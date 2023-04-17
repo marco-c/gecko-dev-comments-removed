@@ -665,6 +665,12 @@ bool EventListenerManager::ListenerCanHandle(const Listener* aListener,
   if (aListener->mListenerType == Listener::eNoListener) {
     return false;
   }
+
+  
+  if (!aListener->mEnabled) {
+    return false;
+  }
+
   
   
   
@@ -1589,9 +1595,77 @@ nsresult EventListenerManager::GetListenerInfo(
     }
 
     RefPtr<EventListenerInfo> info = new EventListenerInfo(
-        eventType, callback, callbackGlobal, listener.mFlags.mCapture,
-        listener.mFlags.mAllowUntrustedEvents, listener.mFlags.mInSystemGroup);
+        this, eventType, callback, callbackGlobal, listener.mFlags.mCapture,
+        listener.mFlags.mAllowUntrustedEvents, listener.mFlags.mInSystemGroup,
+        listener.mListenerIsHandler);
     aList.AppendElement(info.forget());
+  }
+  return NS_OK;
+}
+
+EventListenerManager::Listener* EventListenerManager::GetListenerFor(
+    nsAString& aType, JSObject* aListener, bool aCapturing,
+    bool aAllowsUntrusted, bool aInSystemEventGroup, bool aIsHandler) {
+  NS_ENSURE_TRUE(aListener, nullptr);
+
+  for (Listener& listener : mListeners.ForwardRange()) {
+    if ((aType.IsVoid() && !listener.mAllEvents) ||
+        !Substring(nsDependentAtomString(listener.mTypeAtom), 2)
+             .Equals(aType) ||
+        listener.mListenerType == Listener::eNoListener) {
+      continue;
+    }
+
+    if (listener.mFlags.mCapture != aCapturing ||
+        listener.mFlags.mAllowUntrustedEvents != aAllowsUntrusted ||
+        listener.mFlags.mInSystemGroup != aInSystemEventGroup) {
+      continue;
+    }
+
+    if (aIsHandler) {
+      if (JSEventHandler* handler = listener.GetJSEventHandler()) {
+        if (handler->GetTypedEventHandler().HasEventHandler()) {
+          if (handler->GetTypedEventHandler().Ptr()->CallableOrNull() ==
+              aListener) {
+            return &listener;
+          }
+        }
+      }
+    } else if (listener.mListenerType == Listener::eWebIDLListener &&
+               listener.mListener.GetWebIDLCallback()->CallbackOrNull() ==
+                   aListener) {
+      return &listener;
+    }
+  }
+  return nullptr;
+}
+
+nsresult EventListenerManager::IsListenerEnabled(
+    nsAString& aType, JSObject* aListener, bool aCapturing,
+    bool aAllowsUntrusted, bool aInSystemEventGroup, bool aIsHandler,
+    bool* aEnabled) {
+  Listener* listener =
+      GetListenerFor(aType, aListener, aCapturing, aAllowsUntrusted,
+                     aInSystemEventGroup, aIsHandler);
+  NS_ENSURE_TRUE(listener, NS_ERROR_NOT_AVAILABLE);
+  *aEnabled = listener->mEnabled;
+  return NS_OK;
+}
+
+nsresult EventListenerManager::SetListenerEnabled(
+    nsAString& aType, JSObject* aListener, bool aCapturing,
+    bool aAllowsUntrusted, bool aInSystemEventGroup, bool aIsHandler,
+    bool aEnabled) {
+  Listener* listener =
+      GetListenerFor(aType, aListener, aCapturing, aAllowsUntrusted,
+                     aInSystemEventGroup, aIsHandler);
+  NS_ENSURE_TRUE(listener, NS_ERROR_NOT_AVAILABLE);
+  listener->mEnabled = aEnabled;
+  if (aEnabled) {
+    
+    
+    mNoListenerForEvent = eVoidEvent;
+    mNoListenerForEventAtom = nullptr;
   }
   return NS_OK;
 }
