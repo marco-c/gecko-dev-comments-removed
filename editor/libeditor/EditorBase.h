@@ -735,6 +735,18 @@ class EditorBase : public nsIEditor,
 
 
 
+  bool CanDeleteSelection() const {
+    AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
+    if (NS_WARN_IF(!editActionData.CanHandle())) {
+      return false;
+    }
+    return IsModifiable() && !SelectionRef().IsCollapsed();
+  }
+
+  
+
+
+
 
 
 

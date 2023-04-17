@@ -61,12 +61,6 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
   NS_IMETHOD GetTextLength(int32_t* aCount) override;
 
-  
-
-
-
-  bool CanDeleteSelection() const;
-
   virtual bool CanPaste(int32_t aClipboardType) const;
 
   
