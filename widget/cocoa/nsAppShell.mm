@@ -690,6 +690,22 @@ bool nsAppShell::ProcessNextNativeEvent(bool aMayWait) {
       
       
       
+      
+      
+      
+      
+      
+      
+      
+      
+      
+#ifdef NIGHTLY_BUILD
+      eventProcessed = false;
+      break;
+#else
+      
+      
+      
       EventRef currentEvent =
           AcquireFirstMatchingEventInQueue(currentEventQueue, 0, NULL, kEventQueueOptionsNone);
       if (!currentEvent) {
@@ -726,6 +742,7 @@ bool nsAppShell::ProcessNextNativeEvent(bool aMayWait) {
       
       ReleaseEvent(currentEvent);
       eventProcessed = true;
+#endif
     }
   } while (mRunningEventLoop);
 
