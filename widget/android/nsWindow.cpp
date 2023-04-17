@@ -272,8 +272,7 @@ class NPZCSupport final
 
     
     
-    if (AndroidBridge::Bridge() &&
-        AndroidBridge::Bridge()->GetAPIVersion() >= 19) {
+    if (jni::GetAPIVersion() >= 19) {
       mAndroidVsync = AndroidVsync::GetInstance();
     }
   }

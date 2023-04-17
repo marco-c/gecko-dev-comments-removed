@@ -378,8 +378,7 @@ already_AddRefed<mozilla::gfx::VsyncSource>
 gfxAndroidPlatform::CreateHardwareVsyncSource() {
   
   
-  if (AndroidBridge::Bridge() &&
-      AndroidBridge::Bridge()->GetAPIVersion() >= 19) {
+  if (jni::GetAPIVersion() >= 19) {
     RefPtr<AndroidVsyncSource> vsyncSource = new AndroidVsyncSource();
     return vsyncSource.forget();
   }
