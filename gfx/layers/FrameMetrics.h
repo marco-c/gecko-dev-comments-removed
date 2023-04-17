@@ -161,11 +161,7 @@ struct FrameMetrics {
     
     
     
-    
-    
-    
-    return mZoom * ParentLayerToLayerScale(1.0f) *
-           ViewAs<LayerToScreenScale2D>(mTransformToAncestorScale);
+    return mZoom * mTransformToAncestorScale;
   }
 
   CSSToLayerScale2D LayersPixelsPerCSSPixel() const {
@@ -399,11 +395,12 @@ struct FrameMetrics {
                    CalculateCompositedSizeInCssPixels());
   }
 
-  void SetTransformToAncestorScale(const Scale2D& aTransformToAncestorScale) {
+  void SetTransformToAncestorScale(
+      const ParentLayerToScreenScale2D& aTransformToAncestorScale) {
     mTransformToAncestorScale = aTransformToAncestorScale;
   }
 
-  const Scale2D& GetTransformToAncestorScale() const {
+  const ParentLayerToScreenScale2D& GetTransformToAncestorScale() const {
     return mTransformToAncestorScale;
   }
 
@@ -636,7 +633,7 @@ struct FrameMetrics {
   CSSRect mLayoutViewport;
 
   
-  Scale2D mTransformToAncestorScale;
+  ParentLayerToScreenScale2D mTransformToAncestorScale;
 
   
   TimeStamp mPaintRequestTime;

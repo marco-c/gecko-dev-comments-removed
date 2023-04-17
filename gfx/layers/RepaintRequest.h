@@ -115,8 +115,7 @@ struct RepaintRequest {
 
   CSSToScreenScale2D DisplayportPixelsPerCSSPixel() const {
     
-    return mZoom * ParentLayerToLayerScale(1.0f) *
-           ViewAs<LayerToScreenScale2D>(mTransformToAncestorScale);
+    return mZoom * mTransformToAncestorScale;
   }
 
   CSSToLayerScale2D LayersPixelsPerCSSPixel() const {
@@ -179,7 +178,7 @@ struct RepaintRequest {
 
   const CSSRect& GetLayoutViewport() const { return mLayoutViewport; }
 
-  const Scale2D& GetTransformToAncestorScale() const {
+  const ParentLayerToScreenScale2D& GetTransformToAncestorScale() const {
     return mTransformToAncestorScale;
   }
 
@@ -280,7 +279,7 @@ struct RepaintRequest {
   CSSRect mLayoutViewport;
 
   
-  Scale2D mTransformToAncestorScale;
+  ParentLayerToScreenScale2D mTransformToAncestorScale;
 
   
   TimeStamp mPaintRequestTime;
