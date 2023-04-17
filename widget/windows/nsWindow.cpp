@@ -8679,7 +8679,9 @@ bool nsWindow::OnPointerEvents(UINT msg, WPARAM aWParam, LPARAM aLParam) {
                              buttons);
   pointerInfo.twist = penInfo.rotation;
 
-  if (StaticPrefs::dom_w3c_pointer_events_scroll_by_pen_enabled() &&
+  
+  if (button != MouseButton::eSecondary &&
+      StaticPrefs::dom_w3c_pointer_events_scroll_by_pen_enabled() &&
       DispatchTouchEventFromWMPointer(msg, aLParam, pointerInfo, button)) {
     return true;
   }
@@ -8689,6 +8691,13 @@ bool nsWindow::OnPointerEvents(UINT msg, WPARAM aWParam, LPARAM aLParam) {
   LPARAM newLParam = lParamToClient(aLParam);
   DispatchMouseEvent(message, aWParam, newLParam, false, button,
                      MouseEvent_Binding::MOZ_SOURCE_PEN, &pointerInfo);
+
+  if (button == MouseButton::eSecondary && message == eMouseUp) {
+    
+    
+    DispatchMouseEvent(eContextMenu, aWParam, newLParam, false, button,
+                       MouseEvent_Binding::MOZ_SOURCE_PEN, &pointerInfo);
+  }
   
   
   return true;
