@@ -7,9 +7,7 @@
 #ifndef mozilla_DataStorage_h
 #define mozilla_DataStorage_h
 
-#include <functional>
 #include "mozilla/Atomics.h"
-#include "mozilla/ipc/FileDescriptor.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Mutex.h"
@@ -26,15 +24,6 @@ class psm_DataStorageTest;
 namespace mozilla {
 class DataStorageMemoryReporter;
 class TaskQueue;
-
-namespace dom {
-class ContentChild;
-}  
-
-namespace psm {
-class DataStorageEntry;
-class DataStorageItem;
-}  
 
 
 
@@ -100,6 +89,12 @@ enum DataStorageType {
   DataStorage_Private
 };
 
+struct DataStorageItem final {
+  nsCString key;
+  nsCString value;
+  DataStorageType type;
+};
+
 enum class DataStorageClass {
 #define DATA_STORAGE(_) _,
 #include "mozilla/DataStorageList.h"
@@ -107,8 +102,6 @@ enum class DataStorageClass {
 };
 
 class DataStorage : public nsIObserver {
-  typedef psm::DataStorageItem DataStorageItem;
-
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOBSERVER
@@ -118,21 +111,7 @@ class DataStorage : public nsIObserver {
   static already_AddRefed<DataStorage> Get(DataStorageClass aFilename);
 
   
-  
-  
-  
-  
-  
-  
-  nsresult Init(
-      const nsTArray<mozilla::psm::DataStorageItem>* aItems,
-      mozilla::ipc::FileDescriptor aWriteFd = mozilla::ipc::FileDescriptor());
-
-  
-  
-  
-  nsresult AsyncTakeFileDesc(
-      std::function<void(mozilla::ipc::FileDescriptor&&)>&& aResolver);
+  nsresult Init();
 
   
   
@@ -150,18 +129,7 @@ class DataStorage : public nsIObserver {
   nsresult Clear();
 
   
-  static void GetAllFileNames(nsTArray<nsString>& aItems);
-
-  
-  static void GetAllChildProcessData(
-      nsTArray<mozilla::psm::DataStorageEntry>& aEntries);
-
-  
   void GetAll(nsTArray<DataStorageItem>* aItems);
-
-  
-  static void SetCachedStorageEntries(
-      const nsTArray<mozilla::psm::DataStorageEntry>& aEntries);
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
@@ -178,12 +146,10 @@ class DataStorage : public nsIObserver {
       const nsString& aFilename);
 
   friend class ::psm_DataStorageTest;
-  friend class mozilla::dom::ContentChild;
   friend class mozilla::DataStorageMemoryReporter;
 
   class Writer;
   class Reader;
-  class Opener;
 
   class Entry {
    public:
@@ -246,8 +212,6 @@ class DataStorage : public nsIObserver {
   bool mReady;  
 
   const nsString mFilename;
-
-  mozilla::ipc::FileDescriptor mWriteFd;
 
   static StaticAutoPtr<DataStorages> sDataStorages;
 };
