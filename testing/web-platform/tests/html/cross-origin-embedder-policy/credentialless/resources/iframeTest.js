@@ -48,20 +48,30 @@ const iframeTest = function(
     const child_url = child_origin + executor_path + child_headers +
       `&uuid=${child_token}`;
 
-    send(parent_token, `
+    await send(parent_token, `
       let iframe = document.createElement("iframe");
       iframe.src = "${child_url}";
       document.body.appendChild(iframe);
     `);
 
-    send(child_token, `
+    await send(child_token, `
       send("${test_token}", "load");
     `);
 
     
     
     
-    step_timeout(()=>send(test_token, "block"), 3000);
+    
+    
+    
+    
+    
+    
+    
+    step_timeout(()=>send(test_token, "block"), expectation == EXPECT_BLOCK
+      ? 2000
+      : 6000
+    );
 
     assert_equals(await receive(test_token), expectation);
   }, description);
