@@ -21,8 +21,6 @@
 
 #include <type_traits>
 
-#include "ds/Bitmap.h"
-
 #include "js/WasmFeatures.h"
 
 #include "wasm/WasmBinary.h"
@@ -138,7 +136,6 @@ struct ModuleEnvironment {
   Maybe<uint32_t> startFuncIndex;
   ElemSegmentVector elemSegments;
   MaybeSectionRange codeSection;
-  SparseBitmap validForRefFunc;
   bool usesDuplicateImports;
 
   
@@ -179,6 +176,24 @@ struct ModuleEnvironment {
 
   bool funcIsImport(uint32_t funcIndex) const {
     return funcIndex < funcImportGlobalDataOffsets.length();
+  }
+
+  void declareFuncExported(uint32_t funcIndex, bool eager, bool canRefFunc) {
+    FuncFlags flags = funcs[funcIndex].flags;
+
+    
+    flags = FuncFlags(uint8_t(flags) | uint8_t(FuncFlags::Exported));
+
+    
+    
+    if (eager) {
+      flags = FuncFlags(uint8_t(flags) | uint8_t(FuncFlags::Eager));
+    }
+    if (canRefFunc) {
+      flags = FuncFlags(uint8_t(flags) | uint8_t(FuncFlags::CanRefFunc));
+    }
+
+    funcs[funcIndex].flags = flags;
   }
 };
 

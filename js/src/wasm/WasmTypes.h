@@ -2294,16 +2294,49 @@ using ExportVector = Vector<Export, 0, SystemAllocPolicy>;
 
 
 
+enum class FuncFlags : uint8_t {
+  None = 0x0,
+  
+  
+  
+  Exported = 0x1,
+  
+  
+  Eager = 0x2,
+  
+  
+  CanRefFunc = 0x4,
+};
+
+
+
 class TypeIdDesc;
 
 struct FuncDesc {
   FuncType* type;
   TypeIdDesc* typeId;
-  uint32_t typeIndex;
+  
+  uint32_t typeIndex : 24;
+  FuncFlags flags : 8;
+
+  
+  static_assert(MaxTypes <= (1 << 24) - 1);
+  static_assert(sizeof(FuncFlags) == sizeof(uint8_t));
 
   FuncDesc() = default;
   FuncDesc(FuncType* type, TypeIdDesc* typeId, uint32_t typeIndex)
-      : type(type), typeId(typeId), typeIndex(typeIndex) {}
+      : type(type),
+        typeId(typeId),
+        typeIndex(typeIndex),
+        flags(FuncFlags::None) {}
+
+  bool isExported() const {
+    return uint8_t(flags) & uint8_t(FuncFlags::Exported);
+  }
+  bool isEager() const { return uint8_t(flags) & uint8_t(FuncFlags::Eager); }
+  bool canRefFunc() const {
+    return uint8_t(flags) & uint8_t(FuncFlags::CanRefFunc);
+  }
 };
 
 using FuncDescVector = Vector<FuncDesc, 0, SystemAllocPolicy>;

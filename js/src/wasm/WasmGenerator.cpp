@@ -350,94 +350,31 @@ bool ModuleGenerator::init(Metadata* maybeAsmJSMetadata) {
   
   
   
-  
 
-  static_assert(((uint64_t(MaxFuncs) << 1) | 1) < uint64_t(UINT32_MAX),
-                "bit packing won't work in ExportedFunc");
-
-  class ExportedFunc {
-    uint32_t value;
-
-   public:
-    ExportedFunc() : value(UINT32_MAX) {}
-    ExportedFunc(uint32_t index, bool isExplicit)
-        : value((index << 1) | (isExplicit ? 1 : 0)) {}
-    uint32_t index() const { return value >> 1; }
-    bool isExplicit() const { return value & 0x1; }
-    bool operator<(const ExportedFunc& other) const {
-      return index() < other.index();
+  uint32_t exportedFuncCount = 0;
+  for (const FuncDesc& func : moduleEnv_->funcs) {
+    if (func.isExported()) {
+      exportedFuncCount++;
     }
-    bool operator==(const ExportedFunc& other) const {
-      return index() == other.index();
-    }
-    bool isInvalid() const { return value == UINT32_MAX; }
-    void mergeExplicit(bool explicitBit) {
-      if (!isExplicit() && explicitBit) {
-        value |= 0x1;
-      }
-    }
-  };
-
-  Vector<ExportedFunc, 8, SystemAllocPolicy> exportedFuncs;
-  if (!exportedFuncs.resize(moduleEnv_->numFuncs())) {
+  }
+  if (!metadataTier_->funcExports.reserve(exportedFuncCount)) {
     return false;
   }
 
-  auto addOrMerge = [&exportedFuncs](ExportedFunc newEntry) {
-    uint32_t index = newEntry.index();
-    if (exportedFuncs[index].isInvalid()) {
-      exportedFuncs[index] = newEntry;
-    } else {
-      exportedFuncs[index].mergeExplicit(newEntry.isExplicit());
+  for (uint32_t funcIndex = 0; funcIndex < moduleEnv_->funcs.length();
+       funcIndex++) {
+    const FuncDesc& func = moduleEnv_->funcs[funcIndex];
+
+    if (!func.isExported()) {
+      continue;
     }
-  };
 
-  for (const Export& exp : moduleEnv_->exports) {
-    if (exp.kind() == DefinitionKind::Function) {
-      addOrMerge(ExportedFunc(exp.funcIndex(), true));
-    }
-  }
-
-  if (moduleEnv_->startFuncIndex) {
-    addOrMerge(ExportedFunc(*moduleEnv_->startFuncIndex, true));
-  }
-
-  for (const ElemSegment* seg : moduleEnv_->elemSegments) {
-    
-    
-    
-    
-    
-    
-    
-    bool isAsmJS = seg->active() && moduleEnv_->tables[seg->tableIndex].isAsmJS;
-    if (!isAsmJS) {
-      for (uint32_t funcIndex : seg->elemFuncIndices) {
-        if (funcIndex != NullFuncIndex) {
-          addOrMerge(ExportedFunc(funcIndex, false));
-        }
-      }
-    }
-  }
-
-  
-
-  auto* newEnd =
-      std::remove_if(exportedFuncs.begin(), exportedFuncs.end(),
-                     [](const ExportedFunc& exp) { return exp.isInvalid(); });
-  exportedFuncs.erase(newEnd, exportedFuncs.end());
-
-  if (!metadataTier_->funcExports.reserve(exportedFuncs.length())) {
-    return false;
-  }
-
-  for (const ExportedFunc& funcIndex : exportedFuncs) {
     FuncType funcType;
-    if (!funcType.clone(*moduleEnv_->funcs[funcIndex.index()].type)) {
+    if (!funcType.clone(*func.type)) {
       return false;
     }
-    metadataTier_->funcExports.infallibleEmplaceBack(
-        std::move(funcType), funcIndex.index(), funcIndex.isExplicit());
+    metadataTier_->funcExports.infallibleEmplaceBack(std::move(funcType),
+                                                     funcIndex, func.isEager());
   }
 
   

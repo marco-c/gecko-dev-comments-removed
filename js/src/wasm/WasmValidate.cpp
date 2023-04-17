@@ -2329,7 +2329,8 @@ static bool DecodeExport(Decoder& d, ModuleEnvironment* env,
       }
 #endif
 
-      env->validForRefFunc.setBit(funcIndex);
+      env->declareFuncExported(funcIndex,  true,
+                                true);
       return env->exports.emplaceBack(std::move(fieldName), funcIndex,
                                       DefinitionKind::Function);
     }
@@ -2462,6 +2463,7 @@ static bool DecodeStartSection(Decoder& d, ModuleEnvironment* env) {
     return d.fail("start function must be nullary");
   }
 
+  env->declareFuncExported(funcIndex,  true,  false);
   env->startFuncIndex = Some(funcIndex);
 
   return d.finishSection(*range, "start");
@@ -2630,6 +2632,7 @@ static bool DecodeElemSection(Decoder& d, ModuleEnvironment* env) {
                          kind == ElemSegmentKind::Declared ||
                          env->tables[seg->tableIndex].importedOrExported;
 #endif
+    bool isAsmJS = seg->active() && env->tables[seg->tableIndex].isAsmJS;
 
     
     
@@ -2689,8 +2692,9 @@ static bool DecodeElemSection(Decoder& d, ModuleEnvironment* env) {
       }
 
       seg->elemFuncIndices.infallibleAppend(funcIndex);
-      if (funcIndex != NullFuncIndex) {
-        env->validForRefFunc.setBit(funcIndex);
+      if (funcIndex != NullFuncIndex && !isAsmJS) {
+        env->declareFuncExported(funcIndex,  false,
+                                  true);
       }
     }
 
