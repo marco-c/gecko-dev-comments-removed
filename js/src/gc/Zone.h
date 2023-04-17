@@ -22,6 +22,7 @@
 #include "js/GCHashTable.h"
 #include "vm/AtomsTable.h"
 #include "vm/JSFunction.h"
+#include "vm/ShapeZone.h"
 
 namespace js {
 
@@ -297,16 +298,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::ZoneOrGCTaskData<js::FunctionToStringCache> functionToStringCache_;
 
   
-  js::ZoneData<js::PropertyTree> propertyTree_;
-
-  
-  js::ZoneData<js::BaseShapeSet> baseShapes_;
-
-  
-  
-  
-  
-  js::ZoneData<js::InitialShapeSet> initialShapes_;
+  js::ZoneData<js::ShapeZone> shapeZone_;
 
   
   using FinalizationRegistrySet =
@@ -591,11 +583,8 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
     return functionToStringCache_.ref();
   }
 
-  js::PropertyTree& propertyTree() { return propertyTree_.ref(); }
-
-  js::BaseShapeSet& baseShapes() { return baseShapes_.ref(); }
-
-  js::InitialShapeSet& initialShapes() { return initialShapes_.ref(); }
+  js::ShapeZone& shapeZone() { return shapeZone_.ref(); }
+  js::PropertyTree& propertyTree() { return shapeZone().propertyTree; }
 
   void fixupAfterMovingGC();
   void fixupScriptMapsAfterMovingGC(JSTracer* trc);
@@ -656,9 +645,6 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 #ifdef JSGC_HASH_TABLE_CHECKS
   void checkAllCrossCompartmentWrappersAfterMovingGC();
   void checkStringWrappersAfterMovingGC();
-
-  void checkInitialShapesTableAfterMovingGC();
-  void checkBaseShapeTableAfterMovingGC();
 
   
   void checkUniqueIdTableAfterMovingGC();
