@@ -11,12 +11,6 @@ import py
 iswin32 = sys.platform == "win32" or (getattr(os, '_name', False) == 'nt')
 
 try:
-    
-    import_errors = (ImportError, FileNotFoundError)
-except NameError:
-    import_errors = (ImportError,)
-
-try:
     from os import fspath
 except ImportError:
     def fspath(path):
@@ -41,7 +35,7 @@ except ImportError:
                 raise
             try:
                 import pathlib
-            except import_errors:
+            except ImportError:
                 pass
             else:
                 if isinstance(path, pathlib.PurePath):
