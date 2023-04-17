@@ -1177,6 +1177,18 @@ bool nsContentSecurityUtils::ValidateScriptFilename(const char* aFilename,
   Telemetry::RecordEvent(eventType, mozilla::Some(fileNameTypeAndDetails.first),
                          extra);
 
+#ifdef NIGHTLY_BUILD
+  
+  
+  
+  
+  if (fileNameTypeAndDetails.second.isSome()) {
+    PossiblyCrash("js_load_1", NS_ConvertUTF16toUTF8(fileNameTypeAndDetails.second.value()));
+  } else {
+    PossiblyCrash("js_load_1", "(None)"_ns);
+  }
+#endif
+
   
   
   
