@@ -163,9 +163,9 @@ class ClientChannelHelper : public nsIInterfaceRequestor,
 
   NS_DECL_ISUPPORTS
 
-  static void CreateClientForPrincipal(nsILoadInfo* aLoadInfo,
-                                       nsIPrincipal* aPrincipal,
-                                       nsISerialEventTarget* aEventTarget) {
+  virtual void CreateClientForPrincipal(nsILoadInfo* aLoadInfo,
+                                        nsIPrincipal* aPrincipal,
+                                        nsISerialEventTarget* aEventTarget) {
     
     
     
@@ -181,16 +181,41 @@ NS_IMPL_ISUPPORTS(ClientChannelHelper, nsIInterfaceRequestor,
                   nsIChannelEventSink);
 
 class ClientChannelHelperParent final : public ClientChannelHelper {
-  ~ClientChannelHelperParent() = default;
+  ~ClientChannelHelperParent() {
+    
+    
+    
+    
+    SetFutureSourceInfo(Nothing());
+  }
 
   void CreateClient(nsILoadInfo* aLoadInfo, nsIPrincipal* aPrincipal) override {
     CreateClientForPrincipal(aLoadInfo, aPrincipal, mEventTarget);
   }
 
+  void SetFutureSourceInfo(Maybe<ClientInfo>&& aClientInfo) {
+    if (mRecentFutureSourceInfo) {
+      
+      
+      ClientManager::ForgetFutureSource(*mRecentFutureSourceInfo);
+    }
+
+    if (aClientInfo) {
+      Unused << NS_WARN_IF(!ClientManager::ExpectFutureSource(*aClientInfo));
+    }
+
+    mRecentFutureSourceInfo = std::move(aClientInfo);
+  }
+
+  
+  
+  
+  Maybe<ClientInfo> mRecentFutureSourceInfo;
+
  public:
-  static void CreateClientForPrincipal(nsILoadInfo* aLoadInfo,
-                                       nsIPrincipal* aPrincipal,
-                                       nsISerialEventTarget* aEventTarget) {
+  void CreateClientForPrincipal(nsILoadInfo* aLoadInfo,
+                                nsIPrincipal* aPrincipal,
+                                nsISerialEventTarget* aEventTarget) override {
     
     
     
@@ -200,6 +225,7 @@ class ClientChannelHelperParent final : public ClientChannelHelper {
         ClientManager::CreateInfo(ClientType::Window, aPrincipal);
     if (reservedInfo) {
       aLoadInfo->SetReservedClientInfo(*reservedInfo);
+      SetFutureSourceInfo(std::move(reservedInfo));
     }
   }
   ClientChannelHelperParent(nsIInterfaceRequestor* aOuter,
@@ -296,11 +322,11 @@ nsresult AddClientChannelHelperInternal(nsIChannel* aChannel,
   rv = aChannel->GetNotificationCallbacks(getter_AddRefs(outerCallbacks));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (initialClientInfo.isNothing() && reservedClientInfo.isNothing()) {
-    T::CreateClientForPrincipal(loadInfo, channelPrincipal, aEventTarget);
-  }
-
   RefPtr<ClientChannelHelper> helper = new T(outerCallbacks, aEventTarget);
+
+  if (initialClientInfo.isNothing() && reservedClientInfo.isNothing()) {
+    helper->CreateClientForPrincipal(loadInfo, channelPrincipal, aEventTarget);
+  }
 
   
   
