@@ -309,15 +309,7 @@ class VirtualenvManager(VirtualenvHelper):
         return self.virtualenv_root
 
     def _requirements(self):
-        try:
-            
-            
-            from mozbuild.requirements import MachEnvRequirements
-        except ImportError:
-            
-            
-            
-            from requirements import MachEnvRequirements
+        from mach.requirements import MachEnvRequirements
 
         if not os.path.exists(self._manifest_path):
             raise Exception(
@@ -602,6 +594,9 @@ if __name__ == "__main__":
     else:
         populate = False
         opts = parser.parse_args(sys.argv[1:])
+
+    
+    sys.path.append(os.path.join(opts.topsrcdir, "python", "mach"))
 
     manager = VirtualenvManager(
         opts.topsrcdir,
