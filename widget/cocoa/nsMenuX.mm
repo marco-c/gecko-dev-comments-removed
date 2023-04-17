@@ -469,7 +469,7 @@ void nsMenuX::MenuOpenedAsync() {
   EventDispatcher::Dispatch(dispatchTo, nullptr, &event, nullptr, &status);
 }
 
-void nsMenuX::MenuClosed() {
+void nsMenuX::MenuClosed(bool aEntireMenuClosingDueToActivateItem) {
   if (!mIsOpen) {
     return;
   }
@@ -480,7 +480,7 @@ void nsMenuX::MenuClosed() {
   
   for (auto& child : mMenuChildren) {
     if (child.is<RefPtr<nsMenuX>>()) {
-      child.as<RefPtr<nsMenuX>>()->MenuClosed();
+      child.as<RefPtr<nsMenuX>>()->MenuClosed(aEntireMenuClosingDueToActivateItem);
     }
   }
 

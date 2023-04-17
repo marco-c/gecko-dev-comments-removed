@@ -319,6 +319,10 @@ void NativeMenuMac::ActivateItem(dom::Element* aItemElement, Modifiers aModifier
                                  ConvertModifierFlags(aModifiers), aButton);
 
   
+  mMenu->MenuClosed(true);
+
+  
+  
   
   
   
