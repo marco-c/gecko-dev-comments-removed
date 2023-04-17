@@ -8,13 +8,7 @@ const Services = require("Services");
 
 loader.lazyRequireGetter(
   this,
-  "isWindowIncluded",
-  "devtools/shared/layout/utils",
-  true
-);
-loader.lazyRequireGetter(
-  this,
-  "isRemoteFrame",
+  "isRemoteBrowserElement",
   "devtools/shared/layout/utils",
   true
 );
@@ -34,6 +28,7 @@ class NodePicker {
     this._onKey = this._onKey.bind(this);
     this._onPick = this._onPick.bind(this);
     this._onSuppressedEvent = this._onSuppressedEvent.bind(this);
+    this._preventContentEvent = this._preventContentEvent.bind(this);
   }
 
   _findAndAttachElement(event) {
@@ -52,13 +47,25 @@ class NodePicker {
 
 
 
+  _isEventAllowed({ target, view }) {
+    
+    
+    if (view instanceof Ci.nsIDOMChromeWindow) {
+      return true;
+    }
 
-  _isEventAllowed({ view }) {
-    const { window } = this._targetActor;
+    
+    
+    
+    
+    
+    
+    
+    if (isRemoteBrowserElement(target)) {
+      return false;
+    }
 
-    return (
-      window instanceof Ci.nsIDOMChromeWindow || isWindowIncluded(window, view)
-    );
+    return this._targetActor.windows.includes(view);
   }
 
   
@@ -72,16 +79,11 @@ class NodePicker {
 
 
   _onPick(event) {
-    
-    
-    if (isRemoteFrame(event.target)) {
+    if (!this._isEventAllowed(event)) {
       return;
     }
 
     this._preventContentEvent(event);
-    if (!this._isEventAllowed(event)) {
-      return;
-    }
 
     
     
@@ -103,16 +105,10 @@ class NodePicker {
   }
 
   _onHovered(event) {
-    
-    
-    if (isRemoteFrame(event.target)) {
-      return;
-    }
-
-    this._preventContentEvent(event);
     if (!this._isEventAllowed(event)) {
       return;
     }
+    this._preventContentEvent(event);
 
     this._currentNode = this._findAndAttachElement(event);
     if (this._hoveredNode !== this._currentNode.node) {
@@ -126,10 +122,10 @@ class NodePicker {
       return;
     }
 
-    this._preventContentEvent(event);
     if (!this._isEventAllowed(event)) {
       return;
     }
+    this._preventContentEvent(event);
 
     let currentNode = this._currentNode.node.rawNode;
 
@@ -215,7 +211,7 @@ class NodePicker {
   
   
   _preventContentEvent(event) {
-    if (isRemoteFrame(event.target)) {
+    if (!this._isEventAllowed(event)) {
       return;
     }
     event.stopPropagation();
