@@ -1,11 +1,5 @@
 
 
-if (typeof getBuildConfiguration === "undefined") {
-  var getBuildConfiguration = SpecialPowers.Cu.getJSTestingFunctions().getBuildConfiguration;
-}
-
-var isNightly = !getBuildConfiguration().release_or_beta;
-
 var log;
 var proxy = new Proxy({
     year: "numeric",
@@ -22,19 +16,17 @@ var proxy = new Proxy({
     }
 }));
 
-var dayPeriod = isNightly ? ["dayPeriod"] : [];
-
 var constructorAccesses = [
     
     "weekday", "year", "month", "day",
-    ...dayPeriod, "hour", "minute", "second", "fractionalSecondDigits",
+    "dayPeriod", "hour", "minute", "second", "fractionalSecondDigits",
     "dateStyle", "timeStyle",
 
     
     "localeMatcher", "calendar", "numberingSystem", "hour12", "hourCycle", "timeZone",
 
     
-    "weekday", "era", "year", "month", "day", ...dayPeriod, "hour", "minute", "second",
+    "weekday", "era", "year", "month", "day", "dayPeriod", "hour", "minute", "second",
     "fractionalSecondDigits", "timeZoneName",
 
     
@@ -53,7 +45,7 @@ new Date().toLocaleString(undefined, proxy);
 assertEqArray(log, [
     
     "weekday", "year", "month", "day",
-    ...dayPeriod, "hour", "minute", "second", "fractionalSecondDigits",
+    "dayPeriod", "hour", "minute", "second", "fractionalSecondDigits",
     "dateStyle", "timeStyle",
 
     ...constructorAccesses
@@ -75,7 +67,7 @@ new Date().toLocaleTimeString(undefined, proxy);
 
 assertEqArray(log, [
     
-    ...dayPeriod, "hour", "minute", "second", "fractionalSecondDigits",
+    "dayPeriod", "hour", "minute", "second", "fractionalSecondDigits",
     "dateStyle", "timeStyle",
 
     ...constructorAccesses

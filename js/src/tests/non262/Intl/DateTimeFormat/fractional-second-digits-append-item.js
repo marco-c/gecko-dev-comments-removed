@@ -1,11 +1,5 @@
 
 
-if (typeof getBuildConfiguration === "undefined") {
-  var getBuildConfiguration = SpecialPowers.Cu.getJSTestingFunctions().getBuildConfiguration;
-}
-
-var isNightly = !getBuildConfiguration().release_or_beta;
-
 const {
   DayPeriod, Hour, Minute, Second, FractionalSecond, Literal
 } = DateTimeFormatParts
@@ -41,11 +35,9 @@ const tests = [
       Literal(")")
     ]
   },
-];
 
-if (isNightly) {
   
-  tests.push({
+  {
     locale: "ckb-IR",
     date: new Date("2020-01-01T00:00:00.123"),
     options: {dayPeriod: "short", fractionalSecondDigits: 3},
@@ -55,8 +47,8 @@ if (isNightly) {
       DayPeriod("ب.ن"),
       Literal(")")
     ]
-  });
-}
+  },
+];
 
 for (let {locale, date, options, parts} of tests) {
   let dtf = new Intl.DateTimeFormat(locale, options);
