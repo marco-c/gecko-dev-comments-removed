@@ -4945,6 +4945,10 @@ nsresult nsHttpChannel::InstallCacheListener(int64_t offset) {
 }
 
 void nsHttpChannel::ClearBogusContentEncodingIfNeeded() {
+  if (!StaticPrefs::network_http_clear_bogus_content_encoding()) {
+    return;
+  }
+
   
   
   
