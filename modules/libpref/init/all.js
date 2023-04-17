@@ -4296,15 +4296,6 @@ pref("toolkit.aboutProcesses.showAllSubframes", false);
   pref("toolkit.aboutProcesses.showThreads", false);
 #endif
 
-#ifdef NIGHTLY_BUILD
-  pref("toolkit.aboutProcesses.showProfilerIcons", true);
-#else
-  pref("toolkit.aboutProcesses.showProfilerIcons", false);
-#endif
-
-
-pref("toolkit.aboutProcesses.profileDuration", 5);
-
 
 
 #ifdef RELEASE_OR_BETA
