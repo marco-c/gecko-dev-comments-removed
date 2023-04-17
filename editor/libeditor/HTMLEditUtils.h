@@ -39,6 +39,7 @@ class HTMLEditUtils final {
  public:
   static constexpr char16_t kNewLine = '\n';
   static constexpr char16_t kCarridgeReturn = '\r';
+  static constexpr char16_t kTab = '\t';
   static constexpr char16_t kSpace = ' ';
   static constexpr char16_t kNBSP = 0x00A0;
   static constexpr char16_t kGreaterThan = '>';
@@ -1402,19 +1403,55 @@ class HTMLEditUtils final {
 
 
 
-  static Maybe<uint32_t> GetPreviousCharOffsetExceptASCIIWhiteSpaces(
-      const EditorDOMPointInText& aPoint) {
+  enum class WalkTextOption {
+    TreatNBSPsCollapsible,
+  };
+  using WalkTextOptions = EnumSet<WalkTextOption>;
+  static Maybe<uint32_t> GetPreviousNonCollapsibleCharOffset(
+      const EditorDOMPointInText& aPoint,
+      const WalkTextOptions& aWalkTextOptions = {}) {
     MOZ_ASSERT(aPoint.IsSetAndValid());
-    return GetPreviousCharOffsetExceptASCIIWhiteSpaces(
-        *aPoint.ContainerAsText(), aPoint.Offset());
+    return GetPreviousNonCollapsibleCharOffset(
+        *aPoint.ContainerAsText(), aPoint.Offset(), aWalkTextOptions);
   }
-  static Maybe<uint32_t> GetPreviousCharOffsetExceptASCIIWhiteSpaces(
-      const Text& aTextNode, uint32_t aOffset) {
+  static Maybe<uint32_t> GetPreviousNonCollapsibleCharOffset(
+      const Text& aTextNode, uint32_t aOffset,
+      const WalkTextOptions& aWalkTextOptions = {}) {
+    const bool isWhiteSpaceCollapsible =
+        !EditorUtils::IsWhiteSpacePreformatted(aTextNode);
+    const bool isNewLineCollapsible =
+        !EditorUtils::IsNewLinePreformatted(aTextNode);
+    const bool isNBSPCollapsible =
+        isWhiteSpaceCollapsible &&
+        aWalkTextOptions.contains(WalkTextOption::TreatNBSPsCollapsible);
     const nsTextFragment& textFragment = aTextNode.TextFragment();
     MOZ_ASSERT(aOffset <= textFragment.GetLength());
     for (uint32_t i = aOffset; i; i--) {
-      if (!nsCRT::IsAsciiSpace(textFragment.CharAt(i - 1))) {
-        return Some(i - 1);
+      
+      
+      
+      switch (textFragment.CharAt(AssertedCast<int32_t>(i - 1))) {
+        case HTMLEditUtils::kSpace:
+        case HTMLEditUtils::kCarridgeReturn:
+        case HTMLEditUtils::kTab:
+          if (!isWhiteSpaceCollapsible) {
+            return Some(i - 1);
+          }
+          break;
+        case HTMLEditUtils::kNewLine:
+          if (!isNewLineCollapsible) {
+            return Some(i - 1);
+          }
+          break;
+        case HTMLEditUtils::kNBSP:
+          if (!isNBSPCollapsible) {
+            return Some(i - 1);
+          }
+          break;
+        default:
+          MOZ_ASSERT(!nsCRT::IsAsciiSpace(
+              textFragment.CharAt(AssertedCast<int32_t>(i - 1))));
+          return Some(i - 1);
       }
     }
     return Nothing();
@@ -1424,69 +1461,69 @@ class HTMLEditUtils final {
 
 
 
-  static Maybe<uint32_t> GetNextCharOffsetExceptASCIIWhiteSpaces(
-      const EditorDOMPointInText& aPoint) {
+  static Maybe<uint32_t> GetNextNonCollapsibleCharOffset(
+      const EditorDOMPointInText& aPoint,
+      const WalkTextOptions& aWalkTextOptions = {}) {
     MOZ_ASSERT(aPoint.IsSetAndValid());
-    return GetNextCharOffsetExceptASCIIWhiteSpaces(*aPoint.ContainerAsText(),
-                                                   aPoint.Offset());
+    return GetNextNonCollapsibleCharOffset(*aPoint.ContainerAsText(),
+                                           aPoint.Offset(), aWalkTextOptions);
   }
-  static Maybe<uint32_t> GetNextCharOffsetExceptASCIIWhiteSpaces(
-      const Text& aTextNode, uint32_t aOffset) {
-    const nsTextFragment& textFragment = aTextNode.TextFragment();
-    MOZ_ASSERT(aOffset <= textFragment.GetLength());
-    for (uint32_t i = aOffset + 1; i < textFragment.GetLength(); i++) {
-      if (!nsCRT::IsAsciiSpace(textFragment.CharAt(i))) {
-        return Some(i);
-      }
-    }
-    return Nothing();
+  static Maybe<uint32_t> GetNextNonCollapsibleCharOffset(
+      const Text& aTextNode, uint32_t aOffset,
+      const WalkTextOptions& aWalkTextOptions = {}) {
+    return GetInclusiveNextNonCollapsibleCharOffset(aTextNode, aOffset + 1,
+                                                    aWalkTextOptions);
   }
 
   
 
 
 
-  static Maybe<uint32_t> GetPreviousCharOffsetExceptWhiteSpaces(
-      const EditorDOMPointInText& aPoint) {
+  static Maybe<uint32_t> GetInclusiveNextNonCollapsibleCharOffset(
+      const EditorDOMPointInText& aPoint,
+      const WalkTextOptions& aWalkTextOptions = {}) {
     MOZ_ASSERT(aPoint.IsSetAndValid());
-    return GetPreviousCharOffsetExceptWhiteSpaces(*aPoint.ContainerAsText(),
-                                                  aPoint.Offset());
+    return GetInclusiveNextNonCollapsibleCharOffset(
+        *aPoint.ContainerAsText(), aPoint.Offset(), aWalkTextOptions);
   }
-  static Maybe<uint32_t> GetPreviousCharOffsetExceptWhiteSpaces(
-      const Text& aTextNode, uint32_t aOffset) {
-    if (!aOffset) {
-      return Nothing();
-    }
-    const nsTextFragment& textFragment = aTextNode.TextFragment();
-    MOZ_ASSERT(aOffset <= textFragment.GetLength());
-    for (uint32_t i = aOffset; i; i--) {
-      char16_t ch = textFragment.CharAt(i - 1);
-      if (!nsCRT::IsAsciiSpace(ch) && ch != HTMLEditUtils::kNBSP) {
-        return Some(i - 1);
-      }
-    }
-    return Nothing();
-  }
-
-  
-
-
-
-
-  static Maybe<uint32_t> GetInclusiveNextCharOffsetExceptWhiteSpaces(
-      const EditorDOMPointInText& aPoint) {
-    MOZ_ASSERT(aPoint.IsSetAndValid());
-    return GetInclusiveNextCharOffsetExceptWhiteSpaces(
-        *aPoint.ContainerAsText(), aPoint.Offset());
-  }
-  static Maybe<uint32_t> GetInclusiveNextCharOffsetExceptWhiteSpaces(
-      const Text& aTextNode, uint32_t aOffset) {
+  static Maybe<uint32_t> GetInclusiveNextNonCollapsibleCharOffset(
+      const Text& aTextNode, uint32_t aOffset,
+      const WalkTextOptions& aWalkTextOptions = {}) {
+    const bool isWhiteSpaceCollapsible =
+        !EditorUtils::IsWhiteSpacePreformatted(aTextNode);
+    const bool isNewLineCollapsible =
+        !EditorUtils::IsNewLinePreformatted(aTextNode);
+    const bool isNBSPCollapsible =
+        isWhiteSpaceCollapsible &&
+        aWalkTextOptions.contains(WalkTextOption::TreatNBSPsCollapsible);
     const nsTextFragment& textFragment = aTextNode.TextFragment();
     MOZ_ASSERT(aOffset <= textFragment.GetLength());
     for (uint32_t i = aOffset; i < textFragment.GetLength(); i++) {
-      char16_t ch = textFragment.CharAt(i);
-      if (!nsCRT::IsAsciiSpace(ch) && ch != HTMLEditUtils::kNBSP) {
-        return Some(i);
+      
+      
+      
+      switch (textFragment.CharAt(AssertedCast<int32_t>(i))) {
+        case HTMLEditUtils::kSpace:
+        case HTMLEditUtils::kCarridgeReturn:
+        case HTMLEditUtils::kTab:
+          if (!isWhiteSpaceCollapsible) {
+            return Some(i);
+          }
+          break;
+        case HTMLEditUtils::kNewLine:
+          if (!isNewLineCollapsible) {
+            return Some(i);
+          }
+          break;
+        case HTMLEditUtils::kNBSP:
+          if (!isNBSPCollapsible) {
+            return Some(i);
+          }
+          break;
+        default:
+          MOZ_ASSERT(!nsCRT::IsAsciiSpace(
+              textFragment.CharAt(AssertedCast<int32_t>(i))));
+          return Some(i);
       }
     }
     return Nothing();
@@ -1498,23 +1535,37 @@ class HTMLEditUtils final {
 
 
 
-  static uint32_t GetFirstASCIIWhiteSpaceOffsetCollapsedWith(
-      const EditorDOMPointInText& aPoint) {
+  static uint32_t GetFirstWhiteSpaceOffsetCollapsedWith(
+      const EditorDOMPointInText& aPoint,
+      const WalkTextOptions& aWalkTextOptions = {}) {
     MOZ_ASSERT(aPoint.IsSetAndValid());
     MOZ_ASSERT(!aPoint.IsEndOfContainer());
-    MOZ_ASSERT(aPoint.IsCharASCIISpace());
-    return GetFirstASCIIWhiteSpaceOffsetCollapsedWith(*aPoint.ContainerAsText(),
-                                                      aPoint.Offset());
+    MOZ_ASSERT_IF(
+        aWalkTextOptions.contains(WalkTextOption::TreatNBSPsCollapsible),
+        aPoint.IsCharCollapsibleASCIISpaceOrNBSP());
+    MOZ_ASSERT_IF(
+        !aWalkTextOptions.contains(WalkTextOption::TreatNBSPsCollapsible),
+        aPoint.IsCharCollapsibleASCIISpace());
+    return GetFirstWhiteSpaceOffsetCollapsedWith(
+        *aPoint.ContainerAsText(), aPoint.Offset(), aWalkTextOptions);
   }
-  static uint32_t GetFirstASCIIWhiteSpaceOffsetCollapsedWith(
-      const Text& aTextNode, uint32_t aOffset) {
+  static uint32_t GetFirstWhiteSpaceOffsetCollapsedWith(
+      const Text& aTextNode, uint32_t aOffset,
+      const WalkTextOptions& aWalkTextOptions = {}) {
     MOZ_ASSERT(aOffset < aTextNode.TextLength());
-    MOZ_ASSERT(nsCRT::IsAsciiSpace(aTextNode.TextFragment().CharAt(aOffset)));
+    MOZ_ASSERT_IF(
+        aWalkTextOptions.contains(WalkTextOption::TreatNBSPsCollapsible),
+        EditorRawDOMPoint(&aTextNode, aOffset)
+            .IsCharCollapsibleASCIISpaceOrNBSP());
+    MOZ_ASSERT_IF(
+        !aWalkTextOptions.contains(WalkTextOption::TreatNBSPsCollapsible),
+        EditorRawDOMPoint(&aTextNode, aOffset).IsCharCollapsibleASCIISpace());
     if (!aOffset) {
       return 0;
     }
     Maybe<uint32_t> previousVisibleCharOffset =
-        GetPreviousCharOffsetExceptASCIIWhiteSpaces(aTextNode, aOffset);
+        GetPreviousNonCollapsibleCharOffset(aTextNode, aOffset,
+                                            aWalkTextOptions);
     return previousVisibleCharOffset.isSome()
                ? previousVisibleCharOffset.value() + 1
                : 0;

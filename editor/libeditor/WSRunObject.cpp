@@ -2603,8 +2603,7 @@ WSRunScanner::TextFragmentData::GetEndOfCollapsibleASCIIWhiteSpaces(
   
   if (!aPointAtASCIIWhiteSpace.IsAtLastContent()) {
     Maybe<uint32_t> nextVisibleCharOffset =
-        HTMLEditUtils::GetNextCharOffsetExceptASCIIWhiteSpaces(
-            aPointAtASCIIWhiteSpace);
+        HTMLEditUtils::GetNextNonCollapsibleCharOffset(aPointAtASCIIWhiteSpace);
     if (nextVisibleCharOffset.isSome()) {
       
       return EditorDOMPointInText(aPointAtASCIIWhiteSpace.ContainerAsText(),
@@ -2640,8 +2639,7 @@ WSRunScanner::TextFragmentData::GetEndOfCollapsibleASCIIWhiteSpaces(
 
     
     Maybe<uint32_t> nextVisibleCharOffset =
-        HTMLEditUtils::GetNextCharOffsetExceptASCIIWhiteSpaces(
-            atStartOfNextTextNode);
+        HTMLEditUtils::GetNextNonCollapsibleCharOffset(atStartOfNextTextNode);
     if (nextVisibleCharOffset.isSome()) {
       return EditorDOMPointInText(atStartOfNextTextNode.ContainerAsText(),
                                   nextVisibleCharOffset.value());
@@ -2668,7 +2666,7 @@ WSRunScanner::TextFragmentData::GetFirstASCIIWhiteSpacePointCollapsedTo(
   
   if (!aPointAtASCIIWhiteSpace.IsStartOfContainer()) {
     uint32_t firstASCIIWhiteSpaceOffset =
-        HTMLEditUtils::GetFirstASCIIWhiteSpaceOffsetCollapsedWith(
+        HTMLEditUtils::GetFirstWhiteSpaceOffsetCollapsedWith(
             aPointAtASCIIWhiteSpace);
     if (firstASCIIWhiteSpaceOffset) {
       
@@ -2707,7 +2705,7 @@ WSRunScanner::TextFragmentData::GetFirstASCIIWhiteSpacePointCollapsedTo(
 
     
     uint32_t firstASCIIWhiteSpaceOffset =
-        HTMLEditUtils::GetFirstASCIIWhiteSpaceOffsetCollapsedWith(
+        HTMLEditUtils::GetFirstWhiteSpaceOffsetCollapsedWith(
             atLastCharOfNextTextNode);
     if (firstASCIIWhiteSpaceOffset) {
       return EditorDOMPointInText(atLastCharOfNextTextNode.ContainerAsText(),
