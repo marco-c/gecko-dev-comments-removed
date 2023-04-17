@@ -205,17 +205,6 @@ interface nsIPermissionManager : nsISupports
 
 
   void removePermissionsWithAttributes(in AString patternAsJSON);
-
-  
-
-
-
-
-
-
-
-
-  void broadcastPermissionsForPrincipalToAllContentProcesses(in nsIPrincipal aPrincipal);
 };
 
 %{ C++
