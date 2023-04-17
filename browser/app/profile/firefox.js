@@ -1520,9 +1520,6 @@ pref("browser.aboutwelcome.skipFocus", true);
 
 pref("browser.messaging-system.whatsNewPanel.enabled", true);
 
-pref("browser.messaging-system.personalized-cfr.scores", "{}");
-pref("browser.messaging-system.personalized-cfr.score-threshold", 5000);
-
 
 
 pref("messaging-system.log", "warn");

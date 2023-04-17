@@ -70,11 +70,7 @@ describe("ASRTargeting docs", () => {
     
     
     
-    const allow = [
-      "personalizedCfrThreshold",
-      "personalizedCfrScores",
-      "messageImpressions",
-    ];
+    const allow = ["messageImpressions"];
     for (const targetingParam of DOCS_TARGETING_HEADINGS.filter(
       doc => !allow.includes(doc)
     )) {

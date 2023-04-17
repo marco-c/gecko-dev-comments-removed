@@ -110,13 +110,6 @@ class PageAction {
         message_id: recommendation.id,
         bucket_id: recommendation.content.bucket_id,
         event: "IMPRESSION",
-        ...(recommendation.personalizedModelVersion
-          ? {
-              event_context: {
-                modelVersion: recommendation.personalizedModelVersion,
-              },
-            }
-          : {}),
       });
     }
   }
@@ -566,7 +559,7 @@ class PageAction {
   async _renderPopup(message, browser) {
     this.maybeLoadCustomElement(this.window);
 
-    const { id, content, modelVersion } = message;
+    const { id, content } = message;
 
     const headerLabel = this.window.document.getElementById(
       "cfr-notification-header-label"
@@ -602,7 +595,6 @@ class PageAction {
         message_id: id,
         bucket_id: content.bucket_id,
         event: "RATIONALE",
-        ...(modelVersion ? { event_context: { modelVersion } } : {}),
       });
     
     
@@ -634,7 +626,6 @@ class PageAction {
             message_id: id,
             bucket_id: content.bucket_id,
             event: "ENABLE",
-            ...(modelVersion ? { event_context: { modelVersion } } : {}),
           });
           RecommendationMap.delete(browser);
         };
@@ -681,7 +672,6 @@ class PageAction {
             message_id: id,
             bucket_id: content.bucket_id,
             event: "LEARN_MORE",
-            ...(modelVersion ? { event_context: { modelVersion } } : {}),
           });
 
         primaryActionCallback = async () => {
@@ -696,7 +686,6 @@ class PageAction {
             message_id: id,
             bucket_id: content.bucket_id,
             event: "INSTALL",
-            ...(modelVersion ? { event_context: { modelVersion } } : {}),
           });
           RecommendationMap.delete(browser);
         };
@@ -729,7 +718,6 @@ class PageAction {
             message_id: id,
             bucket_id: content.bucket_id,
             event,
-            ...(modelVersion ? { event_context: { modelVersion } } : {}),
           });
           
           this._collapse();
@@ -810,13 +798,12 @@ class PageAction {
       return;
     }
     const message = RecommendationMap.get(browser);
-    const { id, content, modelVersion } = message;
+    const { id, content } = message;
 
     this._sendTelemetry({
       message_id: id,
       bucket_id: content.bucket_id,
       event: "CLICK_DOORHANGER",
-      ...(modelVersion ? { event_context: { modelVersion } } : {}),
     });
 
     if (this.shouldShowDoorhanger(message)) {
@@ -941,12 +928,11 @@ const CFRPageActions = {
   async forceRecommendation(browser, recommendation, dispatchCFRAction) {
     
     const win = browser.ownerGlobal;
-    const { id, content, personalizedModelVersion } = recommendation;
+    const { id, content } = recommendation;
     RecommendationMap.set(browser, {
       id,
       content,
       retain: true,
-      modelVersion: personalizedModelVersion,
     });
     if (!PageActionMap.has(win)) {
       PageActionMap.set(win, new PageAction(win, dispatchCFRAction));
@@ -990,13 +976,12 @@ const CFRPageActions = {
       
       return false;
     }
-    const { id, content, personalizedModelVersion } = recommendation;
+    const { id, content } = recommendation;
     RecommendationMap.set(browser, {
       id,
       host,
       content,
       retain: true,
-      modelVersion: personalizedModelVersion,
     });
     if (!PageActionMap.has(win)) {
       PageActionMap.set(win, new PageAction(win, dispatchCFRAction));
