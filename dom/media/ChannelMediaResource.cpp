@@ -619,6 +619,15 @@ already_AddRefed<BaseMediaResource> ChannelMediaResource::CloneData(
 void ChannelMediaResource::CloseChannel() {
   NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
 
+  
+  
+  
+  
+  if (mListener) {
+    mListener->Revoke();
+    mListener = nullptr;
+  }
+
   if (mChannel) {
     mSuspendAgent.Revoke();
     
@@ -630,11 +639,6 @@ void ChannelMediaResource::CloseChannel() {
     
     mChannel->Cancel(NS_ERROR_PARSED_DATA_CACHED);
     mChannel = nullptr;
-  }
-
-  if (mListener) {
-    mListener->Revoke();
-    mListener = nullptr;
   }
 }
 
