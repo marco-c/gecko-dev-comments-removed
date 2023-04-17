@@ -2009,6 +2009,10 @@ void PresShell::SimpleResizeReflow(nscoord aWidth, nscoord aHeight,
   FrameNeedsReflow(rootFrame, IntrinsicDirty::Resize,
                    NS_FRAME_HAS_DIRTY_CHILDREN);
 
+  if (mMobileViewportManager) {
+    mMobileViewportManager->UpdateSizesBeforeReflow();
+  }
+
   
   
   bool suppressReflow = (aOptions & ResizeReflowOptions::SuppressReflow) ||
@@ -9506,10 +9510,6 @@ bool PresShell::DoReflow(nsIFrame* target, bool aInterruptible,
     tp->Accumulate();
     tp->reflowCount++;
     timeStart = TimeStamp::Now();
-  }
-
-  if (mMobileViewportManager) {
-    mMobileViewportManager->UpdateSizesBeforeReflow();
   }
 
   
