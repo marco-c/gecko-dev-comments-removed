@@ -23,6 +23,9 @@
 
 
 
+
+
+
 HRESULT SetDefaultBrowserUserChoice(const wchar_t* aAumi);
 
 
@@ -33,5 +36,6 @@ HRESULT SetDefaultBrowserUserChoice(const wchar_t* aAumi);
 const HRESULT MOZ_E_NO_PROGID = 0xa0000001L;
 const HRESULT MOZ_E_HASH_CHECK = 0xa0000002L;
 const HRESULT MOZ_E_REJECTED = 0xa0000003L;
+const HRESULT MOZ_E_BUILD = 0xa0000004L;
 
 #endif  

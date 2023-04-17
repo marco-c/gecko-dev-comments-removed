@@ -154,19 +154,6 @@ let ShellServiceInternal = {
         throw new Error("checkBrowserUserChoiceHashes() failed");
       }
 
-      
-      
-      
-      if (
-        !(
-          AppConstants.isPlatformAndVersionAtLeast("win", "10") &&
-          parseInt(Services.sysinfo.getProperty("build")) >= 15063
-        )
-      ) {
-        telemetryResult = "ErrBuild";
-        throw new Error("Windows build is unsupported");
-      }
-
       const wdba = Services.dirsvc.get("XREExeF", Ci.nsIFile);
       wdba.leafName = "default-browser-agent.exe";
       const aumi = XreDirProvider.getInstallHash();
@@ -184,6 +171,7 @@ let ShellServiceInternal = {
       const MOZ_E_NO_PROGID = 0xa0000001;
       const MOZ_E_HASH_CHECK = 0xa0000002;
       const MOZ_E_REJECTED = 0xa0000003;
+      const MOZ_E_BUILD = 0xa0000004;
 
       const exeWaitTimeoutMs = 2000; 
       const exeWaitPromise = exeProcess.wait();
@@ -199,6 +187,7 @@ let ShellServiceInternal = {
             [MOZ_E_NO_PROGID, "ErrExeProgID"],
             [MOZ_E_HASH_CHECK, "ErrExeHash"],
             [MOZ_E_REJECTED, "ErrExeRejected"],
+            [MOZ_E_BUILD, "ErrBuild"],
           ]).get(exitCode) ?? "ErrExeOther";
         throw new Error(
           `WDBA nonzero exit code ${exitCode}: ${telemetryResult}`
