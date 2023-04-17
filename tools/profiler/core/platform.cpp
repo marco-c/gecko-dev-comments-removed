@@ -700,8 +700,12 @@ class ActivePS {
   {
     
     MOZ_ALWAYS_TRUE(mFilters.resize(aFilterCount));
+    MOZ_ALWAYS_TRUE(mFiltersLowered.resize(aFilterCount));
     for (uint32_t i = 0; i < aFilterCount; ++i) {
       mFilters[i] = aFilters[i];
+      mFiltersLowered[i].reserve(mFilters[i].size());
+      std::transform(mFilters[i].cbegin(), mFilters[i].cend(),
+                     std::back_inserter(mFiltersLowered[i]), ::tolower);
     }
 
 #if !defined(RELEASE_OR_BETA)
@@ -746,21 +750,17 @@ class ActivePS {
   }
 
   bool ThreadSelected(const char* aThreadName) {
-    if (mFilters.empty()) {
+    if (mFiltersLowered.empty()) {
       return true;
     }
 
     std::string name = aThreadName;
     std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 
-    for (uint32_t i = 0; i < mFilters.length(); ++i) {
-      std::string filter = mFilters[i];
-
+    for (const auto& filter : mFiltersLowered) {
       if (filter == "*") {
         return true;
       }
-
-      std::transform(filter.begin(), filter.end(), filter.begin(), ::tolower);
 
       
       if (name.find(filter) != std::string::npos) {
@@ -940,6 +940,7 @@ class ActivePS {
   }
 
   PS_GET(const Vector<std::string>&, Filters)
+  PS_GET(const Vector<std::string>&, FiltersLowered)
 
   
   
@@ -1259,6 +1260,7 @@ class ActivePS {
 
   
   Vector<std::string> mFilters;
+  Vector<std::string> mFiltersLowered;
 
   
   
