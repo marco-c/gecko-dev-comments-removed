@@ -1,0 +1,16 @@
+
+
+
+promise_test(async testCase => {
+  const iframe = document.createElement("iframe");
+  document.body.appendChild(iframe);
+
+  const iframeStorageFoundation = iframe.contentWindow.storageFoundation;
+
+  const getAllPromise = iframeStorageFoundation.getAll();
+  iframe.remove();
+
+  
+  
+  await storageFoundation.getAll();
+}, 'Detaching iframe while storageFoundation.getAll() settles');
