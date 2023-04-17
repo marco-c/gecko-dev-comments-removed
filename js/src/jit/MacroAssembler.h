@@ -4413,6 +4413,21 @@ class MacroAssembler : public MacroAssemblerSpecific {
                              Register scratch1, Register scratch2,
                              Label* ifTrue, Label* ifFalse);
 
+  
+
+
+
+
+
+
+
+
+
+  void equalBigInts(Register left, Register right, Register temp1,
+                    Register temp2, Register temp3, Register temp4,
+                    Label* notSameSign, Label* notSameLength,
+                    Label* notSameDigit);
+
   void loadJSContext(Register dest);
 
   void switchToRealm(Register realm);
