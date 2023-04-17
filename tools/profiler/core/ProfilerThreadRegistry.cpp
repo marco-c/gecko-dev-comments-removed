@@ -14,16 +14,19 @@ ThreadRegistry::RegistryContainer ThreadRegistry::sRegistryContainer;
 
 ThreadRegistry::RegistryMutex ThreadRegistry::sRegistryMutex;
 
+#if !defined(MOZ_GECKO_PROFILER)
+
+
+
+
 
 void ThreadRegistry::Register(ThreadRegistration::OnThreadRef aOnThreadRef) {
-  
   LockedRegistry lock;
   MOZ_RELEASE_ASSERT(sRegistryContainer.append(OffThreadRef{aOnThreadRef}));
 }
 
 
 void ThreadRegistry::Unregister(ThreadRegistration::OnThreadRef aOnThreadRef) {
-  
   LockedRegistry lock;
   for (OffThreadRef& thread : sRegistryContainer) {
     if (thread.IsPointingAt(*aOnThreadRef.mThreadRegistration)) {
@@ -32,5 +35,6 @@ void ThreadRegistry::Unregister(ThreadRegistration::OnThreadRef aOnThreadRef) {
     }
   }
 }
+#endif  
 
 }  
