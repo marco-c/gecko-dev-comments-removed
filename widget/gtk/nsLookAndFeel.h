@@ -45,77 +45,94 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
   static const nscolor kWhite = NS_RGB(255, 255, 255);
 
  protected:
-  bool WidgetUsesImage(WidgetNodeType aNodeType);
+  static bool WidgetUsesImage(WidgetNodeType aNodeType);
   void RecordLookAndFeelSpecificTelemetry() override;
-  bool ShouldHonorThemeScrollbarColors();
+  static bool ShouldHonorThemeScrollbarColors();
 
   
-  nsString mDefaultFontName;
-  nsString mButtonFontName;
-  nsString mFieldFontName;
-  nsString mMenuFontName;
-  gfxFontStyle mDefaultFontStyle;
-  gfxFontStyle mButtonFontStyle;
-  gfxFontStyle mFieldFontStyle;
-  gfxFontStyle mMenuFontStyle;
-
   
-  nscolor mInfoBackground = kWhite;
-  nscolor mInfoText = kBlack;
-  nscolor mMenuBackground = kWhite;
-  nscolor mMenuBarText = kBlack;
-  nscolor mMenuBarHoverText = kBlack;
-  nscolor mMenuText = kBlack;
-  nscolor mMenuTextInactive = kWhite;
-  nscolor mMenuHover = kWhite;
-  nscolor mMenuHoverText = kBlack;
-  nscolor mButtonDefault = kWhite;
-  nscolor mButtonText = kBlack;
-  nscolor mButtonHoverText = kBlack;
-  nscolor mButtonHoverFace = kWhite;
-  nscolor mButtonActiveText = kBlack;
-  nscolor mFrameOuterLightBorder = kBlack;
-  nscolor mFrameInnerDarkBorder = kBlack;
-  nscolor mOddCellBackground = kWhite;
-  nscolor mNativeHyperLinkText = kBlack;
-  nscolor mComboBoxText = kBlack;
-  nscolor mComboBoxBackground = kWhite;
-  nscolor mFieldText = kBlack;
-  nscolor mFieldBackground = kWhite;
-  nscolor mMozWindowText = kBlack;
-  nscolor mMozWindowBackground = kWhite;
-  nscolor mMozWindowActiveBorder = kBlack;
-  nscolor mMozWindowInactiveBorder = kBlack;
-  nscolor mMozWindowInactiveCaption = kWhite;
-  nscolor mMozCellHighlightBackground = kWhite;
-  nscolor mMozCellHighlightText = kBlack;
-  nscolor mTextSelectedText = kBlack;
-  nscolor mTextSelectedBackground = kWhite;
-  nscolor mAccentColor = kWhite;
-  nscolor mAccentColorForeground = kWhite;
-  nscolor mMozScrollbar = kWhite;
-  nscolor mInfoBarText = kBlack;
-  nscolor mMozColHeaderText = kBlack;
-  nscolor mMozColHeaderHoverText = kBlack;
-  nscolor mThemedScrollbar = kWhite;
-  nscolor mThemedScrollbarInactive = kWhite;
-  nscolor mThemedScrollbarThumb = kBlack;
-  nscolor mThemedScrollbarThumbHover = kBlack;
-  nscolor mThemedScrollbarThumbActive = kBlack;
-  nscolor mThemedScrollbarThumbInactive = kBlack;
-  char16_t mInvisibleCharacter = 0;
-  float mCaretRatio = 0.0f;
+  struct PerThemeData {
+    nsCString mName;
+
+    bool mIsDark = false;
+    bool mHighContrast = false;
+    bool mPreferDarkTheme = false;
+
+    
+    nsString mDefaultFontName;
+    nsString mButtonFontName;
+    nsString mFieldFontName;
+    nsString mMenuFontName;
+    gfxFontStyle mDefaultFontStyle;
+    gfxFontStyle mButtonFontStyle;
+    gfxFontStyle mFieldFontStyle;
+    gfxFontStyle mMenuFontStyle;
+
+    
+    nscolor mInfoBackground = kWhite;
+    nscolor mInfoText = kBlack;
+    nscolor mMenuBackground = kWhite;
+    nscolor mMenuBarText = kBlack;
+    nscolor mMenuBarHoverText = kBlack;
+    nscolor mMenuText = kBlack;
+    nscolor mMenuTextInactive = kWhite;
+    nscolor mMenuHover = kWhite;
+    nscolor mMenuHoverText = kBlack;
+    nscolor mButtonDefault = kWhite;
+    nscolor mButtonText = kBlack;
+    nscolor mButtonHoverText = kBlack;
+    nscolor mButtonHoverFace = kWhite;
+    nscolor mButtonActiveText = kBlack;
+    nscolor mFrameOuterLightBorder = kBlack;
+    nscolor mFrameInnerDarkBorder = kBlack;
+    nscolor mOddCellBackground = kWhite;
+    nscolor mNativeHyperLinkText = kBlack;
+    nscolor mComboBoxText = kBlack;
+    nscolor mComboBoxBackground = kWhite;
+    nscolor mFieldText = kBlack;
+    nscolor mFieldBackground = kWhite;
+    nscolor mMozWindowText = kBlack;
+    nscolor mMozWindowBackground = kWhite;
+    nscolor mMozWindowActiveBorder = kBlack;
+    nscolor mMozWindowInactiveBorder = kBlack;
+    nscolor mMozWindowInactiveCaption = kWhite;
+    nscolor mMozCellHighlightBackground = kWhite;
+    nscolor mMozCellHighlightText = kBlack;
+    nscolor mTextSelectedText = kBlack;
+    nscolor mTextSelectedBackground = kWhite;
+    nscolor mAccentColor = kWhite;
+    nscolor mAccentColorForeground = kWhite;
+    nscolor mMozScrollbar = kWhite;
+    nscolor mInfoBarText = kBlack;
+    nscolor mMozColHeaderText = kBlack;
+    nscolor mMozColHeaderHoverText = kBlack;
+    nscolor mThemedScrollbar = kWhite;
+    nscolor mThemedScrollbarInactive = kWhite;
+    nscolor mThemedScrollbarThumb = kBlack;
+    nscolor mThemedScrollbarThumbHover = kBlack;
+    nscolor mThemedScrollbarThumbActive = kBlack;
+    nscolor mThemedScrollbarThumbInactive = kBlack;
+
+    float mCaretRatio = 0.0f;
+    char16_t mInvisibleCharacter = 0;
+    bool mMenuSupportsDrag = false;
+
+    void Init();
+    nsresult GetColor(ColorID, nscolor&) const;
+    bool GetFont(FontID, nsString& aFontName, gfxFontStyle&) const;
+    void InitCellHighlightColors();
+  };
+
+  PerThemeData mSystemTheme;
+
   int32_t mCaretBlinkTime = 0;
-  bool mMenuSupportsDrag = false;
   bool mCSDAvailable = false;
   bool mCSDHideTitlebarByDefault = false;
   bool mCSDMaximizeButton = false;
   bool mCSDMinimizeButton = false;
   bool mCSDCloseButton = false;
   bool mCSDReversedPlacement = false;
-  bool mSystemUsesDarkTheme = false;
   bool mPrefersReducedMotion = false;
-  bool mHighContrast = false;
   bool mInitialized = false;
   int32_t mCSDMaximizeButtonPosition = 0;
   int32_t mCSDMinimizeButtonPosition = 0;
@@ -124,9 +141,6 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
   void EnsureInit();
   
   bool ConfigureContentGtkTheme();
-
- private:
-  nsresult InitCellHighlightColors();
 };
 
 #endif

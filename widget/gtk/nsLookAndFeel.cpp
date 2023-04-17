@@ -212,14 +212,14 @@ static bool GetBorderColors(GtkStyleContext* aContext, nscolor* aLightColor,
 
 
 
-nsresult nsLookAndFeel::InitCellHighlightColors() {
+void nsLookAndFeel::PerThemeData::InitCellHighlightColors() {
   int32_t minLuminosityDifference = NS_SUFFICIENT_LUMINOSITY_DIFFERENCE_BG;
   int32_t backLuminosityDifference =
       NS_LUMINOSITY_DIFFERENCE(mMozWindowBackground, mFieldBackground);
   if (backLuminosityDifference >= minLuminosityDifference) {
     mMozCellHighlightBackground = mMozWindowBackground;
     mMozCellHighlightText = mMozWindowText;
-    return NS_OK;
+    return;
   }
 
   uint16_t hue, sat, luminance;
@@ -254,7 +254,6 @@ nsresult nsLookAndFeel::InitCellHighlightColors() {
     }
   }
   NS_HSV2RGB(mMozCellHighlightBackground, hue, sat, luminance, alpha);
-  return NS_OK;
 }
 
 void nsLookAndFeel::NativeInit() { EnsureInit(); }
@@ -301,6 +300,11 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme,
                                        nscolor& aColor) {
   EnsureInit();
 
+  return mSystemTheme.GetColor(aID, aColor);
+}
+
+nsresult nsLookAndFeel::PerThemeData::GetColor(ColorID aID,
+                                               nscolor& aColor) const {
   nsresult res = NS_OK;
 
   if (IsSelectionColorBackground(aID)) {
@@ -691,7 +695,7 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
       break;
     case IntID::MenuBarDrag:
       EnsureInit();
-      aResult = mMenuSupportsDrag;
+      aResult = mSystemTheme.mMenuSupportsDrag;
       break;
     case IntID::ScrollbarButtonAutoRepeatBehavior:
       aResult = 1;
@@ -742,7 +746,7 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
     }
     case IntID::SystemUsesDarkTheme: {
       EnsureInit();
-      aResult = mSystemUsesDarkTheme;
+      aResult = mSystemTheme.mIsDark;
       break;
     }
     case IntID::GTKCSDMaximizeButtonPosition:
@@ -756,7 +760,7 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
       break;
     case IntID::UseAccessibilityTheme: {
       EnsureInit();
-      aResult = mHighContrast;
+      aResult = mSystemTheme.mHighContrast;
       break;
     }
     case IntID::AllowOverlayScrollbarsOverlap: {
@@ -794,7 +798,7 @@ nsresult nsLookAndFeel::NativeGetFloat(FloatID aID, float& aResult) {
       break;
     case FloatID::CaretAspectRatio:
       EnsureInit();
-      aResult = mCaretRatio;
+      aResult = mSystemTheme.mCaretRatio;
       break;
     case FloatID::TextScaleFactor:
       aResult = gfxPlatformGtk::GetFontScaleFactor();
@@ -844,6 +848,11 @@ static void GetSystemFontInfo(GtkStyleContext* aStyle, nsString* aFontName,
 
 bool nsLookAndFeel::NativeGetFont(FontID aID, nsString& aFontName,
                                   gfxFontStyle& aFontStyle) {
+  return mSystemTheme.GetFont(aID, aFontName, aFontStyle);
+}
+
+bool nsLookAndFeel::PerThemeData::GetFont(FontID aID, nsString& aFontName,
+                                          gfxFontStyle& aFontStyle) const {
   switch (aID) {
     case FontID::Menu:             
     case FontID::MozPullDownMenu:  
@@ -1070,7 +1079,7 @@ bool nsLookAndFeel::ConfigureContentGtkTheme() {
   
   
   
-  if (!themeOverride.IsEmpty() || mHighContrast ||
+  if (!themeOverride.IsEmpty() || mSystemTheme.mHighContrast ||
       StaticPrefs::widget_content_allow_gtk_dark_theme()) {
     return changed;
   }
@@ -1116,89 +1125,141 @@ void nsLookAndFeel::EnsureInit() {
   
   MOZ_ASSERT(NS_IsMainThread());
 
-  GtkStyleContext* style;
-  GdkRGBA color;
+  gboolean enableAnimations = false;
+  g_object_get(settings, "gtk-enable-animations", &enableAnimations, nullptr);
+  mPrefersReducedMotion = !enableAnimations;
 
-  if (XRE_IsContentProcess()) {
-    LOG(("nsLookAndFeel::EnsureInit() [%p] Content process\n", (void*)this));
+  gint blink_time;
+  gboolean blink;
+  g_object_get(settings, "gtk-cursor-blink-time", &blink_time,
+               "gtk-cursor-blink", &blink, nullptr);
+  mCaretBlinkTime = blink ? (int32_t)blink_time : 0;
+
+  mCSDAvailable =
+      nsWindow::GtkWindowDecoration() != nsWindow::GTK_DECORATION_NONE;
+  mCSDHideTitlebarByDefault = nsWindow::HideTitlebarByDefault();
+
+  mSystemTheme.Init();
+
+  mCSDCloseButton = false;
+  mCSDMinimizeButton = false;
+  mCSDMaximizeButton = false;
+  mCSDCloseButtonPosition = 0;
+  mCSDMinimizeButtonPosition = 0;
+  mCSDMaximizeButtonPosition = 0;
+
+  
+  
+  ButtonLayout buttonLayout[TOOLBAR_BUTTONS];
+
+  size_t activeButtons =
+      GetGtkHeaderBarButtonLayout(Span(buttonLayout), &mCSDReversedPlacement);
+  for (size_t i = 0; i < activeButtons; i++) {
     
     
     
-    ConfigureContentGtkTheme();
-  } else {
-    
-    
-    
+    const ButtonLayout& layout = buttonLayout[i];
+    int32_t* pos = nullptr;
+    switch (layout.mType) {
+      case MOZ_GTK_HEADER_BAR_BUTTON_MINIMIZE:
+        mCSDMinimizeButton = true;
+        pos = &mCSDMinimizeButtonPosition;
+        break;
+      case MOZ_GTK_HEADER_BAR_BUTTON_MAXIMIZE:
+        mCSDMaximizeButton = true;
+        pos = &mCSDMaximizeButtonPosition;
+        break;
+      case MOZ_GTK_HEADER_BAR_BUTTON_CLOSE:
+        mCSDCloseButton = true;
+        pos = &mCSDCloseButtonPosition;
+        break;
+      default:
+        break;
+    }
+
+    if (pos) {
+      *pos = i;
+      if (layout.mAtRight) {
+        *pos += TOOLBAR_BUTTONS;
+      }
+    }
+  }
+
+  RecordTelemetry();
+}
+
+void nsLookAndFeel::PerThemeData::Init() {
+  mName = GetGtkTheme();
+
+  GtkStyleContext* style;
+
+  mHighContrast = StaticPrefs::widget_content_gtk_high_contrast_enabled() &&
+                  GetGtkTheme().Find("HighContrast"_ns) >= 0;
+
+  mPreferDarkTheme = GetPreferDarkTheme();
+
+  
+  
+  
+  {
     GdkRGBA bg, fg;
     style = GetStyleContext(MOZ_GTK_WINDOW);
     gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL, &bg);
     gtk_style_context_get_color(style, GTK_STATE_FLAG_NORMAL, &fg);
-    LOG(("nsLookAndFeel::EnsureInit() [%p] Chrome process\n", (void*)this));
+    mIsDark = (RelativeLuminanceUtils::Compute(GDK_RGBA_TO_NS_RGBA(bg)) <
+               RelativeLuminanceUtils::Compute(GDK_RGBA_TO_NS_RGBA(fg)));
+  }
+
+  GdkRGBA color;
+  
+  if (ShouldHonorThemeScrollbarColors()) {
     
     
-    
-    
-    mSystemUsesDarkTheme =
-        (RelativeLuminanceUtils::Compute(GDK_RGBA_TO_NS_RGBA(bg)) <
-         RelativeLuminanceUtils::Compute(GDK_RGBA_TO_NS_RGBA(fg)));
+    style = GetStyleContext(MOZ_GTK_SCROLLBAR_VERTICAL);
+    gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL,
+                                           &color);
+    mThemedScrollbar = GDK_RGBA_TO_NS_RGBA(color);
+    gtk_style_context_get_background_color(style, GTK_STATE_FLAG_BACKDROP,
+                                           &color);
+    mThemedScrollbarInactive = GDK_RGBA_TO_NS_RGBA(color);
 
-    mHighContrast = StaticPrefs::widget_content_gtk_high_contrast_enabled() &&
-                    GetGtkTheme().Find("HighContrast"_ns) >= 0;
+    style = GetStyleContext(MOZ_GTK_SCROLLBAR_TROUGH_VERTICAL);
+    gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL,
+                                           &color);
+    mThemedScrollbar =
+        NS_ComposeColors(mThemedScrollbar, GDK_RGBA_TO_NS_RGBA(color));
+    gtk_style_context_get_background_color(style, GTK_STATE_FLAG_BACKDROP,
+                                           &color);
+    mThemedScrollbarInactive =
+        NS_ComposeColors(mThemedScrollbarInactive, GDK_RGBA_TO_NS_RGBA(color));
 
-    gboolean enableAnimations = false;
-    g_object_get(settings, "gtk-enable-animations", &enableAnimations, nullptr);
-    mPrefersReducedMotion = !enableAnimations;
+    mMozScrollbar = mThemedScrollbar;
 
-    
-    if (ShouldHonorThemeScrollbarColors()) {
-      
-      
-      style = GetStyleContext(MOZ_GTK_SCROLLBAR_VERTICAL);
-      gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL,
-                                             &color);
-      mThemedScrollbar = GDK_RGBA_TO_NS_RGBA(color);
-      gtk_style_context_get_background_color(style, GTK_STATE_FLAG_BACKDROP,
-                                             &color);
-      mThemedScrollbarInactive = GDK_RGBA_TO_NS_RGBA(color);
-
-      style = GetStyleContext(MOZ_GTK_SCROLLBAR_TROUGH_VERTICAL);
-      gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL,
-                                             &color);
-      mThemedScrollbar =
-          NS_ComposeColors(mThemedScrollbar, GDK_RGBA_TO_NS_RGBA(color));
-      gtk_style_context_get_background_color(style, GTK_STATE_FLAG_BACKDROP,
-                                             &color);
-      mThemedScrollbarInactive = NS_ComposeColors(mThemedScrollbarInactive,
-                                                  GDK_RGBA_TO_NS_RGBA(color));
-
-      mMozScrollbar = mThemedScrollbar;
-
-      style = GetStyleContext(MOZ_GTK_SCROLLBAR_THUMB_VERTICAL);
-      gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL,
-                                             &color);
-      mThemedScrollbarThumb = GDK_RGBA_TO_NS_RGBA(color);
-      gtk_style_context_get_background_color(style, GTK_STATE_FLAG_PRELIGHT,
-                                             &color);
-      mThemedScrollbarThumbHover = GDK_RGBA_TO_NS_RGBA(color);
-      gtk_style_context_get_background_color(
-          style, GtkStateFlags(GTK_STATE_FLAG_PRELIGHT | GTK_STATE_FLAG_ACTIVE),
-          &color);
-      mThemedScrollbarThumbActive = GDK_RGBA_TO_NS_RGBA(color);
-      gtk_style_context_get_background_color(style, GTK_STATE_FLAG_BACKDROP,
-                                             &color);
-      mThemedScrollbarThumbInactive = GDK_RGBA_TO_NS_RGBA(color);
-    } else {
-      mMozScrollbar = mThemedScrollbar = widget::sScrollbarColor.ToABGR();
-      mThemedScrollbarInactive = widget::sScrollbarColor.ToABGR();
-      mThemedScrollbarThumb = widget::sScrollbarThumbColor.ToABGR();
-      mThemedScrollbarThumbHover =
-          nsNativeBasicTheme::AdjustUnthemedScrollbarThumbColor(
-              mThemedScrollbarThumb, NS_EVENT_STATE_HOVER);
-      mThemedScrollbarThumbActive =
-          nsNativeBasicTheme::AdjustUnthemedScrollbarThumbColor(
-              mThemedScrollbarThumb, NS_EVENT_STATE_ACTIVE);
-      mThemedScrollbarThumbInactive = mThemedScrollbarThumb;
-    }
+    style = GetStyleContext(MOZ_GTK_SCROLLBAR_THUMB_VERTICAL);
+    gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL,
+                                           &color);
+    mThemedScrollbarThumb = GDK_RGBA_TO_NS_RGBA(color);
+    gtk_style_context_get_background_color(style, GTK_STATE_FLAG_PRELIGHT,
+                                           &color);
+    mThemedScrollbarThumbHover = GDK_RGBA_TO_NS_RGBA(color);
+    gtk_style_context_get_background_color(
+        style, GtkStateFlags(GTK_STATE_FLAG_PRELIGHT | GTK_STATE_FLAG_ACTIVE),
+        &color);
+    mThemedScrollbarThumbActive = GDK_RGBA_TO_NS_RGBA(color);
+    gtk_style_context_get_background_color(style, GTK_STATE_FLAG_BACKDROP,
+                                           &color);
+    mThemedScrollbarThumbInactive = GDK_RGBA_TO_NS_RGBA(color);
+  } else {
+    mMozScrollbar = mThemedScrollbar = widget::sScrollbarColor.ToABGR();
+    mThemedScrollbarInactive = widget::sScrollbarColor.ToABGR();
+    mThemedScrollbarThumb = widget::sScrollbarThumbColor.ToABGR();
+    mThemedScrollbarThumbHover =
+        nsNativeBasicTheme::AdjustUnthemedScrollbarThumbColor(
+            mThemedScrollbarThumb, NS_EVENT_STATE_HOVER);
+    mThemedScrollbarThumbActive =
+        nsNativeBasicTheme::AdjustUnthemedScrollbarThumbColor(
+            mThemedScrollbarThumb, NS_EVENT_STATE_ACTIVE);
+    mThemedScrollbarThumbInactive = mThemedScrollbarThumb;
   }
 
   
@@ -1450,73 +1511,17 @@ void nsLookAndFeel::EnsureInit() {
   
   gtk_widget_style_get(entry, "cursor-aspect-ratio", &mCaretRatio, nullptr);
 
-  gint blink_time;
-  gboolean blink;
-  g_object_get(settings, "gtk-cursor-blink-time", &blink_time,
-               "gtk-cursor-blink", &blink, nullptr);
-  mCaretBlinkTime = blink ? (int32_t)blink_time : 0;
-
   GetSystemFontInfo(gtk_widget_get_style_context(entry), &mFieldFontName,
                     &mFieldFontStyle);
 
   gtk_widget_destroy(window);
   g_object_unref(labelWidget);
-
-  mCSDAvailable =
-      nsWindow::GtkWindowDecoration() != nsWindow::GTK_DECORATION_NONE;
-  mCSDHideTitlebarByDefault = nsWindow::HideTitlebarByDefault();
-
-  mCSDCloseButton = false;
-  mCSDMinimizeButton = false;
-  mCSDMaximizeButton = false;
-  mCSDCloseButtonPosition = 0;
-  mCSDMinimizeButtonPosition = 0;
-  mCSDMaximizeButtonPosition = 0;
-
-  
-  
-  ButtonLayout buttonLayout[TOOLBAR_BUTTONS];
-
-  size_t activeButtons =
-      GetGtkHeaderBarButtonLayout(Span(buttonLayout), &mCSDReversedPlacement);
-  for (size_t i = 0; i < activeButtons; i++) {
-    
-    
-    
-    const ButtonLayout& layout = buttonLayout[i];
-    int32_t* pos = nullptr;
-    switch (layout.mType) {
-      case MOZ_GTK_HEADER_BAR_BUTTON_MINIMIZE:
-        mCSDMinimizeButton = true;
-        pos = &mCSDMinimizeButtonPosition;
-        break;
-      case MOZ_GTK_HEADER_BAR_BUTTON_MAXIMIZE:
-        mCSDMaximizeButton = true;
-        pos = &mCSDMaximizeButtonPosition;
-        break;
-      case MOZ_GTK_HEADER_BAR_BUTTON_CLOSE:
-        mCSDCloseButton = true;
-        pos = &mCSDCloseButtonPosition;
-        break;
-      default:
-        break;
-    }
-
-    if (pos) {
-      *pos = i;
-      if (layout.mAtRight) {
-        *pos += TOOLBAR_BUTTONS;
-      }
-    }
-  }
-
-  RecordTelemetry();
 }
 
 
 char16_t nsLookAndFeel::GetPasswordCharacterImpl() {
   EnsureInit();
-  return mInvisibleCharacter;
+  return mSystemTheme.mInvisibleCharacter;
 }
 
 bool nsLookAndFeel::GetEchoPasswordImpl() { return false; }
