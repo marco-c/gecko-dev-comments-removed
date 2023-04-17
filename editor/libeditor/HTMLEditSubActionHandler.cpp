@@ -732,8 +732,16 @@ nsresult HTMLEditor::EnsureCaretNotAfterPaddingBRElement() {
   }
   MOZ_ASSERT(atSelectionStart.IsSetAndValid());
 
-  nsCOMPtr<nsIContent> previousEditableContent =
-      GetPreviousEditableHTMLNode(atSelectionStart);
+  Element* editingHost = GetActiveEditingHost();
+  if (!editingHost) {
+    NS_WARNING(
+        "HTMLEditor::EnsureCaretNotAfterPaddingBRElement() did nothing because "
+        "of no editing host");
+    return NS_OK;
+  }
+
+  nsIContent* previousEditableContent = HTMLEditUtils::GetPreviousContent(
+      atSelectionStart, {WalkTreeOption::IgnoreNonEditableNode}, editingHost);
   if (!previousEditableContent ||
       !EditorUtils::IsPaddingBRElementForEmptyLastLine(
           *previousEditableContent)) {
@@ -3124,17 +3132,22 @@ nsresult HTMLEditor::FormatBlockContainerWithTransaction(nsAtom& blockType) {
       
       
       
-      nsCOMPtr<nsIContent> brContent =
-          GetNextEditableHTMLNode(pointToInsertBlock);
-      if (brContent && brContent->IsHTMLElement(nsGkAtoms::br)) {
-        AutoEditorDOMPointChildInvalidator lockOffset(pointToInsertBlock);
-        rv = DeleteNodeWithTransaction(*brContent);
-        if (NS_WARN_IF(Destroyed())) {
-          return NS_ERROR_EDITOR_DESTROYED;
-        }
-        if (NS_FAILED(rv)) {
-          NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
-          return rv;
+      
+      if (Element* editingHost = GetActiveEditingHost()) {
+        if (nsCOMPtr<nsIContent> brContent = HTMLEditUtils::GetNextContent(
+                pointToInsertBlock, {WalkTreeOption::IgnoreNonEditableNode},
+                editingHost)) {
+          if (brContent && brContent->IsHTMLElement(nsGkAtoms::br)) {
+            AutoEditorDOMPointChildInvalidator lockOffset(pointToInsertBlock);
+            rv = DeleteNodeWithTransaction(*brContent);
+            if (NS_WARN_IF(Destroyed())) {
+              return NS_ERROR_EDITOR_DESTROYED;
+            }
+            if (NS_FAILED(rv)) {
+              NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
+              return rv;
+            }
+          }
         }
       }
       
@@ -3150,18 +3163,19 @@ nsresult HTMLEditor::FormatBlockContainerWithTransaction(nsAtom& blockType) {
       }
       EditorDOMPoint pointToInsertBRNode(splitNodeResult.SplitPoint());
       
-      brContent = InsertBRElementWithTransaction(pointToInsertBRNode);
+      RefPtr<Element> brElement =
+          InsertBRElementWithTransaction(pointToInsertBRNode);
       if (NS_WARN_IF(Destroyed())) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
-      if (!brContent) {
+      if (!brElement) {
         NS_WARNING("HTMLEditor::InsertBRElementWithTransaction() failed");
         return NS_ERROR_FAILURE;
       }
       
       restoreSelectionLater.Abort();
       
-      nsresult rv = CollapseSelectionTo(EditorRawDOMPoint(brContent));
+      nsresult rv = CollapseSelectionTo(EditorRawDOMPoint(brElement));
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                            "HTMLEditor::CollapseSelectionTo() failed");
       return rv;
@@ -5401,10 +5415,13 @@ nsresult HTMLEditor::MaybeExtendSelectionToHardLineEdgesForBlockEditAction() {
       }
       
     } else if (wsScannerAtEnd.StartsFromCurrentBlockBoundary()) {
-      
-      nsINode* child = GetPreviousEditableHTMLNode(endPoint);
-      if (child) {
-        newEndPoint.SetAfter(child);
+      if (wsScannerAtEnd.GetEditingHost()) {
+        
+        if (nsIContent* child = HTMLEditUtils::GetPreviousContent(
+                endPoint, {WalkTreeOption::IgnoreNonEditableNode},
+                wsScannerAtEnd.GetEditingHost())) {
+          newEndPoint.SetAfter(child);
+        }
       }
       
     } else if (wsScannerAtEnd.StartsFromBRElement()) {
@@ -5435,10 +5452,13 @@ nsresult HTMLEditor::MaybeExtendSelectionToHardLineEdgesForBlockEditAction() {
       }
       
     } else if (wsScannerAtStart.EndsByCurrentBlockBoundary()) {
-      
-      nsINode* child = GetNextEditableHTMLNode(startPoint);
-      if (child) {
-        newStartPoint.Set(child);
+      if (wsScannerAtStart.GetEditingHost()) {
+        
+        if (nsIContent* child = HTMLEditUtils::GetNextContent(
+                startPoint, {WalkTreeOption::IgnoreNonEditableNode},
+                wsScannerAtStart.GetEditingHost())) {
+          newStartPoint.Set(child);
+        }
       }
       
     } else if (wsScannerAtStart.EndsByBRElement()) {
@@ -6713,12 +6733,20 @@ EditActionResult HTMLEditor::HandleInsertParagraphInParagraph(
   } else {
     
     
-    nsCOMPtr<nsIContent> nearContent =
-        GetPreviousEditableHTMLNode(atStartOfSelection);
+    Element* editingHost = GetActiveEditingHost();
+    nsIContent* nearContent =
+        editingHost ? HTMLEditUtils::GetPreviousContent(
+                          atStartOfSelection,
+                          {WalkTreeOption::IgnoreNonEditableNode}, editingHost)
+                    : nullptr;
     if (!nearContent || !IsVisibleBRElement(nearContent) ||
         EditorUtils::IsPaddingBRElementForEmptyLastLine(*nearContent)) {
       
-      nearContent = GetNextEditableHTMLNode(atStartOfSelection);
+      nearContent = editingHost ? HTMLEditUtils::GetNextContent(
+                                      atStartOfSelection,
+                                      {WalkTreeOption::IgnoreNonEditableNode},
+                                      editingHost)
+                                : nullptr;
       if (!nearContent || !IsVisibleBRElement(nearContent) ||
           EditorUtils::IsPaddingBRElementForEmptyLastLine(*nearContent)) {
         pointToInsertBR = atStartOfSelection;
@@ -8151,57 +8179,58 @@ nsresult HTMLEditor::AdjustCaretPositionAndEnsurePaddingBRElement(
   
   
   
-  RefPtr<Element> editingHost = GetActiveEditingHost();
-  if (nsCOMPtr<nsIContent> previousEditableContent =
-          GetPreviousEditableHTMLNode(point)) {
-    RefPtr<Element> blockElementAtCaret =
-        HTMLEditUtils::GetInclusiveAncestorBlockElement(
-            *point.ContainerAsContent());
-    RefPtr<Element> blockElementParentAtPreviousEditableContent =
-        HTMLEditUtils::GetAncestorBlockElement(*previousEditableContent);
-    
-    
-    if (blockElementAtCaret &&
-        blockElementAtCaret == blockElementParentAtPreviousEditableContent &&
-        previousEditableContent &&
-        previousEditableContent->IsHTMLElement(nsGkAtoms::br)) {
+  if (RefPtr<Element> editingHost = GetActiveEditingHost()) {
+    if (nsCOMPtr<nsIContent> previousEditableContent =
+            HTMLEditUtils::GetPreviousContent(
+                point, {WalkTreeOption::IgnoreNonEditableNode}, editingHost)) {
+      RefPtr<Element> blockElementAtCaret =
+          HTMLEditUtils::GetInclusiveAncestorBlockElement(
+              *point.ContainerAsContent());
+      RefPtr<Element> blockElementParentAtPreviousEditableContent =
+          HTMLEditUtils::GetAncestorBlockElement(*previousEditableContent);
       
       
-      if (!IsVisibleBRElement(previousEditableContent)) {
-        CreateElementResult createPaddingBRResult =
-            InsertPaddingBRElementForEmptyLastLineWithTransaction(point);
-        if (createPaddingBRResult.Failed()) {
-          NS_WARNING(
-              "HTMLEditor::"
-              "InsertPaddingBRElementForEmptyLastLineWithTransaction() failed");
-          return createPaddingBRResult.Rv();
-        }
-        point.Set(createPaddingBRResult.GetNewNode());
+      if (blockElementAtCaret &&
+          blockElementAtCaret == blockElementParentAtPreviousEditableContent &&
+          previousEditableContent &&
+          previousEditableContent->IsHTMLElement(nsGkAtoms::br)) {
         
         
-        IgnoredErrorResult ignoredError;
-        SelectionRef().SetInterlinePosition(true, ignoredError);
-        if (NS_WARN_IF(Destroyed())) {
-          return NS_ERROR_EDITOR_DESTROYED;
+        if (!IsVisibleBRElement(previousEditableContent)) {
+          CreateElementResult createPaddingBRResult =
+              InsertPaddingBRElementForEmptyLastLineWithTransaction(point);
+          if (createPaddingBRResult.Failed()) {
+            NS_WARNING(
+                "HTMLEditor::"
+                "InsertPaddingBRElementForEmptyLastLineWithTransaction() "
+                "failed");
+            return createPaddingBRResult.Rv();
+          }
+          point.Set(createPaddingBRResult.GetNewNode());
+          
+          
+          IgnoredErrorResult ignoredError;
+          SelectionRef().SetInterlinePosition(true, ignoredError);
+          if (NS_WARN_IF(Destroyed())) {
+            return NS_ERROR_EDITOR_DESTROYED;
+          }
+          NS_WARNING_ASSERTION(
+              !ignoredError.Failed(),
+              "Selection::SetInterlinePosition(true) failed, but ignored");
+          nsresult rv = CollapseSelectionTo(point);
+          if (NS_FAILED(rv)) {
+            NS_WARNING("HTMLEditor::CollapseSelectionTo() failed");
+            return rv;
+          }
         }
-        NS_WARNING_ASSERTION(
-            !ignoredError.Failed(),
-            "Selection::SetInterlinePosition(true) failed, but ignored");
-        nsresult rv = CollapseSelectionTo(point);
-        if (NS_FAILED(rv)) {
-          NS_WARNING("HTMLEditor::CollapseSelectionTo() failed");
-          return rv;
-        }
-      }
-      
-      
-      else if (editingHost) {
-        if (nsIContent* nextEditableContentInBlock =
-                HTMLEditUtils::GetNextContent(
-                    *previousEditableContent,
-                    {WalkTreeOption::IgnoreNonEditableNode,
-                     WalkTreeOption::StopAtBlockBoundary},
-                    editingHost)) {
+        
+        
+        else if (nsIContent* nextEditableContentInBlock =
+                     HTMLEditUtils::GetNextContent(
+                         *previousEditableContent,
+                         {WalkTreeOption::IgnoreNonEditableNode,
+                          WalkTreeOption::StopAtBlockBoundary},
+                         editingHost)) {
           if (EditorUtils::IsPaddingBRElementForEmptyLastLine(
                   *nextEditableContentInBlock)) {
             
@@ -8215,9 +8244,7 @@ nsresult HTMLEditor::AdjustCaretPositionAndEnsurePaddingBRElement(
         }
       }
     }
-  }
 
-  if (editingHost) {
     
     
     if (nsIContent* previousEditableContentInBlock =
@@ -8277,14 +8304,21 @@ nsIContent* HTMLEditor::FindNearEditableContent(
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(aPoint.IsSetAndValid());
 
+  Element* editingHost = GetActiveEditingHost();
+  if (NS_WARN_IF(!editingHost)) {
+    return nullptr;
+  }
+
   nsIContent* editableContent = nullptr;
   if (aDirection == nsIEditor::ePrevious) {
-    editableContent = GetPreviousEditableHTMLNode(aPoint);
+    editableContent = HTMLEditUtils::GetPreviousContent(
+        aPoint, {WalkTreeOption::IgnoreNonEditableNode}, editingHost);
     if (!editableContent) {
       return nullptr;  
     }
   } else {
-    editableContent = GetNextEditableHTMLNode(aPoint);
+    editableContent = HTMLEditUtils::GetNextContent(
+        aPoint, {WalkTreeOption::IgnoreNonEditableNode}, editingHost);
     if (NS_WARN_IF(!editableContent)) {
       
       
@@ -8300,12 +8334,16 @@ nsIContent* HTMLEditor::FindNearEditableContent(
          !editableContent->IsHTMLElement(nsGkAtoms::br) &&
          !HTMLEditUtils::IsImage(editableContent)) {
     if (aDirection == nsIEditor::ePrevious) {
-      editableContent = GetPreviousEditableHTMLNode(*editableContent);
+      editableContent = HTMLEditUtils::GetPreviousContent(
+          *editableContent, {WalkTreeOption::IgnoreNonEditableNode},
+          editingHost);
       if (NS_WARN_IF(!editableContent)) {
         return nullptr;
       }
     } else {
-      editableContent = GetNextEditableHTMLNode(*editableContent);
+      editableContent = HTMLEditUtils::GetNextContent(
+          *editableContent, {WalkTreeOption::IgnoreNonEditableNode},
+          editingHost);
       if (NS_WARN_IF(!editableContent)) {
         return nullptr;
       }
