@@ -59,8 +59,7 @@ add_task(async function() {
   });
   is(
     resources.length,
-    
-    2,
+    1,
     "we retrieve the expected number of existing resources"
   );
   is(
