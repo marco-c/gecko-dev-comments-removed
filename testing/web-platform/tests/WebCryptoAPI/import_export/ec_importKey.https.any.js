@@ -1,7 +1,9 @@
 
 
 
-function run_test() {
+
+
+
     var subtle = crypto.subtle;
 
     var curves = ['P-256', 'P-384', 'P-521'];
@@ -275,5 +277,3 @@ function run_test() {
         return "{" + keyValuePairs.join(", ") + "}";
     }
 
-    return; 
-}

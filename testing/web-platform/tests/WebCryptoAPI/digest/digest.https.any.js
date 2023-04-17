@@ -1,5 +1,6 @@
 
-function run_test() {
+
+
     var subtle = crypto.subtle; 
 
     var sourceData = {
@@ -149,6 +150,3 @@ function run_test() {
 
         return true;
     }
-
-    return;
-}

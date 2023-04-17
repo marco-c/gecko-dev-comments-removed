@@ -329,9 +329,11 @@ function run_test() {
     });
 
 
-    Promise.all(all_promises)
-    .then(function() {done();})
-    .catch(function() {done();})
+    promise_test(function() {
+        return Promise.all(all_promises)
+            .then(function() {done();})
+            .catch(function() {done();})
+    }, "setup");
 
     
     

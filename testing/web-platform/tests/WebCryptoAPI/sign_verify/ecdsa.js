@@ -408,10 +408,11 @@ function run_test() {
     });
 
 
-    Promise.all(all_promises)
-    .then(function() {done();})
-    .catch(function() {done();})
-    return;
+    promise_test(function() {
+        return Promise.all(all_promises)
+            .then(function() {done();})
+            .catch(function() {done();})
+    }, "setup");
 
     
     

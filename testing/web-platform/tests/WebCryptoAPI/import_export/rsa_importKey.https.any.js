@@ -1,7 +1,9 @@
 
 
 
-function run_test() {
+
+
+
     var subtle = crypto.subtle;
 
     var sizes = [1024, 2048, 4096];
@@ -291,6 +293,3 @@ function run_test() {
 
         return "{" + keyValuePairs.join(", ") + "}";
     }
-
-    return; 
-}
