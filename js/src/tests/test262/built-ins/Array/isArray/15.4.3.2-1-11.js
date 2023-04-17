@@ -7,6 +7,6 @@
 
 
 
-assert.sameValue(Array.isArray(JSON), false, 'Array.isArray(JSON)');
+assert.sameValue(Array.isArray(JSON), false, 'Array.isArray(JSON) must return false');
 
 reportCompare(0, 0);

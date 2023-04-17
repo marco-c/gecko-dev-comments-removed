@@ -7,9 +7,6 @@
 
 
 
-var a = [];
-var b = Array.isArray(a);
-
-assert.sameValue(b, true, 'b');
+assert.sameValue(Array.isArray([]), true, 'Array.isArray([]) must return true');
 
 reportCompare(0, 0);

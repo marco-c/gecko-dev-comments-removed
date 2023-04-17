@@ -7,6 +7,6 @@
 
 
 
-assert.sameValue(Array.isArray(new Boolean(false)), false, 'Array.isArray(new Boolean(false))');
+assert.sameValue(Array.isArray(new Boolean(false)), false, 'Array.isArray(new Boolean(false)) must return false');
 
 reportCompare(0, 0);

@@ -9,16 +9,10 @@
 
 
 var x = +0;
-if (Math.log(x) !== -Infinity)
-{
-  throw new Test262Error("#1: 'var x=+0; Math.log(x) !== -Infinity'");
-}
+assert.sameValue(Math.log(x), -Infinity, 'Math.log(+0) must return -Infinity');
 
 
 var x = -0;
-if (Math.log(x) !== -Infinity)
-{
-  throw new Test262Error("#1: 'var x=-0; Math.log(x) !== -Infinity'");
-}
+assert.sameValue(Math.log(x), -Infinity, 'Math.log(-0) must return -Infinity');
 
 reportCompare(0, 0);

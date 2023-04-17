@@ -18,7 +18,11 @@
 
 
 
-assert.sameValue(Temporal.Now.timeZone.name, 'timeZone');
+assert.sameValue(
+  Temporal.Now.timeZone.name,
+  'timeZone',
+  'The value of Temporal.Now.timeZone.name is expected to be "timeZone"'
+);
 
 verifyProperty(Temporal.Now.timeZone, 'name', {
   enumerable: false,

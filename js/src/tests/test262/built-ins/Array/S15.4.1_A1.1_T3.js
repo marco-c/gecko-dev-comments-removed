@@ -10,9 +10,10 @@
 
 
 
-
-if (Array.prototype.isPrototypeOf(Array()) !== true) {
-  throw new Test262Error('#1: Array.prototype.isPrototypeOf(Array()) === true. Actual: ' + (Array.prototype.isPrototypeOf(Array())));
-}
+assert.sameValue(
+  Array.prototype.isPrototypeOf(Array()),
+  true,
+  'Array.prototype.isPrototypeOf(Array()) must return true'
+);
 
 reportCompare(0, 0);

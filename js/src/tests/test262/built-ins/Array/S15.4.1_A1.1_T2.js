@@ -13,15 +13,11 @@
 
 Array.prototype.toString = Object.prototype.toString;
 var x = Array();
-if (x.toString() !== "[object " + "Array" + "]") {
-  throw new Test262Error('#1: Array.prototype.toString = Object.prototype.toString; var x = Array(); x.toString() === "[object " + "Array" + "]". Actual: ' + (x.toString()));
-}
+assert.sameValue(x.toString(), "[object Array]", 'x.toString() must return "[object Array]"');
 
 
 Array.prototype.toString = Object.prototype.toString;
 var x = Array(0, 1, 2);
-if (x.toString() !== "[object " + "Array" + "]") {
-  throw new Test262Error('#2: Array.prototype.toString = Object.prototype.toString; var x = Array(0,1,2); x.toString() === "[object " + "Array" + "]". Actual: ' + (x.toString()));
-}
+assert.sameValue(x.toString(), "[object Array]", 'x.toString() must return "[object Array]"');
 
 reportCompare(0, 0);

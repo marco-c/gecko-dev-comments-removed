@@ -7,6 +7,6 @@
 
 
 
-assert.sameValue(Array.isArray(new RegExp()), false, 'Array.isArray(new RegExp())');
+assert.sameValue(Array.isArray(new RegExp()), false, 'Array.isArray(new RegExp()) must return false');
 
 reportCompare(0, 0);

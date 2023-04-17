@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var handle = Proxy.revocable([], {});
+
+handle.revoke();
+
+assert.throws(TypeError, function() {
+  Array.isArray(handle.proxy);
+}, 'Array.isArray(handle.proxy) throws a TypeError exception');
+
+reportCompare(0, 0);

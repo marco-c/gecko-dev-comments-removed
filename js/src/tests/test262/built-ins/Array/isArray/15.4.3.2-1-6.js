@@ -7,6 +7,6 @@
 
 
 
-assert.sameValue(Array.isArray(new String("hello\nworld\\!")), false, 'Array.isArray(new String("hello\nworld\\!"))');
+assert.sameValue(Array.isArray(new String("hello\nworld\\!")), false, 'Array.isArray(new String("hello\\nworld\\\\!")) must return false');
 
 reportCompare(0, 0);

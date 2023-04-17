@@ -8,13 +8,15 @@
 
 
 
-let cal = new Temporal.Calendar("iso8601")
+let cal = new Temporal.Calendar('iso8601');
+let notObjectList = [null, undefined, 'string', Symbol('efg'), true, false, Infinity, NaN, 123, 456n];
 
-let notObjectList = [
-    null, undefined, "string", Symbol('efg'), true, false, Infinity, NaN, 123, 456n];
 notObjectList.forEach(function(fields) {
-  assert.throws(TypeError, () => cal.dateFromFields(fields),
-    "fields is not object");
-})
+  assert.throws(
+    TypeError,
+    () => cal.dateFromFields(fields),
+    'cal.dateFromFields(fields) throws a TypeError exception'
+  );
+});
 
 reportCompare(0, 0);

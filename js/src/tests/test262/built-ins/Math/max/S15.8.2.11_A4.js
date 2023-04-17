@@ -6,20 +6,8 @@
 
 
 
-
-
-if (typeof Math.max !== "function") {
-  throw new Test262Error('#1: Math.max method is not defined');
-}
-
-
-if (typeof Math.max.length === "undefined") {
-  throw new Test262Error('#2: length property of Math.max method is undefined');
-}
-
-
-if (Math.max.length !== 2) {
-  throw new Test262Error('#3: The length property of the Math.max method is not 2');
-}
+assert.sameValue(typeof Math.max, "function", 'The value of `typeof Math.max` is expected to be "function"');
+assert.notSameValue(typeof Math.max.length, "undefined", 'The value of typeof Math.max.length is not "undefined"');
+assert.sameValue(Math.max.length, 2, 'The value of Math.max.length is expected to be 2');
 
 reportCompare(0, 0);

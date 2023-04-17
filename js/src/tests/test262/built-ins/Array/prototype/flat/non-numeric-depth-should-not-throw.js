@@ -14,32 +14,32 @@ var expected = a;
 
 var depthNum = 'TestString';
 var actual = a.flat(depthNum);
-assert(compareArray(actual, expected), 'non integral string depthNum');
+assert.compareArray(actual, expected, 'The value of actual is expected to equal the value of expected');
 
 
 depthNum = {};
 actual = a.flat(depthNum);
-assert(compareArray(actual, expected), 'object type depthNum');
+assert.compareArray(actual, expected, 'The value of actual is expected to equal the value of expected');
 
 
 depthNum = Number.NEGATIVE_INFINITY;
 actual = a.flat(depthNum);
-assert(compareArray(actual, expected), 'negative infinity depthNum');
+assert.compareArray(actual, expected, 'The value of actual is expected to equal the value of expected');
 
 
 depthNum = +0;
 actual = a.flat(depthNum);
-assert(compareArray(actual, expected), 'positive zero depthNum');
+assert.compareArray(actual, expected, 'The value of actual is expected to equal the value of expected');
 
 
 depthNum = -0;
 actual = a.flat(depthNum);
-assert(compareArray(actual, expected), 'negative zero depthNum');
+assert.compareArray(actual, expected, 'The value of actual is expected to equal the value of expected');
 
 
 depthNum = '1';
 actual = a.flat(depthNum);
 expected = [1, 2]
-assert(compareArray(actual, expected), 'integral string depthNum');
+assert.compareArray(actual, expected, 'The value of actual is expected to equal the value of expected');
 
 reportCompare(0, 0);

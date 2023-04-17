@@ -7,6 +7,6 @@
 
 
 
-assert.sameValue(Array.isArray(new Number(-3)), false, 'Array.isArray(new Number(-3))');
+assert.sameValue(Array.isArray(new Number(-3)), false, 'Array.isArray(new Number(-3)) must return false');
 
 reportCompare(0, 0);

@@ -15,6 +15,6 @@
 let cal = new Temporal.Calendar("iso8601");
 
 assert.throws(RangeError, () => cal.daysInMonth("invalid string"),
-    "Throw RangeError if temporalDateLike is invalid");
+    'cal.daysInMonth("invalid string") throws a RangeError exception');
 
 reportCompare(0, 0);

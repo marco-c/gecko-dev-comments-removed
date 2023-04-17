@@ -7,6 +7,6 @@
 
 
 
-assert.sameValue(typeof Array, 'function');
+assert.sameValue(typeof Array, 'function', 'The value of `typeof Array` is expected to be "function"');
 
 reportCompare(0, 0);

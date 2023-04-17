@@ -7,6 +7,6 @@
 
 
 
-assert.sameValue(Array.isArray("abc"), false, 'Array.isArray("abc")');
+assert.sameValue(Array.isArray("abc"), false, 'Array.isArray("abc") must return false');
 
 reportCompare(0, 0);

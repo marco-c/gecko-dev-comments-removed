@@ -17,7 +17,7 @@
 
 
 
-assert.sameValue(Array.length, 1);
+assert.sameValue(Array.length, 1, 'The value of Array.length is expected to be 1');
 
 verifyNotEnumerable(Array, 'length');
 verifyNotWritable(Array, 'length');

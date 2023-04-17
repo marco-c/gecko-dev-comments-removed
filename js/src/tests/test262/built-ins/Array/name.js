@@ -21,7 +21,7 @@
 
 
 
-assert.sameValue(Array.name, 'Array');
+assert.sameValue(Array.name, 'Array', 'The value of Array.name is expected to be "Array"');
 
 verifyNotEnumerable(Array, 'name');
 verifyNotWritable(Array, 'name');

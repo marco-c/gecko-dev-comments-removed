@@ -11,6 +11,6 @@
 var a = [0, 0];
 assert.compareArray(a.flatMap(function() {
   return this;
-}.bind([1, 2])), [1, 2, 1, 2]);
+}.bind([1, 2])), [1, 2, 1, 2], 'a.flatMap(function() {return this;}.bind([1, 2])) must return [1, 2, 1, 2]');
 
 reportCompare(0, 0);

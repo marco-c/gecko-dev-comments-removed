@@ -6,31 +6,35 @@
 
 
 
-
-
 const invalidValues = [
   undefined,
   null,
   true,
-  "2020-01-01T12:45:36",
+  '2020-01-01T12:45:36',
   Symbol(),
   2n,
   {},
   Temporal.PlainDateTime,
-  Temporal.PlainDateTime.prototype,
+  Temporal.PlainDateTime.prototype
 ];
 
 for (const dateTime of invalidValues) {
   let callCount = 0;
+
   const timeZone = {
     getOffsetNanosecondsFor(instant, calendar) {
       callCount += 1;
       return dateTime;
-    },
+    }
   };
 
-  assert.throws(TypeError, () => Temporal.Now.plainDateTime("iso8601", timeZone));
-  assert.sameValue(callCount, 1, 'Invoked `getOffsetNanosecondsFor`');
+  assert.throws(
+    TypeError,
+    () => Temporal.Now.plainDateTime('iso8601', timeZone),
+    'Temporal.Now.plainDateTime("iso8601", timeZone) throws a TypeError exception'
+  );
+
+  assert.sameValue(callCount, 1, 'The value of callCount is expected to be 1');
 }
 
 reportCompare(0, 0);

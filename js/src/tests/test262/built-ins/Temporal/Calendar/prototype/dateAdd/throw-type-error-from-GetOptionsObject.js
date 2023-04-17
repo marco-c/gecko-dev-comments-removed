@@ -9,15 +9,15 @@
 
 
 
-
-let cal = new Temporal.Calendar("iso8601");
-let invalidOptionsList =
-  [null, "invalid option", 234, 23n, Symbol("foo"), true, false, Infinity];
+let cal = new Temporal.Calendar('iso8601');
+let invalidOptionsList = [null, 'invalid option', 234, 23n, Symbol('foo'), true, false, Infinity];
 
 invalidOptionsList.forEach(function(invalidOptions) {
-  assert.throws(TypeError,
-      () => cal.dateAdd("2020-02-03", "P1Y", invalidOptions),
-      "Throw by GetOptionsObject");
+  assert.throws(
+    TypeError,
+    () => cal.dateAdd('2020-02-03', 'P1Y', invalidOptions),
+    'cal.dateAdd("2020-02-03", "P1Y", invalidOptions) throws a TypeError exception'
+  );
 });
 
 reportCompare(0, 0);

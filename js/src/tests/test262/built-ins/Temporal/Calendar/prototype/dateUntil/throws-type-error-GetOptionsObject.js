@@ -8,12 +8,14 @@
 
 
 
+let cal = new Temporal.Calendar('iso8601');
 
-let cal = new Temporal.Calendar("iso8601");
-
-["string", null, true, false, 123, 456n, Symbol(), Infinity, NaN].forEach(function (opt) {
-  assert.throws(TypeError, () => cal.dateUntil("2021-07-16", "2021-08-11", opt),
-      "Invalid options will cause GetOptionsObject to throw TypeError");
-})
+['string', null, true, false, 123, 456n, Symbol(), Infinity, NaN].forEach(function(opt) {
+  assert.throws(
+    TypeError,
+    () => cal.dateUntil('2021-07-16', '2021-08-11', opt),
+    'cal.dateUntil("2021-07-16", "2021-08-11", opt) throws a TypeError exception'
+  );
+});
 
 reportCompare(0, 0);

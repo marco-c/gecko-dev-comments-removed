@@ -10,15 +10,11 @@
 
 var x = new Array();
 x.getClass = Object.prototype.toString;
-if (x.getClass() !== "[object " + "Array" + "]") {
-  throw new Test262Error('#1: var x = new Array(); x.getClass = Object.prototype.toString; x is Array object. Actual: ' + (x.getClass()));
-}
+assert.sameValue(x.getClass(), "[object Array]", 'x.getClass() must return "[object Array]"');
 
 
 var x = new Array(0, 1, 2);
 x.getClass = Object.prototype.toString;
-if (x.getClass() !== "[object " + "Array" + "]") {
-  throw new Test262Error('#2: var x = new Array(0,1,2); x.getClass = Object.prototype.toString; x is Array object. Actual: ' + (x.getClass()));
-}
+assert.sameValue(x.getClass(), "[object Array]", 'x.getClass() must return "[object Array]"');
 
 reportCompare(0, 0);

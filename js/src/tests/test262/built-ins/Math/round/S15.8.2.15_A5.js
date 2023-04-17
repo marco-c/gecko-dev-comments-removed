@@ -9,9 +9,6 @@
 
 
 var x = -Infinity;
-if (Math.round(x) !== -Infinity)
-{
-  throw new Test262Error("#1: 'var x=-Infinity; Math.round(x) !== -Infinity'");
-}
+assert.sameValue(Math.round(x), -Infinity, 'Math.round(-Infinity) must return -Infinity');
 
 reportCompare(0, 0);

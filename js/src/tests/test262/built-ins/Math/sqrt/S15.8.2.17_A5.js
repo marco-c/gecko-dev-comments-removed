@@ -9,9 +9,6 @@
 
 
 var x = +Infinity;
-if (Math.sqrt(x) !== +Infinity)
-{
-  throw new Test262Error("#1: 'var x=+Infinity; Math.sqrt(x) !== +Infinity'");
-}
+assert.sameValue(Math.sqrt(x), +Infinity, 'Math.sqrt(+Infinity) must return +Infinity');
 
 reportCompare(0, 0);

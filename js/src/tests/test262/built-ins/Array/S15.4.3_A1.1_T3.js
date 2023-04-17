@@ -8,10 +8,10 @@
 
 
 
-
-
-if (Function.prototype.isPrototypeOf(Array) !== true) {
-  throw new Test262Error('#1: Function.prototype.isPrototypeOf(Array) === true. Actual: ' + (Function.prototype.isPrototypeOf(Array)));
-}
+assert.sameValue(
+  Function.prototype.isPrototypeOf(Array),
+  true,
+  'Function.prototype.isPrototypeOf(Array) must return true'
+);
 
 reportCompare(0, 0);

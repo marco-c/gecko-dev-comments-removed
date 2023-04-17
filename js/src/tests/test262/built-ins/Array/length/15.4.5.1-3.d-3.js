@@ -10,6 +10,6 @@
 var a = [];
 a.length = 4294967295;
 
-assert.sameValue(a.length, 4294967295, 'a.length');
+assert.sameValue(a.length, 4294967295, 'The value of a.length is expected to be 4294967295');
 
 reportCompare(0, 0);

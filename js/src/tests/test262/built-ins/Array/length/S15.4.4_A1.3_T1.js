@@ -8,9 +8,6 @@
 
 
 
-
-if (Array.prototype.length !== 0) {
-  throw new Test262Error('#1.1: Array.prototype.length === 0. Actual: ' + (Array.prototype.length));
-}
+assert.sameValue(Array.prototype.length, 0, 'The value of Array.prototype.length is expected to be 0');
 
 reportCompare(0, 0);

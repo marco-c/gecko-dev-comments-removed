@@ -13,27 +13,13 @@
 
 var x = new Array(true);
 
-
-if (x.length !== 1) {
-  throw new Test262Error('#1: var x = new Array(true); x.length === 1. Actual: ' + (x.length));
-}
-
-
-if (x[0] !== true) {
-  throw new Test262Error('#2: var x = new Array(true); x[0] === true. Actual: ' + (x[0]));
-}
+assert.sameValue(x.length, 1, 'The value of x.length is expected to be 1');
+assert.sameValue(x[0], true, 'The value of x[0] is expected to be true');
 
 var obj = new Boolean(false);
 var x = new Array(obj);
 
-
-if (x.length !== 1) {
-  throw new Test262Error('#3: var obj = new Boolean(false); var x = new Array(obj); x.length === 1. Actual: ' + (x.length));
-}
-
-
-if (x[0] !== obj) {
-  throw new Test262Error('#4: var obj = new Boolean(false); var x = new Array(obj); x[0] === obj. Actual: ' + (x[0]));
-}
+assert.sameValue(x.length, 1, 'The value of x.length is expected to be 1');
+assert.sameValue(x[0], obj, 'The value of x[0] is expected to equal the value of obj');
 
 reportCompare(0, 0);

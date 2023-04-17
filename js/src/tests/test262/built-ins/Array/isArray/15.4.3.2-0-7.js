@@ -7,10 +7,6 @@
 
 
 
-var o = new Object();
-o[12] = 13;
-var b = Array.isArray(o);
-
-assert.sameValue(b, false, 'b');
+assert.sameValue(Array.isArray({}), false, 'Array.isArray({}) must return false');
 
 reportCompare(0, 0);

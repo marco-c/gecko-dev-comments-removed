@@ -7,6 +7,6 @@
 
 
 
-assert.sameValue(Array.isArray(new Date()), false, 'Array.isArray(new Date())');
+assert.sameValue(Array.isArray(new Date()), false, 'Array.isArray(new Date()) must return false');
 
 reportCompare(0, 0);

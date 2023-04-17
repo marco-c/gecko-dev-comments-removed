@@ -20,7 +20,7 @@
 
 
 
-assert.sameValue(Array.isArray.name, "isArray");
+assert.sameValue(Array.isArray.name, "isArray", 'The value of Array.isArray.name is expected to be "isArray"');
 
 verifyNotEnumerable(Array.isArray, "name");
 verifyNotWritable(Array.isArray, "name");

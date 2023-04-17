@@ -8,20 +8,13 @@
 
 
 
+assert.sameValue(new Array().length, 0, 'The value of new Array().length is expected to be 0');
+assert.sameValue(new Array(0, 1, 0, 1).length, 4, 'The value of new Array(0, 1, 0, 1).length is expected to be 4');
 
-
-if (new Array().length !== 0) {
-  throw new Test262Error('#1: new Array().length === 0. Actual: ' + (new Array().length));
-}
-
-
-if (new Array(0, 1, 0, 1).length !== 4) {
-  throw new Test262Error('#2: new Array(0,1,0,1).length === 4. Actual: ' + (new Array(0, 1, 0, 1).length));
-}
-
-
-if (new Array(undefined, undefined).length !== 2) {
-  throw new Test262Error('#3: new Array(undefined, undefined).length === 2. Actual: ' + (new Array(undefined, undefined).length));
-}
+assert.sameValue(
+  new Array(undefined, undefined).length,
+  2,
+  'The value of new Array(undefined, undefined).length is expected to be 2'
+);
 
 reportCompare(0, 0);

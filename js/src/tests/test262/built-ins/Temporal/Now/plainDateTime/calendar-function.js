@@ -7,43 +7,46 @@
 
 
 
-
-
 const actual = [];
+
 const expected = [
-  "has timeZone.timeZone",
-  "get timeZone.getOffsetNanosecondsFor",
-  "call timeZone.getOffsetNanosecondsFor",
+  'has timeZone.timeZone',
+  'get timeZone.getOffsetNanosecondsFor',
+  'call timeZone.getOffsetNanosecondsFor'
 ];
+
 const calendar = function() {};
+
 const timeZone = new Proxy({
   getOffsetNanosecondsFor(instant) {
-    actual.push("call timeZone.getOffsetNanosecondsFor");
-    return -Number(instant.epochNanoseconds % 86400_000_000_000n);
-  },
+    actual.push('call timeZone.getOffsetNanosecondsFor');
+    return -Number(instant.epochNanoseconds % 86400000000000n);
+  }
 }, {
   has(target, property) {
     actual.push(`has timeZone.${property}`);
     return property in target;
   },
+
   get(target, property) {
     actual.push(`get timeZone.${property}`);
     return target[property];
-  },
+  }
 });
 
-Object.defineProperty(Temporal.Calendar, "from", {
+Object.defineProperty(Temporal.Calendar, 'from', {
   get() {
-    actual.push("get Temporal.Calendar.from");
+    actual.push('get Temporal.Calendar.from');
     return undefined;
-  },
+  }
 });
 
 const result = Temporal.Now.plainDateTime(calendar, timeZone);
-for (const property of ["hour", "minute", "second", "millisecond", "microsecond", "nanosecond"]) {
-  assert.sameValue(result[property], 0, property);
+
+for (const property of ['hour', 'minute', 'second', 'millisecond', 'microsecond', 'nanosecond']) {
+  assert.sameValue(result[property], 0, 'The value of result[property] is expected to be 0');
 }
 
-assert.compareArray(actual, expected);
+assert.compareArray(actual, expected, 'The value of actual is expected to equal the value of expected');
 
 reportCompare(0, 0);

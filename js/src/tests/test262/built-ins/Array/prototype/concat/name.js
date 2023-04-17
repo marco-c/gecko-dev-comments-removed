@@ -19,7 +19,11 @@
 
 
 
-assert.sameValue(Array.prototype.concat.name, "concat");
+assert.sameValue(
+  Array.prototype.concat.name,
+  "concat",
+  'The value of Array.prototype.concat.name is expected to be "concat"'
+);
 
 verifyNotEnumerable(Array.prototype.concat, "name");
 verifyNotWritable(Array.prototype.concat, "name");

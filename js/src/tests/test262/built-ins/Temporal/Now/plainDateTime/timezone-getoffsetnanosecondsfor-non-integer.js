@@ -7,12 +7,14 @@
 
 
 
-
-
-[3600_000_000_000.5, NaN].forEach((wrongOffset) => {
+[3600000000000.5, NaN].forEach(wrongOffset => {
   const timeZone = TemporalHelpers.specificOffsetTimeZone(wrongOffset);
 
-  assert.throws(RangeError, () => Temporal.Now.plainDateTime("iso8601", timeZone));
+  assert.throws(
+    RangeError,
+    () => Temporal.Now.plainDateTime('iso8601', timeZone),
+    'Temporal.Now.plainDateTime("iso8601", timeZone) throws a RangeError exception'
+  );
 });
 
 reportCompare(0, 0);

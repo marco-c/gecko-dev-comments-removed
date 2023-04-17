@@ -9,14 +9,12 @@
 
 
 
+assert.sameValue(typeof Array(), "object", 'The value of `typeof Array()` is expected to be "object"');
 
-if (typeof Array() !== "object") {
-  throw new Test262Error('#1: typeof Array() === "object". Actual: ' + (typeof Array()));
-}
-
-
-if ((Array() instanceof Array) !== true) {
-  throw new Test262Error('#2: (Array() instanceof Array) === true. Actual: ' + (Array() instanceof Array));
-}
+assert.sameValue(
+  Array() instanceof Array,
+  true,
+  'The result of evaluating (Array() instanceof Array) is expected to be true'
+);
 
 reportCompare(0, 0);

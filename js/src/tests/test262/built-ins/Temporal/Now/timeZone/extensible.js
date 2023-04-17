@@ -13,6 +13,9 @@
 
 
 
-assert(Object.isExtensible(Temporal.Now.timeZone));
+assert(
+  Object.isExtensible(Temporal.Now.timeZone),
+  'Object.isExtensible(Temporal.Now.timeZone) must return true'
+);
 
 reportCompare(0, 0);

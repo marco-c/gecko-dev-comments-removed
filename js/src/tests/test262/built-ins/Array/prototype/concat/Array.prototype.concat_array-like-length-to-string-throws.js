@@ -7,11 +7,10 @@
 
 
 
-function MyError() {}
-var obj = {
+var objWithPoisonedLengthToString = {
   "length": {
     toString: function() {
-      throw new MyError();
+      throw new Test262Error();
     },
     valueOf: null
   },
@@ -19,9 +18,9 @@ var obj = {
   "3": "B",
   "5": "C"
 };
-obj[Symbol.isConcatSpreadable] = true;
-assert.throws(MyError, function() {
-  [].concat(obj);
-});
+objWithPoisonedLengthToString[Symbol.isConcatSpreadable] = true;
+assert.throws(Test262Error, function() {
+  [].concat(objWithPoisonedLengthToString);
+}, '[].concat(objWithPoisonedLengthToString) throws a Test262Error exception');
 
 reportCompare(0, 0);

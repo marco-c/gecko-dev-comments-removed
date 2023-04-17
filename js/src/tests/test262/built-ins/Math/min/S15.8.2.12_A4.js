@@ -6,20 +6,8 @@
 
 
 
-
-
-if (typeof Math.min !== "function") {
-  throw new Test262Error('#1: Math.min method is not defined');
-}
-
-
-if (typeof Math.min.length === "undefined") {
-  throw new Test262Error('#2: length property of Math.min method is undefined');
-}
-
-
-if (Math.min.length !== 2) {
-  throw new Test262Error('#3: The length property of the Math.min method is not 2');
-}
+assert.sameValue(typeof Math.min, "function", 'The value of `typeof Math.min` is expected to be "function"');
+assert.notSameValue(typeof Math.min.length, "undefined", 'The value of typeof Math.min.length is not "undefined"');
+assert.sameValue(Math.min.length, 2, 'The value of Math.min.length is expected to be 2');
 
 reportCompare(0, 0);

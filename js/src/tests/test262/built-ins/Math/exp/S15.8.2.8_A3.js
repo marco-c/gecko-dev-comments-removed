@@ -9,9 +9,6 @@
 
 
 var x = -0;
-if (Math.exp(x) !== 1)
-{
-  throw new Test262Error("#1: 'var x = -0; Math.exp(x) !== 1'");
-}
+assert.sameValue(Math.exp(x), 1, 'Math.exp(-0) must return 1');
 
 reportCompare(0, 0);

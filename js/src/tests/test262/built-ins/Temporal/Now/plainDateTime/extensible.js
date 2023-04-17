@@ -7,6 +7,9 @@
 
 
 
-assert(Object.isExtensible(Temporal.Now.plainDateTime));
+assert(
+  Object.isExtensible(Temporal.Now.plainDateTime),
+  'Object.isExtensible(Temporal.Now.plainDateTime) must return true'
+);
 
 reportCompare(0, 0);

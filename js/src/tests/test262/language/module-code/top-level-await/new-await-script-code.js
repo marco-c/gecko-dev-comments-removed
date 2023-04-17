@@ -8,7 +8,6 @@
 
 
 
-
 class await {}
 
 assert.sameValue(new await instanceof await, true);

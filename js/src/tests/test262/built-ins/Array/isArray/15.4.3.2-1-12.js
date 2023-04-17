@@ -7,6 +7,6 @@
 
 
 
-assert.sameValue(Array.isArray(new SyntaxError()), false, 'Array.isArray(new SyntaxError())');
+assert.sameValue(Array.isArray(new SyntaxError()), false, 'Array.isArray(new SyntaxError()) must return false');
 
 reportCompare(0, 0);

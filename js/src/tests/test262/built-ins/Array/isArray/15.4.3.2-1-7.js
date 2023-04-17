@@ -7,6 +7,6 @@
 
 
 
-assert.sameValue(Array.isArray(function() {}), false, 'Array.isArray(function () { })');
+assert.sameValue(Array.isArray(function() {}), false, 'Array.isArray(function() {}) must return false');
 
 reportCompare(0, 0);

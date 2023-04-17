@@ -9,9 +9,6 @@
 
 
 var x = +Infinity;
-if (Math.exp(x) !== +Infinity)
-{
-  throw new Test262Error("#1: 'var x = +Infinity; Math.exp(x) !== +Infinity'");
-}
+assert.sameValue(Math.exp(x), +Infinity, 'Math.exp(+Infinity) must return +Infinity');
 
 reportCompare(0, 0);
