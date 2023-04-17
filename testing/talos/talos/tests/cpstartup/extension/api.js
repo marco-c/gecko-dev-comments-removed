@@ -22,7 +22,7 @@ ChromeUtils.defineModuleGetter(
 );
 
 const PREALLOCATED_PREF = "dom.ipc.processPrelaunch.enabled";
-const MESSAGES = ["CPStartup:Go", "Content:BrowserChildReady"];
+const MESSAGES = ["CPStartup:Go", "CPStartup:BrowserChildReady"];
 let domainID = 1;
 
 
@@ -70,7 +70,7 @@ this.cpstartup = class extends ExtensionAPI {
         break;
       }
 
-      case "Content:BrowserChildReady": {
+      case "CPStartup:BrowserChildReady": {
         
         if (!this.readyCallback) {
           throw new Error(
