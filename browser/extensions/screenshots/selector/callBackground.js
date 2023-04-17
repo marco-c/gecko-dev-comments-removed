@@ -7,7 +7,7 @@
 "use strict";
 
 this.callBackground = function callBackground(funcName, ...args) {
-  return browser.runtime.sendMessage({funcName, args}).then((result) => {
+  return browser.runtime.sendMessage({ funcName, args }).then(result => {
     if (result && result.type === "success") {
       return result.value;
     } else if (result && result.type === "error") {
@@ -22,8 +22,11 @@ this.callBackground = function callBackground(funcName, ...args) {
       throw exc;
     } else {
       log.error("Unexpected background result:", result);
-      const exc = new Error(`Bad response type from background page: ${result && result.type || undefined}`);
-      exc.resultType = result ? (result.type || "undefined") : "undefined result";
+      const exc = new Error(
+        `Bad response type from background page: ${(result && result.type) ||
+          undefined}`
+      );
+      exc.resultType = result ? result.type || "undefined" : "undefined result";
       throw exc;
     }
   });
