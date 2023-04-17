@@ -68,9 +68,8 @@ const AboutProfiling = React.createFactory(
 const createStore = require("devtools/client/shared/redux/create-store");
 const reducers = require("devtools/client/performance-new/store/reducers");
 const actions = require("devtools/client/performance-new/store/actions");
-const {
-  ActorReadyGeckoProfilerInterface,
-} = require("devtools/shared/performance-new/gecko-profiler-interface");
+const { Ci } = require("chrome");
+const Services = require("Services");
 
 
 
@@ -80,10 +79,14 @@ const {
 
 
 
-async function gInit(perfFront, pageContext, openRemoteDevTools) {
+
+async function gInit(
+  pageContext,
+  isSupportedPlatform,
+  supportedFeatures,
+  openRemoteDevTools
+) {
   const store = createStore(reducers);
-  const isSupportedPlatform = await perfFront.isSupportedPlatform();
-  const supportedFeatures = await perfFront.getSupportedFeatures();
 
   const l10n = new FluentL10n();
   await l10n.init(
@@ -127,22 +130,16 @@ async function gInit(perfFront, pageContext, openRemoteDevTools) {
     ),
     document.querySelector("#root")
   );
-
-  window.addEventListener("unload", function() {
-    
-    
-    if (pageContext !== "aboutprofiling-remote") {
-      
-      
-      perfFront.destroy();
-    }
-  });
 }
 
 
 
 if (window.location.hash !== "#remote") {
   document.addEventListener("DOMContentLoaded", () => {
-    gInit(new ActorReadyGeckoProfilerInterface(), "aboutprofiling");
+    const isSupportedPlatform = "nsIProfiler" in Ci;
+    const supportedFeatures = isSupportedPlatform
+      ? Services.profiler.GetFeatures()
+      : [];
+    gInit("aboutprofiling", isSupportedPlatform, supportedFeatures);
   });
 }
