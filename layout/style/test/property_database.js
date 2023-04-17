@@ -5256,9 +5256,8 @@ var gCSSProperties = {
     type: CSS_TYPE_LONGHAND,
     applies_to_marker: true,
     
-    initial_values: ["normal"],
+    initial_values: ["normal", "none"],
     other_values: [
-      "none",
       '""',
       "''",
       '"hello"',
