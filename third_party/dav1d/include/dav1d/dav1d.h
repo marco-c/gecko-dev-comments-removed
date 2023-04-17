@@ -202,6 +202,35 @@ DAV1D_API void dav1d_close(Dav1dContext **c_out);
 
 DAV1D_API void dav1d_flush(Dav1dContext *c);
 
+enum Dav1dEventFlags {
+    
+
+
+
+
+    DAV1D_EVENT_FLAG_NEW_SEQUENCE =       1 << 0,
+    
+
+
+
+    DAV1D_EVENT_FLAG_NEW_OP_PARAMS_INFO = 1 << 1,
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+DAV1D_API int dav1d_get_event_flags(Dav1dContext *c, enum Dav1dEventFlags *flags);
+
 # ifdef __cplusplus
 }
 # endif
