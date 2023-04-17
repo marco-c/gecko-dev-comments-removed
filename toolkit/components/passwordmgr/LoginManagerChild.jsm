@@ -2888,7 +2888,10 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
       aField
     );
     if (indexOfFieldInUsernameAndPasswordFields == -1) {
-      fieldNameHint = hasBeenTypePassword ? "current-password" : "username";
+      
+      
+      
+      fieldNameHint = hasBeenTypePassword ? "current-password" : "other";
     } else {
       fieldNameHint =
         LOGIN_FIELD_ORDER[indexOfFieldInUsernameAndPasswordFields];

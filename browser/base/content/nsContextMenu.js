@@ -5,6 +5,7 @@
 
 
 const PASSWORD_FIELDNAME_HINTS = ["current-password", "new-password"];
+const USERNAME_FIELDNAME_HINT = "username";
 
 function openContextMenu(aMessage, aBrowser, aActor) {
   if (BrowserHandler.kiosk) {
@@ -1167,7 +1168,8 @@ class nsContextMenu {
     
     
     return (
-      loginFillInfo?.passwordField?.found &&
+      (loginFillInfo?.passwordField?.found ||
+        loginFillInfo?.activeField.fieldNameHint == USERNAME_FIELDNAME_HINT) &&
       !documentURI?.schemeIs("about") &&
       this.browser.contentPrincipal.spec != "resource://pdf.js/web/viewer.html"
     );
