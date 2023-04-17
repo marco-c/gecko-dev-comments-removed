@@ -88,14 +88,14 @@ class WebrtcVideoConduit
 
 
 
-  MediaConduitErrorCode ReceivedRTPPacket(const void* data, int len,
-                                          webrtc::RTPHeader& header) override;
+  void ReceivedRTPPacket(const uint8_t* data, int len,
+                         webrtc::RTPHeader& header) override;
 
   
 
 
 
-  MediaConduitErrorCode ReceivedRTCPPacket(const void* data, int len) override;
+  void ReceivedRTCPPacket(const uint8_t* data, int len) override;
   Maybe<DOMHighResTimeStamp> LastRtcpReceived() const override;
   DOMHighResTimeStamp GetNow() const override { return mCall->GetNow(); }
 
@@ -272,7 +272,7 @@ class WebrtcVideoConduit
   MediaConduitErrorCode CreateRecvStream();
   void DeleteRecvStream();
 
-  MediaConduitErrorCode DeliverPacket(const void* data, int len) override;
+  void DeliverPacket(rtc::CopyOnWriteBuffer packet, PacketType type) override;
 
   bool RequiresNewSendStream(const VideoCodecConfig& newConfig) const;
 

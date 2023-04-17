@@ -527,8 +527,8 @@ MediaConduitErrorCode WebrtcAudioConduit::GetAudioFrame(
 }
 
 
-MediaConduitErrorCode WebrtcAudioConduit::ReceivedRTPPacket(
-    const void* data, int len, webrtc::RTPHeader& header) {
+void WebrtcAudioConduit::ReceivedRTPPacket(const uint8_t* data, int len,
+                                           webrtc::RTPHeader& header) {
   ASSERT_ON_THREAD(mStsThread);
 
   
@@ -541,8 +541,8 @@ MediaConduitErrorCode WebrtcAudioConduit::ReceivedRTPPacket(
   
   
   if (mRtpPacketQueue.IsQueueActive()) {
-    mRtpPacketQueue.Enqueue(data, len);
-    return kMediaConduitNoError;
+    mRtpPacketQueue.Enqueue(rtc::CopyOnWriteBuffer(data, len));
+    return;
   }
 
   if (mRecvSSRC != header.ssrc) {
@@ -550,7 +550,7 @@ MediaConduitErrorCode WebrtcAudioConduit::ReceivedRTPPacket(
     
     
     mRtpPacketQueue.Clear();
-    mRtpPacketQueue.Enqueue(data, len);
+    mRtpPacketQueue.Enqueue(rtc::CopyOnWriteBuffer(data, len));
 
     CSFLogDebug(LOGTAG, "%s: switching from SSRC %u to %u", __FUNCTION__,
                 static_cast<uint32_t>(mRecvSSRC), header.ssrc);
@@ -558,29 +558,24 @@ MediaConduitErrorCode WebrtcAudioConduit::ReceivedRTPPacket(
     
     mRecvSSRC = header.ssrc;
 
-    
-    RefPtr<WebrtcAudioConduit> self = this;
-    nsCOMPtr<nsIThread> thread;
-    if (NS_WARN_IF(NS_FAILED(NS_GetCurrentThread(getter_AddRefs(thread))))) {
-      return kMediaConduitRTPProcessingFailed;
-    }
-    NS_DispatchToMainThread(
-        media::NewRunnableFrom([self, thread, ssrc = header.ssrc]() mutable {
-          self->SetRemoteSSRC(ssrc, 0);
-          
-          thread->Dispatch(media::NewRunnableFrom([self, ssrc]() mutable {
-                             if (ssrc == self->mRecvSSRC) {
-                               
-                               self->mRtpPacketQueue.DequeueAll(self);
-                             }
-                             
-                             
-                             return NS_OK;
-                           }),
-                           NS_DISPATCH_NORMAL);
-          return NS_OK;
-        }));
-    return kMediaConduitNoError;
+    InvokeAsync(GetMainThreadSerialEventTarget(), __func__,
+                [this, self = RefPtr<WebrtcAudioConduit>(this),
+                 ssrc = header.ssrc]() mutable {
+                  SetRemoteSSRC(ssrc, 0);
+                  return GenericPromise::CreateAndResolve(true, __func__);
+                })
+        ->Then(mStsThread, __func__,
+               [this, self = RefPtr<WebrtcAudioConduit>(this),
+                ssrc = header.ssrc]() mutable {
+                 
+                 if (ssrc != mRecvSSRC) {
+                   
+                   return;
+                 }
+                 
+                 mRtpPacketQueue.DequeueAll(this);
+               });
+    return;
   }
 
   CSFLogVerbose(LOGTAG, "%s: seq# %u, Len %d, SSRC %u (0x%x) ", __FUNCTION__,
@@ -588,28 +583,18 @@ MediaConduitErrorCode WebrtcAudioConduit::ReceivedRTPPacket(
                 (uint32_t)ntohl(((uint32_t*)data)[2]),
                 (uint32_t)ntohl(((uint32_t*)data)[2]));
 
-  if (DeliverPacket(data, len) != kMediaConduitNoError) {
-    CSFLogError(LOGTAG, "%s RTP Processing Failed", __FUNCTION__);
-    return kMediaConduitRTPProcessingFailed;
-  }
-
-  return kMediaConduitNoError;
+  DeliverPacket(rtc::CopyOnWriteBuffer(data, len), PacketType::RTP);
 }
 
-MediaConduitErrorCode WebrtcAudioConduit::ReceivedRTCPPacket(const void* data,
-                                                             int len) {
+void WebrtcAudioConduit::ReceivedRTCPPacket(const uint8_t* data, int len) {
   CSFLogDebug(LOGTAG, "%s", __FUNCTION__);
   ASSERT_ON_THREAD(mStsThread);
 
-  if (DeliverPacket(data, len) != kMediaConduitNoError) {
-    CSFLogError(LOGTAG, "%s RTCP Processing Failed", __FUNCTION__);
-    return kMediaConduitRTPProcessingFailed;
-  }
+  DeliverPacket(rtc::CopyOnWriteBuffer(data, len), PacketType::RTCP);
 
   
   
   mLastRtcpReceived = Some(GetNow());
-  return kMediaConduitNoError;
 }
 
 
@@ -957,39 +942,30 @@ bool WebrtcAudioConduit::RecreateRecvStreamIfExists() {
   return true;
 }
 
-MediaConduitErrorCode WebrtcAudioConduit::DeliverPacket(const void* data,
-                                                        int len) {
-  using PacketPromise =
-      MozPromise<webrtc::PacketReceiver::DeliveryStatus, bool, true>;
+void WebrtcAudioConduit::DeliverPacket(rtc::CopyOnWriteBuffer packet,
+                                       PacketType type) {
+  ASSERT_ON_THREAD(mStsThread);
 
-  auto syncPromise =
-      InvokeAsync(GetMainThreadSerialEventTarget(), __func__, [&] {
+  NS_DispatchToMainThread(NS_NewRunnableFunction(
+      __func__, [this, self = RefPtr<WebrtcAudioConduit>(this),
+                 packet = std::move(packet), type] {
         auto current = TaskQueueWrapper::MainAsCurrent();
+
         if (!mCall->Call()) {
-          return PacketPromise::CreateAndResolve(
-              webrtc::PacketReceiver::DELIVERY_PACKET_ERROR, __func__);
+          return;
         }
-        
+
         
         webrtc::PacketReceiver::DeliveryStatus status =
-            mCall->Call()->Receiver()->DeliverPacket(
-                webrtc::MediaType::AUDIO,
-                rtc::CopyOnWriteBuffer(static_cast<const uint8_t*>(data), len),
-                -1);
-        return PacketPromise::CreateAndResolve(status, __func__);
-      });
+            mCall->Call()->Receiver()->DeliverPacket(webrtc::MediaType::AUDIO,
+                                                     std::move(packet), -1);
 
-  webrtc::PacketReceiver::DeliveryStatus status =
-      media::Await(GetMediaThreadPool(MediaThreadType::WEBRTC_DECODER),
-                   syncPromise)
-          .ResolveValue();
-
-  if (status != webrtc::PacketReceiver::DELIVERY_OK) {
-    CSFLogError(LOGTAG, "%s DeliverPacket Failed, %d", __FUNCTION__, status);
-    return kMediaConduitRTPProcessingFailed;
-  }
-
-  return kMediaConduitNoError;
+        if (status != webrtc::PacketReceiver::DELIVERY_OK) {
+          CSFLogError(LOGTAG, "%s DeliverPacket Failed for %s packet, %d",
+                      __FUNCTION__, type == PacketType::RTP ? "RTP" : "RTCP",
+                      status);
+        }
+      }));
 }
 
 }  
