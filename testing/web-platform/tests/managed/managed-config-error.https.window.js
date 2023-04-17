@@ -1,6 +1,3 @@
-
-
-
 promise_test(t => {
   return promise_rejects_js(
       t, TypeError, navigator.managed.getManagedConfiguration(-1));

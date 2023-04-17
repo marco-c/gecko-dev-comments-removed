@@ -1,8 +1,6 @@
 
 
 
-
-
 'use strict'
 
 managed_config_test(async (test, managedConfigTest) => {
