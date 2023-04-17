@@ -217,6 +217,7 @@
 #include "mozilla/layers/ScrollInputMethods.h"
 #include "InputData.h"
 
+#include "mozilla/TaskController.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "mozilla/layers/IAPZCTreeManager.h"
@@ -366,6 +367,11 @@ static const int32_t kGlassMarginAdjustment = 2;
 
 
 static const int32_t kResizableBorderMinSize = 3;
+
+
+
+StaticRefPtr<IVirtualDesktopManager> gVirtualDesktopManager;
+static bool gInitializedVirtualDesktopManager = false;
 
 
 
@@ -557,6 +563,38 @@ WindowsDllInterceptor::FuncHookType<decltype(&SendMessageTimeoutW)>
     TIPMessageHandler::sSendMessageTimeoutWStub;
 StaticAutoPtr<TIPMessageHandler> TIPMessageHandler::sInstance;
 
+
+
+
+
+
+
+
+
+class InitializeVirtualDesktopManagerTask : public Task {
+ public:
+  InitializeVirtualDesktopManagerTask() : Task(false, kDefaultPriorityValue) {}
+
+  virtual bool Run() override {
+#  ifndef __MINGW32__
+    if (!IsWin10OrLater()) {
+      return true;
+    }
+
+    RefPtr<IVirtualDesktopManager> desktopManager;
+    HRESULT hr = ::CoCreateInstance(
+        CLSID_VirtualDesktopManager, NULL, CLSCTX_INPROC_SERVER,
+        __uuidof(IVirtualDesktopManager), getter_AddRefs(desktopManager));
+    if (FAILED(hr)) {
+      return true;
+    }
+
+    gVirtualDesktopManager = desktopManager;
+#  endif
+    return true;
+  }
+};
+
 }  
 
 #endif  
@@ -582,6 +620,12 @@ nsWindow::nsWindow(bool aIsChildWindow)
     : nsWindowBase(),
       mResizeState(NOT_RESIZING),
       mIsChildWindow(aIsChildWindow) {
+  if (!gInitializedVirtualDesktopManager) {
+    TaskController::Get()->AddTask(
+        MakeAndAddRef<InitializeVirtualDesktopManagerTask>());
+    gInitializedVirtualDesktopManager = true;
+  }
+
   mIconSmall = nullptr;
   mIconBig = nullptr;
   mWnd = nullptr;
@@ -2346,31 +2390,8 @@ void nsWindow::SetSizeMode(nsSizeMode aMode) {
   }
 }
 
-RefPtr<IVirtualDesktopManager> GetVirtualDesktopManager() {
-#ifdef __MINGW32__
-  return nullptr;
-#else
-  if (!IsWin10OrLater()) {
-    return nullptr;
-  }
-
-  RefPtr<IServiceProvider> serviceProvider;
-  HRESULT hr = ::CoCreateInstance(
-      CLSID_ImmersiveShell, NULL, CLSCTX_LOCAL_SERVER,
-      __uuidof(IServiceProvider), getter_AddRefs(serviceProvider));
-  if (FAILED(hr)) {
-    return nullptr;
-  }
-
-  RefPtr<IVirtualDesktopManager> desktopManager;
-  serviceProvider->QueryService(__uuidof(IVirtualDesktopManager),
-                                desktopManager.StartAssignment());
-  return desktopManager;
-#endif
-}
-
 void nsWindow::GetWorkspaceID(nsAString& workspaceID) {
-  RefPtr<IVirtualDesktopManager> desktopManager = GetVirtualDesktopManager();
+  RefPtr<IVirtualDesktopManager> desktopManager = gVirtualDesktopManager;
   if (!desktopManager) {
     return;
   }
@@ -2389,7 +2410,7 @@ void nsWindow::GetWorkspaceID(nsAString& workspaceID) {
 }
 
 void nsWindow::MoveToWorkspace(const nsAString& workspaceID) {
-  RefPtr<IVirtualDesktopManager> desktopManager = GetVirtualDesktopManager();
+  RefPtr<IVirtualDesktopManager> desktopManager = gVirtualDesktopManager;
   if (!desktopManager) {
     return;
   }
