@@ -4,8 +4,6 @@
 
 "use strict";
 
-const DevToolsUtils = require("devtools/shared/DevToolsUtils");
-const { LongStringFront } = require("devtools/client/fronts/string");
 const {
   FrontClassWithSpec,
   registerFront,
@@ -27,7 +25,6 @@ class WebConsoleFront extends FrontClassWithSpec(webconsoleSpec) {
     super(client, targetFront, parentFront);
     this._client = client;
     this.traits = {};
-    this._longStrings = {};
     this.events = [];
 
     
@@ -317,60 +314,6 @@ class WebConsoleFront extends FrontClassWithSpec(webconsoleSpec) {
 
 
 
-
-
-
-  longString(grip) {
-    if (grip.actor in this._longStrings) {
-      return this._longStrings[grip.actor];
-    }
-
-    const front = new LongStringFront(this._client, this.targetFront, this);
-    front.form(grip);
-    this.manage(front);
-    this._longStrings[grip.actor] = front;
-    return front;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  async getString(stringGrip) {
-    
-    if (typeof stringGrip !== "object" || stringGrip.type !== "longString") {
-      
-      return stringGrip;
-    }
-
-    
-    if (stringGrip._fullText) {
-      return stringGrip._fullText;
-    }
-
-    const { initial, length } = stringGrip;
-    const longStringFront = this.longString(stringGrip);
-
-    try {
-      const response = await longStringFront.substring(initial.length, length);
-      return initial + response;
-    } catch (e) {
-      DevToolsUtils.reportException("getString", e.message);
-      throw e;
-    }
-  }
-
-  
-
-
-
   destroy() {
     if (!this._client) {
       return null;
@@ -381,7 +324,6 @@ class WebConsoleFront extends FrontClassWithSpec(webconsoleSpec) {
     
     this._client = null;
 
-    this._longStrings = null;
     return super.destroy();
   }
 }

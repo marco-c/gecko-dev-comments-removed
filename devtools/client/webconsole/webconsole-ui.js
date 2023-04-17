@@ -687,10 +687,6 @@ class WebConsoleUI {
     }
   }
 
-  getLongString(grip) {
-    return this.getProxy().webConsoleFront.getString(grip);
-  }
-
   
 
 
