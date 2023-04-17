@@ -35,6 +35,8 @@ class RenderCompositorOGLSWGL : public RenderCompositorLayersSWGL {
   bool BeginFrame() override;
   RenderedFrameId EndFrame(const nsTArray<DeviceIntRect>& aDirtyRects) override;
 
+  void GetCompositorCapabilities(CompositorCapabilities* aCaps) override;
+
   
   
   
