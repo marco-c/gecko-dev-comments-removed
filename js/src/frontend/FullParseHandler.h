@@ -13,6 +13,7 @@
 #include <cstddef>  
 #include <string.h>
 
+#include "frontend/CompilationStencil.h"  
 #include "frontend/FunctionSyntaxKind.h"  
 #include "frontend/NameAnalysisTypes.h"   
 #include "frontend/ParseNode.h"
@@ -51,6 +52,7 @@ class FullParseHandler {
 
 
   const Rooted<BaseScript*> lazyOuterFunction_;
+  const mozilla::Span<TaggedScriptThingIndex> gcThingsData;
   size_t lazyInnerFunctionIndex;
 
   size_t lazyClosedOverBindingIndex;
@@ -100,10 +102,10 @@ class FullParseHandler {
                                   node->isKind(ParseNodeKind::ArrayExpr));
   }
 
-  FullParseHandler(JSContext* cx, LifoAlloc& alloc,
-                   BaseScript* lazyOuterFunction)
-      : allocator(cx, alloc),
-        lazyOuterFunction_(cx, lazyOuterFunction),
+  FullParseHandler(JSContext* cx, CompilationState& compilationState)
+      : allocator(cx, compilationState.allocScope.alloc()),
+        lazyOuterFunction_(cx, compilationState.input.lazyOuterScript()),
+        gcThingsData(compilationState.input.gcThings()),
         lazyInnerFunctionIndex(0),
         lazyClosedOverBindingIndex(0) {
     
@@ -111,14 +113,11 @@ class FullParseHandler {
     
     
     
-    if (lazyOuterFunction) {
-      for (JS::GCCellPtr gcThing : lazyOuterFunction->gcthings()) {
-        if (gcThing.is<JSObject>()) {
-          lazyClosedOverBindingIndex++;
-        } else {
-          break;
-        }
+    for (auto gcThing : gcThingsData) {
+      if (gcThing.isNull() || gcThing.isAtom()) {
+        break;
       }
+      lazyClosedOverBindingIndex++;
     }
   }
 
@@ -1096,19 +1095,13 @@ class FullParseHandler {
                 .as<JSObject>()
                 .as<JSFunction>();
   }
-  JSAtom* nextLazyClosedOverBinding() {
-    auto gcthings = lazyOuterFunction_->gcthings();
-
+  TaggedParserAtomIndex nextLazyClosedOverBinding() {
     
-    if (lazyClosedOverBindingIndex >= gcthings.Length()) {
-      return nullptr;
+    if (lazyClosedOverBindingIndex >= gcThingsData.Length()) {
+      return TaggedParserAtomIndex::null();
     }
 
-    
-    
-    gc::Cell* cell = gcthings[lazyClosedOverBindingIndex++].asCell();
-    MOZ_ASSERT_IF(cell, cell->as<JSString>()->isAtom());
-    return static_cast<JSAtom*>(cell);
+    return gcThingsData[lazyClosedOverBindingIndex++].toAtomOrNull();
   }
 
   void setPrivateNameKind(Node node, PrivateNameKind kind) {
