@@ -176,8 +176,7 @@ const symbolCache = new Map();
 
 
 
-
-async function getSymbolsFromThisBrowser(pageContext, debugName, breakpadId) {
+async function getSymbolsFromThisBrowser(debugName, breakpadId) {
   if (symbolCache.size === 0) {
     
     for (const lib of Services.profiler.sharedLibraries) {
@@ -198,7 +197,7 @@ async function getSymbolsFromThisBrowser(pageContext, debugName, breakpadId) {
   }
 
   const lib = cachedLib;
-  const objdirs = getObjdirPrefValue(getPrefPostfix(pageContext));
+  const objdirs = getObjdirPrefValue("");
   const { getSymbolTableMultiModal } = lazy.PerfSymbolication();
   return getSymbolTableMultiModal(lib, objdirs);
 }
@@ -266,7 +265,7 @@ async function captureProfile(pageContext) {
 
 
     (debugName, breakpadId) => {
-      return getSymbolsFromThisBrowser(pageContext, debugName, breakpadId);
+      return getSymbolsFromThisBrowser(debugName, breakpadId);
     }
   );
 
@@ -638,7 +637,6 @@ module.exports = {
   restartProfiler,
   toggleProfiler,
   platform,
-  getSymbolsFromThisBrowser,
   getRecordingSettings,
   setRecordingSettings,
   revertRecordingSettings,
