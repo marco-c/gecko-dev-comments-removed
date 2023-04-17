@@ -964,6 +964,11 @@ child:
   
   async DecoderSupportedMimeTypes(nsCString[] supportedTypes);
 
+  
+  
+  
+  async InitNextGenLocalStorageEnabled(bool enabled);
+
 parent:
 
     async SynchronizeLayoutHistoryState(MaybeDiscardedBrowsingContext aContext,

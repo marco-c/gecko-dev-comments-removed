@@ -236,7 +236,16 @@ void MaybeEnableNextGenLocalStorage();
 
 
 
+
+
 bool NextGenLocalStorageEnabled();
+
+
+
+
+
+
+void RecvInitNextGenLocalStorageEnabled(const bool aEnabled);
 
 
 
