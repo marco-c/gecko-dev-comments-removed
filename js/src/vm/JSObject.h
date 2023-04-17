@@ -231,26 +231,13 @@ class JSObject
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  inline bool hasInvalidatedTeleporting() const;
-  static bool setInvalidatedTeleporting(JSContext* cx, JS::HandleObject obj) {
+  inline bool hasUncacheableProto() const;
+  static bool setUncacheableProto(JSContext* cx, JS::HandleObject obj) {
     MOZ_ASSERT(obj->isUsedAsPrototype());
     MOZ_ASSERT(obj->hasStaticPrototype(),
-               "teleporting as a concept is only applicable to static "
+               "uncacheability as a concept is only applicable to static "
                "(not dynamically-computed) prototypes");
-    return setFlag(cx, obj, js::ObjectFlag::InvalidatedTeleporting);
+    return setFlag(cx, obj, js::ObjectFlag::UncacheableProto);
   }
 
   

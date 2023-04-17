@@ -95,6 +95,9 @@
 
 
 
+
+
+
 MOZ_ALWAYS_INLINE size_t JSSLOT_FREE(const JSClass* clasp) {
   
   

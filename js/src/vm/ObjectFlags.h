@@ -24,12 +24,7 @@ enum class ObjectFlag : uint16_t {
   HasInterestingSymbol = 1 << 3,
   
   FrozenElements = 1 << 5,  
-
-  
-  
-  
-  InvalidatedTeleporting = 1 << 6,
-
+  UncacheableProto = 1 << 6,
   ImmutablePrototype = 1 << 7,
 
   
