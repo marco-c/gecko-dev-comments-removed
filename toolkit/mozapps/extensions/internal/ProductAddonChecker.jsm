@@ -398,4 +398,7 @@ const ProductAddonChecker = {
       throw e;
     }
   },
+
+  
+  computeHash,
 };
