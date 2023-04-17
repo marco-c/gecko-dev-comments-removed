@@ -1,3 +1,6 @@
+
+
+
 load(libdir + 'asserts.js');
 
 const code = `var a = 10;`;
