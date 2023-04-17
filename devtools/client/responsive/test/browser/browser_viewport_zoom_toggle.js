@@ -5,7 +5,7 @@
 
 
 
-const TEST_URL = "http://example.com/";
+const TEST_URL = "https://example.com/";
 
 function getZoomForBrowser(browser) {
   return ZoomManager.getZoomForBrowser(browser);

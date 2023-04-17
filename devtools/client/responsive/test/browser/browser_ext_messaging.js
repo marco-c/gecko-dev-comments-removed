@@ -5,7 +5,7 @@
 
 "use strict";
 
-const TEST_URL = "http://example.com/";
+const TEST_URL = "https://example.com/";
 
 
 
@@ -113,7 +113,7 @@ addRDMTask(TEST_URL, async function test_tab_sender() {
     },
 
     async background() {
-      const TEST_URL = "http://example.com/"; 
+      const TEST_URL = "https://example.com/"; 
 
       browser.test.log("Background script init");
 

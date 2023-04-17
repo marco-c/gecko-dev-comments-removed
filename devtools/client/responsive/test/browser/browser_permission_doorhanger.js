@@ -32,6 +32,10 @@ function waitForGeolocationPrompt(win, browser) {
 addRDMTask(
   null,
   async function() {
+    
+    
+    await pushPref("dom.security.https_first", false);
+
     const tab = await addTab(DUMMY_URL);
     const browser = tab.linkedBrowser;
     const win = browser.ownerGlobal;
