@@ -47,7 +47,7 @@ module.exports = function(targetType, targetActorSpec, implementation) {
 
 
     
-    async addWatcherDataEntry(type, entries, isDocumentCreation = false) {
+    async addSessionDataEntry(type, entries, isDocumentCreation = false) {
       if (type == RESOURCES) {
         await this._watchTargetResources(entries);
       } else if (type == BREAKPOINTS) {
@@ -145,7 +145,7 @@ module.exports = function(targetType, targetActorSpec, implementation) {
       }
     },
 
-    removeWatcherDataEntry(type, entries) {
+    removeSessionDataEntry(type, entries) {
       if (type == RESOURCES) {
         return this._unwatchTargetResources(entries);
       } else if (type == BREAKPOINTS) {
