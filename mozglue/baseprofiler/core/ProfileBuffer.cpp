@@ -162,11 +162,17 @@ void ProfileBuffer::CollectOverheadStats(TimeDuration aSamplingTime,
   mThreadsUs.Count(threadsUs);
 
   
-  AddEntry(ProfileBufferEntry::ProfilerOverheadTime(timeUs));
-  AddEntry(ProfileBufferEntry::ProfilerOverheadDuration(lockingUs));
-  AddEntry(ProfileBufferEntry::ProfilerOverheadDuration(cleaningUs));
-  AddEntry(ProfileBufferEntry::ProfilerOverheadDuration(countersUs));
-  AddEntry(ProfileBufferEntry::ProfilerOverheadDuration(threadsUs));
+  static const bool sRecordSamplingOverhead = []() {
+    const char* recordOverheads = getenv("MOZ_PROFILER_RECORD_OVERHEADS");
+    return recordOverheads && recordOverheads[0] != '\0';
+  }();
+  if (sRecordSamplingOverhead) {
+    AddEntry(ProfileBufferEntry::ProfilerOverheadTime(timeUs));
+    AddEntry(ProfileBufferEntry::ProfilerOverheadDuration(lockingUs));
+    AddEntry(ProfileBufferEntry::ProfilerOverheadDuration(cleaningUs));
+    AddEntry(ProfileBufferEntry::ProfilerOverheadDuration(countersUs));
+    AddEntry(ProfileBufferEntry::ProfilerOverheadDuration(threadsUs));
+  }
 }
 
 ProfilerBufferInfo ProfileBuffer::GetProfilerBufferInfo() const {
