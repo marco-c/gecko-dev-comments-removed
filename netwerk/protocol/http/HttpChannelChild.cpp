@@ -1010,6 +1010,8 @@ void HttpChannelChild::DoOnStopRequest(nsIRequest* aRequest,
   };
   checkForBlockedContent();
 
+  MaybeLogCOEPError(aChannelStatus);
+
   
   
   MOZ_ASSERT(mListener || !LoadWasOpened());
@@ -2973,6 +2975,28 @@ HttpChannelChild::LogMimeTypeMismatch(const nsACString& aMessageName,
       aWarning ? nsIScriptError::warningFlag : nsIScriptError::errorFlag,
       "MIMEMISMATCH"_ns, doc, nsContentUtils::eSECURITY_PROPERTIES,
       nsCString(aMessageName).get(), params);
+  return NS_OK;
+}
+
+nsresult HttpChannelChild::MaybeLogCOEPError(nsresult aStatus) {
+  if (aStatus == NS_ERROR_DOM_CORP_FAILED) {
+    RefPtr<Document> doc;
+    mLoadInfo->GetLoadingDocument(getter_AddRefs(doc));
+
+    nsAutoCString url;
+    mURI->GetSpec(url);
+
+    AutoTArray<nsString, 2> params;
+    params.AppendElement(NS_ConvertUTF8toUTF16(url));
+    
+    
+    params.AppendElement(
+        u"https://developer.mozilla.org/docs/Web/HTTP/Cross-Origin_Resource_Policy_(CORP)#"_ns);
+    nsContentUtils::ReportToConsole(nsIScriptError::errorFlag, "COEP"_ns, doc,
+                                    nsContentUtils::eNECKO_PROPERTIES,
+                                    "CORPBlocked", params);
+  }
+
   return NS_OK;
 }
 
