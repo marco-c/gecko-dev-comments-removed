@@ -454,6 +454,10 @@ var SessionStore = {
     }
   },
 
+  getCurrentEpoch(browser) {
+    return SessionStoreInternal.getCurrentEpoch(browser);
+  },
+
   
 
 
