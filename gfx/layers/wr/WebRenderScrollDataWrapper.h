@@ -41,6 +41,94 @@ namespace layers {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class MOZ_STACK_CLASS WebRenderScrollDataWrapper final {
  public:
   
@@ -244,6 +332,10 @@ class MOZ_STACK_CLASS WebRenderScrollDataWrapper final {
   bool TransformIsPerspective() const {
     MOZ_ASSERT(IsValid());
 
+    
+    
+    
+    
     if (AtBottomLayer()) {
       return mLayer->GetTransformIsPerspective();
     }
@@ -412,6 +504,9 @@ class MOZ_STACK_CLASS WebRenderScrollDataWrapper final {
     return mLayer->GetAsyncZoomContainerId();
   }
 
+  
+  
+  
   const void* GetLayer() const {
     MOZ_ASSERT(IsValid());
     return mLayer;
