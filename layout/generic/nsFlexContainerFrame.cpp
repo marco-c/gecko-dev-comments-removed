@@ -1989,6 +1989,8 @@ const CachedBAxisMeasurement& nsFlexContainerFrame::MeasureBSizeForFlexItem(
     FLEX_LOG("[perf] MeasureBSizeForFlexItem didn't have a cached value");
   }
 
+  
+  
   ReflowOutput childReflowOutput(aChildReflowInput);
   nsReflowStatus childReflowStatus;
 
@@ -5636,6 +5638,8 @@ nsReflowStatus nsFlexContainerFrame::ReflowFlexItem(
   
   
 
+  
+  
   ReflowOutput childReflowOutput(childReflowInput);
   nsReflowStatus childReflowStatus;
   ReflowChild(aItem.Frame(), PresContext(), childReflowOutput, childReflowInput,
@@ -5679,7 +5683,7 @@ void nsFlexContainerFrame::ReflowPlaceholders(
                                  availSize);
     
     
-    ReflowOutput childReflowOutput(childReflowInput);
+    ReflowOutput childReflowOutput(outerWM);
     nsReflowStatus childReflowStatus;
     ReflowChild(placeholder, PresContext(), childReflowOutput, childReflowInput,
                 outerWM, aContentBoxOrigin, aContainerSize,
