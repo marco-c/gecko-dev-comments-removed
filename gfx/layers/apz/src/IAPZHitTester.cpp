@@ -44,6 +44,9 @@ AsyncPanZoomController* IAPZHitTester::FindRootApzcForLayersId(
 already_AddRefed<HitTestingTreeNode> IAPZHitTester::GetTargetNode(
     const ScrollableLayerGuid& aGuid,
     ScrollableLayerGuid::Comparator aComparator) {
+  
+  
+  RecursiveMutexAutoLock lock(mTreeManager->mTreeLock);
   return mTreeManager->GetTargetNode(aGuid, aComparator);
 }
 
