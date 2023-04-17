@@ -66,6 +66,10 @@ class FirstInitializationAttempts {
   }
 };
 
+template <typename Initialization, typename StringGenerator>
+using FirstInitializationAttempt = typename FirstInitializationAttempts<
+    Initialization, StringGenerator>::FirstInitializationAttemptImpl;
+
 }  
 
 #endif  
