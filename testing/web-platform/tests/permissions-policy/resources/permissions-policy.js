@@ -40,12 +40,11 @@ function test_feature_availability(
     frame.setAttribute(allow_attribute, true);
   }
 
-  window.addEventListener('message', test.step_func(function handler(evt) {
+  window.addEventListener('message', test.step_func(evt => {
     if (evt.source === frame.contentWindow &&
         evt.data.type === 'availability-result') {
       expect_feature_available(evt.data, feature_description);
       document.body.removeChild(frame);
-      window.removeEventListener('message', handler);
       test.done();
     }
   }));
