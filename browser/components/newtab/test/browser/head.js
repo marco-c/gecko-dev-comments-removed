@@ -69,6 +69,16 @@ async function setTestTopSites() {
 }
 
 
+async function setAboutWelcomePref(value) {
+  return pushPrefs(["browser.aboutwelcome.enabled", value]);
+}
+
+
+async function setProton(value = false) {
+  return pushPrefs(["browser.proton.enabled", value]);
+}
+
+
 async function clearHistoryAndBookmarks() {
   await PlacesUtils.bookmarks.eraseEverything();
   await PlacesUtils.history.clear();

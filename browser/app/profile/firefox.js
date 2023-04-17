@@ -1480,7 +1480,6 @@ pref("browser.aboutwelcome.enabled", true);
 
 pref("browser.aboutwelcome.screens", "");
 pref("browser.aboutwelcome.skipFocus", false);
-pref("browser.aboutwelcome.design", "");
 
 
 pref("browser.messaging-system.whatsNewPanel.enabled", true);
