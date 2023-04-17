@@ -222,7 +222,10 @@ class PrevWordBreakClassWalker {
   }
 
   bool IsStartOfGroup() {
-    PrevChar();
+    if (!PrevChar()) {
+      
+      return true;
+    }
     WordBreakClass curClass = GetClass(mText.CharAt(mOffset));
     
     ++mOffset;
@@ -234,6 +237,10 @@ class PrevWordBreakClassWalker {
     if (mOffset > 0) {
       --mOffset;
       return true;
+    }
+    if (!mAcc) {
+      
+      return false;
     }
     mAcc = PrevLeaf(mAcc);
     if (!mAcc) {
