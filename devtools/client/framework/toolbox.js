@@ -844,8 +844,12 @@ Toolbox.prototype = {
       this._mountReactComponent();
       this._buildDockOptions();
       this._buildTabs();
+
+      
       this._applyCacheSettings();
       this._applyServiceWorkersTestingSettings();
+      this._applyNewPerfPanelEnabled();
+
       this._addWindowListeners();
       this._addChromeEventHandlerEvents();
 
@@ -2093,6 +2097,23 @@ Toolbox.prototype = {
     const serviceWorkersTestingEnabled = Services.prefs.getBoolPref(pref);
     this.commands.targetConfigurationCommand.updateConfiguration({
       serviceWorkersTestingEnabled,
+    });
+  },
+
+  
+
+
+
+
+
+
+
+  _applyNewPerfPanelEnabled: function() {
+    this.commands.targetConfigurationCommand.updateConfiguration({
+      isNewPerfPanelEnabled: Services.prefs.getBoolPref(
+        "devtools.performance.new-panel-enabled",
+        false
+      ),
     });
   },
 
