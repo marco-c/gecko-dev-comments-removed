@@ -444,9 +444,7 @@ async function prepareContentForReact(content) {
 
   
   if (AppConstants.isPlatformAndVersionAtMost("win", "6.1")) {
-    removeScreens(screen =>
-      ["theme", "colorway"].includes(screen.content?.tiles?.type)
-    );
+    removeScreens(screen => ["theme"].includes(screen.content?.tiles?.type));
   }
 
   
