@@ -606,4 +606,13 @@ RefPtr<T> MakeRefPtr(Args&&... aArgs) {
 
 }  
 
+
+
+
+
+
+
+template <typename T>
+RefPtr(already_AddRefed<T>) -> RefPtr<T>;
+
 #endif 
