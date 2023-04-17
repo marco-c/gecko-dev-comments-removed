@@ -114,7 +114,6 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  AboutPagesUtils: "resource://gre/modules/AboutPagesUtils.jsm",
   KeywordUtils: "resource://gre/modules/KeywordUtils.jsm",
   ObjectUtils: "resource://gre/modules/ObjectUtils.jsm",
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
@@ -802,8 +801,6 @@ Search.prototype = {
       }
     }
 
-    this._matchAboutPages();
-
     
     
     let count =
@@ -823,27 +820,6 @@ Search.prototype = {
     }
 
     this._matchPreloadedSites();
-  },
-
-  _shouldMatchAboutPages() {
-    
-    
-    return this._strippedPrefix == "about:" && this._searchString;
-  },
-
-  _matchAboutPages() {
-    if (!this._shouldMatchAboutPages()) {
-      return;
-    }
-    for (const url of AboutPagesUtils.visibleAboutUrls) {
-      if (url.startsWith(`about:${this._searchString}`)) {
-        this._addMatch({
-          value: url,
-          comment: url,
-          frecency: FRECENCY_DEFAULT,
-        });
-      }
-    }
   },
 
   async _checkPreloadedSitesExpiry() {

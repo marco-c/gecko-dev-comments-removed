@@ -46,8 +46,6 @@ class ProviderAboutPages extends UrlbarProvider {
 
 
   isActive(queryContext) {
-    return false;
-    
     return (
       queryContext.trimmedSearchString.toLowerCase().startsWith("about:") &&
       queryContext.trimmedSearchString.length > 6
