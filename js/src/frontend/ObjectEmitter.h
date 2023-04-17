@@ -145,6 +145,26 @@ class MOZ_STACK_CLASS PropertyEmitter {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   enum class PropertyState {
     
     Start,
@@ -154,6 +174,12 @@ class MOZ_STACK_CLASS PropertyEmitter {
 
     
     InitHomeObj,
+
+    
+    PrivateMethodValue,
+
+    
+    InitHomeObjForPrivateMethod,
 
     
     IndexKey,
@@ -214,6 +240,8 @@ class MOZ_STACK_CLASS PropertyEmitter {
   [[nodiscard]] bool prepareForPropValue(const mozilla::Maybe<uint32_t>& keyPos,
                                          Kind kind = Kind::Prototype);
 
+  [[nodiscard]] bool prepareForPrivateMethod();
+
   
   
   
@@ -238,6 +266,8 @@ class MOZ_STACK_CLASS PropertyEmitter {
                               TaggedParserAtomIndex key);
 
   [[nodiscard]] bool emitInitIndexOrComputed(AccessorType accessorType);
+
+  [[nodiscard]] bool skipInit();
 
  private:
   [[nodiscard]] MOZ_ALWAYS_INLINE bool prepareForProp(

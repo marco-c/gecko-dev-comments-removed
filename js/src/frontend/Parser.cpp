@@ -761,10 +761,12 @@ bool GeneralParser<ParseHandler, Unit>::noteDeclaredName(
 template <class ParseHandler, typename Unit>
 bool GeneralParser<ParseHandler, Unit>::noteDeclaredPrivateName(
     Node nameNode, TaggedParserAtomIndex name, PropertyType propType,
-    TokenPos pos) {
+    FieldPlacement placement, TokenPos pos) {
   ParseContext::Scope* scope = pc_->innermostScope();
   AddDeclaredNamePtr p = scope->lookupDeclaredNameForAdd(name);
 
+  DeclarationKind declKind = DeclarationKind::PrivateName;
+  ClosedOver closedOver = ClosedOver::No;
   PrivateNameKind kind;
   switch (propType) {
     case PropertyType::Field:
@@ -774,6 +776,13 @@ bool GeneralParser<ParseHandler, Unit>::noteDeclaredPrivateName(
     case PropertyType::GeneratorMethod:
     case PropertyType::AsyncMethod:
     case PropertyType::AsyncGeneratorMethod:
+      if (placement == FieldPlacement::Instance) {
+        
+        
+        
+        declKind = DeclarationKind::PrivateMethod;
+        closedOver = ClosedOver::Yes;
+      }
       kind = PrivateNameKind::Method;
       break;
     case PropertyType::Getter:
@@ -801,8 +810,7 @@ bool GeneralParser<ParseHandler, Unit>::noteDeclaredPrivateName(
     return false;
   }
 
-  if (!scope->addDeclaredName(pc_, p, name, DeclarationKind::PrivateName,
-                              pos.begin)) {
+  if (!scope->addDeclaredName(pc_, p, name, declKind, pos.begin, closedOver)) {
     return false;
   }
   scope->lookupDeclaredName(name)->value()->setPrivateNameKind(kind);
@@ -7525,7 +7533,10 @@ bool GeneralParser<ParseHandler, Unit>::classMember(
       }
 
       auto privateName = propAtom;
-      if (!noteDeclaredPrivateName(propName, privateName, propType, pos())) {
+      if (!noteDeclaredPrivateName(
+              propName, privateName, propType,
+              isStatic ? FieldPlacement::Static : FieldPlacement::Instance,
+              pos())) {
         return false;
       }
     }
@@ -7668,7 +7679,10 @@ bool GeneralParser<ParseHandler, Unit>::classMember(
     }
 
     TaggedParserAtomIndex privateName = propAtom;
-    if (!noteDeclaredPrivateName(propName, privateName, propType, pos())) {
+    if (!noteDeclaredPrivateName(
+            propName, privateName, propType,
+            isStatic ? FieldPlacement::Static : FieldPlacement::Instance,
+            pos())) {
       return false;
     }
 
@@ -7677,50 +7691,40 @@ bool GeneralParser<ParseHandler, Unit>::classMember(
     
     
     if (!isStatic) {
-      classInitializedMembers.privateMethods++;
+      if (atype == AccessorType::Getter || atype == AccessorType::Setter) {
+        classInitializedMembers.privateAccessors++;
 
-      
-      
-      StringBuffer storedMethodName(cx_);
-      if (!storedMethodName.append(this->parserAtoms(), propAtom)) {
-        return false;
-      }
-      switch (atype) {
-        case AccessorType::None:
-          if (!storedMethodName.append(".method")) {
-            return false;
-          }
-          break;
-        case AccessorType::Getter:
-          if (!storedMethodName.append(".getter")) {
-            return false;
-          }
-          break;
-        case AccessorType::Setter:
-          if (!storedMethodName.append(".setter")) {
-            return false;
-          }
-          break;
-        default:
-          MOZ_CRASH("Invalid private method accessor type");
-      }
-      auto storedMethodProp =
-          storedMethodName.finishParserAtom(this->parserAtoms());
-      if (!storedMethodProp) {
-        return false;
-      }
-      if (!noteDeclaredName(storedMethodProp, DeclarationKind::Synthetic,
-                            pos())) {
-        return false;
-      }
+        
+        
+        StringBuffer storedMethodName(cx_);
+        if (!storedMethodName.append(this->parserAtoms(), propAtom)) {
+          return false;
+        }
+        if (!storedMethodName.append(
+                atype == AccessorType::Getter ? ".getter" : ".setter")) {
+          return false;
+        }
+        auto storedMethodProp =
+            storedMethodName.finishParserAtom(this->parserAtoms());
+        if (!storedMethodProp) {
+          return false;
+        }
+        if (!noteDeclaredName(storedMethodProp, DeclarationKind::Synthetic,
+                              pos())) {
+          return false;
+        }
 
-      TokenPos propNamePos(propNameOffset, pos().end);
-      auto initializerNode =
-          privateMethodInitializer(propNamePos, propAtom, storedMethodProp);
-      if (!initializerNode) {
-        return false;
+        TokenPos propNamePos(propNameOffset, pos().end);
+        auto initializerNode =
+            privateMethodInitializer(propNamePos, propAtom, storedMethodProp);
+        if (!initializerNode) {
+          return false;
+        }
+        initializerIfPrivate = Some(initializerNode);
+      } else {
+        MOZ_ASSERT(atype == AccessorType::None);
+        classInitializedMembers.privateMethods++;
       }
-      initializerIfPrivate = Some(initializerNode);
     }
   }
 
@@ -7799,7 +7803,7 @@ bool GeneralParser<ParseHandler, Unit>::finishClassConstructor(
   
   ctorbox->setCtorToStringEnd(classEndOffset);
 
-  size_t numMemberInitializers = classInitializedMembers.privateMethods +
+  size_t numMemberInitializers = classInitializedMembers.privateAccessors +
                                  classInitializedMembers.instanceFields;
   bool hasPrivateBrand = classInitializedMembers.hasPrivateBrand();
   if (hasPrivateBrand || numMemberInitializers > 0) {
@@ -7920,7 +7924,9 @@ GeneralParser<ParseHandler, Unit>::classDefinition(
         }
       }
 
-      if (classInitializedMembers.privateMethods > 0) {
+      if (classInitializedMembers.privateMethods +
+              classInitializedMembers.privateAccessors >
+          0) {
         
         
         
