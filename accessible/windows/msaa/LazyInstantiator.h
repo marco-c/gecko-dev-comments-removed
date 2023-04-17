@@ -19,7 +19,7 @@ class nsIFile;
 namespace mozilla {
 namespace a11y {
 
-class RootAccessibleWrap;
+class MsaaRootAccessible;
 
 
 
@@ -102,7 +102,7 @@ class LazyInstantiator final : public IAccessible, public IServiceProvider {
 
   HRESULT ResolveDispatch();
 
-  RootAccessibleWrap* ResolveRootAccWrap();
+  MsaaRootAccessible* ResolveMsaaRoot();
   void TransplantRefCnt();
   void ClearProp();
 
@@ -119,7 +119,7 @@ class LazyInstantiator final : public IAccessible, public IServiceProvider {
 
 
 
-  RootAccessibleWrap* mWeakRootAccWrap;
+  MsaaRootAccessible* mWeakMsaaRoot;
   IAccessible* mWeakAccessible;
   IDispatch* mWeakDispatch;
 };
