@@ -156,6 +156,23 @@ static void ScheduleTimedOut(nsITimer* aTimer, void* aClosure) {
   runnable->Schedule(true);
 }
 
+void IdleTaskRunner::ScheduleAfterDelay(TimeDuration aDelay) {
+  if (!mScheduleTimer) {
+    mScheduleTimer = NS_NewTimer();
+    if (!mScheduleTimer) {
+      return;
+    }
+  } else {
+    mScheduleTimer->Cancel();
+  }
+
+  mScheduleTimer->InitWithNamedFuncCallback(
+      ScheduleTimedOut, this,
+      static_cast<unsigned long>(aDelay.ToMilliseconds()),
+      nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY, mName);
+  return;
+}
+
 void IdleTaskRunner::Schedule(bool aAllowIdleDispatch) {
   if (!mCallback) {
     return;
@@ -169,6 +186,14 @@ void IdleTaskRunner::Schedule(bool aAllowIdleDispatch) {
   mDeadline = TimeStamp();
 
   TimeStamp now = TimeStamp::Now();
+  
+  if (now < mStartTime) {
+    
+    
+    ScheduleAfterDelay(mStartTime - now + TimeDuration::FromMilliseconds(1));
+    return;
+  }
+
   if (nsRefreshDriver::IsRegularRateTimerTicking()) {
     if (!mTask) {
       
@@ -178,37 +203,23 @@ void IdleTaskRunner::Schedule(bool aAllowIdleDispatch) {
     }
     
     SetTimerInternal(mMaxDelay);
-  } else {
-    if (aAllowIdleDispatch) {
-      SetTimerInternal(mMaxDelay);
-      if (!mTask) {
-        
-        
-        mTask = new IdleTaskRunnerTask(this);
-        RefPtr<Task> task(mTask);
-        TaskController::Get()->AddTask(task.forget());
-      }
-    } else {
-      if (!mScheduleTimer) {
-        mScheduleTimer = NS_NewTimer();
-        if (!mScheduleTimer) {
-          return;
-        }
-      } else {
-        mScheduleTimer->Cancel();
-      }
-      
-      
-      uint32_t waitToSchedule = 16; 
-      if (now < mStartTime) {
-        
-        
-        waitToSchedule = (mStartTime - now).ToMilliseconds() + 1;
-      }
-      mScheduleTimer->InitWithNamedFuncCallback(
-          ScheduleTimedOut, this, waitToSchedule,
-          nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY, mName);
-    }
+    return;
+  }
+
+  
+  
+  if (!aAllowIdleDispatch) {
+    ScheduleAfterDelay(TimeDuration::FromMilliseconds(16));
+    return;
+  }
+
+  SetTimerInternal(mMaxDelay);
+  if (!mTask) {
+    
+    
+    mTask = new IdleTaskRunnerTask(this);
+    RefPtr<Task> task(mTask);
+    TaskController::Get()->AddTask(task.forget());
   }
 }
 
