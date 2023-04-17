@@ -22,7 +22,6 @@
 #include <vector>
 
 #include "SandboxPolicyContent.h"
-#include "SandboxPolicyFlash.h"
 #include "SandboxPolicyGMP.h"
 #include "SandboxPolicyRDD.h"
 #include "SandboxPolicySocket.h"
@@ -279,57 +278,9 @@ bool StartMacSandbox(MacSandboxInfo const& aInfo, std::string& aErrorMessage) {
   params.push_back(ProcessIsRosettaTranslated() ? "TRUE" : "FALSE");
 
   
-  
-  std::string flashTempDir, flashPath;
-
-  
-  
   std::string userCacheDir;
 
-  if (aInfo.type == MacSandboxType_Flash) {
-    profile = SandboxPolicyFlash;
-
-    params.push_back("SHOULD_LOG");
-    params.push_back(aInfo.shouldLog ? "TRUE" : "FALSE");
-
-    params.push_back("SANDBOX_LEVEL_1");
-    params.push_back(aInfo.level == 1 ? "TRUE" : "FALSE");
-    params.push_back("SANDBOX_LEVEL_2");
-    params.push_back(aInfo.level == 2 ? "TRUE" : "FALSE");
-
-    params.push_back("MAC_OS_VERSION");
-    params.push_back(combinedVersion.c_str());
-
-    params.push_back("HOME_PATH");
-    params.push_back(getenv("HOME"));
-
-    params.push_back("PLUGIN_BINARY_PATH");
-    if (!GetRealPath(flashPath, aInfo.pluginBinaryPath.c_str())) {
-      return false;
-    }
-    params.push_back(flashPath.c_str());
-
-    
-    params.push_back("DARWIN_USER_CACHE_DIR");
-    char confStrBuf[PATH_MAX];
-    if (!confstr(_CS_DARWIN_USER_CACHE_DIR, confStrBuf, sizeof(confStrBuf))) {
-      return false;
-    }
-    if (!GetRealPath(userCacheDir, confStrBuf)) {
-      return false;
-    }
-    params.push_back(userCacheDir.c_str());
-
-    
-    params.push_back("DARWIN_USER_TEMP_DIR");
-    if (!confstr(_CS_DARWIN_USER_TEMP_DIR, confStrBuf, sizeof(confStrBuf))) {
-      return false;
-    }
-    if (!GetRealPath(flashTempDir, confStrBuf)) {
-      return false;
-    }
-    params.push_back(flashTempDir.c_str());
-  } else if (aInfo.type == MacSandboxType_Utility) {
+  if (aInfo.type == MacSandboxType_Utility) {
     profile = const_cast<char*>(SandboxPolicyUtility);
     params.push_back("SHOULD_LOG");
     params.push_back(aInfo.shouldLog ? "TRUE" : "FALSE");
