@@ -336,6 +336,9 @@ void nsViewManager::Refresh(nsView* aView,
         
         
         
+        
+        
+        
         if (!presShell->Composite(aView)) {
           presShell->Paint(aView, damageRegion, PaintFlags::PaintComposite);
         }

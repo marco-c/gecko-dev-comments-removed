@@ -2672,12 +2672,12 @@ mozilla::ipc::IPCResult BrowserChild::RecvRenderLayers(
     MOZ_ASSERT(mPuppetWidget);
     RefPtr<LayerManager> lm =
         mPuppetWidget->GetWindowRenderer()->AsLayerManager();
-    MOZ_ASSERT(lm);
-
-    
-    
-    
-    lm->SetLayersObserverEpoch(mLayersObserverEpoch);
+    if (lm) {
+      
+      
+      
+      lm->SetLayersObserverEpoch(mLayersObserverEpoch);
+    }
   }
 
   mRenderLayers = aEnabled;
@@ -2855,8 +2855,9 @@ void BrowserChild::InitRenderingState(
     InitAPZState();
     RefPtr<LayerManager> lm =
         mPuppetWidget->GetWindowRenderer()->AsLayerManager();
-    MOZ_ASSERT(lm);
-    lm->SetLayersObserverEpoch(mLayersObserverEpoch);
+    if (lm) {
+      lm->SetLayersObserverEpoch(mLayersObserverEpoch);
+    }
   } else {
     NS_WARNING("Fallback to BasicLayerManager");
     mLayersConnected = Some(false);
@@ -3154,7 +3155,9 @@ void BrowserChild::DidComposite(mozilla::layers::TransactionId aTransactionId,
       mPuppetWidget->GetWindowRenderer()->AsLayerManager();
   MOZ_ASSERT(lm);
 
-  lm->DidComposite(aTransactionId, aCompositeStart, aCompositeEnd);
+  if (lm) {
+    lm->DidComposite(aTransactionId, aCompositeStart, aCompositeEnd);
+  }
 }
 
 void BrowserChild::DidRequestComposite(const TimeStamp& aCompositeReqStart,
@@ -3185,9 +3188,9 @@ void BrowserChild::ClearCachedResources() {
   MOZ_ASSERT(mPuppetWidget);
   RefPtr<LayerManager> lm =
       mPuppetWidget->GetWindowRenderer()->AsLayerManager();
-  MOZ_ASSERT(lm);
-
-  lm->ClearCachedResources();
+  if (lm) {
+    lm->ClearCachedResources();
+  }
 
   if (nsCOMPtr<Document> document = GetTopLevelDocument()) {
     nsPresContext* presContext = document->GetPresContext();
@@ -3201,9 +3204,9 @@ void BrowserChild::InvalidateLayers() {
   MOZ_ASSERT(mPuppetWidget);
   RefPtr<LayerManager> lm =
       mPuppetWidget->GetWindowRenderer()->AsLayerManager();
-  MOZ_ASSERT(lm);
-
-  FrameLayerBuilder::InvalidateAllLayers(lm);
+  if (lm) {
+    FrameLayerBuilder::InvalidateAllLayers(lm);
+  }
 }
 
 void BrowserChild::SchedulePaint() {
@@ -3259,8 +3262,9 @@ void BrowserChild::ReinitRendering() {
   InitAPZState();
   RefPtr<LayerManager> lm =
       mPuppetWidget->GetWindowRenderer()->AsLayerManager();
-  MOZ_ASSERT(lm);
-  lm->SetLayersObserverEpoch(mLayersObserverEpoch);
+  if (lm) {
+    lm->SetLayersObserverEpoch(mLayersObserverEpoch);
+  }
 
   nsCOMPtr<Document> doc(GetTopLevelDocument());
   doc->NotifyLayerManagerRecreated();
@@ -3271,10 +3275,10 @@ void BrowserChild::ReinitRenderingForDeviceReset() {
 
   RefPtr<LayerManager> lm =
       mPuppetWidget->GetWindowRenderer()->AsLayerManager();
-  if (WebRenderLayerManager* wlm = lm->AsWebRenderLayerManager()) {
-    wlm->DoDestroy( true);
-  } else if (ClientLayerManager* clm = lm->AsClientLayerManager()) {
-    if (ShadowLayerForwarder* fwd = clm->AsShadowForwarder()) {
+  if (lm && lm->AsWebRenderLayerManager()) {
+    lm->AsWebRenderLayerManager()->DoDestroy( true);
+  } else if (lm && lm->AsClientLayerManager()) {
+    if (ShadowLayerForwarder* fwd = lm->AsShadowForwarder()) {
       
       
       
@@ -3312,8 +3316,9 @@ void BrowserChild::NotifyJankedAnimations(
   MOZ_ASSERT(mPuppetWidget);
   RefPtr<LayerManager> lm =
       mPuppetWidget->GetWindowRenderer()->AsLayerManager();
-  MOZ_ASSERT(lm);
-  lm->UpdatePartialPrerenderedAnimations(aJankedAnimations);
+  if (lm) {
+    lm->UpdatePartialPrerenderedAnimations(aJankedAnimations);
+  }
 }
 
 mozilla::ipc::IPCResult BrowserChild::RecvRequestNotifyAfterRemotePaint() {
