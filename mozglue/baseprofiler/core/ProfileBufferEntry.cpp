@@ -817,6 +817,11 @@ void ProfileBuffer::StreamMarkersToJSON(SpliceableJSONWriter& aWriter,
                 ProfilerBacktrace backtrace("", &aChunkedBuffer);
                 backtrace.StreamJSON(aWriter, TimeStamp::ProcessCreation(),
                                      aUniqueStacks);
+              },
+              
+              [&](mozilla::base_profiler_markers_detail::Streaming::
+                      DeserializerTag) {
+                MOZ_ASSERT_UNREACHABLE("No Rust markers in mozglue.");
               });
     }
 

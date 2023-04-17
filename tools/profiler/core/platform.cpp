@@ -38,6 +38,7 @@
 #include "ProfilerCodeAddressService.h"
 #include "ProfilerIOInterposeObserver.h"
 #include "ProfilerParent.h"
+#include "ProfilerRustBindings.h"
 #include "shared-libraries.h"
 #include "VTuneProfiler.h"
 
@@ -2474,6 +2475,9 @@ static void StreamMarkerSchema(SpliceableJSONWriter& aWriter) {
       markerTypeFunctions.mMarkerSchemaFunction().Stream(aWriter, name);
     }
   }
+
+  
+  profiler::ffi::gecko_profiler_stream_marker_schemas(&aWriter);
 }
 
 

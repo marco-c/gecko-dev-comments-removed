@@ -1,0 +1,12 @@
+
+
+
+
+#ifndef ProfilerRustBindings_h
+#define ProfilerRustBindings_h
+
+#include "mozilla/profiler_ffi_generated.h"
+
+
+
+#endif  
