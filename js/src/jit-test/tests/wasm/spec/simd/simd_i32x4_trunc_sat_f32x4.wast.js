@@ -29,27 +29,7 @@ assert_return(
 
 
 assert_return(
-  () =>
-    invoke($0, `i32x4.trunc_sat_f32x4_s`, [
-      bytes("v128", [
-        0x0,
-        0x0,
-        0x0,
-        0x80,
-        0x0,
-        0x0,
-        0x0,
-        0x80,
-        0x0,
-        0x0,
-        0x0,
-        0x80,
-        0x0,
-        0x0,
-        0x0,
-        0x80,
-      ]),
-    ]),
+  () => invoke($0, `i32x4.trunc_sat_f32x4_s`, [f32x4([-0, -0, -0, -0])]),
   [i32x4([0x0, 0x0, 0x0, 0x0])],
 );
 
@@ -567,27 +547,7 @@ assert_return(
 
 
 assert_return(
-  () =>
-    invoke($0, `i32x4.trunc_sat_f32x4_u`, [
-      bytes("v128", [
-        0x0,
-        0x0,
-        0x0,
-        0x80,
-        0x0,
-        0x0,
-        0x0,
-        0x80,
-        0x0,
-        0x0,
-        0x0,
-        0x80,
-        0x0,
-        0x0,
-        0x0,
-        0x80,
-      ]),
-    ]),
+  () => invoke($0, `i32x4.trunc_sat_f32x4_u`, [f32x4([-0, -0, -0, -0])]),
   [i32x4([0x0, 0x0, 0x0, 0x0])],
 );
 

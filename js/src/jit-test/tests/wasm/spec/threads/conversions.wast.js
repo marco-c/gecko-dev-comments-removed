@@ -160,10 +160,9 @@ assert_return(() => invoke($0, `i32.trunc_f32_s`, [value("f32", 0)]), [
 ]);
 
 
-assert_return(
-  () => invoke($0, `i32.trunc_f32_s`, [bytes("f32", [0x0, 0x0, 0x0, 0x80])]),
-  [value("i32", 0)],
-);
+assert_return(() => invoke($0, `i32.trunc_f32_s`, [value("f32", -0)]), [
+  value("i32", 0),
+]);
 
 
 assert_return(
@@ -288,10 +287,9 @@ assert_return(() => invoke($0, `i32.trunc_f32_u`, [value("f32", 0)]), [
 ]);
 
 
-assert_return(
-  () => invoke($0, `i32.trunc_f32_u`, [bytes("f32", [0x0, 0x0, 0x0, 0x80])]),
-  [value("i32", 0)],
-);
+assert_return(() => invoke($0, `i32.trunc_f32_u`, [value("f32", -0)]), [
+  value("i32", 0),
+]);
 
 
 assert_return(
@@ -722,10 +720,9 @@ assert_return(() => invoke($0, `i64.trunc_f32_s`, [value("f32", 0)]), [
 ]);
 
 
-assert_return(
-  () => invoke($0, `i64.trunc_f32_s`, [bytes("f32", [0x0, 0x0, 0x0, 0x80])]),
-  [value("i64", 0n)],
-);
+assert_return(() => invoke($0, `i64.trunc_f32_s`, [value("f32", -0)]), [
+  value("i64", 0n),
+]);
 
 
 assert_return(
@@ -862,10 +859,9 @@ assert_return(() => invoke($0, `i64.trunc_f32_u`, [value("f32", 0)]), [
 ]);
 
 
-assert_return(
-  () => invoke($0, `i64.trunc_f32_u`, [bytes("f32", [0x0, 0x0, 0x0, 0x80])]),
-  [value("i64", 0n)],
-);
+assert_return(() => invoke($0, `i64.trunc_f32_u`, [value("f32", -0)]), [
+  value("i64", 0n),
+]);
 
 
 assert_return(
@@ -1661,10 +1657,9 @@ assert_return(() => invoke($0, `f64.promote_f32`, [value("f32", 0)]), [
 ]);
 
 
-assert_return(
-  () => invoke($0, `f64.promote_f32`, [bytes("f32", [0x0, 0x0, 0x0, 0x80])]),
-  [value("f64", -0)],
-);
+assert_return(() => invoke($0, `f64.promote_f32`, [value("f32", -0)]), [
+  value("f64", -0),
+]);
 
 
 assert_return(
@@ -1777,7 +1772,7 @@ assert_return(() => invoke($0, `f32.demote_f64`, [value("f64", 0)]), [
 
 
 assert_return(() => invoke($0, `f32.demote_f64`, [value("f64", -0)]), [
-  bytes("f32", [0x0, 0x0, 0x0, 0x80]),
+  value("f32", -0),
 ]);
 
 
@@ -1801,7 +1796,7 @@ assert_return(
         -0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005,
       ),
     ]),
-  [bytes("f32", [0x0, 0x0, 0x0, 0x80])],
+  [value("f32", -0)],
 );
 
 
@@ -2155,7 +2150,7 @@ assert_return(
         -0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000022250738585072014,
       ),
     ]),
-  [bytes("f32", [0x0, 0x0, 0x0, 0x80])],
+  [value("f32", -0)],
 );
 
 
@@ -2179,7 +2174,7 @@ assert_return(
         -0.0000000000000000000000000000000000000000000007006492321624085,
       ),
     ]),
-  [bytes("f32", [0x0, 0x0, 0x0, 0x80])],
+  [value("f32", -0)],
 );
 
 
@@ -2211,7 +2206,7 @@ assert_return(() => invoke($0, `f32.reinterpret_i32`, [0]), [value("f32", 0)]);
 
 
 assert_return(() => invoke($0, `f32.reinterpret_i32`, [-2147483648]), [
-  bytes("f32", [0x0, 0x0, 0x0, 0x80]),
+  value("f32", -0),
 ]);
 
 
@@ -2339,11 +2334,9 @@ assert_return(() => invoke($0, `i32.reinterpret_f32`, [value("f32", 0)]), [
 ]);
 
 
-assert_return(
-  () =>
-    invoke($0, `i32.reinterpret_f32`, [bytes("f32", [0x0, 0x0, 0x0, 0x80])]),
-  [value("i32", -2147483648)],
-);
+assert_return(() => invoke($0, `i32.reinterpret_f32`, [value("f32", -0)]), [
+  value("i32", -2147483648),
+]);
 
 
 assert_return(
