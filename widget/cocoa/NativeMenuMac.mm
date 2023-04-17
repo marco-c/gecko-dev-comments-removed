@@ -315,8 +315,15 @@ void NativeMenuMac::ActivateItem(dom::Element* aItemElement, Modifiers aModifier
     return;
   }
 
-  mMenu->ActivateItemAndClose(std::move(item->as<RefPtr<nsMenuItemX>>()),
-                              ConvertModifierFlags(aModifiers), aButton);
+  menu->ActivateItemAfterClosing(std::move(item->as<RefPtr<nsMenuItemX>>()),
+                                 ConvertModifierFlags(aModifiers), aButton);
+
+  
+  
+  
+  
+  
+  [mMenu->NativeNSMenu() cancelTrackingWithoutAnimation];
 }
 
 void NativeMenuMac::OpenSubmenu(dom::Element* aMenuElement) {

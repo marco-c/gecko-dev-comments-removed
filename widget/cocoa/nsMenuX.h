@@ -99,8 +99,8 @@ class nsMenuX final : public nsMenuParentX,
   mozilla::Maybe<MenuChild> GetItemForElement(mozilla::dom::Element* aMenuChildElement);
 
   
-  void ActivateItemAndClose(RefPtr<nsMenuItemX>&& aItem, NSEventModifierFlags aModifiers,
-                            int16_t aButton);
+  void ActivateItemAfterClosing(RefPtr<nsMenuItemX>&& aItem, NSEventModifierFlags aModifiers,
+                                int16_t aButton);
 
   bool IsOpenForGecko() const { return mIsOpenForGecko; }
 

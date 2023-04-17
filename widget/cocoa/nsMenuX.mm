@@ -567,8 +567,8 @@ void nsMenuX::MenuClosedAsync() {
   }
 }
 
-void nsMenuX::ActivateItemAndClose(RefPtr<nsMenuItemX>&& aItem, NSEventModifierFlags aModifiers,
-                                   int16_t aButton) {
+void nsMenuX::ActivateItemAfterClosing(RefPtr<nsMenuItemX>&& aItem, NSEventModifierFlags aModifiers,
+                                       int16_t aButton) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   
@@ -597,15 +597,6 @@ void nsMenuX::ActivateItemAndClose(RefPtr<nsMenuItemX>&& aItem, NSEventModifierF
   RefPtr<Runnable> doCommandAsync = new DoCommandRunnable(std::move(aItem), aModifiers, aButton);
   mPendingCommandRunnables.AppendElement(doCommandAsync);
   NS_DispatchToCurrentThread(doCommandAsync);
-
-  if (mIsOpen) {
-    
-    
-    [mNativeMenu cancelTrackingWithoutAnimation];
-  }
-
-  
-  
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
