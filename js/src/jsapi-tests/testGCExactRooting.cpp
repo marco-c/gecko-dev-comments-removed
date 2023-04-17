@@ -123,11 +123,11 @@ BEGIN_TEST(testGCRootedStaticStructInternalStackStorageAugmented) {
 
   JS::Rooted<Value> rv(cx);
 
-  CHECK(r1.constructor() == 101);  
-  CHECK(r2.constructor() == 2);    
-  CHECK(r3.constructor() == 103);  
-  CHECK(r4.constructor() == 3);    
-  CHECK(r5.constructor() == 4);    
+  CHECK_EQUAL(r1.constructor(), 101);  
+  CHECK_EQUAL(r2.constructor(), 2);    
+  CHECK_EQUAL(r3.constructor(), 103);  
+  CHECK_EQUAL(r4.constructor(), 3);    
+  CHECK_EQUAL(r5.constructor(), 4);    
 
   
   JS::Rooted<MyNonCopyableContainer> nc1(cx);
@@ -137,10 +137,11 @@ BEGIN_TEST(testGCRootedStaticStructInternalStackStorageAugmented) {
   JS::Rooted<MyNonCopyableContainer> nc4(cx, cx);
   JS::Rooted<MyNonCopyableContainer> nc5(cx, cx, cx, cx);
 
-  CHECK(nc1.constructor() == 1);  
-  CHECK(nc2.constructor() == 2);  
-  CHECK(nc4.constructor() == 3);  
-  CHECK(nc5.constructor() == 4);  
+  CHECK_EQUAL(nc1.constructor(), 1);  
+  CHECK_EQUAL(nc2.constructor(), 2);  
+  CHECK_EQUAL(nc4.constructor(), 3);  
+  CHECK_EQUAL(nc5.constructor(),
+              4);  
 
   JS::Rooted<MyContainer> container(cx);
   container.obj() = JS_NewObject(cx, nullptr);
@@ -161,6 +162,30 @@ BEGIN_TEST(testGCRootedStaticStructInternalStackStorageAugmented) {
 
     
     JS::PersistentRooted<MyContainer> heap(cx, container);
+
+    
+    JS::PersistentRooted<MyContainer> cp1(cx);
+    JS::PersistentRooted<MyContainer> cp2(cx, 7.8);
+    JS::PersistentRooted<MyContainer> cp3(cx, cx);
+    JS::PersistentRooted<MyContainer> cp4(cx, cx, cx, cx);
+
+    CHECK_EQUAL(cp1.constructor(), 101);  
+    CHECK_EQUAL(cp2.constructor(), 2);    
+    CHECK_EQUAL(cp3.constructor(), 3);    
+    CHECK_EQUAL(cp4.constructor(), 4);    
+
+    
+    JS::PersistentRooted<MyNonCopyableContainer> ncp1(cx);
+    JS::PersistentRooted<MyNonCopyableContainer> ncp2(cx, 7.8);
+
+    
+    JS::PersistentRooted<MyNonCopyableContainer> ncp3(cx, cx);
+    JS::PersistentRooted<MyNonCopyableContainer> ncp4(cx, cx, cx, cx);
+
+    CHECK_EQUAL(ncp1.constructor(), 1);  
+    CHECK_EQUAL(ncp2.constructor(), 2);  
+    CHECK_EQUAL(ncp3.constructor(), 3);  
+    CHECK_EQUAL(ncp4.constructor(), 4);  
 
     
     container.obj() = nullptr;
