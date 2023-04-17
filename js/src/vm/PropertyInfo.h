@@ -9,6 +9,7 @@
 
 #include "mozilla/Assertions.h"
 
+#include <limits>
 #include <stdint.h>
 
 #include "jstypes.h"
@@ -87,25 +88,50 @@ constexpr PropertyFlags PropertyFlags::defaultDataPropFlags = {
 
 
 
-class PropertyInfo {
+
+
+
+template <typename T>
+class PropertyInfoBase {
+  static_assert(std::is_same_v<T, uint32_t> || std::is_same_v<T, uint16_t>);
+
   static constexpr uint32_t FlagsMask = 0xff;
   static constexpr uint32_t SlotShift = 8;
 
-  uint32_t slotAndFlags_ = 0;
+  T slotAndFlags_ = 0;
 
   static_assert(SHAPE_INVALID_SLOT <= (UINT32_MAX >> SlotShift),
                 "SHAPE_INVALID_SLOT must fit in slotAndFlags_");
   static_assert(SHAPE_MAXIMUM_SLOT <= (UINT32_MAX >> SlotShift),
                 "SHAPE_MAXIMUM_SLOT must fit in slotAndFlags_");
 
+  
+  
+  
+  PropertyInfoBase() = default;
+
+  template <typename U>
+  friend class PropertyInfoBase;
+  template <typename U, size_t Len>
+  friend class mozilla::Array;
+
  public:
-  PropertyInfo(PropertyFlags flags, uint32_t slot)
+  static constexpr size_t MaxSlotNumber =
+      std::numeric_limits<T>::max() >> SlotShift;
+
+  PropertyInfoBase(PropertyFlags flags, uint32_t slot)
       : slotAndFlags_((slot << SlotShift) | flags.toRaw()) {
     MOZ_ASSERT(maybeSlot() == slot);
     MOZ_ASSERT(this->flags() == flags);
   }
 
-  PropertyInfo(const PropertyInfo& other) = default;
+  template <typename U>
+  explicit PropertyInfoBase(PropertyInfoBase<U> other)
+      : slotAndFlags_(other.slotAndFlags_) {
+    
+    
+    MOZ_ASSERT(slotAndFlags_ == other.slotAndFlags_);
+  }
 
   bool isDataProperty() const { return flags().isDataProperty(); }
   bool isCustomDataProperty() const { return flags().isCustomDataProperty(); }
@@ -143,13 +169,21 @@ class PropertyInfo {
     return attrs;
   }
 
-  bool operator==(const PropertyInfo& other) const {
+  T toRaw() const { return slotAndFlags_; }
+
+  bool operator==(const PropertyInfoBase<T>& other) const {
     return slotAndFlags_ == other.slotAndFlags_;
   }
-  bool operator!=(const PropertyInfo& other) const {
+  bool operator!=(const PropertyInfoBase<T>& other) const {
     return !operator==(other);
   }
 };
+
+using PropertyInfo = PropertyInfoBase<uint32_t>;
+using CompactPropertyInfo = PropertyInfoBase<uint16_t>;
+
+static_assert(sizeof(PropertyInfo) == sizeof(uint32_t));
+static_assert(sizeof(CompactPropertyInfo) == sizeof(uint16_t));
 
 class PropertyInfoWithKey : public PropertyInfo {
   PropertyKey key_;
@@ -157,6 +191,9 @@ class PropertyInfoWithKey : public PropertyInfo {
  public:
   PropertyInfoWithKey(PropertyFlags flags, uint32_t slot, PropertyKey key)
       : PropertyInfo(flags, slot), key_(key) {}
+
+  PropertyInfoWithKey(PropertyInfo prop, PropertyKey key)
+      : PropertyInfo(prop), key_(key) {}
 
   PropertyKey key() const { return key_; }
 
