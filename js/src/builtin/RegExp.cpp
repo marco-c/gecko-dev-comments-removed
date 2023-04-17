@@ -1465,7 +1465,11 @@ static bool InterpretDollar(JSLinearString* matched, JSLinearString* string,
       out->init(string, 0, position);
       break;
     case '\'':
-      out->init(string, tailPos, string->length() - tailPos);
+      if (tailPos >= string->length()) {
+        out->initEmpty(matched);
+      } else {
+        out->init(string, tailPos, string->length() - tailPos);
+      }
       break;
   }
 
