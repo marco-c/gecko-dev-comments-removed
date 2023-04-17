@@ -56,21 +56,21 @@ class ProxyReleaseEvent : public mozilla::CancelableRunnable {
 };
 
 template <typename T>
-void ProxyRelease(const char* aName, nsIEventTarget* aTarget,
-                  already_AddRefed<T> aDoomed, bool aAlwaysProxy) {
+nsresult ProxyRelease(const char* aName, nsIEventTarget* aTarget,
+                      already_AddRefed<T> aDoomed, bool aAlwaysProxy) {
   
   RefPtr<T> doomed = aDoomed;
   nsresult rv;
 
   if (!doomed || !aTarget) {
-    return;
+    return NS_ERROR_INVALID_ARG;
   }
 
   if (!aAlwaysProxy) {
     bool onCurrentThread = false;
     rv = aTarget->IsOnCurrentThread(&onCurrentThread);
     if (NS_SUCCEEDED(rv) && onCurrentThread) {
-      return;
+      return NS_OK;
     }
   }
 
@@ -82,14 +82,16 @@ void ProxyRelease(const char* aName, nsIEventTarget* aTarget,
     
     
   }
+  return rv;
 }
 
 template <bool nsISupportsBased>
 struct ProxyReleaseChooser {
   template <typename T>
-  static void ProxyRelease(const char* aName, nsIEventTarget* aTarget,
-                           already_AddRefed<T> aDoomed, bool aAlwaysProxy) {
-    ::detail::ProxyRelease(aName, aTarget, std::move(aDoomed), aAlwaysProxy);
+  static nsresult ProxyRelease(const char* aName, nsIEventTarget* aTarget,
+                               already_AddRefed<T> aDoomed, bool aAlwaysProxy) {
+    return ::detail::ProxyRelease(aName, aTarget, std::move(aDoomed),
+                                  aAlwaysProxy);
   }
 };
 
@@ -98,14 +100,16 @@ struct ProxyReleaseChooser<true> {
   
   
   template <typename T>
-  static void ProxyRelease(const char* aName, nsIEventTarget* aTarget,
-                           already_AddRefed<T> aDoomed, bool aAlwaysProxy) {
-    ProxyReleaseISupports(aName, aTarget, ToSupports(aDoomed.take()),
-                          aAlwaysProxy);
+  static nsresult ProxyRelease(const char* aName, nsIEventTarget* aTarget,
+                               already_AddRefed<T> aDoomed, bool aAlwaysProxy) {
+    return ProxyReleaseISupports(aName, aTarget, ToSupports(aDoomed.take()),
+                                 aAlwaysProxy);
   }
 
-  static void ProxyReleaseISupports(const char* aName, nsIEventTarget* aTarget,
-                                    nsISupports* aDoomed, bool aAlwaysProxy);
+  static nsresult ProxyReleaseISupports(const char* aName,
+                                        nsIEventTarget* aTarget,
+                                        nsISupports* aDoomed,
+                                        bool aAlwaysProxy);
 };
 
 }  
@@ -125,11 +129,18 @@ struct ProxyReleaseChooser<true> {
 
 
 
+
+
+
+
+
+
+
 template <class T>
-inline NS_HIDDEN_(void)
+inline NS_HIDDEN_(nsresult)
     NS_ProxyRelease(const char* aName, nsIEventTarget* aTarget,
                     already_AddRefed<T> aDoomed, bool aAlwaysProxy = false) {
-  ::detail::ProxyReleaseChooser<
+  return ::detail::ProxyReleaseChooser<
       std::is_base_of<nsISupports, T>::value>::ProxyRelease(aName, aTarget,
                                                             std::move(aDoomed),
                                                             aAlwaysProxy);
