@@ -94,7 +94,8 @@ impl super::TypeInner {
             } => {
                 let count = match size {
                     super::ArraySize::Constant(handle) => {
-                        constants[handle].to_array_length().unwrap()
+                        
+                        constants[handle].to_array_length().unwrap_or(1)
                     }
                     
                     super::ArraySize::Dynamic => 1,
@@ -150,6 +151,7 @@ impl super::MathFunction {
             Self::Normalize => 1,
             Self::FaceForward => 3,
             Self::Reflect => 2,
+            Self::Refract => 3,
             
             Self::Sign => 1,
             Self::Fma => 3,
@@ -214,6 +216,30 @@ impl crate::Binding {
         match *self {
             Self::BuiltIn(bi) => Some(bi),
             Self::Location { .. } => None,
+        }
+    }
+}
+
+
+impl PartialEq for crate::ScalarValue {
+    fn eq(&self, other: &Self) -> bool {
+        match (*self, *other) {
+            (Self::Uint(a), Self::Uint(b)) => a == b,
+            (Self::Sint(a), Self::Sint(b)) => a == b,
+            (Self::Float(a), Self::Float(b)) => a.to_bits() == b.to_bits(),
+            (Self::Bool(a), Self::Bool(b)) => a == b,
+            _ => false,
+        }
+    }
+}
+impl Eq for crate::ScalarValue {}
+impl std::hash::Hash for crate::ScalarValue {
+    fn hash<H: std::hash::Hasher>(&self, hasher: &mut H) {
+        match *self {
+            Self::Sint(v) => v.hash(hasher),
+            Self::Uint(v) => v.hash(hasher),
+            Self::Float(v) => v.to_bits().hash(hasher),
+            Self::Bool(v) => v.hash(hasher),
         }
     }
 }

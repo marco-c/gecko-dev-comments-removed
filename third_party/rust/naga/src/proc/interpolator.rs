@@ -36,13 +36,16 @@ impl crate::Module {
         
         
         
-        fn default_binding_or_struct(binding: &mut Option<Binding>,
-                                     ty: Handle<Type>,
-                                     types: &mut Arena<Type>)
-        {
+        fn default_binding_or_struct(
+            binding: &mut Option<Binding>,
+            ty: Handle<Type>,
+            types: &mut Arena<Type>,
+        ) {
             match types.get_mut(ty).inner {
                 
-                TypeInner::Struct { members: ref mut m, .. } => {
+                TypeInner::Struct {
+                    members: ref mut m, ..
+                } => {
                     
                     
                     
@@ -61,7 +64,9 @@ impl crate::Module {
                     
                     
                     match types.get_mut(ty).inner {
-                        TypeInner::Struct { members: ref mut m, .. } => replace(m, members),
+                        TypeInner::Struct {
+                            members: ref mut m, ..
+                        } => replace(m, members),
                         _ => unreachable!("ty must be a struct"),
                     };
                 }
@@ -71,16 +76,29 @@ impl crate::Module {
                 
                 
                 
-                TypeInner::Scalar { kind: ScalarKind::Float, width: 4 } |
-                TypeInner::Vector { kind: ScalarKind::Float, width: 4, .. } => {
+                TypeInner::Scalar {
+                    kind: ScalarKind::Float,
+                    width: 4,
+                }
+                | TypeInner::Vector {
+                    kind: ScalarKind::Float,
+                    width: 4,
+                    ..
+                } => {
                     
                     
                     let binding = binding.as_mut().unwrap();
-                    if let Binding::Location { ref mut interpolation, ref mut sampling, .. } = *binding {
+                    if let Binding::Location {
+                        ref mut interpolation,
+                        ref mut sampling,
+                        ..
+                    } = *binding
+                    {
                         if interpolation.is_none() {
                             *interpolation = Some(crate::Interpolation::Perspective);
                         }
-                        if sampling.is_none() && *interpolation != Some(crate::Interpolation::Flat) {
+                        if sampling.is_none() && *interpolation != Some(crate::Interpolation::Flat)
+                        {
                             *sampling = Some(crate::Sampling::Center);
                         }
                     }
@@ -91,7 +109,12 @@ impl crate::Module {
                     
                     
                     let binding = binding.as_mut().unwrap();
-                    if let Binding::Location { ref mut interpolation, ref mut sampling, .. } = *binding {
+                    if let Binding::Location {
+                        ref mut interpolation,
+                        ref mut sampling,
+                        ..
+                    } = *binding
+                    {
                         *interpolation = Some(crate::Interpolation::Flat);
                         *sampling = None;
                     }

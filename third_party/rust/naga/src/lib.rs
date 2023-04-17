@@ -150,6 +150,7 @@ pub enum BuiltIn {
     BaseInstance,
     BaseVertex,
     ClipDistance,
+    CullDistance,
     InstanceIndex,
     PointSize,
     VertexIndex,
@@ -444,7 +445,7 @@ pub struct Constant {
 }
 
 
-#[derive(Debug, PartialEq, Clone, Copy, PartialOrd)]
+#[derive(Debug, Clone, Copy, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum ScalarValue {
@@ -480,7 +481,7 @@ pub enum Binding {
     Location {
         location: u32,
         interpolation: Option<Interpolation>,
-        sampling: Option<Sampling>
+        sampling: Option<Sampling>,
     },
 }
 
@@ -630,6 +631,7 @@ pub enum MathFunction {
     Normalize,
     FaceForward,
     Reflect,
+    Refract,
     
     Sign,
     Fma,
@@ -680,6 +682,35 @@ pub enum ImageQuery {
 }
 
 
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+pub enum SwizzleComponent {
+    
+    X = 0,
+    
+    Y = 1,
+    
+    Z = 2,
+    
+    W = 3,
+}
+
+bitflags::bitflags! {
+    /// Memory barrier flags.
+    #[cfg_attr(feature = "serialize", derive(Serialize))]
+    #[cfg_attr(feature = "deserialize", derive(Deserialize))]
+    #[derive(Default)]
+    pub struct Barrier: u32 {
+        /// Barrier affects all `StorageClass::Storage` accesses.
+        const STORAGE = 0x1;
+        /// Barrier affects all `StorageClass::WorkGroup` accesses.
+        const WORK_GROUP = 0x2;
+    }
+}
+
+
 
 
 #[derive(Clone, Debug)]
@@ -703,6 +734,12 @@ pub enum Expression {
     Splat {
         size: VectorSize,
         value: Handle<Expression>,
+    },
+    
+    Swizzle {
+        size: VectorSize,
+        vector: Handle<Expression>,
+        pattern: [SwizzleComponent; 4],
     },
     
     Compose {
@@ -785,10 +822,15 @@ pub enum Expression {
         
         kind: ScalarKind,
         
-        convert: bool,
+        
+        convert: Option<Bytes>,
     },
     
     Call(Handle<Function>),
+    
+    
+    
+    
     
     ArrayLength(Handle<Expression>),
 }
@@ -844,6 +886,10 @@ pub enum Statement {
     Return { value: Option<Handle<Expression>> },
     
     Kill,
+    
+    
+    
+    Barrier(Barrier),
     
     
     

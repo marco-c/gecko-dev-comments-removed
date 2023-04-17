@@ -90,7 +90,10 @@ pub enum SwapchainError {
     #[error("Window is in use")]
     WindowInUse,
     
-    #[error("Swapchain can't be created for an unlknown reason")]
+    #[error("Accecssing NSView from wrong thread")]
+    WrongThread,
+    
+    #[error("Swapchain can't be created for an unknown reason")]
     Unknown,
 }
 

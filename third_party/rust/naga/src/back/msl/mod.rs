@@ -71,13 +71,27 @@ pub type BindingMap = std::collections::BTreeMap<BindSource, BindTarget>;
 #[derive(Clone, Debug, Default, Hash, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize))]
 #[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
-pub struct PushConstantsMap {
+pub struct PerStageResources {
     #[cfg_attr(feature = "deserialize", serde(default))]
-    pub vs_buffer: Option<Slot>,
+    pub push_constant_buffer: Option<Slot>,
+
+    
+    
+    
     #[cfg_attr(feature = "deserialize", serde(default))]
-    pub fs_buffer: Option<Slot>,
+    pub sizes_buffer: Option<Slot>,
+}
+
+#[derive(Clone, Debug, Default, Hash, Eq, Ord, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+pub struct PerStageMap {
     #[cfg_attr(feature = "deserialize", serde(default))]
-    pub cs_buffer: Option<Slot>,
+    pub vs: PerStageResources,
+    #[cfg_attr(feature = "deserialize", serde(default))]
+    pub fs: PerStageResources,
+    #[cfg_attr(feature = "deserialize", serde(default))]
+    pub cs: PerStageResources,
 }
 
 enum ResolvedBinding {
@@ -87,7 +101,7 @@ enum ResolvedBinding {
     User {
         prefix: &'static str,
         index: u32,
-        interpolation: ResolvedInterpolation
+        interpolation: Option<ResolvedInterpolation>,
     },
     Resource(BindTarget),
 }
@@ -121,6 +135,10 @@ pub enum Error {
     FeatureNotImplemented(String),
     #[error("module is not valid")]
     Validation,
+    #[error("BuiltIn {0:?} is not supported")]
+    UnsupportedBuiltIn(crate::BuiltIn),
+    #[error("capability {0:?} is not supported")]
+    CapabilityNotSupported(crate::valid::Capabilities),
 }
 
 #[derive(Clone, Debug, PartialEq, thiserror::Error)]
@@ -131,6 +149,8 @@ pub enum EntryPointError {
     MissingBinding(BindSource),
     #[error("mapping for push constants at stage {0:?} is missing")]
     MissingPushConstants(crate::ShaderStage),
+    #[error("mapping for sizes buffer for stage {0:?} is missing")]
+    MissingSizesBuffer(crate::ShaderStage),
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -150,7 +170,7 @@ pub struct Options {
     
     pub binding_map: BindingMap,
     
-    pub push_constants_map: PushConstantsMap,
+    pub per_stage_map: PerStageMap,
     
     pub inline_samplers: Vec<sampler::InlineSampler>,
     
@@ -164,7 +184,7 @@ impl Default for Options {
         Options {
             lang_version: (1, 0),
             binding_map: BindingMap::default(),
-            push_constants_map: PushConstantsMap::default(),
+            per_stage_map: PerStageMap::default(),
             inline_samplers: Vec::new(),
             spirv_cross_compatibility: false,
             fake_missing_bindings: true,
@@ -198,7 +218,11 @@ impl Options {
     ) -> Result<ResolvedBinding, Error> {
         match *binding {
             crate::Binding::BuiltIn(built_in) => Ok(ResolvedBinding::BuiltIn(built_in)),
-            crate::Binding::Location { location, interpolation, sampling } => match mode {
+            crate::Binding::Location {
+                location,
+                interpolation,
+                sampling,
+            } => match mode {
                 LocationMode::VertexInput => Ok(ResolvedBinding::Attribute(location)),
                 LocationMode::FragmentOutput => Ok(ResolvedBinding::Color(location)),
                 LocationMode::Intermediate => Ok(ResolvedBinding::User {
@@ -214,8 +238,8 @@ impl Options {
                         
                         let interpolation = interpolation.unwrap();
                         let sampling = sampling.unwrap_or(crate::Sampling::Center);
-                        ResolvedInterpolation::from_binding(interpolation, sampling)
-                    }
+                        Some(ResolvedInterpolation::from_binding(interpolation, sampling))
+                    },
                 }),
                 LocationMode::Uniform => {
                     log::error!(
@@ -243,7 +267,7 @@ impl Options {
             None if self.fake_missing_bindings => Ok(ResolvedBinding::User {
                 prefix: "fake",
                 index: 0,
-                interpolation: ResolvedInterpolation::CenterPerspective,
+                interpolation: None,
             }),
             None => Err(EntryPointError::MissingBinding(source)),
         }
@@ -254,9 +278,9 @@ impl Options {
         stage: crate::ShaderStage,
     ) -> Result<ResolvedBinding, EntryPointError> {
         let slot = match stage {
-            crate::ShaderStage::Vertex => self.push_constants_map.vs_buffer,
-            crate::ShaderStage::Fragment => self.push_constants_map.fs_buffer,
-            crate::ShaderStage::Compute => self.push_constants_map.cs_buffer,
+            crate::ShaderStage::Vertex => self.per_stage_map.vs.push_constant_buffer,
+            crate::ShaderStage::Fragment => self.per_stage_map.fs.push_constant_buffer,
+            crate::ShaderStage::Compute => self.per_stage_map.cs.push_constant_buffer,
         };
         match slot {
             Some(slot) => Ok(ResolvedBinding::Resource(BindTarget {
@@ -268,9 +292,35 @@ impl Options {
             None if self.fake_missing_bindings => Ok(ResolvedBinding::User {
                 prefix: "fake",
                 index: 0,
-                interpolation: ResolvedInterpolation::CenterPerspective,
+                interpolation: None,
             }),
             None => Err(EntryPointError::MissingPushConstants(stage)),
+        }
+    }
+
+    fn resolve_sizes_buffer(
+        &self,
+        stage: crate::ShaderStage,
+    ) -> Result<ResolvedBinding, EntryPointError> {
+        let slot = match stage {
+            crate::ShaderStage::Vertex => self.per_stage_map.vs.sizes_buffer,
+            crate::ShaderStage::Fragment => self.per_stage_map.fs.sizes_buffer,
+            crate::ShaderStage::Compute => self.per_stage_map.cs.sizes_buffer,
+        };
+
+        match slot {
+            Some(slot) => Ok(ResolvedBinding::Resource(BindTarget {
+                buffer: Some(slot),
+                texture: None,
+                sampler: None,
+                mutable: false,
+            })),
+            None if self.fake_missing_bindings => Ok(ResolvedBinding::User {
+                prefix: "fake",
+                index: 0,
+                interpolation: None,
+            }),
+            None => Err(EntryPointError::MissingSizesBuffer(stage)),
         }
     }
 }
@@ -310,14 +360,22 @@ impl ResolvedBinding {
                     Bi::LocalInvocationIndex => "thread_index_in_threadgroup",
                     Bi::WorkGroupId => "threadgroup_position_in_grid",
                     Bi::WorkGroupSize => "dispatch_threads_per_threadgroup",
+                    _ => return Err(Error::UnsupportedBuiltIn(built_in)),
                 };
                 write!(out, "{}", name)?;
             }
             Self::Attribute(index) => write!(out, "attribute({})", index)?,
             Self::Color(index) => write!(out, "color({})", index)?,
-            Self::User { prefix, index, interpolation } => {
-                write!(out, "user({}{}), ", prefix, index)?;
-                interpolation.try_fmt(out)?;
+            Self::User {
+                prefix,
+                index,
+                interpolation,
+            } => {
+                write!(out, "user({}{})", prefix, index)?;
+                if let Some(interpolation) = interpolation {
+                    write!(out, ", ")?;
+                    interpolation.try_fmt(out)?;
+                }
             }
             Self::Resource(ref target) => {
                 if let Some(id) = target.buffer {
@@ -344,21 +402,18 @@ impl ResolvedBinding {
 }
 
 impl ResolvedInterpolation {
-    fn from_binding(interpolation: crate::Interpolation,
-                    sampling: crate::Sampling)
-                    -> Self
-{
+    fn from_binding(interpolation: crate::Interpolation, sampling: crate::Sampling) -> Self {
         use crate::Interpolation as I;
         use crate::Sampling as S;
 
         match (interpolation, sampling) {
-            (I::Perspective, S::Center)   => Self::CenterPerspective,
+            (I::Perspective, S::Center) => Self::CenterPerspective,
             (I::Perspective, S::Centroid) => Self::CentroidPerspective,
-            (I::Perspective, S::Sample)   => Self::SamplePerspective,
-            (I::Linear,      S::Center)   => Self::CenterNoPerspective,
-            (I::Linear,      S::Centroid) => Self::CentroidNoPerspective,
-            (I::Linear,      S::Sample)   => Self::SampleNoPerspective,
-            (I::Flat, _)                        => Self::Flat,
+            (I::Perspective, S::Sample) => Self::SamplePerspective,
+            (I::Linear, S::Center) => Self::CenterNoPerspective,
+            (I::Linear, S::Centroid) => Self::CentroidNoPerspective,
+            (I::Linear, S::Sample) => Self::SampleNoPerspective,
+            (I::Flat, _) => Self::Flat,
         }
     }
 

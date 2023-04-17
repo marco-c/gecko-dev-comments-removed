@@ -32,7 +32,7 @@ impl<T> Iterator for IntoIter<T> {
             
             
             
-            if let Some((index, value)) = self.arena.remove_entry_by_slot(slot) {
+            if let Some((index, value)) = self.arena.remove_by_slot(slot) {
                 return Some((index, value));
             }
         }

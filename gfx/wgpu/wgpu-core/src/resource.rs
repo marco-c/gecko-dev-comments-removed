@@ -3,7 +3,7 @@
 
 
 use crate::{
-    device::{alloc::MemoryBlock, DeviceError, HostMap},
+    device::{alloc::MemoryBlock, DeviceError, HostMap, MissingFeatures},
     hub::Resource,
     id::{DeviceId, SwapChainId, TextureId},
     memory_init_tracker::MemoryInitTracker,
@@ -14,12 +14,7 @@ use crate::{
 
 use thiserror::Error;
 
-use std::{
-    borrow::Borrow,
-    num::{NonZeroU32, NonZeroU8},
-    ops::Range,
-    ptr::NonNull,
-};
+use std::{borrow::Borrow, num::NonZeroU8, ops::Range, ptr::NonNull};
 
 bitflags::bitflags! {
     /// The internal enum mirrored from `BufferUsage`. The values don't have to match!
@@ -266,8 +261,8 @@ pub enum CreateTextureError {
     InvalidMipLevelCount(u32),
     #[error("The texture usages {0:?} are not allowed on a texture of type {1:?}")]
     InvalidUsages(wgt::TextureUsage, wgt::TextureFormat),
-    #[error("Feature {0:?} must be enabled to create a texture of type {1:?}")]
-    MissingFeature(wgt::Features, wgt::TextureFormat),
+    #[error("Texture format {0:?} can't be used")]
+    MissingFeatures(wgt::TextureFormat, #[source] MissingFeatures),
 }
 
 impl<B: hal::Backend> Resource for Texture<B> {
@@ -298,19 +293,7 @@ pub struct TextureViewDescriptor<'a> {
     
     pub dimension: Option<wgt::TextureViewDimension>,
     
-    pub aspect: wgt::TextureAspect,
-    
-    pub base_mip_level: u32,
-    
-    
-    
-    pub mip_level_count: Option<NonZeroU32>,
-    
-    pub base_array_layer: u32,
-    
-    
-    
-    pub array_layer_count: Option<NonZeroU32>,
+    pub range: wgt::ImageSubresourceRange,
 }
 
 #[derive(Debug)]
@@ -459,8 +442,8 @@ pub enum CreateSamplerError {
     #[error("cannot create any more samplers")]
     TooManyObjects,
     
-    #[error("Feature {0:?} must be enabled")]
-    MissingFeature(wgt::Features),
+    #[error(transparent)]
+    MissingFeatures(#[from] MissingFeatures),
 }
 
 impl<B: hal::Backend> Resource for Sampler<B> {
@@ -484,8 +467,8 @@ pub enum CreateQuerySetError {
     ZeroCount,
     #[error("{count} is too many queries for a single QuerySet. QuerySets cannot be made more than {maximum} queries.")]
     TooManyQueries { count: u32, maximum: u32 },
-    #[error("Feature {0:?} must be enabled")]
-    MissingFeature(wgt::Features),
+    #[error(transparent)]
+    MissingFeatures(#[from] MissingFeatures),
 }
 
 #[derive(Debug)]

@@ -58,7 +58,9 @@ pub struct Options {
     
     pub flags: WriterFlags,
     
-    pub capabilities: crate::FastHashSet<Capability>,
+    
+    
+    pub capabilities: Option<crate::FastHashSet<Capability>>,
 }
 
 impl Default for Options {
@@ -67,12 +69,10 @@ impl Default for Options {
         if cfg!(debug_assertions) {
             flags |= WriterFlags::DEBUG;
         }
-        let mut capabilities = crate::FastHashSet::default();
-        capabilities.insert(Capability::Shader);
         Options {
             lang_version: (1, 0),
             flags,
-            capabilities,
+            capabilities: None,
         }
     }
 }

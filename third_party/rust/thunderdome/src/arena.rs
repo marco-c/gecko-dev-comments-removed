@@ -12,7 +12,6 @@ use crate::iter_mut::IterMut;
 
 
 
-
 #[derive(Debug, Clone)]
 pub struct Arena<T> {
     storage: Vec<Entry<T>>,
@@ -50,6 +49,12 @@ impl Index {
         let slot = bits as u32;
 
         Self { generation, slot }
+    }
+
+    
+    
+    pub fn slot(self) -> u32 {
+        self.slot
     }
 }
 
@@ -174,6 +179,26 @@ impl<T> Arena<T> {
     }
 
     
+    pub fn contains(&self, index: Index) -> bool {
+        match self.storage.get(index.slot as usize) {
+            Some(Entry::Occupied(occupied)) if occupied.generation == index.generation => true,
+            _ => false,
+        }
+    }
+
+    
+    
+    
+    pub fn contains_slot(&self, slot: u32) -> Option<Index> {
+        match self.storage.get(slot as usize) {
+            Some(Entry::Occupied(occupied)) => Some(Index {
+                slot,
+                generation: occupied.generation,
+            }),
+            _ => None,
+        }
+    }
+
     
     
     pub fn get(&self, index: Index) -> Option<&T> {
@@ -194,6 +219,41 @@ impl<T> Arena<T> {
             }
             _ => None,
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn get2_mut(&mut self, index1: Index, index2: Index) -> (Option<&mut T>, Option<&mut T>) {
+        if index1 == index2 {
+            panic!("Arena::get2_mut is called with two identical indices");
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        
+        let item1_ptr = self.get_mut(index1).map(|x| x as *mut T);
+
+        let item2 = self.get_mut(index2);
+        let item1 = unsafe { item1_ptr.map(|x| &mut *x) };
+
+        (item1, item2)
     }
 
     
@@ -250,6 +310,75 @@ impl<T> Arena<T> {
     }
 
     
+    
+    
+    pub fn get_by_slot(&self, slot: u32) -> Option<(Index, &T)> {
+        match self.storage.get(slot as usize) {
+            Some(Entry::Occupied(occupied)) => {
+                let index = Index {
+                    slot,
+                    generation: occupied.generation,
+                };
+                Some((index, &occupied.value))
+            }
+            _ => None,
+        }
+    }
+
+    
+    
+    
+    pub fn get_by_slot_mut(&mut self, slot: u32) -> Option<(Index, &mut T)> {
+        match self.storage.get_mut(slot as usize) {
+            Some(Entry::Occupied(occupied)) => {
+                let index = Index {
+                    slot,
+                    generation: occupied.generation,
+                };
+                Some((index, &mut occupied.value))
+            }
+            _ => None,
+        }
+    }
+
+    
+    
+    pub fn remove_by_slot(&mut self, slot: u32) -> Option<(Index, T)> {
+        let entry = self.storage.get_mut(slot as usize)?;
+
+        match entry {
+            Entry::Occupied(occupied) => {
+                
+                let index = Index {
+                    generation: occupied.generation,
+                    slot,
+                };
+
+                
+                
+                
+                let next_entry = Entry::Empty(EmptyEntry {
+                    generation: occupied.generation,
+                    next_free: self.first_free,
+                });
+
+                
+                let old_entry = replace(entry, next_entry);
+                let value = old_entry.into_value().unwrap_or_else(|| unreachable!());
+
+                
+                
+                self.first_free = Some(FreePointer::from_slot(slot));
+
+                self.len = self.len.checked_sub(1).unwrap_or_else(|| unreachable!());
+
+                Some((index, value))
+            }
+            _ => None,
+        }
+    }
+
+    
     pub fn clear(&mut self) {
         self.drain().for_each(drop);
     }
@@ -288,44 +417,35 @@ impl<T> Arena<T> {
             slot: 0,
         }
     }
-}
 
-
-impl<T> Arena<T> {
     
-    
-    pub(crate) fn remove_entry_by_slot(&mut self, slot: u32) -> Option<(Index, T)> {
-        let entry = self.storage.get_mut(slot as usize)?;
-
-        match entry {
-            Entry::Occupied(occupied) => {
-                
+    pub fn retain<F: FnMut(Index, &mut T) -> bool>(&mut self, mut f: F) {
+        for (i, entry) in self.storage.iter_mut().enumerate() {
+            if let Entry::Occupied(occupied) = entry {
                 let index = Index {
+                    slot: i as u32,
                     generation: occupied.generation,
-                    slot,
                 };
 
-                
-                
-                
-                let next_entry = Entry::Empty(EmptyEntry {
-                    generation: occupied.generation,
-                    next_free: self.first_free,
-                });
+                if !f(index, &mut occupied.value) {
+                    
+                    
+                    
+                    *entry = Entry::Empty(EmptyEntry {
+                        generation: occupied.generation,
+                        next_free: self.first_free,
+                    });
 
-                
-                let old_entry = replace(entry, next_entry);
-                let value = old_entry.into_value().unwrap_or_else(|| unreachable!());
+                    
+                    
+                    
+                    self.first_free = Some(FreePointer::from_slot(index.slot));
 
-                
-                
-                self.first_free = Some(FreePointer::from_slot(slot));
-
-                self.len = self.len.checked_sub(1).unwrap_or_else(|| unreachable!());
-
-                Some((index, value))
+                    
+                    
+                    self.len = self.len.checked_sub(1).unwrap_or_else(|| unreachable!());
+                }
             }
-            _ => None,
         }
     }
 }
@@ -345,6 +465,24 @@ impl<T> IntoIterator for Arena<T> {
             arena: self,
             slot: 0,
         }
+    }
+}
+
+impl<'a, T> IntoIterator for &'a Arena<T> {
+    type Item = (Index, &'a T);
+    type IntoIter = Iter<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+impl<'a, T> IntoIterator for &'a mut Arena<T> {
+    type Item = (Index, &'a mut T);
+    type IntoIter = IterMut<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter_mut()
     }
 }
 
@@ -411,13 +549,35 @@ mod test {
 
         let two = arena.insert(2);
         assert_eq!(arena.len(), 2);
+        assert!(arena.contains(two));
         assert_eq!(arena.remove(two), Some(2));
+        assert!(!arena.contains(two));
 
         let three = arena.insert(3);
         assert_eq!(arena.len(), 2);
         assert_eq!(arena.get(one), Some(&1));
         assert_eq!(arena.get(three), Some(&3));
         assert_eq!(arena.get(two), None);
+    }
+
+    #[test]
+    fn insert_remove_get_by_slot() {
+        let mut arena = Arena::new();
+        let one = arena.insert(1);
+
+        let two = arena.insert(2);
+        assert_eq!(arena.len(), 2);
+        assert!(arena.contains(two));
+        assert_eq!(arena.remove_by_slot(two.slot()), Some((two, 2)));
+        assert!(!arena.contains(two));
+        assert_eq!(arena.get_by_slot(two.slot()), None);
+
+        let three = arena.insert(3);
+        assert_eq!(arena.len(), 2);
+        assert_eq!(arena.get(one), Some(&1));
+        assert_eq!(arena.get(three), Some(&3));
+        assert_eq!(arena.get(two), None);
+        assert_eq!(arena.get_by_slot(two.slot()), Some((three, &3)));
     }
 
     #[test]
@@ -429,6 +589,74 @@ mod test {
         *handle = 6;
 
         assert_eq!(arena.get(foo), Some(&6));
+    }
+
+    #[test]
+    fn get2_mut() {
+        let mut arena = Arena::new();
+        let foo = arena.insert(100);
+        let bar = arena.insert(500);
+
+        let (foo_handle, bar_handle) = arena.get2_mut(foo, bar);
+        let foo_handle = foo_handle.unwrap();
+        let bar_handle = bar_handle.unwrap();
+        *foo_handle = 105;
+        *bar_handle = 505;
+
+        assert_eq!(arena.get(foo), Some(&105));
+        assert_eq!(arena.get(bar), Some(&505));
+    }
+
+    #[test]
+    fn get2_mut_reversed_order() {
+        let mut arena = Arena::new();
+        let foo = arena.insert(100);
+        let bar = arena.insert(500);
+
+        let (bar_handle, foo_handle) = arena.get2_mut(bar, foo);
+        let foo_handle = foo_handle.unwrap();
+        let bar_handle = bar_handle.unwrap();
+        *foo_handle = 105;
+        *bar_handle = 505;
+
+        assert_eq!(arena.get(foo), Some(&105));
+        assert_eq!(arena.get(bar), Some(&505));
+    }
+
+    #[test]
+    fn get2_mut_non_exist_handle() {
+        let mut arena = Arena::new();
+        let foo = arena.insert(100);
+        let bar = arena.insert(500);
+        arena.remove(bar);
+
+        let (bar_handle, foo_handle) = arena.get2_mut(bar, foo);
+        let foo_handle = foo_handle.unwrap();
+        assert!(bar_handle.is_none());
+        *foo_handle = 105;
+
+        assert_eq!(arena.get(foo), Some(&105));
+    }
+
+    #[test]
+    fn get2_mut_same_slot_different_generation() {
+        let mut arena = Arena::new();
+        let foo = arena.insert(100);
+        let mut foo1 = foo;
+        foo1.generation = foo1.generation.next();
+
+        let (foo_handle, foo1_handle) = arena.get2_mut(foo, foo1);
+        assert!(foo_handle.is_some());
+        assert!(foo1_handle.is_none());
+    }
+
+    #[test]
+    #[should_panic]
+    fn get2_mut_panics() {
+        let mut arena = Arena::new();
+        let foo = arena.insert(100);
+
+        arena.get2_mut(foo, foo);
     }
 
     #[test]
@@ -462,6 +690,23 @@ mod test {
         let new_a = arena.invalidate(a).unwrap();
         assert_eq!(arena.get(a), None);
         assert_eq!(arena.get(new_a), Some(&"a"));
+    }
+
+    #[test]
+    fn retain() {
+        let mut arena = Arena::new();
+
+        for i in 0..100 {
+            arena.insert(i);
+        }
+
+        arena.retain(|_, &mut i| i % 2 == 1);
+
+        for (_, i) in arena.iter() {
+            assert_eq!(i % 2, 1);
+        }
+
+        assert_eq!(arena.len(), 50);
     }
 
     #[test]
