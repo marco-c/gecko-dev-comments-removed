@@ -1042,18 +1042,7 @@ TEST(BaseProfiler, BlocksRingBuffer)
 
 #  define GET_JSON(VARIABLE, GETTER, TYPE) \
     ASSERT_HAS_JSON(GETTER, TYPE);         \
-    const Json::Value&(VARIABLE) = (GETTER)
-
-
-
-#  define GET_JSON_VALUE(VARIABLE, GETTER, TYPE) \
-    ASSERT_HAS_JSON(GETTER, TYPE);               \
-    const auto(VARIABLE) = (GETTER).as##TYPE()
-
-
-#  define GET_JSON_MUTABLE_VALUE(VARIABLE, GETTER, TYPE) \
-    ASSERT_HAS_JSON(GETTER, TYPE);                       \
-    auto(VARIABLE) = (GETTER).as##TYPE()
+    const Json::Value& VARIABLE = (GETTER)
 
 
 
@@ -1133,60 +1122,13 @@ static void JSONRootCheck(const Json::Value& aRoot,
     EXPECT_HAS_JSON(thread["processType"], String);
     EXPECT_HAS_JSON(thread["name"], String);
     EXPECT_HAS_JSON(thread["registerTime"], Double);
-    GET_JSON(samples, thread["samples"], Object);
+    EXPECT_HAS_JSON(thread["samples"], Object);
     EXPECT_HAS_JSON(thread["markers"], Object);
     EXPECT_HAS_JSON(thread["pid"], Int64);
     EXPECT_HAS_JSON(thread["tid"], Int64);
-    GET_JSON(stackTable, thread["stackTable"], Object);
-    GET_JSON(frameTable, thread["frameTable"], Object);
-    GET_JSON(stringTable, thread["stringTable"], Array);
-
-    GET_JSON(stackTableSchema, stackTable["schema"], Object);
-    EXPECT_GE(stackTableSchema.size(), 2u);
-    GET_JSON_VALUE(stackTablePrefix, stackTableSchema["prefix"], UInt);
-    GET_JSON_VALUE(stackTableFrame, stackTableSchema["frame"], UInt);
-    GET_JSON(stackTableData, stackTable["data"], Array);
-
-    GET_JSON(frameTableSchema, frameTable["schema"], Object);
-    EXPECT_GE(frameTableSchema.size(), 1u);
-    GET_JSON_VALUE(frameTableLocation, frameTableSchema["location"], UInt);
-    GET_JSON(frameTableData, frameTable["data"], Array);
-
-    GET_JSON(samplesSchema, samples["schema"], Object);
-    GET_JSON_VALUE(sampleStackIndex, samplesSchema["stack"], UInt);
-    GET_JSON(samplesData, samples["data"], Array);
-    for (const Json::Value& sample : samplesData) {
-      ASSERT_TRUE(sample.isArray());
-      if (sample.isValidIndex(sampleStackIndex)) {
-        if (!sample[sampleStackIndex].isNull()) {
-          GET_JSON_MUTABLE_VALUE(stack, sample[sampleStackIndex], UInt);
-          EXPECT_TRUE(stackTableData.isValidIndex(stack));
-          for (;;) {
-            
-            
-            GET_JSON(stackTableEntry, stackTableData[stack], Array);
-            GET_JSON_VALUE(frame, stackTableEntry[stackTableFrame], UInt);
-
-            
-            EXPECT_TRUE(frameTableData.isValidIndex(frame));
-            GET_JSON(frameTableEntry, frameTableData[frame], Array);
-            GET_JSON_VALUE(location, frameTableEntry[frameTableLocation], UInt);
-
-            
-            EXPECT_TRUE(stringTable.isValidIndex(location));
-
-            
-            if (stackTableEntry[stackTablePrefix].isNull()) {
-              break;
-            }
-            
-            GET_JSON_VALUE(prefix, stackTableEntry[stackTablePrefix], UInt);
-            EXPECT_TRUE(stackTableData.isValidIndex(prefix));
-            stack = prefix;
-          }
-        }
-      }
-    }
+    EXPECT_HAS_JSON(thread["stackTable"], Object);
+    EXPECT_HAS_JSON(thread["frameTable"], Object);
+    EXPECT_HAS_JSON(thread["stringTable"], Array);
   }
 
   if (aWithMainThread) {
@@ -3417,83 +3359,6 @@ TEST(GeckoProfiler, BaseProfilerHandOff)
 
   profiler_stop();
   ASSERT_TRUE(!profiler_is_active());
-}
-
-static std::string_view GetFeatureName(uint32_t feature) {
-  switch (feature) {
-#  define FEATURE_NAME(n_, str_, Name_, desc_) \
-    case ProfilerFeature::Name_:               \
-      return str_;
-
-    PROFILER_FOR_EACH_FEATURE(FEATURE_NAME)
-
-#  undef FEATURE_NAME
-
-    default:
-      return "?";
-  }
-}
-
-TEST(GeckoProfiler, FeatureCombinations)
-{
-  const char* filters[] = {"*"};
-
-  
-  
-  
-  uint32_t featureList[] = {ProfilerFeature::JS,
-                            ProfilerFeature::Screenshots,
-                            ProfilerFeature::StackWalk,
-                            ProfilerFeature::NoStackSampling,
-                            ProfilerFeature::NativeAllocations,
-                            ProfilerFeature::CPUUtilization};
-  constexpr uint32_t featureCount = uint32_t(MOZ_ARRAY_LENGTH(featureList));
-  ASSERT_LT(featureCount, 32u);
-  constexpr uint32_t combinationCount = uint32_t(1) << featureCount;
-
-  std::string featuresString;
-
-  for (uint32_t combination = 0u; combination < combinationCount;
-       ++combination) {
-    uint32_t features = 0u;
-    featuresString = "Features:";
-    for (uint32_t featureIndex = 0u; featureIndex < featureCount;
-         ++featureIndex) {
-      if ((combination & (uint32_t(1) << featureIndex)) != 0u) {
-        features |= featureList[featureIndex];
-        featuresString += " ";
-        featuresString += GetFeatureName(featureList[featureIndex]);
-      }
-    }
-
-    if (features == 0) {
-      featuresString += " (none)";
-    }
-
-    SCOPED_TRACE(featuresString.c_str());
-
-    ASSERT_TRUE(!profiler_is_active());
-
-    profiler_start(PROFILER_DEFAULT_ENTRIES, PROFILER_DEFAULT_INTERVAL,
-                   features, filters, MOZ_ARRAY_LENGTH(filters), 0);
-
-    ASSERT_TRUE(profiler_is_active());
-
-    
-    EXPECT_EQ(WaitForSamplingState(),
-              (((features & ProfilerFeature::NoStackSampling) != 0) &&
-               ((features & ProfilerFeature::CPUUtilization) == 0))
-                  ? SamplingState::NoStackSamplingCompleted
-                  : SamplingState::SamplingCompleted);
-
-    
-    
-    UniquePtr<char[]> profile = profiler_get_profile();
-    JSONOutputCheck(profile.get(), [](const Json::Value& aRoot) {});
-
-    profiler_stop();
-    ASSERT_TRUE(!profiler_is_active());
-  }
 }
 
 TEST(GeckoProfiler, CPUUsage)

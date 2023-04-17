@@ -538,7 +538,6 @@ void JITFrameInfo::AddInfoForRange(
 
 struct ProfileSample {
   uint32_t mStack = 0;
-  bool mStackIsEmpty = false;
   double mTime = 0.0;
   Maybe<double> mResponsiveness;
   RunningTimes mRunningTimes;
@@ -1011,18 +1010,14 @@ ProfilerThreadId ProfileBuffer::StreamSamplesToJSON(
           }
         }
 
-        
-        
-        
-        sample.mStack = aUniqueStacks.GetOrAddStackIndex(stack);
-        sample.mStackIsEmpty = (numFrames == 0);
-
-        if (sample.mStackIsEmpty && aRunningTimes.IsEmpty()) {
+        if (numFrames == 0 && aRunningTimes.IsEmpty()) {
           
           
           
           return;
         }
+
+        sample.mStack = aUniqueStacks.GetOrAddStackIndex(stack);
 
         if (unresponsiveDuration.isSome()) {
           sample.mResponsiveness = unresponsiveDuration;
@@ -1112,7 +1107,6 @@ ProfilerThreadId ProfileBuffer::StreamSamplesToJSON(
         }
 
         
-        
         (void)sample.mStack;
 
         sample.mTime = e.Get().GetDouble();
@@ -1144,11 +1138,6 @@ ProfilerThreadId ProfileBuffer::StreamSamplesToJSON(
           }
 
           if (kind == ProfileBufferEntry::Kind::SameSample) {
-            if (sample.mStackIsEmpty && sample.mRunningTimes.IsEmpty()) {
-              
-              
-              break;
-            }
             WriteSample(aWriter, sample);
             break;
           }
