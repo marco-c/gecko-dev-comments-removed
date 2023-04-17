@@ -404,7 +404,7 @@ public class GeckoSession {
                     delegate.onFullScreen(GeckoSession.this, true);
                 } else if ("GeckoView:FullScreenExit".equals(event)) {
                     delegate.onFullScreen(GeckoSession.this, false);
-                }  else if ("GeckoView:WebAppManifest".equals(event)) {
+                } else if ("GeckoView:WebAppManifest".equals(event)) {
                     final GeckoBundle manifest = message.getBundle("manifest");
                     if (manifest == null) {
                         return;
@@ -1094,6 +1094,21 @@ public class GeckoSession {
             if (delegate != null) {
                 delegate.onExternalResponse(session, response);
             }
+        }
+
+        @WrapForJNI(calledFrom = "gecko")
+        private void onShowDynamicToolbar() {
+            final Window self = this;
+            ThreadUtils.runOnUiThread(() -> {
+                final GeckoSession session = self.mOwner.get();
+                if (session == null) {
+                    return;
+                }
+                final ContentDelegate delegate = session.getContentDelegate();
+                if (delegate != null) {
+                    delegate.onShowDynamicToolbar(session);
+                }
+            });
         }
     }
 
@@ -3308,6 +3323,14 @@ public class GeckoSession {
                                                                        @NonNull final String scriptFileName) {
             return null;
         }
+
+        
+
+
+
+
+        @UiThread
+        default void onShowDynamicToolbar(@NonNull final GeckoSession geckoSession) {}
     }
 
     public interface SelectionActionDelegate {

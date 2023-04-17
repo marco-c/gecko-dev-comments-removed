@@ -670,6 +670,8 @@ parent:
 
     async SetAllowDeprecatedTls(bool value);
 
+    async ShowDynamicToolbar();
+
 child:
     
 

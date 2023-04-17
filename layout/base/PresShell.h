@@ -357,6 +357,13 @@ class PresShell final : public nsStubDocumentObserver,
 
   bool InRDMPane();
 
+#if defined(MOZ_WIDGET_ANDROID)
+  
+
+
+  void MaybeNotifyShowDynamicToolbar();
+#endif  
+
  private:
   
 

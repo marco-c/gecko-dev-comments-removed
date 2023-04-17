@@ -5187,23 +5187,38 @@ auto ScrollFrameHelper::GetPageLoadingState() -> LoadingState {
              : LoadingState::Loading;
 }
 
+ScrollFrameHelper::OverflowState ScrollFrameHelper::GetOverflowState() const {
+  nsSize scrollportSize = mScrollPort.Size();
+  nsSize childSize = GetScrolledRect().Size();
+
+  OverflowState result = OverflowState::None;
+
+  if (childSize.height > scrollportSize.height) {
+    result |= OverflowState::Vertical;
+  }
+
+  if (childSize.width > scrollportSize.width) {
+    result |= OverflowState::Horizontal;
+  }
+
+  return result;
+}
+
 nsresult ScrollFrameHelper::FireScrollPortEvent() {
   mAsyncScrollPortEvent.Forget();
 
   
-  nsSize scrollportSize = mScrollPort.Size();
-  nsSize childSize = GetScrolledRect().Size();
-
-  
   
   
   
   
 
-  bool newVerticalOverflow = childSize.height > scrollportSize.height;
+  OverflowState overflowState = GetOverflowState();
+
+  bool newVerticalOverflow = !!(overflowState & OverflowState::Vertical);
   bool vertChanged = mVerticalOverflow != newVerticalOverflow;
 
-  bool newHorizontalOverflow = childSize.width > scrollportSize.width;
+  bool newHorizontalOverflow = !!(overflowState & OverflowState::Horizontal);
   bool horizChanged = mHorizontalOverflow != newHorizontalOverflow;
 
   if (!vertChanged && !horizChanged) {
@@ -5951,14 +5966,12 @@ void ScrollFrameHelper::PostOverflowEvent() {
     return;
   }
 
-  
-  nsSize scrollportSize = mScrollPort.Size();
-  nsSize childSize = GetScrolledRect().Size();
+  OverflowState overflowState = GetOverflowState();
 
-  bool newVerticalOverflow = childSize.height > scrollportSize.height;
+  bool newVerticalOverflow = !!(overflowState & OverflowState::Vertical);
   bool vertChanged = mVerticalOverflow != newVerticalOverflow;
 
-  bool newHorizontalOverflow = childSize.width > scrollportSize.width;
+  bool newHorizontalOverflow = !!(overflowState & OverflowState::Horizontal);
   bool horizChanged = mHorizontalOverflow != newHorizontalOverflow;
 
   if (!vertChanged && !horizChanged) {
@@ -6433,6 +6446,12 @@ bool ScrollFrameHelper::ReflowFinished() {
         manager->UpdateVisualViewportSizeForPotentialScrollbarChange();
       }
     }
+
+#if defined(MOZ_WIDGET_ANDROID)
+    if (mIsRoot && !(GetOverflowState() & OverflowState::Vertical)) {
+      mOuter->PresShell()->MaybeNotifyShowDynamicToolbar();
+    }
+#endif  
   }
 
   bool doScroll = true;
