@@ -7,7 +7,7 @@ const origin = [
 ];
 let escapeComma = url => url.replace(/,/g, '\\,');
 
-let testAccessProperty = (property, op, message) => {
+let testAccessProperty = (property, op, expectReport = true) => {
   origin.forEach(([origin_name, origin]) => {
     promise_test(async t => {
       const this_window_token = token();
@@ -43,8 +43,14 @@ let testAccessProperty = (property, op, message) => {
 
       
       let report = await receiveReport(openee_report_token,
-                                       "access-to-coop-page-from-opener");
-      assert_equals(report.body.property, property);
+        "access-to-coop-page-from-opener");
+      if (expectReport) {
+        assert_equals(report.body.property, property);
+      } else {
+        
+        assert_equals(report, "timeout");
+      }
+
 
     }, `${origin_name} > ${op}`);
   })
