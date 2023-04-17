@@ -373,8 +373,11 @@ class nsViewManager final {
 
   void InvalidateView(nsView* aView, const nsRect& aRect);
 
-  nsViewManager* RootViewManager() const { return mRootViewManager; }
-  bool IsRootVM() const { return this == RootViewManager(); }
+  nsViewManager* RootViewManager() const {
+    return mRootViewManager ? mRootViewManager.get()
+                            : const_cast<nsViewManager*>(this);
+  }
+  bool IsRootVM() const { return !mRootViewManager; }
 
   
   
@@ -400,9 +403,12 @@ class nsViewManager final {
   nsSize mDelayedResize;
 
   nsView* mRootView;
+
   
   
-  nsViewManager* mRootViewManager;
+  
+  
+  RefPtr<nsViewManager> mRootViewManager;
 
   
   
