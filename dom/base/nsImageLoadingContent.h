@@ -151,8 +151,10 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
 
 
 
+
   nsresult LoadImage(nsIURI* aNewURI, bool aForce, bool aNotify,
                      ImageLoadType aImageLoadType, nsLoadFlags aLoadFlags,
+                     bool aLoadStart = true,
                      mozilla::dom::Document* aDocument = nullptr,
                      nsIPrincipal* aTriggeringPrincipal = nullptr);
 
@@ -160,7 +162,7 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
                      ImageLoadType aImageLoadType,
                      nsIPrincipal* aTriggeringPrincipal) {
     return LoadImage(aNewURI, aForce, aNotify, aImageLoadType, LoadFlags(),
-                     nullptr, aTriggeringPrincipal);
+                     true, nullptr, aTriggeringPrincipal);
   }
 
   

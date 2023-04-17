@@ -999,8 +999,9 @@ void nsImageLoadingContent::ForceReload(bool aNotify, ErrorResult& aError) {
   ImageLoadType loadType = (mCurrentRequestFlags & REQUEST_IS_IMAGESET)
                                ? eImageLoadType_Imageset
                                : eImageLoadType_Normal;
-  nsresult rv = LoadImage(currentURI, true, aNotify, loadType,
-                          nsIRequest::VALIDATE_ALWAYS | LoadFlags());
+  nsresult rv =
+      LoadImage(currentURI, true, aNotify, loadType,
+                nsIRequest::VALIDATE_ALWAYS | LoadFlags(), true, nullptr);
   if (NS_FAILED(rv)) {
     aError.Throw(rv);
   }
@@ -1022,20 +1023,37 @@ nsresult nsImageLoadingContent::LoadImage(const nsAString& aNewURI, bool aForce,
   }
 
   
-  nsCOMPtr<nsIURI> imageURI;
-  if (!aNewURI.IsEmpty()) {
-    Unused << StringToURI(aNewURI, doc, getter_AddRefs(imageURI));
+  
+  
+  CancelPendingEvent();
+
+  if (aNewURI.IsEmpty()) {
+    
+    CancelImageRequests(aNotify);
+    
+    
+    FireEvent(u"error"_ns, true);
+    return NS_OK;
   }
 
-  return LoadImage(imageURI, aForce, aNotify, aImageLoadType, LoadFlags(), doc,
-                   aTriggeringPrincipal);
+  
+  FireEvent(u"loadstart"_ns);
+
+  
+  nsCOMPtr<nsIURI> imageURI;
+  nsresult rv = StringToURI(aNewURI, doc, getter_AddRefs(imageURI));
+  NS_ENSURE_SUCCESS(rv, rv);
+  
+
+  return LoadImage(imageURI, aForce, aNotify, aImageLoadType, LoadFlags(),
+                   false, doc, aTriggeringPrincipal);
 }
 
 nsresult nsImageLoadingContent::LoadImage(nsIURI* aNewURI, bool aForce,
                                           bool aNotify,
                                           ImageLoadType aImageLoadType,
                                           nsLoadFlags aLoadFlags,
-                                          Document* aDocument,
+                                          bool aLoadStart, Document* aDocument,
                                           nsIPrincipal* aTriggeringPrincipal) {
   MOZ_ASSERT(!mIsStartingImageLoad, "some evil code is reentering LoadImage.");
   if (mIsStartingImageLoad) {
@@ -1047,19 +1065,10 @@ nsresult nsImageLoadingContent::LoadImage(nsIURI* aNewURI, bool aForce,
   
   CancelPendingEvent();
 
-  if (!aNewURI) {
-    
-    CancelImageRequests(aNotify);
-    if (aImageLoadType == eImageLoadType_Normal) {
-      
-      
-      FireEvent(u"error"_ns, true);
-    }
-    return NS_OK;
-  }
-
   
-  FireEvent(u"loadstart"_ns);
+  if (aLoadStart) {
+    FireEvent(u"loadstart"_ns);
+  }
 
   if (!mLoadingEnabled) {
     
