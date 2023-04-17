@@ -1081,6 +1081,7 @@ var PlacesMenuDNDHandler = {
 
 
   onDragOver: function PMDH_onDragOver(event) {
+    PlacesControllerDragHelper.currentDropTarget = event.target;
     let ip = new PlacesInsertionPoint({
       parentId: PlacesUtils.bookmarksMenuFolderId,
       parentGuid: PlacesUtils.bookmarks.menuGuid,
