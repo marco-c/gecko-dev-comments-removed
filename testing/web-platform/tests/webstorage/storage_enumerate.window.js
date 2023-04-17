@@ -1,13 +1,3 @@
-<!DOCTYPE HTML>
-<html>
-<head>
-<title>WebStorage Test: Storage - enumerate and built-in properties</title>
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-</head>
-<body>
-<div id="log"></div>
-<script>
 ["localStorage", "sessionStorage"].forEach(function(name) {
     test(function() {
         assert_true(name in window, name + " exist");
@@ -24,13 +14,13 @@
         storage.zeta = "gamma";
 
         const enumeratedArray = Object.keys(storage);
-        enumeratedArray.sort();  // Storage order is implementation-defined.
+        enumeratedArray.sort();  
 
         const expectArray = ["alpha", "bar", "batman", "foo", "fu", "zeta"];
         assert_array_equals(enumeratedArray, expectArray);
 
-        // 'prototypeTestKey' is not an actual storage key, it is just a
-        // property set on Storage's prototype object.
+        
+        
         assert_equals(storage.length, 6);
         assert_equals(storage.getItem("prototypeTestKey"), null);
         assert_equals(storage.prototypeTestKey, "prototypeTestValue");
@@ -55,15 +45,11 @@
         }
 
         const keys = Object.keys(storage);
-        keys.sort();  // Storage order is implementation-defined.
+        keys.sort();  
         assert_array_equals(keys, ["0", "42", "baz", "foo"]);
 
         const values = Object.values(storage);
-        values.sort();  // Storage order is implementation-defined.
+        values.sort();  
         assert_array_equals(values, ["alpha", "bar", "beta", "quux"]);
     }, name + ": test enumeration of numeric and non-numeric keys");
 });
-</script>
-</body>
-</html>
-

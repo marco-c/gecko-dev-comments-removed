@@ -1,13 +1,3 @@
-<!DOCTYPE HTML>
-<html>
-<head>
-<title>WebStorage Test: Storage - set key with the same name as storage function</title>
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-</head>
-<body>
-<div id="log"></div>
-<script>
 ["localStorage", "sessionStorage"].forEach(function(name) {
     test(function() {
         var storage = window[name];
@@ -33,8 +23,8 @@
             assert_equals(storage.getItem('length'), "be");
             assert_equals(storage.getItem('setItem'), "true");
 
-            // Test to see if an exception is thrown for any of the built in
-            // functions.
+            
+            
             storage.setItem("test", "123");
             storage.key(0);
             storage.getItem("test");
@@ -45,7 +35,3 @@
 
     }, name + " should be not rendered unusable by setting a key with the same name as a storage function such that the function is hidden");
 });
-</script>
-</body>
-</html>
-
