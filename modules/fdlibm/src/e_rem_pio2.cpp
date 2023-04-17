@@ -13,8 +13,8 @@
 
 
 
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
+
+
 
 
 
@@ -24,7 +24,6 @@ __FBSDID("$FreeBSD$");
 
 #include <float.h>
 
-#include "math.h"
 #include "math_private.h"
 
 
