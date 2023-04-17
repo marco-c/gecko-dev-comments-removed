@@ -165,7 +165,7 @@ def locate_java_bin_path():
         
         for java_home_item in list_of_java_homes:
             if java_home_item["JVMBundleID"] == "net.adoptopenjdk.8.jdk":
-                return java_home_item["JVMHomePath"]
+                return os.path.join(java_home_item["JVMHomePath"], "bin")
 
         
         for java_home_item in list_of_java_homes:
