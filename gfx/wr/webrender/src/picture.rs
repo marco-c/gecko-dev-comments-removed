@@ -2971,14 +2971,16 @@ impl TileCacheInstance {
         format: YuvFormat,
     ) -> bool {
         for &key in api_keys {
-            
-            resource_cache.request_image(ImageRequest {
-                    key,
-                    rendering: image_rendering,
-                    tile: None,
-                },
-                gpu_cache,
-            );
+            if key != ImageKey::DUMMY {
+                
+                resource_cache.request_image(ImageRequest {
+                        key,
+                        rendering: image_rendering,
+                        tile: None,
+                    },
+                    gpu_cache,
+                );
+            }
         }
 
         self.setup_compositor_surfaces_impl(
