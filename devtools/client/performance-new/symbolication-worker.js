@@ -101,7 +101,7 @@ class FileAndPathHelper {
       );
     }
 
-    const { name, path, debugPath } = lib;
+    const { name, path, debugPath, arch } = lib;
     const candidatePaths = [];
 
     
@@ -150,6 +150,16 @@ class FileAndPathHelper {
     
     
     candidatePaths.push(path);
+
+    
+    
+    
+    if (arch && (path.startsWith("/usr/") || path.startsWith("/System/"))) {
+      
+      candidatePaths.push(
+        `dyldcache:/System/Library/dyld/dyld_shared_cache_${arch}:${path}`
+      );
+    }
 
     return candidatePaths;
   }
