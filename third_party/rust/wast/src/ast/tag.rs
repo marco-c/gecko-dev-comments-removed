@@ -3,22 +3,24 @@ use crate::parser::{Parse, Parser, Result};
 
 
 #[derive(Debug)]
-pub struct Event<'a> {
+pub struct Tag<'a> {
     
     pub span: ast::Span,
     
     pub id: Option<ast::Id<'a>>,
     
+    pub name: Option<ast::NameAnnotation<'a>>,
+    
     pub exports: ast::InlineExport<'a>,
     
-    pub ty: EventType<'a>,
+    pub ty: TagType<'a>,
     
-    pub kind: EventKind<'a>,
+    pub kind: TagKind<'a>,
 }
 
 
 #[derive(Clone, Debug)]
-pub enum EventType<'a> {
+pub enum TagType<'a> {
     
     
     Exception(ast::TypeUse<'a, ast::FunctionType<'a>>),
@@ -26,7 +28,7 @@ pub enum EventType<'a> {
 
 
 #[derive(Debug)]
-pub enum EventKind<'a> {
+pub enum TagKind<'a> {
     
     
     
@@ -38,19 +40,21 @@ pub enum EventKind<'a> {
     Inline(),
 }
 
-impl<'a> Parse<'a> for Event<'a> {
+impl<'a> Parse<'a> for Tag<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
-        let span = parser.parse::<kw::event>()?.0;
+        let span = parser.parse::<kw::tag>()?.0;
         let id = parser.parse()?;
+        let name = parser.parse()?;
         let exports = parser.parse()?;
         let (ty, kind) = if let Some(import) = parser.parse()? {
-            (parser.parse()?, EventKind::Import(import))
+            (parser.parse()?, TagKind::Import(import))
         } else {
-            (parser.parse()?, EventKind::Inline())
+            (parser.parse()?, TagKind::Inline())
         };
-        Ok(Event {
+        Ok(Tag {
             span,
             id,
+            name,
             exports,
             ty,
             kind,
@@ -58,8 +62,8 @@ impl<'a> Parse<'a> for Event<'a> {
     }
 }
 
-impl<'a> Parse<'a> for EventType<'a> {
+impl<'a> Parse<'a> for TagType<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
-        Ok(EventType::Exception(parser.parse()?))
+        Ok(TagType::Exception(parser.parse()?))
     }
 }

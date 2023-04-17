@@ -9,6 +9,8 @@ pub struct Memory<'a> {
     
     pub id: Option<ast::Id<'a>>,
     
+    pub name: Option<ast::NameAnnotation<'a>>,
+    
     
     pub exports: ast::InlineExport<'a>,
     
@@ -41,6 +43,7 @@ impl<'a> Parse<'a> for Memory<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
         let span = parser.parse::<kw::memory>()?.0;
         let id = parser.parse()?;
+        let name = parser.parse()?;
         let exports = parser.parse()?;
 
         
@@ -79,6 +82,7 @@ impl<'a> Parse<'a> for Memory<'a> {
         Ok(Memory {
             span,
             id,
+            name,
             exports,
             kind,
         })
@@ -93,6 +97,9 @@ pub struct Data<'a> {
 
     
     pub id: Option<ast::Id<'a>>,
+
+    
+    pub name: Option<ast::NameAnnotation<'a>>,
 
     
     pub kind: DataKind<'a>,
@@ -124,6 +131,7 @@ impl<'a> Parse<'a> for Data<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
         let span = parser.parse::<kw::data>()?.0;
         let id = parser.parse()?;
+        let name = parser.parse()?;
 
         
         
@@ -165,6 +173,7 @@ impl<'a> Parse<'a> for Data<'a> {
         Ok(Data {
             span,
             id,
+            name,
             kind,
             data,
         })
