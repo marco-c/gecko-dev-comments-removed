@@ -1,6 +1,6 @@
 <!DOCTYPE HTML>
-
-
+<!-- Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/ -->
 <html>
 <head>
   <title>Test Tracking Protection in Private Browsing mode</title>
@@ -72,6 +72,7 @@ SpecialPowers.pushPrefEnv(
   {"set": [["privacy.trackingprotection.enabled", true],
            ["urlclassifier.trackingTable", "test-track-simple"],
            ["urlclassifier.trackingWhitelistTable", "test-trackwhite-simple"],
+           ["dom.security.https_first", false],
            ["network.stricttransportsecurity.preloadlist", false]]},
   test);
 

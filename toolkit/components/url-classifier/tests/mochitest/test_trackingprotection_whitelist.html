@@ -1,6 +1,6 @@
 <!DOCTYPE HTML>
-
-
+<!-- Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/ -->
 <html>
 <head>
   <title>Test Tracking Protection in Private Browsing mode</title>
@@ -110,6 +110,7 @@ function checkLoads(aWindow, aWhitelisted, tpEnabled) {
 SpecialPowers.pushPrefEnv(
   {"set": [["privacy.trackingprotection.enabled", true],
            ["privacy.trackingprotection.testing.report_blocked_node", true],
+           ["dom.security.https_first", false],
            ["channelclassifier.allowlist_example", true]]},
   test);
 
