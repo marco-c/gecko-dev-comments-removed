@@ -207,7 +207,7 @@ class nsHttpChannel final : public HttpBaseChannel,
  public: 
   uint32_t GetRequestTime() const { return mRequestTime; }
 
-  nsresult AsyncOpenFinal(TimeStamp aTimeStamp);
+  void AsyncOpenFinal(TimeStamp aTimeStamp);
 
   [[nodiscard]] nsresult OpenCacheEntry(bool usingSSL);
   [[nodiscard]] nsresult OpenCacheEntryInternal(
@@ -310,7 +310,7 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   
   
-  nsresult MaybeResolveProxyAndBeginConnect();
+  void MaybeResolveProxyAndBeginConnect();
   nsresult MaybeStartDNSPrefetch();
 
   
@@ -335,16 +335,12 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   
   nsresult BeginConnect();
-  [[nodiscard]] nsresult ContinueBeginConnectWithResult();
-  void ContinueBeginConnect();
   [[nodiscard]] nsresult PrepareToConnect();
-  void HandleOnBeforeConnect();
   [[nodiscard]] nsresult OnBeforeConnect();
   [[nodiscard]] nsresult ContinueOnBeforeConnect(
       bool aShouldUpgrade, nsresult aStatus, bool aUpgradeWithHTTPSRR = false);
   nsresult MaybeUseHTTPSRRForUpgrade(bool aShouldUpgrade, nsresult aStatus);
   void OnHTTPSRRAvailable(nsIDNSHTTPSSVCRecord* aRecord);
-  void OnBeforeConnectContinue();
   [[nodiscard]] nsresult Connect();
   void SpeculativeConnect();
   [[nodiscard]] nsresult SetupTransaction();
@@ -802,7 +798,7 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   
   
-  nsresult MaybeRaceCacheWithNetwork();
+  void MaybeRaceCacheWithNetwork();
 
   
   
