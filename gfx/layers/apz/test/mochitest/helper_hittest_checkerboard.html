@@ -9,7 +9,7 @@
 </head>
 <body>
  <div id="scroller" style="width: 300px; height: 300px; overflow:scroll; margin-top: 100px; margin-left: 50px">
-  
+  <!-- Make the contents tall enough to be sure we can checkerboard -->
   <div id="contents" style="width: 100%; height: 5000px; background-image: linear-gradient(blue,red)">
   </div>
  </div>
@@ -31,13 +31,11 @@ async function test() {
   await promiseApzFlushedRepaints();
   var scrollY = scroller.scrollTopMax;
   utils.setAsyncScrollOffset(scroller, 0, scrollY);
-  if (config.isWebRender) {
-    // Tick the refresh driver once to make sure the compositor has applied the
-    // async scroll offset (for APZ hit-testing this doesn't matter, but for
-    // WebRender hit-testing we need to make sure WR has the latest info).
-    utils.advanceTimeAndRefresh(16);
-    utils.restoreNormalRefresh();
-  }
+  // Tick the refresh driver once to make sure the compositor has applied the
+  // async scroll offset (for WebRender hit-testing we need to make sure WR has
+  // the latest info).
+  utils.advanceTimeAndRefresh(16);
+  utils.restoreNormalRefresh();
 
   var scrollerViewId = utils.getViewId(scroller);
 

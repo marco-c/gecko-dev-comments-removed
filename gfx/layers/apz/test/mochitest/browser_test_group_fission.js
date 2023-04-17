@@ -22,9 +22,6 @@ add_task(async function test_main() {
     );
   }
 
-  var utils = SpecialPowers.getDOMWindowUtils(window);
-  var isWebRender = utils.layerManagerType.startsWith("WebRender");
-
   
   
   
@@ -64,26 +61,12 @@ add_task(async function test_main() {
     { file: "helper_fission_initial_displayport.html" },
     { file: "helper_fission_checkerboard_severity.html" },
     { file: "helper_fission_setResolution.html" },
+    { file: "helper_fission_inactivescroller_positionedcontent.html" },
+    { file: "helper_fission_irregular_areas.html" },
+    
+    
     
   ];
-  
-  
-  
-  
-  if (isWebRender) {
-    subtests = subtests.concat([
-      { file: "helper_fission_inactivescroller_positionedcontent.html" },
-      { file: "helper_fission_irregular_areas.html" },
-      
-    ]);
-  } else {
-    subtests = subtests.concat([
-      
-      {
-        file: "helper_fission_animation_styling_in_transformed_oopif.html",
-      },
-    ]);
-  }
 
   
   

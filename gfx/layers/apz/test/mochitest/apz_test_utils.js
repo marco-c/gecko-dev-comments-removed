@@ -778,11 +778,9 @@ async function injectScript(aScript, aWindow = window) {
 
 
 
-
 function getHitTestConfig() {
   if (!("hitTestConfig" in window)) {
     var utils = SpecialPowers.getDOMWindowUtils(window);
-    var isWebRender = utils.layerManagerType.startsWith("WebRender");
     var isWindows = getPlatform() == "windows";
     let activateAllScrollFrames =
       SpecialPowers.getBoolPref("apz.wr.activate_all_scroll_frames") ||
@@ -793,7 +791,6 @@ function getHitTestConfig() {
 
     window.hitTestConfig = {
       utils,
-      isWebRender,
       isWindows,
       activateAllScrollFrames,
     };
@@ -942,26 +939,14 @@ function hitTestScrollbar(params) {
   var expectedHitInfo = APZHitResultFlags.VISIBLE | APZHitResultFlags.SCROLLBAR;
   if (params.expectThumb) {
     
-    
-    
-    
-    
-    if (config.isWebRender) {
-      expectedHitInfo |= APZHitResultFlags.APZ_AWARE_LISTENERS;
-      if (
-        !config.activateAllScrollFrames &&
-        params.layerState == LayerState.INACTIVE
-      ) {
-        expectedHitInfo |= APZHitResultFlags.INACTIVE_SCROLLFRAME;
-      }
-    } else {
-      expectedHitInfo |= APZHitResultFlags.IRREGULAR_AREA;
+    expectedHitInfo |= APZHitResultFlags.APZ_AWARE_LISTENERS;
+    var expectActive =
+      config.activateAllScrollFrames || params.layerState == LayerState.ACTIVE;
+    if (!expectActive) {
+      expectedHitInfo |= APZHitResultFlags.INACTIVE_SCROLLFRAME;
     }
     
-    if (
-      params.layerState == LayerState.ACTIVE ||
-      config.activateAllScrollFrames
-    ) {
+    if (expectActive) {
       expectedHitInfo |= APZHitResultFlags.SCROLLBAR_THUMB;
     }
   }

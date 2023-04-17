@@ -38,10 +38,10 @@
   </style>
 </head>
 <body>
-
-
-
-
+<!-- Create a bunch of divs for hit-testing. Some of the divs also
+    contain nested divs to test inheritance/combination of touch-action
+    properties. This is not an exhaustive list of all the possible
+    combinations but it's assorted enough to provide good coverage. -->
  <div id="taNone" class="taBox" style="touch-action: none">
   <div id="taInnerNonePanX" style="touch-action: pan-x"></div>
   <div id="taInnerNoneManip" style="touch-action: manipulation"></div>
@@ -70,19 +70,19 @@
 
  <br/>
 
- 
-
-
-
-
-
-
-
-
-
-
-
-
+ <!-- More divs for hit-testing. These comprise one big outer div with
+     a touch-action property, then inside is a scrollable div, possibly with
+     a touch-action of its own, and inside that is another div to make the
+     scrollable div scrollable. Note that the touch-action for an element
+     includes the restrictions from all ancestor elements up to and including
+     the element that has the default action for that touch-action property.
+     Panning actions therefore get inherited from the nearest scrollframe
+     downwards, while zooming actions get inherited from the root content
+     element (because that's the only one that has zooming as the default action)
+     downwards. In effect, any pan restrictions on the outer div should not
+     apply to the inner div, but zooming restrictions should. Also, the
+     touch-action on the scrollable div itself should apply to user interaction
+     inside the scrollable div. -->
  <div id="taOuterPanX" class="taBigBox" style="touch-action: pan-x">
   <div id="taScrollerPanY" style="touch-action: pan-y">
    <div></div>
@@ -119,12 +119,6 @@ async function test() {
 
   var scrollId = config.utils.getViewId(document.scrollingElement);
   var layersId = config.utils.getLayersId();
-
-  // Elements with APZ aware listeners round-trip through the dispatch-to-content
-  // region and end up as IRREGULAR_AREA when WebRender is disabled.
-  var touchListenerFlag = config.isWebRender
-        ? APZHitResultFlags.APZ_AWARE_LISTENERS
-        : APZHitResultFlags.IRREGULAR_AREA;
 
   checkHitResult(
       hitTest(centerOf("taNone")),
@@ -263,7 +257,7 @@ async function test() {
   checkHitResult(
       hitTest(centerOf("taInnerManipListener")),
       APZHitResultFlags.VISIBLE |
-      touchListenerFlag |
+      APZHitResultFlags.APZ_AWARE_LISTENERS |
       APZHitResultFlags.DOUBLE_TAP_ZOOM_DISABLED,
       scrollId,
       layersId,
@@ -272,14 +266,14 @@ async function test() {
   checkHitResult(
       hitTest(centerOf("taListener")),
       APZHitResultFlags.VISIBLE |
-      touchListenerFlag,
+      APZHitResultFlags.APZ_AWARE_LISTENERS,
       scrollId,
       layersId,
       "div with touch listener");
   checkHitResult(
       hitTest(centerOf("taInnerListenerPanX")),
       APZHitResultFlags.VISIBLE |
-      touchListenerFlag |
+      APZHitResultFlags.APZ_AWARE_LISTENERS |
       APZHitResultFlags.PAN_Y_DISABLED |
       APZHitResultFlags.PINCH_ZOOM_DISABLED |
       APZHitResultFlags.DOUBLE_TAP_ZOOM_DISABLED,
@@ -351,14 +345,9 @@ async function test() {
       "overflow:hidden div doesn't reset pan-x/pan-y from enclosing scroller");
 }
 
-if (!config.isWebRender) {
-  ok(true, "This test is WebRender-only because we get a bunch of dispatch-to-content regions without it and the test isn't very interesting.");
-  subtestDone();
-} else {
-  waitUntilApzStable()
-    .then(test)
-    .then(subtestDone, subtestFailed);
-}
+waitUntilApzStable()
+  .then(test)
+  .then(subtestDone, subtestFailed);
 
 </script>
 </html>
