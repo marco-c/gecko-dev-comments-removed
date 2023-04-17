@@ -75,9 +75,8 @@ add_task(async () => {
   async function takeSnapshot(browserWin) {
     let browser = await openBrowserActionPanel(extension, browserWin, true);
     const snapshot = await SpecialPowers.spawn(browser, [], async () => {
-      await SpecialPowers.snapshotWindow(
+      return SpecialPowers.snapshotWindowWithOptions(
         content.window,
-        false ,
         undefined ,
         undefined ,
         { DRAWWINDOW_DRAW_VIEW: true } 
