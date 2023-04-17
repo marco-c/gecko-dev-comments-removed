@@ -90,6 +90,7 @@ nsresult SetMinidumpPath(const nsAString& aPath);
 
 
 
+
 nsresult AnnotateCrashReport(Annotation key, bool data);
 nsresult AnnotateCrashReport(Annotation key, int data);
 nsresult AnnotateCrashReport(Annotation key, unsigned int data);
