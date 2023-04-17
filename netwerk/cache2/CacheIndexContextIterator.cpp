@@ -15,14 +15,14 @@ CacheIndexContextIterator::CacheIndexContextIterator(CacheIndex* aIndex,
                                                      nsILoadContextInfo* aInfo)
     : CacheIndexIterator(aIndex, aAddNew), mInfo(aInfo) {}
 
-void CacheIndexContextIterator::AddRecord(CacheIndexRecordWrapper* aRecord) {
+void CacheIndexContextIterator::AddRecord(CacheIndexRecord* aRecord) {
   if (CacheIndexEntry::RecordMatchesLoadContextInfo(aRecord, mInfo)) {
     CacheIndexIterator::AddRecord(aRecord);
   }
 }
 
 void CacheIndexContextIterator::AddRecords(
-    const nsTArray<RefPtr<CacheIndexRecordWrapper>>& aRecords) {
+    const nsTArray<CacheIndexRecord*>& aRecords) {
   
   for (uint32_t i = 0; i < aRecords.Length(); ++i) {
     AddRecord(aRecords[i]);

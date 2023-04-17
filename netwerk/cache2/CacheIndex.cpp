@@ -41,16 +41,14 @@ namespace {
 
 class FrecencyComparator {
  public:
-  bool Equals(const RefPtr<CacheIndexRecordWrapper>& a,
-              const RefPtr<CacheIndexRecordWrapper>& b) const {
+  bool Equals(CacheIndexRecord* a, CacheIndexRecord* b) const {
     if (!a || !b) {
       return false;
     }
 
-    return a->Get()->mFrecency == b->Get()->mFrecency;
+    return a->mFrecency == b->mFrecency;
   }
-  bool LessThan(const RefPtr<CacheIndexRecordWrapper>& a,
-                const RefPtr<CacheIndexRecordWrapper>& b) const {
+  bool LessThan(CacheIndexRecord* a, CacheIndexRecord* b) const {
     
     if (!a) {
       return false;
@@ -60,18 +58,38 @@ class FrecencyComparator {
     }
 
     
-    if (a->Get()->mFrecency == 0) {
+    if (a->mFrecency == 0) {
       return false;
     }
-    if (b->Get()->mFrecency == 0) {
+    if (b->mFrecency == 0) {
       return true;
     }
 
-    return a->Get()->mFrecency < b->Get()->mFrecency;
+    return a->mFrecency < b->mFrecency;
   }
 };
 
 }  
+
+CacheIndexRecord::~CacheIndexRecord() {
+  if (!StaticPrefs::network_cache_frecency_array_check_enabled()) {
+    return;
+  }
+
+  if (!(mFlags & CacheIndexEntry::kDirtyMask) &&
+      ((mFlags & CacheIndexEntry::kFileSizeMask) == 0)) {
+    return;
+  }
+
+  RefPtr<CacheIndex> index = CacheIndex::gInstance;
+  if (index) {
+    CacheIndex::sLock.AssertCurrentThreadOwns();
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+    bool found = index->mFrecencyArray.RecordExisted(this);
+    MOZ_DIAGNOSTIC_ASSERT(!found);
+#endif
+  }
+}
 
 
 
@@ -91,8 +109,18 @@ class CacheIndexEntryAutoManage {
     const CacheIndexEntry* entry = FindEntry();
     mIndex->mIndexStats.BeforeChange(entry);
     if (entry && entry->IsInitialized() && !entry->IsRemoved()) {
-      mOldRecord = entry->mRec;
-      mOldFrecency = entry->mRec->Get()->mFrecency;
+      mOldRecord = entry->mRec.get();
+      mOldFrecency = entry->mRec->mFrecency;
+    } else {
+      if (entry) {
+        
+        
+        
+        if (mIndex->mFrecencyArray.RecordExisted(entry->mRec.get())) {
+          MOZ_DIAGNOSTIC_ASSERT(false);
+          mIndex->mFrecencyArray.RemoveRecord(entry->mRec.get());
+        }
+      }
     }
   }
 
@@ -106,28 +134,29 @@ class CacheIndexEntryAutoManage {
     }
 
     if (entry && !mOldRecord) {
-      mIndex->mFrecencyArray.AppendRecord(entry->mRec);
-      mIndex->AddRecordToIterators(entry->mRec);
+      mIndex->mFrecencyArray.AppendRecord(entry->mRec.get());
+      mIndex->AddRecordToIterators(entry->mRec.get());
     } else if (!entry && mOldRecord) {
       mIndex->mFrecencyArray.RemoveRecord(mOldRecord);
       mIndex->RemoveRecordFromIterators(mOldRecord);
     } else if (entry && mOldRecord) {
-      if (entry->mRec != mOldRecord) {
+      auto rec = entry->mRec.get();
+      if (rec != mOldRecord) {
         
-        mIndex->ReplaceRecordInIterators(mOldRecord, entry->mRec);
+        mIndex->ReplaceRecordInIterators(mOldRecord, rec);
 
-        if (entry->mRec->Get()->mFrecency == mOldFrecency) {
+        if (entry->mRec->mFrecency == mOldFrecency) {
           
-          mIndex->mFrecencyArray.ReplaceRecord(mOldRecord, entry->mRec);
+          mIndex->mFrecencyArray.ReplaceRecord(mOldRecord, rec);
         } else {
           
           mIndex->mFrecencyArray.RemoveRecord(mOldRecord);
-          mIndex->mFrecencyArray.AppendRecord(entry->mRec);
+          mIndex->mFrecencyArray.AppendRecord(rec);
         }
-      } else if (entry->mRec->Get()->mFrecency != mOldFrecency) {
+      } else if (entry->mRec->mFrecency != mOldFrecency) {
         
-        mIndex->mFrecencyArray.RemoveRecord(entry->mRec);
-        mIndex->mFrecencyArray.AppendRecord(entry->mRec);
+        mIndex->mFrecencyArray.RemoveRecord(rec);
+        mIndex->mFrecencyArray.AppendRecord(rec);
       }
     } else {
       
@@ -169,7 +198,7 @@ class CacheIndexEntryAutoManage {
 
   const SHA1Sum::Hash* mHash;
   RefPtr<CacheIndex> mIndex;
-  RefPtr<CacheIndexRecordWrapper> mOldRecord;
+  CacheIndexRecord* mOldRecord;
   uint32_t mOldFrecency;
   bool mDoNotSearchInIndex;
   bool mDoNotSearchInUpdates;
@@ -845,6 +874,7 @@ nsresult CacheIndex::RemoveEntry(const SHA1Sum::Hash* aHash) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
+  CacheIndexRecord* removedRecord = nullptr;
   {
     CacheIndexEntryAutoManage entryMng(aHash, index);
 
@@ -875,6 +905,7 @@ nsresult CacheIndex::RemoveEntry(const SHA1Sum::Hash* aHash) {
       } else {
         if (entry) {
           if (!entry->IsDirty() && entry->IsFileEmpty()) {
+            removedRecord = entry->mRec.get();
             index->mIndex.RemoveEntry(entry);
             entry = nullptr;
           } else {
@@ -916,6 +947,13 @@ nsresult CacheIndex::RemoveEntry(const SHA1Sum::Hash* aHash) {
       updated->MarkFresh();
     }
   }
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  if (removedRecord) {
+    MOZ_DIAGNOSTIC_ASSERT(!index->mFrecencyArray.RecordExisted(removedRecord));
+  }
+#else
+  Unused << removedRecord;
+#endif
   index->StartUpdatingIndexIfNeeded();
   index->WriteIndexToDiskIfNeeded();
 
@@ -1278,7 +1316,7 @@ nsresult CacheIndex::GetEntryForEviction(bool aIgnoreEmptyEntries,
   index->mFrecencyArray.SortIfNeeded();
 
   for (auto iter = index->mFrecencyArray.Iter(); !iter.Done(); iter.Next()) {
-    CacheIndexRecord* rec = iter.Get()->Get();
+    CacheIndexRecord* rec = iter.Get();
 
     memcpy(&hash, rec->mHash, sizeof(SHA1Sum::Hash));
 
@@ -1395,11 +1433,11 @@ nsresult CacheIndex::GetCacheStats(nsILoadContextInfo* aInfo, uint32_t* aSize,
   *aCount = 0;
 
   for (auto iter = index->mFrecencyArray.Iter(); !iter.Done(); iter.Next()) {
-    if (aInfo &&
-        !CacheIndexEntry::RecordMatchesLoadContextInfo(iter.Get(), aInfo))
+    CacheIndexRecord* record = iter.Get();
+    if (aInfo && !CacheIndexEntry::RecordMatchesLoadContextInfo(record, aInfo))
       continue;
 
-    *aSize += CacheIndexEntry::GetFileSize(*(iter.Get()->Get()));
+    *aSize += CacheIndexEntry::GetFileSize(*record);
     ++*aCount;
   }
 
@@ -1608,6 +1646,7 @@ void CacheIndex::ProcessPendingOperations() {
     MOZ_ASSERT(update->IsFresh());
 
     CacheIndexEntry* entry = mIndex.GetEntry(*update->Hash());
+    CacheIndexRecord* removedRecord = nullptr;
     {
       CacheIndexEntryAutoManage emng(update->Hash(), this);
       emng.DoNotSearchInUpdates();
@@ -1621,6 +1660,7 @@ void CacheIndex::ProcessPendingOperations() {
             
             
             
+            removedRecord = entry->mRec.get();
             mIndex.RemoveEntry(entry);
             entry = nullptr;
           } else {
@@ -1641,6 +1681,13 @@ void CacheIndex::ProcessPendingOperations() {
         *entry = *update;
       }
     }
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+    if (removedRecord) {
+      MOZ_DIAGNOSTIC_ASSERT(!mFrecencyArray.RecordExisted(removedRecord));
+    }
+#else
+    Unused << removedRecord;
+#endif
     iter.Remove();
   }
 
@@ -3338,23 +3385,23 @@ void CacheIndex::ReleaseBuffer() {
   mRWBufPos = 0;
 }
 
-void CacheIndex::FrecencyArray::AppendRecord(CacheIndexRecordWrapper* aRecord) {
+void CacheIndex::FrecencyArray::AppendRecord(CacheIndexRecord* aRecord) {
   LOG(
       ("CacheIndex::FrecencyArray::AppendRecord() [record=%p, hash=%08x%08x%08x"
        "%08x%08x]",
-       aRecord, LOGSHA1(aRecord->Get()->mHash)));
+       aRecord, LOGSHA1(aRecord->mHash)));
 
   MOZ_ASSERT(!mRecs.Contains(aRecord));
   mRecs.AppendElement(aRecord);
 
   
   
-  if (aRecord->Get()->mFrecency != 0) {
+  if (aRecord->mFrecency != 0) {
     ++mUnsortedElements;
   }
 }
 
-void CacheIndex::FrecencyArray::RemoveRecord(CacheIndexRecordWrapper* aRecord) {
+void CacheIndex::FrecencyArray::RemoveRecord(CacheIndexRecord* aRecord) {
   LOG(("CacheIndex::FrecencyArray::RemoveRecord() [record=%p]", aRecord));
 
   decltype(mRecs)::index_type idx;
@@ -3368,8 +3415,8 @@ void CacheIndex::FrecencyArray::RemoveRecord(CacheIndexRecordWrapper* aRecord) {
   SortIfNeeded();
 }
 
-void CacheIndex::FrecencyArray::ReplaceRecord(
-    CacheIndexRecordWrapper* aOldRecord, CacheIndexRecordWrapper* aNewRecord) {
+void CacheIndex::FrecencyArray::ReplaceRecord(CacheIndexRecord* aOldRecord,
+                                              CacheIndexRecord* aNewRecord) {
   LOG(
       ("CacheIndex::FrecencyArray::ReplaceRecord() [oldRecord=%p, "
        "newRecord=%p]",
@@ -3379,6 +3426,10 @@ void CacheIndex::FrecencyArray::ReplaceRecord(
   idx = mRecs.IndexOf(aOldRecord);
   MOZ_RELEASE_ASSERT(idx != mRecs.NoIndex);
   mRecs[idx] = aNewRecord;
+}
+
+bool CacheIndex::FrecencyArray::RecordExisted(CacheIndexRecord* aRecord) {
+  return mRecs.Contains(aRecord);
 }
 
 void CacheIndex::FrecencyArray::SortIfNeeded() {
@@ -3412,7 +3463,7 @@ void CacheIndex::FrecencyArray::SortIfNeeded() {
   }
 }
 
-void CacheIndex::AddRecordToIterators(CacheIndexRecordWrapper* aRecord) {
+void CacheIndex::AddRecordToIterators(CacheIndexRecord* aRecord) {
   sLock.AssertCurrentThreadOwns();
 
   for (uint32_t i = 0; i < mIterators.Length(); ++i) {
@@ -3423,7 +3474,7 @@ void CacheIndex::AddRecordToIterators(CacheIndexRecordWrapper* aRecord) {
   }
 }
 
-void CacheIndex::RemoveRecordFromIterators(CacheIndexRecordWrapper* aRecord) {
+void CacheIndex::RemoveRecordFromIterators(CacheIndexRecord* aRecord) {
   sLock.AssertCurrentThreadOwns();
 
   for (uint32_t i = 0; i < mIterators.Length(); ++i) {
@@ -3434,8 +3485,8 @@ void CacheIndex::RemoveRecordFromIterators(CacheIndexRecordWrapper* aRecord) {
   }
 }
 
-void CacheIndex::ReplaceRecordInIterators(CacheIndexRecordWrapper* aOldRecord,
-                                          CacheIndexRecordWrapper* aNewRecord) {
+void CacheIndex::ReplaceRecordInIterators(CacheIndexRecord* aOldRecord,
+                                          CacheIndexRecord* aNewRecord) {
   sLock.AssertCurrentThreadOwns();
 
   for (uint32_t i = 0; i < mIterators.Length(); ++i) {
