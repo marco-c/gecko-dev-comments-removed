@@ -71,6 +71,8 @@ pub struct ApplicableDeclarationBlock {
     bits: ApplicableDeclarationBits,
     
     pub specificity: u32,
+    
+    pub layer_order: u32,
 }
 
 impl ApplicableDeclarationBlock {
@@ -85,16 +87,18 @@ impl ApplicableDeclarationBlock {
             source: StyleSource::from_declarations(declarations),
             bits: ApplicableDeclarationBits::new(0, level),
             specificity: 0,
+            layer_order: 0,
         }
     }
 
     
     #[inline]
-    pub fn new(source: StyleSource, order: u32, level: CascadeLevel, specificity: u32) -> Self {
+    pub fn new(source: StyleSource, source_order: u32, level: CascadeLevel, specificity: u32, layer_order: u32) -> Self {
         ApplicableDeclarationBlock {
             source,
-            bits: ApplicableDeclarationBits::new(order, level),
+            bits: ApplicableDeclarationBits::new(source_order, level),
             specificity,
+            layer_order,
         }
     }
 
