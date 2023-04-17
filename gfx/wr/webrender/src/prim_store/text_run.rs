@@ -3,7 +3,7 @@
 
 
 use api::{ColorF, FontInstanceFlags, GlyphInstance, RasterSpace, Shadow};
-use api::units::{LayoutToWorldTransform, LayoutVector2D, RasterPixelScale};
+use api::units::{LayoutToWorldTransform, LayoutVector2D, RasterPixelScale, DevicePixelScale};
 use crate::scene_building::{CreateShadow, IsVisible};
 use crate::frame_builder::FrameBuildingState;
 use crate::glyph_rasterizer::{FontInstance, FontTransform, GlyphKey, FONT_SIZE_LIMIT};
@@ -262,7 +262,13 @@ impl TextRunPrimitive {
         
         let dps = surface.device_pixel_scale.0 * root_scaling_factor;
         let font_size = specified_font.size.to_f32_px();
-        let mut device_font_size = font_size * dps * raster_scale;
+
+        
+        
+        
+        
+        let quantized_scale = (dps * raster_scale * 100.0).round() / 100.0;
+        let mut device_font_size = font_size * quantized_scale;
 
         
         
@@ -387,19 +393,35 @@ impl TextRunPrimitive {
     fn get_raster_space_for_prim(
         &self,
         prim_spatial_node_index: SpatialNodeIndex,
+        low_quality_pinch_zoom: bool,
+        device_pixel_scale: DevicePixelScale,
         spatial_tree: &SpatialTree,
     ) -> RasterSpace {
         let prim_spatial_node = &spatial_tree.spatial_nodes[prim_spatial_node_index.0 as usize];
         if prim_spatial_node.is_ancestor_or_self_zooming {
-            let scale_factors = spatial_tree
-                .get_relative_transform(prim_spatial_node_index, ROOT_SPATIAL_NODE_INDEX)
-                .scale_factors();
+            if low_quality_pinch_zoom {
+                
+                
+                
+                
+                
+                
+                RasterSpace::Local(1.0)
+            } else {
+                
+                
+                
+                
+                let scale_factors = spatial_tree
+                    .get_relative_transform(prim_spatial_node_index, ROOT_SPATIAL_NODE_INDEX)
+                    .scale_factors();
 
-            
-            let scale = scale_factors.0.max(scale_factors.1).min(8.0).max(1.0);
-            let rounded_up = 2.0f32.powf(scale.log2().ceil());
+                
+                let scale = scale_factors.0.max(scale_factors.1).min(8.0).max(1.0);
+                let rounded_up = 2.0f32.powf(scale.log2().ceil());
 
-            RasterSpace::Local(rounded_up)
+                RasterSpace::Local(rounded_up / device_pixel_scale.0)
+            }
         } else {
             self.requested_raster_space
         }
@@ -415,6 +437,7 @@ impl TextRunPrimitive {
         spatial_node_index: SpatialNodeIndex,
         root_scaling_factor: f32,
         allow_subpixel: bool,
+        low_quality_pinch_zoom: bool,
         resource_cache: &mut ResourceCache,
         gpu_cache: &mut GpuCache,
         spatial_tree: &SpatialTree,
@@ -422,6 +445,8 @@ impl TextRunPrimitive {
     ) {
         let raster_space = self.get_raster_space_for_prim(
             spatial_node_index,
+            low_quality_pinch_zoom,
+            surface.device_pixel_scale,
             spatial_tree,
         );
 
