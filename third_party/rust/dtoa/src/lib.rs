@@ -6,20 +6,77 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/dtoa/0.4.2")]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![doc(html_root_url = "https://docs.rs/dtoa/0.4.8")]
+#![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
+#![cfg_attr(
+    feature = "cargo-clippy",
+    allow(
+        cast_lossless,
+        cast_possible_truncation,
+        if_not_else,
+        missing_errors_doc,
+        range_plus_one,
+        shadow_unrelated,
+        transmute_float_to_int,
+        unreadable_literal,
+        unseparated_literal_suffix
+    )
+)]
 
 #[macro_use] mod diyfp;
 #[macro_use] mod dtoa;
 
 use std::{io, mem, ops, ptr, slice};
 
+
 #[inline]
 pub fn write<W: io::Write, V: Floating>(wr: W, value: V) -> io::Result<usize> {
     value.write(wr)
 }
 
+
 pub trait Floating {
-    fn write<W: io::Write>(self, W) -> io::Result<usize>;
+    fn write<W: io::Write>(self, wr: W) -> io::Result<usize>;
 }
 
 impl Floating for f32 {
@@ -70,12 +127,12 @@ impl Floating for f64 {
 
 const MAX_DECIMAL_PLACES: isize = 324;
 
-static DEC_DIGITS_LUT: &'static [u8] =
-    b"0001020304050607080910111213141516171819\
-      2021222324252627282930313233343536373839\
-      4041424344454647484950515253545556575859\
-      6061626364656667686970717273747576777879\
-      8081828384858687888990919293949596979899";
+static DEC_DIGITS_LUT: [u8; 200] = *b"\
+    0001020304050607080910111213141516171819\
+    2021222324252627282930313233343536373839\
+    4041424344454647484950515253545556575859\
+    6061626364656667686970717273747576777879\
+    8081828384858687888990919293949596979899";
 
 
 static CACHED_POWERS_F_32: [u32; 12] = [

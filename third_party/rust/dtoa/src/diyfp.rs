@@ -6,6 +6,26 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use std::ops;
 
 #[derive(Copy, Clone, Debug)]
@@ -53,6 +73,7 @@ impl ops::Mul for DiyFp<u64, isize> {
     }
 }
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! diyfp {(
     floating_type: $fty:ty,
