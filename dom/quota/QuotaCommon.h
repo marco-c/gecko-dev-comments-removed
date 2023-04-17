@@ -1023,6 +1023,34 @@ auto ErrToDefaultOkOrErr(nsresult aValue) -> Result<V, nsresult> {
 }
 
 
+
+
+template <nsresult ErrorValue>
+bool IsSpecificError(const nsresult aValue) {
+  return aValue == ErrorValue;
+}
+
+
+
+
+
+
+
+
+template <auto SuccessValue, typename V = decltype(SuccessValue)>
+auto ErrToOk(const nsresult aValue) -> Result<V, nsresult> {
+  return V{SuccessValue};
+}
+
+
+
+
+template <typename V = mozilla::Ok>
+auto ErrToDefaultOk(const nsresult aValue) -> Result<V, nsresult> {
+  return V{};
+}
+
+
 template <typename R, typename Func, typename... Args>
 Result<R, nsresult> ToResultGet(const Func& aFunc, Args&&... aArgs) {
   nsresult rv;
