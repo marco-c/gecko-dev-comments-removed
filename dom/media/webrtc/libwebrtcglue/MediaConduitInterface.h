@@ -534,18 +534,8 @@ class AudioSessionConduit : public MediaSessionConduit {
 
 
 
-
-
-
-
-
-
-
-  virtual MediaConduitErrorCode GetAudioFrame(int16_t speechData[],
-                                              int32_t samplingFreqHz,
-                                              int32_t capture_delay,
-                                              size_t& numChannels,
-                                              size_t& lengthSamples) = 0;
+  virtual MediaConduitErrorCode GetAudioFrame(int32_t samplingFreqHz,
+                                              webrtc::AudioFrame* frame) = 0;
 
   
 

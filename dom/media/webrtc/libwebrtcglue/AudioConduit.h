@@ -121,20 +121,8 @@ class WebrtcAudioConduit : public AudioSessionConduit,
 
 
 
-
-
-
-
-
-
-
-
-
-  MediaConduitErrorCode GetAudioFrame(int16_t speechData[],
-                                      int32_t samplingFreqHz,
-                                      int32_t capture_delay,
-                                      size_t& numChannels,
-                                      size_t& lengthSamples) override;
+  MediaConduitErrorCode GetAudioFrame(int32_t samplingFreqHz,
+                                      webrtc::AudioFrame* frame) override;
 
   
 
@@ -290,9 +278,6 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   int mDtmfPayloadFrequency = -1;
 
   Mutex mMutex;
-
-  
-  webrtc::AudioFrame mAudioFrame;  
 
   
   const nsCOMPtr<nsISerialEventTarget> mStsThread;

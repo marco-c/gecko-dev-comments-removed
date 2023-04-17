@@ -577,15 +577,12 @@ MediaConduitErrorCode WebrtcAudioConduit::SendAudioFrame(
   return kMediaConduitNoError;
 }
 
-MediaConduitErrorCode WebrtcAudioConduit::GetAudioFrame(int16_t speechData[],
-                                                        int32_t samplingFreqHz,
-                                                        int32_t capture_delay,
-                                                        size_t& numChannels,
-                                                        size_t& lengthSamples) {
+MediaConduitErrorCode WebrtcAudioConduit::GetAudioFrame(
+    int32_t samplingFreqHz, webrtc::AudioFrame* frame) {
   CSFLogDebug(LOGTAG, "%s ", __FUNCTION__);
 
   
-  if (!speechData) {
+  if (!frame) {
     CSFLogError(LOGTAG, "%s Null Audio Buffer Pointer", __FUNCTION__);
     MOZ_ASSERT(PR_FALSE);
     return kMediaConduitMalformedArgument;
@@ -599,38 +596,26 @@ MediaConduitErrorCode WebrtcAudioConduit::GetAudioFrame(int16_t speechData[],
   }
 
   
-  if (capture_delay < 0) {
-    CSFLogError(LOGTAG, "%s Invalid Capture Delay ", __FUNCTION__);
-    MOZ_ASSERT(PR_FALSE);
-    return kMediaConduitMalformedArgument;
-  }
-
-  
   
   if (!mEngineReceiving) {
     CSFLogError(LOGTAG, "%s Engine not Receiving ", __FUNCTION__);
     return kMediaConduitSessionNotInited;
   }
 
-  size_t lengthSamplesAllowed = lengthSamples;
-  lengthSamples = 0;  
-                      
+  
+  
+  
+  
+  auto info = static_cast<webrtc::internal::AudioReceiveStream*>(mRecvStream)
+                  ->GetAudioFrameWithInfo(samplingFreqHz, frame);
 
-
-  numChannels = mAudioFrame.num_channels_;
-
-  if (numChannels == 0) {
-    CSFLogError(LOGTAG, "%s Audio frame has zero channels", __FUNCTION__);
+  if (info == webrtc::AudioMixer::Source::AudioFrameInfo::kError) {
+    CSFLogError(LOGTAG, "%s Getting audio frame failed", __FUNCTION__);
     return kMediaConduitPlayoutError;
   }
 
-  
-  lengthSamples = mAudioFrame.samples_per_channel_ * mAudioFrame.num_channels_;
-  MOZ_RELEASE_ASSERT(lengthSamples <= lengthSamplesAllowed);
-  PodCopy(speechData, mAudioFrame.data(), lengthSamples);
-
-  CSFLogDebug(LOGTAG, "%s GetAudioFrame:Got samples: length %zu ", __FUNCTION__,
-              lengthSamples);
+  CSFLogDebug(LOGTAG, "%s Got %zu channels of %zu samples", __FUNCTION__,
+              frame->num_channels(), frame->samples_per_channel());
   return kMediaConduitNoError;
 }
 
