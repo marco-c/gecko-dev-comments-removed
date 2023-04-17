@@ -73,6 +73,21 @@ struct StackMap final {
   
 
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
   uint32_t numMappedWords : 30;
 
   
