@@ -25,12 +25,10 @@
 
 #![allow(missing_docs)]
 
-extern crate nodrop;
 #[cfg(feature = "servo")]
 extern crate serde;
 extern crate stable_deref_trait;
 
-use nodrop::NoDrop;
 #[cfg(feature = "servo")]
 use serde::{Deserialize, Serialize};
 use stable_deref_trait::{CloneStableDeref, StableDeref};
@@ -305,7 +303,7 @@ impl<T> Arc<T> {
         F: FnOnce(&RawOffsetArc<T>) -> U,
     {
         
-        let transient = unsafe { NoDrop::new(Arc::into_raw_offset(ptr::read(self))) };
+        let transient = unsafe { mem::ManuallyDrop::new(Arc::into_raw_offset(ptr::read(self))) };
 
         
         let result = f(&transient);
@@ -926,7 +924,7 @@ impl<H, T> ThinArc<H, T> {
     {
         
         let transient = unsafe {
-            NoDrop::new(Arc {
+            mem::ManuallyDrop::new(Arc {
                 p: ptr::NonNull::new_unchecked(thin_to_thick(self.ptr.as_ptr())),
                 phantom: PhantomData,
             })
@@ -934,11 +932,6 @@ impl<H, T> ThinArc<H, T> {
 
         
         let result = f(&transient);
-
-        
-        
-        
-        mem::forget(transient);
 
         
         result
@@ -1140,15 +1133,10 @@ impl<T> RawOffsetArc<T> {
         F: FnOnce(&Arc<T>) -> U,
     {
         
-        let transient = unsafe { NoDrop::new(Arc::from_raw(self.ptr.as_ptr())) };
+        let transient = unsafe { mem::ManuallyDrop::new(Arc::from_raw(self.ptr.as_ptr())) };
 
         
         let result = f(&transient);
-
-        
-        
-        
-        mem::forget(transient);
 
         
         result
@@ -1272,15 +1260,10 @@ impl<'a, T> ArcBorrow<'a, T> {
         T: 'static,
     {
         
-        let transient = unsafe { NoDrop::new(Arc::from_raw(self.0)) };
+        let transient = unsafe { mem::ManuallyDrop::new(Arc::from_raw(self.0)) };
 
         
         let result = f(&transient);
-
-        
-        
-        
-        mem::forget(transient);
 
         
         result
