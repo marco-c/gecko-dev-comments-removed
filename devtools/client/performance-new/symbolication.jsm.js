@@ -215,6 +215,36 @@ function createLibraryMap(sharedLibraries) {
   };
 }
 
+class LocalSymbolicationService {
+  
+
+
+
+
+
+
+  constructor(sharedLibraries, objdirs, perfFront) {
+    this._libraryGetter = createLibraryMap(sharedLibraries);
+    this._objdirs = objdirs;
+    this._perfFront = perfFront;
+  }
+
+  
+
+
+
+
+  async getSymbolTable(debugName, breakpadId) {
+    const lib = this._libraryGetter(debugName, breakpadId);
+    if (!lib) {
+      throw new Error(
+        `Could not find the library for "${debugName}", "${breakpadId}".`
+      );
+    }
+    return getSymbolTableMultiModal(lib, this._objdirs, this._perfFront);
+  }
+}
+
 
 
 
@@ -227,19 +257,7 @@ function createLibraryMap(sharedLibraries) {
 
 
 function createLocalSymbolicationService(sharedLibraries, objdirs, perfFront) {
-  const libraryGetter = createLibraryMap(sharedLibraries);
-
-  return {
-    async getSymbolTable(debugName, breakpadId) {
-      const lib = libraryGetter(debugName, breakpadId);
-      if (!lib) {
-        throw new Error(
-          `Could not find the library for "${debugName}", "${breakpadId}".`
-        );
-      }
-      return getSymbolTableMultiModal(lib, objdirs, perfFront);
-    },
-  };
+  return new LocalSymbolicationService(sharedLibraries, objdirs, perfFront);
 }
 
 
