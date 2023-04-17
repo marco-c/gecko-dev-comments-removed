@@ -69,7 +69,10 @@ enum class StringDataFlags : uint16_t {
   INLINE = 1 << 4,
 
   
-  LITERAL = 1 << 5
+  LITERAL = 1 << 5,
+
+  
+  INVALID_MASK = (uint16_t) ~((LITERAL << 1) - 1)
 };
 
 
@@ -78,7 +81,9 @@ enum class StringClassFlags : uint16_t {
   
   INLINE = 1 << 0,
   
-  NULL_TERMINATED = 1 << 1
+  NULL_TERMINATED = 1 << 1,
+  
+  INVALID_MASK = (uint16_t) ~((NULL_TERMINATED << 1) - 1)
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(StringDataFlags)
