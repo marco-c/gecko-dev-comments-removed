@@ -2913,8 +2913,19 @@ GeckoDriver.prototype.print = async function(cmd) {
 
   
   
+  
+  const chunks = [];
+  
+  const argLengthLimit = 262144;
+
+  for (let offset = 0; offset < bytes.length; offset += argLengthLimit) {
+    const chunkData = bytes.subarray(offset, offset + argLengthLimit);
+
+    chunks.push(String.fromCharCode.apply(null, chunkData));
+  }
+
   return {
-    value: btoa(String.fromCharCode.apply(null, bytes)),
+    value: btoa(chunks.join("")),
   };
 };
 
