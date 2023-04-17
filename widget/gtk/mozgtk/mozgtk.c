@@ -1,0 +1,21 @@
+
+
+
+
+
+
+#include "mozilla/Types.h"
+
+#include <X11/Xlib.h>
+
+
+
+
+
+
+
+
+
+
+
+MOZ_EXPORT Bool XShmQueryExtension(Display* aDisplay) { return False; }

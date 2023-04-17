@@ -5137,6 +5137,9 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
       
       SetCompositorHint(GTK_WIDGET_COMPOSIDED_ENABLED);
     }
+    
+    
+    XShmQueryExtension(mXDisplay);
   }
 #  ifdef MOZ_WAYLAND
   else if (GdkIsWaylandDisplay()) {

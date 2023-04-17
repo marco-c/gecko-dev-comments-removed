@@ -6,6 +6,10 @@
 
 SharedLibrary("mozgtk")
 
+SOURCES += [
+    "mozgtk.c",
+]
+
 
 
 
