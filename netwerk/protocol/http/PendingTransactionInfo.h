@@ -24,14 +24,11 @@ class PendingTransactionInfo final : public ARefBase {
   
   bool IsAlreadyClaimedInitializingConn();
 
-  
-  
-  
-  
-  [[nodiscard]] nsWeakPtr ForgetDnsAndConnectSocketAndActiveConn();
+  void AbandonDnsAndConnectSocketAndForgetActiveConn();
 
   
-  void RememberDnsAndConnectSocket(DnsAndConnectSocket* sock);
+  
+  bool TryClaimingDnsAndConnectSocket(DnsAndConnectSocket* sock);
   
   
   bool TryClaimingActiveConn(HttpConnectionBase* conn);
