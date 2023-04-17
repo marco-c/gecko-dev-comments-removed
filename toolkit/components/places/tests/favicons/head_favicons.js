@@ -19,12 +19,6 @@ const systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
 
 
 
-const FAVICON_ERRORPAGE_URI = Services.io.newURI(
-  "chrome://global/skin/icons/info.svg"
-);
-
-
-
 
 
 
