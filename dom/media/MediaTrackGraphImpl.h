@@ -117,7 +117,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
                                GraphRunType aRunTypeRequested,
                                TrackRate aSampleRate, uint32_t aChannelCount,
                                CubebUtils::AudioDeviceID aOutputDeviceID,
-                               AbstractThread* aWindow);
+                               nsISerialEventTarget* aWindow);
 
   
   
@@ -970,7 +970,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
   bool mTrackOrderDirty;
-  const RefPtr<AbstractThread> mAbstractMainThread;
+  const RefPtr<nsISerialEventTarget> mMainThread;
 
   
   
