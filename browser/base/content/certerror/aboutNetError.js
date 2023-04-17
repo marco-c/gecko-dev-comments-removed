@@ -128,7 +128,7 @@ function showPrefChangeContainer() {
     .addEventListener("click", function resetPreferences() {
       RPMSendAsyncMessage("Browser:ResetSSLPreferences");
     });
-  addAutofocus("#prefResetButton", "beforeend");
+  setFocus("#prefResetButton", "beforeend");
 }
 
 function showTls10Container() {
@@ -140,7 +140,7 @@ function showTls10Container() {
     RPMSetBoolPref("security.tls.version.enable-deprecated", true);
     retryThis(button);
   });
-  addAutofocus("#enableTls10Button", "beforeend");
+  setFocus("#enableTls10Button", "beforeend");
 }
 
 function setupAdvancedButton() {
@@ -332,7 +332,7 @@ function initPage() {
     return;
   }
 
-  addAutofocus("#netErrorButtonContainer > .try-again");
+  setFocus("#netErrorButtonContainer > .try-again");
 
   document.body.classList.add("neterror");
 
@@ -617,7 +617,7 @@ function initPageCaptivePortal() {
       RPMSendAsyncMessage("Browser:OpenCaptivePortalPage");
     });
 
-  addAutofocus("#openPortalLoginPageButton");
+  setFocus("#openPortalLoginPageButton");
   setupAdvancedButton();
 
   
@@ -633,7 +633,7 @@ function initPageCertError() {
     host.textContent = HOST_NAME;
   }
 
-  addAutofocus("#returnButton");
+  setFocus("#returnButton");
   setupAdvancedButton();
   document.getElementById("learnMoreContainer").style.display = "block";
 
@@ -1266,16 +1266,18 @@ function handleErrorCodeClick(event) {
 
 
 
-
-
-
-function addAutofocus(selector, position = "afterbegin") {
+function setFocus(selector, position = "afterbegin") {
   if (window.top == window) {
     var button = document.querySelector(selector);
     var parent = button.parentNode;
-    button.remove();
-    button.setAttribute("autofocus", "true");
     parent.insertAdjacentElement(position, button);
+    
+    
+    
+    
+    requestAnimationFrame(() => {
+      button.focus({ preventFocusRing: true });
+    });
   }
 }
 

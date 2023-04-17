@@ -303,7 +303,7 @@ function onLoad(ready) {
     await document.l10n.translateElements(translatedElements);
     requestAnimationFrame(() => {
       
-      primary.focus();
+      primary.focus({ preventFocusRing: true });
 
       
       if (current === 0) {
