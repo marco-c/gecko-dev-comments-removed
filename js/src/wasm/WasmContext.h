@@ -19,40 +19,20 @@
 #ifndef wasm_context_h
 #define wasm_context_h
 
-#include "mozilla/MemoryReporting.h"
-#include "jstypes.h"
-#include "js/UniquePtr.h"
-
-struct JS_PUBLIC_API JSContext;
-
 namespace js {
 namespace wasm {
-
-class TypeContext;
 
 
 
 
 class Context {
  public:
-  Context()
-      : triedToInstallSignalHandlers(false),
-        haveSignalHandlers(false),
-        typeContext(nullptr) {}
+  Context() : triedToInstallSignalHandlers(false), haveSignalHandlers(false) {}
 
   
   
   bool triedToInstallSignalHandlers;
   bool haveSignalHandlers;
-
-  [[nodiscard]] bool ensureTypeContext(JSContext* cx);
-
-  
-  MutableTypeContext typeContext;
-
-  
-
-  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 };
 
 }  

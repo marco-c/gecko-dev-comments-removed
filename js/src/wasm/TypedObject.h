@@ -33,21 +33,30 @@ class RttValue : public NativeObject {
   static const JSClass class_;
 
   enum Slot {
-    Handle = 0,    
-    Kind = 1,      
-    Size = 2,      
-    Proto = 3,     
-    Parent = 4,    
-    Children = 5,  
+    Handle = 0,       
+    TypeContext = 1,  
+    Kind = 2,         
+    Size = 3,         
+    Proto = 4,        
+    Parent = 5,       
+    Children = 6,     
     
-    SlotCount = 6,
+    SlotCount = 7,
   };
 
-  static RttValue* createFromHandle(JSContext* cx, wasm::TypeHandle handle);
+  static RttValue* createFromHandle(JSContext* cx, const wasm::SharedTypeContext& tycx,
+                                    wasm::TypeHandle handle);
   static RttValue* rttSub(JSContext* cx, js::Handle<RttValue*> parent,
                           js::Handle<RttValue*> subCanon);
 
   bool isNewborn() { return getReservedSlot(Slot::Handle).isUndefined(); }
+
+  const wasm::TypeDef& typeDef() const;
+
+  const wasm::TypeContext* typeContext() const {
+    return (const wasm::TypeContext*)getReservedSlot(Slot::TypeContext)
+        .toPrivate();
+  }
 
   wasm::TypeHandle handle() const {
     return wasm::TypeHandle(uint32_t(getReservedSlot(Slot::Handle).toInt32()));
@@ -72,8 +81,6 @@ class RttValue : public NativeObject {
   }
   ObjectWeakMap& children() const { return *maybeChildren(); }
   bool ensureChildren(JSContext* cx);
-
-  const wasm::TypeDef& getType(JSContext* cx) const;
 
   [[nodiscard]] bool lookupProperty(JSContext* cx,
                                     js::Handle<TypedObject*> object, jsid id,

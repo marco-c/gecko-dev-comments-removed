@@ -556,14 +556,6 @@ class PackedType : public T {
     *this = RefType::fromTypeIndex(newIndex, isNullable());
   }
 
-  void offsetTypeIndex(uint32_t offsetBy) {
-    if (!isTypeIndex()) {
-      return;
-    }
-    *this =
-        RefType::fromTypeIndex(refType().typeIndex() + offsetBy, isNullable());
-  }
-
   
   
   
