@@ -604,11 +604,6 @@ var DownloadsView = {
   
 
 
-  contextMenuOpen: false,
-
-  
-
-
   subViewOpen: false,
 
   
@@ -875,28 +870,20 @@ var DownloadsView = {
     }
   },
 
+  get contextMenu() {
+    let menu = document.getElementById("downloadsContextMenu");
+    if (menu) {
+      delete this.contextMenu;
+      this.contextMenu = menu;
+    }
+    return menu;
+  },
+
   
 
 
-
-  onContextPopupShown(aEvent) {
-    
-    if (aEvent.target != aEvent.currentTarget) {
-      return;
-    }
-
-    DownloadsCommon.log("Context menu has shown.");
-    this.contextMenuOpen = true;
-  },
-
-  onContextPopupHidden(aEvent) {
-    
-    if (aEvent.target != aEvent.currentTarget) {
-      return;
-    }
-
-    DownloadsCommon.log("Context menu has hidden.");
-    this.contextMenuOpen = false;
+  get contextMenuOpen() {
+    return this.contextMenu.state != "closed";
   },
 
   
@@ -951,7 +938,7 @@ var DownloadsView = {
     let { preferredAction, useSystemDefault } = mimeInfo ? mimeInfo : {};
 
     
-    let contextMenu = document.getElementById("downloadsContextMenu");
+    let { contextMenu } = this;
     contextMenu.setAttribute("state", element.getAttribute("state"));
     if (element.hasAttribute("exists")) {
       contextMenu.setAttribute("exists", "true");
