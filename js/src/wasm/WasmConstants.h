@@ -16,8 +16,8 @@
 
 
 
-#ifndef wasm_binary_h
-#define wasm_binary_h
+#ifndef wasm_constants_h
+#define wasm_constants_h
 
 namespace js {
 namespace wasm {
