@@ -127,35 +127,21 @@ static already_AddRefed<nsISupports> NewMetricFromId(uint32_t id) {
 
 
 
-
-
 static already_AddRefed<nsISupports> NewSubMetricFromIds(uint32_t aParentTypeId, uint32_t aParentMetricId, const nsACString& aLabel, uint32_t* aSubmetricId) {
   switch (aParentTypeId) {
     case 2: { 
-#ifdef MOZ_GLEAN_ANDROID
-      auto id = *aSubmetricId;
-#else
       auto id = impl::fog_labeled_boolean_get(aParentMetricId, &aLabel);
       *aSubmetricId = id;
-#endif
       return MakeAndAddRef<GleanBoolean>(id);
     }
     case 4: { 
-#ifdef MOZ_GLEAN_ANDROID
-      auto id = *aSubmetricId;
-#else
       auto id = impl::fog_labeled_counter_get(aParentMetricId, &aLabel);
       *aSubmetricId = id;
-#endif
       return MakeAndAddRef<GleanCounter>(id);
     }
     case 6: { 
-#ifdef MOZ_GLEAN_ANDROID
-      auto id = *aSubmetricId;
-#else
       auto id = impl::fog_labeled_string_get(aParentMetricId, &aLabel);
       *aSubmetricId = id;
-#endif
       return MakeAndAddRef<GleanString>(id);
     }
     default: {
