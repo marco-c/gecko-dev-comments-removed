@@ -1,6 +1,6 @@
 <!doctype html>
 <title>Set location.protocol from an HTTP URL</title>
-
+<!-- In particular, valid non-broken schemes that are nevertheless not going to work -->
 <script src=/resources/testharness.js></script>
 <script src=/resources/testharnessreport.js></script>
 <div id=log></div>
@@ -26,7 +26,9 @@ self.onload = () => {
         assert_equals(self[index].location.host, location.host)
         assert_equals(self[index].location.port, location.port)
         t.done()
-      }, 500)
+        // Experimentally, 4 seconds is long enough for the navigation to
+        // complete, if it happens.
+      }, 4000)
     }, "Set location.protocol to " + val)
   })
 }
