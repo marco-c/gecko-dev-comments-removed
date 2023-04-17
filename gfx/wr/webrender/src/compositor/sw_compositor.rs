@@ -687,12 +687,6 @@ impl SwCompositeThread {
         
         self.waiting_for_jobs.store(false, Ordering::SeqCst);
     }
-
-    
-    
-    fn is_busy_compositing(&self) -> bool {
-        !self.jobs_completed.load(Ordering::SeqCst)
-    }
 }
 
 
@@ -728,6 +722,8 @@ pub struct SwCompositor {
     composite_thread: Option<Arc<SwCompositeThread>>,
     
     locked_framebuffer: Option<swgl::LockedResource>,
+    
+    is_compositing: bool,
 }
 
 impl SwCompositor {
@@ -761,6 +757,7 @@ impl SwCompositor {
             depth_id,
             composite_thread,
             locked_framebuffer: None,
+            is_compositing: false,
         }
     }
 
@@ -1362,7 +1359,7 @@ impl Compositor for SwCompositor {
             
             
             
-            if self.composite_thread.as_ref().unwrap().is_busy_compositing() {
+            if self.is_compositing {
                 self.late_surfaces.push((id, transform, clip_rect, filter));
                 return;
             }
@@ -1377,6 +1374,8 @@ impl Compositor for SwCompositor {
     
     
     fn start_compositing(&mut self, clear_color: ColorF, dirty_rects: &[DeviceIntRect], _opaque_rects: &[DeviceIntRect]) {
+        self.is_compositing = true;
+
         
         
         
@@ -1444,6 +1443,8 @@ impl Compositor for SwCompositor {
     }
 
     fn end_frame(&mut self) {
+        self.is_compositing = false;
+
         if self.use_native_compositor {
             self.compositor.end_frame();
         } else if let Some(ref composite_thread) = self.composite_thread {
