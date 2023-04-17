@@ -119,19 +119,12 @@ add_task(async function test_match_url_filters() {
     
     { shouldPass, filters: [{ ports: [443] }], url: "https://mozilla.org" },
     { shouldPass, filters: [{ ports: [80] }], url: "http://mozilla.org" },
-    {
-      shouldPass,
-      filters: [{ ports: [21] }],
-      url: "ftp://ftp.mozilla.org",
-      prefs: [["network.ftp.enabled", true]],
-    },
 
     
     {
       shouldFail,
       filters: [{ ports: [21] }],
       url: "ftp://ftp.mozilla.org",
-      prefs: [["network.ftp.enabled", false]],
     },
 
     
