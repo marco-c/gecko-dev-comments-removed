@@ -539,6 +539,9 @@ class LookAndFeel {
   static uint32_t GetPasswordMaskDelay();
 
   
+  static void GetThemeInfo(nsACString&);
+
+  
 
 
 

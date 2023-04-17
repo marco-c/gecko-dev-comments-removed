@@ -230,8 +230,10 @@ var dataProviders = {
       );
     } catch (e) {}
 
-    
+    data.osTheme = Services.sysinfo.getProperty("osThemeInfo");
+
     try {
+      
       data.rosetta = Services.sysinfo.getProperty("rosettaStatus");
     } catch (e) {}
 
