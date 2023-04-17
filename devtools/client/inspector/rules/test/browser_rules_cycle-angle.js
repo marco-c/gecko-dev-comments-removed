@@ -88,6 +88,15 @@ async function checkAngleCyclingPersist(inspector, view) {
 }
 
 async function checkSwatchShiftClick(container, win, expectedValue, comment) {
+  
+  
+  
+  
+  
+  
+  
+  await wait(500);
+
   const swatch = container.querySelector(".ruleview-angleswatch");
   const valueNode = container.querySelector(".ruleview-angle");
 
