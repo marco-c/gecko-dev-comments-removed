@@ -1678,7 +1678,11 @@ class nsIWidget : public nsISupports {
 
 
 
-  enum TouchpadPinchPhase { PHASE_BEGIN = 0, PHASE_UPDATE = 1, PHASE_END = 2 };
+  enum TouchpadGesturePhase {
+    PHASE_BEGIN = 0,
+    PHASE_UPDATE = 1,
+    PHASE_END = 2
+  };
   
 
 
@@ -1703,10 +1707,9 @@ class nsIWidget : public nsISupports {
   
 
 
-  virtual nsresult SynthesizeNativeTouchPadPinch(TouchpadPinchPhase aEventPhase,
-                                                 float aScale,
-                                                 LayoutDeviceIntPoint aPoint,
-                                                 int32_t aModifierFlags) = 0;
+  virtual nsresult SynthesizeNativeTouchPadPinch(
+      TouchpadGesturePhase aEventPhase, float aScale,
+      LayoutDeviceIntPoint aPoint, int32_t aModifierFlags) = 0;
 
   
 
