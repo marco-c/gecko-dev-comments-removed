@@ -223,6 +223,11 @@ void CanonicalBrowsingContext::ReplacedBy(
     BackgroundSessionStorageManager::PropagateManager(Id(), aNewContext->Id());
   }
 
+  
+  
+  aNewContext->mPriorityActive = mPriorityActive;
+  mPriorityActive = false;
+
   MOZ_ASSERT(aNewContext->mLoadingEntries.IsEmpty());
   mLoadingEntries.SwapElements(aNewContext->mLoadingEntries);
   MOZ_ASSERT(!aNewContext->mActiveEntry);

@@ -224,7 +224,6 @@ BrowserParent::BrowserParent(ContentParent* aManager, const TabId& aTabId,
       mRemoteTargetSetsCursor(false),
       mPreserveLayers(false),
       mRenderLayers(true),
-      mActiveInPriorityManager(false),
       mHasLayers(false),
       mHasPresented(false),
       mIsReadyToHandleInputEvents(false),
@@ -234,6 +233,14 @@ BrowserParent::BrowserParent(ContentParent* aManager, const TabId& aTabId,
   
   
   mIsReadyToHandleInputEvents = !ContentParent::IsInputEventQueueSupported();
+
+  
+  
+  
+  
+  if (aBrowsingContext->Top()->IsPriorityActive()) {
+    ProcessPriorityManager::ActivityChanged(this, true);
+  }
 }
 
 BrowserParent::~BrowserParent() = default;
@@ -3377,13 +3384,6 @@ bool BrowserParent::GetHasLayers() { return mHasLayers; }
 bool BrowserParent::GetRenderLayers() { return mRenderLayers; }
 
 void BrowserParent::SetRenderLayers(bool aEnabled) {
-  if (mActiveInPriorityManager != aEnabled) {
-    mActiveInPriorityManager = aEnabled;
-    
-    
-    ProcessPriorityManager::ActivityChanged(this, aEnabled);
-  }
-
   if (aEnabled == mRenderLayers) {
     if (aEnabled && mHasLayers && mPreserveLayers) {
       
@@ -3443,13 +3443,6 @@ void BrowserParent::NotifyResolutionChanged() {
     
     Unused << SendUIResolutionChanged(mDPI, mRounding,
                                       mDPI < 0 ? -1.0 : mDefaultScale.scale);
-  }
-}
-
-void BrowserParent::Deprioritize() {
-  if (mActiveInPriorityManager) {
-    ProcessPriorityManager::ActivityChanged(this, false);
-    mActiveInPriorityManager = false;
   }
 }
 
