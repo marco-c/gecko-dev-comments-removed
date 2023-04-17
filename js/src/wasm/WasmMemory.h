@@ -119,11 +119,19 @@ struct Pages {
   bool operator>(Pages other) const { return value_ > other.value_; }
 };
 
+
 extern Pages MaxMemoryPages();
+
+
+static inline size_t MaxMemoryBytes() { return MaxMemoryPages().byteLength(); }
+
+
+
+
 
 extern size_t MaxMemoryBoundsCheckLimit();
 
-static inline size_t MaxMemoryBytes() { return MaxMemoryPages().byteLength(); }
+
 
 static inline uint64_t MaxMemoryLimitField(IndexType indexType) {
   return indexType == IndexType::I32 ? MaxMemory32LimitField

@@ -210,12 +210,22 @@ wasm::Pages wasm::MaxMemoryPages() {
 size_t wasm::MaxMemoryBoundsCheckLimit() { return size_t(UINT32_MAX) + 1; }
 #  endif
 #else
+
+
+
 wasm::Pages wasm::MaxMemoryPages() {
   MOZ_ASSERT(ArrayBufferObject::maxBufferByteLength() >= INT32_MAX / PageSize);
   return wasm::Pages(INT32_MAX / PageSize);
 }
 
-size_t wasm::MaxMemoryBoundsCheckLimit() { return size_t(INT32_MAX) + 1; }
+
+
+
+size_t wasm::MaxMemoryBoundsCheckLimit() {
+  size_t boundsCheckLimit = size_t(INT32_MAX) + 1;
+  MOZ_ASSERT(IsValidBoundsCheckImmediate(boundsCheckLimit));
+  return boundsCheckLimit;
+}
 #endif
 
 
