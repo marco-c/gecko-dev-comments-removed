@@ -21,6 +21,9 @@ const COLLECTION_NAME = "query-stripping";
 const PREF_STRIP_LIST_NAME = "privacy.query_stripping.strip_list";
 const PREF_ALLOW_LIST_NAME = "privacy.query_stripping.allow_list";
 
+const CONTENT_PROCESS_SCRIPT =
+  "resource://gre/modules/URLQueryStrippingListProcessScript.js";
+
 class URLQueryStrippingListService {
   constructor() {
     this.classID = Components.ID("{afff16f0-3fd2-4153-9ccd-c6d9abd879e4}");
@@ -63,6 +66,16 @@ class URLQueryStrippingListService {
       this._onRemoteSettingsUpdate(entries || []);
 
       Services.ppmm.addMessageListener("query-stripping:request-rs", this);
+
+      
+      
+      
+      
+      
+      
+      
+      
+      Services.ppmm.loadProcessScript(CONTENT_PROCESS_SCRIPT, true);
     } else {
       
       
@@ -96,6 +109,7 @@ class URLQueryStrippingListService {
 
     if (this.isParentProcess) {
       Services.ppmm.removeMessageListener("query-stripping:request-rs", this);
+      Services.ppmm.removeDelayedProcessScript(CONTENT_PROCESS_SCRIPT);
     } else {
       Services.cpmm.removeMessageListener("query-stripping:rs-updated", this);
     }
