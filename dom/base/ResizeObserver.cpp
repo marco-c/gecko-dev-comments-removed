@@ -62,9 +62,19 @@ static gfx::Size GetTargetSize(Element* aTarget,
     
     
     
-    gfxRect bbox = SVGUtils::GetBBox(frame);
+    const gfxRect bbox = SVGUtils::GetBBox(frame);
     size.width = static_cast<float>(bbox.width);
     size.height = static_cast<float>(bbox.height);
+    if (aBox == ResizeObserverBoxOptions::Device_pixel_content_box) {
+      
+      
+      
+      
+      const LayoutDeviceIntSize snappedSize =
+          RoundedToInt(CSSSize::FromUnknownSize(size) *
+                       frame->PresContext()->CSSToDevPixelScale());
+      size = gfx::Size(snappedSize.ToUnknownSize());
+    }
   } else {
     
     
@@ -80,6 +90,21 @@ static gfx::Size GetTargetSize(Element* aTarget,
         
         size = CSSPixel::FromAppUnits(frame->GetSize()).ToUnknownSize();
         break;
+      case ResizeObserverBoxOptions::Device_pixel_content_box: {
+        
+        
+        
+        
+        
+        
+        
+        const LayoutDeviceIntSize snappedSize =
+            LayoutDevicePixel::FromAppUnitsRounded(
+                frame->GetContentRectRelativeToSelf().Size(),
+                frame->PresContext()->AppUnitsPerDevPixel());
+        size = gfx::Size(snappedSize.ToUnknownSize());
+        break;
+      }
       case ResizeObserverBoxOptions::Content_box:
       default:
         size =
@@ -295,8 +320,11 @@ uint32_t ResizeObserver::BroadcastActiveObservations() {
         GetTargetSize(target, ResizeObserverBoxOptions::Border_box);
     gfx::Size contentBoxSize =
         GetTargetSize(target, ResizeObserverBoxOptions::Content_box);
+    gfx::Size devicePixelContentBoxSize = GetTargetSize(
+        target, ResizeObserverBoxOptions::Device_pixel_content_box);
     RefPtr<ResizeObserverEntry> entry =
-        new ResizeObserverEntry(this, *target, borderBoxSize, contentBoxSize);
+        new ResizeObserverEntry(this, *target, borderBoxSize, contentBoxSize,
+                                devicePixelContentBoxSize);
 
     if (!entries.AppendElement(entry.forget(), fallible)) {
       
@@ -308,6 +336,9 @@ uint32_t ResizeObserver::BroadcastActiveObservations() {
     switch (observation->BoxOptions()) {
       case ResizeObserverBoxOptions::Border_box:
         observation->UpdateLastReportedSize(borderBoxSize);
+        break;
+      case ResizeObserverBoxOptions::Device_pixel_content_box:
+        observation->UpdateLastReportedSize(devicePixelContentBoxSize);
         break;
       case ResizeObserverBoxOptions::Content_box:
       default:
@@ -332,7 +363,8 @@ uint32_t ResizeObserver::BroadcastActiveObservations() {
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(ResizeObserverEntry, mOwner, mTarget,
                                       mContentRect, mBorderBoxSize,
-                                      mContentBoxSize)
+                                      mContentBoxSize,
+                                      mDevicePixelContentBoxSize)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(ResizeObserverEntry)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(ResizeObserverEntry)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ResizeObserverEntry)
@@ -364,6 +396,18 @@ void ResizeObserverEntry::GetContentBoxSize(
   aRetVal.AppendElement(mContentBoxSize);
 }
 
+void ResizeObserverEntry::GetDevicePixelContentBoxSize(
+    nsTArray<RefPtr<ResizeObserverSize>>& aRetVal) const {
+  
+  
+  
+  
+  
+  
+  aRetVal.Clear();
+  aRetVal.AppendElement(mDevicePixelContentBoxSize);
+}
+
 void ResizeObserverEntry::SetBorderBoxSize(const gfx::Size& aSize) {
   nsIFrame* frame = mTarget->GetPrimaryFrame();
   const WritingMode wm = frame ? frame->GetWritingMode() : WritingMode();
@@ -386,6 +430,12 @@ void ResizeObserverEntry::SetContentRectAndSize(const gfx::Size& aSize) {
   
   const WritingMode wm = frame ? frame->GetWritingMode() : WritingMode();
   mContentBoxSize = new ResizeObserverSize(this, aSize, wm);
+}
+
+void ResizeObserverEntry::SetDevicePixelContentSize(const gfx::Size& aSize) {
+  nsIFrame* frame = mTarget->GetPrimaryFrame();
+  const WritingMode wm = frame ? frame->GetWritingMode() : WritingMode();
+  mDevicePixelContentBoxSize = new ResizeObserverSize(this, aSize, wm);
 }
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(ResizeObserverSize, mOwner)

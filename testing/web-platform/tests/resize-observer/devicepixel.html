@@ -1,13 +1,13 @@
 <!doctype html>
 <link rel="match" href="devicepixel-ref.html">
 <meta name="assert" content="Device pixel content box sizes and pixel snapping are correct in Resize Observer callback">
-
-
-
-
-
-
-
+<!--
+  This test verifies that the device pixel content box sizes available
+  in a resize observer callback are correct. Resize observer notifications
+  are delivered as the element is loaded. A box is then drawn using the
+  available dimensions in device pixels. The result is compared to the reference
+  which uses div and border to draw a box.
+-->
 
 <style>
   #canvas2D {
@@ -46,7 +46,7 @@
     // Use a linewidth of 2. Because the rectangle is drawn at 0,0 with
     // its dimensions being the same as canvas dimensions, linewidth as it
     // is drawn on the canvas will be 1.
-    ctx.lineWidth = "2";
+    ctx.lineWidth = window.devicePixelRatio * 2;
     ctx.strokeStyle = "green";
     ctx.rect(0, 0, snappedSize.inlineSize, snappedSize.blockSize);
     ctx.stroke();
