@@ -12,7 +12,15 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
+
+  error: "chrome://remote/content/shared/webdriver/Errors.jsm",
+  Log: "chrome://remote/content/shared/Log.jsm",
+  WebDriverSession: "chrome://remote/content/shared/webdriver/Session.jsm",
 });
+
+XPCOMUtils.defineLazyGetter(this, "logger", () =>
+  Log.get(Log.TYPES.WEBDRIVER_BIDI)
+);
 
 
 
@@ -29,10 +37,68 @@ class WebDriverBiDi {
   constructor(agent) {
     this.agent = agent;
     this._running = false;
+
+    this._session = null;
   }
 
   get address() {
     return `ws://${this.agent.host}:${this.agent.port}`;
+  }
+
+  get session() {
+    return this._session;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  createSession(capabilities) {
+    if (this.session) {
+      throw new error.SessionNotCreatedError(
+        "Maximum number of active sessions"
+      );
+    }
+
+    this._session = new WebDriverSession(capabilities);
+
+    
+    if (this.agent.listening) {
+      this.agent.server.registerPathHandler(this.session.path, this.session);
+      logger.debug(`Registered session handler: ${this.session.path}`);
+    }
+
+    return {
+      sessionId: this.session.id,
+      capabilities: this.session.capabilities,
+    };
+  }
+
+  
+
+
+  deleteSession() {
+    if (!this.session) {
+      return;
+    }
+
+    
+    if (this.agent.listening) {
+      this.agent.server.registerPathHandler(this.session.path, null);
+      logger.debug(`Unregistered session handler: ${this.session.path}`);
+    }
+
+    this.session.destroy();
+    this._session = null;
   }
 
   
@@ -60,6 +126,10 @@ class WebDriverBiDi {
       return;
     }
 
-    this._running = false;
+    try {
+      this.deleteSession();
+    } finally {
+      this._running = false;
+    }
   }
 }

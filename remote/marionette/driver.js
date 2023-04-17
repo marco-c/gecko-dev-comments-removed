@@ -20,6 +20,8 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   atom: "chrome://remote/content/marionette/atom.js",
   browser: "chrome://remote/content/marionette/browser.js",
   capture: "chrome://remote/content/marionette/capture.js",
+  clearActionInputState:
+    "chrome://remote/content/marionette/actors/MarionetteCommandsChild.jsm",
   clearElementIdCache:
     "chrome://remote/content/marionette/actors/MarionetteCommandsParent.jsm",
   Context: "chrome://remote/content/marionette/browser.js",
@@ -44,6 +46,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
     "chrome://remote/content/marionette/actors/MarionetteCommandsParent.jsm",
   registerEventsActor:
     "chrome://remote/content/marionette/actors/MarionetteEventsParent.jsm",
+  RemoteAgent: "chrome://remote/content/components/RemoteAgent.jsm",
   TimedPromise: "chrome://remote/content/marionette/sync.js",
   Timeouts: "chrome://remote/content/shared/webdriver/Capabilities.jsm",
   UnhandledPromptBehavior:
@@ -108,7 +111,7 @@ this.GeckoDriver = function(server) {
   this._server = server;
 
   
-  this.currentSession = null;
+  this._currentSession = null;
 
   this.browsers = {};
 
@@ -136,6 +139,19 @@ Object.defineProperty(GeckoDriver.prototype, "context", {
 
   set(context) {
     this._context = Context.fromString(context);
+  },
+});
+
+
+
+
+Object.defineProperty(GeckoDriver.prototype, "currentSession", {
+  get() {
+    if (RemoteAgent.webdriverBiDi) {
+      return RemoteAgent.webdriverBiDi.session;
+    }
+
+    return this._currentSession;
   },
 });
 
@@ -386,202 +402,73 @@ GeckoDriver.prototype.registerBrowser = function(browserElement) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 GeckoDriver.prototype.newSession = async function(cmd) {
   if (this.currentSession) {
     throw new error.SessionNotCreatedError("Maximum number of active sessions");
   }
 
-  this.currentSession = new WebDriverSession(cmd.parameters);
+  const { parameters: capabilities } = cmd;
 
-  registerCommandsActor();
-  registerEventsActor();
+  try {
+    const win = await windowManager.waitForInitialApplicationWindow();
 
-  
-  await new TimedPromise(
-    resolve => {
-      const waitForWindow = () => {
-        let windowTypes;
-        if (AppInfo.isThunderbird) {
-          windowTypes = ["mail:3pane"];
-        } else {
-          
-          
-          windowTypes = ["navigator:browser", "navigator:geckoview"];
-        }
-
-        let win;
-        for (const windowType of windowTypes) {
-          win = Services.wm.getMostRecentWindow(windowType);
-          if (win) {
-            break;
-          }
-        }
-
-        if (!win) {
-          
-          let checkTimer = Cc["@mozilla.org/timer;1"].createInstance(
-            Ci.nsITimer
-          );
-          checkTimer.initWithCallback(
-            waitForWindow,
-            100,
-            Ci.nsITimer.TYPE_ONE_SHOT
-          );
-        } else if (win.document.readyState != "complete") {
-          
-          let listener = ev => {
-            
-            
-            if (ev.target != win.document) {
-              return;
-            }
-            win.removeEventListener("load", listener);
-            waitForWindow();
-          };
-          win.addEventListener("load", listener, true);
-        } else {
-          if (MarionettePrefs.clickToStart) {
-            Services.prompt.alert(
-              win,
-              "",
-              "Click to start execution of marionette tests"
-            );
-          }
-          this.addBrowser(win);
-          this.mainFrame = win;
-          resolve();
-        }
-      };
-
-      waitForWindow();
-    },
-    {
-      throws: error.SessionNotCreatedError,
-      errorMessage: "No applicable application windows found",
+    if (MarionettePrefs.clickToStart) {
+      Services.prompt.alert(
+        win,
+        "",
+        "Click to start execution of marionette tests"
+      );
     }
-  );
 
-  for (let win of windowManager.windows) {
-    const tabBrowser = browser.getTabBrowser(win);
+    this.addBrowser(win);
+    this.mainFrame = win;
 
-    if (tabBrowser) {
-      for (const tab of tabBrowser.tabs) {
-        const contentBrowser = browser.getBrowserForTab(tab);
-        this.registerBrowser(contentBrowser);
+    
+    
+    
+    if (RemoteAgent.webdriverBiDi) {
+      RemoteAgent.webdriverBiDi.createSession(capabilities);
+    } else {
+      this._currentSession = new WebDriverSession(capabilities);
+    }
+
+    registerCommandsActor();
+    registerEventsActor();
+
+    for (let win of windowManager.windows) {
+      const tabBrowser = browser.getTabBrowser(win);
+
+      if (tabBrowser) {
+        for (const tab of tabBrowser.tabs) {
+          const contentBrowser = browser.getBrowserForTab(tab);
+          this.registerBrowser(contentBrowser);
+        }
       }
+
+      this.registerListenersForWindow(win);
     }
 
-    this.registerListenersForWindow(win);
+    if (this.mainFrame) {
+      this.currentSession.chromeBrowsingContext = this.mainFrame.browsingContext;
+      this.mainFrame.focus();
+    }
+
+    if (this.curBrowser.tab) {
+      this.currentSession.contentBrowsingContext = this.curBrowser.contentBrowser.browsingContext;
+      this.curBrowser.contentBrowser.focus();
+    }
+
+    
+    this.dialogObserver = new modal.DialogObserver(() => this.curBrowser);
+    this.dialogObserver.add(this.handleModalDialog.bind(this));
+
+    
+    this.dialog = modal.findModalDialogs(this.curBrowser);
+
+    Services.obs.addObserver(this, "browser-delayed-startup-finished");
+  } catch (e) {
+    throw new error.SessionNotCreatedError(e);
   }
-
-  if (this.mainFrame) {
-    this.currentSession.chromeBrowsingContext = this.mainFrame.browsingContext;
-    this.mainFrame.focus();
-  }
-
-  if (this.curBrowser.tab) {
-    this.currentSession.contentBrowsingContext = this.curBrowser.contentBrowser.browsingContext;
-    this.curBrowser.contentBrowser.focus();
-  }
-
-  
-  this.dialogObserver = new modal.DialogObserver(() => this.curBrowser);
-  this.dialogObserver.add(this.handleModalDialog.bind(this));
-
-  
-  this.dialog = modal.findModalDialogs(this.curBrowser);
-
-  Services.obs.addObserver(this, "browser-delayed-startup-finished");
 
   return {
     sessionId: this.currentSession.id,
@@ -1432,6 +1319,7 @@ GeckoDriver.prototype.setTimeouts = function(cmd) {
     this.currentSession.timeouts.toJSON(),
     cmd.parameters
   );
+
   this.currentSession.timeouts = Timeouts.fromJSON(merged);
 };
 
@@ -2244,6 +2132,7 @@ GeckoDriver.prototype.deleteSession = function() {
 
   Services.obs.removeObserver(this, "browser-delayed-startup-finished");
 
+  clearActionInputState();
   clearElementIdCache();
 
   
@@ -2251,8 +2140,12 @@ GeckoDriver.prototype.deleteSession = function() {
   unregisterCommandsActor();
   unregisterEventsActor();
 
-  this.currentSession.destroy();
-  this.currentSession = null;
+  if (RemoteAgent.webdriverBiDi) {
+    RemoteAgent.webdriverBiDi.deleteSession();
+  } else {
+    this.currentSession.destroy();
+    this._currentSession = null;
+  }
 };
 
 

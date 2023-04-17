@@ -14,10 +14,11 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   accessibility: "chrome://remote/content/marionette/accessibility.js",
   allowAllCerts: "chrome://remote/content/marionette/cert.js",
   Capabilities: "chrome://remote/content/shared/webdriver/Capabilities.jsm",
-  clearActionInputState:
-    "chrome://remote/content/marionette/actors/MarionetteCommandsChild.jsm",
   error: "chrome://remote/content/shared/webdriver/Errors.jsm",
   Log: "chrome://remote/content/shared/Log.jsm",
+  WebDriverBiDiConnection:
+    "chrome://remote/content/webdriver-bidi/WebDriverBiDiConnection.jsm",
+  WebSocketHandshake: "chrome://remote/content/server/WebSocketHandshake.jsm",
 });
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -30,16 +31,145 @@ XPCOMUtils.defineLazyServiceGetter(
 XPCOMUtils.defineLazyGetter(this, "logger", () => Log.get());
 
 
+
+
 class WebDriverSession {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   constructor(capabilities) {
+    
+    
+    
+    this._connections = new Set();
+
+    this.id = uuidGen
+      .generateUUID()
+      .toString()
+      .slice(1, -1);
+
+    
+    this.path = `/session/${this.id}`;
+
     try {
       this.capabilities = Capabilities.fromJSON(capabilities);
     } catch (e) {
       throw new error.SessionNotCreatedError(e);
     }
-
-    const uuid = uuidGen.generateUUID().toString();
-    this.id = uuid.substring(1, uuid.length - 1);
 
     if (this.capabilities.get("acceptInsecureCerts")) {
       logger.warn("TLS certificate errors will be ignored for this session");
@@ -61,7 +191,9 @@ class WebDriverSession {
   destroy() {
     allowAllCerts.disable();
 
-    clearActionInputState();
+    
+    this._connections.forEach(connection => connection.close());
+    this._connections.clear();
   }
 
   get a11yChecks() {
@@ -90,5 +222,32 @@ class WebDriverSession {
 
   get unhandledPromptBehavior() {
     return this.capabilities.get("unhandledPromptBehavior");
+  }
+
+  
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  async handle(request, response) {
+    const webSocket = await WebSocketHandshake.upgrade(request, response);
+    const conn = new WebDriverBiDiConnection(webSocket, response._connection);
+    conn.registerSession(this);
+    this._connections.add(conn);
+  }
+
+  
+
+  get QueryInterface() {
+    return ChromeUtils.generateQI(["nsIHttpRequestHandler"]);
   }
 }

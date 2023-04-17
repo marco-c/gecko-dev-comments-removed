@@ -12,9 +12,11 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
+
   AppInfo: "chrome://remote/content/marionette/appinfo.js",
   browser: "chrome://remote/content/marionette/browser.js",
   error: "chrome://remote/content/shared/webdriver/Errors.jsm",
+  TimedPromise: "chrome://remote/content/marionette/sync.js",
   waitForEvent: "chrome://remote/content/marionette/sync.js",
   waitForObserverTopic: "chrome://remote/content/marionette/sync.js",
 });
@@ -267,6 +269,68 @@ class WindowManager {
           `openWindow() not supported in ${AppInfo.name}`
         );
     }
+  }
+
+  
+
+
+
+
+
+  waitForInitialApplicationWindow() {
+    return new TimedPromise(
+      resolve => {
+        const waitForWindow = () => {
+          let windowTypes;
+          if (AppInfo.isThunderbird) {
+            windowTypes = ["mail:3pane"];
+          } else {
+            
+            
+            windowTypes = ["navigator:browser", "navigator:geckoview"];
+          }
+
+          let win;
+          for (const windowType of windowTypes) {
+            win = Services.wm.getMostRecentWindow(windowType);
+            if (win) {
+              break;
+            }
+          }
+
+          if (!win) {
+            
+            let checkTimer = Cc["@mozilla.org/timer;1"].createInstance(
+              Ci.nsITimer
+            );
+            checkTimer.initWithCallback(
+              waitForWindow,
+              100,
+              Ci.nsITimer.TYPE_ONE_SHOT
+            );
+          } else if (win.document.readyState != "complete") {
+            
+            let listener = ev => {
+              
+              
+              if (ev.target != win.document) {
+                return;
+              }
+              win.removeEventListener("load", listener);
+              waitForWindow();
+            };
+            win.addEventListener("load", listener, true);
+          } else {
+            resolve(win);
+          }
+        };
+
+        waitForWindow();
+      },
+      {
+        errorMessage: "No applicable application windows found",
+      }
+    );
   }
 }
 
