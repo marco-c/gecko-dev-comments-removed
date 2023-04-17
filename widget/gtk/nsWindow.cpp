@@ -2468,7 +2468,7 @@ void nsWindow::SetCursor(const Cursor& aCursor) {
 
   
   bool fromImage = true;
-  GdkCursor* newCursor = GetCursorForImage(aCursor, GdkScaleFactor());
+  GdkCursor* newCursor = GetCursorForImage(aCursor, GdkCeiledScaleFactor());
   if (!newCursor) {
     fromImage = false;
     newCursor = get_gtk_cursor(aCursor.mDefaultCursor);
