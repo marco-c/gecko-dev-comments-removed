@@ -187,6 +187,15 @@ static CSSRect AddVMargin(const CSSRect& aRect, const CSSCoord& aMargin,
   return rect;
 }
 
+static bool IsReplacedElement(const nsCOMPtr<dom::Element>& aElement) {
+  if (nsIFrame* frame = aElement->GetPrimaryFrame()) {
+    if (frame->IsFrameOfType(nsIFrame::eReplaced)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 ZoomTarget CalculateRectToZoomTo(
     const RefPtr<dom::Document>& aRootContentDocument, const CSSPoint& aPoint) {
   
@@ -265,11 +274,48 @@ ZoomTarget CalculateRectToZoomTo(
   
   
   
+  bool heightConstrained = false;
+
   
-  if (!rect.IsEmpty() && compositedArea.Width() > 0.0f) {
+  
+  
+  
+  if (!rect.IsEmpty() && compositedArea.Width() > 0.0f &&
+      compositedArea.Height() > 0.0f) {
+    
+    
     const float widthRatio = rect.Width() / compositedArea.Width();
     float targetHeight = compositedArea.Height() * widthRatio;
-    if (targetHeight < rect.Height()) {
+
+    
+    
+
+    
+    if (IsReplacedElement(element) && targetHeight < rect.Height() &&
+        
+        
+        rect.Height() < 1.1 * rect.Width() &&
+        
+        compositedArea.Width() >= compositedArea.Height()) {
+      heightConstrained = true;
+      
+      
+      
+      
+      
+      float targetWidth =
+          rect.Height() * compositedArea.Width() / compositedArea.Height();
+      MOZ_ASSERT(targetWidth > rect.Width());
+      if (targetWidth > rect.Width()) {
+        rect.x -= (targetWidth - rect.Width()) / 2;
+        rect.SetWidth(targetWidth);
+        
+        elementBoundingRect = rect;
+      }
+
+    } else if (targetHeight < rect.Height()) {
+      
+      
       float newY = documentRelativePoint.y - (targetHeight * 0.5f);
       if ((newY + targetHeight) > rect.YMost()) {
         rect.MoveByY(rect.Height() - targetHeight);
@@ -282,6 +328,10 @@ ZoomTarget CalculateRectToZoomTo(
 
   const CSSCoord margin = 15;
   rect = AddHMargin(rect, margin, metrics);
+
+  if (heightConstrained) {
+    rect = AddVMargin(rect, margin, metrics);
+  }
 
   
   
