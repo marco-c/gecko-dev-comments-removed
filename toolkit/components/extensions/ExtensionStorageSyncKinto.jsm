@@ -10,7 +10,11 @@
 
 
 
-var EXPORTED_SYMBOLS = ["ExtensionStorageSync", "extensionStorageSync"];
+var EXPORTED_SYMBOLS = [
+  "ExtensionStorageSync",
+  "KintoStorageTestUtils",
+  "extensionStorageSync",
+];
 
 const global = this;
 
@@ -1368,3 +1372,14 @@ class ExtensionStorageSync {
 }
 this.ExtensionStorageSync = ExtensionStorageSync;
 extensionStorageSync = new ExtensionStorageSync(_fxaService);
+
+
+const KintoStorageTestUtils = {
+  CollectionKeyEncryptionRemoteTransformer,
+  CryptoCollection,
+  EncryptionRemoteTransformer,
+  KeyRingEncryptionRemoteTransformer,
+  cleanUpForContext,
+  idToKey,
+  keyToId,
+};
