@@ -1207,6 +1207,11 @@ impl RenderApi {
     }
 
     
+    pub fn stop_render_backend(&self) {
+        self.low_priority_scene_sender.send(SceneBuilderRequest::StopRenderBackend).unwrap();
+    }
+
+    
     pub fn shut_down(&self, synchronously: bool) {
         if synchronously {
             let (tx, rx) = single_msg_channel();

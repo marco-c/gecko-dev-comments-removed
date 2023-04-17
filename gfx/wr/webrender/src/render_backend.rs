@@ -168,6 +168,7 @@ impl ::std::ops::Sub<usize> for FrameId {
 }
 enum RenderBackendStatus {
     Continue,
+    StopRenderBackend,
     ShutDown(Option<Sender<()>>),
 }
 
@@ -908,6 +909,29 @@ impl RenderBackend {
             };
         }
 
+        if let RenderBackendStatus::StopRenderBackend = status {
+            while let Ok(msg) = self.api_rx.recv() {
+                match msg {
+                    ApiMsg::SceneBuilderResult(SceneBuilderResult::ExternalEvent(evt)) => {
+                        self.notifier.external_event(evt);
+                    }
+                    ApiMsg::SceneBuilderResult(SceneBuilderResult::FlushComplete(tx)) => {
+                        
+                        
+                        
+                        debug_assert!(false);
+                        tx.send(()).ok();
+                    }
+                    ApiMsg::SceneBuilderResult(SceneBuilderResult::ShutDown(sender)) => {
+                        info!("Recycling stats: {:?}", self.recycler);
+                        status = RenderBackendStatus::ShutDown(sender);
+                        break;
+                   }
+                    _ => {},
+                }
+            }
+        }
+
         
         
         while let Ok(msg) = self.api_rx.try_recv() {
@@ -1322,6 +1346,9 @@ impl RenderBackend {
             }
             SceneBuilderResult::DeleteDocument(document_id) => {
                 self.documents.remove(&document_id);
+            }
+            SceneBuilderResult::StopRenderBackend => {
+                return RenderBackendStatus::StopRenderBackend;
             }
             SceneBuilderResult::ShutDown(sender) => {
                 info!("Recycling stats: {:?}", self.recycler);
