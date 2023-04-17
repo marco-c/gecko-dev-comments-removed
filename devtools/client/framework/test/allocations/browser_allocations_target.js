@@ -34,12 +34,12 @@ add_task(async function() {
   
   await testScript(tab);
 
-  const recordData = await startRecordingAllocations();
+  await startRecordingAllocations();
 
   
   await testScript(tab);
 
-  await stopRecordingAllocations(recordData, "target");
+  await stopRecordingAllocations("target");
 
   gBrowser.removeTab(tab);
 });

@@ -33,6 +33,12 @@ SpecialPowers.pushPrefEnv({
   set: [["devtools.testing", false]],
 });
 
+
+const env = Cc["@mozilla.org/process/environment;1"].getService(
+  Ci.nsIEnvironment
+);
+const DEBUG_ALLOCATIONS = env.get("DEBUG_DEVTOOLS_ALLOCATIONS");
+
 async function addTab(url) {
   const tab = BrowserTestUtils.addTab(gBrowser, url);
   gBrowser.selectedTab = tab;
@@ -56,13 +62,11 @@ async function startRecordingAllocations({
   alsoRecordContentProcess = false,
 } = {}) {
   
-  let contentProcessObjects = null;
-  let contentProcessMemory = null;
   if (alsoRecordContentProcess) {
-    contentProcessMemory = await SpecialPowers.spawn(
+    await SpecialPowers.spawn(
       gBrowser.selectedBrowser,
-      [],
-      async () => {
+      [DEBUG_ALLOCATIONS],
+      async debug_allocations => {
         const { DevToolsLoader } = ChromeUtils.import(
           "resource://devtools/shared/Loader.jsm"
         );
@@ -80,95 +84,51 @@ async function startRecordingAllocations({
         
         DevToolsLoader.tracker = tracker;
 
-        await tracker.doGC();
-
-        return tracker.getAllocatedMemory();
-      }
-    );
-    contentProcessObjects = await SpecialPowers.spawn(
-      gBrowser.selectedBrowser,
-      [],
-      () => {
-        const { DevToolsLoader } = ChromeUtils.import(
-          "resource://devtools/shared/Loader.jsm"
-        );
-        const { tracker } = DevToolsLoader;
-        return tracker.stillAllocatedObjects();
+        await tracker.startRecordingAllocations(debug_allocations);
       }
     );
   }
 
-  
-  
-  await tracker.doGC();
-
-  
-  
-  
-  const parentProcessMemory = tracker.getAllocatedMemory();
-  const parentProcessObjects = tracker.stillAllocatedObjects();
-
-  return {
-    parentProcessObjects,
-    parentProcessMemory,
-    contentProcessObjects,
-    contentProcessMemory,
-  };
+  await tracker.startRecordingAllocations(DEBUG_ALLOCATIONS);
 }
 
 
 
 
-async function stopRecordingAllocations(dataOnStart, recordName) {
+async function stopRecordingAllocations(
+  recordName,
+  { alsoRecordContentProcess = false } = {}
+) {
   
-  await tracker.doGC();
+  ok(!tracker.overflowed, "Allocation were all recorded in the parent process");
 
   
-  ok(!tracker.overflowed, "Allocation were all recorded");
+  const parentProcessData = await tracker.stopRecordingAllocations(
+    DEBUG_ALLOCATIONS
+  );
 
-  
-  const parentProcessMemory = tracker.getAllocatedMemory();
-  const parentProcessObjects = tracker.stillAllocatedObjects();
-
-  let contentProcessMemory = null;
-  let contentProcessObjects = null;
-  if (dataOnStart.contentProcessObjects) {
-    contentProcessMemory = await SpecialPowers.spawn(
+  let contentProcessData = null;
+  if (alsoRecordContentProcess) {
+    contentProcessData = await SpecialPowers.spawn(
       gBrowser.selectedBrowser,
-      [],
-      async () => {
+      [DEBUG_ALLOCATIONS],
+      debug_allocations => {
         const { DevToolsLoader } = ChromeUtils.import(
           "resource://devtools/shared/Loader.jsm"
         );
         const { tracker } = DevToolsLoader;
-
-        await tracker.doGC();
-
-        return tracker.getAllocatedMemory();
-      }
-    );
-    contentProcessObjects = await SpecialPowers.spawn(
-      gBrowser.selectedBrowser,
-      [],
-      () => {
-        const { DevToolsLoader } = ChromeUtils.import(
-          "resource://devtools/shared/Loader.jsm"
+        ok(
+          !tracker.overflowed,
+          "Allocation were all recorded in the content process"
         );
-        const { tracker } = DevToolsLoader;
-        return tracker.stillAllocatedObjects();
+        return tracker.stopRecordingAllocations(debug_allocations);
       }
     );
   }
 
   
-  const diffNoStackInParent =
-    parentProcessObjects.objectsWithoutStack -
-    dataOnStart.parentProcessObjects.objectsWithoutStack;
-  const diffWithStackInParent =
-    parentProcessObjects.objectsWithStack -
-    dataOnStart.parentProcessObjects.objectsWithStack;
   info(
-    `The ${recordName} test leaked ${diffWithStackInParent} objects (${diffNoStackInParent} with missing allocation site) in the parent process`
+    `The ${recordName} test leaked ${parentProcessData.objectsWithStack} objects (${parentProcessData.objectsWithoutStack} with missing allocation site) in the parent process`
   );
   const PERFHERDER_DATA = {
     framework: {
@@ -180,44 +140,38 @@ async function stopRecordingAllocations(dataOnStart, recordName) {
         subtests: [
           {
             name: "objects-with-no-stacks",
-            value: diffNoStackInParent,
+            value: parentProcessData.objectsWithoutStack,
           },
           {
             name: "objects-with-stacks",
-            value: diffWithStackInParent,
+            value: parentProcessData.objectsWithStack,
           },
           {
             name: "memory",
-            value: parentProcessMemory - dataOnStart.parentProcessMemory,
+            value: parentProcessData.memory,
           },
         ],
       },
     ],
   };
-  if (contentProcessObjects) {
-    const diffNoStackInContent =
-      contentProcessObjects.objectsWithoutStack -
-      dataOnStart.contentProcessObjects.objectsWithoutStack;
-    const diffWithStackInContent =
-      contentProcessObjects.objectsWithStack -
-      dataOnStart.contentProcessObjects.objectsWithStack;
+  if (alsoRecordContentProcess) {
     info(
-      `The ${recordName} test leaked ${diffWithStackInContent} objects (${diffNoStackInContent} with missing allocation site) in the content process`
+      `The ${recordName} test leaked ${contentProcessData.objectsWithStack} objects (${contentProcessData.objectsWithoutStack} with missing allocation site) in the content process`
     );
     PERFHERDER_DATA.suites.push({
       name: recordName + ":content-process",
       subtests: [
         {
           name: "objects-with-no-stacks",
-          value: diffNoStackInContent,
+          value: contentProcessData.objectsWithoutStack,
         },
         {
           name: "objects-with-stacks",
-          value: diffWithStackInContent,
+          value: contentProcessData.objectsWithStack,
         },
         {
           name: "memory",
-          value: contentProcessMemory - dataOnStart.contentProcessMemory,
+          value: contentProcessData.memory,
         },
       ],
     });
