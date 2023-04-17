@@ -4526,6 +4526,20 @@ void Element::SetHTML(const nsAString& aInnerHTML,
                       const SetHTMLOptions& aOptions, ErrorResult& aError) {
   FragmentOrElement* target = this;
   
+  if (IsHTMLElement(nsGkAtoms::script)) {
+    aError.ThrowTypeError("This does not work on <script> elements");
+    return;
+  }
+  if (IsHTMLElement(nsGkAtoms::object)) {
+    aError.ThrowTypeError("This does not work on <object> elements");
+    return;
+  }
+  if (IsHTMLElement(nsGkAtoms::iframe)) {
+    aError.ThrowTypeError("This does not work on <iframe> elements");
+    return;
+  }
+
+  
   if (target->IsTemplateElement()) {
     DocumentFragment* frag =
         static_cast<HTMLTemplateElement*>(target)->Content();
