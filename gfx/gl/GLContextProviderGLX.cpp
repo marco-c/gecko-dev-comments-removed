@@ -232,6 +232,10 @@ bool GLXLibrary::EnsureInitialized() {
 
   mInitialized = true;
 
+  
+  
+  MesaMemoryLeakWorkaround();
+
   return true;
 }
 

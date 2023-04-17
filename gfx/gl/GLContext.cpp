@@ -16,6 +16,11 @@
 #ifdef MOZ_WIDGET_ANDROID
 #  include <sys/mman.h>
 #endif
+#if defined(XP_LINUX) && !defined(ANDROID)
+
+#  include <dlfcn.h>
+#  include <link.h>
+#endif
 
 #include "GLBlitHelper.h"
 #include "GLReadTexImageHelper.h"
@@ -44,6 +49,7 @@
 #include "OGLShaderProgram.h"  
 
 #include "mozilla/DebugOnly.h"
+#include "mozilla/Maybe.h"
 
 #ifdef XP_MACOSX
 #  include <CoreServices/CoreServices.h>
@@ -2539,6 +2545,37 @@ void GLContext::OnImplicitMakeCurrentFailure(const char* const funcName) {
 bool GLContext::CreateOffscreenDefaultFb(const gfx::IntSize& size) {
   mOffscreenDefaultFb = MozFramebuffer::Create(this, size, 0, true);
   return bool(mOffscreenDefaultFb);
+}
+
+
+
+
+
+
+
+
+
+void MesaMemoryLeakWorkaround() {
+#if defined(XP_LINUX) && !defined(ANDROID)
+  Maybe<nsAutoCString> foundPath;
+
+  dl_iterate_phdr(
+      [](dl_phdr_info* info, size_t size, void* data) {
+        auto& foundPath = *reinterpret_cast<Maybe<nsAutoCString>*>(data);
+        nsDependentCString thisPath(info->dlpi_name);
+        if (StringEndsWith(thisPath, "/swrast_dri.so"_ns)) {
+          foundPath.emplace(thisPath);
+          return 1;
+        }
+        return 0;
+      },
+      &foundPath);
+
+  if (foundPath) {
+    
+    Unused << dlopen(foundPath->get(), RTLD_LAZY);
+  }
+#endif  
 }
 
 } 
