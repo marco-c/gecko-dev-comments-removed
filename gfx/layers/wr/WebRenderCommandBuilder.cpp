@@ -2211,7 +2211,8 @@ WebRenderCommandBuilder::GenerateFallbackData(
   
   
   
-  if (opacity == wr::OpacityType::Opaque && snap) {
+  if (aBuilder.GetInheritedOpacity() == 1.0f &&
+      opacity == wr::OpacityType::Opaque && snap) {
     dtRect = LayerIntRect::FromUnknownRect(
         ScaleToNearestPixelsOffset(paintBounds, scale.width, scale.height,
                                    appUnitsPerDevPixel, residualOffset));
@@ -2268,7 +2269,8 @@ WebRenderCommandBuilder::GenerateFallbackData(
       nsRect lastBounds = fallbackData->mBounds;
       lastBounds.MoveBy(shift);
 
-      if (lastBounds.IsEqualInterior(paintBounds) && invalidRegion.IsEmpty()) {
+      if (lastBounds.IsEqualInterior(paintBounds) && invalidRegion.IsEmpty() &&
+          aBuilder.GetInheritedOpacity() == fallbackData->mOpacity) {
         if (aItem->GetType() == DisplayItemType::TYPE_FILTER) {
           needPaint = ComputeInvalidationForDisplayList(
               aDisplayListBuilder, shift, aItem->GetChildren());
@@ -2319,9 +2321,16 @@ WebRenderCommandBuilder::GenerateFallbackData(
           gfx::BackendType::SKIA, gfx::IntSize(1, 1), format);
       RefPtr<gfx::DrawTarget> dt = gfx::Factory::CreateRecordingDrawTarget(
           recorder, dummyDt, (dtRect - dtRect.TopLeft()).ToUnknownRect());
+      if (aBuilder.GetInheritedOpacity() != 1.0f) {
+        dt->PushLayer(false, aBuilder.GetInheritedOpacity(), nullptr,
+                      gfx::Matrix());
+      }
       PaintItemByDrawTarget(aItem, dt, (dtRect / layerScale).TopLeft(),
                              dt->GetRect(),
                             aDisplayListBuilder, scale, highlight);
+      if (aBuilder.GetInheritedOpacity() != 1.0f) {
+        dt->PopLayer();
+      }
 
       
       
@@ -2365,10 +2374,17 @@ WebRenderCommandBuilder::GenerateFallbackData(
           if (!dt) {
             return nullptr;
           }
+          if (aBuilder.GetInheritedOpacity() != 1.0f) {
+            dt->PushLayer(false, aBuilder.GetInheritedOpacity(), nullptr,
+                          gfx::Matrix());
+          }
           PaintItemByDrawTarget(aItem, dt,
                                  aImageRect.TopLeft(),
                                  dt->GetRect(),
                                 aDisplayListBuilder, scale, highlight);
+          if (aBuilder.GetInheritedOpacity() != 1.0f) {
+            dt->PopLayer();
+          }
         }
 
         
@@ -2387,6 +2403,7 @@ WebRenderCommandBuilder::GenerateFallbackData(
     }
 
     fallbackData->mScale = scale;
+    fallbackData->mOpacity = aBuilder.GetInheritedOpacity();
     fallbackData->SetInvalid(false);
   }
 
