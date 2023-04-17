@@ -280,8 +280,7 @@ class MessagePumpForIO : public MessagePumpWin {
     
     
     
-    virtual void OnIOCompleted(IOContext* context, DWORD bytes_transfered,
-                               DWORD error) = 0;
+    virtual void OnIOCompleted(IOContext* context, DWORD bytes_transfered) = 0;
   };
 
   
@@ -326,13 +325,16 @@ class MessagePumpForIO : public MessagePumpWin {
     IOHandler* handler;
     IOContext* context;
     DWORD bytes_transfered;
-    DWORD error;
+  };
+  struct IOItemChunk {
+    IOItem values[8];
+    ULONG count;
   };
 
   virtual void DoRunLoop();
   void WaitForWork();
   bool MatchCompletedIOItem(IOHandler* filter, IOItem* item);
-  bool GetIOItem(DWORD timeout, IOItem* item);
+  bool GetIOItems(DWORD timeout, IOItemChunk* items);
   bool ProcessInternalIOItem(const IOItem& item);
 
   
