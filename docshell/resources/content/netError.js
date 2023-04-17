@@ -178,7 +178,6 @@ function showSecuritySection() {
 
 
 
-
 function addDomainErrorLink() {
   
   var sd = document.getElementById("errorShortDescText");
@@ -264,14 +263,14 @@ function endsWith(haystack, needle) {
 
 
 
-
-function addAutofocus(buttonId, position = "afterbegin") {
+function addAutofocus(buttonId) {
   if (window.top == window) {
-    var button = document.getElementById(buttonId);
-    var parent = button.parentNode;
+    let button = document.getElementById(buttonId);
+    let nextSibling = button.nextSibling;
+    let parent = button.parentNode;
     button.remove();
     button.setAttribute("autofocus", "true");
-    parent.insertAdjacentElement(position, button);
+    parent.insertBefore(button, nextSibling);
   }
 }
 
