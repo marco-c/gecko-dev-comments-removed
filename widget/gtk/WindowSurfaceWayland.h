@@ -8,97 +8,19 @@
 #define _MOZILLA_WIDGET_GTK_WINDOW_SURFACE_WAYLAND_H
 
 #include <prthread.h>
+
 #include "gfxImageSurface.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Types.h"
+#include "mozilla/Mutex.h"
 #include "nsWaylandDisplay.h"
 #include "nsWindow.h"
+#include "WaylandShmBuffer.h"
 #include "WindowSurface.h"
-#include "mozilla/Mutex.h"
 
 #define BACK_BUFFER_NUM 3
 
-namespace mozilla {
-namespace widget {
-
-class WindowSurfaceWayland;
-
-
-class WaylandShmPool {
- public:
-  bool Create(RefPtr<nsWaylandDisplay> aWaylandDisplay, int aSize);
-  void Release();
-  wl_shm_pool* GetShmPool() { return mShmPool; };
-  void* GetImageData() { return mImageData; };
-  void SetImageDataFromPool(class WaylandShmPool* aSourcePool,
-                            int aImageDataSize);
-  WaylandShmPool();
-  ~WaylandShmPool();
-
- private:
-  wl_shm_pool* mShmPool;
-  int mShmPoolFd;
-  int mAllocatedSize;
-  void* mImageData;
-};
-
-
-class WindowBackBuffer {
- public:
-  explicit WindowBackBuffer(WindowSurfaceWayland* aWindowSurfaceWayland);
-  ~WindowBackBuffer();
-
-  already_AddRefed<gfx::DrawTarget> Lock();
-
-  void Attach(wl_surface* aSurface);
-  void Detach(wl_buffer* aBuffer);
-  bool IsAttached() { return mAttached; }
-
-  void Clear();
-  bool Create(int aWidth, int aHeight);
-  bool Resize(int aWidth, int aHeight);
-  bool SetImageDataFromBuffer(class WindowBackBuffer* aSourceBuffer);
-
-  int GetWidth() { return mWidth; };
-  int GetHeight() { return mHeight; };
-
-  wl_buffer* GetWlBuffer() { return mWLBuffer; };
-
-  bool IsMatchingSize(int aWidth, int aHeight) {
-    return aWidth == GetWidth() && aHeight == GetHeight();
-  }
-  bool IsMatchingSize(class WindowBackBuffer* aBuffer) {
-    return aBuffer->IsMatchingSize(GetWidth(), GetHeight());
-  }
-  static gfx::SurfaceFormat GetSurfaceFormat() { return mFormat; }
-
-#ifdef MOZ_LOGGING
-  void DumpToFile(const char* aHint);
-#endif
-
-  RefPtr<nsWaylandDisplay> GetWaylandDisplay();
-
- private:
-  void ReleaseWLBuffer();
-
-  static gfx::SurfaceFormat mFormat;
-  WindowSurfaceWayland* mWindowSurfaceWayland;
-
-  
-  WaylandShmPool mShmPool;
-
-#ifdef MOZ_LOGGING
-  static int mDumpSerial;
-  static char* mDumpDir;
-#endif
-
-  
-  
-  wl_buffer* mWLBuffer;
-  int mWidth;
-  int mHeight;
-  bool mAttached;
-};
+namespace mozilla::widget {
 
 class WindowImageSurface {
  public:
@@ -120,7 +42,6 @@ class WindowImageSurface {
 class WindowSurfaceWayland : public WindowSurface {
  public:
   explicit WindowSurfaceWayland(nsWindow* aWindow);
-  ~WindowSurfaceWayland();
 
   
   
@@ -139,21 +60,27 @@ class WindowSurfaceWayland : public WindowSurface {
   
   
   
-  void FrameCallbackHandler();
-
-  
-  
-  
   
   void FlushPendingCommits();
 
   RefPtr<nsWaylandDisplay> GetWaylandDisplay() { return mWaylandDisplay; };
 
+  
+  
+  
+  static void FrameCallbackHandler(void* aData, struct wl_callback* aCallback,
+                                   uint32_t aTime);
+
+  static void BufferReleaseCallbackHandler(void* aData, wl_buffer* aBuffer);
+
  private:
-  WindowBackBuffer* GetWaylandBuffer();
-  WindowBackBuffer* SetNewWaylandBuffer();
-  WindowBackBuffer* CreateWaylandBuffer(int aWidth, int aHeight);
-  WindowBackBuffer* WaylandBufferFindAvailable(int aWidth, int aHeight);
+  ~WindowSurfaceWayland();
+
+  WaylandShmBuffer* GetWaylandBuffer();
+  WaylandShmBuffer* SetNewWaylandBuffer();
+  WaylandShmBuffer* CreateWaylandBuffer(const LayoutDeviceIntSize& aSize);
+  WaylandShmBuffer* WaylandBufferFindAvailable(
+      const LayoutDeviceIntSize& aSize);
 
   already_AddRefed<gfx::DrawTarget> LockWaylandBuffer();
 
@@ -168,6 +95,10 @@ class WindowSurfaceWayland : public WindowSurface {
   
   bool FlushPendingCommitsLocked();
 
+  void FrameCallbackHandler();
+  void BufferReleaseCallbackHandler(wl_buffer* aBuffer);
+
+  
   
   nsWindow* mWindow;
 
@@ -186,8 +117,8 @@ class WindowSurfaceWayland : public WindowSurface {
   
   
   
-  WindowBackBuffer* mWaylandBuffer;
-  WindowBackBuffer* mShmBackupBuffer[BACK_BUFFER_NUM];
+  RefPtr<WaylandShmBuffer> mWaylandBuffer;
+  RefPtr<WaylandShmBuffer> mShmBackupBuffer[BACK_BUFFER_NUM];
 
   
   
@@ -251,11 +182,10 @@ class WindowSurfaceWayland : public WindowSurface {
   
   unsigned int mSmoothRendering;
 
-  gint mSurfaceReadyTimerID;
+  int mSurfaceReadyTimerID;
   mozilla::Mutex mSurfaceLock;
 };
 
-}  
 }  
 
 #endif  
