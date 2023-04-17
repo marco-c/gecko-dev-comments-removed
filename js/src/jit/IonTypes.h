@@ -97,7 +97,6 @@ static const SnapshotOffset INVALID_SNAPSHOT_OFFSET = uint32_t(-1);
 
 
 
-
 enum class BailoutKind : uint8_t {
   Unknown,
 
@@ -163,10 +162,6 @@ enum class BailoutKind : uint8_t {
   FirstExecution,
 
   
-  
-  NotOptimizedArgumentsGuard,
-
-  
   UninitializedLexical,
 
   
@@ -208,8 +203,6 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "Debugger";
     case BailoutKind::FirstExecution:
       return "FirstExecution";
-    case BailoutKind::NotOptimizedArgumentsGuard:
-      return "NotOptimizedArgumentsGuard";
     case BailoutKind::UninitializedLexical:
       return "UninitializedLexical";
     case BailoutKind::IonExceptionDebugMode:

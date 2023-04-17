@@ -52,23 +52,6 @@ static inline bool IsOptimizedArguments(AbstractFramePtr frame,
 
 
 
-static inline void GuardFunApplyArgumentsOptimization(JSContext* cx,
-                                                      AbstractFramePtr frame,
-                                                      CallArgs& args) {
-  if (args.length() == 2 && IsOptimizedArguments(frame, args[1])) {
-    if (!IsNativeFunction(args.calleev(), js::fun_apply)) {
-      RootedScript script(cx, frame.script());
-      JSScript::argumentsOptimizationFailed(cx, script);
-      args[1].setObject(frame.argsObj());
-    }
-  }
-}
-
-
-
-
-
-
 
 
 static inline bool IsUninitializedLexical(const Value& val) {
@@ -511,27 +494,6 @@ static MOZ_ALWAYS_INLINE bool GetPrimitiveElementOperation(
 
   cx->debugOnlyCheck(res);
   return true;
-}
-
-static MOZ_ALWAYS_INLINE bool MaybeGetElemOptimizedArguments(
-    JSContext* cx, AbstractFramePtr frame, MutableHandleValue lref,
-    HandleValue rref, MutableHandleValue res) {
-  if (IsOptimizedArguments(frame, lref)) {
-    if (rref.isInt32()) {
-      int32_t i = rref.toInt32();
-      if (i >= 0 && uint32_t(i) < frame.numActualArgs()) {
-        res.set(frame.unaliasedActual(i));
-        return true;
-      }
-    }
-
-    RootedScript script(cx, frame.script());
-    JSScript::argumentsOptimizationFailed(cx, script);
-
-    lref.set(ObjectValue(frame.argsObj()));
-  }
-
-  return false;
 }
 
 static MOZ_ALWAYS_INLINE bool GetElementOperationWithStackIndex(

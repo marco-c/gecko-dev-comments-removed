@@ -2094,12 +2094,6 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
       saveFailedICHash = true;
       break;
 
-    case BailoutKind::NotOptimizedArgumentsGuard:
-      
-      
-      JSScript::argumentsOptimizationFailed(cx, innerScript);
-      break;
-
     case BailoutKind::UninitializedLexical:
       HandleLexicalCheckFailure(cx, outerScript, innerScript);
       break;
