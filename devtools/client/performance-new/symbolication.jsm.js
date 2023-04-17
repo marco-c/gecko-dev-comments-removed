@@ -180,37 +180,6 @@ async function getResultFromWorker(workerURL, initialMessageToWorker) {
 
 
 
-
-
-
-
-
-
-
-
-
-async function getSymbolTableFromLocalBinary(
-  binaryPath,
-  debugPath,
-  breakpadId
-) {
-  const module = await getWASMProfilerGetSymbolsModule();
-
-  
-  const initialMessage = { binaryPath, debugPath, breakpadId, module };
-
-  return getResultFromWorker(
-    "resource://devtools/client/performance-new/symbolication-worker.js",
-    initialMessage
-  );
-}
-
-
-
-
-
-
-
 async function getSymbolTableFromDebuggee(perfFront, path, breakpadId) {
   const [addresses, index, buffer] = await perfFront.getSymbolTable(
     path,
@@ -324,14 +293,21 @@ class LocalSymbolicationService {
     const candidatePaths = this._getCandidatePaths(debugName, breakpadId);
 
     
+    const module = await getWASMProfilerGetSymbolsModule();
     const errors = [];
     for (const { path, debugPath } of candidatePaths) {
       if (await doesFileExistAtPath(path)) {
         try {
-          return await getSymbolTableFromLocalBinary(
-            path,
+          
+          const initialMessage = {
+            binaryPath: path,
             debugPath,
-            breakpadId
+            breakpadId,
+            module,
+          };
+          return await getResultFromWorker(
+            "resource://devtools/client/performance-new/symbolication-worker.js",
+            initialMessage
           );
         } catch (e) {
           
