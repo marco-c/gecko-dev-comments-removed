@@ -30,6 +30,26 @@
 
 pub extern crate fog;
 
+pub use glean_ffi;
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(debug_assertions)]
+#[no_mangle]
+pub unsafe extern "C" fn _fog_force_reexport_donotcall() {
+    glean_ffi::glean_enable_logging();
+}
+
 #[macro_use]
 extern crate cstr;
 #[macro_use]
