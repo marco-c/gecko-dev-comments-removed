@@ -16,6 +16,10 @@
 #endif
 #include <stdint.h>
 
+#ifdef XP_WIN
+typedef int pid_t;
+#endif
+
 namespace webrtc {
 
 
@@ -41,10 +45,6 @@ const ScreenId kInvalidScreenId = -2;
 
 typedef intptr_t ProcessId;
 const ProcessId DesktopProcessId = 0;
-
-#ifdef XP_WIN
-typedef int pid_t;
-#endif
 
 
 
