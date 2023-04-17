@@ -118,20 +118,6 @@ extern JS_PUBLIC_API bool JS_IsArrayBufferViewObject(JSObject* obj);
 
 
 
-extern JS_PUBLIC_API bool JS_IsInt8Array(JSObject* obj);
-extern JS_PUBLIC_API bool JS_IsUint8Array(JSObject* obj);
-extern JS_PUBLIC_API bool JS_IsUint8ClampedArray(JSObject* obj);
-extern JS_PUBLIC_API bool JS_IsInt16Array(JSObject* obj);
-extern JS_PUBLIC_API bool JS_IsUint16Array(JSObject* obj);
-extern JS_PUBLIC_API bool JS_IsInt32Array(JSObject* obj);
-extern JS_PUBLIC_API bool JS_IsUint32Array(JSObject* obj);
-extern JS_PUBLIC_API bool JS_IsFloat32Array(JSObject* obj);
-extern JS_PUBLIC_API bool JS_IsFloat64Array(JSObject* obj);
-
-
-
-
-
 
 
 
@@ -616,5 +602,18 @@ JS_FOR_EACH_TYPED_ARRAY(JS_DECLARE_CLASS_ALIAS)
 #undef JS_DECLARE_CLASS_ALIAS
 
 }  
+
+
+
+
+
+
+
+#define DECLARE_IS_ARRAY_TEST(_1, _2, Name)                                   \
+  inline JS_PUBLIC_API bool JS_Is##Name##Array(JSObject* maybeWrapped) {      \
+    return JS::TypedArray<js::Scalar::Name>::unwrap(maybeWrapped).asObject(); \
+  }
+JS_FOR_EACH_TYPED_ARRAY(DECLARE_IS_ARRAY_TEST)
+#undef DECLARE_IS_ARRAY_TEST
 
 #endif  
