@@ -2348,8 +2348,9 @@ var BrowserTestUtils = {
 
 
 
+
   async promiseAlertDialogOpen(
-    buttonAction,
+    buttonNameOrElementID,
     uri = "chrome://global/content/commonDialog.xhtml",
     options = { callback: null, isSubDialog: false }
   ) {
@@ -2372,9 +2373,12 @@ var BrowserTestUtils = {
       return win;
     }
 
-    if (buttonAction) {
+    if (buttonNameOrElementID) {
       let dialog = win.document.querySelector("dialog");
-      dialog.getButton(buttonAction).click();
+      let element =
+        dialog.getButton(buttonNameOrElementID) ||
+        win.document.getElementById(buttonNameOrElementID);
+      element.click();
     }
 
     return win;
@@ -2393,12 +2397,17 @@ var BrowserTestUtils = {
 
 
 
+
   async promiseAlertDialog(
-    buttonAction,
+    buttonNameOrElementID,
     uri = "chrome://global/content/commonDialog.xhtml",
     options = { callback: null, isSubDialog: false }
   ) {
-    let win = await this.promiseAlertDialogOpen(buttonAction, uri, options);
+    let win = await this.promiseAlertDialogOpen(
+      buttonNameOrElementID,
+      uri,
+      options
+    );
     if (!win.docShell.browsingContext.embedderElement) {
       return this.windowClosed(win);
     }

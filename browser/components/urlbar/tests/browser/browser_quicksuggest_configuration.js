@@ -13,6 +13,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 const SHOWED_ONBOARDING_DIALOG_PREF =
   "browser.urlbar.quicksuggest.showedOnboardingDialog";
+const OPT_IN_PREF = "browser.urlbar.suggest.quicksuggest";
 const SEEN_RESTART_PREF = "browser.urlbar.quicksuggest.seenRestarts";
 
 add_task(async function init() {
@@ -21,8 +22,8 @@ add_task(async function init() {
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.urlbar.suggest.searches", true],
-      ["browser.startup.upgradeDialog.version", 89],
       
+      [OPT_IN_PREF, false],
       [SHOWED_ONBOARDING_DIALOG_PREF, false],
       [SEEN_RESTART_PREF, 0],
     ],
@@ -85,6 +86,7 @@ add_task(async function test_override_wait_after_n_restarts() {
 add_task(async function test_skip_onboarding_dialog() {
   await SpecialPowers.pushPrefEnv({
     set: [
+      [OPT_IN_PREF, false],
       [SHOWED_ONBOARDING_DIALOG_PREF, false],
       [SEEN_RESTART_PREF, 0],
     ],

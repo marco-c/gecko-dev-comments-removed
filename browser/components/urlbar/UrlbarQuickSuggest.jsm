@@ -33,10 +33,9 @@ const RS_COLLECTION = "quicksuggest";
 
 const NONSPONSORED_IAB_CATEGORIES = new Set(["5 - Education"]);
 
-const MR1_VERSION = 89;
-
+const FEATURE_AVAILABLE = "quickSuggestEnabled";
+const OPTED_IN = "suggest.quicksuggest";
 const SEEN_DIALOG_PREF = "quicksuggest.showedOnboardingDialog";
-const VERSION_PREF = "browser.startup.upgradeDialog.version";
 const RESTARTS_PREF = "quicksuggest.seenRestarts";
 
 
@@ -60,7 +59,7 @@ class Suggestions {
       return this._initPromise;
     }
     this._initPromise = Promise.resolve();
-    if (UrlbarPrefs.get("quickSuggestEnabled")) {
+    if (UrlbarPrefs.get(FEATURE_AVAILABLE)) {
       this._initPromise = new Promise(resolve => (this._initResolve = resolve));
       Services.tm.idleDispatchToMainThread(this.onEnabledUpdate.bind(this));
     } else {
@@ -166,7 +165,7 @@ class Suggestions {
 
   onPrefChanged(pref) {
     switch (pref) {
-      case SEEN_DIALOG_PREF:
+      case OPTED_IN:
         this.onEnabledUpdate();
         break;
     }
@@ -184,16 +183,8 @@ class Suggestions {
 
 
 
-
-
-
-
   onEnabledUpdate() {
-    if (
-      UrlbarPrefs.get("quickSuggestEnabled") &&
-      (UrlbarPrefs.get(SEEN_DIALOG_PREF) ||
-        !UrlbarPrefs.get("quickSuggestShouldShowOnboardingDialog"))
-    ) {
+    if (UrlbarPrefs.get(FEATURE_AVAILABLE) && UrlbarPrefs.get(OPTED_IN)) {
       this._setupRemoteSettings();
     }
   }
@@ -209,18 +200,15 @@ class Suggestions {
 
 
 
-
   async maybeShowOnboardingDialog() {
     
     
     
-    
-    
     if (
-      !UrlbarPrefs.get("quickSuggestEnabled") ||
+      !UrlbarPrefs.get(FEATURE_AVAILABLE) ||
       !UrlbarPrefs.get("quickSuggestShouldShowOnboardingDialog") ||
       UrlbarPrefs.get(SEEN_DIALOG_PREF) ||
-      Services.prefs.getIntPref(VERSION_PREF, 0) < MR1_VERSION
+      UrlbarPrefs.get(OPTED_IN)
     ) {
       return;
     }
@@ -236,7 +224,7 @@ class Suggestions {
       return;
     }
 
-    let params = { disable: false, learnMore: false };
+    let params = { accept: false, openSettings: false, learnMore: false };
     let win = BrowserWindowTracker.getTopWindow();
     await win.gDialogBox.open(
       "chrome://browser/content/urlbar/quicksuggestOnboarding.xhtml",
@@ -245,7 +233,9 @@ class Suggestions {
 
     UrlbarPrefs.set(SEEN_DIALOG_PREF, true);
 
-    if (params.disable) {
+    if (params.accept) {
+      UrlbarPrefs.set(OPTED_IN, true);
+    } else if (params.openSettings) {
       win.openPreferences("search-quickSuggest");
     } else if (params.learnMore) {
       win.openTrustedLinkIn(UrlbarProviderQuickSuggest.helpUrl, "tab", {

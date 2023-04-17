@@ -182,7 +182,7 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["suggest.calculator", false],
 
   
-  ["suggest.quicksuggest", true],
+  ["suggest.quicksuggest", false],
 
   
   ["quicksuggest.showedOnboardingDialog", false],
