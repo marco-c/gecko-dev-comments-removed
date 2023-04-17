@@ -115,7 +115,7 @@ const WatcherRegistry = {
         
         
         
-        browserId: watcher.browserId,
+        browserId: watcher.context.browserId,
         
         connectionPrefix: watcher.conn.prefix,
         
@@ -155,7 +155,10 @@ const WatcherRegistry = {
   getWatchersForBrowserId(browserId) {
     const watchers = [];
     for (const watcherActor of watcherActors.values()) {
-      if (watcherActor.browserId === browserId) {
+      if (
+        watcherActor.context.type == "browser-element" &&
+        watcherActor.context.browserId === browserId
+      ) {
         watchers.push(watcherActor);
       }
     }
