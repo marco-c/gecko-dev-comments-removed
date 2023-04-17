@@ -849,6 +849,23 @@ MFBT_API bool MozDescribeCodeAddress(void* aPC,
 #endif
 
 #if defined(XP_WIN) || defined(XP_MACOSX) || defined(XP_LINUX)
+
+#  if defined(XP_MACOSX) && defined(__aarch64__)
+
+
+
+
+
+
+
+
+
+const uintptr_t kPointerMask =
+    (uintptr_t(1) << 40) - 1;  
+#  else
+const uintptr_t kPointerMask = ~uintptr_t(0);
+#  endif
+
 MOZ_ASAN_BLACKLIST
 static void DoFramePointerStackWalk(MozWalkStackCallback aCallback,
                                     const void* aFirstFramePC,
@@ -878,6 +895,12 @@ static void DoFramePointerStackWalk(MozWalkStackCallback aCallback,
     void* pc = *(aBp + 1);
     aBp += 2;
 #  endif
+
+    
+    
+    
+    pc = (void*)((uintptr_t)pc & kPointerMask);
+
     if (!skipper.ShouldSkipPC(pc)) {
       
       
