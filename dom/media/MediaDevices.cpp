@@ -203,9 +203,8 @@ already_AddRefed<Promise> MediaDevices::GetDisplayMedia(
   
 
 
-
   WindowContext* wc = owner->GetWindowContext();
-  if (!wc || !wc->HasBeenUserGestureActivated()) {
+  if (!wc || !wc->HasValidTransientUserGestureActivation()) {
     p->MaybeRejectWithInvalidStateError(
         "getDisplayMedia must be called from a user gesture handler.");
     return p.forget();
