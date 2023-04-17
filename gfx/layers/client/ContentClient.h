@@ -8,7 +8,6 @@
 #define MOZILLA_GFX_CONTENTCLIENT_H
 
 #include <stdint.h>         
-#include "RotatedBuffer.h"  
 #include "gfxTypes.h"
 #include "gfxPlatform.h"                        
 #include "mozilla/Assertions.h"                 
@@ -140,24 +139,6 @@ class ContentClient : public CompositableClient {
       PaintState& aPaintState,
       nsTArray<ReadbackProcessor::Update>* aReadbackUpdates = nullptr);
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  virtual gfx::DrawTarget* BorrowDrawTargetForPainting(
-      PaintState& aPaintState, RotatedBuffer::DrawIterator* aIter = nullptr);
-
   void ReturnDrawTarget(gfx::DrawTarget*& aReturned);
 
   enum {
@@ -196,17 +177,6 @@ class ContentClient : public CompositableClient {
 
   virtual void FinalizeFrame(PaintState& aPaintState) {}
 
-  virtual RefPtr<RotatedBuffer> GetFrontBuffer() const { return mBuffer; }
-
-  
-
-
-
-  virtual RefPtr<RotatedBuffer> CreateBuffer(gfxContentType aType,
-                                             const gfx::IntRect& aRect,
-                                             uint32_t aFlags) = 0;
-
-  RefPtr<RotatedBuffer> mBuffer;
   BufferSizePolicy mBufferSizePolicy;
 };
 
@@ -255,17 +225,6 @@ class ContentClientRemoteBuffer : public ContentClient {
   virtual nsIntRegion GetUpdatedRegion(const nsIntRegion& aRegionToDraw,
                                        const nsIntRegion& aVisibleRegion);
 
-  RefPtr<RotatedBuffer> CreateBuffer(gfxContentType aType,
-                                     const gfx::IntRect& aRect,
-                                     uint32_t aFlags) override;
-
-  RefPtr<RotatedBuffer> CreateBufferInternal(const gfx::IntRect& aRect,
-                                             gfx::SurfaceFormat aFormat,
-                                             TextureFlags aFlags);
-
-  RemoteRotatedBuffer* GetRemoteBuffer() const {
-    return static_cast<RemoteRotatedBuffer*>(mBuffer.get());
-  }
 
   bool mIsNewBuffer;
 };
@@ -296,8 +255,6 @@ class ContentClientDoubleBuffered : public ContentClientRemoteBuffer {
 
   void FinalizeFrame(PaintState& aPaintState) override;
 
-  RefPtr<RotatedBuffer> GetFrontBuffer() const override { return mFrontBuffer; }
-
   TextureInfo GetTextureInfo() const override {
     return TextureInfo(CompositableType::CONTENT_DOUBLE, mTextureFlags);
   }
@@ -305,7 +262,6 @@ class ContentClientDoubleBuffered : public ContentClientRemoteBuffer {
  private:
   void EnsureBackBufferIfFrontBuffer();
 
-  RefPtr<RemoteRotatedBuffer> mFrontBuffer;
   nsIntRegion mFrontUpdatedRegion;
   bool mFrontAndBackBufferDiffer;
 };

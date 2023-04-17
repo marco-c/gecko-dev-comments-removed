@@ -11,7 +11,6 @@
 #include <stdio.h>                             
 #include "mozilla-config.h"                    
 #include "CompositableHost.h"                  
-#include "RotatedBuffer.h"                     
 #include "mozilla/Attributes.h"                
 #include "mozilla/RefPtr.h"                    
 #include "mozilla/gfx/BasePoint.h"             
