@@ -62,10 +62,48 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
 
-  initialize: function(conn, options) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  initialize: function(conn, context, config = {}) {
     protocol.Actor.prototype.initialize.call(this, conn);
-    this._browser = options && options.browser;
-    this._config = options ? options.config : {};
+    this._context = context;
+    if (context.type == "browser-element") {
+      
+      const browsingContext = BrowsingContext.getCurrentTopByBrowserId(
+        context.browserId
+      );
+      if (!browsingContext) {
+        throw new Error(
+          "Unable to retrieve the <browser> element for browserId=" +
+            context.browserId
+        );
+      }
+      this._browserElement = browsingContext.embedderElement;
+    }
+    this._config = config;
+
     
     
     
@@ -89,6 +127,10 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     this.notifyResourceUpdated = this.notifyResourceUpdated.bind(this);
   },
 
+  get context() {
+    return this._context;
+  },
+
   
 
 
@@ -98,17 +140,19 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
   get browserElement() {
-    return this._browser;
+    return this._browserElement;
   },
 
   
 
 
-
-
-
-  get browserId() {
-    return this._browser?.browserId;
+  isContextDestroyed() {
+    if (this.context.type == "browser-element") {
+      return !this.browserElement.browsingContext;
+    } else if (this.context.type == "all") {
+      return false;
+    }
+    throw new Error("Unsupported context type: " + this.context.type);
   },
 
   get isServerTargetSwitchingEnabled() {
@@ -140,7 +184,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
   },
 
   form() {
-    const hasBrowserElement = !!this.browserElement;
+    const isBrowserElementContext = this.context.type == "browser-element";
 
     return {
       actor: this.actorID,
@@ -149,7 +193,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
       traits: {
         [Targets.TYPES.FRAME]: true,
         [Targets.TYPES.PROCESS]: true,
-        [Targets.TYPES.WORKER]: hasBrowserElement,
+        [Targets.TYPES.WORKER]: isBrowserElementContext,
         resources: {
           
           
@@ -163,24 +207,24 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
           
           
           [Resources.TYPES.CONSOLE_MESSAGE]: true,
-          [Resources.TYPES.CSS_CHANGE]: hasBrowserElement,
+          [Resources.TYPES.CSS_CHANGE]: isBrowserElementContext,
           [Resources.TYPES.CSS_MESSAGE]: true,
-          [Resources.TYPES.DOCUMENT_EVENT]: hasBrowserElement,
-          [Resources.TYPES.CACHE_STORAGE]: hasBrowserElement,
-          [Resources.TYPES.COOKIE]: hasBrowserElement,
+          [Resources.TYPES.DOCUMENT_EVENT]: isBrowserElementContext,
+          [Resources.TYPES.CACHE_STORAGE]: isBrowserElementContext,
+          [Resources.TYPES.COOKIE]: isBrowserElementContext,
           [Resources.TYPES.ERROR_MESSAGE]: true,
-          [Resources.TYPES.INDEXED_DB]: hasBrowserElement,
-          [Resources.TYPES.LOCAL_STORAGE]: hasBrowserElement,
-          [Resources.TYPES.SESSION_STORAGE]: hasBrowserElement,
+          [Resources.TYPES.INDEXED_DB]: isBrowserElementContext,
+          [Resources.TYPES.LOCAL_STORAGE]: isBrowserElementContext,
+          [Resources.TYPES.SESSION_STORAGE]: isBrowserElementContext,
           [Resources.TYPES.PLATFORM_MESSAGE]: true,
-          [Resources.TYPES.NETWORK_EVENT]: hasBrowserElement,
-          [Resources.TYPES.NETWORK_EVENT_STACKTRACE]: hasBrowserElement,
+          [Resources.TYPES.NETWORK_EVENT]: isBrowserElementContext,
+          [Resources.TYPES.NETWORK_EVENT_STACKTRACE]: isBrowserElementContext,
           [Resources.TYPES.REFLOW]: true,
-          [Resources.TYPES.STYLESHEET]: hasBrowserElement,
-          [Resources.TYPES.SOURCE]: hasBrowserElement,
-          [Resources.TYPES.THREAD_STATE]: hasBrowserElement,
-          [Resources.TYPES.SERVER_SENT_EVENT]: hasBrowserElement,
-          [Resources.TYPES.WEBSOCKET]: hasBrowserElement,
+          [Resources.TYPES.STYLESHEET]: isBrowserElementContext,
+          [Resources.TYPES.SOURCE]: isBrowserElementContext,
+          [Resources.TYPES.THREAD_STATE]: isBrowserElementContext,
+          [Resources.TYPES.SERVER_SENT_EVENT]: isBrowserElementContext,
+          [Resources.TYPES.WEBSOCKET]: isBrowserElementContext,
         },
 
         
@@ -402,13 +446,14 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
   _getTargetActorInParentProcess() {
-    if (this.browserElement) {
+    if (this.context.type == "all") {
+      return TargetActorRegistry.getParentProcessTargetActor();
+    } else if (this.context.type == "browser-element") {
       
       
-      return TargetActorRegistry.getTargetActor(this.browserId);
+      return TargetActorRegistry.getTargetActor(this.context.browserId);
     }
-
-    return TargetActorRegistry.getParentProcessTargetActor();
+    throw new Error("Unsupported context type: " + this.context.type);
   },
 
   
@@ -524,7 +569,7 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
     
     
-    if (!this.browserElement || this.browserElement.browsingContext) {
+    if (!this.isContextDestroyed()) {
       for (const targetType in TARGET_HELPERS) {
         
         

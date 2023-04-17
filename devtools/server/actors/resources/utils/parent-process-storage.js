@@ -192,8 +192,9 @@ class ParentProcessStorage {
     
     
     if (
-      this.watcherActor.browserId &&
-      windowGlobal.browsingContext.browserId != this.watcherActor.browserId
+      this.watcherActor.context.type == "browser-element" &&
+      windowGlobal.browsingContext.browserId !=
+        this.watcherActor.context.browserId
     ) {
       return;
     }
@@ -371,7 +372,7 @@ class StorageActorMock extends EventEmitter {
   }
 
   get parentActor() {
-    return { isRootActor: !this.watcherActor.browserId };
+    return { isRootActor: this.watcherActor.context.type == "all" };
   }
 
   
@@ -382,8 +383,8 @@ class StorageActorMock extends EventEmitter {
     
     
     if (
-      this.watcherActor.browserId &&
-      subject.browsingContext.browserId != this.watcherActor.browserId
+      this.watcherActor.context.type == "browser-element" &&
+      subject.browsingContext.browserId != this.watcherActor.context.browserId
     ) {
       return;
     }

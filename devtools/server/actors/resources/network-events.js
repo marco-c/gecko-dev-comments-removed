@@ -50,7 +50,7 @@ class NetworkEventWatcher {
     this.persist = false;
 
     this.listener = new NetworkObserver(
-      { browserId: watcherActor.browserId },
+      { browserId: this.browserId },
       { onNetworkEvent: this.onNetworkEvent.bind(this) }
     );
 
@@ -63,7 +63,7 @@ class NetworkEventWatcher {
   }
 
   get browserId() {
-    return this.watcherActor.browserId;
+    return this.watcherActor.context.browserId;
   }
 
   
@@ -161,8 +161,8 @@ class NetworkEventWatcher {
     
     
     if (
-      this.watcherActor.browserId &&
-      windowGlobal.browsingContext.browserId != this.watcherActor.browserId
+      this.watcherActor.context.type == "browser-element" &&
+      windowGlobal.browsingContext.browserId != this.browserId
     ) {
       return;
     }

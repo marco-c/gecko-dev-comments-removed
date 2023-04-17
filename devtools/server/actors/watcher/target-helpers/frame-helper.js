@@ -39,7 +39,7 @@ async function createTargets(watcher) {
   
   
   
-  if (watcher.browserElement) {
+  if (watcher.context.type == "browser-element") {
     
     
     
@@ -49,7 +49,7 @@ async function createTargets(watcher) {
   if (!browsingContextAttachedObserverByWatcher.has(watcher)) {
     
     
-    const browserId = watcher.browserElement?.browserId;
+    const browserId = watcher.context.browserId;
     const onBrowsingContextAttached = browsingContext => {
       
       
@@ -59,7 +59,8 @@ async function createTargets(watcher) {
       
       if (
         !browsingContext.parent &&
-        (!watcher.browserElement || browserId === browsingContext.browserId)
+        (watcher.context.type != "browser-element" ||
+          browserId === browsingContext.browserId)
       ) {
         browsingContext.watchedByDevTools = true;
       }
@@ -133,7 +134,7 @@ async function createTargetForBrowsingContext({
       .instantiateTarget({
         watcherActorID: watcher.actorID,
         connectionPrefix: watcher.conn.prefix,
-        browserId: watcher.browserId,
+        browserId: watcher.context.browserId,
         sessionData: watcher.sessionData,
       });
   } catch (e) {
@@ -167,7 +168,10 @@ function destroyTargets(watcher) {
   const browsingContexts = getFilteredRemoteBrowsingContext(
     watcher.browserElement
   );
-  if (watcher.isServerTargetSwitchingEnabled && watcher.browserElement) {
+  if (
+    watcher.isServerTargetSwitchingEnabled &&
+    watcher.context.type == "browser-element"
+  ) {
     
     
     browsingContexts.push(watcher.browserElement.browsingContext);
@@ -187,11 +191,11 @@ function destroyTargets(watcher) {
       .getActor("DevToolsFrame")
       .destroyTarget({
         watcherActorID: watcher.actorID,
-        browserId: watcher.browserId,
+        browserId: watcher.context.browserId,
       });
   }
 
-  if (watcher.browserElement) {
+  if (watcher.context.type == "browser-element") {
     watcher.browserElement.browsingContext.watchedByDevTools = false;
   }
 
@@ -227,7 +231,7 @@ async function addSessionDataEntry({ watcher, type, entries }) {
       .getActor("DevToolsFrame")
       .addSessionDataEntry({
         watcherActorID: watcher.actorID,
-        browserId: watcher.browserId,
+        browserId: watcher.context.browserId,
         type,
         entries,
       });
@@ -254,7 +258,7 @@ function removeSessionDataEntry({ watcher, type, entries }) {
       .getActor("DevToolsFrame")
       .removeSessionDataEntry({
         watcherActorID: watcher.actorID,
-        browserId: watcher.browserId,
+        browserId: watcher.context.browserId,
         type,
         entries,
       });
@@ -289,7 +293,7 @@ function getWatchingBrowsingContexts(watcher) {
     : [];
   
   
-  if (browserElement) {
+  if (watcher.context.type == "browser-element") {
     const topBrowsingContext = browserElement.browsingContext;
     
     
