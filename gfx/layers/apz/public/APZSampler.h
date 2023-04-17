@@ -31,7 +31,6 @@ struct WrWindowId;
 namespace layers {
 
 class APZCTreeManager;
-class LayerMetricsWrapper;
 struct ScrollbarData;
 
 
@@ -73,38 +72,6 @@ class APZSampler {
 
 
 
-
-
-
-
-
-
-  LayerToParentLayerMatrix4x4 ComputeTransformForScrollThumb(
-      const LayerToParentLayerMatrix4x4& aCurrentTransform,
-      const LayerMetricsWrapper& aContent, const ScrollbarData& aThumbData,
-      bool aScrollbarIsDescendant,
-      AsyncTransformComponentMatrix* aOutClipTransform);
-
-  CSSRect GetCurrentAsyncLayoutViewport(const LayerMetricsWrapper& aLayer);
-  ParentLayerPoint GetCurrentAsyncScrollOffset(
-      const LayerMetricsWrapper& aLayer);
-  AsyncTransform GetCurrentAsyncTransform(const LayerMetricsWrapper& aLayer,
-                                          AsyncTransformComponents aComponents);
-  AsyncTransformComponentMatrix GetOverscrollTransform(
-      const LayerMetricsWrapper& aLayer);
-  AsyncTransformComponentMatrix GetCurrentAsyncTransformWithOverscroll(
-      const LayerMetricsWrapper& aLayer, AsyncTransformComponents aComponents);
-  Maybe<CompositionPayload> NotifyScrollSampling(
-      const LayerMetricsWrapper& aLayer);
-
-  void MarkAsyncTransformAppliedToContent(const LayerMetricsWrapper& aLayer);
-  bool HasUnusedAsyncTransform(const LayerMetricsWrapper& aLayer);
-
-  
-
-
-
-
   AsyncTransform GetCurrentAsyncTransform(
       const LayersId& aLayersId, const ScrollableLayerGuid::ViewID& aScrollId,
       AsyncTransformComponents aComponents) const;
@@ -116,10 +83,6 @@ class APZSampler {
   ParentLayerRect GetCompositionBounds(
       const LayersId& aLayersId,
       const ScrollableLayerGuid::ViewID& aScrollId) const;
-
-  ScrollableLayerGuid GetGuid(const LayerMetricsWrapper& aLayer);
-
-  GeckoViewMetrics GetGeckoViewMetrics(const LayerMetricsWrapper& aLayer) const;
 
   ScreenMargin GetGeckoFixedLayerMargins() const;
 
