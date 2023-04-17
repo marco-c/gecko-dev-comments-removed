@@ -119,6 +119,11 @@ impl<'a> BitReader<'a> {
     }
 
     
+    pub fn peek_u8(&self, bit_count: u8) -> Result<u8> {
+        self.relative_reader().read_u8(bit_count)
+    }
+
+    
     
     
     pub fn read_u8_slice(&mut self, output_bytes: &mut [u8]) -> Result<()> {
@@ -144,15 +149,30 @@ impl<'a> BitReader<'a> {
     }
 
     
+    pub fn peek_u16(&self, bit_count: u8) -> Result<u16> {
+        self.relative_reader().read_u16(bit_count)
+    }
+
+    
     pub fn read_u32(&mut self, bit_count: u8) -> Result<u32> {
         let value = self.read_value(bit_count, 32)?;
         Ok((value & 0xffffffff) as u32)
     }
 
     
+    pub fn peek_u32(&self, bit_count: u8) -> Result<u32> {
+        self.relative_reader().read_u32(bit_count)
+    }
+
+    
     pub fn read_u64(&mut self, bit_count: u8) -> Result<u64> {
         let value = self.read_value(bit_count, 64)?;
         Ok(value)
+    }
+
+    
+    pub fn peek_u64(&self, bit_count: u8) -> Result<u64> {
+        self.relative_reader().read_u64(bit_count)
     }
 
     
@@ -193,6 +213,12 @@ impl<'a> BitReader<'a> {
     }
 
     
+    
+    pub fn peek_bool(&self) -> Result<bool> {
+        self.relative_reader().read_bool()
+    }
+
+    
     pub fn skip(&mut self, bit_count: u64) -> Result<()> {
         let end_position = self.position + bit_count;
         if end_position > self.bytes.len() as u64 * 8 {
@@ -229,6 +255,18 @@ impl<'a> BitReader<'a> {
     
     pub fn is_aligned(&self, alignment_bytes: u32) -> bool {
         self.position % (alignment_bytes as u64 * 8) == 0
+    }
+
+    
+    
+    
+    
+    
+    pub fn align(&mut self, alignment_bytes: u32) -> Result<()> {
+        let alignment_bits = alignment_bytes as u64 * 8;
+        let cur_alignment = self.position % alignment_bits;
+        let bits_to_skip = (alignment_bits - cur_alignment) % alignment_bits;
+        self.skip(bits_to_skip)
     }
 
     fn read_signed_value(&mut self, bit_count: u8, maximum_count: u8) -> Result<i64> {
