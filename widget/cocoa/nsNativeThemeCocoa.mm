@@ -2674,6 +2674,12 @@ void nsNativeThemeCocoa::RenderWidget(const WidgetInfo& aWidgetInfo, DrawTarget&
     
     
     NSAppearance.currentAppearance = GetAppAppearance();
+
+    
+    
+    if (mCellDrawWindow) {
+      mCellDrawWindow.appearance = NSAppearance.currentAppearance;
+    }
   }
 
   const Widget widget = aWidgetInfo.Widget();
