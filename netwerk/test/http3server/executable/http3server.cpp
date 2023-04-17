@@ -1,0 +1,17 @@
+
+
+
+
+
+#include <stdio.h>
+
+extern "C" {
+
+void C_StartServer();
+
+}  
+
+int main(int argc, char* argv[]) {
+  C_StartServer();
+  return 0;
+}
