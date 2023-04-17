@@ -687,18 +687,30 @@ void GeckoEditableSupport::FlushIMEChanges(FlushChangesFlag aFlags) {
   int32_t selEnd = -1;
 
   if (mIMESelectionChanged) {
-    WidgetQueryContentEvent querySelectedTextEvent(true, eQuerySelectedText,
-                                                   widget);
-    widget->DispatchEvent(&querySelectedTextEvent, status);
+    if (mCachedSelection.IsValid()) {
+      selStart = mCachedSelection.mStartOffset;
+      selEnd = mCachedSelection.mEndOffset;
+    } else {
+      
+      
+      
+      
+      
+      
+      WidgetQueryContentEvent querySelectedTextEvent(true, eQuerySelectedText,
+                                                     widget);
+      widget->DispatchEvent(&querySelectedTextEvent, status);
 
-    if (shouldAbort(NS_WARN_IF(querySelectedTextEvent.DidNotFindSelection()))) {
-      return;
+      if (shouldAbort(
+              NS_WARN_IF(querySelectedTextEvent.DidNotFindSelection()))) {
+        return;
+      }
+
+      selStart = static_cast<int32_t>(
+          querySelectedTextEvent.mReply->SelectionStartOffset());
+      selEnd = static_cast<int32_t>(
+          querySelectedTextEvent.mReply->SelectionEndOffset());
     }
-
-    selStart = static_cast<int32_t>(
-        querySelectedTextEvent.mReply->SelectionStartOffset());
-    selEnd = static_cast<int32_t>(
-        querySelectedTextEvent.mReply->SelectionEndOffset());
 
     if (aFlags == FLUSH_FLAG_RECOVER && textTransaction.IsValid()) {
       
@@ -1293,6 +1305,8 @@ nsresult GeckoEditableSupport::NotifyIME(
         mDispatcher = dispatcher;
         mIMEKeyEvents.Clear();
 
+        mCachedSelection.Reset();
+
         mIMEDelaySynchronizeReply = false;
         mIMEActiveCompositionCount = 0;
         FlushIMEText();
@@ -1332,6 +1346,12 @@ nsresult GeckoEditableSupport::NotifyIME(
     case NOTIFY_IME_OF_SELECTION_CHANGE: {
       ALOGIME("IME: NOTIFY_IME_OF_SELECTION_CHANGE: SelectionChangeData=%s",
               ToString(aNotification.mSelectionChangeData).c_str());
+
+      mCachedSelection.mStartOffset =
+          aNotification.mSelectionChangeData.mOffset;
+      mCachedSelection.mEndOffset =
+          aNotification.mSelectionChangeData.mString->Length() +
+          aNotification.mSelectionChangeData.mOffset;
 
       PostFlushIMEChanges();
       mIMESelectionChanged = true;
