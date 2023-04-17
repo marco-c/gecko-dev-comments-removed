@@ -1203,6 +1203,13 @@ nsresult Database::InitSchema(bool* aDatabaseMigrated) {
 
       
 
+      if (currentSchemaVersion < 59) {
+        rv = MigrateV59Up();
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
+      
+
       
       
       
@@ -1319,6 +1326,14 @@ nsresult Database::InitSchema(bool* aDatabaseMigrated) {
     
     rv = mMainConn->ExecuteSimpleSQL(
         CREATE_MOZ_PLACES_METADATA_GROUPS_TO_SNAPSHOTS);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    rv = mMainConn->ExecuteSimpleSQL(CREATE_MOZ_SESSION_METADATA);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    
+    rv = mMainConn->ExecuteSimpleSQL(CREATE_MOZ_SESSION_TO_PLACES);
     NS_ENSURE_SUCCESS(rv, rv);
 
     
@@ -2276,6 +2291,20 @@ nsresult Database::MigrateV58Up() {
     NS_ENSURE_SUCCESS(rv, rv);
     rv = mMainConn->ExecuteSimpleSQL(
         CREATE_MOZ_PLACES_METADATA_GROUPS_TO_SNAPSHOTS);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+  return NS_OK;
+}
+
+nsresult Database::MigrateV59Up() {
+  
+  nsCOMPtr<mozIStorageStatement> stmt;
+  nsresult rv = mMainConn->CreateStatement(
+      "SELECT id FROM moz_session_metadata"_ns, getter_AddRefs(stmt));
+  if (NS_FAILED(rv)) {
+    rv = mMainConn->ExecuteSimpleSQL(CREATE_MOZ_SESSION_METADATA);
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = mMainConn->ExecuteSimpleSQL(CREATE_MOZ_SESSION_TO_PLACES);
     NS_ENSURE_SUCCESS(rv, rv);
   }
   return NS_OK;
