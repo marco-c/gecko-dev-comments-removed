@@ -255,9 +255,6 @@ class MediaManager final : public nsIMediaManagerService,
   
   
   
-  
-  
-  
   RefPtr<SinkInfoPromise> GetSinkDevice(nsPIDOMWindowInner* aWindow,
                                         const nsString& aDeviceId);
 
