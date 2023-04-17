@@ -1834,6 +1834,14 @@ const nsTArray<GfxDriverInfo>& GfxInfo::GetGfxDriverInfo() {
                                 "CRASHY_DRIVERS_BUG_1678808");
 
     
+    APPEND_TO_DRIVER_BLOCKLIST_RANGE(
+        OperatingSystem::Windows7, DeviceFamily::NvidiaAll,
+        nsIGfxInfo::FEATURE_WEBRENDER,
+        nsIGfxInfo::FEATURE_BLOCKED_DRIVER_VERSION, DRIVER_BETWEEN_INCLUSIVE,
+        V(8, 17, 12, 8019), V(8, 17, 12, 8026), "FEATURE_FAILURE_BUG_1709629",
+        "nVidia driver > 280.26");
+
+    
     
     APPEND_TO_DRIVER_BLOCKLIST2_EXT(
         OperatingSystem::Windows, ScreenSizeStatus::All, BatteryStatus::All,
