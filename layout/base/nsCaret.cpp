@@ -48,9 +48,6 @@ using EmbeddingLevel = mozilla::intl::Bidi::EmbeddingLevel;
 static const int32_t kMinBidiIndicatorPixels = 2;
 
 
-static const uint32_t kDefaultCaretBlinkRate = 500;
-
-
 
 
 
@@ -600,6 +597,13 @@ nsCaret::NotifySelectionChanged(Document*, Selection* aDomSel,
 }
 
 void nsCaret::ResetBlinking() {
+  using IntID = LookAndFeel::IntID;
+
+  
+  constexpr uint32_t kDefaultBlinkRate = 500;
+  
+  constexpr int32_t kDefaultBlinkCount = -1;
+
   mIsBlinkOn = true;
 
   if (mReadOnly || !mVisible || mHideCount) {
@@ -607,12 +611,21 @@ void nsCaret::ResetBlinking() {
     return;
   }
 
-  uint32_t blinkRate = static_cast<uint32_t>(LookAndFeel::GetInt(
-      LookAndFeel::IntID::CaretBlinkTime, kDefaultCaretBlinkRate));
+  auto blinkRate =
+      uint32_t(LookAndFeel::GetInt(IntID::CaretBlinkTime, kDefaultBlinkRate));
+
+  if (blinkRate > 0) {
+    
+    
+    mBlinkCount =
+        LookAndFeel::GetInt(IntID::CaretBlinkCount, kDefaultBlinkCount);
+  }
+
   if (mBlinkRate == blinkRate) {
     
     return;
   }
+
   mBlinkRate = blinkRate;
 
   if (mBlinkTimer) {
@@ -632,7 +645,6 @@ void nsCaret::ResetBlinking() {
   }
 
   if (blinkRate > 0) {
-    mBlinkCount = LookAndFeel::GetInt(LookAndFeel::IntID::CaretBlinkCount, -1);
     mBlinkTimer->InitWithNamedFuncCallback(CaretBlinkCallback, this, blinkRate,
                                            nsITimer::TYPE_REPEATING_SLACK,
                                            "nsCaret::CaretBlinkCallback_timer");
