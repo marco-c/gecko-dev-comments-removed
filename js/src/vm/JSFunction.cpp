@@ -768,7 +768,7 @@ inline void JSFunction::trace(JSTracer* trc) {
                (GCPtrValue*)toExtended()->extendedSlots, "nativeReserved");
   }
 
-  TraceNullableEdge(trc, &atom_, "atom");
+  TraceEdge(trc, &atom_, "atom");
 
   
   
