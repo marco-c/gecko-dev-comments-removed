@@ -1887,6 +1887,13 @@ import android.view.inputmethod.EditorInfo;
             return;
         }
 
+        if (unboundedOldEnd >= Integer.MAX_VALUE / 2) {
+            
+            
+            
+            mActions.clear();
+        }
+
         final int currentLength = mText.getCurrentText().length();
         final int oldEnd = unboundedOldEnd > currentLength ? currentLength : unboundedOldEnd;
         final int newEnd = start + text.length();
