@@ -4,6 +4,7 @@
 #ifndef intl_components_NumberRangeFormat_h_
 #define intl_components_NumberRangeFormat_h_
 
+#include "mozilla/intl/NumberFormat.h"
 #include "mozilla/Result.h"
 #include "mozilla/ResultVariant.h"
 #include "mozilla/UniquePtr.h"
@@ -19,8 +20,6 @@ struct UPluralRules;
 
 namespace mozilla::intl {
 
-struct NumberFormatOptions;
-
 #ifndef U_HIDE_DRAFT_API
 
 
@@ -28,6 +27,64 @@ struct NumberFormatOptions;
 
 #  define MOZ_INTL_HAS_NUMBER_RANGE_FORMAT
 #endif
+
+
+
+
+
+struct MOZ_STACK_CLASS NumberRangeFormatOptions : public NumberFormatOptions {
+  
+
+
+  enum class RangeCollapse {
+    
+
+
+    Auto,
+
+    
+
+
+    None,
+
+    
+
+
+    Unit,
+
+    
+
+
+    All,
+  } mRangeCollapse = RangeCollapse::Auto;
+
+  
+
+
+  enum class RangeIdentityFallback {
+    
+
+
+    SingleValue,
+
+    
+
+
+
+
+    ApproximatelyOrSingleValue,
+
+    
+
+
+    Approximately,
+
+    
+
+
+    Range,
+  } mRangeIdentityFallback = RangeIdentityFallback::SingleValue;
+};
 
 
 
@@ -49,7 +106,7 @@ class NumberRangeFormat final {
 
 
   static Result<UniquePtr<NumberRangeFormat>, FormatError> TryCreate(
-      std::string_view aLocale, const NumberFormatOptions& aOptions);
+      std::string_view aLocale, const NumberRangeFormatOptions& aOptions);
 
   NumberRangeFormat() = default;
   NumberRangeFormat(const NumberRangeFormat&) = delete;
@@ -96,7 +153,7 @@ class NumberRangeFormat final {
   UFormattedNumberRange* mFormattedNumberRange = nullptr;
 
   Result<Ok, FormatError> initialize(std::string_view aLocale,
-                                     const NumberFormatOptions& aOptions);
+                                     const NumberRangeFormatOptions& aOptions);
 
   [[nodiscard]] bool formatInternal(double start, double end) const;
 
