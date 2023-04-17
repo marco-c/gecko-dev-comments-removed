@@ -12,6 +12,7 @@
 #include "GMPTimerParent.h"
 #include "MediaResult.h"
 #include "mozIGeckoMediaPluginService.h"
+#include "mozilla/dom/KeySystemNames.h"
 #include "mozilla/dom/WidevineCDMManifestBinding.h"
 #include "mozilla/ipc/CrashReporterHost.h"
 #include "mozilla/ipc/Endpoint.h"
@@ -31,7 +32,6 @@
 #include "nsPrintfCString.h"
 #include "nsThreadUtils.h"
 #include "runnable_utils.h"
-#include "VideoUtils.h"
 #ifdef XP_WIN
 #  include "WMFDecoderModule.h"
 #endif
@@ -539,7 +539,7 @@ bool GMPCapability::Supports(const nsTArray<GMPCapability>& aCapabilities,
         
         
         
-        if (tag.EqualsLiteral(EME_KEY_SYSTEM_CLEARKEY)) {
+        if (tag.EqualsLiteral(kClearKeyKeySystemName)) {
           if (capabilities.mAPIName.EqualsLiteral(GMP_API_VIDEO_DECODER)) {
             if (!WMFDecoderModule::HasH264()) {
               continue;
@@ -847,9 +847,9 @@ RefPtr<GenericPromise> GMPParent::ParseChromiumManifest(
   
   
   if (mDisplayName.EqualsASCII("clearkey")) {
-    video.mAPITags.AppendElement(nsCString{EME_KEY_SYSTEM_CLEARKEY});
+    video.mAPITags.AppendElement(nsCString{kClearKeyKeySystemName});
     video.mAPITags.AppendElement(
-        nsCString{EME_KEY_SYSTEM_CLEARKEY_WITH_PROTECTION_QUERY});
+        nsCString{kClearKeyWithProtectionQueryKeySystemName});
 #if XP_WIN
     mLibs = nsLiteralCString(
         "dxva2.dll, evr.dll, freebl3.dll, mfh264dec.dll, mfplat.dll, "
@@ -858,7 +858,7 @@ RefPtr<GenericPromise> GMPParent::ParseChromiumManifest(
     mLibs = "libfreeblpriv3.so, libsoftokn3.so"_ns;
 #endif
   } else if (mDisplayName.EqualsASCII("WidevineCdm")) {
-    video.mAPITags.AppendElement(nsCString{EME_KEY_SYSTEM_WIDEVINE});
+    video.mAPITags.AppendElement(nsCString{kWidevineKeySystemName});
 #if XP_WIN
     
     

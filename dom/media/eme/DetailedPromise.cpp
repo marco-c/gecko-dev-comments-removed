@@ -5,6 +5,8 @@
 
 
 #include "DetailedPromise.h"
+
+#include "VideoUtils.h"
 #include "mozilla/dom/DOMException.h"
 #include "nsPrintfCString.h"
 
