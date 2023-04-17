@@ -169,6 +169,12 @@ pub enum Source {
     None,
 }
 
+impl Default for Source {
+    fn default() -> Self {
+        Source::Auto
+    }
+}
+
 
 
 
@@ -189,11 +195,17 @@ pub enum Orientation {
     Vertical,
 }
 
+impl Default for Orientation {
+    fn default() -> Self {
+        Orientation::Auto
+    }
+}
 
 
 
 
-#[derive(Clone, Debug, ToCss, ToShmem)]
+
+#[derive(Clone, Default, Debug, ToCss, ToShmem)]
 #[css(comma)]
 pub struct ScrollOffsets(#[css(if_empty = "none", iterable)] Box<[ScrollTimelineOffset]>);
 
