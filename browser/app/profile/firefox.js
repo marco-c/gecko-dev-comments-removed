@@ -31,7 +31,6 @@ pref("extensions.strictCompatibility", false);
 
 pref("extensions.checkCompatibility.temporaryThemeOverride_minAppVersion", "29.0a1");
 
-pref("extensions.webextPermissionPrompts", true);
 pref("extensions.webextOptionalPermissionPrompts", true);
 
 pref("extensions.postDownloadThirdPartyPrompt", true);

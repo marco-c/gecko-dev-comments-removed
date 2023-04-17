@@ -197,7 +197,6 @@ pref("extensions.compatability.locales.buildid", "0");
 
 pref("extensions.installDistroAddons", false);
 
-pref("extensions.webextPermissionPrompts", true);
 pref("extensions.webextOptionalPermissionPrompts", true);
 
 pref("extensions.webextensions.background-delayed-startup", true);
