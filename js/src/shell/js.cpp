@@ -2550,6 +2550,16 @@ static bool Evaluate(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   if (envChain.length() != 0) {
+    {
+      
+      JSAutoRealm ar(cx, global);
+      for (size_t i = 0; i < envChain.length(); ++i) {
+        if (!JS_WrapObject(cx, envChain[i])) {
+          return false;
+        }
+      }
+    }
+
     options.setNonSyntacticScope(true);
   }
 
