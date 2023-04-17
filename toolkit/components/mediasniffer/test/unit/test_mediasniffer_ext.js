@@ -41,6 +41,8 @@ const tests = [
   { path: "data/ff-inst.exe", expected: "application/octet-stream" },
   
   { path: "data/bug1079747.mp4", expected: "application/octet-stream" },
+  
+  { path: "data/mp3-in-riff.wav", expected: "audio/mpeg" },
 ];
 
 
