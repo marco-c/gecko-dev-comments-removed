@@ -17478,6 +17478,9 @@ bool BaseCompiler::emitBody() {
 
       
       case uint16_t(Op::ThreadPrefix): {
+        
+        
+        
         if (moduleEnv_.sharedMemoryEnabled() == Shareable::False) {
           return iter_.unrecognizedOpcode(&op);
         }

@@ -5403,6 +5403,9 @@ static bool EmitBodyExprs(FunctionCompiler& f) {
 
       
       case uint16_t(Op::ThreadPrefix): {
+        
+        
+        
         if (f.moduleEnv().sharedMemoryEnabled() == Shareable::False) {
           return f.iter().unrecognizedOpcode(&op);
         }
