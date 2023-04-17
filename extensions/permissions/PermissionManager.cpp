@@ -2463,10 +2463,13 @@ nsresult PermissionManager::GetStripPermsForPrincipal(
   aResult.Clear();
   aResult.SetCapacity(kStripOAPermissions.size());
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunreachable-code-return"
   
   if (kStripOAPermissions.empty()) {
     return NS_OK;
   }
+#pragma clang diagnostic pop
 
   nsresult rv;
   
