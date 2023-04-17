@@ -434,7 +434,7 @@ class MediaCache {
   
   
   
-  static MediaCache* gMediaCache;
+  static inline MediaCache* gMediaCache = nullptr;
 
   
   
@@ -461,14 +461,14 @@ class MediaCache {
   nsTArray<int64_t> mSuspendedStatusToNotify;
   
   
-  static StaticRefPtr<nsIThread> sThread;
+  static inline StaticRefPtr<nsIThread> sThread;
   
   
-  static bool sThreadInit;
+  static inline bool sThreadInit = false;
 
  private:
   
-  static bool sOnCellular;
+  static inline bool sOnCellular = false;
 
   
   
@@ -479,18 +479,6 @@ class MediaCache {
     return mMonitor;
   }
 };
-
-
-
-MediaCache* MediaCache::gMediaCache;
-
-
-StaticRefPtr<nsIThread> MediaCache::sThread;
-
-bool MediaCache::sThreadInit = false;
-
-
-bool MediaCache::sOnCellular = false;
 
 void MediaCache::UpdateOnCellular() {
   NS_ASSERTION(NS_IsMainThread(),
