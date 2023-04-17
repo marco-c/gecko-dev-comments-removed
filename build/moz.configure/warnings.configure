@@ -53,15 +53,6 @@ check_and_add_gcc_warning("-Wformat-type-confusion")
 add_gcc_warning("-Wignored-qualifiers")
 
 
-
-
-add_gcc_warning(
-    "-Woverloaded-virtual",
-    cxx_compiler,
-    when=depends(cxx_compiler)(lambda c: c.type != "gcc"),
-)
-
-
 add_gcc_warning("-Wpointer-arith")
 
 
