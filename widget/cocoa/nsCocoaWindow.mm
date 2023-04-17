@@ -260,16 +260,6 @@ static void FitRectToVisibleAreaForScreen(DesktopIntRect& aRect, NSScreen* aScre
   }
 }
 
-
-
-static bool UseNativePopupWindows() {
-#ifdef MOZ_USE_NATIVE_POPUP_WINDOWS
-  return true;
-#else
-  return false;
-#endif 
-}
-
 DesktopToLayoutDeviceScale ParentBackingScaleFactor(nsIWidget* aParent, NSView* aParentView) {
   if (aParent) {
     return aParent->GetDesktopToDeviceScale();
@@ -336,9 +326,6 @@ nsresult nsCocoaWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   mParent = aParent;
   mAncestorLink = aParent;
   mAlwaysOnTop = aInitData->mAlwaysOnTop;
-
-  
-  if ((mWindowType == eWindowType_popup) && UseNativePopupWindows()) return NS_OK;
 
   
   
