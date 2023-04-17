@@ -58,13 +58,19 @@ function resolveDisplayNamesInternals(lazyDisplayNamesData) {
     internalProps.style = lazyDisplayNamesData.style;
 
     
-    internalProps.type = lazyDisplayNamesData.type;
+    var type = lazyDisplayNamesData.type;
+    internalProps.type = type;
 
     
     internalProps.fallback = lazyDisplayNamesData.fallback;
 
     
     internalProps.locale = r.locale;
+
+    
+    if (type === "language") {
+        internalProps.languageDisplay = lazyDisplayNamesData.languageDisplay;
+    }
 
     if (mozExtensions) {
         internalProps.calendar = r.ca;
@@ -111,6 +117,9 @@ function InitializeDisplayNames(displayNames, locales, options, mozExtensions) {
     assert(IsObject(displayNames), "InitializeDisplayNames called with non-object");
     assert(GuardToDisplayNames(displayNames) !== null, "InitializeDisplayNames called with non-DisplayNames");
 
+    
+    
+    
     
     
     
@@ -199,6 +208,15 @@ function InitializeDisplayNames(displayNames, locales, options, mozExtensions) {
     lazyDisplayNamesData.fallback = fallback;
 
     
+    var languageDisplay = GetOption(options, "languageDisplay", "string", ["dialect", "standard"],
+                                    "dialect");
+
+    
+    if (type === "language") {
+        lazyDisplayNamesData.languageDisplay = languageDisplay;
+    }
+
+    
     
     initializeIntlObject(displayNames, "DisplayNames", lazyDisplayNamesData);
 }
@@ -239,10 +257,11 @@ function Intl_DisplayNames_of(code) {
 
   
   
-  var {locale, calendar = "", style, type, fallback} = internals;
+  var {locale, calendar = "", style, type, languageDisplay = "", fallback} = internals;
 
   
-  return intl_ComputeDisplayName(displayNames, locale, calendar, style, fallback, type, code);
+  return intl_ComputeDisplayName(displayNames, locale, calendar, style, languageDisplay, fallback,
+                                 type, code);
 }
 
 
@@ -268,8 +287,16 @@ function Intl_DisplayNames_resolvedOptions() {
         fallback: internals.fallback,
     };
 
+    
+    assert(hasOwn("languageDisplay", internals) === (internals.type === "language"),
+           "languageDisplay is present iff type is 'language'");
+
+    if (hasOwn("languageDisplay", internals)) {
+        _DefineDataProperty(options, "languageDisplay", internals.languageDisplay);
+    }
+
     if (hasOwn("calendar", internals)) {
-        options.calendar = internals.calendar;
+        _DefineDataProperty(options, "calendar", internals.calendar);
     }
 
     

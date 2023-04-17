@@ -83,6 +83,7 @@ class DisplayNamesObject : public NativeObject {
 
 
 
+
 [[nodiscard]] extern bool intl_ComputeDisplayName(JSContext* cx, unsigned argc,
                                                   Value* vp);
 
