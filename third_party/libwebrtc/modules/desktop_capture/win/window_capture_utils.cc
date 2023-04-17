@@ -168,7 +168,6 @@ bool IsWindowValidAndVisible(HWND window) {
 BOOL CALLBACK FilterUncapturableWindows(HWND hwnd, LPARAM param) {
   DesktopCapturer::SourceList* list =
       reinterpret_cast<DesktopCapturer::SourceList*>(param);
-
   
   
   int len = GetWindowTextLength(hwnd);
@@ -178,7 +177,6 @@ BOOL CALLBACK FilterUncapturableWindows(HWND hwnd, LPARAM param) {
       (owner && !(exstyle & WS_EX_APPWINDOW))) {
     return TRUE;
   }
-
   
   
   
@@ -187,27 +185,19 @@ BOOL CALLBACK FilterUncapturableWindows(HWND hwnd, LPARAM param) {
                           nullptr)) {
     return TRUE;
   }
-
   
   WCHAR class_name[256];
   const int class_name_length =
       GetClassNameW(hwnd, class_name, arraysize(class_name));
   if (class_name_length < 1)
     return TRUE;
-
   
   
   
   if (wcscmp(class_name, L"Progman") == 0 || wcscmp(class_name, L"Button") == 0)
     return TRUE;
-
   DesktopCapturer::Source window;
   window.id = reinterpret_cast<WindowId>(hwnd);
-
-  DWORD pid;
-  GetWindowThreadProcessId(hwnd, &pid);
-  window.pid = static_cast<pid_t>(pid);
-
   
   WCHAR window_title[500];
   GetWindowTextW(hwnd, window_title, arraysize(window_title));
@@ -216,9 +206,7 @@ BOOL CALLBACK FilterUncapturableWindows(HWND hwnd, LPARAM param) {
   
   if (window.title.empty())
     return TRUE;
-
   list->push_back(window);
-
   return TRUE;
 }
 
