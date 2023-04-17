@@ -7,7 +7,7 @@
 #ifndef mozilla_URLQueryStringStripper_h
 #define mozilla_URLQueryStringStripper_h
 
-#include "nsIObserver.h"
+#include "nsIURLQueryStrippingListService.h"
 
 #include "nsStringFwd.h"
 #include "nsTHashSet.h"
@@ -27,10 +27,10 @@ namespace mozilla {
 
 
 
-class URLQueryStringStripper final : public nsIObserver {
+class URLQueryStringStripper final : public nsIURLQueryStrippingListObserver {
  public:
   NS_DECL_ISUPPORTS
-  NS_DECL_NSIOBSERVER
+  NS_DECL_NSIURLQUERYSTRIPPINGLISTOBSERVER
 
   
   
@@ -50,11 +50,12 @@ class URLQueryStringStripper final : public nsIObserver {
 
   bool CheckAllowList(nsIURI* aURI);
 
-  void PopulateStripList();
-  void PopulateAllowList();
+  void PopulateStripList(const nsAString& aList);
+  void PopulateAllowList(const nsACString& aList);
 
   nsTHashSet<nsString> mList;
   nsTHashSet<nsCString> mAllowList;
+  nsCOMPtr<nsIURLQueryStrippingListService> mService;
 };
 
 }  
