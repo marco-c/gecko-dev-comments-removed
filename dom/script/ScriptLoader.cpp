@@ -3207,7 +3207,7 @@ nsresult ScriptLoader::EvaluateScript(ScriptLoadRequest* aRequest) {
       } else {
         
         JS::Rooted<JSObject*> aEvaluationPromise(cx);
-        if (NS_SUCCEEDED(rv)) {
+        if (rval.isObject()) {
           
           
           
