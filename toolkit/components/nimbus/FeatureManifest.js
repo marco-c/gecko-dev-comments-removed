@@ -9,6 +9,18 @@ const EXPORTED_SYMBOLS = ["FeatureManifest"];
 
 
 const FeatureManifest = {
+  search: {
+    description: "The Search Services",
+    hasExposure: false,
+    variables: {
+      experiment: {
+        type: "string",
+        fallbackPref: "browser.search.experiment",
+        description:
+          "Used to activate only matching configurations that contain the value in `experiment`",
+      },
+    },
+  },
   urlbar: {
     description: "The Address Bar",
     hasExposure: true,
