@@ -58,7 +58,7 @@ class StringListMetric {
 
 
 
-  Maybe<nsTArray<nsCString>> TestGetValue(
+  Result<Maybe<nsTArray<nsCString>>, nsCString> TestGetValue(
       const nsACString& aPingName = nsCString()) const;
 
  private:
