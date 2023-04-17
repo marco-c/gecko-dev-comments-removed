@@ -102,6 +102,9 @@ class OMTASampler final {
 
   bool IsSamplerThread() const;
 
+  void EnterTestMode() { mIsInTestMode = true; }
+  void LeaveTestMode() { mIsInTestMode = false; }
+
  protected:
   ~OMTASampler() = default;
 
@@ -143,6 +146,7 @@ class OMTASampler final {
   
   
   TimeStamp mPreviousSampleTime;
+  bool mIsInTestMode;
 };
 
 }  
