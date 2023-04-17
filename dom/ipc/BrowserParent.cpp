@@ -852,8 +852,7 @@ void BrowserParent::LoadURL(nsDocShellLoadState* aLoadState) {
   if (mIsDestroyed) {
     return;
   }
-  nsCString spec;
-  aLoadState->URI()->GetSpec(spec);
+
   if (mCreatingWindow) {
     
     return;
