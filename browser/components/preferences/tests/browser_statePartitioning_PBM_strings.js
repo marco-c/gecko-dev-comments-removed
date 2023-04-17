@@ -105,16 +105,16 @@ add_task(async function runTests() {
   
   
   
-  await testCookieBlockingInfoStandard(
-    "tp,tpPrivate,cookieBehavior5,cookieBehaviorPBM5,cm,fp,stp,lvl2",
+  await testCookieBlockingInfoStrict(
+    "tp,tpPrivate,cookieBehavior5,cookieBehaviorPBM5,cm,fp,stp,lvl2,rp",
     false
   );
 
   
   
   
-  await testCookieBlockingInfoStandard(
-    "tp,tpPrivate,cookieBehavior4,cookieBehaviorPBM5,cm,fp,stp,lvl2",
+  await testCookieBlockingInfoStrict(
+    "tp,tpPrivate,cookieBehavior4,cookieBehaviorPBM5,cm,fp,stp,lvl2,rp",
     true
   );
 

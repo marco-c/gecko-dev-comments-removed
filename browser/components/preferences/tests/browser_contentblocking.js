@@ -15,6 +15,7 @@ const FP_PREF = "privacy.trackingprotection.fingerprinting.enabled";
 const STP_PREF = "privacy.trackingprotection.socialtracking.enabled";
 const CM_PREF = "privacy.trackingprotection.cryptomining.enabled";
 const LEVEL2_PREF = "privacy.annotate_channels.strict_list.enabled";
+const REFERRER_PREF = "network.http.referer.disallowCrossSiteRelaxingDefault";
 const PREF_TEST_NOTIFICATIONS =
   "browser.safebrowsing.test-notifications.enabled";
 const STRICT_PREF = "browser.contentblocking.features.strict";
@@ -315,6 +316,7 @@ add_task(async function testContentBlockingStandardCategory() {
     [STP_PREF]: null,
     [CM_PREF]: null,
     [LEVEL2_PREF]: null,
+    [REFERRER_PREF]: null,
   };
 
   for (let pref in prefs) {
@@ -350,6 +352,10 @@ add_task(async function testContentBlockingStandardCategory() {
   Services.prefs.setBoolPref(
     LEVEL2_PREF,
     !Services.prefs.getBoolPref(LEVEL2_PREF)
+  );
+  Services.prefs.setBoolPref(
+    REFERRER_PREF,
+    !Services.prefs.getBoolPref(REFERRER_PREF)
   );
 
   for (let pref in prefs) {
@@ -412,6 +418,7 @@ add_task(async function testContentBlockingStrictCategory() {
   Services.prefs.setBoolPref(TP_PREF, false);
   Services.prefs.setBoolPref(TP_PBM_PREF, false);
   Services.prefs.setBoolPref(LEVEL2_PREF, false);
+  Services.prefs.setBoolPref(REFERRER_PREF, false);
   Services.prefs.setIntPref(
     NCB_PREF,
     Ci.nsICookieService.BEHAVIOR_LIMIT_FOREIGN
@@ -520,6 +527,20 @@ add_task(async function testContentBlockingStrictCategory() {
           `${CM_PREF} has been set to false`
         );
         break;
+      case "rp":
+        is(
+          Services.prefs.getBoolPref(REFERRER_PREF),
+          true,
+          `${REFERRER_PREF} has been set to true`
+        );
+        break;
+      case "-rp":
+        is(
+          Services.prefs.getBoolPref(REFERRER_PREF),
+          false,
+          `${REFERRER_PREF} has been set to false`
+        );
+        break;
       case "cookieBehavior0":
         is(
           Services.prefs.getIntPref(NCB_PREF),
@@ -615,7 +636,7 @@ add_task(async function testContentBlockingStrictCategory() {
 
 
 add_task(async function testContentBlockingCustomCategory() {
-  let prefs = [
+  let untouchedPrefs = [
     TP_PREF,
     TP_PBM_PREF,
     NCB_PREF,
@@ -624,6 +645,8 @@ add_task(async function testContentBlockingCustomCategory() {
     STP_PREF,
     CM_PREF,
   ];
+
+  let truePrefs = [REFERRER_PREF];
 
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
   let doc = gBrowser.contentDocument;
@@ -641,11 +664,23 @@ add_task(async function testContentBlockingCustomCategory() {
   await TestUtils.waitForCondition(
     () => Services.prefs.getStringPref(CAT_PREF) == "custom"
   );
+
   
-  for (let pref of prefs) {
+  
+  for (let pref of untouchedPrefs) {
     ok(
       !Services.prefs.prefHasUserValue(pref),
       `the pref ${pref} remains as default value`
+    );
+  }
+
+  
+  
+  for (let pref of truePrefs) {
+    is(
+      Services.prefs.getBoolPref(pref),
+      true,
+      `the pref ${pref} has been set to true in custom`
     );
   }
   is(
@@ -660,7 +695,14 @@ add_task(async function testContentBlockingCustomCategory() {
   );
 
   
-  for (let pref of [FP_PREF, STP_PREF, CM_PREF, TP_PREF, TP_PBM_PREF]) {
+  for (let pref of [
+    FP_PREF,
+    STP_PREF,
+    CM_PREF,
+    TP_PREF,
+    TP_PBM_PREF,
+    REFERRER_PREF,
+  ]) {
     Services.prefs.setBoolPref(pref, !Services.prefs.getBoolPref(pref));
     await TestUtils.waitForCondition(
       () => Services.prefs.getStringPref(CAT_PREF) == "custom"
@@ -738,7 +780,7 @@ add_task(async function testContentBlockingCustomCategory() {
     `${CAT_PREF} has been set to custom`
   );
 
-  for (let pref of prefs) {
+  for (let pref of [...untouchedPrefs, ...truePrefs]) {
     SpecialPowers.clearUserPref(pref);
   }
 
