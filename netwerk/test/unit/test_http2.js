@@ -564,6 +564,16 @@ function test_http2_header() {
 }
 
 
+function test_http2_invalid_response_header() {
+  var listener = new Http2CheckListener();
+  listener.shouldSucceed = false;
+  var chan = makeChan(
+    "https://localhost:" + serverPort + "/invalid_response_header"
+  );
+  chan.asyncOpen(listener);
+}
+
+
 function test_http2_cookie_crumbling() {
   var chan = makeChan("https://localhost:" + serverPort + "/cookie_crumbling");
   var cookiesSent = ["a=b", "c=d01234567890123456789", "e=f"].sort();
@@ -1304,6 +1314,7 @@ var tests = [
   test_http2_doubleheader,
   test_http2_xhr,
   test_http2_header,
+  test_http2_invalid_response_header,
   test_http2_cookie_crumbling,
   test_http2_multiplex,
   test_http2_big,
