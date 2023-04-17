@@ -671,6 +671,21 @@ void MediaKeys::Unbind() {
   mElement = nullptr;
 }
 
+void MediaKeys::CheckIsElementCapturePossible() {
+  MOZ_ASSERT(NS_IsMainThread());
+  EME_LOG("MediaKeys[%p]::IsElementCapturePossible()", this);
+  
+  
+  
+
+  
+  if (mProxy) {
+    mProxy->NotifyOutputProtectionStatus(
+        CDMProxy::OutputProtectionCheckStatus::CheckSuccessful,
+        CDMProxy::OutputProtectionCaptureStatus::CaptureNotPossible);
+  }
+}
+
 void MediaKeys::GetSessionsInfo(nsString& sessionsInfo) {
   for (const auto& keySession : mKeySessions.Values()) {
     nsString sessionID;

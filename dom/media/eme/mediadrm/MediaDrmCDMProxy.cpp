@@ -148,6 +148,18 @@ void MediaDrmCDMProxy::RemoveSession(const nsAString& aSessionId,
       aPromiseId, "Currently Fennec does not support RemoveSession"_ns);
 }
 
+void MediaDrmCDMProxy::QueryOutputProtectionStatus() {
+  
+  
+}
+
+void MediaDrmCDMProxy::NotifyOutputProtectionStatus(
+    OutputProtectionCheckStatus aCheckStatus,
+    OutputProtectionCaptureStatus aCaptureStatus) {
+  
+  
+}
+
 void MediaDrmCDMProxy::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mOwnerThread);

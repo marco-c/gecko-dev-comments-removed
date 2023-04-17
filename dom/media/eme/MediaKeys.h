@@ -70,6 +70,14 @@ class MediaKeys final : public nsISupports,
   void Unbind();
 
   
+  
+  
+  
+  
+  
+  void CheckIsElementCapturePossible();
+
+  
   void GetKeySystem(nsString& retval) const;
 
   
