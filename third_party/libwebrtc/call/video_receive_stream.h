@@ -206,6 +206,10 @@ class VideoReceiveStream {
       bool tmmbr = false;
 
       
+      
+      KeyFrameReqMethod keyframe_method;
+
+      
       LntfConfig lntf;
 
       
