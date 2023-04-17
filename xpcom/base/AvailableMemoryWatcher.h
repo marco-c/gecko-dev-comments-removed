@@ -7,12 +7,31 @@
 #ifndef mozilla_AvailableMemoryWatcher_h
 #define mozilla_AvailableMemoryWatcher_h
 
+#include "nsCOMPtr.h"
+#include "nsIAvailableMemoryWatcherBase.h"
+
 namespace mozilla {
 
-class nsAvailableMemoryWatcherBase : public nsISupports {
+
+
+
+
+
+class nsAvailableMemoryWatcherBase : public nsIAvailableMemoryWatcherBase {
+  static StaticRefPtr<nsAvailableMemoryWatcherBase> sSingleton;
+
+ protected:
+  virtual ~nsAvailableMemoryWatcherBase() = default;
+
  public:
-  virtual nsresult Init() = 0;
+  static already_AddRefed<nsAvailableMemoryWatcherBase> GetSingleton();
+
+  nsAvailableMemoryWatcherBase();
+
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIAVAILABLEMEMORYWATCHERBASE
 };
+
 
 already_AddRefed<nsAvailableMemoryWatcherBase> CreateAvailableMemoryWatcher();
 
