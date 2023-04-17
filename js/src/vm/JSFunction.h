@@ -204,6 +204,8 @@ class JSFunction : public js::NativeObject {
     return hasBaseScript() && baseScript()->hasBytecode();
   }
 
+  bool isGhost() const { return flags_.isGhost(); }
+
   
   bool isArrow() const { return flags_.isArrow(); }
   

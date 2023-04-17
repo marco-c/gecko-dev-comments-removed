@@ -778,7 +778,7 @@ struct MOZ_RAII CompilationState : public ExtensibleCompilationStencil {
   
   
   
-  struct RewindToken {
+  struct CompilationStatePosition {
     
     size_t scriptDataLength = 0;
 
@@ -787,8 +787,17 @@ struct MOZ_RAII CompilationState : public ExtensibleCompilationStencil {
 
   bool prepareSharedDataStorage(JSContext* cx);
 
-  RewindToken getRewindToken();
-  void rewind(const RewindToken& pos);
+  CompilationStatePosition getPosition();
+  void rewind(const CompilationStatePosition& pos);
+
+  
+  
+  
+  
+  
+  
+  
+  void markGhost(const CompilationStatePosition& pos);
 
   
   

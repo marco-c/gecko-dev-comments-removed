@@ -86,6 +86,17 @@ class FunctionFlags {
     RESOLVED_LENGTH = 1 << 14,
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    GHOST_FUNCTION = 1 << 15,
 
     
     NORMAL_KIND = NormalFunction << FUNCTION_KIND_SHIFT,
@@ -118,7 +129,7 @@ class FunctionFlags {
 
     
     STABLE_ACROSS_CLONES =
-        CONSTRUCTOR | LAMBDA | SELF_HOSTED | FUNCTION_KIND_MASK
+        CONSTRUCTOR | LAMBDA | SELF_HOSTED | FUNCTION_KIND_MASK | GHOST_FUNCTION
   };
 
   uint16_t flags_;
@@ -306,6 +317,9 @@ class FunctionFlags {
   void setIsExtended() { setFlags(EXTENDED); }
 
   bool isNativeConstructor() const { return hasFlags(NATIVE_CTOR); }
+
+  void setIsGhost() { setFlags(GHOST_FUNCTION); }
+  bool isGhost() const { return hasFlags(GHOST_FUNCTION); }
 
   static uint16_t HasJitEntryFlags(bool isConstructing) {
     uint16_t flags = BASESCRIPT | SELFHOSTLAZY;

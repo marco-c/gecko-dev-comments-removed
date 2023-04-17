@@ -113,6 +113,13 @@ static void TraverseInnerLazyScriptsForLazyScript(
       continue;
     }
 
+    
+    
+    
+    if (fun->isGhost()) {
+      continue;
+    }
+
     BaseScript* script = fun->baseScript();
     MOZ_ASSERT_IF(script->hasEnclosingScript(),
                   script->enclosingScript() == enclosingScript);

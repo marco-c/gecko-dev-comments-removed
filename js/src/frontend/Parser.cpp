@@ -3098,8 +3098,7 @@ GeneralParser<ParseHandler, Unit>::functionDefinition(
   Directives newDirectives = directives;
 
   Position start(tokenStream);
-  CompilationState::RewindToken startObj =
-      this->compilationState_.getRewindToken();
+  auto startObj = this->compilationState_.getPosition();
 
   
   
@@ -3176,8 +3175,7 @@ bool Parser<FullParseHandler, Unit>::trySyntaxParseInnerFunction(
     }
 
     UsedNameTracker::RewindToken token = usedNames_.getRewindToken();
-    CompilationState::RewindToken startObj =
-        this->compilationState_.getRewindToken();
+    auto statePosition = this->compilationState_.getPosition();
 
     
     
@@ -3215,7 +3213,7 @@ bool Parser<FullParseHandler, Unit>::trySyntaxParseInnerFunction(
         
         syntaxParser->clearAbortedSyntaxParse();
         usedNames_.rewind(token);
-        this->compilationState_.rewind(startObj);
+        this->compilationState_.rewind(statePosition);
         MOZ_ASSERT_IF(!syntaxParser->cx_->isHelperThreadContext(),
                       !syntaxParser->cx_->isExceptionPending());
         break;
@@ -9513,6 +9511,7 @@ typename ParseHandler::Node GeneralParser<ParseHandler, Unit>::assignExpr(
   
   
   Position start(tokenStream);
+  auto ghostToken = this->compilationState_.getPosition();
 
   PossibleError possibleErrorInner(*this);
   Node lhs;
@@ -9583,7 +9582,11 @@ typename ParseHandler::Node GeneralParser<ParseHandler, Unit>::assignExpr(
     
     
     
+    
+    
+    
     tokenStream.rewind(start);
+    this->compilationState_.markGhost(ghostToken);
 
     TokenKind next;
     if (!tokenStream.getToken(&next, TokenStream::SlashIsRegExp)) {

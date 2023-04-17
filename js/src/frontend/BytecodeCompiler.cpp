@@ -136,7 +136,7 @@ class MOZ_STACK_CLASS frontend::SourceAwareCompiler {
 
   void handleParseFailure(const Directives& newDirectives,
                           TokenStreamPosition& startPosition,
-                          CompilationState::RewindToken& startObj);
+                          CompilationState::CompilationStatePosition& startStatePosition);
 
  public:
   CompilationState& compilationState() { return compilationState_; };
@@ -671,12 +671,12 @@ bool frontend::SourceAwareCompiler<Unit>::canHandleParseFailure(
 template <typename Unit>
 void frontend::SourceAwareCompiler<Unit>::handleParseFailure(
     const Directives& newDirectives, TokenStreamPosition& startPosition,
-    CompilationState::RewindToken& startObj) {
+    CompilationState::CompilationStatePosition& startStatePosition) {
   MOZ_ASSERT(canHandleParseFailure(newDirectives));
 
   
   parser->tokenStream.rewind(startPosition);
-  compilationState_.rewind(startObj);
+  compilationState_.rewind(startStatePosition);
 
   
   MOZ_ASSERT_IF(compilationState_.directives.strict(), newDirectives.strict());
@@ -787,7 +787,7 @@ FunctionNode* frontend::StandaloneFunctionCompiler<Unit>::parse(
   assertSourceAndParserCreated();
 
   TokenStreamPosition startPosition(parser->tokenStream);
-  CompilationState::RewindToken startObj = compilationState_.getRewindToken();
+  auto startStatePosition = compilationState_.getPosition();
 
   
   
@@ -809,7 +809,7 @@ FunctionNode* frontend::StandaloneFunctionCompiler<Unit>::parse(
       return nullptr;
     }
 
-    handleParseFailure(newDirectives, startPosition, startObj);
+    handleParseFailure(newDirectives, startPosition, startStatePosition);
   }
 
   return fn;
