@@ -143,39 +143,9 @@ class GlobalObjectData {
   void trace(JSTracer* trc);
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class GlobalObject : public NativeObject {
-  
-  static const unsigned APPLICATION_SLOTS = JSCLASS_GLOBAL_APPLICATION_SLOTS;
-
   enum : unsigned {
-    GLOBAL_DATA_SLOT = APPLICATION_SLOTS,
+    GLOBAL_DATA_SLOT = JSCLASS_GLOBAL_APPLICATION_SLOTS,
     WINDOW_PROXY,
 
     
@@ -183,12 +153,15 @@ class GlobalObject : public NativeObject {
   };
 
   
-
-
-
-
+  
+  
   static_assert(JSCLASS_GLOBAL_SLOT_COUNT == RESERVED_SLOTS,
                 "global object slot counts are inconsistent");
+
+  
+  static_assert(GLOBAL_DATA_SLOT < MAX_FIXED_SLOTS,
+                "GlobalObjectData should be stored in a fixed slot for "
+                "performance reasons");
 
   using ProtoKind = GlobalObjectData::ProtoKind;
 
