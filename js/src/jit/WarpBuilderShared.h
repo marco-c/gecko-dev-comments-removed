@@ -49,7 +49,6 @@ class MOZ_STACK_CLASS CallInfo {
   enum class ArgFormat {
     Standard,
     Array,
-    FunApplyMagicArgs,
     FunApplyArgsObj,
   };
 
@@ -160,10 +159,6 @@ class MOZ_STACK_CLASS CallInfo {
   [[nodiscard]] bool setArgs(const MDefinitionVector& args) {
     MOZ_ASSERT(args_.empty());
     return args_.appendAll(args);
-  }
-  [[nodiscard]] bool replaceArgs(const MDefinitionVector& args) {
-    args_.clear();
-    return setArgs(args);
   }
 
   MDefinitionVector& argv() { return args_; }
