@@ -7,32 +7,32 @@
 
 #include "FilteredContentIterator.h"  
 #include "mozilla/Assertions.h"       
+#include "mozilla/EditorBase.h"       
 #include "mozilla/EditorUtils.h"      
+#include "mozilla/mozalloc.h"         
+#include "mozilla/UniquePtr.h"        
 #include "mozilla/dom/AbstractRange.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/Selection.h"
-#include "mozilla/mozalloc.h"    
-#include "mozilla/TextEditor.h"  
-#include "nsAString.h"           
-#include "nsContentUtils.h"      
-#include "nsComposeTxtSrvFilter.h"
-#include "nsDebug.h"                   
-#include "nsDependentSubstring.h"      
-#include "nsError.h"                   
-#include "nsGenericHTMLElement.h"      
-#include "nsIContent.h"                
-#include "nsID.h"                      
-#include "nsIEditor.h"                 
-#include "nsIEditorSpellCheck.h"       
-#include "nsINode.h"                   
-#include "nsISelectionController.h"    
-#include "nsISupportsBase.h"           
-#include "nsISupportsUtils.h"          
 #include "mozilla/intl/WordBreaker.h"  
-#include "nsRange.h"                   
-#include "nsString.h"                  
-#include "nscore.h"                    
-#include "mozilla/UniquePtr.h"         
+#include "nsAString.h"                 
+#include "nsContentUtils.h"            
+#include "nsComposeTxtSrvFilter.h"
+#include "nsDebug.h"                 
+#include "nsDependentSubstring.h"    
+#include "nsError.h"                 
+#include "nsGenericHTMLElement.h"    
+#include "nsIContent.h"              
+#include "nsID.h"                    
+#include "nsIEditor.h"               
+#include "nsIEditorSpellCheck.h"     
+#include "nsINode.h"                 
+#include "nsISelectionController.h"  
+#include "nsISupportsBase.h"         
+#include "nsISupportsUtils.h"        
+#include "nsRange.h"                 
+#include "nsString.h"                
+#include "nscore.h"                  
 
 namespace mozilla {
 
@@ -86,7 +86,7 @@ NS_INTERFACE_MAP_BEGIN(TextServicesDocument)
   NS_INTERFACE_MAP_ENTRIES_CYCLE_COLLECTION(TextServicesDocument)
 NS_INTERFACE_MAP_END
 
-NS_IMPL_CYCLE_COLLECTION(TextServicesDocument, mDocument, mSelCon, mTextEditor,
+NS_IMPL_CYCLE_COLLECTION(TextServicesDocument, mDocument, mSelCon, mEditorBase,
                          mFilteredIter, mPrevTextBlock, mNextTextBlock, mExtent)
 
 nsresult TextServicesDocument::InitWithEditor(nsIEditor* aEditor) {
@@ -137,7 +137,7 @@ nsresult TextServicesDocument::InitWithEditor(nsIEditor* aEditor) {
     }
   }
 
-  mTextEditor = aEditor->AsTextEditor();
+  mEditorBase = aEditor->AsEditorBase();
 
   rv = aEditor->AddEditActionListener(this);
 
@@ -836,7 +836,7 @@ nsresult TextServicesDocument::ScrollSelectionIntoView() {
 }
 
 nsresult TextServicesDocument::DeleteSelection() {
-  if (NS_WARN_IF(!mTextEditor) || NS_WARN_IF(!SelectionIsValid())) {
+  if (NS_WARN_IF(!mEditorBase) || NS_WARN_IF(!SelectionIsValid())) {
     return NS_ERROR_FAILURE;
   }
 
@@ -964,8 +964,8 @@ nsresult TextServicesDocument::DeleteSelection() {
   AdjustContentIterator();
 
   
-  RefPtr<TextEditor> textEditor = mTextEditor;
-  nsresult rv = textEditor->DeleteSelectionAsAction(nsIEditor::ePrevious,
+  OwningNonNull<EditorBase> editorBase = *mEditorBase;
+  nsresult rv = editorBase->DeleteSelectionAsAction(nsIEditor::ePrevious,
                                                     nsIEditor::eStrip);
   if (NS_FAILED(rv)) {
     return rv;
@@ -1082,7 +1082,7 @@ nsresult TextServicesDocument::DeleteSelection() {
 }
 
 nsresult TextServicesDocument::InsertText(const nsAString& aText) {
-  if (NS_WARN_IF(!mTextEditor) || NS_WARN_IF(!SelectionIsValid())) {
+  if (NS_WARN_IF(!mEditorBase) || NS_WARN_IF(!SelectionIsValid())) {
     return NS_ERROR_FAILURE;
   }
 
@@ -1108,10 +1108,10 @@ nsresult TextServicesDocument::InsertText(const nsAString& aText) {
 
   
   
-  RefPtr<TextEditor> textEditor = mTextEditor;
-  AutoTransactionBatchExternal treatAsOneTransaction(*textEditor);
+  OwningNonNull<EditorBase> editorBase = *mEditorBase;
+  AutoTransactionBatchExternal treatAsOneTransaction(editorBase);
 
-  nsresult rv = textEditor->InsertTextAsAction(aText);
+  nsresult rv = editorBase->InsertTextAsAction(aText);
   if (NS_FAILED(rv)) {
     NS_WARNING("InsertTextAsAction() failed");
     return rv;

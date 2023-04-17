@@ -23,7 +23,7 @@ class nsRange;
 class nsINode;
 
 namespace mozilla {
-class TextEditor;
+class EditorBase;
 
 namespace dom {
 class Document;
@@ -89,7 +89,7 @@ class NodeOffsetRange {
 class MOZ_STACK_CLASS mozInlineSpellWordUtil {
  public:
   static mozilla::Maybe<mozInlineSpellWordUtil> Create(
-      const mozilla::TextEditor& aTextEditor);
+      const mozilla::EditorBase& aEditorBase);
 
   
   

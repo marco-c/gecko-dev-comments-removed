@@ -21,8 +21,8 @@ class mozInlineSpellResume;
 class UpdateCurrentDictionaryCallback;
 
 namespace mozilla {
+class EditorBase;
 class EditorSpellCheck;
-class TextEditor;
 enum class EditSubAction : int32_t;
 
 namespace dom {
@@ -158,7 +158,7 @@ class mozInlineSpellChecker final : public nsIInlineSpellChecker,
   };
   static SpellCheckingState gCanEnableSpellChecking;
 
-  RefPtr<mozilla::TextEditor> mTextEditor;
+  RefPtr<mozilla::EditorBase> mEditorBase;
   RefPtr<mozilla::EditorSpellCheck> mSpellCheck;
   RefPtr<mozilla::EditorSpellCheck> mPendingSpellCheck;
 
@@ -233,7 +233,7 @@ class mozInlineSpellChecker final : public nsIInlineSpellChecker,
   
   
   
-  static bool ShouldSpellCheckNode(mozilla::TextEditor* aTextEditor,
+  static bool ShouldSpellCheckNode(mozilla::EditorBase* aEditorBase,
                                    nsINode* aNode);
 
   
@@ -331,8 +331,8 @@ class mozInlineSpellChecker final : public nsIInlineSpellChecker,
   
   
   void ChangeNumPendingSpellChecks(int32_t aDelta,
-                                   mozilla::TextEditor* aTextEditor = nullptr);
-  void NotifyObservers(const char* aTopic, mozilla::TextEditor* aTextEditor);
+                                   mozilla::EditorBase* aEditorBase = nullptr);
+  void NotifyObservers(const char* aTopic, mozilla::EditorBase* aEditorBase);
 
   void StartToListenToEditSubActions() { mIsListeningToEditSubActions = true; }
   void EndListeningToEditSubActions() { mIsListeningToEditSubActions = false; }
