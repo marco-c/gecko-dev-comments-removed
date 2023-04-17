@@ -327,9 +327,6 @@ void ContentMediaController::HandleMediaKey(MediaControlKey aKey) {
   }
   LOG("Handle '%s' event, receiver num=%zu", ToMediaControlKeyStr(aKey),
       mReceivers.Length());
-  AccumulateCategorical(
-      mozilla::Telemetry::LABELS_MEDIA_CONTROL_HANDLE_PLAY_PAUSE_STOP_ACTIONS::
-          DefaultHandler);
   
   
   switch (aKey) {
