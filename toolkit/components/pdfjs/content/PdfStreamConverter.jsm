@@ -174,13 +174,6 @@ function getLocalizedStrings(path) {
   }
   return map;
 }
-function getLocalizedString(strings, id, property) {
-  property = property || "textContent";
-  if (id in strings) {
-    return strings[id][property];
-  }
-  return id;
-}
 
 function isValidMatchesCount(data) {
   if (typeof data !== "object" || data === null) {
@@ -576,36 +569,7 @@ class ChromeActions {
 
 
   fallback(args, sendResponse) {
-    var featureId = args.featureId;
-
-    var domWindow = this.domWindow;
-    var strings = getLocalizedStrings("chrome.properties");
-    var message;
-    if (featureId === "forms") {
-      message = getLocalizedString(strings, "unsupported_feature_forms");
-    } else if (featureId === "signatures") {
-      message = getLocalizedString(strings, "unsupported_feature_signatures");
-    } else {
-      message = getLocalizedString(strings, "unsupported_feature");
-    }
-    PdfJsTelemetry.onFallbackShown(featureId);
-
-    
-    
-    let actor = getActor(domWindow);
-    if (actor) {
-      actor.sendAsyncMessage("PDFJS:Parent:displayWarning", {
-        message,
-        label: getLocalizedString(strings, "open_with_different_viewer"),
-        accessKey: getLocalizedString(
-          strings,
-          "open_with_different_viewer",
-          "accessKey"
-        ),
-      });
-
-      actor.fallbackCallback = sendResponse;
-    }
+    sendResponse(false);
   }
 
   updateFindControlState(data) {
