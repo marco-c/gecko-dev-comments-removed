@@ -144,6 +144,17 @@ inline bool IsBaselineInterpreterEnabled() {
 }
 
 }  
+
+extern mozilla::Atomic<bool> fuzzingSafe;
+
+static inline bool IsFuzzing() {
+#ifdef FUZZING
+  return true;
+#else
+  return fuzzingSafe;
+#endif
+}
+
 }  
 
 #endif 

@@ -149,7 +149,7 @@ using JS::SourceText;
 
 
 
-mozilla::Atomic<bool> fuzzingSafe(false);
+mozilla::Atomic<bool> js::fuzzingSafe(false);
 
 
 
