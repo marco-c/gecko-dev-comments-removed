@@ -23,7 +23,6 @@ import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.AssertCalled
 import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.WithDisplay
-import org.mozilla.geckoview.test.util.Callbacks
 
 
 @RunWith(AndroidJUnit4::class)
@@ -37,7 +36,7 @@ class AutofillDelegateTest : BaseSessionTest() {
 
         mainSession.loadTestPath(FORMS_HTML_PATH)
         
-        sessionRule.waitUntilCalled(object : Callbacks.AutofillDelegate {
+        sessionRule.waitUntilCalled(object : Autofill.Delegate {
             
             
             @AssertCalled(count = 4)
@@ -61,7 +60,7 @@ class AutofillDelegateTest : BaseSessionTest() {
         
         mainSession.evaluateJS("document.querySelector('#form1').submit()")
 
-        sessionRule.waitUntilCalled(object : Callbacks.AutofillDelegate {
+        sessionRule.waitUntilCalled(object : Autofill.Delegate {
             @AssertCalled(count = 5)
             override fun onAutofill(session: GeckoSession,
                                     notification: Int,
@@ -101,7 +100,7 @@ class AutofillDelegateTest : BaseSessionTest() {
 
         mainSession.loadTestPath(FORMS_ID_VALUE_HTML_PATH)
         
-        sessionRule.waitUntilCalled(object : Callbacks.AutofillDelegate {
+        sessionRule.waitUntilCalled(object : Autofill.Delegate {
             @AssertCalled(count = 1)
             override fun onAutofill(session: GeckoSession,
                                     notification: Int,
@@ -120,7 +119,7 @@ class AutofillDelegateTest : BaseSessionTest() {
         
         mainSession.evaluateJS("document.querySelector('#form1').submit()")
 
-        sessionRule.waitUntilCalled(object : Callbacks.AutofillDelegate {
+        sessionRule.waitUntilCalled(object : Autofill.Delegate {
             @AssertCalled(count = 2)
             override fun onAutofill(session: GeckoSession,
                                     notification: Int,
@@ -149,7 +148,7 @@ class AutofillDelegateTest : BaseSessionTest() {
         
         mainSession.loadTestPath(FORMS_HTML_PATH)
         
-        sessionRule.waitUntilCalled(object : Callbacks.AutofillDelegate {
+        sessionRule.waitUntilCalled(object : Autofill.Delegate {
             
             
             @AssertCalled(count = 4)
@@ -251,7 +250,7 @@ class AutofillDelegateTest : BaseSessionTest() {
     @Test fun autofillNavigation() {
         
         mainSession.loadTestPath(FORMS_HTML_PATH)
-        sessionRule.waitUntilCalled(object : Callbacks.AutofillDelegate {
+        sessionRule.waitUntilCalled(object : Autofill.Delegate {
             @AssertCalled(count = 4)
             override fun onAutofill(session: GeckoSession,
                                     notification: Int,
@@ -270,7 +269,7 @@ class AutofillDelegateTest : BaseSessionTest() {
 
         
         mainSession.loadTestPath(HELLO_HTML_PATH)
-        sessionRule.waitUntilCalled(object : Callbacks.AutofillDelegate {
+        sessionRule.waitUntilCalled(object : Autofill.Delegate {
             @AssertCalled(count = 1)
             override fun onAutofill(session: GeckoSession,
                                     notification: Int,
@@ -287,7 +286,7 @@ class AutofillDelegateTest : BaseSessionTest() {
         
         mainSession.waitForPageStop()
         mainSession.goBack()
-        sessionRule.waitUntilCalled(object : Callbacks.AutofillDelegate {
+        sessionRule.waitUntilCalled(object : Autofill.Delegate {
             @AssertCalled(count = 4)
             override fun onAutofill(session: GeckoSession,
                                     notification: Int,
@@ -307,7 +306,7 @@ class AutofillDelegateTest : BaseSessionTest() {
 
         mainSession.evaluateJS("document.querySelector('#pass2').focus()")
 
-        sessionRule.waitUntilCalled(object : Callbacks.AutofillDelegate {
+        sessionRule.waitUntilCalled(object : Autofill.Delegate {
             @AssertCalled(count = 1)
             override fun onAutofill(session: GeckoSession,
                                     notification: Int,
@@ -330,7 +329,7 @@ class AutofillDelegateTest : BaseSessionTest() {
                    equalTo(8))
 
         mainSession.evaluateJS("document.querySelector('#pass2').blur()")
-        sessionRule.waitUntilCalled(object : Callbacks.AutofillDelegate {
+        sessionRule.waitUntilCalled(object : Autofill.Delegate {
             @AssertCalled(count = 1)
             override fun onAutofill(session: GeckoSession,
                                     notification: Int,
@@ -349,7 +348,7 @@ class AutofillDelegateTest : BaseSessionTest() {
     @Test fun autofillUserpass() {
         mainSession.loadTestPath(FORMS2_HTML_PATH)
         
-        sessionRule.waitUntilCalled(object : Callbacks.AutofillDelegate {
+        sessionRule.waitUntilCalled(object : Autofill.Delegate {
             @AssertCalled(count = 3)
             override fun onAutofill(session: GeckoSession,
                                     notification: Int,
@@ -392,7 +391,7 @@ class AutofillDelegateTest : BaseSessionTest() {
         
         mainSession.loadTestPath(FORMS_HTML_PATH)
         
-        sessionRule.waitUntilCalled(object : Callbacks.AutofillDelegate {
+        sessionRule.waitUntilCalled(object : Autofill.Delegate {
             
             
             @AssertCalled(count = 4)
@@ -408,7 +407,7 @@ class AutofillDelegateTest : BaseSessionTest() {
         })
 
         mainSession.evaluateJS("document.querySelector('#pass2').focus()")
-        sessionRule.waitUntilCalled(object : Callbacks.AutofillDelegate {
+        sessionRule.waitUntilCalled(object : Autofill.Delegate {
             @AssertCalled(count = 1)
             override fun onAutofill(session: GeckoSession,
                                     notification: Int,
@@ -424,7 +423,7 @@ class AutofillDelegateTest : BaseSessionTest() {
 
         
         mainSession.setActive(false)
-        sessionRule.waitUntilCalled(object : Callbacks.AutofillDelegate {
+        sessionRule.waitUntilCalled(object : Autofill.Delegate {
             @AssertCalled(count = 1)
             override fun onAutofill(session: GeckoSession,
                                     notification: Int,
@@ -438,7 +437,7 @@ class AutofillDelegateTest : BaseSessionTest() {
 
         
         mainSession.setActive(true)
-        sessionRule.waitUntilCalled(object : Callbacks.AutofillDelegate {
+        sessionRule.waitUntilCalled(object : Autofill.Delegate {
             @AssertCalled(count = 1)
             override fun onAutofill(session: GeckoSession,
                                     notification: Int,
@@ -456,7 +455,7 @@ class AutofillDelegateTest : BaseSessionTest() {
     @WithDisplay(width = 100, height = 100)
     @Test fun autofillAutocompleteAttribute() {
         mainSession.loadTestPath(FORMS_AUTOCOMPLETE_HTML_PATH)
-        sessionRule.waitUntilCalled(object : Callbacks.AutofillDelegate {
+        sessionRule.waitUntilCalled(object : Autofill.Delegate {
             @AssertCalled(count = 3)
             override fun onAutofill(session: GeckoSession,
                                     notification: Int,
