@@ -40,13 +40,7 @@
 using namespace mozilla;
 
 
-
-const int kClipboardTimeout = 1000000;
-
-
-
-
-const int kClipboardFastIterationNum = 3;
+const int kClipboardTimeout = 500000;
 
 
 

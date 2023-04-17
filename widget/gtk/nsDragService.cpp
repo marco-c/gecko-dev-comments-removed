@@ -1092,7 +1092,7 @@ bool nsDragService::IsTargetContextList(void) {
 }
 
 
-#define NS_DND_TIMEOUT 1000000
+#define NS_DND_TIMEOUT 500000
 
 void nsDragService::GetTargetDragData(GdkAtom aFlavor) {
   LOGDRAGSERVICE(("getting data flavor %s\n", gdk_atom_name(aFlavor)));
@@ -1127,17 +1127,12 @@ void nsDragService::GetTargetDragData(GdkAtom aFlavor) {
     gtk_drag_get_data(mTargetWidget, mTargetDragContext, aFlavor, mTargetTime);
 
     LOGDRAGSERVICE(("about to start inner iteration."));
-    gtk_main_iteration();
-
     PRTime entryTime = PR_Now();
     while (!mTargetDragDataReceived && mDoingDrag) {
       
       LOGDRAGSERVICE(("doing iteration...\n"));
-      PR_Sleep(PR_MillisecondsToInterval(10)); 
-      if (PR_Now() - entryTime > NS_DND_TIMEOUT) {
-        LOGDRAGSERVICE(("failed to get D&D data in time!\n"));
-        break;
-      }
+      PR_Sleep(20 * PR_TicksPerSecond() / 1000); 
+      if (PR_Now() - entryTime > NS_DND_TIMEOUT) break;
       gtk_main_iteration();
     }
   }
