@@ -630,7 +630,6 @@ bool SVGImageFrame::CreateWebRenderCommands(
   
   switch (drawResult) {
     case ImgDrawResult::NOT_READY:
-    case ImgDrawResult::INCOMPLETE:
     case ImgDrawResult::TEMPORARY_ERROR:
       
       return true;
