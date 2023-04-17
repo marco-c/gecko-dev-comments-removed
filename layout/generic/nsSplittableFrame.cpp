@@ -180,8 +180,12 @@ void nsSplittableFrame::RemoveFromFlow(nsIFrame* aFrame) {
     }
   }
 
-  aFrame->SetPrevInFlow(nullptr);
+  
+  
+  
+  
   aFrame->SetNextInFlow(nullptr);
+  aFrame->SetPrevInFlow(nullptr);
 }
 
 NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(ConsumedBSizeProperty, nscoord);
