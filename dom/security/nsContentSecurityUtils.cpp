@@ -477,6 +477,13 @@ void PossiblyCrash(const char* aPrefSuffix, const char* aUnsafeCrashString,
     
     return;
   }
+  if (!NS_IsMainThread()) {
+    
+    
+    
+    
+    return;
+  }
 
   nsCString previous_crashes("security.crash_tracking.");
   previous_crashes.Append(aPrefSuffix);
