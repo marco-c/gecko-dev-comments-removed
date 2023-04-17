@@ -240,12 +240,20 @@ int nr_ice_peer_ctx_find_pstream(nr_ice_peer_ctx *pctx, nr_ice_media_stream *str
     
 
      pstream=STAILQ_FIRST(&pctx->peer_streams);
+
+     if(!pstream) {
+       
+
+       ABORT(R_NOT_FOUND);
+     }
+
      while(pstream) {
        if (pstream->local_stream == stream)
          break;
 
        pstream = STAILQ_NEXT(pstream, entry);
      }
+
      if (!pstream) {
        r_log(LOG_ICE,LOG_WARNING,"ICE(%s): peer (%s) has no stream matching stream %s",pctx->ctx->label,pctx->label,stream->label);
        ABORT(R_NOT_FOUND);
