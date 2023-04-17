@@ -624,6 +624,12 @@ bool nsLookAndFeel::NativeGetFont(FontID aID, nsString& aFontName, gfxFontStyle&
                     name:@"AppleAquaScrollBarVariantChanged"
                   object:nil
       suspensionBehavior:NSNotificationSuspensionBehaviorDeliverImmediately];
+  [NSDistributedNotificationCenter.defaultCenter
+             addObserver:self
+                selector:@selector(cachedValuesChanged)
+                    name:@"com.apple.KeyboardUIModeDidChange"
+                  object:nil
+      suspensionBehavior:NSNotificationSuspensionBehaviorDeliverImmediately];
 
   [MOZGlobalAppearance.sharedInstance addObserver:self
                                        forKeyPath:@"effectiveAppearance"
@@ -661,4 +667,10 @@ bool nsLookAndFeel::NativeGetFont(FontID aID, nsString& aFontName, gfxFontStyle&
   LookAndFeel::NotifyChangedAllWindows(widget::ThemeChangeKind::Style);
 }
 
+- (void)cachedValuesChanged {
+  
+  
+  
+  LookAndFeel::NotifyChangedAllWindows(widget::ThemeChangeKind::MediaQueriesOnly);
+}
 @end
