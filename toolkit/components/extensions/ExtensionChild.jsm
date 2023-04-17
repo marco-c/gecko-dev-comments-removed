@@ -1142,7 +1142,7 @@ class WebIDLChildAPIManager extends ChildAPIManager {
 
 
   callAPIImplementation(request, impl) {
-    const { requestType, args } = request;
+    const { requestType, normalizedArgs } = request;
 
     switch (requestType) {
       
@@ -1152,10 +1152,10 @@ class WebIDLChildAPIManager extends ChildAPIManager {
       case "callFunction":
       case "callFunctionNoReturn":
       case "getProperty":
-        return impl[requestType](args);
+        return impl[requestType](normalizedArgs);
       case "addListener": {
         const listener = this.getOrCreateListenerWrapper(request, impl);
-        impl.addListener(listener, args);
+        impl.addListener(listener, normalizedArgs);
 
         return undefined;
       }

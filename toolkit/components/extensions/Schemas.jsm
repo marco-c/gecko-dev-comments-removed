@@ -3581,6 +3581,14 @@ this.Schemas = {
 
   _rootSchema: null,
 
+  
+  
+  
+  
+  paramsValidationContexts: new DefaultWeakMap(
+    extContext => new Context(extContext)
+  ),
+
   get rootSchema() {
     if (!this.initialized) {
       this.init();
@@ -3755,5 +3763,32 @@ this.Schemas = {
 
   normalize(obj, typeName, context) {
     return this.rootSchema.normalize(obj, typeName, context);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  checkParameters(extContext, apiNamespace, apiName, args) {
+    const apiSchema = this.getNamespace(apiNamespace)?.get(apiName);
+    if (!apiSchema) {
+      throw new Error(`API Schema not found for ${apiNamespace}.${apiName}`);
+    }
+
+    return apiSchema.checkParameters(
+      args,
+      this.paramsValidationContexts.get(extContext)
+    );
   },
 };

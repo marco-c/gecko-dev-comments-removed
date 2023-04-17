@@ -23,6 +23,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ExtensionCommon: "resource://gre/modules/ExtensionCommon.jsm",
   ExtensionContent: "resource://gre/modules/ExtensionContent.jsm",
   ExtensionPageChild: "resource://gre/modules/ExtensionPageChild.jsm",
+  Schemas: "resource://gre/modules/Schemas.jsm",
 });
 
 const { ExtensionUtils } = ChromeUtils.import(
@@ -413,6 +414,12 @@ var ExtensionAPIRequestHandler = {
         request,
       });
 
+      
+      request.normalizedArgs = this.validateAndNormalizeRequestArgs({
+        context,
+        request,
+      });
+
       return context.childManager.handleWebIDLAPIRequest(request);
     } catch (error) {
       
@@ -457,6 +464,22 @@ var ExtensionAPIRequestHandler = {
     }
 
     return context;
+  },
+
+  validateAndNormalizeRequestArgs({ context, request }) {
+    if (!Schemas.checkPermissions(request.apiNamespace, context.extension)) {
+      throw new context.Error(
+        `Not enough privileges to access ${request.apiNamespace}`
+      );
+    }
+    if (request.requestType === "getProperty") {
+      return [];
+    }
+
+    const { apiNamespace, apiName, args } = request;
+    
+    
+    return Schemas.checkParameters(context, apiNamespace, apiName, args);
   },
 };
 
