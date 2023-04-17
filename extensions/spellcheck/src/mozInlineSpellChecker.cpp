@@ -1384,7 +1384,7 @@ nsresult mozInlineSpellChecker::DoSpellCheck(
           sInlineSpellCheckerLog, LogLevel::Verbose,
           ("%s: we have run out of time, schedule next round.", __FUNCTION__));
 
-      CheckCurrentWordsNoSuggest(aSpellCheckSelection, std::move(words),
+      CheckCurrentWordsNoSuggest(aSpellCheckSelection, words,
                                  std::move(checkRanges));
 
       
@@ -1452,16 +1452,16 @@ nsresult mozInlineSpellChecker::DoSpellCheck(
     checkRanges.AppendElement(wordNodeOffsetRange);
     wordsChecked++;
     if (words.Length() >= requestChunkSize) {
-      CheckCurrentWordsNoSuggest(aSpellCheckSelection, std::move(words),
+      CheckCurrentWordsNoSuggest(aSpellCheckSelection, words,
                                  std::move(checkRanges));
       
       
-      words = nsTArray<nsString>();
+      words.Clear();
       checkRanges = nsTArray<NodeOffsetRange>();
     }
   }
 
-  CheckCurrentWordsNoSuggest(aSpellCheckSelection, std::move(words),
+  CheckCurrentWordsNoSuggest(aSpellCheckSelection, words,
                              std::move(checkRanges));
 
   return NS_OK;
@@ -1484,7 +1484,7 @@ class MOZ_RAII AutoChangeNumPendingSpellChecks final {
 };
 
 void mozInlineSpellChecker::CheckCurrentWordsNoSuggest(
-    Selection* aSpellCheckSelection, nsTArray<nsString>&& aWords,
+    Selection* aSpellCheckSelection, const nsTArray<nsString>& aWords,
     nsTArray<NodeOffsetRange>&& aRanges) {
   MOZ_ASSERT(aWords.Length() == aRanges.Length());
 
@@ -1497,8 +1497,7 @@ void mozInlineSpellChecker::CheckCurrentWordsNoSuggest(
   RefPtr<mozInlineSpellChecker> self = this;
   RefPtr<Selection> spellCheckerSelection = aSpellCheckSelection;
   uint32_t token = mDisabledAsyncToken;
-  nsTArray<nsString> words = std::move(aWords);
-  mSpellCheck->CheckCurrentWordsNoSuggest(words)->Then(
+  mSpellCheck->CheckCurrentWordsNoSuggest(aWords)->Then(
       GetMainThreadSerialEventTarget(), __func__,
       [self, spellCheckerSelection, ranges = std::move(aRanges),
        token](const nsTArray<bool>& aIsMisspelled) {
