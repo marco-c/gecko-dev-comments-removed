@@ -53,32 +53,31 @@ const PREFERENCES = [
 
 
 
-
 function showTooltip(toolbox) {
-  if (!toolbox._fissionPrefsTooltip) {
-    toolbox._fissionPrefsTooltip = new HTMLTooltip(toolbox.doc, {
+  if (!toolbox._experimentalPrefsTooltip) {
+    toolbox._experimentalPrefsTooltip = new HTMLTooltip(toolbox.doc, {
       type: "doorhanger",
       useXulWrapper: true,
     });
-    toolbox.once("destroy", () => toolbox._fissionPrefsTooltip.destroy());
+    toolbox.once("destroy", () => toolbox._experimentalPrefsTooltip.destroy());
   }
 
   
-  if (toolbox._fissionPrefsTooltip.preventShow) {
+  if (toolbox._experimentalPrefsTooltip.preventShow) {
     return;
   }
 
   updateTooltipContent(toolbox);
 
-  const commandId = "command-button-fission-prefs";
-  toolbox._fissionPrefsTooltip.show(toolbox.doc.getElementById(commandId));
+  const commandId = "command-button-experimental-prefs";
+  toolbox._experimentalPrefsTooltip.show(toolbox.doc.getElementById(commandId));
 
   
   
-  toolbox._fissionPrefsTooltip.preventShow = true;
-  toolbox._fissionPrefsTooltip.once("hidden", () => {
+  toolbox._experimentalPrefsTooltip.preventShow = true;
+  toolbox._experimentalPrefsTooltip.once("hidden", () => {
     toolbox.win.setTimeout(
-      () => (toolbox._fissionPrefsTooltip.preventShow = false),
+      () => (toolbox._experimentalPrefsTooltip.preventShow = false),
       250
     );
   });
@@ -135,7 +134,7 @@ function updateTooltipContent(toolbox) {
     padding: "0",
   });
 
-  header.textContent = "DevTools Fission preferences";
+  header.textContent = "DevTools Experimental preferences";
 
   const resetButton = toolbox.doc.createElement("button");
   resetButton.addEventListener("click", () => {
@@ -168,11 +167,11 @@ function updateTooltipContent(toolbox) {
 
   container.append(headerContainer, prefList);
 
-  toolbox._fissionPrefsTooltip.panel.innerHTML = "";
+  toolbox._experimentalPrefsTooltip.panel.innerHTML = "";
   
   
-  toolbox._fissionPrefsTooltip.panel.style.maxWidth = "unset";
-  toolbox._fissionPrefsTooltip.panel.appendChild(container);
+  toolbox._experimentalPrefsTooltip.panel.style.maxWidth = "unset";
+  toolbox._experimentalPrefsTooltip.panel.appendChild(container);
 }
 
 function createPreferenceListItem(toolbox, name, desc) {
@@ -208,7 +207,7 @@ function createPreferenceListItem(toolbox, name, desc) {
     height: "12px",
   });
 
-  prefInfo.classList.add("fission-pref-icon");
+  prefInfo.classList.add("experimental-pref-icon");
 
   
   const prefTitle = toolbox.doc.createElement("span");
