@@ -787,7 +787,8 @@ class nsTextFrame : public nsIFrame {
   
   
   
-  virtual nsTArray<nsTextFrame*>* GetContinuations();
+  
+  nsTextFrame* FindContinuationForOffset(int32_t aOffset);
 
  protected:
   virtual ~nsTextFrame();
@@ -1009,6 +1010,10 @@ class nsTextFrame : public nsIFrame {
   void ClearFrameOffsetCache();
 
   void ClearMetrics(ReflowOutput& aMetrics);
+
+  
+  
+  nsTArray<nsTextFrame*>* GetContinuations();
 
   
   
