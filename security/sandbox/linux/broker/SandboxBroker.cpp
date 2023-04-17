@@ -84,7 +84,9 @@ UniquePtr<SandboxBroker> SandboxBroker::Create(
   if (clientFd < 0) {
     rv = nullptr;
   } else {
-    aClientFdOut = ipc::FileDescriptor(clientFd);
+    
+    
+    aClientFdOut = ipc::FileDescriptor(UniqueFileHandle(clientFd));
   }
   return rv;
 }
