@@ -189,16 +189,6 @@ impl<T, M> LRUCache<T, M> {
     }
 
     
-    pub fn remove(&mut self, handle: &WeakFreeListHandle<M>) -> Option<T> {
-        if let Some(entry) = self.entries.get_opt_mut(handle) {
-            let strong_handle = self.lru[entry.partition_index as usize].remove(entry.lru_index);
-            return Some(self.entries.free(strong_handle).value);
-        }
-
-        None
-    }
-
-    
     
     
     
