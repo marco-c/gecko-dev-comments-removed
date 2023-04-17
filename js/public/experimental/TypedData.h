@@ -177,7 +177,7 @@ extern JS_PUBLIC_API JSObject* JS_GetObjectAsArrayBufferView(
 
 
 
-extern JS_PUBLIC_API js::Scalar::Type JS_GetArrayBufferViewType(JSObject* obj);
+extern JS_PUBLIC_API JS::Scalar::Type JS_GetArrayBufferViewType(JSObject* obj);
 
 
 
@@ -279,18 +279,18 @@ namespace detail {
 
 
 
-template <js::Scalar::Type ArrayType>
+template <JS::Scalar::Type ArrayType>
 struct ExternalTypeOf {};
 
 #define DEFINE_ELEMENT_TYPES(ExternalT, NativeT, Name) \
   template <>                                          \
-  struct ExternalTypeOf<js::Scalar::Name> {            \
+  struct ExternalTypeOf<JS::Scalar::Name> {            \
     using Type = ExternalT;                            \
   };
 JS_FOR_EACH_TYPED_ARRAY(DEFINE_ELEMENT_TYPES)
 #undef DEFINE_ELEMENT_TYPES
 
-template <js::Scalar::Type ArrayType>
+template <JS::Scalar::Type ArrayType>
 using ExternalTypeOf_t = typename ExternalTypeOf<ArrayType>::Type;
 
 }  
@@ -437,7 +437,7 @@ class JS_PUBLIC_API TypedArray_base : public ArrayBufferView {
   }
 };
 
-template <js::Scalar::Type TypedArrayElementType>
+template <JS::Scalar::Type TypedArrayElementType>
 class JS_PUBLIC_API TypedArray : public TypedArray_base {
  protected:
   explicit TypedArray(JSObject* unwrapped) : TypedArray_base(unwrapped) {}
@@ -445,7 +445,7 @@ class JS_PUBLIC_API TypedArray : public TypedArray_base {
  public:
   using DataType = detail::ExternalTypeOf_t<TypedArrayElementType>;
 
-  static constexpr js::Scalar::Type Scalar = TypedArrayElementType;
+  static constexpr JS::Scalar::Type Scalar = TypedArrayElementType;
 
   
   
@@ -552,7 +552,7 @@ ArrayBufferView ArrayBufferView::fromObject(JSObject* unwrapped) {
                                             bool* isSharedMemory,          \
                                             ExternalType** data) {         \
     MOZ_ASSERT(JS::GetClass(unwrapped) ==                                  \
-               JS::TypedArray<js::Scalar::Name>::clasp());                 \
+               JS::TypedArray<JS::Scalar::Name>::clasp());                 \
     const JS::Value& lenSlot =                                             \
         JS::GetReservedSlot(unwrapped, detail::TypedArrayLengthSlot);      \
     *length = size_t(lenSlot.toPrivate());                                 \
@@ -571,21 +571,21 @@ namespace JS {
 
 #define IMPL_TYPED_ARRAY_CLASS(ExternalType, NativeType, Name)                \
   template <>                                                                 \
-  inline JS::TypedArray<js::Scalar::Name>                                     \
-  JS::TypedArray<js::Scalar::Name>::create(JSContext* cx, size_t nelements) { \
+  inline JS::TypedArray<JS::Scalar::Name>                                     \
+  JS::TypedArray<JS::Scalar::Name>::create(JSContext* cx, size_t nelements) { \
     return fromObject(JS_New##Name##Array(cx, nelements));                    \
   };                                                                          \
                                                                               \
   template <>                                                                 \
-  inline JS::TypedArray<js::Scalar::Name>                                     \
-  JS::TypedArray<js::Scalar::Name>::fromArray(JSContext* cx,                  \
+  inline JS::TypedArray<JS::Scalar::Name>                                     \
+  JS::TypedArray<JS::Scalar::Name>::fromArray(JSContext* cx,                  \
                                               HandleObject other) {           \
     return fromObject(JS_New##Name##ArrayFromArray(cx, other));               \
   };                                                                          \
                                                                               \
   template <>                                                                 \
-  inline JS::TypedArray<js::Scalar::Name>                                     \
-  JS::TypedArray<js::Scalar::Name>::fromBuffer(                               \
+  inline JS::TypedArray<JS::Scalar::Name>                                     \
+  JS::TypedArray<JS::Scalar::Name>::fromBuffer(                               \
       JSContext* cx, HandleObject arrayBuffer, size_t byteOffset,             \
       int64_t length) {                                                       \
     return fromObject(                                                        \
