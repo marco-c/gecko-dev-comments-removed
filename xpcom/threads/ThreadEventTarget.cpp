@@ -86,6 +86,7 @@ ThreadEventTarget::Dispatch(already_AddRefed<nsIRunnable> aEvent,
 
     
     SpinEventLoopUntil(
+        "ThreadEventTarget::Dispatch"_ns,
         [&, wrapper]() -> bool { return !wrapper->IsPending(); });
 
     return NS_OK;
