@@ -738,12 +738,25 @@ void BrowserParent::ActorDestroy(ActorDestroyReason why) {
     if (why == AbnormalShutdown) {
       frameLoader->MaybeNotifyCrashed(mBrowsingContext, Manager()->ChildID(),
                                       GetIPCChannel());
+
+      auto* bridge = GetBrowserBridgeParent();
+      if (bridge && bridge->CanSend() && !mBrowsingContext->IsDiscarded()) {
+        MOZ_ASSERT(!mBrowsingContext->IsTop());
+
+        
+        
+        
+        mBrowsingContext->SetOwnerProcessId(
+            bridge->Manager()->Manager()->ChildID());
+        MOZ_ALWAYS_SUCCEEDS(mBrowsingContext->SetCurrentInnerWindowId(0));
+
+        
+        Unused << bridge->SendSubFrameCrashed();
+      }
     }
   }
 
   mFrameLoader = nullptr;
-
-  mBrowsingContext->BrowserParentDestroyed(this, why == AbnormalShutdown);
 }
 
 mozilla::ipc::IPCResult BrowserParent::RecvMoveFocus(

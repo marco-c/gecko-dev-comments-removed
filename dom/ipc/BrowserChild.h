@@ -558,7 +558,8 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   mozilla::ipc::IPCResult RecvUpdateNativeWindowHandle(
       const uintptr_t& aNewHandle);
 
-  mozilla::ipc::IPCResult RecvWillChangeProcess();
+  mozilla::ipc::IPCResult RecvWillChangeProcess(
+      WillChangeProcessResolver&& aResolve);
   
 
 

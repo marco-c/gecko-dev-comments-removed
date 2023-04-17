@@ -390,13 +390,12 @@ mozilla::ipc::IPCResult WindowGlobalChild::RecvMakeFrameRemote(
   MOZ_LOG(BrowsingContext::GetLog(), LogLevel::Debug,
           ("RecvMakeFrameRemote ID=%" PRIx64, aFrameContext.ContextId()));
 
+  
+  aResolve(true);
+
   if (!aLayersId.IsValid()) {
     return IPC_FAIL(this, "Received an invalid LayersId");
   }
-
-  
-  
-  auto scopeExit = MakeScopeExit([&] { aResolve(true); });
 
   
   
@@ -416,20 +415,20 @@ mozilla::ipc::IPCResult WindowGlobalChild::RecvMakeFrameRemote(
     return IPC_OK();
   }
 
-  auto deleteBridge =
-      MakeScopeExit([&] { BrowserBridgeChild::Send__delete__(bridge); });
-
   
   if (NS_WARN_IF(aFrameContext.IsNullOrDiscarded())) {
+    BrowserBridgeChild::Send__delete__(bridge);
     return IPC_OK();
   }
 
   RefPtr<Element> embedderElt = frameContext->GetEmbedderElement();
   if (NS_WARN_IF(!embedderElt)) {
+    BrowserBridgeChild::Send__delete__(bridge);
     return IPC_OK();
   }
 
   if (NS_WARN_IF(embedderElt->GetOwnerGlobal() != GetWindowGlobal())) {
+    BrowserBridgeChild::Send__delete__(bridge);
     return IPC_OK();
   }
 
@@ -440,11 +439,9 @@ mozilla::ipc::IPCResult WindowGlobalChild::RecvMakeFrameRemote(
   IgnoredErrorResult rv;
   flo->ChangeRemotenessWithBridge(bridge, rv);
   if (NS_WARN_IF(rv.Failed())) {
+    BrowserBridgeChild::Send__delete__(bridge);
     return IPC_OK();
   }
-
-  
-  deleteBridge.release();
 
   return IPC_OK();
 }
