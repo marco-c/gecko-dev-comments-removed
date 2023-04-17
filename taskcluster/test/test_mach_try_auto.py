@@ -91,9 +91,12 @@ def test_tasks_are_scheduled(optimized_task_graph, filter_tasks, func, min_expec
             lambda t: t.kind == "build" and "ccov" in t.attributes["build_platform"],
             id="no ccov builds",
         ),
+        
+        
         pytest.param(
             lambda t: t.kind == "build-signing",
             id="no build-signing",
+            marks=pytest.mark.xfail(reason="some xpcshell tests require signed builds"),
         ),
         pytest.param(
             lambda t: t.kind == "upload-symbols",
