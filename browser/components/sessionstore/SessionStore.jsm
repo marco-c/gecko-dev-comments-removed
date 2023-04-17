@@ -408,16 +408,10 @@ var SessionStore = {
     return SessionStoreInternal.reviveAllCrashedTabs();
   },
 
-  updateSessionStoreFromTablistener(
-    aBrowser,
-    aBrowsingContext,
-    aPermanentKey,
-    aData
-  ) {
+  updateSessionStoreFromTablistener(aBrowser, aBrowsingContext, aData) {
     return SessionStoreInternal.updateSessionStoreFromTablistener(
       aBrowser,
       aBrowsingContext,
-      aPermanentKey,
       aData
     );
   },
@@ -459,7 +453,7 @@ var SessionStore = {
   },
 
   getCurrentEpoch(browser) {
-    return SessionStoreInternal.getCurrentEpoch(browser.permanentKey);
+    return SessionStoreInternal.getCurrentEpoch(browser);
   },
 
   
@@ -996,12 +990,9 @@ var SessionStoreInternal = {
             aSubject &&
             aSubject === aSubject.top &&
             aSubject.isContent &&
-            aSubject.embedderElement &&
-            aSubject.embedderElement.permanentKey
+            aSubject.embedderElement
           ) {
-            let permanentKey = aSubject.embedderElement.permanentKey;
-            this._browserSHistoryListener.get(permanentKey)?.unregister();
-            this.getOrCreateSHistoryListener(permanentKey, aSubject, true);
+            this.addSHistoryListener(aSubject.embedderElement, aSubject, true);
           }
         }
         break;
@@ -1009,7 +1000,7 @@ var SessionStoreInternal = {
         if (Services.appinfo.sessionHistoryInParent) {
           let permanentKey = aSubject?.embedderElement?.permanentKey;
           if (permanentKey) {
-            this._browserSHistoryListener.get(permanentKey)?.unregister();
+            this._browserSHistoryListener.get(permanentKey)?.uninstall();
           }
         }
         break;
@@ -1022,33 +1013,35 @@ var SessionStoreInternal = {
     }
   },
 
-  getOrCreateSHistoryListener(
-    permanentKey,
-    browsingContext,
-    collectImmediately = false
-  ) {
+  
+  
+  addSHistoryListener(aBrowser, aBrowsingContext, aCollectImmediately = false) {
     class SHistoryListener {
       constructor() {
-        this.QueryInterface = ChromeUtils.generateQI([
-          "nsISHistoryListener",
-          "nsISupportsWeakReference",
-        ]);
-
-        this._browserId = browsingContext.browserId;
+        this._browserId = aBrowsingContext.browserId;
+        this._permanentKey = aBrowser.permanentKey;
         this._fromIndex = kNoIndex;
       }
-
-      unregister() {
+      uninstall() {
         let bc = BrowsingContext.getCurrentTopByBrowserId(this._browserId);
         bc?.sessionHistory?.removeSHistoryListener(this);
-        SessionStoreInternal._browserSHistoryListener.delete(permanentKey);
+        SessionStoreInternal._browserSHistoryListener.delete(
+          this._permanentKey
+        );
       }
-
       collect(
-        permanentKey, 
-        browsingContext, 
-        { collectFull = true, writeToCache = false }
+        browser,
+        browsingContext,
+        { immediate = true, collectFull = true, writeToCache = false }
       ) {
+        if (!immediate) {
+          
+          
+          browser.frameLoader?.requestSHistoryUpdate();
+          return null;
+        }
+
+        
         
         if (!collectFull && this._fromIndex === kNoIndex) {
           return null;
@@ -1065,18 +1058,13 @@ var SessionStoreInternal = {
         );
 
         if (writeToCache) {
-          let win =
-            browsingContext.embedderElement?.ownerGlobal ||
-            browsingContext.currentWindowGlobal?.browsingContext?.window;
-
-          SessionStoreInternal.onTabStateUpdate(permanentKey, win, {
+          SessionStoreInternal.onTabStateUpdate(browser, {
             data: { historychange },
           });
         }
 
         return historychange;
       }
-
       collectFrom(index) {
         if (this._fromIndex <= index) {
           
@@ -1091,15 +1079,11 @@ var SessionStoreInternal = {
         }
 
         let bc = BrowsingContext.getCurrentTopByBrowserId(this._browserId);
-        if (bc?.embedderElement?.frameLoader) {
+        if (bc?.embedderElement) {
           this._fromIndex = index;
-
-          
-          
-          bc.embedderElement.frameLoader.requestSHistoryUpdate();
+          this.collect(bc.embedderElement, bc, { immediate: false });
         }
       }
-
       OnHistoryNewEntry(newURI, oldIndex) {
         
         
@@ -1120,56 +1104,56 @@ var SessionStoreInternal = {
         this.collectFrom(-1);
       }
     }
+    SHistoryListener.prototype.QueryInterface = ChromeUtils.generateQI([
+      "nsISHistoryListener",
+      "nsISupportsWeakReference",
+    ]);
 
     if (!Services.appinfo.sessionHistoryInParent) {
       throw new Error("This function should only be used with SHIP");
     }
 
-    if (!permanentKey || browsingContext !== browsingContext.top) {
+    let sessionHistory = aBrowsingContext.sessionHistory;
+
+    if (!aBrowser || !aBrowser.permanentKey || !sessionHistory) {
       return null;
     }
 
-    let sessionHistory = browsingContext.sessionHistory;
-    if (!sessionHistory) {
+    
+    if (this._browserSHistoryListener.has(aBrowser.permanentKey)) {
       return null;
     }
 
-    let listener = this._browserSHistoryListener.get(permanentKey);
-    if (listener) {
-      return listener;
-    }
-
-    listener = new SHistoryListener();
+    let listener = new SHistoryListener();
     sessionHistory.addSHistoryListener(listener);
-    this._browserSHistoryListener.set(permanentKey, listener);
+    this._browserSHistoryListener.set(aBrowser.permanentKey, listener);
 
-    let isAboutBlank = browsingContext.currentURI?.spec === "about:blank";
-
-    if (collectImmediately && (!isAboutBlank || sessionHistory.count !== 0)) {
-      listener.collect(permanentKey, browsingContext, { writeToCache: true });
+    if (aCollectImmediately) {
+      let uri = aBrowsingContext.currentURI?.spec;
+      if (uri !== "about:blank" || sessionHistory.count !== 0) {
+        listener.collect(aBrowser, aBrowsingContext, { writeToCache: true });
+      }
     }
 
     return listener;
   },
 
-  onTabStateUpdate(permanentKey, win, update) {
+  onTabStateUpdate(browser, data) {
     
     
-    if (this._crashedBrowsers.has(permanentKey)) {
-      return;
-    }
+    if (!this._crashedBrowsers.has(browser.permanentKey)) {
+      TabState.update(browser, data);
+      this.saveStateDelayed(browser.ownerGlobal);
 
-    TabState.update(permanentKey, update);
-    this.saveStateDelayed(win);
-
-    
-    
-    
-    let closedTab = this._closedTabs.get(permanentKey);
-    if (closedTab) {
       
       
-      TabState.copyFromCache(permanentKey, closedTab.tabData.state);
+      
+      let closedTab = this._closedTabs.get(browser.permanentKey);
+      if (closedTab) {
+        
+        
+        TabState.copyFromCache(browser, closedTab.tabData.state);
+      }
     }
   },
 
@@ -1212,55 +1196,46 @@ var SessionStoreInternal = {
     
     TabStateFlusher.resolveAll(browser);
 
-    this._browserSHistoryListener.get(permanentKey)?.unregister();
+    this._browserSHistoryListener.get(permanentKey)?.uninstall();
     this._restoreListeners.get(permanentKey)?.unregister();
 
     Services.obs.notifyObservers(browser, NOTIFY_BROWSER_SHUTDOWN_FLUSH);
   },
 
-  updateSessionStoreFromTablistener(
-    browser,
-    browsingContext,
-    permanentKey,
-    update
-  ) {
-    permanentKey = browser?.permanentKey ?? permanentKey;
-    if (!permanentKey) {
+  updateSessionStoreFromTablistener(aBrowser, aBrowsingContext, aData) {
+    if (aBrowser.permanentKey == undefined) {
       return;
     }
 
     
-    if (!this.isCurrentEpoch(permanentKey, update.epoch)) {
+    if (!this.isCurrentEpoch(aBrowser, aData.epoch)) {
       return;
     }
 
-    if (browsingContext.isReplaced) {
+    if (aBrowsingContext.isReplaced) {
       return;
     }
 
-    if (Services.appinfo.sessionHistoryInParent) {
-      let listener = this.getOrCreateSHistoryListener(
-        permanentKey,
-        browsingContext
-      );
+    if (
+      Services.appinfo.sessionHistoryInParent &&
+      aBrowsingContext === aBrowsingContext.top &&
+      aBrowsingContext.sessionHistory
+    ) {
+      let listener =
+        this._browserSHistoryListener.get(aBrowser.permanentKey) ??
+        this.addSHistoryListener(aBrowser, aBrowsingContext);
 
-      if (listener) {
-        let historychange = listener.collect(permanentKey, browsingContext, {
-          collectFull: !!update.sHistoryNeeded,
-          writeToCache: false,
-        });
+      let historychange = listener.collect(aBrowser, aBrowsingContext, {
+        collectFull: !!aData.sHistoryNeeded,
+        writeToCache: false,
+      });
 
-        if (historychange) {
-          update.data.historychange = historychange;
-        }
+      if (historychange) {
+        aData.data.historychange = historychange;
       }
     }
 
-    let win =
-      browser?.ownerGlobal ??
-      browsingContext.currentWindowGlobal?.browsingContext?.window;
-
-    this.onTabStateUpdate(permanentKey, win, update);
+    this.onTabStateUpdate(aBrowser, aData);
   },
 
   
@@ -1294,7 +1269,7 @@ var SessionStoreInternal = {
     }
 
     
-    if (hasEpoch && !this.isCurrentEpoch(browser.permanentKey, data.epoch)) {
+    if (hasEpoch && !this.isCurrentEpoch(browser, data.epoch)) {
       return;
     }
 
@@ -1312,7 +1287,7 @@ var SessionStoreInternal = {
           return;
         }
 
-        this.onTabStateUpdate(browser.permanentKey, browser.ownerGlobal, data);
+        this.onTabStateUpdate(browser, data);
 
         if (data.isFinal) {
           this.onFinalTabStateUpdateComplete(browser);
@@ -1400,7 +1375,7 @@ var SessionStoreInternal = {
             target.permanentKey,
             target.frameLoader
           );
-          this.resetEpoch(target.permanentKey, target.frameLoader);
+          this.resetEpoch(target);
         }
         break;
       default:
@@ -1862,7 +1837,7 @@ var SessionStoreInternal = {
         for (let browser of browsers) {
           if (this._closedWindowTabs.has(browser.permanentKey)) {
             let tabData = this._closedWindowTabs.get(browser.permanentKey);
-            TabState.copyFromCache(browser.permanentKey, tabData);
+            TabState.copyFromCache(browser, tabData);
             this._closedWindowTabs.delete(browser.permanentKey);
           }
         }
@@ -2370,7 +2345,7 @@ var SessionStoreInternal = {
     if (
       TAB_LAZY_STATES.has(aTab) &&
       !TAB_STATE_FOR_BROWSER.has(browser) &&
-      TabStateCache.get(browser.permanentKey)
+      TabStateCache.get(browser)
     ) {
       let tabState = TabState.clone(aTab, TAB_CUSTOM_VALUES.get(aTab));
       this.restoreTab(aTab, tabState);
@@ -2481,13 +2456,13 @@ var SessionStoreInternal = {
 
     let { userTypedValue = "", userTypedClear = 0 } = browser;
 
-    let cacheState = TabStateCache.get(browser.permanentKey);
+    let cacheState = TabStateCache.get(browser);
     if (cacheState === undefined && userTypedValue) {
       
       
       
       
-      TabStateCache.update(browser.permanentKey, {
+      TabStateCache.update(browser, {
         userTypedValue,
         userTypedClear: 1,
       });
@@ -3008,7 +2983,7 @@ var SessionStoreInternal = {
       
       
       let options = { includePrivateData: true };
-      TabState.copyFromCache(browser.permanentKey, tabState, options);
+      TabState.copyFromCache(browser, tabState, options);
 
       tabState.index += aDelta;
       tabState.index = Math.max(
@@ -3408,7 +3383,7 @@ var SessionStoreInternal = {
           tabData.iconLoadingPrincipal
         );
       }
-      TabStateCache.update(browser.permanentKey, {
+      TabStateCache.update(browser, {
         image: null,
         iconLoadingPrincipal: null,
       });
@@ -4440,7 +4415,7 @@ var SessionStoreInternal = {
     }
 
     
-    TabStateCache.update(browser.permanentKey, {
+    TabStateCache.update(browser, {
       
       
       history: { entries: [...tabData.entries], index: tabData.index },
@@ -4469,7 +4444,7 @@ var SessionStoreInternal = {
       
       
       
-      let epoch = this.startNextEpoch(browser.permanentKey);
+      let epoch = this.startNextEpoch(browser);
 
       
       
@@ -4595,7 +4570,7 @@ var SessionStoreInternal = {
         
         
         
-        let epoch = this.startNextEpoch(browser.permanentKey);
+        let epoch = this.startNextEpoch(browser);
 
         this._sendRestoreHistory(browser, {
           tabData,
@@ -5612,18 +5587,26 @@ var SessionStoreInternal = {
 
 
 
-  startNextEpoch(permanentKey) {
-    let next = this.getCurrentEpoch(permanentKey) + 1;
-    this._browserEpochs.set(permanentKey, next);
+  startNextEpoch(browser) {
+    let next = this.getCurrentEpoch(browser) + 1;
+    this._browserEpochs.set(browser.permanentKey, next);
     return next;
   },
 
   
 
 
+  setCurrentEpoch(aBrowser, aEpoch) {
+    this._browserEpochs.set(aBrowser.permanentKey, aEpoch);
+    return aEpoch;
+  },
 
-  getCurrentEpoch(permanentKey) {
-    return this._browserEpochs.get(permanentKey) || 0;
+  
+
+
+
+  getCurrentEpoch(browser) {
+    return this._browserEpochs.get(browser.permanentKey) || 0;
   },
 
   
@@ -5633,8 +5616,8 @@ var SessionStoreInternal = {
 
 
 
-  isCurrentEpoch(permanentKey, epoch) {
-    return this.getCurrentEpoch(permanentKey) == epoch;
+  isCurrentEpoch(browser, epoch) {
+    return this.getCurrentEpoch(browser) == epoch;
   },
 
   
@@ -5642,10 +5625,10 @@ var SessionStoreInternal = {
 
 
 
-  resetEpoch(permanentKey, frameLoader = null) {
-    this._browserEpochs.delete(permanentKey);
-    if (frameLoader) {
-      frameLoader.requestEpochUpdate(0);
+  resetEpoch(browser) {
+    this._browserEpochs.delete(browser.permanentKey);
+    if (browser && browser.frameLoader) {
+      browser.frameLoader.requestEpochUpdate(0);
     }
   },
 
@@ -6069,10 +6052,10 @@ var SessionStoreInternal = {
     
     
     
-    let cacheState = TabStateCache.get(browser.permanentKey);
+    let cacheState = TabStateCache.get(browser);
     if (cacheState.searchMode) {
       if (!initiatedBySessionStore || isNavigateAndRestore) {
-        TabStateCache.update(browser.permanentKey, {
+        TabStateCache.update(browser, {
           searchMode: null,
           userTypedValue: null,
         });
@@ -6106,7 +6089,7 @@ var SessionStoreInternal = {
       }
 
       
-      TabStateCache.update(browser.permanentKey, {
+      TabStateCache.update(browser, {
         userTypedValue: null,
         userTypedClear: null,
       });
@@ -6121,14 +6104,14 @@ var SessionStoreInternal = {
     }
     
     
-    let cacheState = TabStateCache.get(browser.permanentKey);
+    let cacheState = TabStateCache.get(browser);
     if (cacheState.searchMode) {
       win.gURLBar.setSearchMode(cacheState.searchMode, browser);
       browser.userTypedValue = cacheState.userTypedValue;
       if (tab.selected) {
         win.gURLBar.setURI();
       }
-      TabStateCache.update(browser.permanentKey, {
+      TabStateCache.update(browser, {
         searchMode: null,
         userTypedValue: null,
       });
