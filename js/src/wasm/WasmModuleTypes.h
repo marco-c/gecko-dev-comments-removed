@@ -279,12 +279,13 @@ using GlobalDescVector = Vector<GlobalDesc, 0, SystemAllocPolicy>;
 
 
 
-#ifdef ENABLE_WASM_EXCEPTIONS
 
 
 
 
 using TagOffsetVector = Vector<int32_t, 0, SystemAllocPolicy>;
+
+
 
 struct TagType {
   ValTypeVector argTypes;
@@ -314,6 +315,7 @@ struct TagType {
   }
 };
 
+#ifdef ENABLE_WASM_EXCEPTIONS
 struct TagDesc {
   TagKind kind;
   TagType type;
