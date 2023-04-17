@@ -50,7 +50,10 @@ toolchain_run_schema = Schema(
         
         
         
+        
         Required("sparse-profile"): Any(text_type, None),
+        
+        Optional("sparse-profile-prefix"): text_type,
         
         
         Optional("resources"): [text_type],
