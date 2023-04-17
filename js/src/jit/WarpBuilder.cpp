@@ -21,6 +21,7 @@
 #include "vm/GeneratorObject.h"
 #include "vm/Opcodes.h"
 
+#include "gc/ObjectKind-inl.h"
 #include "jit/JitScript-inl.h"
 #include "vm/BytecodeIterator-inl.h"
 #include "vm/BytecodeLocation-inl.h"
@@ -2893,7 +2894,7 @@ bool WarpBuilder::build_TableSwitch(BytecodeLocation loc) {
 
 bool WarpBuilder::build_Rest(BytecodeLocation loc) {
   auto* snapshot = getOpSnapshot<WarpRest>(loc);
-  ArrayObject* templateObject = snapshot->templateObject();
+  Shape* shape = snapshot ? snapshot->shape() : nullptr;
 
   if (inlineCallInfo()) {
     
@@ -2905,18 +2906,19 @@ bool WarpBuilder::build_Rest(BytecodeLocation loc) {
     gc::InitialHeap heap = gc::DefaultHeap;
 
     
-    MConstant* templateConst = constant(ObjectValue(*templateObject));
-    MNewArray* newArray;
-    if (numRest > snapshot->maxInlineElements()) {
-      newArray = MNewArray::NewVM(alloc(), numRest, templateConst, heap);
+    MInstruction* newArray;
+    if (shape && gc::CanUseFixedElementsForArray(numRest)) {
+      auto* shapeConstant = MConstant::NewShape(alloc(), shape);
+      current->add(shapeConstant);
+      newArray = MNewArrayObject::New(alloc(), shapeConstant, numRest, heap);
     } else {
-      newArray = MNewArray::New(alloc(), numRest, templateConst, heap);
+      MConstant* templateConst = constant(NullValue());
+      newArray = MNewArray::NewVM(alloc(), numRest, templateConst, heap);
     }
     current->add(newArray);
     current->push(newArray);
 
     if (numRest == 0) {
-      
       
       return true;
     }
@@ -2944,12 +2946,6 @@ bool WarpBuilder::build_Rest(BytecodeLocation loc) {
 
     
     
-    
-    MSetArrayLength* length = MSetArrayLength::New(alloc(), elements, index);
-    current->add(length);
-
-    
-    
     MSetInitializedLength* initLength =
         MSetInitializedLength::New(alloc(), elements, index);
     current->add(initLength);
@@ -2963,7 +2959,7 @@ bool WarpBuilder::build_Rest(BytecodeLocation loc) {
   
   
   unsigned numFormals = info().nargs() - 1;
-  MRest* rest = MRest::New(alloc(), numActuals, numFormals, templateObject);
+  MRest* rest = MRest::New(alloc(), numActuals, numFormals, shape);
   current->add(rest);
   current->push(rest);
   return true;
