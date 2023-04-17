@@ -219,16 +219,15 @@ const NetworkCacheCleaner = {
     Services.cache2.clearOrigin(httpsPrincipal);
   },
 
+  async deleteByBaseDomain(aBaseDomain) {
+    Services.cache2.clearBaseDomain(aBaseDomain);
+  },
+
   deleteByPrincipal(aPrincipal) {
     return new Promise(aResolve => {
       Services.cache2.clearOrigin(aPrincipal);
       aResolve();
     });
-  },
-
-  deleteByBaseDomain(aBaseDomain) {
-    
-    return this.deleteByHost(aBaseDomain, {});
   },
 
   deleteByOriginAttributes(aOriginAttributesString) {

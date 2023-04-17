@@ -976,4 +976,16 @@ bool SchemeIsFTP(nsIURI* aURI);
 }  
 }  
 
+
+
+
+
+
+
+
+
+
+nsresult NS_HasRootDomain(const nsACString& aInput, const nsACString& aHost,
+                          bool* aResult);
+
 #endif  
