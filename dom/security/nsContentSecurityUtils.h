@@ -48,12 +48,6 @@ class nsContentSecurityUtils {
 
   
   
-  
-  
-  static void DetectJsHacks();
-
-  
-  
   static nsresult GetHttpChannelFromPotentialMultiPart(
       nsIChannel* aChannel, nsIHttpChannel** aHttpChannel);
 
