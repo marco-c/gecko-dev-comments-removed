@@ -20,6 +20,12 @@ loader.lazyRequireGetter(
   "devtools/client/performance/modules/io"
 );
 loader.lazyRequireGetter(this, "getSystemInfo", "devtools/shared/system", true);
+loader.lazyRequireGetter(
+  this,
+  "safeAsyncMethod",
+  "devtools/shared/async-utils",
+  true
+);
 
 class PerformanceFront extends FrontClassWithSpec(performanceSpec) {
   constructor(client, targetFront, parentFront) {
@@ -31,6 +37,14 @@ class PerformanceFront extends FrontClassWithSpec(performanceSpec) {
     this.before("profiler-status", this._onProfilerStatus.bind(this));
     this.before("timeline-data", this._onTimelineEvent.bind(this));
     this.on("recording-started", this._onRecordingStartedEvent);
+
+    
+    
+    this.connect = safeAsyncMethod(
+      this.connect.bind(this),
+      () => this.isDestroyed(),
+      {}
+    );
 
     
     this.formAttributeName = "performanceActor";
