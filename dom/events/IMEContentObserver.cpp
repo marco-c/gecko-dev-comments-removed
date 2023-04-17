@@ -203,6 +203,10 @@ void IMEContentObserver::OnIMEReceivedFocus() {
   
   
   if (GetState() != eState_Initializing) {
+    MOZ_LOG(sIMECOLog, LogLevel::Debug,
+            ("0x%p IMEContentObserver::OnIMEReceivedFocus(), "
+             "but the state is not \"initializing\", so does nothing",
+             this));
     return;
   }
 
@@ -210,6 +214,10 @@ void IMEContentObserver::OnIMEReceivedFocus() {
   
   
   if (!mRootContent) {
+    MOZ_LOG(sIMECOLog, LogLevel::Debug,
+            ("0x%p IMEContentObserver::OnIMEReceivedFocus(), "
+             "but mRootContent has already been cleared, so does nothing",
+             this));
     return;
   }
 
@@ -456,6 +464,12 @@ bool IMEContentObserver::MaybeReinitialize(nsIWidget& aWidget,
 bool IMEContentObserver::IsManaging(nsPresContext* aPresContext,
                                     nsIContent* aContent) const {
   return GetState() == eState_Observing &&
+         IsObservingContent(aPresContext, aContent);
+}
+
+bool IMEContentObserver::IsBeingInitializedFor(nsPresContext* aPresContext,
+                                               nsIContent* aContent) const {
+  return GetState() == eState_Initializing &&
          IsObservingContent(aPresContext, aContent);
 }
 
@@ -1410,9 +1424,30 @@ void IMEContentObserver::FlushMergeableNotifications() {
 }
 
 void IMEContentObserver::TryToFlushPendingNotifications(bool aAllowAsync) {
-  if (!mQueuedSender || mSendingNotification != NOTIFY_IME_OF_NOTHING ||
-      (XRE_IsContentProcess() && aAllowAsync)) {
+  
+  
+  
+  if (mSendingNotification != NOTIFY_IME_OF_NOTHING) {
     return;
+  }
+
+  
+  
+  if (mQueuedSender && XRE_IsContentProcess() && aAllowAsync) {
+    return;
+  }
+
+  if (!mQueuedSender) {
+    
+    
+    
+    
+    
+    
+    if (!NeedsToNotifyIMEOfSomething()) {
+      return;
+    }
+    mQueuedSender = new IMENotificationSender(this);
   }
 
   MOZ_LOG(sIMECOLog, LogLevel::Debug,

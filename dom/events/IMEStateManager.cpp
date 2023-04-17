@@ -829,17 +829,30 @@ void IMEStateManager::OnFocusInEditor(nsPresContext* aPresContext,
            "the editor is already being managed by sActiveIMEContentObserver"));
       return;
     }
-    DestroyIMEContentObserver();
+    
+    
+    
+    if (!sActiveIMEContentObserver->IsBeingInitializedFor(aPresContext,
+                                                          aContent)) {
+      DestroyIMEContentObserver();
+    }
   }
 
-  CreateIMEContentObserver(aEditorBase);
+  if (!sActiveIMEContentObserver) {
+    CreateIMEContentObserver(aEditorBase);
+    if (sActiveIMEContentObserver) {
+      MOZ_LOG(sISMLog, LogLevel::Debug,
+              ("  OnFocusInEditor(), new IMEContentObserver is created (0x%p)",
+               sActiveIMEContentObserver.get()));
+    }
+  }
 
-  
   if (sActiveIMEContentObserver) {
-    MOZ_LOG(sISMLog, LogLevel::Debug,
-            ("  OnFocusInEditor(), new IMEContentObserver is "
-             "created, trying to flush pending notifications..."));
     sActiveIMEContentObserver->TryToFlushPendingNotifications(false);
+    MOZ_LOG(sISMLog, LogLevel::Debug,
+            ("  OnFocusInEditor(), trying to send pending notifications in "
+             "the active IMEContentObserver (0x%p)...",
+             sActiveIMEContentObserver.get()));
   }
 }
 
@@ -1494,8 +1507,8 @@ void IMEStateManager::DispatchCompositionEvent(
        GetBoolName(aCompositionEvent->mFlags.mPropagationStopped),
        GetBoolName(aIsSynthesized), aBrowserParent));
 
-  if (!aCompositionEvent->IsTrusted() ||
-      aCompositionEvent->PropagationStopped()) {
+  if (NS_WARN_IF(!aCompositionEvent->IsTrusted()) ||
+      NS_WARN_IF(aCompositionEvent->PropagationStopped())) {
     return;
   }
 
