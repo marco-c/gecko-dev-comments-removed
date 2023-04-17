@@ -240,7 +240,9 @@ function PopupNotifications(tabbrowser, panel, iconBox, options = {}) {
   this.iconBox = iconBox;
   this.buttonDelay = Services.prefs.getIntPref(PREF_SECURITY_DELAY);
 
-  this.panel.addEventListener("popuphidden", this, true);
+  
+  
+  this.panel.addEventListener("popuphidden", this);
   this.panel.classList.add("popup-notification-panel", "panel-no-padding");
 
   
