@@ -15,7 +15,7 @@
 #include "mozilla/Mutex.h"
 #include "nsWaylandDisplay.h"
 #include "nsWindow.h"
-#include "WaylandShmBuffer.h"
+#include "WaylandBuffer.h"
 #include "WindowSurface.h"
 
 #define BACK_BUFFER_NUM 3
@@ -76,10 +76,10 @@ class WindowSurfaceWayland : public WindowSurface {
  private:
   ~WindowSurfaceWayland();
 
-  WaylandShmBuffer* GetWaylandBuffer();
-  WaylandShmBuffer* SetNewWaylandBuffer();
-  WaylandShmBuffer* CreateWaylandBuffer(const LayoutDeviceIntSize& aSize);
-  WaylandShmBuffer* WaylandBufferFindAvailable(
+  WaylandBufferSHM* GetWaylandBuffer();
+  WaylandBufferSHM* SetNewWaylandBuffer();
+  WaylandBufferSHM* CreateWaylandBuffer(const LayoutDeviceIntSize& aSize);
+  WaylandBufferSHM* WaylandBufferFindAvailable(
       const LayoutDeviceIntSize& aSize);
 
   already_AddRefed<gfx::DrawTarget> LockWaylandBuffer();
@@ -117,8 +117,8 @@ class WindowSurfaceWayland : public WindowSurface {
   
   
   
-  RefPtr<WaylandShmBuffer> mWaylandBuffer;
-  RefPtr<WaylandShmBuffer> mShmBackupBuffer[BACK_BUFFER_NUM];
+  RefPtr<WaylandBufferSHM> mWaylandBuffer;
+  RefPtr<WaylandBufferSHM> mShmBackupBuffer[BACK_BUFFER_NUM];
 
   
   

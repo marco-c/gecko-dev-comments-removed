@@ -198,7 +198,7 @@ WindowSurfaceWayland::~WindowSurfaceWayland() {
   }
 }
 
-WaylandShmBuffer* WindowSurfaceWayland::CreateWaylandBuffer(
+WaylandBufferSHM* WindowSurfaceWayland::CreateWaylandBuffer(
     const LayoutDeviceIntSize& aSize) {
   int availableBuffer;
 
@@ -220,8 +220,7 @@ WaylandShmBuffer* WindowSurfaceWayland::CreateWaylandBuffer(
     return nullptr;
   }
 
-  RefPtr<WaylandShmBuffer> buffer =
-      WaylandShmBuffer::Create(GetWaylandDisplay(), aSize);
+  RefPtr<WaylandBufferSHM> buffer = WaylandBufferSHM::Create(aSize);
   if (!buffer) {
     LOGWAYLAND(("    failed to create back buffer!\n"));
     return nullptr;
@@ -237,7 +236,7 @@ WaylandShmBuffer* WindowSurfaceWayland::CreateWaylandBuffer(
   return buffer.get();
 }
 
-WaylandShmBuffer* WindowSurfaceWayland::WaylandBufferFindAvailable(
+WaylandBufferSHM* WindowSurfaceWayland::WaylandBufferFindAvailable(
     const LayoutDeviceIntSize& aSize) {
   LOGWAYLAND(("WindowSurfaceWayland::WaylandBufferFindAvailable %d x %d\n",
               aSize.width, aSize.height));
@@ -245,7 +244,7 @@ WaylandShmBuffer* WindowSurfaceWayland::WaylandBufferFindAvailable(
   
   for (int availableBuffer = 0; availableBuffer < BACK_BUFFER_NUM;
        availableBuffer++) {
-    RefPtr<WaylandShmBuffer> buffer = mShmBackupBuffer[availableBuffer];
+    RefPtr<WaylandBufferSHM> buffer = mShmBackupBuffer[availableBuffer];
     if (buffer && !buffer->IsAttached() && buffer->IsMatchingSize(aSize)) {
       LOGWAYLAND(("    found match %d [%p]\n", availableBuffer, buffer.get()));
       return buffer.get();
@@ -256,7 +255,7 @@ WaylandShmBuffer* WindowSurfaceWayland::WaylandBufferFindAvailable(
   return nullptr;
 }
 
-WaylandShmBuffer* WindowSurfaceWayland::SetNewWaylandBuffer() {
+WaylandBufferSHM* WindowSurfaceWayland::SetNewWaylandBuffer() {
   LOGWAYLAND(
       ("WindowSurfaceWayland::NewWaylandBuffer [%p] Requested buffer [%d "
        "x %d]\n",
@@ -272,7 +271,7 @@ WaylandShmBuffer* WindowSurfaceWayland::SetNewWaylandBuffer() {
 }
 
 
-WaylandShmBuffer* WindowSurfaceWayland::GetWaylandBuffer() {
+WaylandBufferSHM* WindowSurfaceWayland::GetWaylandBuffer() {
   LOGWAYLAND(
       ("WindowSurfaceWayland::GetWaylandBuffer [%p] Requested buffer [%d "
        "x %d] can switch %d\n",
@@ -280,13 +279,13 @@ WaylandShmBuffer* WindowSurfaceWayland::GetWaylandBuffer() {
        mCanSwitchWaylandBuffer));
 
 #if MOZ_LOGGING
-  LOGWAYLAND(("    Recent WaylandShmBuffer [%p]\n", mWaylandBuffer.get()));
+  LOGWAYLAND(("    Recent WaylandBufferSHM [%p]\n", mWaylandBuffer.get()));
   for (int i = 0; i < BACK_BUFFER_NUM; i++) {
     if (!mShmBackupBuffer[i]) {
-      LOGWAYLAND(("        WaylandShmBuffer [%d] null\n", i));
+      LOGWAYLAND(("        WaylandBufferSHM [%d] null\n", i));
     } else {
       LOGWAYLAND(
-          ("        WaylandShmBuffer [%d][%p] width %d height %d attached %d\n",
+          ("        WaylandBufferSHM [%d][%p] width %d height %d attached %d\n",
            i, mShmBackupBuffer[i].get(), mShmBackupBuffer[i]->GetSize().width,
            mShmBackupBuffer[i]->GetSize().height,
            mShmBackupBuffer[i]->IsAttached()));
@@ -334,7 +333,7 @@ already_AddRefed<gfx::DrawTarget> WindowSurfaceWayland::LockWaylandBuffer() {
        "%d\n",
        (void*)this, mWLBufferSize.width, mWLBufferSize.height));
 
-  WaylandShmBuffer* buffer = GetWaylandBuffer();
+  WaylandBufferSHM* buffer = GetWaylandBuffer();
   LOGWAYLAND(("WindowSurfaceWayland::LockWaylandBuffer [%p] Got buffer %p\n",
               (void*)this, (void*)buffer));
 
@@ -361,7 +360,7 @@ already_AddRefed<gfx::DrawTarget> WindowSurfaceWayland::LockImageSurface(
     const gfx::IntSize& aLockSize) {
   if (!mImageSurface || !(aLockSize <= mImageSurface->GetSize())) {
     mImageSurface = gfx::Factory::CreateDataSourceSurface(
-        aLockSize, WaylandShmBuffer::GetSurfaceFormat());
+        aLockSize, WaylandBufferSHM::GetSurfaceFormat());
   }
   gfx::DataSourceSurface::MappedSurface map = {nullptr, 0};
   if (!mImageSurface->Map(gfx::DataSourceSurface::READ_WRITE, &map)) {
@@ -369,7 +368,7 @@ already_AddRefed<gfx::DrawTarget> WindowSurfaceWayland::LockImageSurface(
   }
   return gfxPlatform::CreateDrawTargetForData(
       map.mData, mImageSurface->GetSize(), map.mStride,
-      WaylandShmBuffer::GetSurfaceFormat());
+      WaylandBufferSHM::GetSurfaceFormat());
 }
 
 static bool IsWindowFullScreenUpdate(
