@@ -4,6 +4,7 @@
 
 
 
+
 "use strict";
 
 XPCOMUtils.defineLazyModuleGetters(this, {
@@ -92,7 +93,7 @@ async function doTest({ locale, home, expectedOfflineDefault }) {
   
   Region._setHomeRegion(home, false);
   await withLocales([locale], async () => {
-    await UrlbarPrefs.maybeEnableOfflineQuickSuggest();
+    await UrlbarPrefs.updateFirefoxSuggestScenario();
     for (let { name, get, expectedOfflineValue, expectedOtherValue } of PREFS) {
       let expectedValue = expectedOfflineDefault
         ? expectedOfflineValue

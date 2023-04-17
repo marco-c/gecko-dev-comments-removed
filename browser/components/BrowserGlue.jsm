@@ -1650,7 +1650,7 @@ BrowserGlue.prototype = {
 
     ProcessHangMonitor.init();
 
-    UrlbarPrefs.maybeEnableOfflineQuickSuggest();
+    UrlbarPrefs.updateFirefoxSuggestScenario();
 
     
     let channel = new WebChannel(

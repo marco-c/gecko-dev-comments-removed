@@ -31,19 +31,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
 
-
-
-
-const DEFAULT_EXPERIMENT_FEATURE_VARIABLES = {
-  merinoEnabled: false,
-  quickSuggestEnabled: false,
-  quickSuggestNonSponsoredIndex: -1,
-  quickSuggestScenario: "history",
-  quickSuggestShouldShowOnboardingDialog: true,
-  quickSuggestShowOnboardingDialogAfterNRestarts: 0,
-  quickSuggestSponsoredIndex: -1,
-};
-
 var UrlbarTestUtils = {
   
 
@@ -827,21 +814,12 @@ var UrlbarTestUtils = {
 
 
 
-
-
-
-
-
-
   async enrollExperiment({ valueOverrides = {} }) {
     await ExperimentAPI.ready();
     let doExperimentCleanup = await ExperimentFakes.enrollWithFeatureConfig({
       enabled: true,
       featureId: "urlbar",
-      value: Object.assign(
-        DEFAULT_EXPERIMENT_FEATURE_VARIABLES,
-        valueOverrides
-      ),
+      value: valueOverrides,
     });
     return doExperimentCleanup;
   },

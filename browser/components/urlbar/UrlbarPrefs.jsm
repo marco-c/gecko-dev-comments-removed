@@ -447,6 +447,7 @@ class Preferences {
       "keyword.enabled",
       "suggest.searches",
     ];
+    this._updatingFirefoxSuggestScenario = false;
     NimbusFeatures.urlbar.onUpdate(() => this._onNimbusUpdate());
   }
 
@@ -542,20 +543,113 @@ class Preferences {
 
 
 
-  async maybeEnableOfflineQuickSuggest() {
+
+
+
+  async updateFirefoxSuggestScenario() {
     
-    await Region.init();
-    if (
-      Region.home == "US" &&
-      Services.locale.appLocaleAsBCP47.substring(0, 2) == "en"
-    ) {
-      let prefs = Services.prefs.getDefaultBranch("browser.urlbar.");
-      prefs.setBoolPref("quicksuggest.enabled", true);
-      prefs.setCharPref("quicksuggest.scenario", "offline");
-      prefs.setBoolPref("quicksuggest.shouldShowOnboardingDialog", false);
-      prefs.setBoolPref("suggest.quicksuggest", true);
-      prefs.setBoolPref("suggest.quicksuggest.sponsored", true);
+    
+    
+    
+    
+    
+    if (this._updatingFirefoxSuggestScenario) {
+      return;
     }
+    try {
+      this._updatingFirefoxSuggestScenario = true;
+      await this._updateFirefoxSuggestScenarioHelper();
+    } finally {
+      this._updatingFirefoxSuggestScenario = false;
+    }
+  }
+
+  async _updateFirefoxSuggestScenarioHelper() {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let scenario = this._nimbus.quickSuggestScenario;
+    if (!scenario) {
+      await Region.init();
+      if (
+        Region.home == "US" &&
+        Services.locale.appLocaleAsBCP47.substring(0, 2) == "en"
+      ) {
+        
+        scenario = "offline";
+      } else {
+        
+        scenario = "history";
+      }
+    }
+
+    let defaults = Services.prefs.getDefaultBranch("browser.urlbar.");
+    defaults.setCharPref("quicksuggest.scenario", scenario);
+    
+    
+  }
+
+  _syncFirefoxSuggestPrefsFromScenario() {
+    
+    
+    
+    
+    
+
+    let scenario = this.get("quicksuggest.scenario");
+    let defaults = Services.prefs.getDefaultBranch("browser.urlbar.");
+
+    let enabled = false;
+    switch (scenario) {
+      case "history":
+        defaults.setBoolPref("quicksuggest.shouldShowOnboardingDialog", true);
+        defaults.setBoolPref("suggest.quicksuggest", false);
+        defaults.setBoolPref("suggest.quicksuggest.sponsored", false);
+        break;
+      case "offline":
+        enabled = true;
+        defaults.setBoolPref("quicksuggest.shouldShowOnboardingDialog", false);
+        defaults.setBoolPref("suggest.quicksuggest", true);
+        defaults.setBoolPref("suggest.quicksuggest.sponsored", true);
+        break;
+      case "online":
+        enabled = true;
+        defaults.setBoolPref("quicksuggest.shouldShowOnboardingDialog", true);
+        defaults.setBoolPref("suggest.quicksuggest", false);
+        defaults.setBoolPref("suggest.quicksuggest.sponsored", false);
+        break;
+      default:
+        Cu.reportError(`Unrecognized Firefox Suggest scenario "${scenario}"`);
+        break;
+    }
+
+    
+    
+    defaults.setBoolPref("quicksuggest.enabled", enabled);
+  }
+
+  
+
+
+
+
+
+
+  get updatingFirefoxSuggestScenario() {
+    return this._updatingFirefoxSuggestScenario;
   }
 
   
@@ -608,6 +702,9 @@ class Preferences {
 
     
     switch (pref) {
+      case "quicksuggest.scenario":
+        this._syncFirefoxSuggestPrefsFromScenario();
+        return;
       case "showSearchSuggestionsFirst":
         this.set(
           "resultGroups",
@@ -635,6 +732,8 @@ class Preferences {
       this._map.delete(key);
     }
     this.__nimbus = null;
+
+    this.updateFirefoxSuggestScenario();
   }
 
   get _nimbus() {

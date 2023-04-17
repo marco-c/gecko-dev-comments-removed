@@ -1927,14 +1927,19 @@ var gPrivacyPane = {
   _initAddressBar() {
     
     
-    
-    
-    this._firefoxSuggestNimbusUpdate = () =>
-      this._updateFirefoxSuggestSection();
-    NimbusFeatures.urlbar.onUpdate(this._firefoxSuggestNimbusUpdate);
-    window.addEventListener("unload", () =>
-      NimbusFeatures.urlbar.off(this._firefoxSuggestNimbusUpdate)
-    );
+    this._urlbarPrefObserver = {
+      onPrefChanged: pref => {
+        if (["quicksuggest.enabled", "quicksuggest.scenario"].includes(pref)) {
+          this._updateFirefoxSuggestSection();
+        }
+      },
+    };
+    UrlbarPrefs.addObserver(this._urlbarPrefObserver);
+    window.addEventListener("unload", () => {
+      
+      
+      this._urlbarPrefObserver = null;
+    });
 
     
     
@@ -1989,7 +1994,7 @@ var gPrivacyPane = {
       
       
       document.getElementById("firefoxSuggestSuggestionDescription").hidden =
-        UrlbarPrefs.get("quickSuggestScenario") != "online";
+        UrlbarPrefs.get("quicksuggest.scenario") != "online";
       
       this._updateFirefoxSuggestSponsoredCheckbox();
       container.removeAttribute("hidden");
