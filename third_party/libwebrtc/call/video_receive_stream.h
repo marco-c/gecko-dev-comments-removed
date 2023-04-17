@@ -203,6 +203,9 @@ class VideoReceiveStream {
       
       bool transport_cc = false;
 
+      
+      bool remb = false;
+
       bool tmmbr = false;
 
       
