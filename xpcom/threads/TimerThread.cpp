@@ -22,10 +22,6 @@
 #include <math.h>
 
 using namespace mozilla;
-#ifdef MOZ_TASK_TRACER
-#  include "GeckoTaskTracerImpl.h"
-using namespace mozilla::tasktracer;
-#endif
 
 NS_IMPL_ISUPPORTS_INHERITED(TimerThread, Runnable, nsIObserver)
 
@@ -643,12 +639,6 @@ bool TimerThread::AddTimerInternal(nsTimerImpl* aTimer) {
 
   std::push_heap(mTimers.begin(), mTimers.end(), Entry::UniquePtrLessThan);
 
-#ifdef MOZ_TASK_TRACER
-  
-  
-  aTimer->GetTLSTraceInfo();
-#endif
-
   return true;
 }
 
@@ -708,14 +698,6 @@ already_AddRefed<nsTimerImpl> TimerThread::PostTimerEvent(
   
   
   
-
-#ifdef MOZ_TASK_TRACER
-  
-  
-  
-  AutoSaveCurTraceInfo saveCurTraceInfo;
-  (timer->GetTracedTask()).SetTLSTraceInfo();
-#endif
 
   nsCOMPtr<nsIEventTarget> target = timer->mEventTarget;
 

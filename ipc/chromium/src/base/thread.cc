@@ -16,10 +16,6 @@
 #include "nsThreadUtils.h"
 #include "nsThreadManager.h"
 
-#ifdef MOZ_TASK_TRACER
-#  include "GeckoTaskTracer.h"
-#endif
-
 namespace base {
 
 
@@ -197,10 +193,6 @@ void Thread::ThreadMain() {
   DCHECK(GetThreadWasQuitProperly());
 
   mozilla::IOInterposer::UnregisterCurrentThread();
-
-#ifdef MOZ_TASK_TRACER
-  mozilla::tasktracer::FreeTraceInfo();
-#endif
 
   
   message_loop_ = NULL;
