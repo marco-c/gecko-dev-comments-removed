@@ -495,7 +495,10 @@ class FirefoxLauncher implements ProductLauncher {
       'extensions.webservice.discoverURL': `http://${server}/dummy/discoveryURL`,
 
       
-      'fission.autostart': false,
+      'fission.bfcacheInParent': false,
+
+      
+      'fission.webContentIsolationStrategy': 0,
 
       
       'focusmanager.testmode': true,
