@@ -65,6 +65,7 @@
 #include "js/ValueArray.h"
 #include "js/Vector.h"
 #include "js/WeakMap.h"
+#include "js/WrapperCallbacks.h"
 #include "js/Zone.h"
 
 
@@ -101,34 +102,6 @@ using StringVector = JS::GCVector<JSString*>;
 
 
 using JSInterruptCallback = bool (*)(JSContext*);
-
-
-
-
-
-
-
-
-
-
-using JSWrapObjectCallback = JSObject* (*)(JSContext*, JS::HandleObject,
-                                           JS::HandleObject);
-
-
-
-
-
-
-
-
-using JSPreWrapCallback = void (*)(JSContext*, JS::HandleObject,
-                                   JS::HandleObject, JS::HandleObject,
-                                   JS::HandleObject, JS::MutableHandleObject);
-
-struct JSWrapObjectCallbacks {
-  JSWrapObjectCallback wrap;
-  JSPreWrapCallback preWrap;
-};
 
 
 
