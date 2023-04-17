@@ -31,13 +31,9 @@ const size_t CUBEB_LOG_MESSAGE_QUEUE_DEPTH = 40;
 
 
 
-class cubeb_log_message
-{
+class cubeb_log_message {
 public:
-  cubeb_log_message()
-  {
-    *storage = '\0';
-  }
+  cubeb_log_message() { *storage = '\0'; }
   cubeb_log_message(char const str[CUBEB_LOG_MESSAGE_MAX_SIZE])
   {
     size_t length = strlen(str);
@@ -49,20 +45,19 @@ public:
     PodCopy(storage, str, length);
     storage[length] = '\0';
   }
-  char const * get() {
-    return storage;
-  }
+  char const * get() { return storage; }
+
 private:
   char storage[CUBEB_LOG_MESSAGE_MAX_SIZE];
 };
 
 
 
-class cubeb_async_logger
-{
+class cubeb_async_logger {
 public:
   
-  static cubeb_async_logger & get() {
+  static cubeb_async_logger & get()
+  {
     static cubeb_async_logger instance;
     return instance;
   }
@@ -85,8 +80,7 @@ public:
         timespec sleep_duration = sleep_for;
         timespec remainder;
         do {
-          if (nanosleep(&sleep_duration, &remainder) == 0 ||
-              errno != EINTR) {
+          if (nanosleep(&sleep_duration, &remainder) == 0 || errno != EINTR) {
             break;
           }
           sleep_duration = remainder;
@@ -97,29 +91,22 @@ public:
   }
   
   
-  void reset_producer_thread()
-  {
-    msg_queue.reset_thread_ids();
-  }
+  void reset_producer_thread() { msg_queue.reset_thread_ids(); }
+
 private:
 #ifndef _WIN32
   const struct timespec sleep_for = {
-    CUBEB_LOG_BATCH_PRINT_INTERVAL_MS/1000,
-    (CUBEB_LOG_BATCH_PRINT_INTERVAL_MS%1000)*1000*1000
-  };
+      CUBEB_LOG_BATCH_PRINT_INTERVAL_MS / 1000,
+      (CUBEB_LOG_BATCH_PRINT_INTERVAL_MS % 1000) * 1000 * 1000};
 #endif
-  cubeb_async_logger()
-    : msg_queue(CUBEB_LOG_MESSAGE_QUEUE_DEPTH)
-  {
-    run();
-  }
+  cubeb_async_logger() : msg_queue(CUBEB_LOG_MESSAGE_QUEUE_DEPTH) { run(); }
   
 
   lock_free_queue<cubeb_log_message> msg_queue;
 };
 
-
-void cubeb_async_log(char const * fmt, ...)
+void
+cubeb_async_log(char const * fmt, ...)
 {
   if (!g_cubeb_log_callback) {
     return;
@@ -135,7 +122,8 @@ void cubeb_async_log(char const * fmt, ...)
   va_end(args);
 }
 
-void cubeb_async_log_reset_threads()
+void
+cubeb_async_log_reset_threads()
 {
   if (!g_cubeb_log_callback) {
     return;

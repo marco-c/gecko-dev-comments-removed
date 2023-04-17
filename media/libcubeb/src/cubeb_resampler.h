@@ -39,13 +39,12 @@ typedef enum {
 
 
 
-cubeb_resampler * cubeb_resampler_create(cubeb_stream * stream,
-                                         cubeb_stream_params * input_params,
-                                         cubeb_stream_params * output_params,
-                                         unsigned int target_rate,
-                                         cubeb_data_callback callback,
-                                         void * user_ptr,
-                                         cubeb_resampler_quality quality);
+cubeb_resampler *
+cubeb_resampler_create(cubeb_stream * stream,
+                       cubeb_stream_params * input_params,
+                       cubeb_stream_params * output_params,
+                       unsigned int target_rate, cubeb_data_callback callback,
+                       void * user_ptr, cubeb_resampler_quality quality);
 
 
 
@@ -59,24 +58,25 @@ cubeb_resampler * cubeb_resampler_create(cubeb_stream * stream,
 
 
 
-long cubeb_resampler_fill(cubeb_resampler * resampler,
-                          void * input_buffer,
-                          long * input_frame_count,
-                          void * output_buffer,
-                          long output_frames_needed);
+long
+cubeb_resampler_fill(cubeb_resampler * resampler, void * input_buffer,
+                     long * input_frame_count, void * output_buffer,
+                     long output_frames_needed);
 
 
 
 
 
-void cubeb_resampler_destroy(cubeb_resampler * resampler);
+void
+cubeb_resampler_destroy(cubeb_resampler * resampler);
 
 
 
 
 
 
-long cubeb_resampler_latency(cubeb_resampler * resampler);
+long
+cubeb_resampler_latency(cubeb_resampler * resampler);
 
 #if defined(__cplusplus)
 }

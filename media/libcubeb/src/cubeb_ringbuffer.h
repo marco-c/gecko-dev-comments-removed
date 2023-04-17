@@ -48,9 +48,7 @@
 
 
 
-template <typename T>
-class ring_buffer_base
-{
+template <typename T> class ring_buffer_base {
 public:
   
 
@@ -61,11 +59,10 @@ public:
 
 
   ring_buffer_base(int capacity)
-    
-    : capacity_(capacity + 1)
+      
+      : capacity_(capacity + 1)
   {
-    assert(storage_capacity() <
-           std::numeric_limits<int>::max() / 2 &&
+    assert(storage_capacity() < std::numeric_limits<int>::max() / 2 &&
            "buffer too large for the type of index used.");
     assert(capacity_ > 0);
 
@@ -84,10 +81,7 @@ public:
 
 
 
-  int enqueue_default(int count)
-  {
-    return enqueue(nullptr, count);
-  }
+  int enqueue_default(int count) { return enqueue(nullptr, count); }
   
 
 
@@ -97,11 +91,9 @@ public:
 
 
 
-  int enqueue(T& element)
-  {
-    return enqueue(&element, 1);
-  }
+  int enqueue(T & element) { return enqueue(&element, 1); }
   
+
 
 
 
@@ -125,12 +117,10 @@ public:
       return 0;
     }
 
-    int to_write =
-      std::min(available_write_internal(rd_idx, wr_idx), count);
+    int to_write = std::min(available_write_internal(rd_idx, wr_idx), count);
 
     
-    int first_part = std::min(storage_capacity() - wr_idx,
-                                          to_write);
+    int first_part = std::min(storage_capacity() - wr_idx, to_write);
     
     int second_part = to_write - first_part;
 
@@ -142,7 +132,8 @@ public:
       ConstructDefault(data_.get(), second_part);
     }
 
-    write_index_.store(increment_index(wr_idx, to_write), std::memory_order_release);
+    write_index_.store(increment_index(wr_idx, to_write),
+                       std::memory_order_release);
 
     return to_write;
   }
@@ -170,8 +161,7 @@ public:
       return 0;
     }
 
-    int to_read =
-      std::min(available_read_internal(rd_idx, wr_idx), count);
+    int to_read = std::min(available_read_internal(rd_idx, wr_idx), count);
 
     int first_part = std::min(storage_capacity() - rd_idx, to_read);
     int second_part = to_read - first_part;
@@ -181,7 +171,8 @@ public:
       Copy(elements + first_part, data_.get(), second_part);
     }
 
-    read_index_.store(increment_index(rd_idx, to_read), std::memory_order_relaxed);
+    read_index_.store(increment_index(rd_idx, to_read),
+                      std::memory_order_relaxed);
 
     return to_read;
   }
@@ -197,8 +188,9 @@ public:
 #ifndef NDEBUG
     assert_correct_thread(consumer_id);
 #endif
-    return available_read_internal(read_index_.load(std::memory_order_relaxed),
-                                   write_index_.load(std::memory_order_relaxed));
+    return available_read_internal(
+        read_index_.load(std::memory_order_relaxed),
+        write_index_.load(std::memory_order_relaxed));
   }
   
 
@@ -212,8 +204,9 @@ public:
 #ifndef NDEBUG
     assert_correct_thread(producer_id);
 #endif
-    return available_write_internal(read_index_.load(std::memory_order_relaxed),
-                                    write_index_.load(std::memory_order_relaxed));
+    return available_write_internal(
+        read_index_.load(std::memory_order_relaxed),
+        write_index_.load(std::memory_order_relaxed));
   }
   
 
@@ -222,10 +215,7 @@ public:
 
 
 
-  int capacity() const
-  {
-    return storage_capacity() - 1;
-  }
+  int capacity() const { return storage_capacity() - 1; }
   
 
 
@@ -237,6 +227,7 @@ public:
     consumer_id = producer_id = std::thread::id();
 #endif
   }
+
 private:
   
 
@@ -244,8 +235,7 @@ private:
 
 
 
-  bool empty_internal(int read_index,
-                      int write_index) const
+  bool empty_internal(int read_index, int write_index) const
   {
     return write_index == read_index;
   }
@@ -258,8 +248,7 @@ private:
 
 
 
-  bool full_internal(int read_index,
-                     int write_index) const
+  bool full_internal(int read_index, int write_index) const
   {
     return (write_index + 1) % storage_capacity() == read_index;
   }
@@ -269,18 +258,13 @@ private:
 
 
 
-  int storage_capacity() const
-  {
-    return capacity_;
-  }
+  int storage_capacity() const { return capacity_; }
   
 
 
 
 
-  int
-  available_read_internal(int read_index,
-                          int write_index) const
+  int available_read_internal(int read_index, int write_index) const
   {
     if (write_index >= read_index) {
       return write_index - read_index;
@@ -293,9 +277,7 @@ private:
 
 
 
-  int
-  available_write_internal(int read_index,
-                           int write_index) const
+  int available_write_internal(int read_index, int write_index) const
   {
     
 
@@ -312,8 +294,7 @@ private:
 
 
 
-  int
-  increment_index(int index, int increment) const
+  int increment_index(int index, int increment) const
   {
     assert(increment >= 0);
     return (index + increment) % storage_capacity();
@@ -325,7 +306,7 @@ private:
 
 
 #ifndef NDEBUG
-  static void assert_correct_thread(std::thread::id& id)
+  static void assert_correct_thread(std::thread::id & id)
   {
     if (id == std::thread::id()) {
       id = std::this_thread::get_id();
@@ -354,9 +335,7 @@ private:
 
 
 
-template <typename T>
-class audio_ring_buffer_base
-{
+template <typename T> class audio_ring_buffer_base {
 public:
   
 
@@ -365,8 +344,8 @@ public:
 
 
   audio_ring_buffer_base(int channel_count, int capacity_in_frames)
-    : channel_count(channel_count)
-    , ring_buffer(frames_to_samples(capacity_in_frames))
+      : channel_count(channel_count),
+        ring_buffer(frames_to_samples(capacity_in_frames))
   {
     assert(channel_count > 0);
   }
@@ -380,7 +359,8 @@ public:
 
   int enqueue_default(int frame_count)
   {
-    return samples_to_frames(ring_buffer.enqueue(nullptr, frames_to_samples(frame_count)));
+    return samples_to_frames(
+        ring_buffer.enqueue(nullptr, frames_to_samples(frame_count)));
   }
   
 
@@ -396,7 +376,8 @@ public:
 
   int enqueue(T * frames, int frame_count)
   {
-    return samples_to_frames(ring_buffer.enqueue(frames, frames_to_samples(frame_count)));
+    return samples_to_frames(
+        ring_buffer.enqueue(frames, frames_to_samples(frame_count)));
   }
 
   
@@ -413,7 +394,8 @@ public:
 
   int dequeue(T * frames, int frame_count)
   {
-    return samples_to_frames(ring_buffer.dequeue(frames, frames_to_samples(frame_count)));
+    return samples_to_frames(
+        ring_buffer.dequeue(frames, frames_to_samples(frame_count)));
   }
   
 
@@ -444,10 +426,8 @@ public:
 
 
 
-  int capacity() const
-  {
-    return samples_to_frames(ring_buffer.capacity());
-  }
+  int capacity() const { return samples_to_frames(ring_buffer.capacity()); }
+
 private:
   
 
@@ -456,10 +436,7 @@ private:
 
 
 
-  int frames_to_samples(int frames) const
-  {
-    return frames * channel_count;
-  }
+  int frames_to_samples(int frames) const { return frames * channel_count; }
   
 
 
@@ -467,10 +444,7 @@ private:
 
 
 
-  int samples_to_frames(int samples) const
-  {
-    return samples / channel_count;
-  }
+  int samples_to_frames(int samples) const { return samples / channel_count; }
   
   int channel_count;
   
@@ -482,14 +456,13 @@ private:
 
 
 
-template<typename T>
-using lock_free_queue = ring_buffer_base<T>;
+template <typename T> using lock_free_queue = ring_buffer_base<T>;
 
 
 
 
 
-template<typename T>
+template <typename T>
 using lock_free_audio_ring_buffer = audio_ring_buffer_base<T>;
 
 #endif 

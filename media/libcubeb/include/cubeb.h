@@ -7,9 +7,9 @@
 #if !defined(CUBEB_c2f983e9_c96f_e71c_72c3_bbf62992a382)
 #define CUBEB_c2f983e9_c96f_e71c_72c3_bbf62992a382
 
+#include "cubeb_export.h"
 #include <stdint.h>
 #include <stdlib.h>
-#include "cubeb_export.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -122,8 +122,10 @@ extern "C" {
 
 
 
-typedef struct cubeb cubeb;               
-typedef struct cubeb_stream cubeb_stream; 
+typedef struct cubeb
+    cubeb; 
+typedef struct cubeb_stream
+    cubeb_stream; 
 
 
 typedef enum {
@@ -155,8 +157,10 @@ typedef void const * cubeb_devid;
 
 typedef enum {
   CUBEB_LOG_DISABLED = 0, 
-  CUBEB_LOG_NORMAL = 1, 
+  CUBEB_LOG_NORMAL =
+      1, 
   CUBEB_LOG_VERBOSE = 2, 
+
 } cubeb_log_level;
 
 typedef enum {
@@ -190,10 +194,10 @@ enum {
   CUBEB_LAYOUT_STEREO = CHANNEL_FRONT_LEFT | CHANNEL_FRONT_RIGHT,
   CUBEB_LAYOUT_STEREO_LFE = CUBEB_LAYOUT_STEREO | CHANNEL_LOW_FREQUENCY,
   CUBEB_LAYOUT_3F =
-    CHANNEL_FRONT_LEFT | CHANNEL_FRONT_RIGHT | CHANNEL_FRONT_CENTER,
+      CHANNEL_FRONT_LEFT | CHANNEL_FRONT_RIGHT | CHANNEL_FRONT_CENTER,
   CUBEB_LAYOUT_3F_LFE = CUBEB_LAYOUT_3F | CHANNEL_LOW_FREQUENCY,
   CUBEB_LAYOUT_2F1 =
-    CHANNEL_FRONT_LEFT | CHANNEL_FRONT_RIGHT | CHANNEL_BACK_CENTER,
+      CHANNEL_FRONT_LEFT | CHANNEL_FRONT_RIGHT | CHANNEL_BACK_CENTER,
   CUBEB_LAYOUT_2F1_LFE = CUBEB_LAYOUT_2F1 | CHANNEL_LOW_FREQUENCY,
   CUBEB_LAYOUT_3F1 = CHANNEL_FRONT_LEFT | CHANNEL_FRONT_RIGHT |
                      CHANNEL_FRONT_CENTER | CHANNEL_BACK_CENTER,
@@ -222,45 +226,50 @@ enum {
 
 
 typedef enum {
-  CUBEB_STREAM_PREF_NONE     = 0x00, 
-  CUBEB_STREAM_PREF_LOOPBACK = 0x01, 
+  CUBEB_STREAM_PREF_NONE = 0x00, 
+  CUBEB_STREAM_PREF_LOOPBACK =
+      0x01, 
 
 
 
   CUBEB_STREAM_PREF_DISABLE_DEVICE_SWITCHING = 0x02, 
 
 
-  CUBEB_STREAM_PREF_VOICE = 0x04, 
+  CUBEB_STREAM_PREF_VOICE =
+      0x04, 
 
 
 
 
 
-  CUBEB_STREAM_PREF_RAW = 0x08, 
+  CUBEB_STREAM_PREF_RAW =
+      0x08, 
 
   CUBEB_STREAM_PREF_PERSIST = 0x10, 
 
 
 
-  CUBEB_STREAM_PREF_JACK_NO_AUTO_CONNECT = 0x20  
+  CUBEB_STREAM_PREF_JACK_NO_AUTO_CONNECT = 0x20 
 
 
 } cubeb_stream_prefs;
 
 
 typedef struct {
-  cubeb_sample_format format;   
+  cubeb_sample_format format; 
 
-  uint32_t rate;                
-  uint32_t channels;            
-  cubeb_channel_layout layout;  
-  cubeb_stream_prefs prefs;     
+  uint32_t rate; 
+  uint32_t channels; 
+  cubeb_channel_layout
+      layout; 
+
+  cubeb_stream_prefs prefs; 
 } cubeb_stream_params;
 
 
 typedef struct {
   char * output_name; 
-  char * input_name; 
+  char * input_name;  
 } cubeb_device;
 
 
@@ -273,12 +282,15 @@ typedef enum {
 
 
 enum {
-  CUBEB_OK = 0,                       
-  CUBEB_ERROR = -1,                   
-  CUBEB_ERROR_INVALID_FORMAT = -2,    
+  CUBEB_OK = 0,     
+  CUBEB_ERROR = -1, 
+  CUBEB_ERROR_INVALID_FORMAT =
+      -2, 
   CUBEB_ERROR_INVALID_PARAMETER = -3, 
-  CUBEB_ERROR_NOT_SUPPORTED = -4,     
-  CUBEB_ERROR_DEVICE_UNAVAILABLE = -5 
+  CUBEB_ERROR_NOT_SUPPORTED =
+      -4, 
+  CUBEB_ERROR_DEVICE_UNAVAILABLE =
+      -5 
 };
 
 
@@ -294,50 +306,56 @@ typedef enum {
 
 
 typedef enum {
-  CUBEB_DEVICE_STATE_DISABLED, 
+  CUBEB_DEVICE_STATE_DISABLED,  
+
   CUBEB_DEVICE_STATE_UNPLUGGED, 
-  CUBEB_DEVICE_STATE_ENABLED 
+
+  CUBEB_DEVICE_STATE_ENABLED    
 } cubeb_device_state;
 
 
 
 
 typedef enum {
-  CUBEB_DEVICE_FMT_S16LE          = 0x0010, 
-  CUBEB_DEVICE_FMT_S16BE          = 0x0020, 
-  CUBEB_DEVICE_FMT_F32LE          = 0x1000, 
-  CUBEB_DEVICE_FMT_F32BE          = 0x2000  
+  CUBEB_DEVICE_FMT_S16LE = 0x0010, 
+  CUBEB_DEVICE_FMT_S16BE = 0x0020, 
+  CUBEB_DEVICE_FMT_F32LE = 0x1000, 
+  CUBEB_DEVICE_FMT_F32BE = 0x2000  
 } cubeb_device_fmt;
 
 #if defined(WORDS_BIGENDIAN) || defined(__BIG_ENDIAN__)
 
-#define CUBEB_DEVICE_FMT_S16NE     CUBEB_DEVICE_FMT_S16BE
+#define CUBEB_DEVICE_FMT_S16NE CUBEB_DEVICE_FMT_S16BE
 
-#define CUBEB_DEVICE_FMT_F32NE     CUBEB_DEVICE_FMT_F32BE
+
+#define CUBEB_DEVICE_FMT_F32NE CUBEB_DEVICE_FMT_F32BE
 #else
 
-#define CUBEB_DEVICE_FMT_S16NE     CUBEB_DEVICE_FMT_S16LE
+#define CUBEB_DEVICE_FMT_S16NE CUBEB_DEVICE_FMT_S16LE
 
 
-#define CUBEB_DEVICE_FMT_F32NE     CUBEB_DEVICE_FMT_F32LE
+#define CUBEB_DEVICE_FMT_F32NE CUBEB_DEVICE_FMT_F32LE
 #endif
 
-#define CUBEB_DEVICE_FMT_S16_MASK  (CUBEB_DEVICE_FMT_S16LE | CUBEB_DEVICE_FMT_S16BE)
+#define CUBEB_DEVICE_FMT_S16_MASK                                              \
+  (CUBEB_DEVICE_FMT_S16LE | CUBEB_DEVICE_FMT_S16BE)
 
-#define CUBEB_DEVICE_FMT_F32_MASK  (CUBEB_DEVICE_FMT_F32LE | CUBEB_DEVICE_FMT_F32BE)
+#define CUBEB_DEVICE_FMT_F32_MASK                                              \
+  (CUBEB_DEVICE_FMT_F32LE | CUBEB_DEVICE_FMT_F32BE)
 
-#define CUBEB_DEVICE_FMT_ALL       (CUBEB_DEVICE_FMT_S16_MASK | CUBEB_DEVICE_FMT_F32_MASK)
+#define CUBEB_DEVICE_FMT_ALL                                                   \
+  (CUBEB_DEVICE_FMT_S16_MASK | CUBEB_DEVICE_FMT_F32_MASK)
 
 
 
 
 
 typedef enum {
-  CUBEB_DEVICE_PREF_NONE          = 0x00,
-  CUBEB_DEVICE_PREF_MULTIMEDIA    = 0x01,
-  CUBEB_DEVICE_PREF_VOICE         = 0x02,
-  CUBEB_DEVICE_PREF_NOTIFICATION  = 0x04,
-  CUBEB_DEVICE_PREF_ALL           = 0x0F
+  CUBEB_DEVICE_PREF_NONE = 0x00,
+  CUBEB_DEVICE_PREF_MULTIMEDIA = 0x01,
+  CUBEB_DEVICE_PREF_VOICE = 0x02,
+  CUBEB_DEVICE_PREF_NOTIFICATION = 0x04,
+  CUBEB_DEVICE_PREF_ALL = 0x0F
 } cubeb_device_pref;
 
 
@@ -346,25 +364,30 @@ typedef enum {
 
 
 typedef struct {
-  cubeb_devid devid;          
-  char const * device_id;     
+  cubeb_devid devid; 
+  char const *
+      device_id; 
   char const * friendly_name; 
-  char const * group_id;      
-  char const * vendor_name;   
 
-  cubeb_device_type type;     
-  cubeb_device_state state;   
-  cubeb_device_pref preferred;
+  char const * group_id; 
 
-  cubeb_device_fmt format;    
-  cubeb_device_fmt default_format; 
-  uint32_t max_channels;      
-  uint32_t default_rate;      
-  uint32_t max_rate;          
-  uint32_t min_rate;          
 
-  uint32_t latency_lo;        
-  uint32_t latency_hi;        
+  char const * vendor_name; 
+
+  cubeb_device_type type;   
+  cubeb_device_state state; 
+  cubeb_device_pref preferred; 
+
+  cubeb_device_fmt format; 
+  cubeb_device_fmt
+      default_format;    
+  uint32_t max_channels; 
+  uint32_t default_rate; 
+  uint32_t max_rate;     
+  uint32_t min_rate;     
+
+  uint32_t latency_lo; 
+  uint32_t latency_hi; 
 } cubeb_device_info;
 
 
@@ -397,35 +420,32 @@ typedef struct {
 
 
 
-typedef long (* cubeb_data_callback)(cubeb_stream * stream,
-                                     void * user_ptr,
-                                     void const * input_buffer,
-                                     void * output_buffer,
-                                     long nframes);
+typedef long (*cubeb_data_callback)(cubeb_stream * stream, void * user_ptr,
+                                    void const * input_buffer,
+                                    void * output_buffer, long nframes);
 
 
 
 
 
-typedef void (* cubeb_state_callback)(cubeb_stream * stream,
-                                      void * user_ptr,
-                                      cubeb_state state);
+typedef void (*cubeb_state_callback)(cubeb_stream * stream, void * user_ptr,
+                                     cubeb_state state);
 
 
 
 
-typedef void (* cubeb_device_changed_callback)(void * user_ptr);
+typedef void (*cubeb_device_changed_callback)(void * user_ptr);
 
 
 
 
 
-typedef void (* cubeb_device_collection_changed_callback)(cubeb * context,
-                                                          void * user_ptr);
 
+typedef void (*cubeb_device_collection_changed_callback)(cubeb * context,
+                                                         void * user_ptr);
 
-typedef void (* cubeb_log_callback)(char const * fmt, ...);
 
+typedef void (*cubeb_log_callback)(char const * fmt, ...);
 
 
 
@@ -444,14 +464,16 @@ typedef void (* cubeb_log_callback)(char const * fmt, ...);
 
 
 
-CUBEB_EXPORT int cubeb_init(cubeb ** context, char const * context_name,
-                                              char const * backend_name);
 
+CUBEB_EXPORT int
+cubeb_init(cubeb ** context, char const * context_name,
+           char const * backend_name);
 
 
 
-CUBEB_EXPORT char const * cubeb_get_backend_id(cubeb * context);
 
+CUBEB_EXPORT char const *
+cubeb_get_backend_id(cubeb * context);
 
 
 
@@ -459,8 +481,9 @@ CUBEB_EXPORT char const * cubeb_get_backend_id(cubeb * context);
 
 
 
-CUBEB_EXPORT int cubeb_get_max_channel_count(cubeb * context, uint32_t * max_channels);
 
+CUBEB_EXPORT int
+cubeb_get_max_channel_count(cubeb * context, uint32_t * max_channels);
 
 
 
@@ -472,10 +495,10 @@ CUBEB_EXPORT int cubeb_get_max_channel_count(cubeb * context, uint32_t * max_cha
 
 
 
-CUBEB_EXPORT int cubeb_get_min_latency(cubeb * context,
-                                       cubeb_stream_params * params,
-                                       uint32_t * latency_frames);
 
+CUBEB_EXPORT int
+cubeb_get_min_latency(cubeb * context, cubeb_stream_params * params,
+                      uint32_t * latency_frames);
 
 
 
@@ -483,13 +506,15 @@ CUBEB_EXPORT int cubeb_get_min_latency(cubeb * context,
 
 
 
-CUBEB_EXPORT int cubeb_get_preferred_sample_rate(cubeb * context, uint32_t * rate);
 
+CUBEB_EXPORT int
+cubeb_get_preferred_sample_rate(cubeb * context, uint32_t * rate);
 
 
 
-CUBEB_EXPORT void cubeb_destroy(cubeb * context);
 
+CUBEB_EXPORT void
+cubeb_destroy(cubeb * context);
 
 
 
@@ -522,42 +547,43 @@ CUBEB_EXPORT void cubeb_destroy(cubeb * context);
 
 
 
-CUBEB_EXPORT int cubeb_stream_init(cubeb * context,
-                                   cubeb_stream ** stream,
-                                   char const * stream_name,
-                                   cubeb_devid input_device,
-                                   cubeb_stream_params * input_stream_params,
-                                   cubeb_devid output_device,
-                                   cubeb_stream_params * output_stream_params,
-                                   uint32_t latency_frames,
-                                   cubeb_data_callback data_callback,
-                                   cubeb_state_callback state_callback,
-                                   void * user_ptr);
 
+CUBEB_EXPORT int
+cubeb_stream_init(cubeb * context, cubeb_stream ** stream,
+                  char const * stream_name, cubeb_devid input_device,
+                  cubeb_stream_params * input_stream_params,
+                  cubeb_devid output_device,
+                  cubeb_stream_params * output_stream_params,
+                  uint32_t latency_frames, cubeb_data_callback data_callback,
+                  cubeb_state_callback state_callback, void * user_ptr);
 
 
 
-CUBEB_EXPORT void cubeb_stream_destroy(cubeb_stream * stream);
 
+CUBEB_EXPORT void
+cubeb_stream_destroy(cubeb_stream * stream);
 
 
 
 
-CUBEB_EXPORT int cubeb_stream_start(cubeb_stream * stream);
 
+CUBEB_EXPORT int
+cubeb_stream_start(cubeb_stream * stream);
 
 
 
 
-CUBEB_EXPORT int cubeb_stream_stop(cubeb_stream * stream);
 
+CUBEB_EXPORT int
+cubeb_stream_stop(cubeb_stream * stream);
 
 
 
 
 
-CUBEB_EXPORT int cubeb_stream_get_position(cubeb_stream * stream, uint64_t * position);
 
+CUBEB_EXPORT int
+cubeb_stream_get_position(cubeb_stream * stream, uint64_t * position);
 
 
 
@@ -566,8 +592,9 @@ CUBEB_EXPORT int cubeb_stream_get_position(cubeb_stream * stream, uint64_t * pos
 
 
 
-CUBEB_EXPORT int cubeb_stream_get_latency(cubeb_stream * stream, uint32_t * latency);
 
+CUBEB_EXPORT int
+cubeb_stream_get_latency(cubeb_stream * stream, uint32_t * latency);
 
 
 
@@ -577,24 +604,27 @@ CUBEB_EXPORT int cubeb_stream_get_latency(cubeb_stream * stream, uint32_t * late
 
 
 
-CUBEB_EXPORT int cubeb_stream_get_input_latency(cubeb_stream * stream, uint32_t * latency);
 
+CUBEB_EXPORT int
+cubeb_stream_get_input_latency(cubeb_stream * stream, uint32_t * latency);
 
 
 
 
 
 
-CUBEB_EXPORT int cubeb_stream_set_volume(cubeb_stream * stream, float volume);
 
+CUBEB_EXPORT int
+cubeb_stream_set_volume(cubeb_stream * stream, float volume);
 
 
 
 
 
 
-CUBEB_EXPORT int cubeb_stream_set_name(cubeb_stream * stream, char const * stream_name);
 
+CUBEB_EXPORT int
+cubeb_stream_set_name(cubeb_stream * stream, char const * stream_name);
 
 
 
@@ -602,18 +632,19 @@ CUBEB_EXPORT int cubeb_stream_set_name(cubeb_stream * stream, char const * strea
 
 
 
-CUBEB_EXPORT int cubeb_stream_get_current_device(cubeb_stream * stm,
-                                                 cubeb_device ** const device);
 
+CUBEB_EXPORT int
+cubeb_stream_get_current_device(cubeb_stream * stm,
+                                cubeb_device ** const device);
 
 
 
 
 
 
-CUBEB_EXPORT int cubeb_stream_device_destroy(cubeb_stream * stream,
-                                             cubeb_device * devices);
 
+CUBEB_EXPORT int
+cubeb_stream_device_destroy(cubeb_stream * stream, cubeb_device * devices);
 
 
 
@@ -622,35 +653,39 @@ CUBEB_EXPORT int cubeb_stream_device_destroy(cubeb_stream * stream,
 
 
 
-CUBEB_EXPORT int cubeb_stream_register_device_changed_callback(cubeb_stream * stream,
-                                                               cubeb_device_changed_callback device_changed_callback);
 
+CUBEB_EXPORT int
+cubeb_stream_register_device_changed_callback(
+    cubeb_stream * stream,
+    cubeb_device_changed_callback device_changed_callback);
 
 
 
-CUBEB_EXPORT void * cubeb_stream_user_ptr(cubeb_stream * stream);
 
 
+CUBEB_EXPORT void *
+cubeb_stream_user_ptr(cubeb_stream * stream);
 
 
 
 
 
 
-CUBEB_EXPORT int cubeb_enumerate_devices(cubeb * context,
-                                         cubeb_device_type devtype,
-                                         cubeb_device_collection * collection);
 
 
 
+CUBEB_EXPORT int
+cubeb_enumerate_devices(cubeb * context, cubeb_device_type devtype,
+                        cubeb_device_collection * collection);
 
 
 
-CUBEB_EXPORT int cubeb_device_collection_destroy(cubeb * context,
-                                                 cubeb_device_collection * collection);
 
 
 
+CUBEB_EXPORT int
+cubeb_device_collection_destroy(cubeb * context,
+                                cubeb_device_collection * collection);
 
 
 
@@ -662,21 +697,26 @@ CUBEB_EXPORT int cubeb_device_collection_destroy(cubeb * context,
 
 
 
-CUBEB_EXPORT int cubeb_register_device_collection_changed(cubeb * context,
-                                                          cubeb_device_type devtype,
-                                                          cubeb_device_collection_changed_callback callback,
-                                                          void * user_ptr);
 
 
 
 
+CUBEB_EXPORT int
+cubeb_register_device_collection_changed(
+    cubeb * context, cubeb_device_type devtype,
+    cubeb_device_collection_changed_callback callback, void * user_ptr);
 
 
 
 
 
-CUBEB_EXPORT int cubeb_set_log_callback(cubeb_log_level log_level,
-                                        cubeb_log_callback log_callback);
+
+
+
+
+CUBEB_EXPORT int
+cubeb_set_log_callback(cubeb_log_level log_level,
+                       cubeb_log_callback log_callback);
 
 #if defined(__cplusplus)
 }
