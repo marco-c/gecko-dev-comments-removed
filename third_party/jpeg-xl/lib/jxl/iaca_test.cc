@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include "lib/jxl/base/iaca.h"
+
+#include "gtest/gtest.h"
+
+namespace jxl {
+namespace {
+
+TEST(IacaTest, MarkersDefaultToDisabledAndDoNotCrash) {
+  BeginIACA();
+  EndIACA();
+}
+
+TEST(IacaTest, ScopeDefaultToDisabledAndDoNotCrash) { ScopeIACA iaca; }
+
+}  
+}  
