@@ -157,6 +157,21 @@ USE_LIBS += [
 ]
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    USE_LIBS += [
+        "mozgtk",
+    ]
     OS_LIBS += CONFIG["MOZ_GTK3_LIBS"]
 
 if CONFIG["MOZ_WAYLAND"]:
