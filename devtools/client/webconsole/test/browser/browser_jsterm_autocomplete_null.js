@@ -8,6 +8,8 @@ add_task(async function() {
   await addTab("about:blank");
 
   info(`Open browser console with ctrl-shift-j`);
+  
+  
   const opened = waitForBrowserConsole();
   EventUtils.synthesizeKey("j", { accelKey: true, shiftKey: true }, window);
   const hud = await opened;
@@ -21,7 +23,7 @@ add_task(async function() {
 
   info(`Create a null variable`);
   
-  await hud.evaluateJSAsync(`globalThis.nullVar = null;`);
+  await hud.commands.scriptCommand.execute("globalThis.nullVar = null");
 
   info(`Check completion suggestions for "null"`);
   await setInputValueForAutocompletion(hud, "null");
@@ -67,5 +69,5 @@ add_task(async function() {
   );
 
   info(`Cleanup`);
-  await hud.evaluateJSAsync(`delete globalThis.nullVar;`);
+  await hud.commands.scriptCommand.execute("delete globalThis.nullVar");
 });

@@ -94,14 +94,14 @@ function messageClose(id) {
 
 
 function messageGetMatchingElements(id, cssSelectors) {
-  return async ({ dispatch, client, getState }) => {
+  return async ({ dispatch, commands, getState }) => {
     try {
       
       
       const message = getState().messages.messagesById.get(id);
       const selectedTargetFront = message?.targetFront;
 
-      const response = await client.evaluateJSAsync(
+      const response = await commands.scriptCommand.execute(
         `document.querySelectorAll('${cssSelectors}')`,
         {
           selectedTargetFront,

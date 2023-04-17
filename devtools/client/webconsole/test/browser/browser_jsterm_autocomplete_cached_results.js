@@ -33,10 +33,11 @@ add_task(async function() {
   ok(popup.isOpen, "popup is opened");
 
   info("Add a property on the object");
-  
-  let { result } = await hud.evaluateJSAsync(
-    `x.docfoobar = "added"; x.docfoobar`
-  );
+  let result = await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
+    content.wrappedJSObject.x.docfoobar = "added";
+    return content.wrappedJSObject.x.docfoobar;
+  });
+
   is(result, "added", "The property was added on the window object");
 
   info("Test typing d (i.e. input is now 'x.d')");
@@ -66,9 +67,12 @@ add_task(async function() {
     "autocomplete cached results do not contain docfoobar. list has not been updated"
   );
 
-  
-  ({ result } = await hud.evaluateJSAsync(`delete x.docfoobar; x.docfoobar`));
-  is(result.type, "undefined", "The property was removed");
+  result = await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
+    content.wrappedJSObject.x.docfoobar = "added";
+    delete content.wrappedJSObject.x.docfoobar;
+    return typeof content.wrappedJSObject.x.docfoobar;
+  });
+  is(result, "undefined", "The property was removed");
 
   
   await jstermComplete("window.");
@@ -93,10 +97,10 @@ add_task(async function() {
   );
 
   info("Add a property on the x object");
-  
-  ({ result } = await hud.evaluateJSAsync(
-    `x.docfoobar = "added"; x.docfoobar`
-  ));
+  result = await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
+    content.wrappedJSObject.x.docfoobar = "added";
+    return content.wrappedJSObject.x.docfoobar;
+  });
   is(result, "added", "The property was added on the x object again");
 
   

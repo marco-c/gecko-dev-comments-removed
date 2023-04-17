@@ -12,7 +12,7 @@ loader.lazyServiceGetter(
 );
 
 function storeAsGlobal(actor) {
-  return async ({ client, hud }) => {
+  return async ({ commands, hud }) => {
     const evalString = `{ let i = 0;
       while (this.hasOwnProperty("temp" + i) && i < 1000) {
         i++;
@@ -21,13 +21,13 @@ function storeAsGlobal(actor) {
       "temp" + i;
     }`;
 
-    const res = await client.evaluateJSAsync(evalString, {
+    const res = await commands.scriptCommand.execute(evalString, {
       selectedObjectActor: actor,
     });
 
     
     if (hud.toolbox) {
-      const objectFront = client.getFrontByID(actor);
+      const objectFront = commands.client.getFrontByID(actor);
       if (objectFront) {
         const targetActorID = objectFront.targetFront?.actorID;
         if (targetActorID) {
@@ -42,11 +42,11 @@ function storeAsGlobal(actor) {
 }
 
 function copyMessageObject(actor, variableText) {
-  return async ({ client }) => {
+  return async ({ commands }) => {
     if (actor) {
       
       
-      const res = await client.evaluateJSAsync("copy(_self)", {
+      const res = await commands.scriptCommand.execute("copy(_self)", {
         selectedObjectActor: actor,
       });
 

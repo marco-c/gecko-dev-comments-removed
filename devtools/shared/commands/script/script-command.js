@@ -4,16 +4,39 @@
 
 "use strict";
 
-class ConsoleCommands {
+class ScriptCommand {
   constructor({ commands }) {
-    this.commands = commands;
+    this._commands = commands;
   }
 
-  getFrontByID(id) {
-    return this.commands.client.getFrontByID(id);
-  }
+  
 
-  async evaluateJSAsync(expression, options = {}) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async execute(expression, options = {}) {
     const {
       selectedObjectActor,
       selectedNodeActor,
@@ -21,7 +44,7 @@ class ConsoleCommands {
       selectedTargetFront,
     } = options;
 
-    let targetFront = this.commands.targetCommand.targetFront;
+    let targetFront = this._commands.targetCommand.targetFront;
 
     const selectedActor =
       selectedObjectActor || selectedNodeActor || frameActor;
@@ -29,15 +52,16 @@ class ConsoleCommands {
     if (selectedTargetFront) {
       targetFront = selectedTargetFront;
     } else if (selectedActor) {
-      const selectedFront = this.getFrontByID(selectedActor);
+      const selectedFront = this._commands.client.getFrontByID(selectedActor);
       if (selectedFront) {
         targetFront = selectedFront.targetFront;
       }
     }
 
     const front = await targetFront.getFront("console");
+
     return front.evaluateJSAsync(expression, options);
   }
 }
 
-module.exports = ConsoleCommands;
+module.exports = ScriptCommand;
