@@ -3,7 +3,9 @@ ChromeUtils.defineModuleGetter(
   "TelemetryTestUtils",
   "resource://testing-common/TelemetryTestUtils.jsm"
 );
-const { sinon } = ChromeUtils.import("resource://testing-common/Sinon.jsm");
+const { AttributionIOUtils } = ChromeUtils.import(
+  "resource:///modules/AttributionCode.jsm"
+);
 
 add_task(async function test_parse_error() {
   if (AppConstants.platform == "macosx") {
@@ -62,7 +64,7 @@ add_task(async function test_read_error() {
   const histogram = Services.telemetry.getHistogramById(
     "BROWSER_ATTRIBUTION_ERRORS"
   );
-  const sandbox = sinon.createSandbox();
+
   
   await AttributionCode.deleteFileAsync();
   AttributionCode._clearCache();
@@ -70,10 +72,19 @@ add_task(async function test_read_error() {
   histogram.clear();
 
   
-  const exists = sandbox.stub(OS.File, "exists");
-  exists.resolves(true);
-  const read = sandbox.stub(OS.File, "read");
-  read.throws(() => new Error("read_error"));
+  let oldExists = AttributionIOUtils.exists;
+  AttributionIOUtils.exists = () => true;
+
+  let oldRead = AttributionIOUtils.readUTF8;
+  AttributionIOUtils.readUTF8 = () => {
+    throw new Error("read_error");
+  };
+
+  registerCleanupFunction(() => {
+    AttributionIOUtils.exists = oldExists;
+    AttributionIOUtils.readUTF8 = oldRead;
+  });
+
   
   await AttributionCode.getAttrDataAsync();
 
@@ -82,5 +93,4 @@ add_task(async function test_read_error() {
 
   
   histogram.clear();
-  sandbox.restore();
 });

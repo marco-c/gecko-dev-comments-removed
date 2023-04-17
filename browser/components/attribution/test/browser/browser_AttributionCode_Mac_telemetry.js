@@ -6,6 +6,9 @@ ChromeUtils.defineModuleGetter(
 const { MacAttribution } = ChromeUtils.import(
   "resource:///modules/MacAttribution.jsm"
 );
+const { AttributionIOUtils } = ChromeUtils.import(
+  "resource:///modules/AttributionCode.jsm"
+);
 const { sinon } = ChromeUtils.import("resource://testing-common/Sinon.jsm");
 
 async function assertCacheExistsAndIsEmpty() {
@@ -16,12 +19,10 @@ async function assertCacheExistsAndIsEmpty() {
   );
   histogram.clear();
 
-  ok(await OS.File.exists(AttributionCode.attributionFile.path));
+  ok(await AttributionIOUtils.exists(AttributionCode.attributionFile.path));
   Assert.deepEqual(
     "",
-    new TextDecoder().decode(
-      await OS.File.read(AttributionCode.attributionFile.path)
-    )
+    await AttributionIOUtils.readUTF8(AttributionCode.attributionFile.path)
   );
 
   AttributionCode._clearCache();
@@ -49,6 +50,8 @@ add_task(async function test_write_error() {
     "BROWSER_ATTRIBUTION_ERRORS"
   );
 
+  let oldExists = AttributionIOUtils.exists;
+  let oldWrite = AttributionIOUtils.writeUTF8;
   try {
     
     histogram.clear();
@@ -56,14 +59,10 @@ add_task(async function test_write_error() {
     
     
     
-    const writeAtomic = sandbox.stub(OS.File, "writeAtomic");
-    writeAtomic
-      .withArgs(
-        sinon.match(AttributionCode.attributionFile.path),
-        sinon.match.any
-      )
-      .throws(() => new Error("write_error"));
-    OS.File.writeAtomic.callThrough();
+    AttributionIOUtils.exists = () => false;
+    AttributionIOUtils.writeUTF8 = () => {
+      throw new Error("write_error");
+    };
 
     
     let result = await AttributionCode.getAttrDataAsync();
@@ -75,6 +74,8 @@ add_task(async function test_write_error() {
 
     TelemetryTestUtils.assertHistogram(histogram, INDEX_WRITE_ERROR, 1);
   } finally {
+    AttributionIOUtils.exists = oldExists;
+    AttributionIOUtils.writeUTF8 = oldWrite;
     await AttributionCode.deleteFileAsync();
     AttributionCode._clearCache();
     histogram.clear();
@@ -214,6 +215,7 @@ add_task(async function test_broken_referrer() {
     generateQuarantineGUID(),
   ].join(";");
   let bytes = new TextEncoder().encode(string);
+  
   await OS.File.macSetXAttr(
     MacAttribution.applicationPath,
     "com.apple.quarantine",
