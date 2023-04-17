@@ -4800,7 +4800,7 @@ MDefinition* MWasmTernarySimd128::foldsTo(TempAllocator& alloc) {
 }
 
 MDefinition* MWasmBinarySimd128::foldsTo(TempAllocator& alloc) {
-  if (simdOp() == wasm::SimdOp::V8x16Swizzle && rhs()->isWasmFloatConstant()) {
+  if (simdOp() == wasm::SimdOp::I8x16Swizzle && rhs()->isWasmFloatConstant()) {
     
     
     
