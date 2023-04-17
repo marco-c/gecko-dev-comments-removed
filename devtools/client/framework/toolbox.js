@@ -190,13 +190,6 @@ loader.lazyRequireGetter(
 
 loader.lazyRequireGetter(
   this,
-  "getF12SessionId",
-  "devtools/client/framework/enable-devtools-popup",
-  true
-);
-
-loader.lazyRequireGetter(
-  this,
   "HarAutomation",
   "devtools/client/netmonitor/src/har/har-automation",
   true
@@ -255,17 +248,6 @@ function Toolbox(
   if (Services.prefs.getBoolPref(DEVTOOLS_F12_DISABLED_PREF, false)) {
     
     
-    
-    
-    
-    
-    
-    this.sessionId = getF12SessionId() || msSinceProcessStart;
-
-    this.telemetry.recordEvent("f12_enabled", "tools", null, {
-      session_id: this.sessionId,
-    });
-
     
     Services.prefs.setBoolPref(DEVTOOLS_F12_DISABLED_PREF, false);
   }
