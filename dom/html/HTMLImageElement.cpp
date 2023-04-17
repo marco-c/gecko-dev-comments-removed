@@ -888,10 +888,10 @@ nsresult HTMLImageElement::LoadSelectedImage(bool aForce, bool aNotify,
     currentDensity = mResponsiveSelector->GetSelectedImageDensity();
   }
 
-  nsresult rv = NS_ERROR_FAILURE;
   nsCOMPtr<nsIURI> selectedSource;
   nsCOMPtr<nsIPrincipal> triggeringPrincipal;
   ImageLoadType type = eImageLoadType_Normal;
+  bool hasSrc = false;
   if (mResponsiveSelector) {
     selectedSource = mResponsiveSelector->GetSelectedImageURL();
     triggeringPrincipal =
@@ -899,10 +899,8 @@ nsresult HTMLImageElement::LoadSelectedImage(bool aForce, bool aNotify,
     type = eImageLoadType_Imageset;
   } else {
     nsAutoString src;
-    if (!GetAttr(nsGkAtoms::src, src) || src.IsEmpty()) {
-      CancelImageRequests(aNotify);
-      rv = NS_OK;
-    } else {
+    hasSrc = GetAttr(nsGkAtoms::src, src);
+    if (hasSrc && !src.IsEmpty()) {
       Document* doc = OwnerDoc();
       StringToURI(src, doc, getter_AddRefs(selectedSource));
       if (HaveSrcsetOrInPicture()) {
@@ -920,18 +918,23 @@ nsresult HTMLImageElement::LoadSelectedImage(bool aForce, bool aNotify,
     return NS_OK;
   }
 
-  if (selectedSource) {
-    
-    if (mLazyLoading) {
-      if (!nsContentUtils::IsImageAvailable(
-              this, selectedSource, triggeringPrincipal, GetCORSMode())) {
-        return NS_OK;
-      }
-      StopLazyLoading(FromIntersectionObserver::No, StartLoading::No);
+  
+  if (mLazyLoading) {
+    if (!selectedSource ||
+        !nsContentUtils::IsImageAvailable(this, selectedSource,
+                                          triggeringPrincipal, GetCORSMode())) {
+      return NS_OK;
     }
+    StopLazyLoading(FromIntersectionObserver::No, StartLoading::No);
+  }
 
+  nsresult rv = NS_ERROR_FAILURE;
+
+  
+  if (selectedSource || hasSrc) {
     rv = LoadImage(selectedSource, aForce, aNotify, type, triggeringPrincipal);
   }
+
   mLastSelectedSource = selectedSource;
   mCurrentDensity = currentDensity;
 
