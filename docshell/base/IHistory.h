@@ -9,7 +9,6 @@
 
 #include "nsISupports.h"
 #include "nsURIHashKey.h"
-#include "nsTHashSet.h"
 #include "nsTObserverArray.h"
 
 class nsIURI;
@@ -18,7 +17,6 @@ class nsIWidget;
 namespace mozilla {
 
 namespace dom {
-class ContentParent;
 class Document;
 class Link;
 }  
@@ -34,8 +32,6 @@ class Link;
 class IHistory : public nsISupports {
  public:
   NS_DECLARE_STATIC_IID_ACCESSOR(IHISTORY_IID)
-
-  using ContentParentSet = nsTHashSet<RefPtr<dom::ContentParent>>;
 
   
 
@@ -67,15 +63,6 @@ class IHistory : public nsISupports {
 
 
 
-  virtual void ScheduleVisitedQuery(nsIURI* aURI, dom::ContentParent*) = 0;
-
-  
-
-
-
-
-
-
 
 
 
@@ -93,12 +80,7 @@ class IHistory : public nsISupports {
 
 
 
-
-
-
-
-  virtual void NotifyVisited(nsIURI*, VisitedStatus,
-                             ContentParentSet* = nullptr) = 0;
+  virtual void NotifyVisited(nsIURI*, VisitedStatus) = 0;
 
   enum VisitFlags {
     

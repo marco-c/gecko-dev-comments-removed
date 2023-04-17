@@ -16,9 +16,8 @@ namespace mozilla {
 class BaseHistory : public IHistory {
  public:
   void RegisterVisitedCallback(nsIURI*, dom::Link*) final;
-  void ScheduleVisitedQuery(nsIURI*, dom::ContentParent*) final;
   void UnregisterVisitedCallback(nsIURI*, dom::Link*) final;
-  void NotifyVisited(nsIURI*, VisitedStatus, ContentParentSet* = nullptr) final;
+  void NotifyVisited(nsIURI*, VisitedStatus) final;
 
   
   
@@ -26,7 +25,7 @@ class BaseHistory : public IHistory {
 
  protected:
   void NotifyVisitedInThisProcess(nsIURI*, VisitedStatus);
-  void NotifyVisitedFromParent(nsIURI*, VisitedStatus, ContentParentSet*);
+  void NotifyVisitedFromParent(nsIURI*, VisitedStatus);
   static constexpr const size_t kTrackedUrisInitialSize = 64;
 
   BaseHistory();
@@ -42,18 +41,16 @@ class BaseHistory : public IHistory {
     }
   };
 
-  using PendingVisitedQueries = nsTHashMap<nsURIHashKey, ContentParentSet>;
-  struct PendingVisitedResult {
-    dom::VisitedQueryResult mResult;
-    ContentParentSet mProcessesToNotify;
-  };
-  using PendingVisitedResults = nsTArray<PendingVisitedResult>;
+  using PendingVisitedQueries = nsTHashSet<nsURIHashKey>;
+  using PendingVisitedResults = nsTArray<mozilla::dom::VisitedQueryResult>;
 
   
   
-  virtual void StartPendingVisitedQueries(PendingVisitedQueries&&) = 0;
+  virtual void StartPendingVisitedQueries(const PendingVisitedQueries&) = 0;
 
  private:
+  void ScheduleVisitedQuery(nsIURI*);
+
   
   
   void CancelVisitedQueryIfPossible(nsIURI*);
