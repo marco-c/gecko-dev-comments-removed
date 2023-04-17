@@ -2249,6 +2249,18 @@ class EditorBase : public nsIEditor,
 
 
 
+  nsresult ComputeValueInternal(const nsAString& aFormatType,
+                                uint32_t aDocumentEncoderFlags,
+                                nsAString& aOutputString) const;
+
+  
+
+
+
+
+
+
+
 
   already_AddRefed<nsIDocumentEncoder> GetAndInitDocEncoder(
       const nsAString& aFormatType, uint32_t aDocumentEncoderFlags,

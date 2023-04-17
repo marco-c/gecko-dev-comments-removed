@@ -526,18 +526,6 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-
-
-
-
-  nsresult ComputeValueInternal(const nsAString& aFormatType,
-                                uint32_t aDocumentEncoderFlags,
-                                nsAString& aOutputString) const;
-
-  
-
-
-
   virtual nsresult PrepareTransferable(nsITransferable** transferable);
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult

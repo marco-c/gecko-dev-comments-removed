@@ -832,19 +832,13 @@ EditActionResult TextEditor::HandleDeleteSelectionInternal(
 EditActionResult TextEditor::ComputeValueFromTextNodeAndPaddingBRElement(
     nsAString& aValue) const {
   MOZ_ASSERT(IsEditActionDataAvailable());
+  MOZ_ASSERT(!IsHTMLEditor());
 
   
   
   if (mPaddingBRElementForEmptyEditor) {
     aValue.Truncate();
     return EditActionHandled();
-  }
-
-  
-  
-  
-  if (AsHTMLEditor()) {
-    return EditActionIgnored();
   }
 
   Element* anonymousDivElement = GetRoot();
