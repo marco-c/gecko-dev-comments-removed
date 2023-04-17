@@ -481,8 +481,7 @@ static inline void CreateAndStartTimer(nsCOMPtr<nsITimer>& aTimer,
 void nsHttpTransaction::OnPendingQueueInserted() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
-  
-  if (mConnInfo->IsHttp3() && !mOrigConnInfo) {
+  if (mConnInfo->IsHttp3() && !mResolver) {
     
     if (!mHttp3BackupTimerCreated) {
       CreateAndStartTimer(mHttp3BackupTimer, this,
@@ -1213,11 +1212,7 @@ nsHttpTransaction::PrepareFastFallbackConnInfo(bool aEchConfigUsed) {
       return nullptr;
     }
 
-    if (mOrigConnInfo->IsHttp3()) {
-      mOrigConnInfo->CloneAsDirectRoute(getter_AddRefs(fallbackConnInfo));
-    } else {
-      fallbackConnInfo = mOrigConnInfo;
-    }
+    fallbackConnInfo = mOrigConnInfo;
     return fallbackConnInfo.forget();
   }
 
@@ -1237,27 +1232,13 @@ void nsHttpTransaction::PrepareConnInfoForRetry(nsresult aReason) {
 
   if (mFastFallbackTriggered) {
     mFastFallbackTriggered = false;
-    MOZ_ASSERT(mBackupConnInfo);
-    mConnInfo.swap(mBackupConnInfo);
+    mConnInfo = PrepareFastFallbackConnInfo(echConfigUsed);
     return;
   }
 
-  auto useOrigConnInfoToRetry = [&]() {
-    mOrigConnInfo.swap(mConnInfo);
-    if (mConnInfo->IsHttp3() &&
-        ((mCaps & NS_HTTP_DISALLOW_HTTP3) ||
-         gHttpHandler->IsHttp3Excluded(mConnInfo->GetRoutedHost().IsEmpty()
-                                           ? mConnInfo->GetOrigin()
-                                           : mConnInfo->GetRoutedHost()))) {
-      RefPtr<nsHttpConnectionInfo> ci;
-      mConnInfo->CloneAsDirectRoute(getter_AddRefs(ci));
-      mConnInfo = ci;
-    }
-  };
-
   if (!echConfigUsed) {
     LOG((" echConfig is not used, fallback to origin conn info"));
-    useOrigConnInfoToRetry();
+    mOrigConnInfo.swap(mConnInfo);
     return;
   }
 
@@ -1321,7 +1302,7 @@ void nsHttpTransaction::PrepareConnInfoForRetry(nsresult aReason) {
                allRecordsHaveEchConfig));
           if (gHttpHandler->FallbackToOriginIfConfigsAreECHAndAllFailed() ||
               !allRecordsHaveEchConfig) {
-            useOrigConnInfoToRetry();
+            mOrigConnInfo.swap(mConnInfo);
           }
           return;
         }
@@ -1332,7 +1313,7 @@ void nsHttpTransaction::PrepareConnInfoForRetry(nsresult aReason) {
              mAllRecordsInH3ExcludedListBefore));
         if (gHttpHandler->FallbackToOriginIfConfigsAreECHAndAllFailed() &&
             !mAllRecordsInH3ExcludedListBefore) {
-          useOrigConnInfoToRetry();
+          mOrigConnInfo.swap(mConnInfo);
         }
         return;
       }
@@ -2547,8 +2528,6 @@ void nsHttpTransaction::DisableSpdy() {
 void nsHttpTransaction::DisableHttp3() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
-  mCaps |= NS_HTTP_DISALLOW_HTTP3;
-
   
   
   
@@ -2559,6 +2538,7 @@ void nsHttpTransaction::DisableHttp3() {
     return;
   }
 
+  mCaps |= NS_HTTP_DISALLOW_HTTP3;
   MOZ_ASSERT(mConnInfo);
   if (mConnInfo) {
     
@@ -3152,7 +3132,7 @@ nsresult nsHttpTransaction::OnHTTPSRRAvailable(
 
   RefPtr<nsHttpConnectionInfo> newInfo =
       mConnInfo->CloneAndAdoptHTTPSSVCRecord(svcbRecord);
-  bool needFastFallback = newInfo->IsHttp3();
+  bool needFastFallback = !mConnInfo->IsHttp3() && newInfo->IsHttp3();
   if (!gHttpHandler->ConnMgr()->MoveTransToNewConnEntry(this, newInfo)) {
     
     
@@ -3161,9 +3141,6 @@ nsresult nsHttpTransaction::OnHTTPSRRAvailable(
     
     UpdateConnectionInfo(newInfo);
   }
-
-  
-  MaybeCancelFallbackTimer();
 
   if (needFastFallback) {
     CreateAndStartTimer(
@@ -3209,17 +3186,12 @@ void nsHttpTransaction::MaybeCancelFallbackTimer() {
   }
 }
 
-void nsHttpTransaction::OnBackupConnectionReady(bool aTriggeredByHTTPSRR) {
+void nsHttpTransaction::OnBackupConnectionReady(bool aHTTPSRRUsed) {
   LOG(
       ("nsHttpTransaction::OnBackupConnectionReady [%p] mConnected=%d "
-       "aTriggeredByHTTPSRR=%d",
-       this, mConnected, aTriggeredByHTTPSRR));
+       "aHTTPSRRUsed=%d",
+       this, mConnected, aHTTPSRRUsed));
   if (mConnected || mClosed || mRestarted) {
-    return;
-  }
-
-  
-  if (!aTriggeredByHTTPSRR && mOrigConnInfo) {
     return;
   }
 
@@ -3227,12 +3199,9 @@ void nsHttpTransaction::OnBackupConnectionReady(bool aTriggeredByHTTPSRR) {
     
     
     
-    SetRestartReason(aTriggeredByHTTPSRR
-                         ? TRANSACTION_RESTART_HTTPS_RR_FAST_FALLBACK
-                         : TRANSACTION_RESTART_HTTP3_FAST_FALLBACK);
+    SetRestartReason(aHTTPSRRUsed ? TRANSACTION_RESTART_HTTPS_RR_FAST_FALLBACK
+                                  : TRANSACTION_RESTART_HTTP3_FAST_FALLBACK);
   }
-
-  mCaps |= NS_HTTP_DISALLOW_HTTP3;
 
   
   
@@ -3241,38 +3210,19 @@ void nsHttpTransaction::OnBackupConnectionReady(bool aTriggeredByHTTPSRR) {
   HandleFallback(mBackupConnInfo);
   mOrigConnInfo.swap(backup);
 
+  
+  
+  if (!aHTTPSRRUsed) {
+    mCaps |= NS_HTTP_DISALLOW_HTTP3;
+  }
   RemoveAlternateServiceUsedHeader(mRequestHead);
 
-  if (mResolver) {
-    if (mBackupConnInfo) {
-      const nsCString& host = mBackupConnInfo->GetRoutedHost().IsEmpty()
-                                  ? mBackupConnInfo->GetOrigin()
-                                  : mBackupConnInfo->GetRoutedHost();
-      mResolver->PrefetchAddrRecord(host, Caps() & NS_HTTP_REFRESH_DNS);
-    }
-
-    if (!aTriggeredByHTTPSRR) {
-      
-      
-      mResolver->Close();
-      mResolver = nullptr;
-    }
+  if (mResolver && mBackupConnInfo) {
+    const nsCString& host = mBackupConnInfo->GetRoutedHost().IsEmpty()
+                                ? mBackupConnInfo->GetOrigin()
+                                : mBackupConnInfo->GetRoutedHost();
+    mResolver->PrefetchAddrRecord(host, Caps() & NS_HTTP_REFRESH_DNS);
   }
-}
-
-static void CreateBackupConnection(
-    nsHttpConnectionInfo* aBackupConnInfo, nsIInterfaceRequestor* aCallbacks,
-    uint32_t aCaps, std::function<void(bool)>&& aResultCallback) {
-  RefPtr<SpeculativeTransaction> trans = new SpeculativeTransaction(
-      aBackupConnInfo, aCallbacks, aCaps | NS_HTTP_DISALLOW_HTTP3,
-      std::move(aResultCallback));
-  uint32_t limit =
-      StaticPrefs::network_http_http3_parallel_fallback_conn_limit();
-  if (limit) {
-    trans->SetParallelSpeculativeConnectLimit(limit);
-    trans->SetIgnoreIdle(true);
-  }
-  gHttpHandler->ConnMgr()->DoSpeculativeConnection(trans, false);
 }
 
 void nsHttpTransaction::OnHttp3BackupTimer() {
@@ -3292,8 +3242,10 @@ void nsHttpTransaction::OnHttp3BackupTimer() {
     }
   };
 
-  CreateBackupConnection(mBackupConnInfo, mCallbacks, mCaps,
-                         std::move(callback));
+  RefPtr<SpeculativeTransaction> trans = new SpeculativeTransaction(
+      mBackupConnInfo, mCallbacks, mCaps | NS_HTTP_DISALLOW_HTTP3,
+      std::move(callback));
+  gHttpHandler->ConnMgr()->DoSpeculativeConnection(trans, false);
 }
 
 void nsHttpTransaction::OnFastFallbackTimer() {
@@ -3327,8 +3279,10 @@ void nsHttpTransaction::OnFastFallbackTimer() {
     self->OnBackupConnectionReady(true);
   };
 
-  CreateBackupConnection(mBackupConnInfo, mCallbacks, mCaps,
-                         std::move(callback));
+  RefPtr<SpeculativeTransaction> trans = new SpeculativeTransaction(
+      mBackupConnInfo, mCallbacks, mCaps | NS_HTTP_DISALLOW_HTTP3,
+      std::move(callback));
+  gHttpHandler->ConnMgr()->DoSpeculativeConnection(trans, false);
 }
 
 void nsHttpTransaction::HandleFallback(
