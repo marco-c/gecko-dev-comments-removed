@@ -8624,6 +8624,11 @@ static MouseButton PenFlagsToMouseButton(PEN_FLAGS aPenFlags) {
 }
 
 bool nsWindow::OnPointerEvents(UINT msg, WPARAM aWParam, LPARAM aLParam) {
+  if (!mAPZC) {
+    
+    
+    return false;
+  }
   if (!mPointerEvents.ShouldHandleWinPointerMessages(msg, aWParam)) {
     return false;
   }
