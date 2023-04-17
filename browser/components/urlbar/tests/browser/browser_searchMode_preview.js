@@ -9,18 +9,13 @@
 
 const TEST_ENGINE_NAME = "Test";
 
-let win;
-
 add_task(async function setup() {
-  win = await BrowserTestUtils.openNewBrowserWindow();
-
   await SearchTestUtils.installSearchExtension({
     name: TEST_ENGINE_NAME,
     keyword: "@test",
   });
 
   registerCleanupFunction(async () => {
-    await BrowserTestUtils.closeWindow(win);
     await PlacesUtils.history.clear();
   });
 });
@@ -54,15 +49,15 @@ function getExpectedSearchMode(button, isPreview = true) {
 
 add_task(async function tokenAlias() {
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window: win,
+    window,
     value: "@",
   });
 
   let result;
-  while (win.gURLBar.searchMode?.engineName != TEST_ENGINE_NAME) {
-    EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
-    let index = UrlbarTestUtils.getSelectedRowIndex(win);
-    result = await UrlbarTestUtils.getDetailsOfResultAt(win, index);
+  while (gURLBar.searchMode?.engineName != TEST_ENGINE_NAME) {
+    EventUtils.synthesizeKey("KEY_ArrowDown", {}, window);
+    let index = UrlbarTestUtils.getSelectedRowIndex(window);
+    result = await UrlbarTestUtils.getDetailsOfResultAt(window, index);
     let expectedSearchMode = {
       engineName: result.searchParams.engine,
       isPreview: true,
@@ -72,44 +67,44 @@ add_task(async function tokenAlias() {
     if (engine.isGeneralPurposeEngine) {
       expectedSearchMode.source = UrlbarUtils.RESULT_SOURCE.SEARCH;
     }
-    await UrlbarTestUtils.assertSearchMode(win, expectedSearchMode);
+    await UrlbarTestUtils.assertSearchMode(window, expectedSearchMode);
   }
-  let searchPromise = UrlbarTestUtils.promiseSearchComplete(win);
-  EventUtils.synthesizeKey("KEY_Enter", {}, win);
+  let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
+  EventUtils.synthesizeKey("KEY_Enter");
   await searchPromise;
   
-  await UrlbarTestUtils.assertSearchMode(win, {
+  await UrlbarTestUtils.assertSearchMode(window, {
     engineName: result.searchParams.engine,
     entry: "keywordoffer",
   });
-  await UrlbarTestUtils.exitSearchMode(win);
+  await UrlbarTestUtils.exitSearchMode(window);
 });
 
 
 
 add_task(async function startTyping() {
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window: win,
+    window,
     value: "@",
   });
-  while (win.gURLBar.searchMode?.engineName != TEST_ENGINE_NAME) {
-    EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
+  while (gURLBar.searchMode?.engineName != TEST_ENGINE_NAME) {
+    EventUtils.synthesizeKey("KEY_ArrowDown", {}, window);
   }
 
-  await UrlbarTestUtils.assertSearchMode(win, {
+  await UrlbarTestUtils.assertSearchMode(window, {
     engineName: TEST_ENGINE_NAME,
     isPreview: true,
     entry: "keywordoffer",
   });
 
-  let searchPromise = UrlbarTestUtils.promiseSearchComplete(win);
-  EventUtils.synthesizeKey("M", {}, win);
+  let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
+  EventUtils.synthesizeKey("M");
   await searchPromise;
-  await UrlbarTestUtils.assertSearchMode(win, {
+  await UrlbarTestUtils.assertSearchMode(window, {
     engineName: TEST_ENGINE_NAME,
     entry: "keywordoffer",
   });
-  await UrlbarTestUtils.exitSearchMode(win);
+  await UrlbarTestUtils.exitSearchMode(window);
 });
 
 
@@ -122,75 +117,75 @@ add_task(async function topSites() {
     true
   );
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window: win,
+    window,
     value: "",
     fireInputEvent: true,
   });
 
   
-  EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
-  let searchTopSite = await UrlbarTestUtils.getDetailsOfResultAt(win, 0);
-  await UrlbarTestUtils.assertSearchMode(win, {
+  EventUtils.synthesizeKey("KEY_ArrowDown", {}, window);
+  let searchTopSite = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+  await UrlbarTestUtils.assertSearchMode(window, {
     engineName: searchTopSite.searchParams.engine,
     isPreview: true,
     entry: "topsites_urlbar",
   });
-  await UrlbarTestUtils.exitSearchMode(win);
+  await UrlbarTestUtils.exitSearchMode(window);
 });
 
 
 add_task(async function closeView() {
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window: win,
+    window,
     value: "@",
   });
 
-  while (win.gURLBar.searchMode?.engineName != TEST_ENGINE_NAME) {
-    EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
+  while (gURLBar.searchMode?.engineName != TEST_ENGINE_NAME) {
+    EventUtils.synthesizeKey("KEY_ArrowDown", {}, window);
   }
-  await UrlbarTestUtils.assertSearchMode(win, {
+  await UrlbarTestUtils.assertSearchMode(window, {
     engineName: TEST_ENGINE_NAME,
     isPreview: true,
     entry: "keywordoffer",
   });
 
   
-  await UrlbarTestUtils.promisePopupClose(win, () => win.gURLBar.blur());
-  await UrlbarTestUtils.assertSearchMode(win, null);
+  await UrlbarTestUtils.promisePopupClose(window, () => gURLBar.blur());
+  await UrlbarTestUtils.assertSearchMode(window, null);
 
   
-  await UrlbarTestUtils.promisePopupOpen(win, () => {
-    if (win.gURLBar.getAttribute("pageproxystate") == "invalid") {
-      win.gURLBar.handleRevert();
+  await UrlbarTestUtils.promisePopupOpen(window, () => {
+    if (gURLBar.getAttribute("pageproxystate") == "invalid") {
+      gURLBar.handleRevert();
     }
-    EventUtils.synthesizeMouseAtCenter(win.gURLBar.inputField, {}, win);
+    EventUtils.synthesizeMouseAtCenter(gURLBar.inputField, {});
   });
-  await UrlbarTestUtils.assertSearchMode(win, null);
-  await UrlbarTestUtils.promisePopupClose(win);
+  await UrlbarTestUtils.assertSearchMode(window, null);
+  await UrlbarTestUtils.promisePopupClose(window);
 });
 
 
 add_task(async function tabSwitch() {
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window: win,
+    window,
     value: "@",
   });
 
-  while (win.gURLBar.searchMode?.engineName != TEST_ENGINE_NAME) {
-    EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
+  while (gURLBar.searchMode?.engineName != TEST_ENGINE_NAME) {
+    EventUtils.synthesizeKey("KEY_ArrowDown", {}, window);
   }
-  await UrlbarTestUtils.assertSearchMode(win, {
+  await UrlbarTestUtils.assertSearchMode(window, {
     engineName: TEST_ENGINE_NAME,
     isPreview: true,
     entry: "keywordoffer",
   });
 
   
-  let tab1 = win.gBrowser.selectedTab;
-  let tab2 = await BrowserTestUtils.openNewForegroundTab(win.gBrowser);
-  await BrowserTestUtils.switchTab(win.gBrowser, tab1);
+  let tab1 = gBrowser.selectedTab;
+  let tab2 = await BrowserTestUtils.openNewForegroundTab(gBrowser);
+  await BrowserTestUtils.switchTab(gBrowser, tab1);
 
-  await UrlbarTestUtils.assertSearchMode(win, null);
+  await UrlbarTestUtils.assertSearchMode(window, null);
   BrowserTestUtils.removeTab(tab2);
 });
 
@@ -198,44 +193,44 @@ add_task(async function tabSwitch() {
 
 add_task(async function oneOff_downArrow() {
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window: win,
+    window,
     value: "",
   });
-  let oneOffs = UrlbarTestUtils.getOneOffSearchButtons(win);
+  let oneOffs = UrlbarTestUtils.getOneOffSearchButtons(window);
   await TestUtils.waitForCondition(
     () => !oneOffs._rebuilding,
     "Waiting for one-offs to finish rebuilding"
   );
-  let resultCount = UrlbarTestUtils.getResultCount(win);
+  let resultCount = UrlbarTestUtils.getResultCount(window);
 
   
   for (let i = 0; i < resultCount; i++) {
-    EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
+    EventUtils.synthesizeKey("KEY_ArrowDown");
   }
 
   
-  EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
+  EventUtils.synthesizeKey("KEY_ArrowDown");
 
   
-  while (oneOffs.selectedButton != oneOffs.settingsButton) {
+  while (oneOffs.selectedButton != oneOffs.settingsButtonCompact) {
     await UrlbarTestUtils.assertSearchMode(
-      win,
+      window,
       getExpectedSearchMode(oneOffs.selectedButton)
     );
-    EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
+    EventUtils.synthesizeKey("KEY_ArrowDown");
   }
 
   
   Assert.equal(
     oneOffs.selectedButton,
-    oneOffs.settingsButton,
+    oneOffs.settingsButtonCompact,
     "The settings button is selected."
   );
-  await UrlbarTestUtils.assertSearchMode(win, null);
+  await UrlbarTestUtils.assertSearchMode(window, null);
 
   
-  await UrlbarTestUtils.promisePopupClose(win);
-  await UrlbarTestUtils.assertSearchMode(win, null);
+  await UrlbarTestUtils.promisePopupClose(window);
+  await UrlbarTestUtils.assertSearchMode(window, null);
 });
 
 
@@ -257,85 +252,85 @@ add_task(async function oneOff_alt_downArrow() {
   );
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window: win,
+    window,
     value: "",
   });
-  let oneOffs = UrlbarTestUtils.getOneOffSearchButtons(win);
+  let oneOffs = UrlbarTestUtils.getOneOffSearchButtons(window);
   await TestUtils.waitForCondition(
     () => !oneOffs._rebuilding,
     "Waiting for one-offs to finish rebuilding"
   );
 
   
-  EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
-  let searchTopSite = await UrlbarTestUtils.getDetailsOfResultAt(win, 0);
-  await UrlbarTestUtils.assertSearchMode(win, {
+  EventUtils.synthesizeKey("KEY_ArrowDown");
+  let searchTopSite = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+  await UrlbarTestUtils.assertSearchMode(window, {
     engineName: searchTopSite.searchParams.engine,
     isPreview: true,
     entry: "topsites_urlbar",
   });
 
   
-  EventUtils.synthesizeKey("KEY_ArrowDown", { altKey: true }, win);
+  EventUtils.synthesizeKey("KEY_ArrowDown", { altKey: true });
   
   while (oneOffs.selectedButton) {
     await UrlbarTestUtils.assertSearchMode(
-      win,
+      window,
       getExpectedSearchMode(oneOffs.selectedButton)
     );
-    EventUtils.synthesizeKey("KEY_ArrowDown", { altKey: true }, win);
+    EventUtils.synthesizeKey("KEY_ArrowDown", { altKey: true });
   }
 
   
   
-  EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
+  EventUtils.synthesizeKey("KEY_ArrowDown");
   Assert.equal(
-    UrlbarTestUtils.getSelectedRowIndex(win),
+    UrlbarTestUtils.getSelectedRowIndex(window),
     1,
     "The second result is selected."
   );
-  await UrlbarTestUtils.assertSearchMode(win, null);
+  await UrlbarTestUtils.assertSearchMode(window, null);
 
   
-  EventUtils.synthesizeKey("KEY_ArrowUp", {}, win);
-  await UrlbarTestUtils.assertSearchMode(win, {
+  EventUtils.synthesizeKey("KEY_ArrowUp");
+  await UrlbarTestUtils.assertSearchMode(window, {
     engineName: searchTopSite.searchParams.engine,
     isPreview: true,
     entry: "topsites_urlbar",
   });
 
   await PlacesUtils.history.clear();
-  await UrlbarTestUtils.promisePopupClose(win);
-  await UrlbarTestUtils.assertSearchMode(win, null);
+  await UrlbarTestUtils.promisePopupClose(window);
+  await UrlbarTestUtils.assertSearchMode(window, null);
 });
 
 
 
 add_task(async function fullSearchMode_oneOff_downArrow() {
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window: win,
+    window,
     value: "",
   });
-  let oneOffs = UrlbarTestUtils.getOneOffSearchButtons(win);
+  let oneOffs = UrlbarTestUtils.getOneOffSearchButtons(window);
   await TestUtils.waitForCondition(
     () => !oneOffs._rebuilding,
     "Waiting for one-offs to finish rebuilding"
   );
   let oneOffButtons = oneOffs.getSelectableButtons(true);
 
-  await UrlbarTestUtils.enterSearchMode(win);
+  await UrlbarTestUtils.enterSearchMode(window);
   let expectedSearchMode = getExpectedSearchMode(oneOffButtons[0], false);
   
-  await UrlbarTestUtils.assertSearchMode(win, expectedSearchMode);
+  await UrlbarTestUtils.assertSearchMode(window, expectedSearchMode);
 
   
-  let resultCount = UrlbarTestUtils.getResultCount(win);
+  let resultCount = UrlbarTestUtils.getResultCount(window);
   for (let i = 0; i < resultCount; i++) {
-    EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
+    EventUtils.synthesizeKey("KEY_ArrowDown");
     
-    let result = await UrlbarTestUtils.getDetailsOfResultAt(win, i);
+    let result = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
     await UrlbarTestUtils.assertSearchMode(
-      win,
+      window,
       Object.assign(expectedSearchMode, {
         isPreview: !!result.searchParams.keyword,
       })
@@ -343,21 +338,21 @@ add_task(async function fullSearchMode_oneOff_downArrow() {
   }
 
   
-  EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
+  EventUtils.synthesizeKey("KEY_ArrowDown");
   
-  while (oneOffs.selectedButton != oneOffs.settingsButton) {
+  while (oneOffs.selectedButton != oneOffs.settingsButtonCompact) {
     await UrlbarTestUtils.assertSearchMode(
-      win,
+      window,
       getExpectedSearchMode(oneOffs.selectedButton, true)
     );
-    EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
+    EventUtils.synthesizeKey("KEY_ArrowDown");
   }
 
   
   
-  await UrlbarTestUtils.assertSearchMode(win, expectedSearchMode);
-  await UrlbarTestUtils.exitSearchMode(win);
-  await UrlbarTestUtils.promisePopupClose(win);
+  await UrlbarTestUtils.assertSearchMode(window, expectedSearchMode);
+  await UrlbarTestUtils.exitSearchMode(window);
+  await UrlbarTestUtils.promisePopupClose(window);
 });
 
 
@@ -366,25 +361,25 @@ add_task(async function fullSearchMode_oneOff_downArrow() {
 
 add_task(async function fullSearchMode_oneOff_alt_downArrow() {
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window: win,
+    window,
     value: "",
   });
-  let oneOffs = UrlbarTestUtils.getOneOffSearchButtons(win);
+  let oneOffs = UrlbarTestUtils.getOneOffSearchButtons(window);
   let oneOffButtons = oneOffs.getSelectableButtons(true);
   await TestUtils.waitForCondition(
     () => !oneOffs._rebuilding,
     "Waiting for one-offs to finish rebuilding"
   );
 
-  await UrlbarTestUtils.enterSearchMode(win);
+  await UrlbarTestUtils.enterSearchMode(window);
   let expectedSearchMode = getExpectedSearchMode(oneOffButtons[0], false);
-  await UrlbarTestUtils.assertSearchMode(win, expectedSearchMode);
+  await UrlbarTestUtils.assertSearchMode(window, expectedSearchMode);
 
   
-  EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
+  EventUtils.synthesizeKey("KEY_ArrowDown");
 
   
-  EventUtils.synthesizeKey("KEY_ArrowDown", { altKey: true }, win);
+  EventUtils.synthesizeKey("KEY_ArrowDown", { altKey: true });
   
   
   Assert.greater(
@@ -394,25 +389,25 @@ add_task(async function fullSearchMode_oneOff_alt_downArrow() {
   );
   for (let i = 1; i < oneOffButtons.length / 2; i++) {
     await UrlbarTestUtils.assertSearchMode(
-      win,
+      window,
       getExpectedSearchMode(oneOffs.selectedButton, true)
     );
-    EventUtils.synthesizeKey("KEY_ArrowDown", { altKey: true }, win);
+    EventUtils.synthesizeKey("KEY_ArrowDown", { altKey: true });
   }
   
-  await UrlbarTestUtils.exitSearchMode(win, { clickClose: true });
+  await UrlbarTestUtils.exitSearchMode(window, { clickClose: true });
   
-  EventUtils.synthesizeKey("KEY_ArrowDown", { altKey: true }, win);
+  EventUtils.synthesizeKey("KEY_ArrowDown", { altKey: true });
   while (oneOffs.selectedButton) {
     await UrlbarTestUtils.assertSearchMode(
-      win,
+      window,
       getExpectedSearchMode(oneOffs.selectedButton, true)
     );
-    EventUtils.synthesizeKey("KEY_ArrowDown", { altKey: true }, win);
+    EventUtils.synthesizeKey("KEY_ArrowDown", { altKey: true });
   }
 
-  await UrlbarTestUtils.promisePopupClose(win);
-  await UrlbarTestUtils.assertSearchMode(win, null);
+  await UrlbarTestUtils.promisePopupClose(window);
+  await UrlbarTestUtils.assertSearchMode(window, null);
 });
 
 
@@ -429,62 +424,62 @@ add_task(async function fullSearchMode_oneOff_restore_on_down() {
   await updateTopSites(sites => sites?.length > 2, false);
 
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window: win,
+    window,
     value: "",
   });
-  let oneOffs = UrlbarTestUtils.getOneOffSearchButtons(win);
+  let oneOffs = UrlbarTestUtils.getOneOffSearchButtons(window);
   let oneOffButtons = oneOffs.getSelectableButtons(true);
   await TestUtils.waitForCondition(
     () => !oneOffs._rebuilding,
     "Waiting for one-offs to finish rebuilding"
   );
 
-  await UrlbarTestUtils.enterSearchMode(win, {
+  await UrlbarTestUtils.enterSearchMode(window, {
     source: UrlbarUtils.RESULT_SOURCE.HISTORY,
   });
   let expectedSearchMode = getExpectedSearchMode(
     oneOffButtons.find(b => b.source == UrlbarUtils.RESULT_SOURCE.HISTORY),
     false
   );
-  await UrlbarTestUtils.assertSearchMode(win, expectedSearchMode);
+  await UrlbarTestUtils.assertSearchMode(window, expectedSearchMode);
   info("Down to the first result");
-  EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
-  await UrlbarTestUtils.assertSearchMode(win, expectedSearchMode);
+  EventUtils.synthesizeKey("KEY_ArrowDown");
+  await UrlbarTestUtils.assertSearchMode(window, expectedSearchMode);
   info("Alt+down to the first one-off.");
   Assert.greater(
     oneOffButtons.length,
     1,
     "Sanity check: We should have at least two one-offs."
   );
-  EventUtils.synthesizeKey("KEY_ArrowDown", { altKey: true }, win);
+  EventUtils.synthesizeKey("KEY_ArrowDown", { altKey: true });
   await UrlbarTestUtils.assertSearchMode(
-    win,
+    window,
     getExpectedSearchMode(oneOffs.selectedButton, true)
   );
   info("Go again down through the list of results");
-  EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
-  await UrlbarTestUtils.assertSearchMode(win, expectedSearchMode);
+  EventUtils.synthesizeKey("KEY_ArrowDown");
+  await UrlbarTestUtils.assertSearchMode(window, expectedSearchMode);
 
   
   info("Exit search mode.");
-  await UrlbarTestUtils.exitSearchMode(win);
+  await UrlbarTestUtils.exitSearchMode(window);
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window: win,
+    window,
     value: "",
   });
   info("Down to the first result");
-  EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
-  await UrlbarTestUtils.assertSearchMode(win, null);
+  EventUtils.synthesizeKey("KEY_ArrowDown");
+  await UrlbarTestUtils.assertSearchMode(window, null);
   info("select a one-off to start preview");
-  EventUtils.synthesizeKey("KEY_ArrowDown", { altKey: true }, win);
+  EventUtils.synthesizeKey("KEY_ArrowDown", { altKey: true });
   await UrlbarTestUtils.assertSearchMode(
-    win,
+    window,
     getExpectedSearchMode(oneOffs.selectedButton, true)
   );
   info("Go again through the list of results");
-  EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
-  await UrlbarTestUtils.assertSearchMode(win, null);
+  EventUtils.synthesizeKey("KEY_ArrowDown");
+  await UrlbarTestUtils.assertSearchMode(window, null);
 
-  await UrlbarTestUtils.promisePopupClose(win);
+  await UrlbarTestUtils.promisePopupClose(window);
   await PlacesUtils.history.clear();
 });
