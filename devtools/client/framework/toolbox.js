@@ -284,7 +284,7 @@ function Toolbox(
   this.selectedFrameId = null;
 
   
-  this._pausedThreads = new Set();
+  this._pausedTargets = 0;
 
   
 
@@ -336,8 +336,6 @@ function Toolbox(
   this.toggleOptions = this.toggleOptions.bind(this);
   this.togglePaintFlashing = this.togglePaintFlashing.bind(this);
   this.toggleDragging = this.toggleDragging.bind(this);
-  this._onPausedState = this._onPausedState.bind(this);
-  this._onResumedState = this._onResumedState.bind(this);
   this._onTargetAvailable = this._onTargetAvailable.bind(this);
   this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
   this._onResourceAvailable = this._onResourceAvailable.bind(this);
@@ -659,35 +657,44 @@ Toolbox.prototype = {
     }
   },
 
-  _onPausedState: function(packet, threadFront) {
-    
-    
-    if (packet.why.type === "interrupted") {
-      return;
-    }
+  
 
-    this.highlightTool("jsdebugger");
 
-    if (
-      packet.why.type === "debuggerStatement" ||
-      packet.why.type === "mutationBreakpoint" ||
-      packet.why.type === "eventBreakpoint" ||
-      packet.why.type === "breakpoint" ||
-      packet.why.type === "exception"
-    ) {
-      this.raise();
-      this.selectTool("jsdebugger", packet.why.type);
-      this._pausedThreads.add(threadFront);
-      this.emit("toolbox-paused");
-    }
-  },
 
-  _onResumedState: function(threadFront) {
-    this._pausedThreads.delete(threadFront);
 
-    if (this._pausedThreads.size == 0) {
-      this.emit("toolbox-resumed");
-      this.unhighlightTool("jsdebugger");
+  _onThreadStateChanged(resource) {
+    if (resource.state == "paused") {
+      const reason = resource.why.type;
+      
+      
+      if (reason === "interrupted") {
+        return;
+      }
+
+      this.highlightTool("jsdebugger");
+
+      if (
+        reason === "debuggerStatement" ||
+        reason === "mutationBreakpoint" ||
+        reason === "eventBreakpoint" ||
+        reason === "breakpoint" ||
+        reason === "exception"
+      ) {
+        this.raise();
+        this.selectTool("jsdebugger", reason);
+        
+        
+        
+        this._pausedTargets++;
+        this.emit("toolbox-paused");
+      }
+    } else if (resource.state == "resumed") {
+      this._pausedTargets--;
+
+      if (this._pausedTargets == 0) {
+        this.emit("toolbox-resumed");
+        this.unhighlightTool("jsdebugger");
+      }
     }
   },
 
@@ -713,15 +720,6 @@ Toolbox.prototype = {
     targetFront.watchFronts("inspector", async inspectorFront => {
       registerWalkerListeners(this.store, inspectorFront.walker);
     });
-
-    const { threadFront } = targetFront;
-    if (threadFront) {
-      
-      threadFront.on("paused", packet =>
-        this._onPausedState(packet, threadFront)
-      );
-      threadFront.on("resumed", () => this._onResumedState(threadFront));
-    }
 
     if (this.hostType !== Toolbox.HostType.PAGE) {
       await this.store.dispatch(registerTarget(targetFront));
@@ -828,6 +826,7 @@ Toolbox.prototype = {
           
           this.resourceCommand.TYPES.NETWORK_EVENT,
           this.resourceCommand.TYPES.DOCUMENT_EVENT,
+          this.resourceCommand.TYPES.THREAD_STATE,
         ],
         {
           onAvailable: this._onResourceAvailable,
@@ -3726,7 +3725,7 @@ Toolbox.prototype = {
     this.telemetry.toolClosed(this.currentToolId, this.sessionId, this);
 
     this._lastFocusedElement = null;
-    this._pausedThreads = null;
+    this._pausedTargets = null;
 
     if (this._sourceMapService) {
       this._sourceMapService.stopSourceMapWorker();
@@ -3791,6 +3790,7 @@ Toolbox.prototype = {
         this.resourceCommand.TYPES.ERROR_MESSAGE,
         this.resourceCommand.TYPES.NETWORK_EVENT,
         this.resourceCommand.TYPES.DOCUMENT_EVENT,
+        this.resourceCommand.TYPES.THREAD_STATE,
       ],
       { onAvailable: this._onResourceAvailable }
     );
@@ -4340,9 +4340,11 @@ Toolbox.prototype = {
   _onResourceAvailable(resources) {
     let errors = this._errorCount || 0;
 
+    const { TYPES } = this.resourceCommand;
     for (const resource of resources) {
+      const { resourceType } = resource;
       if (
-        resource.resourceType === this.resourceCommand.TYPES.ERROR_MESSAGE &&
+        resourceType === TYPES.ERROR_MESSAGE &&
         
         resource.pageError.error
       ) {
@@ -4350,9 +4352,7 @@ Toolbox.prototype = {
         continue;
       }
 
-      if (
-        resource.resourceType === this.resourceCommand.TYPES.CONSOLE_MESSAGE
-      ) {
+      if (resourceType === TYPES.CONSOLE_MESSAGE) {
         const { level } = resource.message;
         if (level === "error" || level === "exception" || level === "assert") {
           errors++;
@@ -4366,7 +4366,7 @@ Toolbox.prototype = {
 
       
       if (
-        resource.resourceType === this.resourceCommand.TYPES.DOCUMENT_EVENT &&
+        resourceType === TYPES.DOCUMENT_EVENT &&
         resource.name === "will-navigate" &&
         resource.targetFront.isTopLevel
       ) {
@@ -4378,7 +4378,7 @@ Toolbox.prototype = {
       }
 
       if (
-        resource.resourceType === this.resourceCommand.TYPES.DOCUMENT_EVENT &&
+        resourceType === TYPES.DOCUMENT_EVENT &&
         !resource.isFrameSwitching &&
         
         
@@ -4397,6 +4397,10 @@ Toolbox.prototype = {
             this._setDebugTargetData();
           }
         }, 0);
+      }
+
+      if (resourceType == TYPES.THREAD_STATE) {
+        this._onThreadStateChanged(resource);
       }
     }
 
