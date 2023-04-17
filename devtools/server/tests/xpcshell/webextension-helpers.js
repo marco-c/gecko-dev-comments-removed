@@ -32,6 +32,7 @@ async function startDebugger() {
   await client.connect();
   return client;
 }
+exports.startDebugger = startDebugger;
 
 
 

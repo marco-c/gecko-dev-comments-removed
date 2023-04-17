@@ -17,7 +17,7 @@ const {
   openAddonStoragePanel,
   shutdown,
   startupExtension,
-} = require("resource://test/helper_test_extension_storage_actor.js");
+} = require("resource://test/webextension-helpers.js");
 
 
 const { PromiseTestUtils } = ChromeUtils.import(
