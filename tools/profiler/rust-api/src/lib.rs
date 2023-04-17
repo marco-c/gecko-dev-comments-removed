@@ -3,6 +3,7 @@
 
 
 
+mod gecko_bindings;
 mod thread;
 
 pub use thread::*;
