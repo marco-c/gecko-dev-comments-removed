@@ -5631,23 +5631,23 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
         *this, Metrics().GetVisualScrollOffset(), Metrics().GetZoom(),
         endZoomToMetrics.GetVisualScrollOffset(), endZoomToMetrics.GetZoom()));
 
-    
-    
+    FrameMetrics metricsToRequestRepaintWith = Metrics();
+
     ParentLayerPoint velocity(0, 0);
     ScreenMargin displayportMargins = CalculatePendingDisplayPort(
-        endZoomToMetrics, velocity, ZoomInProgress::Yes);
-    endZoomToMetrics.SetPaintRequestTime(TimeStamp::Now());
+        metricsToRequestRepaintWith, velocity, ZoomInProgress::Yes);
+    metricsToRequestRepaintWith.SetPaintRequestTime(TimeStamp::Now());
 
     RefPtr<GeckoContentController> controller = GetGeckoContentController();
     if (!controller) {
       return;
     }
     if (controller->IsRepaintThread()) {
-      RequestContentRepaint(endZoomToMetrics, velocity, displayportMargins,
-                            RepaintUpdateType::eUserAction);
+      RequestContentRepaint(metricsToRequestRepaintWith, velocity,
+                            displayportMargins, RepaintUpdateType::eUserAction);
     } else {
       
-      mExpectedGeckoMetrics.UpdateFrom(endZoomToMetrics);
+      mExpectedGeckoMetrics.UpdateFrom(metricsToRequestRepaintWith);
 
       
       auto func = static_cast<void (AsyncPanZoomController::*)(
@@ -5657,7 +5657,7 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
           NewRunnableMethod<FrameMetrics, ParentLayerPoint, ScreenMargin,
                             RepaintUpdateType>(
               "layers::AsyncPanZoomController::ZoomToRect", this, func,
-              endZoomToMetrics, velocity, displayportMargins,
+              metricsToRequestRepaintWith, velocity, displayportMargins,
               RepaintUpdateType::eUserAction));
     }
   }
