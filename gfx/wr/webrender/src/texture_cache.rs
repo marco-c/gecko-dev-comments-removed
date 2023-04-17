@@ -1217,21 +1217,29 @@ impl TextureCache {
 
     
     
-    pub fn evict_manual_handle(&mut self, handle: &TextureCacheHandle) {
-        if let TextureCacheHandle::Manual(handle) = handle {
-            
-            
-            
-            
-            
-            let index = self.manual_handles.iter().position(|strong_handle| {
-                strong_handle.matches(handle)
-            });
-            if let Some(index) = index {
-                let handle = self.manual_handles.swap_remove(index);
-                let entry = self.manual_entries.free(handle);
-                self.evict_impl(entry);
+    pub fn evict_handle(&mut self, handle: &TextureCacheHandle) {
+        match handle {
+            TextureCacheHandle::Manual(handle) => {
+                
+                
+                
+                
+                
+                let index = self.manual_handles.iter().position(|strong_handle| {
+                    strong_handle.matches(handle)
+                });
+                if let Some(index) = index {
+                    let handle = self.manual_handles.swap_remove(index);
+                    let entry = self.manual_entries.free(handle);
+                    self.evict_impl(entry);
+                }
             }
+            TextureCacheHandle::Auto(handle) => {
+                if let Some(entry) = self.lru_cache.remove(handle) {
+                    self.evict_impl(entry);
+                }
+            }
+            _ => {}
         }
     }
 
@@ -1912,7 +1920,7 @@ mod test_texture_cache {
         assert!(bytes_after_allocating > bytes_at_start);
 
         for handle in handles {
-            texture_cache.evict_manual_handle(&handle);
+            texture_cache.evict_handle(&handle);
         }
 
         let bytes_at_end = texture_cache.total_allocated_bytes_for_testing();
