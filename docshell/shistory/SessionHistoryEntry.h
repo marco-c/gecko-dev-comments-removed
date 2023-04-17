@@ -232,8 +232,7 @@ struct LoadingSessionHistoryInfo {
   bool mLoadIsFromSessionHistory = false;
   
   
-  int32_t mRequestedIndex = -1;
-  int32_t mSessionHistoryLength = 0;
+  int32_t mOffset = 0;
   
   
   bool mLoadingCurrentActiveEntry = false;

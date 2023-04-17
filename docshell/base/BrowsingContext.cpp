@@ -3427,9 +3427,7 @@ void BrowsingContext::SessionHistoryCommit(
         }
       } else {
         
-        
-        rootSH->SetIndexAndLength(aInfo.mRequestedIndex,
-                                  aInfo.mSessionHistoryLength, changeID);
+        changeID = rootSH->AddPendingHistoryChange(aInfo.mOffset, 0);
       }
     }
     ContentChild* cc = ContentChild::GetSingleton();
