@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/StaticPrefs_dom.h"
 #include "XRNativeOriginLocalFloor.h"
 #include "VRDisplayClient.h"
 
@@ -19,9 +20,7 @@ XRNativeOriginLocalFloor::XRNativeOriginLocalFloor(
   
   
   
-  
-  
-  const double kFloorFuzz = 0.05f;  
+  const double kFloorFuzz = StaticPrefs::dom_vr_webxr_quantization();  
   mFloorRandom = double(rand()) / double(RAND_MAX) * kFloorFuzz;
 }
 
