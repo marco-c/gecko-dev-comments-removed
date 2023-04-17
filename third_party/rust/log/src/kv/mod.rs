@@ -13,11 +13,14 @@
 
 
 mod error;
-mod source;
 mod key;
+pub mod source;
+
 pub mod value;
 
 pub use self::error::Error;
-pub use self::source::{Source, Visitor};
 pub use self::key::{Key, ToKey};
-pub use self::value::{Value, ToValue};
+pub use self::source::{Source, Visitor};
+
+#[doc(inline)]
+pub use self::value::{ToValue, Value};

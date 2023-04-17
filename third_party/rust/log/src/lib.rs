@@ -263,11 +263,10 @@
 
 
 
-
 #![doc(
     html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
     html_favicon_url = "https://www.rust-lang.org/favicon.ico",
-    html_root_url = "https://docs.rs/log/0.4.8"
+    html_root_url = "https://docs.rs/log/0.4.14"
 )]
 #![warn(missing_docs)]
 #![deny(missing_debug_implementations)]
@@ -289,13 +288,6 @@ use std::error;
 use std::fmt;
 use std::mem;
 use std::str::FromStr;
-use std::sync::atomic::{AtomicUsize, Ordering};
-
-
-
-
-#[allow(deprecated)]
-use std::sync::atomic::ATOMIC_USIZE_INIT;
 
 #[macro_use]
 mod macros;
@@ -304,12 +296,59 @@ mod serde;
 #[cfg(feature = "kv_unstable")]
 pub mod kv;
 
+#[cfg(has_atomics)]
+use std::sync::atomic::{AtomicUsize, Ordering};
+
+#[cfg(not(has_atomics))]
+use std::cell::Cell;
+#[cfg(not(has_atomics))]
+use std::sync::atomic::Ordering;
+
+#[cfg(not(has_atomics))]
+struct AtomicUsize {
+    v: Cell<usize>,
+}
+
+#[cfg(not(has_atomics))]
+impl AtomicUsize {
+    const fn new(v: usize) -> AtomicUsize {
+        AtomicUsize { v: Cell::new(v) }
+    }
+
+    fn load(&self, _order: Ordering) -> usize {
+        self.v.get()
+    }
+
+    fn store(&self, val: usize, _order: Ordering) {
+        self.v.set(val)
+    }
+
+    #[cfg(atomic_cas)]
+    fn compare_exchange(
+        &self,
+        current: usize,
+        new: usize,
+        _success: Ordering,
+        _failure: Ordering,
+    ) -> Result<usize, usize> {
+        let prev = self.v.get();
+        if current == prev {
+            self.v.set(new);
+        }
+        Ok(prev)
+    }
+}
 
 
-static mut LOGGER: &'static Log = &NopLogger;
 
-#[allow(deprecated)]
-static STATE: AtomicUsize = ATOMIC_USIZE_INIT;
+#[cfg(not(has_atomics))]
+unsafe impl Sync for AtomicUsize {}
+
+
+
+static mut LOGGER: &dyn Log = &NopLogger;
+
+static STATE: AtomicUsize = AtomicUsize::new(0);
 
 
 
@@ -318,14 +357,13 @@ const UNINITIALIZED: usize = 0;
 const INITIALIZING: usize = 1;
 const INITIALIZED: usize = 2;
 
-#[allow(deprecated)]
-static MAX_LOG_LEVEL_FILTER: AtomicUsize = ATOMIC_USIZE_INIT;
+static MAX_LOG_LEVEL_FILTER: AtomicUsize = AtomicUsize::new(0);
 
-static LOG_LEVEL_NAMES: [&'static str; 6] = ["OFF", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"];
+static LOG_LEVEL_NAMES: [&str; 6] = ["OFF", "ERROR", "WARN", "INFO", "DEBUG", "TRACE"];
 
-static SET_LOGGER_ERROR: &'static str = "attempted to set a logger after the logging system \
-                                         was already initialized";
-static LEVEL_PARSE_ERROR: &'static str =
+static SET_LOGGER_ERROR: &str = "attempted to set a logger after the logging system \
+                                 was already initialized";
+static LEVEL_PARSE_ERROR: &str =
     "attempted to convert a string that doesn't match an existing log level";
 
 
@@ -340,7 +378,10 @@ pub enum Level {
     
     
     
-    Error = 1, 
+    
+    
+    
+    Error = 1,
     
     
     
@@ -485,7 +526,7 @@ impl FromStr for Level {
 
 impl fmt::Display for Level {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt.pad(LOG_LEVEL_NAMES[*self as usize])
+        fmt.pad(self.as_str())
     }
 }
 
@@ -511,6 +552,13 @@ impl Level {
     #[inline]
     pub fn to_level_filter(&self) -> LevelFilter {
         LevelFilter::from_usize(*self as usize).unwrap()
+    }
+
+    
+    
+    
+    pub fn as_str(&self) -> &'static str {
+        LOG_LEVEL_NAMES[*self as usize]
     }
 }
 
@@ -638,7 +686,7 @@ impl FromStr for LevelFilter {
 
 impl fmt::Display for LevelFilter {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt.pad(LOG_LEVEL_NAMES[*self as usize])
+        fmt.pad(self.as_str())
     }
 }
 
@@ -666,6 +714,13 @@ impl LevelFilter {
     #[inline]
     pub fn to_level(&self) -> Option<Level> {
         Level::from_usize(*self as usize)
+    }
+
+    
+    
+    
+    pub fn as_str(&self) -> &'static str {
+        LOG_LEVEL_NAMES[*self as usize]
     }
 }
 
@@ -747,13 +802,13 @@ pub struct Record<'a> {
 
 #[cfg(feature = "kv_unstable")]
 #[derive(Clone)]
-struct KeyValues<'a>(&'a kv::Source);
+struct KeyValues<'a>(&'a dyn kv::Source);
 
 #[cfg(feature = "kv_unstable")]
 impl<'a> fmt::Debug for KeyValues<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut visitor = f.debug_map();
-        self.0.visit(&mut visitor)?;
+        self.0.visit(&mut visitor).map_err(|_| fmt::Error)?;
         visitor.finish()
     }
 }
@@ -828,7 +883,7 @@ impl<'a> Record<'a> {
     
     #[cfg(feature = "kv_unstable")]
     #[inline]
-    pub fn key_values(&self) -> &kv::Source {
+    pub fn key_values(&self) -> &dyn kv::Source {
         self.key_values.0
     }
 
@@ -847,7 +902,7 @@ impl<'a> Record<'a> {
                 file: self.file,
                 line: self.line,
                 key_values: self.key_values.clone(),
-            }
+            },
         }
     }
 }
@@ -912,28 +967,17 @@ impl<'a> RecordBuilder<'a> {
     
     #[inline]
     pub fn new() -> RecordBuilder<'a> {
-        #[cfg(feature = "kv_unstable")]
-        return RecordBuilder {
+        RecordBuilder {
             record: Record {
                 args: format_args!(""),
                 metadata: Metadata::builder().build(),
                 module_path: None,
                 file: None,
                 line: None,
+                #[cfg(feature = "kv_unstable")]
                 key_values: KeyValues(&Option::None::<(kv::Key, kv::Value)>),
             },
-        };
-
-        #[cfg(not(feature = "kv_unstable"))]
-        return RecordBuilder {
-            record: Record {
-                args: format_args!(""),
-                metadata: Metadata::builder().build(),
-                module_path: None,
-                file: None,
-                line: None,
-            },
-        };
+        }
     }
 
     
@@ -1002,7 +1046,7 @@ impl<'a> RecordBuilder<'a> {
     
     #[cfg(feature = "kv_unstable")]
     #[inline]
-    pub fn key_values(&mut self, kvs: &'a kv::Source) -> &mut RecordBuilder<'a> {
+    pub fn key_values(&mut self, kvs: &'a dyn kv::Source) -> &mut RecordBuilder<'a> {
         self.record.key_values = KeyValues(kvs);
         self
     }
@@ -1170,6 +1214,23 @@ impl Log for NopLogger {
     fn flush(&self) {}
 }
 
+#[cfg(feature = "std")]
+impl<T> Log for std::boxed::Box<T>
+where
+    T: ?Sized + Log,
+{
+    fn enabled(&self, metadata: &Metadata) -> bool {
+        self.as_ref().enabled(metadata)
+    }
+
+    fn log(&self, record: &Record) {
+        self.as_ref().log(record)
+    }
+    fn flush(&self) {
+        self.as_ref().flush()
+    }
+}
+
 
 
 
@@ -1193,6 +1254,12 @@ pub fn set_max_level(level: LevelFilter) {
 
 #[inline(always)]
 pub fn max_level() -> LevelFilter {
+    
+    
+    
+    
+    
+    
     unsafe { mem::transmute(MAX_LOG_LEVEL_FILTER.load(Ordering::Relaxed)) }
 }
 
@@ -1210,8 +1277,8 @@ pub fn max_level() -> LevelFilter {
 
 
 #[cfg(all(feature = "std", atomic_cas))]
-pub fn set_boxed_logger(logger: Box<Log>) -> Result<(), SetLoggerError> {
-    set_logger_inner(|| unsafe { &*Box::into_raw(logger) })
+pub fn set_boxed_logger(logger: Box<dyn Log>) -> Result<(), SetLoggerError> {
+    set_logger_inner(|| Box::leak(logger))
 }
 
 
@@ -1268,28 +1335,38 @@ pub fn set_boxed_logger(logger: Box<Log>) -> Result<(), SetLoggerError> {
 
 
 #[cfg(atomic_cas)]
-pub fn set_logger(logger: &'static Log) -> Result<(), SetLoggerError> {
+pub fn set_logger(logger: &'static dyn Log) -> Result<(), SetLoggerError> {
     set_logger_inner(|| logger)
 }
 
 #[cfg(atomic_cas)]
 fn set_logger_inner<F>(make_logger: F) -> Result<(), SetLoggerError>
 where
-    F: FnOnce() -> &'static Log,
+    F: FnOnce() -> &'static dyn Log,
 {
-    unsafe {
-        match STATE.compare_and_swap(UNINITIALIZED, INITIALIZING, Ordering::SeqCst) {
-            UNINITIALIZED => {
+    let old_state = match STATE.compare_exchange(
+        UNINITIALIZED,
+        INITIALIZING,
+        Ordering::SeqCst,
+        Ordering::SeqCst,
+    ) {
+        Ok(s) | Err(s) => s,
+    };
+    match old_state {
+        UNINITIALIZED => {
+            unsafe {
                 LOGGER = make_logger();
-                STATE.store(INITIALIZED, Ordering::SeqCst);
-                Ok(())
             }
-            INITIALIZING => {
-                while STATE.load(Ordering::SeqCst) == INITIALIZING {}
-                Err(SetLoggerError(()))
-            }
-            _ => Err(SetLoggerError(())),
+            STATE.store(INITIALIZED, Ordering::SeqCst);
+            Ok(())
         }
+        INITIALIZING => {
+            while STATE.load(Ordering::SeqCst) == INITIALIZING {
+                std::sync::atomic::spin_loop_hint();
+            }
+            Err(SetLoggerError(()))
+        }
+        _ => Err(SetLoggerError(())),
     }
 }
 
@@ -1312,7 +1389,7 @@ where
 
 
 
-pub unsafe fn set_logger_racy(logger: &'static Log) -> Result<(), SetLoggerError> {
+pub unsafe fn set_logger_racy(logger: &'static dyn Log) -> Result<(), SetLoggerError> {
     match STATE.load(Ordering::SeqCst) {
         UNINITIALIZED => {
             LOGGER = logger;
@@ -1342,11 +1419,7 @@ impl fmt::Display for SetLoggerError {
 
 
 #[cfg(feature = "std")]
-impl error::Error for SetLoggerError {
-    fn description(&self) -> &str {
-        SET_LOGGER_ERROR
-    }
-}
+impl error::Error for SetLoggerError {}
 
 
 
@@ -1363,23 +1436,17 @@ impl fmt::Display for ParseLevelError {
 
 
 #[cfg(feature = "std")]
-impl error::Error for ParseLevelError {
-    fn description(&self) -> &str {
-        LEVEL_PARSE_ERROR
-    }
-}
+impl error::Error for ParseLevelError {}
 
 
 
 
-pub fn logger() -> &'static Log {
-    unsafe {
-        if STATE.load(Ordering::SeqCst) != INITIALIZED {
-            static NOP: NopLogger = NopLogger;
-            &NOP
-        } else {
-            LOGGER
-        }
+pub fn logger() -> &'static dyn Log {
+    if STATE.load(Ordering::SeqCst) != INITIALIZED {
+        static NOP: NopLogger = NopLogger;
+        &NOP
+    } else {
+        unsafe { LOGGER }
     }
 }
 
@@ -1497,6 +1564,20 @@ mod tests {
     }
 
     #[test]
+    fn test_level_as_str() {
+        let tests = &[
+            (Level::Error, "ERROR"),
+            (Level::Warn, "WARN"),
+            (Level::Info, "INFO"),
+            (Level::Debug, "DEBUG"),
+            (Level::Trace, "TRACE"),
+        ];
+        for (input, expected) in tests {
+            assert_eq!(*expected, input.as_str());
+        }
+    }
+
+    #[test]
     fn test_level_show() {
         assert_eq!("INFO", Level::Info.to_string());
         assert_eq!("ERROR", Level::Error.to_string());
@@ -1536,13 +1617,27 @@ mod tests {
     }
 
     #[test]
+    fn test_level_filter_as_str() {
+        let tests = &[
+            (LevelFilter::Off, "OFF"),
+            (LevelFilter::Error, "ERROR"),
+            (LevelFilter::Warn, "WARN"),
+            (LevelFilter::Info, "INFO"),
+            (LevelFilter::Debug, "DEBUG"),
+            (LevelFilter::Trace, "TRACE"),
+        ];
+        for (input, expected) in tests {
+            assert_eq!(*expected, input.as_str());
+        }
+    }
+
+    #[test]
     #[cfg(feature = "std")]
     fn test_error_trait() {
         use super::SetLoggerError;
-        use std::error::Error;
         let e = SetLoggerError(());
         assert_eq!(
-            e.description(),
+            &e.to_string(),
             "attempted to set a logger after the logging system \
              was already initialized"
         );
@@ -1642,27 +1737,39 @@ mod tests {
             fn visit_pair(
                 &mut self,
                 _: kv::Key<'kvs>,
-                _: kv::Value<'kvs>
+                _: kv::Value<'kvs>,
             ) -> Result<(), kv::Error> {
                 self.seen_pairs += 1;
                 Ok(())
             }
         }
 
-        let kvs: &[(&str, i32)] = &[
-            ("a", 1),
-            ("b", 2)
-        ];
-        let record_test = Record::builder()
-            .key_values(&kvs)
-            .build();
+        let kvs: &[(&str, i32)] = &[("a", 1), ("b", 2)];
+        let record_test = Record::builder().key_values(&kvs).build();
 
-        let mut visitor = TestVisitor {
-            seen_pairs: 0,
-        };
+        let mut visitor = TestVisitor { seen_pairs: 0 };
 
         record_test.key_values().visit(&mut visitor).unwrap();
 
         assert_eq!(2, visitor.seen_pairs);
+    }
+
+    #[test]
+    #[cfg(feature = "kv_unstable")]
+    fn test_record_key_values_get_coerce() {
+        use super::Record;
+
+        let kvs: &[(&str, &str)] = &[("a", "1"), ("b", "2")];
+        let record = Record::builder().key_values(&kvs).build();
+
+        assert_eq!(
+            "2",
+            record
+                .key_values()
+                .get("b".into())
+                .expect("missing key")
+                .to_borrowed_str()
+                .expect("invalid value")
+        );
     }
 }
