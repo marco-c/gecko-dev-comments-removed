@@ -327,7 +327,7 @@ MediaConduitErrorCode WebrtcAudioConduit::ConfigureRecvMediaCodecs(
   
   
   
-  mRecvStreamConfig.decoder_factory = mCall->mDecoderFactory;
+  mRecvStreamConfig.decoder_factory = mCall->mAudioDecoderFactory;
   mRecvStreamConfig.decoder_map.clear();
   for (const auto& codec : codecConfigList) {
     

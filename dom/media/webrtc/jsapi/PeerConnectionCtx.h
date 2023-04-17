@@ -8,6 +8,8 @@
 #include <map>
 #include <string>
 
+#include "api/scoped_refptr.h"
+#include "call/audio_state.h"
 #include "MediaTransportHandler.h"  
 #include "mozIGeckoMediaPluginService.h"
 #include "mozilla/Attributes.h"
@@ -15,12 +17,50 @@
 #include "nsIRunnable.h"
 #include "PeerConnectionImpl.h"
 
+namespace webrtc {
+class AudioDecoderFactory;
+class SharedModuleThread;
+class WebRtcKeyValueConfig;
+}  
+
 namespace mozilla {
 class PeerConnectionCtxObserver;
 
 namespace dom {
 class WebrtcGlobalInformation;
 }
+
+
+
+
+
+
+class SharedWebrtcState {
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SharedWebrtcState)
+
+  SharedWebrtcState(webrtc::AudioState::Config&& aAudioStateConfig,
+                    RefPtr<webrtc::AudioDecoderFactory> aAudioDecoderFactory);
+
+  webrtc::SharedModuleThread* GetModuleThread();
+
+  
+  
+  const webrtc::AudioState::Config mAudioStateConfig;
+
+  
+  
+  const RefPtr<webrtc::AudioDecoderFactory> mAudioDecoderFactory;
+
+ private:
+  virtual ~SharedWebrtcState() = default;
+
+  
+  
+  
+  rtc::scoped_refptr<webrtc::SharedModuleThread> mModuleThread;
+};
+
 
 
 
@@ -51,6 +91,10 @@ class PeerConnectionCtx {
   RefPtr<MediaTransportHandler> GetTransportHandler() const {
     return mTransportHandler;
   }
+
+  SharedWebrtcState* GetSharedWebrtcState() const;
+
+  webrtc::WebRtcKeyValueConfig* GetTrials() const { return mTrials.get(); }
 
   
   
@@ -101,6 +145,16 @@ class PeerConnectionCtx {
 
   
   RefPtr<MediaTransportHandler> mTransportHandler;
+
+  
+  
+  
+  RefPtr<SharedWebrtcState> mSharedWebrtcState;
+
+  
+  
+  
+  UniquePtr<webrtc::WebRtcKeyValueConfig> mTrials;
 
   static PeerConnectionCtx* gInstance;
 
