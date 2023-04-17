@@ -3991,6 +3991,20 @@ void nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
     return;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  Maybe<nsDisplayListBuilder::Linkifier> linkifier;
+  if (aBuilder->IsForPrinting()) {
+    linkifier.emplace(aBuilder, aChild);
+    linkifier->MaybeAppendLink(aBuilder, aChild, aLists.Content());
+  }
+
   nsIFrame* child = aChild;
   auto* placeholder = child->IsPlaceholderFrame()
                           ? static_cast<nsPlaceholderFrame*>(child)

@@ -1824,6 +1824,25 @@ class nsDisplayListBuilder {
   void AddScrollFrameToNotify(nsIScrollableFrame* aScrollFrame);
   void NotifyAndClearScrollFrames();
 
+  
+  
+  class Linkifier {
+   public:
+    Linkifier(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame);
+
+    ~Linkifier() {
+      if (mBuilderToReset) {
+        mBuilderToReset->mLinkSpec.Truncate(0);
+      }
+    }
+
+    void MaybeAppendLink(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
+                         nsDisplayList* aList);
+
+   private:
+    nsDisplayListBuilder* mBuilderToReset = nullptr;
+  };
+
  private:
   bool MarkOutOfFlowFrameForDisplay(nsIFrame* aDirtyFrame, nsIFrame* aFrame,
                                     const nsRect& aVisibleRect,
@@ -2002,6 +2021,7 @@ class nsDisplayListBuilder {
   
   const ActiveScrolledRoot* mFilterASR;
   std::unordered_set<nsIScrollableFrame*> mScrollFramesToNotify;
+  nsCString mLinkSpec;  
   bool mContainsBlendMode;
   bool mIsBuildingScrollbar;
   bool mCurrentScrollbarWillHaveLayer;
