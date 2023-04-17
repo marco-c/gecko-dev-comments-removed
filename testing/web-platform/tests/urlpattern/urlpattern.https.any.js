@@ -76,11 +76,18 @@ function runTests(data) {
 
       
       
-      assert_equals(pattern.test(entry.input), !!entry.expected_match,
-                    'test() result');
+      if (entry.inputBaseURL) {
+        assert_equals(pattern.test(entry.input, entry.inputBaseURL),
+                      !!entry.expected_match, 'test() result');
+      } else {
+        assert_equals(pattern.test(entry.input),
+                      !!entry.expected_match, 'test() result');
+      }
 
       
-      const result = pattern.exec(entry.input);
+      let result = entry.inputBaseURL
+                 ? pattern.exec(entry.input, entry.inputBaseURL)
+                 : pattern.exec(entry.input);
 
       
       if (!entry.expected_match) {
@@ -123,7 +130,9 @@ function runTests(data) {
         assert_object_equals(result[component], expected_obj,
                              `exec() result for ${component}`);
       }
-    }, `Pattern: ${JSON.stringify(entry.pattern)} Input: ${JSON.stringify(entry.input)}`);
+    }, `Pattern: ${JSON.stringify(entry.pattern)} ` +
+       `Input: ${JSON.stringify(entry.input)} ` +
+       `InputBaseURL: ${JSON.stringify(entry.inputBaseURL)}`);
   }
 }
 
