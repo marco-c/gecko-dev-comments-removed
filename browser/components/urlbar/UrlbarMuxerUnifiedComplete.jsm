@@ -424,13 +424,18 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       let topPrefixData = state.strippedUrlToTopPrefixAndTitle.get(strippedUrl);
       
       
-      
-      if (topPrefixData && prefix != topPrefixData.prefix) {
+      if (
+        topPrefixData &&
+        (prefix != topPrefixData.prefix ||
+          result.providerName != topPrefixData.providerName)
+      ) {
         let prefixRank = UrlbarUtils.getPrefixRank(prefix);
         if (
-          prefixRank < topPrefixData.rank &&
-          (prefix.endsWith("www.") == topPrefixData.prefix.endsWith("www.") ||
-            result.payload?.title == topPrefixData.title)
+          (prefixRank < topPrefixData.rank &&
+            (prefix.endsWith("www.") == topPrefixData.prefix.endsWith("www.") ||
+              result.payload?.title == topPrefixData.title)) ||
+          (prefix == topPrefixData.prefix &&
+            result.providerName != topPrefixData.providerName)
         ) {
           return false;
         }
@@ -639,6 +644,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
           prefix,
           title: result.payload.title,
           rank: prefixRank,
+          providerName: result.providerName,
         });
       }
     }

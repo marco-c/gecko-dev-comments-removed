@@ -27,10 +27,8 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 
 const QUERYTYPE = {
-  FILTERED: 0,
   AUTOFILL_ORIGIN: 1,
   AUTOFILL_URL: 2,
-  ADAPTIVE: 3,
 };
 
 
