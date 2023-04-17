@@ -12866,14 +12866,16 @@ nsresult QuotaClient::GetUsageForOriginInternal(
         
         
         
-        QM_TRY_INSPECT(const int64_t& walFileSize,
-                       MOZ_TO_RESULT_INVOKE(walFile, GetFileSize)
-                           .orElse([](const nsresult rv) {
+        
+        QM_TRY_INSPECT(
+            const int64_t& walFileSize,
+            QM_OR_ELSE_LOG(MOZ_TO_RESULT_INVOKE(walFile, GetFileSize),
+                           ([](const nsresult rv) {
                              return (rv == NS_ERROR_FILE_NOT_FOUND ||
                                      rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST)
                                         ? Result<int64_t, nsresult>{0}
                                         : Err(rv);
-                           }));
+                           })));
         MOZ_ASSERT(walFileSize >= 0);
         *aUsageInfo += DatabaseUsageType(Some(uint64_t(walFileSize)));
       }

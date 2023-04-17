@@ -2396,9 +2396,10 @@ Result<bool, nsresult> EnsureDirectory(nsIFile& aDirectory) {
   
   QM_TRY_INSPECT(
       const auto& exists,
-      MOZ_TO_RESULT_INVOKE(aDirectory, Create, nsIFile::DIRECTORY_TYPE, 0755)
-          .map([](Ok) { return false; })
-          .orElse(ErrToOkOrErr<NS_ERROR_FILE_ALREADY_EXISTS, true>));
+      QM_OR_ELSE_LOG(MOZ_TO_RESULT_INVOKE(aDirectory, Create,
+                                          nsIFile::DIRECTORY_TYPE, 0755)
+                         .map([](Ok) { return false; }),
+                     (ErrToOkOrErr<NS_ERROR_FILE_ALREADY_EXISTS, true>)));
 
   if (exists) {
     QM_TRY_INSPECT(const bool& isDirectory,

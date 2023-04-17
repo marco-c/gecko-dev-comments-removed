@@ -963,21 +963,22 @@ Result<bool, nsresult> ExistsAsFile(nsIFile& aFile) {
   
   
   
+  
   QM_TRY_INSPECT(
       const auto& res,
-      MOZ_TO_RESULT_INVOKE(aFile, IsDirectory)
-          .map([](const bool isDirectory) {
-            return isDirectory ? ExistsAsFileResult::IsDirectory
-                               : ExistsAsFileResult::IsFile;
-          })
-          .orElse(
-              [](const nsresult rv) -> Result<ExistsAsFileResult, nsresult> {
-                if (rv != NS_ERROR_FILE_NOT_FOUND &&
-                    rv != NS_ERROR_FILE_TARGET_DOES_NOT_EXIST) {
-                  return Err(rv);
-                }
-                return ExistsAsFileResult::DoesNotExist;
-              }));
+      QM_OR_ELSE_LOG(
+          MOZ_TO_RESULT_INVOKE(aFile, IsDirectory)
+              .map([](const bool isDirectory) {
+                return isDirectory ? ExistsAsFileResult::IsDirectory
+                                   : ExistsAsFileResult::IsFile;
+              }),
+          ([](const nsresult rv) -> Result<ExistsAsFileResult, nsresult> {
+            if (rv != NS_ERROR_FILE_NOT_FOUND &&
+                rv != NS_ERROR_FILE_TARGET_DOES_NOT_EXIST) {
+              return Err(rv);
+            }
+            return ExistsAsFileResult::DoesNotExist;
+          })));
 
   QM_TRY(OkIf(res != ExistsAsFileResult::IsDirectory), Err(NS_ERROR_FAILURE));
 
