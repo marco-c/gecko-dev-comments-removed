@@ -427,11 +427,11 @@ bool SharedPropMap::addPropertyInternal(JSContext* cx,
   if (map->canHaveTable()) {
     JS::AutoCheckCannotGC nogc;
     if (PropMapTable* table = map->asLinked()->maybeTable(nogc)) {
+      
+      
+      
+      gc::PreWriteBarrier(map.get());
       if (table->add(cx, id, PropMapAndIndex(child, 0))) {
-        
-        
-        
-        gc::PreWriteBarrier(map.get());
         map->asLinked()->handOffTableTo(child->asLinked());
       } else {
         cx->recoverFromOutOfMemory();
