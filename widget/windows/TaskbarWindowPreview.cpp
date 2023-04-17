@@ -66,6 +66,9 @@ TaskbarWindowPreview::~TaskbarWindowPreview() {
     mOverlayIcon = nullptr;
   }
 
+  
+  SetVisible(false);
+
   if (IsWindowAvailable()) {
     DetachFromNSWindow();
   } else {
