@@ -1007,10 +1007,7 @@ void TRRService::AddToBlocklist(const nsACString& aHost,
     bl->InsertOrUpdate(hashkey, NowInSeconds());
   }
 
-  
-  
-  
-  if (aParentsToo && !StaticPrefs::network_trr_skip_check_for_blocked_host()) {
+  if (aParentsToo) {
     
     int32_t dot = aHost.FindChar('.');
     if (dot != kNotFound) {
