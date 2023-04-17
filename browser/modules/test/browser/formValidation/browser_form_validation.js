@@ -527,3 +527,38 @@ add_task(async function() {
 
   gBrowser.removeCurrentTab();
 });
+
+
+
+
+
+add_task(async function() {
+  incrementTest();
+  let uri =
+    getDocHeader() +
+    "<form target='t' action='data:text/html,'><input id='i' required><input id='s' type='submit'></form>" +
+    getDocFooter();
+  let browser = await openNewTab(uri);
+
+  let popupShownPromise = BrowserTestUtils.waitForEvent(
+    gInvalidFormPopup,
+    "popupshown"
+  );
+  let anchorRect = await clickChildElement(browser);
+  await popupShownPromise;
+
+  checkPopupShow(anchorRect);
+  await checkChildFocus(
+    browser,
+    gInvalidFormPopup.firstElementChild.textContent
+  );
+
+  let popupHiddenPromise = BrowserTestUtils.waitForEvent(
+    gInvalidFormPopup,
+    "popuphidden"
+  );
+  BrowserReloadSkipCache();
+  await popupHiddenPromise;
+
+  gBrowser.removeCurrentTab();
+});
