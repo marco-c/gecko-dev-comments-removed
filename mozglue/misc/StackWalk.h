@@ -27,6 +27,24 @@ MOZ_BEGIN_EXTERN_C
 
 
 
+
+
+
+
+#define CallerPC() __builtin_extract_return_addr(__builtin_return_address(0))
+
+
+
+
+
+
+
+
+
+
+
+
+
 typedef void (*MozWalkStackCallback)(uint32_t aFrameNumber, void* aPC,
                                      void* aSP, void* aClosure);
 
@@ -44,8 +62,10 @@ typedef void (*MozWalkStackCallback)(uint32_t aFrameNumber, void* aPC,
 
 
 
-MFBT_API void MozStackWalk(MozWalkStackCallback aCallback, uint32_t aSkipFrames,
-                           uint32_t aMaxFrames, void* aClosure);
+
+MFBT_API void MozStackWalk(MozWalkStackCallback aCallback,
+                           const void* aFirstFramePC, uint32_t aMaxFrames,
+                           void* aClosure);
 
 typedef struct {
   
@@ -153,8 +173,9 @@ MFBT_API int MozFormatCodeAddressDetails(char* aBuffer, uint32_t aBufferSize,
 
 
 
+
 MFBT_API void MozWalkTheStack(FILE* aStream,
-                              uint32_t aSkipFrames FRAMES_DEFAULT,
+                              const void* aFirstFramePC FRAMES_DEFAULT,
                               uint32_t aMaxFrames FRAMES_DEFAULT);
 
 
@@ -167,9 +188,11 @@ MFBT_API void MozWalkTheStack(FILE* aStream,
 
 
 
-MFBT_API void MozWalkTheStackWithWriter(void (*aWriter)(const char*),
-                                        uint32_t aSkipFrames FRAMES_DEFAULT,
-                                        uint32_t aMaxFrames FRAMES_DEFAULT);
+
+
+MFBT_API void MozWalkTheStackWithWriter(
+    void (*aWriter)(const char*), const void* aFirstFramePC FRAMES_DEFAULT,
+    uint32_t aMaxFrames FRAMES_DEFAULT);
 
 #undef FRAMES_DEFAULT
 

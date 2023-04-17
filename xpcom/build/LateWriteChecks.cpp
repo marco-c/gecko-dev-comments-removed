@@ -129,8 +129,7 @@ void LateWriteObserver::Observe(
   
   std::vector<uintptr_t> rawStack;
 
-  MozStackWalk(RecordStackWalker,  0,  0,
-               &rawStack);
+  MozStackWalk(RecordStackWalker, nullptr,  0, &rawStack);
   mozilla::Telemetry::ProcessedStack stack =
       mozilla::Telemetry::GetStackAndModules(rawStack);
 

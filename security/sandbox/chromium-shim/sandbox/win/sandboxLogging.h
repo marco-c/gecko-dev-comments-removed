@@ -28,8 +28,7 @@ void ProvideLogFunction(LogFunction aLogFunction);
 
 
 
-void LogBlocked(const char* aFunctionName, const char* aContext = nullptr,
-                uint32_t aFramesToSkip = 2);
+void LogBlocked(const char* aFunctionName, const char* aContext = nullptr);
 
 
 void LogBlocked(const char* aFunctionName, const wchar_t* aContext);
