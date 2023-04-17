@@ -165,6 +165,20 @@ nsresult SetSubmitReports(bool aSubmitReport);
 
 
 
+#ifdef XP_WIN
+
+
+
+struct WindowsErrorReportingData {
+  
+  LPTHREAD_START_ROUTINE mWerNotifyProc;
+  
+  DWORD mChildPid;
+  
+  char mMinidumpFile[40];
+};
+#endif  
+
 
 
 
@@ -309,15 +323,21 @@ bool CreateNotificationPipeForChild(int* childCrashFd, int* childCrashRemapFd);
 #endif  
 
 
-bool SetRemoteExceptionHandler(const char* aCrashPipe = nullptr,
-                               uintptr_t aCrashTimeAnnotationFile = 0);
+#if defined(XP_WIN)
+DWORD WINAPI WerNotifyProc(LPVOID aParameter);
+#endif
+
+
+bool SetRemoteExceptionHandler(
+    const char* aCrashPipe = nullptr,
+    FileHandle aCrashTimeAnnotationFile = kInvalidFileHandle);
 bool UnsetRemoteExceptionHandler();
 
 #if defined(MOZ_WIDGET_ANDROID)
 
 
-void SetNotificationPipeForChild(int childCrashFd);
-void SetCrashAnnotationPipeForChild(int childCrashAnnotationFd);
+void SetNotificationPipeForChild(FileHandle childCrashFd);
+void SetCrashAnnotationPipeForChild(FileHandle childCrashAnnotationFd);
 #endif
 
 
