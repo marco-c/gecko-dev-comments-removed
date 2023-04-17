@@ -3,7 +3,7 @@
 
 
 
-import mock
+from unittest import mock
 import mozunit
 import os
 import shutil
@@ -14,7 +14,7 @@ import tempfile
 import unittest
 import buildconfig
 
-from mock import patch
+from unittest.mock import patch
 from mozpack.manifests import InstallManifest
 import mozpack.path as mozpath
 

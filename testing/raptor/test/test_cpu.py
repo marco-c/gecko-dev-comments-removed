@@ -6,7 +6,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 import os
 import sys
-import mock
+from unittest import mock
 import mozunit
 
 
