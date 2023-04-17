@@ -161,10 +161,7 @@ const SIGNED_TYPES = new Set(["extension", "locale", "theme"]);
 
 const ASYNC_SAVE_DELAY_MS = 20;
 
-const LOCALE_BUNDLES = [
-  "chrome://global/locale/global-extension-fields.properties",
-  "chrome://global/locale/app-extension-fields.properties",
-].map(url => Services.strings.createBundle(url));
+const l10n = new Localization(["browser/appExtensionFields.ftl"], true);
 
 
 
@@ -1325,15 +1322,6 @@ function chooseValue(aAddon, aObj, aProp) {
     return [repositoryAddon[aProp], true];
   }
 
-  let id = `extension.${aAddon.id}.${aProp}`;
-  for (let bundle of LOCALE_BUNDLES) {
-    try {
-      return [bundle.GetStringFromName(id), false];
-    } catch (e) {
-      
-    }
-  }
-
   return [objValue, false];
 }
 
@@ -1434,6 +1422,22 @@ defineAddonWrapperProperty("signedDate", function() {
 ["name", "description", "creator", "homepageURL"].forEach(function(aProp) {
   defineAddonWrapperProperty(aProp, function() {
     let addon = addonFor(this);
+
+    
+    
+    if (
+      (aProp === "name" || aProp === "description") &&
+      addon.location.name === KEY_APP_BUILTINS &&
+      addon.type === "theme"
+    ) {
+      
+      let addonIdPrefix = addon.id.replace("@mozilla.org", "");
+      let [formattedMessage] = l10n.formatMessagesSync([
+        { id: `extension-${addonIdPrefix}-${aProp}` },
+      ]);
+
+      return formattedMessage.value;
+    }
 
     let [result, usedRepository] = chooseValue(
       addon,
