@@ -18,7 +18,7 @@ namespace js {
 inline bool EmulatesUndefined(JSObject* obj) {
   
   
-  AutoUnsafeCallWithABI unsafe;
+  AutoUnsafeCallWithABI unsafe(UnsafeABIStrictness::AllowPendingExceptions);
   JSObject* actual = MOZ_LIKELY(!obj->is<WrapperObject>())
                          ? obj
                          : UncheckedUnwrapWithoutExpose(obj);

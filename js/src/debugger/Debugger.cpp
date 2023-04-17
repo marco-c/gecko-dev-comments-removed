@@ -300,7 +300,7 @@ static void PropagateForcedReturn(JSContext* cx, AbstractFramePtr frame,
       return false;
 
     case ResumeMode::Terminate:
-      cx->setInterrupting();
+      cx->clearPendingException();
       return false;
 
     case ResumeMode::Return:
@@ -1018,7 +1018,7 @@ NativeResumeMode DebugAPI::slowPathOnNativeCall(JSContext* cx,
       return NativeResumeMode::Abort;
 
     case ResumeMode::Terminate:
-      cx->setInterrupting();
+      cx->clearPendingException();
       return NativeResumeMode::Abort;
 
     case ResumeMode::Return:
@@ -1114,22 +1114,15 @@ bool DebugAPI::slowPathOnLeaveFrame(JSContext* cx, AbstractFramePtr frame,
   
   
   
-  Rooted<Debugger::DebuggerFrameVector> frames(cx);
+  Rooted<Debugger::DebuggerFrameVector> frames(
+      cx, Debugger::DebuggerFrameVector(cx));
   if (!Debugger::getDebuggerFrames(frame, &frames)) {
-    
-    
-    if (!frameOk) {
-      cx->clearPendingException();
-    }
-    ReportOutOfMemory(cx);
     return false;
   }
   if (frames.empty()) {
     return frameOk;
   }
 
-  
-  
   completion = Completion::fromJSFramePop(cx, frame, pc, frameOk);
 
   ResumeMode resumeMode = ResumeMode::Continue;
@@ -1951,7 +1944,6 @@ Completion Completion::fromJSResult(JSContext* cx, bool ok, const Value& rv) {
   }
 
   if (!cx->isExceptionPending()) {
-    cx->clearInterrupt();
     return Completion(Terminate());
   }
 
@@ -2603,9 +2595,9 @@ bool DebugAPI::onSingleStep(JSContext* cx) {
 
   
   
-  Rooted<Debugger::DebuggerFrameVector> frames(cx);
+  Rooted<Debugger::DebuggerFrameVector> frames(
+      cx, Debugger::DebuggerFrameVector(cx));
   if (!Debugger::getDebuggerFrames(iter.abstractFramePtr(), &frames)) {
-    ReportOutOfMemory(cx);
     return false;
   }
 
@@ -3110,6 +3102,7 @@ bool Debugger::updateExecutionObservabilityOfFrames(
   {
     jit::JitContext jctx(cx, nullptr);
     if (!jit::RecompileOnStackBaselineScriptsForDebugMode(cx, obs, observing)) {
+      ReportOutOfMemory(cx);
       return false;
     }
   }
@@ -6437,13 +6430,12 @@ bool Debugger::replaceFrameGuts(JSContext* cx, AbstractFramePtr from,
   });
 
   
-  Rooted<DebuggerFrameVector> frames(cx);
+  Rooted<DebuggerFrameVector> frames(cx, DebuggerFrameVector(cx));
   if (!getDebuggerFrames(from, &frames)) {
     
     
     
     
-    ReportOutOfMemory(cx);
     return false;
   }
 

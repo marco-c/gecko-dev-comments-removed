@@ -39,12 +39,6 @@ extern JS_PUBLIC_API void JS_SetPendingException(
     JSContext* cx, JS::HandleValue v,
     JS::ExceptionStackBehavior behavior = JS::ExceptionStackBehavior::Capture);
 
-
-
-
-
-extern JS_PUBLIC_API void JS_SetPendingInterrupt(JSContext* cx);
-
 extern JS_PUBLIC_API void JS_ClearPendingException(JSContext* cx);
 
 
@@ -58,41 +52,6 @@ extern JS_PUBLIC_API JSErrorReport* JS_ErrorFromException(JSContext* cx,
                                                           JS::HandleObject obj);
 
 namespace JS {
-
-
-
-
-
-
-
-enum class ExceptionStatus {
-  
-  None,
-
-  
-  
-  
-  ForcedReturn,
-
-  
-  
-  
-  
-  Interrupt,
-
-  
-  
-  Throwing,
-  OutOfMemory,
-  OverRecursed,
-};
-
-
-
-static MOZ_ALWAYS_INLINE bool IsCatchableExceptionStatus(
-    ExceptionStatus status) {
-  return status >= ExceptionStatus::Throwing;
-}
 
 
 
@@ -141,7 +100,9 @@ class MOZ_STACK_CLASS ExceptionStack {
 class JS_PUBLIC_API AutoSaveExceptionState {
  private:
   JSContext* context;
-  ExceptionStatus status;
+  bool wasPropagatingForcedReturn;
+  bool wasOverRecursed;
+  bool wasThrowing;
   RootedValue exceptionValue;
   RootedObject exceptionStack;
 

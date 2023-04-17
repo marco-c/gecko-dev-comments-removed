@@ -1515,9 +1515,6 @@ bool jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation,
   MOZ_ASSERT(*bailoutInfo == nullptr);
   MOZ_ASSERT(iter.isBailoutJS());
 
-  
-  MOZ_ASSERT(!cx->isExceptionPending());
-
   TraceLoggerThread* logger = TraceLoggerForCurrentThread(cx);
   TraceLogStopEvent(logger, TraceLogger_IonMonkey);
   TraceLogStartEvent(logger, TraceLogger_Baseline);
@@ -1606,6 +1603,7 @@ bool jit::BailoutIonToBaseline(JSContext* cx, JitActivation* activation,
   
   SnapshotIterator snapIter(iter, activation->bailoutData()->machineState());
   if (!snapIter.initInstructionResults(recoverBailout)) {
+    ReportOutOfMemory(cx);
     return false;
   }
 

@@ -944,7 +944,7 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
 
 
-  using DebuggerFrameVector = GCVector<DebuggerFrame*, 0, SystemAllocPolicy>;
+  using DebuggerFrameVector = GCVector<DebuggerFrame*>;
   [[nodiscard]] static bool getDebuggerFrames(
       AbstractFramePtr frame, MutableHandle<DebuggerFrameVector> frames);
 

@@ -210,8 +210,6 @@ bool jit::ExceptionHandlerBailout(JSContext* cx,
   MOZ_ASSERT_IF(!excInfo.propagatingIonExceptionForDebugMode(),
                 cx->isExceptionPending());
 
-  JS::AutoSaveExceptionState savedExc(cx);
-
   JitActivation* act = cx->activation()->asJit();
   uint8_t* prevExitFP = act->jsExitFP();
   auto restoreExitFP =
@@ -242,9 +240,6 @@ bool jit::ExceptionHandlerBailout(JSContext* cx,
     rfe->target = cx->runtime()->jitRuntime()->getBailoutTail().value;
     rfe->bailoutInfo = bailoutInfo;
   } else {
-    
-    
-    savedExc.drop();
     MOZ_ASSERT(!bailoutInfo);
     MOZ_ASSERT(cx->isExceptionPending());
   }
