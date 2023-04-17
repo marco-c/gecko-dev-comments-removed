@@ -149,19 +149,6 @@ class WindowSurfaceWayland : public WindowSurface {
 
   RefPtr<nsWaylandDisplay> GetWaylandDisplay() { return mWaylandDisplay; };
 
-  
-  typedef enum {
-    
-    
-    CACHE_ALL = 0,
-    
-    
-    
-    CACHE_MISSING = 1,
-    
-    CACHE_NONE = 2
-  } RenderingCacheMode;
-
  private:
   WindowBackBuffer* GetWaylandBuffer();
   WindowBackBuffer* SetNewWaylandBuffer();
@@ -251,9 +238,18 @@ class WindowSurfaceWayland : public WindowSurface {
   
   bool mBufferNeedsClear;
 
+  typedef enum {
+    
+    CACHE_NONE = 0,
+    
+    CACHE_SMALL = 1,
+    
+    CACHE_ALL = 2,
+  } RenderingCacheMode;
+
   
   
-  bool mSmoothRendering;
+  unsigned int mSmoothRendering;
 
   gint mSurfaceReadyTimerID;
   mozilla::Mutex mSurfaceLock;

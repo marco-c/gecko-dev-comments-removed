@@ -487,6 +487,11 @@ WindowSurfaceWayland::WindowSurfaceWayland(nsWindow* aWindow)
   for (int i = 0; i < BACK_BUFFER_NUM; i++) {
     mShmBackupBuffer[i] = nullptr;
   }
+  
+  const char* currentDesktop = getenv("XDG_CURRENT_DESKTOP");
+  if (currentDesktop && strstr(currentDesktop, "KDE") != nullptr) {
+    mSmoothRendering = CACHE_NONE;
+  }
 }
 
 WindowSurfaceWayland::~WindowSurfaceWayland() {
@@ -817,13 +822,12 @@ already_AddRefed<gfx::DrawTarget> WindowSurfaceWayland::Lock(
     mMozContainerRect = mozContainerSize;
   }
 
-  
-  
-  mDrawToWaylandBufferDirectly =
-      mSmoothRendering
-          ? windowRedraw
-          : (windowRedraw || (lockSize.width * 2 > mozContainerSize.width &&
-                              lockSize.height * 2 > mozContainerSize.height));
+  mDrawToWaylandBufferDirectly = windowRedraw || mSmoothRendering == CACHE_NONE;
+  if (!mDrawToWaylandBufferDirectly && mSmoothRendering == CACHE_SMALL) {
+    mDrawToWaylandBufferDirectly =
+        (lockSize.width * 2 > mozContainerSize.width &&
+         lockSize.height * 2 > mozContainerSize.height);
+  }
 
   if (!mDrawToWaylandBufferDirectly) {
     
