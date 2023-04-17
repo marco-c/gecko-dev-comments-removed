@@ -7,6 +7,7 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/ReentrantMonitor.h"
+#include "mozilla/RWLock.h"
 #include "mozilla/StateMirroring.h"
 #include "mozilla/TimeStamp.h"
 
@@ -227,7 +228,7 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   
   bool mDtmfEnabled;
 
-  mutable Mutex mMutex;
+  mutable RWLock mLock;
 
   
   const RefPtr<AbstractThread> mCallThread;
