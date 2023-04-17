@@ -1559,7 +1559,7 @@ void ArgumentsReplacer::visitGuardToClass(MGuardToClass* ins) {
 void ArgumentsReplacer::visitGuardArgumentsObjectFlags(
     MGuardArgumentsObjectFlags* ins) {
   
-  if (ins->getArgsObject() != args_) {
+  if (ins->argsObject() != args_) {
     return;
   }
 
@@ -1610,7 +1610,7 @@ void ArgumentsReplacer::visitUnbox(MUnbox* ins) {
 void ArgumentsReplacer::visitGetArgumentsObjectArg(
     MGetArgumentsObjectArg* ins) {
   
-  if (ins->getArgsObject() != args_) {
+  if (ins->argsObject() != args_) {
     return;
   }
 
