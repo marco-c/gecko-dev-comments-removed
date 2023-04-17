@@ -511,18 +511,6 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
     }
   }
 
-  
-  nsCOMPtr<nsIFile> sysExtDevDir;
-  rv = NS_GetSpecialDirectory(XRE_USER_SYS_EXTENSION_DEV_DIR,
-                              getter_AddRefs(sysExtDevDir));
-  if (NS_SUCCEEDED(rv)) {
-    nsAutoCString tmpPath;
-    rv = sysExtDevDir->GetNativePath(tmpPath);
-    if (NS_SUCCEEDED(rv)) {
-      policy->AddDir(rdonly, tmpPath.get());
-    }
-  }
-
   if (mozilla::IsDevelopmentBuild()) {
     
     
