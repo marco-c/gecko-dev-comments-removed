@@ -27,10 +27,7 @@ class txStack : private nsTArray<void*> {
 
 
 
-  inline nsresult push(void* aObject) {
-    AppendElement(aObject);
-    return NS_OK;
-  }
+  inline void push(void* aObject) { AppendElement(aObject); }
 
   
 
