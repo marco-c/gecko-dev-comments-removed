@@ -81,6 +81,22 @@ profiler_capture_backtrace() {
   return nullptr;
 }
 
+static inline void profiler_set_process_name(
+    const nsACString& aProcessName, const nsACString* aETLDplus1 = nullptr) {}
+
+static inline void profiler_received_exit_profile(
+    const nsCString& aExitProfile) {}
+
+static inline void profiler_register_page(uint64_t aTabID,
+                                          uint64_t aInnerWindowID,
+                                          const nsCString& aUrl,
+                                          uint64_t aEmbedderInnerWindowID) {}
+static inline void profiler_unregister_page(uint64_t aRegisteredInnerWindowID) {
+}
+
+static inline void GetProfilerEnvVarsForChildProcess(
+    std::function<void(const char* key, const char* value)>&& aSetEnv) {}
+
 #else  
 
 #  include "js/ProfilingStack.h"
@@ -492,6 +508,9 @@ enum TracingKind {
 
 void profiler_set_process_name(const nsACString& aProcessName,
                                const nsACString* aETLDplus1 = nullptr);
+
+
+void profiler_received_exit_profile(const nsCString& aExitProfile);
 
 
 

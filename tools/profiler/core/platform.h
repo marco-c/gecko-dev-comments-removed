@@ -104,9 +104,6 @@ enum class JSInstrumentationFlags {
 };
 
 
-void profiler_received_exit_profile(const nsCString& aExitProfile);
-
-
 void profiler_write_active_configuration(mozilla::JSONWriter& aWriter);
 
 
