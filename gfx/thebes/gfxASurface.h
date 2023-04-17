@@ -78,14 +78,6 @@ class gfxASurface {
 
 
 
-  virtual already_AddRefed<gfxASurface> CreateSimilarSurface(
-      gfxContentType aType, const mozilla::gfx::IntSize& aSize);
-
-  
-
-
-
-
   virtual already_AddRefed<gfxImageSurface> GetAsImageSurface();
 
   
