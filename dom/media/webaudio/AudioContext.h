@@ -51,6 +51,7 @@ class AudioDestinationNode;
 class AudioListener;
 class AudioNode;
 class BiquadFilterNode;
+class BrowsingContext;
 class ChannelMergerNode;
 class ChannelSplitterNode;
 class ConstantSourceNode;
@@ -376,6 +377,15 @@ class AudioContext final : public DOMEventTargetHelper,
   void MaybeUpdateAutoplayTelemetry();
   void MaybeUpdateAutoplayTelemetryWhenShutdown();
 
+  
+  
+  
+  void MaybeUpdatePageAwakeRequest();
+  void MaybeClearPageAwakeRequest();
+  void SetPageAwakeRequest(bool aShouldSet);
+
+  BrowsingContext* GetTopLevelBrowsingContext();
+
  private:
   
   
@@ -434,6 +444,11 @@ class AudioContext final : public DOMEventTargetHelper,
   bool mWasEverAllowedToStart;
   bool mWasEverBlockedToStart;
   bool mWouldBeAllowedToStart;
+
+  
+  
+  
+  bool mSetPageAwakeRequest = false;
 };
 
 static const dom::AudioContext::AudioContextId NO_AUDIO_CONTEXT = 0;
