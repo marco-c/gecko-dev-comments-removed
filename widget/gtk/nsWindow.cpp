@@ -939,6 +939,11 @@ bool nsWindow::WidgetTypeSupportsAcceleration() {
     }
     return HasRemoteContent() && mCompositedScreen;
   }
+  
+  if (mWindowType == eWindowType_child && GdkIsX11Display() &&
+      gfxVars::UseEGL()) {
+    return false;
+  }
 
   return true;
 }
