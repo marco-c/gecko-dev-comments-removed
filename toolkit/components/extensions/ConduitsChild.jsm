@@ -15,7 +15,11 @@
 
 
 
-const EXPORTED_SYMBOLS = ["BaseConduit", "ConduitsChild"];
+const EXPORTED_SYMBOLS = [
+  "BaseConduit",
+  "ConduitsChild",
+  "ProcessConduitsChild",
+];
 
 
 
@@ -193,4 +197,19 @@ class ConduitsChild extends JSWindowActorChild {
     }
     this.conduits.clear();
   }
+}
+
+
+
+
+class ProcessConduitsChild extends JSProcessActorChild {
+  constructor() {
+    super();
+    this.conduits = new Map();
+  }
+
+  openConduit = ConduitsChild.prototype.openConduit;
+  receiveMessage = ConduitsChild.prototype.receiveMessage;
+  willDestroy = ConduitsChild.prototype.willDestroy;
+  didDestroy = ConduitsChild.prototype.didDestroy;
 }
