@@ -457,18 +457,8 @@ class LocalAccessible : public nsISupports, public Accessible {
            !aEl->IsAnyOfHTMLElements(nsGkAtoms::option, nsGkAtoms::optgroup);
   }
 
-  
-
-
-
-
-
-
-
-
-
   virtual void AppendTextTo(nsAString& aText, uint32_t aStartOffset = 0,
-                            uint32_t aLength = UINT32_MAX);
+                            uint32_t aLength = UINT32_MAX) override;
 
   
 
