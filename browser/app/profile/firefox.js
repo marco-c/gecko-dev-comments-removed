@@ -300,7 +300,14 @@ pref("toolkit.lazyHiddenWindow", true);
 pref("browser.chrome.site_icons", true);
 
 pref("browser.warnOnQuit", true);
-pref("browser.fullscreen.autohide", true);
+
+
+#ifdef XP_MACOSX
+  pref("browser.fullscreen.autohide", false);
+#else
+  pref("browser.fullscreen.autohide", true);
+#endif
+
 pref("browser.overlink-delay", 80);
 
 

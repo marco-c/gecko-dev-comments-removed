@@ -744,7 +744,7 @@ var FullScreen = {
     }
 
     
-    if (trackMouse && AppConstants.platform != "macosx") {
+    if (trackMouse) {
       let rect = gBrowser.tabpanels.getBoundingClientRect();
       this._mouseTargetRect = {
         top: rect.top + 50,
@@ -768,10 +768,6 @@ var FullScreen = {
     }
     
     if (this._isPopupOpen) {
-      return;
-    }
-    
-    if (AppConstants.platform == "macosx") {
       return;
     }
 
