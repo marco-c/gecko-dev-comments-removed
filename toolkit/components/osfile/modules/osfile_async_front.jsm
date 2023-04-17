@@ -19,7 +19,8 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["OS"];
+
+var EXPORTED_SYMBOLS = ["OS", "Scheduler"];
 
 var SharedAll = {};
 ChromeUtils.import(
@@ -71,8 +72,7 @@ const { AsyncShutdown } = ChromeUtils.import(
   "resource://gre/modules/AsyncShutdown.jsm"
 );
 var Native = ChromeUtils.import(
-  "resource://gre/modules/osfile/osfile_native.jsm",
-  null
+  "resource://gre/modules/osfile/osfile_native.jsm"
 );
 
 
@@ -166,10 +166,7 @@ function summarizeObject(obj) {
   return obj;
 }
 
-
-
-
-var Scheduler = (this.Scheduler = {
+var Scheduler = {
   
 
 
@@ -555,7 +552,7 @@ var Scheduler = (this.Scheduler = {
       worker.workerTimeStamps.loaded - worker.launchTimeStamp
     );
   },
-});
+};
 
 const PREF_OSFILE_LOG = "toolkit.osfile.log";
 const PREF_OSFILE_LOG_REDIRECT = "toolkit.osfile.log.redirect";

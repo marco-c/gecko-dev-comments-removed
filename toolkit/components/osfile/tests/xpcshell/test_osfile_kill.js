@@ -4,11 +4,9 @@ const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 
 
-var AsyncFrontGlobal = ChromeUtils.import(
-  "resource://gre/modules/osfile/osfile_async_front.jsm",
-  null
+var { Scheduler } = ChromeUtils.import(
+  "resource://gre/modules/osfile/osfile_async_front.jsm"
 );
-var Scheduler = AsyncFrontGlobal.Scheduler;
 
 
 
