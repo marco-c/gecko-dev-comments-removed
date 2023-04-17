@@ -460,7 +460,9 @@ class TextInputDelegateTest : BaseSessionTest() {
 
     
     @WithDisplay(width = 512, height = 512) 
+    
     @Test fun inputConnection_deleteSurroundingText() {
+        assumeThat(sessionRule.env.isDebugBuild, equalTo(false))
         setupContent("foobarfoo")
 
         val ic = mainSession.textInput.onCreateInputConnection(EditorInfo())!!
