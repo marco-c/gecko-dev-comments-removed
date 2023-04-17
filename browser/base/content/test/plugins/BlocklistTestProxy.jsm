@@ -62,16 +62,6 @@ var BlocklistProxy = {
     await new Promise(r => setTimeout(r, 150));
     return 0; 
   },
-
-  async getPluginBlocklistState(aPluginTag, aAppVersion, aToolkitVersion) {
-    await new Promise(r => setTimeout(r, 150));
-    return 0; 
-  },
-
-  async getPluginBlockURL(aPluginTag) {
-    await new Promise(r => setTimeout(r, 150));
-    return "";
-  },
 };
 
 class BlocklistTestProxyChild extends JSProcessActorChild {

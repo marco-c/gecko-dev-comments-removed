@@ -209,11 +209,6 @@ class MockBlocklist {
     }
     return null;
   }
-
-  async getPluginBlocklistState(plugin, version, appVersion, toolkitVersion) {
-    await new Promise(r => setTimeout(r, 150));
-    return Ci.nsIBlocklistService.STATE_NOT_BLOCKED;
-  }
 }
 
 MockBlocklist.prototype.QueryInterface = ChromeUtils.generateQI([
@@ -797,16 +792,13 @@ var AddonTestUtils = {
 
   async loadBlocklistData(dir, prefix) {
     let loadedData = {};
-    for (let fileSuffix of ["extensions", "plugins"]) {
-      const fileName = `${prefix}-${fileSuffix}.json`;
-      let jsonStr = await OS.File.read(OS.Path.join(dir.path, fileName), {
-        encoding: "UTF-8",
-      }).catch(() => {});
-      if (!jsonStr) {
-        continue;
-      }
+    let fileSuffix = "extensions";
+    const fileName = `${prefix}-${fileSuffix}.json`;
+    let jsonStr = await OS.File.read(OS.Path.join(dir.path, fileName), {
+      encoding: "UTF-8",
+    }).catch(() => {});
+    if (jsonStr) {
       this.info(`Loaded ${fileName}`);
-
       loadedData[fileSuffix] = JSON.parse(jsonStr);
     }
     return this.loadBlocklistRawData(loadedData);
@@ -830,7 +822,6 @@ var AddonTestUtils = {
     const blocklistMapping = {
       extensions: bsPass.ExtensionBlocklistRS,
       extensionsMLBF: bsPass.ExtensionBlocklistMLBF,
-      plugins: bsPass.PluginBlocklistRS,
     };
 
     
