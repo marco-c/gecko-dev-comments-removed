@@ -16,10 +16,7 @@
 
 MFBT_API void mozalloc_handle_oom(size_t requestedSize);
 
-
-
-
-MFBT_API size_t mozalloc_get_oom_abort_size(void);
+extern MFBT_DATA size_t gOOMAllocationSize;
 
 
 

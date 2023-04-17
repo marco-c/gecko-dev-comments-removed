@@ -449,8 +449,6 @@ static XP_CHAR* Concat(XP_CHAR* str, const XP_CHAR* toAppend, size_t* size) {
   return str;
 }
 
-static size_t gOOMAllocationSize = 0;
-
 void AnnotateOOMAllocationSize(size_t size) { gOOMAllocationSize = size; }
 
 static size_t gTexturesSize = 0;
@@ -1286,17 +1284,6 @@ static void WriteMainThreadRunnableName(AnnotationWriter& aWriter) {
 }
 
 static void WriteOOMAllocationSize(AnnotationWriter& aWriter) {
-  
-  
-  
-  
-  
-  
-  if (!gOOMAllocationSize) {
-    gOOMAllocationSize = mozalloc_get_oom_abort_size();
-  }
-
-  
   if (gOOMAllocationSize) {
     aWriter.Write(Annotation::OOMAllocationSize, gOOMAllocationSize);
   }
