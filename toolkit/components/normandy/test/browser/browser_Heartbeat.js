@@ -83,7 +83,7 @@ function getStars(notice) {
 }
 
 add_task(async function setup() {
-  let win = await BrowserTestUtils.openNewWindowWithFlushedXULCacheForMozSupports();
+  let win = await BrowserTestUtils.openNewBrowserWindow();
   
   await BrowserTestUtils.openNewForegroundTab(
     win.gBrowser,

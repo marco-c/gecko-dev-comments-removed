@@ -1035,12 +1035,8 @@ var BrowserTestUtils = {
 
 
 
-  async openNewWindowWithFlushedXULCacheForMozSupports(options) {
+  async openNewWindowWithFlushedCacheForMozSupports(options) {
     ChromeUtils.clearStyleSheetCache();
-
-    Services.obs.notifyObservers(null, "chrome-flush-caches");
-    await TestUtils.waitForTick();
-
     return BrowserTestUtils.openNewBrowserWindow(options);
   },
 

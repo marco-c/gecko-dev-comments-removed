@@ -28,7 +28,7 @@ function openAboutPrefPromise(win) {
   return Promise.all(promises);
 }
 add_task(async function setup() {
-  let win = await BrowserTestUtils.openNewWindowWithFlushedXULCacheForMozSupports();
+  let win = await BrowserTestUtils.openNewBrowserWindow();
   
   await BrowserTestUtils.openNewForegroundTab(
     win.gBrowser,
