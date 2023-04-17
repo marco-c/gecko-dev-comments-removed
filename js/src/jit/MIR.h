@@ -9747,6 +9747,26 @@ class MNewLexicalEnvironmentObject : public MUnaryInstruction,
 };
 
 
+class MNewClassBodyEnvironmentObject : public MUnaryInstruction,
+                                       public SingleObjectPolicy::Data {
+  CompilerGCPointer<ClassBodyScope*> scope_;
+
+  MNewClassBodyEnvironmentObject(MDefinition* enclosing, ClassBodyScope* scope)
+      : MUnaryInstruction(classOpcode, enclosing), scope_(scope) {
+    setResultType(MIRType::Object);
+  }
+
+ public:
+  INSTRUCTION_HEADER(NewClassBodyEnvironmentObject)
+  TRIVIAL_NEW_WRAPPERS
+  NAMED_OPERANDS((0, enclosing))
+
+  ClassBodyScope* scope() const { return scope_; }
+  bool possiblyCalls() const override { return true; }
+  AliasSet getAliasSet() const override { return AliasSet::None(); }
+};
+
+
 class MCopyLexicalEnvironmentObject : public MUnaryInstruction,
                                       public SingleObjectPolicy::Data {
   bool copySlots_;

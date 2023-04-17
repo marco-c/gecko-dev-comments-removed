@@ -250,6 +250,7 @@
 
 
 
+
 #define FOR_EACH_OPCODE(MACRO)
 
 
@@ -3092,6 +3093,7 @@
 
 
 
+
  \
     MACRO(PushLexicalEnv, push_lexical_env, NULL, 5, 0, 0, JOF_SCOPE) \
     
@@ -3149,6 +3151,21 @@
 
  \
     MACRO(FreshenLexicalEnv, freshen_lexical_env, NULL, 1, 0, 0, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(PushClassBodyEnv, push_class_body_env, NULL, 5, 0, 0, JOF_SCOPE) \
     
 
 
@@ -3534,7 +3551,6 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-  MACRO(228)                                   \
   MACRO(229)                                   \
   MACRO(230)                                   \
   MACRO(231)                                   \
