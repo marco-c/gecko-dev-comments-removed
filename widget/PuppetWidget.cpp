@@ -602,13 +602,7 @@ WindowRenderer* PuppetWidget::GetWindowRenderer() {
     if (XRE_IsParentProcess()) {
       
       
-      
-      if (StaticPrefs::gfx_basic_layer_manager_force_enabled()) {
-        mWindowRenderer =
-            new BasicLayerManager(BasicLayerManager::BLM_OFFSCREEN);
-      } else {
-        mWindowRenderer = new FallbackRenderer;
-      }
+      mWindowRenderer = new FallbackRenderer;
       return mWindowRenderer;
     }
 
