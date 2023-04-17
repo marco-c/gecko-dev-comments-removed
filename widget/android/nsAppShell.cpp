@@ -25,6 +25,7 @@
 #include "mozilla/dom/GeolocationPosition.h"
 
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/AppShutdown.h"
 #include "mozilla/Components.h"
 #include "mozilla/Services.h"
 #include "mozilla/Preferences.h"
@@ -342,6 +343,11 @@ class XPCOMEventTargetWrapper final
  public:
   
   void DispatchNative(mozilla::jni::Object::Param aJavaRunnable) {
+    if (AppShutdown::GetCurrentShutdownPhase() >=
+        ShutdownPhase::XPCOMShutdownThreads) {
+      
+      return;
+    }
     java::XPCOMEventTarget::JNIRunnable::GlobalRef r =
         java::XPCOMEventTarget::JNIRunnable::Ref::From(aJavaRunnable);
     mTarget->Dispatch(NS_NewRunnableFunction(
