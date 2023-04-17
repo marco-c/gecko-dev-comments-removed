@@ -430,6 +430,8 @@ class LookAndFeel {
                                               : ColorScheme::Light;
   }
 
+  static ColorScheme ColorSchemeForDocument(const dom::Document& aDoc);
+
   
   
   enum class UseStandins : bool { No, Yes };
