@@ -704,6 +704,12 @@ class BaseMarionetteTestRunner(object):
                     "fission.autostart": True,
                 }
             )
+        else:
+            self.prefs.update(
+                {
+                    "fission.autostart": False,
+                }
+            )
 
         
         if self.run_until_failure and repeat is None:
