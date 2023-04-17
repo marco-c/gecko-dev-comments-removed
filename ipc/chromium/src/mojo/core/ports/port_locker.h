@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 
-#include "base/macros.h"
+#include "base/logging.h"
 #include "mojo/core/ports/port_ref.h"
 
 namespace mojo {
@@ -31,13 +31,16 @@ class PortLocker {
   PortLocker(const PortRef** port_refs, size_t num_ports);
   ~PortLocker();
 
+  PortLocker(const PortLocker&) = delete;
+  void operator=(const PortLocker&) = delete;
+
   
   
   
   
   
   Port* GetPort(const PortRef& port_ref) const {
-#if DCHECK_IS_ON()
+#ifdef DEBUG
     
     
     bool is_port_locked = false;
@@ -50,7 +53,7 @@ class PortLocker {
 
 
 
-#if DCHECK_IS_ON()
+#ifdef DEBUG
   static void AssertNoPortsLockedOnCurrentThread();
 #else
   static void AssertNoPortsLockedOnCurrentThread() {}
@@ -59,8 +62,6 @@ class PortLocker {
  private:
   const PortRef** const port_refs_;
   const size_t num_ports_;
-
-  DISALLOW_COPY_AND_ASSIGN(PortLocker);
 };
 
 
@@ -69,13 +70,14 @@ class SinglePortLocker {
   explicit SinglePortLocker(const PortRef* port_ref);
   ~SinglePortLocker();
 
+  SinglePortLocker(const SinglePortLocker&) = delete;
+  void operator=(const SinglePortLocker&) = delete;
+
   Port* port() const { return locker_.GetPort(*port_ref_); }
 
  private:
   const PortRef* port_ref_;
   PortLocker locker_;
-
-  DISALLOW_COPY_AND_ASSIGN(SinglePortLocker);
 };
 
 }  
