@@ -814,6 +814,13 @@ void BrowsingContext::Detach(bool aFromIPC) {
   MOZ_DIAGNOSTIC_ASSERT(mEverAttached);
   MOZ_DIAGNOSTIC_ASSERT(!mIsDiscarded);
 
+  auto callListeners =
+      MakeScopeExit([listeners = std::move(mDiscardListeners), id = Id()] {
+        for (const auto& listener : listeners) {
+          listener(id);
+        }
+      });
+
   nsCOMPtr<nsIRequestContextService> rcsvc =
       net::RequestContextService::GetOrCreate();
   if (rcsvc) {
@@ -823,6 +830,7 @@ void BrowsingContext::Detach(bool aFromIPC) {
   
   
   if (NS_WARN_IF(!mGroup)) {
+    MOZ_ASSERT_UNREACHABLE();
     return;
   }
 
@@ -833,6 +841,7 @@ void BrowsingContext::Detach(bool aFromIPC) {
   }
 
   if (XRE_IsParentProcess()) {
+    RefPtr<CanonicalBrowsingContext> self{Canonical()};
     Group()->EachParent([&](ContentParent* aParent) {
       
       
@@ -841,30 +850,32 @@ void BrowsingContext::Detach(bool aFromIPC) {
       
       
       
-      if (!Canonical()->IsEmbeddedInProcess(aParent->ChildID()) &&
-          !Canonical()->IsOwnedByProcess(aParent->ChildID())) {
-        
-        
-        
-        
-        
-        
-        
-        mGroup->AddKeepAlive();
-        auto callback = [self = RefPtr{this}](auto) {
-          self->mGroup->RemoveKeepAlive();
-        };
+      bool doDiscard = !Canonical()->IsEmbeddedInProcess(aParent->ChildID()) &&
+                       !Canonical()->IsOwnedByProcess(aParent->ChildID());
 
-        aParent->SendDiscardBrowsingContext(this, callback, callback);
-      }
+      
+      
+      
+      
+      
+      
+      
+      mGroup->AddKeepAlive();
+      self->AddPendingDiscard();
+      auto callback = [self](auto) {
+        self->mGroup->RemoveKeepAlive();
+        self->RemovePendingDiscard();
+      };
+
+      aParent->SendDiscardBrowsingContext(this, doDiscard, callback, callback);
     });
-  } else if (!aFromIPC) {
+  } else {
     
     
     
     auto callback = [self = RefPtr{this}](auto) {};
-    ContentChild::GetSingleton()->SendDiscardBrowsingContext(this, callback,
-                                                             callback);
+    ContentChild::GetSingleton()->SendDiscardBrowsingContext(
+        this, !aFromIPC, callback, callback);
   }
 
   mGroup->Unregister(this);
@@ -905,6 +916,15 @@ void BrowsingContext::Detach(bool aFromIPC) {
   if (XRE_IsParentProcess()) {
     Canonical()->CanonicalDiscard();
   }
+}
+
+void BrowsingContext::AddDiscardListener(
+    std::function<void(uint64_t)>&& aListener) {
+  if (mIsDiscarded) {
+    aListener(Id());
+    return;
+  }
+  mDiscardListeners.AppendElement(std::move(aListener));
 }
 
 void BrowsingContext::PrepareForProcessChange() {

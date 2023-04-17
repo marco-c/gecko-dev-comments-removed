@@ -1795,8 +1795,10 @@ both:
 
 
 
-    async DiscardBrowsingContext(MaybeDiscardedBrowsingContext aContext)
-            returns (bool unused);
+
+
+    async DiscardBrowsingContext(MaybeDiscardedBrowsingContext aContext, bool aDoDiscard)
+            returns (uint64_t unused);
 
     async AdjustWindowFocus(MaybeDiscardedBrowsingContext aContext,
                             bool aIsVisible, uint64_t aActionId);
