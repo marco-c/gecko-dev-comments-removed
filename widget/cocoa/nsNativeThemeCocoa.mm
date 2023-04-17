@@ -3087,7 +3087,7 @@ LayoutDeviceIntMargin nsNativeThemeCocoa::GetWidgetBorder(nsDeviceContext* aCont
     case StyleAppearance::ScrollbartrackHorizontal:
     case StyleAppearance::ScrollbartrackVertical: {
       bool isHorizontal = (aAppearance == StyleAppearance::ScrollbartrackHorizontal);
-      if (nsLookAndFeel::UseOverlayScrollbars()) {
+      if (LookAndFeel::UseOverlayScrollbars()) {
         
         if (isHorizontal) {
           result.left = 1;
@@ -3556,7 +3556,7 @@ bool nsNativeThemeCocoa::ThemeSupportsWidget(nsPresContext* aPresContext, nsIFra
       
       
       nsIScrollableFrame* scrollFrame = do_QueryFrame(parentFrame);
-      return (!nsLookAndFeel::UseOverlayScrollbars() && scrollFrame &&
+      return (!LookAndFeel::UseOverlayScrollbars() && scrollFrame &&
               (!scrollFrame->GetScrollbarVisibility().isEmpty()));
     }
 
@@ -3698,7 +3698,7 @@ nsITheme::Transparency nsNativeThemeCocoa::GetWidgetTransparency(nsIFrame* aFram
     case StyleAppearance::ScrollbarVertical:
     case StyleAppearance::Scrollcorner: {
       
-      if (nsLookAndFeel::UseOverlayScrollbars()) {
+      if (LookAndFeel::UseOverlayScrollbars()) {
         return eTransparent;
       }
       const nsStyleUI* ui = nsLayoutUtils::StyleForScrollbar(aFrame)->StyleUI();

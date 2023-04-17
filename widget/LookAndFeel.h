@@ -348,6 +348,11 @@ class LookAndFeel {
   };
 
   
+  static bool UseOverlayScrollbars() {
+    return GetInt(IntID::UseOverlayScrollbars);
+  }
+
+  
 
 
   enum WindowsTheme {
