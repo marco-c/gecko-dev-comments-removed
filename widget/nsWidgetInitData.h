@@ -21,11 +21,6 @@ enum nsWindowType {
   eWindowType_child,      
                           
   eWindowType_invisible,  
-  eWindowType_plugin,     
-  eWindowType_plugin_ipc_chrome,   
-                                   
-  eWindowType_plugin_ipc_content,  
-                                   
 };
 
 
