@@ -37,6 +37,15 @@ add_task(async function setup() {
   
   Services.telemetry.setEventRecordingEnabled("navigation", true);
 
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [
+        "browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar",
+        false,
+      ],
+    ],
+  });
+
   
   registerCleanupFunction(async function() {
     await Services.search.setDefault(originalEngine);
