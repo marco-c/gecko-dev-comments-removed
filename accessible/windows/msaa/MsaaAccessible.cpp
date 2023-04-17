@@ -966,12 +966,9 @@ MsaaAccessible::get_accName(
   if (accessible) {
     return accessible->get_accName(kVarChildIdSelf, pszName);
   }
-  if (mAcc->IsRemote()) {
-    return E_NOTIMPL;  
-  }
 
   nsAutoString name;
-  LocalAcc()->Name(name);
+  Acc()->Name(name);
 
   
   
