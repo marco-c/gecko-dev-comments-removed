@@ -105,6 +105,12 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
   
   static bool GetBlobURLPrincipal(nsIURI* aURI, nsIPrincipal** aPrincipal);
 
+  
+  
+  
+  
+  static bool IsBlobURLBroadcastPrincipal(nsIPrincipal* aPrincipal);
+
  private:
   ~BlobURLProtocolHandler();
 

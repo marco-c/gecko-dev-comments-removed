@@ -1968,8 +1968,7 @@ nsresult BrowsingContext::LoadURI(nsDocShellLoadState* aLoadState,
         aLoadState->SetChannelInitialized(true);
       }
 
-      cp->TransmitBlobDataIfBlobURL(aLoadState->URI(),
-                                    aLoadState->TriggeringPrincipal());
+      cp->TransmitBlobDataIfBlobURL(aLoadState->URI());
 
       
       

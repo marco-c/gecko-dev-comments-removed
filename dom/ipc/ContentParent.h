@@ -640,7 +640,7 @@ class ContentParent final
   
   
   
-  void TransmitBlobDataIfBlobURL(nsIURI* aURI, nsIPrincipal* aPrincipal);
+  void TransmitBlobDataIfBlobURL(nsIURI* aURI);
 
   void OnCompositorDeviceReset() override;
 
