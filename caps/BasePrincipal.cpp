@@ -38,6 +38,7 @@
 #include "mozilla/ContentBlocking.h"
 #include "nsPIDOMWindow.h"
 #include "nsIURIMutator.h"
+#include "mozilla/PermissionManager.h"
 
 #include "json/json.h"
 #include "nsSerializationHelper.h"
@@ -391,8 +392,36 @@ BasePrincipal::EqualsForPermission(nsIPrincipal* aOther, bool aExactHost,
   NS_ENSURE_ARG_POINTER(aOther);
   NS_ENSURE_ARG_POINTER(aResult);
 
+  auto* other = Cast(aOther);
+  if (Kind() != other->Kind()) {
+    
+    return NS_OK;
+  }
+
+  if (Kind() == eSystemPrincipal) {
+    *aResult = this == other;
+    return NS_OK;
+  }
+
+  if (Kind() == eNullPrincipal) {
+    
+    return NS_OK;
+  }
+
+  MOZ_ASSERT(Kind() == eExpandedPrincipal || Kind() == eContentPrincipal);
+
   
-  if (FastEquals(aOther)) {
+  
+  mozilla::OriginAttributes ourAttrs = mOriginAttributes;
+  PermissionManager::MaybeStripOriginAttributes(false, ourAttrs);
+  mozilla::OriginAttributes theirAttrs = aOther->OriginAttributesRef();
+  PermissionManager::MaybeStripOriginAttributes(false, theirAttrs);
+
+  if (ourAttrs != theirAttrs) {
+    return NS_OK;
+  }
+
+  if (mOriginNoSuffix == other->mOriginNoSuffix) {
     *aResult = true;
     return NS_OK;
   }
@@ -403,22 +432,18 @@ BasePrincipal::EqualsForPermission(nsIPrincipal* aOther, bool aExactHost,
     return NS_OK;
   }
 
-  
-  const mozilla::OriginAttributes& theirAttrs = aOther->OriginAttributesRef();
-  const mozilla::OriginAttributes& ourAttrs = OriginAttributesRef();
-
-  if (theirAttrs != ourAttrs) {
-    return NS_OK;
-  }
-
   nsCOMPtr<nsIURI> ourURI;
   nsresult rv = GetURI(getter_AddRefs(ourURI));
   NS_ENSURE_SUCCESS(rv, rv);
-  auto* basePrin = BasePrincipal::Cast(aOther);
+  
+  
+  NS_ENSURE_TRUE(ourURI, NS_ERROR_FAILURE);
 
   nsCOMPtr<nsIURI> otherURI;
-  rv = basePrin->GetURI(getter_AddRefs(otherURI));
+  rv = other->GetURI(getter_AddRefs(otherURI));
   NS_ENSURE_SUCCESS(rv, rv);
+  NS_ENSURE_TRUE(otherURI, NS_ERROR_FAILURE);
+
   
   nsAutoCString otherScheme;
   rv = otherURI->GetScheme(otherScheme);
