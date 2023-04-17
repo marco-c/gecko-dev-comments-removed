@@ -162,9 +162,17 @@ function getProxyMock(overrides = {}) {
   };
 }
 
+function formatErrorTextWithCausedBy(text) {
+  
+  
+  
+  return text.replace(/Caused by/g, "\nCaused by");
+}
+
 module.exports = {
   clearPrefs,
   clonePacket,
+  formatErrorTextWithCausedBy,
   getFiltersPrefs,
   getFirstMessage,
   getLastMessage,
