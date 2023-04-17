@@ -1,3 +1,5 @@
+
+
 function f(stdlib, foreign, buffer) {
     "use asm";
     var i32 = new stdlib.Int32Array(buffer);

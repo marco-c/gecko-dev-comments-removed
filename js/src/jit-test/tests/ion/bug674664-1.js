@@ -1,3 +1,4 @@
+
 timeout(5);
 function f0() {
     var v0;

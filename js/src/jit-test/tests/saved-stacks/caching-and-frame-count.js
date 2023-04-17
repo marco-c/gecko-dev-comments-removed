@@ -3,6 +3,8 @@
 
 
 
+
+
 function stackLength(stack) {
   return stack === null
     ? 0
