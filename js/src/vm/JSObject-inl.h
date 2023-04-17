@@ -132,6 +132,7 @@ inline bool JSObject::isUnqualifiedVarObj() const {
 
 namespace js {
 
+#ifdef DEBUG
 inline bool ClassCanHaveFixedData(const JSClass* clasp) {
   
   
@@ -141,6 +142,7 @@ inline bool ClassCanHaveFixedData(const JSClass* clasp) {
   return !clasp->isNativeObject() || clasp == &js::ArrayBufferObject::class_ ||
          js::IsTypedArrayClass(clasp);
 }
+#endif
 
 class MOZ_RAII AutoSuppressAllocationMetadataBuilder {
   JS::Zone* zone;

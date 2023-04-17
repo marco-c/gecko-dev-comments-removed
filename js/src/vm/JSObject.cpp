@@ -743,10 +743,9 @@ static inline NativeObject* NewObject(JSContext* cx, Handle<TaggedProto> proto,
   
   
   
-  size_t nfixed = ClassCanHaveFixedData(clasp)
-                      ? GetGCKindSlots(gc::GetGCObjectKind(clasp))
-                      : GetGCKindSlots(kind);
+  MOZ_ASSERT(!ClassCanHaveFixedData(clasp));
 
+  size_t nfixed = GetGCKindSlots(kind);
   RootedShape shape(
       cx, SharedShape::getInitialShape(cx, clasp, cx->realm(), proto, nfixed,
                                        objectFlags));
