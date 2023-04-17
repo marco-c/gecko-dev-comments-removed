@@ -38,13 +38,15 @@ struct AsyncScrollThumbTransformer {
   
   void ApplyTransformForAxis(const Axis& aAxis);
 
+  enum class ScrollThumbExtent { Start, End };
+
   
   
-  void ScaleThumbBy(const Axis& aAxis, float aScale);
+  void ScaleThumbBy(const Axis& aAxis, float aScale, ScrollThumbExtent aExtent);
 };
 
-void AsyncScrollThumbTransformer::ScaleThumbBy(const Axis& aAxis,
-                                               float aScale) {
+void AsyncScrollThumbTransformer::ScaleThumbBy(const Axis& aAxis, float aScale,
+                                               ScrollThumbExtent aExtent) {
   
   
   
@@ -56,19 +58,22 @@ void AsyncScrollThumbTransformer::ScaleThumbBy(const Axis& aAxis,
   
   
   
-  CSSCoord thumbOriginRelativeToCompBounds =
+  CSSCoord thumbExtentRelativeToCompBounds =
       (aAxis.GetPointOffset(mMetrics.GetVisualScrollOffset()) *
        mUnitlessThumbRatio);
   CSSCoord compBoundsOrigin = aAxis.GetPointOffset(
       mMetrics.CalculateCompositionBoundsInCssPixelsOfSurroundingContent()
           .TopLeft());
-  CSSCoord thumbOrigin = compBoundsOrigin + thumbOriginRelativeToCompBounds;
-  const CSSCoord thumbOriginScaled = thumbOrigin * aScale;
-  const CSSCoord thumbOriginDelta = thumbOriginScaled - thumbOrigin;
-  const ParentLayerCoord thumbOriginDeltaPL = thumbOriginDelta * mEffectiveZoom;
+  CSSCoord thumbExtent = compBoundsOrigin + thumbExtentRelativeToCompBounds;
+  if (aExtent == ScrollThumbExtent::End) {
+    thumbExtent += mScrollbarData.mThumbLength;
+  }
+  const CSSCoord thumbExtentScaled = thumbExtent * aScale;
+  const CSSCoord thumbExtentDelta = thumbExtentScaled - thumbExtent;
+  const ParentLayerCoord thumbExtentDeltaPL = thumbExtentDelta * mEffectiveZoom;
 
   aAxis.PostScale(mScrollbarTransform, aScale);
-  aAxis.PostTranslate(mScrollbarTransform, -thumbOriginDeltaPL);
+  aAxis.PostTranslate(mScrollbarTransform, -thumbExtentDeltaPL);
 }
 
 void AsyncScrollThumbTransformer::ApplyTransformForAxis(const Axis& aAxis) {
@@ -114,7 +119,11 @@ void AsyncScrollThumbTransformer::ApplyTransformForAxis(const Axis& aAxis) {
   
   ParentLayerCoord translation = -asyncScroll * mUnitlessThumbRatio;
 
-  ScaleThumbBy(aAxis, scale);
+  
+  
+  
+  ScaleThumbBy(aAxis, scale, ScrollThumbExtent::Start);
+
   aAxis.PostTranslate(mScrollbarTransform, translation);
 }
 
