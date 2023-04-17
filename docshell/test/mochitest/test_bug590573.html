@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=590573
+-->
 <head>
   <title>Test for Bug 590573</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -24,17 +24,6 @@ function page1Load() {
     pageLoad();
   } else {
     dump("Ignoring page1 load.\n");
-  }
-}
-
-var page1PopstateCallbackEnabled = false;
-function page1Popstate() {
-  if (page1PopstateCallbackEnabled) {
-    page1PopstateCallbackEnabled = false;
-    dump("Got page1 popstate.\n");
-    pageLoad();
-  } else {
-    dump("Ignoring page1 popstate.\n");
   }
 }
 
@@ -100,7 +89,10 @@ function pageLoad() {
 }
 
 function continueAsync() {
-  setTimeout(function() { gTestContinuation.next(); })
+  popup.addEventListener("popstate", function() {
+      setTimeout(function() { gTestContinuation.next(); });
+    },
+    {once: true});
 }
 
 function* testBody() {
