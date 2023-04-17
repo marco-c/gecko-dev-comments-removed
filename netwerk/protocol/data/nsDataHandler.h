@@ -33,7 +33,7 @@ class nsDataHandler : public nsIProtocolHandler,
   
   
   
-  [[nodiscard]] static nsresult ParseURI(const nsACString& spec,
+  [[nodiscard]] static nsresult ParseURI(const nsCString& spec,
                                          nsCString& contentType,
                                          nsCString* contentCharset,
                                          bool& isBase64, nsCString* dataBuffer);

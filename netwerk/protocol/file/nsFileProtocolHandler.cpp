@@ -225,7 +225,7 @@ nsFileProtocolHandler::NewFileURI(nsIFile* aFile, nsIURI** aResult) {
   
   
   return NS_MutateURI(new nsStandardURL::Mutator())
-      .Apply(&nsIFileURLMutator::SetFile, file)
+      .Apply(NS_MutatorMethod(&nsIFileURLMutator::SetFile, file))
       .Finalize(aResult);
 }
 
