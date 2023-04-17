@@ -44,32 +44,21 @@ export interface Commands {
 
 
 
-
-type MaybePromise<T> = Promise<T> | T;
-
-
-
-
-
-
-
-
-
 export interface PerfFront {
-  startProfiler: (options: RecordingSettings) => MaybePromise<boolean>;
+  startProfiler: (options: RecordingSettings) => Promise<boolean>;
   getProfileAndStopProfiler: () => Promise<any>;
-  stopProfilerAndDiscardProfile: () => MaybePromise<void>;
+  stopProfilerAndDiscardProfile: () => Promise<void>;
   getSymbolTable: (
     path: string,
     breakpadId: string
   ) => Promise<[number[], number[], number[]]>;
-  isActive: () => MaybePromise<boolean>;
-  isSupportedPlatform: () => MaybePromise<boolean>;
-  isLockedForPrivateBrowsing: () => MaybePromise<boolean>;
+  isActive: () => Promise<boolean>;
+  isSupportedPlatform: () => Promise<boolean>;
+  isLockedForPrivateBrowsing: () => Promise<boolean>;
   on: (type: string, listener: () => void) => void;
   off: (type: string, listener: () => void) => void;
   destroy: () => void;
-  getSupportedFeatures: () => MaybePromise<string[]>;
+  getSupportedFeatures: () => Promise<string[]>;
 }
 
 
