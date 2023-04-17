@@ -188,7 +188,7 @@ impl ExternalEvent {
 }
 
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Copy, Clone, Deserialize, Serialize)]
 pub enum ScrollClamping {
     
     ToContentBounds,
