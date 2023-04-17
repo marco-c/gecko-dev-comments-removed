@@ -24,6 +24,13 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   UpdateUtils: "resource://gre/modules/UpdateUtils.jsm",
 });
 
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "UpdateService",
+  "@mozilla.org/updates/update-service;1",
+  "nsIApplicationUpdateService"
+);
+
 XPCOMUtils.defineLazyGetter(this, "log", () => {
   let { ConsoleAPI } = ChromeUtils.import("resource://gre/modules/Console.jsm");
   let consoleOptions = {
@@ -90,7 +97,7 @@ async function _attemptBackgroundUpdate() {
   let result = new Promise(resolve => {
     let appUpdater = new AppUpdater();
 
-    let _appUpdaterListener = status => {
+    let _appUpdaterListener = (status, progress, progressMax) => {
       let stringStatus = AppUpdater.STATUS.debugStringFor(status);
       if (AppUpdater.STATUS.isTerminalStatus(status)) {
         log.debug(
@@ -98,6 +105,45 @@ async function _attemptBackgroundUpdate() {
         );
         appUpdater.removeListener(_appUpdaterListener);
         resolve(true);
+      } else if (status == AppUpdater.STATUS.CHECKING) {
+        
+        
+        
+        
+        
+        log.debug(
+          `${SLUG}: This session will be limited to downloading updates only.`
+        );
+        UpdateService.onlyDownloadUpdatesThisSession = true;
+      } else if (
+        status == AppUpdater.STATUS.DOWNLOADING &&
+        progress !== undefined &&
+        progressMax !== undefined
+      ) {
+        
+        
+        
+        
+        
+        
+        if (
+          progressMax < 0 ||
+          progress != progressMax ||
+          UpdateService.onlyDownloadUpdatesThisSession
+        ) {
+          log.debug(
+            `${SLUG}: Download in progress. Exiting task while download ` +
+              `transfers`
+          );
+          
+          
+          UpdateService.onlyDownloadUpdatesThisSession = true;
+
+          appUpdater.removeListener(_appUpdaterListener);
+          resolve(true);
+        } else {
+          log.debug(`${SLUG}: Download has completed!`);
+        }
       } else {
         log.debug(
           `${SLUG}: background update transitioned to status ${status}: ${stringStatus}`
