@@ -81,6 +81,10 @@ function promiseLibrary(aLeftPaneRoot) {
 
 function promiseLibraryClosed(organizer) {
   return new Promise(resolve => {
+    if (organizer.closed) {
+      resolve();
+      return;
+    }
     
     organizer.addEventListener(
       "unload",
@@ -237,33 +241,43 @@ var withBookmarksDialog = async function(
   skipOverlayWait = false
 ) {
   let closed = false;
-  let dialogPromise = new Promise(resolve => {
-    Services.ww.registerNotification(function winObserver(
-      subject,
-      topic,
-      data
-    ) {
-      if (topic == "domwindowopened") {
-        let win = subject;
-        win.addEventListener(
-          "load",
-          function() {
-            ok(
-              win.location.href.startsWith(dialogUrl),
-              "The bookmark properties dialog is open: " + win.location.href
-            );
-            
-            waitForFocus(() => {
-              resolve(win);
-            }, win);
-          },
-          { once: true }
-        );
-      } else if (topic == "domwindowclosed") {
-        Services.ww.unregisterNotification(winObserver);
-        closed = true;
-      }
+  let protonModal =
+    Services.prefs.getBoolPref("browser.proton.modals.enabled", false) &&
+    
+    
+    Services.wm.getMostRecentWindow("").gDialogBox;
+  let dialogPromise;
+  if (protonModal) {
+    dialogPromise = BrowserTestUtils.promiseAlertDialogOpen(null, dialogUrl, {
+      isSubDialog: true,
     });
+  } else {
+    dialogPromise = BrowserTestUtils.domWindowOpenedAndLoaded(null, win => {
+      return win.document.documentURI.startsWith(dialogUrl);
+    }).then(win => {
+      ok(
+        win.location.href.startsWith(dialogUrl),
+        "The bookmark properties dialog is open: " + win.location.href
+      );
+      
+      return SimpleTest.promiseFocus(win).then(() => win);
+    });
+  }
+  let dialogClosePromise = dialogPromise.then(win => {
+    if (!protonModal) {
+      return BrowserTestUtils.domWindowClosed(win);
+    }
+    let container = win.top.document.getElementById("window-modal-dialog");
+    return BrowserTestUtils.waitForEvent(container, "close").then(() => {
+      return BrowserTestUtils.waitForMutationCondition(
+        container,
+        { childList: true, attributes: true },
+        () => !container.hasChildNodes() && !container.open
+      );
+    });
+  });
+  dialogClosePromise.then(() => {
+    closed = true;
   });
 
   info("withBookmarksDialog: opening the dialog");
@@ -311,10 +325,7 @@ var withBookmarksDialog = async function(
       await closePromise;
     }
     
-    await BrowserTestUtils.waitForCondition(
-      () => closed,
-      "The dialog should be closed!"
-    );
+    await dialogClosePromise;
   }
 };
 
