@@ -34,22 +34,9 @@ static constexpr Entry kEntries[] = {
             return False
         return True
 
-    
-    def method(p):
-        if p.id.startswith("margin_"):
-            return "{}Width".format(p.method)
-        if p.id.startswith("_moz_"):
-            method = p.method[3:]
-        else:
-            method = p.method
-        if p.id.startswith("_moz_outline_radius_"):
-            method = method.replace("left", "Left")
-            method = method.replace("right", "Right")
-        return method
-
     def getter_entry(p):
         if has_cpp_getter(p):
-            return "DoGet" + method(p)
+            return "DoGet" + p.method
         
         
         
