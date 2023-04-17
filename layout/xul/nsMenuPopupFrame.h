@@ -286,6 +286,7 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   bool IsVisible() {
     return mPopupState == ePopupVisible || mPopupState == ePopupShown;
   }
+  bool IsNativeMenu() { return mIsNativeMenu; }
 
   
   bool IsMenuList();
@@ -668,6 +669,10 @@ class nsMenuPopupFrame final : public nsBoxFrame,
   
   bool mHFlip;
   bool mVFlip;
+
+  
+  
+  bool mIsNativeMenu = false;
 
   
   bool mPendingPositionedEvent = false;
