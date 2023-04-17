@@ -64,15 +64,20 @@ class CacheIRHealth {
   Happiness spewStubHealth(AutoStructuredSpewer& spew, ICCacheIRStub* stub);
   
   
-  bool spewNonFallbackICInformation(AutoStructuredSpewer& spew,
+  bool spewNonFallbackICInformation(AutoStructuredSpewer& spew, JSContext* cx,
                                     ICStub* firstStub,
                                     Happiness* entryHappiness);
   
-  bool spewICEntryHealth(AutoStructuredSpewer& spew, HandleScript script,
-                         ICEntry* entry, ICFallbackStub* fallback,
-                         jsbytecode* pc, JSOp op, Happiness* entryHappiness);
+  bool spewICEntryHealth(AutoStructuredSpewer& spew, JSContext* cx,
+                         HandleScript script, ICEntry* entry,
+                         ICFallbackStub* fallback, jsbytecode* pc, JSOp op,
+                         Happiness* entryHappiness);
   
-  void spewShapeInformation(AutoStructuredSpewer& spew, ICStub* stub);
+  
+  void spewShapeInformation(AutoStructuredSpewer& spew, JSContext* cx,
+                            ICStub* stub);
+  
+  BaseScript* maybeExtractBaseScript(JSContext* cx, Shape* shape);
 
  public:
   
