@@ -36,7 +36,7 @@
 namespace mozilla {
 namespace dom {
 class CanonicalBrowsingContext;
-struct RemotenessChangeOptions;
+struct NavigationIsolationOptions;
 }  
 namespace net {
 using ChildEndpointPromise =
@@ -329,7 +329,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   bool MaybeTriggerProcessSwitch(bool* aWillSwitchToRemote);
   void TriggerProcessSwitch(dom::CanonicalBrowsingContext* aContext,
-                            const dom::RemotenessChangeOptions& aOptions);
+                            const dom::NavigationIsolationOptions& aOptions);
 
   
   
