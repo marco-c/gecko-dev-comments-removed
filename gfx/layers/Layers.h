@@ -403,25 +403,6 @@ class Layer {
 
 
 
-  void SetScrolledClip(const Maybe<LayerClip>& aScrolledClip) {
-    if (mSimpleAttrs.SetScrolledClip(aScrolledClip)) {
-      MOZ_LAYERS_LOG_IF_SHADOWABLE(this,
-                                   ("Layer::Mutated(%p) ScrolledClip", this));
-      MutatedSimple();
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -440,28 +421,6 @@ class Layer {
       mMaskLayer = aMaskLayer;
       Mutated();
     }
-  }
-
-  
-
-
-
-  void SetAncestorMaskLayers(const nsTArray<RefPtr<Layer>>& aLayers) {
-    if (aLayers != mAncestorMaskLayers) {
-      MOZ_LAYERS_LOG_IF_SHADOWABLE(
-          this, ("Layer::Mutated(%p) AncestorMaskLayers", this));
-      mAncestorMaskLayers = aLayers.Clone();
-      Mutated();
-    }
-  }
-
-  
-
-
-
-  void AddAncestorMaskLayer(const RefPtr<Layer>& aLayer) {
-    mAncestorMaskLayers.AppendElement(aLayer);
-    Mutated();
   }
 
   
@@ -624,10 +583,6 @@ class Layer {
     return mSimpleAttrs.GetMixBlendMode();
   }
   const Maybe<ParentLayerIntRect>& GetClipRect() const { return mClipRect; }
-  const Maybe<LayerClip>& GetScrolledClip() const {
-    return mSimpleAttrs.GetScrolledClip();
-  }
-  Maybe<ParentLayerIntRect> GetScrolledClipRect() const;
   uint32_t GetContentFlags() { return mSimpleAttrs.GetContentFlags(); }
   const LayerIntRegion& GetVisibleRegion() const { return mVisibleRegion; }
   const ScrollMetadata& GetScrollMetadata(uint32_t aIndex) const;
@@ -700,29 +655,6 @@ class Layer {
   bool HasPendingTransform() const { return !!mPendingTransform; }
 
   void CheckCanary() const { mCanary.Check(); }
-
-  
-  
-  size_t GetAncestorMaskLayerCount() const {
-    return mAncestorMaskLayers.Length();
-  }
-  Layer* GetAncestorMaskLayerAt(size_t aIndex) const {
-    return mAncestorMaskLayers.ElementAt(aIndex);
-  }
-  const nsTArray<RefPtr<Layer>>& GetAllAncestorMaskLayers() const {
-    return mAncestorMaskLayers;
-  }
-
-  bool HasMaskLayers() const {
-    return GetMaskLayer() || mAncestorMaskLayers.Length() > 0;
-  }
-
-  
-
-
-
-
-  Maybe<ParentLayerIntRect> GetCombinedClipRect() const;
 
   
 
