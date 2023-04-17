@@ -17,6 +17,7 @@
 #include "nsIDocumentObserver.h"
 #include "nsIObserver.h"
 #include "nsITimer.h"
+#include "nsTHashSet.h"
 #include "nsWeakReference.h"
 
 class nsAccessiblePivot;
@@ -343,6 +344,13 @@ class DocAccessible : public HyperTextAccessibleWrap,
   
 
 
+
+
+  void MarkForBoundsProcessing(LocalAccessible* aAcc);
+
+  
+
+
   void UpdateText(nsIContent* aTextNode);
 
   
@@ -481,6 +489,13 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
 
   void ProcessInvalidationList();
+
+  
+
+
+
+
+  void ProcessBoundsChanged();
 
   
 
@@ -697,6 +712,8 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
   
   DocAccessibleChild* mIPCDoc;
+
+  nsTHashSet<RefPtr<LocalAccessible>> mMaybeBoundsChanged;
 };
 
 inline DocAccessible* LocalAccessible::AsDoc() {
