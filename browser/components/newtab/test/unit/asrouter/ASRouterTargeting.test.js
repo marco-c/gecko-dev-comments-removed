@@ -18,6 +18,7 @@ describe("#CachedTargetingGetter", () => {
   let frecentStub;
   let topsitesCache;
   let globals;
+  let doesAppNeedPinStub;
   beforeEach(() => {
     sandbox = sinon.createSandbox();
     clock = sinon.useFakeTimers();
@@ -40,12 +41,38 @@ describe("#CachedTargetingGetter", () => {
         }
       }
     );
+    doesAppNeedPinStub = sandbox.stub().resolves();
   });
 
   afterEach(() => {
     sandbox.restore();
     clock.restore();
     globals.restore();
+  });
+
+  it("should cache allow for optional getter argument", async () => {
+    let cachedGetter = new CachedTargetingGetter(
+      "doesAppNeedPin",
+      undefined,
+      undefined,
+      { doesAppNeedPin: doesAppNeedPinStub }
+    );
+    
+    clock.tick(sixHours);
+
+    await cachedGetter.get();
+    await cachedGetter.get();
+    await cachedGetter.get();
+
+    
+    assert.calledOnce(doesAppNeedPinStub);
+
+    
+    clock.tick(sixHours);
+    await cachedGetter.get();
+
+    
+    assert.calledTwice(doesAppNeedPinStub);
   });
 
   it("should only make a request every 6 hours", async () => {
