@@ -770,22 +770,19 @@ inline void JSFunction::trace(JSTracer* trc) {
 
   TraceNullableEdge(trc, &atom_, "atom");
 
-  if (isInterpreted()) {
-    
-    
-    
-    if (isIncomplete()) {
-      MOZ_ASSERT(u.scripted.s.script_ == nullptr);
-    } else if (hasBaseScript()) {
-      BaseScript* script = u.scripted.s.script_;
+  
+  
+  
+  MOZ_ASSERT(!nativeJitInfoOrInterpretedScript_.isGCThing());
+  if (isInterpreted() && hasBaseScript()) {
+    if (BaseScript* script = baseScript()) {
       TraceManuallyBarrieredEdge(trc, &script, "script");
       
       
-      if (u.scripted.s.script_ != script) {
-        u.scripted.s.script_ = script;
+      if (baseScript() != script) {
+        nativeJitInfoOrInterpretedScript_.set(JS::PrivateValue(script));
       }
     }
-    
   }
 }
 
