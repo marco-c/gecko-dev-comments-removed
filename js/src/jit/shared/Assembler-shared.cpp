@@ -6,7 +6,6 @@
 
 #include "jit/shared/Assembler-shared.h"
 
-#include "jit/JitSpewer.h"
 #include "vm/NativeObject.h"
 
 namespace js::jit {
@@ -18,57 +17,5 @@ void BaseObjectElementIndex::staticAssertions() {
 void BaseObjectSlotIndex::staticAssertions() {
   NativeObject::slotsSizeMustNotOverflow();
 }
-
-AssemblerShared::~AssemblerShared() {
-#ifdef DEBUG
-  while (hasCreator()) {
-    popCreator();
-  }
-#endif
-}
-
-#ifdef DEBUG
-void AssemblerShared::pushCreator(const char* who) {
-  (void)creators_.append(who);
-  JitSpewStart(JitSpew_Codegen, "# BEGIN creators: ");
-  bool first = true;
-  for (const char* str : creators_) {
-    JitSpewCont(JitSpew_Codegen, "%s%s", first ? "" : "/", str);
-    first = false;
-  }
-  JitSpewCont(JitSpew_Codegen, "\n");
-}
-
-void AssemblerShared::popCreator() {
-  JitSpewStart(JitSpew_Codegen, "# END   creators: ");
-  bool first = true;
-  for (const char* str : creators_) {
-    JitSpewCont(JitSpew_Codegen, "%s%s", first ? "" : "/", str);
-    first = false;
-  }
-  JitSpewCont(JitSpew_Codegen, "\n");
-  if (creators_.empty()) {
-    JitSpew(JitSpew_Codegen, " ");
-  }
-  MOZ_ASSERT(!creators_.empty());
-  creators_.popBack();
-}
-
-bool AssemblerShared::hasCreator() const {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  return !creators_.empty();
-}
-#endif
 
 }  

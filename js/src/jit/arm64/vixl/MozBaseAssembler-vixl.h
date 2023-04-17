@@ -249,7 +249,6 @@ class MozBaseAssembler : public js::jit::AssemblerShared {
     static_assert(sizeof(instruction) == kInstructionSize);
     
     (void)isBranch;
-    MOZ_ASSERT(hasCreator());
     BufferOffset offs = armbuffer_.putInt(*(uint32_t*)(&instruction));
 #ifdef JS_DISASM_ARM64
     if (!isBranch)
@@ -281,7 +280,6 @@ class MozBaseAssembler : public js::jit::AssemblerShared {
   
   BufferOffset EmitData(void const * data, unsigned size) {
     VIXL_ASSERT(size % 4 == 0);
-    MOZ_ASSERT(hasCreator());
     return armbuffer_.allocEntry(size / sizeof(uint32_t), 0, (uint8_t*)(data), nullptr);
   }
 

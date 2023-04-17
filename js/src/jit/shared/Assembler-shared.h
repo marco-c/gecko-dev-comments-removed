@@ -578,14 +578,6 @@ class AssemblerShared {
 #ifdef ENABLE_WASM_EXCEPTIONS
   wasm::WasmTryNoteVector tryNotes_;
 #endif
-#ifdef DEBUG
-  
-  
-  
-  
-  
-  mozilla::Vector<const char*> creators_;
-#endif
 
  protected:
   CodeLabelVector codeLabels_;
@@ -595,17 +587,6 @@ class AssemblerShared {
 
  public:
   AssemblerShared() : enoughMemory_(true), embedsNurseryPointers_(false) {}
-
-  ~AssemblerShared();
-
-#ifdef DEBUG
-  
-  void pushCreator(const char*);
-  void popCreator();
-  
-  
-  bool hasCreator() const;
-#endif
 
   void propagateOOM(bool success) { enoughMemory_ &= success; }
 
@@ -661,30 +642,6 @@ class AssemblerShared {
   wasm::WasmTryNoteVector& tryNotes() { return tryNotes_; }
 #endif
 };
-
-
-
-
-
-
-
-#ifdef DEBUG
-class MOZ_RAII AutoCreatedBy {
- private:
-  AssemblerShared& ash_;
-
- public:
-  AutoCreatedBy(AssemblerShared& ash, const char* who) : ash_(ash) {
-    ash_.pushCreator(who);
-  }
-  ~AutoCreatedBy() { ash_.popCreator(); }
-};
-#else
-class MOZ_RAII AutoCreatedBy {
- public:
-  inline AutoCreatedBy(AssemblerShared& ash, const char* who) {}
-};
-#endif
 
 }  
 }  

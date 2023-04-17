@@ -1117,9 +1117,6 @@ void SMRegExpMacroAssembler::stackOverflowHandler() {
     return;
   }
 
-  js::jit::AutoCreatedBy acb(masm_,
-                             "SMRegExpMacroAssembler::stackOverflowHandler");
-
   
   masm_.bind(&stack_overflow_label_);
 

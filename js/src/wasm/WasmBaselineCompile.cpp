@@ -393,8 +393,6 @@ void BaseCompiler::remainderI64(RegI64 rhs, RegI64 srcDest, RegI64 reserved,
 
 
 bool BaseCompiler::beginFunction() {
-  AutoCreatedBy acb(masm, "(wasm)BaseCompiler::beginFunction");
-
   JitSpew(JitSpew_Codegen, "# ========================================");
   JitSpew(JitSpew_Codegen, "# Emitting wasm baseline code");
   JitSpew(JitSpew_Codegen,
@@ -578,8 +576,6 @@ bool BaseCompiler::beginFunction() {
 }
 
 bool BaseCompiler::endFunction() {
-  AutoCreatedBy acb(masm, "(wasm)BaseCompiler::endFunction");
-
   JitSpew(JitSpew_Codegen, "# endFunction: start of function epilogue");
 
   
@@ -7651,8 +7647,6 @@ bool BaseCompiler::emitIntrinsic(IntrinsicOp op) {
 
 
 bool BaseCompiler::emitBody() {
-  AutoCreatedBy acb(masm, "(wasm)BaseCompiler::emitBody");
-
   MOZ_ASSERT(stackMapGenerator_.framePushedAtEntryToBody.isSome());
 
   if (!iter_.startFunction(func_.index)) {
@@ -9515,8 +9509,6 @@ void BaseCompiler::assertStackInvariants() const {
 
 
 bool BaseCompiler::emitFunction() {
-  AutoCreatedBy acb(masm, "(wasm)BaseCompiler::emitFunction");
-
   if (!beginFunction()) {
     return false;
   }
