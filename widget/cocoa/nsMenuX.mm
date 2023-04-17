@@ -13,6 +13,7 @@
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/MouseEvents.h"
 
+#include "MOZMenuOpeningCoordinator.h"
 #include "nsMenuItemX.h"
 #include "nsMenuUtilsX.h"
 #include "nsMenuItemIconX.h"
@@ -513,8 +514,23 @@ void nsMenuX::MenuClosed(bool aEntireMenuClosingDueToActivateItem) {
    private:
     nsMenuX* mMenu;  
   };
+
   mPendingAsyncMenuCloseRunnable = new MenuClosedAsyncRunnable(this);
-  NS_DispatchToCurrentThread(mPendingAsyncMenuCloseRunnable);
+
+  if (aEntireMenuClosingDueToActivateItem) {
+    
+    
+    
+    
+    
+    [MOZMenuOpeningCoordinator.sharedInstance runAfterMenuClosed:mPendingAsyncMenuCloseRunnable];
+  } else {
+    
+    
+    
+    
+    NS_DispatchToCurrentThread(mPendingAsyncMenuCloseRunnable);
+  }
 }
 
 void nsMenuX::FlushMenuClosedRunnable() {
@@ -571,7 +587,6 @@ void nsMenuX::ActivateItemAfterClosing(RefPtr<nsMenuItemX>&& aItem, NSEventModif
                                        int16_t aButton) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
-  
   class DoCommandRunnable final : public mozilla::Runnable {
    public:
     explicit DoCommandRunnable(RefPtr<nsMenuItemX>&& aItem, NSEventModifierFlags aModifiers,
@@ -596,7 +611,13 @@ void nsMenuX::ActivateItemAfterClosing(RefPtr<nsMenuItemX>&& aItem, NSEventModif
   };
   RefPtr<Runnable> doCommandAsync = new DoCommandRunnable(std::move(aItem), aModifiers, aButton);
   mPendingCommandRunnables.AppendElement(doCommandAsync);
-  NS_DispatchToCurrentThread(doCommandAsync);
+
+  
+  
+  
+  
+  
+  [MOZMenuOpeningCoordinator.sharedInstance runAfterMenuClosed:std::move(doCommandAsync)];
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
