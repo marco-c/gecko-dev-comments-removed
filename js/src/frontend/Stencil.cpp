@@ -143,6 +143,7 @@ bool ScopeContext::init(JSContext* cx, CompilationInput& input,
                         ParserAtomsTable& parserAtoms, InheritThis inheritThis,
                         JSObject* enclosingEnv) {
   Scope* maybeNonDefaultEnclosingScope = input.maybeNonDefaultEnclosingScope();
+  InputScope maybeNonDefaultEnclosingScope_(maybeNonDefaultEnclosingScope);
 
   
   
@@ -153,8 +154,9 @@ bool ScopeContext::init(JSContext* cx, CompilationInput& input,
   
   
   
-  JS::Rooted<Scope*> effectiveScope(
-      cx, determineEffectiveScope(maybeNonDefaultEnclosingScope, enclosingEnv));
+  JS::Rooted<InputScope> effectiveScope(
+      cx, determineEffectiveScope(maybeNonDefaultEnclosingScope_,
+                                  enclosingEnv));
 
   if (inheritThis == InheritThis::Yes) {
     computeThisBinding(effectiveScope);
@@ -168,8 +170,7 @@ bool ScopeContext::init(JSContext* cx, CompilationInput& input,
     if (!cacheEnclosingScopeBindingForEval(cx, input, parserAtoms)) {
       return false;
     }
-    JS::Rooted<InputScope> effectiveScope_(cx, effectiveScope);
-    if (!cachePrivateFieldsForEval(cx, input, enclosingEnv, effectiveScope_,
+    if (!cachePrivateFieldsForEval(cx, input, enclosingEnv, effectiveScope,
                                    parserAtoms)) {
       return false;
     }
@@ -221,26 +222,24 @@ void ScopeContext::computeThisEnvironment(Scope* enclosingScope) {
   }
 }
 
-void ScopeContext::computeThisBinding(Scope* scope) {
+void ScopeContext::computeThisBinding(const InputScope& scope) {
   
-  for (ScopeIter si(scope); si; si++) {
+  for (InputScopeIter si(scope); si; si++) {
     if (si.kind() == ScopeKind::Module) {
       thisBinding = ThisBinding::Module;
       return;
     }
 
     if (si.kind() == ScopeKind::Function) {
-      JSFunction* fun = si.scope()->as<FunctionScope>().canonicalFunction();
-
       
-      if (fun->isArrow()) {
+      if (si.scope().isArrow()) {
         continue;
       }
 
       
       
       
-      if (fun->isDerivedClassConstructor()) {
+      if (si.scope().isDerivedClassConstructor()) {
         thisBinding = ThisBinding::DerivedConstructor;
       } else {
         thisBinding = ThisBinding::Function;
@@ -306,12 +305,12 @@ void ScopeContext::cacheEnclosingScope(Scope* enclosingScope) {
 #endif
 }
 
-Scope* ScopeContext::determineEffectiveScope(Scope* scope,
-                                             JSObject* environment) {
+InputScope ScopeContext::determineEffectiveScope(InputScope& scope,
+                                                 JSObject* environment) {
   MOZ_ASSERT(effectiveScopeHops == 0);
   
   
-  if (environment && scope->hasOnChain(ScopeKind::NonSyntactic)) {
+  if (environment && scope.hasOnChain(ScopeKind::NonSyntactic)) {
     JSObject* env = environment;
     while (env) {
       
@@ -326,7 +325,7 @@ Scope* ScopeContext::determineEffectiveScope(Scope* scope,
 
       if (unwrapped->is<CallObject>()) {
         JSFunction* callee = &unwrapped->as<CallObject>().callee();
-        return callee->nonLazyScript()->bodyScope();
+        return InputScope(callee->nonLazyScript()->bodyScope());
       }
 
       env = env->enclosingEnvironment();
