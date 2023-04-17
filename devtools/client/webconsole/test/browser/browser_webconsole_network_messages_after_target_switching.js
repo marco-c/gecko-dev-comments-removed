@@ -24,6 +24,12 @@ registerCleanupFunction(async function() {
 });
 
 add_task(async function task() {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["fission.bfcacheInParent", false]],
+  });
+
   info("Add an empty tab and open the console");
   const hud = await openNewTabAndConsole("");
 

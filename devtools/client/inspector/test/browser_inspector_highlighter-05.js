@@ -49,6 +49,12 @@ const TEST_URL =
 `);
 
 add_task(async function() {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["fission.bfcacheInParent", false]],
+  });
+
   info("Open the inspector to a blank page.");
   const { inspector, testActor } = await openInspectorForURL("about:blank");
 

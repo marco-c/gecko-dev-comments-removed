@@ -8,6 +8,12 @@
 
 
 add_task(async function() {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["fission.bfcacheInParent", false]],
+  });
+
   const dbg = await initDebugger("doc-sources.html");
 
   

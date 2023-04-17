@@ -10,6 +10,12 @@ const EMPTY_TEST_URL = TEST_BASE_HTTP + "doc_empty.html";
 const TEST_URL = TEST_BASE_HTTP + "doc_fetch_from_netmonitor.html";
 
 add_task(async function() {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["fission.bfcacheInParent", false]],
+  });
+
   info("Opening netmonitor");
   
   

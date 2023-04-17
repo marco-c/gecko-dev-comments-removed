@@ -11,6 +11,12 @@ const SECOND_PAGE_URL = "https://example.org/document-builder.sjs?html=org";
 
 add_task(async function() {
   
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["fission.bfcacheInParent", false]],
+  });
+
+  
   await pushPref("devtools.browsertoolbox.fission", true);
   
   

@@ -23,6 +23,12 @@ const TEST_URI2 = `
 `;
 
 add_task(async function() {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["fission.bfcacheInParent", false]],
+  });
+
   await addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI1));
 
   startTelemetry();

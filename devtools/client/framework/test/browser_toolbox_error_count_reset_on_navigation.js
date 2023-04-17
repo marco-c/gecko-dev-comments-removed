@@ -17,6 +17,12 @@ const { Toolbox } = require("devtools/client/framework/toolbox");
 add_task(async function() {
   
   
+  await SpecialPowers.pushPrefEnv({
+    set: [["fission.bfcacheInParent", false]],
+  });
+
+  
+  
   await pushPref("devtools.toolbox.splitconsoleEnabled", false);
   const tab = await addTab(TEST_URI);
 

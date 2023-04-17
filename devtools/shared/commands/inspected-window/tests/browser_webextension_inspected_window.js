@@ -6,6 +6,12 @@
 const TEST_RELOAD_URL = `${URL_ROOT}/inspectedwindow-reload-target.sjs`;
 
 async function setup(pageUrl) {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["fission.bfcacheInParent", false]],
+  });
+
   const extension = ExtensionTestUtils.loadExtension({
     background() {
       

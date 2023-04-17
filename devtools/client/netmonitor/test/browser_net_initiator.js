@@ -135,6 +135,12 @@ const EXPECTED_REQUESTS = [
 add_task(async function() {
   
   
+  await SpecialPowers.pushPrefEnv({
+    set: [["fission.bfcacheInParent", false]],
+  });
+
+  
+  
   
   
   

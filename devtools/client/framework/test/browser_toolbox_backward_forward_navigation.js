@@ -19,6 +19,12 @@ Services.scriptloader.loadSubScript(
 );
 
 add_task(async function testMultipleNavigations() {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["fission.bfcacheInParent", false]],
+  });
+
   info(
     "Test that DevTools works fine after multiple backward/forward navigations"
   );
@@ -68,6 +74,12 @@ add_task(async function testMultipleNavigations() {
 });
 
 add_task(async function testSingleBackAndForthInstantNavigation() {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["fission.bfcacheInParent", false]],
+  });
+
   info(
     "Test that DevTools works fine after navigating backward and forward right after"
   );

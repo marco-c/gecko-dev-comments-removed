@@ -8,6 +8,12 @@
 
 
 add_task(async function() {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["fission.bfcacheInParent", false]],
+  });
+
   class DataTransfer {
     constructor() {
       this.BLOCKING_URL =

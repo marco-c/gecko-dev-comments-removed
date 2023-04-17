@@ -1,13 +1,19 @@
-/* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+
+
 
 "use strict";
 
-/**
- * Makes sure Table Charts have the right internal structure.
- */
+
+
+
 
 add_task(async function() {
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["fission.bfcacheInParent", false]],
+  });
+
   const { L10N } = require("devtools/client/netmonitor/src/utils/l10n");
 
   const { monitor } = await initNetMonitor(SIMPLE_URL, { requestCount: 1 });
