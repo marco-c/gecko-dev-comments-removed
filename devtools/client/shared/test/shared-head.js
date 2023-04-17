@@ -1446,3 +1446,38 @@ function waitForDispatch(store, actionType, repeat = 1) {
     });
   });
 }
+
+
+
+
+
+
+
+
+
+
+
+async function getBrowsingContextInFrames(browsingContext, selectors) {
+  let context = browsingContext;
+
+  if (!Array.isArray(selectors)) {
+    throw new Error(
+      "getBrowsingContextInFrames called with an invalid selectors argument"
+    );
+  }
+
+  if (selectors.length === 0) {
+    throw new Error(
+      "getBrowsingContextInFrames called with an empty selectors array"
+    );
+  }
+
+  while (selectors.length) {
+    const selector = selectors.shift();
+    context = await SpecialPowers.spawn(context, [selector], _selector => {
+      return content.document.querySelector(_selector).browsingContext;
+    });
+  }
+
+  return context;
+}
