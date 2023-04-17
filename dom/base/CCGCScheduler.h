@@ -432,6 +432,10 @@ class CCGCScheduler {
   bool mInIncrementalGC = false;
 
   
+  
+  bool mHaveAskedParent = false;
+
+  
   bool mReadyForMajorGC = false;
 
   
