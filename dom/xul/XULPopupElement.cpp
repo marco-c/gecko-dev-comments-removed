@@ -270,15 +270,27 @@ already_AddRefed<DOMRect> XULPopupElement::GetOuterScreenRect() {
     return rect.forget();
   }
 
-  nsView* view = menuPopupFrame->GetView();
-  if (view) {
-    nsIWidget* widget = view->GetWidget();
-    if (widget) {
-      LayoutDeviceIntRect screenRect = widget->GetScreenBounds();
+  Maybe<CSSRect> screenRect;
 
-      int32_t pp = menuPopupFrame->PresContext()->AppUnitsPerDevPixel();
-      rect->SetLayoutRect(LayoutDeviceIntRect::ToAppUnits(screenRect, pp));
+  if (menuPopupFrame->IsNativeMenu()) {
+    
+    
+    
+    screenRect = Some(CSSRect(
+        CSSIntRect::FromUnknownRect(menuPopupFrame->GetScreenAnchorRect())));
+  } else {
+    
+    if (nsView* view = menuPopupFrame->GetView()) {
+      if (nsIWidget* widget = view->GetWidget()) {
+        screenRect = Some(widget->GetScreenBounds() /
+                          menuPopupFrame->PresContext()->CSSToDevPixelScale());
+      }
     }
+  }
+
+  if (screenRect) {
+    rect->SetRect(screenRect->X(), screenRect->Y(), screenRect->Width(),
+                  screenRect->Height());
   }
   return rect.forget();
 }
