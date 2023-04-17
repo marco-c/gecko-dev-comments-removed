@@ -272,14 +272,7 @@ class TouchSimulator {
 
     const target = eventTarget || this.target;
     if (target && type) {
-      this.synthesizeNativeTouch(
-        this.getContent(evt.target),
-        evt.clientX,
-        evt.clientY,
-        evt.screenX,
-        evt.screenY,
-        type
-      );
+      this.synthesizeNativeTouch(content, evt.screenX, evt.screenY, type);
     }
 
     if (!isSystemWindow) {
@@ -320,13 +313,7 @@ class TouchSimulator {
 
 
 
-
-
-
-
-
-
-  synthesizeNativeTouch(win, x, y, screenX, screenY, type) {
+  synthesizeNativeTouch(win, screenX, screenY, type) {
     
     
     const utils = win.windowUtils;
