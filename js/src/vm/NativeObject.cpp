@@ -1527,7 +1527,7 @@ bool js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj,
     }
   } else if (obj->is<ArgumentsObject>()) {
     Rooted<ArgumentsObject*> argsobj(cx, &obj->as<ArgumentsObject>());
-    if (id == NameToId(cx->names().length)) {
+    if (id.isAtom(cx->names().length)) {
       
       
       
@@ -1536,15 +1536,14 @@ bool js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj,
           return false;
         }
       }
-    } else if (JSID_IS_SYMBOL(id) &&
-               JSID_TO_SYMBOL(id) == cx->wellKnownSymbols().iterator) {
+    } else if (id.isWellKnownSymbol(JS::SymbolCode::iterator)) {
       
       if (!desc_.resolving()) {
         if (!ArgumentsObject::reifyIterator(cx, argsobj)) {
           return false;
         }
       }
-    } else if (JSID_IS_INT(id)) {
+    } else if (id.isInt()) {
       if (!desc_.resolving()) {
         argsobj->markElementOverridden();
       }
@@ -1839,10 +1838,9 @@ static bool DefineNonexistentProperty(JSContext* cx, HandleNativeObject obj,
     
     
     
-    MOZ_ASSERT_IF(id == NameToId(cx->names().length),
+    MOZ_ASSERT_IF(id.isAtom(cx->names().length),
                   obj->as<ArgumentsObject>().hasOverriddenLength());
-    MOZ_ASSERT_IF(JSID_IS_SYMBOL(id) &&
-                      JSID_TO_SYMBOL(id) == cx->wellKnownSymbols().iterator,
+    MOZ_ASSERT_IF(id.isWellKnownSymbol(JS::SymbolCode::iterator),
                   obj->as<ArgumentsObject>().hasOverriddenIterator());
 
     

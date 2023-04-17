@@ -254,7 +254,7 @@ bool Proxy::delete_(JSContext* cx, HandleObject proxy, HandleId id,
 
   
   
-  MOZ_ASSERT_IF(JSID_IS_SYMBOL(id), !JSID_TO_SYMBOL(id)->isPrivateName());
+  MOZ_ASSERT(!id.isPrivateName());
 
   return proxy->as<ProxyObject>().handler()->delete_(cx, proxy, id, result);
 }
@@ -362,7 +362,7 @@ bool Proxy::has(JSContext* cx, HandleObject proxy, HandleId id, bool* bp) {
   }
 
   
-  MOZ_ASSERT_IF(JSID_IS_SYMBOL(id), !JSID_TO_SYMBOL(id)->isPrivateName());
+  MOZ_ASSERT(!id.isPrivateName());
 
   if (handler->hasPrototype()) {
     if (!handler->hasOwn(cx, proxy, id, bp)) {
