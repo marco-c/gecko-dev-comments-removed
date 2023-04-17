@@ -110,15 +110,6 @@ function httpRedirectCookieTest(cookie, expectedValue, name, location) {
 
 
 
-function dropAllDomCookies() {
-  let cookies = document.cookie.split('; ');
-  for (const cookie of cookies) {
-    if (!Boolean(cookie))
-      continue;
-    document.cookie = `${cookie}; expires=01 Jan 1970 00:00:00 GMT`;
-  }
-  assert_equals(document.cookie, '', 'All DOM cookies were dropped.');
-}
 
 
 
@@ -126,9 +117,11 @@ function dropAllDomCookies() {
 
 function domCookieTest(cookie, expectedValue, name) {
   return promise_test(async (t) => {
+    await test_driver.delete_all_cookies();
+    t.add_cleanup(test_driver.delete_all_cookies);
+
     document.cookie = cookie;
     let cookies = document.cookie;
-    t.add_cleanup(dropAllDomCookies);
     assert_equals(cookies, expectedValue, Boolean(expectedValue) ?
                                           'The cookie was set as expected.' :
                                           'The cookie was rejected.');
