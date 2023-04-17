@@ -164,6 +164,21 @@ class SnapshotSelector extends EventEmitter {
 
 
 
+
+  setUrlAndRebuildNow(url) {
+    if (this.#context.url == url) {
+      return;
+    }
+
+    this.#context.url = url;
+    this.#buildSnapshots();
+  }
+
+  
+
+
+
+
   async setType(type) {
     if (this.#context.type === type) {
       return;
