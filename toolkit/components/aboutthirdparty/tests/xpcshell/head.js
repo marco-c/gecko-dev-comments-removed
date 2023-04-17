@@ -1,0 +1,9 @@
+
+
+
+
+"use strict";
+
+const kATP = Cc["@mozilla.org/about-thirdparty;1"].getService(
+  Ci.nsIAboutThirdParty
+);
