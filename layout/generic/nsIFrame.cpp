@@ -6153,18 +6153,12 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
         boxSizingToMarginEdgeISize, styleISize, aSizeOverrides, aFlags);
     result.ISize(aWM) = iSizeResult.mISize;
     aspectRatioUsage = iSizeResult.mAspectRatioUsage;
-  } else if (aspectRatio &&
-             !nsLayoutUtils::IsAutoBSize(styleBSize, aCBSize.BSize(aWM))) {
-    auto bSize = nsLayoutUtils::ComputeBSizeValue(
-        aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM),
-        styleBSize.AsLengthPercentage());
-    result.ISize(aWM) = aspectRatio.ComputeRatioDependentSize(
-        LogicalAxis::eLogicalAxisInline, aWM, bSize, boxSizingAdjust);
-    aspectRatioUsage = AspectRatioUsage::ToComputeISize;
   } else if (MOZ_UNLIKELY(isGridItem) && !IsTrueOverflowContainer()) {
     
     
     bool stretch = false;
+    bool mayUseAspectRatio = aspectRatio && !nsLayoutUtils::IsAutoBSize(
+                                                styleBSize, aCBSize.BSize(aWM));
     if (!aFlags.contains(ComputeSizeFlag::ShrinkWrap) &&
         !StyleMargin()->HasInlineAxisAuto(aWM) &&
         !alignCB->IsMasonry(isOrthogonal ? eLogicalAxisBlock
@@ -6172,9 +6166,30 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
       auto inlineAxisAlignment =
           isOrthogonal ? StylePosition()->UsedAlignSelf(alignCB->Style())._0
                        : StylePosition()->UsedJustifySelf(alignCB->Style())._0;
-      stretch = inlineAxisAlignment == StyleAlignFlags::NORMAL ||
-                inlineAxisAlignment == StyleAlignFlags::STRETCH;
+      stretch = inlineAxisAlignment == StyleAlignFlags::STRETCH ||
+                (inlineAxisAlignment == StyleAlignFlags::NORMAL &&
+                 !mayUseAspectRatio);
     }
+
+    
+    
+    
+    
+    
+    
+    if (!stretch && mayUseAspectRatio) {
+      
+      
+      
+      
+      auto bSize = nsLayoutUtils::ComputeBSizeValue(
+          aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM),
+          styleBSize.AsLengthPercentage());
+      result.ISize(aWM) = aspectRatio.ComputeRatioDependentSize(
+          LogicalAxis::eLogicalAxisInline, aWM, bSize, boxSizingAdjust);
+      aspectRatioUsage = AspectRatioUsage::ToComputeISize;
+    }
+
     if (stretch || aFlags.contains(ComputeSizeFlag::IClampMarginBoxMinSize)) {
       auto iSizeToFillCB =
           std::max(nscoord(0), aCBSize.ISize(aWM) - aBorderPadding.ISize(aWM) -
@@ -6183,6 +6198,14 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
         result.ISize(aWM) = iSizeToFillCB;
       }
     }
+  } else if (aspectRatio &&
+             !nsLayoutUtils::IsAutoBSize(styleBSize, aCBSize.BSize(aWM))) {
+    auto bSize = nsLayoutUtils::ComputeBSizeValue(
+        aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM),
+        styleBSize.AsLengthPercentage());
+    result.ISize(aWM) = aspectRatio.ComputeRatioDependentSize(
+        LogicalAxis::eLogicalAxisInline, aWM, bSize, boxSizingAdjust);
+    aspectRatioUsage = AspectRatioUsage::ToComputeISize;
   }
 
   
@@ -6285,19 +6308,6 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
       result.BSize(aWM) = nsLayoutUtils::ComputeBSizeValue(
           aCBSize.BSize(aWM), boxSizingAdjust.BSize(aWM),
           styleBSize.AsLengthPercentage());
-    } else if (aspectRatio) {
-      
-      
-      
-      
-      
-      
-      
-      result.BSize(aWM) = aspectRatio.ComputeRatioDependentSize(
-          LogicalAxis::eLogicalAxisBlock, aWM, result.ISize(aWM),
-          boxSizingAdjust);
-      MOZ_ASSERT(aspectRatioUsage == AspectRatioUsage::None);
-      aspectRatioUsage = AspectRatioUsage::ToComputeBSize;
     } else if (MOZ_UNLIKELY(isGridItem) && styleBSize.IsAuto() &&
                !IsTrueOverflowContainer() &&
                !alignCB->IsMasonry(isOrthogonal ? eLogicalAxisInline
@@ -6307,14 +6317,32 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
         
         
         bool stretch = false;
+        bool mayUseAspectRatio =
+            aspectRatio && result.ISize(aWM) != NS_UNCONSTRAINEDSIZE;
         if (!StyleMargin()->HasBlockAxisAuto(aWM)) {
           auto blockAxisAlignment =
               isOrthogonal
                   ? StylePosition()->UsedJustifySelf(alignCB->Style())._0
                   : StylePosition()->UsedAlignSelf(alignCB->Style())._0;
-          stretch = blockAxisAlignment == StyleAlignFlags::NORMAL ||
-                    blockAxisAlignment == StyleAlignFlags::STRETCH;
+          stretch = blockAxisAlignment == StyleAlignFlags::STRETCH ||
+                    (blockAxisAlignment == StyleAlignFlags::NORMAL &&
+                     !mayUseAspectRatio);
         }
+
+        
+        
+        
+        
+        
+        
+        if (!stretch && mayUseAspectRatio) {
+          result.BSize(aWM) = aspectRatio.ComputeRatioDependentSize(
+              LogicalAxis::eLogicalAxisBlock, aWM, result.ISize(aWM),
+              boxSizingAdjust);
+          MOZ_ASSERT(aspectRatioUsage == AspectRatioUsage::None);
+          aspectRatioUsage = AspectRatioUsage::ToComputeBSize;
+        }
+
         if (stretch ||
             aFlags.contains(ComputeSizeFlag::BClampMarginBoxMinSize)) {
           auto bSizeToFillCB =
@@ -6326,6 +6354,17 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
           }
         }
       }
+    } else if (aspectRatio) {
+      
+      
+      
+      
+      
+      result.BSize(aWM) = aspectRatio.ComputeRatioDependentSize(
+          LogicalAxis::eLogicalAxisBlock, aWM, result.ISize(aWM),
+          boxSizingAdjust);
+      MOZ_ASSERT(aspectRatioUsage == AspectRatioUsage::None);
+      aspectRatioUsage = AspectRatioUsage::ToComputeBSize;
     }
   }
 
