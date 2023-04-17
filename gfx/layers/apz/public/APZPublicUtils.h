@@ -64,15 +64,6 @@ gfx::IntSize GetDisplayportAlignmentMultiplier(const ScreenSize& aBaseSize);
 
 
 
-
-
-
-std::pair<int32_t, int32_t> GetMouseWheelAnimationDurations();
-
-
-
-
-
 ScrollAnimationBezierPhysicsSettings ComputeBezierAnimationSettingsForOrigin(
     ScrollOrigin aOrigin);
 
