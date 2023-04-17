@@ -74,10 +74,11 @@ async function createTargets(watcher) {
     
     
     
-    await createTargetForBrowsingContext(
+    await createTargetForBrowsingContext({
       watcher,
-      watcher.browserElement.browsingContext
-    );
+      browsingContext: watcher.browserElement.browsingContext,
+      retryOnAbortError: true,
+    });
   }
 
   const browsingContexts = getFilteredRemoteBrowsingContext(
@@ -87,9 +88,9 @@ async function createTargets(watcher) {
   
   
   
-  await Promise.all(
+  await Promise.allSettled(
     browsingContexts.map(browsingContext =>
-      createTargetForBrowsingContext(watcher, browsingContext)
+      createTargetForBrowsingContext({ watcher, browsingContext })
     )
   );
 }
@@ -102,7 +103,15 @@ async function createTargets(watcher) {
 
 
 
-async function createTargetForBrowsingContext(watcher, browsingContext) {
+
+
+
+
+async function createTargetForBrowsingContext({
+  watcher,
+  browsingContext,
+  retryOnAbortError = false,
+}) {
   logWindowGlobal(browsingContext.currentWindowGlobal, "Existing WindowGlobal");
 
   
@@ -113,14 +122,33 @@ async function createTargetForBrowsingContext(watcher, browsingContext) {
     browsingContext.watchedByDevTools = true;
   }
 
-  return browsingContext.currentWindowGlobal
-    .getActor("DevToolsFrame")
-    .instantiateTarget({
-      watcherActorID: watcher.actorID,
-      connectionPrefix: watcher.conn.prefix,
-      browserId: watcher.browserId,
-      watchedData: watcher.watchedData,
-    });
+  try {
+    await browsingContext.currentWindowGlobal
+      .getActor("DevToolsFrame")
+      .instantiateTarget({
+        watcherActorID: watcher.actorID,
+        connectionPrefix: watcher.conn.prefix,
+        browserId: watcher.browserId,
+        watchedData: watcher.watchedData,
+      });
+  } catch (e) {
+    console.warn(
+      "Failed to create DevTools Frame target for browsingContext",
+      browsingContext.id,
+      ": ",
+      e,
+      retryOnAbortError ? "retrying" : ""
+    );
+    if (retryOnAbortError && e.name === "AbortError") {
+      await createTargetForBrowsingContext({
+        watcher,
+        browsingContext,
+        retryOnAbortError,
+      });
+    } else {
+      throw e;
+    }
+  }
 }
 
 

@@ -237,13 +237,30 @@ class DevToolsFrameChild extends JSWindowActorChild {
 
 
 
+
+
+
   _createTargetActor({
     watcherActorID,
     parentConnectionPrefix,
     watchedData,
     isDocumentCreation,
+    fromInstantiateAlreadyAvailable,
   }) {
     if (this._connections.get(watcherActorID)) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (fromInstantiateAlreadyAvailable) {
+        return;
+      }
       throw new Error(
         "DevToolsFrameChild _createTargetActor was called more than once" +
           ` for the same Watcher (Actor ID: "${watcherActorID}")`
@@ -452,6 +469,7 @@ class DevToolsFrameChild extends JSWindowActorChild {
           watcherActorID,
           parentConnectionPrefix: connectionPrefix,
           watchedData,
+          fromInstantiateAlreadyAvailable: true,
         });
       }
       case "DevToolsFrameParent:destroy": {
