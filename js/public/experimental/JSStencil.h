@@ -88,6 +88,9 @@ extern JS_PUBLIC_API JSScript* InstantiateGlobalStencil(
 extern JS_PUBLIC_API bool StencilIsBorrowed(Stencil* stencil);
 
 
+extern JS_PUBLIC_API bool StencilCanLazilyParse(Stencil* stencil);
+
+
 
 extern JS_PUBLIC_API JSObject* InstantiateModuleStencil(
     JSContext* cx, const ReadOnlyCompileOptions& options, Stencil* stencil);
