@@ -289,6 +289,7 @@ static NrIceCtx::Policy toNrIcePolicy(dom::RTCIceTransportPolicy aPolicy) {
 
 
 int16_t gGoodWebrtcPortList[] = {
+    53,    
     3478,  
     5349,  
     0,     
