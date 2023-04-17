@@ -7,7 +7,7 @@ var EXPORTED_SYMBOLS = [];
 for (let [key, val] of Object.entries({
   
   
-  WEAVE_VERSION: "1.97.0",
+  WEAVE_VERSION: "1.98.0",
 
   
   SYNC_API_VERSION: "1.5",
