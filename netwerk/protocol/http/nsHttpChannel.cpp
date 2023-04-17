@@ -5998,7 +5998,13 @@ nsresult nsHttpChannel::BeginConnect() {
         altUsedLine.AppendLiteral(":");
         altUsedLine.AppendInt(mapping->AlternatePort());
       }
-      rv = mRequestHead.SetHeader(nsHttp::Alternate_Service_Used, altUsedLine);
+      
+      
+      
+      Unused << mRequestHead.ClearHeader(nsHttp::Alternate_Service_Used);
+      rv = mRequestHead.SetHeader(nsHttp::Alternate_Service_Used, altUsedLine,
+                                  false,
+                                  nsHttpHeaderArray::eVarietyRequestDefault);
       MOZ_ASSERT(NS_SUCCEEDED(rv));
     }
 
