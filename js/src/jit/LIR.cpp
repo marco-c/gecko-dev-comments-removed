@@ -640,31 +640,40 @@ bool LMoveGroup::add(LAllocation from, LAllocation to, LDefinition::Type type) {
   }
 
   
-#  ifdef ENABLE_WASM_SIMD
   
+# ifdef ENABLE_WASM_SIMD
+    
+    
+    
+#   if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64) || \
+       defined(JS_CODEGEN_ARM64)
+      
+#   else
+#     error "Need to consider SIMD alignment on this target."
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+#   endif
+# endif
   
-  
-#    if !defined(JS_CODEGEN_X86) && !defined(JS_CODEGEN_X64)
-  if (LDefinition(type).type() == LDefinition::SIMD128) {
-    MOZ_ASSERT(from.isMemory() || from.isFloatReg());
-    if (from.isMemory()) {
-      if (from.isArgument()) {
-        MOZ_ASSERT(from.toArgument()->index() % SimdMemoryAlignment == 0);
-      } else {
-        MOZ_ASSERT(from.toStackSlot()->slot() % SimdMemoryAlignment == 0);
-      }
-    }
-    MOZ_ASSERT(to.isMemory() || to.isFloatReg());
-    if (to.isMemory()) {
-      if (to.isArgument()) {
-        MOZ_ASSERT(to.toArgument()->index() % SimdMemoryAlignment == 0);
-      } else {
-        MOZ_ASSERT(to.toStackSlot()->slot() % SimdMemoryAlignment == 0);
-      }
-    }
-  }
-#    endif
-#  endif
+
 #endif
   return moves_.append(LMove(from, to, type));
 }
