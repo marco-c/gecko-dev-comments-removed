@@ -228,10 +228,6 @@ template <class TypedMatrix>
 TypedMatrix ViewAs(const gfx::Matrix4x4& aMatrix) {
   return TypedMatrix::FromUnknownMatrix(aMatrix);
 }
-template <class TypedScaleFactors2D>
-TypedScaleFactors2D ViewAs(const Scale2D& aScale2D) {
-  return TypedScaleFactors2D::FromUnknownScaleFactors2D(aScale2D);
-}
 
 
 
