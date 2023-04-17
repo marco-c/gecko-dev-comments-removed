@@ -3754,23 +3754,18 @@ void nsCSSFrameConstructor::ConstructFrameFromItemInternal(
                        : aParentFrame);
 
     
-    nsIFrame* frameToAddToList = nullptr;
+    
+    
     if ((bits & FCDATA_MAY_NEED_SCROLLFRAME) &&
         display->IsScrollableOverflow()) {
       nsContainerFrame* scrollframe = nullptr;
       BuildScrollFrame(aState, content, computedStyle, newFrame,
                        geometricParent, scrollframe);
-      frameToAddToList = scrollframe;
+      primaryFrame = scrollframe;
     } else {
       InitAndRestoreFrame(aState, content, geometricParent, newFrame);
-      frameToAddToList = newFrame;
+      primaryFrame = newFrame;
     }
-
-    
-    
-    
-    
-    primaryFrame = frameToAddToList;
 
     
     
@@ -3836,7 +3831,7 @@ void nsCSSFrameConstructor::ConstructFrameFromItemInternal(
       newFrame = innerFrame;
     }
 
-    aState.AddChild(frameToAddToList, aFrameList, content, aParentFrame,
+    aState.AddChild(primaryFrame, aFrameList, content, aParentFrame,
                     allowOutOfFlow, allowOutOfFlow, isPopup);
 
     nsContainerFrame* newFrameAsContainer = do_QueryFrame(newFrame);
