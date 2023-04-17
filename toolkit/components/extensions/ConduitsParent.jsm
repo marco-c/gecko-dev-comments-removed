@@ -184,7 +184,7 @@ const Hub = {
     address.verified = this.verifyEnv(address);
     if (actor instanceof JSWindowActorParent) {
       address.frameId = WebNavigationFrames.getFrameId(actor.browsingContext);
-      address.url = actor.manager.documentURI?.spec;
+      address.url = actor.browsingContext.currentURI.spec;
     } else {
       
       
