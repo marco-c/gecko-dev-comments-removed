@@ -8231,7 +8231,8 @@ static bool FindFirstLetterRange(const nsTextFragment* aFrag,
 
   
   
-  if (!nsContentUtils::IsAlphanumericAt(aFrag, aOffset + i)) {
+  
+  if (!nsContentUtils::IsAlphanumericOrSymbolAt(aFrag, aOffset + i)) {
     *aLength = 0;
     return true;
   }
