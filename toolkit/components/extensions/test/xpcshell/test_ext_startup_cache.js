@@ -163,9 +163,20 @@ add_task(async function() {
   manifest = await getManifest();
   equal(manifest.name, "en-US 1.1", "Got expected manifest name");
 
-  info("uninstall locale 'fr'");
+  info("Disable locale 'fr'");
   addon = await AddonManager.getAddonByID("@test-langpack");
-  await addon.uninstall();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  await addon.disable();
   ok(!Services.locale.availableLocales.includes("fr"), "fr locale is removed");
 
   await extension.unload();
