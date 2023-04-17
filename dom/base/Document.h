@@ -3854,6 +3854,8 @@ class Document : public nsINode,
  private:
   bool IsErrorPage() const;
 
+  void EnsureL10n();
+
   
   
   void SetCssUseCounterBits();

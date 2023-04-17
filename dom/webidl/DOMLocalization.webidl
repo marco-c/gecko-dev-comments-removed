@@ -39,11 +39,11 @@ interface DOMLocalization : Localization {
 
 
 
+
   [Throws]
-  constructor(sequence<UTF8String> aResourceIds,
+  constructor(sequence<DOMString> aResourceIds,
               optional boolean aSync = false,
-              optional L10nRegistry aRegistry,
-              optional sequence<UTF8String> aLocales);
+              optional BundleGenerator aBundleGenerator = {});
 
   
 
