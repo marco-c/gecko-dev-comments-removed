@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 .network-monitor .custom-method-and-url .custom-method-value-label {
   grid-column: 1 / 1;
@@ -168,7 +168,6 @@
   outline-offset: -2px;
   box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.3);
   border-radius: 2px;
-  -moz-outline-radius: 2px;
 }
 
 :root.theme-light .network-details-bar .custom-request-panel input,

@@ -1,6 +1,6 @@
-
-
-
+/* Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 %include ../../../components/contextualidentity/content/usercontext.css
 
@@ -23,7 +23,6 @@
   user-select: none;
   outline: 2px solid transparent;
   outline-offset: 4px;
-  -moz-outline-radius: 100%;
   min-block-size: 24px;
   min-inline-size: 24px;
   border-radius: 50%;

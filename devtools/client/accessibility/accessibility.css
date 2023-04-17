@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :root {
   --accessibility-font-size: 12px;
@@ -11,11 +11,11 @@
   --accessibility-horizontal-padding: 5px;
   --accessibility-horizontal-indent: 20px;
   --accessibility-properties-item-width: calc(100% - var(--accessibility-horizontal-indent));
-  
-
+  /* The main content can use the full height minus the height of the toolbar
+     (including 1px border bottom) */
   --accessibility-main-height: calc(100vh - var(--theme-toolbar-height) - 1px);
-  
-
+  /* The tree can use the main content height minus the height of the tree
+     header, which has the same height as the toolbar and a 1px border bottom */
   --accessibility-tree-height: calc(var(--accessibility-main-height) - var(--theme-toolbar-height) - 1px);
   --accessibility-arrow-horizontal-padding: 4px;
   --accessibility-tree-row-height: 21px;
@@ -36,7 +36,7 @@
   --accessibility-code-background: var(--grey-70);
 }
 
-
+/* General */
 html,
 body {
   height: 100%;
@@ -81,7 +81,7 @@ body {
 }
 
 .main-panel {
-  
+  /* To compenstate for 1px splitter between the tree and sidebar. */
   width: var(--accessibility-full-length-minus-splitter);
 }
 
@@ -93,8 +93,8 @@ body {
 
 .mainFrame .devtools-button.devtools-throbber::before,
 .mainFrame .toggle-button.devtools-throbber::before {
-  
-
+  /* Default for .devtools-throbber is set to 1em which is too big for the
+     devtools toolbar. */
   height: 8px;
   width: 8px;
   margin-block-end: 1px;
@@ -129,7 +129,6 @@ body {
   outline-offset: -2px;
   box-shadow: 0 0 0 2px var(--accessibility-toolbar-focus-alpha30);
   border-radius: 2px;
-  -moz-outline-radius: 2px;
 }
 
 .devtools-toolbar {
@@ -139,7 +138,7 @@ body {
   font-size: var(--accessibility-font-size);
 }
 
-
+/* Similarly to webconsole, add more padding before the toolbar group. */
 .devtools-toolbar .devtools-separator {
   margin-inline: 5px;
 }
@@ -263,7 +262,7 @@ body {
   width: 30vw;
 }
 
-
+/* Description */
 .description {
   color: var(--theme-toolbar-color);
   font: message-box;
@@ -273,8 +272,8 @@ body {
   width: 50vw;
 }
 
-
-
+/* To ensure that the message does not look squished in vertical mode, increase its width
+   when the toolbox is narrow */
 @media (max-width: 700px) {
   .description {
     width: 80vw;
@@ -326,7 +325,7 @@ body {
   text-decoration: underline;
 }
 
-
+/* TreeView Customization */
 .treeTable thead, .treeTable tbody {
   display: block;
 }
@@ -345,8 +344,8 @@ body {
 }
 
 .split-box.horz .treeTable tbody {
-  
-
+  /* Accessibility tree height depends on the height of the controlled panel
+     (sidebar) when in horz mode and also has an additional separator. */
   height: calc(var(--accessibility-tree-height) - var(--split-box-controlled-panel-size) - 1px);
 }
 
@@ -359,12 +358,12 @@ body {
 }
 
 .treeTable.filtered .treeRow .treeLabelCell {
-  
+  /* Unset row indentation when the tree is filtered. */
   padding-inline-start: var(--accessibility-arrow-horizontal-padding);
 }
 
-
-
+/* When the accesibility tree is filtered, we flatten the tree and want to hide
+   the expander icon (▶) for expandable tree rows. */
 .treeTable.filtered .treeRow .treeLabelCell .treeIcon {
   display: none;
 }
@@ -474,7 +473,7 @@ body {
   vertical-align: -1px;
 }
 
-
+/* improve alignment in high res (where we can use half pixels) */
 @media (min-resolution: 1.5x) {
   .badge.audit-badge[data-score="WARNING"]::before {
     vertical-align: -0.5px;
@@ -492,7 +491,6 @@ body {
   outline: 2px solid var(--accessibility-toolbar-focus);
   outline-offset: -2px;
   box-shadow: 0 0 0 2px var(--accessibility-toolbar-focus-alpha30);
-  -moz-outline-radius: 2px;
 }
 
 .treeTable:focus-within .treeRow.selected .badges .badge {
@@ -510,13 +508,13 @@ body {
   color: var(--theme-selection-color);
 }
 
-
-
+/* Avoid having a default dotted border on keyboard focus since we provide focus
+   styling*/
 .badge.toggle-button::-moz-focus-inner {
   border: none;
 }
 
-
+/* Right Sidebar */
 .right-sidebar {
   display: flex;
   flex-direction: column;
@@ -534,14 +532,14 @@ body {
   height: var(--accessibility-main-height)
 }
 
-
+/* Tree customization */
 .accessible .tree {
   flex: 1;
   height: 100%;
   white-space: nowrap;
   overflow: auto;
   display: block;
-  
+  /* Force the properties list to always be displayed in LTR (bug 1575002) */
   direction: ltr;
 }
 
@@ -553,9 +551,9 @@ body {
   display: block;
 }
 
-
-
-
+/* NOTE: total height of the node (height + padding + border + margin) must
+   be exactly the same as the value of TREE_ROW_HEIGHT constant in
+   devtools/client/accessibility/constants.js */
 .accessible .tree .node {
   padding: 0 var(--accessibility-horizontal-indent);
   position: relative;
@@ -574,7 +572,7 @@ body {
   border: 0;
 }
 
-
+/* Unset tree styles leaking from reps.css */
 .accessible .tree .tree-node:not(.focused):hover {
   background-color: transparent;
 }
@@ -601,7 +599,7 @@ body {
   color: var(--theme-selection-color);
 }
 
-
+/* Invert text selection color in selected rows */
 .accessible .tree:focus .node.focused ::selection,
 .accessible .tree .tree-node-active .node.focused ::selection {
   color: var(--theme-selection-background);
@@ -707,7 +705,7 @@ body {
   white-space: nowrap;
 }
 
-
+/* Styling for accessible details panel when accessible is not available */
 .accessible .info {
   color: var(--theme-body-color);
   font-size: 110%;
@@ -724,7 +722,7 @@ body {
   white-space: initial;
 }
 
-
+/* Checks */
 .checks .list li:last-of-type {
   padding-block-end: 4px;
 }

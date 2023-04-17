@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :root {
   background-color: -moz-dialog;
@@ -35,7 +35,7 @@ a:hover {
   text-decoration: underline;
 }
 
-
+/* ensure multiple spaces are shown correctly. */
 td:first-child > a {
   white-space: pre;
 }
@@ -64,7 +64,7 @@ thead {
   font-size: 130%;
 }
 
-
+/* last modified */
 th:last-child {
   text-align: center;
 }
@@ -75,10 +75,9 @@ th:hover > a {
 
 body > table > tbody > tr:hover {
   outline: 1px solid ThreeDLightShadow;
-  -moz-outline-radius: .3em;
 }
 
-
+/* let 'Size' and 'Last Modified' take only as much space as they need and 'Name' all the rest */
 td:not(:first-child) {
   width: 0;
 }
