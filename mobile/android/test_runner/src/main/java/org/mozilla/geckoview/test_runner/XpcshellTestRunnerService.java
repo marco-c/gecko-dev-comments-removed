@@ -1,7 +1,7 @@
 
 
 
-package org.mozilla.geckoview.test;
+package org.mozilla.geckoview.test_runner;
 
 import android.app.Service;
 import android.content.Intent;
@@ -81,7 +81,6 @@ public class XpcshellTestRunnerService extends Service {
                 new ContentBlocking.Settings.Builder()
                     .safeBrowsingProviders(google, googleLegacy)
                     .build())
-            .crashHandler(TestCrashHandler.class)
             .build();
 
     sRuntime = GeckoRuntime.create(this, runtimeSettings);

@@ -52,7 +52,9 @@ class WebPlatformTestsRunnerSetup(MozbuildObject):
             
             package_name = kwargs["package_name"]
             if not package_name:
-                kwargs["package_name"] = package_name = "org.mozilla.geckoview.test"
+                kwargs[
+                    "package_name"
+                ] = package_name = "org.mozilla.geckoview.test_runner"
 
             
             from mozrunner.devices.android_device import (

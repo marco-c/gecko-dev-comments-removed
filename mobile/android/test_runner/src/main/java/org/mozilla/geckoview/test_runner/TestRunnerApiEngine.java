@@ -1,7 +1,7 @@
 
 
 
-package org.mozilla.geckoview.test;
+package org.mozilla.geckoview.test_runner;
 
 import android.util.Log;
 import androidx.annotation.NonNull;
