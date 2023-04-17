@@ -66,6 +66,7 @@ class DebianBootstrapper(LinuxBootstrapper, BaseBootstrapper):
     MOBILE_ANDROID_COMMON_PACKAGES = [
         "openjdk-8-jdk-headless",  
         "wget",  
+        "libncurses5",  
     ]
 
     def __init__(self, distro, version, dist_id, codename, **kwargs):
