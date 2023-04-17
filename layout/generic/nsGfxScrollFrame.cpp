@@ -4260,7 +4260,7 @@ nsRect ScrollFrameHelper::RestrictToRootDisplayPort(
     
     
     
-    if (rootPresContext->IsRootContentDocument() &&
+    if (rootPresContext->IsRootContentDocumentCrossProcess() &&
         rootFrame == rootPresShell->GetRootScrollFrame()) {
       MOZ_LOG(
           sDisplayportLog, LogLevel::Verbose,
