@@ -228,4 +228,11 @@ bool HTMLScriptElement::HasScriptContent() {
          nsContentUtils::HasNonEmptyTextContent(this);
 }
 
+
+
+bool HTMLScriptElement::Supports(const GlobalObject& aGlobal,
+                                 const nsAString& aType) {
+  return aType.EqualsLiteral("classic") || aType.EqualsLiteral("module");
+}
+
 }  
