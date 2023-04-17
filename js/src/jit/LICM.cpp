@@ -15,6 +15,25 @@ using namespace js;
 using namespace js::jit;
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+static constexpr size_t LargestAllowedLoop = 100;
+
+
+
+static constexpr size_t LargestAllowedTableSwitch = 25;
+
+
 static bool LoopContainsPossibleCall(MIRGraph& graph, MBasicBlock* header,
                                      MBasicBlock* backedge) {
   for (auto i(graph.rpoBegin(header));; ++i) {
@@ -33,6 +52,39 @@ static bool LoopContainsPossibleCall(MIRGraph& graph, MBasicBlock* header,
         JitSpew(JitSpew_LICM, "    Possible call found at %s%u", ins->opName(),
                 ins->id());
 #endif
+        return true;
+      }
+    }
+
+    if (block == backedge) {
+      break;
+    }
+  }
+  return false;
+}
+
+
+
+
+
+static bool LoopContainsBigTableSwitch(MIRGraph& graph, MBasicBlock* header,
+                                        size_t* numSuccessors) {
+  MBasicBlock* backedge = header->backedge();
+
+  for (auto i(graph.rpoBegin(header));; ++i) {
+    MOZ_ASSERT(i != graph.rpoEnd(),
+               "Reached end of graph searching for blocks in loop");
+    MBasicBlock* block = *i;
+    if (!block->isMarked()) {
+      continue;
+    }
+
+    for (auto insIter(block->begin()), insEnd(block->end()); insIter != insEnd;
+         ++insIter) {
+      MInstruction* ins = *insIter;
+      if (ins->isTableSwitch() &&
+          ins->toTableSwitch()->numSuccessors() > LargestAllowedTableSwitch) {
+        *numSuccessors = ins->toTableSwitch()->numSuccessors();
         return true;
       }
     }
@@ -145,7 +197,8 @@ static void MoveDeferredOperands(MInstruction* ins, MInstruction* hoistPoint,
     MoveDeferredOperands(opIns, hoistPoint, hasCalls);
 
 #ifdef JS_JITSPEW
-    JitSpew(JitSpew_LICM, "    Hoisting %s%u (now that a user will be hoisted)",
+    JitSpew(JitSpew_LICM,
+            "      Hoisting %s%u (now that a user will be hoisted)",
             opIns->opName(), opIns->id());
 #endif
 
@@ -163,7 +216,7 @@ static void VisitLoopBlock(MBasicBlock* block, MBasicBlock* header,
 #ifdef JS_JITSPEW
       if (IsHoistableIgnoringDependency(ins, hasCalls)) {
         JitSpew(JitSpew_LICM,
-                "    %s%u isn't hoistable due to dependency on %s%u",
+                "      %s%u isn't hoistable due to dependency on %s%u",
                 ins->opName(), ins->id(), ins->dependency()->opName(),
                 ins->dependency()->id());
       }
@@ -176,7 +229,7 @@ static void VisitLoopBlock(MBasicBlock* block, MBasicBlock* header,
     
     if (RequiresHoistedUse(ins, hasCalls)) {
 #ifdef JS_JITSPEW
-      JitSpew(JitSpew_LICM, "    %s%u will be hoisted only if its users are",
+      JitSpew(JitSpew_LICM, "      %s%u will be hoisted only if its users are",
               ins->opName(), ins->id());
 #endif
       continue;
@@ -186,7 +239,7 @@ static void VisitLoopBlock(MBasicBlock* block, MBasicBlock* header,
     MoveDeferredOperands(ins, hoistPoint, hasCalls);
 
 #ifdef JS_JITSPEW
-    JitSpew(JitSpew_LICM, "    Hoisting %s%u", ins->opName(), ins->id());
+    JitSpew(JitSpew_LICM, "      Hoisting %s%u", ins->opName(), ins->id());
 #endif
 
     
@@ -219,6 +272,10 @@ static void VisitLoop(MIRGraph& graph, MBasicBlock* header) {
       continue;
     }
 
+#ifdef JS_JITSPEW
+    JitSpew(JitSpew_LICM, "    Visiting block%u", block->id());
+#endif
+
     VisitLoopBlock(block, header, hoistPoint, hasCalls);
 
     if (block == backedge) {
@@ -242,7 +299,8 @@ bool jit::LICM(MIRGenerator* mir, MIRGraph& graph) {
     size_t numBlocks = MarkLoopBlocks(graph, header, &canOsr);
 
     if (numBlocks == 0) {
-      JitSpew(JitSpew_LICM, "  Loop with header block%u isn't actually a loop",
+      JitSpew(JitSpew_LICM,
+              "  Skipping loop with header block%u -- contains zero blocks",
               header->id());
       continue;
     }
@@ -250,11 +308,52 @@ bool jit::LICM(MIRGenerator* mir, MIRGraph& graph) {
     
     
     
-    if (!canOsr) {
-      VisitLoop(graph, header);
-    } else {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    bool doVisit = true;
+    if (canOsr) {
       JitSpew(JitSpew_LICM, "  Skipping loop with header block%u due to OSR",
               header->id());
+      doVisit = false;
+    } else if (numBlocks > LargestAllowedLoop) {
+      JitSpew(JitSpew_LICM,
+              "  Skipping loop with header block%u "
+              "due to too many blocks (%u > thresh %u)",
+              header->id(), (uint32_t)numBlocks, (uint32_t)LargestAllowedLoop);
+      doVisit = false;
+    } else {
+      size_t switchSize = 0;
+      if (LoopContainsBigTableSwitch(graph, header, &switchSize)) {
+        JitSpew(JitSpew_LICM,
+                "  Skipping loop with header block%u "
+                "due to oversize tableswitch (%u > thresh %u)",
+                header->id(), (uint32_t)switchSize,
+                (uint32_t)LargestAllowedTableSwitch);
+        doVisit = false;
+      }
+    }
+
+    if (doVisit) {
+      VisitLoop(graph, header);
     }
 
     UnmarkLoopBlocks(graph, header);
