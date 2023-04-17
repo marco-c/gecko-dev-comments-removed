@@ -1203,6 +1203,30 @@ class nsIWidget : public nsISupports {
 
 
 
+
+
+
+
+
+
+  enum WindowAppearance { eSystem, eLight, eDark };
+
+  
+
+
+
+
+
+
+
+
+
+  virtual void SetWindowAppearance(WindowAppearance aAppearance) {}
+
+  
+
+
+
   virtual void HideWindowChrome(bool aShouldHide) = 0;
 
   enum FullscreenTransitionStage {
