@@ -659,8 +659,7 @@ add_task(async function test_setup() {
 add_task(async function test_single_initialization() {
   
   const { FirefoxAdapter } = ChromeUtils.import(
-    "resource://gre/modules/ExtensionStorageSyncKinto.jsm",
-    null
+    "resource://services-common/kinto-storage-adapter.js"
   );
   const origOpenConnection = FirefoxAdapter.openConnection;
   let callCount = 0;

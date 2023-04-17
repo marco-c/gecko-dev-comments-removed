@@ -37,14 +37,11 @@ XPCOMUtils.defineLazyGetter(this, "storageSvc", () =>
 );
 
 
-XPCOMUtils.defineLazyGetter(
+XPCOMUtils.defineLazyModuleGetter(
   this,
   "extensionStorageSyncKinto",
-  () =>
-    ChromeUtils.import(
-      "resource://gre/modules/ExtensionStorageSyncKinto.jsm",
-      {}
-    ).extensionStorageSync
+  "resource://gre/modules/ExtensionStorageSyncKinto.jsm",
+  "extensionStorageSync"
 );
 
 

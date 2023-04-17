@@ -114,11 +114,11 @@ add_task(async function testDuplicateTabLazily() {
   });
 
   extension.onMessage("duplicate-tab", tabId => {
-    let {
+    const {
       Management: {
         global: { tabTracker },
       },
-    } = ChromeUtils.import("resource://gre/modules/Extension.jsm", null);
+    } = ChromeUtils.import("resource://gre/modules/Extension.jsm");
 
     let tab = tabTracker.getTab(tabId);
     

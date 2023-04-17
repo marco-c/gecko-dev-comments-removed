@@ -2,15 +2,6 @@
 
 "use strict";
 
-XPCOMUtils.defineLazyGetter(this, "Management", () => {
-  
-  const { Management } = ChromeUtils.import(
-    "resource://gre/modules/Extension.jsm",
-    null
-  );
-  return Management;
-});
-
 ChromeUtils.defineModuleGetter(
   this,
   "AddonManager",
@@ -20,6 +11,11 @@ ChromeUtils.defineModuleGetter(
   this,
   "ExtensionPreferencesManager",
   "resource://gre/modules/ExtensionPreferencesManager.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
+  "Management",
+  "resource://gre/modules/Extension.jsm"
 );
 ChromeUtils.defineModuleGetter(
   this,
