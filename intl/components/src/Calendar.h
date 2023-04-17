@@ -8,6 +8,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/intl/DateTimeFormat.h"
 #include "mozilla/intl/ICU4CGlue.h"
+#include "mozilla/intl/ICUError.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
 #include "mozilla/ResultVariant.h"
@@ -35,12 +36,10 @@ class Calendar final {
   Calendar(const Calendar&) = delete;
   Calendar& operator=(const Calendar&) = delete;
 
-  enum class Error { InternalError };
-
   
 
 
-  static Result<UniquePtr<Calendar>, Calendar::Error> TryCreate(
+  static Result<UniquePtr<Calendar>, ICUError> TryCreate(
       const char* aLocale,
       Maybe<Span<const char16_t>> aTimeZoneOverride = Nothing{});
 
@@ -48,12 +47,12 @@ class Calendar final {
 
 
 
-  Result<const char*, Calendar::Error> GetBcp47Type();
+  Result<const char*, ICUError> GetBcp47Type();
 
   
 
 
-  Result<int32_t, Calendar::Error> GetDefaultTimeZoneOffsetMs();
+  Result<int32_t, ICUError> GetDefaultTimeZoneOffsetMs();
 
   
 
@@ -101,7 +100,7 @@ class Calendar final {
 
 
 
-  Result<Ok, Error> SetTimeInMs(double aUnixEpoch);
+  Result<Ok, ICUError> SetTimeInMs(double aUnixEpoch);
 
   
 
