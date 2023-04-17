@@ -265,12 +265,13 @@ nsresult imgRequestProxy::DispatchWithTargetIfAvailable(
   
   
   if (mEventTarget) {
-    mEventTarget->Dispatch(CreateMediumHighRunnable(std::move(aEvent)),
+    mEventTarget->Dispatch(CreateRenderBlockingRunnable(std::move(aEvent)),
                            NS_DISPATCH_NORMAL);
     return NS_OK;
   }
 
-  return NS_DispatchToMainThread(CreateMediumHighRunnable(std::move(aEvent)));
+  return NS_DispatchToMainThread(
+      CreateRenderBlockingRunnable(std::move(aEvent)));
 }
 
 void imgRequestProxy::AddToOwner(Document* aLoadingDocument) {

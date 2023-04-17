@@ -209,20 +209,21 @@ class ProgressTracker : public mozilla::SupportsWeakPtr {
 
   
   
-  class MediumHighRunnable final : public PrioritizableRunnable {
-    explicit MediumHighRunnable(already_AddRefed<AsyncNotifyRunnable>&& aEvent);
-    virtual ~MediumHighRunnable() = default;
+  class RenderBlockingRunnable final : public PrioritizableRunnable {
+    explicit RenderBlockingRunnable(
+        already_AddRefed<AsyncNotifyRunnable>&& aEvent);
+    virtual ~RenderBlockingRunnable() = default;
 
    public:
     void AddObserver(IProgressObserver* aObserver);
     void RemoveObserver(IProgressObserver* aObserver);
 
-    static already_AddRefed<MediumHighRunnable> Create(
+    static already_AddRefed<RenderBlockingRunnable> Create(
         already_AddRefed<AsyncNotifyRunnable>&& aEvent);
   };
 
   
-  RefPtr<MediumHighRunnable> mRunnable;
+  RefPtr<RenderBlockingRunnable> mRunnable;
 
   
   mutable Mutex mMutex;
