@@ -136,65 +136,121 @@ class TcpTransport(object):
     def _unmarshal(self, packet):
         msg = None
 
-        
-        if self.protocol >= 3:
-            if six.PY3:
-                typ = int(chr(packet[1]))
-            else:
-                typ = int(packet[1])
-            if typ == Command.TYPE:
-                msg = Command.from_msg(packet)
-            elif typ == Response.TYPE:
-                msg = Response.from_msg(packet)
+        if six.PY3:
+            typ = int(chr(packet[1]))
+        else:
+            typ = int(packet[1])
+
+        if typ == Command.TYPE:
+            msg = Command.from_msg(packet)
+        elif typ == Response.TYPE:
+            msg = Response.from_msg(packet)
+        else:
+            raise ValueError("Invalid message body {!r}".format(packet))
 
         return msg
 
     def receive(self, unmarshal=True):
         """Wait for the next complete response from the remote.
 
+        Packet format is length-prefixed JSON:
+
+          packet = digit+ ":" body
+          digit = "0"-"9"
+          body = JSON text
+
         :param unmarshal: Default is to deserialise the packet and
             return a ``Message`` type.  Setting this to false will return
             the raw packet.
         """
+        
+        
+        
+        
+        
+        recv_bytes = 4
+
+        length_prefix = b""
+
+        body_length = -1
+        body_received = 0
+        body_parts = []
+
         now = time.time()
-        data = b""
-        bytes_to_recv = 10
-
-        while self.socket_timeout is None or (time.time() - now < self.socket_timeout):
-            try:
-                chunk = self._sock.recv(bytes_to_recv)
-                data += chunk
-            except socket.timeout:
-                pass
-            else:
-                if not chunk:
-                    raise socket.error("No data received over socket")
-
-            sep = data.find(b":")
-            if sep > -1:
-                length = data[0:sep]
-                remaining = data[sep + 1 :]
-
-                if len(remaining) == int(length):
-                    if unmarshal:
-                        msg = self._unmarshal(remaining)
-                        self.last_id = msg.id
-
-                        
-                        
-                        if isinstance(msg, Response) and msg != self.expected_response:
-                            return self.receive(unmarshal)
-
-                        return msg
-
-                    else:
-                        return remaining
-
-                bytes_to_recv = int(length) - len(remaining)
-
-        raise socket.timeout(
-            "Connection timed out after {}s".format(self.socket_timeout)
+        timeout_time = (
+            now + self.socket_timeout if self.socket_timeout is not None else None
         )
+
+        while recv_bytes > 0:
+            if timeout_time is not None and time.time() > timeout_time:
+                raise socket.timeout(
+                    "Connection timed out after {}s".format(self.socket_timeout)
+                )
+
+            try:
+                chunk = self._sock.recv(recv_bytes)
+            except OSError:
+                continue
+
+            if not chunk:
+                raise socket.error("No data received over socket")
+
+            body_part = None
+            if body_length > 0:
+                body_part = chunk
+            else:
+                parts = chunk.split(b":", 1)
+                length_prefix += parts[0]
+
+                
+                if len(length_prefix) > 10:
+                    raise ValueError(
+                        "Invalid message length: {!r}".format(length_prefix)
+                    )
+
+                if len(parts) == 2:
+                    
+                    err = None
+                    try:
+                        body_length = int(length_prefix)
+                    except ValueError:
+                        err = "expected an integer"
+                    else:
+                        if body_length <= 0:
+                            err = "expected a positive integer"
+                        elif body_length > 2 ** 32 - 1:
+                            err = "expected a 32 bit integer"
+                    if err is not None:
+                        raise ValueError(
+                            "Invalid message length: {} got {!r}".format(
+                                err, length_prefix
+                            )
+                        )
+                    body_part = parts[1]
+
+                
+                
+                
+                
+                
+
+            if body_part is not None:
+                body_received += len(body_part)
+                body_parts.append(body_part)
+                recv_bytes = body_length - body_received
+
+        body = b"".join(body_parts)
+        if unmarshal:
+            msg = self._unmarshal(body)
+            self.last_id = msg.id
+
+            
+            
+            if isinstance(msg, Response) and msg != self.expected_response:
+                return self.receive(unmarshal)
+
+            return msg
+        return body
 
     def connect(self):
         """Connect to the server and process the hello message we expect
