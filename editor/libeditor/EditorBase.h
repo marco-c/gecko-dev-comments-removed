@@ -2103,7 +2103,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  bool IsSafeToInsertData(const Document* aSourceDoc) const;
+  bool IsSafeToInsertData(nsIPrincipal* aSourcePrincipal) const;
 
  protected:  
   
@@ -2452,11 +2452,12 @@ class EditorBase : public nsIEditor,
 
 
 
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual nsresult
   InsertDroppedDataTransferAsAction(AutoEditActionDataSetter& aEditActionData,
                                     dom::DataTransfer& aDataTransfer,
                                     const EditorDOMPoint& aDroppedAt,
-                                    dom::Document* aSrcDocument) = 0;
+                                    nsIPrincipal* aSourcePrincipal) = 0;
 
   
 
