@@ -1515,245 +1515,241 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
       
       frameConstructor->RecreateFramesForContent(
           content, nsCSSFrameConstructor::InsertionKind::Sync);
-      frame = content->GetPrimaryFrame();
-    } else {
-      MOZ_ASSERT(frame, "This shouldn't happen");
+      continue;
+    }
 
-      if (hint & nsChangeHint_AddOrRemoveTransform) {
-        for (nsIFrame* cont = frame; cont;
-            cont = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(cont)) {
-          if (cont->StyleDisplay()->HasTransform(cont)) {
-            cont->AddStateBits(NS_FRAME_MAY_BE_TRANSFORMED);
-          }
-          
-          
-          
+    MOZ_ASSERT(frame, "This shouldn't happen");
+    if (hint & nsChangeHint_AddOrRemoveTransform) {
+      for (nsIFrame* cont = frame; cont;
+           cont = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(cont)) {
+        if (cont->StyleDisplay()->HasTransform(cont)) {
+          cont->AddStateBits(NS_FRAME_MAY_BE_TRANSFORMED);
         }
+        
+        
+        
       }
+    }
 
-      if (!frame->FrameMaintainsOverflow()) {
-        
-        
-        hint &=
-            ~(nsChangeHint_UpdateOverflow | nsChangeHint_ChildrenOnlyTransform |
-              nsChangeHint_UpdatePostTransformOverflow |
-              nsChangeHint_UpdateParentOverflow |
-              nsChangeHint_UpdateSubtreeOverflow);
-      }
+    if (!frame->FrameMaintainsOverflow()) {
+      
+      
+      hint &=
+          ~(nsChangeHint_UpdateOverflow | nsChangeHint_ChildrenOnlyTransform |
+            nsChangeHint_UpdatePostTransformOverflow |
+            nsChangeHint_UpdateParentOverflow |
+            nsChangeHint_UpdateSubtreeOverflow);
+    }
 
-      if (!frame->HasAnyStateBits(NS_FRAME_MAY_BE_TRANSFORMED)) {
-        
-        
-        
-        
-        hint &= ~(nsChangeHint_UpdatePostTransformOverflow |
-                  nsChangeHint_UpdateTransformLayer);
-      }
+    if (!frame->HasAnyStateBits(NS_FRAME_MAY_BE_TRANSFORMED)) {
+      
+      
+      
+      
+      hint &= ~(nsChangeHint_UpdatePostTransformOverflow |
+                nsChangeHint_UpdateTransformLayer);
+    }
 
-      if (hint & nsChangeHint_AddOrRemoveTransform) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        hint &= ~nsChangeHint_UpdateTransformLayer;
-      }
+    if (hint & nsChangeHint_AddOrRemoveTransform) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      hint &= ~nsChangeHint_UpdateTransformLayer;
+    }
 
-      if ((hint & nsChangeHint_UpdateEffects) &&
-          frame == nsLayoutUtils::FirstContinuationOrIBSplitSibling(frame)) {
-        SVGObserverUtils::UpdateEffects(frame);
+    if ((hint & nsChangeHint_UpdateEffects) &&
+        frame == nsLayoutUtils::FirstContinuationOrIBSplitSibling(frame)) {
+      SVGObserverUtils::UpdateEffects(frame);
+    }
+    if ((hint & nsChangeHint_InvalidateRenderingObservers) ||
+        ((hint & nsChangeHint_UpdateOpacityLayer) &&
+         frame->IsFrameOfType(nsIFrame::eSVG) &&
+         !frame->IsSVGOuterSVGFrame())) {
+      SVGObserverUtils::InvalidateRenderingObservers(frame);
+      frame->SchedulePaint();
+    }
+    if (hint & nsChangeHint_NeedReflow) {
+      StyleChangeReflow(frame, hint);
+      didReflowThisFrame = true;
+    }
+
+    
+    
+    
+    
+    
+    if ((hint & nsChangeHint_UpdateOpacityLayer) &&
+        SVGUtils::CanOptimizeOpacity(frame)) {
+      hint &= ~nsChangeHint_UpdateOpacityLayer;
+      hint |= nsChangeHint_RepaintFrame;
+    }
+
+    if ((hint & nsChangeHint_UpdateUsesOpacity) &&
+        frame->IsFrameOfType(nsIFrame::eTablePart)) {
+      NS_ASSERTION(hint & nsChangeHint_UpdateOpacityLayer,
+                   "should only return UpdateUsesOpacity hint "
+                   "when also returning UpdateOpacityLayer hint");
+      
+      
+      
+      
+      
+      
+      hint &= ~nsChangeHint_UpdateOpacityLayer;
+      hint |= nsChangeHint_RepaintFrame;
+    }
+
+    
+    
+    if ((hint & nsChangeHint_UpdateUsesOpacity) &&
+        frame->StyleDisplay()->mTransformStyle ==
+            StyleTransformStyle::Preserve3d) {
+      hint |= nsChangeHint_UpdateSubtreeOverflow;
+    }
+
+    if (hint & nsChangeHint_UpdateBackgroundPosition) {
+      
+      
+      hint |= nsChangeHint_SchedulePaint;
+      if (frame->IsFrameOfType(nsIFrame::eTablePart) ||
+          frame->IsFrameOfType(nsIFrame::eMathML)) {
+        
+        
+        
+        hint |= nsChangeHint_RepaintFrame;
       }
-      if ((hint & nsChangeHint_InvalidateRenderingObservers) ||
-          ((hint & nsChangeHint_UpdateOpacityLayer) &&
-           frame->IsFrameOfType(nsIFrame::eSVG) &&
-           !frame->IsSVGOuterSVGFrame())) {
-        SVGObserverUtils::InvalidateRenderingObservers(frame);
-        frame->SchedulePaint();
-      }
-      if (hint & nsChangeHint_NeedReflow) {
-        StyleChangeReflow(frame, hint);
+    }
+
+    if (hint &
+        (nsChangeHint_RepaintFrame | nsChangeHint_UpdateOpacityLayer |
+         nsChangeHint_UpdateTransformLayer |
+         nsChangeHint_ChildrenOnlyTransform | nsChangeHint_SchedulePaint)) {
+      ApplyRenderingChangeToTree(presContext->PresShell(), frame, hint);
+    }
+    if ((hint & nsChangeHint_RecomputePosition) && !didReflowThisFrame) {
+      ActiveLayerTracker::NotifyOffsetRestyle(frame);
+      
+      if (!RecomputePosition(frame)) {
+        StyleChangeReflow(frame, nsChangeHint_NeedReflow |
+                                     nsChangeHint_ReflowChangesSizeOrPosition);
         didReflowThisFrame = true;
       }
-
-      
-      
-      
-      
-      
-      if ((hint & nsChangeHint_UpdateOpacityLayer) &&
-          SVGUtils::CanOptimizeOpacity(frame)) {
-        hint &= ~nsChangeHint_UpdateOpacityLayer;
-        hint |= nsChangeHint_RepaintFrame;
+    }
+    NS_ASSERTION(!(hint & nsChangeHint_ChildrenOnlyTransform) ||
+                     (hint & nsChangeHint_UpdateOverflow),
+                 "nsChangeHint_UpdateOverflow should be passed too");
+    if (!didReflowThisFrame &&
+        (hint & (nsChangeHint_UpdateOverflow |
+                 nsChangeHint_UpdatePostTransformOverflow |
+                 nsChangeHint_UpdateParentOverflow |
+                 nsChangeHint_UpdateSubtreeOverflow))) {
+      if (hint & nsChangeHint_UpdateSubtreeOverflow) {
+        for (nsIFrame* cont = frame; cont;
+             cont = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(cont)) {
+          AddSubtreeToOverflowTracker(cont, mOverflowChangedTracker);
+        }
+        
+        
+        hint &= ~(nsChangeHint_UpdateOverflow |
+                  nsChangeHint_UpdatePostTransformOverflow);
       }
-
-      if ((hint & nsChangeHint_UpdateUsesOpacity) &&
-          frame->IsFrameOfType(nsIFrame::eTablePart)) {
-        NS_ASSERTION(hint & nsChangeHint_UpdateOpacityLayer,
-                     "should only return UpdateUsesOpacity hint "
-                     "when also returning UpdateOpacityLayer hint");
+      if (hint & nsChangeHint_ChildrenOnlyTransform) {
         
         
-        
-        
-        
-        
-        hint &= ~nsChangeHint_UpdateOpacityLayer;
-        hint |= nsChangeHint_RepaintFrame;
-      }
-
-      
-      
-      if ((hint & nsChangeHint_UpdateUsesOpacity) &&
-          frame->StyleDisplay()->mTransformStyle ==
-              StyleTransformStyle::Preserve3d) {
-        hint |= nsChangeHint_UpdateSubtreeOverflow;
-      }
-
-      if (hint & nsChangeHint_UpdateBackgroundPosition) {
-        
-        
-        hint |= nsChangeHint_SchedulePaint;
-        if (frame->IsFrameOfType(nsIFrame::eTablePart) ||
-            frame->IsFrameOfType(nsIFrame::eMathML)) {
+        nsIFrame* hintFrame = GetFrameForChildrenOnlyTransformHint(frame);
+        NS_ASSERTION(!nsLayoutUtils::GetNextContinuationOrIBSplitSibling(frame),
+                     "SVG frames should not have continuations "
+                     "or ib-split siblings");
+        NS_ASSERTION(
+            !nsLayoutUtils::GetNextContinuationOrIBSplitSibling(hintFrame),
+            "SVG frames should not have continuations "
+            "or ib-split siblings");
+        if (hintFrame->IsSVGOuterSVGAnonChildFrame()) {
           
           
           
-          hint |= nsChangeHint_RepaintFrame;
+
+          if (!CanSkipOverflowUpdates(hintFrame)) {
+            mOverflowChangedTracker.AddFrame(
+                hintFrame, OverflowChangedTracker::CHILDREN_CHANGED);
+          }
+        } else {
+          
+          
+          nsIFrame* childFrame = hintFrame->PrincipalChildList().FirstChild();
+          for (; childFrame; childFrame = childFrame->GetNextSibling()) {
+            MOZ_ASSERT(childFrame->IsFrameOfType(nsIFrame::eSVG),
+                       "Not expecting non-SVG children");
+            if (!CanSkipOverflowUpdates(childFrame)) {
+              mOverflowChangedTracker.AddFrame(
+                  childFrame, OverflowChangedTracker::CHILDREN_CHANGED);
+            }
+            NS_ASSERTION(
+                !nsLayoutUtils::GetNextContinuationOrIBSplitSibling(childFrame),
+                "SVG frames should not have continuations "
+                "or ib-split siblings");
+            NS_ASSERTION(
+                childFrame->GetParent() == hintFrame,
+                "SVG child frame not expected to have different parent");
+          }
         }
       }
-
-      if (hint &
-          (nsChangeHint_RepaintFrame | nsChangeHint_UpdateOpacityLayer |
-           nsChangeHint_UpdateTransformLayer |
-           nsChangeHint_ChildrenOnlyTransform | nsChangeHint_SchedulePaint)) {
-        ApplyRenderingChangeToTree(presContext->PresShell(), frame, hint);
-      }
-      if ((hint & nsChangeHint_RecomputePosition) && !didReflowThisFrame) {
-        ActiveLayerTracker::NotifyOffsetRestyle(frame);
-        
-        if (!RecomputePosition(frame)) {
-          StyleChangeReflow(frame,
-                            nsChangeHint_NeedReflow |
-                                nsChangeHint_ReflowChangesSizeOrPosition);
-          didReflowThisFrame = true;
-        }
-      }
-      NS_ASSERTION(!(hint & nsChangeHint_ChildrenOnlyTransform) ||
-                       (hint & nsChangeHint_UpdateOverflow),
-                   "nsChangeHint_UpdateOverflow should be passed too");
-      if (!didReflowThisFrame &&
-          (hint & (nsChangeHint_UpdateOverflow |
-                   nsChangeHint_UpdatePostTransformOverflow |
-                   nsChangeHint_UpdateParentOverflow |
-                   nsChangeHint_UpdateSubtreeOverflow))) {
-        if (hint & nsChangeHint_UpdateSubtreeOverflow) {
+      if (!CanSkipOverflowUpdates(frame)) {
+        if (hint & (nsChangeHint_UpdateOverflow |
+                    nsChangeHint_UpdatePostTransformOverflow)) {
+          OverflowChangedTracker::ChangeKind changeKind;
+          
+          
+          
+          
+          if (hint & nsChangeHint_UpdateOverflow) {
+            changeKind = OverflowChangedTracker::CHILDREN_CHANGED;
+          } else {
+            changeKind = OverflowChangedTracker::TRANSFORM_CHANGED;
+          }
           for (nsIFrame* cont = frame; cont;
                cont =
                    nsLayoutUtils::GetNextContinuationOrIBSplitSibling(cont)) {
-            AddSubtreeToOverflowTracker(cont, mOverflowChangedTracker);
-          }
-          
-          
-          hint &= ~(nsChangeHint_UpdateOverflow |
-                    nsChangeHint_UpdatePostTransformOverflow);
-        }
-        if (hint & nsChangeHint_ChildrenOnlyTransform) {
-          
-          
-          nsIFrame* hintFrame = GetFrameForChildrenOnlyTransformHint(frame);
-          NS_ASSERTION(
-              !nsLayoutUtils::GetNextContinuationOrIBSplitSibling(frame),
-              "SVG frames should not have continuations "
-              "or ib-split siblings");
-          NS_ASSERTION(
-              !nsLayoutUtils::GetNextContinuationOrIBSplitSibling(hintFrame),
-              "SVG frames should not have continuations "
-              "or ib-split siblings");
-          if (hintFrame->IsSVGOuterSVGAnonChildFrame()) {
-            
-            
-            
-
-            if (!CanSkipOverflowUpdates(hintFrame)) {
-              mOverflowChangedTracker.AddFrame(
-                  hintFrame, OverflowChangedTracker::CHILDREN_CHANGED);
-            }
-          } else {
-            
-            
-            nsIFrame* childFrame = hintFrame->PrincipalChildList().FirstChild();
-            for (; childFrame; childFrame = childFrame->GetNextSibling()) {
-              MOZ_ASSERT(childFrame->IsFrameOfType(nsIFrame::eSVG),
-                         "Not expecting non-SVG children");
-              if (!CanSkipOverflowUpdates(childFrame)) {
-                mOverflowChangedTracker.AddFrame(
-                    childFrame, OverflowChangedTracker::CHILDREN_CHANGED);
-              }
-              NS_ASSERTION(!nsLayoutUtils::GetNextContinuationOrIBSplitSibling(
-                               childFrame),
-                           "SVG frames should not have continuations "
-                           "or ib-split siblings");
-              NS_ASSERTION(
-                  childFrame->GetParent() == hintFrame,
-                  "SVG child frame not expected to have different parent");
-            }
+            mOverflowChangedTracker.AddFrame(cont, changeKind);
           }
         }
-        if (!CanSkipOverflowUpdates(frame)) {
-          if (hint & (nsChangeHint_UpdateOverflow |
-                      nsChangeHint_UpdatePostTransformOverflow)) {
-            OverflowChangedTracker::ChangeKind changeKind;
-            
-            
-            
-            
-            if (hint & nsChangeHint_UpdateOverflow) {
-              changeKind = OverflowChangedTracker::CHILDREN_CHANGED;
-            } else {
-              changeKind = OverflowChangedTracker::TRANSFORM_CHANGED;
-            }
-            for (nsIFrame* cont = frame; cont;
-                 cont =
-                     nsLayoutUtils::GetNextContinuationOrIBSplitSibling(cont)) {
-              mOverflowChangedTracker.AddFrame(cont, changeKind);
-            }
-          }
-          
-          
-          
-          
-          if (hint & nsChangeHint_UpdateParentOverflow) {
-            MOZ_ASSERT(frame->GetParent(),
-                       "shouldn't get style hints for the root frame");
-            for (nsIFrame* cont = frame; cont;
-                 cont =
-                     nsLayoutUtils::GetNextContinuationOrIBSplitSibling(cont)) {
-              mOverflowChangedTracker.AddFrame(
-                  cont->GetParent(), OverflowChangedTracker::CHILDREN_CHANGED);
-            }
+        
+        
+        
+        
+        if (hint & nsChangeHint_UpdateParentOverflow) {
+          MOZ_ASSERT(frame->GetParent(),
+                     "shouldn't get style hints for the root frame");
+          for (nsIFrame* cont = frame; cont;
+               cont =
+                   nsLayoutUtils::GetNextContinuationOrIBSplitSibling(cont)) {
+            mOverflowChangedTracker.AddFrame(
+                cont->GetParent(), OverflowChangedTracker::CHILDREN_CHANGED);
           }
         }
       }
-      if ((hint & nsChangeHint_UpdateCursor) && !didUpdateCursor) {
-        presContext->PresShell()->SynthesizeMouseMove(false);
-        didUpdateCursor = true;
-      }
-      if (hint & nsChangeHint_UpdateTableCellSpans) {
-        frameConstructor->UpdateTableCellSpans(content);
-      }
-      if (hint & nsChangeHint_VisibilityChange) {
-        frame->UpdateVisibleDescendantsState();
-      }
+    }
+    if ((hint & nsChangeHint_UpdateCursor) && !didUpdateCursor) {
+      presContext->PresShell()->SynthesizeMouseMove(false);
+      didUpdateCursor = true;
+    }
+    if (hint & nsChangeHint_UpdateTableCellSpans) {
+      frameConstructor->UpdateTableCellSpans(content);
+    }
+    if (hint & nsChangeHint_VisibilityChange) {
+      frame->UpdateVisibleDescendantsState();
     }
   }
 
