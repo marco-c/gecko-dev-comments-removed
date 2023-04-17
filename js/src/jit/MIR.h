@@ -349,10 +349,13 @@ class AliasSet {
     
     MapOrSetHashTable = 1 << 15,
 
-    Last = MapOrSetHashTable,
+    
+    RNG = 1 << 16,
+
+    Last = RNG,
     Any = Last | (Last - 1),
 
-    NumCategories = 16,
+    NumCategories = 17,
 
     
     Store_ = 1 << 31
