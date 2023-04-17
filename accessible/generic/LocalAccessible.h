@@ -478,7 +478,7 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
-  virtual nsIntRect Bounds() const override;
+  virtual nsIntRect Bounds() const;
 
   
 
@@ -489,11 +489,6 @@ class LocalAccessible : public nsISupports, public Accessible {
 
 
   virtual nsRect RelativeBounds(nsIFrame** aRelativeFrame) const;
-
-  
-
-
-  virtual nsRect ParentRelativeBounds();
 
   
 
@@ -1084,7 +1079,6 @@ class LocalAccessible : public nsISupports, public Accessible {
   LocalAccessible* mParent;
   nsTArray<LocalAccessible*> mChildren;
   int32_t mIndexInParent;
-  Maybe<nsRect> mBounds;
 
   static const uint8_t kStateFlagsBits = 11;
   static const uint8_t kContextFlagsBits = 3;
