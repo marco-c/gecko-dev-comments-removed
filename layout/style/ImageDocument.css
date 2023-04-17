@@ -8,6 +8,13 @@
 
 
 
+body {
+  
+
+
+  margin: 0;
+}
+
 @media not print {
   .shrinkToFit {
     cursor: zoom-in;
