@@ -71,6 +71,48 @@ class KeyboardEvent;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+enum nsPopupState {
+  
+  ePopupClosed,
+  
+  
+  ePopupShowing,
+  
+  ePopupPositioning,
+  
+  ePopupOpening,
+  
+  ePopupVisible,
+  
+  ePopupShown,
+  
+  ePopupHiding,
+  
+  
+  
+  
+  
+  
+  ePopupInvisible
+};
+
+
+
 enum CloseMenuMode {
   CloseMenuMode_Auto,   
   CloseMenuMode_None,   
@@ -672,6 +714,8 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
   
   nsresult UpdateIgnoreKeys(bool aIgnoreKeys);
+
+  nsPopupState GetPopupState(mozilla::dom::Element* aPopupElement);
 
   nsresult KeyUp(mozilla::dom::KeyboardEvent* aKeyEvent);
   nsresult KeyDown(mozilla::dom::KeyboardEvent* aKeyEvent);

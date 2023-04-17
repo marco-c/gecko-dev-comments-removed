@@ -33,48 +33,6 @@ class KeyboardEvent;
 }  
 }  
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-enum nsPopupState {
-  
-  ePopupClosed,
-  
-  
-  ePopupShowing,
-  
-  ePopupPositioning,
-  
-  ePopupOpening,
-  
-  ePopupVisible,
-  
-  ePopupShown,
-  
-  ePopupHiding,
-  
-  
-  
-  
-  
-  
-  ePopupInvisible
-};
-
 enum ConsumeOutsideClicksResult {
   ConsumeOutsideClicks_ParentOnly =
       0,                          
