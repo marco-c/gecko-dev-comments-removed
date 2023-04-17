@@ -84,6 +84,7 @@
 #include "mozilla/dom/HTMLPreElement.h"
 #include "mozilla/dom/HTMLSpanElement.h"
 #include "mozilla/dom/HTMLTableCellElement.h"
+#include "mozilla/dom/HTMLTemplateElement.h"
 #include "mozilla/dom/KeyframeAnimationOptionsBinding.h"
 #include "mozilla/dom/KeyframeEffect.h"
 #include "mozilla/dom/MouseEventBinding.h"
@@ -92,6 +93,7 @@
 #include "mozilla/dom/NodeInfo.h"
 #include "mozilla/dom/PointerEventHandler.h"
 #include "mozilla/dom/Promise.h"
+#include "mozilla/dom/Sanitizer.h"
 #include "mozilla/dom/SVGElement.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/ShadowRoot.h"
@@ -4515,6 +4517,112 @@ void Element::RegUnRegAccessKey(bool aDoReg) {
     } else {
       esm->UnregisterAccessKey(this, (uint32_t)accessKey.First());
     }
+  }
+}
+
+void Element::SetHTML(const nsAString& aInnerHTML,
+                      const SetHTMLOptions& aOptions, ErrorResult& aError) {
+  FragmentOrElement* target = this;
+  
+  if (target->IsTemplateElement()) {
+    DocumentFragment* frag =
+        static_cast<HTMLTemplateElement*>(target)->Content();
+    MOZ_ASSERT(frag);
+    target = frag;
+  }
+
+  
+  
+
+  Document* doc = target->OwnerDoc();
+
+  
+  mozAutoSubtreeModified subtree(doc, nullptr);
+
+  target->FireNodeRemovedForChildren();
+
+  
+  mozAutoDocUpdate updateBatch(doc, true);
+
+  
+  nsAutoMutationBatch mb(target, true, false);
+  while (target->HasChildren()) {
+    target->RemoveChildNode(target->GetFirstChild(), true);
+  }
+  mb.RemovalDone();
+
+  nsAutoScriptLoaderDisabler sld(doc);
+
+  FragmentOrElement* parseContext = this;
+  if (ShadowRoot* shadowRoot = ShadowRoot::FromNode(parseContext)) {
+    
+    
+    parseContext = shadowRoot->GetHost();
+  }
+
+  
+  
+  RefPtr<Document> inertDoc;
+  nsAtom* contextLocalName = parseContext->NodeInfo()->NameAtom();
+  int32_t contextNameSpaceID = parseContext->GetNameSpaceID();
+  ElementCreationOptionsOrString options;
+  RefPtr<DocumentFragment> fragment;
+  if (doc->IsHTMLDocument()) {
+    inertDoc = nsContentUtils::CreateInertHTMLDocument(nullptr);
+    if (!inertDoc) {
+      aError = NS_ERROR_FAILURE;
+      return;
+    }
+    fragment = new (inertDoc->NodeInfoManager())
+        DocumentFragment(inertDoc->NodeInfoManager());
+
+    aError = nsContentUtils::ParseFragmentHTML(aInnerHTML, fragment,
+                                               contextLocalName,
+                                               contextNameSpaceID, false, true);
+
+  } else if (doc->IsXMLDocument()) {
+    inertDoc = nsContentUtils::CreateInertXMLDocument(nullptr);
+    if (!inertDoc) {
+      aError = NS_ERROR_FAILURE;
+      return;
+    }
+    fragment = new (inertDoc->NodeInfoManager())
+        DocumentFragment(inertDoc->NodeInfoManager());
+
+    
+    
+    
+    AutoTArray<nsString, 0> emptyTagStack;
+    aError =
+        nsContentUtils::ParseFragmentXML(aInnerHTML, inertDoc, emptyTagStack,
+                                         true, -1, getter_AddRefs(fragment));
+  }
+
+  if (!aError.Failed()) {
+    
+    
+    
+    nsAutoScriptBlockerSuppressNodeRemoved scriptBlocker;
+
+    int32_t oldChildCount = static_cast<int32_t>(target->GetChildCount());
+
+    if (!aOptions.IsAnyMemberPresent() || !aOptions.mSanitizer.WasPassed()) {
+      SanitizerConfig options;
+      nsCOMPtr<nsIGlobalObject> ownerGlobal = GetOwnerGlobal();
+      if (!ownerGlobal) {
+        aError.Throw(NS_ERROR_FAILURE);
+        return;
+      }
+      RefPtr<Sanitizer> sanitizer = new Sanitizer(ownerGlobal, options);
+      sanitizer->SanitizeFragment(fragment, aError);
+    } else {
+      aOptions.mSanitizer.Value().SanitizeFragment(fragment, aError);
+    }
+
+    target->AppendChild(*fragment, aError);
+    mb.NodesAdded();
+    nsContentUtils::FireMutationEventsForDirectParsing(doc, target,
+                                                       oldChildCount);
   }
 }
 
