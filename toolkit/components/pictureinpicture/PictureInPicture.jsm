@@ -33,6 +33,10 @@ const MULTI_PIP_ENABLED_PREF =
   "media.videocontrols.picture-in-picture.allow-multiple";
 const TOGGLE_ENABLED_PREF =
   "media.videocontrols.picture-in-picture.video-toggle.enabled";
+const TOGGLE_POSITION_PREF =
+  "media.videocontrols.picture-in-picture.video-toggle.position";
+const TOGGLE_POSITION_RIGHT = "right";
+const TOGGLE_POSITION_LEFT = "left";
 
 
 
@@ -674,6 +678,29 @@ var PictureInPicture = {
   openToggleContextMenu(window, data) {
     let document = window.document;
     let popup = document.getElementById("pictureInPictureToggleContextMenu");
+    let contextMoveToggle = document.getElementById(
+      "context_MovePictureInPictureToggle"
+    );
+
+    
+    let position = Services.prefs.getStringPref(
+      TOGGLE_POSITION_PREF,
+      TOGGLE_POSITION_RIGHT
+    );
+    switch (position) {
+      case TOGGLE_POSITION_RIGHT:
+        document.l10n.setAttributes(
+          contextMoveToggle,
+          "picture-in-picture-move-toggle-left"
+        );
+        break;
+      case TOGGLE_POSITION_LEFT:
+        document.l10n.setAttributes(
+          contextMoveToggle,
+          "picture-in-picture-move-toggle-right"
+        );
+        break;
+    }
 
     
     
@@ -702,6 +729,27 @@ var PictureInPicture = {
 
   hideToggle() {
     Services.prefs.setBoolPref(TOGGLE_ENABLED_PREF, false);
+  },
+
+  moveToggle() {
+    
+    let position = Services.prefs.getStringPref(
+      TOGGLE_POSITION_PREF,
+      TOGGLE_POSITION_RIGHT
+    );
+    let newPosition = "";
+    
+    switch (position) {
+      case TOGGLE_POSITION_RIGHT:
+        newPosition = TOGGLE_POSITION_LEFT;
+        break;
+      case TOGGLE_POSITION_LEFT:
+        newPosition = TOGGLE_POSITION_RIGHT;
+        break;
+    }
+    if (newPosition) {
+      Services.prefs.setStringPref(TOGGLE_POSITION_PREF, newPosition);
+    }
   },
 
   
