@@ -12,7 +12,6 @@
 
 #include "MediaConduitInterface.h"
 #include "common/MediaEngineWrapper.h"
-#include "RtpSourceObserver.h"
 #include "RtpPacketQueue.h"
 
 
@@ -32,7 +31,6 @@ DOMHighResTimeStamp NTPtoDOMHighResTimeStamp(uint32_t ntpHigh, uint32_t ntpLow);
 
 class WebrtcAudioConduit : public AudioSessionConduit,
                            public webrtc::Transport {
-  
  public:
   
   static const unsigned int CODEC_PLNAME_SIZE;
@@ -193,7 +191,6 @@ class WebrtcAudioConduit : public AudioSessionConduit,
         mSendChannel(-1),
         mDtmfEnabled(false),
         mMutex("WebrtcAudioConduit::mMutex"),
-        mRtpSourceObserver(new RtpSourceObserver(mCall->GetTimestampMaker())),
         mStsThread(aStsThread) {}
 
   virtual ~WebrtcAudioConduit();
@@ -239,10 +236,6 @@ class WebrtcAudioConduit : public AudioSessionConduit,
                       int attenuationDb) override;
 
   void GetRtpSources(nsTArray<dom::RTCRtpSourceEntry>& outSources) override;
-  
-
-
-
   void SetRtcpEventObserver(mozilla::RtcpEventObserver* observer) override;
 
   
@@ -349,9 +342,6 @@ class WebrtcAudioConduit : public AudioSessionConduit,
 
   
   webrtc::AudioFrame mAudioFrame;  
-
-  
-  RefPtr<RtpSourceObserver> mRtpSourceObserver;
 
   
   const nsCOMPtr<nsISerialEventTarget> mStsThread;
