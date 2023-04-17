@@ -1750,7 +1750,6 @@ void gfxMacPlatformFontList::GetFacesInitDataForFamily(const fontlist::Family* a
     int32_t appKitWeight = [[face objectAtIndex:INDEX_FONT_WEIGHT] unsignedIntValue];
     uint32_t macTraits = [[face objectAtIndex:INDEX_FONT_TRAITS] unsignedIntValue];
     NSString* facename = [face objectAtIndex:INDEX_FONT_FACE_NAME];
-    bool isStandardFace = false;
 
     if (appKitWeight == kAppleExtraLightWeight) {
       
@@ -1774,12 +1773,6 @@ void gfxMacPlatformFontList::GetFacesInitDataForFamily(const fontlist::Family* a
       }
     }
     cssWeight *= 100;  
-
-    if ([facename isEqualToString:@"Regular"] || [facename isEqualToString:@"Bold"] ||
-        [facename isEqualToString:@"Italic"] || [facename isEqualToString:@"Oblique"] ||
-        [facename isEqualToString:@"Bold Italic"] || [facename isEqualToString:@"Bold Oblique"]) {
-      isStandardFace = true;
-    }
 
     StretchRange stretch(FontStretch::Normal());
     if (macTraits & (NSCondensedFontMask | NSNarrowFontMask | NSCompressedFontMask)) {

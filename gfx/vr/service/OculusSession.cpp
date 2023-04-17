@@ -1326,7 +1326,6 @@ void OculusSession::EnumerateControllers(VRSystemState& aState,
     
     VRControllerState& controllerState = aState.controllerState[handIdx];
     if (aInputState.ControllerType & OculusControllerTypes[handIdx]) {
-      bool bNewController = false;
       
       if (controllerState.controllerName[0] == '\0') {
         
@@ -1338,7 +1337,6 @@ void OculusSession::EnumerateControllers(VRSystemState& aState,
         controllerState.numAxes = kNumOculusAxes;
         controllerState.numHaptics = kNumOculusHaptcs;
         controllerState.type = VRControllerType::OculusTouch;
-        bNewController = true;
       }
     } else {
       
