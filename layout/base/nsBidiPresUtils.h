@@ -8,7 +8,7 @@
 #define nsBidiPresUtils_h___
 
 #include "gfxContext.h"
-#include "nsBidi.h"
+#include "mozilla/intl/Bidi.h"
 #include "nsBidiUtils.h"
 #include "nsHashKeys.h"
 #include "nsCoord.h"
@@ -164,7 +164,7 @@ class nsBidiPresUtils {
 
 
     virtual void SetText(const char16_t* aText, int32_t aLength,
-                         nsBidiDirection aDirection) = 0;
+                         mozilla::intl::Bidi::Direction aDirection) = 0;
 
     
 
@@ -239,32 +239,26 @@ class nsBidiPresUtils {
 
 
 
-
-
-
-
-
-
-
-
-
-  static nsresult RenderText(
-      const char16_t* aText, int32_t aLength, nsBidiLevel aBaseLevel,
-      nsPresContext* aPresContext, gfxContext& aRenderingContext,
-      DrawTarget* aTextRunConstructionDrawTarget, nsFontMetrics& aFontMetrics,
-      nscoord aX, nscoord aY, nsBidiPositionResolve* aPosResolve = nullptr,
-      int32_t aPosResolveCount = 0) {
+  static nsresult RenderText(const char16_t* aText, int32_t aLength,
+                             mozilla::intl::Bidi::EmbeddingLevel aBaseLevel,
+                             nsPresContext* aPresContext,
+                             gfxContext& aRenderingContext,
+                             DrawTarget* aTextRunConstructionDrawTarget,
+                             nsFontMetrics& aFontMetrics, nscoord aX,
+                             nscoord aY,
+                             nsBidiPositionResolve* aPosResolve = nullptr,
+                             int32_t aPosResolveCount = 0) {
     return ProcessTextForRenderingContext(
         aText, aLength, aBaseLevel, aPresContext, aRenderingContext,
         aTextRunConstructionDrawTarget, aFontMetrics, MODE_DRAW, aX, aY,
         aPosResolve, aPosResolveCount, nullptr);
   }
 
-  static nscoord MeasureTextWidth(const char16_t* aText, int32_t aLength,
-                                  nsBidiLevel aBaseLevel,
-                                  nsPresContext* aPresContext,
-                                  gfxContext& aRenderingContext,
-                                  nsFontMetrics& aFontMetrics) {
+  static nscoord MeasureTextWidth(
+      const char16_t* aText, int32_t aLength,
+      mozilla::intl::Bidi::EmbeddingLevel aBaseLevel,
+      nsPresContext* aPresContext, gfxContext& aRenderingContext,
+      nsFontMetrics& aFontMetrics) {
     nscoord length;
     nsresult rv = ProcessTextForRenderingContext(
         aText, aLength, aBaseLevel, aPresContext, aRenderingContext,
@@ -317,21 +311,23 @@ class nsBidiPresUtils {
   
 
 
-  static nsBidiLevel GetFrameEmbeddingLevel(nsIFrame* aFrame);
+  static mozilla::intl::Bidi::EmbeddingLevel GetFrameEmbeddingLevel(
+      nsIFrame* aFrame);
 
   
 
 
-  static nsBidiLevel GetFrameBaseLevel(const nsIFrame* aFrame);
+  static mozilla::intl::Bidi::EmbeddingLevel GetFrameBaseLevel(
+      const nsIFrame* aFrame);
 
   
 
 
 
 
-
-  static nsBidiDirection ParagraphDirection(const nsIFrame* aFrame) {
-    return DIRECTION_FROM_LEVEL(GetFrameBaseLevel(aFrame));
+  static mozilla::intl::Bidi::Direction ParagraphDirection(
+      const nsIFrame* aFrame) {
+    return GetFrameBaseLevel(aFrame).Direction();
   }
 
   
@@ -339,9 +335,8 @@ class nsBidiPresUtils {
 
 
 
-
-  static nsBidiDirection FrameDirection(nsIFrame* aFrame) {
-    return DIRECTION_FROM_LEVEL(GetFrameEmbeddingLevel(aFrame));
+  static mozilla::intl::Bidi::Direction FrameDirection(nsIFrame* aFrame) {
+    return GetFrameEmbeddingLevel(aFrame).Direction();
   }
 
   static bool IsFrameInParagraphDirection(nsIFrame* aFrame) {
@@ -353,7 +348,7 @@ class nsBidiPresUtils {
   
   static bool IsReversedDirectionFrame(const nsIFrame* aFrame) {
     mozilla::FrameBidiData bidiData = aFrame->GetBidiData();
-    return !IS_SAME_DIRECTION(bidiData.embeddingLevel, bidiData.baseLevel);
+    return !bidiData.embeddingLevel.IsSameDirection(bidiData.baseLevel);
   }
 
   enum Mode { MODE_DRAW, MODE_MEASURE };
@@ -376,22 +371,13 @@ class nsBidiPresUtils {
 
 
 
-
-
-
-
-
-
-
-
-
-  static nsresult ProcessText(const char16_t* aText, int32_t aLength,
-                              nsBidiLevel aBaseLevel,
+  static nsresult ProcessText(const char16_t* aText, size_t aLength,
+                              mozilla::intl::Bidi::EmbeddingLevel aBaseLevel,
                               nsPresContext* aPresContext,
                               BidiProcessor& aprocessor, Mode aMode,
                               nsBidiPositionResolve* aPosResolve,
                               int32_t aPosResolveCount, nscoord* aWidth,
-                              nsBidi* aBidiEngine);
+                              mozilla::intl::Bidi* aBidiEngine);
 
   
 
@@ -405,11 +391,13 @@ class nsBidiPresUtils {
 
 
 
-  static nsBidiLevel BidiLevelFromStyle(mozilla::ComputedStyle* aComputedStyle);
+  static mozilla::intl::Bidi::EmbeddingLevel BidiLevelFromStyle(
+      mozilla::ComputedStyle* aComputedStyle);
 
  private:
   static nsresult ProcessTextForRenderingContext(
-      const char16_t* aText, int32_t aLength, nsBidiLevel aBaseLevel,
+      const char16_t* aText, int32_t aLength,
+      mozilla::intl::Bidi::EmbeddingLevel aBaseLevel,
       nsPresContext* aPresContext, gfxContext& aRenderingContext,
       DrawTarget* aTextRunConstructionDrawTarget, nsFontMetrics& aFontMetrics,
       Mode aMode,
@@ -572,11 +560,11 @@ class nsBidiPresUtils {
 
   static void RemoveBidiContinuation(BidiParagraphData* aBpd, nsIFrame* aFrame,
                                      int32_t aFirstIndex, int32_t aLastIndex);
-  static void CalculateCharType(nsBidi* aBidiEngine, const char16_t* aText,
-                                int32_t& aOffset, int32_t aCharTypeLimit,
-                                int32_t& aRunLimit, int32_t& aRunLength,
-                                int32_t& aRunCount, uint8_t& aCharType,
-                                uint8_t& aPrevCharType);
+  static void CalculateCharType(mozilla::intl::Bidi* aBidiEngine,
+                                const char16_t* aText, int32_t& aOffset,
+                                int32_t aCharTypeLimit, int32_t& aRunLimit,
+                                int32_t& aRunLength, int32_t& aRunCount,
+                                uint8_t& aCharType, uint8_t& aPrevCharType);
 
   static void StripBidiControlCharacters(char16_t* aText, int32_t& aTextLength);
 };

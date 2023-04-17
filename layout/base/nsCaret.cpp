@@ -12,6 +12,7 @@
 
 #include "gfxUtils.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/intl/Bidi.h"
 #include "nsCOMPtr.h"
 #include "nsFontMetrics.h"
 #include "nsITimer.h"
@@ -38,6 +39,8 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 using namespace mozilla::gfx;
+
+using EmbeddingLevel = mozilla::intl::Bidi::EmbeddingLevel;
 
 
 
@@ -389,7 +392,8 @@ nsIFrame* nsCaret::GetFrameAndOffset(const Selection* aSelection,
 
   nsIContent* contentNode = focusNode->AsContent();
   nsFrameSelection* frameSelection = aSelection->GetFrameSelection();
-  nsBidiLevel bidiLevel = frameSelection->GetCaretBidiLevel();
+  mozilla::intl::Bidi::EmbeddingLevel bidiLevel =
+      frameSelection->GetCaretBidiLevel();
 
   return nsCaret::GetCaretFrameForNodeOffset(
       frameSelection, contentNode, focusOffset, frameSelection->GetHint(),
@@ -644,7 +648,8 @@ void nsCaret::StopBlinking() {
 
 nsIFrame* nsCaret::GetCaretFrameForNodeOffset(
     nsFrameSelection* aFrameSelection, nsIContent* aContentNode,
-    int32_t aOffset, CaretAssociationHint aFrameHint, nsBidiLevel aBidiLevel,
+    int32_t aOffset, CaretAssociationHint aFrameHint,
+    mozilla::intl::Bidi::EmbeddingLevel aBidiLevel,
     nsIFrame** aReturnUnadjustedFrame, int32_t* aReturnOffset) {
   if (!aFrameSelection) {
     return nullptr;
@@ -696,8 +701,10 @@ nsIFrame* nsCaret::GetCaretFrameForNodeOffset(
 
     nsIFrame* frameBefore;
     nsIFrame* frameAfter;
-    nsBidiLevel levelBefore;  
-    nsBidiLevel levelAfter;   
+    mozilla::intl::Bidi::EmbeddingLevel
+        levelBefore;  
+    mozilla::intl::Bidi::EmbeddingLevel
+        levelAfter;  
 
     auto [start, end] = theFrame->GetOffsets();
     if (start == 0 || end == 0 || start == theFrameOffset ||
@@ -720,9 +727,9 @@ nsIFrame* nsCaret::GetCaretFrameForNodeOffset(
                                 std::max(levelBefore, levelAfter));  
           if (aBidiLevel == levelBefore ||                           
               (aBidiLevel > levelBefore && aBidiLevel < levelAfter &&
-               IS_SAME_DIRECTION(aBidiLevel, levelBefore)) ||  
+               aBidiLevel.IsSameDirection(levelBefore)) ||  
               (aBidiLevel < levelBefore && aBidiLevel > levelAfter &&
-               IS_SAME_DIRECTION(aBidiLevel, levelBefore)))  
+               aBidiLevel.IsSameDirection(levelBefore)))  
           {
             if (theFrame != frameBefore) {
               if (frameBefore) {  
@@ -735,7 +742,8 @@ nsIFrame* nsCaret::GetCaretFrameForNodeOffset(
                 
                 
                 
-                nsBidiLevel baseLevel = frameAfter->GetBaseLevel();
+                mozilla::intl::Bidi::EmbeddingLevel baseLevel =
+                    frameAfter->GetBaseLevel();
                 if (baseLevel != levelAfter) {
                   nsPeekOffsetStruct pos(eSelectBeginLine, eDirPrevious, 0,
                                          nsPoint(0, 0), false, true, false,
@@ -749,9 +757,9 @@ nsIFrame* nsCaret::GetCaretFrameForNodeOffset(
             }
           } else if (aBidiLevel == levelAfter ||  
                      (aBidiLevel > levelBefore && aBidiLevel < levelAfter &&
-                      IS_SAME_DIRECTION(aBidiLevel, levelAfter)) ||  
+                      aBidiLevel.IsSameDirection(levelAfter)) ||  
                      (aBidiLevel < levelBefore && aBidiLevel > levelAfter &&
-                      IS_SAME_DIRECTION(aBidiLevel, levelAfter)))  
+                      aBidiLevel.IsSameDirection(levelAfter)))  
           {
             if (theFrame != frameAfter) {
               if (frameAfter) {
@@ -766,7 +774,8 @@ nsIFrame* nsCaret::GetCaretFrameForNodeOffset(
                 
                 
                 
-                nsBidiLevel baseLevel = frameBefore->GetBaseLevel();
+                mozilla::intl::Bidi::EmbeddingLevel baseLevel =
+                    frameBefore->GetBaseLevel();
                 if (baseLevel != levelBefore) {
                   nsPeekOffsetStruct pos(eSelectEndLine, eDirNext, 0,
                                          nsPoint(0, 0), false, true, false,
@@ -781,34 +790,38 @@ nsIFrame* nsCaret::GetCaretFrameForNodeOffset(
           } else if (aBidiLevel > levelBefore &&
                      aBidiLevel < levelAfter &&  
                      
-                     IS_SAME_DIRECTION(levelBefore, levelAfter) &&
+                     levelBefore.IsSameDirection(levelAfter) &&
                      
-                     !IS_SAME_DIRECTION(aBidiLevel, levelAfter)) {
+                     !aBidiLevel.IsSameDirection(levelAfter)) {
             if (NS_SUCCEEDED(aFrameSelection->GetFrameFromLevel(
                     frameAfter, eDirNext, aBidiLevel, &theFrame))) {
               std::tie(start, end) = theFrame->GetOffsets();
               levelAfter = theFrame->GetEmbeddingLevel();
-              if (IS_LEVEL_RTL(aBidiLevel))  
-                                             
-                theFrameOffset = IS_LEVEL_RTL(levelAfter) ? start : end;
-              else  
-                theFrameOffset = IS_LEVEL_RTL(levelAfter) ? end : start;
+              if (aBidiLevel.IsRTL()) {
+                
+                theFrameOffset = levelAfter.IsRTL() ? start : end;
+              } else {
+                
+                theFrameOffset = levelAfter.IsRTL() ? end : start;
+              }
             }
           } else if (aBidiLevel < levelBefore &&
                      aBidiLevel > levelAfter &&  
                      
-                     IS_SAME_DIRECTION(levelBefore, levelAfter) &&
+                     levelBefore.IsSameDirection(levelAfter) &&
                      
-                     !IS_SAME_DIRECTION(aBidiLevel, levelAfter)) {
+                     !aBidiLevel.IsSameDirection(levelAfter)) {
             if (NS_SUCCEEDED(aFrameSelection->GetFrameFromLevel(
                     frameBefore, eDirPrevious, aBidiLevel, &theFrame))) {
               std::tie(start, end) = theFrame->GetOffsets();
               levelBefore = theFrame->GetEmbeddingLevel();
-              if (IS_LEVEL_RTL(aBidiLevel))  
-                                             
-                theFrameOffset = IS_LEVEL_RTL(levelBefore) ? end : start;
-              else  
-                theFrameOffset = IS_LEVEL_RTL(levelBefore) ? start : end;
+              if (aBidiLevel.IsRTL()) {
+                
+                theFrameOffset = levelBefore.IsRTL() ? end : start;
+              } else {
+                
+                theFrameOffset = levelBefore.IsRTL() ? start : end;
+              }
             }
           }
         }
