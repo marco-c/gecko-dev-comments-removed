@@ -820,8 +820,15 @@ gfx::DrawTarget* TextureClient::BorrowDrawTarget() {
 }
 
 void TextureClient::EndDraw() {
-  MOZ_ASSERT(!mBorrowedDrawTarget ||
-             mBorrowedDrawTarget->refCount() <= mExpectedDtRefs);
+  MOZ_ASSERT(mOpenMode & OpenMode::OPEN_READ_WRITE);
+
+  
+  
+  
+  mBorrowedDrawTarget->Flush();
+  mBorrowedDrawTarget->DetachAllSnapshots();
+  MOZ_ASSERT(mBorrowedDrawTarget->refCount() <= mExpectedDtRefs);
+
   mBorrowedDrawTarget = nullptr;
   mData->EndDraw();
 }
