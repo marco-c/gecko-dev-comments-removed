@@ -252,32 +252,9 @@ class WebrtcVideoConduit
 
   bool SetRemoteSSRCLocked(uint32_t ssrc, uint32_t rtxSsrc);
 
-  bool GetSendPacketTypeStats(
-      webrtc::RtcpPacketTypeCounter* aPacketCounts) override;
-
-  bool GetRecvPacketTypeStats(
-      webrtc::RtcpPacketTypeCounter* aPacketCounts) override;
-
-  void PollStats();
-  void UpdateVideoStatsTimer();
-  bool GetVideoEncoderStats(double* framerateMean, double* framerateStdDev,
-                            double* bitrateMean, double* bitrateStdDev,
-                            uint32_t* droppedFrames, uint32_t* framesEncoded,
-                            Maybe<uint64_t>* qpSum) override;
-  bool GetVideoDecoderStats(double* framerateMean, double* framerateStdDev,
-                            double* bitrateMean, double* bitrateStdDev,
-                            uint32_t* discardedPackets,
-                            uint32_t* framesDecoded) override;
-  bool GetRTPReceiverStats(unsigned int* jitterMs,
-                           unsigned int* cumulativeLost) override;
-  bool GetRTCPReceiverReport(uint32_t* jitterMs, uint32_t* packetsReceived,
-                             uint64_t* bytesReceived, uint32_t* cumulativeLost,
-                             Maybe<double>* aOutRttSec) override;
-  bool GetRTCPSenderReport(unsigned int* packetsSent, uint64_t* bytesSent,
-                           DOMHighResTimeStamp* aRemoteTimestamp) override;
-
-  Maybe<mozilla::dom::RTCBandwidthEstimationInternal> GetBandwidthEstimation()
-      override;
+  Maybe<webrtc::VideoReceiveStream::Stats> GetReceiverStats() const override;
+  Maybe<webrtc::VideoSendStream::Stats> GetSenderStats() const override;
+  webrtc::Call::Stats GetCallStats() const override;
 
   void GetRtpSources(nsTArray<dom::RTCRtpSourceEntry>& outSources) override;
   bool AddFrameHistory(dom::Sequence<dom::RTCVideoFrameHistoryInternal>*
@@ -290,15 +267,7 @@ class WebrtcVideoConduit
     mAllowSsrcChange = false;
   }
 
-  Maybe<RefPtr<VideoSessionConduit>> AsVideoSessionConduit() override {
-    return Some(RefPtr<VideoSessionConduit>(this));
-  }
-
-  void RecordTelemetry() const override {
-    ASSERT_ON_THREAD(mStsThread);
-    mSendStreamStats.RecordTelemetry();
-    mRecvStreamStats.RecordTelemetry();
-  }
+  void RecordTelemetry() override;
 
   void SetRtcpEventObserver(mozilla::RtcpEventObserver* observer) override;
 
@@ -306,145 +275,6 @@ class WebrtcVideoConduit
   
   WebrtcVideoConduit(const WebrtcVideoConduit&) = delete;
   void operator=(const WebrtcVideoConduit&) = delete;
-
-  
-
-
-
-  class CallStatistics {
-   public:
-    explicit CallStatistics(nsCOMPtr<nsISerialEventTarget> aStatsThread)
-        : mStatsThread(aStatsThread) {}
-    void Update(const webrtc::Call::Stats& aStats);
-    Maybe<mozilla::dom::RTCBandwidthEstimationInternal> Stats() const;
-    Maybe<DOMHighResTimeStamp> RttSec() const;
-
-   protected:
-    const nsCOMPtr<nsISerialEventTarget> mStatsThread;
-
-   private:
-    Maybe<webrtc::Call::Stats> mStats = Nothing();
-    Maybe<DOMHighResTimeStamp> mRttSec = Nothing();
-  };
-
-  
-
-
-
-  class StreamStatistics {
-   public:
-    explicit StreamStatistics(nsCOMPtr<nsISerialEventTarget> aStatsThread)
-        : mStatsThread(aStatsThread) {}
-    void Update(const double aFrameRate, const double aBitrate,
-                const webrtc::RtcpPacketTypeCounter& aPacketCounts);
-    
-
-
-
-
-
-
-    bool GetVideoStreamStats(double& aOutFrMean, double& aOutFrStdDev,
-                             double& aOutBrMean, double& aOutBrStdDev) const;
-
-    
-
-
-    void RecordTelemetry() const;
-    const webrtc::RtcpPacketTypeCounter& PacketCounts() const;
-    bool Active() const;
-    void SetActive(bool aActive);
-    virtual bool IsSend() const { return false; };
-
-   protected:
-    const nsCOMPtr<nsISerialEventTarget> mStatsThread;
-
-   private:
-    bool mActive = false;
-    RunningStat mFrameRate;
-    RunningStat mBitRate;
-    webrtc::RtcpPacketTypeCounter mPacketCounts;
-  };
-
-  
-
-
-  class SendStreamStatistics : public StreamStatistics {
-   public:
-    explicit SendStreamStatistics(nsCOMPtr<nsISerialEventTarget> aStatsThread)
-        : StreamStatistics(
-              std::forward<nsCOMPtr<nsISerialEventTarget>>(aStatsThread)) {}
-    
-
-
-    uint32_t DroppedFrames() const;
-    
-
-
-    uint32_t FramesEncoded() const;
-    void Update(const webrtc::VideoSendStream::Stats& aStats,
-                uint32_t aConfiguredSsrc);
-    
-
-
-    void FrameDeliveredToEncoder();
-
-    bool SsrcFound() const;
-    uint32_t JitterMs() const;
-    uint32_t PacketsLost() const;
-    uint64_t BytesReceived() const;
-    uint32_t PacketsReceived() const;
-    Maybe<uint64_t> QpSum() const;
-    bool IsSend() const override { return true; };
-
-   private:
-    uint32_t mDroppedFrames = 0;
-    uint32_t mFramesEncoded = 0;
-    int32_t mFramesDeliveredToEncoder = 0;
-
-    bool mSsrcFound = false;
-    uint32_t mJitterMs = 0;
-    uint32_t mPacketsLost = 0;
-    uint64_t mBytesReceived = 0;
-    uint32_t mPacketsReceived = 0;
-    Maybe<uint64_t> mQpSum;
-  };
-
-  
-
-
-  class ReceiveStreamStatistics : public StreamStatistics {
-   public:
-    explicit ReceiveStreamStatistics(
-        nsCOMPtr<nsISerialEventTarget> aStatsThread)
-        : StreamStatistics(
-              std::forward<nsCOMPtr<nsISerialEventTarget>>(aStatsThread)) {}
-    uint32_t BytesSent() const;
-    
-
-
-    uint32_t DiscardedPackets() const;
-    
-
-
-    uint32_t FramesDecoded() const;
-    uint32_t JitterMs() const;
-    uint32_t PacketsLost() const;
-    uint32_t PacketsSent() const;
-    uint32_t Ssrc() const;
-    DOMHighResTimeStamp RemoteTimestamp() const;
-    void Update(const webrtc::VideoReceiveStream::Stats& aStats);
-
-   private:
-    uint32_t mBytesSent = 0;
-    uint32_t mDiscardedPackets = 0;
-    uint32_t mFramesDecoded = 0;
-    uint32_t mJitterMs = 0;
-    uint32_t mPacketsLost = 0;
-    uint32_t mPacketsSent = 0;
-    uint32_t mSsrc = 0;
-    DOMHighResTimeStamp mRemoteTimestamp = 0;
-  };
 
   
   void DumpCodecDB() const;
@@ -532,13 +362,10 @@ class WebrtcVideoConduit
   int mSinkWantsPixelCount = std::numeric_limits<int>::max();
 
   
-  SendStreamStatistics mSendStreamStats;
-
-  
-  ReceiveStreamStatistics mRecvStreamStats;
-
-  
-  CallStatistics mCallStats;
+  RunningStat mSendFramerate;
+  RunningStat mSendBitrate;
+  RunningStat mRecvFramerate;
+  RunningStat mRecvBitrate;
 
   
   
@@ -643,11 +470,6 @@ class WebrtcVideoConduit
   uint64_t mSendCodecPluginID = 0;
   
   uint64_t mRecvCodecPluginID = 0;
-
-  
-  nsCOMPtr<nsITimer> mVideoStatsTimer;
-  
-  bool mVideoStatsTimerActive = false;
 
   
   std::string mPCHandle;
