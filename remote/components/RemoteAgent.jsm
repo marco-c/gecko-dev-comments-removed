@@ -160,7 +160,7 @@ class RemoteAgentClass {
     try {
       
       
-      this.cdp?.stop();
+      await this.cdp?.stop();
       this.webDriverBiDi?.stop();
 
       await this.server.stop();
