@@ -6,18 +6,61 @@
 
 var EXPORTED_SYMBOLS = ["Log"];
 
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
 const { Log: StdLog } = ChromeUtils.import("resource://gre/modules/Log.jsm");
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-const LOG_LEVEL = "remote.log.level";
+const PREF_REMOTE_LOG_LEVEL = "remote.log.level";
+
+
+
+const PREF_MARIONETTE_LOG_LEVEL = "marionette.log.level";
+
+
+
+XPCOMUtils.defineLazyGetter(this, "prefLogLevel", () => {
+  function getLogLevelNumber(pref) {
+    const level = Services.prefs.getCharPref(pref, "Fatal");
+    return (
+      StdLog.Level.Numbers[level.toUpperCase()] || StdLog.Level.Numbers.FATAL
+    );
+  }
+
+  const marionetteNumber = getLogLevelNumber(PREF_MARIONETTE_LOG_LEVEL);
+  const remoteNumber = getLogLevelNumber(PREF_REMOTE_LOG_LEVEL);
+
+  if (marionetteNumber < remoteNumber) {
+    return PREF_MARIONETTE_LOG_LEVEL;
+  }
+
+  return PREF_REMOTE_LOG_LEVEL;
+});
 
 
 class Log {
-  static get() {
-    const logger = StdLog.repository.getLogger("RemoteAgent");
+  static TYPES = {
+    BIDI: "BiDi",
+    CDP: "CDP",
+    MARIONETTE: "Marionette",
+    REMOTE_AGENT: "RemoteAgent",
+  };
+
+  
+
+
+
+
+
+
+
+
+  static get(type = Log.TYPES.REMOTE_AGENT) {
+    const logger = StdLog.repository.getLogger(type);
     if (logger.ownAppenders.length == 0) {
       logger.addAppender(new StdLog.DumpAppender());
-      logger.manageLevelFromPref(LOG_LEVEL);
+      logger.manageLevelFromPref(prefLogLevel);
     }
     return logger;
   }
@@ -25,7 +68,7 @@ class Log {
   static get verbose() {
     
     
-    const level = Services.prefs.getStringPref(LOG_LEVEL, "Info");
+    const level = Services.prefs.getStringPref(PREF_REMOTE_LOG_LEVEL, "Info");
     return StdLog.Level[level] >= StdLog.Level.Info;
   }
 }
