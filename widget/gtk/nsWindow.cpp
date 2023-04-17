@@ -2388,7 +2388,8 @@ gboolean nsWindow::OnPropertyNotifyEvent(GtkWidget* aWidget,
   return FALSE;
 }
 
-static GdkCursor* GetCursorForImage(const nsIWidget::Cursor& aCursor) {
+static GdkCursor* GetCursorForImage(const nsIWidget::Cursor& aCursor,
+                                    int32_t aWidgetScaleFactor) {
   if (!aCursor.IsCustom()) {
     return nullptr;
   }
@@ -2396,7 +2397,10 @@ static GdkCursor* GetCursorForImage(const nsIWidget::Cursor& aCursor) {
 
   
   
-  int32_t gtkScale = std::ceil(aCursor.mResolution);
+  
+  
+  int32_t gtkScale =
+      std::max(aWidgetScaleFactor, int32_t(std::ceil(aCursor.mResolution)));
 
   
   
@@ -2464,7 +2468,7 @@ void nsWindow::SetCursor(const Cursor& aCursor) {
 
   
   bool fromImage = true;
-  GdkCursor* newCursor = GetCursorForImage(aCursor);
+  GdkCursor* newCursor = GetCursorForImage(aCursor, GdkScaleFactor());
   if (!newCursor) {
     fromImage = false;
     newCursor = get_gtk_cursor(aCursor.mDefaultCursor);
@@ -4256,6 +4260,11 @@ void nsWindow::OnScaleChanged(GtkAllocation* aAllocation) {
     moz_container_wayland_set_scale_factor(mContainer);
   }
 #endif
+
+  if (mCursor.IsCustom()) {
+    mUpdateCursor = true;
+    SetCursor(Cursor{mCursor});
+  }
 }
 
 void nsWindow::DispatchDragEvent(EventMessage aMsg,
