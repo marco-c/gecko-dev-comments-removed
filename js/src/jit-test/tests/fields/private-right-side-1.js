@@ -1,5 +1,3 @@
-
-
 let hit = false;
 
 function f() {
@@ -15,6 +13,6 @@ class C {
 
 try {
   C.m({});  
-} catch {}
+} catch { }
 
 assertEq(hit, true);

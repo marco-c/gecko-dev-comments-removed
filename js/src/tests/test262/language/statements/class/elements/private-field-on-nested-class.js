@@ -21,7 +21,6 @@
 
 
 
-
 class C {
   #outer = 'test262';
 

@@ -24,7 +24,6 @@
 
 
 
-
 class C {
   *m() { return 42; } static #x; static #y;
   static x() {

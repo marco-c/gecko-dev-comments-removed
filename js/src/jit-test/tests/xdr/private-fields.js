@@ -1,4 +1,3 @@
-
 load(libdir + 'bytecode-cache.js');
 
 function test() {
@@ -7,4 +6,4 @@ function test() {
   }
 };
 
-evalWithCache(test.toString(), {assertEqBytecode: true, assertEqResult: true});
+evalWithCache(test.toString(), { assertEqBytecode: true, assertEqResult: true });

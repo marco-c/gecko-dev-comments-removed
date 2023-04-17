@@ -38,7 +38,6 @@
 
 
 
-
 class C {
   static #m = 44;
 

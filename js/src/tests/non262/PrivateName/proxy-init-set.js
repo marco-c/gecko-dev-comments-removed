@@ -1,7 +1,6 @@
 
 
 
-
 function assertThrowsTypeError(f) {
   var type;
   try {

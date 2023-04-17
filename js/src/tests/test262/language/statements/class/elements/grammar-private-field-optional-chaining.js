@@ -19,7 +19,6 @@
 
 
 
-
 class C {
   #m = 'test262';
 

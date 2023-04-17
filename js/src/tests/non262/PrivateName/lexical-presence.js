@@ -29,7 +29,7 @@ with (new class A { #x; }) {
 `);
 
 
-with(new class {
+with (new class {
   #x = 12;
 }) {
   assertEq('#x' in this, false);

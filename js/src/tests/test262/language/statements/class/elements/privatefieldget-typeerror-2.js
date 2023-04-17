@@ -31,7 +31,6 @@
 
 
 
-
 class Outer {
   #x = 42;
 
