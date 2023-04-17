@@ -134,6 +134,28 @@ class Collator final {
   ICUResult SetOptions(const Options& aOptions,
                        const Maybe<Options&> aPrevOptions = Nothing());
 
+  
+
+
+  static SpanResult<char> KeywordValueToBcp47Extension(const char* aKeyword,
+                                                       int32_t aLength);
+
+  using Bcp47ExtEnumeration =
+      Enumeration<char, SpanResult<char>,
+                  Collator::KeywordValueToBcp47Extension>;
+
+  
+
+
+
+
+
+
+
+
+  static Result<Bcp47ExtEnumeration, InternalError>
+  GetBcp47KeywordValuesForLocale(const char* aLocale);
+
  private:
   
 
