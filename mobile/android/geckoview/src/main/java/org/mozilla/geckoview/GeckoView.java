@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: Java; c-basic-offset: 4; tab-width: 20; indent-tabs-mode: nil; -*-
+ * vim: ts=4 sw=4 expandtab:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 package org.mozilla.geckoview;
 
@@ -95,7 +95,7 @@ public class GeckoView extends FrameLayout {
 
             setVerticalClipping(mClippingHeight);
 
-            
+            // Tell display there is already a surface.
             onGlobalLayout();
             if (GeckoView.this.mSurfaceWrapper != null) {
                 final SurfaceViewWrapper wrapper = GeckoView.this.mSurfaceWrapper;
@@ -119,7 +119,7 @@ public class GeckoView extends FrameLayout {
             return display;
         }
 
-        @Override 
+        @Override // SurfaceListener
         public void onSurfaceChanged(final Surface surface,
                                    final int width, final int height) {
             if (mDisplay != null) {
@@ -132,7 +132,7 @@ public class GeckoView extends FrameLayout {
             mValid = true;
         }
 
-        @Override 
+        @Override // SurfaceListener
         public void onSurfaceDestroyed() {
             if (mDisplay != null) {
                 mDisplay.surfaceDestroyed();
@@ -148,7 +148,7 @@ public class GeckoView extends FrameLayout {
             if (GeckoView.this.mSurfaceWrapper != null) {
                 GeckoView.this.mSurfaceWrapper.getView().getLocationOnScreen(mOrigin);
                 mDisplay.screenOriginChanged(mOrigin[0], mOrigin[1]);
-                
+                // cutout support
                 if (Build.VERSION.SDK_INT >= 28) {
                     final DisplayCutout cutout = GeckoView.this.mSurfaceWrapper.getView().getRootWindowInsets().getDisplayCutout();
                     if (cutout != null) {
@@ -173,11 +173,11 @@ public class GeckoView extends FrameLayout {
         public void setDynamicToolbarMaxHeight(final int height) {
             mDynamicToolbarMaxHeight = height;
 
-            
-            
-            
-            
-            
+            // Reset the vertical clipping value to zero whenever we change
+            // the dynamic toolbar __max__ height so that it can be properly
+            // propagated to both the main thread and the compositor thread,
+            // thus we will be able to reset the __current__ toolbar height
+            // on the both threads whatever the __current__ toolbar height is.
             setVerticalClipping(0);
 
             if (mDisplay != null) {
@@ -185,13 +185,13 @@ public class GeckoView extends FrameLayout {
             }
         }
 
-        
-
-
-
-
-
-
+        /**
+         * Request a {@link Bitmap} of the visible portion of the web page currently being
+         * rendered.
+         *
+         * @return A {@link GeckoResult} that completes with a {@link Bitmap} containing
+         * the pixels and size information of the currently visible rendered web page.
+         */
         @UiThread
         @NonNull GeckoResult<Bitmap> capturePixels() {
             if (mDisplay == null) {
@@ -230,13 +230,13 @@ public class GeckoView extends FrameLayout {
         setFocusableInTouchMode(true);
         setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
 
-        
-        
+        // We are adding descendants to this LayerView, but we don't want the
+        // descendants to affect the way LayerView retains its focus.
         setDescendantFocusability(FOCUS_BLOCK_DESCENDANTS);
 
-        
-        
-        
+        // This will stop PropertyAnimator from creating a drawing cache (i.e. a
+        // bitmap) from a SurfaceView, which is just not possible (the bitmap will be
+        // transparent).
         setWillNotCacheDrawing(false);
 
         mSurfaceWrapper = new SurfaceViewWrapper(getContext());
@@ -255,12 +255,12 @@ public class GeckoView extends FrameLayout {
         mAutofillDelegate = new AndroidAutofillDelegate();
     }
 
-    
-
-
-
-
-
+    /**
+     * Set a color to cover the display surface while a document is being shown. The color
+     * is automatically cleared once the new document starts painting.
+     *
+     * @param color Cover color.
+     */
     public void coverUntilFirstPaint(final int color) {
         mLastCoverColor = color;
         if (mSession != null) {
@@ -281,32 +281,32 @@ public class GeckoView extends FrameLayout {
         }
     }
 
-    
-
-
-
-
-
+    /**
+     * This GeckoView instance will be backed by a {@link SurfaceView}.
+     *
+     * This option offers the best performance at the price of not being
+     * able to animate GeckoView.
+     */
     public static final int BACKEND_SURFACE_VIEW = 1;
-    
-
-
-
-
-
+    /**
+     * This GeckoView instance will be backed by a {@link TextureView}.
+     *
+     * This option offers worse performance compared to {@link #BACKEND_SURFACE_VIEW}
+     * but allows you to animate GeckoView or to paint a GeckoView on top of another GeckoView.
+     */
     public static final int BACKEND_TEXTURE_VIEW = 2;
 
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({BACKEND_SURFACE_VIEW, BACKEND_TEXTURE_VIEW})
-     @interface ViewBackend {}
+    /* protected */ @interface ViewBackend {}
 
-    
-
-
-
-
-
-
+    /**
+     * Set which view should be used by this GeckoView instance to display content.
+     *
+     * By default, GeckoView will use a {@link SurfaceView}.
+     *
+     * @param backend Any of {@link #BACKEND_SURFACE_VIEW BACKEND_*}.
+     */
     public void setViewBackend(final @ViewBackend int backend) {
         removeView(mSurfaceWrapper.getView());
 
@@ -319,60 +319,60 @@ public class GeckoView extends FrameLayout {
         addView(mSurfaceWrapper.getView());
     }
 
-    
-
-
-
-
-
-
-
-
+    /**
+     * Return whether the view should be pinned on the screen. When pinned, the view
+     * should not be moved on the screen due to animation, scrolling, etc. A common reason
+     * for the view being pinned is when the user is dragging a selection caret inside
+     * the view; normal user interaction would be disrupted in that case if the view
+     * was moved on screen.
+     *
+     * @return True if view should be pinned on the screen.
+     */
     public boolean shouldPinOnScreen() {
         ThreadUtils.assertOnUiThread();
 
         return mDisplay.shouldPinOnScreen();
     }
 
-    
-
-
-
-
-
-
-
-
+    /**
+     * Update the amount of vertical space that is clipped or visibly obscured in the bottom portion
+     * of the view. Tells gecko where to put bottom fixed elements so they are fully visible.
+     *
+     * Optional call. The display's visible vertical space has changed. Must be
+     * called on the application main thread.
+     *
+     * @param clippingHeight The height of the bottom clipped space in screen pixels.
+     */
     public void setVerticalClipping(final int clippingHeight) {
         ThreadUtils.assertOnUiThread();
 
         mDisplay.setVerticalClipping(clippingHeight);
     }
 
-    
-
-
-
-
-
-
-
+    /**
+     * Set the maximum height of the dynamic toolbar(s).
+     *
+     * If there are two or more dynamic toolbars, the height value should be the total amount of
+     * the height of each dynamic toolbar.
+     *
+     * @param height The the maximum height of the dynamic toolbar(s).
+     */
     public void setDynamicToolbarMaxHeight(final int height) {
         mDisplay.setDynamicToolbarMaxHeight(height);
     }
 
-     void setActive(final boolean active) {
+    /* package */ void setActive(final boolean active) {
         if (mSession != null) {
             mSession.setActive(active);
         }
     }
 
-    
-    
+    // TODO: Bug 1670805 this should really be configurable
+    // Default dark color for about:blank, keep it in sync with PresShell.cpp
     final static int DEFAULT_DARK_COLOR = 0xFF2A2A2E;
 
     private int defaultColor() {
-        
+        // If the app set a default color, just use that
         if (mLastCoverColor != null) {
             return mLastCoverColor;
         }
@@ -381,21 +381,21 @@ public class GeckoView extends FrameLayout {
             return Color.WHITE;
         }
 
-        
+        // ... otherwise use the prefers-color-scheme color
         return mSession.getRuntime().usesDarkTheme() ?
                 DEFAULT_DARK_COLOR : Color.WHITE;
     }
 
-    
-
-
-
-
-
-
-
-
-
+    /**
+     * Unsets the current session from this instance and returns it, if any. You must call
+     * this before {@link #setSession(GeckoSession)} if there is already an open session
+     * set for this instance.
+     *
+     * Note: this method does not close the session and the session remains active. The
+     * caller is responsible for calling {@link GeckoSession#close()} when appropriate.
+     *
+     * @return The {@link GeckoSession} that was set for this instance. May be null.
+     */
     @UiThread
     public @Nullable GeckoSession releaseSession() {
         ThreadUtils.assertOnUiThread();
@@ -432,14 +432,14 @@ public class GeckoView extends FrameLayout {
         return session;
     }
 
-    
-
-
-
-
-
-
-
+    /**
+     * Attach a session to this view. If this instance already has an open session, you must use
+     * {@link #releaseSession()} first, otherwise {@link IllegalStateException}
+     * will be thrown. This is to avoid potentially leaking the currently opened session.
+     *
+     * @param session The session to be attached.
+     * @throws IllegalArgumentException if an existing open session is already set.
+     */
     @UiThread
     public void setSession(@NonNull final GeckoSession session) {
         ThreadUtils.assertOnUiThread();
@@ -452,7 +452,7 @@ public class GeckoView extends FrameLayout {
 
         mSession = session;
 
-        
+        // Make sure the clear color is set to the default
         mSession.getCompositorController()
                 .setClearColor(defaultColor());
 
@@ -512,7 +512,7 @@ public class GeckoView extends FrameLayout {
     }
 
     @AnyThread
-     @NonNull EventDispatcher getEventDispatcher() {
+    /* package */ @NonNull EventDispatcher getEventDispatcher() {
         return mSession.getEventDispatcher();
     }
 
@@ -546,7 +546,7 @@ public class GeckoView extends FrameLayout {
             return;
         }
 
-        
+        // Release the display before we detach from the window.
         mSession.releaseDisplay(mDisplay.release());
     }
 
@@ -557,9 +557,9 @@ public class GeckoView extends FrameLayout {
         if (mSession != null) {
             final GeckoRuntime runtime = mSession.getRuntime();
             if (runtime != null) {
-                
-                
-                
+                // onConfigurationChanged is not called for 180 degree orientation changes,
+                // we will miss such rotations and the screen orientation will not be
+                // updated.
                 runtime.orientationChanged(newConfig.orientation);
                 runtime.configurationChanged(newConfig);
             }
@@ -568,9 +568,9 @@ public class GeckoView extends FrameLayout {
 
     @Override
     public boolean gatherTransparentRegion(final Region region) {
-        
-        
-        
+        // For detecting changes in SurfaceView layout, we take a shortcut here and
+        // override gatherTransparentRegion, instead of registering a layout listener,
+        // which is more expensive.
         if (mSurfaceWrapper != null) {
             mDisplay.onGlobalLayout();
         }
@@ -581,9 +581,9 @@ public class GeckoView extends FrameLayout {
     public void onWindowFocusChanged(final boolean hasWindowFocus) {
         super.onWindowFocusChanged(hasWindowFocus);
 
-        
-        
-        
+        // Only call setFocus(true) when the window gains focus. Any focus loss could be temporary
+        // (e.g. due to auto-fill popups) and we don't want to call setFocus(false) in those cases.
+        // Instead, we call setFocus(false) in onWindowVisibilityChanged.
         if (mSession != null && hasWindowFocus && isFocused()) {
             mSession.setFocused(true);
         }
@@ -593,7 +593,7 @@ public class GeckoView extends FrameLayout {
     protected void onWindowVisibilityChanged(final int visibility) {
         super.onWindowVisibilityChanged(visibility);
 
-        
+        // We can be reasonably sure that the focus loss is not temporary, so call setFocus(false).
         if (mSession != null && visibility != View.VISIBLE && !hasWindowFocus()) {
             mSession.setFocused(false);
         }
@@ -624,25 +624,25 @@ public class GeckoView extends FrameLayout {
                 }
 
                 final InputMethodManager imm = InputMethods.getInputMethodManager(getContext());
-                
-                
-                
-                
-                
+                // Bug 1404111: Through View#onFocusChanged, the InputMethodManager queues
+                // up a checkFocus call for the next spin of the message loop, so by
+                // posting this Runnable after super#onFocusChanged, the IMM should have
+                // completed its focus change handling at this point and we should be the
+                // active view for input handling.
 
-                
-                
-                
-                
-                
+                // If however onViewDetachedFromWindow for the previously active view gets
+                // called *after* onFocusChanged, but *before* the focus change has been
+                // fully processed by the IMM with the help of checkFocus, the IMM will
+                // lose track of the currently active view, which means that we can't
+                // interact with the IME.
                 if (!imm.isActive(GeckoView.this)) {
-                    
-                    
+                    // If that happens, we bring the IMM's internal state back into sync
+                    // by clearing and resetting our focus.
                     mIsResettingFocus = true;
                     clearFocus();
-                    
-                    
-                    
+                    // After calling clearFocus we might regain focus automatically, but
+                    // we explicitly request it again in case this doesn't happen.  If
+                    // we've already got the focus back, this will then be a no-op anyway.
                     requestFocus();
                     mIsResettingFocus = false;
                 }
@@ -735,18 +735,18 @@ public class GeckoView extends FrameLayout {
         return true;
     }
 
-    
-
-
-
-
-
-
-
-
-
-
-
+    /**
+     * Dispatches a {@link MotionEvent} to the {@link PanZoomController}. This is the same as
+     * {@link #onTouchEvent(MotionEvent)}, but instead returns a {@link PanZoomController.InputResult}
+     * indicating how the event was handled.
+     *
+     * NOTE: It is highly recommended to only call this with ACTION_DOWN or in otherwise
+     * limited capacity. Returning a GeckoResult for every touch event will generate
+     * a lot of allocations and unnecessary GC pressure.
+     *
+     * @param event A {@link MotionEvent}
+     * @return A GeckoResult resolving to {@link PanZoomController.InputResultDetail}.
+     */
     public @NonNull GeckoResult<PanZoomController.InputResultDetail> onTouchEventForDetailResult(final @NonNull MotionEvent event) {
         if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
             requestFocus();
@@ -759,8 +759,8 @@ public class GeckoView extends FrameLayout {
                                                         PanZoomController.OVERSCROLL_FLAG_NONE));
         }
 
-        
-        
+        // NOTE: Treat mouse events as "touch" rather than as "mouse", so mouse can be
+        // used to pan/zoom. Call onMouseEvent() instead for behavior similar to desktop.
         return mSession.getPanZoomController().onTouchEventForDetailResult(event);
     }
 
@@ -785,8 +785,6 @@ public class GeckoView extends FrameLayout {
     @Override
     public void onProvideAutofillVirtualStructure(final ViewStructure structure,
                                                   final int flags) {
-        super.onProvideAutofillVirtualStructure(structure, flags);
-
         if (mSession == null) {
             return;
         }
@@ -798,8 +796,6 @@ public class GeckoView extends FrameLayout {
     @Override
     @TargetApi(26)
     public void autofill(@NonNull final SparseArray<AutofillValue> values) {
-        super.autofill(values);
-
         if (mSession == null) {
             return;
         }
@@ -807,35 +803,43 @@ public class GeckoView extends FrameLayout {
         for (int i = 0; i < values.size(); i++) {
             final AutofillValue value = values.valueAt(i);
             if (value.isText()) {
-                
+                // Only text is currently supported.
                 strValues.put(values.keyAt(i), value.getTextValue());
             }
         }
         mSession.autofill(strValues);
     }
 
-    
+    @Override
+    public boolean isVisibleToUserForAutofill(final int virtualId) {
+        // If autofill service works with compatibility mode,
+        // View.isVisibleToUserForAutofill walks through the accessibility nodes.
+        // This override avoids it.
+        return true;
+    }
 
-
-
-
-
-
-
-
+    /**
+     * Request a {@link Bitmap} of the visible portion of the web page currently being
+     * rendered.
+     *
+     * See {@link GeckoDisplay#capturePixels} for more details.
+     *
+     * @return A {@link GeckoResult} that completes with a {@link Bitmap} containing
+     * the pixels and size information of the currently visible rendered web page.
+     */
     @UiThread
     public @NonNull GeckoResult<Bitmap> capturePixels() {
         return mDisplay.capturePixels();
     }
 
-    
-
-
-
-
-
-
-
+    /**
+     * Sets whether or not this View participates in Android autofill.
+     *
+     * When enabled, this will set an {@link Autofill.Delegate} on the
+     * {@link GeckoSession} for this instance.
+     *
+     * @param enabled Whether or not Android autofill is enabled for this view.
+     */
     @TargetApi(26)
     public void setAutofillEnabled(final boolean enabled) {
         mAutofillEnabled = enabled;
@@ -849,9 +853,9 @@ public class GeckoView extends FrameLayout {
         }
     }
 
-    
-
-
+    /**
+     * @return Whether or not Android autofill is enabled for this view.
+     */
     @TargetApi(26)
     public boolean getAutofillEnabled() {
         return mAutofillEnabled;
@@ -893,7 +897,7 @@ public class GeckoView extends FrameLayout {
             try {
                 switch (notification) {
                     case Autofill.Notify.SESSION_STARTED:
-                        
+                        // This line seems necessary for auto-fill to work on the initial page.
                     case Autofill.Notify.SESSION_CANCELED:
                         manager.cancel();
                         break;
