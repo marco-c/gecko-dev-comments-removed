@@ -1,0 +1,4 @@
+
+
+testIsPerWindow("navigator");
+testIsPerWindow("clientInformation");
