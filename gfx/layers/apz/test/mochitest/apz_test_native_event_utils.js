@@ -1369,5 +1369,5 @@ async function doubleTapOn(element, x, y, useTouchpad) {
   await transformEndPromise;
 
   
-  await promiseOnlyApzControllerFlushed();
+  await promiseApzFlushedRepaints();
 }
