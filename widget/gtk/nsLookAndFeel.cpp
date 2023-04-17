@@ -347,10 +347,51 @@ void nsLookAndFeel::DoSetCache(const LookAndFeelCache& aCache) {
   }
 }
 
+static bool IsSelectionColorForeground(LookAndFeel::ColorID aID) {
+  using ColorID = LookAndFeel::ColorID;
+  switch (aID) {
+    case ColorID::WidgetSelectForeground:
+    case ColorID::TextSelectForeground:
+    case ColorID::IMESelectedRawTextForeground:
+    case ColorID::IMESelectedConvertedTextForeground:
+    case ColorID::Highlighttext:
+    case ColorID::MozHtmlCellhighlighttext:
+      return true;
+    default:
+      return false;
+  }
+}
+
+static bool IsSelectionColorBackground(LookAndFeel::ColorID aID) {
+  using ColorID = LookAndFeel::ColorID;
+  switch (aID) {
+    case ColorID::WidgetSelectBackground:
+    case ColorID::TextSelectBackground:
+    case ColorID::IMESelectedRawTextBackground:
+    case ColorID::IMESelectedConvertedTextBackground:
+    case ColorID::MozDragtargetzone:
+    case ColorID::MozHtmlCellhighlight:
+    case ColorID::Highlight:
+      return true;
+    default:
+      return false;
+  }
+}
+
 nsresult nsLookAndFeel::NativeGetColor(ColorID aID, nscolor& aColor) {
   EnsureInit();
 
   nsresult res = NS_OK;
+
+  if (IsSelectionColorBackground(aID)) {
+    aColor = mTextSelectedBackground;
+    return NS_OK;
+  }
+
+  if (IsSelectionColorForeground(aID)) {
+    aColor = mTextSelectedText;
+    return NS_OK;
+  }
 
   switch (aID) {
       
@@ -391,14 +432,6 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, nscolor& aColor) {
       break;
     case ColorID::MozAccentColorForeground:
       aColor = mAccentColorForeground;
-      break;
-    case ColorID::WidgetSelectForeground:
-    case ColorID::TextSelectForeground:
-    case ColorID::IMESelectedRawTextForeground:
-    case ColorID::IMESelectedConvertedTextForeground:
-    case ColorID::Highlighttext:
-    case ColorID::MozHtmlCellhighlighttext:
-      aColor = mTextSelectedText;
       break;
     case ColorID::MozCellhighlight:
       aColor = mMozCellHighlightBackground;
@@ -895,7 +928,7 @@ static void GetSystemFontInfo(GtkStyleContext* aStyle, nsString* aFontName,
 bool nsLookAndFeel::NativeGetFont(FontID aID, nsString& aFontName,
                                   gfxFontStyle& aFontStyle) {
   switch (aID) {
-    case FontID::Menu:          
+    case FontID::Menu:             
     case FontID::MozPullDownMenu:  
       aFontName = mMenuFontName;
       aFontStyle = mMenuFontStyle;
@@ -1077,6 +1110,26 @@ bool nsLookAndFeel::FromParentTheme(IntID aID) {
       
       
       return true;
+    default:
+      return false;
+  }
+}
+
+bool nsLookAndFeel::FromParentTheme(ColorID aID) {
+  if (IsSelectionColorBackground(aID) || IsSelectionColorForeground(aID)) {
+    return StaticPrefs::widget_content_allow_gtk_dark_theme_selection();
+  }
+  switch (aID) {
+    case ColorID::ThemedScrollbar:
+    case ColorID::ThemedScrollbarInactive:
+    case ColorID::ThemedScrollbarThumb:
+    case ColorID::ThemedScrollbarThumbHover:
+    case ColorID::ThemedScrollbarThumbActive:
+    case ColorID::ThemedScrollbarThumbInactive:
+      return StaticPrefs::widget_content_allow_gtk_dark_theme_scrollbars();
+    case ColorID::MozAccentColor:
+    case ColorID::MozAccentColorForeground:
+      return StaticPrefs::widget_content_allow_gtk_dark_theme_accent();
     default:
       return false;
   }
@@ -1345,9 +1398,10 @@ void nsLookAndFeel::EnsureInit() {
       GrabSelectionColors(style);
     }
 
-    
     mAccentColor = mTextSelectedBackground;
     mAccentColorForeground = mTextSelectedText;
+
+    
     if (RelativeLuminanceUtils::Compute(mAccentColor) >
         RelativeLuminanceUtils::Compute(mAccentColorForeground)) {
       std::swap(mAccentColor, mAccentColorForeground);
