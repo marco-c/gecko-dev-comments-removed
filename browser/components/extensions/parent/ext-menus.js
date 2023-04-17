@@ -400,8 +400,6 @@ var gMenuBuilder = {
       element.setAttribute("disabled", "true");
     }
 
-    let button;
-
     element.addEventListener(
       "command",
       event => {
@@ -436,7 +434,7 @@ var gMenuBuilder = {
         let info = item.getClickInfo(contextData, wasChecked);
         info.modifiers = clickModifiersFromEvent(event);
 
-        info.button = button;
+        info.button = event.button;
 
         
         
@@ -458,25 +456,6 @@ var gMenuBuilder = {
       },
       { once: true }
     );
-
-    
-    element.addEventListener("click", event => {
-      if (
-        event.target !== event.currentTarget ||
-        
-        
-        element.localName !== "menuitem" ||
-        element.disabled
-      ) {
-        return;
-      }
-
-      button = event.button;
-      if (event.button) {
-        element.doCommand();
-        contextData.menu.hidePopup();
-      }
-    });
 
     
     
