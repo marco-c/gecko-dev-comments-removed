@@ -6,6 +6,9 @@
 
 #include "vm/DateTime.h"
 
+#if JS_HAS_INTL_API
+#  include "mozilla/intl/TimeZone.h"
+#endif
 #include "mozilla/ScopeExit.h"
 #include "mozilla/TextUtils.h"
 
@@ -20,6 +23,10 @@
 #  include <unistd.h>
 #endif 
 
+#if JS_HAS_INTL_API
+#  include "builtin/intl/FormatBuffer.h"
+#endif
+#include "js/AllocPolicy.h"
 #include "js/Date.h"
 #include "js/GCAPI.h"
 #include "threading/ExclusiveData.h"
@@ -189,7 +196,7 @@ void js::DateTimeInfo::updateTimeZone() {
 
   dstRange_.reset();
 
-#if JS_HAS_INTL_API && !MOZ_SYSTEM_ICU
+#if JS_HAS_INTL_API
   utcRange_.reset();
   localRange_.reset();
 
@@ -239,18 +246,10 @@ int32_t js::DateTimeInfo::computeDSTOffsetMilliseconds(int64_t utcSeconds) {
   MOZ_ASSERT(utcSeconds >= MinTimeT);
   MOZ_ASSERT(utcSeconds <= MaxTimeT);
 
-#if JS_HAS_INTL_API && !MOZ_SYSTEM_ICU
-  UDate date = UDate(utcSeconds * msPerSecond);
-  constexpr bool dateIsLocalTime = false;
-  int32_t rawOffset, dstOffset;
-  UErrorCode status = U_ZERO_ERROR;
+#if JS_HAS_INTL_API
+  int64_t utcMilliseconds = utcSeconds * msPerSecond;
 
-  timeZone()->getOffset(date, dateIsLocalTime, rawOffset, dstOffset, status);
-  if (U_FAILURE(status)) {
-    return 0;
-  }
-
-  return dstOffset;
+  return timeZone()->GetDSTOffsetMs(utcMilliseconds).unwrapOr(0);
 #else
   struct tm tm;
   if (!ComputeLocalTime(static_cast<time_t>(utcSeconds), &tm)) {
@@ -381,55 +380,23 @@ void js::DateTimeInfo::RangeCache::sanityCheck() {
   assertRange(oldStartSeconds, oldEndSeconds);
 }
 
-#if JS_HAS_INTL_API && !MOZ_SYSTEM_ICU
+#if JS_HAS_INTL_API
 int32_t js::DateTimeInfo::computeUTCOffsetMilliseconds(int64_t localSeconds) {
   MOZ_ASSERT(localSeconds >= MinTimeT);
   MOZ_ASSERT(localSeconds <= MaxTimeT);
 
-  UDate date = UDate(localSeconds * msPerSecond);
+  int64_t localMilliseconds = localSeconds * msPerSecond;
 
-  
-  
-  
-  
-  
-  
-  
-  constexpr int32_t skippedTime = icu::BasicTimeZone::kFormer;
-  constexpr int32_t repeatedTime = icu::BasicTimeZone::kFormer;
-
-  int32_t rawOffset, dstOffset;
-  UErrorCode status = U_ZERO_ERROR;
-
-  
-  
-  
-  
-  auto* basicTz = static_cast<icu::BasicTimeZone*>(timeZone());
-  basicTz->getOffsetFromLocal(date, skippedTime, repeatedTime, rawOffset,
-                              dstOffset, status);
-  if (U_FAILURE(status)) {
-    return 0;
-  }
-
-  return rawOffset + dstOffset;
+  return timeZone()->GetUTCOffsetMs(localMilliseconds).unwrapOr(0);
 }
 
 int32_t js::DateTimeInfo::computeLocalOffsetMilliseconds(int64_t utcSeconds) {
   MOZ_ASSERT(utcSeconds >= MinTimeT);
   MOZ_ASSERT(utcSeconds <= MaxTimeT);
 
-  UDate date = UDate(utcSeconds * msPerSecond);
-  constexpr bool dateIsLocalTime = false;
-  int32_t rawOffset, dstOffset;
-  UErrorCode status = U_ZERO_ERROR;
+  UDate utcMilliseconds = UDate(utcSeconds * msPerSecond);
 
-  timeZone()->getOffset(date, dateIsLocalTime, rawOffset, dstOffset, status);
-  if (U_FAILURE(status)) {
-    return 0;
-  }
-
-  return rawOffset + dstOffset;
+  return timeZone()->GetOffsetMs(utcMilliseconds).unwrapOr(0);
 }
 
 int32_t js::DateTimeInfo::internalGetOffsetMilliseconds(int64_t milliseconds,
@@ -460,30 +427,27 @@ bool js::DateTimeInfo::internalTimeZoneDisplayName(char16_t* buf, size_t buflen,
     daylightSavingsName_.reset();
   }
 
-  bool daylightSavings = internalGetDSTOffsetMilliseconds(utcMilliseconds) != 0;
+  using DaylightSavings = mozilla::intl::TimeZone::DaylightSavings;
 
-  JS::UniqueTwoByteChars& cachedName =
-      daylightSavings ? daylightSavingsName_ : standardName_;
+  auto daylightSavings = internalGetDSTOffsetMilliseconds(utcMilliseconds) != 0
+                             ? DaylightSavings::Yes
+                             : DaylightSavings::No;
+
+  JS::UniqueTwoByteChars& cachedName = (daylightSavings == DaylightSavings::Yes)
+                                           ? daylightSavingsName_
+                                           : standardName_;
   if (!cachedName) {
     
-    icu::UnicodeString displayName;
-    timeZone()->getDisplayName(daylightSavings, icu::TimeZone::LONG,
-                               icu::Locale(locale), displayName);
 
-    size_t capacity = displayName.length() + 1;  
-    JS::UniqueTwoByteChars displayNameChars(js_pod_malloc<char16_t>(capacity));
-    if (!displayNameChars) {
+    intl::FormatBuffer<char16_t, 0, js::SystemAllocPolicy> buffer;
+    if (timeZone()->GetDisplayName(locale, daylightSavings, buffer).isErr()) {
       return false;
     }
 
-    
-    
-    UErrorCode status = U_ZERO_ERROR;
-    displayName.extract(displayNameChars.get(), capacity, status);
-    MOZ_ASSERT(U_SUCCESS(status));
-    MOZ_ASSERT(displayNameChars[capacity - 1] == '\0');
-
-    cachedName = std::move(displayNameChars);
+    cachedName = buffer.extractStringZ();
+    if (!cachedName) {
+      return false;
+    }
   }
 
   
@@ -498,9 +462,16 @@ bool js::DateTimeInfo::internalTimeZoneDisplayName(char16_t* buf, size_t buflen,
   return true;
 }
 
-icu::TimeZone* js::DateTimeInfo::timeZone() {
+mozilla::intl::TimeZone* js::DateTimeInfo::timeZone() {
   if (!timeZone_) {
-    timeZone_.reset(icu::TimeZone::createDefault());
+    auto timeZone = mozilla::intl::TimeZone::TryCreate();
+
+    
+    
+    
+    MOZ_RELEASE_ASSERT(timeZone.isOk());
+
+    timeZone_ = timeZone.unwrap();
     MOZ_ASSERT(timeZone_);
   }
 

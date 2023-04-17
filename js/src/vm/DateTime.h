@@ -15,13 +15,11 @@
 #include "js/Utility.h"
 #include "threading/ExclusiveData.h"
 
-#if JS_HAS_INTL_API && !MOZ_SYSTEM_ICU
-#  include "unicode/uversion.h"
-
-U_NAMESPACE_BEGIN
+#if JS_HAS_INTL_API
+namespace mozilla::intl {
 class TimeZone;
-U_NAMESPACE_END
-#endif 
+}
+#endif
 
 namespace js {
 
@@ -164,7 +162,7 @@ class DateTimeInfo {
     return guard->utcToLocalStandardOffsetSeconds_;
   }
 
-#if JS_HAS_INTL_API && !MOZ_SYSTEM_ICU
+#if JS_HAS_INTL_API
   enum class TimeZoneOffset { UTC, Local };
 
   
@@ -272,12 +270,7 @@ class DateTimeInfo {
 
   RangeCache dstRange_;  
 
-#if JS_HAS_INTL_API && !MOZ_SYSTEM_ICU
-  
-  
-  
-  
-
+#if JS_HAS_INTL_API
   
   static constexpr int64_t MinTimeT =
       static_cast<int64_t>(StartOfTime / msPerSecond);
@@ -291,7 +284,7 @@ class DateTimeInfo {
 
 
 
-  mozilla::UniquePtr<icu::TimeZone> timeZone_;
+  mozilla::UniquePtr<mozilla::intl::TimeZone> timeZone_;
 
   
 
@@ -338,7 +331,7 @@ class DateTimeInfo {
 
   int32_t internalGetDSTOffsetMilliseconds(int64_t utcMilliseconds);
 
-#if JS_HAS_INTL_API && !MOZ_SYSTEM_ICU
+#if JS_HAS_INTL_API
   
 
 
@@ -357,7 +350,7 @@ class DateTimeInfo {
   bool internalTimeZoneDisplayName(char16_t* buf, size_t buflen,
                                    int64_t utcMilliseconds, const char* locale);
 
-  icu::TimeZone* timeZone();
+  mozilla::intl::TimeZone* timeZone();
 #endif 
 };
 
