@@ -35,16 +35,21 @@ add_task(async function() {
   checkCookieData("lorem", "ipsum");
 
   info("Add more cookies");
+  const onUpdated = gUI.once("store-objects-edit");
   await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
     content.window.document.cookie = "foo2=bar2";
+
     const iframe = content.document.querySelector("iframe");
     return SpecialPowers.spawn(iframe, [], () => {
       content.document.cookie = "lorem2=ipsum2";
     });
   });
+  await onUpdated;
+
+  
+  checkCookieData("lorem2", "ipsum2");
+
   
   await selectTreeItem(["cookies", "http://example.com"]);
   checkCookieData("foo2", "bar2");
-  await selectTreeItem(["cookies", "http://example.net"]);
-  checkCookieData("lorem2", "ipsum2");
 });
