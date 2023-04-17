@@ -27,6 +27,7 @@
 #  include "mozilla/Variant.h"
 #endif
 #include "mozilla/dom/QMResult.h"
+#include "mozilla/dom/quota/FirstInitializationAttemptsImpl.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "nsCOMPtr.h"
 #include "nsDebug.h"
@@ -983,6 +984,8 @@ namespace mozilla {
 
 class LogModule;
 
+struct CreateIfNonExistent {};
+
 struct NotOk {};
 
 
@@ -1535,6 +1538,50 @@ auto CallWithDelayedRetriesIfAccessDenied(Func&& aFunc, uint32_t aMaxRetries,
 
     PR_Sleep(PR_MillisecondsToInterval(aDelayMs));
   }
+}
+
+template <typename Initialization, typename StringGenerator>
+nsresult ExecuteInitialization(
+    FirstInitializationAttempts<Initialization, StringGenerator>&
+        aFirstInitializationAttempts,
+    const Initialization aInitialization, const nsresult aRv) {
+  
+  
+  
+  
+  
+  if (aRv == NS_ERROR_ABORT) {
+    return aRv;
+  }
+
+  if (!aFirstInitializationAttempts.FirstInitializationAttemptRecorded(
+          aInitialization)) {
+    aFirstInitializationAttempts.RecordFirstInitializationAttempt(
+        aInitialization, aRv);
+  }
+
+  return aRv;
+}
+
+
+template <typename Initialization, typename StringGenerator>
+Result<std::pair<nsCOMPtr<nsIFile>, bool>, nsresult> ExecuteInitialization(
+    FirstInitializationAttempts<Initialization, StringGenerator>&
+        aFirstInitializationAttempts,
+    const Initialization aInitialization,
+    Result<std::pair<nsCOMPtr<nsIFile>, bool>, nsresult>&& aResult) {
+  
+  if (aResult.isErr() && aResult.inspectErr() == NS_ERROR_ABORT) {
+    return std::move(aResult);
+  }
+
+  if (!aFirstInitializationAttempts.FirstInitializationAttemptRecorded(
+          aInitialization)) {
+    aFirstInitializationAttempts.RecordFirstInitializationAttempt(
+        aInitialization, aResult.isOk() ? NS_OK : aResult.inspectErr());
+  }
+
+  return std::move(aResult);
 }
 
 }  
