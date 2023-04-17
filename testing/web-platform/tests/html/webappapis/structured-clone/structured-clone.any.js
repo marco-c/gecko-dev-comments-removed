@@ -1,0 +1,9 @@
+
+
+
+
+
+runStructuredCloneBatteryOfTests({
+  structuredClone: (obj, transfer) => self.structuredClone(obj, { transfer }),
+  hasDocument: typeof document !== "undefined",
+});
