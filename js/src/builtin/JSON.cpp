@@ -530,6 +530,38 @@ static bool JO(JSContext* cx, HandleObject obj, StringifyContext* scx) {
 }
 
 
+
+
+static MOZ_ALWAYS_INLINE bool GetLengthPropertyForArray(JSContext* cx,
+                                                        HandleObject obj,
+                                                        uint32_t* lengthp) {
+  if (MOZ_LIKELY(obj->is<ArrayObject>())) {
+    *lengthp = obj->as<ArrayObject>().length();
+    return true;
+  }
+
+  MOZ_ASSERT(obj->is<ProxyObject>());
+
+  uint64_t len = 0;
+  if (!GetLengthProperty(cx, obj, &len)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  if (len > UINT32_MAX) {
+    ReportAllocationOverflow(cx);
+    return false;
+  }
+
+  *lengthp = uint32_t(len);
+  return true;
+}
+
+
 static bool JA(JSContext* cx, HandleObject obj, StringifyContext* scx) {
   
 
@@ -553,7 +585,7 @@ static bool JA(JSContext* cx, HandleObject obj, StringifyContext* scx) {
 
   
   uint32_t length;
-  if (!GetLengthProperty(cx, obj, &length)) {
+  if (!GetLengthPropertyForArray(cx, obj, &length)) {
     return false;
   }
 
@@ -745,7 +777,7 @@ bool js::Stringify(JSContext* cx, MutableHandleValue vp, JSObject* replacer_,
 
       
       uint32_t len;
-      if (!GetLengthProperty(cx, replacer, &len)) {
+      if (!GetLengthPropertyForArray(cx, replacer, &len)) {
         return false;
       }
 
@@ -915,7 +947,7 @@ static bool Walk(JSContext* cx, HandleObject holder, HandleId name,
     if (isArray) {
       
       uint32_t length;
-      if (!GetLengthProperty(cx, obj, &length)) {
+      if (!GetLengthPropertyForArray(cx, obj, &length)) {
         return false;
       }
 
