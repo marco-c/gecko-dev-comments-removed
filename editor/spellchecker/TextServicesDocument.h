@@ -69,6 +69,11 @@ class TextServicesDocument final : public nsIEditActionListener {
     
 
 
+    Maybe<size_t> FirstIndexOf(const dom::Text& aTextNode) const;
+
+    
+
+
 
     Result<EditorDOMRangeInTexts, nsresult> FindWordRange(
         nsAString& aAllTextInBlock, const EditorRawDOMPoint& aStartPointToScan);
@@ -254,8 +259,9 @@ class TextServicesDocument final : public nsIEditActionListener {
 
 
 
-  void DidDeleteNode(nsINode* aChild);
-  void DidJoinNodes(nsINode& aLeftNode, nsINode& aRightNode);
+  void DidDeleteContent(const nsIContent& aChildContent);
+  void DidJoinNodes(const nsIContent& aLeftContent,
+                    const nsIContent& aRightContent);
 
  private:
   
@@ -316,10 +322,6 @@ class TextServicesDocument final : public nsIEditActionListener {
 
   bool SelectionIsCollapsed() const;
   bool SelectionIsValid() const;
-
-  static nsresult NodeHasOffsetEntry(
-      nsTArray<UniquePtr<OffsetEntry>>* aOffsetTable, nsINode* aNode,
-      bool* aHasEntry, size_t* aEntryIndex);
 
   nsresult RemoveInvalidOffsetEntries();
   nsresult SplitOffsetEntry(size_t aTableIndex, uint32_t aOffsetIntoEntry);
