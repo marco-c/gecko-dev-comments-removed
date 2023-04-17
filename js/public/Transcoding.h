@@ -95,23 +95,6 @@ inline bool IsTranscodingBytecodeAligned(const void* offset) {
 
 
 
-extern JS_PUBLIC_API TranscodeResult DecodeScriptAndStartIncrementalEncoding(
-    JSContext* cx, const ReadOnlyCompileOptions& options,
-    TranscodeBuffer& buffer, MutableHandle<JSScript*> scriptp,
-    size_t cursorIndex = 0);
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
