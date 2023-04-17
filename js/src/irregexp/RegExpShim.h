@@ -1125,11 +1125,11 @@ class Isolate {
 
 class StackLimitCheck {
  public:
-  StackLimitCheck(Isolate* isolate) : cx_(isolate->cx()) {}
+  StackLimitCheck(Isolate* isolate) : cx_(isolate->cx()), recursion_(cx_) {}
 
   
   bool HasOverflowed() {
-    bool overflowed = !js::CheckRecursionLimitDontReport(cx_);
+    bool overflowed = !recursion_.checkDontReport(cx_);
     if (overflowed && js::SupportDifferentialTesting()) {
       
       
@@ -1151,6 +1151,7 @@ class StackLimitCheck {
 
  private:
   JSContext* cx_;
+  js::AutoCheckRecursionLimit recursion_;
 };
 
 class Code : public HeapObject {
