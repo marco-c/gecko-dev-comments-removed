@@ -152,6 +152,17 @@ class ProviderQuickSuggest extends UrlbarProvider {
     addCallback(this, result);
 
     this._addedResultInLastQuery = true;
+
+    
+    
+    
+    
+    if (!this._recordedExposureEvent) {
+      this._recordedExposureEvent = true;
+      Services.tm.idleDispatchToMainThread(() =>
+        NimbusFeatures.urlbar.recordExposureEvent()
+      );
+    }
   }
 
   
@@ -293,11 +304,6 @@ class ProviderQuickSuggest extends UrlbarProvider {
       TELEMETRY_EVENT_CATEGORY,
       UrlbarPrefs.get("quickSuggestEnabled")
     );
-
-    
-    
-    
-    NimbusFeatures.urlbar.recordExposureEvent();
 
     
     
