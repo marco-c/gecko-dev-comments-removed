@@ -2091,7 +2091,8 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
   
   
   
-  if (!js::CheckRecursionLimitConservativeDontReport(cx)) {
+  js::AutoCheckRecursionLimit recursion(cx);
+  if (!recursion.checkConservativeDontReport(cx)) {
     NS_WARNING("Overrecursion in SetNewDocument");
     return NS_ERROR_FAILURE;
   }

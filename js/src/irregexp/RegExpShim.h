@@ -1146,7 +1146,7 @@ class StackLimitCheck {
 
   
   bool JsHasOverflowed() {
-    return !js::CheckRecursionLimitConservativeDontReport(cx_);
+    return !recursion_.checkConservativeDontReport(cx_);
   }
 
  private:
