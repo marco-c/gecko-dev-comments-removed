@@ -755,12 +755,28 @@ class MozIntl {
     return this._cache.getCalendarInfo(locales, ...args);
   }
 
-  getDisplayNamesDeprecated(locales, ...args) {
-    if (!this._cache.hasOwnProperty("getDisplayNames")) {
-      mozIntlHelper.addGetDisplayNames(this._cache);
-    }
+  getDisplayNamesDeprecated(locales, options = {}) {
+    
+    
 
-    return this._cache.getDisplayNames(locales, ...args);
+    let { type, style, calendar, keys = [] } = options;
+
+    let dn = new this.DisplayNames(locales, { type, style, calendar });
+    let {
+      locale: resolvedLocale,
+      type: resolvedType,
+      style: resolvedStyle,
+      calendar: resolvedCalendar,
+    } = dn.resolvedOptions();
+    let values = keys.map(key => dn.of(key));
+
+    return {
+      locale: resolvedLocale,
+      type: resolvedType,
+      style: resolvedStyle,
+      calendar: resolvedCalendar,
+      values,
+    };
   }
 
   getAvailableLocaleDisplayNames(type) {
