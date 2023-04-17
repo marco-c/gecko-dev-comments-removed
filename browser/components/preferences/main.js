@@ -239,6 +239,16 @@ if (AppConstants.MOZ_UPDATER) {
   }
 }
 
+XPCOMUtils.defineLazyGetter(this, "gHasWinPackageId", () => {
+  let hasWinPackageId = false;
+  try {
+    hasWinPackageId = Services.sysinfo.getProperty("hasWinPackageId");
+  } catch (_ex) {
+    
+  }
+  return hasWinPackageId;
+});
+
 
 
 var promiseLoadHandlersList;
@@ -663,7 +673,20 @@ var gMainPane = {
 
       let updateDisabled =
         Services.policies && !Services.policies.isAllowed("appUpdate");
-      if (
+
+      if (gHasWinPackageId) {
+        
+        
+        
+        
+        
+        document
+          .getElementById("updatesCategory")
+          .setAttribute("style", "display: none !important");
+        document
+          .getElementById("updateApp")
+          .setAttribute("style", "display: none !important");
+      } else if (
         updateDisabled ||
         UpdateUtils.appUpdateAutoSettingIsLocked() ||
         gApplicationUpdateService.manualUpdateOnly
@@ -1804,7 +1827,8 @@ var gMainPane = {
   async readUpdateAutoPref() {
     if (
       AppConstants.MOZ_UPDATER &&
-      (!Services.policies || Services.policies.isAllowed("appUpdate"))
+      (!Services.policies || Services.policies.isAllowed("appUpdate")) &&
+      !gHasWinPackageId
     ) {
       let radiogroup = document.getElementById("updateRadioGroup");
 
@@ -1823,7 +1847,8 @@ var gMainPane = {
   async writeUpdateAutoPref() {
     if (
       AppConstants.MOZ_UPDATER &&
-      (!Services.policies || Services.policies.isAllowed("appUpdate"))
+      (!Services.policies || Services.policies.isAllowed("appUpdate")) &&
+      !gHasWinPackageId
     ) {
       let radiogroup = document.getElementById("updateRadioGroup");
       let updateAutoValue = radiogroup.value == "true";
@@ -1860,6 +1885,7 @@ var gMainPane = {
       
       UpdateUtils.PER_INSTALLATION_PREFS_SUPPORTED &&
       (!Services.policies || Services.policies.isAllowed("appUpdate")) &&
+      !gHasWinPackageId &&
       !UpdateUtils.appUpdateSettingIsLocked("app.update.background.enabled")
     );
   },
