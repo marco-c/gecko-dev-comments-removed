@@ -98,6 +98,17 @@ class RemoteAgentClass {
     return this._webDriverBiDi;
   }
 
+  handle(cmdLine) {
+    
+    
+    
+    try {
+      cmdLine.handleFlagWithParam("remote-debugging-port", false);
+    } catch (e) {
+      cmdLine.handleFlag("remote-debugging-port", false);
+    }
+  }
+
   async listen(url) {
     if (Services.appinfo.processType != Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT) {
       throw Components.Exception(

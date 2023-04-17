@@ -116,6 +116,16 @@ class MarionetteParentProcess {
     }
   }
 
+  handle(cmdLine) {
+    
+    
+    
+    
+    
+    
+    cmdLine.handleFlag("marionette", false);
+  }
+
   observe(subject, topic) {
     if (this.enabled) {
       logger.trace(`Received observer notification ${topic}`);
