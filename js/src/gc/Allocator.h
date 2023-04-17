@@ -23,13 +23,25 @@ class AllocSite;
 enum AllowGC { NoGC = 0, CanGC = 1 };
 
 
+template <AllowGC allowGC = CanGC>
+gc::Cell* AllocateTenuredImpl(JSContext* cx, gc::AllocKind kind, size_t size);
+template <AllowGC allowGC = CanGC>
+JSString* AllocateStringImpl(JSContext* cx, gc::AllocKind kind, size_t size,
+                             gc::InitialHeap heap);
+
+
 
 
 
 
 
 template <typename T, AllowGC allowGC = CanGC>
-T* Allocate(JSContext* cx);
+T* Allocate(JSContext* cx) {
+  static_assert(std::is_base_of_v<gc::Cell, T>);
+  gc::AllocKind kind = gc::MapTypeToAllocKind<T>::kind;
+  gc::Cell* cell = AllocateTenuredImpl<allowGC>(cx, kind, sizeof(T));
+  return static_cast<T*>(cell);
+}
 
 
 
@@ -40,10 +52,6 @@ template <AllowGC allowGC = CanGC>
 JSObject* AllocateObject(JSContext* cx, gc::AllocKind kind,
                          size_t nDynamicSlots, gc::InitialHeap heap,
                          const JSClass* clasp, gc::AllocSite* site = nullptr);
-
-template <AllowGC allowGC = CanGC>
-JSString* AllocateStringImpl(JSContext* cx, gc::AllocKind kind, size_t size,
-                             gc::InitialHeap heap);
 
 
 
