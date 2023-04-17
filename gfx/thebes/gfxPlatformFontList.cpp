@@ -464,7 +464,7 @@ bool gfxPlatformFontList::InitFontList() {
     LOG_FONTINIT(("(fontinit) system fontlist initialization\n"));
   }
 
-  if (mFontlistInitCount) {
+  if (IsInitialized()) {
     
     
     

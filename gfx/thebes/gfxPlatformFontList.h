@@ -170,12 +170,14 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   typedef nsTArray<FontFamily> PrefFontList;
 
   static gfxPlatformFontList* PlatformFontList() {
-    if (sPlatformFontList->IsInitialized()) {
-      return sPlatformFontList;
-    }
     
     
     if (sInitFontListThread) {
+      
+      
+      if (IsInitFontListThread()) {
+        return sPlatformFontList;
+      }
       PR_JoinThread(sInitFontListThread);
       sInitFontListThread = nullptr;
       
@@ -185,8 +187,10 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
         MOZ_CRASH("Could not initialize gfxPlatformFontList");
       }
     }
-    if (!sPlatformFontList->InitFontList()) {
-      MOZ_CRASH("Could not initialize gfxPlatformFontList");
+    if (!sPlatformFontList->IsInitialized()) {
+      if (!sPlatformFontList->InitFontList()) {
+        MOZ_CRASH("Could not initialize gfxPlatformFontList");
+      }
     }
     return sPlatformFontList;
   }
