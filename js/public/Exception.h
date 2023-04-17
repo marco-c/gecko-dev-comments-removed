@@ -69,6 +69,7 @@ enum class ExceptionStatus {
   
   
   Throwing,
+  OutOfMemory,
   OverRecursed,
 };
 
