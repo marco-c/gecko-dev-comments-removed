@@ -343,14 +343,22 @@ impl NameReferenceEmitter {
                 emitter.emit.get_g_name(name_index);
                 
 
-                emitter.emit.g_implicit_this(name_index);
+                
+                
+                
+
+                emitter.emit.undefined();
                 
             }
             NameLocation::Dynamic => {
                 emitter.emit.get_name(name_index);
                 
 
-                emitter.emit.g_implicit_this(name_index);
+                
+                
+                
+
+                emitter.emit.undefined();
                 
             }
             NameLocation::FrameSlot(slot, kind) => {

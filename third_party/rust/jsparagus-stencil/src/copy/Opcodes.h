@@ -355,7 +355,7 @@
 
 
  \
-    MACRO(String, string, NULL, 5, 0, 1, JOF_ATOM) \
+    MACRO(String, string, NULL, 5, 0, 1, JOF_STRING) \
     
 
 
@@ -760,6 +760,19 @@
 
  \
     MACRO(GlobalThis, global_this, NULL, 1, 0, 1, JOF_BYTE) \
+    
+
+
+
+
+
+
+
+
+
+
+ \
+    MACRO(NonSyntacticGlobalThis, non_syntactic_global_this, NULL, 1, 0, 1, JOF_BYTE) \
     
 
 
@@ -1777,22 +1790,8 @@
 
 
 
-
  \
     MACRO(ImplicitThis, implicit_this, "", 5, 0, 1, JOF_ATOM) \
-    
-
-
-
-
-
-
-
-
-
-
- \
-    MACRO(GImplicitThis, g_implicit_this, "", 5, 0, 1, JOF_ATOM) \
     
 
 
@@ -2749,7 +2748,6 @@
  \
     MACRO(CheckThis, check_this, NULL, 1, 1, 1, JOF_BYTE) \
     
-
 
 
 
