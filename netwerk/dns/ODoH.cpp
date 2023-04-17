@@ -12,7 +12,6 @@
 #include "TRRService.h"
 
 #include "DNSLogging.h"
-#include "nsNetUtil.h"
 
 namespace mozilla {
 namespace net {

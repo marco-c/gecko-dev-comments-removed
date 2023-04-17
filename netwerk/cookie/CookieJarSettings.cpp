@@ -5,7 +5,6 @@
 
 
 #include "mozilla/AntiTrackingUtils.h"
-#include "mozilla/BasePrincipal.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ContentBlockingAllowList.h"
 #include "mozilla/dom/BrowsingContext.h"
@@ -22,7 +21,6 @@
 #  include "nsIProtocolHandler.h"
 #endif
 #include "nsIClassInfoImpl.h"
-#include "nsIChannel.h"
 #include "nsICookieManager.h"
 #include "nsICookieService.h"
 #include "nsIObjectInputStream.h"
