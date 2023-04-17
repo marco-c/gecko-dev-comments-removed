@@ -15,8 +15,6 @@ from mozbuild.vendor.moz_yaml import load_moz_yaml, MozYamlVerifyError
 
 @CommandProvider
 class Vendor(MachCommandBase):
-    """Vendor third-party dependencies into the source repository."""
-
     
     
     
