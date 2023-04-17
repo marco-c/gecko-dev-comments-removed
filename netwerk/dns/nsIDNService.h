@@ -170,7 +170,7 @@ class nsIDNService final : public nsIIDNService,
   
   
   
-  mozilla::Mutex mLock;
+  mozilla::Mutex mLock{"IDNService"};
 
   
   nsTArray<mozilla::net::BlocklistRange> mIDNBlocklist;
@@ -182,7 +182,7 @@ class nsIDNService final : public nsIIDNService,
 
 
 
-  bool mShowPunycode;
+  bool mShowPunycode = false;
 
   
 
@@ -195,11 +195,11 @@ class nsIDNService final : public nsIIDNService,
     eModeratelyRestrictiveProfile
   };
   
-  restrictionProfile mRestrictionProfile;
+  restrictionProfile mRestrictionProfile{eASCIIOnlyProfile};
   
   nsCOMPtr<nsIPrefBranch> mIDNWhitelistPrefBranch;
   
-  bool mIDNUseWhitelist;
+  bool mIDNUseWhitelist = false;
 };
 
 #endif  
