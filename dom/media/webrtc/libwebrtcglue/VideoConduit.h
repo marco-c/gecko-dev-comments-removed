@@ -96,7 +96,6 @@ class WebrtcVideoConduit
 
 
 
-
   void SelectSendResolution(unsigned short width, unsigned short height);
 
   

@@ -1279,14 +1279,6 @@ void WebrtcVideoConduit::SelectSendResolution(unsigned short width,
   
   
   if (mCurSendCodecConfig) {
-    uint16_t max_width = mCurSendCodecConfig->mEncodingConstraints.maxWidth;
-    uint16_t max_height = mCurSendCodecConfig->mEncodingConstraints.maxHeight;
-    if (max_width || max_height) {
-      max_width = max_width ? max_width : UINT16_MAX;
-      max_height = max_height ? max_height : UINT16_MAX;
-      ConstrainPreservingAspectRatio(max_width, max_height, &width, &height);
-    }
-
     int max_fs = std::numeric_limits<int>::max();
     if (!mLockScaling) {
       max_fs = mVideoBroadcaster.wants().max_pixel_count;
@@ -1392,6 +1384,15 @@ MediaConduitErrorCode WebrtcVideoConduit::SendVideoFrame(
             &cropHeight, &adaptedWidth, &adaptedHeight)) {
       
       return kMediaConduitNoError;
+    }
+
+    uint16_t max_width = mCurSendCodecConfig->mEncodingConstraints.maxWidth;
+    uint16_t max_height = mCurSendCodecConfig->mEncodingConstraints.maxHeight;
+    if (max_width || max_height) {
+      max_width = max_width ? max_width : UINT16_MAX;
+      max_height = max_height ? max_height : UINT16_MAX;
+      ConstrainPreservingAspectRatio(max_width, max_height, &adaptedWidth,
+                                     &adaptedHeight);
     }
   }
 
