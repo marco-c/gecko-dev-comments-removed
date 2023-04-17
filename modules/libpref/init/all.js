@@ -4486,10 +4486,6 @@ pref("marionette.prefs.recommended", true);
 #if defined(ENABLE_REMOTE_AGENT)
   
   
-  pref("remote.enabled", true);
-
-  
-  
   pref("remote.force-local", true);
 #endif
 
