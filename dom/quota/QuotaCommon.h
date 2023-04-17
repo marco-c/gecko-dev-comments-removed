@@ -639,7 +639,7 @@ class NotNull;
 
 
 #define QM_TRY_RETURN_PROPAGATE_ERR(tryResult, expr)                         \
-  auto tryResult = ::mozilla::ToResult(expr);                                \
+  auto tryResult = (expr);                                                   \
   if (MOZ_UNLIKELY(tryResult.isErr())) {                                     \
     mozilla::dom::quota::QM_HANDLE_ERROR(                                    \
         expr, tryResult.inspectErr(), mozilla::dom::quota::Severity::Error); \
@@ -649,7 +649,7 @@ class NotNull;
 
 
 #define QM_TRY_RETURN_CUSTOM_RET_VAL(tryResult, expr, customRetVal)          \
-  auto tryResult = ::mozilla::ToResult(expr);                                \
+  auto tryResult = (expr);                                                   \
   if (MOZ_UNLIKELY(tryResult.isErr())) {                                     \
     auto tryTempError MOZ_MAYBE_UNUSED = tryResult.unwrapErr();              \
     mozilla::dom::quota::QM_HANDLE_ERROR(                                    \
@@ -662,7 +662,7 @@ class NotNull;
 
 #define QM_TRY_RETURN_CUSTOM_RET_VAL_WITH_CLEANUP(tryResult, expr,       \
                                                   customRetVal, cleanup) \
-  auto tryResult = ::mozilla::ToResult(expr);                            \
+  auto tryResult = (expr);                                               \
   if (MOZ_UNLIKELY(tryResult.isErr())) {                                 \
     auto tryTempError = tryResult.unwrapErr();                           \
     mozilla::dom::quota::QM_HANDLE_ERROR(                                \
