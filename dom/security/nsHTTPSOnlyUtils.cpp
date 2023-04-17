@@ -47,14 +47,14 @@ bool nsHTTPSOnlyUtils::IsHttpsOnlyModeEnabled(bool aFromPrivateWindow) {
 
 bool nsHTTPSOnlyUtils::IsHttpsFirstModeEnabled(bool aFromPrivateWindow) {
   
-  if (mozilla::StaticPrefs::dom_security_https_only_mode_https_first()) {
+  if (mozilla::StaticPrefs::dom_security_https_first()) {
     return true;
   }
 
   
   
   if (aFromPrivateWindow &&
-      mozilla::StaticPrefs::dom_security_https_only_mode_https_first_pbm()) {
+      mozilla::StaticPrefs::dom_security_https_first_pbm()) {
     return true;
   }
   return false;
