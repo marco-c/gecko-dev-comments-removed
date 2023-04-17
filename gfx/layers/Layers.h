@@ -64,7 +64,6 @@ namespace layers {
 
 class Animation;
 class AsyncPanZoomController;
-class PaintedLayer;
 class ContainerLayer;
 class CompositorAnimations;
 class SpecificLayerAttributes;

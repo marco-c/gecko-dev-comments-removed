@@ -38,8 +38,6 @@ class DrawTarget;
 
 namespace layers {
 
-class PaintedLayer;
-
 
 
 

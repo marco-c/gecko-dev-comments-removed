@@ -58,12 +58,9 @@ namespace layers {
 class AsyncPanZoomController;
 class ClientLayerManager;
 class Layer;
-class PaintedLayer;
 class ContainerLayer;
-class ColorLayer;
 class CompositorBridgeChild;
 class ReadbackProcessor;
-class HostLayer;
 class FocusTarget;
 class KnowsCompositor;
 class TransactionIdAllocator;
@@ -176,56 +173,6 @@ class LayerManager : public WindowRenderer {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  typedef void (*DrawPaintedLayerCallback)(
-      PaintedLayer* aLayer, gfxContext* aContext,
-      const nsIntRegion& aRegionToDraw, const nsIntRegion& aDirtyRegion,
-      DrawRegionClip aClip, const nsIntRegion& aRegionToInvalidate,
-      void* aCallbackData);
-
-  
-
-
-
-
-
-
-  virtual void EndTransaction(DrawPaintedLayerCallback aCallback,
-                              void* aCallbackData,
-                              EndTransactionFlags aFlags = END_DEFAULT) = 0;
-
-  
-
-
-
-
   virtual void ScheduleComposite() {}
 
   virtual void SetNeedsComposite(bool aNeedsComposite) {}
@@ -263,29 +210,6 @@ class LayerManager : public WindowRenderer {
   virtual void Mutated(Layer* aLayer) {}
   virtual void MutatedSimple(Layer* aLayer) {}
 
-  
-
-
-
-
-
-
-  enum PaintedLayerCreationHint { NONE, SCROLLABLE };
-
-  
-
-
-
-  virtual already_AddRefed<PaintedLayer> CreatePaintedLayer() = 0;
-  
-
-
-
-
-  virtual already_AddRefed<PaintedLayer> CreatePaintedLayerWithHint(
-      PaintedLayerCreationHint) {
-    return CreatePaintedLayer();
-  }
   
 
 
