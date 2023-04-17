@@ -486,6 +486,15 @@ pub struct DynamicProperties {
     pub colors: Vec<PropertyValue<ColorF>>,
 }
 
+impl DynamicProperties {
+    
+    pub fn extend(&mut self, other: Self) {
+        self.transforms.extend(other.transforms);
+        self.floats.extend(other.floats);
+        self.colors.extend(other.colors);
+    }
+}
+
 
 
 
