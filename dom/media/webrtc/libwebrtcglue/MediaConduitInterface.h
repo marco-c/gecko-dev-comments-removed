@@ -7,6 +7,8 @@
 
 #include <vector>
 #include <set>
+#include <functional>
+#include <map>
 
 #include "CodecConfig.h"
 #include "ImageContainer.h"
@@ -19,6 +21,8 @@
 #include "VideoTypes.h"
 #include "WebrtcVideoCodecFactory.h"
 #include "RtcpEventObserver.h"
+#include "nsTArray.h"
+#include "mozilla/dom/RTCRtpSourcesBinding.h"
 
 
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
@@ -225,8 +229,6 @@ class MediaSessionConduit {
 
   virtual void SetSyncGroup(const std::string& group) = 0;
 
-  virtual void GetRtpSources(nsTArray<dom::RTCRtpSourceEntry>& outSources) = 0;
-
   virtual bool HasCodecPluginID(uint64_t aPluginID) = 0;
 
   virtual void DeliverPacket(rtc::CopyOnWriteBuffer packet,
@@ -242,6 +244,51 @@ class MediaSessionConduit {
   virtual webrtc::Call::Stats GetCallStats() const = 0;
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaSessionConduit)
+
+  void UpdateRtpSources(const std::vector<webrtc::RtpSource>& aSources);
+  void GetRtpSources(nsTArray<dom::RTCRtpSourceEntry>& outSources) const;
+
+  
+  void InsertAudioLevelForContributingSource(const uint32_t aCsrcSource,
+                                             const int64_t aTimestamp,
+                                             const uint32_t aRtpTimestamp,
+                                             const bool aHasAudioLevel,
+                                             const uint8_t aAudioLevel);
+
+ private:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  class SourceKey {
+   public:
+    explicit SourceKey(const webrtc::RtpSource& aSource)
+        : SourceKey(aSource.timestamp_ms(), aSource.source_id()) {}
+
+    SourceKey(uint32_t aTimestamp, uint32_t aSrc)
+        : mLibwebrtcTimestamp(aTimestamp), mSrc(aSrc) {}
+
+    
+    auto operator>(const SourceKey& aRhs) const {
+      if (mLibwebrtcTimestamp == aRhs.mLibwebrtcTimestamp) {
+        return mSrc > aRhs.mSrc;
+      }
+      return mLibwebrtcTimestamp > aRhs.mLibwebrtcTimestamp;
+    }
+
+   private:
+    uint32_t mLibwebrtcTimestamp;
+    uint32_t mSrc;
+  };
+  std::map<SourceKey, dom::RTCRtpSourceEntry, std::greater<SourceKey>>
+      mSourcesCache;
 };
 
 
@@ -530,6 +577,8 @@ class VideoSessionConduit : public MediaSessionConduit {
 
   virtual bool AddFrameHistory(
       dom::Sequence<dom::RTCVideoFrameHistoryInternal>* outHistories) const = 0;
+
+  virtual void OnFrameDelivered() = 0;
 
  protected:
   
