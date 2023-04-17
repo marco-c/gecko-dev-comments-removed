@@ -471,6 +471,10 @@ void FetchEventOpChild::CancelInterception(nsresult aStatus) {
   RefPtr<ServiceWorkerInfo> mActive = mRegistration->GetActive();
   if (mActive && mArgs.isNonSubresourceRequest()) {
     mActive->ReportNavigationFault();
+    
+    
+    
+    
     if (StaticPrefs::dom_serviceWorkers_mitigations_bypass_on_fault()) {
       ResetInterception(true);
       return;

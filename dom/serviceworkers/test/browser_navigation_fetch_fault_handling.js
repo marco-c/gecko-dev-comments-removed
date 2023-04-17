@@ -161,6 +161,10 @@ async function do_fault_injection_test({
   }
 
   
+  
+  const unregisteredPromise = waitForUnregister(reg.scope);
+
+  
   sw.testingInjectCancellation = useError;
   for (let iFault = 0; iFault < FAULTS_BEFORE_MITIGATION; iFault++) {
     info(`## Testing with injected fault number ${iFault + 1}`);
@@ -189,17 +193,8 @@ async function do_fault_injection_test({
     );
   }
 
-  
-  
-
-  
-  
-  
-
-  
-  
-  
-  is(reg.unregistered, false, "registration should still exist.");
+  await unregisteredPromise;
+  is(reg.unregistered, true, "registration should not exist.");
 
   if (consumeQuotaOrigin) {
     
