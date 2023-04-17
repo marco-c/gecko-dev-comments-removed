@@ -56,7 +56,7 @@ class ResourceCommand {
     
     
     
-    this._offTargetFrontListeners = [];
+    this._offTargetFrontListeners = new Map();
 
     this._notifyWatchers = this._notifyWatchers.bind(this);
     this._throttledNotifyWatchers = throttle(this._notifyWatchers, 100);
@@ -339,8 +339,10 @@ class ResourceCommand {
       return;
     }
 
-    this._offTargetFrontListeners.forEach(off => off());
-    this._offTargetFrontListeners = [];
+    for (const offList of this._offTargetFrontListeners.values()) {
+      offList.forEach(off => off());
+    }
+    this._offTargetFrontListeners.clear();
 
     this._watchTargetsPromise = null;
     this.targetCommand.unwatchTargets(
@@ -457,7 +459,8 @@ class ResourceCommand {
       this._onResourceDestroyed.bind(this, { targetFront })
     );
 
-    this._offTargetFrontListeners.push(
+    const offList = this._offTargetFrontListeners.get(targetFront) || [];
+    offList.push(
       offResourceAvailable,
       offResourceUpdated,
       offResourceDestroyed
@@ -492,8 +495,10 @@ class ResourceCommand {
           ]);
         }
       );
-      this._offTargetFrontListeners.push(offWillNavigate);
+      offList.push(offWillNavigate);
     }
+
+    this._offTargetFrontListeners.set(targetFront, offList);
   }
 
   _shouldRestartListenerOnTargetSwitching(resourceType) {
@@ -525,6 +530,7 @@ class ResourceCommand {
   _onTargetDestroyed({ targetFront }) {
     
     this._existingLegacyListeners.set(targetFront, []);
+    this._offTargetFrontListeners.delete(targetFront);
 
     
     
