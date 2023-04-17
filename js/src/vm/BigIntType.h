@@ -153,6 +153,16 @@ class BigInt final : public js::gc::CellWithLengthAndFlags {
   
   static bool isInt64(BigInt* x, int64_t* result);
 
+  
+  
+  
+  static bool isUint64(BigInt* x, uint64_t* result);
+
+  
+  
+  
+  static bool isNumber(BigInt* x, double* result);
+
   static BigInt* asIntN(JSContext* cx, Handle<BigInt*> x, uint64_t bits);
   static BigInt* asUintN(JSContext* cx, Handle<BigInt*> x, uint64_t bits);
 
