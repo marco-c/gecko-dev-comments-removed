@@ -65,7 +65,6 @@ namespace layers {
 
 class Animation;
 class AsyncPanZoomController;
-class HostLayerManager;
 class PaintedLayer;
 class ContainerLayer;
 class ImageLayer;
@@ -73,7 +72,6 @@ class ColorLayer;
 class CompositorAnimations;
 class CanvasLayer;
 class RefLayer;
-class HostLayer;
 class SpecificLayerAttributes;
 class Compositor;
 class TransformData;
@@ -143,11 +141,6 @@ class Layer {
 
 
   LayerManager* Manager() { return mManager; }
-
-  
-
-
-  void SetManager(LayerManager* aManager, HostLayer* aSelf);
 
   enum {
     
@@ -910,12 +903,6 @@ class Layer {
 
 
   virtual ImageLayer* AsImageLayer() { return nullptr; }
-
-  
-
-
-
-  virtual HostLayer* AsHostLayer() { return nullptr; }
 
   
   

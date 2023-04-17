@@ -21,7 +21,6 @@
 #include "mozilla/layers/CompositableForwarder.h"
 #include "mozilla/layers/CompositorTypes.h"    
 #include "mozilla/layers/ISurfaceAllocator.h"  
-#include "mozilla/layers/LayerManagerComposite.h"
 #include "mozilla/layers/LayersMessageUtils.h"
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/mozalloc.h"               
@@ -38,16 +37,6 @@ class TextureImage;
 }  
 
 namespace layers {
-
-
-
-static bool UsingXCompositing() {
-  if (!gfxEnv::LayersEnableXlibSurfaces()) {
-    return false;
-  }
-  return (gfxSurfaceType::Xlib ==
-          gfxPlatform::GetPlatform()->ScreenReferenceSurface()->GetType());
-}
 
 
 
@@ -101,21 +90,6 @@ already_AddRefed<gfxXlibSurface> SurfaceDescriptorX11::OpenForeign() const {
 
   return surf->CairoStatus() ? nullptr : surf.forget();
 }
-
-
-void LayerManagerComposite::PlatformSyncBeforeReplyUpdate() {
-  if (UsingXCompositing()) {
-    
-    
-    
-    
-    
-    FinishX(DefaultXDisplay());
-  }
-}
-
-
-bool LayerManagerComposite::SupportsDirectTexturing() { return false; }
 
 }  
 }  

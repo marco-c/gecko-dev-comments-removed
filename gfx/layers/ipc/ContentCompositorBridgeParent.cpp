@@ -19,10 +19,8 @@
 #include "mozilla/layers/AnimationHelper.h"  
 #include "mozilla/layers/APZCTreeManagerParent.h"  
 #include "mozilla/layers/APZUpdater.h"             
-#include "mozilla/layers/AsyncCompositionManager.h"
 #include "mozilla/layers/CompositorOptions.h"
 #include "mozilla/layers/CompositorThread.h"
-#include "mozilla/layers/LayerManagerComposite.h"
 #include "mozilla/layers/LayerTreeOwnerTracker.h"
 #include "mozilla/layers/RemoteContentController.h"
 #include "mozilla/layers/WebRenderBridgeParent.h"
@@ -400,10 +398,6 @@ PTextureParent* ContentCompositorBridgeParent::AllocPTextureParent(
   TextureFlags flags = aFlags;
 
   LayersBackend actualBackend = LayersBackend::LAYERS_NONE;
-  if (state && state->mLayerManager) {
-    actualBackend = state->mLayerManager->GetBackendType();
-  }
-
   if (!state) {
     
     

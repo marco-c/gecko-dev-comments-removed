@@ -29,7 +29,6 @@
 #include "mozilla/gfx/Triangle.h"   
 #include "mozilla/gfx/gfxVars.h"    
 #include "mozilla/layers/ImageDataSerializer.h"
-#include "mozilla/layers/LayerManagerComposite.h"  
 #include "mozilla/layers/NativeLayer.h"
 #include "mozilla/layers/CompositingRenderTargetOGL.h"
 #include "mozilla/layers/Effects.h"      
