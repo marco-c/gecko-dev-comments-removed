@@ -681,7 +681,11 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   }
 
   bool parentIsHttps = innerRequestingLocation->SchemeIs("https");
-  if (!parentIsHttps) {
+  bool parentIsSecureContext =
+      requestingWindow && requestingWindow->GetIsSecureContext();
+  
+  bool parentIsExtension = innerRequestingLocation->SchemeIs("moz-extension");
+  if ((!parentIsHttps && !parentIsSecureContext) || parentIsExtension) {
     *aDecision = ACCEPT;
     MOZ_LOG(sMCBLog, LogLevel::Verbose,
             ("  -> decision: Request will be allowed because the requesting "
