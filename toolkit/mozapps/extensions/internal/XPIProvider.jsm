@@ -2858,55 +2858,83 @@ var XPIProvider = {
 
 
   installDistributionAddons(aManifests, aAppChanged, aOldAppVersion) {
-    let distroDir;
+    let distroDirs = [];
     try {
-      distroDir = FileUtils.getDir(KEY_APP_DISTRIBUTION, [DIR_EXTENSIONS]);
+      distroDirs.push(FileUtils.getDir(KEY_APP_DISTRIBUTION, [DIR_EXTENSIONS]));
     } catch (e) {
       return false;
     }
 
+    let availableLocales = [];
+    for (let file of iterDirectory(distroDirs[0])) {
+      if (file.isDirectory() && file.leafName.startsWith("locale-")) {
+        availableLocales.push(file.leafName.replace("locale-", ""));
+      }
+    }
+
+    let locales = Services.locale.negotiateLanguages(
+      Services.locale.requestedLocales,
+      availableLocales,
+      undefined,
+      Services.locale.langNegStrategyMatching
+    );
+
+    
+    
+    for (let locale of locales) {
+      let langPackDir = distroDirs[0].clone();
+      langPackDir.append(`locale-${locale}`);
+      distroDirs.push(langPackDir);
+    }
+
     let changed = false;
-    for (let file of iterDirectory(distroDir)) {
-      if (!isXPI(file.leafName, true)) {
-        logger.warn(`Ignoring distribution: not an XPI: ${file.path}`);
-        continue;
-      }
-
-      let id = getExpectedID(file);
-      if (!id) {
-        logger.warn(
-          `Ignoring distribution: name is not a valid add-on ID: ${file.path}`
-        );
-        continue;
-      }
-
-      
-
-      if (
-        !aAppChanged &&
-        Services.prefs.prefHasUserValue(PREF_BRANCH_INSTALLED_ADDON + id)
-      ) {
-        continue;
-      }
-
-      try {
-        let loc = XPIStates.getLocation(KEY_APP_PROFILE);
-        let addon = awaitPromise(
-          XPIInstall.installDistributionAddon(id, file, loc, aOldAppVersion)
-        );
-
-        if (addon) {
+    for (let distroDir of distroDirs) {
+      logger.warn(`Checking ${distroDir.path} for addons`);
+      for (let file of iterDirectory(distroDir)) {
+        if (!isXPI(file.leafName, true)) {
           
-          
-          
-          if (!(loc.name in aManifests)) {
-            aManifests[loc.name] = {};
+          if (!file.isDirectory()) {
+            logger.warn(`Ignoring distribution: not an XPI: ${file.path}`);
           }
-          aManifests[loc.name][id] = addon;
-          changed = true;
+          continue;
         }
-      } catch (e) {
-        logger.error(`Failed to install distribution add-on ${file.path}`, e);
+
+        let id = getExpectedID(file);
+        if (!id) {
+          logger.warn(
+            `Ignoring distribution: name is not a valid add-on ID: ${file.path}`
+          );
+          continue;
+        }
+
+        
+
+        if (
+          !aAppChanged &&
+          Services.prefs.prefHasUserValue(PREF_BRANCH_INSTALLED_ADDON + id)
+        ) {
+          continue;
+        }
+
+        try {
+          let loc = XPIStates.getLocation(KEY_APP_PROFILE);
+          let addon = awaitPromise(
+            XPIInstall.installDistributionAddon(id, file, loc, aOldAppVersion)
+          );
+
+          if (addon) {
+            
+            
+            
+            if (!(loc.name in aManifests)) {
+              aManifests[loc.name] = {};
+            }
+            aManifests[loc.name][id] = addon;
+            changed = true;
+          }
+        } catch (e) {
+          logger.error(`Failed to install distribution add-on ${file.path}`, e);
+        }
       }
     }
 

@@ -19,6 +19,9 @@
 #include "nsStringEnumerator.h"
 #include "nsXULAppAPI.h"
 #include "nsZipArchive.h"
+#ifdef XP_WIN
+#  include "WinUtils.h"
+#endif
 
 #define INTL_SYSTEM_LOCALES_CHANGED "intl:system-locales-changed"
 
@@ -58,7 +61,16 @@ static void SplitLocaleListStringIntoArray(nsACString& str,
 static void ReadRequestedLocales(nsTArray<nsCString>& aRetVal) {
   nsAutoCString str;
   nsresult rv = Preferences::GetCString(REQUESTED_LOCALES_PREF, str);
+  
+  
+  const bool isRepack =
+#ifdef XP_WIN
+      !mozilla::widget::WinUtils::HasPackageIdentity();
+#else
+      true;
+#endif
 
+  
   
   
   
@@ -67,9 +79,9 @@ static void ReadRequestedLocales(nsTArray<nsCString>& aRetVal) {
   if (NS_SUCCEEDED(rv)) {
     if (str.Length() == 0) {
       
-      
       OSPreferences::GetInstance()->GetSystemLocales(aRetVal);
     } else {
+      
       SplitLocaleListStringIntoArray(str, aRetVal);
     }
   }
@@ -78,9 +90,15 @@ static void ReadRequestedLocales(nsTArray<nsCString>& aRetVal) {
   
   
   if (aRetVal.IsEmpty()) {
-    nsAutoCString defaultLocale;
-    LocaleService::GetInstance()->GetDefaultLocale(defaultLocale);
-    aRetVal.AppendElement(defaultLocale);
+    if (isRepack) {
+      
+      nsAutoCString defaultLocale;
+      LocaleService::GetInstance()->GetDefaultLocale(defaultLocale);
+      aRetVal.AppendElement(defaultLocale);
+    } else {
+      
+      OSPreferences::GetInstance()->GetSystemLocales(aRetVal);
+    }
   }
 }
 
