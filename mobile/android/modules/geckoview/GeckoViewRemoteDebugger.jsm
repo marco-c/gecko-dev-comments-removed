@@ -60,10 +60,8 @@ var GeckoViewRemoteDebugger = {
     
     
     
-    
     Services.tm.dispatchToMainThread(() => {
       Services.obs.notifyObservers(null, "marionette-startup-requested");
-      Services.obs.notifyObservers(null, "remote-startup-requested");
     });
   },
 
