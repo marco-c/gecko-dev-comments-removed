@@ -722,16 +722,6 @@ Search.prototype = {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
 
     
     await this._checkPreloadedSitesExpiry();
@@ -741,6 +731,13 @@ Search.prototype = {
     let tokenAliasEngines = await UrlbarSearchUtils.tokenAliasEngines();
     if (this._trimmedOriginalSearchString == "@" && tokenAliasEngines.length) {
       this._autocompleteSearch.finishSearch(true);
+      return;
+    }
+
+    
+    
+    this._firstTokenIsKeyword = await this._checkIfFirstTokenIsKeyword();
+    if (!this.pending) {
       return;
     }
 
@@ -894,6 +891,19 @@ Search.prototype = {
     return true;
   },
 
+  async _checkIfFirstTokenIsKeyword() {
+    if (!this._enableActions || !this._heuristicToken) {
+      return false;
+    }
+
+    
+    let aliasEngine = await UrlbarSearchUtils.engineForAlias(
+      this._heuristicToken,
+      this._originalSearchString
+    );
+    return !!aliasEngine;
+  },
+
   async _matchFirstHeuristicResult(conn) {
     if (this._searchMode) {
       
@@ -902,15 +912,6 @@ Search.prototype = {
 
     
     
-
-    if (this.pending && this._enableActions && this._heuristicToken) {
-      
-      let matched = await this._matchSearchEngineAlias(this._heuristicToken);
-      if (matched) {
-        return true;
-      }
-    }
-
     if (this.pending && this._heuristicToken) {
       
       let matched = await this._matchPlacesKeyword(this._heuristicToken);
@@ -984,31 +985,6 @@ Search.prototype = {
     this._firstTokenIsKeyword = true;
     this._filterOnHost = entry.url.host;
     this._addMatch(match);
-    return true;
-  },
-
-  async _matchSearchEngineAlias(alias) {
-    let engine = await UrlbarSearchUtils.engineForAlias(alias);
-    if (!engine) {
-      return false;
-    }
-
-    let query = UrlbarUtils.substringAfter(this._originalSearchString, alias);
-
-    
-    
-    if (!UrlbarTokenizer.REGEXP_SPACES_START.test(query)) {
-      return false;
-    }
-
-    this._searchEngineAliasMatch = {
-      engine,
-      alias,
-      query: query.trimStart(),
-    };
-    this._firstTokenIsKeyword = true;
-    this._filterOnHost = engine.getResultDomain();
-    this._addSearchEngineMatch(this._searchEngineAliasMatch);
     return true;
   },
 
