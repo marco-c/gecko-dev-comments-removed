@@ -6,10 +6,13 @@
 #include "ExtensionEventListener.h"
 
 #include "mozilla/dom/FunctionBinding.h"
+#include "nsJSPrincipals.h"   
 #include "nsThreadManager.h"  
 
 namespace mozilla {
 namespace extensions {
+
+
 
 NS_IMPL_ISUPPORTS(ExtensionEventListener, mozIExtensionEventListener)
 
@@ -39,13 +42,10 @@ already_AddRefed<ExtensionEventListener> ExtensionEventListener::Create(
 
 UniquePtr<dom::StructuredCloneHolder>
 ExtensionEventListener::SerializeCallArguments(const nsTArray<JS::Value>& aArgs,
+                                               JSContext* aCx,
                                                ErrorResult& aRv) {
-  dom::AutoEntryScript aes(xpc::PrivilegedJunkScope(),
-                           "ExtensionEventListener :: CallListener");
-  JSContext* cx = aes.cx();
-  JS::Rooted<JS::Value> jsval(cx);
-
-  if (NS_WARN_IF(!dom::ToJSValue(cx, aArgs, &jsval))) {
+  JS::Rooted<JS::Value> jsval(aCx);
+  if (NS_WARN_IF(!dom::ToJSValue(aCx, aArgs, &jsval))) {
     aRv.Throw(NS_ERROR_UNEXPECTED);
     return nullptr;
   }
@@ -56,7 +56,7 @@ ExtensionEventListener::SerializeCallArguments(const nsTArray<JS::Value>& aArgs,
           dom::StructuredCloneHolder::TransferringNotSupported,
           JS::StructuredCloneScope::SameProcess);
 
-  argsHolder->Write(cx, jsval, aRv);
+  argsHolder->Write(aCx, jsval, aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
   }
@@ -65,8 +65,22 @@ ExtensionEventListener::SerializeCallArguments(const nsTArray<JS::Value>& aArgs,
 }
 
 NS_IMETHODIMP ExtensionEventListener::CallListener(
-    const nsTArray<JS::Value>& aArgs) {
+    const nsTArray<JS::Value>& aArgs, JSContext* aCx,
+    dom::Promise** aPromiseResult) {
   MOZ_ASSERT(NS_IsMainThread());
+  NS_ENSURE_ARG_POINTER(aPromiseResult);
+
+  IgnoredErrorResult rv;
+  RefPtr<dom::Promise> retPromise;
+
+  nsIGlobalObject* global = xpc::CurrentNativeGlobal(aCx);
+  if (NS_WARN_IF(!global)) {
+    return NS_ERROR_FAILURE;
+  }
+  retPromise = dom::Promise::Create(global, rv);
+  if (NS_WARN_IF(rv.Failed())) {
+    return rv.StealNSResult();
+  }
 
   MutexAutoLock lock(mMutex);
 
@@ -74,16 +88,17 @@ NS_IMETHODIMP ExtensionEventListener::CallListener(
     return NS_ERROR_ABORT;
   }
 
-  ErrorResult rv;
   UniquePtr<dom::StructuredCloneHolder> argsHolder =
-      SerializeCallArguments(aArgs, rv);
+      SerializeCallArguments(aArgs, aCx, rv);
   if (NS_WARN_IF(rv.Failed())) {
     return rv.StealNSResult();
   }
 
   RefPtr<ExtensionListenerCallWorkerRunnable> runnable =
-      new ExtensionListenerCallWorkerRunnable(this, std::move(argsHolder));
+      new ExtensionListenerCallWorkerRunnable(this, std::move(argsHolder),
+                                              retPromise);
   runnable->Dispatch();
+  retPromise.forget(aPromiseResult);
 
   return NS_OK;
 }
@@ -92,6 +107,8 @@ dom::WorkerPrivate* ExtensionEventListener::GetWorkerPrivate() const {
   MOZ_ASSERT(mWorkerRef);
   return mWorkerRef->Private();
 }
+
+
 
 void ExtensionListenerCallWorkerRunnable::DeserializeCallArguments(
     JSContext* aCx, dom::Sequence<JS::Value>& aArgs, ErrorResult& aRv) {
@@ -124,7 +141,7 @@ bool ExtensionListenerCallWorkerRunnable::WorkerRun(
     return true;
   }
 
-  ErrorResult rv;
+  IgnoredErrorResult rv;
   dom::Sequence<JS::Value> argsSequence;
   dom::SequenceRooter<JS::Value> arguments(aCx, &argsSequence);
 
@@ -133,11 +150,180 @@ bool ExtensionListenerCallWorkerRunnable::WorkerRun(
     return true;
   }
 
-  JS::Rooted<JS::Value> ignoredRetval(aCx);
-  MOZ_KnownLive(fn)->Call(MOZ_KnownLive(global), argsSequence, &ignoredRetval,
-                          rv);
+  RefPtr<dom::Promise> retPromise;
+  RefPtr<dom::StrongWorkerRef> workerRef;
+
+  retPromise = dom::Promise::Create(global, rv);
+  if (retPromise) {
+    workerRef = dom::StrongWorkerRef::Create(
+        aWorkerPrivate, "ExtensionListenerCallWorkerRunnable", []() {});
+  }
+
+  if (NS_WARN_IF(rv.Failed() || !workerRef)) {
+    auto rejectMainThreadPromise =
+        [error = rv.Failed() ? rv.StealNSResult() : NS_ERROR_UNEXPECTED,
+         promiseResult = std::move(mPromiseResult)]() {
+          
+          
+          
+          promiseResult->MaybeReject(error);
+        };
+
+    nsCOMPtr<nsIRunnable> runnable =
+        NS_NewRunnableFunction(__func__, std::move(rejectMainThreadPromise));
+    NS_DispatchToMainThread(runnable);
+    JS_ClearPendingException(aCx);
+    return true;
+  }
+
   
-  return !rv.IsUncatchableException();
+  dom::AutoEntryScript aes(global, "WebExtensionAPIEvent");
+  JS::Rooted<JS::Value> retval(aCx);
+  ErrorResult erv;
+  erv.MightThrowJSException();
+  MOZ_KnownLive(fn)->Call(argsSequence, &retval, erv, "WebExtensionAPIEvent",
+                          dom::Function::eRethrowExceptions);
+
+  
+  
+  
+  erv.WouldReportJSException();
+
+  if (erv.Failed()) {
+    retPromise->MaybeReject(std::move(erv));
+  } else {
+    retPromise->MaybeResolve(retval);
+  }
+
+  ExtensionListenerCallPromiseResultHandler::Create(
+      retPromise, this, new dom::ThreadSafeWorkerRef(workerRef));
+  return true;
+}
+
+
+
+NS_IMPL_ISUPPORTS0(ExtensionListenerCallPromiseResultHandler)
+
+
+void ExtensionListenerCallPromiseResultHandler::Create(
+    const RefPtr<dom::Promise>& aPromise,
+    const RefPtr<ExtensionListenerCallWorkerRunnable>& aWorkerRunnable,
+    dom::ThreadSafeWorkerRef* aWorkerRef) {
+  MOZ_ASSERT(aPromise);
+  MOZ_ASSERT(aWorkerRef);
+  MOZ_ASSERT(aWorkerRef->Private()->IsOnCurrentThread());
+
+  RefPtr<ExtensionListenerCallPromiseResultHandler> handler =
+      new ExtensionListenerCallPromiseResultHandler(aWorkerRef,
+                                                    aWorkerRunnable);
+  aPromise->AppendNativeHandler(handler);
+}
+
+void ExtensionListenerCallPromiseResultHandler::WorkerRunCallback(
+    JSContext* aCx, JS::Handle<JS::Value> aValue,
+    PromiseCallbackType aCallbackType) {
+  MOZ_ASSERT(mWorkerRef);
+  mWorkerRef->Private()->AssertIsOnWorkerThread();
+
+  JS::RootedValue retval(aCx, aValue);
+
+  if (retval.isObject()) {
+    
+    
+    IgnoredErrorResult rv;
+    JS::Rooted<JSObject*> errObj(aCx, &retval.toObject());
+    RefPtr<dom::ClonedErrorHolder> ceh =
+        dom::ClonedErrorHolder::Create(aCx, errObj, rv);
+    if (!rv.Failed() && ceh) {
+      JS::RootedObject obj(aCx);
+      
+      
+      Unused << NS_WARN_IF(!ceh->WrapObject(aCx, nullptr, &obj));
+      retval.setObject(*obj);
+    }
+  }
+
+  UniquePtr<dom::StructuredCloneHolder> resHolder =
+      MakeUnique<dom::StructuredCloneHolder>(
+          dom::StructuredCloneHolder::CloningSupported,
+          dom::StructuredCloneHolder::TransferringNotSupported,
+          JS::StructuredCloneScope::SameProcess);
+
+  IgnoredErrorResult erv;
+  resHolder->Write(aCx, retval, erv);
+
+  
+  
+  
+  if (NS_WARN_IF(erv.Failed())) {
+    auto rejectMainThreadPromise = [error = erv.StealNSResult(),
+                                    runnable = std::move(mWorkerRunnable),
+                                    resHolder = std::move(resHolder)]() {
+      RefPtr<dom::Promise> promiseResult = std::move(runnable->mPromiseResult);
+      promiseResult->MaybeReject(error);
+    };
+
+    nsCOMPtr<nsIRunnable> runnable =
+        NS_NewRunnableFunction(__func__, std::move(rejectMainThreadPromise));
+    NS_DispatchToMainThread(runnable);
+    JS_ClearPendingException(aCx);
+    return;
+  }
+
+  auto resolveMainThreadPromise = [callbackType = aCallbackType,
+                                   resHolder = std::move(resHolder),
+                                   runnable = std::move(mWorkerRunnable),
+                                   workerRef = std::move(mWorkerRef)]() {
+    RefPtr<dom::Promise> promiseResult = std::move(runnable->mPromiseResult);
+
+    auto* global = promiseResult->GetGlobalObject();
+    dom::AutoEntryScript aes(global,
+                             "ExtensionListenerCallWorkerRunnable::WorkerRun");
+    JSContext* cx = aes.cx();
+    JS::Rooted<JS::Value> jsvalue(cx);
+    IgnoredErrorResult rv;
+
+    {
+      
+      
+      
+      
+      Maybe<nsJSPrincipals::AutoSetActiveWorkerPrincipal> set;
+      if (workerRef) {
+        set.emplace(workerRef->Private()->GetPrincipal());
+      }
+
+      resHolder->Read(global, cx, &jsvalue, rv);
+    }
+
+    if (NS_WARN_IF(rv.Failed())) {
+      promiseResult->MaybeReject(rv.StealNSResult());
+      JS_ClearPendingException(cx);
+    } else {
+      switch (callbackType) {
+        case PromiseCallbackType::Resolve:
+          promiseResult->MaybeResolve(jsvalue);
+          break;
+        case PromiseCallbackType::Reject:
+          promiseResult->MaybeReject(jsvalue);
+          break;
+      }
+    }
+  };
+
+  nsCOMPtr<nsIRunnable> runnable =
+      NS_NewRunnableFunction(__func__, std::move(resolveMainThreadPromise));
+  NS_DispatchToMainThread(runnable);
+}
+
+void ExtensionListenerCallPromiseResultHandler::ResolvedCallback(
+    JSContext* aCx, JS::Handle<JS::Value> aValue) {
+  WorkerRunCallback(aCx, aValue, PromiseCallbackType::Resolve);
+}
+
+void ExtensionListenerCallPromiseResultHandler::RejectedCallback(
+    JSContext* aCx, JS::Handle<JS::Value> aValue) {
+  WorkerRunCallback(aCx, aValue, PromiseCallbackType::Reject);
 }
 
 }  
