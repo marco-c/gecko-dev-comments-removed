@@ -110,6 +110,8 @@ extern "C" const char* __lsan_default_suppressions() {
 
          
          "leak:style::global_style_data\n"
+         "leak:style::sharing::SHARING_CACHE_KEY\n"
+         "leak:style::bloom::BLOOM_KEY\n"
 
          
          
