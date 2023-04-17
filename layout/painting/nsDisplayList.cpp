@@ -88,6 +88,7 @@
 #include "mozilla/ViewportFrame.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "ActiveLayerTracker.h"
+#include "nsEscape.h"
 #include "nsPrintfCString.h"
 #include "UnitTransforms.h"
 #include "LayerAnimationInfo.h"
@@ -614,6 +615,9 @@ nsDisplayListBuilder::Linkifier::Linkifier(nsDisplayListBuilder* aBuilder,
         aBuilder->mLinkSpec.IsEmpty()) {
       return;
     }
+    
+    
+    NS_UnescapeURL(aBuilder->mLinkSpec);
     
     aBuilder->mLinkSpec.Insert('#', 0);
   } else {
