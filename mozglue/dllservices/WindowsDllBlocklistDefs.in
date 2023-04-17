@@ -282,8 +282,8 @@ BROWSER_PROCESS += [
 
     
     
-    DllBlocklistEntry("fcagff.dll", (11, 6, 0xffff, 0xffff)),
-    DllBlocklistEntry("fcagff64.dll", (11, 6, 0xffff, 0xffff)),
+    DllBlocklistEntry("fcagff.dll", (11, 6, 300, 2)),
+    DllBlocklistEntry("fcagff64.dll", (11, 6, 300, 2)),
 
     
     DllBlocklistEntry("avmvirtualsource.ax", (1, 0, 0, 3)),
