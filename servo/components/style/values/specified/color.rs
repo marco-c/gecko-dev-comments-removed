@@ -203,6 +203,13 @@ pub enum Color {
 }
 
 
+
+
+
+
+
+
+
 #[allow(missing_docs)]
 #[cfg(feature = "gecko")]
 #[derive(Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, ToCss, ToShmem)]
@@ -275,6 +282,7 @@ pub enum SystemColor {
     #[css(skip)]
     ThemedScrollbarThumbInactive,
     Activeborder,
+    
     Activecaption,
     Appworkspace,
     Background,
@@ -282,6 +290,7 @@ pub enum SystemColor {
     Buttonhighlight,
     Buttonshadow,
     Buttontext,
+    
     Captiontext,
     #[parse(aliases = "-moz-field")]
     Field,
@@ -295,7 +304,9 @@ pub enum SystemColor {
     Highlight,
     Highlighttext,
     Inactiveborder,
+    
     Inactivecaption,
+    
     Inactivecaptiontext,
     Infobackground,
     Infotext,
@@ -433,14 +444,6 @@ pub enum SystemColor {
     MozColheadertext,
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozColheaderhovertext,
-
-    
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
-    MozGtkTitlebarText,
-
-    
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
-    MozGtkTitlebarInactiveText,
 
     #[css(skip)]
     End, 
