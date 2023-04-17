@@ -710,11 +710,13 @@ impl<T> Stealer<T> {
         let task = unsafe { buffer.deref().read(f) };
 
         
-        if self
-            .inner
-            .front
-            .compare_exchange(f, f.wrapping_add(1), Ordering::SeqCst, Ordering::Relaxed)
-            .is_err()
+        
+        if self.inner.buffer.load(Ordering::Acquire, guard) != buffer
+            || self
+                .inner
+                .front
+                .compare_exchange(f, f.wrapping_add(1), Ordering::SeqCst, Ordering::Relaxed)
+                .is_err()
         {
             
             mem::forget(task);
@@ -816,16 +818,18 @@ impl<T> Stealer<T> {
                 }
 
                 
-                if self
-                    .inner
-                    .front
-                    .compare_exchange(
-                        f,
-                        f.wrapping_add(batch_size),
-                        Ordering::SeqCst,
-                        Ordering::Relaxed,
-                    )
-                    .is_err()
+                
+                if self.inner.buffer.load(Ordering::Acquire, guard) != buffer
+                    || self
+                        .inner
+                        .front
+                        .compare_exchange(
+                            f,
+                            f.wrapping_add(batch_size),
+                            Ordering::SeqCst,
+                            Ordering::Relaxed,
+                        )
+                        .is_err()
                 {
                     return Steal::Retry;
                 }
@@ -856,11 +860,18 @@ impl<T> Stealer<T> {
                     let task = unsafe { buffer.deref().read(f) };
 
                     
-                    if self
-                        .inner
-                        .front
-                        .compare_exchange(f, f.wrapping_add(1), Ordering::SeqCst, Ordering::Relaxed)
-                        .is_err()
+                    
+                    if self.inner.buffer.load(Ordering::Acquire, guard) != buffer
+                        || self
+                            .inner
+                            .front
+                            .compare_exchange(
+                                f,
+                                f.wrapping_add(1),
+                                Ordering::SeqCst,
+                                Ordering::Relaxed,
+                            )
+                            .is_err()
                     {
                         
                         mem::forget(task);
@@ -1003,16 +1014,18 @@ impl<T> Stealer<T> {
                 }
 
                 
-                if self
-                    .inner
-                    .front
-                    .compare_exchange(
-                        f,
-                        f.wrapping_add(batch_size + 1),
-                        Ordering::SeqCst,
-                        Ordering::Relaxed,
-                    )
-                    .is_err()
+                
+                if self.inner.buffer.load(Ordering::Acquire, guard) != buffer
+                    || self
+                        .inner
+                        .front
+                        .compare_exchange(
+                            f,
+                            f.wrapping_add(batch_size + 1),
+                            Ordering::SeqCst,
+                            Ordering::Relaxed,
+                        )
+                        .is_err()
                 {
                     
                     mem::forget(task);
@@ -1058,11 +1071,18 @@ impl<T> Stealer<T> {
                     let tmp = unsafe { buffer.deref().read(f) };
 
                     
-                    if self
-                        .inner
-                        .front
-                        .compare_exchange(f, f.wrapping_add(1), Ordering::SeqCst, Ordering::Relaxed)
-                        .is_err()
+                    
+                    if self.inner.buffer.load(Ordering::Acquire, guard) != buffer
+                        || self
+                            .inner
+                            .front
+                            .compare_exchange(
+                                f,
+                                f.wrapping_add(1),
+                                Ordering::SeqCst,
+                                Ordering::Relaxed,
+                            )
+                            .is_err()
                     {
                         
                         mem::forget(tmp);
@@ -1436,9 +1456,9 @@ impl<T> Injector<T> {
 
             
             
-            if offset + 1 == BLOCK_CAP {
-                Block::destroy(block, offset);
-            } else if slot.state.fetch_or(READ, Ordering::AcqRel) & DESTROY != 0 {
+            if (offset + 1 == BLOCK_CAP)
+                || (slot.state.fetch_or(READ, Ordering::AcqRel) & DESTROY != 0)
+            {
                 Block::destroy(block, offset);
             }
 
