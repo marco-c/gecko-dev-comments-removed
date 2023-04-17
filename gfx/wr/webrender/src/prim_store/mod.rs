@@ -5,7 +5,7 @@
 use api::{BorderRadius, ClipMode, ColorF, ColorU, RasterSpace};
 use api::{ImageRendering, RepeatMode, PrimitiveFlags};
 use api::{PremultipliedColorF, PropertyBinding, Shadow};
-use api::{PrimitiveKeyKind, FillRule, POLYGON_CLIP_VERTEX_MAX};
+use api::{PrimitiveKeyKind};
 use api::units::*;
 use euclid::{SideOffsets2D, Size2D};
 use malloc_size_of::MallocSizeOf;
@@ -209,46 +209,6 @@ impl From<WorldRect> for RectangleKey {
         }
     }
 }
-
-
-
-
-
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Copy, Debug, Clone, Hash, MallocSizeOf, PartialEq)]
-pub struct PolygonKey {
-    pub point_count: u8,
-    pub points: [PointKey; POLYGON_CLIP_VERTEX_MAX],
-    pub fill_rule: FillRule,
-}
-
-impl PolygonKey {
-    pub fn new(
-        points_layout: &Vec<LayoutPoint>,
-        fill_rule: FillRule,
-    ) -> Self {
-        
-        
-        
-        
-        let mut points: [PointKey; POLYGON_CLIP_VERTEX_MAX] = [PointKey { x: 0.0, y: 0.0}; POLYGON_CLIP_VERTEX_MAX];
-
-        let mut point_count: u8 = 0;
-        for (src, dest) in points_layout.iter().zip(points.iter_mut()) {
-            *dest = (*src as LayoutPoint).into();
-            point_count = point_count + 1;
-        }
-
-        PolygonKey {
-            point_count,
-            points,
-            fill_rule,
-        }
-    }
-}
-
-impl Eq for PolygonKey {}
 
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
