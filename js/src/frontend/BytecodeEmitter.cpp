@@ -1418,11 +1418,6 @@ restart:
       *answer = true;
       return true;
 
-    case ParseNodeKind::PipelineExpr:
-      MOZ_ASSERT(pn->as<ListNode>().count() >= 2);
-      *answer = true;
-      return true;
-
     
     
     
@@ -8020,38 +8015,6 @@ bool BytecodeEmitter::emitCalleeAndThis(ParseNode* callee, ParseNode* call,
   return true;
 }
 
-bool BytecodeEmitter::emitPipeline(ListNode* node) {
-  MOZ_ASSERT(node->count() >= 2);
-
-  if (!emitTree(node->head())) {
-    
-    return false;
-  }
-
-  ParseNode* callee = node->head()->pn_next;
-  CallOrNewEmitter cone(this, JSOp::Call,
-                        CallOrNewEmitter::ArgumentsKind::Other,
-                        ValueUsage::WantValue);
-  do {
-    if (!emitCalleeAndThis(callee, node, cone)) {
-      
-      return false;
-    }
-    if (!emit2(JSOp::Pick, 2)) {
-      
-      return false;
-    }
-    if (!cone.emitEnd(1, Some(node->pn_pos.begin))) {
-      
-      return false;
-    }
-
-    cone.reset();
-  } while ((callee = callee->pn_next));
-
-  return true;
-}
-
 ParseNode* BytecodeEmitter::getCoordNode(ParseNode* callNode,
                                          ParseNode* calleeNode, JSOp op,
                                          ListNode* argsList) {
@@ -8335,12 +8298,12 @@ static const JSOp ParseNodeKindToJSOp[] = {
     
     
     
-    JSOp::Nop,        JSOp::Coalesce, JSOp::Or,       JSOp::And, JSOp::BitOr,
-    JSOp::BitXor,     JSOp::BitAnd,   JSOp::StrictEq, JSOp::Eq,  JSOp::StrictNe,
-    JSOp::Ne,         JSOp::Lt,       JSOp::Le,       JSOp::Gt,  JSOp::Ge,
-    JSOp::Instanceof, JSOp::In,       JSOp::Nop,      JSOp::Lsh, JSOp::Rsh,
-    JSOp::Ursh,       JSOp::Add,      JSOp::Sub,      JSOp::Mul, JSOp::Div,
-    JSOp::Mod,        JSOp::Pow};
+    JSOp::Coalesce, JSOp::Or,       JSOp::And, JSOp::BitOr,    JSOp::BitXor,
+    JSOp::BitAnd,   JSOp::StrictEq, JSOp::Eq,  JSOp::StrictNe, JSOp::Ne,
+    JSOp::Lt,       JSOp::Le,       JSOp::Gt,  JSOp::Ge,       JSOp::Instanceof,
+    JSOp::In,       JSOp::Nop,      JSOp::Lsh, JSOp::Rsh,      JSOp::Ursh,
+    JSOp::Add,      JSOp::Sub,      JSOp::Mul, JSOp::Div,      JSOp::Mod,
+    JSOp::Pow};
 
 static inline JSOp BinaryOpParseNodeKindToJSOp(ParseNodeKind pnk) {
   MOZ_ASSERT(pnk >= ParseNodeKind::BinOpFirst);
@@ -11348,12 +11311,6 @@ bool BytecodeEmitter::emitTree(
 
     case ParseNodeKind::PowExpr:
       if (!emitRightAssociative(&pn->as<ListNode>())) {
-        return false;
-      }
-      break;
-
-    case ParseNodeKind::PipelineExpr:
-      if (!emitPipeline(&pn->as<ListNode>())) {
         return false;
       }
       break;
