@@ -2451,9 +2451,10 @@ BrowserGlue.prototype = {
       {
         task: () => {
           
-          Cc["@mozilla.org/query-stripping-list-service;1"].getService(
-            Ci.nsIURLQueryStrippingListService
-          );
+          let urlQueryStrippingListService = Cc[
+            "@mozilla.org/query-stripping-list-service;1"
+          ].getService(Ci.nsIURLQueryStrippingListService);
+          urlQueryStrippingListService.init();
         },
       },
 

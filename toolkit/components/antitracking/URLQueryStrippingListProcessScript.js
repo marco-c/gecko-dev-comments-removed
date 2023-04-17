@@ -13,9 +13,10 @@ if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT) {
   
   if (Services.prefs.getBoolPref(PREF_STRIP_ENABLED)) {
     
-    Cc["@mozilla.org/query-stripping-list-service;1"].getService(
-      Ci.nsIURLQueryStrippingListService
-    );
+    let urlQueryStrippingListService = Cc[
+      "@mozilla.org/query-stripping-list-service;1"
+    ].getService(Ci.nsIURLQueryStrippingListService);
+    urlQueryStrippingListService.init();
   } else {
     let observer = (subject, topic, data) => {
       if (
@@ -24,9 +25,10 @@ if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT) {
         Services.prefs.getBoolPref(PREF_STRIP_ENABLED)
       ) {
         
-        Cc["@mozilla.org/query-stripping-list-service;1"].getService(
-          Ci.nsIURLQueryStrippingListService
-        );
+        let urlQueryStrippingListService = Cc[
+          "@mozilla.org/query-stripping-list-service;1"
+        ].getService(Ci.nsIURLQueryStrippingListService);
+        urlQueryStrippingListService.init();
         Services.prefs.removeObserver(PREF_STRIP_ENABLED, observer);
       }
     };
