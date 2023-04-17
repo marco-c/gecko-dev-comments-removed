@@ -167,9 +167,9 @@ inline bool FetchName(JSContext* cx, HandleObject receiver, HandleObject holder,
       
       
       RootedObject normalized(cx, MaybeUnwrapWithEnvironment(receiver));
-      RootedShape shape(cx, shapeProp.shapeDeprecated());
+      RootedId id(cx, NameToId(name));
       if (!NativeGetExistingProperty(cx, normalized, holder.as<NativeObject>(),
-                                     shape, vp)) {
+                                     id, shapeProp, vp)) {
         return false;
       }
     }

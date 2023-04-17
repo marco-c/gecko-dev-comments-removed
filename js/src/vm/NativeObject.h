@@ -1711,9 +1711,9 @@ extern bool NativeLookupOwnProperty(
 
 
 
-
 extern bool NativeGetExistingProperty(JSContext* cx, HandleObject receiver,
-                                      HandleNativeObject obj, HandleShape shape,
+                                      HandleNativeObject obj, HandleId id,
+                                      ShapeProperty prop,
                                       MutableHandleValue vp);
 
 
