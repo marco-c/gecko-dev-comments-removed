@@ -16,6 +16,8 @@
 U_NAMESPACE_BEGIN namespace number {
 namespace impl {
 
+
+
 class LongNameHandler : public MicroPropsGenerator, public ModifierStore, public UMemory {
   public:
     static UnicodeString getUnitDisplayName(
@@ -24,6 +26,8 @@ class LongNameHandler : public MicroPropsGenerator, public ModifierStore, public
         UNumberUnitWidth width,
         UErrorCode& status);
 
+    
+    
     static UnicodeString getUnitPattern(
         const Locale& loc,
         const MeasureUnit& unit,
@@ -53,12 +57,13 @@ class LongNameHandler : public MicroPropsGenerator, public ModifierStore, public
 
 
 
-
-
-
-    static void forMeasureUnit(const Locale &loc, const MeasureUnit &unit, const MeasureUnit &perUnit,
-                               const UNumberUnitWidth &width, const PluralRules *rules,
-                               const MicroPropsGenerator *parent, LongNameHandler *fillIn,
+    static void forMeasureUnit(const Locale &loc,
+                               const MeasureUnit &unitRef,
+                               const UNumberUnitWidth &width,
+                               const char *unitDisplayCase,
+                               const PluralRules *rules,
+                               const MicroPropsGenerator *parent,
+                               LongNameHandler *fillIn,
                                UErrorCode &status);
 
     
@@ -68,10 +73,6 @@ class LongNameHandler : public MicroPropsGenerator, public ModifierStore, public
     void
     processQuantity(DecimalQuantity &quantity, MicroProps &micros, UErrorCode &status) const U_OVERRIDE;
 
-    
-    
-    
-    
     const Modifier* getModifier(Signum signum, StandardPlural::Form plural) const U_OVERRIDE;
 
   private:
@@ -81,6 +82,9 @@ class LongNameHandler : public MicroPropsGenerator, public ModifierStore, public
     const PluralRules *rules;
     
     const MicroPropsGenerator *parent;
+    
+    
+    const char *gender = "";
 
     LongNameHandler(const PluralRules *rules, const MicroPropsGenerator *parent)
         : rules(rules), parent(parent) {
@@ -97,12 +101,24 @@ class LongNameHandler : public MicroPropsGenerator, public ModifierStore, public
     friend class NumberFormatterImpl;
 
     
+    static void forArbitraryUnit(const Locale &loc,
+                                 const MeasureUnit &unit,
+                                 const UNumberUnitWidth &width,
+                                 const char *unitDisplayCase,
+                                 LongNameHandler *fillIn,
+                                 UErrorCode &status);
+
     
     
-    static void forCompoundUnit(const Locale &loc, const MeasureUnit &unit, const MeasureUnit &perUnit,
-                                const UNumberUnitWidth &width, const PluralRules *rules,
-                                const MicroPropsGenerator *parent, LongNameHandler *fillIn,
-                                UErrorCode &status);
+    
+    
+    
+    static void processPatternTimes(MeasureUnitImpl &&productUnit,
+                                    Locale loc,
+                                    const UNumberUnitWidth &width,
+                                    const char *caseVariant,
+                                    UnicodeString *outArray,
+                                    UErrorCode &status);
 
     
     void simpleFormatsToModifiers(const UnicodeString *simpleFormats, Field field, UErrorCode &status);
@@ -135,9 +151,15 @@ class MixedUnitLongNameHandler : public MicroPropsGenerator, public ModifierStor
 
 
 
-    static void forMeasureUnit(const Locale &loc, const MeasureUnit &mixedUnit,
-                               const UNumberUnitWidth &width, const PluralRules *rules,
-                               const MicroPropsGenerator *parent, MixedUnitLongNameHandler *fillIn,
+
+
+    static void forMeasureUnit(const Locale &loc,
+                               const MeasureUnit &mixedUnit,
+                               const UNumberUnitWidth &width,
+                               const char *unitDisplayCase,
+                               const PluralRules *rules,
+                               const MicroPropsGenerator *parent,
+                               MixedUnitLongNameHandler *fillIn,
                                UErrorCode &status);
 
     
@@ -156,20 +178,23 @@ class MixedUnitLongNameHandler : public MicroPropsGenerator, public ModifierStor
   private:
     
     const PluralRules *rules;
+
     
     const MicroPropsGenerator *parent;
 
     
     
     int32_t fMixedUnitCount = 1;
+
     
     
     
     
     LocalArray<UnicodeString> fMixedUnitData;
+
     
-    
-    LocalizedNumberFormatter fIntegerFormatter;
+    LocalizedNumberFormatter fNumberFormatter;
+
     
     LocalPointer<ListFormatter> fListFormatter;
 
@@ -207,8 +232,11 @@ class LongNameMultiplexer : public MicroPropsGenerator, public UMemory {
     
     static LongNameMultiplexer *forMeasureUnits(const Locale &loc,
                                                 const MaybeStackVector<MeasureUnit> &units,
-                                                const UNumberUnitWidth &width, const PluralRules *rules,
-                                                const MicroPropsGenerator *parent, UErrorCode &status);
+                                                const UNumberUnitWidth &width,
+                                                const char *unitDisplayCase,
+                                                const PluralRules *rules,
+                                                const MicroPropsGenerator *parent,
+                                                UErrorCode &status);
 
     
     

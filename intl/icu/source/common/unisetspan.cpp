@@ -231,6 +231,9 @@ UnicodeSetStringSpan::UnicodeSetStringSpan(const UnicodeSet &set,
         const UnicodeString &string=*(const UnicodeString *)strings.elementAt(i);
         const UChar *s16=string.getBuffer();
         int32_t length16=string.length();
+        if (length16==0) {
+            continue;  
+        }
         UBool thisRelevant;
         spanLength=spanSet.span(s16, length16, USET_SPAN_CONTAINED);
         if(spanLength<length16) {  
@@ -312,7 +315,7 @@ UnicodeSetStringSpan::UnicodeSetStringSpan(const UnicodeSet &set,
         const UChar *s16=string.getBuffer();
         int32_t length16=string.length();
         spanLength=spanSet.span(s16, length16, USET_SPAN_CONTAINED);
-        if(spanLength<length16) {  
+        if(spanLength<length16 && length16>0) {  
             if(which&UTF16) {
                 if(which&CONTAINED) {
                     if(which&FWD) {
@@ -658,6 +661,7 @@ int32_t UnicodeSetStringSpan::span(const UChar *s, int32_t length, USetSpanCondi
                 const UnicodeString &string=*(const UnicodeString *)strings.elementAt(i);
                 const UChar *s16=string.getBuffer();
                 int32_t length16=string.length();
+                U_ASSERT(length>0);
 
                 
                 if(overlap>=LONG_SPAN) {
@@ -697,6 +701,9 @@ int32_t UnicodeSetStringSpan::span(const UChar *s, int32_t length, USetSpanCondi
                 const UnicodeString &string=*(const UnicodeString *)strings.elementAt(i);
                 const UChar *s16=string.getBuffer();
                 int32_t length16=string.length();
+                if (length16==0) {
+                    continue;  
+                }
 
                 
                 if(overlap>=LONG_SPAN) {
@@ -822,6 +829,7 @@ int32_t UnicodeSetStringSpan::spanBack(const UChar *s, int32_t length, USetSpanC
                 const UnicodeString &string=*(const UnicodeString *)strings.elementAt(i);
                 const UChar *s16=string.getBuffer();
                 int32_t length16=string.length();
+                U_ASSERT(length>0);
 
                 
                 if(overlap>=LONG_SPAN) {
@@ -863,6 +871,9 @@ int32_t UnicodeSetStringSpan::spanBack(const UChar *s, int32_t length, USetSpanC
                 const UnicodeString &string=*(const UnicodeString *)strings.elementAt(i);
                 const UChar *s16=string.getBuffer();
                 int32_t length16=string.length();
+                if (length16==0) {
+                    continue;  
+                }
 
                 
                 if(overlap>=LONG_SPAN) {
@@ -1363,6 +1374,7 @@ int32_t UnicodeSetStringSpan::spanNot(const UChar *s, int32_t length) const {
             const UnicodeString &string=*(const UnicodeString *)strings.elementAt(i);
             const UChar *s16=string.getBuffer();
             int32_t length16=string.length();
+            U_ASSERT(length>0);
             if(length16<=rest && matches16CPB(s, pos, length, s16, length16)) {
                 return pos;  
             }
@@ -1406,6 +1418,7 @@ int32_t UnicodeSetStringSpan::spanNotBack(const UChar *s, int32_t length) const 
             const UnicodeString &string=*(const UnicodeString *)strings.elementAt(i);
             const UChar *s16=string.getBuffer();
             int32_t length16=string.length();
+            U_ASSERT(length>0);
             if(length16<=pos && matches16CPB(s, pos-length16, length, s16, length16)) {
                 return pos;  
             }

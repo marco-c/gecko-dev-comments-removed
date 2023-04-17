@@ -276,8 +276,6 @@ class RuleCharacterIterator;
 
 
 
-
-
 class U_COMMON_API UnicodeSet U_FINAL : public UnicodeFilter {
 private:
     
@@ -1097,6 +1095,9 @@ public:
 
 
 
+
+
+
     UnicodeSet& add(UChar32 c);
 
     
@@ -1140,7 +1141,6 @@ public:
 
 
 
-
     UnicodeSet& retainAll(const UnicodeString& s);
 
     
@@ -1150,11 +1150,9 @@ public:
 
 
 
-
     UnicodeSet& complementAll(const UnicodeString& s);
 
     
-
 
 
 
@@ -1194,8 +1192,6 @@ public:
 
 
 
-
-
     virtual UnicodeSet& retain(UChar32 start, UChar32 end);
 
 
@@ -1204,7 +1200,24 @@ public:
 
 
 
+
+
+
     UnicodeSet& retain(UChar32 c);
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+    UnicodeSet& retain(const UnicodeString &s);
+#endif  
 
     
 
@@ -1222,6 +1235,9 @@ public:
     virtual UnicodeSet& remove(UChar32 start, UChar32 end);
 
     
+
+
+
 
 
 
@@ -1262,8 +1278,6 @@ public:
 
 
 
-
-
     virtual UnicodeSet& complement(UChar32 start, UChar32 end);
 
     
@@ -1273,10 +1287,12 @@ public:
 
 
 
+
+
+
     UnicodeSet& complement(UChar32 c);
 
     
-
 
 
 

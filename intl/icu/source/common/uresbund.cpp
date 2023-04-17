@@ -94,6 +94,15 @@ static UBool chopLocale(char *name) {
 
 
 
+
+
+static UBool mayHaveParent(char *name) {
+    return (name[0] != 0 && uprv_strstr("nb nn",name) != nullptr);
+}
+
+
+
+
 static void entryIncrease(UResourceDataEntry *entry) {
     Mutex lock(&resbMutex);
     entry->fCountExisting++;
@@ -529,8 +538,8 @@ loadParentsExceptRoot(UResourceDataEntry *&t1,
                       char name[], int32_t nameCapacity,
                       UBool usingUSRData, char usrDataPath[], UErrorCode *status) {
     if (U_FAILURE(*status)) { return FALSE; }
-    UBool hasChopped = TRUE;
-    while (hasChopped && t1->fParent == NULL && !t1->fData.noFallback &&
+    UBool checkParent = TRUE;
+    while (checkParent && t1->fParent == NULL && !t1->fData.noFallback &&
             res_getResource(&t1->fData,"%%ParentIsRoot") == RES_BOGUS) {
         Resource parentRes = res_getResource(&t1->fData, "%%Parent");
         if (parentRes != RES_BOGUS) {  
@@ -573,7 +582,7 @@ loadParentsExceptRoot(UResourceDataEntry *&t1,
             }
         }
         t1 = t2;
-        hasChopped = chopLocale(name);
+        checkParent = chopLocale(name) || mayHaveParent(name);
     }
     return TRUE;
 }
@@ -692,7 +701,7 @@ static UResourceDataEntry *entryOpen(const char* path, const char* localeID,
                 }
             }
         }
-        if (hasChopped && !isRoot) {
+        if ((hasChopped || mayHaveParent(name)) && !isRoot) {
             if (!loadParentsExceptRoot(t1, name, UPRV_LENGTHOF(name), usingUSRData, usrDataPath, status)) {
                 goto finish;
             }
@@ -716,7 +725,7 @@ static UResourceDataEntry *entryOpen(const char* path, const char* localeID,
             hasRealData = TRUE;
             isDefault = TRUE;
             
-            if (hasChopped && !isRoot) {
+            if ((hasChopped || mayHaveParent(name)) && !isRoot) {
                 if (!loadParentsExceptRoot(t1, name, UPRV_LENGTHOF(name), usingUSRData, usrDataPath, status)) {
                     goto finish;
                 }
@@ -1908,6 +1917,8 @@ ures_getByKeyWithFallback(const UResourceBundle *resB,
                             } else {
                               break;
                             }
+                        } else if (res == RES_BOGUS) {
+                            break;
                         }
                     } while(*myPath); 
                 }

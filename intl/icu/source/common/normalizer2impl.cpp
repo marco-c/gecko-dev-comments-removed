@@ -731,9 +731,131 @@ UBool Normalizer2Impl::decompose(UChar32 c, uint16_t norm16,
     return buffer.append((const UChar *)mapping+1, length, TRUE, leadCC, trailCC, errorCode);
 }
 
+
+
+
+const uint8_t *
+Normalizer2Impl::decomposeUTF8(uint32_t options,
+                               const uint8_t *src, const uint8_t *limit,
+                               ByteSink *sink, Edits *edits, UErrorCode &errorCode) const {
+    U_ASSERT(limit != nullptr);
+    UnicodeString s16;
+    uint8_t minNoLead = leadByteForCP(minDecompNoCP);
+
+    const uint8_t *prevBoundary = src;
+    
+    uint8_t prevCC = 0;
+
+    for (;;) {
+        
+        
+        const uint8_t *fastStart = src;
+        const uint8_t *prevSrc;
+        uint16_t norm16 = 0;
+
+        for (;;) {
+            if (src == limit) {
+                if (prevBoundary != limit && sink != nullptr) {
+                    ByteSinkUtil::appendUnchanged(prevBoundary, limit,
+                                                  *sink, options, edits, errorCode);
+                }
+                return src;
+            }
+            if (*src < minNoLead) {
+                ++src;
+            } else {
+                prevSrc = src;
+                UCPTRIE_FAST_U8_NEXT(normTrie, UCPTRIE_16, src, limit, norm16);
+                if (!isMostDecompYesAndZeroCC(norm16)) {
+                    break;
+                }
+            }
+        }
+        
+        
+        
+        
+        if (prevSrc != fastStart) {
+            
+            if (sink != nullptr &&
+                    !ByteSinkUtil::appendUnchanged(prevBoundary, prevSrc,
+                                                   *sink, options, edits, errorCode)) {
+                break;
+            }
+            prevBoundary = prevSrc;
+            prevCC = 0;
+        }
+
+        
+        if (isMaybeOrNonZeroCC(norm16)) {
+            
+            uint8_t cc = getCCFromYesOrMaybe(norm16);
+            if (prevCC <= cc || cc == 0) {
+                prevCC = cc;
+                if (cc <= 1) {
+                    if (sink != nullptr &&
+                            !ByteSinkUtil::appendUnchanged(prevBoundary, src,
+                                                           *sink, options, edits, errorCode)) {
+                        break;
+                    }
+                    prevBoundary = src;
+                }
+                continue;
+            }
+        }
+        if (sink == nullptr) {
+            return prevBoundary;  
+        }
+
+        
+        
+        if (prevBoundary != prevSrc && norm16HasDecompBoundaryBefore(norm16)) {
+            if (!ByteSinkUtil::appendUnchanged(prevBoundary, prevSrc,
+                                               *sink, options, edits, errorCode)) {
+                break;
+            }
+            prevBoundary = prevSrc;
+        }
+        ReorderingBuffer buffer(*this, s16, errorCode);
+        if (U_FAILURE(errorCode)) {
+            break;
+        }
+        decomposeShort(prevBoundary, src, STOP_AT_LIMIT, FALSE ,
+                       buffer, errorCode);
+        
+        if (buffer.getLastCC() > 1) {
+            src = decomposeShort(src, limit, STOP_AT_DECOMP_BOUNDARY, FALSE ,
+                                 buffer, errorCode);
+        }
+        if (U_FAILURE(errorCode)) {
+            break;
+        }
+        if ((src - prevSrc) > INT32_MAX) {  
+            errorCode = U_INDEX_OUTOFBOUNDS_ERROR;
+            break;
+        }
+        
+        
+        if (isMaybeOrNonZeroCC(norm16) && buffer.equals(prevBoundary, src)) {
+            if (!ByteSinkUtil::appendUnchanged(prevBoundary, src,
+                                               *sink, options, edits, errorCode)) {
+                break;
+            }
+        } else {
+            if (!ByteSinkUtil::appendChange(prevBoundary, src, buffer.getStart(), buffer.length(),
+                                            *sink, edits, errorCode)) {
+                break;
+            }
+        }
+        prevBoundary = src;
+        prevCC = 0;
+    }
+    return src;
+}
+
 const uint8_t *
 Normalizer2Impl::decomposeShort(const uint8_t *src, const uint8_t *limit,
-                                UBool stopAtCompBoundary, UBool onlyContiguous,
+                                StopAt stopAt, UBool onlyContiguous,
                                 ReorderingBuffer &buffer, UErrorCode &errorCode) const {
     if (U_FAILURE(errorCode)) {
         return nullptr;
@@ -747,20 +869,27 @@ Normalizer2Impl::decomposeShort(const uint8_t *src, const uint8_t *limit,
         if (norm16 >= limitNoNo) {
             if (isMaybeOrNonZeroCC(norm16)) {
                 
+                uint8_t cc = getCCFromYesOrMaybe(norm16);
+                if (cc == 0 && stopAt == STOP_AT_DECOMP_BOUNDARY) {
+                    return prevSrc;
+                }
                 c = codePointFromValidUTF8(prevSrc, src);
-                if (!buffer.append(c, getCCFromYesOrMaybe(norm16), errorCode)) {
+                if (!buffer.append(c, cc, errorCode)) {
                     return nullptr;
+                }
+                if (stopAt == STOP_AT_DECOMP_BOUNDARY && buffer.getLastCC() <= 1) {
+                    return src;
                 }
                 continue;
             }
             
-            if (stopAtCompBoundary) {
+            if (stopAt != STOP_AT_LIMIT) {
                 return prevSrc;
             }
             c = codePointFromValidUTF8(prevSrc, src);
             c = mapAlgorithmic(c, norm16);
             norm16 = getRawNorm16(c);
-        } else if (stopAtCompBoundary && norm16 < minNoNoCompNoMaybeCC) {
+        } else if (stopAt != STOP_AT_LIMIT && norm16 < minNoNoCompNoMaybeCC) {
             return prevSrc;
         }
         
@@ -768,7 +897,8 @@ Normalizer2Impl::decomposeShort(const uint8_t *src, const uint8_t *limit,
         
         
         
-        U_ASSERT(norm16 != INERT);
+        
+        U_ASSERT(c >= 0 || norm16 != INERT);
         if (norm16 < minYesNo) {
             if (c < 0) {
                 c = codePointFromValidUTF8(prevSrc, src);
@@ -798,11 +928,15 @@ Normalizer2Impl::decomposeShort(const uint8_t *src, const uint8_t *limit,
             } else {
                 leadCC = 0;
             }
+            if (leadCC == 0 && stopAt == STOP_AT_DECOMP_BOUNDARY) {
+                return prevSrc;
+            }
             if (!buffer.append((const char16_t *)mapping+1, length, TRUE, leadCC, trailCC, errorCode)) {
                 return nullptr;
             }
         }
-        if (stopAtCompBoundary && norm16HasCompBoundaryAfter(norm16, onlyContiguous)) {
+        if ((stopAt == STOP_AT_COMP_BOUNDARY && norm16HasCompBoundaryAfter(norm16, onlyContiguous)) ||
+                (stopAt == STOP_AT_DECOMP_BOUNDARY && buffer.getLastCC() <= 1)) {
             return src;
         }
     }
@@ -1954,10 +2088,10 @@ Normalizer2Impl::composeUTF8(uint32_t options, UBool onlyContiguous,
             break;
         }
         
-        decomposeShort(prevSrc, src, FALSE , onlyContiguous,
+        decomposeShort(prevSrc, src, STOP_AT_LIMIT, onlyContiguous,
                        buffer, errorCode);
         
-        src = decomposeShort(src, limit, TRUE , onlyContiguous,
+        src = decomposeShort(src, limit, STOP_AT_COMP_BOUNDARY, onlyContiguous,
                              buffer, errorCode);
         if (U_FAILURE(errorCode)) {
             break;

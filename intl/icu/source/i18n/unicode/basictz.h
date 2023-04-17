@@ -152,6 +152,17 @@ public:
     virtual void getSimpleRulesNear(UDate date, InitialTimeZoneRule*& initial,
         AnnualTimeZoneRule*& std, AnnualTimeZoneRule*& dst, UErrorCode& status) const;
 
+#ifndef U_FORCE_HIDE_DRAFT_API
+    
+
+
+
+    virtual void getOffsetFromLocal(
+        UDate date, UTimeZoneLocalOption nonExistingTimeOpt,
+        UTimeZoneLocalOption duplicatedTimeOpt, int32_t& rawOffset,
+        int32_t& dstOffset, UErrorCode& status) const;
+
+#endif 
 
 #ifndef U_HIDE_INTERNAL_API
     
@@ -161,17 +172,17 @@ public:
     enum {
         kStandard = 0x01,
         kDaylight = 0x03,
-        kFormer = 0x04,
-        kLatter = 0x0C
+        kFormer = 0x04, 
+        kLatter = 0x0C  
     };
-#endif  
 
     
 
 
 
-    virtual void getOffsetFromLocal(UDate date, int32_t nonExistingTimeOpt, int32_t duplicatedTimeOpt,
+    void getOffsetFromLocal(UDate date, int32_t nonExistingTimeOpt, int32_t duplicatedTimeOpt,
         int32_t& rawOffset, int32_t& dstOffset, UErrorCode& status) const;
+#endif  
 
 protected:
 
@@ -184,9 +195,9 @@ protected:
         kStdDstMask = kDaylight,
         kFormerLatterMask = kLatter
     };
-#endif
+#endif  
 
-
+    
 
 
 

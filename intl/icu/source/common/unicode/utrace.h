@@ -173,7 +173,6 @@ typedef enum UTraceFunctionNumber {
     UTRACE_RES_DATA_LIMIT,
 #endif  
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -227,8 +226,6 @@ typedef enum UTraceFunctionNumber {
 
 
     UTRACE_UBRK_CREATE_BREAK_ENGINE,
-
-#endif  
 
 #ifndef U_HIDE_INTERNAL_API
     

@@ -78,6 +78,62 @@
 
 
 
+#ifndef U_FORCE_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef enum UNumberRoundingPriority {
+    
+
+
+
+
+    UNUM_ROUNDING_PRIORITY_RELAXED,
+
+    
+
+
+
+
+    UNUM_ROUNDING_PRIORITY_STRICT,
+} UNumberRoundingPriority;
+#endif 
+
 
 
 
@@ -108,7 +164,7 @@ typedef enum UNumberUnitWidth {
 
 
 
-            UNUM_UNIT_WIDTH_NARROW,
+            UNUM_UNIT_WIDTH_NARROW = 0,
 
     
 
@@ -124,7 +180,7 @@ typedef enum UNumberUnitWidth {
 
 
 
-            UNUM_UNIT_WIDTH_SHORT,
+            UNUM_UNIT_WIDTH_SHORT = 1,
 
     
 
@@ -135,7 +191,7 @@ typedef enum UNumberUnitWidth {
 
 
 
-            UNUM_UNIT_WIDTH_FULL_NAME,
+            UNUM_UNIT_WIDTH_FULL_NAME = 2,
 
     
 
@@ -146,7 +202,7 @@ typedef enum UNumberUnitWidth {
 
 
 
-            UNUM_UNIT_WIDTH_ISO_CODE,
+            UNUM_UNIT_WIDTH_ISO_CODE = 3,
 
 #ifndef U_HIDE_DRAFT_API
     
@@ -158,7 +214,7 @@ typedef enum UNumberUnitWidth {
 
 
 
-            UNUM_UNIT_WIDTH_FORMAL,
+            UNUM_UNIT_WIDTH_FORMAL = 4,
 
     
 
@@ -169,7 +225,7 @@ typedef enum UNumberUnitWidth {
 
 
 
-            UNUM_UNIT_WIDTH_VARIANT,
+            UNUM_UNIT_WIDTH_VARIANT = 5,
 #endif  
 
     
@@ -179,14 +235,16 @@ typedef enum UNumberUnitWidth {
 
 
 
-            UNUM_UNIT_WIDTH_HIDDEN,
+            UNUM_UNIT_WIDTH_HIDDEN = 6,
 
+    
+    
     
 
 
 
 
-            UNUM_UNIT_WIDTH_COUNT
+            UNUM_UNIT_WIDTH_COUNT = 7
 } UNumberUnitWidth;
 
 
@@ -316,7 +374,10 @@ typedef enum UNumberSignDisplay {
 
 
 
-            UNUM_SIGN_AUTO,
+
+
+
+    UNUM_SIGN_AUTO,
 
     
 
@@ -324,30 +385,14 @@ typedef enum UNumberSignDisplay {
 
 
 
-            UNUM_SIGN_ALWAYS,
+    UNUM_SIGN_ALWAYS,
 
     
 
 
 
 
-            UNUM_SIGN_NEVER,
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-            UNUM_SIGN_ACCOUNTING,
+    UNUM_SIGN_NEVER,
 
     
 
@@ -357,7 +402,13 @@ typedef enum UNumberSignDisplay {
 
 
 
-            UNUM_SIGN_ACCOUNTING_ALWAYS,
+
+
+
+
+
+
+    UNUM_SIGN_ACCOUNTING,
 
     
 
@@ -365,7 +416,17 @@ typedef enum UNumberSignDisplay {
 
 
 
-            UNUM_SIGN_EXCEPT_ZERO,
+
+
+    UNUM_SIGN_ACCOUNTING_ALWAYS,
+
+    
+
+
+
+
+
+    UNUM_SIGN_EXCEPT_ZERO,
 
     
 
@@ -374,14 +435,32 @@ typedef enum UNumberSignDisplay {
 
 
 
-            UNUM_SIGN_ACCOUNTING_EXCEPT_ZERO,
+    UNUM_SIGN_ACCOUNTING_EXCEPT_ZERO,
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+    UNUM_SIGN_NEGATIVE,
 
     
 
 
 
 
-            UNUM_SIGN_COUNT
+    UNUM_SIGN_ACCOUNTING_NEGATIVE,
+#endif 
+
+    
+    
+    
+
+
+
+
+    UNUM_SIGN_COUNT = 9,
 } UNumberSignDisplay;
 
 
@@ -412,12 +491,40 @@ typedef enum UNumberDecimalSeparatorDisplay {
             UNUM_DECIMAL_SEPARATOR_ALWAYS,
 
     
+    
+    
 
 
 
 
             UNUM_DECIMAL_SEPARATOR_COUNT
 } UNumberDecimalSeparatorDisplay;
+
+#ifndef U_FORCE_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+typedef enum UNumberTrailingZeroDisplay {
+    
+
+
+
+
+    UNUM_TRAILING_ZERO_AUTO,
+
+    
+
+
+
+
+    UNUM_TRAILING_ZERO_HIDE_IF_WHOLE,
+} UNumberTrailingZeroDisplay;
+#endif 
 
 struct UNumberFormatter;
 
@@ -457,9 +564,15 @@ typedef struct UFormattedNumber UFormattedNumber;
 
 
 
+
+
+
 U_CAPI UNumberFormatter* U_EXPORT2
 unumf_openForSkeletonAndLocale(const UChar* skeleton, int32_t skeletonLen, const char* locale,
                                UErrorCode* ec);
+
+
+
 
 
 

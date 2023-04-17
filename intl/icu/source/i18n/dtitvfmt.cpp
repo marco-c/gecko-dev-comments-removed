@@ -863,6 +863,14 @@ DateIntervalFormat::initializePattern(UErrorCode& status) {
                 setPatternInfo(UCAL_DATE, nullptr, &pattern, fInfo->getDefaultOrder());
                 setPatternInfo(UCAL_MONTH, nullptr, &pattern, fInfo->getDefaultOrder());
                 setPatternInfo(UCAL_YEAR, nullptr, &pattern, fInfo->getDefaultOrder());
+
+                timeSkeleton.insert(0, CAP_G);
+                pattern = DateFormat::getBestPattern(
+                        locale, timeSkeleton, status);
+                if ( U_FAILURE(status) ) {
+                    return;
+                }
+                setPatternInfo(UCAL_ERA, nullptr, &pattern, fInfo->getDefaultOrder());
             } else {
                 
             }
@@ -889,6 +897,14 @@ DateIntervalFormat::initializePattern(UErrorCode& status) {
         setPatternInfo(UCAL_DATE, nullptr, &pattern, fInfo->getDefaultOrder());
         setPatternInfo(UCAL_MONTH, nullptr, &pattern, fInfo->getDefaultOrder());
         setPatternInfo(UCAL_YEAR, nullptr, &pattern, fInfo->getDefaultOrder());
+
+        timeSkeleton.insert(0, CAP_G);
+        pattern = DateFormat::getBestPattern(
+                locale, timeSkeleton, status);
+        if ( U_FAILURE(status) ) {
+            return;
+        }
+        setPatternInfo(UCAL_ERA, nullptr, &pattern, fInfo->getDefaultOrder());
     } else {
         
 
@@ -916,6 +932,11 @@ DateIntervalFormat::initializePattern(UErrorCode& status) {
             
             skeleton.insert(0, LOW_Y);
             setFallbackPattern(UCAL_YEAR, skeleton, status);
+        }
+        if ( !fieldExistsInSkeleton(UCAL_ERA, dateSkeleton) ) {
+            
+            skeleton.insert(0, CAP_G);
+            setFallbackPattern(UCAL_ERA, skeleton, status);
         }
 
         

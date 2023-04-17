@@ -36,62 +36,32 @@ UOBJECT_DEFINE_RTTI_IMPLEMENTATION(MeasureUnit)
 
 
 
-
 static const int32_t gOffsets[] = {
     0,
     2,
     7,
     17,
-    25,
-    29,
-    328,
-    339,
-    355,
-    359,
-    368,
-    370,
-    374,
-    382,
-    404,
-    408,
-    423,
-    426,
-    432,
-    442,
-    446,
-    450,
-    452,
-    486
+    26,
+    30,
+    329,
+    340,
+    356,
+    360,
+    369,
+    371,
+    375,
+    383,
+    405,
+    409,
+    424,
+    425,
+    431,
+    441,
+    445,
+    449,
+    451,
+    485
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 static const int32_t kCurrencyOffset = 5;
 
@@ -142,6 +112,7 @@ static const char * const gSubTypes[] = {
     "square-mile",
     "square-yard",
     "karat",
+    "milligram-ofglucose-per-deciliter",
     "milligram-per-deciliter",
     "millimole-per-liter",
     "mole",
@@ -547,9 +518,7 @@ static const char * const gSubTypes[] = {
     "solar-mass",
     "stone",
     "ton",
-    "", 
-    "percent", 
-    "permille", 
+    "",
     "gigawatt",
     "horsepower",
     "kilowatt",
@@ -611,8 +580,6 @@ static const char * const gSubTypes[] = {
     "tablespoon",
     "teaspoon"
 };
-
-
 
 
 static const int32_t kBaseTypeIdx = 16;
@@ -762,60 +729,68 @@ MeasureUnit MeasureUnit::getKarat() {
     return MeasureUnit(3, 0);
 }
 
-MeasureUnit *MeasureUnit::createMilligramPerDeciliter(UErrorCode &status) {
+MeasureUnit *MeasureUnit::createMilligramOfglucosePerDeciliter(UErrorCode &status) {
     return MeasureUnit::create(3, 1, status);
 }
 
-MeasureUnit MeasureUnit::getMilligramPerDeciliter() {
+MeasureUnit MeasureUnit::getMilligramOfglucosePerDeciliter() {
     return MeasureUnit(3, 1);
 }
 
-MeasureUnit *MeasureUnit::createMillimolePerLiter(UErrorCode &status) {
+MeasureUnit *MeasureUnit::createMilligramPerDeciliter(UErrorCode &status) {
     return MeasureUnit::create(3, 2, status);
 }
 
-MeasureUnit MeasureUnit::getMillimolePerLiter() {
+MeasureUnit MeasureUnit::getMilligramPerDeciliter() {
     return MeasureUnit(3, 2);
 }
 
-MeasureUnit *MeasureUnit::createMole(UErrorCode &status) {
+MeasureUnit *MeasureUnit::createMillimolePerLiter(UErrorCode &status) {
     return MeasureUnit::create(3, 3, status);
 }
 
-MeasureUnit MeasureUnit::getMole() {
+MeasureUnit MeasureUnit::getMillimolePerLiter() {
     return MeasureUnit(3, 3);
 }
 
-MeasureUnit *MeasureUnit::createPercent(UErrorCode &status) {
+MeasureUnit *MeasureUnit::createMole(UErrorCode &status) {
     return MeasureUnit::create(3, 4, status);
 }
 
-MeasureUnit MeasureUnit::getPercent() {
+MeasureUnit MeasureUnit::getMole() {
     return MeasureUnit(3, 4);
 }
 
-MeasureUnit *MeasureUnit::createPermille(UErrorCode &status) {
+MeasureUnit *MeasureUnit::createPercent(UErrorCode &status) {
     return MeasureUnit::create(3, 5, status);
 }
 
-MeasureUnit MeasureUnit::getPermille() {
+MeasureUnit MeasureUnit::getPercent() {
     return MeasureUnit(3, 5);
 }
 
-MeasureUnit *MeasureUnit::createPartPerMillion(UErrorCode &status) {
+MeasureUnit *MeasureUnit::createPermille(UErrorCode &status) {
     return MeasureUnit::create(3, 6, status);
 }
 
-MeasureUnit MeasureUnit::getPartPerMillion() {
+MeasureUnit MeasureUnit::getPermille() {
     return MeasureUnit(3, 6);
 }
 
-MeasureUnit *MeasureUnit::createPermyriad(UErrorCode &status) {
+MeasureUnit *MeasureUnit::createPartPerMillion(UErrorCode &status) {
     return MeasureUnit::create(3, 7, status);
 }
 
-MeasureUnit MeasureUnit::getPermyriad() {
+MeasureUnit MeasureUnit::getPartPerMillion() {
     return MeasureUnit(3, 7);
+}
+
+MeasureUnit *MeasureUnit::createPermyriad(UErrorCode &status) {
+    return MeasureUnit::create(3, 8, status);
+}
+
+MeasureUnit MeasureUnit::getPermyriad() {
+    return MeasureUnit(3, 8);
 }
 
 MeasureUnit *MeasureUnit::createLiterPer100Kilometers(UErrorCode &status) {
@@ -2277,9 +2252,11 @@ StringEnumeration* MeasureUnit::getAvailableTypes(UErrorCode &errorCode) {
 }
 
 bool MeasureUnit::findBySubType(StringPiece subType, MeasureUnit* output) {
+    
+    U_ASSERT(uprv_strcmp(gTypes[kCurrencyOffset], "currency") == 0);
+    U_ASSERT(gOffsets[UPRV_LENGTHOF(gOffsets) - 1] == UPRV_LENGTHOF(gSubTypes));
+
     for (int32_t t = 0; t < UPRV_LENGTHOF(gOffsets) - 1; t++) {
-        
-        U_ASSERT(uprv_strcmp(gTypes[kCurrencyOffset], "currency") == 0);
         
         if (t == kCurrencyOffset) {
             continue;
@@ -2310,7 +2287,7 @@ void MeasureUnit::initTime(const char *timeId) {
     fTypeId = result;
     result = binarySearch(gSubTypes, gOffsets[fTypeId], gOffsets[fTypeId + 1], timeId);
     U_ASSERT(result != -1);
-    fSubTypeId = result - gOffsets[fTypeId]; 
+    fSubTypeId = result - gOffsets[fTypeId];
 }
 
 void MeasureUnit::initCurrency(StringPiece isoCurrency) {
@@ -2353,8 +2330,8 @@ MeasureUnitImpl MeasureUnitImpl::copy(UErrorCode &status) const {
     MeasureUnitImpl result;
     result.complexity = complexity;
     result.identifier.append(identifier, status);
-    for (int32_t i = 0; i < units.length(); i++) {
-        SingleUnitImpl *item = result.units.emplaceBack(*units[i]);
+    for (int32_t i = 0; i < singleUnits.length(); i++) {
+        SingleUnitImpl *item = result.singleUnits.emplaceBack(*singleUnits[i]);
         if (!item) {
             status = U_MEMORY_ALLOCATION_ERROR;
             return result;
