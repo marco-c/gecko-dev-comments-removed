@@ -5771,12 +5771,7 @@ nsHttpChannel::AsyncOpen(nsIStreamListener* aListener) {
     return NS_OK;
   }
 
-  
-  if (!DelayHttpChannelQueue::AttemptQueueChannel(this)) {
-    
-    
-    AsyncOpenFinal(TimeStamp::Now());
-  }
+  AsyncOpenFinal(TimeStamp::Now());
 
   return NS_OK;
 }
