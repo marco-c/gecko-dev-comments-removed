@@ -222,7 +222,7 @@ add_task(async function test() {
   
   await pressure(pinnedSoundTab);
   ok(!pinnedSoundTab.linkedPanel, "unloaded a pinned tab playing sound");
-  await compareTabOrder([]); 
+  await compareTabOrder([tab0]);
 
   const histogram = TelemetryTestUtils.getAndClearHistogram(
     "TAB_UNLOAD_TO_RELOAD"

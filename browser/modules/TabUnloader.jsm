@@ -237,7 +237,7 @@ var TabUnloader = {
 
     
     if (!tabs.length || !this.isDiscardable(tabs[0])) {
-      return [];
+      return tabs;
     }
 
     
@@ -284,6 +284,8 @@ var TabUnloader = {
 
     for (let tabInfo of sortedTabs) {
       if (!this.isDiscardable(tabInfo)) {
+        
+        
         return false;
       }
 

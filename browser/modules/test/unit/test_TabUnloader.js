@@ -69,7 +69,7 @@ let unloadTests = [
   {
     tabs: ["1 selected", "2 selected", "3 selected"],
     process: ["1", "2", "3"],
-    result: "", 
+    result: "0,1,2",
   },
   {
     tabs: ["1 selected", "2", "3"],
