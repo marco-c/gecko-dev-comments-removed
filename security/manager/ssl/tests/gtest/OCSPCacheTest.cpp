@@ -9,6 +9,7 @@
 #include "gtest/gtest.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/Casting.h"
+#include "mozilla/Preferences.h"
 #include "mozilla/Sprintf.h"
 #include "nss.h"
 #include "mozpkix/pkixtypes.h"
@@ -304,6 +305,14 @@ TEST_F(psm_OCSPCacheTest, NetworkFailure) {
 TEST_F(psm_OCSPCacheTest, TestOriginAttributes) {
   CertID certID(fakeIssuer1, fakeKey000, fakeSerial0000);
 
+  
+  
+  
+
+  
+  mozilla::Preferences::SetBool("privacy.partition.network_state.ocsp_cache",
+                                true);
+
   SCOPED_TRACE("");
   OriginAttributes attrs;
   attrs.mFirstPartyDomain.AssignLiteral("foo.com");
@@ -318,4 +327,31 @@ TEST_F(psm_OCSPCacheTest, TestOriginAttributes) {
   attrs.mUserContextId = 1;
   attrs.mFirstPartyDomain.AssignLiteral("foo.com");
   ASSERT_TRUE(cache.Get(certID, attrs, resultOut, timeOut));
+
+  
+  attrs.mUserContextId = 0;
+  attrs.mFirstPartyDomain.Truncate();
+
+  
+  attrs.mPartitionKey.AssignLiteral("(https,foo.com)");
+  PutAndGet(cache, certID, Success, now, attrs);
+
+  
+  attrs.mPartitionKey.AssignLiteral("(https,foo.com)");
+  ASSERT_TRUE(cache.Get(certID, attrs, resultOut, timeOut));
+
+  
+  attrs.mPartitionKey.AssignLiteral("(https,bar.com)");
+  ASSERT_FALSE(cache.Get(certID, attrs, resultOut, timeOut));
+
+  
+  attrs.mUserContextId = 1;
+  attrs.mPartitionKey.AssignLiteral("(https,foo.com)");
+  ASSERT_TRUE(cache.Get(certID, attrs, resultOut, timeOut));
+
+  
+  attrs.mUserContextId = 0;
+  attrs.mFirstPartyDomain.AssignLiteral("foo.com");
+  attrs.mPartitionKey.AssignLiteral("(https,foo.com)");
+  ASSERT_FALSE(cache.Get(certID, attrs, resultOut, timeOut));
 }
