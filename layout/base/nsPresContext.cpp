@@ -136,6 +136,52 @@ bool nsPresContext::IsDOMPaintEventPending() {
   return false;
 }
 
+struct WeakRunnableMethod : Runnable {
+  using Method = void (nsPresContext::*)();
+
+  WeakRunnableMethod(const char* aName, nsPresContext* aPc, Method aMethod)
+      : Runnable(aName), mPresContext(aPc), mMethod(aMethod) {}
+
+  NS_IMETHOD Run() override {
+    if (nsPresContext* pc = mPresContext.get()) {
+      (pc->*mMethod)();
+    }
+    return NS_OK;
+  }
+
+ private:
+  WeakPtr<nsPresContext> mPresContext;
+  Method mMethod;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+void nsPresContext::ForceReflowForFontInfoUpdateFromStyle() {
+  if (mPendingFontInfoUpdateReflowFromStyle) {
+    return;
+  }
+
+  mPendingFontInfoUpdateReflowFromStyle = true;
+  nsCOMPtr<nsIRunnable> ev = new WeakRunnableMethod(
+      "nsPresContext::DoForceReflowForFontInfoUpdateFromStyle", this,
+      &nsPresContext::DoForceReflowForFontInfoUpdateFromStyle);
+  RefreshDriver()->AddEarlyRunner(ev);
+}
+
+void nsPresContext::DoForceReflowForFontInfoUpdateFromStyle() {
+  mPendingFontInfoUpdateReflowFromStyle = false;
+  ForceReflowForFontInfoUpdate(false);
+}
+
 void nsPresContext::ForceReflowForFontInfoUpdate(bool aNeedsReframe) {
   
   
@@ -223,6 +269,7 @@ nsPresContext::nsPresContext(dom::Document* aDocument, nsPresContextType aType)
       mPendingThemeChanged(false),
       mPendingThemeChangeKind(0),
       mPendingUIResolutionChanged(false),
+      mPendingFontInfoUpdateReflowFromStyle(false),
       mIsGlyph(false),
       mUsesExChUnits(false),
       mCounterStylesDirty(true),
@@ -653,24 +700,6 @@ void nsPresContext::PreferenceChanged(const char* aPrefName) {
 
   InvalidatePaintedLayers();
 }
-
-struct WeakRunnableMethod : Runnable {
-  using Method = void (nsPresContext::*)();
-
-  WeakRunnableMethod(const char* aName, nsPresContext* aPc, Method aMethod)
-      : Runnable(aName), mPresContext(aPc), mMethod(aMethod) {}
-
-  NS_IMETHOD Run() override {
-    if (nsPresContext* pc = mPresContext.get()) {
-      (pc->*mMethod)();
-    }
-    return NS_OK;
-  }
-
- private:
-  WeakPtr<nsPresContext> mPresContext;
-  Method mMethod;
-};
 
 nsresult nsPresContext::Init(nsDeviceContext* aDeviceContext) {
   NS_ASSERTION(!mInitialized, "attempt to reinit pres context");

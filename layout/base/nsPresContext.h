@@ -1103,10 +1103,12 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
   void UpdateCharSet(NotNull<const Encoding*> aCharSet);
 
+  void DoForceReflowForFontInfoUpdateFromStyle();
  public:
   
   
   void ForceReflowForFontInfoUpdate(bool aNeedsReframe);
+  void ForceReflowForFontInfoUpdateFromStyle();
 
   
 
@@ -1311,6 +1313,7 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   
   unsigned mPendingThemeChangeKind : kThemeChangeKindBits;
   unsigned mPendingUIResolutionChanged : 1;
+  unsigned mPendingFontInfoUpdateReflowFromStyle : 1;
 
   
   unsigned mIsGlyph : 1;
