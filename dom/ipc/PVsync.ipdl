@@ -24,7 +24,7 @@ async protocol PVsync
 
 child:
   
-  prio(high) async Notify(VsyncEvent aVsync, float aVsyncRate) compress;
+  [Compress, Priority=vsync] async Notify(VsyncEvent aVsync, float aVsyncRate);
 
 parent:
   
