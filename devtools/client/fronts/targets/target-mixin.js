@@ -479,12 +479,6 @@ function TargetMixin(parentClass) {
       
       
       await consoleFront.startListeners([]);
-
-      this._onInspectObject = packet => this.emit("inspect-object", packet);
-      this.removeOnInspectObjectListener = consoleFront.on(
-        "inspectObject",
-        this._onInspectObject
-      );
     }
 
     
@@ -648,12 +642,6 @@ function TargetMixin(parentClass) {
         }
       }
       this.fronts.clear();
-
-      
-      if (this.removeOnInspectObjectListener) {
-        this.removeOnInspectObjectListener();
-        this.removeOnInspectObjectListener = null;
-      }
 
       this.threadFront = null;
       this._offResourceEvent = null;
