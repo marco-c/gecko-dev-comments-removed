@@ -1045,9 +1045,6 @@ pref("browser.sessionstore.cleanup.forget_closed_after", 1209600000);
 pref("browser.sessionstore.max_write_failures", 5);
 
 
-pref("browser.sessionstore.warnOnQuit", false);
-
-
 pref("browser.quitShortcut.disabled", false);
 
 
@@ -1330,7 +1327,6 @@ pref("services.sync.prefs.sync.browser.safebrowsing.malware.enabled", true);
 pref("services.sync.prefs.sync.browser.safebrowsing.phishing.enabled", true);
 pref("services.sync.prefs.sync.browser.search.update", true);
 pref("services.sync.prefs.sync.browser.search.widget.inNavBar", true);
-pref("services.sync.prefs.sync.browser.sessionstore.warnOnQuit", true);
 pref("services.sync.prefs.sync.browser.startup.homepage", true);
 pref("services.sync.prefs.sync.browser.startup.page", true);
 pref("services.sync.prefs.sync.browser.tabs.loadInBackground", true);

@@ -2841,19 +2841,7 @@ BrowserGlue.prototype = {
       return;
     }
 
-    
-    let sessionWillBeRestored =
-      Services.prefs.getIntPref("browser.startup.page") == 3 ||
-      Services.prefs.getBoolPref("browser.sessionstore.resume_session_once");
-    
-    if (sessionWillBeRestored) {
-      if (
-        !Services.prefs.getBoolPref("browser.sessionstore.warnOnQuit", false)
-      ) {
-        return;
-      }
-      
-    } else if (!Services.prefs.getBoolPref("browser.tabs.warnOnClose")) {
+    if (!Services.prefs.getBoolPref("browser.tabs.warnOnClose")) {
       return;
     }
 
@@ -2881,11 +2869,6 @@ BrowserGlue.prototype = {
       Services.prompt.BUTTON_TITLE_IS_STRING * Services.prompt.BUTTON_POS_0 +
       Services.prompt.BUTTON_TITLE_CANCEL * Services.prompt.BUTTON_POS_1;
     
-    let checkboxLabel = !sessionWillBeRestored
-      ? gTabbrowserBundle.GetStringFromName("tabs.closeTabsConfirmCheckbox")
-      : null;
-
-    
     let buttonPressed = Services.prompt.confirmEx(
       win,
       title,
@@ -2894,14 +2877,15 @@ BrowserGlue.prototype = {
       gTabbrowserBundle.GetStringFromName(buttonLabel),
       null,
       null,
-      checkboxLabel,
+      gTabbrowserBundle.GetStringFromName("tabs.closeTabsConfirmCheckbox"),
       warnOnClose
     );
     Services.telemetry.setEventRecordingEnabled("close_tab_warning", true);
     let warnCheckbox = warnOnClose.value ? "checked" : "unchecked";
-    if (!checkboxLabel) {
-      warnCheckbox = "not-present";
-    }
+
+    let sessionWillBeRestored =
+      Services.prefs.getIntPref("browser.startup.page") == 3 ||
+      Services.prefs.getBoolPref("browser.sessionstore.resume_session_once");
     Services.telemetry.recordEvent(
       "close_tab_warning",
       "shown",
@@ -2921,7 +2905,7 @@ BrowserGlue.prototype = {
 
     
     
-    if (!sessionWillBeRestored && buttonPressed == 0 && !warnOnClose.value) {
+    if (!buttonPressed == 0 && !warnOnClose.value) {
       Services.prefs.setBoolPref("browser.tabs.warnOnClose", false);
     }
     aCancelQuit.data = buttonPressed != 0;
