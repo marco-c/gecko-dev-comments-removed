@@ -777,11 +777,7 @@ class UnionExpr : public Expr {
 
 
 
-
-  nsresult addExpr(Expr* aExpr) {
-    mExpressions.AppendElement(aExpr);
-    return NS_OK;
-  }
+  void addExpr(Expr* aExpr) { mExpressions.AppendElement(aExpr); }
 
   
 
