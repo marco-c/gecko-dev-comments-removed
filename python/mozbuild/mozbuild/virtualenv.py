@@ -155,13 +155,14 @@ class VirtualenvManager(VirtualenvHelper):
                 built with then this method will return False.
         """
 
-        deps = [self.manifest_path, __file__]
-
         
         if not os.path.exists(self.virtualenv_root) or not os.path.exists(
             self.activate_path
         ):
             return False
+
+        env_requirements = self._requirements()
+        deps = [__file__] + env_requirements.requirements_paths
 
         
         
@@ -179,9 +180,7 @@ class VirtualenvManager(VirtualenvHelper):
         if (python != self.python_path) and (hexversion != orig_version):
             return False
 
-        packages = self.packages()
-        pypi_packages = [package for action, package in packages if action == "pypi"]
-        if pypi_packages:
+        if env_requirements.pypi_requirements:
             pip_json = self._run_pip(
                 ["list", "--format", "json"], capture_output=True
             ).stdout
@@ -189,22 +188,12 @@ class VirtualenvManager(VirtualenvHelper):
             installed_packages = {
                 package["name"]: package["version"] for package in installed_packages
             }
-            for pypi_package in pypi_packages:
-                name, version = pypi_package.split("==")
-                if installed_packages.get(name, None) != version:
+            for requirement in env_requirements.pypi_requirements:
+                if (
+                    installed_packages.get(requirement.package_name, None)
+                    != requirement.version
+                ):
                     return False
-
-        
-        submanifests = [
-            package for action, package in packages if action == "packages.txt"
-        ]
-        for submanifest in submanifests:
-            submanifest = os.path.join(self.topsrcdir, submanifest)
-            submanager = VirtualenvManager(
-                self.topsrcdir, self.virtualenv_root, self.log_handle, submanifest
-            )
-            if not submanager.up_to_date(python):
-                return False
 
         return True
 
@@ -270,30 +259,27 @@ class VirtualenvManager(VirtualenvHelper):
 
         return self.virtualenv_root
 
-    def packages(self):
-        with open(self.manifest_path, "r") as fh:
-            return [line.rstrip().split(":", maxsplit=1) for line in fh]
+    def _requirements(self):
+        try:
+            
+            
+            from mozbuild.requirements import MachEnvRequirements
+        except ImportError:
+            
+            
+            
+            from requirements import MachEnvRequirements
+
+        thunderbird_dir = os.path.join(self.topsrcdir, "comm")
+        is_thunderbird = os.path.exists(thunderbird_dir) and bool(
+            os.listdir(thunderbird_dir)
+        )
+        return MachEnvRequirements.from_requirements_definition(
+            self.topsrcdir, is_thunderbird, self.manifest_path
+        )
 
     def populate(self):
         """Populate the virtualenv.
-
-        The manifest file consists of colon-delimited fields. The first field
-        specifies the action. The remaining fields are arguments to that
-        action. The following actions are supported:
-
-        pth -- Adds the path given as argument to "mach.pth" under
-            the virtualenv site packages directory.
-
-        pypi -- Fetch the package, plus dependencies, from PyPI.
-
-        thunderbird -- This denotes the action as to only occur for Thunderbird
-            checkouts. The initial "thunderbird" field is stripped, then the
-            remaining line is processed like normal. e.g.
-            "thunderbird:pth:python/foo"
-
-        packages.txt -- Denotes that the specified path is a child manifest. It
-            will be read and processed as if its contents were concatenated
-            into the manifest being read.
 
         Note that the Python interpreter running this function should be the
         one from the virtualenv. If it is the system Python or if the
@@ -301,49 +287,6 @@ class VirtualenvManager(VirtualenvHelper):
         into the wrong place. This is how virtualenv's work.
         """
         import distutils.sysconfig
-
-        thunderbird_dir = os.path.join(self.topsrcdir, "comm")
-        is_thunderbird = os.path.exists(thunderbird_dir) and bool(
-            os.listdir(thunderbird_dir)
-        )
-        python_lib = distutils.sysconfig.get_python_lib()
-
-        def handle_package(action, package):
-            if action == "packages.txt":
-                src = os.path.join(self.topsrcdir, package)
-                assert os.path.isfile(src), "'%s' does not exist" % src
-                submanager = VirtualenvManager(
-                    self.topsrcdir,
-                    self.virtualenv_root,
-                    self.log_handle,
-                    src,
-                    populate_local_paths=self.populate_local_paths,
-                )
-                submanager.populate()
-            elif action == "pth":
-                if not self.populate_local_paths:
-                    return
-
-                path = os.path.join(self.topsrcdir, package)
-
-                with open(os.path.join(python_lib, "mach.pth"), "a") as f:
-                    
-                    
-                    
-                    
-                    f.write("%s\n" % os.path.relpath(path, python_lib))
-            elif action == "thunderbird":
-                if is_thunderbird:
-                    handle_package(*package.split(":", maxsplit=1))
-            elif action == "pypi":
-                if len(package.split("==")) != 2:
-                    raise Exception(
-                        "Expected pypi package version to be pinned in the "
-                        'format "package==version", found "{}"'.format(package)
-                    )
-                self.install_pip_package(package)
-            else:
-                raise Exception("Unknown action: %s" % action)
 
         
         
@@ -382,8 +325,20 @@ class VirtualenvManager(VirtualenvHelper):
                 old_env_variables[k] = os.environ[k]
                 del os.environ[k]
 
-            for current_action, current_package in self.packages():
-                handle_package(current_action, current_package)
+            env_requirements = self._requirements()
+            if self.populate_local_paths:
+                python_lib = distutils.sysconfig.get_python_lib()
+                with open(os.path.join(python_lib, "mach.pth"), "a") as f:
+                    for pth_requirement in env_requirements.pth_requirements:
+                        path = os.path.join(self.topsrcdir, pth_requirement.path)
+                        
+                        
+                        
+                        
+                        f.write("{}\n".format(os.path.relpath(path, python_lib)))
+
+            for pypi_requirement in env_requirements.pypi_requirements:
+                self.install_pip_package(pypi_requirement.full_specifier)
 
         finally:
             os.environ.pop("MACOSX_DEPLOYMENT_TARGET", None)
