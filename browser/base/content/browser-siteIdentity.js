@@ -823,6 +823,7 @@ var gIdentityHandler = {
       
       this._identityBox.className = "certErrorPage notSecureText";
       icon_label = gNavigatorBundle.getString("identity.notSecure.label");
+      tooltip = gNavigatorBundle.getString("identity.notSecure.tooltip");
     } else if (this._isAboutHttpsOnlyErrorPage) {
       
       this._identityBox.className = "httpsOnlyErrorPage";
