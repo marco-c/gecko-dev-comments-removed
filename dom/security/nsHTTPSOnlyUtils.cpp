@@ -24,11 +24,6 @@
 #include "prnetdb.h"
 
 
-
-
-#define FIRE_HTTP_REQUEST_BACKGROUND_TIMER_MS 3000
-
-
 bool nsHTTPSOnlyUtils::IsHttpsOnlyModeEnabled(bool aFromPrivateWindow) {
   
   if (mozilla::StaticPrefs::dom_security_https_only_mode()) {
@@ -867,9 +862,14 @@ NS_IMETHODIMP
 TestHTTPAnswerRunnable::Run() {
   
   
+  
+  
+  
+  uint32_t background_timer_ms = mozilla::StaticPrefs::
+      dom_security_https_only_fire_http_request_background_timer_ms();
+
   return NS_NewTimerWithCallback(getter_AddRefs(mTimer), this,
-                                 FIRE_HTTP_REQUEST_BACKGROUND_TIMER_MS,
-                                 nsITimer::TYPE_ONE_SHOT);
+                                 background_timer_ms, nsITimer::TYPE_ONE_SHOT);
 }
 
 NS_IMETHODIMP
