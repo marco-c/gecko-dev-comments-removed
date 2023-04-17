@@ -113,7 +113,7 @@ function ArrayEvery(callbackfn) {
     return true;
 }
 
-_SetIsInlinableLargeFunction(ArrayEvery);
+SetIsInlinableLargeFunction(ArrayEvery);
 
 
 function ArraySome(callbackfn) {
@@ -147,7 +147,7 @@ function ArraySome(callbackfn) {
     return false;
 }
 
-_SetIsInlinableLargeFunction(ArraySome);
+SetIsInlinableLargeFunction(ArraySome);
 
 
 
@@ -225,7 +225,7 @@ function ArrayForEach(callbackfn) {
     return void 0;
 }
 
-_SetIsInlinableLargeFunction(ArrayForEach);
+SetIsInlinableLargeFunction(ArrayForEach);
 
 
 function ArrayMap(callbackfn) {
@@ -254,7 +254,7 @@ function ArrayMap(callbackfn) {
         if (k in O) {
             
             var mappedValue = callContentFunction(callbackfn, T, O[k], k, O);
-            _DefineDataProperty(A, k, mappedValue);
+            DefineDataProperty(A, k, mappedValue);
         }
     }
 
@@ -262,7 +262,7 @@ function ArrayMap(callbackfn) {
     return A;
 }
 
-_SetIsInlinableLargeFunction(ArrayMap);
+SetIsInlinableLargeFunction(ArrayMap);
 
 
 function ArrayFilter(callbackfn) {
@@ -295,7 +295,7 @@ function ArrayFilter(callbackfn) {
             var selected = callContentFunction(callbackfn, T, kValue, k, O);
             
             if (selected)
-                _DefineDataProperty(A, to++, kValue);
+                DefineDataProperty(A, to++, kValue);
         }
     }
 
@@ -707,7 +707,7 @@ function ArrayIteratorNext() {
     return result;
 }
 
-_SetIsInlinableLargeFunction(ArrayIteratorNext);
+SetIsInlinableLargeFunction(ArrayIteratorNext);
 
 
 
@@ -715,7 +715,7 @@ _SetIsInlinableLargeFunction(ArrayIteratorNext);
 function $ArrayValues() {
     return CreateArrayIterator(this, ITEM_KIND_VALUE);
 }
-_SetCanonicalName($ArrayValues, "values");
+SetCanonicalName($ArrayValues, "values");
 
 function ArrayEntries() {
     return CreateArrayIterator(this, ITEM_KIND_KEY_AND_VALUE);
@@ -772,7 +772,7 @@ function ArrayFrom(items, mapfn = undefined, thisArg = undefined) {
             var mappedValue = mapping ? callContentFunction(mapfn, T, nextValue, k) : nextValue;
 
             
-            _DefineDataProperty(A, k++, mappedValue);
+            DefineDataProperty(A, k++, mappedValue);
         }
 
         
@@ -801,7 +801,7 @@ function ArrayFrom(items, mapfn = undefined, thisArg = undefined) {
         var mappedValue = mapping ? callContentFunction(mapfn, T, kValue, k) : kValue;
 
         
-        _DefineDataProperty(A, k, mappedValue);
+        DefineDataProperty(A, k, mappedValue);
     }
 
     
@@ -900,7 +900,7 @@ function $ArraySpecies() {
     
     return this;
 }
-_SetCanonicalName($ArraySpecies, "get [Symbol.species]");
+SetCanonicalName($ArraySpecies, "get [Symbol.species]");
 
 
 function ArraySpeciesCreate(originalArray, length) {
@@ -1003,7 +1003,7 @@ function ArrayConcat(arg1) {
                 for (k = 0; k < len; k++) {
                     
                     
-                    _DefineDataProperty(A, n, E[k]);
+                    DefineDataProperty(A, n, E[k]);
 
                     
                     n++;
@@ -1013,7 +1013,7 @@ function ArrayConcat(arg1) {
                 for (k = 0; k < len; k++) {
                     
                     if (k in E)
-                        _DefineDataProperty(A, n, E[k]);
+                        DefineDataProperty(A, n, E[k]);
 
                     
                     n++;
@@ -1025,7 +1025,7 @@ function ArrayConcat(arg1) {
                 ThrowTypeError(JSMSG_TOO_LONG_ARRAY);
 
             
-            _DefineDataProperty(A, n, E);
+            DefineDataProperty(A, n, E);
 
             
             n++;
@@ -1140,7 +1140,7 @@ function FlattenIntoArray(target, source, sourceLen, start, depth, mapperFunctio
                     ThrowTypeError(JSMSG_TOO_LONG_ARRAY);
 
                 
-                _DefineDataProperty(target, targetIndex, element);
+                DefineDataProperty(target, targetIndex, element);
 
                 
                 targetIndex++;
@@ -1181,4 +1181,4 @@ function ArrayAt(index) {
     return O[k];
 }
 
-_SetIsInlinableLargeFunction(ArrayAt);
+SetIsInlinableLargeFunction(ArrayAt);

@@ -22,7 +22,7 @@ function ObjectGetOwnPropertyDescriptors(O) {
 
         
         if (typeof desc !== "undefined")
-            _DefineDataProperty(descriptors, key, desc);
+            DefineDataProperty(descriptors, key, desc);
     }
 
     
@@ -66,14 +66,14 @@ function Object_hasOwnProperty(V) {
 function $ObjectProtoGetter() {
     return std_Reflect_getPrototypeOf(ToObject(this));
 }
-_SetCanonicalName($ObjectProtoGetter, "get __proto__");
+SetCanonicalName($ObjectProtoGetter, "get __proto__");
 
 
 
 function $ObjectProtoSetter(proto) {
     return callFunction(std_Object_setProto, this, proto);
 }
-_SetCanonicalName($ObjectProtoSetter, "set __proto__");
+SetCanonicalName($ObjectProtoSetter, "set __proto__");
 
 
 function ObjectDefineSetter(name, setter) {
@@ -88,8 +88,8 @@ function ObjectDefineSetter(name, setter) {
     var key = TO_PROPERTY_KEY(name);
 
     
-    _DefineProperty(object, key, ACCESSOR_DESCRIPTOR_KIND | ATTR_ENUMERABLE | ATTR_CONFIGURABLE,
-                    null, setter, true);
+    DefineProperty(object, key, ACCESSOR_DESCRIPTOR_KIND | ATTR_ENUMERABLE | ATTR_CONFIGURABLE,
+                   null, setter, true);
 
     
 }
@@ -107,8 +107,8 @@ function ObjectDefineGetter(name, getter) {
     var key = TO_PROPERTY_KEY(name);
 
     
-    _DefineProperty(object, key, ACCESSOR_DESCRIPTOR_KIND | ATTR_ENUMERABLE | ATTR_CONFIGURABLE,
-                    getter, null, true);
+    DefineProperty(object, key, ACCESSOR_DESCRIPTOR_KIND | ATTR_ENUMERABLE | ATTR_CONFIGURABLE,
+                   getter, null, true);
 
     
 }
@@ -268,7 +268,7 @@ function ObjectOrReflectDefineProperty(obj, propertyKey, attributes, strict) {
             ThrowTypeError(JSMSG_INVALID_DESCRIPTOR);
 
         
-        return _DefineProperty(obj, propertyKey, attrs, getter, setter, strict);
+        return DefineProperty(obj, propertyKey, attrs, getter, setter, strict);
     }
 
     
@@ -278,17 +278,17 @@ function ObjectOrReflectDefineProperty(obj, propertyKey, attributes, strict) {
             if ((attrs & (ATTR_ENUMERABLE | ATTR_CONFIGURABLE | ATTR_WRITABLE)) ===
                 (ATTR_ENUMERABLE | ATTR_CONFIGURABLE | ATTR_WRITABLE))
             {
-                _DefineDataProperty(obj, propertyKey, value);
+                DefineDataProperty(obj, propertyKey, value);
                 return true;
             }
         }
 
         
-        return _DefineProperty(obj, propertyKey, attrs, value, null, strict);
+        return DefineProperty(obj, propertyKey, attrs, value, null, strict);
     }
 
     
-    return _DefineProperty(obj, propertyKey, attrs, undefined, undefined, strict);
+    return DefineProperty(obj, propertyKey, attrs, undefined, undefined, strict);
 }
 
 
@@ -317,7 +317,7 @@ function ObjectFromEntries(iter) {
     for (const pair of allowContentIter(iter)) {
         if (!IsObject(pair))
             ThrowTypeError(JSMSG_INVALID_MAP_ITERABLE, "Object.fromEntries");
-        _DefineDataProperty(obj, pair[0], pair[1]);
+        DefineDataProperty(obj, pair[0], pair[1]);
     }
 
     return obj;

@@ -39,10 +39,10 @@ function SetForEach(callbackfn, thisArg = undefined) {
     
     var setIterationResult = setIteratorTemp.setIterationResult;
     if (!setIterationResult)
-        setIterationResult = setIteratorTemp.setIterationResult = _CreateSetIterationResult();
+        setIterationResult = setIteratorTemp.setIterationResult = CreateSetIterationResult();
 
     while (true) {
-        var done = _GetNextSetEntryForIterator(values, setIterationResult);
+        var done = GetNextSetEntryForIterator(values, setIterationResult);
         if (done)
             break;
 
@@ -60,7 +60,7 @@ function $SetSpecies() {
     
     return this;
 }
-_SetCanonicalName($SetSpecies, "get [Symbol.species]");
+SetCanonicalName($SetSpecies, "get [Symbol.species]");
 
 
 var setIteratorTemp = { setIterationResult: null };
@@ -78,12 +78,12 @@ function SetIteratorNext() {
 
     var setIterationResult = setIteratorTemp.setIterationResult;
     if (!setIterationResult)
-        setIterationResult = setIteratorTemp.setIterationResult = _CreateSetIterationResult();
+        setIterationResult = setIteratorTemp.setIterationResult = CreateSetIterationResult();
 
     var retVal = {value: undefined, done: true};
 
     
-    var done = _GetNextSetEntryForIterator(O, setIterationResult);
+    var done = GetNextSetEntryForIterator(O, setIterationResult);
     if (!done) {
         
 

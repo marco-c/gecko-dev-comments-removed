@@ -85,7 +85,7 @@ function TypedArraySpeciesConstructor(obj) {
 
     
     if (ctor === undefined)
-        return _ConstructorForTypedArray(obj);
+        return ConstructorForTypedArray(obj);
 
     
     if (!IsObject(ctor))
@@ -96,7 +96,7 @@ function TypedArraySpeciesConstructor(obj) {
 
     
     if (s === undefined || s === null)
-        return _ConstructorForTypedArray(obj);
+        return ConstructorForTypedArray(obj);
 
     
     if (IsConstructor(s))
@@ -1344,7 +1344,7 @@ function $TypedArrayValues() {
     
     return CreateArrayIterator(O, ITEM_KIND_VALUE);
 }
-_SetCanonicalName($TypedArrayValues, "values");
+SetCanonicalName($TypedArrayValues, "values");
 
 
 
@@ -1572,7 +1572,7 @@ function $TypedArraySpecies() {
     
     return this;
 }
-_SetCanonicalName($TypedArraySpecies, "get [Symbol.species]");
+SetCanonicalName($TypedArraySpecies, "get [Symbol.species]");
 
 
 
@@ -1606,7 +1606,7 @@ function IterableToList(items, method) {
         
         if (next.done)
             break;
-        _DefineDataProperty(values, i++, next.value);
+        DefineDataProperty(values, i++, next.value);
     }
 
     
@@ -1706,14 +1706,14 @@ function $ArrayBufferSpecies() {
     
     return this;
 }
-_SetCanonicalName($ArrayBufferSpecies, "get [Symbol.species]");
+SetCanonicalName($ArrayBufferSpecies, "get [Symbol.species]");
 
 
 function $SharedArrayBufferSpecies() {
     
     return this;
 }
-_SetCanonicalName($SharedArrayBufferSpecies, "get [Symbol.species]");
+SetCanonicalName($SharedArrayBufferSpecies, "get [Symbol.species]");
 
 
 

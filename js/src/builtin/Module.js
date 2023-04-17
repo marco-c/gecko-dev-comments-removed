@@ -29,7 +29,7 @@ function ModuleGetExportedNames(exportStarSet = [])
         return [];
 
     
-    _DefineDataProperty(exportStarSet, exportStarSet.length, module);
+    DefineDataProperty(exportStarSet, exportStarSet.length, module);
 
     
     let exportedNames = [];
@@ -39,14 +39,14 @@ function ModuleGetExportedNames(exportStarSet = [])
     let localExportEntries = module.localExportEntries;
     for (let i = 0; i < localExportEntries.length; i++) {
         let e = localExportEntries[i];
-        _DefineDataProperty(exportedNames, namesCount++, e.exportName);
+        DefineDataProperty(exportedNames, namesCount++, e.exportName);
     }
 
     
     let indirectExportEntries = module.indirectExportEntries;
     for (let i = 0; i < indirectExportEntries.length; i++) {
         let e = indirectExportEntries[i];
-        _DefineDataProperty(exportedNames, namesCount++, e.exportName);
+        DefineDataProperty(exportedNames, namesCount++, e.exportName);
     }
 
     
@@ -60,7 +60,7 @@ function ModuleGetExportedNames(exportStarSet = [])
         for (let j = 0; j < starNames.length; j++) {
             let n = starNames[j];
             if (n !== "default" && !callFunction(ArrayIncludes, exportedNames, n))
-                _DefineDataProperty(exportedNames, namesCount++, n);
+                DefineDataProperty(exportedNames, namesCount++, n);
         }
     }
 
@@ -121,7 +121,7 @@ function ModuleResolveExport(exportName, resolveSet = [])
     }
 
     
-    _DefineDataProperty(resolveSet, resolveSet.length, {module, exportName});
+    DefineDataProperty(resolveSet, resolveSet.length, {module, exportName});
 
     
     let localExportEntries = module.localExportEntries;
@@ -211,7 +211,7 @@ function GetModuleNamespace(module)
             let name = exportedNames[i];
             let resolution = callFunction(module.resolveExport, module, name);
             if (IsResolvedBinding(resolution))
-                _DefineDataProperty(unambiguousNames, unambiguousNames.length, name);
+                DefineDataProperty(unambiguousNames, unambiguousNames.length, name);
         }
         namespace = ModuleNamespaceCreate(module, unambiguousNames);
     }
@@ -384,7 +384,7 @@ function InnerModuleLinking(module, stack, index)
     index++;
 
     
-    _DefineDataProperty(stack, stack.length, module);
+    DefineDataProperty(stack, stack.length, module);
 
     
     let requestedModules = module.requestedModules;
@@ -685,7 +685,7 @@ function InnerModuleEvaluation(module, stack, index)
     index++;
 
     
-    _DefineDataProperty(stack, stack.length, module);
+    DefineDataProperty(stack, stack.length, module);
 
     
     let requestedModules = module.requestedModules;

@@ -63,8 +63,8 @@ function Intl_getCalendarInfo(locales) {
 
     
     const result = intl_GetCalendarInfo(r.locale);
-    _DefineDataProperty(result, "calendar", r.ca);
-    _DefineDataProperty(result, "locale", r.locale);
+    DefineDataProperty(result, "calendar", r.ca);
+    DefineDataProperty(result, "locale", r.locale);
 
     
     return result;
@@ -162,7 +162,7 @@ function Intl_getDisplayNames(locales, options) {
     for (let i = 0; i < len; i++) {
         
         
-        _DefineDataProperty(processedKeys, i, ToString(keys[i]));
+        DefineDataProperty(processedKeys, i, ToString(keys[i]));
     }
 
     
@@ -183,7 +183,7 @@ function Intl_getDisplayNames(locales, options) {
         
         assert(name.length > 0, "empty string value");
         
-        _DefineDataProperty(values, key, name);
+        DefineDataProperty(values, key, name);
     }
 
     

@@ -365,7 +365,7 @@ function $Intl_Collator_compare_get() {
     
     return internals.boundCompare;
 }
-_SetCanonicalName($Intl_Collator_compare_get, "get compare");
+SetCanonicalName($Intl_Collator_compare_get, "get compare");
 
 
 

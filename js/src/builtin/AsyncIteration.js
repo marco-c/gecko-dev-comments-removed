@@ -443,7 +443,7 @@ async function AsyncIteratorToArray() {
   
   for await (const value of allowContentIter(iterated)) {
     
-    _DefineDataProperty(items, index++, value);
+    DefineDataProperty(items, index++, value);
   }
   
   return items;

@@ -180,7 +180,7 @@ function StringListFromIterable(iterable, methodName) {
         }
 
         
-        _DefineDataProperty(list, list.length, element);
+        DefineDataProperty(list, list.length, element);
     }
 
     

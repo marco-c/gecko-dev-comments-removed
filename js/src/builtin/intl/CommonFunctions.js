@@ -209,7 +209,7 @@ function CanonicalizeLocaleList(locales) {
 
             
             if (callFunction(ArrayIndexOf, seen, tag) === -1)
-                _DefineDataProperty(seen, seen.length, tag);
+                DefineDataProperty(seen, seen.length, tag);
         }
 
         
@@ -558,7 +558,7 @@ function LookupSupportedLocales(availableLocales, requestedLocales) {
 
         
         if (availableLocale !== undefined)
-            _DefineDataProperty(subset, subset.length, locale);
+            DefineDataProperty(subset, subset.length, locale);
     }
 
     

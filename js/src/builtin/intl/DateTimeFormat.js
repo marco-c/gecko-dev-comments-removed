@@ -446,7 +446,7 @@ function InitializeDateTimeFormat(dateTimeFormat, thisValue, locales, options, m
     if (dateTimeFormat !== thisValue &&
         callFunction(std_Object_isPrototypeOf, GetBuiltinPrototype("DateTimeFormat"), thisValue))
     {
-        _DefineDataProperty(thisValue, intlFallbackSymbol(), dateTimeFormat,
+        DefineDataProperty(thisValue, intlFallbackSymbol(), dateTimeFormat,
                             ATTR_NONENUMERABLE | ATTR_NONCONFIGURABLE | ATTR_NONWRITABLE);
 
         return thisValue;
@@ -755,17 +755,17 @@ function ToDateTimeOptions(options, required, defaults) {
         
         
         
-        _DefineDataProperty(options, "year", "numeric");
-        _DefineDataProperty(options, "month", "numeric");
-        _DefineDataProperty(options, "day", "numeric");
+        DefineDataProperty(options, "year", "numeric");
+        DefineDataProperty(options, "month", "numeric");
+        DefineDataProperty(options, "day", "numeric");
     }
 
     
     if (needDefaults && (defaults === "time" || defaults === "all")) {
         
-        _DefineDataProperty(options, "hour", "numeric");
-        _DefineDataProperty(options, "minute", "numeric");
-        _DefineDataProperty(options, "second", "numeric");
+        DefineDataProperty(options, "hour", "numeric");
+        DefineDataProperty(options, "minute", "numeric");
+        DefineDataProperty(options, "second", "numeric");
     }
 
     
@@ -871,7 +871,7 @@ function $Intl_DateTimeFormat_format_get() {
     
     return internals.boundFormat;
 }
-_SetCanonicalName($Intl_DateTimeFormat_format_get, "get format");
+SetCanonicalName($Intl_DateTimeFormat_format_get, "get format");
 
 
 
@@ -1001,7 +1001,7 @@ function Intl_DateTimeFormat_resolvedOptions() {
     };
 
     if (internals.patternOption !== undefined) {
-        _DefineDataProperty(result, "pattern", internals.pattern);
+        DefineDataProperty(result, "pattern", internals.pattern);
     }
 
     var hasDateStyle = internals.dateStyle !== undefined;
@@ -1014,10 +1014,10 @@ function Intl_DateTimeFormat_resolvedOptions() {
             resolveICUPattern(internals.pattern, result,  false);
         }
         if (hasDateStyle) {
-            _DefineDataProperty(result, "dateStyle", internals.dateStyle);
+            DefineDataProperty(result, "dateStyle", internals.dateStyle);
         }
         if (hasTimeStyle) {
-            _DefineDataProperty(result, "timeStyle", internals.timeStyle);
+            DefineDataProperty(result, "timeStyle", internals.timeStyle);
         }
     } else {
         resolveICUPattern(internals.pattern, result,  true);
@@ -1171,44 +1171,44 @@ function resolveICUPattern(pattern, result, includeDateTimeFields) {
     }
 
     if (hourCycle) {
-        _DefineDataProperty(result, "hourCycle", hourCycle);
-        _DefineDataProperty(result, "hour12", hourCycle === "h11" || hourCycle === "h12");
+        DefineDataProperty(result, "hourCycle", hourCycle);
+        DefineDataProperty(result, "hour12", hourCycle === "h11" || hourCycle === "h12");
     }
     if (!includeDateTimeFields) {
         return;
     }
     if (weekday) {
-        _DefineDataProperty(result, "weekday", weekday);
+        DefineDataProperty(result, "weekday", weekday);
     }
     if (era) {
-        _DefineDataProperty(result, "era", era);
+        DefineDataProperty(result, "era", era);
     }
     if (year) {
-        _DefineDataProperty(result, "year", year);
+        DefineDataProperty(result, "year", year);
     }
     if (month) {
-        _DefineDataProperty(result, "month", month);
+        DefineDataProperty(result, "month", month);
     }
     if (day) {
-        _DefineDataProperty(result, "day", day);
+        DefineDataProperty(result, "day", day);
     }
     if (dayPeriod) {
-        _DefineDataProperty(result, "dayPeriod", dayPeriod);
+        DefineDataProperty(result, "dayPeriod", dayPeriod);
     }
     if (hour) {
-        _DefineDataProperty(result, "hour", hour);
+        DefineDataProperty(result, "hour", hour);
     }
     if (minute) {
-        _DefineDataProperty(result, "minute", minute);
+        DefineDataProperty(result, "minute", minute);
     }
     if (second) {
-        _DefineDataProperty(result, "second", second);
+        DefineDataProperty(result, "second", second);
     }
     if (fractionalSecondDigits) {
-        _DefineDataProperty(result, "fractionalSecondDigits", fractionalSecondDigits);
+        DefineDataProperty(result, "fractionalSecondDigits", fractionalSecondDigits);
     }
     if (timeZoneName) {
-        _DefineDataProperty(result, "timeZoneName", timeZoneName);
+        DefineDataProperty(result, "timeZoneName", timeZoneName);
     }
 }
 

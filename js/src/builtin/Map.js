@@ -46,11 +46,11 @@ function MapForEach(callbackfn, thisArg = undefined) {
     var mapIterationResultPair = iteratorTemp.mapIterationResultPair;
     if (!mapIterationResultPair) {
         mapIterationResultPair = iteratorTemp.mapIterationResultPair =
-            _CreateMapIterationResultPair();
+            CreateMapIterationResultPair();
     }
 
     while (true) {
-        var done = _GetNextMapEntryForIterator(entries, mapIterationResultPair);
+        var done = GetNextMapEntryForIterator(entries, mapIterationResultPair);
         if (done)
             break;
 
@@ -79,13 +79,13 @@ function MapIteratorNext() {
     var mapIterationResultPair = iteratorTemp.mapIterationResultPair;
     if (!mapIterationResultPair) {
         mapIterationResultPair = iteratorTemp.mapIterationResultPair =
-            _CreateMapIterationResultPair();
+            CreateMapIterationResultPair();
     }
 
     var retVal = {value: undefined, done: true};
 
     
-    var done = _GetNextMapEntryForIterator(O, mapIterationResultPair);
+    var done = GetNextMapEntryForIterator(O, mapIterationResultPair);
     if (!done) {
         
 
@@ -122,4 +122,4 @@ function $MapSpecies() {
     
     return this;
 }
-_SetCanonicalName($MapSpecies, "get [Symbol.species]");
+SetCanonicalName($MapSpecies, "get [Symbol.species]");
