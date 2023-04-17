@@ -26,7 +26,7 @@ class TargetConfigurationFront extends FrontClassWithSpec(
   form(json) {
     
     this.initialConfiguration = json.configuration;
-    this._traits = json.traits;
+    this.traits = json.traits;
   }
 }
 

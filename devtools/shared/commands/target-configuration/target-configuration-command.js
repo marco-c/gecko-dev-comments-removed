@@ -82,6 +82,24 @@ class TargetConfigurationCommand {
 
 
 
+  async supports(configurationKey) {
+    if (!this._hasTargetWatcherSupport()) {
+      return false;
+    }
+    const front = await this.getFront();
+    return !!front.traits.supportedOptions[configurationKey];
+  }
+
+  
+
+
+
+
+
+
+
+
+
 
 
 
