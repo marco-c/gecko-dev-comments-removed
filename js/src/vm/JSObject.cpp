@@ -421,10 +421,10 @@ bool js::ToPropertyDescriptor(JSContext* cx, HandleValue descval,
     
     
     if (hasGet) {
-      desc.setGetterObject(getter);
+      desc.setGetter(getter);
     }
     if (hasSet) {
-      desc.setSetterObject(setter);
+      desc.setSetter(setter);
     }
   }
 
@@ -469,11 +469,11 @@ void js::CompletePropertyDescriptor(MutableHandle<PropertyDescriptor> desc) {
   } else {
     
     if (!desc.hasGetter()) {
-      desc.setGetterObject(nullptr);
+      desc.setGetter(nullptr);
     }
     
     if (!desc.hasSetter()) {
-      desc.setSetterObject(nullptr);
+      desc.setSetter(nullptr);
     }
   }
 

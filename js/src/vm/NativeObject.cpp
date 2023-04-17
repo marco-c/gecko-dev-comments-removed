@@ -1694,8 +1694,8 @@ bool js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj,
       desc.setWritable(attrs.writable());
     } else {
       PropertyInfo propInfo = prop.propertyInfo();
-      desc.setGetterObject(obj->getGetter(propInfo));
-      desc.setSetterObject(obj->getSetter(propInfo));
+      desc.setGetter(obj->getGetter(propInfo));
+      desc.setSetter(obj->getSetter(propInfo));
     }
   } else if (desc.isDataDescriptor() != IsDataDescriptor(prop)) {
     
@@ -1761,7 +1761,7 @@ bool js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj,
       }
     } else {
       
-      desc.setSetterObject(obj->getSetter(propInfo));
+      desc.setSetter(obj->getSetter(propInfo));
     }
     if (desc.hasGetter()) {
       
@@ -1771,7 +1771,7 @@ bool js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj,
       }
     } else {
       
-      desc.setGetterObject(obj->getGetter(propInfo));
+      desc.setGetter(obj->getGetter(propInfo));
     }
 
     
