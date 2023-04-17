@@ -266,7 +266,11 @@ nsDocLoader::Stop(void) {
   
   
   mChildrenInOnload.Clear();
-  mOOPChildrenLoading.Clear();
+  nsCOMPtr<nsIDocShell> ds = do_QueryInterface(GetAsSupports(this));
+  Document* doc = ds ? ds->GetExtantDocument() : nullptr;
+  if (doc) {
+    doc->ClearOOPChildrenLoading();
+  }
 
   
   
@@ -306,7 +310,9 @@ bool nsDocLoader::IsBusy() {
   
   
 
-  if (!mChildrenInOnload.IsEmpty() || !mOOPChildrenLoading.IsEmpty() ||
+  nsCOMPtr<nsIDocShell> ds = do_QueryInterface(GetAsSupports(this));
+  Document* doc = ds ? ds->GetExtantDocument() : nullptr;
+  if (!mChildrenInOnload.IsEmpty() || (doc && doc->HasOOPChildrenLoading()) ||
       mIsFlushingLayout) {
     return true;
   }
