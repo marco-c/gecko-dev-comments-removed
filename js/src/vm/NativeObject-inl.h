@@ -481,7 +481,15 @@ MOZ_ALWAYS_INLINE bool NativeObject::updateSlotsForSpan(JSContext* cx,
     if (newSpan == oldSpan + 1) {
       initSlotUnchecked(oldSpan, UndefinedValue());
     } else {
-      initializeSlotRange(oldSpan, newSpan);
+      
+      
+      
+      auto initRange = [](HeapSlot* start, HeapSlot* end) {
+        for (HeapSlot* slot = start; slot < end; slot++) {
+          slot->initAsUndefined();
+        }
+      };
+      forEachSlotRangeUnchecked(oldSpan, newSpan, initRange);
     }
   } else {
     
