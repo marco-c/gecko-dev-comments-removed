@@ -163,7 +163,7 @@ enum class NumberPartType {
 
 using NumberPart = std::pair<NumberPartType, size_t>;
 
-using NumberPartVector = mozilla::Vector<NumberPart, 8 * sizeof(NumberPart)>;
+using NumberPartVector = mozilla::Vector<NumberPart, 8>;
 
 
 
