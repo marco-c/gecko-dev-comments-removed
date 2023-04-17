@@ -660,6 +660,7 @@ void PointerEventHandler::DispatchPointerFromMouseOrTouch(
 
       InitPointerEventFromTouch(event, *touchEvent, *touch, i == 0);
       event.convertToPointer = touch->convertToPointer = false;
+      event.mCoalescedWidgetEvents = touch->mCoalescedWidgetEvents;
       if (aEvent->mMessage == eTouchStart) {
         
         
