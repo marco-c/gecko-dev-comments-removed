@@ -109,6 +109,8 @@ private:
   RLBOX_SHARED_LOCK(func_ptr_cache_lock);
   std::map<std::string, void*> func_ptr_map;
 
+  app_pointer_map<typename T_Sbx::T_PointerType> app_ptr_map;
+
   
   
   
@@ -911,6 +913,48 @@ public:
   inline tainted<T*, T_Sbx> INTERNAL_get_sandbox_function_ptr(void* func_ptr)
   {
     return tainted<T*, T_Sbx>::internal_factory(reinterpret_cast<T*>(func_ptr));
+  }
+
+  
+
+
+
+
+
+
+
+  template<typename T>
+  app_pointer<T*, T_Sbx> get_app_pointer(T* ptr)
+  {
+    auto idx = app_ptr_map.get_app_pointer_idx((void*)ptr);
+    auto idx_as_ptr = this->template impl_get_unsandboxed_pointer<T>(idx);
+    
+    
+    
+    
+    
+    detail::dynamic_check(is_pointer_in_sandbox_memory(idx_as_ptr),
+                          "App pointers are not currently supported for this "
+                          "rlbox sandbox plugin. Please file a bug.");
+    auto ret = app_pointer<T*, T_Sbx>(
+      &app_ptr_map, idx, reinterpret_cast<T*>(idx_as_ptr));
+    return ret;
+  }
+
+  
+
+
+
+
+
+
+
+  template<typename T>
+  T* lookup_app_ptr(tainted<T*, T_Sbx> tainted_ptr)
+  {
+    auto idx = tainted_ptr.get_raw_sandbox_value(*this);
+    void* ret = app_ptr_map.lookup_index(idx);
+    return reinterpret_cast<T*>(ret);
   }
 
 #ifdef RLBOX_MEASURE_TRANSITION_TIMES
