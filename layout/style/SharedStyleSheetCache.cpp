@@ -335,9 +335,6 @@ void SharedStyleSheetCache::LoadCompletedInternal(
     data->mSheetCompleteCalled = true;
 #endif
 
-    
-    data->mRequestingNodeBeforeComplete = nullptr;
-
     if (!data->mSheetAlreadyComplete) {
       
       

@@ -719,8 +719,7 @@ already_AddRefed<dom::Promise> StyleSheet::Replace(const nsACString& aText,
       css::Loader::UseSystemPrincipal::No, css::StylePreloadKind::None,
        nullptr,
        nullptr, mConstructorDocument->NodePrincipal(),
-      GetReferrerInfo(),
-       nullptr);
+      GetReferrerInfo());
 
   
   
