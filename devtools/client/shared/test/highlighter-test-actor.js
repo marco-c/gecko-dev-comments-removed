@@ -48,10 +48,33 @@ const dumpn = msg => {
 
 
 function getHighlighterCanvasFrameHelper(conn, actorID) {
+  
   const actor = conn.getActor(actorID);
-  if (actor && actor._highlighter) {
-    return actor._highlighter.markup;
+  if (!actor) {
+    return null;
   }
+
+  
+  let highlighter = actor.instance;
+
+  
+  
+  if (
+    highlighter._highlighters &&
+    Array.isArray(highlighter._highlighters) &&
+    highlighter._highlighters.length > 0
+  ) {
+    highlighter = highlighter._highlighters[0];
+  }
+
+  
+  
+  if (highlighter.markup) {
+    return highlighter.markup;
+  }
+
+  
+  
   return null;
 }
 
@@ -232,10 +255,12 @@ var HighlighterTestActor = protocol.ActorClassWithSpec(highlighterTestSpec, {
 
   getHighlighterAttribute: function(nodeID, name, actorID) {
     const helper = getHighlighterCanvasFrameHelper(this.conn, actorID);
-    if (helper) {
-      return helper.getAttributeForElement(nodeID, name);
+
+    if (!helper) {
+      throw new Error(`Highlighter not found`);
     }
-    return null;
+
+    return helper.getAttributeForElement(nodeID, name);
   },
 
   
@@ -481,17 +506,25 @@ class HighlighterTestFront extends protocol.FrontClassWithSpec(
   
 
 
-  isHighlighting() {
+  async isHighlighting() {
     
     
     if (!this.highlighter) {
       return false;
     }
 
-    return this.getHighlighterNodeAttribute(
-      "box-model-elements",
-      "hidden"
-    ).then(value => value === null);
+    try {
+      const hidden = await this.getHighlighterNodeAttribute(
+        "box-model-elements",
+        "hidden"
+      );
+      return hidden === null;
+    } catch (e) {
+      if (e.message.match(/Highlighter not found/)) {
+        return false;
+      }
+      throw e;
+    }
   }
 
   
@@ -600,6 +633,10 @@ class HighlighterTestFront extends protocol.FrontClassWithSpec(
       "box-model-" + region,
       "d"
     );
+
+    if (!d) {
+      return null;
+    }
 
     const polygons = d.match(/M[^M]+/g);
     if (!polygons) {

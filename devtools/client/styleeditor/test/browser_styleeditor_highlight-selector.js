@@ -6,40 +6,196 @@
 
 
 
+const REMOTE_IFRAME_URL = `https://example.org/document-builder.sjs?html=
+    <style>h2{color:cyan}</style>
+    <h2>highlighter test</h2>`;
+const TOP_LEVEL_URL = `https://example.com/document-builder.sjs?html=
+    <style>h1{color:red}</style>
+    <h1>highlighter test</h1>
+    <iframe src='${REMOTE_IFRAME_URL}'></iframe>`;
+
 add_task(async function() {
-  const url = TEST_BASE_HTTP + "selector-highlighter.html";
-  const { ui } = await openStyleEditorForURL(url);
-  const editor = ui.editors[0];
+  const { ui } = await openStyleEditorForURL(TOP_LEVEL_URL);
 
-  
-  
-  editor.highlighter = {
-    isShown: false,
-    options: null,
+  info(
+    "Wait until both stylesheet are loaded and ready to handle mouse events"
+  );
+  await waitFor(() => ui.editors.length == 2);
+  const topLevelStylesheetEditor = ui.editors.find(e =>
+    e._resource.nodeHref.startsWith("https://example.com")
+  );
+  const iframeStylesheetEditor = ui.editors.find(e =>
+    e._resource.nodeHref.startsWith("https://example.org")
+  );
 
-    show: function(node, options) {
-      this.isShown = true;
-      this.options = options;
-      return Promise.resolve();
-    },
+  await ui.selectStyleSheet(topLevelStylesheetEditor.styleSheet);
+  await waitFor(() => topLevelStylesheetEditor.highlighter);
 
-    hide: function() {
-      this.isShown = false;
-    },
-  };
+  info("Check that highlighting works on the top-level document");
+  const topLevelHighlighterTestFront = await topLevelStylesheetEditor._resource.targetFront.getFront(
+    "highlighterTest"
+  );
+  topLevelHighlighterTestFront.highlighter =
+    topLevelStylesheetEditor.highlighter;
 
   info("Expecting a node-highlighted event");
-  const onHighlighted = editor.once("node-highlighted");
+  let onHighlighted = topLevelStylesheetEditor.once("node-highlighted");
 
-  info("Simulate a mousemove event on the div selector");
-  editor._onMouseMove({ clientX: 56, clientY: 10 });
+  info("Simulate a mousemove event on the h1 selector");
+  
+  await waitFor(() => !!topLevelStylesheetEditor.sourceEditor);
+  let selectorEl = querySelectorCodeMirrorCssRuleSelectorToken(
+    topLevelStylesheetEditor
+  );
+  EventUtils.synthesizeMouseAtCenter(
+    selectorEl,
+    { type: "mousemove" },
+    selectorEl.ownerDocument.defaultView
+  );
   await onHighlighted;
 
-  ok(editor.highlighter.isShown, "The highlighter is now shown");
-  is(editor.highlighter.options.selector, "div", "The selector is correct");
+  ok(
+    await topLevelHighlighterTestFront.isNodeRectHighlighted(
+      await getElementNodeRectWithinTarget(["h1"])
+    ),
+    "The highlighter's outline corresponds to the h1 node"
+  );
+
+  info(
+    "Simulate a mousemove event on the property name to hide the highlighter"
+  );
+  EventUtils.synthesizeMouseAtCenter(
+    querySelectorCodeMirrorCssPropertyNameToken(topLevelStylesheetEditor),
+    { type: "mousemove" },
+    selectorEl.ownerDocument.defaultView
+  );
+
+  await waitFor(async () => !topLevelStylesheetEditor.highlighter.isShown());
+  let isVisible = await topLevelHighlighterTestFront.isHighlighting();
+  is(isVisible, false, "The highlighter is now hidden");
+
+  info("Check that highlighting works on the iframe document");
+  await ui.selectStyleSheet(iframeStylesheetEditor.styleSheet);
+  await waitFor(() => iframeStylesheetEditor.highlighter);
+
+  const iframeHighlighterTestFront = await iframeStylesheetEditor._resource.targetFront.getFront(
+    "highlighterTest"
+  );
+  iframeHighlighterTestFront.highlighter = iframeStylesheetEditor.highlighter;
+
+  info("Expecting a node-highlighted event");
+  onHighlighted = iframeStylesheetEditor.once("node-highlighted");
+
+  info("Simulate a mousemove event on the h2 selector");
+  
+  await waitFor(() => !!iframeStylesheetEditor.sourceEditor);
+  selectorEl = querySelectorCodeMirrorCssRuleSelectorToken(
+    iframeStylesheetEditor
+  );
+  EventUtils.synthesizeMouseAtCenter(
+    selectorEl,
+    { type: "mousemove" },
+    selectorEl.ownerDocument.defaultView
+  );
+  await onHighlighted;
+
+  isVisible = await iframeHighlighterTestFront.isHighlighting();
+  ok(isVisible, "The highlighter is shown");
+  ok(
+    await iframeHighlighterTestFront.isNodeRectHighlighted(
+      await getElementNodeRectWithinTarget(["iframe", "h2"])
+    ),
+    "The highlighter's outline corresponds to the h2 node"
+  );
 
   info("Simulate a mousemove event elsewhere in the editor");
-  editor._onMouseMove({ clientX: 16, clientY: 0 });
+  EventUtils.synthesizeMouseAtCenter(
+    querySelectorCodeMirrorCssPropertyNameToken(iframeStylesheetEditor),
+    { type: "mousemove" },
+    selectorEl.ownerDocument.defaultView
+  );
 
-  ok(!editor.highlighter.isShown, "The highlighter is now hidden");
+  await waitFor(async () => !topLevelStylesheetEditor.highlighter.isShown());
+
+  isVisible = await iframeHighlighterTestFront.isHighlighting();
+  is(isVisible, false, "The highlighter is now hidden");
 });
+
+function querySelectorCodeMirrorCssRuleSelectorToken(stylesheetEditor) {
+  
+  return querySelectorCodeMirror(stylesheetEditor, ".cm-tag");
+}
+
+function querySelectorCodeMirrorCssPropertyNameToken(stylesheetEditor) {
+  
+  return querySelectorCodeMirror(stylesheetEditor, ".cm-property");
+}
+
+function querySelectorCodeMirror(stylesheetEditor, selector) {
+  return stylesheetEditor.sourceEditor.codeMirror
+    .getWrapperElement()
+    .querySelector(selector);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+async function getElementNodeRectWithinTarget(selectors) {
+  
+  const inBCSelector = selectors.pop();
+  const frameSelectors = selectors;
+  const bc =
+    frameSelectors.length > 0
+      ? await getBrowsingContextInFrames(
+          gBrowser.selectedBrowser.browsingContext,
+          frameSelectors
+        )
+      : gBrowser.selectedBrowser.browsingContext;
+
+  
+  const elementBounds = await SpecialPowers.spawn(
+    bc,
+    [inBCSelector],
+    _selector => {
+      const el = content.document.querySelector(_selector);
+      const {
+        left,
+        top,
+        width,
+        height,
+      } = el.getBoxQuadsFromWindowOrigin()[0].getBounds();
+      return { left, top, width, height };
+    }
+  );
+
+  
+  
+  
+  
+  const relativeBrowsingContext =
+    isFissionEnabled() || isEveryFrameTargetEnabled()
+      ? bc
+      : gBrowser.selectedBrowser.browsingContext;
+  const relativeDocumentBounds = await SpecialPowers.spawn(
+    relativeBrowsingContext,
+    [],
+    () =>
+      content.document.documentElement
+        .getBoxQuadsFromWindowOrigin()[0]
+        .getBounds()
+  );
+
+  
+  elementBounds.left = elementBounds.left - relativeDocumentBounds.left;
+  elementBounds.top = elementBounds.top - relativeDocumentBounds.top;
+
+  return elementBounds;
+}

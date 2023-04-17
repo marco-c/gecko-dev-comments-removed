@@ -25,6 +25,7 @@ const {
 
 const LOAD_ERROR = "error-load";
 const SAVE_ERROR = "error-save";
+const SELECTOR_HIGHLIGHTER_TYPE = "SelectorHighlighter";
 
 
 
@@ -69,18 +70,7 @@ const STYLE_SHEET_UPDATE_CAUSED_BY_STYLE_EDITOR = "styleeditor";
 
 
 
-
-
-
-
-
-function StyleSheetEditor(
-  resource,
-  win,
-  walker,
-  highlighter,
-  styleSheetFriendlyIndex
-) {
+function StyleSheetEditor(resource, win, styleSheetFriendlyIndex) {
   EventEmitter.decorate(this);
 
   this._resource = resource;
@@ -88,8 +78,6 @@ function StyleSheetEditor(
   this.sourceEditor = null;
   this._window = win;
   this._isNew = this.styleSheet.isNew;
-  this.walker = walker;
-  this.highlighter = highlighter;
   this.styleSheetFriendlyIndex = styleSheetFriendlyIndex;
 
   
@@ -455,9 +443,9 @@ StyleSheetEditor.prototype = {
 
 
 
-  load: function(inputElement, cssProperties) {
+  load: async function(inputElement, cssProperties) {
     if (this._isDestroyed) {
-      return Promise.reject(
+      throw new Error(
         "Won't load source editor as the style sheet has " +
           "already been removed from Style Editor."
       );
@@ -465,6 +453,7 @@ StyleSheetEditor.prototype = {
 
     this._inputElement = inputElement;
 
+    const walker = await this.getWalker();
     const config = {
       value: this._state.text,
       lineNumbers: true,
@@ -474,49 +463,45 @@ StyleSheetEditor.prototype = {
       extraKeys: this._getKeyBindings(),
       contextMenu: "sourceEditorContextMenu",
       autocomplete: Services.prefs.getBoolPref(AUTOCOMPLETION_PREF),
-      autocompleteOpts: { walker: this.walker, cssProperties },
+      autocompleteOpts: { walker, cssProperties },
       cssProperties,
     };
     const sourceEditor = (this._sourceEditor = new Editor(config));
 
     sourceEditor.on("dirty-change", this.onPropertyChange);
 
-    return sourceEditor.appendTo(inputElement).then(() => {
-      sourceEditor.on("saveRequested", this.saveToFile);
+    await sourceEditor.appendTo(inputElement);
 
-      if (!this.styleSheet.isOriginalSource) {
-        sourceEditor.on("change", this.updateStyleSheet);
-      }
+    sourceEditor.on("saveRequested", this.saveToFile);
 
-      this.sourceEditor = sourceEditor;
+    if (!this.styleSheet.isOriginalSource) {
+      sourceEditor.on("change", this.updateStyleSheet);
+    }
 
-      if (this._focusOnSourceEditorReady) {
-        this._focusOnSourceEditorReady = false;
-        sourceEditor.focus();
-      }
+    this.sourceEditor = sourceEditor;
 
-      sourceEditor.setSelection(
-        this._state.selection.start,
-        this._state.selection.end
+    if (this._focusOnSourceEditorReady) {
+      this._focusOnSourceEditorReady = false;
+      sourceEditor.focus();
+    }
+
+    sourceEditor.setSelection(
+      this._state.selection.start,
+      this._state.selection.end
+    );
+
+    const highlighter = await this.getHighlighter();
+    if (highlighter && walker && sourceEditor.container?.contentWindow) {
+      sourceEditor.container.contentWindow.addEventListener(
+        "mousemove",
+        this._onMouseMove
       );
+    }
 
-      if (
-        this.highlighter &&
-        this.walker &&
-        sourceEditor.container &&
-        sourceEditor.container.contentWindow
-      ) {
-        sourceEditor.container.contentWindow.addEventListener(
-          "mousemove",
-          this._onMouseMove
-        );
-      }
+    
+    sourceEditor.insertCommandsController();
 
-      
-      sourceEditor.insertCommandsController();
-
-      this.emit("source-editor-load");
-    });
+    this.emit("source-editor-load");
   },
 
   
@@ -634,7 +619,11 @@ StyleSheetEditor.prototype = {
 
 
   _onMouseMove: function(e) {
-    this.highlighter.hide();
+    
+    
+    if (this.highlighter) {
+      this.highlighter.hide();
+    }
 
     if (this.mouseMoveTimeout) {
       this._window.clearTimeout(this.mouseMoveTimeout);
@@ -660,8 +649,12 @@ StyleSheetEditor.prototype = {
       return;
     }
 
-    const node = await this.walker.getStyleSheetOwnerNode(this.resourceId);
-    await this.highlighter.show(node, {
+    const onGetHighlighter = this.getHighlighter();
+    const walker = await this.getWalker();
+    const node = await walker.getStyleSheetOwnerNode(this.resourceId);
+
+    const highlighter = await onGetHighlighter;
+    await highlighter.show(node, {
       selector: info.selector,
       hideInfoBar: true,
       showOnly: "border",
@@ -669,6 +662,50 @@ StyleSheetEditor.prototype = {
     });
 
     this.emit("node-highlighted");
+  },
+
+  
+
+
+
+
+  async getWalker() {
+    if (this.walker) {
+      return this.walker;
+    }
+
+    const { targetFront } = this._resource;
+    const inspectorFront = await targetFront.getFront("inspector");
+    this.walker = inspectorFront.walker;
+    return this.walker;
+  },
+
+  
+
+
+
+
+  async getHighlighter() {
+    if (this.highlighter) {
+      return this.highlighter;
+    }
+
+    const walker = await this.getWalker();
+    try {
+      this.highlighter = await walker.parentFront.getHighlighterByType(
+        SELECTOR_HIGHLIGHTER_TYPE
+      );
+      return this.highlighter;
+    } catch (e) {
+      
+      
+      
+      console.warn(
+        "The selectorHighlighter couldn't be instantiated, " +
+          "elements matching hovered selectors will not be highlighted"
+      );
+    }
+    return null;
   },
 
   
@@ -871,12 +908,7 @@ StyleSheetEditor.prototype = {
       this._sourceEditor.off("dirty-change", this.onPropertyChange);
       this._sourceEditor.off("saveRequested", this.saveToFile);
       this._sourceEditor.off("change", this.updateStyleSheet);
-      if (
-        this.highlighter &&
-        this.walker &&
-        this._sourceEditor.container &&
-        this._sourceEditor.container.contentWindow
-      ) {
+      if (this._sourceEditor.container?.contentWindow) {
         this._sourceEditor.container.contentWindow.removeEventListener(
           "mousemove",
           this._onMouseMove
