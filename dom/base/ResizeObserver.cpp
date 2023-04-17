@@ -49,8 +49,9 @@ static uint32_t GetNodeDepth(nsINode* aNode) {
 
 
 
-static nsSize GetTargetSize(Element* aTarget, ResizeObserverBoxOptions aBox) {
-  nsSize size;
+static gfx::Size GetTargetSize(Element* aTarget,
+                               ResizeObserverBoxOptions aBox) {
+  gfx::Size size;
   nsIFrame* frame = aTarget->GetPrimaryFrame();
 
   if (!frame) {
@@ -62,8 +63,8 @@ static nsSize GetTargetSize(Element* aTarget, ResizeObserverBoxOptions aBox) {
     
     
     gfxRect bbox = SVGUtils::GetBBox(frame);
-    size.width = NSFloatPixelsToAppUnits(bbox.width, AppUnitsPerCSSPixel());
-    size.height = NSFloatPixelsToAppUnits(bbox.height, AppUnitsPerCSSPixel());
+    size.width = static_cast<float>(bbox.width);
+    size.height = static_cast<float>(bbox.height);
   } else {
     
     
@@ -77,11 +78,13 @@ static nsSize GetTargetSize(Element* aTarget, ResizeObserverBoxOptions aBox) {
     switch (aBox) {
       case ResizeObserverBoxOptions::Border_box:
         
-        size = frame->GetSize();
+        size = CSSPixel::FromAppUnits(frame->GetSize()).ToUnknownSize();
         break;
       case ResizeObserverBoxOptions::Content_box:
       default:
-        size = frame->GetContentRectRelativeToSelf().Size();
+        size =
+            CSSPixel::FromAppUnits(frame->GetContentRectRelativeToSelf().Size())
+                .ToUnknownSize();
     }
   }
 
@@ -105,12 +108,7 @@ ResizeObservation::ResizeObservation(Element& aTarget,
                                      ResizeObserver& aObserver,
                                      ResizeObserverBoxOptions aBox,
                                      WritingMode aWm)
-    : mTarget(&aTarget),
-      mObserver(&aObserver),
-      mObservedBox(aBox),
-      
-      mLastReportedSize(aWm),
-      mLastReportedWM(aWm) {
+    : mTarget(&aTarget), mObserver(&aObserver), mObservedBox(aBox) {
   aTarget.BindObject(mObserver);
 }
 
@@ -132,15 +130,14 @@ void ResizeObservation::Unlink(RemoveFromObserver aRemoveFromObserver) {
 bool ResizeObservation::IsActive() const {
   nsIFrame* frame = mTarget->GetPrimaryFrame();
   const WritingMode wm = frame ? frame->GetWritingMode() : WritingMode();
-  const LogicalSize size(wm, GetTargetSize(mTarget, mObservedBox));
-  return mLastReportedSize.ISize(mLastReportedWM) != size.ISize(wm) ||
-         mLastReportedSize.BSize(mLastReportedWM) != size.BSize(wm);
+  const LogicalPixelSize size(wm, GetTargetSize(mTarget, mObservedBox));
+  return mLastReportedSize != size;
 }
 
-void ResizeObservation::UpdateLastReportedSize(const nsSize& aSize) {
+void ResizeObservation::UpdateLastReportedSize(const gfx::Size& aSize) {
   nsIFrame* frame = mTarget->GetPrimaryFrame();
-  mLastReportedWM = frame ? frame->GetWritingMode() : WritingMode();
-  mLastReportedSize = LogicalSize(mLastReportedWM, aSize);
+  WritingMode wm = frame ? frame->GetWritingMode() : WritingMode();
+  mLastReportedSize = {wm, aSize};
 }
 
 
@@ -294,9 +291,9 @@ uint32_t ResizeObserver::BroadcastActiveObservations() {
   for (auto& observation : mActiveTargets) {
     Element* target = observation->Target();
 
-    nsSize borderBoxSize =
+    gfx::Size borderBoxSize =
         GetTargetSize(target, ResizeObserverBoxOptions::Border_box);
-    nsSize contentBoxSize =
+    gfx::Size contentBoxSize =
         GetTargetSize(target, ResizeObserverBoxOptions::Content_box);
     RefPtr<ResizeObserverEntry> entry =
         new ResizeObserverEntry(this, *target, borderBoxSize, contentBoxSize);
@@ -367,29 +364,28 @@ void ResizeObserverEntry::GetContentBoxSize(
   aRetVal.AppendElement(mContentBoxSize);
 }
 
-void ResizeObserverEntry::SetBorderBoxSize(const nsSize& aSize) {
+void ResizeObserverEntry::SetBorderBoxSize(const gfx::Size& aSize) {
   nsIFrame* frame = mTarget->GetPrimaryFrame();
   const WritingMode wm = frame ? frame->GetWritingMode() : WritingMode();
-  mBorderBoxSize = new ResizeObserverSize(
-      this, CSSSize::FromAppUnits(aSize).ToUnknownSize(), wm);
+  mBorderBoxSize = new ResizeObserverSize(this, aSize, wm);
 }
 
-void ResizeObserverEntry::SetContentRectAndSize(const nsSize& aSize) {
+void ResizeObserverEntry::SetContentRectAndSize(const gfx::Size& aSize) {
   nsIFrame* frame = mTarget->GetPrimaryFrame();
 
   
   nsMargin padding = frame ? frame->GetUsedPadding() : nsMargin();
   
   
-  nsRect rect(nsPoint(padding.left, padding.top), aSize);
+  nsRect rect(nsPoint(padding.left, padding.top),
+              CSSPixel::ToAppUnits(CSSSize::FromUnknownSize(aSize)));
   RefPtr<DOMRect> contentRect = new DOMRect(this);
   contentRect->SetLayoutRect(rect);
   mContentRect = std::move(contentRect);
 
   
   const WritingMode wm = frame ? frame->GetWritingMode() : WritingMode();
-  mContentBoxSize = new ResizeObserverSize(
-      this, CSSSize::FromAppUnits(aSize).ToUnknownSize(), wm);
+  mContentBoxSize = new ResizeObserverSize(this, aSize, wm);
 }
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(ResizeObserverSize, mOwner)

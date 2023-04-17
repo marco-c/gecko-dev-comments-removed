@@ -34,6 +34,38 @@ class Element;
 
 
 
+
+
+class LogicalPixelSize {
+ public:
+  LogicalPixelSize() = default;
+  LogicalPixelSize(WritingMode aWM, const gfx::Size& aSize) {
+    mSize = aSize;
+    if (aWM.IsVertical()) {
+      std::swap(mSize.width, mSize.height);
+    }
+  }
+
+  bool operator==(const LogicalPixelSize& aOther) const {
+    return mSize == aOther.mSize;
+  }
+  bool operator!=(const LogicalPixelSize& aOther) const {
+    return !(*this == aOther);
+  }
+
+  float ISize() const { return mSize.width; }
+  float BSize() const { return mSize.height; }
+  float& ISize() { return mSize.width; }
+  float& BSize() { return mSize.height; }
+
+ private:
+  
+  
+  gfx::Size mSize;
+};
+
+
+
 class ResizeObservation final : public LinkedListElement<ResizeObservation> {
  public:
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(ResizeObservation)
@@ -55,7 +87,7 @@ class ResizeObservation final : public LinkedListElement<ResizeObservation> {
   
 
 
-  void UpdateLastReportedSize(const nsSize& aSize);
+  void UpdateLastReportedSize(const gfx::Size& aSize);
 
   enum class RemoveFromObserver : bool { No, Yes };
   void Unlink(RemoveFromObserver);
@@ -74,8 +106,8 @@ class ResizeObservation final : public LinkedListElement<ResizeObservation> {
   
   
   
-  LogicalSize mLastReportedSize;
-  WritingMode mLastReportedWM;
+  
+  LogicalPixelSize mLastReportedSize;
 };
 
 
@@ -179,8 +211,8 @@ class ResizeObserverEntry final : public nsISupports, public nsWrapperCache {
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(ResizeObserverEntry)
 
   ResizeObserverEntry(nsISupports* aOwner, Element& aTarget,
-                      const nsSize& aBorderBoxSize,
-                      const nsSize& aContentBoxSize)
+                      const gfx::Size& aBorderBoxSize,
+                      const gfx::Size& aContentBoxSize)
       : mOwner(aOwner), mTarget(&aTarget) {
     MOZ_ASSERT(mOwner, "Need a non-null owner");
     MOZ_ASSERT(mTarget, "Need a non-null target element");
@@ -215,9 +247,9 @@ class ResizeObserverEntry final : public nsISupports, public nsWrapperCache {
   ~ResizeObserverEntry() = default;
 
   
-  void SetBorderBoxSize(const nsSize& aSize);
+  void SetBorderBoxSize(const gfx::Size& aSize);
   
-  void SetContentRectAndSize(const nsSize& aSize);
+  void SetContentRectAndSize(const gfx::Size& aSize);
 
   nsCOMPtr<nsISupports> mOwner;
   nsCOMPtr<Element> mTarget;
@@ -234,7 +266,7 @@ class ResizeObserverSize final : public nsISupports, public nsWrapperCache {
 
   ResizeObserverSize(nsISupports* aOwner, const gfx::Size& aSize,
                      const WritingMode aWM)
-      : mOwner(aOwner), mSize(aSize), mWM(aWM) {
+      : mOwner(aOwner), mSize(aWM, aSize) {
     MOZ_ASSERT(mOwner, "Need a non-null owner");
   }
 
@@ -245,13 +277,8 @@ class ResizeObserverSize final : public nsISupports, public nsWrapperCache {
     return ResizeObserverSize_Binding::Wrap(aCx, this, aGivenProto);
   }
 
-  double InlineSize() const {
-    return mWM.IsVertical() ? mSize.Height() : mSize.Width();
-  }
-
-  double BlockSize() const {
-    return mWM.IsVertical() ? mSize.Width() : mSize.Height();
-  }
+  double InlineSize() const { return mSize.ISize(); }
+  double BlockSize() const { return mSize.BSize(); }
 
  protected:
   ~ResizeObserverSize() = default;
@@ -260,9 +287,7 @@ class ResizeObserverSize final : public nsISupports, public nsWrapperCache {
   
   
   
-  const gfx::Size mSize;
-  
-  const WritingMode mWM;
+  const LogicalPixelSize mSize;
 };
 
 }  
