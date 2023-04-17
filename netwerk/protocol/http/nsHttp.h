@@ -122,7 +122,7 @@ extern const nsCString kHttp3Versions[];
 
 
 
-#define NS_HTTP_WAIT_HTTPSSVC_RESULT (1 << 23)
+#define NS_HTTP_FORCE_WAIT_HTTP_RR (1 << 23)
 
 
 
