@@ -122,7 +122,7 @@ impl AsyncStylesheetParser {
 
         
         
-        let sheet = Arc::new(StylesheetContents::from_str(
+        let sheet = StylesheetContents::from_str(
             input,
             self.extra_data.clone(),
             self.origin,
@@ -134,7 +134,7 @@ impl AsyncStylesheetParser {
             use_counters.as_deref(),
             self.allow_import_rules,
              None,
-        ));
+        );
 
         let use_counters = match use_counters {
             Some(c) => c.into_ffi().maybe(),

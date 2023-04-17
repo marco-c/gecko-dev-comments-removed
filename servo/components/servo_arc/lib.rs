@@ -254,6 +254,14 @@ impl<T> Arc<T> {
     }
 
     
+    #[inline]
+    pub unsafe fn from_raw_addrefed(ptr: *const T) -> Self {
+        let arc = Self::from_raw(ptr);
+        mem::forget(arc.clone());
+        arc
+    }
+
+    
     
     
     
