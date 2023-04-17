@@ -782,10 +782,6 @@ Toolbox.prototype = {
       
       this.commands = await createCommandsDictionary(this.descriptorFront);
 
-      
-      
-      this.targetList = this.commands.targetCommand;
-
       this.commands.targetCommand.on(
         "target-thread-wrong-order-on-resume",
         this._onTargetThreadFrontResumeWrongOrder.bind(this)
