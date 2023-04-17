@@ -30,7 +30,7 @@ let whitelist = [
     platforms: ["windows"],
   },
   {
-    sourceName: /\b(contenteditable|EditorOverride|svg|forms|html|mathml|ua|pluginproblem)\.css$/i,
+    sourceName: /\b(contenteditable|EditorOverride|svg|forms|html|mathml|ua)\.css$/i,
     errorMessage: /Unknown pseudo-class.*-moz-/i,
     isFromDevTools: false,
   },
@@ -87,6 +87,14 @@ if (!Services.prefs.getBoolPref("layout.css.scroll-anchoring.enabled")) {
   });
 }
 
+if (!Services.prefs.getBoolPref("layout.css.forced-colors.enabled")) {
+  whitelist.push({
+    sourceName: /pdf\.js\/web\/viewer\.css$/,
+    errorMessage: /Expected media feature name but found ‘forced-colors’*/i,
+    isFromDevTools: false,
+  });
+}
+
 let propNameWhitelist = [
   
   
@@ -106,6 +114,7 @@ let propNameWhitelist = [
   
   { propName: "--bezier-diagonal-color", isFromDevTools: true },
   { propName: "--bezier-grid-color", isFromDevTools: true },
+  { propName: "--page-border", isFromDevTools: false },
 ];
 
 
