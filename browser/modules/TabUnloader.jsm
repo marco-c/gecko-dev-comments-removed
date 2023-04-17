@@ -117,13 +117,13 @@ let DefaultTabUnloaderMethods = {
 
 
 
-  async calculateMemoryUsage(tabs, processMap) {
+  async calculateMemoryUsage(processMap) {
     let parentProcessInfo = await ChromeUtils.requestProcInfo();
     let childProcessInfoList = parentProcessInfo.children;
     for (let childProcInfo of childProcessInfoList) {
       let processInfo = processMap.get(childProcInfo.pid);
       if (!processInfo) {
-        processInfo = { count: 0, topCount: 0 };
+        processInfo = { count: 0, topCount: 0, tabSet: new Set() };
         processMap.set(childProcInfo.pid, processInfo);
       }
       processInfo.memory = childProcInfo.residentUniqueSize;
@@ -145,6 +145,13 @@ var TabUnloader = {
       Ci.nsIAvailableMemoryWatcherBase
     );
     watcher.registerTabUnloader(this);
+  },
+
+  isDiscardable(tab) {
+    if (!("weight" in tab)) {
+      return false;
+    }
+    return tab.weight < NEVER_DISCARD;
   },
 
   
@@ -229,7 +236,7 @@ var TabUnloader = {
     });
 
     
-    if (!tabs.length || tabs[0].weight == NEVER_DISCARD) {
+    if (!tabs.length || !this.isDiscardable(tabs[0])) {
       return [];
     }
 
@@ -253,7 +260,10 @@ var TabUnloader = {
       higherWeightedCount = minCount;
     }
 
-    if (higherWeightedCount < tabs.length) {
+    
+    
+    const lowestWeightedCount = tabs.length - higherWeightedCount;
+    if (lowestWeightedCount > 1) {
       let processMap = getAllProcesses(tabs, tabMethods);
 
       let higherWeightedTabs = tabs.splice(-higherWeightedCount);
@@ -273,7 +283,7 @@ var TabUnloader = {
     let sortedTabs = await this.getSortedTabs();
 
     for (let tabInfo of sortedTabs) {
-      if (tabInfo.weight == NEVER_DISCARD) {
+      if (!this.isDiscardable(tabInfo)) {
         return false;
       }
 
@@ -330,6 +340,7 @@ function determineTabBaseWeight(tab, tabMethods) {
 
 
 
+
 function getAllProcesses(tabs, tabMethods) {
   
   
@@ -340,15 +351,37 @@ function getAllProcesses(tabs, tabMethods) {
 
   let processMap = new Map();
 
-  for (let tab of tabs) {
+  for (let tabIndex = 0; tabIndex < tabs.length; ++tabIndex) {
+    const tab = tabs[tabIndex];
+
+    
+    
+    
+    
+    
+    tab.processes = new Map();
+
     let topLevel = true;
     for (let pid of tabMethods.iterateProcesses(tab.tab)) {
       let processInfo = processMap.get(pid);
       if (processInfo) {
         processInfo.count++;
+        processInfo.tabSet.add(tabIndex);
       } else {
-        processInfo = { count: 1, topCount: 0 };
+        processInfo = { count: 1, topCount: 0, tabSet: new Set([tabIndex]) };
         processMap.set(pid, processInfo);
+      }
+
+      let tabProcessEntry = tab.processes.get(pid);
+      if (tabProcessEntry) {
+        ++tabProcessEntry.frameCount;
+      } else {
+        tabProcessEntry = {
+          isTopLevel: topLevel,
+          frameCount: 1,
+          entryToProcessMap: processInfo,
+        };
+        tab.processes.set(pid, tabProcessEntry);
       }
 
       if (topLevel) {
@@ -356,6 +389,8 @@ function getAllProcesses(tabs, tabMethods) {
         processInfo.topCount = processInfo.topCount
           ? processInfo.topCount + 1
           : 1;
+        
+        ++tabProcessEntry.frameCount;
       }
     }
   }
@@ -372,19 +407,18 @@ function getAllProcesses(tabs, tabMethods) {
 
 
 async function adjustForResourceUse(tabs, processMap, tabMethods) {
-  await tabMethods.calculateMemoryUsage(tabs, processMap);
+  
+  await tabMethods.calculateMemoryUsage(processMap, tabs);
 
   let sortWeight = 0;
   for (let tab of tabs) {
     tab.sortWeight = ++sortWeight;
 
-    let topLevel = true;
     let uniqueCount = 0;
     let totalMemory = 0;
-    for (let pid of tabMethods.iterateProcesses(tab.tab)) {
-      let processInfo = processMap.get(pid);
-      let { count, topCount, memory } = processInfo;
-      if (count == 1) {
+    for (const procEntry of tab.processes.values()) {
+      const processInfo = procEntry.entryToProcessMap;
+      if (processInfo.tabSet.size == 1) {
         uniqueCount++;
       }
 
@@ -395,12 +429,10 @@ async function adjustForResourceUse(tabs, processMap, tabMethods) {
       
       
       
-      let perFrameMemory = memory / (topCount * 2 + (count - topCount));
-      if (topLevel) {
-        topLevel = false;
-        perFrameMemory *= 2;
-      }
-      totalMemory += perFrameMemory;
+      const perFrameMemory =
+        processInfo.memory /
+        (processInfo.topCount * 2 + (processInfo.count - processInfo.topCount));
+      totalMemory += perFrameMemory * procEntry.frameCount;
     }
 
     tab.uniqueCount = uniqueCount;
