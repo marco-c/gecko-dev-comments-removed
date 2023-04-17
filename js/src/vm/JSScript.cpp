@@ -37,6 +37,7 @@
 #include "frontend/SharedContext.h"
 #include "frontend/SourceNotes.h"  
 #include "frontend/StencilXdr.h"  
+#include "gc/AllocKind.h"  
 #include "gc/FreeOp.h"
 #include "jit/BaselineJIT.h"
 #include "jit/CacheIRHealth.h"

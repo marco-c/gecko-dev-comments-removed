@@ -16,7 +16,15 @@ namespace js {
 
 namespace jit {
 
-enum class ScriptGCThingType { Atom, RegExp, Object, Function, Scope, BigInt };
+enum class ScriptGCThingType {
+  Atom,
+  String,
+  RegExp,
+  Object,
+  Function,
+  Scope,
+  BigInt
+};
 
 
 

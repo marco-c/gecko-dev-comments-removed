@@ -1724,12 +1724,6 @@ extern int32_t CompareStrings(const JSLinearString* str1,
 
 
 
-
-extern int32_t CompareAtoms(JSAtom* atom1, JSAtom* atom2);
-
-
-
-
 extern bool StringIsAscii(JSLinearString* str);
 
 
