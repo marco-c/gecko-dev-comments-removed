@@ -560,15 +560,8 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
             custom_types = raw_result["extras"][0]
             if custom_types:
                 for custom_type in custom_types:
-                    
-                    
-                    if any(["youtube" in k for k in custom_types[custom_type]]):
-                        for k, v in custom_types[custom_type].items():
-                            bt_result["measurements"].setdefault(k, []).append([v])
-                    else:
-                        bt_result["measurements"].update(
-                            {k: [v] for k, v in custom_types[custom_type].items()}
-                        )
+                    for k, v in custom_types[custom_type].items():
+                        bt_result["measurements"].setdefault(k, []).append(v)
             else:
                 
                 for bt, raptor in conversion:
