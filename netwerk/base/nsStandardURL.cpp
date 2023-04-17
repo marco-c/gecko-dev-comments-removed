@@ -2608,7 +2608,7 @@ nsStandardURL::Resolve(const nsACString& in, nsACString& out) {
     net_CoalesceDirs(coalesceFlag, resultPath);
   } else {
     
-    resultPath = PL_strstr(result, "://");
+    resultPath = strstr(result, "://");
     if (resultPath) {
       resultPath = strchr(resultPath + 3, '/');
       if (resultPath) {
