@@ -181,6 +181,7 @@ class nsContentPermissionRequestProxy : public nsIContentPermissionRequest {
 
 
 
+
 class RemotePermissionRequest final
     : public mozilla::dom::PContentPermissionRequestChild {
  public:
