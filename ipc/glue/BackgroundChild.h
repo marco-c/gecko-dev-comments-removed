@@ -16,14 +16,13 @@ namespace mozilla {
 namespace dom {
 
 class BlobImpl;
-class ContentChild;
 class ContentParent;
+class ContentProcess;
 
 }  
 
 namespace net {
 
-class SocketProcessImpl;
 class SocketProcessChild;
 
 }  
@@ -55,9 +54,8 @@ class PBackgroundChild;
 
 
 class BackgroundChild final {
-  friend class mozilla::dom::ContentChild;
   friend class mozilla::dom::ContentParent;
-  friend class mozilla::net::SocketProcessImpl;
+  friend class mozilla::dom::ContentProcess;
   friend class mozilla::net::SocketProcessChild;
 
   typedef mozilla::ipc::Transport Transport;
