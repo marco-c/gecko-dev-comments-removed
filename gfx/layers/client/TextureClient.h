@@ -269,6 +269,12 @@ class TextureData {
     return nullptr;
   }
 
+  
+
+
+
+  virtual void EndDraw() {}
+
   virtual already_AddRefed<gfx::SourceSurface> BorrowSnapshot() {
     return nullptr;
   }
@@ -465,6 +471,12 @@ class TextureClient : public AtomicRefCountedWithFinalize<TextureClient> {
 
 
   gfx::DrawTarget* BorrowDrawTarget();
+
+  
+
+
+
+  void EndDraw();
 
   already_AddRefed<gfx::SourceSurface> BorrowSnapshot();
 

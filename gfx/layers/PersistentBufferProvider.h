@@ -175,6 +175,11 @@ class PersistentBufferProviderShared : public PersistentBufferProvider,
   gfx::SurfaceFormat mFormat;
   RefPtr<KnowsCompositor> mKnowsCompositor;
   
+  
+  
+  
+  RefPtr<TextureClient> mPermanentBackBuffer;
+  
   static const size_t kMaxTexturesAllowed = 4;
   Vector<RefPtr<TextureClient>, kMaxTexturesAllowed + 2> mTextures;
   
