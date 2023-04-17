@@ -243,6 +243,9 @@ nsresult mozSpellChecker::Replace(const nsAString& aOldWord,
   }
   int32_t currOffset = 0;
   int32_t currentBlock = 0;
+  int32_t wordLengthDifference =
+      AssertedCast<int32_t>(static_cast<int64_t>(aNewWord.Length()) -
+                            static_cast<int64_t>(aOldWord.Length()));
   while (NS_SUCCEEDED(mTextServicesDocument->IsDone(&done)) && !done) {
     nsAutoString str;
     mTextServicesDocument->GetCurrentTextBlock(str);
@@ -251,18 +254,25 @@ nsresult mozSpellChecker::Replace(const nsAString& aOldWord,
         
         
         if (currentBlock == startBlock && begin < selOffset) {
-          selOffset += int32_t(aNewWord.Length()) - int32_t(aOldWord.Length());
+          selOffset += wordLengthDifference;
           if (selOffset < begin) {
             selOffset = begin;
           }
         }
-        MOZ_KnownLive(mTextServicesDocument)
-            ->SetSelection(AssertedCast<uint32_t>(begin),
-                           AssertedCast<uint32_t>(end - begin));
-        MOZ_KnownLive(mTextServicesDocument)->InsertText(aNewWord);
+        
+        
+        if (NS_WARN_IF(NS_FAILED(
+                MOZ_KnownLive(mTextServicesDocument)
+                    ->SetSelection(AssertedCast<uint32_t>(begin),
+                                   AssertedCast<uint32_t>(end - begin))))) {
+          return NS_ERROR_FAILURE;
+        }
+        if (NS_WARN_IF(NS_FAILED(
+                MOZ_KnownLive(mTextServicesDocument)->InsertText(aNewWord)))) {
+          return NS_ERROR_FAILURE;
+        }
         mTextServicesDocument->GetCurrentTextBlock(str);
-        end += (aNewWord.Length() -
-                aOldWord.Length());  
+        end += wordLengthDifference;  
       }
       currOffset = end;
     }
