@@ -50,7 +50,7 @@ async function clearWarnedHosts() {
   });
 }
 
-add_task(function setup() {
+add_task(async function setup() {
   
   
   let originalWaitForCondition = TestUtils.waitForCondition;
@@ -67,6 +67,16 @@ add_task(function setup() {
   };
   registerCleanupFunction(function() {
     TestUtils.waitForCondition = originalWaitForCondition;
+  });
+
+  
+  
+  
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.proton.doorhangers.enabled", false]],
   });
 });
 

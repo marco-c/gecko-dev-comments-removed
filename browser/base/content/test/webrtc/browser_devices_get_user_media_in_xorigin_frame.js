@@ -97,8 +97,12 @@ async function promptNoDelegateScreenSharing(aThirdPartyOrgin) {
 
   checkDeviceSelectors(false, false, true);
   const notification = PopupNotifications.panel.firstElementChild;
-  const iconclass = notification.getAttribute("iconclass");
-  ok(iconclass.includes("screen-icon"), "panel using screen icon");
+
+  
+  if (!gProtonDoorhangers) {
+    const iconclass = notification.getAttribute("iconclass");
+    ok(iconclass.includes("screen-icon"), "panel using screen icon");
+  }
 
   
   const checkbox = notification.checkbox;
@@ -222,8 +226,12 @@ var gTests = [
 
       checkDeviceSelectors(false, false, true);
       const notification = PopupNotifications.panel.firstElementChild;
-      const iconclass = notification.getAttribute("iconclass");
-      ok(iconclass.includes("screen-icon"), "panel using screen icon");
+
+      
+      if (!gProtonDoorhangers) {
+        const iconclass = notification.getAttribute("iconclass");
+        ok(iconclass.includes("screen-icon"), "panel using screen icon");
+      }
 
       
       const checkbox = notification.checkbox;
