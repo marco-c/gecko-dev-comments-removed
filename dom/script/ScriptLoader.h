@@ -711,6 +711,7 @@ class ScriptLoader final : public nsISupports {
   ScriptLoadRequestList mXSLTRequests;
   ScriptLoadRequestList mDynamicImportRequests;
   RefPtr<ScriptLoadRequest> mParserBlockingRequest;
+  ScriptLoadRequestList mOffThreadCompilingRequests;
 
   
   

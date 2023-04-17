@@ -211,7 +211,8 @@ NS_INTERFACE_MAP_END
 
 NS_IMPL_CYCLE_COLLECTION(ScriptLoader, mNonAsyncExternalScriptInsertedRequests,
                          mLoadingAsyncRequests, mLoadedAsyncRequests,
-                         mDeferRequests, mXSLTRequests, mDynamicImportRequests,
+                         mOffThreadCompilingRequests, mDeferRequests,
+                         mXSLTRequests, mDynamicImportRequests,
                          mParserBlockingRequest, mBytecodeEncodingQueue,
                          mPreloads, mPendingChildLoaders, mFetchedModules,
                          mFetchingModules)
@@ -2309,6 +2310,18 @@ class NotifyOffThreadScriptLoadCompletedRunnable : public Runnable {
 
 } 
 
+static bool ShouldTrackRequestWhileCompiling(ScriptLoadRequest* aRequest) {
+  
+  
+  
+  
+  
+  
+
+  return aRequest->IsTopLevel() &&
+         (aRequest->IsAsyncScript() || aRequest->IsBlockingScript());
+}
+
 void ScriptLoader::CancelScriptLoadRequests() {
   
   if (mParserBlockingRequest) {
@@ -2349,6 +2362,8 @@ void ScriptLoader::CancelScriptLoadRequests() {
   for (size_t i = 0; i < mPreloads.Length(); i++) {
     mPreloads[i].mRequest->Cancel();
   }
+
+  mOffThreadCompilingRequests.Clear();  
 }
 
 nsresult ScriptLoader::ProcessOffThreadRequest(ScriptLoadRequest* aRequest) {
@@ -2360,6 +2375,10 @@ nsresult ScriptLoader::ProcessOffThreadRequest(ScriptLoadRequest* aRequest) {
   }
 
   aRequest->mWasCompiledOMT = true;
+
+  if (ShouldTrackRequestWhileCompiling(aRequest)) {
+    mOffThreadCompilingRequests.Remove(aRequest);
+  }
 
   if (aRequest->IsModuleRequest()) {
     MOZ_ASSERT(aRequest->mOffThreadToken);
@@ -2638,6 +2657,11 @@ nsresult ScriptLoader::AttemptAsyncScriptCompile(ScriptLoadRequest* aRequest,
   
   
   aRequest->mProgress = ScriptLoadRequest::Progress::eCompiling;
+
+  
+  if (ShouldTrackRequestWhileCompiling(aRequest)) {
+    mOffThreadCompilingRequests.AppendElement(aRequest);
+  }
 
   *aCouldCompileOut = true;
   Unused << runnable.forget();
@@ -3605,6 +3629,7 @@ bool ScriptLoader::HasPendingRequests() {
          !mNonAsyncExternalScriptInsertedRequests.isEmpty() ||
          !mDeferRequests.isEmpty() || !mDynamicImportRequests.isEmpty() ||
          !mPendingChildLoaders.IsEmpty();
+  
 }
 
 void ScriptLoader::ProcessPendingRequestsAsync() {
