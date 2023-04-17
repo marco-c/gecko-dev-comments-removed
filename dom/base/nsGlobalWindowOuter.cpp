@@ -7322,6 +7322,11 @@ already_AddRefed<nsISupports> nsGlobalWindowOuter::SaveWindowState() {
   nsGlobalWindowInner* inner = GetCurrentInnerWindowInternal();
   NS_ASSERTION(inner, "No inner window to save");
 
+  if (WindowContext* wc = inner->GetWindowContext()) {
+    MOZ_ASSERT(!wc->GetWindowStateSaved());
+    Unused << wc->SetWindowStateSaved(true);
+  }
+
   
   
   
@@ -7362,6 +7367,11 @@ nsresult nsGlobalWindowOuter::RestoreWindowState(nsISupports* aState) {
       fm->SetFocus(focusedElement, nsIFocusManager::FLAG_NOSCROLL |
                                        nsIFocusManager::FLAG_SHOWRING);
     }
+  }
+
+  if (WindowContext* wc = inner->GetWindowContext()) {
+    MOZ_ASSERT(wc->GetWindowStateSaved());
+    Unused << wc->SetWindowStateSaved(false);
   }
 
   inner->Thaw();
