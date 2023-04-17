@@ -593,6 +593,8 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
 
   bool mHasExceededAfterLoadTickPeriod : 1;
 
+  bool mHasStartedTimerAtLeastOnce : 1;
+
   
   
   
