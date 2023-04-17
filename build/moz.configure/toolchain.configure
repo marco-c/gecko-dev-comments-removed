@@ -944,7 +944,7 @@ def sysroot_path(sysroot_input, path, bootstrap, automation):
         path = sysroot_input[0]
     elif sysroot_input is not None and sysroot_input.origin != "default":
         return
-    if sysroot_input or bootstrap or automation:
+    if sysroot_input or (bootstrap and bootstrap.origin != "default") or automation:
         if path:
             log.info("Using sysroot in %s", path)
         return path
