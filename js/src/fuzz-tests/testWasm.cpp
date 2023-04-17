@@ -424,7 +424,7 @@ static int testWasmFuzz(const uint8_t* buf, size_t size) {
         if (propObj->is<WasmMemoryObject>()) {
           Rooted<WasmMemoryObject*> memory(gCx,
                                            &propObj->as<WasmMemoryObject>());
-          size_t byteLen = memory->volatileMemoryLength().get();
+          size_t byteLen = memory->volatileMemoryLength();
           if (byteLen) {
             
             

@@ -34,9 +34,8 @@
 #include "js/RootingAPI.h"     
 #include "js/SweepingAPI.h"    
 #include "js/TypeDecls.h"  
-#include "js/Vector.h"  
+#include "js/Vector.h"        
 #include "js/WasmFeatures.h"
-#include "vm/BufferSize.h"
 #include "vm/JSFunction.h"    
 #include "vm/NativeObject.h"  
 #include "wasm/WasmTypes.h"   
@@ -401,12 +400,12 @@ class WasmMemoryObject : public NativeObject {
   
   
   
-  js::BufferSize volatileMemoryLength() const;
+  size_t volatileMemoryLength() const;
 
   bool isShared() const;
   bool isHuge() const;
   bool movingGrowable() const;
-  js::BufferSize boundsCheckLimit() const;
+  size_t boundsCheckLimit() const;
 
   
   SharedArrayRawBuffer* sharedArrayRawBuffer() const;

@@ -116,7 +116,7 @@ static bool ValidateAtomicAccess(JSContext* cx,
   
 
   MOZ_ASSERT(!typedArray->hasDetachedBuffer());
-  size_t length = typedArray->length().get();
+  size_t length = typedArray->length();
 
   
   uint64_t accessIndex;
@@ -652,7 +652,7 @@ static bool DoAtomicsWait(JSContext* cx,
       cx, unwrappedTypedArray->bufferShared());
 
   
-  size_t offset = unwrappedTypedArray->byteOffset().get();
+  size_t offset = unwrappedTypedArray->byteOffset();
 
   
   
@@ -821,7 +821,7 @@ static bool atomics_notify(JSContext* cx, unsigned argc, Value* vp) {
       cx, unwrappedTypedArray->bufferShared());
 
   
-  size_t offset = unwrappedTypedArray->byteOffset().get();
+  size_t offset = unwrappedTypedArray->byteOffset();
 
   
   

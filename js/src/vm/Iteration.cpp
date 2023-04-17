@@ -215,7 +215,7 @@ static bool EnumerateNativeProperties(JSContext* cx, HandleNativeObject pobj,
     
     
     if (pobj->is<TypedArrayObject>()) {
-      size_t len = pobj->as<TypedArrayObject>().length().get();
+      size_t len = pobj->as<TypedArrayObject>().length();
 
       
       
