@@ -1836,6 +1836,9 @@ class AsyncPanZoomController {
   
   Maybe<CSSPoint> FindSnapPointNear(const CSSPoint& aDestination,
                                     ScrollUnit aUnit);
+
+  friend std::ostream& operator<<(
+      std::ostream& aOut, const AsyncPanZoomController::PanZoomState& aState);
 };
 
 }  
