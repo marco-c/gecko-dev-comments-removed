@@ -223,7 +223,10 @@ class AboutReaderChild extends JSWindowActorChild {
 
     
     
-    if (Readerable.isProbablyReaderable(document)) {
+    if (
+      Readerable.shouldCheckUri(document.baseURIObject, true) &&
+      Readerable.isProbablyReaderable(document)
+    ) {
       this.sendAsyncMessage("Reader:UpdateReaderButton", {
         isArticle: true,
       });
