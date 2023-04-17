@@ -1400,6 +1400,9 @@ void LIRGenerator::visitWasmUnarySimd128(MWasmUnarySimd128* ins) {
     case wasm::SimdOp::I32x4RelaxedTruncUSatF32x4:
     case wasm::SimdOp::I32x4RelaxedTruncSatF64x2SZero:
     case wasm::SimdOp::I32x4RelaxedTruncSatF64x2UZero:
+    case wasm::SimdOp::I64x2WidenHighSI32x4:
+    case wasm::SimdOp::I64x2WidenHighUI32x4:
+      
       
       useAtStart = true;
       reuseInput = true;
@@ -1422,9 +1425,7 @@ void LIRGenerator::visitWasmUnarySimd128(MWasmUnarySimd128* ins) {
     case wasm::SimdOp::I32x4WidenLowUI16x8:
     case wasm::SimdOp::I32x4WidenHighUI16x8:
     case wasm::SimdOp::I64x2WidenLowSI32x4:
-    case wasm::SimdOp::I64x2WidenHighSI32x4:
     case wasm::SimdOp::I64x2WidenLowUI32x4:
-    case wasm::SimdOp::I64x2WidenHighUI32x4:
     case wasm::SimdOp::F32x4ConvertSI32x4:
     case wasm::SimdOp::F32x4Ceil:
     case wasm::SimdOp::F32x4Floor:
