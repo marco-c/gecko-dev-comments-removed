@@ -643,11 +643,26 @@ void wasm::GenerateFunctionPrologue(MacroAssembler& masm,
 
   
   
-  masm.flushBuffer();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   
   masm.nopAlign(CodeAlignment);
+  DebugOnly<uint32_t> expectedEntry = masm.currentOffset();
   GenerateCallablePrologue(masm, &offsets->uncheckedCallEntry);
+  MOZ_ASSERT(expectedEntry == offsets->uncheckedCallEntry);
   masm.bind(&functionBody);
 #ifdef JS_CODEGEN_ARM64
   
