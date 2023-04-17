@@ -617,6 +617,8 @@ class TestRunnerManager(threading.Thread):
         if self.timer is not None:
             self.timer.cancel()
 
+        self.browser.browser.maybe_parse_tombstone()
+
         
         file_result, test_results = results
         subtest_unexpected = False

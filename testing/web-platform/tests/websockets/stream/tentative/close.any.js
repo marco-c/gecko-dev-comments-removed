@@ -2,8 +2,6 @@
 
 
 
-
-
 promise_test(async () => {
   const wss = new WebSocketStream(ECHOURL);
   await wss.connection;

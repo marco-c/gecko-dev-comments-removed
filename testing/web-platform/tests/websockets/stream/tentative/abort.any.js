@@ -3,8 +3,6 @@
 
 
 
-
-
 promise_test(async t => {
   const controller = new AbortController();
   controller.abort();

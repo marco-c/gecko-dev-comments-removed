@@ -1,3 +1,5 @@
+
+
 async_test(t => {
   function workerCode() {
     close();

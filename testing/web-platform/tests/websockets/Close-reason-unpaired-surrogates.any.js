@@ -1,12 +1,9 @@
 
 
-
-
-
 var testOpen = async_test("Create WebSocket - Close the Connection - close(reason with unpaired surrogates) - connection should get opened");
 var testClose = async_test("Create WebSocket - Close the Connection - close(reason with unpaired surrogates) - connection should get closed");
 
-var wsocket = CreateWebSocket(false, false);
+var wsocket = CreateWebSocket(false, false, false);
 var isOpenCalled = false;
 var replacementChar = "\uFFFD";
 var reason = "\uD807";
