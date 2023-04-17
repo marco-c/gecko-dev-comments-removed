@@ -32,14 +32,15 @@ class WordBreaker {
   
   
   
-  WordRange FindWord(const char16_t* aText, uint32_t aLen, uint32_t aPos);
+  static WordRange FindWord(const char16_t* aText, uint32_t aLen,
+                            uint32_t aPos);
 
   
   
   
   
   
-  int32_t Next(const char16_t* aText, uint32_t aLen, uint32_t aPos);
+  static int32_t Next(const char16_t* aText, uint32_t aLen, uint32_t aPos);
 
  private:
   ~WordBreaker() = default;

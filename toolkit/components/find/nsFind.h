@@ -12,7 +12,6 @@
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsINode.h"
-#include "mozilla/intl/WordBreaker.h"
 
 #define NS_FIND_CONTRACTID "@mozilla.org/embedcomp/rangefind;1"
 
@@ -29,19 +28,17 @@ class nsFind : public nsIFind {
   NS_DECL_NSIFIND
   NS_DECL_CYCLE_COLLECTION_CLASS(nsFind)
 
-  nsFind();
-
  protected:
-  virtual ~nsFind();
+  virtual ~nsFind() = default;
 
   
-  bool mFindBackward;
-  bool mCaseSensitive;
-  bool mMatchDiacritics;
+  bool mFindBackward = false;
+  bool mCaseSensitive = false;
+  bool mMatchDiacritics = false;
 
   
   
-  RefPtr<mozilla::intl::WordBreaker> mWordBreaker;
+  bool mEntireWord = false;
 
   struct State;
   class StateRestorer;
