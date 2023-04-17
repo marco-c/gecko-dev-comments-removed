@@ -833,6 +833,21 @@ exports.getAbsoluteScrollOffsetsForNode = getAbsoluteScrollOffsetsForNode;
 
 
 
+function isRemoteBrowserElement(node) {
+  return (
+    ChromeUtils.getClassName(node) == "XULFrameElement" &&
+    !node.childNodes.length &&
+    node.getAttribute("remote") == "true"
+  );
+}
+exports.isRemoteBrowserElement = isRemoteBrowserElement;
+
+
+
+
+
+
+
 
 
 
@@ -843,8 +858,8 @@ function isRemoteFrame(node) {
     return node.frameLoader?.isRemoteFrame;
   }
 
-  if (ChromeUtils.getClassName(node) == "XULFrameElement") {
-    return !node.childNodes.length && node.getAttribute("remote") == "true";
+  if (isRemoteBrowserElement(node)) {
+    return true;
   }
 
   return false;
