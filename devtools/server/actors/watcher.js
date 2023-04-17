@@ -165,10 +165,6 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
         
         
         
-        "set-breakpoints": true,
-        
-        
-        
         
         
         "target-configuration": true,

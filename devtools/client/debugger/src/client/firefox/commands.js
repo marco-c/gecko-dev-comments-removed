@@ -202,9 +202,7 @@ async function setBreakpoint(location, options) {
     condition: options.condition,
     logValue: options.logValue,
   };
-  const hasWatcherSupport = commands.targetCommand.hasTargetWatcherSupport(
-    "set-breakpoints"
-  );
+  const hasWatcherSupport = commands.targetCommand.hasTargetWatcherSupport();
   if (!hasWatcherSupport) {
     
     return forEachThread(async thread =>
@@ -230,9 +228,7 @@ async function setBreakpoint(location, options) {
 async function removeBreakpoint(location) {
   delete breakpoints[makePendingLocationId(location)];
 
-  const hasWatcherSupport = commands.targetCommand.hasTargetWatcherSupport(
-    "set-breakpoints"
-  );
+  const hasWatcherSupport = commands.targetCommand.hasTargetWatcherSupport();
   if (!hasWatcherSupport) {
     
     return forEachThread(async thread => thread.removeBreakpoint(location));
