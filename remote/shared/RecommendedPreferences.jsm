@@ -258,9 +258,6 @@ const COMMON_PREFERENCES = new Map([
 
   
   ["toolkit.startup.max_resumed_crashes", -1],
-
-  
-  ["browser.topsites.contile.enabled", false],
 ]);
 
 const RecommendedPreferences = {
