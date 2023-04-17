@@ -1240,7 +1240,7 @@ IdlArray.prototype.assert_type_is = function(value, type)
         
         assert_in_array(typeof value, ["object", "function"], "wrong type: not object or function");
         if (value instanceof Object
-        && !this.members[type].has_extended_attribute("NoInterfaceObject")
+        && !this.members[type].has_extended_attribute("LegacyNoInterfaceObject")
         && type in self)
         {
             assert_true(value instanceof self[type], "instanceof " + type);
@@ -1418,7 +1418,7 @@ IdlInterface.prototype.should_have_interface_object = function()
     
     
 
-    return this.is_callback() ? this.has_constants() : !this.has_extended_attribute("NoInterfaceObject");
+    return this.is_callback() ? this.has_constants() : !this.has_extended_attribute("LegacyNoInterfaceObject");
 };
 
 IdlInterface.prototype.assert_interface_object_exists = function()
@@ -1429,7 +1429,7 @@ IdlInterface.prototype.assert_interface_object_exists = function()
 
 IdlInterface.prototype.get_interface_object = function() {
     if (!this.should_have_interface_object()) {
-        var reason = this.is_callback() ? "lack of declared constants" : "declared [NoInterfaceObject] attribute";
+        var reason = this.is_callback() ? "lack of declared constants" : "declared [LegacyNoInterfaceObject] attribute";
         throw new IdlHarnessError(this.name + " has no interface object due to " + reason);
     }
 
@@ -1572,7 +1572,7 @@ function _traverse_inherited_and_consequential_interfaces(stack, callback) {
 
 IdlInterface.prototype.test = function()
 {
-    if (this.has_extended_attribute("NoInterfaceObject") || this.is_mixin())
+    if (this.has_extended_attribute("LegacyNoInterfaceObject") || this.is_mixin())
     {
         
         
@@ -1681,7 +1681,7 @@ IdlInterface.prototype.test_self = function()
             
             
             var inherited_interface = this.array.members[this.base];
-            if (!inherited_interface.has_extended_attribute("NoInterfaceObject")) {
+            if (!inherited_interface.has_extended_attribute("LegacyNoInterfaceObject")) {
                 inherited_interface.assert_interface_object_exists();
                 assert_equals(prototype, inherited_interface.get_interface_object(),
                               'prototype of ' + this.name + ' is not ' +
@@ -1996,7 +1996,7 @@ IdlInterface.prototype.test_self = function()
             if (this.base) {
                 inherit_interface = this.base;
                 var parent = this.array.members[inherit_interface];
-                if (!parent.has_extended_attribute("NoInterfaceObject")) {
+                if (!parent.has_extended_attribute("LegacyNoInterfaceObject")) {
                     parent.assert_interface_object_exists();
                     inherit_interface_interface_object = parent.get_interface_object();
                 }

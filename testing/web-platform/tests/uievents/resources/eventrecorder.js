@@ -91,8 +91,6 @@
 
 
 
-
-
 (function EventRecorderScope(global) {
    "use strict";
 
