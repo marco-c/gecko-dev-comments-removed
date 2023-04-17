@@ -11,6 +11,7 @@
 #define nsWindowsHelpers_h
 
 #include <windows.h>
+#include <msi.h>
 #include "nsAutoRef.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/UniquePtr.h"
@@ -172,6 +173,19 @@ class nsAutoRefTraits<DEVMODEW*> {
   }
 };
 
+template <>
+class nsAutoRefTraits<MSIHANDLE> {
+ public:
+  typedef MSIHANDLE RawRef;
+  static RawRef Void() { return 0; }
+
+  static void Release(RawRef aHandle) {
+    if (aHandle != Void()) {
+      ::MsiCloseHandle(aHandle);
+    }
+  }
+};
+
 
 
 
@@ -237,6 +251,7 @@ typedef nsAutoRef<HMODULE> nsModuleHandle;
 typedef nsAutoRef<DEVMODEW*> nsAutoDevMode;
 typedef nsAutoRef<nsHGLOBAL> nsAutoGlobalMem;
 typedef nsAutoRef<nsHPRINTER> nsAutoPrinter;
+typedef nsAutoRef<MSIHANDLE> nsAutoMsiHandle;
 
 namespace {
 
