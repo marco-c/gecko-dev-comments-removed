@@ -222,11 +222,10 @@ class WebrtcVideoConduit
 
   WebrtcVideoConduit(RefPtr<WebrtcCallWrapper> aCall,
                      nsCOMPtr<nsISerialEventTarget> aStsThread,
-                     std::string aPCHandle);
+                     Options aOptions, std::string aPCHandle);
   virtual ~WebrtcVideoConduit();
 
-  MediaConduitErrorCode InitMain();
-  virtual MediaConduitErrorCode Init();
+  MediaConduitErrorCode Init();
 
   std::vector<uint32_t> GetLocalSSRCs() override;
   bool SetLocalSSRCs(const std::vector<uint32_t>& ssrcs,
@@ -376,33 +375,27 @@ class WebrtcVideoConduit
   unsigned int mSendingFramerate;
 
   
-  
-  bool mVideoLatencyTestEnable = false;
-
-  
   uint64_t mVideoLatencyAvg = 0;
 
+  const bool mVideoLatencyTestEnable;
+
   
+  const int mMinBitrate;
+  const int mStartBitrate;
+  const int mPrefMaxBitrate;
+  const int mMinBitrateEstimate;
+
   
-  int mMinBitrate = 0;
-  int mStartBitrate = 0;
-  int mPrefMaxBitrate = 0;
   int mNegotiatedMaxBitrate = 0;
-  int mMinBitrateEstimate = 0;
 
   
-  
-  bool mDenoising = false;
+  const bool mDenoising;
 
   
-  
-  bool mLockScaling = false;
+  const bool mLockScaling;
 
-  
-  uint8_t mSpatialLayers = 1;
-
-  
-  uint8_t mTemporalLayers = 1;
+  const uint8_t mSpatialLayers;
+  const uint8_t mTemporalLayers;
 
   static const unsigned int sAlphaNum = 7;
   static const unsigned int sAlphaDen = 8;
