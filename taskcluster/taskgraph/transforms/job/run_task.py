@@ -37,6 +37,8 @@ run_task_schema = Schema(
         
         Required("sparse-profile"): Any(text_type, None),
         
+        Optional("sparse-profile-prefix"): text_type,
+        
         
         Required("comm-checkout"): bool,
         
@@ -68,9 +70,11 @@ def common_setup(config, job, taskdesc, command):
         )
 
     if run["sparse-profile"]:
-        command.append(
-            "--gecko-sparse-profile=build/sparse-profiles/%s" % run["sparse-profile"]
+        sparse_profile_prefix = run.pop(
+            "sparse-profile-prefix", "build/sparse-profiles"
         )
+        sparse_profile_path = path.join(sparse_profile_prefix, run["sparse-profile"])
+        command.append("--gecko-sparse-profile={}".format(sparse_profile_path))
 
     taskdesc["worker"].setdefault("env", {})["MOZ_SCM_LEVEL"] = config.params["level"]
 
