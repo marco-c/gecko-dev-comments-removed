@@ -58,7 +58,6 @@ namespace layers {
 class AsyncPanZoomController;
 class ClientLayerManager;
 class Layer;
-class LayerMetricsWrapper;
 class PaintedLayer;
 class ContainerLayer;
 class ImageLayer;
@@ -271,20 +270,6 @@ class LayerManager : public WindowRenderer {
 
 
   Layer* GetRoot() { return mRoot; }
-
-  
-
-
-
-
-
-  ScrollableLayerGuid::ViewID GetRootScrollableLayerId();
-
-  
-
-
-
-  LayerMetricsWrapper GetRootContentLayer();
 
   
 

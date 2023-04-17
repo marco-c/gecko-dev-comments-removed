@@ -28,9 +28,8 @@
 #include "mozilla/dom/AnimationEffect.h"  
 #include "mozilla/gfx/Point.h"            
 #include "mozilla/gfx/Types.h"            
-#include "mozilla/gfx/UserData.h"  
-#include "mozilla/layers/LayerMetricsWrapper.h"  
-#include "mozilla/layers/LayersTypes.h"          
+#include "mozilla/gfx/UserData.h"        
+#include "mozilla/layers/LayersTypes.h"  
 #include "mozilla/layers/PersistentBufferProvider.h"  
 #include "mozilla/layers/ScrollableLayerGuid.h"  
 #include "nsHashKeys.h"                          
@@ -72,37 +71,6 @@ void LayerManager::Destroy() {
  mozilla::LogModule* LayerManager::GetLog() {
   static LazyLogModule sLog("Layers");
   return sLog;
-}
-
-ScrollableLayerGuid::ViewID LayerManager::GetRootScrollableLayerId() {
-  if (!mRoot) {
-    return ScrollableLayerGuid::NULL_SCROLL_ID;
-  }
-
-  LayerMetricsWrapper layerMetricsRoot = LayerMetricsWrapper(mRoot);
-
-  LayerMetricsWrapper rootScrollableLayerMetrics =
-      BreadthFirstSearch<ForwardIterator>(
-          layerMetricsRoot, [](LayerMetricsWrapper aLayerMetrics) {
-            return aLayerMetrics.Metrics().IsScrollable();
-          });
-
-  return rootScrollableLayerMetrics.IsValid()
-             ? rootScrollableLayerMetrics.Metrics().GetScrollId()
-             : ScrollableLayerGuid::NULL_SCROLL_ID;
-}
-
-LayerMetricsWrapper LayerManager::GetRootContentLayer() {
-  if (!mRoot) {
-    return LayerMetricsWrapper();
-  }
-
-  LayerMetricsWrapper root(mRoot);
-
-  return BreadthFirstSearch<ForwardIterator>(
-      root, [](LayerMetricsWrapper aLayerMetrics) {
-        return aLayerMetrics.Metrics().IsRootContent();
-      });
 }
 
 already_AddRefed<DrawTarget> LayerManager::CreateOptimalDrawTarget(
