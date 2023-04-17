@@ -11,6 +11,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   CONTEXTUAL_SERVICES_PING_TYPES:
     "resource:///modules/PartnerLinkAttribution.jsm",
   PartnerLinkAttribution: "resource:///modules/PartnerLinkAttribution.jsm",
+  TelemetryEnvironment: "resource://gre/modules/TelemetryEnvironment.jsm",
   UrlbarProviderQuickSuggest:
     "resource:///modules/UrlbarProviderQuickSuggest.jsm",
   UrlbarQuickSuggest: "resource:///modules/UrlbarQuickSuggest.jsm",
@@ -320,6 +321,7 @@ add_task(async function help_mouse() {
 
 
 
+
 add_task(async function enableToggled() {
   Services.telemetry.clearEvents();
 
@@ -335,6 +337,13 @@ add_task(async function enableToggled() {
         object: enabled ? "enabled" : "disabled",
       },
     ]);
+    Assert.equal(
+      TelemetryEnvironment.currentEnvironment.settings.userPrefs[
+        "browser.urlbar.suggest.quicksuggest"
+      ],
+      enabled,
+      "suggest.quicksuggest is correct in TelemetryEnvironment"
+    );
   }
 
   
@@ -350,6 +359,8 @@ add_task(async function enableToggled() {
   
   UrlbarPrefs.set(SUGGEST_PREF, !enabled);
 });
+
+
 
 
 
@@ -369,6 +380,13 @@ add_task(async function sponsoredToggled() {
         object: enabled ? "enabled" : "disabled",
       },
     ]);
+    Assert.equal(
+      TelemetryEnvironment.currentEnvironment.settings.userPrefs[
+        "browser.urlbar.suggest.quicksuggest.sponsored"
+      ],
+      enabled,
+      "suggest.quicksuggest.sponsored is correct in TelemetryEnvironment"
+    );
   }
 
   
@@ -476,7 +494,8 @@ add_task(async function nimbusExposure() {
 
 
 
-add_task(async function updateScenarioNoEvents() {
+
+add_task(async function updateScenario() {
   
   
   UrlbarPrefs.clear("quicksuggest.scenario");
@@ -499,6 +518,18 @@ add_task(async function updateScenarioNoEvents() {
     defaults.getBoolPref("suggest.quicksuggest.sponsored"),
     "suggest.quicksuggest.sponsored is true initially"
   );
+  Assert.ok(
+    TelemetryEnvironment.currentEnvironment.settings.userPrefs[
+      "browser.urlbar.suggest.quicksuggest"
+    ],
+    "suggest.quicksuggest is true in TelemetryEnvironment"
+  );
+  Assert.ok(
+    TelemetryEnvironment.currentEnvironment.settings.userPrefs[
+      "browser.urlbar.suggest.quicksuggest.sponsored"
+    ],
+    "suggest.quicksuggest.sponsored is true in TelemetryEnvironment"
+  );
 
   
   defaults.setCharPref("quicksuggest.scenario", "online");
@@ -511,6 +542,18 @@ add_task(async function updateScenarioNoEvents() {
     "suggest.quicksuggest.sponsored is false after setting online scenario"
   );
   TelemetryTestUtils.assertEvents([]);
+  Assert.ok(
+    !TelemetryEnvironment.currentEnvironment.settings.userPrefs[
+      "browser.urlbar.suggest.quicksuggest"
+    ],
+    "suggest.quicksuggest is false in TelemetryEnvironment"
+  );
+  Assert.ok(
+    !TelemetryEnvironment.currentEnvironment.settings.userPrefs[
+      "browser.urlbar.suggest.quicksuggest.sponsored"
+    ],
+    "suggest.quicksuggest.sponsored is false in TelemetryEnvironment"
+  );
 
   
   defaults.setCharPref("quicksuggest.scenario", "offline");
@@ -523,6 +566,116 @@ add_task(async function updateScenarioNoEvents() {
     "suggest.quicksuggest.sponsored is true after setting offline again"
   );
   TelemetryTestUtils.assertEvents([]);
+  Assert.ok(
+    TelemetryEnvironment.currentEnvironment.settings.userPrefs[
+      "browser.urlbar.suggest.quicksuggest"
+    ],
+    "suggest.quicksuggest is true in TelemetryEnvironment again"
+  );
+  Assert.ok(
+    TelemetryEnvironment.currentEnvironment.settings.userPrefs[
+      "browser.urlbar.suggest.quicksuggest.sponsored"
+    ],
+    "suggest.quicksuggest.sponsored is true in TelemetryEnvironment again"
+  );
+});
+
+
+
+add_task(async function telemetryEnvironmentUpdateNotification() {
+  
+  
+  UrlbarPrefs.clear("quicksuggest.scenario");
+  UrlbarPrefs.clear("suggest.quicksuggest");
+  UrlbarPrefs.clear("suggest.quicksuggest.sponsored");
+
+  
+  let defaults = Services.prefs.getDefaultBranch("browser.urlbar.");
+  Assert.ok(
+    defaults.getBoolPref("suggest.quicksuggest"),
+    "suggest.quicksuggest is true initially"
+  );
+  Assert.ok(
+    defaults.getBoolPref("suggest.quicksuggest.sponsored"),
+    "suggest.quicksuggest.sponsored is true initially"
+  );
+
+  
+  await TelemetryEnvironment.testWatchPreferences(new Map());
+
+  
+  defaults.setBoolPref("suggest.quicksuggest", false);
+  defaults.setBoolPref("suggest.quicksuggest.sponsored", false);
+  Assert.ok(
+    !(
+      "browser.urlbar.suggest.quicksuggest" in
+      TelemetryEnvironment.currentEnvironment.settings.userPrefs
+    ),
+    "suggest.quicksuggest not in TelemetryEnvironment"
+  );
+  Assert.ok(
+    !(
+      "browser.urlbar.suggest.quicksuggest.sponsored" in
+      TelemetryEnvironment.currentEnvironment.settings.userPrefs
+    ),
+    "suggest.quicksuggest.sponsored not in TelemetryEnvironment"
+  );
+
+  
+  
+  Services.obs.notifyObservers(null, "firefox-suggest-update");
+  Assert.strictEqual(
+    TelemetryEnvironment.currentEnvironment.settings.userPrefs[
+      "browser.urlbar.suggest.quicksuggest"
+    ],
+    false,
+    "suggest.quicksuggest is false in TelemetryEnvironment"
+  );
+  Assert.strictEqual(
+    TelemetryEnvironment.currentEnvironment.settings.userPrefs[
+      "browser.urlbar.suggest.quicksuggest.sponsored"
+    ],
+    false,
+    "suggest.quicksuggest.sponsored is false in TelemetryEnvironment"
+  );
+
+  
+  defaults.setBoolPref("suggest.quicksuggest", true);
+  defaults.setBoolPref("suggest.quicksuggest.sponsored", true);
+  Assert.strictEqual(
+    TelemetryEnvironment.currentEnvironment.settings.userPrefs[
+      "browser.urlbar.suggest.quicksuggest"
+    ],
+    false,
+    "suggest.quicksuggest remains false in TelemetryEnvironment"
+  );
+  Assert.strictEqual(
+    TelemetryEnvironment.currentEnvironment.settings.userPrefs[
+      "browser.urlbar.suggest.quicksuggest.sponsored"
+    ],
+    false,
+    "suggest.quicksuggest.sponsored remains false in TelemetryEnvironment"
+  );
+
+  
+  
+  Services.obs.notifyObservers(null, "firefox-suggest-update");
+  Assert.strictEqual(
+    TelemetryEnvironment.currentEnvironment.settings.userPrefs[
+      "browser.urlbar.suggest.quicksuggest"
+    ],
+    true,
+    "suggest.quicksuggest is false in TelemetryEnvironment"
+  );
+  Assert.strictEqual(
+    TelemetryEnvironment.currentEnvironment.settings.userPrefs[
+      "browser.urlbar.suggest.quicksuggest.sponsored"
+    ],
+    true,
+    "suggest.quicksuggest.sponsored is false in TelemetryEnvironment"
+  );
+
+  await TelemetryEnvironment.testCleanRestart().onInitialized();
 });
 
 

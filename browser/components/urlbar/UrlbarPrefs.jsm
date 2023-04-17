@@ -25,6 +25,8 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 const PREF_URLBAR_BRANCH = "browser.urlbar.";
 
+const FIREFOX_SUGGEST_UPDATE_TOPIC = "firefox-suggest-update";
+
 
 
 
@@ -639,6 +641,17 @@ class Preferences {
     
     
     defaults.setBoolPref("quicksuggest.enabled", enabled);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Services.obs.notifyObservers(null, FIREFOX_SUGGEST_UPDATE_TOPIC);
   }
 
   
