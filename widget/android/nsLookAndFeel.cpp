@@ -383,8 +383,16 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
       break;
 
     case IntID::PrimaryPointerCapabilities:
-      aResult = java::GeckoAppShell::GetPrimaryPointerCapabilities();
+      aResult = java::GeckoAppShell::GetAllPointerCapabilities();
+
+      
+      
+      
+      if (aResult & static_cast<int32_t>(PointerCapabilities::Coarse)) {
+        aResult = static_cast<int32_t>(PointerCapabilities::Coarse);
+      }
       break;
+
     case IntID::AllPointerCapabilities:
       aResult = java::GeckoAppShell::GetAllPointerCapabilities();
       break;

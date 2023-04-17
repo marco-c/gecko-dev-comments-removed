@@ -1286,14 +1286,19 @@ public class GeckoAppShell {
     int result = NO_POINTER;
     final int sources = inputDevice.getSources();
 
-    if (hasInputDeviceSource(sources, InputDevice.SOURCE_TOUCHSCREEN)
-        || hasInputDeviceSource(sources, InputDevice.SOURCE_JOYSTICK)) {
-      result |= COARSE_POINTER;
-    } else if (hasInputDeviceSource(sources, InputDevice.SOURCE_MOUSE)
+    
+    
+    
+    
+
+    if (hasInputDeviceSource(sources, InputDevice.SOURCE_MOUSE)
         || hasInputDeviceSource(sources, InputDevice.SOURCE_STYLUS)
         || hasInputDeviceSource(sources, InputDevice.SOURCE_TOUCHPAD)
         || hasInputDeviceSource(sources, InputDevice.SOURCE_TRACKBALL)) {
       result |= FINE_POINTER;
+    } else if (hasInputDeviceSource(sources, InputDevice.SOURCE_TOUCHSCREEN)
+        || hasInputDeviceSource(sources, InputDevice.SOURCE_JOYSTICK)) {
+      result |= COARSE_POINTER;
     }
 
     if (hasInputDeviceSource(sources, InputDevice.SOURCE_MOUSE)
@@ -1318,27 +1323,6 @@ public class GeckoAppShell {
       }
 
       result |= getPointerCapabilities(inputDevice);
-    }
-
-    return result;
-  }
-
-  @WrapForJNI(calledFrom = "gecko")
-  
-  private static int getPrimaryPointerCapabilities() {
-    int result = NO_POINTER;
-
-    for (final int deviceId : InputDevice.getDeviceIds()) {
-      final InputDevice inputDevice = InputDevice.getDevice(deviceId);
-      if (inputDevice == null || !InputDeviceUtils.isPointerTypeDevice(inputDevice)) {
-        continue;
-      }
-
-      result = getPointerCapabilities(inputDevice);
-
-      
-      
-      break;
     }
 
     return result;
