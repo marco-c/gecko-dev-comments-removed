@@ -5928,7 +5928,7 @@ bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
 
       
       
-      if (wParam == HTMAXBUTTON) {
+      if (wParam == HTMAXBUTTON && mCustomNonClient) {
         DispatchMouseEvent(eMouseDown, wParam, lParamToClient(lParam), false,
                            MouseButton::ePrimary, MOUSE_INPUT_SOURCE());
         DispatchPendingEvents();
