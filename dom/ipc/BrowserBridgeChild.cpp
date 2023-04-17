@@ -214,6 +214,10 @@ mozilla::ipc::IPCResult BrowserBridgeChild::RecvSubFrameCrashed() {
 }
 
 void BrowserBridgeChild::ActorDestroy(ActorDestroyReason aWhy) {
+  if (mFrameLoader) {
+    mFrameLoader->DestroyComplete();
+  }
+
   if (!mBrowsingContext) {
     
     return;
