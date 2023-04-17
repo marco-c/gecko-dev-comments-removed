@@ -19,6 +19,16 @@ namespace MacRunFromDmgUtils {
 
 bool IsAppRunningFromDmg();
 
+
+
+
+
+
+
+
+
+bool MaybeInstallFromDmgAndRelaunch();
+
 }  
 }  
 
