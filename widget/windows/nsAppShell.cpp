@@ -682,7 +682,6 @@ bool nsAppShell::ProcessNextNativeEvent(bool mayWait) {
 
   do {
     MSG msg;
-    bool uiMessage = false;
 
     
     
@@ -696,15 +695,10 @@ bool nsAppShell::ProcessNextNativeEvent(bool mayWait) {
                                          MOZ_WM_MOUSEWHEEL_LAST, PM_REMOVE);
       NS_ASSERTION(gotMessage,
                    "waiting internal wheel message, but it has not come");
-      uiMessage = gotMessage;
     }
 
     if (!gotMessage) {
       gotMessage = WinUtils::PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE);
-      uiMessage =
-          (msg.message >= WM_KEYFIRST && msg.message <= WM_IME_KEYLAST) ||
-          (msg.message >= NS_WM_IMEFIRST && msg.message <= NS_WM_IMELAST) ||
-          (msg.message >= WM_MOUSEFIRST && msg.message <= WM_MOUSELAST);
     }
 
     if (gotMessage) {
