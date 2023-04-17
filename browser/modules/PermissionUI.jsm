@@ -1240,7 +1240,7 @@ StorageAccessPermissionPrompt.prototype = {
 
   get permissionKey() {
     
-    return "storage-access-" + this.principal.origin;
+    return `3rdPartyStorage${SitePermissions.PERM_KEY_DELIMITER}${this.principal.origin}`;
   },
 
   prettifyHostPort(hostport) {
