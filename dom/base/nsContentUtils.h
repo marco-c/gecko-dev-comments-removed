@@ -353,6 +353,7 @@ class nsContentUtils {
   static bool ShouldResistFingerprinting(
       mozilla::dom::WorkerPrivate* aWorkerPrivate);
   static bool ShouldResistFingerprinting(const Document* aDoc);
+  static bool ShouldResistFingerprinting(nsIChannel* aChannel);
 
   
   static bool UseStandinsForNativeColors();
@@ -2729,6 +2730,11 @@ class nsContentUtils {
   
 
 
+  static mozilla::LogModule* ResistFingerprintingLog();
+
+  
+
+
 
 
   static mozilla::LogModule* DOMDumpLog();
@@ -3412,6 +3418,7 @@ class nsContentUtils {
   
   static nsCString* sJSBytecodeMimeType;
 
+  static mozilla::LazyLogModule gResistFingerprintingLog;
   static mozilla::LazyLogModule sDOMDumpLog;
 
   static int32_t sInnerOrOuterWindowCount;
