@@ -155,26 +155,23 @@ StoragePrincipalHelper::PrepareEffectiveStoragePrincipalOriginAttributes(
 }
 
 
-bool StoragePrincipalHelper::
-    VerifyValidPartitionedPrincipalInfoForPrincipalInfo(
-        const mozilla::ipc::PrincipalInfo& aPartitionedPrincipalInfo,
-        const mozilla::ipc::PrincipalInfo& aPrincipalInfo,
-        bool aIgnoreSpecForContentPrincipal) {
-  if (aPartitionedPrincipalInfo.type() != aPrincipalInfo.type()) {
+bool StoragePrincipalHelper::VerifyValidStoragePrincipalInfoForPrincipalInfo(
+    const mozilla::ipc::PrincipalInfo& aStoragePrincipalInfo,
+    const mozilla::ipc::PrincipalInfo& aPrincipalInfo) {
+  if (aStoragePrincipalInfo.type() != aPrincipalInfo.type()) {
     return false;
   }
 
-  if (aPartitionedPrincipalInfo.type() ==
+  if (aStoragePrincipalInfo.type() ==
       mozilla::ipc::PrincipalInfo::TContentPrincipalInfo) {
     const mozilla::ipc::ContentPrincipalInfo& spInfo =
-        aPartitionedPrincipalInfo.get_ContentPrincipalInfo();
+        aStoragePrincipalInfo.get_ContentPrincipalInfo();
     const mozilla::ipc::ContentPrincipalInfo& pInfo =
         aPrincipalInfo.get_ContentPrincipalInfo();
 
-    if (!spInfo.attrs().EqualsIgnoringPartitionKey(pInfo.attrs()) ||
+    if (!spInfo.attrs().EqualsIgnoringFPD(pInfo.attrs()) ||
         spInfo.originNoSuffix() != pInfo.originNoSuffix() ||
-        (!aIgnoreSpecForContentPrincipal && spInfo.spec() != pInfo.spec()) ||
-        spInfo.domain() != pInfo.domain() ||
+        spInfo.spec() != pInfo.spec() || spInfo.domain() != pInfo.domain() ||
         spInfo.baseDomain() != pInfo.baseDomain()) {
       return false;
     }
@@ -182,31 +179,31 @@ bool StoragePrincipalHelper::
     return true;
   }
 
-  if (aPartitionedPrincipalInfo.type() ==
+  if (aStoragePrincipalInfo.type() ==
       mozilla::ipc::PrincipalInfo::TSystemPrincipalInfo) {
     
     return true;
   }
 
-  if (aPartitionedPrincipalInfo.type() ==
+  if (aStoragePrincipalInfo.type() ==
       mozilla::ipc::PrincipalInfo::TNullPrincipalInfo) {
     const mozilla::ipc::NullPrincipalInfo& spInfo =
-        aPartitionedPrincipalInfo.get_NullPrincipalInfo();
+        aStoragePrincipalInfo.get_NullPrincipalInfo();
     const mozilla::ipc::NullPrincipalInfo& pInfo =
         aPrincipalInfo.get_NullPrincipalInfo();
 
     return spInfo.spec() == pInfo.spec() &&
-           spInfo.attrs().EqualsIgnoringPartitionKey(pInfo.attrs());
+           spInfo.attrs().EqualsIgnoringFPD(pInfo.attrs());
   }
 
-  if (aPartitionedPrincipalInfo.type() ==
+  if (aStoragePrincipalInfo.type() ==
       mozilla::ipc::PrincipalInfo::TExpandedPrincipalInfo) {
     const mozilla::ipc::ExpandedPrincipalInfo& spInfo =
-        aPartitionedPrincipalInfo.get_ExpandedPrincipalInfo();
+        aStoragePrincipalInfo.get_ExpandedPrincipalInfo();
     const mozilla::ipc::ExpandedPrincipalInfo& pInfo =
         aPrincipalInfo.get_ExpandedPrincipalInfo();
 
-    if (!spInfo.attrs().EqualsIgnoringPartitionKey(pInfo.attrs())) {
+    if (!spInfo.attrs().EqualsIgnoringFPD(pInfo.attrs())) {
       return false;
     }
 
@@ -215,9 +212,8 @@ bool StoragePrincipalHelper::
     }
 
     for (uint32_t i = 0; i < spInfo.allowlist().Length(); ++i) {
-      if (!VerifyValidPartitionedPrincipalInfoForPrincipalInfo(
-              spInfo.allowlist()[i], pInfo.allowlist()[i],
-              aIgnoreSpecForContentPrincipal)) {
+      if (!VerifyValidStoragePrincipalInfoForPrincipalInfo(
+              spInfo.allowlist()[i], pInfo.allowlist()[i])) {
         return false;
       }
     }
@@ -322,47 +318,6 @@ nsresult StoragePrincipalHelper::GetPrincipal(nsPIDOMWindowInner* aWindow,
 
   outPrincipal.forget(aPrincipal);
   return NS_OK;
-}
-
-
-bool StoragePrincipalHelper::ShouldUsePartitionPrincipalForServiceWorker(
-    nsIDocShell* aDocShell) {
-  MOZ_ASSERT(aDocShell);
-
-  RefPtr<Document> document = aDocShell->GetExtantDocument();
-
-  
-  
-  if (!document) {
-    nsCOMPtr<nsIDocShellTreeItem> parentItem;
-    aDocShell->GetInProcessSameTypeParent(getter_AddRefs(parentItem));
-
-    if (parentItem) {
-      document = parentItem->GetDocument();
-    }
-  }
-
-  nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
-
-  if (document) {
-    cookieJarSettings = document->CookieJarSettings();
-  } else {
-    
-    
-    cookieJarSettings = CookieJarSettings::Create(CookieJarSettings::eRegular);
-  }
-
-  
-  if (cookieJarSettings->GetCookieBehavior() !=
-      nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN) {
-    return false;
-  }
-
-  
-  
-  
-  return AntiTrackingUtils::IsThirdPartyContext(
-      aDocShell->GetBrowsingContext());
 }
 
 
