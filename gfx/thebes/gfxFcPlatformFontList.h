@@ -30,7 +30,7 @@ namespace dom {
 class SystemFontListEntry;
 class SystemFontList;
 class SystemFontOptions;
-};
+};  
 
 template <>
 class RefPtrTraits<FcPattern> {
