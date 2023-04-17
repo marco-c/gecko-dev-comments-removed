@@ -238,6 +238,12 @@ class CCGCScheduler {
   
   
   
+  void RunNextCollectorTimer(JS::GCReason aReason,
+                             mozilla::TimeStamp aDeadline);
+
+  
+  
+  
   void BlockCC(TimeStamp aNow) {
     MOZ_ASSERT(mInIncrementalGC);
     MOZ_ASSERT(mCCBlockStart.IsNull());

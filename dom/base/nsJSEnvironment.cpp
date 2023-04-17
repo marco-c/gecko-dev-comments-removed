@@ -1579,32 +1579,9 @@ bool nsJSContext::HasHadCleanupSinceLastGC() {
 }
 
 
-
-
-
-
 void nsJSContext::RunNextCollectorTimer(JS::GCReason aReason,
                                         mozilla::TimeStamp aDeadline) {
-  if (sShuttingDown) {
-    return;
-  }
-
-  
-  
-  MOZ_ASSERT_IF(sScheduler.InIncrementalGC(), sScheduler.mGCRunner);
-
-  RefPtr<IdleTaskRunner> runner;
-  if (sScheduler.mGCRunner) {
-    sScheduler.SetWantMajorGC(aReason);
-    runner = sScheduler.mGCRunner;
-  } else if (sScheduler.mCCRunner) {
-    runner = sScheduler.mCCRunner;
-  }
-
-  if (runner) {
-    runner->SetIdleDeadline(aDeadline);
-    runner->Run();
-  }
+  sScheduler.RunNextCollectorTimer(aReason, aDeadline);
 }
 
 
@@ -1660,7 +1637,7 @@ void nsJSContext::MaybeRunNextCollectorSlice(nsIDocShell* aDocShell,
     
     
     if (next.isSome()) {
-      nsJSContext::RunNextCollectorTimer(aReason, next.value());
+      sScheduler.RunNextCollectorTimer(aReason, next.value());
     }
   }
 }
