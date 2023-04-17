@@ -3226,7 +3226,11 @@ void nsCSSFrameConstructor::ConstructTextFrame(
   
   aFrameList.AppendFrame(nullptr, newFrame);
 
-  if (!aState.mCreatingExtraFrames) aContent->SetPrimaryFrame(newFrame);
+  if (!aState.mCreatingExtraFrames ||
+      (aContent->IsInNativeAnonymousSubtree() &&
+       !aContent->GetPrimaryFrame())) {
+    aContent->SetPrimaryFrame(newFrame);
+  }
 }
 
 
