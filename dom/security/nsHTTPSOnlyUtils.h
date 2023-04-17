@@ -217,6 +217,14 @@ class TestHTTPAnswerRunnable final : public mozilla::Runnable,
   ~TestHTTPAnswerRunnable() = default;
 
  private:
+  
+
+
+
+
+
+  static bool IsBackgroundRequestRedirected(nsIHttpChannel* aChannel);
+
   RefPtr<nsIURI> mURI;
   
   

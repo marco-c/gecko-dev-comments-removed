@@ -666,6 +666,45 @@ TestHTTPAnswerRunnable::TestHTTPAnswerRunnable(
       mURI(aURI),
       mDocumentLoadListener(aDocumentLoadListener) {}
 
+
+bool TestHTTPAnswerRunnable::IsBackgroundRequestRedirected(
+    nsIHttpChannel* aChannel) {
+  
+  nsCOMPtr<nsILoadInfo> loadinfo = aChannel->LoadInfo();
+  if (loadinfo->RedirectChain().IsEmpty()) {
+    return false;
+  }
+
+  
+  
+  nsCOMPtr<nsIURI> finalURI;
+  nsresult rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(finalURI));
+  NS_ENSURE_SUCCESS(rv, false);
+  if (!finalURI->SchemeIs("https")) {
+    return false;
+  }
+
+  
+  nsCOMPtr<nsIPrincipal> firstURIPrincipal;
+  loadinfo->RedirectChain()[0]->GetPrincipal(getter_AddRefs(firstURIPrincipal));
+  if (!firstURIPrincipal || !firstURIPrincipal->SchemeIs("http")) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  nsAutoCString redirectHost;
+  nsAutoCString finalHost;
+  firstURIPrincipal->GetAsciiHost(redirectHost);
+  finalURI->GetAsciiHost(finalHost);
+  return finalHost.Equals(redirectHost);
+}
+
 NS_IMETHODIMP
 TestHTTPAnswerRunnable::OnStartRequest(nsIRequest* aRequest) {
   
@@ -692,6 +731,17 @@ TestHTTPAnswerRunnable::OnStartRequest(nsIRequest* aRequest) {
         do_QueryInterface(httpsOnlyChannel);
     bool isAuthChannel = false;
     mozilla::Unused << httpChannelInternal->GetIsAuthChannel(&isAuthChannel);
+    
+    
+    
+    
+    
+    if (!topLevelLoadInProgress) {
+      nsCOMPtr<nsIHttpChannel> backgroundHttpChannel =
+          do_QueryInterface(aRequest);
+      topLevelLoadInProgress =
+          IsBackgroundRequestRedirected(backgroundHttpChannel);
+    }
     if (!topLevelLoadInProgress && !isAuthChannel) {
       
       
