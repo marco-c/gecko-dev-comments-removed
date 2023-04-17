@@ -381,10 +381,29 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
 
 mozilla::Maybe<::JS::ProfilingFrameIterator::RegisterState>
 JitRuntime::getCppEntryRegisters(JitFrameLayout* frameStackAddress) {
+  if (frameStackAddress->prevType() != FrameType::CppToJSJit) {
+    
+    return mozilla::Nothing{};
+  }
+
+  
+  MOZ_ASSERT(frameStackAddress->headerSize() == JitFrameLayout::Size());
+  const size_t offsetToCppEntry =
+      JitFrameLayout::Size() + frameStackAddress->prevFrameLocalSize();
+  EnterJITStackEntry* enterJITStackEntry =
+      reinterpret_cast<EnterJITStackEntry*>(
+          reinterpret_cast<uint8_t*>(frameStackAddress) + offsetToCppEntry);
+
+  
+  ::JS::ProfilingFrameIterator::RegisterState registerState;
+  registerState.fp = enterJITStackEntry->rbp;
+  registerState.pc = enterJITStackEntry->rip;
   
   
+  registerState.sp = &enterJITStackEntry->rip + 1;
   
-  return mozilla::Nothing{};
+  registerState.lr = nullptr;
+  return mozilla::Some(registerState);
 }
 
 
