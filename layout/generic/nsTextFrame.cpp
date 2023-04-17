@@ -4505,7 +4505,8 @@ class nsContinuingTextFrame final : public nsTextFrame {
         auto* prev = static_cast<nsContinuingTextFrame*>(mPrevContinuation);
         MOZ_ASSERT(mFirstContinuation == prev->mFirstContinuation);
       } else {
-        MOZ_ASSERT(mFirstContinuation == mPrevContinuation->FirstContinuation());
+        MOZ_ASSERT(mFirstContinuation ==
+                   mPrevContinuation->FirstContinuation());
       }
     } else {
       MOZ_ASSERT(!mFirstContinuation);
@@ -10179,7 +10180,12 @@ bool nsTextFrame::IsEmpty() {
   const nsStyleText* textStyle = StyleText();
   if (textStyle->WhiteSpaceIsSignificant()) {
     
-    return false;
+    
+    
+    
+    
+    return GetContentLength() == 0 && !GetContent()->IsEditable() &&
+           !GetContent()->GetParent()->IsHTMLElement(nsGkAtoms::input);
   }
 
   if (mState & TEXT_ISNOT_ONLY_WHITESPACE) {
