@@ -374,7 +374,6 @@ void nsXPLookAndFeel::Shutdown() {
   nsNativeBasicTheme::Shutdown();
 }
 
-
 static void IntPrefChanged() {
   
   LookAndFeel::NotifyChangedAllWindows(
@@ -387,7 +386,6 @@ static void FloatPrefChanged() {
       widget::ThemeChangeKind::MediaQueriesOnly);
 }
 
-
 static void ColorPrefChanged() {
   
   LookAndFeel::NotifyChangedAllWindows(widget::ThemeChangeKind::Style);
@@ -395,8 +393,6 @@ static void ColorPrefChanged() {
 
 
 void nsXPLookAndFeel::OnPrefChanged(const char* aPref, void* aClosure) {
-  
-
   nsDependentCString prefName(aPref);
   for (const char* pref : sIntPrefs) {
     if (prefName.Equals(pref)) {
@@ -420,6 +416,15 @@ void nsXPLookAndFeel::OnPrefChanged(const char* aPref, void* aClosure) {
   }
 }
 
+static constexpr nsLiteralCString kBoolMediaQueryPrefs[] = {
+    "browser.proton.enabled"_ns,
+    "browser.proton.urlbar.enabled"_ns,
+    "browser.proton.contextmenus.enabled"_ns,
+    "browser.proton.modals.enabled"_ns,
+    "browser.proton.doorhangers.enabled"_ns,
+    "browser.proton.infobars.enabled"_ns,
+    "browser.proton.places-tooltip.enabled"_ns,
+};
 
 
 
@@ -439,6 +444,15 @@ void nsXPLookAndFeel::Init() {
   
   
   Preferences::RegisterCallback(OnPrefChanged, "accessibility.tabfocus");
+
+  for (auto& pref : kBoolMediaQueryPrefs) {
+    Preferences::RegisterCallback(
+        [](const char*, void*) {
+          LookAndFeel::NotifyChangedAllWindows(
+              widget::ThemeChangeKind::MediaQueriesOnly);
+        },
+        pref);
+  }
 }
 
 nsXPLookAndFeel::~nsXPLookAndFeel() {
