@@ -179,7 +179,7 @@ add_task(async function test_hiddenPageActionContextMenu() {
   
   
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.proton.enabled", false]],
+    set: [["browser.proton.urlbar.enabled", false]],
   });
   const manifest = {
     page_action: {},

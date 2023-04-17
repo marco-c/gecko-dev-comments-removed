@@ -44,13 +44,6 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIClipboardHelper"
 );
 
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "protonEnabled",
-  "browser.proton.enabled",
-  false
-);
-
 const DEFAULT_FORM_HISTORY_NAME = "searchbar-history";
 const SEARCH_BUTTON_ID = "urlbar-search-button";
 
@@ -208,10 +201,6 @@ class UrlbarInput {
       return new UrlbarValueFormatter(this);
     });
 
-    XPCOMUtils.defineLazyGetter(this, "addSearchEngineHelper", () => {
-      return new AddSearchEngineHelper(this);
-    });
-
     
     
     
@@ -271,6 +260,9 @@ class UrlbarInput {
 
     this._initCopyCutController();
     this._initPasteAndGo();
+    if (UrlbarPrefs.get("browser.proton.urlbar.enabled")) {
+      this.addSearchEngineHelper = new AddSearchEngineHelper(this);
+    }
 
     
     this._compositionState = UrlbarUtils.COMPOSITION.NONE;
@@ -1419,7 +1411,7 @@ class UrlbarInput {
     this._hideFocus = false;
     if (this.focused) {
       this.setAttribute("focused", "true");
-      if (!protonEnabled) {
+      if (!UrlbarPrefs.get("browser.proton.urlbar.enabled")) {
         this.startLayoutExtend();
       }
     }
@@ -1659,7 +1651,7 @@ class UrlbarInput {
       return;
     }
     await this._updateLayoutBreakoutDimensions();
-    if (!protonEnabled) {
+    if (!UrlbarPrefs.get("browser.proton.urlbar.enabled")) {
       this.startLayoutExtend();
     }
   }
@@ -1673,7 +1665,7 @@ class UrlbarInput {
     ) {
       return;
     }
-    if (protonEnabled && !this.view.isOpen) {
+    if (UrlbarPrefs.get("browser.proton.urlbar.enabled") && !this.view.isOpen) {
       return;
     }
     
@@ -1722,7 +1714,7 @@ class UrlbarInput {
     }
 
     if (
-      !protonEnabled &&
+      !UrlbarPrefs.get("browser.proton.urlbar.enabled") &&
       this.getAttribute("focused") == "true" &&
       (!this.window.gReduceMotion ||
         !this.window.matchMedia("(prefers-reduced-motion: reduce)").matches)
@@ -2740,7 +2732,7 @@ class UrlbarInput {
     });
 
     this.removeAttribute("focused");
-    if (!protonEnabled) {
+    if (!UrlbarPrefs.get("browser.proton.urlbar.enabled")) {
       this.endLayoutExtend();
     }
 
@@ -2819,7 +2811,7 @@ class UrlbarInput {
   }
 
   _on_contextmenu(event) {
-    if (protonEnabled) {
+    if (UrlbarPrefs.get("browser.proton.urlbar.enabled")) {
       this.addSearchEngineHelper.refreshContextMenu(event);
     }
 
@@ -2856,7 +2848,7 @@ class UrlbarInput {
       }
     }
 
-    if (!protonEnabled) {
+    if (!UrlbarPrefs.get("browser.proton.urlbar.enabled")) {
       this.startLayoutExtend();
     }
 

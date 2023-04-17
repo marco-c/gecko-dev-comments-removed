@@ -630,7 +630,7 @@ macro_rules! bool_pref_feature {
 
 
 
-pub static MEDIA_FEATURES: [MediaFeatureDescription; 62] = [
+pub static MEDIA_FEATURES: [MediaFeatureDescription; 63] = [
     feature!(
         atom!("width"),
         AllowsRanges::Yes,
@@ -866,6 +866,7 @@ pub static MEDIA_FEATURES: [MediaFeatureDescription; 62] = [
     lnf_int_feature!(atom!("-moz-system-dark-theme"), SystemUsesDarkTheme),
 
     bool_pref_feature!(atom!("-moz-proton"), "browser.proton.enabled"),
+    bool_pref_feature!(atom!("-moz-proton-urlbar"), "browser.proton.urlbar.enabled"),
     bool_pref_feature!(atom!("-moz-proton-modals"), "browser.proton.modals.enabled"),
     bool_pref_feature!(atom!("-moz-proton-contextmenus"), "browser.proton.contextmenus.enabled"),
     bool_pref_feature!(atom!("-moz-proton-doorhangers"), "browser.proton.doorhangers.enabled"),

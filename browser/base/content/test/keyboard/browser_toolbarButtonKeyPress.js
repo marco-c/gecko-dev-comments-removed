@@ -121,14 +121,6 @@ add_task(async function testDeveloperButtonWrongKey() {
 
 
 add_task(async function testPageActionsButtonPress() {
-  
-  
-  if (gProton) {
-    BrowserPageActions.mainButtonNode.style.visibility = "visible";
-    registerCleanupFunction(() => {
-      BrowserPageActions.mainButtonNode.style.removeProperty("visibility");
-    });
-  }
   await BrowserTestUtils.withNewTab("https://example.com", async function() {
     let button = document.getElementById("pageActionButton");
     forceFocus(button);
@@ -171,10 +163,6 @@ add_task(async function testBackForwardButtonPress() {
 
 
 add_task(async function testSendTabToDeviceButtonPress() {
-  
-  if (gProton) {
-    return;
-  }
   await BrowserTestUtils.withNewTab("https://example.com", async function() {
     PageActions.actionForID("sendToDevice").pinnedToUrlbar = true;
     let button = document.getElementById("pageAction-urlbar-sendToDevice");

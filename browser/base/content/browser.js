@@ -4206,7 +4206,9 @@ const BrowserSearch = {
 
 
   updateOpenSearchBadge() {
-    if (gProton) {
+    
+    
+    if (gProton && gURLBar.addSearchEngineHelper) {
       gURLBar.addSearchEngineHelper.setEnginesFromBrowser(
         gBrowser.selectedBrowser
       );

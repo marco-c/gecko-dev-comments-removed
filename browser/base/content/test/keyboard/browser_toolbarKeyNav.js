@@ -121,15 +121,6 @@ add_task(async function setup() {
     guid: PlacesUtils.bookmarks.toolbarGuid,
     children: bookmarks,
   });
-
-  
-  
-  if (gProton) {
-    BrowserPageActions.mainButtonNode.style.visibility = "visible";
-    registerCleanupFunction(() => {
-      BrowserPageActions.mainButtonNode.style.removeProperty("visibility");
-    });
-  }
 });
 
 

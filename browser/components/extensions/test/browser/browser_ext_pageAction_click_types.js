@@ -5,7 +5,7 @@
 add_task(async function setup() {
   
   
-  if (gProton) {
+  if (Services.prefs.getBoolPref("browser.proton.urlbar.enabled", false)) {
     BrowserPageActions.mainButtonNode.style.visibility = "visible";
     registerCleanupFunction(() => {
       BrowserPageActions.mainButtonNode.style.removeProperty("visibility");

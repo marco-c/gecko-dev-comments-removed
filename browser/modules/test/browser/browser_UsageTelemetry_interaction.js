@@ -116,7 +116,7 @@ add_task(async function toolbarButtons() {
     click(document.querySelector("#PlacesToolbarItems .bookmark-item"));
 
     
-    if (gProton) {
+    if (Services.prefs.getBoolPref("browser.proton.urlbar.enabled", false)) {
       click(customButton);
 
       assertInteractionScalars({
