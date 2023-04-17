@@ -1073,6 +1073,7 @@ int32_t mozInlineSpellWordUtil::FindRealWordContaining(
   if (!mSoftText.mIsValid) return -1;
 
   
+  
   size_t index;
   bool found = FindLastNongreaterOffset(mRealWords, aSoftTextOffset, &index);
   if (!found) {
@@ -1085,8 +1086,9 @@ int32_t mozInlineSpellWordUtil::FindRealWordContaining(
   
   if (aHint == HINT_END && index > 0) {
     const RealWord& word = mRealWords[index - 1];
-    if (word.mSoftTextOffset + word.mLength == aSoftTextOffset)
+    if (word.EndOffset() == aSoftTextOffset) {
       return index - 1;
+    }
   }
 
   
