@@ -654,36 +654,88 @@ def fetch_pr_files(inDir, outDir, prNumber, strictTests):
         
         return print("PR %s is closed" % prNumber)
 
-    files = requests.get(
-        "https://api.github.com/repos/tc39/test262/pulls/%s/files" % prNumber
-    )
-    files.raise_for_status()
+    url = "https://api.github.com/repos/tc39/test262/pulls/%s/files" % prNumber
+    hasNext = True
 
-    for item in files.json():
-        if not item["filename"].startswith("test/"):
-            continue
+    while hasNext:
+        files = requests.get(url)
+        files.raise_for_status()
 
-        filename = item["filename"]
-        fileStatus = item["status"]
+        for item in files.json():
+            if not item["filename"].startswith("test/"):
+                continue
 
-        print("%s %s" % (fileStatus, filename))
+            filename = item["filename"]
+            fileStatus = item["status"]
+
+            print("%s %s" % (fileStatus, filename))
+
+            
+            if fileStatus == "removed":
+                continue
+
+            contents = requests.get(item["raw_url"])
+            contents.raise_for_status()
+
+            fileText = contents.text
+
+            filePathDirs = os.path.join(inDir, *filename.split("/")[:-1])
+
+            if not os.path.isdir(filePathDirs):
+                os.makedirs(filePathDirs)
+
+            with io.open(
+                os.path.join(inDir, *filename.split("/")), "wb"
+            ) as output_file:
+                output_file.write(fileText.encode("utf8"))
+
+        hasNext = False
 
         
-        if fileStatus == "removed":
-            continue
+        if "link" in files.headers:
+            link = files.headers["link"]
 
-        contents = requests.get(item["raw_url"])
-        contents.raise_for_status()
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
 
-        fileText = contents.text
+            for pages in link.split(", "):
+                (pageUrl, rel) = pages.split("; ")
 
-        filePathDirs = os.path.join(inDir, *filename.split("/")[:-1])
+                assert pageUrl[0] == "<"
+                assert pageUrl[-1] == ">"
 
-        if not os.path.isdir(filePathDirs):
-            os.makedirs(filePathDirs)
+                
+                pageUrl = pageUrl[1:-1]
 
-        with io.open(os.path.join(inDir, *filename.split("/")), "wb") as output_file:
-            output_file.write(fileText.encode("utf8"))
+                
+                assert pageUrl.startswith("https://api.github.com/")
+
+                
+                assert (
+                    rel == 'rel="prev"'
+                    or rel == 'rel="next"'
+                    or rel == 'rel="first"'
+                    or rel == 'rel="last"'
+                )
+
+                
+                if rel == 'rel="next"':
+                    url = pageUrl
+                    hasNext = True
 
     process_test262(inDir, prTestsOutDir, strictTests, [])
 
