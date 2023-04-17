@@ -7413,9 +7413,10 @@ nsresult HTMLEditor::RemoveBlockContainerElements(
         firstContent = lastContent = blockElement = nullptr;
         
       }
-      blockElement = HTMLEditUtils::GetAncestorBlockElement(content);
+      blockElement = HTMLEditUtils::GetAncestorElement(
+          content, HTMLEditUtils::ClosestEditableBlockElement);
       if (!blockElement || !HTMLEditUtils::IsFormatNode(blockElement) ||
-          !EditorUtils::IsEditableContent(*blockElement, EditorType::HTML)) {
+          !HTMLEditUtils::IsRemovableNode(*blockElement)) {
         
         blockElement = nullptr;
       } else {
