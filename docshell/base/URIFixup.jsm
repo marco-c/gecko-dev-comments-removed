@@ -101,11 +101,7 @@ XPCOMUtils.defineLazyGetter(
 );
 
 
-XPCOMUtils.defineLazyGetter(
-  this,
-  "uriLikeRegex",
-  () => /(:\d{1,5}([?#/]|$)|\/.*[?#])/
-);
+XPCOMUtils.defineLazyGetter(this, "portRegex", () => /^:\d{1,5}([?#/]|$)/);
 
 
 XPCOMUtils.defineLazyGetter(this, "numberRegex", () => /^[0-9]+(\.[0-9]+)?$/);
@@ -940,7 +936,7 @@ function keywordURIFixup(uriString, fixupInfo, isPrivateContext) {
   
   
   if (
-    !uriLikeRegex.test(uriString) ||
+    !isURILike(uriString, fixupInfo.fixedURI?.displayHost) ||
     (fixupInfo.fixedURI?.userPass && fixupInfo.fixedURI?.pathQueryRef === "/")
   ) {
     return tryKeywordFixupForURIInfo(
@@ -1097,4 +1093,32 @@ function fixupConsecutiveDotsHost(fixupInfo) {
       throw e;
     }
   }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function isURILike(uriString, host) {
+  const indexOfSlash = uriString.indexOf("/");
+  if (
+    indexOfSlash >= 0 &&
+    (indexOfSlash < uriString.indexOf("?", indexOfSlash) ||
+      indexOfSlash < uriString.indexOf("#", indexOfSlash))
+  ) {
+    return true;
+  }
+
+  if (uriString.startsWith(host)) {
+    uriString = uriString.substring(host.length);
+  }
+
+  return portRegex.test(uriString);
 }
