@@ -329,19 +329,20 @@ class PdfjsParent extends JSWindowActorParent {
       },
     ];
     notificationBox.appendNotification(
-      data.message,
       "pdfjs-fallback",
-      null,
-      notificationBox.PRIORITY_INFO_MEDIUM,
-      buttons,
-      function eventsCallback(eventType) {
-        
-        
-        if (eventType !== "removed") {
-          return;
-        }
-        sendMessage(false);
-      }
+      {
+        label: data.message,
+        priority: notificationBox.PRIORITY_INFO_MEDIUM,
+        eventCallback: eventType => {
+          
+          
+          if (eventType !== "removed") {
+            return;
+          }
+          sendMessage(false);
+        },
+      },
+      buttons
     );
   }
 }

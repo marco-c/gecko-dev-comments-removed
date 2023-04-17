@@ -72,19 +72,20 @@ var gDataNotificationInfoBar = {
 
     this._log.info("Creating data reporting policy notification.");
     gNotificationBox.appendNotification(
-      message,
       this._DATA_REPORTING_NOTIFICATION,
-      null,
-      gNotificationBox.PRIORITY_INFO_HIGH,
-      buttons,
-      event => {
-        if (event == "removed") {
-          Services.obs.notifyObservers(
-            null,
-            "datareporting:notify-data-policy:close"
-          );
-        }
-      }
+      {
+        label: message,
+        priority: gNotificationBox.PRIORITY_INFO_HIGH,
+        eventCallback: event => {
+          if (event == "removed") {
+            Services.obs.notifyObservers(
+              null,
+              "datareporting:notify-data-policy:close"
+            );
+          }
+        },
+      },
+      buttons
     );
     
     
