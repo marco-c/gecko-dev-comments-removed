@@ -6018,7 +6018,7 @@
           
           
           
-          browser.docShellIsActive = this.shouldActivateDocShell(browser);
+          browser.docShellIsActive = browser.docShellIsActive;
 
           
           
