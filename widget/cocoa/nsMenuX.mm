@@ -439,7 +439,13 @@ bool nsMenuX::Close() {
   bool wasOpen = mIsOpenForGecko;
 
   if (mIsOpen) {
-    [mNativeMenu cancelTracking];
+    
+    
+    
+    
+    
+    
+    [mNativeMenu cancelTrackingWithoutAnimation];
   }
 
   FlushMenuClosedRunnable();
