@@ -4778,6 +4778,30 @@ bool WarpCacheIRTranspiler::emitAssertRecoveredOnBailoutResult(
   return true;
 }
 
+bool WarpCacheIRTranspiler::emitGuardNoAllocationMetadataBuilder(
+    uint32_t builderAddrOffset) {
+  
+  
+  return true;
+}
+
+bool WarpCacheIRTranspiler::emitNewPlainObjectResult(uint32_t numFixedSlots,
+                                                     uint32_t numDynamicSlots,
+                                                     gc::AllocKind allocKind,
+                                                     uint32_t shapeOffset) {
+  Shape* shape = shapeStubField(shapeOffset);
+
+  
+  gc::InitialHeap heap = gc::DefaultHeap;
+
+  auto* obj = MNewPlainObject::New(alloc(), numFixedSlots, numDynamicSlots,
+                                   allocKind, shape, heap);
+  addEffectful(obj);
+
+  pushResult(obj);
+  return resumeAfter(obj);
+}
+
 static void MaybeSetImplicitlyUsed(uint32_t numInstructionIdsBefore,
                                    MDefinition* input) {
   
