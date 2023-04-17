@@ -26,7 +26,7 @@ NetMonitorPanel.prototype = {
 
     
     this.emit("ready");
-    this.isReady = true;
+    this.isPanelReady = true;
 
     return this;
   },
