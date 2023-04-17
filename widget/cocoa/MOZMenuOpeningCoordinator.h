@@ -42,6 +42,14 @@ class Runnable;
 
 - (void)runAfterMenuClosed:(RefPtr<mozilla::Runnable>&&)aRunnable;
 
+
+
+
+
+
+
+@property(class) BOOL needToUnwindForMenuClosing;
+
 @end
 
 #endif  

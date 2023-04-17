@@ -134,6 +134,7 @@ nsMenuX::~nsMenuX() {
 
   if (mIsOpen) {
     [mNativeMenu cancelTracking];
+    MOZMenuOpeningCoordinator.needToUnwindForMenuClosing = YES;
   }
 
   
@@ -653,6 +654,7 @@ bool nsMenuX::Close() {
     
     
     [mNativeMenu cancelTrackingWithoutAnimation];
+    MOZMenuOpeningCoordinator.needToUnwindForMenuClosing = YES;
 
     
     MenuClosed();

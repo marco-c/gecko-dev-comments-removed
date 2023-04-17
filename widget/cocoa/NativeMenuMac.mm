@@ -346,6 +346,7 @@ void NativeMenuMac::ActivateItem(dom::Element* aItemElement, Modifiers aModifier
   
   
   [mMenu->NativeNSMenu() cancelTrackingWithoutAnimation];
+  MOZMenuOpeningCoordinator.needToUnwindForMenuClosing = YES;
 
   
   

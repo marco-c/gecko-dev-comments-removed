@@ -21,6 +21,8 @@
 #include "nsThreadUtils.h"
 #include "SDKDeclarations.h"
 
+static BOOL sNeedToUnwindForMenuClosing = NO;
+
 @interface MOZMenuOpeningInfo : NSObject
 @property NSInteger handle;
 @property(retain) NSMenu* menu;
@@ -109,6 +111,8 @@
     [info release];
 
     
+    MOZMenuOpeningCoordinator.needToUnwindForMenuClosing = NO;
+
     
     while (mPendingAfterMenuCloseRunnables.GetSize() != 0) {
       NS_DispatchToCurrentThread(mPendingAfterMenuCloseRunnables.PopFront());
@@ -217,6 +221,14 @@
     
     [aMenu popUpMenuPositioningItem:nil atLocation:aPosition inView:nil];
   }
+}
+
++ (void)setNeedToUnwindForMenuClosing:(BOOL)aValue {
+  sNeedToUnwindForMenuClosing = aValue;
+}
+
++ (BOOL)needToUnwindForMenuClosing {
+  return sNeedToUnwindForMenuClosing;
 }
 
 @end
