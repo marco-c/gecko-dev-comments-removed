@@ -974,6 +974,10 @@ void NativeObject::removeDictionaryPropertyWithoutReshape(ShapeTable* table,
                                                           Shape* shape) {
   
   
+  
+  
+  
+  
 
   AutoCheckCannotGC nogc;
   MOZ_ASSERT(inDictionaryMode());
@@ -986,13 +990,9 @@ void NativeObject::removeDictionaryPropertyWithoutReshape(ShapeTable* table,
   }
 
   
-  
-  
-  table->remove(ptr);
-
-  
   bool removingLastProperty = (shape == lastProperty());
   shape->removeFromDictionary(this);
+  table->remove(ptr);
 
   
   
@@ -1123,6 +1123,8 @@ bool NativeObject::densifySparseElements(JSContext* cx,
       obj->removeDictionaryPropertyWithoutReshape(table, ptr, shape);
       shape = previous;
     }
+
+    MOZ_ASSERT(obj->lastProperty()->maybeTable(nogc) == table);
   }
 
   
