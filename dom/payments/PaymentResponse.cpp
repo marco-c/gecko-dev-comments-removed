@@ -280,6 +280,10 @@ void PaymentResponse::RespondRetry(const nsAString& aMethodName,
                                    const nsAString& aPayerName,
                                    const nsAString& aPayerEmail,
                                    const nsAString& aPayerPhone) {
+  
+  if (!mRetryPromise) {
+    return;
+  }
   mMethodName = aMethodName;
   mShippingOption = aShippingOption;
   mShippingAddress = aShippingAddress;
