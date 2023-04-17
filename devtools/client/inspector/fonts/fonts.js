@@ -1015,7 +1015,10 @@ class FontInspector {
     
     this.store && this.store.dispatch(updateFonts(allFonts));
     
-    this.inspector && this.inspector.emit("fontinspector-updated");
+    
+    
+    this.inspector &&
+      this.inspector.emitForTests("fontinspector-updated", this.node);
   }
 
   

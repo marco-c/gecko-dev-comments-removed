@@ -17,6 +17,15 @@ registerCleanupFunction(() => {
   Services.prefs.clearUserPref("devtools.inspector.activeSidebar");
 });
 
+var nodeConstants = require("devtools/shared/dom-node-constants");
+
+
+
+
+
+
+
+
 
 
 
@@ -25,12 +34,28 @@ registerCleanupFunction(() => {
 
 var _selectNode = selectNode;
 selectNode = async function(node, inspector, reason) {
-  const onInspectorUpdated = inspector.once("fontinspector-updated");
+  
+  
+  node = await getNodeFront(node, inspector);
+
+  
+  
+  const isTextNode = node.nodeType == nodeConstants.TEXT_NODE;
+  const expectedNode = isTextNode ? node.parentNode() : node;
+
   const onEditorUpdated = inspector.once("fonteditor-updated");
+  const onFontInspectorUpdated = new Promise(resolve => {
+    inspector.on("fontinspector-updated", function onUpdated(eventNode) {
+      if (eventNode === expectedNode) {
+        inspector.off("fontinspector-updated", onUpdated);
+        resolve();
+      }
+    });
+  });
   await _selectNode(node, inspector, reason);
 
   
-  await Promise.all([onInspectorUpdated, onEditorUpdated]);
+  await Promise.all([onFontInspectorUpdated, onEditorUpdated]);
 };
 
 
