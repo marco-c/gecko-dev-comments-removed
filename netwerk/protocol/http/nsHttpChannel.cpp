@@ -350,7 +350,6 @@ void nsHttpChannel::ReleaseMainThreadOnlyReferences() {
   }
 
   nsTArray<nsCOMPtr<nsISupports>> arrayToRelease;
-  arrayToRelease.AppendElement(mApplicationCacheForWrite.forget());
   arrayToRelease.AppendElement(mAuthProvider.forget());
   arrayToRelease.AppendElement(mRedirectChannel.forget());
   arrayToRelease.AppendElement(mPreflightChannel.forget());
@@ -3476,8 +3475,7 @@ nsresult nsHttpChannel::OpenCacheEntryInternal(
   mCacheQueueSizeWhenOpen =
       CacheStorageService::CacheQueueSize(mCacheOpenWithPriority);
 
-  if (StaticPrefs::network_http_rcwn_enabled() && maybeRCWN &&
-      !mApplicationCacheForWrite) {
+  if (StaticPrefs::network_http_rcwn_enabled() && maybeRCWN) {
     bool hasAltData = false;
     uint32_t sizeInKb = 0;
     rv = cacheStorage->GetCacheIndexEntryAttrs(
@@ -4204,22 +4202,10 @@ nsresult nsHttpChannel::OpenCacheInputStream(nsICacheEntry* cacheEntry,
       !LoadCachedContentIsPartial()) {
     
     
-    if (!mApplicationCacheForWrite) {
-      LOG(
-          ("Will skip read from cache based on LOAD_ONLY_IF_MODIFIED "
-           "load flag\n"));
-      return NS_OK;
-    }
-
-    
-    
-    
-    
-    
-    
     LOG(
-        ("May skip read from cache based on LOAD_ONLY_IF_MODIFIED "
+        ("Will skip read from cache based on LOAD_ONLY_IF_MODIFIED "
          "load flag\n"));
+    return NS_OK;
   }
 
   
