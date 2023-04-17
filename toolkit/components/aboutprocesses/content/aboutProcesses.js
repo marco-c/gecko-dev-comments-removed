@@ -11,10 +11,7 @@
 const TIME_BEFORE_SORTING_AGAIN = 5000;
 
 
-const BUFFER_SAMPLING_RATE_MS = 1000;
-
-
-const BUFFER_DURATION_MS = 10000;
+const MINIMUM_INTERVAL_BETWEEN_SAMPLES_MS = 1000;
 
 
 const UPDATE_INTERVAL_MS = 2000;
@@ -64,34 +61,6 @@ const PROFILE_DURATION = Math.max(
   1,
   Services.prefs.getIntPref("toolkit.aboutProcesses.profileDuration")
 );
-
-
-
-
-
-
-
-
-
-
-
-
-
-function wait(ms = 0) {
-  try {
-    let resolve;
-    let p = new Promise(resolve_ => {
-      resolve = resolve_;
-    });
-    setTimeout(resolve, ms);
-    return p;
-  } catch (e) {
-    dump(
-      "WARNING: wait aborted because of an invalid Window state in aboutPerformance.js.\n"
-    );
-    return undefined;
-  }
-}
 
 
 
@@ -161,16 +130,7 @@ let tabFinder = {
 
 var State = {
   
-
-
-
-
-  _buffer: [],
-  
-
-
-
-
+  _previous: null,
   _latest: null,
 
   async _promiseSnapshot() {
@@ -194,27 +154,18 @@ var State = {
 
 
   async update(force = false) {
-    
-    if (!this._buffer.length) {
-      this._latest = await this._promiseSnapshot();
-      this._buffer.push(this._latest);
-      await wait(BUFFER_SAMPLING_RATE_MS * 1.1);
-    }
-
-    let now = Cu.now();
-
-    
-    let latestInBuffer = this._buffer[this._buffer.length - 1];
-    let deltaT = now - latestInBuffer.date;
-    if (force || deltaT > BUFFER_SAMPLING_RATE_MS) {
-      this._latest = await this._promiseSnapshot();
-      this._buffer.push(this._latest);
-    }
-
-    
-    let oldestInBuffer = this._buffer[0];
-    if (oldestInBuffer.date + BUFFER_DURATION_MS < this._latest.date) {
-      this._buffer.shift();
+    if (
+      force ||
+      !this._latest ||
+      Cu.now() - this._latest.date > MINIMUM_INTERVAL_BETWEEN_SAMPLES_MS
+    ) {
+      
+      
+      
+      
+      let newSnapshot = await this._promiseSnapshot();
+      this._previous = this._latest;
+      this._latest = newSnapshot;
     }
   },
 
@@ -227,15 +178,13 @@ var State = {
       slopeCpu: null,
       active: null,
     };
-    if (!prev) {
+    if (!deltaT) {
       return result;
     }
-    if (prev.tid != cur.tid) {
-      throw new Error("Assertion failed: A thread cannot change tid.");
-    }
     result.slopeCpu =
-      (cur.cpuUser + cur.cpuKernel - prev.cpuUser - prev.cpuKernel) / deltaT;
-    result.active = !!result.slopeCpu || cur.cpuCycleCount > prev.cpuCycleCount;
+      (result.totalCpu - (prev ? prev.cpuUser + prev.cpuKernel : 0)) / deltaT;
+    result.active =
+      !!result.slopeCpu || cur.cpuCycleCount > (prev ? prev.cpuCycleCount : 0);
     return result;
   },
 
@@ -336,9 +285,7 @@ var State = {
     }
     if (!prev) {
       if (SHOW_THREADS) {
-        result.threads = cur.threads.map(data =>
-          this._getThreadDelta(data, null, null)
-        );
+        result.threads = cur.threads.map(data => this._getThreadDelta(data));
       }
       return result;
     }
@@ -352,13 +299,9 @@ var State = {
       for (let thread of prev.threads) {
         prevThreads.set(thread.tid, thread);
       }
-      threads = cur.threads.map(curThread => {
-        let prevThread = prevThreads.get(curThread.tid);
-        if (!prevThread) {
-          return this._getThreadDelta(curThread);
-        }
-        return this._getThreadDelta(curThread, prevThread, deltaT);
-      });
+      threads = cur.threads.map(curThread =>
+        this._getThreadDelta(curThread, prevThreads.get(curThread.tid), deltaT)
+      );
     }
     result.deltaRamSize = cur.memory - prev.memory;
     result.slopeCpu =
@@ -371,32 +314,11 @@ var State = {
   getCounters() {
     tabFinder.update();
 
-    
-    
-    
-
-    let current = this._latest;
     let counters = [];
 
-    for (let cur of current.processes.values()) {
-      
-      let oldest = null;
-      let delta;
-      for (let index = 0; index <= this._buffer.length - 2; ++index) {
-        oldest = this._buffer[index].processes.get(cur.pid);
-        if (oldest) {
-          
-          break;
-        }
-      }
-      if (oldest) {
-        
-        delta = this._getProcessDelta(cur, oldest);
-      } else {
-        
-        delta = this._getProcessDelta(cur, null);
-      }
-      counters.push(delta);
+    for (let cur of this._latest.processes.values()) {
+      let prev = this._previous?.processes.get(cur.pid);
+      counters.push(this._getProcessDelta(cur, prev));
     }
 
     return counters;
@@ -1236,8 +1158,6 @@ var Control = {
       return;
     }
 
-    await wait(0);
-
     await this._updateDisplay(force);
   },
 
@@ -1529,6 +1449,17 @@ var Control = {
 
 window.onload = async function() {
   Control.init();
+
+  
   await Control.update();
+
+  
+  
+  await new Promise(resolve =>
+    setTimeout(resolve, MINIMUM_INTERVAL_BETWEEN_SAMPLES_MS)
+  );
+  await Control.update(true);
+
+  
   window.setInterval(() => Control.update(), UPDATE_INTERVAL_MS);
 };
