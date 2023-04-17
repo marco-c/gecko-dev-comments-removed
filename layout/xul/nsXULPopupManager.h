@@ -586,7 +586,7 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
 
   bool ActivateNativeMenuItem(nsIContent* aItem, mozilla::Modifiers aModifiers,
-                              mozilla::ErrorResult& aRv);
+                              int16_t aButton, mozilla::ErrorResult& aRv);
 
   
 
