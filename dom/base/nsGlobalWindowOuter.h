@@ -190,6 +190,8 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
     return Cast(nsPIDOMWindowOuter::From(aWin));
   }
 
+  bool IsOuterWindow() const final { return true; }  
+
   static nsGlobalWindowOuter* GetOuterWindowWithId(uint64_t aWindowID) {
     AssertIsOnMainThread();
 
