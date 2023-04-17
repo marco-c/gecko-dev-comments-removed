@@ -594,13 +594,8 @@ static gint moz_gtk_header_bar_button_paint(cairo_t* cr,
         GetToolbarButtonMetrics(buttonWidgetType);
 
     
-    static auto sGtkRenderIconSurfacePtr =
-        (void (*)(GtkStyleContext*, cairo_t*, cairo_surface_t*, gdouble,
-                  gdouble))dlsym(RTLD_DEFAULT, "gtk_render_icon_surface");
-
-    sGtkRenderIconSurfacePtr(style, cr, surface,
-                             rect.x + metrics->iconXPosition,
-                             rect.y + metrics->iconYPosition);
+    gtk_render_icon_surface(style, cr, surface, rect.x + metrics->iconXPosition,
+                            rect.y + metrics->iconYPosition);
     gtk_style_context_restore(style);
   }
 
