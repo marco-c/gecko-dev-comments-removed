@@ -86,6 +86,13 @@ pref("toolkit.autocomplete.delegate", true);
 pref("webextensions.storage.sync.kinto", true);
 
 
+
+
+#ifdef NIGHTLY_BUILD
+  pref("dom.ipc.processCount.webCOOP+COEP", 38);
+#endif
+
+
 pref("extensions.formautofill.addresses.capture.enabled", true);
 
 
