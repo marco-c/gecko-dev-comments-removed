@@ -1761,10 +1761,10 @@ TEST(GeckoProfiler, Markers)
       
       
       using MS = mozilla::MarkerSchema;
-      MS schema{MS::Location::markerChart,      MS::Location::markerTable,
-                MS::Location::timelineOverview, MS::Location::timelineMemory,
-                MS::Location::timelineIPC,      MS::Location::timelineFileIO,
-                MS::Location::stackChart};
+      MS schema{MS::Location::MarkerChart,      MS::Location::MarkerTable,
+                MS::Location::TimelineOverview, MS::Location::TimelineMemory,
+                MS::Location::TimelineIPC,      MS::Location::TimelineFileIO,
+                MS::Location::StackChart};
       
       schema.SetChartLabel("chart label");
       schema.SetTooltipLabel("tooltip label");

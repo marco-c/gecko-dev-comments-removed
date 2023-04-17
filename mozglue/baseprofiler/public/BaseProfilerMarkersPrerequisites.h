@@ -675,20 +675,20 @@ class JSONWriter;
 class MarkerSchema {
  public:
   enum class Location : unsigned {
-    markerChart,
-    markerTable,
+    MarkerChart,
+    MarkerTable,
     
-    timelineOverview,
+    TimelineOverview,
     
     
     
-    timelineMemory,
+    TimelineMemory,
     
-    timelineIPC,
+    TimelineIPC,
     
-    timelineFileIO,
+    TimelineFileIO,
     
-    stackChart
+    StackChart
   };
 
   
