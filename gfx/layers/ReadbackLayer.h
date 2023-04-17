@@ -24,10 +24,6 @@ namespace layers {
 
 class ReadbackProcessor;
 
-namespace layerscope {
-class LayersPacket;
-}  
-
 
 
 

@@ -78,10 +78,6 @@ class GlyphArray;
 class WebRenderLayerManager;
 struct AnimData;
 
-namespace layerscope {
-class LayersPacket;
-}  
-
 
 class LayerUserData;
 
@@ -468,12 +464,6 @@ class LayerManager : public WindowRenderer {
   void DumpSelf(std::stringstream& aStream, const char* aPrefix = "",
                 bool aSorted = false);
   void Dump(bool aSorted = false);
-
-  
-
-
-
-  void Dump(layerscope::LayersPacket* aPacket);
 
   
 

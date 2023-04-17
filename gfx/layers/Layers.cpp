@@ -50,7 +50,6 @@
 #include "nsPrintfCString.h"               
 #include "nsRegionFwd.h"                   
 #include "nsString.h"                      
-#include "protobuf/LayerScopePacket.pb.h"  
 
 
 #undef compress
