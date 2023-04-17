@@ -42,20 +42,20 @@ static constexpr ARMRegister ScratchReg2_64 = {ScratchReg2, 64};
 
 static constexpr FloatRegister ReturnDoubleReg = {FloatRegisters::d0,
                                                   FloatRegisters::Double};
-static constexpr FloatRegister ScratchDoubleReg = {FloatRegisters::d31,
-                                                   FloatRegisters::Double};
+static constexpr FloatRegister ScratchDoubleReg_ = {FloatRegisters::d31,
+                                                    FloatRegisters::Double};
 struct ScratchDoubleScope : public AutoFloatRegisterScope {
   explicit ScratchDoubleScope(MacroAssembler& masm)
-      : AutoFloatRegisterScope(masm, ScratchDoubleReg) {}
+      : AutoFloatRegisterScope(masm, ScratchDoubleReg_) {}
 };
 
 static constexpr FloatRegister ReturnFloat32Reg = {FloatRegisters::s0,
                                                    FloatRegisters::Single};
-static constexpr FloatRegister ScratchFloat32Reg = {FloatRegisters::s31,
-                                                    FloatRegisters::Single};
+static constexpr FloatRegister ScratchFloat32Reg_ = {FloatRegisters::s31,
+                                                     FloatRegisters::Single};
 struct ScratchFloat32Scope : public AutoFloatRegisterScope {
   explicit ScratchFloat32Scope(MacroAssembler& masm)
-      : AutoFloatRegisterScope(masm, ScratchFloat32Reg) {}
+      : AutoFloatRegisterScope(masm, ScratchFloat32Reg_) {}
 };
 
 #ifdef ENABLE_WASM_SIMD
@@ -70,7 +70,7 @@ struct ScratchSimd128Scope : public AutoFloatRegisterScope {
 #else
 struct ScratchSimd128Scope : public AutoFloatRegisterScope {
   explicit ScratchSimd128Scope(MacroAssembler& masm)
-      : AutoFloatRegisterScope(masm, ScratchDoubleReg) {
+      : AutoFloatRegisterScope(masm, ScratchDoubleReg_) {
     MOZ_CRASH("SIMD not enabled");
   }
 };

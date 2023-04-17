@@ -24,14 +24,17 @@
 namespace js {
 namespace jit {
 
+
+
 struct ScratchFloat32Scope : public AutoFloatRegisterScope {
   explicit ScratchFloat32Scope(MacroAssembler& masm)
-      : AutoFloatRegisterScope(masm, ScratchFloat32Reg) {}
+      : AutoFloatRegisterScope(masm, ScratchFloat32Reg_) {}
 };
+
 
 struct ScratchDoubleScope : public AutoFloatRegisterScope {
   explicit ScratchDoubleScope(MacroAssembler& masm)
-      : AutoFloatRegisterScope(masm, ScratchDoubleReg) {}
+      : AutoFloatRegisterScope(masm, ScratchDoubleReg_) {}
 };
 
 struct ScratchSimd128Scope : public AutoFloatRegisterScope {
