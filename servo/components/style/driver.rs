@@ -140,7 +140,7 @@ where
                     
                     
                     rayon::scope_fifo(|scope| {
-                        profiler_label!(Style);
+                        gecko_profiler_label!(Layout, StyleComputation);
                         parallel::traverse_nodes(
                             drain,
                             DispatchMode::TailCall,
