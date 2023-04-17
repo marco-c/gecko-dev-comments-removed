@@ -254,6 +254,9 @@ class ServiceWorkerManager final : public nsIServiceWorkerManager,
 
   int32_t GetPrincipalQuotaUsageCheckCount(nsIPrincipal* aPrincipal);
 
+  void CheckPrincipalQuotaUsage(nsIPrincipal* aPrincipal,
+                                const nsACString& aScope);
+
   
   
   uint32_t MaybeInitServiceWorkerShutdownProgress() const;

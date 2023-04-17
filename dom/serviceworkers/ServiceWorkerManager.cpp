@@ -2268,6 +2268,32 @@ int32_t ServiceWorkerManager::GetPrincipalQuotaUsageCheckCount(
   return data->mQuotaUsageCheckCount;
 }
 
+void ServiceWorkerManager::CheckPrincipalQuotaUsage(nsIPrincipal* aPrincipal,
+                                                    const nsACString& aScope) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(aPrincipal);
+
+  nsAutoCString scopeKey;
+  nsresult rv = PrincipalToScopeKey(aPrincipal, scopeKey);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
+
+  RegistrationDataPerPrincipal* data;
+  if (!mRegistrationInfos.Get(scopeKey, &data)) {
+    return;
+  }
+
+  
+  if (data->mQuotaUsageCheckCount != 0) {
+    return;
+  }
+
+  ++data->mQuotaUsageCheckCount;
+
+  
+}
+
 void ServiceWorkerManager::SoftUpdate(const OriginAttributes& aOriginAttributes,
                                       const nsACString& aScope) {
   MOZ_ASSERT(NS_IsMainThread());

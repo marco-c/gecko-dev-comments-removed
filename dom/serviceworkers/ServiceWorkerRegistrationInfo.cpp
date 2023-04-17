@@ -517,6 +517,7 @@ void ServiceWorkerRegistrationInfo::MaybeScheduleUpdate() {
     
     if (navigationFaultThreshold <= navigationFaultCount &&
         navigationFaultThreshold != 0) {
+      CheckQuotaUsage();
       swm->Unregister(mPrincipal, nullptr, NS_ConvertUTF8toUTF16(Scope()));
       return;
     }
@@ -893,6 +894,15 @@ void ServiceWorkerRegistrationInfo::ForEachWorker(
   if (mActiveWorker) {
     aFunc(mActiveWorker);
   }
+}
+
+void ServiceWorkerRegistrationInfo::CheckQuotaUsage() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
+  MOZ_ASSERT(swm);
+
+  swm->CheckPrincipalQuotaUsage(mPrincipal, Scope());
 }
 
 }  
