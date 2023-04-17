@@ -228,7 +228,6 @@ enum class WebGLExtensionID : uint8_t {
   EXT_texture_filter_anisotropic,
   EXT_texture_norm16,
   MOZ_debug,
-  OES_draw_buffers_indexed,
   OES_element_index_uint,
   OES_fbo_render_mipmap,
   OES_standard_derivatives,
@@ -1156,15 +1155,6 @@ inline void Memcpy(const RangedPtr<uint8_t>& destBytes,
 }
 
 
-
-namespace webgl {
-
-
-
-
-
-inline constexpr size_t kMaxDrawBuffers = 8;
-}  
 
 }  
 
