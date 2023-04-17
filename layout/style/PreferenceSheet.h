@@ -41,7 +41,7 @@ struct PreferenceSheet {
     
     
     bool NonNativeThemeShouldUseSystemColors() const {
-      return mUseAccessibilityTheme && !mUseDocumentColors;
+      return !mUseDocumentColors;
     }
 
     void Load(bool aIsChrome);
