@@ -358,6 +358,9 @@ void SharedStyleSheetCache::LoadCompletedInternal(
     data->mSheetCompleteCalled = true;
 #endif
 
+    
+    data->mRequestingNodeBeforeComplete = nullptr;
+
     if (!data->mSheetAlreadyComplete) {
       
       
@@ -389,7 +392,7 @@ void SharedStyleSheetCache::LoadCompletedInternal(
           
           return false;
         }
-        if (data->mOwningNode != data->mSheet->GetOwnerNode()) {
+        if (data->mOwningNodeBeforeLoadEvent != data->mSheet->GetOwnerNode()) {
           
           
           return false;
@@ -398,7 +401,7 @@ void SharedStyleSheetCache::LoadCompletedInternal(
       }();
 
       if (needInsertIntoTree) {
-        data->mLoader->InsertSheetInTree(*data->mSheet, data->mOwningNode);
+        data->mLoader->InsertSheetInTree(*data->mSheet);
       }
       data->mSheet->SetComplete();
       data->ScheduleLoadEventIfNeeded();

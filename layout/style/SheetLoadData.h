@@ -203,19 +203,26 @@ class SheetLoadData final : public PreloaderBase,
 
   
   
-  const nsCOMPtr<nsINode> mOwningNode;
+  
+  
+  
+  
+  nsCOMPtr<nsINode> mOwningNodeBeforeLoadEvent;
 
   
-  const nsCOMPtr<nsICSSLoaderObserver> mObserver;
+  
+  
+  
+  nsCOMPtr<nsINode> mRequestingNodeBeforeComplete;
+
+  
+  nsCOMPtr<nsICSSLoaderObserver> mObserver;
 
   
   const nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
 
   
   const nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
-
-  
-  const nsCOMPtr<nsINode> mRequestingNode;
 
   
   const NotNull<const Encoding*> mGuessedEncoding;
