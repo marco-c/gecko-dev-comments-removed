@@ -1,24 +1,5 @@
-<!DOCTYPE html>
-<meta charset="utf-8" />
-<title>FormData: Upload files named using controls</title>
-<link
-  rel="help"
-  href="https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#multipart-form-data"
-/>
-<link
-  rel="help"
-  href="https://html.spec.whatwg.org/multipage/dnd.html#datatransferitemlist"
-/>
-<link rel="help" href="https://w3c.github.io/FileAPI/#file-constructor" />
-<link
-  rel="author"
-  title="Benjamin C. Wiley Sittler"
-  href="mailto:bsittler@chromium.org"
-/>
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script src="../support/send-file-formdata-helper.js"></script>
-<script>
+
+
   "use strict";
 
   formDataPostFileUploadTest({
@@ -36,9 +17,9 @@
     fileBaseName: "file-for-upload-in-form-VT-[\v].txt",
   });
 
-  // These have characters that undergo processing in name=,
-  // filename=, and/or value; formDataPostFileUploadTest postprocesses
-  // expectedEncodedBaseName for these internally.
+  
+  
+  
 
   formDataPostFileUploadTest({
     fileNameSource: "ASCII",
@@ -75,7 +56,7 @@
     fileBaseName: "file-for-upload-in-form-DEL-[\x7F].txt",
   });
 
-  // The rest should be passed through unmodified:
+  
 
   formDataPostFileUploadTest({
     fileNameSource: "ASCII",
@@ -86,4 +67,3 @@
     fileNameSource: "ASCII",
     fileBaseName: "file-for-upload-in-form-SPACE-[ ].txt",
   });
-</script>
