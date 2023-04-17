@@ -84,8 +84,6 @@ class WebGPUChild final : public PWebGPUChild, public SupportsWeakPtr {
  private:
   virtual ~WebGPUChild();
 
-  void JsWarning(nsIGlobalObject* aGlobal, const nsACString& aMessage);
-
   
   
   
