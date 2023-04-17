@@ -201,17 +201,6 @@ interface nsIEditor  : nsISupports
 
 
 
-  [can_run_script]
-  void doTransaction(in nsITransaction txn);
-
-
-  
-
-
-
-
-
-
 
   void enableUndo(in boolean enable);
 
