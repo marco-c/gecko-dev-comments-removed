@@ -1659,6 +1659,8 @@ nsGenericHTMLFormElement::nsGenericHTMLFormElement(
 
 void nsGenericHTMLFormElement::ClearForm(bool aRemoveFromForm,
                                          bool aUnbindOrDelete) {
+  MOZ_ASSERT(IsFormAssociatedElement());
+
   HTMLFormElement* form = GetFormInternal();
   NS_ASSERTION((form != nullptr) == HasFlag(ADDED_TO_FORM),
                "Form control should have had flag set correctly");
@@ -1694,15 +1696,16 @@ nsresult nsGenericHTMLFormElement::BindToTree(BindContext& aContext,
   nsresult rv = nsGenericHTMLElement::BindToTree(aContext, aParent);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  
-  
-  
-  
-  
-  if (HasAttr(kNameSpaceID_None, nsGkAtoms::form) ? IsInComposedDoc()
-                                                  : aParent.IsContent()) {
-    UpdateFormOwner(true, nullptr);
+  if (IsFormAssociatedElement()) {
+    
+    
+    
+    
+    
+    if (HasAttr(kNameSpaceID_None, nsGkAtoms::form) ? IsInComposedDoc()
+                                                    : aParent.IsContent()) {
+      UpdateFormOwner(true, nullptr);
+    }
   }
 
   
@@ -1712,32 +1715,34 @@ nsresult nsGenericHTMLFormElement::BindToTree(BindContext& aContext,
 }
 
 void nsGenericHTMLFormElement::UnbindFromTree(bool aNullParent) {
-  if (HTMLFormElement* form = GetFormInternal()) {
-    
-    if (aNullParent) {
+  if (IsFormAssociatedElement()) {
+    if (HTMLFormElement* form = GetFormInternal()) {
       
-      ClearForm(true, true);
-    } else {
-      
-      if (HasAttr(kNameSpaceID_None, nsGkAtoms::form) ||
-          !FindAncestorForm(form)) {
+      if (aNullParent) {
+        
         ClearForm(true, true);
       } else {
-        UnsetFlags(MAYBE_ORPHAN_FORM_ELEMENT);
+        
+        if (HasAttr(kNameSpaceID_None, nsGkAtoms::form) ||
+            !FindAncestorForm(form)) {
+          ClearForm(true, true);
+        } else {
+          UnsetFlags(MAYBE_ORPHAN_FORM_ELEMENT);
+        }
+      }
+
+      if (!GetFormInternal()) {
+        
+        UpdateState(false);
       }
     }
 
-    if (!GetFormInternal()) {
-      
-      UpdateState(false);
+    
+    
+    if (nsContentUtils::HasNonEmptyAttr(this, kNameSpaceID_None,
+                                        nsGkAtoms::form)) {
+      RemoveFormIdObserver();
     }
-  }
-
-  
-  
-  if (nsContentUtils::HasNonEmptyAttr(this, kNameSpaceID_None,
-                                      nsGkAtoms::form)) {
-    RemoveFormIdObserver();
   }
 
   nsGenericHTMLElement::UnbindFromTree(aNullParent);
@@ -1749,7 +1754,7 @@ void nsGenericHTMLFormElement::UnbindFromTree(bool aNullParent) {
 nsresult nsGenericHTMLFormElement::BeforeSetAttr(
     int32_t aNameSpaceID, nsAtom* aName, const nsAttrValueOrString* aValue,
     bool aNotify) {
-  if (aNameSpaceID == kNameSpaceID_None) {
+  if (aNameSpaceID == kNameSpaceID_None && IsFormAssociatedElement()) {
     nsAutoString tmp;
     HTMLFormElement* form = GetFormInternal();
 
@@ -1799,7 +1804,7 @@ nsresult nsGenericHTMLFormElement::AfterSetAttr(
     int32_t aNameSpaceID, nsAtom* aName, const nsAttrValue* aValue,
     const nsAttrValue* aOldValue, nsIPrincipal* aMaybeScriptedPrincipal,
     bool aNotify) {
-  if (aNameSpaceID == kNameSpaceID_None) {
+  if (aNameSpaceID == kNameSpaceID_None && IsFormAssociatedElement()) {
     HTMLFormElement* form = GetFormInternal();
 
     
@@ -1857,6 +1862,8 @@ void nsGenericHTMLFormElement::ForgetFieldSet(nsIContent* aFieldset) {
 }
 
 Element* nsGenericHTMLFormElement::AddFormIdObserver() {
+  MOZ_ASSERT(IsFormAssociatedElement());
+
   nsAutoString formId;
   DocumentOrShadowRoot* docOrShadow = GetUncomposedDocOrConnectedShadowRoot();
   GetAttr(kNameSpaceID_None, nsGkAtoms::form, formId);
@@ -1868,6 +1875,8 @@ Element* nsGenericHTMLFormElement::AddFormIdObserver() {
 }
 
 void nsGenericHTMLFormElement::RemoveFormIdObserver() {
+  MOZ_ASSERT(IsFormAssociatedElement());
+
   DocumentOrShadowRoot* docOrShadow = GetUncomposedDocOrConnectedShadowRoot();
   if (!docOrShadow) {
     return;
@@ -1948,6 +1957,7 @@ bool nsGenericHTMLFormElement::IsElementDisabledForEvents(WidgetEvent* aEvent,
 
 void nsGenericHTMLFormElement::UpdateFormOwner(bool aBindToTree,
                                                Element* aFormIdElement) {
+  MOZ_ASSERT(IsFormAssociatedElement());
   MOZ_ASSERT(!aBindToTree || !aFormIdElement,
              "aFormIdElement shouldn't be set if aBindToTree is true!");
 
@@ -2023,7 +2033,7 @@ void nsGenericHTMLFormElement::UpdateFormOwner(bool aBindToTree,
 }
 
 void nsGenericHTMLFormElement::UpdateFieldSet(bool aNotify) {
-  if (IsInNativeAnonymousSubtree()) {
+  if (IsInNativeAnonymousSubtree() || !IsFormAssociatedElement()) {
     MOZ_ASSERT(!GetFieldSetInternal());
     return;
   }

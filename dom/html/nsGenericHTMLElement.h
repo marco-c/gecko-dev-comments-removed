@@ -1081,6 +1081,12 @@ class nsGenericHTMLFormElement : public nsGenericHTMLElement {
 
 
   virtual bool DoesReadOnlyApply() const { return false; }
+
+  
+
+
+
+  virtual bool IsFormAssociatedElement() const { return false; }
 };
 
 class nsGenericHTMLFormControlElement : public nsGenericHTMLFormElement,
@@ -1140,6 +1146,7 @@ class nsGenericHTMLFormControlElement : public nsGenericHTMLFormElement,
   mozilla::dom::HTMLFieldSetElement* GetFieldSetInternal() const override;
   void SetFieldSetInternal(
       mozilla::dom::HTMLFieldSetElement* aFieldset) override;
+  bool IsFormAssociatedElement() const override { return true; }
 
   
 
