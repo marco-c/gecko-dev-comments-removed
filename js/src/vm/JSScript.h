@@ -63,6 +63,10 @@ namespace coverage {
 class LCovSource;
 }  
 
+namespace gc {
+class AllocSite;
+}  
+
 namespace jit {
 class AutoKeepJitScripts;
 class BaselineScript;
@@ -2288,6 +2292,10 @@ class JSScript : public js::BaseScript {
   
   
   inline bool isDebuggee() const;
+
+  
+  
+  js::gc::AllocSite* createAllocSite();
 
   
   

@@ -440,6 +440,9 @@ class Nursery {
     return startTimes_[ProfileKey::Total];
   }
 
+  bool canCreateAllocSite() { return pretenuringNursery.canCreateAllocSite(); }
+  void noteAllocSiteCreated() { pretenuringNursery.noteAllocSiteCreated(); }
+
   
   static size_t roundSize(size_t size);
 

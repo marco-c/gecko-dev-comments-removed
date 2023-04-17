@@ -318,6 +318,9 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
   bool hasPurgedStubs_ = false;
 #endif
 
+  
+  Vector<gc::AllocSite*, 0, SystemAllocPolicy> allocSites_;
+
   ICScript icScript_;
   
 
@@ -445,6 +448,8 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
   bool hasTryFinally() const {
     return cachedIonData().bytecodeInfo.hasTryFinally;
   }
+
+  gc::AllocSite* createAllocSite(JSScript* script);
 
  private:
   
