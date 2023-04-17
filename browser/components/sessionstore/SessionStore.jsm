@@ -53,8 +53,6 @@ const OBSERVING = [
   "browser:purge-session-history-for-domain",
   "idle-daily",
   "clear-origin-attributes-data",
-  "browsing-context-did-set-embedder",
-  "browsing-context-discarded",
 ];
 
 
@@ -97,6 +95,10 @@ const MESSAGES = [
 
   
   "SessionStore:error",
+
+  
+  
+  "SessionStore:addSHistoryListener",
 ];
 
 
@@ -112,6 +114,9 @@ const NOTAB_MESSAGES = new Set([
 
   
   "SessionStore:error",
+
+  
+  "SessionStore:addSHistoryListener",
 ]);
 
 
@@ -122,6 +127,9 @@ const NOEPOCH_MESSAGES = new Set([
 
   
   "SessionStore:error",
+
+  
+  "SessionStore:addSHistoryListener",
 ]);
 
 
@@ -986,74 +994,31 @@ var SessionStoreInternal = {
           this._forgetTabsWithUserContextId(userContextId);
         }
         break;
-      case "browsing-context-did-set-embedder":
-        if (Services.appinfo.sessionHistoryInParent) {
-          if (
-            aSubject &&
-            aSubject === aSubject.top &&
-            aSubject.isContent &&
-            aSubject.embedderElement
-          ) {
-            this.addSHistoryListener(aSubject.embedderElement, aSubject);
-          }
-        }
-        break;
-      case "browsing-context-discarded":
-        if (Services.appinfo.sessionHistoryInParent) {
-          let listener = this._browserSHistoryListener.get(
-            aSubject.embedderElement?.permanentKey
-          );
-          if (listener) {
-            listener.uninstall();
-          }
-        }
-        break;
     }
   },
 
   
   
-  addSHistoryListener(aBrowser, aBrowsingContext) {
-    class SHistoryListener {
-      constructor(browser, browsingContext) {
-        if (!browsingContext.sessionHistory) {
-          throw new Error("no SessionHistory object!");
-        }
+  addSHistoryListener(aBrowser) {
+    function SHistoryListener(browser) {
+      browser.browsingContext.sessionHistory.addSHistoryListener(this);
 
-        this._permanentKey = browser.permanentKey;
-        this._browserId = browsingContext.browserId;
-        this._fromIdx = kNoIndex;
+      this.browserId = browser.browsingContext.browserId;
+      this._fromIdx = kNoIndex;
+      this._sHistoryChanges = false;
+      this._permanentKey = browser.permanentKey;
+      if (browser.currentURI && browser.ownerGlobal) {
+        this._lastKnownBody = browser.ownerGlobal.document.body;
+      }
+    }
+    SHistoryListener.prototype = {
+      QueryInterface: ChromeUtils.generateQI([
+        "nsISHistoryListener",
+        "nsISupportsWeakReference",
+      ]),
 
-        
-        if (
-          browsingContext.currentURI?.spec !== "about:blank" ||
-          browsingContext.sessionHistory.count !== 0
-        ) {
-          browser.frameLoader.requestSHistoryUpdate( true);
-        }
-
-        browsingContext.sessionHistory.addSHistoryListener(this);
-      }
-      uninstall() {
-        let bc = BrowsingContext.getCurrentTopByBrowserId(this._browserId);
-        if (bc?.sessionHistory) {
-          bc.sessionHistory.removeSHistoryListener(this);
-        }
-        SessionStoreInternal._browserSHistoryListener.delete(
-          this._permanentKey
-        );
-      }
-      reset() {
-        this._fromIdx = kNoIndex;
-      }
-      didCollect() {
-        return this._fromIdx !== kNoIndex;
-      }
-      collectFrom(index) {
+      notifySHistoryChanges(index) {
         if (this._fromIdx <= index) {
-          
-          
-          
           
           
           
@@ -1062,7 +1027,7 @@ var SessionStoreInternal = {
           return;
         }
 
-        let browser = BrowsingContext.getCurrentTopByBrowserId(this._browserId)
+        let browser = BrowsingContext.getCurrentTopByBrowserId(this.browserId)
           ?.embedderElement;
 
         if (!browser) {
@@ -1070,40 +1035,49 @@ var SessionStoreInternal = {
           return;
         }
 
-        if (!this.didCollect()) {
+        if (!this._sHistoryChanges) {
           browser.frameLoader.requestSHistoryUpdate( false);
+          this._sHistoryChanges = true;
         }
-
         this._fromIdx = index;
-      }
+        if (browser.currentURI && browser.ownerGlobal) {
+          this._lastKnownBody = browser.ownerGlobal.document.body;
+        }
+      },
+
+      uninstall() {
+        let bc = BrowsingContext.getCurrentTopByBrowserId(this.browserId);
+
+        if (bc?.sessionHistory) {
+          bc.sessionHistory.removeSHistoryListener(this);
+        }
+        SessionStoreInternal._browserSHistoryListener.delete(
+          this._permanentKey
+        );
+      },
+
       OnHistoryNewEntry(newURI, oldIndex) {
         
         
-        
-        this.collectFrom(oldIndex == -1 ? oldIndex : oldIndex - 1);
-      }
-      OnHistoryGotoIndex() {
-        this.collectFrom(kLastIndex);
-      }
-      OnHistoryPurge() {
-        this.collectFrom(-1);
-      }
-      OnHistoryReload() {
-        this.collectFrom(-1);
-        return true;
-      }
-      OnHistoryReplaceEntry() {
-        this.collectFrom(-1);
-      }
-    }
-    SHistoryListener.prototype.QueryInterface = ChromeUtils.generateQI([
-      "nsISHistoryListener",
-      "nsISupportsWeakReference",
-    ]);
+        this.notifySHistoryChanges(oldIndex == -1 ? oldIndex : oldIndex - 1);
+      },
 
-    if (!aBrowser || !aBrowser.permanentKey) {
-      return;
-    }
+      OnHistoryGotoIndex() {
+        this.notifySHistoryChanges(kLastIndex);
+      },
+      OnHistoryPurge() {
+        this.notifySHistoryChanges(-1);
+      },
+
+      OnHistoryReload() {
+        this.notifySHistoryChanges(-1);
+        return true;
+      },
+
+      OnHistoryReplaceEntry() {
+        this.notifySHistoryChanges(-1);
+      },
+    };
 
     
     
@@ -1112,8 +1086,20 @@ var SessionStoreInternal = {
       return;
     }
 
-    let listener = new SHistoryListener(aBrowser, aBrowsingContext);
+    
+    if (!aBrowser.browsingContext?.sessionHistory) {
+      throw new Error("no SessionHistory object");
+    }
+
+    let listener = new SHistoryListener(aBrowser);
     this._browserSHistoryListener.set(aBrowser.permanentKey, listener);
+
+    
+    let uri = aBrowser.currentURI.displaySpec;
+    let history = aBrowser.frameLoader.browsingContext.sessionHistory;
+    if (uri != "about:blank" || history.count != 0) {
+      aBrowser.frameLoader.requestSHistoryUpdate( true);
+    }
   },
 
   
@@ -1249,45 +1235,62 @@ var SessionStoreInternal = {
       return;
     }
 
-    
-    if (aBrowsingContext === aBrowsingContext.top) {
-      let listener = this._browserSHistoryListener.get(aBrowser.permanentKey);
+    let sHistoryChangedInListener = false;
+    let listener = this._browserSHistoryListener.get(aBrowser.permanentKey);
+    if (listener) {
+      sHistoryChangedInListener = listener._sHistoryChanges;
+    }
+
+    if (aData.sHistoryNeeded || sHistoryChangedInListener) {
       if (!listener) {
-        this.addSHistoryListener(aBrowser, aBrowsingContext);
+        debug(
+          "updateSessionStoreFromTablistener() with aData.sHistoryNeeded, but no SHlistener. Add again!!!"
+        );
+        this.addSHistoryListener(aBrowser);
         listener = this._browserSHistoryListener.get(aBrowser.permanentKey);
       }
-      if (!listener) {
-        throw new Error("no SHistoryListener!");
-      }
 
-      let needsFullCollect = !!aData.sHistoryNeeded;
-      if (needsFullCollect || listener.didCollect()) {
-        if (!aBrowsingContext.sessionHistory) {
-          throw new Error("no SessionHistory object!");
+      if (listener) {
+        if (!aData.sHistoryNeeded && listener._fromIdx == kNoIndex) {
+          
+          listener._sHistoryChanges = false;
+        } else if (aBrowsingContext.sessionHistory) {
+          let uri = aBrowsingContext.currentURI?.displaySpec;
+          let body =
+            aBrowser.ownerGlobal?.document.body ?? listener._lastKnownBody;
+          
+          
+          
+          
+          
+          
+          
+          aData.data.historychange = SessionHistory.collectFromParent(
+            uri,
+            body,
+            aBrowsingContext.sessionHistory,
+            listener._sHistoryChanges && !aData.sHistoryNeeded
+              ? listener._fromIdx
+              : -1
+          );
+          listener._sHistoryChanges = false;
+          listener._fromIdx = kNoIndex;
+        } else {
+          debug(
+            "updateSessionStoreFromTablistener() with sHistoryNeeded, but no sessionHistory.\n"
+          );
         }
-
-        
-        
-        
-        
-        
-        let fromIdx = -1;
-        if (listener.didCollect() && !needsFullCollect) {
-          fromIdx = listener._fromIdx;
-        }
-
-        aData.data.historychange = SessionHistory.collectFromParent(
-          aBrowsingContext.currentURI?.spec,
-          true, 
-          aBrowsingContext.sessionHistory,
-          fromIdx
+      } else {
+        debug(
+          "updateSessionStoreFromTablistener() with sHistoryNeeded, but no sHlistener.\n"
         );
-
-        listener.reset();
       }
     }
 
-    delete aData.sHistoryNeeded; 
+    if ("sHistoryNeeded" in aData) {
+      delete aData.sHistoryNeeded;
+    }
+
     TabState.update(aBrowser, aData);
     let win = aBrowser.ownerGlobal;
     this.saveStateDelayed(win);
@@ -1329,6 +1332,9 @@ var SessionStoreInternal = {
     }
 
     switch (aMessage.name) {
+      case "SessionStore:addSHistoryListener":
+        this.addSHistoryListener(browser);
+        break;
       case "SessionStore:update":
         
         
