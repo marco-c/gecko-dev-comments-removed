@@ -12,9 +12,12 @@
 #include "mozilla/rlbox/rlbox_config.h"
 
 #ifdef MOZ_WASM_SANDBOXING_HUNSPELL
+
+
+#  include "rlbox.wasm.h"
+#  define RLBOX_USE_STATIC_CALLS() rlbox_wasm2c_sandbox_lookup_symbol
 #  include "mozilla/rlbox/rlbox_wasm2c_sandbox.hpp"
 #else
-
 #  define RLBOX_USE_STATIC_CALLS() rlbox_noop_sandbox_lookup_symbol
 #  include "mozilla/rlbox/rlbox_noop_sandbox.hpp"
 #endif
