@@ -3835,13 +3835,6 @@ already_AddRefed<nsILoadInfo> HttpBaseChannel::CloneLoadInfoForRedirect(
   
   
   if (!isInternalRedirect) {
-    
-    
-    
-    
-    if (!aNewURI->SchemeIs("http") && !aNewURI->SchemeIs("https")) {
-      newLoadInfo->SetLoadTriggeredFromExternal(false);
-    }
     newLoadInfo->ResetSandboxedNullPrincipalID();
   }
 
