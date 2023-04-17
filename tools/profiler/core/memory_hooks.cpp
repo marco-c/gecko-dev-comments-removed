@@ -303,7 +303,12 @@ static void EnsureAllocationTrackerIsInstalled() {
     ::mozilla::detail::ThreadLocal<T, ::mozilla::detail::ThreadLocalKeyStorage>
 #endif
 
-class ThreadIntercept {
+
+
+
+
+
+class MOZ_RAII ThreadIntercept {
   
   
   
@@ -313,51 +318,48 @@ class ThreadIntercept {
   
   static mozilla::Atomic<bool, mozilla::Relaxed> sAllocationsFeatureEnabled;
 
-  ThreadIntercept() = default;
+  
+  bool mIsBlockingTLS;
 
   
-  
-  static bool IsBlocked_() {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    return tlsIsBlocked.get() || profiler_is_locked_on_current_thread();
-  }
+  bool mIsBlocked;
 
  public:
-  static void Init() { tlsIsBlocked.infallibleInit(); }
-
-  
-  
-  
-  
-  static Maybe<ThreadIntercept> MaybeGet() {
-    if (sAllocationsFeatureEnabled && !ThreadIntercept::IsBlocked_()) {
-      
-      
-      return Some(ThreadIntercept());
-    }
-    return Nothing();
-  }
-
-  void Block() {
+  static void Init() {
+    tlsIsBlocked.infallibleInit();
+    
     MOZ_ASSERT(!tlsIsBlocked.get());
-    tlsIsBlocked.set(true);
   }
 
-  void Unblock() {
-    MOZ_ASSERT(tlsIsBlocked.get());
-    tlsIsBlocked.set(false);
+  ThreadIntercept() {
+    
+    
+    mIsBlockingTLS = sAllocationsFeatureEnabled && !tlsIsBlocked.get();
+    if (mIsBlockingTLS) {
+      MOZ_ASSERT(!tlsIsBlocked.get());
+      tlsIsBlocked.set(true);
+      
+      
+      
+      
+      mIsBlocked = profiler_is_locked_on_current_thread();
+    } else {
+      
+      
+      mIsBlocked = true;
+    }
   }
 
-  bool IsBlocked() const { return ThreadIntercept::IsBlocked_(); }
+  ~ThreadIntercept() {
+    if (mIsBlockingTLS) {
+      MOZ_ASSERT(tlsIsBlocked.get());
+      tlsIsBlocked.set(false);
+    }
+  }
+
+  
+  
+  bool IsBlocked() const { return mIsBlocked; }
 
   static void EnableAllocationFeature() { sAllocationsFeatureEnabled = true; }
 
@@ -368,26 +370,6 @@ PROFILER_THREAD_LOCAL(bool) ThreadIntercept::tlsIsBlocked;
 
 mozilla::Atomic<bool, mozilla::Relaxed>
     ThreadIntercept::sAllocationsFeatureEnabled(false);
-
-
-
-class AutoBlockIntercepts {
-  ThreadIntercept& mThreadIntercept;
-
- public:
-  
-  AutoBlockIntercepts(const AutoBlockIntercepts&) = delete;
-  void operator=(const AutoBlockIntercepts&) = delete;
-
-  explicit AutoBlockIntercepts(ThreadIntercept& aThreadIntercept)
-      : mThreadIntercept(aThreadIntercept) {
-    mThreadIntercept.Block();
-  }
-  ~AutoBlockIntercepts() {
-    MOZ_ASSERT(mThreadIntercept.IsBlocked());
-    mThreadIntercept.Unblock();
-  }
-};
 
 
 
@@ -404,17 +386,14 @@ static void AllocCallback(void* aPtr, size_t aReqSize) {
     sCounter->Add(actualSize);
   }
 
-  auto threadIntercept = ThreadIntercept::MaybeGet();
-  if (threadIntercept.isNothing()) {
+  ThreadIntercept threadIntercept;
+  if (threadIntercept.IsBlocked()) {
     
     
     
     return;
   }
 
-  
-  
-  AutoBlockIntercepts block(threadIntercept.ref());
   AUTO_PROFILER_LABEL("AllocCallback", PROFILER);
 
   
@@ -450,17 +429,14 @@ static void FreeCallback(void* aPtr) {
   int64_t signedSize = -(static_cast<int64_t>(unsignedSize));
   sCounter->Add(signedSize);
 
-  auto threadIntercept = ThreadIntercept::MaybeGet();
-  if (threadIntercept.isNothing()) {
+  ThreadIntercept threadIntercept;
+  if (threadIntercept.IsBlocked()) {
     
     
     
     return;
   }
 
-  
-  
-  AutoBlockIntercepts block(threadIntercept.ref());
   AUTO_PROFILER_LABEL("FreeCallback", PROFILER);
 
   
