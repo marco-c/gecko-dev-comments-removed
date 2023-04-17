@@ -6,6 +6,8 @@
 
 
 
+#include "mozilla/PresShell.h"
+#include "nsHTMLParts.h"
 #include "nsIFrame.h"
 
 using namespace mozilla;
