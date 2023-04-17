@@ -693,6 +693,9 @@ NS_IMETHODIMP EditorBase::SetFlags(uint32_t aFlags) {
   
   
   MOZ_ASSERT_IF(IsTextEditor(), !(aFlags & nsIEditor::eEditorNoCSSMask));
+  
+  
+  MOZ_ASSERT_IF(IsTextEditor(), !(aFlags & nsIEditor::eEditorAllowInteraction));
 
   const bool isCalledByPostCreate = (mFlags == ~aFlags);
   
@@ -5116,25 +5119,6 @@ nsresult EditorBase::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
           NS_SUCCEEDED(rvIgnored),
           "EditorBase::DeleteSelectionAsAction() failed, but ignored");
       return NS_OK;
-    }
-    case NS_VK_TAB: {
-      MOZ_ASSERT_IF(IsHTMLEditor(), IsInPlaintextMode());
-      if (IsTabbable()) {
-        return NS_OK;  
-      }
-
-      if (aKeyboardEvent->IsShift() || aKeyboardEvent->IsControl() ||
-          aKeyboardEvent->IsAlt() || aKeyboardEvent->IsMeta() ||
-          aKeyboardEvent->IsOS()) {
-        return NS_OK;
-      }
-
-      
-      aKeyboardEvent->PreventDefault();
-      nsresult rv = OnInputText(u"\t"_ns);
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                           "EditorBase::OnInputText(\\t) failed");
-      return rv;
     }
   }
   return NS_OK;

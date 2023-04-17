@@ -75,6 +75,8 @@ interface nsIEditor  : nsISupports
   
   
   
+  
+  
   const long eEditorAllowInteraction    = 0x0200;
   
   

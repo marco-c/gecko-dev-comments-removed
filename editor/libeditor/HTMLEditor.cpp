@@ -901,15 +901,6 @@ nsresult HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
       return rv;
     }
     case NS_VK_TAB: {
-      if (IsInPlaintextMode()) {
-        
-        
-        nsresult rv = EditorBase::HandleKeyPressEvent(aKeyboardEvent);
-        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                             "EditorBase::HandleKeyPressEvent() failed");
-        return rv;
-      }
-
       
       
       if (IsTabbable()) {
@@ -918,7 +909,23 @@ nsresult HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
 
       
       
+      if (IsInPlaintextMode()) {
+        if (aKeyboardEvent->IsShift() || aKeyboardEvent->IsControl() ||
+            aKeyboardEvent->IsAlt() || aKeyboardEvent->IsMeta() ||
+            aKeyboardEvent->IsOS()) {
+          return NS_OK;
+        }
 
+        
+        aKeyboardEvent->PreventDefault();
+        nsresult rv = OnInputText(u"\t"_ns);
+        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                             "EditorBase::OnInputText(\\t) failed");
+        return rv;
+      }
+
+      
+      
       if (aKeyboardEvent->IsControl() || aKeyboardEvent->IsAlt() ||
           aKeyboardEvent->IsMeta() || aKeyboardEvent->IsOS()) {
         return NS_OK;

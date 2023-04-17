@@ -630,6 +630,13 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
+  bool IsTabbable() const { return IsInteractionAllowed(); }
+
+  
+
+
+
   void NotifyEditingHostMaybeChanged();
 
   
