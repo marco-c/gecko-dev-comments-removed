@@ -7820,9 +7820,16 @@ AttachDecision CallIRGenerator::tryAttachSetHas(HandleFunction callee) {
         writer.setHasBigIntResult(objId, bigIntId);
         break;
       }
-      case ValueType::Object:
+      case ValueType::Object: {
+        
+#  ifdef JS_PUNBOX64
+        ObjOperandId valId = writer.guardToObject(argId);
+        writer.setHasObjectResult(objId, valId);
+#  else
         writer.setHasResult(objId, argId);
+#  endif
         break;
+      }
 
       case ValueType::Magic:
       case ValueType::PrivateGCThing:
