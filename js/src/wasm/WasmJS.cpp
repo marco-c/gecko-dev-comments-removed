@@ -1919,7 +1919,7 @@ void WasmInstanceObject::trace(JSTracer* trc, JSObject* obj) {
 
 WasmInstanceObject* WasmInstanceObject::create(
     JSContext* cx, SharedCode code, const DataSegmentVector& dataSegments,
-    const ElemSegmentVector& elemSegments, UniqueTlsData tlsData,
+    const ElemSegmentVector& elemSegments, uint32_t globalDataLength,
     HandleWasmMemoryObject memory, SharedExceptionTagVector&& exceptionTags,
     SharedTableVector&& tables, const JSFunctionVector& funcImports,
     const GlobalDescVector& globals, const ValVector& globalImportValues,
@@ -1995,6 +1995,13 @@ WasmInstanceObject* WasmInstanceObject::create(
     
     
     MOZ_ASSERT(obj->isNewborn());
+
+    
+    UniqueTlsData tlsData = CreateTlsData(globalDataLength);
+    if (!tlsData) {
+      ReportOutOfMemory(cx);
+      return nullptr;
+    }
 
     
     instance = cx->new_<Instance>(cx, obj, code, std::move(tlsData), memory,

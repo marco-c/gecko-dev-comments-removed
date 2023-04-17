@@ -1144,6 +1144,9 @@ struct BaseCompiler final {
   
   
   [[nodiscard]] bool throwFrom(RegRef exn, uint32_t lineOrBytecode);
+
+  
+  void loadPendingException(Register dest);
 #endif
 
   

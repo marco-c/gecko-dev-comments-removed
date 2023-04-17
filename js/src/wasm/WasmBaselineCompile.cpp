@@ -875,20 +875,6 @@ void BaseCompiler::popBlockResults(ResultType type, StackHeight stackBase,
 #ifdef ENABLE_WASM_EXCEPTIONS
 
 
-bool BaseCompiler::throwFrom(RegRef exn, uint32_t lineOrBytecode) {
-  pushRef(exn);
-
-  
-  if (!emitInstanceCall(lineOrBytecode, SASigThrowException)) {
-    return false;
-  }
-  freeRef(popRef());
-
-  return true;
-}
-
-
-
 
 void BaseCompiler::popCatchResults(ResultType type, StackHeight stackBase) {
   if (!type.empty()) {
@@ -1386,6 +1372,29 @@ bool BaseCompiler::pushCallResults(const FunctionCall& call, ResultType type,
 #endif
   return pushResults(type, fr.stackResultsBase(loc.bytes()));
 }
+
+
+
+
+#ifdef ENABLE_WASM_EXCEPTIONS
+
+
+bool BaseCompiler::throwFrom(RegRef exn, uint32_t lineOrBytecode) {
+  pushRef(exn);
+
+  
+  if (!emitInstanceCall(lineOrBytecode, SASigThrowException)) {
+    return false;
+  }
+  freeRef(popRef());
+
+  return true;
+}
+
+void BaseCompiler::loadPendingException(Register dest) {
+  masm.loadPtr(Address(WasmTlsReg, offsetof(TlsData, pendingException)), dest);
+}
+#endif
 
 
 
@@ -3695,14 +3704,35 @@ bool BaseCompiler::emitBodyDelegateThrowPad() {
 
   
   if (block.otherLabel.used()) {
+    uint32_t lineOrBytecode = readCallSiteLineOrBytecode();
     StackHeight savedHeight = fr.stackHeight();
     fr.setStackHeight(block.stackHeight);
     masm.bind(&block.otherLabel);
 
     
-    RegRef exn = RegRef(WasmExceptionReg);
-    needRef(exn);
-    if (!throwFrom(exn, readCallSiteLineOrBytecode())) {
+    
+    fr.loadTlsPtr(WasmTlsReg);
+    masm.loadWasmPinnedRegsFromTls();
+    RegRef scratch = needRef();
+    RegRef scratch2 = needRef();
+    masm.switchToWasmTlsRealm(scratch, scratch2);
+    freeRef(scratch);
+    freeRef(scratch2);
+
+    
+    
+    RegRef exn = needRef();
+    loadPendingException(exn);
+    pushRef(exn);
+
+    
+    if (!emitInstanceCall(lineOrBytecode, SASigConsumePendingException)) {
+      return false;
+    }
+    freeI32(popI32());
+    exn = popRef();
+
+    if (!throwFrom(exn, lineOrBytecode)) {
       return false;
     }
     fr.setStackHeight(savedHeight);
@@ -3846,14 +3876,15 @@ bool BaseCompiler::endTryCatch(ResultType type) {
   RegRef scratch = needRef();
   RegRef scratch2 = needRef();
   masm.switchToWasmTlsRealm(scratch, scratch2);
+  freeRef(scratch);
   freeRef(scratch2);
 
   
-  masm.movePtr(exn, scratch);
+  
+  loadPendingException(exn);
   pushRef(exn);
-  pushRef(scratch);
 
-  if (!emitInstanceCall(lineOrBytecode, SASigGetLocalExceptionIndex)) {
+  if (!emitInstanceCall(lineOrBytecode, SASigConsumePendingException)) {
     return false;
   }
 

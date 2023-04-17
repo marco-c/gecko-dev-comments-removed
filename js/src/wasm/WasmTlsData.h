@@ -68,6 +68,17 @@ struct TlsData {
   
   const JSClass* valueBoxClass;
 
+#ifdef ENABLE_WASM_EXCEPTIONS
+  
+  
+  
+  
+  
+  
+  
+  GCPtrObject pendingException;
+#endif
+
   
   
   
