@@ -44,7 +44,7 @@ var ins = wasmEvalText(
       (table $t1 (export "t1") 2 funcref)
       (table 1 externref)
       (table $t2 (export "t2") 3 funcref))`,
-    {m:{t: new WebAssembly.Table({element:"funcref", initial:2})}}).exports;
+    {m:{t: new WebAssembly.Table({element:"anyfunc", initial:2})}}).exports;
 
 assertEq(ins.t1 instanceof WebAssembly.Table, true);
 assertEq(ins.t1.length, 2);
@@ -54,9 +54,9 @@ assertEq(ins.t2.length, 3);
 
 
 
-var exp = {m:{t0: new WebAssembly.Table({element:"funcref", initial:2}),
+var exp = {m:{t0: new WebAssembly.Table({element:"anyfunc", initial:2}),
               t1: new WebAssembly.Table({element:"externref", initial:3}),
-              t2: new WebAssembly.Table({element:"funcref", initial:4}),
+              t2: new WebAssembly.Table({element:"anyfunc", initial:4}),
               t3: new WebAssembly.Table({element:"externref", initial:5})}};
 var ins = wasmEvalText(
     `(module
@@ -266,7 +266,7 @@ assertEq(ins.exports.call(1, 10), -1);
 
 
 
-var tbl = new WebAssembly.Table({element:"funcref", initial:2});
+var tbl = new WebAssembly.Table({element:"anyfunc", initial:2});
 var exp = {m:{t0: tbl, t1: tbl}};
 var ins = wasmEvalText(
     `(module
