@@ -1879,7 +1879,7 @@ static bool RecreateLostWaivers(JSContext* cx, const PropertyDescriptor* orig,
   
   
   bool valueWasWaived =
-      orig->value().isObject() &&
+      orig->hasValue() && orig->value().isObject() &&
       WrapperFactory::HasWaiveXrayFlag(&orig->value().toObject());
   bool getterWasWaived = orig->hasGetterObject() && orig->getterObject() &&
                          WrapperFactory::HasWaiveXrayFlag(orig->getterObject());
