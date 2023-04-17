@@ -47,41 +47,35 @@ class CDP {
 
 
 
-  constructor(agent) {
-    this.agent = agent;
-    this.targetList = null;
-  }
+  constructor(server) {
+    this.server = server;
 
-  get address() {
-    const mainTarget = this.targetList.getMainProcessTarget();
-    return mainTarget.wsDebuggerURL;
+    this.server.registerPrefixHandler("/json/", new JSONHandler(this));
+
+    this.targetList = new TargetList();
+    this.targetList.on("target-created", (eventName, target) => {
+      this.server.registerPathHandler(target.path, target);
+    });
+    this.targetList.on("target-destroyed", (eventName, target) => {
+      this.server.registerPathHandler(target.path, null);
+    });
+
+    RecommendedPreferences.applyPreferences(RECOMMENDED_PREFS);
   }
 
   
 
 
   async start() {
-    RecommendedPreferences.applyPreferences(RECOMMENDED_PREFS);
-
-    this.agent.server.registerPrefixHandler("/json/", new JSONHandler(this));
-
-    this.targetList = new TargetList();
-    this.targetList.on("target-created", (eventName, target) => {
-      this.agent.server.registerPathHandler(target.path, target);
-    });
-    this.targetList.on("target-destroyed", (eventName, target) => {
-      this.agent.server.registerPathHandler(target.path, null);
-    });
-
     await this.targetList.watchForTargets();
 
     
     
-
+    const mainTarget = this.targetList.getMainProcessTarget();
     Services.obs.notifyObservers(
       null,
       "remote-listening",
-      `DevTools listening on ${this.address}`
+      `DevTools listening on ${mainTarget.wsDebuggerURL}`
     );
   }
 
@@ -90,8 +84,6 @@ class CDP {
 
   stop() {
     this.targetList.destructor();
-    this.targetList = null;
-
     RecommendedPreferences.restorePreferences(RECOMMENDED_PREFS);
   }
 }
