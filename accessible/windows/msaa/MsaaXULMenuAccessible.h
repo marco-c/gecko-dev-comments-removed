@@ -6,21 +6,19 @@
 #ifndef mozilla_a11y_MsaaXULMenuAccessible_h__
 #define mozilla_a11y_MsaaXULMenuAccessible_h__
 
-#include "XULMenuAccessible.h"
+#include "MsaaAccessible.h"
 
 namespace mozilla {
 namespace a11y {
 
-
-
-
-class MsaaXULMenuitemAccessible : public XULMenuitemAccessible {
+class MsaaXULMenuitemAccessible : public MsaaAccessible {
  public:
-  using XULMenuitemAccessible::XULMenuitemAccessible;
-
   virtual  HRESULT STDMETHODCALLTYPE get_accKeyboardShortcut(
        VARIANT varChild,
        BSTR __RPC_FAR* pszKeyboardShortcut) override;
+
+ protected:
+  using MsaaAccessible::MsaaAccessible;
 };
 
 }  

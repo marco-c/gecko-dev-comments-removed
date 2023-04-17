@@ -14,17 +14,23 @@ using namespace mozilla;
 using namespace mozilla::a11y;
 
 DocAccessible* MsaaDocAccessible::DocAcc() {
-  
-  
-  auto wrap = static_cast<DocAccessible*>(this);
-  AccessibleWrap* acc = static_cast<MsaaAccessible*>(wrap)->LocalAcc();
-  return static_cast<DocAccessible*>(acc);
+  return static_cast<DocAccessible*>(LocalAcc());
 }
 
 
 MsaaDocAccessible* MsaaDocAccessible::GetFrom(DocAccessible* aDoc) {
   return static_cast<MsaaDocAccessible*>(MsaaAccessible::GetFrom(aDoc));
 }
+
+
+IMPL_IUNKNOWN_QUERY_HEAD(MsaaDocAccessible)
+if (aIID == IID_ISimpleDOMDocument) {
+  statistics::ISimpleDOMUsed();
+  *aInstancePtr = static_cast<ISimpleDOMDocument*>(new sdnDocAccessible(this));
+  static_cast<IUnknown*>(*aInstancePtr)->AddRef();
+  return S_OK;
+}
+IMPL_IUNKNOWN_QUERY_TAIL_INHERITED(ia2AccessibleHypertext)
 
 STDMETHODIMP
 MsaaDocAccessible::get_accParent(

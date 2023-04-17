@@ -10,16 +10,21 @@
 
 #include "AccessibleTable.h"
 #include "AccessibleTable2.h"
+#include "ia2AccessibleHypertext.h"
+#include "IUnknownImpl.h"
 
 namespace mozilla {
 namespace a11y {
 
 class TableAccessible;
 
-class ia2AccessibleTable : public IAccessibleTable, public IAccessibleTable2 {
+class ia2AccessibleTable : public IAccessibleTable,
+                           public IAccessibleTable2,
+                           public ia2AccessibleHypertext {
  public:
   
-  STDMETHODIMP QueryInterface(REFIID, void**);
+  DECL_IUNKNOWN_INHERITED
+  IMPL_IUNKNOWN_REFCOUNTING_INHERITED(ia2AccessibleHypertext)
 
   
   virtual  HRESULT STDMETHODCALLTYPE get_accessibleAt(
@@ -161,12 +166,10 @@ class ia2AccessibleTable : public IAccessibleTable, public IAccessibleTable2 {
        long* nRows);
 
  protected:
-  ia2AccessibleTable(TableAccessible* aTable) : mTable(aTable) {}
-
-  TableAccessible* mTable;
+  using ia2AccessibleHypertext::ia2AccessibleHypertext;
 
  private:
-  TableAccessible* TableAcc() { return mTable; }
+  TableAccessible* TableAcc();
 };
 
 }  

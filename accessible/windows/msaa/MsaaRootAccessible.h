@@ -7,21 +7,16 @@
 #define mozilla_a11y_MsaaRootAccessible_h__
 
 #include "mozilla/mscom/Aggregation.h"
-#include "RootAccessible.h"
+#include "MsaaDocAccessible.h"
 
 namespace mozilla {
 
-class PresShell;
-
 namespace a11y {
 
-
-
-
-class MsaaRootAccessible : public RootAccessible {
+class MsaaRootAccessible : public MsaaDocAccessible {
  public:
-  MsaaRootAccessible(dom::Document* aDocument, PresShell* aPresShell)
-      : RootAccessible(aDocument, aPresShell), mOuter(&mInternalUnknown) {}
+  explicit MsaaRootAccessible(Accessible* aAcc)
+      : MsaaDocAccessible(aAcc), mOuter(&mInternalUnknown) {}
 
   
 

@@ -19,29 +19,14 @@ using namespace mozilla;
 using namespace mozilla::a11y;
 
 ImageAccessible* ia2AccessibleImage::ImageAcc() {
-  
-  
-  auto wrap = static_cast<ImageAccessibleWrap*>(this);
-  AccessibleWrap* acc = static_cast<MsaaAccessible*>(wrap)->LocalAcc();
+  AccessibleWrap* acc = static_cast<MsaaAccessible*>(this)->LocalAcc();
   return static_cast<ImageAccessible*>(acc);
 }
 
 
-
-STDMETHODIMP
-ia2AccessibleImage::QueryInterface(REFIID iid, void** ppv) {
-  if (!ppv) return E_INVALIDARG;
-
-  *ppv = nullptr;
-
-  if (IID_IAccessibleImage == iid) {
-    *ppv = static_cast<IAccessibleImage*>(this);
-    (static_cast<IUnknown*>(*ppv))->AddRef();
-    return S_OK;
-  }
-
-  return E_NOINTERFACE;
-}
+IMPL_IUNKNOWN_QUERY_HEAD(ia2AccessibleImage)
+IMPL_IUNKNOWN_QUERY_IFACE(IAccessibleImage)
+IMPL_IUNKNOWN_QUERY_TAIL_INHERITED(MsaaAccessible)
 
 
 

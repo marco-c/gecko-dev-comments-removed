@@ -11,21 +11,7 @@
 
 namespace mozilla {
 namespace a11y {
-
-
-
-
-
-class TextLeafAccessibleWrap : public TextLeafAccessible {
- public:
-  TextLeafAccessibleWrap(nsIContent* aContent, DocAccessible* aDoc)
-      : TextLeafAccessible(aContent, aDoc) {}
-  virtual ~TextLeafAccessibleWrap() {}
-
-  
-  DECL_IUNKNOWN_INHERITED
-};
-
+using TextLeafAccessibleWrap = TextLeafAccessible;
 }  
 }  
 

@@ -39,7 +39,12 @@ AccessibleWrap::AccessibleWrap(nsIContent* aContent, DocAccessible* aDoc)
 NS_IMPL_ISUPPORTS_INHERITED0(AccessibleWrap, LocalAccessible)
 
 void AccessibleWrap::Shutdown() {
-  MsaaShutdown();
+  if (mMsaa) {
+    mMsaa->MsaaShutdown();
+    
+    
+    
+  }
   LocalAccessible::Shutdown();
 }
 
@@ -47,9 +52,16 @@ void AccessibleWrap::Shutdown() {
 
 
 
+MsaaAccessible* AccessibleWrap::GetMsaa() {
+  if (!mMsaa) {
+    mMsaa = MsaaAccessible::Create(this);
+  }
+  return mMsaa;
+}
+
 void AccessibleWrap::GetNativeInterface(void** aOutAccessible) {
-  *aOutAccessible = static_cast<IAccessible*>(this);
-  NS_ADDREF_THIS();
+  RefPtr<IAccessible> result = GetMsaa();
+  return result.forget(aOutAccessible);
 }
 
 

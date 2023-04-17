@@ -7,31 +7,21 @@
 #ifndef mozilla_a11y_MsaaDocAccessible_h__
 #define mozilla_a11y_MsaaDocAccessible_h__
 
-#include "DocAccessible.h"
-#include "MsaaAccessible.h"
+#include "ia2AccessibleHypertext.h"
 
 namespace mozilla {
 
-class PresShell;
-
 namespace a11y {
+class Accessible;
 class DocAccessible;
 
-
-
-class MsaaDocAccessible : public DocAccessible {
+class MsaaDocAccessible : public ia2AccessibleHypertext {
  public:
-  MsaaDocAccessible(dom::Document* aDocument, PresShell* aPresShell)
-      : DocAccessible(aDocument, aPresShell) {}
-
   DocAccessible* DocAcc();
 
   
-  
-  
-  STDMETHODIMP QueryInterface(REFIID iid, void** ppv) override {
-    return MsaaAccessible::QueryInterface(iid, ppv);
-  }
+  DECL_IUNKNOWN_INHERITED
+  IMPL_IUNKNOWN_REFCOUNTING_INHERITED(ia2AccessibleHypertext)
 
   
 
@@ -59,6 +49,8 @@ class MsaaDocAccessible : public DocAccessible {
   static MsaaDocAccessible* GetFrom(DocAccessible* aDoc);
 
  protected:
+  using ia2AccessibleHypertext::ia2AccessibleHypertext;
+
   
 
 

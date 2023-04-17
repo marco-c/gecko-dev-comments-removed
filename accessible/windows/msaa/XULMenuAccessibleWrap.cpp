@@ -4,6 +4,7 @@
 
 
 #include "XULMenuAccessibleWrap.h"
+#include "mozilla/dom/Element.h"
 #include "nsNameSpaceManager.h"
 
 using namespace mozilla::a11y;
@@ -14,7 +15,7 @@ using namespace mozilla::a11y;
 
 XULMenuitemAccessibleWrap::XULMenuitemAccessibleWrap(nsIContent* aContent,
                                                      DocAccessible* aDoc)
-    : MsaaXULMenuitemAccessible(aContent, aDoc) {}
+    : XULMenuitemAccessible(aContent, aDoc) {}
 
 ENameValueFlag XULMenuitemAccessibleWrap::Name(nsString& aName) const {
   

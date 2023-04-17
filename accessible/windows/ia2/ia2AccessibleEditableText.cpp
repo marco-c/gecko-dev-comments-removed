@@ -6,6 +6,7 @@
 
 
 #include "ia2AccessibleEditableText.h"
+#include "ia2AccessibleHypertext.h"
 
 #include "AccessibleEditableText_i.c"
 #include "HyperTextAccessible-inl.h"
@@ -18,10 +19,8 @@
 using namespace mozilla::a11y;
 
 HyperTextAccessibleWrap* ia2AccessibleEditableText::TextAcc() {
-  
-  
-  auto wrap = static_cast<HyperTextAccessibleWrap*>(this);
-  AccessibleWrap* acc = static_cast<MsaaAccessible*>(wrap)->LocalAcc();
+  auto hyp = static_cast<ia2AccessibleHypertext*>(this);
+  AccessibleWrap* acc = static_cast<MsaaAccessible*>(hyp)->LocalAcc();
   return static_cast<HyperTextAccessibleWrap*>(acc);
 }
 

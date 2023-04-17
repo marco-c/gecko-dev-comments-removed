@@ -12,11 +12,7 @@ using namespace mozilla;
 using namespace mozilla::a11y;
 
 RootAccessible* MsaaRootAccessible::RootAcc() {
-  
-  
-  auto wrap = static_cast<RootAccessible*>(this);
-  AccessibleWrap* acc = static_cast<MsaaAccessible*>(wrap)->LocalAcc();
-  return static_cast<RootAccessible*>(acc);
+  return static_cast<RootAccessible*>(LocalAcc());
 }
 
 
@@ -37,14 +33,14 @@ MsaaRootAccessible::InternalQueryInterface(REFIID aIid, void** aOutInterface) {
 
   
   
-  return DocAccessibleWrap::QueryInterface(aIid, aOutInterface);
+  return MsaaDocAccessible::QueryInterface(aIid, aOutInterface);
 }
 
 ULONG
-MsaaRootAccessible::InternalAddRef() { return DocAccessible::AddRef(); }
+MsaaRootAccessible::InternalAddRef() { return MsaaDocAccessible::AddRef(); }
 
 ULONG
-MsaaRootAccessible::InternalRelease() { return DocAccessible::Release(); }
+MsaaRootAccessible::InternalRelease() { return MsaaDocAccessible::Release(); }
 
 already_AddRefed<IUnknown> MsaaRootAccessible::Aggregate(IUnknown* aOuter) {
   MOZ_ASSERT(mOuter &&
