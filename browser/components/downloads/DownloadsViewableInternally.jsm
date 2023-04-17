@@ -162,6 +162,20 @@ let DownloadsViewableInternally = {
       
     },
     {
+      extension: "jxl",
+      mimeTypes: ["image/jxl"],
+      initAvailable() {
+        XPCOMUtils.defineLazyPreferenceGetter(
+          this,
+          "available",
+          "image.jxl.enabled",
+          false,
+          () => DownloadsViewableInternally._updateHandler(this)
+        );
+      },
+      
+    },
+    {
       extension: "pdf",
       mimeTypes: ["application/pdf"],
       
