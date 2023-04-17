@@ -58,7 +58,6 @@ namespace layers {
 class AsyncPanZoomController;
 class ClientLayerManager;
 class Layer;
-class ContainerLayer;
 class CompositorBridgeChild;
 class ReadbackProcessor;
 class FocusTarget;
@@ -210,11 +209,6 @@ class LayerManager : public WindowRenderer {
   virtual void Mutated(Layer* aLayer) {}
   virtual void MutatedSimple(Layer* aLayer) {}
 
-  
-
-
-
-  virtual already_AddRefed<ContainerLayer> CreateContainerLayer() = 0;
   
 
 
