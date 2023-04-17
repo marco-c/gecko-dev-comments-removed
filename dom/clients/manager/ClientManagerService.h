@@ -84,7 +84,7 @@ class ClientManagerService final {
 
   
   
-  nsTHashMap<nsIDHashKey, ClientSourceParent*> mSourceTable;
+  nsTHashMap<nsIDHashKey, SourceTableEntry> mSourceTable;
 
   
   
@@ -98,6 +98,16 @@ class ClientManagerService final {
   ~ClientManagerService();
 
   void Shutdown();
+
+  
+  
+  ClientSourceParent* MaybeUnwrapAsExistingSource(
+      const SourceTableEntry& aEntry) const;
+
+  
+  
+  ClientSourceParent* FindExistingSource(
+      const nsID& aID, const mozilla::ipc::PrincipalInfo& aPrincipalInfo) const;
 
  public:
   static already_AddRefed<ClientManagerService> GetOrCreateInstance();
