@@ -56,7 +56,7 @@ void AxisPhysicsMSDModel::SetDestination(double aDestination) {
   mDestination = aDestination;
 }
 
-bool AxisPhysicsMSDModel::IsFinished(double aSmallestVisibleIncrement) {
+bool AxisPhysicsMSDModel::IsFinished(double aSmallestVisibleIncrement) const {
   
   
   

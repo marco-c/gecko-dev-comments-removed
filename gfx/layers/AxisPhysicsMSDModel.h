@@ -38,7 +38,7 @@ class AxisPhysicsMSDModel : public AxisPhysicsModel {
 
 
 
-  bool IsFinished(double aSmallestVisibleIncrement);
+  bool IsFinished(double aSmallestVisibleIncrement) const;
 
  protected:
   double Acceleration(const State& aState) override;

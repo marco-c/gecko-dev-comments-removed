@@ -809,6 +809,12 @@ class AsyncPanZoomController {
 
 
   ParentLayerPoint GetOverscrollAmount() const;
+
+  
+
+
+  SideBits GetOverscrollSideBits() const;
+
   
 
 
@@ -1452,14 +1458,16 @@ class AsyncPanZoomController {
   
   
   void HandleFlingOverscroll(
-      const ParentLayerPoint& aVelocity,
+      const ParentLayerPoint& aVelocity, SideBits aOverscrollSideBits,
       const RefPtr<const OverscrollHandoffChain>& aOverscrollHandoffChain,
       const RefPtr<const AsyncPanZoomController>& aScrolledApzc);
 
-  void HandleSmoothScrollOverscroll(const ParentLayerPoint& aVelocity);
+  void HandleSmoothScrollOverscroll(const ParentLayerPoint& aVelocity,
+                                    SideBits aOverscrollSideBits);
 
   
-  void StartOverscrollAnimation(const ParentLayerPoint& aVelocity);
+  void StartOverscrollAnimation(const ParentLayerPoint& aVelocity,
+                                SideBits aOverscrollSideBits);
 
   
   ScrollDirections GetOverscrollableDirections() const;

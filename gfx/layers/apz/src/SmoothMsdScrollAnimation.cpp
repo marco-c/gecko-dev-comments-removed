@@ -103,9 +103,10 @@ bool SmoothMsdScrollAnimation::DoSample(FrameMetrics& aFrameMetrics,
     
     
     
-    mDeferredTasks.AppendElement(NewRunnableMethod<ParentLayerPoint>(
+    mDeferredTasks.AppendElement(NewRunnableMethod<ParentLayerPoint, SideBits>(
         "layers::AsyncPanZoomController::HandleSmoothScrollOverscroll", &mApzc,
-        &AsyncPanZoomController::HandleSmoothScrollOverscroll, velocity));
+        &AsyncPanZoomController::HandleSmoothScrollOverscroll, velocity,
+        apz::GetOverscrollSideBits(overscroll)));
     return false;
   }
 

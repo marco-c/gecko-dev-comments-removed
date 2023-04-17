@@ -205,6 +205,12 @@ bool AboutToCheckerboard(const FrameMetrics& aPaintedMetrics,
 
 
 bool ShouldUseProgressivePaint();
+
+
+
+
+SideBits GetOverscrollSideBits(const ParentLayerPoint& aOverscrollAmount);
+
 }  
 
 }  

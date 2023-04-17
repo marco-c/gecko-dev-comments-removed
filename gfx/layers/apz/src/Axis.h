@@ -177,6 +177,11 @@ class Axis {
   
 
 
+  bool IsOverscrollAnimationRunning() const;
+
+  
+
+
   ParentLayerCoord PanStart() const;
 
   

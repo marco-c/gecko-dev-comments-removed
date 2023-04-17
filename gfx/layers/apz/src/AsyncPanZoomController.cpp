@@ -2721,7 +2721,7 @@ nsEventStatus AsyncPanZoomController::OnPan(
 
   if (aFingersOnTouchpad == FingersOnTouchpad::No) {
     if (IsOverscrolled() && mState != OVERSCROLL_ANIMATION) {
-      StartOverscrollAnimation(velocity);
+      StartOverscrollAnimation(velocity, GetOverscrollSideBits());
     } else if (!consumed) {
       
       
@@ -2754,7 +2754,7 @@ nsEventStatus AsyncPanZoomController::OnPanEnd(const PanGestureInput& aEvent) {
   if (IsOverscrolled() && mState != OVERSCROLL_ANIMATION) {
     
     
-    StartOverscrollAnimation(GetVelocityVector());
+    StartOverscrollAnimation(GetVelocityVector(), GetOverscrollSideBits());
   } else {
     SetState(NOTHING);
   }
@@ -3635,7 +3635,7 @@ bool AsyncPanZoomController::OverscrollBehaviorAllowsSwipe() const {
 }
 
 void AsyncPanZoomController::HandleFlingOverscroll(
-    const ParentLayerPoint& aVelocity,
+    const ParentLayerPoint& aVelocity, SideBits aOverscrollSideBits,
     const RefPtr<const OverscrollHandoffChain>& aOverscrollHandoffChain,
     const RefPtr<const AsyncPanZoomController>& aScrolledApzc) {
   APZCTreeManager* treeManagerLocal = GetApzcTreeManager();
@@ -3659,17 +3659,19 @@ void AsyncPanZoomController::HandleFlingOverscroll(
       }
 
       if (!IsZero(residualVelocity)) {
-        mOverscrollEffect->HandleFlingOverscroll(residualVelocity);
+        mOverscrollEffect->HandleFlingOverscroll(residualVelocity,
+                                                 aOverscrollSideBits);
       }
     }
   }
 }
 
 void AsyncPanZoomController::HandleSmoothScrollOverscroll(
-    const ParentLayerPoint& aVelocity) {
+    const ParentLayerPoint& aVelocity, SideBits aOverscrollSideBits) {
   
   
-  HandleFlingOverscroll(aVelocity, BuildOverscrollHandoffChain(), nullptr);
+  HandleFlingOverscroll(aVelocity, aOverscrollSideBits,
+                        BuildOverscrollHandoffChain(), nullptr);
 }
 
 void AsyncPanZoomController::SmoothScrollTo(const CSSPoint& aDestination,
@@ -3730,13 +3732,13 @@ void AsyncPanZoomController::SmoothMsdScrollTo(const CSSPoint& aDestination) {
 }
 
 void AsyncPanZoomController::StartOverscrollAnimation(
-    const ParentLayerPoint& aVelocity) {
+    const ParentLayerPoint& aVelocity, SideBits aOverscrollSideBits) {
   SetState(OVERSCROLL_ANIMATION);
 
   ParentLayerPoint velocity = aVelocity;
   AdjustDeltaForAllowedScrollDirections(velocity,
                                         GetOverscrollableDirections());
-  StartAnimation(new OverscrollAnimation(*this, velocity));
+  StartAnimation(new OverscrollAnimation(*this, velocity, aOverscrollSideBits));
 }
 
 bool AsyncPanZoomController::CallDispatchScroll(
@@ -3832,6 +3834,10 @@ ExternalPoint AsyncPanZoomController::GetFirstExternalTouchPoint(
 
 ParentLayerPoint AsyncPanZoomController::GetOverscrollAmount() const {
   return {mX.GetOverscroll(), mY.GetOverscroll()};
+}
+
+SideBits AsyncPanZoomController::GetOverscrollSideBits() const {
+  return apz::GetOverscrollSideBits({mX.GetOverscroll(), mY.GetOverscroll()});
 }
 
 void AsyncPanZoomController::RestoreOverscrollAmount(
@@ -4175,7 +4181,7 @@ bool AsyncPanZoomController::SnapBackIfOverscrolled() {
   
   if (IsOverscrolled() && mState != OVERSCROLL_ANIMATION) {
     APZC_LOG("%p is overscrolled, starting snap-back\n", this);
-    StartOverscrollAnimation(ParentLayerPoint(0, 0));
+    StartOverscrollAnimation(ParentLayerPoint(0, 0), GetOverscrollSideBits());
     return true;
   }
   

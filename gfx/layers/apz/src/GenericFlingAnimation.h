@@ -164,12 +164,13 @@ class GenericFlingAnimation : public AsyncPanZoomAnimation,
       FLING_LOG("%p fling went into overscroll, handing off with velocity %s\n",
                 &mApzc, ToString(velocity).c_str());
       mDeferredTasks.AppendElement(
-          NewRunnableMethod<ParentLayerPoint,
+          NewRunnableMethod<ParentLayerPoint, SideBits,
                             RefPtr<const OverscrollHandoffChain>,
                             RefPtr<const AsyncPanZoomController>>(
               "layers::AsyncPanZoomController::HandleFlingOverscroll", &mApzc,
               &AsyncPanZoomController::HandleFlingOverscroll, velocity,
-              mOverscrollHandoffChain, mScrolledApzc));
+              apz::GetOverscrollSideBits(overscroll), mOverscrollHandoffChain,
+              mScrolledApzc));
 
       
       
