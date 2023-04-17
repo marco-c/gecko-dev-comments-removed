@@ -4,7 +4,12 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["EventPromise", "executeSoon", "PollPromise"];
+var EXPORTED_SYMBOLS = [
+  "AnimationFramePromise",
+  "EventPromise",
+  "executeSoon",
+  "PollPromise",
+];
 
 var { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -96,6 +101,29 @@ function executeSoon(fn) {
   }
 
   Services.tm.dispatchToMainThread(fn);
+}
+
+
+
+
+
+
+
+
+
+function AnimationFramePromise(win) {
+  const animationFramePromise = new Promise(resolve => {
+    win.requestAnimationFrame(resolve);
+  });
+
+  
+  const windowClosedPromise = new PollPromise(resolve => {
+    if (win.closed) {
+      resolve();
+    }
+  });
+
+  return Promise.race([animationFramePromise, windowClosedPromise]);
 }
 
 

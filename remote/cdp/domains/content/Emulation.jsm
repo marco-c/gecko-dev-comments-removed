@@ -11,6 +11,7 @@ var { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  AnimationFramePromise: "chrome://remote/content/shared/Sync.jsm",
   ContentProcessDomain:
     "chrome://remote/content/cdp/domains/ContentProcessDomain.jsm",
 });
@@ -28,18 +29,28 @@ class Emulation extends ContentProcessDomain {
 
   async _awaitViewportDimensions({ width, height }) {
     const win = this.content;
+    let resized;
 
-    if (win.innerWidth === width && win.innerHeight === height) {
-      return;
-    }
+    
+    
+    
+    await AnimationFramePromise(win);
 
-    await new Promise(resolve => {
-      win.addEventListener("resize", function resized() {
-        if (win.innerWidth === width && win.innerHeight === height) {
-          win.removeEventListener("resize", resized);
-          resolve();
-        }
-      });
+    const checkBrowserSize = () => {
+      if (win.innerWidth === width && win.innerHeight === height) {
+        resized();
+      }
+    };
+
+    return new Promise(resolve => {
+      resized = resolve;
+
+      win.addEventListener("resize", checkBrowserSize);
+
+      
+      checkBrowserSize();
+    }).finally(() => {
+      win.removeEventListener("resize", checkBrowserSize);
     });
   }
 }
