@@ -29,7 +29,7 @@ def test_up_to_date_vendor():
             
             
             
-            file.write("mozilla.pth:third_party/python/Click")
+            file.write("pth:third_party/python/Click")
 
         
         existing_vendored = os.path.join(topsrcdir, "third_party", "python")
