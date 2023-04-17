@@ -166,6 +166,11 @@ void gfxPlatformGtk::InitX11EGLConfig() {
     feature.ForceDisable(FeatureStatus::Broken, "glxtest could not use EGL",
                          "FEATURE_FAILURE_GLXTEST_NO_EGL"_ns);
   }
+
+  if (feature.IsEnabled() && IsX11Display()) {
+    
+    PR_SetEnv("mesa_glthread=false");
+  }
 #else
   feature.DisableByDefault(FeatureStatus::Unavailable, "X11 support missing",
                            "FEATURE_FAILURE_NO_X11"_ns);
