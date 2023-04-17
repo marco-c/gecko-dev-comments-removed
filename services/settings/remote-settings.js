@@ -343,6 +343,11 @@ function remoteSettingsFunction() {
         syncTelemetryArgs
       );
       
+      Services.obs.notifyObservers(
+        { wrappedJSObject: { error: firstError } },
+        "remote-settings:sync-error"
+      );
+      
       throw firstError;
     }
 
