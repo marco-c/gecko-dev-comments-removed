@@ -74,7 +74,20 @@ pub struct ParserConfig {
     
     
     
-    pub ignore_end_of_stream: bool
+    pub ignore_end_of_stream: bool,
+
+    
+    
+    
+    
+    
+    pub replace_unknown_entity_references: bool,
+
+    
+    
+    
+    
+    pub ignore_root_level_whitespace: bool,
 }
 
 impl ParserConfig {
@@ -98,7 +111,9 @@ impl ParserConfig {
             ignore_comments: true,
             coalesce_characters: true,
             extra_entities: HashMap::new(),
-            ignore_end_of_stream: false
+            ignore_end_of_stream: false,
+            replace_unknown_entity_references: false,
+            ignore_root_level_whitespace: true,
         }
     }
 
@@ -160,5 +175,7 @@ gen_setters! { ParserConfig,
     cdata_to_characters: val bool,
     ignore_comments: val bool,
     coalesce_characters: val bool,
-    ignore_end_of_stream: val bool
+    ignore_end_of_stream: val bool,
+    replace_unknown_entity_references: val bool,
+    ignore_root_level_whitespace: val bool
 }

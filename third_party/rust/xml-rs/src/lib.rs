@@ -2,8 +2,16 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 #![forbid(non_camel_case_types)]
+#![forbid(unsafe_code)]
 
 
+
+#[cfg(doctest)]
+#[macro_use]
+extern crate doc_comment;
+
+#[cfg(doctest)]
+doctest!("../Readme.md");
 
 pub use reader::EventReader;
 pub use reader::ParserConfig;

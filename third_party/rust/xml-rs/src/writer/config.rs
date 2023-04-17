@@ -73,6 +73,15 @@ pub struct EmitterConfig {
     
     
     pub autopad_comments: bool,
+
+    
+    
+    
+    
+    
+    
+    
+    pub pad_self_closing: bool,
 }
 
 impl EmitterConfig {
@@ -99,7 +108,8 @@ impl EmitterConfig {
             normalize_empty_elements: true,
             cdata_to_characters: false,
             keep_element_names_stack: true,
-            autopad_comments: true
+            autopad_comments: true,
+            pad_self_closing: true
         }
     }
 
@@ -142,5 +152,6 @@ gen_setters!(EmitterConfig,
     normalize_empty_elements: val bool,
     cdata_to_characters: val bool,
     keep_element_names_stack: val bool,
-    autopad_comments: val bool
+    autopad_comments: val bool,
+    pad_self_closing: val bool
 );
