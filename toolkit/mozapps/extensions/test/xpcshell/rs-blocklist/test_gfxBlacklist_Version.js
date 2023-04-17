@@ -20,7 +20,9 @@ async function run_test() {
   gfxInfo.fireTestProcess();
 
   
-  switch (Services.appinfo.OS) {
+  const OS = Services.appinfo.OS;
+  
+  switch (OS) {
     case "WINNT":
       gfxInfo.spoofVendorID("0xabcd");
       gfxInfo.spoofDeviceID("0x1234");
@@ -38,8 +40,8 @@ async function run_test() {
       gfxInfo.spoofOSVersion(0xa0900);
       break;
     case "Android":
-      gfxInfo.spoofVendorID("abcd");
-      gfxInfo.spoofDeviceID("asdf");
+      gfxInfo.spoofVendorID("0xabcd");
+      gfxInfo.spoofDeviceID("0x1234");
       gfxInfo.spoofDriverVersion("5");
       break;
   }
@@ -81,10 +83,14 @@ async function run_test() {
     Assert.equal(status, Ci.nsIGfxInfo.FEATURE_STATUS_OK);
     Assert.equal(failureId.value, "");
 
-    
-    
     status = gfxInfo.getFeatureStatus(Ci.nsIGfxInfo.FEATURE_OPENGL_LAYERS);
-    Assert.equal(status, Ci.nsIGfxInfo.FEATURE_BLOCKED_DRIVER_VERSION);
+    if (OS == "Android") {
+      
+      
+      Assert.equal(status, Ci.nsIGfxInfo.FEATURE_STATUS_OK);
+    } else {
+      Assert.equal(status, Ci.nsIGfxInfo.FEATURE_BLOCKED_DRIVER_VERSION);
+    }
 
     status = gfxInfo.getFeatureStatus(
       Ci.nsIGfxInfo.FEATURE_WEBGL_OPENGL,
@@ -114,19 +120,35 @@ async function run_test() {
       Ci.nsIGfxInfo.FEATURE_WEBRTC_HW_ACCELERATION_H264,
       failureId
     );
-    Assert.equal(status, Ci.nsIGfxInfo.FEATURE_STATUS_OK);
+    if (OS == "Android" && status != Ci.nsIGfxInfo.FEATURE_STATUS_OK) {
+      
+      Assert.equal(status, Ci.nsIGfxInfo.FEATURE_BLOCKED_DEVICE);
+      Assert.equal(failureId.value, "FEATURE_FAILURE_WEBRTC_H264");
+    } else {
+      Assert.equal(status, Ci.nsIGfxInfo.FEATURE_STATUS_OK);
+    }
 
     status = gfxInfo.getFeatureStatus(
       Ci.nsIGfxInfo.FEATURE_WEBRTC_HW_ACCELERATION_ENCODE,
       failureId
     );
-    Assert.equal(status, Ci.nsIGfxInfo.FEATURE_STATUS_OK);
+    if (OS == "Android" && status != Ci.nsIGfxInfo.FEATURE_STATUS_OK) {
+      Assert.equal(status, Ci.nsIGfxInfo.FEATURE_BLOCKED_DEVICE);
+      Assert.equal(failureId.value, "FEATURE_FAILURE_WEBRTC_ENCODE");
+    } else {
+      Assert.equal(status, Ci.nsIGfxInfo.FEATURE_STATUS_OK);
+    }
 
     status = gfxInfo.getFeatureStatus(
       Ci.nsIGfxInfo.FEATURE_WEBRTC_HW_ACCELERATION_DECODE,
       failureId
     );
-    Assert.equal(status, Ci.nsIGfxInfo.FEATURE_STATUS_OK);
+    if (OS == "Android" && status != Ci.nsIGfxInfo.FEATURE_STATUS_OK) {
+      Assert.equal(status, Ci.nsIGfxInfo.FEATURE_BLOCKED_DEVICE);
+      Assert.equal(failureId.value, "FEATURE_FAILURE_WEBRTC_DECODE");
+    } else {
+      Assert.equal(status, Ci.nsIGfxInfo.FEATURE_STATUS_OK);
+    }
 
     status = gfxInfo.getFeatureStatus(
       Ci.nsIGfxInfo.FEATURE_DIRECT3D_11_LAYERS,
