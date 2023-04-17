@@ -297,7 +297,7 @@ void HTMLFormElement::RequestSubmit(nsGenericHTMLElement* aSubmitter,
 
     
     
-    if (fc->GetFormElement() != this) {
+    if (fc->GetForm() != this) {
       aRv.Throw(NS_ERROR_DOM_NOT_FOUND_ERR);
       return;
     }

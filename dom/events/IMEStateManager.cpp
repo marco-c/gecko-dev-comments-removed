@@ -1305,7 +1305,7 @@ static void GetActionHint(const IMEState& aState, const nsIContent& aContent,
   bool isLastElement = false;
   nsCOMPtr<nsIFormControl> control(do_QueryInterface(inputContent));
   if (control) {
-    HTMLFormElement* formElement = control->GetFormElement();
+    HTMLFormElement* formElement = control->GetForm();
     
     if (formElement) {
       if (formElement->IsLastActiveElement(control)) {
