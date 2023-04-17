@@ -160,60 +160,6 @@ class DateTimeFormatObject : public NativeObject {
 
 
 
-[[nodiscard]] extern bool intl_patternForSkeleton(JSContext* cx, unsigned argc,
-                                                  JS::Value* vp);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-[[nodiscard]] extern bool intl_patternForStyle(JSContext* cx, unsigned argc,
-                                               JS::Value* vp);
-
-
-
-
-
-
-
-[[nodiscard]] extern bool intl_skeletonForPattern(JSContext* cx, unsigned argc,
-                                                  JS::Value* vp);
-
-
-
-
-
-
-
-
-
 
 [[nodiscard]] extern bool intl_FormatDateTime(JSContext* cx, unsigned argc,
                                               JS::Value* vp);
@@ -230,6 +176,15 @@ class DateTimeFormatObject : public NativeObject {
 [[nodiscard]] extern bool intl_FormatDateTimeRange(JSContext* cx, unsigned argc,
                                                    JS::Value* vp);
 
+
+
+
+
+
+
+[[nodiscard]] extern bool intl_resolveDateTimeFormatComponents(JSContext* cx,
+                                                               unsigned argc,
+                                                               JS::Value* vp);
 }  
 
 #endif 
