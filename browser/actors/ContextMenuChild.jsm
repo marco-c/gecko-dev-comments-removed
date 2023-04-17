@@ -545,9 +545,6 @@ class ContextMenuChild extends JSWindowActorChild {
       doc.defaultView
     ).getFieldContext(aEvent.composedTarget);
 
-    
-    let parentAllowsMixedContent = !!this.docShell.mixedContentChannel;
-
     let disableSetDesktopBackground = null;
 
     
@@ -659,7 +656,6 @@ class ContextMenuChild extends JSWindowActorChild {
       frameID,
       frameBrowsingContextID,
       disableSetDesktopBackground,
-      parentAllowsMixedContent,
     };
 
     if (context.inFrame && !context.inSrcdocFrame) {

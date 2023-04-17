@@ -2548,22 +2548,6 @@ DocumentLoadListener::AsyncOnChannelRedirect(
   
   
   
-  
-  nsresult rv = nsContentUtils::CheckSameOrigin(aOldChannel, aNewChannel);
-  if (NS_FAILED(rv)) {
-    if (mLoadStateLoadType == LOAD_NORMAL_ALLOW_MIXED_CONTENT) {
-      mLoadStateLoadType = LOAD_NORMAL;
-    } else if (mLoadStateLoadType == LOAD_RELOAD_ALLOW_MIXED_CONTENT) {
-      mLoadStateLoadType = LOAD_RELOAD_NORMAL;
-    }
-    MOZ_ASSERT(!LOAD_TYPE_HAS_FLAGS(
-        mLoadStateLoadType, nsIWebNavigation::LOAD_FLAGS_ALLOW_MIXED_CONTENT));
-  }
-
-  
-  
-  
-  
   aNewChannel->GetOriginalURI(getter_AddRefs(mChannelCreationURI));
 
   

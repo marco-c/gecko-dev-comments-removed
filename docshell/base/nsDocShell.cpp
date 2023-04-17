@@ -5031,20 +5031,6 @@ nsDocShell::GetDefaultLoadFlags(uint32_t* aDefaultLoadFlags) {
 }
 
 NS_IMETHODIMP
-nsDocShell::SetMixedContentChannel(nsIChannel* aMixedContentChannel) {
-#ifdef DEBUG
-  
-  if (aMixedContentChannel) {
-    NS_WARNING_ASSERTION(mBrowsingContext->IsTop(),
-                         "Setting mMixedContentChannel on a docshell that is "
-                         "not the root docshell");
-  }
-#endif
-  mMixedContentChannel = aMixedContentChannel;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 nsDocShell::GetFailedChannel(nsIChannel** aFailedChannel) {
   NS_ENSURE_ARG_POINTER(aFailedChannel);
   Document* doc = GetDocument();
@@ -5053,13 +5039,6 @@ nsDocShell::GetFailedChannel(nsIChannel** aFailedChannel) {
     return NS_OK;
   }
   NS_IF_ADDREF(*aFailedChannel = doc->GetFailedChannel());
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDocShell::GetMixedContentChannel(nsIChannel** aMixedContentChannel) {
-  NS_ENSURE_ARG_POINTER(aMixedContentChannel);
-  NS_IF_ADDREF(*aMixedContentChannel = mMixedContentChannel);
   return NS_OK;
 }
 
@@ -5956,20 +5935,6 @@ void nsDocShell::OnRedirectStateChange(nsIChannel* aOldChannel,
                                        uint32_t aStateFlags) {
   NS_ASSERTION(aStateFlags & STATE_REDIRECTING,
                "Calling OnRedirectStateChange when there is no redirect");
-
-  
-  
-  
-  if (mMixedContentChannel && mMixedContentChannel == aOldChannel) {
-    nsresult rv =
-        nsContentUtils::CheckSameOrigin(mMixedContentChannel, aNewChannel);
-    if (NS_SUCCEEDED(rv)) {
-      SetMixedContentChannel(aNewChannel);  
-    } else {
-      SetMixedContentChannel(
-          nullptr);  
-    }
-  }
 
   if (!(aStateFlags & STATE_IS_DOCUMENT)) {
     return;  
@@ -10677,34 +10642,10 @@ static nsresult AppendSegmentToString(nsIInputStream* aIn, void* aClosure,
   return openFlags;
 }
 
-void nsDocShell::UpdateMixedContentChannelForNewLoad(nsIChannel* aChannel) {
-  if (mLoadType == LOAD_NORMAL_ALLOW_MIXED_CONTENT ||
-      mLoadType == LOAD_RELOAD_ALLOW_MIXED_CONTENT) {
-    SetMixedContentChannel(aChannel);
-  } else if (mMixedContentChannel) {
-    
-
-
-
-
-
-
-
-
-    nsresult rv =
-        nsContentUtils::CheckSameOrigin(mMixedContentChannel, aChannel);
-    if (NS_FAILED(rv) || NS_FAILED(SetMixedContentChannel(aChannel))) {
-      SetMixedContentChannel(nullptr);
-    }
-  }
-}
-
 nsresult nsDocShell::OpenInitializedChannel(nsIChannel* aChannel,
                                             nsIURILoader* aURILoader,
                                             uint32_t aOpenFlags) {
   nsresult rv = NS_OK;
-
-  UpdateMixedContentChannelForNewLoad(aChannel);
 
   
   auto cleanupInitialClient =
@@ -10761,8 +10702,6 @@ nsresult nsDocShell::OpenInitializedChannel(nsIChannel* aChannel,
 nsresult nsDocShell::OpenRedirectedChannel(nsDocShellLoadState* aLoadState) {
   nsCOMPtr<nsIChannel> channel = aLoadState->GetPendingRedirectedChannel();
   MOZ_ASSERT(channel);
-
-  UpdateMixedContentChannelForNewLoad(channel);
 
   
   auto cleanupInitialClient =

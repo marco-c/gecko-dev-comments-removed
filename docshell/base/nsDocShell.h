@@ -1173,11 +1173,6 @@ class nsDocShell final : public nsDocLoader,
   nsCOMPtr<nsIURI> mFailedURI;
   nsCOMPtr<nsIChannel> mFailedChannel;
 
-  
-  
-  
-  nsCOMPtr<nsIChannel> mMixedContentChannel;
-
   mozilla::UniquePtr<mozilla::gfx::Matrix5x4> mColorMatrix;
 
   const mozilla::Encoding* mForcedCharset;

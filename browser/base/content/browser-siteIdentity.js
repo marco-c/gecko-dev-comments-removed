@@ -456,20 +456,36 @@ var gIdentityHandler = {
       "MIXED_CONTENT_UNBLOCK_COUNTER"
     );
     histogram.add(kMIXED_CONTENT_UNBLOCK_EVENT);
+
+    SitePermissions.setForPrincipal(
+      gBrowser.contentPrincipal,
+      "mixed-content",
+      SitePermissions.ALLOW,
+      SitePermissions.SCOPE_SESSION
+    );
+
     
-    BrowserReloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_MIXED_CONTENT);
+    BrowserReloadWithFlags(Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE);
     if (this._popupInitialized) {
       PanelMultiView.hidePopup(this._identityPopup);
     }
   },
 
-  enableMixedContentProtection() {
-    gBrowser.selectedBrowser.sendMessageToActor(
-      "MixedContent:ReenableProtection",
-      {},
-      "BrowserTab"
+  
+  
+  
+  enableMixedContentProtectionNoReload() {
+    this.enableMixedContentProtection(false);
+  },
+
+  enableMixedContentProtection(reload = true) {
+    SitePermissions.removeFromPrincipal(
+      gBrowser.contentPrincipal,
+      "mixed-content"
     );
-    BrowserReload();
+    if (reload) {
+      BrowserReload();
+    }
     if (this._popupInitialized) {
       PanelMultiView.hidePopup(this._identityPopup);
     }

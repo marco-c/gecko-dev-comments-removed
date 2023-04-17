@@ -218,9 +218,8 @@ void WindowGlobalChild::OnNewDocument(Document* aDocument) {
   txn.SetIsThirdPartyTrackingResourceWindow(
       nsContentUtils::IsThirdPartyTrackingResourceWindow(mWindowGlobal));
   txn.SetIsSecureContext(mWindowGlobal->IsSecureContext());
-  auto policy = aDocument->GetEmbedderPolicy();
-  if (policy.isSome()) {
-    txn.SetEmbedderPolicy(policy.ref());
+  if (auto policy = aDocument->GetEmbedderPolicy()) {
+    txn.SetEmbedderPolicy(*policy);
   }
 
   if (nsCOMPtr<nsIChannel> channel = aDocument->GetChannel()) {
@@ -235,15 +234,6 @@ void WindowGlobalChild::OnNewDocument(Document* aDocument) {
       NS_GetInnermostURI(aDocument->GetDocumentURI());
   if (innerDocURI) {
     txn.SetIsSecure(innerDocURI->SchemeIs("https"));
-  }
-  nsCOMPtr<nsIChannel> mixedChannel;
-  mWindowGlobal->GetDocShell()->GetMixedContentChannel(
-      getter_AddRefs(mixedChannel));
-  
-  
-  
-  if (mixedChannel && (mixedChannel == aDocument->GetChannel())) {
-    txn.SetAllowMixedContent(true);
   }
 
   MOZ_DIAGNOSTIC_ASSERT(mDocumentPrincipal->GetIsLocalIpAddress() ==

@@ -57,7 +57,6 @@ function openContextMenu(aMessage, aBrowser, aActor) {
     selectionInfo: data.selectionInfo,
     disableSetDesktopBackground: data.disableSetDesktopBackground,
     loginFillInfo: data.loginFillInfo,
-    parentAllowsMixedContent: data.parentAllowsMixedContent,
     userContextId: data.userContextId,
     webExtContextData: data.webExtContextData,
     cookieJarSettings: E10SUtils.deserializeCookieJarSettings(
@@ -1225,26 +1224,7 @@ class nsContextMenu {
 
   
   openLinkInTab(event) {
-    let referrerURI = this.contentData.documentURIObject;
-
-    
-    
-    
-    let persistAllowMixedContentInChildTab = false;
-
-    if (this.contentData.parentAllowsMixedContent) {
-      const sm = Services.scriptSecurityManager;
-      try {
-        let targetURI = this.linkURI;
-        let isPrivateWin =
-          this.browser.contentPrincipal.originAttributes.privateBrowsingId > 0;
-        sm.checkSameOriginURI(referrerURI, targetURI, false, isPrivateWin);
-        persistAllowMixedContentInChildTab = true;
-      } catch (e) {}
-    }
-
     let params = {
-      allowMixedContent: persistAllowMixedContentInChildTab,
       userContextId: parseInt(event.target.getAttribute("data-usercontextid")),
     };
 

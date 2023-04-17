@@ -6934,33 +6934,11 @@ function handleLinkClick(event, href, linkNode) {
     return true;
   }
 
-  
-  
-  
-  var persistAllowMixedContentInChildTab = false;
-
-  if (where == "tab" && gBrowser.docShell.mixedContentChannel) {
-    const sm = Services.scriptSecurityManager;
-    try {
-      var targetURI = makeURI(href);
-      let isPrivateWin =
-        doc.nodePrincipal.originAttributes.privateBrowsingId > 0;
-      sm.checkSameOriginURI(
-        doc.documentURIObject,
-        targetURI,
-        false,
-        isPrivateWin
-      );
-      persistAllowMixedContentInChildTab = true;
-    } catch (e) {}
-  }
-
   let frameID = WebNavigationFrames.getFrameId(doc.defaultView);
 
   urlSecurityCheck(href, doc.nodePrincipal);
   let params = {
     charset: doc.characterSet,
-    allowMixedContent: persistAllowMixedContentInChildTab,
     referrerInfo,
     originPrincipal: doc.nodePrincipal,
     originStoragePrincipal: doc.effectiveStoragePrincipal,
