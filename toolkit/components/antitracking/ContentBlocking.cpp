@@ -308,6 +308,11 @@ ContentBlocking::AllowAccessFor(
   
   
   
+  
+  
+  
+  
+  
 
   
   
@@ -323,6 +328,7 @@ ContentBlocking::AllowAccessFor(
     
     
     
+    
     if (aParentContext->IsInProcess()) {
       bool isThirdParty;
       nsCOMPtr<nsIPrincipal> principal =
@@ -334,7 +340,10 @@ ContentBlocking::AllowAccessFor(
       }
       Unused << trackingPrincipal->IsThirdPartyPrincipal(principal,
                                                          &isThirdParty);
-      runInSameProcess = !isThirdParty;
+      runInSameProcess =
+          aReason ==
+              ContentBlockingNotifier::ePrivilegeStorageAccessForOriginAPI ||
+          !isThirdParty;
     } else {
       runInSameProcess = false;
     }
@@ -407,6 +416,12 @@ ContentBlocking::AllowAccessFor(
 
 
 
+
+
+
+
+
+
  RefPtr<ContentBlocking::StorageAccessPermissionGrantPromise>
 ContentBlocking::CompleteAllowAccessFor(
     dom::BrowsingContext* aParentContext, uint64_t aTopLevelWindowId,
@@ -448,13 +463,17 @@ ContentBlocking::CompleteAllowAccessFor(
   
   
   
+  
+  
+  
 
   bool isInPrefList = false;
   trackingPrincipal->IsURIInPrefList(
       "privacy.restrict3rdpartystorage."
       "userInteractionRequiredForHosts",
       &isInPrefList);
-  if (isInPrefList &&
+  if (aReason != ContentBlockingNotifier::ePrivilegeStorageAccessForOriginAPI &&
+      isInPrefList &&
       !ContentBlockingUserInteraction::Exists(trackingPrincipal)) {
     LOG_PRIN(("Tracking principal (%s) hasn't been interacted with before, "
               "refusing to add a first-party storage permission to access it",
