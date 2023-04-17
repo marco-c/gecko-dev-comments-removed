@@ -26,6 +26,7 @@ namespace js {
 namespace gc {
 class GCRuntime;
 }  
+class JS_PUBLIC_API SliceBudget;
 namespace gcstats {
 struct Statistics;
 }  
@@ -433,6 +434,18 @@ typedef enum JSGCParamKey {
 
 
 typedef void (*JSTraceDataOp)(JSTracer* trc, void* data);
+
+
+
+
+
+
+
+
+
+
+typedef bool (*JSGrayRootsTracer)(JSTracer* trc, js::SliceBudget& budget,
+                                  void* data);
 
 typedef enum JSGCStatus { JSGC_BEGIN, JSGC_END } JSGCStatus;
 
