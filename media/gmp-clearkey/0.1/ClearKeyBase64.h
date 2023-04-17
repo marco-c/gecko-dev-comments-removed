@@ -17,9 +17,10 @@
 #ifndef __ClearKeyBase64_h__
 #define __ClearKeyBase64_h__
 
-#include <vector>
-#include <string>
 #include <stdint.h>
+
+#include <string>
+#include <vector>
 
 
 bool DecodeBase64(const std::string& aEncoded,

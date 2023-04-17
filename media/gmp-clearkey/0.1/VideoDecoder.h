@@ -17,13 +17,14 @@
 #ifndef __VideoDecoder_h__
 #define __VideoDecoder_h__
 
+
+
+#include <stddef.h>
+
 #include <atomic>
 #include <queue>
 #include <thread>
 
-
-
-#include "stddef.h"
 #include "content_decryption_module.h"
 #include "WMFH264Decoder.h"
 

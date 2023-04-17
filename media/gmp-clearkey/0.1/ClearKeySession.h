@@ -17,14 +17,16 @@
 #ifndef __ClearKeySession_h__
 #define __ClearKeySession_h__
 
-#include "ClearKeyUtils.h"
 
 
-#include "stddef.h"
-#include "content_decryption_module.h"
+#include <stddef.h>
 
 #include <string>
 #include <vector>
+
+#include "content_decryption_module.h"
+
+#include "ClearKeyUtils.h"
 
 class ClearKeySession {
  public:
