@@ -155,14 +155,14 @@ static bool IsLocalAccAtLineStart(LocalAccessible* aAcc) {
     
     return true;
   }
-  nsAutoLineIterator it = thisBlock->GetLineIterator();
+  nsAutoLineIterator it = prevBlock->GetLineIterator();
   MOZ_ASSERT(it, "GetLineIterator impl in line-container blocks is infallible");
-  int32_t thisLineNum = it->FindLineContaining(thisLineFrame);
-  if (thisLineNum < 0) {
+  int32_t prevLineNum = it->FindLineContaining(prevLineFrame);
+  if (prevLineNum < 0) {
     
     return true;
   }
-  int32_t prevLineNum = it->FindLineContaining(prevLineFrame);
+  int32_t thisLineNum = it->FindLineContaining(thisLineFrame, prevLineNum);
   
   
   return thisLineNum != prevLineNum;
