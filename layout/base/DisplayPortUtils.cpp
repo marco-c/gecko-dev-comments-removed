@@ -188,48 +188,6 @@ CSSPoint DisplayPortMargins::ComputeAsyncTranslation(
   return mVisualOffset - asyncLayoutViewport.TopLeft();
 }
 
-
-
-static nscoord GetMaxDisplayPortSize(nsIContent* aContent,
-                                     nsPresContext* aFallbackPrescontext) {
-  MOZ_ASSERT(!StaticPrefs::layers_enable_tiles_AtStartup(),
-             "Do not clamp displayports if tiling is enabled");
-
-  
-  
-  
-  
-  
-  nscoord safeMaximum = aFallbackPrescontext
-                            ? aFallbackPrescontext->DevPixelsToAppUnits(
-                                  std::min(8192, gfxPlatform::MaxTextureSize()))
-                            : nscoord_MAX;
-
-  nsIFrame* frame = aContent->GetPrimaryFrame();
-  if (!frame) {
-    return safeMaximum;
-  }
-  frame = nsLayoutUtils::GetDisplayRootFrame(frame);
-
-  nsIWidget* widget = frame->GetNearestWidget();
-  if (!widget) {
-    return safeMaximum;
-  }
-  WindowRenderer* renderer = widget->GetWindowRenderer();
-  if (!renderer || !renderer->AsWebRender()) {
-    return safeMaximum;
-  }
-  nsPresContext* presContext = frame->PresContext();
-
-  int32_t maxSizeInDevPixels = renderer->GetMaxTextureSize();
-  if (maxSizeInDevPixels < 0 || maxSizeInDevPixels == INT_MAX) {
-    return safeMaximum;
-  }
-  maxSizeInDevPixels =
-      std::min(maxSizeInDevPixels, gfxPlatform::MaxTextureSize());
-  return presContext->DevPixelsToAppUnits(maxSizeInDevPixels);
-}
-
 static nsRect ApplyRectMultiplier(nsRect aRect, float aMultiplier) {
   if (aMultiplier == 1.0f) {
     return aRect;
@@ -512,21 +470,6 @@ static bool GetDisplayPortImpl(nsIContent* aContent, nsRect* aResult,
   } else {
     result = GetDisplayPortFromMarginsData(aContent, marginsData, aMultiplier,
                                            aOptions);
-  }
-
-  if (!StaticPrefs::layers_enable_tiles_AtStartup()) {
-    
-    
-    nscoord maxSize = GetMaxDisplayPortSize(aContent, nullptr);
-    if (result.width > maxSize || result.height > maxSize) {
-      switch (aOptions.mMaxSizeExceededBehaviour) {
-        case MaxSizeExceededBehaviour::Assert:
-          NS_ASSERTION(false, "Displayport must be a valid texture size");
-          break;
-        case MaxSizeExceededBehaviour::Drop:
-          return false;
-      }
-    }
   }
 
   if (aOptions.mRelativeTo == DisplayportRelativeTo::ScrollFrame) {
