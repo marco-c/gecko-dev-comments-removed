@@ -789,42 +789,6 @@ nsresult nsXPLookAndFeel::GetColorValue(ColorID aID,
     }
   }
 
-  
-#ifndef XP_MACOSX
-  if (aID == ColorID::TextSelectBackgroundDisabled) {
-    
-    
-    aResult = NS_RGB(0xb0, 0xb0, 0xb0);
-    return NS_OK;
-  }
-#endif
-
-  if (aID == ColorID::TextSelectBackgroundAttention) {
-    if (StaticPrefs::findbar_modalHighlight() && !mozilla::FissionAutostart()) {
-      aResult = NS_RGBA(0, 0, 0, 0);
-      return NS_OK;
-    }
-
-    
-    
-    aResult = NS_RGB(0x38, 0xd8, 0x78);
-    return NS_OK;
-  }
-
-  if (aID == ColorID::TextHighlightBackground) {
-    
-    
-    aResult = NS_RGB(0xef, 0x0f, 0xff);
-    return NS_OK;
-  }
-
-  if (aID == ColorID::TextHighlightForeground) {
-    
-    
-    aResult = NS_RGB(0xff, 0xff, 0xff);
-    return NS_OK;
-  }
-
   if (aUseStandinsForNativeColors) {
     aResult = GetStandinForNativeColor(aID);
     return NS_OK;
