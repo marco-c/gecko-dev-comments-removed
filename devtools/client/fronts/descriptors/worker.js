@@ -39,6 +39,11 @@ class WorkerDescriptorFront extends DescriptorMixin(
   }
 
   get name() {
+    
+    if (!this.url) {
+      return null;
+    }
+
     return this.url.split("/").pop();
   }
 

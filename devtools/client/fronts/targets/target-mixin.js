@@ -144,9 +144,13 @@ function TargetMixin(parentClass) {
     }
 
     get isTopLevel() {
-      if (!this.getTrait("supportsTopLevelTargetFlag")) {
-        return this._isTopLevel;
+      
+      
+      
+      if (!this.targetForm.hasOwnProperty("isTopLevelTarget")) {
+        return !!this._isTopLevel;
       }
+
       return this.targetForm.isTopLevelTarget;
     }
 
