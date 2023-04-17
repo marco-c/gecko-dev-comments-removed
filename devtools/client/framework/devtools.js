@@ -19,6 +19,12 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
+  "CommandsFactory",
+  "devtools/shared/commands/commands-factory",
+  true
+);
+loader.lazyRequireGetter(
+  this,
   "ToolboxHostManager",
   "devtools/client/framework/toolbox-host-manager",
   true
@@ -709,18 +715,10 @@ DevTools.prototype = {
 
 
 
-  createDescriptorForTabForWebExtension: function(tab) {
-    return TabDescriptorFactory.createDescriptorForTab(tab, {
-      forceCreationForWebextension: true,
-    });
-  },
-
-  
 
 
-
-  createWebExtensionInspectedWindowFront: function(tabTarget) {
-    return tabTarget.getFront("webExtensionInspectedWindow");
+  createCommandsForTabForWebExtension: function(tab) {
+    return CommandsFactory.forTab(tab);
   },
 
   

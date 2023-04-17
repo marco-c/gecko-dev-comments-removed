@@ -41,18 +41,7 @@ exports.TabDescriptorFactory = {
 
 
 
-
-
-
-
-
-
-
-  async createDescriptorForTab(tab, { forceCreationForWebextension } = {}) {
-    if (forceCreationForWebextension) {
-      return this._createDescriptorForTab(tab);
-    }
-
+  async createDescriptorForTab(tab) {
     let descriptor = descriptors.get(tab);
     if (descriptor) {
       return descriptor;

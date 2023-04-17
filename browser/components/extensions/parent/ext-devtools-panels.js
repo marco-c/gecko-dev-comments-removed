@@ -573,10 +573,6 @@ this.devtools_panels = class extends ExtensionAPI {
   getAPI(context) {
     
     
-    let waitForInspectedWindowFront;
-
-    
-    
     
     const callerInfo = {
       addonId: context.extension.id,
@@ -646,21 +642,14 @@ this.devtools_panels = class extends ExtensionAPI {
               async setExpression(sidebarId, evalExpression, rootTitle) {
                 const sidebar = sidebarsById.get(sidebarId);
 
-                if (!waitForInspectedWindowFront) {
-                  waitForInspectedWindowFront = getInspectedWindowFront(
-                    context
-                  );
-                }
-
-                const front = await waitForInspectedWindowFront;
                 const toolboxEvalOptions = await getToolboxEvalOptions(context);
 
-                const consoleFront = await context.devToolsToolbox.target.getFront(
-                  "console"
-                );
+                const commands = await context.getDevToolsCommands();
+                const target = commands.targetCommand.targetFront;
+                const consoleFront = await target.getFront("console");
                 toolboxEvalOptions.consoleFront = consoleFront;
 
-                const evalResult = await front.eval(
+                const evalResult = await commands.inspectedWindowCommand.eval(
                   callerInfo,
                   evalExpression,
                   toolboxEvalOptions

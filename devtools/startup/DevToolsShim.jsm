@@ -313,8 +313,7 @@ const DevToolsShim = {
 
 
 const webExtensionsMethods = [
-  "createDescriptorForTabForWebExtension",
-  "createWebExtensionInspectedWindowFront",
+  "createCommandsForTabForWebExtension",
   "getTheme",
   "openBrowserConsole",
 ];

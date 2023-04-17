@@ -56,13 +56,6 @@ global.getTargetTabIdForToolbox = toolbox => {
 
 
 
-global.getInspectedWindowFront = async function(context) {
-  const target = await context.getCurrentDevToolsTarget();
-  return DevToolsShim.createWebExtensionInspectedWindowFront(target);
-};
-
-
-
 global.getToolboxEvalOptions = async function(context) {
   const options = {};
   const toolbox = context.devToolsToolbox;

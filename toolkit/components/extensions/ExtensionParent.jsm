@@ -629,10 +629,10 @@ class DevToolsExtensionPageContextParent extends ExtensionPageContextParent {
     
     
     
-    this._currentDevToolsTarget = null;
+    
+    this._devToolsCommands = null;
     this._onNavigatedListeners = null;
 
-    this._onTargetAvailable = this._onTargetAvailable.bind(this);
     this._onResourceAvailable = this._onResourceAvailable.bind(this);
   }
 
@@ -676,25 +676,26 @@ class DevToolsExtensionPageContextParent extends ExtensionPageContextParent {
 
 
 
-
-  async getCurrentDevToolsTarget() {
-    if (!this._currentDevToolsTarget) {
-      if (!this._pendingWatchTargetsPromise) {
-        
-        
-        
-        
-        
-        this._pendingWatchTargetsPromise = this.devToolsToolbox.targetList.watchTargets(
-          [this.devToolsToolbox.targetList.TYPES.FRAME],
-          this._onTargetAvailable
-        );
-      }
-      await this._pendingWatchTargetsPromise;
-      this._pendingWatchTargetsPromise = null;
+  async getDevToolsCommands() {
+    
+    
+    if (this._devToolsCommandsPromise) {
+      return this._devToolsCommandsPromise;
+    }
+    if (this._devToolsCommands) {
+      return this._devToolsCommands;
     }
 
-    return this._currentDevToolsTarget;
+    this._devToolsCommandsPromise = (async () => {
+      const commands = await DevToolsShim.createCommandsForTabForWebExtension(
+        this.devToolsToolbox.descriptorFront.localTab
+      );
+      await commands.targetCommand.startListening();
+      this._devToolsCommands = commands;
+      this._devToolsCommandsPromise = null;
+      return commands;
+    })();
+    return this._devToolsCommandsPromise;
   }
 
   unload() {
@@ -703,11 +704,6 @@ class DevToolsExtensionPageContextParent extends ExtensionPageContextParent {
       return;
     }
 
-    this.devToolsToolbox.targetList.unwatchTargets(
-      [this.devToolsToolbox.targetList.TYPES.FRAME],
-      this._onTargetAvailable
-    );
-
     if (this._onNavigatedListeners) {
       this.devToolsToolbox.resourceWatcher.unwatchResources(
         [this.devToolsToolbox.resourceWatcher.TYPES.DOCUMENT_EVENT],
@@ -715,9 +711,9 @@ class DevToolsExtensionPageContextParent extends ExtensionPageContextParent {
       );
     }
 
-    if (this._currentDevToolsTarget) {
-      this._currentDevToolsTarget.destroy();
-      this._currentDevToolsTarget = null;
+    if (this._devToolsCommands) {
+      this._devToolsCommands.destroy();
+      this._devToolsCommands = null;
     }
 
     if (this._onNavigatedListeners) {
@@ -728,25 +724,6 @@ class DevToolsExtensionPageContextParent extends ExtensionPageContextParent {
     this._devToolsToolbox = null;
 
     super.unload();
-  }
-
-  async _onTargetAvailable({ targetFront }) {
-    if (!targetFront.isTopLevel) {
-      return;
-    }
-
-    const descriptorFront = await DevToolsShim.createDescriptorForTabForWebExtension(
-      targetFront.localTab
-    );
-
-    
-    
-    
-    descriptorFront.isDevToolsExtensionContext = true;
-
-    this._currentDevToolsTarget = await descriptorFront.getTarget();
-
-    await this._currentDevToolsTarget.attach();
   }
 
   async _onResourceAvailable(resources) {

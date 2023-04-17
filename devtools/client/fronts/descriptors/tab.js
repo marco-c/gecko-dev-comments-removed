@@ -44,10 +44,6 @@ class TabDescriptorFront extends DescriptorMixin(
     
     this._localTab = null;
 
-    
-    
-    this.isDevToolsExtensionContext = false;
-
     this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
     this._handleTabEvent = this._handleTabEvent.bind(this);
   }
@@ -246,11 +242,6 @@ class TabDescriptorFront extends DescriptorMixin(
 
 
   async _onRemotenessChange() {
-    
-    if (this.isDevToolsExtensionContext) {
-      return;
-    }
-
     
     
     this.emit("remoteness-change", this._targetFront);

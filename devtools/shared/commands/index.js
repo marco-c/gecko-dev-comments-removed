@@ -8,6 +8,8 @@
 
 
 const Commands = {
+  inspectedWindowCommand:
+    "devtools/shared/commands/inspected-window/inspected-window-command",
   targetCommand: "devtools/shared/commands/target/target-command",
   targetConfigurationCommand:
     "devtools/shared/commands/target-configuration/target-configuration-command",
