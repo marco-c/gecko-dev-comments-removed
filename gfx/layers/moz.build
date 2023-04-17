@@ -88,7 +88,6 @@ EXPORTS.mozilla.layers += [
     "apz/public/GeckoContentControllerTypes.h",
     "apz/public/IAPZCTreeManager.h",
     "apz/public/MatrixMessage.h",
-    "apz/public/MetricsSharingController.h",
     
     
     "apz/src/APZUtils.h",

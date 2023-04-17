@@ -75,14 +75,6 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
 
   void Destroy();
 
-  
-
-
-
-
-  bool LookupCompositorFrameMetrics(const ScrollableLayerGuid::ViewID aId,
-                                    FrameMetrics&);
-
   static CompositorBridgeChild* Get();
 
   static bool ChildProcessHasCompositorBridge();
@@ -243,14 +235,6 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
-  mozilla::ipc::IPCResult RecvSharedCompositorFrameMetrics(
-      const mozilla::ipc::SharedMemoryBasic::Handle& metrics,
-      const CrossProcessMutexHandle& handle, const LayersId& aLayersId,
-      const uint32_t& aAPZCId);
-
-  mozilla::ipc::IPCResult RecvReleaseSharedCompositorFrameMetrics(
-      const ViewID& aId, const uint32_t& aAPZCId);
-
   mozilla::ipc::IPCResult RecvObserveLayersUpdate(
       const LayersId& aLayersId, const LayersObserverEpoch& aEpoch,
       const bool& aActive);
@@ -259,34 +243,6 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
       const LayersId& aLayersId, const CompositorOptions& aNewOptions);
 
   uint64_t GetNextResourceId();
-
-  void ClearSharedFrameMetricsData(LayersId aLayersId);
-
-  
-  
-  class SharedFrameMetricsData final {
-   public:
-    SharedFrameMetricsData(
-        const mozilla::ipc::SharedMemoryBasic::Handle& metrics,
-        const CrossProcessMutexHandle& handle, const LayersId& aLayersId,
-        const uint32_t& aAPZCId);
-
-    ~SharedFrameMetricsData();
-
-    void CopyFrameMetrics(FrameMetrics* aFrame);
-    ScrollableLayerGuid::ViewID GetViewID();
-    LayersId GetLayersId() const;
-    uint32_t GetAPZCId();
-
-   private:
-    
-    
-    RefPtr<mozilla::ipc::SharedMemoryBasic> mBuffer;
-    CrossProcessMutex* mMutex;
-    LayersId mLayersId;
-    
-    uint32_t mAPZCId;
-  };
 
   RefPtr<CompositorManagerChild> mCompositorManager;
 
@@ -298,10 +254,6 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
   
   
   RefPtr<CompositorBridgeParent> mCompositorBridgeParent;
-
-  
-  
-  nsClassHashtable<nsUint64HashKey, SharedFrameMetricsData> mFrameMetricsTable;
 
   DISALLOW_EVIL_CONSTRUCTORS(CompositorBridgeChild);
 

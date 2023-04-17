@@ -69,7 +69,6 @@
 #include "mozilla/layers/APZUtils.h"        
 #include "mozilla/layers/CompositorController.h"  
 #include "mozilla/layers/DirectionUtils.h"  
-#include "mozilla/layers/MetricsSharingController.h"  
 #include "mozilla/mozalloc.h"                         
 #include "mozilla/Unused.h"                           
 #include "mozilla/FloatingPoint.h"                    
@@ -729,8 +728,6 @@ AsyncPanZoomController::AsyncPanZoomController(
       mNotificationBlockers(0),
       mInputQueue(aInputQueue),
       mPinchPaintTimerSet(false),
-      mAPZCId(0),
-      mSharedLock(nullptr),
       mTestAttributeAppliers(0),
       mAsyncTransformAppliedToContent(false),
       mTestHasAsyncKeyScrolled(false),
@@ -782,19 +779,6 @@ void AsyncPanZoomController::Destroy() {
   }
   mParent = nullptr;
   mTreeManager = nullptr;
-
-  
-  if (mMetricsSharingController && mSharedFrameMetricsBuffer) {
-    Unused << mMetricsSharingController->StopSharingMetrics(GetScrollId(),
-                                                            mAPZCId);
-  }
-
-  {  
-    RecursiveMutexAutoLock lock(mRecursiveMutex);
-    mSharedFrameMetricsBuffer = nullptr;
-    delete mSharedLock;
-    mSharedLock = nullptr;
-  }
 }
 
 bool AsyncPanZoomController::IsDestroyed() const {
@@ -1015,7 +999,6 @@ nsEventStatus AsyncPanZoomController::HandleDragEvent(
            ToString(scrollOffset).c_str());
   SetVisualScrollOffset(scrollOffset);
   ScheduleCompositeAndMaybeRepaint();
-  UpdateSharedCompositorFrameMetrics();
 
   return nsEventStatus_eConsumeNoDefault;
 }
@@ -1598,7 +1581,6 @@ nsEventStatus AsyncPanZoomController::OnScale(const PinchGestureInput& aEvent) {
       
       
       ScheduleCompositeAndMaybeRepaint();
-      UpdateSharedCompositorFrameMetrics();
       return nsEventStatus_eConsumeNoDefault;
     }
     float spanRatio = aEvent.mCurrentSpan / aEvent.mPreviousSpan;
@@ -1684,9 +1666,6 @@ nsEventStatus AsyncPanZoomController::OnScale(const PinchGestureInput& aEvent) {
         
         DoDelayedRequestContentRepaint();
       }
-
-      UpdateSharedCompositorFrameMetrics();
-
     } else {
       
       RequestContentRepaint();
@@ -1730,7 +1709,6 @@ nsEventStatus AsyncPanZoomController::OnScaleEnd(
     RecursiveMutexAutoLock lock(mRecursiveMutex);
     ScheduleComposite();
     RequestContentRepaint();
-    UpdateSharedCompositorFrameMetrics();
   }
 
   mPinchEventBuffer.clear();
@@ -3421,7 +3399,6 @@ bool AsyncPanZoomController::AttemptScroll(
         }
       }
       ScheduleCompositeAndMaybeRepaint();
-      UpdateSharedCompositorFrameMetrics();
     }
 
     
@@ -3943,7 +3920,6 @@ void AsyncPanZoomController::CancelAnimation(CancelAnimationFlags aFlags) {
   if (repaint) {
     RequestContentRepaint();
     ScheduleComposite();
-    UpdateSharedCompositorFrameMetrics();
   }
 }
 
@@ -3956,11 +3932,6 @@ void AsyncPanZoomController::ClearOverscroll() {
 void AsyncPanZoomController::SetCompositorController(
     CompositorController* aCompositorController) {
   mCompositorController = aCompositorController;
-}
-
-void AsyncPanZoomController::SetMetricsSharingController(
-    MetricsSharingController* aMetricsSharingController) {
-  mMetricsSharingController = aMetricsSharingController;
 }
 
 void AsyncPanZoomController::SetVisualScrollOffset(const CSSPoint& aOffset) {
@@ -4214,7 +4185,6 @@ void AsyncPanZoomController::ScheduleCompositeAndMaybeRepaint() {
 void AsyncPanZoomController::FlushRepaintForOverscrollHandoff() {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
   RequestContentRepaint();
-  UpdateSharedCompositorFrameMetrics();
 }
 
 void AsyncPanZoomController::FlushRepaintForNewInputBlock() {
@@ -4222,7 +4192,6 @@ void AsyncPanZoomController::FlushRepaintForNewInputBlock() {
 
   RecursiveMutexAutoLock lock(mRecursiveMutex);
   RequestContentRepaint();
-  UpdateSharedCompositorFrameMetrics();
 }
 
 bool AsyncPanZoomController::SnapBackIfOverscrolled() {
@@ -4441,7 +4410,6 @@ bool AsyncPanZoomController::UpdateAnimation(
     if (!continueAnimation || wantsRepaints) {
       RequestContentRepaint();
     }
-    UpdateSharedCompositorFrameMetrics();
     needComposite = true;
   }
   return needComposite;
@@ -4985,7 +4953,6 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     }
 
     mExpectedGeckoMetrics.UpdateFrom(aLayerMetrics);
-    ShareCompositorFrameMetrics();
 
     for (auto& sampledState : mSampledState) {
       sampledState.UpdateScrollProperties(Metrics());
@@ -5413,7 +5380,6 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     
     RequestContentRepaint(contentRepaintType);
   }
-  UpdateSharedCompositorFrameMetrics();
 }
 
 FrameMetrics& AsyncPanZoomController::Metrics() {
@@ -5911,65 +5877,6 @@ ScrollableLayerGuid AsyncPanZoomController::GetGuid() const {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
   return ScrollableLayerGuid(mLayersId, Metrics().GetPresShellId(),
                              Metrics().GetScrollId());
-}
-
-void AsyncPanZoomController::UpdateSharedCompositorFrameMetrics() {
-  mRecursiveMutex.AssertCurrentThreadIn();
-
-  FrameMetrics* frame =
-      mSharedFrameMetricsBuffer
-          ? static_cast<FrameMetrics*>(mSharedFrameMetricsBuffer->memory())
-          : nullptr;
-
-  if (frame && mSharedLock && apz::ShouldUseProgressivePaint()) {
-    mSharedLock->Lock();
-    *frame = Metrics();
-    mSharedLock->Unlock();
-  }
-}
-
-void AsyncPanZoomController::ShareCompositorFrameMetrics() {
-  AssertOnUpdaterThread();
-
-  
-  
-  
-  if (!mSharedFrameMetricsBuffer && mMetricsSharingController &&
-      apz::ShouldUseProgressivePaint()) {
-    
-    
-    mSharedFrameMetricsBuffer = new ipc::SharedMemoryBasic;
-    FrameMetrics* frame = nullptr;
-    mSharedFrameMetricsBuffer->Create(sizeof(FrameMetrics));
-    mSharedFrameMetricsBuffer->Map(sizeof(FrameMetrics));
-    frame = static_cast<FrameMetrics*>(mSharedFrameMetricsBuffer->memory());
-
-    if (frame) {
-      {  
-        RecursiveMutexAutoLock lock(mRecursiveMutex);
-        *frame = Metrics();
-      }
-
-      
-      base::ProcessId otherPid = mMetricsSharingController->RemotePid();
-      ipc::SharedMemoryBasic::Handle mem = ipc::SharedMemoryBasic::NULLHandle();
-
-      
-      mSharedFrameMetricsBuffer->ShareToProcess(otherPid, &mem);
-
-      
-      mSharedLock = new CrossProcessMutex("AsyncPanZoomControlLock");
-      CrossProcessMutexHandle handle = mSharedLock->ShareToProcess(otherPid);
-
-      
-      
-      
-      if (!mMetricsSharingController->StartSharingMetrics(mem, handle,
-                                                          mLayersId, mAPZCId)) {
-        APZC_LOG("%p failed to share FrameMetrics with content process.", this);
-      }
-    }
-  }
 }
 
 void AsyncPanZoomController::SetTestAsyncScrollOffset(const CSSPoint& aPoint) {

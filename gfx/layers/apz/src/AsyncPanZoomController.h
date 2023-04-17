@@ -7,7 +7,6 @@
 #ifndef mozilla_layers_AsyncPanZoomController_h
 #define mozilla_layers_AsyncPanZoomController_h
 
-#include "mozilla/ipc/CrossProcessMutex.h"
 #include "mozilla/layers/GeckoContentController.h"
 #include "mozilla/layers/RepaintRequest.h"
 #include "mozilla/layers/SampleTime.h"
@@ -50,7 +49,6 @@ class AsyncDragMetrics;
 class APZCTreeManager;
 struct ScrollableLayerGuid;
 class CompositorController;
-class MetricsSharingController;
 class GestureEventListener;
 struct AsyncTransform;
 class AsyncPanZoomAnimation;
@@ -274,13 +272,6 @@ class AsyncPanZoomController {
 
 
   void SetCompositorController(CompositorController* aCompositorController);
-
-  
-
-
-
-  void SetMetricsSharingController(
-      MetricsSharingController* aMetricsSharingController);
 
   
   
@@ -960,7 +951,6 @@ class AsyncPanZoomController {
 
   LayersId mLayersId;
   RefPtr<CompositorController> mCompositorController;
-  RefPtr<MetricsSharingController> mMetricsSharingController;
 
   
 
@@ -1696,29 +1686,6 @@ class AsyncPanZoomController {
 
 
   AncestorTransform mAncestorTransform;
-
-  
-
-
-
- private:
-  
-
-  const uint32_t mAPZCId;
-
-  RefPtr<ipc::SharedMemoryBasic> mSharedFrameMetricsBuffer;
-  CrossProcessMutex* mSharedLock;
-  
-
-
-
-  void UpdateSharedCompositorFrameMetrics();
-  
-
-
-
-
-  void ShareCompositorFrameMetrics();
 
   
 
