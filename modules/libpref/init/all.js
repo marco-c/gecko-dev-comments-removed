@@ -351,9 +351,7 @@ pref("pdfjs.annotationMode", 2);
 pref("pdfjs.enableScripting", true);
 
 
-#ifdef EARLY_BETA_OR_EARLIER
 pref("pdfjs.enableXfa", true);
-#endif
 
 
 pref("mathml.disabled",    false);
