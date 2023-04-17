@@ -1,4 +1,3 @@
-from six import PY3
 from wptserve.utils import isomorphic_encode
 
 
@@ -7,9 +6,7 @@ from wptserve.utils import isomorphic_encode
 
 def escape_byte(byte):
     
-    
-    if PY3:
-        byte = bytes([byte])
+    byte = bytes([byte])
     if b"\0" <= byte <= b"\x1F" or byte >= b"\x7F":
         return b"\\x%02x" % ord(byte)
     if byte == b"\\":
