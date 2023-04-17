@@ -165,6 +165,8 @@ impl MinidumpWriter {
         self
     }
 
+    
+    #[cfg(not(target_arch = "arm"))]
     pub fn set_crash_context(&mut self, crash_context: CrashContext) -> &mut Self {
         self.crash_context = Some(crash_context);
         self
