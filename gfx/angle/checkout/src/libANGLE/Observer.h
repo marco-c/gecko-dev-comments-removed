@@ -54,6 +54,13 @@ enum class SubjectMessage
 
     
     SurfaceChanged,
+
+    
+    ProgramTextureOrImageBindingChanged,
+    
+    ProgramRelinked,
+    
+    SamplerUniformsUpdated,
 };
 
 

@@ -103,10 +103,19 @@ Library *OpenSharedLibrary(const char *libraryName, SearchType searchType)
     std::string directory;
     if (searchType == SearchType::ApplicationDir)
     {
+#if ANGLE_PLATFORM_IOS
+        
+        directory = GetExecutableDirectory() + "/Frameworks/";
+#else
         directory = GetHelperExecutableDir();
+#endif
     }
 
     std::string fullPath = directory + libraryName + "." + GetSharedLibraryExtension();
+#if ANGLE_PLATFORM_IOS
+    
+    fullPath = fullPath + "/" + libraryName;
+#endif
     return new PosixLibrary(fullPath);
 }
 

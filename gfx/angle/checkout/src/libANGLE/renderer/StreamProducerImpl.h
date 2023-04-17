@@ -23,7 +23,7 @@ class StreamProducerImpl : angle::NonCopyable
 
     
     
-    virtual egl::Error validateD3DTexture(void *pointer,
+    virtual egl::Error validateD3DTexture(const void *pointer,
                                           const egl::AttributeMap &attributes) const = 0;
 
     

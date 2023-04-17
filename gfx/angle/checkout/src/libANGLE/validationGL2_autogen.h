@@ -17,6 +17,7 @@ namespace gl
 {
 class Context;
 
+
 bool ValidateGetVertexAttribdv(const Context *context,
                                GLuint index,
                                GLenum pname,
@@ -68,6 +69,8 @@ bool ValidateVertexAttrib4sv(const Context *context, GLuint index, const GLshort
 bool ValidateVertexAttrib4ubv(const Context *context, GLuint index, const GLubyte *v);
 bool ValidateVertexAttrib4uiv(const Context *context, GLuint index, const GLuint *v);
 bool ValidateVertexAttrib4usv(const Context *context, GLuint index, const GLushort *v);
+
+
 }  
 
 #endif  

@@ -90,12 +90,20 @@
 
 
 
+#if defined(__SCITECH_SNAP__) && !defined(KHRONOS_STATIC)
+#   define KHRONOS_STATIC 1
+#endif
 
 
 
 
 
-#if defined(_WIN32) && !defined(__SCITECH_SNAP__)
+
+#if defined(KHRONOS_STATIC)
+    
+
+#   define KHRONOS_APICALL
+#elif defined(_WIN32)
 #   define KHRONOS_APICALL __declspec(dllimport)
 #elif defined (__SYMBIAN32__)
 #   define KHRONOS_APICALL IMPORT_C

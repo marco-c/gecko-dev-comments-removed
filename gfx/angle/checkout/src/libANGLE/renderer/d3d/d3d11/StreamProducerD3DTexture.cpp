@@ -112,10 +112,11 @@ StreamProducerD3DTexture::~StreamProducerD3DTexture()
     SafeRelease(mTexture);
 }
 
-egl::Error StreamProducerD3DTexture::validateD3DTexture(void *pointer,
+egl::Error StreamProducerD3DTexture::validateD3DTexture(const void *pointer,
                                                         const egl::AttributeMap &attributes) const
 {
-    ID3D11Texture2D *textureD3D = static_cast<ID3D11Texture2D *>(pointer);
+    
+    ID3D11Texture2D *textureD3D = static_cast<ID3D11Texture2D *>(const_cast<void *>(pointer));
 
     
     ID3D11Device *device;

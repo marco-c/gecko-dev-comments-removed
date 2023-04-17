@@ -167,12 +167,40 @@ void TDirectiveHandler::handleExtension(const angle::pp::SourceLocation &loc,
         
         if (name == "GL_OVR_multiview2")
         {
-            const std::string multiview = "GL_OVR_multiview";
-            TExtensionBehavior::iterator iterMultiview =
-                mExtensionBehavior.find(GetExtensionByName(multiview.c_str()));
-            if (iterMultiview != mExtensionBehavior.end())
+            constexpr char kMultiviewExtName[] = "GL_OVR_multiview";
+            iter = mExtensionBehavior.find(GetExtensionByName(kMultiviewExtName));
+            if (iter != mExtensionBehavior.end())
             {
-                iterMultiview->second = behaviorVal;
+                iter->second = behaviorVal;
+            }
+        }
+        
+        
+        if (name == "GL_EXT_geometry_shader" || name == "GL_EXT_tessellation_shader")
+        {
+            constexpr char kIOBlocksExtName[] = "GL_EXT_shader_io_blocks";
+            iter = mExtensionBehavior.find(GetExtensionByName(kIOBlocksExtName));
+            if (iter != mExtensionBehavior.end())
+            {
+                iter->second = behaviorVal;
+            }
+        }
+        
+        else if (name == "GL_EXT_clip_cull_distance")
+        {
+            
+            if (mShaderVersion < 300)
+            {
+                mDiagnostics.error(loc, "extension can be enabled on greater than ESSL 300",
+                                   name.c_str());
+                return;
+            }
+
+            constexpr char kAPPLEClipDistanceEXTName[] = "GL_APPLE_clip_distance";
+            iter = mExtensionBehavior.find(GetExtensionByName(kAPPLEClipDistanceEXTName));
+            if (iter != mExtensionBehavior.end())
+            {
+                iter->second = behaviorVal;
             }
         }
         return;
@@ -198,7 +226,8 @@ void TDirectiveHandler::handleVersion(const angle::pp::SourceLocation &loc,
                                       int version,
                                       ShShaderSpec spec)
 {
-    if (((version == 100 || version == 300 || version == 310) && !IsDesktopGLSpec(spec)) ||
+    if (((version == 100 || version == 300 || version == 310 || version == 320) &&
+         !IsDesktopGLSpec(spec)) ||
         IsDesktopGLSpec(spec))
     {
         mShaderVersion = version;

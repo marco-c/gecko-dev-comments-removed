@@ -200,6 +200,8 @@ angle::Result Image11::recoverFromAssociatedStorage(const gl::Context *context)
 
         
         disassociateStorage();
+
+        markDirty();
     }
 
     return angle::Result::Continue;

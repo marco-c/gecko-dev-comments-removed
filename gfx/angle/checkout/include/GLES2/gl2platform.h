@@ -14,9 +14,6 @@
 
 
 
-
-
-
 #include <KHR/khrplatform.h>
 
 #ifndef GL_APICALL

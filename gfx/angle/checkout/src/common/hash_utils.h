@@ -21,7 +21,7 @@ inline std::size_t ComputeGenericHash(const void *key, size_t keySize)
 
     
     ASSERT(keySize % 4 == 0);
-#if defined(ANGLE_IS_64_BIT_CPU)
+#if INTPTR_MAX == INT64_MAX
     return XXH64(key, keySize, kSeed);
 #else
     return XXH32(key, keySize, kSeed);

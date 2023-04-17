@@ -1609,7 +1609,7 @@ void GenerateCaps(ID3D11Device *device,
     extensions->blendMinMax                = true;
     
     extensions->floatBlend             = true;
-    extensions->framebufferBlit        = GetFramebufferBlitSupport(featureLevel);
+    extensions->framebufferBlitANGLE   = GetFramebufferBlitSupport(featureLevel);
     extensions->framebufferMultisample = GetFramebufferMultisampleSupport(featureLevel);
     extensions->instancedArraysANGLE   = GetInstancingSupport(featureLevel);
     extensions->instancedArraysEXT     = GetInstancingSupport(featureLevel);
@@ -2138,10 +2138,12 @@ void MakeValidSize(bool isImage,
                    int *levelOffset)
 {
     const DXGIFormatSize &dxgiFormatInfo = d3d11::GetDXGIFormatSizeInfo(format);
+    bool validFormat                     = format != DXGI_FORMAT_UNKNOWN;
+    bool validImage                      = isImage && validFormat;
 
     int upsampleCount = 0;
     
-    if (isImage || *requestWidth < static_cast<GLsizei>(dxgiFormatInfo.blockWidth) ||
+    if (validImage || *requestWidth < static_cast<GLsizei>(dxgiFormatInfo.blockWidth) ||
         *requestHeight < static_cast<GLsizei>(dxgiFormatInfo.blockHeight))
     {
         while (*requestWidth % dxgiFormatInfo.blockWidth != 0 ||
@@ -2152,7 +2154,7 @@ void MakeValidSize(bool isImage,
             upsampleCount++;
         }
     }
-    else
+    else if (validFormat)
     {
         if (*requestWidth % dxgiFormatInfo.blockWidth != 0)
         {
@@ -2282,7 +2284,6 @@ bool operator!=(const RasterizerStateKey &a, const RasterizerStateKey &b)
 
 HRESULT SetDebugName(ID3D11DeviceChild *resource, const char *name)
 {
-#if defined(_DEBUG)
     UINT existingDataSize = 0;
     resource->GetPrivateData(WKPDID_D3DDebugObjectName, &existingDataSize, nullptr);
     
@@ -2294,28 +2295,22 @@ HRESULT SetDebugName(ID3D11DeviceChild *resource, const char *name)
         
         
         
-        static const char *multipleNamesUsed = "Multiple names set by ANGLE";
+        static const char *multipleNamesUsed = "MultipleNamesSetByANGLE";
 
         
-        HRESULT hr = resource->SetPrivateData(WKPDID_D3DDebugObjectName, 0, nullptr);
+        const HRESULT hr = resource->SetPrivateData(WKPDID_D3DDebugObjectName, 0, nullptr);
         if (FAILED(hr))
         {
             return hr;
         }
 
-        
-        return resource->SetPrivateData(WKPDID_D3DDebugObjectName,
-                                        static_cast<unsigned int>(strlen(multipleNamesUsed)),
-                                        multipleNamesUsed);
+        name = multipleNamesUsed;
     }
-    else
-    {
-        return resource->SetPrivateData(WKPDID_D3DDebugObjectName,
-                                        static_cast<unsigned int>(strlen(name)), name);
-    }
-#else
-    return S_OK;
-#endif
+
+    
+    const std::string d3dName = std::string("ANGLE_") + name;
+    return resource->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(d3dName.size()),
+                                    d3dName.c_str());
 }
 
 

@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+#ifndef COMPILER_TRANSLATOR_VALIDATECLIPCULLDISTANCE_H_
+#define COMPILER_TRANSLATOR_VALIDATECLIPCULLDISTANCE_H_
+
+#include "GLSLANG/ShaderVars.h"
+
+namespace sh
+{
+
+class TIntermBlock;
+class TDiagnostics;
+
+bool ValidateClipCullDistance(TIntermBlock *root,
+                              TDiagnostics *diagnostics,
+                              const unsigned int maxCombinedClipAndCullDistances);
+
+}  
+
+#endif
