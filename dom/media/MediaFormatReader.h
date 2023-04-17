@@ -586,6 +586,9 @@ class MediaFormatReader final
     
     bool mIsNullDecode;
     bool mHardwareDecodingDisabled;
+    
+    
+    bool mHasReportedVideoHardwareSupportTelemtry = false;
 
     class {
      public:
