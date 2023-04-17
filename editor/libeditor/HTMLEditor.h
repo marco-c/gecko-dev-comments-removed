@@ -492,9 +492,33 @@ class HTMLEditor final : public EditorBase,
       nsAtom& aProperty, nsAtom* aAttribute, const nsAString& aValue,
       nsIPrincipal* aPrincipal = nullptr);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult GetInlineProperty(
       nsAtom* aHTMLProperty, nsAtom* aAttribute, const nsAString& aValue,
       bool* aFirst, bool* aAny, bool* aAll) const;
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult GetInlinePropertyWithAttrValue(
       nsAtom* aHTMLProperty, nsAtom* aAttribute, const nsAString& aValue,
       bool* aFirst, bool* aAny, bool* aAll, nsAString& outValue);
