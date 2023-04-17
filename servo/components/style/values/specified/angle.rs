@@ -131,6 +131,15 @@ impl Angle {
     }
 
     
+    #[inline]
+    pub fn from_radians(value: CSSFloat) -> Self {
+        Angle {
+            value: AngleDimension::Rad(value),
+            was_calc: false,
+        }
+    }
+
+    
     pub fn zero() -> Self {
         Self::from_degrees(0.0, false)
     }
@@ -139,6 +148,13 @@ impl Angle {
     #[inline]
     pub fn degrees(&self) -> CSSFloat {
         self.value.degrees()
+    }
+
+    
+    #[inline]
+    pub fn radians(&self) -> CSSFloat {
+        const RAD_PER_DEG: f32 = PI / 180.0;
+        self.value.degrees() * RAD_PER_DEG
     }
 
     
