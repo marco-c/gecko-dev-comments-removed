@@ -298,7 +298,7 @@ using ExternalTypeOf_t = typename ExternalTypeOf<ArrayType>::Type;
 
 
 
-class MOZ_STACK_CLASS JS_PUBLIC_API ArrayBufferOrView {
+class JS_PUBLIC_API ArrayBufferOrView {
  public:
   
   
@@ -327,14 +327,34 @@ class MOZ_STACK_CLASS JS_PUBLIC_API ArrayBufferOrView {
 
   
   void trace(JSTracer* trc) {
-    UnsafeTraceRoot(trc, &obj, "ArrayBufferOrView object");
+    if (obj) {
+      js::gc::TraceExternalEdge(trc, &obj, "ArrayBufferOrView object");
+    }
   }
-
-  void reset() { obj = nullptr; }
 
   bool isDetached() const;
 
-  JSObject* asObject() const { return obj; }
+  void exposeToActiveJS() const {
+    if (obj) {
+      js::BarrierMethods<JSObject*>::exposeToJS(obj);
+    }
+  }
+
+  JSObject* asObject() const {
+    exposeToActiveJS();
+    return obj;
+  }
+
+  JSObject* asObjectUnbarriered() const { return obj; }
+
+  JSObject** addressOfObject() { return &obj; }
+
+  bool operator==(const ArrayBufferOrView& other) const {
+    return obj == other.asObjectUnbarriered();
+  }
+  bool operator!=(const ArrayBufferOrView& other) const {
+    return obj != other.asObjectUnbarriered();
+  }
 };
 
 class JS_PUBLIC_API ArrayBuffer : public ArrayBufferOrView {
@@ -650,6 +670,37 @@ class WrappedPtrOperations<T, Wrapper, EnableIfABOVType<T>> {
   }
 };
 
+
+template <typename T>
+struct IsHeapConstructibleType<T, EnableIfABOVType<T>> : public std::true_type {
+};
+
+template <typename T>
+struct BarrierMethods<T, EnableIfABOVType<T>> {
+  static gc::Cell* asGCThingOrNull(T view) {
+    return reinterpret_cast<gc::Cell*>(view.asObjectUnbarriered());
+  }
+  static void postWriteBarrier(T* viewp, T prev, T next) {
+    BarrierMethods<JSObject*>::postWriteBarrier(viewp->addressOfObject(),
+                                                prev.asObjectUnbarriered(),
+                                                next.asObjectUnbarriered());
+  }
+  static void exposeToJS(T view) { view.exposeToActiveJS(); }
+  static void readBarrier(T view) {
+    JSObject* obj = view.asObjectUnbarriered();
+    if (obj) {
+      js::gc::IncrementalReadBarrier(JS::GCCellPtr(obj));
+    }
+  }
+};
+
+}  
+
+namespace JS {
+template <typename T>
+struct SafelyInitialized<T, js::EnableIfABOVType<T>> {
+  static T create() { return T::fromObject(nullptr); }
+};
 }  
 
 

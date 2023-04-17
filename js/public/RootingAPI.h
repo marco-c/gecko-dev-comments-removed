@@ -114,10 +114,10 @@
 
 namespace js {
 
-template <typename T>
+
+
+template <typename T, typename Enable = void>
 struct BarrierMethods {};
-
-
 
 template <typename Element, typename Wrapper, typename Enable = void>
 class WrappedPtrOperations {};
@@ -141,18 +141,20 @@ class HeapOperations : public MutableWrappedPtrOperations<T, Wrapper> {};
 
 
 
-template <typename T>
-struct IsHeapConstructibleType {
-  static constexpr bool value = false;
-};
-#define DECLARE_IS_HEAP_CONSTRUCTIBLE_TYPE(T) \
-  template <>                                 \
-  struct IsHeapConstructibleType<T> {         \
-    static constexpr bool value = true;       \
-  };
-JS_FOR_EACH_PUBLIC_GC_POINTER_TYPE(DECLARE_IS_HEAP_CONSTRUCTIBLE_TYPE)
-JS_FOR_EACH_PUBLIC_TAGGED_GC_POINTER_TYPE(DECLARE_IS_HEAP_CONSTRUCTIBLE_TYPE)
-#undef DECLARE_IS_HEAP_CONSTRUCTIBLE_TYPE
+
+
+
+template <typename T, typename Enable = void>
+struct IsHeapConstructibleType : public std::false_type {};
+
+#define JS_DECLARE_IS_HEAP_CONSTRUCTIBLE_TYPE(T) \
+  template <>                                    \
+  struct IsHeapConstructibleType<T> : public std::true_type {};
+JS_FOR_EACH_PUBLIC_GC_POINTER_TYPE(JS_DECLARE_IS_HEAP_CONSTRUCTIBLE_TYPE)
+JS_FOR_EACH_PUBLIC_TAGGED_GC_POINTER_TYPE(JS_DECLARE_IS_HEAP_CONSTRUCTIBLE_TYPE)
+
+
+
 
 namespace gc {
 struct Cell;
