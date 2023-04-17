@@ -103,6 +103,22 @@ function add_message_event_handlers(receiver, target, target_origin) {
             { targetOrigin: target_origin });
           break;
 
+        case 'create-sync-access-handle':
+          
+          
+          let success = true;
+          try {
+            
+            await message_data.file_handle.createSyncAccessHandle();
+          } catch (error) {
+            success = false;
+          }
+
+          message_source.postMessage(
+            { type: 'receive-sync-access-handle-result', success },
+            { targetOrigin: target_origin });
+          break;
+
         default:
           throw `Unknown message type: '${message_data.type}'`;
       }
