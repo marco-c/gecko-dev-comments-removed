@@ -394,6 +394,13 @@ nsresult nsTimerImpl::Cancel() {
 }
 
 void nsTimerImpl::CancelImpl(bool aClearITimer) {
+  if (gXPCOMTimersShutDown) {
+    
+    
+    MOZ_ASSERT_UNREACHABLE(
+        "Tried to cancel a timer after timers have been freed.");
+    return;
+  }
   Callback cbTrash;
   RefPtr<nsITimer> timerTrash;
 
