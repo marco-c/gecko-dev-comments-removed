@@ -352,28 +352,17 @@ void nsThreadManager::Shutdown() {
   
   NS_ProcessPendingEvents(mMainThread);
 
-  typedef typename ShutdownPromise::AllPromiseType AllPromise;
-  typename AllPromise::ResolveOrRejectValue val;
-  using ResolveValueT = typename AllPromise::ResolveValueType;
-  using RejectValueT = typename AllPromise::RejectValueType;
-
   nsTArray<RefPtr<ShutdownPromise>> promises;
   mBackgroundEventTarget->BeginShutdown(promises);
 
-  RefPtr<AllPromise> complete = ShutdownPromise::All(mMainThread, promises);
-
   bool taskQueuesShutdown = false;
-
-  complete->Then(
-      mMainThread, __func__,
-      [&](const ResolveValueT& aResolveValue) {
-        mBackgroundEventTarget->FinishShutdown();
-        taskQueuesShutdown = true;
-      },
-      [&](RejectValueT aRejectValue) {
-        mBackgroundEventTarget->FinishShutdown();
-        taskQueuesShutdown = true;
-      });
+  
+  
+  
+  ShutdownPromise::All(mMainThread, promises)->Then(mMainThread, __func__, [&] {
+    mBackgroundEventTarget->FinishShutdown();
+    taskQueuesShutdown = true;
+  });
 
   
   
