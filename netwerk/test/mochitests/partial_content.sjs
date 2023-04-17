@@ -6,7 +6,8 @@
 
 
 
-function ERR(response, responseCode, responseCodeStr, msg) {
+function ERR(response, responseCode, responseCodeStr, msg)
+{
   
   setState("expectedRequestType", "");
   
@@ -18,7 +19,8 @@ function ERR(response, responseCode, responseCodeStr, msg) {
   response.write(msg);
 }
 
-function DBG(msg) {
+function DBG(msg)
+{
   
   dump("SERVER DEBUG: " + msg + "\n");
 }
@@ -33,7 +35,8 @@ function DBG(msg) {
 
 
 
-function handleRequest(request, response) {
+function handleRequest(request, response)
+{
   DBG("Trying to seize power");
   response.seizePower();
 
@@ -47,7 +50,7 @@ function handleRequest(request, response) {
     
     setState("expectedRequestType", "partialRequest");
     
-    lastModified = new Date().toUTCString();
+    lastModified = (new Date()).toUTCString();
     setState("lastModified", lastModified);
   } else if (getState("expectedRequestType") === "partialRequest") {
     DBG("Second call: Should be requesting undelivered content.");
@@ -57,80 +60,52 @@ function handleRequest(request, response) {
     
     lastModified = getState("lastModified");
   } else {
-    ERR(
-      response,
-      500,
-      "Internal Server Error",
-      'Invalid expectedRequestType "' +
-        expectedRequestType +
-        '"in ' +
-        "server state db."
-    );
+    ERR(response, 500, "Internal Server Error",
+        "Invalid expectedRequestType \"" + expectedRequestType + "\"in " +
+        "server state db.");
     return;
   }
 
   
   var range = request.hasHeader("Range") ? request.getHeader("Range") : "";
-  var ifRange = request.hasHeader("If-Range")
-    ? request.getHeader("If-Range")
-    : "";
+  var ifRange = request.hasHeader("If-Range") ? request.getHeader("If-Range") : "";
 
   if (expectedRequestType === "fullRequest") {
     
     if (range && range.length > 0) {
-      ERR(
-        response,
-        400,
-        "Bad Request",
-        'Should not receive "Range: ' + range + '" for first, full request.'
-      );
+      ERR(response, 400, "Bad Request",
+          "Should not receive \"Range: " + range + "\" for first, full request.");
       return;
     }
     if (ifRange && ifRange.length > 0) {
-      ERR(
-        response,
-        400,
-        "Bad Request",
-        'Should not receive "Range: ' + range + '" for first, full request.'
-      );
+      ERR(response, 400, "Bad Request",
+          "Should not receive \"Range: " + range + "\" for first, full request.");
       return;
     }
   } else if (expectedRequestType === "partialRequest") {
     
     if (!range) {
-      ERR(
-        response,
-        400,
-        "Bad Request",
-        'Should receive "Range: " for second, partial request.'
-      );
+      ERR(response, 400, "Bad Request",
+          "Should receive \"Range: \" for second, partial request.");
       return;
     }
     if (!ifRange) {
-      ERR(
-        response,
-        400,
-        "Bad Request",
-        'Should receive "If-Range: " for second, partial request.'
-      );
+      ERR(response, 400, "Bad Request",
+          "Should receive \"If-Range: \" for second, partial request.");
       return;
     }
   } else {
     
-    ERR(
-      response,
-      500,
-      "Internal Server Error",
-      'expectedRequestType not set correctly: "' + expectedRequestType + '"'
-    );
+    ERR(response, 500, "Internal Server Error",
+        "expectedRequestType not set correctly: \"" + expectedRequestType + "\"");
     return;
   }
 
   
-  var partialContent =
-    '<html><head></head><body><p id="firstResponse">' + "First response</p>";
-  var remainderContent =
-    '<p id="secondResponse">Second response</p>' + "</body></html>";
+  var partialContent = "<html><head></head><body><p id=\"firstResponse\">" +
+                       "First response</p>";
+  var remainderContent = "<p id=\"secondResponse\">Second response</p>" +
+                         "</body></html>";
   var totalLength = partialContent.length + remainderContent.length;
 
   DBG("totalLength: " + totalLength);
@@ -138,16 +113,12 @@ function handleRequest(request, response) {
   
   date = new Date();
   DBG("Date: " + date.toUTCString() + ", Last-Modified: " + lastModified);
-  var commonHeaders =
-    "Date: " +
-    date.toUTCString() +
-    "\r\n" +
-    "Last-Modified: " +
-    lastModified +
-    "\r\n" +
-    "Content-Type: text/html; charset=UTF-8\r\n" +
-    "ETag: abcd0123\r\n" +
-    "Accept-Ranges: bytes\r\n";
+  var commonHeaders = "Date: " + date.toUTCString() + "\r\n" +
+                      "Last-Modified: " + lastModified + "\r\n" +
+                      "Content-Type: text/html; charset=UTF-8\r\n" +
+                      "ETag: abcd0123\r\n" +
+                      "Accept-Ranges: bytes\r\n";
+
 
   
   if (expectedRequestType === "fullRequest") {
@@ -164,28 +135,15 @@ function handleRequest(request, response) {
     response.write(commonHeaders);
     
     response.write("Content-Length: " + remainderContent.length + "\r\n");
-    response.write(
-      "Content-Range: bytes " +
-        partialContent.length +
-        "-" +
-        (totalLength - 1) +
-        "/" +
-        totalLength +
-        "\r\n"
-    );
+    response.write("Content-Range: bytes " + partialContent.length + "-" +
+                   (totalLength - 1) + "/" + totalLength + "\r\n");
     response.write("\r\n");
     response.write(remainderContent);
   } else {
     
-    ERR(
-      response,
-      500,
-      "Internal Server Error",
-      "Something very bad happened here: expectedRequestType is invalid " +
-        'towards the end of handleRequest! - "' +
-        expectedRequestType +
-        '"'
-    );
+    ERR(response, 500, "Internal Server Error",
+       "Something very bad happened here: expectedRequestType is invalid " +
+       "towards the end of handleRequest! - \"" + expectedRequestType + "\"");
     return;
   }
 
