@@ -22,6 +22,15 @@ void FirstInitializationAttempts<Initialization, StringGenerator>::
                                      const nsresult aRv) {
   MOZ_ASSERT(FirstInitializationAttemptPending(aInitialization));
 
+  
+  
+  
+  
+  
+  if (aRv == NS_ERROR_ABORT) {
+    return;
+  }
+
   mFirstInitializationAttempts |= aInitialization;
 
   if constexpr (!std::is_same_v<StringGenerator, Nothing>) {
