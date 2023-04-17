@@ -642,7 +642,8 @@ async function testAboutProcessesWithConfig({ showAllFrames, showThreads }) {
 
       
       
-      await promiseAboutProcessesUpdated({ doc, tbody, tabAboutProcesses });
+      await new Promise(doc.defaultView.requestAnimationFrame);
+
       let numberOfThreadsFound = 0;
       for (
         let threadRow = threads.nextSibling;
@@ -656,6 +657,7 @@ async function testAboutProcessesWithConfig({ showAllFrames, showThreads }) {
         number,
         `We should see ${number} threads, found ${numberOfThreadsFound}`
       );
+      let threadIds = [];
       for (
         let threadRow = threads.nextSibling;
         threadRow && threadRow.classList.contains("thread");
@@ -680,6 +682,7 @@ async function testAboutProcessesWithConfig({ showAllFrames, showThreads }) {
         
         let tidContent = l10nArgs.tid;
         let tid = Number.parseInt(tidContent);
+        threadIds.push(tid);
         Assert.notEqual(tid, 0, "The tid should be set");
         Assert.equal(tid, threadRow.thread.tid, "Displayed tid is correct");
 
@@ -691,6 +694,13 @@ async function testAboutProcessesWithConfig({ showAllFrames, showThreads }) {
           HARDCODED_ASSUMPTIONS_THREAD
         );
       }
+      
+      let threadList = threadIds.join(",");
+      Assert.equal(
+        threadList,
+        threadIds.sort((a, b) => a - b).join(","),
+        "The thread rows are in the default sort order."
+      );
     }
   }
 
