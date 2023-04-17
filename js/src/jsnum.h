@@ -66,8 +66,9 @@ extern bool IsInteger(double d);
 
 
 
-[[nodiscard]] extern bool JS_FASTCALL
-NumberValueToStringBuffer(JSContext* cx, const Value& v, StringBuffer& sb);
+[[nodiscard]] extern bool NumberValueToStringBuffer(JSContext* cx,
+                                                    const Value& v,
+                                                    StringBuffer& sb);
 
 extern JSLinearString* IndexToString(JSContext* cx, uint32_t index);
 

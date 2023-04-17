@@ -276,7 +276,7 @@ void TypedArrayObject::setInlineElements() {
 
 
 
-uint32_t JS_FASTCALL js::ClampDoubleToUint8(const double x) {
+uint32_t js::ClampDoubleToUint8(const double x) {
   
   if (!(x >= 0)) {
     return 0;
