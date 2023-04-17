@@ -881,6 +881,7 @@ void ScriptPreloader::FillCompileOptionsForCachedStencil(
   
   
   options.borrowBuffer = true;
+  options.usePinnedBytecode = true;
 }
 
 already_AddRefed<JS::Stencil> ScriptPreloader::GetCachedStencil(
