@@ -82,41 +82,11 @@ static constexpr uint8_t JSPROP_SETTER = 0x20;
 
 static constexpr unsigned JSPROP_RESOLVING = 0x2000;
 
-namespace js {
-
-
-
-
-
-static constexpr unsigned JSPROP_IGNORE_ENUMERATE = 0x4000;
-
-
-
-
-
-static constexpr unsigned JSPROP_IGNORE_READONLY = 0x8000;
-
-
-
-
-
-static constexpr unsigned JSPROP_IGNORE_PERMANENT = 0x10000;
-
-
-
-
-
-static constexpr unsigned JSPROP_IGNORE_VALUE = 0x20000;
-
-}  
-
 
 
 static constexpr unsigned JSPROP_FLAGS_MASK =
     JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT |
-    JSPROP_CUSTOM_DATA_PROP | JSPROP_GETTER | JSPROP_SETTER | JSPROP_RESOLVING |
-    js::JSPROP_IGNORE_ENUMERATE | js::JSPROP_IGNORE_READONLY |
-    js::JSPROP_IGNORE_PERMANENT | js::JSPROP_IGNORE_VALUE;
+    JSPROP_CUSTOM_DATA_PROP | JSPROP_GETTER | JSPROP_SETTER | JSPROP_RESOLVING;
 
 namespace JS {
 
