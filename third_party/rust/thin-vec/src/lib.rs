@@ -140,7 +140,7 @@
 
 
 use std::{fmt, io, ptr, mem, slice};
-use std::collections::Bound;
+use std::ops::Bound;
 use std::iter::FromIterator;
 use std::slice::IterMut;
 use std::ops::{Deref, DerefMut, RangeBounds};
