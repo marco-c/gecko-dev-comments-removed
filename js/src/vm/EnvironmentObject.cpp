@@ -2917,7 +2917,8 @@ void DebugEnvironments::onRealmUnsetIsDebuggee(Realm* realm) {
 }
 
 bool DebugEnvironments::updateLiveEnvironments(JSContext* cx) {
-  if (!CheckRecursionLimit(cx)) {
+  AutoCheckRecursionLimit recursion(cx);
+  if (!recursion.check(cx)) {
     return false;
   }
 
@@ -3201,7 +3202,8 @@ static JSObject* GetDebugEnvironmentForNonEnvironmentObject(
 }
 
 static JSObject* GetDebugEnvironment(JSContext* cx, const EnvironmentIter& ei) {
-  if (!CheckRecursionLimit(cx)) {
+  AutoCheckRecursionLimit recursion(cx);
+  if (!recursion.check(cx)) {
     return nullptr;
   }
 

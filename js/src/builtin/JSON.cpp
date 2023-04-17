@@ -671,7 +671,8 @@ static bool Str(JSContext* cx, const Value& v, StringifyContext* scx) {
   
   MOZ_ASSERT(!IsFilteredValue(v));
 
-  if (!CheckRecursionLimit(cx)) {
+  AutoCheckRecursionLimit recursion(cx);
+  if (!recursion.check(cx)) {
     return false;
   }
 
@@ -925,7 +926,8 @@ bool js::Stringify(JSContext* cx, MutableHandleValue vp, JSObject* replacer_,
 
 static bool Walk(JSContext* cx, HandleObject holder, HandleId name,
                  HandleValue reviver, MutableHandleValue vp) {
-  if (!CheckRecursionLimit(cx)) {
+  AutoCheckRecursionLimit recursion(cx);
+  if (!recursion.check(cx)) {
     return false;
   }
 

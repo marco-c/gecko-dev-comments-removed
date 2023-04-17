@@ -778,7 +778,8 @@ JSString* js::ErrorToSource(JSContext* cx, HandleObject obj) {
 
 
 static bool exn_toSource(JSContext* cx, unsigned argc, Value* vp) {
-  if (!CheckRecursionLimit(cx)) {
+  AutoCheckRecursionLimit recursion(cx);
+  if (!recursion.check(cx)) {
     return false;
   }
   CallArgs args = CallArgsFromVp(argc, vp);

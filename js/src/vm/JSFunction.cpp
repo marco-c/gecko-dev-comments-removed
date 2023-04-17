@@ -719,7 +719,8 @@ bool JS::OrdinaryHasInstance(JSContext* cx, HandleObject objArg, HandleValue v,
   
   if (obj->is<JSFunction>() && obj->isBoundFunction()) {
     
-    if (!CheckRecursionLimit(cx)) {
+    AutoCheckRecursionLimit recursion(cx);
+    if (!recursion.check(cx)) {
       return false;
     }
     obj = obj->as<JSFunction>().getBoundFunctionTarget();

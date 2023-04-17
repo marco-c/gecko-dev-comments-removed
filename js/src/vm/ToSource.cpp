@@ -118,7 +118,8 @@ static JSString* BoxedToSource(JSContext* cx, HandleObject obj,
 }
 
 JSString* js::ValueToSource(JSContext* cx, HandleValue v) {
-  if (!CheckRecursionLimit(cx)) {
+  AutoCheckRecursionLimit recursion(cx);
+  if (!recursion.check(cx)) {
     return nullptr;
   }
   cx->check(v);

@@ -644,19 +644,21 @@ static void* WasmHandleTrap() {
       return ReportError(cx, JSMSG_WASM_UNALIGNED_ACCESS);
     case Trap::CheckInterrupt:
       return CheckInterrupt(cx, activation);
-    case Trap::StackOverflow:
+    case Trap::StackOverflow: {
       
       
       
       
       
-      if (!CheckRecursionLimit(cx)) {
+      AutoCheckRecursionLimit recursion(cx);
+      if (!recursion.check(cx)) {
         return nullptr;
       }
       if (activation->wasmExitTls()->isInterrupted()) {
         return CheckInterrupt(cx, activation);
       }
       return ReportError(cx, JSMSG_OVER_RECURSED);
+    }
     case Trap::ThrowReported:
       
       return nullptr;

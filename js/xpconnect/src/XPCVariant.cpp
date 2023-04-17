@@ -261,7 +261,8 @@ bool XPCArrayHomogenizer::GetTypeForArray(JSContext* cx, HandleObject array,
 }
 
 bool XPCVariant::InitializeData(JSContext* cx) {
-  if (!js::CheckRecursionLimit(cx)) {
+  js::AutoCheckRecursionLimit recursion(cx);
+  if (!recursion.check(cx)) {
     return false;
   }
 

@@ -84,7 +84,8 @@ static bool ListContainsHoistedDeclaration(JSContext* cx, ListNode* list,
 
 static bool ContainsHoistedDeclaration(JSContext* cx, ParseNode* node,
                                        bool* result) {
-  if (!CheckRecursionLimit(cx)) {
+  AutoCheckRecursionLimit recursion(cx);
+  if (!recursion.check(cx)) {
     return false;
   }
 
