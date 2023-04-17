@@ -110,6 +110,10 @@ class AllocSite {
 
   void updateStateOnMinorGC(double promotionRate);
 
+  
+  
+  bool maybeResetState();
+
   bool invalidationLimitReached() const;
   bool invalidateScript(GCRuntime* gc);
 
@@ -150,6 +154,41 @@ class PretenuringZone {
   
   
   AllocSite optimizedAllocSite;
+
+  
+  
+  uint32_t allocCountInNewlyCreatedArenas = 0;
+  uint32_t survivorCountInNewlyCreatedArenas = 0;
+
+  
+  
+  
+  uint32_t lowYoungTenuredSurvivalCount = 0;
+
+  
+  
+  
+  uint32_t highNurserySurvivalCount = 0;
+
+  void clearCellCountsInNewlyCreatedArenas() {
+    allocCountInNewlyCreatedArenas = 0;
+    survivorCountInNewlyCreatedArenas = 0;
+  }
+  void updateCellCountsInNewlyCreatedArenas(uint32_t allocCount,
+                                            uint32_t survivorCount) {
+    allocCountInNewlyCreatedArenas += allocCount;
+    survivorCountInNewlyCreatedArenas += survivorCount;
+  }
+
+  bool calculateYoungTenuredSurvivalRate(double* rateOut);
+
+  void noteLowYoungTenuredSurvivalRate(bool lowYoungSurvivalRate);
+  void noteHighNurserySurvivalRate(bool highNurserySurvivalRate);
+
+  
+  
+  bool shouldResetNurseryAllocSites();
+  bool shouldResetPretenuredAllocSites();
 };
 
 
@@ -174,7 +213,10 @@ class PretenuringNursery {
     allocatedSites = site;
   }
 
-  void doPretenuring(GCRuntime* gc, bool reportInfo);
+  void doPretenuring(GCRuntime* gc, bool validPromotionRate,
+                     double promotionRate, bool reportInfo);
+
+  void maybeStopPretenuring(GCRuntime* gc);
 
   void* addressOfAllocatedSites() { return &allocatedSites; }
 };
