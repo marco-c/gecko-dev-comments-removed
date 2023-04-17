@@ -321,6 +321,8 @@ class nsDocShellLoadState final {
                                    bool aLoadingFromActiveEntry);
   void ClearLoadIsFromSessionHistory();
 
+  void MaybeStripTrackerQueryStrings(mozilla::dom::BrowsingContext* aContext);
+
  protected:
   
   

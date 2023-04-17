@@ -21,6 +21,7 @@
 #include "mozilla/dom/LoadURIOptionsBinding.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_fission.h"
+#include "mozilla/URLQueryStringStripper.h"
 
 #include "mozilla/OriginAttributes.h"
 #include "mozilla/NullPrincipal.h"
@@ -567,6 +568,41 @@ bool nsDocShellLoadState::LoadIsFromSessionHistory() const {
   return mLoadingSessionHistoryInfo
              ? mLoadingSessionHistoryInfo->mLoadIsFromSessionHistory
              : !!mSHEntry;
+}
+
+void nsDocShellLoadState::MaybeStripTrackerQueryStrings(
+    BrowsingContext* aContext) {
+  MOZ_ASSERT(aContext);
+
+  
+  
+  
+  
+  
+  
+  
+  if (GetChannelInitialized() || !aContext->IsTopContent() ||
+      BasePrincipal::Cast(TriggeringPrincipal())->AddonPolicy()) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  bool isThirdPartyURI = false;
+  if (!TriggeringPrincipal()->IsSystemPrincipal() &&
+      (NS_FAILED(
+           TriggeringPrincipal()->IsThirdPartyURI(URI(), &isThirdPartyURI)) ||
+       !isThirdPartyURI)) {
+    return;
+  }
+
+  nsCOMPtr<nsIURI> strippedURI;
+  if (URLQueryStringStripper::Strip(URI(), strippedURI)) {
+    SetURI(strippedURI);
+  }
 }
 
 const nsString& nsDocShellLoadState::Target() const { return mTarget; }
