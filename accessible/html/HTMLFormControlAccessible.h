@@ -355,10 +355,10 @@ class HTMLDateTimeAccessible : public AccessibleWrap {
     RefPtr<AccAttributes> attributes = AccessibleWrap::NativeAttributes();
     
     
-    nsAutoString type;
+    nsString type;
     if (mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::type,
                                        type)) {
-      attributes->SetAttribute(nsGkAtoms::textInputType, type);
+      attributes->SetAttribute(nsGkAtoms::textInputType, std::move(type));
     }
     return attributes.forget();
   }

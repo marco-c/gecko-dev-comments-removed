@@ -261,7 +261,7 @@ already_AddRefed<AccAttributes> HTMLTextFieldAccessible::NativeAttributes() {
 
   
   
-  nsAutoString type;
+  nsString type;
   
   
   
@@ -272,21 +272,22 @@ already_AddRefed<AccAttributes> HTMLTextFieldAccessible::NativeAttributes() {
                                                     nsGkAtoms::type, type)) ||
       mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::type,
                                      type)) {
-    attributes->SetAttribute(nsGkAtoms::textInputType, type);
     if (!ARIARoleMap() && type.EqualsLiteral("search")) {
-      attributes->SetAttribute(nsGkAtoms::xmlroles, u"searchbox"_ns);
+      attributes->SetAttribute(nsGkAtoms::xmlroles, nsGkAtoms::searchbox);
     }
+    attributes->SetAttribute(nsGkAtoms::textInputType, std::move(type));
   }
 
   
   
-  nsAutoString placeholderText;
+  nsString placeholderText;
   if (mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::placeholder,
                                      placeholderText)) {
     nsAutoString name;
     const_cast<HTMLTextFieldAccessible*>(this)->Name(name);
     if (!name.Equals(placeholderText)) {
-      attributes->SetAttribute(nsGkAtoms::placeholder, placeholderText);
+      attributes->SetAttribute(nsGkAtoms::placeholder,
+                               std::move(placeholderText));
     }
   }
 
