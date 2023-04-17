@@ -28,6 +28,7 @@
 #  include <processthreadsapi.h>
 #endif  
 
+#include "jsapi.h"  
 #include "jsexn.h"
 #include "jspubtd.h"
 #include "jstypes.h"
@@ -154,6 +155,21 @@ bool JSContext::init(ContextKind kind) {
   return true;
 }
 
+static void InitDefaultStackQuota(JSContext* cx) {
+  
+  
+  
+  
+  
+
+#if defined(MOZ_ASAN) || (defined(DEBUG) && !defined(XP_WIN))
+  static constexpr size_t MaxStackSize = 2 * 128 * sizeof(size_t) * 1024;
+#else
+  static constexpr size_t MaxStackSize = 128 * sizeof(size_t) * 1024;
+#endif
+  JS_SetNativeStackQuota(cx, MaxStackSize);
+}
+
 JSContext* js::NewContext(uint32_t maxBytes, JSRuntime* parentRuntime) {
   AutoNoteSingleThreadedRegion anstr;
 
@@ -186,6 +202,12 @@ JSContext* js::NewContext(uint32_t maxBytes, JSRuntime* parentRuntime) {
     js_delete(cx);
     js_delete(runtime);
     return nullptr;
+  }
+
+  
+  
+  if (cx->isMainThreadContext()) {
+    InitDefaultStackQuota(cx);
   }
 
   return cx;
