@@ -7,9 +7,6 @@
 
 
 {
-  const { XPCOMUtils } = ChromeUtils.import(
-    "resource://gre/modules/XPCOMUtils.jsm"
-  );
   const { Services } = ChromeUtils.import(
     "resource://gre/modules/Services.jsm"
   );
@@ -27,26 +24,13 @@
       this._insertElementFn = insertElementFn;
       this._animating = false;
       this.currentNotification = null;
-
-      XPCOMUtils.defineLazyPreferenceGetter(
-        this,
-        "gProton",
-        "browser.proton.enabled",
-        false
-      );
     }
 
     get stack() {
       if (!this._stack) {
-        let stack;
-        stack = document.createXULElement(
-          this.gProton ? "vbox" : "legacy-stack"
-        );
+        let stack = document.createXULElement("vbox");
         stack._notificationBox = this;
         stack.className = "notificationbox-stack";
-        if (!this.gProton) {
-          stack.appendChild(document.createXULElement("spacer"));
-        }
         stack.addEventListener("transitionend", event => {
           if (
             (event.target.localName == "notification" ||
@@ -169,7 +153,7 @@
 
       
       var newitem;
-      if (this.gProton && !aNotificationIs) {
+      if (!aNotificationIs) {
         if (!customElements.get("notification-message")) {
           
           
@@ -184,25 +168,11 @@
         );
       }
 
-      if (this.gProton) {
-        
-        if (this.stack.hasAttribute("prepend-notifications")) {
-          this.stack.prepend(newitem);
-        } else {
-          this.stack.append(newitem);
-        }
+      
+      if (this.stack.hasAttribute("prepend-notifications")) {
+        this.stack.prepend(newitem);
       } else {
-        
-        
-        var notifications = this.allNotifications;
-        var insertPos = null;
-        for (var n = notifications.length - 1; n >= 0; n--) {
-          if (notifications[n].priority < aPriority) {
-            break;
-          }
-          insertPos = notifications[n];
-        }
-        this.stack.insertBefore(newitem, insertPos);
+        this.stack.append(newitem);
       }
 
       
@@ -221,9 +191,6 @@
       }
       newitem.setAttribute("value", aValue);
 
-      if (aImage && !this.gProton) {
-        newitem.messageImage.setAttribute("src", aImage);
-      }
       newitem.eventCallback = aEventCallback;
 
       if (aButtons) {
@@ -242,16 +209,12 @@
       }
 
       
-      
-      
-      if (this.gProton || !insertPos) {
-        newitem.style.display = "block";
-        newitem.style.position = "fixed";
-        newitem.style.top = "100%";
-        newitem.style.marginTop = "-15px";
-        newitem.style.opacity = "0";
-        this._showNotification(newitem, true);
-      }
+      newitem.style.display = "block";
+      newitem.style.position = "fixed";
+      newitem.style.top = "100%";
+      newitem.style.marginTop = "-15px";
+      newitem.style.opacity = "0";
+      this._showNotification(newitem, true);
 
       
       var event = document.createEvent("Events");
@@ -265,14 +228,8 @@
       if (!aItem.parentNode) {
         return;
       }
-      if (this.gProton) {
-        this.currentNotification = aItem;
-        this.removeCurrentNotification(aSkipAnimation);
-      } else if (aItem == this.currentNotification) {
-        this.removeCurrentNotification(aSkipAnimation);
-      } else if (aItem != this._closedNotification) {
-        this._removeNotificationElement(aItem);
-      }
+      this.currentNotification = aItem;
+      this.removeCurrentNotification(aSkipAnimation);
     }
 
     _removeNotificationElement(aChild) {
