@@ -3,7 +3,6 @@
 
 
 
-
 assertEq(Object.hasOwn({}, "any"), false);
 assertThrowsInstanceOf(() => Object.hasOwn(null, "any"), TypeError);
 
