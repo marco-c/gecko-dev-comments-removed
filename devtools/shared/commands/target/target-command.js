@@ -473,7 +473,11 @@ class TargetCommand extends EventEmitter {
 
 
   stopListening({ onlyLegacy = false } = {}) {
-    if (this._watchingDocumentEvent) {
+    
+    
+    
+    
+    if (this._watchingDocumentEvent && !onlyLegacy) {
       this.commands.resourceCommand.unwatchResources(
         [this.commands.resourceCommand.TYPES.DOCUMENT_EVENT],
         {

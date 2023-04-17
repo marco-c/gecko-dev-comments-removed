@@ -523,7 +523,6 @@ class DevToolsFrameChild extends JSWindowActorChild {
       this.instantiate({ forceOverridingFirstTarget: true });
     }
     if (shouldHandleBfCacheEvents && type == "pagehide" && persisted) {
-      this.didDestroy();
       
       
       
@@ -559,6 +558,11 @@ class DevToolsFrameChild extends JSWindowActorChild {
       
       
       this.sendAsyncMessage("DevToolsFrameChild:destroy", { actors });
+
+      
+      
+      
+      this.didDestroy();
     }
   }
 

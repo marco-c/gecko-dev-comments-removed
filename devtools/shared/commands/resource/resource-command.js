@@ -502,15 +502,25 @@ class ResourceCommand {
   }
 
   _shouldRestartListenerOnTargetSwitching(resourceType) {
-    if (!this.targetCommand.isServerTargetSwitchingEnabled()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    const isServerSideTarget = this.targetCommand.targetFront.targetForm
+      .followWindowGlobalLifeCycle;
+    if (isServerSideTarget) {
       
       
-      return true;
+      return !this.hasResourceCommandSupport(resourceType);
     }
 
     
     
-    return !this.hasResourceCommandSupport(resourceType);
+    return true;
   }
 
   
