@@ -69,6 +69,10 @@ BOOL CALLBACK GetWindowListHandler(HWND hwnd, LPARAM param) {
   DesktopCapturer::Source window;
   window.id = reinterpret_cast<WindowId>(hwnd);
 
+  DWORD pid;
+  GetWindowThreadProcessId(hwnd, &pid);
+  window.pid = static_cast<pid_t>(pid);
+
   
   
   
