@@ -28,6 +28,12 @@ class IonICStub {
   
   CacheIRStubInfo* stubInfo_;
 
+#ifndef JS_64BIT
+ protected:  
+  
+  uintptr_t padding_ = 0;
+#endif
+
  public:
   IonICStub(uint8_t* fallbackCode, CacheIRStubInfo* stubInfo)
       : nextCodeRaw_(fallbackCode), next_(nullptr), stubInfo_(stubInfo) {}
