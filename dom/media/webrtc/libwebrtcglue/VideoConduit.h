@@ -226,10 +226,7 @@ class WebrtcVideoConduit
   void CollectTelemetryData() override;
 
   void OnRtcpBye() override;
-
   void OnRtcpTimeout() override;
-
-  void SetRtcpEventObserver(mozilla::RtcpEventObserver* observer) override;
 
  private:
   
@@ -248,6 +245,11 @@ class WebrtcVideoConduit
   void DeleteRecvStream();
 
   void DeliverPacket(rtc::CopyOnWriteBuffer packet, PacketType type) override;
+
+  MediaEventSource<void>& RtcpByeEvent() override { return mRtcpByeEvent; }
+  MediaEventSource<void>& RtcpTimeoutEvent() override {
+    return mRtcpTimeoutEvent;
+  }
 
   bool RequiresNewSendStream(const VideoCodecConfig& newConfig) const;
 
@@ -468,7 +470,8 @@ class WebrtcVideoConduit
   dom::RTCVideoFrameHistoryInternal mReceivedFrameHistory;
 
   
-  mozilla::RtcpEventObserver* mRtcpEventObserver = nullptr;
+  MediaEventProducer<void> mRtcpByeEvent;
+  MediaEventProducer<void> mRtcpTimeoutEvent;
 };
 }  
 

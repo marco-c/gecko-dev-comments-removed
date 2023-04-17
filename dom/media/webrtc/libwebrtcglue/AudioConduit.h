@@ -40,8 +40,6 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   void OnRtcpBye() override;
   void OnRtcpTimeout() override;
 
-  void SetRtcpEventObserver(mozilla::RtcpEventObserver* observer) override;
-
   
 
 
@@ -149,6 +147,11 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   webrtc::Call::Stats GetCallStats() const override;
 
   bool IsSamplingFreqSupported(int freq) const override;
+
+  MediaEventSource<void>& RtcpByeEvent() override { return mRtcpByeEvent; }
+  MediaEventSource<void>& RtcpTimeoutEvent() override {
+    return mRtcpTimeoutEvent;
+  }
 
  private:
   WebrtcAudioConduit(const WebrtcAudioConduit& other) = delete;
@@ -269,7 +272,8 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   Maybe<DOMHighResTimeStamp> mLastRtcpReceived;
 
   
-  mozilla::RtcpEventObserver* mRtcpEventObserver = nullptr;
+  MediaEventProducer<void> mRtcpByeEvent;
+  MediaEventProducer<void> mRtcpTimeoutEvent;
 };
 
 }  
