@@ -1019,6 +1019,17 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
     log("_processDOMFormHasPossibleUsernameEvent:", form, formLike);
 
     
+    
+    
+    
+    let usernameField = this.getUsernameFieldFromUsernameOnlyForm(form);
+    if (usernameField) {
+      
+      log(
+        "_processDOMFormHasPossibleUsernameEvent: A username-only form is found"
+      );
+      this._fetchLoginsFromParentAndFillForm(formLike);
+    }
   }
 
   onDOMInputPasswordAdded(event, window) {
@@ -2464,14 +2475,14 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
       }
 
       
-      if (passwordField == null) {
-        log("not filling form, no password field found");
+      if (passwordField == null && usernameField == null) {
+        log("not filling form, no password and username field found");
         autofillResult = AUTOFILL_RESULT.NO_PASSWORD_FIELD;
         return;
       }
 
       
-      if (passwordField.disabled || passwordField.readOnly) {
+      if (passwordField?.disabled || passwordField?.readOnly) {
         log("not filling form, password field disabled or read-only");
         autofillResult = AUTOFILL_RESULT.PASSWORD_DISABLED_READONLY;
         return;
@@ -2489,7 +2500,7 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
 
       if (
         !userTriggered &&
-        !passwordField.ownerGlobal.windowGlobalChild.sameOriginWithTop
+        !form.rootElement.ownerGlobal.windowGlobalChild.sameOriginWithTop
       ) {
         log("not filling form; it is in a cross-origin subframe");
         autofillResult = AUTOFILL_RESULT.FORM_IN_CROSSORIGIN_SUBFRAME;
@@ -2530,10 +2541,10 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
       let maxPasswordLen = Number.MAX_VALUE;
 
       
-      if (usernameField && usernameField.maxLength >= 0) {
+      if (usernameField?.maxLength >= 0) {
         maxUsernameLen = usernameField.maxLength;
       }
-      if (passwordField.maxLength >= 0) {
+      if (passwordField?.maxLength >= 0) {
         maxPasswordLen = passwordField.maxLength;
       }
 
@@ -2554,31 +2565,34 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
         return;
       }
 
-      if (!userTriggered && passwordField.type != "password") {
+      const passwordACFieldName = passwordField?.getAutocompleteInfo()
+        .fieldName;
+
+      if (passwordField) {
+        if (!userTriggered && passwordField.type != "password") {
+          
+          
+          log("not autofilling, password field isn't currently type=password");
+          autofillResult = AUTOFILL_RESULT.TYPE_NO_LONGER_PASSWORD;
+          return;
+        }
+
         
         
-        log("not autofilling, password field isn't currently type=password");
-        autofillResult = AUTOFILL_RESULT.TYPE_NO_LONGER_PASSWORD;
-        return;
-      }
+        if (!userTriggered && passwordACFieldName == "new-password") {
+          log(
+            "not filling form, password field has the autocomplete new-password value"
+          );
+          autofillResult = AUTOFILL_RESULT.PASSWORD_AUTOCOMPLETE_NEW_PASSWORD;
+          return;
+        }
 
-      const passwordACFieldName = passwordField.getAutocompleteInfo().fieldName;
-
-      
-      
-      if (!userTriggered && passwordACFieldName == "new-password") {
-        log(
-          "not filling form, password field has the autocomplete new-password value"
-        );
-        autofillResult = AUTOFILL_RESULT.PASSWORD_AUTOCOMPLETE_NEW_PASSWORD;
-        return;
-      }
-
-      
-      if (passwordField.value && !clobberPassword) {
-        log("form not filled, the password field was already filled");
-        autofillResult = AUTOFILL_RESULT.EXISTING_PASSWORD;
-        return;
+        
+        if (passwordField.value && !clobberPassword) {
+          log("form not filled, the password field was already filled");
+          autofillResult = AUTOFILL_RESULT.EXISTING_PASSWORD;
+          return;
+        }
       }
 
       
@@ -2671,7 +2685,9 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
             ? Cu.getWeakReference(usernameField)
             : null,
           password: selectedLogin.password,
-          passwordField: Cu.getWeakReference(passwordField),
+          passwordField: passwordField
+            ? Cu.getWeakReference(passwordField)
+            : null,
         };
         
         log(
@@ -2708,15 +2724,17 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
         }
       }
 
-      if (passwordField.value != selectedLogin.password) {
-        
-        
-        this._stopTreatingAsGeneratedPasswordField(passwordField);
+      if (passwordField) {
+        if (passwordField.value != selectedLogin.password) {
+          
+          
+          this._stopTreatingAsGeneratedPasswordField(passwordField);
 
-        passwordField.setUserInput(selectedLogin.password);
+          passwordField.setUserInput(selectedLogin.password);
+        }
+
+        this._highlightFilledField(passwordField);
       }
-
-      this._highlightFilledField(passwordField);
 
       if (style && style === "generatedPassword") {
         this._filledWithGeneratedPassword(passwordField);
@@ -2833,18 +2851,16 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
     }
 
     
-    let autoFilledUsernameField = filledLogin.usernameField
-      ? filledLogin.usernameField.get()
-      : null;
-    let autoFilledPasswordField = filledLogin.passwordField.get();
+    let autoFilledUsernameField = filledLogin.usernameField?.get();
+    let autoFilledPasswordField = filledLogin.passwordField?.get();
 
     
     if (
       !autoFilledUsernameField ||
       autoFilledUsernameField != aUsernameField ||
       autoFilledUsernameField.value != filledLogin.username ||
-      !autoFilledPasswordField ||
-      autoFilledPasswordField.value != filledLogin.password
+      (autoFilledPasswordField &&
+        autoFilledPasswordField.value != filledLogin.password)
     ) {
       return false;
     }
