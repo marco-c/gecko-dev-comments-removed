@@ -37,7 +37,7 @@ const SHARED_DATA_KEY_NAME = "DevTools:watchedPerWatcher";
 
 function shouldNotifyWindowGlobal(
   windowGlobal,
-  context,
+  watchedBrowserId,
   { acceptTopLevelTarget = false }
 ) {
   const browsingContext = windowGlobal.browsingContext;
@@ -69,10 +69,7 @@ function shouldNotifyWindowGlobal(
 
   
   
-  if (
-    context.type == "browser-element" &&
-    browsingContext.browserId != context.browserId
-  ) {
+  if (watchedBrowserId && browsingContext.browserId != watchedBrowserId) {
     return false;
   }
 
@@ -85,11 +82,7 @@ function shouldNotifyWindowGlobal(
   
   
   
-  if (
-    !acceptTopLevelTarget &&
-    context.type == "browser-element" &&
-    !browsingContext.parent
-  ) {
+  if (!acceptTopLevelTarget && watchedBrowserId && !browsingContext.parent) {
     return false;
   }
 
@@ -174,7 +167,7 @@ class DevToolsFrameChild extends JSWindowActorChild {
     for (const [watcherActorID, sessionData] of sessionDataByWatcherActor) {
       const {
         connectionPrefix,
-        context,
+        browserId,
         isServerTargetSwitchingEnabled,
       } = sessionData;
       
@@ -187,7 +180,7 @@ class DevToolsFrameChild extends JSWindowActorChild {
         (isBFCache && this.isBfcacheInParentEnabled);
       if (
         sessionData.targets.includes("frame") &&
-        shouldNotifyWindowGlobal(this.manager, context, {
+        shouldNotifyWindowGlobal(this.manager, browserId, {
           acceptTopLevelTarget,
         })
       ) {
@@ -203,7 +196,7 @@ class DevToolsFrameChild extends JSWindowActorChild {
         
         const existingTarget = this._findTargetActor({
           watcherActorID,
-          context,
+          browserId,
           browsingContextId: this.manager.browsingContext.id,
         });
 
@@ -308,7 +301,7 @@ class DevToolsFrameChild extends JSWindowActorChild {
     const browsingContext = this.manager.browsingContext;
     const isTopLevelTarget =
       !browsingContext.parent &&
-      browsingContext.browserId == sessionData.context.browserId;
+      browsingContext.browserId == sessionData.browserId;
 
     const { connection, targetActor } = this._createConnectionAndActor(
       forwardingPrefix,
@@ -463,10 +456,10 @@ class DevToolsFrameChild extends JSWindowActorChild {
     
     
     if (
-      message.name != "DevToolsFrameParent:packet" &&
-      message.data.context.type == "browser-element"
+      message.data.browserId &&
+      message.name != "DevToolsFrameParent:packet"
     ) {
-      const { browserId } = message.data.context;
+      const { browserId } = message.data;
       
       
       if (
@@ -499,19 +492,19 @@ class DevToolsFrameChild extends JSWindowActorChild {
         return this._destroyTargetActor(watcherActorID);
       }
       case "DevToolsFrameParent:addSessionDataEntry": {
-        const { watcherActorID, context, type, entries } = message.data;
+        const { watcherActorID, browserId, type, entries } = message.data;
         return this._addSessionDataEntry(
           watcherActorID,
-          context,
+          browserId,
           type,
           entries
         );
       }
       case "DevToolsFrameParent:removeSessionDataEntry": {
-        const { watcherActorID, context, type, entries } = message.data;
+        const { watcherActorID, browserId, type, entries } = message.data;
         return this._removeSessionDataEntry(
           watcherActorID,
-          context,
+          browserId,
           type,
           entries
         );
@@ -540,7 +533,7 @@ class DevToolsFrameChild extends JSWindowActorChild {
 
 
 
-  _findTargetActor({ watcherActorID, context, browsingContextId }) {
+  _findTargetActor({ watcherActorID, browserId, browsingContextId }) {
     
     
     const connectionInfo = this._connections.get(watcherActorID);
@@ -550,16 +543,13 @@ class DevToolsFrameChild extends JSWindowActorChild {
     
     
     
-    if (
-      !targetActor &&
-      this.manager.browsingContext.browserId == context.browserId
-    ) {
+    if (!targetActor && this.manager.browsingContext.browserId == browserId) {
       
       
       
       const connectionPrefix = watcherActorID.replace(/watcher\d+$/, "");
       const targetActors = TargetActorRegistry.getTargetActors(
-        context,
+        browserId,
         connectionPrefix
       );
 
@@ -575,30 +565,30 @@ class DevToolsFrameChild extends JSWindowActorChild {
     return targetActor;
   }
 
-  _addSessionDataEntry(watcherActorID, context, type, entries) {
+  _addSessionDataEntry(watcherActorID, browserId, type, entries) {
     
     
     
     const targetActor = this._findTargetActor({
       watcherActorID,
-      context,
+      browserId,
     });
 
     if (!targetActor) {
       throw new Error(
-        `No target actor for this Watcher Actor ID:"${watcherActorID}" / BrowserId:${context.browserId}`
+        `No target actor for this Watcher Actor ID:"${watcherActorID}" / BrowserId:${browserId}`
       );
     }
     return targetActor.addSessionDataEntry(type, entries);
   }
 
-  _removeSessionDataEntry(watcherActorID, context, type, entries) {
+  _removeSessionDataEntry(watcherActorID, browserId, type, entries) {
     
     
     
     const targetActor = this._findTargetActor({
       watcherActorID,
-      context,
+      browserId,
     });
     
     if (targetActor) {
@@ -666,14 +656,14 @@ class DevToolsFrameChild extends JSWindowActorChild {
       
       let allActorsAreDestroyed = true;
       for (const [watcherActorID, sessionData] of sessionDataByWatcherActor) {
-        const { context, isServerTargetSwitchingEnabled } = sessionData;
+        const { browserId, isServerTargetSwitchingEnabled } = sessionData;
 
         
         
         
         const existingTarget = this._findTargetActor({
           watcherActorID,
-          context,
+          browserId,
         });
 
         if (!existingTarget) {

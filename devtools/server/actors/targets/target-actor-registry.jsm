@@ -4,8 +4,6 @@
 
 "use strict";
 
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-
 var EXPORTED_SYMBOLS = ["TargetActorRegistry"];
 
 
@@ -44,30 +42,8 @@ var TargetActorRegistry = {
 
 
 
-
-  getTopLevelTargetActorForContext(context, connectionPrefix) {
-    if (context.type == "all") {
-      if (
-        Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_DEFAULT
-      ) {
-        
-        
-        if (xpcShellTargetActor) {
-          return xpcShellTargetActor;
-        }
-
-        const actors = this.getTargetActors(context, connectionPrefix);
-        
-        return actors[0];
-      }
-      return null;
-    } else if (context.type == "browser-element") {
-      const actors = this.getTargetActors(context, connectionPrefix);
-      return actors.find(actor => {
-        return actor.isTopLevelTarget;
-      });
-    }
-    throw new Error("Unsupported context type: " + context.type);
+  getTargetActor(browserId, connectionPrefix) {
+    return this.getTargetActors(browserId, connectionPrefix)[0] || null;
   },
 
   
@@ -81,18 +57,38 @@ var TargetActorRegistry = {
 
 
 
-  getTargetActors(context, connectionPrefix) {
+  getTargetActors(browserId, connectionPrefix) {
     const actors = [];
     for (const actor of windowGlobalTargetActors) {
-      const isMatchingPrefix = actor.actorID.startsWith(connectionPrefix);
-      const isMatchingContext =
-        (context.type == "all" && actor.typeName === "parentProcessTarget") ||
-        (context.type == "browser-element" &&
-          actor.browserId == context.browserId);
-      if (isMatchingPrefix && isMatchingContext) {
+      if (
+        ((!connectionPrefix || actor.actorID.startsWith(connectionPrefix)) &&
+          actor.browserId == browserId) ||
+        (browserId === null && actor.typeName === "parentProcessTarget")
+      ) {
         actors.push(actor);
       }
     }
     return actors;
+  },
+
+  
+
+
+
+
+  getParentProcessTargetActor() {
+    for (const actor of windowGlobalTargetActors) {
+      if (actor.typeName === "parentProcessTarget") {
+        return actor;
+      }
+    }
+
+    
+    
+    if (xpcShellTargetActor) {
+      return xpcShellTargetActor;
+    }
+
+    return null;
   },
 };

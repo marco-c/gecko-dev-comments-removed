@@ -48,6 +48,8 @@ const { SUPPORTED_DATA } = SessionDataHelpers;
 
 
 
+
+
 const sessionDataByWatcherActor = new Map();
 
 
@@ -111,7 +113,9 @@ const WatcherRegistry = {
       sessionData = {
         
         
-        context: watcher.context,
+        
+        
+        browserId: watcher.browserId,
         
         connectionPrefix: watcher.conn.prefix,
         
@@ -151,10 +155,7 @@ const WatcherRegistry = {
   getWatchersForBrowserId(browserId) {
     const watchers = [];
     for (const watcherActor of watcherActors.values()) {
-      if (
-        watcherActor.context.type == "browser-element" &&
-        watcherActor.context.browserId === browserId
-      ) {
+      if (watcherActor.browserId === browserId) {
         watchers.push(watcherActor);
       }
     }

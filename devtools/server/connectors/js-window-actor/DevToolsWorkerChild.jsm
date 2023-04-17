@@ -119,10 +119,10 @@ class DevToolsWorkerChild extends JSWindowActorChild {
 
     
     for (const [watcherActorID, sessionData] of sessionDataByWatcherActor) {
-      const { targets, connectionPrefix, context } = sessionData;
+      const { targets, connectionPrefix, browserId } = sessionData;
       if (
         targets.includes("worker") &&
-        shouldNotifyWindowGlobal(this.manager, context)
+        shouldNotifyWindowGlobal(this.manager, browserId)
       ) {
         this._watchWorkerTargets({
           watcherActorID,
@@ -144,12 +144,12 @@ class DevToolsWorkerChild extends JSWindowActorChild {
     
     
     if (message.name != "DevToolsWorkerParent:packet") {
-      const { browserId } = message.data.context;
+      const { browserId } = message.data;
       
       
       if (
         this.manager.browsingContext.browserId != browserId &&
-        !shouldNotifyWindowGlobal(this.manager, message.data.context)
+        !shouldNotifyWindowGlobal(this.manager, browserId)
       ) {
         throw new Error(
           "Mismatch between DevToolsWorkerParent and DevToolsWorkerChild  " +
@@ -527,15 +527,12 @@ class DevToolsWorkerChild extends JSWindowActorChild {
 
 
 
-function shouldNotifyWindowGlobal(windowGlobal, context) {
+function shouldNotifyWindowGlobal(windowGlobal, watchedBrowserId) {
   const browsingContext = windowGlobal.browsingContext;
 
   
   
-  if (
-    context.type == "browser-element" &&
-    browsingContext.browserId != context.browserId
-  ) {
+  if (watchedBrowserId && browsingContext.browserId != watchedBrowserId) {
     return false;
   }
 

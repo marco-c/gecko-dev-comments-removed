@@ -103,7 +103,7 @@ const TargetConfigurationActor = ActorClassWithSpec(targetConfigurationSpec, {
   _shouldHandleConfigurationInParentProcess() {
     
     
-    return this.watcherActor.context.type == "browser-element";
+    return this.watcherActor.browserElement;
   },
 
   
@@ -125,8 +125,8 @@ const TargetConfigurationActor = ActorClassWithSpec(targetConfigurationSpec, {
     
     
     if (
-      this.watcherActor.context.type == "browser-element" &&
-      browsingContext.browserId != this.watcherActor.context.browserId
+      this.watcherActor.browserId &&
+      browsingContext.browserId != this.watcherActor.browserId
     ) {
       return;
     }
