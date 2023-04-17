@@ -261,6 +261,9 @@ class nsStandardURL : public nsIFileURL,
   void SanityCheck();
 
   
+  bool IsValid();
+
+  
   nsCString mSpec;
   int32_t mDefaultPort;
   int32_t mPort;
