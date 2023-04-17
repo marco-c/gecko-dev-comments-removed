@@ -784,3 +784,17 @@ async function waitUntilVisitedState(tab, selectors) {
     return hasVisitedState;
   });
 }
+
+
+
+
+
+
+
+function getNumberOfMatchingElementsInContentPage(selector) {
+  return SpecialPowers.spawn(gBrowser.selectedBrowser, [selector], function(
+    innerSelector
+  ) {
+    return content.document.querySelectorAll(innerSelector).length;
+  });
+}
