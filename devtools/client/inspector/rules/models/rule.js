@@ -4,6 +4,7 @@
 
 "use strict";
 
+const promise = require("promise");
 const {
   style: { ELEMENT_STYLE },
 } = require("devtools/shared/constants");
@@ -473,7 +474,8 @@ class Rule {
   applyProperties(modifier) {
     
     
-    const resultPromise = Promise.resolve(this._applyingModifications)
+    const resultPromise = promise
+      .resolve(this._applyingModifications)
       .then(() => {
         const modifications = this.domRule.startModifyingProperties(
           this.cssProperties

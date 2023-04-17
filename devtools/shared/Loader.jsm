@@ -68,6 +68,15 @@ function DevToolsLoader({
   
   
   
+  
+  
+  if (invisibleToDebugger) {
+    paths.promise = "resource://gre/modules/Promise-backend.js";
+  }
+
+  
+  
+  
   const dampTestPath = Services.prefs.getCharPref(
     "devtools.damp.test-path",
     ""
@@ -108,6 +117,13 @@ function DevToolsLoader({
 
   
   const { modules, globals } = this.require("devtools/shared/builtin-modules");
+
+  
+  
+  
+  if (invisibleToDebugger) {
+    delete modules.promise;
+  }
 
   
   for (const id in modules) {

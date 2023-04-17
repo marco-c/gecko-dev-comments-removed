@@ -19,6 +19,7 @@ const HTML_NS = "http://www.w3.org/1999/xhtml";
 const REGEX_4XX_5XX = /^[4,5]\d\d$/;
 
 var { Ci, Cc } = require("chrome");
+var promise = require("promise");
 const { debounce } = require("devtools/shared/debounce");
 const { throttle } = require("devtools/shared/throttle");
 const { safeAsyncMethod } = require("devtools/shared/async-utils");
@@ -908,7 +909,7 @@ Toolbox.prototype = {
 
       
       
-      let splitConsolePromise = Promise.resolve();
+      let splitConsolePromise = promise.resolve();
       if (Services.prefs.getBoolPref(SPLITCONSOLE_ENABLED_PREF)) {
         splitConsolePromise = this.openSplitConsole();
         this.telemetry.addEventProperty(
@@ -930,7 +931,7 @@ Toolbox.prototype = {
         );
       }
 
-      await Promise.all([
+      await promise.all([
         splitConsolePromise,
         framesPromise,
         onResourcesWatched,
@@ -2541,7 +2542,7 @@ Toolbox.prototype = {
         }
 
         
-        Promise.resolve(built).then(panel => {
+        promise.resolve(built).then(panel => {
           this._toolPanels.set(id, panel);
 
           
@@ -2682,12 +2683,12 @@ Toolbox.prototype = {
         this.focusTool(id);
 
         
-        return Promise.resolve(panel);
+        return promise.resolve(panel);
       }
       
       
       return this.once("select").then(() =>
-        Promise.resolve(this._toolPanels.get(id))
+        promise.resolve(this._toolPanels.get(id))
       );
     }
 
@@ -2905,7 +2906,7 @@ Toolbox.prototype = {
     if (this._lastFocusedElement) {
       this._lastFocusedElement.focus();
     }
-    return Promise.resolve();
+    return promise.resolve();
   },
 
   
@@ -2922,7 +2923,7 @@ Toolbox.prototype = {
         : this.openSplitConsole();
     }
 
-    return Promise.resolve();
+    return promise.resolve();
   },
 
   
@@ -3150,7 +3151,7 @@ Toolbox.prototype = {
     if (!this.target.getTrait("frames")) {
       
       
-      return Promise.resolve();
+      return promise.resolve();
     }
 
     try {

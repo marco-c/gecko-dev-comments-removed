@@ -4,6 +4,7 @@
 
 "use strict";
 
+const promise = require("promise");
 const { KeyCodes } = require("devtools/client/shared/keycodes");
 
 const EventEmitter = require("devtools/shared/event-emitter");
@@ -42,6 +43,10 @@ function InspectorSearch(inspector, input, clearBtn) {
   this.searchBox.addEventListener("keydown", this._onKeyDown, true);
   this.searchBox.addEventListener("input", this._onInput, true);
   this.searchClearButton.addEventListener("click", this._onClearSearch);
+
+  
+  
+  this._lastQuery = promise.resolve(null);
 
   this.autocompleter = new SelectorAutocompleter(inspector, input);
   EventEmitter.decorate(this);
@@ -172,6 +177,9 @@ function SelectorAutocompleter(inspector, inputNode) {
   this.searchBox.addEventListener("keypress", this._onSearchKeypress, true);
   this.inspector.on("markupmutation", this._onMarkupMutation);
 
+  
+  
+  this._lastQuery = promise.resolve(null);
   EventEmitter.decorate(this);
 }
 
@@ -335,7 +343,7 @@ SelectorAutocompleter.prototype = {
           
           
           
-          this.emitForTests("processing-done");
+          this.emit("processing-done");
           return;
         }
         break;
@@ -358,7 +366,7 @@ SelectorAutocompleter.prototype = {
         if (popup.isOpen) {
           this.hidePopup();
         } else {
-          this.emitForTests("processing-done");
+          this.emit("processing-done");
           return;
         }
         break;
@@ -369,7 +377,7 @@ SelectorAutocompleter.prototype = {
 
     event.preventDefault();
     event.stopPropagation();
-    this.emitForTests("processing-done");
+    this.emit("processing-done");
   },
 
   
@@ -474,8 +482,6 @@ SelectorAutocompleter.prototype = {
 
   showSuggestions: async function() {
     let query = this.searchBox.value;
-    const originalQuery = this.searchBox.value;
-
     const state = this.state;
     let firstPart = "";
 
@@ -484,7 +490,6 @@ SelectorAutocompleter.prototype = {
       
       
       this.hidePopup();
-      this.emitForTests("processing-done", { query: originalQuery });
       return;
     }
 
@@ -508,27 +513,26 @@ SelectorAutocompleter.prototype = {
       query += "*";
     }
 
-    let suggestions = await this.inspector.commands.inspectorCommand.getSuggestionsForQuery(
-      query,
-      firstPart,
-      state
-    );
+    this._lastQuery = this.inspector.commands.inspectorCommand
+      .getSuggestionsForQuery(query, firstPart, state)
+      .then(suggestions => {
+        this.emit("processing-done");
 
-    if (state === this.States.CLASS) {
-      firstPart = "." + firstPart;
-    } else if (state === this.States.ID) {
-      firstPart = "#" + firstPart;
-    }
+        if (state === this.States.CLASS) {
+          firstPart = "." + firstPart;
+        } else if (state === this.States.ID) {
+          firstPart = "#" + firstPart;
+        }
 
-    
-    
-    if (suggestions.length === 1 && suggestions[0][0] === firstPart) {
-      suggestions = [];
-    }
+        
+        
+        if (suggestions.length === 1 && suggestions[0][0] === firstPart) {
+          suggestions = [];
+        }
 
-    
-    
-    await this._showPopup(suggestions, state);
-    this.emitForTests("processing-done", { query: originalQuery });
+        
+        
+        return this._showPopup(suggestions, state);
+      });
   },
 };

@@ -14,20 +14,12 @@ add_task(async function() {
   await focusSearchBoxUsingShortcut(inspector.panelWin);
 
   info("Enter body > p to search");
-  const searchText = "body > p";
-  
-  const processingDone = new Promise(resolve => {
-    const off = inspector.searchSuggestions.on("processing-done", data => {
-      if (data.query == searchText) {
-        resolve();
-        off();
-      }
-    });
-  });
-  EventUtils.sendString(searchText, inspector.panelWin);
+  const processingDone = once(inspector.searchSuggestions, "processing-done");
+  EventUtils.sendString("body > p", inspector.panelWin);
+  await processingDone;
 
   info("Wait for search query to complete");
-  await processingDone;
+  await inspector.searchSuggestions._lastQuery;
 
   let msg = "Press enter and expect a new selection";
   await sendKeyAndCheck(inspector, msg, "VK_RETURN", {}, "#p1");
