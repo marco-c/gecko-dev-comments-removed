@@ -4,7 +4,7 @@
 
 config = {
     "stage_platform": "android-geckoview-docs",
-    "src_mozconfig": "mobile/android/config/mozconfigs/android-api-16/nightly-android-lints",
+    "src_mozconfig": "mobile/android/config/mozconfigs/android-arm/nightly-android-lints",
     
     "disable_package_metrics": True,
     "postflight_build_mach_commands": [
