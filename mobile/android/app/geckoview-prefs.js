@@ -46,6 +46,12 @@ pref("dom.push.enabled", true);
 pref("dom.storageManager.enabled", true);
 
 
+
+
+
+pref("dom.storage.next_gen", true);
+
+
 pref("dom.visualviewport.enabled", true);
 
 
