@@ -44,6 +44,7 @@ enum class SurfaceType : int8_t {
   DATA_ALIGNED,           
   DATA_SHARED_WRAPPER,    
   BLOB_IMAGE,             
+  DATA_MAPPED,            
 };
 
 enum class SurfaceFormat : int8_t {
