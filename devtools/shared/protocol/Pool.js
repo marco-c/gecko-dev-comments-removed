@@ -30,6 +30,10 @@ class Pool extends EventEmitter {
       this.conn = conn;
     }
     this.label = label;
+
+    
+    
+    this._isDestroyed = false;
   }
 
   __poolMap = null;
@@ -145,6 +149,13 @@ class Pool extends EventEmitter {
       }
       yield actor;
     }
+  }
+
+  isDestroyed() {
+    
+    
+    
+    return this._isDestroyed;
   }
 
   
