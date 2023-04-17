@@ -1,20 +1,20 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ *
+ * Copyright 2015 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include "wasm/WasmOpIter.h"
 
@@ -257,7 +257,7 @@ OpKind wasm::Classify(OpBytes op) {
       return OpKind::CallIndirect;
     case Op::Return:
     case Op::Limit:
-      
+      // Accept Limit, for use in decoding the end of a function after the body.
       return OpKind::Return;
     case Op::If:
       return OpKind::If;
@@ -300,7 +300,7 @@ OpKind wasm::Classify(OpBytes op) {
     case Op::GcPrefix: {
       switch (GcOp(op.b1)) {
         case GcOp::Limit:
-          
+          // Reject Limit for GcPrefix encoding
           break;
         case GcOp::StructNewWithRtt:
           WASM_GC_OP(OpKind::StructNewWithRtt);
@@ -340,7 +340,7 @@ OpKind wasm::Classify(OpBytes op) {
     case Op::SimdPrefix: {
       switch (SimdOp(op.b1)) {
         case SimdOp::Limit:
-          
+          // Reject Limit for SimdPrefix encoding
           break;
         case SimdOp::I8x16ExtractLaneS:
         case SimdOp::I8x16ExtractLaneU:
@@ -591,6 +591,11 @@ OpKind wasm::Classify(OpBytes op) {
         case SimdOp::V128Store32Lane:
         case SimdOp::V128Store64Lane:
           WASM_SIMD_OP(OpKind::StoreLane);
+        case SimdOp::F32x4RelaxedFma:
+        case SimdOp::F32x4RelaxedFms:
+        case SimdOp::F64x2RelaxedFma:
+        case SimdOp::F64x2RelaxedFms:
+          WASM_SIMD_OP(OpKind::Ternary);
 #  ifdef ENABLE_WASM_SIMD_WORMHOLE
         case SimdOp::MozWHSELFTEST:
         case SimdOp::MozWHPMADDUBSW:
@@ -603,7 +608,7 @@ OpKind wasm::Classify(OpBytes op) {
     case Op::MiscPrefix: {
       switch (MiscOp(op.b1)) {
         case MiscOp::Limit:
-          
+          // Reject Limit for MiscPrefix encoding
           break;
         case MiscOp::I32TruncSSatF32:
         case MiscOp::I32TruncUSatF32:
@@ -637,7 +642,7 @@ OpKind wasm::Classify(OpBytes op) {
     case Op::ThreadPrefix: {
       switch (ThreadOp(op.b1)) {
         case ThreadOp::Limit:
-          
+          // Reject Limit for ThreadPrefix encoding
           break;
         case ThreadOp::Wake:
           return OpKind::Wake;
@@ -721,7 +726,7 @@ OpKind wasm::Classify(OpBytes op) {
     case Op::MozPrefix: {
       switch (MozOp(op.b1)) {
         case MozOp::Limit:
-          
+          // Reject Limit for the MozPrefix encoding
           break;
         case MozOp::TeeGlobal:
           return OpKind::TeeGlobal;
