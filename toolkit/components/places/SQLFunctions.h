@@ -524,6 +524,29 @@ class IsFrecencyDecayingFunction final : public mozIStorageFunction {
 
 
 
+class SqrtFunction final : public mozIStorageFunction {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_MOZISTORAGEFUNCTION
+
+  
+
+
+
+
+
+  static nsresult create(mozIStorageConnection* aDBConn);
+
+ private:
+  ~SqrtFunction() = default;
+};
+
+
+
+
+
+
+
 
 
 class NoteSyncChangeFunction final : public mozIStorageFunction {

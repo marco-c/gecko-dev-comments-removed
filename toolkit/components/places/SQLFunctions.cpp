@@ -1132,6 +1132,39 @@ IsFrecencyDecayingFunction::OnFunctionCall(mozIStorageValueArray* aArgs,
 
 
 
+nsresult SqrtFunction::create(mozIStorageConnection* aDBConn) {
+  RefPtr<SqrtFunction> function = new SqrtFunction();
+  nsresult rv = aDBConn->CreateFunction("sqrt"_ns, 1, function);
+  NS_ENSURE_SUCCESS(rv, rv);
+  return NS_OK;
+}
+
+NS_IMPL_ISUPPORTS(SqrtFunction, mozIStorageFunction)
+
+NS_IMETHODIMP
+SqrtFunction::OnFunctionCall(mozIStorageValueArray* aArgs,
+                             nsIVariant** _result) {
+  MOZ_ASSERT(aArgs);
+
+  uint32_t numArgs;
+  nsresult rv = aArgs->GetNumEntries(&numArgs);
+  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_ASSERT(numArgs == 1);
+
+  double value = aArgs->AsDouble(0);
+
+  RefPtr<nsVariant> result = new nsVariant();
+  rv = result->SetAsDouble(sqrt(value));
+  NS_ENSURE_SUCCESS(rv, rv);
+  result.forget(_result);
+
+  return NS_OK;
+}
+
+
+
+
+
 nsresult NoteSyncChangeFunction::create(mozIStorageConnection* aDBConn) {
   RefPtr<NoteSyncChangeFunction> function = new NoteSyncChangeFunction();
   nsresult rv = aDBConn->CreateFunction("note_sync_change"_ns, 0, function);
