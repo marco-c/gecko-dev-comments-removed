@@ -7,6 +7,7 @@ use std::fmt;
 
 
 
+#[macro_export]
 macro_rules! error_here {
     ($error_type:expr) => {
         Error::new($error_type, file!(), line!(), None)

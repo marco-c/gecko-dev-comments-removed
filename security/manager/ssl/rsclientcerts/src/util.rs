@@ -6,6 +6,7 @@
 use byteorder::{BigEndian, NativeEndian, ReadBytesExt, WriteBytesExt};
 use std::convert::TryInto;
 
+use crate::error_here;
 use crate::error::{Error, ErrorType};
 
 
@@ -13,6 +14,7 @@ use crate::error::{Error, ErrorType};
 
 
 
+#[macro_export]
 macro_rules! unsafe_packed_field_access {
     ($e:expr) => {{
         #[allow(unused_unsafe)]
