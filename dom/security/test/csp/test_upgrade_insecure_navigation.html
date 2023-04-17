@@ -2,7 +2,7 @@
 <html>
 <head>
   <title>Bug 1271173 - Missing spec on Upgrade Insecure Requests(Navigational Upgrades) </title>
-  
+  <!-- Including SimpleTest.js so we can use waitForExplicitFinish !-->
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
   <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
 </head>
@@ -94,9 +94,11 @@ function loadNextTest() {
   document.getElementById("testframe").src = src;
   document.getElementById("sandboxedtestframe").src = src;
 }
-
+// Don't upgrade to https to test that upgrade-insecure-requests acts correctly
 // start running the tests
-loadNextTest();
+SpecialPowers.pushPrefEnv({
+  set: [["dom.security.https_first", false]]
+}, loadNextTest);
 
 </script>
 </body>
