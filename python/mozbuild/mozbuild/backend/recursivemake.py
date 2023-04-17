@@ -995,7 +995,7 @@ class RecursiveMakeBackend(MakeBackend):
                     
                     
                     
-                    for t in ("XPI_PKGNAME", "INSTALL_EXTENSION_ID", "tools"):
+                    for t in ("XPI_PKGNAME", "tools"):
                         if t not in content:
                             continue
                         if t == "tools" and not re.search(
