@@ -18,6 +18,7 @@
 #include "Role.h"
 #include "States.h"
 #include "TextAttrs.h"
+#include "TextLeafRange.h"
 #include "TextRange.h"
 #include "TreeWalker.h"
 
@@ -41,6 +42,7 @@
 #include "mozilla/HTMLEditor.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/StaticPrefs_accessibility.h"
 #include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/HTMLBRElement.h"
@@ -1048,6 +1050,52 @@ void HyperTextAccessible::TextAtOffset(int32_t aOffset,
   if (adjustedOffset == std::numeric_limits<uint32_t>::max()) {
     NS_ERROR("Wrong given offset!");
     return;
+  }
+
+  if (StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+    
+    
+    
+    switch (aBoundaryType) {
+      case nsIAccessibleText::BOUNDARY_WORD_START:
+      case nsIAccessibleText::BOUNDARY_LINE_START:
+        TextLeafPoint origStart =
+            ToTextLeafPoint(static_cast<int32_t>(adjustedOffset));
+        TextLeafPoint end;
+        LocalAccessible* childAcc = GetChildAtOffset(adjustedOffset);
+        if (childAcc && childAcc->IsHyperText()) {
+          
+          
+          
+          
+          
+          
+          
+          end = ToTextLeafPoint(static_cast<int32_t>(adjustedOffset),
+                                 true);
+        } else {
+          end = origStart;
+        }
+        TextLeafPoint start = origStart.FindBoundary(
+            aBoundaryType, eDirPrevious,  true);
+        *aStartOffset = static_cast<int32_t>(
+            TransformOffset(start.mAcc->AsLocal(), start.mOffset,
+                             false));
+        if (*aStartOffset == static_cast<int32_t>(CharacterCount()) &&
+            (*aStartOffset > static_cast<int32_t>(adjustedOffset) ||
+             start != origStart)) {
+          
+          
+          
+          *aStartOffset = 0;
+        }
+        end = end.FindBoundary(aBoundaryType, eDirNext);
+        *aEndOffset = static_cast<int32_t>(
+            TransformOffset(end.mAcc->AsLocal(), end.mOffset,
+                             true));
+        TextSubstring(*aStartOffset, *aEndOffset, aText);
+        return;
+    }
   }
 
   switch (aBoundaryType) {
@@ -2084,6 +2132,24 @@ void HyperTextAccessible::RangeAtPoint(int32_t aX, int32_t aY,
     int32_t offset = ht->GetChildOffset(child);
     aRange.Set(mDoc, ht, offset, ht, offset);
   }
+}
+
+TextLeafPoint HyperTextAccessible::ToTextLeafPoint(int32_t aOffset,
+                                                   bool aDescendToEnd) {
+  if (!HasChildren()) {
+    return TextLeafPoint(this, 0);
+  }
+  LocalAccessible* child = GetChildAtOffset(aOffset);
+  if (!child) {
+    return TextLeafPoint();
+  }
+  if (HyperTextAccessible* childHt = child->AsHyperText()) {
+    return childHt->ToTextLeafPoint(
+        aDescendToEnd ? static_cast<int32_t>(childHt->CharacterCount()) : 0,
+        aDescendToEnd);
+  }
+  int32_t offset = aOffset - GetChildOffset(child);
+  return TextLeafPoint(child, offset);
 }
 
 

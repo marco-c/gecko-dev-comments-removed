@@ -27,6 +27,7 @@ class Selection;
 
 namespace a11y {
 
+class TextLeafPoint;
 class TextRange;
 
 struct DOMPoint {
@@ -383,6 +384,14 @@ class HyperTextAccessible : public AccessibleWrap {
 
 
   void RangeAtPoint(int32_t aX, int32_t aY, TextRange& aRange) const;
+
+  
+
+
+
+
+
+  TextLeafPoint ToTextLeafPoint(int32_t aOffset, bool aDescendToEnd = false);
 
   
   
