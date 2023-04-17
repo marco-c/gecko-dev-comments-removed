@@ -101,7 +101,7 @@ void js::GCParallelTask::joinRunningOrFinishedTask(
 
   
   while (!isFinished(lock)) {
-    HelperThreadState().wait(lock, GlobalHelperThreadState::CONSUMER);
+    HelperThreadState().wait(lock);
   }
 
   setIdle(lock);
