@@ -1203,6 +1203,86 @@ class MinidumpMacCrashInfo : public MinidumpStream {
 };
 
 
+class MinidumpThreadName : public MinidumpObject {
+ public:
+  ~MinidumpThreadName() override;
+
+  const MDRawThreadName* thread_name() const {
+    if (valid_) {
+      return &thread_name_;
+    }
+
+    return NULL;
+  }
+
+  uint32_t thread_id() const {
+    if (valid_) {
+      return thread_name_.thread_id;
+    }
+
+    return 0;
+  }
+
+  string name() const;
+
+  
+  void Print();
+
+ protected:
+  explicit MinidumpThreadName(Minidump* minidump);
+
+ private:
+  
+  friend class MinidumpThreadNamesList;
+
+  
+  
+  bool Read(uint32_t expected_size);
+
+  
+  
+  bool ReadAuxiliaryData();
+
+  bool valid_;
+  MDRawThreadName thread_name_;
+  const string* name_;
+};
+
+
+
+
+class MinidumpThreadNamesList : public MinidumpStream {
+ public:
+  ~MinidumpThreadNamesList() override;
+
+  unsigned int name_count() const {
+    return valid_ ? name_count_ : 0;
+  }
+
+  const string GetNameForThreadId(uint32_t thread_id) const;
+
+  
+  void Print();
+
+ protected:
+  explicit MinidumpThreadNamesList(Minidump* minidump_);
+
+ private:
+  friend class Minidump;
+
+  typedef vector<MinidumpThreadName> MinidumpThreadNames;
+
+  static const uint32_t kStreamType = MD_THREAD_NAMES_STREAM;
+
+  bool Read(uint32_t expected_size_) override;
+
+  MinidumpThreadNames* thread_names_;
+  uint32_t name_count_;
+  bool valid_;
+
+  DISALLOW_COPY_AND_ASSIGN(MinidumpThreadNamesList);
+};
+
 
 
 class Minidump {
@@ -1266,6 +1346,7 @@ class Minidump {
   virtual MinidumpMemoryInfoList* GetMemoryInfoList();
   MinidumpCrashpadInfo* GetCrashpadInfo();
   MinidumpMacCrashInfo* GetMacCrashInfo();
+  MinidumpThreadNamesList* GetThreadNamesList();
 
   
   virtual MinidumpLinuxMapsList *GetLinuxMapsList();
