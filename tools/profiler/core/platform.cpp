@@ -2252,7 +2252,7 @@ static void DoNativeBacktrace(
 
 
 static inline void DoSharedSample(
-    PSLockRef aLock, bool aIsSynchronous,
+    PSLockRef aLock, bool aIsSynchronous, uint32_t aFeatures,
     const ThreadRegistration::UnlockedReaderAndAtomicRWOnThread& aThreadData,
     const Registers& aRegs, uint64_t aSamplePos, uint64_t aBufferRangeStart,
     ProfileBuffer& aBuffer,
@@ -2268,7 +2268,7 @@ static inline void DoSharedSample(
   JsFrameBuffer& jsFrames = CorePS::JsFrames(aLock);
   StackWalkControl* stackWalkControlIfSupported = nullptr;
 #if defined(HAVE_NATIVE_UNWIND)
-  const bool captureNative = ActivePS::FeatureStackWalk(aLock) &&
+  const bool captureNative = ProfilerFeature::HasStackWalk(aFeatures) &&
                              aCaptureOptions == StackCaptureOptions::Full;
   StackWalkControl stackWalkControl;
   if constexpr (StackWalkControl::scIsSupported) {
@@ -2286,16 +2286,16 @@ static inline void DoSharedSample(
     DoNativeBacktrace(aThreadData, aRegs, nativeStack,
                       stackWalkControlIfSupported);
 
-    MergeStacks(ActivePS::Features(aLock), aIsSynchronous, aThreadData, aRegs,
-                nativeStack, collector, jsFrames, jsFramesCount);
+    MergeStacks(aFeatures, aIsSynchronous, aThreadData, aRegs, nativeStack,
+                collector, jsFrames, jsFramesCount);
   } else
 #endif
   {
-    MergeStacks(ActivePS::Features(aLock), aIsSynchronous, aThreadData, aRegs,
-                nativeStack, collector, jsFrames, jsFramesCount);
+    MergeStacks(aFeatures, aIsSynchronous, aThreadData, aRegs, nativeStack,
+                collector, jsFrames, jsFramesCount);
 
     
-    if (ActivePS::FeatureLeaf(aLock) &&
+    if (ProfilerFeature::HasLeaf(aFeatures) &&
         aCaptureOptions == StackCaptureOptions::Full) {
       aBuffer.AddEntry(ProfileBufferEntry::NativeLeafAddr((void*)aRegs.mPC));
     }
@@ -2304,7 +2304,7 @@ static inline void DoSharedSample(
 
 
 static void DoSyncSample(
-    PSLockRef aLock,
+    PSLockRef aLock, uint32_t aFeatures,
     const ThreadRegistration::UnlockedReaderAndAtomicRWOnThread& aThreadData,
     const TimeStamp& aNow, const Registers& aRegs, ProfileBuffer& aBuffer,
     StackCaptureOptions aCaptureOptions) {
@@ -2321,8 +2321,8 @@ static void DoSyncSample(
   TimeDuration delta = aNow - CorePS::ProcessStartTime();
   aBuffer.AddEntry(ProfileBufferEntry::Time(delta.ToMilliseconds()));
 
-  DoSharedSample(aLock,  true, aThreadData, aRegs,
-                 samplePos, bufferRangeStart, aBuffer, aCaptureOptions);
+  DoSharedSample(aLock,  true, aFeatures, aThreadData,
+                 aRegs, samplePos, bufferRangeStart, aBuffer, aCaptureOptions);
 }
 
 
@@ -2335,8 +2335,8 @@ static inline void DoPeriodicSample(
     ProfileBuffer& aBuffer) {
   
 
-  DoSharedSample(aLock,  false, aThreadData, aRegs,
-                 aSamplePos, aBufferRangeStart, aBuffer);
+  DoSharedSample(aLock,  false, ActivePS::Features(aLock),
+                 aThreadData, aRegs, aSamplePos, aBufferRangeStart, aBuffer);
 }
 
 
@@ -5507,6 +5507,12 @@ bool profiler_capture_backtrace_into(ProfileChunkedBuffer& aChunkedBuffer,
 
   return ThreadRegistration::WithOnThreadRefOr(
       [&](ThreadRegistration::OnThreadRef aOnThreadRef) {
+        mozilla::Maybe<uint32_t> maybeFeatures =
+            RacyFeatures::FeaturesIfActiveAndUnpaused();
+        if (!maybeFeatures) {
+          return false;
+        }
+
         ProfileBuffer profileBuffer(aChunkedBuffer);
 
         Registers regs;
@@ -5516,7 +5522,8 @@ bool profiler_capture_backtrace_into(ProfileChunkedBuffer& aChunkedBuffer,
         regs.Clear();
 #endif
 
-        DoSyncSample(lock, aOnThreadRef.UnlockedReaderAndAtomicRWOnThreadCRef(),
+        DoSyncSample(lock, *maybeFeatures,
+                     aOnThreadRef.UnlockedReaderAndAtomicRWOnThreadCRef(),
                      TimeStamp::Now(), regs, profileBuffer, aCaptureOptions);
 
         return true;
