@@ -28,10 +28,11 @@ function test_ntp_theme(browser, theme, isBrightText) {
       {
         isBrightText,
         background: hexToCSS(theme.colors.ntp_background),
+        card_background: hexToCSS(theme.colors.ntp_card_background),
         color: hexToCSS(theme.colors.ntp_text),
       },
     ],
-    function({ isBrightText, background, color }) {
+    function({ isBrightText, background, card_background, color }) {
       let doc = content.document;
       ok(
         doc.body.hasAttribute("lwt-newtab"),
@@ -49,6 +50,12 @@ function test_ntp_theme(browser, theme, isBrightText) {
         content.getComputedStyle(doc.body).backgroundColor,
         background,
         "New tab page background should be set."
+      );
+      is(
+        content.getComputedStyle(doc.querySelector(".top-site-outer .tile"))
+          .backgroundColor,
+        card_background,
+        "New tab page card background should be set."
       );
       is(
         content.getComputedStyle(doc.querySelector(".outer-wrapper")).color,
@@ -146,6 +153,7 @@ add_task(async function test_per_window_ntp_theme() {
           frame: "#add8e6",
           tab_background_text: "#000",
           ntp_background: "#add8e6",
+          ntp_card_background: "#ff0000",
           ntp_text: "#000",
         },
       };
@@ -155,11 +163,15 @@ add_task(async function test_per_window_ntp_theme() {
           frame: "#00008b",
           tab_background_text: "#add8e6",
           ntp_background: "#00008b",
+          ntp_card_background: "#00ff00",
           ntp_text: "#add8e6",
         },
       };
 
       let { id: winId } = await browser.windows.getCurrent();
+      
+      
+      
       
       
       
