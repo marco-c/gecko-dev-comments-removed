@@ -2933,12 +2933,6 @@ class nsContentUtils {
   
 
 
-  static bool IsThirdPartyWindowOrChannel(nsPIDOMWindowInner* aWindow,
-                                          nsIChannel* aChannel, nsIURI* aURI);
-
-  
-
-
 
   static bool IsThirdPartyTrackingResourceWindow(nsPIDOMWindowInner* aWindow);
 

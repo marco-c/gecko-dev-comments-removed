@@ -7189,7 +7189,7 @@ void nsGlobalWindowOuter::MaybeAllowStorageForOpenedWindow(nsIURI* aURI) {
   }
 
   
-  if (!nsContentUtils::IsThirdPartyWindowOrChannel(inner, nullptr, aURI)) {
+  if (!AntiTrackingUtils::IsThirdPartyWindow(inner, aURI)) {
     return;
   }
 
