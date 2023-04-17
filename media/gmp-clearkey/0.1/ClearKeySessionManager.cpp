@@ -133,7 +133,6 @@ void ClearKeySessionManager::CreateSession(uint32_t aPromiseId,
   }
 
   mSessions[sessionId] = session;
-  mLastSessionId = sessionId;
 
   const vector<KeyId>& sessionKeys = session->GetKeyIds();
   vector<KeyId> neededKeys;
@@ -239,7 +238,6 @@ void ClearKeySessionManager::PersistentSessionDataLoaded(
       new ClearKeySession(aSessionId, SessionType::kPersistentLicense);
 
   mSessions[aSessionId] = session;
-  mLastSessionId = aSessionId;
 
   uint32_t numKeys = aKeyDataSize / (2 * CENC_KEY_LEN);
 
@@ -573,7 +571,6 @@ void ClearKeySessionManager::DecryptingComplete() {
     delete it->second;
   }
   mSessions.clear();
-  mLastSessionId = std::nullopt;
 
   mDecryptionManager = nullptr;
   mHost = nullptr;
@@ -589,125 +586,4 @@ bool ClearKeySessionManager::MaybeDeferTillInitialized(
 
   mDeferredInitialize.emplace(move(aMaybeDefer));
   return true;
-}
-
-void ClearKeySessionManager::OnQueryOutputProtectionStatus(
-    QueryResult aResult, uint32_t aLinkMask, uint32_t aOutputProtectionMask) {
-  MOZ_ASSERT(mHasOutstandingOutputProtectionQuery,
-             "Should only be called if a query is outstanding");
-  CK_LOGD("ClearKeySessionManager::OnQueryOutputProtectionStatus");
-  mHasOutstandingOutputProtectionQuery = false;
-
-  if (aResult == QueryResult::kQueryFailed) {
-    
-    NotifyOutputProtectionStatus(KeyStatus::kInternalError);
-    return;
-  }
-
-  if (aLinkMask & OutputLinkTypes::kLinkTypeNetwork) {
-    NotifyOutputProtectionStatus(KeyStatus::kOutputRestricted);
-    return;
-  }
-
-  NotifyOutputProtectionStatus(KeyStatus::kUsable);
-}
-
-void ClearKeySessionManager::QueryOutputProtectionStatusIfNeeded() {
-  MOZ_ASSERT(
-      mHost,
-      "Should not query protection status if we're shutdown (mHost == null)!");
-  CK_LOGD(
-      "ClearKeySessionManager::UpdateOutputProtectionStatusAndQueryIfNeeded");
-  if (mLastOutputProtectionQueryTime.IsNull()) {
-    
-    MOZ_ASSERT(
-        !mHasOutstandingOutputProtectionQuery,
-        "Shouldn't have an outstanding query if we haven't recorded a time");
-    QueryOutputProtectionStatusFromHost();
-    return;
-  }
-
-  MOZ_ASSERT(!mLastOutputProtectionQueryTime.IsNull(),
-             "Should have already handled the case where we don't yet have a "
-             "previous check time");
-  const mozilla::TimeStamp now = mozilla::TimeStamp::NowLoRes();
-  const mozilla::TimeDuration timeSinceQuery =
-      now - mLastOutputProtectionQueryTime;
-
-  
-  
-  
-  static const mozilla::TimeDuration kOutputProtectionQueryInterval =
-      mozilla::TimeDuration::FromSeconds(0.2);
-  
-  
-  
-  
-  constexpr uint32_t kMissedIntervalsBeforeFailure = 2;
-  
-  
-  static const mozilla::TimeDuration kTimeToWaitBeforeFailure =
-      kOutputProtectionQueryInterval * kMissedIntervalsBeforeFailure;
-
-  if ((timeSinceQuery > kOutputProtectionQueryInterval) &&
-      !mHasOutstandingOutputProtectionQuery) {
-    
-    
-    QueryOutputProtectionStatusFromHost();
-    return;
-  }
-
-  if ((timeSinceQuery > kTimeToWaitBeforeFailure) &&
-      mHasOutstandingOutputProtectionQuery) {
-    
-    NotifyOutputProtectionStatus(KeyStatus::kInternalError);
-  }
-}
-
-void ClearKeySessionManager::QueryOutputProtectionStatusFromHost() {
-  MOZ_ASSERT(
-      mHost,
-      "Should not query protection status if we're shutdown (mHost == null)!");
-  CK_LOGD("ClearKeySessionManager::QueryOutputProtectionStatusFromHost");
-  if (mHost) {
-    mLastOutputProtectionQueryTime = mozilla::TimeStamp::NowLoRes();
-    mHost->QueryOutputProtectionStatus();
-    mHasOutstandingOutputProtectionQuery = true;
-  }
-}
-
-void ClearKeySessionManager::NotifyOutputProtectionStatus(KeyStatus aStatus) {
-  MOZ_ASSERT(aStatus == KeyStatus::kUsable ||
-                 aStatus == KeyStatus::kOutputRestricted ||
-                 aStatus == KeyStatus::kInternalError,
-             "aStatus should have an expected value");
-  CK_LOGD("ClearKeySessionManager::NotifyOutputProtectionStatus");
-  if (!mLastSessionId.has_value()) {
-    
-    
-    return;
-  }
-
-  string& lastSessionId = mLastSessionId.value();
-
-  
-  
-  const uint8_t kKeyId[] = {'o', 'u', 't', 'p', 'u', 't', '-', 'p', 'r',
-                            'o', 't', 'e', 'c', 't', 'i', 'o', 'n'};
-  KeyInformation keyInfo = {};
-  keyInfo.key_id = kKeyId;
-  keyInfo.key_id_size = std::size(kKeyId);
-  keyInfo.status = aStatus;
-
-  vector<KeyInformation> keyInfos;
-  keyInfos.push_back(keyInfo);
-
-  
-  
-  
-  
-  bool hasAdditionalUseableKey = false;
-  mHost->OnSessionKeysChange(lastSessionId.c_str(), lastSessionId.size(),
-                             hasAdditionalUseableKey, keyInfos.data(),
-                             keyInfos.size());
 }
