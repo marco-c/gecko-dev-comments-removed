@@ -35,7 +35,6 @@ class AnimationState {
         mHasRequestedDecode(false),
         mIsCurrentlyDecoded(false),
         mCompositedFrameInvalid(false),
-        mCompositedFrameRequested(false),
         mDiscarded(false) {}
 
   
@@ -239,10 +238,6 @@ class AnimationState {
   
   
   bool mCompositedFrameInvalid;
-
-  
-  
-  bool mCompositedFrameRequested;
 
   
   
