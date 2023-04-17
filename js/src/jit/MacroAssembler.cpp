@@ -2760,7 +2760,7 @@ void MacroAssembler::PopRegsInMask(LiveGeneralRegisterSet set) {
   PopRegsInMask(LiveRegisterSet(set.set(), FloatRegisterSet()));
 }
 
-void MacroAssembler::Push(JS::PropertyKey key, Register scratchReg) {
+void MacroAssembler::Push(PropertyKey key, Register scratchReg) {
   if (key.isGCThing()) {
     
     
@@ -2785,7 +2785,7 @@ void MacroAssembler::Push(JS::PropertyKey key, Register scratchReg) {
   }
 }
 
-void MacroAssembler::movePropertyKey(JS::PropertyKey key, Register dest) {
+void MacroAssembler::movePropertyKey(PropertyKey key, Register dest) {
   if (key.isGCThing()) {
     
     if (key.isString()) {
