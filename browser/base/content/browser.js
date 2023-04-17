@@ -1132,12 +1132,6 @@ var gPopupBlockerObserver = {
       blockedPopupAllowSite.hidden = true;
     }
 
-    if (PrivateBrowsingUtils.isWindowPrivate(window)) {
-      blockedPopupAllowSite.setAttribute("disabled", "true");
-    } else {
-      blockedPopupAllowSite.removeAttribute("disabled");
-    }
-
     let blockedPopupDontShowMessage = document.getElementById(
       "blockedPopupDontShowMessage"
     );
