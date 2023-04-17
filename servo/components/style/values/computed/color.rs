@@ -11,6 +11,8 @@ use cssparser::{Color as CSSParserColor, RGBA};
 use std::fmt;
 use style_traits::{CssWriter, ToCss};
 
+pub use crate::values::specified::color::ColorScheme;
+
 
 pub type ColorPropertyValue = RGBA;
 

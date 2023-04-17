@@ -1377,6 +1377,9 @@ impl LonghandId {
             LonghandId::FontFamily |
 
             
+            LonghandId::ColorScheme |
+
+            
             
             LonghandId::WritingMode |
             LonghandId::Direction

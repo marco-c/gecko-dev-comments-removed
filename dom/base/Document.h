@@ -2169,6 +2169,14 @@ class Document : public nsINode,
 
 
 
+  uint8_t GetColorSchemeBits() const { return mColorSchemeBits; }
+
+  
+
+
+
+
+
   bool IsHTMLDocument() const { return mType == eHTML; }
   bool IsHTMLOrXHTML() const { return mType == eHTML || mType == eXHTML; }
   bool IsXMLDocument() const { return !IsHTMLDocument(); }
@@ -4758,6 +4766,11 @@ class Document : public nsINode,
   uint8_t mPendingFullscreenRequests;
 
   uint8_t mXMLDeclarationBits;
+
+  
+  
+  
+  uint8_t mColorSchemeBits = 0;
 
   
   uint32_t mOnloadBlockCount;

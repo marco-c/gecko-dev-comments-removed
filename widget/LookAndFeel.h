@@ -23,6 +23,8 @@ class nsIFrame;
 
 namespace mozilla {
 
+struct StyleColorSchemeFlags;
+
 namespace dom {
 class Document;
 }
@@ -429,7 +431,9 @@ class LookAndFeel {
                                               : ColorScheme::Light;
   }
 
-  static ColorScheme ColorSchemeForDocument(const dom::Document& aDoc);
+  static ColorScheme ColorSchemeForStyle(const dom::Document&,
+                                         const StyleColorSchemeFlags&);
+  static ColorScheme ColorSchemeForFrame(const nsIFrame*);
 
   
   
@@ -449,14 +453,6 @@ class LookAndFeel {
 
   
   
-  static Maybe<nscolor> GetColor(ColorID, const dom::Document&);
-
-  
-  
-  
-  
-  
-  
   static Maybe<nscolor> GetColor(ColorID, const nsIFrame*);
 
   
@@ -465,11 +461,6 @@ class LookAndFeel {
                        UseStandins aUseStandins,
                        nscolor aDefault = NS_RGB(0, 0, 0)) {
     return GetColor(aId, aScheme, aUseStandins).valueOr(aDefault);
-  }
-
-  static nscolor Color(ColorID aId, const dom::Document& aDoc,
-                       nscolor aDefault = NS_RGB(0, 0, 0)) {
-    return GetColor(aId, aDoc).valueOr(aDefault);
   }
 
   static nscolor Color(ColorID aId, nsIFrame* aFrame,
