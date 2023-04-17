@@ -264,10 +264,8 @@ static void BuildPreviousPageOverflow(nsDisplayListBuilder* aBuilder,
 
 
 
-
 static void PruneDisplayListForExtraPage(nsDisplayListBuilder* aBuilder,
                                          nsPageFrame* aPage,
-                                         nsIFrame* aExtraPage,
                                          nsDisplayList* aList) {
   nsDisplayList newList;
 
@@ -276,7 +274,7 @@ static void PruneDisplayListForExtraPage(nsDisplayListBuilder* aBuilder,
     if (!i) break;
     nsDisplayList* subList = i->GetSameCoordinateSystemChildren();
     if (subList) {
-      PruneDisplayListForExtraPage(aBuilder, aPage, aExtraPage, subList);
+      PruneDisplayListForExtraPage(aBuilder, aPage, subList);
       i->UpdateBounds(aBuilder);
     } else {
       nsIFrame* f = i->Frame();
@@ -305,7 +303,7 @@ static void BuildDisplayListForExtraPage(nsDisplayListBuilder* aBuilder,
   }
   nsDisplayList list;
   aExtraPage->BuildDisplayListForStackingContext(aBuilder, &list);
-  PruneDisplayListForExtraPage(aBuilder, aPage, aExtraPage, &list);
+  PruneDisplayListForExtraPage(aBuilder, aPage, &list);
   aList->AppendToTop(&list);
 }
 
