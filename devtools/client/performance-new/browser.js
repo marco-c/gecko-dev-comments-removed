@@ -21,6 +21,7 @@
 
 
 
+
 const ChromeUtils = require("ChromeUtils");
 const { createLazyLoaders } = ChromeUtils.import(
   "resource://devtools/client/performance-new/typescript-lazy-load.jsm.js"
@@ -75,7 +76,7 @@ const UI_BASE_URL_PATH_DEFAULT = "/from-addon";
 function openProfilerAndDisplayProfile(
   profile,
   profilerViewMode,
-  getSymbolTableCallback
+  symbolicationService
 ) {
   const Services = lazy.Services();
   
@@ -125,7 +126,7 @@ function openProfilerAndDisplayProfile(
   mm.sendAsyncMessage(TRANSFER_EVENT, profile);
   mm.addMessageListener(SYMBOL_TABLE_REQUEST_EVENT, e => {
     const { debugName, breakpadId } = e.data;
-    getSymbolTableCallback(debugName, breakpadId).then(
+    symbolicationService.getSymbolTable(debugName, breakpadId).then(
       result => {
         const [addr, index, buffer] = result;
         mm.sendAsyncMessage(SYMBOL_TABLE_RESPONSE_EVENT, {
@@ -224,18 +225,20 @@ function createLibraryMap(sharedLibraries) {
 
 
 
-function createMultiModalGetSymbolTableFn(sharedLibraries, objdirs, perfFront) {
+function createLocalSymbolicationService(sharedLibraries, objdirs, perfFront) {
   const libraryGetter = createLibraryMap(sharedLibraries);
 
-  return async function getSymbolTable(debugName, breakpadId) {
-    const lib = libraryGetter(debugName, breakpadId);
-    if (!lib) {
-      throw new Error(
-        `Could not find the library for "${debugName}", "${breakpadId}".`
-      );
-    }
-    const { getSymbolTableMultiModal } = lazy.PerfSymbolication();
-    return getSymbolTableMultiModal(lib, objdirs, perfFront);
+  return {
+    async getSymbolTable(debugName, breakpadId) {
+      const lib = libraryGetter(debugName, breakpadId);
+      if (!lib) {
+        throw new Error(
+          `Could not find the library for "${debugName}", "${breakpadId}".`
+        );
+      }
+      const { getSymbolTableMultiModal } = lazy.PerfSymbolication();
+      return getSymbolTableMultiModal(lib, objdirs, perfFront);
+    },
   };
 }
 
@@ -295,7 +298,7 @@ function openFilePickerForObjdir(window, objdirs, changeObjdirs) {
 module.exports = {
   openProfilerAndDisplayProfile,
   sharedLibrariesFromProfile,
-  createMultiModalGetSymbolTableFn,
+  createLocalSymbolicationService,
   restartBrowserWithEnvironmentVariable,
   getEnvironmentVariable,
   openFilePickerForObjdir,
