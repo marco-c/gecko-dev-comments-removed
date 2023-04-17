@@ -451,8 +451,8 @@ class nsHttpChannel final : public HttpBaseChannel,
 
 
 
-  [[nodiscard]] nsresult ProcessHSTSHeader(nsITransportSecurityInfo* aSecInfo,
-                                           uint32_t aFlags);
+  [[nodiscard]] nsresult ProcessSingleSecurityHeader(
+      uint32_t aType, nsITransportSecurityInfo* aSecInfo, uint32_t aFlags);
 
   void InvalidateCacheEntryForLocation(const char* location);
   void AssembleCacheKey(const char* spec, uint32_t postID, nsACString& key);
