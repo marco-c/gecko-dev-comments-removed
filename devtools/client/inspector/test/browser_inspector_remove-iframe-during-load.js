@@ -8,12 +8,6 @@
 const TEST_URL = URL_ROOT + "doc_inspector_remove-iframe-during-load.html";
 
 add_task(async function() {
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["fission.bfcacheInParent", false]],
-  });
-
   const { inspector, tab } = await openInspectorForURL("about:blank");
   await selectNode("body", inspector);
 
