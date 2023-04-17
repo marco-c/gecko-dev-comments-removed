@@ -106,7 +106,7 @@ class SharedWorkerInterfaceRequestor final : public nsIInterfaceRequestor {
 
   SharedWorkerInterfaceRequestor() {
     
-    if (!ServiceWorkerParentInterceptEnabled() || XRE_IsParentProcess()) {
+    if (XRE_IsParentProcess()) {
       mSWController = new ServiceWorkerInterceptController();
     }
   }
