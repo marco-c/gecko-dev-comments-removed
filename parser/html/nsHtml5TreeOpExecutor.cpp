@@ -905,9 +905,7 @@ void nsHtml5TreeOpExecutor::NeedsCharsetSwitchTo(
   nsDocShell* docShell = static_cast<nsDocShell*>(mDocShell.get());
 
   if (NS_SUCCEEDED(docShell->CharsetChangeStopDocumentLoad())) {
-    nsAutoCString charset;
-    aEncoding->Name(charset);
-    docShell->CharsetChangeReloadDocument(charset.get(), aSource);
+    docShell->CharsetChangeReloadDocument(aEncoding, aSource);
   }
   
   
