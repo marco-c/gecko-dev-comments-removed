@@ -556,8 +556,8 @@ class Document : public nsINode,
   Document& operator=(const Document&) = delete;
 
  public:
-  typedef dom::ExternalResourceMap::ExternalResourceLoad ExternalResourceLoad;
-  typedef dom::ReferrerPolicy ReferrerPolicyEnum;
+  using ExternalResourceLoad = dom::ExternalResourceMap::ExternalResourceLoad;
+  using ReferrerPolicyEnum = dom::ReferrerPolicy;
   using AdoptedStyleSheetCloneCache =
       nsRefPtrHashtable<nsPtrHashKey<const StyleSheet>, StyleSheet>;
 
@@ -1102,7 +1102,7 @@ class Document : public nsINode,
   
 
 
-  typedef MozPromise<uint32_t, bool, true> GetContentBlockingEventsPromise;
+  using GetContentBlockingEventsPromise = MozPromise<uint32_t, bool, true>;
   [[nodiscard]] RefPtr<GetContentBlockingEventsPromise>
   GetContentBlockingEvents();
 
@@ -2313,7 +2313,7 @@ class Document : public nsINode,
 
 
 
-  typedef bool (*nsDocTestFunc)(const Document* aDocument);
+  using nsDocTestFunc = bool (*)(const Document* aDocument);
   void CollectDescendantDocuments(nsTArray<RefPtr<Document>>& aDescendants,
                                   nsDocTestFunc aCallback) const;
 
@@ -4119,7 +4119,7 @@ class Document : public nsINode,
     InvertedBoolean,
   };
 
-  typedef mozilla::EditorCommand*(GetEditorCommandFunc)();
+  using GetEditorCommandFunc = mozilla::EditorCommand*();
 
   struct InternalCommandData {
     const char* mXULCommandName;
@@ -4269,8 +4269,8 @@ class Document : public nsINode,
   };
 
   
-  typedef nsTHashMap<nsStringCaseInsensitiveHashKey, InternalCommandData>
-      InternalCommandDataHashtable;
+  using InternalCommandDataHashtable =
+      nsTHashMap<nsStringCaseInsensitiveHashKey, InternalCommandData>;
   static InternalCommandDataHashtable* sInternalCommandDataHashtable;
 
   mutable std::bitset<static_cast<size_t>(
@@ -4342,8 +4342,8 @@ class Document : public nsINode,
 
   void MaybeResolveReadyForIdle();
 
-  typedef MozPromise<bool, bool, true>
-      AutomaticStorageAccessPermissionGrantPromise;
+  using AutomaticStorageAccessPermissionGrantPromise =
+      MozPromise<bool, bool, true>;
   [[nodiscard]] RefPtr<AutomaticStorageAccessPermissionGrantPromise>
   AutomaticStorageAccessPermissionCanBeGranted();
 
@@ -4427,8 +4427,8 @@ class Document : public nsINode,
   
   static const size_t kSegmentSize = 128;
 
-  typedef SegmentedVector<nsCOMPtr<Link>, kSegmentSize, InfallibleAllocPolicy>
-      LinksToUpdateList;
+  using LinksToUpdateList =
+      SegmentedVector<nsCOMPtr<Link>, kSegmentSize, InfallibleAllocPolicy>;
 
   LinksToUpdateList mLinksToUpdate;
 

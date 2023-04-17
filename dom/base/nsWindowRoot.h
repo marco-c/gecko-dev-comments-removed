@@ -94,7 +94,7 @@ class nsWindowRoot final : public nsPIWindowRoot {
 
   
   
-  typedef nsTHashSet<RefPtr<nsIWeakReference>> WeakBrowserTable;
+  using WeakBrowserTable = nsTHashSet<RefPtr<nsIWeakReference>>;
   WeakBrowserTable mWeakBrowsers;
 };
 

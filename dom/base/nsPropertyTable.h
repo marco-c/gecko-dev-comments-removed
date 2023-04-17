@@ -19,8 +19,8 @@
 
 class nsAtom;
 
-typedef void (*NSPropertyFunc)(void* aObject, nsAtom* aPropertyName,
-                               void* aPropertyValue, void* aData);
+using NSPropertyFunc = void (*)(void* aObject, nsAtom* aPropertyName,
+                                void* aPropertyValue, void* aData);
 
 
 
@@ -28,7 +28,7 @@ typedef void (*NSPropertyFunc)(void* aObject, nsAtom* aPropertyName,
 
 
 
-typedef NSPropertyFunc NSPropertyDtorFunc;
+using NSPropertyDtorFunc = NSPropertyFunc;
 class nsINode;
 class nsIFrame;
 

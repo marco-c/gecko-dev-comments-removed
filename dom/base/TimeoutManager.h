@@ -196,7 +196,7 @@ class TimeoutManager final {
     
     const TimeoutManager& mManager;
 
-    typedef mozilla::LinkedList<RefPtr<Timeout>> TimeoutList;
+    using TimeoutList = mozilla::LinkedList<RefPtr<Timeout>>;
 
     
     

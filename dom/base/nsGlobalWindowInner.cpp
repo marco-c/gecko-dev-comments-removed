@@ -5707,7 +5707,7 @@ CallState nsGlobalWindowInner::CallOnInProcessDescendantsInternal(
         
         
         
-        typedef decltype((inner->*aMethod)(aArgs...)) returnType;
+        using returnType = decltype((inner->*aMethod)(aArgs...));
         state = CallDescendant<returnType>(inner, aMethod, aArgs...);
 
         if (state == CallState::Stop) {

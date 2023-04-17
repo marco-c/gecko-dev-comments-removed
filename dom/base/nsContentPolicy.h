@@ -29,7 +29,7 @@ class nsContentPolicy : public nsIContentPolicy {
   nsCategoryCache<nsIContentPolicy> mPolicies;
 
   
-  typedef decltype(&nsIContentPolicy::ShouldProcess) CPMethod;
+  using CPMethod = decltype(&nsIContentPolicy::ShouldProcess);
 
   
   

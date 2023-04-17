@@ -27,7 +27,7 @@ class DOMRect;
 
 
 class nsDOMCaretPosition : public nsISupports, public nsWrapperCache {
-  typedef mozilla::dom::DOMRect DOMRect;
+  using DOMRect = mozilla::dom::DOMRect;
 
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS

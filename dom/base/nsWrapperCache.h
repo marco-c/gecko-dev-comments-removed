@@ -254,7 +254,7 @@ class JS_HAZ_ROOTED nsWrapperCache {
 
 
 
-  typedef uint32_t FlagsType;
+  using FlagsType = uint32_t;
 
   FlagsType GetFlags() const { return mFlags & ~kWrapperFlagsMask; }
 

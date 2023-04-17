@@ -41,7 +41,7 @@ class nsDOMMutationRecord final : public nsISupports, public nsWrapperCache {
   virtual ~nsDOMMutationRecord() = default;
 
  public:
-  typedef nsTArray<RefPtr<mozilla::dom::Animation>> AnimationArray;
+  using AnimationArray = nsTArray<RefPtr<mozilla::dom::Animation>>;
 
   nsDOMMutationRecord(nsAtom* aType, nsISupports* aOwner)
       : mType(aType),
@@ -839,7 +839,7 @@ class nsAutoAnimationMutationBatch {
 
   static nsAutoAnimationMutationBatch* sCurrentBatch;
   AutoTArray<nsDOMMutationObserver*, 2> mObservers;
-  typedef nsTArray<Entry> EntryArray;
+  using EntryArray = nsTArray<Entry>;
   nsClassHashtable<nsPtrHashKey<nsINode>, EntryArray> mEntryTable;
   
   

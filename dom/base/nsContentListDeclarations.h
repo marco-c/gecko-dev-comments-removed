@@ -30,19 +30,19 @@ class Element;
 
 
 
-typedef bool (*nsContentListMatchFunc)(mozilla::dom::Element* aElement,
-                                       int32_t aNamespaceID, nsAtom* aAtom,
-                                       void* aData);
+using nsContentListMatchFunc = bool (*)(mozilla::dom::Element* aElement,
+                                        int32_t aNamespaceID, nsAtom* aAtom,
+                                        void* aData);
 
-typedef void (*nsContentListDestroyFunc)(void* aData);
-
-
+using nsContentListDestroyFunc = void (*)(void* aData);
 
 
 
 
-typedef void* (*nsFuncStringContentListDataAllocator)(nsINode* aRootNode,
-                                                      const nsString* aString);
+
+
+using nsFuncStringContentListDataAllocator = void* (*)(nsINode* aRootNode,
+                                                       const nsString* aString);
 
 
 

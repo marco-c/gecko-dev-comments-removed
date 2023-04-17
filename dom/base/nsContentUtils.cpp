@@ -8498,7 +8498,7 @@ namespace {
 
 
 class BulkAppender {
-  typedef typename nsAString::size_type size_type;
+  using size_type = typename nsAString::size_type;
 
  public:
   explicit BulkAppender(BulkWriteHandle<char16_t>&& aHandle)
