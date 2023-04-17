@@ -435,7 +435,6 @@ bool JSFunction::hasNonConfigurablePrototypeDataProperty() {
   if (isSelfHostedBuiltin()) {
     
     
-    
     if (!isConstructor() || isBoundFunction()) {
       return false;
     }
