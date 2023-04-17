@@ -27,6 +27,11 @@
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/ProfilerState.h"
 
+enum class IsFastShutdown {
+  No,
+  Yes,
+};
+
 #ifndef MOZ_GECKO_PROFILER
 
 #  include "mozilla/UniquePtr.h"
@@ -80,6 +85,11 @@ static inline mozilla::UniquePtr<mozilla::ProfileChunkedBuffer>
 profiler_capture_backtrace() {
   return nullptr;
 }
+
+static inline void profiler_init(void* stackTop) {}
+
+static inline void profiler_shutdown(
+    IsFastShutdown aIsFastShutdown = IsFastShutdown::No) {}
 
 static inline void profiler_set_process_name(
     const nsACString& aProcessName, const nsACString* aETLDplus1 = nullptr) {}
@@ -184,11 +194,6 @@ void profiler_init_threadmanager();
 #  define AUTO_PROFILER_INIT mozilla::AutoProfilerInit PROFILER_RAII
 
 #  define AUTO_PROFILER_INIT2 mozilla::AutoProfilerInit2 PROFILER_RAII
-
-enum class IsFastShutdown {
-  No,
-  Yes,
-};
 
 
 

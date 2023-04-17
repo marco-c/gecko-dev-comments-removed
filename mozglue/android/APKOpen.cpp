@@ -173,13 +173,11 @@ static void EnsureBaseProfilerInitialized() {
     return;
   }
 
-#ifdef MOZ_GECKO_PROFILER
   
   
   
   int stackBase = 5;
   mozilla::baseprofiler::profiler_init(&stackBase);
-#endif
   sInitialized = true;
 }
 
