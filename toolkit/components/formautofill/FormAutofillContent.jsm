@@ -590,7 +590,7 @@ var FormAutofillContent = {
         
         
         extra.fields_not_auto = Array.from(handler.form.elements)
-          .filter(element => !!element.value.trim().length)
+          .filter(element => !!element.value?.trim().length)
           .length.toString();
       }
 
