@@ -74,9 +74,9 @@ XPCCallContext::XPCCallContext(
   if (IS_WN_CLASS(clasp)) {
     mWrapper = XPCWrappedNative::Get(unwrapped);
   } else if (IsTearoffClass(clasp)) {
-    mTearOff = (XPCWrappedNativeTearOff*)JS::GetPrivate(unwrapped);
+    mTearOff = XPCWrappedNativeTearOff::Get(unwrapped);
     mWrapper = XPCWrappedNative::Get(
-        &JS::GetReservedSlot(unwrapped, XPC_WN_TEAROFF_FLAT_OBJECT_SLOT)
+        &JS::GetReservedSlot(unwrapped, XPCWrappedNativeTearOff::FlatObjectSlot)
              .toObject());
   }
   if (mWrapper && !mTearOff) {
