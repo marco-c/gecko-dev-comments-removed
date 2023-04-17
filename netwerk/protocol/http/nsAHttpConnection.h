@@ -154,7 +154,7 @@ class nsAHttpConnection : public nsISupports {
   virtual HttpVersion Version() = 0;
 
   
-  virtual void TopLevelOuterContentWindowIdChanged(uint64_t windowId) = 0;
+  virtual void TopBrowsingContextIdChanged(uint64_t id) = 0;
 
   
   
@@ -182,11 +182,11 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsAHttpConnection, NS_AHTTPCONNECTION_IID)
   [[nodiscard]] nsresult PushBack(const char*, uint32_t) override;         \
   already_AddRefed<HttpConnectionBase> TakeHttpConnection() override;      \
   already_AddRefed<HttpConnectionBase> HttpConnection() override;          \
-  void TopLevelOuterContentWindowIdChanged(uint64_t windowId) override;    \
-  
-
-
-                                                                       \
+  void TopBrowsingContextIdChanged(uint64_t id) override;                  \
+  /*                                                                       \
+     Thes methods below have automatic definitions that just forward the   \
+     function to a lower level connection object                           \
+  */                                                                       \
   void GetConnectionInfo(nsHttpConnectionInfo** result) override {         \
     if (!(fwdObject)) {                                                    \
       *result = nullptr;                                                   \

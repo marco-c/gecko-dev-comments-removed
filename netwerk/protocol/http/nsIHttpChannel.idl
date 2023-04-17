@@ -483,8 +483,7 @@ interface nsIHttpChannel : nsIIdentChannel
 
 
 
-
-    [must_use] attribute uint64_t topLevelOuterContentWindowId;
+    [must_use] attribute uint64_t topBrowsingContextId;
 
     
 

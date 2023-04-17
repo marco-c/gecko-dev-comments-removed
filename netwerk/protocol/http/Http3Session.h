@@ -168,7 +168,7 @@ class Http3Session final : public nsAHttpTransaction, public nsAHttpConnection {
   
   nsresult mSocketError;
   bool mBeforeConnectedError;
-  uint64_t mCurrentForegroundTabOuterContentWindowId;
+  uint64_t mCurrentTopBrowsingContextId;
 
   
   bool mTimerActive;

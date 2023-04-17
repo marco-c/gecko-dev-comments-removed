@@ -119,8 +119,8 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   
   bool IsConnEntryUnderPressure(nsHttpConnectionInfo*);
 
-  uint64_t CurrentTopLevelOuterContentWindowId() {
-    return mCurrentTopLevelOuterContentWindowId;
+  uint64_t CurrentTopBrowsingContextId() {
+    return mCurrentTopBrowsingContextId;
   }
 
   void DoSpeculativeConnection(SpeculativeTransaction* aTrans,
@@ -314,7 +314,7 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   void OnMsgUpdateRequestTokenBucket(int32_t, ARefBase*);
   void OnMsgVerifyTraffic(int32_t, ARefBase*);
   void OnMsgPruneNoTraffic(int32_t, ARefBase*);
-  void OnMsgUpdateCurrentTopLevelOuterContentWindowId(int32_t, ARefBase*);
+  void OnMsgUpdateCurrentTopBrowsingContextId(int32_t, ARefBase*);
   void OnMsgClearConnectionHistory(int32_t, ARefBase*);
 
   
@@ -361,7 +361,7 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   void OnMsgPrintDiagnostics(int32_t, ARefBase*);
 
   nsCString mLogData;
-  uint64_t mCurrentTopLevelOuterContentWindowId;
+  uint64_t mCurrentTopBrowsingContextId;
 
   
   void SetThrottlingEnabled(bool aEnable);
@@ -441,7 +441,7 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
   
   
   
-  void NotifyConnectionOfWindowIdChange(uint64_t previousWindowId);
+  void NotifyConnectionOfBrowsingContextIdChange(uint64_t previousId);
 };
 
 }  
