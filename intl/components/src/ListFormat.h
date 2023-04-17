@@ -101,17 +101,30 @@ class ListFormat final {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   enum class PartType {
     Element,
     Literal,
   };
-  using Part = std::pair<PartType, mozilla::Span<const char16_t>>;
+  
+  using Part = std::pair<PartType, size_t>;
   using PartVector = mozilla::Vector<Part, DEFAULT_LIST_LENGTH>;
 
   
-
-
-
 
 
 
@@ -151,7 +164,7 @@ class ListFormat final {
     if (!value) {
       return Err(ICUError::InternalError);
     }
-    return FormattedToParts(value, {buffer.data(), buffer.length()}, parts);
+    return FormattedToParts(value, buffer.length(), parts);
   }
 
  private:
@@ -200,8 +213,7 @@ class ListFormat final {
                           ulistfmt_resultAsValue, ulistfmt_closeResult>;
 
   ICUResult FormattedToParts(const UFormattedValue* formattedValue,
-                             mozilla::Span<const char16_t> formattedSpan,
-                             PartVector& parts);
+                             size_t formattedSize, PartVector& parts);
 
   static UListFormatterType ToUListFormatterType(Type type);
   static UListFormatterWidth ToUListFormatterWidth(Style style);
