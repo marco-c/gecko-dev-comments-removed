@@ -7,7 +7,9 @@ const { Actor } = require("devtools/shared/protocol/Actor");
 const { Front } = require("devtools/shared/protocol/Front");
 
 add_task(async function() {
-  const front = new Front();
+  
+  const client = {};
+  const front = new Front(client);
   ok(
     !front.isDestroyed(),
     "Blank front with no actor ID is not considered as destroyed"

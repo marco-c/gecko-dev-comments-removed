@@ -32,6 +32,9 @@ const defer = require("devtools/shared/defer");
 class Front extends Pool {
   constructor(conn = null, targetFront = null, parentFront = null) {
     super(conn);
+    if (!conn) {
+      throw new Error("Front without conn");
+    }
     this.actorID = null;
     
     

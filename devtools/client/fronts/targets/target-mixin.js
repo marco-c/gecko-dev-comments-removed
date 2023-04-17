@@ -313,6 +313,11 @@ function TargetMixin(parentClass) {
     
     
     async getFront(typeName) {
+      if (this.isDestroyed()) {
+        throw new Error(
+          "Target already destroyed, unable to fetch children fronts"
+        );
+      }
       let front = this.fronts.get(typeName);
       if (front) {
         
