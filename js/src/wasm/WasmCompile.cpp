@@ -494,6 +494,7 @@ static bool TieringBeneficial(uint32_t codeSize) {
     return false;
   }
 
+  MOZ_ASSERT(GetHelperThreadCount() >= cpuCount);
 
   
   
@@ -503,7 +504,7 @@ static bool TieringBeneficial(uint32_t codeSize) {
   
   
 
-  uint32_t cores = workers;
+  uint32_t cores = std::min(cpuCount, workers);
 
   SystemClass cls = ClassifySystem();
 

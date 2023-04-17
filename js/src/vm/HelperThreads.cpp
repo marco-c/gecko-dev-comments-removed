@@ -105,8 +105,8 @@ static size_t ClampDefaultCPUCount(size_t cpuCount) {
 static size_t ThreadCountForCPUCount(size_t cpuCount) {
   
   
-  MOZ_ASSERT(cpuCount > 0);
-  return cpuCount;
+  
+  return std::max<size_t>(cpuCount, 2);
 }
 
 bool js::SetFakeCPUCount(size_t count) {
