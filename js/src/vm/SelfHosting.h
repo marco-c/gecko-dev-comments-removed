@@ -30,18 +30,6 @@ bool IsSelfHostedFunctionWithName(JSFunction* fun, JSAtom* name);
 PropertyName* GetClonedSelfHostedFunctionName(const JSFunction* fun);
 void SetClonedSelfHostedFunctionName(JSFunction* fun, PropertyName* name);
 
-
-
-
-
-
-
-
-
-
-
-PropertyName* GetClonedSelfHostedFunctionNameOffMainThread(JSFunction* fun);
-
 constexpr char ExtendedUnclonedSelfHostedFunctionNamePrefix = '$';
 
 
