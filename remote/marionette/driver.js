@@ -970,14 +970,15 @@ GeckoDriver.prototype.refresh = async function() {
 
 
 
-GeckoDriver.prototype.getWindowHandle = function() {
-  assert.open(
-    this.getBrowsingContext({
-      context: Context.Content,
-      top: true,
-    })
-  );
 
+
+
+GeckoDriver.prototype.getWindowHandle = function() {
+  assert.open(this.getBrowsingContext({ top: true }));
+
+  if (this.context == Context.Chrome) {
+    return windowManager.getIdForWindow(this.curBrowser.window);
+  }
   return windowManager.getIdForBrowser(this.curBrowser.contentBrowser);
 };
 
@@ -992,46 +993,14 @@ GeckoDriver.prototype.getWindowHandle = function() {
 
 
 
+
+
+
 GeckoDriver.prototype.getWindowHandles = function() {
+  if (this.context == Context.Chrome) {
+    return windowManager.chromeWindowHandles.map(String);
+  }
   return windowManager.windowHandles.map(String);
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-GeckoDriver.prototype.getChromeWindowHandle = function() {
-  assert.open(
-    this.getBrowsingContext({
-      context: Context.Chrome,
-      top: true,
-    })
-  );
-
-  return windowManager.getIdForWindow(this.curBrowser.window);
-};
-
-
-
-
-
-
-
-
-GeckoDriver.prototype.getChromeWindowHandles = function() {
-  return windowManager.chromeWindowHandles.map(String);
 };
 
 
@@ -2989,13 +2958,7 @@ GeckoDriver.prototype.commands = {
   "WebDriver:GetActiveElement": GeckoDriver.prototype.getActiveElement,
   "WebDriver:GetAlertText": GeckoDriver.prototype.getTextFromDialog,
   "WebDriver:GetCapabilities": GeckoDriver.prototype.getSessionCapabilities,
-  "WebDriver:GetChromeWindowHandle":
-    GeckoDriver.prototype.getChromeWindowHandle,
-  "WebDriver:GetChromeWindowHandles":
-    GeckoDriver.prototype.getChromeWindowHandles,
   "WebDriver:GetCookies": GeckoDriver.prototype.getCookies,
-  "WebDriver:GetCurrentChromeWindowHandle":
-    GeckoDriver.prototype.getChromeWindowHandle,
   "WebDriver:GetCurrentURL": GeckoDriver.prototype.getCurrentUrl,
   "WebDriver:GetElementAttribute": GeckoDriver.prototype.getElementAttribute,
   "WebDriver:GetElementCSSValue":
