@@ -13,6 +13,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 XPCOMUtils.defineLazyModuleGetters(this, {
   EventEmitter: "resource://gre/modules/EventEmitter.jsm",
 
+  error: "chrome://remote/content/shared/messagehandler/Errors.jsm",
   Log: "chrome://remote/content/shared/Log.jsm",
   ModuleCache: "chrome://remote/content/shared/messagehandler/ModuleCache.jsm",
 });
@@ -71,6 +72,32 @@ class MessageHandler extends EventEmitter {
 
   get sessionId() {
     return this._sessionId;
+  }
+
+  
+
+
+
+
+
+
+
+
+  checkCommand(command) {
+    const { commandName, destination, moduleName } = command;
+
+    
+    
+    const moduleClasses = this._moduleCache.getAllModuleClasses(
+      moduleName,
+      destination
+    );
+
+    if (!moduleClasses.some(cls => cls.supportsMethod(commandName))) {
+      throw new error.UnsupportedCommandError(
+        `${moduleName}.${commandName} not supported for destination ${destination?.type}`
+      );
+    }
   }
 
   destroy() {
@@ -139,8 +166,10 @@ class MessageHandler extends EventEmitter {
       `Received command ${moduleName}.${commandName} for destination ${destination.type}`
     );
 
+    this.checkCommand(command);
+
     const module = this._moduleCache.getModuleInstance(moduleName, destination);
-    if (this._isCommandSupportedByModule(commandName, module)) {
+    if (module && module.supportsMethod(commandName)) {
       return module[commandName](params, destination);
     }
 
@@ -149,14 +178,6 @@ class MessageHandler extends EventEmitter {
 
   toString() {
     return `[object ${this.constructor.name} ${this.name}]`;
-  }
-
-  _isCommandSupportedByModule(commandName, module) {
-    
-    
-    
-    
-    return module && typeof module[commandName] === "function";
   }
 
   

@@ -10,28 +10,27 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-
-ChromeUtils.import(
-  "chrome://remote/content/webdriver-bidi/modules/ModuleRegistry.jsm"
-);
-
 XPCOMUtils.defineLazyModuleGetters(this, {
   Services: "resource://gre/modules/Services.jsm",
 
   getMessageHandlerClass:
     "chrome://remote/content/shared/messagehandler/MessageHandlerRegistry.jsm",
+  
+  
+  
+  getModuleClass:
+    "chrome://remote/content/webdriver-bidi/modules/ModuleRegistry.jsm",
   Log: "chrome://remote/content/shared/Log.jsm",
 });
 
+XPCOMUtils.defineLazyModuleGetter(
+  this,
+  "getTestModuleClass",
+  "chrome://mochitests/content/browser/remote/shared/messagehandler/test/browser/resources/modules/ModuleRegistry.jsm",
+  "getModuleClass"
+);
+
 XPCOMUtils.defineLazyGetter(this, "logger", () => Log.get());
-
-
-
-
-const MODULES_FOLDER = "chrome://remote/content/webdriver-bidi/modules";
-
-const TEST_MODULES_FOLDER =
-  "chrome://mochitests/content/browser/remote/shared/messagehandler/test/browser/resources/modules";
 
 
 
@@ -71,20 +70,12 @@ class ModuleCache {
 
   constructor(messageHandler) {
     this.messageHandler = messageHandler;
-    this._messageHandlerPath = messageHandler.constructor.modulePath;
+    this._messageHandlerType = messageHandler.constructor.type;
 
-    this._modulesRootFolder = MODULES_FOLDER;
-    
-    
-    
-    if (
-      Services.prefs.getBoolPref(
-        "remote.messagehandler.modulecache.useBrowserTestRoot",
-        false
-      )
-    ) {
-      this._modulesRootFolder = TEST_MODULES_FOLDER;
-    }
+    this._useTestModules = Services.prefs.getBoolPref(
+      "remote.messagehandler.modulecache.useBrowserTestRoot",
+      false
+    );
 
     
     this._modules = new Map();
@@ -112,44 +103,92 @@ class ModuleCache {
 
 
 
-  getModuleInstance(moduleName, destination) {
-    const moduleFullPath = this._getModuleFullPath(moduleName, destination);
 
-    if (!this._modules.has(moduleFullPath)) {
-      try {
-        const ModuleClass = ChromeUtils.import(moduleFullPath)[moduleName];
-        this._modules.set(moduleFullPath, new ModuleClass(this.messageHandler));
-        logger.trace(`Module ${moduleName} created for ${moduleFullPath}`);
-      } catch (e) {
-        
-        
-        
-        this._modules.set(moduleFullPath, null);
-        logger.trace(`No module ${moduleName} found for ${moduleFullPath}`);
-      }
+  getAllModuleClasses(moduleName, destination) {
+    const destinationType = destination.type;
+    const folders = [
+      this._getModuleFolder(this._messageHandlerType, destinationType),
+    ];
+
+    
+    
+    
+    
+    if (destinationType !== this._messageHandlerType) {
+      folders.push(this._getModuleFolder(destinationType, destinationType));
     }
 
-    return this._modules.get(moduleFullPath);
+    return folders
+      .map(folder => this._getModuleClass(moduleName, folder))
+      .filter(cls => !!cls);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  getModuleInstance(moduleName, destination) {
+    const key = `${moduleName}-${destination.type}`;
+
+    if (this._modules.has(key)) {
+      
+      
+      return this._modules.get(key);
+    }
+
+    const moduleFolder = this._getModuleFolder(
+      this._messageHandlerType,
+      destination.type
+    );
+    const ModuleClass = this._getModuleClass(moduleName, moduleFolder);
+
+    let module = null;
+    if (ModuleClass) {
+      module = new ModuleClass(this.messageHandler);
+      logger.trace(`Module ${moduleName} created for ${destination.type}`);
+    } else {
+      logger.trace(`No module ${moduleName} found for ${destination.type}`);
+    }
+
+    this._modules.set(key, module);
+    return module;
   }
 
   toString() {
     return `[object ${this.constructor.name} ${this.messageHandler.name}]`;
   }
 
-  _getModuleFullPath(moduleName, destination) {
-    let moduleFolder;
-    if (this.messageHandler.constructor.type === destination.type) {
-      
-      
-      moduleFolder = this._messageHandlerPath;
-    } else {
-      
-      
-      const MessageHandlerClass = getMessageHandlerClass(destination.type);
-      const destinationPath = MessageHandlerClass.modulePath;
-      moduleFolder = `${destinationPath}-in-${this._messageHandlerPath}`;
+  _getModuleClass(moduleName, moduleFolder) {
+    if (this._useTestModules) {
+      return getTestModuleClass(moduleName, moduleFolder);
     }
 
-    return `${this._modulesRootFolder}/${moduleFolder}/${moduleName}.jsm`;
+    
+    
+    return getModuleClass(moduleName, moduleFolder);
+  }
+
+  _getModuleFolder(originType, destinationType) {
+    const originPath = getMessageHandlerClass(originType).modulePath;
+    if (originType === destinationType) {
+      
+      
+      return originPath;
+    }
+    
+    
+    const destinationPath = getMessageHandlerClass(destinationType).modulePath;
+    return `${destinationPath}-in-${originPath}`;
   }
 }

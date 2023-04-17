@@ -26,7 +26,19 @@ class Module {
     throw new Error("Not implemented");
   }
 
+  
+
+
+
+  supportsMethod(methodName) {
+    return this.constructor.supportsMethod(methodName);
+  }
+
   get messageHandler() {
     return this._messageHandler;
+  }
+
+  static supportsMethod(methodName) {
+    return typeof this.prototype[methodName] === "function";
   }
 }

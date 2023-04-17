@@ -32,6 +32,16 @@ class CommandWindowGlobalOnly extends Module {
   testError() {
     throw new Error("error-from-module");
   }
+
+  testMissingIntermediaryMethod(params, destination) {
+    
+    
+    return this.messageHandler.handleCommand({
+      moduleName: "commandwindowglobalonly",
+      commandName: "missingMethod",
+      destination,
+    });
+  }
 }
 
 const commandwindowglobalonly = CommandWindowGlobalOnly;

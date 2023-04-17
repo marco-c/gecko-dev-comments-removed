@@ -4,7 +4,7 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = [];
+var EXPORTED_SYMBOLS = ["getModuleClass"];
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -15,8 +15,6 @@ const modules = {
   "windowglobal-in-root": {},
   windowglobal: {},
 };
-
-
 
 XPCOMUtils.defineLazyModuleGetters(modules.root, {
   log: "chrome://remote/content/webdriver-bidi/modules/root/log.jsm",
@@ -31,3 +29,33 @@ XPCOMUtils.defineLazyModuleGetters(modules["windowglobal-in-root"], {
 XPCOMUtils.defineLazyModuleGetters(modules.windowglobal, {
   log: "chrome://remote/content/webdriver-bidi/modules/windowglobal/log.jsm",
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const getModuleClass = function(moduleName, moduleFolder) {
+  if (!modules[moduleFolder]) {
+    throw new Error(
+      `Invalid module folder "${moduleFolder}", expected one of "${Object.keys(
+        modules
+      )}"`
+    );
+  }
+
+  if (!modules[moduleFolder][moduleName]) {
+    return null;
+  }
+
+  return modules[moduleFolder][moduleName];
+};
