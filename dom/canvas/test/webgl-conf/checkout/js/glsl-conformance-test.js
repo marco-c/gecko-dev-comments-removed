@@ -132,28 +132,40 @@ function runOneTest(gl, info) {
   var vSource = info.vShaderPrep ? info.vShaderPrep(info.vShaderSource) :
     info.vShaderSource;
 
-  if (!quietMode())
+  if (!quietMode()) {
     wtu.addShaderSource(consoleDiv, vLabel, vSource);
+  }
 
   
   var vShader = vShaderDB[vSource];
   if (!vShader) {
-    vShader = wtu.loadShader(gl, vSource, gl.VERTEX_SHADER);
+    
+    vShader = wtu.loadShader(gl, vSource, gl.VERTEX_SHADER, null, null, null, null, true);
+    let compiledVShader = vShader;
+    if (vShader && !gl.getShaderParameter(vShader, gl.COMPILE_STATUS)) {
+      compiledVShader = null;
+    }
     if (info.vShaderTest) {
-      if (!info.vShaderTest(vShader)) {
+      if (!info.vShaderTest(compiledVShader)) {
         testFailed("[vertex shader test] " + passMsg);
         return;
       }
     }
     
     
-    if (!info.ignoreResults && info.vShaderSuccess && !vShader) {
+    if (!info.ignoreResults && info.vShaderSuccess && !compiledVShader) {
       testFailed("[unexpected vertex shader compile status] (expected: " +
                  info.vShaderSuccess + ") " + passMsg);
+      if (!quietMode() && vShader) {
+        const info = gl.getShaderInfoLog(vShader);
+        wtu.addShaderSource(consoleDiv, vLabel + " info log", info);
+      }
     }
     
-    if (vShader) {
-      vShaderDB[vSource] = vShader;
+    if (compiledVShader) {
+      vShaderDB[vSource] = compiledVShader;
+    } else {
+      vShader = null;
     }
   }
 
@@ -166,15 +178,21 @@ function runOneTest(gl, info) {
   var fSource = info.fShaderPrep ? info.fShaderPrep(info.fShaderSource) :
     info.fShaderSource;
 
-  if (!quietMode())
+  if (!quietMode()) {
     wtu.addShaderSource(consoleDiv, fLabel, fSource);
+  }
 
   
   var fShader = fShaderDB[fSource];
   if (!fShader) {
-    fShader = wtu.loadShader(gl, fSource, gl.FRAGMENT_SHADER);
+    
+    fShader = wtu.loadShader(gl, fSource, gl.FRAGMENT_SHADER, null, null, null, null, true);
+    let compiledFShader = fShader;
+    if (fShader && !gl.getShaderParameter(fShader, gl.COMPILE_STATUS)) {
+      compiledFShader = null;
+    }
     if (info.fShaderTest) {
-      if (!info.fShaderTest(fShader)) {
+      if (!info.fShaderTest(compiledFShader)) {
         testFailed("[fragment shader test] " + passMsg);
         return;
       }
@@ -182,15 +200,21 @@ function runOneTest(gl, info) {
     
     
     
-    if (!info.ignoreResults && info.fShaderSuccess && !fShader) {
+    if (!info.ignoreResults && info.fShaderSuccess && !compiledFShader) {
       testFailed("[unexpected fragment shader compile status] (expected: " +
                 info.fShaderSuccess + ") " + passMsg);
+      if (!quietMode() && fShader) {
+        const info = gl.getShaderInfoLog(fShader);
+        wtu.addShaderSource(consoleDiv, fLabel + " info log", info);
+      }
       return;
     }
 
     
-    if (fShader) {
-      fShaderDB[fSource] = fShader;
+    if (compiledFShader) {
+      fShaderDB[fSource] = compiledFShader;
+    } else {
+      fShader = null;
     }
   }
 
