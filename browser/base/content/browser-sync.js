@@ -876,8 +876,8 @@ var gSync = {
     );
 
     let headerTitle = menuHeaderTitleEl.getAttribute("defaultLabel");
-    let headerDescription = menuHeaderDescriptionEl.getAttribute(
-      "defaultLabel"
+    let headerDescription = this.fluentStrings.formatValueSync(
+      "fxa-menu-turn-on-sync-default"
     );
 
     if (PanelUI.protonAppMenuEnabled) {
@@ -949,6 +949,10 @@ var gSync = {
 
     menuHeaderTitleEl.value = headerTitle;
     menuHeaderDescriptionEl.value = headerDescription;
+    
+    
+    
+    menuHeaderDescriptionEl.removeAttribute("data-l10n-id");
   },
 
   enableSendTabIfValidTab() {
@@ -1842,11 +1846,9 @@ var gSync = {
   
   
   async _confirmSyncDisconnect() {
-    const l10nPrefix = "sync-disconnect-dialog";
-
     const [title, body, button] = await document.l10n.formatValues([
-      { id: `${l10nPrefix}-title` },
-      { id: `${l10nPrefix}-body` },
+      { id: `sync-disconnect-dialog-title2` },
+      { id: `sync-disconnect-dialog-body` },
       { id: "sync-disconnect-dialog-button" },
     ]);
 
