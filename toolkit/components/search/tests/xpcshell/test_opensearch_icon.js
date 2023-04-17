@@ -48,12 +48,9 @@ for (const test of tests) {
     };
     
     
-    addTestEngines([
-      {
-        name: test.name,
-        xmlFileName: "engineMaker.sjs?" + JSON.stringify(engineData),
-      },
-    ]);
+    SearchTestUtils.promiseNewSearchEngine(
+      `${gDataUrl}engineMaker.sjs?${JSON.stringify(engineData)}`
+    );
     let engine = await promiseEngineAdded;
     await promiseEngineChanged;
 
