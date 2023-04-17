@@ -284,10 +284,8 @@ Scale2D ViewportUtils::TryInferEnclosingResolution(PresShell* aShell) {
       gfx::Point3DTyped<gfx::UnknownUnits> translation;
       gfx::Quaternion rotation;
       gfx::Point3DTyped<gfx::UnknownUnits> scale;
-      
-      
-      if (bc->GetChildToParentConversionMatrix().ToUnknownMatrix().Decompose(
-              translation, rotation, scale)) {
+      if (bc->GetChildToParentConversionMatrix().Decompose(translation,
+                                                           rotation, scale)) {
         return {scale.x, scale.y};
       }
     }
