@@ -2217,6 +2217,7 @@ WorkerPrivate::WorkerPrivate(
           IsNewWorkerSecureContext(mParent, mWorkerKind, mLoadInfo)),
       mDebuggerRegistered(false),
       mDebuggerReady(true),
+      mExtensionAPIAllowed(false),
       mIsInAutomation(false),
       mId(std::move(aId)),
       mAgentClusterOpenerPolicy(aAgentClusterOpenerPolicy),
@@ -2287,6 +2288,16 @@ WorkerPrivate::WorkerPrivate(
             
             
             mIsPrivilegedAddonGlobal = true;
+          }
+
+          if (StaticPrefs::
+                  extensions_backgroundServiceWorker_enabled_AtStartup() &&
+              mWorkerKind == WorkerKindService &&
+              policy->IsManifestBackgroundWorker(mScriptURL)) {
+            
+            
+            
+            mExtensionAPIAllowed = true;
           }
         }
       }
