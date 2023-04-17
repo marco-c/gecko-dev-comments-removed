@@ -230,6 +230,7 @@ class BigIntStencil {
 
 class ScopeStencil {
   friend class StencilXDR;
+  friend struct CompilationStencil;
   friend struct CompilationStencilMerger;
 
   

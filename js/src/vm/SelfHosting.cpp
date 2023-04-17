@@ -3245,58 +3245,30 @@ static bool CloneValue(JSContext* cx, HandleValue selfHostedValue,
   return true;
 }
 
-bool JSRuntime::cloneSelfHostedFunctionScript(JSContext* cx,
-                                              HandlePropertyName name,
-                                              HandleFunction targetFun) {
-  RootedFunction sourceFun(cx, getUnclonedSelfHostedFunction(name));
-  if (!sourceFun) {
-    return false;
-  }
+bool JSRuntime::delazifySelfHostedFunction(JSContext* cx,
+                                           HandlePropertyName name,
+                                           HandleFunction targetFun) {
   MOZ_ASSERT(targetFun->isExtended());
   MOZ_ASSERT(targetFun->hasSelfHostedLazyScript());
 
-  RootedScript sourceScript(cx, JSFunction::getOrCreateScript(cx, sourceFun));
-  if (!sourceScript) {
+  auto indexRange = *getSelfHostedScriptIndexRange(name);
+  auto& stencil = cx->runtime()->selfHostStencil();
+
+  if (!stencil.delazifySelfHostedFunction(
+          cx, cx->runtime()->selfHostStencilInput().atomCache, indexRange,
+          targetFun)) {
     return false;
   }
 
-  Rooted<ScriptSourceObject*> sourceObject(cx,
-                                           SelfHostingScriptSourceObject(cx));
-  if (!sourceObject) {
-    return false;
-  }
-
   
   
   
   
-  
-  MOZ_ASSERT(sourceScript->outermostScope()->enclosing()->kind() ==
-             ScopeKind::Global);
-  RootedScope emptyGlobalScope(cx, &cx->global()->emptyGlobalScope());
-  if (!CloneScriptIntoFunction(cx, emptyGlobalScope, targetFun, sourceScript,
-                               sourceObject)) {
-    return false;
-  }
-
-  MOZ_ASSERT(targetFun->hasBytecode());
-  RootedScript targetScript(cx, targetFun->nonLazyScript());
-
-  
-  
-  
-  
-  
+  BaseScript* targetScript = targetFun->baseScript();
   if (targetScript->isRelazifiable()) {
     targetScript->setAllowRelazify();
   }
 
-  MOZ_ASSERT(sourceFun->nargs() == targetFun->nargs());
-  MOZ_ASSERT(sourceScript->hasRest() == targetScript->hasRest());
-  MOZ_ASSERT(targetFun->strict(), "Self-hosted builtins must be strict");
-
-  
-  targetFun->setFlags(targetFun->flags().toRaw() | sourceFun->flags().toRaw());
   return true;
 }
 
