@@ -189,28 +189,8 @@ class CCGCScheduler {
     return true;
   }
 
-  void NoteGCBegin() {
-    
-    
-    mInIncrementalGC = true;
-    mReadyForMajorGC = false;
-  }
-
-  void NoteGCEnd() {
-    mMajorGCReason = JS::GCReason::NO_REASON;
-
-    mInIncrementalGC = false;
-    mCCBlockStart = TimeStamp();
-    mReadyForMajorGC = false;
-    mNeedsFullCC = true;
-    mHasRunGC = true;
-    mIsCompactingOnUserInactive = false;
-
-    mCleanupsSinceLastGC = 0;
-    mCCollectedWaitingForGC = 0;
-    mCCollectedZonesWaitingForGC = 0;
-    mLikelyShortLivingObjectsNeedingGC = 0;
-  }
+  void NoteGCBegin();
+  void NoteGCEnd();
 
   void NoteGCSliceEnd(TimeDuration aSliceDuration) {
     if (mMajorGCReason == JS::GCReason::NO_REASON) {
