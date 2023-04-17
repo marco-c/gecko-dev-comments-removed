@@ -30,6 +30,13 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIToolkitProfileService"
 );
 
+class CannotLockProfileError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = "CannotLockProfileError";
+  }
+}
+
 var BackgroundTasksUtils = {
   
   
@@ -128,7 +135,7 @@ var BackgroundTasksUtils = {
       lock = profile.lock({});
       log.info(`withProfileLock: locked profile at ${lock.directory.path}`);
     } catch (e) {
-      throw new Error(`Unable to lock profile: ${e}`);
+      throw new CannotLockProfileError(`Cannot lock profile: ${e}`);
     }
 
     try {

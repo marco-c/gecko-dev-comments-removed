@@ -140,6 +140,10 @@ var BackgroundTasksManager = {
 
 
 
+
+
+
+
 BackgroundTasksManager.EXIT_CODE = {
   
 
@@ -161,4 +165,10 @@ BackgroundTasksManager.EXIT_CODE = {
 
 
   EXCEPTION: 3,
+
+  
+
+
+
+  LAST_RESERVED: 10,
 };
