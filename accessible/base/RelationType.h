@@ -154,7 +154,12 @@ enum class RelationType {
 
   ERRORMSG_FOR = 0x18,
 
-  LAST = ERRORMSG_FOR
+  
+
+
+  LINKS_TO = 0x19,
+
+  LAST = LINKS_TO
 };
 
 }  
