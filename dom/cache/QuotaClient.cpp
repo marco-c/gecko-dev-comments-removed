@@ -102,6 +102,10 @@ Result<UsageInfo, nsresult> GetBodyUsage(nsIFile& aMorgueDir,
 
           return false;
         };
+
+        
+        
+        
         CACHE_TRY(ToResult(BodyTraverseFiles(QuotaInfo{}, *bodyDir, getUsage,
                                               true,
                                               false))

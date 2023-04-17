@@ -381,6 +381,10 @@ nsresult BodyDeleteOrphanedFiles(const QuotaInfo& aQuotaInfo, nsIFile& aBaseDir,
 
               return false;
             };
+
+            
+            
+            
             CACHE_TRY(
                 ToResult(BodyTraverseFiles(aQuotaInfo, *subdir,
                                            removeOrphanedFiles,
