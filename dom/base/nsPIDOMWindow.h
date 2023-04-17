@@ -780,9 +780,6 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
   bool GetAudioMuted() const;
 
-  float GetAudioVolume() const;
-  nsresult SetAudioVolume(float aVolume);
-
   void MaybeActiveMediaComponents();
 
   void RefreshMediaElementsVolume();
@@ -1136,9 +1133,6 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
 
   SuspendTypes mMediaSuspend;
-
-  bool mAudioMuted;
-  float mAudioVolume;
 
   
   bool mDesktopModeViewport;
