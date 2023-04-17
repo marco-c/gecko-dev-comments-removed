@@ -434,6 +434,7 @@ static uint32_t GenCmpxchg(MacroAssembler& masm, Scalar::Type size,
 
       
       
+      
       masm.lock_cmpxchg8b(edx, eax, ecx, ebx, Operand(addr));
 #else
       masm.compareExchange64(sync, addr, AtomicValReg64, AtomicVal2Reg64,

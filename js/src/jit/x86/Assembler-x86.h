@@ -51,7 +51,6 @@ static constexpr Register JSReturnReg_Data = edx;
 static constexpr Register StackPointer = esp;
 static constexpr Register FramePointer = ebp;
 static constexpr Register ReturnReg = eax;
-static constexpr Register64 ReturnReg64(edi, eax);
 static constexpr FloatRegister ReturnFloat32Reg =
     FloatRegister(X86Encoding::xmm0, FloatRegisters::Single);
 static constexpr FloatRegister ReturnDoubleReg =
@@ -64,6 +63,17 @@ static constexpr FloatRegister ScratchDoubleReg_ =
     FloatRegister(X86Encoding::xmm7, FloatRegisters::Double);
 static constexpr FloatRegister ScratchSimd128Reg =
     FloatRegister(X86Encoding::xmm7, FloatRegisters::Simd128);
+
+
+
+
+
+
+
+
+
+
+static constexpr Register64 ReturnReg64(edx, eax);
 
 
 static constexpr Register CallTempReg0 = edi;
@@ -103,7 +113,7 @@ static constexpr FloatRegister ABINonArgDoubleReg =
 
 
 static constexpr Register ABINonArgReturnReg0 = ecx;
-static constexpr Register ABINonArgReturnReg1 = edx;
+static constexpr Register ABINonArgReturnReg1 = edi;
 static constexpr Register ABINonVolatileReg = ebx;
 
 
