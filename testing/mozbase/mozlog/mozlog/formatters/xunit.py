@@ -114,4 +114,4 @@ class XUnitFormatter(base.BaseFormatter):
         
         from xml.dom import minidom
 
-        return minidom.parseString(xml_string).toprettyxml(encoding="utf8")
+        return minidom.parseString(xml_string).toprettyxml()
