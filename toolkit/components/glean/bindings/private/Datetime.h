@@ -8,7 +8,6 @@
 #define mozilla_glean_GleanDatetime_h
 
 #include "mozilla/Maybe.h"
-#include "mozilla/Result.h"
 #include "nsIGleanMetrics.h"
 #include "nsString.h"
 #include "prtime.h"
@@ -45,7 +44,7 @@ class DatetimeMetric {
 
 
 
-  Result<Maybe<PRExplodedTime>, nsCString> TestGetValue(
+  Maybe<PRExplodedTime> TestGetValue(
       const nsACString& aPingName = nsCString()) const;
 
  private:

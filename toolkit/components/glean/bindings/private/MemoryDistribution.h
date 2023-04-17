@@ -48,7 +48,7 @@ class MemoryDistributionMetric {
 
 
 
-  Result<Maybe<DistributionData>, nsCString> TestGetValue(
+  Maybe<DistributionData> TestGetValue(
       const nsACString& aPingName = nsCString()) const;
 
  private:
