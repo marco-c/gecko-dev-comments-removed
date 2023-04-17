@@ -36,6 +36,8 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIHandlerService"
 );
 
+const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+
 var HandlerServiceTestUtils = {
   
 
@@ -137,6 +139,8 @@ var HandlerServiceTestUtils = {
     let handlerInfo = this.getHandlerInfo(type);
 
     let preferredAction, preferredApplicationHandler;
+    let alwaysAskBeforeHandling = true;
+
     if (AppConstants.platform == "android") {
       
       
@@ -152,16 +156,27 @@ var HandlerServiceTestUtils = {
     } else {
       
       
-      preferredAction = type.includes("/")
-        ? Ci.nsIHandlerInfo.saveToDisk
-        : Ci.nsIHandlerInfo.alwaysAsk;
+      
+      
+      alwaysAskBeforeHandling = !Services.prefs.getBoolPref(
+        "browser.download.improvements_to_download_panel",
+        false
+      );
+
+      if (type.includes("/")) {
+        preferredAction = Ci.nsIHandlerInfo.saveToDisk;
+      } else {
+        preferredAction = Ci.nsIHandlerInfo.alwaysAsk;
+        
+        alwaysAskBeforeHandling = true;
+      }
       preferredApplicationHandler = null;
     }
 
     this.assertHandlerInfoMatches(handlerInfo, {
       type,
       preferredAction,
-      alwaysAskBeforeHandling: true,
+      alwaysAskBeforeHandling,
       preferredApplicationHandler,
     });
     return handlerInfo;
