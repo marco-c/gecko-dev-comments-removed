@@ -23,8 +23,8 @@ SimpleTest.requestCompleteLog();
 const { require } = ChromeUtils.import("resource://devtools/shared/Loader.jsm");
 
 const {
-  TabDescriptorFactory,
-} = require("devtools/client/framework/tab-descriptor-factory");
+  CommandsFactory,
+} = require("devtools/shared/commands/commands-factory");
 
 async function doGC() {
   
@@ -48,17 +48,14 @@ async function addTab(url) {
 }
 
 async function testScript(tab) {
-  const descriptor = await TabDescriptorFactory.createDescriptorForTab(tab);
-  const target = await descriptor.getTarget();
-  await target.attach();
+  const commands = await CommandsFactory.forTab(tab);
+  await commands.targetCommand.startListening();
 
   
   await new Promise(resolve => setTimeout(resolve, 1000));
 
-  await target.destroy();
-
   
-  await descriptor.destroy();
+  await commands.destroy();
 }
 
 add_task(async function() {
