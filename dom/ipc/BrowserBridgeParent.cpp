@@ -231,7 +231,10 @@ IPCResult BrowserBridgeParent::RecvSetIsUnderHiddenEmbedderElement(
 #ifdef ACCESSIBILITY
 IPCResult BrowserBridgeParent::RecvSetEmbedderAccessible(
     PDocAccessibleParent* aDoc, uint64_t aID) {
+  MOZ_ASSERT(!mEmbedderAccessibleDoc || mEmbedderAccessibleDoc == aDoc,
+             "Embedder document shouldn't change");
   mEmbedderAccessibleDoc = static_cast<a11y::DocAccessibleParent*>(aDoc);
+  uint64_t oldEmbedderID = mEmbedderAccessibleID;
   mEmbedderAccessibleID = aID;
   if (auto embeddedBrowser = GetBrowserParent()) {
     a11y::DocAccessibleParent* childDocAcc =
@@ -240,6 +243,13 @@ IPCResult BrowserBridgeParent::RecvSetEmbedderAccessible(
       
       
       
+      if (oldEmbedderID) {
+        
+        
+        
+        mEmbedderAccessibleDoc->RemovePendingChildDoc(childDocAcc,
+                                                      oldEmbedderID);
+      }
       mEmbedderAccessibleDoc->AddChildDoc(childDocAcc, aID,
                                            false);
     }
