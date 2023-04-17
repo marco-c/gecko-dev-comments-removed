@@ -103,7 +103,7 @@ class EffectSet {
   bool MayHaveTransformAnimation() const { return mMayHaveTransformAnim; }
 
  private:
-  typedef nsTHashSet<nsRefPtrHashKey<dom::KeyframeEffect>> OwningEffectSet;
+  using OwningEffectSet = nsTHashSet<nsRefPtrHashKey<dom::KeyframeEffect>>;
 
  public:
   
