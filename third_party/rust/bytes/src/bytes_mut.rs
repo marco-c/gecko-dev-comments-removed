@@ -1,16 +1,26 @@
-use core::{cmp, fmt, hash, isize, slice, usize};
+use core::iter::{FromIterator, Iterator};
 use core::mem::{self, ManuallyDrop};
 use core::ops::{Deref, DerefMut};
 use core::ptr::{self, NonNull};
-use core::iter::{FromIterator, Iterator};
+use core::{cmp, fmt, hash, isize, slice, usize};
 
-use alloc::{vec::Vec, string::String, boxed::Box, borrow::{Borrow, BorrowMut}};
+use alloc::{
+    borrow::{Borrow, BorrowMut},
+    boxed::Box,
+    string::String,
+    vec::Vec,
+};
 
-use crate::{Bytes, Buf, BufMut};
-use crate::bytes::Vtable;
 use crate::buf::IntoIter;
-use crate::debug;
+use crate::bytes::Vtable;
+#[allow(unused)]
+use crate::loom::sync::atomic::AtomicMut;
 use crate::loom::sync::atomic::{self, AtomicPtr, AtomicUsize, Ordering};
+use crate::{Buf, BufMut, Bytes};
+
+
+
+
 
 
 
@@ -105,7 +115,6 @@ const PTR_WIDTH: usize = 32;
 
 
 impl BytesMut {
-    
     
     
     
@@ -234,7 +243,9 @@ impl BytesMut {
                 let (off, _) = self.get_vec_pos();
                 let vec = rebuild_vec(self.ptr.as_ptr(), self.len, self.cap, off);
                 mem::forget(self);
-                vec.into()
+                let mut b: Bytes = vec.into();
+                b.advance(off);
+                b
             }
         } else {
             debug_assert_eq!(self.kind(), KIND_ARC);
@@ -243,9 +254,7 @@ impl BytesMut {
             let len = self.len;
             let data = AtomicPtr::new(self.data as _);
             mem::forget(self);
-            unsafe {
-                Bytes::with_vtable(ptr, len, data, &SHARED_VTABLE)
-            }
+            unsafe { Bytes::with_vtable(ptr, len, data, &SHARED_VTABLE) }
         }
     }
 
@@ -277,7 +286,12 @@ impl BytesMut {
     
     #[must_use = "consider BytesMut::truncate if you don't need the other half"]
     pub fn split_off(&mut self, at: usize) -> BytesMut {
-        assert!(at <= self.capacity());
+        assert!(
+            at <= self.capacity(),
+            "split_off out of bounds: {:?} <= {:?}",
+            at,
+            self.capacity(),
+        );
         unsafe {
             let mut other = self.shallow_clone();
             other.set_start(at);
@@ -345,7 +359,12 @@ impl BytesMut {
     
     #[must_use = "consider BytesMut::advance if you don't need the other half"]
     pub fn split_to(&mut self, at: usize) -> BytesMut {
-        assert!(at <= self.len());
+        assert!(
+            at <= self.len(),
+            "split_to out of bounds: {:?} <= {:?}",
+            at,
+            self.len(),
+        );
 
         unsafe {
             let mut other = self.shallow_clone();
@@ -377,7 +396,9 @@ impl BytesMut {
     
     pub fn truncate(&mut self, len: usize) {
         if len <= self.len() {
-            unsafe { self.set_len(len); }
+            unsafe {
+                self.set_len(len);
+            }
         }
     }
 
@@ -458,8 +479,9 @@ impl BytesMut {
     
     
     
+    #[inline]
     pub unsafe fn set_len(&mut self, len: usize) {
-        debug_assert!(len <= self.cap);
+        debug_assert!(len <= self.cap, "set_len out of bounds");
         self.len = len;
     }
 
@@ -542,8 +564,7 @@ impl BytesMut {
                 let (off, prev) = self.get_vec_pos();
 
                 
-                
-                if off >= additional && off >= (self.cap / 2) {
+                if self.capacity() - self.len() + off >= additional {
                     
                     
                     
@@ -558,7 +579,8 @@ impl BytesMut {
                     self.cap += off;
                 } else {
                     
-                    let mut v = ManuallyDrop::new(rebuild_vec(self.ptr.as_ptr(), self.len, self.cap, off));
+                    let mut v =
+                        ManuallyDrop::new(rebuild_vec(self.ptr.as_ptr(), self.len, self.cap, off));
                     v.reserve(additional);
 
                     
@@ -573,7 +595,6 @@ impl BytesMut {
 
         debug_assert_eq!(kind, KIND_ARC);
         let shared: *mut Shared = self.data as _;
-
 
         
         
@@ -618,9 +639,7 @@ impl BytesMut {
                 
                 let double = v.capacity().checked_shl(1).unwrap_or(new_cap);
 
-                new_cap = cmp::max(
-                    cmp::max(double, new_cap),
-                    original_capacity);
+                new_cap = cmp::max(cmp::max(double, new_cap), original_capacity);
             } else {
                 new_cap = cmp::max(new_cap, original_capacity);
             }
@@ -643,6 +662,7 @@ impl BytesMut {
         self.len = v.len();
         self.cap = v.capacity();
     }
+
     
     
     
@@ -668,16 +688,18 @@ impl BytesMut {
             
             debug_assert!(dst.len() >= cnt);
 
-            ptr::copy_nonoverlapping(
-                extend.as_ptr(),
-                dst.as_mut_ptr() as *mut u8,
-                cnt);
-
+            ptr::copy_nonoverlapping(extend.as_ptr(), dst.as_mut_ptr() as *mut u8, cnt);
         }
 
-        unsafe { self.advance_mut(cnt); }
+        unsafe {
+            self.advance_mut(cnt);
+        }
     }
 
+    
+    
+    
+    
     
     
     
@@ -736,16 +758,12 @@ impl BytesMut {
 
     #[inline]
     fn as_slice(&self) -> &[u8] {
-        unsafe {
-            slice::from_raw_parts(self.ptr.as_ptr(), self.len)
-        }
+        unsafe { slice::from_raw_parts(self.ptr.as_ptr(), self.len) }
     }
 
     #[inline]
     fn as_slice_mut(&mut self) -> &mut [u8] {
-        unsafe {
-            slice::from_raw_parts_mut(self.ptr.as_ptr(), self.len)
-        }
+        unsafe { slice::from_raw_parts_mut(self.ptr.as_ptr(), self.len) }
     }
 
     unsafe fn set_start(&mut self, start: usize) {
@@ -755,7 +773,7 @@ impl BytesMut {
             return;
         }
 
-        debug_assert!(start <= self.cap);
+        debug_assert!(start <= self.cap, "internal: set_start out of bounds");
 
         let kind = self.kind();
 
@@ -774,7 +792,7 @@ impl BytesMut {
                 
                 
                 
-                self.promote_to_shared(1);
+                self.promote_to_shared( 1);
             }
         }
 
@@ -794,7 +812,7 @@ impl BytesMut {
 
     unsafe fn set_end(&mut self, end: usize) {
         debug_assert_eq!(self.kind(), KIND_ARC);
-        assert!(end <= self.cap);
+        assert!(end <= self.cap, "set_end out of bounds");
 
         self.cap = end;
         self.len = cmp::min(self.len, end);
@@ -806,10 +824,10 @@ impl BytesMut {
         }
 
         let ptr = unsafe { self.ptr.as_ptr().offset(self.len as isize) };
-        if ptr == other.ptr.as_ptr() &&
-           self.kind() == KIND_ARC &&
-           other.kind() == KIND_ARC &&
-           self.data == other.data
+        if ptr == other.ptr.as_ptr()
+            && self.kind() == KIND_ARC
+            && other.kind() == KIND_ARC
+            && self.data == other.data
         {
             
             self.len += other.len;
@@ -870,7 +888,7 @@ impl BytesMut {
             increment_shared(self.data);
             ptr::read(self)
         } else {
-            self.promote_to_shared(2);
+            self.promote_to_shared( 2);
             ptr::read(self)
         }
     }
@@ -932,8 +950,15 @@ impl Buf for BytesMut {
 
     #[inline]
     fn advance(&mut self, cnt: usize) {
-        assert!(cnt <= self.remaining(), "cannot advance past `remaining`");
-        unsafe { self.set_start(cnt); }
+        assert!(
+            cnt <= self.remaining(),
+            "cannot advance past `remaining`: {:?} <= {:?}",
+            cnt,
+            self.remaining(),
+        );
+        unsafe {
+            self.set_start(cnt);
+        }
     }
 
     fn to_bytes(&mut self) -> crate::Bytes {
@@ -950,7 +975,12 @@ impl BufMut for BytesMut {
     #[inline]
     unsafe fn advance_mut(&mut self, cnt: usize) {
         let new_len = self.len() + cnt;
-        assert!(new_len <= self.cap, "new_len = {}; capacity = {}", new_len, self.cap);
+        assert!(
+            new_len <= self.cap,
+            "new_len = {}; capacity = {}",
+            new_len,
+            self.cap
+        );
         self.len = new_len;
     }
 
@@ -965,7 +995,10 @@ impl BufMut for BytesMut {
     
     
 
-    fn put<T: crate::Buf>(&mut self, mut src: T) where Self: Sized {
+    fn put<T: crate::Buf>(&mut self, mut src: T)
+    where
+        Self: Sized,
+    {
         while src.has_remaining() {
             let s = src.bytes();
             let l = s.len();
@@ -996,6 +1029,7 @@ impl Deref for BytesMut {
 }
 
 impl AsMut<[u8]> for BytesMut {
+    #[inline]
     fn as_mut(&mut self) -> &mut [u8] {
         self.as_slice_mut()
     }
@@ -1020,6 +1054,12 @@ impl<'a> From<&'a str> for BytesMut {
     }
 }
 
+impl From<BytesMut> for Bytes {
+    fn from(src: BytesMut) -> Bytes {
+        src.freeze()
+    }
+}
+
 impl PartialEq for BytesMut {
     fn eq(&self, other: &BytesMut) -> bool {
         self.as_slice() == other.as_slice()
@@ -1038,8 +1078,7 @@ impl Ord for BytesMut {
     }
 }
 
-impl Eq for BytesMut {
-}
+impl Eq for BytesMut {}
 
 impl Default for BytesMut {
     #[inline]
@@ -1048,14 +1087,11 @@ impl Default for BytesMut {
     }
 }
 
-impl fmt::Debug for BytesMut {
-    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Debug::fmt(&debug::BsDebug(&self.as_slice()), fmt)
-    }
-}
-
 impl hash::Hash for BytesMut {
-    fn hash<H>(&self, state: &mut H) where H: hash::Hasher {
+    fn hash<H>(&self, state: &mut H)
+    where
+        H: hash::Hasher,
+    {
         let s: &[u8] = self.as_ref();
         s.hash(state);
     }
@@ -1115,7 +1151,10 @@ impl<'a> IntoIterator for &'a BytesMut {
 }
 
 impl Extend<u8> for BytesMut {
-    fn extend<T>(&mut self, iter: T) where T: IntoIterator<Item = u8> {
+    fn extend<T>(&mut self, iter: T)
+    where
+        T: IntoIterator<Item = u8>,
+    {
         let iter = iter.into_iter();
 
         let (lower, _) = iter.size_hint();
@@ -1132,7 +1171,10 @@ impl Extend<u8> for BytesMut {
 }
 
 impl<'a> Extend<&'a u8> for BytesMut {
-    fn extend<T>(&mut self, iter: T) where T: IntoIterator<Item = &'a u8> {
+    fn extend<T>(&mut self, iter: T)
+    where
+        T: IntoIterator<Item = &'a u8>,
+    {
         self.extend(iter.into_iter().map(|b| *b))
     }
 }
@@ -1210,7 +1252,10 @@ impl Shared {
 
 fn original_capacity_to_repr(cap: usize) -> usize {
     let width = PTR_WIDTH - ((cap >> MIN_ORIGINAL_CAPACITY_WIDTH).leading_zeros() as usize);
-    cmp::min(width, MAX_ORIGINAL_CAPACITY_WIDTH - MIN_ORIGINAL_CAPACITY_WIDTH)
+    cmp::min(
+        width,
+        MAX_ORIGINAL_CAPACITY_WIDTH - MIN_ORIGINAL_CAPACITY_WIDTH,
+    )
 }
 
 fn original_capacity_from_repr(repr: usize) -> usize {
@@ -1301,7 +1346,7 @@ impl PartialEq<BytesMut> for [u8] {
 
 impl PartialOrd<BytesMut> for [u8] {
     fn partial_cmp(&self, other: &BytesMut) -> Option<cmp::Ordering> {
-        other.partial_cmp(self)
+        <[u8] as PartialOrd<[u8]>>::partial_cmp(self, other)
     }
 }
 
@@ -1325,7 +1370,7 @@ impl PartialEq<BytesMut> for str {
 
 impl PartialOrd<BytesMut> for str {
     fn partial_cmp(&self, other: &BytesMut) -> Option<cmp::Ordering> {
-        other.partial_cmp(self)
+        <[u8] as PartialOrd<[u8]>>::partial_cmp(self.as_bytes(), other)
     }
 }
 
@@ -1373,12 +1418,13 @@ impl PartialEq<BytesMut> for String {
 
 impl PartialOrd<BytesMut> for String {
     fn partial_cmp(&self, other: &BytesMut) -> Option<cmp::Ordering> {
-        other.partial_cmp(self)
+        <[u8] as PartialOrd<[u8]>>::partial_cmp(self.as_bytes(), other)
     }
 }
 
 impl<'a, T: ?Sized> PartialEq<&'a T> for BytesMut
-    where BytesMut: PartialEq<T>
+where
+    BytesMut: PartialEq<T>,
 {
     fn eq(&self, other: &&'a T) -> bool {
         *self == **other
@@ -1386,7 +1432,8 @@ impl<'a, T: ?Sized> PartialEq<&'a T> for BytesMut
 }
 
 impl<'a, T: ?Sized> PartialOrd<&'a T> for BytesMut
-    where BytesMut: PartialOrd<T>
+where
+    BytesMut: PartialOrd<T>,
 {
     fn partial_cmp(&self, other: &&'a T) -> Option<cmp::Ordering> {
         self.partial_cmp(*other)
@@ -1401,7 +1448,7 @@ impl PartialEq<BytesMut> for &[u8] {
 
 impl PartialOrd<BytesMut> for &[u8] {
     fn partial_cmp(&self, other: &BytesMut) -> Option<cmp::Ordering> {
-        other.partial_cmp(self)
+        <[u8] as PartialOrd<[u8]>>::partial_cmp(self, other)
     }
 }
 
@@ -1453,7 +1500,7 @@ static SHARED_VTABLE: Vtable = Vtable {
 };
 
 unsafe fn shared_v_clone(data: &AtomicPtr<()>, ptr: *const u8, len: usize) -> Bytes {
-    let shared = data.load(Ordering::Acquire) as *mut Shared;
+    let shared = data.load(Ordering::Relaxed) as *mut Shared;
     increment_shared(shared);
 
     let data = AtomicPtr::new(shared as _);
@@ -1461,8 +1508,9 @@ unsafe fn shared_v_clone(data: &AtomicPtr<()>, ptr: *const u8, len: usize) -> By
 }
 
 unsafe fn shared_v_drop(data: &mut AtomicPtr<()>, _ptr: *const u8, _len: usize) {
-    let shared = (*data.get_mut()) as *mut Shared;
-    release_shared(shared as *mut Shared);
+    data.with_mut(|shared| {
+        release_shared(*shared as *mut Shared);
+    });
 }
 
 
@@ -1500,11 +1548,11 @@ fn _split_must_use() {}
 
 #[cfg(all(test, loom))]
 mod fuzz {
-    use std::sync::Arc;
+    use loom::sync::Arc;
     use loom::thread;
 
-    use crate::Bytes;
     use super::BytesMut;
+    use crate::Bytes;
 
     #[test]
     fn bytes_mut_cloning_frozen() {

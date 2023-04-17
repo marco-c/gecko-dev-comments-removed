@@ -10,9 +10,9 @@ mod take;
 #[cfg(feature = "std")]
 mod writer;
 
+pub use self::chain::Chain;
 pub use self::limit::Limit;
 pub use self::take::Take;
-pub use self::chain::Chain;
 
 #[cfg(feature = "std")]
 pub use self::{reader::Reader, writer::Writer};
@@ -41,7 +41,8 @@ pub trait BufExt: Buf {
     
     
     fn take(self, limit: usize) -> Take<Self>
-        where Self: Sized
+    where
+        Self: Sized,
     {
         take::new(self, limit)
     }
@@ -62,7 +63,8 @@ pub trait BufExt: Buf {
     
     
     fn chain<U: Buf>(self, next: U) -> Chain<Self, U>
-        where Self: Sized
+    where
+        Self: Sized,
     {
         Chain::new(self, next)
     }
@@ -91,7 +93,10 @@ pub trait BufExt: Buf {
     
     
     #[cfg(feature = "std")]
-    fn reader(self) -> Reader<Self> where Self: Sized {
+    fn reader(self) -> Reader<Self>
+    where
+        Self: Sized,
+    {
         reader::new(self)
     }
 }
@@ -114,7 +119,8 @@ pub trait BufMutExt: BufMut {
     
     
     fn limit(self, limit: usize) -> Limit<Self>
-        where Self: Sized
+    where
+        Self: Sized,
     {
         limit::new(self, limit)
     }
@@ -142,7 +148,10 @@ pub trait BufMutExt: BufMut {
     
     
     #[cfg(feature = "std")]
-    fn writer(self) -> Writer<Self> where Self: Sized {
+    fn writer(self) -> Writer<Self>
+    where
+        Self: Sized,
+    {
         writer::new(self)
     }
 
@@ -167,7 +176,8 @@ pub trait BufMutExt: BufMut {
     
     
     fn chain_mut<U: BufMut>(self, next: U) -> Chain<Self, U>
-        where Self: Sized
+    where
+        Self: Sized,
     {
         Chain::new(self, next)
     }

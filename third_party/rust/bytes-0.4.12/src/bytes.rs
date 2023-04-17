@@ -599,6 +599,46 @@ impl Bytes {
     
     
     
+    
+    
+    pub fn slice_ref(&self, subset: &[u8]) -> Bytes {
+        let bytes_p = self.as_ptr() as usize;
+        let bytes_len = self.len();
+
+        let sub_p = subset.as_ptr() as usize;
+        let sub_len = subset.len();
+
+        assert!(sub_p >= bytes_p);
+        assert!(sub_p + sub_len <= bytes_p + bytes_len);
+
+        let sub_offset = sub_p - bytes_p;
+
+        self.slice(sub_offset, sub_offset + sub_len)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn split_off(&mut self, at: usize) -> Bytes {
         assert!(at <= self.len());
 
@@ -882,6 +922,18 @@ impl FromIterator<u8> for BytesMut {
 
 impl FromIterator<u8> for Bytes {
     fn from_iter<T: IntoIterator<Item = u8>>(into_iter: T) -> Self {
+        BytesMut::from_iter(into_iter).freeze()
+    }
+}
+
+impl<'a> FromIterator<&'a u8> for BytesMut {
+    fn from_iter<T: IntoIterator<Item = &'a u8>>(into_iter: T) -> Self {
+        BytesMut::from_iter(into_iter.into_iter().map(|b| *b))
+    }
+}
+
+impl<'a> FromIterator<&'a u8> for Bytes {
+    fn from_iter<T: IntoIterator<Item = &'a u8>>(into_iter: T) -> Self {
         BytesMut::from_iter(into_iter).freeze()
     }
 }
@@ -2393,12 +2445,16 @@ impl Inner {
         
         
         
+        
+        
+        
+        
 
         #[cfg(target_endian = "little")]
         #[inline]
         fn imp(arc: &AtomicPtr<Shared>) -> usize {
             unsafe {
-                let p: &u8 = mem::transmute(arc);
+                let p: *const u8 = mem::transmute(arc);
                 (*p as usize) & KIND_MASK
             }
         }
@@ -2407,7 +2463,7 @@ impl Inner {
         #[inline]
         fn imp(arc: &AtomicPtr<Shared>) -> usize {
             unsafe {
-                let p: &usize = mem::transmute(arc);
+                let p: *const usize = mem::transmute(arc);
                 *p & KIND_MASK
             }
         }
@@ -2423,7 +2479,7 @@ impl Inner {
         
         let prev = unsafe {
             let p: &AtomicPtr<Shared> = &self.arc;
-            let p: &usize = mem::transmute(p);
+            let p: *const usize = mem::transmute(p);
             *p
         };
 
@@ -2530,35 +2586,51 @@ fn original_capacity_from_repr(repr: usize) -> usize {
 
 #[test]
 fn test_original_capacity_to_repr() {
-    for &cap in &[0, 1, 16, 1000] {
-        assert_eq!(0, original_capacity_to_repr(cap));
-    }
+    assert_eq!(original_capacity_to_repr(0), 0);
 
-    for &cap in &[1024, 1025, 1100, 2000, 2047] {
-        assert_eq!(1, original_capacity_to_repr(cap));
-    }
+    let max_width = 32;
 
-    for &cap in &[2048, 2049] {
-        assert_eq!(2, original_capacity_to_repr(cap));
-    }
+    for width in 1..(max_width + 1) {
+        let cap = 1 << width - 1;
 
-    
+        let expected = if width < MIN_ORIGINAL_CAPACITY_WIDTH {
+            0
+        } else if width < MAX_ORIGINAL_CAPACITY_WIDTH {
+            width - MIN_ORIGINAL_CAPACITY_WIDTH
+        } else {
+            MAX_ORIGINAL_CAPACITY_WIDTH - MIN_ORIGINAL_CAPACITY_WIDTH
+        };
 
-    for &cap in &[65536, 65537, 68000, 1 << 17, 1 << 18, 1 << 20, 1 << 30] {
-        assert_eq!(7, original_capacity_to_repr(cap), "cap={}", cap);
+        assert_eq!(original_capacity_to_repr(cap), expected);
+
+        if width > 1 {
+            assert_eq!(original_capacity_to_repr(cap + 1), expected);
+        }
+
+        
+        if width == MIN_ORIGINAL_CAPACITY_WIDTH + 1 {
+            assert_eq!(original_capacity_to_repr(cap - 24), expected - 1);
+            assert_eq!(original_capacity_to_repr(cap + 76), expected);
+        } else if width == MIN_ORIGINAL_CAPACITY_WIDTH + 2 {
+            assert_eq!(original_capacity_to_repr(cap - 1), expected - 1);
+            assert_eq!(original_capacity_to_repr(cap - 48), expected - 1);
+        }
     }
 }
 
 #[test]
 fn test_original_capacity_from_repr() {
     assert_eq!(0, original_capacity_from_repr(0));
-    assert_eq!(1024, original_capacity_from_repr(1));
-    assert_eq!(1024 * 2, original_capacity_from_repr(2));
-    assert_eq!(1024 * 4, original_capacity_from_repr(3));
-    assert_eq!(1024 * 8, original_capacity_from_repr(4));
-    assert_eq!(1024 * 16, original_capacity_from_repr(5));
-    assert_eq!(1024 * 32, original_capacity_from_repr(6));
-    assert_eq!(1024 * 64, original_capacity_from_repr(7));
+
+    let min_cap = 1 << MIN_ORIGINAL_CAPACITY_WIDTH;
+
+    assert_eq!(min_cap, original_capacity_from_repr(1));
+    assert_eq!(min_cap * 2, original_capacity_from_repr(2));
+    assert_eq!(min_cap * 4, original_capacity_from_repr(3));
+    assert_eq!(min_cap * 8, original_capacity_from_repr(4));
+    assert_eq!(min_cap * 16, original_capacity_from_repr(5));
+    assert_eq!(min_cap * 32, original_capacity_from_repr(6));
+    assert_eq!(min_cap * 64, original_capacity_from_repr(7));
 }
 
 unsafe impl Send for Inner {}

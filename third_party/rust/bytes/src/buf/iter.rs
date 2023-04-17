@@ -47,6 +47,7 @@ impl<T> IntoIter<T> {
     pub fn new(inner: T) -> IntoIter<T> {
         IntoIter { inner }
     }
+
     
     
     
@@ -109,7 +110,6 @@ impl<T> IntoIter<T> {
     }
 }
 
-
 impl<T: Buf> Iterator for IntoIter<T> {
     type Item = u8;
 
@@ -130,4 +130,4 @@ impl<T: Buf> Iterator for IntoIter<T> {
     }
 }
 
-impl<T: Buf> ExactSizeIterator for IntoIter<T> { }
+impl<T: Buf> ExactSizeIterator for IntoIter<T> {}
