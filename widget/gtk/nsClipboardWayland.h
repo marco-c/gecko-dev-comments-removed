@@ -149,7 +149,7 @@ class nsRetrievalContextWayland : public nsRetrievalContext {
   mozilla::Atomic<int> mClipboardRequestNumber;
   char* mClipboardData;
   uint32_t mClipboardDataLength;
-
+  bool mAsyncDataGetter;
 
 
 #define TEXT_MIME_TYPES_NUM 3
