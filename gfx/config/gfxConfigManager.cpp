@@ -30,7 +30,6 @@ void gfxConfigManager::Init() {
 
   EmplaceUserPref("gfx.webrender.compositor", mWrCompositorEnabled);
   mWrForceEnabled = gfxPlatform::WebRenderPrefEnabled();
-  mWrForceDisabled = StaticPrefs::gfx_webrender_force_legacy_layers_AtStartup();
   mWrSoftwareForceEnabled = StaticPrefs::gfx_webrender_software_AtStartup();
   mWrCompositorForceEnabled =
       StaticPrefs::gfx_webrender_compositor_force_enabled_AtStartup();
@@ -51,7 +50,6 @@ void gfxConfigManager::Init() {
 #endif
 
   mWrEnvForceEnabled = gfxPlatform::WebRenderEnvvarEnabled();
-  mWrEnvForceDisabled = gfxPlatform::WebRenderEnvvarDisabled();
 
 #ifdef XP_WIN
   DeviceManagerDx::Get()->CheckHardwareStretchingSupport(mHwStretchingSupport);
@@ -118,27 +116,6 @@ void gfxConfigManager::ConfigureFromBlocklist(long aFeature,
       aFeatureState->Disable(FeatureStatus::Blocklisted,
                              "Blocklisted by gfxInfo", blockId);
     }
-  }
-}
-
-void gfxConfigManager::ConfigureWebRenderSoftware() {
-  MOZ_ASSERT(mFeatureWrSoftware);
-
-  mFeatureWrSoftware->EnableByDefault();
-
-  
-  
-  
-  
-  if (mWrSoftwareForceEnabled) {
-    mFeatureWrSoftware->UserForceEnable("Force enabled by pref");
-  } else if (mWrForceDisabled || mWrEnvForceDisabled) {
-    
-    
-    mFeatureWrSoftware->UserDisable("User force-disabled WR",
-                                    "FEATURE_FAILURE_USER_FORCE_DISABLED"_ns);
-  } else if (gfxPlatform::DoesFissionForceWebRender()) {
-    mFeatureWrSoftware->UserForceEnable("Force enabled by fission");
   }
 }
 
@@ -216,10 +193,9 @@ void gfxConfigManager::ConfigureWebRender() {
                                   "No hardware stretching support", failureId);
   }
 
-  ConfigureWebRenderSoftware();
-  ConfigureWebRenderQualified();
-
   mFeatureWr->EnableByDefault();
+  mFeatureWrSoftware->EnableByDefault();
+  ConfigureWebRenderQualified();
 
   
   
@@ -231,13 +207,6 @@ void gfxConfigManager::ConfigureWebRender() {
                             "FEATURE_FAILURE_USER_FORCE_ENABLED_SW_WR"_ns);
   } else if (mWrEnvForceEnabled) {
     mFeatureWr->UserForceEnable("Force enabled by envvar");
-  } else if (mWrForceDisabled || mWrEnvForceDisabled) {
-    
-    
-    
-    
-    mFeatureWr->UserDisable("User force-disabled WR",
-                            "FEATURE_FAILURE_USER_FORCE_DISABLED"_ns);
   } else if (mWrForceEnabled) {
     mFeatureWr->UserForceEnable("Force enabled by pref");
   }

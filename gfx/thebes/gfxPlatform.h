@@ -807,8 +807,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   static bool WebRenderPrefEnabled();
   
   static bool WebRenderEnvvarEnabled();
-  
-  static bool WebRenderEnvvarDisabled();
 
   static const char* WebRenderResourcePathOverride();
 
