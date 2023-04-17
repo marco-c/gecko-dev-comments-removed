@@ -36,6 +36,8 @@
 
 extern "C" void __cdecl SetOaNoCache(void);
 
+using namespace mozilla::mscom::detail;
+
 namespace mozilla {
 namespace mscom {
 
@@ -148,7 +150,8 @@ ProcessRuntime::ProcessRuntime(const ProcessCategory aProcessCategory)
 
     
     
-    const bool prevInit = lock.IsInitialized();
+    const bool prevInit =
+        lock.GetInitState() == ProcessInitState::FullyInitialized;
     MOZ_ASSERT(prevInit);
     if (prevInit) {
       PostInit();
@@ -259,45 +262,56 @@ COINIT ProcessRuntime::GetDesiredApartmentType(
 
 void ProcessRuntime::InitInsideApartment() {
   ProcessInitLock lock;
-  if (lock.IsInitialized()) {
+  const ProcessInitState prevInitState = lock.GetInitState();
+  if (prevInitState == ProcessInitState::FullyInitialized) {
     
     mInitResult = S_OK;
     return;
   }
 
-  
-  mInitResult = InitializeSecurity(mProcessCategory);
-  MOZ_DIAGNOSTIC_ASSERT(SUCCEEDED(mInitResult));
+  if (prevInitState < ProcessInitState::PartialSecurityInitialized) {
+    
+    
+    mInitResult = InitializeSecurity(mProcessCategory);
+    MOZ_DIAGNOSTIC_ASSERT(SUCCEEDED(mInitResult));
 
-  
-  
-  
-  if (FAILED(mInitResult) && mInitResult != RPC_E_TOO_LATE) {
-    return;
+    
+    
+    
+    if (FAILED(mInitResult) && mInitResult != RPC_E_TOO_LATE) {
+      return;
+    }
+
+    lock.SetInitState(ProcessInitState::PartialSecurityInitialized);
   }
 
-  RefPtr<IGlobalOptions> globalOpts;
-  mInitResult =
-      ::CoCreateInstance(CLSID_GlobalOptions, nullptr, CLSCTX_INPROC_SERVER,
-                         IID_IGlobalOptions, getter_AddRefs(globalOpts));
-  MOZ_ASSERT(SUCCEEDED(mInitResult));
-  if (FAILED(mInitResult)) {
-    return;
+  if (prevInitState < ProcessInitState::PartialGlobalOptions) {
+    RefPtr<IGlobalOptions> globalOpts;
+    mInitResult =
+        ::CoCreateInstance(CLSID_GlobalOptions, nullptr, CLSCTX_INPROC_SERVER,
+                           IID_IGlobalOptions, getter_AddRefs(globalOpts));
+    MOZ_ASSERT(SUCCEEDED(mInitResult));
+    if (FAILED(mInitResult)) {
+      return;
+    }
+
+    
+    mInitResult = globalOpts->Set(COMGLB_EXCEPTION_HANDLING,
+                                  COMGLB_EXCEPTION_DONOT_HANDLE_ANY);
+    MOZ_ASSERT(SUCCEEDED(mInitResult));
+    if (FAILED(mInitResult)) {
+      return;
+    }
+
+    lock.SetInitState(ProcessInitState::PartialGlobalOptions);
   }
 
   
-  mInitResult = globalOpts->Set(COMGLB_EXCEPTION_HANDLING,
-                                COMGLB_EXCEPTION_DONOT_HANDLE_ANY);
-  MOZ_ASSERT(SUCCEEDED(mInitResult));
-
+  
   
   ::SetOaNoCache();
 
-  if (FAILED(mInitResult)) {
-    return;
-  }
-
-  lock.SetInitialized();
+  lock.SetInitState(ProcessInitState::FullyInitialized);
 }
 
 #if defined(MOZILLA_INTERNAL_API)

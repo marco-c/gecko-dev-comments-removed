@@ -12,15 +12,16 @@
 
 
 static mozilla::glue::Win32SRWLock gLock;
-static bool gIsProcessInitialized = false;
+static mozilla::mscom::detail::ProcessInitState gProcessInitState =
+    mozilla::mscom::detail::ProcessInitState::Uninitialized;
 
 namespace mozilla {
 namespace mscom {
 namespace detail {
 
-MFBT_API bool& BeginProcessRuntimeInit() {
+MFBT_API ProcessInitState& BeginProcessRuntimeInit() {
   gLock.LockExclusive();
-  return gIsProcessInitialized;
+  return gProcessInitState;
 }
 
 MFBT_API void EndProcessRuntimeInit() { gLock.UnlockExclusive(); }
