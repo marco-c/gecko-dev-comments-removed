@@ -74,9 +74,6 @@ DocumentEventsListener.prototype = {
       this.onWindowReady({
         window: this.targetActor.window,
         isTopLevel: true,
-        
-        
-        shouldBeIgnoredAsRedundantWithTargetAvailable: true,
       });
     }
   },
@@ -100,12 +97,7 @@ DocumentEventsListener.prototype = {
     });
   },
 
-  onWindowReady({
-    window,
-    isTopLevel,
-    shouldBeIgnoredAsRedundantWithTargetAvailable,
-    isFrameSwitching,
-  }) {
+  onWindowReady({ window, isTopLevel, isFrameSwitching }) {
     
     if (!isTopLevel) {
       return;
@@ -113,20 +105,8 @@ DocumentEventsListener.prototype = {
 
     const time = window.performance.timing.navigationStart;
 
-    
-    
-    
-    
-    
-    
-    shouldBeIgnoredAsRedundantWithTargetAvailable =
-      shouldBeIgnoredAsRedundantWithTargetAvailable ||
-      (this.targetActor.isTopLevelTarget &&
-        this.targetActor.followWindowGlobalLifeCycle);
-
     this.emit("dom-loading", {
       time,
-      shouldBeIgnoredAsRedundantWithTargetAvailable,
       isFrameSwitching,
     });
 

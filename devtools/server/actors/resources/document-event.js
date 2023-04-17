@@ -32,8 +32,6 @@ class DocumentEventWatcher {
       {
         time,
         
-        shouldBeIgnoredAsRedundantWithTargetAvailable,
-        
         
         isFrameSwitching,
         
@@ -54,7 +52,6 @@ class DocumentEventWatcher {
           resourceType: DOCUMENT_EVENT,
           name,
           time,
-          shouldBeIgnoredAsRedundantWithTargetAvailable,
           isFrameSwitching,
           
           

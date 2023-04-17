@@ -490,7 +490,6 @@ class ResourceCommand {
               resourceType: this.TYPES.DOCUMENT_EVENT,
               name: "will-navigate",
               time: Date.now(), 
-              shouldBeIgnoredAsRedundantWithTargetAvailable: false,
               isFrameSwitching,
               newURI: url,
             },
