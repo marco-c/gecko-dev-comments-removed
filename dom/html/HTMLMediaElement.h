@@ -659,6 +659,9 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   double VisiblePlayTime() const;
   double InvisiblePlayTime() const;
   double VideoDecodeSuspendedTime() const;
+  double TotalAudioPlayTime() const;
+  double AudiblePlayTime() const;
+  double InaudiblePlayTime() const;
 
   
   void SetFormatDiagnosticsReportForMimeType(const nsAString& aMimeType,
