@@ -30,6 +30,8 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsINetworkLinkService"
 );
 
+XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
+
 
 
 XPCOMUtils.defineLazyGetter(this, "log", () => {
@@ -103,6 +105,10 @@ var Utils = {
 
 
 
+
+
+
+
   async fetch(input, init = {}) {
     return new Promise(function(resolve, reject) {
       const request = new ServiceRequest();
@@ -168,8 +174,11 @@ var Utils = {
 
   async hasLocalDump(bucket, collection) {
     try {
-      await Utils.fetch(
-        `resource://app/defaults/settings/${bucket}/${collection}.json`
+      await fetch(
+        `resource://app/defaults/settings/${bucket}/${collection}.json`,
+        {
+          method: "HEAD",
+        }
       );
       return true;
     } catch (e) {
@@ -189,7 +198,7 @@ var Utils = {
       if (!this._dumpStatsInitPromise) {
         this._dumpStatsInitPromise = (async () => {
           try {
-            let res = await Utils.fetch(
+            let res = await fetch(
               "resource://app/defaults/settings/last_modified.json"
             );
             this._dumpStats = await res.json();
@@ -206,7 +215,7 @@ var Utils = {
     let lastModified = this._dumpStats[identifier];
     if (lastModified === undefined) {
       try {
-        let res = await Utils.fetch(
+        let res = await fetch(
           `resource://app/defaults/settings/${bucket}/${collection}.json`
         );
         let records = (await res.json()).data;
