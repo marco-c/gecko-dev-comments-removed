@@ -1767,6 +1767,7 @@ bool GCMarker::markUntilBudgetExhausted(SliceBudget& budget,
     while (hasBlackEntries()) {
       MOZ_ASSERT(markColor() == MarkColor::Black);
       processMarkStackTop(budget);
+      MOZ_ASSERT(barrierBuffer().empty());
       if (budget.isOverBudget()) {
         return false;
       }
@@ -1782,6 +1783,8 @@ bool GCMarker::markUntilBudgetExhausted(SliceBudget& budget,
       AutoSetMarkColor autoSetGray(*this, MarkColor::Gray);
       do {
         processMarkStackTop(budget);
+        MOZ_ASSERT(!hasBlackEntries());
+        MOZ_ASSERT(barrierBuffer().empty());
         if (budget.isOverBudget()) {
           return false;
         }
@@ -1789,19 +1792,8 @@ bool GCMarker::markUntilBudgetExhausted(SliceBudget& budget,
     }
 
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    MOZ_ASSERT(!hasGrayEntries());
-    if (!barrierBuffer().empty() || hasBlackEntries()) {
-      continue;
-    }
+    MOZ_ASSERT(!hasBlackEntries() && !hasGrayEntries());
+    MOZ_ASSERT(barrierBuffer().empty());
 
     
     
