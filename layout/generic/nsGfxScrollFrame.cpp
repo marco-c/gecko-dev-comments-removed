@@ -2987,7 +2987,8 @@ void ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange,
 
   
   
-  if (IsRootScrollFrameOfDocument() && presContext->IsRootContentDocument()) {
+  if (IsRootScrollFrameOfDocument() &&
+      presContext->IsRootContentDocumentCrossProcess()) {
     PresShell* ps = presContext->GetPresShell();
     if (const auto& visualScrollUpdate = ps->GetPendingVisualScrollUpdate()) {
       if (visualScrollUpdate->mVisualScrollOffset != aPt) {
