@@ -384,6 +384,24 @@ nsScriptSecurityManager::GetChannelURIPrincipal(nsIChannel* aChannel,
   
   OriginAttributes attrs = loadInfo->GetOriginAttributes();
 
+  
+  
+  
+  bool inheritsPrincipal = false;
+  rv = NS_URIChainHasFlags(uri,
+                           nsIProtocolHandler::URI_INHERITS_SECURITY_CONTEXT,
+                           &inheritsPrincipal);
+  if (NS_FAILED(rv) || inheritsPrincipal) {
+    
+    
+    nsCOMPtr<nsIPrincipal> precursorPrincipal =
+        loadInfo->FindPrincipalToInherit(aChannel);
+    nsCOMPtr<nsIURI> nullPrincipalURI =
+        NullPrincipal::CreateURI(precursorPrincipal);
+    *aPrincipal = NullPrincipal::Create(attrs, nullPrincipalURI).take();
+    return *aPrincipal ? NS_OK : NS_ERROR_FAILURE;
+  }
+
   nsCOMPtr<nsIPrincipal> prin =
       BasePrincipal::CreateContentPrincipal(uri, attrs);
   prin.forget(aPrincipal);
