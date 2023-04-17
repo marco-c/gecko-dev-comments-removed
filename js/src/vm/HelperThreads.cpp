@@ -110,13 +110,20 @@ static size_t ThreadCountForCPUCount(size_t cpuCount) {
 }
 
 bool js::SetFakeCPUCount(size_t count) {
+  HelperThreadState().setCpuCount(count);
+  return true;
+}
+
+void GlobalHelperThreadState::setCpuCount(size_t count) {
   
   AutoLockHelperThreadState lock;
-  MOZ_ASSERT(HelperThreadState().threads(lock).empty());
+  MOZ_ASSERT(!isInitialized(lock));
 
-  HelperThreadState().cpuCount = count;
-  HelperThreadState().threadCount = ThreadCountForCPUCount(count);
-  return true;
+  
+  MOZ_ASSERT(!dispatchTaskCallback);
+
+  cpuCount = count;
+  threadCount = ThreadCountForCPUCount(count);
 }
 
 size_t js::GetHelperThreadCount() { return HelperThreadState().threadCount; }
@@ -137,16 +144,19 @@ void JS::SetProfilingThreadCallbacks(
 
 
 JS_PUBLIC_API MOZ_NEVER_INLINE void JS::SetHelperThreadTaskCallback(
-    HelperThreadTaskCallback callback) {
-  HelperThreadState().setExternalTaskCallback(callback);
+    HelperThreadTaskCallback callback, size_t threadCount) {
+  HelperThreadState().setExternalTaskCallback(callback, threadCount);
 }
 
 void GlobalHelperThreadState::setExternalTaskCallback(
-    JS::HelperThreadTaskCallback callback) {
+    JS::HelperThreadTaskCallback callback, size_t threadCount) {
   AutoLockHelperThreadState lock;
   MOZ_ASSERT(!isInitialized(lock));
   MOZ_ASSERT(!dispatchTaskCallback);
+  MOZ_ASSERT(threadCount != 0);
+
   dispatchTaskCallback = callback;
+  this->threadCount = threadCount;
 }
 
 bool js::StartOffThreadWasmCompile(wasm::CompileTask* task,

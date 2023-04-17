@@ -21,7 +21,7 @@ namespace JS {
 
 using HelperThreadTaskCallback = void (*)();
 extern JS_PUBLIC_API void SetHelperThreadTaskCallback(
-    HelperThreadTaskCallback callback);
+    HelperThreadTaskCallback callback, size_t threadCount);
 
 
 extern JS_PUBLIC_API void RunHelperThreadTask();
