@@ -334,6 +334,18 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeHttpsFirstRequest(nsIURI* aURI,
   
   
   MOZ_ASSERT(aURI->SchemeIs("http"), "how come the request is not 'http'?");
+  int defaultPortforScheme = NS_GetDefaultPort("http");
+  
+  
+  int32_t port = 0;
+  nsresult rv = aURI->GetPort(&port);
+  NS_ENSURE_SUCCESS(rv, false);
+  if (port != defaultPortforScheme && port != -1) {
+    return false;
+  }
+
+  
+  
   nsAutoCString scheme;
   aURI->GetScheme(scheme);
   scheme.AppendLiteral("s");
