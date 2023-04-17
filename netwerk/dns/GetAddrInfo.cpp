@@ -350,7 +350,14 @@ nsresult GetAddrInfo(const nsACString& aHost, uint16_t aAddressFamily,
     return (*aAddrInfo)->Addresses().Length() ? NS_OK : NS_ERROR_UNKNOWN_HOST;
   }
 
-  nsAutoCString host(aHost);
+  nsAutoCString host;
+  if (StaticPrefs::network_dns_copy_string_before_call()) {
+    host = Substring(aHost.BeginReading(), aHost.Length());
+    MOZ_ASSERT(aHost.BeginReading() != host.BeginReading());
+  } else {
+    host = aHost;
+  }
+
   if (gNativeIsLocalhost) {
     
     host = "localhost"_ns;
