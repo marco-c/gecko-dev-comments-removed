@@ -1390,7 +1390,11 @@ impl Device {
             gl.get_integer_v(gl::MAX_TEXTURE_SIZE, &mut max_texture_size);
         }
 
-        let max_texture_size = max_texture_size[0];
+        
+        
+        
+        let max_texture_size = max_texture_size[0].min(16384);
+
         let renderer_name = gl.get_string(gl::RENDERER);
         info!("Renderer: {}", renderer_name);
         info!("Max texture size: {}", max_texture_size);
