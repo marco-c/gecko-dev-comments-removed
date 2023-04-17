@@ -573,7 +573,7 @@ bool nsDocShellLoadState::LoadIsFromSessionHistory() const {
 }
 
 void nsDocShellLoadState::MaybeStripTrackerQueryStrings(
-    BrowsingContext* aContext) {
+    BrowsingContext* aContext, nsIURI* aCurrentUnstrippedURI) {
   MOZ_ASSERT(aContext);
 
   
@@ -605,7 +605,24 @@ void nsDocShellLoadState::MaybeStripTrackerQueryStrings(
   if (URLQueryStringStripper::Strip(URI(), strippedURI)) {
     mUnstrippedURI = URI();
     SetURI(strippedURI);
+  } else if (LoadType() & nsIDocShell::LOAD_CMD_RELOAD) {
+    
+    
+    
+    mUnstrippedURI = aCurrentUnstrippedURI;
   }
+
+#ifdef DEBUG
+  
+  
+  if (mUnstrippedURI) {
+    nsCOMPtr<nsIURI> uri;
+    URLQueryStringStripper::Strip(mUnstrippedURI, uri);
+    bool equals = false;
+    Unused << URI()->Equals(uri, &equals);
+    MOZ_ASSERT(equals);
+  }
+#endif
 }
 
 const nsString& nsDocShellLoadState::Target() const { return mTarget; }
