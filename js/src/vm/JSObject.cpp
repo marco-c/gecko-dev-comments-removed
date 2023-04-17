@@ -1411,71 +1411,6 @@ NativeObject* js::InitClass(JSContext* cx, HandleObject obj,
                                        static_fs, ctorp);
 }
 
-static bool ReshapeForProtoMutation(JSContext* cx, HandleObject obj) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  if (!obj->isUsedAsPrototype()) {
-    return true;
-  }
-
-  RootedObject pobj(cx, obj);
-
-  while (pobj && pobj->is<NativeObject>()) {
-    if (!pobj->hasInvalidatedTeleporting()) {
-      if (!JSObject::setInvalidatedTeleporting(cx, pobj)) {
-        return false;
-      }
-    }
-    pobj = pobj->staticPrototype();
-  }
-
-  return true;
-}
-
-static bool SetProto(JSContext* cx, HandleObject obj,
-                     Handle<js::TaggedProto> proto) {
-  
-  
-  if (!ReshapeForProtoMutation(cx, obj)) {
-    return false;
-  }
-
-  if (proto.isObject()) {
-    RootedObject protoObj(cx, proto.toObject());
-    if (!JSObject::setIsUsedAsPrototype(cx, protoObj)) {
-      return false;
-    }
-  }
-
-  return JSObject::setProtoUnchecked(cx, obj, proto);
-}
-
 
 
 
@@ -1983,7 +1918,7 @@ bool js::SetPrototype(JSContext* cx, HandleObject obj, HandleObject proto,
   }
 
   Rooted<TaggedProto> taggedProto(cx, TaggedProto(proto));
-  if (!SetProto(cx, obj, taggedProto)) {
+  if (!JSObject::setProtoUnchecked(cx, obj, taggedProto)) {
     return false;
   }
 

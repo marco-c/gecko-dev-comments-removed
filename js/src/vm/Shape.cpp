@@ -167,6 +167,53 @@ static MOZ_ALWAYS_INLINE bool ReshapeForShadowedProp(JSContext* cx,
   return ReshapeForShadowedPropSlow(cx, obj, id);
 }
 
+static bool ReshapeForProtoMutation(JSContext* cx, HandleObject obj) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (!obj->isUsedAsPrototype()) {
+    return true;
+  }
+
+  RootedObject pobj(cx, obj);
+
+  while (pobj && pobj->is<NativeObject>()) {
+    if (!pobj->hasInvalidatedTeleporting()) {
+      if (!JSObject::setInvalidatedTeleporting(cx, pobj)) {
+        return false;
+      }
+    }
+    pobj = pobj->staticPrototype();
+  }
+
+  return true;
+}
+
  MOZ_ALWAYS_INLINE bool
 NativeObject::maybeConvertToDictionaryForAdd(JSContext* cx,
                                              HandleNativeObject obj) {
@@ -917,10 +964,21 @@ bool JSObject::setFlag(JSContext* cx, HandleObject obj, ObjectFlag flag) {
 bool JSObject::setProtoUnchecked(JSContext* cx, HandleObject obj,
                                  Handle<TaggedProto> proto) {
   MOZ_ASSERT(cx->compartment() == obj->compartment());
-  MOZ_ASSERT_IF(proto.isObject(), proto.toObject()->isUsedAsPrototype());
+  MOZ_ASSERT(!obj->staticPrototypeIsImmutable());
+  MOZ_ASSERT_IF(!obj->is<ProxyObject>(), obj->nonProxyIsExtensible());
+  MOZ_ASSERT(obj->shape()->proto() != proto);
 
-  if (obj->shape()->proto() == proto) {
-    return true;
+  
+  
+  if (!ReshapeForProtoMutation(cx, obj)) {
+    return false;
+  }
+
+  if (proto.isObject()) {
+    RootedObject protoObj(cx, proto.toObject());
+    if (!JSObject::setIsUsedAsPrototype(cx, protoObj)) {
+      return false;
+    }
   }
 
   if (obj->is<NativeObject>() && obj->as<NativeObject>().inDictionaryMode()) {
