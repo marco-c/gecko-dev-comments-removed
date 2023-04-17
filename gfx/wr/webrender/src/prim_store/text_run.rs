@@ -396,7 +396,7 @@ impl TextRunPrimitive {
                 .scale_factors();
 
             
-            let scale = scale_factors.0.max(scale_factors.1).min(8.0);
+            let scale = scale_factors.0.max(scale_factors.1).min(8.0).max(1.0);
             let rounded_up = 2.0f32.powf(scale.log2().ceil());
 
             RasterSpace::Local(rounded_up)
