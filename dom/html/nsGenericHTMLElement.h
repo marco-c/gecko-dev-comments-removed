@@ -1143,6 +1143,12 @@ class nsGenericHTMLFormControlElement : public nsGenericHTMLFormElement,
 
 
 
+  inline bool IsAutofocusable() const;
+
+  
+
+
+
 
   virtual void SaveState() {}
 };
