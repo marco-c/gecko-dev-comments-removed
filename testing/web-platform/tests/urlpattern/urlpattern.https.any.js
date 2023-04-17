@@ -57,20 +57,20 @@ function runTests(data) {
           
           
           
-          
           if (entry.exactly_empty_components &&
               entry.exactly_empty_components.includes(component)) {
             expected = '';
           } else if (typeof entry.pattern[0] === 'object' &&
               entry.pattern[0][component]) {
             expected = entry.pattern[0][component];
-          } else if (baseURL &&
-                     component !== 'search' && component !== 'hash') {
+          } else if (baseURL) {
             let base_value = baseURL[component];
             
             
             if (component === 'protocol')
               base_value = base_value.substring(0, base_value.length - 1);
+            else if (component === 'search' || component === 'hash')
+              base_value = base_value.substring(1, base_value.length);
             expected = base_value;
           } else {
             expected = '*';
