@@ -1,8 +1,6 @@
 
 
 
-
-
 package org.mozilla.geckoview.test;
 
 import org.jetbrains.annotations.NotNull;

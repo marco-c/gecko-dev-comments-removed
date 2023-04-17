@@ -1,8 +1,6 @@
 
 
 
-
-
 package org.mozilla.geckoview.test.rule;
 
 import org.json.JSONArray;

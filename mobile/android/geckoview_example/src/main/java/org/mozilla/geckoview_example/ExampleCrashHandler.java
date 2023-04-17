@@ -1,3 +1,7 @@
+
+
+
+
 package org.mozilla.geckoview_example;
 
 import org.mozilla.geckoview.BuildConfig;

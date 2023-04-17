@@ -1,8 +1,6 @@
 
 
 
-
-
 package org.mozilla.geckoview.test.util;
 
 import org.mozilla.geckoview.GeckoResult;

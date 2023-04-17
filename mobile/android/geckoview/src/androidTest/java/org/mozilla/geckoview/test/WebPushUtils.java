@@ -1,9 +1,6 @@
 
 
 
-
-
-
 package org.mozilla.geckoview.test;
 
 import androidx.annotation.AnyThread;
