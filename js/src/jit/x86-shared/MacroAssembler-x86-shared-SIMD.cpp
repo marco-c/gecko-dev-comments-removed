@@ -976,19 +976,15 @@ void MacroAssemblerX86Shared::packedRightShiftByScalarInt8x16(
 }
 
 void MacroAssemblerX86Shared::packedRightShiftByScalarInt8x16(
-    Imm32 count, FloatRegister src, FloatRegister temp, FloatRegister dest) {
+    Imm32 count, FloatRegister src, FloatRegister dest) {
   MOZ_ASSERT(count.value <= 7);
   ScratchSimd128Scope scratch(asMasm());
 
-  asMasm().moveSimd128(src, scratch);
-  vpslldq(Imm32(1), scratch, scratch);               
-  vpsraw(Imm32(count.value + 8), scratch, scratch);  
-  asMasm().moveSimd128(src, dest);
-  vpsraw(count, dest, dest);  
-  asMasm().loadConstantSimd128Int(SimdConstant::SplatX8(0xFF00), temp);
-  vpand(Operand(temp), dest, dest);      
-  vpandn(Operand(scratch), temp, temp);  
-  vpor(Operand(temp), dest, dest);       
+  vpunpckhbw(src, scratch, scratch);
+  vpunpcklbw(src, dest, dest);
+  vpsraw(Imm32(count.value + 8), scratch, scratch);
+  vpsraw(Imm32(count.value + 8), dest, dest);
+  vpacksswb(Operand(scratch), dest, dest);
 }
 
 void MacroAssemblerX86Shared::packedUnsignedRightShiftByScalarInt8x16(
