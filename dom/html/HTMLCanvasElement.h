@@ -31,7 +31,6 @@ class ClientWebGLContext;
 
 namespace layers {
 class CanvasRenderer;
-class CanvasLayer;
 class Image;
 class Layer;
 class LayerManager;
@@ -122,7 +121,6 @@ class HTMLCanvasElement final : public nsGenericHTMLElement,
   enum { DEFAULT_CANVAS_WIDTH = 300, DEFAULT_CANVAS_HEIGHT = 150 };
 
   typedef layers::CanvasRenderer CanvasRenderer;
-  typedef layers::CanvasLayer CanvasLayer;
   typedef layers::Layer Layer;
   typedef layers::LayerManager LayerManager;
   typedef layers::WebRenderCanvasData WebRenderCanvasData;
@@ -298,18 +296,11 @@ class HTMLCanvasElement final : public nsGenericHTMLElement,
 
 
 
-  already_AddRefed<Layer> GetCanvasLayer(nsDisplayListBuilder* aBuilder,
-                                         Layer* aOldLayer,
-                                         LayerManager* aManager);
   already_AddRefed<layers::Image> GetAsImage();
   bool UpdateWebRenderCanvasData(nsDisplayListBuilder* aBuilder,
                                  WebRenderCanvasData* aCanvasData);
   bool InitializeCanvasRenderer(nsDisplayListBuilder* aBuilder,
                                 CanvasRenderer* aRenderer);
-  
-  
-  
-  bool ShouldForceInactiveLayer(LayerManager* aManager);
 
   
   

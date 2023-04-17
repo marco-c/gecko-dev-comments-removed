@@ -26,7 +26,6 @@ class nsICanvasRenderingContextInternal;
 namespace mozilla {
 namespace layers {
 
-class ClientCanvasRenderer;
 class KnowsCompositor;
 class PersistentBufferProvider;
 class WebRenderCanvasRendererAsync;
@@ -55,9 +54,6 @@ struct CanvasRendererData final {
     return *ptrToPtr;
   }
 };
-
-
-
 
 
 
@@ -135,7 +131,6 @@ class CanvasRenderer : public RefCounted<CanvasRenderer> {
   void ResetDirty() { mDirty = false; }
   bool IsDirty() const { return mDirty; }
 
-  virtual ClientCanvasRenderer* AsClientCanvasRenderer() { return nullptr; }
   virtual WebRenderCanvasRendererAsync* AsWebRenderCanvasRendererAsync() {
     return nullptr;
   }
