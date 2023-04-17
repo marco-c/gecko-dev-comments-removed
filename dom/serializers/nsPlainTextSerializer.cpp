@@ -144,47 +144,37 @@ int32_t nsPlainTextSerializer::CurrentLine::FindWrapIndexForContent(
       --goodSpace;  
                     
     }
-  } else {
-    
-    
-    
-    
-
-    if (aWrapColumn < prefixwidth) {
-      goodSpace = NS_LINEBREAKER_NEED_MORE_TEXT;
-    } else {
-      goodSpace = std::min(aWrapColumn - prefixwidth, mContent.Length() - 1);
-      while (goodSpace >= 0 &&
-             !nsCRT::IsAsciiSpace(mContent.CharAt(goodSpace))) {
-        goodSpace--;
-      }
-    }
-  }
-
-  if (goodSpace == NS_LINEBREAKER_NEED_MORE_TEXT) {
-    
-    
-    goodSpace =
-        (prefixwidth > aWrapColumn + 1) ? 1 : aWrapColumn - prefixwidth + 1;
-    if (aLineBreaker) {
+    if (goodSpace == NS_LINEBREAKER_NEED_MORE_TEXT) {
+      
+      
+      goodSpace =
+          (prefixwidth > aWrapColumn + 1) ? 1 : aWrapColumn - prefixwidth + 1;
       if ((uint32_t)goodSpace < mContent.Length())
         goodSpace = aLineBreaker->DeprecatedNext(mContent.get(),
                                                  mContent.Length(), goodSpace);
       if (goodSpace == NS_LINEBREAKER_NEED_MORE_TEXT)
         goodSpace = mContent.Length();
-    } else {
-      
-      
-      
-      
-      goodSpace = (prefixwidth > aWrapColumn) ? 1 : aWrapColumn - prefixwidth;
-      const int32_t contentLength = mContent.Length();
-      while (goodSpace < contentLength &&
-             !nsCRT::IsAsciiSpace(mContent.CharAt(goodSpace))) {
-        goodSpace++;
-      }
+    }
+
+    return goodSpace;
+  }
+
+  
+  
+  if (aWrapColumn < prefixwidth) {
+    goodSpace = (prefixwidth > aWrapColumn) ? 1 : aWrapColumn - prefixwidth;
+    const int32_t contentLength = mContent.Length();
+    while (goodSpace < contentLength &&
+           !nsCRT::IsAsciiSpace(mContent.CharAt(goodSpace))) {
+      goodSpace++;
+    }
+  } else {
+    goodSpace = std::min(aWrapColumn - prefixwidth, mContent.Length() - 1);
+    while (goodSpace >= 0 && !nsCRT::IsAsciiSpace(mContent.CharAt(goodSpace))) {
+      goodSpace--;
     }
   }
+
   return goodSpace;
 }
 
