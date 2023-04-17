@@ -111,6 +111,10 @@ add_task(async function test_interactions_background_tab() {
 
   
   
+  
+  
+  await TestUtils.waitForTick();
+  await TestUtils.waitForTick();
   await TestUtils.waitForTick();
 
   Assert.equal(

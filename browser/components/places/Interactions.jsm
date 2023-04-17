@@ -152,6 +152,14 @@ class _Interactions {
 
 
   registerEndOfInteraction(browser) {
+    
+    
+    
+    
+    
+    if (!browser) {
+      return;
+    }
     this.logConsole.debug("End of interaction");
 
     this.#updateInteraction(browser);
