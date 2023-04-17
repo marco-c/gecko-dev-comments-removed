@@ -2723,17 +2723,9 @@ void gfxPlatform::InitWebGLConfig() {
     }
   }
 
-  {
-    bool allowWebGLOop =
-        IsFeatureOk(nsIGfxInfo::FEATURE_ALLOW_WEBGL_OUT_OF_PROCESS);
-
-    const bool threadsafeGl = IsFeatureOk(nsIGfxInfo::FEATURE_THREADSAFE_GL);
-    if (gfxVars::UseWebRender() && !threadsafeGl) {
-      allowWebGLOop = false;
-    }
-
-    gfxVars::SetAllowWebglOop(allowWebGLOop);
-  }
+  bool allowWebGLOop =
+      IsFeatureOk(nsIGfxInfo::FEATURE_ALLOW_WEBGL_OUT_OF_PROCESS);
+  gfxVars::SetAllowWebglOop(allowWebGLOop);
 
   if (kIsAndroid) {
     
