@@ -51,6 +51,7 @@ ChromeUtils.defineModuleGetter(
   "FileUtils",
   "resource://gre/modules/FileUtils.jsm"
 );
+ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
 ChromeUtils.defineModuleGetter(
   this,
   "NetUtil",
@@ -59,6 +60,10 @@ ChromeUtils.defineModuleGetter(
 
 XPCOMUtils.defineLazyGetter(this, "gTextDecoder", function() {
   return new TextDecoder();
+});
+
+XPCOMUtils.defineLazyGetter(this, "gTextEncoder", function() {
+  return new TextEncoder();
 });
 
 const FileInputStream = Components.Constructor(
@@ -133,11 +138,11 @@ function JSONFile(config) {
 
   this._options = {};
   if (config.compression) {
-    this._options.decompress = this._options.compress = true;
+    this._options.compression = config.compression;
   }
 
   if (config.backupTo) {
-    this._options.backupFile = this._options.backupTo = config.backupTo;
+    this._options.backupTo = config.backupTo;
   }
 
   this._finalizeAt = config.finalizeAt || AsyncShutdown.profileBeforeChange;
@@ -218,12 +223,14 @@ JSONFile.prototype = {
     let data = {};
 
     try {
-      data = await IOUtils.readJSON(this.path, this._options);
+      let bytes = await OS.File.read(this.path, this._options);
 
       
       if (this.dataReady) {
         return;
       }
+
+      data = JSON.parse(gTextDecoder.decode(bytes));
     } catch (ex) {
       
       
@@ -236,7 +243,7 @@ JSONFile.prototype = {
       
       
 
-      let cleansedBasename = PathUtils.filename(this.path)
+      let cleansedBasename = OS.Path.basename(this.path)
         .replace(/\.json$/, "")
         .replaceAll(/[^a-zA-Z0-9_.]/g, "");
       let errorNo = ex.winLastError || ex.unixErrno;
@@ -245,29 +252,30 @@ JSONFile.prototype = {
         cleansedBasename,
         errorNo ? errorNo.toString() : ""
       );
-      if (!(ex instanceof DOMException && ex.name == "NotFoundError")) {
+      if (!(ex instanceof OS.File.Error && ex.becauseNoSuchFile)) {
         Cu.reportError(ex);
 
         
         try {
-          let uniquePath = await PathUtils.createUniquePath(
-            this.path + ".corrupt"
-          );
-          await IOUtils.move(this.path, uniquePath);
+          let openInfo = await OS.File.openUnique(this.path + ".corrupt", {
+            humanReadable: true,
+          });
+          await openInfo.file.close();
+          await OS.File.move(this.path, openInfo.path);
           this._recordTelemetry("load", cleansedBasename, "invalid_json");
         } catch (e2) {
           Cu.reportError(e2);
         }
       }
 
-      if (this._options.backupFile) {
+      if (this._options.backupTo) {
         
         
         
         try {
-          await IOUtils.copy(this._options.backupFile, this.path);
+          await OS.File.copy(this._options.backupTo, this.path);
         } catch (e) {
-          if (!(e instanceof DOMException && e.name == "NotFoundError")) {
+          if (!(e instanceof OS.File.Error && ex.becauseNoSuchFile)) {
             Cu.reportError(e);
           }
         }
@@ -276,17 +284,16 @@ JSONFile.prototype = {
           
           
           
-          data = await IOUtils.readJSON(
-            this._options.backupFile,
-            this._options
-          );
+          let bytes = await OS.File.read(this._options.backupTo, this._options);
+
           
           if (this.dataReady) {
             return;
           }
+          data = JSON.parse(gTextDecoder.decode(bytes));
           this._recordTelemetry("load", cleansedBasename, "used_backup");
         } catch (e3) {
-          if (!(e3 instanceof DOMException && e3.name == "NotFoundError")) {
+          if (!(e3 instanceof OS.File.Error && ex.becauseNoSuchFile)) {
             Cu.reportError(e3);
           }
         }
@@ -366,13 +373,13 @@ JSONFile.prototype = {
         }
       }
 
-      if (this._options.backupFile) {
+      if (this._options.backupTo) {
         
         
         
         try {
-          let basename = PathUtils.filename(this.path);
-          let backupFile = new FileUtils.File(this._options.backupFile);
+          let basename = OS.Path.basename(this.path);
+          let backupFile = new FileUtils.File(this._options.backupTo);
           backupFile.copyTo(null, basename);
         } catch (e) {
           if (
@@ -389,7 +396,7 @@ JSONFile.prototype = {
           
           
           let inputStream = new FileInputStream(
-            new FileUtils.File(this._options.backupFile),
+            new FileUtils.File(this._options.backupTo),
             FileUtils.MODE_RDONLY,
             FileUtils.PERMS_FILE,
             0
@@ -434,27 +441,28 @@ JSONFile.prototype = {
 
 
   async _save() {
+    let json;
+    try {
+      json = JSON.stringify(this._data);
+    } catch (e) {
+      
+      if (typeof this._data.toJSONSafe == "function") {
+        json = JSON.stringify(this._data.toJSONSafe());
+      } else {
+        throw e;
+      }
+    }
+
     
+    let bytes = gTextEncoder.encode(json);
     if (this._beforeSave) {
       await Promise.resolve(this._beforeSave());
     }
-
-    try {
-      await IOUtils.writeJSON(
-        this.path,
-        this._data,
-        Object.assign({ tmpPath: this.path + ".tmp" }, this._options)
-      );
-    } catch (ex) {
-      if (typeof this._data.toJSONSafe == "function") {
-        
-        await IOUtils.writeUTF8(
-          this.path,
-          this._data.toJSONSafe(),
-          Object.assign({ tmpPath: this.path + ".tmp" }, this._options)
-        );
-      }
-    }
+    await OS.File.writeAtomic(
+      this.path,
+      bytes,
+      Object.assign({ tmpPath: this.path + ".tmp" }, this._options)
+    );
   },
 
   
