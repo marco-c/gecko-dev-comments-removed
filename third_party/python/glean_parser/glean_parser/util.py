@@ -172,6 +172,13 @@ def Camelize(value: str) -> str:
     return to_camel_case(value, True)
 
 
+def snake_case(value: str) -> str:
+    """
+    Convert the value to snake_case.
+    """
+    return value.lower().replace(".", "_").replace("-", "_")
+
+
 @functools.lru_cache()
 def get_jinja2_template(
     template_name: str, filters: Iterable[Tuple[str, Callable]] = ()
@@ -413,14 +420,16 @@ common_metric_args = [
 
 
 
+
+
 extra_metric_args = [
     "time_unit",
     "memory_unit",
     "allowed_extra_keys",
     "reason_codes",
-    "bucket_count",
-    "range_max",
     "range_min",
+    "range_max",
+    "bucket_count",
     "histogram_type",
     "numerators",
 ]
