@@ -7,6 +7,7 @@
 #ifndef mozilla_StaticPresData_h
 #define mozilla_StaticPresData_h
 
+#include "mozilla/StaticPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "nsCoord.h"
 #include "nsCOMPtr.h"
@@ -161,8 +162,12 @@ class StaticPresData {
   void InvalidateFontPrefs() { mLangGroupFontPrefs.Reset(); }
 
  private:
+  
+  
+  
   StaticPresData();
   ~StaticPresData() = default;
+  friend class StaticAutoPtr<StaticPresData>;
 
   nsLanguageAtomService* mLangService;
   LangGroupFontPrefs mLangGroupFontPrefs;

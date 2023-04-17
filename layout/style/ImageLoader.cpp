@@ -25,6 +25,7 @@
 #include "Image.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ProfilerLabels.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/layers/WebRenderUserData.h"
 #include "nsTHashSet.h"
@@ -72,7 +73,7 @@ using GlobalRequestTable =
 
 
 
-static GlobalRequestTable* sImages = nullptr;
+static StaticAutoPtr<GlobalRequestTable> sImages;
 static StaticRefPtr<GlobalImageObserver> sImageObserver;
 
 
@@ -87,7 +88,6 @@ void ImageLoader::Shutdown() {
     entry.GetKey()->CancelAndForgetObserver(NS_BINDING_ABORTED);
   }
 
-  delete sImages;
   sImages = nullptr;
   sImageObserver = nullptr;
 }
