@@ -1481,13 +1481,6 @@ nsresult nsHttpChannel::CallOnStartRequest() {
     }
   }
 
-  auto isAllowedOrErr = EnsureOpaqueResponseIsAllowedAfterSniff();
-  if (isAllowedOrErr.isErr() || !isAllowedOrErr.inspect()) {
-    
-    
-    
-  }
-
   
   
   
@@ -1514,6 +1507,17 @@ nsresult nsHttpChannel::CallOnStartRequest() {
           unknownDecoderStarted = true;
         }
       }
+    }
+  }
+
+  
+  
+  if (!unknownDecoderStarted) {
+    auto isAllowedOrErr = EnsureOpaqueResponseIsAllowedAfterSniff();
+    if (isAllowedOrErr.isErr() || !isAllowedOrErr.inspect()) {
+      
+      
+      
     }
   }
 
@@ -7524,6 +7528,15 @@ nsHttpChannel::OnDataAvailable(nsIRequest* request, nsIInputStream* input,
     nsresult rv =
         mListener->OnDataAvailable(this, input, mLogicalOffset, count);
     if (NS_SUCCEEDED(rv)) {
+      auto isAllowedOrErr = EnsureOpaqueResponseIsAllowedAfterSniff();
+      if (isAllowedOrErr.isErr() || !isAllowedOrErr.inspect()) {
+        
+        
+        
+        
+        
+        
+      }
       
       
       
