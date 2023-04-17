@@ -678,16 +678,12 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
 
 
 
-  void RegAccessKey() {
-    if (HasFlag(NODE_HAS_ACCESSKEY)) {
-      RegUnRegAccessKey(true);
+  void RegUnRegAccessKey(bool aDoReg) override {
+    if (!HasFlag(NODE_HAS_ACCESSKEY)) {
+      return;
     }
-  }
 
-  void UnregAccessKey() {
-    if (HasFlag(NODE_HAS_ACCESSKEY)) {
-      RegUnRegAccessKey(false);
-    }
+    nsStyledElement::RegUnRegAccessKey(aDoReg);
   }
 
  protected:
