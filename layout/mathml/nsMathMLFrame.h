@@ -16,11 +16,7 @@
 
 class nsMathMLChar;
 class nsCSSValue;
-
-namespace mozilla {
-class nsDisplayListBuilder;
 class nsDisplayListSet;
-}  
 
 
 
@@ -268,8 +264,8 @@ class nsMathMLFrame : public nsIMathMLFrame {
 
  protected:
 #if defined(DEBUG) && defined(SHOW_BOUNDING_BOX)
-  void DisplayBoundingMetrics(mozilla::nsDisplayListBuilder* aBuilder,
-                              nsIFrame* aFrame, const nsPoint& aPt,
+  void DisplayBoundingMetrics(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
+                              const nsPoint& aPt,
                               const nsBoundingMetrics& aMetrics,
                               const nsDisplayListSet& aLists);
 #endif
@@ -278,8 +274,8 @@ class nsMathMLFrame : public nsIMathMLFrame {
 
 
 
-  void DisplayBar(mozilla::nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                  const nsRect& aRect, const mozilla::nsDisplayListSet& aLists,
+  void DisplayBar(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
+                  const nsRect& aRect, const nsDisplayListSet& aLists,
                   uint32_t aIndex = 0);
 
   

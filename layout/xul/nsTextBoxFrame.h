@@ -14,7 +14,6 @@ class nsAsyncAccesskeyUpdate;
 class nsFontMetrics;
 
 namespace mozilla {
-class nsDisplayXULTextBox;
 class PresShell;
 }  
 
@@ -64,7 +63,7 @@ class nsTextBoxFrame final : public nsLeafBoxFrame {
 
  protected:
   friend class nsAsyncAccesskeyUpdate;
-  friend class mozilla::nsDisplayXULTextBox;
+  friend class nsDisplayXULTextBox;
   
   
   bool UpdateAccesskey(WeakFrame& aWeakThis);

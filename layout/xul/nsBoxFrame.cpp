@@ -956,7 +956,7 @@ void nsBoxFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     
     aLists.Content()->AppendNewToTopWithIndex<nsDisplayOwnLayer>(
         aBuilder, this,  nsDisplayOwnLayer::OwnLayerForBoxFrame,
-        &masterList, ownLayerASR, mozilla::nsDisplayOwnLayerFlags::None,
+        &masterList, ownLayerASR, nsDisplayOwnLayerFlags::None,
         mozilla::layers::ScrollbarData{}, true, true);
   }
 }
@@ -1004,8 +1004,6 @@ nsresult nsBoxFrame::LayoutChildAt(nsBoxLayoutState& aState, nsIFrame* aBox,
 
   return NS_OK;
 }
-
-namespace mozilla {
 
 
 
@@ -1088,8 +1086,6 @@ void nsDisplayXULEventRedirector::HitTest(nsDisplayListBuilder* aBuilder,
     }
   }
 }
-
-}  
 
 class nsXULEventRedirectorWrapper final : public nsDisplayItemWrapper {
  public:

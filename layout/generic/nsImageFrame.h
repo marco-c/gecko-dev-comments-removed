@@ -26,13 +26,13 @@ class nsFontMetrics;
 class nsImageMap;
 class nsIURI;
 class nsILoadGroup;
+class nsDisplayImage;
 class nsPresContext;
 class nsImageFrame;
 class nsTransform2D;
 class nsImageLoadingContent;
 
 namespace mozilla {
-class nsDisplayImage;
 class PresShell;
 namespace layers {
 class ImageContainer;
@@ -434,11 +434,10 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
   
   static mozilla::StaticRefPtr<IconLoad> gIconLoad;
 
-  friend class mozilla::nsDisplayImage;
+  friend class nsDisplayImage;
   friend class nsDisplayGradient;
 };
 
-namespace mozilla {
 
 
 
@@ -504,7 +503,5 @@ class nsDisplayImage final : public nsDisplayImageContainer {
   nsCOMPtr<imgIContainer> mImage;
   nsCOMPtr<imgIContainer> mPrevImage;
 };
-
-}  
 
 #endif 

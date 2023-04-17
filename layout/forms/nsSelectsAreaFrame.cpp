@@ -28,64 +28,7 @@ nsContainerFrame* NS_NewSelectsAreaFrame(PresShell* aShell,
 
 NS_IMPL_FRAMEARENA_HELPERS(nsSelectsAreaFrame)
 
-static nsListControlFrame* GetEnclosingListFrame(nsIFrame* aSelectsAreaFrame) {
-  nsIFrame* frame = aSelectsAreaFrame->GetParent();
-  while (frame) {
-    if (frame->IsListControlFrame())
-      return static_cast<nsListControlFrame*>(frame);
-    frame = frame->GetParent();
-  }
-  return nullptr;
-}
 
-void nsSelectsAreaFrame::Reflow(nsPresContext* aPresContext,
-                                ReflowOutput& aDesiredSize,
-                                const ReflowInput& aReflowInput,
-                                nsReflowStatus& aStatus) {
-  MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
-
-  nsListControlFrame* list = GetEnclosingListFrame(this);
-  NS_ASSERTION(list,
-               "Must have an nsListControlFrame!  Frame constructor is "
-               "broken");
-
-  bool isInDropdownMode = list->IsInDropDownMode();
-
-  
-  
-  WritingMode wm = aReflowInput.GetWritingMode();
-  nscoord oldBSize;
-  if (isInDropdownMode) {
-    
-    
-    if (!HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
-      oldBSize = BSize(wm);
-    } else {
-      oldBSize = NS_UNCONSTRAINEDSIZE;
-    }
-  }
-
-  nsBlockFrame::Reflow(aPresContext, aDesiredSize, aReflowInput, aStatus);
-
-  
-  
-  
-  if (list->MightNeedSecondPass()) {
-    nscoord newBSizeOfARow = list->CalcBSizeOfARow();
-    
-    
-    
-    
-    if (newBSizeOfARow != mBSizeOfARow ||
-        (isInDropdownMode &&
-         (oldBSize != aDesiredSize.BSize(wm) || oldBSize != BSize(wm)))) {
-      mBSizeOfARow = newBSizeOfARow;
-      list->SetSuppressScrollbarUpdate(true);
-    }
-  }
-}
-
-namespace mozilla {
 
 
 
@@ -151,6 +94,16 @@ class nsOptionEventGrabberWrapper : public nsDisplayItemWrapper {
   }
 };
 
+static nsListControlFrame* GetEnclosingListFrame(nsIFrame* aSelectsAreaFrame) {
+  nsIFrame* frame = aSelectsAreaFrame->GetParent();
+  while (frame) {
+    if (frame->IsListControlFrame())
+      return static_cast<nsListControlFrame*>(frame);
+    frame = frame->GetParent();
+  }
+  return nullptr;
+}
+
 class nsDisplayListFocus : public nsPaintedDisplayItem {
  public:
   nsDisplayListFocus(nsDisplayListBuilder* aBuilder, nsSelectsAreaFrame* aFrame)
@@ -178,8 +131,6 @@ class nsDisplayListFocus : public nsPaintedDisplayItem {
   NS_DISPLAY_DECL_NAME("ListFocus", TYPE_LIST_FOCUS)
 };
 
-}  
-
 void nsSelectsAreaFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                           const nsDisplayListSet& aLists) {
   if (!aBuilder->IsForEventDelivery()) {
@@ -204,5 +155,52 @@ void nsSelectsAreaFrame::BuildDisplayListInternal(
     
     
     aLists.Outlines()->AppendNewToTop<nsDisplayListFocus>(aBuilder, this);
+  }
+}
+
+void nsSelectsAreaFrame::Reflow(nsPresContext* aPresContext,
+                                ReflowOutput& aDesiredSize,
+                                const ReflowInput& aReflowInput,
+                                nsReflowStatus& aStatus) {
+  MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
+
+  nsListControlFrame* list = GetEnclosingListFrame(this);
+  NS_ASSERTION(list,
+               "Must have an nsListControlFrame!  Frame constructor is "
+               "broken");
+
+  bool isInDropdownMode = list->IsInDropDownMode();
+
+  
+  
+  WritingMode wm = aReflowInput.GetWritingMode();
+  nscoord oldBSize;
+  if (isInDropdownMode) {
+    
+    
+    if (!HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
+      oldBSize = BSize(wm);
+    } else {
+      oldBSize = NS_UNCONSTRAINEDSIZE;
+    }
+  }
+
+  nsBlockFrame::Reflow(aPresContext, aDesiredSize, aReflowInput, aStatus);
+
+  
+  
+  
+  if (list->MightNeedSecondPass()) {
+    nscoord newBSizeOfARow = list->CalcBSizeOfARow();
+    
+    
+    
+    
+    if (newBSizeOfARow != mBSizeOfARow ||
+        (isInDropdownMode &&
+         (oldBSize != aDesiredSize.BSize(wm) || oldBSize != BSize(wm)))) {
+      mBSizeOfARow = newBSizeOfARow;
+      list->SetSuppressScrollbarUpdate(true);
+    }
   }
 }

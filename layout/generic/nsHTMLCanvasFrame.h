@@ -25,6 +25,7 @@ class WebRenderCanvasData;
 }  
 
 class nsPresContext;
+class nsDisplayItem;
 
 nsIFrame* NS_NewHTMLCanvasFrame(mozilla::PresShell* aPresShell,
                                 mozilla::ComputedStyle* aStyle);

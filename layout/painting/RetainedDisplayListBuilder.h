@@ -13,8 +13,6 @@
 
 class nsWindowSizes;
 
-namespace mozilla {
-
 
 
 
@@ -259,7 +257,5 @@ struct RetainedDisplayListBuilder {
   WeakFrame mPreviousCaret;
   RetainedDisplayListMetrics mMetrics;
 };
-
-}  
 
 #endif  

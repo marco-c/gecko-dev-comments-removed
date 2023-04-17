@@ -14,7 +14,6 @@
 #include "gfxRect.h"
 #include "mozilla/gfx/MatrixFwd.h"
 
-namespace mozilla {
 class nsDisplayBackgroundImage;
 class nsCharClipDisplayItem;
 class nsDisplayItem;
@@ -25,9 +24,11 @@ class nsDisplayEffectsBase;
 class nsDisplayMasksAndClipPaths;
 class nsDisplayFilters;
 
+namespace mozilla {
 namespace gfx {
 struct sRGBColor;
 }
+}  
 
 
 
@@ -364,7 +365,5 @@ class nsDisplayTransformGeometry : public nsDisplayItemGeometry {
   mozilla::gfx::Matrix4x4Flagged mTransform;
   int32_t mAppUnitsPerDevPixel;
 };
-
-}  
 
 #endif 

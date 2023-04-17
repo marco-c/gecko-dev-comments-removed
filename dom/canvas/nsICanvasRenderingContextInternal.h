@@ -27,11 +27,11 @@
     }                                                \
   }
 
+class nsDisplayListBuilder;
 class nsIDocShell;
 class nsRefreshDriver;
 
 namespace mozilla {
-class nsDisplayListBuilder;
 class ClientWebGLContext;
 class PresShell;
 namespace layers {
@@ -143,15 +143,14 @@ class nsICanvasRenderingContextInternal : public nsISupports,
 
   
   
-  virtual already_AddRefed<Layer> GetCanvasLayer(
-      mozilla::nsDisplayListBuilder* builder, Layer* oldLayer,
-      LayerManager* manager) = 0;
-  virtual bool UpdateWebRenderCanvasData(
-      mozilla::nsDisplayListBuilder* aBuilder,
-      WebRenderCanvasData* aCanvasData) {
+  virtual already_AddRefed<Layer> GetCanvasLayer(nsDisplayListBuilder* builder,
+                                                 Layer* oldLayer,
+                                                 LayerManager* manager) = 0;
+  virtual bool UpdateWebRenderCanvasData(nsDisplayListBuilder* aBuilder,
+                                         WebRenderCanvasData* aCanvasData) {
     return false;
   }
-  virtual bool InitializeCanvasRenderer(mozilla::nsDisplayListBuilder* aBuilder,
+  virtual bool InitializeCanvasRenderer(nsDisplayListBuilder* aBuilder,
                                         CanvasRenderer* aRenderer) {
     return true;
   }
