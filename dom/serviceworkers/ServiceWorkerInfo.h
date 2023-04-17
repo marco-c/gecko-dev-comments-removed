@@ -62,12 +62,6 @@ class ServiceWorkerInfo final : public nsIServiceWorkerInfo {
 
   enum { Unknown, Enabled, Disabled } mHandlesFetch;
 
-  uint32_t mNavigationFaultCount;
-
-  
-  
-  nsresult mTestingInjectCancellation;
-
   ~ServiceWorkerInfo();
 
   
@@ -103,11 +97,6 @@ class ServiceWorkerInfo final : public nsIServiceWorkerInfo {
     mSkipWaitingFlag = true;
   }
 
-  void ReportNavigationFault() {
-    MOZ_ASSERT(NS_IsMainThread());
-    mNavigationFaultCount++;
-  }
-
   ServiceWorkerInfo(nsIPrincipal* aPrincipal, const nsACString& aScope,
                     uint64_t aRegistrationId, uint64_t aRegistrationVersion,
                     const nsACString& aScriptSpec, const nsAString& aCacheName,
@@ -126,8 +115,6 @@ class ServiceWorkerInfo final : public nsIServiceWorkerInfo {
   uint64_t ID() const { return mDescriptor.Id(); }
 
   const ServiceWorkerDescriptor& Descriptor() const { return mDescriptor; }
-
-  nsresult TestingInjectCancellation() { return mTestingInjectCancellation; }
 
   void UpdateState(ServiceWorkerState aState);
 

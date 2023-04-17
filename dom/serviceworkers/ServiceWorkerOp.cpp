@@ -1541,31 +1541,6 @@ nsresult FetchEventOp::DispatchFetchEvent(JSContext* aCx,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-  if (NS_FAILED(args.testingInjectCancellation())) {
-    return args.testingInjectCancellation();
-  }
-
-  
-
-
-
-
-
-
-
   SafeRefPtr<InternalRequest> internalRequest =
       mActor->ExtractInternalRequest();
 
