@@ -1127,15 +1127,6 @@ class nsGenericHTMLFormElement : public nsGenericHTMLElement,
                                   nsIFrame* aFrame);
 
   
-  
-  
-  enum FocusTristate { eUnfocusable, eInactiveWindow, eActiveWindow };
-
-  
-  
-  FocusTristate FocusState();
-
-  
   mozilla::dom::HTMLFormElement* mForm;
 
   

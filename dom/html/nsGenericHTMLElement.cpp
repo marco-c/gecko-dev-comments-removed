@@ -2046,19 +2046,6 @@ EventStates nsGenericHTMLFormElement::IntrinsicState() const {
   return state;
 }
 
-nsGenericHTMLFormElement::FocusTristate nsGenericHTMLFormElement::FocusState() {
-  
-  Document* doc = GetComposedDoc();
-  if (!doc) return eUnfocusable;
-
-  
-  if (IsDisabled()) {
-    return eUnfocusable;
-  }
-
-  return IsInActiveTab(doc) ? eActiveWindow : eInactiveWindow;
-}
-
 Element* nsGenericHTMLFormElement::AddFormIdObserver() {
   nsAutoString formId;
   DocumentOrShadowRoot* docOrShadow = GetUncomposedDocOrConnectedShadowRoot();

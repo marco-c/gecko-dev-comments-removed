@@ -220,6 +220,14 @@ class TextControlElement : public nsGenericHTMLFormElementWithState {
 
  protected:
   virtual ~TextControlElement() = default;
+
+  
+  
+  
+  enum class FocusTristate { eUnfocusable, eInactiveWindow, eActiveWindow };
+
+  
+  FocusTristate FocusState();
 };
 
 }  
