@@ -198,12 +198,7 @@ class WinUtils {
 
 
   static double LogToPhysFactor(HMONITOR aMonitor);
-  static double LogToPhysFactor(HWND aWnd) {
-    
-    HWND ancestor = ::GetAncestor(aWnd, GA_ROOTOWNER);
-    return LogToPhysFactor(::MonitorFromWindow(ancestor ? ancestor : aWnd,
-                                               MONITOR_DEFAULTTOPRIMARY));
-  }
+  static double LogToPhysFactor(HWND aWnd);
   static double LogToPhysFactor(HDC aDC) {
     return LogToPhysFactor(::WindowFromDC(aDC));
   }

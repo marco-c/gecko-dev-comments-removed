@@ -431,6 +431,9 @@ EnableNonClientDpiScalingProc WinUtils::sEnableNonClientDpiScaling = NULL;
 GetSystemMetricsForDpiProc WinUtils::sGetSystemMetricsForDpi = NULL;
 bool WinUtils::sHasPackageIdentity = false;
 
+using GetDpiForWindowProc = UINT (WINAPI*)(HWND);
+static GetDpiForWindowProc sGetDpiForWindow = NULL;
+
 
 void WinUtils::Initialize() {
   
@@ -460,6 +463,8 @@ void WinUtils::Initialize() {
 
       sGetSystemMetricsForDpi = (GetSystemMetricsForDpiProc)::GetProcAddress(
           user32Dll, "GetSystemMetricsForDpi");
+      sGetDpiForWindow = (GetDpiForWindowProc)::GetProcAddress(
+          user32Dll, "GetDpiForWindow");
     }
   }
 
@@ -660,6 +665,26 @@ double WinUtils::LogToPhysFactor(HMONITOR aMonitor) {
 
 int32_t WinUtils::LogToPhys(HMONITOR aMonitor, double aValue) {
   return int32_t(NS_round(aValue * LogToPhysFactor(aMonitor)));
+}
+
+
+double WinUtils::LogToPhysFactor(HWND aWnd) {
+  
+  
+  
+  if (sGetDpiForWindow)
+  {
+    UINT dpi = sGetDpiForWindow(aWnd);
+    if (dpi > 0)
+    {
+      return static_cast<double>(dpi) / 96.0;
+    }
+  }
+
+  
+  HWND ancestor = ::GetAncestor(aWnd, GA_ROOTOWNER);
+  return LogToPhysFactor(::MonitorFromWindow(ancestor ? ancestor : aWnd,
+                                             MONITOR_DEFAULTTOPRIMARY));
 }
 
 
