@@ -4901,11 +4901,6 @@ void nsWindow::OnDragDataReceivedEvent(GtkWidget* aWidget,
   RefPtr<nsDragService> dragService = nsDragService::GetInstance();
   dragService->TargetDataReceived(aWidget, aDragContext, aX, aY, aSelectionData,
                                   aInfo, aTime);
-
-  
-  
-  
-  WindowDragMotionHandler(aWidget, aDragContext, nullptr, aX, aY, aTime);
 }
 
 nsWindow* nsWindow::GetTransientForWindowIfPopup() {
