@@ -10,6 +10,7 @@
 
 #include "jsapi.h"
 
+#include "js/CallAndConstruct.h"  
 #include "js/CharacterEncoding.h"
 #include "js/friend/ErrorMessages.h"  
 #include "js/PropertyDescriptor.h"    

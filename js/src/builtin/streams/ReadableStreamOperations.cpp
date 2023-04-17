@@ -19,6 +19,7 @@
 #include "builtin/streams/ReadableStreamInternals.h"  
 #include "builtin/streams/ReadableStreamReader.h"  
 #include "builtin/streams/TeeState.h"              
+#include "js/CallAndConstruct.h"                   
 #include "js/CallArgs.h"                           
 #include "js/Promise.h"  
 #include "js/RootingAPI.h"        

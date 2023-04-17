@@ -21,6 +21,7 @@
 #include "builtin/Array.h"
 #include "jit/AtomicOperations.h"
 #include "jit/InlinableNatives.h"
+#include "js/CallAndConstruct.h"  
 #include "js/Conversions.h"
 #include "js/experimental/TypedData.h"  
 #include "js/friend/ErrorMessages.h"    

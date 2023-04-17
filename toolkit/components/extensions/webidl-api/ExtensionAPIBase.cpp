@@ -1,7 +1,7 @@
-
-
-
-
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ExtensionAPIBase.h"
 
@@ -17,14 +17,16 @@
 #include "mozilla/dom/SerializedStackHolder.h"
 #include "mozilla/dom/FunctionBinding.h"
 
+#include "js/CallAndConstruct.h"  // JS::IsCallable
+
 namespace mozilla {
 namespace extensions {
 
-
+// ChromeCompatCallbackHandler
 
 NS_IMPL_ISUPPORTS0(ChromeCompatCallbackHandler)
 
-
+// static
 void ChromeCompatCallbackHandler::Create(
     dom::Promise* aPromise, const RefPtr<dom::Function>& aCallback) {
   MOZ_ASSERT(aPromise);
@@ -47,13 +49,13 @@ void ChromeCompatCallbackHandler::RejectedCallback(
     JSContext* aCx, JS::Handle<JS::Value> aValue) {
   JS::RootedValue retval(aCx);
   IgnoredErrorResult rv;
-  
-  
-  
+  // Call the chrome-compatible callback without any parameter, the errors
+  // isn't passed to the callback as a parameter but the extension will be
+  // able to retrieve it from chrome.runtime.lastError.
   MOZ_KnownLive(mCallback)->Call({}, &retval, rv);
 }
 
-
+// WebExtensionStub methods shared between multiple API namespaces.
 
 void ExtensionAPIBase::CallWebExtMethodNotImplementedNoReturn(
     JSContext* aCx, const nsAString& aApiMethod,
@@ -118,8 +120,8 @@ void ExtensionAPIBase::CallWebExtMethodAsyncInternal(
     return;
   }
 
-  
-  
+  // The async method has been called with the chrome-compatible callback
+  // convention.
   if (aCallback) {
     ChromeCompatCallbackHandler::Create(domPromise, aCallback);
     return;
@@ -163,7 +165,7 @@ void ExtensionAPIBase::CallWebExtMethodAsyncAmbiguous(
                                 aRetval, aRv);
 }
 
-
+// ExtensionAPIBase - API Request helpers
 
 already_AddRefed<ExtensionEventManager> ExtensionAPIBase::CreateEventManager(
     const nsAString& aEventName) {
@@ -213,10 +215,10 @@ RefPtr<ExtensionAPIAddRemoveListener> ExtensionAPIBase::SendRemoveListener(
       GetAPIObjectId());
 }
 
-
+// static
 void ExtensionAPIBase::ThrowUnexpectedError(JSContext* aCx, ErrorResult& aRv) {
   ExtensionAPIRequestForwarder::ThrowUnexpectedError(aCx, aRv);
 }
 
-}  
-}  
+}  // namespace extensions
+}  // namespace mozilla

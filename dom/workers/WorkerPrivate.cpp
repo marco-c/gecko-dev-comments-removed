@@ -8,6 +8,7 @@
 
 #include <utility>
 
+#include "js/CallAndConstruct.h"  
 #include "js/CompilationAndEvaluation.h"
 #include "js/ContextOptions.h"
 #include "js/Exception.h"

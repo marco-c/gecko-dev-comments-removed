@@ -13,6 +13,7 @@
 #include "mozilla/ScopeExit.h"
 #include "mozJSComponentLoader.h"
 #include "jsapi.h"
+#include "js/CallAndConstruct.h"    
 #include "js/PropertyAndElement.h"  
 #include "nsContentUtils.h"
 

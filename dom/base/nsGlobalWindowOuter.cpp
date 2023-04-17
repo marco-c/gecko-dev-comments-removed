@@ -79,6 +79,7 @@
 #include "nsJSUtils.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
+#include "js/CallAndConstruct.h"    
 #include "js/friend/StackLimits.h"  
 #include "js/friend/WindowProxy.h"  
 #include "js/PropertyAndElement.h"  

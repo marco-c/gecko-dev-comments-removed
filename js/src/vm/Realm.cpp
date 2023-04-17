@@ -20,6 +20,7 @@
 #include "jit/JitOptions.h"
 #include "jit/JitRealm.h"
 #include "jit/JitRuntime.h"
+#include "js/CallAndConstruct.h"  
 #include "js/Date.h"
 #include "js/friend/ErrorMessages.h"  
 #include "js/Proxy.h"

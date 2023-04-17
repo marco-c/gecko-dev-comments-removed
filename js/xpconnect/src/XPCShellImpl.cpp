@@ -1,26 +1,27 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsXULAppAPI.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
-#include "js/Array.h"  
+#include "js/Array.h"             // JS::NewArrayObject
+#include "js/CallAndConstruct.h"  // JS_CallFunctionValue
 #include "js/CharacterEncoding.h"
-#include "js/CompilationAndEvaluation.h"  
+#include "js/CompilationAndEvaluation.h"  // JS::Evaluate
 #include "js/ContextOptions.h"
 #include "js/Printf.h"
-#include "js/PropertyAndElement.h"  
+#include "js/PropertyAndElement.h"  // JS_DefineElement, JS_DefineFunctions, JS_DefineProperty
 #include "js/PropertySpec.h"
-#include "js/SourceText.h"  
+#include "js/SourceText.h"  // JS::SourceText
 #include "mozilla/ChaosMode.h"
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/IOInterposer.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/Utf8.h"  
+#include "mozilla/Utf8.h"  // mozilla::Utf8Unit
 #include "nsServiceManagerUtils.h"
 #include "nsComponentManagerUtils.h"
 #include "nsExceptionHandler.h"
@@ -69,27 +70,27 @@
 #  include "mozilla/CodeCoverageHandler.h"
 #endif
 
-
+// all this crap is needed to do the interactive shell stuff
 #include <stdlib.h>
 #include <errno.h>
 #ifdef HAVE_IO_H
-#  include <io.h> 
+#  include <io.h> /* for isatty() */
 #endif
 #ifdef HAVE_UNISTD_H
-#  include <unistd.h> 
+#  include <unistd.h> /* for isatty() */
 #endif
 
 #ifdef ENABLE_TESTS
 #  include "xpctest_private.h"
 #endif
 
-
+// Fuzzing support for XPC runtime fuzzing
 #ifdef FUZZING_INTERFACES
 #  include "xpcrtfuzzing/xpcrtfuzzing.h"
 #  include "XREShellData.h"
 static bool fuzzDoDebug = !!getenv("MOZ_FUZZ_DEBUG");
 static bool fuzzHaveModule = !!getenv("FUZZER");
-#endif  
+#endif  // FUZZING_INTERFACES
 
 using namespace mozilla;
 using namespace JS;
@@ -105,19 +106,19 @@ class XPCShellDirProvider : public nsIDirectoryServiceProvider2 {
   XPCShellDirProvider() = default;
   ~XPCShellDirProvider() = default;
 
-  
+  // The platform resource folder
   void SetGREDirs(nsIFile* greDir);
   void ClearGREDirs() {
     mGREDir = nullptr;
     mGREBinDir = nullptr;
   }
-  
+  // The application resource folder
   void SetAppDir(nsIFile* appFile);
   void ClearAppDir() { mAppDir = nullptr; }
-  
+  // The app executable
   void SetAppFile(nsIFile* appFile);
   void ClearAppFile() { mAppFile = nullptr; }
-  
+  // An additional custom plugin dir if specified
   void SetPluginDir(nsIFile* pluginDir);
   void ClearPluginDir() { mPluginDir = nullptr; }
 
@@ -160,13 +161,13 @@ static bool GetLocationProperty(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 #if !defined(XP_WIN) && !defined(XP_UNIX)
-  
+  // XXX: your platform should really implement this
   return false;
 #else
   JS::AutoFilename filename;
   if (JS::DescribeScriptedCaller(cx, &filename) && filename.get()) {
 #  if defined(XP_WIN)
-    
+    // convert from the system codepage to UTF-16
     int bufferSize =
         MultiByteToWideChar(CP_ACP, 0, filename.get(), -1, nullptr, 0);
     nsAutoString filenameString;
@@ -174,11 +175,11 @@ static bool GetLocationProperty(JSContext* cx, unsigned argc, Value* vp) {
     MultiByteToWideChar(CP_ACP, 0, filename.get(), -1,
                         (LPWSTR)filenameString.BeginWriting(),
                         filenameString.Length());
-    
+    // remove the null terminator
     filenameString.SetLength(bufferSize - 1);
 
-    
-    
+    // replace forward slashes with backslashes,
+    // since nsLocalFileWin chokes on them
     char16_t* start = filenameString.BeginWriting();
     char16_t* end = filenameString.EndWriting();
 
@@ -197,8 +198,8 @@ static bool GetLocationProperty(JSContext* cx, unsigned argc, Value* vp) {
         NS_NewLocalFile(filenameString, false, getter_AddRefs(location));
 
     if (!location && gWorkingDirectory) {
-      
-      
+      // could be a relative path, try appending it to the cwd
+      // and then normalize
       nsAutoString absolutePath(*gWorkingDirectory);
       absolutePath.Append(filenameString);
 
@@ -207,7 +208,7 @@ static bool GetLocationProperty(JSContext* cx, unsigned argc, Value* vp) {
 
     if (location) {
       bool symlink;
-      
+      // don't normalize symlinks, because that's kind of confusing
       if (NS_SUCCEEDED(location->IsSymlink(&symlink)) && !symlink)
         location->Normalize();
       RootedObject locationObj(cx);
@@ -243,12 +244,12 @@ static bool GetLine(JSContext* cx, char* bufp, FILE* file, const char* prompt) {
 static bool ReadLine(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
-  
-  
+  // While 4096 might be quite arbitrary, this is something to be fixed in
+  // bug 105707. It is also the same limit as in ProcessFile.
   char buf[4096];
   RootedString str(cx);
 
-  
+  /* If a prompt was specified, construct the string */
   if (args.length() > 0) {
     str = JS::ToString(cx, args[0]);
     if (!str) {
@@ -258,13 +259,13 @@ static bool ReadLine(JSContext* cx, unsigned argc, Value* vp) {
     str = JS_GetEmptyString(cx);
   }
 
-  
+  /* Get a line from the infile */
   JS::UniqueChars strBytes = JS_EncodeStringToLatin1(cx, str);
   if (!strBytes || !GetLine(cx, buf, gInFile, strBytes.get())) {
     return false;
   }
 
-  
+  /* Strip newline character added by GetLine() */
   unsigned int buflen = strlen(buf);
   if (buflen == 0) {
     if (feof(gInFile)) {
@@ -275,7 +276,7 @@ static bool ReadLine(JSContext* cx, unsigned argc, Value* vp) {
     --buflen;
   }
 
-  
+  /* Turn buf into a JSString */
   str = JS_NewStringCopyN(cx, buf, buflen);
   if (!str) {
     return false;
@@ -291,12 +292,12 @@ static bool Print(JSContext* cx, unsigned argc, Value* vp) {
 
 #ifdef FUZZING_INTERFACES
   if (fuzzHaveModule && !fuzzDoDebug) {
-    
-    
-    
+    // When fuzzing and not debugging, suppress any print() output,
+    // as it slows down fuzzing and makes libFuzzer's output hard
+    // to read.
     return true;
   }
-#endif  
+#endif  // FUZZING_INTERFACES
 
   RootedString str(cx);
   nsAutoCString utf8output;
@@ -421,7 +422,7 @@ static bool Quit(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   gQuitting = true;
-  
+  //    exit(0);
   return false;
 }
 
@@ -545,7 +546,7 @@ static bool XPCShellInterruptCallback(JSContext* cx) {
   MOZ_ASSERT(sScriptedInterruptCallback->initialized());
   RootedValue callback(cx, *sScriptedInterruptCallback);
 
-  
+  // If no interrupt callback was set by script, no-op.
   if (callback.isUndefined()) {
     return true;
   }
@@ -568,20 +569,20 @@ static bool XPCShellInterruptCallback(JSContext* cx) {
 static bool SetInterruptCallback(JSContext* cx, unsigned argc, Value* vp) {
   MOZ_ASSERT(sScriptedInterruptCallback->initialized());
 
-  
+  // Sanity-check args.
   JS::CallArgs args = JS::CallArgsFromVp(argc, vp);
   if (args.length() != 1) {
     JS_ReportErrorASCII(cx, "Wrong number of arguments");
     return false;
   }
 
-  
+  // Allow callers to remove the interrupt callback by passing undefined.
   if (args[0].isUndefined()) {
     *sScriptedInterruptCallback = UndefinedValue();
     return true;
   }
 
-  
+  // Otherwise, we should have a function object.
   if (!args[0].isObject() || !js::IsFunctionObject(&args[0].toObject())) {
     JS_ReportErrorASCII(cx, "Argument must be a function");
     return false;
@@ -593,15 +594,15 @@ static bool SetInterruptCallback(JSContext* cx, unsigned argc, Value* vp) {
 }
 
 static bool SimulateNoScriptActivity(JSContext* cx, unsigned argc, Value* vp) {
-  
+  // Sanity-check args.
   JS::CallArgs args = JS::CallArgsFromVp(argc, vp);
   if (args.length() != 1 || !args[0].isInt32() || args[0].toInt32() < 0) {
     JS_ReportErrorASCII(cx, "Expected a positive integer argument");
     return false;
   }
 
-  
-  
+  // This mimics mozilla::SpinEventLoopUntil but instead of spinning the
+  // event loop we sleep, to make sure we don't run script.
   xpc::AutoScriptActivity asa(false);
   PR_Sleep(PR_SecondsToInterval(args[0].toInt32()));
 
@@ -654,7 +655,7 @@ static bool RegisterXPCTestComponents(JSContext* cx, unsigned argc, Value* vp) {
 #endif
 
 static const JSFunctionSpec glob_functions[] = {
-    
+    // clang-format off
     JS_FN("print",           Print,          0,0),
     JS_FN("readline",        ReadLine,       1,0),
     JS_FN("load",            Load,           1,0),
@@ -676,10 +677,10 @@ static const JSFunctionSpec glob_functions[] = {
     JS_FN("registerXPCTestComponents", RegisterXPCTestComponents, 0, 0),
 #endif
     JS_FS_END
-    
+    // clang-format on
 };
 
-
+/***************************************************************************/
 
 typedef enum JSShellErrNum {
 #define MSG_DEF(name, number, count, exception, format) name = number,
@@ -756,14 +757,14 @@ static bool ProcessFile(AutoJSAPI& jsapi, const char* filename, FILE* file,
   if (forceTTY) {
     file = stdin;
   } else if (!isatty(fileno(file))) {
-    
-
-
-
-
-
-
-
+    /*
+     * It's not interactive - just execute it.
+     *
+     * Support the UNIX #! shell hack; gobble the first line if it starts
+     * with '#'.  TODO - this isn't quite compatible with sharp variables,
+     * as a legal js program (using sharp variables) might start with '#'.
+     * But that would require multi-character lookahead.
+     */
     int ch = fgetc(file);
     if (ch == '#') {
       while ((ch = fgetc(file)) != EOF) {
@@ -788,7 +789,7 @@ static bool ProcessFile(AutoJSAPI& jsapi, const char* filename, FILE* file,
     return compileOnly || JS_ExecuteScript(cx, script, &unused);
   }
 
-  
+  /* It's an interactive filehandle; drop into read-eval-print loop. */
   int lineno = 1;
   bool hitEOF = false;
   do {
@@ -796,12 +797,12 @@ static bool ProcessFile(AutoJSAPI& jsapi, const char* filename, FILE* file,
     char* bufp = buffer;
     *bufp = '\0';
 
-    
-
-
-
-
-
+    /*
+     * Accumulate lines until we get a 'compilable unit' - one that either
+     * generates an error (before running out of source) or that compiles
+     * cleanly.  This should be whenever we get a complete statement that
+     * coincides with the end of a line.
+     */
     int startline = lineno;
     do {
       if (!GetLine(cx, bufp, file, startline == lineno ? "js> " : "")) {
@@ -830,10 +831,10 @@ static bool Process(AutoJSAPI& jsapi, const char* filename, bool forceTTY) {
   } else {
     file = fopen(filename, "r");
     if (!file) {
-      
-
-
-
+      /*
+       * Use Latin1 variant here because the encoding of the return value
+       * of strerror function can be non-UTF-8.
+       */
       JS_ReportErrorNumberLatin1(jsapi.cx(), my_GetErrorMessage, nullptr,
                                  JSSMSG_CANT_OPEN, filename, strerror(errno));
       gExitCode = EXITCODE_FILE_NOT_FOUND;
@@ -885,14 +886,14 @@ static bool ProcessArgs(AutoJSAPI& jsapi, char** argv, int argc,
 
   JS::Rooted<JSObject*> global(cx, JS::CurrentGlobalOrNull(cx));
 
-  
-
-
-
-
-
-
-
+  /*
+   * Scan past all optional arguments so we can create the arguments object
+   * before processing any -f options, which must interleave properly with
+   * -v and -w options.  This requires two passes, and without getopt, we'll
+   * have to keep the option logic here and in the second for loop in sync.
+   * First of all, find out the first argument position which will be passed
+   * as a script file to be executed.
+   */
   for (rootPosition = 0; rootPosition < argc; rootPosition++) {
     if (argv[rootPosition][0] != '-' || argv[rootPosition][1] == '\0') {
       ++rootPosition;
@@ -904,15 +905,15 @@ static bool ProcessArgs(AutoJSAPI& jsapi, char** argv, int argc,
         (argv[rootPosition][1] == 'v' || argv[rootPosition][1] == 'f' ||
          argv[rootPosition][1] == 'e');
     if (isPairedFlag && rootPosition < argc - 1) {
-      ++rootPosition;  
-                       
+      ++rootPosition;  // Skip over the 'foo' portion of |-v foo|, |-f foo|, or
+                       // |-e foo|.
     }
   }
 
-  
-
-
-
+  /*
+   * Create arguments early and define it to root it, so it's safe from any
+   * GC calls nested below, and so it is available to -f <file> arguments.
+   */
   argsObj = JS::NewArrayObject(cx, 0);
   if (!argsObj) {
     return 1;
@@ -944,7 +945,7 @@ static bool ProcessArgs(AutoJSAPI& jsapi, char** argv, int argc,
       case 'x':
         break;
       case 'd':
-        
+        /* This used to try to turn on the debugger. */
         break;
       case 'm':
         break;
@@ -955,11 +956,11 @@ static bool ProcessArgs(AutoJSAPI& jsapi, char** argv, int argc,
         if (!Process(jsapi, argv[i], false)) {
           return false;
         }
-        
-
-
-
-
+        /*
+         * XXX: js -f foo.js should interpret foo.js and then
+         * drop into interactive mode, but that breaks test
+         * harness. Just execute foo.js for now.
+         */
         isInteractive = false;
         break;
       case 'i':
@@ -990,7 +991,7 @@ static bool ProcessArgs(AutoJSAPI& jsapi, char** argv, int argc,
         isInteractive = false;
         break;
       case 'p': {
-        
+        // plugins path
         char* pluginPath = argv[++i];
         nsCOMPtr<nsIFile> pluginsDir;
         if (NS_FAILED(
@@ -1012,23 +1013,23 @@ static bool ProcessArgs(AutoJSAPI& jsapi, char** argv, int argc,
   return true;
 }
 
-
+/***************************************************************************/
 
 static bool GetCurrentWorkingDirectory(nsAString& workingDirectory) {
 #if !defined(XP_WIN) && !defined(XP_UNIX)
-  
+  // XXX: your platform should really implement this
   return false;
 #elif XP_WIN
   DWORD requiredLength = GetCurrentDirectoryW(0, nullptr);
   workingDirectory.SetLength(requiredLength);
   GetCurrentDirectoryW(workingDirectory.Length(),
                        (LPWSTR)workingDirectory.BeginWriting());
-  
+  // we got a trailing null there
   workingDirectory.SetLength(requiredLength);
   workingDirectory.Replace(workingDirectory.Length() - 1, 1, L'\\');
 #elif defined(XP_UNIX)
   nsAutoCString cwd;
-  
+  // 1024 is just a guess at a sane starting value
   size_t bufsize = 1024;
   char* result = nullptr;
   while (result == nullptr) {
@@ -1038,11 +1039,11 @@ static bool GetCurrentWorkingDirectory(nsAString& workingDirectory) {
       if (errno != ERANGE) {
         return false;
       }
-      
+      // need to make the buffer bigger
       bufsize *= 2;
     }
   }
-  
+  // size back down to the actual string length
   cwd.SetLength(strlen(result) + 1);
   cwd.Replace(cwd.Length() - 1, 1, '/');
   CopyUTF8toUTF16(cwd, workingDirectory);
@@ -1073,8 +1074,8 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
 
   mozilla::LogModule::Init(argc, argv);
 
-  
-  
+  // This guard ensures that all threads that attempt to register themselves
+  // with the IOInterposer will be properly tracked.
   mozilla::IOInterposerInit ioInterposerGuard;
 
 #ifdef MOZ_GECKO_PROFILER
@@ -1090,7 +1091,7 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
     ChaosFeature feature = ChaosFeature::Any;
     long featureInt = strtol(PR_GetEnv("MOZ_CHAOSMODE"), nullptr, 16);
     if (featureInt) {
-      
+      // NOTE: MOZ_CHAOSMODE=0 or a non-hex value maps to Any feature.
       feature = static_cast<ChaosFeature>(featureInt);
     }
     ChaosMode::SetChaosFeature(feature);
@@ -1102,17 +1103,17 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
   }
 
 #ifdef XP_WIN
-  
-  
-  
-  
+  // Some COM settings are global to the process and must be set before any non-
+  // trivial COM is run in the application. Since these settings may affect
+  // stability, we should instantiate COM ASAP so that we can ensure that these
+  // global settings are configured before anything can interfere.
   mscom::ProcessRuntime mscom;
 #endif
 
-  
+  // The provider needs to outlive the call to shutting down XPCOM.
   XPCShellDirProvider dirprovider;
 
-  {  
+  {  // Start scoping nsCOMPtrs
     nsCOMPtr<nsIFile> appFile;
     rv = XRE_GetBinaryPath(getter_AddRefs(appFile));
     if (NS_FAILED(rv)) {
@@ -1146,9 +1147,9 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
       argv += 2;
     } else {
 #ifdef XP_MACOSX
-      
-      
-      
+      // On OSX, the GreD needs to point to Contents/Resources in the .app
+      // bundle. Libraries will be loaded at a relative path to GreD, i.e.
+      // ../MacOS.
       nsCOMPtr<nsIFile> tmpDir;
       XRE_GetFileFromPath(argv[0], getter_AddRefs(greDir));
       greDir->GetParent(getter_AddRefs(tmpDir));
@@ -1234,8 +1235,8 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
       return 1;
     }
 
-    
-    
+    // xpc::ErrorReport::LogToConsoleWithStack needs this to print errors
+    // to stderr.
     Preferences::SetBool("browser.dom.window.dump.enabled", true);
     Preferences::SetBool("devtools.console.stdout.chrome", true);
 
@@ -1243,9 +1244,9 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
     jsapi.Init();
     cx = jsapi.cx();
 
-    
-    
-    
+    // Override the default XPConnect interrupt callback. We could store the
+    // old one and restore it before shutting down, but there's not really a
+    // reason to bother.
     sScriptedInterruptCallback = new PersistentRootedValue;
     sScriptedInterruptCallback->init(cx, UndefinedValue());
 
@@ -1255,9 +1256,9 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
     argv++;
 
     nsCOMPtr<nsIPrincipal> systemprincipal;
-    
-    
-    
+    // Fetch the system principal and store it away in a global, to use for
+    // script compilation in Load() and ProcessFile() (including interactive
+    // eval loop)
     {
       nsCOMPtr<nsIScriptSecurityManager> securityManager =
           do_GetService(NS_SCRIPTSECURITYMANAGER_CONTRACTID, &rv);
@@ -1269,7 +1270,7 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
                   "+++ Failed to obtain SystemPrincipal from "
                   "ScriptSecurityManager service.\n");
         } else {
-          
+          // fetch the JS principals and stick in a global
           gJSPrincipals = nsJSPrincipals::get(systemprincipal);
           JS_HoldPrincipals(gJSPrincipals);
         }
@@ -1289,15 +1290,15 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
 
     auto backstagePass = MakeRefPtr<BackstagePass>();
 
-    
-    
+    // Make the default XPCShell global use a fresh zone (rather than the
+    // System Zone) to improve cross-zone test coverage.
     JS::RealmOptions options;
     options.creationOptions().setNewCompartmentAndZone();
     xpc::SetPrefableRealmOptions(options);
 
-    
-    
-    
+    // Even if we're building in a configuration where source is
+    // discarded, there's no reason to do that on XPCShell, and doing so
+    // might break various automation scripts.
     options.behaviors().setDiscardSource(false);
 
     JS::Rooted<JSObject*> glob(cx);
@@ -1308,21 +1309,21 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
       return 1;
     }
 
-    
+    // Initialize e10s check on the main thread, if not already done
     BrowserTabsRemoteAutostart();
 #ifdef XP_WIN
-    
-    
+    // Plugin may require audio session if installed plugin can initialize
+    // asynchronized.
     AutoAudioSession audioSession;
 
-    
+    // Ensure that DLL Services are running
     RefPtr<DllServices> dllSvc(DllServices::Get());
     dllSvc->StartUntrustedModulesProcessor();
     auto dllServicesDisable =
         MakeScopeExit([&dllSvc]() { dllSvc->DisableFull(); });
 
 #  if defined(MOZ_SANDBOX)
-    
+    // Required for sandboxed child processes.
     if (aShellData->sandboxBrokerServices) {
       SandboxBroker::Initialize(aShellData->sandboxBrokerServices);
       SandboxBroker::GeckoDependentInitialize();
@@ -1373,7 +1374,7 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
 #ifdef FUZZING_INTERFACES
         if (fuzzHaveModule) {
 #  ifdef LIBFUZZER
-          
+          // argv[0] was removed previously, but libFuzzer expects it
           argc++;
           argv--;
 
@@ -1384,13 +1385,13 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
 #  endif
         } else {
 #endif
-
-
+          // We are almost certainly going to run script here, so we need an
+          // AutoEntryScript. This is Gecko-specific and not in any spec.
           AutoEntryScript aes(backstagePass, "xpcshell argument processing");
 
-          
-          
-          
+          // If an exception is thrown, we'll set our return code
+          // appropriately, and then let the AutoEntryScript destructor report
+          // the error to the console.
           if (!ProcessArgs(aes, argv, argc, &dirprovider)) {
             if (gExitCode) {
               result = gExitCode;
@@ -1405,7 +1406,7 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
 #endif
       }
 
-      
+      // Signal that we're now shutting down.
       nsCOMPtr<nsIObserver> obs = do_QueryInterface(appStartup);
       if (obs) {
         obs->Observe(nullptr, "quit-application-forced", nullptr);
@@ -1423,25 +1424,25 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
     dirprovider.ClearAppDir();
     dirprovider.ClearPluginDir();
     dirprovider.ClearAppFile();
-  }  
+  }  // this scopes the nsCOMPtrs
 
   if (!XRE_ShutdownTestShell()) {
     NS_ERROR("problem shutting down testshell");
   }
 
-  
+  // no nsCOMPtrs are allowed to be alive when you call NS_ShutdownXPCOM
   rv = NS_ShutdownXPCOM(nullptr);
   MOZ_ASSERT(NS_SUCCEEDED(rv), "NS_ShutdownXPCOM failed");
 
-  
-  
+  // Shut down the crashreporter service to prevent leaking some strings it
+  // holds.
   if (CrashReporter::GetEnabled()) {
     CrashReporter::UnsetExceptionHandler();
   }
 
 #ifdef MOZ_GECKO_PROFILER
-  
-  
+  // This must precede NS_LogTerm(), otherwise xpcshell return non-zero
+  // during some tests, which causes failures.
   profiler_shutdown();
 #endif
 
@@ -1537,16 +1538,16 @@ XPCShellDirProvider::GetFiles(const char* prop, nsISimpleEnumerator** result) {
     return NS_ERROR_FAILURE;
   } else if (!strcmp(prop, NS_APP_PLUGINS_DIR_LIST)) {
     nsCOMArray<nsIFile> dirs;
-    
-    
+    // Add the test plugin location passed in by the caller or through
+    // runxpcshelltests.
     if (mPluginDir) {
       dirs.AppendObject(mPluginDir);
-      
+      // If there was no path specified, default to the one set up by automation
     } else {
       nsCOMPtr<nsIFile> file;
       bool exists;
-      
-      
+      // We have to add this path, buildbot copies the test plugin directory
+      // to (app)/bin when unpacking test zips.
       if (mGREDir) {
         mGREDir->Clone(getter_AddRefs(file));
         if (NS_SUCCEEDED(mGREDir->Clone(getter_AddRefs(file)))) {

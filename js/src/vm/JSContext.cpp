@@ -40,6 +40,7 @@
 #include "jit/Ion.h"
 #include "jit/PcScriptCache.h"
 #include "jit/Simulator.h"
+#include "js/CallAndConstruct.h"  
 #include "js/CharacterEncoding.h"
 #include "js/ContextOptions.h"        
 #include "js/friend/ErrorMessages.h"  

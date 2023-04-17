@@ -10,6 +10,7 @@
 #include "AudioParamMap.h"
 #include "AudioWorkletImpl.h"
 #include "js/Array.h"  
+#include "js/CallAndConstruct.h"  
 #include "js/Exception.h"
 #include "js/experimental/TypedData.h"  
 #include "js/PropertyAndElement.h"  

@@ -18,6 +18,7 @@
 
 #include "builtin/Array.h"
 #include "builtin/BigInt.h"
+#include "js/CallAndConstruct.h"      
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/StackLimits.h"    
 #include "js/Object.h"                

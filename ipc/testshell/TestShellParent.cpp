@@ -6,6 +6,7 @@
 
 
 #include "jsfriendapi.h"
+#include "js/CallAndConstruct.h"  
 #include "mozilla/ArrayUtils.h"
 
 #include "mozilla/dom/AutoEntryScript.h"

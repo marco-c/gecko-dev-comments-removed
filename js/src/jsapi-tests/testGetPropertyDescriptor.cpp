@@ -2,6 +2,7 @@
 
 
 
+#include "js/CallAndConstruct.h"  
 #include "js/PropertyDescriptor.h"  
 #include "js/RootingAPI.h"
 #include "jsapi-tests/tests.h"

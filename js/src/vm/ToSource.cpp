@@ -18,6 +18,7 @@
 #include "builtin/Boolean.h"        
 #include "builtin/Object.h"         
 #include "gc/Allocator.h"           
+#include "js/CallAndConstruct.h"    
 #include "js/Class.h"               
 #include "js/friend/StackLimits.h"  
 #include "js/Object.h"              

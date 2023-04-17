@@ -21,6 +21,7 @@
 #include "mozilla/UseCounter.h"
 
 #include "AccessCheck.h"
+#include "js/CallAndConstruct.h"  
 #include "js/experimental/JitInfo.h"  
 #include "js/friend/StackLimits.h"  
 #include "js/Id.h"

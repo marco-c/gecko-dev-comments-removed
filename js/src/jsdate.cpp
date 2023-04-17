@@ -33,6 +33,7 @@
 #include "jsnum.h"
 #include "jstypes.h"
 
+#include "js/CallAndConstruct.h"  
 #include "js/Conversions.h"
 #include "js/Date.h"
 #include "js/friend/ErrorMessages.h"  

@@ -27,6 +27,7 @@
 #include "jspubtd.h"
 
 #include "js/AllocPolicy.h"
+#include "js/CallAndConstruct.h"  
 #include "js/CallArgs.h"
 #include "js/CharacterEncoding.h"
 #include "js/Class.h"
@@ -668,132 +669,6 @@ extern JS_PUBLIC_API bool JS_SetImmutablePrototype(JSContext* cx,
 extern JS_PUBLIC_API bool JS_AssignObject(JSContext* cx,
                                           JS::HandleObject target,
                                           JS::HandleObject src);
-
-
-
-
-
-
-
-namespace JS {
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API bool IsCallable(JSObject* obj);
-
-
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API bool IsConstructor(JSObject* obj);
-
-} 
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API bool JS_CallFunctionValue(JSContext* cx,
-                                               JS::HandleObject obj,
-                                               JS::HandleValue fval,
-                                               const JS::HandleValueArray& args,
-                                               JS::MutableHandleValue rval);
-
-extern JS_PUBLIC_API bool JS_CallFunction(JSContext* cx, JS::HandleObject obj,
-                                          JS::HandleFunction fun,
-                                          const JS::HandleValueArray& args,
-                                          JS::MutableHandleValue rval);
-
-
-
-
-extern JS_PUBLIC_API bool JS_CallFunctionName(JSContext* cx,
-                                              JS::HandleObject obj,
-                                              const char* name,
-                                              const JS::HandleValueArray& args,
-                                              JS::MutableHandleValue rval);
-
-namespace JS {
-
-static inline bool Call(JSContext* cx, JS::HandleObject thisObj,
-                        JS::HandleFunction fun,
-                        const JS::HandleValueArray& args,
-                        MutableHandleValue rval) {
-  return !!JS_CallFunction(cx, thisObj, fun, args, rval);
-}
-
-static inline bool Call(JSContext* cx, JS::HandleObject thisObj,
-                        JS::HandleValue fun, const JS::HandleValueArray& args,
-                        MutableHandleValue rval) {
-  return !!JS_CallFunctionValue(cx, thisObj, fun, args, rval);
-}
-
-static inline bool Call(JSContext* cx, JS::HandleObject thisObj,
-                        const char* name, const JS::HandleValueArray& args,
-                        MutableHandleValue rval) {
-  return !!JS_CallFunctionName(cx, thisObj, name, args, rval);
-}
-
-extern JS_PUBLIC_API bool Call(JSContext* cx, JS::HandleValue thisv,
-                               JS::HandleValue fun,
-                               const JS::HandleValueArray& args,
-                               MutableHandleValue rval);
-
-static inline bool Call(JSContext* cx, JS::HandleValue thisv,
-                        JS::HandleObject funObj,
-                        const JS::HandleValueArray& args,
-                        MutableHandleValue rval) {
-  MOZ_ASSERT(funObj);
-  JS::RootedValue fun(cx, JS::ObjectValue(*funObj));
-  return Call(cx, thisv, fun, args, rval);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API bool Construct(JSContext* cx, JS::HandleValue fun,
-                                    HandleObject newTarget,
-                                    const JS::HandleValueArray& args,
-                                    MutableHandleObject objp);
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API bool Construct(JSContext* cx, JS::HandleValue fun,
-                                    const JS::HandleValueArray& args,
-                                    MutableHandleObject objp);
-
-} 
 
 namespace JS {
 

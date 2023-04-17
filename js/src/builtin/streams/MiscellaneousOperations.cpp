@@ -13,6 +13,7 @@
 
 #include "jsapi.h"  
 
+#include "js/CallAndConstruct.h"      
 #include "js/Conversions.h"           
 #include "js/friend/ErrorMessages.h"  
 #include "js/RootingAPI.h"            

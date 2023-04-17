@@ -8,6 +8,7 @@
 
 #include "jsexn.h"
 
+#include "js/CallAndConstruct.h"      
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/WindowProxy.h"    
 #include "js/Object.h"                

@@ -61,6 +61,7 @@
 #include "jit/JitScript.h"            
 #include "jit/JSJitFrameIter.h"       
 #include "jit/RematerializedFrame.h"  
+#include "js/CallAndConstruct.h"      
 #include "js/Conversions.h"           
 #include "js/Debug.h"                 
 #include "js/friend/ErrorMessages.h"  

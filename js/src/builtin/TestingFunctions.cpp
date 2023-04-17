@@ -62,6 +62,7 @@
 #include "jit/TrialInlining.h"
 #include "js/Array.h"        
 #include "js/ArrayBuffer.h"  
+#include "js/CallAndConstruct.h"  
 #include "js/CharacterEncoding.h"
 #include "js/CompilationAndEvaluation.h"
 #include "js/CompileOptions.h"

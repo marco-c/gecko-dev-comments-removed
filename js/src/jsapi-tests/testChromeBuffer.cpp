@@ -1,15 +1,16 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "mozilla/Utf8.h"  // mozilla::Utf8Unit
 
-
-
-
-
-#include "mozilla/Utf8.h"  
-
-#include "js/CompilationAndEvaluation.h"  
+#include "js/CallAndConstruct.h"          // JS_CallFunctionValue
+#include "js/CompilationAndEvaluation.h"  // JS::CompileFunction
 #include "js/ContextOptions.h"
-#include "js/PropertyAndElement.h"  
-#include "js/SourceText.h"          
+#include "js/PropertyAndElement.h"  // JS_DefineProperty
+#include "js/SourceText.h"          // JS::Source{Ownership,Text}
 #include "jsapi-tests/tests.h"
 #include "util/Text.h"
 
@@ -46,13 +47,13 @@ BEGIN_TEST(testChromeBuffer) {
 
   JS::RootedFunction fun(cx);
 
-  
-
-
-
-
+  /*
+   * Check that, even after untrusted content has exhausted the stack, code
+   * compiled with "trusted principals" can run using reserved trusted-only
+   * buffer space.
+   */
   {
-    
+    // Disable the JIT because if we don't this test fails.  See bug 1160414.
     uint32_t oldBaselineInterpreterEnabled;
     CHECK(JS_GetGlobalJitCompilerOption(
         cx, JSJITCOMPILER_BASELINE_INTERPRETER_ENABLE,
@@ -121,10 +122,10 @@ BEGIN_TEST(testChromeBuffer) {
                                   oldBaselineJitEnabled);
   }
 
-  
-
-
-
+  /*
+   * Check that content called from chrome in the reserved-buffer space
+   * immediately ooms.
+   */
   {
     {
       JSAutoRealm ar(cx, trusted_glob);
@@ -185,10 +186,10 @@ BEGIN_TEST(testChromeBuffer) {
     JS::RootedValue rval(cx);
     CHECK(JS_CallFunction(cx, nullptr, fun, JS::HandleValueArray(v), &rval));
 #ifndef JS_SIMULATOR_ARM64
-    
-    
-    
-    
+    // The ARM64 simulator does not share a common implementation with the other
+    // simulators, and has slightly different end-of-stack behavior. Instead of
+    // failing with "too much recursion," it executes one more function call and
+    // fails with a type error. This behavior is not incorrect.
     bool match;
     CHECK(JS_StringEqualsAscii(
         cx, rval.toString(), "From trusted: InternalError: too much recursion",

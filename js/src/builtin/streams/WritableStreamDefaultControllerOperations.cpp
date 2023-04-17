@@ -17,6 +17,7 @@
 #include "builtin/streams/WritableStream.h"  
 #include "builtin/streams/WritableStreamDefaultController.h"  
 #include "builtin/streams/WritableStreamOperations.h"  
+#include "js/CallAndConstruct.h"                       
 #include "js/CallArgs.h"                               
 #include "js/Promise.h"     
 #include "js/RootingAPI.h"  
