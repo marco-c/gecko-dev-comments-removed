@@ -1132,6 +1132,16 @@ bool nsContentSecurityUtils::ValidateScriptFilename(const char* aFilename,
     return true;
   }
 
+  
+  
+  NS_ConvertUTF8toUTF16 filenameU(aFilename);
+  if (StaticPrefs::security_allow_eval_with_system_principal() ||
+      StaticPrefs::security_allow_eval_in_parent_process()) {
+    if (StringEndsWith(filenameU, u"> eval"_ns)) {
+      return true;
+    }
+  }
+
   DetectJsHacks();
 
   if (MOZ_UNLIKELY(sJSHacksPresent)) {
@@ -1151,7 +1161,6 @@ bool nsContentSecurityUtils::ValidateScriptFilename(const char* aFilename,
     return true;
   }
 
-  NS_ConvertUTF8toUTF16 filenameU(aFilename);
   if (StringBeginsWith(filenameU, u"chrome://"_ns)) {
     
     return true;
@@ -1210,6 +1219,19 @@ bool nsContentSecurityUtils::ValidateScriptFilename(const char* aFilename,
   }
   Telemetry::RecordEvent(eventType, mozilla::Some(fileNameTypeAndDetails.first),
                          extra);
+
+#ifdef NIGHTLY_BUILD
+  
+  
+  
+  
+  if (fileNameTypeAndDetails.second.isSome()) {
+    PossiblyCrash("js_load_1",
+                  NS_ConvertUTF16toUTF8(fileNameTypeAndDetails.second.value()));
+  } else {
+    PossiblyCrash("js_load_1", "(None)"_ns);
+  }
+#endif
 
   
   
