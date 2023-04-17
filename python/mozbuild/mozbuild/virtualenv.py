@@ -319,31 +319,9 @@ class VirtualenvManager(VirtualenvHelper):
         
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         IGNORE_ENV_VARIABLES = ("CC", "CXX", "CFLAGS", "CXXFLAGS", "LDFLAGS")
 
         try:
-            old_target = os.environ.get("MACOSX_DEPLOYMENT_TARGET", None)
-            sysconfig_target = distutils.sysconfig.get_config_var(
-                "MACOSX_DEPLOYMENT_TARGET"
-            )
-
-            if sysconfig_target is not None:
-                
-                
-                
-                os.environ["MACOSX_DEPLOYMENT_TARGET"] = str(sysconfig_target)
-
             old_env_variables = {}
             for k in IGNORE_ENV_VARIABLES:
                 if k not in os.environ:
@@ -368,11 +346,6 @@ class VirtualenvManager(VirtualenvHelper):
                 self.install_pip_package(pypi_requirement.full_specifier)
 
         finally:
-            os.environ.pop("MACOSX_DEPLOYMENT_TARGET", None)
-
-            if old_target is not None:
-                os.environ["MACOSX_DEPLOYMENT_TARGET"] = old_target
-
             os.environ.update(old_env_variables)
 
     def call_setup(self, directory, arguments):
