@@ -15,6 +15,42 @@
 #include "js/TypeDecls.h"
 #include "js/Value.h"  
 
+class JSErrorReport;
+
+namespace JS {
+enum class ExceptionStackBehavior : bool {
+  
+  DoNotCapture,
+
+  
+  
+  Capture
+};
+}  
+
+extern JS_PUBLIC_API bool JS_IsExceptionPending(JSContext* cx);
+
+extern JS_PUBLIC_API bool JS_IsThrowingOutOfMemory(JSContext* cx);
+
+extern JS_PUBLIC_API bool JS_GetPendingException(JSContext* cx,
+                                                 JS::MutableHandleValue vp);
+
+extern JS_PUBLIC_API void JS_SetPendingException(
+    JSContext* cx, JS::HandleValue v,
+    JS::ExceptionStackBehavior behavior = JS::ExceptionStackBehavior::Capture);
+
+extern JS_PUBLIC_API void JS_ClearPendingException(JSContext* cx);
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API JSErrorReport* JS_ErrorFromException(JSContext* cx,
+                                                          JS::HandleObject obj);
+
 namespace JS {
 
 
@@ -53,6 +89,54 @@ class MOZ_STACK_CLASS ExceptionStack {
 
 
 
+
+
+
+
+
+
+
+
+class JS_PUBLIC_API AutoSaveExceptionState {
+ private:
+  JSContext* context;
+  bool wasPropagatingForcedReturn;
+  bool wasOverRecursed;
+  bool wasThrowing;
+  RootedValue exceptionValue;
+  RootedObject exceptionStack;
+
+ public:
+  
+
+
+
+  explicit AutoSaveExceptionState(JSContext* cx);
+
+  
+
+
+
+  ~AutoSaveExceptionState();
+
+  
+
+
+
+  void drop();
+
+  
+
+
+
+
+  void restore();
+};
+
+
+
+
+
 extern JS_PUBLIC_API bool GetPendingExceptionStack(
     JSContext* cx, JS::ExceptionStack* exceptionStack);
 
@@ -65,6 +149,15 @@ extern JS_PUBLIC_API bool StealPendingExceptionStack(
 
 extern JS_PUBLIC_API void SetPendingExceptionStack(
     JSContext* cx, const JS::ExceptionStack& exceptionStack);
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API JSObject* ExceptionStackOrNull(JS::HandleObject obj);
 
 }  
 

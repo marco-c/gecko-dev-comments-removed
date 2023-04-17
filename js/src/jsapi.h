@@ -32,6 +32,7 @@
 #include "js/Class.h"
 #include "js/CompileOptions.h"
 #include "js/ErrorReport.h"
+#include "js/Exception.h"
 #include "js/GCVector.h"
 #include "js/HashTable.h"
 #include "js/Id.h"
@@ -2057,106 +2058,6 @@ extern JS_PUBLIC_API bool CreateError(
 } 
 
 
-
-extern JS_PUBLIC_API bool JS_IsExceptionPending(JSContext* cx);
-
-extern JS_PUBLIC_API bool JS_IsThrowingOutOfMemory(JSContext* cx);
-
-extern JS_PUBLIC_API bool JS_GetPendingException(JSContext* cx,
-                                                 JS::MutableHandleValue vp);
-
-namespace JS {
-
-enum class ExceptionStackBehavior : bool {
-  
-  DoNotCapture,
-
-  
-  
-  Capture
-};
-
-}  
-
-extern JS_PUBLIC_API void JS_SetPendingException(
-    JSContext* cx, JS::HandleValue v,
-    JS::ExceptionStackBehavior behavior = JS::ExceptionStackBehavior::Capture);
-
-extern JS_PUBLIC_API void JS_ClearPendingException(JSContext* cx);
-
-namespace JS {
-
-
-
-
-
-
-
-
-
-
-
-
-
-class JS_PUBLIC_API AutoSaveExceptionState {
- private:
-  JSContext* context;
-  bool wasPropagatingForcedReturn;
-  bool wasOverRecursed;
-  bool wasThrowing;
-  RootedValue exceptionValue;
-  RootedObject exceptionStack;
-
- public:
-  
-
-
-
-  explicit AutoSaveExceptionState(JSContext* cx);
-
-  
-
-
-
-  ~AutoSaveExceptionState();
-
-  
-
-
-
-  void drop();
-
-  
-
-
-
-
-  void restore();
-};
-
-} 
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API JSErrorReport* JS_ErrorFromException(JSContext* cx,
-                                                          JS::HandleObject obj);
-
-namespace JS {
-
-
-
-
-
-
-
-extern JS_PUBLIC_API JSObject* ExceptionStackOrNull(JS::HandleObject obj);
-
-} 
 
 
 
