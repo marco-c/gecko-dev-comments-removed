@@ -191,11 +191,23 @@ class PerftestOutput(object):
         if self.summarized_results == {}:
             success = False
             LOG.error(
-                "no summarized raptor results found for %s" % ", ".join(test_names)
+                "no summarized raptor results found for any of %s"
+                % ", ".join(test_names)
             )
         else:
             for suite in self.summarized_results["suites"]:
                 tname = suite["name"]
+
+                
+                
+                
+                parts = tname.split(".")
+                try:
+                    tname = ".".join(parts[:-1])
+                except Exception as e:
+                    LOG.info("no alias found on test, ignoring: %s" % e)
+                    pass
+
                 
                 
                 found = False
@@ -205,7 +217,7 @@ class PerftestOutput(object):
                         break
                 if not found:
                     success = False
-                    LOG.error("no summarized raptor results found for %s" % tname)
+                    LOG.error("no summarized raptor results found for %s" % (tname))
 
             with open(results_path, "w") as f:
                 for result in self.summarized_results:
