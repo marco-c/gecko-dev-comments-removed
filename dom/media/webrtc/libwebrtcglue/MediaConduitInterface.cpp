@@ -63,7 +63,7 @@ void MediaSessionConduit::UpdateRtpSources(
   
   
   
-  auto jsNow = GetNow();
+  auto jsNow = GetTimestampMaker().GetNow();
   double libwebrtcNow = webrtc::Clock::GetRealTimeClock()->TimeInMilliseconds();
 
   for (const auto& source : aSources) {
@@ -141,7 +141,7 @@ void MediaSessionConduit::InsertAudioLevelForContributingSource(
 
   int64_t libwebrtcNow =
       webrtc::Clock::GetRealTimeClock()->TimeInMilliseconds();
-  double jsNow = GetNow();
+  double jsNow = GetTimestampMaker().GetNow();
   double ago = jsNow - aTimestamp;
   uint64_t convertedTimestamp = libwebrtcNow - ago;
 

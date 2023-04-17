@@ -7,6 +7,7 @@
 #ifndef RTCStatsReport_h_
 #define RTCStatsReport_h_
 
+#include "api/units/timestamp.h"  
 #include "nsWrapperCache.h"
 #include "nsCOMPtr.h"
 
@@ -15,29 +16,54 @@
 #include "nsIGlobalObject.h"
 #include "js/RootingAPI.h"  
 #include "js/Value.h"
+#include "libwebrtcglue/SystemTime.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/UniquePtr.h"
 #include "prtime.h"  
 #include "mozilla/MozPromise.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/dom/PerformanceService.h"
 #include "mozilla/dom/RTCStatsReportBinding.h"  
 #include "mozilla/dom/ToJSValue.h"
 
 namespace mozilla {
+
+extern TimeStamp WebrtcSystemTimeBase();
+
 namespace dom {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class RTCStatsTimestampMaker {
  public:
-  RTCStatsTimestampMaker() = default;
+  RTCStatsTimestampMaker();
   explicit RTCStatsTimestampMaker(nsPIDOMWindowInner* aWindow);
+
   DOMHighResTimeStamp GetNow() const;
 
- private:
-  const uint64_t mRandomTimelineSeed = 0;
-  const TimeStamp mStartMonotonic = TimeStamp::Now();
-  const DOMHighResTimeStamp mStartWallClockRaw =
-      (double)PR_Now() / PR_USEC_PER_MSEC;
-  const bool mCrossOriginIsolated = false;
+  webrtc::Timestamp GetNowRealtime() const;
+  webrtc::Timestamp ConvertRealtimeTo1Jan1970(
+      webrtc::Timestamp aRealtime) const;
+  DOMHighResTimeStamp ConvertNtpToDomTime(webrtc::Timestamp aNtpTime) const;
+  DOMHighResTimeStamp ReduceRealtimePrecision(
+      webrtc::Timestamp aRealtime) const;
+
+  const uint64_t mRandomTimelineSeed;
+  const TimeStamp mStartRealtime;
+  const bool mCrossOriginIsolated;
+  const DOMHighResTimeStamp mStartWallClockRaw;
 };
 
 
