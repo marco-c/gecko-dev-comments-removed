@@ -49,7 +49,6 @@ DocumentEventsListener.prototype = {
     window,
     isTopLevel,
     shouldBeIgnoredAsRedundantWithTargetAvailable,
-    isFrameSwitching,
   }) {
     
     if (!isTopLevel) {
@@ -57,61 +56,51 @@ DocumentEventsListener.prototype = {
     }
 
     const time = window.performance.timing.navigationStart;
-
-    
-    
-    
-    
-    
-    
-    shouldBeIgnoredAsRedundantWithTargetAvailable =
-      shouldBeIgnoredAsRedundantWithTargetAvailable ||
-      (this.targetActor.isTopLevelTarget &&
-        this.targetActor.followWindowGlobalLifeCycle);
-
-    this.emit("dom-loading", {
+    this.emit(
+      "dom-loading",
       time,
-      shouldBeIgnoredAsRedundantWithTargetAvailable,
-      isFrameSwitching,
-    });
+      
+      
+      
+      
+      
+      
+      shouldBeIgnoredAsRedundantWithTargetAvailable ||
+        (this.targetActor.isTopLevelTarget &&
+          this.targetActor.followWindowGlobalLifeCycle)
+    );
 
     const { readyState } = window.document;
     if (readyState != "interactive" && readyState != "complete") {
-      window.addEventListener(
-        "DOMContentLoaded",
-        e => this.onContentLoaded(e, isFrameSwitching),
-        {
-          once: true,
-        }
-      );
-    } else {
-      this.onContentLoaded({ target: window.document }, isFrameSwitching);
-    }
-    if (readyState != "complete") {
-      window.addEventListener("load", e => this.onLoad(e, isFrameSwitching), {
+      window.addEventListener("DOMContentLoaded", this.onContentLoaded, {
         once: true,
       });
     } else {
-      this.onLoad({ target: window.document }, isFrameSwitching);
+      this.onContentLoaded({ target: window.document });
+    }
+    if (readyState != "complete") {
+      window.addEventListener("load", this.onLoad, { once: true });
+    } else {
+      this.onLoad({ target: window.document });
     }
   },
 
-  onContentLoaded(event, isFrameSwitching) {
+  onContentLoaded(event) {
     
     
     
     const window = event.target.defaultView;
     const time = window.performance.timing.domInteractive;
-    this.emit("dom-interactive", { time, isFrameSwitching });
+    this.emit("dom-interactive", time);
   },
 
-  onLoad(event, isFrameSwitching) {
+  onLoad(event) {
     
     
     
     const window = event.target.defaultView;
     const time = window.performance.timing.domComplete;
-    this.emit("dom-complete", { time, isFrameSwitching });
+    this.emit("dom-complete", time);
   },
 
   destroy() {

@@ -125,8 +125,6 @@ class TargetCommand extends EventEmitter {
     
     
     this._gotFirstTopLevelTarget = false;
-    this.commands = commands;
-    this._onResourceAvailable = this._onResourceAvailable.bind(this);
   }
 
   
@@ -400,21 +398,6 @@ class TargetCommand extends EventEmitter {
       }
     }
 
-    if (!this._watchingDocumentEvent && !this.isDestroyed()) {
-      
-      
-      
-      
-
-      this._watchingDocumentEvent = true;
-      await this.commands.resourceCommand.watchResources(
-        [this.commands.resourceCommand.TYPES.DOCUMENT_EVENT],
-        {
-          onAvailable: this._onResourceAvailable,
-        }
-      );
-    }
-
     if (this.isServerTargetSwitchingEnabled()) {
       await this._onFirstTarget;
     }
@@ -473,16 +456,6 @@ class TargetCommand extends EventEmitter {
 
 
   stopListening({ onlyLegacy = false } = {}) {
-    if (this._watchingDocumentEvent) {
-      this.commands.resourceCommand.unwatchResources(
-        [this.commands.resourceCommand.TYPES.DOCUMENT_EVENT],
-        {
-          onAvailable: this._onResourceAvailable,
-        }
-      );
-      this._watchingDocumentEvent = false;
-    }
-
     for (const type of TargetCommand.ALL_TYPES) {
       if (!this._isListening(type)) {
         continue;
@@ -536,23 +509,6 @@ class TargetCommand extends EventEmitter {
 
   _matchTargetType(type, target) {
     return type === target.targetType;
-  }
-
-  _onResourceAvailable(resources) {
-    for (const resource of resources) {
-      if (
-        resource.resourceType ===
-        this.commands.resourceCommand.TYPES.DOCUMENT_EVENT
-      ) {
-        const { targetFront } = resource;
-        if (resource.title !== undefined && targetFront?.setTitle) {
-          targetFront.setTitle(resource.title);
-        }
-        if (resource.url !== undefined && targetFront?.setUrl) {
-          targetFront.setUrl(resource.url);
-        }
-      }
-    }
   }
 
   
@@ -817,7 +773,6 @@ class TargetCommand extends EventEmitter {
     this.stopListening();
     this._createListeners.off();
     this._destroyListeners.off();
-
     this._isDestroyed = true;
   }
 }

@@ -81,6 +81,8 @@ add_task(async function() {
   
   const willNavigate = toolbox.target.once("will-navigate");
 
+  const onTitleChanged = waitForTitleChange(toolbox);
+
   
   
   const onInspectorReloaded = toolbox.getPanel("inspector").once("reloaded");
@@ -89,8 +91,7 @@ add_task(async function() {
 
   await willNavigate;
   await onInspectorReloaded;
-  
-  await wait(1000);
+  await onTitleChanged;
 
   info("Navigation to the iframe is done, the inspector should be back up");
   is(

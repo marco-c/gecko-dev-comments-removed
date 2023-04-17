@@ -29,14 +29,9 @@ class DocumentEventWatcher {
 
     const onDocumentEvent = (
       name,
-      {
-        time,
-        
-        shouldBeIgnoredAsRedundantWithTargetAvailable,
-        
-        
-        isFrameSwitching,
-      }
+      time,
+      
+      shouldBeIgnoredAsRedundantWithTargetAvailable
     ) => {
       onAvailable([
         {
@@ -44,14 +39,6 @@ class DocumentEventWatcher {
           name,
           time,
           shouldBeIgnoredAsRedundantWithTargetAvailable,
-          isFrameSwitching,
-          
-          
-          
-          title: name === "dom-interactive" ? targetActor.title : undefined,
-          
-          
-          url: name === "dom-loading" ? targetActor.url : undefined,
         },
       ]);
     };

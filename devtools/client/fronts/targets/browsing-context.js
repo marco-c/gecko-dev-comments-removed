@@ -42,16 +42,8 @@ class BrowsingContextTargetFront extends TargetMixin(
 
     this.outerWindowID = json.outerWindowID;
     this.favicon = json.favicon;
-
-    
-    
-    
-    
-    
-    
-    
-    this.setTitle(json.title);
-    this.setUrl(json.url);
+    this._title = json.title;
+    this._url = json.url;
   }
 
   
@@ -76,8 +68,8 @@ class BrowsingContextTargetFront extends TargetMixin(
     
     
     if (!packet.isFrameSwitching || this.isWebExtension) {
-      this.setTitle(packet.title);
-      this.setUrl(packet.url);
+      this._url = packet.url;
+      this._title = packet.title;
     }
 
     
@@ -87,24 +79,6 @@ class BrowsingContextTargetFront extends TargetMixin(
     } else {
       this.emit("navigate", event);
     }
-  }
-
-  
-
-
-
-
-  setUrl(url) {
-    this._url = url;
-  }
-
-  
-
-
-
-
-  setTitle(title) {
-    this._title = title;
   }
 
   async attach() {
