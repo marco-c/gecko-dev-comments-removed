@@ -2560,6 +2560,8 @@ class PageCount extends PrintUIControlMixin(HTMLElement) {
 
   update(settings) {
     this.numCopies = settings.numCopies;
+    this.duplex = settings.duplex;
+    this.printToFile = settings.printToFile;
     this.render();
   }
 
@@ -2567,8 +2569,17 @@ class PageCount extends PrintUIControlMixin(HTMLElement) {
     if (!this.numCopies || !this.sheetCount) {
       return;
     }
+
+    let sheetCount = this.sheetCount * this.numCopies;
+
+    
+    
+    if (!this.printToFile && this.duplex != Ci.nsIPrintSettings.kDuplexNone) {
+      sheetCount = Math.ceil(sheetCount / 2);
+    }
+
     document.l10n.setAttributes(this, "printui-sheets-count", {
-      sheetCount: this.sheetCount * this.numCopies,
+      sheetCount,
     });
 
     
