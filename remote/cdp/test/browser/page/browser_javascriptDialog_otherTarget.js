@@ -3,6 +3,10 @@
 
 "use strict";
 
+const { PromptTestUtils } = ChromeUtils.import(
+  "resource://testing-common/PromptTestUtils.jsm"
+);
+
 
 
 add_task(async function({ client }) {
@@ -25,13 +29,11 @@ add_task(async function({ client }) {
 
   
   
-  const onOtherPageDialog = new Promise(r => {
-    Services.obs.addObserver(function onDialogLoaded(promptContainer) {
-      Services.obs.removeObserver(onDialogLoaded, "tabmodal-dialog-loaded");
-      promptContainer.querySelector(".tabmodalprompt-button0").click();
-      r();
-    }, "tabmodal-dialog-loaded");
-  });
+  let onOtherPageDialog = PromptTestUtils.handleNextPrompt(
+    gBrowser.selectedBrowser,
+    { modalType: Services.prompt.MODAL_TYPE_CONTENT, promptType: "alert" },
+    { buttonNumClick: 0 }
+  );
 
   info("Trigger an alert in the second page");
   SpecialPowers.spawn(gBrowser.selectedBrowser, [], () => {
