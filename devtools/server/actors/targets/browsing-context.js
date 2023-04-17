@@ -1367,7 +1367,13 @@ const browsingContextTargetPrototype = {
   _changeTopLevelDocument(window) {
     
     
-    this._willNavigate(this.window, window.location.href, null, true);
+    this._willNavigate({
+      window: this.window,
+      newURI: window.location.href,
+      request: null,
+      isFrameSwitching: true,
+      navigationStart: Date.now(),
+    });
 
     this._windowDestroyed(this.window, null, true);
 
@@ -1437,7 +1443,13 @@ const browsingContextTargetPrototype = {
 
 
 
-  _willNavigate(window, newURI, request, isFrameSwitching = false) {
+  _willNavigate({
+    window,
+    newURI,
+    request,
+    isFrameSwitching = false,
+    navigationStart,
+  }) {
     let isTopLevel = window == this.window;
     let reset = false;
 
@@ -1462,10 +1474,11 @@ const browsingContextTargetPrototype = {
     
     
     this.emit("will-navigate", {
-      window: window,
-      isTopLevel: isTopLevel,
-      newURI: newURI,
-      request: request,
+      window,
+      isTopLevel,
+      newURI,
+      request,
+      navigationStart,
     });
 
     
@@ -1839,6 +1852,12 @@ DebuggerProgressListener.prototype = {
     const isWindow = flag & Ci.nsIWebProgressListener.STATE_IS_WINDOW;
 
     
+    
+    
+    
+    const navigationStart = Date.now();
+
+    
     if (isDocument && isStop) {
       
       this._targetActor._notifyDocShellsUpdate([progress]);
@@ -1849,7 +1868,13 @@ DebuggerProgressListener.prototype = {
       
       
       const newURI = request instanceof Ci.nsIChannel ? request.URI.spec : null;
-      this._targetActor._willNavigate(window, newURI, request);
+      this._targetActor._willNavigate({
+        window,
+        newURI,
+        request,
+        isFrameSwitching: false,
+        navigationStart,
+      });
     }
     if (isWindow && isStop) {
       

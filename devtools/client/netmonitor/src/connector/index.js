@@ -368,8 +368,8 @@ class Connector {
       return;
     }
 
-    if (resource.name === "dom-loading") {
-      
+    
+    if (resource.name != "dom-interactive" && resource.name != "dom-complete") {
       return;
     }
 

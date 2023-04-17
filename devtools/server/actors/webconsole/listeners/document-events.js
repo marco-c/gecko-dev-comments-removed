@@ -13,10 +13,36 @@ const EventEmitter = require("devtools/shared/event-emitter");
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const WILL_NAVIGATE_TIME_SHIFT = 5;
+exports.WILL_NAVIGATE_TIME_SHIFT = WILL_NAVIGATE_TIME_SHIFT;
+
+
+
+
+
+
+
+
 function DocumentEventsListener(targetActor) {
   this.targetActor = targetActor;
 
   EventEmitter.decorate(this);
+  this.onWillNavigate = this.onWillNavigate.bind(this);
   this.onWindowReady = this.onWindowReady.bind(this);
   this.onContentLoaded = this.onContentLoaded.bind(this);
   this.onLoad = this.onLoad.bind(this);
@@ -26,6 +52,10 @@ exports.DocumentEventsListener = DocumentEventsListener;
 
 DocumentEventsListener.prototype = {
   listen() {
+    
+    EventEmitter.on(this.targetActor, "will-navigate", this.onWillNavigate);
+
+    
     EventEmitter.on(this.targetActor, "window-ready", this.onWindowReady);
     
     if (!this.targetActor.attached) {
@@ -43,6 +73,18 @@ DocumentEventsListener.prototype = {
         shouldBeIgnoredAsRedundantWithTargetAvailable: true,
       });
     }
+  },
+
+  onWillNavigate({ window, isTopLevel, newURI, navigationStart }) {
+    
+    if (!isTopLevel) {
+      return;
+    }
+
+    this.emit("will-navigate", {
+      time: navigationStart - WILL_NAVIGATE_TIME_SHIFT,
+      newURI,
+    });
   },
 
   onWindowReady({

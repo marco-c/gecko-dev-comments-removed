@@ -36,7 +36,9 @@ class DocumentEventWatcher {
         
         
         isFrameSwitching,
-      }
+        
+        newURI,
+      } = {}
     ) => {
       onAvailable([
         {
@@ -52,6 +54,9 @@ class DocumentEventWatcher {
           
           
           url: name === "dom-loading" ? targetActor.url : undefined,
+          
+          
+          newURI: name === "will-navigate" ? newURI : null,
         },
       ]);
     };
