@@ -72,8 +72,8 @@ impl SwTile {
         clip_rect: &DeviceIntRect,
     ) -> Option<DeviceIntRect> {
         let bounds = self.local_bounds(surface);
-        let device_rect = transform.outer_transformed_box2d(&bounds.to_f32())?.round_out().to_i32();
-        device_rect.intersection(clip_rect)
+        let device_rect = transform.outer_transformed_box2d(&bounds.to_f32())?.round_out();
+        Some(device_rect.intersection(&clip_rect.to_f32())?.to_i32())
     }
 
     
@@ -101,7 +101,7 @@ impl SwTile {
         
         let valid = self.local_bounds(surface);
         
-        let dest_rect = transform.outer_transformed_box2d(&valid.to_f32())?.round_out().to_i32();
+        let dest_rect = transform.outer_transformed_box2d(&valid.to_f32())?.round_out().try_cast()?;
         if !dest_rect.intersects(clip_rect) {
             return None;
         }
@@ -157,8 +157,8 @@ impl SwSurface {
         clip_rect: &DeviceIntRect,
     ) -> Option<DeviceIntRect> {
         let bounds = self.local_bounds();
-        let device_rect = transform.outer_transformed_box2d(&bounds.to_f32())?.round_out().to_i32();
-        device_rect.intersection(clip_rect)
+        let device_rect = transform.outer_transformed_box2d(&bounds.to_f32())?.round_out();
+        Some(device_rect.intersection(&clip_rect.to_f32())?.to_i32())
     }
 }
 
