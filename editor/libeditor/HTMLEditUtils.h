@@ -1364,6 +1364,24 @@ class HTMLEditUtils final {
     return EditorDOMPointType(&aContent);
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+  template <typename EditorDOMPointType, typename EditorDOMPointTypeInput>
+  static EditorDOMPointType GetBetterInsertionPointFor(
+      const nsIContent& aContentToInsert,
+      const EditorDOMPointTypeInput& aPointToInsert,
+      const Element& aEditingHost);
+
  private:
   static bool CanNodeContain(nsHTMLTag aParentTagId, nsHTMLTag aChildTagId);
   static bool IsContainerNode(nsHTMLTag aTagId);

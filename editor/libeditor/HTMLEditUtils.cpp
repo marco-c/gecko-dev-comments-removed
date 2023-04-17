@@ -80,6 +80,19 @@ template EditorRawDOMPoint HTMLEditUtils::GetNextEditablePoint(
     InvisibleWhiteSpaces aInvisibleWhiteSpaces,
     TableBoundary aHowToTreatTableBoundary);
 
+template EditorDOMPoint HTMLEditUtils::GetBetterInsertionPointFor(
+    const nsIContent& aContentToInsert, const EditorDOMPoint& aPointToInsert,
+    const Element& aEditingHost);
+template EditorRawDOMPoint HTMLEditUtils::GetBetterInsertionPointFor(
+    const nsIContent& aContentToInsert, const EditorRawDOMPoint& aPointToInsert,
+    const Element& aEditingHost);
+template EditorDOMPoint HTMLEditUtils::GetBetterInsertionPointFor(
+    const nsIContent& aContentToInsert, const EditorRawDOMPoint& aPointToInsert,
+    const Element& aEditingHost);
+template EditorRawDOMPoint HTMLEditUtils::GetBetterInsertionPointFor(
+    const nsIContent& aContentToInsert, const EditorDOMPoint& aPointToInsert,
+    const Element& aEditingHost);
+
 bool HTMLEditUtils::CanContentsBeJoined(const nsIContent& aLeftContent,
                                         const nsIContent& aRightContent,
                                         StyleDifference aStyleDifference) {
@@ -1506,6 +1519,67 @@ EditAction HTMLEditUtils::GetEditActionForAlignment(
     return EditAction::eJustify;
   }
   return EditAction::eSetAlignment;
+}
+
+template <typename EditorDOMPointType, typename EditorDOMPointTypeInput>
+EditorDOMPointType HTMLEditUtils::GetBetterInsertionPointFor(
+    const nsIContent& aContentToInsert,
+    const EditorDOMPointTypeInput& aPointToInsert,
+    const Element& aEditingHost) {
+  if (NS_WARN_IF(!aPointToInsert.IsSet())) {
+    return EditorDOMPointType();
+  }
+
+  EditorDOMPointType pointToInsert(
+      aPointToInsert.GetNonAnonymousSubtreePoint());
+  if (NS_WARN_IF(!pointToInsert.IsSet()) ||
+      NS_WARN_IF(!pointToInsert.GetContainer()->IsInclusiveDescendantOf(
+          &aEditingHost))) {
+    
+    return EditorDOMPointType();
+  }
+
+  
+  
+  if (!HTMLEditUtils::IsBlockElement(aContentToInsert)) {
+    return pointToInsert;
+  }
+
+  WSRunScanner wsScannerForPointToInsert(const_cast<Element*>(&aEditingHost),
+                                         pointToInsert);
+
+  
+  
+  
+  WSScanResult forwardScanFromPointToInsertResult =
+      wsScannerForPointToInsert.ScanNextVisibleNodeOrBlockBoundaryFrom(
+          pointToInsert);
+  
+  
+  if (!forwardScanFromPointToInsertResult.GetContent() ||
+      !forwardScanFromPointToInsertResult.ReachedBRElement()) {
+    return pointToInsert;
+  }
+
+  
+  
+  
+  
+  WSScanResult backwardScanFromPointToInsertResult =
+      wsScannerForPointToInsert.ScanPreviousVisibleNodeOrBlockBoundaryFrom(
+          pointToInsert);
+  
+  
+  
+  
+  
+  if (!backwardScanFromPointToInsertResult.GetContent() ||
+      backwardScanFromPointToInsertResult.ReachedBRElement() ||
+      backwardScanFromPointToInsertResult.ReachedCurrentBlockBoundary()) {
+    return pointToInsert;
+  }
+
+  return forwardScanFromPointToInsertResult.RawPointAfterContent();
 }
 
 }  

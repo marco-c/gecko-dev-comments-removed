@@ -3998,21 +3998,6 @@ class HTMLEditor final : public TextEditor,
 
 
 
-
-
-
-
-  EditorRawDOMPoint GetBetterInsertionPointFor(
-      nsIContent& aContentToInsert,
-      const EditorRawDOMPoint& aPointToInsert) const;
-
-  
-
-
-
-
-
-
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   MakeDefinitionListItemWithTransaction(nsAtom& aTagName);
 

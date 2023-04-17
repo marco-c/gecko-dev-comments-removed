@@ -1564,61 +1564,6 @@ NS_IMETHODIMP HTMLEditor::RebuildDocumentFromSource(
   return rv;
 }
 
-EditorRawDOMPoint HTMLEditor::GetBetterInsertionPointFor(
-    nsIContent& aContentToInsert,
-    const EditorRawDOMPoint& aPointToInsert) const {
-  if (NS_WARN_IF(!aPointToInsert.IsSet())) {
-    return aPointToInsert;
-  }
-
-  EditorRawDOMPoint pointToInsert(aPointToInsert.GetNonAnonymousSubtreePoint());
-  if (NS_WARN_IF(!pointToInsert.IsSet())) {
-    
-    return EditorRawDOMPoint();
-  }
-
-  
-  
-  if (!HTMLEditUtils::IsBlockElement(aContentToInsert)) {
-    return pointToInsert;
-  }
-
-  WSRunScanner wsScannerForPointToInsert(GetActiveEditingHost(), pointToInsert);
-
-  
-  
-  
-  WSScanResult forwardScanFromPointToInsertResult =
-      wsScannerForPointToInsert.ScanNextVisibleNodeOrBlockBoundaryFrom(
-          pointToInsert);
-  
-  
-  if (!forwardScanFromPointToInsertResult.GetContent() ||
-      !forwardScanFromPointToInsertResult.ReachedBRElement()) {
-    return pointToInsert;
-  }
-
-  
-  
-  
-  
-  WSScanResult backwardScanFromPointToInsertResult =
-      wsScannerForPointToInsert.ScanPreviousVisibleNodeOrBlockBoundaryFrom(
-          pointToInsert);
-  
-  
-  
-  
-  
-  if (!backwardScanFromPointToInsertResult.GetContent() ||
-      backwardScanFromPointToInsertResult.ReachedBRElement() ||
-      backwardScanFromPointToInsertResult.ReachedCurrentBlockBoundary()) {
-    return pointToInsert;
-  }
-
-  return forwardScanFromPointToInsertResult.RawPointAfterContent();
-}
-
 NS_IMETHODIMP HTMLEditor::InsertElementAtSelection(Element* aElement,
                                                    bool aDeleteSelection) {
   nsresult rv = InsertElementAtSelectionAsAction(aElement, aDeleteSelection);
@@ -1748,12 +1693,24 @@ nsresult HTMLEditor::InsertElementAtSelectionAsAction(
     return NS_OK;
   }
 
+  Element* editingHost = GetActiveEditingHost();
+  if (NS_WARN_IF(!editingHost)) {
+    
+    
+    
+    editingHost = GetRoot();
+    if (NS_WARN_IF(!editingHost)) {
+      return EditorBase::ToGenericNSResult(NS_ERROR_FAILURE);
+    }
+  }
+
   EditorRawDOMPoint atAnchor(SelectionRef().AnchorRef());
   
   EditorDOMPoint pointToInsert =
-      GetBetterInsertionPointFor(*aElement, atAnchor);
+      HTMLEditUtils::GetBetterInsertionPointFor<EditorDOMPoint>(
+          *aElement, atAnchor, *editingHost);
   if (!pointToInsert.IsSet()) {
-    NS_WARNING("HTMLEditor::GetBetterInsertionPointFor() failed");
+    NS_WARNING("HTMLEditUtils::GetBetterInsertionPointFor() failed");
     return NS_ERROR_FAILURE;
   }
 

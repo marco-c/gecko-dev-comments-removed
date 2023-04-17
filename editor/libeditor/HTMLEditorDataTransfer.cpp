@@ -633,10 +633,23 @@ nsresult HTMLEditor::HTMLWithContextInserter::Run(
     }
   }
 
+  Element* editingHost = mHTMLEditor.GetActiveEditingHost();
+  if (NS_WARN_IF(!editingHost)) {
+    
+    
+    
+    
+    editingHost = mHTMLEditor.GetRoot();
+    if (NS_WARN_IF(!editingHost)) {
+      return NS_ERROR_FAILURE;
+    }
+  }
+
   
-  EditorDOMPoint pointToInsert = mHTMLEditor.GetBetterInsertionPointFor(
-      arrayOfTopMostChildContents[0],
-      EditorBase::GetStartPoint(mHTMLEditor.SelectionRef()));
+  EditorDOMPoint pointToInsert =
+      HTMLEditUtils::GetBetterInsertionPointFor<EditorDOMPoint>(
+          arrayOfTopMostChildContents[0],
+          EditorBase::GetStartPoint(mHTMLEditor.SelectionRef()), *editingHost);
   if (!pointToInsert.IsSet()) {
     NS_WARNING("HTMLEditor::GetBetterInsertionPointFor() failed");
     return NS_ERROR_FAILURE;
