@@ -87,12 +87,9 @@ using namespace xpc;
 using namespace JS;
 
 
-
 #if !defined(PTHREAD_STACK_MIN)
 #  define PTHREAD_STACK_MIN 0
 #endif
-static constexpr size_t kWatchdogStackSize =
-    PTHREAD_STACK_MIN < 32 * 1024 ? 32 * 1024 : PTHREAD_STACK_MIN;
 
 static void WatchdogMain(void* arg);
 class Watchdog;
@@ -162,9 +159,16 @@ class Watchdog {
       
       
       
+      
+      size_t watchdogStackSize = PTHREAD_STACK_MIN;
+      watchdogStackSize = std::max<size_t>(32 * 1024, watchdogStackSize);
+
+      
+      
+      
       mThread = PR_CreateThread(PR_USER_THREAD, WatchdogMain, this,
                                 PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD,
-                                PR_JOINABLE_THREAD, kWatchdogStackSize);
+                                PR_JOINABLE_THREAD, watchdogStackSize);
       if (!mThread) {
         MOZ_CRASH("PR_CreateThread failed!");
       }
