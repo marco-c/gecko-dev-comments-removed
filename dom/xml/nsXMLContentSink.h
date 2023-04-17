@@ -31,11 +31,11 @@ class ProcessingInstruction;
 }  
 }  
 
-typedef enum {
+enum XMLContentSinkState {
   eXMLContentSinkState_InProlog,
   eXMLContentSinkState_InDocumentElement,
   eXMLContentSinkState_InEpilog
-} XMLContentSinkState;
+};
 
 class nsXMLContentSink : public nsContentSink,
                          public nsIXMLContentSink,
