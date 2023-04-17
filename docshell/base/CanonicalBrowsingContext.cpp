@@ -1858,11 +1858,14 @@ CanonicalBrowsingContext::ChangeRemoteness(
   BrowsingContextGroup* finalGroup =
       aOptions.mReplaceBrowsingContext ? change->mSpecificGroup.get() : Group();
 
+  bool preferUsed =
+      StaticPrefs::browser_tabs_remote_subframesPreferUsed() && !IsTop();
+
   change->mContentParent = ContentParent::GetNewOrUsedLaunchingBrowserProcess(
        aOptions.mRemoteType,
        finalGroup,
        hal::PROCESS_PRIORITY_FOREGROUND,
-       false);
+       preferUsed);
   if (!change->mContentParent) {
     change->Cancel(NS_ERROR_FAILURE);
     return promise.forget();

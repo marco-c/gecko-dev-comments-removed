@@ -920,6 +920,7 @@ already_AddRefed<ContentParent> ContentParent::GetUsedBrowserProcess(
   if (aPreferUsed && numberOfParents) {
     
     
+    
     aMaxContentParents = numberOfParents;
   }
 
