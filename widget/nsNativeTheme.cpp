@@ -612,47 +612,48 @@ static nsIFrame* GetBodyFrame(nsIFrame* aCanvasFrame) {
   return body->GetPrimaryFrame();
 }
 
-static const ComputedStyle* GetBackgroundStyle(nsIFrame* aFrame) {
-  if (nsCSSRendering::IsCanvasFrame(aFrame)) {
+
+bool nsNativeTheme::IsDarkBackground(nsIFrame* aFrame) {
+  
+  
+  {
+    nsIFrame* frame = aFrame;
+    nsIScrollableFrame* scrollFrame = nullptr;
+    while (!scrollFrame && frame) {
+      scrollFrame = frame->GetScrollTargetFrame();
+      frame = frame->GetParent();
+    }
+    if (scrollFrame) {
+      aFrame = scrollFrame->GetScrolledFrame();
+    } else {
+      
+    }
+  }
+
+  auto backgroundFrame = nsCSSRendering::FindNonTransparentBackgroundFrame(
+      aFrame,  false);
+  if (!backgroundFrame.mFrame) {
+    return false;
+  }
+
+  nscolor color = backgroundFrame.mFrame->StyleBackground()->BackgroundColor(
+      backgroundFrame.mFrame);
+
+  if (backgroundFrame.mIsForCanvas) {
     
     
     
     
     if (nsIFrame* bodyFrame = GetBodyFrame(aFrame)) {
-      if (!bodyFrame->StyleBackground()->IsTransparent(bodyFrame->Style())) {
-        return bodyFrame->Style();
+      nscolor bodyColor =
+          bodyFrame->StyleBackground()->BackgroundColor(bodyFrame);
+      if (NS_GET_A(bodyColor)) {
+        color = bodyColor;
       }
     }
   }
-  ComputedStyle* bgSC = nullptr;
-  if (nsCSSRendering::FindBackground(aFrame, &bgSC) &&
-      !bgSC->StyleBackground()->IsTransparent(bgSC)) {
-    return bgSC;
-  }
 
-  nsIFrame* backgroundFrame =
-      nsCSSRendering::FindNonTransparentBackgroundFrame(aFrame, true);
-  if (!backgroundFrame) {
-    return nullptr;
-  }
-  return backgroundFrame->Style();
-}
-
-
-bool nsNativeTheme::IsDarkBackground(nsIFrame* aFrame) {
-  nsIScrollableFrame* scrollFrame = nullptr;
-  while (!scrollFrame && aFrame) {
-    scrollFrame = aFrame->GetScrollTargetFrame();
-    aFrame = aFrame->GetParent();
-  }
-  if (!scrollFrame) {
-    return false;
-  }
-
-  if (const auto* style = GetBackgroundStyle(scrollFrame->GetScrolledFrame())) {
-    return IsDarkColor(style->StyleBackground()->BackgroundColor(style));
-  }
-  return false;
+  return IsDarkColor(color);
 }
 
 
