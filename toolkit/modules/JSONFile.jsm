@@ -38,11 +38,6 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 ChromeUtils.defineModuleGetter(
   this,
-  "AsyncShutdown",
-  "resource://gre/modules/AsyncShutdown.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
   "DeferredTask",
   "resource://gre/modules/DeferredTask.jsm"
 );
@@ -51,7 +46,6 @@ ChromeUtils.defineModuleGetter(
   "FileUtils",
   "resource://gre/modules/FileUtils.jsm"
 );
-ChromeUtils.defineModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
 ChromeUtils.defineModuleGetter(
   this,
   "NetUtil",
@@ -60,10 +54,6 @@ ChromeUtils.defineModuleGetter(
 
 XPCOMUtils.defineLazyGetter(this, "gTextDecoder", function() {
   return new TextDecoder();
-});
-
-XPCOMUtils.defineLazyGetter(this, "gTextEncoder", function() {
-  return new TextEncoder();
 });
 
 const FileInputStream = Components.Constructor(
@@ -138,14 +128,14 @@ function JSONFile(config) {
 
   this._options = {};
   if (config.compression) {
-    this._options.compression = config.compression;
+    this._options.decompress = this._options.compress = true;
   }
 
   if (config.backupTo) {
-    this._options.backupTo = config.backupTo;
+    this._options.backupFile = this._options.backupTo = config.backupTo;
   }
 
-  this._finalizeAt = config.finalizeAt || AsyncShutdown.profileBeforeChange;
+  this._finalizeAt = config.finalizeAt || IOUtils.profileBeforeChange;
   this._finalizeInternalBound = this._finalizeInternal.bind(this);
   this._finalizeAt.addBlocker(
     "JSON store: writing data",
@@ -223,14 +213,12 @@ JSONFile.prototype = {
     let data = {};
 
     try {
-      let bytes = await OS.File.read(this.path, this._options);
+      data = await IOUtils.readJSON(this.path, this._options);
 
       
       if (this.dataReady) {
         return;
       }
-
-      data = JSON.parse(gTextDecoder.decode(bytes));
     } catch (ex) {
       
       
@@ -243,7 +231,7 @@ JSONFile.prototype = {
       
       
 
-      let cleansedBasename = OS.Path.basename(this.path)
+      let cleansedBasename = PathUtils.filename(this.path)
         .replace(/\.json$/, "")
         .replaceAll(/[^a-zA-Z0-9_.]/g, "");
       let errorNo = ex.winLastError || ex.unixErrno;
@@ -252,30 +240,29 @@ JSONFile.prototype = {
         cleansedBasename,
         errorNo ? errorNo.toString() : ""
       );
-      if (!(ex instanceof OS.File.Error && ex.becauseNoSuchFile)) {
+      if (!(ex instanceof DOMException && ex.name == "NotFoundError")) {
         Cu.reportError(ex);
 
         
         try {
-          let openInfo = await OS.File.openUnique(this.path + ".corrupt", {
-            humanReadable: true,
-          });
-          await openInfo.file.close();
-          await OS.File.move(this.path, openInfo.path);
+          let uniquePath = await PathUtils.createUniquePath(
+            this.path + ".corrupt"
+          );
+          await IOUtils.move(this.path, uniquePath);
           this._recordTelemetry("load", cleansedBasename, "invalid_json");
         } catch (e2) {
           Cu.reportError(e2);
         }
       }
 
-      if (this._options.backupTo) {
+      if (this._options.backupFile) {
         
         
         
         try {
-          await OS.File.copy(this._options.backupTo, this.path);
+          await IOUtils.copy(this._options.backupFile, this.path);
         } catch (e) {
-          if (!(e instanceof OS.File.Error && ex.becauseNoSuchFile)) {
+          if (!(e instanceof DOMException && e.name == "NotFoundError")) {
             Cu.reportError(e);
           }
         }
@@ -284,16 +271,17 @@ JSONFile.prototype = {
           
           
           
-          let bytes = await OS.File.read(this._options.backupTo, this._options);
-
+          data = await IOUtils.readJSON(
+            this._options.backupFile,
+            this._options
+          );
           
           if (this.dataReady) {
             return;
           }
-          data = JSON.parse(gTextDecoder.decode(bytes));
           this._recordTelemetry("load", cleansedBasename, "used_backup");
         } catch (e3) {
-          if (!(e3 instanceof OS.File.Error && ex.becauseNoSuchFile)) {
+          if (!(e3 instanceof DOMException && e3.name == "NotFoundError")) {
             Cu.reportError(e3);
           }
         }
@@ -373,13 +361,13 @@ JSONFile.prototype = {
         }
       }
 
-      if (this._options.backupTo) {
+      if (this._options.backupFile) {
         
         
         
         try {
-          let basename = OS.Path.basename(this.path);
-          let backupFile = new FileUtils.File(this._options.backupTo);
+          let basename = PathUtils.filename(this.path);
+          let backupFile = new FileUtils.File(this._options.backupFile);
           backupFile.copyTo(null, basename);
         } catch (e) {
           if (
@@ -396,7 +384,7 @@ JSONFile.prototype = {
           
           
           let inputStream = new FileInputStream(
-            new FileUtils.File(this._options.backupTo),
+            new FileUtils.File(this._options.backupFile),
             FileUtils.MODE_RDONLY,
             FileUtils.PERMS_FILE,
             0
@@ -441,28 +429,27 @@ JSONFile.prototype = {
 
 
   async _save() {
-    let json;
-    try {
-      json = JSON.stringify(this._data);
-    } catch (e) {
-      
-      if (typeof this._data.toJSONSafe == "function") {
-        json = JSON.stringify(this._data.toJSONSafe());
-      } else {
-        throw e;
-      }
-    }
-
     
-    let bytes = gTextEncoder.encode(json);
     if (this._beforeSave) {
       await Promise.resolve(this._beforeSave());
     }
-    await OS.File.writeAtomic(
-      this.path,
-      bytes,
-      Object.assign({ tmpPath: this.path + ".tmp" }, this._options)
-    );
+
+    try {
+      await IOUtils.writeJSON(
+        this.path,
+        this._data,
+        Object.assign({ tmpPath: this.path + ".tmp" }, this._options)
+      );
+    } catch (ex) {
+      if (typeof this._data.toJSONSafe == "function") {
+        
+        await IOUtils.writeUTF8(
+          this.path,
+          this._data.toJSONSafe(),
+          Object.assign({ tmpPath: this.path + ".tmp" }, this._options)
+        );
+      }
+    }
   },
 
   
