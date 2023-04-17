@@ -3645,7 +3645,7 @@ class Document : public nsINode,
 
   
   
-  bool HasValidTransientUserGestureActivation();
+  bool HasValidTransientUserGestureActivation() const;
 
   
   bool ConsumeTransientUserGestureActivation();
