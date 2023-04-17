@@ -164,6 +164,12 @@ class WebMDemuxer : public MediaDataDemuxer,
   void NotifyDataArrived() override;
   void NotifyDataRemoved() override;
   void EnsureUpToDateIndex();
+
+  
+  
+  
+  bool IsBufferedIntervalValid(uint64_t start, uint64_t end);
+
   media::TimeIntervals GetBuffered();
   nsresult SeekInternal(TrackInfo::TrackType aType,
                         const media::TimeUnit& aTarget);
