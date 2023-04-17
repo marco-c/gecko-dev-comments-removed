@@ -455,23 +455,22 @@ inline nsChangeHint NS_HintsNotHandledForDescendantsIn(
   nsChangeHint result =
       aChangeHint & nsChangeHint_Hints_NeverHandledForDescendants;
 
-  if (!NS_IsHintSubset(nsChangeHint_NeedDirtyReflow, aChangeHint)) {
-    if (NS_IsHintSubset(nsChangeHint_NeedReflow, aChangeHint)) {
+  if (!(aChangeHint & nsChangeHint_NeedDirtyReflow)) {
+    if (aChangeHint & nsChangeHint_NeedReflow) {
       
       
       result |= nsChangeHint_NeedReflow;
     }
 
-    if (NS_IsHintSubset(nsChangeHint_ReflowChangesSizeOrPosition,
-                        aChangeHint)) {
+    if (aChangeHint & nsChangeHint_ReflowChangesSizeOrPosition) {
       
       
       result |= nsChangeHint_ReflowChangesSizeOrPosition;
     }
   }
 
-  if (!NS_IsHintSubset(nsChangeHint_ClearDescendantIntrinsics, aChangeHint) &&
-      NS_IsHintSubset(nsChangeHint_ClearAncestorIntrinsics, aChangeHint)) {
+  if (!(aChangeHint & nsChangeHint_ClearDescendantIntrinsics) &&
+      (aChangeHint & nsChangeHint_ClearAncestorIntrinsics)) {
     
     
     result |= nsChangeHint_ClearAncestorIntrinsics;
