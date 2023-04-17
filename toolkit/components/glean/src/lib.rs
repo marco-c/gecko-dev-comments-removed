@@ -120,8 +120,6 @@ pub unsafe extern "C" fn fog_set_log_pings(value: bool) -> nsresult {
 
 #[no_mangle]
 pub unsafe extern "C" fn fog_persist_ping_lifetime_data() -> nsresult {
-    if glean::persist_ping_lifetime_data().is_err() {
-        return NS_ERROR_FAILURE;
-    }
+    glean::persist_ping_lifetime_data();
     NS_OK
 }

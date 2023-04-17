@@ -424,7 +424,7 @@ fn block_on_dispatcher() {
         was_initialize_called(),
         "initialize was never called. Can't block on the dispatcher queue."
     );
-    dispatcher::block_on_queue()
+    dispatcher::block_on_queue().unwrap();
 }
 
 
@@ -789,20 +789,11 @@ pub fn get_timestamp_ms() -> u64 {
 }
 
 
-
-
-
-pub fn persist_ping_lifetime_data() -> Result<()> {
-    if !was_initialize_called() {
-        crate::launch_with_glean(|glean| {
-            
-            let _ = glean.persist_ping_lifetime_data();
-        });
-        Ok(())
-    } else {
-        block_on_dispatcher();
-        with_glean(|glean| glean.persist_ping_lifetime_data())
-    }
+pub fn persist_ping_lifetime_data() {
+    crate::launch_with_glean(|glean| {
+        
+        let _ = glean.persist_ping_lifetime_data();
+    });
 }
 
 #[cfg(test)]
