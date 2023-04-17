@@ -48,6 +48,7 @@
 #ifdef DEBUG
 #  include "js/Proxy.h"  
 #endif
+#include "js/ScriptPrivate.h"
 #include "js/Stack.h"
 #include "js/Stream.h"  
 #include "js/Symbol.h"

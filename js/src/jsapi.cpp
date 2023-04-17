@@ -54,6 +54,7 @@
 #include "js/OffThreadScriptCompilation.h"  
 #include "js/PropertySpec.h"
 #include "js/Proxy.h"
+#include "js/ScriptPrivate.h"
 #include "js/StableStringChars.h"
 #include "js/Stack.h"
 #include "js/String.h"  

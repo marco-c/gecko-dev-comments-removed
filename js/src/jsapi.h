@@ -51,6 +51,7 @@
 #include "js/RealmOptions.h"
 #include "js/RefCounted.h"
 #include "js/RootingAPI.h"
+#include "js/ScriptPrivate.h"
 #include "js/Stack.h"
 #include "js/String.h"
 #include "js/TracingAPI.h"
@@ -798,43 +799,6 @@ extern JS_PUBLIC_API JSString* JS_DecompileScript(JSContext* cx,
 
 extern JS_PUBLIC_API JSString* JS_DecompileFunction(
     JSContext* cx, JS::Handle<JSFunction*> fun);
-
-namespace JS {
-
-
-
-
-
-extern JS_PUBLIC_API void SetScriptPrivate(JSScript* script,
-                                           const JS::Value& value);
-
-
-
-
-
-extern JS_PUBLIC_API JS::Value GetScriptPrivate(JSScript* script);
-
-
-
-
-
-extern JS_PUBLIC_API JS::Value GetScriptedCallerPrivate(JSContext* cx);
-
-
-
-
-
-
-using ScriptPrivateReferenceHook = void (*)(const JS::Value&);
-
-
-
-
-extern JS_PUBLIC_API void SetScriptPrivateReferenceHooks(
-    JSRuntime* rt, ScriptPrivateReferenceHook addRefHook,
-    ScriptPrivateReferenceHook releaseHook);
-
-} 
 
 extern JS_PUBLIC_API bool JS_CheckForInterrupt(JSContext* cx);
 
