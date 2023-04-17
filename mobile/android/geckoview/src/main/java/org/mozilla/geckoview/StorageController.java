@@ -280,8 +280,41 @@ public final class StorageController {
 
 
 
+
+
+
+
     @AnyThread
-    public void setPermission(final @NonNull ContentPermission perm, final @ContentPermission.Value int value) {
+    public void setPermission(
+            final @NonNull ContentPermission perm,
+            final @ContentPermission.Value int value) {
+        setPermissionInternal(perm, value,  false);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    @AnyThread
+    public void setPrivateBrowsingPermanentPermission(
+            final @NonNull ContentPermission perm,
+            final @ContentPermission.Value int value) {
+        setPermissionInternal(perm, value,  true);
+    }
+
+    private void setPermissionInternal(
+            final @NonNull ContentPermission perm,
+            final @ContentPermission.Value int value,
+            final boolean allowPermanentPrivateBrowsing) {
         if (perm.permission == GeckoSession.PermissionDelegate.PERMISSION_TRACKING &&
                 value == ContentPermission.VALUE_PROMPT) {
             Log.w(LOGTAG, "Cannot set a tracking permission to VALUE_PROMPT, aborting.");
@@ -289,6 +322,7 @@ public final class StorageController {
         }
         final GeckoBundle msg = perm.toGeckoBundle();
         msg.putInt("newValue", value);
+        msg.putBoolean("allowPermanentPrivateBrowsing", allowPermanentPrivateBrowsing);
         EventDispatcher.getInstance().dispatch("GeckoView:SetPermission", msg);
     }
 

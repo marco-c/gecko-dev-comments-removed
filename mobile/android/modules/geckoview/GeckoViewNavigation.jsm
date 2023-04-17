@@ -557,6 +557,18 @@ class GeckoViewNavigation extends GeckoViewModule {
     this.browser.removeProgressListener(this.progressFilter);
   }
 
+  serializePermission({ type, capability, principal }) {
+    const { URI, originAttributes, privateBrowsingId } = principal;
+    return {
+      uri: Services.io.createExposableURI(URI).displaySpec,
+      principal: E10SUtils.serializePrincipal(principal),
+      perm: type,
+      value: capability,
+      contextId: originAttributes.geckoViewSessionContextId,
+      privateMode: privateBrowsingId != 0,
+    };
+  }
+
   
   onLocationChange(aWebProgress, aRequest, aLocationURI, aFlags) {
     debug`onLocationChange`;
@@ -576,21 +588,34 @@ class GeckoViewNavigation extends GeckoViewModule {
       return;
     }
 
+    const { contentPrincipal } = this.browser;
     let permissions;
-    if (this.browser.contentPrincipal) {
-      const rawPerms = Services.perms.getAllForPrincipal(
-        this.browser.contentPrincipal
-      );
-      permissions = rawPerms.map(p => {
-        return {
-          uri: Services.io.createExposableURI(p.principal.URI).displaySpec,
-          principal: E10SUtils.serializePrincipal(p.principal),
-          perm: p.type,
-          value: p.capability,
-          contextId: p.principal.originAttributes.geckoViewSessionContextId,
-          privateMode: p.principal.privateBrowsingId != 0,
-        };
-      });
+    if (contentPrincipal) {
+      const rawPerms = Services.perms.getAllForPrincipal(contentPrincipal);
+      permissions = rawPerms.map(this.serializePermission);
+
+      
+      
+      
+      
+      
+      
+      const trackingProtectionPermission =
+        contentPrincipal.privateBrowsingId == 0
+          ? "trackingprotection"
+          : "trackingprotection-pb";
+      if (
+        contentPrincipal.isContentPrincipal &&
+        rawPerms.findIndex(p => p.type == trackingProtectionPermission) == -1
+      ) {
+        permissions.push(
+          this.serializePermission({
+            type: trackingProtectionPermission,
+            capability: Ci.nsIPermissionManager.DENY_ACTION,
+            principal: contentPrincipal,
+          })
+        );
+      }
     }
 
     const message = {
