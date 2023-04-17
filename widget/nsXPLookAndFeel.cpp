@@ -926,45 +926,30 @@ static bool ShouldUseStandinsForNativeColorForNonNativeTheme(
   return false;
 }
 
-static bool ShouldRespectSystemAppearanceForChromeDoc() {
-#ifdef XP_MACOSX
-  return StaticPrefs::widget_macos_respect_system_appearance();
-#else
-  
-  
-  return true;
-#endif
-}
-
-static bool ShouldRespectThemeAppearanceForChromeDoc() {
-  return StaticPrefs::widget_system_colors_follow_theme();
-}
-
 LookAndFeel::ColorScheme LookAndFeel::ColorSchemeForDocument(
     const dom::Document& aDoc) {
+#ifdef XP_MACOSX
   if (nsContentUtils::IsChromeDoc(&aDoc) &&
-      ShouldRespectSystemAppearanceForChromeDoc()) {
-    if (ShouldRespectThemeAppearanceForChromeDoc()) {
-      const auto* doc = &aDoc;
-      while (const auto* parent = doc->GetInProcessParentDocument()) {
-        doc = parent;
-      }
-      switch (doc->ThreadSafeGetDocumentLWTheme()) {
-        case dom::Document::Doc_Theme_Dark:
-          return ColorScheme::Light;
-        case dom::Document::Doc_Theme_Bright:
-          
-          
-          
-          return ColorScheme::Dark;
-        case dom::Document::Doc_Theme_Neutral:
-        case dom::Document::Doc_Theme_None:
-        default:
-          break;
-      }
+      StaticPrefs::widget_macos_respect_system_appearance()) {
+    const auto* doc = &aDoc;
+    while (const auto* parent = doc->GetInProcessParentDocument()) {
+      doc = parent;
     }
-    return SystemColorScheme();
+    switch (doc->ThreadSafeGetDocumentLWTheme()) {
+      case dom::Document::Doc_Theme_None:
+        return LookAndFeel::SystemColorScheme();
+      case dom::Document::Doc_Theme_Dark:
+        return LookAndFeel::ColorScheme::Light;
+      case dom::Document::Doc_Theme_Bright:
+        
+        
+        
+        return LookAndFeel::ColorScheme::Dark;
+      default:
+        break;
+    }
   }
+#endif
   return LookAndFeel::ColorScheme::Light;
 }
 
