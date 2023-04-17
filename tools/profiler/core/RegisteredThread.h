@@ -11,14 +11,12 @@
 #include "ThreadInfo.h"
 
 #include "mozilla/NotNull.h"
-#include "mozilla/ProfilerLabels.h"  
+#include "mozilla/ProfilerThreadRegistration.h"
 #include "mozilla/RefPtr.h"
 #include "nsIEventTarget.h"
 #include "nsIThread.h"
 
-namespace mozilla {
-class ProfilingStackOwner;
-}
+class ProfilingStack;
 
 
 
@@ -79,18 +77,12 @@ class RacyRegisteredThread final {
   ProfilerThreadId ThreadId() const { return mThreadId; }
 
   class ProfilingStack& ProfilingStack() {
-    return mProfilingStackOwner->ProfilingStack();
+    return mProfilingStack;
   }
-  const class ProfilingStack& ProfilingStack() const {
-    return mProfilingStackOwner->ProfilingStack();
-  }
-
-  mozilla::ProfilingStackOwner& ProfilingStackOwner() {
-    return *mProfilingStackOwner;
-  }
+  const class ProfilingStack& ProfilingStack() const { return mProfilingStack; }
 
  private:
-  mozilla::NotNull<RefPtr<mozilla::ProfilingStackOwner>> mProfilingStackOwner;
+  class ProfilingStack& mProfilingStack;
 
   
   

@@ -20,6 +20,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/ProfilerThreadRegistration.h"
 #include "mozilla/ThreadLocal.h"
 #include "nsString.h"
 
@@ -160,41 +161,7 @@ struct JSContext;
       ctx, label, dynamicString, JS::ProfilingCategoryPair::categoryPair,    \
       flags)
 
-class TLSRegisteredThread;  
-
 namespace mozilla {
-
-
-
-class ProfilingStackOwner {
- public:
-  class ProfilingStack& ProfilingStack() {
-    return mProfilingStack;
-  }
-
-  
-  
-  
-  void AddRef() const { ++mRefCnt; }
-  void Release() const {
-    MOZ_ASSERT(int32_t(mRefCnt) > 0);
-    if (--mRefCnt == 0) {
-      if (mProfilingStack.stackSize() > 0) {
-        DumpStackAndCrash();
-      }
-      delete this;
-    }
-  }
-
- private:
-  ~ProfilingStackOwner() = default;
-
-  MOZ_NORETURN void DumpStackAndCrash() const;
-
-  class ProfilingStack mProfilingStack;
-
-  mutable Atomic<int32_t, MemoryOrdering::ReleaseAcquire> mRefCnt;
-};
 
 #ifndef MOZ_GECKO_PROFILER
 
@@ -231,9 +198,14 @@ class MOZ_RAII AutoProfilerLabel {
                     JS::ProfilingCategoryPair aCategoryPair,
                     uint32_t aFlags = 0) {
     
-    ProfilingStackOwner* profilingStackOwner = ProfilingStackOwnerTLS::Get();
-    Push(profilingStackOwner ? &profilingStackOwner->ProfilingStack() : nullptr,
-         aLabel, aDynamicString, aCategoryPair, aFlags);
+    ProfilingStack* profilingStack =
+        profiler::ThreadRegistration::WithOnThreadRefOr(
+            [](profiler::ThreadRegistration::OnThreadRef aThread) {
+              return &aThread.UnlockedConstReaderAndAtomicRWRef()
+                          .ProfilingStackRef();
+            },
+            nullptr);
+    Push(profilingStack, aLabel, aDynamicString, aCategoryPair, aFlags);
   }
 
   
@@ -270,40 +242,6 @@ class MOZ_RAII AutoProfilerLabel {
   
   
   ProfilingStack* mProfilingStack;
-
- public:
-  
-  class ProfilingStackOwnerTLS {
-   public:
-    static ProfilingStackOwner* Get() {
-      MOZ_ASSERT(
-          sState != State::Uninitialized,
-          "ProfilingStackOwnerTLS::Get() should only be called after Init()");
-      if (sState != State::Initialized) {
-        return nullptr;
-      }
-      return sProfilingStackOwnerTLS.get();
-    }
-
-    static void Set(ProfilingStackOwner* aProfilingStackOwner) {
-      MOZ_ASSERT(
-          sState != State::Uninitialized,
-          "ProfilingStackOwnerTLS::Set() should only be called after Init()");
-      MOZ_DIAGNOSTIC_ASSERT(sState == State::Initialized,
-                            "ProfilingStackOwnerTLS::Set() should only be "
-                            "called after a successful Init()");
-      sProfilingStackOwnerTLS.set(aProfilingStackOwner);
-    }
-
-   private:
-    friend TLSRegisteredThread;
-    static void Init();
-
-    enum class State { Uninitialized = 0, Initialized, Unavailable };
-    static State sState;
-
-    static MOZ_THREAD_LOCAL(ProfilingStackOwner*) sProfilingStackOwnerTLS;
-  };
 };
 
 #endif  

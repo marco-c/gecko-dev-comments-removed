@@ -305,17 +305,19 @@ void nsAppShell::OnRunLoopActivityChanged(CFRunLoopActivity aActivity) {
   
   
   if (aActivity == kCFRunLoopBeforeWaiting) {
-    if (ProfilingStackOwner* profilingStackOwner =
-            AutoProfilerLabel::ProfilingStackOwnerTLS::Get()) {
-      mProfilingStackOwnerWhileWaiting = profilingStackOwner;
+    using ThreadRegistration = mozilla::profiler::ThreadRegistration;
+    ThreadRegistration::WithOnThreadRef([&](ThreadRegistration::OnThreadRef aOnThreadRef) {
+      ProfilingStack& profilingStack =
+          aOnThreadRef.UnlockedConstReaderAndAtomicRWRef().ProfilingStackRef();
+      mProfilingStackWhileWaiting = &profilingStack;
       uint8_t variableOnStack = 0;
-      mProfilingStackOwnerWhileWaiting->ProfilingStack().pushLabelFrame(
-          "Native event loop idle", nullptr, &variableOnStack, JS::ProfilingCategoryPair::IDLE, 0);
-    }
+      profilingStack.pushLabelFrame("Native event loop idle", nullptr, &variableOnStack,
+                                    JS::ProfilingCategoryPair::IDLE, 0);
+    });
   } else {
-    if (mProfilingStackOwnerWhileWaiting) {
-      mProfilingStackOwnerWhileWaiting->ProfilingStack().pop();
-      mProfilingStackOwnerWhileWaiting = nullptr;
+    if (mProfilingStackWhileWaiting) {
+      mProfilingStackWhileWaiting->pop();
+      mProfilingStackWhileWaiting = nullptr;
     }
   }
 }
