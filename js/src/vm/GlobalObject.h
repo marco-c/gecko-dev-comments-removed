@@ -123,6 +123,7 @@ class GlobalObject : public NativeObject {
     GLOBAL_THIS_RESOLVED,
     INSTRUMENTATION,
     SOURCE_URLS,
+    REALM_WEAK_MAP_KEY,
 
     
     RESERVED_SLOTS
@@ -893,6 +894,10 @@ class GlobalObject : public NativeObject {
     
     getSlotRef(SOURCE_URLS).unbarrieredSet(UndefinedValue());
   }
+
+  
+  static JSObject* getOrCreateRealmWeakMapKey(JSContext* cx,
+                                              Handle<GlobalObject*> global);
 
   
   struct OffThreadPlaceholderObject : public NativeObject {

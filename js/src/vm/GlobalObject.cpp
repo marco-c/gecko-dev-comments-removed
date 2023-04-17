@@ -964,6 +964,24 @@ NativeObject* GlobalObject::getOrCreateForOfPICObject(
 }
 
 
+JSObject* GlobalObject::getOrCreateRealmWeakMapKey(
+    JSContext* cx, Handle<GlobalObject*> global) {
+  cx->check(global);
+  Value v = global->getReservedSlot(REALM_WEAK_MAP_KEY);
+  if (v.isObject()) {
+    return &v.toObject();
+  }
+
+  PlainObject* key = NewBuiltinClassInstance<PlainObject>(cx);
+  if (!key) {
+    return nullptr;
+  }
+
+  global->setReservedSlot(REALM_WEAK_MAP_KEY, ObjectValue(*key));
+  return key;
+}
+
+
 RegExpStatics* GlobalObject::getRegExpStatics(JSContext* cx,
                                               Handle<GlobalObject*> global) {
   MOZ_ASSERT(cx);

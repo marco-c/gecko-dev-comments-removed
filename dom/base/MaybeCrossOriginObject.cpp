@@ -275,7 +275,20 @@ bool MaybeCrossOriginObjectMixins::EnsureHolder(
   
   
   
-  JS::Rooted<JSObject*> key(cx, JS::GetRealmObjectPrototype(cx));
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  JS::Rooted<JSObject*> key(cx, JS::GetRealmWeakMapKey(cx));
   if (!key) {
     return false;
   }
