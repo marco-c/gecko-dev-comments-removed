@@ -739,9 +739,9 @@ class MOZ_STACK_CLASS nsFrameConstructorState {
   
   
   
-  
-  
-  
+  void MaybePushFloatContainingBlock(nsContainerFrame* aFloatCBCandidate,
+                                     nsFrameConstructorSaveState& aSaveState);
+
   
   void PushFloatContainingBlock(nsContainerFrame* aNewFloatContainingBlock,
                                 nsFrameConstructorSaveState& aSaveState);
@@ -921,6 +921,23 @@ void nsFrameConstructorState::PushAbsoluteContainingBlock(
 
   if (aNewAbsoluteContainingBlock) {
     aNewAbsoluteContainingBlock->MarkAsAbsoluteContainingBlock();
+  }
+}
+
+void nsFrameConstructorState::MaybePushFloatContainingBlock(
+    nsContainerFrame* aFloatCBCandidate,
+    nsFrameConstructorSaveState& aSaveState) {
+  
+  if (ShouldSuppressFloatingOfDescendants(aFloatCBCandidate)) {
+    
+    
+    
+    
+    
+    
+    PushFloatContainingBlock(nullptr, aSaveState);
+  } else if (aFloatCBCandidate->IsFloatContainingBlock()) {
+    PushFloatContainingBlock(aFloatCBCandidate, aSaveState);
   }
 }
 
@@ -2106,14 +2123,11 @@ nsIFrame* nsCSSFrameConstructor::ConstructTableCell(
           PseudoStyleType::cellContent, computedStyle);
 
   
-  bool isBlock;
   nsContainerFrame* cellInnerFrame;
   if (isMathMLContent) {
     cellInnerFrame = NS_NewMathMLmtdInnerFrame(mPresShell, innerPseudoStyle);
-    isBlock = false;
   } else {
     cellInnerFrame = NS_NewBlockFormattingContext(mPresShell, innerPseudoStyle);
-    isBlock = true;
   }
 
   InitAndRestoreFrame(aState, content, newFrame, cellInnerFrame);
@@ -2129,19 +2143,14 @@ nsIFrame* nsCSSFrameConstructor::ConstructTableCell(
     
     
     nsFrameConstructorSaveState floatSaveState;
-    if (!isBlock) { 
-      aState.PushFloatContainingBlock(nullptr, floatSaveState);
-    } else {
-      aState.PushFloatContainingBlock(cellInnerFrame, floatSaveState);
-    }
-
+    aState.MaybePushFloatContainingBlock(cellInnerFrame, floatSaveState);
     ConstructFramesFromItemList(
         aState, aItem.mChildItems, cellInnerFrame,
         aItem.mFCData->mBits & FCDATA_IS_WRAPPER_ANON_BOX, childList);
   } else {
     
     ProcessChildren(aState, content, computedStyle, cellInnerFrame, true,
-                    childList, isBlock);
+                    childList, !isMathMLContent);
   }
 
   cellInnerFrame->SetInitialChildList(kPrincipalList, childList);
@@ -3208,9 +3217,7 @@ nsIFrame* nsCSSFrameConstructor::ConstructBlockRubyFrame(
                                        absoluteSaveState);
   }
   nsFrameConstructorSaveState floatSaveState;
-  if (blockFrame->IsFloatContainingBlock()) {
-    aState.PushFloatContainingBlock(blockFrame, floatSaveState);
-  }
+  aState.MaybePushFloatContainingBlock(blockFrame, floatSaveState);
 
   nsFrameList childList;
   ProcessChildren(aState, content, rubyStyle, rubyFrame, true, childList, false,
@@ -3800,12 +3807,8 @@ void nsCSSFrameConstructor::ConstructFrameFromItemInternal(
 
       if (bits & FCDATA_USE_CHILD_ITEMS) {
         nsFrameConstructorSaveState floatSaveState;
-
-        if (ShouldSuppressFloatingOfDescendants(newFrame)) {
-          aState.PushFloatContainingBlock(nullptr, floatSaveState);
-        } else if (newFrame->IsFloatContainingBlock()) {
-          aState.PushFloatContainingBlock(newFrameAsContainer, floatSaveState);
-        }
+        aState.MaybePushFloatContainingBlock(newFrameAsContainer,
+                                             floatSaveState);
         ConstructFramesFromItemList(
             aState, aItem.mChildItems, newFrameAsContainer,
             bits & FCDATA_IS_WRAPPER_ANON_BOX, childList);
@@ -5725,7 +5728,6 @@ nsContainerFrame* nsCSSFrameConstructor::GetAbsoluteContainingBlock(
 
 nsContainerFrame* nsCSSFrameConstructor::GetFloatContainingBlock(
     nsIFrame* aFrame) {
-  
   
   
   
@@ -9560,13 +9562,8 @@ void nsCSSFrameConstructor::ProcessChildren(
                                 &haveFirstLineStyle);
   }
 
-  
   nsFrameConstructorSaveState floatSaveState;
-  if (ShouldSuppressFloatingOfDescendants(aFrame)) {
-    aState.PushFloatContainingBlock(nullptr, floatSaveState);
-  } else if (aFrame->IsFloatContainingBlock()) {
-    aState.PushFloatContainingBlock(aFrame, floatSaveState);
-  }
+  aState.MaybePushFloatContainingBlock(aFrame, floatSaveState);
 
   AutoFrameConstructionItemList itemsToConstruct(this);
 
