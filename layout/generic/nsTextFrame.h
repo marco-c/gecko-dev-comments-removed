@@ -214,9 +214,6 @@ class nsTextFrame : public nsIFrame {
   
   NS_DECL_QUERYFRAME
 
-  NS_DECLARE_FRAME_PROPERTY_DELETABLE(ContinuationsProperty,
-                                      nsTArray<nsTextFrame*>)
-
   
   void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                         const nsDisplayListSet& aLists) final;
@@ -231,9 +228,6 @@ class nsTextFrame : public nsIFrame {
 
   nsresult CharacterDataChanged(const CharacterDataChangeInfo&) final;
 
-  nsTextFrame* FirstContinuation() const override {
-    return const_cast<nsTextFrame*>(this);
-  }
   nsTextFrame* GetPrevContinuation() const override { return nullptr; }
   nsTextFrame* GetNextContinuation() const final { return mNextContinuation; }
   void SetNextContinuation(nsIFrame* aNextContinuation) final {
@@ -784,12 +778,6 @@ class nsTextFrame : public nsIFrame {
 
   nsRect WebRenderBounds();
 
-  
-  
-  
-  
-  nsTextFrame* FindContinuationForOffset(int32_t aOffset);
-
  protected:
   virtual ~nsTextFrame();
 
@@ -823,9 +811,6 @@ class nsTextFrame : public nsIFrame {
     NotSelected,
   };
   mutable SelectionState mIsSelected;
-
-  
-  bool mHasContinuationsProperty = false;
 
   
 
@@ -1012,19 +997,6 @@ class nsTextFrame : public nsIFrame {
   void ClearMetrics(ReflowOutput& aMetrics);
 
   
-  
-  nsTArray<nsTextFrame*>* GetContinuations();
-
-  
-  
-  void ClearCachedContinuations() {
-    if (mHasContinuationsProperty) {
-      RemoveProperty(ContinuationsProperty());
-      mHasContinuationsProperty = false;
-    }
-  }
-
-  
 
 
 
@@ -1035,6 +1007,8 @@ class nsTextFrame : public nsIFrame {
 
   nsPoint GetPointFromIterator(const gfxSkipCharsIterator& aIter,
                                PropertyProvider& aProperties);
+
+ public:
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsTextFrame::TrimmedOffsetFlags)
