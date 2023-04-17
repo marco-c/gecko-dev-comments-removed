@@ -13082,18 +13082,21 @@ void CodeGenerator::visitLoadElementHole(LLoadElementHole* lir) {
   masm.loadValue(BaseObjectElementIndex(elements, index), out);
 
   
-  
-  if (lir->mir()->needsHoleCheck()) {
-    masm.branchTestMagic(Assembler::NotEqual, out, &done);
-    masm.moveValue(UndefinedValue(), out);
-  }
-  masm.jump(&done);
+  masm.branchTestMagic(Assembler::NotEqual, out, &done);
 
-  masm.bind(&outOfBounds);
   if (mir->needsNegativeIntCheck()) {
+    Label loadUndefined;
+    masm.jump(&loadUndefined);
+
+    masm.bind(&outOfBounds);
+
     Label negative;
     masm.branch32(Assembler::LessThan, index, Imm32(0), &negative);
     bailoutFrom(&negative, lir->snapshot());
+
+    masm.bind(&loadUndefined);
+  } else {
+    masm.bind(&outOfBounds);
   }
   masm.moveValue(UndefinedValue(), out);
 
