@@ -301,9 +301,10 @@ RefPtr<NativeEntryPromise> GetImageNativeEntry(
 }
 
 
+
 static bool IsValidType(const nsAString& aType) {
   return aType.EqualsLiteral(kPNGImageMime) || aType.EqualsLiteral(kTextMime) ||
-         aType.EqualsLiteral(kHTMLMime) || aType.EqualsLiteral("image/svg+xml");
+         aType.EqualsLiteral(kHTMLMime);
 }
 
 using NativeItemPromise = NativeEntryPromise::AllPromiseType;
