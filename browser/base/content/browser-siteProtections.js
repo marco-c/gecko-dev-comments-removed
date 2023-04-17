@@ -1094,12 +1094,6 @@ var gProtectionsHandler = {
       "tracking-protection-icon-box"
     ));
   },
-  get animatedIcon() {
-    delete this.animatedIcon;
-    return (this.animatedIcon = document.getElementById(
-      "tracking-protection-icon-animatable-image"
-    ));
-  },
   get _protectionsIconBox() {
     delete this._protectionsIconBox;
     return (this._protectionsIconBox = document.getElementById(
@@ -1298,10 +1292,6 @@ var gProtectionsHandler = {
   },
 
   init() {
-    this.animatedIcon.addEventListener("animationend", () =>
-      this.iconBox.removeAttribute("animate")
-    );
-
     XPCOMUtils.defineLazyPreferenceGetter(
       this,
       "_protectionsPopupToastTimeout",
@@ -1706,7 +1696,6 @@ var gProtectionsHandler = {
   onContentBlockingEvent(event, webProgress, isSimulated, previousState) {
     
     if (!ContentBlockingAllowList.canHandle(gBrowser.selectedBrowser)) {
-      this.iconBox.removeAttribute("animate");
       this.iconBox.removeAttribute("active");
       this.iconBox.removeAttribute("hasException");
       return;
@@ -1741,17 +1730,6 @@ var gProtectionsHandler = {
     this._categoryItemOrderInvalidated = true;
 
     
-
-    
-    
-    
-    if (isSimulated || !this.anyBlocking) {
-      this.iconBox.removeAttribute("animate");
-      
-      
-    } else if (this.anyBlocking && !this.iconBox.hasAttribute("active")) {
-      this.iconBox.setAttribute("animate", "true");
-    }
 
     
     
