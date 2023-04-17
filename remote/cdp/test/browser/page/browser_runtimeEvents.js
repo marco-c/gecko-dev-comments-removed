@@ -6,8 +6,6 @@
 
 
 
-
-
 const TEST_DOC = toDataURL("default-test-page");
 
 add_task(async function testCDP({ client }) {

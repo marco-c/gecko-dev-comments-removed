@@ -3,8 +3,6 @@
 
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const { Log } = ChromeUtils.import("chrome://remote/content/shared/Log.jsm");
-const logger = Log.get();
 
 const COMMON_PREF = "toolkit.startup.max_resumed_crashes";
 

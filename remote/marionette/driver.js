@@ -4,7 +4,6 @@
 
 "use strict";
 
-
 const EXPORTED_SYMBOLS = ["GeckoDriver"];
 
 const { XPCOMUtils } = ChromeUtils.import(
@@ -83,8 +82,6 @@ const SUPPORTED_STRATEGIES = new Set([
 
 
 const TIMEOUT_NO_WINDOW_MANAGER = 5000;
-
-const globalMessageManager = Services.mm;
 
 
 
