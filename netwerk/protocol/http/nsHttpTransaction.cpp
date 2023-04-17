@@ -825,7 +825,7 @@ nsresult nsHttpTransaction::ReadSegments(nsAHttpSegmentReader* reader,
     mEarlyDataDisposition = EARLY_SENT;
   }
 
-  if (mDeferredSendProgress && mConnection && mConnection->Transport()) {
+  if (mDeferredSendProgress && mConnection) {
     
     
     
