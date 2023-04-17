@@ -7288,6 +7288,26 @@ class nsDisplayForeignObject : public nsDisplayWrapList {
       nsDisplayListBuilder* aDisplayListBuilder) override;
 };
 
+
+
+
+class nsDisplayLink : public nsPaintedDisplayItem {
+ public:
+  nsDisplayLink(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
+                const char* aLinkSpec, const nsRect& aRect)
+      : nsPaintedDisplayItem(aBuilder, aFrame),
+        mLinkSpec(aLinkSpec),
+        mRect(aRect) {}
+
+  NS_DISPLAY_DECL_NAME("Link", TYPE_LINK)
+
+  void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override;
+
+ private:
+  nsCString mLinkSpec;
+  nsRect mRect;
+};
+
 class FlattenedDisplayListIterator {
  public:
   FlattenedDisplayListIterator(nsDisplayListBuilder* aBuilder,
