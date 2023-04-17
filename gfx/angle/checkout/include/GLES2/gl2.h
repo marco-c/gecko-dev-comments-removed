@@ -1,28 +1,9 @@
-#ifndef __gl2_h_
-#define __gl2_h_ 1
+#ifndef __gles2_gl2_h_
+#define __gles2_gl2_h_ 1
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -62,8 +43,8 @@ extern "C" {
 typedef khronos_int8_t GLbyte;
 typedef khronos_float_t GLclampf;
 typedef khronos_int32_t GLfixed;
-typedef short GLshort;
-typedef unsigned short GLushort;
+typedef khronos_int16_t GLshort;
+typedef khronos_uint16_t GLushort;
 typedef void GLvoid;
 typedef struct __GLsync *GLsync;
 typedef khronos_int64_t GLint64;
@@ -477,7 +458,7 @@ typedef void (GL_APIENTRYP PFNGLRELEASESHADERCOMPILERPROC) (void);
 typedef void (GL_APIENTRYP PFNGLRENDERBUFFERSTORAGEPROC) (GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
 typedef void (GL_APIENTRYP PFNGLSAMPLECOVERAGEPROC) (GLfloat value, GLboolean invert);
 typedef void (GL_APIENTRYP PFNGLSCISSORPROC) (GLint x, GLint y, GLsizei width, GLsizei height);
-typedef void (GL_APIENTRYP PFNGLSHADERBINARYPROC) (GLsizei count, const GLuint *shaders, GLenum binaryformat, const void *binary, GLsizei length);
+typedef void (GL_APIENTRYP PFNGLSHADERBINARYPROC) (GLsizei count, const GLuint *shaders, GLenum binaryFormat, const void *binary, GLsizei length);
 typedef void (GL_APIENTRYP PFNGLSHADERSOURCEPROC) (GLuint shader, GLsizei count, const GLchar *const*string, const GLint *length);
 typedef void (GL_APIENTRYP PFNGLSTENCILFUNCPROC) (GLenum func, GLint ref, GLuint mask);
 typedef void (GL_APIENTRYP PFNGLSTENCILFUNCSEPARATEPROC) (GLenum face, GLenum func, GLint ref, GLuint mask);
@@ -620,7 +601,7 @@ GL_APICALL void GL_APIENTRY glReleaseShaderCompiler (void);
 GL_APICALL void GL_APIENTRY glRenderbufferStorage (GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
 GL_APICALL void GL_APIENTRY glSampleCoverage (GLfloat value, GLboolean invert);
 GL_APICALL void GL_APIENTRY glScissor (GLint x, GLint y, GLsizei width, GLsizei height);
-GL_APICALL void GL_APIENTRY glShaderBinary (GLsizei count, const GLuint *shaders, GLenum binaryformat, const void *binary, GLsizei length);
+GL_APICALL void GL_APIENTRY glShaderBinary (GLsizei count, const GLuint *shaders, GLenum binaryFormat, const void *binary, GLsizei length);
 GL_APICALL void GL_APIENTRY glShaderSource (GLuint shader, GLsizei count, const GLchar *const*string, const GLint *length);
 GL_APICALL void GL_APIENTRY glStencilFunc (GLenum func, GLint ref, GLuint mask);
 GL_APICALL void GL_APIENTRY glStencilFuncSeparate (GLenum face, GLenum func, GLint ref, GLuint mask);

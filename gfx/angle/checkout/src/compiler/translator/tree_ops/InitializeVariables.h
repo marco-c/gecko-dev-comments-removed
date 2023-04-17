@@ -24,10 +24,11 @@ typedef std::vector<sh::ShaderVariable> InitVariableList;
 
 
 
-TIntermSequence *CreateInitCode(const TIntermTyped *initializedSymbol,
-                                bool canUseLoopsToInitialize,
-                                bool highPrecisionSupported,
-                                TSymbolTable *symbolTable);
+void CreateInitCode(const TIntermTyped *initializedSymbol,
+                    bool canUseLoopsToInitialize,
+                    bool highPrecisionSupported,
+                    TIntermSequence *initCode,
+                    TSymbolTable *symbolTable);
 
 
 ANGLE_NO_DISCARD bool InitializeUninitializedLocals(TCompiler *compiler,
