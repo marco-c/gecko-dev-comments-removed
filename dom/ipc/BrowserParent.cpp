@@ -222,7 +222,7 @@ BrowserParent::BrowserParent(ContentParent* aManager, const TabId& aTabId,
       mMarkedDestroying(false),
       mIsDestroyed(false),
       mRemoteTargetSetsCursor(false),
-      mPreserveLayers(false),
+      mIsPreservingLayers(false),
       mRenderLayers(true),
       mHasLayers(false),
       mHasPresented(false),
@@ -3377,7 +3377,7 @@ bool BrowserParent::GetRenderLayers() { return mRenderLayers; }
 
 void BrowserParent::SetRenderLayers(bool aEnabled) {
   if (aEnabled == mRenderLayers) {
-    if (aEnabled && mHasLayers && mPreserveLayers) {
+    if (aEnabled && mHasLayers && mIsPreservingLayers) {
       
       
       
@@ -3396,7 +3396,7 @@ void BrowserParent::SetRenderLayers(bool aEnabled) {
 
   
   
-  if (!aEnabled && mPreserveLayers) {
+  if (!aEnabled && mIsPreservingLayers) {
     return;
   }
 
@@ -3420,7 +3420,11 @@ void BrowserParent::SetRenderLayersInternal(bool aEnabled) {
 }
 
 void BrowserParent::PreserveLayers(bool aPreserveLayers) {
-  mPreserveLayers = aPreserveLayers;
+  if (mIsPreservingLayers == aPreserveLayers) {
+    return;
+  }
+  mIsPreservingLayers = aPreserveLayers;
+  Unused << SendPreserveLayers(aPreserveLayers);
 }
 
 void BrowserParent::NotifyResolutionChanged() {

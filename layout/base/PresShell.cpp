@@ -10797,7 +10797,16 @@ bool PresShell::ShouldBeActive() const {
     
     
     
-    return browserChild->IsVisible();
+    if (!browserChild->IsVisible()) {
+      return false;
+    }
+
+    
+    
+    
+    if (!browserChild->IsPreservingLayers()) {
+      return true;
+    }
   }
 
   BrowsingContext* bc = doc->GetBrowsingContext();

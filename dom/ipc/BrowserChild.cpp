@@ -341,6 +341,7 @@ BrowserChild::BrowserChild(ContentChild* aManager, const TabId& aTabId,
 #endif
       mShouldSendWebProgressEventsToParent(false),
       mRenderLayers(true),
+      mIsPreservingLayers(false),
       mPendingDocShellIsActive(false),
       mPendingDocShellReceivedMessage(false),
       mPendingRenderLayers(false),
@@ -2960,21 +2961,7 @@ void BrowserChild::MakeVisible() {
     mPuppetWidget->Show(true);
   }
 
-  if (nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation())) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (RefPtr<PresShell> presShell = docShell->GetPresShell()) {
-      presShell->ActivenessMaybeChanged();
-    }
-  }
+  PresShellActivenessMaybeChanged();
 }
 
 void BrowserChild::MakeHidden() {
@@ -2994,15 +2981,36 @@ void BrowserChild::MakeHidden() {
     mPuppetWidget->Show(false);
   }
 
-  if (nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation())) {
-    
-    
-    
-    
-    if (RefPtr<PresShell> presShell = docShell->GetPresShell()) {
-      presShell->ActivenessMaybeChanged();
-    }
+  PresShellActivenessMaybeChanged();
+}
+
+IPCResult BrowserChild::RecvPreserveLayers(bool aPreserve) {
+  mIsPreservingLayers = true;
+
+  PresShellActivenessMaybeChanged();
+
+  return IPC_OK();
+}
+
+void BrowserChild::PresShellActivenessMaybeChanged() {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
+  if (!docShell) {
+    return;
   }
+  RefPtr<PresShell> presShell = docShell->GetPresShell();
+  if (!presShell) {
+    return;
+  }
+  presShell->ActivenessMaybeChanged();
 }
 
 NS_IMETHODIMP

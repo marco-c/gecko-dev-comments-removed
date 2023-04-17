@@ -950,7 +950,7 @@ class BrowserParent final : public PBrowserParent,
 
   
   
-  bool mPreserveLayers : 1;
+  bool mIsPreservingLayers : 1;
 
   
   

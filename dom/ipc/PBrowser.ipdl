@@ -889,6 +889,12 @@ child:
 
 
     async RenderLayers(bool aEnabled, LayersObserverEpoch aEpoch);
+
+    
+
+
+
+    async PreserveLayers(bool aPreserve);
 child:
     
 
