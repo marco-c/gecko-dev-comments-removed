@@ -6,11 +6,30 @@ PromiseTestUtils.allowMatchingRejectionsGlobally(/Connection closed/);
 
 
 add_task(async function() {
+  info("Run test with bfcacheInParent DISABLED");
+  await pushPref("fission.bfcacheInParent", false);
+  await testCase();
+
+  
+  
+  if (Services.appinfo.sessionHistoryInParent) {
+    info("Run test with bfcacheInParent ENABLED");
+    await pushPref("fission.bfcacheInParent", true);
+    await testCase();
+  }
+});
+
+async function testCase() {
   const dbg = await initDebugger("doc-bfcache1.html");
+
   await navigate(dbg, "doc-bfcache2.html", "doc-bfcache2.html");
+
   invokeInTab("goBack");
   await waitForSources(dbg, "doc-bfcache1.html");
+
   invokeInTab("goForward");
   await waitForSources(dbg, "doc-bfcache2.html");
   ok(true, "Found sources after BFCache navigations");
-});
+
+  await dbg.toolbox.closeToolbox();
+}
