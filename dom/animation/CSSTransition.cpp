@@ -281,13 +281,19 @@ void CSSTransition::UpdateStartValueFromReplacedTransition() {
                      nsCSSPropertyIDSet::CompositorAnimatables()),
              "Should be called for compositor-runnable transitions");
 
-  MOZ_ASSERT(mTimeline,
-             "Should have a timeline if we are replacing transition start "
-             "values");
-
   if (!mReplacedTransition) {
     return;
   }
+
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(mTimeline,
+             "Should have a timeline if we are replacing transition start "
+             "values");
 
   ComputedTiming computedTiming = AnimationEffect::GetComputedTimingAt(
       CSSTransition::GetCurrentTimeAt(*mTimeline, TimeStamp::Now(),
