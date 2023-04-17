@@ -1074,7 +1074,9 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
-  void SendCacheUpdate(uint64_t aCacheDomain);
+
+
+  void SendCache(uint64_t aCacheDomain, CacheUpdateType aUpdate);
 
   
   nsCOMPtr<nsIContent> mContent;

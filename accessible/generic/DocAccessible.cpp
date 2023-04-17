@@ -1446,6 +1446,13 @@ void DocAccessible::DoInitialUpdate() {
     DocAccessibleChild* ipcDoc = IPCDoc();
     MOZ_ASSERT(ipcDoc);
     if (ipcDoc) {
+      if (StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+        
+        
+        
+        SendCache(CacheDomain::All, CacheUpdateType::Initial);
+      }
+
       for (auto idx = 0U; idx < mChildren.Length(); idx++) {
         ipcDoc->InsertIntoIpcTree(this, mChildren.ElementAt(idx), idx, true);
       }
