@@ -25,6 +25,12 @@
 
 #include "nsJSUtils.h"
 
+#ifdef XP_MACOSX
+#  include <CoreFoundation/CoreFoundation.h>
+#  include <Security/Security.h>
+#  include "KeychainSecret.h"  
+#endif                         
+
 using namespace mozilla;
 using namespace mozilla::psm;
 
@@ -190,6 +196,62 @@ nsClientAuthRememberService::RememberDecision(
   return NS_OK;
 }
 
+#ifdef XP_MACOSX
+
+
+
+
+
+nsresult CheckForPreferredCertificate(const nsACString& aHostName,
+                                      nsACString& aCertDBKey) {
+  aCertDBKey.Truncate();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsPrintfCString fakeUrl("//%s/", PromiseFlatCString(aHostName).get());
+  ScopedCFType<CFStringRef> host(::CFStringCreateWithCString(
+      kCFAllocatorDefault, fakeUrl.get(), kCFStringEncodingUTF8));
+  if (!host) {
+    return NS_ERROR_UNEXPECTED;
+  }
+  ScopedCFType<SecIdentityRef> identity(
+      ::SecIdentityCopyPreferred(host.get(), NULL, NULL));
+  if (!identity) {
+    
+    
+    return NS_OK;
+  }
+  SecCertificateRef certRefRaw = NULL;
+  OSStatus copyResult =
+      ::SecIdentityCopyCertificate(identity.get(), &certRefRaw);
+  ScopedCFType<SecCertificateRef> certRef(certRefRaw);
+  if (copyResult != errSecSuccess || certRef.get() == NULL) {
+    return NS_ERROR_UNEXPECTED;
+  }
+  ScopedCFType<CFDataRef> der(::SecCertificateCopyData(certRef.get()));
+  if (!der) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  nsCOMPtr<nsIX509Cert> cert(nsNSSCertificate::ConstructFromDER(
+      
+      
+      const_cast<char*>(
+          reinterpret_cast<const char*>(::CFDataGetBytePtr(der.get()))),
+      ::CFDataGetLength(der.get())));
+  if (!cert) {
+    return NS_ERROR_FAILURE;
+  }
+  return cert->GetDbKey(aCertDBKey);
+}
+#endif
+
 NS_IMETHODIMP
 nsClientAuthRememberService::HasRememberedDecision(
     const nsACString& aHostName, const OriginAttributes& aOriginAttributes,
@@ -212,14 +274,24 @@ nsClientAuthRememberService::HasRememberedDecision(
   DataStorageType storageType = GetDataStorageType(aOriginAttributes);
 
   nsCString listEntry = mClientAuthRememberList->Get(entryKey, storageType);
-  if (listEntry.IsEmpty()) {
+  if (!listEntry.IsEmpty()) {
+    if (!listEntry.Equals(nsClientAuthRemember::SentinelValue)) {
+      aCertDBKey = listEntry;
+    }
+    *aRetVal = true;
     return NS_OK;
   }
 
-  if (!listEntry.Equals(nsClientAuthRemember::SentinelValue)) {
-    aCertDBKey = listEntry;
+#ifdef XP_MACOSX
+  rv = CheckForPreferredCertificate(aHostName, aCertDBKey);
+  if (NS_FAILED(rv)) {
+    return rv;
   }
-  *aRetVal = true;
+  if (!aCertDBKey.IsEmpty()) {
+    *aRetVal = true;
+    return NS_OK;
+  }
+#endif
 
   return NS_OK;
 }
