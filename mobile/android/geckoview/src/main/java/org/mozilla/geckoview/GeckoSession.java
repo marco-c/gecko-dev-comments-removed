@@ -2819,6 +2819,31 @@ public class GeckoSession {
                 res = delegate.onLoginSave(session, request);
                 break;
             }
+            case "Autocomplete:Save:Address": {
+                final int hint = message.getInt("hint");
+                final GeckoBundle[] addressBundles =
+                        message.getBundleArray("addresses");
+
+                if (addressBundles == null) {
+                    break;
+                }
+
+                final Autocomplete.AddressSaveOption[] options =
+                        new Autocomplete.AddressSaveOption[addressBundles.length];
+
+                for (int i = 0; i < options.length; ++i) {
+                    options[i] = new Autocomplete.AddressSaveOption(
+                            new Autocomplete.Address(addressBundles[i]),
+                            hint);
+                }
+
+                final PromptDelegate.AutocompleteRequest
+                        <Autocomplete.AddressSaveOption> request =
+                        new PromptDelegate.AutocompleteRequest<>(options);
+
+                res = delegate.onAddressSave(session, request);
+                break;
+            }
             case "Autocomplete:Select:Login": {
                 final GeckoBundle[] optionBundles =
                     message.getBundleArray("options");
@@ -2863,6 +2888,29 @@ public class GeckoSession {
                     new PromptDelegate.AutocompleteRequest<>(options);
 
                 res = delegate.onCreditCardSelect(session, request);
+                break;
+            }
+            case "Autocomplete:Select:Address": {
+                final GeckoBundle[] optionBundles =
+                        message.getBundleArray("options");
+
+                if (optionBundles == null) {
+                    break;
+                }
+
+                final Autocomplete.AddressSelectOption[] options =
+                        new Autocomplete.AddressSelectOption[optionBundles.length];
+
+                for (int i = 0; i < options.length; ++i) {
+                    options[i] = Autocomplete.AddressSelectOption.fromBundle(
+                            optionBundles[i]);
+                }
+
+                final PromptDelegate.AutocompleteRequest
+                        <Autocomplete.AddressSelectOption> request =
+                        new PromptDelegate.AutocompleteRequest<>(options);
+
+                res = delegate.onAddressSelect(session, request);
                 break;
             }
             default: {
@@ -5179,6 +5227,34 @@ public class GeckoSession {
 
 
 
+
+        @UiThread
+        default @Nullable GeckoResult<PromptResponse> onAddressSave(
+                @NonNull final GeckoSession session,
+                @NonNull final AutocompleteRequest<Autocomplete.AddressSaveOption>
+                        request) {
+            return null;
+        }
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         @UiThread
         default @Nullable GeckoResult<PromptResponse> onLoginSelect(
                 @NonNull final GeckoSession session,
@@ -5214,6 +5290,34 @@ public class GeckoSession {
                     request) {
             return null;
         }
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        @UiThread
+        default @Nullable GeckoResult<PromptResponse> onAddressSelect(
+                @NonNull final GeckoSession session,
+                @NonNull final AutocompleteRequest<Autocomplete.AddressSelectOption>
+                        request) {
+            return null;
+        }
+
     }
 
     
