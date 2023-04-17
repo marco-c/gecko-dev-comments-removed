@@ -10,27 +10,66 @@ const { RemoteL10n } = ChromeUtils.import(
   "resource://activity-stream/lib/RemoteL10n.jsm"
 );
 
-function renderSpotlight() {
-  const [content, params] = window.arguments[0];
-  const template = document.querySelector(`#${content?.template}`);
-  const clone = template.content.cloneNode(true);
+function cloneTemplate(id) {
+  return document.getElementById(id).content.cloneNode(true);
+}
 
-  document.body.classList.add(content.template);
+async function renderSpotlight(ready) {
+  const [
+    { template, logo = {}, body, extra = {} },
+    params,
+  ] = window.arguments[0];
 
+  
+  const clone = cloneTemplate(template);
+  document.body.classList.add(template);
+
+  
   let imageEl = clone.querySelector(".logo");
-  imageEl.src = content.logoImageURL;
+  
+  imageEl.src = logo.imageURL ?? window.arguments[0][0].logoImageURL;
+  imageEl.style.height = imageEl.style.width = logo.size;
 
-  for (let textProp in content.body) {
-    let el = clone.querySelector(`.${textProp}`);
-    if (!content.body[textProp]?.label) {
+  
+  const setText = (className, config) => {
+    const el = clone.querySelector(`.${className}`);
+    if (!config.label) {
       el.remove();
-      continue;
+      return;
     }
+
     el.appendChild(
-      RemoteL10n.createElement(this.window.document, "span", {
-        content: content.body[textProp].label,
-      })
+      RemoteL10n.createElement(document, "span", { content: config.label })
     );
+    el.style.fontSize = config.size;
+  };
+
+  
+  Object.entries(body).forEach(entry => setText(...entry));
+
+  
+  const { expanded } = extra;
+  if (expanded) {
+    
+    clone
+      .querySelector("#content")
+      .append(cloneTemplate("extra-content-expanded"));
+    setText("expanded", expanded);
+
+    
+    const toggleBtn = clone.querySelector("#learn-more-toggle");
+    const toggle = () => {
+      const toExpand = !!toggleBtn.dataset.l10nId?.includes("collapsed");
+      document.l10n.setAttributes(
+        toggleBtn,
+        toExpand
+          ? "spotlight-learn-more-expanded"
+          : "spotlight-learn-more-collapsed"
+      );
+      toggleBtn.setAttribute("aria-expanded", toExpand);
+    };
+    toggleBtn.addEventListener("click", toggle);
+    toggle();
   }
 
   document.body.appendChild(clone);
@@ -55,6 +94,20 @@ function renderSpotlight() {
       window.close();
     });
   }
+
+  
+  await document.l10n.ready;
+  await document.l10n.translateElements(clone.children);
+  requestAnimationFrame(() => requestAnimationFrame(ready));
 }
 
-renderSpotlight();
+
+document.mozSubdialogReady = new Promise(resolve =>
+  document.addEventListener(
+    "DOMContentLoaded",
+    () => renderSpotlight(resolve),
+    {
+      once: true,
+    }
+  )
+);
