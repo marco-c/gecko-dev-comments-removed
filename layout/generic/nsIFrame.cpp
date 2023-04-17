@@ -8225,8 +8225,7 @@ nsresult nsIFrame::GetNextPrevLineFromeBlockFrame(nsPresContext* aPresContext,
     if (resultFrame) {
       
       
-      nsAutoLineIterator newIt = resultFrame->GetLineIterator();
-      if (newIt) {
+      if (resultFrame->CanProvideLineIterator()) {
         aPos->mResultFrame = resultFrame;
         return NS_OK;
       }

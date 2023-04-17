@@ -561,11 +561,22 @@ void nsLineBox::SetOverflowAreas(const OverflowAreas& aOverflowAreas) {
 
 static nsLineBox* gDummyLines[1];
 
-nsLineIterator::nsLineIterator() {
-  mLines = gDummyLines;
-  mNumLines = 0;
-  mIndex = 0;
-  mRightToLeft = false;
+nsLineIterator::nsLineIterator(nsLineList& aLines, bool aRightToLeft)
+    : mIndex(0), mNumLines(aLines.size()), mRightToLeft(aRightToLeft) {
+  if (0 == mNumLines) {
+    
+    
+    mLines = gDummyLines;
+    return;
+  }
+
+  
+  mLines = new nsLineBox*[mNumLines];
+  nsLineBox** lp = mLines;
+  for (nsLineList::iterator line = aLines.begin(), line_end = aLines.end();
+       line != line_end; ++line) {
+    *lp++ = line;
+  }
 }
 
 nsLineIterator::~nsLineIterator() {
@@ -576,35 +587,6 @@ nsLineIterator::~nsLineIterator() {
 
 
 void nsLineIterator::DisposeLineIterator() { delete this; }
-
-nsresult nsLineIterator::Init(nsLineList& aLines, bool aRightToLeft) {
-  mRightToLeft = aRightToLeft;
-
-  
-  int32_t numLines = aLines.size();
-  if (0 == numLines) {
-    
-    
-    mLines = gDummyLines;
-    return NS_OK;
-  }
-
-  
-  mLines = new nsLineBox*[numLines];
-  if (!mLines) {
-    
-    
-    mLines = gDummyLines;
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
-  nsLineBox** lp = mLines;
-  for (nsLineList::iterator line = aLines.begin(), line_end = aLines.end();
-       line != line_end; ++line) {
-    *lp++ = line;
-  }
-  mNumLines = numLines;
-  return NS_OK;
-}
 
 int32_t nsLineIterator::GetNumLines() const { return mNumLines; }
 
