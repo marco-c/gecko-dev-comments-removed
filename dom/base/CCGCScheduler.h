@@ -63,8 +63,9 @@ static const int64_t kNumCCNodesBetweenTimeChecks = 1000;
 
 
 enum class GCRunnerAction {
-  MajorGC,  
-  GCSlice,  
+  MajorGC,       
+  MajorGCReady,  
+  GCSlice,       
   None
 };
 
@@ -167,16 +168,23 @@ class CCGCScheduler {
     mNeedsGCAfterCC = true;
   }
 
+  void NoteReadyForMajorGC(JS::GCReason aReason) {
+    mMajorGCReason = aReason;
+    mReadyForMajorGC = true;
+  }
+
   void NoteGCBegin() {
     
     
     mInIncrementalGC = true;
+    mReadyForMajorGC = false;
   }
 
   void NoteGCEnd() {
     mInIncrementalGC = false;
     mCCBlockStart = TimeStamp();
     mInIncrementalGC = false;
+    mReadyForMajorGC = false;
     mNeedsFullCC = true;
     mHasRunGC = true;
 
@@ -332,6 +340,9 @@ class CCGCScheduler {
   
   
   bool mInIncrementalGC = false;
+
+  
+  bool mReadyForMajorGC = false;
 
   
   
@@ -651,6 +662,12 @@ CCRunnerStep CCGCScheduler::GetNextCCRunnerAction(TimeStamp aDeadline) {
 GCRunnerStep CCGCScheduler::GetNextGCRunnerAction(TimeStamp aDeadline) {
   if (InIncrementalGC()) {
     return {GCRunnerAction::GCSlice, JS::GCReason::INTER_SLICE_GC};
+  }
+
+  if (mReadyForMajorGC) {
+    GCRunnerStep step{GCRunnerAction::MajorGCReady, mMajorGCReason};
+    mMajorGCReason = JS::GCReason::NO_REASON;
+    return step;
   }
 
   if (mMajorGCReason != JS::GCReason::NO_REASON) {
