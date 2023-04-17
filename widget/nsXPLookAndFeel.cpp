@@ -430,6 +430,7 @@ static constexpr struct {
     {"browser.display.windows.native_menus"_ns},
     {"browser.proton.enabled"_ns},
     {"browser.proton.places-tooltip.enabled"_ns},
+    {"layout.css.prefers-color-scheme.content-override"_ns},
     
     
     {"browser.theme.toolbar-theme"_ns, widget::ThemeChangeKind::AllBits},
