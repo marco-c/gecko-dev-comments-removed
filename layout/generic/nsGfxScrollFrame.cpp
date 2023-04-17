@@ -3395,14 +3395,14 @@ void ScrollFrameHelper::AppendScrollPartsTo(nsDisplayListBuilder* aBuilder,
     
     
     const nsRect visible =
-        mIsRoot && mOuter->PresContext()->IsRootContentDocument()
+        mIsRoot && mOuter->PresContext()->IsRootContentDocumentCrossProcess()
             ? scrollParts[i]->InkOverflowRectRelativeToParent()
             : aBuilder->GetVisibleRect();
     if (visible.IsEmpty()) {
       continue;
     }
     const nsRect dirty =
-        mIsRoot && mOuter->PresContext()->IsRootContentDocument()
+        mIsRoot && mOuter->PresContext()->IsRootContentDocumentCrossProcess()
             ? scrollParts[i]->InkOverflowRectRelativeToParent()
             : aBuilder->GetDirtyRect();
 
