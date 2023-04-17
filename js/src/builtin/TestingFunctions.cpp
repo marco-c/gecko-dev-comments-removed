@@ -4622,12 +4622,12 @@ class ShapeSnapshot {
   struct PropertySnapshot {
     HeapPtr<Shape*> propShape;
     HeapPtr<PropertyKey> key;
-    ShapeProperty prop;
+    PropertyInfo prop;
 
     explicit PropertySnapshot(Shape* shape)
         : propShape(shape),
-          key(shape->propertyWithKey().key()),
-          prop(propShape->property()) {}
+          key(propShape->propertyInfoWithKey().key()),
+          prop(propShape->propertyInfo()) {}
     void trace(JSTracer* trc) {
       TraceEdge(trc, &propShape, "propShape");
       TraceEdge(trc, &key, "key");
@@ -4756,7 +4756,7 @@ void ShapeSnapshot::checkSelf(JSContext* cx) const {
 
   for (const PropertySnapshot& propSnapshot : properties_) {
     Shape* propShape = propSnapshot.propShape;
-    ShapeProperty prop = propSnapshot.prop;
+    PropertyInfo prop = propSnapshot.prop;
 
     
     
@@ -4817,7 +4817,7 @@ void ShapeSnapshot::check(JSContext* cx, const ShapeSnapshot& later) const {
       MOZ_RELEASE_ASSERT(properties_[i] == later.properties_[i]);
       
       
-      ShapeProperty prop = properties_[i].prop;
+      PropertyInfo prop = properties_[i].prop;
       if (!prop.configurable()) {
         if (prop.isAccessorProperty() ||
             (prop.isDataProperty() && !prop.writable())) {

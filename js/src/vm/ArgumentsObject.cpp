@@ -759,17 +759,17 @@ static bool DefineMappedIndex(JSContext* cx, Handle<MappedArgumentsObject*> obj,
 
   MOZ_ASSERT(prop.isNativeProperty());
 
-  ShapeProperty shapeProp = prop.shapeProperty();
-  MOZ_ASSERT(shapeProp.writable());
-  MOZ_ASSERT(shapeProp.isCustomDataProperty());
+  PropertyInfo propInfo = prop.propertyInfo();
+  MOZ_ASSERT(propInfo.writable());
+  MOZ_ASSERT(propInfo.isCustomDataProperty());
 
   
   
   
 
   
-  bool configurable = shapeProp.configurable();
-  bool enumerable = shapeProp.enumerable();
+  bool configurable = propInfo.configurable();
+  bool enumerable = propInfo.enumerable();
   if (configurable) {
     if (desc.hasConfigurable()) {
       configurable = desc.configurable();
@@ -785,7 +785,7 @@ static bool DefineMappedIndex(JSContext* cx, Handle<MappedArgumentsObject*> obj,
     }
   }
 
-  PropertyFlags flags = shapeProp.flags();
+  PropertyFlags flags = propInfo.flags();
   flags.setFlag(PropertyFlag::Configurable, configurable);
   flags.setFlag(PropertyFlag::Enumerable, enumerable);
   if (!NativeObject::changeCustomDataPropAttributes(cx, obj, id, flags)) {

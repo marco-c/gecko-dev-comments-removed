@@ -82,7 +82,7 @@ void js::PromiseLookup::initialize(JSContext* cx) {
 
   
   
-  mozilla::Maybe<ShapeProperty> ctorProp =
+  mozilla::Maybe<PropertyInfo> ctorProp =
       promiseProto->lookup(cx, cx->names().constructor);
   if (ctorProp.isNothing() || !ctorProp->isDataProperty()) {
     return;
@@ -100,7 +100,7 @@ void js::PromiseLookup::initialize(JSContext* cx) {
 
   
   
-  mozilla::Maybe<ShapeProperty> thenProp =
+  mozilla::Maybe<PropertyInfo> thenProp =
       promiseProto->lookup(cx, cx->names().then);
   if (thenProp.isNothing() || !thenProp->isDataProperty()) {
     return;
@@ -114,7 +114,7 @@ void js::PromiseLookup::initialize(JSContext* cx) {
 
   
   
-  mozilla::Maybe<ShapeProperty> speciesProp =
+  mozilla::Maybe<PropertyInfo> speciesProp =
       promiseCtor->lookup(cx, SYMBOL_TO_JSID(cx->wellKnownSymbols().species));
   if (speciesProp.isNothing() || !promiseCtor->hasGetter(*speciesProp)) {
     return;
@@ -130,7 +130,7 @@ void js::PromiseLookup::initialize(JSContext* cx) {
 
   
   
-  mozilla::Maybe<ShapeProperty> resolveProp =
+  mozilla::Maybe<PropertyInfo> resolveProp =
       promiseCtor->lookup(cx, cx->names().resolve);
   if (resolveProp.isNothing() || !resolveProp->isDataProperty()) {
     return;

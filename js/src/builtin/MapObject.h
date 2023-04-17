@@ -381,7 +381,7 @@ template <SetInitGetPrototypeOp getPrototypeOp, SetInitIsBuiltinOp isBuiltinOp>
   }
 
   
-  mozilla::Maybe<ShapeProperty> addProp = setProto->lookup(cx, cx->names().add);
+  mozilla::Maybe<PropertyInfo> addProp = setProto->lookup(cx, cx->names().add);
   if (addProp.isNothing() || !addProp->isDataProperty()) {
     return true;
   }
