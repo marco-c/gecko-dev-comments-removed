@@ -842,17 +842,11 @@ if __name__ == "__main__":
     elif is_linux():
         extra_cflags = []
         extra_cxxflags = []
-        
-        
-        
-        
-        extra_cflags2 = ["-fPIC", "-gcc-toolchain", stage1_inst_dir]
+        extra_cflags2 = ["-fPIC"]
         
         extra_cxxflags2 = [
             "-fPIC",
             "-Qunused-arguments",
-            "-gcc-toolchain",
-            stage1_inst_dir,
         ]
         extra_asmflags = []
         
@@ -863,14 +857,6 @@ if __name__ == "__main__":
         
         
         extra_ldflags += ["-fuse-ld=gold", "-Wl,--gc-sections", "-Wl,--icf=safe"]
-
-        if "LD_LIBRARY_PATH" in os.environ:
-            os.environ["LD_LIBRARY_PATH"] = "%s/lib64/:%s" % (
-                gcc_dir,
-                os.environ["LD_LIBRARY_PATH"],
-            )
-        else:
-            os.environ["LD_LIBRARY_PATH"] = "%s/lib64/" % gcc_dir
     elif is_windows():
         extra_cflags = []
         extra_cxxflags = []
