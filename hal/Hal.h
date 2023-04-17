@@ -246,12 +246,6 @@ void UnlockScreenOrientation();
 
 
 
-bool SetProcessPrioritySupported();
-
-
-
-
-
 
 
 

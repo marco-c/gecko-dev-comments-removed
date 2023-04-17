@@ -29,8 +29,6 @@ ToJavaPriorityLevel(const ProcessPriority aPriority) {
 namespace mozilla {
 namespace hal_impl {
 
-bool SetProcessPrioritySupported() { return true; }
-
 void SetProcessPriority(int aPid, ProcessPriority aPriority) {
   if (aPriority == PROCESS_PRIORITY_PARENT_PROCESS) {
     
