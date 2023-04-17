@@ -203,7 +203,7 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
   virtual bool GetDirection() override;
 
   
-  Result<LineInfo, nsresult> GetLine(int32_t aLineNumber) const override;
+  Result<LineInfo, nsresult> GetLine(int32_t aLineNumber) override;
 
   
 
@@ -228,7 +228,7 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
 
   NS_IMETHOD FindFrameAt(int32_t aLineNumber, nsPoint aPos,
                          nsIFrame** aFrameFound, bool* aPosIsBeforeFirstFrame,
-                         bool* aPosIsAfterLastFrame) const override;
+                         bool* aPosIsAfterLastFrame) override;
 
   
 
