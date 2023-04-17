@@ -108,12 +108,17 @@ class MOZ_STACK_CLASS mozInlineSpellWordUtil {
                      nsRange** aRange) const;
   static already_AddRefed<nsRange> MakeRange(const NodeOffsetRange& aRange);
 
+  struct Word {
+    nsAutoString mText;
+    NodeOffsetRange mNodeOffsetRange;
+    bool mSkipChecking = false;
+  };
+
   
   
   
   
-  bool GetNextWord(nsAString& aText, NodeOffsetRange* aNodeOffsetRange,
-                   bool* aSkipChecking);
+  bool GetNextWord(Word& aWord);
 
   
   
