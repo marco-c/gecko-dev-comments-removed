@@ -170,9 +170,11 @@ class CCGCScheduler {
   void SetWantMajorGC(JS::GCReason aReason) {
     MOZ_ASSERT(aReason != JS::GCReason::NO_REASON);
 
-    if (mMajorGCReason != JS::GCReason::NO_REASON &&
-        mMajorGCReason != JS::GCReason::USER_INACTIVE &&
-        aReason != JS::GCReason::USER_INACTIVE) {
+    
+    
+    
+    
+    if (aReason != JS::GCReason::USER_INACTIVE) {
       mWantAtLeastRegularGC = true;
     }
     mMajorGCReason = aReason;
