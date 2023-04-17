@@ -3640,13 +3640,6 @@ static inline bool ArrayConstructorImpl(JSContext* cx, CallArgs& args,
     if (!GetPrototypeFromBuiltinConstructor(cx, args, JSProto_Array, &proto)) {
       return false;
     }
-  } else {
-    
-    
-    proto = GlobalObject::getOrCreateArrayPrototype(cx, cx->global());
-    if (!proto) {
-      return false;
-    }
   }
 
   if (args.length() != 1 || !args[0].isNumber()) {
