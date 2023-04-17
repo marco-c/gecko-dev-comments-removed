@@ -6939,10 +6939,9 @@ bool nsWindow::CheckForRollup(gdouble aMouseX, gdouble aMouseY, bool aIsWheel,
 
     
     bool usePoint = !aIsWheel && !aAlwaysRollup;
-    IntPoint point;
+    LayoutDeviceIntPoint point;
     if (usePoint) {
-      LayoutDeviceIntPoint p = GdkEventCoordsToDevicePixels(aMouseX, aMouseY);
-      point = p.ToUnknownPoint();
+      point = GdkEventCoordsToDevicePixels(aMouseX, aMouseY);
     }
     if (rollup &&
         rollupListener->Rollup(popupsToRollup, true,
