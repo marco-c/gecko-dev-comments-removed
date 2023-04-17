@@ -3528,11 +3528,6 @@ JS::CompileOptions::CompileOptions(JSContext* cx) : ReadOnlyCompileOptions() {
   
   if (cx->realm()) {
     discardSource = cx->realm()->behaviors().discardSource();
-
-    
-    
-    instrumentationKinds =
-        RealmInstrumentation::getInstrumentationKinds(cx->global());
   }
 }
 

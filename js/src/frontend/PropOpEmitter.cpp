@@ -67,7 +67,7 @@ bool PropOpEmitter::emitGet(TaggedParserAtomIndex prop) {
   }
 
   JSOp op = isSuper() ? JSOp::GetPropSuper : JSOp::GetProp;
-  if (!bce_->emitAtomOp(op, propAtomIndex_, ShouldInstrument::Yes)) {
+  if (!bce_->emitAtomOp(op, propAtomIndex_)) {
     
     
     
@@ -178,7 +178,7 @@ bool PropOpEmitter::emitAssignment(TaggedParserAtomIndex prop) {
                                                  : JSOp::SetPropSuper
                : bce_->sc->strict() ? JSOp::StrictSetProp
                                     : JSOp::SetProp;
-  if (!bce_->emitAtomOp(setOp, propAtomIndex_, ShouldInstrument::Yes)) {
+  if (!bce_->emitAtomOp(setOp, propAtomIndex_)) {
     
     return false;
   }
@@ -225,7 +225,7 @@ bool PropOpEmitter::emitIncDec(TaggedParserAtomIndex prop) {
                                               : JSOp::SetPropSuper
                : bce_->sc->strict() ? JSOp::StrictSetProp
                                     : JSOp::SetProp;
-  if (!bce_->emitAtomOp(setOp, propAtomIndex_, ShouldInstrument::Yes)) {
+  if (!bce_->emitAtomOp(setOp, propAtomIndex_)) {
     
     return false;
   }

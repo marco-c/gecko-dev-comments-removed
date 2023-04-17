@@ -92,7 +92,7 @@ bool ElemOpEmitter::emitGet() {
   } else {
     op = JSOp::GetElem;
   }
-  if (!bce_->emitElemOpBase(op, ShouldInstrument::Yes)) {
+  if (!bce_->emitElemOpBase(op)) {
     
     
     
@@ -198,7 +198,7 @@ bool ElemOpEmitter::emitAssignment() {
                                                  : JSOp::SetElemSuper
                : bce_->sc->strict() ? JSOp::StrictSetElem
                                     : JSOp::SetElem;
-  if (!bce_->emitElemOpBase(setOp, ShouldInstrument::Yes)) {
+  if (!bce_->emitElemOpBase(setOp)) {
     
     return false;
   }
@@ -245,7 +245,7 @@ bool ElemOpEmitter::emitIncDec() {
       isSuper()
           ? (bce_->sc->strict() ? JSOp::StrictSetElemSuper : JSOp::SetElemSuper)
           : (bce_->sc->strict() ? JSOp::StrictSetElem : JSOp::SetElem);
-  if (!bce_->emitElemOpBase(setOp, ShouldInstrument::Yes)) {
+  if (!bce_->emitElemOpBase(setOp)) {
     
     return false;
   }

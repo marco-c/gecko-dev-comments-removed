@@ -158,7 +158,6 @@ BytecodeEmitter::BytecodeEmitter(BytecodeEmitter* parent,
                                  EmitterMode emitterMode)
     : BytecodeEmitter(parent, sc, compilationState, emitterMode) {
   parser = handle;
-  instrumentationKinds = parser->options().instrumentationKinds;
 }
 
 BytecodeEmitter::BytecodeEmitter(BytecodeEmitter* parent,
@@ -168,7 +167,6 @@ BytecodeEmitter::BytecodeEmitter(BytecodeEmitter* parent,
     : BytecodeEmitter(parent, sc, compilationState, emitterMode) {
   ep_.emplace(parser);
   this->parser = ep_.ptr();
-  instrumentationKinds = this->parser->options().instrumentationKinds;
 }
 
 void BytecodeEmitter::initFromBodyPosition(TokenPos bodyPosition) {
@@ -230,10 +228,6 @@ bool BytecodeEmitter::markStepBreakpoint() {
     return true;
   }
 
-  if (!emitInstrumentation(InstrumentationKind::Breakpoint)) {
-    return false;
-  }
-
   if (!newSrcNote(SrcNoteType::StepSep)) {
     return false;
   }
@@ -260,10 +254,6 @@ bool BytecodeEmitter::markSimpleBreakpoint() {
   
   
   if (!bytecodeSection().isDuplicateLocation()) {
-    if (!emitInstrumentation(InstrumentationKind::Breakpoint)) {
-      return false;
-    }
-
     if (!newSrcNote(SrcNoteType::Breakpoint)) {
       return false;
     }
@@ -938,8 +928,7 @@ bool BytecodeEmitter::emitGCIndexOp(JSOp op, GCThingIndex index) {
   return true;
 }
 
-bool BytecodeEmitter::emitAtomOp(JSOp op, TaggedParserAtomIndex atom,
-                                 ShouldInstrument shouldInstrument) {
+bool BytecodeEmitter::emitAtomOp(JSOp op, TaggedParserAtomIndex atom) {
   MOZ_ASSERT(atom);
 
   
@@ -954,18 +943,11 @@ bool BytecodeEmitter::emitAtomOp(JSOp op, TaggedParserAtomIndex atom,
     return false;
   }
 
-  return emitAtomOp(op, index, shouldInstrument);
+  return emitAtomOp(op, index);
 }
 
-bool BytecodeEmitter::emitAtomOp(JSOp op, GCThingIndex atomIndex,
-                                 ShouldInstrument shouldInstrument) {
+bool BytecodeEmitter::emitAtomOp(JSOp op, GCThingIndex atomIndex) {
   MOZ_ASSERT(JOF_OPTYPE(op) == JOF_ATOM);
-
-  if (shouldInstrument != ShouldInstrument::No &&
-      !emitInstrumentationForOpcode(op, atomIndex)) {
-    return false;
-  }
-
   return emitGCIndexOp(op, atomIndex);
 }
 
@@ -1888,8 +1870,7 @@ bool BytecodeEmitter::emitPropLHS(PropertyAccess* prop) {
 
   while (true) {
     
-    if (!emitAtomOp(JSOp::GetProp, pndot->key().atom(),
-                    ShouldInstrument::Yes)) {
+    if (!emitAtomOp(JSOp::GetProp, pndot->key().atom())) {
       return false;
     }
 
@@ -2006,14 +1987,7 @@ bool BytecodeEmitter::emitObjAndKey(ParseNode* exprOrSuper, ParseNode* key,
   return true;
 }
 
-bool BytecodeEmitter::emitElemOpBase(JSOp op,
-                                     ShouldInstrument shouldInstrument) {
-  GCThingIndex unused;
-  if (shouldInstrument != ShouldInstrument::No &&
-      !emitInstrumentationForOpcode(op, unused)) {
-    return false;
-  }
-
+bool BytecodeEmitter::emitElemOpBase(JSOp op) {
   if (!emit1(op)) {
     return false;
   }
@@ -2378,11 +2352,6 @@ bool BytecodeEmitter::allocateResumeIndexRange(
 }
 
 bool BytecodeEmitter::emitYieldOp(JSOp op) {
-  
-  if (!emitInstrumentation(InstrumentationKind::Exit)) {
-    return false;
-  }
-
   if (op == JSOp::FinalYieldRval) {
     return emit1(JSOp::FinalYieldRval);
   }
@@ -2405,10 +2374,6 @@ bool BytecodeEmitter::emitYieldOp(JSOp op) {
   }
 
   SET_RESUMEINDEX(bytecodeSection().code(off), resumeIndex);
-
-  if (!emitInstrumentation(InstrumentationKind::Entry)) {
-    return false;
-  }
 
   BytecodeOffset unusedOffset;
   return emitJumpTargetOp(JSOp::AfterYield, &unusedOffset);
@@ -2623,9 +2588,7 @@ bool BytecodeEmitter::emitScript(ParseNode* body) {
       return false;
     }
 
-    if (!switchToMain()) {
-      return false;
-    }
+    switchToMain();
 
     ParseNode* scopeBody = scope->scopeBody();
     if (!emitLexicalScopeBody(scopeBody, EMIT_LINENOTE)) {
@@ -2649,9 +2612,7 @@ bool BytecodeEmitter::emitScript(ParseNode* body) {
       }
     }
 
-    if (!switchToMain()) {
-      return false;
-    }
+    switchToMain();
 
     if (topLevelAwait) {
       if (!topLevelAwait->prepareForBody()) {
@@ -3964,8 +3925,7 @@ bool BytecodeEmitter::emitDestructuringOpsObject(ListNode* pattern,
         }
       } else if (key->isKind(ParseNodeKind::ObjectPropertyName) ||
                  key->isKind(ParseNodeKind::StringExpr)) {
-        if (!emitAtomOp(JSOp::GetProp, key->as<NameNode>().atom(),
-                        ShouldInstrument::Yes)) {
+        if (!emitAtomOp(JSOp::GetProp, key->as<NameNode>().atom())) {
           
           return false;
         }
@@ -6362,10 +6322,7 @@ bool BytecodeEmitter::emitReturn(UnaryNode* returnNode) {
       return false;
     }
   } else if (top + BytecodeOffsetDiff(JSOpLength_Return) !=
-                 bytecodeSection().offset() ||
-             
-             
-             instrumentationKinds) {
+             bytecodeSection().offset()) {
     bytecodeSection().code()[top.value()] = jsbytecode(JSOp::SetRval);
     if (!emitReturnRval()) {
       return false;
@@ -10984,130 +10941,6 @@ bool BytecodeEmitter::emitExportDefault(BinaryNode* exportNode) {
   }
 
   return true;
-}
-
-MOZ_NEVER_INLINE bool BytecodeEmitter::emitInstrumentationSlow(
-    InstrumentationKind kind,
-    const std::function<bool(uint32_t)>& pushOperandsCallback) {
-  MOZ_ASSERT(instrumentationKinds);
-
-  if (!(instrumentationKinds & (uint32_t)kind)) {
-    return true;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-
-  unsigned initialDepth = bytecodeSection().stackDepth();
-  InternalIfEmitter ifEmitter(this);
-
-  if (!emit1(JSOp::InstrumentationActive)) {
-    return false;
-  }
-  
-
-  if (!ifEmitter.emitThen()) {
-    return false;
-  }
-  
-
-  
-  if (!emit1(JSOp::InstrumentationCallback)) {
-    return false;
-  }
-  
-
-  
-  if (!emit1(JSOp::Undefined)) {
-    return false;
-  }
-  
-
-  auto atom =
-      RealmInstrumentation::getInstrumentationKindName(cx, parserAtoms(), kind);
-  if (!atom) {
-    return false;
-  }
-
-  if (!emitAtomOp(JSOp::String, atom)) {
-    return false;
-  }
-  
-
-  if (!emit1(JSOp::InstrumentationScriptId)) {
-    return false;
-  }
-  
-
-  
-  BytecodeOffset updateOffset;
-  if (!emitN(JSOp::Int32, 4, &updateOffset)) {
-    return false;
-  }
-  
-
-  unsigned numPushed = bytecodeSection().stackDepth() - initialDepth;
-
-  if (pushOperandsCallback && !pushOperandsCallback(numPushed)) {
-    return false;
-  }
-  
-
-  unsigned argc = bytecodeSection().stackDepth() - initialDepth - 2;
-  if (!emitCall(JSOp::CallIgnoresRv, argc)) {
-    return false;
-  }
-  
-
-  if (!emit1(JSOp::Pop)) {
-    return false;
-  }
-  
-
-  if (!ifEmitter.emitEnd()) {
-    return false;
-  }
-
-  SET_INT32(bytecodeSection().code(updateOffset),
-            bytecodeSection().code().length());
-
-  return true;
-}
-
-MOZ_NEVER_INLINE bool BytecodeEmitter::emitInstrumentationForOpcodeSlow(
-    JSOp op, GCThingIndex atomIndex) {
-  MOZ_ASSERT(instrumentationKinds);
-
-  switch (op) {
-    case JSOp::GetProp:
-      return emitInstrumentationSlow(
-          InstrumentationKind::GetProperty, [=](uint32_t pushed) {
-            return emitDupAt(pushed) && emitAtomOp(JSOp::String, atomIndex);
-          });
-    case JSOp::SetProp:
-    case JSOp::StrictSetProp:
-      return emitInstrumentationSlow(
-          InstrumentationKind::SetProperty, [=](uint32_t pushed) {
-            return emitDupAt(pushed + 1) &&
-                   emitAtomOp(JSOp::String, atomIndex) && emitDupAt(pushed + 2);
-          });
-    case JSOp::GetElem:
-      return emitInstrumentationSlow(
-          InstrumentationKind::GetElement,
-          [=](uint32_t pushed) { return emitDupAt(pushed + 1, 2); });
-    case JSOp::SetElem:
-    case JSOp::StrictSetElem:
-      return emitInstrumentationSlow(
-          InstrumentationKind::SetElement,
-          [=](uint32_t pushed) { return emitDupAt(pushed + 2, 3); });
-    default:
-      return true;
-  }
 }
 
 bool BytecodeEmitter::emitTree(

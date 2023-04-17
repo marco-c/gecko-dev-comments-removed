@@ -380,9 +380,7 @@ bool FunctionScriptEmitter::prepareForParameters() {
     
     
     
-    if (!bce_->switchToMain()) {
-      return false;
-    }
+    bce_->switchToMain();
   }
 
   if (!functionEmitterScope_->enterFunction(bce_, funbox_)) {
@@ -395,9 +393,7 @@ bool FunctionScriptEmitter::prepareForParameters() {
   }
 
   if (!funbox_->hasParameterExprs) {
-    if (!bce_->switchToMain()) {
-      return false;
-    }
+    bce_->switchToMain();
   }
 
   if (funbox_->needsPromiseResult()) {
