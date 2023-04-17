@@ -42,10 +42,6 @@ DOM4_MSG_DEF(OperationError, "The operation failed for an operation-specific rea
 
 
 
-DOM4_MSG_DEF(SyntaxError, "The expression is not a legal expression.", NS_ERROR_DOM_INVALID_EXPRESSION_ERR)
-
-
-
 DOM4_MSG_DEF(UnknownError, "The operation failed for reasons unrelated to the database itself and not covered by any other error code.", NS_ERROR_DOM_INDEXEDDB_UNKNOWN_ERR)
 DOM4_MSG_DEF(ConstraintError, "A mutation operation in the transaction failed because a constraint was not satisfied.", NS_ERROR_DOM_INDEXEDDB_CONSTRAINT_ERR)
 DOM4_MSG_DEF(ConstraintError, "Object store renamed to an already existing object store.", NS_ERROR_DOM_INDEXEDDB_RENAME_OBJECT_STORE_ERR)

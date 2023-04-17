@@ -934,14 +934,6 @@ with modules["SECURITY"]:
 
 
 
-with modules["DOM_XPATH"]:
-    
-    errors["NS_ERROR_DOM_INVALID_EXPRESSION_ERR"] = FAILURE(51)
-
-
-
-
-
 with modules["URILOADER"]:
     errors["NS_ERROR_WONT_HANDLE_CONTENT"] = FAILURE(1)
     
