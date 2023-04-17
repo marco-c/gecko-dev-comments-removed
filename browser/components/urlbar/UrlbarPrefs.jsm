@@ -437,6 +437,22 @@ class Preferences {
 
 
 
+  migrateResultBuckets() {
+    this.set(
+      "resultBuckets",
+      JSON.stringify(
+        makeResultBuckets({
+          showSearchSuggestionsFirst: this.get("showSearchSuggestionsFirst"),
+        })
+      )
+    );
+  }
+
+  
+
+
+
+
 
 
 

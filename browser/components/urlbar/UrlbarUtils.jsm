@@ -206,6 +206,15 @@ var UrlbarUtils = {
   ]),
 
   
+  PROTOCOLS_WITH_ICONS: [
+    "chrome:",
+    "moz-extension:",
+    "about:",
+    "http:",
+    "https:",
+  ],
+
+  
   
   get LOCAL_SEARCH_MODES() {
     return [
@@ -619,6 +628,26 @@ var UrlbarUtils = {
         return 3;
     }
     return 1;
+  },
+
+  
+
+
+
+
+  getIconForUrl(url) {
+    if (typeof url == "string") {
+      return UrlbarUtils.PROTOCOLS_WITH_ICONS.some(p => url.startsWith(p))
+        ? "page-icon:" + url
+        : UrlbarUtils.ICON.DEFAULT;
+    }
+    if (
+      url instanceof URL &&
+      UrlbarUtils.PROTOCOLS_WITH_ICONS.includes(url.protocol)
+    ) {
+      return "page-icon:" + url.href;
+    }
+    return UrlbarUtils.ICON.DEFAULT;
   },
 
   
