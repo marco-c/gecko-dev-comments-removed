@@ -10,7 +10,6 @@ use crate::clip::{polygon_contains_point};
 use crate::prim_store::PolygonKey;
 use crate::scene_builder_thread::Interners;
 use crate::spatial_tree::{SpatialNodeIndex, SpatialTree, get_external_scroll_offset};
-use crate::spatial_node::SpatialNodeType;
 use crate::internal_types::{FastHashMap, FastHashSet, LayoutPrimitiveInfo};
 use std::ops;
 use std::sync::{Arc, Mutex};
@@ -353,18 +352,12 @@ impl HitTester {
         spatial_tree: &SpatialTree,
     ) {
         self.spatial_nodes.clear();
+
         self.spatial_nodes.reserve(spatial_tree.spatial_node_count());
-        self.pipeline_root_nodes.clear();
-
-        spatial_tree.visit_nodes(|index, node| {
-
+        spatial_tree.iter_nodes(|index, node| {
             
-            if let SpatialNodeType::ReferenceFrame(ref info) = node.node_type {
-                if info.is_pipeline_root {
-                    let _old = self.pipeline_root_nodes.insert(node.pipeline_id, index);
-                    debug_assert!(_old.is_none());
-                }
-            }
+            
+            self.pipeline_root_nodes.entry(node.pipeline_id).or_insert(index);
 
             
             
