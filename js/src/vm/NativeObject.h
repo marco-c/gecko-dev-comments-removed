@@ -962,42 +962,42 @@ class NativeObject : public JSObject {
 
  public:
   
-  static MOZ_ALWAYS_INLINE Shape* addProperty(JSContext* cx,
-                                              HandleNativeObject obj,
-                                              HandleId id, uint32_t slot,
-                                              unsigned attrs);
+  static MOZ_ALWAYS_INLINE bool addProperty(JSContext* cx,
+                                            HandleNativeObject obj, HandleId id,
+                                            uint32_t slot, unsigned attrs,
+                                            uint32_t* slotOut);
 
-  static Shape* addCustomDataProperty(JSContext* cx, HandleNativeObject obj,
-                                      HandleId id, unsigned attrs);
+  static bool addCustomDataProperty(JSContext* cx, HandleNativeObject obj,
+                                    HandleId id, unsigned attrs);
 
-  static Shape* addEnumerableDataProperty(JSContext* cx, HandleNativeObject obj,
-                                          HandleId id);
-
-  
-  static Shape* addProperty(JSContext* cx, HandleNativeObject obj,
-                            HandlePropertyName name, uint32_t slot,
-                            unsigned attrs);
+  static bool addEnumerableDataProperty(JSContext* cx, HandleNativeObject obj,
+                                        HandleId id, uint32_t* slotOut);
 
   
-  static Shape* putProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
-                            unsigned attrs);
+  static bool addProperty(JSContext* cx, HandleNativeObject obj,
+                          HandlePropertyName name, uint32_t slot,
+                          unsigned attrs, uint32_t* slotOut);
 
-  static Shape* changeCustomDataPropAttributes(JSContext* cx,
-                                               HandleNativeObject obj,
-                                               HandleId id, unsigned attrs);
+  
+  static bool putProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
+                          unsigned attrs, uint32_t* slotOut);
+
+  static bool changeCustomDataPropAttributes(JSContext* cx,
+                                             HandleNativeObject obj,
+                                             HandleId id, unsigned attrs);
 
   
   static bool removeProperty(JSContext* cx, HandleNativeObject obj, jsid id);
 
  protected:
   
-
-
-
-  static Shape* addPropertyInternal(JSContext* cx, HandleNativeObject obj,
-                                    HandleId id, uint32_t slot, unsigned attrs,
-                                    ShapeTable* table, ShapeTable::Entry* entry,
-                                    const AutoKeepShapeCaches& keep);
+  
+  
+  static bool addPropertyInternal(JSContext* cx, HandleNativeObject obj,
+                                  HandleId id, uint32_t slot, unsigned attrs,
+                                  ShapeTable* table, ShapeTable::Entry* entry,
+                                  const AutoKeepShapeCaches& keep,
+                                  uint32_t* slotOut);
 
   [[nodiscard]] static bool fillInAfterSwap(JSContext* cx,
                                             HandleNativeObject obj,

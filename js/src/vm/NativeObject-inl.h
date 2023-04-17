@@ -887,12 +887,12 @@ MOZ_ALWAYS_INLINE bool AddDataPropertyNonPrototype(JSContext* cx,
 
   
   
-  Shape* shape = NativeObject::addEnumerableDataProperty(cx, obj, id);
-  if (!shape) {
+  uint32_t slot;
+  if (!NativeObject::addEnumerableDataProperty(cx, obj, id, &slot)) {
     return false;
   }
 
-  obj->initSlot(shape->slot(), v);
+  obj->initSlot(slot, v);
 
   MOZ_ASSERT(!obj->getClass()->getAddProperty());
   return true;
