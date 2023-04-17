@@ -1695,6 +1695,11 @@ void XMLHttpRequestWorker::SendInternal(const BodyExtractorBase* aBody,
   autoUnpin.Clear();
 
   bool succeeded = autoSyncLoop->Run();
+  
+  if (mProxy->mXHR->ErrorCode() !=
+      static_cast<uint16_t>(XMLHttpRequestMainThread::ErrorType::eOK)) {
+    aRv.Throw(NS_ERROR_DOM_NETWORK_ERR);
+  }
   mStateData->mFlagSend = false;
 
   
