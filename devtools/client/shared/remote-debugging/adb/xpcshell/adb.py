@@ -10,14 +10,14 @@ A fake ADB binary
 from __future__ import absolute_import
 
 import os
-import SocketServer
+import socketserver
 import sys
 
 HOST = "127.0.0.1"
 PORT = 5037
 
 
-class ADBRequestHandler(SocketServer.BaseRequestHandler):
+class ADBRequestHandler(socketserver.BaseRequestHandler):
     def sendData(self, data):
         header = "OKAY%04x" % len(data)
         all_data = header + data
@@ -28,12 +28,12 @@ class ADBRequestHandler(SocketServer.BaseRequestHandler):
         
         
         while sent_length < total_length:
-            sent = self.request.send(all_data[sent_length:])
+            sent = self.request.send(all_data[sent_length:].encode("utf-8", "replace"))
             sent_length = sent_length + sent
 
     def handle(self):
         while True:
-            data = self.request.recv(4096)
+            data = self.request.recv(4096).decode("utf-8", "replace")
             if "host:kill" in data:
                 self.sendData("")
                 
@@ -50,11 +50,11 @@ class ADBRequestHandler(SocketServer.BaseRequestHandler):
                 break
 
 
-class ADBServer(SocketServer.TCPServer):
+class ADBServer(socketserver.TCPServer):
     def __init__(self, server_address):
         
         
-        SocketServer.TCPServer.__init__(
+        socketserver.TCPServer.__init__(
             self, server_address, ADBRequestHandler, bind_and_activate=False
         )
 
