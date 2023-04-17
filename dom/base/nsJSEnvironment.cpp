@@ -79,6 +79,7 @@
 #include "mozilla/CycleCollectedJSContext.h"
 #include "nsCycleCollectionNoteRootCallback.h"
 #include "mozilla/IdleTaskRunner.h"
+#include "mozilla/ipc/IdleSchedulerChild.h"
 #include "nsViewManager.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/ProfilerLabels.h"
@@ -92,6 +93,11 @@ using namespace mozilla::dom;
 #  undef CompareString
 #endif
 
+static nsITimer* sShrinkingGCTimer;
+static StaticRefPtr<IdleTaskRunner> sCCRunner;
+static nsITimer* sFullGCTimer;
+static StaticRefPtr<IdleTaskRunner> sGCRunner;
+
 static JS::GCSliceCallback sPrevGCSliceCallback;
 
 static bool sIncrementalCC = false;
@@ -99,11 +105,20 @@ static bool sIncrementalCC = false;
 static bool sIsInitialized;
 static bool sShuttingDown;
 
+
+
+
+
+static bool sIsCompactingOnUserInactive = false;
+static bool sUserIsActive = true;
+
+static TimeDuration sGCUnnotifiedTotalTime;
+
 static CCGCScheduler sScheduler;
 
-TimeStamp mozilla::CCGCScheduler::Now() { return TimeStamp::Now(); }
+inline TimeStamp mozilla::CCGCScheduler::Now() { return TimeStamp::Now(); }
 
-uint32_t mozilla::CCGCScheduler::SuspectedCCObjects() {
+inline uint32_t mozilla::CCGCScheduler::SuspectedCCObjects() {
   return nsCycleCollector_suspectedCount();
 }
 
@@ -270,6 +285,13 @@ static TimeDuration GetCollectionTimeDelta() {
   return TimeDuration();
 }
 
+static void KillTimers() {
+  nsJSContext::KillShrinkingGCTimer();
+  nsJSContext::KillCCRunner();
+  nsJSContext::KillFullGCTimer();
+  nsJSContext::KillGCRunner();
+}
+
 class nsJSEnvironmentObserver final : public nsIObserver {
   ~nsJSEnvironmentObserver() = default;
 
@@ -309,14 +331,24 @@ nsJSEnvironmentObserver::Observe(nsISupports* aSubject, const char* aTopic,
   } else if (!nsCRT::strcmp(aTopic, "memory-pressure-stop")) {
     nsJSContext::SetLowMemoryState(false);
   } else if (!nsCRT::strcmp(aTopic, "user-interaction-inactive")) {
-    sScheduler.UserIsInactive();
+    sUserIsActive = false;
+    if (StaticPrefs::javascript_options_compact_on_user_inactive()) {
+      nsJSContext::PokeShrinkingGC();
+    }
   } else if (!nsCRT::strcmp(aTopic, "user-interaction-active")) {
-    sScheduler.UserIsActive();
+    sUserIsActive = true;
+    nsJSContext::KillShrinkingGCTimer();
+    if (sIsCompactingOnUserInactive) {
+      AutoJSAPI jsapi;
+      jsapi.Init();
+      JS::AbortIncrementalGC(jsapi.cx());
+    }
+    MOZ_ASSERT(!sIsCompactingOnUserInactive);
   } else if (!nsCRT::strcmp(aTopic, "quit-application") ||
              !nsCRT::strcmp(aTopic, NS_XPCOM_SHUTDOWN_OBSERVER_ID) ||
              !nsCRT::strcmp(aTopic, "content-child-will-shutdown")) {
     sShuttingDown = true;
-    sScheduler.Shutdown();
+    KillTimers();
   }
 
   return NS_OK;
@@ -545,7 +577,7 @@ nsJSContext::~nsJSContext() {
 
 void nsJSContext::Destroy() {
   if (mGCOnDestruction) {
-    sScheduler.PokeGC(JS::GCReason::NSJSCONTEXT_DESTROY, mWindowProxy);
+    PokeGC(JS::GCReason::NSJSCONTEXT_DESTROY, mWindowProxy);
   }
 
   DropJSObjects(this);
@@ -1024,6 +1056,59 @@ void nsJSContext::SetProcessingScriptTag(bool aFlag) {
   mProcessingScriptTag = aFlag;
 }
 
+using MayGCPromise =
+    MozPromise<bool , mozilla::ipc::ResponseRejectReason, true>;
+
+
+static RefPtr<MayGCPromise> MayGCNow(JS::GCReason reason) {
+  using namespace mozilla::ipc;
+
+  
+  
+  
+  
+  switch (reason) {
+    case JS::GCReason::PAGE_HIDE:
+    case JS::GCReason::MEM_PRESSURE:
+    case JS::GCReason::USER_INACTIVE:
+    case JS::GCReason::FULL_GC_TIMER:
+    case JS::GCReason::CC_FINISHED: {
+      if (XRE_IsContentProcess()) {
+        IdleSchedulerChild* child =
+            IdleSchedulerChild::GetMainThreadIdleScheduler();
+        if (child) {
+          return child->MayGCNow();
+        }
+      }
+      
+      
+      break;
+    }
+    default:
+      break;
+  }
+
+  return MayGCPromise::CreateAndResolve(true, __func__);
+}
+
+void FullGCTimerFired(nsITimer* aTimer, void* aClosure) {
+  nsJSContext::KillFullGCTimer();
+  MOZ_ASSERT(!aClosure, "Don't pass a closure to FullGCTimerFired");
+
+  RefPtr<MayGCPromise> mbPromise = MayGCNow(JS::GCReason::FULL_GC_TIMER);
+  if (mbPromise) {
+    mbPromise->Then(
+        GetMainThreadSerialEventTarget(), __func__,
+        [](bool aIgnored) {
+          nsJSContext::GarbageCollectNow(JS::GCReason::FULL_GC_TIMER,
+                                         nsJSContext::IncrementalGC);
+        },
+        [](mozilla::ipc::ResponseRejectReason r) {
+          
+        });
+  }
+}
+
 
 void nsJSContext::SetLowMemoryState(bool aState) {
   JSContext* cx = danger::GetJSContext();
@@ -1464,16 +1549,18 @@ void nsJSContext::BeginCycleCollectionCallback() {
     return;
   }
 
-  sScheduler.InitCCRunnerStateMachine(
-      mozilla::CCGCScheduler::CCRunnerState::CycleCollecting);
-  sScheduler.EnsureCCRunner(kICCIntersliceDelay, kIdleICCSliceBudget);
+  if (!sCCRunner) {
+    sScheduler.InitCCRunnerStateMachine(
+        mozilla::CCGCScheduler::CCRunnerState::CycleCollecting);
+  }
+  EnsureCCRunner(kICCIntersliceDelay, kIdleICCSliceBudget);
 }
 
 
 void nsJSContext::EndCycleCollectionCallback(CycleCollectorResults& aResults) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  sScheduler.KillCCRunner();
+  nsJSContext::KillCCRunner();
 
   
   
@@ -1489,10 +1576,9 @@ void nsJSContext::EndCycleCollectionCallback(CycleCollectorResults& aResults) {
                    kMaxICCDuration.ToMilliseconds(),
                "A max duration ICC shouldn't reduce GC delay to 0");
 
-    sScheduler.PokeGC(
-        JS::GCReason::CC_FINISHED, nullptr,
-        StaticPrefs::javascript_options_gc_delay() -
-            std::min(ccNowDuration, kMaxICCDuration).ToMilliseconds());
+    PokeGC(JS::GCReason::CC_FINISHED, nullptr,
+           StaticPrefs::javascript_options_gc_delay() -
+               std::min(ccNowDuration, kMaxICCDuration).ToMilliseconds());
   }
 
   
@@ -1511,7 +1597,120 @@ void nsJSContext::EndCycleCollectionCallback(CycleCollectorResults& aResults) {
 }
 
 
-bool CCGCScheduler::CCRunnerFired(TimeStamp aDeadline) {
+bool GCRunnerFired(TimeStamp aDeadline, void* aClosure) {
+  MOZ_ASSERT(!aClosure, "Don't pass a closure to GCRunnerFired");
+  MOZ_ASSERT(!sShuttingDown, "GCRunner still alive during shutdown");
+
+  GCRunnerStep step = sScheduler.GetNextGCRunnerAction(aDeadline);
+  switch (step.mAction) {
+    case GCRunnerAction::None:
+      MOZ_CRASH("Unexpected GCRunnerAction");
+
+    case GCRunnerAction::WaitToMajorGC: {
+      RefPtr<MayGCPromise> mbPromise = MayGCNow(step.mReason);
+      if (!mbPromise || mbPromise->IsResolved()) {
+        
+        
+        break;
+      }
+
+      nsJSContext::KillGCRunner();
+      mbPromise->Then(
+          GetMainThreadSerialEventTarget(), __func__,
+          [](bool aIgnored) {
+            if (!sScheduler.NoteReadyForMajorGC()) {
+              return;  
+            }
+            
+            
+            nsJSContext::KillGCRunner();
+            sGCRunner = IdleTaskRunner::Create(
+                [](TimeStamp aDeadline) {
+                  return GCRunnerFired(aDeadline, nullptr);
+                },
+                "GCRunnerFired", 0,
+                StaticPrefs::javascript_options_gc_delay_interslice(),
+                int64_t(sScheduler.mActiveIntersliceGCBudget.ToMilliseconds()),
+                true, [] { return sShuttingDown; });
+          },
+          [](mozilla::ipc::ResponseRejectReason r) {});
+
+      return true;
+    }
+
+    case GCRunnerAction::StartMajorGC:
+    case GCRunnerAction::GCSlice:
+      break;
+  }
+
+  
+
+  MOZ_ASSERT(sScheduler.mActiveIntersliceGCBudget);
+  TimeStamp startTimeStamp = TimeStamp::Now();
+  TimeDuration budget =
+      sScheduler.ComputeInterSliceGCBudget(aDeadline, startTimeStamp);
+  TimeDuration duration = sGCUnnotifiedTotalTime;
+  nsJSContext::GarbageCollectNow(step.mReason, nsJSContext::IncrementalGC,
+                                 nsJSContext::NonShrinkingGC,
+                                 budget.ToMilliseconds());
+
+  sGCUnnotifiedTotalTime = TimeDuration();
+  TimeStamp now = TimeStamp::Now();
+  TimeDuration sliceDuration = now - startTimeStamp;
+  duration += sliceDuration;
+  if (duration.ToSeconds()) {
+    TimeDuration idleDuration;
+    if (!aDeadline.IsNull()) {
+      if (aDeadline < now) {
+        
+        idleDuration = aDeadline - startTimeStamp;
+      } else {
+        
+        
+        idleDuration = sliceDuration;
+      }
+    }
+
+    uint32_t percent =
+        uint32_t(idleDuration.ToSeconds() / duration.ToSeconds() * 100);
+    Telemetry::Accumulate(Telemetry::GC_SLICE_DURING_IDLE, percent);
+  }
+
+  
+  
+  
+  JSContext* cx = danger::GetJSContext();
+  return JS::IncrementalGCHasForegroundWork(cx);
+}
+
+
+void ShrinkingGCTimerFired(nsITimer* aTimer, void* aClosure) {
+  nsJSContext::KillShrinkingGCTimer();
+
+  RefPtr<MayGCPromise> mbPromise = MayGCNow(JS::GCReason::USER_INACTIVE);
+  if (mbPromise) {
+    mbPromise->Then(
+        GetMainThreadSerialEventTarget(), __func__,
+        [](bool aIgnored) {
+          if (!sUserIsActive) {
+            sIsCompactingOnUserInactive = true;
+            nsJSContext::GarbageCollectNow(JS::GCReason::USER_INACTIVE,
+                                           nsJSContext::IncrementalGC,
+                                           nsJSContext::ShrinkingGC);
+          } else {
+            using mozilla::ipc::IdleSchedulerChild;
+            IdleSchedulerChild* child =
+                IdleSchedulerChild::GetMainThreadIdleScheduler();
+            if (child) {
+              child->DoneGC();
+            }
+          }
+        },
+        [](mozilla::ipc::ResponseRejectReason r) {});
+  }
+}
+
+static bool CCRunnerFired(TimeStamp aDeadline) {
   bool didDoWork = false;
 
   
@@ -1551,7 +1750,7 @@ bool CCGCScheduler::CCRunnerFired(TimeStamp aDeadline) {
       case CCRunnerAction::StopRunning:
         
         
-        sScheduler.KillCCRunner();
+        nsJSContext::KillCCRunner();
         break;
     }
 
@@ -1564,14 +1763,55 @@ bool CCGCScheduler::CCRunnerFired(TimeStamp aDeadline) {
 }
 
 
+void nsJSContext::EnsureCCRunner(TimeDuration aDelay, TimeDuration aBudget) {
+  MOZ_ASSERT(!sShuttingDown);
+
+  if (!sCCRunner) {
+    sCCRunner = IdleTaskRunner::Create(
+        CCRunnerFired, "EnsureCCRunner::CCRunnerFired", 0,
+        aDelay.ToMilliseconds(), aBudget.ToMilliseconds(), true,
+        [] { return sShuttingDown; });
+  } else {
+    sCCRunner->SetMinimumUsefulBudget(aBudget.ToMilliseconds());
+    nsIEventTarget* target = mozilla::GetCurrentEventTarget();
+    if (target) {
+      sCCRunner->SetTimer(aDelay.ToMilliseconds(), target);
+    }
+  }
+}
+
+
 bool nsJSContext::HasHadCleanupSinceLastGC() {
   return sScheduler.IsEarlyForgetSkippable(1);
 }
 
 
+
+
+
+
 void nsJSContext::RunNextCollectorTimer(JS::GCReason aReason,
                                         mozilla::TimeStamp aDeadline) {
-  sScheduler.RunNextCollectorTimer(aReason, aDeadline);
+  if (sShuttingDown) {
+    return;
+  }
+
+  
+  
+  MOZ_ASSERT_IF(sScheduler.InIncrementalGC(), sGCRunner);
+
+  RefPtr<IdleTaskRunner> runner;
+  if (sGCRunner) {
+    sScheduler.SetWantMajorGC(aReason);
+    runner = sGCRunner;
+  } else if (sCCRunner) {
+    runner = sCCRunner;
+  }
+
+  if (runner) {
+    runner->SetIdleDeadline(aDeadline);
+    runner->Run();
+  }
 }
 
 
@@ -1627,7 +1867,7 @@ void nsJSContext::MaybeRunNextCollectorSlice(nsIDocShell* aDocShell,
     
     
     if (next.isSome()) {
-      sScheduler.RunNextCollectorTimer(aReason, next.value());
+      nsJSContext::RunNextCollectorTimer(aReason, next.value());
     }
   }
 }
@@ -1635,7 +1875,60 @@ void nsJSContext::MaybeRunNextCollectorSlice(nsIDocShell* aDocShell,
 
 void nsJSContext::PokeGC(JS::GCReason aReason, JSObject* aObj,
                          uint32_t aDelay) {
-  sScheduler.PokeGC(aReason, aObj, aDelay);
+  if (sShuttingDown) {
+    return;
+  }
+
+  if (aObj) {
+    JS::Zone* zone = JS::GetObjectZone(aObj);
+    CycleCollectedJSRuntime::Get()->AddZoneWaitingForGC(zone);
+  } else if (aReason != JS::GCReason::CC_FINISHED) {
+    sScheduler.SetNeedsFullGC();
+  }
+
+  if (sGCRunner) {
+    
+    return;
+  }
+
+  sScheduler.SetWantMajorGC(aReason);
+
+  if (sCCRunner) {
+    
+    
+    sScheduler.EnsureCCThenGC();
+    return;
+  }
+
+  static bool first = true;
+
+  uint32_t delay =
+      aDelay ? aDelay
+             : (first ? StaticPrefs::javascript_options_gc_delay_first()
+                      : StaticPrefs::javascript_options_gc_delay());
+  first = false;
+
+  sGCRunner = IdleTaskRunner::Create(
+      [](TimeStamp aDeadline) { return GCRunnerFired(aDeadline, nullptr); },
+      "GCRunnerFired",
+      
+      
+      
+      delay, StaticPrefs::javascript_options_gc_delay_interslice(),
+      sScheduler.mActiveIntersliceGCBudget.ToMilliseconds(), true,
+      [] { return sShuttingDown; });
+}
+
+
+void nsJSContext::PokeShrinkingGC() {
+  if (sShrinkingGCTimer || sShuttingDown) {
+    return;
+  }
+
+  NS_NewTimerWithFuncCallback(
+      &sShrinkingGCTimer, ShrinkingGCTimerFired, nullptr,
+      StaticPrefs::javascript_options_compact_on_user_inactive_delay(),
+      nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY, "ShrinkingGCTimerFired");
 }
 
 
@@ -1656,8 +1949,7 @@ void nsJSContext::DoLowMemoryGC() {
 
 
 void nsJSContext::LowMemoryGC() {
-  RefPtr<CCGCScheduler::MayGCPromise> mbPromise =
-      CCGCScheduler::MayGCNow(JS::GCReason::MEM_PRESSURE);
+  RefPtr<MayGCPromise> mbPromise = MayGCNow(JS::GCReason::MEM_PRESSURE);
   if (!mbPromise) {
     
     
@@ -1670,7 +1962,54 @@ void nsJSContext::LowMemoryGC() {
 }
 
 
-void nsJSContext::MaybePokeCC() { sScheduler.MaybePokeCC(); }
+void nsJSContext::MaybePokeCC() {
+  if (sCCRunner || sShuttingDown) {
+    return;
+  }
+
+  if (sScheduler.ShouldScheduleCC()) {
+    
+    nsCycleCollector_dispatchDeferredDeletion();
+
+    if (!sCCRunner) {
+      sScheduler.InitCCRunnerStateMachine(
+          mozilla::CCGCScheduler::CCRunnerState::ReducePurple);
+    }
+    EnsureCCRunner(kCCSkippableDelay, kForgetSkippableSliceDuration);
+  }
+}
+
+void nsJSContext::KillFullGCTimer() {
+  if (sFullGCTimer) {
+    sFullGCTimer->Cancel();
+    NS_RELEASE(sFullGCTimer);
+  }
+}
+
+void nsJSContext::KillGCRunner() {
+  if (sGCRunner) {
+    sGCRunner->Cancel();
+    sGCRunner = nullptr;
+  }
+}
+
+
+void nsJSContext::KillShrinkingGCTimer() {
+  if (sShrinkingGCTimer) {
+    sShrinkingGCTimer->Cancel();
+    NS_RELEASE(sShrinkingGCTimer);
+  }
+}
+
+
+void nsJSContext::KillCCRunner() {
+  sScheduler.UnblockCC();
+  sScheduler.DeactivateCCRunner();
+  if (sCCRunner) {
+    sCCRunner->Cancel();
+    sCCRunner = nullptr;
+  }
+}
 
 static void DOMGCSliceCallback(JSContext* aCx, JS::GCProgress aProgress,
                                const JS::GCDescription& aDesc) {
@@ -1705,6 +2044,7 @@ static void DOMGCSliceCallback(JSContext* aCx, JS::GCProgress aProgress,
       }
 
       sScheduler.NoteGCEnd();
+      sIsCompactingOnUserInactive = false;
 
       using mozilla::ipc::IdleSchedulerChild;
       IdleSchedulerChild* child =
@@ -1714,15 +2054,20 @@ static void DOMGCSliceCallback(JSContext* aCx, JS::GCProgress aProgress,
       }
 
       
-      sScheduler.KillGCRunner();
+      nsJSContext::KillGCRunner();
 
-      sScheduler.MaybePokeCC();
+      nsJSContext::MaybePokeCC();
 
       if (aDesc.isZone_) {
-        sScheduler.PokeFullGC();
+        if (!sFullGCTimer && !sShuttingDown) {
+          NS_NewTimerWithFuncCallback(
+              &sFullGCTimer, FullGCTimerFired, nullptr,
+              StaticPrefs::javascript_options_gc_delay_full(),
+              nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY, "FullGCTimerFired");
+        }
       } else {
+        nsJSContext::KillFullGCTimer();
         sScheduler.SetNeedsFullGC(false);
-        sScheduler.KillFullGCTimer();
       }
 
       if (sScheduler.IsCCNeeded()) {
@@ -1738,16 +2083,27 @@ static void DOMGCSliceCallback(JSContext* aCx, JS::GCProgress aProgress,
       break;
 
     case JS::GC_SLICE_END:
-      sScheduler.NoteGCSliceEnd(aDesc.lastSliceEnd(aCx) -
-                                aDesc.lastSliceStart(aCx));
+      sScheduler.NoteGCSliceEnd();
+
+      sGCUnnotifiedTotalTime +=
+          aDesc.lastSliceEnd(aCx) - aDesc.lastSliceStart(aCx);
 
       if (sShuttingDown || aDesc.isComplete_) {
-        sScheduler.KillGCRunner();
-      } else {
+        nsJSContext::KillGCRunner();
+      } else if (!sGCRunner) {
         
         
         
-        sScheduler.EnsureGCRunner(0);
+        sGCRunner = IdleTaskRunner::Create(
+            [](TimeStamp aDeadline) {
+              return GCRunnerFired(aDeadline, nullptr);
+            },
+            "DOMGCSliceCallback::GCRunnerFired",
+            
+            
+            0, StaticPrefs::javascript_options_gc_delay_interslice(),
+            sScheduler.mActiveIntersliceGCBudget.ToMilliseconds(), true,
+            [] { return sShuttingDown; });
       }
 
       if (sScheduler.IsCCNeeded()) {
@@ -1791,6 +2147,7 @@ void nsJSContext::LikelyShortLivingObjectCreated() {
 
 void mozilla::dom::StartupJSEnvironment() {
   
+  sShrinkingGCTimer = sFullGCTimer = nullptr;
   sIsInitialized = false;
   sShuttingDown = false;
   new (&sScheduler) CCGCScheduler();  
@@ -2062,6 +2419,8 @@ void nsJSContext::EnsureStatics() {
 }
 
 void mozilla::dom::ShutdownJSEnvironment() {
+  KillTimers();
+
   sShuttingDown = true;
   sScheduler.Shutdown();
 }
