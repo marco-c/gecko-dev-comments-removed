@@ -24,6 +24,14 @@ EXPORTS.mozilla.extensions += [
     "ExtensionPort.h",
 ]
 
+
+
+
+
+UNIFIED_SOURCES += ["ExtensionMockAPI.cpp"]
+
+EXPORTS.mozilla.extensions += ["ExtensionMockAPI.h"]
+
 include("/ipc/chromium/chromium-config.mozbuild")
 
 LOCAL_INCLUDES += [

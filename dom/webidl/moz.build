@@ -1063,6 +1063,12 @@ WEBIDL_FILES += [
 
 
 
+
+
+WEBIDL_FILES += ["ExtensionMockAPI.webidl"]
+
+
+
 if CONFIG["MOZ_DEBUG"] and CONFIG["ENABLE_TESTS"]:
     WEBIDL_FILES += [
         "TestFunctions.webidl",
