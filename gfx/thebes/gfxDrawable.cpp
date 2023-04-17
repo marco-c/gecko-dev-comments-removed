@@ -4,7 +4,6 @@
 
 
 #include "gfxDrawable.h"
-#include "gfxASurface.h"
 #include "gfxContext.h"
 #include "gfxPlatform.h"
 #include "gfx2DGlue.h"

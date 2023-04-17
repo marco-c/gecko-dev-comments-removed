@@ -6,7 +6,6 @@
 
 #include "nsDeviceContext.h"
 #include <algorithm>      
-#include "gfxASurface.h"  
 #include "gfxContext.h"
 #include "gfxImageSurface.h"     
 #include "gfxPoint.h"            
