@@ -7,6 +7,7 @@
 #ifndef mozilla_layers_TestWRScrollData_h
 #define mozilla_layers_TestWRScrollData_h
 
+#include "mozilla/gfx/MatrixFwd.h"
 #include "mozilla/layers/WebRenderScrollData.h"
 
 namespace mozilla {
@@ -35,8 +36,14 @@ class TestWRScrollData : public WebRenderScrollData {
 
 
 
+
+
+
+
   static TestWRScrollData Create(const char* aTreeShape,
-                                 const APZUpdater& aUpdater);
+                                 const APZUpdater& aUpdater,
+                                 const nsIntRegion* aVisibleRegions = nullptr,
+                                 const gfx::Matrix4x4* aTransforms = nullptr);
 
   
   
