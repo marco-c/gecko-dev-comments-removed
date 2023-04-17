@@ -792,8 +792,13 @@ nsThreadShutdownContext* nsThread::ShutdownInternal(bool aSync) {
   
   nsCOMPtr<nsIRunnable> event =
       new nsThreadShutdownEvent(WrapNotNull(this), WrapNotNull(context));
-  
-  mEvents->PutEvent(event.forget(), EventQueuePriority::Normal);
+  if (!mEvents->PutEvent(event.forget(), EventQueuePriority::Normal)) {
+    
+    nsAutoCString threadName;
+    currentThread->GetThreadName(threadName);
+    MOZ_CRASH_UNSAFE_PRINTF("Attempt to shutdown an already dead thread: %s",
+                            threadName.get());
+  }
 
   
   
