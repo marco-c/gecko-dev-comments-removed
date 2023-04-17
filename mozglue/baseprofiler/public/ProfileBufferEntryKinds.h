@@ -41,6 +41,7 @@ static constexpr size_t ProfileBufferEntryNumChars = 8;
         sizeof(::mozilla::baseprofiler::BaseProfilerThreadId))    \
   MACRO(Time, double, sizeof(double))                             \
   MACRO(TimeBeforeCompactStack, double, sizeof(double))           \
+  MACRO(TimeBeforeSameSample, double, sizeof(double))             \
   MACRO(CounterId, void*, sizeof(void*))                          \
   MACRO(CounterKey, uint64_t, sizeof(uint64_t))                   \
   MACRO(Number, uint64_t, sizeof(uint64_t))                       \
@@ -88,6 +89,10 @@ enum class ProfileBufferEntryKind : ProfileBufferEntryKindUnderlyingType {
   
   
   CompactStack,
+
+  
+  
+  SameSample,
 
   MODERN_LIMIT
 };

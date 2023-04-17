@@ -532,8 +532,8 @@ void JITFrameInfo::AddInfoForRange(
 }
 
 struct ProfileSample {
-  uint32_t mStack;
-  double mTime;
+  uint32_t mStack = 0;
+  double mTime = 0.0;
   Maybe<double> mResponsiveness;
   RunningTimes mRunningTimes;
 };
@@ -782,6 +782,13 @@ class EntryGetter {
 
 
 
+
+
+
+
+
+
+
 #define ERROR_AND_CONTINUE(msg)                            \
   {                                                        \
     fprintf(stderr, "ProfileBuffer parse error: %s", msg); \
@@ -800,6 +807,11 @@ ProfilerThreadId ProfileBuffer::StreamSamplesToJSON(
                "running");
 
     ProfilerThreadId processedThreadId;
+
+    
+    
+    
+    ProfileSample sample;
 
     EntryGetter e(*aReader);
 
@@ -841,8 +853,6 @@ ProfilerThreadId ProfileBuffer::StreamSamplesToJSON(
       MOZ_ASSERT(
           aThreadId.IsSpecified() || !processedThreadId.IsSpecified(),
           "Unspecified aThreadId should only be used with 1-sample buffer");
-
-      ProfileSample sample;
 
       auto ReadStack = [&](EntryGetter& e, uint64_t entryPosition,
                            const Maybe<double>& unresponsiveDuration,
@@ -1083,6 +1093,57 @@ ProfilerThreadId ProfileBuffer::StreamSamplesToJSON(
         }
 
         e.Next();
+      } else if (e.Has() && e.Get().IsTimeBeforeSameSample()) {
+        if (sample.mTime == 0.0) {
+          
+          
+          
+          break;
+        }
+
+        
+        (void)sample.mStack;
+
+        sample.mTime = e.Get().GetDouble();
+
+        
+        if (sample.mTime < aSinceTime) {
+          e.Next();
+          continue;
+        }
+
+        sample.mResponsiveness = Nothing{};
+
+        sample.mRunningTimes.Clear();
+
+        ProfileChunkedBuffer::BlockIterator it = e.Iterator();
+        for (;;) {
+          ++it;
+          if (it.IsAtEnd()) {
+            break;
+          }
+          ProfileBufferEntryReader er = *it;
+          ProfileBufferEntry::Kind kind =
+              er.ReadObject<ProfileBufferEntry::Kind>();
+
+          
+          if (kind == ProfileBufferEntry::Kind::RunningTimes) {
+            er.ReadIntoObject(sample.mRunningTimes);
+            continue;
+          }
+
+          if (kind == ProfileBufferEntry::Kind::SameSample) {
+            WriteSample(aWriter, sample);
+            break;
+          }
+
+          MOZ_ASSERT(kind >= ProfileBufferEntry::Kind::LEGACY_LIMIT,
+                     "There should be no legacy entries between "
+                     "TimeBeforeSameSample and SameSample");
+          er.SetRemainingBytes(0);
+        }
+
+        e.Next();
       } else {
         ERROR_AND_CONTINUE("expected a Time entry");
       }
@@ -1179,6 +1240,9 @@ void ProfileBuffer::AddJITInfoForRange(uint64_t aRangeStart,
               }
 
               e.Next();
+            } else if (e.Has() && e.Get().IsTimeBeforeSameSample()) {
+              
+
             } else {
               ERROR_AND_CONTINUE("expected a Time entry");
             }
@@ -1605,6 +1669,54 @@ bool ProfileBuffer::DuplicateLastSample(ProfilerThreadId aThreadId,
     return false;
   }
 
+  if (mEntries.IsIndexInCurrentChunk(ProfileBufferIndex{*aLastSample})) {
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    AUTO_PROFILER_STATS(DuplicateLastSample_SameSample);
+
+    
+    
+    (void)AddThreadIdEntry(aThreadId);
+
+    
+    AddEntry(ProfileBufferEntry::TimeBeforeSameSample(aSampleTimeMs));
+
+    
+    if (!aRunningTimes.IsEmpty()) {
+      mEntries.PutObjects(ProfileBufferEntry::Kind::RunningTimes,
+                          aRunningTimes);
+    }
+
+    
+    mEntries.PutObjects(ProfileBufferEntry::Kind::SameSample);
+
+    return true;
+  }
+
+  AUTO_PROFILER_STATS(DuplicateLastSample_copy);
+
   ProfileChunkedBuffer tempBuffer(
       ProfileChunkedBuffer::ThreadSafety::WithoutMutex, mWorkerChunkManager);
 
@@ -1641,6 +1753,7 @@ bool ProfileBuffer::DuplicateLastSample(ProfilerThreadId aThreadId,
         case ProfileBufferEntry::Kind::CollectionStart:
         case ProfileBufferEntry::Kind::CollectionEnd:
         case ProfileBufferEntry::Kind::ThreadId:
+        case ProfileBufferEntry::Kind::TimeBeforeSameSample:
           
           return true;
         case ProfileBufferEntry::Kind::Time:
