@@ -1527,6 +1527,7 @@ nsresult HTMLEditor::DeleteTableColumnWithTransaction(Element& aTableElement,
   
   ErrorResult error;
   IgnoredErrorResult ignoredError;
+
   for (int32_t rowIndex = 0;; rowIndex++) {
     CellData cellData(*this, aTableElement, rowIndex, aColumnIndex,
                       ignoredError);
@@ -1626,7 +1627,8 @@ nsresult HTMLEditor::DeleteTableColumnWithTransaction(Element& aTableElement,
     
     rowIndex--;
   }
-  return NS_OK;
+
+  
 }
 
 NS_IMETHODIMP HTMLEditor::DeleteTableRow(int32_t aNumberOfRowsToDelete) {

@@ -4262,6 +4262,7 @@ SplitNodeResult HTMLEditor::SplitNodeDeepWithTransaction(
   nsCOMPtr<nsIContent> newLeftNodeOfMostAncestor;
   EditorDOMPoint atStartOfRightNode(aStartOfDeepestRightNode);
   SplitNodeResult lastSplitNodeResult(atStartOfRightNode);
+
   while (true) {
     
     
@@ -4338,7 +4339,7 @@ SplitNodeResult HTMLEditor::SplitNodeDeepWithTransaction(
     }
   }
 
-  return SplitNodeResult(NS_ERROR_FAILURE);
+  
 }
 
 void HTMLEditor::DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
