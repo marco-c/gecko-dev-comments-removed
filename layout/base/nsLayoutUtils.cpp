@@ -3261,9 +3261,13 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
 
   
   if (BrowserChild* browserChild = BrowserChild::GetFrom(presShell)) {
-    Maybe<nsRect> unscaledVisibleRect = browserChild->GetVisibleRect();
+    if (!browserChild->IsTopLevel()) {
+      Maybe<nsRect> unscaledVisibleRect = browserChild->GetVisibleRect();
 
-    if (unscaledVisibleRect) {
+      if (!unscaledVisibleRect) {
+        unscaledVisibleRect = Some(nsRect());
+      }
+
       rootInkOverflow.IntersectRect(rootInkOverflow, *unscaledVisibleRect);
     }
   }
