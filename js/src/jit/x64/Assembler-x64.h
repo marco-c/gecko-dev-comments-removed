@@ -232,10 +232,6 @@ static constexpr Register WasmTableCallIndexReg = ABINonArgReg3;
 
 static constexpr Register WasmJitEntryReturnScratch = rbx;
 
-
-
-static constexpr Register WasmExceptionReg = ABINonArgReg0;
-
 static constexpr Register OsrFrameReg = IntArgReg3;
 
 static constexpr Register PreBarrierReg = rdx;

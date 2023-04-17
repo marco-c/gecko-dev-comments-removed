@@ -714,10 +714,6 @@ static constexpr Register WasmTableCallIndexReg = ABINonArgReg3;
 
 static constexpr Register WasmJitEntryReturnScratch = r9;
 
-
-
-static constexpr Register WasmExceptionReg = ABINonArgReg2;
-
 static inline bool GetIntArgReg(uint32_t usedIntArgs, uint32_t usedFloatArgs,
                                 Register* out) {
   if (usedIntArgs >= NumIntArgRegs) {
