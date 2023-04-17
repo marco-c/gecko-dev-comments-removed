@@ -1111,57 +1111,6 @@ class HTMLEditUtils final {
 
 
 
-  static Element* GetAncestorBlockElement(
-      const nsIContent& aContent, const nsINode* aAncestorLimiter = nullptr) {
-    MOZ_ASSERT(
-        !aAncestorLimiter || aContent.IsInclusiveDescendantOf(aAncestorLimiter),
-        "aContent isn't in aAncestorLimiter");
-
-    
-    if (&aContent == aAncestorLimiter) {
-      return nullptr;
-    }
-
-    for (Element* element : aContent.AncestorsOfType<Element>()) {
-      if (HTMLEditUtils::IsBlockElement(*element)) {
-        return element;
-      }
-      
-      if (element == aAncestorLimiter) {
-        return nullptr;
-      }
-    }
-
-    return nullptr;
-  }
-
-  
-
-
-
-
-
-  static Element* GetInclusiveAncestorBlockElement(
-      const nsIContent& aContent, const nsINode* aAncestorLimiter = nullptr) {
-    MOZ_ASSERT(
-        !aAncestorLimiter || aContent.IsInclusiveDescendantOf(aAncestorLimiter),
-        "aContent isn't in aAncestorLimiter");
-
-    if (!aContent.IsContent()) {
-      return nullptr;
-    }
-
-    if (HTMLEditUtils::IsBlockElement(aContent)) {
-      return const_cast<Element*>(aContent.AsElement());
-    }
-    return GetAncestorBlockElement(aContent, aAncestorLimiter);
-  }
-
-  
-
-
-
-
   enum class AncestorType {
     ClosestBlockElement,
     MostDistantInlineElementInBlock,
