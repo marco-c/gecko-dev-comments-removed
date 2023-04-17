@@ -967,10 +967,8 @@ class MOZ_STACK_CLASS HTMLEditor::AutoDeleteRangesHandler final {
 
 
 
-
     [[nodiscard]] Element* ScanEmptyBlockInclusiveAncestor(
-        const HTMLEditor& aHTMLEditor, nsIContent& aStartContent,
-        Element& aEditingHostElement);
+        const HTMLEditor& aHTMLEditor, nsIContent& aStartContent);
 
     
 
@@ -1184,7 +1182,7 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDelete(
     if (startPoint.GetContainerAsContent()) {
       AutoEmptyBlockAncestorDeleter deleter;
       if (deleter.ScanEmptyBlockInclusiveAncestor(
-              aHTMLEditor, *startPoint.GetContainerAsContent(), *editingHost)) {
+              aHTMLEditor, *startPoint.GetContainerAsContent())) {
         nsresult rv = deleter.ComputeTargetRanges(
             aHTMLEditor, aDirectionAndAmount, *editingHost, aRangesToDelete);
         NS_WARNING_ASSERTION(
@@ -1432,7 +1430,7 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::Run(
 #endif  
       AutoEmptyBlockAncestorDeleter deleter;
       if (deleter.ScanEmptyBlockInclusiveAncestor(
-              aHTMLEditor, *startPoint.GetContainerAsContent(), *editingHost)) {
+              aHTMLEditor, *startPoint.GetContainerAsContent())) {
         EditActionResult result = deleter.Run(aHTMLEditor, aDirectionAndAmount);
         if (result.Failed() || result.Handled()) {
           NS_WARNING_ASSERTION(result.Succeeded(),
@@ -5029,28 +5027,29 @@ nsresult HTMLEditor::DeleteMostAncestorMailCiteElementIfEmpty(
 
 Element* HTMLEditor::AutoDeleteRangesHandler::AutoEmptyBlockAncestorDeleter::
     ScanEmptyBlockInclusiveAncestor(const HTMLEditor& aHTMLEditor,
-                                    nsIContent& aStartContent,
-                                    Element& aEditingHostElement) {
+                                    nsIContent& aStartContent) {
   MOZ_ASSERT(aHTMLEditor.IsEditActionDataAvailable());
 
   
-  if (HTMLEditUtils::IsInlineElement(aEditingHostElement)) {
-    return nullptr;
-  }
-
   
   
-  Element* blockElement =
-      HTMLEditUtils::GetInclusiveAncestorBlockElement(aStartContent);
-  if (!blockElement) {
+  Element* editableBlockElement = HTMLEditUtils::GetInclusiveAncestorElement(
+      aStartContent, HTMLEditUtils::ClosestEditableBlockElement);
+  if (!editableBlockElement) {
     return nullptr;
   }
-  while (blockElement && blockElement != &aEditingHostElement &&
-         !HTMLEditUtils::IsAnyTableElement(blockElement) &&
-         HTMLEditUtils::IsEmptyNode(*blockElement)) {
-    mEmptyInclusiveAncestorBlockElement = blockElement;
-    blockElement = HTMLEditUtils::GetAncestorBlockElement(
-        *mEmptyInclusiveAncestorBlockElement);
+  
+  
+  
+  
+  while (editableBlockElement &&
+         HTMLEditUtils::IsRemovableFromParentNode(*editableBlockElement) &&
+         !HTMLEditUtils::IsAnyTableElement(editableBlockElement) &&
+         HTMLEditUtils::IsEmptyNode(*editableBlockElement)) {
+    mEmptyInclusiveAncestorBlockElement = editableBlockElement;
+    editableBlockElement = HTMLEditUtils::GetAncestorElement(
+        *mEmptyInclusiveAncestorBlockElement,
+        HTMLEditUtils::ClosestEditableBlockElement);
   }
   if (!mEmptyInclusiveAncestorBlockElement) {
     return nullptr;
