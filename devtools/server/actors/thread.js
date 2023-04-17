@@ -1342,41 +1342,6 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   
 
 
-
-
-
-
-
-
-
-
-  unsafeSynchronize(p) {
-    let needNest = true;
-    let eventLoop;
-    let returnVal;
-
-    p.then(resolvedVal => {
-      needNest = false;
-      returnVal = resolvedVal;
-    })
-      .catch(e => reportException("unsafeSynchronize", e))
-      .then(() => {
-        if (eventLoop) {
-          eventLoop.resolve();
-        }
-      });
-
-    if (needNest) {
-      eventLoop = this._nestedEventLoops.push();
-      eventLoop.enter();
-    }
-
-    return returnVal;
-  },
-
-  
-
-
   maybePauseOnExceptions() {
     if (this._options.pauseOnExceptions) {
       this.dbg.onExceptionUnwind = this._onExceptionUnwind;
@@ -1797,6 +1762,9 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
   },
 
   _onWindowReady({ isTopLevel, isBFCache, window }) {
+    
+    
+    
     if (isTopLevel && this.state != STATES.DETACHED) {
       this.sourcesManager.reset();
       this.clearDebuggees();
@@ -1826,7 +1794,16 @@ const ThreadActor = ActorClassWithSpec(threadSpec, {
 
     
     if (this.state == STATES.PAUSED) {
-      this.unsafeSynchronize(Promise.resolve(this.doResume()));
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      this.doResume();
       this.dbg.disable();
     }
 
