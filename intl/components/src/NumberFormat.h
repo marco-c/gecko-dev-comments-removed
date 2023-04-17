@@ -185,7 +185,7 @@ struct MOZ_STACK_CLASS NumberFormatOptions {
   } mRoundingPriority = RoundingPriority::Auto;
 };
 
-enum class NumberPartType {
+enum class NumberPartType : int16_t {
   Compact,
   Currency,
   Decimal,
@@ -204,15 +204,18 @@ enum class NumberPartType {
   Unit,
 };
 
+enum class NumberPartSource : int16_t { Shared, Start, End };
+
 
 
 
 struct NumberPart {
   NumberPartType type;
+  NumberPartSource source;
   size_t endIndex;
 
   bool operator==(const NumberPart& rhs) const {
-    return type == rhs.type && endIndex == rhs.endIndex;
+    return type == rhs.type && source == rhs.source && endIndex == rhs.endIndex;
   }
   bool operator!=(const NumberPart& rhs) const { return !(*this == rhs); }
 };
