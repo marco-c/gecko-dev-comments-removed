@@ -752,6 +752,11 @@ SandboxBrokerPolicyFactory::GetSocketProcessPolicy(int aPid) {
   policy->AddDir(rdonly, "/usr/local/share");
   policy->AddDir(rdonly, "/etc");
 
+  
+  
+  
+  policy->AddDir(access, "/");
+
   AddLdconfigPaths(policy.get());
 
   
