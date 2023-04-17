@@ -196,11 +196,6 @@ class SVGIntegrationUtils final {
   
 
 
-  static bool IsMaskResourceReady(nsIFrame* aFrame);
-
-  
-
-
 
 
 
