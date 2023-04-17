@@ -59,10 +59,9 @@ async function closeColorsDialog(dialogWin) {
 }
 
 function verifyBackplate(expectedValue) {
-  const snapshot = TelemetryTestUtils.getProcessScalars("parent", false, true);
-  ok("a11y.backplate" in snapshot, "Backplate scalar must be present.");
-  is(
-    snapshot["a11y.backplate"],
+  TelemetryTestUtils.assertScalar(
+    TelemetryTestUtils.getProcessScalars("parent", false, true),
+    "a11y.backplate",
     expectedValue,
     "Backplate scalar is logged as " + expectedValue
   );
@@ -288,9 +287,6 @@ add_task(async function testSetNever() {
   reset();
   gBrowser.removeCurrentTab();
 });
-
-
-
 
 add_task(async function testBackplate() {
   is(

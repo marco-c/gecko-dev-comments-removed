@@ -161,14 +161,10 @@ function checkSuccess(profilesReported, rawCount = profilesReported) {
 
 function checkError() {
   const scalars = TelemetryTestUtils.getProcessScalars("parent");
-  
-  
-  
-  
-  
-  Assert.ok(
-    PROFILE_COUNT_SCALAR in scalars &&
-      scalars[PROFILE_COUNT_SCALAR] === SCALAR_ERROR_VALUE,
+  TelemetryTestUtils.assertScalar(
+    scalars,
+    PROFILE_COUNT_SCALAR,
+    SCALAR_ERROR_VALUE,
     "The value reported to telemetry should be the error value"
   );
 }

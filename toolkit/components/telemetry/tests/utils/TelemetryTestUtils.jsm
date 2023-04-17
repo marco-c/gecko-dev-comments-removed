@@ -19,12 +19,17 @@ var TelemetryTestUtils = {
 
 
 
-
   assertScalar(scalars, scalarName, value, msg) {
-    if (value > 0) {
-      Assert.equal(scalars[scalarName], value, msg);
-      return;
-    }
+    Assert.equal(scalars[scalarName], value, msg);
+  },
+
+  
+
+
+
+
+
+  assertScalarUnset(scalars, scalarName) {
     Assert.ok(!(scalarName in scalars), scalarName + " must not be reported.");
   },
 
