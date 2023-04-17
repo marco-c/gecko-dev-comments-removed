@@ -457,8 +457,6 @@ class ExperimentFeature {
 
 
 
-
-
   getValue({ sendExposureEvent } = {}) {
     
     let userPrefs = this._getUserPrefsValues();
@@ -479,6 +477,33 @@ class ExperimentFeature {
     return {
       ...this.prefGetters,
       ...this.getRemoteConfig()?.variables,
+      ...userPrefs,
+    };
+  }
+
+  
+
+
+
+
+  getAllVariables({ sendExposureEvent, defaultValues = null } = {}) {
+    
+    let userPrefs = this._getUserPrefsValues();
+    const branch = ExperimentAPI.activateBranch({
+      featureId: this.featureId,
+      sendExposureEvent: sendExposureEvent && this._sendExposureEventOnce,
+    });
+
+    
+    if (branch && sendExposureEvent) {
+      this._sendExposureEventOnce = false;
+    }
+
+    return {
+      ...this.prefGetters,
+      ...defaultValues,
+      ...this.getRemoteConfig()?.variables,
+      ...(branch?.feature?.value || null),
       ...userPrefs,
     };
   }
