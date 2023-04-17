@@ -908,12 +908,8 @@ void XPCJSRuntime::FinalizeCallback(JSFreeOp* fop, JSFinalizeStatus status,
       
       
       
-
-      for (auto i = self->mDyingWrappedNativeProtoMap->ModIter(); !i.done();
-           i.next()) {
-        delete i.get();
-        i.remove();
-      }
+      
+      self->mDyingWrappedNativeProtos.clear();
 
       MOZ_ASSERT(self->mGCIsRunning, "bad state");
       self->mGCIsRunning = false;
@@ -1113,8 +1109,6 @@ void XPCJSRuntime::Shutdown(JSContext* cx) {
   mClassInfo2NativeSetMap = nullptr;
 
   mNativeSetMap = nullptr;
-
-  mDyingWrappedNativeProtoMap = nullptr;
 
   
   mWrappedNativeScopes.clear();
@@ -2899,8 +2893,6 @@ XPCJSRuntime::XPCJSRuntime(JSContext* aCx)
       mClassInfo2NativeSetMap(mozilla::MakeUnique<ClassInfo2NativeSetMap>()),
       mNativeSetMap(mozilla::MakeUnique<NativeSetMap>()),
       mWrappedNativeScopes(),
-      mDyingWrappedNativeProtoMap(
-          mozilla::MakeUnique<XPCWrappedNativeProtoMap>()),
       mGCIsRunning(false),
       mNativesToReleaseArray(),
       mDoingFinalization(false),
