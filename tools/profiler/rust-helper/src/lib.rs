@@ -2,7 +2,7 @@
 
 
 
-extern crate memmap;
+extern crate memmap2;
 extern crate rustc_demangle;
 extern crate thin_vec;
 extern crate uuid;
@@ -18,7 +18,7 @@ mod compact_symbol_table;
 mod elf;
 
 #[cfg(feature = "parse_elf")]
-use memmap::MmapOptions;
+use memmap2::MmapOptions;
 #[cfg(feature = "parse_elf")]
 use std::fs::File;
 
