@@ -153,10 +153,15 @@ var IdentityHandler = {
       result.securityException = OverrideService.hasMatchingOverride(
         uri.host,
         uri.port,
+        {},
         cert,
         {},
         {}
       );
+
+      
+      
+      result.secure = !result.securityException;
     } catch (e) {}
 
     return result;
