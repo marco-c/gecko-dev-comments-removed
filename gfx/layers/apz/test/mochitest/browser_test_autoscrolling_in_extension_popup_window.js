@@ -115,16 +115,6 @@ add_task(async () => {
     }
   );
 
-  
-  ok(
-    browserForPopup.browsingContext.startApzAutoscroll(
-      screenX + 100,
-      screenY + 50,
-      viewId,
-      presShellId
-    )
-  );
-
   const scrollEventPromise = SpecialPowers.spawn(
     browserForPopup,
     [],
@@ -140,6 +130,16 @@ add_task(async () => {
         );
       });
     }
+  );
+
+  
+  ok(
+    browserForPopup.browsingContext.startApzAutoscroll(
+      screenX + 100,
+      screenY + 50,
+      viewId,
+      presShellId
+    )
   );
 
   
