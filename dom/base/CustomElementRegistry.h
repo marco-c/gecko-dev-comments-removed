@@ -29,6 +29,7 @@ namespace dom {
 struct CustomElementData;
 struct ElementDefinitionOptions;
 class CallbackFunction;
+class CustomElementCallback;
 class CustomElementReaction;
 class DocGroup;
 class Promise;
@@ -53,25 +54,6 @@ struct LifecycleCallbackArgs {
   RefPtr<Document> mNewDocument;
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const;
-};
-
-class CustomElementCallback {
- public:
-  CustomElementCallback(Element* aThisObject, ElementCallbackType aCallbackType,
-                        CallbackFunction* aCallback,
-                        const LifecycleCallbackArgs& aArgs);
-  void Traverse(nsCycleCollectionTraversalCallback& aCb) const;
-  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
-  void Call();
-
- private:
-  
-  RefPtr<Element> mThisObject;
-  RefPtr<CallbackFunction> mCallback;
-  
-  ElementCallbackType mType;
-  
-  LifecycleCallbackArgs mArgs;
 };
 
 
@@ -490,10 +472,6 @@ class CustomElementRegistry final : public nsISupports, public nsWrapperCache {
   bool JSObjectToAtomArray(JSContext* aCx, JS::Handle<JSObject*> aConstructor,
                            const nsString& aName,
                            nsTArray<RefPtr<nsAtom>>& aArray, ErrorResult& aRv);
-
-  static UniquePtr<CustomElementCallback> CreateCustomElementCallback(
-      ElementCallbackType aType, Element* aCustomElement,
-      const LifecycleCallbackArgs& aArgs, CustomElementDefinition* aDefinition);
 
   void UpgradeCandidates(nsAtom* aKey, CustomElementDefinition* aDefinition,
                          ErrorResult& aRv);

@@ -67,6 +67,29 @@ class CustomElementUpgradeReaction final : public CustomElementReaction {
 
 
 
+class CustomElementCallback {
+ public:
+  CustomElementCallback(Element* aThisObject, ElementCallbackType aCallbackType,
+                        CallbackFunction* aCallback,
+                        const LifecycleCallbackArgs& aArgs);
+  void Traverse(nsCycleCollectionTraversalCallback& aCb) const;
+  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
+  void Call();
+
+  static UniquePtr<CustomElementCallback> Create(
+      ElementCallbackType aType, Element* aCustomElement,
+      const LifecycleCallbackArgs& aArgs, CustomElementDefinition* aDefinition);
+
+ private:
+  
+  RefPtr<Element> mThisObject;
+  RefPtr<CallbackFunction> mCallback;
+  
+  ElementCallbackType mType;
+  
+  LifecycleCallbackArgs mArgs;
+};
+
 class CustomElementCallbackReaction final : public CustomElementReaction {
  public:
   explicit CustomElementCallbackReaction(
@@ -104,6 +127,55 @@ size_t LifecycleCallbackArgs::SizeOfExcludingThis(
   n += mNewValue.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
   n += mNamespaceURI.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
   return n;
+}
+
+
+UniquePtr<CustomElementCallback> CustomElementCallback::Create(
+    ElementCallbackType aType, Element* aCustomElement,
+    const LifecycleCallbackArgs& aArgs, CustomElementDefinition* aDefinition) {
+  MOZ_ASSERT(aDefinition, "CustomElementDefinition should not be null");
+  MOZ_ASSERT(aCustomElement->GetCustomElementData(),
+             "CustomElementData should exist");
+
+  
+  CallbackFunction* func = nullptr;
+  switch (aType) {
+    case ElementCallbackType::eConnected:
+      if (aDefinition->mCallbacks->mConnectedCallback.WasPassed()) {
+        func = aDefinition->mCallbacks->mConnectedCallback.Value();
+      }
+      break;
+
+    case ElementCallbackType::eDisconnected:
+      if (aDefinition->mCallbacks->mDisconnectedCallback.WasPassed()) {
+        func = aDefinition->mCallbacks->mDisconnectedCallback.Value();
+      }
+      break;
+
+    case ElementCallbackType::eAdopted:
+      if (aDefinition->mCallbacks->mAdoptedCallback.WasPassed()) {
+        func = aDefinition->mCallbacks->mAdoptedCallback.Value();
+      }
+      break;
+
+    case ElementCallbackType::eAttributeChanged:
+      if (aDefinition->mCallbacks->mAttributeChangedCallback.WasPassed()) {
+        func = aDefinition->mCallbacks->mAttributeChangedCallback.Value();
+      }
+      break;
+
+    case ElementCallbackType::eGetCustomInterface:
+      MOZ_ASSERT_UNREACHABLE("Don't call GetCustomInterface through callback");
+      break;
+  }
+
+  
+  if (!func) {
+    return nullptr;
+  }
+
+  
+  return MakeUnique<CustomElementCallback>(aCustomElement, aType, func, aArgs);
 }
 
 void CustomElementCallback::Call() {
@@ -460,56 +532,6 @@ void CustomElementRegistry::UnregisterUnresolvedElement(Element* aElement,
 }
 
 
-UniquePtr<CustomElementCallback>
-CustomElementRegistry::CreateCustomElementCallback(
-    ElementCallbackType aType, Element* aCustomElement,
-    const LifecycleCallbackArgs& aArgs, CustomElementDefinition* aDefinition) {
-  MOZ_ASSERT(aDefinition, "CustomElementDefinition should not be null");
-  MOZ_ASSERT(aCustomElement->GetCustomElementData(),
-             "CustomElementData should exist");
-
-  
-  CallbackFunction* func = nullptr;
-  switch (aType) {
-    case ElementCallbackType::eConnected:
-      if (aDefinition->mCallbacks->mConnectedCallback.WasPassed()) {
-        func = aDefinition->mCallbacks->mConnectedCallback.Value();
-      }
-      break;
-
-    case ElementCallbackType::eDisconnected:
-      if (aDefinition->mCallbacks->mDisconnectedCallback.WasPassed()) {
-        func = aDefinition->mCallbacks->mDisconnectedCallback.Value();
-      }
-      break;
-
-    case ElementCallbackType::eAdopted:
-      if (aDefinition->mCallbacks->mAdoptedCallback.WasPassed()) {
-        func = aDefinition->mCallbacks->mAdoptedCallback.Value();
-      }
-      break;
-
-    case ElementCallbackType::eAttributeChanged:
-      if (aDefinition->mCallbacks->mAttributeChangedCallback.WasPassed()) {
-        func = aDefinition->mCallbacks->mAttributeChangedCallback.Value();
-      }
-      break;
-
-    case ElementCallbackType::eGetCustomInterface:
-      MOZ_ASSERT_UNREACHABLE("Don't call GetCustomInterface through callback");
-      break;
-  }
-
-  
-  if (!func) {
-    return nullptr;
-  }
-
-  
-  return MakeUnique<CustomElementCallback>(aCustomElement, aType, func, aArgs);
-}
-
-
 
 void CustomElementRegistry::EnqueueLifecycleCallback(
     ElementCallbackType aType, Element* aCustomElement,
@@ -529,7 +551,7 @@ void CustomElementRegistry::EnqueueLifecycleCallback(
   }
 
   auto callback =
-      CreateCustomElementCallback(aType, aCustomElement, aArgs, definition);
+      CustomElementCallback::Create(aType, aCustomElement, aArgs, definition);
   if (!callback) {
     return;
   }
