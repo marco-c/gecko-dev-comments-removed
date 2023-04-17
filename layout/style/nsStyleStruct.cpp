@@ -2454,13 +2454,6 @@ nsChangeHint nsStyleDisplay::CalcDifference(
         
         
         
-        
-        
-        
-        
-        
-        
-        
         hint |= nsChangeHint_ScrollbarChange;
       } else {
         

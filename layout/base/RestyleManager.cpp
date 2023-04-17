@@ -37,6 +37,7 @@
 #include "Layers.h"
 #include "nsAnimationManager.h"
 #include "nsBlockFrame.h"
+#include "nsIScrollableFrame.h"
 #include "nsContentUtils.h"
 #include "nsCSSFrameConstructor.h"
 #include "nsCSSRendering.h"
@@ -1262,7 +1263,6 @@ static inline void MaybeDealWithScrollbarChange(nsStyleChangeData& aData,
     return;
   }
   aData.mHint &= ~nsChangeHint_ScrollbarChange;
-  bool doReconstruct = true;  
 
   
   
@@ -1301,14 +1301,24 @@ static inline void MaybeDealWithScrollbarChange(nsStyleChangeData& aData,
         
         
         aData.mHint |= nsChangeHint_ReflowHintsForScrollbarChange;
-        doReconstruct = false;
+        return;
       }
     }
   }
 
-  if (doReconstruct) {
-    aData.mHint |= nsChangeHint_ReconstructFrame;
+  if (nsIScrollableFrame* sf = do_QueryFrame(aData.mFrame)) {
+    if (aData.mFrame->StyleDisplay()->IsScrollableOverflow() &&
+        sf->HasAllNeededScrollbars()) {
+      
+      
+      aData.mHint |= nsChangeHint_ReflowHintsForScrollbarChange;
+      return;
+    }
   }
+
+  
+  
+  aData.mHint |= nsChangeHint_ReconstructFrame;
 }
 
 void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
