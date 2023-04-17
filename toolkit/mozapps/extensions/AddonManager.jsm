@@ -28,8 +28,6 @@ const MOZ_COMPATIBILITY_NIGHTLY = ![
   "esr",
 ].includes(AppConstants.MOZ_UPDATE_CHANNEL);
 
-const INTL_LOCALES_CHANGED = "intl:app-locales-changed";
-
 const PREF_AMO_ABUSEREPORT = "extensions.abuseReport.amWebAPI.enabled";
 const PREF_BLOCKLIST_PINGCOUNTVERSION = "extensions.blocklist.pingCountVersion";
 const PREF_EM_UPDATE_ENABLED = "extensions.update.enabled";
@@ -733,9 +731,6 @@ var AddonManagerInternal = {
       Services.prefs.addObserver(PREF_MIN_WEBEXT_PLATFORM_VERSION, this);
 
       
-      Services.obs.addObserver(this, INTL_LOCALES_CHANGED);
-
-      
       for (let url of DEFAULT_PROVIDERS) {
         try {
           let scope = {};
@@ -1053,8 +1048,6 @@ var AddonManagerInternal = {
     Services.prefs.removeObserver(PREF_EM_UPDATE_ENABLED, this);
     Services.prefs.removeObserver(PREF_EM_AUTOUPDATE_DEFAULT, this);
 
-    Services.obs.removeObserver(this, INTL_LOCALES_CHANGED);
-
     let savedError = null;
     
     if (gStarted) {
@@ -1111,14 +1104,6 @@ var AddonManagerInternal = {
 
 
   observe(aSubject, aTopic, aData) {
-    switch (aTopic) {
-      case INTL_LOCALES_CHANGED: {
-        
-        AddonRepository.backgroundUpdateCheck();
-        return;
-      }
-    }
-
     switch (aData) {
       case PREF_EM_CHECK_COMPATIBILITY: {
         let oldValue = gCheckCompatibility;

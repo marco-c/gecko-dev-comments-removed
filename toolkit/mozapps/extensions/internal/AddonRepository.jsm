@@ -540,41 +540,33 @@ var AddonRepository = {
 
 
   async backgroundUpdateCheck() {
-    let shutter = (async () => {
-      let allAddons = await AddonManager.getAllAddons();
+    let allAddons = await AddonManager.getAllAddons();
 
-      
-      if (!this.cacheEnabled) {
-        logger.debug("Clearing cache because it is disabled");
-        await this._clearCache();
-        return;
-      }
+    
+    if (!this.cacheEnabled) {
+      logger.debug("Clearing cache because it is disabled");
+      await this._clearCache();
+      return;
+    }
 
-      let ids = allAddons.map(a => a.id);
-      logger.debug("Repopulate add-on cache with " + ids.toSource());
+    let ids = allAddons.map(a => a.id);
+    logger.debug("Repopulate add-on cache with " + ids.toSource());
 
-      let addonsToCache = await getAddonsToCache(ids);
+    let addonsToCache = await getAddonsToCache(ids);
 
-      
-      if (!addonsToCache.length) {
-        logger.debug("Clearing cache because 0 add-ons were requested");
-        await this._clearCache();
-        return;
-      }
+    
+    if (!addonsToCache.length) {
+      logger.debug("Clearing cache because 0 add-ons were requested");
+      await this._clearCache();
+      return;
+    }
 
-      let addons = await this._getFullData(addonsToCache);
+    let addons = await this._getFullData(addonsToCache);
 
-      AddonDatabase.repopulate(addons);
+    AddonDatabase.repopulate(addons);
 
-      
-      await AddonManagerPrivate.updateAddonRepositoryData();
-    })();
-    AddonManager.beforeShutdown.addBlocker(
-      "AddonRepository Background Updater",
-      shutter
-    );
-    await shutter;
-    AddonManager.beforeShutdown.removeBlocker(shutter);
+    
+    await AddonManagerPrivate.updateAddonRepositoryData();
   },
 
   
