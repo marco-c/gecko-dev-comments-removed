@@ -5200,42 +5200,28 @@ void js::gc::DelayCrossCompartmentGrayMarking(JSObject* src) {
 #endif
 }
 
-void GCRuntime::markIncomingCrossCompartmentPointers(MarkColor color) {
-  gcstats::AutoPhase ap(stats(),
-                        color == MarkColor::Black
-                            ? gcstats::PhaseKind::SWEEP_MARK_INCOMING_BLACK
-                            : gcstats::PhaseKind::SWEEP_MARK_INCOMING_GRAY);
-
-  bool unlinkList = color == MarkColor::Gray;
+void GCRuntime::markIncomingGrayCrossCompartmentPointers() {
+  gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::SWEEP_MARK_INCOMING_GRAY);
 
   for (SweepGroupCompartmentsIter c(rt); !c.done(); c.next()) {
-    MOZ_ASSERT(c->zone()->isGCMarking());
-    MOZ_ASSERT_IF(color == MarkColor::Gray,
-                  c->zone()->isGCMarkingBlackAndGray());
+    MOZ_ASSERT(c->zone()->isGCMarkingBlackAndGray());
     MOZ_ASSERT_IF(c->gcIncomingGrayPointers,
                   IsGrayListObject(c->gcIncomingGrayPointers));
 
     for (JSObject* src = c->gcIncomingGrayPointers; src;
-         src = NextIncomingCrossCompartmentPointer(src, unlinkList)) {
+         src = NextIncomingCrossCompartmentPointer(src, true)) {
       JSObject* dst = CrossCompartmentPointerReferent(src);
       MOZ_ASSERT(dst->compartment() == c);
+      MOZ_ASSERT_IF(src->asTenured().isMarkedBlack(),
+                    dst->asTenured().isMarkedBlack());
 
-      if (color == MarkColor::Gray) {
-        if (src->asTenured().isMarkedGray()) {
-          TraceManuallyBarrieredEdge(&marker, &dst,
-                                     "cross-compartment gray pointer");
-        }
-      } else {
-        if (src->asTenured().isMarkedBlack()) {
-          TraceManuallyBarrieredEdge(&marker, &dst,
-                                     "cross-compartment black pointer");
-        }
+      if (src->asTenured().isMarkedGray()) {
+        TraceManuallyBarrieredEdge(&marker, &dst,
+                                   "cross-compartment gray pointer");
       }
     }
 
-    if (unlinkList) {
-      c->gcIncomingGrayPointers = nullptr;
-    }
+    c->gcIncomingGrayPointers = nullptr;
   }
 }
 
@@ -5391,12 +5377,6 @@ IncrementalProgress GCRuntime::markGrayReferencesInCurrentGroup(
   
   
   
-  markIncomingCrossCompartmentPointers(MarkColor::Black);
-  drainMarkStack();
-
-  
-  
-  
   
   for (SweepGroupZonesIter zone(this); !zone.done(); zone.next()) {
     zone->changeGCState(Zone::MarkBlackOnly, Zone::MarkBlackAndGray);
@@ -5406,7 +5386,7 @@ IncrementalProgress GCRuntime::markGrayReferencesInCurrentGroup(
   marker.setMainStackColor(MarkColor::Gray);
 
   
-  markIncomingCrossCompartmentPointers(MarkColor::Gray);
+  markIncomingGrayCrossCompartmentPointers();
 
   markGrayRoots<SweepGroupZonesIter>(gcstats::PhaseKind::SWEEP_MARK_GRAY);
 
