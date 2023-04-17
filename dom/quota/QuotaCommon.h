@@ -1192,7 +1192,19 @@ CreateAndExecuteSingleStepStatement(mozIStorageConnection& aConnection,
 
 namespace detail {
 
+
+
+
+
 nsDependentCSubstring GetSourceTreeBase();
+
+
+
+
+
+
+nsDependentCSubstring GetObjdirDistIncludeTreeBase(
+    const nsLiteralCString& aQuotaCommonHPath = nsLiteralCString(__FILE__));
 
 nsDependentCSubstring MakeSourceFileRelativePath(
     const nsACString& aSourceFilePath);
