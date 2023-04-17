@@ -3412,13 +3412,12 @@ WSRunScanner::GetRangeInTextNodesToForwardDeleteFrom(
 
 
 EditorDOMRange WSRunScanner::GetRangesForDeletingAtomicContent(
-    const HTMLEditor& aHTMLEditor, const nsIContent& aAtomicContent) {
+    Element* aEditingHost, const nsIContent& aAtomicContent) {
   if (aAtomicContent.IsHTMLElement(nsGkAtoms::br)) {
     
     
-    Element* editingHost = aHTMLEditor.GetActiveEditingHost();
     TextFragmentData textFragmentDataAfterBRElement(
-        EditorDOMPoint::After(aAtomicContent), editingHost);
+        EditorDOMPoint::After(aAtomicContent), aEditingHost);
     if (NS_WARN_IF(!textFragmentDataAfterBRElement.IsInitialized())) {
       return EditorDOMRange();  
     }
@@ -3446,9 +3445,8 @@ EditorDOMRange WSRunScanner::GetRangesForDeletingAtomicContent(
 
   
   
-  Element* editingHost = aHTMLEditor.GetActiveEditingHost();
   TextFragmentData textFragmentDataBeforeAtomicContent(
-      EditorDOMPoint(const_cast<nsIContent*>(&aAtomicContent)), editingHost);
+      EditorDOMPoint(const_cast<nsIContent*>(&aAtomicContent)), aEditingHost);
   if (NS_WARN_IF(!textFragmentDataBeforeAtomicContent.IsInitialized())) {
     return EditorDOMRange();  
   }
@@ -3457,7 +3455,7 @@ EditorDOMRange WSRunScanner::GetRangesForDeletingAtomicContent(
           textFragmentDataBeforeAtomicContent
               .InvisibleTrailingWhiteSpaceRangeRef());
   TextFragmentData textFragmentDataAfterAtomicContent(
-      EditorDOMPoint::After(aAtomicContent), editingHost);
+      EditorDOMPoint::After(aAtomicContent), aEditingHost);
   if (NS_WARN_IF(!textFragmentDataAfterAtomicContent.IsInitialized())) {
     return EditorDOMRange();  
   }

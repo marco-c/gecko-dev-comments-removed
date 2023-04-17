@@ -378,7 +378,7 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
 
   static EditorDOMRange GetRangesForDeletingAtomicContent(
-      const HTMLEditor& aHTMLEditor, const nsIContent& aAtomicContent);
+      dom::Element* aEditingHost, const nsIContent& aAtomicContent);
 
   
 
