@@ -1090,14 +1090,6 @@ ClassBodyLexicalEnvironmentObject* ClassBodyLexicalEnvironmentObject::create(
     return nullptr;
   }
 
-  
-  
-  uint32_t lastSlot = shape->slot();
-  MOZ_ASSERT(lastSlot == env->lastProperty()->slot());
-  for (uint32_t slot = JSSLOT_FREE(&class_); slot <= lastSlot; slot++) {
-    env->initSlot(slot, MagicValue(JS_UNINITIALIZED_LEXICAL));
-  }
-
   env->initScope(scope);
   return env;
 }

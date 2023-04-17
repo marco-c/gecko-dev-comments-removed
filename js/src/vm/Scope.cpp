@@ -49,6 +49,8 @@ const char* js::BindingKindString(BindingKind kind) {
       return "const";
     case BindingKind::NamedLambdaCallee:
       return "named lambda callee";
+    case BindingKind::Synthetic:
+      return "synthetic";
   }
   MOZ_CRASH("Bad BindingKind");
 }
@@ -1792,8 +1794,8 @@ void BaseAbstractBindingIter<NameT>::init(
   if (flags & IsNamedLambda) {
     
     
-    init(0, 0, 0, 0, 0, CanHaveEnvironmentSlots | flags, firstFrameSlot,
-         JSSLOT_FREE(&LexicalEnvironmentObject::class_),
+    init(0, 0, 0, 0, 0, data.length, CanHaveEnvironmentSlots | flags,
+         firstFrameSlot, JSSLOT_FREE(&LexicalEnvironmentObject::class_),
          GetScopeDataTrailingNames(&data));
   } else {
     
@@ -1802,7 +1804,8 @@ void BaseAbstractBindingIter<NameT>::init(
     
     
     
-    init(0, 0, 0, 0, slotInfo.constStart,
+    
+    init(0, 0, 0, 0, slotInfo.constStart, data.length,
          CanHaveFrameSlots | CanHaveEnvironmentSlots | flags, firstFrameSlot,
          JSSLOT_FREE(&LexicalEnvironmentObject::class_),
          GetScopeDataTrailingNames(&data));
@@ -1826,7 +1829,8 @@ void BaseAbstractBindingIter<NameT>::init(
   
   
   
-  init(0, 0, 0, 0, slotInfo.constStart,
+  
+  init(0, 0, 0, 0, slotInfo.constStart, data.length,
        CanHaveFrameSlots | CanHaveEnvironmentSlots, firstFrameSlot,
        JSSLOT_FREE(&LexicalEnvironmentObject::class_),
        GetScopeDataTrailingNames(&data));
@@ -1854,8 +1858,9 @@ void BaseAbstractBindingIter<NameT>::init(
   
   
   
+  
   init(0, slotInfo.nonPositionalFormalStart, slotInfo.varStart, length, length,
-       flags, 0, JSSLOT_FREE(&CallObject::class_),
+       length, flags, 0, JSSLOT_FREE(&CallObject::class_),
        GetScopeDataTrailingNames(&data));
 }
 template void BaseAbstractBindingIter<JSAtom>::init(
@@ -1874,8 +1879,10 @@ void BaseAbstractBindingIter<NameT>::init(VarScope::AbstractData<NameT>& data,
   
   
   
-  init(0, 0, 0, length, length, CanHaveFrameSlots | CanHaveEnvironmentSlots,
-       firstFrameSlot, JSSLOT_FREE(&VarEnvironmentObject::class_),
+  
+  init(0, 0, 0, length, length, length,
+       CanHaveFrameSlots | CanHaveEnvironmentSlots, firstFrameSlot,
+       JSSLOT_FREE(&VarEnvironmentObject::class_),
        GetScopeDataTrailingNames(&data));
 }
 template void BaseAbstractBindingIter<JSAtom>::init(
@@ -1894,8 +1901,10 @@ void BaseAbstractBindingIter<NameT>::init(
   
   
   
-  init(0, 0, 0, slotInfo.letStart, slotInfo.constStart, CannotHaveSlots,
-       UINT32_MAX, UINT32_MAX, GetScopeDataTrailingNames(&data));
+  
+  init(0, 0, 0, slotInfo.letStart, slotInfo.constStart, data.length,
+       CannotHaveSlots, UINT32_MAX, UINT32_MAX,
+       GetScopeDataTrailingNames(&data));
 }
 template void BaseAbstractBindingIter<JSAtom>::init(
     GlobalScope::AbstractData<JSAtom>&);
@@ -1926,8 +1935,9 @@ void BaseAbstractBindingIter<NameT>::init(EvalScope::AbstractData<NameT>& data,
   
   
   
-  init(0, 0, 0, length, length, flags, firstFrameSlot, firstEnvironmentSlot,
-       GetScopeDataTrailingNames(&data));
+  
+  init(0, 0, 0, length, length, length, flags, firstFrameSlot,
+       firstEnvironmentSlot, GetScopeDataTrailingNames(&data));
 }
 template void BaseAbstractBindingIter<JSAtom>::init(
     EvalScope::AbstractData<JSAtom>&, bool);
@@ -1945,8 +1955,9 @@ void BaseAbstractBindingIter<NameT>::init(
   
   
   
+  
   init(slotInfo.varStart, slotInfo.varStart, slotInfo.varStart,
-       slotInfo.letStart, slotInfo.constStart,
+       slotInfo.letStart, slotInfo.constStart, data.length,
        CanHaveFrameSlots | CanHaveEnvironmentSlots, 0,
        JSSLOT_FREE(&ModuleEnvironmentObject::class_),
        GetScopeDataTrailingNames(&data));
@@ -1967,8 +1978,10 @@ void BaseAbstractBindingIter<NameT>::init(
   
   
   
-  init(0, 0, 0, length, length, CanHaveFrameSlots | CanHaveEnvironmentSlots,
-       UINT32_MAX, UINT32_MAX, GetScopeDataTrailingNames(&data));
+  
+  init(0, 0, 0, length, length, length,
+       CanHaveFrameSlots | CanHaveEnvironmentSlots, UINT32_MAX, UINT32_MAX,
+       GetScopeDataTrailingNames(&data));
 }
 template void BaseAbstractBindingIter<JSAtom>::init(
     WasmInstanceScope::AbstractData<JSAtom>&);
@@ -1986,8 +1999,10 @@ void BaseAbstractBindingIter<NameT>::init(
   
   
   
-  init(0, 0, 0, length, length, CanHaveFrameSlots | CanHaveEnvironmentSlots,
-       UINT32_MAX, UINT32_MAX, GetScopeDataTrailingNames(&data));
+  
+  init(0, 0, 0, length, length, length,
+       CanHaveFrameSlots | CanHaveEnvironmentSlots, UINT32_MAX, UINT32_MAX,
+       GetScopeDataTrailingNames(&data));
 }
 template void BaseAbstractBindingIter<JSAtom>::init(
     WasmFunctionScope::AbstractData<JSAtom>&);

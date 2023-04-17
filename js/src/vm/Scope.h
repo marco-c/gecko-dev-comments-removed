@@ -1337,11 +1337,15 @@ class BaseAbstractBindingIter {
   
   
   
+  
+  
+  
   MOZ_INIT_OUTSIDE_CTOR uint32_t positionalFormalStart_;
   MOZ_INIT_OUTSIDE_CTOR uint32_t nonPositionalFormalStart_;
   MOZ_INIT_OUTSIDE_CTOR uint32_t varStart_;
   MOZ_INIT_OUTSIDE_CTOR uint32_t letStart_;
   MOZ_INIT_OUTSIDE_CTOR uint32_t constStart_;
+  MOZ_INIT_OUTSIDE_CTOR uint32_t syntheticStart_;
   MOZ_INIT_OUTSIDE_CTOR uint32_t length_;
 
   MOZ_INIT_OUTSIDE_CTOR uint32_t index_;
@@ -1371,7 +1375,7 @@ class BaseAbstractBindingIter {
 
   void init(uint32_t positionalFormalStart, uint32_t nonPositionalFormalStart,
             uint32_t varStart, uint32_t letStart, uint32_t constStart,
-            uint8_t flags, uint32_t firstFrameSlot,
+            uint32_t syntheticStart, uint8_t flags, uint32_t firstFrameSlot,
             uint32_t firstEnvironmentSlot,
             mozilla::Span<AbstractBindingName<NameT>> names) {
     positionalFormalStart_ = positionalFormalStart;
@@ -1379,7 +1383,9 @@ class BaseAbstractBindingIter {
     varStart_ = varStart;
     letStart_ = letStart;
     constStart_ = constStart;
+    syntheticStart_ = syntheticStart;
     length_ = names.size();
+
     index_ = 0;
     flags_ = flags;
     argumentSlot_ = 0;
@@ -1566,10 +1572,11 @@ class BaseAbstractBindingIter {
     if (index_ < constStart_) {
       return BindingKind::Let;
     }
-    if (isNamedLambda()) {
-      return BindingKind::NamedLambdaCallee;
+    if (index_ < syntheticStart_) {
+      return isNamedLambda() ? BindingKind::NamedLambdaCallee
+                             : BindingKind::Const;
     }
-    return BindingKind::Const;
+    return BindingKind::Synthetic;
   }
 
   js::frontend::NameLocation nameLocation() const {
