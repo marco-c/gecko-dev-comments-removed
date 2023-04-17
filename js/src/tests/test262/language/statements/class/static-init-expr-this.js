@@ -12,7 +12,6 @@
 
 
 
-
 var value;
 
 class C {

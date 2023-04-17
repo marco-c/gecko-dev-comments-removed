@@ -12,7 +12,6 @@
 
 
 
-
 var test262 = 'outer scope';
 var probe1, probe2;
 

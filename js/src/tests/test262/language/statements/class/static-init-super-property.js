@@ -11,7 +11,6 @@
 
 
 
-
 function Parent() {}
 Parent.test262 = 'test262';
 var value;

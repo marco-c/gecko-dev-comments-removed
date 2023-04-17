@@ -11,7 +11,6 @@
 
 
 
-
 class C {
   static {
     (() => { class await {} });

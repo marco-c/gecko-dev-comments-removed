@@ -19,7 +19,6 @@
 
 
 
-
 var thrown = new Test262Error();
 var caught;
 var sameBlock = false;

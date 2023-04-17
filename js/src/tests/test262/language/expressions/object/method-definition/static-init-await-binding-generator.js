@@ -11,7 +11,6 @@
 
 
 
-
 class C {
   static {
     ({*method(await) {}});

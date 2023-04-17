@@ -12,7 +12,6 @@
 
 
 
-
 var instance;
 var method, methodParam;
 var getter;

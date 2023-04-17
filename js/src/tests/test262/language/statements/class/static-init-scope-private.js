@@ -12,7 +12,6 @@
 
 
 
-
 var probe;
 
 class C {

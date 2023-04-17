@@ -19,7 +19,6 @@
 
 
 
-
 var sequence = [];
 
 class C {

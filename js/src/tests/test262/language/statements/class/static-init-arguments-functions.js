@@ -12,7 +12,6 @@
 
 
 
-
 var fn, fnParam;
 var gen, genParam;
 var asyncFn, asyncFnParam;

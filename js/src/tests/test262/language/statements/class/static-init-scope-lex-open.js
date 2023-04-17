@@ -12,7 +12,6 @@
 
 
 
-
 let test262 = 'outer scope';
 let probe1, probe2;
 
