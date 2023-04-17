@@ -56,7 +56,7 @@ struct DataMap
 
   protected:
   Tag		tag;		
-  LNNOffsetTo<UnsizedArrayOf<HBUINT8>>
+  NNOffset32To<UnsizedArrayOf<HBUINT8>>
 		dataZ;		
 
   HBUINT32	dataLength;	
@@ -113,7 +113,7 @@ struct meta
 
 
 
-  LArrayOf<DataMap>
+  Array32Of<DataMap>
 		dataMaps;
   public:
   DEFINE_SIZE_ARRAY (16, dataMaps);

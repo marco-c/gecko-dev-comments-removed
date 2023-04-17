@@ -1390,7 +1390,7 @@ struct cff1
 
   public:
   FixedVersion<HBUINT8> version;	  
-  OffsetTo<CFF1NameIndex, HBUINT8> nameIndex; 
+  NNOffsetTo<CFF1NameIndex, HBUINT8> nameIndex; 
   HBUINT8	       offSize;	  
 
   public:

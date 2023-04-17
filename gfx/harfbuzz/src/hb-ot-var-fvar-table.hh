@@ -303,7 +303,7 @@ struct fvar
   protected:
   FixedVersion<>version;	
 
-  OffsetTo<AxisRecord>
+  Offset16To<AxisRecord>
 		firstAxis;	
 
   HBUINT16	reserved;	

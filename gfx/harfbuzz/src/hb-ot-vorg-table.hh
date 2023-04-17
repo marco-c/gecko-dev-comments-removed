@@ -125,7 +125,7 @@ struct VORG
   FixedVersion<>version;	
   FWORD		defaultVertOriginY;
 				
-  SortedArrayOf<VertOriginMetric>
+  SortedArray16Of<VertOriginMetric>
 		vertYOrigins;	
 
   public:

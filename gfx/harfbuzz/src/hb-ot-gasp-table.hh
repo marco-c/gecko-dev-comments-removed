@@ -71,7 +71,7 @@ struct gasp
 
   protected:
   HBUINT16	version;	
-  ArrayOf<GaspRange>
+  Array16Of<GaspRange>
 		gaspRanges;	
 
   public:

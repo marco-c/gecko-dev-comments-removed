@@ -42,7 +42,7 @@ namespace OT {
 
 
 
-struct AttachPoint : ArrayOf<HBUINT16>
+struct AttachPoint : Array16Of<HBUINT16>
 {
   bool subset (hb_subset_context_t *c) const
   {
@@ -110,10 +110,10 @@ struct AttachList
   }
 
   protected:
-  OffsetTo<Coverage>
+  Offset16To<Coverage>
 		coverage;		
 
-  OffsetArrayOf<AttachPoint>
+  Array16OfOffset16To<AttachPoint>
 		attachPoint;		
 
   public:
@@ -220,7 +220,7 @@ struct CaretValueFormat3
   protected:
   HBUINT16	caretValueFormat;	
   FWORD		coordinate;		
-  OffsetTo<Device>
+  Offset16To<Device>
 		deviceTable;		
 
 
@@ -329,7 +329,7 @@ struct LigGlyph
 
   void collect_variation_indices (hb_collect_variation_indices_context_t *c) const
   {
-    for (const OffsetTo<CaretValue>& offset : carets.iter ())
+    for (const Offset16To<CaretValue>& offset : carets.iter ())
       (this+offset).collect_variation_indices (c->layout_variation_indices);
   }
 
@@ -340,7 +340,7 @@ struct LigGlyph
   }
 
   protected:
-  OffsetArrayOf<CaretValue>
+  Array16OfOffset16To<CaretValue>
 		carets;			
 
 
@@ -408,10 +408,10 @@ struct LigCaretList
   }
 
   protected:
-  OffsetTo<Coverage>
+  Offset16To<Coverage>
 		coverage;		
 
-  OffsetArrayOf<LigGlyph>
+  Array16OfOffset16To<LigGlyph>
 		ligGlyph;		
 
   public:
@@ -432,7 +432,7 @@ struct MarkGlyphSetsFormat1
     out->format = format;
 
     bool ret = true;
-    for (const LOffsetTo<Coverage>& offset : coverage.iter ())
+    for (const Offset32To<Coverage>& offset : coverage.iter ())
     {
       auto *o = out->coverage.serialize_append (c->serializer);
       if (unlikely (!o))
@@ -460,7 +460,7 @@ struct MarkGlyphSetsFormat1
 
   protected:
   HBUINT16	format;			
-  ArrayOf<LOffsetTo<Coverage>>
+  Array16Of<Offset32To<Coverage>>
 		coverage;		
 
   public:
@@ -643,10 +643,10 @@ struct GDEF
     auto *out = c->serializer->embed (*this);
     if (unlikely (!out)) return_trace (false);
 
-    bool subset_glyphclassdef = out->glyphClassDef.serialize_subset (c, glyphClassDef, this);
+    bool subset_glyphclassdef = out->glyphClassDef.serialize_subset (c, glyphClassDef, this, nullptr, false, true);
     bool subset_attachlist = out->attachList.serialize_subset (c, attachList, this);
     bool subset_ligcaretlist = out->ligCaretList.serialize_subset (c, ligCaretList, this);
-    bool subset_markattachclassdef = out->markAttachClassDef.serialize_subset (c, markAttachClassDef, this);
+    bool subset_markattachclassdef = out->markAttachClassDef.serialize_subset (c, markAttachClassDef, this, nullptr, false, true);
 
     bool subset_markglyphsetsdef = true;
     if (version.to_int () >= 0x00010002u)
@@ -687,28 +687,28 @@ struct GDEF
   protected:
   FixedVersion<>version;		
 
-  OffsetTo<ClassDef>
+  Offset16To<ClassDef>
 		glyphClassDef;		
 
 
-  OffsetTo<AttachList>
+  Offset16To<AttachList>
 		attachList;		
 
 
-  OffsetTo<LigCaretList>
+  Offset16To<LigCaretList>
 		ligCaretList;		
 
 
-  OffsetTo<ClassDef>
+  Offset16To<ClassDef>
 		markAttachClassDef;	
 
 
-  OffsetTo<MarkGlyphSets>
+  Offset16To<MarkGlyphSets>
 		markGlyphSetsDef;	
 
 
 
-  LOffsetTo<VariationStore>
+  Offset32To<VariationStore>
 		varStore;		
 
 

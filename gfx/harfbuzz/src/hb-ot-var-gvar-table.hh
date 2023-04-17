@@ -374,7 +374,7 @@ struct GlyphVariationData
 
 
 
-  OffsetTo<HBUINT8>
+  Offset16To<HBUINT8>
 		data;		
 
   
@@ -676,7 +676,7 @@ no_more_gaps:
 
 
 
-  LNNOffsetTo<UnsizedArrayOf<F2DOT14>>
+  NNOffset32To<UnsizedArrayOf<F2DOT14>>
 		sharedTuples;	
 
   HBUINT16	glyphCount;	
@@ -684,7 +684,7 @@ no_more_gaps:
   HBUINT16	flags;		
 
 
-  LOffsetTo<GlyphVariationData>
+  Offset32To<GlyphVariationData>
 		dataZ;		
 
   UnsizedArrayOf<HBUINT8>

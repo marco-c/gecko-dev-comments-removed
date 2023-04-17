@@ -87,15 +87,15 @@ struct CPALV1Tail
   }
 
   protected:
-  LNNOffsetTo<UnsizedArrayOf<HBUINT32>>
+  NNOffset32To<UnsizedArrayOf<HBUINT32>>
 		paletteFlagsZ;		
 
 
-  LNNOffsetTo<UnsizedArrayOf<NameID>>
+  NNOffset32To<UnsizedArrayOf<NameID>>
 		paletteLabelsZ;		
 
 
-  LNNOffsetTo<UnsizedArrayOf<NameID>>
+  NNOffset32To<UnsizedArrayOf<NameID>>
 		colorLabelsZ;		
 
 
@@ -173,7 +173,7 @@ struct CPAL
   HBUINT16	numPalettes;		
   HBUINT16	numColorRecords;	
 
-  LNNOffsetTo<UnsizedArrayOf<BGRAColor>>
+  NNOffset32To<UnsizedArrayOf<BGRAColor>>
 		colorRecordsZ;		
 
   UnsizedArrayOf<HBUINT16>

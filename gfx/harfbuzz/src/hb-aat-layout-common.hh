@@ -164,7 +164,7 @@ struct LookupSegmentArray
 
   HBGlyphID	last;		
   HBGlyphID	first;		
-  NNOffsetTo<UnsizedArrayOf<T>>
+  NNOffset16To<UnsizedArrayOf<T>>
 		valuesZ;	
 
   public:
@@ -659,7 +659,7 @@ struct ClassTable
   }
   protected:
   HBGlyphID		firstGlyph;	
-  ArrayOf<HBUCHAR>	classArray;	
+  Array16Of<HBUCHAR>	classArray;	
 
   public:
   DEFINE_SIZE_ARRAY (4, classArray);
@@ -678,7 +678,8 @@ struct ObsoleteTypes
 				     const void *base,
 				     const T *array)
   {
-    return (offset - ((const char *) array - (const char *) base)) / T::static_size;
+    
+    return (offset - unsigned ((const char *) array - (const char *) base)) / T::static_size;
   }
   template <typename T>
   static unsigned int byteOffsetToIndex (unsigned int offset,

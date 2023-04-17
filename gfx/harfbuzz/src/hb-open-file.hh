@@ -218,7 +218,7 @@ struct TTCHeaderVersion1
   Tag		ttcTag;		
   FixedVersion<>version;	
 
-  LArrayOf<LOffsetTo<OpenTypeOffsetTable>>
+  Array32Of<Offset32To<OpenTypeOffsetTable>>
 		table;		
 
   public:
@@ -295,7 +295,7 @@ struct ResourceRecord
   HBINT16	nameOffset;	
 
   HBUINT8	attrs;		
-  NNOffsetTo<LArrayOf<HBUINT8>, HBUINT24>
+  NNOffset24To<Array32Of<HBUINT8>>
 		offset;		
 
   HBUINT32	reserved;	
@@ -330,7 +330,7 @@ struct ResourceTypeRecord
   protected:
   Tag		tag;		
   HBUINT16	resCountM1;	
-  NNOffsetTo<UnsizedArrayOf<ResourceRecord>>
+  NNOffset16To<UnsizedArrayOf<ResourceRecord>>
 		resourcesZ;	
 
   public:
@@ -386,7 +386,7 @@ struct ResourceMap
   HBUINT32	reserved1;	
   HBUINT16	resreved2;	
   HBUINT16	attrs;		
-  NNOffsetTo<ArrayOfM1<ResourceTypeRecord>>
+  NNOffset16To<ArrayOfM1<ResourceTypeRecord>>
 		typeList;	
 
   Offset16	nameList;	
@@ -418,10 +418,10 @@ struct ResourceForkHeader
   }
 
   protected:
-  LNNOffsetTo<UnsizedArrayOf<HBUINT8>>
+  NNOffset32To<UnsizedArrayOf<HBUINT8>>
 		data;		
 
-  LNNOffsetTo<ResourceMap >
+  NNOffset32To<ResourceMap >
 		map;		
 
   HBUINT32	dataLen;	

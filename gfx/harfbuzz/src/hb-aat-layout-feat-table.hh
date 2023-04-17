@@ -144,7 +144,7 @@ struct FeatureName
   protected:
   HBUINT16	feature;	
   HBUINT16	nSettings;	
-  LNNOffsetTo<UnsizedArrayOf<SettingName>>
+  NNOffset32To<UnsizedArrayOf<SettingName>>
 		settingTableZ;	
 
 

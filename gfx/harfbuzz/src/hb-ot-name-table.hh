@@ -149,7 +149,7 @@ struct NameRecord
   HBUINT16	languageID;	
   HBUINT16	nameID;		
   HBUINT16	length;		
-  NNOffsetTo<UnsizedArrayOf<HBUINT8>>
+  NNOffset16To<UnsizedArrayOf<HBUINT8>>
 		offset;		
   public:
   DEFINE_SIZE_STATIC (12);
@@ -230,7 +230,8 @@ struct name
     c->copy_all (records, src_string_pool);
     free (records.arrayZ);
 
-    if (unlikely (c->ran_out_of_room)) return_trace (false);
+
+    if (unlikely (c->ran_out_of_room ())) return_trace (false);
 
     this->stringOffset = c->length ();
 
@@ -357,7 +358,7 @@ struct name
   
   HBUINT16	format;		
   HBUINT16	count;		
-  NNOffsetTo<UnsizedArrayOf<HBUINT8>>
+  NNOffset16To<UnsizedArrayOf<HBUINT8>>
 		stringOffset;	
   UnsizedArrayOf<NameRecord>
 		nameRecordZ;	

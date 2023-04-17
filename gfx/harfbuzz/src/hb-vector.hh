@@ -177,6 +177,11 @@ struct hb_vector_t
   Type *push (T&& v)
   {
     Type *p = push ();
+    if (p == &Crap (Type))
+      
+      
+      
+      return p;
     *p = hb_forward<T> (v);
     return p;
   }

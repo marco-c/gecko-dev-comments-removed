@@ -49,7 +49,7 @@ struct MathValueRecord
 
   protected:
   HBINT16		value;		
-  OffsetTo<Device>	deviceTable;	
+  Offset16To<Device>	deviceTable;	
 
 
 
@@ -181,11 +181,11 @@ struct MathItalicsCorrectionInfo
   }
 
   protected:
-  OffsetTo<Coverage>       coverage;		
+  Offset16To<Coverage>       coverage;		
 
 
 
-  ArrayOf<MathValueRecord> italicsCorrection;	
+  Array16Of<MathValueRecord> italicsCorrection;	
 
 
 
@@ -214,11 +214,11 @@ struct MathTopAccentAttachment
   }
 
   protected:
-  OffsetTo<Coverage>       topAccentCoverage;   
+  Offset16To<Coverage>       topAccentCoverage;   
 
 
 
-  ArrayOf<MathValueRecord> topAccentAttachment; 
+  Array16Of<MathValueRecord> topAccentAttachment; 
 
 
 
@@ -320,7 +320,7 @@ struct MathKernInfoRecord
   protected:
   
 
-  OffsetTo<MathKern> mathKern[4];
+  Offset16To<MathKern> mathKern[4];
 
   public:
   DEFINE_SIZE_STATIC (8);
@@ -346,12 +346,12 @@ struct MathKernInfo
   }
 
   protected:
-  OffsetTo<Coverage>
+  Offset16To<Coverage>
 		mathKernCoverage;
 				
 
 
-  ArrayOf<MathKernInfoRecord>
+  Array16Of<MathKernInfoRecord>
 		mathKernInfoRecords;
 				
 
@@ -395,22 +395,22 @@ struct MathGlyphInfo
   protected:
   
 
-  OffsetTo<MathItalicsCorrectionInfo> mathItalicsCorrectionInfo;
+  Offset16To<MathItalicsCorrectionInfo> mathItalicsCorrectionInfo;
 
   
 
-  OffsetTo<MathTopAccentAttachment> mathTopAccentAttachment;
+  Offset16To<MathTopAccentAttachment> mathTopAccentAttachment;
 
   
 
 
 
 
-  OffsetTo<Coverage> extendedShapeCoverage;
+  Offset16To<Coverage> extendedShapeCoverage;
 
    
 
-  OffsetTo<MathKernInfo> mathKernInfo;
+  Offset16To<MathKernInfo> mathKernInfo;
 
   public:
   DEFINE_SIZE_STATIC (8);
@@ -532,7 +532,7 @@ struct MathGlyphAssembly
 				
 
 
-  ArrayOf<MathGlyphPartRecord>
+  Array16Of<MathGlyphPartRecord>
 		partRecords;	
 
 
@@ -572,10 +572,10 @@ struct MathGlyphConstruction
   protected:
   
 
-  OffsetTo<MathGlyphAssembly>	  glyphAssembly;
+  Offset16To<MathGlyphAssembly>	  glyphAssembly;
 
   
-  ArrayOf<MathGlyphVariantRecord> mathGlyphVariantRecord;
+  Array16Of<MathGlyphVariantRecord> mathGlyphVariantRecord;
 
   public:
   DEFINE_SIZE_ARRAY (4, mathGlyphVariantRecord);
@@ -636,7 +636,7 @@ struct MathVariants
   {
     bool vertical = HB_DIRECTION_IS_VERTICAL (direction);
     unsigned int count = vertical ? vertGlyphCount : horizGlyphCount;
-    const OffsetTo<Coverage> &coverage = vertical ? vertGlyphCoverage
+    const Offset16To<Coverage> &coverage = vertical ? vertGlyphCoverage
 						  : horizGlyphCoverage;
 
     unsigned int index = (this+coverage).get_coverage (glyph);
@@ -653,11 +653,11 @@ struct MathVariants
 				
 
 
-  OffsetTo<Coverage> vertGlyphCoverage;
+  Offset16To<Coverage> vertGlyphCoverage;
 				
 
 
-  OffsetTo<Coverage> horizGlyphCoverage;
+  Offset16To<Coverage> horizGlyphCoverage;
 				
 
 
@@ -671,7 +671,7 @@ struct MathVariants
   
 
 
-  UnsizedArrayOf<OffsetTo<MathGlyphConstruction>>
+  UnsizedArrayOf<Offset16To<MathGlyphConstruction>>
 			glyphConstruction;
 
   public:
@@ -711,11 +711,11 @@ struct MATH
   protected:
   FixedVersion<>version;	
 
-  OffsetTo<MathConstants>
+  Offset16To<MathConstants>
 		mathConstants;	
-  OffsetTo<MathGlyphInfo>
+  Offset16To<MathGlyphInfo>
 		mathGlyphInfo;	
-  OffsetTo<MathVariants>
+  Offset16To<MathVariants>
 		mathVariants;	
 
   public:

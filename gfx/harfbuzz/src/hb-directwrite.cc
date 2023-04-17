@@ -623,7 +623,7 @@ _hb_directwrite_shape_full (hb_shape_plan_t    *shape_plan,
 
 
 
-  uint32_t textLength = buffer->len;
+  uint32_t textLength = chars_len;
 
   TextAnalysis analysis (textString, textLength, nullptr, readingDirection);
   TextAnalysis::Run *runHead;

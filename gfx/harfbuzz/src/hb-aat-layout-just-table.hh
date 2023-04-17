@@ -79,7 +79,7 @@ struct DecompositionAction
 
 
 
-  ArrayOf<HBUINT16>
+  Array16Of<HBUINT16>
 		decomposedglyphs;
 				
 
@@ -310,7 +310,7 @@ struct WidthDeltaPair
   DEFINE_SIZE_STATIC (24);
 };
 
-typedef OT::LArrayOf<WidthDeltaPair> WidthDeltaCluster;
+typedef OT::Array32Of<WidthDeltaPair> WidthDeltaCluster;
 
 struct JustificationCategory
 {
@@ -358,20 +358,20 @@ struct JustificationHeader
   }
 
   protected:
-  OffsetTo<JustificationCategory>
+  Offset16To<JustificationCategory>
 		justClassTable;	
-  OffsetTo<WidthDeltaCluster>
+  Offset16To<WidthDeltaCluster>
 		wdcTable;	
 
 
 
 
-  OffsetTo<PostcompensationActionChain>
+  Offset16To<PostcompensationActionChain>
 		pcTable;	
 
 
 
-  Lookup<OffsetTo<WidthDeltaCluster>>
+  Lookup<Offset16To<WidthDeltaCluster>>
 		lookupTable;	
 
 
@@ -398,13 +398,13 @@ struct just
   FixedVersion<>version;	
 
   HBUINT16	format;		
-  OffsetTo<JustificationHeader>
+  Offset16To<JustificationHeader>
 		horizData;	
 
 
 
 
-  OffsetTo<JustificationHeader>
+  Offset16To<JustificationHeader>
 		vertData;	
 
   public:

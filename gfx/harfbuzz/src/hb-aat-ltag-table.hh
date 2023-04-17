@@ -50,7 +50,7 @@ struct FTStringRange
   }
 
   protected:
-  NNOffsetTo<UnsizedArrayOf<HBUINT8>>
+  NNOffset16To<UnsizedArrayOf<HBUINT8>>
 		tag;		
 
   HBUINT16	length;		
@@ -80,7 +80,7 @@ struct ltag
   protected:
   HBUINT32	version;	
   HBUINT32	flags;		
-  LArrayOf<FTStringRange>
+  Array32Of<FTStringRange>
 		tagRanges;	
   public:
   DEFINE_SIZE_ARRAY (12, tagRanges);

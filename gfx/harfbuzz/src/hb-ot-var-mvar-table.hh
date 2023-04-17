@@ -103,7 +103,7 @@ protected:
   HBUINT16	valueRecordSize;
 
   HBUINT16	valueRecordCount;
-  OffsetTo<VariationStore>
+  Offset16To<VariationStore>
 		varStore;	
   UnsizedArrayOf<HBUINT8>
 		valuesZ;	

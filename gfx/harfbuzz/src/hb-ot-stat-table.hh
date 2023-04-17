@@ -297,7 +297,7 @@ struct STAT
     unsigned int axis_index;
     if (!get_design_axes ().lfind (tag, &axis_index)) return false;
 
-    hb_array_t<const OffsetTo<AxisValue>> axis_values = get_axis_value_offsets ();
+    hb_array_t<const Offset16To<AxisValue>> axis_values = get_axis_value_offsets ();
     for (unsigned int i = 0; i < axis_values.length; i++)
     {
       const AxisValue& axis_value = this+axis_values[i];
@@ -359,7 +359,7 @@ struct STAT
   hb_array_t<const StatAxisRecord> const get_design_axes () const
   { return (this+designAxesOffset).as_array (designAxisCount); }
 
-  hb_array_t<const OffsetTo<AxisValue>> const get_axis_value_offsets () const
+  hb_array_t<const Offset16To<AxisValue>> const get_axis_value_offsets () const
   { return (this+offsetToAxisValueOffsets).as_array (axisValueCount); }
 
 
@@ -373,7 +373,7 @@ struct STAT
 
 
 
-  LNNOffsetTo<UnsizedArrayOf<StatAxisRecord>>
+  NNOffset32To<UnsizedArrayOf<StatAxisRecord>>
 		designAxesOffset;
 				
 
@@ -381,7 +381,7 @@ struct STAT
 
 
   HBUINT16	axisValueCount;	
-  LNNOffsetTo<UnsizedArrayOf<OffsetTo<AxisValue>>>
+  NNOffset32To<UnsizedArrayOf<Offset16To<AxisValue>>>
 		offsetToAxisValueOffsets;
 				
 

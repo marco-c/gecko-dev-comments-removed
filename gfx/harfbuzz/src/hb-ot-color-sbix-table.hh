@@ -185,7 +185,7 @@ struct SBIXStrike
   HBUINT16	resolution;	
 
   protected:
-  UnsizedArrayOf<LOffsetTo<SBIXGlyph>>
+  UnsizedArrayOf<Offset32To<SBIXGlyph>>
 		imageOffsetsZ;	
 
   public:
@@ -352,11 +352,11 @@ struct sbix
   {
     TRACE_SERIALIZE (this);
 
-    auto *out = c->serializer->start_embed<LOffsetLArrayOf<SBIXStrike>> ();
+    auto *out = c->serializer->start_embed<Array32OfOffset32To<SBIXStrike>> ();
     if (unlikely (!out)) return_trace (false);
     if (unlikely (!c->serializer->extend_min (out))) return_trace (false);
 
-    hb_vector_t<LOffsetTo<SBIXStrike>*> new_strikes;
+    hb_vector_t<Offset32To<SBIXStrike>*> new_strikes;
     hb_vector_t<hb_serialize_context_t::objidx_t> objidxs;
     for (int i = strikes.len - 1; i >= 0; --i)
     {
@@ -400,7 +400,7 @@ struct sbix
   HBUINT16	version;	
   HBUINT16	flags;		
 
-  LOffsetLArrayOf<SBIXStrike>
+  Array32OfOffset32To<SBIXStrike>
 		strikes;	
 
   public:

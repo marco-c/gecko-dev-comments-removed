@@ -45,7 +45,7 @@ typedef IndexArray JstfModList;
 
 
 
-typedef OffsetListOf<PosLookup> JstfMax;
+typedef List16OfOffset16To<PosLookup> JstfMax;
 
 
 
@@ -71,43 +71,43 @@ struct JstfPriority
   }
 
   protected:
-  OffsetTo<JstfModList>
+  Offset16To<JstfModList>
 		shrinkageEnableGSUB;	
 
 
-  OffsetTo<JstfModList>
+  Offset16To<JstfModList>
 		shrinkageDisableGSUB;	
 
 
-  OffsetTo<JstfModList>
+  Offset16To<JstfModList>
 		shrinkageEnableGPOS;	
 
 
-  OffsetTo<JstfModList>
+  Offset16To<JstfModList>
 		shrinkageDisableGPOS;	
 
 
-  OffsetTo<JstfMax>
+  Offset16To<JstfMax>
 		shrinkageJstfMax;	
 
 
-  OffsetTo<JstfModList>
+  Offset16To<JstfModList>
 		extensionEnableGSUB;	
 
 
-  OffsetTo<JstfModList>
+  Offset16To<JstfModList>
 		extensionDisableGSUB;	
 
 
-  OffsetTo<JstfModList>
+  Offset16To<JstfModList>
 		extensionEnableGPOS;	
 
 
-  OffsetTo<JstfModList>
+  Offset16To<JstfModList>
 		extensionDisableGPOS;	
 
 
-  OffsetTo<JstfMax>
+  Offset16To<JstfMax>
 		extensionJstfMax;	
 
 
@@ -121,13 +121,13 @@ struct JstfPriority
 
 
 
-struct JstfLangSys : OffsetListOf<JstfPriority>
+struct JstfLangSys : List16OfOffset16To<JstfPriority>
 {
   bool sanitize (hb_sanitize_context_t *c,
 		 const Record_sanitize_closure_t * = nullptr) const
   {
     TRACE_SANITIZE (this);
-    return_trace (OffsetListOf<JstfPriority>::sanitize (c));
+    return_trace (List16OfOffset16To<JstfPriority>::sanitize (c));
   }
 };
 
@@ -136,7 +136,7 @@ struct JstfLangSys : OffsetListOf<JstfPriority>
 
 
 
-typedef SortedArrayOf<HBGlyphID> ExtenderGlyphs;
+typedef SortedArray16Of<HBGlyphID> ExtenderGlyphs;
 
 
 
@@ -174,10 +174,10 @@ struct JstfScript
   }
 
   protected:
-  OffsetTo<ExtenderGlyphs>
+  Offset16To<ExtenderGlyphs>
 		extenderGlyphs;	
 
-  OffsetTo<JstfLangSys>
+  Offset16To<JstfLangSys>
 		defaultLangSys;	
 
   RecordArrayOf<JstfLangSys>

@@ -103,7 +103,7 @@ struct BaseCoordFormat3
   protected:
   HBUINT16	format;		
   FWORD		coordinate;	
-  OffsetTo<Device>
+  Offset16To<Device>
 		deviceTable;	
 
 
@@ -173,11 +173,11 @@ struct FeatMinMaxRecord
   protected:
   Tag		tag;		
 
-  OffsetTo<BaseCoord>
+  Offset16To<BaseCoord>
 		minCoord;	
 
 
-  OffsetTo<BaseCoord>
+  Offset16To<BaseCoord>
 		maxCoord;	
 
 
@@ -212,15 +212,15 @@ struct MinMax
   }
 
   protected:
-  OffsetTo<BaseCoord>
+  Offset16To<BaseCoord>
 		minCoord;	
 
 
-  OffsetTo<BaseCoord>
+  Offset16To<BaseCoord>
 		maxCoord;	
 
 
-  SortedArrayOf<FeatMinMaxRecord>
+  SortedArray16Of<FeatMinMaxRecord>
 		featMinMaxRecords;
 				
 
@@ -247,7 +247,7 @@ struct BaseValues
   Index		defaultIndex;	
 
 
-  OffsetArrayOf<BaseCoord>
+  Array16OfOffset16To<BaseCoord>
 		baseCoords;	
 
 
@@ -275,7 +275,7 @@ struct BaseLangSysRecord
 
   protected:
   Tag		baseLangSysTag;	
-  OffsetTo<MinMax>
+  Offset16To<MinMax>
 		minMax;		
 
   public:
@@ -305,13 +305,13 @@ struct BaseScript
   }
 
   protected:
-  OffsetTo<BaseValues>
+  Offset16To<BaseValues>
 		baseValues;	
 
-  OffsetTo<MinMax>
+  Offset16To<MinMax>
 		defaultMinMax;	
 
-  SortedArrayOf<BaseLangSysRecord>
+  SortedArray16Of<BaseLangSysRecord>
 		baseLangSysRecords;
 				
 
@@ -339,7 +339,7 @@ struct BaseScriptRecord
 
   protected:
   Tag		baseScriptTag;	
-  OffsetTo<BaseScript>
+  Offset16To<BaseScript>
 		baseScript;	
 
 
@@ -364,7 +364,7 @@ struct BaseScriptList
   }
 
   protected:
-  SortedArrayOf<BaseScriptRecord>
+  SortedArray16Of<BaseScriptRecord>
 			baseScriptRecords;
 
   public:
@@ -426,12 +426,12 @@ struct Axis
   }
 
   protected:
-  OffsetTo<SortedArrayOf<Tag>>
+  Offset16To<SortedArray16Of<Tag>>
 		baseTagList;	
 
 
 
-  OffsetTo<BaseScriptList>
+  Offset16To<BaseScriptList>
 		baseScriptList;	
 
 
@@ -501,11 +501,11 @@ struct BASE
 
   protected:
   FixedVersion<>version;	
-  OffsetTo<Axis>hAxis;		
+  Offset16To<Axis>hAxis;		
 
-  OffsetTo<Axis>vAxis;		
+  Offset16To<Axis>vAxis;		
 
-  LOffsetTo<VariationStore>
+  Offset32To<VariationStore>
 		varStore;	
 
 
