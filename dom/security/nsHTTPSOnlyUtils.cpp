@@ -114,6 +114,20 @@ void nsHTTPSOnlyUtils::PotentiallyFireHttpRequestToShortenTimout(
   }
 
   
+  
+  
+  
+  if (IsHttpsFirstModeEnabled(isPrivateWin) &&
+      !IsHttpsOnlyModeEnabled(isPrivateWin)) {
+    int32_t port = 0;
+    nsresult rv = channelURI->GetPort(&port);
+    int defaultPortforScheme = NS_GetDefaultPort("http");
+    if (NS_SUCCEEDED(rv) && port != defaultPortforScheme && port != -1) {
+      return;
+    }
+  }
+
+  
   if (OnionException(channelURI) || LoopbackOrLocalException(channelURI)) {
     return;
   }
