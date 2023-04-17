@@ -329,10 +329,6 @@ already_AddRefed<Element> TextEditor::GetInputEventTargetElement() const {
 }
 
 bool TextEditor::IsEmpty() const {
-  if (mPaddingBRElementForEmptyEditor) {
-    return true;
-  }
-
   
   
   

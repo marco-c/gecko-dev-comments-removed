@@ -2808,10 +2808,6 @@ class EditorBase : public nsIEditor,
   RefPtr<Element> mRootElement;
 
   
-  
-  RefPtr<dom::HTMLBRElement> mPaddingBRElementForEmptyEditor;
-
-  
   nsCOMPtr<dom::EventTarget> mEventTarget;
   RefPtr<EditorEventListener> mEventListener;
   
