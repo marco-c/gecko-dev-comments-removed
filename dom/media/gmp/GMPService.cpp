@@ -402,10 +402,8 @@ already_AddRefed<nsISerialEventTarget> GeckoMediaPluginService::GetGMPThread() {
   return thread.forget();
 }
 
-
-
 NS_IMETHODIMP
-GeckoMediaPluginService::GetDecryptingGMPVideoDecoder(
+GeckoMediaPluginService::GetGMPVideoDecoder(
     GMPCrashHelper* aHelper, nsTArray<nsCString>* aTags,
     const nsACString& aNodeId,
     UniquePtr<GetGMPVideoDecoderCallback>&& aCallback) {
