@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :root {
   --card-padding: 24px;
@@ -12,19 +12,19 @@
   --fingerprinter-color: #FFA436;
   --cryptominer-color: #ADADBC;
 
-  
+  /* Highlight colors for trackers */
   --social-highlight-color: #7B4CDB;
   --cookie-highlight-color: #0081DB;
   --tracker-highlight-color: #23A488;
   --fingerprinter-highlight-color: #D37F17;
   --cryptominer-highlight-color: #9292A0;
 
-  --tab-highlight: var(--social-color); 
+  --tab-highlight: var(--social-color); /* start with social selected */
   --column-width: 16px;
   --graph-empty: #CECECF;
   --graph-curve: cubic-bezier(.66,.75,.59,.91);
 
-  
+  /* Colors for the loading indicator */
   --protection-report-loader-color-stop: #AEAEAE3D;
   --protection-report-loader-gradient-opacity: 0.95;
 
@@ -144,7 +144,7 @@ h2 {
   grid-area: 1 / 1 / 1 / 7;
 }
 
-
+/* We want to hide certain components depending on its state. */
 .no-logins .monitor-scanned-wrapper,
 .etp-card.custom-not-blocking .card-body,
 .etp-card.custom-not-blocking #protection-settings,
@@ -273,7 +273,7 @@ a.hidden,
   -moz-context-properties: fill;
   fill: var(--in-content-deemphasized-text);
 
-  
+  /* Override margin, padding, min-height and min-width set in common.inc.css */
   padding: 0;
   margin: 0;
   min-width: 1px;
@@ -377,7 +377,7 @@ a.hidden,
   display: none;
 }
 
-
+/* Graph Bars */
 .graph-bar {
   grid-row: 2 / -2;
   align-self: flex-end;
@@ -466,7 +466,7 @@ a.hidden,
   opacity: 1;
 }
 
-
+/* Legend */
 #graphLegendDescription {
   position: absolute;
   opacity: 0;
@@ -644,7 +644,7 @@ label[for="tab-cryptominer"]:hover ~ #highlight-hover {
   grid-template-rows: 20% auto auto;
 }
 
-
+/* Lockwise Card */
 
 #lockwise-body-content > .no-logins,
 #lockwise-body-content > .has-logins,
@@ -724,7 +724,7 @@ label[for="tab-cryptominer"]:hover ~ #highlight-hover {
   display: none;
 }
 
-
+/* Monitor card */
 .monitor-info-wrapper {
   display: grid;
   grid: 1fr / 1fr 1fr 1fr;
@@ -855,7 +855,7 @@ label[for="tab-cryptominer"]:hover ~ #highlight-hover {
 
 #monitor-breaches-link,
 #monitor-partial-breaches-link {
-  color: var(--in-content-selected-text);
+  color: inherit;
   outline: none;
   text-decoration: none;
   width: 157.267px;
@@ -1002,8 +1002,21 @@ label[for="tab-cryptominer"]:hover ~ #highlight-hover {
   border: 1px solid transparent;
   border-radius: 2px;
   text-decoration: none;
-  color: var(--in-content-selected-text);
+  color: var(--in-content-primary-button-text-color);
+  font-weight: 600;
 }
+
+@supports not -moz-bool-pref("browser.proton.enabled") {
+#manage-protections,
+#sign-up-for-monitor-link,
+#get-proxy-extension-link,
+#get-vpn-link,
+#vpn-banner-link,
+.monitor-partial-breaches-link-wrapper,
+.monitor-breaches-link-wrapper {
+  font-weight: inherit;
+}
+} /** END !proton **/
 
 #manage-protections:active,
 #sign-up-for-monitor-link:active,
@@ -1033,8 +1046,9 @@ label[for="tab-cryptominer"]:hover ~ #highlight-hover {
 #monitor-partial-breaches-link:focus,
 .monitor-block > a:focus,
 #monitor-breaches-link:focus {
-  box-shadow: 0 0 0 1px #0a84ff inset, 0 0 0 1px #0a84ff, 0 0 0 4px rgba(10, 132, 255, 0.3);
-  outline: none;
+  outline: 2px solid var(--in-content-focus-outline-color);
+  outline-offset: 2px;
+  -moz-outline-radius: 6px;
 }
 
 .monitor-card.loading::after,
