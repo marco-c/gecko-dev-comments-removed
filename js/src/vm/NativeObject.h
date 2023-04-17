@@ -710,12 +710,6 @@ class NativeObject : public JSObject {
 
   void initializeSlotRange(uint32_t start, uint32_t end);
 
-  
-
-
-
-  void initSlots(const Value* vector, uint32_t length);
-
 #ifdef DEBUG
   enum SentinelAllowed{SENTINEL_NOT_ALLOWED, SENTINEL_ALLOWED};
 
