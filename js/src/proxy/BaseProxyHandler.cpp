@@ -228,7 +228,7 @@ bool js::SetPropertyIgnoringNamedGetter(
   
   MOZ_ASSERT(ownDesc.isAccessorDescriptor());
   RootedObject setter(cx);
-  if (ownDesc.hasSetterObject()) {
+  if (ownDesc.hasSetter()) {
     setter = ownDesc.setterObject();
   }
   if (!setter) {

@@ -722,11 +722,11 @@ bool SandboxProxyHandler::getPropertyDescriptorImpl(
   Rooted<PropertyDescriptor> desc(cx, *desc_);
 
   
-  if (desc.hasGetterObject() &&
+  if (desc.hasGetter() &&
       !WrapAccessorFunction(cx, desc.getterObject(), proxy)) {
     return false;
   }
-  if (desc.hasSetterObject() &&
+  if (desc.hasSetter() &&
       !WrapAccessorFunction(cx, desc.setterObject(), proxy)) {
     return false;
   }
