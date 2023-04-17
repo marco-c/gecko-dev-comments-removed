@@ -799,6 +799,9 @@ void CanonicalBrowsingContext::SessionHistoryCommit(uint64_t aLoadId,
           addEntry = index < 0;
           if (!addEntry) {
             shistory->ReplaceEntry(index, mActiveEntry);
+            
+            
+            shistory->InternalSetRequestedIndex(-1);
           }
         }
 
