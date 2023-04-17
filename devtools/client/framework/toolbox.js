@@ -3216,27 +3216,13 @@ Toolbox.prototype = {
     }
 
     
-    const wasVisible = this.frameButton.isVisible;
-    const wasDisabled = this.frameButton.disabled;
     this.updateFrameButton();
 
-    const toolbarUpdate = () => {
-      if (
-        this.frameButton.isVisible === wasVisible &&
-        this.frameButton.disabled === wasDisabled
-      ) {
-        return;
-      }
-      this.component.setToolboxButtons(this.toolbarButtons);
-    };
-
     
-    
-    
-    if (data.destroyAll && !this.debouncedToolbarUpdate) {
+    if (!this.debouncedToolbarUpdate) {
       this.debouncedToolbarUpdate = debounce(
         () => {
-          toolbarUpdate();
+          this.component.setToolboxButtons(this.toolbarButtons);
           this.debouncedToolbarUpdate = null;
         },
         200,
@@ -3246,8 +3232,6 @@ Toolbox.prototype = {
 
     if (this.debouncedToolbarUpdate) {
       this.debouncedToolbarUpdate();
-    } else {
-      toolbarUpdate();
     }
   },
 
