@@ -227,11 +227,10 @@ bool RenderCompositorD3D11SWGL::TileD3D11::Map(wr::DeviceIntRect aDirtyRect,
       return false;
     }
 
-    *aData =
-        map.mData + aValidRect.origin.y * map.mStride + aValidRect.origin.x * 4;
+    *aData = map.mData + aValidRect.min.y * map.mStride + aValidRect.min.x * 4;
     *aStride = map.mStride;
-    mValidRect = gfx::Rect(aValidRect.origin.x, aValidRect.origin.y,
-                           aValidRect.size.width, aValidRect.size.height);
+    mValidRect = gfx::Rect(aValidRect.min.x, aValidRect.min.y,
+                           aValidRect.width(), aValidRect.height());
     return true;
   }
 
@@ -293,13 +292,12 @@ bool RenderCompositorD3D11SWGL::TileD3D11::Map(wr::DeviceIntRect aDirtyRect,
   
   
   *aData = (uint8_t*)mappedSubresource.pData +
-           aValidRect.origin.y * mappedSubresource.RowPitch +
-           aValidRect.origin.x * 4;
+           aValidRect.min.y * mappedSubresource.RowPitch + aValidRect.min.x * 4;
   *aStride = mappedSubresource.RowPitch;
 
   
-  mValidRect = gfx::Rect(aValidRect.origin.x, aValidRect.origin.y,
-                         aValidRect.size.width, aValidRect.size.height);
+  mValidRect = gfx::Rect(aValidRect.min.x, aValidRect.min.y, aValidRect.width(),
+                         aValidRect.height());
 
   return true;
 }
