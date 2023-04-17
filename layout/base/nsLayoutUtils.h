@@ -519,6 +519,11 @@ class nsLayoutUtils {
 
 
 
+
+
+
+
+
   static bool IsAncestorFrameCrossDocInProcess(
       const nsIFrame* aAncestorFrame, const nsIFrame* aFrame,
       const nsIFrame* aCommonAncestor = nullptr);
