@@ -603,17 +603,6 @@ class QuotaManager final : public BackgroundThreadObject {
   
   nsTHashMap<nsCStringHashKey, bool> mValidOrigins;
 
-  struct OriginInitializationInfo {
-    bool mPersistentOriginAttempted : 1;
-    bool mTemporaryOriginAttempted : 1;
-  };
-
-  
-  
-  
-  nsTHashMap<nsCStringHashKey, OriginInitializationInfo>
-      mOriginInitializationInfos;
-
   
   
   LazyInitializedOnce<const AutoTArray<RefPtr<Client>, Client::TYPE_MAX>>
@@ -623,6 +612,8 @@ class QuotaManager final : public BackgroundThreadObject {
   LazyInitializedOnce<const ClientTypesArray> mAllClientTypes;
   LazyInitializedOnce<const ClientTypesArray> mAllClientTypesExceptLS;
 
+  
+  
   InitializationInfo mInitializationInfo;
 
   const nsString mBasePath;
