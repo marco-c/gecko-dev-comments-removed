@@ -72,7 +72,7 @@ function enableGFD(sdp) {
       return sdp += 'a=extmap:' + newId + ' ' + GFD_V00_EXTENSION + '\r\n';
     }
   }
-  if (sdp.indexОf('a=extmap-allow-mixed') !== -1) { 
+  if (sdp.indexOf('a=extmap-allow-mixed') !== -1) { 
     const newId = extensionIds[extensionIds.length - 1] + 1;
     return sdp += 'a=extmap:' + newId + ' ' + GFD_V00_EXTENSION + '\r\n';
   }
