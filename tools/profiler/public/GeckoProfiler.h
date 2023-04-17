@@ -120,7 +120,6 @@ enum CacheDisposition : uint8_t;
 }  
 }  
 class nsIURI;
-class nsIDocShell;
 
 namespace mozilla {
 class MallocAllocPolicy;
@@ -500,24 +499,6 @@ enum TracingKind {
   TRACING_INTERVAL_START,
   TRACING_INTERVAL_END,
 };
-
-
-
-
-
-
-mozilla::Maybe<uint64_t> profiler_get_inner_window_id_from_docshell(
-    nsIDocShell* aDocshell);
-
-inline mozilla::MarkerInnerWindowId MarkerInnerWindowIdFromDocShell(
-    nsIDocShell* aDocshell) {
-  mozilla::Maybe<uint64_t> id =
-      profiler_get_inner_window_id_from_docshell(aDocshell);
-  if (!id) {
-    return mozilla::MarkerInnerWindowId::NoId();
-  }
-  return mozilla::MarkerInnerWindowId(*id);
-}
 
 
 

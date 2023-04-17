@@ -48,6 +48,41 @@
 #else  
 
 #  include "mozilla/ProfilerLabels.h"
+#  include "nsJSUtils.h"  
+
+class nsIDocShell;
+
+namespace geckoprofiler::markers::detail {
+
+mozilla::Maybe<uint64_t> profiler_get_inner_window_id_from_docshell(
+    nsIDocShell* aDocshell);
+}  
+
+
+
+
+
+
+inline mozilla::MarkerInnerWindowId MarkerInnerWindowIdFromDocShell(
+    nsIDocShell* aDocshell) {
+  mozilla::Maybe<uint64_t> id = geckoprofiler::markers::detail::
+      profiler_get_inner_window_id_from_docshell(aDocshell);
+  if (!id) {
+    return mozilla::MarkerInnerWindowId::NoId();
+  }
+  return mozilla::MarkerInnerWindowId(*id);
+}
+
+
+
+
+
+
+inline mozilla::MarkerInnerWindowId MarkerInnerWindowIdFromJSContext(
+    JSContext* aContext) {
+  return mozilla::MarkerInnerWindowId(
+      nsJSUtils::GetCurrentlyRunningCodeInnerWindowID(aContext));
+}
 
 
 bool profiler_capture_backtrace_into(
@@ -263,7 +298,8 @@ class MOZ_RAII AutoProfilerTracing {
                                                 categoryPair, docShell)     \
     AutoProfilerTracing PROFILER_RAII(                                      \
         categoryString, markerName, geckoprofiler::category::categoryPair,  \
-        profiler_get_inner_window_id_from_docshell(docShell))
+        geckoprofiler::markers::detail::                                    \
+            profiler_get_inner_window_id_from_docshell(docShell))
 
 extern template mozilla::ProfileBufferBlockIndex AddMarkerToBuffer(
     mozilla::ProfileChunkedBuffer&, const mozilla::ProfilerString8View&,
