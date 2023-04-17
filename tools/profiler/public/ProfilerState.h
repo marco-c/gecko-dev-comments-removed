@@ -321,9 +321,6 @@ class RacyFeatures {
 [[nodiscard]] bool profiler_is_sampling_paused();
 
 
-[[nodiscard]] bool profiler_thread_is_sleeping();
-
-
 
 
 [[nodiscard]] uint32_t profiler_get_available_features();

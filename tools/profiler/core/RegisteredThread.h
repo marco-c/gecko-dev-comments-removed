@@ -39,16 +39,6 @@ class RacyRegisteredThread final {
     mThreadRegistration.mData.ReinitializeOnResume();
   }
 
-  
-  
-  void SetSleeping() { mThreadRegistration.mData.SetSleeping(); }
-
-  
-  
-  void SetAwake() { mThreadRegistration.mData.SetAwake(); }
-
-  bool IsSleeping() { return mThreadRegistration.mData.IsSleeping(); }
-
   class ProfilingStack& ProfilingStack() {
     return mThreadRegistration.mData.ProfilingStackRef();
   }
