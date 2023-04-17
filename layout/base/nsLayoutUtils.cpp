@@ -3324,22 +3324,10 @@ void nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
     PerfStats::AutoMetricRecording<PerfStats::Metric::DisplayListBuilding>
         autoRecording;
     {
-      
-      
-      
-      
-      
-      
       ViewID id = ScrollableLayerGuid::NULL_SCROLL_ID;
-      if (ignoreViewportScrolling && presContext->IsRootContentDocument()) {
-        if (nsIFrame* rootScrollFrame = presShell->GetRootScrollFrame()) {
-          if (nsIContent* content = rootScrollFrame->GetContent()) {
-            id = nsLayoutUtils::FindOrCreateIDFor(content);
-          }
-        }
-      } else if (presShell->GetDocument() &&
-                 presShell->GetDocument()->IsRootDisplayDocument() &&
-                 !presShell->GetRootScrollFrame()) {
+      if (presShell->GetDocument() &&
+          presShell->GetDocument()->IsRootDisplayDocument() &&
+          !presShell->GetRootScrollFrame()) {
         
         
         
