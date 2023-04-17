@@ -1014,7 +1014,9 @@ EditActionResult HTMLEditor::HandleInsertText(
   
   
   if (!pointToInsert.IsInTextNode()) {
-    Element* editingHost = GetActiveEditingHost();
+    Element* editingHost = GetActiveEditingHost(GetDocument()->IsXMLDocument()
+                                                    ? LimitInBodyElement::No
+                                                    : LimitInBodyElement::Yes);
     if (NS_WARN_IF(!editingHost)) {
       return EditActionHandled(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
     }
