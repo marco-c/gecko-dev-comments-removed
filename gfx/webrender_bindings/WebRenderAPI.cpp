@@ -17,6 +17,7 @@
 #include "mozilla/layers/SynchronousTask.h"
 #include "TextDrawTarget.h"
 #include "malloc_decls.h"
+#include "GLContext.h"
 
 
 #define WRDL_LOG(...)
@@ -133,6 +134,23 @@ class NewRenderer : public RendererEvent {
     auto* shaders = (aRenderThread.GetShaders() && !swgl)
                         ? aRenderThread.GetShaders()->RawShaders()
                         : nullptr;
+
+    
+    
+    if (gl && !swgl) {
+      bool versionCheck =
+          gl->IsAtLeast(gl::ContextProfile::OpenGLCore, 300) ||
+          gl->IsAtLeast(gl::ContextProfile::OpenGLCompatibility, 300) ||
+          gl->IsAtLeast(gl::ContextProfile::OpenGLES, 300);
+
+      if (!versionCheck) {
+        gfxCriticalNote << "GL context version (" << gl->Version()
+                        << ") insufficent for hardware WebRender";
+
+        mError->AssignASCII("GL context version insufficient");
+        return;
+      }
+    }
 
     if (!wr_window_new(
             aWindowId, mSize.width, mSize.height,
