@@ -1421,11 +1421,11 @@ void GlobalHelperThreadState::finishThreads(AutoLockHelperThreadState& lock) {
 
   waitForAllThreadsLocked(lock);
 
+  terminating_ = true;
+
   if (!useInternalThreadPool(lock)) {
     return;
   }
-
-  terminating_ = true;
 
   notifyAll(GlobalHelperThreadState::PRODUCER, lock);
 
@@ -1475,7 +1475,22 @@ void GlobalHelperThreadState::assertIsLockedByCurrentThread() const {
 
 void GlobalHelperThreadState::dispatch(
     const AutoLockHelperThreadState& locked) {
-  notifyOne(PRODUCER, locked);
+  if (useInternalThreadPool(locked)) {
+    notifyOne(PRODUCER, locked);
+    return;
+  }
+
+  if (canStartTasks(locked) && externalTasksPending_ < threadCount) {
+    
+    
+    
+    externalTasksPending_++;
+
+    
+    JS::AutoSuppressGCAnalysis nogc;
+
+    dispatchTaskCallback();
+  }
 }
 
 void GlobalHelperThreadState::wait(
@@ -2802,7 +2817,30 @@ void HelperThread::threadLoop() {
 }
 
 void JS::RunHelperThreadTask() {
-  MOZ_CRASH("JS::RunHelperThreadTask is not yet implemented");
+  MOZ_ASSERT(CanUseExtraThreads());
+
+  AutoLockHelperThreadState lock;
+
+  if (!gHelperThreadState || HelperThreadState().isTerminating(lock)) {
+    return;
+  }
+
+  HelperThreadState().runTaskFromExternalThread(lock);
+}
+
+void GlobalHelperThreadState::runTaskFromExternalThread(
+    AutoLockHelperThreadState& lock) {
+  MOZ_ASSERT(externalTasksPending_ > 0);
+  externalTasksPending_--;
+
+  HelperThreadTask* task = HelperThreadState().findHighestPriorityTask(lock);
+  if (!task) {
+    return;
+  }
+
+  runTaskLocked(task, lock);
+
+  dispatch(lock);
 }
 
 HelperThreadTask* GlobalHelperThreadState::findHighestPriorityTask(
