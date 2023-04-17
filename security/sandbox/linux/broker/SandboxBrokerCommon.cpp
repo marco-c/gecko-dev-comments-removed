@@ -84,6 +84,10 @@ ssize_t SandboxBrokerCommon::RecvWithFd(int aFd, const iovec* aIO,
         for (size_t i = 0; CMSG_LEN(sizeof(int) * i) < cmsg->cmsg_len; ++i) {
           close(fds[i]);
         }
+        
+        
+        
+        MOZ_DIAGNOSTIC_ASSERT(cmsg->cmsg_len != 0);
         errno = EMSGSIZE;
         return -1;
       }
@@ -98,7 +102,14 @@ ssize_t SandboxBrokerCommon::RecvWithFd(int aFd, const iovec* aIO,
       close(*aPassedFdPtr);
       *aPassedFdPtr = -1;
     }
-    errno = EMSGSIZE;
+    
+    
+    
+    
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT((msg.msg_flags & MSG_TRUNC) == 0);
+    errno = EMFILE;
     return -1;
   }
 
