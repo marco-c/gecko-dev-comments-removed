@@ -376,6 +376,16 @@ class nsIContent : public nsINode {
 
   mozilla::dom::HTMLSlotElement* GetAssignedSlotByMode() const;
 
+  mozilla::dom::HTMLSlotElement* GetManualSlotAssignment() const {
+    const nsExtendedContentSlots* slots = GetExistingExtendedContentSlots();
+    return slots ? slots->mManualSlotAssignment : nullptr;
+  }
+
+  void SetManualSlotAssignment(mozilla::dom::HTMLSlotElement* aSlot) {
+    MOZ_ASSERT(aSlot || GetExistingExtendedContentSlots());
+    ExtendedContentSlots()->mManualSlotAssignment = aSlot;
+  }
+
   
 
 
@@ -674,6 +684,8 @@ class nsIContent : public nsINode {
 
 
     RefPtr<mozilla::dom::HTMLSlotElement> mAssignedSlot;
+
+    mozilla::dom::HTMLSlotElement* mManualSlotAssignment = nullptr;
   };
 
   class nsContentSlots : public nsINode::nsSlots {

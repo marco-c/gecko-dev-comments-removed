@@ -4,12 +4,13 @@
 
 
 
+#include "mozilla/PresShell.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLSlotElement.h"
-#include "mozilla/dom/HTMLSlotElementBinding.h"
 #include "mozilla/dom/HTMLUnknownElement.h"
 #include "mozilla/dom/ShadowRoot.h"
+#include "mozilla/dom/Text.h"
 #include "nsContentUtils.h"
 #include "nsGkAtoms.h"
 
@@ -27,7 +28,12 @@ HTMLSlotElement::HTMLSlotElement(
     already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
     : nsGenericHTMLElement(std::move(aNodeInfo)) {}
 
-HTMLSlotElement::~HTMLSlotElement() = default;
+HTMLSlotElement::~HTMLSlotElement() {
+  for (const auto& node : mManuallyAssignedNodes) {
+    MOZ_ASSERT(node->AsContent()->GetManualSlotAssignment() == this);
+    node->AsContent()->SetManualSlotAssignment(nullptr);
+  }
+}
 
 NS_IMPL_ADDREF_INHERITED(HTMLSlotElement, nsGenericHTMLElement)
 NS_IMPL_RELEASE_INHERITED(HTMLSlotElement, nsGenericHTMLElement)
@@ -47,6 +53,9 @@ nsresult HTMLSlotElement::BindToTree(BindContext& aContext, nsINode& aParent) {
   NS_ENSURE_SUCCESS(rv, rv);
 
   ShadowRoot* containingShadow = GetContainingShadow();
+  mInManualShadowRoot =
+      containingShadow &&
+      containingShadow->SlotAssignment() == SlotAssignmentMode::Manual;
   if (containingShadow && !oldContainingShadow) {
     containingShadow->AddSlot(this);
   }
@@ -155,6 +164,147 @@ const nsTArray<RefPtr<nsINode>>& HTMLSlotElement::AssignedNodes() const {
   return mAssignedNodes;
 }
 
+const nsTArray<nsINode*>& HTMLSlotElement::ManuallyAssignedNodes() const {
+  return mManuallyAssignedNodes;
+}
+
+void HTMLSlotElement::Assign(const Sequence<OwningElementOrText>& aNodes) {
+  MOZ_ASSERT(StaticPrefs::dom_shadowdom_slot_assign_enabled());
+  nsAutoScriptBlocker scriptBlocker;
+
+  
+  
+  
+  
+  if (!mAssignedNodes.IsEmpty() && aNodes.Length() >= mAssignedNodes.Length()) {
+    nsTHashMap<nsPtrHashKey<nsIContent>, size_t> nodeIndexMap;
+    for (size_t i = 0; i < aNodes.Length(); ++i) {
+      nsIContent* content;
+      if (aNodes[i].IsElement()) {
+        content = aNodes[i].GetAsElement();
+      } else {
+        content = aNodes[i].GetAsText();
+      }
+      MOZ_ASSERT(content);
+      
+      
+      nodeIndexMap.LookupOrInsert(content, i);
+    }
+
+    if (nodeIndexMap.Count() == mAssignedNodes.Length()) {
+      bool isIdentical = true;
+      for (size_t i = 0; i < mAssignedNodes.Length(); ++i) {
+        size_t indexInInputNodes;
+        if (!nodeIndexMap.Get(mAssignedNodes[i]->AsContent(),
+                              &indexInInputNodes) ||
+            indexInInputNodes != i) {
+          isIdentical = false;
+          break;
+        }
+      }
+      if (isIdentical) {
+        return;
+      }
+    }
+  }
+
+  
+  
+  for (nsINode* node : mManuallyAssignedNodes) {
+    MOZ_ASSERT(node->AsContent()->GetManualSlotAssignment() == this);
+    node->AsContent()->SetManualSlotAssignment(nullptr);
+  }
+
+  
+  mManuallyAssignedNodes.Clear();
+
+  nsIContent* host = nullptr;
+  ShadowRoot* root = GetContainingShadow();
+
+  
+  
+  
+  nsTHashSet<RefPtr<HTMLSlotElement>> changedSlots;
+
+  
+  if (mInManualShadowRoot) {
+    nsTArray<RefPtr<nsINode>> assignedNodes(std::move(mAssignedNodes));
+    for (RefPtr<nsINode>& node : assignedNodes) {
+      nsIContent* content = node->AsContent();
+      HTMLSlotElement* oldSlot = content->GetAssignedSlot();
+      MOZ_RELEASE_ASSERT(oldSlot == this);
+      if (changedSlots.EnsureInserted(oldSlot)) {
+        if (root) {
+          MOZ_ASSERT(oldSlot->GetContainingShadow() == root);
+          root->InvalidateStyleAndLayoutOnSubtree(oldSlot);
+        }
+      }
+      oldSlot->RemoveAssignedNode(*content);
+    }
+
+    MOZ_ASSERT(mAssignedNodes.IsEmpty());
+    host = GetContainingShadowHost();
+  }
+
+  for (const OwningElementOrText& elementOrText : aNodes) {
+    nsIContent* content;
+    if (elementOrText.IsElement()) {
+      content = elementOrText.GetAsElement();
+    } else {
+      content = elementOrText.GetAsText();
+    }
+
+    MOZ_ASSERT(content);
+    
+    
+    if (content->GetManualSlotAssignment() != this) {
+      if (HTMLSlotElement* oldSlot = content->GetAssignedSlot()) {
+        if (changedSlots.EnsureInserted(oldSlot)) {
+          if (root) {
+            MOZ_ASSERT(oldSlot->GetContainingShadow() == root);
+            root->InvalidateStyleAndLayoutOnSubtree(oldSlot);
+          }
+        }
+      }
+
+      if (changedSlots.EnsureInserted(this)) {
+        if (root) {
+          root->InvalidateStyleAndLayoutOnSubtree(this);
+        }
+      }
+      
+      
+      
+      if (HTMLSlotElement* oldSlot = content->GetManualSlotAssignment()) {
+        oldSlot->RemoveManuallyAssignedNode(*content);
+      }
+      content->SetManualSlotAssignment(this);
+      mManuallyAssignedNodes.AppendElement(content);
+
+      if (root && host && content->GetParent() == host) {
+        
+        
+        root->MaybeReassignContent(*content);
+      }
+    }
+  }
+
+  
+  
+  
+  if (root) {
+    for (nsIContent* child = root->GetFirstChild(); child;
+         child = child->GetNextNode()) {
+      if (HTMLSlotElement* slot = HTMLSlotElement::FromNode(child)) {
+        if (changedSlots.EnsureRemoved(slot)) {
+          slot->EnqueueSlotChangeEvent();
+        }
+      }
+    }
+    MOZ_ASSERT(changedSlots.IsEmpty());
+  }
+}
+
 void HTMLSlotElement::InsertAssignedNode(uint32_t aIndex, nsIContent& aNode) {
   MOZ_ASSERT(!aNode.GetAssignedSlot(), "Losing track of a slot");
   mAssignedNodes.InsertElementAt(aIndex, &aNode);
@@ -214,6 +364,11 @@ void HTMLSlotElement::FireSlotChangeEvent() {
   nsContentUtils::DispatchTrustedEvent(
       OwnerDoc(), static_cast<nsIContent*>(this), u"slotchange"_ns,
       CanBubble::eYes, Cancelable::eNo);
+}
+
+void HTMLSlotElement::RemoveManuallyAssignedNode(nsIContent& aNode) {
+  mManuallyAssignedNodes.RemoveElement(&aNode);
+  RemoveAssignedNode(aNode);
 }
 
 JSObject* HTMLSlotElement::WrapNode(JSContext* aCx,

@@ -52,12 +52,13 @@ class ShadowRoot final : public DocumentFragment,
   NS_DECL_ISUPPORTS_INHERITED
 
   ShadowRoot(Element* aElement, ShadowRootMode aMode,
+             SlotAssignmentMode aSlotAssignment,
              already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
   void AddSizeOfExcludingThis(nsWindowSizes&, size_t* aNodeSize) const final;
 
   
-  void MaybeReassignElement(Element&);
+  void MaybeReassignContent(nsIContent& aElementOrText);
   
   
   void MaybeSlotHostChild(nsIContent&);
@@ -74,6 +75,7 @@ class ShadowRoot final : public DocumentFragment,
   }
 
   ShadowRootMode Mode() const { return mMode; }
+  SlotAssignmentMode SlotAssignment() const { return mSlotAssignment; }
   bool IsClosed() const { return mMode == ShadowRootMode::Closed; }
 
   void RemoveSheetFromStyles(StyleSheet&);
@@ -104,35 +106,6 @@ class ShadowRoot final : public DocumentFragment,
   
   nsresult Bind();
 
- private:
-  void InsertSheetIntoAuthorData(size_t aIndex, StyleSheet&,
-                                 const nsTArray<RefPtr<StyleSheet>>&);
-
-  void AppendStyleSheet(StyleSheet& aSheet) {
-    InsertSheetAt(SheetCount(), aSheet);
-  }
-
-  
-
-
-  struct SlotAssignment {
-    HTMLSlotElement* mSlot = nullptr;
-    Maybe<uint32_t> mIndex;
-
-    SlotAssignment() = default;
-    SlotAssignment(HTMLSlotElement* aSlot, const Maybe<uint32_t>& aIndex)
-        : mSlot(aSlot), mIndex(aIndex) {}
-  };
-
-  
-
-
-
-
-
-
-  SlotAssignment SlotAssignmentFor(nsIContent&);
-
   
 
 
@@ -148,6 +121,35 @@ class ShadowRoot final : public DocumentFragment,
 
 
   void InvalidateStyleAndLayoutOnSubtree(Element*);
+
+ private:
+  void InsertSheetIntoAuthorData(size_t aIndex, StyleSheet&,
+                                 const nsTArray<RefPtr<StyleSheet>>&);
+
+  void AppendStyleSheet(StyleSheet& aSheet) {
+    InsertSheetAt(SheetCount(), aSheet);
+  }
+
+  
+
+
+  struct SlotInsertionPoint {
+    HTMLSlotElement* mSlot = nullptr;
+    Maybe<uint32_t> mIndex;
+
+    SlotInsertionPoint() = default;
+    SlotInsertionPoint(HTMLSlotElement* aSlot, const Maybe<uint32_t>& aIndex)
+        : mSlot(aSlot), mIndex(aIndex) {}
+  };
+
+  
+
+
+
+
+
+
+  SlotInsertionPoint SlotInsertionPointFor(nsIContent&);
 
  public:
   void AddSlot(HTMLSlotElement* aSlot);
@@ -259,6 +261,8 @@ class ShadowRoot final : public DocumentFragment,
   virtual ~ShadowRoot();
 
   const ShadowRootMode mMode;
+
+  const SlotAssignmentMode mSlotAssignment;
 
   
   UniquePtr<RawServoAuthorStyles> mServoStyles;
