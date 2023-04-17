@@ -181,6 +181,11 @@ parent:
 
   async ResetSessionStore(uint32_t aEpoch);
 
+  
+  
+  
+  async UpdateBFCacheStatus(uint16_t aOnFlags, uint16_t aOffFlags);
+
   async Destroy();
 };
 
