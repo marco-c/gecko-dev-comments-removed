@@ -38,7 +38,7 @@ exports.CacheEntry = {
           
           loadContext = Services.loadContextInfo.default;
         }
-        this.cacheSession = cacheService.diskCacheStorage(loadContext, false);
+        this.cacheSession = cacheService.diskCacheStorage(loadContext);
         this.isCacheSessionInitialized = true;
       }
     } catch (e) {

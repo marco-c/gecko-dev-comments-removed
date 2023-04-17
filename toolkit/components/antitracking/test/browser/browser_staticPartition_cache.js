@@ -32,7 +32,7 @@ async function checkCache(suffixes, originAttributes) {
     };
     
     
-    let storage = Services.cache2.diskCacheStorage(loadContextInfo, false);
+    let storage = Services.cache2.diskCacheStorage(loadContextInfo);
     storage.asyncVisitStorage(cacheVisitor, true);
   });
 

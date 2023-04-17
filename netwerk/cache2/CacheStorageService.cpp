@@ -11,11 +11,9 @@
 #include "CacheIndex.h"
 #include "CacheIndexIterator.h"
 #include "CacheStorage.h"
-#include "AppCacheStorage.h"
 #include "CacheEntry.h"
 #include "CacheFileUtils.h"
 
-#include "OldWrappers.h"
 #include "nsCacheService.h"
 #include "nsDeleteDir.h"
 
@@ -672,7 +670,7 @@ nsresult ClearStorage(bool const aPrivate, bool const aAnonymous,
   NS_ENSURE_TRUE(service, NS_ERROR_FAILURE);
 
   
-  rv = service->DiskCacheStorage(info, false, getter_AddRefs(storage));
+  rv = service->DiskCacheStorage(info, getter_AddRefs(storage));
   NS_ENSURE_SUCCESS(rv, rv);
   rv = storage->AsyncEvictStorage(nullptr);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -711,14 +709,13 @@ NS_IMETHODIMP CacheStorageService::MemoryCacheStorage(
   NS_ENSURE_ARG(_retval);
 
   nsCOMPtr<nsICacheStorage> storage =
-      new CacheStorage(aLoadContextInfo, false, false, false, false);
+      new CacheStorage(aLoadContextInfo, false, false, false);
   storage.forget(_retval);
   return NS_OK;
 }
 
 NS_IMETHODIMP CacheStorageService::DiskCacheStorage(
-    nsILoadContextInfo* aLoadContextInfo, bool aLookupAppCache,
-    nsICacheStorage** _retval) {
+    nsILoadContextInfo* aLoadContextInfo, nsICacheStorage** _retval) {
   NS_ENSURE_ARG(_retval);
 
   
@@ -727,9 +724,8 @@ NS_IMETHODIMP CacheStorageService::DiskCacheStorage(
   
   bool useDisk = CacheObserver::UseDiskCache();
 
-  nsCOMPtr<nsICacheStorage> storage =
-      new CacheStorage(aLoadContextInfo, useDisk, aLookupAppCache,
-                       false , false );
+  nsCOMPtr<nsICacheStorage> storage = new CacheStorage(
+      aLoadContextInfo, useDisk, false , false );
   storage.forget(_retval);
   return NS_OK;
 }
@@ -744,9 +740,9 @@ NS_IMETHODIMP CacheStorageService::PinningCacheStorage(
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  nsCOMPtr<nsICacheStorage> storage = new CacheStorage(
-      aLoadContextInfo, true , false ,
-      true , true );
+  nsCOMPtr<nsICacheStorage> storage =
+      new CacheStorage(aLoadContextInfo, true ,
+                       true , true );
   storage.forget(_retval);
   return NS_OK;
 }
@@ -757,7 +753,7 @@ NS_IMETHODIMP CacheStorageService::SynthesizedCacheStorage(
   NS_ENSURE_ARG(_retval);
 
   nsCOMPtr<nsICacheStorage> storage =
-      new CacheStorage(aLoadContextInfo, false, false,
+      new CacheStorage(aLoadContextInfo, false,
                        true ,
                        false );
   storage.forget(_retval);
