@@ -650,12 +650,7 @@ bool nsNativeTheme::IsDarkBackground(nsIFrame* aFrame) {
   }
 
   if (const auto* style = GetBackgroundStyle(scrollFrame->GetScrolledFrame())) {
-    nscolor bgColor = style->StyleBackground()->BackgroundColor(style);
-    
-    
-    
-    return NS_GET_A(bgColor) > 127 &&
-           NS_GET_R(bgColor) + NS_GET_G(bgColor) + NS_GET_B(bgColor) < 384;
+    return IsDarkColor(style->StyleBackground()->BackgroundColor(style));
   }
   return false;
 }
