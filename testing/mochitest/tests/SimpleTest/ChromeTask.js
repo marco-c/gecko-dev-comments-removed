@@ -6,14 +6,20 @@
 
 "use strict";
 
+
+
 function ChromeTask_ChromeScript() {
   "use strict";
 
-  const {Task} = ChromeUtils.import("resource://testing-common/Task.jsm");
-  const {Services} = ChromeUtils.import("resource://gre/modules/Services.jsm");
-  const AssertCls = ChromeUtils.import("resource://testing-common/Assert.jsm", null).Assert;
+  
+  const { Services } = ChromeUtils.import(
+    "resource://gre/modules/Services.jsm"
+  );
+  const { Assert: AssertCls } = ChromeUtils.import(
+    "resource://testing-common/Assert.jsm"
+  );
 
-  addMessageListener("chrome-task:spawn", function(aData) {
+  addMessageListener("chrome-task:spawn", async function(aData) {
     let id = aData.id;
     let source = aData.runnable || "()=>{}";
 
@@ -40,15 +46,15 @@ function ChromeTask_ChromeScript() {
     var isnot = Assert.notEqual.bind(Assert);
 
     function todo(expr, name) {
-      sendAsyncMessage("chrome-task:test-todo", {id, expr, name});
+      sendAsyncMessage("chrome-task:test-todo", { id, expr, name });
     }
 
     function todo_is(a, b, name) {
-      sendAsyncMessage("chrome-task:test-todo_is", {id, a, b, name});
+      sendAsyncMessage("chrome-task:test-todo_is", { id, a, b, name });
     }
 
     function info(name) {
-      sendAsyncMessage("chrome-task:test-info", {id, name});
+      sendAsyncMessage("chrome-task:test-info", { id, name });
     }
     
 
@@ -60,27 +66,19 @@ function ChromeTask_ChromeScript() {
 
       
       let runnable = eval(runnablestr);
-      let iterator = runnable.call(this, aData.arg);
-      Task.spawn(iterator).then((val) => {
-        sendAsyncMessage("chrome-task:complete", {
-          id,
-          result: val,
-        });
-      }, (e) => {
-        sendAsyncMessage("chrome-task:complete", {
-          id,
-          error: e.toString(),
-        });
-      });
-    } catch (e) {
+      let result = await runnable.call(this, aData.arg);
       sendAsyncMessage("chrome-task:complete", {
         id,
-        error: e.toString(),
+        result,
+      });
+    } catch (ex) {
+      sendAsyncMessage("chrome-task:complete", {
+        id,
+        error: ex.toString(),
       });
     }
   });
 }
-
 
 
 
@@ -126,7 +124,10 @@ var ChromeTask = {
       handle.addMessageListener("chrome-task:test-result", ChromeTask.onResult);
       handle.addMessageListener("chrome-task:test-info", ChromeTask.onInfo);
       handle.addMessageListener("chrome-task:test-todo", ChromeTask.onTodo);
-      handle.addMessageListener("chrome-task:test-todo_is", ChromeTask.onTodoIs);
+      handle.addMessageListener(
+        "chrome-task:test-todo_is",
+        ChromeTask.onTodoIs
+      );
       ChromeTask._chromeScript = handle;
     }
 
@@ -139,13 +140,11 @@ var ChromeTask = {
     let id = ChromeTask._messageID++;
     ChromeTask._promises.set(id, deferred);
 
-    handle.sendAsyncMessage(
-      "chrome-task:spawn",
-      {
-        id,
-        runnable: task.toString(),
-        arg,
-      });
+    handle.sendAsyncMessage("chrome-task:spawn", {
+      id,
+      runnable: task.toString(),
+      arg,
+    });
 
     return deferred.promise;
   },

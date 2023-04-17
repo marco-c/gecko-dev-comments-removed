@@ -53,7 +53,6 @@ let { AppConstants: _AppConstants } = ChromeUtils.import(
 let { PromiseTestUtils: _PromiseTestUtils } = ChromeUtils.import(
   "resource://testing-common/PromiseTestUtils.jsm"
 );
-let { Task: _Task } = ChromeUtils.import("resource://testing-common/Task.jsm");
 
 let { NetUtil: _NetUtil } = ChromeUtils.import(
   "resource://gre/modules/NetUtil.jsm"
@@ -872,7 +871,7 @@ function _format_stack(stack) {
   } else {
     normalized = "" + stack;
   }
-  return _Task.Debugging.generateReadableStack(normalized, "    ");
+  return normalized;
 }
 
 
@@ -1595,12 +1594,9 @@ function add_test(properties, func = properties, isTask = false) {
 
 
 
-
 function add_task(properties, func = properties) {
   return add_test(properties, func, true);
 }
-
-_Task.Debugging.maintainStack = true;
 
 
 

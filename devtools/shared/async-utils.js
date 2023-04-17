@@ -24,8 +24,6 @@
 
 
 
-
-
 exports.listenOnce = function listenOnce(element, event, useCapture) {
   return new Promise(function(resolve, reject) {
     const onEvent = function(ev) {
