@@ -24,9 +24,10 @@
 namespace mozilla::intl {
 
 static inline const char* IcuLocale(const char* aLocale) {
+  
   const char* locale = aLocale;
-  if (!strncmp(locale, "und", 3)) {
-    locale = "";
+  if (!std::strcmp(locale, "und")) {
+    locale = "";  
   }
   return locale;
 }
