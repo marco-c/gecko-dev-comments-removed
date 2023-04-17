@@ -403,7 +403,6 @@ nsresult nsLookAndFeel::PerThemeData::GetColor(ColorID aID,
       
       
     case ColorID::WidgetBackground:
-    case ColorID::TextBackground:
     case ColorID::Appworkspace:  
     case ColorID::Background:    
     case ColorID::Window:
@@ -413,7 +412,6 @@ nsresult nsLookAndFeel::PerThemeData::GetColor(ColorID aID,
       aColor = mMozWindowBackground;
       break;
     case ColorID::WidgetForeground:
-    case ColorID::TextForeground:
     case ColorID::Windowtext:
     case ColorID::MozDialogtext:
       aColor = mMozWindowText;

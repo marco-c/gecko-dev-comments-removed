@@ -205,8 +205,6 @@ static const char sColorPrefs[][41] = {
     "ui.widgetSelectForeground",
     "ui.widget3DHighlight",
     "ui.widget3DShadow",
-    "ui.textBackground",
-    "ui.textForeground",
     "ui.textSelectBackgroundDisabled",
     "ui.textSelectBackgroundAttention",
     "ui.textHighlightBackground",
@@ -633,7 +631,6 @@ Maybe<nscolor> nsXPLookAndFeel::GenericDarkColor(ColorID aID) {
     case ColorID::Window:  
     case ColorID::Background:
     case ColorID::Menu:
-    case ColorID::TextBackground:
       color = kWindowBackground;
       break;
     case ColorID::MozOddtreerow:
@@ -642,7 +639,6 @@ Maybe<nscolor> nsXPLookAndFeel::GenericDarkColor(ColorID aID) {
       break;
     case ColorID::Windowtext:  
     case ColorID::Menutext:
-    case ColorID::TextForeground:
     case ColorID::MozDialogtext:
     case ColorID::Fieldtext:
     case ColorID::Buttontext:  
@@ -1196,8 +1192,6 @@ static bool ColorIsCSSAccessible(LookAndFeel::ColorID aId) {
     case ColorID::WidgetSelectForeground:
     case ColorID::Widget3DHighlight:
     case ColorID::Widget3DShadow:
-    case ColorID::TextBackground:
-    case ColorID::TextForeground:
     case ColorID::TextSelectBackgroundDisabled:
     case ColorID::TextSelectBackgroundAttention:
     case ColorID::TextHighlightBackground:

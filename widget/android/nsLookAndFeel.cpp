@@ -141,10 +141,6 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aColorScheme,
     case ColorID::Widget3DShadow:
       aColor = NS_RGB(0x40, 0x40, 0x40);
       break;
-    case ColorID::TextForeground:
-      
-      aColor = mSystemColors.textColorPrimary;
-      break;
 
     case ColorID::ThemedScrollbarThumbInactive:
     case ColorID::ThemedScrollbarThumb:
@@ -188,7 +184,6 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aColorScheme,
     case ColorID::Inactiveborder:   
     case ColorID::Inactivecaption:  
     case ColorID::Scrollbar:        
-    case ColorID::TextBackground:   
     case ColorID::WidgetBackground:
       aColor = mSystemColors.colorBackground;
       break;
