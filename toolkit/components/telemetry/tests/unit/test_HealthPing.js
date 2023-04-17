@@ -337,13 +337,7 @@ add_task(async function test_discardedForSizePending() {
 });
 
 add_task(async function test_usePingSenderOnShutdown() {
-  if (
-    gIsAndroid ||
-    (AppConstants.platform == "linux" && OS.Constants.Sys.bits == 32)
-  ) {
-    
-    
-    
+  if (gIsAndroid) {
     
     return;
   }

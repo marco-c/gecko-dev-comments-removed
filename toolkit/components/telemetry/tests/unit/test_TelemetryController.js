@@ -730,13 +730,7 @@ add_task(async function test_telemetryCleanFHRDatabase() {
 });
 
 add_task(async function test_sendNewProfile() {
-  if (
-    gIsAndroid ||
-    (AppConstants.platform == "linux" && OS.Constants.Sys.bits == 32)
-  ) {
-    
-    
-    
+  if (gIsAndroid) {
     
     return;
   }
