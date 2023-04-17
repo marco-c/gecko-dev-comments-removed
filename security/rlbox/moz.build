@@ -21,9 +21,9 @@ SOURCES += [
 
 NoVisibilityFlags()
 
-CFLAGS += [
-    "-Wno-error=unused-function",
-]
+
+
+AllowCompilerWarnings()
 
 WASM_DEFINES["MOZILLA_CLIENT"] = True
 WASM_DEFINES["_WASI_EMULATED_PROCESS_CLOCKS"] = True
