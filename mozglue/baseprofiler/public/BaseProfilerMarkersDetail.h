@@ -422,25 +422,7 @@ template <typename CHAR>
 struct ProfileBufferEntryReader::Deserializer<ProfilerStringView<CHAR>> {
   static void ReadInto(ProfileBufferEntryReader& aER,
                        ProfilerStringView<CHAR>& aString) {
-    const Length lengthAndIsLiteral = aER.ReadULEB128<Length>();
-    const Length stringLength = lengthAndIsLiteral >> 1;
-    if ((lengthAndIsLiteral & 1u) == 0u) {
-      
-      aString.mStringView = std::basic_string_view<CHAR>(
-          aER.ReadObject<const CHAR*>(), stringLength);
-      aString.mOwnership = ProfilerStringView<CHAR>::Ownership::Literal;
-      return;
-    }
-    
-    
-    
-    
-    CHAR* buffer = new CHAR[stringLength + 1];
-    aER.ReadBytes(buffer, stringLength * sizeof(CHAR));
-    buffer[stringLength] = CHAR(0);
-    aString.mStringView = std::basic_string_view<CHAR>(buffer, stringLength);
-    aString.mOwnership =
-        ProfilerStringView<CHAR>::Ownership::OwnedThroughStringView;
+    aString = Read(aER);
   }
 
   static ProfilerStringView<CHAR> Read(ProfileBufferEntryReader& aER) {
@@ -453,15 +435,31 @@ struct ProfileBufferEntryReader::Deserializer<ProfilerStringView<CHAR>> {
           ProfilerStringView<CHAR>::Ownership::Literal);
     }
     
-    
-    
-    
-    CHAR* buffer = new CHAR[stringLength + 1];
-    aER.ReadBytes(buffer, stringLength * sizeof(CHAR));
-    buffer[stringLength] = CHAR(0);
-    return ProfilerStringView<CHAR>(
-        buffer, stringLength,
-        ProfilerStringView<CHAR>::Ownership::OwnedThroughStringView);
+    ProfileBufferEntryReader::DoubleSpanOfConstBytes spans =
+        aER.ReadSpans(stringLength * sizeof(CHAR));
+    if (MOZ_LIKELY(spans.IsSingleSpan()) &&
+        reinterpret_cast<uintptr_t>(spans.mFirstOrOnly.Elements()) %
+                alignof(CHAR) ==
+            0u) {
+      
+      
+      
+      return ProfilerStringView<CHAR>(
+          reinterpret_cast<const CHAR*>(spans.mFirstOrOnly.Elements()),
+          stringLength, ProfilerStringView<CHAR>::Ownership::Reference);
+    } else {
+      
+      
+      
+      
+      
+      CHAR* buffer = new CHAR[stringLength + 1];
+      spans.CopyBytesTo(buffer);
+      buffer[stringLength] = CHAR(0);
+      return ProfilerStringView<CHAR>(
+          buffer, stringLength,
+          ProfilerStringView<CHAR>::Ownership::OwnedThroughStringView);
+    }
   }
 };
 
