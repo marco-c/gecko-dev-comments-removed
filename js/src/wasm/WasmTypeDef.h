@@ -19,6 +19,8 @@
 #ifndef wasm_type_def_h
 #define wasm_type_def_h
 
+#include "mozilla/CheckedInt.h"
+
 #include "wasm/WasmCodegenConstants.h"
 #include "wasm/WasmCompileArgs.h"
 #include "wasm/WasmConstants.h"
@@ -29,6 +31,7 @@
 namespace js {
 namespace wasm {
 
+using mozilla::CheckedInt32;
 using mozilla::MallocSizeOf;
 
 
@@ -240,6 +243,21 @@ class StructType {
 
 using StructTypeVector = Vector<StructType, 0, SystemAllocPolicy>;
 using StructTypePtrVector = Vector<const StructType*, 0, SystemAllocPolicy>;
+
+
+
+class StructLayout {
+  CheckedInt32 sizeSoFar = 0;
+  uint32_t structAlignment = 1;
+
+ public:
+  
+  CheckedInt32 addField(FieldType type);
+
+  
+  
+  CheckedInt32 close();
+};
 
 
 

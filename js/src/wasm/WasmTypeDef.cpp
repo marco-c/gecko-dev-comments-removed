@@ -18,7 +18,6 @@
 
 #include "wasm/WasmTypeDef.h"
 
-#include "mozilla/CheckedInt.h"
 #include "mozilla/MathAlgorithms.h"
 
 #include "jit/JitOptions.h"
@@ -32,7 +31,6 @@ using namespace js;
 using namespace js::jit;
 using namespace js::wasm;
 
-using mozilla::CheckedInt32;
 using mozilla::IsPowerOfTwo;
 
 bool FuncType::canHaveJitEntry() const {
@@ -85,40 +83,31 @@ static inline CheckedInt32 RoundUpToAlignment(CheckedInt32 address,
   return ((address + (align - 1)) / align) * align;
 }
 
-class StructLayout {
-  CheckedInt32 sizeSoFar = 0;
-  uint32_t structAlignment = 1;
+CheckedInt32 StructLayout::addField(FieldType type) {
+  uint32_t fieldSize = type.size();
+  uint32_t fieldAlignment = type.alignmentInStruct();
 
- public:
   
-  CheckedInt32 addField(FieldType type) {
-    uint32_t fieldSize = type.size();
-    uint32_t fieldAlignment = type.alignmentInStruct();
+  structAlignment = std::max(structAlignment, fieldAlignment);
 
-    
-    structAlignment = std::max(structAlignment, fieldAlignment);
-
-    
-    CheckedInt32 offset = RoundUpToAlignment(sizeSoFar, fieldAlignment);
-    if (!offset.isValid()) {
-      return offset;
-    }
-
-    
-    sizeSoFar = offset + fieldSize;
-    if (!sizeSoFar.isValid()) {
-      return sizeSoFar;
-    }
-
+  
+  CheckedInt32 offset = RoundUpToAlignment(sizeSoFar, fieldAlignment);
+  if (!offset.isValid()) {
     return offset;
   }
 
   
-  
-  CheckedInt32 close() {
-    return RoundUpToAlignment(sizeSoFar, structAlignment);
+  sizeSoFar = offset + fieldSize;
+  if (!sizeSoFar.isValid()) {
+    return sizeSoFar;
   }
-};
+
+  return offset;
+}
+
+CheckedInt32 StructLayout::close() {
+  return RoundUpToAlignment(sizeSoFar, structAlignment);
+}
 
 bool StructType::computeLayout() {
   StructLayout layout;
