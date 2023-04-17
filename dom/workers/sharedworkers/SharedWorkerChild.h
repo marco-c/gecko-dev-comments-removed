@@ -15,6 +15,10 @@ namespace dom {
 
 class SharedWorker;
 
+
+
+
+
 class SharedWorkerChild final : public mozilla::dom::PSharedWorkerChild {
   friend class PSharedWorkerChild;
 

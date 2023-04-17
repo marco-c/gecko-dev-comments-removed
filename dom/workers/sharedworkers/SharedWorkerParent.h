@@ -19,6 +19,11 @@ class MessagePortIdentifier;
 class RemoteWorkerData;
 class SharedWorkerManagerWrapper;
 
+
+
+
+
+
 class SharedWorkerParent final
     : public mozilla::dom::PSharedWorkerParent,
       public SupportsCheckedUnsafePtr<CheckIf<DiagnosticAssertEnabled>> {

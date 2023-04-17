@@ -14,6 +14,11 @@ namespace dom {
 
 class RemoteWorkerController;
 
+
+
+
+
+
 class RemoteWorkerParent final : public PRemoteWorkerParent {
   friend class PRemoteWorkerParent;
 

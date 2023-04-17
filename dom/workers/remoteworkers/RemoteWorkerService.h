@@ -17,6 +17,20 @@ namespace dom {
 
 class RemoteWorkerServiceChild;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class RemoteWorkerService final : public nsIObserver {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS

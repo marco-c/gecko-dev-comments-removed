@@ -27,6 +27,10 @@ class Event;
 
 class SharedWorkerChild;
 
+
+
+
+
 class SharedWorker final : public DOMEventTargetHelper {
   typedef mozilla::ErrorResult ErrorResult;
   typedef mozilla::dom::GlobalObject GlobalObject;

@@ -34,6 +34,13 @@ class WeakWorkerRef;
 class WorkerErrorReport;
 class WorkerPrivate;
 
+
+
+
+
+
+
+
 class RemoteWorkerChild final
     : public SupportsThreadSafeWeakPtr<RemoteWorkerChild>,
       public PRemoteWorkerChild {

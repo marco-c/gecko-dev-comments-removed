@@ -16,6 +16,10 @@ namespace dom {
 class RemoteWorkerController;
 class RemoteWorkerData;
 
+
+
+
+
 class RemoteWorkerServiceChild final : public PRemoteWorkerServiceChild {
  public:
   NS_INLINE_DECL_REFCOUNTING(RemoteWorkerServiceChild)

@@ -22,6 +22,13 @@ class RemoteWorkerController;
 class RemoteWorkerServiceParent;
 
 
+
+
+
+
+
+
+
 class RemoteWorkerManager final {
  public:
   NS_INLINE_DECL_REFCOUNTING(RemoteWorkerManager)

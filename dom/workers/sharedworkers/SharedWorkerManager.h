@@ -61,6 +61,15 @@ class SharedWorkerManagerWrapper final {
   RefPtr<SharedWorkerManagerHolder> mHolder;
 };
 
+
+
+
+
+
+
+
+
+
 class SharedWorkerManager final : public RemoteWorkerObserver {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SharedWorkerManager, override);

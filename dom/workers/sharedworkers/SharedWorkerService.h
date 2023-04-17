@@ -27,6 +27,11 @@ class SharedWorkerManager;
 class SharedWorkerParent;
 class UniqueMessagePortId;
 
+
+
+
+
+
 class SharedWorkerService final {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SharedWorkerService);

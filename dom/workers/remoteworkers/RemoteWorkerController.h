@@ -105,6 +105,18 @@ class RemoteWorkerObserver {
   virtual void Terminated() = 0;
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
 class RemoteWorkerController final {
   friend class RemoteWorkerControllerParent;
   friend class RemoteWorkerManager;

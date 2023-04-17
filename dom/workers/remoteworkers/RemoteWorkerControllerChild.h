@@ -16,6 +16,10 @@
 namespace mozilla {
 namespace dom {
 
+
+
+
+
 class RemoteWorkerControllerChild final : public PRemoteWorkerControllerChild {
   friend class PRemoteWorkerControllerChild;
 

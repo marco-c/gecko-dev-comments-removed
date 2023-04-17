@@ -15,6 +15,10 @@ namespace dom {
 
 class RemoteWorkerManager;
 
+
+
+
+
 class RemoteWorkerServiceParent final : public PRemoteWorkerServiceParent {
  public:
   RemoteWorkerServiceParent();
