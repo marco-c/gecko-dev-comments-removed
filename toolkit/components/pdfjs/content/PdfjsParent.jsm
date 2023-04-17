@@ -65,9 +65,7 @@ class PdfjsParent extends JSWindowActorParent {
   }
 
   didDestroy() {
-    if (this._boundToFindbar) {
-      this._removeEventListener();
-    }
+    this._removeEventListener();
   }
 
   receiveMessage(aMsg) {
@@ -184,6 +182,25 @@ class PdfjsParent extends JSWindowActorParent {
       return;
     }
 
+    if (type == "SwapDocShells") {
+      this._removeEventListener();
+      let newBrowser = aEvent.detail;
+      newBrowser.addEventListener(
+        "EndSwapDocShells",
+        evt => {
+          this._hookupEventListeners(newBrowser);
+        },
+        { once: true }
+      );
+      return;
+    }
+
+    
+    
+    if (this.windowContext.isInBFCache) {
+      return;
+    }
+
     
     
     let detail = null;
@@ -241,10 +258,13 @@ class PdfjsParent extends JSWindowActorParent {
     } else {
       tab.addEventListener("TabFindInitialized", this);
     }
+    aBrowser.addEventListener("SwapDocShells", this);
     return !!findbar;
   }
 
   _removeEventListener() {
+    let browser = this.browser;
+
     
     let findbar = this._boundToFindbar;
     if (findbar) {
@@ -253,9 +273,18 @@ class PdfjsParent extends JSWindowActorParent {
         var type = gFindTypes[i];
         findbar.removeEventListener(type, this, true);
       }
+    } else if (browser) {
+      
+      
+      let tabbrowser = browser.getTabBrowser();
+      let tab = tabbrowser.getTabForBrowser(browser);
+      tab?.removeEventListener("TabFindInitialized", this);
     }
 
     this._boundToFindbar = null;
+
+    
+    browser?.removeEventListener("SwapDocShells", this);
   }
 
   
