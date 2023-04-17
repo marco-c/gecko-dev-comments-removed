@@ -2551,7 +2551,7 @@ toolbar#nav-bar {
             
             if status:
                 self.message_logger.dump_buffered()
-                msg = ("application terminated with exit code %s" % status,)
+                msg = "application terminated with exit code %s" % status
                 
                 if crashAsPass and self.message_logger.is_test_running:
                     
@@ -2570,7 +2570,9 @@ toolbar#nav-bar {
                     
                     self.message_logger.process_message(message)
                 else:
-                    self.log.error(msg)
+                    self.log.error(
+                        "TEST-UNEXPECTED-FAIL | %s | %s" % (self.lastTestSeen, msg)
+                    )
             else:
                 self.lastTestSeen = "Main app process exited normally"
 
