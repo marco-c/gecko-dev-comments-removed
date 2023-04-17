@@ -216,6 +216,12 @@ function getFieldCallInstanceCSU(edge, field)
     }
 }
 
+
+
+function isSyntheticVirtualDestructor(funcName) {
+    return funcName.endsWith(" ");
+}
+
 function typedField(field)
 {
     if ("FieldInstanceFunction" in field) {
@@ -225,11 +231,18 @@ function typedField(field)
         
         
         
+        const {Type, Name: [name]} = field;
+
+        
+        
+        if (isSyntheticVirtualDestructor(name)) {
+            return name;
+        }
+
         var nargs = 0;
-        const {Type} = field;
         if (Type.Kind == "Function" && "TypeFunctionArguments" in Type)
             nargs = Type.TypeFunctionArguments.Type.length;
-        return field.Name[0] + ":" + nargs;
+        return name + ":" + nargs;
     } else {
         
         return field.Name[0];

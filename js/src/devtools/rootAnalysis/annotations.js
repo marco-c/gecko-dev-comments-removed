@@ -448,6 +448,9 @@ function isOverridableField(staticCSU, csu, field)
     if (csu != 'nsISupports')
         return false;
 
+    if (field.endsWith(" "))
+        return false; 
+
     
     
     if (field == 'GetCurrentJSContext')

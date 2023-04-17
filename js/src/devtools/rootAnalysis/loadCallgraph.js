@@ -258,7 +258,6 @@ function loadCallgraph(file)
         worklist.push(name);
 
     
-    
     for (const [name, csuName] of fieldCallCSU) {
         const fullFieldName = functionNames[name];
         if (!fieldCallCannotGC(csuName, fullFieldName)) {

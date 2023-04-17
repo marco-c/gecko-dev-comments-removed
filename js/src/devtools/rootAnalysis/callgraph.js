@@ -24,6 +24,15 @@ var virtualDefinitions = new Map();
 
 
 
+
+
+
+
+
+
+
+
+
 var virtualDeclarations = new Map();
 
 var virtualResolutionsSeen = new Set();
@@ -49,9 +58,9 @@ function processCSU(csuName, csu)
         addToNamedSet(superclasses, csuName, Base);
     }
 
-    for (const field of csu.FunctionField) {
+    for (const {Field, Variable} of csu.FunctionField) {
         
-        const info = field.Field[0];
+        const info = Field[0];
         const name = info.Name[0];
         const annotations = new Set();
         const funcInfo = {
@@ -59,10 +68,17 @@ function processCSU(csuName, csu)
             typedfield: typedField(info),
             field: info,
             annotations,
-            inherited: (info.FieldCSU.Type.Name != csuName),
-            pureVirtual: "Variable" in field,
-            synthetic: false
+            inherited: (info.FieldCSU.Type.Name != csuName), 
+            pureVirtual: Boolean(Variable),
+            dtor: false,
         };
+
+        if (Variable && isSyntheticVirtualDestructor(name)) {
+            
+            funcInfo.dtor = Variable.Name[0];
+            funcInfo.pureVirtual = false;
+        }
+
         addToNamedSet(virtualDeclarations, csuName, funcInfo);
         if ('Annotation' in info) {
             for (const {Name: [annType, annValue]} of info.Annotation) {
@@ -70,10 +86,10 @@ function processCSU(csuName, csu)
             }
         }
 
-        if ("Variable" in field) {
+        if (Variable) {
             
-            const name = field.Variable.Name[0];
-            addToNamedSet(virtualDefinitions, fieldKey(csuName, field.Field[0]), name);
+            const name = Variable.Name[0];
+            addToNamedSet(virtualDefinitions, fieldKey(csuName, Field[0]), name);
         }
     }
 }
