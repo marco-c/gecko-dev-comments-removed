@@ -1,0 +1,38 @@
+
+
+
+
+
+
+
+
+
+
+package org.webrtc.audio;
+
+
+
+
+
+
+
+
+public interface AudioDeviceModule {
+  
+
+
+
+  long getNativeAudioDeviceModulePointer();
+
+  
+
+
+
+  void release();
+
+  
+  void setSpeakerMute(boolean mute);
+
+  
+  void setMicrophoneMute(boolean mute);
+}

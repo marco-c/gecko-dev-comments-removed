@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+#include "call/adaptation/degradation_preference_provider.h"
+
+webrtc::DegradationPreferenceProvider::~DegradationPreferenceProvider() =
+    default;

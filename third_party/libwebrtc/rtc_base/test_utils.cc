@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+#include "rtc_base/test_utils.h"
+
+namespace webrtc {
+namespace testing {
+
+StreamSink::StreamSink() = default;
+StreamSink::~StreamSink() = default;
+
+}  
+}  

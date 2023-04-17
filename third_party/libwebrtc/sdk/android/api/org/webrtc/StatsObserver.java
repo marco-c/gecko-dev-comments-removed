@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+package org.webrtc;
+
+
+public interface StatsObserver {
+  
+  @CalledByNative public void onComplete(StatsReport[] reports);
+}

@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+#include "call/adaptation/resource_adaptation_processor_interface.h"
+
+namespace webrtc {
+
+ResourceAdaptationProcessorInterface::~ResourceAdaptationProcessorInterface() =
+    default;
+
+ResourceLimitationsListener::~ResourceLimitationsListener() = default;
+
+}  

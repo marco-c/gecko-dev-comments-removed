@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+#include <cpu-features.h>
+
+namespace webrtc {
+
+uint64_t GetCPUFeaturesARM(void) {
+  return android_getCpuFeatures();
+}
+
+}  

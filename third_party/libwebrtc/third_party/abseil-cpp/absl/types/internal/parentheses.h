@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef ABSL_TYPES_INTERNAL_PARENTHESES_H_
+#define ABSL_TYPES_INTERNAL_PARENTHESES_H_
+
+#define ABSL_INTERNAL_LPAREN (
+
+#define ABSL_INTERNAL_RPAREN )
+
+#endif  

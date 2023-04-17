@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+package org.webrtc;
+
+
+public interface RTCStatsCollectorCallback {
+  
+  @CalledByNative public void onStatsDelivered(RTCStatsReport report);
+}

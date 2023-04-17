@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef MODULES_VIDEO_CODING_CODECS_VP8_TEMPORAL_LAYERS_H_
+#define MODULES_VIDEO_CODING_CODECS_VP8_TEMPORAL_LAYERS_H_
+
+
+#include "api/video_codecs/vp8_temporal_layers.h"
+
+#endif  

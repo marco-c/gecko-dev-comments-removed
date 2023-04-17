@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+#ifndef RTC_BASE_SYNCHRONIZATION_YIELD_H_
+#define RTC_BASE_SYNCHRONIZATION_YIELD_H_
+
+namespace webrtc {
+
+
+void YieldCurrentThread();
+
+}  
+
+#endif  

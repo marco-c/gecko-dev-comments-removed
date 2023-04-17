@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+#include "rtc_base/async_resolver_interface.h"
+
+namespace rtc {
+
+AsyncResolverInterface::AsyncResolverInterface() {}
+
+AsyncResolverInterface::~AsyncResolverInterface() = default;
+
+}  

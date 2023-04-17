@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef MODULES_AUDIO_CODING_CODECS_ILBC_MAIN_SOURCE_CB_MEM_ENERGY_H_
+#define MODULES_AUDIO_CODING_CODECS_ILBC_MAIN_SOURCE_CB_MEM_ENERGY_H_
+
+void WebRtcIlbcfix_CbMemEnergy(
+    size_t range,
+    int16_t* CB,           
+    int16_t* filteredCB,   
+    size_t lMem,           
+    size_t lTarget,        
+    int16_t* energyW16,    
+    int16_t* energyShifts, 
+    int scale,             
+    size_t base_size 
+    );
+
+#endif

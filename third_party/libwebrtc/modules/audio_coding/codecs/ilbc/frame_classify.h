@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef MODULES_AUDIO_CODING_CODECS_ILBC_MAIN_SOURCE_FRAME_CLASSIFY_H_
+#define MODULES_AUDIO_CODING_CODECS_ILBC_MAIN_SOURCE_FRAME_CLASSIFY_H_
+
+size_t WebRtcIlbcfix_FrameClassify(
+    
+    IlbcEncoder* iLBCenc_inst,
+    
+    int16_t* residualFIX 
+    );
+
+#endif

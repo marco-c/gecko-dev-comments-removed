@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+#include "api/video/hdr_metadata.h"
+
+namespace webrtc {
+
+HdrMasteringMetadata::Chromaticity::Chromaticity() = default;
+
+HdrMasteringMetadata::HdrMasteringMetadata() = default;
+
+HdrMetadata::HdrMetadata() = default;
+
+}  

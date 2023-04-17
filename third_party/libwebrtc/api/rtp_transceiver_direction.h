@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef API_RTP_TRANSCEIVER_DIRECTION_H_
+#define API_RTP_TRANSCEIVER_DIRECTION_H_
+
+namespace webrtc {
+
+
+enum class RtpTransceiverDirection {
+  kSendRecv,
+  kSendOnly,
+  kRecvOnly,
+  kInactive,
+  kStopped,
+};
+
+}  
+
+#endif  

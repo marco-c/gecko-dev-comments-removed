@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef MEDIA_ENGINE_ADM_HELPERS_H_
+#define MEDIA_ENGINE_ADM_HELPERS_H_
+
+namespace webrtc {
+
+class AudioDeviceModule;
+
+namespace adm_helpers {
+
+void Init(AudioDeviceModule* adm);
+
+}  
+}  
+
+#endif  

@@ -1,0 +1,34 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef MODULES_AUDIO_CODING_ACM2_ACM_REMIXING_H_
+#define MODULES_AUDIO_CODING_ACM2_ACM_REMIXING_H_
+
+#include <vector>
+
+#include "api/audio/audio_frame.h"
+
+namespace webrtc {
+
+
+
+void DownMixFrame(const AudioFrame& input, rtc::ArrayView<int16_t> output);
+
+
+
+
+
+void ReMixFrame(const AudioFrame& input,
+                size_t num_output_channels,
+                std::vector<int16_t>* output);
+
+}  
+
+#endif  

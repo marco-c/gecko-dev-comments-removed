@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+#include "modules/audio_processing/aec3/mock/mock_render_delay_controller.h"
+
+namespace webrtc {
+namespace test {
+
+MockRenderDelayController::MockRenderDelayController() = default;
+MockRenderDelayController::~MockRenderDelayController() = default;
+
+}  
+}  

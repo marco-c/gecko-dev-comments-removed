@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+#include "call/audio_state.h"
+
+namespace webrtc {
+
+AudioState::Config::Config() = default;
+AudioState::Config::~Config() = default;
+
+}  

@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+package org.webrtc;
+
+import org.webrtc.Logging.Severity;
+
+
+
+
+
+
+public interface Loggable {
+  public void onLogMessage(String message, Severity severity, String tag);
+}

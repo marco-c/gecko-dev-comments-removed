@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+#include <stdint.h>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int32_t WebRtcSpl_SqrtFloor(int32_t value);

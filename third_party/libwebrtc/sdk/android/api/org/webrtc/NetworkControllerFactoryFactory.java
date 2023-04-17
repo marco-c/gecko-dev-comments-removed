@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+package org.webrtc;
+
+
+public interface NetworkControllerFactoryFactory {
+  
+
+
+
+  public long createNativeNetworkControllerFactory();
+}

@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include "absl/container/internal/hashtablez_sampler.h"
+
+#include "absl/base/attributes.h"
+
+namespace absl {
+ABSL_NAMESPACE_BEGIN
+namespace container_internal {
+
+
+extern "C" ABSL_ATTRIBUTE_WEAK bool AbslContainerInternalSampleEverything() {
+  return false;
+}
+
+}  
+ABSL_NAMESPACE_END
+}  

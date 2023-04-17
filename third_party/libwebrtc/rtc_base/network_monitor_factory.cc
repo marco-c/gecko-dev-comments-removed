@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+#include "rtc_base/network_monitor_factory.h"
+
+namespace rtc {
+
+NetworkMonitorFactory::NetworkMonitorFactory() {}
+NetworkMonitorFactory::~NetworkMonitorFactory() {}
+
+}  

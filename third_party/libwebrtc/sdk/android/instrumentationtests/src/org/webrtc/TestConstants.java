@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+package org.webrtc;
+
+class TestConstants {
+  public static final String NATIVE_LIBRARY = "jingle_peerconnection_instrumentationtests_so";
+}

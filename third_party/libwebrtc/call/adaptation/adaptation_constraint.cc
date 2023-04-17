@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+#include "call/adaptation/adaptation_constraint.h"
+
+namespace webrtc {
+
+AdaptationConstraint::~AdaptationConstraint() {}
+
+}  
