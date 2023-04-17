@@ -40,7 +40,8 @@ struct RemotenessChangeOptions;
 }  
 namespace net {
 using ChildEndpointPromise =
-    MozPromise<ipc::Endpoint<extensions::PStreamFilterChild>, bool, true>;
+    MozPromise<mozilla::ipc::Endpoint<extensions::PStreamFilterChild>, bool,
+               true>;
 
 
 
@@ -59,7 +60,7 @@ struct StreamFilterRequest {
   }
   RefPtr<ChildEndpointPromise::Private> mPromise;
   base::ProcessId mChildProcessId;
-  ipc::Endpoint<extensions::PStreamFilterChild> mChildEndpoint;
+  mozilla::ipc::Endpoint<extensions::PStreamFilterChild> mChildEndpoint;
 };
 }  
 }  
@@ -103,7 +104,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
                        bool aIsDocumentLoad);
 
   struct OpenPromiseSucceededType {
-    nsTArray<ipc::Endpoint<extensions::PStreamFilterParent>>
+    nsTArray<mozilla::ipc::Endpoint<extensions::PStreamFilterParent>>
         mStreamFilterEndpoints;
     uint32_t mRedirectFlags;
     uint32_t mLoadFlags;
@@ -327,7 +328,8 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   
   
   
-  using ParentEndpoint = ipc::Endpoint<extensions::PStreamFilterParent>;
+  using ParentEndpoint =
+      mozilla::ipc::Endpoint<extensions::PStreamFilterParent>;
   RefPtr<PDocumentChannelParent::RedirectToRealChannelPromise>
   RedirectToRealChannel(uint32_t aRedirectFlags, uint32_t aLoadFlags,
                         const Maybe<uint64_t>& aDestinationProcess,
