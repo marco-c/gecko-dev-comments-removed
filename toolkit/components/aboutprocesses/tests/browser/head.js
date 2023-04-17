@@ -423,6 +423,18 @@ async function testAboutProcessesWithConfig({ showAllFrames, showThreads }) {
     return tab;
   })();
 
+  let promiseUserContextTab = (async function() {
+    let tab = BrowserTestUtils.addTab(gBrowser, "http://example.com", {
+      userContextId: 1,
+      skipAnimation: true,
+    });
+    await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+    await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
+      content.document.title = "Tab with User Context";
+    });
+    return tab;
+  })();
+
   info("Setting up tabs we intend to close");
 
   
@@ -463,6 +475,7 @@ async function testAboutProcessesWithConfig({ showAllFrames, showThreads }) {
   
   let tabAboutProcesses = await promiseTabAboutProcesses;
   let tabHung = await promiseTabHung;
+  let tabUserContext = await promiseUserContextTab;
   let tabCloseSeparately1 = await promiseTabCloseSeparately1;
   let tabCloseSeparately2 = await promiseTabCloseSeparately2;
   let tabCloseProcess1 = await promiseTabCloseProcess1;
@@ -809,6 +822,22 @@ async function testAboutProcessesWithConfig({ showAllFrames, showThreads }) {
     }
 
     
+    let userContextProcessRow = findProcessRowByOrigin(
+      doc,
+      "http://example.com^userContextId=1"
+    );
+    Assert.ok(
+      userContextProcessRow,
+      "There is a separate process for the tab with a different user context"
+    );
+    Assert.equal(
+      document.l10n.getAttributes(userContextProcessRow.firstChild).args.origin,
+      "http://example.com — " +
+        ContextualIdentityService.getUserContextLabel(1),
+      "The user context ID should be replaced with the localized container name"
+    );
+
+    
     for (let origin of [
       "http://example.net", 
       "https://example.org", 
@@ -946,6 +975,7 @@ async function testAboutProcessesWithConfig({ showAllFrames, showThreads }) {
   }
   BrowserTestUtils.removeTab(tabAboutProcesses);
   BrowserTestUtils.removeTab(tabHung);
+  BrowserTestUtils.removeTab(tabUserContext);
   BrowserTestUtils.removeTab(tabCloseSeparately2);
 
   
