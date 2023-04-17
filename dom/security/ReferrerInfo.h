@@ -394,6 +394,20 @@ class ReferrerInfo : public nsIReferrerInfo {
 
 
 
+  bool ShouldIgnoreLessRestrictedPolicies(
+      nsIHttpChannel* aChannel, const ReferrerPolicyEnum aPolicy) const;
+
+  
+
+
+
+
+
+
+
+
+
+
 
 
 
