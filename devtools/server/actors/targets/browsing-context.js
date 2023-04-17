@@ -1350,7 +1350,10 @@ const browsingContextTargetPrototype = {
       navigationStart: Date.now(),
     });
 
-    this._windowDestroyed(this.window, null, true);
+    this._windowDestroyed(this.window, {
+      isFrozen: true,
+      isFrameSwitching: true,
+    });
 
     
     
@@ -1399,7 +1402,9 @@ const browsingContextTargetPrototype = {
     
     
     
-    if (this.followWindowGlobalLifeCycle && isTopLevel) {
+    
+    
+    if (this.followWindowGlobalLifeCycle && isTopLevel && !isFrameSwitching) {
       return;
     }
 
@@ -1412,13 +1417,18 @@ const browsingContextTargetPrototype = {
     });
   },
 
-  _windowDestroyed(window, id = null, isFrozen = false) {
+  _windowDestroyed(
+    window,
+    { id = null, isFrozen = false, isFrameSwitching = false }
+  ) {
     const isTopLevel = window == this.window;
 
     
     
     
-    if (this.followWindowGlobalLifeCycle && isTopLevel) {
+    
+    
+    if (this.followWindowGlobalLifeCycle && isTopLevel && !isFrameSwitching) {
       return;
     }
 
@@ -1787,7 +1797,7 @@ DebuggerProgressListener.prototype = {
       return;
     }
 
-    this._targetActor._windowDestroyed(window, null, true);
+    this._targetActor._windowDestroyed(window, { isFrozen: true });
     this._knownWindowIDs.delete(getWindowID(window));
   }, "DebuggerProgressListener.prototype.onWindowHidden"),
 
@@ -1803,7 +1813,7 @@ DebuggerProgressListener.prototype = {
     const window = this._knownWindowIDs.get(innerID);
     if (window) {
       this._knownWindowIDs.delete(innerID);
-      this._targetActor._windowDestroyed(window, innerID);
+      this._targetActor._windowDestroyed(window, { id: innerID });
     }
 
     
