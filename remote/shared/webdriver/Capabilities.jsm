@@ -23,23 +23,14 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   AppInfo: "chrome://remote/content/marionette/appinfo.js",
   assert: "chrome://remote/content/marionette/assert.js",
   error: "chrome://remote/content/marionette/error.js",
-  Log: "chrome://remote/content/marionette/log.js",
   pprint: "chrome://remote/content/marionette/format.js",
+  RemoteAgent: "chrome://remote/content/components/RemoteAgent.jsm",
 });
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["URL"]);
 
-XPCOMUtils.defineLazyGetter(this, "logger", () => Log.get());
-
 XPCOMUtils.defineLazyGetter(this, "remoteAgent", () => {
-  
-  
-  try {
-    return Cc["@mozilla.org/remote/agent;1"].createInstance(Ci.nsIRemoteAgent);
-  } catch (e) {
-    logger.debug("Remote agent not available for this build and platform");
-    return null;
-  }
+  return Cc["@mozilla.org/remote/agent;1"].createInstance(Ci.nsIRemoteAgent);
 });
 
 
@@ -446,7 +437,11 @@ class Capabilities extends Map {
       
       ["moz:accessibilityChecks", false],
       ["moz:buildID", AppInfo.appBuildID],
-      ["moz:debuggerAddress", remoteAgent?.debuggerAddress || null],
+      [
+        "moz:debuggerAddress",
+        
+        RemoteAgent.cdp ? remoteAgent.debuggerAddress : null,
+      ],
       [
         "moz:headless",
         Cc["@mozilla.org/gfx/info;1"].getService(Ci.nsIGfxInfo).isHeadless,

@@ -23,15 +23,31 @@ class TestCommandLineArguments(MarionetteTestCase):
 
         super(TestCommandLineArguments, self).tearDown()
 
-    def test_remote_agent_enabled(self):
+    def test_debugger_address_cdp_status(self):
+        
         debugger_address = self.marionette.session_capabilities.get(
             "moz:debuggerAddress"
         )
         self.assertIsNone(debugger_address)
 
-        self.marionette.instance.app_args.append("-remote-debugging-port")
+        
+        self.marionette.enforce_gecko_prefs({"remote.active-protocols": 1})
+        try:
+            self.marionette.quit()
+            self.marionette.instance.app_args.append("-remote-debugging-port")
+            self.marionette.start_session()
 
+            debugger_address = self.marionette.session_capabilities.get(
+                "moz:debuggerAddress"
+            )
+            self.assertIsNone(debugger_address)
+        finally:
+            self.marionette.clear_pref("remote.active-protocols")
+            self.marionette.restart()
+
+        
         self.marionette.quit()
+        self.marionette.instance.switch_profile()
         self.marionette.start_session()
 
         debugger_address = self.marionette.session_capabilities.get(
