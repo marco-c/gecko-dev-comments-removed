@@ -288,11 +288,10 @@ const ExperimentAPI = {
 
 const NimbusFeatures = {};
 for (let feature in FeatureManifest) {
-  XPCOMUtils.defineLazyGetter(NimbusFeatures, feature, () =>
-    
-    feature === "upgradeDialog"
-      ? NimbusFeatures.aboutwelcome
-      : new ExperimentFeature(feature)
+  XPCOMUtils.defineLazyGetter(
+    NimbusFeatures,
+    feature,
+    () => new ExperimentFeature(feature)
   );
 }
 
