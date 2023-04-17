@@ -321,7 +321,20 @@ void UntrustedModulesData::AddNewLoads(
     Unused << mModules.LookupOrInsert(entry.GetKey(), entry.GetData());
   }
 
+  
+  const size_t kMaxEvents = 50;
   MOZ_ASSERT(mEvents.length() <= kMaxEvents);
+
+  if (mEvents.length() + aEvents.length() > kMaxEvents) {
+    
+    size_t newLength = kMaxEvents - mEvents.length();
+    if (!newLength) {
+      return;
+    }
+
+    aEvents.shrinkTo(newLength);
+    aStacks.shrinkTo(newLength);
+  }
 
   if (mEvents.empty()) {
     mEvents = std::move(aEvents);

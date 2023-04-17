@@ -135,6 +135,64 @@ class UntrustedModulesCollector {
   }
 };
 
+static void ValidateUntrustedModules(const UntrustedModulesData& aData) {
+  
+  
+  
+  
+  
+  const struct {
+    const wchar_t* mName;
+    ModuleLoadInfo::Status mStatus;
+  } kKnownModules[] = {
+      
+      {L"TestDllBlocklist_MatchByName.dll", ModuleLoadInfo::Status::Blocked},
+      {L"TestDllBlocklist_MatchByVersion.dll", ModuleLoadInfo::Status::Blocked},
+      {L"TestDllBlocklist_NoOpEntryPoint.dll",
+       ModuleLoadInfo::Status::Redirected},
+  };
+
+  EXPECT_EQ(aData.mProcessType, GeckoProcessType_Default);
+  EXPECT_EQ(aData.mPid, ::GetCurrentProcessId());
+
+  nsTHashtable<nsPtrHashKey<void>> moduleSet;
+  for (const RefPtr<ModuleRecord>& module : aData.mModules.Values()) {
+    moduleSet.PutEntry(module);
+  }
+
+  for (const auto& evt : aData.mEvents) {
+    const nsDependentSubstring leafName =
+        nt::GetLeafName(evt.mModule->mResolvedNtName);
+    const nsAutoString leafNameStr(leafName.Data(), leafName.Length());
+    size_t match;
+    if (BinarySearchIf(
+            kKnownModules, 0, ArrayLength(kKnownModules),
+            [&leafNameStr](const auto& aVal) {
+              return _wcsicmp(leafNameStr.get(), aVal.mName);
+            },
+            &match)) {
+      
+      
+      EXPECT_EQ(evt.mLoadStatus,
+                static_cast<uint32_t>(kKnownModules[match].mStatus));
+    } else {
+      EXPECT_EQ(evt.mThreadId, ::GetCurrentThreadId());
+      EXPECT_EQ(evt.mLoadStatus, 0);
+    }
+
+    
+    EXPECT_TRUE(moduleSet.Contains(evt.mModule));
+    EXPECT_FALSE(evt.mIsDependent);
+  }
+
+  
+  
+  EXPECT_GT(aData.mEvents.length(), 0);
+  EXPECT_GT(aData.mStacks.GetModuleCount(), 0);
+  EXPECT_EQ(aData.mSanitizationFailures, 0);
+  EXPECT_EQ(aData.mTrustTestFailures, 0);
+}
+
 class UntrustedModulesFixture : public TelemetryTestFixture {
   static constexpr int kLoadCountBeforeDllServices = 5;
   static constexpr int kLoadCountAfterDllServices = 5;
@@ -170,8 +228,6 @@ class UntrustedModulesFixture : public TelemetryTestFixture {
   static constexpr int kInitLoadCount =
       kLoadCountBeforeDllServices + kLoadCountAfterDllServices;
   static const nsString kTestModules[];
-
-  static void ValidateUntrustedModules(const UntrustedModulesData& aData);
 
   static void LoadAndFree(const nsAString& aLeaf) {
     nsModuleHandle dll(::LoadLibraryW(PrependWorkingDir(aLeaf).get()));
@@ -245,80 +301,9 @@ class UntrustedModulesFixture : public TelemetryTestFixture {
 };
 
 const nsString UntrustedModulesFixture::kTestModules[] = {
-    
-    u"TestUntrustedModules_Dll1.dll"_ns,
-    u"TestUntrustedModules_Dll2.dll"_ns,
-};
-
+    u"TestUntrustedModules_Dll1.dll"_ns, u"TestUntrustedModules_Dll2.dll"_ns};
 INIT_ONCE UntrustedModulesFixture::sInitLoadOnce = INIT_ONCE_STATIC_INIT;
 UntrustedModulesCollector UntrustedModulesFixture::sInitLoadDataCollector;
-
-void UntrustedModulesFixture::ValidateUntrustedModules(
-    const UntrustedModulesData& aData) {
-  
-  
-  
-  
-  
-  const struct {
-    const wchar_t* mName;
-    ModuleLoadInfo::Status mStatus;
-  } kKnownModules[] = {
-      
-      {L"TestDllBlocklist_MatchByName.dll", ModuleLoadInfo::Status::Blocked},
-      {L"TestDllBlocklist_MatchByVersion.dll", ModuleLoadInfo::Status::Blocked},
-      {L"TestDllBlocklist_NoOpEntryPoint.dll",
-       ModuleLoadInfo::Status::Redirected},
-  };
-
-  EXPECT_EQ(aData.mProcessType, GeckoProcessType_Default);
-  EXPECT_EQ(aData.mPid, ::GetCurrentProcessId());
-
-  nsTHashtable<nsPtrHashKey<void>> moduleSet;
-  for (const RefPtr<ModuleRecord>& module : aData.mModules.Values()) {
-    moduleSet.PutEntry(module);
-  }
-
-  for (const auto& evt : aData.mEvents) {
-    const nsDependentSubstring leafName =
-        nt::GetLeafName(evt.mModule->mResolvedNtName);
-    const nsAutoString leafNameStr(leafName.Data(), leafName.Length());
-    size_t match;
-    if (BinarySearchIf(
-            kKnownModules, 0, ArrayLength(kKnownModules),
-            [&leafNameStr](const auto& aVal) {
-              return _wcsicmp(leafNameStr.get(), aVal.mName);
-            },
-            &match)) {
-      EXPECT_EQ(evt.mLoadStatus,
-                static_cast<uint32_t>(kKnownModules[match].mStatus));
-    } else {
-      EXPECT_EQ(evt.mLoadStatus, 0);
-    }
-
-    if (BinarySearchIf(
-            kTestModules, 0, ArrayLength(kTestModules),
-            [&leafNameStr](const auto& aVal) {
-              return _wcsicmp(leafNameStr.get(), aVal.get());
-            },
-            &match)) {
-      
-      
-      EXPECT_EQ(evt.mThreadId, ::GetCurrentThreadId());
-    }
-
-    
-    EXPECT_TRUE(moduleSet.Contains(evt.mModule));
-    EXPECT_FALSE(evt.mIsDependent);
-  }
-
-  
-  
-  EXPECT_GT(aData.mEvents.length(), 0);
-  EXPECT_GT(aData.mStacks.GetModuleCount(), 0);
-  EXPECT_EQ(aData.mSanitizationFailures, 0);
-  EXPECT_EQ(aData.mTrustTestFailures, 0);
-}
 
 BOOL CALLBACK UntrustedModulesFixture::InitialModuleLoadOnce(PINIT_ONCE, void*,
                                                              void**) {
