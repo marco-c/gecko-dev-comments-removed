@@ -55,13 +55,14 @@ class CodespellProcess(LintProcess):
                 print("Unable to match regex against output: {}".format(line))
             return
 
+        if CodespellProcess._fix:
+            CodespellProcess.fixed += 1
+
         
         
         m = re.match(r"^[a-z][A-Z][a-z]*", typo)
         if m:
             return
-        if CodespellProcess._fix:
-            CodespellProcess.fixed += 1
         res = {
             "path": abspath,
             "message": typo.strip() + " ==> " + correct,
