@@ -89,6 +89,10 @@
 
 
 
+
+
+
+
 #include "PHC.h"
 
 #include <stdlib.h>
@@ -284,7 +288,15 @@ using Delay = uint32_t;
 
 
 
-static const size_t kPageSize = 4096;
+
+
+static const size_t kPageSize =
+#if defined(XP_MACOSX) && defined(__aarch64__)
+    16384
+#else
+    4096
+#endif
+    ;
 
 
 

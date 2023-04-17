@@ -413,10 +413,10 @@ bool ExceptionHandler::WriteMinidumpForChild(mach_port_t child,
 }
 
 #ifdef MOZ_PHC
-static void GetPHCAddrInfo(int64_t exception_subcode,
+static void GetPHCAddrInfo(int exception_type, int64_t exception_subcode,
                            mozilla::phc::AddrInfo* addr_info) {
   
-  if (exception_subcode) {
+  if (exception_type == EXC_BAD_ACCESS) {
     
     
     char* addr = reinterpret_cast<char*>(exception_subcode);
@@ -443,7 +443,7 @@ bool ExceptionHandler::WriteMinidumpWithException(
 
     mozilla::phc::AddrInfo addr_info;
 #ifdef MOZ_PHC
-    GetPHCAddrInfo(exception_subcode, &addr_info);
+    GetPHCAddrInfo(exception_type, exception_subcode, &addr_info);
 #endif
 
   if (directCallback_) {
