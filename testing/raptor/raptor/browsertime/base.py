@@ -235,6 +235,11 @@ class Browsertime(Perftest):
             ["--browsertime.post_startup_delay", str(self.post_startup_delay)]
         )
 
+        
+        browsertime_script.extend(
+            ["--pageCompleteWaitTime", str(test.get("page_complete_wait_time", "5000"))]
+        )
+
         self.results_handler.remove_result_dir_for_test(test)
 
         browsertime_options = [
