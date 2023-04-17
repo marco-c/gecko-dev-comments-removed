@@ -168,9 +168,9 @@ inline void FinalizationRegistrationsObject::remove(
   records()->eraseIfEqual(record);
 }
 
-inline void FinalizationRegistrationsObject::sweep() {
+inline bool FinalizationRegistrationsObject::traceWeak(JSTracer* trc) {
   MOZ_ASSERT(records());
-  return records()->sweep();
+  return records()->traceWeak(trc);
 }
 
 
@@ -276,25 +276,26 @@ bool FinalizationRegistryObject::construct(JSContext* cx, unsigned argc,
 
 
 void FinalizationRegistryObject::trace(JSTracer* trc, JSObject* obj) {
-  auto registry = &obj->as<FinalizationRegistryObject>();
+  
+  
+  
 
-  
-  
-  
+  auto* registry = &obj->as<FinalizationRegistryObject>();
   if (ObjectWeakMap* registrations = registry->registrations()) {
     registrations->trace(trc);
   }
 }
 
-void FinalizationRegistryObject::sweep() {
+void FinalizationRegistryObject::traceWeak(JSTracer* trc) {
   
+  
+
   MOZ_ASSERT(registrations());
   for (ObjectValueWeakMap::Enum e(registrations()->valueMap()); !e.empty();
        e.popFront()) {
-    auto registrations =
+    auto* registrations =
         &e.front().value().toObject().as<FinalizationRegistrationsObject>();
-    registrations->sweep();
-    if (registrations->isEmpty()) {
+    if (!registrations->traceWeak(trc)) {
       e.removeFront();
     }
   }
