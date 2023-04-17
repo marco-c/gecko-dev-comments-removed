@@ -81,21 +81,36 @@ class HTMLEditUtils final {
 
 
 
+
+
+
+
+
   static bool IsRemovableNode(const nsIContent& aContent) {
-    return aContent.GetParentNode() && aContent.GetParentNode()->IsEditable() &&
-           &aContent != aContent.OwnerDoc()->GetBody() &&
-           &aContent != aContent.OwnerDoc()->GetDocumentElement();
+    return EditorUtils::IsPaddingBRElementForEmptyEditor(aContent) ||
+           aContent.IsRootOfNativeAnonymousSubtree() ||
+           (aContent.GetParentNode() &&
+            aContent.GetParentNode()->IsEditable() &&
+            &aContent != aContent.OwnerDoc()->GetBody() &&
+            &aContent != aContent.OwnerDoc()->GetDocumentElement());
   }
 
   
 
 
 
+
+
+
+
+
   static bool IsRemovableFromParentNode(const nsIContent& aContent) {
-    return aContent.IsEditable() && aContent.GetParentNode() &&
-           aContent.GetParentNode()->IsEditable() &&
-           &aContent != aContent.OwnerDoc()->GetBody() &&
-           &aContent != aContent.OwnerDoc()->GetDocumentElement();
+    return EditorUtils::IsPaddingBRElementForEmptyEditor(aContent) ||
+           aContent.IsRootOfNativeAnonymousSubtree() ||
+           (aContent.IsEditable() && aContent.GetParentNode() &&
+            aContent.GetParentNode()->IsEditable() &&
+            &aContent != aContent.OwnerDoc()->GetBody() &&
+            &aContent != aContent.OwnerDoc()->GetDocumentElement());
   }
 
   

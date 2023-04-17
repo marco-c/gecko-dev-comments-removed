@@ -905,12 +905,17 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
         }
         
         
-        else {
+        else if (HTMLEditUtils::IsRemovableNode(*firstChild)) {
           AutoEditorDOMPointChildInvalidator lockOffset(pointToInsert);
           IgnoredErrorResult ignoredError;
           content->RemoveChild(*firstChild, ignoredError);
           NS_WARNING_ASSERTION(!ignoredError.Failed(),
                                "nsINode::RemoveChild() failed, but ignored");
+        } else {
+          NS_WARNING(
+              "Failed to delete the first child of a list element because the "
+              "list element non-editable");
+          break;
         }
       }
     }

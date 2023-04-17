@@ -3298,11 +3298,8 @@ nsresult HTMLEditor::RemoveEmptyInclusiveAncestorInlineElements(
 
 nsresult HTMLEditor::DeleteNodeWithTransaction(nsIContent& aContent) {
   
-  
-  
-  if (NS_WARN_IF(!HTMLEditUtils::IsRemovableNode(aContent) &&
-                 !EditorUtils::IsPaddingBRElementForEmptyEditor(aContent))) {
-    return NS_ERROR_FAILURE;
+  if (NS_WARN_IF(!HTMLEditUtils::IsRemovableNode(aContent))) {
+    return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
   }
   nsresult rv = EditorBase::DeleteNodeWithTransaction(aContent);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
@@ -3668,9 +3665,9 @@ already_AddRefed<Element> HTMLEditor::InsertContainerWithTransactionInternal(
 
   
   
-  nsresult rv = EditorBase::DeleteNodeWithTransaction(aContent);
+  nsresult rv = DeleteNodeWithTransaction(aContent);
   if (NS_FAILED(rv)) {
-    NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
+    NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
     return nullptr;
   }
 
@@ -3734,12 +3731,9 @@ already_AddRefed<Element> HTMLEditor::ReplaceContainerWithTransactionInternal(
       if (NS_WARN_IF(!child)) {
         return nullptr;
       }
-      
-      
-      
-      nsresult rv = EditorBase::DeleteNodeWithTransaction(*child);
+      nsresult rv = DeleteNodeWithTransaction(*child);
       if (NS_FAILED(rv)) {
-        NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
+        NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
         return nullptr;
       }
 
@@ -3762,10 +3756,9 @@ already_AddRefed<Element> HTMLEditor::ReplaceContainerWithTransactionInternal(
   }
 
   
-  
-  rv = EditorBase::DeleteNodeWithTransaction(aOldContainer);
+  rv = DeleteNodeWithTransaction(aOldContainer);
   if (NS_FAILED(rv)) {
-    NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
+    NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
     return nullptr;
   }
 
@@ -3790,12 +3783,9 @@ nsresult HTMLEditor::RemoveContainerWithTransaction(Element& aElement) {
     if (NS_WARN_IF(!child)) {
       return NS_ERROR_FAILURE;
     }
-    
-    
-    
-    nsresult rv = EditorBase::DeleteNodeWithTransaction(*child);
+    nsresult rv = DeleteNodeWithTransaction(*child);
     if (NS_FAILED(rv)) {
-      NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
+      NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
       return rv;
     }
 
@@ -3811,10 +3801,9 @@ nsresult HTMLEditor::RemoveContainerWithTransaction(Element& aElement) {
     }
   }
 
-  
-  nsresult rv = EditorBase::DeleteNodeWithTransaction(aElement);
+  nsresult rv = DeleteNodeWithTransaction(aElement);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "EditorBase::DeleteNodeWithTransaction() failed");
+                       "HTMLEditor::DeleteNodeWithTransaction() failed");
   return rv;
 }
 
@@ -4249,6 +4238,12 @@ already_AddRefed<nsIContent> HTMLEditor::SplitNodeWithTransaction(
     return nullptr;
   }
   MOZ_ASSERT(aStartOfRightNode.IsSetAndValid());
+
+  if (NS_WARN_IF(!HTMLEditUtils::IsSplittableNode(
+          *aStartOfRightNode.ContainerAsContent()))) {
+    aError.Throw(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+    return nullptr;
+  }
 
   AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eSplitNode, nsIEditor::eNext, aError);
@@ -4894,16 +4889,9 @@ nsresult HTMLEditor::MoveNodeWithTransaction(
   
   AutoMoveNodeSelNotify selNotify(RangeUpdaterRef(), oldPoint, aPointToInsert);
 
-  
-  
-  
-  
-  
-  
-  
-  nsresult rv = EditorBase::DeleteNodeWithTransaction(aContent);
+  nsresult rv = DeleteNodeWithTransaction(aContent);
   if (NS_FAILED(rv)) {
-    NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
+    NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
     return rv;
   }
 
