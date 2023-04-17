@@ -187,13 +187,10 @@ add_task(async function test_subframes_focus() {
               content.browsingContext.top,
               descChild + "activeBrowsingContext"
             );
-            if (!isOop) {
-              
-              Assert.ok(
-                content.document.hasFocus(),
-                descChild + "hasFocus: " + content.browsingContext.id
-              );
-            }
+            Assert.ok(
+              content.document.hasFocus(),
+              descChild + "hasFocus: " + content.browsingContext.id
+            );
 
             
             
@@ -206,10 +203,16 @@ add_task(async function test_subframes_focus() {
               
               
               
+
               
-              
-              
-              if (!isOop) {
+              if (isOop) {
+                Assert.equal(
+                  Services.focus.focusedWindow,
+                  null,
+                  descChild + "focusedWindow"
+                );
+                Assert.ok(!childBC.docShell, descChild + "childBC.docShell");
+              } else {
                 Assert.equal(
                   Services.focus.focusedWindow,
                   childBC.window,
