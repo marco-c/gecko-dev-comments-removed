@@ -157,6 +157,17 @@ class Collator final {
   static Result<Bcp47ExtEnumeration, ICUError> GetBcp47KeywordValuesForLocale(
       const char* aLocale);
 
+  
+
+
+
+
+
+
+
+
+  static Result<Bcp47ExtEnumeration, ICUError> GetBcp47KeywordValues();
+
  private:
   
 

@@ -252,7 +252,20 @@ Result<Collator::Bcp47ExtEnumeration, ICUError>
 Collator::GetBcp47KeywordValuesForLocale(const char* aLocale) {
   UErrorCode status = U_ZERO_ERROR;
   UEnumeration* enumeration = ucol_getKeywordValuesForLocale(
-      "collator", aLocale,  false, &status);
+      "collation", aLocale,  false, &status);
+
+  if (U_SUCCESS(status)) {
+    return Bcp47ExtEnumeration(enumeration);
+  }
+
+  return Err(ToICUError(status));
+}
+
+
+Result<Collator::Bcp47ExtEnumeration, ICUError>
+Collator::GetBcp47KeywordValues() {
+  UErrorCode status = U_ZERO_ERROR;
+  UEnumeration* enumeration = ucol_getKeywordValues("collation", &status);
 
   if (U_SUCCESS(status)) {
     return Bcp47ExtEnumeration(enumeration);
