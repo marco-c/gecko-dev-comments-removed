@@ -125,7 +125,7 @@ class nsTreeColumn final : public nsISupports, public nsWrapperCache {
   
 
 
-  RefPtr<mozilla::dom::Element> mContent;
+  RefPtr<mozilla::dom::Element> mElement;
 
   nsTreeColumns* mColumns;
 
