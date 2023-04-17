@@ -876,6 +876,20 @@ RefPtr<GenericPromise> GMPParent::ParseChromiumManifest(
     return GenericPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
   }
 
+#ifdef XP_LINUX
+  
+  
+  
+  
+  
+  if (!mDisplayName.EqualsASCII("clearkey")) {
+    if (!mLibs.IsEmpty()) {
+      mLibs.AppendLiteral(", ");
+    }
+    mLibs.AppendLiteral("libdl.so.2, libpthread.so.0, librt.so.1");
+  }
+#endif
+
   nsCString codecsString = NS_ConvertUTF16toUTF8(m.mX_cdm_codecs);
   nsTArray<nsCString> codecs;
   SplitAt(",", codecsString, codecs);

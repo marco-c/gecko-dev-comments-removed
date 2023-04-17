@@ -232,8 +232,14 @@ mozilla::ipc::IPCResult GMPChild::RecvPreloadLibs(const nsCString& aLibs) {
   }
 #elif defined(XP_LINUX)
   constexpr static const char* whitelist[] = {
+      
       "libfreeblpriv3.so",
       "libsoftokn3.so",
+      
+      
+      "libdl.so.2",
+      "libpthread.so.0",
+      "librt.so.1",
   };
 
   nsTArray<nsCString> libs;
@@ -256,7 +262,7 @@ mozilla::ipc::IPCResult GMPChild::RecvPreloadLibs(const nsCString& aLibs) {
           }
           
 
-          MOZ_CRASH("Couldn't load lib needed by NSS");
+          MOZ_CRASH("Couldn't load lib needed by media plugin");
         }
       }
     }
