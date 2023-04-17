@@ -156,14 +156,6 @@ static nscoord PhysicalCoordFromFlexRelativeCoord(nscoord aFlexRelativeCoord,
 
 
 
-static nscoord AddChecked(nscoord aFirst, nscoord aSecond) {
-  CheckedInt<nscoord> checkedResult = CheckedInt<nscoord>(aFirst) + aSecond;
-  return checkedResult.isValid() ? checkedResult.value() : nscoord_MAX;
-}
-
-
-
-
 
 
 
@@ -927,7 +919,7 @@ class nsFlexContainerFrame::FlexLine final {
   
   
   
-  nscoord TotalOuterHypotheticalMainSize() const {
+  AuCoord64 TotalOuterHypotheticalMainSize() const {
     return mTotalOuterHypotheticalMainSize;
   }
 
@@ -960,27 +952,13 @@ class nsFlexContainerFrame::FlexLine final {
       mNumFrozenItems++;
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    mTotalItemMBP =
-        AddChecked(mTotalItemMBP, lastItem.MarginBorderPaddingSizeInMainAxis());
-
-    mTotalOuterHypotheticalMainSize =
-        AddChecked(mTotalOuterHypotheticalMainSize, lastItem.OuterMainSize());
+    mTotalItemMBP += lastItem.MarginBorderPaddingSizeInMainAxis();
+    mTotalOuterHypotheticalMainSize += lastItem.OuterMainSize();
 
     
     
     if (NumItems() >= 2) {
-      mTotalOuterHypotheticalMainSize =
-          AddChecked(mTotalOuterHypotheticalMainSize, mMainGapSize);
+      mTotalOuterHypotheticalMainSize += mMainGapSize;
     }
   }
 
@@ -1060,7 +1038,12 @@ class nsFlexContainerFrame::FlexLine final {
   
   
   
-  nscoord mTotalOuterHypotheticalMainSize = 0;
+  
+  
+  
+  
+  
+  AuCoord64 mTotalOuterHypotheticalMainSize = 0;
 
   nscoord mLineCrossSize = 0;
   nscoord mFirstBaselineOffset = nscoord_MIN;
@@ -3007,6 +2990,13 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
   
   
   
+  
+  AuCoord64 flexContainerMainSize(aFlexContainerMainSize);
+
+  
+  
+  
+  
   if (aLineInfo) {
     uint32_t itemIndex = 0;
     for (FlexItem& item : Items()) {
@@ -3018,7 +3008,7 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
 
   
   const bool isUsingFlexGrow =
-      (mTotalOuterHypotheticalMainSize < aFlexContainerMainSize);
+      (mTotalOuterHypotheticalMainSize < flexContainerMainSize);
 
   if (aLineInfo) {
     aLineInfo->mGrowthState =
@@ -3044,11 +3034,10 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
   
   
   
-  nscoord spaceAvailableForFlexItemsContentBoxes =
-      aFlexContainerMainSize - (mTotalItemMBP + SumOfGaps());
+  const AuCoord64 spaceAvailableForFlexItemsContentBoxes =
+      flexContainerMainSize - AuCoord64(mTotalItemMBP + SumOfGaps());
 
-  nscoord origAvailableFreeSpace;
-  bool isOrigAvailFreeSpaceInitialized = false;
+  Maybe<AuCoord64> origAvailableFreeSpace;
 
   
   
@@ -3062,7 +3051,7 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
     
     
     
-    nscoord availableFreeSpace = spaceAvailableForFlexItemsContentBoxes;
+    AuCoord64 availableFreeSpace = spaceAvailableForFlexItemsContentBoxes;
     for (FlexItem& item : Items()) {
       if (!item.IsFrozen()) {
         item.SetMainSize(item.FlexBaseSize());
@@ -3070,7 +3059,7 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
       availableFreeSpace -= item.MainSize();
     }
 
-    FLEX_LOG(" available free space = %d", availableFreeSpace);
+    FLEX_LOG(" available free space = %" PRId64, availableFreeSpace.value);
 
     
     
@@ -3084,11 +3073,10 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
 
     
     
-    if (availableFreeSpace != 0) {
+    if (availableFreeSpace != AuCoord64(0)) {
       
-      if (!isOrigAvailFreeSpaceInitialized) {
-        origAvailableFreeSpace = availableFreeSpace;
-        isOrigAvailFreeSpaceInitialized = true;
+      if (!origAvailableFreeSpace) {
+        origAvailableFreeSpace.emplace(availableFreeSpace);
       }
 
       
@@ -3161,14 +3149,14 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
           
           
           
-          nscoord totalDesiredPortionOfOrigFreeSpace =
-              NSToCoordRound(origAvailableFreeSpace * flexFactorSum);
+          auto totalDesiredPortionOfOrigFreeSpace =
+              AuCoord64::FromRound(*origAvailableFreeSpace * flexFactorSum);
 
           
           
           
           
-          NS_ASSERTION(totalDesiredPortionOfOrigFreeSpace == 0 ||
+          NS_ASSERTION(totalDesiredPortionOfOrigFreeSpace == AuCoord64(0) ||
                            ((totalDesiredPortionOfOrigFreeSpace > 0) ==
                             (availableFreeSpace > 0)),
                        "When we reduce available free space for flex "
@@ -3202,7 +3190,7 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
 
             
             
-            nscoord sizeDelta = 0;
+            AuCoord64 sizeDelta = 0;
             if (IsFinite(weightSum)) {
               double myShareOfRemainingSpace = item.ShareOfWeightSoFar();
 
@@ -3215,23 +3203,24 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
                 
                 sizeDelta = availableFreeSpace;
               } else if (myShareOfRemainingSpace > 0.0) {
-                sizeDelta = NSToCoordRound(availableFreeSpace *
-                                           myShareOfRemainingSpace);
+                sizeDelta = AuCoord64::FromRound(availableFreeSpace *
+                                                 myShareOfRemainingSpace);
               }
             } else if (item.GetWeight(isUsingFlexGrow) == largestWeight) {
               
               
               
-              sizeDelta = NSToCoordRound(availableFreeSpace /
-                                         double(numItemsWithLargestWeight));
+              sizeDelta = AuCoord64::FromRound(
+                  availableFreeSpace / double(numItemsWithLargestWeight));
               numItemsWithLargestWeight--;
             }
 
             availableFreeSpace -= sizeDelta;
 
-            item.SetMainSize(item.MainSize() + sizeDelta);
-            FLEX_LOG("  flex item %p receives %d, for a total of %d",
-                     item.Frame(), sizeDelta, item.MainSize());
+            item.SetMainSize(item.MainSize() +
+                             nscoord(sizeDelta.ToMinMaxClamped()));
+            FLEX_LOG("  flex item %p receives %" PRId64 ", for a total of %d",
+                     item.Frame(), sizeDelta.value, item.MainSize());
           }
         }
 
@@ -4132,18 +4121,13 @@ void nsFlexContainerFrame::GenerateFlexLines(
       
       
       
-      
-      
-      
-      
-      
-      nscoord newOuterSize =
-          AddChecked(curLine->TotalOuterHypotheticalMainSize(),
-                     curLine->Items().LastElement().OuterMainSize());
+      auto newOuterSize = curLine->TotalOuterHypotheticalMainSize();
+      newOuterSize += curLine->Items().LastElement().OuterMainSize();
 
       
-      newOuterSize = AddChecked(newOuterSize, aMainGapSize);
-      if (newOuterSize == nscoord_MAX || newOuterSize > wrapThreshold) {
+      newOuterSize += aMainGapSize;
+
+      if (newOuterSize >= nscoord_MAX || newOuterSize > wrapThreshold) {
         curLine = ConstructNewFlexLine();
 
         
@@ -4230,8 +4214,8 @@ nscoord nsFlexContainerFrame::GetMainSizeFromReflowInput(
 
 
 
-static nscoord GetLargestLineMainSize(nsTArray<FlexLine>& aLines) {
-  nscoord largestLineOuterSize = 0;
+static AuCoord64 GetLargestLineMainSize(nsTArray<FlexLine>& aLines) {
+  AuCoord64 largestLineOuterSize = 0;
   for (const FlexLine& line : aLines) {
     largestLineOuterSize =
         std::max(largestLineOuterSize, line.TotalOuterHypotheticalMainSize());
@@ -4265,8 +4249,9 @@ nscoord nsFlexContainerFrame::ComputeMainSize(
   
   
   
-  nscoord largestLineOuterSize = GetLargestLineMainSize(aLines);
-  return NS_CSS_MINMAX(largestLineOuterSize, aReflowInput.ComputedMinBSize(),
+  const AuCoord64 largestLineMainSize = GetLargestLineMainSize(aLines);
+  return NS_CSS_MINMAX(nscoord(largestLineMainSize.ToMinMaxClamped()),
+                       aReflowInput.ComputedMinBSize(),
                        aReflowInput.ComputedMaxBSize());
 }
 
