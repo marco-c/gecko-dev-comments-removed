@@ -437,6 +437,17 @@ void InitPoisonIOInterposer() {
   
   
   
+  
+
+  
+  
+  if (::GetModuleHandleW(L"kwsui64.dll")) {
+    return;
+  }
+
+  
+  
+  
   if (sIOPoisoned) {
     return;
   }
