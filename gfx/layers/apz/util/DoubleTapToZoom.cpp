@@ -64,7 +64,11 @@ static already_AddRefed<dom::Element> ElementFromPoint(
 
 static bool ShouldZoomToElement(const nsCOMPtr<dom::Element>& aElement) {
   if (nsIFrame* frame = aElement->GetPrimaryFrame()) {
-    if (frame->StyleDisplay()->IsInlineFlow()) {
+    if (frame->StyleDisplay()->IsInlineFlow() &&
+        
+        
+        
+        !frame->IsFrameOfType(nsIFrame::eReplaced)) {
       return false;
     }
   }
