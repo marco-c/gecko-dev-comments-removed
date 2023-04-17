@@ -2509,40 +2509,6 @@ class CreateMachEnvironment(MachCommandBase):
             print("virtualenv at %s is already up to date." % virtualenv_path)
         else:
             manager.build(sys.executable)
-
-        try:
-            
-            
-            manager.install_pip_requirements(
-                os.path.join(
-                    command_context.topsrcdir, "build", "psutil_requirements.txt"
-                )
-            )
-        except subprocess.CalledProcessError:
-            print(
-                "Could not install psutil, so telemetry will be missing some "
-                "data. Continuing."
-            )
-
-        manager.install_pip_requirements(
-            os.path.join(
-                command_context.topsrcdir, "build", "zstandard_requirements.txt"
-            )
-        )
-
-        
-        
-        try:
-            manager.install_pip_requirements(
-                os.path.join(
-                    command_context.topsrcdir, "build", "glean_requirements.txt"
-                )
-            )
-        except subprocess.CalledProcessError:
-            print(
-                "Could not install glean_sdk, so telemetry will not be "
-                "collected. Continuing."
-            )
         print("Mach environment created.")
 
 
