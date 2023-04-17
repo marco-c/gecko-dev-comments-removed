@@ -133,36 +133,6 @@ var Utils = {
 
 
 
-  async getLocalDumpLastModified(bucket, collection) {
-    if (!this._dumpStats) {
-      this._dumpStats = {};
-    }
-    const identifier = `${bucket}/${collection}`;
-    let lastModified = this._dumpStats[identifier];
-    if (lastModified === undefined) {
-      try {
-        let res = await fetch(
-          `resource://app/defaults/settings/${bucket}/${collection}.json`
-        );
-        let records = (await res.json()).data;
-        
-        
-        lastModified = records[0]?.last_modified || 0;
-      } catch (e) {
-        lastModified = -1;
-      }
-      this._dumpStats[identifier] = lastModified;
-    }
-    return lastModified;
-  },
-
-  
-
-
-
-
-
-
 
 
 

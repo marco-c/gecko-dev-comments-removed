@@ -345,21 +345,18 @@ class RemoteSettingsClient extends EventEmitter {
 
 
 
-
   async get(options = {}) {
     const {
       filters = {},
       order = "", 
       dumpFallback = true,
-      loadDumpIfNewer = false, 
       syncIfEmpty = true,
     } = options;
     let { verifySignature = false } = options;
 
     let data;
     try {
-      let lastModified = await this.db.getLastModified();
-      let hasLocalData = lastModified !== null;
+      let hasLocalData = await Utils.hasLocalData(this);
 
       if (syncIfEmpty && !hasLocalData) {
         
@@ -378,35 +375,9 @@ class RemoteSettingsClient extends EventEmitter {
               await this.sync({ loadDump: false });
             }
           })();
-        } else {
-          console.debug(`${this.identifier} Awaiting existing import.`);
         }
-      } else if (hasLocalData && loadDumpIfNewer) {
-        
-        
-        let lastModifiedDump = await Utils.getLocalDumpLastModified(
-          this.bucketName,
-          this.collectionName
-        );
-        if (lastModified < lastModifiedDump) {
-          console.debug(
-            `${this.identifier} Local DB is stale (${lastModified}), using dump instead (${lastModifiedDump})`
-          );
-          if (!this._importingPromise) {
-            
-            this._importingPromise = this._importJSONDump();
-          } else {
-            console.debug(`${this.identifier} Awaiting existing import.`);
-          }
-        }
-      }
-
-      if (this._importingPromise) {
         try {
           await this._importingPromise;
-          
-          
-          verifySignature = false;
         } catch (e) {
           
           
@@ -415,6 +386,9 @@ class RemoteSettingsClient extends EventEmitter {
           
           delete this._importingPromise;
         }
+        
+        
+        verifySignature = false;
       }
 
       

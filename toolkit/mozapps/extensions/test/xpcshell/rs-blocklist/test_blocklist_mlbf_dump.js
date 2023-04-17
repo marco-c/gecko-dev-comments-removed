@@ -38,18 +38,14 @@ async function sha256(arrayBuffer) {
   return Array.from(new Uint8Array(hash), toHex).join("");
 }
 
-
-
-
-const observed = [];
-
-add_task(async function setup() {
+add_task(async function verify_dump_first_run() {
   createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1");
+
+  
+  
+  const observed = [];
+
   ExtensionBlocklistMLBF.ensureInitialized();
-
-  
-  
-
   
   
   const originalImpl = ExtensionBlocklistMLBF._client.attachments.download;
@@ -59,10 +55,6 @@ add_task(async function setup() {
     return downloadPromise;
   };
 
-  await promiseStartupManager();
-});
-
-async function verifyBlocklistWorksWithDump() {
   Assert.equal(
     await Blocklist.getAddonBlocklistState(blockedAddon),
     Ci.nsIBlocklistService.STATE_BLOCKED,
@@ -73,13 +65,10 @@ async function verifyBlocklistWorksWithDump() {
     Ci.nsIBlocklistService.STATE_NOT_BLOCKED,
     "A known non-blocked add-on should not be blocked"
   );
-}
 
-add_task(async function verify_dump_first_run() {
-  await verifyBlocklistWorksWithDump();
   Assert.equal(observed.length, 1, "expected number of MLBF download requests");
 
-  const { inputRecord, downloadPromise } = observed.pop();
+  const { inputRecord, downloadPromise } = observed[0];
 
   Assert.ok(inputRecord, "addons-bloomfilters collection dump exists");
 
@@ -104,53 +93,4 @@ add_task(async function verify_dump_first_run() {
     inputRecord.attachment.hash,
     "The content of the attachment should actually matches the record"
   );
-});
-
-add_task(async function use_dump_fallback_when_collection_is_out_of_sync() {
-  await AddonTestUtils.loadBlocklistRawData({
-    
-    extensionsMLBF: [{ last_modified: Date.now() }],
-  });
-  Assert.equal(observed.length, 1, "Expected new download on update");
-
-  const { inputRecord, downloadPromise } = observed.pop();
-  Assert.equal(inputRecord, null, "No MLBF record found");
-
-  const downloadResult = await downloadPromise;
-  Assert.equal(
-    downloadResult._source,
-    "dump_fallback",
-    "should have used fallback despite the absence of a MLBF record"
-  );
-
-  await verifyBlocklistWorksWithDump();
-  Assert.equal(observed.length, 0, "Blocklist uses cached result");
-});
-
-
-
-
-add_task(async function verify_dump_supersedes_old_dump() {
-  
-  
-  delete ExtensionBlocklistMLBF._mlbfData;
-
-  await AddonTestUtils.loadBlocklistRawData({
-    
-    extensionsMLBF: [{ last_modified: 1 }],
-  });
-  Assert.equal(observed.length, 1, "Expected new download on update");
-
-  const { inputRecord, downloadPromise } = observed.pop();
-  Assert.ok(inputRecord, "should have read from addons-bloomfilters dump");
-
-  const downloadResult = await downloadPromise;
-  Assert.equal(
-    downloadResult._source,
-    "dump_match",
-    "Should have replaced outdated collection records with dump"
-  );
-
-  await verifyBlocklistWorksWithDump();
-  Assert.equal(observed.length, 0, "Blocklist uses cached result");
 });
