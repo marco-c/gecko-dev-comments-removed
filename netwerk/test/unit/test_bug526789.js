@@ -11,6 +11,7 @@ add_task(async () => {
 
   
   Services.prefs.setIntPref("network.cookie.cookieBehavior", 0);
+  Services.prefs.setBoolPref("dom.security.https_first", false);
 
   
   
@@ -284,4 +285,5 @@ async function testTrailingDotCookie(uriString, domain) {
   Assert.equal(cm.countCookiesFromHost(domain), 0);
   Assert.equal(cm.countCookiesFromHost(domain + "."), 0);
   cm.removeAll();
+  Services.prefs.clearUserPref("dom.security.https_first");
 }

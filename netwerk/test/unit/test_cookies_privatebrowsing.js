@@ -30,6 +30,7 @@ add_task(async () => {
 
   
   Services.prefs.setIntPref("network.cookie.cookieBehavior", 0);
+  Services.prefs.setBoolPref("dom.security.https_first", false);
 
   
   Services.prefs.setBoolPref("dom.security.https_first_pbm", false);
@@ -139,4 +140,5 @@ add_task(async () => {
 
   
   privateBrowsingHolder.close();
+  Services.prefs.clearUserPref("dom.security.https_first");
 });
