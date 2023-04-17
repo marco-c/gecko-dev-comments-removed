@@ -271,7 +271,9 @@ this.SyncedTabsPanelList = class SyncedTabsPanelList {
       "label",
       tabInfo.title != "" ? tabInfo.title : tabInfo.url
     );
-    item.setAttribute("image", tabInfo.icon);
+    if (tabInfo.icon) {
+      item.setAttribute("image", tabInfo.icon);
+    }
     item.setAttribute("tooltiptext", tooltipText);
     
     
