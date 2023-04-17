@@ -30,6 +30,7 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ScopeExit.h"
+#include "mozilla/AutoRestore.h"
 #include "mozilla/WidgetUtilsGtk.h"
 #include "GRefPtr.h"
 
@@ -112,7 +113,8 @@ static void invisibleSourceDragDataGet(GtkWidget* aWidget,
 
 nsDragService::nsDragService()
     : mScheduledTask(eDragTaskNone),
-      mTaskSource(0)
+      mTaskSource(0),
+      mScheduledTaskIsRunning(false)
 #ifdef MOZ_WAYLAND
       ,
       mPendingWaylandDataOffer(nullptr),
@@ -481,6 +483,8 @@ nsDragService::EndDragSession(bool aDoneDrag, uint32_t aKeyModifiers) {
 #ifdef MOZ_WAYLAND
   mTargetWaylandDataOfferForRemote = nullptr;
 #endif
+  mTargetWindow = nullptr;
+  mPendingWindow = nullptr;
 
   return nsBaseDragService::EndDragSession(aDoneDrag, aKeyModifiers);
 }
@@ -978,6 +982,7 @@ void nsDragService::ReplyToDragMotion(GdkDragContext* aDragContext) {
     }
   }
 
+  LOGDRAGSERVICE(("  gdk_drag_status() action %d", action));
   gdk_drag_status(aDragContext, action, mTargetTime);
 }
 
@@ -1142,7 +1147,7 @@ void nsDragService::GetTargetDragData(GdkAtom aFlavor) {
     }
   }
 #ifdef MOZ_WAYLAND
-  else {
+  else if (mTargetWaylandDataOffer) {
     mTargetDragData = mTargetWaylandDataOffer->GetDragData(
         gdk_atom_name(aFlavor), &mTargetDragDataLen);
     mTargetDragDataReceived = true;
@@ -1847,6 +1852,16 @@ gboolean nsDragService::ScheduleDropEvent(nsWindow* aWindow,
   return TRUE;
 }
 
+#ifdef MOZ_LOGGING
+const char* nsDragService::GetDragServiceTaskName(DragTask aTask) {
+  static const char* taskNames[] = {"eDragTaskNone", "eDragTaskMotion",
+                                    "eDragTaskLeave", "eDragTaskDrop",
+                                    "eDragTaskSourceEnd"};
+  MOZ_ASSERT(size_t(aTask) < ArrayLength(taskNames));
+  return taskNames[aTask];
+}
+#endif
+
 gboolean nsDragService::Schedule(DragTask aTask, nsWindow* aWindow,
                                  GdkDragContext* aDragContext,
                                  RefPtr<DataOffer> aWaylandDataOffer,
@@ -1861,9 +1876,15 @@ gboolean nsDragService::Schedule(DragTask aTask, nsWindow* aWindow,
   
   
   
+  LOGDRAGSERVICE(("nsDragService::Schedule() task %s window %p\n",
+                  GetDragServiceTaskName(aTask), aWindow));
+
   if (mScheduledTask == eDragTaskSourceEnd ||
-      (mScheduledTask == eDragTaskDrop && aTask != eDragTaskSourceEnd))
+      (mScheduledTask == eDragTaskDrop && aTask != eDragTaskSourceEnd)) {
+    LOGDRAGSERVICE(("   task does not fit recent task %s, quit!\n",
+                    GetDragServiceTaskName(mScheduledTask)));
     return FALSE;
+  }
 
   mScheduledTask = aTask;
   mPendingWindow = aWindow;
@@ -1881,8 +1902,9 @@ gboolean nsDragService::Schedule(DragTask aTask, nsWindow* aWindow,
     
     
     
-    mTaskSource =
-        g_idle_add_full(G_PRIORITY_HIGH, TaskDispatchCallback, this, nullptr);
+    
+    mTaskSource = g_timeout_add_full(G_PRIORITY_HIGH, 0, TaskDispatchCallback,
+                                     this, nullptr);
   }
   return TRUE;
 }
@@ -1893,9 +1915,22 @@ gboolean nsDragService::TaskDispatchCallback(gpointer data) {
 }
 
 gboolean nsDragService::RunScheduledTask() {
+  LOGDRAGSERVICE(
+      ("nsDragService::RunScheduledTask() task %s mTargetWindow %p "
+       "mPendingWindow %p\n",
+       GetDragServiceTaskName(mScheduledTask), mTargetWindow.get(),
+       mPendingWindow.get()));
+
+  
+  
+  if (mScheduledTaskIsRunning) {
+    return FALSE;
+  }
+  AutoRestore<bool> guard(mScheduledTaskIsRunning);
+  mScheduledTaskIsRunning = true;
+
   if (mTargetWindow && mTargetWindow != mPendingWindow) {
-    LOGDRAGSERVICE(
-        ("nsDragService: dispatch drag leave (%p)\n", mTargetWindow.get()));
+    LOGDRAGSERVICE(("  dispatch eDragExit (%p)\n", mTargetWindow.get()));
     mTargetWindow->DispatchDragEvent(eDragExit, mTargetWindowPoint, 0);
 
     if (!mSourceNode) {
@@ -1921,6 +1956,7 @@ gboolean nsDragService::RunScheduledTask() {
   mTargetWindowPoint = mPendingWindowPoint;
 
   if (task == eDragTaskLeave || task == eDragTaskSourceEnd) {
+    LOGDRAGSERVICE(("  quit, task %s\n", GetDragServiceTaskName(task)));
     if (task == eDragTaskSourceEnd) {
       
       EndDragSession(true, GetCurrentModifiers());
@@ -1939,7 +1975,11 @@ gboolean nsDragService::RunScheduledTask() {
   
   
   
-  mTargetWidget = mTargetWindow->GetMozContainerWidget();
+  mTargetWidget =
+      mTargetWindow ? mTargetWindow->GetMozContainerWidget() : nullptr;
+  LOGDRAGSERVICE(("  start drag session mTargetWindow %p mTargetWidget %p\n",
+                  mTargetWindow.get(), mTargetWidget.get()));
+
   mTargetDragContext = std::move(mPendingDragContext);
 #ifdef MOZ_WAYLAND
   mTargetWaylandDataOffer = std::move(mPendingWaylandDataOffer);
@@ -1971,6 +2011,7 @@ gboolean nsDragService::RunScheduledTask() {
   
   
   if (task == eDragTaskMotion || positionHasChanged) {
+    LOGDRAGSERVICE(("  process motion event\n"));
     UpdateDragAction();
     TakeDragEventDispatchedToChildProcess();  
     DispatchMotionEvents();
@@ -1996,12 +2037,14 @@ gboolean nsDragService::RunScheduledTask() {
   }
 
   if (task == eDragTaskDrop) {
+    LOGDRAGSERVICE(("  process drop task\n"));
     gboolean success = DispatchDropEvent();
 
     
     
     
     if (mTargetDragContext) {
+      LOGDRAGSERVICE(("  drag finished\n"));
       gtk_drag_finish(mTargetDragContext, success,
                        FALSE, mTargetTime);
     }
@@ -2015,6 +2058,7 @@ gboolean nsDragService::RunScheduledTask() {
   }
 
   
+  LOGDRAGSERVICE(("  clear mTargetWindow mTargetWidget and other data\n"));
   mTargetWidget = nullptr;
   mTargetDragContext = nullptr;
 #ifdef MOZ_WAYLAND
@@ -2030,6 +2074,7 @@ gboolean nsDragService::RunScheduledTask() {
 
   
   
+  LOGDRAGSERVICE(("  remove task source\n"));
   mTaskSource = 0;
   return FALSE;
 }
@@ -2045,6 +2090,7 @@ void nsDragService::UpdateDragAction() {
   
   
   
+  LOGDRAGSERVICE(("nsDragService::UpdateDragAction()\n"));
 
   
   int action = nsIDragService::DRAGDROP_ACTION_NONE;
@@ -2080,6 +2126,8 @@ void nsDragService::UpdateDragAction() {
 
 NS_IMETHODIMP
 nsDragService::UpdateDragEffect() {
+  LOGDRAGSERVICE(
+      ("nsDragService::UpdateDragEffect() from e10s child process\n"));
   if (mTargetDragContextForRemote) {
     ReplyToDragMotion(mTargetDragContextForRemote);
     mTargetDragContextForRemote = nullptr;

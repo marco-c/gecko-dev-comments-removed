@@ -101,6 +101,7 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
 
   
   void SetDragIcon(GdkDragContext* aContext);
+  gboolean IsDragActive() { return mScheduledTask != eDragTaskNone; }
 
  protected:
   virtual ~nsDragService();
@@ -121,6 +122,7 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   
   
   guint mTaskSource;
+  bool mScheduledTaskIsRunning;
 
   
   
@@ -207,6 +209,9 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   void ReplyToDragMotion(GdkDragContext* aDragContext);
 #ifdef MOZ_WAYLAND
   void ReplyToDragMotion(RefPtr<DataOffer> aDragContext);
+#endif
+#ifdef MOZ_LOGGING
+  const char* GetDragServiceTaskName(nsDragService::DragTask aTask);
 #endif
   gboolean DispatchDropEvent();
   static uint32_t GetCurrentModifiers();
