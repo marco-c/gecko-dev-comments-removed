@@ -1080,9 +1080,9 @@ impl PropertyDeclarationBlock {
                 
                 let mut v = CssString::new();
                 let value = match appendable_value {
-                    AppendableValue::Css { css, with_variables } => {
+                    AppendableValue::Css(css) => {
                         debug_assert!(!css.is_empty());
-                        AppendableValue::Css { css, with_variables }
+                        appendable_value
                     },
                     other => {
                         append_declaration_value(&mut v, other)?;
@@ -1094,14 +1094,13 @@ impl PropertyDeclarationBlock {
                             continue;
                         }
 
-                        AppendableValue::Css {
+                        AppendableValue::Css({
                             
                             #[cfg(feature = "gecko")]
-                            css: unsafe { v.as_str_unchecked() },
+                            unsafe { v.as_str_unchecked() }
                             #[cfg(feature = "servo")]
-                            css: &v,
-                            with_variables: false,
-                        }
+                            &v
+                        })
                     },
                 };
 
@@ -1183,12 +1182,7 @@ where
     DeclarationsForShorthand(ShorthandId, I),
     
     
-    Css {
-        
-        css: &'a str,
-        
-        with_variables: bool,
-    },
+    Css(&'a str),
 }
 
 
@@ -1213,7 +1207,7 @@ where
     I: Iterator<Item = &'a PropertyDeclaration>,
 {
     match appendable_value {
-        AppendableValue::Css { css, .. } => dest.write_str(css),
+        AppendableValue::Css(css) => dest.write_str(css),
         AppendableValue::Declaration(decl) => decl.to_css(dest),
         AppendableValue::DeclarationsForShorthand(shorthand, decls) => {
             shorthand.longhands_to_css(decls, &mut CssWriter::new(dest))
@@ -1236,25 +1230,7 @@ where
     handle_first_serialization(dest, is_first_serialization)?;
 
     property_name.to_css(&mut CssWriter::new(dest))?;
-    dest.write_char(':')?;
-
-    
-    match appendable_value {
-        AppendableValue::Declaration(decl) => {
-            if !decl.value_is_unparsed() {
-                
-                dest.write_str(" ")?
-            }
-        },
-        AppendableValue::Css { with_variables, .. } => {
-            if !with_variables {
-                dest.write_str(" ")?
-            }
-        },
-        
-        
-        AppendableValue::DeclarationsForShorthand(..) => unreachable!(),
-    }
+    dest.write_str(": ")?;
 
     append_declaration_value(dest, appendable_value)?;
 
