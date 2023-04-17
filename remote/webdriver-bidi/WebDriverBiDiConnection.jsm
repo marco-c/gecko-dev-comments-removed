@@ -93,7 +93,9 @@ class WebDriverBiDiConnection extends WebSocketConnection {
 
 
 
-  sendEvent(method, params) {}
+  sendEvent(method, params) {
+    this.send({ method, params });
+  }
 
   
 

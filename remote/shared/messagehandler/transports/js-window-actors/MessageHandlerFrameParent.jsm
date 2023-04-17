@@ -6,12 +6,39 @@
 
 var EXPORTED_SYMBOLS = ["MessageHandlerFrameParent"];
 
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  MessageHandlerRegistry:
+    "chrome://remote/content/shared/messagehandler/MessageHandlerRegistry.jsm",
+});
+
 
 
 
 
 
 class MessageHandlerFrameParent extends JSWindowActorParent {
+  receiveMessage(message) {
+    switch (message.name) {
+      case "MessageHandlerFrameChild:messageHandlerEvent":
+        const { method, params, sessionId } = message.data;
+
+        const messageHandler = MessageHandlerRegistry.getRootMessageHandler(
+          sessionId
+        );
+
+        
+        messageHandler.emitMessageHandlerEvent(method, params);
+
+        break;
+      default:
+        throw new Error("Unsupported message:" + message.name);
+    }
+  }
+
   
 
 

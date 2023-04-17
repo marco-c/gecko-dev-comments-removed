@@ -95,6 +95,28 @@ class MessageHandler extends EventEmitter {
 
 
 
+
+
+
+  emitMessageHandlerEvent(method, params) {
+    this.emit("message-handler-event", {
+      
+      
+      
+      
+      messageHandlerInfo: this._messageHandlerInfo,
+      method,
+      params,
+    });
+  }
+
+  
+
+
+
+
+
+
   
 
 

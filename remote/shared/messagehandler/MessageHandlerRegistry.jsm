@@ -11,6 +11,8 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  EventEmitter: "resource://gre/modules/EventEmitter.jsm",
+
   Log: "chrome://remote/content/shared/Log.jsm",
   MessageHandlerInfo:
     "chrome://remote/content/shared/messagehandler/MessageHandlerInfo.jsm",
@@ -61,8 +63,10 @@ function getMessageHandlerClass(type) {
 
 
 
-class MessageHandlerRegistryClass {
+class MessageHandlerRegistryClass extends EventEmitter {
   constructor() {
+    super();
+
     
 
 
@@ -75,6 +79,7 @@ class MessageHandlerRegistryClass {
     this._onMessageHandlerDestroyed = this._onMessageHandlerDestroyed.bind(
       this
     );
+    this._onMessageHandlerEvent = this._onMessageHandlerEvent.bind(this);
   }
 
   
@@ -154,6 +159,30 @@ class MessageHandlerRegistryClass {
     return messageHandler;
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+  getRootMessageHandler(sessionId) {
+    const rootMessageHandler = this.getExistingMessageHandler(
+      sessionId,
+      RootMessageHandler.type
+    );
+    if (!rootMessageHandler) {
+      throw new Error(
+        `Unable to find a root MessageHandler for session id ${sessionId}`
+      );
+    }
+    return rootMessageHandler;
+  }
+
   toString() {
     return `[object ${this.constructor.name}]`;
   }
@@ -182,6 +211,7 @@ class MessageHandlerRegistryClass {
       "message-handler-destroyed",
       this._onMessageHandlerDestroyed
     );
+    messageHandler.on("message-handler-event", this._onMessageHandlerEvent);
     return messageHandler;
   }
 
@@ -198,12 +228,19 @@ class MessageHandlerRegistryClass {
 
   
 
-  _onMessageHandlerDestroyed(evt, messageHandler) {
+  _onMessageHandlerDestroyed(eventName, messageHandler) {
     messageHandler.off(
       "message-handler-destroyed",
       this._onMessageHandlerDestroyed
     );
+    messageHandler.off("message-handler-event", this._onMessageHandlerEvent);
     this._unregisterMessageHandler(messageHandler);
+  }
+
+  _onMessageHandlerEvent(eventName, messageHandlerEvent) {
+    
+    
+    this.emit("message-handler-registry-event", messageHandlerEvent);
   }
 }
 

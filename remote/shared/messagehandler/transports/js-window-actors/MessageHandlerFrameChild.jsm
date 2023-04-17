@@ -26,6 +26,17 @@ class MessageHandlerFrameChild extends JSWindowActorChild {
   actorCreated() {
     this.type = WindowGlobalMessageHandler.type;
     this.context = this.manager.browsingContext;
+
+    this._onRegistryEvent = this._onRegistryEvent.bind(this);
+
+    
+    
+    
+    
+    MessageHandlerRegistry.on(
+      "message-handler-registry-event",
+      this._onRegistryEvent
+    );
   }
 
   receiveMessage(message) {
@@ -53,7 +64,31 @@ class MessageHandlerFrameChild extends JSWindowActorChild {
     );
   }
 
+  _onRegistryEvent(eventName, wrappedEvent) {
+    const { messageHandlerInfo, method, params } = wrappedEvent;
+    const { contextId, sessionId, type } = messageHandlerInfo;
+
+    
+    
+    
+    
+    if (
+      type === this.type &&
+      contextId === WindowGlobalMessageHandler.getIdFromContext(this.context)
+    ) {
+      this.sendAsyncMessage("MessageHandlerFrameChild:messageHandlerEvent", {
+        method,
+        params,
+        sessionId,
+      });
+    }
+  }
+
   didDestroy() {
     MessageHandlerRegistry.contextDestroyed(this.context, this.type);
+    MessageHandlerRegistry.off(
+      "message-handler-registry-event",
+      this._onRegistryEvent
+    );
   }
 }

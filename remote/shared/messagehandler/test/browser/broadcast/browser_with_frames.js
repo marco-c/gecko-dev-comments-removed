@@ -6,37 +6,10 @@
 add_task(async function test_broadcasting_with_frames() {
   info("Navigate the initial tab to the test URL");
   const tab = gBrowser.selectedTab;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  const NESTED_FRAME_MARKUP = createFrameForUri(
-    `http://example.org/document-builder.sjs?html=${createFrame("example.net")}`
-  );
-
-  
-  const TEST_URI_MARKUP = `${NESTED_FRAME_MARKUP}${createFrame("example.com")}`;
-
-  
-  const TEST_URI = `http://example.org/document-builder.sjs?html=${encodeURI(
-    TEST_URI_MARKUP
-  )}`;
-
-  await loadURL(tab.linkedBrowser, TEST_URI);
+  await loadURL(tab.linkedBrowser, createTestMarkupWithFrames());
 
   const contexts = tab.linkedBrowser.browsingContext.getAllBrowsingContextsInSubtree();
-  is(contexts.length, 4, "Test tab has 3 children contexts");
+  is(contexts.length, 4, "Test tab has 3 children contexts (4 in total)");
 
   const rootMessageHandler = createRootMessageHandler(
     "session-id-broadcasting_with_frames"
@@ -63,20 +36,3 @@ add_task(async function test_broadcasting_with_frames() {
 
   rootMessageHandler.destroy();
 });
-
-
-
-
-
-
-
-
-function createFrame(domain) {
-  return createFrameForUri(
-    `http://${domain}/document-builder.sjs?html=frame-${domain}`
-  );
-}
-
-function createFrameForUri(uri) {
-  return `<iframe src="${encodeURI(uri)}"></iframe>`;
-}
