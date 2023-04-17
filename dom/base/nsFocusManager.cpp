@@ -883,7 +883,6 @@ nsresult nsFocusManager::ContentRemoved(Document* aDocument,
       
       
       
-      
       Document* subdoc = aDocument->GetSubDocumentFor(content);
       if (subdoc) {
         nsCOMPtr<nsIDocShell> docShell = subdoc->GetDocShell();
