@@ -1305,7 +1305,15 @@ const browsingContextTargetPrototype = {
     this._setServiceWorkersTestingEnabled(false);
     this._setPaintFlashingEnabled(false);
     this._setPrintSimulationEnabled(false);
-    this._setColorSchemeSimulation(null);
+
+    if (this._resetColorSchemeSimulationOnDestroy) {
+      
+      
+      
+      
+      
+      this._setColorSchemeSimulation(null);
+    }
 
     if (this._restoreFocus && this.browsingContext?.isActive) {
       this.window.focus();
@@ -1381,6 +1389,7 @@ const browsingContextTargetPrototype = {
     const value = override || "none";
     if (this.browsingContext.prefersColorSchemeOverride != value) {
       this.browsingContext.prefersColorSchemeOverride = value;
+      this._resetColorSchemeSimulationOnDestroy = true;
     }
   },
 
