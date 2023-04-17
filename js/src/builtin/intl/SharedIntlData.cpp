@@ -10,6 +10,7 @@
 
 #include "mozilla/Assertions.h"
 #include "mozilla/HashFunctions.h"
+#include "mozilla/intl/DateTimePatternGenerator.h"
 #include "mozilla/TextUtils.h"
 
 #include <algorithm>
@@ -598,11 +599,11 @@ bool js::intl::SharedIntlData::isUpperCaseFirst(JSContext* cx,
 }
 
 void js::intl::DateTimePatternGeneratorDeleter::operator()(
-    UDateTimePatternGenerator* ptr) {
-  udatpg_close(ptr);
+    mozilla::intl::DateTimePatternGenerator* ptr) {
+  delete ptr;
 }
 
-UDateTimePatternGenerator*
+mozilla::intl::DateTimePatternGenerator*
 js::intl::SharedIntlData::getDateTimePatternGenerator(JSContext* cx,
                                                       const char* locale) {
   
@@ -612,12 +613,16 @@ js::intl::SharedIntlData::getDateTimePatternGenerator(JSContext* cx,
     return dateTimePatternGenerator.get();
   }
 
-  UErrorCode status = U_ZERO_ERROR;
-  UniqueUDateTimePatternGenerator gen(udatpg_open(IcuLocale(locale), &status));
-  if (U_FAILURE(status)) {
+  auto result =
+      mozilla::intl::DateTimePatternGenerator::TryCreate(IcuLocale(locale));
+  if (result.isErr()) {
     intl::ReportInternalError(cx);
     return nullptr;
   }
+  
+  
+  
+  UniqueDateTimePatternGenerator gen(result.unwrap().release());
 
   JS::UniqueChars localeCopy = js::DuplicateString(cx, locale);
   if (!localeCopy) {

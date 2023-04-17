@@ -154,6 +154,18 @@ class DateTimeFormat final {
   
 
 
+  template <typename B>
+  ICUResult GetPattern(B& aBuffer) const {
+    return FillBufferWithICUCall(
+        aBuffer, [&](UChar* target, int32_t length, UErrorCode* status) {
+          return udat_toPattern(mDateFormat,  false, target,
+                                length, status);
+        });
+  }
+
+  
+
+
 
 
   void SetStartTimeIfGregorian(double aTime);

@@ -20,15 +20,21 @@
 #include "js/Utility.h"
 #include "vm/StringType.h"
 
-using UDateTimePatternGenerator = void*;
+namespace mozilla::intl {
+class DateTimePatternGenerator;
+}  
 
 namespace js {
 
 namespace intl {
 
+
+
+
+
 class DateTimePatternGeneratorDeleter {
  public:
-  void operator()(UDateTimePatternGenerator* ptr);
+  void operator()(mozilla::intl::DateTimePatternGenerator* ptr);
 };
 
 
@@ -283,11 +289,11 @@ class SharedIntlData {
                         bool* isUpperFirst);
 
  private:
-  using UniqueUDateTimePatternGenerator =
-      mozilla::UniquePtr<UDateTimePatternGenerator,
+  using UniqueDateTimePatternGenerator =
+      mozilla::UniquePtr<mozilla::intl::DateTimePatternGenerator,
                          DateTimePatternGeneratorDeleter>;
 
-  UniqueUDateTimePatternGenerator dateTimePatternGenerator;
+  UniqueDateTimePatternGenerator dateTimePatternGenerator;
   JS::UniqueChars dateTimePatternGeneratorLocale;
 
  public:
@@ -295,8 +301,10 @@ class SharedIntlData {
 
 
 
-  UDateTimePatternGenerator* getDateTimePatternGenerator(JSContext* cx,
-                                                         const char* locale);
+
+
+  mozilla::intl::DateTimePatternGenerator* getDateTimePatternGenerator(
+      JSContext* cx, const char* locale);
 
  public:
   void destroyInstance();
