@@ -47,6 +47,8 @@ class LookAndFeel {
     
     CaretBlinkTime,
     
+    CaretBlinkCount,
+    
     CaretWidth,
     
     ShowCaretDuringSelection,

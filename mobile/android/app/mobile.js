@@ -60,9 +60,6 @@ pref("ui.useOverlayScrollbars", 1);
 pref("ui.scrollbarFadeBeginDelay", 450);
 pref("ui.scrollbarFadeDuration", 0);
 
-
-pref("ui.caretBlinkCount", 10);
-
 pref("browser.cache.memory_limit", 5120); 
 
 
