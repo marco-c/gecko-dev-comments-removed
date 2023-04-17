@@ -45,13 +45,11 @@
 
 #ifdef MOZ_X11
 #  include <gdk/gdkx.h>
-#  include <X11/extensions/Xrandr.h>
 #  include "cairo-xlib.h"
 #  include "gfxXlibSurface.h"
 #  include "GLContextGLX.h"
 #  include "GLXLibrary.h"
 #  include "mozilla/X11Util.h"
-#  include "SoftwareVsyncSource.h"
 
 
 
@@ -820,114 +818,14 @@ class GtkVsyncSource final : public VsyncSource {
   RefPtr<GLXDisplay> mGlobalDisplay;
 };
 
-class XrandrSoftwareVsyncSource final : public SoftwareVsyncSource {
- public:
-  XrandrSoftwareVsyncSource() : SoftwareVsyncSource(false) {
-    MOZ_ASSERT(NS_IsMainThread());
-    mGlobalDisplay = new XrandrSoftwareDisplay();
-  }
-
- private:
-  class XrandrSoftwareDisplay final : public SoftwareDisplay {
-   public:
-    XrandrSoftwareDisplay() {
-      MOZ_ASSERT(NS_IsMainThread());
-
-      UpdateVsyncRate();
-
-      GdkScreen* defaultScreen = gdk_screen_get_default();
-      g_signal_connect(defaultScreen, "monitors-changed",
-                       G_CALLBACK(monitors_changed), this);
-    }
-
-   private:
-    void UpdateVsyncRate() {
-      
-      
-      
-
-      struct _XDisplay* dpy = gdk_x11_get_default_xdisplay();
-      Window root = gdk_x11_get_default_root_xwindow();
-      XRRScreenResources* res = XRRGetScreenResourcesCurrent(dpy, root);
-
-      
-      
-      double highestRefreshRate = gfxPlatform::GetSoftwareVsyncRate() / 2.0;
-
-      for (int i = 0; i < res->noutput; i++) {
-        XRROutputInfo* outputInfo = XRRGetOutputInfo(dpy, res, res->outputs[i]);
-        if (!outputInfo->crtc) {
-          XRRFreeOutputInfo(outputInfo);
-          continue;
-        }
-
-        XRRCrtcInfo* crtcInfo = XRRGetCrtcInfo(dpy, res, outputInfo->crtc);
-        for (int j = 0; j < res->nmode; j++) {
-          if (res->modes[j].id == crtcInfo->mode) {
-            double refreshRate = mode_refresh(&res->modes[j]);
-            if (refreshRate > highestRefreshRate) {
-              highestRefreshRate = refreshRate;
-            }
-            break;
-          }
-        }
-
-        XRRFreeCrtcInfo(crtcInfo);
-        XRRFreeOutputInfo(outputInfo);
-      }
-      XRRFreeScreenResources(res);
-
-      const double rate = 1000.0 / highestRefreshRate;
-      mVsyncRate = mozilla::TimeDuration::FromMilliseconds(rate);
-    }
-
-    static void monitors_changed(GdkScreen* aScreen, gpointer aClosure) {
-      XrandrSoftwareDisplay* self =
-          static_cast<XrandrSoftwareDisplay*>(aClosure);
-      self->UpdateVsyncRate();
-    }
-
-    
-    static double mode_refresh(const XRRModeInfo* mode_info) {
-      double rate;
-      double vTotal = mode_info->vTotal;
-
-      if (mode_info->modeFlags & RR_DoubleScan) {
-        
-        vTotal *= 2;
-      }
-
-      if (mode_info->modeFlags & RR_Interlace) {
-        
-        
-        vTotal /= 2;
-      }
-
-      if (mode_info->hTotal && vTotal) {
-        rate = ((double)mode_info->dotClock /
-                ((double)mode_info->hTotal * (double)vTotal));
-      } else {
-        rate = 0;
-      }
-      return rate;
-    }
-  };
-};
-
 already_AddRefed<gfx::VsyncSource> gfxPlatformGtk::CreateHardwareVsyncSource() {
-  if (IsHeadless() || IsWaylandDisplay()) {
+#  ifdef MOZ_WAYLAND
+  if (IsWaylandDisplay()) {
     
     
     return gfxPlatform::CreateHardwareVsyncSource();
   }
-
-  nsCOMPtr<nsIGfxInfo> gfxInfo = components::GfxInfo::Service();
-  nsString windowProtocol;
-  gfxInfo->GetWindowProtocol(windowProtocol);
-  bool isXwayland = windowProtocol.Find("xwayland") != -1;
-  nsString adapterDriverVendor;
-  gfxInfo->GetAdapterDriverVendor(adapterDriverVendor);
-  bool isMesa = adapterDriverVendor.Find("mesa") != -1;
+#  endif
 
   
   
@@ -936,22 +834,32 @@ already_AddRefed<gfx::VsyncSource> gfxPlatformGtk::CreateHardwareVsyncSource() {
   
   
   
-  
-  if (gfxConfig::IsEnabled(Feature::HW_COMPOSITING) && !isXwayland &&
-      (!gfxVars::UseEGL() || isMesa) &&
-      gl::sGLXLibrary.SupportsVideoSync(DefaultXDisplay())) {
-    RefPtr<VsyncSource> vsyncSource = new GtkVsyncSource();
-    VsyncSource::Display& display = vsyncSource->GetGlobalDisplay();
-    if (!static_cast<GtkVsyncSource::GLXDisplay&>(display).Setup()) {
-      NS_WARNING("Failed to setup GLContext, falling back to software vsync.");
-      return gfxPlatform::CreateHardwareVsyncSource();
+  if (gfxConfig::IsEnabled(Feature::HW_COMPOSITING)) {
+    bool useGlxVsync = false;
+
+    nsCOMPtr<nsIGfxInfo> gfxInfo = components::GfxInfo::Service();
+    nsString adapterDriverVendor;
+    gfxInfo->GetAdapterDriverVendor(adapterDriverVendor);
+
+    
+    if (!gfxVars::UseEGL() || (adapterDriverVendor.Find("mesa") != -1)) {
+      useGlxVsync = gl::sGLXLibrary.SupportsVideoSync(DefaultXDisplay());
     }
-    return vsyncSource.forget();
+    if (useGlxVsync) {
+      RefPtr<VsyncSource> vsyncSource = new GtkVsyncSource();
+      VsyncSource::Display& display = vsyncSource->GetGlobalDisplay();
+      if (!static_cast<GtkVsyncSource::GLXDisplay&>(display).Setup()) {
+        NS_WARNING(
+            "Failed to setup GLContext, falling back to software vsync.");
+        return gfxPlatform::CreateHardwareVsyncSource();
+      }
+      return vsyncSource.forget();
+    }
+    NS_WARNING("SGI_video_sync unsupported. Falling back to software vsync.");
   }
-
-  RefPtr<VsyncSource> softwareVsync = new XrandrSoftwareVsyncSource();
-  return softwareVsync.forget();
+  return gfxPlatform::CreateHardwareVsyncSource();
 }
+
 #endif
 
 void gfxPlatformGtk::BuildContentDeviceData(ContentDeviceData* aOut) {
