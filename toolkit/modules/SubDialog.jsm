@@ -565,7 +565,7 @@ SubDialog.prototype = {
 
     
     
-    let frameOverhead = frameSizeDifference + (this._titleBar ? 30 : 0);
+    let frameOverhead = frameSizeDifference + titleBarHeight;
     let maxHeight = this._window.innerHeight - frameOverhead;
     
     let comparisonFrameHeight;
