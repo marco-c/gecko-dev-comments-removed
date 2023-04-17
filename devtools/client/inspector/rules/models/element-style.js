@@ -5,7 +5,6 @@
 "use strict";
 
 const Services = require("Services");
-const promise = require("promise");
 const Rule = require("devtools/client/inspector/rules/models/rule");
 const UserProperties = require("devtools/client/inspector/rules/models/user-properties");
 const {
@@ -129,7 +128,7 @@ class ElementStyle {
       })
       .then(entries => {
         if (this.destroyed || this.populated !== populated) {
-          return promise.resolve(undefined);
+          return Promise.resolve(undefined);
         }
 
         
@@ -167,7 +166,7 @@ class ElementStyle {
         
         
         if (this.destroyed) {
-          return promise.resolve(undefined);
+          return Promise.resolve(undefined);
         }
         return promiseWarn(e);
       });
