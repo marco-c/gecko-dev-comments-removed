@@ -1134,7 +1134,7 @@ auto nsCSSRendering::FindNonTransparentBackgroundFrame(nsIFrame* aFrame,
       return {frame, true, false};
     }
 
-    if (frame->IsCanvasFrame()) {
+    if (IsCanvasFrame(frame)) {
       nsIFrame* bgFrame = nullptr;
       if (FindBackgroundFrame(frame, &bgFrame) &&
           NS_GET_A(bgFrame->StyleBackground()->BackgroundColor(bgFrame))) {
@@ -1144,6 +1144,18 @@ auto nsCSSRendering::FindNonTransparentBackgroundFrame(nsIFrame* aFrame,
   }
 
   return {};
+}
+
+
+
+
+
+bool nsCSSRendering::IsCanvasFrame(const nsIFrame* aFrame) {
+  LayoutFrameType frameType = aFrame->Type();
+  return frameType == LayoutFrameType::Canvas ||
+         frameType == LayoutFrameType::XULRoot ||
+         frameType == LayoutFrameType::PageContent ||
+         frameType == LayoutFrameType::Viewport;
 }
 
 nsIFrame* nsCSSRendering::FindBackgroundStyleFrame(nsIFrame* aForFrame) {
@@ -1185,6 +1197,7 @@ nsIFrame* nsCSSRendering::FindBackgroundStyleFrame(nsIFrame* aForFrame) {
 
   return nsLayoutUtils::GetStyleFrame(bodyFrame);
 }
+
 
 
 
@@ -1258,7 +1271,7 @@ bool nsCSSRendering::FindBackgroundFrame(const nsIFrame* aForFrame,
                                          nsIFrame** aBackgroundFrame) {
   nsIFrame* rootElementFrame =
       aForFrame->PresShell()->FrameConstructor()->GetRootElementStyleFrame();
-  if (aForFrame->IsCanvasFrame()) {
+  if (IsCanvasFrame(aForFrame)) {
     *aBackgroundFrame = FindCanvasBackgroundFrame(aForFrame, rootElementFrame);
     return true;
   }
@@ -2397,7 +2410,7 @@ ImgDrawResult nsCSSRendering::PaintStyleImageLayerWithSC(
   
   
   
-  bool isCanvasFrame = aParams.frame->IsCanvasFrame();
+  bool isCanvasFrame = IsCanvasFrame(aParams.frame);
   const bool paintMask = aParams.paintFlags & PAINTBG_MASK_IMAGE;
 
   

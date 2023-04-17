@@ -214,6 +214,9 @@ static FrameCtorDebugFlags gFlags[] = {
 
 
 
+nsContainerFrame* NS_NewRootBoxFrame(PresShell* aPresShell,
+                                     ComputedStyle* aStyle);
+
 nsContainerFrame* NS_NewDocElementBoxFrame(PresShell* aPresShell,
                                            ComputedStyle* aStyle);
 
@@ -2672,10 +2675,21 @@ void nsCSSFrameConstructor::SetUpDocElementContainingBlock(
       static_cast<nsContainerFrame*>(GetRootFrame());
   ComputedStyle* viewportPseudoStyle = viewportFrame->Style();
 
-  nsContainerFrame* rootFrame =
-    NS_NewCanvasFrame(mPresShell, viewportPseudoStyle);
+  nsContainerFrame* rootFrame = nullptr;
+
+#ifdef MOZ_XUL
+  if (aDocElement->IsXULElement()) {
+    
+    rootFrame = NS_NewRootBoxFrame(mPresShell, viewportPseudoStyle);
+  } else
+#endif
+  {
+    
+    rootFrame = NS_NewCanvasFrame(mPresShell, viewportPseudoStyle);
+    mHasRootAbsPosContainingBlock = true;
+  }
+
   PseudoStyleType rootPseudo = PseudoStyleType::canvas;
-  mHasRootAbsPosContainingBlock = true;
   mDocElementContainingBlock = rootFrame;
 
   

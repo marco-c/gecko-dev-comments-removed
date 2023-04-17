@@ -3626,9 +3626,13 @@ AppendedBackgroundType nsDisplayBackgroundImage::AppendBackgroundItemsToTop(
   }
 
   bool drawBackgroundColor = false;
-  bool drawBackgroundImage = false;
+  
+  
+  
+  bool drawBackgroundImage =
+      aFrame->IsXULRootFrame() && aFrame->ComputeShouldPaintBackground().mImage;
   nscolor color = NS_RGBA(0, 0, 0, 0);
-  if (bg && !(aFrame->IsCanvasFrame() || aFrame->IsViewportFrame())) {
+  if (!nsCSSRendering::IsCanvasFrame(aFrame) && bg) {
     color = nsCSSRendering::DetermineBackgroundColor(
         presContext, bgSC, aFrame, drawBackgroundImage, drawBackgroundColor);
   }
