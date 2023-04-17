@@ -1441,6 +1441,11 @@ impl Compositor for SwCompositor {
             self.compositor.end_frame();
         } else if let Some(ref composite_thread) = self.composite_thread {
             
+            if !composite_thread.is_busy_compositing() {
+                return;
+            }
+
+            
             composite_thread.wait_for_composites(false);
 
             if !self.late_surfaces.is_empty() {

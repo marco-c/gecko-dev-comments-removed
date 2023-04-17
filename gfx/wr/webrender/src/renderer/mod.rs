@@ -4617,10 +4617,12 @@ impl Renderer {
             
             
             
-            frame.composite_state.composite_native(
-                &results.dirty_rects,
-                &mut **compositor,
-            );
+            if device_size.is_some() {
+                frame.composite_state.composite_native(
+                    &results.dirty_rects,
+                    &mut **compositor,
+                );
+            }
         }
 
         for (_pass_index, pass) in frame.passes.iter_mut().enumerate() {
