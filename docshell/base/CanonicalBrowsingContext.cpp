@@ -27,7 +27,6 @@
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/StaticPrefs_docshell.h"
 #include "mozilla/StaticPrefs_fission.h"
-#include "mozilla/Telemetry.h"
 #include "nsIWebNavigation.h"
 #include "mozilla/MozPromiseInlines.h"
 #include "nsDocShell.h"
@@ -60,49 +59,6 @@ extern mozilla::LazyLogModule gSHIPBFCacheLog;
 
 #define AUTOPLAY_LOG(msg, ...) \
   MOZ_LOG(gAutoplayPermissionLog, LogLevel::Debug, (msg, ##__VA_ARGS__))
-
-static mozilla::LazyLogModule sPBContext("PBContext");
-
-
-static uint32_t gNumberOfPrivateContexts = 0;
-
-static void IncreasePrivateCount() {
-  gNumberOfPrivateContexts++;
-  MOZ_LOG(sPBContext, mozilla::LogLevel::Debug,
-          ("%s: Private browsing context count %d -> %d", __func__,
-           gNumberOfPrivateContexts - 1, gNumberOfPrivateContexts));
-  if (gNumberOfPrivateContexts > 1) {
-    return;
-  }
-
-  static bool sHasSeenPrivateContext = false;
-  if (!sHasSeenPrivateContext) {
-    sHasSeenPrivateContext = true;
-    mozilla::Telemetry::ScalarSet(
-        mozilla::Telemetry::ScalarID::DOM_PARENTPROCESS_PRIVATE_WINDOW_USED,
-        true);
-  }
-}
-
-static void DecreasePrivateCount() {
-  MOZ_ASSERT(gNumberOfPrivateContexts > 0);
-  gNumberOfPrivateContexts--;
-
-  MOZ_LOG(sPBContext, mozilla::LogLevel::Debug,
-          ("%s: Private browsing context count %d -> %d", __func__,
-           gNumberOfPrivateContexts + 1, gNumberOfPrivateContexts));
-  if (!gNumberOfPrivateContexts &&
-      !mozilla::Preferences::GetBool("browser.privatebrowsing.autostart")) {
-    nsCOMPtr<nsIObserverService> observerService =
-        mozilla::services::GetObserverService();
-    if (observerService) {
-      MOZ_LOG(sPBContext, mozilla::LogLevel::Debug,
-              ("%s: last-pb-context-exited fired", __func__));
-      observerService->NotifyObservers(nullptr, "last-pb-context-exited",
-                                       nullptr);
-    }
-  }
-}
 
 namespace mozilla {
 namespace dom {
@@ -1133,30 +1089,6 @@ void CanonicalBrowsingContext::CanonicalDiscard() {
   }
 
   CancelSessionStoreUpdate();
-
-  if (UsePrivateBrowsing() && EverAttached() && IsContent()) {
-    DecreasePrivateCount();
-  }
-}
-
-void CanonicalBrowsingContext::CanonicalAttach() {
-  if (UsePrivateBrowsing() && IsContent()) {
-    IncreasePrivateCount();
-  }
-}
-
-void CanonicalBrowsingContext::AdjustPrivateBrowsingCount(
-    bool aPrivateBrowsing) {
-  if (IsDiscarded() || !EverAttached() || IsChrome()) {
-    return;
-  }
-
-  MOZ_DIAGNOSTIC_ASSERT(aPrivateBrowsing == UsePrivateBrowsing());
-  if (aPrivateBrowsing) {
-    IncreasePrivateCount();
-  } else {
-    DecreasePrivateCount();
-  }
 }
 
 void CanonicalBrowsingContext::NotifyStartDelayedAutoplayMedia() {
@@ -1439,22 +1371,6 @@ nsresult CanonicalBrowsingContext::PendingRemotenessChange::FinishTopContent() {
   RefPtr<nsFrameLoaderOwner> frameLoaderOwner = do_QueryObject(browserElement);
   MOZ_RELEASE_ASSERT(frameLoaderOwner,
                      "embedder browser must be nsFrameLoaderOwner");
-
-  
-  
-  
-  
-  
-  bool usePrivateBrowsing = mTarget->UsePrivateBrowsing();
-  if (usePrivateBrowsing) {
-    IncreasePrivateCount();
-  }
-
-  auto restorePrivateCount = MakeScopeExit([usePrivateBrowsing]() {
-    if (usePrivateBrowsing) {
-      DecreasePrivateCount();
-    }
-  });
 
   
   nsresult rv = browser->BeforeChangeRemoteness();

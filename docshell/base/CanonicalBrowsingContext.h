@@ -335,13 +335,6 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   void CanonicalDiscard();
 
-  
-  void CanonicalAttach();
-
-  
-  
-  void AdjustPrivateBrowsingCount(bool aPrivateBrowsing);
-
   using Type = BrowsingContext::Type;
   CanonicalBrowsingContext(WindowContext* aParentWindow,
                            BrowsingContextGroup* aGroup,
