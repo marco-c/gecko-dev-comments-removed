@@ -361,29 +361,6 @@ class RasterImage final : public ImageResource,
 
   void OnSurfaceDiscardedInternal(bool aAnimatedFramesDiscarded);
 
-  
-
-
-
-
-
-  gfxMatrix OrientationMatrix(const UnorientedIntSize& aSize,
-                              bool aInvert = false) const;
-
-  
-  UnorientedIntSize ToUnoriented(OrientedIntSize aSize) const {
-    return mOrientation.SwapsWidthAndHeight()
-               ? UnorientedIntSize(aSize.height, aSize.width)
-               : UnorientedIntSize(aSize.width, aSize.height);
-  }
-  OrientedIntSize ToOriented(UnorientedIntSize aSize) const {
-    return mOrientation.SwapsWidthAndHeight()
-               ? OrientedIntSize(aSize.height, aSize.width)
-               : OrientedIntSize(aSize.width, aSize.height);
-  }
-  OrientedIntRect ToOriented(UnorientedIntRect aRect) const;
-  UnorientedIntRect ToUnoriented(OrientedIntRect aRect) const;
-
  private:  
   OrientedIntSize mSize;
   nsTArray<OrientedIntSize> mNativeSizes;

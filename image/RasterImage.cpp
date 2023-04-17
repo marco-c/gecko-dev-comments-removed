@@ -577,13 +577,11 @@ RasterImage::GetFrameInternal(const IntSize& aSize,
   
   LookupResult result = LookupFrame(size, aFlags, ToPlaybackType(aWhichFrame),
                                      true);
-  auto resultSuggestedSize =
-      UnorientedIntSize::FromUnknownSize(result.SuggestedSize());
 
   
   
   
-  OrientedIntSize suggestedSize = ToOriented(resultSuggestedSize);
+  auto suggestedSize = OrientedIntSize::FromUnknownSize(result.SuggestedSize());
   if (suggestedSize.IsEmpty()) {
     suggestedSize = size;
   }
@@ -597,12 +595,6 @@ RasterImage::GetFrameInternal(const IntSize& aSize,
   }
 
   RefPtr<SourceSurface> surface = result.Surface()->GetSourceSurface();
-
-  
-  
-  
-  surface = OrientedImage::OrientSurface(mOrientation, surface);
-
   if (!result.Surface()->IsFinished()) {
     return MakeTuple(ImgDrawResult::INCOMPLETE, suggestedSize.ToUnknownSize(),
                      std::move(surface));
@@ -1777,83 +1769,6 @@ IntSize RasterImage::OptimalImageSizeForDest(const gfxSize& aDest,
 
   
   return mSize.ToUnknownSize();
-}
-
-gfxMatrix RasterImage::OrientationMatrix(const UnorientedIntSize& aSize,
-                                         bool aInvert) const {
-  return OrientedImage::OrientationMatrix(mOrientation, aSize.ToUnknownSize(),
-                                          aInvert);
-}
-
-
-
-
-
-
-
-static void Rotate(IntRect& aRect, const IntSize& aSize, Angle aAngle) {
-  switch (aAngle) {
-    case Angle::D0:
-      break;
-    case Angle::D90:
-      aRect = {aSize.height - aRect.YMost(), aRect.x, aRect.height,
-               aRect.width};
-      break;
-    case Angle::D180:
-      aRect.MoveTo(aSize.width - aRect.XMost(), aSize.height - aRect.YMost());
-      break;
-    case Angle::D270:
-      aRect = {aRect.y, aSize.width - aRect.XMost(), aRect.height, aRect.width};
-      break;
-  }
-}
-
-
-
-
-
-
-
-static void Flip(IntRect& aRect, const IntSize& aSize, Flip aFlip) {
-  switch (aFlip) {
-    case Flip::Unflipped:
-      break;
-    case Flip::Horizontal:
-      aRect.x = aSize.width - aRect.XMost();
-      break;
-  }
-}
-
-OrientedIntRect RasterImage::ToOriented(UnorientedIntRect aRect) const {
-  IntRect rect = aRect.ToUnknownRect();
-  auto size = ToUnoriented(mSize);
-
-  MOZ_ASSERT(!mOrientation.flipFirst,
-             "flipFirst should only be used by OrientedImage");
-
-  
-  
-  
-  Angle angle = Orientation::InvertAngle(mOrientation.rotation);
-  Rotate(rect, size.ToUnknownSize(), angle);
-
-  
-  
-  Flip(rect, mSize.ToUnknownSize(), mOrientation.flip);
-
-  return OrientedIntRect::FromUnknownRect(rect);
-}
-
-UnorientedIntRect RasterImage::ToUnoriented(OrientedIntRect aRect) const {
-  IntRect rect = aRect.ToUnknownRect();
-
-  Flip(rect, mSize.ToUnknownSize(), mOrientation.flip);
-  Rotate(rect, mSize.ToUnknownSize(), mOrientation.rotation);
-
-  MOZ_ASSERT(!mOrientation.flipFirst,
-             "flipFirst should only be used by OrientedImage");
-
-  return UnorientedIntRect::FromUnknownRect(rect);
 }
 
 }  

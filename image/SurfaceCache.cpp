@@ -566,10 +566,6 @@ class ImageSurfaceCache {
       return aSize;
     }
 
-    if (image->GetOrientation().SwapsWidthAndHeight()) {
-      std::swap(factorSize.width, factorSize.height);
-    }
-
     if (mIsVectorImage) {
       
       
