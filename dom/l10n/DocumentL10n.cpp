@@ -296,7 +296,7 @@ void DocumentL10n::InitialTranslationCompleted(bool aL10nCached) {
 
   
   
-  SetIsSync(false);
+  SetAsync();
 }
 
 void DocumentL10n::ConnectRoot(nsINode& aNode, bool aTranslate,
