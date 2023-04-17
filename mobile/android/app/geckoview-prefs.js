@@ -84,3 +84,5 @@ pref("toolkit.autocomplete.delegate", true);
 
 
 pref("webextensions.storage.sync.kinto", true);
+
+pref("browser.formfill.enable", true);

@@ -173,13 +173,13 @@ public final class GeckoRuntime implements Parcelable {
     private final WebExtensionController mWebExtensionController;
     private WebPushController mPushController;
     private final ContentBlockingController mContentBlockingController;
-    private final Autocomplete.LoginStorageProxy mLoginStorageProxy;
+    private final Autocomplete.StorageProxy mAutocompleteStorageProxy;
     private final ProfilerController mProfilerController;
 
     private GeckoRuntime() {
         mWebExtensionController = new WebExtensionController(this);
         mContentBlockingController = new ContentBlockingController();
-        mLoginStorageProxy = new Autocomplete.LoginStorageProxy();
+        mAutocompleteStorageProxy = new Autocomplete.StorageProxy();
         mProfilerController = new ProfilerController();
 
         if (sRuntime != null) {
@@ -573,10 +573,29 @@ public final class GeckoRuntime implements Parcelable {
 
 
     @UiThread
+    public void setAutocompleteStorageDelegate(
+            final @Nullable Autocomplete.StorageDelegate delegate) {
+        ThreadUtils.assertOnUiThread();
+        mAutocompleteStorageProxy.setDelegate(delegate);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+    @Deprecated @DeprecationSchedule(version = 93, id = "login-storage")
+    @UiThread
     public void setLoginStorageDelegate(
             final @Nullable Autocomplete.LoginStorageDelegate delegate) {
         ThreadUtils.assertOnUiThread();
-        mLoginStorageProxy.setDelegate(delegate);
+        mAutocompleteStorageProxy.setDelegate(delegate);
     }
 
     
@@ -585,9 +604,25 @@ public final class GeckoRuntime implements Parcelable {
 
 
     @UiThread
+    public @Nullable Autocomplete.StorageDelegate getAutocompleteStorageDelegate() {
+        ThreadUtils.assertOnUiThread();
+        return mAutocompleteStorageProxy.getDelegate();
+    }
+
+    
+
+
+
+
+
+
+
+
+    @Deprecated @DeprecationSchedule(version = 93, id = "login-storage")
+    @UiThread
     public @Nullable Autocomplete.LoginStorageDelegate getLoginStorageDelegate() {
         ThreadUtils.assertOnUiThread();
-        return mLoginStorageProxy.getDelegate();
+        return (Autocomplete.LoginStorageDelegate)mAutocompleteStorageProxy.getDelegate();
     }
 
     @UiThread

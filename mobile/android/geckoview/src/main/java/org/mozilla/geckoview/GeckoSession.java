@@ -2860,7 +2860,29 @@ public class GeckoSession {
                     new PromptDelegate.AutocompleteRequest<>(options);
 
                 res = delegate.onLoginSelect(session, request);
+                break;
+            }
+            case "Autocomplete:Select:CreditCard": {
+                final GeckoBundle[] optionBundles =
+                    message.getBundleArray("options");
 
+                if (optionBundles == null) {
+                    break;
+                }
+
+                final Autocomplete.CreditCardSelectOption[] options =
+                    new Autocomplete.CreditCardSelectOption[optionBundles.length];
+
+                for (int i = 0; i < options.length; ++i) {
+                    options[i] = Autocomplete.CreditCardSelectOption.fromBundle(
+                        optionBundles[i]);
+                }
+
+                final PromptDelegate.AutocompleteRequest
+                    <Autocomplete.CreditCardSelectOption> request =
+                    new PromptDelegate.AutocompleteRequest<>(options);
+
+                res = delegate.onCreditCardSelect(session, request);
                 break;
             }
             default: {
@@ -5181,6 +5203,34 @@ public class GeckoSession {
         default @Nullable GeckoResult<PromptResponse> onLoginSelect(
                 @NonNull final GeckoSession session,
                 @NonNull final AutocompleteRequest<Autocomplete.LoginSelectOption>
+                    request) {
+            return null;
+        }
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        @UiThread
+        default @Nullable GeckoResult<PromptResponse> onCreditCardSelect(
+                @NonNull final GeckoSession session,
+                @NonNull final AutocompleteRequest<Autocomplete.CreditCardSelectOption>
                     request) {
             return null;
         }
