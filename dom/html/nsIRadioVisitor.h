@@ -8,7 +8,10 @@
 #define nsIRadioVisitor_h___
 
 #include "nsISupports.h"
-class nsIFormControl;
+
+namespace mozilla::dom {
+class HTMLInputElement;
+}  
 
 
 #define NS_IRADIOVISITOR_IID                         \
@@ -37,7 +40,7 @@ class nsIRadioVisitor : public nsISupports {
 
 
 
-  virtual bool Visit(nsIFormControl* aRadio) = 0;
+  virtual bool Visit(mozilla::dom::HTMLInputElement* aRadio) = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIRadioVisitor, NS_IRADIOVISITOR_IID)
