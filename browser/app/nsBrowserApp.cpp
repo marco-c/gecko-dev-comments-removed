@@ -341,6 +341,14 @@ int main(int argc, char* argv[], char* envp[]) {
   DllBlocklist_Initialize(gBlocklistInitFlags);
 #endif
 
+
+
+#if defined(XP_WIN) || defined(XP_MACOSX)
+  if (argc > 1 && IsArg(argv[1], "silentmode")) {
+    ::putenv(const_cast<char*>("MOZ_APP_SILENT_START=1"));
+  }
+#endif
+
 #if defined(XP_WIN)
 
   

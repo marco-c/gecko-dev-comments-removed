@@ -444,10 +444,10 @@ static void ApplyUpdate(nsIFile* greDir, nsIFile* updateDir, nsIFile* appDir,
     if (needElevation) {
       
       
-      char* mozAppSilentRestart = PR_GetEnv("MOZ_APP_SILENT_RESTART");
-      bool wasSilentlyRestarted =
-          mozAppSilentRestart && (strcmp(mozAppSilentRestart, "") != 0);
-      if (wasSilentlyRestarted) {
+      char* mozAppSilentStart = PR_GetEnv("MOZ_APP_SILENT_START");
+      bool wasSilentlyStarted =
+          mozAppSilentStart && (strcmp(mozAppSilentStart, "") != 0);
+      if (wasSilentlyStarted) {
         
         
         

@@ -2708,11 +2708,11 @@ bool ShouldRunSilently(int argc, NS_tchar** argv) {
   }
 #endif  
 
-#ifdef XP_MACOSX
-  if (EnvHasValue("MOZ_APP_SILENT_RESTART")) {
+#if defined(XP_WIN) || defined(XP_MACOSX)
+  if (EnvHasValue("MOZ_APP_SILENT_START")) {
     return true;
   }
-#endif  
+#endif
 
   return false;
 }

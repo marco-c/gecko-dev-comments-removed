@@ -926,9 +926,8 @@ nsDefaultCommandLineHandler.prototype = {
     var urilist = [];
 
     if (
-      AppConstants.platform == "macosx" &&
       cmdLine.state == Ci.nsICommandLine.STATE_INITIAL_LAUNCH &&
-      Services.startup.wasSilentlyRestarted
+      Services.startup.wasSilentlyStarted
     ) {
       
       
