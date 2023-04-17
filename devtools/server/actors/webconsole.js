@@ -199,10 +199,7 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
       );
     }
 
-    this.traits = {
-      
-      blockedUrls: true,
-    };
+    this.traits = {};
   },
   
 
