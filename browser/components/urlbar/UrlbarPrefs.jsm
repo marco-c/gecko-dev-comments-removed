@@ -352,13 +352,6 @@ function makeResultBuckets({ showSearchSuggestionsFirst }) {
                 flex: 2,
                 group: UrlbarUtils.RESULT_GROUP.GENERAL,
               },
-              {
-                
-                
-                
-                flex: 2,
-                group: UrlbarUtils.RESULT_GROUP.ABOUT_PAGES,
-              },
             ],
           },
           {

@@ -51,7 +51,6 @@ var UrlbarUtils = {
   
   
   RESULT_GROUP: {
-    ABOUT_PAGES: "aboutPages",
     GENERAL: "general",
     FORM_HISTORY: "formHistory",
     HEURISTIC_AUTOFILL: "heuristicAutofill",
@@ -527,8 +526,6 @@ var UrlbarUtils = {
     switch (result.providerName) {
       case "InputHistory":
         return UrlbarUtils.RESULT_GROUP.INPUT_HISTORY;
-      case "AboutPages":
-        return UrlbarUtils.RESULT_GROUP.ABOUT_PAGES;
       default:
         break;
     }

@@ -32,10 +32,6 @@ add_task(async function test_maxResults() {
     Assert.deepEqual(context.results, matches.slice(0, count), "Check results");
   }
   await test_count(10);
-  
-  
-  
-  
-  
+  await test_count(1);
   await test_count(30);
 });
