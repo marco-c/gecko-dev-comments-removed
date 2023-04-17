@@ -571,45 +571,10 @@ public final class GeckoRuntime implements Parcelable {
 
 
 
-
-
-
-
-
-
-    @Deprecated @DeprecationSchedule(version = 93, id = "login-storage")
-    @UiThread
-    public void setLoginStorageDelegate(
-            final @Nullable Autocomplete.LoginStorageDelegate delegate) {
-        ThreadUtils.assertOnUiThread();
-        mAutocompleteStorageProxy.setDelegate(delegate);
-    }
-
-    
-
-
-
-
     @UiThread
     public @Nullable Autocomplete.StorageDelegate getAutocompleteStorageDelegate() {
         ThreadUtils.assertOnUiThread();
         return mAutocompleteStorageProxy.getDelegate();
-    }
-
-    
-
-
-
-
-
-
-
-
-    @Deprecated @DeprecationSchedule(version = 93, id = "login-storage")
-    @UiThread
-    public @Nullable Autocomplete.LoginStorageDelegate getLoginStorageDelegate() {
-        ThreadUtils.assertOnUiThread();
-        return (Autocomplete.LoginStorageDelegate)mAutocompleteStorageProxy.getDelegate();
     }
 
     @UiThread
@@ -782,21 +747,6 @@ public final class GeckoRuntime implements Parcelable {
     @SuppressWarnings("checkstyle:javadocmethod")
     public @NonNull GeckoRuntimeSettings getSettings() {
         return mSettings;
-    }
-
-    
-
-
-
-
-
-
-
-    @UiThread
-    @Deprecated
-    @DeprecationSchedule(id = "get-profile-dir", version = 93)
-    public @Nullable File getProfileDir() {
-        return null;
     }
 
     

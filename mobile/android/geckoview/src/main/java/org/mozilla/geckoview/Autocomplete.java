@@ -980,13 +980,6 @@ public class Autocomplete {
 
 
 
-    @Deprecated @DeprecationSchedule(version = 93, id = "login-storage")
-    public interface LoginStorageDelegate extends StorageDelegate {}
-
-    
-
-
-
 
     public abstract static class Option<T> {
          static final String VALUE_KEY = "value";
