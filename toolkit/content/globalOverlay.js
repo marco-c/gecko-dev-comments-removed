@@ -32,8 +32,7 @@ function closeWindow(aClose, aPromptFunction, aSource) {
     }
 
     
-    
-    if (aClose && windowCount == 1) {
+    if (aClose) {
       window.SessionStore?.maybeDontSaveTabs(window);
     }
   } else if (
