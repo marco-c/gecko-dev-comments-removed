@@ -415,6 +415,7 @@ class XPCShellTestThread(Thread):
             filename = "user.js"
             interpolation = {"server": "dummyserver"}
             profile = Profile(profile=localTempDir, restore=False)
+            
             profile.merge(self._rootTempDir, interpolation=interpolation)
 
             prefs = self.test_object["prefs"].strip().split()
@@ -435,6 +436,7 @@ class XPCShellTestThread(Thread):
             )
             return os.path.join(profile.profile, filename)
 
+        
         
         return self.rootPrefsFile
 
