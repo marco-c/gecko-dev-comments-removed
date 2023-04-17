@@ -59,10 +59,6 @@ class DateInputType : public DateTimeInputTypeBase {
     return new (aMemory) DateInputType(aInputElement);
   }
 
-  
-  
-  
-  
   nsresult GetBadInputMessage(nsAString& aMessage) override;
 
   bool ConvertStringToNumber(nsAString& aValue,
@@ -81,6 +77,8 @@ class TimeInputType : public DateTimeInputTypeBase {
   static InputType* Create(HTMLInputElement* aInputElement, void* aMemory) {
     return new (aMemory) TimeInputType(aInputElement);
   }
+
+  nsresult GetBadInputMessage(nsAString& aMessage) override;
 
   bool ConvertStringToNumber(nsAString& aValue,
                              Decimal& aResultValue) const override;
