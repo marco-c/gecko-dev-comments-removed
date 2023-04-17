@@ -397,6 +397,9 @@ class PanGestureInput : public InputData {
                   const ScreenPoint& aPanStartPoint,
                   const ScreenPoint& aPanDisplacement, Modifiers aModifiers);
 
+  void SetLineOrPageDeltas(int32_t aLineOrPageDeltaX,
+                           int32_t aLineOrPageDeltaY);
+
   bool IsMomentum() const;
 
   WidgetWheelEvent ToWidgetEvent(nsIWidget* aWidget) const;
@@ -456,6 +459,13 @@ class PanGestureInput : public InputData {
   
   bool mSimulateMomentum : 1;
 
+  
+  
+  
+  
+  
+  bool mIsNoLineOrPageDelta : 1;
+
   void SetHandledByAPZ(bool aHandled) { mHandledByAPZ = aHandled; }
   void SetFollowedByMomentum(bool aFollowed) {
     mFollowedByMomentum = aFollowed;
@@ -469,6 +479,9 @@ class PanGestureInput : public InputData {
     mOverscrollBehaviorAllowsSwipe = aAllows;
   }
   void SetSimulateMomentum(bool aSimulate) { mSimulateMomentum = aSimulate; }
+  void SetIsNoLineOrPageDelta(bool aIsNoLineOrPageDelta) {
+    mIsNoLineOrPageDelta = aIsNoLineOrPageDelta;
+  }
 };
 
 
