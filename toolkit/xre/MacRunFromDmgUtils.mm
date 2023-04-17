@@ -236,7 +236,17 @@ bool IsAppRunningFromDmg() {
   const int devDirPathLength = strlen(devDirPath);
   if (strncmp(statfsBuf.f_mntfromname, devDirPath, devDirPathLength) != 0) {
     
-    return false;
+    
+    
+    nsCString volumesPath(statfsBuf.f_mntfromname);
+    if (statfs(volumesPath.get(), &statfsBuf) != 0) {
+      return false;
+    }
+
+    if (strncmp(statfsBuf.f_mntfromname, devDirPath, devDirPathLength) != 0) {
+      
+      return false;
+    }
   }
   const char* bsdDeviceName = statfsBuf.f_mntfromname + devDirPathLength;
 
