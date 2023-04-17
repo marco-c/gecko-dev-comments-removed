@@ -189,7 +189,9 @@ function onLoad(ready) {
     document.l10n.setAttributes(secondary, strings.secondary);
 
     
+    await document.l10n.ready;
     requestAnimationFrame(() => {
+      
       primary.focus();
 
       
