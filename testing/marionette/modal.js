@@ -68,7 +68,10 @@ modal.findModalDialogs = function(context) {
     }
 
     dialogs = tabDialogBox.getContentDialogManager().dialogs;
-    if (dialogs.length) {
+
+    
+    
+    if (dialogs.length && dialogs[0].frameContentWindow.Dialog) {
       logger.trace("Found open content prompt");
       return new modal.Dialog(() => context, dialogs[0].frameContentWindow);
     }
