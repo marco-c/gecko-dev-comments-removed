@@ -199,9 +199,6 @@ function onLoad(ready) {
         document.body.style.minHeight = getComputedStyle(document.body).height;
 
         
-        recordEvent("show", primary.dataset.l10nId);
-
-        
         ready();
       }
 
