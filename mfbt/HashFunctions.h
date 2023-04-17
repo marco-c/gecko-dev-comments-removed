@@ -80,8 +80,6 @@ static const HashNumber kGoldenRatioU32 = 0x9E3779B9U;
 
 
 
-
-
 constexpr HashNumber ScrambleHashCode(HashNumber h) {
   
 
