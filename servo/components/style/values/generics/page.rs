@@ -94,6 +94,11 @@ pub enum Orientation {
     Landscape,
 }
 
+#[inline]
+fn is_portrait(orientation: &Orientation) -> bool {
+    *orientation == Orientation::Portrait
+}
+
 
 
 
@@ -101,15 +106,13 @@ pub enum Orientation {
 #[repr(C, u8)]
 pub enum GenericPageSize<S> {
     
-    Size(S),
+    Auto,
     
-    PaperSize(PaperSize),
+    Size(S),
     
     Orientation(Orientation),
     
-    PaperSizeAndOrientation(PaperSize, Orientation),
-    
-    Auto,
+    PaperSize(PaperSize, #[css(skip_if = "is_portrait")] Orientation),
 }
 
 pub use self::GenericPageSize as PageSize;
