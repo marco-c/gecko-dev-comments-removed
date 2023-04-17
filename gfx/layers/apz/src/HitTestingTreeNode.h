@@ -106,7 +106,6 @@ class HitTestingTreeNode {
       const EventRegions& aRegions, const LayerIntRegion& aVisibleRegion,
       const LayerIntSize& aRemoteDocumentSize,
       const CSSTransformMatrix& aTransform,
-      const Maybe<ParentLayerIntRegion>& aClipRegion,
       const EventRegionsOverride& aOverride,
       const Maybe<ScrollableLayerGuid::ViewID>& aAsyncZoomContainerId);
 
@@ -225,13 +224,6 @@ class HitTestingTreeNode {
   
 
   Maybe<ScrollableLayerGuid::ViewID> mAsyncZoomContainerId;
-
-  
-
-
-
-
-  Maybe<ParentLayerIntRegion> mClipRegion;
 
   
 
