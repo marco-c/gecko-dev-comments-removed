@@ -4486,7 +4486,7 @@ void Element::RegUnRegAccessKey(bool aDoReg) {
   }
 
   
-  if (nsPresContext* presContext = GetPresContext(eForUncomposedDoc)) {
+  if (nsPresContext* presContext = GetPresContext(eForComposedDoc)) {
     EventStateManager* esm = presContext->EventStateManager();
 
     
