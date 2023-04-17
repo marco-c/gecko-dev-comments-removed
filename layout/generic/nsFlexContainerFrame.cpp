@@ -2134,8 +2134,6 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
   
   
   
-  
-  
   if (mIsInlineAxisMainAxis) {
     
     
@@ -2164,11 +2162,6 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
       
       mTreatBSizeAsIndefinite = false;
     } else if (aFlexBaseSize != NS_UNCONSTRAINEDSIZE) {
-      
-      
-      
-      
-      
       
       
       mTreatBSizeAsIndefinite = false;
