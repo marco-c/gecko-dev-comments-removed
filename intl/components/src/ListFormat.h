@@ -4,10 +4,9 @@
 #ifndef intl_components_ListFormat_h_
 #define intl_components_ListFormat_h_
 
-#include <functional>
-
 #include "mozilla/CheckedInt.h"
 #include "mozilla/intl/ICU4CGlue.h"
+#include "mozilla/PodOperations.h"
 #include "mozilla/Result.h"
 #include "mozilla/Vector.h"
 #include "unicode/ulistformatter.h"
@@ -109,8 +108,6 @@ class ListFormat final {
   using Part = std::pair<PartType, mozilla::Span<const char16_t>>;
   using PartVector = mozilla::Vector<Part, DEFAULT_LIST_LENGTH>;
 
-  using PartsCallback = std::function<bool(const PartVector& parts)>;
-
   
 
 
@@ -122,11 +119,40 @@ class ListFormat final {
 
 
 
+  template <typename Buffer>
+  ICUResult FormatToParts(const StringList& list, Buffer& buffer,
+                          PartVector& parts) {
+    static_assert(std::is_same_v<typename Buffer::CharType, char16_t>,
+                  "Currently only UTF-16 buffers are supported.");
 
+    mozilla::Vector<const char16_t*, DEFAULT_LIST_LENGTH> u16strings;
+    mozilla::Vector<int32_t, DEFAULT_LIST_LENGTH> u16stringLens;
+    MOZ_TRY(ConvertStringListToVectors(list, u16strings, u16stringLens));
 
+    AutoFormattedList formatted;
+    UErrorCode status = U_ZERO_ERROR;
+    ulistfmt_formatStringsToResult(
+        mListFormatter.GetConst(), u16strings.begin(), u16stringLens.begin(),
+        int32_t(list.length()), formatted.GetFormatted(), &status);
+    if (U_FAILURE(status)) {
+      return Err(ToICUError(status));
+    }
 
+    auto spanResult = formatted.ToSpan();
+    if (spanResult.isErr()) {
+      return spanResult.propagateErr();
+    }
+    auto formattedSpan = spanResult.unwrap();
+    if (!FillBuffer(formattedSpan, buffer)) {
+      return Err(ICUError::OutOfMemory);
+    }
 
-  ICUResult FormatToParts(const StringList& list, PartsCallback&& callback);
+    const UFormattedValue* value = formatted.Value();
+    if (!value) {
+      return Err(ICUError::InternalError);
+    }
+    return FormattedToParts(value, {buffer.data(), buffer.length()}, parts);
+  }
 
  private:
   ListFormat() = delete;
@@ -168,6 +194,14 @@ class ListFormat final {
 
     return Ok{};
   }
+
+  using AutoFormattedList =
+      AutoFormattedResult<UFormattedList, ulistfmt_openResult,
+                          ulistfmt_resultAsValue, ulistfmt_closeResult>;
+
+  ICUResult FormattedToParts(const UFormattedValue* formattedValue,
+                             mozilla::Span<const char16_t> formattedSpan,
+                             PartVector& parts);
 
   static UListFormatterType ToUListFormatterType(Type type);
   static UListFormatterWidth ToUListFormatterWidth(Style style);
