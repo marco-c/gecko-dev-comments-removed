@@ -1277,19 +1277,21 @@ void nsHTMLScrollFrame::Reflow(nsPresContext* aPresContext,
 
   if (mHelper.mIsRoot) {
     reflowScrollCorner = false;
+  }
 
-    
-    
-    
-    
-    ComputedStyle* scrollbarStyle = nsLayoutUtils::StyleForScrollbar(this);
-    auto scrollbarWidth = scrollbarStyle->StyleUIReset()->mScrollbarWidth;
-    if (scrollbarWidth == StyleScrollbarWidth::None) {
-      state.mVScrollbarAllowedForScrollingVVInsideLV = false;
-      state.mHScrollbarAllowedForScrollingVVInsideLV = false;
-      state.mVScrollbar = ShowScrollbar::Never;
-      state.mHScrollbar = ShowScrollbar::Never;
-    }
+  const auto* scrollbarStyle = nsLayoutUtils::StyleForScrollbar(this);
+  
+  
+  
+  
+  
+  
+  if (scrollbarStyle->StyleUIReset()->mScrollbarWidth ==
+      StyleScrollbarWidth::None) {
+    state.mVScrollbarAllowedForScrollingVVInsideLV = false;
+    state.mHScrollbarAllowedForScrollingVVInsideLV = false;
+    state.mVScrollbar = ShowScrollbar::Never;
+    state.mHScrollbar = ShowScrollbar::Never;
   }
 
   nsRect oldScrollAreaBounds = mHelper.mScrollPort;
@@ -2560,11 +2562,11 @@ static void AdjustViews(nsIFrame* aFrame) {
 void ScrollFrameHelper::MarkScrollbarsDirtyForReflow() const {
   PresShell* presShell = mOuter->PresShell();
   if (mVScrollbarBox) {
-    presShell->FrameNeedsReflow(mVScrollbarBox, IntrinsicDirty::Resize,
+    presShell->FrameNeedsReflow(mVScrollbarBox, IntrinsicDirty::StyleChange,
                                 NS_FRAME_IS_DIRTY);
   }
   if (mHScrollbarBox) {
-    presShell->FrameNeedsReflow(mHScrollbarBox, IntrinsicDirty::Resize,
+    presShell->FrameNeedsReflow(mHScrollbarBox, IntrinsicDirty::StyleChange,
                                 NS_FRAME_IS_DIRTY);
   }
 }

@@ -1300,6 +1300,12 @@ static inline void MaybeDealWithScrollbarChange(nsStyleChangeData& aData,
         
         
         
+        if (nsIScrollableFrame* sf = do_QueryFrame(aData.mFrame)) {
+          sf->MarkScrollbarsDirtyForReflow();
+        } else if (nsIScrollableFrame* sf =
+                       aPc->PresShell()->GetRootScrollFrameAsScrollable()) {
+          sf->MarkScrollbarsDirtyForReflow();
+        }
         aData.mHint |= nsChangeHint_ReflowHintsForScrollbarChange;
         return;
       }
@@ -1309,6 +1315,7 @@ static inline void MaybeDealWithScrollbarChange(nsStyleChangeData& aData,
   if (nsIScrollableFrame* sf = do_QueryFrame(aData.mFrame)) {
     if (aData.mFrame->StyleDisplay()->IsScrollableOverflow() &&
         sf->HasAllNeededScrollbars()) {
+      sf->MarkScrollbarsDirtyForReflow();
       
       
       aData.mHint |= nsChangeHint_ReflowHintsForScrollbarChange;
