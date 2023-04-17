@@ -14,7 +14,6 @@ const MS_PER_DAY = 86400000;
 
 
 const QUERYTYPE_FILTERED = 0;
-const QUERYTYPE_ADAPTIVE = 3;
 
 
 const FRECENCY_DEFAULT = 1000;
@@ -107,28 +106,6 @@ const SQL_SWITCHTAB_QUERY = `SELECT :query_type, t.url, t.url, NULL, NULL, NULL,
                             NULL, NULL, NULL, t.open_count,
                             :matchBehavior, :searchBehavior)
    ORDER BY t.ROWID DESC
-   LIMIT :maxResults`;
-
-const SQL_ADAPTIVE_QUERY = `/* do not warn (bug 487789) */
-   SELECT :query_type, h.url, h.title, ${SQL_BOOKMARK_TAGS_FRAGMENT},
-          h.visit_count, h.typed, h.id, t.open_count, h.frecency
-   FROM (
-     SELECT ROUND(MAX(use_count) * (1 + (input = :search_string)), 1) AS rank,
-            place_id
-     FROM moz_inputhistory
-     WHERE input BETWEEN :search_string AND :search_string || X'FFFF'
-     GROUP BY place_id
-   ) AS i
-   JOIN moz_places h ON h.id = i.place_id
-   LEFT JOIN moz_openpages_temp t
-          ON t.url = h.url
-         AND t.userContextId = :userContextId
-   WHERE AUTOCOMPLETE_MATCH(NULL, h.url,
-                            IFNULL(btitle, h.title), tags,
-                            h.visit_count, h.typed, bookmarked,
-                            t.open_count,
-                            :matchBehavior, :searchBehavior)
-   ORDER BY rank DESC, h.frecency DESC
    LIMIT :maxResults`;
 
 
@@ -417,6 +394,13 @@ function makeActionUrl(type, params) {
   return `moz-action:${type},${JSON.stringify(encodedParams)}`;
 }
 
+const MATCH_TYPE = {
+  HEURISTIC: "heuristic",
+  GENERAL: "general",
+  SUGGESTION: "suggestion",
+  EXTENSION: "extension",
+};
+
 
 
 
@@ -586,10 +570,6 @@ function Search(
   this._result = result;
 
   
-  this._adaptiveCount = 0;
-  this._extraAdaptiveRows = [];
-
-  
   this._extraRemoteTabRows = [];
 
   
@@ -597,7 +577,7 @@ function Search(
   this._usedPlaceIds = new Set();
 
   
-  this._counts = Object.values(UrlbarUtils.RESULT_GROUP).reduce((o, p) => {
+  this._counts = Object.values(MATCH_TYPE).reduce((o, p) => {
     o[p] = 0;
     return o;
   }, {});
@@ -768,7 +748,6 @@ Search.prototype = {
     
     
     
-    
 
     
     await this._checkPreloadedSitesExpiry();
@@ -824,16 +803,6 @@ Search.prototype = {
     }
 
     
-    await conn.executeCached(
-      this._adaptiveQuery[0],
-      this._adaptiveQuery[1],
-      this._onResultRow.bind(this)
-    );
-    if (!this.pending) {
-      return;
-    }
-
-    
     if (this._enableActions && this.hasBehavior("openpage")) {
       await this._matchRemoteTabs();
       if (!this.pending) {
@@ -858,14 +827,6 @@ Search.prototype = {
 
     
     while (
-      this._extraAdaptiveRows.length &&
-      this._result.matchCount < this._maxResults
-    ) {
-      this._addFilteredQueryMatch(this._extraAdaptiveRows.shift());
-    }
-
-    
-    while (
       this._extraRemoteTabRows.length &&
       this._result.matchCount < this._maxResults
     ) {
@@ -877,11 +838,10 @@ Search.prototype = {
     
     
     let count =
-      this._counts[UrlbarUtils.RESULT_GROUP.GENERAL] +
-      this._counts[UrlbarUtils.RESULT_GROUP.HEURISTIC];
+      this._counts[MATCH_TYPE.GENERAL] + this._counts[MATCH_TYPE.HEURISTIC];
     if (count < this._maxResults) {
       this._matchBehavior = Ci.mozIPlacesAutoComplete.MATCH_ANYWHERE;
-      let queries = [this._adaptiveQuery, this._searchQuery];
+      let queries = [this._searchQuery];
       if (this.hasBehavior("openpage")) {
         queries.unshift(this._switchToTabQuery);
       }
@@ -1209,9 +1169,6 @@ Search.prototype = {
   _onResultRow(row, cancel) {
     let queryType = row.getResultByIndex(QUERYINDEX_QUERYTYPE);
     switch (queryType) {
-      case QUERYTYPE_ADAPTIVE:
-        this._addAdaptiveQueryMatch(row);
-        break;
       case QUERYTYPE_FILTERED:
         this._addFilteredQueryMatch(row);
         break;
@@ -1219,8 +1176,7 @@ Search.prototype = {
     
     
     let count =
-      this._counts[UrlbarUtils.RESULT_GROUP.GENERAL] +
-      this._counts[UrlbarUtils.RESULT_GROUP.HEURISTIC];
+      this._counts[MATCH_TYPE.GENERAL] + this._counts[MATCH_TYPE.HEURISTIC];
     if (!this.pending || count >= this._maxResults) {
       cancel();
     }
@@ -1300,9 +1256,9 @@ Search.prototype = {
     }
 
     if (this._addingHeuristicResult) {
-      match.type = UrlbarUtils.RESULT_GROUP.HEURISTIC;
+      match.type = MATCH_TYPE.HEURISTIC;
     } else if (typeof match.type != "string") {
-      match.type = UrlbarUtils.RESULT_GROUP.GENERAL;
+      match.type = MATCH_TYPE.GENERAL;
     }
 
     
@@ -1350,7 +1306,7 @@ Search.prototype = {
     );
     this._counts[match.type]++;
 
-    this.notifyResult(true, match.type == UrlbarUtils.RESULT_GROUP.HEURISTIC);
+    this.notifyResult(true, match.type == MATCH_TYPE.HEURISTIC);
   },
 
   
@@ -1390,7 +1346,7 @@ Search.prototype = {
             
             
             if (
-              matchType == UrlbarUtils.RESULT_GROUP.HEURISTIC &&
+              matchType == MATCH_TYPE.HEURISTIC &&
               action.type == "switchtab"
             ) {
               isDupe = false;
@@ -1440,7 +1396,7 @@ Search.prototype = {
             if (prefix == existingPrefix) {
               
               
-              if (match.type != UrlbarUtils.RESULT_GROUP.HEURISTIC) {
+              if (match.type != MATCH_TYPE.HEURISTIC) {
                 break; 
               } else {
                 this._usedURLs[i] = {
@@ -1457,14 +1413,14 @@ Search.prototype = {
             if (prefix.endsWith("www.") == existingPrefix.endsWith("www.")) {
               
 
-              if (match.type == UrlbarUtils.RESULT_GROUP.HEURISTIC) {
+              if (match.type == MATCH_TYPE.HEURISTIC) {
                 isDupe = false;
                 continue;
               }
 
               if (prefixRank <= existingPrefixRank) {
                 break; 
-              } else if (existingType != UrlbarUtils.RESULT_GROUP.HEURISTIC) {
+              } else if (existingType != MATCH_TYPE.HEURISTIC) {
                 this._usedURLs[i] = {
                   key: urlMapKey,
                   action,
@@ -1506,26 +1462,9 @@ Search.prototype = {
     }
 
     let index = 0;
-    
-    
     if (!this._buckets) {
-      
-      let buckets =
-        match.type == UrlbarUtils.RESULT_GROUP.HEURISTIC &&
-        match.style.includes("searchengine")
-          ? UrlbarPrefs.get("matchBucketsSearch")
-          : UrlbarPrefs.get("matchBuckets");
-      
-      
-      
-      
-      
-      this._buckets = buckets.map(([type, available]) => ({
-        type,
-        available,
-        insertIndex: 0,
-        count: 0,
-      }));
+      this._buckets = [];
+      this._makeBuckets(UrlbarPrefs.get("resultBuckets"), this._maxResults);
     }
 
     let replace = 0;
@@ -1557,6 +1496,63 @@ Search.prototype = {
     return { index, replace };
   },
 
+  _makeBuckets(resultBucket, maxResultCount) {
+    if (!resultBucket.children) {
+      let type;
+      switch (resultBucket.group) {
+        case UrlbarUtils.RESULT_GROUP.FORM_HISTORY:
+        case UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION:
+        case UrlbarUtils.RESULT_GROUP.TAIL_SUGGESTION:
+          type = MATCH_TYPE.SUGGESTION;
+          break;
+        case UrlbarUtils.RESULT_GROUP.HEURISTIC_AUTOFILL:
+        case UrlbarUtils.RESULT_GROUP.HEURISTIC_EXTENSION:
+        case UrlbarUtils.RESULT_GROUP.HEURISTIC_FALLBACK:
+        case UrlbarUtils.RESULT_GROUP.HEURISTIC_OMNIBOX:
+        case UrlbarUtils.RESULT_GROUP.HEURISTIC_SEARCH_TIP:
+        case UrlbarUtils.RESULT_GROUP.HEURISTIC_TEST:
+        case UrlbarUtils.RESULT_GROUP.HEURISTIC_TOKEN_ALIAS_ENGINE:
+        case UrlbarUtils.RESULT_GROUP.HEURISTIC_UNIFIED_COMPLETE:
+          type = MATCH_TYPE.HEURISTIC;
+          break;
+        case UrlbarUtils.RESULT_GROUP.OMNIBOX:
+          type = MATCH_TYPE.EXTENSION;
+          break;
+        default:
+          type = MATCH_TYPE.GENERAL;
+          break;
+      }
+      if (this._buckets.length) {
+        let last = this._buckets[this._buckets.length - 1];
+        if (last.type == type) {
+          return;
+        }
+      }
+      
+      
+      
+      
+      
+      this._buckets.push({
+        type,
+        available: maxResultCount,
+        insertIndex: 0,
+        count: 0,
+      });
+      return;
+    }
+
+    let childMaxResultCount = Math.min(
+      typeof resultBucket.maxResultCount == "number"
+        ? resultBucket.maxResultCount
+        : this._maxResults,
+      maxResultCount
+    );
+    for (let child of resultBucket.children) {
+      this._makeBuckets(child, childMaxResultCount);
+    }
+  },
+
   _addAutofillMatch(
     autofilledValue,
     finalCompleteValue,
@@ -1582,26 +1578,6 @@ Search.prototype = {
       style: ["autofill"].concat(extraStyles).join(" "),
       icon: iconHelper(finalCompleteValue),
     });
-  },
-
-  
-  
-  
-  _addAdaptiveQueryMatch(row) {
-    
-    if (this._searchModeEngine) {
-      return;
-    }
-    
-    
-    
-    
-    if (this._adaptiveCount < Math.ceil(this._maxResults / 4)) {
-      this._addFilteredQueryMatch(row);
-    } else {
-      this._extraAdaptiveRows.push(row);
-    }
-    this._adaptiveCount++;
   },
 
   _addFilteredQueryMatch(row) {
@@ -1804,27 +1780,6 @@ Search.prototype = {
         
         
         searchString: this._keywordFilteredSearchString,
-        userContextId: this._userContextId,
-        maxResults: this._maxResults,
-      },
-    ];
-  },
-
-  
-
-
-
-
-
-  get _adaptiveQuery() {
-    return [
-      SQL_ADAPTIVE_QUERY,
-      {
-        parent: PlacesUtils.tagsFolderId,
-        search_string: this._searchString,
-        query_type: QUERYTYPE_ADAPTIVE,
-        matchBehavior: this._matchBehavior,
-        searchBehavior: this._behavior,
         userContextId: this._userContextId,
         maxResults: this._maxResults,
       },

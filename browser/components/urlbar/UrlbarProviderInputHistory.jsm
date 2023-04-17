@@ -96,9 +96,7 @@ class ProviderInputHistory extends UrlbarProvider {
 
 
   isActive(queryContext) {
-    return false;
-    
-    
+    return UrlbarPrefs.get("suggest.history") && !queryContext.searchMode;
   }
 
   
