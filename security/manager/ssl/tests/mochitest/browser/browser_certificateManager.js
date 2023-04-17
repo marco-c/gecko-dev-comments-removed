@@ -13,13 +13,20 @@ async function checkServerCertificates(win, expectedValues = []) {
       expectedValues.length
     );
   }, `Expected to have ${expectedValues.length} but got ${win.document.getElementById("serverList").itemChildren.length}`);
-  
-  
   await new Promise(win.requestAnimationFrame);
 
   let labels = win.document
     .getElementById("serverList")
     .querySelectorAll("label");
+
+  
+  
+  if (expectedValues.length > 0) {
+    await BrowserTestUtils.waitForCondition(
+      () => labels[1].value || labels[1].textContent.length > 0,
+      "At least one label is populated"
+    );
+  }
 
   expectedValues.forEach((item, i) => {
     let hostPort = labels[i * 3].value;
