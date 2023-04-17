@@ -302,35 +302,45 @@ SEC_PKCS5GetPBEAlgorithm(SECOidTag algTag, int keyLen)
     return SEC_OID_UNKNOWN;
 }
 
-static PRBool
-sec_pkcs5_is_algorithm_v2_aes_algorithm(SECOidTag algorithm)
-{
-    switch (algorithm) {
-        case SEC_OID_AES_128_CBC:
-        case SEC_OID_AES_192_CBC:
-        case SEC_OID_AES_256_CBC:
-            return PR_TRUE;
-        default:
-            return PR_FALSE;
-    }
-}
+
+
+
+
 
 static int
-sec_pkcs5v2_aes_key_length(SECOidTag algorithm)
+sec_pkcs5v2_key_length_by_oid(SECOidTag algorithm)
 {
     switch (algorithm) {
-        
-
         case SEC_OID_AES_128_CBC:
+        case SEC_OID_CAMELLIA_128_CBC:
             return AES_128_KEY_LENGTH;
         case SEC_OID_AES_192_CBC:
+        case SEC_OID_CAMELLIA_192_CBC:
             return AES_192_KEY_LENGTH;
         case SEC_OID_AES_256_CBC:
+        case SEC_OID_CAMELLIA_256_CBC:
             return AES_256_KEY_LENGTH;
         default:
             break;
     }
-    return 0;
+    return -1;
+}
+
+
+static int
+sec_pkcs5v2_default_key_length(SECOidTag algorithm)
+{
+    CK_MECHANISM_TYPE cryptoMech;
+    int key_length = sec_pkcs5v2_key_length_by_oid(algorithm);
+    if (key_length != -1) {
+        return key_length;
+    }
+    cryptoMech = PK11_AlgtagToMechanism(algorithm);
+    if (cryptoMech == CKM_INVALID_MECHANISM) {
+        PORT_SetError(SEC_ERROR_INVALID_ALGORITHM);
+        return -1;
+    }
+    return PK11_GetMaxKeyLength(cryptoMech);
 }
 
 
@@ -366,34 +376,17 @@ sec_pkcs5v2_key_length(SECAlgorithmID *algid, SECAlgorithmID *cipherAlgId)
     if (cipherAlgId)
         cipherAlg = SECOID_GetAlgorithmTag(cipherAlgId);
 
-    if (sec_pkcs5_is_algorithm_v2_aes_algorithm(cipherAlg)) {
+    if (p5_param.keyLength.data != NULL) {
         
 
 
 
 
-
-
-
-        if (p5_param.keyLength.data != NULL) {
-            length = DER_GetInteger(&p5_param.keyLength);
-        }
-        
-
-
-
-        if (length != 32) {
-            length = sec_pkcs5v2_aes_key_length(cipherAlg);
-        }
-    } else if (p5_param.keyLength.data != NULL) {
         length = DER_GetInteger(&p5_param.keyLength);
     } else {
-        CK_MECHANISM_TYPE cipherMech;
-        cipherMech = PK11_AlgtagToMechanism(cipherAlg);
-        if (cipherMech == CKM_INVALID_MECHANISM) {
-            goto loser;
-        }
-        length = PK11_GetMaxKeyLength(cipherMech);
+        
+
+        length = sec_pkcs5v2_default_key_length(cipherAlg);
     }
 
 loser:
@@ -677,17 +670,10 @@ sec_pkcs5CreateAlgorithmID(SECOidTag algorithm,
             SECOidTag hashAlg = HASH_GetHashOidTagByHMACOidTag(cipherAlgorithm);
             if (hashAlg != SEC_OID_UNKNOWN) {
                 keyLength = HASH_ResultLenByOidTag(hashAlg);
-            } else if (sec_pkcs5_is_algorithm_v2_aes_algorithm(cipherAlgorithm)) {
-                keyLength = sec_pkcs5v2_aes_key_length(cipherAlgorithm);
             } else {
-                CK_MECHANISM_TYPE cryptoMech;
-                cryptoMech = PK11_AlgtagToMechanism(cipherAlgorithm);
-                if (cryptoMech == CKM_INVALID_MECHANISM) {
-                    goto loser;
-                }
-                keyLength = PK11_GetMaxKeyLength(cryptoMech);
+                keyLength = sec_pkcs5v2_default_key_length(cipherAlgorithm);
             }
-            if (keyLength == 0) {
+            if (keyLength <= 0) {
                 goto loser;
             }
         }

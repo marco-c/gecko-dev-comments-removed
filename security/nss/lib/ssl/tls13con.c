@@ -5871,6 +5871,7 @@ tls13_UnprotectRecord(sslSocket *ss,
         SSL_TRC(3, ("%d: TLS13[%d]: empty record", SSL_GETPID(), ss->fd));
         
 
+        *alert = unexpected_message;
         PORT_SetError(SSL_ERROR_BAD_BLOCK_PADDING);
         return SECFailure;
     }
