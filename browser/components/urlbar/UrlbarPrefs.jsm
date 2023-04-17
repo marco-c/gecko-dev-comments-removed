@@ -160,6 +160,9 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["suggest.topsites", true],
 
   
+  ["suggest.calculator", false],
+
+  
   ["suggest.quicksuggest", true],
 
   
