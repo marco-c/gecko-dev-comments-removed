@@ -793,18 +793,10 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
     
     
     
-    COMPUTE_DEFAULT_ACTION_TARGET_EXCEPT_PLUGIN =
+    COMPUTE_DEFAULT_ACTION_TARGET =
         (PREFER_MOUSE_WHEEL_TRANSACTION |
          PREFER_ACTUAL_SCROLLABLE_TARGET_ALONG_X_AXIS |
          PREFER_ACTUAL_SCROLLABLE_TARGET_ALONG_Y_AXIS),
-    
-    
-    COMPUTE_DEFAULT_ACTION_TARGET =
-        (COMPUTE_DEFAULT_ACTION_TARGET_EXCEPT_PLUGIN |
-         INCLUDE_PLUGIN_AS_TARGET),
-    COMPUTE_DEFAULT_ACTION_TARGET_WITH_AUTO_DIR_EXCEPT_PLUGIN =
-        (COMPUTE_DEFAULT_ACTION_TARGET_EXCEPT_PLUGIN |
-         MAY_BE_ADJUSTED_BY_AUTO_DIR),
     COMPUTE_DEFAULT_ACTION_TARGET_WITH_AUTO_DIR =
         (COMPUTE_DEFAULT_ACTION_TARGET | MAY_BE_ADJUSTED_BY_AUTO_DIR),
     
@@ -820,18 +812,6 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
         (COMPUTE_SCROLLABLE_ANCESTOR_ALONG_Y_AXIS |
          MAY_BE_ADJUSTED_BY_AUTO_DIR),
   };
-  static ComputeScrollTargetOptions RemovePluginFromTarget(
-      ComputeScrollTargetOptions aOptions) {
-    switch (aOptions) {
-      case COMPUTE_DEFAULT_ACTION_TARGET:
-        return COMPUTE_DEFAULT_ACTION_TARGET_EXCEPT_PLUGIN;
-      case COMPUTE_DEFAULT_ACTION_TARGET_WITH_AUTO_DIR:
-        return COMPUTE_DEFAULT_ACTION_TARGET_WITH_AUTO_DIR_EXCEPT_PLUGIN;
-      default:
-        MOZ_ASSERT(!(aOptions & INCLUDE_PLUGIN_AS_TARGET));
-        return aOptions;
-    }
-  }
 
   
   
