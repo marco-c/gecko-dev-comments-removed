@@ -1795,6 +1795,9 @@ void DocAccessible::DoInitialUpdate() {
   if (logging::IsEnabled(logging::eVerbose)) {
     logging::Tree("TREE", "Initial subtree", this);
   }
+  if (logging::IsEnabled(logging::eTreeSize)) {
+    logging::TreeSize("TREE SIZE", "Initial subtree", this);
+  }
 #endif
 
   
