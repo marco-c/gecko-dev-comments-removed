@@ -1271,13 +1271,9 @@ void WebrtcVideoConduit::DetachRenderer() {
   }
 }
 
-
-
 void WebrtcVideoConduit::SelectSendResolution(unsigned short width,
                                               unsigned short height) {
   mMutex.AssertCurrentThreadOwns();
-  
-  
   if (mCurSendCodecConfig) {
     int max_fs = std::numeric_limits<int>::max();
     if (!mLockScaling) {
