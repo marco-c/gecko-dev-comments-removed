@@ -5919,6 +5919,7 @@ void nsWindow::NativeShow(bool aAction) {
   if (aAction) {
     
     mNeedsShow = false;
+    LOG(("nsWindow::NativeShow show [%p]\n", this));
 
     if (mIsTopLevel) {
       
@@ -5926,7 +5927,6 @@ void nsWindow::NativeShow(bool aAction) {
         SetUserTimeAndStartupIDForActivatedWindow(mShell);
       }
       if (IsWaylandPopup()) {
-        LOG_POPUP(("nsWindow::NativeShow show Popup [%p]\n", this));
         if (WaylandPopupNeedsTrackInHierarchy()) {
           AddWindowToPopupHierarchy();
           UpdateWaylandPopupHierarchy();
@@ -5954,10 +5954,10 @@ void nsWindow::NativeShow(bool aAction) {
     
     mPreferredPopupRect = nsRect(0, 0, 0, 0);
     mPreferredPopupRectFlushed = false;
+    LOG(("nsWindow::NativeShow hide [%p]\n", this));
     if (GdkIsWaylandDisplay()) {
       WaylandStopVsync();
       if (IsWaylandPopup()) {
-        LOG_POPUP(("nsWindow::NativeShow hide Popup [%p]\n", this));
         
         
         
