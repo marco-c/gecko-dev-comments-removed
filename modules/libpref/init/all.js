@@ -1952,6 +1952,10 @@ pref("font.cjk_pref_fallback_order",        "zh-cn,zh-hk,zh-tw,ja,ko");
 pref("intl.uidirection", -1); 
 
 
+
+pref("intl.l10n.pseudo", "");
+
+
 pref("intl.hyphenation-alias.en", "en-us");
 
 pref("intl.hyphenation-alias.en-*", "en-us");
