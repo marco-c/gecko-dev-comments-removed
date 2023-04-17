@@ -1485,6 +1485,7 @@ const browsingContextTargetPrototype = {
       newURI,
       request,
       navigationStart,
+      isFrameSwitching,
     });
 
     
@@ -1500,7 +1501,7 @@ const browsingContextTargetPrototype = {
         url: newURI,
         nativeConsoleAPI: true,
         state: "start",
-        isFrameSwitching: isFrameSwitching,
+        isFrameSwitching,
       });
     }
 

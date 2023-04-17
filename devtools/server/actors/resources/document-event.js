@@ -42,6 +42,13 @@ class DocumentEventWatcher {
         newURI,
       } = {}
     ) => {
+      
+      
+      
+      
+      if (name == "will-navigate" && !isFrameSwitching) {
+        return;
+      }
       onAvailable([
         {
           resourceType: DOCUMENT_EVENT,
