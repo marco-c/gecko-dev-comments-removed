@@ -3,8 +3,8 @@
 
 
 config = {
-    "stage_platform": "android-api-16-gradle-dependencies",
-    "src_mozconfig": "mobile/android/config/mozconfigs/android-api-16-gradle-dependencies/nightly",
+    "stage_platform": "android-arm-gradle-dependencies",
+    "src_mozconfig": "mobile/android/config/mozconfigs/android-arm-gradle-dependencies/nightly",
     
     "postflight_build_mach_commands": [
         [

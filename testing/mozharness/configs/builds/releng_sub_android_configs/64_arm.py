@@ -1,0 +1,8 @@
+
+
+
+
+config = {
+    "stage_platform": "android-arm",
+    "src_mozconfig": "mobile/android/config/mozconfigs/android-arm/nightly",
+}

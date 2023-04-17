@@ -1,0 +1,9 @@
+
+
+
+
+config = {
+    "stage_platform": "android-arm-debug",
+    "src_mozconfig": "mobile/android/config/mozconfigs/android-arm/debug",
+    "debug_build": True,
+}
