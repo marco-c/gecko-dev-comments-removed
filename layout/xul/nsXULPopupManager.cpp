@@ -825,9 +825,13 @@ void nsXULPopupManager::OnNativeMenuClosed() {
     return;
   }
 
-  
-  
-  
+  RefPtr<nsXULPopupManager> kungFuDeathGrip(this);
+
+  nsCOMPtr<nsIContent> popup = mNativeMenu->Element();
+  nsMenuPopupFrame* popupFrame = GetPopupFrameForContent(popup, true);
+  if (popupFrame) {
+    popupFrame->ClearTriggerContentIncludingDocument();
+  }
   mNativeMenu->RemoveObserver(this);
   mNativeMenu = nullptr;
 }

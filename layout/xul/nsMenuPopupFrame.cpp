@@ -973,6 +973,25 @@ void nsMenuPopupFrame::ShowPopup(bool aIsContextMenu) {
   mShouldAutoPosition = true;
 }
 
+void nsMenuPopupFrame::ClearTriggerContentIncludingDocument() {
+  
+  
+  if (mTriggerContent) {
+    
+    
+    Document* doc = mContent->GetUncomposedDoc();
+    if (doc) {
+      if (nsPIDOMWindowOuter* win = doc->GetWindow()) {
+        nsCOMPtr<nsPIWindowRoot> root = win->GetTopWindowRoot();
+        if (root) {
+          root->SetPopupNode(nullptr);
+        }
+      }
+    }
+  }
+  mTriggerContent = nullptr;
+}
+
 void nsMenuPopupFrame::HidePopup(bool aDeselectMenu, nsPopupState aNewState) {
   NS_ASSERTION(aNewState == ePopupClosed || aNewState == ePopupInvisible,
                "popup being set to unexpected state");
@@ -984,24 +1003,11 @@ void nsMenuPopupFrame::HidePopup(bool aDeselectMenu, nsPopupState aNewState) {
       mPopupState == ePopupPositioning)
     return;
 
-  
-  
-  
   if (aNewState == ePopupClosed) {
     
     
-    if (mTriggerContent) {
-      Document* doc = mContent->GetUncomposedDoc();
-      if (doc) {
-        if (nsPIDOMWindowOuter* win = doc->GetWindow()) {
-          nsCOMPtr<nsPIWindowRoot> root = win->GetTopWindowRoot();
-          if (root) {
-            root->SetPopupNode(nullptr);
-          }
-        }
-      }
-    }
-    mTriggerContent = nullptr;
+    
+    ClearTriggerContentIncludingDocument();
     mAnchorContent = nullptr;
   }
 

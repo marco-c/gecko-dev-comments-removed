@@ -9,6 +9,10 @@
 #include "nsISupportsImpl.h"
 #include "Units.h"
 
+namespace mozilla::dom {
+class Element;
+}
+
 namespace mozilla::widget {
 
 class NativeMenu {
@@ -22,6 +26,9 @@ class NativeMenu {
   
   
   virtual bool Close() = 0;
+
+  
+  virtual RefPtr<dom::Element> Element() = 0;
 
   class Observer {
    public:
