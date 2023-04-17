@@ -924,7 +924,7 @@ void XPCJSRuntime::FinalizeCallback(JSFreeOp* fop, JSFinalizeStatus status,
 }
 
 
-void XPCJSRuntime::WeakPointerZonesCallback(JSContext* cx, void* data) {
+void XPCJSRuntime::WeakPointerZonesCallback(JSTracer* trc, void* data) {
   
   
   
@@ -943,7 +943,7 @@ void XPCJSRuntime::WeakPointerZonesCallback(JSContext* cx, void* data) {
 }
 
 
-void XPCJSRuntime::WeakPointerCompartmentCallback(JSContext* cx,
+void XPCJSRuntime::WeakPointerCompartmentCallback(JSTracer* trc,
                                                   JS::Compartment* comp,
                                                   void* data) {
   
