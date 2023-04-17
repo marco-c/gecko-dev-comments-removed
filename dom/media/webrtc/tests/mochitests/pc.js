@@ -1901,14 +1901,48 @@ PeerConnectionWrapper.prototype = {
       }
       return report;
     };
+    
+    
+    const hasAllRtcpUpdated = (baseStats, stats) => {
+      let hasRtcpStats = false;
+      for (const v of stats.values()) {
+        if (v.type == "remote-outbound-rtp") {
+          hasRtcpStats = true;
+          if (!v.remoteTimestamp) {
+            
+            return false;
+          }
+          if (v.remoteTimestamp <= baseStats.get(v.id)?.remoteTimestamp) {
+            
+            
+            return false;
+          }
+        } else if (v.type == "remote-inbound-rtp") {
+          hasRtcpStats = true;
+          
+          
+          if (!v.packetsReceived) {
+            
+            return false;
+          }
+          if (v.packetsReceived <= baseStats.get(v.id)?.packetsReceived) {
+            
+            
+            return false;
+          }
+        }
+      }
+      return hasRtcpStats;
+    };
     let attempts = 0;
+    const baseStats = await this._pc.getStats();
     
     const waitPeriod = 100;
     const maxTime = 20000;
     for (let totalTime = maxTime; totalTime > 0; totalTime -= waitPeriod) {
       try {
         let syncedStats = await ensureSyncedRtcp();
-        if (syncedStats) {
+        if (syncedStats && hasAllRtcpUpdated(baseStats, syncedStats)) {
           return syncedStats;
         }
       } catch (e) {
