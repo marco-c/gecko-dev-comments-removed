@@ -5846,11 +5846,13 @@ Element* HTMLEditor::GetActiveEditingHost(
   nsIContent* content = focusNode->AsContent();
 
   
-  
-  if (!content->HasFlag(NODE_IS_EDITABLE) ||
-      content->HasIndependentSelection()) {
+  if (!content->HasFlag(NODE_IS_EDITABLE)) {
     return nullptr;
   }
+  
+  
+  
+  
   Element* candidateEditingHost = content->GetEditingHost();
   if (!candidateEditingHost) {
     return nullptr;
