@@ -1790,7 +1790,8 @@ bool ScriptSource::startIncrementalEncoding(
     JSContext* cx,
     UniquePtr<frontend::ExtensibleCompilationStencil>&& initial) {
   
-  if (containsAsmJS()) {
+  
+  if (initial->asmJS) {
     return true;
   }
 

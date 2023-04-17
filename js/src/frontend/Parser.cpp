@@ -3847,13 +3847,6 @@ bool Parser<SyntaxParseHandler, Unit>::asmJS(ListNodeType list) {
   
   
   MOZ_ALWAYS_FALSE(abortIfSyntaxParser());
-
-  
-  
-  
-  if (ss) {
-    ss->setContainsAsmJS();
-  }
   return false;
 }
 
@@ -3876,7 +3869,6 @@ bool Parser<FullParseHandler, Unit>::asmJS(ListNodeType list) {
     return true;
   }
 
-  ss->setContainsAsmJS();
   pc_->functionBox()->useAsm = true;
 
   

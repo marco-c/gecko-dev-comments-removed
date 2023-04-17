@@ -582,9 +582,6 @@ class ScriptSource {
   bool mutedErrors_ = false;
 
   
-  bool containsAsmJS_ = false;
-
-  
   
   
 
@@ -1021,9 +1018,6 @@ class ScriptSource {
     MOZ_ASSERT(offset <= (uint32_t)INT32_MAX);
     introductionOffset_.emplace(offset);
   }
-
-  bool containsAsmJS() const { return containsAsmJS_; }
-  void setContainsAsmJS() { containsAsmJS_ = true; }
 
   
   bool hasEncoder() const { return bool(xdrEncoder_); }
