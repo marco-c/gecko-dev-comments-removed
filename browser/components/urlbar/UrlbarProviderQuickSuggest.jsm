@@ -242,10 +242,14 @@ class ProviderQuickSuggest extends UrlbarProvider {
         sponsoredBlockId,
       } = result.payload;
       
+      
+      
+      
+      
       PartnerLinkAttribution.sendContextualServicesPing(
         {
-          search_query: details.searchString,
-          matched_keywords: details.searchString,
+          search_query: "",
+          matched_keywords: "",
           advertiser: sponsoredAdvertiser,
           block_id: sponsoredBlockId,
           position: telemetryResultIndex,
