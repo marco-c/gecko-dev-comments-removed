@@ -60,14 +60,12 @@
 #![cfg_attr(
     feature = "unstable_const",
     feature(
-        ptr_offset_from,
-        const_fn,
         const_ptr_offset_from,
         const_maybe_uninit_as_ptr,
         const_raw_ptr_deref,
+        const_refs_to_cell,
     )
 )]
-#![cfg_attr(feature = "unstable_raw", feature(raw_ref_macros))]
 
 #[macro_use]
 #[cfg(doctests)]
@@ -78,11 +76,19 @@ extern crate doc_comment;
 doctest!("../README.md");
 
 
+#[doc(hidden)]
+pub mod __priv {
+    #[doc(hidden)]
+    pub use core::mem;
+    #[doc(hidden)]
+    pub use core::ptr;
 
-#[doc(hidden)]
-pub use core::mem;
-#[doc(hidden)]
-pub use core::ptr;
+    
+    #[doc(hidden)]
+    pub fn size_of_pointee<T>(_ptr: *const T) -> usize {
+        mem::size_of::<T>()
+    }
+}
 
 #[macro_use]
 mod raw_field;

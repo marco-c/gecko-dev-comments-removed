@@ -4,9 +4,10 @@
 
 
 
+
 use crate::job::{HeapJob, JobFifo};
-use crate::latch::CountLatch;
-use crate::registry::{in_worker, Registry, WorkerThread};
+use crate::latch::{CountLatch, CountLockLatch, Latch};
+use crate::registry::{global_registry, in_worker, Registry, WorkerThread};
 use crate::unwind;
 use std::any::Any;
 use std::fmt;
@@ -37,12 +38,28 @@ pub struct ScopeFifo<'scope> {
     fifos: Vec<JobFifo>,
 }
 
+enum ScopeLatch {
+    
+    
+    
+    Stealing {
+        latch: CountLatch,
+        
+        
+        
+        
+        
+        registry: Arc<Registry>,
+        
+        worker_index: usize,
+    },
+
+    
+    Blocking { latch: CountLockLatch },
+}
+
 struct ScopeBase<'scope> {
     
-    
-    
-    owner_thread_index: usize,
-
     
     registry: Arc<Registry>,
 
@@ -51,7 +68,7 @@ struct ScopeBase<'scope> {
     panic: AtomicPtr<Box<dyn Any + Send + 'static>>,
 
     
-    job_completed_latch: CountLatch,
+    job_completed_latch: ScopeLatch,
 
     
     
@@ -289,8 +306,8 @@ where
     R: Send,
 {
     in_worker(|owner_thread, _| {
-        let scope = Scope::<'scope>::new(owner_thread);
-        unsafe { scope.base.complete(owner_thread, || op(&scope)) }
+        let scope = Scope::<'scope>::new(Some(owner_thread), None);
+        scope.base.complete(Some(owner_thread), || op(&scope))
     })
 }
 
@@ -380,16 +397,89 @@ where
     R: Send,
 {
     in_worker(|owner_thread, _| {
-        let scope = ScopeFifo::<'scope>::new(owner_thread);
-        unsafe { scope.base.complete(owner_thread, || op(&scope)) }
+        let scope = ScopeFifo::<'scope>::new(Some(owner_thread), None);
+        scope.base.complete(Some(owner_thread), || op(&scope))
     })
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn in_place_scope<'scope, OP, R>(op: OP) -> R
+where
+    OP: FnOnce(&Scope<'scope>) -> R,
+{
+    do_in_place_scope(None, op)
+}
+
+pub(crate) fn do_in_place_scope<'scope, OP, R>(registry: Option<&Arc<Registry>>, op: OP) -> R
+where
+    OP: FnOnce(&Scope<'scope>) -> R,
+{
+    let thread = unsafe { WorkerThread::current().as_ref() };
+    let scope = Scope::<'scope>::new(thread, registry);
+    scope.base.complete(thread, || op(&scope))
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn in_place_scope_fifo<'scope, OP, R>(op: OP) -> R
+where
+    OP: FnOnce(&ScopeFifo<'scope>) -> R,
+{
+    do_in_place_scope_fifo(None, op)
+}
+
+pub(crate) fn do_in_place_scope_fifo<'scope, OP, R>(registry: Option<&Arc<Registry>>, op: OP) -> R
+where
+    OP: FnOnce(&ScopeFifo<'scope>) -> R,
+{
+    let thread = unsafe { WorkerThread::current().as_ref() };
+    let scope = ScopeFifo::<'scope>::new(thread, registry);
+    scope.base.complete(thread, || op(&scope))
+}
+
 impl<'scope> Scope<'scope> {
-    fn new(owner_thread: &WorkerThread) -> Self {
-        Scope {
-            base: ScopeBase::new(owner_thread),
-        }
+    fn new(owner: Option<&WorkerThread>, registry: Option<&Arc<Registry>>) -> Self {
+        let base = ScopeBase::new(owner, registry);
+        Scope { base }
     }
 
     
@@ -457,18 +547,18 @@ impl<'scope> Scope<'scope> {
 
             
             
+            
             self.base.registry.inject_or_push(job_ref);
         }
     }
 }
 
 impl<'scope> ScopeFifo<'scope> {
-    fn new(owner_thread: &WorkerThread) -> Self {
-        let num_threads = owner_thread.registry().num_threads();
-        ScopeFifo {
-            base: ScopeBase::new(owner_thread),
-            fifos: (0..num_threads).map(|_| JobFifo::new()).collect(),
-        }
+    fn new(owner: Option<&WorkerThread>, registry: Option<&Arc<Registry>>) -> Self {
+        let base = ScopeBase::new(owner, registry);
+        let num_threads = base.registry.num_threads();
+        let fifos = (0..num_threads).map(|_| JobFifo::new()).collect();
+        ScopeFifo { base, fifos }
     }
 
     
@@ -511,12 +601,16 @@ impl<'scope> ScopeFifo<'scope> {
 
 impl<'scope> ScopeBase<'scope> {
     
-    fn new(owner_thread: &WorkerThread) -> Self {
+    fn new(owner: Option<&WorkerThread>, registry: Option<&Arc<Registry>>) -> Self {
+        let registry = registry.unwrap_or_else(|| match owner {
+            Some(owner) => owner.registry(),
+            None => global_registry(),
+        });
+
         ScopeBase {
-            owner_thread_index: owner_thread.index(),
-            registry: owner_thread.registry().clone(),
+            registry: Arc::clone(registry),
             panic: AtomicPtr::new(ptr::null_mut()),
-            job_completed_latch: CountLatch::new(),
+            job_completed_latch: ScopeLatch::new(owner),
             marker: PhantomData,
         }
     }
@@ -527,22 +621,19 @@ impl<'scope> ScopeBase<'scope> {
 
     
     
-    
-    
-    unsafe fn complete<FUNC, R>(&self, owner_thread: &WorkerThread, func: FUNC) -> R
+    fn complete<FUNC, R>(&self, owner: Option<&WorkerThread>, func: FUNC) -> R
     where
         FUNC: FnOnce() -> R,
     {
         let result = self.execute_job_closure(func);
-        self.steal_till_jobs_complete(owner_thread);
+        self.job_completed_latch.wait(owner);
+        self.maybe_propagate_panic();
         result.unwrap() 
     }
 
     
     
-    
-    
-    unsafe fn execute_job<FUNC>(&self, func: FUNC)
+    fn execute_job<FUNC>(&self, func: FUNC)
     where
         FUNC: FnOnce(),
     {
@@ -552,25 +643,24 @@ impl<'scope> ScopeBase<'scope> {
     
     
     
-    
-    
-    unsafe fn execute_job_closure<FUNC, R>(&self, func: FUNC) -> Option<R>
+    fn execute_job_closure<FUNC, R>(&self, func: FUNC) -> Option<R>
     where
         FUNC: FnOnce() -> R,
     {
         match unwind::halt_unwinding(func) {
             Ok(r) => {
-                self.job_completed_ok();
+                self.job_completed_latch.set();
                 Some(r)
             }
             Err(err) => {
                 self.job_panicked(err);
+                self.job_completed_latch.set();
                 None
             }
         }
     }
 
-    unsafe fn job_panicked(&self, err: Box<dyn Any + Send + 'static>) {
+    fn job_panicked(&self, err: Box<dyn Any + Send + 'static>) {
         
         let nil = ptr::null_mut();
         let mut err = Box::new(err); 
@@ -581,27 +671,65 @@ impl<'scope> ScopeBase<'scope> {
         {
             mem::forget(err); 
         }
-
-        self.job_completed_latch
-            .set_and_tickle_one(&self.registry, self.owner_thread_index);
     }
 
-    unsafe fn job_completed_ok(&self) {
-        self.job_completed_latch
-            .set_and_tickle_one(&self.registry, self.owner_thread_index);
-    }
-
-    unsafe fn steal_till_jobs_complete(&self, owner_thread: &WorkerThread) {
-        
-        owner_thread.wait_until(&self.job_completed_latch);
-
+    fn maybe_propagate_panic(&self) {
         
         
         
         let panic = self.panic.swap(ptr::null_mut(), Ordering::Relaxed);
         if !panic.is_null() {
-            let value: Box<Box<dyn Any + Send + 'static>> = mem::transmute(panic);
+            let value = unsafe { Box::from_raw(panic) };
             unwind::resume_unwinding(*value);
+        }
+    }
+}
+
+impl ScopeLatch {
+    fn new(owner: Option<&WorkerThread>) -> Self {
+        match owner {
+            Some(owner) => ScopeLatch::Stealing {
+                latch: CountLatch::new(),
+                registry: Arc::clone(owner.registry()),
+                worker_index: owner.index(),
+            },
+            None => ScopeLatch::Blocking {
+                latch: CountLockLatch::new(),
+            },
+        }
+    }
+
+    fn increment(&self) {
+        match self {
+            ScopeLatch::Stealing { latch, .. } => latch.increment(),
+            ScopeLatch::Blocking { latch } => latch.increment(),
+        }
+    }
+
+    fn set(&self) {
+        match self {
+            ScopeLatch::Stealing {
+                latch,
+                registry,
+                worker_index,
+            } => latch.set_and_tickle_one(registry, *worker_index),
+            ScopeLatch::Blocking { latch } => latch.set(),
+        }
+    }
+
+    fn wait(&self, owner: Option<&WorkerThread>) {
+        match self {
+            ScopeLatch::Stealing {
+                latch,
+                registry,
+                worker_index,
+            } => unsafe {
+                let owner = owner.expect("owner thread");
+                debug_assert_eq!(registry.id(), owner.registry().id());
+                debug_assert_eq!(*worker_index, owner.index());
+                owner.wait_until(latch);
+            },
+            ScopeLatch::Blocking { latch } => latch.wait(),
         }
     }
 }
@@ -610,7 +738,6 @@ impl<'scope> fmt::Debug for Scope<'scope> {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt.debug_struct("Scope")
             .field("pool_id", &self.base.registry.id())
-            .field("owner_thread_index", &self.base.owner_thread_index)
             .field("panic", &self.base.panic)
             .field("job_completed_latch", &self.base.job_completed_latch)
             .finish()
@@ -622,9 +749,23 @@ impl<'scope> fmt::Debug for ScopeFifo<'scope> {
         fmt.debug_struct("ScopeFifo")
             .field("num_fifos", &self.fifos.len())
             .field("pool_id", &self.base.registry.id())
-            .field("owner_thread_index", &self.base.owner_thread_index)
             .field("panic", &self.base.panic)
             .field("job_completed_latch", &self.base.job_completed_latch)
             .finish()
+    }
+}
+
+impl fmt::Debug for ScopeLatch {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ScopeLatch::Stealing { latch, .. } => fmt
+                .debug_tuple("ScopeLatch::Stealing")
+                .field(latch)
+                .finish(),
+            ScopeLatch::Blocking { latch } => fmt
+                .debug_tuple("ScopeLatch::Blocking")
+                .field(latch)
+                .finish(),
+        }
     }
 }

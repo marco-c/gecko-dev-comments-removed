@@ -1,26 +1,18 @@
 use super::super::plumbing::*;
 use std::marker::PhantomData;
+use std::mem::MaybeUninit;
 use std::ptr;
 use std::slice;
 
 pub(super) struct CollectConsumer<'c, T: Send> {
     
-    target: &'c mut [T],
-}
-
-pub(super) struct CollectFolder<'c, T: Send> {
-    
-    
-    final_len: usize,
-
-    
-    result: CollectResult<'c, T>,
+    target: &'c mut [MaybeUninit<T>],
 }
 
 impl<'c, T: Send + 'c> CollectConsumer<'c, T> {
     
     
-    pub(super) fn new(target: &'c mut [T]) -> Self {
+    pub(super) fn new(target: &'c mut [MaybeUninit<T>]) -> Self {
         CollectConsumer { target }
     }
 }
@@ -31,8 +23,12 @@ impl<'c, T: Send + 'c> CollectConsumer<'c, T> {
 
 #[must_use]
 pub(super) struct CollectResult<'c, T> {
-    start: *mut T,
+    
+    target: &'c mut [MaybeUninit<T>],
+    
     len: usize,
+    
+    
     invariant_lifetime: PhantomData<&'c mut &'c mut [T]>,
 }
 
@@ -57,13 +53,15 @@ impl<'c, T> Drop for CollectResult<'c, T> {
         
         
         unsafe {
-            ptr::drop_in_place(slice::from_raw_parts_mut(self.start, self.len));
+            
+            let start = self.target.as_mut_ptr() as *mut T;
+            ptr::drop_in_place(slice::from_raw_parts_mut(start, self.len));
         }
     }
 }
 
 impl<'c, T: Send + 'c> Consumer<T> for CollectConsumer<'c, T> {
-    type Folder = CollectFolder<'c, T>;
+    type Folder = CollectResult<'c, T>;
     type Reducer = CollectReducer;
     type Result = CollectResult<'c, T>;
 
@@ -80,16 +78,13 @@ impl<'c, T: Send + 'c> Consumer<T> for CollectConsumer<'c, T> {
         )
     }
 
-    fn into_folder(self) -> CollectFolder<'c, T> {
+    fn into_folder(self) -> Self::Folder {
         
         
-        CollectFolder {
-            final_len: self.target.len(),
-            result: CollectResult {
-                start: self.target.as_mut_ptr(),
-                len: 0,
-                invariant_lifetime: PhantomData,
-            },
+        CollectResult {
+            target: self.target,
+            len: 0,
+            invariant_lifetime: PhantomData,
         }
     }
 
@@ -98,19 +93,19 @@ impl<'c, T: Send + 'c> Consumer<T> for CollectConsumer<'c, T> {
     }
 }
 
-impl<'c, T: Send + 'c> Folder<T> for CollectFolder<'c, T> {
-    type Result = CollectResult<'c, T>;
+impl<'c, T: Send + 'c> Folder<T> for CollectResult<'c, T> {
+    type Result = Self;
 
-    fn consume(mut self, item: T) -> CollectFolder<'c, T> {
-        if self.result.len >= self.final_len {
-            panic!("too many values pushed to consumer");
-        }
+    fn consume(mut self, item: T) -> Self {
+        let dest = self
+            .target
+            .get_mut(self.len)
+            .expect("too many values pushed to consumer");
 
-        
         
         unsafe {
-            self.result.start.add(self.result.len).write(item);
-            self.result.len += 1;
+            dest.as_mut_ptr().write(item);
+            self.len += 1;
         }
 
         self
@@ -119,7 +114,7 @@ impl<'c, T: Send + 'c> Folder<T> for CollectFolder<'c, T> {
     fn complete(self) -> Self::Result {
         
         
-        self.result
+        self
     }
 
     fn full(&self) -> bool {
@@ -151,8 +146,13 @@ impl<'c, T> Reducer<CollectResult<'c, T>> for CollectReducer {
         
         
         
-        if left.start.wrapping_add(left.len) == right.start {
-            left.len += right.release_ownership();
+        let left_end = left.target[left.len..].as_ptr();
+        if left_end == right.target.as_ptr() {
+            let len = left.len + right.release_ownership();
+            unsafe {
+                left.target = slice::from_raw_parts_mut(left.target.as_mut_ptr(), len);
+            }
+            left.len = len;
         }
         left
     }

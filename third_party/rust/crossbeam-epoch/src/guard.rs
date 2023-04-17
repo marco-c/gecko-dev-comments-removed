@@ -1,10 +1,12 @@
 use core::fmt;
 use core::mem;
 
-use atomic::Shared;
-use collector::Collector;
-use deferred::Deferred;
-use internal::Local;
+use scopeguard::defer;
+
+use crate::atomic::Shared;
+use crate::collector::Collector;
+use crate::deferred::Deferred;
+use crate::internal::Local;
 
 
 
@@ -85,8 +87,6 @@ impl Guard {
     
     
     
-    
-    
     pub fn defer<F, R>(&self, f: F)
     where
         F: FnOnce() -> R,
@@ -97,8 +97,6 @@ impl Guard {
         }
     }
 
-    
-    
     
     
     
@@ -266,16 +264,10 @@ impl Guard {
     
     
     
-    
-    
-    pub unsafe fn defer_destroy<T>(&self, ptr: Shared<T>) {
+    pub unsafe fn defer_destroy<T>(&self, ptr: Shared<'_, T>) {
         self.defer_unchecked(move || ptr.into_owned());
     }
 
-    
-    
-    
-    
     
     
     
@@ -329,18 +321,12 @@ impl Guard {
     
     
     
-    
-    
-    
-    
     pub fn repin(&mut self) {
         if let Some(local) = unsafe { self.local.as_ref() } {
             local.repin();
         }
     }
 
-    
-    
     
     
     
@@ -409,8 +395,6 @@ impl Guard {
     
     
     
-    
-    
     pub fn collector(&self) -> Option<&Collector> {
         unsafe { self.local.as_ref().map(|local| local.collector()) }
     }
@@ -426,7 +410,7 @@ impl Drop for Guard {
 }
 
 impl fmt::Debug for Guard {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad("Guard { .. }")
     }
 }
@@ -521,9 +505,10 @@ pub unsafe fn unprotected() -> &'static Guard {
     
     
     
-    
-    
-    
-    static UNPROTECTED: usize = 0;
-    &*(&UNPROTECTED as *const _ as *const Guard)
+    struct GuardWrapper(Guard);
+    unsafe impl Sync for GuardWrapper {}
+    static UNPROTECTED: GuardWrapper = GuardWrapper(Guard {
+        local: core::ptr::null(),
+    });
+    &UNPROTECTED.0
 }

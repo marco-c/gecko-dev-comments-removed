@@ -5,6 +5,7 @@
 
 use crate::join;
 use crate::registry::{Registry, ThreadSpawn, WorkerThread};
+use crate::scope::{do_in_place_scope, do_in_place_scope_fifo};
 use crate::spawn;
 #[allow(deprecated)]
 use crate::Configuration;
@@ -219,6 +220,30 @@ impl ThreadPool {
         R: Send,
     {
         self.install(|| scope_fifo(op))
+    }
+
+    
+    
+    
+    
+    
+    pub fn in_place_scope<'scope, OP, R>(&self, op: OP) -> R
+    where
+        OP: FnOnce(&Scope<'scope>) -> R,
+    {
+        do_in_place_scope(Some(&self.registry), op)
+    }
+
+    
+    
+    
+    
+    
+    pub fn in_place_scope_fifo<'scope, OP, R>(&self, op: OP) -> R
+    where
+        OP: FnOnce(&ScopeFifo<'scope>) -> R,
+    {
+        do_in_place_scope_fifo(Some(&self.registry), op)
     }
 
     

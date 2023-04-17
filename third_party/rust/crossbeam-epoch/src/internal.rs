@@ -35,31 +35,33 @@
 
 
 
-use core::cell::{Cell, UnsafeCell};
+use crate::primitive::cell::UnsafeCell;
+use crate::primitive::sync::atomic;
+use core::cell::Cell;
 use core::mem::{self, ManuallyDrop};
 use core::num::Wrapping;
-use core::sync::atomic;
 use core::sync::atomic::Ordering;
 use core::{fmt, ptr};
 
 use crossbeam_utils::CachePadded;
+use memoffset::offset_of;
 
-use atomic::{Owned, Shared};
-use collector::{Collector, LocalHandle};
-use deferred::Deferred;
-use epoch::{AtomicEpoch, Epoch};
-use guard::{unprotected, Guard};
-use sync::list::{Entry, IsElement, IterError, List};
-use sync::queue::Queue;
+use crate::atomic::{Owned, Shared};
+use crate::collector::{Collector, LocalHandle};
+use crate::deferred::Deferred;
+use crate::epoch::{AtomicEpoch, Epoch};
+use crate::guard::{unprotected, Guard};
+use crate::sync::list::{Entry, IsElement, IterError, List};
+use crate::sync::queue::Queue;
 
 
-#[cfg(not(feature = "sanitize"))]
-const MAX_OBJECTS: usize = 64;
-#[cfg(feature = "sanitize")]
+#[cfg(not(crossbeam_sanitize))]
+const MAX_OBJECTS: usize = 62;
+#[cfg(crossbeam_sanitize)]
 const MAX_OBJECTS: usize = 4;
 
 
-pub struct Bag {
+pub(crate) struct Bag {
     
     deferreds: [Deferred; MAX_OBJECTS],
     len: usize,
@@ -70,12 +72,12 @@ unsafe impl Send for Bag {}
 
 impl Bag {
     
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self::default()
     }
 
     
-    pub fn is_empty(&self) -> bool {
+    pub(crate) fn is_empty(&self) -> bool {
         self.len == 0
     }
 
@@ -87,7 +89,7 @@ impl Bag {
     
     
     
-    pub unsafe fn try_push(&mut self, deferred: Deferred) -> Result<(), Deferred> {
+    pub(crate) unsafe fn try_push(&mut self, deferred: Deferred) -> Result<(), Deferred> {
         if self.len < MAX_OBJECTS {
             self.deferreds[self.len] = deferred;
             self.len += 1;
@@ -104,12 +106,10 @@ impl Bag {
 }
 
 impl Default for Bag {
-    
-    
-    #[cfg_attr(rustfmt, rustfmt_skip)]
+    #[rustfmt::skip]
     fn default() -> Self {
         
-        #[cfg(not(feature = "sanitize"))]
+        #[cfg(not(crossbeam_sanitize))]
         return Bag {
             len: 0,
             deferreds: [
@@ -175,11 +175,9 @@ impl Default for Bag {
                 Deferred::new(no_op_func),
                 Deferred::new(no_op_func),
                 Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
-                Deferred::new(no_op_func),
             ],
         };
-        #[cfg(feature = "sanitize")]
+        #[cfg(crossbeam_sanitize)]
         return Bag {
             len: 0,
             deferreds: [
@@ -205,7 +203,7 @@ impl Drop for Bag {
 
 
 impl fmt::Debug for Bag {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Bag")
             .field("deferreds", &&self.deferreds[..self.len])
             .finish()
@@ -234,7 +232,7 @@ impl SealedBag {
 }
 
 
-pub struct Global {
+pub(crate) struct Global {
     
     locals: List<Local>,
 
@@ -251,7 +249,7 @@ impl Global {
 
     
     #[inline]
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             locals: List::new(),
             queue: Queue::new(),
@@ -260,7 +258,7 @@ impl Global {
     }
 
     
-    pub fn push_bag(&self, bag: &mut Bag, guard: &Guard) {
+    pub(crate) fn push_bag(&self, bag: &mut Bag, guard: &Guard) {
         let bag = mem::replace(bag, Bag::new());
 
         atomic::fence(Ordering::SeqCst);
@@ -277,10 +275,10 @@ impl Global {
     
     
     #[cold]
-    pub fn collect(&self, guard: &Guard) {
+    pub(crate) fn collect(&self, guard: &Guard) {
         let global_epoch = self.try_advance(guard);
 
-        let steps = if cfg!(feature = "sanitize") {
+        let steps = if cfg!(crossbeam_sanitize) {
             usize::max_value()
         } else {
             Self::COLLECT_STEPS
@@ -306,7 +304,7 @@ impl Global {
     
     
     #[cold]
-    pub fn try_advance(&self, guard: &Guard) -> Epoch {
+    pub(crate) fn try_advance(&self, guard: &Guard) -> Epoch {
         let global_epoch = self.epoch.load(Ordering::Relaxed);
         atomic::fence(Ordering::SeqCst);
 
@@ -348,7 +346,7 @@ impl Global {
 }
 
 
-pub struct Local {
+pub(crate) struct Local {
     
     entry: Entry,
 
@@ -375,13 +373,24 @@ pub struct Local {
     pin_count: Cell<Wrapping<usize>>,
 }
 
+
+
+#[cfg(not(crossbeam_sanitize))] 
+#[test]
+fn local_size() {
+    assert!(
+        core::mem::size_of::<Local>() <= 2048,
+        "An allocation of `Local` should be <= 2048 bytes."
+    );
+}
+
 impl Local {
     
     
     const PINNINGS_BETWEEN_COLLECT: usize = 128;
 
     
-    pub fn register(collector: &Collector) -> LocalHandle {
+    pub(crate) fn register(collector: &Collector) -> LocalHandle {
         unsafe {
             
 
@@ -394,8 +403,8 @@ impl Local {
                 handle_count: Cell::new(1),
                 pin_count: Cell::new(Wrapping(0)),
             })
-            .into_shared(&unprotected());
-            collector.global.locals.insert(local, &unprotected());
+            .into_shared(unprotected());
+            collector.global.locals.insert(local, unprotected());
             LocalHandle {
                 local: local.as_raw(),
             }
@@ -404,19 +413,19 @@ impl Local {
 
     
     #[inline]
-    pub fn global(&self) -> &Global {
+    pub(crate) fn global(&self) -> &Global {
         &self.collector().global
     }
 
     
     #[inline]
-    pub fn collector(&self) -> &Collector {
-        unsafe { &**self.collector.get() }
+    pub(crate) fn collector(&self) -> &Collector {
+        self.collector.with(|c| unsafe { &**c })
     }
 
     
     #[inline]
-    pub fn is_pinned(&self) -> bool {
+    pub(crate) fn is_pinned(&self) -> bool {
         self.guard_count.get() > 0
     }
 
@@ -425,8 +434,8 @@ impl Local {
     
     
     
-    pub unsafe fn defer(&self, mut deferred: Deferred, guard: &Guard) {
-        let bag = &mut *self.bag.get();
+    pub(crate) unsafe fn defer(&self, mut deferred: Deferred, guard: &Guard) {
+        let bag = self.bag.with_mut(|b| &mut *b);
 
         while let Err(d) = bag.try_push(deferred) {
             self.global().push_bag(bag, guard);
@@ -434,8 +443,8 @@ impl Local {
         }
     }
 
-    pub fn flush(&self, guard: &Guard) {
-        let bag = unsafe { &mut *self.bag.get() };
+    pub(crate) fn flush(&self, guard: &Guard) {
+        let bag = self.bag.with_mut(|b| unsafe { &mut *b });
 
         if !bag.is_empty() {
             self.global().push_bag(bag, guard);
@@ -446,7 +455,7 @@ impl Local {
 
     
     #[inline]
-    pub fn pin(&self) -> Guard {
+    pub(crate) fn pin(&self) -> Guard {
         let guard = Guard { local: self };
 
         let guard_count = self.guard_count.get();
@@ -474,10 +483,13 @@ impl Local {
                 
                 
                 let current = Epoch::starting();
-                let previous = self
-                    .epoch
-                    .compare_and_swap(current, new_epoch, Ordering::SeqCst);
-                debug_assert_eq!(current, previous, "participant was expected to be unpinned");
+                let res = self.epoch.compare_exchange(
+                    current,
+                    new_epoch,
+                    Ordering::SeqCst,
+                    Ordering::SeqCst,
+                );
+                debug_assert!(res.is_ok(), "participant was expected to be unpinned");
                 
                 
                 
@@ -503,7 +515,7 @@ impl Local {
 
     
     #[inline]
-    pub fn unpin(&self) {
+    pub(crate) fn unpin(&self) {
         let guard_count = self.guard_count.get();
         self.guard_count.set(guard_count - 1);
 
@@ -518,7 +530,7 @@ impl Local {
 
     
     #[inline]
-    pub fn repin(&self) {
+    pub(crate) fn repin(&self) {
         let guard_count = self.guard_count.get();
 
         
@@ -541,7 +553,7 @@ impl Local {
 
     
     #[inline]
-    pub fn acquire_handle(&self) {
+    pub(crate) fn acquire_handle(&self) {
         let handle_count = self.handle_count.get();
         debug_assert!(handle_count >= 1);
         self.handle_count.set(handle_count + 1);
@@ -549,7 +561,7 @@ impl Local {
 
     
     #[inline]
-    pub fn release_handle(&self) {
+    pub(crate) fn release_handle(&self) {
         let guard_count = self.guard_count.get();
         let handle_count = self.handle_count.get();
         debug_assert!(handle_count >= 1);
@@ -573,7 +585,8 @@ impl Local {
             
             
             let guard = &self.pin();
-            self.global().push_bag(&mut *self.bag.get(), guard);
+            self.global()
+                .push_bag(self.bag.with_mut(|b| &mut *b), guard);
         }
         
         self.handle_count.set(0);
@@ -582,10 +595,10 @@ impl Local {
             
             
             
-            let collector: Collector = ptr::read(&*(*self.collector.get()));
+            let collector: Collector = ptr::read(self.collector.with(|c| &*(*c)));
 
             
-            self.entry.delete(&unprotected());
+            self.entry.delete(unprotected());
 
             
             
@@ -613,7 +626,7 @@ impl IsElement<Local> for Local {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(crossbeam_loom)))]
 mod tests {
     use std::sync::atomic::{AtomicUsize, Ordering};
 

@@ -19,7 +19,32 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/rayon-core/1.8")]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![doc(html_root_url = "https://docs.rs/rayon-core/1.9")]
 #![deny(missing_debug_implementations)]
 #![deny(missing_docs)]
 #![deny(unreachable_pub)]
@@ -47,15 +72,14 @@ mod sleep;
 mod spawn;
 mod thread_pool;
 mod unwind;
-mod util;
 
 mod compile_fail;
 mod test;
 
 pub use self::join::{join, join_context};
 pub use self::registry::ThreadBuilder;
-pub use self::scope::{scope, Scope};
-pub use self::scope::{scope_fifo, ScopeFifo};
+pub use self::scope::{in_place_scope, scope, Scope};
+pub use self::scope::{in_place_scope_fifo, scope_fifo, ScopeFifo};
 pub use self::spawn::{spawn, spawn_fifo};
 pub use self::thread_pool::current_thread_has_pending_tasks;
 pub use self::thread_pool::current_thread_index;

@@ -8,11 +8,30 @@
 use crate::iter::plumbing::*;
 use crate::iter::*;
 use crate::math::simplify_range;
+use crate::slice::{Iter, IterMut};
 use std::iter;
 use std::mem;
 use std::ops::{Range, RangeBounds};
 use std::ptr;
 use std::slice;
+
+impl<'data, T: Sync + 'data> IntoParallelIterator for &'data Vec<T> {
+    type Item = &'data T;
+    type Iter = Iter<'data, T>;
+
+    fn into_par_iter(self) -> Self::Iter {
+        <&[T]>::into_par_iter(self)
+    }
+}
+
+impl<'data, T: Send + 'data> IntoParallelIterator for &'data mut Vec<T> {
+    type Item = &'data mut T;
+    type Iter = IterMut<'data, T>;
+
+    fn into_par_iter(self) -> Self::Iter {
+        <&mut [T]>::into_par_iter(self)
+    }
+}
 
 
 #[derive(Debug, Clone)]
@@ -123,11 +142,15 @@ impl<'data, T: Send> IndexedParallelIterator for Drain<'data, T> {
             self.vec.set_len(start);
 
             
-            let mut slice = &mut self.vec[start..];
-            slice = slice::from_raw_parts_mut(slice.as_mut_ptr(), self.range.len());
+            let producer = {
+                
+                let mut slice = &mut self.vec[start..];
+                slice = slice::from_raw_parts_mut(slice.as_mut_ptr(), self.range.len());
+                DrainProducer::new(slice)
+            };
 
             
-            callback.callback(DrainProducer::new(slice))
+            callback.callback(producer)
         }
     }
 }
@@ -208,7 +231,9 @@ impl<'data, T: 'data> Iterator for SliceDrain<'data, T> {
     type Item = T;
 
     fn next(&mut self) -> Option<T> {
-        let ptr = self.iter.next()?;
+        
+        
+        let ptr: *const T = self.iter.next()?;
         Some(unsafe { ptr::read(ptr) })
     }
 
@@ -223,7 +248,9 @@ impl<'data, T: 'data> Iterator for SliceDrain<'data, T> {
 
 impl<'data, T: 'data> DoubleEndedIterator for SliceDrain<'data, T> {
     fn next_back(&mut self) -> Option<Self::Item> {
-        let ptr = self.iter.next_back()?;
+        
+        
+        let ptr: *const T = self.iter.next_back()?;
         Some(unsafe { ptr::read(ptr) })
     }
 }

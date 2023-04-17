@@ -71,6 +71,7 @@ where
     }
 }
 
+
 impl<T> IntoParallelIterator for RangeInclusive<T>
 where
     Iter<T>: ParallelIterator,
@@ -83,34 +84,109 @@ where
     }
 }
 
+
+
+
+
+
+
+
+mod private {
+    use super::*;
+
+    
+    pub trait RangeInteger: Sized + Send {
+        private_decl! {}
+
+        fn drive_unindexed<C>(iter: Iter<Self>, consumer: C) -> C::Result
+        where
+            C: UnindexedConsumer<Self>;
+
+        fn opt_len(iter: &Iter<Self>) -> Option<usize>;
+    }
+
+    
+    pub trait IndexedRangeInteger: RangeInteger {
+        private_decl! {}
+
+        fn drive<C>(iter: Iter<Self>, consumer: C) -> C::Result
+        where
+            C: Consumer<Self>;
+
+        fn len(iter: &Iter<Self>) -> usize;
+
+        fn with_producer<CB>(iter: Iter<Self>, callback: CB) -> CB::Output
+        where
+            CB: ProducerCallback<Self>;
+    }
+}
+use private::{IndexedRangeInteger, RangeInteger};
+
+impl<T: RangeInteger> ParallelIterator for Iter<T> {
+    type Item = T;
+
+    fn drive_unindexed<C>(self, consumer: C) -> C::Result
+    where
+        C: UnindexedConsumer<T>,
+    {
+        T::drive_unindexed(self, consumer)
+    }
+
+    #[inline]
+    fn opt_len(&self) -> Option<usize> {
+        T::opt_len(self)
+    }
+}
+
+impl<T: IndexedRangeInteger> IndexedParallelIterator for Iter<T> {
+    fn drive<C>(self, consumer: C) -> C::Result
+    where
+        C: Consumer<T>,
+    {
+        T::drive(self, consumer)
+    }
+
+    #[inline]
+    fn len(&self) -> usize {
+        T::len(self)
+    }
+
+    fn with_producer<CB>(self, callback: CB) -> CB::Output
+    where
+        CB: ProducerCallback<T>,
+    {
+        T::with_producer(self, callback)
+    }
+}
+
 macro_rules! convert {
-    ( $self:ident . $method:ident ( $( $arg:expr ),* ) ) => {
-        if let Some((start, end)) = $self.bounds() {
+    ( $iter:ident . $method:ident ( $( $arg:expr ),* ) ) => {
+        if let Some((start, end)) = $iter.bounds() {
             if let Some(end) = end.checked_add(1) {
                 (start..end).into_par_iter().$method($( $arg ),*)
             } else {
                 (start..end).into_par_iter().chain(once(end)).$method($( $arg ),*)
             }
         } else {
-            empty::<Self::Item>().$method($( $arg ),*)
+            empty::<Self>().$method($( $arg ),*)
         }
     };
 }
 
 macro_rules! parallel_range_impl {
     ( $t:ty ) => {
-        impl ParallelIterator for Iter<$t> {
-            type Item = $t;
+        impl RangeInteger for $t {
+            private_impl! {}
 
-            fn drive_unindexed<C>(self, consumer: C) -> C::Result
+            fn drive_unindexed<C>(iter: Iter<$t>, consumer: C) -> C::Result
             where
-                C: UnindexedConsumer<Self::Item>,
+                C: UnindexedConsumer<$t>,
             {
-                convert!(self.drive_unindexed(consumer))
+                convert!(iter.drive_unindexed(consumer))
             }
 
-            fn opt_len(&self) -> Option<usize> {
-                convert!(self.opt_len())
+            fn opt_len(iter: &Iter<$t>) -> Option<usize> {
+                convert!(iter.opt_len())
             }
         }
     };
@@ -120,23 +196,25 @@ macro_rules! indexed_range_impl {
     ( $t:ty ) => {
         parallel_range_impl! { $t }
 
-        impl IndexedParallelIterator for Iter<$t> {
-            fn drive<C>(self, consumer: C) -> C::Result
+        impl IndexedRangeInteger for $t {
+            private_impl! {}
+
+            fn drive<C>(iter: Iter<$t>, consumer: C) -> C::Result
             where
-                C: Consumer<Self::Item>,
+                C: Consumer<$t>,
             {
-                convert!(self.drive(consumer))
+                convert!(iter.drive(consumer))
             }
 
-            fn len(&self) -> usize {
-                self.range.len()
+            fn len(iter: &Iter<$t>) -> usize {
+                iter.range.len()
             }
 
-            fn with_producer<CB>(self, callback: CB) -> CB::Output
+            fn with_producer<CB>(iter: Iter<$t>, callback: CB) -> CB::Output
             where
-                CB: ProducerCallback<Self::Item>,
+                CB: ProducerCallback<$t>,
             {
-                convert!(self.with_producer(callback))
+                convert!(iter.with_producer(callback))
             }
         }
     };
@@ -179,7 +257,7 @@ macro_rules! convert_char {
                     .$method($( $arg ),*)
             }
         } else {
-            empty().into_par_iter().$method($( $arg ),*)
+            empty::<char>().$method($( $arg ),*)
         }
     };
 }
@@ -285,4 +363,24 @@ fn test_usize_i64_overflow() {
     
     let pool = ThreadPoolBuilder::new().num_threads(8).build().unwrap();
     pool.install(|| assert_eq!(iter.find_last(|_| true), Some(i64::MAX)));
+}
+
+#[test]
+fn test_issue_833() {
+    fn is_even(n: i64) -> bool {
+        n % 2 == 0
+    }
+
+    
+    let v: Vec<_> = (1..=100).into_par_iter().filter(|&x| is_even(x)).collect();
+    assert!(v.into_iter().eq((2..=100).step_by(2)));
+
+    
+    let pos = (0..=100).into_par_iter().position_any(|x| x == 50i16);
+    assert_eq!(pos, Some(50usize));
+
+    assert!((0..=100)
+        .into_par_iter()
+        .zip(0..=100)
+        .all(|(a, b)| i16::eq(&a, &b)));
 }

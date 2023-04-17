@@ -8,19 +8,18 @@
 
 
 
+use core::mem::MaybeUninit;
 use core::sync::atomic::Ordering::{Acquire, Relaxed, Release};
 
 use crossbeam_utils::CachePadded;
 
-use maybe_uninit::MaybeUninit;
-
-use {unprotected, Atomic, Guard, Owned, Shared};
+use crate::{unprotected, Atomic, Guard, Owned, Shared};
 
 
 
 
 #[derive(Debug)]
-pub struct Queue<T> {
+pub(crate) struct Queue<T> {
     head: CachePadded<Atomic<Node<T>>>,
     tail: CachePadded<Atomic<Node<T>>>,
 }
@@ -43,7 +42,7 @@ unsafe impl<T: Send> Send for Queue<T> {}
 
 impl<T> Queue<T> {
     
-    pub fn new() -> Queue<T> {
+    pub(crate) fn new() -> Queue<T> {
         let q = Queue {
             head: CachePadded::new(Atomic::null()),
             tail: CachePadded::new(Atomic::null()),
@@ -53,7 +52,7 @@ impl<T> Queue<T> {
             next: Atomic::null(),
         });
         unsafe {
-            let guard = &unprotected();
+            let guard = unprotected();
             let sentinel = sentinel.into_shared(guard);
             q.head.store(sentinel, Relaxed);
             q.tail.store(sentinel, Relaxed);
@@ -64,30 +63,39 @@ impl<T> Queue<T> {
     
     
     #[inline(always)]
-    fn push_internal(&self, onto: Shared<Node<T>>, new: Shared<Node<T>>, guard: &Guard) -> bool {
+    fn push_internal(
+        &self,
+        onto: Shared<'_, Node<T>>,
+        new: Shared<'_, Node<T>>,
+        guard: &Guard,
+    ) -> bool {
         
         let o = unsafe { onto.deref() };
         let next = o.next.load(Acquire, guard);
         if unsafe { next.as_ref().is_some() } {
             
-            let _ = self.tail.compare_and_set(onto, next, Release, guard);
+            let _ = self
+                .tail
+                .compare_exchange(onto, next, Release, Relaxed, guard);
             false
         } else {
             
             let result = o
                 .next
-                .compare_and_set(Shared::null(), new, Release, guard)
+                .compare_exchange(Shared::null(), new, Release, Relaxed, guard)
                 .is_ok();
             if result {
                 
-                let _ = self.tail.compare_and_set(onto, new, Release, guard);
+                let _ = self
+                    .tail
+                    .compare_exchange(onto, new, Release, Relaxed, guard);
             }
             result
         }
     }
 
     
-    pub fn push(&self, t: T, guard: &Guard) {
+    pub(crate) fn push(&self, t: T, guard: &Guard) {
         let new = Owned::new(Node {
             data: MaybeUninit::new(t),
             next: Atomic::null(),
@@ -114,12 +122,14 @@ impl<T> Queue<T> {
         match unsafe { next.as_ref() } {
             Some(n) => unsafe {
                 self.head
-                    .compare_and_set(head, next, Release, guard)
+                    .compare_exchange(head, next, Release, Relaxed, guard)
                     .map(|_| {
                         let tail = self.tail.load(Relaxed, guard);
                         
                         if head == tail {
-                            let _ = self.tail.compare_and_set(tail, next, Release, guard);
+                            let _ = self
+                                .tail
+                                .compare_exchange(tail, next, Release, Relaxed, guard);
                         }
                         guard.defer_destroy(head);
                         
@@ -145,12 +155,14 @@ impl<T> Queue<T> {
         match unsafe { next.as_ref() } {
             Some(n) if condition(unsafe { &*n.data.as_ptr() }) => unsafe {
                 self.head
-                    .compare_and_set(head, next, Release, guard)
+                    .compare_exchange(head, next, Release, Relaxed, guard)
                     .map(|_| {
                         let tail = self.tail.load(Relaxed, guard);
                         
                         if head == tail {
-                            let _ = self.tail.compare_and_set(tail, next, Release, guard);
+                            let _ = self
+                                .tail
+                                .compare_exchange(tail, next, Release, Relaxed, guard);
                         }
                         guard.defer_destroy(head);
                         Some(n.data.as_ptr().read())
@@ -164,7 +176,7 @@ impl<T> Queue<T> {
     
     
     
-    pub fn try_pop(&self, guard: &Guard) -> Option<T> {
+    pub(crate) fn try_pop(&self, guard: &Guard) -> Option<T> {
         loop {
             if let Ok(head) = self.pop_internal(guard) {
                 return head;
@@ -176,7 +188,7 @@ impl<T> Queue<T> {
     
     
     
-    pub fn try_pop_if<F>(&self, condition: F, guard: &Guard) -> Option<T>
+    pub(crate) fn try_pop_if<F>(&self, condition: F, guard: &Guard) -> Option<T>
     where
         T: Sync,
         F: Fn(&T) -> bool,
@@ -192,9 +204,9 @@ impl<T> Queue<T> {
 impl<T> Drop for Queue<T> {
     fn drop(&mut self) {
         unsafe {
-            let guard = &unprotected();
+            let guard = unprotected();
 
-            while let Some(_) = self.try_pop(guard) {}
+            while self.try_pop(guard).is_some() {}
 
             
             let sentinel = self.head.load(Relaxed, guard);
@@ -203,41 +215,41 @@ impl<T> Drop for Queue<T> {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(crossbeam_loom)))]
 mod test {
     use super::*;
+    use crate::pin;
     use crossbeam_utils::thread;
-    use pin;
 
     struct Queue<T> {
         queue: super::Queue<T>,
     }
 
     impl<T> Queue<T> {
-        pub fn new() -> Queue<T> {
+        pub(crate) fn new() -> Queue<T> {
             Queue {
                 queue: super::Queue::new(),
             }
         }
 
-        pub fn push(&self, t: T) {
+        pub(crate) fn push(&self, t: T) {
             let guard = &pin();
             self.queue.push(t, guard);
         }
 
-        pub fn is_empty(&self) -> bool {
+        pub(crate) fn is_empty(&self) -> bool {
             let guard = &pin();
             let head = self.queue.head.load(Acquire, guard);
             let h = unsafe { head.deref() };
             h.next.load(Acquire, guard).is_null()
         }
 
-        pub fn try_pop(&self) -> Option<T> {
+        pub(crate) fn try_pop(&self) -> Option<T> {
             let guard = &pin();
             self.queue.try_pop(guard)
         }
 
-        pub fn pop(&self) -> T {
+        pub(crate) fn pop(&self) -> T {
             loop {
                 match self.try_pop() {
                     None => continue,

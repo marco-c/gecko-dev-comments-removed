@@ -1,8 +1,32 @@
-extern crate autocfg;
+#![warn(rust_2018_idioms)]
+
+use std::env;
+
+include!("no_atomic.rs");
+
+
+
 
 fn main() {
-    let cfg = autocfg::new();
-    if cfg.probe_rustc_version(1, 31) {
-        println!("cargo:rustc-cfg=has_min_const_fn");
+    let target = match env::var("TARGET") {
+        Ok(target) => target,
+        Err(e) => {
+            println!(
+                "cargo:warning={}: unable to get TARGET environment variable: {}",
+                env!("CARGO_PKG_NAME"),
+                e
+            );
+            return;
+        }
+    };
+
+    
+    
+    
+    
+    if NO_ATOMIC_CAS.contains(&&*target) {
+        println!("cargo:rustc-cfg=crossbeam_no_atomic_cas");
     }
+
+    println!("cargo:rerun-if-changed=no_atomic.rs");
 }

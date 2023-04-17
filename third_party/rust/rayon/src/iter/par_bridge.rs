@@ -125,16 +125,19 @@ where
         let mut count = self.split_count.load(Ordering::SeqCst);
 
         loop {
-            let done = self.done.load(Ordering::SeqCst);
+            
+            let done = self.done.load(Ordering::SeqCst) && self.items.is_empty();
+
             match count.checked_sub(1) {
                 Some(new_count) if !done => {
-                    let last_count =
-                        self.split_count
-                            .compare_and_swap(count, new_count, Ordering::SeqCst);
-                    if last_count == count {
-                        return (self.clone(), Some(self));
-                    } else {
-                        count = last_count;
+                    match self.split_count.compare_exchange_weak(
+                        count,
+                        new_count,
+                        Ordering::SeqCst,
+                        Ordering::SeqCst,
+                    ) {
+                        Ok(_) => return (self.clone(), Some(self)),
+                        Err(last_count) => count = last_count,
                     }
                 }
                 _ => {
@@ -157,13 +160,26 @@ where
                     }
                 }
                 Steal::Empty => {
+                    
                     if self.done.load(Ordering::SeqCst) {
                         
-                        return folder;
+                        if self.items.is_empty() {
+                            
+                            return folder;
+                        }
                     } else {
                         
                         match self.iter.try_lock() {
                             Ok(mut guard) => {
+                                
+                                
+                                if self.done.load(Ordering::SeqCst) {
+                                    if self.items.is_empty() {
+                                        return folder;
+                                    }
+                                    continue;
+                                }
+
                                 let count = current_num_threads();
                                 let count = (count * count) * 2;
 

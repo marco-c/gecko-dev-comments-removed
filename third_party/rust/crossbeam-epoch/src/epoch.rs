@@ -7,14 +7,15 @@
 
 
 
-use core::sync::atomic::{AtomicUsize, Ordering};
+use crate::primitive::sync::atomic::AtomicUsize;
+use core::sync::atomic::Ordering;
 
 
 
 
 
 #[derive(Copy, Clone, Default, Debug, Eq, PartialEq)]
-pub struct Epoch {
+pub(crate) struct Epoch {
     
     data: usize,
 }
@@ -22,7 +23,7 @@ pub struct Epoch {
 impl Epoch {
     
     #[inline]
-    pub fn starting() -> Self {
+    pub(crate) fn starting() -> Self {
         Self::default()
     }
 
@@ -30,7 +31,7 @@ impl Epoch {
     
     
     
-    pub fn wrapping_sub(self, rhs: Self) -> isize {
+    pub(crate) fn wrapping_sub(self, rhs: Self) -> isize {
         
         
         
@@ -39,13 +40,13 @@ impl Epoch {
 
     
     #[inline]
-    pub fn is_pinned(self) -> bool {
+    pub(crate) fn is_pinned(self) -> bool {
         (self.data & 1) == 1
     }
 
     
     #[inline]
-    pub fn pinned(self) -> Epoch {
+    pub(crate) fn pinned(self) -> Epoch {
         Epoch {
             data: self.data | 1,
         }
@@ -53,7 +54,7 @@ impl Epoch {
 
     
     #[inline]
-    pub fn unpinned(self) -> Epoch {
+    pub(crate) fn unpinned(self) -> Epoch {
         Epoch {
             data: self.data & !1,
         }
@@ -63,7 +64,7 @@ impl Epoch {
     
     
     #[inline]
-    pub fn successor(self) -> Epoch {
+    pub(crate) fn successor(self) -> Epoch {
         Epoch {
             data: self.data.wrapping_add(2),
         }
@@ -72,7 +73,7 @@ impl Epoch {
 
 
 #[derive(Default, Debug)]
-pub struct AtomicEpoch {
+pub(crate) struct AtomicEpoch {
     
     
     data: AtomicUsize,
@@ -81,14 +82,14 @@ pub struct AtomicEpoch {
 impl AtomicEpoch {
     
     #[inline]
-    pub fn new(epoch: Epoch) -> Self {
+    pub(crate) fn new(epoch: Epoch) -> Self {
         let data = AtomicUsize::new(epoch.data);
         AtomicEpoch { data }
     }
 
     
     #[inline]
-    pub fn load(&self, ord: Ordering) -> Epoch {
+    pub(crate) fn load(&self, ord: Ordering) -> Epoch {
         Epoch {
             data: self.data.load(ord),
         }
@@ -96,7 +97,7 @@ impl AtomicEpoch {
 
     
     #[inline]
-    pub fn store(&self, epoch: Epoch, ord: Ordering) {
+    pub(crate) fn store(&self, epoch: Epoch, ord: Ordering) {
         self.data.store(epoch.data, ord);
     }
 
@@ -106,9 +107,27 @@ impl AtomicEpoch {
     
     
     
+    
+    
+    
+    
+    
+    
+    
     #[inline]
-    pub fn compare_and_swap(&self, current: Epoch, new: Epoch, ord: Ordering) -> Epoch {
-        let data = self.data.compare_and_swap(current.data, new.data, ord);
-        Epoch { data }
+    pub(crate) fn compare_exchange(
+        &self,
+        current: Epoch,
+        new: Epoch,
+        success: Ordering,
+        failure: Ordering,
+    ) -> Result<Epoch, Epoch> {
+        match self
+            .data
+            .compare_exchange(current.data, new.data, success, failure)
+        {
+            Ok(data) => Ok(Epoch { data }),
+            Err(data) => Err(Epoch { data }),
+        }
     }
 }

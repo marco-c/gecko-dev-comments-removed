@@ -6,14 +6,14 @@
 use core::marker::PhantomData;
 use core::sync::atomic::Ordering::{Acquire, Relaxed, Release};
 
-use {unprotected, Atomic, Guard, Shared};
+use crate::{unprotected, Atomic, Guard, Shared};
 
 
 
 
 
 #[derive(Debug)]
-pub struct Entry {
+pub(crate) struct Entry {
     
     
     next: Atomic<Entry>,
@@ -64,9 +64,9 @@ pub struct Entry {
 
 
 
-pub trait IsElement<T> {
+pub(crate) trait IsElement<T> {
     
-    fn entry_of(&T) -> &Entry;
+    fn entry_of(_: &T) -> &Entry;
 
     
     
@@ -80,7 +80,7 @@ pub trait IsElement<T> {
     
     
     
-    unsafe fn element_of(&Entry) -> &T;
+    unsafe fn element_of(_: &Entry) -> &T;
 
     
     
@@ -88,12 +88,12 @@ pub trait IsElement<T> {
     
     
     
-    unsafe fn finalize(&Entry, &Guard);
+    unsafe fn finalize(_: &Entry, _: &Guard);
 }
 
 
 #[derive(Debug)]
-pub struct List<T, C: IsElement<T> = T> {
+pub(crate) struct List<T, C: IsElement<T> = T> {
     
     head: Atomic<Entry>,
 
@@ -102,7 +102,7 @@ pub struct List<T, C: IsElement<T> = T> {
 }
 
 
-pub struct Iter<'g, T: 'g, C: IsElement<T>> {
+pub(crate) struct Iter<'g, T, C: IsElement<T>> {
     
     guard: &'g Guard,
 
@@ -122,7 +122,7 @@ pub struct Iter<'g, T: 'g, C: IsElement<T>> {
 
 
 #[derive(PartialEq, Debug)]
-pub enum IterError {
+pub(crate) enum IterError {
     
     
     Stalled,
@@ -145,14 +145,14 @@ impl Entry {
     
     
     
-    pub unsafe fn delete(&self, guard: &Guard) {
+    pub(crate) unsafe fn delete(&self, guard: &Guard) {
         self.next.fetch_or(1, Release, guard);
     }
 }
 
 impl<T, C: IsElement<T>> List<T, C> {
     
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             head: Atomic::null(),
             _marker: PhantomData,
@@ -169,7 +169,7 @@ impl<T, C: IsElement<T>> List<T, C> {
     
     
     
-    pub unsafe fn insert<'g>(&'g self, container: Shared<'g, T>, guard: &'g Guard) {
+    pub(crate) unsafe fn insert<'g>(&'g self, container: Shared<'g, T>, guard: &'g Guard) {
         
         let to = &self.head;
         
@@ -183,7 +183,7 @@ impl<T, C: IsElement<T>> List<T, C> {
             
             
             entry.next.store(next, Relaxed);
-            match to.compare_and_set_weak(next, entry_ptr, Release, guard) {
+            match to.compare_exchange_weak(next, entry_ptr, Release, Relaxed, guard) {
                 Ok(_) => break,
                 
                 
@@ -204,7 +204,7 @@ impl<T, C: IsElement<T>> List<T, C> {
     
     
     
-    pub fn iter<'g>(&'g self, guard: &'g Guard) -> Iter<'g, T, C> {
+    pub(crate) fn iter<'g>(&'g self, guard: &'g Guard) -> Iter<'g, T, C> {
         Iter {
             guard,
             pred: &self.head,
@@ -218,7 +218,7 @@ impl<T, C: IsElement<T>> List<T, C> {
 impl<T, C: IsElement<T>> Drop for List<T, C> {
     fn drop(&mut self) {
         unsafe {
-            let guard = &unprotected();
+            let guard = unprotected();
             let mut curr = self.head.load(Relaxed, guard);
             while let Some(c) = curr.as_ref() {
                 let succ = c.next.load(Relaxed, guard);
@@ -250,7 +250,7 @@ impl<'g, T: 'g, C: IsElement<T>> Iterator for Iter<'g, T, C> {
                 
                 let succ = match self
                     .pred
-                    .compare_and_set(self.curr, succ, Acquire, self.guard)
+                    .compare_exchange(self.curr, succ, Acquire, Acquire, self.guard)
                 {
                     Ok(_) => {
                         
@@ -295,12 +295,12 @@ impl<'g, T: 'g, C: IsElement<T>> Iterator for Iter<'g, T, C> {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(crossbeam_loom)))]
 mod tests {
     use super::*;
+    use crate::{Collector, Owned};
     use crossbeam_utils::thread;
     use std::sync::Barrier;
-    use {Collector, Owned};
 
     impl IsElement<Entry> for Entry {
         fn entry_of(entry: &Entry) -> &Entry {

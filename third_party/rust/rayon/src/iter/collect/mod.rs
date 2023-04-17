@@ -1,4 +1,5 @@
 use super::{IndexedParallelIterator, IntoParallelIterator, ParallelExtend, ParallelIterator};
+use std::mem::MaybeUninit;
 use std::slice;
 
 mod consumer;
@@ -88,55 +89,56 @@ impl<'c, T: Send + 'c> Collect<'c, T> {
     where
         F: FnOnce(CollectConsumer<'_, T>) -> CollectResult<'_, T>,
     {
+        let slice = Self::reserve_get_tail_slice(&mut self.vec, self.len);
+        let result = scope_fn(CollectConsumer::new(slice));
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let actual_writes = result.len();
+        assert!(
+            actual_writes == self.len,
+            "expected {} total writes, but got {}",
+            self.len,
+            actual_writes
+        );
+
+        
+        
+        result.release_ownership();
+
+        let new_len = self.vec.len() + self.len;
+
         unsafe {
-            let slice = Self::reserve_get_tail_slice(&mut self.vec, self.len);
-            let result = scope_fn(CollectConsumer::new(slice));
-
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            let actual_writes = result.len();
-            assert!(
-                actual_writes == self.len,
-                "expected {} total writes, but got {}",
-                self.len,
-                actual_writes
-            );
-
-            
-            
-            result.release_ownership();
-
-            let new_len = self.vec.len() + self.len;
             self.vec.set_len(new_len);
         }
     }
 
     
     
-    
-    
-    unsafe fn reserve_get_tail_slice(vec: &mut Vec<T>, len: usize) -> &mut [T] {
+    fn reserve_get_tail_slice(vec: &mut Vec<T>, len: usize) -> &mut [MaybeUninit<T>] {
         
         vec.reserve(len);
 
         
+        
+        
         let start = vec.len();
-        let slice = &mut vec[start..];
-        slice::from_raw_parts_mut(slice.as_mut_ptr(), len)
+        let tail_ptr = vec[start..].as_mut_ptr() as *mut MaybeUninit<T>;
+        unsafe { slice::from_raw_parts_mut(tail_ptr, len) }
     }
 }
 
