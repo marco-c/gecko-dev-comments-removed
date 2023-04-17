@@ -799,11 +799,6 @@ class HTMLEditor final : public TextEditor,
 
   MOZ_CAN_RUN_SCRIPT nsresult DeleteTableCellContentsWithTransaction();
 
-  static void IsNextCharInNodeWhiteSpace(nsIContent* aContent, int32_t aOffset,
-                                         bool* outIsSpace, bool* outIsNBSP,
-                                         nsIContent** outNode = nullptr,
-                                         int32_t* outOffset = 0);
-
   
 
 
