@@ -81,6 +81,7 @@ NS_IMPL_ISUPPORTS(nsXULTooltipListener, nsIDOMEventListener)
 void nsXULTooltipListener::MouseOut(Event* aEvent) {
   
   mTooltipShownOnce = false;
+  mPreviousMouseMoveTarget = nullptr;
 
   
   
@@ -151,16 +152,26 @@ void nsXULTooltipListener::MouseMove(Event* aEvent) {
   
   if (mMouseScreenX == newMouseX && mMouseScreenY == newMouseY) return;
 
-  
-  
   nsCOMPtr<nsIContent> currentTooltip = do_QueryReferent(mCurrentTooltip);
+  nsCOMPtr<EventTarget> eventTarget = aEvent->GetComposedTarget();
+  nsCOMPtr<nsIContent> content = do_QueryInterface(eventTarget);
 
-  if ((currentTooltip) &&
+  bool isSameTarget = true;
+  nsCOMPtr<nsIContent> tempContent = do_QueryReferent(mPreviousMouseMoveTarget);
+  if (tempContent && tempContent != content) {
+    isSameTarget = false;
+  }
+
+  
+  
+  
+  if ((currentTooltip && isSameTarget) &&
       (abs(mMouseScreenX - newMouseX) <= kTooltipMouseMoveTolerance) &&
       (abs(mMouseScreenY - newMouseY) <= kTooltipMouseMoveTolerance))
     return;
   mMouseScreenX = newMouseX;
   mMouseScreenY = newMouseY;
+  mPreviousMouseMoveTarget = do_GetWeakReference(content);
 
   nsCOMPtr<nsIContent> sourceContent =
       do_QueryInterface(aEvent->GetCurrentTarget());
@@ -178,13 +189,17 @@ void nsXULTooltipListener::MouseMove(Event* aEvent) {
   
   
   
-  if (!currentTooltip && !mTooltipShownOnce) {
-    nsCOMPtr<EventTarget> eventTarget = aEvent->GetComposedTarget();
-    nsCOMPtr<nsIContent> content = do_QueryInterface(eventTarget);
-    if (content && !content->GetContainingShadow()) {
-      eventTarget = aEvent->GetTarget();
-    }
+  if (!isSameTarget) {
+    HideTooltip();
+    mTooltipShownOnce = false;
+  }
 
+  
+  
+  
+  
+  
+  if ((!currentTooltip && !mTooltipShownOnce) || !isSameTarget) {
     
     
     
@@ -223,11 +238,13 @@ void nsXULTooltipListener::MouseMove(Event* aEvent) {
 #ifdef MOZ_XUL
   if (mIsSourceTree) return;
 #endif
-
-  HideTooltip();
   
-  
-  mTooltipShownOnce = true;
+  if (currentTooltip) {
+    HideTooltip();
+    
+    
+    mTooltipShownOnce = true;
+  }
 }
 
 NS_IMETHODIMP
