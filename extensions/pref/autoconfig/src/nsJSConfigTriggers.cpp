@@ -31,7 +31,7 @@ using mozilla::dom::AutoJSAPI;
 
 static JS::PersistentRooted<JSObject*> autoconfigSystemSb;
 static JS::PersistentRooted<JSObject*> autoconfigSb;
-static bool sandboxEnabled;
+bool sandboxEnabled;
 
 nsresult CentralizedAdminPrefManagerInit(bool aSandboxEnabled) {
   
