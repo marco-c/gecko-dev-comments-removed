@@ -966,7 +966,7 @@ class StorageUI {
     let value;
 
     
-    if (item?.name && item?.valueActor) {
+    if ((item?.name || item?.name === "") && item?.valueActor) {
       value = await item.valueActor.string();
     }
 
