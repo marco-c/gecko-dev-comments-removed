@@ -23,7 +23,7 @@ def main():
 
     
     
-    file = re.sub(r' *"CR_XCODE_VERSION=1220",\n', r"", file)
+    file = re.sub(r' *"CR_XCODE_VERSION=[0-9]+",\n', r"", file)
     file = re.sub(r',\n *"(.\:)?/.*/third_party/libwebrtc/gn-output/gen/"', r"", file)
 
     
