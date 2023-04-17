@@ -469,7 +469,7 @@ impl FrameBuilder {
                     root_spatial_node_index,
                     root_spatial_node_index,
                     ROOT_SURFACE_INDEX,
-                    SubpixelMode::Allow,
+                    &SubpixelMode::Allow,
                     &mut frame_state,
                     &frame_context,
                     &mut scratch.primitive,
@@ -891,6 +891,30 @@ pub fn build_render_pass(
         };
 
         
+        
+        
+        
+        
+        
+        
+        let forced_opaque = match tile_cache.background_color {
+            Some(color) => color.a >= 1.0,
+            None => false,
+        };
+        let mut clear_color = if forced_opaque {
+            Some(ColorF::WHITE)
+        } else {
+            Some(ColorF::TRANSPARENT)
+        };
+
+        
+        
+        
+        if let Some(BackdropKind::Color { color }) = tile_cache.backdrop.kind {
+            clear_color = Some(color);
+        }
+
+        
         let mut batchers = Vec::new();
         for task_id in &task_ids {
             let task_id = *task_id;
@@ -943,30 +967,11 @@ pub fn build_render_pass(
                     
                     
                     
-                    let (scissor_rect, valid_rect, clear_color)  = match render_tasks[task_id].kind {
+                    let (scissor_rect, valid_rect)  = match render_tasks[task_id].kind {
                         RenderTaskKind::Picture(ref info) => {
-                            let mut clear_color = ColorF::TRANSPARENT;
-
-                            
-                            if let Some(batch_filter) = info.batch_filter {
-                                if batch_filter.sub_slice_index.is_primary() {
-                                    if let Some(background_color) = tile_cache.background_color {
-                                        clear_color = background_color;
-                                    }
-
-                                    
-                                    
-                                    
-                                    if let Some(BackdropKind::Color { color }) = tile_cache.backdrop.kind {
-                                        clear_color = color;
-                                    }
-                                }
-                            }
-
                             (
                                 info.scissor_rect.expect("bug: must be set for cache tasks"),
                                 info.valid_rect.expect("bug: must be set for cache tasks"),
-                                clear_color,
                             )
                         }
                         _ => unreachable!(),
@@ -983,7 +988,7 @@ pub fn build_render_pass(
 
                     let target = PictureCacheTarget {
                         surface: surface.clone(),
-                        clear_color: Some(clear_color),
+                        clear_color,
                         alpha_batch_container,
                         dirty_rect: scissor_rect,
                         valid_rect,

@@ -184,7 +184,7 @@ use std::collections::HashMap;
 pub const MAX_BLUR_RADIUS: f32 = 100.;
 
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum SubpixelMode {
     
     Allow,
@@ -194,6 +194,7 @@ pub enum SubpixelMode {
     
     Conditional {
         allowed_rect: PictureRect,
+        excluded_rects: Vec<PictureRect>,
     },
 }
 
@@ -511,7 +512,7 @@ struct TilePostUpdateContext<'a> {
     local_clip_rect: PictureRect,
 
     
-    backdrop: Option<BackdropInfo>,
+    backdrop: BackdropInfo,
 
     
     opacity_bindings: &'a FastHashMap<PropertyBindingId, OpacityBindingInfo>,
@@ -526,7 +527,17 @@ struct TilePostUpdateContext<'a> {
     local_rect: PictureRect,
 
     
-    z_id: ZBufferId,
+    external_surfaces: &'a [ExternalSurfaceDescriptor],
+
+    
+    
+    
+    
+    
+    z_id_opaque: ZBufferId,
+
+    
+    z_id_alpha: ZBufferId,
 
     
     
@@ -570,6 +581,9 @@ struct PrimitiveDependencyInfo {
 
     
     spatial_nodes: SmallVec<[SpatialNodeIndex; 4]>,
+
+    
+    is_compositor_surface: bool,
 }
 
 impl PrimitiveDependencyInfo {
@@ -586,6 +600,7 @@ impl PrimitiveDependencyInfo {
             prim_clip_box,
             clips: SmallVec::new(),
             spatial_nodes: SmallVec::new(),
+            is_compositor_surface: false,
         }
     }
 }
@@ -880,7 +895,13 @@ pub struct Tile {
     
     invalidation_reason: Option<InvalidationReason>,
     
-    local_valid_rect: PictureBox2D,
+    pub has_compositor_surface: bool,
+    
+    
+    bg_local_valid_rect: PictureBox2D,
+    
+    
+    fg_local_valid_rect: PictureBox2D,
     
     pub z_id: ZBufferId,
     
@@ -912,7 +933,9 @@ impl Tile {
             root: TileNode::new_leaf(Vec::new()),
             background_color: None,
             invalidation_reason: None,
-            local_valid_rect: PictureBox2D::zero(),
+            has_compositor_surface: false,
+            bg_local_valid_rect: PictureBox2D::zero(),
+            fg_local_valid_rect: PictureBox2D::zero(),
             z_id: ZBufferId::invalid(),
             last_updated_frame_id: FrameId::INVALID,
         }
@@ -1040,8 +1063,10 @@ impl Tile {
             self.local_tile_rect.origin,
             self.local_tile_rect.bottom_right(),
         );
-        self.local_valid_rect = PictureBox2D::zero();
+        self.bg_local_valid_rect = PictureBox2D::zero();
+        self.fg_local_valid_rect = PictureBox2D::zero();
         self.invalidation_reason  = None;
+        self.has_compositor_surface = false;
 
         self.world_tile_rect = ctx.pic_to_world_mapper
             .map(&self.local_tile_rect)
@@ -1103,8 +1128,24 @@ impl Tile {
 
         
         
-        
-        self.local_valid_rect = self.local_valid_rect.union(&info.prim_clip_box);
+        if info.is_compositor_surface {
+            self.has_compositor_surface = true;
+        } else {
+            
+            
+            
+
+            
+            
+            
+            
+            
+            if self.has_compositor_surface {
+                self.fg_local_valid_rect = self.fg_local_valid_rect.union(&info.prim_clip_box);
+            } else {
+                self.bg_local_valid_rect = self.bg_local_valid_rect.union(&info.prim_clip_box);
+            }
+        }
 
         
         self.current_descriptor.images.extend_from_slice(&info.images);
@@ -1204,7 +1245,11 @@ impl Tile {
         }
 
         
-        self.current_descriptor.local_valid_rect = self.local_valid_rect.to_rect();
+        
+        self.current_descriptor.local_valid_rect =
+            self.bg_local_valid_rect
+                .union(&self.fg_local_valid_rect)
+                .to_rect();
 
         
         
@@ -1262,13 +1307,31 @@ impl Tile {
         let clipped_rect = self.current_descriptor.local_valid_rect
             .intersection(&ctx.local_clip_rect)
             .unwrap_or_else(PictureRect::zero);
+        let mut is_opaque = ctx.backdrop.opaque_rect.contains_rect(&clipped_rect);
 
-        let has_opaque_bg_color = self.background_color.map_or(false, |c| c.a >= 1.0);
-        let has_opaque_backdrop = ctx.backdrop.map_or(false, |b| b.opaque_rect.contains_rect(&clipped_rect));
-        let is_opaque = has_opaque_bg_color || has_opaque_backdrop;
+        if self.has_compositor_surface {
+            
+            
+            
+            let fg_world_valid_rect = ctx.pic_to_world_mapper
+                .map(&self.fg_local_valid_rect.to_rect())
+                .expect("bug: map fg local valid rect");
+            let fg_device_valid_rect = fg_world_valid_rect * ctx.global_device_pixel_scale;
+
+            for surface in ctx.external_surfaces {
+                if surface.device_rect.intersects(&fg_device_valid_rect) {
+                    is_opaque = false;
+                    break;
+                }
+            }
+        }
 
         
-        self.z_id = ctx.z_id;
+        if is_opaque {
+            self.z_id = ctx.z_id_opaque;
+        } else {
+            self.z_id = ctx.z_id_alpha;
+        }
 
         if is_opaque != self.is_opaque {
             
@@ -1331,7 +1394,7 @@ impl Tile {
         
         
         let is_simple_prim =
-            ctx.backdrop.map_or(false, |b| b.kind.is_some()) &&
+            ctx.backdrop.kind.is_some() &&
             self.current_descriptor.prims.len() == 1 &&
             self.is_opaque &&
             supports_simple_prims;
@@ -1341,7 +1404,7 @@ impl Tile {
             
             
             
-            match ctx.backdrop.unwrap().kind {
+            match ctx.backdrop.kind {
                 Some(BackdropKind::Color { color }) => {
                     TileSurface::Color {
                         color,
@@ -2162,18 +2225,6 @@ impl SubSliceIndex {
 
 
 
-pub struct CompositorSurface {
-    
-    pub descriptor: ExternalSurfaceDescriptor,
-    
-    
-    prohibited_rect: PictureRect,
-    
-    pub is_opaque: bool,
-}
-
-
-
 
 
 pub struct SubSlice {
@@ -2183,9 +2234,6 @@ pub struct SubSlice {
     
     
     pub native_surface: Option<NativeSurface>,
-    
-    
-    pub compositor_surfaces: Vec<CompositorSurface>,
 }
 
 impl SubSlice {
@@ -2194,14 +2242,7 @@ impl SubSlice {
         SubSlice {
             tiles: FastHashMap::default(),
             native_surface: None,
-            compositor_surfaces: Vec::new(),
         }
-    }
-
-    
-    
-    fn reset(&mut self) {
-        self.compositor_surfaces.clear();
     }
 
     
@@ -2314,7 +2355,10 @@ pub struct TileCacheInstance {
     
     tile_size_override: Option<DeviceIntSize>,
     
-    pub z_id_backdrop: ZBufferId,
+    
+    pub external_surfaces: Vec<ExternalSurfaceDescriptor>,
+    
+    pub z_id_opaque: ZBufferId,
     
     pub external_native_surface_cache: FastHashMap<ExternalNativeSurfaceKey, ExternalNativeSurface>,
     
@@ -2332,12 +2376,8 @@ impl TileCacheInstance {
     pub fn new(params: TileCacheParams) -> Self {
         
         
-        let sub_slice_count = params.compositor_surface_count.min(MAX_COMPOSITOR_SURFACES) + 1;
-
-        let mut sub_slices = Vec::with_capacity(sub_slice_count);
-        for _ in 0 .. sub_slice_count {
-            sub_slices.push(SubSlice::new());
-        }
+        
+        let sub_slices = vec![SubSlice::new()];
 
         TileCacheInstance {
             slice: params.slice,
@@ -2375,7 +2415,8 @@ impl TileCacheInstance {
             compare_cache: FastHashMap::default(),
             device_position: DevicePoint::zero(),
             tile_size_override: None,
-            z_id_backdrop: ZBufferId::invalid(),
+            external_surfaces: Vec::new(),
+            z_id_opaque: ZBufferId::invalid(),
             external_native_surface_cache: FastHashMap::default(),
             frame_id: FrameId::INVALID,
         }
@@ -2398,8 +2439,7 @@ impl TileCacheInstance {
         assert_eq!(self.slice, params.slice);
 
         
-        
-        let required_sub_slice_count = params.compositor_surface_count.min(MAX_COMPOSITOR_SURFACES) + 1;
+        let required_sub_slice_count = 1;
 
         if self.sub_slices.len() != required_sub_slice_count {
             self.tile_rect = TileRect::zero();
@@ -2456,6 +2496,16 @@ impl TileCacheInstance {
     }
 
     
+    pub fn is_opaque(&self) -> bool {
+        
+        
+        match self.background_color {
+            Some(color) => color.a >= 1.0,
+            None => false
+        }
+    }
+
+    
     fn get_tile_coords_for_rect(
         &self,
         rect: &PictureRect,
@@ -2488,17 +2538,15 @@ impl TileCacheInstance {
         frame_context: &FrameVisibilityContext,
         frame_state: &mut FrameVisibilityState,
     ) -> WorldRect {
+        self.external_surfaces.clear();
         self.surface_index = surface_index;
         self.local_rect = pic_rect;
         self.local_clip_rect = PictureRect::max_rect();
 
-        for sub_slice in &mut self.sub_slices {
-            sub_slice.reset();
-        }
-
         
         
-        self.z_id_backdrop = frame_state.composite_state.z_generator.next();
+        
+        self.z_id_opaque = frame_state.composite_state.z_generator.next();
 
         
         
@@ -2901,7 +2949,6 @@ impl TileCacheInstance {
         prim_clip_chain: &ClipChainInstance,
         prim_spatial_node_index: SpatialNodeIndex,
         on_picture_surface: bool,
-        sub_slice_index: usize,
         frame_context: &FrameVisibilityContext,
     ) -> SurfacePromotionResult {
         
@@ -2910,7 +2957,7 @@ impl TileCacheInstance {
         }
 
         
-        if sub_slice_index == MAX_COMPOSITOR_SURFACES {
+        if self.external_surfaces.len() == MAX_COMPOSITOR_SURFACES {
             return SurfacePromotionResult::Failed;
         }
 
@@ -2948,12 +2995,10 @@ impl TileCacheInstance {
 
     fn setup_compositor_surfaces_yuv(
         &mut self,
-        sub_slice_index: usize,
         prim_info: &mut PrimitiveDependencyInfo,
         flags: PrimitiveFlags,
         local_prim_rect: LayoutRect,
         prim_spatial_node_index: SpatialNodeIndex,
-        pic_clip_rect: PictureRect,
         frame_context: &FrameVisibilityContext,
         image_dependencies: &[ImageDependency;3],
         api_keys: &[ImageKey; 3],
@@ -2977,12 +3022,10 @@ impl TileCacheInstance {
         }
 
         self.setup_compositor_surfaces_impl(
-            sub_slice_index,
             prim_info,
             flags,
             local_prim_rect,
             prim_spatial_node_index,
-            pic_clip_rect,
             frame_context,
             ExternalSurfaceDependency::Yuv {
                 image_dependencies: *image_dependencies,
@@ -2994,18 +3037,15 @@ impl TileCacheInstance {
             resource_cache,
             composite_state,
             image_rendering,
-            true,
         )
     }
 
     fn setup_compositor_surfaces_rgb(
         &mut self,
-        sub_slice_index: usize,
         prim_info: &mut PrimitiveDependencyInfo,
         flags: PrimitiveFlags,
         local_prim_rect: LayoutRect,
         prim_spatial_node_index: SpatialNodeIndex,
-        pic_clip_rect: PictureRect,
         frame_context: &FrameVisibilityContext,
         image_dependency: ImageDependency,
         api_key: ImageKey,
@@ -3032,16 +3072,11 @@ impl TileCacheInstance {
             gpu_cache,
         );
 
-        let is_opaque = resource_cache.get_image_properties(api_key)
-            .map_or(false, |properties| properties.descriptor.is_opaque());
-
         self.setup_compositor_surfaces_impl(
-            sub_slice_index,
             prim_info,
             flags,
             local_prim_rect,
             prim_spatial_node_index,
-            pic_clip_rect,
             frame_context,
             ExternalSurfaceDependency::Rgb {
                 image_dependency,
@@ -3051,7 +3086,6 @@ impl TileCacheInstance {
             resource_cache,
             composite_state,
             image_rendering,
-            is_opaque,
         )
     }
 
@@ -3059,20 +3093,19 @@ impl TileCacheInstance {
     
     fn setup_compositor_surfaces_impl(
         &mut self,
-        sub_slice_index: usize,
         prim_info: &mut PrimitiveDependencyInfo,
         flags: PrimitiveFlags,
         local_prim_rect: LayoutRect,
         prim_spatial_node_index: SpatialNodeIndex,
-        pic_clip_rect: PictureRect,
         frame_context: &FrameVisibilityContext,
         dependency: ExternalSurfaceDependency,
         api_keys: &[ImageKey; 3],
         resource_cache: &mut ResourceCache,
         composite_state: &mut CompositeState,
         image_rendering: ImageRendering,
-        is_opaque: bool,
     ) -> bool {
+        prim_info.is_compositor_surface = true;
+
         let map_local_to_surface = SpaceMapper::new_with_target(
             self.spatial_node_index,
             prim_spatial_node_index,
@@ -3180,7 +3213,7 @@ impl TileCacheInstance {
                             Some(_external_image) => {
                                 
                                 
-                                resource_cache.create_compositor_external_surface(is_opaque)
+                                resource_cache.create_compositor_external_surface(true)
                             }
                             None => {
                                 
@@ -3189,7 +3222,7 @@ impl TileCacheInstance {
                                 resource_cache.create_compositor_surface(
                                     DeviceIntPoint::zero(),
                                     native_surface_size,
-                                    is_opaque,
+                                    true,
                                 );
 
                                 let tile_id = NativeTileId {
@@ -3252,27 +3285,18 @@ impl TileCacheInstance {
         };
 
         
-        
-        debug_assert!(sub_slice_index < self.sub_slices.len() - 1);
-        let sub_slice = &mut self.sub_slices[sub_slice_index];
-
-        
-        sub_slice.compositor_surfaces.push(CompositorSurface {
-            prohibited_rect: pic_clip_rect,
-            is_opaque,
-            descriptor: ExternalSurfaceDescriptor {
-                local_rect: prim_info.prim_clip_box.to_rect(),
-                local_clip_rect: prim_info.prim_clip_box.to_rect(),
-                dependency,
-                image_rendering,
-                device_rect,
-                surface_rect,
-                clip_rect,
-                transform: transform.cast_unit(),
-                z_id: ZBufferId::invalid(),
-                native_surface_id,
-                update_params,
-            },
+        self.external_surfaces.push(ExternalSurfaceDescriptor {
+            local_rect: prim_info.prim_clip_box.to_rect(),
+            local_clip_rect: prim_info.prim_clip_box.to_rect(),
+            dependency,
+            image_rendering,
+            device_rect,
+            surface_rect,
+            clip_rect,
+            transform: transform.cast_unit(),
+            z_id: composite_state.z_generator.next(),
+            native_surface_id,
+            update_params,
         });
 
         true
@@ -3361,30 +3385,6 @@ impl TileCacheInstance {
             pic_clip_rect.to_box2d(),
         );
 
-        let mut sub_slice_index = self.sub_slices.len() - 1;
-
-        
-        if sub_slice_index > 0 {
-            
-            
-            for (i, sub_slice) in self.sub_slices.iter_mut().enumerate() {
-                let mut intersects_prohibited_region = false;
-
-                for surface in &mut sub_slice.compositor_surfaces {
-                    if pic_clip_rect.intersects(&surface.prohibited_rect) {
-                        surface.prohibited_rect = surface.prohibited_rect.union(&pic_clip_rect);
-
-                        intersects_prohibited_region = true;
-                    }
-                }
-
-                if !intersects_prohibited_region {
-                    sub_slice_index = i;
-                    break;
-                }
-            }
-        }
-
         
         if prim_spatial_node_index != self.spatial_node_index {
             prim_info.spatial_nodes.push(prim_spatial_node_index);
@@ -3458,7 +3458,6 @@ impl TileCacheInstance {
                                                   prim_clip_chain,
                                                   prim_spatial_node_index,
                                                   on_picture_surface,
-                                                  sub_slice_index,
                                                   frame_context) {
                     SurfacePromotionResult::Failed => {
                     }
@@ -3485,12 +3484,10 @@ impl TileCacheInstance {
 
                 if promote_to_surface {
                     promote_to_surface = self.setup_compositor_surfaces_rgb(
-                        sub_slice_index,
                         &mut prim_info,
                         image_key.common.flags,
                         local_prim_rect,
                         prim_spatial_node_index,
-                        pic_clip_rect,
                         frame_context,
                         ImageDependency {
                             key: image_data.key,
@@ -3505,17 +3502,14 @@ impl TileCacheInstance {
                     );
                 }
 
-                *is_compositor_surface = promote_to_surface;
-
-                if promote_to_surface {
-                    prim_instance.vis.state = VisibilityState::Culled;
-                    return;
-                } else {
+                if !promote_to_surface {
                     prim_info.images.push(ImageDependency {
                         key: image_data.key,
                         generation: resource_cache.get_image_generation(image_data.key),
                     });
                 }
+
+                *is_compositor_surface = promote_to_surface;
             }
             PrimitiveInstanceKind::YuvImage { data_handle, ref mut is_compositor_surface, .. } => {
                 let prim_data = &data_stores.yuv_image[data_handle];
@@ -3524,7 +3518,6 @@ impl TileCacheInstance {
                                             prim_clip_chain,
                                             prim_spatial_node_index,
                                             on_picture_surface,
-                                            sub_slice_index,
                                             frame_context) {
                     SurfacePromotionResult::Failed => false,
                     SurfacePromotionResult::Success{flip_y} => !flip_y,
@@ -3550,12 +3543,10 @@ impl TileCacheInstance {
                     }
 
                     promote_to_surface = self.setup_compositor_surfaces_yuv(
-                        sub_slice_index,
                         &mut prim_info,
                         prim_data.common.flags,
                         local_prim_rect,
                         prim_spatial_node_index,
-                        pic_clip_rect,
                         frame_context,
                         &image_dependencies,
                         &prim_data.kind.yuv_key,
@@ -3569,15 +3560,7 @@ impl TileCacheInstance {
                     );
                 }
 
-                
-                
-                
-                *is_compositor_surface = promote_to_surface;
-
-                if promote_to_surface {
-                    prim_instance.vis.state = VisibilityState::Culled;
-                    return;
-                } else {
+                if !promote_to_surface {
                     prim_info.images.extend(
                         prim_data.kind.yuv_key.iter().map(|key| {
                             ImageDependency {
@@ -3587,6 +3570,12 @@ impl TileCacheInstance {
                         })
                     );
                 }
+
+                
+                
+                
+                *is_compositor_surface = promote_to_surface;
+
             }
             PrimitiveInstanceKind::ImageBorder { data_handle, .. } => {
                 let border_data = &data_stores.image_border[data_handle].kind;
@@ -3646,6 +3635,8 @@ impl TileCacheInstance {
         
         let mut vis_flags = PrimitiveVisibilityFlags::empty();
 
+        
+        let sub_slice_index = 0;
         let sub_slice = &mut self.sub_slices[sub_slice_index];
 
         if let Some(backdrop_candidate) = backdrop_candidate {
@@ -3679,10 +3670,9 @@ impl TileCacheInstance {
                 }
             };
 
-            if sub_slice_index == 0 &&
-               is_suitable_backdrop &&
-               sub_slice.compositor_surfaces.is_empty() &&
-               !prim_clip_chain.needs_mask {
+            if is_suitable_backdrop
+                && self.external_surfaces.is_empty()
+                && !prim_clip_chain.needs_mask {
 
                 if backdrop_candidate.opaque_rect.contains_rect(&self.backdrop.opaque_rect) {
                     self.backdrop.opaque_rect = backdrop_candidate.opaque_rect;
@@ -3772,10 +3762,8 @@ impl TileCacheInstance {
     }
 
     fn calculate_subpixel_mode(&self) -> SubpixelMode {
-        let has_opaque_bg_color = self.background_color.map_or(false, |c| c.a >= 1.0);
-
         
-        if has_opaque_bg_color {
+        if self.is_opaque() {
             return SubpixelMode::Allow;
         }
 
@@ -3798,8 +3786,19 @@ impl TileCacheInstance {
         
         
         
+        
+        
+
+        let excluded_rects = self.external_surfaces
+            .iter()
+            .map(|s| {
+                s.local_rect
+            })
+            .collect();
+
         SubpixelMode::Conditional {
             allowed_rect: self.backdrop.opaque_rect,
+            excluded_rects,
         }
     }
 
@@ -3838,8 +3837,31 @@ impl TileCacheInstance {
                 
                 
                 frame_state.composite_state.register_occluder(
-                    self.z_id_backdrop,
+                    self.z_id_opaque,
                     world_backdrop_rect,
+                );
+            }
+        }
+
+        
+        
+        
+        
+        for external_surface in &self.external_surfaces {
+            let local_surface_rect = external_surface.local_rect
+                .intersection(&external_surface.local_clip_rect)
+                .and_then(|r| {
+                    r.intersection(&self.local_clip_rect)
+                });
+
+            if let Some(local_surface_rect) = local_surface_rect {
+                let world_surface_rect = map_pic_to_world
+                    .map(&local_surface_rect)
+                    .expect("bug: unable to map external surface to world space");
+
+                frame_state.composite_state.register_occluder(
+                    external_surface.z_id,
+                    world_surface_rect,
                 );
             }
         }
@@ -3888,16 +3910,21 @@ impl TileCacheInstance {
             frame_context.spatial_tree,
         );
 
-        let mut ctx = TilePostUpdateContext {
+        
+        let z_id_alpha = frame_state.composite_state.z_generator.next();
+
+        let ctx = TilePostUpdateContext {
             pic_to_world_mapper,
             global_device_pixel_scale: frame_context.global_device_pixel_scale,
             local_clip_rect: self.local_clip_rect,
-            backdrop: Some(self.backdrop),
+            backdrop: self.backdrop,
             opacity_bindings: &self.opacity_bindings,
             color_bindings: &self.color_bindings,
             current_tile_size: self.current_tile_size,
             local_rect: self.local_rect,
-            z_id: self.z_id_backdrop,
+            external_surfaces: &self.external_surfaces,
+            z_id_opaque: self.z_id_opaque,
+            z_id_alpha,
             invalidate_all: root_scale_changed || frame_context.config.force_invalidation,
         };
 
@@ -3913,44 +3940,6 @@ impl TileCacheInstance {
         for sub_slice in &mut self.sub_slices {
             for tile in sub_slice.tiles.values_mut() {
                 tile.post_update(&ctx, &mut state, frame_context);
-            }
-
-            for compositor_surface in &mut sub_slice.compositor_surfaces {
-                compositor_surface.descriptor.z_id = state.composite_state.z_generator.next();
-            }
-
-            
-            ctx.backdrop = None;
-            ctx.z_id = state.composite_state.z_generator.next();
-        }
-
-        
-        
-        
-        
-
-        for sub_slice in &self.sub_slices {
-            for compositor_surface in &sub_slice.compositor_surfaces {
-                if compositor_surface.is_opaque {
-                    let local_surface_rect = compositor_surface
-                        .descriptor
-                        .local_rect
-                        .intersection(&compositor_surface.descriptor.local_clip_rect)
-                        .and_then(|r| {
-                            r.intersection(&self.local_clip_rect)
-                        });
-
-                    if let Some(local_surface_rect) = local_surface_rect {
-                        let world_surface_rect = map_pic_to_world
-                            .map(&local_surface_rect)
-                            .expect("bug: unable to map external surface to world space");
-
-                        frame_state.composite_state.register_occluder(
-                            compositor_surface.descriptor.z_id,
-                            world_surface_rect,
-                        );
-                    }
-                }
             }
         }
     }
@@ -4738,7 +4727,7 @@ impl PicturePrimitive {
         surface_spatial_node_index: SpatialNodeIndex,
         raster_spatial_node_index: SpatialNodeIndex,
         parent_surface_index: SurfaceIndex,
-        parent_subpixel_mode: SubpixelMode,
+        parent_subpixel_mode: &SubpixelMode,
         frame_state: &mut FrameBuildingState,
         frame_context: &FrameBuildingContext,
         scratch: &mut PrimitiveScratchBuffer,
@@ -5859,7 +5848,7 @@ impl PicturePrimitive {
             Some(RasterConfig { ref composite_mode, .. }) => {
                 let subpixel_mode = match composite_mode {
                     PictureCompositeMode::TileCache { slice_id } => {
-                        tile_caches[&slice_id].subpixel_mode
+                        tile_caches[&slice_id].subpixel_mode.clone()
                     }
                     PictureCompositeMode::Blit(..) |
                     PictureCompositeMode::ComponentTransferFilter(..) |
@@ -5887,16 +5876,18 @@ impl PicturePrimitive {
                 
                 SubpixelMode::Allow
             }
-            (SubpixelMode::Allow, SubpixelMode::Conditional { allowed_rect }) => {
+            (SubpixelMode::Allow, SubpixelMode::Conditional { allowed_rect, excluded_rects }) => {
                 
                 SubpixelMode::Conditional {
                     allowed_rect,
+                    excluded_rects,
                 }
             }
-            (SubpixelMode::Conditional { allowed_rect }, SubpixelMode::Allow) => {
+            (SubpixelMode::Conditional { allowed_rect, excluded_rects }, SubpixelMode::Allow) => {
                 
                 SubpixelMode::Conditional {
-                    allowed_rect,
+                    allowed_rect: *allowed_rect,
+                    excluded_rects: excluded_rects.clone(),
                 }
             }
             (SubpixelMode::Conditional { .. }, SubpixelMode::Conditional { ..}) => {

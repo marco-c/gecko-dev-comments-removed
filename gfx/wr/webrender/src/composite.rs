@@ -579,7 +579,11 @@ impl CompositeState {
                         let surface = descriptor.resolve(resource_cache, tile_cache.current_tile_size);
                         (
                             CompositeTileSurface::Texture { surface },
-                            tile.is_opaque
+                            
+                            
+                            
+                            
+                            tile.is_opaque || (!tile.has_compositor_surface && tile_cache.is_opaque()),
                         )
                     }
                 };
@@ -639,28 +643,8 @@ impl CompositeState {
             }
 
             
-            if visible_alpha_tile_count > 0 {
-                self.descriptor.surfaces.push(
-                    CompositeSurfaceDescriptor {
-                        surface_id: sub_slice.native_surface.as_ref().map(|s| s.alpha),
-                        clip_rect: surface_clip_rect,
-                        transform: CompositorSurfaceTransform::translation(
-                            tile_cache.device_position.x,
-                            tile_cache.device_position.y,
-                            0.0,
-                        ),
-                        image_dependencies: [ImageDependency::INVALID; 3],
-                        image_rendering: ImageRendering::CrispEdges,
-                        tile_descriptors: alpha_tile_descriptors,
-                    }
-                );
-            }
-
             
-            
-            for compositor_surface in &sub_slice.compositor_surfaces {
-                let external_surface = &compositor_surface.descriptor;
-
+            for external_surface in &tile_cache.external_surfaces {
                 let clip_rect = external_surface
                     .clip_rect
                     .intersection(&device_clip_rect)
@@ -738,7 +722,25 @@ impl CompositeState {
                     }
                 );
 
-                self.push_tile(tile, compositor_surface.is_opaque);
+                self.push_tile(tile, true);
+            }
+
+            
+            if visible_alpha_tile_count > 0 {
+                self.descriptor.surfaces.push(
+                    CompositeSurfaceDescriptor {
+                        surface_id: sub_slice.native_surface.as_ref().map(|s| s.alpha),
+                        clip_rect: surface_clip_rect,
+                        transform: CompositorSurfaceTransform::translation(
+                            tile_cache.device_position.x,
+                            tile_cache.device_position.y,
+                            0.0,
+                        ),
+                        image_dependencies: [ImageDependency::INVALID; 3],
+                        image_rendering: ImageRendering::CrispEdges,
+                        tile_descriptors: alpha_tile_descriptors,
+                    }
+                );
             }
         }
     }
@@ -867,11 +869,7 @@ impl CompositeState {
                 }
             }
             CompositeTileSurface::ExternalSurface { .. } => {
-                if is_opaque {
-                    self.opaque_tiles.push(tile);
-                } else {
-                    self.alpha_tiles.push(tile);
-                }
+                self.opaque_tiles.push(tile);
             }
         }
     }
