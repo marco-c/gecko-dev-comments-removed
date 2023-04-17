@@ -73,9 +73,6 @@ namespace dom {
 class BrowserChild;
 enum class CallerType : uint32_t;
 }  
-namespace plugins {
-class PluginWidgetChild;
-}  
 namespace layers {
 class AsyncDragMetrics;
 class Compositor;
@@ -1992,15 +1989,6 @@ class nsIWidget : public nsISupports {
       BrowserChild* aBrowserChild);
 
   static already_AddRefed<nsIWidget> CreateHeadlessWidget();
-
-  
-
-
-
-
-
-  static already_AddRefed<nsIWidget> CreatePluginProxyWidget(
-      BrowserChild* aBrowserChild, mozilla::plugins::PluginWidgetChild* aActor);
 
   
 

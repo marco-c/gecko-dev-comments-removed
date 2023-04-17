@@ -1429,31 +1429,6 @@ NS_IMETHODIMP nsPluginInstanceOwner::CreateWidget(void) {
     nsresult rv = NS_ERROR_FAILURE;
 
     nsCOMPtr<nsIWidget> parentWidget;
-    Document* doc = nullptr;
-    nsCOMPtr<nsIContent> content = do_QueryReferent(mContent);
-    if (content) {
-      doc = content->OwnerDoc();
-      parentWidget = nsContentUtils::WidgetForDocument(doc);
-      
-      
-      if (XRE_IsContentProcess()) {
-        if (nsCOMPtr<nsPIDOMWindowOuter> window = doc->GetWindow()) {
-          if (nsCOMPtr<nsPIDOMWindowOuter> topWindow =
-                  window->GetInProcessTop()) {
-            dom::BrowserChild* tc = dom::BrowserChild::GetFrom(topWindow);
-            if (tc) {
-              
-              
-              rv = tc->CreatePluginWidget(parentWidget.get(),
-                                          getter_AddRefs(mWidget));
-              if (NS_FAILED(rv)) {
-                return rv;
-              }
-            }
-          }
-        }
-      }
-    }
 
     
     
