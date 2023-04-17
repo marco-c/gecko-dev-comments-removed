@@ -107,6 +107,7 @@ class Perftest(object):
     ):
         self._dirs_to_remove = []
         self.verbose = verbose
+        self.page_count = []
 
         
         if host == "HOST_IP":
