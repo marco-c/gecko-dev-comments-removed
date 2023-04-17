@@ -1,11 +1,5 @@
-<!DOCTYPE html>
-<title>MediaCapabilities.encodingInfo()</title>
-<script src=/resources/testharness.js></script>
-<script src="/resources/testharnessreport.js"></script>
-<script>
 
-// Minimal VideoConfiguration that will be allowed per spec. All optional
-// properties are missing.
+
 var minimalVideoConfiguration = {
   contentType: 'video/webm; codecs="vp09.00.10.08"',
   width: 800,
@@ -14,8 +8,8 @@ var minimalVideoConfiguration = {
   framerate: 24,
 };
 
-// Minimal WebRTC VideoConfiguration that will be allowed per spec. All optional
-// properties are missing.
+
+
 var minimalWebrtcVideoConfiguration = {
   contentType: 'video/VP9',
   width: 800,
@@ -24,14 +18,14 @@ var minimalWebrtcVideoConfiguration = {
   framerate: 24,
 };
 
-// Minimal AudioConfiguration that will be allowed per spec. All optional
-// properties are missing.
+
+
 var minimalAudioConfiguration = {
   contentType: 'audio/webm; codecs="opus"',
 };
 
-// Minimal WebRTC AudioConfiguration that will be allowed per spec. All optional
-// properties are missing.
+
+
 var minimalWebrtcAudioConfiguration = {
   contentType: 'audio/opus',
 };
@@ -295,10 +289,10 @@ async_test(t => {
     }));
   });
 
-  // validTypes are tested via Promise.all(validPromises) because if one of the
-  // promises fail, Promise.all() will reject. This mechanism can't be used for
-  // invalid types which will be tested individually and increment invalidCaught
-  // when rejected until the amount of rejection matches the expectation.
+  
+  
+  
+  
   Promise.all(validPromises).then(t.step_func(() => {
     for (var i = 0; i < invalidTypes.length; ++i) {
       navigator.mediaCapabilities.encodingInfo({
@@ -314,5 +308,3 @@ async_test(t => {
     }
   }), t.unreached_func('Promise.all should not reject for valid types'));
 }, "Test that encodingInfo rejects if the MediaConfiguration does not have a valid type");
-
-</script>
