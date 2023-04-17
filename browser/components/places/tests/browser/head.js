@@ -536,6 +536,15 @@ async function clickBookmarkStar(win = window) {
   );
   win.BookmarkingUI.star.click();
   await shownPromise;
+
+  
+  let menuList = win.document.getElementById("editBMPanel_folderMenuList");
+  await BrowserTestUtils.waitForMutationCondition(
+    menuList,
+    { attributes: true },
+    () => !!menuList.getAttribute("selectedGuid"),
+    "Should select the menu folder item"
+  );
 }
 
 

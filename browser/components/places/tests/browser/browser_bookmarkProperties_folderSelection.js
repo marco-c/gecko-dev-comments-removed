@@ -10,6 +10,8 @@ let win;
 add_task(async function setup() {
   await PlacesUtils.bookmarks.eraseEverything();
 
+  Services.prefs.clearUserPref("browser.bookmarks.defaultLocation");
+
   win = await BrowserTestUtils.openNewBrowserWindow();
   await BrowserTestUtils.openNewForegroundTab({
     gBrowser: win.gBrowser,
@@ -51,7 +53,7 @@ add_task(async function test_selectChoose() {
   Assert.equal(
     menuList.label,
     PlacesUtils.getString(expectedFolder),
-    "Should have the other bookmarks folder selected by default"
+    "Should have the expected bookmarks folder selected by default"
   );
   Assert.equal(
     menuList.getAttribute("selectedGuid"),
@@ -156,11 +158,6 @@ add_task(async function test_selectBookmarksMenu() {
     win
   );
 
-  
-  
-  
-  
-  await new Promise(r => setTimeout(r, 100));
   await TestUtils.waitForCondition(
     () =>
       menuList.getAttribute("selectedGuid") == PlacesUtils.bookmarks.menuGuid,
