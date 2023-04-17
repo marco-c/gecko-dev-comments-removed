@@ -125,26 +125,9 @@ class MediaQueue : private nsRefPtrDeque<T> {
   }
 
   
-  
-  void GetElementsAfter(int64_t aTime, nsTArray<RefPtr<T>>* aResult) {
-    RecursiveMutexAutoLock lock(mRecursiveMutex);
-    if (GetSize() == 0) return;
-    size_t i;
-    for (i = GetSize() - 1; i > 0; --i) {
-      T* v = nsRefPtrDeque<T>::ObjectAt(i);
-      if (v->GetEndTime().ToMicroseconds() < aTime) break;
-    }
-    
-    
-    for (; i < GetSize(); ++i) {
-      RefPtr<T> elem = nsRefPtrDeque<T>::ObjectAt(i);
-      aResult->AppendElement(elem);
-    }
-  }
-
   void GetElementsAfter(const media::TimeUnit& aTime,
                         nsTArray<RefPtr<T>>* aResult) {
-    GetElementsAfter(aTime.ToMicroseconds(), aResult);
+    GetElementsAfterStrict(aTime.ToMicroseconds(), aResult);
   }
 
   void GetFirstElements(uint32_t aMaxElements, nsTArray<RefPtr<T>>* aResult) {
@@ -173,6 +156,24 @@ class MediaQueue : private nsRefPtrDeque<T> {
   MediaEventSource<void>& FinishEvent() { return mFinishEvent; }
 
  private:
+  
+  
+  void GetElementsAfterStrict(int64_t aTime, nsTArray<RefPtr<T>>* aResult) {
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    if (GetSize() == 0) return;
+    size_t i;
+    for (i = GetSize() - 1; i > 0; --i) {
+      T* v = nsRefPtrDeque<T>::ObjectAt(i);
+      if (v->GetEndTime().ToMicroseconds() < aTime) break;
+    }
+    for (; i < GetSize(); ++i) {
+      RefPtr<T> elem = nsRefPtrDeque<T>::ObjectAt(i);
+      if (elem->GetEndTime().ToMicroseconds() > aTime) {
+        aResult->AppendElement(elem);
+      }
+    }
+  }
+
   mutable RecursiveMutex mRecursiveMutex;
   MediaEventProducer<RefPtr<T>> mPopFrontEvent;
   MediaEventProducer<RefPtr<T>> mPushEvent;
