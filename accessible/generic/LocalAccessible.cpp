@@ -27,6 +27,7 @@
 #include "RootAccessible.h"
 #include "States.h"
 #include "StyleInfo.h"
+#include "TextLeafRange.h"
 #include "TextRange.h"
 #include "TableAccessible.h"
 #include "TableCellAccessible.h"
@@ -3079,7 +3080,9 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
     uint64_t aCacheDomain, CacheUpdateType aUpdateType) {
   RefPtr<AccAttributes> fields = new AccAttributes();
 
-  if (aCacheDomain & CacheDomain::NameAndDescription) {
+  
+  
+  if (aCacheDomain & CacheDomain::NameAndDescription && !IsText()) {
     nsString name;
     int32_t nameFlag = Name(name);
     if (nameFlag != eNameOK) {
@@ -3124,6 +3127,29 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
       boundsArray.AppendElement(newBoundsRect.height);
 
       fields->SetAttribute(nsGkAtoms::relativeBounds, std::move(boundsArray));
+    }
+  }
+
+  
+  if ((aCacheDomain & CacheDomain::Text) && !HasChildren()) {
+    
+    if (IsText()) {
+      nsString text;
+      AppendTextTo(text);
+      fields->SetAttribute(nsGkAtoms::text, std::move(text));
+    }
+    
+    
+    nsTArray<int32_t> lineStarts;
+    for (TextLeafPoint lineStart =
+             TextLeafPoint(this, 0).FindNextLineStartSameLocalAcc(
+                  true);
+         lineStart;
+         lineStart = lineStart.FindNextLineStartSameLocalAcc(false)) {
+      lineStarts.AppendElement(lineStart.mOffset);
+    }
+    if (!lineStarts.IsEmpty()) {
+      fields->SetAttribute(nsGkAtoms::line, std::move(lineStarts));
     }
   }
 
