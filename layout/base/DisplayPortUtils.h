@@ -274,14 +274,6 @@ class DisplayPortUtils {
   
 
 
-
-  static bool GetHighResolutionDisplayPort(
-      nsIContent* aContent, nsRect* aResult,
-      const DisplayPortOptions& aOptions = DisplayPortOptions());
-
-  
-
-
   static void RemoveDisplayPort(nsIContent* aContent);
 
   

@@ -715,7 +715,7 @@ bool DisplayPortUtils::SetDisplayPortMargins(
     
     
     
-    hadDisplayPort = GetHighResolutionDisplayPort(aContent, &oldDisplayPort);
+    hadDisplayPort = GetDisplayPort(aContent, &oldDisplayPort);
   }
 
   aContent->SetProperty(
@@ -745,8 +745,7 @@ bool DisplayPortUtils::SetDisplayPortMargins(
   }
 
   nsRect newDisplayPort;
-  DebugOnly<bool> hasDisplayPort =
-      GetHighResolutionDisplayPort(aContent, &newDisplayPort);
+  DebugOnly<bool> hasDisplayPort = GetDisplayPort(aContent, &newDisplayPort);
   MOZ_ASSERT(hasDisplayPort);
 
   if (MOZ_LOG_TEST(sDisplayportLog, LogLevel::Debug)) {
@@ -840,14 +839,6 @@ bool DisplayPortUtils::GetCriticalDisplayPort(
 
 bool DisplayPortUtils::HasCriticalDisplayPort(nsIContent* aContent) {
   return GetCriticalDisplayPort(aContent, nullptr);
-}
-
-bool DisplayPortUtils::GetHighResolutionDisplayPort(
-    nsIContent* aContent, nsRect* aResult, const DisplayPortOptions& aOptions) {
-  if (StaticPrefs::layers_low_precision_buffer()) {
-    return GetCriticalDisplayPort(aContent, aResult, aOptions);
-  }
-  return GetDisplayPort(aContent, aResult, aOptions);
 }
 
 void DisplayPortUtils::RemoveDisplayPort(nsIContent* aContent) {
