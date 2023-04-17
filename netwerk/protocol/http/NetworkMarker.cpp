@@ -4,6 +4,11 @@
 
 
 
+#include "NetworkMarker.h"
+
+#include "HttpBaseChannel.h"
+#include "nsIChannelEventSink.h"
+
 namespace mozilla {
 namespace net {
 
