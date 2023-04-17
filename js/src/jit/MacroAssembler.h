@@ -351,22 +351,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void Push(RegisterOrSP reg);
 #endif
 
-#ifdef ENABLE_WASM_SIMD
-  
-  
-  static bool MustScalarizeShiftSimd128(wasm::SimdOp op);
-
-  
-  
-  
-  static bool MustMaskShiftCountSimd128(wasm::SimdOp op, int32_t* mask);
-
-  
-  
-  
-  static bool MustScalarizeShiftSimd128(wasm::SimdOp op, Imm32 imm);
-#endif
-
  private:
   
   uint32_t wasmMaxOffsetGuardLimit_;
@@ -2803,7 +2787,10 @@ class MacroAssembler : public MacroAssemblerSpecific {
                                         FloatRegister dest)
       DEFINED_ON(x86_shared);
 
-  
+  inline void rightShiftInt64x2(Register rhs, FloatRegister lhsDest,
+                                Register temp1, FloatRegister temp2)
+      DEFINED_ON(x86_shared);
+
   inline void rightShiftInt64x2(Imm32 count, FloatRegister src,
                                 FloatRegister dest) DEFINED_ON(x86_shared);
 
@@ -2812,6 +2799,11 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   inline void unsignedRightShiftInt64x2(Imm32 count, FloatRegister src,
                                         FloatRegister dest)
+      DEFINED_ON(x86_shared);
+
+  
+
+  inline void signReplicationInt64x2(FloatRegister src, FloatRegister dest)
       DEFINED_ON(x86_shared);
 
   

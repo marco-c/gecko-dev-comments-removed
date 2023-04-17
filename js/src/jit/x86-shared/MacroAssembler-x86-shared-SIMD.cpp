@@ -1057,17 +1057,13 @@ void MacroAssemblerX86Shared::packedRightShiftByScalarInt64x2(
     FloatRegister in, Register count, Register temp1, FloatRegister temp2,
     FloatRegister dest) {
   ScratchSimd128Scope scratch(asMasm());
-  movl(count, temp1);                   
-  andl(Imm32(63), temp1);               
-  vmovd(temp1, scratch);                
-  vpxor(Operand(temp2), temp2, temp2);  
-  vpcmpgtq(Operand(in), temp2, temp2);  
-  vpsrlq(scratch, in, dest);            
-  negl(temp1);                          
-  addl(Imm32(63), temp1);               
-  vmovd(temp1, scratch);                
-  vpsllq(scratch, temp2, temp2);        
-  vpor(Operand(temp2), dest, dest);     
+  MaskSimdShiftCount(asMasm(), 63, count, temp1, temp2);
+  asMasm().moveSimd128(in, dest);
+  asMasm().signReplicationInt64x2(in, scratch);
+  
+  vpxor(Operand(scratch), dest, dest);
+  vpsrlq(temp2, dest, dest);
+  vpxor(Operand(scratch), dest, dest);
 }
 
 void MacroAssemblerX86Shared::packedUnsignedRightShiftByScalarInt64x2(
@@ -1079,24 +1075,13 @@ void MacroAssemblerX86Shared::packedUnsignedRightShiftByScalarInt64x2(
 
 void MacroAssemblerX86Shared::packedRightShiftByScalarInt64x2(
     Imm32 count, FloatRegister src, FloatRegister dest) {
-  MOZ_ASSERT(count.value < 32);
-#ifdef ENABLE_WASM_SIMD
-  MOZ_ASSERT(!MacroAssembler::MustScalarizeShiftSimd128(wasm::SimdOp::I64x2ShrS,
-                                                        count));
-#endif
-
   ScratchSimd128Scope scratch(asMasm());
-  
-  asMasm().moveSimd128(src, scratch);
-  vpsrad(count, scratch, scratch);
-  asMasm().vpandSimd128(SimdConstant::SplatX2(int64_t(0xFFFFFFFF00000000LL)),
-                        scratch);
-  
-  
   asMasm().moveSimd128(src, dest);
-  vpsrlq(count, dest, dest);
+  asMasm().signReplicationInt64x2(src, scratch);
   
-  vpor(scratch, dest, dest);
+  vpxor(Operand(scratch), dest, dest);
+  vpsrlq(Imm32(count.value & 63), dest, dest);
+  vpxor(Operand(scratch), dest, dest);
 }
 
 void MacroAssemblerX86Shared::selectSimd128(FloatRegister mask,
