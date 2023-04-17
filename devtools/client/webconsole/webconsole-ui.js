@@ -240,6 +240,9 @@ class WebConsoleUI {
     this.proxy = null;
     this.additionalProxies = null;
 
+    this.networkDataProvider.destroy();
+    this.networkDataProvider = null;
+
     
     this.window = this.hud = this.wrapper = null;
   }
