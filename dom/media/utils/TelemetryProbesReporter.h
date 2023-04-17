@@ -8,6 +8,7 @@
 #include "MediaInfo.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/AwakeTimeStamp.h"
+#include "AudioChannelService.h"
 #include "nsISupportsImpl.h"
 
 namespace mozilla {
@@ -48,12 +49,15 @@ class TelemetryProbesReporter final {
 
   static MediaContent MediaInfoToMediaContent(const MediaInfo& aInfo);
 
+  using AudibleState = dom::AudioChannelService::AudibleState;
+
   
   void OnPlay(Visibility aVisibility, MediaContent aContent);
   void OnPause(Visibility aVisibility);
   void OnShutdown();
 
   void OnVisibilityChanged(Visibility aVisibility);
+  void OnAudibleChanged(AudibleState aAudible);
   void OnMediaContentChanged(MediaContent aContent);
   void OnDecodeSuspended();
   void OnDecodeResumed();
@@ -66,11 +70,14 @@ class TelemetryProbesReporter final {
  private:
   void StartInvisibleVideoTimeAcculator();
   void PauseInvisibleVideoTimeAcculator();
+  void StartInaudibleAudioTimeAcculator();
+  void PauseInaudibleAudioTimeAcculator();
   bool HasOwnerHadValidVideo() const;
   void AssertOnMainThreadAndNotShutdown() const;
 
   void ReportTelemetry();
   void ReportResultForVideo();
+  void ReportResultForAudio();
   void ReportResultForVideoFrameStatistics(double aTotalPlayTimeS,
                                            const nsCString& key);
 
@@ -121,13 +128,21 @@ class TelemetryProbesReporter final {
   TimeDurationAccumulator mTotalVideoPlayTime;
 
   
+  TimeDurationAccumulator mTotalAudioPlayTime;
+
+  
   
   TimeDurationAccumulator mInvisibleVideoPlayTime;
+
+  
+  TimeDurationAccumulator mInaudibleAudioPlayTime;
 
   
   TimeDurationAccumulator mVideoDecodeSuspendedTime;
 
   Visibility mMediaElementVisibility = Visibility::eInitial;
+
+  AudibleState mAudibleState = AudibleState::eNotAudible;
 
   MediaContent mMediaContent = MediaContent::MEDIA_HAS_NOTHING;
 
