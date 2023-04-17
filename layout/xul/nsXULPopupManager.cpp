@@ -1597,7 +1597,9 @@ void nsXULPopupManager::BeginShowingPopup(const PendingPopup& aPendingPopup,
   if (popupFrame) {
     
     
-    if (status == nsEventStatus_eConsumeNoDefault) {
+    
+    if (popupFrame->PopupState() == ePopupClosed ||
+        status == nsEventStatus_eConsumeNoDefault) {
       popupFrame->SetPopupState(ePopupClosed);
       popupFrame->ClearTriggerContent();
     } else {
