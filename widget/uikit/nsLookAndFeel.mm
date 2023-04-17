@@ -248,6 +248,11 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID, ColorScheme, nscolor& aResult) {
       
       aResult = NS_RGB(0x14, 0x4F, 0xAE);
       break;
+    case ColorID::MozNativevisitedhyperlinktext:
+      
+      
+      aResult = GetColorFromUIColor([UIColor systemPurpleColor]);
+      break;
     default:
       NS_WARNING("Someone asked nsILookAndFeel for a color I don't know about");
       aResult = NS_RGB(0xff, 0xff, 0xff);

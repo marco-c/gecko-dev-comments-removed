@@ -22,6 +22,7 @@
 #include "SDKDeclarations.h"
 
 #import <Cocoa/Cocoa.h>
+#import <AppKit/NSColor.h>
 
 
 #include "nsObjCExceptions.h"
@@ -336,6 +337,9 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme, nscolor
       break;
     case ColorID::MozNativehyperlinktext:
       color = GetColorFromNSColor(NSColor.linkColor);
+      break;
+    case ColorID::MozNativevisitedhyperlinktext:
+      color = GetColorFromNSColor(NSColor.systemPurpleColor);
       break;
     
     

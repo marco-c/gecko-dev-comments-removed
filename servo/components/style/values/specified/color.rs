@@ -362,6 +362,10 @@ pub enum SystemColor {
     
     MozNativehyperlinktext,
 
+    
+    #[css(skip)]
+    MozNativevisitedhyperlinktext,
+
     #[parse(aliases = "-moz-hyperlinktext")]
     Linktext,
     #[parse(aliases = "-moz-activehyperlinktext")]

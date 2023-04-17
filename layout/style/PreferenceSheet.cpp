@@ -112,18 +112,29 @@ void PreferenceSheet::Prefs::Load(bool aIsChrome) {
         useStandins ? ColorID::Window : ColorID::WindowBackground, scheme,
         standins, mColors.mDefaultBackground);
     mColors.mLink = LookAndFeel::Color(ColorID::MozNativehyperlinktext, scheme,
-                                    standins, mColors.mLink);
+                                       standins, mColors.mLink);
+
+    if (auto color = LookAndFeel::GetColor(
+            ColorID::MozNativevisitedhyperlinktext, scheme, standins)) {
+      
+      mColors.mVisitedLink = *color;
+    } else if (mUseAccessibilityTheme) {
+      
+      
+      
+      
+      mColors.mVisitedLink = NS_RGB(AVG2(NS_GET_R(mColors.mDefault),
+                                         NS_GET_R(mColors.mDefaultBackground)),
+                                    NS_GET_G(mColors.mDefault),
+                                    AVG2(NS_GET_B(mColors.mDefault),
+                                         NS_GET_B(mColors.mDefaultBackground)));
+    } else {
+      
+    }
   }
 
   if (mUseAccessibilityTheme && !useStandins) {
     mColors.mActiveLink = mColors.mLink;
-    
-    
-    
-    mColors.mVisitedLink = NS_RGB(
-        AVG2(NS_GET_R(mColors.mDefault), NS_GET_R(mColors.mDefaultBackground)),
-        NS_GET_G(mColors.mDefault),
-        AVG2(NS_GET_B(mColors.mDefault), NS_GET_B(mColors.mDefaultBackground)));
   } else {
     GetColor("browser.active_color", mColors.mActiveLink);
     GetColor("browser.visited_color", mColors.mVisitedLink);
