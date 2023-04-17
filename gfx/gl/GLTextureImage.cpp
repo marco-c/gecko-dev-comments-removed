@@ -51,13 +51,15 @@ already_AddRefed<TextureImage> TextureImage::Create(
 
 bool TextureImage::UpdateFromDataSource(gfx::DataSourceSurface* aSurface,
                                         const nsIntRegion* aDestRegion,
-                                        const gfx::IntPoint* aSrcPoint) {
+                                        const gfx::IntPoint* aSrcOffset,
+                                        const gfx::IntPoint* aDstOffset) {
   nsIntRegion destRegion = aDestRegion
                                ? *aDestRegion
                                : IntRect(0, 0, aSurface->GetSize().width,
                                          aSurface->GetSize().height);
-  gfx::IntPoint srcPoint = aSrcPoint ? *aSrcPoint : gfx::IntPoint(0, 0);
-  return DirectUpdate(aSurface, destRegion, srcPoint);
+  gfx::IntPoint srcPoint = aSrcOffset ? *aSrcOffset : gfx::IntPoint(0, 0);
+  gfx::IntPoint srcPointOut = aDstOffset ? *aDstOffset : gfx::IntPoint(0, 0);
+  return DirectUpdate(aSurface, destRegion, srcPoint, srcPointOut);
 }
 
 gfx::IntRect TextureImage::GetTileRect() {
@@ -99,7 +101,8 @@ void BasicTextureImage::BindTexture(GLenum aTextureUnit) {
 
 bool BasicTextureImage::DirectUpdate(
     gfx::DataSourceSurface* aSurf, const nsIntRegion& aRegion,
-    const gfx::IntPoint& aFrom ) {
+    const gfx::IntPoint& aSrcOffset ,
+    const gfx::IntPoint& aDstOffset ) {
   nsIntRegion region;
   if (mTextureState == Valid) {
     region = aRegion;
@@ -110,7 +113,7 @@ bool BasicTextureImage::DirectUpdate(
   size_t uploadSize;
 
   mTextureFormat = UploadSurfaceToTexture(mGLContext, aSurf, region, mTexture,
-                                          mSize, &uploadSize, needInit, aFrom);
+                                          mSize, &uploadSize, needInit, aSrcOffset, aDstOffset);
   if (mTextureFormat == SurfaceFormat::UNKNOWN) {
     return false;
   }
@@ -174,7 +177,7 @@ static bool WantsSmallTiles(GLContext* gl) {
 
   
   
-  if (!CanUploadSubTextures(gl)) return true;
+  if (!ShouldUploadSubTextures(gl)) return true;
 
   
   
@@ -209,7 +212,11 @@ TiledTextureImage::~TiledTextureImage() = default;
 
 bool TiledTextureImage::DirectUpdate(
     gfx::DataSourceSurface* aSurf, const nsIntRegion& aRegion,
-    const gfx::IntPoint& aFrom ) {
+    const gfx::IntPoint& aSrcOffset ,
+    const gfx::IntPoint& aDstOffset ) {
+  
+  MOZ_RELEASE_ASSERT(aDstOffset == gfx::IntPoint());
+
   if (mSize.width == 0 || mSize.height == 0) {
     return true;
   }
@@ -239,7 +246,7 @@ bool TiledTextureImage::DirectUpdate(
     tileRegion.MoveBy(-xPos, -yPos);  
 
     result &= mImages[mCurrentImage]->DirectUpdate(
-        aSurf, tileRegion, aFrom + gfx::IntPoint(xPos, yPos));
+        aSurf, tileRegion, aSrcOffset + gfx::IntPoint(xPos, yPos));
 
     if (mCurrentImage == mImages.Length() - 1) {
       

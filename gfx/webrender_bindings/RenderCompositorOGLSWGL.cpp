@@ -1,10 +1,10 @@
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ *
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "RenderCompositorOGLSWGL.h"
 
@@ -32,7 +32,7 @@
 
 namespace mozilla {
 using namespace layers;
-
+using namespace gfx;
 namespace wr {
 
 UniquePtr<RenderCompositor> RenderCompositorOGLSWGL::Create(
@@ -57,9 +57,9 @@ UniquePtr<RenderCompositor> RenderCompositorOGLSWGL::Create(
 
   nsCString log;
   RefPtr<CompositorOGL> compositorOGL;
-  compositorOGL = new CompositorOGL(nullptr, aWidget,  -1,
-                                     -1,
-                                     true);
+  compositorOGL = new CompositorOGL(nullptr, aWidget, /* aSurfaceWidth */ -1,
+                                    /* aSurfaceHeight */ -1,
+                                    /* aUseExternalSurfaceSize */ true);
   if (!compositorOGL->Initialize(context, programs, &log)) {
     gfxCriticalNote << "Failed to initialize CompositorOGL for SWGL: "
                     << log.get();
@@ -128,7 +128,7 @@ EGLSurface RenderCompositorOGLSWGL::CreateEGLSurface() {
     gfxCriticalNote << "Failed to create EGLSurface";
   }
 
-  
+  // The subsequent render after creating a new surface must be a full render.
   mFullRender = true;
 
   return surface;
@@ -140,7 +140,7 @@ void RenderCompositorOGLSWGL::DestroyEGLSurface() {
   const auto& gle = gl::GLContextEGL::Cast(GetGLContext());
   const auto& egl = gle->mEgl;
 
-  
+  // Release EGLSurface of back buffer before calling ResizeBuffers().
   if (mEGLSurface) {
     gle->SetEGLSurfaceOverride(EGL_NO_SURFACE);
     egl->fDestroySurface(mEGLSurface);
@@ -155,7 +155,7 @@ bool RenderCompositorOGLSWGL::BeginFrame() {
 #ifdef MOZ_WIDGET_ANDROID
   java::GeckoSurfaceTexture::DestroyUnused((int64_t)GetGLContext());
   GetGLContext()
-      ->MakeCurrent();  
+      ->MakeCurrent();  // DestroyUnused can change the current context!
 #endif
 
   return true;
@@ -174,18 +174,18 @@ void RenderCompositorOGLSWGL::HandleExternalImage(
 
 #ifdef MOZ_WIDGET_ANDROID
   GLenum target =
-      LOCAL_GL_TEXTURE_EXTERNAL;  
+      LOCAL_GL_TEXTURE_EXTERNAL;  // This is required by SurfaceTexture
   GLenum wrapMode = LOCAL_GL_CLAMP_TO_EDGE;
 
   auto* host = aExternalImage->AsRenderAndroidSurfaceTextureHost();
-  
-  
+  // We need to hold the texture source separately from the effect,
+  // since the effect doesn't hold a strong reference.
   RefPtr<SurfaceTextureSource> layer = new SurfaceTextureSource(
       (TextureSourceProvider*)mCompositor, host->mSurfTex, host->mFormat,
-      target, wrapMode, host->mSize,  true);
+      target, wrapMode, host->mSize, /* aIgnoreTransform */ true);
   RefPtr<TexturedEffect> texturedEffect =
       CreateTexturedEffect(host->mFormat, layer, aFrameSurface.mFilter,
-                            true);
+                           /* isAlphaPremultiplied */ true);
 
   gfx::Rect drawRect(0, 0, host->mSize.width, host->mSize.height);
 
@@ -208,13 +208,13 @@ void RenderCompositorOGLSWGL::Pause() {
 
 bool RenderCompositorOGLSWGL::Resume() {
 #ifdef MOZ_WIDGET_ANDROID
-  
+  // Destroy EGLSurface if it exists.
   DestroyEGLSurface();
 
-  
-  
-  
-  
+  // Query the new surface size as this may have changed. We cannot use
+  // mWidget->GetClientSize() due to a race condition between
+  // nsWindow::Resize() being called and the frame being rendered after the
+  // surface is resized.
   EGLNativeWindowType window = mWidget->AsAndroid()->GetEGLNativeWindow();
   JNIEnv* const env = jni::GetEnvForThread();
   ANativeWindow* const nativeWindow =
@@ -226,7 +226,7 @@ bool RenderCompositorOGLSWGL::Resume() {
   GetGLContext()->fGetIntegerv(LOCAL_GL_MAX_TEXTURE_SIZE,
                                (GLint*)&maxTextureSize);
 
-  
+  // When window size is too big, hardware buffer allocation could fail.
   if (maxTextureSize < width || maxTextureSize < height) {
     gfxCriticalNote << "Too big ANativeWindow size(" << width << ", " << height
                     << ") MaxTextureSize " << maxTextureSize;
@@ -297,7 +297,7 @@ bool RenderCompositorOGLSWGL::MaybeReadback(
   return true;
 }
 
-
+// This is a DataSourceSurface that represents a 0-based PBO for GLTextureImage.
 class PBOUnpackSurface : public gfx::DataSourceSurface {
  public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(PBOUnpackSurface, override)
@@ -314,9 +314,9 @@ class PBOUnpackSurface : public gfx::DataSourceSurface {
     return gfx::SurfaceFormat::B8G8R8A8;
   }
 
-  
-  
-  
+  // PBO offsets need to start from a 0 address, but DataSourceSurface::Map
+  // checks for failure by comparing the address against nullptr. Override Map
+  // to work around this.
   bool Map(MapType, MappedSurface* aMappedSurface) override {
     aMappedSurface->mData = GetData();
     aMappedSurface->mStride = Stride();
@@ -336,7 +336,7 @@ RenderCompositorOGLSWGL::TileOGL::TileOGL(
   auto* gl = mTexture->gl();
   if (gl && gl->HasPBOState() && gl->MakeCurrent()) {
     mSurface = new PBOUnpackSurface(aSize);
-    
+    // Create a PBO large enough to encompass any valid rects within the tile.
     gl->fGenBuffers(1, &mPBO);
     gl->fBindBuffer(LOCAL_GL_PIXEL_UNPACK_BUFFER, mPBO);
     gl->fBufferData(LOCAL_GL_PIXEL_UNPACK_BUFFER,
@@ -344,7 +344,7 @@ RenderCompositorOGLSWGL::TileOGL::TileOGL(
                     LOCAL_GL_DYNAMIC_DRAW);
     gl->fBindBuffer(LOCAL_GL_PIXEL_UNPACK_BUFFER, 0);
   } else {
-    
+    // Couldn't allocate a PBO, so just use a memory surface instead.
     mSurface = gfx::Factory::CreateDataSourceSurface(
         aSize, gfx::SurfaceFormat::B8G8R8A8);
   }
@@ -373,10 +373,10 @@ bool RenderCompositorOGLSWGL::TileOGL::Map(wr::DeviceIntRect aDirtyRect,
     if (!gl) {
       return false;
     }
-    
-    
-    
-    
+    // Map the PBO, but only within the range of the buffer that spans from the
+    // linear start offset to the linear end offset. Since we don't care about
+    // the previous contents of the buffer, we can just tell OpenGL to
+    // invalidate the entire buffer, even though we're only mapping a sub-range.
     gl->fBindBuffer(LOCAL_GL_PIXEL_UNPACK_BUFFER, mPBO);
     size_t stride = mSurface->Stride();
     size_t offset =
@@ -393,16 +393,35 @@ bool RenderCompositorOGLSWGL::TileOGL::Map(wr::DeviceIntRect aDirtyRect,
     *aData = data;
     *aStride = stride;
   } else {
-    
+    // No PBO is available, so just directly write to the memory surface.
     gfx::DataSourceSurface::MappedSurface map;
     if (!mSurface->Map(gfx::DataSourceSurface::READ_WRITE, &map)) {
       return false;
     }
-    
+    // Verify that we're not somehow using a PBOUnpackSurface.
     MOZ_ASSERT(map.mData != nullptr);
-    *aData = map.mData + aValidRect.min.y * map.mStride +
-             aValidRect.min.x * sizeof(uint32_t);
-    *aStride = map.mStride;
+    // glTex(Sub)Image on ES doesn't support arbitrary strides without
+    // the EXT_unpack_subimage extension. To avoid needing to make a
+    // copy of the data we'll always draw it with stride = bpp*width
+    // unless we're uploading the entire texture.
+    if (!mTexture->IsValid()) {
+      // If we don't have a texture we need to position our
+      // data in the correct spot because we're going to upload
+      // the entire surface
+      *aData = map.mData + aValidRect.min.y * map.mStride +
+               aValidRect.min.x * sizeof(uint32_t);
+
+      *aStride = map.mStride;
+      mSubSurface = nullptr;
+    } else {
+      // Otherwise, we can just use the top left as a scratch space
+      *aData = map.mData;
+      *aStride = aDirtyRect.width() * BytesPerPixel(mSurface->GetFormat());
+      mSubSurface = Factory::CreateWrappingDataSourceSurface(
+          (uint8_t*)*aData, *aStride,
+          IntSize(aDirtyRect.width(), aDirtyRect.height()),
+          mSurface->GetFormat());
+    }
   }
   return true;
 }
@@ -410,9 +429,9 @@ bool RenderCompositorOGLSWGL::TileOGL::Map(wr::DeviceIntRect aDirtyRect,
 void RenderCompositorOGLSWGL::TileOGL::Unmap(const gfx::IntRect& aDirtyRect) {
   nsIntRegion dirty(aDirtyRect);
   if (mPBO) {
-    
-    
-    
+    // If there is a PBO, it must be unmapped before it can be sourced from.
+    // Leave the PBO bound before the call to Update so that the texture uploads
+    // will source from it.
     auto* gl = mTexture->gl();
     if (!gl) {
       return;
@@ -422,10 +441,25 @@ void RenderCompositorOGLSWGL::TileOGL::Unmap(const gfx::IntRect& aDirtyRect) {
     mTexture->Update(mSurface, &dirty);
     gl->fBindBuffer(LOCAL_GL_PIXEL_UNPACK_BUFFER, 0);
   } else {
-    mSurface->Unmap();
-    mTexture->Update(mSurface, &dirty);
+    if (mSubSurface) {
+      mSurface->Unmap();
+      // Our subsurface has a stride = aDirtyRect.width
+      // We use a negative offset to move it to match
+      // the dirty rect's top-left. These two offsets
+      // will cancel each other out by the time we reach
+      // TexSubImage.
+      IntPoint srcOffset = {0, 0};
+      IntPoint dstOffset = aDirtyRect.TopLeft();
+      // adjust the dirty region to be relative to the dstOffset
+      dirty.MoveBy(-dstOffset);
+      mTexture->Update(mSubSurface, &dirty, &srcOffset, &dstOffset);
+      mSubSurface = nullptr;
+    } else {
+      mSurface->Unmap();
+      mTexture->Update(mSurface, &dirty);
+    }
   }
 }
 
-}  
-}  
+}  // namespace wr
+}  // namespace mozilla

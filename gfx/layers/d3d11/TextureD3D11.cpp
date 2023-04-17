@@ -1386,10 +1386,12 @@ bool DXGIYCbCrTextureHostD3D11::AcquireTextureSource(
 
 bool DataTextureSourceD3D11::Update(DataSourceSurface* aSurface,
                                     nsIntRegion* aDestRegion,
-                                    IntPoint* aSrcOffset) {
+                                    IntPoint* aSrcOffset,
+                                    IntPoint* aDstOffset) {
   
   
   MOZ_ASSERT(!aSrcOffset);
+  MOZ_RELEASE_ASSERT(!aDstOffset);
   MOZ_ASSERT(aSurface);
 
   MOZ_ASSERT(mAllowTextureUploads);
