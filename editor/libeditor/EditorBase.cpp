@@ -2599,7 +2599,7 @@ nsINode* EditorBase::GetFirstEditableNode(nsINode* aRoot) {
   nsIContent* content =
       HTMLEditUtils::GetFirstLeafChild(*aRoot, {LeafNodeType::OnlyLeafNode});
   if (content && !EditorUtils::IsEditableContent(*content, editorType)) {
-    content = GetNextEditableNode(*content);
+    content = GetNextContent(*content, {WalkTreeOption::IgnoreNonEditableNode});
   }
 
   return (content != aRoot) ? content : nullptr;
@@ -3443,8 +3443,8 @@ EditorBase::CreateTransactionForCollapsedRange(
       point.IsStartOfContainer()) {
     
     
-    nsIContent* previousEditableContent =
-        GetPreviousEditableNode(*point.GetContainer());
+    nsIContent* previousEditableContent = GetPreviousContent(
+        *point.GetContainer(), {WalkTreeOption::IgnoreNonEditableNode});
     if (!previousEditableContent) {
       NS_WARNING("There was no editable content before the collapsed range");
       return nullptr;
@@ -3485,8 +3485,8 @@ EditorBase::CreateTransactionForCollapsedRange(
       point.IsEndOfContainer()) {
     
     
-    nsIContent* nextEditableContent =
-        GetNextEditableNode(*point.GetContainer());
+    nsIContent* nextEditableContent = GetNextContent(
+        *point.GetContainer(), {WalkTreeOption::IgnoreNonEditableNode});
     if (!nextEditableContent) {
       NS_WARNING("There was no editable content after the collapsed range");
       return nullptr;
@@ -3545,8 +3545,8 @@ EditorBase::CreateTransactionForCollapsedRange(
 
   nsIContent* editableContent =
       aHowToHandleCollapsedRange == HowToHandleCollapsedRange::ExtendBackward
-          ? GetPreviousEditableNode(point)
-          : GetNextEditableNode(point);
+          ? GetPreviousContent(point, {WalkTreeOption::IgnoreNonEditableNode})
+          : GetNextContent(point, {WalkTreeOption::IgnoreNonEditableNode});
   if (!editableContent) {
     NS_WARNING("There was no editable content around the collapsed range");
     return nullptr;
@@ -3556,8 +3556,10 @@ EditorBase::CreateTransactionForCollapsedRange(
     
     editableContent =
         aHowToHandleCollapsedRange == HowToHandleCollapsedRange::ExtendBackward
-            ? GetPreviousEditableNode(*editableContent)
-            : GetNextEditableNode(*editableContent);
+            ? GetPreviousContent(*editableContent,
+                                 {WalkTreeOption::IgnoreNonEditableNode})
+            : GetNextContent(*editableContent,
+                             {WalkTreeOption::IgnoreNonEditableNode});
   }
   if (NS_WARN_IF(!editableContent)) {
     NS_WARNING(
