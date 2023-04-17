@@ -173,7 +173,6 @@ const BlocklistTelemetry = {
 
 
 
-
   async recordRSBlocklistLastModified(blocklistType, remoteSettingsClient) {
     
     
