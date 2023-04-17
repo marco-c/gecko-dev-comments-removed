@@ -176,7 +176,14 @@ pref("app.update.langpack.enabled", true);
   
   
   
-#if defined(NIGHTLY_BUILD) && defined(XP_WIN)
+  
+  
+  
+  
+  
+  
+  
+#if defined(EARLY_BETA_OR_EARLIER) && defined(XP_WIN) || defined(MOZ_DEV_EDITION) && defined(XP_WIN)
   pref("app.update.background.scheduling.enabled", true);
   pref("app.update.background.experimental", true);
 #else
