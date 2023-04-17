@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+/* Headers tabpanel */
 
 .network-monitor .headers-panel-container {
   height: 100%;
@@ -128,7 +128,7 @@
 }
 
 .network-monitor .headers-panel-container .accordion .properties-view tr.treeRow {
-  padding: 3px 0 0 0;
+  padding: 1px 0 2px;
 }
 .network-monitor .headers-panel-container .accordion .properties-view tr.treeRow .treeLabelCell {
   float: left;
@@ -149,7 +149,7 @@
   display: inline;
 }
 
-
+/* Summary tabpanel */
 
 .network-monitor .tabpanel-summary-container {
   flex-wrap: wrap;
