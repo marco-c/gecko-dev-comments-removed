@@ -130,10 +130,6 @@ struct APZCTreeManager::TreeBuildingState {
 
   
   
-  std::stack<bool> mParentHasPerspective;
-
-  
-  
   
   
   DeferredTransformMap mPerspectiveTransformsDeferredToChildren;
@@ -430,7 +426,6 @@ void APZCTreeManager::UpdateHitTestingTree(
     LayersId layersId = mRootLayersId;
     seenLayersIds.insert(mRootLayersId);
     ancestorTransforms.push(AncestorTransform());
-    state.mParentHasPerspective.push(false);
     state.mOverrideFlags.push(EventRegionsOverride::NoOverride);
     nsTArray<Maybe<ZoomConstraints>> zoomConstraintsStack;
 
@@ -565,8 +560,6 @@ void APZCTreeManager::UpdateHitTestingTree(
           }
 
           indents.push(gfx::TreeAutoIndent<LOG_DEFAULT>(mApzcTreeLog));
-          state.mParentHasPerspective.push(
-              aLayerMetrics.TransformIsPerspective());
         },
         [&](ScrollNode aLayerMetrics) {
           if (aLayerMetrics.GetAsyncZoomContainerId()) {
@@ -582,7 +575,6 @@ void APZCTreeManager::UpdateHitTestingTree(
           layersId = next->GetLayersId();
           ancestorTransforms.pop();
           indents.pop();
-          state.mParentHasPerspective.pop();
         });
 
     mApzcTreeLog << "[end]\n";
