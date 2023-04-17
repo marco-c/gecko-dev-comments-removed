@@ -51,6 +51,10 @@ class OffsetEntry final {
         mIsValid(true) {}
 
   uint32_t EndOffsetInTextNode() const { return mOffsetInTextNode + mLength; }
+  bool OffsetInTextNodeIsInRangeOrEndOffset(uint32_t aOffsetInTextNode) const {
+    return aOffsetInTextNode >= mOffsetInTextNode &&
+           aOffsetInTextNode <= EndOffsetInTextNode();
+  }
 
   OwningNonNull<Text> mTextNode;
   uint32_t mOffsetInTextNode;
@@ -1792,8 +1796,7 @@ nsresult TextServicesDocument::GetCollapsedSelection(
       NS_ENSURE_TRUE(entry, NS_ERROR_FAILURE);
 
       if (entry->mTextNode == parent->AsText() &&
-          entry->mOffsetInTextNode <= offset &&
-          offset <= entry->EndOffsetInTextNode()) {
+          entry->OffsetInTextNodeIsInRangeOrEndOffset(offset)) {
         *aSelStatus = BlockSelectionStatus::eBlockContains;
         *aSelOffset = entry->mStrOffset + (offset - entry->mOffsetInTextNode);
         *aSelLength = 0;
@@ -1901,8 +1904,8 @@ nsresult TextServicesDocument::GetCollapsedSelection(
     const OffsetEntry* const entry = mOffsetTable[i];
     NS_ENSURE_TRUE(entry, NS_ERROR_FAILURE);
 
-    if (entry->mTextNode == textNode && entry->mOffsetInTextNode <= offset &&
-        offset <= entry->EndOffsetInTextNode()) {
+    if (entry->mTextNode == textNode &&
+        entry->OffsetInTextNodeIsInRangeOrEndOffset(offset)) {
       *aSelStatus = BlockSelectionStatus::eBlockContains;
       *aSelOffset = entry->mStrOffset + (offset - entry->mOffsetInTextNode);
       *aSelLength = 0;
@@ -2113,11 +2116,10 @@ nsresult TextServicesDocument::GetUncollapsedSelection(
     entry = mOffsetTable[i];
     NS_ENSURE_TRUE(entry, NS_ERROR_FAILURE);
     if (!found) {
-      if (entry->mTextNode == p1.get() && entry->mOffsetInTextNode <= o1 &&
-          o1 <= entry->EndOffsetInTextNode()) {
+      if (entry->mTextNode == p1.get() &&
+          entry->OffsetInTextNodeIsInRangeOrEndOffset(o1)) {
         *aSelOffset = entry->mStrOffset + (o1 - entry->mOffsetInTextNode);
-        if (p1 == p2 && entry->mOffsetInTextNode <= o2 &&
-            o2 <= entry->EndOffsetInTextNode()) {
+        if (p1 == p2 && entry->OffsetInTextNodeIsInRangeOrEndOffset(o2)) {
           
           
           *aSelLength = o2 - o1;
@@ -2129,8 +2131,8 @@ nsresult TextServicesDocument::GetUncollapsedSelection(
         found = true;
       }
     } else {  
-      if (entry->mTextNode == p2.get() && entry->mOffsetInTextNode <= o2 &&
-          o2 <= entry->EndOffsetInTextNode()) {
+      if (entry->mTextNode == p2.get() &&
+          entry->OffsetInTextNodeIsInRangeOrEndOffset(o2)) {
         
         
         *aSelLength += o2 - entry->mOffsetInTextNode;
