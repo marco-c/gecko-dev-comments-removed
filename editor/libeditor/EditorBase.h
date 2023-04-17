@@ -861,7 +861,9 @@ class EditorBase : public nsIEditor,
       mHasCanHandleChecked = true;
 #endif  
       
-      if (mEditAction != EditAction::eInitializing && mEditorWasDestroyed) {
+      
+      if (mEditAction != EditAction::eInitializing &&
+          mEditorWasDestroyedDuringHandlingEditAction) {
         NS_WARNING("Editor was destroyed during an edit action being handled");
         return false;
       }
@@ -907,6 +909,16 @@ class EditorBase : public nsIEditor,
                  mEditAction == EditAction::ePasteAsQuotation ||
                  mEditAction == EditAction::eDrop);
       mHasTriedToDispatchBeforeInputEvent = true;
+    }
+
+    
+
+
+
+
+    void MarkAsHandled() {
+      MOZ_ASSERT(!mHandled);
+      mHandled = true;
     }
 
     
@@ -1028,12 +1040,20 @@ class EditorBase : public nsIEditor,
     bool IsAborted() const { return mAborted; }
 
     void OnEditorDestroy() {
-      mEditorWasDestroyed = true;
+      if (!mHandled && mHasTriedToDispatchBeforeInputEvent) {
+        
+        
+        
+        
+        mEditorWasDestroyedDuringHandlingEditAction = true;
+      }
       if (mParentData) {
         mParentData->OnEditorDestroy();
       }
     }
-    bool HasEditorDestroyed() const { return mEditorWasDestroyed; }
+    bool HasEditorDestroyedDuringHandlingEditAction() const {
+      return mEditorWasDestroyedDuringHandlingEditAction;
+    }
 
     void SetTopLevelEditSubAction(EditSubAction aEditSubAction,
                                   EDirection aDirection = eNone) {
@@ -1270,7 +1290,10 @@ class EditorBase : public nsIEditor,
     
     
     
-    bool mEditorWasDestroyed;
+    bool mEditorWasDestroyedDuringHandlingEditAction;
+    
+    
+    bool mHandled;
 
 #ifdef DEBUG
     mutable bool mHasCanHandleChecked = false;
