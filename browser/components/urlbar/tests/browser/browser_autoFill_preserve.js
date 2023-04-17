@@ -14,6 +14,10 @@
 "use strict";
 
 add_task(async function init() {
+  await SpecialPowers.pushPrefEnv({
+    
+    set: [["browser.urlbar.suggest.engines", false]],
+  });
   await cleanUp();
 });
 
