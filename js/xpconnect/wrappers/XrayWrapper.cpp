@@ -1904,8 +1904,8 @@ static bool RecreateLostWaivers(JSContext* cx, const PropertyDescriptor* orig,
   
   
   bool valueWasWaived =
-      orig->value.isObject() &&
-      WrapperFactory::HasWaiveXrayFlag(&orig->value.toObject());
+      orig->value().isObject() &&
+      WrapperFactory::HasWaiveXrayFlag(&orig->value().toObject());
   bool getterWasWaived = (orig->attrs & JSPROP_GETTER) && orig->getter &&
                          WrapperFactory::HasWaiveXrayFlag(
                              JS_FUNC_TO_DATA_PTR(JSObject*, orig->getter));
