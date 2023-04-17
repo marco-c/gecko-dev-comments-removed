@@ -26,18 +26,14 @@ function validMemoryType(shared, initial, max) {
   wasmEvalText(memoryTypeModuleText(shared, initial, max));
   
   
-  if (max <= MaxUint32) {
-    new WebAssembly.Memory(memoryTypeDescriptor(shared, initial, max));
-  }
+  new WebAssembly.Memory(memoryTypeDescriptor(shared, initial, max));
 }
 function invalidMemoryType(shared, initial, max, compileMessage, jsMessage) {
   wasmFailValidateText(memoryTypeModuleText(shared, initial, max), compileMessage);
   assertErrorMessage(() => wasmEvalText(memoryTypeModuleText(shared, initial, max)), WebAssembly.CompileError, compileMessage);
   
   
-  if (max === undefined || max <= MaxUint32) {
-    assertErrorMessage(() => new WebAssembly.Memory(memoryTypeDescriptor(shared, initial, max)), Error, jsMessage);
-  }
+  assertErrorMessage(() => new WebAssembly.Memory(memoryTypeDescriptor(shared, initial, max)), Error, jsMessage);
 }
 
 
@@ -255,13 +251,22 @@ if (getBuildConfiguration()["pointer-byte-size"] == 8) {
 if (WebAssembly.Function) {
     
     
+    
 
     let m64 = new WebAssembly.Memory({index:"i64", initial:1});
     assertEq(m64.type().index, "i64");
 
     let m32 = new WebAssembly.Memory({initial:1});
     assertEq(m32.type().index, "i32");
+
+    let ins = new WebAssembly.Instance(new WebAssembly.Module(wasmTextToBinary(`
+(module
+  (memory (export "mem") i64 1 0x100000000))`)));
+    assertEq(ins.exports.mem.type().minimum, 1);
+    assertEq(ins.exports.mem.type().maximum, 0x100000000);
 }
+
+
 
 const SMALL = 64;  
 const BIG = 131072;  
