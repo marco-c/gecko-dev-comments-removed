@@ -413,6 +413,7 @@ const MultiStageAboutWelcome = props => {
       id: screen.id,
       totalNumberOfScreens: props.screens.length,
       order: order,
+      autoClose: screen.autoClose,
       content: screen.content,
       navigate: handleTransition,
       topSites: topSites,
@@ -543,6 +544,7 @@ class WelcomeScreen extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureCom
       content: this.props.content,
       id: this.props.id,
       order: this.props.order,
+      autoClose: this.props.autoClose,
       activeTheme: this.props.activeTheme,
       totalNumberOfScreens: this.props.totalNumberOfScreens - 1,
       handleAction: this.handleAction
@@ -752,13 +754,26 @@ class MultiStageProtonScreen extends react__WEBPACK_IMPORTED_MODULE_0___default.
 
   render() {
     const {
+      autoClose,
       content,
       totalNumberOfScreens: total
     } = this.props;
-    const isWelcomeScreen = this.props.order === 0; 
+    const isWelcomeScreen = this.props.order === 0;
+    const isLastScreen = this.props.order === total;
+    const autoCloseTime = 20000; 
     
 
     const screenClassName = isWelcomeScreen ? "screen-0" : `${this.props.order === 1 ? `dialog-initial` : ``} ${this.props.order === total ? `dialog-last` : ``} screen-${this.props.order % 2 !== 0 ? 1 : 2}`;
+
+    if (this.props.order === total && autoClose) {
+      let currentURL = window.location.href;
+      setTimeout(function () {
+        if (window.location.href === currentURL) {
+          window.location.href = "about:home";
+        }
+      }, autoCloseTime);
+    }
+
     return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("main", {
       className: `screen ${this.props.id} ${screenClassName}`
     }, isWelcomeScreen ? react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
@@ -795,10 +810,12 @@ class MultiStageProtonScreen extends react__WEBPACK_IMPORTED_MODULE_0___default.
       className: "main-content"
     }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
       className: `brand-logo ${content.hideLogo ? "hide" : ""}`
-    }), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+    }), isLastScreen && content.hasFancyTitle ? react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+      className: "confetti"
+    }) : null, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
       className: "main-content-inner"
     }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
-      className: "welcome-text"
+      className: `welcome-text ${content.hasFancyTitle ? "fancy-headings" : ""}`
     }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__["Localized"], {
       text: content.title
     }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("h1", {
