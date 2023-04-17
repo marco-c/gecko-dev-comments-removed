@@ -2,6 +2,12 @@
 
 
 
+
+
+
+
+#include "jsfriendapi.h"
+
 #include "js/ArrayBuffer.h"             
 #include "js/experimental/TypedData.h"  
 #include "js/GlobalObject.h"            
@@ -12,6 +18,7 @@
 #include "vm/Realm.h"
 #include "vm/Uint8Clamped.h"  
 
+#include "vm/JSObject-inl.h"
 #include "vm/Realm-inl.h"
 #include "vm/TypedArrayObject-inl.h"  
 
