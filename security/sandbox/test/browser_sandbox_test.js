@@ -17,7 +17,7 @@ function test() {
   var processTypes = ["tab", "socket", "gpu"];
 
   
-  Services.obs.addObserver(function result(subject, topic, data) {
+  let sandboxTestResult = (subject, topic, data) => {
     let { testid, shouldPermit, wasPermitted, message } = JSON.parse(data);
     ok(
       shouldPermit == wasPermitted,
@@ -28,20 +28,26 @@ function test() {
         "permitted.  | " +
         message
     );
-  }, "sandbox-test-result");
+  };
+  Services.obs.addObserver(sandboxTestResult, "sandbox-test-result");
+
+  var remainingTests = processTypes.length;
 
   
-  var remainingTests = processTypes.length;
-  Services.obs.addObserver(_ => {
+  let sandboxTestDone = () => {
     remainingTests = remainingTests - 1;
     if (remainingTests == 0) {
+      Services.obs.removeObserver(sandboxTestResult, "sandbox-test-result");
+      Services.obs.removeObserver(sandboxTestDone, "sandbox-test-done");
+
       
       
       comp.finishTests();
       
       finish();
     }
-  }, "sandbox-test-done");
+  };
+  Services.obs.addObserver(sandboxTestDone, "sandbox-test-done");
 
   var comp = Cc["@mozilla.org/sandbox/sandbox-test;1"].getService(
     Ci.mozISandboxTest
