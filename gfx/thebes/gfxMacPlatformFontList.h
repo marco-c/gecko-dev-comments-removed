@@ -127,7 +127,8 @@ class gfxMacPlatformFontList final : public gfxPlatformFontList {
 
   static int32_t AppleWeightToCSSWeight(int32_t aAppleWeight);
 
-  gfxFontEntry* LookupLocalFont(const nsACString& aFontName,
+  gfxFontEntry* LookupLocalFont(nsPresContext* aPresContext,
+                                const nsACString& aFontName,
                                 WeightRange aWeightForEntry,
                                 StretchRange aStretchForEntry,
                                 SlantStyleRange aStyleForEntry) override;
@@ -139,13 +140,11 @@ class gfxMacPlatformFontList final : public gfxPlatformFontList {
                                  const uint8_t* aFontData,
                                  uint32_t aLength) override;
 
-  bool FindAndAddFamilies(mozilla::StyleGenericFontFamily aGeneric,
-                          const nsACString& aFamily,
-                          nsTArray<FamilyAndGeneric>* aOutput,
-                          FindFamiliesFlags aFlags,
-                          gfxFontStyle* aStyle = nullptr,
-                          nsAtom* aLanguage = nullptr,
-                          gfxFloat aDevToCssSize = 1.0) override;
+  bool FindAndAddFamilies(
+      nsPresContext* aPresContext, mozilla::StyleGenericFontFamily aGeneric,
+      const nsACString& aFamily, nsTArray<FamilyAndGeneric>* aOutput,
+      FindFamiliesFlags aFlags, gfxFontStyle* aStyle = nullptr,
+      nsAtom* aLanguage = nullptr, gfxFloat aDevToCssSize = 1.0) override;
 
   
   
@@ -162,7 +161,8 @@ class gfxMacPlatformFontList final : public gfxPlatformFontList {
   void ReadSystemFontList(mozilla::dom::SystemFontList*);
 
  protected:
-  FontFamily GetDefaultFontForPlatform(const gfxFontStyle* aStyle,
+  FontFamily GetDefaultFontForPlatform(nsPresContext* aPresContext,
+                                       const gfxFontStyle* aStyle,
                                        nsAtom* aLanguage = nullptr) override;
 
  private:
@@ -197,7 +197,8 @@ class gfxMacPlatformFontList final : public gfxPlatformFontList {
 
   
   
-  gfxFontEntry* PlatformGlobalFontFallback(const uint32_t aCh,
+  gfxFontEntry* PlatformGlobalFontFallback(nsPresContext* aPresContext,
+                                           const uint32_t aCh,
                                            Script aRunScript,
                                            const gfxFontStyle* aMatchStyle,
                                            FontFamily& aMatchedFamily) override;

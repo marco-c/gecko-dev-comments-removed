@@ -807,19 +807,6 @@ struct GlobalFontMatch {
 };
 
 
-
-
-
-enum class FontVisibility : uint8_t {
-  Unknown = 0,   
-  Base = 1,      
-  LangPack = 2,  
-  User = 3,      
-  Hidden = 4,    
-  Webfont = 5,   
-  Count = 6,     
-};
-
 namespace IPC {
 template <>
 struct ParamTraits<FontVisibility>

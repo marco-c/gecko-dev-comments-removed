@@ -163,6 +163,8 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
   void UpdateFontCacheUserFonts(gfxUserFontSet* aUserFontSet);
 
+  FontVisibility GetFontVisibility() const { return mFontVisibility; }
+
   
 
 
@@ -1152,6 +1154,11 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   
   
   
+  bool UpdateFontVisibility();
+
+  
+  
+  
 
   
   
@@ -1353,6 +1360,8 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 #ifdef DEBUG
   unsigned mInitialized : 1;
 #endif
+
+  FontVisibility mFontVisibility = FontVisibility::Unknown;
 
  protected:
   virtual ~nsPresContext();
