@@ -2280,6 +2280,10 @@ PeerConnectionWrapper.prototype = {
       candidateType = "relay-tcp";
     }
 
+    if (lCand.relayProtocol === "tls" && candidateType === "relay") {
+      candidateType = "relay-tls";
+    }
+
     if (expectedLocalCandidateType === "srflx" && candidateType === "prflx") {
       
       
