@@ -3,14 +3,6 @@
 
 "use strict";
 
-add_task(async function setup() {
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.proton.enabled", false]],
-  });
-});
-
 add_task(async function testPanelItemWithAccesskey() {
   let win = await loadInitialView("extension");
   let doc = win.document;
