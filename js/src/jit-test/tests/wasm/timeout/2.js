@@ -3,7 +3,7 @@
 
 
 
-var tbl = new WebAssembly.Table({initial:1, element:"anyfunc"});
+var tbl = new WebAssembly.Table({initial:1, element:"funcref"});
 
 new WebAssembly.Instance(new WebAssembly.Module(wasmTextToBinary(`(module
     (import "imports" "tbl" (table 1 funcref))

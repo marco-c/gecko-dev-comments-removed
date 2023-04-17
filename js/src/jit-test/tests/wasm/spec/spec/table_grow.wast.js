@@ -192,7 +192,7 @@ let $4 = instantiate(`(module
 
 
 assert_return(() => invoke($4, `check-table-null`, [0, 9]), [
-  value("anyfunc", null),
+  value("funcref", null),
 ]);
 
 
@@ -200,7 +200,7 @@ assert_return(() => invoke($4, `grow`, [10]), [value("i32", 10)]);
 
 
 assert_return(() => invoke($4, `check-table-null`, [0, 19]), [
-  value("anyfunc", null),
+  value("funcref", null),
 ]);
 
 

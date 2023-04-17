@@ -466,7 +466,7 @@ assert_return(
 
 
 assert_return(() => invoke($0, `select-funcref`, [null, null, 1]), [
-  value("anyfunc", null),
+  value("funcref", null),
 ]);
 
 
