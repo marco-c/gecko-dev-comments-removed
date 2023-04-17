@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "gtest/gtest.h"
 
@@ -33,7 +33,7 @@ static constexpr auto kOther = "other"_ns;
   fprintf(stderr, "First: %s\n", first.get());                          \
   fprintf(stderr, "Second: %s\n", NS_ConvertUTF16toUTF8(second).get()); \
   ASSERT_TRUE((condition));
-// Usage: ASSERT_AND_PRINT(ret.first, ret.second.value(), ...
+
 
 TEST(FilenameEvalParser, ResourceChrome)
 {
@@ -83,7 +83,7 @@ TEST(FilenameEvalParser, BlobData)
 
 TEST(FilenameEvalParser, MozExtension)
 {
-  {  // Test shield.mozilla.org replacing
+  {  
     constexpr auto str =
         u"jar:file:///c:/users/bob/appdata/roaming/mozilla/firefox/profiles/"
         u"foo/"
@@ -95,7 +95,7 @@ TEST(FilenameEvalParser, MozExtension)
                 ret.second.value() ==
                     u"federated-learning@s!/experiments/study/api.js"_ns);
   }
-  {  // Test mozilla.org replacing
+  {  
     constexpr auto str =
         u"jar:file:///c:/users/bob/appdata/roaming/mozilla/firefox/profiles/"
         u"foo/"
@@ -109,7 +109,7 @@ TEST(FilenameEvalParser, MozExtension)
             nsLiteralString(
                 u"federated-learning@shigeld.m!/experiments/study/api.js"));
   }
-  {  // Test truncating
+  {  
     constexpr auto str =
         u"jar:file:///c:/users/bob/appdata/roaming/mozilla/firefox/profiles/"
         u"foo/"
@@ -285,7 +285,7 @@ TEST(FilenameEvalParser, Other)
 TEST(FilenameEvalParser, WebExtensionPathParser)
 {
   {
-    // Set up an Extension and register it so we can test against it.
+    
     mozilla::dom::AutoJSAPI jsAPI;
     ASSERT_TRUE(jsAPI.Init(xpc::PrivilegedJunkScope()));
     JSContext* cx = jsAPI.cx();
@@ -362,3 +362,51 @@ TEST(FilenameEvalParser, WebExtensionPathParser)
   }
 }
 #endif
+
+TEST(FilenameEvalParser, AboutPageParser)
+{
+  {
+    constexpr auto str = u"about:about"_ns;
+    FilenameTypeAndDetails ret =
+        nsContentSecurityUtils::FilenameToFilenameType(str, false);
+#if defined(XP_WIN)
+    ASSERT_TRUE(ret.first == kSanitizedWindowsURL &&
+                ret.second.value() == u"about:about"_ns);
+#else
+    ASSERT_TRUE(ret.first == kOther && !ret.second.isSome());
+#endif
+  }
+  {
+    constexpr auto str = u"about:about?hello"_ns;
+    FilenameTypeAndDetails ret =
+        nsContentSecurityUtils::FilenameToFilenameType(str, false);
+#if defined(XP_WIN)
+    ASSERT_TRUE(ret.first == kSanitizedWindowsURL &&
+                ret.second.value() == u"about:about"_ns);
+#else
+    ASSERT_TRUE(ret.first == kOther && !ret.second.isSome());
+#endif
+  }
+  {
+    constexpr auto str = u"about:about#mom"_ns;
+    FilenameTypeAndDetails ret =
+        nsContentSecurityUtils::FilenameToFilenameType(str, false);
+#if defined(XP_WIN)
+    ASSERT_TRUE(ret.first == kSanitizedWindowsURL &&
+                ret.second.value() == u"about:about"_ns);
+#else
+    ASSERT_TRUE(ret.first == kOther && !ret.second.isSome());
+#endif
+  }
+  {
+    constexpr auto str = u"about:about?hello=there#mom"_ns;
+    FilenameTypeAndDetails ret =
+        nsContentSecurityUtils::FilenameToFilenameType(str, false);
+#if defined(XP_WIN)
+    ASSERT_TRUE(ret.first == kSanitizedWindowsURL &&
+                ret.second.value() == u"about:about"_ns);
+#else
+    ASSERT_TRUE(ret.first == kOther && !ret.second.isSome());
+#endif
+  }
+}
