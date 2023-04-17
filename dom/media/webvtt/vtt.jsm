@@ -1350,7 +1350,6 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "DEBUG_LOG",
       }
 
       
-      let isPrevLineBlank = false;
       while (/\r\n|\n|\r/.test(this.buffer)) {
         let buffer = this.buffer;
         let pos = 0;
@@ -1370,19 +1369,9 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "DEBUG_LOG",
         
         line = line.replace(/[\u0000]/g, "\uFFFD");
 
-        
-        
-        
-        
-        
-        
-        
-        if (isPrevLineBlank && /^NOTE($|[ \t])/.test(line)) {
-          LOG("Ignore comment that starts with 'NOTE'");
-        } else {
+        if (!/^NOTE($|[ \t])/.test(line)) {
           this.parseLine(line);
         }
-        isPrevLineBlank = emptyOrOnlyContainsWhiteSpaces(line);
       }
 
       return this;
@@ -1575,7 +1564,6 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "DEBUG_LOG",
       }
 
       try {
-        LOG(`state=${self.state}, line=${line}`)
         
         if (self.state === "INITIAL") {
           parseSignatureMayThrow(line);
