@@ -12,9 +12,12 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
+  clearTimeout: "resource://gre/modules/Timer.jsm",
   InteractionsBlocklist: "resource:///modules/InteractionsBlocklist.jsm",
+  PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
+  setTimeout: "resource://gre/modules/Timer.jsm",
 });
 
 XPCOMUtils.defineLazyGetter(this, "logConsole", function() {
@@ -40,7 +43,27 @@ XPCOMUtils.defineLazyPreferenceGetter(
   60
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "saveInterval",
+  "browser.places.interactions.saveInterval",
+  10000
+);
+
 const DOMWINDOW_OPENED_TOPIC = "domwindowopened";
+
+
+
+
+
+let gLastTime = 0;
+function monotonicNow() {
+  let time = Date.now();
+  if (time == gLastTime) {
+    time++;
+  }
+  return (gLastTime = time);
+}
 
 
 
@@ -309,6 +332,12 @@ class _Interactions {
   
 
 
+
+  #store = undefined;
+
+  
+
+
   init() {
     if (
       !Services.prefs.getBoolPref("browser.places.interactions.enabled", false)
@@ -352,12 +381,25 @@ class _Interactions {
 
 
 
-  reset() {
+  async reset() {
     logConsole.debug("Reset");
     this.#interactions = new WeakMap();
     this.#userIsIdle = false;
     this._pageViewStartTime = Cu.now();
     this.#typingInteraction?.resetTypingInteraction();
+    await this.store.reset();
+  }
+
+  
+
+
+
+
+  get store() {
+    if (!this.#store) {
+      this.#store = new InteractionsStore();
+    }
+    return this.#store;
   }
 
   
@@ -380,11 +422,14 @@ class _Interactions {
     }
 
     logConsole.debug("New interaction", docInfo);
+    let now = monotonicNow();
     interaction = {
       url: docInfo.url,
       totalViewTime: 0,
       typingTime: 0,
       keypresses: 0,
+      created_at: now,
+      updated_at: now,
     };
     this.#interactions.set(browser, interaction);
 
@@ -460,9 +505,11 @@ class _Interactions {
     const typingInteraction = this.#typingInteraction.getTypingInteraction();
     interaction.typingTime += typingInteraction.typingTime;
     interaction.keypresses += typingInteraction.keypresses;
+    interaction.updated_at = monotonicNow();
     this.#typingInteraction.resetTypingInteraction();
 
-    this._updateDatabase(interaction);
+    logConsole.debug("Add to store: ", interaction);
+    this.store.add(interaction);
   }
 
   
@@ -634,6 +681,78 @@ class _Interactions {
     "nsIObserver",
     "nsISupportsWeakReference",
   ]);
+}
+
+const Interactions = new _Interactions();
+
+
+
+
+
+
+
+
+
+
+
+class InteractionsStore {
+  
+
+
+  #timer = undefined;
+  
+
+
+
+
+  #interactions = new Map();
+  
+
+
+  #timerResolve = undefined;
+
+  constructor() {
+    
+    this.progress = {};
+    PlacesUtils.history.shutdownClient.jsclient.addBlocker(
+      "Interactions.jsm:: store",
+      async () => this.flush(),
+      { fetchState: () => this.progress }
+    );
+
+    
+    this.pendingPromise = Promise.resolve();
+  }
+
+  
+
+
+
+  async flush() {
+    if (this.#timer) {
+      clearTimeout(this.#timer);
+      this.#timerResolve();
+      await this.#updateDatabase();
+    }
+  }
+
+  
+
+
+
+  async reset() {
+    await PlacesUtils.withConnectionWrapper(
+      "Interactions.jsm::reset",
+      async db => {
+        await db.executeCached(`DELETE FROM moz_places_metadata`);
+      }
+    );
+    if (this.#timer) {
+      clearTimeout(this.#timer);
+      this.#timerResolve();
+      this.#interactions.clear();
+    }
+  }
 
   
 
@@ -642,9 +761,81 @@ class _Interactions {
 
 
 
-  async _updateDatabase(interactionInfo) {
-    logConsole.debug("Would update database: ", interactionInfo);
+
+  add(interaction) {
+    let interactionsForUrl = this.#interactions.get(interaction.url);
+    if (!interactionsForUrl) {
+      interactionsForUrl = new Map();
+      this.#interactions.set(interaction.url, interactionsForUrl);
+    }
+    interactionsForUrl.set(interaction.created_at, interaction);
+
+    if (!this.#timer) {
+      let promise = new Promise(resolve => {
+        this.#timerResolve = resolve;
+        this.#timer = setTimeout(() => {
+          logConsole.debug("Save Timer");
+          this.#updateDatabase()
+            .catch(Cu.reportError)
+            .then(resolve);
+        }, saveInterval);
+      });
+      this.pendingPromise = this.pendingPromise.then(() => promise);
+    }
+  }
+
+  async #updateDatabase() {
+    this.#timer = undefined;
+
+    
+    let interactions = this.#interactions;
+    
+    this.#interactions = new Map();
+
+    let params = {};
+    let SQLInsertFragments = [];
+    let i = 0;
+    for (let interactionsForUrl of interactions.values()) {
+      for (let interaction of interactionsForUrl.values()) {
+        params[`url${i}`] = interaction.url;
+        params[`created_at${i}`] = interaction.created_at;
+        params[`updated_at${i}`] = interaction.updated_at;
+        params[`total_view_time${i}`] =
+          Math.round(interaction.totalViewTime) || 0;
+        params[`typing_time${i}`] = Math.round(interaction.typingTime) || 0;
+        params[`key_presses${i}`] = interaction.keypresses || 0;
+        SQLInsertFragments.push(`(
+          (SELECT id FROM moz_places_metadata
+            WHERE place_id = (SELECT id FROM moz_places WHERE url_hash = hash(:url${i}) AND url = :url${i})
+              AND created_at = :created_at${i}),
+          (SELECT id FROM moz_places WHERE url_hash = hash(:url${i}) AND url = :url${i}),
+          :created_at${i},
+          :updated_at${i},
+          :total_view_time${i},
+          :typing_time${i},
+          :key_presses${i}
+        )`);
+        i++;
+      }
+    }
+    logConsole.debug(`Storing ${i} entries in the database`);
+    this.progress.pendingUpdates = i;
+    await PlacesUtils.withConnectionWrapper(
+      "Interactions.jsm::updateDatabase",
+      async db => {
+        await db.executeCached(
+          `
+          WITH inserts (id, place_id, created_at, updated_at, total_view_time, typing_time, key_presses) AS (
+            VALUES ${SQLInsertFragments.join(", ")}
+          )
+          INSERT OR REPLACE INTO moz_places_metadata (
+            id, place_id, created_at, updated_at, total_view_time, typing_time, key_presses
+          ) SELECT * FROM inserts WHERE place_id NOT NULL;
+        `,
+          params
+        );
+      }
+    );
+    this.progress.pendingUpdates = 0;
   }
 }
-
-const Interactions = new _Interactions();

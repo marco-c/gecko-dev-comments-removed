@@ -1184,6 +1184,11 @@ nsresult Database::InitSchema(bool* aDatabaseMigrated) {
         NS_ENSURE_SUCCESS(rv, rv);
       }
 
+      if (currentSchemaVersion < 56) {
+        rv = MigrateV56Up();
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+
       
 
       
@@ -1278,6 +1283,10 @@ nsresult Database::InitSchema(bool* aDatabaseMigrated) {
     
     rv = mMainConn->ExecuteSimpleSQL(CREATE_MOZ_PLACES_METADATA);
     NS_ENSURE_SUCCESS(rv, rv);
+    rv = mMainConn->ExecuteSimpleSQL(
+        CREATE_IDX_MOZ_PLACES_METADATA_PLACECREATED);
+    NS_ENSURE_SUCCESS(rv, rv);
+
     
     rv = mMainConn->ExecuteSimpleSQL(CREATE_MOZ_PLACES_METADATA_SEARCH_QUERIES);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -2187,6 +2196,12 @@ nsresult Database::MigrateV55Up() {
   }
 
   return NS_OK;
+}
+
+nsresult Database::MigrateV56Up() {
+  
+  return mMainConn->ExecuteSimpleSQL(
+      CREATE_IDX_MOZ_PLACES_METADATA_PLACECREATED);
 }
 
 nsresult Database::ConvertOldStyleQuery(nsCString& aURL) {
