@@ -807,10 +807,13 @@ public final class GeckoRuntime implements Parcelable {
 
 
 
+
+
     @UiThread
+    @Deprecated
+    @DeprecationSchedule(id = "get-profile-dir", version = 93)
     public @Nullable File getProfileDir() {
-        ThreadUtils.assertOnUiThread();
-        return GeckoThread.getActiveProfile().getDir();
+        return null;
     }
 
     
