@@ -191,12 +191,6 @@ class AccessibleWrap : public LocalAccessible, public MsaaAccessible {
 
   bool IsRootForHWND();
 
-  
-
-
-  [[nodiscard]] already_AddRefed<IAccessible> GetIAccessibleFor(
-      const VARIANT& aVarChild, bool* aIsDefunct);
-
   virtual void GetNativeInterface(void** aOutAccessible) override;
 
   static IDispatch* NativeAccessible(LocalAccessible* aAccessible);
@@ -210,15 +204,6 @@ class AccessibleWrap : public LocalAccessible, public MsaaAccessible {
 
  protected:
   virtual ~AccessibleWrap() = default;
-
-  HRESULT
-  ResolveChild(const VARIANT& aVarChild, IAccessible** aOutInterface);
-
-  
-
-
-  [[nodiscard]] already_AddRefed<IAccessible> GetRemoteIAccessibleFor(
-      const VARIANT& aVarChild);
 
   
 
