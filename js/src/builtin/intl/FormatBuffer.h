@@ -46,9 +46,7 @@ class FormatBuffer {
   
 
 
-  [[nodiscard]] bool reserve(const size_t size) {
-    return buffer_.reserve(size);
-  }
+  [[nodiscard]] bool reserve(size_t size) { return buffer_.reserve(size); }
 
   
 
