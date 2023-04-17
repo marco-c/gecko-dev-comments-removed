@@ -367,10 +367,6 @@ def build_one_stage(
     
     
     if is_final_stage and android_targets:
-        cmake_args += [
-            "-DLLVM_LIBDIR_SUFFIX=64",
-        ]
-
         android_link_flags = "-fuse-ld=lld"
 
         for target, cfg in android_targets.items():
