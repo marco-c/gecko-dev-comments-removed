@@ -619,8 +619,7 @@ bool nsHTTPSOnlyUtils::IsEqualURIExceptSchemeAndRef(nsIURI* aHTTPSSchemeURI,
 
   
   bool isPrivateWin = aLoadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
-  if (!IsHttpsOnlyModeEnabled(isPrivateWin) &&
-      !IsHttpsFirstModeEnabled(isPrivateWin)) {
+  if (!IsHttpsOnlyModeEnabled(isPrivateWin)) {
     return false;
   }
 
