@@ -1071,13 +1071,18 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
     }
 
     let element = detail.elementWeakRef.get();
+
+    let ccExpMonth = profile["cc-exp-month"];
+    let ccExpYear = profile["cc-exp-year"];
     if (element.tagName != "INPUT" || !element.placeholder) {
+      
+      
+      profile["cc-exp"] =
+        ccExpMonth.toString().padStart(2, "0") + "/" + ccExpYear.toString();
       return;
     }
 
     let result,
-      ccExpMonth = profile["cc-exp-month"],
-      ccExpYear = profile["cc-exp-year"],
       placeholder = element.placeholder;
 
     
@@ -1185,9 +1190,13 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
 
 
   applyTransformers(profile) {
-    this.matchSelectOptions(profile);
+    
+    
+    
+    
     this.creditCardExpDateTransformer(profile);
     this.creditCardExpMonthTransformer(profile);
+    this.matchSelectOptions(profile);
     this.adaptFieldMaxLength(profile);
   }
 
