@@ -127,13 +127,12 @@ function promiseInterruptibleDownload() {
 
 
 async function createDownloadedFile(pathname, contents) {
-  let encoder = new TextEncoder();
   let file = new FileUtils.File(pathname);
   if (file.exists()) {
     info(`File at ${pathname} already exists`);
   }
   
-  await OS.File.writeAtomic(pathname, encoder.encode(contents));
+  await IOUtils.writeUTF8(pathname, contents);
   ok(file.exists(), `Created ${pathname}`);
   return file;
 }
