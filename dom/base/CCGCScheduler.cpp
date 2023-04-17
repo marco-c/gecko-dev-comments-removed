@@ -10,11 +10,6 @@
 
 namespace mozilla {
 
-
-uint32_t CCGCScheduler::SuspectedCCObjects() {
-  return nsCycleCollector_suspectedCount();
-}
-
 void CCGCScheduler::FullGCTimerFired(nsITimer* aTimer) {
   KillFullGCTimer();
 
@@ -330,12 +325,12 @@ void CCGCScheduler::EnsureCCRunner(TimeDuration aDelay, TimeDuration aBudget) {
   }
 }
 
-void CCGCScheduler::MaybePokeCC(TimeStamp aNow) {
+void CCGCScheduler::MaybePokeCC(TimeStamp aNow, uint32_t aSuspectedCCObjects) {
   if (mCCRunner || mDidShutdown) {
     return;
   }
 
-  if (ShouldScheduleCC(aNow)) {
+  if (ShouldScheduleCC(aNow, aSuspectedCCObjects)) {
     
     nsCycleCollector_dispatchDeferredDeletion();
 

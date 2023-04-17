@@ -28,9 +28,7 @@ static TimeStamp Now() { return sNow; }
 
 static uint32_t sSuspected = 0;
 
-inline uint32_t mozilla::CCGCScheduler::SuspectedCCObjects() {
-  return sSuspected;
-}
+static uint32_t SuspectedCCObjects() { return sSuspected; }
 static void SetNumSuspected(uint32_t n) { sSuspected = n; }
 static void SuspectMore(uint32_t n) { sSuspected += n; }
 
@@ -54,7 +52,7 @@ void TestGC::Run(int aNumSlices) {
   
   
   
-  bool neededCCAtStartOfGC = mScheduler.IsCCNeeded(Now());
+  bool neededCCAtStartOfGC = mScheduler.IsCCNeeded(Now(), SuspectedCCObjects());
 
   mScheduler.NoteGCBegin();
 
@@ -67,7 +65,8 @@ void TestGC::Run(int aNumSlices) {
     
     AdvanceTime(budget);
 
-    EXPECT_EQ(mScheduler.IsCCNeeded(Now()), neededCCAtStartOfGC);
+    EXPECT_EQ(mScheduler.IsCCNeeded(Now(), SuspectedCCObjects()),
+              neededCCAtStartOfGC);
 
     
     AdvanceTime(kOneSecond);
@@ -105,7 +104,7 @@ class TestCC {
 
 void TestCC::MaybePokeCC() {
   
-  EXPECT_TRUE(mScheduler.ShouldScheduleCC(Now()));
+  EXPECT_TRUE(mScheduler.ShouldScheduleCC(Now(), SuspectedCCObjects()));
 
   mScheduler.InitCCRunnerStateMachine(CCRunnerState::ReducePurple);
   EXPECT_TRUE(mScheduler.IsEarlyForgetSkippable());
@@ -118,7 +117,8 @@ void TestCC::TimerFires(int aNumSlices) {
   while (true) {
     SuspectMore(1000);
     TimeStamp idleDeadline = Now() + kOneSecond;
-    step = mScheduler.AdvanceCCRunner(idleDeadline, Now());
+    step =
+        mScheduler.AdvanceCCRunner(idleDeadline, Now(), SuspectedCCObjects());
     
     if (step.mAction != CCRunnerAction::ForgetSkippable ||
         step.mRemoveChildless != KeepChildless) {
@@ -130,16 +130,17 @@ void TestCC::TimerFires(int aNumSlices) {
 
   while (step.mYield == Continue) {
     TimeStamp idleDeadline = Now() + kOneSecond;
-    step = mScheduler.AdvanceCCRunner(idleDeadline, Now());
+    step =
+        mScheduler.AdvanceCCRunner(idleDeadline, Now(), SuspectedCCObjects());
   }
   EXPECT_EQ(step.mAction, CCRunnerAction::ForgetSkippable);
   EXPECT_EQ(step.mRemoveChildless, RemoveChildless);
   ForgetSkippable();
 
   TimeStamp idleDeadline = Now() + kOneSecond;
-  step = mScheduler.AdvanceCCRunner(idleDeadline, Now());
+  step = mScheduler.AdvanceCCRunner(idleDeadline, Now(), SuspectedCCObjects());
   EXPECT_EQ(step.mAction, CCRunnerAction::CleanupContentUnbinder);
-  step = mScheduler.AdvanceCCRunner(idleDeadline, Now());
+  step = mScheduler.AdvanceCCRunner(idleDeadline, Now(), SuspectedCCObjects());
   EXPECT_EQ(step.mAction, CCRunnerAction::CleanupDeferred);
 
   RunSlices(aNumSlices);
@@ -152,7 +153,8 @@ void TestCC::ForgetSkippable() {
       mScheduler.ComputeForgetSkippableBudget(Now(), Now() + kTenthSecond);
   EXPECT_NEAR(budget.timeBudget(), kTenthSecond.ToMilliseconds(), 1);
   AdvanceTime(kTenthSecond);
-  mScheduler.NoteForgetSkippableComplete(Now(), suspectedBefore);
+  mScheduler.NoteForgetSkippableComplete(Now(), suspectedBefore,
+                                         SuspectedCCObjects());
 }
 
 void TestCC::RunSlices(int aNumSlices) {
@@ -201,7 +203,7 @@ void TestIdleCC::RunSlice(TimeStamp aCCStartTime, TimeStamp aPrevSliceEnd,
   TimeStamp idleDeadline = Now() + kTenthSecond;
 
   
-  step = mScheduler.AdvanceCCRunner(idleDeadline, Now());
+  step = mScheduler.AdvanceCCRunner(idleDeadline, Now(), SuspectedCCObjects());
   EXPECT_EQ(step.mAction, CCRunnerAction::CycleCollect);
 
   
@@ -239,7 +241,7 @@ void TestNonIdleCC::RunSlice(TimeStamp aCCStartTime, TimeStamp aPrevSliceEnd,
   TimeStamp nullDeadline;
 
   
-  step = mScheduler.AdvanceCCRunner(nullDeadline, Now());
+  step = mScheduler.AdvanceCCRunner(nullDeadline, Now(), SuspectedCCObjects());
   EXPECT_EQ(step.mAction, CCRunnerAction::CycleCollect);
 
   
@@ -292,25 +294,25 @@ static bool BasicScenario(CCGCScheduler& aScheduler, TestGC* aTestGC,
   
   
   SetNumSuspected(3);
-  EXPECT_TRUE(aScheduler.IsCCNeeded(Now()));
+  EXPECT_TRUE(aScheduler.IsCCNeeded(Now(), SuspectedCCObjects()));
 
   
-  EXPECT_TRUE(aScheduler.ShouldScheduleCC(Now()));
+  EXPECT_TRUE(aScheduler.ShouldScheduleCC(Now(), SuspectedCCObjects()));
 
   
   aTestCC->Run(5);
 
   
-  EXPECT_FALSE(aScheduler.IsCCNeeded(Now()));
-  EXPECT_FALSE(aScheduler.ShouldScheduleCC(Now()));
+  EXPECT_FALSE(aScheduler.IsCCNeeded(Now(), SuspectedCCObjects()));
+  EXPECT_FALSE(aScheduler.ShouldScheduleCC(Now(), SuspectedCCObjects()));
   SetNumSuspected(10000);
 
   
-  EXPECT_FALSE(aScheduler.ShouldScheduleCC(Now()));
+  EXPECT_FALSE(aScheduler.ShouldScheduleCC(Now(), SuspectedCCObjects()));
   AdvanceTime(mozilla::kCCDelay);
 
   
-  EXPECT_TRUE(aScheduler.ShouldScheduleCC(Now()));
+  EXPECT_TRUE(aScheduler.ShouldScheduleCC(Now(), SuspectedCCObjects()));
 
   
   EXPECT_TRUE(!aScheduler.InIncrementalGC());
@@ -327,7 +329,7 @@ static TestNonIdleCC ccNonIdle(scheduler);
 TEST(TestScheduler, Idle)
 {
   
-  EXPECT_FALSE(scheduler.ShouldScheduleCC(Now()));
+  EXPECT_FALSE(scheduler.ShouldScheduleCC(Now(), SuspectedCCObjects()));
 
   EXPECT_TRUE(BasicScenario(scheduler, &gc, &ccIdle));
 }

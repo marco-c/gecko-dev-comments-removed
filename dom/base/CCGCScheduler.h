@@ -108,15 +108,6 @@ struct CCRunnerStep {
 
 class CCGCScheduler {
  public:
-  
-  
-  
-
-  
-  
-  
-  static inline uint32_t SuspectedCCObjects();
-
   static bool CCRunnerFired(TimeStamp aDeadline);
 
   
@@ -147,7 +138,7 @@ class CCGCScheduler {
   void PokeGC(JS::GCReason aReason, JSObject* aObj, uint32_t aDelay = 0);
   void PokeShrinkingGC();
   void PokeFullGC();
-  void MaybePokeCC(TimeStamp aNow);
+  void MaybePokeCC(TimeStamp aNow, uint32_t aSuspectedCCObjects);
 
   void UserIsInactive();
   void UserIsActive();
@@ -265,13 +256,13 @@ class CCGCScheduler {
   void UnblockCC() { mCCBlockStart = TimeStamp(); }
 
   
-  uint32_t NoteForgetSkippableComplete(
-      TimeStamp aNow, uint32_t aSuspectedBeforeForgetSkippable) {
+  uint32_t NoteForgetSkippableComplete(TimeStamp aNow,
+                                       uint32_t aSuspectedBeforeForgetSkippable,
+                                       uint32_t aSuspectedCCObjects) {
     mLastForgetSkippableEndTime = aNow;
-    uint32_t suspected = SuspectedCCObjects();
-    mPreviousSuspectedCount = suspected;
+    mPreviousSuspectedCount = aSuspectedCCObjects;
     mCleanupsSinceLastGC++;
-    return aSuspectedBeforeForgetSkippable - suspected;
+    return aSuspectedBeforeForgetSkippable - aSuspectedCCObjects;
   }
 
   
@@ -318,10 +309,10 @@ class CCGCScheduler {
   inline TimeDuration ComputeInterSliceGCBudget(TimeStamp aDeadline,
                                                 TimeStamp aNow) const;
 
-  bool ShouldForgetSkippable() const {
+  bool ShouldForgetSkippable(uint32_t aSuspectedCCObjects) const {
     
     
-    return ((mPreviousSuspectedCount + 100) <= SuspectedCCObjects()) ||
+    return ((mPreviousSuspectedCount + 100) <= aSuspectedCCObjects) ||
            mCleanupsSinceLastGC < kMajorForgetSkippableCalls;
   }
 
@@ -329,17 +320,17 @@ class CCGCScheduler {
   
   
   
-  bool IsCCNeeded(TimeStamp aNow) const {
+  bool IsCCNeeded(TimeStamp aNow, uint32_t aSuspectedCCObjects) const {
     if (mNeedsFullCC) {
       return true;
     }
-    uint32_t suspected = SuspectedCCObjects();
-    return suspected > kCCPurpleLimit ||
-           (suspected > kCCForcedPurpleLimit && mLastCCEndTime &&
+    return aSuspectedCCObjects > kCCPurpleLimit ||
+           (aSuspectedCCObjects > kCCForcedPurpleLimit && mLastCCEndTime &&
             aNow - mLastCCEndTime > kCCForced);
   }
 
-  inline bool ShouldScheduleCC(TimeStamp aNow) const;
+  inline bool ShouldScheduleCC(TimeStamp aNow,
+                               uint32_t aSuspectedCCObjects) const;
 
   
   
@@ -394,7 +385,8 @@ class CCGCScheduler {
 
   inline GCRunnerStep GetNextGCRunnerAction(TimeStamp aDeadline);
 
-  inline CCRunnerStep AdvanceCCRunner(TimeStamp aDeadline, TimeStamp aNow);
+  inline CCRunnerStep AdvanceCCRunner(TimeStamp aDeadline, TimeStamp aNow,
+                                      uint32_t aSuspectedCCObjects);
 
   
   
@@ -525,7 +517,8 @@ inline TimeDuration CCGCScheduler::ComputeInterSliceGCBudget(
   return std::max(budget, maxSliceGCBudget.MultDouble(percentOfBlockedTime));
 }
 
-bool CCGCScheduler::ShouldScheduleCC(TimeStamp aNow) const {
+bool CCGCScheduler::ShouldScheduleCC(TimeStamp aNow,
+                                     uint32_t aSuspectedCCObjects) const {
   if (!mHasRunGC) {
     return false;
   }
@@ -547,11 +540,11 @@ bool CCGCScheduler::ShouldScheduleCC(TimeStamp aNow) const {
     }
   }
 
-  return IsCCNeeded(aNow);
+  return IsCCNeeded(aNow, aSuspectedCCObjects);
 }
 
-CCRunnerStep CCGCScheduler::AdvanceCCRunner(TimeStamp aDeadline,
-                                            TimeStamp aNow) {
+CCRunnerStep CCGCScheduler::AdvanceCCRunner(TimeStamp aDeadline, TimeStamp aNow,
+                                            uint32_t aSuspectedCCObjects) {
   struct StateDescriptor {
     
     
@@ -625,7 +618,7 @@ CCRunnerStep CCGCScheduler::AdvanceCCRunner(TimeStamp aDeadline,
   
   
   
-  if (desc.mCanAbortCC && !IsCCNeeded(aNow)) {
+  if (desc.mCanAbortCC && !IsCCNeeded(aNow, aSuspectedCCObjects)) {
     
     
     mCCRunnerState = CCRunnerState::Canceled;
@@ -633,7 +626,8 @@ CCRunnerStep CCGCScheduler::AdvanceCCRunner(TimeStamp aDeadline,
 
     
     
-    if (desc.mTryFinalForgetSkippable && ShouldForgetSkippable()) {
+    if (desc.mTryFinalForgetSkippable &&
+        ShouldForgetSkippable(aSuspectedCCObjects)) {
       
       
       return {CCRunnerAction::ForgetSkippable, Yield, KeepChildless};
@@ -653,7 +647,7 @@ CCRunnerStep CCGCScheduler::AdvanceCCRunner(TimeStamp aDeadline,
         mCCRunnerState = CCRunnerState::CleanupChildless;
       }
 
-      if (ShouldForgetSkippable()) {
+      if (ShouldForgetSkippable(aSuspectedCCObjects)) {
         return {CCRunnerAction::ForgetSkippable, Yield, KeepChildless};
       }
 
