@@ -167,8 +167,7 @@ bool HTMLObjectElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
   }
 
   
-  if ((Type() == eType_Null) &&
-      (PluginFallbackType() == eFallbackBlockAllPlugins)) {
+  if (Type() == eType_Fallback) {
     if (aTabIndex) {
       *aTabIndex = -1;
     }

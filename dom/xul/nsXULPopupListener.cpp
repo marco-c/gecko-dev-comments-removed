@@ -123,15 +123,6 @@ nsresult nsXULPopupListener::HandleEvent(Event* aEvent) {
     if (!eventEnabled) {
       
       
-      nsCOMPtr<nsIObjectLoadingContent> olc = do_QueryInterface(targetContent);
-      uint32_t type;
-      if (olc && NS_SUCCEEDED(olc->GetDisplayedType(&type)) &&
-          type == nsIObjectLoadingContent::TYPE_PLUGIN) {
-        return NS_OK;
-      }
-
-      
-      
       
       if (!targetContent->NodePrincipal()->IsSystemPrincipal()) {
         
