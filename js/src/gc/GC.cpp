@@ -885,7 +885,12 @@ void GCRuntime::finish() {
   stats().printTotalProfileTimes();
 }
 
-void GCRuntime::freezePermanentAtoms() {
+void GCRuntime::freezePermanentSharedThings() {
+  
+  
+  
+  
+  
   
   
   
@@ -895,36 +900,38 @@ void GCRuntime::freezePermanentAtoms() {
   MOZ_ASSERT(zones().empty());
 
   atomsZone->arenas.clearFreeLists();
-  freezePermanentAtomsOfKind(AllocKind::ATOM, permanentAtoms.ref());
-  freezePermanentAtomsOfKind(AllocKind::FAT_INLINE_ATOM,
-                             permanentFatInlineAtoms.ref());
+  freezeAtomsZoneArenas<JSAtom>(AllocKind::ATOM, permanentAtoms.ref());
+  freezeAtomsZoneArenas<JSAtom>(AllocKind::FAT_INLINE_ATOM,
+                                permanentFatInlineAtoms.ref());
+  freezeAtomsZoneArenas<JS::Symbol>(AllocKind::SYMBOL,
+                                    permanentWellKnownSymbols.ref());
 }
 
-void GCRuntime::freezePermanentAtomsOfKind(AllocKind kind,
-                                           ArenaList& arenaList) {
-  for (auto atom = atomsZone->cellIterUnsafe<JSAtom>(kind); !atom.done();
-       atom.next()) {
-    MOZ_ASSERT(atom->isPermanentAtom());
-    atom->asTenured().markBlack();
+template <typename T>
+void GCRuntime::freezeAtomsZoneArenas(AllocKind kind, ArenaList& arenaList) {
+  for (auto thing = atomsZone->cellIterUnsafe<T>(kind); !thing.done();
+       thing.next()) {
+    MOZ_ASSERT(thing->isPermanentAndMayBeShared());
+    thing->asTenured().markBlack();
   }
 
   arenaList = std::move(atomsZone->arenas.arenaList(kind));
 }
 
-void GCRuntime::restorePermanentAtoms() {
+void GCRuntime::restorePermanentSharedThings() {
   
   
   
 
   MOZ_ASSERT(heapState() == JS::HeapState::MajorCollecting);
 
-  restorePermanentAtomsOfKind(AllocKind::ATOM, permanentAtoms.ref());
-  restorePermanentAtomsOfKind(AllocKind::FAT_INLINE_ATOM,
-                              permanentFatInlineAtoms.ref());
+  restoreAtomsZoneArenas(AllocKind::ATOM, permanentAtoms.ref());
+  restoreAtomsZoneArenas(AllocKind::FAT_INLINE_ATOM,
+                         permanentFatInlineAtoms.ref());
+  restoreAtomsZoneArenas(AllocKind::SYMBOL, permanentWellKnownSymbols.ref());
 }
 
-void GCRuntime::restorePermanentAtomsOfKind(AllocKind kind,
-                                            ArenaList& arenaList) {
+void GCRuntime::restoreAtomsZoneArenas(AllocKind kind, ArenaList& arenaList) {
   atomsZone->arenas.arenaList(kind).insertListWithCursorAtEnd(arenaList);
 }
 
@@ -2354,7 +2361,7 @@ bool GCRuntime::beginPreparePhase(JS::GCReason reason, AutoGCSession& session) {
   }
 
   if (reason == JS::GCReason::DESTROY_RUNTIME) {
-    restorePermanentAtoms();
+    restorePermanentSharedThings();
   }
 
   
