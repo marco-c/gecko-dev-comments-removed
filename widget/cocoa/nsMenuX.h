@@ -101,13 +101,6 @@ class nsMenuX final : public nsMenuParentX,
   void MenuClosed();
 
   
-  
-  
-  
-  
-  void MenuClosedAsync();
-
-  
   bool Close();
 
   
@@ -177,6 +170,13 @@ class nsMenuX final : public nsMenuParentX,
   
   
   NSInteger CalculateNativeInsertionPoint(nsMenuX* aChild);
+
+  
+  
+  
+  
+  
+  void MenuClosedAsync();
 
   
   
