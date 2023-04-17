@@ -9404,6 +9404,16 @@ bool BytecodeEmitter::emitPropertyListObjLiteral(ListNode* obj,
       MOZ_ASSERT(numIsInt);
       MOZ_ASSERT(
           ObjLiteralWriter::arrayIndexInRange(i));  
+
+      
+      
+      
+      
+      
+      if (!useObjLiteralValues) {
+        continue;
+      }
+
       writer.setPropIndex(i);
     }
 
