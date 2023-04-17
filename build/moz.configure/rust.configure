@@ -670,7 +670,7 @@ option("--disable-cargo-incremental", help="Disable incremental rust compilation
 )
 @imports("os")
 def cargo_incremental(
-    opt_level,
+    developer_options,
     debug_rust,
     automation,
     code_coverage,
@@ -710,10 +710,7 @@ def cargo_incremental(
 
     
     
-    
-    
-    
-    if opt_level not in ("0", "1"):
+    if not developer_options:
         return
 
     
