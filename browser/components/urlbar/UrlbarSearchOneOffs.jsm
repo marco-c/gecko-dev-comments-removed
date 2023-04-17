@@ -191,10 +191,15 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
     
     
     if (
-      this.selectedButton == this.view.oneOffSearchButtons.settingsButtonCompact
+      this.selectedButton ==
+        this.view.oneOffSearchButtons.settingsButtonCompact ||
+      this.selectedButton.classList.contains(
+        "searchbar-engine-one-off-add-engine"
+      )
     ) {
       this.input.controller.engagementEvent.discard();
       this.selectedButton.doCommand();
+      this.selectedButton = null;
       return;
     }
 
@@ -343,8 +348,9 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
         if (engine.icon) {
           button.setAttribute("image", engine.icon);
         }
+        button.setAttribute("title", engine.name);
+        button.setAttribute("uri", engine.uri);
         button.setAttribute("tooltiptext", engine.tooltip);
-        button.webEngine = engine;
         this.buttons.appendChild(button);
       }
     }
@@ -380,12 +386,6 @@ class UrlbarSearchOneOffs extends SearchOneOffs {
     }
 
     let button = event.originalTarget;
-
-    if (button.webEngine) {
-      
-      this.input.addSearchEngineHelper.addSearchEngine(button.webEngine);
-      return;
-    }
 
     if (!button.engine && !button.source) {
       return;
