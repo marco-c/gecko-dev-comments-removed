@@ -141,6 +141,41 @@ fn is_same<N: PartialEq>(x: &N, y: &N) -> bool {
     x == y
 }
 
+
+
+#[derive(
+    Clone,
+    Debug,
+    Deserialize,
+    MallocSizeOf,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(C, u8)]
+pub enum GenericPerspectiveFunction<L> {
+    
+    None,
+    
+    Length(L),
+}
+
+impl<L> GenericPerspectiveFunction<L> {
+    
+    pub fn infinity_or(&self, f: impl FnOnce(&L) -> f32) -> f32 {
+        match *self {
+            Self::None => std::f32::INFINITY,
+            Self::Length(ref l) => f(l),
+        }
+    }
+}
+
+pub use self::GenericPerspectiveFunction as PerspectiveFunction;
+
 #[derive(
     Clone,
     Debug,
@@ -240,7 +275,7 @@ where
     
     
     #[css(function)]
-    Perspective(Length),
+    Perspective(GenericPerspectiveFunction<Length>),
     
     #[allow(missing_docs)]
     #[css(comma, function = "interpolatematrix")]
@@ -469,9 +504,12 @@ where
                 let theta = euclid::Angle::radians(theta.radians64());
                 Transform3D::rotation(0., 0., 1., theta)
             },
-            Perspective(ref d) => {
-                let m = create_perspective_matrix(d.to_pixel_length(None)?);
-                m.cast()
+            Perspective(ref p) => {
+                let px = match p {
+                    PerspectiveFunction::None => std::f32::INFINITY,
+                    PerspectiveFunction::Length(ref p) => p.to_pixel_length(None)?,
+                };
+                create_perspective_matrix(px).cast()
             },
             Scale3D(sx, sy, sz) => Transform3D::scale(sx.into(), sy.into(), sz.into()),
             Scale(sx, sy) => Transform3D::scale(sx.into(), sy.into(), 1.),

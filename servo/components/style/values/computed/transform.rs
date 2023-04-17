@@ -25,6 +25,9 @@ pub type TransformOrigin =
     generic::GenericTransformOrigin<LengthPercentage, LengthPercentage, Length>;
 
 
+pub type PerspectiveFunction = generic::PerspectiveFunction<Length>;
+
+
 pub type DirectionVector = Vector3D<CSSFloat>;
 
 impl TransformOrigin {
@@ -517,7 +520,7 @@ impl ToAnimatedZero for TransformOperation {
                 Ok(generic::TransformOperation::Rotate(Angle::zero()))
             },
             generic::TransformOperation::Perspective(_) => Ok(
-                generic::TransformOperation::Perspective(Length::new(std::f32::INFINITY))
+                generic::TransformOperation::Perspective(generic::PerspectiveFunction::None)
             ),
             generic::TransformOperation::AccumulateMatrix { .. } |
             generic::TransformOperation::InterpolateMatrix { .. } => {
