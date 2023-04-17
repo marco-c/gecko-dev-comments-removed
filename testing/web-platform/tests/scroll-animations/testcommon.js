@@ -22,7 +22,8 @@ function createScrollerWithStartAndEnd(test, orientationClass = 'vertical') {
 
 function createScrollTimeline(test, options) {
   options = options || {
-    scrollSource: createScroller(test)
+    scrollSource: createScroller(test),
+    timeRange: 1000
   }
   return new ScrollTimeline(options);
 }
@@ -31,17 +32,47 @@ function createScrollTimelineWithOffsets(test, startOffset, endOffset) {
   return createScrollTimeline(test, {
     scrollSource: createScroller(test),
     orientation: "vertical",
-    scrollOffsets: [startOffset, endOffset]
+    scrollOffsets: [startOffset, endOffset],
+    timeRange: 1000
   });
 }
 
 function createScrollLinkedAnimation(test, timeline) {
-  return createScrollLinkedAnimationWithTiming(test,  1000, timeline);
-}
-
-function createScrollLinkedAnimationWithTiming(test, timing, timeline) {
   if (timeline === undefined)
     timeline = createScrollTimeline(test);
+  const DURATION = 1000; 
+  const KEYFRAMES = { opacity: [0, 1] };
+  return new Animation(
+    new KeyframeEffect(createDiv(test), KEYFRAMES, DURATION), timeline);
+}
+
+
+
+
+
+
+function createProgressBasedScrollTimeline(test, options) {
+  options = options || {
+    scrollSource: createScroller(test)
+  }
+  return new ScrollTimeline(options);
+}
+
+function createProgressBasedScrollTimelineWithOffsets(test, startOffset, endOffset) {
+  return createScrollTimeline(test, {
+    scrollSource: createScroller(test),
+    orientation: "vertical",
+    scrollOffsets: [startOffset, endOffset]
+  });
+}
+
+function createProgressBasedScrollLinkedAnimation(test, timeline) {
+  return createProgressBasedScrollLinkedAnimationWithTiming(test,  1000, timeline);
+}
+
+function createProgressBasedScrollLinkedAnimationWithTiming(test, timing, timeline) {
+  if (timeline === undefined)
+    timeline = createProgressBasedScrollTimeline(test);
   if (timing === undefined)
     timing = 1000; 
   const KEYFRAMES = { opacity: [0, 1] };
@@ -71,34 +102,4 @@ function assert_css_numberish_equals(actual, expected, name){
   assert_true(expected instanceof CSSUnitValue, "'expected' must be of type CSSNumberish for \"" + name + "\"");
   assert_equals(actual.unit, expected.unit, "units do not match for  \"" + name + "\"");
   assert_equals(actual.value, expected.value, "values do not match for  \"" + name + "\"");
-}
-
-
-
-
-
-function createScrollTimelineWithTimeRange(test, options) {
-  options = options || {
-    scrollSource: createScroller(test),
-    timeRange: 1000
-  }
-  return new ScrollTimeline(options);
-}
-
-function createScrollTimelineWithOffsetsWithTimeRange(test, startOffset, endOffset) {
-  return createScrollTimelineWithTimeRange(test, {
-    scrollSource: createScroller(test),
-    orientation: "vertical",
-    scrollOffsets: [startOffset, endOffset],
-    timeRange: 1000
-  });
-}
-
-function createScrollLinkedAnimationWithTimeRange(test, timeline) {
-  if (timeline === undefined)
-    timeline = createScrollTimelineWithTimeRange(test);
-  const DURATION = 1000; 
-  const KEYFRAMES = { opacity: [0, 1] };
-  return new Animation(
-    new KeyframeEffect(createDiv(test), KEYFRAMES, DURATION), timeline);
 }

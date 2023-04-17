@@ -41,20 +41,14 @@ function invokeScenario(scenario) {
 }
 
 const referrerUrlResolver = {
-  
-  
-  
   "omitted": function(sourceUrl) {
-    return [undefined];
+    return undefined;
   },
   "origin": function(sourceUrl) {
-    return [stripUrlForUseAsReferrer(sourceUrl, true),
-            undefined];
+    return stripUrlForUseAsReferrer(sourceUrl, true);
   },
   "stripped-referrer": function(sourceUrl) {
-    return [stripUrlForUseAsReferrer(sourceUrl, false),
-            stripUrlForUseAsReferrer(sourceUrl, true),
-            undefined];
+    return stripUrlForUseAsReferrer(sourceUrl, false);
   }
 };
 
@@ -76,16 +70,18 @@ function checkResult(scenario, expectation, result) {
     
     referrerSource = location.toString();
   }
-  const possibleReferrerUrls =
+  const expectedReferrerUrl =
     referrerUrlResolver[expectation](referrerSource);
 
   
-  assert_in_array(result.referrer,
-                  possibleReferrerUrls,
-                  "document.referrer");
-  assert_in_array(result.headers.referer,
-                  possibleReferrerUrls,
-                  "HTTP Referer header");
+  assert_equals(result.referrer,
+                expectedReferrerUrl,
+                "Reported Referrer URL is '" +
+                expectation + "'.");
+  assert_equals(result.headers.referer,
+                expectedReferrerUrl,
+                "Reported Referrer URL from HTTP header is '" +
+                expectedReferrerUrl + "'");
 }
 
 function runLengthTest(scenario, urlLength, expectation, testDescription) {

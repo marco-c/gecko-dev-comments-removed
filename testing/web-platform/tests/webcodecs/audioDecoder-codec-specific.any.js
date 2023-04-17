@@ -320,7 +320,8 @@ promise_test(async t => {
   });
 
   
-  await promise_rejects_dom(t, 'AbortError', flushDone);
+  
+  await promise_rejects_exactly(t, undefined, flushDone);
 
   assert_equals(outputs, 1, 'outputs');
 }, 'Test reset during flush');
