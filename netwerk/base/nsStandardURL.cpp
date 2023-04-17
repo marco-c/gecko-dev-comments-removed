@@ -599,43 +599,51 @@ nsresult nsStandardURL::NormalizeIPv4(const nsACString& host,
   return NS_OK;
 }
 
-nsresult nsStandardURL::NormalizeIDN(const nsACString& host,
-                                     nsCString& result) {
-  
-  
-
-  
-
+nsresult nsStandardURL::NormalizeIDN(const nsCString& host, nsCString& result) {
   result.Truncate();
+  mDisplayHost.Truncate();
   nsresult rv;
 
   if (!gIDN) {
     return NS_ERROR_UNEXPECTED;
   }
 
-  bool isAscii;
-  nsAutoCString normalized;
-  rv = gIDN->ConvertToDisplayIDN(host, &isAscii, normalized);
+  
+  
+  
+  bool isACE = false;
+  if (IsAscii(host) && NS_SUCCEEDED(gIDN->IsACE(host, &isACE)) && !isACE) {
+    mCheckedIfHostA = true;
+    result = host;
+    return NS_OK;
+  }
+
+  
+  
+  rv = gIDN->ConvertUTF8toACE(host, result);
   if (NS_FAILED(rv)) {
     return rv;
   }
 
   
-  if (isAscii) {
-    result = normalized;
+  
+  if (!StringBeginsWith(result, "xn--"_ns) &&
+      result.Find(".xn--"_ns) == kNotFound) {
     mCheckedIfHostA = true;
-    mDisplayHost.Truncate();
     return NS_OK;
   }
 
-  rv = gIDN->ConvertUTF8toACE(normalized, result);
+  bool isAscii = true;
+  nsAutoCString displayHost;
+  rv = gIDN->ConvertToDisplayIDN(result, &isAscii, displayHost);
   if (NS_FAILED(rv)) {
     return rv;
   }
 
   mCheckedIfHostA = true;
-  mDisplayHost = normalized;
-
+  if (!isAscii) {
+    mDisplayHost = displayHost;
+  }
   return NS_OK;
 }
 
