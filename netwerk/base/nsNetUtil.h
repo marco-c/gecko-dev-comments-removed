@@ -631,11 +631,6 @@ bool NS_IsSafeMethodNav(nsIChannel* aChannel);
 
 
 
-bool NS_ShouldCheckAppCache(nsIPrincipal* aPrincipal);
-
-
-
-
 
 
 
