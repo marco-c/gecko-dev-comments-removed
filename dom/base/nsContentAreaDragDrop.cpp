@@ -350,20 +350,13 @@ DragDataProducer::DragDataProducer(nsPIDOMWindowOuter* aWindow,
 
 
 already_AddRefed<nsIContent> DragDataProducer::FindParentLinkNode(
-    nsIContent* inNode) {
-  nsIContent* content = inNode;
-  if (!content) {
-    
-    return nullptr;
-  }
-
-  for (; content; content = content->GetParent()) {
+    nsIContent* aContent) {
+  for (nsIContent* content = aContent; content;
+       content = content->GetFlattenedTreeParent()) {
     if (nsContentUtils::IsDraggableLink(content)) {
-      nsCOMPtr<nsIContent> ret = content;
-      return ret.forget();
+      return do_AddRef(content);
     }
   }
-
   return nullptr;
 }
 
