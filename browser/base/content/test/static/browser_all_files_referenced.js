@@ -28,6 +28,9 @@ var gExceptionPaths = [
   "resource://payments/",
 
   
+  "chrome://global/content/certviewer/components/",
+
+  
   "chrome://activity-stream/content/data/content/tippytop/images/",
   "chrome://activity-stream/content/data/content/tippytop/favicons/",
   

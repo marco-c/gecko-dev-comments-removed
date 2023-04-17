@@ -15,11 +15,6 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "DevToolsUtils",
-  "devtools/shared/DevToolsUtils"
-);
-loader.lazyRequireGetter(
-  this,
   "CacheEntry",
   "devtools/shared/platform/cache-entry",
   true
@@ -227,7 +222,7 @@ NetworkResponseListener.prototype = {
     }
 
     this.request = request;
-    this._getSecurityInfo();
+    this._onSecurityInfo = this._getSecurityInfo();
     this._findOpenResponse();
     
     
@@ -316,7 +311,7 @@ NetworkResponseListener.prototype = {
   
 
 
-  _getSecurityInfo: DevToolsUtils.makeInfallible(function() {
+  _getSecurityInfo: async function() {
     
     
     
@@ -333,8 +328,10 @@ NetworkResponseListener.prototype = {
     if (secinfo) {
       secinfo.QueryInterface(Ci.nsITransportSecurityInfo);
     }
-    const info = NetworkHelper.parseSecurityInfo(secinfo, this.httpActivity);
-
+    const info = await NetworkHelper.parseSecurityInfo(
+      secinfo,
+      this.httpActivity
+    );
     let isRacing = false;
     try {
       const channel = this.httpActivity.channel;
@@ -347,7 +344,7 @@ NetworkResponseListener.prototype = {
     }
 
     this.httpActivity.owner.addSecurityInfo(info, isRacing);
-  }),
+  },
 
   
 
@@ -479,6 +476,15 @@ NetworkResponseListener.prototype = {
 
 
   _onComplete: function(data) {
+    
+    this._getResponseContent(data);
+    this._onSecurityInfo.then(() => this._destroy());
+  },
+
+  
+
+
+  _getResponseContent: function(data) {
     const response = {
       mimeType: "",
       text: data || "",
@@ -534,7 +540,9 @@ NetworkResponseListener.prototype = {
       blockedReason: reason,
       blockingExtension: id,
     });
+  },
 
+  _destroy: function() {
     this._wrappedNotificationCallbacks = null;
     this.httpActivity = null;
     this.sink = null;
