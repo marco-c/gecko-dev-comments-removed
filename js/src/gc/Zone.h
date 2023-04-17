@@ -322,7 +322,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::MainThreadData<bool> gcScheduled_;
   js::MainThreadData<bool> gcScheduledSaved_;
   js::MainThreadData<bool> gcPreserveCode_;
-  js::ZoneData<bool> keepShapeCaches_;
+  js::ZoneData<bool> keepPropMapTables_;
   js::MainThreadData<bool> wasCollected_;
 
   
@@ -622,8 +622,8 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   
   void adoptUniqueIds(JS::Zone* source);
 
-  bool keepShapeCaches() const { return keepShapeCaches_; }
-  void setKeepShapeCaches(bool b) { keepShapeCaches_ = b; }
+  bool keepPropMapTables() const { return keepPropMapTables_; }
+  void setKeepPropMapTables(bool b) { keepPropMapTables_ = b; }
 
   
   void deleteEmptyCompartment(JS::Compartment* comp);

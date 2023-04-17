@@ -1258,7 +1258,8 @@ const char gc::ZealModeHelpText[] =
     "    22: (YieldBeforeSweepingNonObjects) Incremental GC in two slices that "
     "yields\n"
     "        before sweeping non-object GC things\n"
-    "    23: (YieldBeforeSweepingShapeTrees) Incremental GC in two slices that "
+    "    23: (YieldBeforeSweepingPropMapTrees) Incremental GC in two slices "
+    "that "
     "yields\n"
     "        before sweeping shape trees\n"
     "    24: (CheckWeakMapMarking) Check weak map marking invariants after "
@@ -1277,7 +1278,7 @@ static const mozilla::EnumSet<ZealMode> IncrementalSliceZealModes = {
     ZealMode::YieldBeforeSweepingCaches,
     ZealMode::YieldBeforeSweepingObjects,
     ZealMode::YieldBeforeSweepingNonObjects,
-    ZealMode::YieldBeforeSweepingShapeTrees};
+    ZealMode::YieldBeforeSweepingPropMapTrees};
 
 void GCRuntime::setZeal(uint8_t zeal, uint32_t frequency) {
   MOZ_ASSERT(zeal <= unsigned(ZealMode::Limit));
@@ -2528,6 +2529,7 @@ static void UpdateArenaPointersTyped(MovingTracer* trc, Arena* arena) {
 }
 
 static bool CanUpdateKindInBackground(AllocKind kind) {
+  
   
   
   
@@ -4302,10 +4304,10 @@ void GCRuntime::relazifyFunctionsForShrinkingGC() {
   }
 }
 
-void GCRuntime::purgeShapeCachesForShrinkingGC() {
-  gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::PURGE_SHAPE_CACHES);
+void GCRuntime::purgePropMapTablesForShrinkingGC() {
+  gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::PURGE_PROP_MAP_TABLES);
   for (GCZonesIter zone(this); !zone.done(); zone.next()) {
-    if (!canRelocateZone(zone) || zone->keepShapeCaches()) {
+    if (!canRelocateZone(zone) || zone->keepPropMapTables()) {
       continue;
     }
 
@@ -4530,7 +4532,7 @@ void GCRuntime::endPreparePhase(JS::GCReason reason) {
 
     if (gcOptions == JS::GCOptions::Shrink) {
       relazifyFunctionsForShrinkingGC();
-      purgeShapeCachesForShrinkingGC();
+      purgePropMapTablesForShrinkingGC();
       purgeSourceURLsForShrinkingGC();
     }
 
@@ -6166,11 +6168,11 @@ IncrementalProgress GCRuntime::finalizeAllocKind(JSFreeOp* fop,
   return Finished;
 }
 
-IncrementalProgress GCRuntime::sweepShapeTree(JSFreeOp* fop,
-                                              SliceBudget& budget) {
+IncrementalProgress GCRuntime::sweepPropMapTree(JSFreeOp* fop,
+                                                SliceBudget& budget) {
   
 
-  gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::SWEEP_SHAPE);
+  gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::SWEEP_PROP_MAP);
 
   ArenaLists& al = sweepZone->arenas;
 
@@ -6481,8 +6483,8 @@ bool GCRuntime::initSweepActions() {
                        ForEachAllocKind(ForegroundNonObjectFinalizePhase.kinds,
                                         &sweepAllocKind.ref(),
                                         Call(&GCRuntime::finalizeAllocKind)),
-                       MaybeYield(ZealMode::YieldBeforeSweepingShapeTrees),
-                       Call(&GCRuntime::sweepShapeTree))),
+                       MaybeYield(ZealMode::YieldBeforeSweepingPropMapTrees),
+                       Call(&GCRuntime::sweepPropMapTree))),
           Call(&GCRuntime::endSweepingSweepGroup)));
 
   return sweepActions != nullptr;
