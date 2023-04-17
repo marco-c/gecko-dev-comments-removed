@@ -883,8 +883,20 @@ void nsMenuFrame::Execute(WidgetGUIEvent* aEvent) {
   nsCOMPtr<nsISound> sound(do_CreateInstance("@mozilla.org/sound;1"));
   if (sound) sound->PlayEventSound(nsISound::EVENT_MENU_EXECUTE);
 
+  
+  
+  
+  bool isTrusted =
+      aEvent ? aEvent->IsTrusted() : nsContentUtils::IsCallerChrome();
+
+  mozilla::Modifiers modifiers = 0;
+  WidgetInputEvent* inputEvent = aEvent ? aEvent->AsInputEvent() : nullptr;
+  if (inputEvent) {
+    modifiers = inputEvent->mModifiers;
+  }
+
   StopBlinking();
-  CreateMenuCommandEvent(aEvent);
+  CreateMenuCommandEvent(isTrusted, modifiers);
   StartBlinking();
 }
 
@@ -931,19 +943,8 @@ void nsMenuFrame::StopBlinking() {
   mDelayedMenuCommandEvent = nullptr;
 }
 
-void nsMenuFrame::CreateMenuCommandEvent(WidgetGUIEvent* aEvent) {
-  
-  
-  
-  bool isTrusted =
-      aEvent ? aEvent->IsTrusted() : nsContentUtils::IsCallerChrome();
-
-  mozilla::Modifiers modifiers = 0;
-  WidgetInputEvent* inputEvent = aEvent ? aEvent->AsInputEvent() : nullptr;
-  if (inputEvent) {
-    modifiers = inputEvent->mModifiers;
-  }
-
+void nsMenuFrame::CreateMenuCommandEvent(bool aIsTrusted,
+                                         mozilla::Modifiers aModifiers) {
   
   
   
@@ -958,7 +959,7 @@ void nsMenuFrame::CreateMenuCommandEvent(WidgetGUIEvent* aEvent) {
   }
 
   mDelayedMenuCommandEvent =
-      new nsXULMenuCommandEvent(mContent->AsElement(), isTrusted, modifiers,
+      new nsXULMenuCommandEvent(mContent->AsElement(), aIsTrusted, aModifiers,
                                 userinput, needToFlipChecked);
 }
 
