@@ -367,7 +367,9 @@ LoadInfo::LoadInfo(nsPIDOMWindowOuter* aOuterWindow,
   
   
   
-  mCookieJarSettings = CookieJarSettings::Create();
+  bool isPrivate = mOriginAttributes.mPrivateBrowsingId > 0;
+  mCookieJarSettings = CookieJarSettings::Create(
+      isPrivate ? CookieJarSettings::ePrivate : CookieJarSettings::eRegular);
 }
 
 LoadInfo::LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
@@ -406,7 +408,9 @@ LoadInfo::LoadInfo(dom::CanonicalBrowsingContext* aBrowsingContext,
   
   
   
-  mCookieJarSettings = CookieJarSettings::Create();
+  bool isPrivate = mOriginAttributes.mPrivateBrowsingId > 0;
+  mCookieJarSettings = CookieJarSettings::Create(
+      isPrivate ? CookieJarSettings::ePrivate : CookieJarSettings::eRegular);
 }
 
 LoadInfo::LoadInfo(dom::WindowGlobalParent* aParentWGP,
@@ -973,9 +977,10 @@ LoadInfo::GetCookiePolicy(uint32_t* aResult) {
 namespace {
 
 already_AddRefed<nsICookieJarSettings> CreateCookieJarSettings(
-    nsContentPolicyType aContentPolicyType) {
+    nsContentPolicyType aContentPolicyType, bool aIsPrivate) {
   if (StaticPrefs::network_cookieJarSettings_unblocked_for_testing()) {
-    return CookieJarSettings::Create();
+    return aIsPrivate ? CookieJarSettings::Create(CookieJarSettings::ePrivate)
+                      : CookieJarSettings::Create(CookieJarSettings::eRegular);
   }
 
   
@@ -983,7 +988,8 @@ already_AddRefed<nsICookieJarSettings> CreateCookieJarSettings(
   
   if (aContentPolicyType == nsIContentPolicy::TYPE_INTERNAL_IMAGE_FAVICON ||
       aContentPolicyType == nsIContentPolicy::TYPE_SAVEAS_DOWNLOAD) {
-    return CookieJarSettings::Create();
+    return aIsPrivate ? CookieJarSettings::Create(CookieJarSettings::ePrivate)
+                      : CookieJarSettings::Create(CookieJarSettings::eRegular);
   }
 
   return CookieJarSettings::GetBlockingAll();
@@ -994,7 +1000,9 @@ already_AddRefed<nsICookieJarSettings> CreateCookieJarSettings(
 NS_IMETHODIMP
 LoadInfo::GetCookieJarSettings(nsICookieJarSettings** aCookieJarSettings) {
   if (!mCookieJarSettings) {
-    mCookieJarSettings = CreateCookieJarSettings(mInternalContentPolicyType);
+    bool isPrivate = mOriginAttributes.mPrivateBrowsingId > 0;
+    mCookieJarSettings =
+        CreateCookieJarSettings(mInternalContentPolicyType, isPrivate);
   }
 
   nsCOMPtr<nsICookieJarSettings> cookieJarSettings = mCookieJarSettings;
