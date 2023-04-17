@@ -408,8 +408,11 @@ RawAccessFrameRef AnimationFrameRecyclingQueue::RecycleFrame(
     
     
     
+    
+    
+    
+    
     for (RecycleEntry& entry : mRecycle) {
-      MOZ_ASSERT(mFirstFrameRefreshArea.Contains(entry.mDirtyRect));
       entry.mDirtyRect = mFirstFrameRefreshArea;
     }
     
