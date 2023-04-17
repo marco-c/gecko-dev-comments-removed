@@ -57,6 +57,7 @@
 #endif
 
 #include "mozpkix/pkix.h"
+#include "mozpkix/pkixder.h"
 #include "mozpkix/test/pkixtestutil.h"
 
 
@@ -71,7 +72,7 @@ inline void PrintTo(const Result& result, ::std::ostream* os) {
     *os << "mozilla::pkix::Result(" << static_cast<unsigned int>(result) << ")";
   }
 }
-}
+}  
 }  
 
 namespace mozilla {
@@ -223,8 +224,26 @@ class DefaultNameMatchingPolicy : public NameMatchingPolicy {
     return Success;
   }
 };
+
+
+const uint8_t tlv_id_kp_clientAuth[] = {0x06, 0x08, 0x2b, 0x06, 0x01,
+                                        0x05, 0x05, 0x07, 0x03, 0x02};
+
+
+const uint8_t tlv_id_kp_codeSigning[] = {0x06, 0x08, 0x2b, 0x06, 0x01,
+                                         0x05, 0x05, 0x07, 0x03, 0x03};
+
+
+const uint8_t tlv_id_ce_extKeyUsage[] = {0x06, 0x03, 0x55, 0x1d, 0x25};
+
+inline ByteString CreateEKUExtension(ByteString ekuOIDs) {
+  return TLV(der::SEQUENCE,
+             BytesToByteString(tlv_id_ce_extKeyUsage) +
+                 TLV(der::OCTET_STRING, TLV(der::SEQUENCE, ekuOIDs)));
 }
-}
+
+}  
+}  
 }  
 
 #endif  
