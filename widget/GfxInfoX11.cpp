@@ -231,7 +231,7 @@ void GfxInfo::GetData() {
 
   
   
-  struct utsname unameobj;
+  struct utsname unameobj {};
   if (uname(&unameobj) >= 0) {
     mOS.Assign(unameobj.sysname);
     mOSRelease.Assign(unameobj.release);
@@ -338,7 +338,7 @@ void GfxInfo::GetData() {
     while (loc != kNotFound) {
       int isDefault = 0;
       nsCString line(screenInfo.get() + start, loc - start);
-      ScreenInfo info;
+      ScreenInfo info{};
       if (sscanf(line.get(), "%ux%u:%u", &info.mWidth, &info.mHeight,
                  &isDefault) == 3) {
         info.mIsDefault = isDefault != 0;
