@@ -258,8 +258,29 @@ class PresentableSharedImage {
                  WS_EX_LAYERED);
 
       BLENDFUNCTION bf = {AC_SRC_OVER, 0, 255, AC_SRC_ALPHA};
-      SIZE winSize = {mSharedImage.GetWidth(), mSharedImage.GetHeight()};
       POINT srcPos = {0, 0};
+      RECT clientRect = {};
+      if (!::GetClientRect(aWindowHandle, &clientRect)) {
+        return false;
+      }
+      MOZ_ASSERT(clientRect.left == 0);
+      MOZ_ASSERT(clientRect.top == 0);
+      int32_t width = clientRect.right;
+      int32_t height = clientRect.bottom;
+      SIZE winSize = {width, height};
+      
+      
+      
+      
+      
+      
+      
+      
+      if (width != mSharedImage.GetWidth() ||
+          height != mSharedImage.GetHeight()) {
+        return false;
+      }
+
       return !!::UpdateLayeredWindow(
           topLevelWindow, nullptr , nullptr , &winSize,
           mDeviceContext, &srcPos, 0 , &bf, ULW_ALPHA);
