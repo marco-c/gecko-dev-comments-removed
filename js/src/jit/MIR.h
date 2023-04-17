@@ -1233,41 +1233,7 @@ class MVariadicT : public T {
 
 using MVariadicInstruction = MVariadicT<MInstruction>;
 
-
-class MStart : public MNullaryInstruction {
-  MStart() : MNullaryInstruction(classOpcode) {}
-
- public:
-  INSTRUCTION_HEADER(Start)
-  TRIVIAL_NEW_WRAPPERS
-};
-
-
-
-
-class MOsrEntry : public MNullaryInstruction {
-  MOsrEntry() : MNullaryInstruction(classOpcode) {
-    setResultType(MIRType::Pointer);
-  }
-
- public:
-  INSTRUCTION_HEADER(OsrEntry)
-  TRIVIAL_NEW_WRAPPERS
-};
-
-
-
-class MNop : public MNullaryInstruction {
-  MNop() : MNullaryInstruction(classOpcode) {}
-
- public:
-  INSTRUCTION_HEADER(Nop)
-  TRIVIAL_NEW_WRAPPERS
-
-  AliasSet getAliasSet() const override { return AliasSet::None(); }
-
-  ALLOW_CLONE(MNop)
-};
+MIR_OPCODE_CLASS_GENERATED
 
 
 
@@ -2727,17 +2693,6 @@ class MUnreachable : public MAryControlInstruction<0, 0>,
   TRIVIAL_NEW_WRAPPERS
 
   AliasSet getAliasSet() const override { return AliasSet::None(); }
-};
-
-
-
-
-class MEncodeSnapshot : public MNullaryInstruction {
-  MEncodeSnapshot() : MNullaryInstruction(classOpcode) { setGuard(); }
-
- public:
-  INSTRUCTION_HEADER(EncodeSnapshot)
-  TRIVIAL_NEW_WRAPPERS
 };
 
 class MAssertRecoveredOnBailout : public MUnaryInstruction,
@@ -6742,17 +6697,6 @@ class MUnaryCache : public MUnaryInstruction, public BoxPolicy<0>::Data {
 };
 
 
-class MCheckOverRecursed : public MNullaryInstruction {
-  MCheckOverRecursed() : MNullaryInstruction(classOpcode) { setGuard(); }
-
- public:
-  INSTRUCTION_HEADER(CheckOverRecursed)
-  TRIVIAL_NEW_WRAPPERS
-
-  AliasSet getAliasSet() const override { return AliasSet::None(); }
-};
-
-
 class MInterruptCheck : public MNullaryInstruction {
   MInterruptCheck() : MNullaryInstruction(classOpcode) { setGuard(); }
 
@@ -6872,16 +6816,6 @@ class MThrowMsg : public MNullaryInstruction {
   AliasSet getAliasSet() const override {
     return AliasSet::Store(AliasSet::ExceptionState);
   }
-};
-
-
-
-class MGlobalDeclInstantiation : public MNullaryInstruction {
-  MGlobalDeclInstantiation() : MNullaryInstruction(classOpcode) { setGuard(); }
-
- public:
-  INSTRUCTION_HEADER(GlobalDeclInstantiation)
-  TRIVIAL_NEW_WRAPPERS
 };
 
 class MRegExp : public MNullaryInstruction {
@@ -12723,18 +12657,6 @@ class MAsmJSStoreHeap
   AliasSet getAliasSet() const override {
     return AliasSet::Store(AliasSet::WasmHeap);
   }
-};
-
-class MWasmFence : public MNullaryInstruction {
-  MWasmFence() : MNullaryInstruction(classOpcode) { setGuard(); }
-
- public:
-  INSTRUCTION_HEADER(WasmFence)
-  TRIVIAL_NEW_WRAPPERS
-
-  AliasSet getAliasSet() const override { return AliasSet::None(); }
-
-  ALLOW_CLONE(MWasmFence)
 };
 
 class MWasmCompareExchangeHeap : public MVariadicInstruction,
