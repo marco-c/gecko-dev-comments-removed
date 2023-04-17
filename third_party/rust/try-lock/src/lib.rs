@@ -1,7 +1,8 @@
-#![doc(html_root_url = "https://docs.rs/try-lock/0.2.2")]
+#![doc(html_root_url = "https://docs.rs/try-lock/0.2.3")]
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
 #![deny(warnings)]
+#![cfg_attr(not(test), no_std)]
 
 
 
@@ -43,10 +44,13 @@
 
 
 
-use std::cell::UnsafeCell;
-use std::fmt;
-use std::ops::{Deref, DerefMut};
-use std::sync::atomic::{AtomicBool, Ordering};
+#[cfg(test)]
+extern crate core;
+
+use core::cell::UnsafeCell;
+use core::fmt;
+use core::ops::{Deref, DerefMut};
+use core::sync::atomic::{AtomicBool, Ordering};
 
 
 
@@ -83,9 +87,12 @@ impl<T> TryLock<T> {
     
     
     
+    
     #[inline]
     pub fn try_lock(&self) -> Option<Locked<T>> {
-        self.try_lock_order(Ordering::Acquire, Ordering::Release)
+        unsafe {
+            self.try_lock_explicit_unchecked(Ordering::Acquire, Ordering::Release)
+        }
     }
 
     
@@ -95,7 +102,67 @@ impl<T> TryLock<T> {
     
     
     #[inline]
+    #[deprecated(
+        since = "0.2.3",
+        note = "This method is actually unsafe because it unsafely allows \
+        the use of weaker memory ordering. Please use try_lock_explicit instead"
+    )]
     pub fn try_lock_order(&self, lock_order: Ordering, unlock_order: Ordering) -> Option<Locked<T>> {
+        unsafe {
+            self.try_lock_explicit_unchecked(lock_order, unlock_order)
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn try_lock_explicit(&self, lock_order: Ordering, unlock_order: Ordering) -> Option<Locked<T>> {
+        match lock_order {
+            Ordering::Acquire |
+            Ordering::AcqRel |
+            Ordering::SeqCst => {}
+            _ => panic!("lock ordering must be `Acquire`, `AcqRel`, or `SeqCst`"),
+        }
+
+        match unlock_order {
+            Ordering::Release |
+            Ordering::SeqCst => {}
+            _ => panic!("unlock ordering must be `Release` or `SeqCst`"),
+        }
+
+        unsafe {
+            self.try_lock_explicit_unchecked(lock_order, unlock_order)
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub unsafe fn try_lock_explicit_unchecked(&self, lock_order: Ordering, unlock_order: Ordering) -> Option<Locked<T>> {
         if !self.is_locked.swap(true, lock_order) {
             Some(Locked {
                 lock: self,
