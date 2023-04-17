@@ -177,6 +177,11 @@ interface imgIContainer : nsISupports
   
 
 
+  [infallible] readonly attribute unsigned long providerId;
+
+  
+
+
 
 
 
