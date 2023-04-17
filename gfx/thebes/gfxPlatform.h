@@ -654,11 +654,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   int GetScreenDepth() const { return mScreenDepth; }
   mozilla::gfx::IntSize GetScreenSize() const { return mScreenSize; }
 
-  
-
-
-  mozilla::layers::DiagnosticTypes GetLayerDiagnosticTypes();
-
   static void PurgeSkiaFontCache();
 
   static bool UsesOffMainThreadCompositing();
