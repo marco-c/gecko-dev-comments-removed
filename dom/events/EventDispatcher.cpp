@@ -1040,9 +1040,8 @@ nsresult EventDispatcher::Dispatch(nsISupports* aTarget,
                 baseprofiler::SpliceableJSONWriter& aWriter,
                 const ProfilerString16View& aEventType,
                 const TimeStamp& aStartTime, const TimeStamp& aEventTimeStamp) {
-              aWriter.StringProperty(
-                  "eventType", NS_ConvertUTF16toUTF8(aEventType.Data(),
-                                                     aEventType.Length()));
+              aWriter.StringProperty("eventType",
+                                     NS_ConvertUTF16toUTF8(aEventType));
               
               
               
