@@ -368,9 +368,16 @@ void LIRGeneratorARM::lowerDivI(MDiv* div) {
   defineReturn(lir, div);
 }
 
-void LIRGeneratorARM::lowerNegI(MInstruction* ins, MDefinition* input,
-                                int32_t inputNo) {
+void LIRGeneratorARM::lowerNegI(MInstruction* ins, MDefinition* input) {
   define(new (alloc()) LNegI(useRegisterAtStart(input)), ins);
+}
+
+void LIRGeneratorARM::lowerNegI64(MInstruction* ins, MDefinition* input) {
+  
+  
+  
+  defineInt64ReuseInput(new (alloc()) LNegI64(useInt64RegisterAtStart(input)),
+                        ins, 0);
 }
 
 void LIRGeneratorARM::lowerMulI(MMul* mul, MDefinition* lhs, MDefinition* rhs) {
