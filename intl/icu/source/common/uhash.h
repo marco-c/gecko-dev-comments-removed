@@ -81,6 +81,13 @@
 
 
 
+
+
+
+
+
+
+
 U_CDECL_BEGIN
 
 
@@ -412,6 +419,44 @@ uhash_iputi(UHashtable *hash,
 
 
 
+
+
+
+
+
+
+U_CAPI int32_t U_EXPORT2
+uhash_putiAllowZero(UHashtable *hash,
+                    void *key,
+                    int32_t value,
+                    UErrorCode *status);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_CAPI int32_t U_EXPORT2
+uhash_iputiAllowZero(UHashtable *hash,
+                     int32_t key,
+                     int32_t value,
+                     UErrorCode *status);
+
+
+
+
+
+
+
+
 U_CAPI void* U_EXPORT2
 uhash_get(const UHashtable *hash,
           const void *key);
@@ -447,6 +492,34 @@ uhash_geti(const UHashtable *hash,
 U_CAPI int32_t U_EXPORT2
 uhash_igeti(const UHashtable *hash,
            int32_t key);
+
+
+
+
+
+
+
+
+
+
+U_CAPI int32_t U_EXPORT2
+uhash_getiAndFound(const UHashtable *hash,
+                   const void *key,
+                   UBool *found);
+
+
+
+
+
+
+
+
+
+
+U_CAPI int32_t U_EXPORT2
+uhash_igetiAndFound(const UHashtable *hash,
+                    int32_t key,
+                    UBool *found);
 
 
 
@@ -494,6 +567,26 @@ uhash_iremovei(UHashtable *hash,
 
 U_CAPI void U_EXPORT2
 uhash_removeAll(UHashtable *hash);
+
+
+
+
+
+
+
+
+U_CAPI UBool U_EXPORT2
+uhash_containsKey(const UHashtable *hash, const void *key);
+
+
+
+
+
+
+
+
+U_CAPI UBool U_EXPORT2
+uhash_icontainsKey(const UHashtable *hash, int32_t key);
 
 
 

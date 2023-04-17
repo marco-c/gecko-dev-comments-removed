@@ -960,14 +960,6 @@ res_findResource(const ResourceData *pResData, Resource r, char** path, const ch
     if(URES_IS_TABLE(type)) {
       *key = pathP;
       t2 = res_getTableItemByKey(pResData, t1, &indexR, key);
-      if(t2 == RES_BOGUS) { 
-        
-        indexR = uprv_strtol(pathP, &closeIndex, 10);
-        if(indexR >= 0 && *closeIndex == 0 && (*pathP != '0' || closeIndex - pathP == 1)) {
-          
-          t2 = res_getTableItemByIndex(pResData, t1, indexR, key);
-        } 
-      }
     } else if(URES_IS_ARRAY(type)) {
       indexR = uprv_strtol(pathP, &closeIndex, 10);
       if(indexR >= 0 && *closeIndex == 0) {

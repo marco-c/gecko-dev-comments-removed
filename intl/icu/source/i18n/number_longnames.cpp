@@ -5,6 +5,8 @@
 
 #if !UCONFIG_NO_FORMATTING
 
+#include <cstdlib>
+
 #include "unicode/simpleformatter.h"
 #include "unicode/ures.h"
 #include "ureslocs.h"
@@ -40,18 +42,76 @@ constexpr int32_t DNAM_INDEX = StandardPlural::Form::COUNT;
 
 constexpr int32_t PER_INDEX = StandardPlural::Form::COUNT + 1;
 
-constexpr int32_t ARRAY_LENGTH = StandardPlural::Form::COUNT + 2;
+
+
+constexpr int32_t GENDER_INDEX = StandardPlural::Form::COUNT + 2;
+
+constexpr int32_t ARRAY_LENGTH = StandardPlural::Form::COUNT + 3;
+
+
+
+const int32_t GENDER_COUNT = 7;
+const char *gGenders[GENDER_COUNT] = {"animate",   "common", "feminine", "inanimate",
+                                      "masculine", "neuter", "personal"};
+
+
+
+
+const char *getGenderString(UnicodeString uGender, UErrorCode status) {
+    if (uGender.length() == 0) {
+        return "";
+    }
+    CharString gender;
+    gender.appendInvariantChars(uGender, status);
+    if (U_FAILURE(status)) {
+        return "";
+    }
+    int32_t first = 0;
+    int32_t last = GENDER_COUNT;
+    while (first < last) {
+        int32_t mid = (first + last) / 2;
+        int32_t cmp = uprv_strcmp(gender.data(), gGenders[mid]);
+        if (cmp == 0) {
+            return gGenders[mid];
+        } else if (cmp > 0) {
+            first = mid + 1;
+        } else if (cmp < 0) {
+            last = mid;
+        }
+    }
+    
+    
+    
+    
+    
+    
+    return "";
+}
+
 
 static int32_t getIndex(const char* pluralKeyword, UErrorCode& status) {
     
-    if (uprv_strcmp(pluralKeyword, "dnam") == 0) {
-        return DNAM_INDEX;
-    } else if (uprv_strcmp(pluralKeyword, "per") == 0) {
-        return PER_INDEX;
-    } else {
-        StandardPlural::Form plural = StandardPlural::fromString(pluralKeyword, status);
-        return plural;
+    switch (*pluralKeyword) {
+    case 'd':
+        if (uprv_strcmp(pluralKeyword + 1, "nam") == 0) {
+            return DNAM_INDEX;
+        }
+        break;
+    case 'g':
+        if (uprv_strcmp(pluralKeyword + 1, "ender") == 0) {
+            return GENDER_INDEX;
+        }
+        break;
+    case 'p':
+        if (uprv_strcmp(pluralKeyword + 1, "er") == 0) {
+            return PER_INDEX;
+        }
+        break;
+    default:
+        break;
     }
+    StandardPlural::Form plural = StandardPlural::fromString(pluralKeyword, status);
+    return plural;
 }
 
 
@@ -74,13 +134,260 @@ static UnicodeString getWithPlural(
     return result;
 }
 
+enum PlaceholderPosition { PH_EMPTY, PH_NONE, PH_BEGINNING, PH_MIDDLE, PH_END };
 
 
 
 
+
+
+
+
+
+
+
+
+
+void extractCorePattern(const UnicodeString &pattern,
+                        UnicodeString &coreUnit,
+                        PlaceholderPosition &placeholderPosition,
+                        UChar &joinerChar) {
+    joinerChar = 0;
+    int32_t len = pattern.length();
+    if (pattern.startsWith(u"{0}", 3)) {
+        placeholderPosition = PH_BEGINNING;
+        if (u_isJavaSpaceChar(pattern[3])) {
+            joinerChar = pattern[3];
+            coreUnit.setTo(pattern, 4, len - 4);
+        } else {
+            coreUnit.setTo(pattern, 3, len - 3);
+        }
+    } else if (pattern.endsWith(u"{0}", 3)) {
+        placeholderPosition = PH_END;
+        if (u_isJavaSpaceChar(pattern[len - 4])) {
+            coreUnit.setTo(pattern, 0, len - 4);
+            joinerChar = pattern[len - 4];
+        } else {
+            coreUnit.setTo(pattern, 0, len - 3);
+        }
+    } else if (pattern.indexOf(u"{0}", 3, 1, len - 2) == -1) {
+        placeholderPosition = PH_NONE;
+        coreUnit = pattern;
+    } else {
+        placeholderPosition = PH_MIDDLE;
+        coreUnit = pattern;
+    }
+}
+
+
+
+
+
+
+
+UnicodeString
+getGenderForBuiltin(const Locale &locale, const MeasureUnit &builtinUnit, UErrorCode &status) {
+    LocalUResourceBundlePointer unitsBundle(ures_open(U_ICUDATA_UNIT, locale.getName(), &status));
+    if (U_FAILURE(status)) { return {}; }
+
+    
+    
+    StringPiece subtypeForResource;
+    int32_t subtypeLen = static_cast<int32_t>(uprv_strlen(builtinUnit.getSubtype()));
+    if (subtypeLen > 7 && uprv_strcmp(builtinUnit.getSubtype() + subtypeLen - 7, "-person") == 0) {
+        subtypeForResource = {builtinUnit.getSubtype(), subtypeLen - 7};
+    } else {
+        subtypeForResource = builtinUnit.getSubtype();
+    }
+
+    CharString key;
+    key.append("units/", status);
+    key.append(builtinUnit.getType(), status);
+    key.append("/", status);
+    key.append(subtypeForResource, status);
+    key.append("/gender", status);
+
+    UErrorCode localStatus = status;
+    int32_t resultLen = 0;
+    const UChar *result =
+        ures_getStringByKeyWithFallback(unitsBundle.getAlias(), key.data(), &resultLen, &localStatus);
+    if (U_SUCCESS(localStatus)) {
+        status = localStatus;
+        return UnicodeString(true, result, resultLen);
+    } else {
+        
+        
+        
+        
+        return {};
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class InflectedPluralSink : public ResourceSink {
+  public:
+    
+    
+    
+    
+    
+    explicit InflectedPluralSink(const char *gender, const char *caseVariant, UnicodeString *outArray)
+        : gender(gender), caseVariant(caseVariant), outArray(outArray) {
+        
+        for (int32_t i = 0; i < ARRAY_LENGTH; i++) {
+            outArray[i].setToBogus();
+        }
+    }
+
+    
+    void put(const char *key, ResourceValue &value, UBool , UErrorCode &status) U_OVERRIDE {
+        ResourceTable pluralsTable = value.getTable(status);
+        if (U_FAILURE(status)) { return; }
+        for (int32_t i = 0; pluralsTable.getKeyAndValue(i, key, value); ++i) {
+            int32_t pluralIndex = getIndex(key, status);
+            if (U_FAILURE(status)) { return; }
+            if (!outArray[pluralIndex].isBogus()) {
+                
+                continue;
+            }
+            ResourceTable genderTable = value.getTable(status);
+            ResourceTable caseTable; 
+            if (loadForPluralForm(genderTable, caseTable, value, status)) {
+                outArray[pluralIndex] = value.getUnicodeString(status);
+            }
+        }
+    }
+
+  private:
+    
+    
+    
+    
+    
+    bool loadForPluralForm(const ResourceTable &genderTable,
+                           ResourceTable &caseTable,
+                           ResourceValue &value,
+                           UErrorCode &status) {
+        if (uprv_strcmp(gender, "") != 0) {
+            if (loadForGender(genderTable, gender, caseTable, value, status)) {
+                return true;
+            }
+            if (uprv_strcmp(gender, "neuter") != 0 &&
+                loadForGender(genderTable, "neuter", caseTable, value, status)) {
+                return true;
+            }
+        }
+        if (loadForGender(genderTable, "_", caseTable, value, status)) {
+            return true;
+        }
+        return false;
+    }
+
+    
+    
+    
+    
+    bool loadForGender(const ResourceTable &genderTable,
+                       const char *genderVal,
+                       ResourceTable &caseTable,
+                       ResourceValue &value,
+                       UErrorCode &status) {
+        if (!genderTable.findValue(genderVal, value)) {
+            return false;
+        }
+        caseTable = value.getTable(status);
+        if (uprv_strcmp(caseVariant, "") != 0) {
+            if (loadForCase(caseTable, caseVariant, value)) {
+                return true;
+            }
+            if (uprv_strcmp(caseVariant, "nominative") != 0 &&
+                loadForCase(caseTable, "nominative", value)) {
+                return true;
+            }
+        }
+        if (loadForCase(caseTable, "_", value)) {
+            return true;
+        }
+        return false;
+    }
+
+    
+    
+    bool loadForCase(const ResourceTable &caseTable, const char *caseValue, ResourceValue &value) {
+        if (!caseTable.findValue(caseValue, value)) {
+            return false;
+        }
+        return true;
+    }
+
+    const char *gender;
+    const char *caseVariant;
+    UnicodeString *outArray;
+};
+
+
+
+
+
+
+void getInflectedMeasureData(StringPiece subKey,
+                             const Locale &locale,
+                             const UNumberUnitWidth &width,
+                             const char *gender,
+                             const char *caseVariant,
+                             UnicodeString *outArray,
+                             UErrorCode &status) {
+    InflectedPluralSink sink(gender, caseVariant, outArray);
+    LocalUResourceBundlePointer unitsBundle(ures_open(U_ICUDATA_UNIT, locale.getName(), &status));
+    if (U_FAILURE(status)) { return; }
+
+    CharString key;
+    key.append("units", status);
+    if (width == UNUM_UNIT_WIDTH_NARROW) {
+        key.append("Narrow", status);
+    } else if (width == UNUM_UNIT_WIDTH_SHORT) {
+        key.append("Short", status);
+    }
+    key.append("/", status);
+    key.append(subKey, status);
+
+    UErrorCode localStatus = status;
+    ures_getAllItemsWithFallback(unitsBundle.getAlias(), key.data(), sink, localStatus);
+    if (width == UNUM_UNIT_WIDTH_SHORT) {
+        status = localStatus;
+        return;
+    }
+
+    
+    
+    key.clear();
+    key.append("unitsShort/", status);
+    key.append(subKey, status);
+    ures_getAllItemsWithFallback(unitsBundle.getAlias(), key.data(), sink, status);
+}
 
 class PluralTableSink : public ResourceSink {
   public:
+    
+    
     explicit PluralTableSink(UnicodeString *outArray) : outArray(outArray) {
         
         for (int32_t i = 0; i < ARRAY_LENGTH; i++) {
@@ -92,6 +399,9 @@ class PluralTableSink : public ResourceSink {
         ResourceTable pluralsTable = value.getTable(status);
         if (U_FAILURE(status)) { return; }
         for (int32_t i = 0; pluralsTable.getKeyAndValue(i, key, value); ++i) {
+            if (uprv_strcmp(key, "case") == 0) {
+                continue;
+            }
             int32_t index = getIndex(key, status);
             if (U_FAILURE(status)) { return; }
             if (!outArray[index].isBogus()) {
@@ -120,20 +430,41 @@ class PluralTableSink : public ResourceSink {
 
 
 
-void getMeasureData(const Locale &locale, const MeasureUnit &unit, const UNumberUnitWidth &width,
-                    UnicodeString *outArray, UErrorCode &status) {
+
+void getMeasureData(const Locale &locale,
+                    const MeasureUnit &unit,
+                    const UNumberUnitWidth &width,
+                    const char *unitDisplayCase,
+                    UnicodeString *outArray,
+                    UErrorCode &status) {
     PluralTableSink sink(outArray);
     LocalUResourceBundlePointer unitsBundle(ures_open(U_ICUDATA_UNIT, locale.getName(), &status));
     if (U_FAILURE(status)) { return; }
 
+    CharString subKey;
+    subKey.append("/", status);
+    subKey.append(unit.getType(), status);
+    subKey.append("/", status);
+
     
     
-    StringPiece subtypeForResource;
     int32_t subtypeLen = static_cast<int32_t>(uprv_strlen(unit.getSubtype()));
     if (subtypeLen > 7 && uprv_strcmp(unit.getSubtype() + subtypeLen - 7, "-person") == 0) {
-        subtypeForResource = {unit.getSubtype(), subtypeLen - 7};
+        subKey.append({unit.getSubtype(), subtypeLen - 7}, status);
     } else {
-        subtypeForResource = unit.getSubtype();
+        subKey.append({unit.getSubtype(), subtypeLen}, status);
+    }
+
+    if (width != UNUM_UNIT_WIDTH_FULL_NAME) {
+        UErrorCode localStatus = status;
+        CharString genderKey;
+        genderKey.append("units", localStatus);
+        genderKey.append(subKey, localStatus);
+        genderKey.append("/gender", localStatus);
+        StackUResourceBundle fillIn;
+        ures_getByKeyWithFallback(unitsBundle.getAlias(), genderKey.data(), fillIn.getAlias(),
+                                  &localStatus);
+        outArray[GENDER_INDEX] = ures_getUnicodeString(fillIn.getAlias(), &localStatus);
     }
 
     CharString key;
@@ -143,11 +474,30 @@ void getMeasureData(const Locale &locale, const MeasureUnit &unit, const UNumber
     } else if (width == UNUM_UNIT_WIDTH_SHORT) {
         key.append("Short", status);
     }
-    key.append("/", status);
-    key.append(unit.getType(), status);
-    key.append("/", status);
-    key.append(subtypeForResource, status);
+    key.append(subKey, status);
 
+    
+    
+    if (width == UNUM_UNIT_WIDTH_FULL_NAME && unitDisplayCase[0] != 0) {
+        CharString caseKey;
+        caseKey.append(key, status);
+        caseKey.append("/case/", status);
+        caseKey.append(unitDisplayCase, status);
+
+        UErrorCode localStatus = U_ZERO_ERROR;
+        
+        
+        
+        
+        
+        ures_getAllItemsWithFallback(unitsBundle.getAlias(), caseKey.data(), sink, localStatus);
+    }
+
+    
+    
+    
+    
+    
     UErrorCode localStatus = U_ZERO_ERROR;
     ures_getAllItemsWithFallback(unitsBundle.getAlias(), key.data(), sink, localStatus);
     if (width == UNUM_UNIT_WIDTH_SHORT) {
@@ -160,12 +510,11 @@ void getMeasureData(const Locale &locale, const MeasureUnit &unit, const UNumber
     
     
     key.clear();
-    key.append("unitsShort/", status);
-    key.append(unit.getType(), status);
-    key.append("/", status);
-    key.append(subtypeForResource, status);
+    key.append("unitsShort", status);
+    key.append(subKey, status);
     ures_getAllItemsWithFallback(unitsBundle.getAlias(), key.data(), sink, status);
 }
+
 
 void getCurrencyLongNameData(const Locale &locale, const CurrencyUnit &currency, UnicodeString *outArray,
                              UErrorCode &status) {
@@ -195,7 +544,10 @@ void getCurrencyLongNameData(const Locale &locale, const CurrencyUnit &currency,
     }
 }
 
-UnicodeString getPerUnitFormat(const Locale& locale, const UNumberUnitWidth &width, UErrorCode& status) {
+UnicodeString getCompoundValue(StringPiece compoundKey,
+                               const Locale &locale,
+                               const UNumberUnitWidth &width,
+                               UErrorCode &status) {
     LocalUResourceBundlePointer unitsBundle(ures_open(U_ICUDATA_UNIT, locale.getName(), &status));
     if (U_FAILURE(status)) { return {}; }
     CharString key;
@@ -205,9 +557,25 @@ UnicodeString getPerUnitFormat(const Locale& locale, const UNumberUnitWidth &wid
     } else if (width == UNUM_UNIT_WIDTH_SHORT) {
         key.append("Short", status);
     }
-    key.append("/compound/per", status);
+    key.append("/compound/", status);
+    key.append(compoundKey, status);
+
+    UErrorCode localStatus = status;
     int32_t len = 0;
-    const UChar* ptr = ures_getStringByKeyWithFallback(unitsBundle.getAlias(), key.data(), &len, &status);
+    const UChar *ptr =
+        ures_getStringByKeyWithFallback(unitsBundle.getAlias(), key.data(), &len, &localStatus);
+    if (U_FAILURE(localStatus) && width != UNUM_UNIT_WIDTH_SHORT) {
+        
+        key.clear();
+        key.append("unitsShort/compound/", status);
+        key.append(compoundKey, status);
+        ptr = ures_getStringByKeyWithFallback(unitsBundle.getAlias(), key.data(), &len, &status);
+    } else {
+        status = localStatus;
+    }
+    if (U_FAILURE(status)) {
+        return {};
+    }
     return UnicodeString(ptr, len);
 }
 
@@ -215,109 +583,867 @@ UnicodeString getPerUnitFormat(const Locale& locale, const UNumberUnitWidth &wid
 
 
 
-} 
 
-void LongNameHandler::forMeasureUnit(const Locale &loc, const MeasureUnit &unitRef,
-                                     const MeasureUnit &perUnit, const UNumberUnitWidth &width,
-                                     const PluralRules *rules, const MicroPropsGenerator *parent,
-                                     LongNameHandler *fillIn, UErrorCode &status) {
-    
-    
-    U_ASSERT(uprv_strcmp(unitRef.getType(), "") != 0 ||
-             unitRef.getComplexity(status) != UMEASURE_UNIT_MIXED);
-    U_ASSERT(fillIn != nullptr);
 
-    MeasureUnit unit = unitRef;
-    if (uprv_strcmp(perUnit.getType(), "none") != 0) {
-        
-        MeasureUnit simplified = unit.product(perUnit.reciprocal(status), status);
-        if (uprv_strcmp(simplified.getType(), "") != 0) {
-            unit = simplified;
-        } else {
-            
-            forCompoundUnit(loc, unit, perUnit, width, rules, parent, fillIn, status);
+
+
+
+
+
+
+
+
+
+
+
+
+class DerivedComponents {
+  public:
+    
+
+
+
+
+
+
+    DerivedComponents(const Locale &locale, const char *feature, const char *structure) {
+        StackUResourceBundle derivationsBundle, stackBundle;
+        ures_openDirectFillIn(derivationsBundle.getAlias(), NULL, "grammaticalFeatures", &status);
+        ures_getByKey(derivationsBundle.getAlias(), "grammaticalData", derivationsBundle.getAlias(),
+                      &status);
+        ures_getByKey(derivationsBundle.getAlias(), "derivations", derivationsBundle.getAlias(),
+                      &status);
+        if (U_FAILURE(status)) {
             return;
+        }
+        UErrorCode localStatus = U_ZERO_ERROR;
+        
+        
+        ures_getByKey(derivationsBundle.getAlias(), locale.getLanguage(), stackBundle.getAlias(),
+                      &localStatus);
+        
+        
+        
+        
+        
+        
+        if (localStatus == U_MISSING_RESOURCE_ERROR) {
+            ures_getByKey(derivationsBundle.getAlias(), "root", stackBundle.getAlias(), &status);
+        } else {
+            status = localStatus;
+        }
+        ures_getByKey(stackBundle.getAlias(), "component", stackBundle.getAlias(), &status);
+        ures_getByKey(stackBundle.getAlias(), feature, stackBundle.getAlias(), &status);
+        ures_getByKey(stackBundle.getAlias(), structure, stackBundle.getAlias(), &status);
+        UnicodeString val0 = ures_getUnicodeStringByIndex(stackBundle.getAlias(), 0, &status);
+        UnicodeString val1 = ures_getUnicodeStringByIndex(stackBundle.getAlias(), 1, &status);
+        if (U_SUCCESS(status)) {
+            if (val0.compare(UnicodeString(u"compound")) == 0) {
+                compound0_ = true;
+            } else {
+                compound0_ = false;
+                value0_.appendInvariantChars(val0, status);
+            }
+            if (val1.compare(UnicodeString(u"compound")) == 0) {
+                compound1_ = true;
+            } else {
+                compound1_ = false;
+                value1_.appendInvariantChars(val1, status);
+            }
         }
     }
 
-    if (uprv_strcmp(unit.getType(), "") == 0) {
-        
-        
-        
-        status = U_UNSUPPORTED_ERROR;
-        return;
+    
+    StringPiece value0(const StringPiece compoundValue) const {
+        return compound0_ ? compoundValue : value0_.toStringPiece();
     }
 
-    UnicodeString simpleFormats[ARRAY_LENGTH];
-    getMeasureData(loc, unit, width, simpleFormats, status);
-    if (U_FAILURE(status)) {
-        return;
+    
+    StringPiece value1(const StringPiece compoundValue) const {
+        return compound1_ ? compoundValue : value1_.toStringPiece();
     }
-    fillIn->rules = rules;
-    fillIn->parent = parent;
-    fillIn->simpleFormatsToModifiers(simpleFormats, {UFIELD_CATEGORY_NUMBER, UNUM_MEASURE_UNIT_FIELD},
-                                     status);
+
+    
+    const char *value0(const char *compoundValue) const {
+        return compound0_ ? compoundValue : value0_.data();
+    }
+
+    
+    const char *value1(const char *compoundValue) const {
+        return compound1_ ? compoundValue : value1_.data();
+    }
+
+  private:
+    UErrorCode status = U_ZERO_ERROR;
+
+    
+    bool compound0_ = false, compound1_ = false;
+    CharString value0_, value1_;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+UnicodeString
+getDeriveCompoundRule(Locale locale, const char *feature, const char *structure, UErrorCode &status) {
+    StackUResourceBundle derivationsBundle, stackBundle;
+    ures_openDirectFillIn(derivationsBundle.getAlias(), NULL, "grammaticalFeatures", &status);
+    ures_getByKey(derivationsBundle.getAlias(), "grammaticalData", derivationsBundle.getAlias(),
+                  &status);
+    ures_getByKey(derivationsBundle.getAlias(), "derivations", derivationsBundle.getAlias(), &status);
+    
+    ures_getByKey(derivationsBundle.getAlias(), locale.getLanguage(), stackBundle.getAlias(), &status);
+    
+    
+    
+    
+    
+    
+    if (status == U_MISSING_RESOURCE_ERROR) {
+        status = U_ZERO_ERROR;
+        ures_getByKey(derivationsBundle.getAlias(), "root", stackBundle.getAlias(), &status);
+    }
+    ures_getByKey(stackBundle.getAlias(), "compound", stackBundle.getAlias(), &status);
+    ures_getByKey(stackBundle.getAlias(), feature, stackBundle.getAlias(), &status);
+    UnicodeString uVal = ures_getUnicodeStringByKey(stackBundle.getAlias(), structure, &status);
+    if (U_FAILURE(status)) {
+        return {};
+    }
+    U_ASSERT(!uVal.isBogus());
+    return uVal;
 }
 
-void LongNameHandler::forCompoundUnit(const Locale &loc, const MeasureUnit &unit,
-                                      const MeasureUnit &perUnit, const UNumberUnitWidth &width,
-                                      const PluralRules *rules, const MicroPropsGenerator *parent,
-                                      LongNameHandler *fillIn, UErrorCode &status) {
-    if (uprv_strcmp(unit.getType(), "") == 0 || uprv_strcmp(perUnit.getType(), "") == 0) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+UnicodeString getDerivedGender(Locale locale,
+                               const char *structure,
+                               UnicodeString *data0,
+                               UnicodeString *data1,
+                               UErrorCode &status) {
+    UnicodeString val = getDeriveCompoundRule(locale, "gender", structure, status);
+    if (val.length() == 1) {
+        switch (val[0]) {
+        case u'0':
+            return data0[GENDER_INDEX];
+        case u'1':
+            if (data1 == nullptr) {
+                return {};
+            }
+            return data1[GENDER_INDEX];
+        }
+    }
+    return val;
+}
+
+
+
+
+
+
+const UChar *trimSpaceChars(const UChar *s, int32_t &length) {
+    if (length <= 0 || (!u_isJavaSpaceChar(s[0]) && !u_isJavaSpaceChar(s[length - 1]))) {
+        return s;
+    }
+    int32_t start = 0;
+    int32_t limit = length;
+    while (start < limit && u_isJavaSpaceChar(s[start])) {
+        ++start;
+    }
+    if (start < limit) {
+        
+        
+        while (u_isJavaSpaceChar(s[limit - 1])) {
+            --limit;
+        }
+    }
+    length = limit - start;
+    return s + start;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+UnicodeString calculateGenderForUnit(const Locale &locale, const MeasureUnit &unit, UErrorCode &status) {
+    MeasureUnitImpl impl;
+    const MeasureUnitImpl& mui = MeasureUnitImpl::forMeasureUnit(unit, impl, status);
+    int32_t singleUnitIndex = 0;
+    if (mui.complexity == UMEASURE_UNIT_COMPOUND) {
+        int32_t startSlice = 0;
+        
+        int32_t endSlice = mui.singleUnits.length()-1;
+        U_ASSERT(endSlice > 0); 
+        if (mui.singleUnits[endSlice]->dimensionality < 0) {
+            
+            UnicodeString perRule = getDeriveCompoundRule(locale, "gender", "per", status);
+            if (perRule.length() != 1) {
+                
+                return perRule;
+            }
+            if (perRule[0] == u'1') {
+                
+                while (mui.singleUnits[startSlice]->dimensionality >= 0) {
+                    startSlice++;
+                }
+            } else {
+                
+                while (endSlice >= 0 && mui.singleUnits[endSlice]->dimensionality < 0) {
+                    endSlice--;
+                }
+                if (endSlice < 0) {
+                    
+                    
+                    
+                    return {};
+                }
+            }
+        }
+        if (endSlice > startSlice) {
+            
+            UnicodeString timesRule = getDeriveCompoundRule(locale, "gender", "times", status);
+            if (timesRule.length() != 1) {
+                
+                return timesRule;
+            }
+            if (timesRule[0] == u'0') {
+                endSlice = startSlice;
+            } else {
+                
+                startSlice = endSlice;
+            }
+        }
+        U_ASSERT(startSlice == endSlice);
+        singleUnitIndex = startSlice;
+    } else if (mui.complexity == UMEASURE_UNIT_MIXED) {
+        status = U_INTERNAL_PROGRAM_ERROR;
+        return {};
+    } else {
+        U_ASSERT(mui.complexity == UMEASURE_UNIT_SINGLE);
+        U_ASSERT(mui.singleUnits.length() == 1);
+    }
+
+    
+    const SingleUnitImpl *singleUnit = mui.singleUnits[singleUnitIndex];
+    
+    if (std::abs(singleUnit->dimensionality) != 1) {
+        UnicodeString powerRule = getDeriveCompoundRule(locale, "gender", "power", status);
+        if (powerRule.length() != 1) {
+            
+            return powerRule;
+        }
+        
+    }
+    
+    if (std::abs(singleUnit->dimensionality) != 1) {
+        UnicodeString prefixRule = getDeriveCompoundRule(locale, "gender", "prefix", status);
+        if (prefixRule.length() != 1) {
+            
+            return prefixRule;
+        }
+        
+    }
+    
+    return getGenderForBuiltin(locale, MeasureUnit::forIdentifier(singleUnit->getSimpleUnitID(), status),
+                               status);
+}
+
+void maybeCalculateGender(const Locale &locale,
+                          const MeasureUnit &unitRef,
+                          UnicodeString *outArray,
+                          UErrorCode &status) {
+    if (outArray[GENDER_INDEX].isBogus()) {
+        UnicodeString meterGender = getGenderForBuiltin(locale, MeasureUnit::getMeter(), status);
+        if (meterGender.isEmpty()) {
+            
+            return;
+        }
+        
+        outArray[GENDER_INDEX] = calculateGenderForUnit(locale, unitRef, status);
+    }
+}
+
+} 
+
+void LongNameHandler::forMeasureUnit(const Locale &loc,
+                                     const MeasureUnit &unitRef,
+                                     const UNumberUnitWidth &width,
+                                     const char *unitDisplayCase,
+                                     const PluralRules *rules,
+                                     const MicroPropsGenerator *parent,
+                                     LongNameHandler *fillIn,
+                                     UErrorCode &status) {
+    
+    
+    
+    
+    
+    U_ASSERT(fillIn != nullptr);
+
+    if (uprv_strcmp(unitRef.getType(), "") != 0) {
         
         
         
-        status = U_UNSUPPORTED_ERROR;
+        
+        UnicodeString simpleFormats[ARRAY_LENGTH];
+        getMeasureData(loc, unitRef, width, unitDisplayCase, simpleFormats, status);
+        maybeCalculateGender(loc, unitRef, simpleFormats, status);
+        if (U_FAILURE(status)) {
+            return;
+        }
+        fillIn->rules = rules;
+        fillIn->parent = parent;
+        fillIn->simpleFormatsToModifiers(simpleFormats,
+                                         {UFIELD_CATEGORY_NUMBER, UNUM_MEASURE_UNIT_FIELD}, status);
+        if (!simpleFormats[GENDER_INDEX].isBogus()) {
+            fillIn->gender = getGenderString(simpleFormats[GENDER_INDEX], status);
+        }
+        return;
+
+        
+        
+        
+
+        
+        
+        
+        
+    } else {
+        
+        
+        U_ASSERT(unitRef.getComplexity(status) != UMEASURE_UNIT_MIXED);
+        forArbitraryUnit(loc, unitRef, width, unitDisplayCase, fillIn, status);
+        fillIn->rules = rules;
+        fillIn->parent = parent;
+        return;
+    }
+}
+
+void LongNameHandler::forArbitraryUnit(const Locale &loc,
+                                       const MeasureUnit &unitRef,
+                                       const UNumberUnitWidth &width,
+                                       const char *unitDisplayCase,
+                                       LongNameHandler *fillIn,
+                                       UErrorCode &status) {
+    if (U_FAILURE(status)) {
         return;
     }
     if (fillIn == nullptr) {
         status = U_INTERNAL_PROGRAM_ERROR;
         return;
     }
-    UnicodeString primaryData[ARRAY_LENGTH];
-    getMeasureData(loc, unit, width, primaryData, status);
+
+    
+    
+    
+    
+    
+    MeasureUnitImpl unit;
+    MeasureUnitImpl perUnit;
+    {
+        MeasureUnitImpl fullUnit = MeasureUnitImpl::forMeasureUnitMaybeCopy(unitRef, status);
+        if (U_FAILURE(status)) {
+            return;
+        }
+        for (int32_t i = 0; i < fullUnit.singleUnits.length(); i++) {
+            SingleUnitImpl *subUnit = fullUnit.singleUnits[i];
+            if (subUnit->dimensionality > 0) {
+                unit.appendSingleUnit(*subUnit, status);
+            } else {
+                subUnit->dimensionality *= -1;
+                perUnit.appendSingleUnit(*subUnit, status);
+            }
+        }
+    }
+
+    
+    
+    
+    
+
+    DerivedComponents derivedPerCases(loc, "case", "per");
+
+    
+    UnicodeString numeratorUnitData[ARRAY_LENGTH];
+    processPatternTimes(std::move(unit), loc, width, derivedPerCases.value0(unitDisplayCase),
+                        numeratorUnitData, status);
+
+    
+    UnicodeString denominatorUnitData[ARRAY_LENGTH];
+    processPatternTimes(std::move(perUnit), loc, width, derivedPerCases.value1(unitDisplayCase),
+                        denominatorUnitData, status);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    UnicodeString perUnitPattern;
+    if (!denominatorUnitData[PER_INDEX].isBogus()) {
+        
+        perUnitPattern = denominatorUnitData[PER_INDEX];
+    } else {
+        
+        UnicodeString rawPerUnitFormat = getCompoundValue("per", loc, width, status);
+        
+        SimpleFormatter perPatternFormatter(rawPerUnitFormat, 2, 2, status);
+        if (U_FAILURE(status)) {
+            return;
+        }
+        
+        
+        
+        UnicodeString denominatorFormat =
+            getWithPlural(denominatorUnitData, StandardPlural::Form::ONE, status);
+        
+        SimpleFormatter denominatorFormatter(denominatorFormat, 0, 1, status);
+        if (U_FAILURE(status)) {
+            return;
+        }
+        UnicodeString denominatorPattern = denominatorFormatter.getTextWithNoArguments();
+        int32_t trimmedLen = denominatorPattern.length();
+        const UChar *trimmed = trimSpaceChars(denominatorPattern.getBuffer(), trimmedLen);
+        UnicodeString denominatorString(false, trimmed, trimmedLen);
+        
+        
+        
+        
+        
+        
+        perPatternFormatter.format(UnicodeString(u"{0}"), denominatorString, perUnitPattern, status);
+        if (U_FAILURE(status)) {
+            return;
+        }
+    }
+    if (perUnitPattern.length() == 0) {
+        fillIn->simpleFormatsToModifiers(numeratorUnitData,
+                                         {UFIELD_CATEGORY_NUMBER, UNUM_MEASURE_UNIT_FIELD}, status);
+    } else {
+        fillIn->multiSimpleFormatsToModifiers(numeratorUnitData, perUnitPattern,
+                                              {UFIELD_CATEGORY_NUMBER, UNUM_MEASURE_UNIT_FIELD}, status);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    fillIn->gender = getGenderString(
+        getDerivedGender(loc, "per", numeratorUnitData, denominatorUnitData, status), status);
+}
+
+void LongNameHandler::processPatternTimes(MeasureUnitImpl &&productUnit,
+                                          Locale loc,
+                                          const UNumberUnitWidth &width,
+                                          const char *caseVariant,
+                                          UnicodeString *outArray,
+                                          UErrorCode &status) {
     if (U_FAILURE(status)) {
         return;
     }
-    UnicodeString secondaryData[ARRAY_LENGTH];
-    getMeasureData(loc, perUnit, width, secondaryData, status);
+    if (productUnit.complexity == UMEASURE_UNIT_MIXED) {
+        
+        status = U_UNSUPPORTED_ERROR;
+        return;
+    }
+
+#if U_DEBUG
+    for (int32_t pluralIndex = 0; pluralIndex < ARRAY_LENGTH; pluralIndex++) {
+        U_ASSERT(outArray[pluralIndex].length() == 0);
+        U_ASSERT(!outArray[pluralIndex].isBogus());
+    }
+#endif
+
+    if (productUnit.identifier.isEmpty()) {
+        
+        
+        productUnit.serialize(status);
+    }
+    if (U_FAILURE(status)) {
+        return;
+    }
+    if (productUnit.identifier.length() == 0) {
+        
+        return;
+    }
+
+    MeasureUnit builtinUnit;
+    if (MeasureUnit::findBySubType(productUnit.identifier.toStringPiece(), &builtinUnit)) {
+        
+        
+        
+        
+        
+        
+        
+        if (builtinUnit != MeasureUnit()) {
+            getMeasureData(loc, builtinUnit, width, caseVariant, outArray, status);
+            maybeCalculateGender(loc, builtinUnit, outArray, status);
+        }
+        return;
+    }
+
+    
+    UnicodeString timesPattern = getCompoundValue("times", loc, width, status);
+    SimpleFormatter timesPatternFormatter(timesPattern, 2, 2, status);
     if (U_FAILURE(status)) {
         return;
     }
 
-    UnicodeString perUnitFormat;
-    if (!secondaryData[PER_INDEX].isBogus()) {
-        perUnitFormat = secondaryData[PER_INDEX];
-    } else {
-        UnicodeString rawPerUnitFormat = getPerUnitFormat(loc, width, status);
-        if (U_FAILURE(status)) {
-            return;
-        }
+    PlaceholderPosition globalPlaceholder[ARRAY_LENGTH];
+    UChar globalJoinerChar = 0;
+    
+    
+    
+    
+    
+    
+    
+    for (int32_t pluralIndex = 0; pluralIndex < ARRAY_LENGTH; pluralIndex++) {
         
-        SimpleFormatter compiled(rawPerUnitFormat, 2, 2, status);
-        if (U_FAILURE(status)) {
-            return;
+        if (pluralIndex == StandardPlural::Form::OTHER) {
+            outArray[pluralIndex].remove();
+        } else {
+            outArray[pluralIndex].setToBogus();
         }
-        UnicodeString secondaryFormat = getWithPlural(secondaryData, StandardPlural::Form::ONE, status);
-        if (U_FAILURE(status)) {
-            return;
-        }
+        globalPlaceholder[pluralIndex] = PH_EMPTY;
+    }
+
+    
+    const char *pluralCategory = "";
+    DerivedComponents derivedTimesPlurals(loc, "plural", "times");
+    DerivedComponents derivedTimesCases(loc, "case", "times");
+    DerivedComponents derivedPowerCases(loc, "case", "power");
+
+    
+    for (int32_t singleUnitIndex = 0; singleUnitIndex < productUnit.singleUnits.length();
+         singleUnitIndex++) {
+        SingleUnitImpl *singleUnit = productUnit.singleUnits[singleUnitIndex];
+        const char *singlePluralCategory;
+        const char *singleCaseVariant;
         
-        SimpleFormatter secondaryCompiled(secondaryFormat, 0, 1, status);
-        if (U_FAILURE(status)) {
+        
+        if (singleUnitIndex < productUnit.singleUnits.length() - 1) {
+            
+            singlePluralCategory = derivedTimesPlurals.value0(pluralCategory);
+            singleCaseVariant = derivedTimesCases.value0(caseVariant);
+            pluralCategory = derivedTimesPlurals.value1(pluralCategory);
+            caseVariant = derivedTimesCases.value1(caseVariant);
+        } else {
+            singlePluralCategory = derivedTimesPlurals.value1(pluralCategory);
+            singleCaseVariant = derivedTimesCases.value1(caseVariant);
+        }
+
+        
+        MeasureUnit simpleUnit;
+        if (!MeasureUnit::findBySubType(singleUnit->getSimpleUnitID(), &simpleUnit)) {
+            
+            
+            
+            
+            
+            status = U_UNSUPPORTED_ERROR;
             return;
         }
-        UnicodeString secondaryString = secondaryCompiled.getTextWithNoArguments().trim();
+        const char *gender = getGenderString(getGenderForBuiltin(loc, simpleUnit, status), status);
+
         
-        compiled.format(UnicodeString(u"{0}"), secondaryString, perUnitFormat, status);
+        U_ASSERT(singleUnit->dimensionality > 0);
+        int32_t dimensionality = singleUnit->dimensionality;
+        UnicodeString dimensionalityPrefixPatterns[ARRAY_LENGTH];
+        if (dimensionality != 1) {
+            
+            
+            
+            CharString dimensionalityKey("compound/power", status);
+            dimensionalityKey.appendNumber(dimensionality, status);
+            getInflectedMeasureData(dimensionalityKey.toStringPiece(), loc, width, gender,
+                                    singleCaseVariant, dimensionalityPrefixPatterns, status);
+            if (U_FAILURE(status)) {
+                
+                
+                
+                
+                if (status == U_RESOURCE_TYPE_MISMATCH && dimensionality > 3) {
+                    status = U_UNSUPPORTED_ERROR;
+                }
+                return;
+            }
+
+            
+            
+
+            
+            singleCaseVariant = derivedPowerCases.value0(singleCaseVariant);
+            
+            singleUnit->dimensionality = 1;
+        }
+
+        
+        UMeasurePrefix prefix = singleUnit->unitPrefix;
+        UnicodeString prefixPattern;
+        if (prefix != UMEASURE_PREFIX_ONE) {
+            
+            
+            CharString prefixKey;
+            
+            prefixKey.appendNumber(umeas_getPrefixBase(prefix), status);
+            prefixKey.append('p', status);
+            prefixKey.appendNumber(umeas_getPrefixPower(prefix), status);
+            
+            prefixPattern = getCompoundValue(prefixKey.toStringPiece(), loc, width, status);
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+
+            
+            singleUnit->unitPrefix = UMEASURE_PREFIX_ONE;
+        }
+
+        
+        
+        UnicodeString singleUnitArray[ARRAY_LENGTH];
+        
+        U_ASSERT(uprv_strcmp(singleUnit->build(status).getIdentifier(), singleUnit->getSimpleUnitID()) ==
+                 0);
+        getMeasureData(loc, singleUnit->build(status), width, singleCaseVariant, singleUnitArray,
+                       status);
         if (U_FAILURE(status)) {
+            
             return;
+        }
+
+        
+        if (!singleUnitArray[GENDER_INDEX].isBogus()) {
+            U_ASSERT(!singleUnitArray[GENDER_INDEX].isEmpty());
+            UnicodeString uVal;
+
+            if (prefix != UMEASURE_PREFIX_ONE) {
+                singleUnitArray[GENDER_INDEX] =
+                    getDerivedGender(loc, "prefix", singleUnitArray, nullptr, status);
+            }
+
+            if (dimensionality != 1) {
+                singleUnitArray[GENDER_INDEX] =
+                    getDerivedGender(loc, "power", singleUnitArray, nullptr, status);
+            }
+
+            UnicodeString timesGenderRule = getDeriveCompoundRule(loc, "gender", "times", status);
+            if (timesGenderRule.length() == 1) {
+                switch (timesGenderRule[0]) {
+                case u'0':
+                    if (singleUnitIndex == 0) {
+                        U_ASSERT(outArray[GENDER_INDEX].isBogus());
+                        outArray[GENDER_INDEX] = singleUnitArray[GENDER_INDEX];
+                    }
+                    break;
+                case u'1':
+                    if (singleUnitIndex == productUnit.singleUnits.length() - 1) {
+                        U_ASSERT(outArray[GENDER_INDEX].isBogus());
+                        outArray[GENDER_INDEX] = singleUnitArray[GENDER_INDEX];
+                    }
+                }
+            } else {
+                if (outArray[GENDER_INDEX].isBogus()) {
+                    outArray[GENDER_INDEX] = timesGenderRule;
+                }
+            }
+        }
+
+        
+        for (int32_t pluralIndex = 0; pluralIndex < StandardPlural::Form::COUNT; pluralIndex++) {
+            StandardPlural::Form plural = static_cast<StandardPlural::Form>(pluralIndex);
+
+            
+            if (outArray[pluralIndex].isBogus()) {
+                if (singleUnitArray[pluralIndex].isBogus()) {
+                    
+                    
+                    continue;
+                } else {
+                    
+                    
+                    
+                    outArray[pluralIndex] = getWithPlural(outArray, plural, status);
+                    if (U_FAILURE(status)) {
+                        return;
+                    }
+                }
+            }
+
+            if (uprv_strcmp(singlePluralCategory, "") != 0) {
+                plural = static_cast<StandardPlural::Form>(getIndex(singlePluralCategory, status));
+            }
+
+            
+            UnicodeString coreUnit;
+            PlaceholderPosition placeholderPosition;
+            UChar joinerChar;
+            extractCorePattern(getWithPlural(singleUnitArray, plural, status), coreUnit,
+                               placeholderPosition, joinerChar);
+
+            
+            if (placeholderPosition == PH_MIDDLE) {
+                status = U_UNSUPPORTED_ERROR;
+                return;
+            }
+
+            
+            if (globalPlaceholder[pluralIndex] == PH_EMPTY) {
+                globalPlaceholder[pluralIndex] = placeholderPosition;
+                globalJoinerChar = joinerChar;
+            } else {
+                
+                U_ASSERT(globalPlaceholder[pluralIndex] == placeholderPosition);
+                
+                
+                
+            }
+            
+
+            
+            if (prefix != UMEASURE_PREFIX_ONE) {
+                SimpleFormatter prefixCompiled(prefixPattern, 1, 1, status);
+                if (U_FAILURE(status)) {
+                    return;
+                }
+
+                
+                
+                UnicodeString tmp;
+                
+                
+                
+                
+                
+                if (width == UNUM_UNIT_WIDTH_FULL_NAME) {
+                    coreUnit.toLower(loc);
+                }
+                prefixCompiled.format(coreUnit, tmp, status);
+                if (U_FAILURE(status)) {
+                    return;
+                }
+                coreUnit = tmp;
+            }
+
+            
+            if (dimensionality != 1) {
+                SimpleFormatter dimensionalityCompiled(
+                    getWithPlural(dimensionalityPrefixPatterns, plural, status), 1, 1, status);
+                if (U_FAILURE(status)) {
+                    return;
+                }
+
+                
+                
+                UnicodeString tmp;
+                
+                
+                
+                
+                
+                if (width == UNUM_UNIT_WIDTH_FULL_NAME) {
+                    coreUnit.toLower(loc);
+                }
+                dimensionalityCompiled.format(coreUnit, tmp, status);
+                if (U_FAILURE(status)) {
+                    return;
+                }
+                coreUnit = tmp;
+            }
+
+            if (outArray[pluralIndex].length() == 0) {
+                
+                outArray[pluralIndex] = coreUnit;
+            } else {
+                
+                UnicodeString tmp;
+                timesPatternFormatter.format(outArray[pluralIndex], coreUnit, tmp, status);
+                outArray[pluralIndex] = tmp;
+            }
         }
     }
-    fillIn->rules = rules;
-    fillIn->parent = parent;
-    fillIn->multiSimpleFormatsToModifiers(primaryData, perUnitFormat,
-                                          {UFIELD_CATEGORY_NUMBER, UNUM_MEASURE_UNIT_FIELD}, status);
+    for (int32_t pluralIndex = 0; pluralIndex < StandardPlural::Form::COUNT; pluralIndex++) {
+        if (globalPlaceholder[pluralIndex] == PH_BEGINNING) {
+            UnicodeString tmp;
+            tmp.append(u"{0}", 3);
+            if (globalJoinerChar != 0) {
+                tmp.append(globalJoinerChar);
+            }
+            tmp.append(outArray[pluralIndex]);
+            outArray[pluralIndex] = tmp;
+        } else if (globalPlaceholder[pluralIndex] == PH_END) {
+            if (globalJoinerChar != 0) {
+                outArray[pluralIndex].append(globalJoinerChar);
+            }
+            outArray[pluralIndex].append(u"{0}", 3);
+        }
+    }
 }
 
 UnicodeString LongNameHandler::getUnitDisplayName(
@@ -329,7 +1455,7 @@ UnicodeString LongNameHandler::getUnitDisplayName(
         return ICU_Utility::makeBogusString();
     }
     UnicodeString simpleFormats[ARRAY_LENGTH];
-    getMeasureData(loc, unit, width, simpleFormats, status);
+    getMeasureData(loc, unit, width, "", simpleFormats, status);
     return simpleFormats[DNAM_INDEX];
 }
 
@@ -343,7 +1469,7 @@ UnicodeString LongNameHandler::getUnitPattern(
         return ICU_Utility::makeBogusString();
     }
     UnicodeString simpleFormats[ARRAY_LENGTH];
-    getMeasureData(loc, unit, width, simpleFormats, status);
+    getMeasureData(loc, unit, width, "", simpleFormats, status);
     
     if (U_FAILURE(status)) {
         return ICU_Utility::makeBogusString();
@@ -366,6 +1492,7 @@ LongNameHandler* LongNameHandler::forCurrencyLongNames(const Locale &loc, const 
     getCurrencyLongNameData(loc, currency, simpleFormats, status);
     if (U_FAILURE(status)) { return nullptr; }
     result->simpleFormatsToModifiers(simpleFormats, {UFIELD_CATEGORY_NUMBER, UNUM_CURRENCY_FIELD}, status);
+    
     return result;
 }
 
@@ -390,8 +1517,12 @@ void LongNameHandler::multiSimpleFormatsToModifiers(const UnicodeString *leadFor
         UnicodeString leadFormat = getWithPlural(leadFormats, plural, status);
         if (U_FAILURE(status)) { return; }
         UnicodeString compoundFormat;
-        trailCompiled.format(leadFormat, compoundFormat, status);
-        if (U_FAILURE(status)) { return; }
+        if (leadFormat.length() == 0) {
+            compoundFormat = trailFormat;
+        } else {
+            trailCompiled.format(leadFormat, compoundFormat, status);
+            if (U_FAILURE(status)) { return; }
+        }
         SimpleFormatter compoundCompiled(compoundFormat, 0, 1, status);
         if (U_FAILURE(status)) { return; }
         fModifiers[i] = SimpleModifier(compoundCompiled, field, false, {this, SIGNUM_POS_ZERO, plural});
@@ -405,29 +1536,53 @@ void LongNameHandler::processQuantity(DecimalQuantity &quantity, MicroProps &mic
     }
     StandardPlural::Form pluralForm = utils::getPluralSafe(micros.rounder, rules, quantity, status);
     micros.modOuter = &fModifiers[pluralForm];
+    micros.gender = gender;
 }
 
 const Modifier* LongNameHandler::getModifier(Signum , StandardPlural::Form plural) const {
     return &fModifiers[plural];
 }
 
-void MixedUnitLongNameHandler::forMeasureUnit(const Locale &loc, const MeasureUnit &mixedUnit,
-                                              const UNumberUnitWidth &width, const PluralRules *rules,
+void MixedUnitLongNameHandler::forMeasureUnit(const Locale &loc,
+                                              const MeasureUnit &mixedUnit,
+                                              const UNumberUnitWidth &width,
+                                              const char *unitDisplayCase,
+                                              const PluralRules *rules,
                                               const MicroPropsGenerator *parent,
-                                              MixedUnitLongNameHandler *fillIn, UErrorCode &status) {
+                                              MixedUnitLongNameHandler *fillIn,
+                                              UErrorCode &status) {
     U_ASSERT(mixedUnit.getComplexity(status) == UMEASURE_UNIT_MIXED);
     U_ASSERT(fillIn != nullptr);
+    if (U_FAILURE(status)) {
+        return;
+    }
 
     MeasureUnitImpl temp;
-    const MeasureUnitImpl& impl = MeasureUnitImpl::forMeasureUnit(mixedUnit, temp, status);
-    fillIn->fMixedUnitCount = impl.units.length();
+    const MeasureUnitImpl &impl = MeasureUnitImpl::forMeasureUnit(mixedUnit, temp, status);
+    
+    if (impl.complexity != UMEASURE_UNIT_MIXED) {
+        
+        status = U_UNSUPPORTED_ERROR;
+        return;
+    }
+
+    fillIn->fMixedUnitCount = impl.singleUnits.length();
     fillIn->fMixedUnitData.adoptInstead(new UnicodeString[fillIn->fMixedUnitCount * ARRAY_LENGTH]);
     for (int32_t i = 0; i < fillIn->fMixedUnitCount; i++) {
         
         UnicodeString *unitData = &fillIn->fMixedUnitData[i * ARRAY_LENGTH];
-        getMeasureData(loc, impl.units[i]->build(status), width, unitData, status);
+        
+        
+        getMeasureData(loc, impl.singleUnits[i]->build(status), width, unitDisplayCase, unitData,
+                       status);
+        
+        
     }
 
+    
+    
+    
+    
     UListFormatterWidth listWidth = ULISTFMT_WIDTH_SHORT;
     if (width == UNUM_UNIT_WIDTH_NARROW) {
         listWidth = ULISTFMT_WIDTH_NARROW;
@@ -437,12 +1592,14 @@ void MixedUnitLongNameHandler::forMeasureUnit(const Locale &loc, const MeasureUn
     }
     fillIn->fListFormatter.adoptInsteadAndCheckErrorCode(
         ListFormatter::createInstance(loc, ULISTFMT_TYPE_UNITS, listWidth, status), status);
+    
+    
     fillIn->rules = rules;
     fillIn->parent = parent;
 
     
     
-    fillIn->fIntegerFormatter = NumberFormatter::withLocale(loc);
+    fillIn->fNumberFormatter = NumberFormatter::withLocale(loc);
 }
 
 void MixedUnitLongNameHandler::processQuantity(DecimalQuantity &quantity, MicroProps &micros,
@@ -462,12 +1619,6 @@ const Modifier *MixedUnitLongNameHandler::getMixedUnitModifier(DecimalQuantity &
         status = U_UNSUPPORTED_ERROR;
         return &micros.helpers.emptyWeakModifier;
     }
-    
-    
-    U_ASSERT(micros.mixedMeasuresCount > 0);
-    
-    U_ASSERT(fMixedUnitCount == micros.mixedMeasuresCount + 1);
-    U_ASSERT(fListFormatter.isValid());
 
     
     
@@ -492,39 +1643,45 @@ const Modifier *MixedUnitLongNameHandler::getMixedUnitModifier(DecimalQuantity &
         return &micros.helpers.emptyWeakModifier;
     }
 
+    StandardPlural::Form quantityPlural = StandardPlural::Form::OTHER;
     for (int32_t i = 0; i < micros.mixedMeasuresCount; i++) {
         DecimalQuantity fdec;
-        fdec.setToLong(micros.mixedMeasures[i]);
-        if (i > 0 && fdec.isNegative()) {
-            
-            
-            fdec.negate();
-        }
-        StandardPlural::Form pluralForm = utils::getStandardPlural(rules, fdec);
 
-        UnicodeString simpleFormat =
-            getWithPlural(&fMixedUnitData[i * ARRAY_LENGTH], pluralForm, status);
-        SimpleFormatter compiledFormatter(simpleFormat, 0, 1, status);
-
-        UnicodeString num;
-        auto appendable = UnicodeStringAppendable(num);
-        fIntegerFormatter.formatDecimalQuantity(fdec, status).appendTo(appendable, status);
-        compiledFormatter.format(num, outputMeasuresList[i], status);
         
+        
+        int64_t number = i > 0 ? std::abs(micros.mixedMeasures[i]) : micros.mixedMeasures[i];
+
+        if (micros.indexOfQuantity == i) { 
+            
+            if (micros.indexOfQuantity > 0 && quantity.isNegative()) {
+                quantity.negate();
+            }
+
+            StandardPlural::Form quantityPlural =
+                utils::getPluralSafe(micros.rounder, rules, quantity, status);
+            UnicodeString quantityFormatWithPlural =
+                getWithPlural(&fMixedUnitData[i * ARRAY_LENGTH], quantityPlural, status);
+            SimpleFormatter quantityFormatter(quantityFormatWithPlural, 0, 1, status);
+            quantityFormatter.format(UnicodeString(u"{0}"), outputMeasuresList[i], status);
+        } else {
+            fdec.setToLong(number);
+            StandardPlural::Form pluralForm = utils::getStandardPlural(rules, fdec);
+            UnicodeString simpleFormat =
+                getWithPlural(&fMixedUnitData[i * ARRAY_LENGTH], pluralForm, status);
+            SimpleFormatter compiledFormatter(simpleFormat, 0, 1, status);
+            UnicodeString num;
+            auto appendable = UnicodeStringAppendable(num);
+
+            fNumberFormatter.formatDecimalQuantity(fdec, status).appendTo(appendable, status);
+            compiledFormatter.format(num, outputMeasuresList[i], status);
+        }
     }
 
     
-    U_ASSERT(micros.mixedMeasuresCount > 0);
     
-    if (quantity.isNegative()) {
-        quantity.negate();
-    }
-
-    UnicodeString *finalSimpleFormats = &fMixedUnitData[(fMixedUnitCount - 1) * ARRAY_LENGTH];
-    StandardPlural::Form finalPlural = utils::getPluralSafe(micros.rounder, rules, quantity, status);
-    UnicodeString finalSimpleFormat = getWithPlural(finalSimpleFormats, finalPlural, status);
-    SimpleFormatter finalFormatter(finalSimpleFormat, 0, 1, status);
-    finalFormatter.format(UnicodeString(u"{0}"), outputMeasuresList[fMixedUnitCount - 1], status);
+    
+    
+    
 
     
     UnicodeString premixedFormatPattern;
@@ -535,10 +1692,8 @@ const Modifier *MixedUnitLongNameHandler::getMixedUnitModifier(DecimalQuantity &
         return &micros.helpers.emptyWeakModifier;
     }
 
-    
-    
     micros.helpers.mixedUnitModifier =
-        SimpleModifier(premixedCompiled, kUndefinedField, false, {this, SIGNUM_POS_ZERO, finalPlural});
+        SimpleModifier(premixedCompiled, kUndefinedField, false, {this, SIGNUM_POS_ZERO, quantityPlural});
     return &micros.helpers.mixedUnitModifier;
 }
 
@@ -551,10 +1706,13 @@ const Modifier *MixedUnitLongNameHandler::getModifier(Signum ,
     return nullptr;
 }
 
-LongNameMultiplexer *
-LongNameMultiplexer::forMeasureUnits(const Locale &loc, const MaybeStackVector<MeasureUnit> &units,
-                                     const UNumberUnitWidth &width, const PluralRules *rules,
-                                     const MicroPropsGenerator *parent, UErrorCode &status) {
+LongNameMultiplexer *LongNameMultiplexer::forMeasureUnits(const Locale &loc,
+                                                          const MaybeStackVector<MeasureUnit> &units,
+                                                          const UNumberUnitWidth &width,
+                                                          const char *unitDisplayCase,
+                                                          const PluralRules *rules,
+                                                          const MicroPropsGenerator *parent,
+                                                          UErrorCode &status) {
     LocalPointer<LongNameMultiplexer> result(new LongNameMultiplexer(parent), status);
     if (U_FAILURE(status)) {
         return nullptr;
@@ -566,15 +1724,16 @@ LongNameMultiplexer::forMeasureUnits(const Locale &loc, const MaybeStackVector<M
     }
     result->fMeasureUnits.adoptInstead(new MeasureUnit[units.length()]);
     for (int32_t i = 0, length = units.length(); i < length; i++) {
-        const MeasureUnit& unit = *units[i];
+        const MeasureUnit &unit = *units[i];
         result->fMeasureUnits[i] = unit;
         if (unit.getComplexity(status) == UMEASURE_UNIT_MIXED) {
             MixedUnitLongNameHandler *mlnh = result->fMixedUnitHandlers.createAndCheckErrorCode(status);
-            MixedUnitLongNameHandler::forMeasureUnit(loc, unit, width, rules, NULL, mlnh, status);
+            MixedUnitLongNameHandler::forMeasureUnit(loc, unit, width, unitDisplayCase, rules, NULL,
+                                                     mlnh, status);
             result->fHandlers[i] = mlnh;
         } else {
             LongNameHandler *lnh = result->fLongNameHandlers.createAndCheckErrorCode(status);
-            LongNameHandler::forMeasureUnit(loc, unit, MeasureUnit(), width, rules, NULL, lnh, status);
+            LongNameHandler::forMeasureUnit(loc, unit, width, unitDisplayCase, rules, NULL, lnh, status);
             result->fHandlers[i] = lnh;
         }
         if (U_FAILURE(status)) {

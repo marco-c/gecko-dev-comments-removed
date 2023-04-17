@@ -750,12 +750,10 @@ public:
 
 
 
-
     virtual void transliterate(Replaceable& text, UTransPosition& index,
                                UErrorCode& status) const;
 
     
-
 
 
 

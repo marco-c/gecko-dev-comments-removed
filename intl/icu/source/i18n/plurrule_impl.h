@@ -145,6 +145,7 @@ enum tokenType {
   tVariableV,
   tVariableT,
   tVariableE,
+  tVariableC,
   tDecimal,
   tInteger,
   tEOF
@@ -234,6 +235,15 @@ enum PluralOperand {
 
 
 
+    PLURAL_OPERAND_C,
+
+    
+
+
+
+
+
+
 
 
     PLURAL_OPERAND_J
@@ -282,6 +292,8 @@ class U_I18N_API FixedDecimal: public IFixedDecimal, public UObject {
 
 
 
+
+    FixedDecimal(double  n, int32_t v, int64_t f, int32_t e, int32_t c);
     FixedDecimal(double  n, int32_t v, int64_t f, int32_t e);
     FixedDecimal(double  n, int32_t v, int64_t f);
     FixedDecimal(double n, int32_t);
@@ -302,6 +314,7 @@ class U_I18N_API FixedDecimal: public IFixedDecimal, public UObject {
 
     int32_t getVisibleFractionDigitCount() const;
 
+    void init(double n, int32_t v, int64_t f, int32_t e, int32_t c);
     void init(double n, int32_t v, int64_t f, int32_t e);
     void init(double n, int32_t v, int64_t f);
     void init(double n);

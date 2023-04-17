@@ -3476,6 +3476,9 @@ int32_t   RegexCompile::minMatchLength(int32_t start, int32_t end) {
 
 
 
+
+
+
 int32_t   RegexCompile::maxMatchLength(int32_t start, int32_t end) {
     if (U_FAILURE(*fStatus)) {
         return 0;
@@ -3720,14 +3723,14 @@ int32_t   RegexCompile::maxMatchLength(int32_t start, int32_t end) {
                 
                 
                 int32_t dataLoc = URX_VAL(op);
-                for (loc = loc + 1; loc < end; ++loc) {
+                for (loc = loc + 1; loc <= end; ++loc) {
                     op = (int32_t)fRXPat->fCompiledPat->elementAti(loc);
                     int32_t opType = URX_TYPE(op);
                     if ((opType == URX_LA_END || opType == URX_LBN_END) && (URX_VAL(op) == dataLoc)) {
                         break;
                     }
                 }
-                U_ASSERT(loc < end);
+                U_ASSERT(loc <= end);
             }
             break;
 

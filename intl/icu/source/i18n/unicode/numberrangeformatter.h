@@ -76,7 +76,7 @@ struct UFormattedNumberRangeImpl;
 
 
 
-#if U_PLATFORM == U_PF_WINDOWS && !defined(U_IN_DOXYGEN)
+#if U_PLATFORM == U_PF_WINDOWS && !defined(U_IN_DOXYGEN) && !defined(U_STATIC_IMPLEMENTATION)
 } 
 U_NAMESPACE_END
 
@@ -616,49 +616,6 @@ class U_I18N_API FormattedNumberRange : public UMemory, public FormattedValue {
     
     
     UBool nextPosition(ConstrainedFieldPosition& cfpos, UErrorCode& status) const U_OVERRIDE;
-
-#ifndef U_HIDE_DEPRECATED_API
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    UnicodeString getFirstDecimal(UErrorCode& status) const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    UnicodeString getSecondDecimal(UErrorCode& status) const;
-#endif 
-
 
 #ifndef U_HIDE_DRAFT_API
     

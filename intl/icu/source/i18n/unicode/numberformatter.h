@@ -81,7 +81,6 @@
 
 
 
-
 U_NAMESPACE_BEGIN
 
 
@@ -660,6 +659,17 @@ class U_I18N_API Precision : public UMemory {
 
     static CurrencyPrecision currency(UCurrencyUsage currencyUsage);
 
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    Precision trailingZeroDisplay(UNumberTrailingZeroDisplay trailingZeroDisplay) const;
+#endif 
+
   private:
     enum PrecisionType {
         RND_BOGUS,
@@ -695,6 +705,8 @@ class U_I18N_API Precision : public UMemory {
             impl::digits_t fMinSig;
             
             impl::digits_t fMaxSig;
+            
+            UNumberRoundingPriority fPriority;
         } fracSig;
         
         struct IncrementSettings {
@@ -709,6 +721,8 @@ class U_I18N_API Precision : public UMemory {
         UCurrencyUsage currencyUsage; 
         UErrorCode errorCode; 
     } fUnion;
+
+    UNumberTrailingZeroDisplay fTrailingZeroDisplay = UNUM_TRAILING_ZERO_AUTO;
 
     typedef PrecisionUnion::FractionSignificantSettings FractionSignificantSettings;
     typedef PrecisionUnion::IncrementSettings IncrementSettings;
@@ -741,8 +755,11 @@ class U_I18N_API Precision : public UMemory {
 
     static Precision constructSignificant(int32_t minSig, int32_t maxSig);
 
-    static Precision
-    constructFractionSignificant(const FractionPrecision &base, int32_t minSig, int32_t maxSig);
+    static Precision constructFractionSignificant(
+        const FractionPrecision &base,
+        int32_t minSig,
+        int32_t maxSig,
+        UNumberRoundingPriority priority);
 
     static IncrementPrecision constructIncrement(double increment, int32_t minFrac);
 
@@ -784,7 +801,29 @@ class U_I18N_API Precision : public UMemory {
 
 class U_I18N_API FractionPrecision : public Precision {
   public:
+#ifndef U_HIDE_DRAFT_API
     
+
+
+
+
+
+
+
+
+
+
+
+
+
+    Precision withSignificantDigits(
+        int32_t minSignificantDigits,
+        int32_t maxSignificantDigits,
+        UNumberRoundingPriority priority) const;
+#endif 
+
+    
+
 
 
 
@@ -1136,28 +1175,30 @@ namespace impl {
 
 
 
-class U_I18N_API Usage : public UMemory {
+class U_I18N_API StringProp : public UMemory {
 
 #ifndef U_HIDE_INTERNAL_API
 
   public:
     
-    Usage(const Usage& other);
+    StringProp(const StringProp &other);
 
     
-    Usage& operator=(const Usage& other);
+    StringProp &operator=(const StringProp &other);
 
     
-    Usage(Usage &&src) U_NOEXCEPT;
+    StringProp(StringProp &&src) U_NOEXCEPT;
 
     
-    Usage& operator=(Usage&& src) U_NOEXCEPT;
+    StringProp &operator=(StringProp &&src) U_NOEXCEPT;
 
     
-    ~Usage();
+    ~StringProp();
 
     
-    int16_t length() const { return fLength; }
+    int16_t length() const {
+        return fLength;
+    }
 
     
 
@@ -1165,16 +1206,19 @@ class U_I18N_API Usage : public UMemory {
     void set(StringPiece value);
 
     
-    bool isSet() const { return fLength > 0; }
+    bool isSet() const {
+        return fLength > 0;
+    }
 
 #endif 
 
   private:
-    char *fUsage;
+    char *fValue;
     int16_t fLength;
     UErrorCode fError;
 
-    Usage() : fUsage(nullptr), fLength(0), fError(U_ZERO_ERROR) {}
+    StringProp() : fValue(nullptr), fLength(0), fError(U_ZERO_ERROR) {
+    }
 
     
     UBool copyErrorTo(UErrorCode &status) const {
@@ -1480,7 +1524,10 @@ struct U_I18N_API MacroProps : public UMemory {
     Scale scale;  
 
     
-    Usage usage;  
+    StringProp usage;  
+
+    
+    StringProp unitDisplayCase;  
 
     
     const AffixPatternProvider* affixProvider = nullptr;  
@@ -1503,7 +1550,8 @@ struct U_I18N_API MacroProps : public UMemory {
     bool copyErrorTo(UErrorCode &status) const {
         return notation.copyErrorTo(status) || precision.copyErrorTo(status) ||
                padder.copyErrorTo(status) || integerWidth.copyErrorTo(status) ||
-               symbols.copyErrorTo(status) || scale.copyErrorTo(status) || usage.copyErrorTo(status);
+               symbols.copyErrorTo(status) || scale.copyErrorTo(status) || usage.copyErrorTo(status) ||
+               unitDisplayCase.copyErrorTo(status);
     }
 };
 
@@ -2171,6 +2219,25 @@ class U_I18N_API NumberFormatterSettings {
     Derived usage(StringPiece usage) &&;
 #endif 
 
+#ifndef U_HIDE_DRAFT_API
+#ifndef U_HIDE_INTERNAL_API
+    
+
+
+
+
+
+    Derived unitDisplayCase(StringPiece unitDisplayCase) const &;
+
+    
+
+
+
+
+    Derived unitDisplayCase(StringPiece unitDisplayCase) &&;
+#endif 
+#endif 
+
 #ifndef U_HIDE_INTERNAL_API
 
     
@@ -2213,6 +2280,9 @@ class U_I18N_API NumberFormatterSettings {
 #endif  
 
     
+
+
+
 
 
 
@@ -2658,6 +2728,14 @@ class U_I18N_API FormattedNumber : public UMemory, public FormattedValue {
 
 
     MeasureUnit getOutputUnit(UErrorCode& status) const;
+
+    
+
+
+
+
+
+    const char *getGender(UErrorCode& status) const;
 #endif 
 
 #ifndef U_HIDE_INTERNAL_API
@@ -2702,8 +2780,6 @@ class U_I18N_API FormattedNumber : public UMemory, public FormattedValue {
     friend struct impl::UFormattedNumberImpl;
 };
 
-#ifndef U_HIDE_DRAFT_API
-
 template<typename StringClass>
 StringClass FormattedNumber::toDecimalNumber(UErrorCode& status) const {
     StringClass result;
@@ -2711,7 +2787,6 @@ StringClass FormattedNumber::toDecimalNumber(UErrorCode& status) const {
     toDecimalNumber(sink, status);
     return result;
 }
-#endif 
 
 
 
@@ -2754,9 +2829,15 @@ class U_I18N_API NumberFormatter final {
 
 
 
+
+
+
     static UnlocalizedNumberFormatter forSkeleton(const UnicodeString& skeleton, UErrorCode& status);
 
     
+
+
+
 
 
 

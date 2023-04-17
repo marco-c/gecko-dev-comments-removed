@@ -231,6 +231,13 @@ static const int32_t gFieldRangeBias[] = {
 static const int32_t HEBREW_CAL_CUR_MILLENIUM_START_YEAR = 5000;
 static const int32_t HEBREW_CAL_CUR_MILLENIUM_END_YEAR = 6000;
 
+
+
+
+
+
+static const double MAX_DAYLIGHT_DETECTION_RANGE = 30*365*24*60*60*1000.0;
+
 static UMutex LOCK;
 
 UOBJECT_DEFINE_RTTI_IMPLEMENTATION(SimpleDateFormat)
@@ -2575,51 +2582,47 @@ SimpleDateFormat::parse(const UnicodeString& text, Calendar& cal, ParsePosition&
             } else { 
                 if (dst == 0) {
                     if (btz != NULL) {
-                        UDate time = localMillis + raw;
                         
-                        TimeZoneTransition beforeTrs, afterTrs;
-                        UDate beforeT = time, afterT = time;
-                        int32_t beforeSav = 0, afterSav = 0;
-                        UBool beforeTrsAvail, afterTrsAvail;
+                        
+                        UDate baseTime = localMillis + raw;
+                        UDate time = baseTime;
+                        UDate limit = baseTime + MAX_DAYLIGHT_DETECTION_RANGE;
+                        TimeZoneTransition trs;
+                        UBool trsAvail;
 
                         
-                        while (TRUE) {
-                            beforeTrsAvail = btz->getPreviousTransition(beforeT, TRUE, beforeTrs);
-                            if (!beforeTrsAvail) {
+                        while (time < limit) {
+                            trsAvail = btz->getNextTransition(time, FALSE, trs);
+                            if (!trsAvail) {
                                 break;
                             }
-                            beforeT = beforeTrs.getTime() - 1;
-                            beforeSav = beforeTrs.getFrom()->getDSTSavings();
-                            if (beforeSav != 0) {
+                            resolvedSavings = trs.getTo()->getDSTSavings();
+                            if (resolvedSavings != 0) {
                                 break;
                             }
+                            time = trs.getTime();
                         }
 
-                        
-                        while (TRUE) {
-                            afterTrsAvail = btz->getNextTransition(afterT, FALSE, afterTrs);
-                            if (!afterTrsAvail) {
-                                break;
+                        if (resolvedSavings == 0) {
+                            
+                            
+                            time = baseTime;
+                            limit = baseTime - MAX_DAYLIGHT_DETECTION_RANGE;
+                            while (time > limit) {
+                                trsAvail = btz->getPreviousTransition(time, TRUE, trs);
+                                if (!trsAvail) {
+                                    break;
+                                }
+                                resolvedSavings = trs.getFrom()->getDSTSavings();
+                                if (resolvedSavings != 0) {
+                                    break;
+                                }
+                                time = trs.getTime() - 1;
                             }
-                            afterT = afterTrs.getTime();
-                            afterSav = afterTrs.getTo()->getDSTSavings();
-                            if (afterSav != 0) {
-                                break;
-                            }
-                        }
 
-                        if (beforeTrsAvail && afterTrsAvail) {
-                            if (time - beforeT > afterT - time) {
-                                resolvedSavings = afterSav;
-                            } else {
-                                resolvedSavings = beforeSav;
+                            if (resolvedSavings == 0) {
+                                resolvedSavings = btz->getDSTSavings();
                             }
-                        } else if (beforeTrsAvail && beforeSav != 0) {
-                            resolvedSavings = beforeSav;
-                        } else if (afterTrsAvail && afterSav != 0) {
-                            resolvedSavings = afterSav;
-                        } else {
-                            resolvedSavings = btz->getDSTSavings();
                         }
                     } else {
                         resolvedSavings = tz.getDSTSavings();

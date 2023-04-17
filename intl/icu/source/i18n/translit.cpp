@@ -170,6 +170,7 @@ Transliterator* Transliterator::clone() const {
 
 
 Transliterator& Transliterator::operator=(const Transliterator& other) {
+    if (this == &other) { return *this; }  
     ID = other.ID;
     
     ID.getTerminatedBuffer();
