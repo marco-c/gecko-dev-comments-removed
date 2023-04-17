@@ -174,11 +174,6 @@ extern JS_PUBLIC_API void LeaveRealm(JSContext* cx, JS::Realm* oldRealm);
 
 
 
-
-
-
-
-
 class MOZ_RAII JS_PUBLIC_API JSAutoRealm {
   JSContext* cx_;
   JS::Realm* oldRealm_;
