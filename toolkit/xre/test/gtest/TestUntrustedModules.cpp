@@ -236,7 +236,7 @@ class UntrustedModulesFixture : public TelemetryTestFixture {
     
     
     EXPECT_TRUE(matchResult.isBoolean() && matchResult.toBoolean());
-    if (!matchResult.toBoolean()) {
+    if (!matchResult.isBoolean() || !matchResult.toBoolean()) {
       
       wprintf(L"JSON: %s\n", json.get());
       wprintf(L"RE: %s\n", aPattern);
@@ -366,8 +366,8 @@ BOOL CALLBACK UntrustedModulesFixture::InitialModuleLoadOnce(PINIT_ONCE, void*,
     u"\"combinedStacks\":{" \
       u"\"memoryMap\":\\[\\[\"\\w+\\.\\w+\",\"[0-9A-Z]+\"\\]" \
         u"(,\\[\"\\w+\\.\\w+\",\"[0-9A-Z]+\\\"\\])*\\]," \
-      u"\"stacks\":\\[\\[\\[\\d+,\\d+\\]" \
-        u"(,\\[\\d+,\\d+\\])*\\]\\]}}"
+      u"\"stacks\":\\[\\[\\[(-1|\\d+),\\d+\\]" \
+        u"(,\\[(-1|\\d+),\\d+\\])*\\]\\]}}"
 
 TEST_F(UntrustedModulesFixture, Serialize) {
   
