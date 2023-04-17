@@ -29,6 +29,11 @@ ChromeUtils.defineModuleGetter(
   "SiteDataManager",
   "resource:///modules/SiteDataManager.jsm"
 );
+XPCOMUtils.defineLazyModuleGetters(this, {
+  NimbusFeatures: "resource://nimbus/ExperimentAPI.jsm",
+  UrlbarProviderQuickSuggest:
+    "resource:///modules/UrlbarProviderQuickSuggest.jsm",
+});
 XPCOMUtils.defineLazyGetter(this, "L10n", () => {
   return new Localization([
     "branding/brand.ftl",
@@ -137,6 +142,8 @@ Preferences.addAll([
   { id: "browser.urlbar.suggest.openpage", type: "bool" },
   { id: "browser.urlbar.suggest.topsites", type: "bool" },
   { id: "browser.urlbar.suggest.engines", type: "bool" },
+  { id: "browser.urlbar.suggest.quicksuggest", type: "bool" },
+  { id: "browser.urlbar.suggest.quicksuggest.sponsored", type: "bool" },
 
   
   { id: "places.history.enabled", type: "bool" },
@@ -721,23 +728,7 @@ var gPrivacyPane = {
       }
     }
 
-    
-    if (
-      Services.prefs.getBoolPref(
-        "browser.newtabpage.activity-stream.newNewtabExperience.enabled"
-      ) ||
-      Services.prefs.getBoolPref(
-        "browser.newtabpage.activity-stream.customizationMenu.enabled"
-      )
-    ) {
-      document
-        .getElementById("topSitesSuggestion")
-        .setAttribute("data-l10n-id", "addressbar-locbar-shortcuts-option");
-    } else {
-      document
-        .getElementById("topSitesSuggestion")
-        .setAttribute("data-l10n-id", "addressbar-locbar-topsites-option");
-    }
+    this._initAddressBar();
 
     this.initSiteDataControls();
     setEventListener(
@@ -1926,6 +1917,124 @@ var gPrivacyPane = {
     gSubDialog.open(
       "chrome://browser/content/preferences/dialogs/clearSiteData.xhtml"
     );
+  },
+
+  
+
+  
+
+
+  _initAddressBar() {
+    
+    
+    if (
+      Services.prefs.getBoolPref(
+        "browser.newtabpage.activity-stream.newNewtabExperience.enabled"
+      ) ||
+      Services.prefs.getBoolPref(
+        "browser.newtabpage.activity-stream.customizationMenu.enabled"
+      )
+    ) {
+      document
+        .getElementById("topSitesSuggestion")
+        .setAttribute("data-l10n-id", "addressbar-locbar-shortcuts-option");
+    } else {
+      document
+        .getElementById("topSitesSuggestion")
+        .setAttribute("data-l10n-id", "addressbar-locbar-topsites-option");
+    }
+
+    
+    this._updateFirefoxSuggestSection = this._updateFirefoxSuggestSection.bind(
+      this
+    );
+    NimbusFeatures.urlbar.onUpdate(this._updateFirefoxSuggestSection);
+    window.addEventListener("unload", () =>
+      NimbusFeatures.urlbar.off(this._updateFirefoxSuggestSection)
+    );
+
+    
+    
+    
+    
+    
+    
+    Preferences.get("browser.urlbar.suggest.quicksuggest").on("change", () =>
+      
+      
+      this._updateFirefoxSuggestSponsoredCheckbox()
+    );
+    setEventListener("firefoxSuggestSponsoredSuggestion", "command", () => {
+      
+      
+      Preferences.get(
+        "browser.urlbar.suggest.quicksuggest.sponsored"
+      ).value = document.getElementById(
+        "firefoxSuggestSponsoredSuggestion"
+      ).checked;
+    });
+
+    
+    document
+      .getElementById("firefoxSuggestSuggestionLearnMore")
+      .setAttribute("href", UrlbarProviderQuickSuggest.helpUrl);
+
+    this._updateFirefoxSuggestSection(true);
+  },
+
+  
+
+
+
+
+
+
+  _updateFirefoxSuggestSection(onInit = false) {
+    let container = document.getElementById("firefoxSuggestContainer");
+
+    if (UrlbarPrefs.get("quickSuggestEnabled")) {
+      
+      let l10nIdByElementId = {
+        locationBarGroupHeader: "addressbar-header-firefox-suggest",
+        locationBarSuggestionLabel: "addressbar-suggest-firefox-suggest",
+      };
+      for (let [elementId, l10nId] of Object.entries(l10nIdByElementId)) {
+        let element = document.getElementById(elementId);
+        element.dataset.l10nIdOriginal = element.dataset.l10nId;
+        element.dataset.l10nId = l10nId;
+      }
+      
+      this._updateFirefoxSuggestSponsoredCheckbox();
+      container.removeAttribute("hidden");
+    } else if (!onInit) {
+      
+      
+      
+      container.setAttribute("hidden", "true");
+      let elementIds = ["locationBarGroupHeader", "locationBarSuggestionLabel"];
+      for (let id of elementIds) {
+        let element = document.getElementById(id);
+        element.dataset.l10nId = element.dataset.l10nIdOriginal;
+        delete element.dataset.l10nIdOriginal;
+        document.l10n.translateElements([element]);
+      }
+    }
+  },
+
+  
+
+
+
+  _updateFirefoxSuggestSponsoredCheckbox() {
+    let sponsoredCheckbox = document.getElementById(
+      "firefoxSuggestSponsoredSuggestion"
+    );
+    sponsoredCheckbox.disabled = !Preferences.get(
+      "browser.urlbar.suggest.quicksuggest"
+    ).value;
+    sponsoredCheckbox.checked =
+      !sponsoredCheckbox.disabled &&
+      Preferences.get("browser.urlbar.suggest.quicksuggest.sponsored").value;
   },
 
   
