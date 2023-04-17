@@ -9,18 +9,25 @@
 #include "SandboxTestingParent.h"
 #include "mozISandboxTest.h"
 #include "mozilla/GfxMessageUtils.h"
+#include "mozilla/MozPromise.h"
 
 #if !defined(MOZ_DEBUG) || !defined(ENABLE_TESTS)
 #  error "This file should not be used outside of debug with tests"
 #endif
 
 namespace mozilla {
+
 class SandboxTest : public mozISandboxTest {
  public:
   NS_DECL_ISUPPORTS
   NS_DECL_MOZISANDBOXTEST
 
   SandboxTest() : mSandboxTestingParents{nullptr} {};
+
+  
+  
+  
+  using ProcessPromise = MozPromise<SandboxTestingParent*, nsresult, true>;
 
  private:
   virtual ~SandboxTest() = default;
