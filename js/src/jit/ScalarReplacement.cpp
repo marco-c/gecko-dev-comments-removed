@@ -1512,20 +1512,17 @@ bool ArgumentsReplacer::run() {
     
     
     
-    for (MNodeIterator iter(*block); iter;) {
+    for (MDefinitionIterator iter(*block); iter;) {
       
       
-      MNode* ins = *iter++;
-      if (ins->isDefinition()) {
-        MDefinition* def = ins->toDefinition();
-        switch (def->op()) {
+      MDefinition* def = *iter++;
+      switch (def->op()) {
 #define MIR_OP(op)              \
   case MDefinition::Opcode::op: \
     visit##op(def->to##op());   \
     break;
-          MIR_OPCODE_LIST(MIR_OP)
+        MIR_OPCODE_LIST(MIR_OP)
 #undef MIR_OP
-        }
       }
     }
   }
