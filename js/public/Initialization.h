@@ -8,7 +8,11 @@
 #ifndef js_Initialization_h
 #define js_Initialization_h
 
+#include "mozilla/Span.h"
+
 #include "jstypes.h"
+
+struct JS_PUBLIC_API JSContext;
 
 namespace JS {
 namespace detail {
@@ -92,6 +96,55 @@ inline const char* JS_InitWithFailureDiagnostic(void) {
 inline bool JS_IsInitialized(void) {
   return JS::detail::libraryInitState >= JS::detail::InitState::Running;
 }
+
+namespace JS {
+
+
+
+using SelfHostedCache = mozilla::Span<uint8_t>;
+
+
+using SelfHostedWriter = bool (*)(JSContext*, SelfHostedCache);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+JS_PUBLIC_API bool InitSelfHostedCode(JSContext* cx,
+                                      SelfHostedCache cache = nullptr,
+                                      SelfHostedWriter writer = nullptr);
+
+}  
 
 
 

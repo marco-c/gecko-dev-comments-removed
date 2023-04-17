@@ -40,6 +40,7 @@
 #include "js/friend/UsageStatistics.h"   
 #include "js/GCVector.h"
 #include "js/HashTable.h"
+#include "js/Initialization.h"
 #include "js/Modules.h"  
 #ifdef DEBUG
 #  include "js/Proxy.h"  
@@ -631,16 +632,6 @@ struct JSRuntime {
 
   js::WriteOnceData<js::NativeObject*> selfHostingGlobal_;
 
-  
-  
-  
-  JS::TranscodeRange selfHostedXDR = {};
-
-  
-  using TranscodeBufferWriter = bool (*)(JSContext* cx,
-                                         const JS::TranscodeBuffer&);
-  TranscodeBufferWriter selfHostedXDRWriter = nullptr;
-
   static js::GlobalObject* createSelfHostingGlobal(JSContext* cx);
 
  public:
@@ -670,27 +661,10 @@ struct JSRuntime {
   
   
 
-  
-  
-  
-  
-  void setSelfHostedXDR(JS::TranscodeRange enctext) {
-    MOZ_RELEASE_ASSERT(!hasInitializedSelfHosting());
-    MOZ_RELEASE_ASSERT(enctext.length() > 0);
-    new (&selfHostedXDR) mozilla::Range(enctext);
-  }
-
-  
-  
-  void setSelfHostedXDRWriterCallback(TranscodeBufferWriter writer) {
-    MOZ_RELEASE_ASSERT(!hasInitializedSelfHosting());
-    MOZ_RELEASE_ASSERT(!selfHostedXDRWriter);
-    selfHostedXDRWriter = writer;
-  }
-
   bool hasInitializedSelfHosting() const { return selfHostingGlobal_; }
 
-  bool initSelfHosting(JSContext* cx);
+  bool initSelfHosting(JSContext* cx, JS::SelfHostedCache xdrCache = nullptr,
+                       JS::SelfHostedWriter xdrWriter = nullptr);
   void finishSelfHosting();
   void traceSelfHostingGlobal(JSTracer* trc);
   bool isSelfHostingGlobal(JSObject* global) {

@@ -73,16 +73,6 @@ namespace JS {
 
 
 
-
-
-
-
-JS_PUBLIC_API bool InitSelfHostedCode(JSContext* cx);
-
-
-
-
-
 JS_PUBLIC_API void AssertObjectBelongsToCurrentThread(JSObject* obj);
 
 
