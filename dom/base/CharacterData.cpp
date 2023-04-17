@@ -282,7 +282,7 @@ nsresult CharacterData::SetTextInternal(
     bool bidi = mText.IsBidi();
 
     
-    int32_t newLength = textLength - aCount + aLength;
+    const uint32_t newLength = textLength - aCount + aLength;
     
     
     nsString to;

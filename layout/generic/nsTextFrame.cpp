@@ -1723,9 +1723,12 @@ void BuildTextRunsScanner::AccumulateRunInfo(nsTextFrame* aFrame) {
 }
 
 static bool HasTerminalNewline(const nsTextFrame* aFrame) {
-  if (aFrame->GetContentLength() == 0) return false;
+  if (aFrame->GetContentLength() == 0) {
+    return false;
+  }
   const nsTextFragment* frag = aFrame->TextFragment();
-  return frag->CharAt(aFrame->GetContentEnd() - 1) == '\n';
+  return frag->CharAt(AssertedCast<uint32_t>(aFrame->GetContentEnd()) - 1) ==
+         '\n';
 }
 
 static gfxFont::Metrics GetFirstFontMetrics(gfxFontGroup* aFontGroup,
@@ -3107,7 +3110,7 @@ static bool IsJustifiableCharacter(const nsStyleText* aTextStyle,
     return false;
   }
 
-  char16_t ch = aFrag->CharAt(aPos);
+  const char16_t ch = aFrag->CharAt(AssertedCast<uint32_t>(aPos));
   if (ch == '\n' || ch == '\t' || ch == '\r') {
     return true;
   }
@@ -3157,7 +3160,7 @@ static bool IsJustifiableCharacter(const nsStyleText* aTextStyle,
       return true;
     }
     if (NS_IS_HIGH_SURROGATE(ch)) {
-      if (char32_t u = aFrag->ScalarValueAt(aPos)) {
+      if (char32_t u = aFrag->ScalarValueAt(AssertedCast<uint32_t>(aPos))) {
         
         
         
@@ -3662,7 +3665,7 @@ void nsTextFrame::PropertyProvider::GetHyphenationBreaks(
   bool allowHyphenBreakBeforeNextChar =
       prevTrailingCharOffset >= mStart.GetOriginalOffset() &&
       prevTrailingCharOffset < mStart.GetOriginalOffset() + mLength &&
-      mFrag->CharAt(prevTrailingCharOffset) == CH_SHY;
+      mFrag->CharAt(AssertedCast<uint32_t>(prevTrailingCharOffset)) == CH_SHY;
 
   while (run.NextRun()) {
     NS_ASSERTION(run.GetRunLength() > 0, "Shouldn't return zero-length runs");
@@ -3671,8 +3674,8 @@ void nsTextFrame::PropertyProvider::GetHyphenationBreaks(
       
       
       allowHyphenBreakBeforeNextChar =
-          mFrag->CharAt(run.GetOriginalOffset() + run.GetRunLength() - 1) ==
-          CH_SHY;
+          mFrag->CharAt(AssertedCast<uint32_t>(
+              run.GetOriginalOffset() + run.GetRunLength() - 1)) == CH_SHY;
     } else {
       int32_t runOffsetInSubstring = run.GetSkippedOffset() - aRange.start;
       memset(aBreakBefore + runOffsetInSubstring,
@@ -3692,8 +3695,8 @@ void nsTextFrame::PropertyProvider::GetHyphenationBreaks(
   if (mTextStyle->mHyphens == StyleHyphens::Auto) {
     gfxSkipCharsIterator skipIter(mStart);
     for (uint32_t i = 0; i < aRange.Length(); ++i) {
-      if (IS_HYPHEN(mFrag->CharAt(
-              skipIter.ConvertSkippedToOriginal(aRange.start + i)))) {
+      if (IS_HYPHEN(mFrag->CharAt(AssertedCast<uint32_t>(
+              skipIter.ConvertSkippedToOriginal(aRange.start + i))))) {
         if (i < aRange.Length() - 1) {
           aBreakBefore[i + 1] = HyphenType::Explicit;
         }
@@ -7906,9 +7909,9 @@ static bool IsAcceptableCaretPosition(const gfxSkipCharsIterator& aIter,
     
     
     
-    uint32_t offs = aIter.GetOriginalOffset();
+    const uint32_t offs = AssertedCast<uint32_t>(aIter.GetOriginalOffset());
     const nsTextFragment* frag = aFrame->TextFragment();
-    uint32_t ch = frag->CharAt(offs);
+    const char16_t ch = frag->CharAt(offs);
 
     if (gfxFontUtils::IsVarSelector(ch) ||
         frag->IsLowSurrogateFollowingHighSurrogateAt(offs) ||
@@ -7923,7 +7926,7 @@ static bool IsAcceptableCaretPosition(const gfxSkipCharsIterator& aIter,
     
     
     if (NS_IS_HIGH_SURROGATE(ch)) {
-      if (char32_t ucs4 = frag->ScalarValueAt(offs)) {
+      if (const char32_t ucs4 = frag->ScalarValueAt(offs)) {
         
         
         
@@ -8013,8 +8016,8 @@ bool ClusterIterator::IsPunctuation() const {
   
   
   
-  uint32_t ch = mFrag->CharAt(mCharIndex);
-  uint8_t cat = unicode::GetGeneralCategory(ch);
+  const char16_t ch = mFrag->CharAt(AssertedCast<uint32_t>(mCharIndex));
+  const uint8_t cat = unicode::GetGeneralCategory(ch);
   switch (cat) {
     case HB_UNICODE_GENERAL_CATEGORY_CONNECT_PUNCTUATION: 
       if (ch == '_' && !StaticPrefs::layout_word_select_stop_at_underscore()) {
@@ -8039,7 +8042,8 @@ bool ClusterIterator::IsPunctuation() const {
 }
 
 int32_t ClusterIterator::GetAfterInternal() const {
-  if (mFrag->IsHighSurrogateFollowedByLowSurrogateAt(mCharIndex)) {
+  if (mFrag->IsHighSurrogateFollowedByLowSurrogateAt(
+          AssertedCast<uint32_t>(mCharIndex))) {
     return mCharIndex + 2;
   }
   return mCharIndex + 1;
@@ -8135,14 +8139,16 @@ ClusterIterator::ClusterIterator(nsTextFrame* aTextFrame, int32_t aPosition,
                          : nsTextFrame::TrimmedOffsetFlags::NoTrimAfter |
                                nsTextFrame::TrimmedOffsetFlags::NoTrimBefore);
 
-  int32_t textOffset = aTextFrame->GetContentOffset();
-  int32_t textLen = aTextFrame->GetContentLength();
+  const uint32_t textOffset =
+      AssertedCast<uint32_t>(aTextFrame->GetContentOffset());
+  const uint32_t textLen =
+      AssertedCast<uint32_t>(aTextFrame->GetContentLength());
 
   
   
   mWordBreaks.AppendElements(textLen + 1);
   PodZero(mWordBreaks.Elements(), textLen + 1);
-  int32_t textStart;
+  uint32_t textStart;
   if (aDirection > 0) {
     if (aContext.IsEmpty()) {
       
@@ -8161,19 +8167,20 @@ ClusterIterator::ClusterIterator(nsTextFrame* aTextFrame, int32_t aPosition,
     aContext.Insert(str, 0);
   }
   mozilla::intl::WordBreaker* wordBreaker = nsContentUtils::WordBreaker();
-  int32_t nextWord = textStart > 0 ? textStart - 1 : textStart;
+  uint32_t nextWord = textStart > 0 ? textStart - 1 : textStart;
   while (true) {
-    nextWord = wordBreaker->Next(aContext.get(), aContext.Length(), nextWord);
-    if (NS_WORDBREAKER_NEED_MORE_TEXT == nextWord ||
-        nextWord > textStart + textLen) {
+    const int32_t scanResult =
+        wordBreaker->Next(aContext.get(), aContext.Length(), nextWord);
+    if (NS_WORDBREAKER_NEED_MORE_TEXT == scanResult ||
+        AssertedCast<uint32_t>(scanResult) > textStart + textLen) {
       break;
     }
+    nextWord = AssertedCast<uint32_t>(scanResult);
     mWordBreaks[nextWord - textStart] = true;
   }
 
-  MOZ_ASSERT(
-      textStart + textLen != int32_t(aContext.Length()) || mWordBreaks[textLen],
-      "There should be a word break at the end of a line or text run!");
+  MOZ_ASSERT(textStart + textLen != aContext.Length() || mWordBreaks[textLen],
+             "There should be a word break at the end of a line or text run!");
 }
 
 nsIFrame::FrameSearchResult nsTextFrame::PeekOffsetWord(
@@ -8272,7 +8279,7 @@ static int32_t FindEndOfPunctuationRun(const nsTextFragment* aFrag,
 
   for (i = aStart; i < aEnd - aOffset; ++i) {
     if (nsContentUtils::IsFirstLetterPunctuation(
-            aFrag->ScalarValueAt(aOffset + i))) {
+            aFrag->ScalarValueAt(AssertedCast<uint32_t>(aOffset + i)))) {
       aIter->SetOriginalOffset(aOffset + i);
       FindClusterEnd(aTextRun, aEnd, aIter);
       i = aIter->GetOriginalOffset() - aOffset;
@@ -8336,7 +8343,8 @@ static bool FindFirstLetterRange(const nsTextFragment* aFrag,
   
   
   
-  uint32_t usv = aFrag->ScalarValueAt(aOffset + i);
+  const char32_t usv =
+      aFrag->ScalarValueAt(AssertedCast<uint32_t>(aOffset + i));
   if (!nsContentUtils::IsAlphanumericOrSymbol(usv)) {
     *aLength = 0;
     return true;
@@ -8419,8 +8427,10 @@ static bool FindFirstLetterRange(const nsTextFragment* aFrag,
 
   
   if (script == Script::LATIN && LangTagIsDutch(aLang)) {
-    if (ToLowerCase(aFrag->CharAt(aOffset + i)) == 'i' &&
-        ToLowerCase(aFrag->CharAt(aOffset + i + 1)) == 'j') {
+    if (ToLowerCase(aFrag->CharAt(AssertedCast<uint32_t>(aOffset + i))) ==
+            'i' &&
+        ToLowerCase(aFrag->CharAt(AssertedCast<uint32_t>(aOffset + i + 1))) ==
+            'j') {
       iter.SetOriginalOffset(aOffset + i + 1);
       FindClusterEnd(aTextRun, endOffset, &iter, allowSplitLigature);
       i = iter.GetOriginalOffset() - aOffset;
@@ -8915,12 +8925,19 @@ static bool HasSoftHyphenBefore(const nsTextFragment* aFrag,
       aTextRun->CanHyphenateBefore(aIter.GetSkippedOffset())) {
     return true;
   }
-  if (!(aTextRun->GetFlags2() & nsTextFrameUtils::Flags::HasShy)) return false;
+  if (!(aTextRun->GetFlags2() & nsTextFrameUtils::Flags::HasShy)) {
+    return false;
+  }
   gfxSkipCharsIterator iter = aIter;
   while (iter.GetOriginalOffset() > aStartOffset) {
     iter.AdvanceOriginal(-1);
-    if (!iter.IsOriginalCharSkipped()) break;
-    if (aFrag->CharAt(iter.GetOriginalOffset()) == CH_SHY) return true;
+    if (!iter.IsOriginalCharSkipped()) {
+      break;
+    }
+    if (aFrag->CharAt(AssertedCast<uint32_t>(iter.GetOriginalOffset())) ==
+        CH_SHY) {
+      return true;
+    }
   }
   return false;
 }
@@ -9935,8 +9952,9 @@ static void TransformChars(nsTextFrame* aFrame, const nsStyleText* aStyle,
   }
 
   
-  for (int32_t i = 0; i < aFragLen; ++i) {
-    char16_t ch = aFrag->CharAt(aFragOffset + i);
+  MOZ_ASSERT(aFragOffset >= 0);
+  for (uint32_t i = 0; i < static_cast<uint32_t>(aFragLen); ++i) {
+    char16_t ch = aFrag->CharAt(static_cast<uint32_t>(aFragOffset) + i);
     if ((ch == '\n' && !aStyle->NewlineIsSignificant(aFrame)) ||
         (ch == '\t' && !aStyle->TabIsSignificant())) {
       ch = ' ';
@@ -10140,8 +10158,10 @@ nsIFrame::RenderedText nsTextFrame::GetRenderedText(
       runLength = std::min(runLength,
                            trimmedOffsets.GetEnd() - iter.GetOriginalOffset());
       if (isSkipped) {
-        for (int32_t i = 0; i < runLength; ++i) {
-          char16_t ch = textFrag->CharAt(iter.GetOriginalOffset() + i);
+        MOZ_ASSERT(runLength >= 0);
+        for (uint32_t i = 0; i < static_cast<uint32_t>(runLength); ++i) {
+          const char16_t ch = textFrag->CharAt(
+              AssertedCast<uint32_t>(iter.GetOriginalOffset() + i));
           if (ch == CH_SHY) {
             
             result.mString.Append(ch);
@@ -10216,13 +10236,13 @@ void nsTextFrame::ToCString(nsCString& aBuf,
   
   *aTotalContentLength = frag->GetLength();
 
-  int32_t contentLength = GetContentLength();
+  const uint32_t contentLength = AssertedCast<uint32_t>(GetContentLength());
   
   if (0 == contentLength) {
     return;
   }
-  int32_t fragOffset = GetContentOffset();
-  int32_t n = fragOffset + contentLength;
+  uint32_t fragOffset = AssertedCast<uint32_t>(GetContentOffset());
+  const uint32_t n = fragOffset + contentLength;
   while (fragOffset < n) {
     char16_t ch = frag->CharAt(fragOffset++);
     if (ch == '\r') {
@@ -10400,7 +10420,8 @@ uint32_t nsTextFrame::CountGraphemeClusters() const {
   const nsTextFragment* frag = TextFragment();
   MOZ_ASSERT(frag, "Text frame must have text fragment");
   nsAutoString content;
-  frag->AppendTo(content, GetContentOffset(), GetContentLength());
+  frag->AppendTo(content, AssertedCast<uint32_t>(GetContentOffset()),
+                 AssertedCast<uint32_t>(GetContentLength()));
   return unicode::CountGraphemeClusters(content.Data(), content.Length());
 }
 

@@ -102,7 +102,7 @@ class nsTextFragment final {
 
 
 
-  bool SetTo(const char16_t* aBuffer, int32_t aLength, bool aUpdateBidi,
+  bool SetTo(const char16_t* aBuffer, uint32_t aLength, bool aUpdateBidi,
              bool aForce2b);
 
   bool SetTo(const nsString& aString, bool aUpdateBidi, bool aForce2b) {
@@ -169,7 +169,7 @@ class nsTextFragment final {
 
 
 
-  void AppendTo(nsAString& aString, int32_t aOffset, int32_t aLength) const {
+  void AppendTo(nsAString& aString, uint32_t aOffset, uint32_t aLength) const {
     if (!AppendTo(aString, aOffset, aLength, mozilla::fallible)) {
       aString.AllocFailed(aString.Length() + aLength);
     }
@@ -182,8 +182,8 @@ class nsTextFragment final {
 
 
 
-  [[nodiscard]] bool AppendTo(nsAString& aString, int32_t aOffset,
-                              int32_t aLength,
+  [[nodiscard]] bool AppendTo(nsAString& aString, uint32_t aOffset,
+                              uint32_t aLength,
                               const mozilla::fallible_t& aFallible) const {
     if (mState.mIs2b) {
       bool ok = aString.Append(Get2b() + aOffset, aLength, aFallible);
@@ -204,14 +204,14 @@ class nsTextFragment final {
 
 
 
-  void CopyTo(char16_t* aDest, int32_t aOffset, int32_t aCount);
+  void CopyTo(char16_t* aDest, uint32_t aOffset, uint32_t aCount);
 
   
 
 
 
-  char16_t CharAt(int32_t aIndex) const {
-    MOZ_ASSERT(uint32_t(aIndex) < mState.mLength, "bad index");
+  char16_t CharAt(uint32_t aIndex) const {
+    MOZ_ASSERT(aIndex < mState.mLength, "bad index");
     return mState.mIs2b ? Get2b()[aIndex]
                         : static_cast<unsigned char>(m1b[aIndex]);
   }
@@ -220,8 +220,7 @@ class nsTextFragment final {
 
 
 
-  inline bool IsHighSurrogateFollowedByLowSurrogateAt(int32_t aIndex) const {
-    MOZ_ASSERT(aIndex >= 0);
+  inline bool IsHighSurrogateFollowedByLowSurrogateAt(uint32_t aIndex) const {
     MOZ_ASSERT(aIndex < mState.mLength);
     if (!mState.mIs2b || aIndex + 1 >= mState.mLength) {
       return false;
@@ -233,10 +232,9 @@ class nsTextFragment final {
 
 
 
-  inline bool IsLowSurrogateFollowingHighSurrogateAt(int32_t aIndex) const {
-    MOZ_ASSERT(aIndex >= 0);
+  inline bool IsLowSurrogateFollowingHighSurrogateAt(uint32_t aIndex) const {
     MOZ_ASSERT(aIndex < mState.mLength);
-    if (!mState.mIs2b || aIndex <= 0) {
+    if (!mState.mIs2b || !aIndex) {
       return false;
     }
     return NS_IS_SURROGATE_PAIR(Get2b()[aIndex - 1], Get2b()[aIndex]);
@@ -248,8 +246,7 @@ class nsTextFragment final {
 
 
 
-  inline char32_t ScalarValueAt(int32_t aIndex) const {
-    MOZ_ASSERT(aIndex >= 0);
+  inline char32_t ScalarValueAt(uint32_t aIndex) const {
     MOZ_ASSERT(aIndex < mState.mLength);
     if (!mState.mIs2b) {
       return static_cast<unsigned char>(m1b[aIndex]);
