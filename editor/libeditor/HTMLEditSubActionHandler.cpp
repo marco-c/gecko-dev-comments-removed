@@ -2600,7 +2600,8 @@ EditActionResult HTMLEditor::ChangeSelectedHardLinesToList(
     
     
     if (curList &&
-        HTMLEditor::NodesInDifferentTableElements(*curList, content)) {
+        HTMLEditUtils::GetInclusiveAncestorAnyTableElement(*curList) !=
+            HTMLEditUtils::GetInclusiveAncestorAnyTableElement(content)) {
       curList = nullptr;
     }
 
@@ -3900,7 +3901,8 @@ nsresult HTMLEditor::HandleHTMLIndentAtSelectionInternal() {
     
     
     if (curQuote &&
-        HTMLEditor::NodesInDifferentTableElements(*curQuote, content)) {
+        HTMLEditUtils::GetInclusiveAncestorAnyTableElement(*curQuote) !=
+            HTMLEditUtils::GetInclusiveAncestorAnyTableElement(content)) {
       curQuote = nullptr;
     }
 
@@ -8301,31 +8303,17 @@ nsIContent* HTMLEditor::FindNearEditableContent(
   }
 
   
-  if (HTMLEditor::NodesInDifferentTableElements(*editableContent,
-                                                *aPoint.GetContainer())) {
+  if ((!aPoint.IsInContentNode() &&
+       !!HTMLEditUtils::GetInclusiveAncestorAnyTableElement(
+           *editableContent)) ||
+      (HTMLEditUtils::GetInclusiveAncestorAnyTableElement(*editableContent) !=
+       HTMLEditUtils::GetInclusiveAncestorAnyTableElement(
+           *aPoint.ContainerAsContent()))) {
     return nullptr;
   }
 
   
   return editableContent;
-}
-
-
-bool HTMLEditor::NodesInDifferentTableElements(nsINode& aNode1,
-                                               nsINode& aNode2) {
-  nsINode* parentNode1;
-  for (parentNode1 = &aNode1;
-       parentNode1 && !HTMLEditUtils::IsAnyTableElement(parentNode1);
-       parentNode1 = parentNode1->GetParentNode()) {
-  }
-  nsINode* parentNode2;
-  for (parentNode2 = &aNode2;
-       parentNode2 && !HTMLEditUtils::IsAnyTableElement(parentNode2);
-       parentNode2 = parentNode2->GetParentNode()) {
-  }
-  
-  
-  return parentNode1 != parentNode2;
 }
 
 nsresult HTMLEditor::RemoveEmptyNodesIn(nsRange& aRange) {

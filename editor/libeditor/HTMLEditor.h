@@ -1661,15 +1661,6 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  static bool NodesInDifferentTableElements(nsINode& aNode1, nsINode& aNode2);
-
-  
-
-
-
-
-
-
 
 
 
