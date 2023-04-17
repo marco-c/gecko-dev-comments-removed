@@ -1063,6 +1063,24 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
       }
     }
 
+    if (content->IsXULElement(nsGkAtoms::panel)) {
+      
+      
+      
+      
+      
+      nsMenuPopupFrame* popupFrame = do_QueryFrame(frame);
+      if (!popupFrame) {
+        return nullptr;
+      }
+
+      nsPopupState popupState = popupFrame->PopupState();
+      if (popupState == ePopupHiding || popupState == ePopupInvisible ||
+          popupState == ePopupClosed) {
+        return nullptr;
+      }
+    }
+
 #ifdef MOZ_XUL
     
     const XULMarkupMapInfo* xulMap =
