@@ -333,6 +333,14 @@ class JitTest:
                     elif name == "module":
                         test.is_module = True
                     elif name == "crash":
+                        
+                        
+                        
+                        
+                        
+                        assert (
+                            "self-test" in path
+                        ), "{}: has an unexpected crash annotation.".format(path)
                         test.expect_crash = True
                     elif name.startswith("--"):
                         
@@ -515,6 +523,11 @@ def check_output(out, err, rc, timed_out, test, options):
         
         if rc == 139 or rc == 138:
             return True
+
+        
+        
+        
+        return False
 
     if rc != test.expect_status:
         
