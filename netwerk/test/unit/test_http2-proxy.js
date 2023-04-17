@@ -108,10 +108,20 @@ class AuthRequestor {
   }
 }
 
+function createPrincipal(url) {
+  var ssm = Services.scriptSecurityManager;
+  try {
+    return ssm.createContentPrincipal(Services.io.newURI(url), {});
+  } catch (e) {
+    return null;
+  }
+}
+
 function make_channel(url) {
   return NetUtil.newChannel({
     uri: url,
-    loadUsingSystemPrincipal: true,
+    loadingPrincipal: createPrincipal(url),
+    securityFlags: Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT,
     
     contentPolicyType: Ci.nsIContentPolicy.TYPE_DOCUMENT,
   });
