@@ -1,6 +1,7 @@
 <!DOCTYPE>
 <html>
   <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Checking zoomToFocusedInput scrolls that focused element is into iframe</title>
   <script type="application/javascript" src="apz_test_utils.js"></script>
   <script src="/tests/SimpleTest/paint_listener.js"></script>
@@ -9,7 +10,7 @@
 <div style="height: 8000px;">ABC</div>
 <iframe style="height: 30em;" src="helper_iframe_textarea.html"></iframe>
 </div>
-
+<!-- Leave additional room below the element so it can be scrolled to the center -->
 <div style="height: 1000px;">ABC</div>
 <script type="application/javascript">
 async function test() {
