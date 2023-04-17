@@ -85,6 +85,9 @@ class GlobalObjectData {
   HeapPtr<PlainObject*> realmKeyObject;
 
   
+  HeapPtr<Shape*> arrayShape;
+
+  
   bool globalThisResolved = false;
 
   void trace(JSTracer* trc);
@@ -153,7 +156,6 @@ class GlobalObject : public NativeObject {
     REQUESTED_MODULE_PROTO,
     MODULE_REQUEST_PROTO,
     WINDOW_PROXY,
-    ARRAY_SHAPE,
 
     
     RESERVED_SLOTS
@@ -929,14 +931,10 @@ class GlobalObject : public NativeObject {
   }
 
   void setArrayShape(Shape* shape) {
-    MOZ_ASSERT(getReservedSlot(ARRAY_SHAPE).isUndefined());
-    initReservedSlot(ARRAY_SHAPE, PrivateGCThingValue(shape));
+    MOZ_ASSERT(!data().arrayShape);
+    data().arrayShape.init(shape);
   }
-  Shape* maybeArrayShape() const {
-    Value v = getReservedSlot(ARRAY_SHAPE);
-    MOZ_ASSERT(v.isUndefined() || v.isPrivateGCThing());
-    return v.isPrivateGCThing() ? v.toGCThing()->as<Shape>() : nullptr;
-  }
+  Shape* maybeArrayShape() const { return data().arrayShape; }
 
   
   static JSObject* getOrCreateRealmKeyObject(JSContext* cx,
