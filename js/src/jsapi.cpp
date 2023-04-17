@@ -1778,7 +1778,7 @@ JS_PUBLIC_API void JS_GlobalObjectTraceHook(JSTracer* trc, JSObject* global) {
 
   
   
-  globalRealm->traceGlobal(trc);
+  globalRealm->traceGlobalData(trc);
 
   globalObj->traceData(trc);
 

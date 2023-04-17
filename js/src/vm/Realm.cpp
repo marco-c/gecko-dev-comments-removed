@@ -256,7 +256,7 @@ ObjectRealm::getNonSyntacticLexicalEnvironment(JSObject* key) const {
   return &lexicalEnv->as<NonSyntacticLexicalEnvironmentObject>();
 }
 
-void Realm::traceGlobal(JSTracer* trc) {
+void Realm::traceGlobalData(JSTracer* trc) {
   
   
 
@@ -341,12 +341,12 @@ void Realm::sweepAfterMinorGC() {
 
 void Realm::traceWeakSavedStacks(JSTracer* trc) { savedStacks_.traceWeak(trc); }
 
-void Realm::traceWeakObjects(JSTracer* trc) {
+void Realm::traceWeakGlobalEdge(JSTracer* trc) {
   
-  if (zone_->isGCSweeping() && globalIsAboutToBeFinalized()) {
-    global_.unbarrieredGet()->releaseData(runtime_->defaultFreeOp());
+  auto result = TraceWeakEdge(trc, &global_, "Realm::global_");
+  if (result.isDead()) {
+    result.initialTarget()->releaseData(runtime_->defaultFreeOp());
   }
-  TraceWeakEdge(trc, &global_, "Realm::global_");
 }
 
 void Realm::traceWeakEdgesInJitRealm(JSTracer* trc) {
@@ -391,14 +391,7 @@ void Realm::traceWeakObjectRealm(JSTracer* trc) {
 
 void Realm::fixupAfterMovingGC(JSTracer* trc) {
   purge();
-  fixupGlobal();
-}
-
-void Realm::fixupGlobal() {
-  GlobalObject* global = global_.unbarrieredGet();
-  if (global) {
-    global_.unbarrieredSet(MaybeForwarded(global));
-  }
+  traceWeakGlobalEdge(trc);
 }
 
 void Realm::purge() {
@@ -690,7 +683,7 @@ JS_PUBLIC_API void gc::TraceRealm(JSTracer* trc, JS::Realm* realm,
   
   
   
-  realm->traceGlobal(trc);
+  realm->traceGlobalData(trc);
 }
 
 JS_PUBLIC_API bool gc::RealmNeedsSweep(JS::Realm* realm) {

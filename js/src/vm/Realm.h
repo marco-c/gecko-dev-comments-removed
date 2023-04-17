@@ -506,10 +506,9 @@ class JS::Realm : public JS::shadow::Realm {
 
 
 
-  void traceGlobal(JSTracer* trc);
+  void traceGlobalData(JSTracer* trc);
 
-  void traceWeakObjects(JSTracer* trc);
-  void fixupGlobal();
+  void traceWeakGlobalEdge(JSTracer* trc);
 
   
 
