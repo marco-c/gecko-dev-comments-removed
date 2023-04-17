@@ -69,7 +69,9 @@ const ProcessDescriptorActor = ActorClassWithSpec(processDescriptorSpec, {
       
       
       
-      targetActor = new ContentProcessTargetActor(this.conn);
+      targetActor = new ContentProcessTargetActor(this.conn, {
+        isXpcShellTarget: true,
+      });
     } else {
       
       

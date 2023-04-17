@@ -291,11 +291,13 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
   _getTargetActorInParentProcess() {
-    return this.browserElement
-      ? 
-        
-        TargetActorRegistry.getTargetActor(this.browserId)
-      : TargetActorRegistry.getParentProcessTargetActor();
+    if (this.browserElement) {
+      
+      
+      return TargetActorRegistry.getTargetActor(this.browserId);
+    }
+
+    return TargetActorRegistry.getParentProcessTargetActor();
   },
 
   

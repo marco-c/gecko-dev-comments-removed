@@ -7,3 +7,5 @@ dump("hello from the debugee!\n");
 
 
 debugger; 
+
+dump("try to set a breakpoint here");
