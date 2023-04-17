@@ -880,6 +880,12 @@ static BOOL gMenuItemsExecuteCommands = YES;
   }
 
   
+  NSMenu* menu = nativeMenuItem.menu;
+  if ([menu.delegate isKindOfClass:[MenuDelegate class]]) {
+    [(MenuDelegate*)menu.delegate menu:menu willActivateItem:nativeMenuItem];
+  }
+
+  
   
   
   NSEventModifierFlags modifierFlags = NSApp.currentEvent ? NSApp.currentEvent.modifierFlags : 0;

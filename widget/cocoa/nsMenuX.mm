@@ -1157,6 +1157,10 @@ void nsMenuX::Dump(uint32_t aIndent) const {
   geckoMenu->MenuClosed();
 }
 
+
+- (void)menu:(NSMenu*)aMenu willActivateItem:(NSMenuItem*)aItem {
+}
+
 @end
 
 
