@@ -23,8 +23,8 @@ namespace mozilla {
 
 
 
-void InternetCiter::GetCiteString(const nsAString& aInString,
-                                  nsAString& aOutString) {
+nsresult InternetCiter::GetCiteString(const nsAString& aInString,
+                                      nsAString& aOutString) {
   aOutString.Truncate();
   char16_t uch = HTMLEditUtils::kNewLine;
 
@@ -58,6 +58,7 @@ void InternetCiter::GetCiteString(const nsAString& aInString,
   if (uch != HTMLEditUtils::kNewLine) {
     aOutString += HTMLEditUtils::kNewLine;
   }
+  return NS_OK;
 }
 
 static void AddCite(nsAString& aOutString, int32_t citeLevel) {
@@ -85,9 +86,9 @@ static inline bool IsSpace(char16_t c) {
           (c == HTMLEditUtils::kCarridgeReturn) || (c == HTMLEditUtils::kNBSP));
 }
 
-void InternetCiter::Rewrap(const nsAString& aInString, uint32_t aWrapCol,
-                           uint32_t aFirstLineOffset, bool aRespectNewlines,
-                           nsAString& aOutString) {
+nsresult InternetCiter::Rewrap(const nsAString& aInString, uint32_t aWrapCol,
+                               uint32_t aFirstLineOffset, bool aRespectNewlines,
+                               nsAString& aOutString) {
   
   
 #ifdef DEBUG
@@ -97,7 +98,11 @@ void InternetCiter::Rewrap(const nsAString& aInString, uint32_t aWrapCol,
 
   aOutString.Truncate();
 
-  mozilla::intl::LineBreaker* lineBreaker = nsContentUtils::LineBreaker();
+  nsresult rv;
+
+  RefPtr<mozilla::intl::LineBreaker> lineBreaker =
+      mozilla::intl::LineBreaker::Create();
+  MOZ_ASSERT(lineBreaker);
 
   
   uint32_t length;
@@ -227,23 +232,37 @@ void InternetCiter::Rewrap(const nsAString& aInString, uint32_t aWrapCol,
         continue;  
       }
 
-      int32_t breakPt =
-          lineBreaker->Prev(tString.get() + posInString, length - posInString,
-                            eol + 1 - posInString);
-      if (breakPt == NS_LINEBREAKER_NEED_MORE_TEXT) {
-        
-        
-        
-        if (outStringCol > citeLevel + 1) {
-          BreakLine(aOutString, outStringCol, citeLevel);
-          continue;  
-        }
+      int32_t breakPt = 0;
+      
+      rv = NS_ERROR_BASE;
+      if (lineBreaker) {
+        breakPt =
+            lineBreaker->Prev(tString.get() + posInString, length - posInString,
+                              eol + 1 - posInString);
+        if (breakPt == NS_LINEBREAKER_NEED_MORE_TEXT) {
+          
+          
+          
+          if (outStringCol > citeLevel + 1) {
+            BreakLine(aOutString, outStringCol, citeLevel);
+            continue;  
+          }
 
-        
-        breakPt = lineBreaker->Next(tString.get() + posInString,
-                                    length - posInString, eol - posInString);
-        MOZ_ASSERT(breakPt != NS_LINEBREAKER_NEED_MORE_TEXT,
-                   "Next() always treats end-of-text as a break");
+          
+          breakPt = lineBreaker->DeprecatedNext(tString.get() + posInString,
+                                                length - posInString,
+                                                eol - posInString);
+
+          rv = breakPt == NS_LINEBREAKER_NEED_MORE_TEXT ? NS_ERROR_BASE : NS_OK;
+        } else {
+          rv = NS_OK;
+        }
+      }
+      
+      
+      
+      if (NS_FAILED(rv)) {
+        breakPt = eol;
       }
 
       
@@ -281,6 +300,8 @@ void InternetCiter::Rewrap(const nsAString& aInString, uint32_t aWrapCol,
       }
     }  
   }    
+
+  return NS_OK;
 }
 
 }  

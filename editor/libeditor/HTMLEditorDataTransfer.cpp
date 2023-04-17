@@ -2576,7 +2576,11 @@ nsresult HTMLEditor::InsertWithQuotationsAsSubAction(
 
   
   nsString quotedStuff;
-  InternetCiter::GetCiteString(aQuotedText, quotedStuff);
+  nsresult rv = InternetCiter::GetCiteString(aQuotedText, quotedStuff);
+  if (NS_FAILED(rv)) {
+    NS_WARNING("InternetCiter::GetCiteString() failed");
+    return rv;
+  }
 
   
   
@@ -2595,7 +2599,7 @@ nsresult HTMLEditor::InsertWithQuotationsAsSubAction(
       !ignoredError.Failed(),
       "OnStartToHandleTopLevelEditSubAction() failed, but ignored");
 
-  nsresult rv = EnsureNoPaddingBRElementForEmptyEditor();
+  rv = EnsureNoPaddingBRElementForEmptyEditor();
   if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
@@ -2989,8 +2993,12 @@ NS_IMETHODIMP HTMLEditor::Rewrap(bool aRespectNewlines) {
   nsString wrapped;
   uint32_t firstLineOffset = 0;  
                                  
-  InternetCiter::Rewrap(current, wrapWidth, firstLineOffset, aRespectNewlines,
-                        wrapped);
+  rv = InternetCiter::Rewrap(current, wrapWidth, firstLineOffset,
+                             aRespectNewlines, wrapped);
+  if (NS_FAILED(rv)) {
+    NS_WARNING("InternetCiter::Rewrap() failed");
+    return EditorBase::ToGenericNSResult(rv);
+  }
 
   if (isCollapsed) {
     DebugOnly<nsresult> rvIgnored = SelectAllInternal();
