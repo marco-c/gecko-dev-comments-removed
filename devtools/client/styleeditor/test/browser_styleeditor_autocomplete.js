@@ -134,7 +134,9 @@ add_task(async function() {
   
   
   
-  await SpecialPowers.pushPrefEnv({ set: [["layout.css.backdrop-filter.enabled", true]] });
+  await SpecialPowers.pushPrefEnv({
+    set: [["layout.css.backdrop-filter.enabled", true]],
+  });
   const { panel, ui } = await openStyleEditorForURL(TESTCASE_URI);
   const { cssProperties } = ui;
   const testCases = getTestCases(cssProperties);
