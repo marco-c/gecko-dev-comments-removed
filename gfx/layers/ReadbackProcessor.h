@@ -16,7 +16,6 @@ namespace mozilla {
 namespace layers {
 
 class ContainerLayer;
-class ReadbackLayer;
 class PaintedLayer;
 
 class ReadbackProcessor {
@@ -39,10 +38,6 @@ class ReadbackProcessor {
     
 
 
-    ReadbackLayer* mLayer;
-    
-
-
 
 
 
@@ -52,24 +47,10 @@ class ReadbackProcessor {
 
     uint64_t mSequenceCounter;
   };
-  
-
-
-
-
-
-
-
-
-
-
-  void GetPaintedLayerUpdates(PaintedLayer* aLayer, nsTArray<Update>* aUpdates,
-                              nsIntRegion* aUpdateRegion = nullptr);
 
   ~ReadbackProcessor();
 
  protected:
-  void BuildUpdatesForLayer(ReadbackLayer* aLayer);
 
   nsTArray<Update> mAllUpdates;
 };
