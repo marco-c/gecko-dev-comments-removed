@@ -93,8 +93,8 @@ bool MoofParser::RebuildFragmentedIndex(BoxContext& aContext) {
         mMoofs.LastElement().FixRounding(moof);
       }
 
-      mMoofs.AppendElement(moof);
       mMediaRanges.AppendElement(moof.mRange);
+      mMoofs.AppendElement(std::move(moof));
       foundValidMoof = true;
     } else if (box.IsType("mdat") && !Moofs().IsEmpty()) {
       
@@ -856,6 +856,7 @@ Result<Ok, nsresult> Tkhd::Parse(Box& aBox) {
     MOZ_TRY_VAR(reserved, reader->ReadU32());
     MOZ_TRY_VAR(duration, reader->ReadU32());
 
+    (void)reserved;
     NS_ASSERTION(!reserved, "reserved should be 0");
 
     mCreationTime = creationTime;
@@ -867,6 +868,7 @@ Result<Ok, nsresult> Tkhd::Parse(Box& aBox) {
     MOZ_TRY_VAR(mModificationTime, reader->ReadU64());
     MOZ_TRY_VAR(mTrackId, reader->ReadU32());
     MOZ_TRY_VAR(reserved, reader->ReadU32());
+    (void)reserved;
     NS_ASSERTION(!reserved, "reserved should be 0");
     MOZ_TRY_VAR(mDuration, reader->ReadU64());
   }
