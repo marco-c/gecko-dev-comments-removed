@@ -63,7 +63,7 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
       traits: {
         
         watcher: true,
-        supportsReloadBrowsingContext: true,
+        supportsReloadDescriptor: true,
       },
       url: this._getUrl(),
     };
@@ -216,7 +216,7 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
     return tab?.hasAttribute && tab.hasAttribute("pending");
   },
 
-  reloadBrowsingContext({ bypassCache }) {
+  reloadDescriptor({ bypassCache }) {
     if (!this._browser || !this._browser.browsingContext) {
       return;
     }

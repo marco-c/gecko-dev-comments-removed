@@ -164,18 +164,20 @@ const ProcessDescriptorActor = ActorClassWithSpec(processDescriptorSpec, {
         
         watcher: true,
         
-        supportsReloadBrowsingContext: this.isParent,
+        supportsReloadDescriptor: this.isParent,
       },
     };
   },
 
-  async reloadBrowsingContext({ bypassCache }) {
+  async reloadDescriptor({ bypassCache }) {
     if (!this.isParent) {
       throw new Error(
-        "reloadBrowsingContext is not available for content process descriptors"
+        "reloadDescriptor is not available for content process descriptors"
       );
     }
 
+    
+    
     this._browsingContextTargetActor.browsingContext.reload(
       bypassCache
         ? Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE

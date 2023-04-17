@@ -83,7 +83,7 @@ const WebExtensionDescriptorActor = protocol.ActorClassWithSpec(
         name: this.addon.name,
         temporarilyInstalled: this.addon.temporarilyInstalled,
         traits: {
-          supportsReloadBrowsingContext: true,
+          supportsReloadDescriptor: true,
         },
         url: this.addon.sourceURI ? this.addon.sourceURI.spec : undefined,
         warnings: ExtensionParent.DebugUtils.getExtensionManifestWarnings(
@@ -150,7 +150,7 @@ const WebExtensionDescriptorActor = protocol.ActorClassWithSpec(
 
 
 
-    reloadBrowsingContext({ bypassCache }) {
+    reloadDescriptor({ bypassCache }) {
       return this.reload();
     },
 

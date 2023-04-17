@@ -791,8 +791,8 @@ class TargetCommand extends EventEmitter {
 
     
     
-    if (this.descriptorFront.traits.supportsReloadBrowsingContext) {
-      await this.descriptorFront.reloadBrowsingContext({ bypassCache });
+    if (this.descriptorFront.traits.supportsReloadDescriptor) {
+      await this.descriptorFront.reloadDescriptor({ bypassCache });
     } else {
       await this._legacyTargetActorReload(bypassCache);
     }
