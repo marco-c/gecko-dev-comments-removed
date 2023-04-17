@@ -2899,13 +2899,12 @@ nsIFrame* nsCSSFrameConstructor::ConstructSelectFrame(
         PseudoStyleType::dropDownList, computedStyle);
 
     
-    nsContainerFrame* listFrame = NS_NewListControlFrame(mPresShell, listStyle);
+    nsListControlFrame* listFrame =
+        NS_NewListControlFrame(mPresShell, listStyle);
 
     
-    nsListControlFrame* listControlFrame = do_QueryFrame(listFrame);
-    if (listControlFrame) {
-      listControlFrame->SetComboboxFrame(comboboxFrame);
-    }
+    listFrame->SetComboboxFrame(comboboxFrame);
+
     
     comboboxFrame->SetDropDown(listFrame);
 
