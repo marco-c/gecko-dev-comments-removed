@@ -475,7 +475,7 @@ const DownloadsIndicatorView = {
           
           this.indicator.style.setProperty(
             "--download-progress-pcent",
-            `${Math.max(5, this._percentComplete)}%`
+            `${Math.max(10, this._percentComplete)}%`
           );
         } else {
           this.indicator.removeAttribute("progress");
