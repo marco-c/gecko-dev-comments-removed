@@ -9,6 +9,7 @@
 #include "mozilla/ProfilerMarkers.h"
 #include "platform.h"
 #include "ProfileBuffer.h"
+#include "ProfiledThreadData.h"
 #include "ProfilerBacktrace.h"
 #include "ProfilerRustBindings.h"
 
@@ -542,7 +543,6 @@ void JITFrameInfo::AddInfoForRange(
 
 struct ProfileSample {
   uint32_t mStack = 0;
-  bool mStackIsEmpty = false;
   double mTime = 0.0;
   Maybe<double> mResponsiveness;
   RunningTimes mRunningTimes;
@@ -823,9 +823,29 @@ class EntryGetter {
     continue;                                              \
   }
 
-ProfilerThreadId ProfileBuffer::StreamSamplesToJSON(
-    SpliceableJSONWriter& aWriter, ProfilerThreadId aThreadId,
-    double aSinceTime, UniqueStacks& aUniqueStacks) const {
+struct StreamingParametersForThread {
+  SpliceableJSONWriter& mWriter;
+  UniqueStacks& mUniqueStacks;
+  ThreadStreamingContext::PreviousStackState& mPreviousStackState;
+  uint32_t& mPreviousStack;
+
+  StreamingParametersForThread(
+      SpliceableJSONWriter& aWriter, UniqueStacks& aUniqueStacks,
+      ThreadStreamingContext::PreviousStackState& aPreviousStackState,
+      uint32_t& aPreviousStack)
+      : mWriter(aWriter),
+        mUniqueStacks(aUniqueStacks),
+        mPreviousStackState(aPreviousStackState),
+        mPreviousStack(aPreviousStack) {}
+};
+
+
+
+template <typename GetStreamingParametersForThreadCallback>
+ProfilerThreadId ProfileBuffer::DoStreamSamplesToJSON(
+    GetStreamingParametersForThreadCallback&&
+        aGetStreamingParametersForThreadCallback,
+    double aSinceTime) const {
   UniquePtr<char[]> dynStrBuf = MakeUnique<char[]>(kMaxFrameKeyLength);
 
   return mEntries.Read([&](ProfileChunkedBuffer::Reader* aReader) {
@@ -834,11 +854,6 @@ ProfilerThreadId ProfileBuffer::StreamSamplesToJSON(
                "running");
 
     ProfilerThreadId processedThreadId;
-
-    
-    
-    
-    ProfileSample sample;
 
     EntryGetter e(*aReader);
 
@@ -872,20 +887,26 @@ ProfilerThreadId ProfileBuffer::StreamSamplesToJSON(
       ProfilerThreadId threadId = e.Get().GetThreadId();
       e.Next();
 
+      Maybe<StreamingParametersForThread> streamingParameters =
+          std::forward<GetStreamingParametersForThreadCallback>(
+              aGetStreamingParametersForThreadCallback)(threadId);
+
       
-      if (threadId != aThreadId && aThreadId.IsSpecified()) {
+      if (!streamingParameters) {
         continue;
       }
 
-      MOZ_ASSERT(
-          aThreadId.IsSpecified() || !processedThreadId.IsSpecified(),
-          "Unspecified aThreadId should only be used with 1-sample buffer");
+      SpliceableJSONWriter& writer = streamingParameters->mWriter;
+      UniqueStacks& uniqueStacks = streamingParameters->mUniqueStacks;
+      ThreadStreamingContext::PreviousStackState& previousStackState =
+          streamingParameters->mPreviousStackState;
+      uint32_t& previousStack = streamingParameters->mPreviousStack;
 
-      auto ReadStack = [&](EntryGetter& e, uint64_t entryPosition,
+      auto ReadStack = [&](EntryGetter& e, double time, uint64_t entryPosition,
                            const Maybe<double>& unresponsiveDuration,
-                           const RunningTimes& aRunningTimes) {
+                           const RunningTimes& runningTimes) {
         UniqueStacks::StackKey stack =
-            aUniqueStacks.BeginStack(UniqueStacks::FrameKey("(root)"));
+            uniqueStacks.BeginStack(UniqueStacks::FrameKey("(root)"));
 
         int numFrames = 0;
         while (e.Has()) {
@@ -897,8 +918,8 @@ ProfilerThreadId ProfileBuffer::StreamSamplesToJSON(
 
             nsAutoCString buf;
 
-            if (!aUniqueStacks.mCodeAddressService ||
-                !aUniqueStacks.mCodeAddressService->GetFunction(pc, buf) ||
+            if (!uniqueStacks.mCodeAddressService ||
+                !uniqueStacks.mCodeAddressService->GetFunction(pc, buf) ||
                 buf.IsEmpty()) {
               buf.AppendASCII("0x");
               
@@ -915,8 +936,8 @@ ProfilerThreadId ProfileBuffer::StreamSamplesToJSON(
                             16);
             }
 
-            stack = aUniqueStacks.AppendFrame(
-                stack, UniqueStacks::FrameKey(buf.get()));
+            stack = uniqueStacks.AppendFrame(stack,
+                                             UniqueStacks::FrameKey(buf.get()));
 
           } else if (e.Get().IsLabel()) {
             numFrames++;
@@ -1003,7 +1024,7 @@ ProfilerThreadId ProfileBuffer::StreamSamplesToJSON(
               e.Next();
             }
 
-            stack = aUniqueStacks.AppendFrame(
+            stack = uniqueStacks.AppendFrame(
                 stack,
                 UniqueStacks::FrameKey(std::move(frameLabel), relevantForJS,
                                        isBaselineInterp, innerWindowID, line,
@@ -1015,14 +1036,14 @@ ProfilerThreadId ProfileBuffer::StreamSamplesToJSON(
             
             void* pc = e.Get().GetPtr();
             const Maybe<Vector<UniqueStacks::FrameKey>>& frameKeys =
-                aUniqueStacks.LookupFramesForJITAddressFromBufferPos(
+                uniqueStacks.LookupFramesForJITAddressFromBufferPos(
                     pc, entryPosition ? entryPosition : e.CurPos());
             MOZ_RELEASE_ASSERT(
                 frameKeys,
                 "Attempting to stream samples for a buffer range "
                 "for which we don't have JITFrameInfo?");
             for (const UniqueStacks::FrameKey& frameKey : *frameKeys) {
-              stack = aUniqueStacks.AppendFrame(stack, frameKey);
+              stack = uniqueStacks.AppendFrame(stack, frameKey);
             }
 
             e.Next();
@@ -1035,45 +1056,49 @@ ProfilerThreadId ProfileBuffer::StreamSamplesToJSON(
         
         
         
-        sample.mStack = aUniqueStacks.GetOrAddStackIndex(stack);
-        sample.mStackIsEmpty = (numFrames == 0);
+        const uint32_t stackIndex = uniqueStacks.GetOrAddStackIndex(stack);
 
-        if (sample.mStackIsEmpty && aRunningTimes.IsEmpty()) {
+        
+        
+        previousStack = stackIndex;
+        previousStackState = (numFrames == 0)
+                                 ? ThreadStreamingContext::eStackWasEmpty
+                                 : ThreadStreamingContext::eStackWasNotEmpty;
+
+        
+        processedThreadId = threadId;
+
+        
+        if (time < aSinceTime) {
+          return;
+        }
+
+        if (numFrames == 0 && runningTimes.IsEmpty()) {
           
           
           
           return;
         }
 
-        if (unresponsiveDuration.isSome()) {
-          sample.mResponsiveness = unresponsiveDuration;
-        }
-
-        sample.mRunningTimes = aRunningTimes;
-
-        WriteSample(aWriter, sample);
-
-        processedThreadId = threadId;
+        WriteSample(writer, ProfileSample{stackIndex, time,
+                                          unresponsiveDuration, runningTimes});
       };  
 
       if (e.Has() && e.Get().IsTime()) {
-        sample.mTime = e.Get().GetDouble();
+        double time = e.Get().GetDouble();
         e.Next();
-
         
-        if (sample.mTime < aSinceTime) {
-          continue;
-        }
+        
+        
+        
 
-        ReadStack(e, 0, Nothing{}, RunningTimes{});
+        ReadStack(e, time, 0, Nothing{}, RunningTimes{});
       } else if (e.Has() && e.Get().IsTimeBeforeCompactStack()) {
-        sample.mTime = e.Get().GetDouble();
-
+        double time = e.Get().GetDouble();
         
-        if (sample.mTime < aSinceTime) {
-          e.Next();
-          continue;
-        }
+        
+        
+        
 
         RunningTimes runningTimes;
         Maybe<double> unresponsiveDuration;
@@ -1108,8 +1133,9 @@ ProfilerThreadId ProfileBuffer::StreamSamplesToJSON(
             tempBuffer.Read([&](ProfileChunkedBuffer::Reader* aReader) {
               MOZ_ASSERT(aReader,
                          "Local ProfileChunkedBuffer cannot be out-of-session");
+              
               EntryGetter stackEntryGetter(*aReader);
-              ReadStack(stackEntryGetter,
+              ReadStack(stackEntryGetter, time,
                         it.CurrentBlockIndex().ConvertToProfileBufferIndex(),
                         unresponsiveDuration, runningTimes);
             });
@@ -1125,16 +1151,18 @@ ProfilerThreadId ProfileBuffer::StreamSamplesToJSON(
 
         e.RestartAfter(it);
       } else if (e.Has() && e.Get().IsTimeBeforeSameSample()) {
-        if (sample.mTime == 0.0) {
+        if (previousStackState == ThreadStreamingContext::eNoStackYet) {
           
           
           
           continue;
         }
 
+        ProfileSample sample;
+
         
         
-        (void)sample.mStack;
+        sample.mStack = previousStack;
 
         sample.mTime = e.Get().GetDouble();
 
@@ -1165,12 +1193,13 @@ ProfilerThreadId ProfileBuffer::StreamSamplesToJSON(
           }
 
           if (kind == ProfileBufferEntry::Kind::SameSample) {
-            if (sample.mStackIsEmpty && sample.mRunningTimes.IsEmpty()) {
+            if (previousStackState == ThreadStreamingContext::eStackWasEmpty &&
+                sample.mRunningTimes.IsEmpty()) {
               
               
               break;
             }
-            WriteSample(aWriter, sample);
+            WriteSample(writer, sample);
             break;
           }
 
@@ -1188,6 +1217,34 @@ ProfilerThreadId ProfileBuffer::StreamSamplesToJSON(
 
     return processedThreadId;
   });
+}
+
+ProfilerThreadId ProfileBuffer::StreamSamplesToJSON(
+    SpliceableJSONWriter& aWriter, ProfilerThreadId aThreadId,
+    double aSinceTime, UniqueStacks& aUniqueStacks) const {
+  ThreadStreamingContext::PreviousStackState previousStackState =
+      ThreadStreamingContext::eNoStackYet;
+  uint32_t stack = 0u;
+#ifdef DEBUG
+  int processedCount = 0;
+#endif  
+  return DoStreamSamplesToJSON(
+      [&](ProfilerThreadId aReadThreadId) {
+        Maybe<StreamingParametersForThread> streamingParameters;
+#ifdef DEBUG
+        ++processedCount;
+        MOZ_ASSERT(
+            aThreadId.IsSpecified() ||
+                (processedCount == 1 && aReadThreadId.IsSpecified()),
+            "Unspecified aThreadId should only be used with 1-sample buffer");
+#endif  
+        if (!aThreadId.IsSpecified() || aThreadId == aReadThreadId) {
+          streamingParameters.emplace(aWriter, aUniqueStacks,
+                                      previousStackState, stack);
+        }
+        return streamingParameters;
+      },
+      aSinceTime);
 }
 
 void ProfileBuffer::AddJITInfoForRange(uint64_t aRangeStart,
