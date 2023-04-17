@@ -78,15 +78,27 @@ class AtomSet final : public RefCounted<AtomSet> {
   
   
   template <const char** schemes>
-  static already_AddRefed<AtomSet> Get() {
+  [[nodiscard]] static nsresult Get(RefPtr<AtomSet>& aMatcherOut) {
     static RefPtr<AtomSet> sMatcher;
 
     if (MOZ_UNLIKELY(!sMatcher)) {
+      
+      
+      
+      
+      
+      if (PastShutdownPhase(ShutdownPhase::XPCOMShutdownFinal)) {
+        aMatcherOut = nullptr;
+        return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
+      }
+
       sMatcher = new AtomSet(schemes);
       ClearOnShutdown(&sMatcher);
     }
 
-    return do_AddRef(sMatcher);
+    MOZ_ASSERT(sMatcher);
+    aMatcherOut = do_AddRef(sMatcher);
+    return NS_OK;
   }
 
   void Get(nsTArray<nsString>& aResult) const {
