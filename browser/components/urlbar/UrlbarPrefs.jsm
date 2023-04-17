@@ -282,7 +282,6 @@ const PREF_TYPES = new Map([
 
 
 
-
 function makeResultBuckets({ showSearchSuggestionsFirst }) {
   let rootBucket = {
     children: [
@@ -305,7 +304,7 @@ function makeResultBuckets({ showSearchSuggestionsFirst }) {
       
       {
         group: UrlbarUtils.RESULT_GROUP.OMNIBOX,
-        maxResultCount: UrlbarUtils.MAX_OMNIBOX_RESULT_COUNT - 1,
+        availableSpan: UrlbarUtils.MAX_OMNIBOX_RESULT_COUNT - 1,
       },
     ],
   };
@@ -316,22 +315,23 @@ function makeResultBuckets({ showSearchSuggestionsFirst }) {
     children: [
       
       {
-        flexChildren: true,
         children: [
           {
-            
-            
-            flex: 2,
-            group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+            flexChildren: true,
+            children: [
+              {
+                
+                
+                flex: 2,
+                group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+              },
+              {
+                flex: 4,
+                group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+              },
+            ],
           },
           {
-            flex: 4,
-            group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
-          },
-          {
-            
-            
-            flex: 0,
             group: UrlbarUtils.RESULT_GROUP.TAIL_SUGGESTION,
           },
         ],
@@ -340,7 +340,7 @@ function makeResultBuckets({ showSearchSuggestionsFirst }) {
       {
         children: [
           {
-            maxResultCount: 3,
+            availableSpan: 3,
             group: UrlbarUtils.RESULT_GROUP.INPUT_HISTORY,
           },
           {
@@ -355,7 +355,6 @@ function makeResultBuckets({ showSearchSuggestionsFirst }) {
                 group: UrlbarUtils.RESULT_GROUP.GENERAL,
               },
               {
-                
                 
                 
                 flex: 2,

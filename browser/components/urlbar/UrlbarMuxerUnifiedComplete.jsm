@@ -125,9 +125,10 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       : UrlbarPrefs.get("resultGroups");
     logger.debug(`Buckets: ${rootBucket}`);
 
-    let [sortedResults] = this._fillBuckets(
+    
+    let [sortedResults] = this._fillGroup(
       rootBucket,
-      state.availableResultSpan,
+      { availableSpan: state.availableResultSpan, maxResultCount: Infinity },
       state
     );
 
@@ -176,109 +177,122 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
 
 
-  _fillBuckets(bucket, availableSpan, state) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _fillGroup(group, limits, state, flexDataArray = null) {
     
-    if (!bucket.children) {
-      return this._addResults(bucket.group, availableSpan, state);
+    if (!group.children) {
+      return this._addResults(group.group, limits, state);
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     let stateCopy;
-    let flexSum = 0;
-    let unfilledChildIndexes = [];
-    let unfilledChildSpan = 0;
-    if (bucket.flexChildren) {
+    if (group.flexChildren) {
       stateCopy = this._copyState(state);
-      for (let child of bucket.children) {
-        let flex = typeof child.flex == "number" ? child.flex : 0;
-        flexSum += flex;
-      }
+      flexDataArray = this._updateFlexData(group, limits, flexDataArray);
     }
-
-    
-    
-    let flexSumFilled = flexSum;
 
     
     let results = [];
-    let usedSpan = 0;
-    for (
-      let i = 0;
-      i < bucket.children.length && usedSpan < availableSpan;
-      i++
-    ) {
-      let child = bucket.children[i];
+    let usedLimits = {};
+    for (let key of Object.keys(limits)) {
+      usedLimits[key] = 0;
+    }
+    let anyChildUnderfilled = false;
+    let anyChildHasMoreResults = false;
+    for (let i = 0; i < group.children.length; i++) {
+      let child = group.children[i];
+      let flexData = flexDataArray?.[i];
 
       
-      let availableChildSpan;
-      if (bucket.flexChildren) {
-        let flex = typeof child.flex == "number" ? child.flex : 0;
-        availableChildSpan = Math.round(availableSpan * (flex / flexSum));
-      } else {
-        availableChildSpan = Math.min(
-          typeof child.maxResultCount == "number"
-            ? child.maxResultCount
-            : Infinity,
-          availableSpan - usedSpan
-        );
+      let childLimits = {};
+      for (let key of Object.keys(limits)) {
+        childLimits[key] = flexData
+          ? flexData.limits[key]
+          : Math.min(
+              typeof child[key] == "number" ? child[key] : Infinity,
+              limits[key] - usedLimits[key]
+            );
       }
 
       
-      let [childResults, usedChildSpan] = this._fillBuckets(
-        child,
-        availableChildSpan,
-        state
-      );
+      let [
+        childResults,
+        childUsedLimits,
+        childHasMoreResults,
+      ] = this._fillGroup(child, childLimits, state);
       results = results.concat(childResults);
-      usedSpan += usedChildSpan;
+      for (let key of Object.keys(usedLimits)) {
+        usedLimits[key] += childUsedLimits[key];
+      }
+      anyChildHasMoreResults = anyChildHasMoreResults || childHasMoreResults;
 
-      if (bucket.flexChildren && usedChildSpan < availableChildSpan) {
+      if (flexData?.hasMoreResults) {
         
-        
-        let flex = typeof child.flex == "number" ? child.flex : 0;
-        flexSumFilled -= flex;
-        unfilledChildIndexes.push(i);
-        unfilledChildSpan += usedChildSpan;
+        flexData.usedLimits = childUsedLimits;
+        flexData.hasMoreResults = childHasMoreResults;
+        anyChildUnderfilled =
+          anyChildUnderfilled ||
+          (!childHasMoreResults &&
+            [...Object.entries(childLimits)].every(
+              ([key, limit]) => flexData.usedLimits[key] < limit
+            ));
       }
     }
 
     
     
-    
-    if (unfilledChildIndexes.length) {
-      results = [];
-      usedSpan = 0;
-      let remainingSpan = availableSpan - unfilledChildSpan;
-      for (
-        let i = 0;
-        i < bucket.children.length && usedSpan < availableSpan;
-        i++
-      ) {
-        let child = bucket.children[i];
-        let availableChildSpan;
-        if (unfilledChildIndexes.length && i == unfilledChildIndexes[0]) {
-          
-          
-          
-          
-          
-          
-          unfilledChildIndexes.shift();
-          availableChildSpan = availableSpan;
-        } else {
-          let flex = typeof child.flex == "number" ? child.flex : 0;
-          availableChildSpan = flex
-            ? Math.round(remainingSpan * (flex / flexSumFilled))
-            : remainingSpan;
-        }
-        let [childResults, usedChildSpan] = this._fillBuckets(
-          child,
-          availableChildSpan,
-          stateCopy
-        );
-        results = results.concat(childResults);
-        usedSpan += usedChildSpan;
-      }
+    if (anyChildUnderfilled && anyChildHasMoreResults) {
+      [results, usedLimits, anyChildHasMoreResults] = this._fillGroup(
+        group,
+        limits,
+        stateCopy,
+        flexDataArray
+      );
 
       
       for (let [key, value] of Object.entries(stateCopy)) {
@@ -286,7 +300,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       }
     }
 
-    return [results, usedSpan];
+    return [results, usedLimits, anyChildHasMoreResults];
   }
 
   
@@ -304,47 +318,222 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
 
 
-  _addResults(group, availableSpan, state) {
+
+
+
+
+  _updateFlexData(group, limits, flexDataArray) {
+    flexDataArray =
+      flexDataArray ||
+      group.children.map((child, index) => {
+        let data = {
+          
+          index,
+          
+          limits: {},
+          
+          limitFractions: {},
+          
+          usedLimits: {},
+          
+          
+          hasMoreResults: true,
+          
+          flex: typeof child.flex == "number" ? child.flex : 0,
+        };
+        for (let key of Object.keys(limits)) {
+          data.limits[key] = 0;
+          data.limitFractions[key] = 0;
+          data.usedLimits[key] = 0;
+        }
+        return data;
+      });
+
+    
+    
+    let fillableDataArray = [];
+
+    
+    let fillableFlexSum = 0;
+
+    for (let data of flexDataArray) {
+      if (data.hasMoreResults) {
+        fillableFlexSum += data.flex;
+        fillableDataArray.push(data);
+      }
+    }
+
+    
+    for (let [key, limit] of Object.entries(limits)) {
+      
+      let fillableLimit = limit;
+      for (let data of flexDataArray) {
+        if (!data.hasMoreResults) {
+          fillableLimit -= data.usedLimits[key];
+        }
+      }
+
+      
+      
+      fillableLimit = Math.max(fillableLimit, 0);
+
+      
+      
+      
+      let summedFillableLimit = 0;
+
+      
+      
+      
+      for (let data of fillableDataArray) {
+        let unroundedLimit = fillableLimit * (data.flex / fillableFlexSum);
+        
+        
+        
+        data.limitFractions[key] = unroundedLimit - Math.floor(unroundedLimit);
+        data.limits[key] = Math.round(unroundedLimit);
+        summedFillableLimit += data.limits[key];
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (summedFillableLimit != fillableLimit) {
+        
+        
+        
+        let fractionalDataArray = fillableDataArray.filter(
+          data => data.limitFractions[key]
+        );
+
+        let diff;
+        if (summedFillableLimit < fillableLimit) {
+          
+          
+          
+          diff = 1;
+          fractionalDataArray.sort((a, b) => {
+            
+            let cmp = b.limitFractions[key] - a.limitFractions[key];
+            
+            
+            
+            return cmp || a.index - b.index;
+          });
+        } else if (fillableLimit < summedFillableLimit) {
+          
+          
+          
+          diff = -1;
+          fractionalDataArray.sort((a, b) => {
+            
+            let cmp = a.limitFractions[key] - b.limitFractions[key];
+            
+            
+            
+            return cmp || b.index - a.index;
+          });
+        }
+
+        
+        
+        while (summedFillableLimit != fillableLimit) {
+          if (!fractionalDataArray.length) {
+            
+            Cu.reportError("fractionalDataArray is empty!");
+            break;
+          }
+          let data = flexDataArray[fractionalDataArray.shift().index];
+          data.limits[key] += diff;
+          summedFillableLimit += diff;
+        }
+      }
+    }
+
+    return flexDataArray;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _addResults(groupConst, limits, state) {
+    
+    
+    limits = { ...limits };
+
+    let usedLimits = {};
+    for (let key of Object.keys(limits)) {
+      usedLimits[key] = 0;
+    }
+
     
     
     
     
     if (
-      group == UrlbarUtils.RESULT_GROUP.FORM_HISTORY &&
+      groupConst == UrlbarUtils.RESULT_GROUP.FORM_HISTORY &&
       !UrlbarPrefs.get("maxHistoricalSearchSuggestions")
     ) {
-      availableSpan = 0;
+      limits.maxResultCount = 0;
     }
 
     let addQuickSuggest =
       state.quickSuggestResult &&
-      group == UrlbarUtils.RESULT_GROUP.GENERAL &&
+      groupConst == UrlbarUtils.RESULT_GROUP.GENERAL &&
       this._canAddResult(state.quickSuggestResult, state);
     if (addQuickSuggest) {
-      availableSpan -= UrlbarUtils.getSpanForResult(state.quickSuggestResult);
+      let span = UrlbarUtils.getSpanForResult(state.quickSuggestResult);
+      usedLimits.availableSpan += span;
+      usedLimits.maxResultCount++;
+      state.usedResultSpan += span;
     }
 
     let addedResults = [];
-    let usedSpan = 0;
-    let groupResults = state.resultsByGroup.get(group);
+    let groupResults = state.resultsByGroup.get(groupConst);
     while (
       groupResults?.length &&
-      usedSpan < availableSpan &&
-      state.usedResultSpan < state.availableResultSpan
+      state.usedResultSpan < state.availableResultSpan &&
+      [...Object.entries(limits)].every(([k, limit]) => usedLimits[k] < limit)
     ) {
       let result = groupResults[0];
       if (this._canAddResult(result, state)) {
         let span = UrlbarUtils.getSpanForResult(result);
-        let newUsedSpan = usedSpan + span;
-        if (availableSpan < newUsedSpan && !result.heuristic) {
-          
+        let newUsedSpan = usedLimits.availableSpan + span;
+        if (limits.availableSpan < newUsedSpan) {
           
           
           
           break;
         }
         addedResults.push(result);
-        usedSpan = newUsedSpan;
+        usedLimits.availableSpan = newUsedSpan;
+        usedLimits.maxResultCount++;
         state.usedResultSpan += span;
         this._updateStatePostAdd(result, state);
       }
@@ -378,13 +567,10 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
         index = Math.min(index, addedResults.length);
       }
       addedResults.splice(index, 0, quickSuggestResult);
-      let span = UrlbarUtils.getSpanForResult(quickSuggestResult);
-      usedSpan += span;
-      state.usedResultSpan += span;
       this._updateStatePostAdd(quickSuggestResult, state);
     }
 
-    return [addedResults, usedSpan];
+    return [addedResults, usedLimits, !!groupResults?.length];
   }
 
   
