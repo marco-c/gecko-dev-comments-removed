@@ -6,24 +6,13 @@
 
 #include "mozilla/mscom/EnsureMTA.h"
 
-#include "mozilla/Assertions.h"
 #include "mozilla/ClearOnShutdown.h"
-#include "mozilla/DebugOnly.h"
 #include "mozilla/mscom/Utils.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/StaticLocalPtr.h"
-#include "nsThreadManager.h"
 #include "nsThreadUtils.h"
 
 #include "private/pprthred.h"
-
-#include <combaseapi.h>
-
-#if (NTDDI_VERSION < NTDDI_WIN8)
-
-DECLARE_HANDLE(CO_MTA_USAGE_COOKIE);
-HRESULT WINAPI CoIncrementMTAUsage(CO_MTA_USAGE_COOKIE* pCookie);
-#endif  
 
 namespace {
 
@@ -42,8 +31,8 @@ class BackgroundMTAData {
  public:
   BackgroundMTAData() {
     nsCOMPtr<nsIRunnable> runnable = new EnterMTARunnable();
-    mozilla::DebugOnly<nsresult> rv = NS_NewNamedThread(
-        "COM MTA", getter_AddRefs(mThread), runnable.forget());
+    mozilla::DebugOnly<nsresult> rv =
+        NS_NewNamedThread("COM MTA", getter_AddRefs(mThread), runnable);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "NS_NewNamedThread failed");
     MOZ_ASSERT(NS_SUCCEEDED(rv));
   }
@@ -68,54 +57,6 @@ class BackgroundMTAData {
 
 namespace mozilla {
 namespace mscom {
-
-EnsureMTA::EnsureMTA() {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  
-  
-  
-  
-  nsresult rv = nsThreadManager::get().Init();
-  
-  
-
-  
-  
-  
-  static const StaticDynamicallyLinkedFunctionPtr<
-      decltype(&::CoIncrementMTAUsage)>
-      pCoIncrementMTAUsage(L"ole32.dll", "CoIncrementMTAUsage");
-  if (pCoIncrementMTAUsage) {
-    
-    
-    
-    
-    CO_MTA_USAGE_COOKIE mtaCookie = nullptr;
-    HRESULT hr = pCoIncrementMTAUsage(&mtaCookie);
-    MOZ_ASSERT(SUCCEEDED(hr));
-    if (SUCCEEDED(hr)) {
-      return;
-    }
-  }
-
-  
-
-  
-  
-  MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
-  if (NS_FAILED(rv)) {
-    return;
-  }
-
-  
-  
-  
-  nsCOMPtr<nsIRunnable> runnable(NS_NewRunnableFunction(
-      "EnsureMTA::EnsureMTA()",
-      []() { MOZ_RELEASE_ASSERT(IsCurrentThreadExplicitMTA()); }));
-  SyncDispatchToPersistentThread(runnable);
-}
 
 
 RefPtr<EnsureMTA::CreateInstanceAgileRefPromise>
@@ -172,14 +113,14 @@ RefPtr<EnsureMTA::CreateInstanceAgileRefPromise> EnsureMTA::CreateInstance(
     return CreateInstanceInternal(localClsid, localIid);
   };
 
-  nsCOMPtr<nsIThread> mtaThread(GetPersistentMTAThread());
+  nsCOMPtr<nsIThread> mtaThread(GetMTAThread());
 
   return InvokeAsync(mtaThread->SerialEventTarget(), __func__,
                      std::move(invoker));
 }
 
 
-nsCOMPtr<nsIThread> EnsureMTA::GetPersistentMTAThread() {
+nsCOMPtr<nsIThread> EnsureMTA::GetMTAThread() {
   static StaticLocalAutoPtr<BackgroundMTAData> sMTAData(
       []() -> BackgroundMTAData* {
         BackgroundMTAData* bgData = new BackgroundMTAData();
@@ -195,7 +136,7 @@ nsCOMPtr<nsIThread> EnsureMTA::GetPersistentMTAThread() {
 
         SchedulerGroup::Dispatch(
             TaskCategory::Other,
-            NS_NewRunnableFunction("mscom::EnsureMTA::GetPersistentMTAThread",
+            NS_NewRunnableFunction("mscom::EnsureMTA::GetMTAThread",
                                    std::move(setClearOnShutdown)));
 
         return bgData;
@@ -204,58 +145,6 @@ nsCOMPtr<nsIThread> EnsureMTA::GetPersistentMTAThread() {
   MOZ_ASSERT(sMTAData);
 
   return sMTAData->GetThread();
-}
-
-
-void EnsureMTA::SyncDispatchToPersistentThread(nsIRunnable* aRunnable) {
-  nsCOMPtr<nsIThread> thread(GetPersistentMTAThread());
-  MOZ_ASSERT(thread);
-  if (!thread) {
-    return;
-  }
-
-  
-  
-  
-  
-  
-  nsAutoHandle event(::CreateEventW(nullptr, FALSE, FALSE, nullptr));
-  if (!event) {
-    return;
-  }
-
-  HANDLE eventHandle = event.get();
-  auto eventSetter = [&aRunnable, eventHandle]() -> void {
-    aRunnable->Run();
-    ::SetEvent(eventHandle);
-  };
-
-  nsresult rv = thread->Dispatch(
-      NS_NewRunnableFunction("mscom::EnsureMTA::SyncDispatchToPersistentThread",
-                             std::move(eventSetter)),
-      NS_DISPATCH_NORMAL);
-  MOZ_ASSERT(NS_SUCCEEDED(rv));
-  if (NS_FAILED(rv)) {
-    return;
-  }
-
-  const BOOL alertable = XRE_IsContentProcess() && NS_IsMainThread();
-
-  DWORD waitResult;
-  while ((waitResult = ::WaitForSingleObjectEx(event, INFINITE, alertable)) ==
-         WAIT_IO_COMPLETION) {
-  }
-  MOZ_ASSERT(waitResult == WAIT_OBJECT_0);
-}
-
-
-
-
-
-
-
-void EnsureMTA::SyncDispatch(nsCOMPtr<nsIRunnable>&& aRunnable, Option aOpt) {
-  SyncDispatchToPersistentThread(aRunnable);
 }
 
 }  

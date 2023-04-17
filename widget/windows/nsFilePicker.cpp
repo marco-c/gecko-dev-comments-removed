@@ -11,6 +11,7 @@
 #include <cderr.h>
 
 #include "mozilla/BackgroundHangMonitor.h"
+#include "mozilla/mscom/EnsureMTA.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WindowsVersion.h"
@@ -27,6 +28,7 @@
 using mozilla::IsWin8OrLater;
 using mozilla::MakeUnique;
 using mozilla::UniquePtr;
+using mozilla::mscom::EnsureMTA;
 
 using namespace mozilla::widget;
 
@@ -108,6 +110,15 @@ NS_IMETHODIMP nsFilePicker::Init(mozIDOMWindowProxy* aParent,
 
 
 bool nsFilePicker::ShowFolderPicker(const nsString& aInitialDir) {
+  if (!IsWin8OrLater()) {
+    
+    
+    
+    
+    
+    EnsureMTA ensureMTA;
+  }
+
   RefPtr<IFileOpenDialog> dialog;
   if (FAILED(CoCreateInstance(CLSID_FileOpenDialog, nullptr,
                               CLSCTX_INPROC_SERVER, IID_IFileOpenDialog,
@@ -194,6 +205,15 @@ bool nsFilePicker::ShowFolderPicker(const nsString& aInitialDir) {
 
 bool nsFilePicker::ShowFilePicker(const nsString& aInitialDir) {
   AUTO_PROFILER_LABEL("nsFilePicker::ShowFilePicker", OTHER);
+
+  if (!IsWin8OrLater()) {
+    
+    
+    
+    
+    
+    EnsureMTA ensureMTA;
+  }
 
   RefPtr<IFileDialog> dialog;
   if (mMode != modeSave) {
