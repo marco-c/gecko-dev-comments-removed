@@ -130,7 +130,7 @@ already_AddRefed<MacIOSurface> MacIOSurfaceRecycleAllocator::Allocate(
     
     
     if (!result && !::IOSurfaceIsInUse(surf.get())) {
-      result = new MacIOSurface(surf, 1.0, false, aYUVColorSpace);
+      result = new MacIOSurface(surf, false, aYUVColorSpace);
     }
 
     mSurfaces.AppendElement(surf);
