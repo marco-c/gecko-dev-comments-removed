@@ -154,7 +154,9 @@ add_task(async function terminateScriptTest() {
   Services.obs.notifyObservers(hangReport, "process-hang-report");
   let notification = await promise;
 
-  let buttons = notification.currentNotification.getElementsByTagName("button");
+  let buttons = notification.currentNotification.buttonContainer.getElementsByTagName(
+    "button"
+  );
   is(buttons.length, buttonCount, "proper number of buttons");
 
   
@@ -177,13 +179,10 @@ add_task(async function waitForScriptTest() {
   Services.obs.notifyObservers(hangReport, "process-hang-report");
   let notification = await promise;
 
-  let buttons = notification.currentNotification.getElementsByTagName("button");
-  is(buttons.length, buttonCount, "proper number of buttons");
-  let toolbarbuttons = notification.currentNotification.getElementsByTagName(
-    "toolbarbutton"
+  let buttons = notification.currentNotification.buttonContainer.getElementsByTagName(
+    "button"
   );
-  is(toolbarbuttons.length, 1, "proper number of toolbarbuttons");
-  let closeButton = toolbarbuttons[0];
+  is(buttons.length, buttonCount, "proper number of buttons");
 
   await pushPrefs(["browser.hangNotification.waitPeriod", 1000]);
 
@@ -206,7 +205,7 @@ add_task(async function waitForScriptTest() {
   });
 
   
-  closeButton.click();
+  notification.currentNotification.closeButton.click();
 
   
   Services.obs.notifyObservers(hangReport, "process-hang-report");
@@ -255,7 +254,9 @@ add_task(async function terminatePluginTest() {
   Services.obs.notifyObservers(hangReport, "process-hang-report");
   let notification = await promise;
 
-  let buttons = notification.currentNotification.getElementsByTagName("button");
+  let buttons = notification.currentNotification.buttonContainer.getElementsByTagName(
+    "button"
+  );
   
   
   is(buttons.length, 1, "proper number of buttons");
