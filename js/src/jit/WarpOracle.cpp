@@ -121,9 +121,7 @@ void WarpOracle::addScriptSnapshot(WarpScriptSnapshot* scriptSnapshot) {
 AbortReasonOr<WarpSnapshot*> WarpOracle::createSnapshot() {
 #ifdef JS_JITSPEW
   const char* mode;
-  if (mirGen().outerInfo().isAnalysis()) {
-    mode = "Analyzing";
-  } else if (outerScript_->hasIonScript()) {
+  if (outerScript_->hasIonScript()) {
     mode = "Recompiling";
   } else {
     mode = "Compiling";
@@ -711,16 +709,8 @@ AbortReasonOr<WarpScriptSnapshot*> WarpScriptOracle::createScriptSnapshot() {
       case JSOp::Yield:
       case JSOp::ResumeKind:
       case JSOp::ThrowMsg:
-        
-        break;
-
       case JSOp::Try:
-        if (info_->isAnalysis()) {
-          
-          
-          return abort(AbortReason::Disable,
-                       "try-catch not supported during analysis");
-        }
+        
         break;
 
         
@@ -777,7 +767,7 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
   MOZ_ASSERT(loc.opHasIC());
 
   
-  if (info_->isAnalysis() || JitOptions.forceInlineCaches) {
+  if (JitOptions.forceInlineCaches) {
     return Ok();
   }
 
@@ -954,8 +944,8 @@ AbortReasonOr<bool> WarpScriptOracle::maybeInlineCall(
   jsbytecode* osrPc = nullptr;
   bool needsArgsObj = targetScript->needsArgsObj();
   CompileInfo* info = lifoAlloc->new_<CompileInfo>(
-      mirGen_.runtime, targetScript, targetFunction, osrPc,
-      info_->analysisMode(), needsArgsObj, inlineScriptTree);
+      mirGen_.runtime, targetScript, targetFunction, osrPc, needsArgsObj,
+      inlineScriptTree);
   if (!info) {
     return abort(AbortReason::Alloc);
   }
