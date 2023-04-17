@@ -1,9 +1,12 @@
 
 
+
+
+
 var testOpen = async_test("Create WebSocket - Pass a valid URL - Connection should be opened");
 var testClose = async_test("Create WebSocket - Pass a valid URL - Connection should be closed");
 
-var wsocket = CreateWebSocket(false, false, false);
+var wsocket = CreateWebSocket(false, false);
 var isOpenCalled = false;
 
 wsocket.addEventListener('open', testOpen.step_func(function(evt) {

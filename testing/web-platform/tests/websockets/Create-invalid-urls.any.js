@@ -1,5 +1,7 @@
 
 
+
+
 var wsocket;
 test(function() {
   assert_throws_dom("SYNTAX_ERR", function() {

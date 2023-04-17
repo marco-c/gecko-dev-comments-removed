@@ -1,8 +1,11 @@
 
 
+
+
+
 var test = async_test();
 
-var wsocket = CreateWebSocket(false, false, false);
+var wsocket = CreateWebSocket(false, false);
 var isOpenCalled = false;
 
 wsocket.addEventListener('open', test.step_func(function(evt) {
