@@ -945,9 +945,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   
   int32_t mWordCacheMaxEntries;
 
-  uint64_t mTotalPhysicalMemory;
-  uint64_t mTotalVirtualMemory;
-
   
   RefPtr<mozilla::gfx::VsyncSource> mVsyncSource;
 
@@ -1038,9 +1035,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
   int32_t mScreenDepth;
   mozilla::gfx::IntSize mScreenSize;
-
-  
-  int64_t mScreenPixels;
 
   
   
