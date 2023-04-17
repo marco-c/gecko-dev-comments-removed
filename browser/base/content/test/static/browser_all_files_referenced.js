@@ -55,10 +55,6 @@ var gExceptionPaths = [
   
   
   "chrome://browser/content/certerror/supportpages/",
-
-  
-  
-  "resource://app/features/screenshots",
 ];
 
 
