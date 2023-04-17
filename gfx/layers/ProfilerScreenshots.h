@@ -36,6 +36,8 @@ namespace layers {
 
 
 
+
+
 class ProfilerScreenshots final {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ProfilerScreenshots)
 
@@ -74,8 +76,8 @@ class ProfilerScreenshots final {
 
 
   void SubmitScreenshot(
-      uintptr_t aWindowIdentifier, const gfx::IntSize& aOriginalSize,
-      const gfx::IntSize& aScaledSize, const TimeStamp& aTimeStamp,
+      const gfx::IntSize& aOriginalSize, const gfx::IntSize& aScaledSize,
+      const TimeStamp& aTimeStamp,
       const std::function<bool(gfx::DataSourceSurface*)>& aPopulateSurface);
 
  private:
@@ -104,6 +106,12 @@ class ProfilerScreenshots final {
   
   
   uint32_t mLiveSurfaceCount;
+
+  
+  uint32_t mWindowIdentifier;
+
+  
+  static uint32_t sWindowCounter;
 };
 
 }  
