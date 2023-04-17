@@ -11,7 +11,7 @@
 package org.webrtc;
 
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import org.webrtc.VideoEncoder;
 
 
