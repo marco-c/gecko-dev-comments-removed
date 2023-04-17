@@ -20,6 +20,7 @@ const { createLazyLoaders } = ChromeUtils.import(
 
 
 
+
 const lazy = createLazyLoaders({
   OS: () => ChromeUtils.import("resource://gre/modules/osfile.jsm"),
 });
@@ -93,6 +94,7 @@ function getWASMProfilerGetSymbolsModule() {
 
   return gCachedWASMModulePromise;
 }
+
 
 
 
@@ -193,9 +195,13 @@ async function getSymbolTableFromLocalBinary(
   breakpadId
 ) {
   const module = await getWASMProfilerGetSymbolsModule();
+
+  
+  const initialMessage = { binaryPath, debugPath, breakpadId, module };
+
   return getResultFromWorker(
     "resource://devtools/client/performance-new/symbolication-worker.js",
-    { binaryPath, debugPath, breakpadId, module }
+    initialMessage
   );
 }
 

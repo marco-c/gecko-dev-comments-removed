@@ -500,6 +500,22 @@ export interface FeatureDescription {
   disabledReason?: string;
 }
 
+export type SymbolicationWorkerInitialMessage = {
+  
+  binaryPath: string;
+  
+  
+  debugPath: string;
+  
+  
+  
+  
+  
+  breakpadId: string;
+  
+  module: WebAssembly.Module;
+};
+
 export type SymbolicationWorkerError = {
   name: string;
   message: string;

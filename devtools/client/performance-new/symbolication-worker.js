@@ -6,12 +6,20 @@
 
 
 
+
+
+
+
 "use strict";
 
 importScripts(
   "resource://gre/modules/osfile.jsm",
   "resource://devtools/client/performance-new/profiler_get_symbols.js"
 );
+
+
+
+
 
 
 
@@ -73,6 +81,7 @@ function createPlainErrorObject(e) {
     lineNumber: e.lineNumber,
   };
 }
+
 
 onmessage = async e => {
   try {
