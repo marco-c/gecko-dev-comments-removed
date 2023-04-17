@@ -2245,6 +2245,16 @@ class MacroAssembler : public MacroAssemblerSpecific {
                            FloatRegister rhs, FloatRegister dest)
       DEFINED_ON(x86_shared, arm64);
 
+  
+  
+  
+  inline void laneSelectSimd128(FloatRegister mask, FloatRegister rhsDest,
+                                FloatRegister lhs) DEFINED_ON(x86_shared);
+
+  inline void laneSelectSimd128(FloatRegister mask, FloatRegister lhs,
+                                FloatRegister rhs, FloatRegister dest)
+      DEFINED_ON(arm64);
+
   inline void interleaveHighInt8x16(FloatRegister rhs, FloatRegister lhsDest)
       DEFINED_ON(x86_shared);
 

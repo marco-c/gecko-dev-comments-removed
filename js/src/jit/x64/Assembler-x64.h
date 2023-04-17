@@ -66,6 +66,10 @@ static constexpr FloatRegister xmm15 =
     FloatRegister(X86Encoding::xmm15, FloatRegisters::Double);
 
 
+static constexpr FloatRegister vmm0 =
+    FloatRegister(X86Encoding::xmm0, FloatRegisters::Simd128);
+
+
 static constexpr Register eax = rax;
 static constexpr Register ebx = rbx;
 static constexpr Register ecx = rcx;
