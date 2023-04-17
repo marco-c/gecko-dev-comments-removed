@@ -1422,10 +1422,7 @@ void LUL::Unwind( uintptr_t* aFramePCs,
       }
     }
 
-    
-    
-    
-    aFramePCs[*aFramesUsed] = ia.Value() - (*aFramesUsed == 0 ? 0 : 1);
+    aFramePCs[*aFramesUsed] = ia.Value();
     aFrameSPs[*aFramesUsed] = sp.Valid() ? sp.Value() : 0;
     (*aFramesUsed)++;
 
