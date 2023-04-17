@@ -211,7 +211,11 @@ class TelemetryHandler {
 
 
 
-  updateTrackingStatus(browser, url) {
+
+
+
+
+  updateTrackingStatus(browser, url, loadType) {
     if (
       !BrowserSearchTelemetry.shouldRecordSearchCount(browser.getTabBrowser())
     ) {
@@ -224,7 +228,11 @@ class TelemetryHandler {
     }
 
     let source = "unknown";
-    if (this._browserSourceMap.has(browser)) {
+    if (loadType & Ci.nsIDocShell.LOAD_CMD_RELOAD) {
+      source = "reload";
+    } else if (loadType & Ci.nsIDocShell.LOAD_CMD_HISTORY) {
+      source = "tabhistory";
+    } else if (this._browserSourceMap.has(browser)) {
       source = this._browserSourceMap.get(browser);
       this._browserSourceMap.delete(browser);
     }
