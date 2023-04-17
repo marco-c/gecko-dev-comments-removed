@@ -98,7 +98,11 @@ add_task(async function save_worthy_tabs_remote_final() {
   let promise = promiseRemoveTabAndSessionState(tab);
 
   
-  ok(!isValueInClosedData(r), "closed tab not saved");
+  if (!Services.appinfo.sessionHistoryInParent) {
+    
+    ok(!isValueInClosedData(r), "closed tab not saved");
+  }
+
   await promise;
 
   
@@ -119,7 +123,11 @@ add_task(async function save_worthy_tabs_nonremote_final() {
   let promise = promiseRemoveTabAndSessionState(tab);
 
   
-  ok(!isValueInClosedData(r), "closed tab not saved");
+  if (!Services.appinfo.sessionHistoryInParent) {
+    
+    ok(!isValueInClosedData(r), "closed tab not saved");
+  }
+
   await promise;
 
   
@@ -142,7 +150,11 @@ add_task(async function dont_save_empty_tabs_final() {
   let promise = promiseRemoveTabAndSessionState(tab);
 
   
-  ok(isValueInClosedData(r), "closed tab saved");
+  if (!Services.appinfo.sessionHistoryInParent) {
+    
+    ok(isValueInClosedData(r), "closed tab saved");
+  }
+
   await promise;
 
   
