@@ -2346,7 +2346,22 @@ void DocAccessible::DoARIAOwnsRelocation(LocalAccessible* aOwner) {
     
     if (!child) {
       
-      if (aOwner->Elm()->IsInclusiveDescendantOf(childEl)) {
+      bool ok = true;
+      bool check = true;
+      for (LocalAccessible* parent = aOwner; parent && !parent->IsDoc();
+           parent = parent->LocalParent()) {
+        if (check) {
+          if (parent->Elm()->IsInclusiveDescendantOf(childEl)) {
+            ok = false;
+            break;
+          }
+        }
+        
+        
+        
+        check = parent->IsRelocated();
+      }
+      if (!ok) {
         continue;
       }
 
