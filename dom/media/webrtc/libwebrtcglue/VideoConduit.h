@@ -105,8 +105,7 @@ class WebrtcVideoConduit
 
 
 
-  MediaConduitErrorCode SendVideoFrame(
-      const webrtc::VideoFrame& frame) override;
+  MediaConduitErrorCode SendVideoFrame(webrtc::VideoFrame aFrame) override;
 
   bool SendRtp(const uint8_t* aData, size_t aLength,
                const webrtc::PacketOptions& aOptions) override;
