@@ -1103,11 +1103,19 @@ function isInTree(doc, path) {
 
 
 function checkStorageData(name, value) {
-  is(
-    gUI.table.items.get(name)?.value,
-    value,
+  ok(
+    hasStorageData(name, value),
     `Table row has an entry for: ${name} with value: ${value}`
   );
+}
+
+
+
+
+
+
+function hasStorageData(name, value) {
+  return gUI.table.items.get(name)?.value === value;
 }
 
 
