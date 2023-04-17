@@ -778,10 +778,13 @@ bool GeneralParser<ParseHandler, Unit>::noteDeclaredPrivateName(
       if (placement == FieldPlacement::Instance) {
         
         
-        
         declKind = DeclarationKind::PrivateMethod;
-        closedOver = ClosedOver::Yes;
       }
+
+      
+      
+      
+      closedOver = ClosedOver::Yes;
       kind = PrivateNameKind::Method;
       break;
     case PropertyType::Getter:
