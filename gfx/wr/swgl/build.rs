@@ -176,6 +176,22 @@ fn main() {
         if tool.args().contains(&"-Oz".into()) {
             build.flag("-O2");
         }
+
+        
+        
+        
+        
+        
+        
+        
+        if tool.is_like_msvc() {
+            build.flag("/fp:fast")
+                 .flag("-Xclang")
+                 .flag("-mrecip=none");
+        } else {
+            build.flag("-ffast-math")
+                 .flag("-mrecip=none");
+        }
     }
 
     build.file("src/gl.cc")
