@@ -259,12 +259,12 @@ class U_I18N_API ModifierStore {
 
 
 
+
 class U_I18N_API MicroPropsGenerator {
   public:
-    virtual ~MicroPropsGenerator();
+    virtual ~MicroPropsGenerator() = default;
 
     
-
 
 
 

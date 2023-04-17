@@ -216,93 +216,93 @@ typedef size_t uintptr_t;
 
 
 
-U_INTERNAL UBool   U_EXPORT2 uprv_isNaN(double d);
+U_CAPI UBool   U_EXPORT2 uprv_isNaN(double d);
 
 
 
 
-U_INTERNAL UBool   U_EXPORT2 uprv_isInfinite(double d);
+U_CAPI UBool   U_EXPORT2 uprv_isInfinite(double d);
 
 
 
 
-U_INTERNAL UBool   U_EXPORT2 uprv_isPositiveInfinity(double d);
+U_CAPI UBool   U_EXPORT2 uprv_isPositiveInfinity(double d);
 
 
 
 
-U_INTERNAL UBool   U_EXPORT2 uprv_isNegativeInfinity(double d);
+U_CAPI UBool   U_EXPORT2 uprv_isNegativeInfinity(double d);
 
 
 
 
-U_INTERNAL double  U_EXPORT2 uprv_getNaN(void);
+U_CAPI double  U_EXPORT2 uprv_getNaN(void);
 
 
 
 
-U_INTERNAL double  U_EXPORT2 uprv_getInfinity(void);
+U_CAPI double  U_EXPORT2 uprv_getInfinity(void);
 
 
 
 
 
-U_INTERNAL double  U_EXPORT2 uprv_trunc(double d);
+U_CAPI double  U_EXPORT2 uprv_trunc(double d);
 
 
 
 
-U_INTERNAL double  U_EXPORT2 uprv_floor(double d);
+U_CAPI double  U_EXPORT2 uprv_floor(double d);
 
 
 
 
-U_INTERNAL double  U_EXPORT2 uprv_ceil(double d);
+U_CAPI double  U_EXPORT2 uprv_ceil(double d);
 
 
 
 
-U_INTERNAL double  U_EXPORT2 uprv_fabs(double d);
+U_CAPI double  U_EXPORT2 uprv_fabs(double d);
 
 
 
 
-U_INTERNAL double  U_EXPORT2 uprv_modf(double d, double* pinteger);
+U_CAPI double  U_EXPORT2 uprv_modf(double d, double* pinteger);
 
 
 
 
-U_INTERNAL double  U_EXPORT2 uprv_fmod(double d, double y);
+U_CAPI double  U_EXPORT2 uprv_fmod(double d, double y);
 
 
 
 
-U_INTERNAL double  U_EXPORT2 uprv_pow(double d, double exponent);
+U_CAPI double  U_EXPORT2 uprv_pow(double d, double exponent);
 
 
 
 
-U_INTERNAL double  U_EXPORT2 uprv_pow10(int32_t exponent);
+U_CAPI double  U_EXPORT2 uprv_pow10(int32_t exponent);
 
 
 
 
-U_INTERNAL double  U_EXPORT2 uprv_fmax(double d, double y);
+U_CAPI double  U_EXPORT2 uprv_fmax(double d, double y);
 
 
 
 
-U_INTERNAL double  U_EXPORT2 uprv_fmin(double d, double y);
+U_CAPI double  U_EXPORT2 uprv_fmin(double d, double y);
 
 
 
 
-U_INTERNAL int32_t U_EXPORT2 uprv_max(int32_t d, int32_t y);
+U_CAPI int32_t U_EXPORT2 uprv_max(int32_t d, int32_t y);
 
 
 
 
-U_INTERNAL int32_t U_EXPORT2 uprv_min(int32_t d, int32_t y);
+U_CAPI int32_t U_EXPORT2 uprv_min(int32_t d, int32_t y);
 
 #if U_IS_BIG_ENDIAN
 #   define uprv_isNegative(number) (*((signed char *)&(number))<0)
@@ -315,21 +315,13 @@ U_INTERNAL int32_t U_EXPORT2 uprv_min(int32_t d, int32_t y);
 
 
 
-U_INTERNAL double  U_EXPORT2 uprv_maxMantissa(void);
+U_CAPI double  U_EXPORT2 uprv_maxMantissa(void);
 
 
 
 
 
-U_INTERNAL double  U_EXPORT2 uprv_log(double d);
-
-
-
-
-
-
-
-U_INTERNAL double  U_EXPORT2 uprv_round(double x);
+U_CAPI double  U_EXPORT2 uprv_log(double d);
 
 
 
@@ -337,12 +329,7 @@ U_INTERNAL double  U_EXPORT2 uprv_round(double x);
 
 
 
-
-
-
-
-
-U_INTERNAL UBool U_EXPORT2 uprv_add32_overflow(int32_t a, int32_t b, int32_t* res);
+U_CAPI double  U_EXPORT2 uprv_round(double x);
 
 
 
@@ -355,7 +342,20 @@ U_INTERNAL UBool U_EXPORT2 uprv_add32_overflow(int32_t a, int32_t b, int32_t* re
 
 
 
-U_INTERNAL UBool U_EXPORT2 uprv_mul32_overflow(int32_t a, int32_t b, int32_t* res);
+U_CAPI UBool U_EXPORT2 uprv_add32_overflow(int32_t a, int32_t b, int32_t* res);
+
+
+
+
+
+
+
+
+
+
+
+
+U_CAPI UBool U_EXPORT2 uprv_mul32_overflow(int32_t a, int32_t b, int32_t* res);
 
 #if 0
 
@@ -377,7 +377,7 @@ U_INTERNAL UBool U_EXPORT2 uprv_mul32_overflow(int32_t a, int32_t b, int32_t* re
 
 
 
-U_INTERNAL const char*  U_EXPORT2 uprv_getDefaultCodepage(void);
+U_CAPI const char*  U_EXPORT2 uprv_getDefaultCodepage(void);
 #endif
 
 
@@ -389,7 +389,7 @@ U_INTERNAL const char*  U_EXPORT2 uprv_getDefaultCodepage(void);
 
 
 
-U_INTERNAL const char*  U_EXPORT2 uprv_getDefaultLocaleID(void);
+U_CAPI const char*  U_EXPORT2 uprv_getDefaultLocaleID(void);
 
 
 
@@ -423,7 +423,7 @@ U_INTERNAL const char*  U_EXPORT2 uprv_getDefaultLocaleID(void);
 
 
 
-U_INTERNAL void     U_EXPORT2 uprv_tzset(void);
+U_CAPI void     U_EXPORT2 uprv_tzset(void);
 
 
 
@@ -431,7 +431,7 @@ U_INTERNAL void     U_EXPORT2 uprv_tzset(void);
 
 
 
-U_INTERNAL int32_t  U_EXPORT2 uprv_timezone(void);
+U_CAPI int32_t  U_EXPORT2 uprv_timezone(void);
 
 
 
@@ -441,13 +441,13 @@ U_INTERNAL int32_t  U_EXPORT2 uprv_timezone(void);
 
 
 
-U_INTERNAL const char* U_EXPORT2 uprv_tzname(int n);
+U_CAPI const char* U_EXPORT2 uprv_tzname(int n);
 
 
 
 
 
-U_INTERNAL void uprv_tzname_clear_cache();
+U_CAPI void uprv_tzname_clear_cache(void);
 
 
 
@@ -455,7 +455,7 @@ U_INTERNAL void uprv_tzname_clear_cache();
 
 
 
-U_INTERNAL UDate U_EXPORT2 uprv_getUTCtime(void);
+U_CAPI UDate U_EXPORT2 uprv_getUTCtime(void);
 
 
 
@@ -464,7 +464,7 @@ U_INTERNAL UDate U_EXPORT2 uprv_getUTCtime(void);
 
 
 
-U_INTERNAL UDate U_EXPORT2 uprv_getRawUTCtime(void);
+U_CAPI UDate U_EXPORT2 uprv_getRawUTCtime(void);
 
 
 
@@ -472,7 +472,7 @@ U_INTERNAL UDate U_EXPORT2 uprv_getRawUTCtime(void);
 
 
 
-U_INTERNAL UBool U_EXPORT2 uprv_pathIsAbsolute(const char *path);
+U_CAPI UBool U_EXPORT2 uprv_pathIsAbsolute(const char *path);
 
 
 
@@ -480,7 +480,7 @@ U_INTERNAL UBool U_EXPORT2 uprv_pathIsAbsolute(const char *path);
 
 
 
-U_INTERNAL void * U_EXPORT2 uprv_maximumPtr(void *base);
+U_CAPI void * U_EXPORT2 uprv_maximumPtr(void *base);
 
 
 
@@ -578,19 +578,19 @@ typedef void (UVoidFunction)(void);
 
 
 
-U_INTERNAL void * U_EXPORT2 uprv_dl_open(const char *libName, UErrorCode *status);
+U_CAPI void * U_EXPORT2 uprv_dl_open(const char *libName, UErrorCode *status);
 
 
 
 
 
-U_INTERNAL void U_EXPORT2 uprv_dl_close( void *lib, UErrorCode *status);
+U_CAPI void U_EXPORT2 uprv_dl_close( void *lib, UErrorCode *status);
 
 
 
 
 
-U_INTERNAL UVoidFunction* U_EXPORT2 uprv_dlsym_func( void *lib, const char *symbolName, UErrorCode *status);
+U_CAPI UVoidFunction* U_EXPORT2 uprv_dlsym_func( void *lib, const char *symbolName, UErrorCode *status);
 
 
 

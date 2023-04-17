@@ -13,7 +13,10 @@
 #include "unicode/utypes.h"
 #include "unicode/uloc.h"
 #include "unicode/utext.h"
+
+#if U_SHOW_CPLUSPLUS_API
 #include "unicode/localpointer.h"
+#endif   
 
 
 
@@ -238,7 +241,7 @@ typedef enum USentenceBreakTag {
 
 
 
-U_STABLE UBreakIterator* U_EXPORT2
+U_CAPI UBreakIterator* U_EXPORT2
 ubrk_open(UBreakIteratorType type,
       const char *locale,
       const UChar *text,
@@ -260,7 +263,7 @@ ubrk_open(UBreakIteratorType type,
 
 
 
-U_STABLE UBreakIterator* U_EXPORT2
+U_CAPI UBreakIterator* U_EXPORT2
 ubrk_openRules(const UChar     *rules,
                int32_t         rulesLength,
                const UChar     *text,
@@ -288,7 +291,7 @@ ubrk_openRules(const UChar     *rules,
 
 
 
-U_STABLE UBreakIterator* U_EXPORT2
+U_CAPI UBreakIterator* U_EXPORT2
 ubrk_openBinaryRules(const uint8_t *binaryRules, int32_t rulesLength,
                      const UChar *  text, int32_t textLength,
                      UErrorCode *   status);
@@ -311,7 +314,7 @@ ubrk_openBinaryRules(const uint8_t *binaryRules, int32_t rulesLength,
 
 
 
-U_STABLE UBreakIterator * U_EXPORT2
+U_CAPI UBreakIterator * U_EXPORT2
 ubrk_safeClone(
           const UBreakIterator *bi,
           void *stackBuffer,
@@ -334,7 +337,7 @@ ubrk_safeClone(
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ubrk_close(UBreakIterator *bi);
 
 #if U_SHOW_CPLUSPLUS_API
@@ -368,7 +371,7 @@ U_NAMESPACE_END
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ubrk_setText(UBreakIterator* bi,
              const UChar*    text,
              int32_t         textLength,
@@ -392,7 +395,7 @@ ubrk_setText(UBreakIterator* bi,
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ubrk_setUText(UBreakIterator* bi,
              UText*          text,
              UErrorCode*     status);
@@ -407,7 +410,7 @@ ubrk_setUText(UBreakIterator* bi,
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ubrk_current(const UBreakIterator *bi);
 
 
@@ -419,7 +422,7 @@ ubrk_current(const UBreakIterator *bi);
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ubrk_next(UBreakIterator *bi);
 
 
@@ -431,7 +434,7 @@ ubrk_next(UBreakIterator *bi);
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ubrk_previous(UBreakIterator *bi);
 
 
@@ -441,7 +444,7 @@ ubrk_previous(UBreakIterator *bi);
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ubrk_first(UBreakIterator *bi);
 
 
@@ -453,7 +456,7 @@ ubrk_first(UBreakIterator *bi);
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ubrk_last(UBreakIterator *bi);
 
 
@@ -465,7 +468,7 @@ ubrk_last(UBreakIterator *bi);
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ubrk_preceding(UBreakIterator *bi,
            int32_t offset);
 
@@ -478,7 +481,7 @@ ubrk_preceding(UBreakIterator *bi,
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ubrk_following(UBreakIterator *bi,
            int32_t offset);
 
@@ -491,7 +494,7 @@ ubrk_following(UBreakIterator *bi,
 
 
 
-U_STABLE const char* U_EXPORT2
+U_CAPI const char* U_EXPORT2
 ubrk_getAvailable(int32_t index);
 
 
@@ -502,7 +505,7 @@ ubrk_getAvailable(int32_t index);
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ubrk_countAvailable(void);
 
 
@@ -515,7 +518,7 @@ ubrk_countAvailable(void);
 
 
 
-U_STABLE  UBool U_EXPORT2
+U_CAPI  UBool U_EXPORT2
 ubrk_isBoundary(UBreakIterator *bi, int32_t offset);
 
 
@@ -527,7 +530,7 @@ ubrk_isBoundary(UBreakIterator *bi, int32_t offset);
 
 
 
-U_STABLE  int32_t U_EXPORT2
+U_CAPI  int32_t U_EXPORT2
 ubrk_getRuleStatus(UBreakIterator *bi);
 
 
@@ -547,7 +550,7 @@ ubrk_getRuleStatus(UBreakIterator *bi);
 
 
 
-U_STABLE  int32_t U_EXPORT2
+U_CAPI  int32_t U_EXPORT2
 ubrk_getRuleStatusVec(UBreakIterator *bi, int32_t *fillInVec, int32_t capacity, UErrorCode *status);
 
 
@@ -559,7 +562,7 @@ ubrk_getRuleStatusVec(UBreakIterator *bi, int32_t *fillInVec, int32_t capacity, 
 
 
 
-U_STABLE const char* U_EXPORT2
+U_CAPI const char* U_EXPORT2
 ubrk_getLocaleByType(const UBreakIterator *bi, ULocDataLocaleType type, UErrorCode* status);
 
 
@@ -587,7 +590,7 @@ ubrk_getLocaleByType(const UBreakIterator *bi, ULocDataLocaleType type, UErrorCo
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ubrk_refreshUText(UBreakIterator *bi,
                        UText          *text,
                        UErrorCode     *status);
@@ -618,7 +621,7 @@ ubrk_refreshUText(UBreakIterator *bi,
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ubrk_getBinaryRules(UBreakIterator *bi,
                     uint8_t *       binaryRules, int32_t rulesCapacity,
                     UErrorCode *    status);

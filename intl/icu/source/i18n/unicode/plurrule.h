@@ -46,14 +46,20 @@ U_NAMESPACE_BEGIN
 
 class Hashtable;
 class IFixedDecimal;
+class FixedDecimal;
 class RuleChain;
 class PluralRuleParser;
 class PluralKeywordEnumeration;
 class AndConstraint;
 class SharedPluralRules;
+class StandardPluralRanges;
 
 namespace number {
 class FormattedNumber;
+class FormattedNumberRange;
+namespace impl {
+class UFormattedNumberRangeData;
+}
 }
 
 
@@ -367,11 +373,35 @@ public:
 
     UnicodeString select(const number::FormattedNumber& number, UErrorCode& status) const;
 
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    UnicodeString select(const number::FormattedNumberRange& range, UErrorCode& status) const;
+#endif 
+
 #ifndef U_HIDE_INTERNAL_API
     
 
 
     UnicodeString select(const IFixedDecimal &number) const;
+    
+
+
+    UnicodeString select(const number::impl::UFormattedNumberRangeData* urange, UErrorCode& status) const;
 #endif  
 
     
@@ -446,6 +476,32 @@ public:
                        double *dest, int32_t destCapacity,
                        UErrorCode& status);
 
+#ifndef U_HIDE_INTERNAL_API
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    int32_t getSamples(const UnicodeString &keyword,
+                       FixedDecimal *dest, int32_t destCapacity,
+                       UErrorCode& status);
+#endif  
+
     
 
 
@@ -513,12 +569,14 @@ public:
 
 private:
     RuleChain  *mRules;
+    StandardPluralRanges *mStandardPluralRanges;
 
     PluralRules();   
     void            parseDescription(const UnicodeString& ruleData, UErrorCode &status);
     int32_t         getNumberValue(const UnicodeString& token) const;
     UnicodeString   getRuleFromResource(const Locale& locale, UPluralType type, UErrorCode& status);
     RuleChain      *rulesForKeyword(const UnicodeString &keyword) const;
+    PluralRules    *clone(UErrorCode& status) const;
 
     
 

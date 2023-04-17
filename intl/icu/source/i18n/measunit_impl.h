@@ -22,7 +22,7 @@ static const char kDefaultCurrency8[] = "XXX";
 
 
 
-struct SingleUnitImpl : public UMemory {
+struct U_I18N_API SingleUnitImpl : public UMemory {
     
 
 
@@ -31,6 +31,16 @@ struct SingleUnitImpl : public UMemory {
 
     
     MeasureUnit build(UErrorCode& status) const;
+
+    
+
+
+
+
+
+
+
+    const char *getSimpleUnitID() const;
 
     
 
@@ -113,9 +123,24 @@ struct SingleUnitImpl : public UMemory {
 
 
 
+#if U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN
+template class U_I18N_API MaybeStackArray<SingleUnitImpl*, 8>;
+template class U_I18N_API MemoryPool<SingleUnitImpl, 8>;
+template class U_I18N_API MaybeStackVector<SingleUnitImpl, 8>;
+#endif
 
 
-struct MeasureUnitImpl : public UMemory {
+
+
+
+struct U_I18N_API MeasureUnitImpl : public UMemory {
+    MeasureUnitImpl() = default;
+    MeasureUnitImpl(MeasureUnitImpl &&other) = default;
+    MeasureUnitImpl(const MeasureUnitImpl &other, UErrorCode &status);
+    MeasureUnitImpl(const SingleUnitImpl &singleUnit, UErrorCode &status);
+
+    MeasureUnitImpl &operator=(MeasureUnitImpl &&other) noexcept = default;
+
     
     static inline const MeasureUnitImpl* get(const MeasureUnit& measureUnit) {
         return measureUnit.fImpl;
@@ -169,13 +194,17 @@ struct MeasureUnitImpl : public UMemory {
     
 
 
-    inline MeasureUnitImpl copy(UErrorCode& status) const {
-        MeasureUnitImpl result;
-        result.complexity = complexity;
-        result.units.appendAll(units, status);
-        result.identifier.append(identifier, status);
-        return result;
-    }
+    MeasureUnitImpl copy(UErrorCode& status) const;
+
+    
+
+
+
+
+
+
+
+    MaybeStackVector<MeasureUnitImpl> extractIndividualUnits(UErrorCode &status) const;
 
     
     void takeReciprocal(UErrorCode& status);
@@ -205,7 +234,6 @@ struct MeasureUnitImpl : public UMemory {
 
     CharString identifier;
 };
-
 
 U_NAMESPACE_END
 

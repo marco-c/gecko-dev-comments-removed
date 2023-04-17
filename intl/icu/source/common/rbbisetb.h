@@ -16,9 +16,10 @@
 
 #if !UCONFIG_NO_BREAK_ITERATION
 
+#include "unicode/ucptrie.h"
+#include "unicode/umutablecptrie.h"
 #include "unicode/uobject.h"
 #include "rbbirb.h"
-#include "utrie2.h"
 #include "uvector.h"
 
 U_NAMESPACE_BEGIN
@@ -40,25 +41,26 @@ U_NAMESPACE_BEGIN
 
 class RangeDescriptor : public UMemory {
 public:
-    UChar32            fStartChar;      
-    UChar32            fEndChar;        
-    int32_t            fNum;            
-    UVector           *fIncludesSets;   
-                                        
-                                        
-    RangeDescriptor   *fNext;           
+    UChar32            fStartChar {};            
+    UChar32            fEndChar {};              
+    int32_t            fNum {0};                 
+    bool               fIncludesDict {false};    
+    bool               fFirstInGroup {false};    
+    UVector           *fIncludesSets {nullptr};  
+                                                 
+                                                 
+    RangeDescriptor   *fNext {nullptr};          
 
     RangeDescriptor(UErrorCode &status);
     RangeDescriptor(const RangeDescriptor &other, UErrorCode &status);
     ~RangeDescriptor();
     void split(UChar32 where, UErrorCode &status);   
                                         
-    void setDictionaryFlag();           
+    bool isDictionaryRange();           
                                         
 
-private:
-    RangeDescriptor(const RangeDescriptor &other); 
-    RangeDescriptor &operator=(const RangeDescriptor &other); 
+    RangeDescriptor(const RangeDescriptor &other) = delete; 
+    RangeDescriptor &operator=(const RangeDescriptor &other) = delete; 
 };
 
 
@@ -89,6 +91,8 @@ public:
     int32_t  getNumCharCategories() const;   
                                              
                                              
+    int32_t  getDictCategoriesStart() const; 
+                                             
     int32_t  getTrieSize() ;        
     void     serializeTrie(uint8_t *where);  
     UChar32  getFirstChar(int32_t  val) const;
@@ -101,8 +105,6 @@ public:
 
     void     mergeCategories(IntPair categories);
 
-    static constexpr int32_t DICT_BIT = 0x4000;
-
 #ifdef RBBI_DEBUG
     void     printSets();
     void     printRanges();
@@ -114,23 +116,21 @@ public:
 #endif
 
 private:
-    void           numberSets();
-
     RBBIRuleBuilder       *fRB;             
     UErrorCode            *fStatus;
 
     RangeDescriptor       *fRangeList;      
 
-    UTrie2                *fTrie;           
-    uint32_t               fTrieSize;       
+    UMutableCPTrie        *fMutableTrie;    
+    UCPTrie               *fTrie;           
+    uint32_t               fTrieSize;
+
+    
+    int32_t               fGroupCount;
 
     
     
-    
-    
-    
-    
-    int32_t               fGroupCount;
+    int32_t               fDictCategoriesStart;
 
     UBool                 fSawBOF;
 

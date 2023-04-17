@@ -27,7 +27,6 @@ namespace impl {
 
 
 
-
 class U_I18N_API LocalizedNumberFormatterAsFormat : public Format {
   public:
     LocalizedNumberFormatterAsFormat(const LocalizedNumberFormatter& formatter, const Locale& locale);

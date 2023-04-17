@@ -207,8 +207,8 @@ public:
 
         Iterator() :
                 array(nullptr), index(0), length(0),
-                remaining(0), onlyChanges_(FALSE), coarse(FALSE),
-                dir(0), changed(FALSE), oldLength_(0), newLength_(0),
+                remaining(0), onlyChanges_(false), coarse(false),
+                dir(0), changed(false), oldLength_(0), newLength_(0),
                 srcIndex(0), replIndex(0), destIndex(0) {}
         
 
@@ -251,7 +251,7 @@ public:
 
 
         UBool findSourceIndex(int32_t i, UErrorCode &errorCode) {
-            return findIndex(i, TRUE, errorCode) == 0;
+            return findIndex(i, true, errorCode) == 0;
         }
 
         
@@ -274,7 +274,7 @@ public:
 
 
         UBool findDestinationIndex(int32_t i, UErrorCode &errorCode) {
-            return findIndex(i, FALSE, errorCode) == 0;
+            return findIndex(i, false, errorCode) == 0;
         }
 
         
@@ -436,7 +436,7 @@ public:
 
 
     Iterator getCoarseChangesIterator() const {
-        return Iterator(array, length, TRUE, TRUE);
+        return Iterator(array, length, true, true);
     }
 
     
@@ -448,7 +448,7 @@ public:
 
 
     Iterator getCoarseIterator() const {
-        return Iterator(array, length, FALSE, TRUE);
+        return Iterator(array, length, false, true);
     }
 
     
@@ -460,7 +460,7 @@ public:
 
 
     Iterator getFineChangesIterator() const {
-        return Iterator(array, length, TRUE, FALSE);
+        return Iterator(array, length, true, false);
     }
 
     
@@ -471,7 +471,7 @@ public:
 
 
     Iterator getFineIterator() const {
-        return Iterator(array, length, FALSE, FALSE);
+        return Iterator(array, length, false, false);
     }
 
     

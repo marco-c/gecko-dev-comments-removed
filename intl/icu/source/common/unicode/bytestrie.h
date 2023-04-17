@@ -97,7 +97,6 @@ public:
         return *this;
     }
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -130,7 +129,6 @@ public:
         pos_ = bytes_ + (state & kState64PosMask);
         return *this;
     }
-#endif  
 
     
 
@@ -262,7 +260,7 @@ public:
     inline UBool hasUniqueValue(int32_t &uniqueValue) const {
         const uint8_t *pos=pos_;
         
-        return pos!=NULL && findUniqueValue(pos+remainingMatchLength_+1, FALSE, uniqueValue);
+        return pos!=NULL && findUniqueValue(pos+remainingMatchLength_+1, false, uniqueValue);
     }
 
     

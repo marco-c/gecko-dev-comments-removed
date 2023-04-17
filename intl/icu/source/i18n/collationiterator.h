@@ -76,9 +76,9 @@ private:
             
             if(length < INITIAL_CAPACITY || ensureAppendCapacity(1, errorCode)) {
                 ++length;
-                return TRUE;
+                return true;
             } else {
-                return FALSE;
+                return false;
             }
         }
 

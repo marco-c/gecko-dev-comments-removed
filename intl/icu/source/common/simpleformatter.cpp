@@ -263,6 +263,8 @@ UnicodeString SimpleFormatter::getTextWithNoArguments(
             sb.append(compiledPattern + i, n);
             i += n;
         } else if (n < offsetsLength) {
+            
+            
             offsets[n] = sb.length();
         }
     }

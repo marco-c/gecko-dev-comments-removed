@@ -1228,7 +1228,7 @@ public:
     
 
 
-    SimpleNumberFormatFactory(const Locale& locale, UBool visible = TRUE);
+    SimpleNumberFormatFactory(const Locale& locale, UBool visible = true);
 
     
 

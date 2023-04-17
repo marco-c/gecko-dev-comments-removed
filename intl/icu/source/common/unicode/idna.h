@@ -273,7 +273,7 @@ public:
 
 
 
-    IDNAInfo() : errors(0), labelErrors(0), isTransDiff(FALSE), isBiDi(FALSE), isOkBiDi(TRUE) {}
+    IDNAInfo() : errors(0), labelErrors(0), isTransDiff(false), isBiDi(false), isOkBiDi(true) {}
     
 
 
@@ -310,9 +310,9 @@ private:
 
     void reset() {
         errors=labelErrors=0;
-        isTransDiff=FALSE;
-        isBiDi=FALSE;
-        isOkBiDi=TRUE;
+        isTransDiff=false;
+        isBiDi=false;
+        isOkBiDi=true;
     }
 
     uint32_t errors, labelErrors;

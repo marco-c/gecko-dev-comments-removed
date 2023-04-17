@@ -49,7 +49,7 @@
 
 
   
-U_STABLE void U_EXPORT2 
+U_CAPI void U_EXPORT2 
 u_init(UErrorCode *status);
 
 #ifndef U_HIDE_SYSTEM_API
@@ -98,7 +98,7 @@ u_init(UErrorCode *status);
 
 
 
-U_STABLE void U_EXPORT2 
+U_CAPI void U_EXPORT2 
 u_cleanup(void);
 
 U_CDECL_BEGIN
@@ -148,7 +148,7 @@ typedef void  U_CALLCONV UMemFreeFn (const void *context, void *mem);
 
 
   
-U_STABLE void U_EXPORT2 
+U_CAPI void U_EXPORT2 
 u_setMemoryFunctions(const void *context, UMemAllocFn * U_CALLCONV_FPTR a, UMemReallocFn * U_CALLCONV_FPTR r, UMemFreeFn * U_CALLCONV_FPTR f, 
                     UErrorCode *status);
 

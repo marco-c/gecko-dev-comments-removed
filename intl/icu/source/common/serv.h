@@ -299,7 +299,7 @@ class U_COMMON_API SimpleFactory : public ICUServiceFactory {
 
 
 
-  SimpleFactory(UObject* instanceToAdopt, const UnicodeString& id, UBool visible = TRUE);
+  SimpleFactory(UObject* instanceToAdopt, const UnicodeString& id, UBool visible = true);
 
   
 

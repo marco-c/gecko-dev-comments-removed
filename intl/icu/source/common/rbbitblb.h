@@ -20,6 +20,7 @@
 
 #include "unicode/uobject.h"
 #include "unicode/rbbi.h"
+#include "rbbidata.h"
 #include "rbbirb.h"
 #include "rbbinode.h"
 
@@ -54,6 +55,9 @@ public:
     void     exportTable(void *where);
 
     
+    bool     use8BitsForTable() const;
+
+    
 
 
 
@@ -85,6 +89,8 @@ public:
 
     void     exportSafeTable(void *where);
 
+    
+    bool     use8BitsForSafeTable() const;
 
 private:
     void     calcNullable(RBBINode *n);
@@ -179,9 +185,15 @@ private:
     
     UVector32        *fLookAheadRuleMap = nullptr;
 
+    
 
-    RBBITableBuilder(const RBBITableBuilder &other); 
-    RBBITableBuilder &operator=(const RBBITableBuilder &other); 
+
+
+    int32_t          fLASlotsInUse = ACCEPTING_UNCONDITIONAL;
+
+
+    RBBITableBuilder(const RBBITableBuilder &other) = delete; 
+    RBBITableBuilder &operator=(const RBBITableBuilder &other) = delete; 
 };
 
 
@@ -190,8 +202,8 @@ private:
 class RBBIStateDescriptor : public UMemory {
 public:
     UBool            fMarked;
-    int32_t          fAccepting;
-    int32_t          fLookAhead;
+    uint32_t         fAccepting;
+    uint32_t         fLookAhead;
     UVector          *fTagVals;
     int32_t          fTagsIdx;
     UVector          *fPositions;          

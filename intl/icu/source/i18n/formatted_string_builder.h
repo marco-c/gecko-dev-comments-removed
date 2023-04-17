@@ -56,7 +56,6 @@ class U_I18N_API FormattedStringBuilder : public UMemory {
     
     
     
-    
     struct U_I18N_API Field {
         uint8_t bits;
 

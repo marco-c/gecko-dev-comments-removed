@@ -20,8 +20,6 @@
 
 
 
-#ifndef U_FORCE_HIDE_DRAFT_API
-
 
 
 
@@ -93,6 +91,8 @@ enum ULocMatchDemotion {
 typedef enum ULocMatchDemotion ULocMatchDemotion;
 #endif
 
+#ifndef U_FORCE_HIDE_DRAFT_API
+
 
 
 
@@ -128,6 +128,8 @@ enum ULocMatchDirection {
 #ifndef U_IN_DOXYGEN
 typedef enum ULocMatchDirection ULocMatchDirection;
 #endif
+
+#endif  
 
 struct UHashtable;
 
@@ -218,7 +220,6 @@ public:
 
         Result &operator=(Result &&src) U_NOEXCEPT;
 
-#ifndef U_HIDE_DRAFT_API
         
 
 
@@ -273,7 +274,6 @@ public:
 
 
         Locale makeResolvedLocale(UErrorCode &errorCode) const;
-#endif  
 
     private:
         Result(const Locale *desired, const Locale *supported,
@@ -295,7 +295,6 @@ public:
     };
 
     
-
 
 
 
@@ -336,7 +335,6 @@ public:
 
         Builder &operator=(Builder &&src) U_NOEXCEPT;
 
-#ifndef U_HIDE_DRAFT_API
         
 
 
@@ -419,7 +417,21 @@ public:
 
         Builder &addSupportedLocale(const Locale &locale);
 
+#ifndef U_HIDE_DRAFT_API
         
+
+
+
+
+
+
+
+        Builder &setNoDefaultLocale();
+#endif  
+
+        
+
+
 
 
 
@@ -451,6 +463,7 @@ public:
 
         Builder &setDemotionPerDesiredLocale(ULocMatchDemotion demotion);
 
+#ifndef U_HIDE_DRAFT_API
         
 
 
@@ -465,6 +478,32 @@ public:
             }
             return *this;
         }
+#endif  
+
+#ifndef U_HIDE_DRAFT_API
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        Builder &setMaxDistance(const Locale &desired, const Locale &supported);
+#endif  
 
         
 
@@ -489,7 +528,6 @@ public:
 
 
         LocaleMatcher build(UErrorCode &errorCode) const;
-#endif  
 
     private:
         friend class LocaleMatcher;
@@ -505,8 +543,11 @@ public:
         int32_t thresholdDistance_ = -1;
         ULocMatchDemotion demotion_ = ULOCMATCH_DEMOTION_REGION;
         Locale *defaultLocale_ = nullptr;
+        bool withDefault_ = true;
         ULocMatchFavorSubtag favor_ = ULOCMATCH_FAVOR_LANGUAGE;
         ULocMatchDirection direction_ = ULOCMATCH_DIRECTION_WITH_ONE_WAY;
+        Locale *maxDistanceDesired_ = nullptr;
+        Locale *maxDistanceSupported_ = nullptr;
     };
 
     
@@ -535,7 +576,6 @@ public:
 
     LocaleMatcher &operator=(LocaleMatcher &&src) U_NOEXCEPT;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -603,6 +643,22 @@ public:
 
 
     Result getBestMatchResult(Locale::Iterator &desiredLocales, UErrorCode &errorCode) const;
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    UBool isMatch(const Locale &desired, const Locale &supported, UErrorCode &errorCode) const;
 #endif  
 
 #ifndef U_HIDE_INTERNAL_API
@@ -660,6 +716,5 @@ private:
 
 U_NAMESPACE_END
 
-#endif  
 #endif  
 #endif  

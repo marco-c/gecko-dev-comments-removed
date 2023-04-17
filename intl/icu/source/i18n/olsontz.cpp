@@ -197,58 +197,60 @@ OlsonTimeZone::OlsonTimeZone(const UResourceBundle* top,
         }
 
         
-        const UChar *ruleIdUStr = ures_getStringByKey(res, kFINALRULE, &len, &ec);
-        ures_getByKey(res, kFINALRAW, r.getAlias(), &ec);
-        int32_t ruleRaw = ures_getInt(r.getAlias(), &ec);
-        ures_getByKey(res, kFINALYEAR, r.getAlias(), &ec);
-        int32_t ruleYear = ures_getInt(r.getAlias(), &ec);
         if (U_SUCCESS(ec)) {
-            UnicodeString ruleID(TRUE, ruleIdUStr, len);
-            UResourceBundle *rule = TimeZone::loadRule(top, ruleID, NULL, ec);
-            const int32_t *ruleData = ures_getIntVector(rule, &len, &ec); 
-            if (U_SUCCESS(ec) && len == 11) {
-                UnicodeString emptyStr;
-                finalZone = new SimpleTimeZone(
-                    ruleRaw * U_MILLIS_PER_SECOND,
-                    emptyStr,
-                    (int8_t)ruleData[0], (int8_t)ruleData[1], (int8_t)ruleData[2],
-                    ruleData[3] * U_MILLIS_PER_SECOND,
-                    (SimpleTimeZone::TimeMode) ruleData[4],
-                    (int8_t)ruleData[5], (int8_t)ruleData[6], (int8_t)ruleData[7],
-                    ruleData[8] * U_MILLIS_PER_SECOND,
-                    (SimpleTimeZone::TimeMode) ruleData[9],
-                    ruleData[10] * U_MILLIS_PER_SECOND, ec);
-                if (finalZone == NULL) {
-                    ec = U_MEMORY_ALLOCATION_ERROR;
+            const UChar *ruleIdUStr = ures_getStringByKey(res, kFINALRULE, &len, &ec);
+            ures_getByKey(res, kFINALRAW, r.getAlias(), &ec);
+            int32_t ruleRaw = ures_getInt(r.getAlias(), &ec);
+            ures_getByKey(res, kFINALYEAR, r.getAlias(), &ec);
+            int32_t ruleYear = ures_getInt(r.getAlias(), &ec);
+            if (U_SUCCESS(ec)) {
+                UnicodeString ruleID(TRUE, ruleIdUStr, len);
+                UResourceBundle *rule = TimeZone::loadRule(top, ruleID, NULL, ec);
+                const int32_t *ruleData = ures_getIntVector(rule, &len, &ec); 
+                if (U_SUCCESS(ec) && len == 11) {
+                    UnicodeString emptyStr;
+                    finalZone = new SimpleTimeZone(
+                        ruleRaw * U_MILLIS_PER_SECOND,
+                        emptyStr,
+                        (int8_t)ruleData[0], (int8_t)ruleData[1], (int8_t)ruleData[2],
+                        ruleData[3] * U_MILLIS_PER_SECOND,
+                        (SimpleTimeZone::TimeMode) ruleData[4],
+                        (int8_t)ruleData[5], (int8_t)ruleData[6], (int8_t)ruleData[7],
+                        ruleData[8] * U_MILLIS_PER_SECOND,
+                        (SimpleTimeZone::TimeMode) ruleData[9],
+                        ruleData[10] * U_MILLIS_PER_SECOND, ec);
+                    if (finalZone == NULL) {
+                        ec = U_MEMORY_ALLOCATION_ERROR;
+                    } else {
+                        finalStartYear = ruleYear;
+
+                        
+                        
+                        
+                        
+                        
+
+                        
+
+
+                        
+
+                        
+                        
+                        
+                        
+                        
+                        
+                        finalStartMillis = Grego::fieldsToDay(finalStartYear, 0, 1) * U_MILLIS_PER_DAY;
+                    }
                 } else {
-                    finalStartYear = ruleYear;
-
-                    
-                    
-                    
-                    
-                    
-
-                    
-
-
-                    
-
-                    
-                    
-                    
-                    
-                    
-                    
-                    finalStartMillis = Grego::fieldsToDay(finalStartYear, 0, 1) * U_MILLIS_PER_DAY;
+                    ec = U_INVALID_FORMAT_ERROR;
                 }
-            } else {
-                ec = U_INVALID_FORMAT_ERROR;
+                ures_close(rule);
+            } else if (ec == U_MISSING_RESOURCE_ERROR) {
+                
+                ec = U_ZERO_ERROR;
             }
-            ures_close(rule);
-        } else if (ec == U_MISSING_RESOURCE_ERROR) {
-            
-            ec = U_ZERO_ERROR;
         }
 
         

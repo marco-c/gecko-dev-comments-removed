@@ -1683,6 +1683,13 @@ class U_I18N_API DecimalFormat : public NumberFormat {
 
 
 
+
+
+
+
+
+
+
     void setMinimumGroupingDigits(int32_t newValue);
 
     

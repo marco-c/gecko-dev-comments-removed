@@ -10,11 +10,13 @@
 #include "number_types.h"
 #include "formatted_string_builder.h"
 #include "number_patternstring.h"
+#include "number_usageprefs.h"
 #include "number_utils.h"
 #include "number_patternmodifier.h"
 #include "number_longnames.h"
 #include "number_compact.h"
 #include "number_microprops.h"
+#include "number_utypes.h"
 
 U_NAMESPACE_BEGIN namespace number {
 namespace impl {
@@ -34,9 +36,8 @@ class NumberFormatterImpl : public UMemory {
     
 
 
-    static int32_t
-    formatStatic(const MacroProps &macros, DecimalQuantity &inValue, FormattedStringBuilder &outString,
-                 UErrorCode &status);
+    static int32_t formatStatic(const MacroProps &macros, UFormattedNumberData *results,
+                                UErrorCode &status);
 
     
 
@@ -51,7 +52,7 @@ class NumberFormatterImpl : public UMemory {
     
 
 
-    int32_t format(DecimalQuantity& inValue, FormattedStringBuilder& outString, UErrorCode& status) const;
+    int32_t format(UFormattedNumberData *results, UErrorCode &status) const;
 
     
 
@@ -83,6 +84,8 @@ class NumberFormatterImpl : public UMemory {
 
   private:
     
+    
+    
     const MicroPropsGenerator *fMicroPropsGenerator = nullptr;
 
     
@@ -90,13 +93,20 @@ class NumberFormatterImpl : public UMemory {
 
     
     
+    LocalPointer<const UsagePrefsHandler> fUsagePrefsHandler;
+    LocalPointer<const UnitConversionHandler> fUnitConversionHandler;
     LocalPointer<const DecimalFormatSymbols> fSymbols;
     LocalPointer<const PluralRules> fRules;
     LocalPointer<const ParsedPatternInfo> fPatternInfo;
     LocalPointer<const ScientificHandler> fScientificHandler;
     LocalPointer<MutablePatternModifier> fPatternModifier;
     LocalPointer<ImmutablePatternModifier> fImmutablePatternModifier;
-    LocalPointer<const LongNameHandler> fLongNameHandler;
+    LocalPointer<LongNameHandler> fLongNameHandler;
+    
+    
+    
+    LocalPointer<MixedUnitLongNameHandler> fMixedUnitLongNameHandler;
+    LocalPointer<const LongNameMultiplexer> fLongNameMultiplexer;
     LocalPointer<const CompactHandler> fCompactHandler;
 
     

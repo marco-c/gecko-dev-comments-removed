@@ -317,6 +317,19 @@ public:
 
     static TimeZone* U_EXPORT2 createDefault(void);
 
+#ifndef U_HIDE_INTERNAL_API
+    
+
+
+
+
+
+
+
+
+    static TimeZone* U_EXPORT2 forLocaleOrDefault(const Locale& locale);
+#endif  
+
     
 
 
@@ -968,9 +981,9 @@ TimeZone::setID(const UnicodeString& ID)
 }
 U_NAMESPACE_END
 
-#endif
+#endif 
 
-#endif
+#endif 
 
-#endif
+#endif 
 

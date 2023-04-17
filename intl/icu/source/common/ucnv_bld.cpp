@@ -262,7 +262,7 @@ static UBool U_CALLCONV ucnv_cleanup(void) {
 }
 
 U_CAPI void U_EXPORT2
-ucnv_enableCleanup() {
+ucnv_enableCleanup(void) {
     ucln_common_registerCleanup(UCLN_COMMON_UCNV, ucnv_cleanup);
 }
 
@@ -1309,7 +1309,7 @@ ucnv_setDefaultName(const char *converterName) {
 
         
         ucnv_close(cnv);
-  
+
         
         u_flushDefaultConverter();
     }

@@ -22,6 +22,56 @@
 U_NAMESPACE_BEGIN namespace number {
 namespace impl {
 
+
+
+
+
+
+
+class IntMeasures : public MaybeStackArray<int64_t, 2> {
+  public:
+    
+
+
+
+
+
+    IntMeasures() : MaybeStackArray<int64_t, 2>() {
+    }
+
+    
+
+
+
+
+
+    IntMeasures(const IntMeasures &other) : MaybeStackArray<int64_t, 2>() {
+        this->operator=(other);
+    }
+
+    
+    IntMeasures &operator=(const IntMeasures &rhs) {
+        if (this == &rhs) {
+            return *this;
+        }
+        copyFrom(rhs, status);
+        return *this;
+    }
+
+    
+    IntMeasures(IntMeasures &&src) = default;
+
+    
+    IntMeasures &operator=(IntMeasures &&src) = default;
+
+    UErrorCode status = U_ZERO_ERROR;
+};
+
+
+
+
+
+
 struct MicroProps : public MicroPropsGenerator {
 
     
@@ -36,19 +86,47 @@ struct MicroProps : public MicroPropsGenerator {
 
     
     const DecimalFormatSymbols* symbols;
+
+    
+    
+
+    
+    
+    
     const Modifier* modOuter;
+    
+    
     const Modifier* modMiddle = nullptr;
+    
+    
     const Modifier* modInner;
 
     
     
     struct {
+        
+        
         ScientificModifier scientificModifier;
+        
         EmptyModifier emptyWeakModifier{false};
+        
         EmptyModifier emptyStrongModifier{true};
         MultiplierFormatHandler multiplier;
+        
+        
+        SimpleModifier mixedUnitModifier;
     } helpers;
 
+    
+    
+    
+    MeasureUnit outputUnit;
+
+    
+    
+    IntMeasures mixedMeasures;
+    
+    int32_t mixedMeasuresCount = 0;
 
     MicroProps() = default;
 
@@ -56,7 +134,23 @@ struct MicroProps : public MicroPropsGenerator {
 
     MicroProps& operator=(const MicroProps& other) = default;
 
-    void processQuantity(DecimalQuantity&, MicroProps& micros, UErrorCode& status) const U_OVERRIDE {
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    void processQuantity(DecimalQuantity &quantity, MicroProps &micros,
+                         UErrorCode &status) const U_OVERRIDE {
+        (void) quantity;
         (void) status;
         if (this == &micros) {
             
@@ -65,6 +159,7 @@ struct MicroProps : public MicroPropsGenerator {
             U_ASSERT(exhausted);
         } else {
             
+            U_ASSERT(!exhausted);
             micros = *this;
         }
     }

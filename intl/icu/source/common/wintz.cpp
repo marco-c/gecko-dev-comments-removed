@@ -16,11 +16,12 @@
 #if U_PLATFORM_USES_ONLY_WIN32_API
 
 #include "wintz.h"
+#include "charstr.h"
 #include "cmemory.h"
 #include "cstring.h"
 
 #include "unicode/ures.h"
-#include "unicode/ustring.h"
+#include "unicode/unistr.h"
 #include "uresimp.h"
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -36,7 +37,28 @@
 U_NAMESPACE_BEGIN
 
 
-#define MAX_TIMEZONE_ID_LENGTH 128
+
+
+
+#define WINDOWS_TIMEZONES_REG_KEY_PATH L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Time Zones"
+
+
+
+#define WINDOWS_MAX_REG_KEY_LENGTH 256
+
+#if U_PLATFORM_HAS_WINUWP_API == 0
+
+
+
+typedef struct _REG_TZI_FORMAT {
+    LONG Bias;
+    LONG StandardBias;
+    LONG DaylightBias;
+    SYSTEMTIME StandardDate;
+    SYSTEMTIME DaylightDate;
+} REG_TZI_FORMAT;
+
+#endif 
 
 
 
@@ -44,80 +66,265 @@ U_NAMESPACE_BEGIN
 
 
 
-U_INTERNAL const char* U_EXPORT2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_CAPI const char* U_EXPORT2
 uprv_detectWindowsTimeZone()
 {
-    UErrorCode status = U_ZERO_ERROR;
-    char* icuid = nullptr;
-    char dynamicTZKeyName[MAX_TIMEZONE_ID_LENGTH];
-    char tmpid[MAX_TIMEZONE_ID_LENGTH];
-    int32_t len;
-    int id = GEOID_NOT_AVAILABLE;
-    int errorCode;
-    wchar_t ISOcodeW[3] = {}; 
-    char ISOcode[3] = {}; 
-
+    
     DYNAMIC_TIME_ZONE_INFORMATION dynamicTZI;
     uprv_memset(&dynamicTZI, 0, sizeof(dynamicTZI));
-    uprv_memset(dynamicTZKeyName, 0, sizeof(dynamicTZKeyName));
-    uprv_memset(tmpid, 0, sizeof(tmpid));
+    SYSTEMTIME systemTimeAllZero;
+    uprv_memset(&systemTimeAllZero, 0, sizeof(systemTimeAllZero));
 
-    
-    if (TIME_ZONE_ID_INVALID == GetDynamicTimeZoneInformation(&dynamicTZI)) {
+    if (GetDynamicTimeZoneInformation(&dynamicTZI) == TIME_ZONE_ID_INVALID) {
         return nullptr;
     }
 
-    id = GetUserGeoID(GEOCLASS_NATION);
-    errorCode = GetGeoInfoW(id, GEO_ISO2, ISOcodeW, 3, 0);
-
     
-    u_strToUTF8(ISOcode, UPRV_LENGTHOF(ISOcode), nullptr,
-        reinterpret_cast<const UChar*>(ISOcodeW), UPRV_LENGTHOF(ISOcodeW), &status);
-
-    LocalUResourceBundlePointer bundle(ures_openDirect(nullptr, "windowsZones", &status));
-    ures_getByKey(bundle.getAlias(), "mapTimezones", bundle.getAlias(), &status);
-
     
-    u_strToUTF8(dynamicTZKeyName, UPRV_LENGTHOF(dynamicTZKeyName), nullptr,
-        reinterpret_cast<const UChar*>(dynamicTZI.TimeZoneKeyName), -1, &status);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (dynamicTZI.DynamicDaylightTimeDisabled != 0 &&
+        uprv_memcmp(&dynamicTZI.StandardDate, &dynamicTZI.DaylightDate, sizeof(dynamicTZI.StandardDate)) == 0 &&
+        ((dynamicTZI.TimeZoneKeyName[0] != L'\0' && uprv_memcmp(&dynamicTZI.StandardDate, &systemTimeAllZero, sizeof(systemTimeAllZero)) == 0) ||
+         (dynamicTZI.TimeZoneKeyName[0] == L'\0' && uprv_memcmp(&dynamicTZI.StandardDate, &systemTimeAllZero, sizeof(systemTimeAllZero)) != 0)))
+    {
+        LONG utcOffsetMins = dynamicTZI.Bias;
+        if (utcOffsetMins == 0) {
+            return uprv_strdup("Etc/UTC");
+        }
 
-    if (U_FAILURE(status)) {
-        return nullptr;
-    }
-
-    if (dynamicTZI.TimeZoneKeyName[0] != 0) {
-        StackUResourceBundle winTZ;
-        ures_getByKey(bundle.getAlias(), dynamicTZKeyName, winTZ.getAlias(), &status);
-
-        if (U_SUCCESS(status)) {
-            const UChar* icuTZ = nullptr;
-            if (errorCode != 0) {
-                icuTZ = ures_getStringByKey(winTZ.getAlias(), ISOcode, &len, &status);
-            }
-            if (errorCode == 0 || icuTZ == nullptr) {
-                
-                status = U_ZERO_ERROR;
-                icuTZ = ures_getStringByKey(winTZ.getAlias(), "001", &len, &status);
-            }
-
-            if (U_SUCCESS(status)) {
-                int index = 0;
-
-                while (!(*icuTZ == '\0' || *icuTZ == ' ')) {
-                    
-                    tmpid[index++] = (char)(*icuTZ++);
-                }
-                tmpid[index] = '\0';
+        
+        if (utcOffsetMins % 60 == 0) {
+            char gmtOffsetTz[11] = {}; 
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            int ret = snprintf(gmtOffsetTz, UPRV_LENGTHOF(gmtOffsetTz), "Etc/GMT%+ld", utcOffsetMins / 60);
+            if (ret > 0 && ret < UPRV_LENGTHOF(gmtOffsetTz)) {
+                return uprv_strdup(gmtOffsetTz);
             }
         }
     }
 
     
-    if (tmpid[0] != 0) {
-        icuid = uprv_strdup(tmpid);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    WCHAR timezoneSubKeyName[WINDOWS_MAX_REG_KEY_LENGTH];
+    WCHAR *windowsTimeZoneName = dynamicTZI.TimeZoneKeyName;
+
+    if (dynamicTZI.TimeZoneKeyName[0] == 0) {
+
+
+#if U_PLATFORM_HAS_WINUWP_API == 1
+        (void)timezoneSubKeyName; 
+        return nullptr;
+#else
+        
+        LONG ret;
+        HKEY hKeyAllTimeZones = nullptr;
+        ret = RegOpenKeyExW(HKEY_LOCAL_MACHINE, WINDOWS_TIMEZONES_REG_KEY_PATH, 0, KEY_READ,
+                            reinterpret_cast<PHKEY>(&hKeyAllTimeZones));
+        
+        if (ret != ERROR_SUCCESS) {
+            
+            return nullptr;
+        }
+
+        
+        DWORD numTimeZoneSubKeys;
+        ret = RegQueryInfoKeyW(hKeyAllTimeZones, nullptr, nullptr, nullptr, &numTimeZoneSubKeys,
+                               nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+        
+        if (ret != ERROR_SUCCESS) {
+            RegCloseKey(hKeyAllTimeZones);
+            return nullptr;
+        }
+
+        
+        
+        
+        
+        
+        HKEY hKeyTimeZoneSubKey = nullptr;
+        ULONG registryValueType;
+        WCHAR registryStandardName[WINDOWS_MAX_REG_KEY_LENGTH];
+
+        for (DWORD i = 0; i < numTimeZoneSubKeys; i++) {
+            
+            DWORD size = UPRV_LENGTHOF(timezoneSubKeyName);
+            ret = RegEnumKeyExW(hKeyAllTimeZones, i, timezoneSubKeyName, &size, nullptr, nullptr, nullptr, nullptr);
+
+            if (ret != ERROR_SUCCESS) {
+                RegCloseKey(hKeyAllTimeZones);
+                return nullptr;
+            }
+            
+            ret = RegOpenKeyExW(hKeyAllTimeZones, timezoneSubKeyName, 0, KEY_READ,
+                                reinterpret_cast<PHKEY>(&hKeyTimeZoneSubKey));
+            
+            if (ret != ERROR_SUCCESS) {
+                RegCloseKey(hKeyAllTimeZones);
+                return nullptr;
+            }
+
+            
+            size = sizeof(registryStandardName);
+            ret = RegQueryValueExW(hKeyTimeZoneSubKey, L"Std", nullptr, &registryValueType,
+                                   reinterpret_cast<LPBYTE>(registryStandardName), &size);
+            
+            if (ret != ERROR_SUCCESS || registryValueType != REG_SZ) {
+                RegCloseKey(hKeyTimeZoneSubKey);
+                RegCloseKey(hKeyAllTimeZones);
+                return nullptr;
+            }
+
+            
+            if (wcscmp(reinterpret_cast<WCHAR *>(registryStandardName), dynamicTZI.StandardName) == 0) {
+                
+                
+                
+                
+                REG_TZI_FORMAT registryTziValue;
+                uprv_memset(&registryTziValue, 0, sizeof(registryTziValue));
+
+                
+                DWORD timezoneTziValueSize = sizeof(registryTziValue);
+                ret = RegQueryValueExW(hKeyTimeZoneSubKey, L"TZI", nullptr, &registryValueType,
+                                     reinterpret_cast<LPBYTE>(&registryTziValue), &timezoneTziValueSize);
+
+                if (ret == ERROR_SUCCESS) {
+                    if ((dynamicTZI.Bias == registryTziValue.Bias) &&
+                        (memcmp((const void *)&dynamicTZI.StandardDate, (const void *)&registryTziValue.StandardDate, sizeof(SYSTEMTIME)) == 0) &&
+                        (memcmp((const void *)&dynamicTZI.DaylightDate, (const void *)&registryTziValue.DaylightDate, sizeof(SYSTEMTIME)) == 0))
+                    {
+                        
+                        windowsTimeZoneName = timezoneSubKeyName;
+                        break;
+                    }
+                }
+            }
+            RegCloseKey(hKeyTimeZoneSubKey);
+            hKeyTimeZoneSubKey = nullptr;
+        }
+
+        if (hKeyTimeZoneSubKey != nullptr) {
+            RegCloseKey(hKeyTimeZoneSubKey);
+        }
+        if (hKeyAllTimeZones != nullptr) {
+            RegCloseKey(hKeyAllTimeZones);
+        }
+#endif 
     }
 
-    return icuid;
+    CharString winTZ;
+    UErrorCode status = U_ZERO_ERROR;
+    winTZ.appendInvariantChars(UnicodeString(TRUE, windowsTimeZoneName, -1), status);
+
+    
+    StackUResourceBundle winTZBundle;
+    ures_openDirectFillIn(winTZBundle.getAlias(), nullptr, "windowsZones", &status);
+    ures_getByKey(winTZBundle.getAlias(), "mapTimezones", winTZBundle.getAlias(), &status);
+    ures_getByKey(winTZBundle.getAlias(), winTZ.data(), winTZBundle.getAlias(), &status);
+
+    if (U_FAILURE(status)) {
+        return nullptr;
+    }
+    
+    
+    
+    
+    
+    wchar_t regionCodeW[3] = {};
+    char regionCode[3] = {}; 
+    int geoId = GetUserGeoID(GEOCLASS_NATION);
+    int regionCodeLen = GetGeoInfoW(geoId, GEO_ISO2, regionCodeW, UPRV_LENGTHOF(regionCodeW), 0);
+
+    const UChar *icuTZ16 = nullptr;
+    int32_t tzListLen = 0;
+
+    if (regionCodeLen != 0) {
+        for (int i = 0; i < UPRV_LENGTHOF(regionCodeW); i++) {
+            regionCode[i] = static_cast<char>(regionCodeW[i]);
+        }
+        icuTZ16 = ures_getStringByKey(winTZBundle.getAlias(), regionCode, &tzListLen, &status);
+    }
+    if (regionCodeLen == 0 || U_FAILURE(status)) {
+        
+        status = U_ZERO_ERROR;
+        icuTZ16 = ures_getStringByKey(winTZBundle.getAlias(), "001", &tzListLen, &status);
+    }
+
+    
+    
+    
+    
+    int32_t tzLen = 0;
+    if (tzListLen > 0) {
+        while (!(icuTZ16[tzLen] == u'\0' || icuTZ16[tzLen] == u' ')) {
+            tzLen++;
+        }
+    }
+
+    
+    
+    CharString icuTZStr;
+    return icuTZStr.appendInvariantChars(icuTZ16, tzLen, status).cloneData(status);
 }
 
 U_NAMESPACE_END

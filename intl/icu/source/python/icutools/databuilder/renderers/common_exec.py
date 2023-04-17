@@ -1,6 +1,10 @@
 
 
 
+
+
+from __future__ import print_function
+
 from . import *
 from .. import *
 from .. import utils
@@ -146,4 +150,6 @@ def run_shell_command(command_line, platform, verbose):
             )
     if changed_windows_comspec:
         os.environ["COMSPEC"] = previous_comspec
+    if returncode != 0:
+        print("Command failed: %s" % command_line, file=sys.stderr)
     return returncode

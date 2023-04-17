@@ -208,7 +208,7 @@ typedef UPlugTokenReturn (U_EXPORT2 UPlugEntrypoint) (
 
 
 
-U_INTERNAL void U_EXPORT2 
+U_CAPI void U_EXPORT2 
 uplug_setPlugNoUnload(UPlugData *plug, UBool dontUnload);
 
 
@@ -217,7 +217,7 @@ uplug_setPlugNoUnload(UPlugData *plug, UBool dontUnload);
 
 
 
-U_INTERNAL void U_EXPORT2
+U_CAPI void U_EXPORT2
 uplug_setPlugLevel(UPlugData *plug, UPlugLevel level);
 
 
@@ -226,7 +226,7 @@ uplug_setPlugLevel(UPlugData *plug, UPlugLevel level);
 
 
 
-U_INTERNAL UPlugLevel U_EXPORT2
+U_CAPI UPlugLevel U_EXPORT2
 uplug_getPlugLevel(UPlugData *plug);
 
 
@@ -236,7 +236,7 @@ uplug_getPlugLevel(UPlugData *plug);
 
 
 
-U_INTERNAL UPlugLevel U_EXPORT2
+U_CAPI UPlugLevel U_EXPORT2
 uplug_getCurrentLevel(void);
 
 
@@ -245,7 +245,7 @@ uplug_getCurrentLevel(void);
 
 
 
-U_INTERNAL UErrorCode U_EXPORT2
+U_CAPI UErrorCode U_EXPORT2
 uplug_getPlugLoadStatus(UPlugData *plug); 
 
 
@@ -254,7 +254,7 @@ uplug_getPlugLoadStatus(UPlugData *plug);
 
 
 
-U_INTERNAL void U_EXPORT2
+U_CAPI void U_EXPORT2
 uplug_setPlugName(UPlugData *plug, const char *name);
 
 
@@ -263,7 +263,7 @@ uplug_setPlugName(UPlugData *plug, const char *name);
 
 
 
-U_INTERNAL const char * U_EXPORT2
+U_CAPI const char * U_EXPORT2
 uplug_getPlugName(UPlugData *plug);
 
 
@@ -272,7 +272,7 @@ uplug_getPlugName(UPlugData *plug);
 
 
 
-U_INTERNAL const char * U_EXPORT2
+U_CAPI const char * U_EXPORT2
 uplug_getSymbolName(UPlugData *plug);
 
 
@@ -282,7 +282,7 @@ uplug_getSymbolName(UPlugData *plug);
 
 
 
-U_INTERNAL const char * U_EXPORT2
+U_CAPI const char * U_EXPORT2
 uplug_getLibraryName(UPlugData *plug, UErrorCode *status);
 
 
@@ -292,7 +292,7 @@ uplug_getLibraryName(UPlugData *plug, UErrorCode *status);
 
 
 
-U_INTERNAL void * U_EXPORT2
+U_CAPI void * U_EXPORT2
 uplug_getLibrary(UPlugData *plug);
 
 
@@ -301,7 +301,7 @@ uplug_getLibrary(UPlugData *plug);
 
 
 
-U_INTERNAL void * U_EXPORT2
+U_CAPI void * U_EXPORT2
 uplug_getContext(UPlugData *plug);
 
 
@@ -310,7 +310,7 @@ uplug_getContext(UPlugData *plug);
 
 
 
-U_INTERNAL void U_EXPORT2
+U_CAPI void U_EXPORT2
 uplug_setContext(UPlugData *plug, void *context);
 
 
@@ -321,7 +321,7 @@ uplug_setContext(UPlugData *plug, void *context);
 
 
 
-U_INTERNAL const char * U_EXPORT2
+U_CAPI const char * U_EXPORT2
 uplug_getConfiguration(UPlugData *plug);
 
 
@@ -339,7 +339,7 @@ uplug_getConfiguration(UPlugData *plug);
 
 
 
-U_INTERNAL UPlugData* U_EXPORT2
+U_CAPI UPlugData* U_EXPORT2
 uplug_nextPlug(UPlugData *prior);
 
 
@@ -354,7 +354,7 @@ uplug_nextPlug(UPlugData *prior);
 
 
 
-U_INTERNAL UPlugData* U_EXPORT2
+U_CAPI UPlugData* U_EXPORT2
 uplug_loadPlugFromEntrypoint(UPlugEntrypoint *entrypoint, const char *config, UErrorCode *status);
 
 
@@ -368,7 +368,7 @@ uplug_loadPlugFromEntrypoint(UPlugEntrypoint *entrypoint, const char *config, UE
 
 
 
-U_INTERNAL UPlugData* U_EXPORT2
+U_CAPI UPlugData* U_EXPORT2
 uplug_loadPlugFromLibrary(const char *libName, const char *sym, const char *config, UErrorCode *status);
 
 
@@ -378,7 +378,7 @@ uplug_loadPlugFromLibrary(const char *libName, const char *sym, const char *conf
 
 
 
-U_INTERNAL void U_EXPORT2
+U_CAPI void U_EXPORT2
 uplug_removePlug(UPlugData *plug, UErrorCode *status);
 #endif  
 

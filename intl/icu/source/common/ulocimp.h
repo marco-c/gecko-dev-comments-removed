@@ -13,6 +13,8 @@
 #include "unicode/bytestream.h"
 #include "unicode/uloc.h"
 
+#include "charstr.h"
+
 
 
 
@@ -47,36 +49,48 @@ uloc_getCurrentCountryID(const char* oldID);
 U_CFUNC const char* 
 uloc_getCurrentLanguageID(const char* oldID);
 
-U_CFUNC int32_t
+U_CFUNC void
+ulocimp_getKeywords(const char *localeID,
+             char prev,
+             icu::ByteSink& sink,
+             UBool valuesToo,
+             UErrorCode *status);
+
+icu::CharString U_EXPORT2
 ulocimp_getLanguage(const char *localeID,
-                    char *language, int32_t languageCapacity,
-                    const char **pEnd);
+                    const char **pEnd,
+                    UErrorCode &status);
 
-U_CFUNC int32_t
+icu::CharString U_EXPORT2
 ulocimp_getScript(const char *localeID,
-                   char *script, int32_t scriptCapacity,
-                   const char **pEnd);
+                  const char **pEnd,
+                  UErrorCode &status);
 
-U_CFUNC int32_t
+icu::CharString U_EXPORT2
 ulocimp_getCountry(const char *localeID,
-                   char *country, int32_t countryCapacity,
-                   const char **pEnd);
+                   const char **pEnd,
+                   UErrorCode &status);
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ulocimp_getName(const char* localeID,
                 icu::ByteSink& sink,
                 UErrorCode* err);
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ulocimp_getBaseName(const char* localeID,
                     icu::ByteSink& sink,
                     UErrorCode* err);
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ulocimp_canonicalize(const char* localeID,
                      icu::ByteSink& sink,
                      UErrorCode* err);
 
+U_CAPI void U_EXPORT2
+ulocimp_getKeywordValue(const char* localeID,
+                        const char* keywordName,
+                        icu::ByteSink& sink,
+                        UErrorCode* status);
 
 
 
@@ -96,11 +110,16 @@ ulocimp_canonicalize(const char* localeID,
 
 
 
-U_STABLE void U_EXPORT2
+
+U_CAPI void U_EXPORT2
 ulocimp_toLanguageTag(const char* localeID,
                       icu::ByteSink& sink,
                       UBool strict,
                       UErrorCode* err);
+
+
+
+
 
 
 
@@ -189,7 +208,7 @@ ulocimp_getRegionForSupplementalData(const char *localeID, UBool inferRegion,
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ulocimp_addLikelySubtags(const char* localeID,
                          icu::ByteSink& sink,
                          UErrorCode* err);
@@ -223,7 +242,7 @@ ulocimp_addLikelySubtags(const char* localeID,
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ulocimp_minimizeSubtags(const char* localeID,
                         icu::ByteSink& sink,
                         UErrorCode* err);
@@ -278,5 +297,11 @@ ulocimp_toBcpType(const char* key, const char* type, UBool* isKnownKey, UBool* i
 
 U_CFUNC const char*
 ulocimp_toLegacyType(const char* key, const char* type, UBool* isKnownKey, UBool* isSpecialType);
+
+
+U_CAPI const char* const* ulocimp_getKnownCanonicalizedLocaleForTest(int32_t* length);
+
+
+U_CAPI bool ulocimp_isCanonicalizedLocaleForTest(const char* localeName);
 
 #endif

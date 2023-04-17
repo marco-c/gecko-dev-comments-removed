@@ -14,7 +14,9 @@
 
 #if !UCONFIG_NO_FORMATTING
 
+#if U_SHOW_CPLUSPLUS_API
 #include "unicode/localpointer.h"
+#endif   
 
 
 
@@ -63,7 +65,7 @@ typedef struct UGenderInfo UGenderInfo;
 
 
 
-U_STABLE const UGenderInfo* U_EXPORT2
+U_CAPI const UGenderInfo* U_EXPORT2
 ugender_getInstance(const char *locale, UErrorCode *status);
 
 
@@ -76,7 +78,7 @@ ugender_getInstance(const char *locale, UErrorCode *status);
 
 
 
-U_STABLE UGender U_EXPORT2
+U_CAPI UGender U_EXPORT2
 ugender_getListGender(const UGenderInfo* genderInfo, const UGender *genders, int32_t size, UErrorCode *status);
 
 #endif 

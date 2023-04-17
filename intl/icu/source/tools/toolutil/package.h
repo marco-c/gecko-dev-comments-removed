@@ -57,13 +57,13 @@ public:
 
 
 
-    void setAutoPrefix() { doAutoPrefix=TRUE; }
+    void setAutoPrefix() { doAutoPrefix=true; }
     
 
 
     void setAutoPrefixWithType() {
-        doAutoPrefix=TRUE;
-        prefixEndsWithType=TRUE;
+        doAutoPrefix=true;
+        prefixEndsWithType=true;
     }
     void setPrefix(const char *p);
 

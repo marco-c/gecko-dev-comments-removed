@@ -32,50 +32,21 @@ U_NAMESPACE_BEGIN
 
 
 
-class U_I18N_API NoUnit: public MeasureUnit {
-public:
+
+namespace NoUnit {
     
 
 
 
 
 
-    static NoUnit U_EXPORT2 base();
-
-    
 
 
 
 
-
-    static NoUnit U_EXPORT2 percent();
-
-    
-
-
-
-
-
-    static NoUnit U_EXPORT2 permille();
-
-    
-
-
-
-    NoUnit(const NoUnit& other);
-
-    
-
-
-
-    virtual ~NoUnit();
-
-    
-
-
-
-
-    virtual NoUnit* clone() const;
+    static inline MeasureUnit U_EXPORT2 base() {
+        return MeasureUnit();
+    }
 
     
 
@@ -85,7 +56,11 @@ public:
 
 
 
-    virtual UClassID getDynamicClassID() const;
+
+
+    static inline MeasureUnit U_EXPORT2 percent() {
+        return MeasureUnit::getPercent();
+    }
 
     
 
@@ -93,16 +68,14 @@ public:
 
 
 
-    static UClassID U_EXPORT2 getStaticClassID();
-
-private:
-    
 
 
 
-    NoUnit(const char* subtype);
 
-};
+    static inline MeasureUnit U_EXPORT2 permille() {
+        return MeasureUnit::getPermille();
+    }
+}
 
 U_NAMESPACE_END
 

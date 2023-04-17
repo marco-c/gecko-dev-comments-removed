@@ -34,13 +34,13 @@ class UnifiedCache;
 
 class U_COMMON_API CacheKeyBase : public UObject {
  public:
-   CacheKeyBase() : fCreationStatus(U_ZERO_ERROR), fIsMaster(FALSE) {}
+   CacheKeyBase() : fCreationStatus(U_ZERO_ERROR), fIsPrimary(false) {}
 
    
 
 
    CacheKeyBase(const CacheKeyBase &other) 
-           : UObject(other), fCreationStatus(other.fCreationStatus), fIsMaster(FALSE) { }
+           : UObject(other), fCreationStatus(other.fCreationStatus), fIsPrimary(false) { }
    virtual ~CacheKeyBase();
 
    
@@ -88,7 +88,7 @@ class U_COMMON_API CacheKeyBase : public UObject {
    }
  private:
    mutable UErrorCode fCreationStatus;
-   mutable UBool fIsMaster;
+   mutable UBool fIsPrimary;
    friend class UnifiedCache;
 };
 
@@ -147,10 +147,10 @@ class LocaleCacheKey : public CacheKey<T> {
    virtual UBool operator == (const CacheKeyBase &other) const {
        
        if (this == &other) {
-           return TRUE;
+           return true;
        }
        if (!CacheKey<T>::operator == (other)) {
-           return FALSE;
+           return false;
        }
        
        
@@ -473,7 +473,7 @@ class U_COMMON_API UnifiedCache : public UnifiedCacheBase {
 
 
 
-   void _registerMaster(const CacheKeyBase *theKey, const SharedObject *value) const;
+   void _registerPrimary(const CacheKeyBase *theKey, const SharedObject *value) const;
         
    
 

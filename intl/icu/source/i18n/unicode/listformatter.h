@@ -23,6 +23,8 @@
 
 #if U_SHOW_CPLUSPLUS_API
 
+#if !UCONFIG_NO_FORMATTING
+
 #include "unicode/unistr.h"
 #include "unicode/locid.h"
 #include "unicode/formattedvalue.h"
@@ -65,7 +67,6 @@ struct ListFormatData : public UMemory {
 
 
 
-#if !UCONFIG_NO_FORMATTING
 
 
 
@@ -135,7 +136,6 @@ class U_I18N_API FormattedList : public UMemory, public FormattedValue {
         : fData(nullptr), fErrorCode(errorCode) {}
     friend class ListFormatter;
 };
-#endif 
 
 
 
@@ -185,8 +185,6 @@ class U_I18N_API ListFormatter : public UObject{
 
     static ListFormatter* createInstance(const Locale& locale, UErrorCode& errorCode);
 
-#ifndef U_HIDE_DRAFT_API
-#if !UCONFIG_NO_FORMATTING
     
 
 
@@ -199,8 +197,6 @@ class U_I18N_API ListFormatter : public UObject{
 
     static ListFormatter* createInstance(
       const Locale& locale, UListFormatterType type, UListFormatterWidth width, UErrorCode& errorCode);
-#endif  
-#endif  
   
 #ifndef U_HIDE_INTERNAL_API
     
@@ -239,7 +235,6 @@ class U_I18N_API ListFormatter : public UObject{
     UnicodeString& format(const UnicodeString items[], int32_t n_items,
         UnicodeString& appendTo, UErrorCode& errorCode) const;
 
-#if !UCONFIG_NO_FORMATTING
     
 
 
@@ -255,7 +250,6 @@ class U_I18N_API ListFormatter : public UObject{
         const UnicodeString items[],
         int32_t n_items,
         UErrorCode& errorCode) const;
-#endif 
 
 #ifndef U_HIDE_INTERNAL_API
     
@@ -295,6 +289,8 @@ class U_I18N_API ListFormatter : public UObject{
 };
 
 U_NAMESPACE_END
+
+#endif 
 
 #endif 
 

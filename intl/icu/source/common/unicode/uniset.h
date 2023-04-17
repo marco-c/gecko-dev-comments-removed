@@ -707,7 +707,7 @@ public:
 
 
     virtual UnicodeString& toPattern(UnicodeString& result,
-                             UBool escapeUnprintable = FALSE) const;
+                                     UBool escapeUnprintable = false) const;
 
     
 

@@ -118,14 +118,6 @@ U_CAPI void udbg_writeIcuInfo(FILE *f);
 
 
 
-
-U_CAPI char *udbg_knownIssueURLFrom(const char *ticket, char *buf);
-
-
-
-
-
-
 U_CAPI void *udbg_knownIssue_openU(void *ptr, const char *ticket, char *where, const UChar *msg, UBool *firstForTicket,
                                    UBool *firstForWhere);
 

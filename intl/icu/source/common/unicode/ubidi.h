@@ -21,7 +21,10 @@
 
 #include "unicode/utypes.h"
 #include "unicode/uchar.h"
+
+#if U_SHOW_CPLUSPLUS_API
 #include "unicode/localpointer.h"
+#endif   
 
 
 
@@ -496,7 +499,7 @@ typedef struct UBiDi UBiDi;
 
 
 
-U_STABLE UBiDi * U_EXPORT2
+U_CAPI UBiDi * U_EXPORT2
 ubidi_open(void);
 
 
@@ -533,7 +536,7 @@ ubidi_open(void);
 
 
 
-U_STABLE UBiDi * U_EXPORT2
+U_CAPI UBiDi * U_EXPORT2
 ubidi_openSized(int32_t maxLength, int32_t maxRunCount, UErrorCode *pErrorCode);
 
 
@@ -556,7 +559,7 @@ ubidi_openSized(int32_t maxLength, int32_t maxRunCount, UErrorCode *pErrorCode);
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ubidi_close(UBiDi *pBiDi);
 
 #if U_SHOW_CPLUSPLUS_API
@@ -626,7 +629,7 @@ U_NAMESPACE_END
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ubidi_setInverse(UBiDi *pBiDi, UBool isInverse);
 
 
@@ -645,7 +648,7 @@ ubidi_setInverse(UBiDi *pBiDi, UBool isInverse);
 
 
 
-U_STABLE UBool U_EXPORT2
+U_CAPI UBool U_EXPORT2
 ubidi_isInverse(UBiDi *pBiDi);
 
 
@@ -668,7 +671,7 @@ ubidi_isInverse(UBiDi *pBiDi);
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ubidi_orderParagraphsLTR(UBiDi *pBiDi, UBool orderParagraphsLTR);
 
 
@@ -682,7 +685,7 @@ ubidi_orderParagraphsLTR(UBiDi *pBiDi, UBool orderParagraphsLTR);
 
 
 
-U_STABLE UBool U_EXPORT2
+U_CAPI UBool U_EXPORT2
 ubidi_isOrderParagraphsLTR(UBiDi *pBiDi);
 
 
@@ -886,7 +889,7 @@ typedef enum UBiDiReorderingMode {
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ubidi_setReorderingMode(UBiDi *pBiDi, UBiDiReorderingMode reorderingMode);
 
 
@@ -897,7 +900,7 @@ ubidi_setReorderingMode(UBiDi *pBiDi, UBiDiReorderingMode reorderingMode);
 
 
 
-U_STABLE UBiDiReorderingMode U_EXPORT2
+U_CAPI UBiDiReorderingMode U_EXPORT2
 ubidi_getReorderingMode(UBiDi *pBiDi);
 
 
@@ -1042,7 +1045,7 @@ typedef enum UBiDiReorderingOption {
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ubidi_setReorderingOptions(UBiDi *pBiDi, uint32_t reorderingOptions);
 
 
@@ -1053,7 +1056,7 @@ ubidi_setReorderingOptions(UBiDi *pBiDi, uint32_t reorderingOptions);
 
 
 
-U_STABLE uint32_t U_EXPORT2
+U_CAPI uint32_t U_EXPORT2
 ubidi_getReorderingOptions(UBiDi *pBiDi);
 
 
@@ -1140,7 +1143,7 @@ ubidi_getReorderingOptions(UBiDi *pBiDi);
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ubidi_setContext(UBiDi *pBiDi,
                  const UChar *prologue, int32_t proLength,
                  const UChar *epilogue, int32_t epiLength,
@@ -1228,7 +1231,7 @@ ubidi_setContext(UBiDi *pBiDi,
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ubidi_setPara(UBiDi *pBiDi, const UChar *text, int32_t length,
               UBiDiLevel paraLevel, UBiDiLevel *embeddingLevels,
               UErrorCode *pErrorCode);
@@ -1279,7 +1282,7 @@ ubidi_setPara(UBiDi *pBiDi, const UChar *text, int32_t length,
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ubidi_setLine(const UBiDi *pParaBiDi,
               int32_t start, int32_t limit,
               UBiDi *pLineBiDi,
@@ -1300,7 +1303,7 @@ ubidi_setLine(const UBiDi *pParaBiDi,
 
 
 
-U_STABLE UBiDiDirection U_EXPORT2
+U_CAPI UBiDiDirection U_EXPORT2
 ubidi_getDirection(const UBiDi *pBiDi);
 
 
@@ -1330,7 +1333,7 @@ ubidi_getDirection(const UBiDi *pBiDi);
 
 
 
-U_STABLE UBiDiDirection U_EXPORT2
+U_CAPI UBiDiDirection U_EXPORT2
 ubidi_getBaseDirection(const UChar *text,  int32_t length );
 
 
@@ -1344,7 +1347,7 @@ ubidi_getBaseDirection(const UChar *text,  int32_t length );
 
 
 
-U_STABLE const UChar * U_EXPORT2
+U_CAPI const UChar * U_EXPORT2
 ubidi_getText(const UBiDi *pBiDi);
 
 
@@ -1355,7 +1358,7 @@ ubidi_getText(const UBiDi *pBiDi);
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ubidi_getLength(const UBiDi *pBiDi);
 
 
@@ -1373,7 +1376,7 @@ ubidi_getLength(const UBiDi *pBiDi);
 
 
 
-U_STABLE UBiDiLevel U_EXPORT2
+U_CAPI UBiDiLevel U_EXPORT2
 ubidi_getParaLevel(const UBiDi *pBiDi);
 
 
@@ -1384,7 +1387,7 @@ ubidi_getParaLevel(const UBiDi *pBiDi);
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ubidi_countParagraphs(UBiDi *pBiDi);
 
 
@@ -1421,7 +1424,7 @@ ubidi_countParagraphs(UBiDi *pBiDi);
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ubidi_getParagraph(const UBiDi *pBiDi, int32_t charIndex, int32_t *pParaStart,
                    int32_t *pParaLimit, UBiDiLevel *pParaLevel,
                    UErrorCode *pErrorCode);
@@ -1453,7 +1456,7 @@ ubidi_getParagraph(const UBiDi *pBiDi, int32_t charIndex, int32_t *pParaStart,
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ubidi_getParagraphByIndex(const UBiDi *pBiDi, int32_t paraIndex,
                           int32_t *pParaStart, int32_t *pParaLimit,
                           UBiDiLevel *pParaLevel, UErrorCode *pErrorCode);
@@ -1473,7 +1476,7 @@ ubidi_getParagraphByIndex(const UBiDi *pBiDi, int32_t paraIndex,
 
 
 
-U_STABLE UBiDiLevel U_EXPORT2
+U_CAPI UBiDiLevel U_EXPORT2
 ubidi_getLevelAt(const UBiDi *pBiDi, int32_t charIndex);
 
 
@@ -1494,7 +1497,7 @@ ubidi_getLevelAt(const UBiDi *pBiDi, int32_t charIndex);
 
 
 
-U_STABLE const UBiDiLevel * U_EXPORT2
+U_CAPI const UBiDiLevel * U_EXPORT2
 ubidi_getLevels(UBiDi *pBiDi, UErrorCode *pErrorCode);
 
 
@@ -1521,7 +1524,7 @@ ubidi_getLevels(UBiDi *pBiDi, UErrorCode *pErrorCode);
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ubidi_getLogicalRun(const UBiDi *pBiDi, int32_t logicalPosition,
                     int32_t *pLogicalLimit, UBiDiLevel *pLevel);
 
@@ -1540,7 +1543,7 @@ ubidi_getLogicalRun(const UBiDi *pBiDi, int32_t logicalPosition,
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ubidi_countRuns(UBiDi *pBiDi, UErrorCode *pErrorCode);
 
 
@@ -1599,7 +1602,7 @@ ubidi_countRuns(UBiDi *pBiDi, UErrorCode *pErrorCode);
 
 
 
-U_STABLE UBiDiDirection U_EXPORT2
+U_CAPI UBiDiDirection U_EXPORT2
 ubidi_getVisualRun(UBiDi *pBiDi, int32_t runIndex,
                    int32_t *pLogicalStart, int32_t *pLength);
 
@@ -1640,7 +1643,7 @@ ubidi_getVisualRun(UBiDi *pBiDi, int32_t runIndex,
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ubidi_getVisualIndex(UBiDi *pBiDi, int32_t logicalIndex, UErrorCode *pErrorCode);
 
 
@@ -1675,7 +1678,7 @@ ubidi_getVisualIndex(UBiDi *pBiDi, int32_t logicalIndex, UErrorCode *pErrorCode)
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ubidi_getLogicalIndex(UBiDi *pBiDi, int32_t visualIndex, UErrorCode *pErrorCode);
 
 
@@ -1718,7 +1721,7 @@ ubidi_getLogicalIndex(UBiDi *pBiDi, int32_t visualIndex, UErrorCode *pErrorCode)
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ubidi_getLogicalMap(UBiDi *pBiDi, int32_t *indexMap, UErrorCode *pErrorCode);
 
 
@@ -1754,7 +1757,7 @@ ubidi_getLogicalMap(UBiDi *pBiDi, int32_t *indexMap, UErrorCode *pErrorCode);
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ubidi_getVisualMap(UBiDi *pBiDi, int32_t *indexMap, UErrorCode *pErrorCode);
 
 
@@ -1777,7 +1780,7 @@ ubidi_getVisualMap(UBiDi *pBiDi, int32_t *indexMap, UErrorCode *pErrorCode);
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ubidi_reorderLogical(const UBiDiLevel *levels, int32_t length, int32_t *indexMap);
 
 
@@ -1800,7 +1803,7 @@ ubidi_reorderLogical(const UBiDiLevel *levels, int32_t length, int32_t *indexMap
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ubidi_reorderVisual(const UBiDiLevel *levels, int32_t length, int32_t *indexMap);
 
 
@@ -1835,7 +1838,7 @@ ubidi_reorderVisual(const UBiDiLevel *levels, int32_t length, int32_t *indexMap)
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ubidi_invertMap(const int32_t *srcMap, int32_t *destMap, int32_t length);
 
 
@@ -1940,7 +1943,7 @@ ubidi_invertMap(const int32_t *srcMap, int32_t *destMap, int32_t length);
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ubidi_getProcessedLength(const UBiDi *pBiDi);
 
 
@@ -1970,7 +1973,7 @@ ubidi_getProcessedLength(const UBiDi *pBiDi);
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ubidi_getResultLength(const UBiDi *pBiDi);
 
 U_CDECL_BEGIN
@@ -2028,7 +2031,7 @@ U_CDECL_END
 
 
 
-U_STABLE UCharDirection U_EXPORT2
+U_CAPI UCharDirection U_EXPORT2
 ubidi_getCustomizedClass(UBiDi *pBiDi, UChar32 c);
 
 
@@ -2058,7 +2061,7 @@ ubidi_getCustomizedClass(UBiDi *pBiDi, UChar32 c);
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ubidi_setClassCallback(UBiDi *pBiDi, UBiDiClassCallback *newFn,
                        const void *newContext, UBiDiClassCallback **oldFn,
                        const void **oldContext, UErrorCode *pErrorCode);
@@ -2075,7 +2078,7 @@ ubidi_setClassCallback(UBiDi *pBiDi, UBiDiClassCallback *newFn,
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ubidi_getClassCallback(UBiDi *pBiDi, UBiDiClassCallback **fn, const void **context);
 
 
@@ -2143,7 +2146,7 @@ ubidi_getClassCallback(UBiDi *pBiDi, UBiDiClassCallback **fn, const void **conte
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ubidi_writeReordered(UBiDi *pBiDi,
                      UChar *dest, int32_t destSize,
                      uint16_t options,
@@ -2195,7 +2198,7 @@ ubidi_writeReordered(UBiDi *pBiDi,
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ubidi_writeReverse(const UChar *src, int32_t srcLength,
                    UChar *dest, int32_t destSize,
                    uint16_t options,

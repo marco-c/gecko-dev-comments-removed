@@ -244,13 +244,13 @@ public:
                 continue;
             }
             if (fVariants[i] == NULL || rhs.fVariants[i] == NULL) {
-                return FALSE;
+                return false;
             }
             if (!eqFunc(*fVariants[i], *rhs.fVariants[i])) {
-                return FALSE;
+                return false;
             }
         }
-        return TRUE;
+        return true;
     }
 
 private:

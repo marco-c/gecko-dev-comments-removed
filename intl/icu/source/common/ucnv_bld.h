@@ -66,8 +66,8 @@ typedef struct UConverterImpl UConverterImpl;
 
 typedef struct UConverterStaticData {   
     uint32_t structSize;                
-    
-    char name 
+
+    char name
       [UCNV_MAX_CONVERTER_NAME_LENGTH]; 
 
     int32_t codepage;               
@@ -80,7 +80,7 @@ typedef struct UConverterStaticData {
 
     uint8_t subChar[UCNV_MAX_SUBCHAR_LEN]; 
     int8_t subCharLen;              
-    
+
     uint8_t hasToUnicodeFallback;   
     uint8_t hasFromUnicodeFallback; 
     uint8_t unicodeMask;            
@@ -128,7 +128,7 @@ struct UConverterSharedData {
 #define UCNV_IMMUTABLE_SHARED_DATA_INITIALIZER(pStaticData, pImpl) \
     { \
         sizeof(UConverterSharedData), ~((uint32_t)0), \
-        NULL, pStaticData, FALSE, FALSE, pImpl, \
+        NULL, pStaticData, false, false, pImpl, \
         0, UCNV_MBCS_TABLE_INITIALIZER \
     }
 
@@ -289,7 +289,7 @@ ucnv_swap(const UDataSwapper *ds,
           UErrorCode *pErrorCode);
 
 U_CAPI void U_EXPORT2
-ucnv_enableCleanup();
+ucnv_enableCleanup(void);
 
 #endif
 

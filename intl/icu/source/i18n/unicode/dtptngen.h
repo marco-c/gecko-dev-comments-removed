@@ -81,6 +81,13 @@ public:
 
 
 
+    static DateTimePatternGenerator* U_EXPORT2 createInstanceNoStdPat(const Locale& uLocale, UErrorCode& status);
+
+    
+
+
+
+
     static DateTimePatternGenerator* U_EXPORT2 internalMakeInstance(const Locale& uLocale, UErrorCode& status);
 
 #endif 
@@ -526,7 +533,7 @@ private:
     
 
 
-    DateTimePatternGenerator(const Locale& locale, UErrorCode & status);
+    DateTimePatternGenerator(const Locale& locale, UErrorCode & status, UBool skipStdPatterns = false);
 
     
 
@@ -573,7 +580,7 @@ private:
         
     };
 
-    void initData(const Locale &locale, UErrorCode &status);
+    void initData(const Locale &locale, UErrorCode &status, UBool skipStdPatterns = false);
     void addCanonicalItems(UErrorCode &status);
     void addICUPatterns(const Locale& locale, UErrorCode& status);
     void hackTimes(const UnicodeString& hackPattern, UErrorCode& status);

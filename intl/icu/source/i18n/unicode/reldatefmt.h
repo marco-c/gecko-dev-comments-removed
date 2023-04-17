@@ -175,7 +175,6 @@ typedef enum UDateAbsoluteUnit {
 
     UDAT_ABSOLUTE_QUARTER,
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -187,7 +186,6 @@ typedef enum UDateAbsoluteUnit {
 
 
     UDAT_ABSOLUTE_MINUTE,
-#endif 
 
 #ifndef U_HIDE_DEPRECATED_API
     

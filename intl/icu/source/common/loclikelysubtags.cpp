@@ -20,6 +20,7 @@
 #include "uhash.h"
 #include "uinvchar.h"
 #include "umutex.h"
+#include "uniquecharstr.h"
 #include "uresdata.h"
 #include "uresimp.h"
 
@@ -30,71 +31,6 @@ namespace {
 constexpr char PSEUDO_ACCENTS_PREFIX = '\'';  
 constexpr char PSEUDO_BIDI_PREFIX = '+';  
 constexpr char PSEUDO_CRACKED_PREFIX = ',';  
-
-
-
-
-
-class UniqueCharStrings {
-public:
-    UniqueCharStrings(UErrorCode &errorCode) : strings(nullptr) {
-        uhash_init(&map, uhash_hashUChars, uhash_compareUChars, uhash_compareLong, &errorCode);
-        if (U_FAILURE(errorCode)) { return; }
-        strings = new CharString();
-        if (strings == nullptr) {
-            errorCode = U_MEMORY_ALLOCATION_ERROR;
-        }
-    }
-    ~UniqueCharStrings() {
-        uhash_close(&map);
-        delete strings;
-    }
-
-    
-    CharString *orphanCharStrings() {
-        CharString *result = strings;
-        strings = nullptr;
-        return result;
-    }
-
-    
-    int32_t add(const UnicodeString &s, UErrorCode &errorCode) {
-        if (U_FAILURE(errorCode)) { return 0; }
-        if (isFrozen) {
-            errorCode = U_NO_WRITE_PERMISSION;
-            return 0;
-        }
-        
-        const char16_t *p = s.getBuffer();
-        int32_t oldIndex = uhash_geti(&map, p);
-        if (oldIndex != 0) {  
-            return oldIndex;
-        }
-        
-        
-        strings->append(0, errorCode);
-        int32_t newIndex = strings->length();
-        strings->appendInvariantChars(s, errorCode);
-        uhash_puti(&map, const_cast<char16_t *>(p), newIndex, &errorCode);
-        return newIndex;
-    }
-
-    void freeze() { isFrozen = true; }
-
-    
-
-
-
-    const char *get(int32_t i) const {
-        U_ASSERT(isFrozen);
-        return isFrozen && i > 0 ? strings->data() + i : nullptr;
-    }
-
-private:
-    UHashtable map;
-    CharString *strings;
-    bool isFrozen = false;
-};
 
 }  
 

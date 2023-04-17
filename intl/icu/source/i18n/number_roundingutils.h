@@ -8,6 +8,7 @@
 #define __NUMBER_ROUNDINGUTILS_H__
 
 #include "number_types.h"
+#include "string_segment.h"
 
 U_NAMESPACE_BEGIN
 namespace number {
@@ -44,6 +45,9 @@ enum Section {
 inline bool
 getRoundingDirection(bool isEven, bool isNegative, Section section, RoundingMode roundingMode,
                      UErrorCode &status) {
+    if (U_FAILURE(status)) {
+        return false;
+    }
     switch (roundingMode) {
         case RoundingMode::UNUM_ROUND_UP:
             
@@ -187,8 +191,22 @@ class RoundingImpl {
     Precision fPrecision;
     UNumberFormatRoundingMode fRoundingMode;
     bool fPassThrough = true;  
+
+    
+    friend class units::UnitsRouter;
+
+    
+    friend class UnitConversionHandler;
 };
 
+
+
+
+
+
+
+
+void parseIncrementOption(const StringSegment &segment, Precision &outPrecision, UErrorCode &status);
 
 } 
 } 

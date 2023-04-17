@@ -99,6 +99,13 @@ class MultiplierParseHandler;
 }
 }
 
+namespace units {
+
+
+class UnitsRouter;
+
+} 
+
 namespace number {  
 
 
@@ -157,6 +164,7 @@ struct RangeMacroProps;
 struct UFormattedNumberImpl;
 class MutablePatternModifier;
 class ImmutablePatternModifier;
+struct DecimalFormatWarehouse;
 
 
 
@@ -371,9 +379,9 @@ class U_I18N_API Notation : public UMemory {
     UBool copyErrorTo(UErrorCode &status) const {
         if (fType == NTN_ERROR) {
             status = fUnion.errorCode;
-            return TRUE;
+            return true;
         }
-        return FALSE;
+        return false;
     }
 
     
@@ -705,12 +713,8 @@ class U_I18N_API Precision : public UMemory {
     typedef PrecisionUnion::FractionSignificantSettings FractionSignificantSettings;
     typedef PrecisionUnion::IncrementSettings IncrementSettings;
 
-    
-    UNumberFormatRoundingMode fRoundingMode;
-
-    Precision(const PrecisionType& type, const PrecisionUnion& union_,
-              UNumberFormatRoundingMode roundingMode)
-            : fType(type), fUnion(union_), fRoundingMode(roundingMode) {}
+    Precision(const PrecisionType& type, const PrecisionUnion& union_)
+            : fType(type), fUnion(union_) {}
 
     Precision(UErrorCode errorCode) : fType(RND_ERROR) {
         fUnion.errorCode = errorCode;
@@ -725,9 +729,9 @@ class U_I18N_API Precision : public UMemory {
     UBool copyErrorTo(UErrorCode &status) const {
         if (fType == RND_ERROR) {
             status = fUnion.errorCode;
-            return TRUE;
+            return true;
         }
-        return FALSE;
+        return false;
     }
 
     
@@ -743,8 +747,6 @@ class U_I18N_API Precision : public UMemory {
     static IncrementPrecision constructIncrement(double increment, int32_t minFrac);
 
     static CurrencyPrecision constructCurrency(UCurrencyUsage usage);
-
-    static Precision constructPassThrough();
 
     
     friend struct impl::MacroProps;
@@ -766,6 +768,9 @@ class U_I18N_API Precision : public UMemory {
 
     
     friend class impl::GeneratorHelpers;
+
+    
+    friend class units::UnitsRouter;
 };
 
 
@@ -969,9 +974,9 @@ class U_I18N_API IntegerWidth : public UMemory {
     UBool copyErrorTo(UErrorCode &status) const {
         if (fHasError) {
             status = fUnion.errorCode;
-            return TRUE;
+            return true;
         }
-        return FALSE;
+        return false;
     }
 
     void apply(impl::DecimalQuantity &quantity, UErrorCode &status) const;
@@ -1095,11 +1100,11 @@ class U_I18N_API Scale : public UMemory {
     }
 
     UBool copyErrorTo(UErrorCode &status) const {
-        if (fError != U_ZERO_ERROR) {
+        if (U_FAILURE(fError)) {
             status = fError;
-            return TRUE;
+            return true;
         }
-        return FALSE;
+        return false;
     }
 
     void applyTo(impl::DecimalQuantity& quantity) const;
@@ -1125,6 +1130,71 @@ class U_I18N_API Scale : public UMemory {
 };
 
 namespace impl {
+
+
+
+
+
+
+class U_I18N_API Usage : public UMemory {
+
+#ifndef U_HIDE_INTERNAL_API
+
+  public:
+    
+    Usage(const Usage& other);
+
+    
+    Usage& operator=(const Usage& other);
+
+    
+    Usage(Usage &&src) U_NOEXCEPT;
+
+    
+    Usage& operator=(Usage&& src) U_NOEXCEPT;
+
+    
+    ~Usage();
+
+    
+    int16_t length() const { return fLength; }
+
+    
+
+
+    void set(StringPiece value);
+
+    
+    bool isSet() const { return fLength > 0; }
+
+#endif 
+
+  private:
+    char *fUsage;
+    int16_t fLength;
+    UErrorCode fError;
+
+    Usage() : fUsage(nullptr), fLength(0), fError(U_ZERO_ERROR) {}
+
+    
+    UBool copyErrorTo(UErrorCode &status) const {
+        if (U_FAILURE(fError)) {
+            status = fError;
+            return true;
+        }
+        return false;
+    }
+
+    
+    friend class impl::NumberFormatterImpl;
+
+    
+    friend class impl::GeneratorHelpers;
+
+    
+    
+    friend struct impl::MacroProps;
+};
 
 
 
@@ -1192,12 +1262,12 @@ class U_I18N_API SymbolsWrapper : public UMemory {
     UBool copyErrorTo(UErrorCode &status) const {
         if (fType == SYMPTR_DFS && fPtr.dfs == nullptr) {
             status = U_MEMORY_ALLOCATION_ERROR;
-            return TRUE;
+            return true;
         } else if (fType == SYMPTR_NS && fPtr.ns == nullptr) {
             status = U_MEMORY_ALLOCATION_ERROR;
-            return TRUE;
+            return true;
         }
-        return FALSE;
+        return false;
     }
 
   private:
@@ -1239,13 +1309,13 @@ class U_I18N_API Grouper : public UMemory {
               fGrouping2(grouping2),
               fMinGrouping(minGrouping),
               fStrategy(strategy) {}
-#endif  
 
     
     int16_t getPrimary() const;
 
     
     int16_t getSecondary() const;
+#endif  
 
   private:
     
@@ -1309,10 +1379,10 @@ class U_I18N_API Padder : public UMemory {
 
     
     static Padder codePoints(UChar32 cp, int32_t targetWidth, UNumberFormatPadPosition position);
-#endif  
 
     
     static Padder forProperties(const DecimalFormatProperties& properties);
+#endif  
 
   private:
     UChar32 fWidth;  
@@ -1341,9 +1411,9 @@ class U_I18N_API Padder : public UMemory {
     UBool copyErrorTo(UErrorCode &status) const {
         if (fWidth == -3) {
             status = fUnion.errorCode;
-            return TRUE;
+            return true;
         }
-        return FALSE;
+        return false;
     }
 
     bool isValid() const {
@@ -1372,10 +1442,10 @@ struct U_I18N_API MacroProps : public UMemory {
     Notation notation;
 
     
-    MeasureUnit unit; 
+    MeasureUnit unit;  
 
     
-    MeasureUnit perUnit; 
+    MeasureUnit perUnit;  
 
     
     Precision precision;  
@@ -1410,6 +1480,9 @@ struct U_I18N_API MacroProps : public UMemory {
     Scale scale;  
 
     
+    Usage usage;  
+
+    
     const AffixPatternProvider* affixProvider = nullptr;  
 
     
@@ -1430,7 +1503,7 @@ struct U_I18N_API MacroProps : public UMemory {
     bool copyErrorTo(UErrorCode &status) const {
         return notation.copyErrorTo(status) || precision.copyErrorTo(status) ||
                padder.copyErrorTo(status) || integerWidth.copyErrorTo(status) ||
-               symbols.copyErrorTo(status) || scale.copyErrorTo(status);
+               symbols.copyErrorTo(status) || scale.copyErrorTo(status) || usage.copyErrorTo(status);
     }
 };
 
@@ -1496,6 +1569,11 @@ class U_I18N_API NumberFormatterSettings {
     Derived notation(const Notation &notation) &&;
 
     
+
+
+
+
+
 
 
 
@@ -2038,6 +2116,61 @@ class U_I18N_API NumberFormatterSettings {
 
     Derived scale(const Scale &scale) &&;
 
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    Derived usage(StringPiece usage) const &;
+
+    
+
+
+
+
+
+
+    Derived usage(StringPiece usage) &&;
+#endif 
+
 #ifndef U_HIDE_INTERNAL_API
 
     
@@ -2126,7 +2259,7 @@ class U_I18N_API NumberFormatterSettings {
     UBool copyErrorTo(UErrorCode &outErrorCode) const {
         if (U_FAILURE(outErrorCode)) {
             
-            return TRUE;
+            return true;
         }
         fMacros.copyErrorTo(outErrorCode);
         return U_FAILURE(outErrorCode);
@@ -2385,6 +2518,10 @@ class U_I18N_API LocalizedNumberFormatter
     const impl::NumberFormatterImpl* fCompiled {nullptr};
     char fUnsafeCallCount[8] {};  
 
+    
+    
+    const impl::DecimalFormatWarehouse* fWarehouse {nullptr};
+
     explicit LocalizedNumberFormatter(const NumberFormatterSettings<LocalizedNumberFormatter>& other);
 
     explicit LocalizedNumberFormatter(NumberFormatterSettings<LocalizedNumberFormatter>&& src) U_NOEXCEPT;
@@ -2393,9 +2530,11 @@ class U_I18N_API LocalizedNumberFormatter
 
     LocalizedNumberFormatter(impl::MacroProps &&macros, const Locale &locale);
 
-    void clear();
+    void resetCompiled();
 
     void lnfMoveHelper(LocalizedNumberFormatter&& src);
+
+    void lnfCopyHelper(const LocalizedNumberFormatter& src, UErrorCode& status);
 
     
 
@@ -2485,7 +2624,6 @@ class U_I18N_API FormattedNumber : public UMemory, public FormattedValue {
     
     UBool nextPosition(ConstrainedFieldPosition& cfpos, UErrorCode& status) const U_OVERRIDE;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -2506,6 +2644,20 @@ class U_I18N_API FormattedNumber : public UMemory, public FormattedValue {
 
     template<typename StringClass>
     inline StringClass toDecimalNumber(UErrorCode& status) const;
+
+#ifndef U_HIDE_DRAFT_API
+	
+
+
+
+
+
+
+
+
+
+
+    MeasureUnit getOutputUnit(UErrorCode& status) const;
 #endif 
 
 #ifndef U_HIDE_INTERNAL_API
@@ -2541,7 +2693,6 @@ class U_I18N_API FormattedNumber : public UMemory, public FormattedValue {
     explicit FormattedNumber(UErrorCode errorCode)
         : fData(nullptr), fErrorCode(errorCode) {}
 
-    
     void toDecimalNumber(ByteSink& sink, UErrorCode& status) const;
 
     
@@ -2639,4 +2790,3 @@ U_NAMESPACE_END
 #endif 
 
 #endif 
-

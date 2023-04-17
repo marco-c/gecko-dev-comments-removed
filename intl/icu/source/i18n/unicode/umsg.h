@@ -24,11 +24,13 @@
 
 #if !UCONFIG_NO_FORMATTING
 
-#include "unicode/localpointer.h"
 #include "unicode/uloc.h"
 #include "unicode/parseerr.h"
 #include <stdarg.h>
 
+#if U_SHOW_CPLUSPLUS_API
+#include "unicode/localpointer.h"
+#endif   
 
 
 
@@ -175,7 +177,8 @@
 
 
 
-U_STABLE int32_t U_EXPORT2 
+
+U_CAPI int32_t U_EXPORT2 
 u_formatMessage(const char  *locale,
                  const UChar *pattern,
                 int32_t     patternLength,
@@ -202,7 +205,7 @@ u_formatMessage(const char  *locale,
 
 
 
-U_STABLE int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2 
 u_vformatMessage(   const char  *locale,
                     const UChar *pattern,
                     int32_t     patternLength,
@@ -227,7 +230,7 @@ u_vformatMessage(   const char  *locale,
 
 
 
-U_STABLE void U_EXPORT2 
+U_CAPI void U_EXPORT2 
 u_parseMessage( const char   *locale,
                 const UChar  *pattern,
                 int32_t      patternLength,
@@ -252,7 +255,7 @@ u_parseMessage( const char   *locale,
 
 
 
-U_STABLE void U_EXPORT2 
+U_CAPI void U_EXPORT2 
 u_vparseMessage(const char  *locale,
                 const UChar *pattern,
                 int32_t     patternLength,
@@ -281,7 +284,7 @@ u_vparseMessage(const char  *locale,
 
 
 
-U_STABLE int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2 
 u_formatMessageWithError(   const char    *locale,
                             const UChar   *pattern,
                             int32_t       patternLength,
@@ -310,7 +313,7 @@ u_formatMessageWithError(   const char    *locale,
 
 
 
-U_STABLE int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2 
 u_vformatMessageWithError(  const char   *locale,
                             const UChar  *pattern,
                             int32_t      patternLength,
@@ -338,7 +341,7 @@ u_vformatMessageWithError(  const char   *locale,
 
 
 
-U_STABLE void U_EXPORT2 
+U_CAPI void U_EXPORT2 
 u_parseMessageWithError(const char  *locale,
                         const UChar *pattern,
                         int32_t     patternLength,
@@ -366,7 +369,7 @@ u_parseMessageWithError(const char  *locale,
 
 
 
-U_STABLE void U_EXPORT2 
+U_CAPI void U_EXPORT2 
 u_vparseMessageWithError(const char  *locale,
                          const UChar *pattern,
                          int32_t     patternLength,
@@ -396,7 +399,7 @@ typedef void* UMessageFormat;
 
 
 
-U_STABLE UMessageFormat* U_EXPORT2 
+U_CAPI UMessageFormat* U_EXPORT2 
 umsg_open(  const UChar     *pattern,
             int32_t         patternLength,
             const  char     *locale,
@@ -409,7 +412,7 @@ umsg_open(  const UChar     *pattern,
 
 
 
-U_STABLE void U_EXPORT2 
+U_CAPI void U_EXPORT2 
 umsg_close(UMessageFormat* format);
 
 #if U_SHOW_CPLUSPLUS_API
@@ -439,7 +442,7 @@ U_NAMESPACE_END
 
 
 
-U_STABLE UMessageFormat U_EXPORT2 
+U_CAPI UMessageFormat U_EXPORT2 
 umsg_clone(const UMessageFormat *fmt,
            UErrorCode *status);
 
@@ -450,7 +453,7 @@ umsg_clone(const UMessageFormat *fmt,
 
 
 
-U_STABLE void  U_EXPORT2 
+U_CAPI void  U_EXPORT2 
 umsg_setLocale(UMessageFormat *fmt,
                const char* locale);
 
@@ -461,7 +464,7 @@ umsg_setLocale(UMessageFormat *fmt,
 
 
 
-U_STABLE const char*  U_EXPORT2 
+U_CAPI const char*  U_EXPORT2 
 umsg_getLocale(const UMessageFormat *fmt);
 
 
@@ -476,7 +479,7 @@ umsg_getLocale(const UMessageFormat *fmt);
 
 
 
-U_STABLE void  U_EXPORT2 
+U_CAPI void  U_EXPORT2 
 umsg_applyPattern( UMessageFormat *fmt,
                    const UChar* pattern,
                    int32_t patternLength,
@@ -494,7 +497,7 @@ umsg_applyPattern( UMessageFormat *fmt,
 
 
 
-U_STABLE int32_t  U_EXPORT2 
+U_CAPI int32_t  U_EXPORT2 
 umsg_toPattern(const UMessageFormat *fmt,
                UChar* result, 
                int32_t resultLength,
@@ -515,7 +518,7 @@ umsg_toPattern(const UMessageFormat *fmt,
 
 
 
-U_STABLE int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2 
 umsg_format(    const UMessageFormat *fmt,
                 UChar          *result,
                 int32_t        resultLength,
@@ -537,7 +540,7 @@ umsg_format(    const UMessageFormat *fmt,
 
 
 
-U_STABLE int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2 
 umsg_vformat(   const UMessageFormat *fmt,
                 UChar          *result,
                 int32_t        resultLength,
@@ -558,7 +561,7 @@ umsg_vformat(   const UMessageFormat *fmt,
 
 
 
-U_STABLE void U_EXPORT2 
+U_CAPI void U_EXPORT2 
 umsg_parse( const UMessageFormat *fmt,
             const UChar    *source,
             int32_t        sourceLength,
@@ -581,7 +584,7 @@ umsg_parse( const UMessageFormat *fmt,
 
 
 
-U_STABLE void U_EXPORT2 
+U_CAPI void U_EXPORT2 
 umsg_vparse(const UMessageFormat *fmt,
             const UChar    *source,
             int32_t        sourceLength,
@@ -613,7 +616,7 @@ umsg_vparse(const UMessageFormat *fmt,
 
 
 
-U_STABLE int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2 
 umsg_autoQuoteApostrophe(const UChar* pattern, 
                          int32_t patternLength,
                          UChar* dest,

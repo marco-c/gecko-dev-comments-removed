@@ -20,13 +20,14 @@
 #define __UENUM_H
 
 #include "unicode/utypes.h"
-#include "unicode/localpointer.h"
 
 #if U_SHOW_CPLUSPLUS_API
+#include "unicode/localpointer.h"
+
 U_NAMESPACE_BEGIN
 class StringEnumeration;
 U_NAMESPACE_END
-#endif
+#endif   
 
 
 
@@ -49,7 +50,7 @@ typedef struct UEnumeration UEnumeration;
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 uenum_close(UEnumeration* en);
 
 #if U_SHOW_CPLUSPLUS_API
@@ -85,7 +86,7 @@ U_NAMESPACE_END
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 uenum_count(UEnumeration* en, UErrorCode* status);
 
 
@@ -109,7 +110,7 @@ uenum_count(UEnumeration* en, UErrorCode* status);
 
 
 
-U_STABLE const UChar* U_EXPORT2
+U_CAPI const UChar* U_EXPORT2
 uenum_unext(UEnumeration* en,
             int32_t* resultLength,
             UErrorCode* status);
@@ -142,7 +143,7 @@ uenum_unext(UEnumeration* en,
 
 
 
-U_STABLE const char* U_EXPORT2
+U_CAPI const char* U_EXPORT2
 uenum_next(UEnumeration* en,
            int32_t* resultLength,
            UErrorCode* status);
@@ -156,7 +157,7 @@ uenum_next(UEnumeration* en,
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 uenum_reset(UEnumeration* en, UErrorCode* status);
 
 #if U_SHOW_CPLUSPLUS_API
@@ -170,7 +171,7 @@ uenum_reset(UEnumeration* en, UErrorCode* status);
 
 
 
-U_STABLE UEnumeration* U_EXPORT2
+U_CAPI UEnumeration* U_EXPORT2
 uenum_openFromStringEnumeration(icu::StringEnumeration* adopted, UErrorCode* ec);
 
 #endif
@@ -186,7 +187,7 @@ uenum_openFromStringEnumeration(icu::StringEnumeration* adopted, UErrorCode* ec)
 
 
 
-U_STABLE UEnumeration* U_EXPORT2
+U_CAPI UEnumeration* U_EXPORT2
 uenum_openUCharStringsEnumeration(const UChar* const strings[], int32_t count,
                                  UErrorCode* ec);
 
@@ -201,7 +202,7 @@ uenum_openUCharStringsEnumeration(const UChar* const strings[], int32_t count,
 
 
 
-U_STABLE UEnumeration* U_EXPORT2
+U_CAPI UEnumeration* U_EXPORT2
 uenum_openCharStringsEnumeration(const char* const strings[], int32_t count,
                                  UErrorCode* ec);
 

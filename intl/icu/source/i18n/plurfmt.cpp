@@ -550,8 +550,14 @@ void PluralFormat::parseType(const UnicodeString& source, const NFRule *rbnfLeni
         UnicodeString currArg = pattern.tempSubString(partStart->getLimit(), partLimit->getIndex() - partStart->getLimit());
         if (rbnfLenientScanner != NULL) {
             
-            int32_t length = -1;
-            currMatchIndex = rbnfLenientScanner->findTextLenient(source, currArg, startingAt, &length);
+            int32_t tempIndex = source.indexOf(currArg, startingAt);
+            if (tempIndex >= 0) {
+                currMatchIndex = tempIndex;
+            } else {
+                
+                int32_t length = -1;
+                currMatchIndex = rbnfLenientScanner->findTextLenient(source, currArg, startingAt, &length);
+            }
         }
         else {
             currMatchIndex = source.indexOf(currArg, startingAt);

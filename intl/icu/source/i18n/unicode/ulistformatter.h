@@ -14,8 +14,11 @@
 
 #if !UCONFIG_NO_FORMATTING
 
-#include "unicode/localpointer.h"
 #include "unicode/uformattedvalue.h"
+
+#if U_SHOW_CPLUSPLUS_API
+#include "unicode/localpointer.h"
+#endif   
 
 
 
@@ -59,7 +62,6 @@ typedef enum UListFormatterField {
     ULISTFMT_ELEMENT_FIELD
 } UListFormatterField;
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -114,7 +116,6 @@ typedef enum UListFormatterWidth {
 
     ULISTFMT_WIDTH_NARROW,
 } UListFormatterWidth;
-#endif 
 
 
 
@@ -138,7 +139,6 @@ U_CAPI UListFormatter* U_EXPORT2
 ulistfmt_open(const char*  locale,
               UErrorCode*  status);
 
-#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -161,10 +161,9 @@ ulistfmt_open(const char*  locale,
 
 
 
-U_DRAFT UListFormatter* U_EXPORT2
+U_CAPI UListFormatter* U_EXPORT2
 ulistfmt_openForType(const char*  locale, UListFormatterType type,
                      UListFormatterWidth width, UErrorCode*  status);
-#endif 
 
 
 

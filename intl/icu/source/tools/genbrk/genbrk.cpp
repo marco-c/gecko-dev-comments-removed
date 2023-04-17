@@ -282,7 +282,7 @@ int  main(int argc, char **argv) {
     
     
     
-    UnicodeString ruleSourceS(FALSE, ruleSourceU, destCap);
+    UnicodeString ruleSourceS(false, ruleSourceU, destCap);
 
     
     

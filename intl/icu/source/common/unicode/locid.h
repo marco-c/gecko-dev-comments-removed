@@ -405,6 +405,10 @@ public:
 
 
 
+
+
+
+
     static Locale U_EXPORT2 forLanguageTag(StringPiece tag, UErrorCode& status);
 
     
@@ -1005,7 +1009,6 @@ public:
 
     virtual UClassID getDynamicClassID() const;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1101,7 +1104,6 @@ public:
         const Iter end_;
         Conv converter_;
     };
-#endif  
 
 protected: 
 #ifndef U_HIDE_INTERNAL_API

@@ -153,7 +153,7 @@ NFRule::makeRules(UnicodeString& description,
         if ((rule1->baseValue > 0
             && (rule1->baseValue % util64_pow(rule1->radix, rule1->exponent)) == 0)
             || rule1->getType() == kImproperFractionRule
-            || rule1->getType() == kMasterRule) {
+            || rule1->getType() == kDefaultRule) {
 
             
             
@@ -183,7 +183,7 @@ NFRule::makeRules(UnicodeString& description,
             
             
             
-            else if (rule1->getType() == kMasterRule) {
+            else if (rule1->getType() == kDefaultRule) {
                 rule2->baseValue = rule1->baseValue;
                 rule1->setType(kImproperFractionRule);
             }
@@ -376,7 +376,7 @@ NFRule::parseRuleDescriptor(UnicodeString& description, UErrorCode& status)
                 decimalPoint = descriptor.charAt(1);
             }
             else if (firstChar == gX && lastChar == gZero) {
-                setBaseValue(kMasterRule, status);
+                setBaseValue(kDefaultRule, status);
                 decimalPoint = descriptor.charAt(1);
             }
             else if (descriptor.compare(gNaN, 3) == 0) {
@@ -663,7 +663,7 @@ NFRule::_appendRuleText(UnicodeString& result) const
     case kNegativeNumberRule: result.append(gMinusX, 2); break;
     case kImproperFractionRule: result.append(gX).append(decimalPoint == 0 ? gDot : decimalPoint).append(gX); break;
     case kProperFractionRule: result.append(gZero).append(decimalPoint == 0 ? gDot : decimalPoint).append(gX); break;
-    case kMasterRule: result.append(gX).append(decimalPoint == 0 ? gDot : decimalPoint).append(gZero); break;
+    case kDefaultRule: result.append(gX).append(decimalPoint == 0 ? gDot : decimalPoint).append(gZero); break;
     case kInfinityRule: result.append(gInf, 3); break;
     case kNaNRule: result.append(gNaN, 3); break;
     default:
@@ -1298,6 +1298,10 @@ NFRule::prefixLength(const UnicodeString& str, const UnicodeString& prefix, UErr
     
     if (formatter->isLenient()) {
         
+        if (str.startsWith(prefix)) {
+            return prefix.length();
+        }
+        
         
         
         
@@ -1506,8 +1510,14 @@ NFRule::findText(const UnicodeString& str,
     }
     else {
         
-        
-        return findTextLenient(str, key, startingAt, length);
+        *length = key.length();
+        int32_t pos = str.indexOf(key, startingAt);
+        if(pos >= 0) {
+            return pos;
+        } else {
+            
+            return findTextLenient(str, key, startingAt, length);
+        }
     }
 }
 

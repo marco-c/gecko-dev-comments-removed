@@ -655,7 +655,7 @@ private:
 
 inline UBool BreakIterator::isBufferClone()
 {
-    return FALSE;
+    return false;
 }
 
 #endif 

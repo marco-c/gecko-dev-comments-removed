@@ -105,6 +105,7 @@ public:
 
 
 
+
     LocaleBuilder& setLanguageTag(StringPiece tag);
 
     
@@ -278,7 +279,6 @@ public:
 
     Locale build(UErrorCode& status);
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -289,7 +289,6 @@ public:
 
 
     UBool copyErrorTo(UErrorCode &outErrorCode) const;
-#endif  
 
 private:
     friend class LocaleMatcher::Result;

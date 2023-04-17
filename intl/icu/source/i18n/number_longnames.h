@@ -7,6 +7,8 @@
 #ifndef __NUMBER_LONGNAMES_H__
 #define __NUMBER_LONGNAMES_H__
 
+#include "cmemory.h"
+#include "unicode/listformatter.h"
 #include "unicode/uversion.h"
 #include "number_utils.h"
 #include "number_modifiers.h"
@@ -33,32 +35,204 @@ class LongNameHandler : public MicroPropsGenerator, public ModifierStore, public
     forCurrencyLongNames(const Locale &loc, const CurrencyUnit &currency, const PluralRules *rules,
                          const MicroPropsGenerator *parent, UErrorCode &status);
 
-    static LongNameHandler*
-    forMeasureUnit(const Locale &loc, const MeasureUnit &unit, const MeasureUnit &perUnit,
-                   const UNumberUnitWidth &width, const PluralRules *rules,
-                   const MicroPropsGenerator *parent, UErrorCode &status);
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static void forMeasureUnit(const Locale &loc, const MeasureUnit &unit, const MeasureUnit &perUnit,
+                               const UNumberUnitWidth &width, const PluralRules *rules,
+                               const MicroPropsGenerator *parent, LongNameHandler *fillIn,
+                               UErrorCode &status);
+
+    
+
+
 
     void
     processQuantity(DecimalQuantity &quantity, MicroProps &micros, UErrorCode &status) const U_OVERRIDE;
 
+    
+    
+    
+    
     const Modifier* getModifier(Signum signum, StandardPlural::Form plural) const U_OVERRIDE;
 
   private:
+    
     SimpleModifier fModifiers[StandardPlural::Form::COUNT];
+    
     const PluralRules *rules;
+    
     const MicroPropsGenerator *parent;
 
     LongNameHandler(const PluralRules *rules, const MicroPropsGenerator *parent)
-            : rules(rules), parent(parent) {}
+        : rules(rules), parent(parent) {
+    }
 
-    static LongNameHandler*
-    forCompoundUnit(const Locale &loc, const MeasureUnit &unit, const MeasureUnit &perUnit,
-                    const UNumberUnitWidth &width, const PluralRules *rules,
-                    const MicroPropsGenerator *parent, UErrorCode &status);
+    LongNameHandler() : rules(nullptr), parent(nullptr) {
+    }
 
+    
+    
+    friend class MemoryPool<LongNameHandler>;
+
+    
+    friend class NumberFormatterImpl;
+
+    
+    
+    
+    static void forCompoundUnit(const Locale &loc, const MeasureUnit &unit, const MeasureUnit &perUnit,
+                                const UNumberUnitWidth &width, const PluralRules *rules,
+                                const MicroPropsGenerator *parent, LongNameHandler *fillIn,
+                                UErrorCode &status);
+
+    
     void simpleFormatsToModifiers(const UnicodeString *simpleFormats, Field field, UErrorCode &status);
+
+    
+    
+    
+    
+    
     void multiSimpleFormatsToModifiers(const UnicodeString *leadFormats, UnicodeString trailFormat,
                                        Field field, UErrorCode &status);
+};
+
+
+class MixedUnitLongNameHandler : public MicroPropsGenerator, public ModifierStore, public UMemory {
+  public:
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    static void forMeasureUnit(const Locale &loc, const MeasureUnit &mixedUnit,
+                               const UNumberUnitWidth &width, const PluralRules *rules,
+                               const MicroPropsGenerator *parent, MixedUnitLongNameHandler *fillIn,
+                               UErrorCode &status);
+
+    
+
+
+
+
+    void processQuantity(DecimalQuantity &quantity, MicroProps &micros,
+                         UErrorCode &status) const U_OVERRIDE;
+
+    
+    
+    
+    const Modifier *getModifier(Signum signum, StandardPlural::Form plural) const U_OVERRIDE;
+
+  private:
+    
+    const PluralRules *rules;
+    
+    const MicroPropsGenerator *parent;
+
+    
+    
+    int32_t fMixedUnitCount = 1;
+    
+    
+    
+    
+    LocalArray<UnicodeString> fMixedUnitData;
+    
+    
+    LocalizedNumberFormatter fIntegerFormatter;
+    
+    LocalPointer<ListFormatter> fListFormatter;
+
+    MixedUnitLongNameHandler(const PluralRules *rules, const MicroPropsGenerator *parent)
+        : rules(rules), parent(parent) {
+    }
+
+    MixedUnitLongNameHandler() : rules(nullptr), parent(nullptr) {
+    }
+
+    
+    friend class NumberFormatterImpl;
+
+    
+    
+    friend class MemoryPool<MixedUnitLongNameHandler>;
+
+    
+    
+    
+    
+    const Modifier *getMixedUnitModifier(DecimalQuantity &quantity, MicroProps &micros,
+                                         UErrorCode &status) const;
+};
+
+
+
+
+
+
+
+class LongNameMultiplexer : public MicroPropsGenerator, public UMemory {
+  public:
+    
+    
+    static LongNameMultiplexer *forMeasureUnits(const Locale &loc,
+                                                const MaybeStackVector<MeasureUnit> &units,
+                                                const UNumberUnitWidth &width, const PluralRules *rules,
+                                                const MicroPropsGenerator *parent, UErrorCode &status);
+
+    
+    
+    void processQuantity(DecimalQuantity &quantity, MicroProps &micros,
+                         UErrorCode &status) const U_OVERRIDE;
+
+  private:
+    
+
+
+
+
+    MemoryPool<LongNameHandler> fLongNameHandlers;
+    MemoryPool<MixedUnitLongNameHandler> fMixedUnitHandlers;
+    
+    MaybeStackArray<MicroPropsGenerator *, 8> fHandlers;
+    
+    
+    LocalArray<MeasureUnit> fMeasureUnits;
+
+    const MicroPropsGenerator *fParent;
+
+    LongNameMultiplexer(const MicroPropsGenerator *parent) : fParent(parent) {
+    }
 };
 
 }  

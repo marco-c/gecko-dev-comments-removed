@@ -81,7 +81,7 @@ class Quantifier : public UnicodeFunctor, public UnicodeMatcher {
 
 
     virtual UnicodeString& toPattern(UnicodeString& result,
-                                     UBool escapeUnprintable = FALSE) const;
+                                     UBool escapeUnprintable = false) const;
 
     
 

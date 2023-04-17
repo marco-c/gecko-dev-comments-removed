@@ -40,6 +40,7 @@
 #include "unicode/ures.h"
 #include "unicode/ucnv.h"
 #include "unicode/ustring.h"
+#include "unicode/unistr.h"
 #include "cstring.h"
 #include "cmemory.h"
 
@@ -142,18 +143,42 @@ u_fopen(const char    *filename,
     return result; 
 }
 
+
+
+
+
+
+#define FILENAME_BUF_MAX 296
+#if defined PATH_MAX && PATH_MAX < FILENAME_BUF_MAX
+#define FILENAME_BUF_CAPACITY PATH_MAX
+#elif defined MAX_PATH && MAX_PATH < FILENAME_BUF_MAX
+#define FILENAME_BUF_CAPACITY MAX_PATH
+#else
+#define FILENAME_BUF_CAPACITY FILENAME_BUF_MAX
+#endif
+
 U_CAPI UFILE* U_EXPORT2
 u_fopen_u(const UChar   *filename,
         const char    *perm,
         const char    *locale,
         const char    *codepage)
 {
-    UFILE     *result;
-    char buffer[256];
+    UFILE *result;
+    char buffer[FILENAME_BUF_CAPACITY];
+    char *filenameBuffer = buffer;
 
-    u_austrcpy(buffer, filename);
+    icu::UnicodeString filenameString(true, filename, -1); 
+    
+    int32_t filenameLength = filenameString.extract(0, filenameString.length(), filenameBuffer, FILENAME_BUF_CAPACITY);
+    if (filenameLength >= FILENAME_BUF_CAPACITY) { 
+        filenameBuffer = static_cast<char *>(uprv_malloc(++filenameLength)); 
+        if (!filenameBuffer) {
+            return nullptr;
+        }
+        filenameString.extract(0, filenameString.length(), filenameBuffer, filenameLength);
+    }
 
-    result = u_fopen(buffer, perm, locale, codepage);
+    result = u_fopen(filenameBuffer, perm, locale, codepage);
 #if U_PLATFORM_USES_ONLY_WIN32_API
     
     if (!result) {
@@ -161,19 +186,24 @@ u_fopen_u(const UChar   *filename,
         wchar_t wperm[40] = {};
         size_t  retVal;
         mbstowcs_s(&retVal, wperm, UPRV_LENGTHOF(wperm), perm, _TRUNCATE);
-        FILE *systemFile = _wfopen((const wchar_t *)filename, wperm);
+        FILE *systemFile = _wfopen(reinterpret_cast<const wchar_t *>(filename), wperm); 
         if (systemFile) {
             result = finit_owner(systemFile, locale, codepage, TRUE);
         }
-        if (!result) {
+        if (!result && systemFile) {
             
+
 
             fclose(systemFile);
         }
     }
 #endif
+    if (filenameBuffer != buffer) {
+        uprv_free(filenameBuffer);
+    }
     return result; 
 }
+
 
 U_CAPI UFILE* U_EXPORT2
 u_fstropen(UChar *stringBuf,

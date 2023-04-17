@@ -49,6 +49,7 @@
 
 
 
+#include <stdbool.h>
 #include <stddef.h>
 
 
@@ -174,7 +175,7 @@
 
 
 #ifndef UPRV_BLOCK_MACRO_END
-#define UPRV_BLOCK_MACRO_END while (FALSE)
+#define UPRV_BLOCK_MACRO_END while (false)
 #endif
 
 
@@ -258,17 +259,58 @@
 
 
 
+
+
+
+
+
+
+
 typedef int8_t UBool;
 
+
+
+
+
+
+
+
+
+
+
+
+
+#ifdef U_DEFINE_FALSE_AND_TRUE
+    
+#elif defined(U_COMBINED_IMPLEMENTATION) || \
+        defined(U_COMMON_IMPLEMENTATION) || defined(U_I18N_IMPLEMENTATION) || \
+        defined(U_IO_IMPLEMENTATION) || defined(U_LAYOUTEX_IMPLEMENTATION) || \
+        defined(U_TOOLUTIL_IMPLEMENTATION)
+    
+#   define U_DEFINE_FALSE_AND_TRUE 1
+#else
+    
+#   define U_DEFINE_FALSE_AND_TRUE 0
+#endif
+
+#if U_DEFINE_FALSE_AND_TRUE || defined(U_IN_DOXYGEN)
 #ifndef TRUE
+
+
+
+
 
 #   define TRUE  1
 #endif
 #ifndef FALSE
 
+
+
+
+
 #   define FALSE 0
 #endif
-
+#endif  
 
 
 

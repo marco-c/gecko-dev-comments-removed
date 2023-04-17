@@ -258,7 +258,10 @@ void DecNum::toString(ByteSink& output, UErrorCode& status) const {
     }
     
     int32_t minCapacity = fData.getAlias()->digits + 14;
-    MaybeStackArray<char, 30> buffer(minCapacity);
+    MaybeStackArray<char, 30> buffer(minCapacity, status);
+    if (U_FAILURE(status)) {
+        return;
+    }
     uprv_decNumberToString(fData, buffer.getAlias());
     output.Append(buffer.getAlias(), static_cast<int32_t>(uprv_strlen(buffer.getAlias())));
 }

@@ -112,8 +112,6 @@ typedef enum UTraceFunctionNumber {
     UTRACE_COLLATION_LIMIT,
 #endif  
 
-#ifndef U_HIDE_DRAFT_API
-
     
 
 
@@ -166,8 +164,6 @@ typedef enum UTraceFunctionNumber {
 
 
     UTRACE_UDATA_RES_FILE,
-
-#endif  
 
 #ifndef U_HIDE_INTERNAL_API
     
@@ -249,7 +245,7 @@ typedef enum UTraceFunctionNumber {
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 utrace_setLevel(int32_t traceLevel);
 
 
@@ -257,7 +253,7 @@ utrace_setLevel(int32_t traceLevel);
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 utrace_getLevel(void);
 
 
@@ -331,7 +327,7 @@ UTraceData(const void *context, int32_t fnNumber, int32_t level,
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 utrace_setFunctions(const void *context,
                     UTraceEntry *e, UTraceExit *x, UTraceData *d);
 
@@ -345,7 +341,7 @@ utrace_setFunctions(const void *context,
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 utrace_getFunctions(const void **context,
                     UTraceEntry **e, UTraceExit **x, UTraceData **d);
 
@@ -467,7 +463,7 @@ utrace_getFunctions(const void **context,
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 utrace_vformat(char *outBuf, int32_t capacity,
               int32_t indent, const char *fmt,  va_list args);
 
@@ -488,7 +484,7 @@ utrace_vformat(char *outBuf, int32_t capacity,
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 utrace_format(char *outBuf, int32_t capacity,
               int32_t indent, const char *fmt,  ...);
 
@@ -505,7 +501,7 @@ utrace_format(char *outBuf, int32_t capacity,
 
 
 
-U_STABLE const char * U_EXPORT2
+U_CAPI const char * U_EXPORT2
 utrace_functionName(int32_t fnNumber);
 
 U_CDECL_END

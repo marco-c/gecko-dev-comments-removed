@@ -20,7 +20,10 @@
 #define __UDATA_H__
 
 #include "unicode/utypes.h"
+
+#if U_SHOW_CPLUSPLUS_API
 #include "unicode/localpointer.h"
+#endif   
 
 U_CDECL_BEGIN
 
@@ -197,7 +200,7 @@ UDataMemoryIsAcceptable(void *context,
 
 
 
-U_STABLE UDataMemory * U_EXPORT2
+U_CAPI UDataMemory * U_EXPORT2
 udata_open(const char *path, const char *type, const char *name,
            UErrorCode *pErrorCode);
 
@@ -249,7 +252,7 @@ udata_open(const char *path, const char *type, const char *name,
 
 
 
-U_STABLE UDataMemory * U_EXPORT2
+U_CAPI UDataMemory * U_EXPORT2
 udata_openChoice(const char *path, const char *type, const char *name,
                  UDataMemoryIsAcceptable *isAcceptable, void *context,
                  UErrorCode *pErrorCode);
@@ -261,7 +264,7 @@ udata_openChoice(const char *path, const char *type, const char *name,
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 udata_close(UDataMemory *pData);
 
 
@@ -273,7 +276,7 @@ udata_close(UDataMemory *pData);
 
 
 
-U_STABLE const void * U_EXPORT2
+U_CAPI const void * U_EXPORT2
 udata_getMemory(UDataMemory *pData);
 
 
@@ -294,7 +297,7 @@ udata_getMemory(UDataMemory *pData);
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 udata_getInfo(UDataMemory *pData, UDataInfo *pInfo);
 
 
@@ -340,7 +343,7 @@ udata_getInfo(UDataMemory *pData, UDataInfo *pInfo);
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 udata_setCommonData(const void *data, UErrorCode *err);
 
 
@@ -371,7 +374,7 @@ udata_setCommonData(const void *data, UErrorCode *err);
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 udata_setAppData(const char *packageName, const void *data, UErrorCode *err);
 
 
@@ -410,7 +413,7 @@ typedef enum UDataFileAccess {
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 udata_setFileAccess(UDataFileAccess access, UErrorCode *status);
 
 U_CDECL_END

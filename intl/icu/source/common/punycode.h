@@ -65,7 +65,7 @@
 
 
 
-U_CFUNC int32_t
+U_CAPI int32_t
 u_strToPunycode(const UChar *src, int32_t srcLength,
                 UChar *dest, int32_t destCapacity,
                 const UBool *caseFlags,
@@ -100,7 +100,7 @@ u_strToPunycode(const UChar *src, int32_t srcLength,
 
 
 
-U_CFUNC int32_t
+U_CAPI int32_t
 u_strFromPunycode(const UChar *src, int32_t srcLength,
                   UChar *dest, int32_t destCapacity,
                   UBool *caseFlags,

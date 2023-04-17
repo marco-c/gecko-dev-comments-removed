@@ -70,6 +70,9 @@ U_NAMESPACE_BEGIN
 
 
 
+
+
+
 class FormattedValueFieldPositionIteratorImpl : public UMemory, public FormattedValue {
 public:
 
@@ -115,6 +118,24 @@ private:
 
 
 
+struct U_I18N_API SpanInfo {
+    int32_t spanValue;
+    int32_t length;
+};
+
+
+
+
+
+
+
+
+
+#if U_PF_WINDOWS <= U_PLATFORM && U_PLATFORM <= U_PF_CYGWIN
+template class U_I18N_API MaybeStackArray<SpanInfo, 8>;
+#endif
+
+
 
 
 
@@ -147,12 +168,23 @@ public:
         return fString;
     }
 
+    
+
+
+
+
+
+    void appendSpanInfo(int32_t spanValue, int32_t length, UErrorCode& status);
+    void prependSpanInfo(int32_t spanValue, int32_t length, UErrorCode& status);
+
 private:
     FormattedStringBuilder fString;
     FormattedStringBuilder::Field fNumericField;
+    MaybeStackArray<SpanInfo, 8> spanIndices;
 
     bool nextPositionImpl(ConstrainedFieldPosition& cfpos, FormattedStringBuilder::Field numericField, UErrorCode& status) const;
     static bool isIntOrGroup(FormattedStringBuilder::Field field);
+    static bool isTrimmable(FormattedStringBuilder::Field field);
     int32_t trimBack(int32_t limit) const;
     int32_t trimFront(int32_t start) const;
 };
@@ -211,7 +243,7 @@ struct UFormattedValueImpl : public UMemory, public UFormattedValueApiHelper {
         return fData->appendTo(appendable, status); \
     } \
     UBool Name::nextPosition(ConstrainedFieldPosition& cfpos, UErrorCode& status) const { \
-        UPRV_FORMATTED_VALUE_METHOD_GUARD(FALSE) \
+        UPRV_FORMATTED_VALUE_METHOD_GUARD(false) \
         return fData->nextPosition(cfpos, status); \
     }
 
@@ -230,7 +262,7 @@ struct UFormattedValueImpl : public UMemory, public UFormattedValueApiHelper {
         } \
         return static_cast<HelperType*>(impl)->exportForC(); \
     } \
-    U_DRAFT const UFormattedValue* U_EXPORT2 \
+    U_CAPI const UFormattedValue* U_EXPORT2 \
     Prefix ## _resultAsValue (const CType* uresult, UErrorCode* ec) { \
         const ImplType* result = HelperType::validate(uresult, *ec); \
         if (U_FAILURE(*ec)) { return nullptr; } \

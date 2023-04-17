@@ -10,6 +10,7 @@
 #include "ureslocs.h"
 #include "charstr.h"
 #include "uresimp.h"
+#include "measunit_impl.h"
 #include "number_longnames.h"
 #include "number_microprops.h"
 #include <algorithm>
@@ -22,8 +23,23 @@ using namespace icu::number::impl;
 
 namespace {
 
+
+
+
+
+
+
+
 constexpr int32_t DNAM_INDEX = StandardPlural::Form::COUNT;
+
+
+
+
+
+
+
 constexpr int32_t PER_INDEX = StandardPlural::Form::COUNT + 1;
+
 constexpr int32_t ARRAY_LENGTH = StandardPlural::Form::COUNT + 2;
 
 static int32_t getIndex(const char* pluralKeyword, UErrorCode& status) {
@@ -37,6 +53,11 @@ static int32_t getIndex(const char* pluralKeyword, UErrorCode& status) {
         return plural;
     }
 }
+
+
+
+
+
 
 static UnicodeString getWithPlural(
         const UnicodeString* strings,
@@ -84,6 +105,18 @@ class PluralTableSink : public ResourceSink {
   private:
     UnicodeString *outArray;
 };
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -184,78 +217,107 @@ UnicodeString getPerUnitFormat(const Locale& locale, const UNumberUnitWidth &wid
 
 } 
 
-LongNameHandler*
-LongNameHandler::forMeasureUnit(const Locale &loc, const MeasureUnit &unitRef, const MeasureUnit &perUnit,
-                                const UNumberUnitWidth &width, const PluralRules *rules,
-                                const MicroPropsGenerator *parent, UErrorCode &status) {
-    if (uprv_strlen(unitRef.getType()) == 0 || uprv_strlen(perUnit.getType()) == 0) {
-        
-        status = U_UNSUPPORTED_ERROR;
-        return nullptr;
-    }
+void LongNameHandler::forMeasureUnit(const Locale &loc, const MeasureUnit &unitRef,
+                                     const MeasureUnit &perUnit, const UNumberUnitWidth &width,
+                                     const PluralRules *rules, const MicroPropsGenerator *parent,
+                                     LongNameHandler *fillIn, UErrorCode &status) {
+    
+    
+    U_ASSERT(uprv_strcmp(unitRef.getType(), "") != 0 ||
+             unitRef.getComplexity(status) != UMEASURE_UNIT_MIXED);
+    U_ASSERT(fillIn != nullptr);
 
     MeasureUnit unit = unitRef;
     if (uprv_strcmp(perUnit.getType(), "none") != 0) {
         
-        bool isResolved = false;
-        MeasureUnit resolved = MeasureUnit::resolveUnitPerUnit(unit, perUnit, &isResolved);
-        if (isResolved) {
-            unit = resolved;
+        MeasureUnit simplified = unit.product(perUnit.reciprocal(status), status);
+        if (uprv_strcmp(simplified.getType(), "") != 0) {
+            unit = simplified;
         } else {
             
-            return forCompoundUnit(loc, unit, perUnit, width, rules, parent, status);
+            forCompoundUnit(loc, unit, perUnit, width, rules, parent, fillIn, status);
+            return;
         }
     }
 
-    auto* result = new LongNameHandler(rules, parent);
-    if (result == nullptr) {
-        status = U_MEMORY_ALLOCATION_ERROR;
-        return nullptr;
+    if (uprv_strcmp(unit.getType(), "") == 0) {
+        
+        
+        
+        status = U_UNSUPPORTED_ERROR;
+        return;
     }
+
     UnicodeString simpleFormats[ARRAY_LENGTH];
     getMeasureData(loc, unit, width, simpleFormats, status);
-    if (U_FAILURE(status)) { return result; }
-    result->simpleFormatsToModifiers(simpleFormats, {UFIELD_CATEGORY_NUMBER, UNUM_MEASURE_UNIT_FIELD}, status);
-    return result;
+    if (U_FAILURE(status)) {
+        return;
+    }
+    fillIn->rules = rules;
+    fillIn->parent = parent;
+    fillIn->simpleFormatsToModifiers(simpleFormats, {UFIELD_CATEGORY_NUMBER, UNUM_MEASURE_UNIT_FIELD},
+                                     status);
 }
 
-LongNameHandler*
-LongNameHandler::forCompoundUnit(const Locale &loc, const MeasureUnit &unit, const MeasureUnit &perUnit,
-                                 const UNumberUnitWidth &width, const PluralRules *rules,
-                                 const MicroPropsGenerator *parent, UErrorCode &status) {
-    auto* result = new LongNameHandler(rules, parent);
-    if (result == nullptr) {
-        status = U_MEMORY_ALLOCATION_ERROR;
-        return nullptr;
+void LongNameHandler::forCompoundUnit(const Locale &loc, const MeasureUnit &unit,
+                                      const MeasureUnit &perUnit, const UNumberUnitWidth &width,
+                                      const PluralRules *rules, const MicroPropsGenerator *parent,
+                                      LongNameHandler *fillIn, UErrorCode &status) {
+    if (uprv_strcmp(unit.getType(), "") == 0 || uprv_strcmp(perUnit.getType(), "") == 0) {
+        
+        
+        
+        status = U_UNSUPPORTED_ERROR;
+        return;
+    }
+    if (fillIn == nullptr) {
+        status = U_INTERNAL_PROGRAM_ERROR;
+        return;
     }
     UnicodeString primaryData[ARRAY_LENGTH];
     getMeasureData(loc, unit, width, primaryData, status);
-    if (U_FAILURE(status)) { return result; }
+    if (U_FAILURE(status)) {
+        return;
+    }
     UnicodeString secondaryData[ARRAY_LENGTH];
     getMeasureData(loc, perUnit, width, secondaryData, status);
-    if (U_FAILURE(status)) { return result; }
+    if (U_FAILURE(status)) {
+        return;
+    }
 
     UnicodeString perUnitFormat;
     if (!secondaryData[PER_INDEX].isBogus()) {
         perUnitFormat = secondaryData[PER_INDEX];
     } else {
         UnicodeString rawPerUnitFormat = getPerUnitFormat(loc, width, status);
-        if (U_FAILURE(status)) { return result; }
+        if (U_FAILURE(status)) {
+            return;
+        }
         
         SimpleFormatter compiled(rawPerUnitFormat, 2, 2, status);
-        if (U_FAILURE(status)) { return result; }
+        if (U_FAILURE(status)) {
+            return;
+        }
         UnicodeString secondaryFormat = getWithPlural(secondaryData, StandardPlural::Form::ONE, status);
-        if (U_FAILURE(status)) { return result; }
+        if (U_FAILURE(status)) {
+            return;
+        }
         
         SimpleFormatter secondaryCompiled(secondaryFormat, 0, 1, status);
-        if (U_FAILURE(status)) { return result; }
+        if (U_FAILURE(status)) {
+            return;
+        }
         UnicodeString secondaryString = secondaryCompiled.getTextWithNoArguments().trim();
         
         compiled.format(UnicodeString(u"{0}"), secondaryString, perUnitFormat, status);
-        if (U_FAILURE(status)) { return result; }
+        if (U_FAILURE(status)) {
+            return;
+        }
     }
-    result->multiSimpleFormatsToModifiers(primaryData, perUnitFormat, {UFIELD_CATEGORY_NUMBER, UNUM_MEASURE_UNIT_FIELD}, status);
-    return result;
+    fillIn->rules = rules;
+    fillIn->parent = parent;
+    fillIn->multiSimpleFormatsToModifiers(primaryData, perUnitFormat,
+                                          {UFIELD_CATEGORY_NUMBER, UNUM_MEASURE_UNIT_FIELD}, status);
 }
 
 UnicodeString LongNameHandler::getUnitDisplayName(
@@ -338,13 +400,210 @@ void LongNameHandler::multiSimpleFormatsToModifiers(const UnicodeString *leadFor
 
 void LongNameHandler::processQuantity(DecimalQuantity &quantity, MicroProps &micros,
                                       UErrorCode &status) const {
-    parent->processQuantity(quantity, micros, status);
+    if (parent != NULL) {
+        parent->processQuantity(quantity, micros, status);
+    }
     StandardPlural::Form pluralForm = utils::getPluralSafe(micros.rounder, rules, quantity, status);
     micros.modOuter = &fModifiers[pluralForm];
 }
 
 const Modifier* LongNameHandler::getModifier(Signum , StandardPlural::Form plural) const {
     return &fModifiers[plural];
+}
+
+void MixedUnitLongNameHandler::forMeasureUnit(const Locale &loc, const MeasureUnit &mixedUnit,
+                                              const UNumberUnitWidth &width, const PluralRules *rules,
+                                              const MicroPropsGenerator *parent,
+                                              MixedUnitLongNameHandler *fillIn, UErrorCode &status) {
+    U_ASSERT(mixedUnit.getComplexity(status) == UMEASURE_UNIT_MIXED);
+    U_ASSERT(fillIn != nullptr);
+
+    MeasureUnitImpl temp;
+    const MeasureUnitImpl& impl = MeasureUnitImpl::forMeasureUnit(mixedUnit, temp, status);
+    fillIn->fMixedUnitCount = impl.units.length();
+    fillIn->fMixedUnitData.adoptInstead(new UnicodeString[fillIn->fMixedUnitCount * ARRAY_LENGTH]);
+    for (int32_t i = 0; i < fillIn->fMixedUnitCount; i++) {
+        
+        UnicodeString *unitData = &fillIn->fMixedUnitData[i * ARRAY_LENGTH];
+        getMeasureData(loc, impl.units[i]->build(status), width, unitData, status);
+    }
+
+    UListFormatterWidth listWidth = ULISTFMT_WIDTH_SHORT;
+    if (width == UNUM_UNIT_WIDTH_NARROW) {
+        listWidth = ULISTFMT_WIDTH_NARROW;
+    } else if (width == UNUM_UNIT_WIDTH_FULL_NAME) {
+        
+        listWidth = ULISTFMT_WIDTH_WIDE;
+    }
+    fillIn->fListFormatter.adoptInsteadAndCheckErrorCode(
+        ListFormatter::createInstance(loc, ULISTFMT_TYPE_UNITS, listWidth, status), status);
+    fillIn->rules = rules;
+    fillIn->parent = parent;
+
+    
+    
+    fillIn->fIntegerFormatter = NumberFormatter::withLocale(loc);
+}
+
+void MixedUnitLongNameHandler::processQuantity(DecimalQuantity &quantity, MicroProps &micros,
+                                               UErrorCode &status) const {
+    U_ASSERT(fMixedUnitCount > 1);
+    if (parent != nullptr) {
+        parent->processQuantity(quantity, micros, status);
+    }
+    micros.modOuter = getMixedUnitModifier(quantity, micros, status);
+}
+
+const Modifier *MixedUnitLongNameHandler::getMixedUnitModifier(DecimalQuantity &quantity,
+                                                               MicroProps &micros,
+                                                               UErrorCode &status) const {
+    if (micros.mixedMeasuresCount == 0) {
+        U_ASSERT(micros.mixedMeasuresCount > 0); 
+        status = U_UNSUPPORTED_ERROR;
+        return &micros.helpers.emptyWeakModifier;
+    }
+    
+    
+    U_ASSERT(micros.mixedMeasuresCount > 0);
+    
+    U_ASSERT(fMixedUnitCount == micros.mixedMeasuresCount + 1);
+    U_ASSERT(fListFormatter.isValid());
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    LocalArray<UnicodeString> outputMeasuresList(new UnicodeString[fMixedUnitCount], status);
+    if (U_FAILURE(status)) {
+        return &micros.helpers.emptyWeakModifier;
+    }
+
+    for (int32_t i = 0; i < micros.mixedMeasuresCount; i++) {
+        DecimalQuantity fdec;
+        fdec.setToLong(micros.mixedMeasures[i]);
+        if (i > 0 && fdec.isNegative()) {
+            
+            
+            fdec.negate();
+        }
+        StandardPlural::Form pluralForm = utils::getStandardPlural(rules, fdec);
+
+        UnicodeString simpleFormat =
+            getWithPlural(&fMixedUnitData[i * ARRAY_LENGTH], pluralForm, status);
+        SimpleFormatter compiledFormatter(simpleFormat, 0, 1, status);
+
+        UnicodeString num;
+        auto appendable = UnicodeStringAppendable(num);
+        fIntegerFormatter.formatDecimalQuantity(fdec, status).appendTo(appendable, status);
+        compiledFormatter.format(num, outputMeasuresList[i], status);
+        
+    }
+
+    
+    U_ASSERT(micros.mixedMeasuresCount > 0);
+    
+    if (quantity.isNegative()) {
+        quantity.negate();
+    }
+
+    UnicodeString *finalSimpleFormats = &fMixedUnitData[(fMixedUnitCount - 1) * ARRAY_LENGTH];
+    StandardPlural::Form finalPlural = utils::getPluralSafe(micros.rounder, rules, quantity, status);
+    UnicodeString finalSimpleFormat = getWithPlural(finalSimpleFormats, finalPlural, status);
+    SimpleFormatter finalFormatter(finalSimpleFormat, 0, 1, status);
+    finalFormatter.format(UnicodeString(u"{0}"), outputMeasuresList[fMixedUnitCount - 1], status);
+
+    
+    UnicodeString premixedFormatPattern;
+    fListFormatter->format(outputMeasuresList.getAlias(), fMixedUnitCount, premixedFormatPattern,
+                           status);
+    SimpleFormatter premixedCompiled(premixedFormatPattern, 0, 1, status);
+    if (U_FAILURE(status)) {
+        return &micros.helpers.emptyWeakModifier;
+    }
+
+    
+    
+    micros.helpers.mixedUnitModifier =
+        SimpleModifier(premixedCompiled, kUndefinedField, false, {this, SIGNUM_POS_ZERO, finalPlural});
+    return &micros.helpers.mixedUnitModifier;
+}
+
+const Modifier *MixedUnitLongNameHandler::getModifier(Signum ,
+                                                      StandardPlural::Form ) const {
+    
+    
+    
+    UPRV_UNREACHABLE;
+    return nullptr;
+}
+
+LongNameMultiplexer *
+LongNameMultiplexer::forMeasureUnits(const Locale &loc, const MaybeStackVector<MeasureUnit> &units,
+                                     const UNumberUnitWidth &width, const PluralRules *rules,
+                                     const MicroPropsGenerator *parent, UErrorCode &status) {
+    LocalPointer<LongNameMultiplexer> result(new LongNameMultiplexer(parent), status);
+    if (U_FAILURE(status)) {
+        return nullptr;
+    }
+    U_ASSERT(units.length() > 0);
+    if (result->fHandlers.resize(units.length()) == nullptr) {
+        status = U_MEMORY_ALLOCATION_ERROR;
+        return nullptr;
+    }
+    result->fMeasureUnits.adoptInstead(new MeasureUnit[units.length()]);
+    for (int32_t i = 0, length = units.length(); i < length; i++) {
+        const MeasureUnit& unit = *units[i];
+        result->fMeasureUnits[i] = unit;
+        if (unit.getComplexity(status) == UMEASURE_UNIT_MIXED) {
+            MixedUnitLongNameHandler *mlnh = result->fMixedUnitHandlers.createAndCheckErrorCode(status);
+            MixedUnitLongNameHandler::forMeasureUnit(loc, unit, width, rules, NULL, mlnh, status);
+            result->fHandlers[i] = mlnh;
+        } else {
+            LongNameHandler *lnh = result->fLongNameHandlers.createAndCheckErrorCode(status);
+            LongNameHandler::forMeasureUnit(loc, unit, MeasureUnit(), width, rules, NULL, lnh, status);
+            result->fHandlers[i] = lnh;
+        }
+        if (U_FAILURE(status)) {
+            return nullptr;
+        }
+    }
+    return result.orphan();
+}
+
+void LongNameMultiplexer::processQuantity(DecimalQuantity &quantity, MicroProps &micros,
+                                          UErrorCode &status) const {
+    
+    
+    
+    fParent->processQuantity(quantity, micros, status);
+
+    
+    for (int i = 0; i < fHandlers.getCapacity(); i++) {
+        if (fMeasureUnits[i] == micros.outputUnit) {
+            fHandlers[i]->processQuantity(quantity, micros, status);
+            return;
+        }
+    }
+    if (U_FAILURE(status)) {
+        return;
+    }
+    
+    
+    status = U_INTERNAL_PROGRAM_ERROR;
 }
 
 #endif 

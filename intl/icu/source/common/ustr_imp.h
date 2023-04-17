@@ -37,13 +37,13 @@ uprv_strCompare(const UChar *s1, int32_t length1,
                 const UChar *s2, int32_t length2,
                 UBool strncmpStyle, UBool codePointOrder);
 
-U_INTERNAL int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2 
 ustr_hashUCharsN(const UChar *str, int32_t length);
 
-U_INTERNAL int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2 
 ustr_hashCharsN(const char *str, int32_t length);
 
-U_INTERNAL int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ustr_hashICharsN(const char *str, int32_t length);
 
 
@@ -53,7 +53,7 @@ ustr_hashICharsN(const char *str, int32_t length);
 
 
 
-U_INTERNAL UChar U_EXPORT2
+U_CAPI UChar U_EXPORT2
 u_asciiToUpper(UChar c);
 
 
@@ -70,28 +70,28 @@ u_asciiToUpper(UChar c);
 
 
 
-U_INTERNAL int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 u_terminateUChars(UChar *dest, int32_t destCapacity, int32_t length, UErrorCode *pErrorCode);
 
 
 
 
 
-U_INTERNAL int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 u_terminateChars(char *dest, int32_t destCapacity, int32_t length, UErrorCode *pErrorCode);
 
 
 
 
 
-U_INTERNAL int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 u_terminateUChar32s(UChar32 *dest, int32_t destCapacity, int32_t length, UErrorCode *pErrorCode);
 
 
 
 
 
-U_INTERNAL int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 u_terminateWChars(wchar_t *dest, int32_t destCapacity, int32_t length, UErrorCode *pErrorCode);
 
 

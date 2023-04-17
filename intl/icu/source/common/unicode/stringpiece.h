@@ -111,7 +111,6 @@ class U_COMMON_API StringPiece : public UMemory {
 #endif
 #endif  
 
-#ifndef U_HIDE_DRAFT_API
   
 
 
@@ -145,7 +144,6 @@ class U_COMMON_API StringPiece : public UMemory {
   StringPiece(T str)
       : ptr_(reinterpret_cast<const char*>(str.data())),
         length_(static_cast<int32_t>(str.size())) {}
-#endif  
 
   
 

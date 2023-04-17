@@ -104,7 +104,7 @@ private:
                                int32_t LoopOp);
     UBool       compileInlineInterval();             
     void        literalChar(UChar32 c);              
-    void        fixLiterals(UBool split=FALSE);      
+    void        fixLiterals(UBool split=false);      
     void        insertOp(int32_t where);             
                                                      
     void        appendOp(int32_t op);                

@@ -22,9 +22,12 @@
 #define __UCASEMAP_H__
 
 #include "unicode/utypes.h"
-#include "unicode/localpointer.h"
 #include "unicode/stringoptions.h"
 #include "unicode/ustring.h"
+
+#if U_SHOW_CPLUSPLUS_API
+#include "unicode/localpointer.h"
+#endif   
 
 
 
@@ -69,7 +72,7 @@ typedef struct UCaseMap UCaseMap;
 
 
 
-U_STABLE UCaseMap * U_EXPORT2
+U_CAPI UCaseMap * U_EXPORT2
 ucasemap_open(const char *locale, uint32_t options, UErrorCode *pErrorCode);
 
 
@@ -77,7 +80,7 @@ ucasemap_open(const char *locale, uint32_t options, UErrorCode *pErrorCode);
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ucasemap_close(UCaseMap *csm);
 
 #if U_SHOW_CPLUSPLUS_API
@@ -105,7 +108,7 @@ U_NAMESPACE_END
 
 
 
-U_STABLE const char * U_EXPORT2
+U_CAPI const char * U_EXPORT2
 ucasemap_getLocale(const UCaseMap *csm);
 
 
@@ -114,7 +117,7 @@ ucasemap_getLocale(const UCaseMap *csm);
 
 
 
-U_STABLE uint32_t U_EXPORT2
+U_CAPI uint32_t U_EXPORT2
 ucasemap_getOptions(const UCaseMap *csm);
 
 
@@ -128,7 +131,7 @@ ucasemap_getOptions(const UCaseMap *csm);
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ucasemap_setLocale(UCaseMap *csm, const char *locale, UErrorCode *pErrorCode);
 
 
@@ -142,7 +145,7 @@ ucasemap_setLocale(UCaseMap *csm, const char *locale, UErrorCode *pErrorCode);
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ucasemap_setOptions(UCaseMap *csm, uint32_t options, UErrorCode *pErrorCode);
 
 #if !UCONFIG_NO_BREAK_ITERATION
@@ -154,7 +157,7 @@ ucasemap_setOptions(UCaseMap *csm, uint32_t options, UErrorCode *pErrorCode);
 
 
 
-U_STABLE const UBreakIterator * U_EXPORT2
+U_CAPI const UBreakIterator * U_EXPORT2
 ucasemap_getBreakIterator(const UCaseMap *csm);
 
 
@@ -177,7 +180,7 @@ ucasemap_getBreakIterator(const UCaseMap *csm);
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ucasemap_setBreakIterator(UCaseMap *csm, UBreakIterator *iterToAdopt, UErrorCode *pErrorCode);
 
 
@@ -226,7 +229,7 @@ ucasemap_setBreakIterator(UCaseMap *csm, UBreakIterator *iterToAdopt, UErrorCode
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ucasemap_toTitle(UCaseMap *csm,
                  UChar *dest, int32_t destCapacity,
                  const UChar *src, int32_t srcLength,
@@ -257,7 +260,7 @@ ucasemap_toTitle(UCaseMap *csm,
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ucasemap_utf8ToLower(const UCaseMap *csm,
                      char *dest, int32_t destCapacity,
                      const char *src, int32_t srcLength,
@@ -286,7 +289,7 @@ ucasemap_utf8ToLower(const UCaseMap *csm,
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ucasemap_utf8ToUpper(const UCaseMap *csm,
                      char *dest, int32_t destCapacity,
                      const char *src, int32_t srcLength,
@@ -338,7 +341,7 @@ ucasemap_utf8ToUpper(const UCaseMap *csm,
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ucasemap_utf8ToTitle(UCaseMap *csm,
                     char *dest, int32_t destCapacity,
                     const char *src, int32_t srcLength,
@@ -376,7 +379,7 @@ ucasemap_utf8ToTitle(UCaseMap *csm,
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ucasemap_utf8FoldCase(const UCaseMap *csm,
                       char *dest, int32_t destCapacity,
                       const char *src, int32_t srcLength,

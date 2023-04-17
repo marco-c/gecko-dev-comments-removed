@@ -81,7 +81,7 @@
 #include <float.h>
 
 #ifndef U_COMMON_IMPLEMENTATION
-#error U_COMMON_IMPLEMENTATION not set - must be set for all ICU source files in common/ - see http://userguide.icu-project.org/howtouseicu
+#error U_COMMON_IMPLEMENTATION not set - must be set for all ICU source files in common/ - see https://unicode-org.github.io/icu/userguide/howtouseicu
 #endif
 
 
@@ -890,7 +890,7 @@ typedef struct DefaultTZInfo {
 
 
 static UBool compareBinaryFiles(const char* defaultTZFileName, const char* TZFileName, DefaultTZInfo* tzInfo) {
-    FILE* file; 
+    FILE* file;
     int64_t sizeFile;
     int64_t sizeFileLeft;
     int32_t sizeFileRead;
@@ -1065,7 +1065,7 @@ static void u_property_read(void* cookie, const char* name, const char* value,
 #endif
 
 U_CAPI void U_EXPORT2
-uprv_tzname_clear_cache()
+uprv_tzname_clear_cache(void)
 {
 #if U_PLATFORM == U_PF_ANDROID
     
@@ -1143,10 +1143,10 @@ uprv_tzname(int n)
         && uprv_strcmp(tzid, TZ_ENV_CHECK) != 0
 #endif
     ) {
-         
-        if (tzid[0] == ':') { 
-            tzid++; 
-        } 
+        
+        if (tzid[0] == ':') {
+            tzid++;
+        }
         
         skipZoneIDPrefix(&tzid);
         return tzid;
@@ -1167,7 +1167,7 @@ uprv_tzname(int n)
             int32_t tzZoneInfoTailLen = uprv_strlen(TZZONEINFOTAIL);
             gTimeZoneBuffer[ret] = 0;
             char *  tzZoneInfoTailPtr = uprv_strstr(gTimeZoneBuffer, TZZONEINFOTAIL);
-            
+
             if (tzZoneInfoTailPtr != NULL
                 && isValidOlsonID(tzZoneInfoTailPtr + tzZoneInfoTailLen))
             {
@@ -1497,7 +1497,7 @@ static void setTimeZoneFilesDir(const char *path, UErrorCode &status) {
 #endif
 }
 
-#define TO_STRING(x) TO_STRING_2(x) 
+#define TO_STRING(x) TO_STRING_2(x)
 #define TO_STRING_2(x) #x
 
 static void U_CALLCONV TimeZoneDataDirInitFn(UErrorCode &status) {
@@ -1615,7 +1615,7 @@ static const char *uprv_getPOSIXIDForCategory(int category)
             if (posixID == 0) {
                 posixID = getenv(category == LC_MESSAGES ? "LC_MESSAGES" : "LC_CTYPE");
                 if (posixID == 0) {
-#endif                    
+#endif
                     posixID = getenv("LANG");
                 }
             }
@@ -1723,7 +1723,7 @@ uprv_getDefaultLocaleID()
       
       uprv_strcpy(correctedPOSIXLocale, "en_US_POSIX");
     }
- 
+
     
     const char *p;
     if ((p = uprv_strrchr(posixID, '@')) != nullptr) {
@@ -2144,7 +2144,7 @@ int_getDefaultCodepage()
 #endif
     
     if (codepageNumber == 65001)
-    { 
+    {
         return "UTF-8";
     }
     
@@ -2351,7 +2351,7 @@ u_getVersion(UVersionInfo versionArray) {
 #include <dlfcn.h>
 #endif 
 
-U_INTERNAL void * U_EXPORT2
+U_CAPI void * U_EXPORT2
 uprv_dl_open(const char *libName, UErrorCode *status) {
   void *ret = NULL;
   if(U_FAILURE(*status)) return ret;
@@ -2365,13 +2365,13 @@ uprv_dl_open(const char *libName, UErrorCode *status) {
   return ret;
 }
 
-U_INTERNAL void U_EXPORT2
+U_CAPI void U_EXPORT2
 uprv_dl_close(void *lib, UErrorCode *status) {
   if(U_FAILURE(*status)) return;
   dlclose(lib);
 }
 
-U_INTERNAL UVoidFunction* U_EXPORT2
+U_CAPI UVoidFunction* U_EXPORT2
 uprv_dlsym_func(void *lib, const char* sym, UErrorCode *status) {
   union {
       UVoidFunction *fp;
@@ -2394,40 +2394,40 @@ uprv_dlsym_func(void *lib, const char* sym, UErrorCode *status) {
 
 
 
-U_INTERNAL void * U_EXPORT2
+U_CAPI void * U_EXPORT2
 uprv_dl_open(const char *libName, UErrorCode *status) {
   HMODULE lib = NULL;
-  
+
   if(U_FAILURE(*status)) return NULL;
-  
+
   lib = LoadLibraryA(libName);
-  
+
   if(lib==NULL) {
     *status = U_MISSING_RESOURCE_ERROR;
   }
-  
+
   return (void*)lib;
 }
 
-U_INTERNAL void U_EXPORT2
+U_CAPI void U_EXPORT2
 uprv_dl_close(void *lib, UErrorCode *status) {
   HMODULE handle = (HMODULE)lib;
   if(U_FAILURE(*status)) return;
-  
+
   FreeLibrary(handle);
-  
+
   return;
 }
 
-U_INTERNAL UVoidFunction* U_EXPORT2
+U_CAPI UVoidFunction* U_EXPORT2
 uprv_dlsym_func(void *lib, const char* sym, UErrorCode *status) {
   HMODULE handle = (HMODULE)lib;
   UVoidFunction* addr = NULL;
-  
+
   if(U_FAILURE(*status) || lib==NULL) return NULL;
-  
+
   addr = (UVoidFunction*)GetProcAddress(handle, sym);
-  
+
   if(addr==NULL) {
     DWORD lastError = GetLastError();
     if(lastError == ERROR_PROC_NOT_FOUND) {
@@ -2436,7 +2436,7 @@ uprv_dlsym_func(void *lib, const char* sym, UErrorCode *status) {
       *status = U_UNSUPPORTED_ERROR; 
     }
   }
-  
+
   return addr;
 }
 
@@ -2444,7 +2444,7 @@ uprv_dlsym_func(void *lib, const char* sym, UErrorCode *status) {
 
 
 
-U_INTERNAL void * U_EXPORT2
+U_CAPI void * U_EXPORT2
 uprv_dl_open(const char *libName, UErrorCode *status) {
     (void)libName;
     if(U_FAILURE(*status)) return NULL;
@@ -2452,7 +2452,7 @@ uprv_dl_open(const char *libName, UErrorCode *status) {
     return NULL;
 }
 
-U_INTERNAL void U_EXPORT2
+U_CAPI void U_EXPORT2
 uprv_dl_close(void *lib, UErrorCode *status) {
     (void)lib;
     if(U_FAILURE(*status)) return;
@@ -2460,7 +2460,7 @@ uprv_dl_close(void *lib, UErrorCode *status) {
     return;
 }
 
-U_INTERNAL UVoidFunction* U_EXPORT2
+U_CAPI UVoidFunction* U_EXPORT2
 uprv_dlsym_func(void *lib, const char* sym, UErrorCode *status) {
   (void)lib;
   (void)sym;

@@ -8,10 +8,12 @@
 #define __UCPTRIE_H__
 
 #include "unicode/utypes.h"
-
-#include "unicode/localpointer.h"
 #include "unicode/ucpmap.h"
 #include "unicode/utf8.h"
+
+#if U_SHOW_CPLUSPLUS_API
+#include "unicode/localpointer.h"
+#endif   
 
 U_CDECL_BEGIN
 
@@ -580,11 +582,11 @@ enum {
 
 
 
-U_INTERNAL int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ucptrie_internalSmallIndex(const UCPTrie *trie, UChar32 c);
 
 
-U_INTERNAL int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ucptrie_internalSmallU8Index(const UCPTrie *trie, int32_t lt1, uint8_t t2, uint8_t t3);
 
 
@@ -592,7 +594,7 @@ ucptrie_internalSmallU8Index(const UCPTrie *trie, int32_t lt1, uint8_t t2, uint8
 
 
 
-U_INTERNAL int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ucptrie_internalU8PrevIndex(const UCPTrie *trie, UChar32 c,
                             const uint8_t *start, const uint8_t *src);
 

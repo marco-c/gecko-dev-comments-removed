@@ -150,7 +150,7 @@ public:
     void optimize(const UnicodeSet &set, UErrorCode &errorCode);
     void suppressContractions(const UnicodeSet &set, UErrorCode &errorCode);
 
-    void enableFastLatin() { fastLatinEnabled = TRUE; }
+    void enableFastLatin() { fastLatinEnabled = true; }
     virtual void build(CollationData &data, UErrorCode &errorCode);
 
     

@@ -120,7 +120,7 @@ typedef struct UConstrainedFieldPosition UConstrainedFieldPosition;
 
 
 
-U_STABLE UConstrainedFieldPosition* U_EXPORT2
+U_CAPI UConstrainedFieldPosition* U_EXPORT2
 ucfpos_open(UErrorCode* ec);
 
 
@@ -133,7 +133,7 @@ ucfpos_open(UErrorCode* ec);
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ucfpos_reset(
     UConstrainedFieldPosition* ucfpos,
     UErrorCode* ec);
@@ -145,7 +145,7 @@ ucfpos_reset(
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ucfpos_close(UConstrainedFieldPosition* ucfpos);
 
 
@@ -174,7 +174,7 @@ ucfpos_close(UConstrainedFieldPosition* ucfpos);
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ucfpos_constrainCategory(
     UConstrainedFieldPosition* ucfpos,
     int32_t category,
@@ -207,7 +207,7 @@ ucfpos_constrainCategory(
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ucfpos_constrainField(
     UConstrainedFieldPosition* ucfpos,
     int32_t category,
@@ -227,7 +227,7 @@ ucfpos_constrainField(
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ucfpos_getCategory(
     const UConstrainedFieldPosition* ucfpos,
     UErrorCode* ec);
@@ -245,7 +245,7 @@ ucfpos_getCategory(
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ucfpos_getField(
     const UConstrainedFieldPosition* ucfpos,
     UErrorCode* ec);
@@ -262,7 +262,7 @@ ucfpos_getField(
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ucfpos_getIndexes(
     const UConstrainedFieldPosition* ucfpos,
     int32_t* pStart,
@@ -282,7 +282,7 @@ ucfpos_getIndexes(
 
 
 
-U_STABLE int64_t U_EXPORT2
+U_CAPI int64_t U_EXPORT2
 ucfpos_getInt64IterationContext(
     const UConstrainedFieldPosition* ucfpos,
     UErrorCode* ec);
@@ -298,7 +298,7 @@ ucfpos_getInt64IterationContext(
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ucfpos_setInt64IterationContext(
     UConstrainedFieldPosition* ucfpos,
     int64_t context,
@@ -317,7 +317,7 @@ ucfpos_setInt64IterationContext(
 
 
 
-U_STABLE UBool U_EXPORT2
+U_CAPI UBool U_EXPORT2
 ucfpos_matchesField(
     const UConstrainedFieldPosition* ucfpos,
     int32_t category,
@@ -341,7 +341,7 @@ ucfpos_matchesField(
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ucfpos_setState(
     UConstrainedFieldPosition* ucfpos,
     int32_t category,
@@ -374,7 +374,7 @@ typedef struct UFormattedValue UFormattedValue;
 
 
 
-U_STABLE const UChar* U_EXPORT2
+U_CAPI const UChar* U_EXPORT2
 ufmtval_getString(
     const UFormattedValue* ufmtval,
     int32_t* pLength,
@@ -404,7 +404,7 @@ ufmtval_getString(
 
 
 
-U_STABLE UBool U_EXPORT2
+U_CAPI UBool U_EXPORT2
 ufmtval_nextPosition(
     const UFormattedValue* ufmtval,
     UConstrainedFieldPosition* ucfpos,

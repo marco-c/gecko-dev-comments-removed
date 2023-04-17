@@ -97,7 +97,6 @@ public:
         return *this;
     }
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -130,7 +129,6 @@ public:
         pos_ = uchars_ + (state & kState64PosMask);
         return *this;
     }
-#endif  
 
     
 
@@ -277,7 +275,7 @@ public:
     inline UBool hasUniqueValue(int32_t &uniqueValue) const {
         const char16_t *pos=pos_;
         
-        return pos!=NULL && findUniqueValue(pos+remainingMatchLength_+1, FALSE, uniqueValue);
+        return pos!=NULL && findUniqueValue(pos+remainingMatchLength_+1, false, uniqueValue);
     }
 
     
@@ -371,7 +369,7 @@ public:
         UBool truncateAndStop() {
             pos_=NULL;
             value_=-1;  
-            return TRUE;
+            return true;
         }
 
         const char16_t *branchNext(const char16_t *pos, int32_t length, UErrorCode &errorCode);

@@ -84,7 +84,7 @@ public:
         
         
         
-        if(c < 0x300) { return FALSE; }
+        if(c < 0x300) { return false; }
         if(c > 0xffff) { c = U16_LEAD(c); }
         int32_t i;
         return

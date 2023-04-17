@@ -32,6 +32,8 @@
 #include "unicode/parseerr.h"
 #include "unicode/schriter.h"
 
+struct UCPTrie;
+
 U_NAMESPACE_BEGIN
 
 
@@ -139,6 +141,11 @@ private:
 
 
     UBool           fDone;
+
+    
+
+
+    int32_t *fLookAheadMatches;
 
     
     
@@ -659,6 +666,28 @@ private:
 
     int32_t handleNext();
 
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+    typedef uint16_t (*PTrieFunc)(const UCPTrie *, UChar32);
+
+    template<typename RowType, PTrieFunc trieFunc>
+    int32_t handleSafePrevious(int32_t fromPosition);
+
+    template<typename RowType, PTrieFunc trieFunc>
+    int32_t handleNext();
+
 
     
 
@@ -681,7 +710,6 @@ private:
 
 
     void dumpTables();
-
 #endif  
 };
 

@@ -87,6 +87,22 @@ public:
 
 
     char *cloneData(UErrorCode &errorCode) const;
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    int32_t extract(char *dest, int32_t capacity, UErrorCode &errorCode) const;
 
     bool operator==(StringPiece other) const {
         return len == other.length() && (len == 0 || uprv_memcmp(data(), other.data(), len) == 0);
@@ -160,6 +176,12 @@ private:
 
     CharString(const CharString &other); 
     CharString &operator=(const CharString &other); 
+
+    
+
+
+
+    char getDirSepChar() const;
 };
 
 U_NAMESPACE_END

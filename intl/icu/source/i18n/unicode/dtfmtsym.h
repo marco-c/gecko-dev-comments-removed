@@ -919,7 +919,8 @@ private:
 
 
 
-    void initializeData(const Locale& locale, const char *type, UErrorCode& status, UBool useLastResortData = FALSE);
+    void initializeData(const Locale& locale, const char *type,
+                        UErrorCode& status, UBool useLastResortData = false);
 
     
 

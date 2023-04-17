@@ -30,15 +30,18 @@ const DecimalQuantity* validateUFormattedNumberToDecimalQuantity(
 
 
 
-
-
-
 class U_I18N_API UFormattedNumberData : public FormattedValueStringBuilderImpl {
 public:
     UFormattedNumberData() : FormattedValueStringBuilderImpl(kUndefinedField) {}
     virtual ~UFormattedNumberData();
 
+    
     DecimalQuantity quantity;
+
+    
+    
+    
+    MeasureUnit outputUnit;
 };
 
 

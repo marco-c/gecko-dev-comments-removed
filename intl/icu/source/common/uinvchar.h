@@ -37,7 +37,7 @@
 
 
 
-U_INTERNAL UBool U_EXPORT2
+U_CAPI UBool U_EXPORT2
 uprv_isInvariantString(const char *s, int32_t length);
 
 
@@ -50,7 +50,7 @@ uprv_isInvariantString(const char *s, int32_t length);
 
 
 
-U_INTERNAL UBool U_EXPORT2
+U_CAPI UBool U_EXPORT2
 uprv_isInvariantUString(const UChar *s, int32_t length);
 
 
@@ -141,7 +141,7 @@ uprv_isEbcdicAtSign(char c);
 
 
 
-U_INTERNAL int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 uprv_compareInvEbcdicAsAscii(const char *s1, const char *s2);
 
 
@@ -161,7 +161,7 @@ uprv_compareInvEbcdicAsAscii(const char *s1, const char *s2);
 
 
 
-U_INTERNAL char U_EXPORT2
+U_CAPI char U_EXPORT2
 uprv_ebcdicToAscii(char c);
 
 
@@ -181,7 +181,7 @@ uprv_ebcdicToAscii(char c);
 
 
 
-U_INTERNAL char U_EXPORT2
+U_CAPI char U_EXPORT2
 uprv_ebcdicToLowercaseAscii(char c);
 
 
@@ -202,7 +202,7 @@ uprv_ebcdicToLowercaseAscii(char c);
 
 
 
-U_INTERNAL uint8_t* U_EXPORT2
+U_CAPI uint8_t* U_EXPORT2
 uprv_aestrncpy(uint8_t *dst, const uint8_t *src, int32_t n);
 
 
@@ -211,7 +211,7 @@ uprv_aestrncpy(uint8_t *dst, const uint8_t *src, int32_t n);
 
 
 
-U_INTERNAL uint8_t* U_EXPORT2
+U_CAPI uint8_t* U_EXPORT2
 uprv_eastrncpy(uint8_t *dst, const uint8_t *src, int32_t n);
 
 

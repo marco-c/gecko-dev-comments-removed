@@ -66,7 +66,7 @@
 
 
 
-U_STABLE const char* U_EXPORT2 u_getDataDirectory(void);
+U_CAPI const char* U_EXPORT2 u_getDataDirectory(void);
 
 
 
@@ -88,7 +88,7 @@ U_STABLE const char* U_EXPORT2 u_getDataDirectory(void);
 
 
 
-U_STABLE void U_EXPORT2 u_setDataDirectory(const char *directory);
+U_CAPI void U_EXPORT2 u_setDataDirectory(const char *directory);
 
 #ifndef U_HIDE_INTERNAL_API
 
@@ -99,7 +99,7 @@ U_STABLE void U_EXPORT2 u_setDataDirectory(const char *directory);
 
 
  
-U_INTERNAL const char * U_EXPORT2 u_getTimeZoneFilesDirectory(UErrorCode *status);
+U_CAPI const char * U_EXPORT2 u_getTimeZoneFilesDirectory(UErrorCode *status);
 
 
 
@@ -109,7 +109,7 @@ U_INTERNAL const char * U_EXPORT2 u_getTimeZoneFilesDirectory(UErrorCode *status
 
 
 
-U_INTERNAL void U_EXPORT2 u_setTimeZoneFilesDirectory(const char *path, UErrorCode *status);
+U_CAPI void U_EXPORT2 u_setTimeZoneFilesDirectory(const char *path, UErrorCode *status);
 #endif  
 
 
@@ -155,7 +155,7 @@ U_INTERNAL void U_EXPORT2 u_setTimeZoneFilesDirectory(const char *path, UErrorCo
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 u_charsToUChars(const char *cs, UChar *us, int32_t length);
 
 
@@ -177,7 +177,7 @@ u_charsToUChars(const char *cs, UChar *us, int32_t length);
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 u_UCharsToChars(const UChar *us, char *cs, int32_t length);
 
 #endif

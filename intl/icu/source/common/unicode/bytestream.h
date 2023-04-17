@@ -103,9 +103,9 @@ public:
     Append(reinterpret_cast<const char*>(bytes), n);
   }
 #endif
-#endif  
+#endif
 
-  
+
 
 
 

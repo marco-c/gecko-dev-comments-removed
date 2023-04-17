@@ -15,10 +15,13 @@
 
 #if !UCONFIG_NO_COLLATION && !UCONFIG_NO_BREAK_ITERATION
 
-#include "unicode/localpointer.h"
 #include "unicode/ucol.h"
 #include "unicode/ucoleitr.h"
 #include "unicode/ubrk.h"
+
+#if U_SHOW_CPLUSPLUS_API
+#include "unicode/localpointer.h"
+#endif   
 
 
 
@@ -298,9 +301,13 @@ typedef enum {
 
 
 
-U_STABLE UStringSearch * U_EXPORT2 usearch_open(const UChar          *pattern, 
-                                              int32_t         patternlength, 
-                                        const UChar          *text, 
+
+
+
+
+U_CAPI UStringSearch * U_EXPORT2 usearch_open(const UChar    *pattern,
+                                              int32_t         patternlength,
+                                        const UChar          *text,
                                               int32_t         textlength,
                                         const char           *locale,
                                               UBreakIterator *breakiter,
@@ -330,10 +337,15 @@ U_STABLE UStringSearch * U_EXPORT2 usearch_open(const UChar          *pattern,
 
 
 
-U_STABLE UStringSearch * U_EXPORT2 usearch_openFromCollator(
-                                         const UChar *pattern, 
+
+
+
+
+
+U_CAPI UStringSearch * U_EXPORT2 usearch_openFromCollator(
+                                         const UChar          *pattern,
                                                int32_t         patternlength,
-                                         const UChar          *text, 
+                                         const UChar          *text,
                                                int32_t         textlength,
                                          const UCollator      *collator,
                                                UBreakIterator *breakiter,
@@ -345,7 +357,7 @@ U_STABLE UStringSearch * U_EXPORT2 usearch_openFromCollator(
 
 
 
-U_STABLE void U_EXPORT2 usearch_close(UStringSearch *searchiter);
+U_CAPI void U_EXPORT2 usearch_close(UStringSearch *searchiter);
 
 #if U_SHOW_CPLUSPLUS_API
 
@@ -383,8 +395,8 @@ U_NAMESPACE_END
 
 
 
-U_STABLE void U_EXPORT2 usearch_setOffset(UStringSearch *strsrch, 
-                                        int32_t    position,
+U_CAPI void U_EXPORT2 usearch_setOffset(UStringSearch *strsrch,
+                                        int32_t        position,
                                         UErrorCode    *status);
 
 
@@ -395,7 +407,7 @@ U_STABLE void U_EXPORT2 usearch_setOffset(UStringSearch *strsrch,
 
 
 
-U_STABLE int32_t U_EXPORT2 usearch_getOffset(const UStringSearch *strsrch);
+U_CAPI int32_t U_EXPORT2 usearch_getOffset(const UStringSearch *strsrch);
     
 
 
@@ -408,7 +420,7 @@ U_STABLE int32_t U_EXPORT2 usearch_getOffset(const UStringSearch *strsrch);
 
 
 
-U_STABLE void U_EXPORT2 usearch_setAttribute(UStringSearch         *strsrch, 
+U_CAPI void U_EXPORT2 usearch_setAttribute(UStringSearch         *strsrch,
                                            USearchAttribute       attribute,
                                            USearchAttributeValue  value,
                                            UErrorCode            *status);
@@ -421,7 +433,7 @@ U_STABLE void U_EXPORT2 usearch_setAttribute(UStringSearch         *strsrch,
 
 
 
-U_STABLE USearchAttributeValue U_EXPORT2 usearch_getAttribute(
+U_CAPI USearchAttributeValue U_EXPORT2 usearch_getAttribute(
                                          const UStringSearch    *strsrch,
                                                USearchAttribute  attribute);
 
@@ -444,7 +456,7 @@ U_STABLE USearchAttributeValue U_EXPORT2 usearch_getAttribute(
 
 
 
-U_STABLE int32_t U_EXPORT2 usearch_getMatchedStart(
+U_CAPI int32_t U_EXPORT2 usearch_getMatchedStart(
                                                const UStringSearch *strsrch);
     
 
@@ -464,7 +476,7 @@ U_STABLE int32_t U_EXPORT2 usearch_getMatchedStart(
 
 
 
-U_STABLE int32_t U_EXPORT2 usearch_getMatchedLength(
+U_CAPI int32_t U_EXPORT2 usearch_getMatchedLength(
                                                const UStringSearch *strsrch);
 
 
@@ -492,7 +504,7 @@ U_STABLE int32_t U_EXPORT2 usearch_getMatchedLength(
 
 
 
-U_STABLE int32_t U_EXPORT2 usearch_getMatchedText(const UStringSearch *strsrch, 
+U_CAPI int32_t U_EXPORT2 usearch_getMatchedText(const UStringSearch *strsrch, 
                                             UChar         *result, 
                                             int32_t        resultCapacity, 
                                             UErrorCode    *status);
@@ -514,7 +526,7 @@ U_STABLE int32_t U_EXPORT2 usearch_getMatchedText(const UStringSearch *strsrch,
 
 
 
-U_STABLE void U_EXPORT2 usearch_setBreakIterator(UStringSearch  *strsrch, 
+U_CAPI void U_EXPORT2 usearch_setBreakIterator(UStringSearch  *strsrch, 
                                                UBreakIterator *breakiter,
                                                UErrorCode     *status);
 
@@ -529,11 +541,10 @@ U_STABLE void U_EXPORT2 usearch_setBreakIterator(UStringSearch  *strsrch,
 
 
 
-U_STABLE const UBreakIterator * U_EXPORT2 usearch_getBreakIterator(
+U_CAPI const UBreakIterator * U_EXPORT2 usearch_getBreakIterator(
                                               const UStringSearch *strsrch);
     
 #endif
-    
 
 
 
@@ -547,7 +558,12 @@ U_STABLE const UBreakIterator * U_EXPORT2 usearch_getBreakIterator(
 
 
 
-U_STABLE void U_EXPORT2 usearch_setText(      UStringSearch *strsrch, 
+
+
+
+
+
+U_CAPI void U_EXPORT2 usearch_setText(      UStringSearch *strsrch, 
                                       const UChar         *text,
                                             int32_t        textlength,
                                             UErrorCode    *status);
@@ -560,7 +576,7 @@ U_STABLE void U_EXPORT2 usearch_setText(      UStringSearch *strsrch,
 
 
 
-U_STABLE const UChar * U_EXPORT2 usearch_getText(const UStringSearch *strsrch, 
+U_CAPI const UChar * U_EXPORT2 usearch_getText(const UStringSearch *strsrch, 
                                                int32_t       *length);
 
 
@@ -573,7 +589,7 @@ U_STABLE const UChar * U_EXPORT2 usearch_getText(const UStringSearch *strsrch,
 
 
 
-U_STABLE UCollator * U_EXPORT2 usearch_getCollator(
+U_CAPI UCollator * U_EXPORT2 usearch_getCollator(
                                                const UStringSearch *strsrch);
 
 
@@ -586,7 +602,7 @@ U_STABLE UCollator * U_EXPORT2 usearch_getCollator(
 
 
 
-U_STABLE void U_EXPORT2 usearch_setCollator(      UStringSearch *strsrch, 
+U_CAPI void U_EXPORT2 usearch_setCollator(      UStringSearch *strsrch, 
                                           const UCollator     *collator,
                                                 UErrorCode    *status);
 
@@ -602,7 +618,11 @@ U_STABLE void U_EXPORT2 usearch_setCollator(      UStringSearch *strsrch,
 
 
 
-U_STABLE void U_EXPORT2 usearch_setPattern(      UStringSearch *strsrch, 
+
+
+
+
+U_CAPI void U_EXPORT2 usearch_setPattern(      UStringSearch *strsrch, 
                                          const UChar         *pattern,
                                                int32_t        patternlength,
                                                UErrorCode    *status);
@@ -615,7 +635,7 @@ U_STABLE void U_EXPORT2 usearch_setPattern(      UStringSearch *strsrch,
 
 
 
-U_STABLE const UChar * U_EXPORT2 usearch_getPattern(
+U_CAPI const UChar * U_EXPORT2 usearch_getPattern(
                                                const UStringSearch *strsrch, 
                                                      int32_t       *length);
 
@@ -636,7 +656,7 @@ U_STABLE const UChar * U_EXPORT2 usearch_getPattern(
 
 
 
-U_STABLE int32_t U_EXPORT2 usearch_first(UStringSearch *strsrch, 
+U_CAPI int32_t U_EXPORT2 usearch_first(UStringSearch *strsrch, 
                                            UErrorCode    *status);
 
 
@@ -660,7 +680,7 @@ U_STABLE int32_t U_EXPORT2 usearch_first(UStringSearch *strsrch,
 
 
 
-U_STABLE int32_t U_EXPORT2 usearch_following(UStringSearch *strsrch, 
+U_CAPI int32_t U_EXPORT2 usearch_following(UStringSearch *strsrch, 
                                                int32_t    position, 
                                                UErrorCode    *status);
     
@@ -679,7 +699,7 @@ U_STABLE int32_t U_EXPORT2 usearch_following(UStringSearch *strsrch,
 
 
 
-U_STABLE int32_t U_EXPORT2 usearch_last(UStringSearch *strsrch, 
+U_CAPI int32_t U_EXPORT2 usearch_last(UStringSearch *strsrch, 
                                           UErrorCode    *status);
 
 
@@ -707,7 +727,7 @@ U_STABLE int32_t U_EXPORT2 usearch_last(UStringSearch *strsrch,
 
 
 
-U_STABLE int32_t U_EXPORT2 usearch_preceding(UStringSearch *strsrch, 
+U_CAPI int32_t U_EXPORT2 usearch_preceding(UStringSearch *strsrch, 
                                                int32_t    position, 
                                                UErrorCode    *status);
     
@@ -728,7 +748,7 @@ U_STABLE int32_t U_EXPORT2 usearch_preceding(UStringSearch *strsrch,
 
 
 
-U_STABLE int32_t U_EXPORT2 usearch_next(UStringSearch *strsrch, 
+U_CAPI int32_t U_EXPORT2 usearch_next(UStringSearch *strsrch, 
                                           UErrorCode    *status);
 
 
@@ -748,7 +768,7 @@ U_STABLE int32_t U_EXPORT2 usearch_next(UStringSearch *strsrch,
 
 
 
-U_STABLE int32_t U_EXPORT2 usearch_previous(UStringSearch *strsrch, 
+U_CAPI int32_t U_EXPORT2 usearch_previous(UStringSearch *strsrch, 
                                               UErrorCode    *status);
     
 
@@ -761,7 +781,7 @@ U_STABLE int32_t U_EXPORT2 usearch_previous(UStringSearch *strsrch,
 
 
 
-U_STABLE void U_EXPORT2 usearch_reset(UStringSearch *strsrch);
+U_CAPI void U_EXPORT2 usearch_reset(UStringSearch *strsrch);
 
 #ifndef U_HIDE_INTERNAL_API
 
@@ -818,7 +838,7 @@ U_STABLE void U_EXPORT2 usearch_reset(UStringSearch *strsrch);
 
 
 
-U_INTERNAL UBool U_EXPORT2 usearch_search(UStringSearch *strsrch,
+U_CAPI UBool U_EXPORT2 usearch_search(UStringSearch *strsrch,
                                           int32_t        startIdx,
                                           int32_t        *matchStart,
                                           int32_t        *matchLimit,
@@ -878,7 +898,7 @@ U_INTERNAL UBool U_EXPORT2 usearch_search(UStringSearch *strsrch,
 
 
 
-U_INTERNAL UBool U_EXPORT2 usearch_searchBackwards(UStringSearch *strsrch,
+U_CAPI UBool U_EXPORT2 usearch_searchBackwards(UStringSearch *strsrch,
                                                    int32_t        startIdx,
                                                    int32_t        *matchStart,
                                                    int32_t        *matchLimit,

@@ -16,9 +16,12 @@
 
 
 #include "unicode/utypes.h"
-#include "unicode/localpointer.h"
 #include "unicode/uscript.h"
 #include "unicode/udisplaycontext.h"
+
+#if U_SHOW_CPLUSPLUS_API
+#include "unicode/localpointer.h"
+#endif   
 
 
 
@@ -65,7 +68,7 @@ typedef struct ULocaleDisplayNames ULocaleDisplayNames;
 
 
 
-U_STABLE ULocaleDisplayNames * U_EXPORT2
+U_CAPI ULocaleDisplayNames * U_EXPORT2
 uldn_open(const char * locale,
           UDialectHandling dialectHandling,
           UErrorCode *pErrorCode);
@@ -75,7 +78,7 @@ uldn_open(const char * locale,
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 uldn_close(ULocaleDisplayNames *ldn);
 
 #if U_SHOW_CPLUSPLUS_API
@@ -106,7 +109,7 @@ U_NAMESPACE_END
 
 
 
-U_STABLE const char * U_EXPORT2
+U_CAPI const char * U_EXPORT2
 uldn_getLocale(const ULocaleDisplayNames *ldn);
 
 
@@ -115,7 +118,7 @@ uldn_getLocale(const ULocaleDisplayNames *ldn);
 
 
 
-U_STABLE UDialectHandling U_EXPORT2
+U_CAPI UDialectHandling U_EXPORT2
 uldn_getDialectHandling(const ULocaleDisplayNames *ldn);
 
 
@@ -131,7 +134,7 @@ uldn_getDialectHandling(const ULocaleDisplayNames *ldn);
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 uldn_localeDisplayName(const ULocaleDisplayNames *ldn,
                        const char *locale,
                        UChar *result,
@@ -151,7 +154,7 @@ uldn_localeDisplayName(const ULocaleDisplayNames *ldn,
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 uldn_languageDisplayName(const ULocaleDisplayNames *ldn,
                          const char *lang,
                          UChar *result,
@@ -169,7 +172,7 @@ uldn_languageDisplayName(const ULocaleDisplayNames *ldn,
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 uldn_scriptDisplayName(const ULocaleDisplayNames *ldn,
                        const char *script,
                        UChar *result,
@@ -187,7 +190,7 @@ uldn_scriptDisplayName(const ULocaleDisplayNames *ldn,
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 uldn_scriptCodeDisplayName(const ULocaleDisplayNames *ldn,
                            UScriptCode scriptCode,
                            UChar *result,
@@ -205,7 +208,7 @@ uldn_scriptCodeDisplayName(const ULocaleDisplayNames *ldn,
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 uldn_regionDisplayName(const ULocaleDisplayNames *ldn,
                        const char *region,
                        UChar *result,
@@ -223,7 +226,7 @@ uldn_regionDisplayName(const ULocaleDisplayNames *ldn,
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 uldn_variantDisplayName(const ULocaleDisplayNames *ldn,
                         const char *variant,
                         UChar *result,
@@ -241,7 +244,7 @@ uldn_variantDisplayName(const ULocaleDisplayNames *ldn,
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 uldn_keyDisplayName(const ULocaleDisplayNames *ldn,
                     const char *key,
                     UChar *result,
@@ -260,7 +263,7 @@ uldn_keyDisplayName(const ULocaleDisplayNames *ldn,
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 uldn_keyValueDisplayName(const ULocaleDisplayNames *ldn,
                          const char *key,
                          const char *value,
@@ -282,7 +285,7 @@ uldn_keyValueDisplayName(const ULocaleDisplayNames *ldn,
 
 
 
-U_STABLE ULocaleDisplayNames * U_EXPORT2
+U_CAPI ULocaleDisplayNames * U_EXPORT2
 uldn_openForContext(const char * locale, UDisplayContext *contexts,
                     int32_t length, UErrorCode *pErrorCode);
 
@@ -296,7 +299,7 @@ uldn_openForContext(const char * locale, UDisplayContext *contexts,
 
 
 
-U_STABLE UDisplayContext U_EXPORT2
+U_CAPI UDisplayContext U_EXPORT2
 uldn_getContext(const ULocaleDisplayNames *ldn, UDisplayContextType type,
                 UErrorCode *pErrorCode);
 

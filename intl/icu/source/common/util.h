@@ -95,7 +95,7 @@ class U_COMMON_API ICU_Utility  {
 
 
     static int32_t skipWhitespace(const UnicodeString& str, int32_t& pos,
-                                  UBool advance = FALSE);
+                                  UBool advance = false);
 
     
 

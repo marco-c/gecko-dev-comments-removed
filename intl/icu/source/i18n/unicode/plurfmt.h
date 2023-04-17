@@ -587,7 +587,7 @@ private:
 
     static int32_t findSubMessage(
          const MessagePattern& pattern, int32_t partIndex,
-         const PluralSelector& selector, void *context, double number, UErrorCode& ec); 
+         const PluralSelector& selector, void *context, double number, UErrorCode& ec);
 
     void parseType(const UnicodeString& source, const NFRule *rbnfLenientScanner,
         Formattable& result, FieldPosition& pos) const;
@@ -598,9 +598,9 @@ private:
 
 U_NAMESPACE_END
 
-#endif 
+#endif
 
-#endif 
+#endif
 
-#endif 
+#endif
 

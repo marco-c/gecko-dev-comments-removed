@@ -33,7 +33,7 @@
 #include "unicode/utypes.h"
 
 #ifndef U_TOOLUTIL_IMPLEMENTATION
-#error U_TOOLUTIL_IMPLEMENTATION not set - must be set for all ICU source files in common/ - see http://userguide.icu-project.org/howtouseicu
+#error U_TOOLUTIL_IMPLEMENTATION not set - must be set for all ICU source files in common/ - see https://unicode-org.github.io/icu/userguide/howtouseicu
 #endif
 
 #if U_PLATFORM_USES_ONLY_WIN32_API
@@ -166,14 +166,11 @@ findBasename(const char *filename) {
     const char *basename=uprv_strrchr(filename, U_FILE_SEP_CHAR);
 
 #if U_FILE_ALT_SEP_CHAR!=U_FILE_SEP_CHAR
-#if !(U_PLATFORM == U_PF_CYGWIN && U_PLATFORM_USES_ONLY_WIN32_API)
-    if(basename==NULL)
-#endif
-    {
-        
-
-
-        basename=uprv_strrchr(filename, U_FILE_ALT_SEP_CHAR);
+    
+    
+    const char *alt_basename=uprv_strrchr(filename, U_FILE_ALT_SEP_CHAR);
+    if(alt_basename>basename) {
+        basename=alt_basename;
     }
 #endif
 

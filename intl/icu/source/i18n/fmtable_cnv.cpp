@@ -30,8 +30,6 @@ U_NAMESPACE_BEGIN
 
 
 
-
-
 Formattable::Formattable(const char* stringToCopy)
 {
     init();

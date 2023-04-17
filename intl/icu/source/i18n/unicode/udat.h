@@ -14,11 +14,15 @@
 
 #if !UCONFIG_NO_FORMATTING
 
-#include "unicode/localpointer.h"
 #include "unicode/ucal.h"
 #include "unicode/unum.h"
 #include "unicode/udisplaycontext.h"
 #include "unicode/ufieldpositer.h"
+
+#if U_SHOW_CPLUSPLUS_API
+#include "unicode/localpointer.h"
+#endif   
+
 
 
 
@@ -838,6 +842,20 @@ typedef enum UDateFormatField {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 U_CAPI UCalendarDateFields U_EXPORT2
 udat_toCalendarDateField(UDateFormatField field);
 
@@ -1636,7 +1654,7 @@ udat_getContext(const UDateFormat* fmt, UDisplayContextType type, UErrorCode* st
 
 
 
-U_INTERNAL int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 udat_toPatternRelativeDate(const UDateFormat *fmt,
                            UChar             *result,
                            int32_t           resultLength,
@@ -1653,7 +1671,7 @@ udat_toPatternRelativeDate(const UDateFormat *fmt,
 
 
 
-U_INTERNAL int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 udat_toPatternRelativeTime(const UDateFormat *fmt,
                            UChar             *result,
                            int32_t           resultLength,
@@ -1671,7 +1689,7 @@ udat_toPatternRelativeTime(const UDateFormat *fmt,
 
 
 
-U_INTERNAL void U_EXPORT2
+U_CAPI void U_EXPORT2
 udat_applyPatternRelative(UDateFormat *format,
                           const UChar *datePattern,
                           int32_t     datePatternLength,
@@ -1696,14 +1714,14 @@ typedef UDateFormat* (U_EXPORT2 *UDateFormatOpener) (UDateFormatStyle  timeStyle
 
 
 
-U_INTERNAL void U_EXPORT2
+U_CAPI void U_EXPORT2
 udat_registerOpener(UDateFormatOpener opener, UErrorCode *status);
 
 
 
 
 
-U_INTERNAL UDateFormatOpener U_EXPORT2
+U_CAPI UDateFormatOpener U_EXPORT2
 udat_unregisterOpener(UDateFormatOpener opener, UErrorCode *status);
 #endif  
 

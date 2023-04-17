@@ -355,7 +355,7 @@ public:
               fNumCopies(0), fNumUnitsSaved(0), fNumCharsForLength(numCharsForLength) {
         
         fRes = URES_MAKE_RESOURCE(URES_STRING_V2, poolStringIndex);
-        fWritten = TRUE;
+        fWritten = true;
     }
     virtual ~StringResource();
 

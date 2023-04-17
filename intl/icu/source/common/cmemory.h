@@ -292,14 +292,21 @@ public:
     
 
 
-    MaybeStackArray() : ptr(stackArray), capacity(stackCapacity), needToRelease(FALSE) {}
+    MaybeStackArray() : ptr(stackArray), capacity(stackCapacity), needToRelease(false) {}
     
 
 
 
 
-    MaybeStackArray(int32_t newCapacity) : MaybeStackArray() {
-        if (capacity < newCapacity) { resize(newCapacity); }
+    MaybeStackArray(int32_t newCapacity, UErrorCode status) : MaybeStackArray() {
+        if (U_FAILURE(status)) {
+            return;
+        }
+        if (capacity < newCapacity) {
+            if (resize(newCapacity) == nullptr) {
+                status = U_MEMORY_ALLOCATION_ERROR;
+            }
+        }
     }
     
 
@@ -355,7 +362,7 @@ public:
             releaseArray();
             ptr=otherArray;
             capacity=otherCapacity;
-            needToRelease=FALSE;
+            needToRelease=false;
         }
     }
     
@@ -380,6 +387,20 @@ public:
 
 
     inline T *orphanOrClone(int32_t length, int32_t &resultCapacity);
+
+protected:
+    
+    void copyFrom(const MaybeStackArray &src, UErrorCode &status) {
+        if (U_FAILURE(status)) {
+            return;
+        }
+        if (this->resize(src.capacity, 0) == NULL) {
+            status = U_MEMORY_ALLOCATION_ERROR;
+            return;
+        }
+        uprv_memcpy(this->ptr, src.ptr, (size_t)capacity * sizeof(T));
+    }
+
 private:
     T *ptr;
     int32_t capacity;
@@ -393,14 +414,14 @@ private:
     void resetToStackArray() {
         ptr=stackArray;
         capacity=stackCapacity;
-        needToRelease=FALSE;
+        needToRelease=false;
     }
     
-    bool operator==(const MaybeStackArray & ) {return FALSE;}
-    bool operator!=(const MaybeStackArray & ) {return TRUE;}
+    bool operator==(const MaybeStackArray & ) = delete;
+    bool operator!=(const MaybeStackArray & ) = delete;
     
-    MaybeStackArray(const MaybeStackArray & ) {}
-    void operator=(const MaybeStackArray & ) {}
+    MaybeStackArray(const MaybeStackArray & ) = delete;
+    void operator=(const MaybeStackArray & ) = delete;
 };
 
 template<typename T, int32_t stackCapacity>
@@ -435,7 +456,7 @@ template<typename T, int32_t stackCapacity>
 inline T *MaybeStackArray<T, stackCapacity>::resize(int32_t newCapacity, int32_t length) {
     if(newCapacity>0) {
 #if U_DEBUG && defined(UPRV_MALLOC_COUNT)
-      ::fprintf(::stderr,"MaybeStacArray (resize) alloc %d * %lu\n", newCapacity,sizeof(T));
+        ::fprintf(::stderr, "MaybeStackArray (resize) alloc %d * %lu\n", newCapacity, sizeof(T));
 #endif
         T *p=(T *)uprv_malloc(newCapacity*sizeof(T));
         if(p!=NULL) {
@@ -451,7 +472,7 @@ inline T *MaybeStackArray<T, stackCapacity>::resize(int32_t newCapacity, int32_t
             releaseArray();
             ptr=p;
             capacity=newCapacity;
-            needToRelease=TRUE;
+            needToRelease=true;
         }
         return p;
     } else {
@@ -507,7 +528,7 @@ public:
     
 
 
-    MaybeStackHeaderAndArray() : ptr(&stackHeader), capacity(stackCapacity), needToRelease(FALSE) {}
+    MaybeStackHeaderAndArray() : ptr(&stackHeader), capacity(stackCapacity), needToRelease(false) {}
     
 
 
@@ -556,7 +577,7 @@ public:
             releaseMemory();
             ptr=otherMemory;
             capacity=otherCapacity;
-            needToRelease=FALSE;
+            needToRelease=false;
         }
     }
     
@@ -595,8 +616,8 @@ private:
         }
     }
     
-    bool operator==(const MaybeStackHeaderAndArray & ) {return FALSE;}
-    bool operator!=(const MaybeStackHeaderAndArray & ) {return TRUE;}
+    bool operator==(const MaybeStackHeaderAndArray & ) {return false;}
+    bool operator!=(const MaybeStackHeaderAndArray & ) {return true;}
     
     MaybeStackHeaderAndArray(const MaybeStackHeaderAndArray & ) {}
     void operator=(const MaybeStackHeaderAndArray & ) {}
@@ -625,7 +646,7 @@ inline H *MaybeStackHeaderAndArray<H, T, stackCapacity>::resize(int32_t newCapac
             releaseMemory();
             ptr=p;
             capacity=newCapacity;
-            needToRelease=TRUE;
+            needToRelease=true;
         }
         return p;
     } else {
@@ -657,7 +678,7 @@ inline H *MaybeStackHeaderAndArray<H, T, stackCapacity>::orphanOrClone(int32_t l
     resultCapacity=length;
     ptr=&stackHeader;
     capacity=stackCapacity;
-    needToRelease=FALSE;
+    needToRelease=false;
     return p;
 }
 
@@ -704,9 +725,14 @@ public:
     }
 
     MemoryPool& operator=(MemoryPool&& other) U_NOEXCEPT {
-        fCount = other.fCount;
-        fPool = std::move(other.fPool);
-        other.fCount = 0;
+        
+        
+        
+        
+        
+        
+        std::swap(fCount, other.fCount);
+        std::swap(fPool, other.fPool);
         return *this;
     }
 
@@ -726,6 +752,18 @@ public:
             return nullptr;
         }
         return fPool[fCount++] = new T(std::forward<Args>(args)...);
+    }
+
+    template <typename... Args>
+    T* createAndCheckErrorCode(UErrorCode &status, Args &&... args) {
+        if (U_FAILURE(status)) {
+            return nullptr;
+        }
+        T *pointer = this->create(args...);
+        if (U_SUCCESS(status) && pointer == nullptr) {
+            status = U_MEMORY_ALLOCATION_ERROR;
+        }
+        return pointer;
     }
 
     
@@ -763,12 +801,14 @@ protected:
 template<typename T, int32_t stackCapacity = 8>
 class MaybeStackVector : protected MemoryPool<T, stackCapacity> {
 public:
-    using MemoryPool<T, stackCapacity>::MemoryPool;
-    using MemoryPool<T, stackCapacity>::operator=;
-
     template<typename... Args>
     T* emplaceBack(Args&&... args) {
         return this->create(args...);
+    }
+
+    template <typename... Args>
+    T *emplaceBackAndCheckErrorCode(UErrorCode &status, Args &&... args) {
+        return this->createAndCheckErrorCode(status, args...);
     }
 
     int32_t length() const {
@@ -776,6 +816,10 @@ public:
     }
 
     T** getAlias() {
+        return this->fPool.getAlias();
+    }
+
+    const T *const *getAlias() const {
         return this->fPool.getAlias();
     }
 
@@ -797,19 +841,6 @@ public:
 
     T* operator[](ptrdiff_t i) {
         return this->fPool[i];
-    }
-
-    
-
-
-    void appendAll(const MaybeStackVector& other, UErrorCode& status) {
-        for (int32_t i = 0; i < other.fCount; i++) {
-            T* item = emplaceBack(*other[i]);
-            if (!item) {
-                status = U_MEMORY_ALLOCATION_ERROR;
-                return;
-            }
-        }
     }
 };
 

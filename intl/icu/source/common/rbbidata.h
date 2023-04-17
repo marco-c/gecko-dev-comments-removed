@@ -49,16 +49,17 @@ ubrk_swap(const UDataSwapper *ds,
 
 #ifdef __cplusplus
 
+#include "unicode/ucptrie.h"
 #include "unicode/uobject.h"
 #include "unicode/unistr.h"
 #include "unicode/uversion.h"
 #include "umutex.h"
-#include "utrie2.h"
+
 
 U_NAMESPACE_BEGIN
 
 
-static const uint8_t RBBI_DATA_FORMAT_VERSION[] = {5, 0, 0, 0};
+static const uint8_t RBBI_DATA_FORMAT_VERSION[] = {6, 0, 0, 0};
 
 
 
@@ -94,49 +95,61 @@ struct RBBIDataHeader {
 
 
 
-struct  RBBIStateTableRow {
-    int16_t          fAccepting;    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-    int16_t          fLookAhead;    
-                                    
-                                    
-                                    
-                                    
-    int16_t          fTagIdx;       
-                                    
-                                    
-                                    
-    int16_t          fReserved;
-    uint16_t         fNextState[1]; 
-                                    
-                                    
-                                    
-                                    
-                                    
+template <typename T>
+struct RBBIStateTableRowT {
+    T               fAccepting;    
+                                   
+                                   
+                                   
+                                   
+                                   
+                                   
+    T               fLookAhead;    
+                                   
+                                   
+                                   
+                                   
+    T               fTagsIdx;      
+                                   
+                                   
+                                   
+    T               fNextState[1]; 
+                                   
+                                   
+                                   
+                                   
+                                   
 };
 
+typedef RBBIStateTableRowT<uint8_t> RBBIStateTableRow8;
+typedef RBBIStateTableRowT<uint16_t> RBBIStateTableRow16;
+
+constexpr uint16_t ACCEPTING_UNCONDITIONAL = 1;   
+
+union RBBIStateTableRow {
+  RBBIStateTableRow16 r16;
+  RBBIStateTableRow8 r8;
+};
 
 struct RBBIStateTable {
-    uint32_t         fNumStates;    
-    uint32_t         fRowLen;       
-    uint32_t         fFlags;        
-    uint32_t         fReserved;     
-    char             fTableData[1]; 
-                                    
-                                    
-                                    
-                                    
+    uint32_t         fNumStates;            
+    uint32_t         fRowLen;               
+    uint32_t         fDictCategoriesStart;  
+                                            
+                                            
+    uint32_t         fLookAheadResultsSize; 
+                                            
+    uint32_t         fFlags;                
+    char             fTableData[1];         
+                                            
+                                            
+                                            
+                                            
 };
 
-typedef enum {
-    RBBI_LOOKAHEAD_HARD_BREAK = 1,
-    RBBI_BOF_REQUIRED = 2
-} RBBIStateTableFlags;
+constexpr uint32_t RBBI_LOOKAHEAD_HARD_BREAK = 1;
+constexpr uint32_t RBBI_BOF_REQUIRED = 2;
+constexpr uint32_t RBBI_8BITS_ROWS = 4;
 
 
 
@@ -170,13 +183,13 @@ public:
     const RBBIDataHeader     *fHeader;
     const RBBIStateTable     *fForwardTable;
     const RBBIStateTable     *fReverseTable;
-    const UChar              *fRuleSource;
+    const char               *fRuleSource;
     const int32_t            *fRuleStatusTable; 
 
     
     int32_t             fStatusMaxIdx;
 
-    UTrie2             *fTrie;
+    UCPTrie             *fTrie;
 
 private:
     u_atomic_int32_t    fRefCount;
@@ -184,8 +197,8 @@ private:
     UnicodeString       fRuleString;
     UBool               fDontFreeData;
 
-    RBBIDataWrapper(const RBBIDataWrapper &other); 
-    RBBIDataWrapper &operator=(const RBBIDataWrapper &other); 
+    RBBIDataWrapper(const RBBIDataWrapper &other) = delete; 
+    RBBIDataWrapper &operator=(const RBBIDataWrapper &other) = delete; 
 };
 
 

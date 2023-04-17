@@ -21,7 +21,10 @@
 #include "unicode/utypes.h"
 #include "unicode/ubidi.h"
 #include "unicode/uchar.h"
+
+#if U_SHOW_CPLUSPLUS_API
 #include "unicode/localpointer.h"
+#endif   
 
 
 
@@ -245,7 +248,7 @@ typedef struct UBiDiTransform UBiDiTransform;
 
 
 
-U_STABLE uint32_t U_EXPORT2
+U_CAPI uint32_t U_EXPORT2
 ubiditransform_transform(UBiDiTransform *pBiDiTransform,
             const UChar *src, int32_t srcLength,
             UChar *dest, int32_t destSize,
@@ -291,14 +294,14 @@ ubiditransform_transform(UBiDiTransform *pBiDiTransform,
 
 
 
-U_STABLE UBiDiTransform* U_EXPORT2
+U_CAPI UBiDiTransform* U_EXPORT2
 ubiditransform_open(UErrorCode *pErrorCode);
 
 
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ubiditransform_close(UBiDiTransform *pBidiTransform);
 
 #if U_SHOW_CPLUSPLUS_API

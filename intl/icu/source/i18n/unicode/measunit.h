@@ -445,7 +445,7 @@ class U_I18N_API MeasureUnit: public UObject {
     MeasureUnit product(const MeasureUnit& other, UErrorCode& status) const;
 #endif 
 
-#ifndef U_HIDE_INTERNAL_API
+#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -461,10 +461,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
-
-
-
-    LocalArray<MeasureUnit> splitToSingleUnits(int32_t& outCount, UErrorCode& status) const;
+    inline std::pair<LocalArray<MeasureUnit>, int32_t> splitToSingleUnits(UErrorCode& status) const;
 #endif 
 
     
@@ -543,30 +540,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
-
-    int32_t getIndex() const;
-
-    
-
-
-
-
-    static int32_t getIndexCount();
-
-    
-
-
-
-
-
-    static int32_t internalGetIndexForTypeAndSubtype(const char *type, const char *subtype);
-
-    
-
-
-
-    static MeasureUnit resolveUnitPerUnit(
-            const MeasureUnit &unit, const MeasureUnit &perUnit, bool* isResolved);
+    int32_t getOffset() const;
 #endif 
 
 
@@ -920,22 +894,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
-    static MeasureUnit *createPartPerMillion(UErrorCode &status);
-
-    
-
-
-
-
-    static MeasureUnit getPartPerMillion();
-
-    
-
-
-
-
-
-
     static MeasureUnit *createPercent(UErrorCode &status);
 
     
@@ -960,6 +918,22 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getPermille();
+
+    
+
+
+
+
+
+
+    static MeasureUnit *createPartPerMillion(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getPartPerMillion();
 
     
 
@@ -1265,7 +1239,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit getDayPerson();
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1281,7 +1254,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getDecade();
-#endif 
 
     
 
@@ -1667,7 +1639,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit getKilowattHour();
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1683,7 +1654,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getThermUs();
-#endif 
 
     
 
@@ -1789,6 +1759,23 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
+    static MeasureUnit *createDot(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getDot();
+#endif 
+
+    
+
+
+
+
+
+
     static MeasureUnit *createDotPerCentimeter(UErrorCode &status);
 
     
@@ -1797,9 +1784,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getDotPerCentimeter();
-#endif 
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1815,9 +1800,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getDotPerInch();
-#endif 
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1833,9 +1816,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getEm();
-#endif 
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1851,9 +1832,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getMegapixel();
-#endif 
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1869,9 +1848,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getPixel();
-#endif 
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1887,9 +1864,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getPixelPerCentimeter();
-#endif 
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1905,7 +1880,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getPixelPerInch();
-#endif 
 
     
 
@@ -1954,6 +1928,24 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getDecimeter();
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createEarthRadius(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getEarthRadius();
+#endif 
 
     
 
@@ -2243,6 +2235,42 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit getYard();
 
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createCandela(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getCandela();
+#endif 
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createLumen(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getLumen();
+#endif 
+
     
 
 
@@ -2322,6 +2350,24 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getEarthMass();
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createGrain(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getGrain();
+#endif 
 
     
 
@@ -2611,7 +2657,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit getAtmosphere();
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -2627,7 +2672,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getBar();
-#endif 
 
     
 
@@ -2725,7 +2769,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit getMillimeterOfMercury();
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -2741,7 +2784,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getPascal();
-#endif 
 
     
 
@@ -3143,6 +3185,78 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit getDeciliter();
 
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createDessertSpoon(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getDessertSpoon();
+#endif 
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createDessertSpoonImperial(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getDessertSpoonImperial();
+#endif 
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createDram(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getDram();
+#endif 
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createDrop(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getDrop();
+#endif 
+
     
 
 
@@ -3223,6 +3337,24 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit getHectoliter();
 
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createJigger(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getJigger();
+#endif 
+
     
 
 
@@ -3271,6 +3403,24 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit getMilliliter();
 
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createPinch(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getPinch();
+#endif 
+
     
 
 
@@ -3318,6 +3468,24 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getQuart();
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    static MeasureUnit *createQuartImperial(UErrorCode &status);
+
+    
+
+
+
+
+    static MeasureUnit getQuartImperial();
+#endif 
 
     
 
@@ -3369,12 +3537,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
     void initCurrency(StringPiece isoCurrency);
 
-    
-
-
-
-    void initNoUnit(const char *subtype);
-
 #endif  
 
 private:
@@ -3393,7 +3555,6 @@ private:
     MeasureUnit(int32_t typeId, int32_t subTypeId);
     MeasureUnit(MeasureUnitImpl&& impl);
     void setTo(int32_t typeId, int32_t subTypeId);
-    int32_t getOffset() const;
     static MeasureUnit *create(int typeId, int subTypeId, UErrorCode &status);
 
     
@@ -3405,8 +3566,20 @@ private:
 
     static bool findBySubType(StringPiece subType, MeasureUnit* output);
 
+    
+    LocalArray<MeasureUnit> splitToSingleUnitsImpl(int32_t& outCount, UErrorCode& status) const;
+
     friend struct MeasureUnitImpl;
 };
+
+#ifndef U_HIDE_DRAFT_API  
+inline std::pair<LocalArray<MeasureUnit>, int32_t>
+MeasureUnit::splitToSingleUnits(UErrorCode& status) const {
+    int32_t length;
+    auto array = splitToSingleUnitsImpl(length, status);
+    return std::make_pair(std::move(array), length);
+}
+#endif 
 
 U_NAMESPACE_END
 

@@ -283,7 +283,7 @@ vzone_useDaylightTime(VZone* zone);
 
 
 
-U_INTERNAL UBool U_EXPORT2
+U_CAPI UBool U_EXPORT2
 vzone_inDaylightTime(VZone* zone, UDate date, UErrorCode& status);
 
 

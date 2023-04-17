@@ -37,7 +37,7 @@ enum {
     
     PROPER_FRACTION_RULE_INDEX = 2,
     
-    MASTER_RULE_INDEX = 3,
+    DEFAULT_RULE_INDEX = 3,
     
     INFINITY_RULE_INDEX = 4,
     
@@ -278,8 +278,8 @@ void NFRuleSet::setNonNumericalRule(NFRule *rule) {
     else if (baseValue == NFRule::kProperFractionRule) {
         setBestFractionRule(PROPER_FRACTION_RULE_INDEX, rule, TRUE);
     }
-    else if (baseValue == NFRule::kMasterRule) {
-        setBestFractionRule(MASTER_RULE_INDEX, rule, TRUE);
+    else if (baseValue == NFRule::kDefaultRule) {
+        setBestFractionRule(DEFAULT_RULE_INDEX, rule, TRUE);
     }
     else if (baseValue == NFRule::kInfinityRule) {
         delete nonNumericalRules[INFINITY_RULE_INDEX];
@@ -323,7 +323,7 @@ NFRuleSet::~NFRuleSet()
     for (int i = 0; i < NON_NUMERICAL_RULE_LENGTH; i++) {
         if (i != IMPROPER_FRACTION_RULE_INDEX
             && i != PROPER_FRACTION_RULE_INDEX
-            && i != MASTER_RULE_INDEX)
+            && i != DEFAULT_RULE_INDEX)
         {
             delete nonNumericalRules[i];
         }
@@ -375,7 +375,7 @@ NFRuleSet::setDecimalFormatSymbols(const DecimalFormatSymbols &newSymbols, UErro
         rules[i]->setDecimalFormatSymbols(newSymbols, status);
     }
     
-    for (int32_t nonNumericalIdx = IMPROPER_FRACTION_RULE_INDEX; nonNumericalIdx <= MASTER_RULE_INDEX; nonNumericalIdx++) {
+    for (int32_t nonNumericalIdx = IMPROPER_FRACTION_RULE_INDEX; nonNumericalIdx <= DEFAULT_RULE_INDEX; nonNumericalIdx++) {
         if (nonNumericalRules[nonNumericalIdx]) {
             for (uint32_t fIdx = 0; fIdx < fractionRules.size(); fIdx++) {
                 NFRule *fractionRule = fractionRules[fIdx];
@@ -473,8 +473,8 @@ NFRuleSet::findDoubleRule(double number) const
     }
 
     
-    if (nonNumericalRules[MASTER_RULE_INDEX]) {
-        return nonNumericalRules[MASTER_RULE_INDEX];
+    if (nonNumericalRules[DEFAULT_RULE_INDEX]) {
+        return nonNumericalRules[DEFAULT_RULE_INDEX];
     }
 
     
@@ -554,7 +554,7 @@ NFRuleSet::findNormalRule(int64_t number) const
         return result;
     }
     
-    return nonNumericalRules[MASTER_RULE_INDEX];
+    return nonNumericalRules[DEFAULT_RULE_INDEX];
 }
 
 
@@ -792,7 +792,7 @@ NFRuleSet::appendRules(UnicodeString& result) const
         if (nonNumericalRules[i]) {
             if (rule->getBaseValue() == NFRule::kImproperFractionRule
                 || rule->getBaseValue() == NFRule::kProperFractionRule
-                || rule->getBaseValue() == NFRule::kMasterRule)
+                || rule->getBaseValue() == NFRule::kDefaultRule)
             {
                 for (uint32_t fIdx = 0; fIdx < fractionRules.size(); fIdx++) {
                     NFRule *fractionRule = fractionRules[fIdx];

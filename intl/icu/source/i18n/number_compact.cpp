@@ -167,6 +167,11 @@ void CompactData::CompactDataSink::put(const char *key, ResourceValue &value, UB
         if (U_FAILURE(status)) { return; }
         for (int i4 = 0; pluralVariantsTable.getKeyAndValue(i4, key, value); ++i4) {
 
+            if (uprv_strcmp(key, "0") == 0 || uprv_strcmp(key, "1") == 0) {
+                
+                continue;
+            }
+
             
             
             StandardPlural::Form plural = StandardPlural::fromString(key, status);

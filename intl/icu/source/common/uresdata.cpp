@@ -963,7 +963,7 @@ res_findResource(const ResourceData *pResData, Resource r, char** path, const ch
       if(t2 == RES_BOGUS) { 
         
         indexR = uprv_strtol(pathP, &closeIndex, 10);
-        if(indexR >= 0 && *closeIndex == 0) {
+        if(indexR >= 0 && *closeIndex == 0 && (*pathP != '0' || closeIndex - pathP == 1)) {
           
           t2 = res_getTableItemByIndex(pResData, t1, indexR, key);
         } 

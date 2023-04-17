@@ -707,6 +707,7 @@ ucase_isCaseSensitive(UChar32 c) {
 #define is_r(c) ((c)=='r' || (c)=='R')
 #define is_t(c) ((c)=='t' || (c)=='T')
 #define is_u(c) ((c)=='u' || (c)=='U')
+#define is_y(c) ((c)=='y' || (c)=='Y')
 #define is_z(c) ((c)=='z' || (c)=='Z')
 
 
@@ -804,6 +805,18 @@ ucase_getCaseLocale(const char *locale) {
                     return UCASE_LOC_DUTCH;
                 }
             }
+        } else if(c=='h') {
+            
+            c=*locale++;
+            if(is_y(c)) {
+                c=*locale++;
+                if(is_e(c)) {
+                    c=*locale;
+                }
+                if(is_sep(c)) {
+                    return UCASE_LOC_ARMENIAN;
+                }
+            }
         }
     } else {
         
@@ -866,6 +879,18 @@ ucase_getCaseLocale(const char *locale) {
                 }
                 if(is_sep(c)) {
                     return UCASE_LOC_DUTCH;
+                }
+            }
+        } else if(c=='H') {
+            
+            c=*locale++;
+            if(is_y(c)) {
+                c=*locale++;
+                if(is_e(c)) {
+                    c=*locale;
+                }
+                if(is_sep(c)) {
+                    return UCASE_LOC_ARMENIAN;
                 }
             }
         }
@@ -1229,6 +1254,17 @@ toUpperOrTitle(UChar32 c,
 
                 *pString=nullptr;
                 return 0; 
+            } else if(c==0x0587) {
+                
+                
+                
+                
+                if(loc==UCASE_LOC_ARMENIAN) {
+                    *pString=upperNotTitle ? u"ԵՎ" : u"Եվ";
+                } else {
+                    *pString=upperNotTitle ? u"ԵՒ" : u"Եւ";
+                }
+                return 2;
             } else {
                 
             }

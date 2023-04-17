@@ -16,8 +16,12 @@
 
 #include "unicode/ucal.h"
 #include "unicode/umisc.h"
-#include "unicode/localpointer.h"
 #include "unicode/uformattedvalue.h"
+#include "unicode/udisplaycontext.h"
+
+#if U_SHOW_CPLUSPLUS_API
+#include "unicode/localpointer.h"
+#endif   
 
 
 
@@ -114,7 +118,7 @@ typedef struct UFormattedDateInterval UFormattedDateInterval;
 
 
 
-U_STABLE UDateIntervalFormat* U_EXPORT2
+U_CAPI UDateIntervalFormat* U_EXPORT2
 udtitvfmt_open(const char*  locale,
               const UChar* skeleton,
               int32_t      skeletonLength,
@@ -128,7 +132,7 @@ udtitvfmt_open(const char*  locale,
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 udtitvfmt_close(UDateIntervalFormat *formatter);
 
 
@@ -238,7 +242,7 @@ U_NAMESPACE_END
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 udtitvfmt_format(const UDateIntervalFormat* formatter,
                 UDate           fromDate,
                 UDate           toDate,
@@ -265,7 +269,7 @@ udtitvfmt_format(const UDateIntervalFormat* formatter,
 
 
 
-U_DRAFT void U_EXPORT2
+U_CAPI void U_EXPORT2
 udtitvfmt_formatToResult(
                 const UDateIntervalFormat* formatter,
                 UDate           fromDate,
@@ -290,7 +294,7 @@ udtitvfmt_formatToResult(
 
 
 
-U_DRAFT void U_EXPORT2
+U_CAPI void U_EXPORT2
 udtitvfmt_formatCalendarToResult(
                 const UDateIntervalFormat* formatter,
                 UCalendar*      fromCalendar,
@@ -299,6 +303,34 @@ udtitvfmt_formatCalendarToResult(
                 UErrorCode*     status);
 #endif 
 
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+
+
+U_CAPI void U_EXPORT2
+udtitvfmt_setContext(UDateIntervalFormat* formatter, UDisplayContext value, UErrorCode* status);
+
+
+
+
+
+
+
+
+
+
+U_CAPI UDisplayContext U_EXPORT2
+udtitvfmt_getContext(const UDateIntervalFormat* formatter, UDisplayContextType type, UErrorCode* status);
+
+#endif 
 
 #endif 
 

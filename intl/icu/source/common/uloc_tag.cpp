@@ -15,6 +15,7 @@
 #include "unicode/uenum.h"
 #include "unicode/uloc.h"
 #include "ustr_imp.h"
+#include "bytesinkutil.h"
 #include "charstr.h"
 #include "cmemory.h"
 #include "cstring.h"
@@ -53,7 +54,7 @@ typedef struct ULanguageTag {
     VariantListEntry    *variants;
     ExtensionListEntry  *extensions;
     const char          *privateuse;
-    const char          *grandfathered;
+    const char          *legacy;
 } ULanguageTag;
 
 #define MINLEN 2
@@ -100,7 +101,8 @@ static const char LOCALE_TYPE_YES[] = "yes";
 
 
 
-static const char* const GRANDFATHERED[] = {
+
+static const char* const LEGACY[] = {
 
     "art-lojban",   "jbo",
     "en-gb-oed",    "en-gb-oxendict",
@@ -346,7 +348,7 @@ ultag_getPrivateUse(const ULanguageTag* langtag);
 
 #if 0
 static const char*
-ultag_getGrandfathered(const ULanguageTag* langtag);
+ultag_getLegacy(const ULanguageTag* langtag);
 #endif
 
 U_NAMESPACE_BEGIN
@@ -986,7 +988,7 @@ _initializeULanguageTag(ULanguageTag* langtag) {
     langtag->variants = NULL;
     langtag->extensions = NULL;
 
-    langtag->grandfathered = EMPTY;
+    langtag->legacy = EMPTY;
     langtag->privateuse = EMPTY;
 }
 
@@ -1268,35 +1270,17 @@ _appendKeywordsToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool st
         UBool isBcpUExt;
 
         while (TRUE) {
-            icu::CharString buf;
             key = uenum_next(keywordEnum.getAlias(), NULL, status);
             if (key == NULL) {
                 break;
             }
-            char* buffer;
-            int32_t resultCapacity = ULOC_KEYWORD_AND_VALUES_CAPACITY;
 
-            for (;;) {
-                buffer = buf.getAppendBuffer(
-                        resultCapacity,
-                        resultCapacity,
-                        resultCapacity,
-                        tmpStatus);
-
-                if (U_FAILURE(tmpStatus)) {
-                    break;
-                }
-
-                len = uloc_getKeywordValue(
-                        localeID, key, buffer, resultCapacity, &tmpStatus);
-
-                if (tmpStatus != U_BUFFER_OVERFLOW_ERROR) {
-                    break;
-                }
-
-                resultCapacity = len;
-                tmpStatus = U_ZERO_ERROR;
+            icu::CharString buf;
+            {
+                icu::CharStringByteSink sink(&buf);
+                ulocimp_getKeywordValue(localeID, key, sink, &tmpStatus);
             }
+            len = buf.length();
 
             if (U_FAILURE(tmpStatus)) {
                 if (tmpStatus == U_MEMORY_ALLOCATION_ERROR) {
@@ -1310,11 +1294,6 @@ _appendKeywordsToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool st
                 
                 tmpStatus = U_ZERO_ERROR;
                 continue;
-            }
-
-            buf.append(buffer, len, tmpStatus);
-            if (tmpStatus == U_STRING_NOT_TERMINATED_WARNING) {
-                tmpStatus = U_ZERO_ERROR;  
             }
 
             keylen = (int32_t)uprv_strlen(key);
@@ -1395,32 +1374,18 @@ _appendKeywordsToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool st
 
 
 
-                    icu::CharString* extBuf = extBufPool.create();
+                    icu::CharString* extBuf = extBufPool.create(buf, tmpStatus);
+
                     if (extBuf == nullptr) {
                         *status = U_MEMORY_ALLOCATION_ERROR;
                         break;
                     }
-                    int32_t bcpValueLen = static_cast<int32_t>(uprv_strlen(bcpValue));
-                    int32_t resultCapacity;
-                    char* pExtBuf = extBuf->getAppendBuffer(
-                            bcpValueLen,
-                            bcpValueLen,
-                            resultCapacity,
-                            tmpStatus);
                     if (U_FAILURE(tmpStatus)) {
                         *status = tmpStatus;
                         break;
                     }
 
-                    uprv_strcpy(pExtBuf, bcpValue);
-                    T_CString_toLowerCase(pExtBuf);
-
-                    extBuf->append(pExtBuf, bcpValueLen, tmpStatus);
-                    if (U_FAILURE(tmpStatus)) {
-                        *status = tmpStatus;
-                        break;
-                    }
-
+                    T_CString_toLowerCase(extBuf->data());
                     bcpValue = extBuf->data();
                 }
             } else {
@@ -2027,7 +1992,8 @@ _appendPrivateuseToLanguageTag(const char* localeID, icu::ByteSink& sink, UBool 
 
 
 
-#if (defined(_MSC_VER) && (_MSC_VER >= 1900) && defined(_MSC_FULL_VER) && (_MSC_FULL_VER >= 190024210))
+
+#if defined(_MSC_VER) && (_MSC_VER >= 1900) && (_MSC_VER < 1924)
 #pragma optimize( "", off )
 #endif
 
@@ -2042,7 +2008,7 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
     char *pExtValueSubtag, *pExtValueSubtagEnd;
     int32_t i;
     UBool privateuseVar = FALSE;
-    int32_t grandfatheredLen = 0;
+    int32_t legacyLen = 0;
 
     if (parsedLen != NULL) {
         *parsedLen = 0;
@@ -2086,21 +2052,21 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
     
     
     
-    for (i = 0; i < UPRV_LENGTHOF(GRANDFATHERED); i += 2) {
-        int32_t checkGrandfatheredLen = static_cast<int32_t>(uprv_strlen(GRANDFATHERED[i]));
-        if (tagLen < checkGrandfatheredLen) {
+    for (i = 0; i < UPRV_LENGTHOF(LEGACY); i += 2) {
+        int32_t checkLegacyLen = static_cast<int32_t>(uprv_strlen(LEGACY[i]));
+        if (tagLen < checkLegacyLen) {
             continue;
         }
-        if (tagLen > checkGrandfatheredLen && tagBuf[checkGrandfatheredLen] != '-') {
+        if (tagLen > checkLegacyLen && tagBuf[checkLegacyLen] != '-') {
             
             continue;
         }
-        if (uprv_strnicmp(GRANDFATHERED[i], tagBuf, checkGrandfatheredLen) == 0) {
+        if (uprv_strnicmp(LEGACY[i], tagBuf, checkLegacyLen) == 0) {
             int32_t newTagLength;
 
-            grandfatheredLen = checkGrandfatheredLen;  
-            int32_t replacementLen = static_cast<int32_t>(uprv_strlen(GRANDFATHERED[i+1]));
-            newTagLength = replacementLen + tagLen - checkGrandfatheredLen;
+            legacyLen = checkLegacyLen;  
+            int32_t replacementLen = static_cast<int32_t>(uprv_strlen(LEGACY[i+1]));
+            newTagLength = replacementLen + tagLen - checkLegacyLen;
             if (tagLen < newTagLength) {
                 uprv_free(tagBuf);
                 tagBuf = (char*)uprv_malloc(newTagLength + 1);
@@ -2111,16 +2077,16 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
                 t->buf = tagBuf;
                 tagLen = newTagLength;
             }
-            parsedLenDelta = checkGrandfatheredLen - replacementLen;
-            uprv_strcpy(t->buf, GRANDFATHERED[i + 1]);
-            if (checkGrandfatheredLen != tagLen) {
-                uprv_strcpy(t->buf + replacementLen, tag + checkGrandfatheredLen);
+            parsedLenDelta = checkLegacyLen - replacementLen;
+            uprv_strcpy(t->buf, LEGACY[i + 1]);
+            if (checkLegacyLen != tagLen) {
+                uprv_strcpy(t->buf + replacementLen, tag + checkLegacyLen);
             }
             break;
         }
     }
 
-    if (grandfatheredLen == 0) {
+    if (legacyLen == 0) {
         for (i = 0; i < UPRV_LENGTHOF(REDUNDANT); i += 2) {
             const char* redundantTag = REDUNDANT[i];
             size_t redundantTagLen = uprv_strlen(redundantTag);
@@ -2441,9 +2407,7 @@ ultag_parse(const char* tag, int32_t tagLen, int32_t* parsedLen, UErrorCode* sta
 }
 
 
-
-
-#if (defined(_MSC_VER) && (_MSC_VER >= 1900) && defined(_MSC_FULL_VER) && (_MSC_FULL_VER >= 190024210))
+#if defined(_MSC_VER) && (_MSC_VER >= 1900) && (_MSC_VER < 1924)
 #pragma optimize( "", on )
 #endif
 
@@ -2608,8 +2572,8 @@ ultag_getPrivateUse(const ULanguageTag* langtag) {
 
 #if 0
 static const char*
-ultag_getGrandfathered(const ULanguageTag* langtag) {
-    return langtag->grandfathered;
+ultag_getLegacy(const ULanguageTag* langtag) {
+    return langtag->legacy;
 }
 #endif
 
@@ -2720,14 +2684,17 @@ ulocimp_toLanguageTag(const char* localeID,
 
                 key = uenum_next(kwdEnum.getAlias(), &len, &tmpStatus);
                 if (len == 1 && *key == PRIVATEUSE) {
-                    char buf[ULOC_KEYWORD_AND_VALUES_CAPACITY];
-                    buf[0] = PRIVATEUSE;
-                    buf[1] = SEP;
-                    len = uloc_getKeywordValue(localeID, key, &buf[2], sizeof(buf) - 2, &tmpStatus);
+                    icu::CharString buf;
+                    {
+                        icu::CharStringByteSink sink(&buf);
+                        ulocimp_getKeywordValue(localeID, key, sink, &tmpStatus);
+                    }
                     if (U_SUCCESS(tmpStatus)) {
-                        if (ultag_isPrivateuseValueSubtags(&buf[2], len)) {
+                        if (ultag_isPrivateuseValueSubtags(buf.data(), buf.length())) {
                             
-                            sink.Append(buf, len + 2);
+                            static const char PREFIX[] = { PRIVATEUSE, SEP };
+                            sink.Append(PREFIX, sizeof(PREFIX));
+                            sink.Append(buf.data(), buf.length());
                             done = TRUE;
                         } else if (strict) {
                             *status = U_ILLEGAL_ARGUMENT_ERROR;

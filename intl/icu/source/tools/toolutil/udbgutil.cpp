@@ -594,24 +594,11 @@ U_CAPI void udbg_writeIcuInfo(FILE *out) {
   fprintf(out, " </icuSystemParams>\n");
 }
 
-#define ICU_TRAC_URL "http://bugs.icu-project.org/trac/ticket/"
-#define CLDR_TRAC_URL "http://unicode.org/cldr/trac/ticket/"
-#define CLDR_TICKET_PREFIX "cldrbug:"
+#define UNICODE_BUG_URL "https://unicode-org.atlassian.net/browse/"
+#define OLD_CLDR_PREFIX "cldrbug:"
+#define CLDR_BUG_PREFIX "CLDR-"
+#define ICU_BUG_PREFIX "ICU-"
 
-U_CAPI char *udbg_knownIssueURLFrom(const char *ticket, char *buf) {
-  if( ticket==NULL ) {
-    return NULL;
-  }
-
-  if( !strncmp(ticket, CLDR_TICKET_PREFIX, strlen(CLDR_TICKET_PREFIX)) ) {
-    strcpy( buf, CLDR_TRAC_URL );
-    strcat( buf, ticket+strlen(CLDR_TICKET_PREFIX) );
-  } else {
-    strcpy( buf, ICU_TRAC_URL );
-    strcat( buf, ticket );
-  }
-  return buf;
-}
 
 
 #include <set>
@@ -641,8 +628,27 @@ KnownIssues::~KnownIssues()
 {
 }
 
-void KnownIssues::add(const char *ticket, const char *where, const UChar *msg, UBool *firstForTicket, UBool *firstForWhere)
+
+
+
+
+static std::string mapTicketId(const char *ticketStr) {
+  std::string ticket(ticketStr);
+  
+  
+  if(ticket.rfind(OLD_CLDR_PREFIX) == 0) {
+    
+    ticket.replace(0, uprv_strlen(OLD_CLDR_PREFIX), CLDR_BUG_PREFIX);
+  } else if(::isdigit(ticket[0])) {
+    
+    ticket.insert(0, ICU_BUG_PREFIX);
+  }
+  return ticket;
+}
+
+void KnownIssues::add(const char *ticketStr, const char *where, const UChar *msg, UBool *firstForTicket, UBool *firstForWhere)
 {
+  const std::string ticket = mapTicketId(ticketStr);
   if(fTable.find(ticket) == fTable.end()) {
     if(firstForTicket!=NULL) *firstForTicket = TRUE;
     fTable[ticket] = std::map < std::string, std::set < std::string > >();
@@ -664,8 +670,9 @@ void KnownIssues::add(const char *ticket, const char *where, const UChar *msg, U
   fTable[ticket][where].insert(std::string(icu::CStr(ustr)()));
 }
 
-void KnownIssues::add(const char *ticket, const char *where, const char *msg, UBool *firstForTicket, UBool *firstForWhere)
+void KnownIssues::add(const char *ticketStr, const char *where, const char *msg, UBool *firstForTicket, UBool *firstForWhere)
 {
+  const std::string ticket = mapTicketId(ticketStr);
   if(fTable.find(ticket) == fTable.end()) {
     if(firstForTicket!=NULL) *firstForTicket = TRUE;
     fTable[ticket] = std::map < std::string, std::set < std::string > >();
@@ -697,8 +704,13 @@ UBool KnownIssues::print()
           std::map <  std::string,  std::set <  std::string > > >::iterator i = fTable.begin();
        i != fTable.end();
        i++ ) {
-    char URL[1024];
-    std::cout << '#' << (*i).first << " <" << udbg_knownIssueURLFrom( (*i).first.c_str(), URL ) << ">" << std::endl;
+    const std::string ticketid = (*i).first;
+    std::cout << "[" << ticketid << "] ";
+    if(ticketid.rfind(ICU_BUG_PREFIX) == 0 || ticketid.rfind(CLDR_BUG_PREFIX) == 0) {
+      
+      std::cout << UNICODE_BUG_URL << ticketid;
+    } 
+    std::cout << std::endl;
 
     for( std::map< std::string, std::set < std::string > >::iterator ii = (*i).second.begin();
          ii != (*i).second.end();

@@ -56,15 +56,25 @@ udata_create(const char *dir, const char *type, const char *name,
         *pErrorCode=U_MEMORY_ALLOCATION_ERROR;
         return NULL;
     }
+
+    char dirSepChar = U_FILE_SEP_CHAR;
+#if (U_FILE_SEP_CHAR != U_FILE_ALT_SEP_CHAR)
     
+    if(dir && *dir) {
+      if(!uprv_strchr(dir, U_FILE_SEP_CHAR) && uprv_strchr(dir, U_FILE_ALT_SEP_CHAR)) {
+          dirSepChar = U_FILE_ALT_SEP_CHAR;
+      }
+    }
+#endif
+
     
     length = 0;					
     if(dir != NULL  && *dir !=0)	
     {
     	length += static_cast<int32_t>(strlen(dir));
-	
+
     	
-        if (dir[strlen(dir) - 1]!= U_FILE_SEP_CHAR) {
+        if (dir[strlen(dir) - 1]!= dirSepChar) {
             length++;
         }
 	}
@@ -74,7 +84,7 @@ udata_create(const char *dir, const char *type, const char *name,
         length += static_cast<int32_t>(strlen(type));
     }
 
-        
+
      
     if(length  > ((int32_t)sizeof(filename) - 1))
     {
@@ -82,13 +92,13 @@ udata_create(const char *dir, const char *type, const char *name,
    	    uprv_free(pData);
 	    return NULL;
     }
-   
+
     
     if(dir!=NULL && *dir!=0) { 
         char *p=filename+strlen(dir);
         uprv_strcpy(filename, dir);
-        if (*(p-1)!=U_FILE_SEP_CHAR) {
-            *p++=U_FILE_SEP_CHAR;
+        if (*(p-1)!=dirSepChar) {
+            *p++=dirSepChar;
             *p=0;
         }
     } else { 

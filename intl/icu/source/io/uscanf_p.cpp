@@ -695,9 +695,10 @@ u_scanf_integer_handler(UFILE       *input,
 
     int32_t         len;
     void            *num        = (void*) (args[0].ptrValue);
-    UNumberFormat   *format;
+    UNumberFormat   *format, *localFormat;
     int32_t         parsePos    = 0;
     int32_t         skipped;
+    int32_t         parseIntOnly = 0;
     UErrorCode      status      = U_ZERO_ERROR;
     int64_t         result;
 
@@ -723,10 +724,19 @@ u_scanf_integer_handler(UFILE       *input,
         return 0;
 
     
-    skipped += u_scanf_skip_leading_positive_sign(input, format, &status);
+    localFormat = unum_clone(format, &status);
+    if(U_FAILURE(status))
+        return 0;
+
+    if(info->fSpec == 'd' || info->fSpec == 'i' || info->fSpec == 'u')
+        parseIntOnly = 1;
+    unum_setAttribute(localFormat, UNUM_PARSE_INT_ONLY, parseIntOnly);
 
     
-    result = unum_parseInt64(format, input->str.fPos, len, &parsePos, &status);
+    skipped += u_scanf_skip_leading_positive_sign(input, localFormat, &status);
+
+    
+    result = unum_parseInt64(localFormat, input->str.fPos, len, &parsePos, &status);
 
     
     if (!info->fSkipArg) {
@@ -740,6 +750,9 @@ u_scanf_integer_handler(UFILE       *input,
 
     
     input->str.fPos += parsePos;
+
+    
+    unum_close(localFormat);
 
     
     *argConverted = !info->fSkipArg;

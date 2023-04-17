@@ -45,7 +45,7 @@ struct UConverter;
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 u_strlen(const UChar *s);
 #endif
 
@@ -113,9 +113,9 @@ class UnicodeStringAppendable;
 
 
 #if !U_CHAR16_IS_TYPEDEF
-# define UNICODE_STRING(cs, _length) icu::UnicodeString(TRUE, u ## cs, _length)
+# define UNICODE_STRING(cs, _length) icu::UnicodeString(true, u ## cs, _length)
 #else
-# define UNICODE_STRING(cs, _length) icu::UnicodeString(TRUE, (const char16_t*)u ## cs, _length)
+# define UNICODE_STRING(cs, _length) icu::UnicodeString(true, (const char16_t*)u ## cs, _length)
 #endif
 
 
@@ -3615,7 +3615,7 @@ private:
   void unBogus();
 
   
-  UnicodeString &copyFrom(const UnicodeString &src, UBool fastCopy=FALSE);
+  UnicodeString &copyFrom(const UnicodeString &src, UBool fastCopy=false);
 
   
   void copyFieldsFrom(UnicodeString &src, UBool setSrcToBogus) U_NOEXCEPT;
@@ -3672,9 +3672,9 @@ private:
 
   UBool cloneArrayIfNeeded(int32_t newCapacity = -1,
                             int32_t growCapacity = -1,
-                            UBool doCopyArray = TRUE,
+                            UBool doCopyArray = true,
                             int32_t **pBufferToDelete = 0,
-                            UBool forceClone = FALSE);
+                            UBool forceClone = false);
 
   
 
@@ -4732,12 +4732,12 @@ UnicodeString::truncate(int32_t targetLength)
   if(isBogus() && targetLength == 0) {
     
     unBogus();
-    return FALSE;
+    return false;
   } else if((uint32_t)targetLength < (uint32_t)length()) {
     setLength(targetLength);
-    return TRUE;
+    return true;
   } else {
-    return FALSE;
+    return false;
   }
 }
 

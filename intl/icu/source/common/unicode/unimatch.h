@@ -141,7 +141,7 @@ public:
 
 
     virtual UnicodeString& toPattern(UnicodeString& result,
-                                     UBool escapeUnprintable = FALSE) const = 0;
+                                     UBool escapeUnprintable = false) const = 0;
 
     
 

@@ -514,7 +514,7 @@ typedef enum UScriptCode {
 
 
 
-U_STABLE int32_t  U_EXPORT2
+U_CAPI int32_t  U_EXPORT2
 uscript_getCode(const char* nameOrAbbrOrLocale,UScriptCode* fillIn,int32_t capacity,UErrorCode *err);
 
 
@@ -527,7 +527,7 @@ uscript_getCode(const char* nameOrAbbrOrLocale,UScriptCode* fillIn,int32_t capac
 
 
 
-U_STABLE const char*  U_EXPORT2
+U_CAPI const char*  U_EXPORT2
 uscript_getName(UScriptCode scriptCode);
 
 
@@ -539,7 +539,7 @@ uscript_getName(UScriptCode scriptCode);
 
 
 
-U_STABLE const char*  U_EXPORT2
+U_CAPI const char*  U_EXPORT2
 uscript_getShortName(UScriptCode scriptCode);
 
 
@@ -550,7 +550,7 @@ uscript_getShortName(UScriptCode scriptCode);
 
 
 
-U_STABLE UScriptCode  U_EXPORT2
+U_CAPI UScriptCode  U_EXPORT2
 uscript_getScript(UChar32 codepoint, UErrorCode *err);
 
 
@@ -565,7 +565,7 @@ uscript_getScript(UChar32 codepoint, UErrorCode *err);
 
 
 
-U_STABLE UBool U_EXPORT2
+U_CAPI UBool U_EXPORT2
 uscript_hasScript(UChar32 c, UScriptCode sc);
 
 
@@ -597,7 +597,7 @@ uscript_hasScript(UChar32 c, UScriptCode sc);
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 uscript_getScriptExtensions(UChar32 c,
                             UScriptCode *scripts, int32_t capacity,
                             UErrorCode *errorCode);
@@ -636,7 +636,7 @@ typedef enum UScriptUsage {
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 uscript_getSampleString(UScriptCode script, UChar *dest, int32_t capacity, UErrorCode *pErrorCode);
 
 #if U_SHOW_CPLUSPLUS_API
@@ -668,7 +668,7 @@ uscript_getSampleUnicodeString(UScriptCode script);
 
 
 
-U_STABLE UScriptUsage U_EXPORT2
+U_CAPI UScriptUsage U_EXPORT2
 uscript_getUsage(UScriptCode script);
 
 
@@ -679,7 +679,7 @@ uscript_getUsage(UScriptCode script);
 
 
 
-U_STABLE UBool U_EXPORT2
+U_CAPI UBool U_EXPORT2
 uscript_isRightToLeft(UScriptCode script);
 
 
@@ -691,7 +691,7 @@ uscript_isRightToLeft(UScriptCode script);
 
 
 
-U_STABLE UBool U_EXPORT2
+U_CAPI UBool U_EXPORT2
 uscript_breaksBetweenLetters(UScriptCode script);
 
 
@@ -702,7 +702,7 @@ uscript_breaksBetweenLetters(UScriptCode script);
 
 
 
-U_STABLE UBool U_EXPORT2
+U_CAPI UBool U_EXPORT2
 uscript_isCased(UScriptCode script);
 
 #endif

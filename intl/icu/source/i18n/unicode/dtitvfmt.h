@@ -31,6 +31,7 @@
 #include "unicode/dtitvinf.h"
 #include "unicode/dtptngen.h"
 #include "unicode/formattedvalue.h"
+#include "unicode/udisplaycontext.h"
 
 U_NAMESPACE_BEGIN
 
@@ -651,6 +652,34 @@ public:
 
     virtual void setTimeZone(const TimeZone& zone);
 
+#ifndef U_FORCE_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+
+
+    virtual void setContext(UDisplayContext value, UErrorCode& status);
+
+    
+
+
+
+
+
+
+
+
+
+    virtual UDisplayContext getContext(UDisplayContextType type, UErrorCode& status) const;
+#endif  
+
     
 
 
@@ -864,6 +893,19 @@ private:
     void setFallbackPattern(UCalendarDateFields field,
                             const UnicodeString& skeleton,
                             UErrorCode& status);
+    
+
+
+    
+
+
+
+
+
+
+
+
+    UnicodeString normalizeHourMetacharacters(const UnicodeString& skeleton) const;
 
 
 
@@ -986,12 +1028,25 @@ private:
 
 
 
+
     static void U_EXPORT2 adjustFieldWidth(
                             const UnicodeString& inputSkeleton,
                             const UnicodeString& bestMatchSkeleton,
                             const UnicodeString& bestMatchIntervalPattern,
                             int8_t differenceInfo,
+                            UBool suppressDayPeriodField,
                             UnicodeString& adjustedIntervalPattern);
+
+    
+
+
+
+
+
+
+    static void U_EXPORT2 findReplaceInPattern(UnicodeString& targetString,
+                                               const UnicodeString& strToReplace,
+                                               const UnicodeString& strToReplaceWith);
 
     
 
@@ -1137,6 +1192,11 @@ private:
     UnicodeString* fDatePattern;
     UnicodeString* fTimePattern;
     UnicodeString* fDateTimeFormat;
+
+    
+
+
+    UDisplayContext fCapitalizationContext;
 };
 
 inline UBool
@@ -1146,9 +1206,9 @@ DateIntervalFormat::operator!=(const Format& other) const  {
 
 U_NAMESPACE_END
 
-#endif
+#endif 
 
-#endif
+#endif 
 
-#endif
+#endif 
 

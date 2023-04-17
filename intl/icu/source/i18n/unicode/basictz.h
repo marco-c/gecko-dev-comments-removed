@@ -164,9 +164,9 @@ public:
         kFormer = 0x04,
         kLatter = 0x0C
     };
-#endif
+#endif  
 
-
+    
 
 
 
@@ -184,9 +184,9 @@ protected:
         kStdDstMask = kDaylight,
         kFormerLatterMask = kLatter
     };
-#endif  
+#endif
 
-    
+
 
 
 

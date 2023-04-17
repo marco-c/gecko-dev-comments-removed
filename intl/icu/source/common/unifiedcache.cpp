@@ -335,7 +335,7 @@ void UnifiedCache::_putNew(
     }
     keyToAdopt->fCreationStatus = creationStatus;
     if (value->softRefCount == 0) {
-        _registerMaster(keyToAdopt, value);
+        _registerPrimary(keyToAdopt, value);
     }
     void *oldValue = uhash_put(fHashtable, keyToAdopt, (void *) value, &status);
     U_ASSERT(oldValue == nullptr);
@@ -433,9 +433,9 @@ void UnifiedCache::_get(
     }
 }
 
-void UnifiedCache::_registerMaster(
+void UnifiedCache::_registerPrimary(
             const CacheKeyBase *theKey, const SharedObject *value) const {
-    theKey->fIsMaster = true;
+    theKey->fIsPrimary = true;
     value->cachePtr = this;
     ++fNumValuesTotal;
     ++fNumValuesInUse;
@@ -450,7 +450,7 @@ void UnifiedCache::_put(
     const SharedObject *oldValue = (const SharedObject *) element->value.pointer;
     theKey->fCreationStatus = status;
     if (value->softRefCount == 0) {
-        _registerMaster(theKey, value);
+        _registerPrimary(theKey, value);
     }
     value->softRefCount++;
     UHashElement *ptr = const_cast<UHashElement *>(element);
@@ -508,7 +508,7 @@ UBool UnifiedCache::_isEvictable(const UHashElement *element) const
 
     
     
-    return (!theKey->fIsMaster || (theValue->softRefCount == 1 && theValue->noHardReferences()));
+    return (!theKey->fIsPrimary || (theValue->softRefCount == 1 && theValue->noHardReferences()));
 }
 
 void UnifiedCache::removeSoftRef(const SharedObject *value) const {

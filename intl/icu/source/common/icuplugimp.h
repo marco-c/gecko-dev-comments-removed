@@ -36,7 +36,7 @@
 
 
 
-U_INTERNAL void * U_EXPORT2
+U_CAPI void * U_EXPORT2
 uplug_openLibrary(const char *libName, UErrorCode *status);
 
 
@@ -45,7 +45,7 @@ uplug_openLibrary(const char *libName, UErrorCode *status);
 
 
 
-U_INTERNAL void U_EXPORT2
+U_CAPI void U_EXPORT2
 uplug_closeLibrary(void *lib, UErrorCode *status);
 
 
@@ -55,7 +55,7 @@ uplug_closeLibrary(void *lib, UErrorCode *status);
 
 
 
-U_INTERNAL  char * U_EXPORT2
+U_CAPI  char * U_EXPORT2
 uplug_findLibrary(void *lib, UErrorCode *status);
 
 
@@ -69,21 +69,21 @@ uplug_findLibrary(void *lib, UErrorCode *status);
 
 
 
-U_INTERNAL void U_EXPORT2
+U_CAPI void U_EXPORT2
 uplug_init(UErrorCode *status);
 
 
 
 
  
-U_INTERNAL UPlugData* U_EXPORT2
+U_CAPI UPlugData* U_EXPORT2
 uplug_getPlugInternal(int32_t n);
 
 
 
 
 
-U_INTERNAL const char* U_EXPORT2
+U_CAPI const char* U_EXPORT2
 uplug_getPluginFile(void);
 
 

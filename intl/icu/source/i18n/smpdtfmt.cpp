@@ -54,6 +54,7 @@
 #include "unicode/udisplaycontext.h"
 #include "unicode/brkiter.h"
 #include "unicode/rbnf.h"
+#include "unicode/dtptngen.h"
 #include "uresimp.h"
 #include "olsontz.h"
 #include "patternprops.h"
@@ -650,6 +651,12 @@ SimpleDateFormat::operator==(const Format& other) const
 }
 
 
+static const UChar* timeSkeletons[4] = {
+    u"jmmsszzzz",   
+    u"jmmssz",      
+    u"jmmss",       
+    u"jmm",         
+};
 
 void SimpleDateFormat::construct(EStyle timeStyle,
                                  EStyle dateStyle,
@@ -714,35 +721,75 @@ void SimpleDateFormat::construct(EStyle timeStyle,
     fDateOverride.setToBogus();
     fTimeOverride.setToBogus();
 
+    UnicodeString timePattern;
+    if (timeStyle >= kFull && timeStyle <= kShort) {
+        const char* baseLocID = locale.getBaseName();
+        if (baseLocID[0]!=0 && uprv_strcmp(baseLocID,"und")!=0) {
+            UErrorCode useStatus = U_ZERO_ERROR;
+            Locale baseLoc(baseLocID);
+            Locale validLoc(getLocale(ULOC_VALID_LOCALE, useStatus));
+            if (U_SUCCESS(useStatus) && validLoc!=baseLoc) {
+                bool useDTPG = false;
+                const char* baseReg = baseLoc.getCountry(); 
+                if ((baseReg[0]!=0 && uprv_strncmp(baseReg,validLoc.getCountry(),ULOC_COUNTRY_CAPACITY)!=0)
+                        || uprv_strncmp(baseLoc.getLanguage(),validLoc.getLanguage(),ULOC_LANG_CAPACITY)!=0) {
+                    
+                    
+                    
+                    useDTPG = true;
+                }
+                if (useDTPG) {
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    LocalPointer<DateTimePatternGenerator> dtpg(DateTimePatternGenerator::createInstanceNoStdPat(locale, useStatus));
+                    if (U_SUCCESS(useStatus)) {
+                        UnicodeString timeSkeleton(TRUE, timeSkeletons[timeStyle], -1);
+                        timePattern = dtpg->getBestPattern(timeSkeleton, useStatus);
+                    }
+                }
+            }
+        }
+    }
+
     
     
     
     if ((timeStyle != kNone) && (dateStyle != kNone))
     {
-        currentBundle.adoptInstead(
-                ures_getByIndex(dateTimePatterns.getAlias(), (int32_t)timeStyle, NULL, &status));
-        if (U_FAILURE(status)) {
-           status = U_INVALID_FORMAT_ERROR;
-           return;
-        }
-        switch (ures_getType(currentBundle.getAlias())) {
-            case URES_STRING: {
-               resStr = ures_getString(currentBundle.getAlias(), &resStrLen, &status);
-               break;
-            }
-            case URES_ARRAY: {
-               resStr = ures_getStringByIndex(currentBundle.getAlias(), 0, &resStrLen, &status);
-               ovrStr = ures_getStringByIndex(currentBundle.getAlias(), 1, &ovrStrLen, &status);
-               fTimeOverride.setTo(TRUE, ovrStr, ovrStrLen);
-               break;
-            }
-            default: {
+        UnicodeString tempus1(timePattern);
+        if (tempus1.length() == 0) {
+            currentBundle.adoptInstead(
+                    ures_getByIndex(dateTimePatterns.getAlias(), (int32_t)timeStyle, NULL, &status));
+            if (U_FAILURE(status)) {
                status = U_INVALID_FORMAT_ERROR;
                return;
             }
-        }
+            switch (ures_getType(currentBundle.getAlias())) {
+                case URES_STRING: {
+                   resStr = ures_getString(currentBundle.getAlias(), &resStrLen, &status);
+                   break;
+                }
+                case URES_ARRAY: {
+                   resStr = ures_getStringByIndex(currentBundle.getAlias(), 0, &resStrLen, &status);
+                   ovrStr = ures_getStringByIndex(currentBundle.getAlias(), 1, &ovrStrLen, &status);
+                   fTimeOverride.setTo(TRUE, ovrStr, ovrStrLen);
+                   break;
+                }
+                default: {
+                   status = U_INVALID_FORMAT_ERROR;
+                   return;
+                }
+            }
 
-        UnicodeString tempus1(TRUE, resStr, resStrLen);
+            tempus1.setTo(TRUE, resStr, resStrLen);
+        }
 
         currentBundle.adoptInstead(
                 ures_getByIndex(dateTimePatterns.getAlias(), (int32_t)dateStyle, NULL, &status));
@@ -784,29 +831,32 @@ void SimpleDateFormat::construct(EStyle timeStyle,
     
     
     else if (timeStyle != kNone) {
-        currentBundle.adoptInstead(
-                ures_getByIndex(dateTimePatterns.getAlias(), (int32_t)timeStyle, NULL, &status));
-        if (U_FAILURE(status)) {
-           status = U_INVALID_FORMAT_ERROR;
-           return;
-        }
-        switch (ures_getType(currentBundle.getAlias())) {
-            case URES_STRING: {
-               resStr = ures_getString(currentBundle.getAlias(), &resStrLen, &status);
-               break;
-            }
-            case URES_ARRAY: {
-               resStr = ures_getStringByIndex(currentBundle.getAlias(), 0, &resStrLen, &status);
-               ovrStr = ures_getStringByIndex(currentBundle.getAlias(), 1, &ovrStrLen, &status);
-               fDateOverride.setTo(TRUE, ovrStr, ovrStrLen);
-               break;
-            }
-            default: {
+        fPattern.setTo(timePattern);
+        if (fPattern.length() == 0) {
+            currentBundle.adoptInstead(
+                    ures_getByIndex(dateTimePatterns.getAlias(), (int32_t)timeStyle, NULL, &status));
+            if (U_FAILURE(status)) {
                status = U_INVALID_FORMAT_ERROR;
                return;
             }
+            switch (ures_getType(currentBundle.getAlias())) {
+                case URES_STRING: {
+                   resStr = ures_getString(currentBundle.getAlias(), &resStrLen, &status);
+                   break;
+                }
+                case URES_ARRAY: {
+                   resStr = ures_getStringByIndex(currentBundle.getAlias(), 0, &resStrLen, &status);
+                   ovrStr = ures_getStringByIndex(currentBundle.getAlias(), 1, &ovrStrLen, &status);
+                   fDateOverride.setTo(TRUE, ovrStr, ovrStrLen);
+                   break;
+                }
+                default: {
+                   status = U_INVALID_FORMAT_ERROR;
+                   return;
+                }
+            }
+            fPattern.setTo(TRUE, resStr, resStrLen);
         }
-        fPattern.setTo(TRUE, resStr, resStrLen);
     }
     else if (dateStyle != kNone) {
         currentBundle.adoptInstead(
@@ -848,7 +898,8 @@ Calendar*
 SimpleDateFormat::initializeCalendar(TimeZone* adoptZone, const Locale& locale, UErrorCode& status)
 {
     if(!U_FAILURE(status)) {
-        fCalendar = Calendar::createInstance(adoptZone?adoptZone:TimeZone::createDefault(), locale, status);
+        fCalendar = Calendar::createInstance(
+            adoptZone ? adoptZone : TimeZone::forLocaleOrDefault(locale), locale, status);
     }
     return fCalendar;
 }

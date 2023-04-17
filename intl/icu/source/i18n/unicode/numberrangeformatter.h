@@ -15,6 +15,7 @@
 #include "unicode/formattedvalue.h"
 #include "unicode/fpositer.h"
 #include "unicode/numberformatter.h"
+#include "unicode/unumberrangeformatter.h"
 
 #ifndef __wasi__
 #include <atomic>
@@ -47,129 +48,10 @@
 
 
 
-
-
-
-
-
-typedef enum UNumberRangeCollapse {
-    
-
-
-
-
-
-
-
-    UNUM_RANGE_COLLAPSE_AUTO,
-
-    
-
-
-
-
-    UNUM_RANGE_COLLAPSE_NONE,
-
-    
-
-
-
-
-
-    UNUM_RANGE_COLLAPSE_UNIT,
-
-    
-
-
-
-
-
-    UNUM_RANGE_COLLAPSE_ALL
-} UNumberRangeCollapse;
-
-
-
-
-
-
-
-
-typedef enum UNumberRangeIdentityFallback {
-    
-
-
-
-
-    UNUM_IDENTITY_FALLBACK_SINGLE_VALUE,
-
-    
-
-
-
-
-
-    UNUM_IDENTITY_FALLBACK_APPROXIMATELY_OR_SINGLE_VALUE,
-
-    
-
-
-
-
-
-    UNUM_IDENTITY_FALLBACK_APPROXIMATELY,
-
-    
-
-
-
-
-
-    UNUM_IDENTITY_FALLBACK_RANGE
-} UNumberRangeIdentityFallback;
-
-
-
-
-
-
-
-
-typedef enum UNumberRangeIdentityResult {
-    
-
-
-
-
-
-    UNUM_IDENTITY_RESULT_EQUAL_BEFORE_ROUNDING,
-
-    
-
-
-
-
-
-    UNUM_IDENTITY_RESULT_EQUAL_AFTER_ROUNDING,
-
-    
-
-
-
-
-
-    UNUM_IDENTITY_RESULT_NOT_EQUAL,
-
-#ifndef U_HIDE_INTERNAL_API
-    
-
-
-
-    UNUM_IDENTITY_RESULT_COUNT
-#endif
-
-} UNumberRangeIdentityResult;
-
 U_NAMESPACE_BEGIN
+
+
+class PluralRules;
 
 namespace number {  
 
@@ -185,6 +67,7 @@ struct RangeMacroProps;
 class DecimalQuantity;
 class UFormattedNumberRangeData;
 class NumberRangeFormatterImpl;
+struct UFormattedNumberRangeImpl;
 
 } 
 
@@ -485,7 +368,7 @@ class U_I18N_API NumberRangeFormatterSettings {
     UBool copyErrorTo(UErrorCode &outErrorCode) const {
         if (U_FAILURE(outErrorCode)) {
             
-            return TRUE;
+            return true;
         }
         fMacros.copyErrorTo(outErrorCode);
         return U_FAILURE(outErrorCode);
@@ -734,8 +617,12 @@ class U_I18N_API FormattedNumberRange : public UMemory, public FormattedValue {
     
     UBool nextPosition(ConstrainedFieldPosition& cfpos, UErrorCode& status) const U_OVERRIDE;
 
-#ifndef U_HIDE_DRAFT_API
+#ifndef U_HIDE_DEPRECATED_API
     
+
+
+
+
 
 
 
@@ -765,7 +652,36 @@ class U_I18N_API FormattedNumberRange : public UMemory, public FormattedValue {
 
 
 
+
+
+
+
     UnicodeString getSecondDecimal(UErrorCode& status) const;
+#endif 
+
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    template<typename StringClass>
+    inline std::pair<StringClass, StringClass> getDecimalNumbers(UErrorCode& status) const;
 #endif
 
 
@@ -827,9 +743,32 @@ class U_I18N_API FormattedNumberRange : public UMemory, public FormattedValue {
 
     void getAllFieldPositionsImpl(FieldPositionIteratorHandler& fpih, UErrorCode& status) const;
 
+    void getDecimalNumbers(ByteSink& sink1, ByteSink& sink2, UErrorCode& status) const;
+
+    const impl::UFormattedNumberRangeData* getData(UErrorCode& status) const;
+
+    
+    friend class ::icu::PluralRules;
+
     
     friend class LocalizedNumberRangeFormatter;
+
+    
+    friend struct impl::UFormattedNumberRangeImpl;
 };
+
+#ifndef U_HIDE_DRAFT_API
+
+template<typename StringClass>
+std::pair<StringClass, StringClass> FormattedNumberRange::getDecimalNumbers(UErrorCode& status) const {
+    StringClass str1;
+    StringClass str2;
+    StringByteSink<StringClass> sink1(&str1);
+    StringByteSink<StringClass> sink2(&str2);
+    getDecimalNumbers(sink1, sink2, status);
+    return std::make_pair(str1, str2);
+}
+#endif 
 
 
 

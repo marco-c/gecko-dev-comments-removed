@@ -14,7 +14,9 @@
 
 #if !UCONFIG_NO_FORMATTING
 
+#if U_SHOW_CPLUSPLUS_API
 #include "unicode/localpointer.h"
+#endif   
 
 
 
@@ -52,7 +54,7 @@ typedef struct UFieldPositionIterator UFieldPositionIterator;
 
 
 
-U_STABLE UFieldPositionIterator* U_EXPORT2
+U_CAPI UFieldPositionIterator* U_EXPORT2
 ufieldpositer_open(UErrorCode* status);
 
 
@@ -61,7 +63,7 @@ ufieldpositer_open(UErrorCode* status);
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 ufieldpositer_close(UFieldPositionIterator *fpositer);
 
 
@@ -112,7 +114,7 @@ U_NAMESPACE_END
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ufieldpositer_next(UFieldPositionIterator *fpositer,
                    int32_t *beginIndex, int32_t *endIndex);
 

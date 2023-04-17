@@ -1,11 +1,12 @@
 
 
 
+#ifndef __UNUMBERFORMATTER_H__
+#define __UNUMBERFORMATTER_H__
+
 #include "unicode/utypes.h"
 
 #if !UCONFIG_NO_FORMATTING
-#ifndef __UNUMBERFORMATTER_H__
-#define __UNUMBERFORMATTER_H__
 
 #include "unicode/parseerr.h"
 #include "unicode/ufieldpositer.h"
@@ -146,6 +147,30 @@ typedef enum UNumberUnitWidth {
 
 
             UNUM_UNIT_WIDTH_ISO_CODE,
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+            UNUM_UNIT_WIDTH_FORMAL,
+
+    
+
+
+
+
+
+
+
+
+            UNUM_UNIT_WIDTH_VARIANT,
+#endif  
 
     
 
@@ -432,7 +457,7 @@ typedef struct UFormattedNumber UFormattedNumber;
 
 
 
-U_STABLE UNumberFormatter* U_EXPORT2
+U_CAPI UNumberFormatter* U_EXPORT2
 unumf_openForSkeletonAndLocale(const UChar* skeleton, int32_t skeletonLen, const char* locale,
                                UErrorCode* ec);
 
@@ -449,7 +474,7 @@ unumf_openForSkeletonAndLocale(const UChar* skeleton, int32_t skeletonLen, const
 
 
 
-U_STABLE UNumberFormatter* U_EXPORT2
+U_CAPI UNumberFormatter* U_EXPORT2
 unumf_openForSkeletonAndLocaleWithError(
        const UChar* skeleton, int32_t skeletonLen, const char* locale, UParseError* perror, UErrorCode* ec);
 
@@ -462,7 +487,7 @@ unumf_openForSkeletonAndLocaleWithError(
 
 
 
-U_STABLE UFormattedNumber* U_EXPORT2
+U_CAPI UFormattedNumber* U_EXPORT2
 unumf_openResult(UErrorCode* ec);
 
 
@@ -481,7 +506,7 @@ unumf_openResult(UErrorCode* ec);
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 unumf_formatInt(const UNumberFormatter* uformatter, int64_t value, UFormattedNumber* uresult,
                 UErrorCode* ec);
 
@@ -501,7 +526,7 @@ unumf_formatInt(const UNumberFormatter* uformatter, int64_t value, UFormattedNum
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 unumf_formatDouble(const UNumberFormatter* uformatter, double value, UFormattedNumber* uresult,
                    UErrorCode* ec);
 
@@ -525,7 +550,7 @@ unumf_formatDouble(const UNumberFormatter* uformatter, double value, UFormattedN
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 unumf_formatDecimal(const UNumberFormatter* uformatter, const char* value, int32_t valueLen,
                     UFormattedNumber* uresult, UErrorCode* ec);
 
@@ -543,7 +568,7 @@ unumf_formatDecimal(const UNumberFormatter* uformatter, const char* value, int32
 
 
 
-U_STABLE const UFormattedValue* U_EXPORT2
+U_CAPI const UFormattedValue* U_EXPORT2
 unumf_resultAsValue(const UFormattedNumber* uresult, UErrorCode* ec);
 
 
@@ -566,7 +591,7 @@ unumf_resultAsValue(const UFormattedNumber* uresult, UErrorCode* ec);
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 unumf_resultToString(const UFormattedNumber* uresult, UChar* buffer, int32_t bufferCapacity,
                      UErrorCode* ec);
 
@@ -604,7 +629,7 @@ unumf_resultToString(const UFormattedNumber* uresult, UChar* buffer, int32_t buf
 
 
 
-U_STABLE UBool U_EXPORT2
+U_CAPI UBool U_EXPORT2
 unumf_resultNextFieldPosition(const UFormattedNumber* uresult, UFieldPosition* ufpos, UErrorCode* ec);
 
 
@@ -629,11 +654,12 @@ unumf_resultNextFieldPosition(const UFormattedNumber* uresult, UFieldPosition* u
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 unumf_resultGetAllFieldPositions(const UFormattedNumber* uresult, UFieldPositionIterator* ufpositer,
                                  UErrorCode* ec);
 
 
+#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -647,7 +673,27 @@ unumf_resultGetAllFieldPositions(const UFormattedNumber* uresult, UFieldPosition
 
 
 
-U_STABLE void U_EXPORT2
+
+
+
+
+
+U_CAPI int32_t U_EXPORT2
+unumf_resultToDecimalNumber(
+       const UFormattedNumber* uresult,
+       char* dest,
+       int32_t destCapacity,
+       UErrorCode* ec);
+#endif 
+
+
+
+
+
+
+
+
+U_CAPI void U_EXPORT2
 unumf_close(UNumberFormatter* uformatter);
 
 
@@ -657,7 +703,7 @@ unumf_close(UNumberFormatter* uformatter);
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 unumf_closeResult(UFormattedNumber* uresult);
 
 

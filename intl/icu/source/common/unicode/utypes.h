@@ -479,13 +479,23 @@ typedef enum UErrorCode {
     U_COLLATOR_VERSION_MISMATCH = 28,   
     U_USELESS_COLLATOR_ERROR  = 29,     
     U_NO_WRITE_PERMISSION     = 30,     
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+    U_INPUT_TOO_LONG_ERROR = 31,
+#endif  
 
 #ifndef U_HIDE_DEPRECATED_API
     
 
 
 
-    U_STANDARD_ERROR_LIMIT,
+    U_STANDARD_ERROR_LIMIT = 32,
 #endif  
 
     
@@ -715,8 +725,8 @@ typedef enum UErrorCode {
 
 
 
-U_STABLE const char * U_EXPORT2
+U_CAPI const char * U_EXPORT2
 u_errorName(UErrorCode code);
 
 
-#endif 
+#endif

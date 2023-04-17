@@ -30,8 +30,11 @@
 
 #if !UCONFIG_NO_REGULAR_EXPRESSIONS
 
-#include "unicode/localpointer.h"
 #include "unicode/parseerr.h"
+
+#if U_SHOW_CPLUSPLUS_API
+#include "unicode/localpointer.h"
+#endif   
 
 struct URegularExpression;
 
@@ -131,7 +134,7 @@ typedef enum URegexpFlag{
 
 
 
-U_STABLE URegularExpression * U_EXPORT2
+U_CAPI URegularExpression * U_EXPORT2
 uregex_open( const  UChar          *pattern,
                     int32_t         patternLength,
                     uint32_t        flags,
@@ -161,7 +164,7 @@ uregex_open( const  UChar          *pattern,
 
 
 
-U_STABLE URegularExpression *  U_EXPORT2
+U_CAPI URegularExpression *  U_EXPORT2
 uregex_openUText(UText          *pattern,
                  uint32_t        flags,
                  UParseError    *pe,
@@ -191,7 +194,7 @@ uregex_openUText(UText          *pattern,
 
 
 
-U_STABLE URegularExpression * U_EXPORT2
+U_CAPI URegularExpression * U_EXPORT2
 uregex_openC( const char           *pattern,
                     uint32_t        flags,
                     UParseError    *pe,
@@ -207,7 +210,7 @@ uregex_openC( const char           *pattern,
 
 
 
-U_STABLE void U_EXPORT2 
+U_CAPI void U_EXPORT2 
 uregex_close(URegularExpression *regexp);
 
 #if U_SHOW_CPLUSPLUS_API
@@ -247,7 +250,7 @@ U_NAMESPACE_END
 
 
 
-U_STABLE URegularExpression * U_EXPORT2 
+U_CAPI URegularExpression * U_EXPORT2 
 uregex_clone(const URegularExpression *regexp, UErrorCode *status);
 
 
@@ -267,7 +270,7 @@ uregex_clone(const URegularExpression *regexp, UErrorCode *status);
 
 
 
-U_STABLE const UChar * U_EXPORT2 
+U_CAPI const UChar * U_EXPORT2 
 uregex_pattern(const URegularExpression *regexp,
                      int32_t            *patLength,
                      UErrorCode         *status);
@@ -283,7 +286,7 @@ uregex_pattern(const URegularExpression *regexp,
 
 
 
-U_STABLE UText * U_EXPORT2 
+U_CAPI UText * U_EXPORT2 
 uregex_patternUText(const URegularExpression *regexp,
                           UErrorCode         *status);
 
@@ -295,7 +298,7 @@ uregex_patternUText(const URegularExpression *regexp,
 
 
 
-U_STABLE int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2 
 uregex_flags(const  URegularExpression   *regexp,
                     UErrorCode           *status);
 
@@ -320,7 +323,7 @@ uregex_flags(const  URegularExpression   *regexp,
 
 
 
-U_STABLE void U_EXPORT2 
+U_CAPI void U_EXPORT2 
 uregex_setText(URegularExpression *regexp,
                const UChar        *text,
                int32_t             textLength,
@@ -343,7 +346,7 @@ uregex_setText(URegularExpression *regexp,
 
 
 
-U_STABLE void U_EXPORT2 
+U_CAPI void U_EXPORT2 
 uregex_setUText(URegularExpression *regexp,
                 UText              *text,
                 UErrorCode         *status);
@@ -368,7 +371,7 @@ uregex_setUText(URegularExpression *regexp,
 
 
 
-U_STABLE const UChar * U_EXPORT2 
+U_CAPI const UChar * U_EXPORT2 
 uregex_getText(URegularExpression *regexp,
                int32_t            *textLength,
                UErrorCode         *status);
@@ -389,7 +392,7 @@ uregex_getText(URegularExpression *regexp,
 
 
 
-U_STABLE UText * U_EXPORT2 
+U_CAPI UText * U_EXPORT2 
 uregex_getUText(URegularExpression *regexp,
                 UText              *dest,
                 UErrorCode         *status);
@@ -419,7 +422,7 @@ uregex_getUText(URegularExpression *regexp,
 
 
 
-U_STABLE void U_EXPORT2 
+U_CAPI void U_EXPORT2 
 uregex_refreshUText(URegularExpression *regexp,
                     UText              *text,
                     UErrorCode         *status);
@@ -444,7 +447,7 @@ uregex_refreshUText(URegularExpression *regexp,
 
 
 
-U_STABLE UBool U_EXPORT2 
+U_CAPI UBool U_EXPORT2 
 uregex_matches(URegularExpression *regexp,
                 int32_t            startIndex,
                 UErrorCode        *status);
@@ -470,7 +473,7 @@ uregex_matches(URegularExpression *regexp,
 
 
 
-U_STABLE UBool U_EXPORT2 
+U_CAPI UBool U_EXPORT2 
 uregex_matches64(URegularExpression *regexp,
                  int64_t            startIndex,
                  UErrorCode        *status);
@@ -498,7 +501,7 @@ uregex_matches64(URegularExpression *regexp,
 
 
 
-U_STABLE UBool U_EXPORT2 
+U_CAPI UBool U_EXPORT2 
 uregex_lookingAt(URegularExpression *regexp,
                  int32_t             startIndex,
                  UErrorCode         *status);
@@ -527,7 +530,7 @@ uregex_lookingAt(URegularExpression *regexp,
 
 
 
-U_STABLE UBool U_EXPORT2 
+U_CAPI UBool U_EXPORT2 
 uregex_lookingAt64(URegularExpression *regexp,
                    int64_t             startIndex,
                    UErrorCode         *status);
@@ -551,7 +554,7 @@ uregex_lookingAt64(URegularExpression *regexp,
 
 
 
-U_STABLE UBool U_EXPORT2 
+U_CAPI UBool U_EXPORT2 
 uregex_find(URegularExpression *regexp,
             int32_t             startIndex, 
             UErrorCode         *status);
@@ -576,7 +579,7 @@ uregex_find(URegularExpression *regexp,
 
 
 
-U_STABLE UBool U_EXPORT2 
+U_CAPI UBool U_EXPORT2 
 uregex_find64(URegularExpression *regexp,
               int64_t             startIndex, 
               UErrorCode         *status);
@@ -594,7 +597,7 @@ uregex_find64(URegularExpression *regexp,
 
 
 
-U_STABLE UBool U_EXPORT2 
+U_CAPI UBool U_EXPORT2 
 uregex_findNext(URegularExpression *regexp,
                 UErrorCode         *status);
 
@@ -605,7 +608,7 @@ uregex_findNext(URegularExpression *regexp,
 
 
 
-U_STABLE int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2 
 uregex_groupCount(URegularExpression *regexp,
                   UErrorCode         *status);
 
@@ -625,7 +628,7 @@ uregex_groupCount(URegularExpression *regexp,
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 uregex_groupNumberFromName(URegularExpression *regexp,
                            const UChar        *groupName,
                            int32_t             nameLength,
@@ -649,7 +652,7 @@ uregex_groupNumberFromName(URegularExpression *regexp,
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 uregex_groupNumberFromCName(URegularExpression *regexp,
                             const char         *groupName,
                             int32_t             nameLength,
@@ -671,7 +674,7 @@ uregex_groupNumberFromCName(URegularExpression *regexp,
 
 
 
-U_STABLE int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2 
 uregex_group(URegularExpression *regexp,
              int32_t             groupNum,
              UChar              *dest,
@@ -700,7 +703,7 @@ uregex_group(URegularExpression *regexp,
 
 
 
-U_STABLE UText * U_EXPORT2 
+U_CAPI UText * U_EXPORT2 
 uregex_groupUText(URegularExpression *regexp,
                   int32_t             groupNum,
                   UText              *dest,
@@ -721,7 +724,7 @@ uregex_groupUText(URegularExpression *regexp,
 
 
 
-U_STABLE int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2 
 uregex_start(URegularExpression *regexp,
              int32_t             groupNum,
              UErrorCode          *status);
@@ -741,7 +744,7 @@ uregex_start(URegularExpression *regexp,
 
 
 
-U_STABLE int64_t U_EXPORT2 
+U_CAPI int64_t U_EXPORT2 
 uregex_start64(URegularExpression *regexp,
                int32_t             groupNum,
                UErrorCode          *status);
@@ -759,7 +762,7 @@ uregex_start64(URegularExpression *regexp,
 
 
 
-U_STABLE int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2 
 uregex_end(URegularExpression   *regexp,
            int32_t               groupNum,
            UErrorCode           *status);
@@ -778,7 +781,7 @@ uregex_end(URegularExpression   *regexp,
 
 
 
-U_STABLE int64_t U_EXPORT2 
+U_CAPI int64_t U_EXPORT2 
 uregex_end64(URegularExpression *regexp,
              int32_t               groupNum,
              UErrorCode           *status);
@@ -796,7 +799,7 @@ uregex_end64(URegularExpression *regexp,
 
 
 
-U_STABLE void U_EXPORT2 
+U_CAPI void U_EXPORT2 
 uregex_reset(URegularExpression    *regexp,
              int32_t               index,
              UErrorCode            *status);
@@ -815,7 +818,7 @@ uregex_reset(URegularExpression    *regexp,
 
 
 
-U_STABLE void U_EXPORT2 
+U_CAPI void U_EXPORT2 
 uregex_reset64(URegularExpression  *regexp,
                int64_t               index,
                UErrorCode            *status);
@@ -840,7 +843,7 @@ uregex_reset64(URegularExpression  *regexp,
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 uregex_setRegion(URegularExpression   *regexp,
                  int32_t               regionStart,
                  int32_t               regionLimit,
@@ -867,7 +870,7 @@ uregex_setRegion(URegularExpression   *regexp,
 
 
 
-U_STABLE void U_EXPORT2 
+U_CAPI void U_EXPORT2 
 uregex_setRegion64(URegularExpression *regexp,
                  int64_t               regionStart,
                  int64_t               regionLimit,
@@ -887,7 +890,7 @@ uregex_setRegion64(URegularExpression *regexp,
 
 
 
-U_STABLE void U_EXPORT2 
+U_CAPI void U_EXPORT2 
 uregex_setRegionAndStart(URegularExpression *regexp,
                  int64_t               regionStart,
                  int64_t               regionLimit,
@@ -903,7 +906,7 @@ uregex_setRegionAndStart(URegularExpression *regexp,
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 uregex_regionStart(const  URegularExpression   *regexp,
                           UErrorCode           *status);
 
@@ -917,7 +920,7 @@ uregex_regionStart(const  URegularExpression   *regexp,
 
 
 
-U_STABLE int64_t U_EXPORT2 
+U_CAPI int64_t U_EXPORT2 
 uregex_regionStart64(const  URegularExpression   *regexp,
                             UErrorCode           *status);
 
@@ -931,7 +934,7 @@ uregex_regionStart64(const  URegularExpression   *regexp,
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 uregex_regionEnd(const  URegularExpression   *regexp,
                         UErrorCode           *status);
 
@@ -946,7 +949,7 @@ uregex_regionEnd(const  URegularExpression   *regexp,
 
 
 
-U_STABLE int64_t U_EXPORT2 
+U_CAPI int64_t U_EXPORT2 
 uregex_regionEnd64(const  URegularExpression   *regexp,
                           UErrorCode           *status);
 
@@ -960,7 +963,7 @@ uregex_regionEnd64(const  URegularExpression   *regexp,
 
 
 
-U_STABLE UBool U_EXPORT2
+U_CAPI UBool U_EXPORT2
 uregex_hasTransparentBounds(const  URegularExpression   *regexp,
                                    UErrorCode           *status);
 
@@ -984,7 +987,7 @@ uregex_hasTransparentBounds(const  URegularExpression   *regexp,
 
 
 
-U_STABLE void U_EXPORT2  
+U_CAPI void U_EXPORT2  
 uregex_useTransparentBounds(URegularExpression   *regexp, 
                             UBool                b,
                             UErrorCode           *status);
@@ -999,7 +1002,7 @@ uregex_useTransparentBounds(URegularExpression   *regexp,
 
 
 
-U_STABLE UBool U_EXPORT2
+U_CAPI UBool U_EXPORT2
 uregex_hasAnchoringBounds(const  URegularExpression   *regexp,
                                  UErrorCode           *status);
 
@@ -1017,7 +1020,7 @@ uregex_hasAnchoringBounds(const  URegularExpression   *regexp,
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 uregex_useAnchoringBounds(URegularExpression   *regexp,
                           UBool                 b,
                           UErrorCode           *status);
@@ -1032,7 +1035,7 @@ uregex_useAnchoringBounds(URegularExpression   *regexp,
 
 
 
-U_STABLE UBool U_EXPORT2
+U_CAPI UBool U_EXPORT2
 uregex_hitEnd(const  URegularExpression   *regexp,
                      UErrorCode           *status);
 
@@ -1047,7 +1050,7 @@ uregex_hitEnd(const  URegularExpression   *regexp,
 
 
 
-U_STABLE UBool U_EXPORT2   
+U_CAPI UBool U_EXPORT2   
 uregex_requireEnd(const  URegularExpression   *regexp,
                          UErrorCode           *status);
 
@@ -1079,7 +1082,7 @@ uregex_requireEnd(const  URegularExpression   *regexp,
 
 
 
-U_STABLE int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2 
 uregex_replaceAll(URegularExpression    *regexp,
                   const UChar           *replacementText,
                   int32_t                replacementLength,
@@ -1108,7 +1111,7 @@ uregex_replaceAll(URegularExpression    *regexp,
 
 
 
-U_STABLE UText * U_EXPORT2 
+U_CAPI UText * U_EXPORT2 
 uregex_replaceAllUText(URegularExpression *regexp,
                        UText              *replacement,
                        UText              *dest,
@@ -1138,7 +1141,7 @@ uregex_replaceAllUText(URegularExpression *regexp,
 
 
 
-U_STABLE int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2 
 uregex_replaceFirst(URegularExpression  *regexp,
                     const UChar         *replacementText,
                     int32_t              replacementLength,
@@ -1167,7 +1170,7 @@ uregex_replaceFirst(URegularExpression  *regexp,
 
 
 
-U_STABLE UText * U_EXPORT2 
+U_CAPI UText * U_EXPORT2 
 uregex_replaceFirstUText(URegularExpression *regexp,
                          UText              *replacement,
                          UText              *dest,
@@ -1219,7 +1222,7 @@ uregex_replaceFirstUText(URegularExpression *regexp,
 
 
 
-U_STABLE int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2 
 uregex_appendReplacement(URegularExpression    *regexp,
                          const UChar           *replacementText,
                          int32_t                replacementLength,
@@ -1249,7 +1252,7 @@ uregex_appendReplacement(URegularExpression    *regexp,
 
 
 
-U_STABLE void U_EXPORT2 
+U_CAPI void U_EXPORT2 
 uregex_appendReplacementUText(URegularExpression    *regexp,
                               UText                 *replacementText,
                               UText                 *dest,
@@ -1279,7 +1282,7 @@ uregex_appendReplacementUText(URegularExpression    *regexp,
 
 
 
-U_STABLE int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2 
 uregex_appendTail(URegularExpression    *regexp,
                   UChar                **destBuf,
                   int32_t               *destCapacity,
@@ -1303,7 +1306,7 @@ uregex_appendTail(URegularExpression    *regexp,
 
 
 
-U_STABLE UText * U_EXPORT2 
+U_CAPI UText * U_EXPORT2 
 uregex_appendTailUText(URegularExpression    *regexp,
                        UText                 *dest,
                        UErrorCode            *status);
@@ -1359,7 +1362,7 @@ uregex_appendTailUText(URegularExpression    *regexp,
 
 
 
-U_STABLE int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2 
 uregex_split(   URegularExpression      *regexp,
                   UChar                 *destBuf,
                   int32_t                destCapacity,
@@ -1394,7 +1397,7 @@ uregex_split(   URegularExpression      *regexp,
 
 
 
-U_STABLE int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2 
 uregex_splitUText(URegularExpression    *regexp,
                   UText                 *destFields[],
                   int32_t                destFieldsCapacity,
@@ -1422,7 +1425,7 @@ uregex_splitUText(URegularExpression    *regexp,
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 uregex_setTimeLimit(URegularExpression      *regexp,
                     int32_t                  limit,
                     UErrorCode              *status);
@@ -1436,7 +1439,7 @@ uregex_setTimeLimit(URegularExpression      *regexp,
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 uregex_getTimeLimit(const URegularExpression      *regexp,
                           UErrorCode              *status);
 
@@ -1460,7 +1463,7 @@ uregex_getTimeLimit(const URegularExpression      *regexp,
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 uregex_setStackLimit(URegularExpression      *regexp,
                      int32_t                  limit,
                      UErrorCode              *status);
@@ -1472,7 +1475,7 @@ uregex_setStackLimit(URegularExpression      *regexp,
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 uregex_getStackLimit(const URegularExpression      *regexp,
                            UErrorCode              *status);
 
@@ -1515,7 +1518,7 @@ U_CDECL_END
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 uregex_setMatchCallback(URegularExpression      *regexp,
                         URegexMatchCallback     *callback,
                         const void              *context,
@@ -1533,7 +1536,7 @@ uregex_setMatchCallback(URegularExpression      *regexp,
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 uregex_getMatchCallback(const URegularExpression    *regexp,
                         URegexMatchCallback        **callback,
                         const void                 **context,
@@ -1587,7 +1590,7 @@ U_CDECL_END
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 uregex_setFindProgressCallback(URegularExpression              *regexp,
                                 URegexFindProgressCallback      *callback,
                                 const void                      *context,
@@ -1604,7 +1607,7 @@ uregex_setFindProgressCallback(URegularExpression              *regexp,
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 uregex_getFindProgressCallback(const URegularExpression          *regexp,
                                 URegexFindProgressCallback        **callback,
                                 const void                        **context,

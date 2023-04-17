@@ -78,7 +78,7 @@ typedef enum UCurrencyUsage UCurrencyUsage;
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ucurr_forLocale(const char* locale,
                 UChar* buff,
                 int32_t buffCapacity,
@@ -113,7 +113,29 @@ typedef enum UCurrNameStyle {
 
 
 
-    UCURR_NARROW_SYMBOL_NAME
+    UCURR_NARROW_SYMBOL_NAME,
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+    UCURR_FORMAL_SYMBOL_NAME,
+
+    
+
+
+
+
+
+
+    UCURR_VARIANT_SYMBOL_NAME
+#endif  
+    
 } UCurrNameStyle;
 
 #if !UCONFIG_NO_SERVICE
@@ -133,7 +155,7 @@ typedef const void* UCurrRegistryKey;
 
 
 
-U_STABLE UCurrRegistryKey U_EXPORT2
+U_CAPI UCurrRegistryKey U_EXPORT2
 ucurr_register(const UChar* isoCode, 
                    const char* locale,  
                    UErrorCode* status);
@@ -148,7 +170,7 @@ ucurr_register(const UChar* isoCode,
 
 
 
-U_STABLE UBool U_EXPORT2
+U_CAPI UBool U_EXPORT2
 ucurr_unregister(UCurrRegistryKey key, UErrorCode* status);
 #endif 
 
@@ -169,7 +191,7 @@ ucurr_unregister(UCurrRegistryKey key, UErrorCode* status);
 
 
 
-U_STABLE const UChar* U_EXPORT2
+U_CAPI const UChar* U_EXPORT2
 ucurr_getName(const UChar* currency,
               const char* locale,
               UCurrNameStyle nameStyle,
@@ -194,7 +216,7 @@ ucurr_getName(const UChar* currency,
 
 
 
-U_STABLE const UChar* U_EXPORT2
+U_CAPI const UChar* U_EXPORT2
 ucurr_getPluralName(const UChar* currency,
                     const char* locale,
                     UBool* isChoiceFormat,
@@ -219,7 +241,7 @@ ucurr_getPluralName(const UChar* currency,
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ucurr_getDefaultFractionDigits(const UChar* currency,
                                UErrorCode* ec);
 
@@ -240,7 +262,7 @@ ucurr_getDefaultFractionDigits(const UChar* currency,
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ucurr_getDefaultFractionDigitsForUsage(const UChar* currency, 
                                        const UCurrencyUsage usage,
                                        UErrorCode* ec);
@@ -255,7 +277,7 @@ ucurr_getDefaultFractionDigitsForUsage(const UChar* currency,
 
 
 
-U_STABLE double U_EXPORT2
+U_CAPI double U_EXPORT2
 ucurr_getRoundingIncrement(const UChar* currency,
                            UErrorCode* ec);
 
@@ -269,7 +291,7 @@ ucurr_getRoundingIncrement(const UChar* currency,
 
 
 
-U_STABLE double U_EXPORT2
+U_CAPI double U_EXPORT2
 ucurr_getRoundingIncrementForUsage(const UChar* currency,
                                    const UCurrencyUsage usage,
                                    UErrorCode* ec);
@@ -326,7 +348,7 @@ typedef enum UCurrCurrencyType {
 
 
 
-U_STABLE UEnumeration * U_EXPORT2
+U_CAPI UEnumeration * U_EXPORT2
 ucurr_openISOCurrencies(uint32_t currType, UErrorCode *pErrorCode);
 
 
@@ -355,7 +377,7 @@ ucurr_openISOCurrencies(uint32_t currType, UErrorCode *pErrorCode);
 
 
  
-U_STABLE UBool U_EXPORT2
+U_CAPI UBool U_EXPORT2
 ucurr_isAvailable(const UChar* isoCode, 
              UDate from, 
              UDate to, 
@@ -375,7 +397,7 @@ ucurr_isAvailable(const UChar* isoCode,
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ucurr_countCurrencies(const char* locale, 
                  UDate date, 
                  UErrorCode* ec); 
@@ -399,7 +421,7 @@ ucurr_countCurrencies(const char* locale,
 
 
  
-U_STABLE int32_t U_EXPORT2 
+U_CAPI int32_t U_EXPORT2 
 ucurr_forLocaleAndDate(const char* locale, 
                 UDate date, 
                 int32_t index,
@@ -423,7 +445,7 @@ ucurr_forLocaleAndDate(const char* locale,
 
 
 
-U_STABLE UEnumeration* U_EXPORT2
+U_CAPI UEnumeration* U_EXPORT2
 ucurr_getKeywordValuesForLocale(const char* key,
                                 const char* locale,
                                 UBool commonlyUsed,
@@ -438,7 +460,7 @@ ucurr_getKeywordValuesForLocale(const char* key,
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ucurr_getNumericCode(const UChar* currency);
 
 #endif 

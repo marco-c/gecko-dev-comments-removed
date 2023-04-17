@@ -25,7 +25,10 @@
 
 
 #include "unicode/utypes.h"
+
+#if U_SHOW_CPLUSPLUS_API
 #include "unicode/localpointer.h"
+#endif   
 
 
 
@@ -181,7 +184,7 @@ typedef enum UStringPrepProfileType {
 
 
 
-U_STABLE UStringPrepProfile* U_EXPORT2
+U_CAPI UStringPrepProfile* U_EXPORT2
 usprep_open(const char* path, 
             const char* fileName,
             UErrorCode* status);
@@ -197,7 +200,7 @@ usprep_open(const char* path,
 
 
 
-U_STABLE UStringPrepProfile* U_EXPORT2
+U_CAPI UStringPrepProfile* U_EXPORT2
 usprep_openByType(UStringPrepProfileType type,
 				  UErrorCode* status);
 
@@ -206,7 +209,7 @@ usprep_openByType(UStringPrepProfileType type,
 
 
 
-U_STABLE void U_EXPORT2
+U_CAPI void U_EXPORT2
 usprep_close(UStringPrepProfile* profile);
 
 #if U_SHOW_CPLUSPLUS_API
@@ -257,7 +260,7 @@ U_NAMESPACE_END
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 usprep_prepare(   const UStringPrepProfile* prep,
                   const UChar* src, int32_t srcLength, 
                   UChar* dest, int32_t destCapacity,

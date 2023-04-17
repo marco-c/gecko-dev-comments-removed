@@ -34,6 +34,7 @@
 #ifndef __UTF8_H__
 #define __UTF8_H__
 
+#include <stdbool.h>
 #include "unicode/umachine.h"
 #ifndef __UTF_H__
 #   include "unicode/utf.h"
@@ -122,7 +123,7 @@
 
 
 
-U_STABLE UChar32 U_EXPORT2
+U_CAPI UChar32 U_EXPORT2
 utf8_nextCharSafeBody(const uint8_t *s, int32_t *pi, int32_t length, UChar32 c, UBool strict);
 
 
@@ -134,7 +135,7 @@ utf8_nextCharSafeBody(const uint8_t *s, int32_t *pi, int32_t length, UChar32 c, 
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 utf8_appendCharSafeBody(uint8_t *s, int32_t i, int32_t length, UChar32 c, UBool *pIsError);
 
 
@@ -146,7 +147,7 @@ utf8_appendCharSafeBody(uint8_t *s, int32_t i, int32_t length, UChar32 c, UBool 
 
 
 
-U_STABLE UChar32 U_EXPORT2
+U_CAPI UChar32 U_EXPORT2
 utf8_prevCharSafeBody(const uint8_t *s, int32_t start, int32_t *pi, UChar32 c, UBool strict);
 
 
@@ -158,7 +159,7 @@ utf8_prevCharSafeBody(const uint8_t *s, int32_t start, int32_t *pi, UChar32 c, U
 
 
 
-U_STABLE int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 utf8_back1SafeBody(const uint8_t *s, int32_t start, int32_t i);
 
 
@@ -472,7 +473,7 @@ utf8_back1SafeBody(const uint8_t *s, int32_t start, int32_t i);
         (s)[(i)++]=(uint8_t)(((__uc>>6)&0x3f)|0x80); \
         (s)[(i)++]=(uint8_t)((__uc&0x3f)|0x80); \
     } else { \
-        (isError)=TRUE; \
+        (isError)=true; \
     } \
 } UPRV_BLOCK_MACRO_END
 

@@ -1824,10 +1824,10 @@ protected:
 
 
     UCalendarDateFields resolveFields(const UFieldResolutionTable *precedenceTable);
-#endif
+#endif  
 
 
-
+    
 
 
     virtual const UFieldResolutionTable* getFieldResolutionTable() const;
@@ -2531,7 +2531,7 @@ Calendar::internalSet(UCalendarDateFields field, int32_t value)
 {
     fFields[field] = value;
     fStamp[field] = kInternallySet;
-    fIsSet[field]     = TRUE; 
+    fIsSet[field]     = true; 
 }
 
 
@@ -2546,6 +2546,6 @@ U_NAMESPACE_END
 
 #endif 
 
-#endif
+#endif 
 
 #endif
