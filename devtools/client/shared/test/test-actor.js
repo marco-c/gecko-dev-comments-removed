@@ -130,12 +130,6 @@ var testSpec = protocol.generateActorSpec({
         value: RetVal("json"),
       },
     },
-    synthesizeMouse: {
-      request: {
-        object: Arg(0, "json"),
-      },
-      response: {},
-    },
     synthesizeKey: {
       request: {
         args: Arg(0, "json"),
@@ -490,45 +484,6 @@ var TestActor = protocol.ActorClassWithSpec(testSpec, {
     }
 
     return regions;
-  },
-
-  
-
-
-  windowForMouseEvent: function(node) {
-    return node.ownerDocument.defaultView;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  synthesizeMouse: function({ selector, x, y, center, options }) {
-    const node = this._querySelector(selector);
-    node.scrollIntoView();
-    if (center) {
-      EventUtils.synthesizeMouseAtCenter(
-        node,
-        options,
-        this.windowForMouseEvent(node)
-      );
-    } else {
-      EventUtils.synthesizeMouse(
-        node,
-        x,
-        y,
-        options,
-        this.windowForMouseEvent(node)
-      );
-    }
   },
 
   

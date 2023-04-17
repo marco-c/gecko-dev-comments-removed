@@ -17,10 +17,13 @@ const CONTENT = `
 `;
 
 add_task(async function() {
-  const tab = await addTab("data:text/html;charset=utf-8," + CONTENT);
+  await addTab("data:text/html;charset=utf-8," + CONTENT);
 
-  const testActor = await getTestActorWithoutToolbox(tab);
-  const inspector = await clickOnInspectMenuItem(testActor, "span");
+  
+  
+  
+  
+  const inspector = await clickOnInspectMenuItem("span");
 
   checkRuleViewContent(inspector.getPanel("ruleview").view);
 });

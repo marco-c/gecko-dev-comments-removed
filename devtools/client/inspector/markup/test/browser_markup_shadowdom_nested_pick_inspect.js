@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 
@@ -47,7 +46,7 @@ const TEST_URL =
   </script>`);
 
 add_task(async function() {
-  const { inspector, toolbox, tab } = await openInspectorForURL(TEST_URL);
+  const { inspector, toolbox } = await openInspectorForURL(TEST_URL);
 
   info("Waiting for element picker to become active");
   await startPicker(toolbox);
@@ -59,13 +58,11 @@ add_task(async function() {
   info("Close DevTools before testing Inspect Element");
   await toolbox.destroy();
 
-  info("Waiting for element picker to become active.");
-  const newTestActor = await getTestActorWithoutToolbox(tab);
   info("Click on Inspect Element for our test-image <div>");
   
   
   
-  const newInspector = await clickOnInspectMenuItem(newTestActor, "test-outer");
+  const newInspector = await clickOnInspectMenuItem("test-outer");
   info("Check again that the markup view is displayed as expected");
   await assertMarkupView(newInspector);
 });

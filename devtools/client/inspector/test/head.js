@@ -256,18 +256,16 @@ function clearCurrentNodeSelection(inspector) {
 
 
 
-
-var clickOnInspectMenuItem = async function(testActor, selector) {
+var clickOnInspectMenuItem = async function(selector) {
   info("Showing the contextual menu on node " + selector);
   const contentAreaContextMenu = document.querySelector(
     "#contentAreaContextMenu"
   );
   const contextOpened = once(contentAreaContextMenu, "popupshown");
 
-  await testActor.synthesizeMouse({
-    selector: selector,
-    center: true,
-    options: { type: "contextmenu", button: 2 },
+  await safeSynthesizeMouseEventAtCenterInContentPage(selector, {
+    type: "contextmenu",
+    button: 2,
   });
 
   await contextOpened;
@@ -678,9 +676,21 @@ const getHighlighterHelperFor = type =>
         }, `Waiting for element ${id} to have attribute ${name} removed`);
       },
 
-      synthesizeMouse: async function(options) {
-        options = Object.assign({ selector: ":root" }, options);
-        await testActor.synthesizeMouse(options);
+      synthesizeMouse: async function({
+        selector = ":root",
+        center,
+        x,
+        y,
+        options,
+      } = {}) {
+        if (center === true) {
+          await safeSynthesizeMouseEventAtCenterInContentPage(
+            selector,
+            options
+          );
+        } else {
+          await safeSynthesizeMouseEventInContentPage(selector, x, y, options);
+        }
       },
 
       
@@ -699,11 +709,8 @@ const getHighlighterHelperFor = type =>
             async function(x = prevX, y = prevY, selector = ":root") {
               prevX = x;
               prevY = y;
-              await testActor.synthesizeMouse({
-                selector,
-                x,
-                y,
-                options: { type: "mouse" + name },
+              await safeSynthesizeMouseEventInContentPage(selector, x, y, {
+                type: "mouse" + name,
               });
             },
         }
@@ -1347,11 +1354,8 @@ async function checkEyeDropperColorAt(
   assertionDescription
 ) {
   info(`Move mouse to ${x},${y}`);
-  await testActorFront.synthesizeMouse({
-    selector: ":root",
-    x,
-    y,
-    options: { type: "mousemove" },
+  await safeSynthesizeMouseEventInContentPage(":root", x, y, {
+    type: "mousemove",
   });
 
   const colorValue = await testActorFront.getEyeDropperColorValue(
