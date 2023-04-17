@@ -534,7 +534,6 @@ class MOZ_RAII AutoKeepShapeCaches {
 
 
 class Shape;
-struct StackBaseShape;
 
 
 
@@ -579,7 +578,6 @@ using ObjectFlags = EnumFlags<ObjectFlag>;
 class BaseShape : public gc::TenuredCellWithNonGCPointer<const JSClass> {
  public:
   friend class Shape;
-  friend struct StackBaseShape;
   friend struct StackShape;
 
   
@@ -595,7 +593,7 @@ class BaseShape : public gc::TenuredCellWithNonGCPointer<const JSClass> {
  public:
   void finalize(JSFreeOp* fop) {}
 
-  explicit inline BaseShape(const StackBaseShape& base);
+  BaseShape(const JSClass* clasp, JS::Realm* realm, TaggedProto proto);
 
   
   ~BaseShape() = delete;
@@ -615,7 +613,8 @@ class BaseShape : public gc::TenuredCellWithNonGCPointer<const JSClass> {
 
 
 
-  static BaseShape* get(JSContext* cx, Handle<StackBaseShape> base);
+  static BaseShape* get(JSContext* cx, const JSClass* clasp, JS::Realm* realm,
+                        Handle<TaggedProto> proto);
 
   static const JS::TraceKind TraceKind = JS::TraceKind::BaseShape;
 
@@ -647,46 +646,6 @@ class BaseShape : public gc::TenuredCellWithNonGCPointer<const JSClass> {
   }
 };
 
-
-struct StackBaseShape : public DefaultHasher<WeakHeapPtr<BaseShape*>> {
-  const JSClass* clasp;
-  JS::Realm* realm;
-  TaggedProto proto;
-
-  inline StackBaseShape(const JSClass* clasp, JS::Realm* realm,
-                        TaggedProto proto);
-
-  struct Lookup {
-    const JSClass* clasp;
-    JS::Realm* realm;
-    TaggedProto proto;
-
-    MOZ_IMPLICIT Lookup(const StackBaseShape& base)
-        : clasp(base.clasp), realm(base.realm), proto(base.proto) {}
-
-    MOZ_IMPLICIT Lookup(BaseShape* base)
-        : clasp(base->clasp()), realm(base->realm()), proto(base->proto()) {}
-  };
-
-  static HashNumber hash(const Lookup& lookup) {
-    HashNumber hash = MovableCellHasher<TaggedProto>::hash(lookup.proto);
-    return mozilla::AddToHash(hash,
-                              mozilla::HashGeneric(lookup.clasp, lookup.realm));
-  }
-  static inline bool match(const WeakHeapPtr<BaseShape*>& key,
-                           const Lookup& lookup) {
-    return key.unbarrieredGet()->clasp() == lookup.clasp &&
-           key.unbarrieredGet()->realm() == lookup.realm &&
-           key.unbarrieredGet()->proto() == lookup.proto;
-  }
-
-  
-  void trace(JSTracer* trc);
-};
-
-template <typename Wrapper>
-class WrappedPtrOperations<StackBaseShape, Wrapper> {};
-
 static MOZ_ALWAYS_INLINE js::HashNumber HashId(jsid id) {
   
   
@@ -714,8 +673,29 @@ struct DefaultHasher<jsid> {
 
 namespace js {
 
+
+struct BaseShapeHasher {
+  struct Lookup {
+    const JSClass* clasp;
+    JS::Realm* realm;
+    TaggedProto proto;
+
+    Lookup(const JSClass* clasp, JS::Realm* realm, TaggedProto proto)
+        : clasp(clasp), realm(realm), proto(proto) {}
+  };
+
+  static HashNumber hash(const Lookup& lookup) {
+    HashNumber hash = MovableCellHasher<TaggedProto>::hash(lookup.proto);
+    return mozilla::AddToHash(hash, lookup.clasp, lookup.realm);
+  }
+  static bool match(const WeakHeapPtr<BaseShape*>& key, const Lookup& lookup) {
+    return key.unbarrieredGet()->clasp() == lookup.clasp &&
+           key.unbarrieredGet()->realm() == lookup.realm &&
+           key.unbarrieredGet()->proto() == lookup.proto;
+  }
+};
 using BaseShapeSet = JS::WeakCache<
-    JS::GCHashSet<WeakHeapPtr<BaseShape*>, StackBaseShape, SystemAllocPolicy>>;
+    JS::GCHashSet<WeakHeapPtr<BaseShape*>, BaseShapeHasher, SystemAllocPolicy>>;
 
 class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
   friend class ::JSObject;
@@ -724,7 +704,6 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
   friend class NativeObject;
   friend class PropertyTree;
   friend class TenuringTracer;
-  friend struct StackBaseShape;
   friend struct StackShape;
   friend class JS::ubi::Concrete<Shape>;
   friend class js::gc::RelocationOverlay;
