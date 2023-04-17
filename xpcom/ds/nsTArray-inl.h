@@ -8,17 +8,31 @@
 #  error "Don't include this file directly"
 #endif
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 template <class Alloc, class RelocationStrategy>
-nsTArray_base<Alloc, RelocationStrategy>::nsTArray_base() : mHdr(EmptyHdr()) {
-  MOZ_COUNT_CTOR(nsTArray_base);
-}
+nsTArray_base<Alloc, RelocationStrategy>::nsTArray_base() : mHdr(EmptyHdr()) {}
 
 template <class Alloc, class RelocationStrategy>
 nsTArray_base<Alloc, RelocationStrategy>::~nsTArray_base() {
   if (!HasEmptyHeader() && !UsesAutoArrayBuffer()) {
     Alloc::Free(mHdr);
   }
-  MOZ_COUNT_DTOR(nsTArray_base);
 }
 
 template <class Alloc, class RelocationStrategy>
@@ -26,7 +40,6 @@ nsTArray_base<Alloc, RelocationStrategy>::nsTArray_base(const nsTArray_base&)
     : mHdr(EmptyHdr()) {
   
   
-  MOZ_COUNT_CTOR(nsTArray_base);
 }
 
 template <class Alloc, class RelocationStrategy>
