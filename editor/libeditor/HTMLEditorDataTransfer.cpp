@@ -674,16 +674,10 @@ nsresult HTMLEditor::HTMLWithContextInserter::Run(
     }
   }
 
-  Element* editingHost = mHTMLEditor.GetActiveEditingHost();
+  Element* editingHost =
+      mHTMLEditor.GetActiveEditingHost(HTMLEditor::LimitInBodyElement::No);
   if (NS_WARN_IF(!editingHost)) {
-    
-    
-    
-    
-    editingHost = mHTMLEditor.GetRoot();
-    if (NS_WARN_IF(!editingHost)) {
-      return NS_ERROR_FAILURE;
-    }
+    return NS_ERROR_FAILURE;
   }
 
   
