@@ -3256,25 +3256,31 @@ nsresult HTMLEditor::RemoveEmptyInclusiveAncestorInlineElements(
   }
 
   if (&aContent == editingHost || HTMLEditUtils::IsBlockElement(aContent) ||
-      !HTMLEditUtils::IsSimplyEditableNode(aContent) || !aContent.GetParent()) {
+      !EditorUtils::IsEditableContent(aContent, EditorType::HTML) ||
+      !aContent.GetParent()) {
     return NS_OK;
   }
 
   
   
-  Element* blockElement =
-      HTMLEditUtils::GetAncestorBlockElement(aContent, editingHost);
-  if (!blockElement ||
-      HTMLEditUtils::IsEmptyNode(
-          *blockElement, {EmptyCheckOption::TreatSingleBRElementAsVisible})) {
-    return NS_OK;
+  
+  
+  {
+    const Element* editableBlockElement = HTMLEditUtils::GetAncestorElement(
+        aContent, HTMLEditUtils::ClosestEditableBlockElement);
+    if (!editableBlockElement ||
+        HTMLEditUtils::IsEmptyNode(
+            *editableBlockElement,
+            {EmptyCheckOption::TreatSingleBRElementAsVisible})) {
+      return NS_OK;
+    }
   }
 
   OwningNonNull<nsIContent> content = aContent;
   for (nsIContent* parentContent : aContent.AncestorsOfType<nsIContent>()) {
     if (HTMLEditUtils::IsBlockElement(*parentContent) ||
         parentContent->Length() != 1 ||
-        !HTMLEditUtils::IsSimplyEditableNode(*parentContent) ||
+        !EditorUtils::IsEditableContent(*parentContent, EditorType::HTML) ||
         parentContent == editingHost) {
       break;
     }
