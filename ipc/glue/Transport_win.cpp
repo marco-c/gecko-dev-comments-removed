@@ -77,12 +77,6 @@ UniquePtr<Transport> OpenDescriptor(const TransportDescriptor& aTd,
                                nullptr);
 }
 
-UniquePtr<Transport> OpenDescriptor(const FileDescriptor& aFd,
-                                    Transport::Mode aMode) {
-  MOZ_ASSERT_UNREACHABLE("Not implemented!");
-  return nullptr;
-}
-
 TransportDescriptor DuplicateDescriptor(const TransportDescriptor& aTd) {
   
 

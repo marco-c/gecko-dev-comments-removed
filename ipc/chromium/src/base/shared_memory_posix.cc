@@ -64,7 +64,7 @@ bool SharedMemory::SetHandle(SharedMemoryHandle handle, bool read_only) {
 #endif
 
   freezeable_ = false;
-  mapped_file_.reset(handle.fd);
+  mapped_file_ = std::move(handle);
   read_only_ = read_only;
   
   return true;
@@ -72,11 +72,11 @@ bool SharedMemory::SetHandle(SharedMemoryHandle handle, bool read_only) {
 
 
 bool SharedMemory::IsHandleValid(const SharedMemoryHandle& handle) {
-  return handle.fd >= 0;
+  return handle != nullptr;
 }
 
 
-SharedMemoryHandle SharedMemory::NULLHandle() { return SharedMemoryHandle(); }
+SharedMemoryHandle SharedMemory::NULLHandle() { return nullptr; }
 
 #ifdef ANDROID
 
@@ -537,8 +537,7 @@ bool SharedMemory::ShareToProcessCommon(ProcessId processId,
                           << strerror(errno);
     return false;
   }
-  new_handle->fd = new_fd;
-  new_handle->auto_close = true;
+  *new_handle = mozilla::UniqueFileHandle(new_fd);
 
   if (close_self) Close();
 

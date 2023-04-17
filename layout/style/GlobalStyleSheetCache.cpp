@@ -670,13 +670,13 @@ bool GlobalStyleSheetCache::AffectedByPref(const nsACString& aPref) {
 }
 
  void GlobalStyleSheetCache::SetSharedMemory(
-    const base::SharedMemoryHandle& aHandle, uintptr_t aAddress) {
+    base::SharedMemoryHandle aHandle, uintptr_t aAddress) {
   MOZ_ASSERT(!XRE_IsParentProcess());
   MOZ_ASSERT(!gStyleCache, "Too late, GlobalStyleSheetCache already created!");
   MOZ_ASSERT(!sSharedMemory, "Shouldn't call this more than once");
 
   auto shm = MakeUnique<base::SharedMemory>();
-  if (!shm->SetHandle(aHandle,  true)) {
+  if (!shm->SetHandle(std::move(aHandle),  true)) {
     return;
   }
 

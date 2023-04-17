@@ -15,6 +15,7 @@
 #include "mojo/core/ports/port_ref.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/ipc/ScopedPort.h"
 #include "nsTArray.h"
 
@@ -22,17 +23,11 @@
 #  include "mozilla/ipc/Faulty.h"
 #endif
 
-namespace base {
-struct FileDescriptor;
-}
-
 namespace mozilla {
 namespace ipc {
 class MiniTransceiver;
 }
 }  
-
-class FileDescriptorSet;
 
 namespace IPC {
 
@@ -93,6 +88,10 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
     NOT_REPLY = 0,
     REPLY = 1,
   };
+
+  
+  
+  enum { MAX_DESCRIPTORS_PER_MESSAGE = 200 };
 
   class HeaderFlags {
     friend class Message;
@@ -246,9 +245,7 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
 
   const mozilla::TimeStamp& create_time() const { return create_time_; }
 
-#if defined(OS_POSIX)
-  uint32_t num_fds() const;
-#endif
+  uint32_t num_handles() const;
 
   template <class T>
   static bool Dispatch(const Message* msg, T* obj, void (T::*func)()) {
@@ -300,21 +297,21 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
     return Pickle::MessageSize(HeaderSize(), range_start, range_end);
   }
 
-#if defined(OS_POSIX)
-  
-  
+  bool WriteFileHandle(mozilla::UniqueFileHandle handle);
 
   
-  bool WriteFileDescriptor(const base::FileDescriptor& descriptor);
   
-  
-  bool ReadFileDescriptor(PickleIterator* iter,
-                          base::FileDescriptor* descriptor) const;
+  bool ConsumeFileHandle(PickleIterator* iter,
+                         mozilla::UniqueFileHandle* handle) const;
 
-#  if defined(OS_MACOSX)
+  
+  
+  
+  void SetAttachedFileHandles(nsTArray<mozilla::UniqueFileHandle> handles);
+
+#if defined(OS_MACOSX)
   void set_fd_cookie(uint32_t cookie) { header()->cookie = cookie; }
   uint32_t fd_cookie() const { return header()->cookie; }
-#  endif
 #endif
 
   void WritePort(mozilla::ipc::ScopedPort port);
@@ -344,14 +341,12 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
 #endif
 
   struct Header : Pickle::Header {
-    int32_t routing;    
-    msgid_t type;       
-    HeaderFlags flags;  
-#if defined(OS_POSIX)
-    uint32_t num_fds;  
-#  if defined(OS_MACOSX)
+    int32_t routing;       
+    msgid_t type;          
+    HeaderFlags flags;     
+    uint32_t num_handles;  
+#if defined(OS_MACOSX)
     uint32_t cookie;  
-#  endif
 #endif
     union {
       
@@ -372,21 +367,11 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
   Header* header() { return headerT<Header>(); }
   const Header* header() const { return headerT<Header>(); }
 
-#if defined(OS_POSIX)
   
-  RefPtr<FileDescriptorSet> file_descriptor_set_;
-
   
-  void EnsureFileDescriptorSet();
-
-  FileDescriptorSet* file_descriptor_set() {
-    EnsureFileDescriptorSet();
-    return file_descriptor_set_.get();
-  }
-  const FileDescriptorSet* file_descriptor_set() const {
-    return file_descriptor_set_.get();
-  }
-#endif
+  
+  
+  mutable nsTArray<mozilla::UniqueFileHandle> attached_handles_;
 
   
   
