@@ -815,3 +815,23 @@ function getContentPageElementProperty(selector, propertyName) {
     }
   );
 }
+
+
+
+
+
+
+
+
+
+function setContentPageElementProperty(selector, propertyName, propertyValue) {
+  return SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [selector, propertyName, propertyValue],
+    function(innerSelector, innerPropertyName, innerPropertyValue) {
+      content.document.querySelector(innerSelector)[
+        innerPropertyName
+      ] = innerPropertyValue;
+    }
+  );
+}
