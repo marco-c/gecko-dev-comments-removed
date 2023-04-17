@@ -53,6 +53,11 @@ class HyperTextAccessibleBase {
 
   uint32_t CharacterCount() const;
 
+  
+
+
+  virtual int32_t CaretOffset() const = 0;
+
  protected:
   virtual const Accessible* Acc() const = 0;
   Accessible* Acc() {

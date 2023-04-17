@@ -260,7 +260,7 @@ class HyperTextAccessible : public HyperTextAccessibleBase,
   
 
 
-  int32_t CaretOffset() const;
+  virtual int32_t CaretOffset() const override;
   void SetCaretOffset(int32_t aOffset);
 
   
