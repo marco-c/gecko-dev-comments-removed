@@ -24,9 +24,23 @@ struct Engine256State {
 impl Engine256State {
     fn new(h: &[u32; STATE_LEN]) -> Engine256State { Engine256State { h: *h } }
 
+    #[cfg(not(feature = "asm-aarch64"))]
     pub fn process_block(&mut self, block: &Block) {
         let block = unsafe { &*(block.as_ptr() as *const [u8; 64]) };
         compress256(&mut self.h, block);
+    }
+
+    #[cfg(feature = "asm-aarch64")]
+    pub fn process_block(&mut self, block: &Block) {
+        let block = unsafe { &*(block.as_ptr() as *const [u8; 64]) };
+        
+        
+        
+        if ::aarch64::sha2_supported() {
+            compress256(&mut self.h, block);
+        } else {
+            ::sha256_utils::compress256(&mut self.h, block);
+        }
     }
 }
 
