@@ -223,6 +223,68 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub use ouroboros_macro::self_referencing;
 
 #[doc(hidden)]
@@ -230,6 +292,20 @@ pub mod macro_help {
     use stable_deref_trait::StableDeref;
     use std::ops::DerefMut;
 
+    pub struct CheckIfTypeIsStd<T>(std::marker::PhantomData<T>);
+
+    macro_rules! std_type_check {
+        ($fn_name:ident $T:ident $check_for:ty) => {
+            impl<$T: ?Sized> CheckIfTypeIsStd<$check_for> {
+                pub fn $fn_name() { }
+            }
+        }
+    }
+
+    std_type_check!(is_std_box_type T std::boxed::Box<T>);
+    std_type_check!(is_std_arc_type T std::sync::Arc<T>);
+    std_type_check!(is_std_rc_type T std::rc::Rc<T>);
+
     
     
     
@@ -243,9 +319,9 @@ pub mod macro_help {
     
     
     
-    pub unsafe fn stable_deref_and_strip_lifetime<'a, T: StableDeref + 'static>(
-        data: &'a T,
-    ) -> &'static T::Target {
+    pub unsafe fn stable_deref_and_change_lifetime<'old, 'new: 'old, T: StableDeref + 'new>(
+        data: &'old T,
+    ) -> &'new T::Target {
         &*((&**data) as *const _)
     }
 
@@ -255,9 +331,13 @@ pub mod macro_help {
     
     
     
-    pub unsafe fn stable_deref_and_strip_lifetime_mut<'a, T: StableDeref + DerefMut + 'static>(
-        data: &'a mut T,
-    ) -> &'static mut T::Target {
+    pub unsafe fn stable_deref_and_change_lifetime_mut<
+        'old,
+        'new: 'old,
+        T: StableDeref + DerefMut + 'new,
+    >(
+        data: &'old mut T,
+    ) -> &'new mut T::Target {
         &mut *((&mut **data) as *mut _)
     }
 }

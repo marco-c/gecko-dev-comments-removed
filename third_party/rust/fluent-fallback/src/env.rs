@@ -1,0 +1,84 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+use unic_langid::LanguageIdentifier;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub trait LocalesProvider {
+    type Iter: Iterator<Item = LanguageIdentifier>;
+    fn locales(&self) -> Self::Iter;
+}
+
+impl LocalesProvider for Vec<LanguageIdentifier> {
+    type Iter = <Vec<LanguageIdentifier> as IntoIterator>::IntoIter;
+    fn locales(&self) -> Self::Iter {
+        self.clone().into_iter()
+    }
+}
