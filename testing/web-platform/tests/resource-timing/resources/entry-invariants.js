@@ -1,5 +1,15 @@
 
 
+const assert_all_equal_ = (entry, attributes) => {
+  let first = attributes[0];
+  attributes.slice(1).forEach(other => {
+    assert_equals(entry[first], entry[other],
+      `${first} should be equal to ${other}`);
+  });
+}
+
+
+
 const assert_ordered_ = (entry, attributes) => {
   let before = attributes[0];
   attributes.slice(1).forEach(after => {
@@ -39,7 +49,7 @@ const invariants = {
   
   
   
-  assert_tao_pass_no_redirect: entry => {
+  assert_tao_pass_no_redirect_http: entry => {
     assert_ordered_(entry, [
       "fetchStart",
       "domainLookupStart",
@@ -67,6 +77,118 @@ const invariants = {
       "transferSize",
       "encodedBodySize",
       "decodedBodySize",
+    ]);
+  },
+
+  
+  assert_tao_pass_no_redirect_https: entry => {
+    assert_ordered_(entry, [
+      "fetchStart",
+      "domainLookupStart",
+      "domainLookupEnd",
+      "secureConnectionStart",
+      "connectStart",
+      "connectEnd",
+      "requestStart",
+      "responseStart",
+      "responseEnd",
+    ]);
+
+    assert_zeroed_(entry, [
+      "workerStart",
+      "redirectStart",
+      "redirectEnd",
+    ]);
+
+    assert_not_negative_(entry, [
+      "duration",
+    ]);
+
+    assert_positive_(entry, [
+      "fetchStart",
+      "transferSize",
+      "encodedBodySize",
+      "decodedBodySize",
+    ]);
+  },
+
+  
+  
+  assert_tao_pass_304_not_modified_http: entry => {
+    assert_ordered_(entry, [
+      "fetchStart",
+      "domainLookupStart",
+      "domainLookupEnd",
+      "connectStart",
+      "connectEnd",
+      "requestStart",
+      "responseStart",
+      "responseEnd",
+    ]);
+
+    assert_zeroed_(entry, [
+      "workerStart",
+      "secureConnectionStart",
+      "redirectStart",
+      "redirectEnd",
+      "encodedBodySize",
+      "decodedBodySize",
+    ]);
+
+    assert_not_negative_(entry, [
+      "duration",
+    ]);
+
+    assert_positive_(entry, [
+      "fetchStart",
+      "transferSize",
+    ]);
+  },
+
+  
+  
+  assert_tao_pass_304_not_modified_https: entry => {
+    assert_ordered_(entry, [
+      "fetchStart",
+      "domainLookupStart",
+      "domainLookupEnd",
+      "secureConnectionStart",
+      "connectStart",
+      "connectEnd",
+      "requestStart",
+      "responseStart",
+      "responseEnd",
+    ]);
+
+    assert_zeroed_(entry, [
+      "workerStart",
+      "redirectStart",
+      "redirectEnd",
+      "encodedBodySize",
+      "decodedBodySize",
+    ]);
+
+    assert_not_negative_(entry, [
+      "duration",
+    ]);
+
+    assert_positive_(entry, [
+      "fetchStart",
+      "transferSize",
+    ]);
+  },
+
+  
+  
+  
+  
+  assert_connection_reused: entry => {
+    assert_all_equal_(entry, [
+      "fetchStart",
+      "connectStart",
+      "connectEnd",
+      "domainLookupStart",
+      "domainLookupEnd",
     ]);
   },
 
