@@ -5064,6 +5064,8 @@ void AsyncPanZoomController::NotifyLayersUpdated(
 
   bool scrollOffsetUpdated = false;
   bool smoothScrollRequested = false;
+  bool didCancelAnimation = false;
+  Maybe<CSSPoint> cumulativeRelativeDelta;
   for (const auto& scrollUpdate : aScrollMetadata.GetScrollUpdates()) {
     APZC_LOG("%p processing scroll update %s\n", this,
              ToString(scrollUpdate).c_str());
@@ -5147,7 +5149,6 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     }
 
     Maybe<CSSPoint> relativeDelta;
-
     if (scrollUpdate.GetType() == ScrollUpdateType::Relative) {
       APZC_LOG(
           "%p relative updating scroll offset from %s by %s\n", this,
@@ -5214,6 +5215,17 @@ void AsyncPanZoomController::NotifyLayersUpdated(
       }
     }
 
+    if (relativeDelta) {
+      cumulativeRelativeDelta =
+          !cumulativeRelativeDelta
+              ? relativeDelta
+              : Some(*cumulativeRelativeDelta + *relativeDelta);
+    } else {
+      
+      
+      cumulativeRelativeDelta.reset();
+    }
+
     
     
     
@@ -5222,12 +5234,18 @@ void AsyncPanZoomController::NotifyLayersUpdated(
       
       
       CancelAnimation();
+      didCancelAnimation = true;
     }
   }
 
   if (scrollOffsetUpdated) {
     for (auto& sampledState : mSampledState) {
-      sampledState.UpdateScrollProperties(Metrics());
+      if (!didCancelAnimation && cumulativeRelativeDelta.isSome()) {
+        sampledState.UpdateScrollPropertiesWithRelativeDelta(
+            Metrics(), *cumulativeRelativeDelta);
+      } else {
+        sampledState.UpdateScrollProperties(Metrics());
+      }
     }
 
     
