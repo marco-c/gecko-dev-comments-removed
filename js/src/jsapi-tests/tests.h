@@ -346,30 +346,12 @@ class JSAPITest {
 
   bool definePrint();
 
-  static void setNativeStackQuota(JSContext* cx) {
-    const size_t MAX_STACK_SIZE =
-
-#if (defined(DEBUG) && defined(__SUNPRO_CC)) || defined(__sparc__)
-        
-
-
-
-        5000000
-#else
-        500000
-#endif
-        ;
-
-    JS_SetNativeStackQuota(cx, MAX_STACK_SIZE);
-  }
-
   virtual JSContext* createContext() {
     JSContext* cx = JS_NewContext(8L * 1024 * 1024);
     if (!cx) {
       return nullptr;
     }
     JS::SetWarningReporter(cx, &reportWarning);
-    setNativeStackQuota(cx);
     return cx;
   }
 
