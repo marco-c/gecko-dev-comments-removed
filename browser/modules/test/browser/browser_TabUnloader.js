@@ -65,34 +65,14 @@ async function addWebRTCTab(win = window) {
   return tab;
 }
 
-async function pressure(tab) {
+async function pressure(tab, observerData = "low-memory") {
   let tabDiscarded = BrowserTestUtils.waitForEvent(
     document,
     "TabBrowserDiscarded",
     true
   );
-  TabUnloader.unloadTabAsync();
+  TabUnloader.observe(null, "memory-pressure", observerData);
   return tabDiscarded;
-}
-
-function pressureAndObserve(aExpectedTopic) {
-  const promise = new Promise(resolve => {
-    const observer = {
-      QueryInterface: ChromeUtils.generateQI([
-        "nsIObserver",
-        "nsISupportsWeakReference",
-      ]),
-      observe(aSubject, aTopicInner, aData) {
-        if (aTopicInner == aExpectedTopic) {
-          Services.obs.removeObserver(observer, aTopicInner);
-          resolve(aData);
-        }
-      },
-    };
-    Services.obs.addObserver(observer, aExpectedTopic);
-  });
-  TabUnloader.unloadTabAsync();
-  return promise;
 }
 
 async function compareTabOrder(expectedOrder) {
@@ -112,15 +92,8 @@ const PREF_PERMISSION_FAKE = "media.navigator.permission.fake";
 const PREF_AUDIO_LOOPBACK = "media.audio_loopback_dev";
 const PREF_VIDEO_LOOPBACK = "media.video_loopback_dev";
 const PREF_FAKE_STREAMS = "media.navigator.streams.fake";
-const PREF_ENABLE_UNLOADER = "browser.tabs.unloadOnLowMemory";
 
 add_task(async function test() {
-  registerCleanupFunction(() => {
-    Services.prefs.clearUserPref(PREF_ENABLE_UNLOADER);
-  });
-  Services.prefs.setBoolPref(PREF_ENABLE_UNLOADER, true);
-  TabUnloader.init();
-
   
   let prefs = [
     [PREF_PERMISSION_FAKE, true],
@@ -177,6 +150,26 @@ add_task(async function test() {
   );
 
   
+  TabUnloader.observe(null, "memory-pressure", "heap-minimize");
+  ok(
+    tab1.linkedPanel &&
+      tab2.linkedPanel &&
+      pinnedTab.linkedPanel &&
+      soundTab.linkedPanel &&
+      pinnedSoundTab.linkedPanel,
+    "heap-minimize memory-pressure notification did not unload a tab"
+  );
+
+  await compareTabOrder([
+    tab1,
+    tab2,
+    pinnedTab,
+    soundTab,
+    pinnedSoundTab,
+    tab0,
+  ]);
+
+  
   await pressure(tab1);
   ok(
     !tab1.linkedPanel,
@@ -209,11 +202,18 @@ add_task(async function test() {
   ok(!pinnedSoundTab.linkedPanel, "unloaded a pinned tab playing sound");
   await compareTabOrder([]); 
 
-  Assert.equal(
-    await pressureAndObserve("memory-pressure"),
-    "low-memory",
-    "observed the memory-pressure notification because of no discardable tab"
+  
+  await BrowserTestUtils.switchTab(gBrowser, tab1);
+  await BrowserTestUtils.switchTab(gBrowser, tab0);
+
+  await compareTabOrder([tab1, tab0]);
+
+  await pressure(tab1, "low-memory-ongoing");
+  ok(
+    !tab1.linkedPanel,
+    "low-memory-ongoing memory-pressure notification unloaded the LRU tab"
   );
+  await compareTabOrder([]);
 
   
   let webrtcTab = await addWebRTCTab();

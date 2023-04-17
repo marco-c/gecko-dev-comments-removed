@@ -9,6 +9,22 @@
 
 #include "nscore.h"
 
+enum MemoryPressureState {
+  
+
+
+  MemPressure_None = 0,
+
+  
+
+
+
+
+
+
+  MemPressure_New,
+
+  
 
 
 
@@ -23,6 +39,9 @@
 
 
 
+  MemPressure_Ongoing,
+
+  
 
 
 
@@ -31,25 +50,7 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-extern const char* const kTopicMemoryPressure;
-extern const char* const kTopicMemoryPressureStop;
-extern const char16_t* const kSubTopicLowMemoryNew;
-extern const char16_t* const kSubTopicLowMemoryOngoing;
-
-enum class MemoryPressureState : uint32_t {
-  None,  
-  LowMemory,
-  NoPressure,
+  MemPressure_Stopping
 };
 
 
@@ -59,9 +60,7 @@ enum class MemoryPressureState : uint32_t {
 
 
 
-
-
-void NS_NotifyOfEventualMemoryPressure(MemoryPressureState aState);
+MemoryPressureState NS_GetPendingMemoryPressure();
 
 
 
@@ -72,6 +71,17 @@ void NS_NotifyOfEventualMemoryPressure(MemoryPressureState aState);
 
 
 
-nsresult NS_NotifyOfMemoryPressure(MemoryPressureState aState);
+void NS_DispatchEventualMemoryPressure(MemoryPressureState aState);
+
+
+
+
+
+
+
+
+
+
+nsresult NS_DispatchMemoryPressure(MemoryPressureState aState);
 
 #endif  
