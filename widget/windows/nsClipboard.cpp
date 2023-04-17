@@ -37,9 +37,17 @@ using mozilla::LogLevel;
 static mozilla::LazyLogModule gWin32ClipboardLog("nsClipboard");
 
 
-UINT nsClipboard::CF_HTML = ::RegisterClipboardFormatW(L"HTML Format");
-UINT nsClipboard::CF_CUSTOMTYPES =
-    ::RegisterClipboardFormatW(L"application/x-moz-custom-clipdata");
+UINT nsClipboard::GetHtmlClipboardFormat() {
+  static UINT format = ::RegisterClipboardFormatW(L"HTML Format");
+  return format;
+}
+
+
+UINT nsClipboard::GetCustomClipboardFormat() {
+  static UINT format =
+      ::RegisterClipboardFormatW(L"application/x-moz-custom-clipdata");
+  return format;
+}
 
 
 
@@ -96,9 +104,9 @@ UINT nsClipboard::GetFormat(const char* aMimeStr, bool aMapHTMLMime) {
     format = CF_HDROP;
   } else if ((strcmp(aMimeStr, kNativeHTMLMime) == 0) ||
              (aMapHTMLMime && strcmp(aMimeStr, kHTMLMime) == 0)) {
-    format = CF_HTML;
+    format = GetHtmlClipboardFormat();
   } else if (strcmp(aMimeStr, kCustomTypesMime) == 0) {
-    format = CF_CUSTOMTYPES;
+    format = GetCustomClipboardFormat();
   } else {
     format = ::RegisterClipboardFormatW(NS_ConvertASCIItoUTF16(aMimeStr).get());
   }
@@ -180,7 +188,8 @@ nsresult nsClipboard::SetupNativeDataObject(nsITransferable* aTransferable,
       
       
       FORMATETC htmlFE;
-      SET_FORMATETC(htmlFE, CF_HTML, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL);
+      SET_FORMATETC(htmlFE, GetHtmlClipboardFormat(), 0, DVASPECT_CONTENT, -1,
+                    TYMED_HGLOBAL);
       dObj->AddDataFlavor(kHTMLMime, &htmlFE);
     } else if (flavorStr.EqualsLiteral(kURLMime)) {
       
@@ -549,14 +558,14 @@ nsresult nsClipboard::GetNativeDataOffClipboard(IDataObject* aDataObject,
               
               uint32_t allocLen = 0;
               if (NS_SUCCEEDED(GetGlobalData(stm.hGlobal, aData, &allocLen))) {
-                if (fe.cfFormat == CF_HTML) {
+                if (fe.cfFormat == GetHtmlClipboardFormat()) {
                   
                   
                   
                   
                   
                   *aLen = allocLen;
-                } else if (fe.cfFormat == CF_CUSTOMTYPES) {
+                } else if (fe.cfFormat == GetCustomClipboardFormat()) {
                   
                   *aLen = allocLen;
                 } else if (fe.cfFormat == preferredDropEffect) {
