@@ -2,7 +2,9 @@
 
 
 
+#include "MacStringHelpers.h"
 #include "nsMacPreferencesReader.h"
+#include "nsString.h"
 
 #include "js/JSON.h"
 #include "js/RootingAPI.h"

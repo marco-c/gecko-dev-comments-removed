@@ -44,9 +44,6 @@ static constexpr uint32_t kTelemetryInterval = 60 * 1000;
 static constexpr const char* kTopicCycleCollectorBegin =
     "cycle-collector-begin";
 
-
-static constexpr uint32_t kTotalMemoryCollectorTimeout = 200;
-
 namespace {
 
 enum class PrevValue : uint32_t {
