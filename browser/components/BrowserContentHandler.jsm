@@ -925,6 +925,22 @@ nsDefaultCommandLineHandler.prototype = {
   handle: function dch_handle(cmdLine) {
     var urilist = [];
 
+    if (
+      AppConstants.platform == "macosx" &&
+      cmdLine.state == Ci.nsICommandLine.STATE_INITIAL_LAUNCH &&
+      Services.startup.wasSilentlyRestarted
+    ) {
+      
+      
+      
+      Services.startup.enterLastWindowClosingSurvivalArea();
+      Services.obs.addObserver(function windowOpenObserver() {
+        Services.startup.exitLastWindowClosingSurvivalArea();
+        Services.obs.removeObserver(windowOpenObserver, "domwindowopened");
+      }, "domwindowopened");
+      return;
+    }
+
     if (AppConstants.platform == "win") {
       
       
