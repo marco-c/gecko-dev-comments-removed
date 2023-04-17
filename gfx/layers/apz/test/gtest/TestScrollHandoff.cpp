@@ -156,6 +156,7 @@ class APZScrollHandoffTester : public APZCTreeManagerTester {
 
     
     
+    QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
     Pan(manager, 70, 40);
 
     
@@ -164,6 +165,7 @@ class APZScrollHandoffTester : public APZCTreeManagerTester {
     float childVelocityAfterFling1 = childApzc->GetVelocityVector().y;
 
     
+    QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
     Pan(manager, 70, 40);
 
     
@@ -196,11 +198,9 @@ class APZScrollHandoffTester : public APZCTreeManagerTester {
   }
 };
 
-class APZScrollHandoffTesterInternal : public APZScrollHandoffTester {
+class APZScrollHandoffTesterMock : public APZScrollHandoffTester {
  public:
-  APZScrollHandoffTesterInternal() {
-    mHitTester = MakeUnique<InternalHitTester>();
-  }
+  APZScrollHandoffTesterMock() { CreateMockHitTester(); }
 };
 
 #ifndef MOZ_WIDGET_ANDROID  
@@ -291,7 +291,7 @@ TEST_F(APZScrollHandoffTester, LayerStructureChangesWhileEventsArePending) {
 #ifndef MOZ_WIDGET_ANDROID  
 
 
-TEST_F(APZScrollHandoffTesterInternal, StuckInOverscroll_Bug1073250) {
+TEST_F(APZScrollHandoffTesterMock, StuckInOverscroll_Bug1073250) {
   
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
   SCOPED_GFX_PREF_FLOAT("apz.fling_min_velocity_threshold", 0.0f);
@@ -301,6 +301,7 @@ TEST_F(APZScrollHandoffTesterInternal, StuckInOverscroll_Bug1073250) {
   TestAsyncPanZoomController* child = ApzcOf(layers[1]);
 
   
+  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID);
   Pan(manager, 10, 40, PanOptions::KeepFingerDown);
   EXPECT_FALSE(child->IsOverscrolled());
   EXPECT_TRUE(rootApzc->IsOverscrolled());
@@ -335,7 +336,7 @@ TEST_F(APZScrollHandoffTesterInternal, StuckInOverscroll_Bug1073250) {
 
 
 
-TEST_F(APZScrollHandoffTesterInternal, StuckInOverscroll_Bug1231228) {
+TEST_F(APZScrollHandoffTesterMock, StuckInOverscroll_Bug1231228) {
   
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
   SCOPED_GFX_PREF_FLOAT("apz.fling_min_velocity_threshold", 0.0f);
@@ -345,6 +346,7 @@ TEST_F(APZScrollHandoffTesterInternal, StuckInOverscroll_Bug1231228) {
   TestAsyncPanZoomController* child = ApzcOf(layers[1]);
 
   
+  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
   Pan(manager, 60, 90, PanOptions::KeepFingerDown);
   EXPECT_FALSE(child->IsOverscrolled());
   EXPECT_TRUE(rootApzc->IsOverscrolled());
@@ -411,7 +413,7 @@ TEST_F(APZScrollHandoffTester, StuckInOverscroll_Bug1240202a) {
 #endif
 
 #ifndef MOZ_WIDGET_ANDROID  
-TEST_F(APZScrollHandoffTesterInternal, StuckInOverscroll_Bug1240202b) {
+TEST_F(APZScrollHandoffTesterMock, StuckInOverscroll_Bug1240202b) {
   
   SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
 
@@ -420,6 +422,7 @@ TEST_F(APZScrollHandoffTesterInternal, StuckInOverscroll_Bug1240202b) {
   TestAsyncPanZoomController* child = ApzcOf(layers[1]);
 
   
+  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
   Pan(manager, 60, 90, PanOptions::KeepFingerDown);
   EXPECT_FALSE(child->IsOverscrolled());
   EXPECT_TRUE(rootApzc->IsOverscrolled());
@@ -430,6 +433,7 @@ TEST_F(APZScrollHandoffTesterInternal, StuckInOverscroll_Bug1240202b) {
 
   
   
+  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
   TouchDown(manager, ScreenIntPoint(10, 90), mcc->Time());
 
   
@@ -444,6 +448,8 @@ TEST_F(APZScrollHandoffTesterInternal, StuckInOverscroll_Bug1240202b) {
       SingleTouchData(0, ScreenIntPoint(10, 90), ScreenSize(0, 0), 0, 0));
   secondFingerDown.mTouches.AppendElement(
       SingleTouchData(1, ScreenIntPoint(10, 80), ScreenSize(0, 0), 0, 0));
+  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
+  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
   manager->ReceiveInputEvent(secondFingerDown);
 
   
@@ -483,7 +489,7 @@ TEST_F(APZScrollHandoffTester, OpposingConstrainedAxes_Bug1201098) {
 
 
 
-TEST_F(APZScrollHandoffTesterInternal, PartialFlingHandoff) {
+TEST_F(APZScrollHandoffTesterMock, PartialFlingHandoff) {
   SCOPED_GFX_PREF_FLOAT("apz.fling_min_velocity_threshold", 0.0f);
 
   CreateScrollHandoffLayerTree1();
@@ -491,6 +497,7 @@ TEST_F(APZScrollHandoffTesterInternal, PartialFlingHandoff) {
   
   
   
+  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
   Pan(manager, ScreenIntPoint(90, 90), ScreenIntPoint(55, 55));
 
   RefPtr<TestAsyncPanZoomController> parent = ApzcOf(layers[0]);
@@ -577,7 +584,7 @@ TEST_F(APZScrollHandoffTester, ScrollgrabFling) {
   childApzc->AssertStateIsReset();
 }
 
-TEST_F(APZScrollHandoffTesterInternal, ScrollgrabFlingAcceleration1) {
+TEST_F(APZScrollHandoffTesterMock, ScrollgrabFlingAcceleration1) {
   SCOPED_GFX_PREF_BOOL("apz.allow_immediate_handoff", true);
   SCOPED_GFX_PREF_FLOAT("apz.fling_min_velocity_threshold", 0.0f);
   CreateScrollgrabLayerTree(true );
@@ -590,7 +597,7 @@ TEST_F(APZScrollHandoffTesterInternal, ScrollgrabFlingAcceleration1) {
   TestFlingAcceleration();
 }
 
-TEST_F(APZScrollHandoffTesterInternal, ScrollgrabFlingAcceleration2) {
+TEST_F(APZScrollHandoffTesterMock, ScrollgrabFlingAcceleration2) {
   SCOPED_GFX_PREF_BOOL("apz.allow_immediate_handoff", true);
   SCOPED_GFX_PREF_FLOAT("apz.fling_min_velocity_threshold", 0.0f);
   CreateScrollgrabLayerTree(false );
@@ -669,7 +676,7 @@ TEST_F(APZScrollHandoffTester, CrossApzcAxisLock_TouchAction) {
   TestCrossApzcAxisLock();
 }
 
-TEST_F(APZScrollHandoffTesterInternal, WheelHandoffAfterDirectionReversal) {
+TEST_F(APZScrollHandoffTesterMock, WheelHandoffAfterDirectionReversal) {
   
   
   SCOPED_GFX_PREF_INT("mousewheel.transaction.timeout", 1500);
@@ -692,6 +699,7 @@ TEST_F(APZScrollHandoffTesterInternal, WheelHandoffAfterDirectionReversal) {
 
   
   
+  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
   Wheel(manager, cursorLocation, upwardDelta, mcc->Time());
   EXPECT_EQ(0, rootMetrics.GetVisualScrollOffset().y);
   EXPECT_EQ(0, childMetrics.GetVisualScrollOffset().y);
@@ -700,6 +708,7 @@ TEST_F(APZScrollHandoffTesterInternal, WheelHandoffAfterDirectionReversal) {
   
   for (size_t i = 0; i < 6; ++i) {
     mcc->AdvanceByMillis(100);
+    QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
     Wheel(manager, cursorLocation, downwardDelta, mcc->Time());
   }
   EXPECT_EQ(0, rootMetrics.GetVisualScrollOffset().y);
@@ -710,13 +719,14 @@ TEST_F(APZScrollHandoffTesterInternal, WheelHandoffAfterDirectionReversal) {
   
   for (size_t i = 0; i < 16; ++i) {
     mcc->AdvanceByMillis(100);
+    QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
     Wheel(manager, cursorLocation, downwardDelta, mcc->Time());
   }
   EXPECT_EQ(childScrollRange.YMost(), childMetrics.GetVisualScrollOffset().y);
   EXPECT_GT(rootMetrics.GetVisualScrollOffset().y, 0);
 }
 
-TEST_F(APZScrollHandoffTesterInternal, WheelHandoffNonscrollable) {
+TEST_F(APZScrollHandoffTesterMock, WheelHandoffNonscrollable) {
   
   CreateScrollHandoffLayerTree5();
 
@@ -732,6 +742,7 @@ TEST_F(APZScrollHandoffTesterInternal, WheelHandoffNonscrollable) {
   ScreenIntPoint scrollableLocation(40, 60);
 
   
+  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID);
   Wheel(manager, nonscrollableLocation, downwardDelta, mcc->Time());
   EXPECT_EQ(0, childMetrics.GetVisualScrollOffset().y);
 
@@ -742,10 +753,12 @@ TEST_F(APZScrollHandoffTesterInternal, WheelHandoffNonscrollable) {
                         scrollableLocation,
                         MillisecondsSinceStartup(mcc->Time()), mcc->Time(), 0);
   WidgetMouseEvent mouseEvent = mouseInput.ToWidgetEvent(nullptr);
+  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
   ((APZInputBridge*)manager.get())->ReceiveInputEvent(mouseEvent);
 
   
   mcc->AdvanceByMillis(100);
+  QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
   Wheel(manager, scrollableLocation, downwardDelta, mcc->Time());
   EXPECT_GT(childMetrics.GetVisualScrollOffset().y, 0);
 }
