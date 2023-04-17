@@ -126,16 +126,6 @@ extern const JSClass IntlClass;
                                                          unsigned argc,
                                                          JS::Value* vp);
 
-
-
-
-
-
-
-
-[[nodiscard]] extern bool intl_SupportedValuesOf(JSContext* cx, unsigned argc,
-                                                 JS::Value* vp);
-
 }  
 
 #endif 

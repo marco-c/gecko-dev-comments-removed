@@ -1672,8 +1672,7 @@ extern bool EqualStrings(JSContext* cx, JSLinearString* str1,
                          JSLinearString* str2, bool* result) = delete;
 
 
-extern bool EqualStrings(const JSLinearString* str1,
-                         const JSLinearString* str2);
+extern bool EqualStrings(JSLinearString* str1, JSLinearString* str2);
 
 
 
@@ -1681,7 +1680,7 @@ extern bool EqualStrings(const JSLinearString* str1,
 
 
 
-extern bool EqualChars(const JSLinearString* str1, const JSLinearString* str2);
+extern bool EqualChars(JSLinearString* str1, JSLinearString* str2);
 
 
 
@@ -1696,12 +1695,6 @@ extern int32_t CompareChars(const char16_t* s1, size_t len1,
 
 extern bool CompareStrings(JSContext* cx, JSString* str1, JSString* str2,
                            int32_t* result);
-
-
-
-
-extern int32_t CompareStrings(const JSLinearString* str1,
-                              const JSLinearString* str2);
 
 
 
