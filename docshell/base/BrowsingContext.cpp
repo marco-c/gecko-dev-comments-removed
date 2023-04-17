@@ -859,7 +859,10 @@ void BrowsingContext::Detach(bool aFromIPC) {
       }
     });
   } else if (!aFromIPC) {
-    auto callback = [](auto) {};
+    
+    
+    
+    auto callback = [self = RefPtr{this}](auto) {};
     ContentChild::GetSingleton()->SendDiscardBrowsingContext(this, callback,
                                                              callback);
   }
