@@ -192,8 +192,7 @@ nsresult JSExecutionContext::Decode(mozilla::Vector<uint8_t>& aBytecodeBuf,
   
   
   
-  MOZ_ASSERT(tr != JS::TranscodeResult::Failure_BadBuildId &&
-             tr != JS::TranscodeResult::Failure_WrongCompileOption);
+  MOZ_ASSERT(tr != JS::TranscodeResult::Failure_BadBuildId);
   if (tr != JS::TranscodeResult::Ok) {
     mSkip = true;
     mRv = NS_ERROR_DOM_JS_DECODING_ERROR;
