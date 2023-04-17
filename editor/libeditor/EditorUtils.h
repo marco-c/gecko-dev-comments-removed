@@ -1164,7 +1164,7 @@ class EditorUtils final {
 
 
 
-  static bool IsContentPreformatted(nsIContent& aContent);
+  static bool IsWhiteSpacePreformatted(const nsIContent& aContent);
 
   
 

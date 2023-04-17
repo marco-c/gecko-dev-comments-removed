@@ -538,7 +538,7 @@ void EditorUtils::MaskString(nsString& aString, Text* aText,
 }
 
 
-bool EditorUtils::IsContentPreformatted(nsIContent& aContent) {
+bool EditorUtils::IsWhiteSpacePreformatted(const nsIContent& aContent) {
   
   
   Element* element = aContent.GetAsElementOrParentElement();

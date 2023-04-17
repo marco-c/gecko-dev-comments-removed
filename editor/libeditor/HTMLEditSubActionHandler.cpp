@@ -1112,8 +1112,8 @@ EditActionResult HTMLEditor::HandleInsertText(
 
   
   
-  bool isPRE =
-      EditorUtils::IsContentPreformatted(*pointToInsert.ContainerAsContent());
+  const bool isWhiteSpaceCollapsible = !EditorUtils::IsWhiteSpacePreformatted(
+      *pointToInsert.ContainerAsContent());
 
   
   
@@ -1134,7 +1134,7 @@ EditActionResult HTMLEditor::HandleInsertText(
     
     
     
-    if (isPRE || IsInPlaintextMode()) {
+    if (!isWhiteSpaceCollapsible || IsInPlaintextMode()) {
       while (pos != -1 &&
              pos < AssertedCast<int32_t>(aInsertionString.Length())) {
         int32_t oldPos = pos;
@@ -2115,14 +2115,14 @@ void HTMLEditor::ExtendRangeToDeleteWithNormalizingWhiteSpaces(
       precedingCharPoint.ContainerAsText() ==
           aStartToDelete.ContainerAsText() &&
       precedingCharPoint.IsCharASCIISpaceOrNBSP() &&
-      !EditorUtils::IsContentPreformatted(
+      !EditorUtils::IsWhiteSpacePreformatted(
           *precedingCharPoint.ContainerAsText());
   const bool maybeNormalizeFollowingWhiteSpaces =
       followingCharPoint.IsSet() && !followingCharPoint.IsEndOfContainer() &&
       (followingCharPoint.ContainerAsText() == aEndToDelete.ContainerAsText() ||
        removingLastCharOfStartNode) &&
       followingCharPoint.IsCharASCIISpaceOrNBSP() &&
-      !EditorUtils::IsContentPreformatted(
+      !EditorUtils::IsWhiteSpacePreformatted(
           *followingCharPoint.ContainerAsText());
 
   if (!maybeNormalizePrecedingWhiteSpaces &&
@@ -5807,7 +5807,7 @@ EditorDOMPoint HTMLEditor::GetCurrentHardLineEndPoint(
 
     
     if (nextEditableContent->IsText() &&
-        EditorUtils::IsContentPreformatted(*nextEditableContent)) {
+        EditorUtils::IsWhiteSpacePreformatted(*nextEditableContent)) {
       nsAutoString textContent;
       nextEditableContent->GetAsText()->GetData(textContent);
       int32_t newlinePos = textContent.FindChar(nsCRT::LF);

@@ -963,7 +963,7 @@ class MOZ_STACK_CLASS WSRunScanner final {
       return mNBSPData.LastPointRef();
     }
 
-    bool IsPreformatted() const { return mIsPreformatted; }
+    bool IsWhiteSpaceCollapsible() const { return mIsWhiteSpaceCollapsible; }
 
     template <typename PT, typename CT>
     EditorDOMPointInText GetInclusiveNextEditableCharPoint(
@@ -1220,8 +1220,8 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
 
 
-    bool IsPreformattedOrSurrondedByVisibleContent() const {
-      return mIsPreformatted ||
+    bool IsWhiteSpaceNotCollapsibleOrSurrondedByVisibleContent() const {
+      return !mIsWhiteSpaceCollapsible ||
              ((StartsFromNormalText() || StartsFromSpecialContent()) &&
               (EndsByNormalText() || EndsBySpecialContent() ||
                EndsByBRElement()));
@@ -1239,7 +1239,7 @@ class MOZ_STACK_CLASS WSRunScanner final {
     
     
     
-    bool mIsPreformatted;
+    bool mIsWhiteSpaceCollapsible;
   };
 
   const TextFragmentData& TextFragmentDataAtStartRef() const {
