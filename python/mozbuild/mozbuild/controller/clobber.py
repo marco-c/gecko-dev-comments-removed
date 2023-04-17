@@ -158,10 +158,7 @@ class Clobberer(object):
             rust_build_kind = "debug"
 
         
-        no_clobber = {
-            ".mozbuild",
-            "msvc",
-        }
+        no_clobber = {".mozbuild", "msvc", "_virtualenvs"}
 
         
         no_clobber |= rust_targets
