@@ -68,20 +68,6 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-
-
-  MOZ_CAN_RUN_SCRIPT nsresult UndoAsAction(uint32_t aCount,
-                                           nsIPrincipal* aPrincipal = nullptr);
-  MOZ_CAN_RUN_SCRIPT nsresult RedoAsAction(uint32_t aCount,
-                                           nsIPrincipal* aPrincipal = nullptr);
-
-  
-
-
-
-
-
-
   MOZ_CAN_RUN_SCRIPT nsresult CutAsAction(nsIPrincipal* aPrincipal = nullptr);
 
   

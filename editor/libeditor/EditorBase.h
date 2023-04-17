@@ -669,6 +669,20 @@ class EditorBase : public nsIEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT nsresult UndoAsAction(uint32_t aCount,
+                                           nsIPrincipal* aPrincipal = nullptr);
+  MOZ_CAN_RUN_SCRIPT nsresult RedoAsAction(uint32_t aCount,
+                                           nsIPrincipal* aPrincipal = nullptr);
+
+  
+
+
+
+
+
+
+
+
 
 
   MOZ_CAN_RUN_SCRIPT nsresult InsertTextAsAction(
