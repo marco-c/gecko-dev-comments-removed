@@ -20,7 +20,6 @@ use std::{
     cell::{Cell, RefCell},
     cmp,
     collections::hash_map::Entry,
-    fmt::Write,
     marker::PhantomData,
     mem,
     num::NonZeroUsize,
@@ -34,7 +33,6 @@ use std::{
     thread,
     time::Duration,
 };
-use uuid::Uuid;
 use webrender_build::shader::{
     ProgramSourceDigest, ShaderKind, ShaderVersion, build_shader_main_string,
     build_shader_prefix_string, do_build_shader_string, shader_source_from_file,
@@ -1129,10 +1127,6 @@ pub struct Device {
 
     
     
-    requires_unique_shader_source: bool,
-
-    
-    
     requires_texture_external_unbind: bool,
 
     
@@ -1628,12 +1622,6 @@ impl Device {
 
         
         
-        
-        
-        let requires_unique_shader_source = renderer_name == "Adreno (TM) 505" || renderer_name == "Adreno (TM) 506";
-
-        
-        
         let requires_texture_external_unbind = is_emulator;
 
         let is_macos = cfg!(target_os = "macos");
@@ -1789,7 +1777,6 @@ impl Device {
             extensions,
             texture_storage_usage,
             requires_null_terminated_shader_source,
-            requires_unique_shader_source,
             requires_texture_external_unbind,
             required_pbo_stride,
             dump_shader_source,
@@ -1935,13 +1922,6 @@ impl Device {
         let id = self.gl.create_shader(shader_type);
 
         let mut new_source = Cow::from(source.as_str());
-        
-        
-        
-        if self.requires_unique_shader_source {
-            let uuid = Uuid::new_v4().to_hyphenated();
-            write!(new_source.to_mut(), "\n//{}\n", uuid).unwrap();
-        }
         
         
         if self.requires_null_terminated_shader_source {
