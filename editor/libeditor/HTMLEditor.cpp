@@ -891,19 +891,18 @@ nsresult HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
 
     case NS_VK_BACK:
     case NS_VK_DELETE: {
-      
-      nsresult rv = TextEditor::HandleKeyPressEvent(aKeyboardEvent);
+      nsresult rv = EditorBase::HandleKeyPressEvent(aKeyboardEvent);
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                           "TextEditor::HandleKeyPressEvent() failed");
+                           "EditorBase::HandleKeyPressEvent() failed");
       return rv;
     }
     case NS_VK_TAB: {
       if (IsPlaintextEditor()) {
         
         
-        nsresult rv = TextEditor::HandleKeyPressEvent(aKeyboardEvent);
+        nsresult rv = EditorBase::HandleKeyPressEvent(aKeyboardEvent);
         NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                             "TextEditor::HandleKeyPressEvent() failed");
+                             "EditorBase::HandleKeyPressEvent() failed");
         return rv;
       }
 
@@ -978,7 +977,7 @@ nsresult HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
       aKeyboardEvent->PreventDefault();
       nsresult rv = OnInputText(u"\t"_ns);
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                           "TextEditor::OnInputText(\\t) failed");
+                           "EditorBase::OnInputText(\\t) failed");
       return EditorBase::ToGenericNSResult(rv);
     }
     case NS_VK_RETURN:
@@ -1008,7 +1007,7 @@ nsresult HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
   aKeyboardEvent->PreventDefault();
   nsAutoString str(aKeyboardEvent->mCharCode);
   nsresult rv = OnInputText(str);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "TextEditor::OnInputText() failed");
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "EditorBase::OnInputText() failed");
   return rv;
 }
 
