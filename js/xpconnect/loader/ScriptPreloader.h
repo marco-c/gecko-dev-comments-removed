@@ -216,7 +216,7 @@ class ScriptPreloader : public nsIObserver,
     void FreeData() {
       
       
-      if (!mXDRData.empty()) {
+      if (!IsMemMapped()) {
         mXDRRange.reset();
         mXDRData.destroy();
       }
@@ -275,6 +275,8 @@ class ScriptPreloader : public nsIObserver,
     }
 
     bool HasRange() { return mXDRRange.isSome(); }
+
+    bool IsMemMapped() const { return mXDRData.empty(); }
 
     nsTArray<uint8_t>& Array() {
       MOZ_ASSERT(HasArray());
@@ -397,7 +399,7 @@ class ScriptPreloader : public nsIObserver,
   
   static constexpr int MAX_MAINTHREAD_DECODE_SIZE = 50 * 1024;
 
-  ScriptPreloader();
+  explicit ScriptPreloader(AutoMemMap* cacheData);
 
   void Cleanup();
 
@@ -513,7 +515,10 @@ class ScriptPreloader : public nsIObserver,
   nsCOMPtr<nsITimer> mSaveTimer;
 
   
-  AutoMemMap mCacheData;
+  
+  
+  
+  AutoMemMap* mCacheData;
 
   Monitor mMonitor;
   Monitor mSaveMonitor;
