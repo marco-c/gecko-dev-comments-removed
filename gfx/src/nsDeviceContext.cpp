@@ -190,14 +190,6 @@ already_AddRefed<gfxContext> nsDeviceContext::CreateRenderingContextCommon(
     return nullptr;
   }
 
-#ifdef XP_MACOSX
-  
-  
-  
-  
-  
-  dt->AddUserData(&gfxContext::sDontUseAsSourceKey, dt, nullptr);
-#endif
   dt->AddUserData(&sDisablePixelSnapping, (void*)0x1, nullptr);
 
   RefPtr<gfxContext> pContext = gfxContext::CreateOrNull(dt);

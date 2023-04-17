@@ -426,20 +426,6 @@ class gfxContext final {
       mozilla::gfx::SourceSurface* aMask = nullptr,
       const mozilla::gfx::Matrix& aMaskTransform = mozilla::gfx::Matrix());
 
-  
-
-
-
-
-
-
-
-
-  void PushGroupAndCopyBackground(
-      gfxContentType content = gfxContentType::COLOR,
-      mozilla::gfx::Float aOpacity = 1.0f,
-      mozilla::gfx::SourceSurface* aMask = nullptr,
-      const mozilla::gfx::Matrix& aMaskTransform = mozilla::gfx::Matrix());
   void PopGroupAndBlend();
 
   mozilla::gfx::Point GetDeviceOffset() const;
@@ -465,8 +451,6 @@ class gfxContext final {
 
   void CopyAsDataURI();
 #endif
-
-  static mozilla::gfx::UserDataKey sDontUseAsSourceKey;
 
  private:
   
