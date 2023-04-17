@@ -99,10 +99,6 @@ DOM4_MSG_DEF(NotReadableError, "File could not be read", NS_ERROR_DOM_FILE_NOT_R
 
 
 
-DOM4_MSG_DEF(NotSupportedError, "Animation to or from an underlying value is not yet supported.", NS_ERROR_DOM_ANIM_MISSING_PROPS_ERR)
-
-
-
 DOM_MSG_DEF(NS_OK                                  , "Success")
 DOM_MSG_DEF(NS_ERROR_NOT_INITIALIZED               , "Component not initialized")
 DOM_MSG_DEF(NS_ERROR_ALREADY_INITIALIZED           , "Component already initialized")

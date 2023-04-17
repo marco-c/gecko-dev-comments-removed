@@ -1161,13 +1161,6 @@ with modules["SIGNED_APP"]:
 
 
 
-with modules["DOM_ANIM"]:
-    errors["NS_ERROR_DOM_ANIM_MISSING_PROPS_ERR"] = FAILURE(1)
-
-
-
-
-
 with modules["DOM_PUSH"]:
     errors["NS_ERROR_DOM_PUSH_INVALID_REGISTRATION_ERR"] = FAILURE(1)
     errors["NS_ERROR_DOM_PUSH_DENIED_ERR"] = FAILURE(2)
