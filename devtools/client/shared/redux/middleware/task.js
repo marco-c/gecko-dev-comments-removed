@@ -3,10 +3,9 @@
 
 "use strict";
 
-loader.lazyRequireGetter(this, "Task", "devtools/shared/task", true);
 loader.lazyRequireGetter(
   this,
-  ["executeSoon", "isGenerator", "isAsyncFunction", "reportException"],
+  ["executeSoon", "isAsyncFunction", "reportException"],
   "devtools/shared/DevToolsUtils",
   true
 );
@@ -18,28 +17,13 @@ const ERROR_TYPE = (exports.ERROR_TYPE = "@@redux/middleware/task#error");
 
 
 
-
-
-
 function task({ dispatch, getState }) {
   return next => action => {
-    if (isGenerator(action)) {
-      return Task.spawn(action.bind(null, { dispatch, getState })).catch(
-        handleError.bind(null, dispatch)
-      );
-    }
     if (isAsyncFunction(action)) {
       return action({ dispatch, getState }).catch(
         handleError.bind(null, dispatch)
       );
     }
-
-    
-
-
-
-
-
     return next(action);
   };
 }
