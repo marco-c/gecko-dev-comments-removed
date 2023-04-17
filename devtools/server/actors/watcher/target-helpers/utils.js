@@ -32,9 +32,22 @@ function shouldNotifyWindowGlobal(
   
   
   
-  if (windowGlobal.osPid == -1 && windowGlobal.isInProcess) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const isParentProcessWindowGlobal =
+    windowGlobal.osPid == -1 && windowGlobal.isInProcess;
+  const isTabDebugging = !!watchedBrowserId;
+  if (isParentProcessWindowGlobal && !isTabDebugging) {
     return false;
   }
+
   
   
   if (
