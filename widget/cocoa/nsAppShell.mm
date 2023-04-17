@@ -653,7 +653,6 @@ bool nsAppShell::ProcessNextNativeEvent(bool aMayWait) {
   NSRunLoop* currentRunLoop = [NSRunLoop currentRunLoop];
 
   EventQueueRef currentEventQueue = GetCurrentEventQueue();
-  EventTargetRef eventDispatcherTarget = GetEventDispatcherTarget();
 
   if (aMayWait) {
     mozilla::BackgroundHangMonitor().NotifyWait();
@@ -689,6 +688,23 @@ bool nsAppShell::ProcessNextNativeEvent(bool aMayWait) {
       
       
       
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+#ifdef NIGHTLY_BUILD
+      eventProcessed = false;
+      break;
+#else
+      
+      
+      
       EventRef currentEvent =
           AcquireFirstMatchingEventInQueue(currentEventQueue, 0, NULL, kEventQueueOptionsNone);
       if (!currentEvent) {
@@ -720,11 +736,13 @@ bool nsAppShell::ProcessNextNativeEvent(bool aMayWait) {
       
       RetainEvent(currentEvent);
       RemoveEventFromQueue(currentEventQueue, currentEvent);
+      EventTargetRef eventDispatcherTarget = GetEventDispatcherTarget();
       SendEventToEventTarget(currentEvent, eventDispatcherTarget);
       
       
       ReleaseEvent(currentEvent);
       eventProcessed = true;
+#endif
     }
   } while (mRunningEventLoop);
 
