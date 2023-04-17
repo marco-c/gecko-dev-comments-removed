@@ -517,6 +517,7 @@ class FormAutofillSection {
       return;
     }
 
+    let nextStateValue = null;
     for (let [state, mmStateValue] of Object.entries(this._FIELD_STATE_ENUM)) {
       
       
@@ -525,10 +526,14 @@ class FormAutofillSection {
       }
 
       if (state == nextState) {
-        this.winUtils.addManuallyManagedState(element, mmStateValue);
+        nextStateValue = mmStateValue;
       } else {
         this.winUtils.removeManuallyManagedState(element, mmStateValue);
       }
+    }
+
+    if (nextStateValue) {
+      this.winUtils.addManuallyManagedState(element, nextStateValue);
     }
 
     if (nextState == FIELD_STATES.AUTO_FILLED) {
