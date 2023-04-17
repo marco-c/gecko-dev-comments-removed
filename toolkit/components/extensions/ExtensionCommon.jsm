@@ -191,6 +191,10 @@ function makeWidgetId(id) {
   return id.replace(/[^a-z0-9_-]/g, "_");
 }
 
+function isDeadOrRemote(obj) {
+  return Cu.isDeadWrapper(obj) || Cu.isRemoteProxy(obj);
+}
+
 
 
 
@@ -399,7 +403,8 @@ class InnerWindowReference {
     
     if (
       !this.needWindowIDCheck ||
-      getInnerWindowID(this.contentWindow) === this.innerWindowID
+      (!isDeadOrRemote(this.contentWindow) &&
+        getInnerWindowID(this.contentWindow) === this.innerWindowID)
     ) {
       return this.contentWindow;
     }
@@ -410,7 +415,7 @@ class InnerWindowReference {
     
     
     
-    if (this.contentWindow && !Cu.isDeadWrapper(this.contentWindow)) {
+    if (this.contentWindow && !isDeadOrRemote(this.contentWindow)) {
       this.contentWindow.removeEventListener("pagehide", this, {
         mozSystemGroup: true,
       });
