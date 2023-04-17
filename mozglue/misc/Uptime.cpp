@@ -111,12 +111,7 @@ Maybe<uint64_t> NowIncludingSuspendMs() {
 #  endif
 }
 
-#else  
-
-Maybe<uint64_t> NowExcludingSuspendMs() { return Nothing(); }
-Maybe<uint64_t> NowIncludingSuspendMs() { return Nothing(); }
-
-#endif
+#endif  
 
 };  
 
