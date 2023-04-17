@@ -45,6 +45,9 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   JS::Rooted<JSScript*> mScript;
 
   
+  JS::CompileOptions& mCompileOptions;
+
+  
   
   nsresult mRv;
 
@@ -68,13 +71,13 @@ class MOZ_STACK_CLASS JSExecutionContext final {
  private:
   
   template <typename Unit>
-  nsresult InternalCompile(JS::CompileOptions& aCompileOptions,
-                           JS::SourceText<Unit>& aSrcBuf);
+  nsresult InternalCompile(JS::SourceText<Unit>& aSrcBuf);
 
  public:
   
   
-  JSExecutionContext(JSContext* aCx, JS::Handle<JSObject*> aGlobal);
+  JSExecutionContext(JSContext* aCx, JS::Handle<JSObject*> aGlobal,
+                     JS::CompileOptions& aCompileOptions);
 
   JSExecutionContext(const JSExecutionContext&) = delete;
   JSExecutionContext(JSExecutionContext&&) = delete;
@@ -110,18 +113,14 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   [[nodiscard]] nsresult JoinCompile(JS::OffThreadToken** aOffThreadToken);
 
   
-  nsresult Compile(JS::CompileOptions& aCompileOptions,
-                   JS::SourceText<char16_t>& aSrcBuf);
-  nsresult Compile(JS::CompileOptions& aCompileOptions,
-                   JS::SourceText<mozilla::Utf8Unit>& aSrcBuf);
+  nsresult Compile(JS::SourceText<char16_t>& aSrcBuf);
+  nsresult Compile(JS::SourceText<mozilla::Utf8Unit>& aSrcBuf);
 
   
-  nsresult Compile(JS::CompileOptions& aCompileOptions,
-                   const nsAString& aScript);
+  nsresult Compile(const nsAString& aScript);
 
   
-  nsresult Decode(JS::CompileOptions& aCompileOptions,
-                  mozilla::Vector<uint8_t>& aBytecodeBuf,
+  nsresult Decode(mozilla::Vector<uint8_t>& aBytecodeBuf,
                   size_t aBytecodeIndex);
 
   
