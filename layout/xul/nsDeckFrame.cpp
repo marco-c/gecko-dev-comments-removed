@@ -219,11 +219,16 @@ nsDeckFrame::DoXULLayout(nsBoxLayoutState& aState) {
 
   
   
-  MOZ_ASSERT((mContent->IsXULElement(nsGkAtoms::tabpanels) &&
-              mContent->AsElement()->AttrValueIs(
-                  kNameSpaceID_None, nsGkAtoms::id, u"tabbrowser-tabpanels"_ns,
-                  eCaseMatters)) ||
-             !HasPossiblyRemoteContents());
+  MOZ_ASSERT(
+      (mContent->IsXULElement(nsGkAtoms::tabpanels) &&
+       mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::id,
+#ifdef MOZ_THUNDERBIRD
+                                          u"tabpanelcontainer"_ns,
+#else
+                                          u"tabbrowser-tabpanels"_ns,
+#endif
+                                          eCaseMatters)) ||
+      !HasPossiblyRemoteContents());
 
   
   nsIFrame* box = nsIFrame::GetChildXULBox(this);
