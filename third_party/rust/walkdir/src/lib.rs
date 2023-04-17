@@ -106,7 +106,7 @@
 #![deny(missing_docs)]
 #![allow(unknown_lints)]
 
-#[cfg(test)]
+#[cfg(doctest)]
 doc_comment::doctest!("../README.md");
 
 use std::cmp::{min, Ordering};
@@ -390,12 +390,48 @@ impl WalkDir {
     
     
     
+    
     pub fn sort_by<F>(mut self, cmp: F) -> Self
     where
         F: FnMut(&DirEntry, &DirEntry) -> Ordering + Send + Sync + 'static,
     {
         self.opts.sorter = Some(Box::new(cmp));
         self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn sort_by_key<K, F>(self, mut cmp: F) -> Self
+    where
+        F: FnMut(&DirEntry) -> K + Send + Sync + 'static,
+        K: Ord,
+    {
+        self.sort_by(move |a, b| cmp(a).cmp(&cmp(b)))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn sort_by_file_name(self) -> Self {
+        self.sort_by(|a, b| a.file_name().cmp(b.file_name()))
     }
 
     
