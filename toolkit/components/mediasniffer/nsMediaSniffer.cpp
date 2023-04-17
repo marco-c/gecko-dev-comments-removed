@@ -35,6 +35,23 @@ nsMediaSnifferEntry nsMediaSniffer::sSnifferEntries[] = {
     
     PATTERN_ENTRY("\xFF\xFF\xFF\xFF\xFF", "OggS", APPLICATION_OGG),
     
+    
+    
+    
+    PATTERN_ENTRY("\xFF\xFF\xFF\xFF"
+                  "\x00\x00\x00\x00"
+                  "\xFF\xFF\xFF\xFF"
+                  "\x00\x00\x00\x00"
+                  "\x00\x00\x00\x00"
+                  "\xFF\xFF",
+                  "RIFF"
+                  "\x00\x00\x00\x00"
+                  "WAVE"
+                  "\x00\x00\x00\x00"
+                  "\x00\x00\x00\x00"
+                  "\x55\x00",
+                  AUDIO_MP3),
+    
     PATTERN_ENTRY("\xFF\xFF\xFF\xFF\x00\x00\x00\x00\xFF\xFF\xFF\xFF",
                   "RIFF\x00\x00\x00\x00WAVE", AUDIO_WAV),
     
