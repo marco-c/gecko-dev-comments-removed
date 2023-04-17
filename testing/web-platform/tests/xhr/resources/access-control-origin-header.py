@@ -1,4 +1,3 @@
-
 def main(request, response):
     response.headers.set(b"Content-Type", b"text/plain")
     response.headers.set(b"Cache-Control", b"no-cache, no-store")

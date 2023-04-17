@@ -1,6 +1,4 @@
 
-
-
 state_header = b"content-language"
 
 
