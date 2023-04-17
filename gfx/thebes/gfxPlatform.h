@@ -516,14 +516,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   
 
 
-
-
-  static bool BufferRotationEnabled();
-  static void DisableBufferRotation();
-
-  
-
-
   static CMSMode GetCMSMode() {
     EnsureCMSInitialized();
     return gCMSMode;
