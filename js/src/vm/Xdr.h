@@ -279,7 +279,7 @@ class XDRState : public XDRCoderBase {
   }
 
   
-  XDRResult peekRawUint32(uint32_t* n) {
+  XDRResult peekUint32(uint32_t* n) {
     MOZ_ASSERT(mode == XDR_DECODE);
     const uint8_t* ptr = buf->peek(sizeof(*n));
     if (!ptr) {
