@@ -2376,14 +2376,16 @@ HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
   
   
   if (!newCaretPosition.IsInTextNode()) {
-    if (nsIContent* currentBlock = HTMLEditUtils::
-            GetInclusiveAncestorEditableBlockElementOrInlineEditingHost(
-                *newCaretPosition.ContainerAsContent())) {
+    if (const Element* editableBlockElementOrInlineEditingHost =
+            HTMLEditUtils::GetInclusiveAncestorElement(
+                *newCaretPosition.ContainerAsContent(),
+                HTMLEditUtils::
+                    ClosestEditableBlockElementOrInlineEditingHost)) {
       Element* editingHost = GetActiveEditingHost();
       
       nsIContent* previousContent =
           HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement(
-              newCaretPosition, *currentBlock,
+              newCaretPosition, *editableBlockElementOrInlineEditingHost,
               {LeafNodeType::LeafNodeOrNonEditableNode}, editingHost);
       if (previousContent && !HTMLEditUtils::IsBlockElement(*previousContent)) {
         newCaretPosition =
@@ -2396,7 +2398,8 @@ HTMLEditor::DeleteTextAndNormalizeSurroundingWhiteSpaces(
       
       else if (nsIContent* nextContent =
                    HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
-                       newCaretPosition, *currentBlock,
+                       newCaretPosition,
+                       *editableBlockElementOrInlineEditingHost,
                        {LeafNodeType::LeafNodeOrNonEditableNode},
                        editingHost)) {
         newCaretPosition = nextContent->IsText() ||

@@ -390,8 +390,8 @@ bool HTMLEditUtils::IsVisibleTextNode(
   }
 
   if (!aEditingHost) {
-    aEditingHost = HTMLEditUtils::
-        GetInclusiveAncestorEditableBlockElementOrInlineEditingHost(aText);
+    aEditingHost = HTMLEditUtils::GetAncestorElement(
+        aText, HTMLEditUtils::ClosestEditableBlockElementOrInlineEditingHost);
   }
   WSScanResult nextWSScanResult =
       WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(
@@ -449,8 +449,9 @@ bool HTMLEditUtils::IsVisibleBRElement(
   
   
   if (!aEditingHost) {
-    aEditingHost = HTMLEditUtils::
-        GetInclusiveAncestorEditableBlockElementOrInlineEditingHost(aContent);
+    aEditingHost = HTMLEditUtils::GetInclusiveAncestorElement(
+        aContent,
+        HTMLEditUtils::ClosestEditableBlockElementOrInlineEditingHost);
     if (NS_WARN_IF(!aEditingHost)) {
       return false;
     }
@@ -513,17 +514,19 @@ bool HTMLEditUtils::IsEmptyNode(nsPresContext* aPresContext,
     *aSeenBR = false;
   }
 
-  Element* maybeParentBlockElement =
+  const Element* editableBlockElementOrInlineEditingHost =
       aNode.IsContent() && EditorUtils::IsEditableContent(*aNode.AsContent(),
                                                           EditorType::HTML)
-          ? GetInclusiveAncestorEditableBlockElementOrInlineEditingHost(
-                *aNode.AsContent())
+          ? HTMLEditUtils::GetInclusiveAncestorElement(
+                *aNode.AsContent(),
+                HTMLEditUtils::ClosestEditableBlockElementOrInlineEditingHost)
           : nullptr;
 
   if (const Text* text = Text::FromNode(&aNode)) {
     return aOptions.contains(EmptyCheckOption::SafeToAskLayout)
                ? !IsInVisibleTextFrames(aPresContext, *text)
-               : !IsVisibleTextNode(*text, maybeParentBlockElement);
+               : !IsVisibleTextNode(*text,
+                                    editableBlockElementOrInlineEditingHost);
   }
 
   
@@ -560,7 +563,8 @@ bool HTMLEditUtils::IsEmptyNode(nsPresContext* aPresContext,
       
       if (aOptions.contains(EmptyCheckOption::SafeToAskLayout)
               ? IsInVisibleTextFrames(aPresContext, *text)
-              : IsVisibleTextNode(*text, maybeParentBlockElement)) {
+              : IsVisibleTextNode(*text,
+                                  editableBlockElementOrInlineEditingHost)) {
         return false;
       }
       continue;
@@ -1390,21 +1394,117 @@ EditorDOMPointType HTMLEditUtils::GetNextEditablePoint(
 }
 
 
-Element*
-HTMLEditUtils::GetInclusiveAncestorEditableBlockElementOrInlineEditingHost(
-    const nsIContent& aContent) {
-  MOZ_ASSERT(EditorUtils::IsEditableContent(aContent, EditorType::HTML));
-  Element* maybeInlineEditingHost = nullptr;
-  for (Element* element : aContent.InclusiveAncestorsOfType<Element>()) {
-    if (!EditorUtils::IsEditableContent(*element, EditorType::HTML)) {
-      return maybeInlineEditingHost;
+Element* HTMLEditUtils::GetAncestorElement(
+    const nsIContent& aContent, const AncestorTypes& aAncestorTypes,
+    const Element* aAncestorLimiter ) {
+  MOZ_ASSERT(
+      aAncestorTypes.contains(AncestorType::ClosestBlockElement) ||
+      aAncestorTypes.contains(AncestorType::MostDistantInlineElementInBlock));
+
+  if (&aContent == aAncestorLimiter) {
+    return nullptr;
+  }
+
+  Element* lastAncestorElement = nullptr;
+  const bool editableElementOnly =
+      aAncestorTypes.contains(AncestorType::EditableElement);
+  const bool lookingForClosesetBlockElement =
+      aAncestorTypes.contains(AncestorType::ClosestBlockElement);
+  const bool lookingForMostDistantInlineElementInBlock =
+      aAncestorTypes.contains(AncestorType::MostDistantInlineElementInBlock);
+  auto isSerachingElementType = [&](const nsIContent& aContent) -> bool {
+    if (!aContent.IsElement()) {
+      return false;
+    }
+    if (editableElementOnly &&
+        !EditorUtils::IsEditableContent(aContent, EditorType::HTML)) {
+      return false;
+    }
+    return (lookingForClosesetBlockElement &&
+            HTMLEditUtils::IsBlockElement(aContent)) ||
+           (lookingForMostDistantInlineElementInBlock &&
+            HTMLEditUtils::IsInlineElement(aContent));
+  };
+  for (Element* element : aContent.AncestorsOfType<Element>()) {
+    if (editableElementOnly &&
+        !EditorUtils::IsEditableContent(*element, EditorType::HTML)) {
+      return lastAncestorElement && isSerachingElementType(*lastAncestorElement)
+                 ? lastAncestorElement  
+                 : nullptr;
     }
     if (HTMLEditUtils::IsBlockElement(*element)) {
-      return element;
+      if (lookingForClosesetBlockElement) {
+        return element;  
+      }
+      MOZ_ASSERT_IF(lastAncestorElement,
+                    HTMLEditUtils::IsInlineElement(*lastAncestorElement));
+      return lastAncestorElement;  
     }
-    maybeInlineEditingHost = element;
+    if (element == aAncestorLimiter) {
+      break;
+    }
+    lastAncestorElement = element;
   }
-  return maybeInlineEditingHost;
+  return lastAncestorElement && isSerachingElementType(*lastAncestorElement)
+             ? lastAncestorElement
+             : nullptr;
+}
+
+
+Element* HTMLEditUtils::GetInclusiveAncestorElement(
+    const nsIContent& aContent, const AncestorTypes& aAncestorTypes,
+    const Element* aAncestorLimiter ) {
+  MOZ_ASSERT(
+      aAncestorTypes.contains(AncestorType::ClosestBlockElement) ||
+      aAncestorTypes.contains(AncestorType::MostDistantInlineElementInBlock));
+
+  const bool editableElementOnly =
+      aAncestorTypes.contains(AncestorType::EditableElement);
+  const bool lookingForClosesetBlockElement =
+      aAncestorTypes.contains(AncestorType::ClosestBlockElement);
+  const bool lookingForMostDistantInlineElementInBlock =
+      aAncestorTypes.contains(AncestorType::MostDistantInlineElementInBlock);
+  auto isSerachingElementType = [&](const nsIContent& aContent) -> bool {
+    if (!aContent.IsElement()) {
+      return false;
+    }
+    if (editableElementOnly &&
+        !EditorUtils::IsEditableContent(aContent, EditorType::HTML)) {
+      return false;
+    }
+    return (lookingForClosesetBlockElement &&
+            HTMLEditUtils::IsBlockElement(aContent)) ||
+           (lookingForMostDistantInlineElementInBlock &&
+            HTMLEditUtils::IsInlineElement(aContent));
+  };
+
+  
+  
+  if (HTMLEditUtils::IsBlockElement(aContent)) {
+    return isSerachingElementType(aContent)
+               ? const_cast<Element*>(aContent.AsElement())
+               : nullptr;
+  }
+
+  
+  
+  
+  if (!aContent.GetParent() ||
+      (editableElementOnly && !EditorUtils::IsEditableContent(
+                                  *aContent.GetParent(), EditorType::HTML)) ||
+      (!lookingForClosesetBlockElement &&
+       HTMLEditUtils::IsBlockElement(*aContent.GetParent()))) {
+    return isSerachingElementType(aContent)
+               ? const_cast<Element*>(aContent.AsElement())
+               : nullptr;
+  }
+
+  if (&aContent == aAncestorLimiter) {
+    return nullptr;
+  }
+
+  return HTMLEditUtils::GetAncestorElement(aContent, aAncestorTypes,
+                                           aAncestorLimiter);
 }
 
 

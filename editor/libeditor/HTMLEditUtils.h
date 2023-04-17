@@ -1173,8 +1173,26 @@ class HTMLEditUtils final {
 
 
 
-  static Element* GetInclusiveAncestorEditableBlockElementOrInlineEditingHost(
-      const nsIContent& aContent);
+  enum class AncestorType {
+    ClosestBlockElement,
+    MostDistantInlineElementInBlock,
+    EditableElement,
+  };
+  using AncestorTypes = EnumSet<AncestorType>;
+  constexpr static AncestorTypes
+      ClosestEditableBlockElementOrInlineEditingHost = {
+          AncestorType::ClosestBlockElement,
+          AncestorType::MostDistantInlineElementInBlock,
+          AncestorType::EditableElement};
+  constexpr static AncestorTypes ClosestEditableBlockElement = {
+      AncestorType::ClosestBlockElement, AncestorType::EditableElement};
+  static Element* GetAncestorElement(const nsIContent& aContent,
+                                     const AncestorTypes& aAncestorTypes,
+                                     const Element* aAncestorLimiter = nullptr);
+  static Element* GetInclusiveAncestorElement(
+      const nsIContent& aContent, const AncestorTypes& aAncestorTypes,
+      const Element* aAncestorLimiter = nullptr);
+
   
 
 
