@@ -196,6 +196,10 @@ except Exception:
         return sorted(iterable, key=key, reverse=reverse)
 
 
+
+
+FORCE_DOWNGRADE_BEHAVIOR = True
+
 statistics = {
     "guess_candidates": {},
     "number_refinements": {},
@@ -213,76 +217,52 @@ def log(*args, **kwargs):
 
 
 
+import inspect
+
+
+def node_to_name(code, node):
+    if (
+        not FORCE_DOWNGRADE_BEHAVIOR
+        and sys.version_info[0] >= 3
+        and sys.version_info[1] >= 8
+    ):
+        return ast.get_source_segment(code, node)
+
+    return node.__class__.__name__
+
+
+def get_attribute_label(node):
+    assert isinstance(node, ast.Attribute)
+
+    label = ""
+    subtarget = node
+    while isinstance(subtarget, ast.Attribute):
+        label = subtarget.attr + ("." if label else "") + label
+        subtarget = subtarget.value
+    assert isinstance(subtarget, ast.Name)
+    label = subtarget.id + "." + label
+
+    return label
+
+
+def ast_get_source_segment(code, node):
+    if (
+        not FORCE_DOWNGRADE_BEHAVIOR
+        and sys.version_info[0] >= 3
+        and sys.version_info[1] >= 8
+    ):
+        return ast.get_source_segment(code, node)
+
+    caller = inspect.stack()[1].function
+    if caller == "log":
+        return ""
+
+    raise Exception("ast_get_source_segment is not available with this Python version.")
 
 
 
-
-def _splitlines_no_ff(source):
-    """Split a string into lines ignoring form feed and other chars.
-    This mimics how the Python parser splits source code.
-    """
-    idx = 0
-    lines = []
-    next_line = ""
-    while idx < len(source):
-        c = source[idx]
-        next_line += c
-        idx += 1
-        
-        if c == "\r" and idx < len(source) and source[idx] == "\n":
-            next_line += "\n"
-            idx += 1
-        if c in "\r\n":
-            lines.append(next_line)
-            next_line = ""
-
-    if next_line:
-        lines.append(next_line)
-    return lines
-
-
-def _pad_whitespace(source):
-    r"""Replace all chars except '\f\t' in a line with spaces."""
-    result = ""
-    for c in source:
-        if c in "\f\t":
-            result += c
-        else:
-            result += " "
-    return result
-
-
-def ast_get_source_segment(source, node, padded=False):
-    """Get source code segment of the *source* that generated *node*.
-    If some location information (`lineno`, `end_lineno`, `col_offset`,
-    or `end_col_offset`) is missing, return None.
-    If *padded* is `True`, the first line of a multi-line statement will
-    be padded with spaces to match its original position.
-    """
-    try:
-        lineno = node.lineno - 1
-        end_lineno = node.end_lineno - 1
-        col_offset = node.col_offset
-        end_col_offset = node.end_col_offset
-    except AttributeError:
-        return None
-
-    lines = _splitlines_no_ff(source)
-    if end_lineno == lineno:
-        return lines[lineno].encode()[col_offset:end_col_offset].decode()
-
-    if padded:
-        padding = _pad_whitespace(lines[lineno].encode()[:col_offset].decode())
-    else:
-        padding = ""
-
-    first = padding + lines[lineno].encode()[col_offset:].decode()
-    last = lines[end_lineno].encode()[:end_col_offset].decode()
-    lines = lines[lineno + 1 : end_lineno]
-
-    lines.insert(0, first)
-    lines.append(last)
-    return "".join(lines)
+if sys.version_info[0] >= 3 and sys.version_info[1] >= 8:
+    ast.get_source_segment = ast_get_source_segment
 
 
 
@@ -303,28 +283,28 @@ def node_to_readable_file_location(code, node, child_node=None):
     elif isinstance(node, ast.If):
         assert child_node
         if child_node in node.body:
-            location += "if " + ast_get_source_segment(code, node.test)
+            location += "if " + node_to_name(code, node.test)
         else:
-            location += "else-of-if " + ast_get_source_segment(code, node.test)
+            location += "else-of-if " + node_to_name(code, node.test)
     elif isinstance(node, ast.For):
         location += (
             "for "
-            + ast_get_source_segment(code, node.target)
+            + node_to_name(code, node.target)
             + " in "
-            + ast_get_source_segment(code, node.iter)
+            + node_to_name(code, node.iter)
         )
     elif isinstance(node, ast.AugAssign):
         if isinstance(node.target, ast.Name):
             location += node.target.id
         else:
-            location += ast_get_source_segment(code, node.target)
+            location += node_to_name(code, node.target)
     elif isinstance(node, ast.Assign):
         
         assert len(node.targets) == 1, "Assignment node contains more than one target"
         if isinstance(node.targets[0], ast.Name):
             location += node.targets[0].id
         else:
-            location += ast_get_source_segment(code, node.targets[0])
+            location += node_to_name(code, node.targets[0])
     else:
         raise Exception("Got a node type I don't know how to handle: " + str(node))
 
@@ -345,13 +325,15 @@ def assignment_node_to_source_filename_list(code, node):
     """
     if isinstance(node.value, ast.List) and "elts" in node.value._fields:
         for f in node.value.elts:
-            if not isinstance(f, ast.Constant):
+            if not isinstance(f, ast.Constant) and not isinstance(f, ast.Str):
                 log(
                     "Found non-constant source file name in list: ",
                     ast_get_source_segment(code, f),
                 )
                 return []
-        return [f.value for f in node.value.elts]
+        return [
+            f.value if isinstance(f, ast.Constant) else f.s for f in node.value.elts
+        ]
     elif isinstance(node.value, ast.ListComp):
         
         log("Could not find the files for " + ast_get_source_segment(code, node.value))
@@ -370,7 +352,7 @@ def assignment_node_to_source_filename_list(code, node):
     return []
 
 
-def mozbuild_file_to_source_assignments(normalized_mozbuild_filename):
+def mozbuild_file_to_source_assignments(normalized_mozbuild_filename, assignment_type):
     """
     Returns a dictionary of 'source-assignment-location' -> 'normalized source filename list'
     contained in the moz.build file specified
@@ -378,6 +360,11 @@ def mozbuild_file_to_source_assignments(normalized_mozbuild_filename):
     normalized_mozbuild_filename: the moz.build file to read
     """
     source_assignments = {}
+
+    if assignment_type == "source-files":
+        targets = ["SOURCES", "UNIFIED_SOURCES"]
+    else:
+        targets = ["EXPORTS"]
 
     
     code = open(normalized_mozbuild_filename).read()
@@ -390,48 +377,80 @@ def mozbuild_file_to_source_assignments(normalized_mozbuild_filename):
             child.parent = node
 
     
-    source_assignment_nodes = [
-        node
-        for node in ast.walk(root)
-        if isinstance(node, ast.AugAssign)
-        and isinstance(node.target, ast.Name)
-        and node.target.id in ["SOURCES", "UNIFIED_SOURCES"]
-    ]
-    assert (
-        len([n for n in source_assignment_nodes if not isinstance(n.op, ast.Add)]) == 0
-    ), "We got a Source assignment that wasn't +="
+    if assignment_type == "source-files":
+        source_assignment_nodes = [
+            node
+            for node in ast.walk(root)
+            if isinstance(node, ast.AugAssign)
+            and isinstance(node.target, ast.Name)
+            and node.target.id in targets
+        ]
+        assert (
+            len([n for n in source_assignment_nodes if not isinstance(n.op, ast.Add)])
+            == 0
+        ), "We got a Source assignment that wasn't +="
 
-    
-    recursive_assignment_nodes = [
-        node
-        for node in source_assignment_nodes
-        if isinstance(node.value, ast.Name) or isinstance(node.value, ast.Subscript)
-    ]
+        
+        recursive_assignment_nodes = [
+            node
+            for node in source_assignment_nodes
+            if isinstance(node.value, ast.Name) or isinstance(node.value, ast.Subscript)
+        ]
 
-    recursive_assignment_nodes_names = [
-        node.value.id
-        for node in recursive_assignment_nodes
-        if isinstance(node.value, ast.Name)
-    ]
+        recursive_assignment_nodes_names = [
+            node.value.id
+            for node in recursive_assignment_nodes
+            if isinstance(node.value, ast.Name)
+        ]
 
-    
-    
-    
-    
+        
+        
+        
+        
 
-    additional_assignment_nodes = [
-        node
-        for node in ast.walk(root)
-        if isinstance(node, ast.Assign)
-        and isinstance(node.targets[0], ast.Name)
-        and node.targets[0].id in recursive_assignment_nodes_names
-    ]
+        additional_assignment_nodes = [
+            node
+            for node in ast.walk(root)
+            if isinstance(node, ast.Assign)
+            and isinstance(node.targets[0], ast.Name)
+            and node.targets[0].id in recursive_assignment_nodes_names
+        ]
 
-    
-    for node in recursive_assignment_nodes:
-        source_assignment_nodes.remove(node)
-    
-    source_assignment_nodes.extend(additional_assignment_nodes)
+        
+        for node in recursive_assignment_nodes:
+            source_assignment_nodes.remove(node)
+        
+        source_assignment_nodes.extend(additional_assignment_nodes)
+    else:
+        source_assignment_nodes = [
+            node
+            for node in ast.walk(root)
+            if isinstance(node, ast.AugAssign)
+            and (
+                (isinstance(node.target, ast.Name) and node.target.id == "EXPORTS")
+                or (
+                    isinstance(node.target, ast.Attribute)
+                    and get_attribute_label(node.target).startswith("EXPORTS")
+                )
+            )
+        ]
+        source_assignment_nodes.extend(
+            [
+                node
+                for node in ast.walk(root)
+                if isinstance(node, ast.Assign)
+                and (
+                    (
+                        isinstance(node.targets[0], ast.Name)
+                        and node.targets[0].id == "EXPORTS"
+                    )
+                    or (
+                        isinstance(node.targets[0], ast.Attribute)
+                        and get_attribute_label(node.targets[0]).startswith("EXPORTS")
+                    )
+                )
+            ]
+        )
 
     
     assignment_index = 1
@@ -913,9 +932,17 @@ def remove_file_from_moz_build_file(
     
     original_normalized_filename_to_remove = normalized_filename_to_remove
 
+    
+    if normalized_filename_to_remove.endswith(
+        ".h"
+    ) or normalized_filename_to_remove.endswith(".hpp"):
+        assignment_type = "header-files"
+    else:
+        assignment_type = "source-files"
+
     for normalized_mozbuild_filename in all_possible_normalized_mozbuild_filenames:
         source_assignments, root, code = mozbuild_file_to_source_assignments(
-            normalized_mozbuild_filename
+            normalized_mozbuild_filename, assignment_type
         )
 
         modes = get_file_reference_modes(source_assignments)
@@ -941,7 +968,7 @@ def remove_file_from_moz_build_file(
                     return
 
         normalized_filename_to_remove = original_normalized_filename_to_remove
-    raise MozBuildRewriteException("Could not remove file")
+    raise MozBuildRewriteException("Could not remove " + normalized_filename_to_remove)
 
 
 def add_file_to_moz_build_file(
@@ -970,9 +997,16 @@ def add_file_to_moz_build_file(
     
     original_normalized_filename_to_add = normalized_filename_to_add
 
+    if normalized_filename_to_add.endswith(".h") or normalized_filename_to_add.endswith(
+        ".hpp"
+    ):
+        assignment_type = "header-files"
+    else:
+        assignment_type = "source-files"
+
     for normalized_mozbuild_filename in all_possible_normalized_mozbuild_filenames:
         source_assignments, root, code = mozbuild_file_to_source_assignments(
-            normalized_mozbuild_filename
+            normalized_mozbuild_filename, assignment_type
         )
 
         modes = get_file_reference_modes(source_assignments)
@@ -1034,7 +1068,9 @@ def add_file_to_moz_build_file(
             )
             return
 
-    raise MozBuildRewriteException("Could not find a single moz.build file to edit")
+    raise MozBuildRewriteException(
+        "Could not find a single moz.build file to add " + normalized_filename_to_add
+    )
 
 
 
