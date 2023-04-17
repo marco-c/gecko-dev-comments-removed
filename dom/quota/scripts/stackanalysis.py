@@ -48,6 +48,7 @@ def constructHGLinks(buildids, rows):
 
 
 topmost_stackframes = set()
+delta_frames = {}
 
 
 def isTopmostFrame(frame):
@@ -63,7 +64,52 @@ def addTopmostFrame(frame):
         frame["topmost"] = True
 
 
+def addFrameDelta(frame1, frame2):
+    if frame1["client_id"] != frame2["client_id"]:
+        return
+    if frame1["session_id"] != frame2["session_id"]:
+        return
 
+    fkey = "{}:{}-{}:{}".format(
+        frame2["location"], frame2["result"], frame1["location"], frame1["result"]
+    )
+    if fkey not in delta_frames:
+        fdelta = {"delta_sum": 0, "delta_cnt": 0}
+        fdelta["prev_row"] = frame1
+        fdelta["candidate"] = frame2
+        delta_frames[fkey] = fdelta
+
+    fdelta = delta_frames[fkey]
+    etv1 = frame1["event_timestamp"]
+    etv2 = frame2["event_timestamp"]
+    if isinstance(etv1, int) and isinstance(etv2, int) and etv2 > etv1:
+        delta = etv2 - etv1
+        fdelta["delta_sum"] = fdelta["delta_sum"] + delta
+        fdelta["delta_cnt"] = fdelta["delta_cnt"] + 1
+
+
+
+
+
+
+def checkAverageFrameTimeDeltas(rows, max_delta):
+    
+    prev_row = None
+    for row in rows:
+        if "topmost" in row or not row["session_complete"]:
+            prev_row = None
+            continue
+
+        if prev_row:
+            addFrameDelta(prev_row, row)
+        prev_row = row
+
+    for fd in delta_frames:
+        sum = delta_frames[fd]["delta_sum"]
+        cnt = delta_frames[fd]["delta_cnt"]
+        if cnt > 0 and (sum / cnt) > max_delta:
+            
+            addTopmostFrame(delta_frames[fd]["candidate"])
 
 
 
@@ -117,17 +163,8 @@ def collectTopmostFrames(rows):
     
     
     
-    
-    delta = 800
-    prev_event_time = -99999
-    for row in rows:
-        et = int(row["event_timestamp"])
-        if row["session_complete"]:
-            if "topmost" not in row and et - prev_event_time >= delta:
-                addTopmostFrame(row)
-            prev_event_time = et
-        else:
-            prev_event_time = -99999
+    max_avg_delta = 200
+    checkAverageFrameTimeDeltas(rows, max_avg_delta)
 
 
 def getFrameKey(frame):
@@ -219,7 +256,7 @@ def mergeEqualStacks(raw_stacks):
             merged_stacks[stack_key] = merged_stack
 
     merged_list = list(merged_stacks.values())
-    merged_list.sort(key=lambda x: x.get("client_count"), reverse=True)
+    merged_list.sort(key=lambda x: x.get("hit_count"), reverse=True)
     return merged_list
 
 
