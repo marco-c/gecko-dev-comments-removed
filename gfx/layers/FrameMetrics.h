@@ -96,7 +96,6 @@ struct FrameMetrics {
         mBoundingCompositionSize(0, 0),
         mPresShellId(-1),
         mLayoutViewport(0, 0, 0, 0),
-        mExtraResolution(),
         mTransformToAncestorScale(),
         mPaintRequestTime(),
         mVisualDestination(0, 0),
@@ -127,7 +126,6 @@ struct FrameMetrics {
            mBoundingCompositionSize == aOther.mBoundingCompositionSize &&
            mPresShellId == aOther.mPresShellId &&
            mLayoutViewport.IsEqualEdges(aOther.mLayoutViewport) &&
-           mExtraResolution == aOther.mExtraResolution &&
            mTransformToAncestorScale == aOther.mTransformToAncestorScale &&
            mPaintRequestTime == aOther.mPaintRequestTime &&
            mVisualDestination == aOther.mVisualDestination &&
@@ -401,14 +399,6 @@ struct FrameMetrics {
                    CalculateCompositedSizeInCssPixels());
   }
 
-  void SetExtraResolution(const ScreenToLayerScale2D& aExtraResolution) {
-    mExtraResolution = aExtraResolution;
-  }
-
-  const ScreenToLayerScale2D& GetExtraResolution() const {
-    return mExtraResolution;
-  }
-
   void SetTransformToAncestorScale(const Scale2D& aTransformToAncestorScale) {
     mTransformToAncestorScale = aTransformToAncestorScale;
   }
@@ -644,10 +634,6 @@ struct FrameMetrics {
   
   
   CSSRect mLayoutViewport;
-
-  
-  
-  ScreenToLayerScale2D mExtraResolution;
 
   
   Scale2D mTransformToAncestorScale;
