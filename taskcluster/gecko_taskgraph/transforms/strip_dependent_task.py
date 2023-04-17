@@ -1,0 +1,18 @@
+
+
+
+"""
+FIXME
+"""
+
+
+from gecko_taskgraph.transforms.base import TransformSequence
+
+transforms = TransformSequence()
+
+
+@transforms.add
+def strip_dependent_task(config, jobs):
+    for job in jobs:
+        del job["primary-dependency"]
+        yield job
