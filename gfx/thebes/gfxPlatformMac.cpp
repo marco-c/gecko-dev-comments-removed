@@ -230,12 +230,6 @@ BackendPrefsData gfxPlatformMac::GetBackendPrefs() const {
   return data;
 }
 
-bool gfxPlatformMac::UsesTiling() const {
-  
-  
-  return true;
-}
-
 bool gfxPlatformMac::CreatePlatformFontList() {
   return gfxPlatformFontList::Initialize(new gfxMacPlatformFontList);
 }

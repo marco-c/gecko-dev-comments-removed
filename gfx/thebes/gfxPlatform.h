@@ -311,7 +311,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
   void GetAzureBackendInfo(mozilla::widget::InfoObject& aObj);
   void GetApzSupportInfo(mozilla::widget::InfoObject& aObj);
-  void GetTilesSupportInfo(mozilla::widget::InfoObject& aObj);
   void GetFrameStats(mozilla::widget::InfoObject& aObj);
   void GetCMSSupportInfo(mozilla::widget::InfoObject& aObj);
   void GetDisplayInfo(mozilla::widget::InfoObject& aObj);
@@ -642,11 +641,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   
 
 
-  virtual bool UsesTiling() const;
-
-  
-
-
   static mozilla::LogModule* GetLog(eGfxLog aWhichLog);
 
   int GetScreenDepth() const { return mScreenDepth; }
@@ -963,14 +957,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   
 
 
-
-
-
-  void ComputeTileSize();
-
-  
-
-
   void PopulateScreenInfo();
 
   void InitCompositorAccelerationPrefs();
@@ -1002,7 +988,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
   mozilla::widget::GfxInfoCollector<gfxPlatform> mAzureCanvasBackendCollector;
   mozilla::widget::GfxInfoCollector<gfxPlatform> mApzSupportCollector;
-  mozilla::widget::GfxInfoCollector<gfxPlatform> mTilesInfoCollector;
   mozilla::widget::GfxInfoCollector<gfxPlatform> mFrameStatsCollector;
   mozilla::widget::GfxInfoCollector<gfxPlatform> mCMSInfoCollector;
   mozilla::widget::GfxInfoCollector<gfxPlatform> mDisplayInfoCollector;

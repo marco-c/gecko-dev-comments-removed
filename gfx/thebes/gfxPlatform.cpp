@@ -437,7 +437,6 @@ gfxPlatform::gfxPlatform()
     : mHasVariationFontSupport(false),
       mAzureCanvasBackendCollector(this, &gfxPlatform::GetAzureBackendInfo),
       mApzSupportCollector(this, &gfxPlatform::GetApzSupportInfo),
-      mTilesInfoCollector(this, &gfxPlatform::GetTilesSupportInfo),
       mFrameStatsCollector(this, &gfxPlatform::GetFrameStats),
       mCMSInfoCollector(this, &gfxPlatform::GetCMSSupportInfo),
       mDisplayInfoCollector(this, &gfxPlatform::GetDisplayInfo),
@@ -946,8 +945,6 @@ void gfxPlatform::Init() {
 #endif
 
   InitLayersIPC();
-
-  gPlatform->ComputeTileSize();
 
   gPlatform->mHasVariationFontSupport = gPlatform->CheckVariationFontSupport();
 
@@ -1550,34 +1547,6 @@ already_AddRefed<DataSourceSurface> gfxPlatform::GetWrappedDataSourceSurface(
   result->AddUserData(&kThebesSurface, srcSurfUD, SourceSurfaceDestroyed);
 
   return result.forget();
-}
-
-void gfxPlatform::ComputeTileSize() {
-  
-  
-  if (!XRE_IsParentProcess()) {
-    return;
-  }
-
-  int32_t w = StaticPrefs::layers_tile_width_AtStartup();
-  int32_t h = StaticPrefs::layers_tile_height_AtStartup();
-
-  if (StaticPrefs::layers_tiles_adjust_AtStartup()) {
-    gfx::IntSize screenSize = GetScreenSize();
-    if (screenSize.width > 0) {
-      
-      
-      
-      w = h = clamped(int32_t(RoundUpPow2(screenSize.width)) / 4, 256, 1024);
-    }
-  }
-
-  
-  
-  MOZ_ASSERT(gfxVars::TileSize().width == -1 &&
-             gfxVars::TileSize().height == -1);
-
-  gfxVars::SetTileSize(IntSize(w, h));
 }
 
 void gfxPlatform::PopulateScreenInfo() {
@@ -2839,10 +2808,6 @@ bool gfxPlatform::UsesOffMainThreadCompositing() {
   return result;
 }
 
-bool gfxPlatform::UsesTiling() const {
-  return StaticPrefs::layers_enable_tiles_AtStartup();
-}
-
 
 
 
@@ -2984,16 +2949,6 @@ void gfxPlatform::GetApzSupportInfo(mozilla::widget::InfoObject& aObj) {
   if (SupportsApzZooming()) {
     aObj.DefineProperty("ApzZoomingInput", 1);
   }
-}
-
-void gfxPlatform::GetTilesSupportInfo(mozilla::widget::InfoObject& aObj) {
-  if (!StaticPrefs::layers_enable_tiles_AtStartup()) {
-    return;
-  }
-
-  IntSize tileSize = gfxVars::TileSize();
-  aObj.DefineProperty("TileHeight", tileSize.height);
-  aObj.DefineProperty("TileWidth", tileSize.width);
 }
 
 void gfxPlatform::GetFrameStats(mozilla::widget::InfoObject& aObj) {

@@ -519,8 +519,6 @@ pref("media.plugins.enabled", true);
 
 pref("media.stagefright.omxcodec.flags", 0);
 
-pref("layers.enable-tiles", true);
-
 
 pref("browser.chrome.dynamictoolbar", true);
 
