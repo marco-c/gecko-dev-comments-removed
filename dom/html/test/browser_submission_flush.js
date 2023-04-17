@@ -6,10 +6,10 @@
 
 
 const kTestPage =
-  "http://example.org/browser/dom/html/test/submission_flush.html";
+  "https://example.org/browser/dom/html/test/submission_flush.html";
 
 const kPostActionPage =
-  "http://example.org/browser/dom/html/test/post_action_page.html";
+  "https://example.org/browser/dom/html/test/post_action_page.html";
 
 const kFormId = "test_form";
 const kFrameId = "test_frame";
