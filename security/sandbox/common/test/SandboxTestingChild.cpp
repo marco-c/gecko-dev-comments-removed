@@ -5,17 +5,14 @@
 
 
 #include "SandboxTestingChild.h"
+#include "SandboxTestingChildTests.h"
 #include "SandboxTestingThread.h"
 
-#include "nsXULAppAPI.h"
-
-#ifdef XP_UNIX
-#  include <fcntl.h>
-#  include <sys/stat.h>
-#  include <sys/types.h>
-#  include <time.h>
-#  include <unistd.h>
+#ifdef XP_LINUX
+#  include "mozilla/Sandbox.h"
 #endif
+
+#include "nsXULAppAPI.h"
 
 namespace mozilla {
 
@@ -61,36 +58,21 @@ void SandboxTestingChild::Bind(Endpoint<PSandboxTestingChild>&& aEndpoint) {
   DebugOnly<bool> ok = aEndpoint.Bind(this);
   MOZ_ASSERT(ok);
 
+#ifdef XP_LINUX
+  bool sandboxCrashOnError = SetSandboxCrashOnError(false);
+#endif
+
   if (XRE_IsContentProcess()) {
-#ifdef XP_UNIX
-    struct stat st;
-    static const char kAllowedPath[] = "/usr/lib";
-
-    ErrnoTest("fstatat_as_stat"_ns, true,
-              [&] { return fstatat(AT_FDCWD, kAllowedPath, &st, 0); });
-    ErrnoTest("fstatat_as_lstat"_ns, true, [&] {
-      return fstatat(AT_FDCWD, kAllowedPath, &st, AT_SYMLINK_NOFOLLOW);
-    });
-
-#  ifdef XP_LINUX
-    ErrnoTest("fstatat_as_fstat"_ns, true,
-              [&] { return fstatat(0, "", &st, AT_EMPTY_PATH); });
-#  endif  
-
-    const struct timespec usec = {0, 1000};
-    ErrnoTest("nanosleep"_ns, true, [&] { return nanosleep(&usec, nullptr); });
-
-    struct timespec res = {0, 0};
-    ErrnoTest("clock_getres"_ns, true,
-              [&] { return clock_getres(CLOCK_REALTIME, &res); });
-
-#else   
-    SendReportTestResults("dummy_test"_ns,
-                           true,
-                           true,
-                          "The test framework fails if there are no cases."_ns);
-#endif  
+    RunTestsContent(this);
   }
+
+  if (XRE_IsSocketProcess()) {
+    RunTestsSocket(this);
+  }
+
+#ifdef XP_LINUX
+  SetSandboxCrashOnError(sandboxCrashOnError);
+#endif
 
   
   SendTestCompleted();

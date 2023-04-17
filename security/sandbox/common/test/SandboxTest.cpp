@@ -7,12 +7,15 @@
 #include "SandboxTest.h"
 
 #include "mozilla/Components.h"
+#include "mozilla/Preferences.h"
 #include "SandboxTestingParent.h"
 #include "SandboxTestingChild.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/gfx/GPUChild.h"
+#include "mozilla/net/SocketProcessParent.h"
 #include "mozilla/ipc/Endpoint.h"
+#include "nsIOService.h"
 
 using namespace mozilla;
 using namespace mozilla::ipc;
@@ -84,6 +87,40 @@ SandboxTest::StartTests(const nsTArray<nsCString>& aProcessesList) {
         break;
       }
 
+      case GeckoProcessType_Socket: {
+        
+        
+        int rv_unset =
+#ifdef XP_UNIX
+            unsetenv("MOZ_DISABLE_SOCKET_PROCESS");
+#endif  
+#ifdef XP_WIN
+        _putenv("MOZ_DISABLE_SOCKET_PROCESS=");
+#endif  
+        MOZ_ASSERT(rv_unset == 0, "Error unsetting env var");
+
+        nsresult rv_pref =
+            Preferences::SetBool("network.process.enabled", true);
+        MOZ_ASSERT(rv_pref == NS_OK, "Error enforcing pref");
+
+        MOZ_ASSERT(net::gIOService, "No gIOService?");
+        RefPtr<SandboxTest> self = this;
+        net::gIOService->CallOrWaitForSocketProcess([self, type]() {
+          
+          
+          
+          
+          
+          
+          
+          net::SocketProcessParent* parent =
+              net::SocketProcessParent::GetSingleton();
+          self->mSandboxTestingParents[type] =
+              InitializeSandboxTestingActors(parent);
+        });
+        break;
+      }
+
       default:
         MOZ_ASSERT_UNREACHABLE(
             "SandboxTest does not yet support this process type");
@@ -91,7 +128,24 @@ SandboxTest::StartTests(const nsTArray<nsCString>& aProcessesList) {
     }
 
     if (!mSandboxTestingParents[type]) {
-      return NS_ERROR_FAILURE;
+      if (type == GeckoProcessType_Socket) {
+        
+        
+        
+        RefPtr<SandboxTest> self = this;
+        NS_DelayedDispatchToCurrentThread(
+            NS_NewRunnableFunction(
+                "SandboxTest::StartTests",
+                [self, type]() {
+                  if (!self->mSandboxTestingParents[type]) {
+                    MOZ_ASSERT_UNREACHABLE(
+                        "SandboxTest failed to get a Parent");
+                  }
+                }),
+            5e3 );
+      } else {
+        return NS_ERROR_FAILURE;
+      }
     }
   }
   return NS_OK;

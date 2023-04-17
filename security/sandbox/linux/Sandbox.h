@@ -63,6 +63,10 @@ MOZ_EXPORT void SetRemoteDataDecoderSandbox(int aBroker);
 
 MOZ_EXPORT void SetSocketProcessSandbox(int aBroker);
 
+
+
+MOZ_EXPORT bool SetSandboxCrashOnError(bool aValue);
+
 }  
 
 #endif  
