@@ -64,6 +64,16 @@
 
 
 
+namespace JS {
+
+
+
+
+extern JS_PUBLIC_API void SetUseFdlibmForSinCosTan(bool value);
+}  
+
+
+
 struct JSFunctionSpec;
 struct JSPropertySpec;
 
