@@ -595,6 +595,9 @@ interface nsIEditor  : nsISupports
   void insertLineBreak();
 
 %{C++
+  inline bool IsHTMLEditor() const;
+  inline bool IsTextEditor() const;
+
   
 
 
@@ -610,8 +613,13 @@ interface nsIEditor  : nsISupports
 
 
 
+
+
+
   inline mozilla::TextEditor* AsTextEditor();
   inline const mozilla::TextEditor* AsTextEditor() const;
+  inline mozilla::TextEditor* GetAsTextEditor();
+  inline const mozilla::TextEditor* GetAsTextEditor() const;
 
   
 
@@ -619,7 +627,12 @@ interface nsIEditor  : nsISupports
 
 
 
+
+
+
   inline mozilla::HTMLEditor* AsHTMLEditor();
   inline const mozilla::HTMLEditor* AsHTMLEditor() const;
+  inline mozilla::HTMLEditor* GetAsHTMLEditor();
+  inline const mozilla::HTMLEditor* GetAsHTMLEditor() const;
 %}
 };

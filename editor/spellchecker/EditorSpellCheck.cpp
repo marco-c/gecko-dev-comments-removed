@@ -628,8 +628,7 @@ EditorSpellCheck::UpdateCurrentDictionary(
 
   
   nsCOMPtr<nsIContent> rootContent;
-  HTMLEditor* htmlEditor = mEditor->AsHTMLEditor();
-  if (htmlEditor) {
+  if (HTMLEditor* htmlEditor = mEditor->GetAsHTMLEditor()) {
     if (flags & nsIEditor::eEditorMailMask) {
       
       
