@@ -787,10 +787,11 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
   EditorDOMPoint pointToInsert{aPointToInsert};
 
   
-  RefPtr<Element> blockElement =
+  const RefPtr<const Element> maybeNonEditableBlockElement =
       pointToInsert.IsInContentNode()
-          ? HTMLEditUtils::GetInclusiveAncestorBlockElement(
-                *pointToInsert.ContainerAsContent())
+          ? HTMLEditUtils::GetInclusiveAncestorElement(
+                *pointToInsert.ContainerAsContent(),
+                HTMLEditUtils::ClosestBlockElement)
           : nullptr;
 
   EditorDOMPoint lastInsertedPoint;
@@ -915,7 +916,7 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
     }
     
     
-    else if (blockElement && HTMLEditUtils::IsPre(blockElement) &&
+    else if (HTMLEditUtils::IsPre(maybeNonEditableBlockElement) &&
              HTMLEditUtils::IsPre(content)) {
       
       for (nsCOMPtr<nsIContent> firstChild = content->GetFirstChild();

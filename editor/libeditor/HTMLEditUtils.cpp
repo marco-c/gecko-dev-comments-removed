@@ -286,7 +286,7 @@ bool HTMLEditUtils::IsAnyListElement(nsINode* aNode) {
 
 
 
-bool HTMLEditUtils::IsPre(nsINode* aNode) {
+bool HTMLEditUtils::IsPre(const nsINode* aNode) {
   return aNode && aNode->IsHTMLElement(nsGkAtoms::pre);
 }
 
