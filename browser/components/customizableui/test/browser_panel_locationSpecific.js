@@ -1,3 +1,6 @@
+
+
+
 "use strict";
 
 
@@ -8,13 +11,17 @@
 
 
 add_task(async function() {
-  let tab1 = BrowserTestUtils.addTab(gBrowser, "http://mochi.test:8888/#0");
-  let tab2 = BrowserTestUtils.addTab(gBrowser, "http://mochi.test:8888/#1");
   let specificPanel = document.createXULElement("panel");
-  specificPanel.setAttribute("tabspecific", "true");
+  specificPanel.setAttribute("locationspecific", "true");
   specificPanel.setAttribute("noautohide", "true");
+  specificPanel.height = "100px";
+  specificPanel.width = "100px";
+
   let generalPanel = document.createXULElement("panel");
   generalPanel.setAttribute("noautohide", "true");
+  generalPanel.height = "100px";
+  generalPanel.width = "100px";
+
   let anchor = document.getElementById(CustomizableUI.AREA_NAVBAR);
 
   anchor.appendChild(specificPanel);
@@ -26,7 +33,9 @@ add_task(async function() {
     specificPanel,
     "popupshown"
   );
-  specificPanel.openPopupAtScreen(210, 210);
+
+  specificPanel.openPopupAtScreen(0, 0);
+
   await specificPanelPromise;
   is(specificPanel.state, "open", "specificPanel has been opened");
 
@@ -34,20 +43,36 @@ add_task(async function() {
     generalPanel,
     "popupshown"
   );
-  generalPanel.openPopupAtScreen(510, 510);
+
+  generalPanel.openPopupAtScreen(100, 0);
+
   await generalPanelPromise;
   is(generalPanel.state, "open", "generalPanel has been opened");
 
-  gBrowser.tabContainer.advanceSelectedTab(-1, true);
+  let specificPanelHiddenPromise = BrowserTestUtils.waitForEvent(
+    specificPanel,
+    "popuphidden"
+  );
+
+  
+  let browser = gBrowser.selectedBrowser;
+  let loaded = BrowserTestUtils.browserLoaded(browser);
+  BrowserTestUtils.loadURI(browser, "http://mochi.test:8888/#0");
+  await loaded;
+
+  await specificPanelHiddenPromise;
+
   is(
     specificPanel.state,
     "closed",
-    "specificPanel panel is closed after its tab loses focus"
+    "specificPanel panel is closed after location change"
   );
-  is(generalPanel.state, "open", "generalPanel is still open after tab switch");
+  is(
+    generalPanel.state,
+    "open",
+    "generalPanel is still open after location change"
+  );
 
   specificPanel.remove();
   generalPanel.remove();
-  gBrowser.removeTab(tab1);
-  gBrowser.removeTab(tab2);
 });

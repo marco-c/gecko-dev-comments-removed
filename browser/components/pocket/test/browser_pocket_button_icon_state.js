@@ -8,22 +8,33 @@ ChromeUtils.defineModuleGetter(
   "chrome://pocket/content/SaveToPocket.jsm"
 );
 
-add_task(async function() {
-  let tab = await BrowserTestUtils.openNewForegroundTab(
-    gBrowser,
-    "https://example.com/browser/browser/components/pocket/test/test.html"
-  );
+function test_runner(test) {
+  let testTask = async () => {
+    
+    const sandbox = sinon.createSandbox();
+
+    
+    sandbox.stub(pktApi, "isUserLoggedIn").callsFake(() => true);
+
+    
+    
+    sandbox.stub(pktApi, "addLink").callsFake(() => true);
+
+    try {
+      await test({ sandbox });
+    } finally {
+      
+      sandbox.restore();
+    }
+  };
 
   
-  const loggedInStub = sinon
-    .stub(pktApi, "isUserLoggedIn")
-    .callsFake(() => true);
-  
-  
-  const addLinkStub = sinon.stub(pktApi, "addLink").callsFake(() => true);
+  Object.defineProperty(testTask, "name", { value: test.name });
+  add_task(testTask);
+}
 
+async function isPocketPanelShown() {
   info("clicking on pocket button in toolbar");
-  let pocketButton = document.getElementById("save-to-pocket-button");
   
   
   let pocketPanelShowing = BrowserTestUtils.waitForEvent(
@@ -31,9 +42,18 @@ add_task(async function() {
     "popupshown",
     true
   );
-  pocketButton.click();
-  await pocketPanelShowing;
+  return pocketPanelShowing;
+}
 
+async function isPocketPanelHidden() {
+  let pocketPanelHidden = BrowserTestUtils.waitForEvent(
+    document,
+    "popuphidden"
+  );
+  return pocketPanelHidden;
+}
+
+function fakeSavingPage() {
   
   
   
@@ -41,26 +61,73 @@ add_task(async function() {
   
   
   SaveToPocket.updateToolbarNodeState(window);
+}
 
+function checkPanelOpen() {
+  let pocketButton = document.getElementById("save-to-pocket-button");
   
   is(pocketButton.open, true, "Pocket button is open");
   is(pocketButton.getAttribute("pocketed"), "true", "Pocket item is pocketed");
+}
 
-  let pocketPanelHidden = BrowserTestUtils.waitForEvent(
-    document,
-    "popuphidden"
-  );
-
-  
-  await BrowserTestUtils.switchTab(gBrowser, gBrowser.tabs[0]);
-
-  await pocketPanelHidden;
-
+function checkPanelClosed() {
+  let pocketButton = document.getElementById("save-to-pocket-button");
   
   is(pocketButton.open, false, "Pocket button is closed");
   is(pocketButton.getAttribute("pocketed"), "", "Pocket item is not pocketed");
+}
 
-  loggedInStub.restore();
-  addLinkStub.restore();
+test_runner(async function test_pocketButtonState_changeTabs({ sandbox }) {
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "https://example.com/browser/browser/components/pocket/test/test.html"
+  );
+
+  let pocketPanelShown = isPocketPanelShown();
+  let pocketButton = document.getElementById("save-to-pocket-button");
+  pocketButton.click();
+  await pocketPanelShown;
+  fakeSavingPage();
+
+  
+  checkPanelOpen();
+
+  let pocketPanelHidden = isPocketPanelHidden();
+  
+  await BrowserTestUtils.switchTab(gBrowser, gBrowser.tabs[0]);
+  await pocketPanelHidden;
+
+  
+  checkPanelClosed();
+
+  BrowserTestUtils.removeTab(tab);
+});
+
+test_runner(async function test_pocketButtonState_changeLocation({ sandbox }) {
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "https://example.com/browser/browser/components/pocket/test/test.html"
+  );
+
+  let pocketPanelShown = isPocketPanelShown();
+  let pocketButton = document.getElementById("save-to-pocket-button");
+  pocketButton.click();
+  await pocketPanelShown;
+  fakeSavingPage();
+
+  
+  checkPanelOpen();
+
+  let pocketPanelHidden = isPocketPanelHidden();
+  
+  let browser = gBrowser.selectedBrowser;
+  let loaded = BrowserTestUtils.browserLoaded(browser);
+  BrowserTestUtils.loadURI(browser, "about:robots");
+  await loaded;
+  await pocketPanelHidden;
+
+  
+  checkPanelClosed();
+
   BrowserTestUtils.removeTab(tab);
 });
