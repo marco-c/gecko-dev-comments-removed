@@ -196,23 +196,37 @@ fn consume_operation_or_colon(input: &mut Parser) -> Result<Option<Operator>, ()
             _ => return Err(()),
         }
     };
-    Ok(Some(match first_delim {
-        '=' => Operator::Equal,
-        '>' => {
-            if input.try_parse(|i| i.expect_delim('=')).is_ok() {
-                Operator::GreaterThanEqual
-            } else {
-                Operator::GreaterThan
-            }
-        },
-        '<' => {
-            if input.try_parse(|i| i.expect_delim('=')).is_ok() {
-                Operator::LessThanEqual
-            } else {
-                Operator::LessThan
-            }
-        },
+    let operator = match first_delim {
+        '=' => return Ok(Some(Operator::Equal)),
+        '>' => Operator::GreaterThan,
+        '<' => Operator::LessThan,
         _ => return Err(()),
+    };
+
+    
+    
+    
+    
+    
+    
+    
+    
+    let parsed_equal = input.try_parse(|i| {
+        let t = i.next_including_whitespace().map_err(|_| ())?;
+        if !matches!(t, Token::Delim('=')) {
+            return Err(())
+        }
+        Ok(())
+    }).is_ok();
+
+    if !parsed_equal {
+        return Ok(Some(operator));
+    }
+
+    Ok(Some(match operator {
+        Operator::GreaterThan => Operator::GreaterThanEqual,
+        Operator::LessThan => Operator::LessThanEqual,
+        _ => unreachable!(),
     }))
 }
 
