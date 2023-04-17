@@ -989,7 +989,6 @@ nsresult WhiteSpaceVisibilityKeeper::ReplaceText(
   
   
   
-  
   MOZ_DIAGNOSTIC_ASSERT(!theString.IsEmpty());
   if (NS_WARN_IF(!pointToInsert.IsInContentNode()) ||
       !EditorUtils::IsWhiteSpacePreformatted(
