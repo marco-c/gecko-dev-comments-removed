@@ -524,14 +524,6 @@ class TabTracker extends TabTrackerBase {
           
           
           this.adopt(nativeTab, adoptedTab);
-          if (adoptedTab.linkedPanel) {
-            adoptedTab.linkedBrowser.messageManager.sendAsyncMessage(
-              "Extension:SetFrameData",
-              {
-                windowId: windowTracker.getId(nativeTab.ownerGlobal),
-              }
-            );
-          }
         } else {
           
           
