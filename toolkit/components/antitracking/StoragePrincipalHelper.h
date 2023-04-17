@@ -242,17 +242,8 @@ class StoragePrincipalHelper final {
   static nsresult PrepareEffectiveStoragePrincipalOriginAttributes(
       nsIChannel* aChannel, OriginAttributes& aOriginAttributes);
 
-  
   static bool VerifyValidStoragePrincipalInfoForPrincipalInfo(
       const mozilla::ipc::PrincipalInfo& aStoragePrincipalInfo,
-      const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
-
-  
-  
-  
-  
-  static bool VerifyValidClientPrincipalInfoForPrincipalInfo(
-      const mozilla::ipc::PrincipalInfo& aClientPrincipalInfo,
       const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
 
   enum PrincipalType {
@@ -293,12 +284,6 @@ class StoragePrincipalHelper final {
   static nsresult GetPrincipal(nsPIDOMWindowInner* aWindow,
                                PrincipalType aPrincipalType,
                                nsIPrincipal** aPrincipal);
-
-  
-  
-  
-  static bool ShouldUsePartitionPrincipalForServiceWorker(
-      nsIDocShell* aDocShell);
 
   
 

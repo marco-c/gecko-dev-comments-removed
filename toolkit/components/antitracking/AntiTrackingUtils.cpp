@@ -651,7 +651,7 @@ bool AntiTrackingUtils::IsThirdPartyWindow(nsPIDOMWindowInner* aWindow,
   }
 
   RefPtr<Document> doc = aWindow->GetDoc();
-  if (!doc) {
+  if (!doc || !doc->GetChannel()) {
     
     
     nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
@@ -661,59 +661,10 @@ bool AntiTrackingUtils::IsThirdPartyWindow(nsPIDOMWindowInner* aWindow,
     return thirdParty;
   }
 
-  if (!doc->GetChannel()) {
-    
-    
-    
-    return IsThirdPartyContext(doc->GetBrowsingContext());
-  }
-
   
   
   nsCOMPtr<nsILoadInfo> loadInfo = doc->GetChannel()->LoadInfo();
   return loadInfo->GetIsThirdPartyContextToTopWindow();
-}
-
-
-bool AntiTrackingUtils::IsThirdPartyContext(BrowsingContext* aBrowsingContext) {
-  MOZ_ASSERT(aBrowsingContext);
-  MOZ_ASSERT(aBrowsingContext->IsInProcess());
-
-  if (aBrowsingContext->IsTopContent()) {
-    return false;
-  }
-
-  
-  if (!aBrowsingContext->Top()->IsInProcess()) {
-    return true;
-  }
-
-  nsIDocShell* docShell = aBrowsingContext->GetDocShell();
-  if (!docShell) {
-    return true;
-  }
-  Document* doc = docShell->GetExtantDocument();
-  if (!doc) {
-    return true;
-  }
-  nsIPrincipal* principal = doc->NodePrincipal();
-
-  nsIDocShell* topDocShell = aBrowsingContext->Top()->GetDocShell();
-  if (!topDocShell) {
-    return true;
-  }
-  Document* topDoc = topDocShell->GetDocument();
-  if (!topDoc) {
-    return true;
-  }
-  nsIPrincipal* topPrincipal = topDoc->NodePrincipal();
-
-  auto* topBasePrin = BasePrincipal::Cast(topPrincipal);
-  bool isThirdParty = true;
-
-  topBasePrin->IsThirdPartyPrincipal(principal, &isThirdParty);
-
-  return isThirdParty;
 }
 
 
