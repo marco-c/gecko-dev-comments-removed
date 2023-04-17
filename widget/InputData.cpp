@@ -635,6 +635,38 @@ double PinchGestureInput::ComputeDeltaY(nsIWidget* aWidget) const {
 #endif
 }
 
+bool PinchGestureInput::SetLineOrPageDeltaY(nsIWidget* aWidget) {
+  double deltaY = ComputeDeltaY(aWidget);
+  if (deltaY == 0 && mType != PINCHGESTURE_END) {
+    return false;
+  }
+  gfx::IntPoint lineOrPageDelta = PinchGestureInput::GetIntegerDeltaForEvent(
+      (mType == PINCHGESTURE_START), 0, deltaY);
+  mLineOrPageDeltaY = lineOrPageDelta.y;
+  if (mLineOrPageDeltaY == 0) {
+    
+    
+    if (mType == PINCHGESTURE_SCALE) {
+      return false;
+    }
+    
+    
+    
+    
+    
+    if (mType == PINCHGESTURE_START) {
+#ifdef XP_WIN
+      return false;
+#else
+      mLineOrPageDeltaY = (deltaY >= 0) ? 1 : -1;
+#endif
+    }
+    
+    
+  }
+  return true;
+}
+
  gfx::IntPoint PinchGestureInput::GetIntegerDeltaForEvent(
     bool aIsStart, float x, float y) {
   static gfx::Point sAccumulator(0.0f, 0.0f);

@@ -509,6 +509,17 @@ class PinchGestureInput : public InputData {
 
   double ComputeDeltaY(nsIWidget* aWidget) const;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool SetLineOrPageDeltaY(nsIWidget* aWidget);
+
   static gfx::IntPoint GetIntegerDeltaForEvent(bool aIsStart, float x, float y);
 
   
