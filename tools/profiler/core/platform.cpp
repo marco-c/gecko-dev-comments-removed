@@ -2736,6 +2736,44 @@ static JS::ProfilingCategoryPair InferJavaCategory(nsACString& aName) {
   return JS::ProfilingCategoryPair::OTHER;
 }
 
+
+struct JavaMarker {
+  static constexpr Span<const char> MarkerTypeName() {
+    return MakeStringSpan("Java");
+  }
+  static void StreamJSONMarkerData(
+      baseprofiler::SpliceableJSONWriter& aWriter) {}
+  static MarkerSchema MarkerTypeDisplay() {
+    using MS = MarkerSchema;
+    MS schema{MS::Location::timelineOverview, MS::Location::markerChart,
+              MS::Location::markerTable};
+    schema.SetAllLabels("{marker.name}");
+    return schema;
+  }
+};
+
+
+struct JavaMarkerWithDetails {
+  static constexpr Span<const char> MarkerTypeName() {
+    return MakeStringSpan("JavaWithDetails");
+  }
+  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
+                                   const ProfilerString8View& aText) {
+    aWriter.StringProperty("name", aText);
+  }
+  static MarkerSchema MarkerTypeDisplay() {
+    using MS = MarkerSchema;
+    MS schema{MS::Location::timelineOverview, MS::Location::markerChart,
+              MS::Location::markerTable};
+    schema.SetTooltipLabel("{marker.name}");
+    schema.SetChartLabel("{marker.data.details}");
+    schema.SetTableLabel("{marker.name} - {marker.data.details}");
+    schema.AddKeyLabelFormat("details", "Details",
+                             MarkerSchema::Format::string);
+    return schema;
+  }
+};
+
 static void CollectJavaThreadProfileData(ProfileBuffer& aProfileBuffer) {
   
   
@@ -2803,14 +2841,14 @@ static void CollectJavaThreadProfileData(ProfileBuffer& aProfileBuffer) {
       
       AddMarkerToBuffer(aProfileBuffer.UnderlyingChunkedBuffer(), markerName,
                         geckoprofiler::category::JAVA_ANDROID,
-                        {MarkerThreadId(threadId), std::move(timing)});
+                        {MarkerThreadId(threadId), std::move(timing)},
+                        JavaMarker{});
     } else {
       
       AddMarkerToBuffer(aProfileBuffer.UnderlyingChunkedBuffer(), markerName,
                         geckoprofiler::category::JAVA_ANDROID,
                         {MarkerThreadId(threadId), std::move(timing)},
-                        geckoprofiler::markers::TextMarker{},
-                        text->ToCString());
+                        JavaMarkerWithDetails{}, text->ToCString());
     }
   }
 }
@@ -2845,6 +2883,28 @@ static void locked_profiler_stream_json_for_this_process(
     const double durationStartMs = collectionStartMs - *durationS * 1000;
     buffer.DiscardSamplesBeforeTime(durationStartMs);
   }
+
+#if defined(GP_OS_android)
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  mozilla::ProfileBufferChunkManagerWithLocalLimit javaChunkManager(
+      64 * 1024 * 1024, 1024 * 1024);
+  ProfileChunkedBuffer javaBufferManager(
+      ProfileChunkedBuffer::ThreadSafety::WithoutMutex, javaChunkManager);
+  ProfileBuffer javaBuffer(javaBufferManager);
+  if (ActivePS::FeatureJava(aLock)) {
+    CollectJavaThreadProfileData(javaBuffer);
+  }
+#endif
 
   
   aWriter.StartArrayProperty("libs");
@@ -2884,17 +2944,6 @@ static void locked_profiler_stream_json_for_this_process(
 
 #if defined(GP_OS_android)
     if (ActivePS::FeatureJava(aLock)) {
-      
-      
-      
-      
-      mozilla::ProfileBufferChunkManagerWithLocalLimit chunkManager(
-          64 * 1024 * 1024, 1024 * 1024);
-      ProfileChunkedBuffer bufferManager(
-          ProfileChunkedBuffer::ThreadSafety::WithoutMutex, chunkManager);
-      ProfileBuffer javaBuffer(bufferManager);
-      CollectJavaThreadProfileData(javaBuffer);
-
       
       
       
