@@ -19,10 +19,7 @@ static mozilla::LazyLogModule sApzMgrLog("apz.manager");
 namespace mozilla {
 namespace layers {
 
-using gfx::CompositorHitTestFlags;
 using gfx::CompositorHitTestInfo;
-using gfx::CompositorHitTestInvisibleToHit;
-using gfx::CompositorHitTestTouchActionMask;
 
 HitTestingTreeNode::HitTestingTreeNode(AsyncPanZoomController* aApzc,
                                        bool aIsPrimaryHolder,
@@ -267,94 +264,6 @@ void HitTestingTreeNode::SetHitTestData(
   mOverride = aOverride;
   mIsBackfaceHidden = aIsBackfaceHidden;
   mAsyncZoomContainerId = aAsyncZoomContainerId;
-}
-
-bool HitTestingTreeNode::IsOutsideClip(const ParentLayerPoint& aPoint) const {
-  
-  return (mClipRegion.isSome() && !mClipRegion->Contains(aPoint.x, aPoint.y));
-}
-
-Maybe<LayerPoint> HitTestingTreeNode::Untransform(
-    const ParentLayerPoint& aPoint,
-    const LayerToParentLayerMatrix4x4& aTransform) const {
-  Maybe<ParentLayerToLayerMatrix4x4> inverse = aTransform.MaybeInverse();
-  if (inverse) {
-    return UntransformBy(inverse.ref(), aPoint);
-  }
-  return Nothing();
-}
-
-CompositorHitTestInfo HitTestingTreeNode::HitTest(
-    const LayerPoint& aPoint) const {
-  CompositorHitTestInfo result = CompositorHitTestInvisibleToHit;
-
-  if (mOverride & EventRegionsOverride::ForceEmptyHitRegion) {
-    return result;
-  }
-
-  auto point = LayerIntPoint::Round(aPoint);
-
-  
-  
-  
-  if (mIsBackfaceHidden) {
-    return result;
-  }
-
-  
-  if (!mEventRegions.mHitRegion.Contains(point.x, point.y)) {
-    return result;
-  }
-
-  result = CompositorHitTestFlags::eVisibleToHitTest;
-
-  if (mOverride & EventRegionsOverride::ForceDispatchToContent) {
-    result += CompositorHitTestFlags::eApzAwareListeners;
-  }
-  if (mEventRegions.mDispatchToContentHitRegion.Contains(point.x, point.y)) {
-    
-    
-    
-    
-    
-    result += CompositorHitTestFlags::eIrregularArea;
-    if (mEventRegions.mDTCRequiresTargetConfirmation) {
-      result += CompositorHitTestFlags::eRequiresTargetConfirmation;
-    }
-  } else if (StaticPrefs::layout_css_touch_action_enabled()) {
-    if (mEventRegions.mNoActionRegion.Contains(point.x, point.y)) {
-      
-      result += CompositorHitTestTouchActionMask;
-    } else {
-      bool panX = mEventRegions.mHorizontalPanRegion.Contains(point.x, point.y);
-      bool panY = mEventRegions.mVerticalPanRegion.Contains(point.x, point.y);
-      if (panX && panY) {
-        
-        result += CompositorHitTestFlags::eTouchActionDoubleTapZoomDisabled;
-        result += CompositorHitTestFlags::eTouchActionPinchZoomDisabled;
-      } else if (panX) {
-        
-        result += CompositorHitTestFlags::eTouchActionPanYDisabled;
-        result += CompositorHitTestFlags::eTouchActionPinchZoomDisabled;
-        result += CompositorHitTestFlags::eTouchActionDoubleTapZoomDisabled;
-      } else if (panY) {
-        
-        result += CompositorHitTestFlags::eTouchActionPanXDisabled;
-        result += CompositorHitTestFlags::eTouchActionPinchZoomDisabled;
-        result += CompositorHitTestFlags::eTouchActionDoubleTapZoomDisabled;
-      }  
-         
-         
-         
-    }
-  }
-
-  
-  
-  
-  
-
-  return result;
 }
 
 EventRegionsOverride HitTestingTreeNode::GetEventRegionsOverride() const {

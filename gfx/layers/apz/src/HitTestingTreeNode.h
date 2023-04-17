@@ -109,7 +109,6 @@ class HitTestingTreeNode {
       const Maybe<ParentLayerIntRegion>& aClipRegion,
       const EventRegionsOverride& aOverride, bool aIsBackfaceHidden,
       const Maybe<ScrollableLayerGuid::ViewID>& aAsyncZoomContainerId);
-  bool IsOutsideClip(const ParentLayerPoint& aPoint) const;
 
   
 
@@ -145,15 +144,6 @@ class HitTestingTreeNode {
   const LayerRectAbsolute& GetStickyScrollRangeInner() const;
   Maybe<uint64_t> GetStickyPositionAnimationId() const;
 
-  
-
-
-  Maybe<LayerPoint> Untransform(
-      const ParentLayerPoint& aPoint,
-      const LayerToParentLayerMatrix4x4& aTransform) const;
-  
-
-  gfx::CompositorHitTestInfo HitTest(const LayerPoint& aPoint) const;
   
   EventRegionsOverride GetEventRegionsOverride() const;
   const CSSTransformMatrix& GetTransform() const;
