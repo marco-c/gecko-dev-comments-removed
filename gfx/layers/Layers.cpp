@@ -14,8 +14,7 @@
 #include <string>              
 #include <type_traits>         
 #include "CompositableHost.h"  
-#include "GeckoProfiler.h"  
-#include "LayerUserData.h"  
+#include "LayerUserData.h"     
 #include "TreeTraversal.h"  
 #include "UnitTransforms.h"  
 #include "apz/src/AsyncPanZoomController.h"  
@@ -24,9 +23,9 @@
 #include "gfxMatrix.h"              
 #include "gfxUtils.h"               
 #include "mozilla/ArrayIterator.h"  
-#include "mozilla/BaseProfilerMarkersPrerequisites.h"  
-#include "mozilla/DebugOnly.h"                         
+#include "mozilla/DebugOnly.h"      
 #include "mozilla/Logging.h"  
+#include "mozilla/ProfilerMarkers.h"  
 #include "mozilla/ScrollPositionUpdate.h"  
 #include "mozilla/Telemetry.h"             
 #include "mozilla/TelemetryHistogramEnums.h"  
@@ -99,7 +98,7 @@ void RecordCompositionPayloadsPresented(
   if (aPayloads.Length()) {
     TimeStamp presented = aCompositionEndTime;
     for (const CompositionPayload& payload : aPayloads) {
-      if (profiler_can_accept_markers()) {
+      if (profiler_thread_is_being_profiled()) {
         MOZ_RELEASE_ASSERT(payload.mType <= kHighestCompositionPayloadType);
         nsAutoCString name(
             kCompositionPayloadTypeNames[uint8_t(payload.mType)]);

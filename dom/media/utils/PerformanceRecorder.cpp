@@ -55,7 +55,7 @@ const char* PerformanceRecorder::FindMediaResolution(int32_t aHeight) {
 
 
 bool PerformanceRecorder::IsMeasurementEnabled() {
-  return profiler_can_accept_markers() ||
+  return profiler_thread_is_being_profiled() ||
          PerformanceRecorder::sEnableMeasurementForTesting;
 }
 

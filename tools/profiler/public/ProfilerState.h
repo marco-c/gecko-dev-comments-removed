@@ -164,7 +164,6 @@ using ProfilingStateChangeCallback = std::function<void(ProfilingState)>;
 
 [[nodiscard]] inline bool profiler_is_active() { return false; }
 [[nodiscard]] inline bool profiler_is_active_and_unpaused() { return false; }
-[[nodiscard]] inline bool profiler_can_accept_markers() { return false; }
 [[nodiscard]] inline bool profiler_feature_active(uint32_t aFeature) {
   return false;
 }
@@ -304,18 +303,6 @@ class RacyFeatures {
 
 
 [[nodiscard]] inline bool profiler_is_active_and_unpaused() {
-  return mozilla::profiler::detail::RacyFeatures::IsActiveAndUnpaused();
-}
-
-
-
-
-
-
-
-
-
-[[nodiscard]] inline bool profiler_can_accept_markers() {
   return mozilla::profiler::detail::RacyFeatures::IsActiveAndUnpaused();
 }
 

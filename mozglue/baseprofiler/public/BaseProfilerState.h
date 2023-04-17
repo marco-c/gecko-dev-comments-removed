@@ -317,17 +317,6 @@ MFBT_API bool IsThreadBeingProfiled();
 
 
 
-
-
-
-
-
-[[nodiscard]] inline bool profiler_can_accept_markers() {
-  return baseprofiler::detail::RacyFeatures::IsActiveAndUnpaused();
-}
-
-
-
 [[nodiscard]] inline bool profiler_thread_is_being_profiled() {
   return baseprofiler::detail::RacyFeatures::IsActiveAndUnpaused() &&
          baseprofiler::detail::IsThreadBeingProfiled();
