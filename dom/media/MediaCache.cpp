@@ -472,6 +472,10 @@ class MediaCache {
 
   
   
+  int32_t TrimCacheIfNeeded(AutoLock& aLock, const TimeStamp& aNow);
+
+  
+  
   friend void MediaCacheStream::GetDebugInfo(
       dom::MediaCacheStreamDebugInfo& aInfo);
   mozilla::Monitor& GetMonitorOnTheMainThread() {
@@ -1218,106 +1222,8 @@ void MediaCache::Update() {
 #ifdef DEBUG
   mInUpdate = true;
 #endif
-
-  int32_t maxBlocks = mBlockCache->GetMaxBlocks(MediaCache::CacheSize());
-  TimeStamp now = TimeStamp::Now();
-
-  int32_t freeBlockCount = mFreeBlocks.GetCount();
-  TimeDuration latestPredictedUseForOverflow = 0;
-  if (mIndex.Length() > uint32_t(maxBlocks)) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    for (int32_t blockIndex = mIndex.Length() - 1; blockIndex >= maxBlocks;
-         --blockIndex) {
-      if (IsBlockFree(blockIndex)) {
-        
-        --freeBlockCount;
-        continue;
-      }
-      TimeDuration predictedUse = PredictNextUse(lock, now, blockIndex);
-      latestPredictedUseForOverflow =
-          std::max(latestPredictedUseForOverflow, predictedUse);
-    }
-  } else {
-    freeBlockCount += maxBlocks - mIndex.Length();
-  }
-
-  
-  for (int32_t blockIndex = mIndex.Length() - 1; blockIndex >= maxBlocks;
-       --blockIndex) {
-    if (IsBlockFree(blockIndex)) continue;
-
-    Block* block = &mIndex[blockIndex];
-    
-    
-    
-    int32_t destinationBlockIndex =
-        FindReusableBlock(lock, now, block->mOwners[0].mStream,
-                          block->mOwners[0].mStreamBlock, maxBlocks);
-    if (destinationBlockIndex < 0) {
-      
-      
-      break;
-    }
-
-    
-    
-    bool inCurrentCachedRange = false;
-    for (BlockOwner& owner : mIndex[destinationBlockIndex].mOwners) {
-      MediaCacheStream* stream = owner.mStream;
-      int64_t end = OffsetToBlockIndexUnchecked(
-          stream->GetCachedDataEndInternal(lock, stream->mStreamOffset));
-      int64_t cur = OffsetToBlockIndexUnchecked(stream->mStreamOffset);
-      if (cur <= owner.mStreamBlock && owner.mStreamBlock < end) {
-        inCurrentCachedRange = true;
-        break;
-      }
-    }
-    if (inCurrentCachedRange) {
-      continue;
-    }
-
-    if (IsBlockFree(destinationBlockIndex) ||
-        PredictNextUse(lock, now, destinationBlockIndex) >
-            latestPredictedUseForOverflow) {
-      
-      
-
-      nsresult rv = mBlockCache->MoveBlock(blockIndex, destinationBlockIndex);
-
-      if (NS_SUCCEEDED(rv)) {
-        
-        LOG("Swapping blocks %d and %d (trimming cache)", blockIndex,
-            destinationBlockIndex);
-        
-        
-        SwapBlocks(lock, blockIndex, destinationBlockIndex);
-        
-        LOG("Released block %d (trimming cache)", blockIndex);
-        FreeBlock(lock, blockIndex);
-      }
-    } else {
-      LOG("Could not trim cache block %d (destination %d, "
-          "predicted next use %f, latest predicted use for overflow %f",
-          blockIndex, destinationBlockIndex,
-          PredictNextUse(lock, now, destinationBlockIndex).ToSeconds(),
-          latestPredictedUseForOverflow.ToSeconds());
-    }
-  }
-  
-  Truncate();
+  const TimeStamp now = TimeStamp::Now();
+  const int32_t freeBlockCount = TrimCacheIfNeeded(lock, now);
 
   
   
@@ -1333,6 +1239,7 @@ void MediaCache::Update() {
   
   
   TimeDuration latestNextUse;
+  const int32_t maxBlocks = mBlockCache->GetMaxBlocks(MediaCache::CacheSize());
   if (freeBlockCount == 0) {
     int32_t reusableBlock = FindReusableBlock(lock, now, nullptr, 0, maxBlocks);
     if (reusableBlock >= 0) {
@@ -1563,6 +1470,110 @@ void MediaCache::Update() {
     }
   }
   mSuspendedStatusToNotify.Clear();
+}
+
+int32_t MediaCache::TrimCacheIfNeeded(AutoLock& aLock, const TimeStamp& aNow) {
+  MOZ_ASSERT(sThread->IsOnCurrentThread());
+
+  const int32_t maxBlocks = mBlockCache->GetMaxBlocks(MediaCache::CacheSize());
+
+  int32_t freeBlockCount = mFreeBlocks.GetCount();
+  TimeDuration latestPredictedUseForOverflow = 0;
+  if (mIndex.Length() > uint32_t(maxBlocks)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    for (int32_t blockIndex = mIndex.Length() - 1; blockIndex >= maxBlocks;
+         --blockIndex) {
+      if (IsBlockFree(blockIndex)) {
+        
+        --freeBlockCount;
+        continue;
+      }
+      TimeDuration predictedUse = PredictNextUse(aLock, aNow, blockIndex);
+      latestPredictedUseForOverflow =
+          std::max(latestPredictedUseForOverflow, predictedUse);
+    }
+  } else {
+    freeBlockCount += maxBlocks - mIndex.Length();
+  }
+
+  
+  for (int32_t blockIndex = mIndex.Length() - 1; blockIndex >= maxBlocks;
+       --blockIndex) {
+    if (IsBlockFree(blockIndex)) continue;
+
+    Block* block = &mIndex[blockIndex];
+    
+    
+    
+    int32_t destinationBlockIndex =
+        FindReusableBlock(aLock, aNow, block->mOwners[0].mStream,
+                          block->mOwners[0].mStreamBlock, maxBlocks);
+    if (destinationBlockIndex < 0) {
+      
+      
+      break;
+    }
+
+    
+    
+    bool inCurrentCachedRange = false;
+    for (BlockOwner& owner : mIndex[destinationBlockIndex].mOwners) {
+      MediaCacheStream* stream = owner.mStream;
+      int64_t end = OffsetToBlockIndexUnchecked(
+          stream->GetCachedDataEndInternal(aLock, stream->mStreamOffset));
+      int64_t cur = OffsetToBlockIndexUnchecked(stream->mStreamOffset);
+      if (cur <= owner.mStreamBlock && owner.mStreamBlock < end) {
+        inCurrentCachedRange = true;
+        break;
+      }
+    }
+    if (inCurrentCachedRange) {
+      continue;
+    }
+
+    if (IsBlockFree(destinationBlockIndex) ||
+        PredictNextUse(aLock, aNow, destinationBlockIndex) >
+            latestPredictedUseForOverflow) {
+      
+      
+
+      nsresult rv = mBlockCache->MoveBlock(blockIndex, destinationBlockIndex);
+
+      if (NS_SUCCEEDED(rv)) {
+        
+        LOG("Swapping blocks %d and %d (trimming cache)", blockIndex,
+            destinationBlockIndex);
+        
+        
+        SwapBlocks(aLock, blockIndex, destinationBlockIndex);
+        
+        LOG("Released block %d (trimming cache)", blockIndex);
+        FreeBlock(aLock, blockIndex);
+      }
+    } else {
+      LOG("Could not trim cache block %d (destination %d, "
+          "predicted next use %f, latest predicted use for overflow %f",
+          blockIndex, destinationBlockIndex,
+          PredictNextUse(aLock, aNow, destinationBlockIndex).ToSeconds(),
+          latestPredictedUseForOverflow.ToSeconds());
+    }
+  }
+  
+  Truncate();
+  return freeBlockCount;
 }
 
 class UpdateEvent : public Runnable {
