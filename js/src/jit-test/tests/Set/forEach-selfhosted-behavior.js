@@ -4,14 +4,6 @@
 
 
 
-var BUGNUMBER = 987243;
-var summary = "Don't use .call(...) in the self-hosted Set.prototype.forEach";
-
-print(BUGNUMBER + ": " + summary);
-
-
-
-
 
 var functionCall = Function.prototype.call;
 
@@ -42,10 +34,3 @@ new Set([new Number]).forEach(lalala);
 new Set([true, new Boolean(false)]).forEach(lalala);
 
 assertEq(callCount, 0);
-
-
-
-if (typeof reportCompare === "function")
-  reportCompare(true, true);
-
-print("Tests complete");
