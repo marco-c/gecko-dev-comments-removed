@@ -807,7 +807,7 @@ static Maybe<TransformData> CreateAnimationData(
     
     
     nsIFrame* referenceFrame = nsLayoutUtils::GetReferenceFrame(
-        nsLayoutUtils::GetCrossDocParentFrame(aFrame));
+        nsLayoutUtils::GetCrossDocParentFrameInProcess(aFrame));
     origin = aFrame->GetOffsetToCrossDoc(referenceFrame);
   }
 
