@@ -15,7 +15,10 @@ function setupScrollTimelineTest(
   let scroller = document.createElement('div');
   scroller.style.width = '100px';
   scroller.style.height = '100px';
-  scroller.style.overflow = 'scroll';
+  
+  
+  
+  scroller.style.overflow = 'hidden';
   for (const [key, value] of scrollerOverrides) {
     scroller.style[key] = value;
   }
@@ -121,8 +124,6 @@ function assert_percents_approx_equal(actual, expected, maxScroll,
 }
 
 function assert_percents_equal(actual, expected, description) {
-  
-  
   
   
   const defaultScrollRange = 400;
