@@ -107,6 +107,11 @@ class SnapshotSelector extends EventEmitter {
   }
 
   rebuild() {
+    
+    if (!this.#task) {
+      return;
+    }
+
     this.#task.arm();
   }
 
@@ -116,6 +121,11 @@ class SnapshotSelector extends EventEmitter {
 
 
   #snapshotsGenerated(snapshots) {
+    
+    if (!this.#task) {
+      return;
+    }
+
     logConsole.debug(
       "Generated snapshots",
       snapshots.map(s => s.url)
@@ -127,6 +137,11 @@ class SnapshotSelector extends EventEmitter {
 
 
   async #buildSnapshots() {
+    
+    if (!this.#task) {
+      return;
+    }
+
     
     
     let context = { ...this.#context };
