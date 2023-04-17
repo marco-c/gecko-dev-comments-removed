@@ -1634,6 +1634,10 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
     
     
     if (!pwFields) {
+      if (!LoginHelper.usernameOnlyFormEnabled) {
+        return emptyResult;
+      }
+
       usernameField = this.getUsernameFieldFromUsernameOnlyForm(
         form.rootElement
       );
