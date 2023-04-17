@@ -44,6 +44,7 @@ def WebglSuite(name):
 config = {
     "default_actions": [
         "clobber",
+        "setup-avds",
         "download-and-extract",
         "create-virtualenv",
         "start-emulator",
