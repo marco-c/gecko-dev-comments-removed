@@ -92,7 +92,9 @@ static void MakeGray(JSObject* obj) {
 
 
 BEGIN_TEST(testGCHeapPostBarriers) {
+#ifdef JS_GC_ZEAL
   AutoLeaveZeal nozeal(cx);
+#endif 
 
   
   JS_GC(cx);
@@ -340,7 +342,9 @@ END_TEST(testGCHeapPostBarriers)
 
 
 BEGIN_TEST(testGCHeapReadBarriers) {
+#ifdef JS_GC_ZEAL
   AutoLeaveZeal nozeal(cx);
+#endif 
 
   CHECK((TestWrapperType<JS::Heap<JSObject*>, JSObject*>()));
   CHECK((TestWrapperType<JS::TenuredHeap<JSObject*>, JSObject*>()));
@@ -434,9 +438,13 @@ using ObjectVector = Vector<JSObject*, 0, SystemAllocPolicy>;
 
 
 BEGIN_TEST(testGCHeapPreBarriers) {
+#ifdef JS_GC_ZEAL
   AutoLeaveZeal nozeal(cx);
+#endif 
 
-  AutoGCParameter param1(cx, JSGC_INCREMENTAL_GC_ENABLED, true);
+  bool wasIncrementalGCEnabled =
+      JS_GetGCParameter(cx, JSGC_INCREMENTAL_GC_ENABLED);
+  JS_SetGCParameter(cx, JSGC_INCREMENTAL_GC_ENABLED, true);
 
   
   
@@ -470,6 +478,8 @@ BEGIN_TEST(testGCHeapPreBarriers) {
   TestGCPtr(testObjects);
 
   gc::FinishGC(cx, JS::GCReason::API);
+
+  JS_SetGCParameter(cx, JSGC_INCREMENTAL_GC_ENABLED, wasIncrementalGCEnabled);
 
   return true;
 }
