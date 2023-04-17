@@ -37,6 +37,12 @@ class nsPrinterWin final : public nsPrinterBase {
 
   const nsString mName;
   mutable mozilla::DataMutex<nsTArray<uint8_t>> mDefaultDevmodeWStorage;
+  
+  
+  
+  
+  
+  mutable mozilla::Mutex mDriverMutex{"nsPrinterWin::Driver"};
 };
 
 #endif  
