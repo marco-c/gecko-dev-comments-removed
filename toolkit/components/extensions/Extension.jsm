@@ -898,6 +898,10 @@ class ExtensionData {
     return this.manifest.manifest_version;
   }
 
+  async getExtensionVersionWithoutValidation() {
+    return (await this.readJSON("manifest.json")).version;
+  }
+
   
 
 
