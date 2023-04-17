@@ -24,11 +24,7 @@ namespace base {
 
 
 
-#if defined(OS_WIN)
-typedef HANDLE SharedMemoryHandle;
-#elif defined(OS_POSIX)
 typedef mozilla::UniqueFileHandle SharedMemoryHandle;
-#endif
 
 
 
@@ -100,12 +96,16 @@ class SharedMemory {
   
   
   
-  
   mozilla::UniqueFileHandle TakeHandle() {
     mozilla::UniqueFileHandle handle = std::move(mapped_file_);
     Close();
     return handle;
   }
+
+  
+  
+  
+  mozilla::UniqueFileHandle CloneHandle();
 
   
   
@@ -149,27 +149,6 @@ class SharedMemory {
   
   static void* FindFreeAddressSpace(size_t size);
 
-  
-  
-  
-  
-  
-  
-  bool ShareToProcess(base::ProcessId target_pid,
-                      SharedMemoryHandle* new_handle) {
-    return ShareToProcessCommon(target_pid, new_handle, false);
-  }
-
-  
-  
-  
-  
-  
-  
-  bool GiveToProcess(ProcessId target_pid, SharedMemoryHandle* new_handle) {
-    return ShareToProcessCommon(target_pid, new_handle, true);
-  }
-
 #ifdef OS_POSIX
   
   
@@ -179,9 +158,6 @@ class SharedMemory {
 #endif
 
  private:
-  bool ShareToProcessCommon(ProcessId target_pid,
-                            SharedMemoryHandle* new_handle, bool close_self);
-
   bool CreateInternal(size_t size, bool freezeable);
 
   
