@@ -101,10 +101,17 @@ class UnitConverterTimezone {
       inputDate.setUTCHours(inputDate.getHours());
       inputDate.setUTCMinutes(inputDate.getMinutes());
     } else {
-      const inputHours = Number(regexResult[2]);
-      const inputMinutes = regexResult[4] ? Number(regexResult[4]) : 0;
+      
+      
+      
       const inputAMPM = regexResult[5]?.toLowerCase() || "";
-      const inputMeridianHourShift = inputAMPM === "pm" ? 12 : 0;
+      const inputHours =
+        regexResult[2] === "12" && inputAMPM === "am"
+          ? 0
+          : Number(regexResult[2]);
+      const inputMinutes = regexResult[4] ? Number(regexResult[4]) : 0;
+      const inputMeridianHourShift =
+        inputAMPM === "pm" && inputHours < 12 ? 12 : 0;
       inputDate.setUTCHours(inputHours + inputMeridianHourShift);
       inputDate.setUTCMinutes(inputMinutes);
       isMeridiemNeeded = !!inputAMPM;
