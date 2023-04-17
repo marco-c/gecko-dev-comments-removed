@@ -1854,7 +1854,7 @@ pref("privacy.webrtc.sharedTabWarning", false);
 
 
 
-pref("privacy.webrtc.deviceGracePeriodTimeoutMs", 50000);
+pref("privacy.webrtc.deviceGracePeriodTimeoutMs", 3600000);
 
 
 pref("browser.tabs.remote.autostart", true);
