@@ -40,6 +40,10 @@
 #  include "mozilla/XULStore.h"
 #endif
 
+#ifdef MOZ_BACKGROUNDTASKS
+#  include "mozilla/BackgroundTasks.h"
+#endif
+
 namespace mozilla {
 
 const char* sPhaseObserverKeys[] = {
@@ -234,6 +238,17 @@ void AppShutdown::MaybeFastShutdown(ShutdownPhase aPhase) {
 
 #ifdef MOZ_GECKO_PROFILER
     profiler_shutdown(IsFastShutdown::Yes);
+#endif
+
+#ifdef MOZ_BACKGROUNDTASKS
+    
+    
+    
+    
+    if (mozilla::BackgroundTasks::IsUsingTemporaryProfile()) {
+      UnlockProfile();
+    }
+    mozilla::BackgroundTasks::Shutdown();
 #endif
 
     DoImmediateExit(sExitCode);
