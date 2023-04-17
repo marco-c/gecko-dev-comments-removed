@@ -6,7 +6,9 @@
 
 
 
+#[cfg(feature = "num_traits")]
 extern crate num_traits;
+#[cfg(feature = "serde_serialization")]
 extern crate serde;
 
 mod app_unit;
