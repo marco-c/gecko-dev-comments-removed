@@ -1161,8 +1161,16 @@ MsaaAccessible::get_accState(
   if (accessible) {
     return accessible->get_accState(kVarChildIdSelf, pvarState);
   }
+
   if (mAcc->IsRemote()) {
-    return E_NOTIMPL;  
+    
+    if (mAcc->IsDoc()) {
+      
+      
+      
+      pvarState->lVal |= STATE_SYSTEM_READONLY;
+    }
+    return S_OK;
   }
 
   

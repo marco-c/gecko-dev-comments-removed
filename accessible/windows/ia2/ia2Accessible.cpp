@@ -284,7 +284,10 @@ ia2Accessible::get_states(AccessibleStates* aStates) {
   }
   AccessibleWrap* acc = LocalAcc();
   if (!acc) {
-    return E_NOTIMPL;  
+    
+    
+    
+    return S_OK;
   }
 
   uint64_t state;
