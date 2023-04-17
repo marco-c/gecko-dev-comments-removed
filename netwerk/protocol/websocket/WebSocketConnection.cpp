@@ -4,12 +4,16 @@
 
 
 
+#include "nsIInterfaceRequestor.h"
 #include "WebSocketConnection.h"
 
 #include "WebSocketLog.h"
 #include "mozilla/net/WebSocketConnectionListener.h"
 #include "nsIOService.h"
 #include "nsISocketTransport.h"
+#include "nsSocketTransportService2.h"
+
+namespace mozilla::net {
 
 NS_IMPL_ISUPPORTS(WebSocketConnection, nsIInputStreamCallback,
                   nsIOutputStreamCallback)
@@ -241,3 +245,5 @@ WebSocketConnection::OnOutputStreamReady(nsIAsyncOutputStream* aStream) {
 
   return NS_OK;
 }
+
+}  
