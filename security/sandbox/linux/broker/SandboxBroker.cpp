@@ -738,7 +738,7 @@ void SandboxBroker::ThreadMain(void) {
       
       
       
-      strncpy(pathBuf2, recvBuf + first_len + 1, kMaxPathLen + 1);
+      strncpy(pathBuf2, recvBuf + first_len + 1, kMaxPathLen);
 
       
       pathLen = first_len;
