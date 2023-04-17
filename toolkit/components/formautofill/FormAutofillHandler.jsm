@@ -284,6 +284,13 @@ class FormAutofillSection {
               ).slice(-2);
               const year2Digits = profile["cc-exp-year"].toString().slice(-2);
               profile[key] = `${month2Digits}/${year2Digits}`;
+            } else if (key == "cc-number") {
+              
+              
+              
+              profile[key] = profile[key].substr(
+                profile[key].length - maxLength
+              );
             } else {
               profile[key] = profile[key].substr(0, maxLength);
             }
@@ -364,6 +371,10 @@ class FormAutofillSection {
         profile[`${fieldDetail.fieldName}-formatted`] ||
         profile[fieldDetail.fieldName];
 
+      
+      if (fieldDetail.transform) {
+        value = fieldDetail.transform(value);
+      }
       if (ChromeUtils.getClassName(element) === "HTMLInputElement" && value) {
         
         
@@ -569,6 +580,35 @@ class FormAutofillSection {
 
 
 
+  _condenseMultipleCCNumberFields(condensedDetails) {
+    let countOfCCNumbers = 0;
+    
+    
+    for (let i = condensedDetails.length - 1; i >= 0; i--) {
+      if (condensedDetails[i].fieldName == "cc-number") {
+        countOfCCNumbers++;
+        if (countOfCCNumbers == 4) {
+          countOfCCNumbers = 0;
+          condensedDetails[i].fieldValue =
+            condensedDetails[i].elementWeakRef.get()?.value +
+            condensedDetails[i + 1].elementWeakRef.get()?.value +
+            condensedDetails[i + 2].elementWeakRef.get()?.value +
+            condensedDetails[i + 3].elementWeakRef.get()?.value;
+          condensedDetails.splice(i + 1, 3);
+        }
+      } else {
+        countOfCCNumbers = 0;
+      }
+    }
+  }
+  
+
+
+
+
+
+
+
 
 
 
@@ -586,11 +626,16 @@ class FormAutofillSection {
     if (this.flowId) {
       data.flowId = this.flowId;
     }
+    let condensedDetails = this.fieldDetails;
+    
+    if (AppConstants.NIGHTLY_BUILD) {
+      this._condenseMultipleCCNumberFields(condensedDetails);
+    }
 
-    details.forEach(detail => {
+    condensedDetails.forEach(detail => {
       let element = detail.elementWeakRef.get();
       
-      let value = element && element.value.trim();
+      let value = detail.fieldValue ?? (element && element.value.trim());
       value = this.computeFillingValue(value, detail, element);
 
       if (!value || value.length > FormAutofillUtils.MAX_FIELD_VALUE_LENGTH) {
@@ -1190,6 +1235,10 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
     
     if (profile["cc-number-decrypted"]) {
       profile["cc-number"] = profile["cc-number-decrypted"];
+    } else if (!profile["cc-number"].startsWith("****")) {
+      
+      
+      profile["cc-number"] = "****" + profile["cc-number"];
     }
   }
 

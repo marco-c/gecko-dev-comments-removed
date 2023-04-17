@@ -17,6 +17,10 @@ const { XPCOMUtils } = ChromeUtils.import(
 const { FormAutofill } = ChromeUtils.import(
   "resource://autofill/FormAutofill.jsm"
 );
+
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
 ChromeUtils.defineModuleGetter(
   this,
   "FormAutofillUtils",
@@ -143,17 +147,69 @@ class FieldScanner {
     });
   }
 
+  _classifyMultipleCCNumberFields() {
+    if (this._sections.length != 4) {
+      return;
+    }
+    let firstDetails = this._sections[0].fieldDetails;
+    
+    if (
+      firstDetails.findIndex(detail => detail.fieldName == "cc-number") !=
+      firstDetails.length - 1
+    ) {
+      return;
+    }
+    let secondDetails = this._sections[1].fieldDetails;
+    
+    if (
+      !(secondDetails.length == 1 && secondDetails[0].fieldName == "cc-number")
+    ) {
+      return;
+    }
+
+    let thirdDetails = this._sections[2].fieldDetails;
+    
+    if (
+      !(thirdDetails.length == 1 && thirdDetails[0].fieldName == "cc-number")
+    ) {
+      return;
+    }
+
+    let fourthDetails = this._sections[3].fieldDetails;
+    
+    let foundCCNumber = false;
+    for (let [index, detail] of fourthDetails.entries()) {
+      if (detail.fieldName == "cc-number") {
+        if (index == 0) {
+          foundCCNumber = true;
+        } else {
+          return;
+        }
+      }
+    }
+    if (!foundCCNumber) {
+      return;
+    }
+    
+    
+    this._sections[0].fieldDetails = firstDetails.concat(
+      secondDetails,
+      thirdDetails,
+      fourthDetails
+    );
+    this._sections.splice(1);
+  }
   _classifySections() {
     let fieldDetails = this._sections[0].fieldDetails;
     this._sections = [];
     let seenTypes = new Set();
     let previousType;
     let sectionCount = 0;
-
     for (let fieldDetail of fieldDetails) {
       if (!fieldDetail.fieldName) {
         continue;
       }
+
       if (
         seenTypes.has(fieldDetail.fieldName) &&
         (previousType != fieldDetail.fieldName ||
@@ -168,6 +224,10 @@ class FieldScanner {
         DEFAULT_SECTION_NAME + "-" + sectionCount,
         fieldDetail
       );
+    }
+    
+    if (AppConstants.NIGHTLY_BUILD) {
+      this._classifyMultipleCCNumberFields();
     }
   }
 
@@ -266,8 +326,34 @@ class FieldScanner {
     return (
       field1.section == field2.section &&
       field1.addressType == field2.addressType &&
-      field1.fieldName == field2.fieldName
+      field1.fieldName == field2.fieldName &&
+      !field1.transform &&
+      !field2.transform
     );
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  _transformCCNumberForMultipleFields(creditCardFieldDetails) {
+    let ccNumberFields = creditCardFieldDetails.filter(
+      field =>
+        field.fieldName == "cc-number" &&
+        field.elementWeakRef.get().maxLength == 4
+    );
+    if (ccNumberFields.length == 4) {
+      ccNumberFields[0].transform = fullCCNumber => fullCCNumber.slice(0, 4);
+      ccNumberFields[1].transform = fullCCNumber => fullCCNumber.slice(4, 8);
+      ccNumberFields[2].transform = fullCCNumber => fullCCNumber.slice(8, 12);
+      ccNumberFields[3].transform = fullCCNumber => fullCCNumber.slice(12, 16);
+    }
   }
 
   
@@ -301,7 +387,7 @@ class FieldScanner {
         );
       }
     }
-
+    this._transformCCNumberForMultipleFields(creditCardFieldDetails);
     return [
       {
         type: FormAutofillUtils.SECTION_TYPES.ADDRESS,
