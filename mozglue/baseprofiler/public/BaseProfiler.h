@@ -51,9 +51,6 @@
 
 namespace mozilla {
 
-
-class ProfileChunkedBuffer {};
-
 namespace baseprofiler {
 
 

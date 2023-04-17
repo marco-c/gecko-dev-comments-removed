@@ -24,22 +24,20 @@ enum class StackCaptureOptions {
 
 }
 
-#ifdef MOZ_GECKO_PROFILER
+#include "BaseProfilingCategory.h"
+#include "mozilla/Maybe.h"
+#include "mozilla/ProfileChunkedBuffer.h"
+#include "mozilla/BaseProfilerState.h"
+#include "mozilla/TimeStamp.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/Variant.h"
 
-#  include "BaseProfilingCategory.h"
-#  include "mozilla/Maybe.h"
-#  include "mozilla/ProfileChunkedBuffer.h"
-#  include "mozilla/BaseProfilerState.h"
-#  include "mozilla/TimeStamp.h"
-#  include "mozilla/UniquePtr.h"
-#  include "mozilla/Variant.h"
-
-#  include <initializer_list>
-#  include <string_view>
-#  include <string>
-#  include <type_traits>
-#  include <utility>
-#  include <vector>
+#include <initializer_list>
+#include <string_view>
+#include <string>
+#include <type_traits>
+#include <utility>
+#include <vector>
 
 namespace mozilla {
 
@@ -248,16 +246,16 @@ namespace baseprofiler::category {
 
 
 
-#  define CATEGORY_ENUM_BEGIN_CATEGORY(name, labelAsString, color)
-#  define CATEGORY_ENUM_SUBCATEGORY(supercategory, name, labelAsString) \
-    static constexpr MarkerCategory name{ProfilingCategoryPair::name};
-#  define CATEGORY_ENUM_END_CATEGORY
+#define CATEGORY_ENUM_BEGIN_CATEGORY(name, labelAsString, color)
+#define CATEGORY_ENUM_SUBCATEGORY(supercategory, name, labelAsString) \
+  static constexpr MarkerCategory name{ProfilingCategoryPair::name};
+#define CATEGORY_ENUM_END_CATEGORY
 MOZ_PROFILING_CATEGORY_LIST(CATEGORY_ENUM_BEGIN_CATEGORY,
                             CATEGORY_ENUM_SUBCATEGORY,
                             CATEGORY_ENUM_END_CATEGORY)
-#  undef CATEGORY_ENUM_BEGIN_CATEGORY
-#  undef CATEGORY_ENUM_SUBCATEGORY
-#  undef CATEGORY_ENUM_END_CATEGORY
+#undef CATEGORY_ENUM_BEGIN_CATEGORY
+#undef CATEGORY_ENUM_SUBCATEGORY
+#undef CATEGORY_ENUM_END_CATEGORY
 
 
 
@@ -535,7 +533,7 @@ class MarkerStack {
 
   
   void AssertInvariants() const {
-#  ifdef DEBUG
+#ifdef DEBUG
     if (mCaptureOptions != StackCaptureOptions::NoStack) {
       MOZ_ASSERT(!mOptionalChunkedBufferStorage,
                  "We should not hold a buffer when capture is requested");
@@ -552,7 +550,7 @@ class MarkerStack {
                    "Non-null mChunkedBuffer must not be empty");
       }
     }
-#  endif  
+#endif  
   }
 
   StackCaptureOptions mCaptureOptions = StackCaptureOptions::NoStack;
@@ -624,26 +622,26 @@ class MarkerOptions {
   
   
   
-#  define FUNCTIONS_ON_MEMBER(NAME)                      \
-    MarkerOptions& Set(Marker##NAME&& a##NAME)& {        \
-      m##NAME = std::move(a##NAME);                      \
-      return *this;                                      \
-    }                                                    \
-                                                         \
-    MarkerOptions&& Set(Marker##NAME&& a##NAME)&& {      \
-      m##NAME = std::move(a##NAME);                      \
-      return std::move(*this);                           \
-    }                                                    \
-                                                         \
-    const Marker##NAME& NAME() const { return m##NAME; } \
-                                                         \
-    Marker##NAME& NAME##Ref() { return m##NAME; }
+#define FUNCTIONS_ON_MEMBER(NAME)                      \
+  MarkerOptions& Set(Marker##NAME&& a##NAME)& {        \
+    m##NAME = std::move(a##NAME);                      \
+    return *this;                                      \
+  }                                                    \
+                                                       \
+  MarkerOptions&& Set(Marker##NAME&& a##NAME)&& {      \
+    m##NAME = std::move(a##NAME);                      \
+    return std::move(*this);                           \
+  }                                                    \
+                                                       \
+  const Marker##NAME& NAME() const { return m##NAME; } \
+                                                       \
+  Marker##NAME& NAME##Ref() { return m##NAME; }
 
   FUNCTIONS_ON_MEMBER(ThreadId);
   FUNCTIONS_ON_MEMBER(Timing);
   FUNCTIONS_ON_MEMBER(Stack);
   FUNCTIONS_ON_MEMBER(InnerWindowId);
-#  undef FUNCTIONS_ON_MEMBER
+#undef FUNCTIONS_ON_MEMBER
 
  private:
   friend ProfileBufferEntryReader::Deserializer<MarkerOptions>;
@@ -763,17 +761,17 @@ class MarkerSchema {
   
   
 
-#  define LABEL_SETTER(name)                       \
-    MarkerSchema& Set##name(std::string a##name) { \
-      m##name = std::move(a##name);                \
-      return *this;                                \
-    }
+#define LABEL_SETTER(name)                       \
+  MarkerSchema& Set##name(std::string a##name) { \
+    m##name = std::move(a##name);                \
+    return *this;                                \
+  }
 
   LABEL_SETTER(ChartLabel)
   LABEL_SETTER(TooltipLabel)
   LABEL_SETTER(TableLabel)
 
-#  undef LABEL_SETTER
+#undef LABEL_SETTER
 
   MarkerSchema& SetAllLabels(std::string aText) {
     
@@ -867,7 +865,5 @@ class MarkerSchema {
 };
 
 }  
-
-#endif  
 
 #endif  

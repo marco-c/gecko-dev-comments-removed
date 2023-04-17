@@ -13,18 +13,16 @@
 
 #include "mozilla/BaseProfilerMarkersPrerequisites.h"
 
-#ifdef MOZ_GECKO_PROFILER
 
 
 
 
 
+#include "mozilla/BaseProfileJSONWriter.h"
+#include "mozilla/ProfileBufferEntryKinds.h"
 
-#  include "mozilla/BaseProfileJSONWriter.h"
-#  include "mozilla/ProfileBufferEntryKinds.h"
-
-#  include <limits>
-#  include <tuple>
+#include <limits>
+#include <tuple>
 
 namespace mozilla::baseprofiler {
 
@@ -672,7 +670,5 @@ struct ProfileBufferEntryReader::Deserializer<MarkerOptions> {
 };
 
 }  
-
-#endif  
 
 #endif  
