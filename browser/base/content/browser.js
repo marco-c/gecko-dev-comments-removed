@@ -3043,8 +3043,8 @@ function BrowserCloseTabOrWindow(event) {
   gBrowser.removeCurrentTab({ animate: true });
 }
 
-function BrowserTryToCloseWindow() {
-  if (WindowIsClosing()) {
+function BrowserTryToCloseWindow(event) {
+  if (WindowIsClosing(event)) {
     window.close();
   } 
 }
@@ -7860,8 +7860,20 @@ function CanCloseWindow() {
   return true;
 }
 
-function WindowIsClosing() {
-  if (!closeWindow(false, warnAboutClosingWindow)) {
+function WindowIsClosing(event) {
+  let source;
+  if (event) {
+    let target = event.sourceEvent?.target;
+    if (target?.id?.startsWith("menu_")) {
+      source = "menuitem";
+    } else if (target?.nodeName == "toolbarbutton") {
+      source = "close-button";
+    } else {
+      let key = AppConstants.platform == "macosx" ? "metaKey" : "ctrlKey";
+      source = event[key] ? "shortcut" : "OS";
+    }
+  }
+  if (!closeWindow(false, warnAboutClosingWindow, source)) {
     return false;
   }
 
@@ -7885,7 +7897,9 @@ function WindowIsClosing() {
 
 
 
-function warnAboutClosingWindow() {
+
+
+function warnAboutClosingWindow(source) {
   
   let isPBWindow =
     PrivateBrowsingUtils.isWindowPrivate(window) &&
@@ -7896,7 +7910,8 @@ function warnAboutClosingWindow() {
   if (!isPBWindow && !toolbar.visible) {
     return gBrowser.warnAboutClosingTabs(
       closingTabs,
-      gBrowser.closingTabsEnum.ALL
+      gBrowser.closingTabsEnum.ALL,
+      source
     );
   }
 
@@ -7934,7 +7949,11 @@ function warnAboutClosingWindow() {
   if (otherWindowExists) {
     return (
       isPBWindow ||
-      gBrowser.warnAboutClosingTabs(closingTabs, gBrowser.closingTabsEnum.ALL)
+      gBrowser.warnAboutClosingTabs(
+        closingTabs,
+        gBrowser.closingTabsEnum.ALL,
+        source
+      )
     );
   }
 
@@ -7956,7 +7975,11 @@ function warnAboutClosingWindow() {
   return (
     AppConstants.platform != "macosx" ||
     isPBWindow ||
-    gBrowser.warnAboutClosingTabs(closingTabs, gBrowser.closingTabsEnum.ALL)
+    gBrowser.warnAboutClosingTabs(
+      closingTabs,
+      gBrowser.closingTabsEnum.ALL,
+      source
+    )
   );
 }
 

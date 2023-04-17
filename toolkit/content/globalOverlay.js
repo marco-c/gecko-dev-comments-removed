@@ -2,7 +2,7 @@
 
 
 
-function closeWindow(aClose, aPromptFunction) {
+function closeWindow(aClose, aPromptFunction, aSource) {
   let { AppConstants } = ChromeUtils.import(
     "resource://gre/modules/AppConstants.jsm"
   );
@@ -20,17 +20,20 @@ function closeWindow(aClose, aPromptFunction) {
     }
 
     
-    if (windowCount == 1 && !canQuitApplication("lastwindow")) {
+    if (windowCount == 1 && !canQuitApplication("lastwindow", aSource)) {
       return false;
     }
     if (
       windowCount != 1 &&
       typeof aPromptFunction == "function" &&
-      !aPromptFunction()
+      !aPromptFunction(aSource)
     ) {
       return false;
     }
-  } else if (typeof aPromptFunction == "function" && !aPromptFunction()) {
+  } else if (
+    typeof aPromptFunction == "function" &&
+    !aPromptFunction(aSource)
+  ) {
     return false;
   }
 
@@ -42,7 +45,12 @@ function closeWindow(aClose, aPromptFunction) {
   return true;
 }
 
-function canQuitApplication(aData) {
+function canQuitApplication(aData, aSource) {
+  const kCID = "@mozilla.org/browser/browserglue;1";
+  if (kCID in Cc && !(aData || "").includes("restart")) {
+    let BrowserGlue = Cc[kCID].getService(Ci.nsISupports).wrappedJSObject;
+    BrowserGlue._registerQuitSource(aSource);
+  }
   try {
     var cancelQuit = Cc["@mozilla.org/supports-PRBool;1"].createInstance(
       Ci.nsISupportsPRBool
@@ -61,8 +69,22 @@ function canQuitApplication(aData) {
   return true;
 }
 
-function goQuitApplication() {
-  if (!canQuitApplication()) {
+function goQuitApplication(event) {
+  
+  
+  let isMac = navigator.platform.startsWith("Mac");
+  let key = isMac ? "metaKey" : "ctrlKey";
+  let source = "OS";
+  if (event[key]) {
+    source = "shortcut";
+    
+    
+  } else if (event.sourceEvent?.target?.id?.startsWith("menu_")) {
+    source = "menuitem";
+  } else if (event.sourceEvent?.target?.id?.startsWith("appMenu")) {
+    source = "appmenu";
+  }
+  if (!canQuitApplication(undefined, source)) {
     return false;
   }
 
