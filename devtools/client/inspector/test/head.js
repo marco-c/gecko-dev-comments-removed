@@ -1340,10 +1340,8 @@ function waitForNMutations(inspector, type, count) {
 
 
 
-
 async function checkEyeDropperColorAt(
   highlighterTestFront,
-  inspectorActorID,
   x,
   y,
   expectedColor,
@@ -1354,9 +1352,7 @@ async function checkEyeDropperColorAt(
     type: "mousemove",
   });
 
-  const colorValue = await highlighterTestFront.getEyeDropperColorValue(
-    inspectorActorID
-  );
+  const colorValue = await highlighterTestFront.getEyeDropperColorValue();
   is(colorValue, expectedColor, assertionDescription);
 }
 
