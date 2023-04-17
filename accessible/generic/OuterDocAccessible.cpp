@@ -10,9 +10,6 @@
 #include "DocAccessible-inl.h"
 #include "mozilla/a11y/DocAccessibleChild.h"
 #include "mozilla/a11y/DocAccessibleParent.h"
-#if defined(XP_WIN)
-#  include "mozilla/a11y/ProxyWrappers.h"
-#endif
 #include "mozilla/dom/BrowserBridgeChild.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "Role.h"
@@ -89,16 +86,8 @@ LocalAccessible* OuterDocAccessible::LocalChildAtPoint(
   NS_ENSURE_TRUE(child, nullptr);
 
   if (aWhichChild == Accessible::EWhichChildAtPoint::DeepestChild) {
-#if defined(XP_WIN)
-    
-    
-    
-    
-    return nullptr;
-#else
     return child->LocalChildAtPoint(
         aX, aY, Accessible::EWhichChildAtPoint::DeepestChild);
-#endif  
   }
   return child;
 }
@@ -192,69 +181,18 @@ bool OuterDocAccessible::IsAcceptableChild(nsIContent* aEl) const {
   return false;
 }
 
-#if defined(XP_WIN)
-
-LocalAccessible* OuterDocAccessible::RemoteChildDocAccessible() const {
-  RemoteAccessible* docProxy = RemoteChildDoc();
-  if (docProxy) {
-    
-    return WrapperFor(docProxy);
-  }
-
-  if (IPCAccessibilityActive()) {
-    auto bridge = dom::BrowserBridgeChild::GetFrom(mContent);
-    if (bridge) {
-      
-      
-      
-      return bridge->GetEmbeddedDocAccessible();
-    }
-  }
-
-  return nullptr;
-}
-
-
-
-
-
-LocalAccessible* OuterDocAccessible::LocalChildAt(uint32_t aIndex) const {
-  LocalAccessible* result = AccessibleWrap::LocalChildAt(aIndex);
-  if (result || aIndex) {
-    return result;
-  }
-  
-  
-  return RemoteChildDocAccessible();
-}
-
-#endif  
-
 
 
 uint32_t OuterDocAccessible::ChildCount() const {
   uint32_t result = mChildren.Length();
-  if (!result &&
-#if defined(XP_WIN)
-      ((StaticPrefs::accessibility_cache_enabled_AtStartup() &&
-        RemoteChildDoc()) ||
-       
-       
-       
-       RemoteChildDocAccessible())
-#else
-      RemoteChildDoc()
-#endif
-  ) {
+  if (!result && RemoteChildDoc()) {
     result = 1;
   }
   return result;
 }
 
 Accessible* OuterDocAccessible::ChildAt(uint32_t aIndex) const {
-  
-  
-  LocalAccessible* result = AccessibleWrap::LocalChildAt(aIndex);
+  LocalAccessible* result = LocalChildAt(aIndex);
   if (result || aIndex) {
     return result;
   }

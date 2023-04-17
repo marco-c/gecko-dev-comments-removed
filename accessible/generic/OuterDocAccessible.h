@@ -33,9 +33,6 @@ class OuterDocAccessible final : public AccessibleWrap {
   NS_INLINE_DECL_REFCOUNTING_INHERITED(OuterDocAccessible, AccessibleWrap)
 
   DocAccessibleParent* RemoteChildDoc() const;
-#if defined(XP_WIN)
-  LocalAccessible* RemoteChildDocAccessible() const;
-#endif
 
   
 
@@ -58,9 +55,6 @@ class OuterDocAccessible final : public AccessibleWrap {
   virtual bool IsAcceptableChild(nsIContent* aEl) const override;
 
   virtual uint32_t ChildCount() const override;
-#if defined(XP_WIN)
-  virtual LocalAccessible* LocalChildAt(uint32_t aIndex) const override;
-#endif  
 
   
   virtual Accessible* ChildAt(uint32_t aIndex) const override;

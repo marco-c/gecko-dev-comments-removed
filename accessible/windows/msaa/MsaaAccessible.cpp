@@ -12,6 +12,7 @@
 #include "ia2AccessibleTableCell.h"
 #include "mozilla/a11y/AccessibleWrap.h"
 #include "mozilla/a11y/DocAccessibleParent.h"
+#include "mozilla/dom/BrowserBridgeChild.h"
 #include "mozilla/dom/BrowserBridgeParent.h"
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/mscom/Interceptor.h"
@@ -458,6 +459,28 @@ static already_AddRefed<IDispatch> GetProxiedAccessibleInSubtree(
   return disp.forget();
 }
 
+
+
+
+
+
+
+
+static already_AddRefed<IDispatch> MaybeGetOOPIframeDocCOMProxy(
+    Accessible* aAcc) {
+  if (!XRE_IsContentProcess() || !aAcc->IsOuterDoc()) {
+    return nullptr;
+  }
+  MOZ_ASSERT(!StaticPrefs::accessibility_cache_enabled_AtStartup());
+  LocalAccessible* outerDoc = aAcc->AsLocal();
+  auto bridge = dom::BrowserBridgeChild::GetFrom(outerDoc->GetContent());
+  if (!bridge) {
+    
+    return nullptr;
+  }
+  return bridge->GetEmbeddedDocAccessible();
+}
+
 already_AddRefed<IAccessible> MsaaAccessible::GetIAccessibleFor(
     const VARIANT& aVarChild, bool* aIsDefunct) {
   if (aVarChild.vt != VT_I4) return nullptr;
@@ -513,19 +536,15 @@ already_AddRefed<IAccessible> MsaaAccessible::GetIAccessibleFor(
 
   if (varChild.lVal > 0) {
     
-    MOZ_ASSERT(!localAcc || !localAcc->IsProxy());
-    if (!StaticPrefs::accessibility_cache_enabled_AtStartup() &&
-        XRE_IsContentProcess() && localAcc->IsOuterDoc()) {
-      
-      
-      
-      
-      LocalAccessible* xpAcc = localAcc->LocalChildAt(varChild.lVal - 1);
-      if (!xpAcc) {
-        return nullptr;
+    if (varChild.lVal == 1) {
+      RefPtr<IDispatch> disp = MaybeGetOOPIframeDocCOMProxy(localAcc);
+      if (disp) {
+        
+        
+        
+        disp.forget((void**)getter_AddRefs(result));
+        return result.forget();
       }
-      xpAcc->GetNativeInterface(getter_AddRefs(result));
-      return result.forget();
     }
     Accessible* xpAcc = mAcc->ChildAt(varChild.lVal - 1);
     if (!xpAcc) {
@@ -896,6 +915,9 @@ MsaaAccessible::get_accChildCount(long __RPC_FAR* pcountChildren) {
   if (nsAccUtils::MustPrune(mAcc)) return S_OK;
 
   *pcountChildren = mAcc->ChildCount();
+  if (*pcountChildren == 0 && RefPtr{MaybeGetOOPIframeDocCOMProxy(mAcc)}) {
+    *pcountChildren = 1;
+  }
   return S_OK;
 }
 
@@ -1550,25 +1572,19 @@ MsaaAccessible::accNavigate(
 
   switch (navDir) {
     case NAVDIR_FIRSTCHILD:
-      if (!StaticPrefs::accessibility_cache_enabled_AtStartup() &&
-          XRE_IsContentProcess() && mAcc->IsOuterDoc()) {
-        
-        
-        
-        
-        navAccessible = LocalAcc()->LocalFirstChild();
+      if (RefPtr<IDispatch> disp = MaybeGetOOPIframeDocCOMProxy(mAcc)) {
+        pvarEndUpAt->vt = VT_DISPATCH;
+        disp.forget(&pvarEndUpAt->pdispVal);
+        return S_OK;
       } else if (!nsAccUtils::MustPrune(mAcc)) {
         navAccessible = mAcc->FirstChild();
       }
       break;
     case NAVDIR_LASTCHILD:
-      if (!StaticPrefs::accessibility_cache_enabled_AtStartup() &&
-          XRE_IsContentProcess() && mAcc->IsOuterDoc()) {
-        
-        
-        
-        
-        navAccessible = LocalAcc()->LocalLastChild();
+      if (RefPtr<IDispatch> disp = MaybeGetOOPIframeDocCOMProxy(mAcc)) {
+        pvarEndUpAt->vt = VT_DISPATCH;
+        disp.forget(&pvarEndUpAt->pdispVal);
+        return S_OK;
       } else if (!nsAccUtils::MustPrune(mAcc)) {
         navAccessible = mAcc->LastChild();
       }
@@ -1643,6 +1659,17 @@ MsaaAccessible::accHitTest(
     }
   } else {
     
+    if (RefPtr<IDispatch> disp = MaybeGetOOPIframeDocCOMProxy(mAcc)) {
+      
+      
+      
+      nsIntRect docRect = mAcc->AsLocal()->Bounds();
+      if (docRect.Contains(xLeft, yTop)) {
+        pvarChild->vt = VT_DISPATCH;
+        disp.forget(&pvarChild->pdispVal);
+        return S_OK;
+      }
+    }
     pvarChild->vt = VT_EMPTY;
     return S_FALSE;
   }
