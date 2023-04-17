@@ -373,7 +373,14 @@ add_task(async function testReorderingBrowserLanguages() {
   let dialogClosed = BrowserTestUtils.waitForEvent(dialog, "dialogclosing");
   dialog.acceptDialog();
   await dialogClosed;
-  is(messageBar.hidden, false, "The message bar is now visible");
+
+  
+  
+  await BrowserTestUtils.waitForMutationCondition(
+    messageBar,
+    { attributes: true },
+    () => !messageBar.hidden
+  );
   is(
     messageBar.querySelector("button").getAttribute("locales"),
     "en-US,he,pl",
@@ -453,6 +460,19 @@ add_task(async function testAddAndRemoveSelectedLanguages() {
   let { dialog, dialogDoc, available, selected } = await openDialog(doc);
   let dialogId = getDialogId(dialogDoc);
 
+  
+  
+  
+  await BrowserTestUtils.waitForMutationCondition(
+    available.menupopup,
+    { attributes: true, childList: true },
+    () => {
+      let listLocales = Array.from(available.menupopup.children).filter(
+        item => item.value && item.value != "search"
+      );
+      return listLocales.length == 3;
+    }
+  );
   
   assertLocaleOrder(selected, "en-US");
   assertAvailableLocales(available, ["fr", "pl", "he"]);
