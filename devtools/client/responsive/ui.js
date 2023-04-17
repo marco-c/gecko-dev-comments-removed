@@ -259,8 +259,6 @@ class ResponsiveUI {
     const isTabContentDestroying =
       isWindowClosing || options?.reason === "TabClose";
 
-    let currentTarget;
-
     
     if (!isTabContentDestroying) {
       await this.inited;
@@ -272,10 +270,6 @@ class ResponsiveUI {
 
       
       this.hideBrowserUI();
-
-      
-      
-      currentTarget = this.currentTarget;
 
       
       
@@ -316,8 +310,8 @@ class ResponsiveUI {
       reloadNeeded |=
         (await this.updateTouchSimulation()) &&
         this.reloadOnChange("touchSimulation");
-      if (reloadNeeded && currentTarget) {
-        await currentTarget.reload();
+      if (reloadNeeded) {
+        await this.reloadBrowser();
       }
 
       
@@ -1058,7 +1052,7 @@ class ResponsiveUI {
 
 
   async reloadBrowser() {
-    await this.currentTarget.reload();
+    await this.commands.targetCommand.reloadTopLevelTarget();
   }
 }
 
