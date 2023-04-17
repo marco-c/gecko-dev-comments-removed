@@ -310,14 +310,12 @@ already_AddRefed<GLContext> GLContextEGLFactory::CreateImpl(
 #ifdef MOZ_GTK_WAYLAND
   if (surface && GdkIsWaylandDisplay()) {
     
-    const int interval = gfxVars::SwapIntervalEGL() ? 1 : 0;
-    egl->fSwapInterval(interval);
+    egl->fSwapInterval(0);
   }
 #endif
   if (aHardwareWebRender && egl->mLib->IsANGLE()) {
     MOZ_ASSERT(doubleBuffered);
-    const int interval = gfxVars::SwapIntervalEGL() ? 1 : 0;
-    egl->fSwapInterval(interval);
+    egl->fSwapInterval(0);
   }
   return gl.forget();
 }
@@ -497,9 +495,7 @@ bool GLContextEGL::RenewSurface(CompositorWidget* aWidget) {
 #ifdef MOZ_GTK_WAYLAND
   if (mSurface && GdkIsWaylandDisplay()) {
     
-    
-    const int interval = gfxVars::SwapIntervalEGL() ? 1 : 0;
-    mEgl->fSwapInterval(interval);
+    mEgl->fSwapInterval(0);
   }
 #endif
   return ok;
