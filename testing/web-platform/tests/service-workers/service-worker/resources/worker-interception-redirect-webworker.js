@@ -5,8 +5,7 @@
 
 
 
-const resources_url = new URL("/service-workers/service-worker/resources/",
-                              self.location);
+
 
 
 
@@ -23,11 +22,9 @@ if (!greeting)
 let echo_output;
 const import_scripts_msg = encodeURIComponent(
     'importScripts: served from network');
-const import_scripts_url =
-    new URL(`import-scripts-echo.py?msg=${import_scripts_msg}`, resources_url);
 let import_scripts_greeting = 'not set';
 try {
-  importScripts(import_scripts_url);
+  importScripts(`import-scripts-echo.py?msg=${import_scripts_msg}`);
   import_scripts_greeting = echo_output;
 } catch(e) {
   import_scripts_greeting = 'importScripts failed';
@@ -38,8 +35,7 @@ async function runTest(port) {
 
   port.postMessage(import_scripts_greeting);
 
-  const fetch_url = new URL('simple.txt', resources_url);
-  const response = await fetch(fetch_url);
+  const response = await fetch('simple.txt');
   const text = await response.text();
   port.postMessage('fetch(): ' + text);
 
