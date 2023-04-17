@@ -146,14 +146,17 @@ promise_setup(async () => {
   }[location.search];
 
   
+  let supported = false;
   try {
     
     
     
-    await VideoDecoder.isConfigSupported({codec: data.config.codec});
+    const support =
+        await VideoDecoder.isConfigSupported({codec: data.config.codec});
+    supported = support.supported;
   } catch (e) {
-    assert_implements_optional(false, data.config.codec + ' unsupported');
   }
+  assert_implements_optional(supported, data.config.codec + ' unsupported');
 
   
   const response = await fetch(data.src);
