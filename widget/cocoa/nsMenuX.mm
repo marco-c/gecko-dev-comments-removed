@@ -221,6 +221,65 @@ void nsMenuX::AddMenuChild(MenuChild&& aChild) {
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
+void nsMenuX::InsertMenuChild(MenuChild&& aChild) {
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
+
+  WillInsertChild(aChild);
+  size_t insertionIndex = FindInsertionIndex(aChild);
+  mMenuChildren.InsertElementAt(insertionIndex, aChild);
+
+  bool isVisible =
+      aChild.match([](const RefPtr<nsMenuX>& aMenu) { return aMenu->IsVisible(); },
+                   [](const RefPtr<nsMenuItemX>& aMenuItem) { return aMenuItem->IsVisible(); });
+  if (isVisible) {
+    MenuChildChangedVisibility(aChild, true);
+  }
+
+  NS_OBJC_END_TRY_ABORT_BLOCK;
+}
+
+void nsMenuX::RemoveMenuChild(const MenuChild& aChild) {
+  bool isVisible =
+      aChild.match([](const RefPtr<nsMenuX>& aMenu) { return aMenu->IsVisible(); },
+                   [](const RefPtr<nsMenuItemX>& aMenuItem) { return aMenuItem->IsVisible(); });
+  if (isVisible) {
+    MenuChildChangedVisibility(aChild, false);
+  }
+
+  WillRemoveChild(aChild);
+  mMenuChildren.RemoveElement(aChild);
+}
+
+size_t nsMenuX::FindInsertionIndex(const MenuChild& aChild) {
+  nsCOMPtr<nsIContent> menuPopup = GetMenuPopupContent();
+  MOZ_RELEASE_ASSERT(menuPopup);
+
+  RefPtr<nsIContent> insertedContent =
+      aChild.match([](const RefPtr<nsMenuX>& aMenu) { return aMenu->Content(); },
+                   [](const RefPtr<nsMenuItemX>& aMenuItem) { return aMenuItem->Content(); });
+
+  MOZ_RELEASE_ASSERT(insertedContent->GetParent() == menuPopup);
+
+  
+  
+  size_t index = 0;
+  for (nsIContent* child = menuPopup->GetFirstChild(); child && index < mMenuChildren.Length();
+       child = child->GetNextSibling()) {
+    if (child == insertedContent) {
+      break;
+    }
+
+    RefPtr<nsIContent> contentAtIndex = mMenuChildren[index].match(
+        [](const RefPtr<nsMenuX>& aMenu) { return aMenu->Content(); },
+        [](const RefPtr<nsMenuItemX>& aMenuItem) { return aMenuItem->Content(); });
+    if (child == contentAtIndex) {
+      index++;
+    }
+  }
+
+  return index;
+}
+
 
 uint32_t nsMenuX::GetItemCount() { return mMenuChildren.Length(); }
 
@@ -858,6 +917,19 @@ void nsMenuX::ObserveContentRemoved(dom::Document* aDocument, nsIContent* aConta
 
   SetRebuild(true);
   mMenuGroupOwner->UnregisterForContentChanges(aChild);
+
+  if (!mIsOpen) {
+    
+    return;
+  }
+
+  
+  nsCOMPtr<nsIContent> popupContent = GetMenuPopupContent();
+  if (popupContent && aContainer == popupContent && aChild->IsElement()) {
+    if (Maybe<MenuChild> child = GetItemForElement(aChild->AsElement())) {
+      RemoveMenuChild(*child);
+    }
+  }
 }
 
 void nsMenuX::ObserveContentInserted(dom::Document* aDocument, nsIContent* aContainer,
@@ -867,6 +939,19 @@ void nsMenuX::ObserveContentInserted(dom::Document* aDocument, nsIContent* aCont
   }
 
   SetRebuild(true);
+
+  if (!mIsOpen) {
+    
+    return;
+  }
+
+  
+  nsCOMPtr<nsIContent> popupContent = GetMenuPopupContent();
+  if (popupContent && aContainer == popupContent) {
+    if (Maybe<MenuChild> child = CreateMenuChild(aChild)) {
+      InsertMenuChild(std::move(*child));
+    }
+  }
 }
 
 void nsMenuX::SetupIcon() {

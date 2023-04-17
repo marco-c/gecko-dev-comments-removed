@@ -166,10 +166,17 @@ class nsMenuX final : public nsMenuParentX,
   void WillInsertChild(const MenuChild& aChild);
   void WillRemoveChild(const MenuChild& aChild);
   void AddMenuChild(MenuChild&& aChild);
+  void InsertMenuChild(MenuChild&& aChild);
+  void RemoveMenuChild(const MenuChild& aChild);
   mozilla::Maybe<MenuChild> CreateMenuChild(nsIContent* aContent);
   RefPtr<nsMenuItemX> CreateMenuItem(nsIContent* aMenuItemContent);
   GeckoNSMenu* CreateMenuWithGeckoString(nsString& aMenuTitle);
   void DidFirePopupShowing();
+
+  
+  
+  
+  size_t FindInsertionIndex(const MenuChild& aChild);
 
   
   
