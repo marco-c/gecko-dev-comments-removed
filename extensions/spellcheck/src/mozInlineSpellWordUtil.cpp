@@ -99,21 +99,17 @@ static bool IsDOMWordSeparator(char16_t ch) {
 
 
 
-nsresult mozInlineSpellWordUtil::Init(TextEditor* aTextEditor) {
-  if (NS_WARN_IF(!aTextEditor)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  mDocument = aTextEditor->GetDocument();
+nsresult mozInlineSpellWordUtil::Init(const TextEditor& aTextEditor) {
+  mDocument = aTextEditor.GetDocument();
   if (NS_WARN_IF(!mDocument)) {
     return NS_ERROR_FAILURE;
   }
 
-  mIsContentEditableOrDesignMode = !!aTextEditor->AsHTMLEditor();
+  mIsContentEditableOrDesignMode = !!aTextEditor.AsHTMLEditor();
 
   
   
-  mRootNode = aTextEditor->GetRoot();
+  mRootNode = aTextEditor.GetRoot();
   if (NS_WARN_IF(!mRootNode)) {
     return NS_ERROR_FAILURE;
   }

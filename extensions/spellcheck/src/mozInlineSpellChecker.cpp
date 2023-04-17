@@ -1555,7 +1555,7 @@ nsresult mozInlineSpellChecker::ResumeCheck(
   }
 
   mozInlineSpellWordUtil wordUtil;
-  nsresult rv = wordUtil.Init(mTextEditor);
+  nsresult rv = wordUtil.Init(*mTextEditor);
   if (NS_FAILED(rv)) return NS_OK;  
 
   RefPtr<Selection> spellCheckSelection = GetSpellCheckSelection();

@@ -86,7 +86,7 @@ class MOZ_STACK_CLASS mozInlineSpellWordUtil {
         mNextWordIndex(-1),
         mSoftTextValid(false) {}
 
-  nsresult Init(mozilla::TextEditor* aTextEditor);
+  nsresult Init(const mozilla::TextEditor& aTextEditor);
 
   
   
