@@ -379,6 +379,17 @@ StyleWindowShadow nsMenuPopupFrame::GetShadowStyle() {
   }
 }
 
+void nsMenuPopupFrame::SetPopupState(nsPopupState aState) {
+  mPopupState = aState;
+
+  
+  if (aState == ePopupShown && IS_WAYLAND_DISPLAY()) {
+    if (nsIWidget* widget = GetWidget()) {
+      widget->SetWindowMouseTransparent(mMouseTransparent);
+    }
+  }
+}
+
 NS_IMETHODIMP nsXULPopupShownEvent::Run() {
   nsMenuPopupFrame* popup = do_QueryFrame(mPopup->GetPrimaryFrame());
   
