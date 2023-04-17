@@ -3438,6 +3438,16 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
           if (frame->IsFocusable( true)) {
             break;
           }
+
+          if (ShadowRoot* root = newFocus->GetShadowRoot()) {
+            if (root->DelegatesFocus()) {
+              if (Element* firstFocusable =
+                      root->GetFirstFocusable( true)) {
+                newFocus = firstFocusable;
+                break;
+              }
+            }
+          }
         }
 
         MOZ_ASSERT_IF(newFocus, newFocus->IsElement());
