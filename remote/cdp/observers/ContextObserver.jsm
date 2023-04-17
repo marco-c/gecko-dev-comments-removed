@@ -134,7 +134,10 @@ class ContextObserver {
         const window = subject.defaultView;
 
         
-        if (window.docShell.chromeEventHandler !== this.chromeEventHandler) {
+        if (
+          !window ||
+          window.docShell.chromeEventHandler !== this.chromeEventHandler
+        ) {
           return;
         }
 
