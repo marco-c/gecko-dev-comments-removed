@@ -330,7 +330,6 @@ function Toolbox(
   this._onResumedState = this._onResumedState.bind(this);
   this._onTargetAvailable = this._onTargetAvailable.bind(this);
   this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
-  this._onNavigate = this._onNavigate.bind(this);
   this._onResourceAvailable = this._onResourceAvailable.bind(this);
   this._onResourceUpdated = this._onResourceUpdated.bind(this);
 
@@ -696,7 +695,6 @@ Toolbox.prototype = {
       
       
       targetFront.on("will-navigate", this._onWillNavigate);
-      targetFront.on("navigate", this._onNavigate);
       targetFront.on("frame-update", this._updateFrames);
       targetFront.on("inspect-object", this._onInspectObject);
     }
@@ -732,7 +730,6 @@ Toolbox.prototype = {
     if (targetFront.isTopLevel) {
       this.target.off("inspect-object", this._onInspectObject);
       this.target.off("will-navigate", this._onWillNavigate);
-      this.target.off("navigate", this._onNavigate);
       this.target.off("frame-update", this._updateFrames);
     }
 
@@ -801,10 +798,10 @@ Toolbox.prototype = {
         this._onTargetDestroyed
       );
 
-      
-      
       const onResourcesWatched = this.resourceCommand.watchResources(
         [
+          
+          
           this.resourceCommand.TYPES.CONSOLE_MESSAGE,
           this.resourceCommand.TYPES.ERROR_MESSAGE,
           
@@ -813,6 +810,7 @@ Toolbox.prototype = {
           
           
           this.resourceCommand.TYPES.NETWORK_EVENT,
+          this.resourceCommand.TYPES.DOCUMENT_EVENT,
         ],
         {
           onAvailable: this._onResourceAvailable,
@@ -3762,6 +3760,7 @@ Toolbox.prototype = {
         this.resourceCommand.TYPES.CONSOLE_MESSAGE,
         this.resourceCommand.TYPES.ERROR_MESSAGE,
         this.resourceCommand.TYPES.NETWORK_EVENT,
+        this.resourceCommand.TYPES.DOCUMENT_EVENT,
       ],
       { onAvailable: this._onResourceAvailable }
     );
@@ -4282,14 +4281,6 @@ Toolbox.prototype = {
   
 
 
-  _onNavigate: function() {
-    this._refreshHostTitle();
-    this._setDebugTargetData();
-  },
-
-  
-
-
   _setDebugTargetData() {
     if (this.hostType === Toolbox.HostType.PAGE) {
       
@@ -4324,6 +4315,24 @@ Toolbox.prototype = {
         if (level === "clear") {
           errors = 0;
         }
+      }
+
+      if (
+        resource.resourceType === this.resourceCommand.TYPES.DOCUMENT_EVENT &&
+        resource?.targetFront.isTopLevel &&
+        !resource.isFrameSwitching &&
+        
+        
+        
+        resource.name === "dom-interactive"
+      ) {
+        
+        
+        
+        setTimeout(() => {
+          this._refreshHostTitle();
+        }, 0);
+        this._setDebugTargetData();
       }
     }
 
