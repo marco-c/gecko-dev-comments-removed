@@ -161,6 +161,13 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
 #ifdef MOZ_WAYLAND
   RefPtr<DataOffer> mTargetWaylandDataOffer;
 #endif
+
+  
+  
+  
+  
+  
+  
   
   
   RefPtr<GdkDragContext> mTargetDragContextForRemote;
@@ -181,7 +188,7 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   bool IsTargetContextList(void);
   
   
-  void GetTargetDragData(GdkAtom aFlavor);
+  void GetTargetDragData(GdkAtom aFlavor, nsTArray<nsCString>& aDropFlavors);
   
   void TargetResetData(void);
   
@@ -221,6 +228,7 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
 #ifdef MOZ_LOGGING
   const char* GetDragServiceTaskName(nsDragService::DragTask aTask);
 #endif
+  void GetDragFlavors(nsTArray<nsCString>& aFlavors);
   gboolean DispatchDropEvent();
   static uint32_t GetCurrentModifiers();
 };
