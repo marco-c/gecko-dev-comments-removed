@@ -3761,8 +3761,15 @@ already_AddRefed<nsILoadInfo> HttpBaseChannel::CloneLoadInfoForRedirect(
       mLoadInfo->GetExternalContentPolicyType();
   if (contentPolicyType == ExtContentPolicy::TYPE_DOCUMENT ||
       contentPolicyType == ExtContentPolicy::TYPE_SUBDOCUMENT) {
+    
+    
+    
+    
+    nsCOMPtr<nsIPrincipal> redirectPrincipal;
+    nsContentUtils::GetSecurityManager()->GetChannelResultPrincipal(
+        this, getter_AddRefs(redirectPrincipal));
     nsCOMPtr<nsIPrincipal> nullPrincipalToInherit =
-        NullPrincipal::CreateWithoutOriginAttributes();
+        NullPrincipal::CreateWithInheritedAttributes(redirectPrincipal);
     newLoadInfo->SetPrincipalToInherit(nullPrincipalToInherit);
   }
 
