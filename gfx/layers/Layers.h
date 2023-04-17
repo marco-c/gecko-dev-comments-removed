@@ -74,7 +74,6 @@ class CompositorAnimations;
 class CanvasLayer;
 class RefLayer;
 class HostLayer;
-class ShadowableLayer;
 class SpecificLayerAttributes;
 class Compositor;
 class TransformData;
@@ -917,12 +916,6 @@ class Layer {
 
 
   virtual HostLayer* AsHostLayer() { return nullptr; }
-
-  
-
-
-
-  virtual ShadowableLayer* AsShadowableLayer() { return nullptr; }
 
   
   
