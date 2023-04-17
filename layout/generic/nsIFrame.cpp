@@ -3231,8 +3231,12 @@ void nsIFrame::BuildDisplayListForStackingContext(
   
   
   
+  
+  
+  
   if (aBuilder->IsPartialUpdate() && !aBuilder->InInvalidSubtree() &&
-      !IsFrameModified() && IsFixedPosContainingBlock()) {
+      !IsFrameModified() && IsFixedPosContainingBlock() &&
+      !GetPrevContinuation() && !GetNextContinuation()) {
     dirtyRect = nsRect();
     if (HasOverrideDirtyRegion()) {
       nsDisplayListBuilder::DisplayListBuildingData* data =

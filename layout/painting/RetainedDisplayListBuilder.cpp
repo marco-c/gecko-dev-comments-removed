@@ -928,6 +928,19 @@ static bool IsInPreserve3DContext(const nsIFrame* aFrame) {
          aFrame->Combines3DTransformWithAncestors();
 }
 
+
+
+
+
+static bool CanStoreDisplayListBuildingRect(nsDisplayListBuilder* aBuilder,
+                                            nsIFrame* aFrame) {
+  return aFrame != aBuilder->RootReferenceFrame() &&
+         aFrame->IsStackingContext() && aFrame->IsFixedPosContainingBlock() &&
+         
+         
+         !aFrame->GetPrevContinuation() && !aFrame->GetNextContinuation();
+}
+
 static bool ProcessFrameInternal(nsIFrame* aFrame,
                                  nsDisplayListBuilder* aBuilder,
                                  AnimatedGeometryRoot** aAGR, nsRect& aOverflow,
@@ -1037,9 +1050,7 @@ static bool ProcessFrameInternal(nsIFrame* aFrame,
       break;
     }
 
-    if (currentFrame != aBuilder->RootReferenceFrame() &&
-        currentFrame->IsStackingContext() &&
-        currentFrame->IsFixedPosContainingBlock()) {
+    if (CanStoreDisplayListBuildingRect(aBuilder, currentFrame)) {
       CRR_LOG("Frame belongs to stacking context frame %p\n", currentFrame);
       
       
