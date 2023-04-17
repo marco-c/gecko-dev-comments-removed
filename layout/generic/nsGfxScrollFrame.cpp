@@ -1371,6 +1371,17 @@ void nsHTMLScrollFrame::Reflow(nsPresContext* aPresContext,
       
       
       manager->UpdateVisualViewportSizeForPotentialScrollbarChange();
+    } else if ((oldScrollAreaBounds.Size() != newScrollAreaBounds.Size()) &&
+               !HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
+      
+      
+      
+      
+      
+      if (auto* window = nsGlobalWindowInner::Cast(
+              aPresContext->Document()->GetInnerWindow())) {
+        window->VisualViewport()->PostResizeEvent();
+      }
     }
   }
 
