@@ -6,9 +6,6 @@
 package org.mozilla.gecko;
 
 import org.mozilla.gecko.annotation.WrapForJNI;
-import org.mozilla.gecko.util.BundleEventListener;
-import org.mozilla.gecko.util.EventCallback;
-import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.NetworkUtils;
 import org.mozilla.gecko.util.NetworkUtils.ConnectionSubType;
 import org.mozilla.gecko.util.NetworkUtils.ConnectionType;
@@ -21,11 +18,9 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.DhcpInfo;
-import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import android.text.format.Formatter;
 import android.util.Log;
 
 
@@ -41,7 +36,7 @@ import android.util.Log;
 
 
 
-public class GeckoNetworkManager extends BroadcastReceiver implements BundleEventListener {
+public class GeckoNetworkManager extends BroadcastReceiver {
     private static final String LOGTAG = "GeckoNetworkManager";
 
     
@@ -85,20 +80,11 @@ public class GeckoNetworkManager extends BroadcastReceiver implements BundleEven
     private NetworkStatus mCurrentNetworkStatus = NetworkStatus.UNKNOWN;
     private NetworkStatus mPreviousNetworkStatus = NetworkStatus.UNKNOWN;
 
-    private enum InfoType {
-        MCC,
-        MNC
-    }
-
     private GeckoNetworkManager() {
-        EventDispatcher.getInstance().registerUiThreadListener(this,
-                "Wifi:GetIPAddress");
     }
 
     private void onDestroy() {
         handleManagerEvent(ManagerEvent.stop);
-        EventDispatcher.getInstance().unregisterUiThreadListener(this,
-                "Wifi:GetIPAddress");
     }
 
     public static GeckoNetworkManager getInstance() {
@@ -405,43 +391,5 @@ public class GeckoNetworkManager extends BroadcastReceiver implements BundleEven
             
             return 0;
         }
-    }
-
-    @SuppressLint("MissingPermission")
-    @Override 
-    
-
-
-    public void handleMessage(final String event, final GeckoBundle message,
-                              final EventCallback callback) {
-        final Context applicationContext = GeckoAppShell.getApplicationContext();
-        switch (event) {
-            case "Wifi:GetIPAddress":
-                getWifiIPAddress(callback);
-                break;
-        }
-    }
-
-    
-    private void getWifiIPAddress(final EventCallback callback) {
-        final WifiManager mgr = (WifiManager) GeckoAppShell.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-
-        if (mgr == null) {
-            callback.sendError("Cannot get WifiManager");
-            return;
-        }
-
-        @SuppressLint("MissingPermission") final WifiInfo info = mgr.getConnectionInfo();
-        if (info == null) {
-            callback.sendError("Cannot get connection info");
-            return;
-        }
-
-        final int ip = info.getIpAddress();
-        if (ip == 0) {
-            callback.sendError("Cannot get IPv4 address");
-            return;
-        }
-        callback.sendSuccess(Formatter.formatIpAddress(ip));
     }
 }
