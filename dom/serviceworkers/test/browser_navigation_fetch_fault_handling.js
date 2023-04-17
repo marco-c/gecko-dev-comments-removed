@@ -175,11 +175,11 @@ async function do_fault_injection_test({
     
     is(
       docInfo.body,
-      errorPage, 
+      "NETWORK",
       "navigation with injected fault originates from network"
     );
 
-    is(docInfo.controlled, false, "error pages shouldn't be controlled");
+    is(docInfo.controlled, false, "bypassed pages shouldn't be controlled");
 
     
     is(
@@ -189,6 +189,7 @@ async function do_fault_injection_test({
     );
   }
 
+  
   
 
   
@@ -219,6 +220,7 @@ add_task(async function test_navigation_fetch_fault_handling() {
       ["dom.serviceWorkers.enabled", true],
       ["dom.serviceWorkers.exemptFromPerDomainMax", true],
       ["dom.serviceWorkers.testing.enabled", true],
+      ["dom.serviceWorkers.mitigations.bypass_on_fault", true],
       
       
       

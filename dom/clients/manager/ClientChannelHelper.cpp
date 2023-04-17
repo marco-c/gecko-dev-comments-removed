@@ -98,7 +98,27 @@ class ClientChannelHelper : public nsIInterfaceRequestor,
                               initialClientInfo.isNothing());
 
         if (reservedClientInfo.isSome()) {
-          newLoadInfo->SetReservedClientInfo(reservedClientInfo.ref());
+          
+          
+          
+          
+          
+          
+          
+          if (oldLoadInfo->GetController().isSome() &&
+              newLoadInfo->GetController().isNothing()) {
+            nsIScriptSecurityManager* ssm =
+                nsContentUtils::GetSecurityManager();
+            MOZ_DIAGNOSTIC_ASSERT(ssm);
+            nsCOMPtr<nsIPrincipal> principal;
+            rv = ssm->GetChannelResultPrincipal(aNewChannel,
+                                                getter_AddRefs(principal));
+            NS_ENSURE_SUCCESS(rv, rv);
+            reservedClient.reset();
+            CreateClient(newLoadInfo, principal);
+          } else {
+            newLoadInfo->SetReservedClientInfo(reservedClientInfo.ref());
+          }
         }
 
         if (initialClientInfo.isSome()) {
