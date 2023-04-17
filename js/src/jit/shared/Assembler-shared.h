@@ -498,7 +498,7 @@ typedef Vector<SymbolicAccess, 0, SystemAllocPolicy> SymbolicAccessVector;
 
 
 class MemoryAccessDesc {
-  uint32_t offset_;
+  uint64_t offset64_;
   uint32_t align_;
   Scalar::Type type_;
   jit::Synchronization sync_;
@@ -511,7 +511,7 @@ class MemoryAccessDesc {
       Scalar::Type type, uint32_t align, uint64_t offset,
       BytecodeOffset trapOffset,
       const jit::Synchronization& sync = jit::Synchronization::None())
-      : offset_(uint32_t(offset)),
+      : offset64_(offset),
         align_(align),
         type_(type),
         sync_(sync),
@@ -519,12 +519,27 @@ class MemoryAccessDesc {
         widenOp_(wasm::SimdOp::Limit),
         loadOp_(Plain) {
     MOZ_ASSERT(mozilla::IsPowerOfTwo(align));
-    
-    
-    MOZ_ASSERT(offset <= UINT32_MAX);
   }
 
-  uint32_t offset() const { return offset_; }
+  
+  
+  
+  
+  
+  
+  uint32_t offset() const {
+    MOZ_ASSERT(offset64_ <= UINT32_MAX);
+    return uint32_t(offset64_);
+  }
+  uint64_t offset64() const { return offset64_; }
+
+  
+  void clearOffset() { offset64_ = 0; }
+
+  
+  
+  void setOffset32(uint32_t offset) { offset64_ = offset; }
+
   uint32_t align() const { return align_; }
   Scalar::Type type() const { return type_; }
   unsigned byteSize() const { return Scalar::byteSize(type()); }
@@ -560,9 +575,6 @@ class MemoryAccessDesc {
     widenOp_ = op;
     loadOp_ = Widen;
   }
-
-  void clearOffset() { offset_ = 0; }
-  void setOffset(uint32_t offset) { offset_ = offset; }
 };
 
 }  
