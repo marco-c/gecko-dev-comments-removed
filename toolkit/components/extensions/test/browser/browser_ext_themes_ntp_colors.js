@@ -154,11 +154,16 @@ async function test_ntp_theme(theme, isBrightText) {
 }
 
 add_task(async function test_support_ntp_colors() {
-  
-  
-  await SpecialPowers.setBoolPref("browser.newtab.preload", false);
-  registerCleanupFunction(() => {
-    SpecialPowers.clearUserPref("browser.newtab.preload");
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      
+      
+      ["browser.newtab.preload", false],
+      
+      
+      
+      ["layout.css.prefers-color-scheme.content-override", 2],
+    ],
   });
   NewTabPagePreloading.removePreloadedBrowser(window);
   for (let url of ["about:newtab", "about:home"]) {

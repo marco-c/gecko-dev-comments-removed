@@ -436,6 +436,8 @@ static constexpr struct {
     
     
     {"browser.theme.toolbar-theme"_ns, widget::ThemeChangeKind::AllBits},
+    {"browser.theme.content-theme"_ns},
+    {"layout.css.color-scheme.content-override"_ns},
 };
 
 
@@ -448,6 +450,8 @@ void nsXPLookAndFeel::Init() {
   
   
   sInitialized = true;
+
+  RecomputeColorSchemes();
 
   
   
@@ -969,6 +973,7 @@ void nsXPLookAndFeel::RefreshImpl() {
   sFontCache.Clear();
   sFloatCache.Clear();
   sIntCache.Clear();
+  RecomputeColorSchemes();
 
   
   if (XRE_IsParentProcess()) {
@@ -1049,16 +1054,54 @@ static bool ShouldUseStandinsForNativeColorForNonNativeTheme(
   return false;
 }
 
-LookAndFeel::ColorScheme LookAndFeel::ColorSchemeForChrome() {
+ColorScheme LookAndFeel::sChromeColorScheme;
+ColorScheme LookAndFeel::sContentColorScheme;
+
+auto LookAndFeel::ColorSchemeSettingForChrome() -> ChromeColorSchemeSetting {
   switch (StaticPrefs::browser_theme_toolbar_theme()) {
     case 0:  
-      return ColorScheme::Dark;
+      return ChromeColorSchemeSetting::Dark;
     case 1:  
-      return ColorScheme::Light;
+      return ChromeColorSchemeSetting::Light;
     default:
-      break;
+      return ChromeColorSchemeSetting::System;
   }
-  return SystemColorScheme();
+}
+
+void LookAndFeel::RecomputeColorSchemes() {
+  sChromeColorScheme = [] {
+    switch (ColorSchemeSettingForChrome()) {
+      case ChromeColorSchemeSetting::Light:
+        return ColorScheme::Light;
+      case ChromeColorSchemeSetting::Dark:
+        return ColorScheme::Dark;
+      case ChromeColorSchemeSetting::System:
+        break;
+    }
+    return SystemColorScheme();
+  }();
+
+  sContentColorScheme = [] {
+    switch (StaticPrefs::layout_css_prefers_color_scheme_content_override()) {
+      case 0:
+        return ColorScheme::Dark;
+      case 1:
+        return ColorScheme::Light;
+      case 2:
+        return SystemColorScheme();
+      default:
+        break;  
+    }
+
+    switch (StaticPrefs::browser_theme_content_theme()) {
+      case 0:  
+        return ColorScheme::Dark;
+      case 1:  
+        return ColorScheme::Light;
+      default:
+        return ColorSchemeForChrome();
+    }
+  }();
 }
 
 ColorScheme LookAndFeel::ColorSchemeForStyle(
@@ -1081,7 +1124,7 @@ ColorScheme LookAndFeel::ColorSchemeForStyle(
   
   
   if (nsContentUtils::IsChromeDoc(&aDoc)) {
-    return ColorSchemeForChrome();
+    return aDoc.PreferredColorScheme();
   }
   
   
