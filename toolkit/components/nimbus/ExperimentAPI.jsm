@@ -57,19 +57,6 @@ function parseJSON(value) {
   return null;
 }
 
-function featuresCompat(branch) {
-  if (!branch) {
-    return [];
-  }
-  let { features } = branch;
-  
-  if (!features) {
-    features = [branch.feature];
-  }
-
-  return features;
-}
-
 const ExperimentAPI = {
   
 
@@ -418,13 +405,9 @@ class _ExperimentFeature {
   isEnabled({ defaultValue = null } = {}) {
     const branch = ExperimentAPI.activateBranch({ featureId: this.featureId });
 
-    let feature = featuresCompat(branch).find(
-      ({ featureId }) => featureId === this.featureId
-    );
-
     
-    if (isBooleanValueDefined(feature?.enabled)) {
-      return feature.enabled;
+    if (isBooleanValueDefined(branch?.feature.enabled)) {
+      return branch.feature.enabled;
     }
 
     if (isBooleanValueDefined(this.getRemoteConfig()?.enabled)) {
@@ -453,15 +436,12 @@ class _ExperimentFeature {
     
     let userPrefs = this._getUserPrefsValues();
     const branch = ExperimentAPI.activateBranch({ featureId: this.featureId });
-    const featureValue = featuresCompat(branch).find(
-      ({ featureId }) => featureId === this.featureId
-    )?.value;
 
     return {
       ...this.prefGetters,
       ...defaultValues,
       ...this.getRemoteConfig()?.variables,
-      ...(featureValue || null),
+      ...(branch?.feature?.value || null),
       ...userPrefs,
     };
   }
@@ -485,12 +465,9 @@ class _ExperimentFeature {
     }
 
     
-    const branch = ExperimentAPI.activateBranch({
+    const experimentValue = ExperimentAPI.activateBranch({
       featureId: this.featureId,
-    });
-    const experimentValue = featuresCompat(branch).find(
-      ({ featureId }) => featureId === this.featureId
-    )?.value?.[variable];
+    })?.feature?.value?.[variable];
 
     if (typeof experimentValue !== "undefined") {
       return experimentValue;
