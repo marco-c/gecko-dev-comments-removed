@@ -71,9 +71,10 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
 
   
   
+  bool RemoveTransFromConnEntry(nsHttpTransaction* aTrans);
+
   
-  bool MoveTransToNewConnEntry(nsHttpTransaction* aTrans,
-                               nsHttpConnectionInfo* aNewCI);
+  [[nodiscard]] nsresult ProcessNewTransaction(nsHttpTransaction* aTrans);
 
   
   
@@ -260,7 +261,6 @@ class nsHttpConnectionMgr final : public HttpConnectionMgrShell,
                                                      uint32_t,
                                                      HttpConnectionBase*,
                                                      int32_t);
-  [[nodiscard]] nsresult ProcessNewTransaction(nsHttpTransaction*);
   [[nodiscard]] nsresult EnsureSocketThreadTarget();
   void ReportProxyTelemetry(ConnectionEntry* ent);
   void StartedConnect();
