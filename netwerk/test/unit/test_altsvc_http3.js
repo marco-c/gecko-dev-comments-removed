@@ -102,7 +102,7 @@ function h1Server(metadata, response) {
   response.setHeader("Access-Control-Allow-Headers", "x-altsvc", false);
 
   try {
-    var hval = "h3-27=" + metadata.getHeader("x-altsvc");
+    var hval = "h3-29=" + metadata.getHeader("x-altsvc");
     response.setHeader("Alt-Svc", hval, false);
   } catch (e) {}
 

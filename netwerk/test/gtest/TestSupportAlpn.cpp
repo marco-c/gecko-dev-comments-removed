@@ -15,9 +15,9 @@ TEST(TestSupportAlpn, testSvcParamKeyAlpn)
       do_GetService(NS_NETWORK_PROTOCOL_CONTRACTID_PREFIX "http");
 
   
-  nsTArray<nsCString> alpn = {"h3-28"_ns, "h3-27"_ns, "h2"_ns, "http/1.1"_ns};
+  nsTArray<nsCString> alpn = {"h3-29"_ns, "h3-30"_ns, "h2"_ns, "http/1.1"_ns};
   Tuple<nsCString, bool> result = SelectAlpnFromAlpnList(alpn, false, false);
-  ASSERT_EQ(Get<0>(result), "h3-28"_ns);
+  ASSERT_EQ(Get<0>(result), "h3-29"_ns);
   ASSERT_EQ(Get<1>(result), true);
 
   
@@ -27,25 +27,25 @@ TEST(TestSupportAlpn, testSvcParamKeyAlpn)
   ASSERT_EQ(Get<1>(result), false);
 
   
-  alpn = {"h3-28"_ns, "h3-27"_ns, "h2"_ns, "http/1.1"_ns};
+  alpn = {"h3-29"_ns, "h3-30"_ns, "h2"_ns, "http/1.1"_ns};
   result = SelectAlpnFromAlpnList(alpn, false, true);
   ASSERT_EQ(Get<0>(result), "h2"_ns);
   ASSERT_EQ(Get<1>(result), false);
 
   
-  alpn = {"h3-28"_ns, "h3-27"_ns, "http/1.1"_ns};
+  alpn = {"h3-29"_ns, "h3-30"_ns, "http/1.1"_ns};
   result = SelectAlpnFromAlpnList(alpn, false, true);
   ASSERT_EQ(Get<0>(result), "http/1.1"_ns);
   ASSERT_EQ(Get<1>(result), false);
 
   
-  alpn = {"h3-28"_ns, "h3-27"_ns, "h2"_ns, "http/1.1"_ns};
+  alpn = {"h3-29"_ns, "h3-30"_ns, "h2"_ns, "http/1.1"_ns};
   result = SelectAlpnFromAlpnList(alpn, true, true);
   ASSERT_EQ(Get<0>(result), "http/1.1"_ns);
   ASSERT_EQ(Get<1>(result), false);
 
   
-  alpn = {"h3-28"_ns, "h3-27"_ns, "h2"_ns};
+  alpn = {"h3-29"_ns, "h3-30"_ns, "h2"_ns};
   result = SelectAlpnFromAlpnList(alpn, true, true);
   ASSERT_EQ(Get<0>(result), ""_ns);
   ASSERT_EQ(Get<1>(result), false);
