@@ -152,6 +152,9 @@ void qcms_data_create_rgb_with_gamma(
                 size_t *size);
 
 
+
+
+
 qcms_profile* qcms_profile_create_cicp(uint8_t colour_primaries,
                                        uint8_t transfer_characteristics);
 
