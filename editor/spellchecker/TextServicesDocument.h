@@ -94,6 +94,28 @@ class TextServicesDocument final : public nsIEditActionListener {
 
     void RemoveInvalidElements();
 
+    
+
+
+    nsresult WillDeleteSelection();
+
+    
+
+
+    OffsetEntry* DidDeleteSelection();
+
+    
+
+
+    MOZ_CAN_RUN_SCRIPT nsresult DidInsertText(dom::Selection* aSelection,
+                                              const nsAString& aInsertedString);
+
+    
+
+
+    Result<EditorRawDOMRangeInTexts, nsresult> WillSetSelection(
+        uint32_t aOffsetInTextInBlock, uint32_t aLength);
+
     class Selection final {
      public:
       size_t StartIndex() const {
