@@ -243,7 +243,8 @@ template <typename V, typename E>
 class Result;
 
 
-inline Result<Ok, nsresult> ToResult(nsresult aValue);
+template <typename E = nsresult>
+inline Result<Ok, E> ToResult(nsresult aValue);
 }  
 
 
