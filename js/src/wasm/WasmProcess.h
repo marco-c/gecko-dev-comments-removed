@@ -21,6 +21,8 @@
 
 #include "mozilla/Atomics.h"
 
+#include "wasm/WasmMemory.h"
+
 namespace js {
 namespace wasm {
 
@@ -55,7 +57,9 @@ void UnregisterCodeSegment(const CodeSegment* cs);
 
 
 
-bool IsHugeMemoryEnabled();
+
+
+bool IsHugeMemoryEnabled(IndexType t);
 
 [[nodiscard]] bool DisableHugeMemory();
 

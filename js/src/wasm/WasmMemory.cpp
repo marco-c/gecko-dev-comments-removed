@@ -377,14 +377,6 @@ static_assert(HugeOffsetGuardLimit < UINT32_MAX,
 #    error "Not an expected configuration"
 #  endif
 
-
-
-
-
-
-
-
-
 #endif
 
 

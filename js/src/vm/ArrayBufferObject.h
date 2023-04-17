@@ -34,7 +34,8 @@ struct MemoryDesc;
 
 
 
-void* MapBufferMemory(size_t mappedSize, size_t initialCommittedSize);
+void* MapBufferMemory(wasm::IndexType, size_t mappedSize,
+                      size_t initialCommittedSize);
 
 
 
@@ -52,7 +53,7 @@ bool ExtendBufferMapping(void* dataStart, size_t mappedSize,
 
 
 
-void UnmapBufferMemory(void* dataStart, size_t mappedSize);
+void UnmapBufferMemory(wasm::IndexType t, void* dataStart, size_t mappedSize);
 
 
 int32_t LiveMappedBufferCount();

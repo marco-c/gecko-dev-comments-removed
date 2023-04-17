@@ -779,10 +779,6 @@ bool wasm::CompileAndSerialize(const ShareableBytes& bytecode,
   
   compileArgs->ionEnabled = true;
 
-  
-  
-  compileArgs->features.hugeMemory = wasm::IsHugeMemoryEnabled();
-
   SerializeListener listener(serialized);
 
   UniqueChars error;
@@ -2575,7 +2571,7 @@ void WasmMemoryObject::finalize(JSFreeOp* fop, JSObject* obj) {
 
 
 WasmMemoryObject* WasmMemoryObject::create(
-    JSContext* cx, HandleArrayBufferObjectMaybeShared buffer,
+    JSContext* cx, HandleArrayBufferObjectMaybeShared buffer, bool isHuge,
     HandleObject proto) {
   AutoSetNewObjectMetadata metadata(cx);
   auto* obj = NewObjectWithGivenProto<WasmMemoryObject>(cx, proto);
@@ -2584,6 +2580,7 @@ WasmMemoryObject* WasmMemoryObject::create(
   }
 
   obj->initReservedSlot(BUFFER_SLOT, ObjectValue(*buffer));
+  obj->initReservedSlot(ISHUGE_SLOT, BooleanValue(isHuge));
   MOZ_ASSERT(!obj->hasObservers());
 
   return obj;
@@ -2634,8 +2631,9 @@ bool WasmMemoryObject::construct(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  RootedWasmMemoryObject memoryObj(cx,
-                                   WasmMemoryObject::create(cx, buffer, proto));
+  RootedWasmMemoryObject memoryObj(
+      cx, WasmMemoryObject::create(
+              cx, buffer, IsHugeMemoryEnabled(limits.indexType), proto));
   if (!memoryObj) {
     return false;
   }
@@ -2829,15 +2827,7 @@ WasmMemoryObject::InstanceSet* WasmMemoryObject::getOrCreateObservers(
 }
 
 bool WasmMemoryObject::isHuge() const {
-#ifdef WASM_SUPPORTS_HUGE_MEMORY
-  
-  
-  MOZ_ASSERT(MaxMemoryBytes() < HugeMappedSize,
-             "Non-huge buffer may be confused as huge");
-  return buffer().wasmMappedSize() >= HugeMappedSize;
-#else
-  return false;
-#endif
+  return getReservedSlot(ISHUGE_SLOT).toBoolean();
 }
 
 bool WasmMemoryObject::movingGrowable() const {
