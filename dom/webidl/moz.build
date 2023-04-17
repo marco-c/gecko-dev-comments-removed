@@ -1057,6 +1057,7 @@ WEBIDL_FILES += [
 
 WEBIDL_FILES += [
     "ExtensionBrowser.webidl",
+    "ExtensionEventManager.webidl",
 ]
 
 
