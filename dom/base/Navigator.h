@@ -285,8 +285,6 @@ class Navigator final : public nsISupports, public nsWrapperCache {
   RefPtr<AddonManager> mAddonManager;
   RefPtr<webgpu::Instance> mWebGpu;
   RefPtr<Promise> mSharePromise;  
-  
-  bool mGamepadSecureContextWarningShown = false;
 };
 
 }  
