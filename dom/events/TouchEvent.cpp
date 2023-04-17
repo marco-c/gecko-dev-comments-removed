@@ -242,11 +242,8 @@ bool TouchEvent::PrefEnabled(nsIDocShell* aDocShell) {
         
         
         RefPtr<nsPresContext> pc = aDocShell->GetPresContext();
-        if (pc) {
-          nsCOMPtr<nsIWidget> widget = pc->GetRootWidget();
-          if (widget) {
-            enabled &= widget->AsyncPanZoomEnabled();
-          }
+        if (pc && pc->GetRootWidget()) {
+          enabled &= pc->GetRootWidget()->AsyncPanZoomEnabled();
         }
       }
 #endif

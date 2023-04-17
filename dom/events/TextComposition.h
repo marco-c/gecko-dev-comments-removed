@@ -13,7 +13,6 @@
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
 #include "nsPresContext.h"
-#include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/RangeBoundary.h"
@@ -76,7 +75,7 @@ class TextComposition final {
   
   TextRangeArray* GetRanges() const { return mRanges; }
   
-  already_AddRefed<nsIWidget> GetWidget() const {
+  nsIWidget* GetWidget() const {
     return mPresContext ? mPresContext->GetRootWidget() : nullptr;
   }
   

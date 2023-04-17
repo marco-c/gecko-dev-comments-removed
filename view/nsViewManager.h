@@ -14,7 +14,6 @@
 #include "nsDeviceContext.h"
 #include "nsTArray.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/EventForwards.h"
 
 class nsIWidget;
@@ -282,7 +281,7 @@ class nsViewManager final {
 
 
 
-  already_AddRefed<nsIWidget> GetRootWidget();
+  void GetRootWidget(nsIWidget** aWidget);
 
   
 
@@ -374,11 +373,8 @@ class nsViewManager final {
 
   void InvalidateView(nsView* aView, const nsRect& aRect);
 
-  nsViewManager* RootViewManager() const {
-    return mRootViewManager ? mRootViewManager.get()
-                            : const_cast<nsViewManager*>(this);
-  }
-  bool IsRootVM() const { return !mRootViewManager; }
+  nsViewManager* RootViewManager() const { return mRootViewManager; }
+  bool IsRootVM() const { return this == RootViewManager(); }
 
   
   
@@ -404,12 +400,9 @@ class nsViewManager final {
   nsSize mDelayedResize;
 
   nsView* mRootView;
-
   
   
-  
-  
-  RefPtr<nsViewManager> mRootViewManager;
+  nsViewManager* mRootViewManager;
 
   
   
@@ -424,7 +417,7 @@ class nsViewManager final {
   
 
   
-  static mozilla::StaticAutoPtr<nsTArray<nsViewManager*>> gViewManagers;
+  static nsTArray<nsViewManager*>* gViewManagers;
 };
 
 
