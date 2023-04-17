@@ -4,18 +4,25 @@ const TEST_PAGE =
   "http://mochi.test:8888/browser/browser/base/content/test/general/file_double_close_tab.html";
 var testTab;
 
+const CONTENT_PROMPT_SUBDIALOG = Services.prefs.getBoolPref(
+  "prompts.contentPromptSubDialog",
+  false
+);
+
 function waitForDialog(callback) {
-  function onTabModalDialogLoaded(node) {
-    Services.obs.removeObserver(
-      onTabModalDialogLoaded,
-      "tabmodal-dialog-loaded"
-    );
+  function onDialogLoaded(nodeOrDialogWindow) {
+    let node = CONTENT_PROMPT_SUBDIALOG
+      ? nodeOrDialogWindow.document.querySelector("dialog")
+      : nodeOrDialogWindow;
+    Services.obs.removeObserver(onDialogLoaded, "tabmodal-dialog-loaded");
+    Services.obs.removeObserver(onDialogLoaded, "common-dialog-loaded");
     
     Promise.resolve().then(() => callback(node));
   }
 
   
-  Services.obs.addObserver(onTabModalDialogLoaded, "tabmodal-dialog-loaded");
+  Services.obs.addObserver(onDialogLoaded, "tabmodal-dialog-loaded");
+  Services.obs.addObserver(onDialogLoaded, "common-dialog-loaded");
 }
 
 function waitForDialogDestroyed(node, callback) {
@@ -27,6 +34,11 @@ function waitForDialogDestroyed(node, callback) {
     }
   });
   observer.observe(node.parentNode, { childList: true });
+
+  if (CONTENT_PROMPT_SUBDIALOG) {
+    node.ownerGlobal.addEventListener("unload", done);
+  }
+
   let failureTimeout = setTimeout(function() {
     ok(false, "Dialog should have been destroyed");
     done();
@@ -36,7 +48,13 @@ function waitForDialogDestroyed(node, callback) {
     clearTimeout(failureTimeout);
     observer.disconnect();
     observer = null;
-    callback();
+
+    if (CONTENT_PROMPT_SUBDIALOG) {
+      node.ownerGlobal.removeEventListener("unload", done);
+      SimpleTest.executeSoon(callback);
+    } else {
+      callback();
+    }
   }
 }
 
@@ -45,11 +63,8 @@ add_task(async function() {
     set: [["dom.require_user_interaction_for_beforeunload", false]],
   });
 
-  await SpecialPowers.pushPrefEnv({
-    set: [["prompts.contentPromptSubDialog", false]],
-  });
-
   testTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE);
+
   
   
   
@@ -60,14 +75,26 @@ add_task(async function() {
       waitForDialogDestroyed(dialogNode, () => {
         let doCompletion = () => setTimeout(resolveOuter, 0);
         info("Now checking if dialog is destroyed");
-        ok(!dialogNode.parentNode, "onbeforeunload dialog should be gone.");
-        if (dialogNode.parentNode) {
-          
-          let leaveBtn = dialogNode.querySelector(".tabmodalprompt-button0");
-          waitForDialogDestroyed(dialogNode, doCompletion);
-          EventUtils.synthesizeMouseAtCenter(leaveBtn, {});
-          return;
+
+        if (CONTENT_PROMPT_SUBDIALOG) {
+          ok(
+            !dialogNode.ownerGlobal || dialogNode.ownerGlobal.closed,
+            "onbeforeunload dialog should be gone."
+          );
+          if (dialogNode.ownerGlobal && !dialogNode.ownerGlobal.closed) {
+            dialogNode.acceptDialog();
+          }
+        } else {
+          ok(!dialogNode.parentNode, "onbeforeunload dialog should be gone.");
+          if (dialogNode.parentNode) {
+            
+            let leaveBtn = dialogNode.querySelector(".tabmodalprompt-button0");
+            waitForDialogDestroyed(dialogNode, doCompletion);
+            EventUtils.synthesizeMouseAtCenter(leaveBtn, {});
+            return;
+          }
         }
+
         doCompletion();
       });
       

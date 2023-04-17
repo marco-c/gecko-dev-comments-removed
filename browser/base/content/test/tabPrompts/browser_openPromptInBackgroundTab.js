@@ -22,6 +22,7 @@ registerCleanupFunction(function() {
 
 
 add_task(async function test_old_modal_ui() {
+  
   await SpecialPowers.pushPrefEnv({
     set: [["prompts.contentPromptSubDialog", false]],
   });
@@ -130,6 +131,7 @@ add_task(async function test_old_modal_ui() {
 });
 
 add_task(async function test_new_modal_ui() {
+  
   await SpecialPowers.pushPrefEnv({
     set: [["prompts.contentPromptSubDialog", true]],
   });

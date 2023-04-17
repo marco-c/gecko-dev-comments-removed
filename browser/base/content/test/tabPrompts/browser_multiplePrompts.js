@@ -1,5 +1,9 @@
 "use strict";
 
+const CONTENT_PROMPT_SUBDIALOG = Services.prefs.getBoolPref(
+  "prompts.contentPromptSubDialog",
+  false
+);
 
 
 
@@ -7,50 +11,70 @@
 
 
 
-add_task(async function() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["prompts.contentPromptSubDialog", false]],
-  });
 
-  const PROMPTCOUNT = 9;
 
-  let contentScript = function(MAX_PROMPT) {
-    var i = MAX_PROMPT;
-    let fns = ["alert", "prompt", "confirm"];
-    function openDialog() {
-      i--;
-      if (i) {
-        SpecialPowers.Services.tm.dispatchToMainThread(openDialog);
-      }
-      window[fns[i % 3]](fns[i % 3] + " countdown #" + i);
-    }
-    SpecialPowers.Services.tm.dispatchToMainThread(openDialog);
-  };
-  let url =
-    "data:text/html,<script>(" +
-    encodeURIComponent(contentScript.toSource()) +
-    ")(" +
-    PROMPTCOUNT +
-    ");</script>";
 
-  let promptsOpenedPromise = new Promise(function(resolve) {
-    let unopenedPromptCount = PROMPTCOUNT;
-    Services.obs.addObserver(function observer() {
-      unopenedPromptCount--;
-      if (!unopenedPromptCount) {
-        Services.obs.removeObserver(observer, "tabmodal-dialog-loaded");
-        info("Prompts opened.");
-        resolve();
-      }
-    }, "tabmodal-dialog-loaded");
-  });
 
-  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url, true);
-  info("Tab loaded");
 
-  await promptsOpenedPromise;
 
-  let promptElementsCount = PROMPTCOUNT;
+
+
+async function closeDialogs(tab, dialogCount) {
+  let dialogElementsCount = dialogCount;
+  let dialogs = tab.linkedBrowser.tabDialogBox.getContentDialogManager()
+    .dialogs;
+
+  is(
+    dialogs.length,
+    dialogElementsCount,
+    "There should be " + dialogElementsCount + " dialog(s)."
+  );
+
+  let i = dialogElementsCount - 1;
+  for (let dialog of dialogs) {
+    dialog.focus(true);
+    await dialog._dialogReady;
+
+    let dialogWindow = dialog.frameContentWindow;
+    let expectedType = ["alert", "prompt", "confirm"][i % 3];
+
+    is(
+      dialogWindow.Dialog.args.text,
+      expectedType + " countdown #" + i,
+      "The #" + i + " alert should be labelled as such."
+    );
+    i--;
+
+    dialogWindow.Dialog.ui.button0.click();
+
+    
+    
+    await new Promise(function(resolve) {
+      Services.tm.dispatchToMainThread(resolve);
+    });
+  }
+
+  dialogs = tab.linkedBrowser.tabDialogBox.getContentDialogManager().dialogs;
+  is(dialogs.length, 0, "Dialogs should all be dismissed.");
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function closeTabModals(tab, promptCount) {
+  let promptElementsCount = promptCount;
   while (promptElementsCount--) {
     let promptElements = tab.linkedBrowser.parentNode.querySelectorAll(
       "tabmodalprompt"
@@ -62,6 +86,7 @@ add_task(async function() {
     );
     
     let i = 0;
+
     for (let promptElement of promptElements) {
       let prompt = tab.linkedBrowser.tabModalPromptBox.getPrompt(promptElement);
       let expectedType = ["alert", "prompt", "confirm"][i % 3];
@@ -91,6 +116,57 @@ add_task(async function() {
     "tabmodalprompt"
   );
   is(promptElements.length, 0, "Prompts should all be dismissed.");
+}
+
+
+
+
+
+
+
+
+add_task(async function() {
+  const PROMPTCOUNT = 9;
+
+  let unopenedPromptCount = PROMPTCOUNT;
+
+  let tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "http://example.com",
+    true
+  );
+  info("Tab loaded");
+
+  let promptsOpenedPromise = BrowserTestUtils.waitForEvent(
+    tab.linkedBrowser,
+    "DOMWillOpenModalDialog",
+    false,
+    () => {
+      unopenedPromptCount--;
+      return unopenedPromptCount == 0;
+    }
+  );
+
+  await SpecialPowers.spawn(tab.linkedBrowser, [PROMPTCOUNT], maxPrompts => {
+    var i = maxPrompts;
+    let fns = ["alert", "prompt", "confirm"];
+    function openDialog() {
+      i--;
+      if (i) {
+        SpecialPowers.Services.tm.dispatchToMainThread(openDialog);
+      }
+      content[fns[i % 3]](fns[i % 3] + " countdown #" + i);
+    }
+    SpecialPowers.Services.tm.dispatchToMainThread(openDialog);
+  });
+
+  await promptsOpenedPromise;
+
+  if (CONTENT_PROMPT_SUBDIALOG) {
+    await closeDialogs(tab, PROMPTCOUNT);
+  } else {
+    await closeTabModals(tab, PROMPTCOUNT);
+  }
 
   BrowserTestUtils.removeTab(tab);
 });
