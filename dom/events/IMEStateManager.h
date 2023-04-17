@@ -188,9 +188,14 @@ class IMEStateManager {
   
   
   
+  enum class UpdateIMEStateOption {
+    ForceUpdate,
+    DontCommitComposition,
+  };
+  using UpdateIMEStateOptions = EnumSet<UpdateIMEStateOption, uint32_t>;
   MOZ_CAN_RUN_SCRIPT_BOUNDARY static void UpdateIMEState(
       const IMEState& aNewIMEState, nsIContent* aContent,
-      EditorBase& aEditorBase);
+      EditorBase& aEditorBase, const UpdateIMEStateOptions& aOptions = {});
 
   
   
