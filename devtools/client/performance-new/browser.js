@@ -208,7 +208,7 @@ function createLibraryMap(profile) {
 
 
 
-function createMultiModalGetSymbolTableFn(profile, getObjdirs, perfFront) {
+function createMultiModalGetSymbolTableFn(profile, objdirs, perfFront) {
   const libraryGetter = createLibraryMap(profile);
 
   return async function getSymbolTable(debugName, breakpadId) {
@@ -218,7 +218,6 @@ function createMultiModalGetSymbolTableFn(profile, getObjdirs, perfFront) {
         `Could not find the library for "${debugName}", "${breakpadId}".`
       );
     }
-    const objdirs = getObjdirs();
     const { getSymbolTableMultiModal } = lazy.PerfSymbolication();
     return getSymbolTableMultiModal(lib, objdirs, perfFront);
   };
