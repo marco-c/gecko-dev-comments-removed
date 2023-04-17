@@ -16,11 +16,7 @@
 #include "RtpPacketQueue.h"
 
 
-#include "webrtc/common_types.h"
-#include "webrtc/modules/rtp_rtcp/include/rtp_packet_observer.h"
-#include "webrtc/modules/audio_device/include/fake_audio_device.h"
-#include "webrtc/voice_engine/include/voe_base.h"
-#include "webrtc/voice_engine/channel_proxy.h"
+#include "modules/audio_device/include/fake_audio_device.h"
 
 
 
@@ -35,9 +31,8 @@ DOMHighResTimeStamp NTPtoDOMHighResTimeStamp(uint32_t ntpHigh, uint32_t ntpLow);
 
 
 class WebrtcAudioConduit : public AudioSessionConduit,
-                           public webrtc::Transport,
-                           public webrtc::RtcpEventObserver,
-                           public webrtc::RtpPacketObserver {
+                           public webrtc::Transport {
+  
  public:
   
   static const unsigned int CODEC_PLNAME_SIZE;
@@ -206,9 +201,6 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   virtual MediaConduitErrorCode Init();
 
   int GetRecvChannel() { return mRecvChannel; }
-  webrtc::VoiceEngine* GetVoiceEngine() {
-    return mCall->Call()->voice_engine();
-  }
 
   
 
@@ -247,12 +239,9 @@ class WebrtcAudioConduit : public AudioSessionConduit,
                       int attenuationDb) override;
 
   void GetRtpSources(nsTArray<dom::RTCRtpSourceEntry>& outSources) override;
+  
 
-  void OnRtpPacket(const webrtc::RTPHeader& aRtpHeader,
-                   const int64_t aTimestamp, const uint32_t aJitter) override;
 
-  void OnRtcpBye() override;
-  void OnRtcpTimeout() override;
 
   void SetRtcpEventObserver(mozilla::RtcpEventObserver* observer) override;
 
@@ -268,16 +257,16 @@ class WebrtcAudioConduit : public AudioSessionConduit,
  protected:
   
 
-  
-  
-  
-  
-  std::unique_ptr<webrtc::voe::ChannelProxy> mRecvChannelProxy = nullptr;
 
-  
-  
-  
-  std::unique_ptr<webrtc::voe::ChannelProxy> mSendChannelProxy = nullptr;
+
+
+
+
+
+
+
+
+
 
  private:
   WebrtcAudioConduit(const WebrtcAudioConduit& other) = delete;
@@ -312,11 +301,11 @@ class WebrtcAudioConduit : public AudioSessionConduit,
 
   
   RefPtr<TransportInterface> mReceiverTransport;
+  
 
-  
-  
-  
-  ScopedCustomReleasePtr<webrtc::VoEBase> mPtrVoEBase;
+
+
+
 
   
   
