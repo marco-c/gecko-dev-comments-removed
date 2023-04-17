@@ -960,6 +960,44 @@ bool NativeObject::changeCustomDataPropAttributes(JSContext* cx,
   return true;
 }
 
+void NativeObject::removeDictionaryPropertyWithoutReshape(ShapeTable* table,
+                                                          ShapeTable::Ptr ptr,
+                                                          Shape* shape) {
+  
+  
+
+  AutoCheckCannotGC nogc;
+  MOZ_ASSERT(inDictionaryMode());
+  MOZ_ASSERT(lastProperty()->maybeTable(nogc) == table);
+  MOZ_ASSERT(*ptr == shape);
+
+  
+  if (shape->hasSlot()) {
+    freeDictionarySlot(table, shape->slot());
+  }
+
+  
+  
+  
+  table->remove(ptr);
+
+  
+  bool removingLastProperty = (shape == lastProperty());
+  shape->removeFromDictionary(this);
+
+  
+  
+  
+  
+  
+  if (removingLastProperty) {
+    MOZ_ASSERT(lastProperty() != shape);
+    shape->handoffTableTo(lastProperty());
+    lastProperty()->setBase(shape->base());
+    lastProperty()->setObjectFlags(shape->objectFlags());
+  }
+}
+
 
 bool NativeObject::removeProperty(JSContext* cx, HandleNativeObject obj,
                                   jsid id_) {
@@ -995,10 +1033,8 @@ bool NativeObject::removeProperty(JSContext* cx, HandleNativeObject obj,
     }
   }
 
-  const bool removingLastProperty = (shape == obj->lastProperty());
-
   if (!obj->inDictionaryMode()) {
-    if (removingLastProperty && obj->canRemoveLastProperty()) {
+    if (shape == obj->lastProperty() && obj->canRemoveLastProperty()) {
       
       
       
@@ -1034,32 +1070,7 @@ bool NativeObject::removeProperty(JSContext* cx, HandleNativeObject obj,
   }
   new (spare) Shape(shape->base(), ObjectFlags(), 0);
 
-  
-  if (shape->hasSlot()) {
-    obj->freeDictionarySlot(table, shape->slot());
-  }
-
-  
-  
-  
-  MOZ_ASSERT(obj->lastProperty()->maybeTable(keep) == table);
-  table->remove(ptr);
-
-  
-  MOZ_ASSERT(removingLastProperty == (shape == obj->lastProperty()));
-  shape->removeFromDictionary(obj);
-
-  
-  
-  
-  
-  
-  if (removingLastProperty) {
-    MOZ_ASSERT(obj->lastProperty() != shape);
-    shape->handoffTableTo(obj->lastProperty());
-    obj->lastProperty()->setBase(shape->base());
-    obj->lastProperty()->setObjectFlags(shape->objectFlags());
-  }
+  obj->removeDictionaryPropertyWithoutReshape(table, ptr, shape);
 
   
   MOZ_ALWAYS_TRUE(NativeObject::generateOwnShape(cx, obj, spare));

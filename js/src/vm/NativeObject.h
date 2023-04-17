@@ -957,6 +957,10 @@ class NativeObject : public JSObject {
                                              HandleNativeObject obj,
                                              MutableHandleShape shape);
 
+  void removeDictionaryPropertyWithoutReshape(ShapeTable* table,
+                                              ShapeTable::Ptr ptr,
+                                              Shape* shape);
+
  public:
   
   
