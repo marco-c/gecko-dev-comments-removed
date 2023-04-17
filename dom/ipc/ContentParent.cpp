@@ -4,6 +4,10 @@
 
 
 
+#ifdef MOZ_WIDGET_ANDROID
+#  include "AndroidDecoderModule.h"
+#endif
+
 #include "mozilla/DebugOnly.h"
 
 #include "base/basictypes.h"
@@ -2926,6 +2930,11 @@ bool ContentParent::InitInternal(ProcessPriority aInitialPriority) {
   for (auto const& [location, supported] : sCodecsSupported) {
     Unused << SendUpdateMediaCodecsSupported(location, supported);
   }
+
+#ifdef MOZ_WIDGET_ANDROID
+  Unused << SendDecoderSupportedMimeTypes(
+      AndroidDecoderModule::GetSupportedMimeTypes());
+#endif
 
   
   ScreenManager& screenManager = ScreenManager::GetSingleton();

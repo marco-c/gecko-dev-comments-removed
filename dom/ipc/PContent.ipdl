@@ -931,8 +931,10 @@ child:
   async FlushTabState(MaybeDiscardedBrowsingContext aBrowsingContext)
       returns(bool aHadContext);
 
-parent:
+  
+  async DecoderSupportedMimeTypes(nsCString[] supportedTypes);
 
+parent:
 
     async SynchronizeLayoutHistoryState(MaybeDiscardedBrowsingContext aContext,
                                         nsILayoutHistoryState aState);
