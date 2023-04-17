@@ -59,5 +59,3 @@ if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
 
 
 
-
-REQUIRES_UNIFIED_BUILD = True
