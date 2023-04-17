@@ -363,13 +363,14 @@ nsresult EditorBase::InitEditorContentAndSelection() {
 
   if (IsTextEditor()) {
     MOZ_TRY(EnsureEmptyTextFirstChild());
-  }
-
-  nsresult rv = MaybeCreatePaddingBRElementForEmptyEditor();
-  if (NS_FAILED(rv)) {
-    NS_WARNING(
-        "EditorBase::MaybeCreatePaddingBRElementForEmptyEditor() failed");
-    return rv;
+  } else {
+    nsresult rv = MOZ_KnownLive(AsHTMLEditor())
+                      ->MaybeCreatePaddingBRElementForEmptyEditor();
+    if (NS_FAILED(rv)) {
+      NS_WARNING(
+          "HTMLEditor::MaybeCreatePaddingBRElementForEmptyEditor() failed");
+      return rv;
+    }
   }
 
   
@@ -3603,89 +3604,6 @@ nsresult EditorBase::EnsureNoPaddingBRElementForEmptyEditor() {
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::DeleteNodeWithTransaction() failed");
   return rv;
-}
-
-nsresult EditorBase::MaybeCreatePaddingBRElementForEmptyEditor() {
-  MOZ_ASSERT(IsEditActionDataAvailable());
-
-  if (mPaddingBRElementForEmptyEditor) {
-    return NS_OK;
-  }
-
-  IgnoredErrorResult ignoredError;
-  AutoEditSubActionNotifier startToHandleEditSubAction(
-      *this, EditSubAction::eCreatePaddingBRElementForEmptyEditor,
-      nsIEditor::eNone, ignoredError);
-  if (NS_WARN_IF(ignoredError.ErrorCodeIs(NS_ERROR_EDITOR_DESTROYED))) {
-    return ignoredError.StealNSResult();
-  }
-  NS_WARNING_ASSERTION(
-      !ignoredError.Failed(),
-      "TextEditor::OnStartToHandleTopLevelEditSubAction() failed, but ignored");
-  ignoredError.SuppressException();
-
-  RefPtr<Element> rootElement = GetRoot();
-  if (!rootElement) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  EditorType editorType = GetEditorType();
-  bool isRootEditable =
-      EditorUtils::IsEditableContent(*rootElement, editorType);
-  for (nsIContent* rootChild = rootElement->GetFirstChild(); rootChild;
-       rootChild = rootChild->GetNextSibling()) {
-    if (EditorUtils::IsPaddingBRElementForEmptyEditor(*rootChild) ||
-        !isRootEditable ||
-        EditorUtils::IsEditableContent(*rootChild, editorType) ||
-        HTMLEditUtils::IsBlockElement(*rootChild)) {
-      return NS_OK;
-    }
-  }
-
-  
-  
-  if (IsHTMLEditor() && !HTMLEditUtils::IsSimplyEditableNode(*rootElement)) {
-    return NS_OK;
-  }
-
-  
-  RefPtr<Element> newBRElement = CreateHTMLContent(nsGkAtoms::br);
-  if (NS_WARN_IF(Destroyed())) {
-    return NS_ERROR_EDITOR_DESTROYED;
-  }
-  if (NS_WARN_IF(!newBRElement)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  mPaddingBRElementForEmptyEditor =
-      static_cast<HTMLBRElement*>(newBRElement.get());
-
-  
-  newBRElement->SetFlags(NS_PADDING_FOR_EMPTY_EDITOR);
-
-  
-  nsresult rv =
-      InsertNodeWithTransaction(*newBRElement, EditorDOMPoint(rootElement, 0));
-  if (NS_WARN_IF(Destroyed())) {
-    return NS_ERROR_EDITOR_DESTROYED;
-  }
-  if (NS_FAILED(rv)) {
-    NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
-    return rv;
-  }
-
-  
-  SelectionRef().CollapseInLimiter(EditorRawDOMPoint(rootElement, 0),
-                                   ignoredError);
-  if (NS_WARN_IF(Destroyed())) {
-    return NS_ERROR_EDITOR_DESTROYED;
-  }
-  NS_WARNING_ASSERTION(!ignoredError.Failed(),
-                       "Selection::CollapseInLimiter() failed, but ignored");
-  return NS_OK;
 }
 
 void EditorBase::BeginUpdateViewBatch() {

@@ -1918,13 +1918,6 @@ class EditorBase : public nsIEditor,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  MaybeCreatePaddingBRElementForEmptyEditor();
-
-  
-
-
-
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult MarkElementDirty(Element& aElement);
@@ -2239,6 +2232,8 @@ class EditorBase : public nsIEditor,
   MOZ_ALWAYS_INLINE EditorType GetEditorType() const {
     return mIsHTMLEditorClass ? EditorType::HTML : EditorType::Text;
   }
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult EnsureEmptyTextFirstChild();
 
   
 
