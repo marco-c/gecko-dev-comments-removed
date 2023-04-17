@@ -137,6 +137,10 @@ class ShapeProperty {
   inline bool isAccessorProperty() const;
   inline uint32_t slot() const;
 
+  
+  
+  inline bool isDataDescriptor() const;
+
   inline uint8_t attributes() const;
   inline bool writable() const;
   inline bool configurable() const;
@@ -1624,6 +1628,10 @@ inline bool ShapeProperty::isAccessorProperty() const {
 }
 
 inline uint32_t ShapeProperty::slot() const { return shape_->slot(); }
+
+inline bool ShapeProperty::isDataDescriptor() const {
+  return shape_->isDataDescriptor();
+}
 
 inline uint8_t ShapeProperty::attributes() const {
   return shape_->attributes();

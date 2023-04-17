@@ -1294,7 +1294,7 @@ static bool ChangeProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
   
   
   if (existing->isNativeProperty()) {
-    ShapeProperty prop = ShapeProperty(existing->shape());
+    ShapeProperty prop = existing->shapeProperty();
     if (prop.isAccessorProperty()) {
       GetterSetter* current = obj->getGetterSetter(prop);
       if (current->getter() == getter && current->setter() == setter) {
@@ -1488,11 +1488,11 @@ static bool GetExistingPropertyValue(JSContext* cx, HandleNativeObject obj,
 
   MOZ_ASSERT(!cx->isHelperThreadContext());
 
-  MOZ_ASSERT(prop.shape()->propid() == id);
-  MOZ_ASSERT(obj->contains(cx, prop.shape()));
+  MOZ_ASSERT(prop.shapeProperty().shapeDeprecated()->propid() == id);
+  MOZ_ASSERT(obj->contains(cx, prop.shapeProperty().shapeDeprecated()));
 
   RootedValue receiver(cx, ObjectValue(*obj));
-  RootedShape shape(cx, prop.shape());
+  RootedShape shape(cx, prop.shapeProperty().shapeDeprecated());
   return GetExistingProperty<CanGC>(cx, receiver, obj, shape, vp);
 }
 
@@ -1524,11 +1524,11 @@ static bool DefinePropertyIsRedundant(JSContext* cx, HandleNativeObject obj,
     if (desc.hasValue()) {
       
       RootedValue currentValue(cx);
-      if (prop.isNativeProperty() && prop.shape()->isDataProperty()) {
+      if (prop.isNativeProperty() && prop.shapeProperty().isDataProperty()) {
         
         
         
-        currentValue.set(obj->getSlot(prop.shape()->slot()));
+        currentValue.set(obj->getSlot(prop.shapeProperty().slot()));
       } else {
         if (!GetExistingPropertyValue(cx, obj, id, prop, &currentValue)) {
           return false;
@@ -1545,18 +1545,19 @@ static bool DefinePropertyIsRedundant(JSContext* cx, HandleNativeObject obj,
     
     
     
-    if (prop.isNativeProperty() && prop.shape()->isCustomDataProperty()) {
+    if (prop.isNativeProperty() &&
+        prop.shapeProperty().isCustomDataProperty()) {
       return true;
     }
   } else {
     if (desc.hasGetterObject() &&
         (!(shapeAttrs & JSPROP_GETTER) ||
-         desc.getterObject() != obj->getGetter(ShapeProperty(prop.shape())))) {
+         desc.getterObject() != obj->getGetter(prop.shapeProperty()))) {
       return true;
     }
     if (desc.hasSetterObject() &&
         (!(shapeAttrs & JSPROP_SETTER) ||
-         desc.setterObject() != obj->getSetter(ShapeProperty(prop.shape())))) {
+         desc.setterObject() != obj->getSetter(prop.shapeProperty()))) {
       return true;
     }
   }
@@ -1730,7 +1731,7 @@ bool js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj,
       desc.setValue(currentValue);
       desc.setWritable(IsWritable(shapeAttrs));
     } else {
-      ShapeProperty shapeProp = ShapeProperty(prop.shape());
+      ShapeProperty shapeProp = prop.shapeProperty();
       desc.setGetterObject(obj->getGetter(shapeProp));
       desc.setSetterObject(obj->getSetter(shapeProp));
     }
@@ -1784,7 +1785,7 @@ bool js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj,
     }
   } else {
     
-    ShapeProperty shapeProp = ShapeProperty(prop.shape());
+    ShapeProperty shapeProp = prop.shapeProperty();
     MOZ_ASSERT(shapeProp.isAccessorProperty());
     MOZ_ASSERT(desc.isAccessorDescriptor());
 
@@ -2092,7 +2093,7 @@ bool js::NativeGetOwnPropertyDescriptor(
     
     
     
-    ShapeProperty shapeProp = ShapeProperty(prop.shape());
+    ShapeProperty shapeProp = prop.shapeProperty();
     if (desc.hasGetterObject()) {
       desc.setGetterObject(obj->getGetter(shapeProp));
     } else {
@@ -2122,7 +2123,7 @@ bool js::NativeGetOwnPropertyDescriptor(
       
       desc.attributesRef() &= ~JSPROP_CUSTOM_DATA_PROP;
 
-      RootedShape shape(cx, prop.shape());
+      RootedShape shape(cx, prop.shapeProperty().shapeDeprecated());
       if (!NativeGetExistingProperty(cx, obj, obj, shape, desc.value())) {
         return false;
       }
@@ -2348,7 +2349,8 @@ static MOZ_ALWAYS_INLINE bool NativeGetPropertyInline(
         return tarr->template getElement<allowGC>(cx, idx, vp);
       }
 
-      typename MaybeRooted<Shape*, allowGC>::RootType shape(cx, prop.shape());
+      typename MaybeRooted<Shape*, allowGC>::RootType shape(
+          cx, prop.shapeProperty().shapeDeprecated());
       return GetExistingProperty<allowGC>(cx, receiver, pobj, shape, vp);
     }
 
@@ -2671,10 +2673,10 @@ static bool SetExistingProperty(JSContext* cx, HandleId id, HandleValue v,
   }
 
   
-  RootedShape shape(cx, prop.shape());
-  if (shape->isDataDescriptor()) {
+  ShapeProperty shapeProp = prop.shapeProperty();
+  if (shapeProp.isDataDescriptor()) {
     
-    if (!shape->writable()) {
+    if (!shapeProp.writable()) {
       return result.fail(JSMSG_READ_ONLY);
     }
 
@@ -2685,6 +2687,7 @@ static bool SetExistingProperty(JSContext* cx, HandleId id, HandleValue v,
       
 
       
+      RootedShape shape(cx, shapeProp.shapeDeprecated());
       return NativeSetExistingDataProperty(cx, pobj, shape, v, result);
     }
 
@@ -2694,7 +2697,6 @@ static bool SetExistingProperty(JSContext* cx, HandleId id, HandleValue v,
   }
 
   
-  ShapeProperty shapeProp = ShapeProperty(shape);
   MOZ_ASSERT(shapeProp.isAccessorProperty());
 
   JSObject* setterObject = pobj->getSetter(shapeProp);

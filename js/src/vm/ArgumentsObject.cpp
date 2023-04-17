@@ -757,18 +757,17 @@ static bool DefineMappedIndex(JSContext* cx, Handle<MappedArgumentsObject*> obj,
 
   MOZ_ASSERT(prop.isNativeProperty());
 
-  Shape* shape = prop.shape();
-  MOZ_ASSERT(shape);
-  MOZ_ASSERT(shape->writable());
-  MOZ_ASSERT(shape->isCustomDataProperty());
+  ShapeProperty shapeProp = prop.shapeProperty();
+  MOZ_ASSERT(shapeProp.writable());
+  MOZ_ASSERT(shapeProp.isCustomDataProperty());
 
   
   
   
 
   
-  bool configurable = shape->configurable();
-  bool enumerable = shape->enumerable();
+  bool configurable = shapeProp.configurable();
+  bool enumerable = shapeProp.enumerable();
   if (configurable) {
     if (desc.hasConfigurable()) {
       configurable = desc.configurable();
