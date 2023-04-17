@@ -157,7 +157,7 @@ class CertVerifier {
   
   
   mozilla::pkix::Result VerifyCert(
-      CERTCertificate* cert, SECCertificateUsage usage,
+      const nsTArray<uint8_t>& certBytes, SECCertificateUsage usage,
       mozilla::pkix::Time time, void* pinArg, const char* hostname,
        nsTArray<nsTArray<uint8_t>>& builtChain, Flags flags = 0,
       
@@ -175,8 +175,8 @@ class CertVerifier {
        CertificateTransparencyInfo* ctInfo = nullptr);
 
   mozilla::pkix::Result VerifySSLServerCert(
-      const UniqueCERTCertificate& peerCert, mozilla::pkix::Time time,
-      void* pinarg, const nsACString& hostname,
+      const nsTArray<uint8_t>& peerCert, mozilla::pkix::Time time, void* pinarg,
+      const nsACString& hostname,
        nsTArray<nsTArray<uint8_t>>& builtChain,
        Flags flags = 0,
        const Maybe<nsTArray<nsTArray<uint8_t>>>& extraCertificates =

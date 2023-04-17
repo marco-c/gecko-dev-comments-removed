@@ -1266,9 +1266,15 @@ nsresult VerifyCertAtTime(nsIX509Cert* aCert,
   EVStatus evStatus;
   mozilla::pkix::Result result;
 
+  nsTArray<uint8_t> certBytes;
+  nsresult nsrv = aCert->GetRawDER(certBytes);
+  if (NS_FAILED(nsrv)) {
+    return nsrv;
+  }
+
   if (!aHostname.IsVoid() && aUsage == certificateUsageSSLServer) {
     result =
-        certVerifier->VerifySSLServerCert(nssCert, aTime,
+        certVerifier->VerifySSLServerCert(certBytes, aTime,
                                           nullptr,  
                                           aHostname, resultChain, aFlags,
                                           Nothing(),  
@@ -1279,7 +1285,7 @@ nsresult VerifyCertAtTime(nsIX509Cert* aCert,
   } else {
     const nsCString& flatHostname = PromiseFlatCString(aHostname);
     result = certVerifier->VerifyCert(
-        nssCert.get(), aUsage, aTime,
+        certBytes, aUsage, aTime,
         nullptr,  
         aHostname.IsVoid() ? nullptr : flatHostname.get(), resultChain, aFlags,
         Nothing(),  

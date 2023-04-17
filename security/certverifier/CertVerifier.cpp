@@ -483,8 +483,8 @@ bool CertVerifier::SHA1ModeMoreRestrictiveThanGivenMode(SHA1Mode mode) {
 }
 
 Result CertVerifier::VerifyCert(
-    CERTCertificate* cert, SECCertificateUsage usage, Time time, void* pinArg,
-    const char* hostname,
+    const nsTArray<uint8_t>& certBytes, SECCertificateUsage usage, Time time,
+    void* pinArg, const char* hostname,
      nsTArray<nsTArray<uint8_t>>& builtChain,
      const Flags flags,
      const Maybe<nsTArray<nsTArray<uint8_t>>>& extraCertificates,
@@ -499,7 +499,6 @@ Result CertVerifier::VerifyCert(
      CertificateTransparencyInfo* ctInfo) {
   MOZ_LOG(gCertVerifierLog, LogLevel::Debug, ("Top of VerifyCert\n"));
 
-  MOZ_ASSERT(cert);
   MOZ_ASSERT(usage == certificateUsageSSLServer || !(flags & FLAG_MUST_BE_EV));
   MOZ_ASSERT(usage == certificateUsageSSLServer || !keySizeStatus);
   MOZ_ASSERT(usage == certificateUsageSSLServer || !sha1ModeResult);
@@ -535,13 +534,12 @@ Result CertVerifier::VerifyCert(
     *sha1ModeResult = SHA1ModeResult::NeverChecked;
   }
 
-  if (!cert ||
-      (usage != certificateUsageSSLServer && (flags & FLAG_MUST_BE_EV))) {
+  if (usage != certificateUsageSSLServer && (flags & FLAG_MUST_BE_EV)) {
     return Result::FATAL_ERROR_INVALID_ARGS;
   }
 
   Input certDER;
-  Result rv = certDER.Init(cert->derCert.data, cert->derCert.len);
+  Result rv = certDER.Init(certBytes.Elements(), certBytes.Length());
   if (rv != Success) {
     return rv;
   }
@@ -630,7 +628,6 @@ Result CertVerifier::VerifyCert(
               : NSSCertDBTrustDomain::FetchOCSPForEV;
 
       CertPolicyId evPolicy;
-      nsTArray<uint8_t> certBytes(cert->derCert.data, cert->derCert.len);
       bool foundEVPolicy = GetFirstEVPolicy(certBytes, evPolicy);
       rv = Result::ERROR_UNKNOWN_ERROR;
       for (size_t i = 0;
@@ -878,20 +875,7 @@ Result CertVerifier::VerifyCert(
   return Success;
 }
 
-static bool CertIsSelfSigned(const UniqueCERTCertificate& cert, void* pinarg) {
-  Input certInput;
-  Result rv = certInput.Init(cert->derCert.data, cert->derCert.len);
-  if (rv != Success) {
-    return false;
-  }
-  
-  
-  EndEntityOrCA notUsedForPaths = EndEntityOrCA::MustBeEndEntity;
-  BackCert backCert(certInput, notUsedForPaths, nullptr);
-  rv = backCert.Init();
-  if (rv != Success) {
-    return false;
-  }
+static bool CertIsSelfSigned(const BackCert& backCert, void* pinarg) {
   if (!InputsAreEqual(backCert.GetIssuer(), backCert.GetSubject())) {
     return false;
   }
@@ -899,13 +883,13 @@ static bool CertIsSelfSigned(const UniqueCERTCertificate& cert, void* pinarg) {
   nsTArray<nsTArray<uint8_t>> emptyCertList;
   
   mozilla::psm::CSTrustDomain trustDomain(emptyCertList);
-  rv = VerifySignedData(trustDomain, backCert.GetSignedData(),
-                        backCert.GetSubjectPublicKeyInfo());
+  Result rv = VerifySignedData(trustDomain, backCert.GetSignedData(),
+                               backCert.GetSubjectPublicKeyInfo());
   return rv == Success;
 }
 
 Result CertVerifier::VerifySSLServerCert(
-    const UniqueCERTCertificate& peerCert, Time time,
+    const nsTArray<uint8_t>& peerCertBytes, Time time,
      void* pinarg, const nsACString& hostname,
      nsTArray<nsTArray<uint8_t>>& builtChain,
      Flags flags,
@@ -921,7 +905,6 @@ Result CertVerifier::VerifySSLServerCert(
      PinningTelemetryInfo* pinningTelemetryInfo,
      CertificateTransparencyInfo* ctInfo,
      bool* isBuiltCertChainRootBuiltInRoot) {
-  MOZ_ASSERT(peerCert);
   
   MOZ_ASSERT(!hostname.IsEmpty());
 
@@ -939,15 +922,27 @@ Result CertVerifier::VerifySSLServerCert(
 
   
   
+  Input peerCertInput;
   Result rv =
-      VerifyCert(peerCert.get(), certificateUsageSSLServer, time, pinarg,
-                 PromiseFlatCString(hostname).get(), builtChain, flags,
-                 extraCertificates, stapledOCSPResponse, sctsFromTLS,
-                 originAttributes, evStatus, ocspStaplingStatus, keySizeStatus,
-                 sha1ModeResult, pinningTelemetryInfo, ctInfo);
+      peerCertInput.Init(peerCertBytes.Elements(), peerCertBytes.Length());
   if (rv != Success) {
+    return rv;
+  }
+  rv = VerifyCert(peerCertBytes, certificateUsageSSLServer, time, pinarg,
+                  PromiseFlatCString(hostname).get(), builtChain, flags,
+                  extraCertificates, stapledOCSPResponse, sctsFromTLS,
+                  originAttributes, evStatus, ocspStaplingStatus, keySizeStatus,
+                  sha1ModeResult, pinningTelemetryInfo, ctInfo);
+  if (rv != Success) {
+    
+    
+    EndEntityOrCA notUsedForPaths = EndEntityOrCA::MustBeEndEntity;
+    BackCert peerBackCert(peerCertInput, notUsedForPaths, nullptr);
+    if (peerBackCert.Init() != Success) {
+      return rv;
+    }
     if (rv == Result::ERROR_UNKNOWN_ISSUER &&
-        CertIsSelfSigned(peerCert, pinarg)) {
+        CertIsSelfSigned(peerBackCert, pinarg)) {
       
       
       return Result::ERROR_SELF_SIGNED_CERT;
@@ -965,7 +960,13 @@ Result CertVerifier::VerifySSLServerCert(
       }
       
       
-      nsresult rv = component->IssuerMatchesMitmCanary(peerCert->issuerName);
+      Input issuerNameInput = peerBackCert.GetIssuer();
+      SECItem issuerNameItem = UnsafeMapInputToSECItem(issuerNameInput);
+      UniquePORTString issuerName(CERT_DerNameToAscii(&issuerNameItem));
+      if (!issuerName) {
+        return Result::ERROR_BAD_DER;
+      }
+      nsresult rv = component->IssuerMatchesMitmCanary(issuerName.get());
       if (NS_SUCCEEDED(rv)) {
         return Result::ERROR_MITM_DETECTED;
       }
@@ -978,12 +979,6 @@ Result CertVerifier::VerifySSLServerCert(
     if (rv != Success) {
       return rv;
     }
-  }
-
-  Input peerCertInput;
-  rv = peerCertInput.Init(peerCert->derCert.data, peerCert->derCert.len);
-  if (rv != Success) {
-    return rv;
   }
 
   Input stapledOCSPResponseInput;
