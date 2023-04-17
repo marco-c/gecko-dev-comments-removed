@@ -436,7 +436,7 @@ bool gfxPlatformFontList::AddWithLegacyFamilyName(const nsACString& aLegacyName,
   return added;
 }
 
-bool gfxPlatformFontList::InitFontList() {
+nsresult gfxPlatformFontList::InitFontList() {
   
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -486,6 +486,8 @@ bool gfxPlatformFontList::InitFontList() {
   mVisibilityLevel = FontVisibility::Unknown;
   SetVisibilityLevel();
 
+  sPlatformFontList = this;
+
   
   
   if (StaticPrefs::gfx_e10s_font_list_shared_AtStartup() &&
@@ -514,15 +516,18 @@ bool gfxPlatformFontList::InitFontList() {
                          "falling back to in-process list.";
       mSharedFontList.reset(nullptr);
     }
-    if (oldSharedList && XRE_IsParentProcess()) {
-      
-      dom::ContentParent::NotifyUpdatedFonts(true);
+    if (oldSharedList) {
+      if (XRE_IsParentProcess()) {
+        
+        dom::ContentParent::NotifyUpdatedFonts(true);
+      }
     }
   }
 
   if (!SharedFontList()) {
-    if (NS_FAILED(InitFontListForPlatform())) {
-      return false;
+    nsresult rv = InitFontListForPlatform();
+    if (NS_FAILED(rv)) {
+      return rv;
     }
     ApplyWhitelist();
   }
@@ -533,13 +538,16 @@ bool gfxPlatformFontList::InitFontList() {
   FontFamily fam = GetDefaultFont(&defStyle);
   if (fam.mIsShared) {
     auto face = fam.mShared->FindFaceForStyle(SharedFontList(), defStyle);
-    mDefaultFontEntry =
-        face ? GetOrCreateFontEntry(face, fam.mShared) : nullptr;
+    if (!face) {
+      mDefaultFontEntry = nullptr;
+    } else {
+      mDefaultFontEntry = GetOrCreateFontEntry(face, fam.mShared);
+    }
   } else {
     mDefaultFontEntry = fam.mUnshared->FindFontForStyle(defStyle);
   }
 
-  return true;
+  return NS_OK;
 }
 
 void gfxPlatformFontList::InitializeCodepointsWithNoFonts() {

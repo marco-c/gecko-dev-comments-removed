@@ -169,24 +169,15 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   
   typedef nsTArray<FontFamily> PrefFontList;
 
-  static gfxPlatformFontList* PlatformFontList() {
-    
-    
-    if (!sPlatformFontList) {
-      if (!gfxPlatform::GetPlatform()->CreatePlatformFontList()) {
-        MOZ_CRASH("Could not initialize gfxPlatformFontList");
-      }
-    }
-    return sPlatformFontList;
-  }
+  static gfxPlatformFontList* PlatformFontList() { return sPlatformFontList; }
 
-  static bool Initialize(gfxPlatformFontList* aList) {
-    sPlatformFontList = aList;
-    if (aList->InitFontList()) {
-      return true;
+  static nsresult Init() {
+    NS_ASSERTION(!sPlatformFontList, "What's this doing here?");
+    gfxPlatform::GetPlatform()->CreatePlatformFontList();
+    if (!sPlatformFontList) {
+      return NS_ERROR_OUT_OF_MEMORY;
     }
-    Shutdown();
-    return false;
+    return NS_OK;
   }
 
   static void Shutdown() {
@@ -197,7 +188,7 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   virtual ~gfxPlatformFontList();
 
   
-  bool InitFontList();
+  nsresult InitFontList();
 
   void FontListChanged();
 
