@@ -5,8 +5,15 @@ const RELATIVE_DIR = "toolkit/components/pdfjs/test/";
 const TESTROOT = "http://example.com/browser/" + RELATIVE_DIR;
 
 function test() {
+  
+  
+  Services.prefs.setBoolPref(
+    "browser.download.improvements_to_download_panel",
+    false
+  );
   var oldAction = changeMimeHandler(Ci.nsIHandlerInfo.useSystemDefault, true);
   var tab = BrowserTestUtils.addTab(gBrowser, TESTROOT + "file_pdfjs_test.pdf");
+
   
   
   addWindowListener(
@@ -16,6 +23,9 @@ function test() {
 
   waitForExplicitFinish();
   registerCleanupFunction(function() {
+    Services.prefs.clearUserPref(
+      "browser.download.improvements_to_download_panel"
+    );
     changeMimeHandler(oldAction[0], oldAction[1]);
     gBrowser.removeTab(tab);
   });
