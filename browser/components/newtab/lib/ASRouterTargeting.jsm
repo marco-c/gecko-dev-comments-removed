@@ -631,10 +631,16 @@ const TargetingGetters = {
   get activeNotifications() {
     let window = BrowserWindowTracker.getTopWindow();
 
+    
+    
+    if (!window) {
+      return true;
+    }
+
     if (
-      window.gURLBar.view.isOpen ||
-      window.gNotificationBox.currentNotification ||
-      window.gBrowser.getNotificationBox().currentNotification
+      window.gURLBar?.view.isOpen ||
+      window.gNotificationBox?.currentNotification ||
+      window.gBrowser.getNotificationBox()?.currentNotification
     ) {
       return true;
     }
