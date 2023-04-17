@@ -209,6 +209,7 @@ size_t AssemblerMIPSShared::bytesNeeded() const {
 
 
 BufferOffset AssemblerMIPSShared::writeInst(uint32_t x, uint32_t* dest) {
+  MOZ_ASSERT(hasCreator());
   if (dest == nullptr) {
     return m_buffer.putInt(x);
   }

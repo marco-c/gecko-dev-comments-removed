@@ -163,6 +163,8 @@ bool CodeGeneratorShared::generateEpilogue() {
 }
 
 bool CodeGeneratorShared::generateOutOfLineCode() {
+  AutoCreatedBy acb(masm, "CodeGeneratorShared::generateOutOfLineCode");
+
   
   
   current = nullptr;
