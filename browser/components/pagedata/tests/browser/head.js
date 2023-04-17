@@ -2,6 +2,11 @@
 
 
 
-const { PageDataService } = ChromeUtils.import(
-  "resource:///modules/pagedata/PageDataService.jsm"
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
 );
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  PageDataService: "resource:///modules/pagedata/PageDataService.jsm",
+  Snapshots: "resource:///modules/Snapshots.jsm",
+});
