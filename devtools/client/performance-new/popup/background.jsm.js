@@ -261,6 +261,10 @@ async function captureProfile(pageContext) {
   openProfilerAndDisplayProfile(
     profile,
     profilerViewMode,
+    
+
+
+
     (debugName, breakpadId) => {
       return getSymbolsFromThisBrowser(pageContext, debugName, breakpadId);
     }
