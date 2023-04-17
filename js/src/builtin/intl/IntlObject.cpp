@@ -38,6 +38,7 @@
 #include "js/StableStringChars.h"
 #include "unicode/ucal.h"
 #include "unicode/ucol.h"
+#include "unicode/ucurr.h"
 #include "unicode/udat.h"
 #include "unicode/udatpg.h"
 #include "unicode/uenum.h"
@@ -871,6 +872,54 @@ static ArrayObject* CreateArrayFromList(JSContext* cx,
 
 
 
+template <const auto& unsupported, const auto& missing>
+static bool EnumerationIntoList(JSContext* cx, UEnumeration* values,
+                                MutableHandle<StringList> list) {
+  while (true) {
+    UErrorCode status = U_ZERO_ERROR;
+    int32_t len;
+    const char* value = uenum_next(values, &len, &status);
+    if (U_FAILURE(status)) {
+      intl::ReportInternalError(cx);
+      return false;
+    }
+    if (value == nullptr) {
+      break;
+    }
+
+    
+    if (std::any_of(
+            std::begin(unsupported), std::end(unsupported),
+            [value](const auto& e) { return std::strcmp(value, e) == 0; })) {
+      continue;
+    }
+
+    auto* string = NewStringCopyN<CanGC>(cx, value, size_t(len));
+    if (!string) {
+      return false;
+    }
+    if (!list.append(string)) {
+      return false;
+    }
+  }
+
+  
+  for (const char* value : missing) {
+    auto* string = NewStringCopyZ<CanGC>(cx, value);
+    if (!string) {
+      return false;
+    }
+    if (!list.append(string)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+
+
 template <const auto& unsupported>
 static bool EnumerationIntoList(JSContext* cx, const char* type,
                                 UEnumeration* values,
@@ -1012,6 +1061,59 @@ static ArrayObject* AvailableCollations(JSContext* cx) {
   return CreateArrayFromList(cx, &list);
 }
 
+
+
+
+
+static constexpr auto UnsupportedCurrencies() {
+  
+  
+  
+  return std::array{
+      "EQE",  
+      "LSM",  
+  };
+}
+
+
+
+
+
+static constexpr auto MissingCurrencies() {
+  return std::array{
+      "UYW",  
+      "VES",  
+  };
+}
+
+
+
+static constexpr auto UnsupportedCurrenciesArray = UnsupportedCurrencies();
+static constexpr auto MissingCurrenciesArray = MissingCurrencies();
+
+
+
+
+static ArrayObject* AvailableCurrencies(JSContext* cx) {
+  UErrorCode status = U_ZERO_ERROR;
+  UEnumeration* values = ucurr_openISOCurrencies(UCURR_ALL, &status);
+  if (U_FAILURE(status)) {
+    intl::ReportInternalError(cx);
+    return nullptr;
+  }
+  ScopedICUObject<UEnumeration, CloseEnumeration> toClose(values);
+
+  static constexpr auto& unsupported = UnsupportedCurrenciesArray;
+  static constexpr auto& missing = MissingCurrenciesArray;
+
+  Rooted<StringList> list(cx, StringList(cx));
+  if (!EnumerationIntoList<unsupported, missing>(cx, values, &list)) {
+    return nullptr;
+  }
+
+  return CreateArrayFromList(cx, &list);
+}
+
 bool js::intl_SupportedValuesOf(JSContext* cx, unsigned argc, JS::Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   MOZ_ASSERT(args.length() == 1);
@@ -1027,6 +1129,8 @@ bool js::intl_SupportedValuesOf(JSContext* cx, unsigned argc, JS::Value* vp) {
     list = AvailableCalendars(cx);
   } else if (StringEqualsLiteral(key, "collation")) {
     list = AvailableCollations(cx);
+  } else if (StringEqualsLiteral(key, "currency")) {
+    list = AvailableCurrencies(cx);
   } else {
     ReportBadKey(cx, key);
     return false;
