@@ -273,10 +273,10 @@ navigate.waitForNavigationCompleted = async function waitForNavigationCompleted(
   };
 
   const onNavigation = (eventName, data) => {
+    const browsingContext = browsingContextFn();
+
     
-    
-    
-    if (data.browsingContext != browsingContextFn()) {
+    if (data.browsingContext != browsingContext) {
       return;
     }
 
