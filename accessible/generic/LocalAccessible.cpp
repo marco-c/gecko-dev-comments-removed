@@ -1133,6 +1133,24 @@ already_AddRefed<AccAttributes> LocalAccessible::NativeAttributes() {
   return attributes.forget();
 }
 
+bool LocalAccessible::AttributeChangesState(nsAtom* aAttribute) {
+  return aAttribute == nsGkAtoms::aria_disabled ||
+         aAttribute == nsGkAtoms::disabled ||
+         aAttribute == nsGkAtoms::tabindex ||
+         aAttribute == nsGkAtoms::aria_required ||
+         aAttribute == nsGkAtoms::aria_invalid ||
+         aAttribute == nsGkAtoms::aria_expanded ||
+         aAttribute == nsGkAtoms::aria_checked ||
+         (aAttribute == nsGkAtoms::aria_pressed && IsButton()) ||
+         aAttribute == nsGkAtoms::aria_readonly ||
+         aAttribute == nsGkAtoms::aria_current ||
+         aAttribute == nsGkAtoms::aria_haspopup ||
+         aAttribute == nsGkAtoms::aria_busy ||
+         aAttribute == nsGkAtoms::aria_multiline ||
+         aAttribute == nsGkAtoms::contenteditable ||
+         (aAttribute == nsGkAtoms::href && IsHTMLLink());
+}
+
 void LocalAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
                                           nsAtom* aAttribute, int32_t aModType,
                                           const nsAttrValue* aOldValue,
@@ -1153,41 +1171,18 @@ void LocalAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
   
   
 
-  
-  
-  
-  
-  
-  
-  
-  if (aAttribute == nsGkAtoms::disabled ||
-      aAttribute == nsGkAtoms::aria_disabled) {
-    
-    MaybeFireFocusableStateChange((aOldState & states::FOCUSABLE) != 0);
-
-    
-    
-    uint64_t unavailableState = (State() & states::UNAVAILABLE);
-    if ((aOldState & states::UNAVAILABLE) == unavailableState) {
-      return;
+  if (AttributeChangesState(aAttribute)) {
+    uint64_t currState = State();
+    uint64_t diffState = currState ^ aOldState;
+    if (diffState) {
+      for (uint64_t state = 1; state <= states::LAST_ENTRY; state <<= 1) {
+        if (diffState & state) {
+          RefPtr<AccEvent> stateChangeEvent =
+              new AccStateChangeEvent(this, state, (currState & state));
+          mDoc->FireDelayedEvent(stateChangeEvent);
+        }
+      }
     }
-
-    RefPtr<AccEvent> enabledChangeEvent =
-        new AccStateChangeEvent(this, states::ENABLED, !unavailableState);
-    mDoc->FireDelayedEvent(enabledChangeEvent);
-
-    RefPtr<AccEvent> sensitiveChangeEvent =
-        new AccStateChangeEvent(this, states::SENSITIVE, !unavailableState);
-    mDoc->FireDelayedEvent(sensitiveChangeEvent);
-
-    return;
-  }
-
-  if (aAttribute == nsGkAtoms::tabindex) {
-    
-    
-    MaybeFireFocusableStateChange((aOldState & states::FOCUSABLE));
-    return;
   }
 
   
@@ -1206,60 +1201,23 @@ void LocalAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
     }
   }
 
-  if (aAttribute == nsGkAtoms::aria_required) {
-    RefPtr<AccEvent> event = new AccStateChangeEvent(this, states::REQUIRED);
-    mDoc->FireDelayedEvent(event);
-    return;
-  }
-
-  if (aAttribute == nsGkAtoms::aria_invalid) {
-    RefPtr<AccEvent> event = new AccStateChangeEvent(this, states::INVALID);
-    mDoc->FireDelayedEvent(event);
-    return;
-  }
-
   
-  if (aAttribute == nsGkAtoms::aria_expanded) {
-    RefPtr<AccEvent> event = new AccStateChangeEvent(this, states::EXPANDED);
-    mDoc->FireDelayedEvent(event);
-    return;
-  }
-
-  
-  
-  
-  uint8_t attrFlags = aria::AttrCharacteristicsFor(aAttribute);
-  if (!(attrFlags & ATTR_BYPASSOBJ)) {
-    RefPtr<AccEvent> event = new AccObjectAttrChangedEvent(this, aAttribute);
-    mDoc->FireDelayedEvent(event);
+  if (aNameSpaceID == kNameSpaceID_None) {
+    
+    if (StringBeginsWith(nsDependentAtomString(aAttribute), u"aria-"_ns)) {
+      uint8_t attrFlags = aria::AttrCharacteristicsFor(aAttribute);
+      if (!(attrFlags & ATTR_BYPASSOBJ)) {
+        
+        
+        
+        RefPtr<AccEvent> event =
+            new AccObjectAttrChangedEvent(this, aAttribute);
+        mDoc->FireDelayedEvent(event);
+      }
+    }
   }
 
   dom::Element* elm = Elm();
-
-  if (aAttribute == nsGkAtoms::aria_checked ||
-      (IsButton() && aAttribute == nsGkAtoms::aria_pressed)) {
-    const uint64_t kState = (aAttribute == nsGkAtoms::aria_checked)
-                                ? states::CHECKED
-                                : states::PRESSED;
-    RefPtr<AccEvent> event = new AccStateChangeEvent(this, kState);
-    mDoc->FireDelayedEvent(event);
-
-    bool wasMixed = aOldValue->Equals(nsGkAtoms::mixed, eCaseMatters);
-    bool isMixed = elm->AttrValueIs(kNameSpaceID_None, aAttribute,
-                                    nsGkAtoms::mixed, eCaseMatters);
-    if (isMixed != wasMixed) {
-      RefPtr<AccEvent> event =
-          new AccStateChangeEvent(this, states::MIXED, isMixed);
-      mDoc->FireDelayedEvent(event);
-    }
-    return;
-  }
-
-  if (aAttribute == nsGkAtoms::aria_readonly) {
-    RefPtr<AccEvent> event = new AccStateChangeEvent(this, states::READONLY);
-    mDoc->FireDelayedEvent(event);
-    return;
-  }
 
   
   if (aAttribute == nsGkAtoms::aria_valuetext) {
@@ -1274,18 +1232,6 @@ void LocalAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
        elm->AttrValueIs(kNameSpaceID_None, nsGkAtoms::aria_valuetext,
                         nsGkAtoms::_empty, eCaseMatters))) {
     mDoc->FireDelayedEvent(nsIAccessibleEvent::EVENT_VALUE_CHANGE, this);
-    return;
-  }
-
-  if (aAttribute == nsGkAtoms::aria_current) {
-    RefPtr<AccEvent> event = new AccStateChangeEvent(this, states::CURRENT);
-    mDoc->FireDelayedEvent(event);
-    return;
-  }
-
-  if (aAttribute == nsGkAtoms::aria_haspopup) {
-    RefPtr<AccEvent> event = new AccStateChangeEvent(this, states::HASPOPUP);
-    mDoc->FireDelayedEvent(event);
     return;
   }
 
@@ -1380,23 +1326,6 @@ void LocalAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
     }
   }
 
-  if (aAttribute == nsGkAtoms::aria_busy) {
-    bool isOn = elm->AttrValueIs(aNameSpaceID, aAttribute, nsGkAtoms::_true,
-                                 eCaseMatters);
-    RefPtr<AccEvent> event = new AccStateChangeEvent(this, states::BUSY, isOn);
-    mDoc->FireDelayedEvent(event);
-    return;
-  }
-
-  if (aAttribute == nsGkAtoms::aria_multiline) {
-    bool isOn = elm->AttrValueIs(aNameSpaceID, aAttribute, nsGkAtoms::_true,
-                                 eCaseMatters);
-    RefPtr<AccEvent> event =
-        new AccStateChangeEvent(this, states::MULTI_LINE, isOn);
-    mDoc->FireDelayedEvent(event);
-    return;
-  }
-
   
   if ((mContent->IsXULElement() && aAttribute == nsGkAtoms::selected) ||
       aAttribute == nsGkAtoms::aria_selected) {
@@ -1416,36 +1345,11 @@ void LocalAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
     return;
   }
 
-  if (aAttribute == nsGkAtoms::contenteditable) {
-    RefPtr<AccEvent> editableChangeEvent =
-        new AccStateChangeEvent(this, states::EDITABLE);
-    mDoc->FireDelayedEvent(editableChangeEvent);
-    
-    
-    
-    MaybeFireFocusableStateChange((aOldState & states::FOCUSABLE));
-    return;
-  }
-
   if (aAttribute == nsGkAtoms::value) {
     if (IsProgress()) {
       mDoc->FireDelayedEvent(nsIAccessibleEvent::EVENT_VALUE_CHANGE, this);
     }
     return;
-  }
-
-  if (aModType == dom::MutationEvent_Binding::REMOVAL ||
-      aModType == dom::MutationEvent_Binding::ADDITION) {
-    if (aAttribute == nsGkAtoms::href) {
-      if (IsHTMLLink() && !nsCoreUtils::HasClickListener(mContent)) {
-        RefPtr<AccEvent> linkedChangeEvent =
-            new AccStateChangeEvent(this, states::LINKED);
-        mDoc->FireDelayedEvent(linkedChangeEvent);
-        
-        
-        MaybeFireFocusableStateChange((aOldState & states::FOCUSABLE));
-      }
-    }
   }
 }
 

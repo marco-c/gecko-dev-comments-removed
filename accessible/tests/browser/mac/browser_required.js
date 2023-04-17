@@ -77,6 +77,21 @@ addAccessibleTask(
     await SpecialPowers.spawn(browser, [], () => {
       content.document
         .getElementById("ariaCheckbox")
+        .setAttribute("aria-required", "true");
+    });
+    await stateChanged;
+
+    is(
+      ariaCheckbox.getAttributeValue("AXRequired"),
+      1,
+      "Correct required after true set for ariaCheckbox"
+    );
+
+    
+    stateChanged = waitForEvent(EVENT_STATE_CHANGE, "ariaCheckbox");
+    await SpecialPowers.spawn(browser, [], () => {
+      content.document
+        .getElementById("ariaCheckbox")
         .removeAttribute("aria-required");
     });
     await stateChanged;
@@ -100,6 +115,21 @@ addAccessibleTask(
       ariaRadio.getAttributeValue("AXRequired"),
       0,
       "Correct required after false set for ariaRadio"
+    );
+
+    
+    stateChanged = waitForEvent(EVENT_STATE_CHANGE, "ariaRadio");
+    await SpecialPowers.spawn(browser, [], () => {
+      content.document
+        .getElementById("ariaRadio")
+        .setAttribute("aria-required", "true");
+    });
+    await stateChanged;
+
+    is(
+      ariaRadio.getAttributeValue("AXRequired"),
+      1,
+      "Correct required after true set for ariaRadio"
     );
 
     
