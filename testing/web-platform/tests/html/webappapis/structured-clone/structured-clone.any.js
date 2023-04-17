@@ -4,6 +4,10 @@
 
 
 runStructuredCloneBatteryOfTests({
-  structuredClone: (obj, transfer) => self.structuredClone(obj, { transfer }),
+  structuredClone: (obj, transfer) => {
+    return new Promise(resolve => {
+      resolve(self.structuredClone(obj, { transfer }));
+    });
+  },
   hasDocument: typeof document !== "undefined",
 });
