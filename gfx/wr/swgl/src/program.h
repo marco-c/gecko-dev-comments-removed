@@ -12,12 +12,6 @@ namespace glsl {
 
 typedef vec3 Interpolants;
 
-
-
-static ALWAYS_INLINE Float get_clip_distances(const Interpolants& interp) {
-  return interp.x;
-}
-
 struct VertexShaderImpl;
 struct FragmentShaderImpl;
 
@@ -33,9 +27,6 @@ struct ProgramImpl {
 };
 
 typedef ProgramImpl* (*ProgramLoader)();
-
-
-constexpr int32_t gl_MaxClipDistances = 4;
 
 struct VertexShaderImpl {
   typedef void (*SetUniform1iFunc)(VertexShaderImpl*, int index, int value);
@@ -56,17 +47,7 @@ struct VertexShaderImpl {
   LoadAttribsFunc load_attribs_func = nullptr;
   RunPrimitiveFunc run_primitive_func = nullptr;
 
-  enum FLAGS {
-    CLIP_DISTANCE = 1 << 0,
-  };
-  int flags = 0;
-  void enable_clip_distance() { flags |= CLIP_DISTANCE; }
-  ALWAYS_INLINE bool use_clip_distance() const {
-    return (flags & CLIP_DISTANCE) != 0;
-  }
-
   vec4 gl_Position;
-  Float gl_ClipDistance[gl_MaxClipDistances];
 
   void set_uniform_1i(int index, int value) {
     (*set_uniform_1i_func)(this, index, value);

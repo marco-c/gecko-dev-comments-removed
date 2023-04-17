@@ -563,36 +563,6 @@ static ALWAYS_INLINE IntRange aa_span(P* buf, const E& left, const E& right,
 
 
 
-template <typename E>
-static ALWAYS_INLINE IntRange clip_distance_range(const E& left,
-                                                  const E& right) {
-  Float leftClip = get_clip_distances(left.interp);
-  Float rightClip = get_clip_distances(right.interp);
-  
-  Float clipStep = (rightClip - leftClip) / (right.cur_x() - left.cur_x());
-  
-  Float clipDist = left.cur_x() - leftClip * recip(clipStep);
-  
-  
-  
-  Float start = if_then_else(clipStep > 0.0f, clipDist,
-                             if_then_else(leftClip < 0.0f, 1.0e6f, 0.0f));
-  
-  
-  
-  Float end = if_then_else(clipStep < 0.0f, clipDist,
-                           if_then_else(rightClip >= 0.0f, 1.0e6f, 0.0f));
-  
-  start = max(start, start.zwxy);
-  
-  end = min(end, end.zwxy);
-  
-  
-  return FloatRange{max(start.x, start.y), min(end.x, end.y)}.round();
-}
-
-
-
 
 static void flatten_depth_runs(DepthRun* runs, size_t width) {
   if (runs->is_flat()) {
@@ -946,11 +916,6 @@ static inline void draw_quad_spans(int nump, Point2D p[4], uint32_t z,
     
     IntRange span = aa_span(fbuf, left, right, clipSpan);
     if (span.len() > 0) {
-      
-      if (vertex_shader->use_clip_distance()) {
-        span = span.intersect(clip_distance_range(left, right));
-        if (span.len() <= 0) goto next_span;
-      }
       ctx->shaded_rows++;
       ctx->shaded_pixels += span.len();
       
@@ -1196,11 +1161,6 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
     
     IntRange span = aa_span(fbuf, left, right, clipSpan);
     if (span.len() > 0) {
-      
-      if (vertex_shader->use_clip_distance()) {
-        span = span.intersect(clip_distance_range(left, right));
-        if (span.len() <= 0) goto next_span;
-      }
       ctx->shaded_rows++;
       ctx->shaded_pixels += span.len();
       
@@ -1257,7 +1217,6 @@ static inline void draw_perspective_spans(int nump, Point3D* p,
         draw_span<true, true>(buf, depth, span.len(), packDepth);
       }
     }
-  next_span:
     
     y++;
     left.nextRow();
