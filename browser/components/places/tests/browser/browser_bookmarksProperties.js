@@ -383,7 +383,7 @@ gTests.push({
         newFolderButton.doCommand();
 
         
-        await BrowserTestUtils.waitForCondition(
+        await TestUtils.waitForCondition(
           () => folderTree.hasAttribute("editing"),
           "We are editing new folder name in folder tree"
         );
@@ -502,10 +502,7 @@ async function open_properties_dialog(test) {
   var tree = sidebar.contentDocument.getElementById(sidebarTreeID);
   
   
-  await BrowserTestUtils.waitForCondition(
-    () => tree,
-    "Sidebar tree has been loaded"
-  );
+  await TestUtils.waitForCondition(() => tree, "Sidebar tree has been loaded");
 
   
   test.selectNode(tree);
