@@ -1,17 +1,17 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
+/*
+ * Global styles
+ */
 a {
   color: var(--theme-highlight-blue);
   text-decoration: none;
   cursor: pointer;
 }
 
-
+/* Storage Host Tree */
 
 #storage-tree {
   min-width: 220px;
@@ -23,7 +23,7 @@ a {
   background: var(--theme-sidebar-background);
 }
 
-
+/* Let the component gain focus when a click hits an empty area */
 #storage-tree {
   -moz-user-focus: normal;
 }
@@ -32,9 +32,9 @@ a {
   outline: 0;
 }
 
+/* Storage Table */
 
-
-
+/* Let the component gain focus when a click hits an empty area */
 #storage-table {
   display: flex;
   justify-content: center;
@@ -46,12 +46,12 @@ a {
   outline: 0;
 }
 
-
+/* The minimum column width needs to be determined by the header width */
 .table-widget-cell {
   min-width: unset;
 }
 
-
+/* Set minimum column widths */
 #name {
   min-width: 65px;
 }
@@ -84,16 +84,16 @@ a {
   min-width: 115px;
 }
 
-
+/* Prevent all columns except for value from resizing with the panel */
 #storage-table .table-widget-column:not(#value) {
   width: 0;
 }
 
-
+/* Text input in storage table */
 #storage-table input {
   appearance: none;
   -moz-box-flex: 1;
-  
+  /* make sure the outline is not cut off */
   position: relative;
   box-sizing: border-box;
   padding: 0 2px;
@@ -106,7 +106,7 @@ a {
   outline: 1px solid var(--blue-50);
 }
 
-
+/* Variables View Sidebar */
 
 #storage-sidebar {
   max-width: 500px;
@@ -117,12 +117,12 @@ a {
   padding-inline: 0;
 }
 
+/* Toolbar */
 
-
-
-
-
-
+/*
+  .devtools-input-toolbar forces display: flex; which does not work
+  properly with XUL. Force XUL flexbox instead.
+*/
 #storage-toolbar {
   display: -moz-box;
 }
@@ -152,14 +152,10 @@ a {
   display: none;
 }
 
-
+/* Responsive sidebar */
 @media (max-width: 700px) {
   #storage-tree,
   #storage-sidebar {
     max-width: 100%;
-  }
-
-  #storage-table #path {
-    display: none;
   }
 }
