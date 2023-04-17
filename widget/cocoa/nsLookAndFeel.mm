@@ -201,13 +201,19 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme, nscolor
       
       
       
-    case ColorID::MozButtonactivetext:
     case ColorID::MozMacDefaultbuttontext:
       color = NS_RGB(0xFF, 0xFF, 0xFF);
       break;
     case ColorID::Buttontext:
     case ColorID::MozButtonhovertext:
       color = GetColorFromNSColor(NSColor.controlTextColor);
+      break;
+    case ColorID::MozButtonactivetext:
+      
+      
+      
+      color = nsCocoaFeatures::OnMontereyOrLater() ? GetColorFromNSColor(NSColor.controlTextColor)
+                                                   : NS_RGB(0xFF, 0xFF, 0xFF);
       break;
     case ColorID::Captiontext:
     case ColorID::Menutext:
