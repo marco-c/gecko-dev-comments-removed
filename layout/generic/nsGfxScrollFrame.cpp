@@ -2199,7 +2199,6 @@ ScrollFrameHelper::ScrollFrameHelper(nsContainerFrame* aOuter, bool aIsRoot)
       mRestorePos(-1, -1),
       mLastPos(-1, -1),
       mApzScrollPos(0, 0),
-      mScrollPosForLayerPixelAlignment(-1, -1),
       mLastUpdateFramesPos(-1, -1),
       mDisplayPortAtLastFrameUpdate(),
       mScrollParentID(mozilla::layers::ScrollableLayerGuid::NULL_SCROLL_ID),
@@ -2950,9 +2949,6 @@ void ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange,
   gfxSize scale = GetPaintedLayerScaleForFrame(mScrolledFrame);
   nsPoint curPos = GetScrollPosition();
 
-  nsPoint alignWithPos = mScrollPosForLayerPixelAlignment == nsPoint(-1, -1)
-                             ? curPos
-                             : mScrollPosForLayerPixelAlignment;
   
   
   
@@ -2963,9 +2959,8 @@ void ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange,
   
   
   
-  nsPoint pt =
-      ClampAndAlignWithLayerPixels(aPt, GetLayoutScrollRange(), aRange,
-                                   alignWithPos, appUnitsPerDevPixel, scale);
+  nsPoint pt = ClampAndAlignWithLayerPixels(aPt, GetLayoutScrollRange(), aRange,
+                                            curPos, appUnitsPerDevPixel, scale);
   if (pt == curPos) {
     
     
@@ -3639,16 +3634,6 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   }
 
   mOuter->DisplayBorderBackgroundOutline(aBuilder, aLists);
-
-  if (aBuilder->IsPaintingToWindow()) {
-    if (IsScrollingActive() && !gfxVars::UseWebRender()) {
-      if (mScrollPosForLayerPixelAlignment == nsPoint(-1, -1)) {
-        mScrollPosForLayerPixelAlignment = GetScrollPosition();
-      }
-    } else {
-      mScrollPosForLayerPixelAlignment = nsPoint(-1, -1);
-    }
-  }
 
   bool isRootContent =
       mIsRoot && mOuter->PresContext()->IsRootContentDocumentCrossProcess();

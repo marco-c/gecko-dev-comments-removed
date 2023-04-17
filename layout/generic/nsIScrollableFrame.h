@@ -395,11 +395,6 @@ class nsIScrollableFrame : public nsIScrollbarMediator {
   
 
 
-
-  virtual void ResetScrollPositionForLayerPixelAlignment() = 0;
-  
-
-
   virtual bool DidHistoryRestore() const = 0;
   
 
