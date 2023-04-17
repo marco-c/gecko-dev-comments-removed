@@ -1652,16 +1652,6 @@ bool DocAccessible::UpdateAccessibleOnAttrChange(dom::Element* aElement,
     return true;
   }
 
-  if (aAttribute == nsGkAtoms::aria_multiselectable &&
-      aElement->HasAttr(kNameSpaceID_None, nsGkAtoms::role)) {
-    
-    
-    
-    RecreateAccessible(aElement);
-
-    return true;
-  }
-
   if (aAttribute == nsGkAtoms::type) {
     
     RecreateAccessible(aElement);
