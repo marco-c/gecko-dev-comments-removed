@@ -143,9 +143,6 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   bool classStaticBlocks = false;
 
   
-  bool useStencilXDR = false;
-
-  
   
   
   bool useOffThreadParseGlobal = true;
