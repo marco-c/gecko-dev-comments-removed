@@ -49,21 +49,13 @@ async function openPage(enableDialogs) {
     { gBrowser, url: "about:blank" },
     async function(browser) {
       
-      let methodName = enableDialogs ? "enableDialogs" : "disableDialogs";
-      await SpecialPowers.spawn(browser, [methodName], async function(name) {
-        const { Services } = ChromeUtils.import(
-          "resource://gre/modules/Services.jsm"
-        );
-        let win = content;
-        Services.obs.addObserver(doc => {
-          if (doc == win.document) {
-            win.windowUtils[name]();
-          }
-        }, "document-element-inserted");
-      });
-      
       BrowserTestUtils.loadURI(browser, PAGE_URL);
       await BrowserTestUtils.browserLoaded(browser);
+      
+      let methodName = enableDialogs ? "enableDialogs" : "disableDialogs";
+      await SpecialPowers.spawn(browser, [methodName], async function(name) {
+        content.windowUtils[name]();
+      });
       
       BrowserTestUtils.loadURI(browser, "http://example.com/");
       await BrowserTestUtils.browserLoaded(browser);
