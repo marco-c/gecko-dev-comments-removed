@@ -62,5 +62,4 @@ allowAllCerts.disable = function() {
   
   
   sss.clearAll();
-  sss.clearPreloads();
 };

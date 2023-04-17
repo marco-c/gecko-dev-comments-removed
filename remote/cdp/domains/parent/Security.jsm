@@ -53,7 +53,6 @@ class Security extends Domain {
 
       
       sss.clearAll();
-      sss.clearPreloads();
     }
 
     certOverrideService.setDisableAllSecurityChecksAndLetAttackersInterceptMyData(
