@@ -12,6 +12,10 @@ ChromeUtils.defineModuleGetter(
 const SINGLE_TRY_TIMEOUT = 100;
 const NUMBER_OF_TRIES = 30;
 
+const PROTON_URLBAR_PREF = "browser.proton.urlbar.enabled";
+
+let gProtonUrlbar = Services.prefs.getBoolPref(PROTON_URLBAR_PREF, false);
+
 function waitForConditionPromise(
   condition,
   timeoutMsg,
@@ -319,4 +323,22 @@ async function promisePageActionViewChildrenVisible(panelViewNode) {
     }
     return false;
   });
+}
+
+async function initPageActionsTest() {
+  await disableNonReleaseActions();
+
+  
+  const addon = await AddonManager.getAddonByID("screenshots@mozilla.org");
+  await addon.disable({ allowSystemAddons: true });
+
+  gProtonUrlbar = Services.prefs.getBoolPref(PROTON_URLBAR_PREF, false);
+  if (gProtonUrlbar) {
+    
+    
+    BrowserPageActions.mainButtonNode.style.visibility = "visible";
+    registerCleanupFunction(() => {
+      BrowserPageActions.mainButtonNode.style.removeProperty("visibility");
+    });
+  }
 }
