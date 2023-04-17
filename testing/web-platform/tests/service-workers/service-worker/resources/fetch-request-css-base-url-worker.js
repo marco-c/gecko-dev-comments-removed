@@ -19,7 +19,7 @@ self.addEventListener('fetch', event => {
   if (url.pathname.indexOf(cssPath) != -1) {
     
     if (url.search == '?fetch') {
-      event.respondWith(fetch('fetch-request-css-base-url-style.css'));
+      event.respondWith(fetch('fetch-request-css-base-url-style.css?fetch'));
     }
     
     else if (url.search == '?newResponse') {
