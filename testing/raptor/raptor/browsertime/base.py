@@ -210,11 +210,29 @@ class Browsertime(Perftest):
                     test.get("test_script", "browsertime_pageload.js"),
                 )
 
+        page_cycle_delay = "1000"
+        if self.config["live_sites"]:
+            
+            page_cycle_delay = "5000"
+
+            
+            self.profile.set_preferences(
+                {
+                    "media.autoplay.default": 5,
+                    "media.autoplay.ask-permission": True,
+                    "media.autoplay.blocking_policy": 1,
+                    "media.autoplay.block-webaudio": True,
+                    "media.allowed-to-play.enabled": False,
+                    "media.block-autoplay-until-in-foreground": True,
+                }
+            )
+
         
         
         browsertime_options = [
+            "--firefox.noDefaultPrefs",
             "--browsertime.page_cycle_delay",
-            "1000",
+            page_cycle_delay,
             
             "--skipHar",
             "--pageLoadStrategy",
