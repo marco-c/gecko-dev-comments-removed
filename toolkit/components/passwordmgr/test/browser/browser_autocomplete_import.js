@@ -71,6 +71,7 @@ add_task(async function test_initialize() {
 });
 
 add_task(async function import_suggestion_wizard() {
+  let wizard;
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
@@ -103,17 +104,22 @@ add_task(async function import_suggestion_wizard() {
       
       executeSoon(() => EventUtils.synthesizeMouseAtCenter(importableItem, {}));
 
-      const wizard = await wizardPromise;
+      wizard = await wizardPromise;
       ok(wizard, "Wizard opened");
       is(gTestMigrator.migrate.callCount, 0, "Direct migrate not used");
 
       await closePopup(popup);
-      await BrowserTestUtils.closeWindow(wizard);
     }
   );
+
+  
+  
+  
+  await BrowserTestUtils.closeWindow(wizard);
 });
 
 add_task(async function import_suggestion_learn_more() {
+  let supportTab;
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
@@ -139,13 +145,16 @@ add_task(async function import_suggestion_learn_more() {
           "password-import"
       );
       EventUtils.synthesizeMouseAtCenter(learnMoreItem, {});
-      const supportTab = await supportTabPromise;
+      supportTab = await supportTabPromise;
       ok(supportTab, "Support tab opened");
 
       await closePopup(popup);
-      BrowserTestUtils.removeTab(supportTab);
     }
   );
+
+  
+  
+  await BrowserTestUtils.removeTab(supportTab);
 });
 
 add_task(async function import_suggestion_migrate() {
