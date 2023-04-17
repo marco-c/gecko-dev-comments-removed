@@ -109,7 +109,8 @@ class MediaFormatReader final
 
   
   RefPtr<VideoDataPromise> RequestVideoData(
-      const media::TimeUnit& aTimeThreshold);
+      const media::TimeUnit& aTimeThreshold,
+      bool aRequestNextVideoKeyFrame = false);
 
   
   
@@ -287,6 +288,9 @@ class MediaFormatReader final
   
   
   void InternalSeek(TrackType aTrack, const InternalSeekTarget& aTarget);
+  
+  
+  media::TimeUnit GetInternalSeekTargetEndTime() const;
 
   
   void DrainDecoder(TrackType aTrack);
@@ -305,7 +309,16 @@ class MediaFormatReader final
   void Reset(TrackType aTrack);
   void DropDecodedSamples(TrackType aTrack);
 
-  bool ShouldSkip(media::TimeUnit aTimeThreshold);
+  
+  
+  
+  
+  
+  
+  
+  
+  Maybe<media::TimeUnit> ShouldSkip(media::TimeUnit aTimeThreshold,
+                                    bool aRequestNextVideoKeyFrame);
 
   void SetVideoDecodeThreshold();
 

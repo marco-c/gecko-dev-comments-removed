@@ -479,7 +479,11 @@ class MediaDecoderStateMachine
   void RequestAudioData();
 
   
-  void RequestVideoData(const media::TimeUnit& aCurrentTime);
+  
+  
+  
+  void RequestVideoData(const media::TimeUnit& aCurrentTime,
+                        bool aRequestNextKeyFrame = false);
 
   void WaitForData(MediaData::Type aType);
 

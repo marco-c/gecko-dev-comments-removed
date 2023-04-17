@@ -1319,11 +1319,19 @@ MediaFormatReader::DecoderData& MediaFormatReader::GetDecoderData(
   return mVideo;
 }
 
-bool MediaFormatReader::ShouldSkip(TimeUnit aTimeThreshold) {
+Maybe<TimeUnit> MediaFormatReader::ShouldSkip(TimeUnit aTimeThreshold,
+                                              bool aRequestNextVideoKeyFrame) {
+  MOZ_ASSERT(OnTaskQueue());
   MOZ_ASSERT(HasVideo());
 
   if (!StaticPrefs::media_decoder_skip_to_next_key_frame_enabled()) {
-    return false;
+    return Nothing();
+  }
+
+  
+  
+  if (mVideo.HasInternalSeekPending()) {
+    return Nothing();
   }
 
   TimeUnit nextKeyframe;
@@ -1331,16 +1339,27 @@ bool MediaFormatReader::ShouldSkip(TimeUnit aTimeThreshold) {
   if (NS_FAILED(rv)) {
     
     
-    return false;
+    return Nothing();
   }
-  return (nextKeyframe <= aTimeThreshold ||
-          (mVideo.mTimeThreshold &&
-           mVideo.mTimeThreshold.ref().EndTime() < aTimeThreshold)) &&
-         nextKeyframe.ToMicroseconds() >= 0 && !nextKeyframe.IsInfinite();
+
+  MOZ_ASSERT(aTimeThreshold >= TimeUnit::Zero());
+  
+  
+  
+  if (aRequestNextVideoKeyFrame && nextKeyframe > aTimeThreshold &&
+      !nextKeyframe.IsInfinite()) {
+    return Some(nextKeyframe);
+  }
+
+  const bool isNextVideoBehindTheThreshold =
+      (nextKeyframe <= aTimeThreshold ||
+       GetInternalSeekTargetEndTime() < aTimeThreshold) &&
+      nextKeyframe.ToMicroseconds() >= 0 && !nextKeyframe.IsInfinite();
+  return isNextVideoBehindTheThreshold ? Some(aTimeThreshold) : Nothing();
 }
 
 RefPtr<MediaFormatReader::VideoDataPromise> MediaFormatReader::RequestVideoData(
-    const TimeUnit& aTimeThreshold) {
+    const TimeUnit& aTimeThreshold, bool aRequestNextVideoKeyFrame) {
   MOZ_ASSERT(OnTaskQueue());
   MOZ_DIAGNOSTIC_ASSERT(mSeekPromise.IsEmpty(),
                         "No sample requests allowed while seeking");
@@ -1348,7 +1367,8 @@ RefPtr<MediaFormatReader::VideoDataPromise> MediaFormatReader::RequestVideoData(
   MOZ_DIAGNOSTIC_ASSERT(!mVideo.mSeekRequest.Exists() ||
                         mVideo.mTimeThreshold.isSome());
   MOZ_DIAGNOSTIC_ASSERT(!IsSeeking(), "called mid-seek");
-  LOGV("RequestVideoData(%" PRId64 ")", aTimeThreshold.ToMicroseconds());
+  LOGV("RequestVideoData(%" PRId64 "), requestNextKeyFrame=%d",
+       aTimeThreshold.ToMicroseconds(), aRequestNextVideoKeyFrame);
 
   if (!HasVideo()) {
     LOG("called with no video track");
@@ -1368,11 +1388,10 @@ RefPtr<MediaFormatReader::VideoDataPromise> MediaFormatReader::RequestVideoData(
                                              __func__);
   }
 
-  
-  
-  if (!mVideo.HasInternalSeekPending() && ShouldSkip(aTimeThreshold)) {
+  if (Maybe<TimeUnit> target =
+          ShouldSkip(aTimeThreshold, aRequestNextVideoKeyFrame)) {
     RefPtr<VideoDataPromise> p = mVideo.EnsurePromise(__func__);
-    SkipVideoDemuxToNextKeyFrame(aTimeThreshold);
+    SkipVideoDemuxToNextKeyFrame(*target);
     return p;
   }
 
@@ -1973,6 +1992,12 @@ void MediaFormatReader::HandleDemuxedSamples(
   DecodeDemuxedSamples(aTrack, sample);
 
   decoder.mQueuedSamples.RemoveElementAt(0);
+}
+
+media::TimeUnit MediaFormatReader::GetInternalSeekTargetEndTime() const {
+  MOZ_ASSERT(OnTaskQueue());
+  return mVideo.mTimeThreshold ? mVideo.mTimeThreshold->EndTime()
+                               : TimeUnit::FromInfinity();
 }
 
 void MediaFormatReader::InternalSeek(TrackType aTrack,
