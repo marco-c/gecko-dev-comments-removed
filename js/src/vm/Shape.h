@@ -319,9 +319,9 @@ class Shape : public gc::CellWithTenuredGCPointer<gc::TenuredCell, BaseShape> {
 
   
   
-  static Shape* replaceShape(JSContext* cx, ObjectFlags objectFlags,
-                             TaggedProto proto, uint32_t nfixed,
-                             HandleShape shape);
+  static bool replaceShape(JSContext* cx, HandleObject obj,
+                           ObjectFlags objectFlags, TaggedProto proto,
+                           uint32_t nfixed);
 
   void setObjectFlags(ObjectFlags flags) {
     MOZ_ASSERT(isDictionary());
