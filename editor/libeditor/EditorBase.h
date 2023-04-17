@@ -1737,11 +1737,6 @@ class EditorBase : public nsIEditor,
   
 
 
-  uint32_t CountEditableChildren(nsINode* aNode);
-
-  
-
-
   bool ShouldHandleIMEComposition() const;
 
   

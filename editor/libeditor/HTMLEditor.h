@@ -1209,17 +1209,6 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  enum class ScanDirection { Backward, Forward };
-  template <typename PT, typename RT>
-  static EditorDOMPoint GetWhiteSpaceEndPoint(
-      const RangeBoundaryBase<PT, RT>& aPoint, ScanDirection aScanDirection);
-
-  
-
-
-
-
-
 
 
   template <typename PT, typename RT>
@@ -1399,16 +1388,6 @@ class HTMLEditor final : public TextEditor,
       aOutArrayOfContents.AppendElement(*childContent);
     }
   }
-
-  
-
-
-
-
-
-
-  Element* GetDeepestEditableOnlyChildDivBlockquoteOrListElement(
-      nsINode& aNode);
 
   
 
