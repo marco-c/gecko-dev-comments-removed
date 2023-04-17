@@ -219,24 +219,23 @@ class EmbedderPort {
 }
 
 class GeckoViewConnection {
-  constructor(sender, nativeApp, allowContentMessaging) {
+  constructor(sender, target, nativeApp, allowContentMessaging) {
     this.sender = sender;
+    this.target = target;
     this.nativeApp = nativeApp;
     this.allowContentMessaging = allowContentMessaging;
 
-    if (!this.allowContentMessaging && !sender.verified) {
+    if (!allowContentMessaging && sender.envType !== "addon_child") {
       throw new Error(`Unexpected messaging sender: ${JSON.stringify(sender)}`);
     }
   }
 
   get dispatcher() {
-    const target = this.sender.actor.browsingContext.top.embedderElement;
-
     if (this.sender.envType === "addon_child") {
       
       
       const dispatcher = GeckoViewUtils.getDispatcherForWindow(
-        target.ownerGlobal
+        this.target.ownerGlobal
       );
       if (dispatcher) {
         return dispatcher;
@@ -252,7 +251,7 @@ class GeckoViewConnection {
       
       
       
-      return GeckoViewUtils.getDispatcherForWindow(target.ownerGlobal);
+      return GeckoViewUtils.getDispatcherForWindow(this.target.ownerGlobal);
     }
 
     throw new Error(`Uknown sender envType: ${this.sender.envType}`);
