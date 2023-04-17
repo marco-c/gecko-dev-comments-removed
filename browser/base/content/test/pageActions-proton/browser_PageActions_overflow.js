@@ -170,11 +170,6 @@ add_task(async function bookmark() {
 add_task(async function test_disabledPageAction_hidden_in_protonOverflowMenu() {
   
   
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.proton.enabled", true]],
-  });
-  
-  
   BrowserPageActions.mainButtonNode.style.visibility = "visible";
   registerCleanupFunction(() => {
     BrowserPageActions.mainButtonNode.style.removeProperty("visibility");

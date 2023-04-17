@@ -77,14 +77,8 @@ add_task(async function testAppShutdown() {
   await promiseStartupManager();
   await extension.awaitStartup();
 
-  
-  
-  
   action = PageActions.actionForID(actionID);
-  Assert.equal(
-    action.pinnedToUrlbar,
-    Services.prefs.getBoolPref("browser.proton.enabled", false)
-  );
+  Assert.equal(action.pinnedToUrlbar, true);
 
   
   await extension.unload();
