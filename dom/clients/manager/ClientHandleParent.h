@@ -14,8 +14,8 @@ namespace dom {
 class ClientManagerService;
 class ClientSourceParent;
 
-typedef MozPromise<bool, CopyableErrorResult,  false>
-    SourcePromise;
+using SourcePromise =
+    MozPromise<bool, CopyableErrorResult,  false>;
 
 class ClientHandleParent final : public PClientHandleParent {
   RefPtr<ClientManagerService> mService;
