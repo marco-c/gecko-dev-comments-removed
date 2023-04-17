@@ -873,6 +873,12 @@ add_task(async function test_sendCheckOverride() {
   const TEST_PING_TYPE = "test-sendCheckOverride";
 
   
+  Services.prefs.setBoolPref(
+    TelemetryUtils.Preferences.HealthPingEnabled,
+    false
+  );
+
+  
   await TelemetryController.testShutdown();
   await TelemetryStorage.testClearPendingPings();
 
