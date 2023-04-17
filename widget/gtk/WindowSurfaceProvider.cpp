@@ -20,6 +20,7 @@
 #  include "mozilla/X11Util.h"
 #  include "WindowSurfaceX11Image.h"
 #  include "WindowSurfaceX11SHM.h"
+#  include "WindowSurfaceXRender.h"
 #endif
 
 #undef LOG
@@ -94,6 +95,13 @@ RefPtr<WindowSurface> WindowSurfaceProvider::CreateWindowSurface() {
     
     
     
+    
+    if (!mIsShaped && gfx::gfxVars::UseXRender()) {
+      LOG(("Drawing to Window 0x%lx will use XRender\n", mXWindow));
+      return MakeRefPtr<WindowSurfaceXRender>(DefaultXDisplay(), mXWindow,
+                                              mXVisual, mXDepth);
+    }
+
 #  ifdef MOZ_HAVE_SHMIMAGE
     if (!mIsShaped && nsShmImage::UseShm()) {
       LOG(("Drawing to Window 0x%lx will use MIT-SHM\n", mXWindow));

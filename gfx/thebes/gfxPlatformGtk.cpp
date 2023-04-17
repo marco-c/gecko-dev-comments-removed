@@ -222,6 +222,16 @@ void gfxPlatformGtk::InitWebRenderConfig() {
     return;
   }
 
+#ifdef MOZ_X11
+  
+  
+  if (mIsX11Display && mozilla::Preferences::GetBool("gfx.xrender.enabled") &&
+      !(gfxConfig::IsEnabled(Feature::WEBRENDER) ||
+        gfxConfig::IsEnabled(Feature::WEBRENDER_SOFTWARE))) {
+    gfxVars::SetUseXRender(true);
+  }
+#endif
+
   FeatureState& feature = gfxConfig::GetFeature(Feature::WEBRENDER_COMPOSITOR);
   if (feature.IsEnabled()) {
     if (!(gfxConfig::IsEnabled(Feature::WEBRENDER) ||
@@ -277,10 +287,24 @@ already_AddRefed<gfxASurface> gfxPlatformGtk::CreateOffscreenSurface(
   
   GdkScreen* gdkScreen = gdk_screen_get_default();
   if (gdkScreen) {
-    newSurface = new gfxImageSurface(aSize, aFormat);
     
     
-    needsClear = false;
+    if (gfxVars::UseXRender() && !UseImageOffscreenSurfaces()) {
+      Screen* screen = gdk_x11_screen_get_xscreen(gdkScreen);
+      XRenderPictFormat* xrenderFormat =
+          gfxXlibSurface::FindRenderFormat(DisplayOfScreen(screen), aFormat);
+
+      if (xrenderFormat) {
+        newSurface = gfxXlibSurface::Create(screen, xrenderFormat, aSize);
+      }
+    } else {
+      
+      
+      newSurface = new gfxImageSurface(aSize, aFormat);
+      
+      
+      needsClear = false;
+    }
   }
 #endif
 

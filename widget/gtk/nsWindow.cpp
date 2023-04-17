@@ -108,6 +108,7 @@
 #  include "GLContextEGL.h"  
 #  include "WindowSurfaceX11Image.h"
 #  include "WindowSurfaceX11SHM.h"
+#  include "WindowSurfaceXRender.h"
 #endif
 #ifdef MOZ_WAYLAND
 #  include "nsIClipboard.h"
