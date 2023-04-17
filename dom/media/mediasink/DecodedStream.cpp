@@ -141,6 +141,17 @@ class DecodedStreamGraphListener {
 
     MOZ_ASSERT_IF(aType == MediaSegment::AUDIO, !mAudioEnded);
     MOZ_ASSERT_IF(aType == MediaSegment::VIDEO, !mVideoEnded);
+    
+    
+    
+    
+    
+    
+    
+    if (aCurrentTrackTime <= mLastOutputTime) {
+      MOZ_ASSERT(aType == MediaSegment::VIDEO);
+      return;
+    }
     MOZ_ASSERT(aCurrentTrackTime > mLastOutputTime);
     mLastOutputTime = aCurrentTrackTime;
 
@@ -315,7 +326,8 @@ class DecodedStreamData final {
                            const TimeUnit& aEnd,
                            const gfx::IntSize& aIntrinsicSize,
                            const TimeStamp& aTimeStamp, VideoSegment* aOutput,
-                           const PrincipalHandle& aPrincipalHandle);
+                           const PrincipalHandle& aPrincipalHandle,
+                           double aPlaybackRate);
 
   
 
@@ -803,7 +815,8 @@ void DecodedStream::CheckIsDataAudible(const AudioData* aData) {
 void DecodedStreamData::WriteVideoToSegment(
     layers::Image* aImage, const TimeUnit& aStart, const TimeUnit& aEnd,
     const gfx::IntSize& aIntrinsicSize, const TimeStamp& aTimeStamp,
-    VideoSegment* aOutput, const PrincipalHandle& aPrincipalHandle) {
+    VideoSegment* aOutput, const PrincipalHandle& aPrincipalHandle,
+    double aPlaybackRate) {
   RefPtr<layers::Image> image = aImage;
   auto end =
       mVideoTrack->MicrosecondsToTrackTimeRoundDown(aEnd.ToMicroseconds());
@@ -814,7 +827,9 @@ void DecodedStreamData::WriteVideoToSegment(
   
   
   
-  aOutput->ExtendLastFrameBy(end - start);
+  MOZ_ASSERT(aPlaybackRate > 0);
+  aOutput->ExtendLastFrameBy(
+      static_cast<TrackTime>((float)(end - start) / aPlaybackRate));
 
   mLastVideoStartTime = Some(aStart);
   mLastVideoEndTime = Some(aEnd);
@@ -947,7 +962,7 @@ void DecodedStream::SendVideo(const PrincipalHandle& aPrincipalHandle) {
                    currentTime + (lastEnd - currentPosition).ToTimeDuration());
       mData->WriteVideoToSegment(mData->mLastVideoImage, lastEnd, v->mTime,
                                  mData->mLastVideoImageDisplaySize, t, &output,
-                                 aPrincipalHandle);
+                                 aPrincipalHandle, mPlaybackRate);
       lastEnd = v->mTime;
     }
 
@@ -966,7 +981,7 @@ void DecodedStream::SendVideo(const PrincipalHandle& aPrincipalHandle) {
       mData->mLastVideoImage = v->mImage;
       mData->mLastVideoImageDisplaySize = v->mDisplay;
       mData->WriteVideoToSegment(v->mImage, lastEnd, end, v->mDisplay, t,
-                                 &output, aPrincipalHandle);
+                                 &output, aPrincipalHandle, mPlaybackRate);
     }
   }
 
@@ -1006,7 +1021,7 @@ void DecodedStream::SendVideo(const PrincipalHandle& aPrincipalHandle) {
           mData->mLastVideoImage, start, start + deviation,
           mData->mLastVideoImageDisplaySize,
           currentTime + (start + deviation - currentPosition).ToTimeDuration(),
-          &endSegment, aPrincipalHandle);
+          &endSegment, aPrincipalHandle, mPlaybackRate);
       MOZ_ASSERT(endSegment.GetDuration() > 0);
       if (forceBlack) {
         endSegment.ReplaceWithDisabled();
