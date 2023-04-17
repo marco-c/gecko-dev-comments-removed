@@ -7,7 +7,6 @@
 #define mozilla_a11y_HyperTextAccessible_h__
 
 #include "AccessibleWrap.h"
-#include "mozilla/a11y/HyperTextAccessibleBase.h"
 #include "nsIAccessibleText.h"
 #include "nsIAccessibleTypes.h"
 #include "nsIFrame.h"  
@@ -41,9 +40,14 @@ struct DOMPoint {
 
 
 
+const char16_t kEmbeddedObjectChar = 0xfffc;
+const char16_t kImaginaryEmbeddedObjectChar = ' ';
+const char16_t kForcedNewLineChar = '\n';
 
-class HyperTextAccessible : public HyperTextAccessibleBase,
-                            public AccessibleWrap {
+
+
+
+class HyperTextAccessible : public AccessibleWrap {
  public:
   HyperTextAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
@@ -144,7 +148,31 @@ class HyperTextAccessible : public HyperTextAccessibleBase,
   
   
 
-  using HyperTextAccessibleBase::CharAt;
+  
+
+
+  uint32_t CharacterCount() const { return GetChildOffset(ChildCount()); }
+
+  
+
+
+  bool CharAt(int32_t aOffset, nsAString& aChar,
+              int32_t* aStartOffset = nullptr, int32_t* aEndOffset = nullptr) {
+    NS_ASSERTION(!aStartOffset == !aEndOffset,
+                 "Offsets should be both defined or both undefined!");
+
+    int32_t childIdx = GetChildIndexAtOffset(aOffset);
+    if (childIdx == -1) return false;
+
+    LocalAccessible* child = LocalChildAt(childIdx);
+    child->AppendTextTo(aChar, aOffset - GetChildOffset(childIdx), 1);
+
+    if (aStartOffset && aEndOffset) {
+      *aStartOffset = aOffset;
+      *aEndOffset = aOffset + aChar.Length();
+    }
+    return true;
+  }
 
   char16_t CharAt(int32_t aOffset) {
     nsAutoString charAtOffset;
@@ -167,14 +195,19 @@ class HyperTextAccessible : public HyperTextAccessibleBase,
   
 
 
+  void TextSubstring(int32_t aStartOffset, int32_t aEndOffset,
+                     nsAString& aText);
+
+  
+
+
 
   void TextBeforeOffset(int32_t aOffset, AccessibleTextBoundary aBoundaryType,
                         int32_t* aStartOffset, int32_t* aEndOffset,
                         nsAString& aText);
-  virtual void TextAtOffset(int32_t aOffset,
-                            AccessibleTextBoundary aBoundaryType,
-                            int32_t* aStartOffset, int32_t* aEndOffset,
-                            nsAString& aText) override;
+  void TextAtOffset(int32_t aOffset, AccessibleTextBoundary aBoundaryType,
+                    int32_t* aStartOffset, int32_t* aEndOffset,
+                    nsAString& aText);
   void TextAfterOffset(int32_t aOffset, AccessibleTextBoundary aBoundaryType,
                        int32_t* aStartOffset, int32_t* aEndOffset,
                        nsAString& aText);
@@ -193,15 +226,46 @@ class HyperTextAccessible : public HyperTextAccessibleBase,
   already_AddRefed<AccAttributes> DefaultTextAttributes();
 
   
-  using HyperTextAccessibleBase::GetChildOffset;
-  virtual int32_t GetChildOffset(uint32_t aChildIndex,
-                                 bool aInvalidateAfter = false) const override;
 
-  virtual int32_t GetChildIndexAtOffset(uint32_t aOffset) const override;
 
-  virtual LocalAccessible* GetChildAtOffset(uint32_t aOffset) const override {
+
+
+
+
+
+  int32_t GetChildOffset(const LocalAccessible* aChild,
+                         bool aInvalidateAfter = false) const {
+    int32_t index = GetIndexOf(aChild);
+    return index == -1 ? -1 : GetChildOffset(index, aInvalidateAfter);
+  }
+
+  
+
+
+  int32_t GetChildOffset(uint32_t aChildIndex,
+                         bool aInvalidateAfter = false) const;
+
+  
+
+
+
+
+  int32_t GetChildIndexAtOffset(uint32_t aOffset) const;
+
+  
+
+
+
+
+  LocalAccessible* GetChildAtOffset(uint32_t aOffset) const {
     return LocalChildAt(GetChildIndexAtOffset(aOffset));
   }
+
+  
+
+
+  bool IsValidOffset(int32_t aOffset);
+  bool IsValidRange(int32_t aStartOffset, int32_t aEndOffset);
 
   
 
@@ -230,7 +294,7 @@ class HyperTextAccessible : public HyperTextAccessibleBase,
   
 
 
-  virtual int32_t CaretOffset() const override;
+  int32_t CaretOffset() const;
   void SetCaretOffset(int32_t aOffset);
 
   
@@ -322,6 +386,14 @@ class HyperTextAccessible : public HyperTextAccessibleBase,
   void RangeAtPoint(int32_t aX, int32_t aY, TextRange& aRange) const;
 
   
+
+
+
+
+
+  TextLeafPoint ToTextLeafPoint(int32_t aOffset, bool aDescendToEnd = false);
+
+  
   
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void ReplaceText(const nsAString& aText);
@@ -352,6 +424,11 @@ class HyperTextAccessible : public HyperTextAccessibleBase,
   virtual ENameValueFlag NativeName(nsString& aName) const override;
 
   
+
+  
+
+
+  index_t ConvertMagicOffset(int32_t aOffset) const;
 
   
 
@@ -470,9 +547,6 @@ class HyperTextAccessible : public HyperTextAccessibleBase,
 
   void SetMathMLXMLRoles(AccAttributes* aAttributes);
 
-  
-  virtual const Accessible* Acc() const override { return this; }
-
  private:
   
 
@@ -485,10 +559,6 @@ class HyperTextAccessible : public HyperTextAccessibleBase,
 
 inline HyperTextAccessible* LocalAccessible::AsHyperText() {
   return IsHyperText() ? static_cast<HyperTextAccessible*>(this) : nullptr;
-}
-
-inline HyperTextAccessibleBase* LocalAccessible::AsHyperTextBase() {
-  return AsHyperText();
 }
 
 }  
