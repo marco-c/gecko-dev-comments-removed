@@ -290,7 +290,9 @@ class nsRange final : public mozilla::dom::AbstractRange,
 
 
 
-  nsresult CutContents(mozilla::dom::DocumentFragment** frag);
+
+  void CutContents(mozilla::dom::DocumentFragment** aFragment,
+                   ErrorResult& aRv);
 
   static nsresult CloneParentsBetween(nsINode* aAncestor, nsINode* aNode,
                                       nsINode** aClosestAncestor,
