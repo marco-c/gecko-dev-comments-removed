@@ -27,11 +27,46 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   clearTimeout: "resource://gre/modules/Timer.jsm",
 });
 
+
+
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
-  "kDebounceTimeout",
+  "kIsInAutomation",
+  "doh-rollout._testing",
+  false
+);
+
+
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "kNetworkDebounceTimeout",
   "doh-rollout.network-debounce-timeout",
   1000
+);
+
+
+
+
+
+
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "kHeuristicsThrottleTimeout",
+  "doh-rollout.heuristics-throttle-timeout",
+  15000
+);
+
+
+
+
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "kHeuristicsRateLimit",
+  "doh-rollout.heuristics-throttle-rate-limit",
+  2
 );
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -293,26 +328,85 @@ const DoHController = {
     }
 
     await this.runTRRSelection();
-    await this.runHeuristics("startup");
+    this.runHeuristicsThrottled("startup");
     Services.obs.addObserver(this, kLinkStatusChangedTopic);
     Services.obs.addObserver(this, kConnectivityTopic);
 
     this._heuristicsAreEnabled = true;
   },
 
-  _lastHeuristicsRunTimestamp: 0,
+  _runsWhileThrottling: 0,
+  _wasThrottleExtended: false,
+  _throttleHeuristics() {
+    if (kHeuristicsThrottleTimeout < 0) {
+      
+      return false;
+    }
+
+    if (this._throttleTimer) {
+      
+      this._runsWhileThrottling++;
+      return true;
+    }
+
+    this._runsWhileThrottling = 0;
+
+    this._throttleTimer = setTimeout(
+      this._handleThrottleTimeout.bind(this),
+      kHeuristicsThrottleTimeout
+    );
+
+    return false;
+  },
+
+  _handleThrottleTimeout() {
+    delete this._throttleTimer;
+    if (this._runsWhileThrottling > kHeuristicsRateLimit) {
+      
+      
+      this._wasThrottleExtended = true;
+      
+      this._throttleHeuristics();
+      if (kIsInAutomation) {
+        Services.obs.notifyObservers(null, "doh:heuristics-throttle-extend");
+      }
+      return;
+    }
+
+    
+    
+    
+    if (this._runsWhileThrottling > 0 || this._wasThrottleExtended) {
+      this.runHeuristicsThrottled("throttled");
+    }
+
+    this._wasThrottleExtended = false;
+
+    if (kIsInAutomation) {
+      Services.obs.notifyObservers(null, "doh:heuristics-throttle-done");
+    }
+  },
+
+  runHeuristicsThrottled(evaluateReason) {
+    
+    
+    if (this._throttleHeuristics()) {
+      return;
+    }
+
+    
+    
+    
+    this.runHeuristics(evaluateReason);
+  },
   async runHeuristics(evaluateReason) {
     let start = Date.now();
-    
-    
-    this._lastHeuristicsRunTimestamp = start;
 
     let results = await Heuristics.run();
 
     if (
       !gNetworkLinkService.isLinkUp ||
       this._lastDebounceTimestamp > start ||
-      this._lastHeuristicsRunTimestamp > start ||
       gCaptivePortalService.state == gCaptivePortalService.LOCKED_PORTAL
     ) {
       
@@ -448,6 +542,14 @@ const DoHController = {
 
     Services.obs.removeObserver(this, kLinkStatusChangedTopic);
     Services.obs.removeObserver(this, kConnectivityTopic);
+    if (this._debounceTimer) {
+      clearTimeout(this._debounceTimer);
+      delete this._debounceTimer;
+    }
+    if (this._throttleTimer) {
+      clearTimeout(this._throttleTimer);
+      delete this._throttleTimer;
+    }
     this._heuristicsAreEnabled = false;
   },
 
@@ -509,7 +611,7 @@ const DoHController = {
       );
     };
 
-    if (Cu.isInAutomation) {
+    if (kIsInAutomation) {
       
       
       setDryRunResultAndRecordTelemetry("https://dummytrr.com/query");
@@ -584,14 +686,20 @@ const DoHController = {
       return;
     }
 
+    if (kNetworkDebounceTimeout < 0) {
+      
+      this.onConnectionChangedDebounced();
+      return;
+    }
+
     this._lastDebounceTimestamp = Date.now();
     this._debounceTimer = setTimeout(() => {
       this._cancelDebounce();
       this.onConnectionChangedDebounced();
-    }, kDebounceTimeout);
+    }, kNetworkDebounceTimeout);
   },
 
-  async onConnectionChangedDebounced() {
+  onConnectionChangedDebounced() {
     if (!gNetworkLinkService.isLinkUp) {
       return;
     }
@@ -603,15 +711,15 @@ const DoHController = {
     
     
     
-    await this.runHeuristics("netchange");
+    this.runHeuristicsThrottled("netchange");
   },
 
-  async onConnectivityAvailable() {
+  onConnectivityAvailable() {
     if (this._debounceTimer) {
       
       return;
     }
 
-    await this.runHeuristics("connectivity");
+    this.runHeuristicsThrottled("connectivity");
   },
 };
