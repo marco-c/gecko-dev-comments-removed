@@ -7,6 +7,8 @@
 #define mozilla_TextEditor_h
 
 #include "mozilla/EditorBase.h"
+#include "mozilla/UniquePtr.h"
+
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsINamed.h"
@@ -159,21 +161,21 @@ class TextEditor final : public EditorBase,
 
 
 
-  bool IsAllMasked() const {
+  MOZ_ALWAYS_INLINE bool IsAllMasked() const {
     MOZ_ASSERT(IsPasswordEditor());
-    return mUnmaskedStart == UINT32_MAX && mUnmaskedLength == 0;
+    return !mPasswordMaskData || mPasswordMaskData->IsAllMasked();
   }
-  uint32_t UnmaskedStart() const {
+  MOZ_ALWAYS_INLINE uint32_t UnmaskedStart() const {
     MOZ_ASSERT(IsPasswordEditor());
-    return mUnmaskedStart;
+    return mPasswordMaskData ? mPasswordMaskData->mUnmaskedStart : UINT32_MAX;
   }
-  uint32_t UnmaskedLength() const {
+  MOZ_ALWAYS_INLINE uint32_t UnmaskedLength() const {
     MOZ_ASSERT(IsPasswordEditor());
-    return mUnmaskedLength;
+    return mPasswordMaskData ? mPasswordMaskData->mUnmaskedLength : 0;
   }
-  uint32_t UnmaskedEnd() const {
+  MOZ_ALWAYS_INLINE uint32_t UnmaskedEnd() const {
     MOZ_ASSERT(IsPasswordEditor());
-    return mUnmaskedStart + mUnmaskedLength;
+    return mPasswordMaskData ? mPasswordMaskData->UnmaskedEnd() : UINT32_MAX;
   }
 
   
@@ -183,7 +185,7 @@ class TextEditor final : public EditorBase,
 
   bool IsMaskingPassword() const {
     MOZ_ASSERT(IsPasswordEditor());
-    return mIsMaskingPassword;
+    return mPasswordMaskData && mPasswordMaskData->mIsMaskingPassword;
   }
 
   
@@ -196,9 +198,19 @@ class TextEditor final : public EditorBase,
 
 
 
-  bool EchoingPasswordPrevented() const { return mEchoingPasswordPrevented; }
-  void PreventToEchoPassword() { mEchoingPasswordPrevented = true; }
-  void AllowToEchoPassword() { mEchoingPasswordPrevented = false; }
+  bool EchoingPasswordPrevented() const {
+    return mPasswordMaskData && mPasswordMaskData->mEchoingPasswordPrevented;
+  }
+  void PreventToEchoPassword() {
+    if (mPasswordMaskData) {
+      mPasswordMaskData->mEchoingPasswordPrevented = true;
+    }
+  }
+  void AllowToEchoPassword() {
+    if (mPasswordMaskData) {
+      mPasswordMaskData->mEchoingPasswordPrevented = false;
+    }
+  }
 
  protected:  
   
@@ -481,26 +493,40 @@ class TextEditor final : public EditorBase,
                                                      bool aNotify,
                                                      bool aForceStartMasking);
 
+  MOZ_ALWAYS_INLINE bool HasAutoMaskingTimer() const {
+    return mPasswordMaskData && mPasswordMaskData->mTimer;
+  }
+
  protected:
-  
-  
-  nsCOMPtr<nsITimer> mMaskTimer;
+  struct PasswordMaskData final {
+    
+    
+    nsCOMPtr<nsITimer> mTimer;
 
-  int32_t mMaxTextLength;
+    
+    
+    uint32_t mUnmaskedStart = UINT32_MAX;
+    uint32_t mUnmaskedLength = 0;
 
-  
-  
-  uint32_t mUnmaskedStart;
-  uint32_t mUnmaskedLength;
+    
+    
+    
+    bool mIsMaskingPassword = true;
 
-  
-  
-  
-  bool mIsMaskingPassword;
+    
+    
+    bool mEchoingPasswordPrevented = false;
 
-  
-  
-  bool mEchoingPasswordPrevented;
+    MOZ_ALWAYS_INLINE bool IsAllMasked() const {
+      return mUnmaskedStart == UINT32_MAX && mUnmaskedLength == 0;
+    }
+    MOZ_ALWAYS_INLINE uint32_t UnmaskedEnd() const {
+      return mUnmaskedStart + mUnmaskedLength;
+    }
+  };
+  UniquePtr<PasswordMaskData> mPasswordMaskData;
+
+  int32_t mMaxTextLength = -1;
 
   friend class DeleteNodeTransaction;
   friend class EditorBase;

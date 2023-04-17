@@ -71,12 +71,7 @@ using namespace dom;
 using LeafNodeType = HTMLEditUtils::LeafNodeType;
 using LeafNodeTypes = HTMLEditUtils::LeafNodeTypes;
 
-TextEditor::TextEditor()
-    : mMaxTextLength(-1),
-      mUnmaskedStart(UINT32_MAX),
-      mUnmaskedLength(0),
-      mIsMaskingPassword(true),
-      mEchoingPasswordPrevented(false) {
+TextEditor::TextEditor() {
   
   static_assert(
       sizeof(TextEditor) <= 512,
@@ -92,14 +87,18 @@ TextEditor::~TextEditor() {
 NS_IMPL_CYCLE_COLLECTION_CLASS(TextEditor)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(TextEditor, EditorBase)
-  if (tmp->mMaskTimer) {
-    tmp->mMaskTimer->Cancel();
+  if (tmp->mPasswordMaskData) {
+    if (tmp->HasAutoMaskingTimer()) {
+      tmp->mPasswordMaskData->mTimer->Cancel();
+    }
+    NS_IMPL_CYCLE_COLLECTION_UNLINK(mPasswordMaskData->mTimer)
   }
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mMaskTimer)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(TextEditor, EditorBase)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mMaskTimer)
+  if (tmp->mPasswordMaskData) {
+    NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPasswordMaskData->mTimer)
+  }
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_ADDREF_INHERITED(TextEditor, EditorBase)
@@ -115,6 +114,10 @@ nsresult TextEditor::Init(Document& aDoc, Element* aRoot,
                           const nsAString& aInitialValue) {
   MOZ_ASSERT(!mInitSucceeded,
              "TextEditor::Init() called again without calling PreDestroy()?");
+
+  if (!mPasswordMaskData && (aFlags & nsIEditor::eEditorPasswordMask)) {
+    mPasswordMaskData = MakeUnique<PasswordMaskData>();
+  }
 
   
   nsresult rv = EditorBase::Init(aDoc, aRoot, aSelCon, aFlags, aInitialValue);
@@ -389,13 +392,14 @@ bool TextEditor::IsCopyToClipboardAllowedInternal() const {
     return false;
   }
 
-  if (!IsSingleLineEditor() || !IsPasswordEditor()) {
+  if (!IsSingleLineEditor() || !IsPasswordEditor() ||
+      NS_WARN_IF(!mPasswordMaskData)) {
     return true;
   }
 
   
   
-  if (IsAllMasked() || IsMaskingPassword() || mUnmaskedLength == 0) {
+  if (IsAllMasked() || IsMaskingPassword() || !UnmaskedLength()) {
     return false;
   }
 
@@ -409,7 +413,7 @@ bool TextEditor::IsCopyToClipboardAllowedInternal() const {
   uint32_t selectionStart = 0, selectionEnd = 0;
   nsContentUtils::GetSelectionInTextControl(&SelectionRef(), mRootElement,
                                             selectionStart, selectionEnd);
-  return mUnmaskedStart <= selectionStart && UnmaskedEnd() >= selectionEnd;
+  return UnmaskedStart() <= selectionStart && UnmaskedEnd() >= selectionEnd;
 }
 
 nsresult TextEditor::PasteAsQuotationAsAction(int32_t aClipboardType,
@@ -617,22 +621,24 @@ nsresult TextEditor::RemoveAttributeOrEquivalent(Element* aElement,
 nsresult TextEditor::SetUnmaskRangeInternal(uint32_t aStart, uint32_t aLength,
                                             uint32_t aTimeout, bool aNotify,
                                             bool aForceStartMasking) {
-  mIsMaskingPassword = aForceStartMasking || aTimeout != 0;
+  if (mPasswordMaskData) {
+    mPasswordMaskData->mIsMaskingPassword = aForceStartMasking || aTimeout != 0;
 
-  
-  
-  if (!IsAllMasked()) {
-    mUnmaskedLength = 0;
-    if (mMaskTimer) {
-      mMaskTimer->Cancel();
+    
+    
+    if (!IsAllMasked()) {
+      mPasswordMaskData->mUnmaskedLength = 0;
+      if (HasAutoMaskingTimer()) {
+        mPasswordMaskData->mTimer->Cancel();
+      }
     }
   }
 
   
   
-  if (!IsPasswordEditor()) {
-    if (mMaskTimer) {
-      mMaskTimer = nullptr;
+  if (!IsPasswordEditor() || NS_WARN_IF(!mPasswordMaskData)) {
+    if (HasAutoMaskingTimer()) {
+      mPasswordMaskData->mTimer = nullptr;
     }
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -657,33 +663,34 @@ nsresult TextEditor::SetUnmaskRangeInternal(uint32_t aStart, uint32_t aLength,
     
     const nsTextFragment* textFragment = text->GetText();
     if (textFragment->IsLowSurrogateFollowingHighSurrogateAt(aStart)) {
-      mUnmaskedStart = aStart - 1;
+      mPasswordMaskData->mUnmaskedStart = aStart - 1;
       
       if (aLength > 0) {
         ++aLength;
       }
     } else {
-      mUnmaskedStart = aStart;
+      mPasswordMaskData->mUnmaskedStart = aStart;
     }
-    mUnmaskedLength = std::min(valueLength - mUnmaskedStart, aLength);
+    mPasswordMaskData->mUnmaskedLength =
+        std::min(valueLength - UnmaskedStart(), aLength);
     
     
     
     if (UnmaskedEnd() < valueLength &&
         textFragment->IsLowSurrogateFollowingHighSurrogateAt(UnmaskedEnd())) {
-      ++mUnmaskedLength;
+      mPasswordMaskData->mUnmaskedLength++;
     }
     
     
-    if (!mMaskTimer && aLength && aTimeout && mUnmaskedLength) {
-      mMaskTimer = NS_NewTimer();
+    if (!HasAutoMaskingTimer() && aLength && aTimeout && UnmaskedLength()) {
+      mPasswordMaskData->mTimer = NS_NewTimer();
     }
   } else {
     if (NS_WARN_IF(aLength != 0)) {
       return NS_ERROR_INVALID_ARG;
     }
-    mUnmaskedStart = UINT32_MAX;
-    mUnmaskedLength = 0;
+    mPasswordMaskData->mUnmaskedStart = UINT32_MAX;
+    mPasswordMaskData->mUnmaskedLength = 0;
   }
 
   
@@ -715,9 +722,9 @@ nsresult TextEditor::SetUnmaskRangeInternal(uint32_t aStart, uint32_t aLength,
 
   if (!IsAllMasked() && aTimeout != 0) {
     
-    MOZ_ASSERT(mMaskTimer);
-    DebugOnly<nsresult> rvIgnored =
-        mMaskTimer->InitWithCallback(this, aTimeout, nsITimer::TYPE_ONE_SHOT);
+    MOZ_ASSERT(HasAutoMaskingTimer());
+    DebugOnly<nsresult> rvIgnored = mPasswordMaskData->mTimer->InitWithCallback(
+        this, aTimeout, nsITimer::TYPE_ONE_SHOT);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                          "nsITimer::InitWithCallback() failed, but ignored");
   }
@@ -737,7 +744,7 @@ char16_t TextEditor::PasswordMask() {
 MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP TextEditor::Notify(nsITimer* aTimer) {
   
   
-  if (!IsPasswordEditor()) {
+  if (!IsPasswordEditor() || NS_WARN_IF(!mPasswordMaskData)) {
     return NS_OK;
   }
 
@@ -780,7 +787,7 @@ void TextEditor::WillDeleteText(uint32_t aCurrentLength,
                                 uint32_t aRemoveLength) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  if (!IsPasswordEditor() || IsAllMasked()) {
+  if (!IsPasswordEditor() || NS_WARN_IF(!mPasswordMaskData) || IsAllMasked()) {
     return;
   }
 
@@ -788,18 +795,18 @@ void TextEditor::WillDeleteText(uint32_t aCurrentLength,
   
 
   
-  if (mIsMaskingPassword) {
+  if (IsMaskingPassword()) {
     DebugOnly<nsresult> rvIgnored = MaskAllCharacters();
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                          "TextEditor::MaskAllCharacters() failed, but ignored");
     return;
   }
 
-  if (aRemoveStartOffset < mUnmaskedStart) {
+  if (aRemoveStartOffset < UnmaskedStart()) {
     
-    if (aRemoveStartOffset + aRemoveLength <= mUnmaskedStart) {
+    if (aRemoveStartOffset + aRemoveLength <= UnmaskedStart()) {
       DebugOnly<nsresult> rvIgnored =
-          SetUnmaskRange(mUnmaskedStart - aRemoveLength, mUnmaskedLength);
+          SetUnmaskRange(UnmaskedStart() - aRemoveLength, UnmaskedLength());
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                            "TextEditor::SetUnmaskRange() failed, but ignored");
       return;
@@ -809,9 +816,9 @@ void TextEditor::WillDeleteText(uint32_t aCurrentLength,
     
     if (aRemoveStartOffset + aRemoveLength < UnmaskedEnd()) {
       uint32_t unmaskedLengthInRemovingRange =
-          aRemoveStartOffset + aRemoveLength - mUnmaskedStart;
+          aRemoveStartOffset + aRemoveLength - UnmaskedStart();
       DebugOnly<nsresult> rvIgnored = SetUnmaskRange(
-          aRemoveStartOffset, mUnmaskedLength - unmaskedLengthInRemovingRange);
+          aRemoveStartOffset, UnmaskedLength() - unmaskedLengthInRemovingRange);
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                            "TextEditor::SetUnmaskRange() failed, but ignored");
       return;
@@ -829,7 +836,7 @@ void TextEditor::WillDeleteText(uint32_t aCurrentLength,
     
     if (aRemoveStartOffset + aRemoveLength <= UnmaskedEnd()) {
       DebugOnly<nsresult> rvIgnored =
-          SetUnmaskRange(mUnmaskedStart, mUnmaskedLength - aRemoveLength);
+          SetUnmaskRange(UnmaskedStart(), UnmaskedLength() - aRemoveLength);
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                            "TextEditor::SetUnmaskRange() failed, but ignored");
       return;
@@ -838,7 +845,7 @@ void TextEditor::WillDeleteText(uint32_t aCurrentLength,
     
     
     DebugOnly<nsresult> rvIgnored =
-        SetUnmaskRange(mUnmaskedStart, aRemoveStartOffset - mUnmaskedStart);
+        SetUnmaskRange(UnmaskedStart(), aRemoveStartOffset - UnmaskedStart());
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                          "TextEditor::SetUnmaskRange() failed, but ignored");
     return;
@@ -852,11 +859,11 @@ nsresult TextEditor::DidInsertText(uint32_t aNewLength,
                                    uint32_t aInsertedLength) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  if (!IsPasswordEditor() || IsAllMasked()) {
+  if (!IsPasswordEditor() || NS_WARN_IF(!mPasswordMaskData) || IsAllMasked()) {
     return NS_OK;
   }
 
-  if (mIsMaskingPassword) {
+  if (IsMaskingPassword()) {
     
     nsresult rv = MaskAllCharactersAndNotify();
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
@@ -864,7 +871,7 @@ nsresult TextEditor::DidInsertText(uint32_t aNewLength,
     return rv;
   }
 
-  if (aInsertedOffset < mUnmaskedStart) {
+  if (aInsertedOffset < UnmaskedStart()) {
     
     
     nsresult rv = SetUnmaskRangeAndNotify(
@@ -876,8 +883,8 @@ nsresult TextEditor::DidInsertText(uint32_t aNewLength,
 
   if (aInsertedOffset <= UnmaskedEnd()) {
     
-    nsresult rv = SetUnmaskRangeAndNotify(mUnmaskedStart,
-                                          mUnmaskedLength + aInsertedLength);
+    nsresult rv = SetUnmaskRangeAndNotify(UnmaskedStart(),
+                                          UnmaskedLength() + aInsertedLength);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "TextEditor::SetUnmaskRangeAndNotify() failed");
     return rv;
@@ -886,7 +893,7 @@ nsresult TextEditor::DidInsertText(uint32_t aNewLength,
   
   
   nsresult rv = SetUnmaskRangeAndNotify(
-      mUnmaskedStart, aInsertedOffset + aInsertedLength - mUnmaskedStart);
+      UnmaskedStart(), aInsertedOffset + aInsertedLength - UnmaskedStart());
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "TextEditor::SetUnmaskRangeAndNotify() failed");
   return rv;
