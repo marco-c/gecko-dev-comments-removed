@@ -82,6 +82,7 @@
 #include "mozilla/GlobalStyleSheetCache.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/StaticPrefs_widget.h"
 #include "mozilla/StaticPrefs_zoom.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInlines.h"
@@ -349,16 +350,54 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 
 
-static bool sLookAndFeelChanged;
-
-
-
-
-static bool sThemeChanged;
+static bool sPendingThemeChange = false;
+static widget::ThemeChangeKind sPendingThemeChangeKind{0};
 
 bool nsPresContext::IsChrome() const {
   return Document()->IsInChromeDocShell();
 }
+
+static void HandleGlobalThemeChange() {
+  if (!sPendingThemeChange) {
+    MOZ_ASSERT(uint8_t(sPendingThemeChangeKind) == 0);
+    return;
+  }
+  sPendingThemeChange = false;
+  auto kind =
+      std::exchange(sPendingThemeChangeKind, widget::ThemeChangeKind(0));
+
+  
+  
+  
+  
+  
+  if (XRE_IsParentProcess() ||
+      !StaticPrefs::widget_non_native_theme_enabled()) {
+    if (nsCOMPtr<nsITheme> theme = do_GetNativeThemeDoNotUseDirectly()) {
+      theme->ThemeChanged();
+    }
+  }
+  if (nsCOMPtr<nsITheme> theme = do_GetBasicNativeThemeDoNotUseDirectly()) {
+    theme->ThemeChanged();
+  }
+
+  
+  LookAndFeel::Refresh();
+
+  
+  
+  PreferenceSheet::Refresh();
+
+  
+  
+  
+  image::SurfaceCacheUtils::DiscardAll();
+
+  if (XRE_IsParentProcess()) {
+    ContentParent::BroadcastThemeUpdate(kind);
+  }
+}
+
 
 void nsPresContext::GetUserPreferences() {
   if (!GetPresShell()) {
@@ -577,6 +616,9 @@ void nsPresContext::PreferenceChanged(const char* aPrefName) {
   
   GlobalStyleSheetCache::InvalidatePreferenceSheets();
   PreferenceSheet::Refresh();
+  
+  StaticPresData::Get()->InvalidateFontPrefs();
+  Document()->SetMayNeedFontPrefsUpdate();
   DispatchPrefChangedRunnableIfNeeded();
 
   if (prefName.EqualsLiteral("nglayout.debug.paint_flashing") ||
@@ -627,8 +669,6 @@ void nsPresContext::UpdateAfterPreferencesChanged() {
     
     return;
   }
-
-  StaticPresData::Get()->InvalidateFontPrefs();
 
   
   GetUserPreferences();
@@ -756,6 +796,9 @@ void nsPresContext::AttachPresShell(mozilla::PresShell* aPresShell) {
   MOZ_ASSERT(doc);
   
   mDocument = doc;
+
+  HandleGlobalThemeChange();
+
   
   
   GetUserPreferences();
@@ -1371,50 +1414,29 @@ void nsPresContext::ThemeChanged(widget::ThemeChangeKind aKind) {
   PROFILER_MARKER_TEXT("ThemeChanged", LAYOUT, MarkerStack::Capture(), ""_ns);
 
   mPendingThemeChangeKind |= unsigned(aKind);
+  sPendingThemeChangeKind |= aKind;
 
   if (!mPendingThemeChanged) {
-    sLookAndFeelChanged = true;
-    sThemeChanged = true;
-
     nsCOMPtr<nsIRunnable> ev =
         new WeakRunnableMethod("nsPresContext::ThemeChangedInternal", this,
                                &nsPresContext::ThemeChangedInternal);
     RefreshDriver()->AddEarlyRunner(ev);
     mPendingThemeChanged = true;
   }
+
+  sPendingThemeChange = true;
+  sPendingThemeChangeKind |= aKind;
 }
 
 void nsPresContext::ThemeChangedInternal() {
+  MOZ_ASSERT(mPendingThemeChanged);
+
   mPendingThemeChanged = false;
 
   const auto kind = widget::ThemeChangeKind(mPendingThemeChangeKind);
   mPendingThemeChangeKind = 0;
 
-  
-  
-  if (mTheme && sThemeChanged) {
-    mTheme->ThemeChanged();
-    sThemeChanged = false;
-  }
-
-  if (sLookAndFeelChanged) {
-    
-    LookAndFeel::Refresh();
-    sLookAndFeelChanged = false;
-
-    
-    
-    
-    image::SurfaceCacheUtils::DiscardAll();
-
-    if (XRE_IsParentProcess()) {
-      ContentParent::BroadcastThemeUpdate(kind);
-    }
-  }
-
-  
-  
-  PreferenceSheet::Refresh();
+  HandleGlobalThemeChange();
 
   
   
