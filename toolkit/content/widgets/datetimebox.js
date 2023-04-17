@@ -43,11 +43,11 @@ this.DateTimeBoxWidget = class {
   }
 
   shouldShowTime() {
-    return this.type == "time";
+    return this.type == "time" || this.type == "datetime-local";
   }
 
   shouldShowDate() {
-    return this.type == "date";
+    return this.type == "date" || this.type == "datetime-local";
   }
 
   destructor() {
@@ -530,6 +530,16 @@ this.DateTimeBoxWidget = class {
     this.updateResetButtonVisibility();
   }
 
+  openDateTimePicker() {
+    this.mInputElement.openDateTimePicker(this.getCurrentValue());
+  }
+
+  closeDateTimePicker() {
+    if (this.mIsPickerOpen) {
+      this.mInputElement.closeDateTimePicker();
+    }
+  }
+
   notifyPicker() {
     if (this.mIsPickerOpen && this.isAnyFieldAvailable(true)) {
       this.mInputElement.updateDateTimePicker(this.getCurrentValue());
@@ -634,6 +644,9 @@ this.DateTimeBoxWidget = class {
       this.mLastFocusedField = target;
       this.mInputElement.setFocusState(true);
     }
+    if (this.mIsPickerOpen && this.isPickerIrrelevantField(target)) {
+      this.closeDateTimePicker();
+    }
   }
 
   onBlur(aEvent) {
@@ -654,9 +667,39 @@ this.DateTimeBoxWidget = class {
     if (aEvent.relatedTarget != this.mInputElement) {
       this.mInputElement.setFocusState(false);
       if (this.mIsPickerOpen) {
-        this.mInputElement.closeDateTimePicker();
+        this.closeDateTimePicker();
       }
     }
+  }
+
+  isTimeField(field) {
+    return (
+      field == this.mHourField ||
+      field == this.mMinuteField ||
+      field == this.mSecondField ||
+      field == this.mDayPeriodField
+    );
+  }
+
+  shouldOpenDateTimePickerOnKeyPress() {
+    if (!this.mLastFocusedField) {
+      return true;
+    }
+    return !this.isPickerIrrelevantField(this.mLastFocusedField);
+  }
+
+  shouldOpenDateTimePickerOnClick(target) {
+    return !this.isPickerIrrelevantField(target);
+  }
+
+  
+  
+  
+  isPickerIrrelevantField(field) {
+    if (this.type != "datetime-local") {
+      return false;
+    }
+    return this.isTimeField(field);
   }
 
   onKeyPress(aEvent) {
@@ -668,9 +711,12 @@ this.DateTimeBoxWidget = class {
       case "Escape":
       case " ": {
         if (this.mIsPickerOpen) {
-          this.mInputElement.closeDateTimePicker();
-        } else if (aEvent.key != "Escape") {
-          this.mInputElement.openDateTimePicker(this.getCurrentValue());
+          this.closeDateTimePicker();
+        } else if (
+          aEvent.key != "Escape" &&
+          this.shouldOpenDateTimePickerOnKeyPress()
+        ) {
+          this.openDateTimePicker();
         } else {
           
           break;
@@ -733,8 +779,11 @@ this.DateTimeBoxWidget = class {
 
     if (aEvent.originalTarget == this.mResetButton) {
       this.clearInputFields(false);
-    } else if (!this.mIsPickerOpen) {
-      this.mInputElement.openDateTimePicker(this.getCurrentValue());
+    } else if (
+      !this.mIsPickerOpen &&
+      this.shouldOpenDateTimePickerOnClick(aEvent.originalTarget)
+    ) {
+      this.openDateTimePicker();
     }
   }
 
@@ -1002,13 +1051,12 @@ this.DateTimeBoxWidget = class {
       dayPeriod,
     } = this.getCurrentValue();
 
-    let value = "";
+    let time = "";
+    let date = "";
 
     
     
-    
-    
-    if (this.type == "time") {
+    if (this.shouldShowTime()) {
       if (this.mHour12) {
         if (dayPeriod == this.mPMIndicator && hour < this.mMaxHour) {
           hour += this.mMaxHour;
@@ -1020,10 +1068,10 @@ this.DateTimeBoxWidget = class {
       hour = hour < 10 ? "0" + hour : hour;
       minute = minute < 10 ? "0" + minute : minute;
 
-      value = hour + ":" + minute;
+      time = hour + ":" + minute;
       if (second != undefined) {
         second = second < 10 ? "0" + second : second;
-        value += ":" + second;
+        time += ":" + second;
       }
 
       if (millisecond != undefined) {
@@ -1031,17 +1079,26 @@ this.DateTimeBoxWidget = class {
         millisecond = millisecond
           .toString()
           .padStart(this.mMillisecMaxLength, "0");
-        value += "." + millisecond;
+        time += "." + millisecond;
       }
     }
 
-    if (this.type == "date") {
+    if (this.shouldShowDate()) {
       
       
       year = year.toString().padStart(this.mYearLength, "0");
       month = month < 10 ? "0" + month : month;
       day = day < 10 ? "0" + day : day;
-      value = [year, month, day].join("-");
+      date = [year, month, day].join("-");
+    }
+
+    let value;
+    if (date) {
+      value = date;
+    }
+    if (time) {
+      
+      value = value ? value + "T" + time : time;
     }
 
     if (value == this.mInputElement.value) {
@@ -1273,15 +1330,24 @@ this.DateTimeBoxWidget = class {
       return {};
     }
 
+    let date, time;
+
     let year, month, day, hour, minute, second, millisecond;
-
-    
     if (this.type == "date") {
-      [year, month, day] = value.split("-");
+      date = value;
     }
-
     if (this.type == "time") {
-      [hour, minute, second] = value.split(":");
+      time = value;
+    }
+    if (this.type == "datetime-local") {
+      
+      [date, time] = value.split("T");
+    }
+    if (date) {
+      [year, month, day] = date.split("-");
+    }
+    if (time) {
+      [hour, minute, second] = time.split(":");
       if (second) {
         [second, millisecond] = second.split(".");
 
@@ -1293,7 +1359,6 @@ this.DateTimeBoxWidget = class {
         }
       }
     }
-
     return { year, month, day, hour, minute, second, millisecond };
   }
 
