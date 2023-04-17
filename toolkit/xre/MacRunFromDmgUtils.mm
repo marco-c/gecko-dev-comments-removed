@@ -3,6 +3,7 @@
 
 
 
+#include <AppKit/AppKit.h>
 #include <ApplicationServices/ApplicationServices.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <CoreServices/CoreServices.h>
@@ -13,6 +14,8 @@
 
 #include "MacRunFromDmgUtils.h"
 
+#include "mozilla/ErrorResult.h"
+#include "mozilla/intl/Localization.h"
 #include "nsCocoaFeatures.h"
 #include "nsCommandLine.h"
 #include "nsCommandLineServiceMac.h"
@@ -27,6 +30,70 @@
 
 namespace mozilla {
 namespace MacRunFromDmgUtils {
+
+
+
+
+
+
+static bool AskUserIfWeShouldInstall() {
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
+
+  
+  nsTArray<nsCString> resIds = {
+      "branding/brand.ftl"_ns,
+      "toolkit/global/run-from-dmg.ftl"_ns,
+  };
+  RefPtr<intl::Localization> l10n = intl::Localization::Create(resIds, true);
+
+  ErrorResult rv;
+  nsAutoCString mozTitle, mozMessage, mozInstall, mozDontInstall;
+  l10n->FormatValueSync("prompt-to-install-title"_ns, {}, mozTitle, rv);
+  if (rv.Failed()) {
+    return false;
+  }
+  l10n->FormatValueSync("prompt-to-install-message"_ns, {}, mozMessage, rv);
+  if (rv.Failed()) {
+    return false;
+  }
+  l10n->FormatValueSync("prompt-to-install-yes-button"_ns, {}, mozInstall, rv);
+  if (rv.Failed()) {
+    return false;
+  }
+  l10n->FormatValueSync("prompt-to-install-no-button"_ns, {}, mozDontInstall, rv);
+  if (rv.Failed()) {
+    return false;
+  }
+
+  NSString* title = [NSString stringWithUTF8String:reinterpret_cast<const char*>(mozTitle.get())];
+  NSString* message =
+      [NSString stringWithUTF8String:reinterpret_cast<const char*>(mozMessage.get())];
+  NSString* install =
+      [NSString stringWithUTF8String:reinterpret_cast<const char*>(mozInstall.get())];
+  NSString* dontInstall =
+      [NSString stringWithUTF8String:reinterpret_cast<const char*>(mozDontInstall.get())];
+
+  NSAlert* alert = [[[NSAlert alloc] init] autorelease];
+
+  
+  [alert setAlertStyle:NSAlertStyleInformational];
+  [alert setMessageText:title];
+  [alert setInformativeText:message];
+  
+  
+  
+  [alert addButtonWithTitle:install];
+  NSButton* dontInstallButton = [alert addButtonWithTitle:dontInstall];
+  
+  
+  [dontInstallButton setKeyEquivalent:@"\e"];
+
+  NSInteger result = [alert runModal];
+
+  return result == NSAlertFirstButtonReturn;
+
+  NS_OBJC_END_TRY_BLOCK_RETURN(false);
+}
 
 bool IsAppRunningFromDmg() {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
