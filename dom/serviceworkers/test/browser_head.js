@@ -25,11 +25,6 @@ const SWM = Cc["@mozilla.org/serviceworkers/manager;1"].getService(
   Ci.nsIServiceWorkerManager
 );
 
-
-
-
-const kMinimumOriginUsageBytes = 65536;
-
 function getPrincipal(url, attrs) {
   const uri = Services.io.newURI(url);
   if (!attrs) {
@@ -50,13 +45,6 @@ async function _qm_requestFinished(request) {
   }
 
   return request.result;
-}
-
-async function qm_reset_storage() {
-  return new Promise(resolve => {
-    let request = Services.qms.reset();
-    request.callback = resolve;
-  });
 }
 
 async function get_qm_origin_usage(origin) {
@@ -82,7 +70,7 @@ async function clear_qm_origin_group_via_clearData(origin) {
 
   
   await new Promise((resolve, reject) => {
-    Services.clearData.deleteDataFromBaseDomain(
+    Services.clearData.deleteDataFromHost(
       baseDomain,
       false,
       Services.clearData.CLEAR_DOM_QUOTA,
@@ -179,12 +167,6 @@ async function consume_storage(origin, storageDesc) {
 
 
 
-function is_minimum_origin_usage(originUsageBytes) {
-  return originUsageBytes <= kMinimumOriginUsageBytes;
-}
-
-
-
 
 
 
@@ -260,23 +242,6 @@ function waitForUnregister(scope) {
   return new Promise(function(resolve) {
     let listener = {
       onUnregister(registration) {
-        if (registration.scope !== scope) {
-          return;
-        }
-        SWM.removeListener(listener);
-        resolve(registration);
-      },
-    };
-    SWM.addListener(listener);
-  });
-}
-
-
-
-function waitForQuotaUsageCheckFinish(scope) {
-  return new Promise(function(resolve) {
-    let listener = {
-      onQuotaUsageCheckFinish(registration) {
         if (registration.scope !== scope) {
           return;
         }

@@ -86,7 +86,6 @@
 #include "ServiceWorkerUnregisterJob.h"
 #include "ServiceWorkerUpdateJob.h"
 #include "ServiceWorkerUtils.h"
-#include "ServiceWorkerQuotaUtils.h"
 
 #ifdef PostMessage
 #  undef PostMessage
@@ -1700,6 +1699,7 @@ void ServiceWorkerManager::AddScopeAndRegistration(
   MOZ_ASSERT(!scopeKey.IsEmpty());
 
   auto* const data = swm->mRegistrationInfos.GetOrInsertNew(scopeKey);
+
   data->mScopeContainer.InsertScope(aScope);
   data->mInfos.InsertOrUpdate(aScope, RefPtr{aInfo});
   swm->NotifyListenersOnRegister(aInfo);
@@ -1799,14 +1799,6 @@ void ServiceWorkerManager::MaybeRemoveRegistrationInfo(
     if (entry.Data()->mScopeContainer.IsEmpty() &&
         entry.Data()->mJobQueues.Count() == 0) {
       entry.Remove();
-
-      
-      
-      
-      
-    } else if (entry.Data()->mScopeContainer.IsEmpty() &&
-               entry.Data()->mQuotaUsageCheckCount) {
-      entry.Data()->mQuotaUsageCheckCount = 0;
     }
   }
 }
@@ -2274,46 +2266,6 @@ int32_t ServiceWorkerManager::GetPrincipalQuotaUsageCheckCount(
   }
 
   return data->mQuotaUsageCheckCount;
-}
-
-void ServiceWorkerManager::CheckPrincipalQuotaUsage(nsIPrincipal* aPrincipal,
-                                                    const nsACString& aScope) {
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aPrincipal);
-
-  nsAutoCString scopeKey;
-  nsresult rv = PrincipalToScopeKey(aPrincipal, scopeKey);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
-
-  RegistrationDataPerPrincipal* data;
-  if (!mRegistrationInfos.Get(scopeKey, &data)) {
-    return;
-  }
-
-  
-  if (data->mQuotaUsageCheckCount != 0) {
-    return;
-  }
-
-  ++data->mQuotaUsageCheckCount;
-
-  
-  
-  
-  
-  
-  RefPtr<ServiceWorkerRegistrationInfo> info;
-  data->mInfos.Get(aScope, getter_AddRefs(info));
-  MOZ_ASSERT(info);
-
-  RefPtr<ServiceWorkerManager> self = this;
-
-  ClearQuotaUsageIfNeeded(aPrincipal, [self, info](bool aResult) {
-    MOZ_ASSERT(NS_IsMainThread());
-    self->NotifyListenersOnQuotaUsageCheckFinish(info);
-  });
 }
 
 void ServiceWorkerManager::SoftUpdate(const OriginAttributes& aOriginAttributes,
@@ -2986,15 +2938,6 @@ void ServiceWorkerManager::NotifyListenersOnUnregister(
       mListeners.Clone());
   for (size_t index = 0; index < listeners.Length(); ++index) {
     listeners[index]->OnUnregister(aInfo);
-  }
-}
-
-void ServiceWorkerManager::NotifyListenersOnQuotaUsageCheckFinish(
-    nsIServiceWorkerRegistrationInfo* aRegistration) {
-  nsTArray<nsCOMPtr<nsIServiceWorkerManagerListener>> listeners(
-      mListeners.Clone());
-  for (size_t index = 0; index < listeners.Length(); ++index) {
-    listeners[index]->OnQuotaUsageCheckFinish(aRegistration);
   }
 }
 
