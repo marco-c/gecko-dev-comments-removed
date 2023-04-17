@@ -6192,11 +6192,7 @@ nsIFrame::SizeComputationResult nsIFrame::ComputeSize(
   
   
   
-  
-  
-  const bool isDefiniteISize =
-      styleISize.IsLengthPercentage() ||
-      aspectRatioUsage == AspectRatioUsage::ToComputeISize;
+  const bool isDefiniteISize = styleISize.IsLengthPercentage();
   const bool isFlexItemInlineAxisMainAxis =
       isFlexItem && flexMainAxis == eLogicalAxisInline;
   const auto& minBSizeCoord = stylePos->MinBSize(aWM);
