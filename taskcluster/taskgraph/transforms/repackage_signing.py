@@ -30,6 +30,7 @@ SIGNING_FORMATS = {
     "target.installer.exe": ["autograph_authenticode_stub"],
     "target.stub-installer.exe": ["autograph_authenticode_stub"],
     "target.installer.msi": ["autograph_authenticode"],
+    "target.installer.msix": ["autograph_authenticode_sha2"],
 }
 
 transforms = TransformSequence()
@@ -59,6 +60,15 @@ def make_repackage_signing_description(config, jobs):
         if config.kind == "repackage-signing-msi":
             treeherder["symbol"] = "MSIs({})".format(locale or "N")
 
+        elif config.kind in (
+            "repackage-signing-msix",
+            "repackage-signing-shippable-l10n-msix",
+        ):
+            
+            treeherder["symbol"] = "MSIXs({})".format(
+                dep_job.task.get("extra", {}).get("treeherder", {}).get("symbol", "B")
+            )
+
         label = job["label"]
 
         dep_kind = dep_job.kind
@@ -70,8 +80,14 @@ def make_repackage_signing_description(config, jobs):
         signing_dependencies = dep_job.dependencies
         
         
+        
         dependencies.update(
-            {k: v for k, v in signing_dependencies.items() if k != "docker-image"}
+            {
+                k: v
+                for k, v in signing_dependencies.items()
+                if k != "docker-image"
+                and not k.startswith("shippable-l10n-signing-linux64")
+            }
         )
 
         description = (
