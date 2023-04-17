@@ -94,7 +94,7 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(disableLicm, false);
 
   
-  SET_DEFAULT(disablePruning, true);
+  SET_DEFAULT(disablePruning, false);
 
   
   SET_DEFAULT(disableInstructionReordering, false);
