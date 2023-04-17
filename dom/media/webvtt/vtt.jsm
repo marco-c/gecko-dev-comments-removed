@@ -1575,6 +1575,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "DEBUG_LOG",
       }
 
       try {
+        LOG(`state=${self.state}, line=${line}`)
         
         if (self.state === "INITIAL") {
           parseSignatureMayThrow(line);
