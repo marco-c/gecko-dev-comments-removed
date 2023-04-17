@@ -2721,6 +2721,59 @@ static bool VerifyGlobalNames(JSContext* cx, Handle<GlobalObject*> shg) {
     }
   }
 
+  
+  {
+    auto& scriptMap = cx->runtime()->selfHostScriptMap.ref();
+
+    
+    
+    
+    size_t numSelfHostedScripts = stencil.scriptData.size();
+    if (!scriptMap.reserve(numSelfHostedScripts)) {
+      ReportOutOfMemory(cx);
+      return false;
+    }
+
+    auto topLevelThings =
+        stencil.scriptData[frontend::CompilationStencil::TopLevelIndex]
+            .gcthings(stencil);
+
+    
+    
+    
+    
+    RootedAtom prevAtom(cx);
+    frontend::ScriptIndex prevIndex;
+    for (frontend::TaggedScriptThingIndex thing : topLevelThings) {
+      if (!thing.isFunction()) {
+        continue;
+      }
+
+      frontend::ScriptIndex index = thing.toFunction();
+      const auto& script = stencil.scriptData[index];
+
+      if (prevAtom) {
+        frontend::ScriptIndexRange range{prevIndex, index};
+        scriptMap.putNewInfallible(prevAtom, range);
+      }
+
+      prevAtom = script.functionAtom ? input.atomCache.getExistingAtomAt(
+                                           cx, script.functionAtom)
+                                     : nullptr;
+      prevIndex = index;
+    }
+    if (prevAtom) {
+      frontend::ScriptIndexRange range{
+          prevIndex, frontend::ScriptIndex(stencil.scriptData.size())};
+      scriptMap.putNewInfallible(prevAtom, range);
+    }
+
+    
+    
+    
+    MOZ_ASSERT(numSelfHostedScripts < (scriptMap.count() * 1.15));
+  }
+
 #ifdef DEBUG
   
   CheckSelfHostedIntrinsics();
@@ -2876,6 +2929,8 @@ void JSRuntime::finishSelfHosting() {
   selfHostStencilInput_ = nullptr;
   selfHostStencil_ = nullptr;
 
+  selfHostScriptMap.ref().clear();
+
   selfHostingGlobal_ = nullptr;
 }
 
@@ -2890,6 +2945,7 @@ void JSRuntime::traceSelfHostingStencil(JSTracer* trc) {
   if (selfHostStencilInput_.ref()) {
     selfHostStencilInput_->trace(trc);
   }
+  selfHostScriptMap.ref().trace(trc);
 }
 
 GeneratorKind JSRuntime::getSelfHostedFunctionGeneratorKind(
@@ -3287,6 +3343,18 @@ JSFunction* JSRuntime::getUnclonedSelfHostedFunction(PropertyName* name) {
   Value selfHostedValue;
   getUnclonedSelfHostedValue(name, &selfHostedValue);
   return &selfHostedValue.toObject().as<JSFunction>();
+}
+
+mozilla::Maybe<frontend::ScriptIndexRange>
+JSRuntime::getSelfHostedScriptIndexRange(js::PropertyName* name) {
+  if (parentRuntime) {
+    return parentRuntime->getSelfHostedScriptIndexRange(name);
+  }
+  MOZ_ASSERT(name->isPermanentAndMayBeShared());
+  if (auto ptr = selfHostScriptMap.ref().readonlyThreadsafeLookup(name)) {
+    return mozilla::Some(ptr->value());
+  }
+  return mozilla::Nothing();
 }
 
 bool JSRuntime::cloneSelfHostedValue(JSContext* cx, HandlePropertyName name,
