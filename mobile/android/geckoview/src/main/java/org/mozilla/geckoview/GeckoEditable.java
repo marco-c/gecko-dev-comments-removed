@@ -1608,8 +1608,36 @@ import android.view.inputmethod.EditorInfo;
             mListener.notifyIMEContext(state, typeHint, modeHint, actionHint, flags);
         }
 
-        if (state == SessionTextInput.EditableListener.IME_STATE_DISABLED ||
-                mFocusedChild == null) {
+        if (mFocusedChild == null) {
+            
+            return;
+        }
+
+        if ((flags & SessionTextInput.EditableListener.IME_FOCUS_NOT_CHANGED) != 0) {
+            if (DEBUG) {
+                final StringBuilder sb = new StringBuilder("icNotifyIMEContext: ");
+                sb.append("focus isn't changed. oldState=").append(oldState)
+                    .append(", newState=").append(state);
+                Log.d(LOGTAG, sb.toString());
+            }
+            if (((oldState == SessionTextInput.EditableListener.IME_STATE_ENABLED ||
+                  oldState == SessionTextInput.EditableListener.IME_STATE_PASSWORD) &&
+                 state == SessionTextInput.EditableListener.IME_STATE_DISABLED) ||
+                (oldState == SessionTextInput.EditableListener.IME_STATE_DISABLED &&
+                 (state == SessionTextInput.EditableListener.IME_STATE_ENABLED ||
+                  state == SessionTextInput.EditableListener.IME_STATE_PASSWORD))) {
+                
+                
+                icRestartInput(GeckoSession.TextInputDelegate.RESTART_REASON_CONTENT_CHANGE,
+                                true);
+                return;
+            }
+        }
+
+        if (state == SessionTextInput.EditableListener.IME_STATE_DISABLED) {
+            
+            
+            
             return;
         }
 
