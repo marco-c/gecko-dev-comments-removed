@@ -3014,7 +3014,7 @@ APZCTreeManager::HitTestResult APZCTreeManager::GetAPZCAtPoint(
   HitTestResult hit;
   
   
-  HitTestingTreeNode* resultNode;
+  HitTestingTreeNode* resultNode = nullptr;
   HitTestingTreeNode* root = mRootNode;
   HitTestingTreeNode* scrollbarNode = nullptr;
   std::stack<LayerPoint> hitTestPoints;
@@ -3025,21 +3025,49 @@ APZCTreeManager::HitTestResult APZCTreeManager::GetAPZCAtPoint(
 
   ForEachNode<ReverseIterator>(
       root,
-      [&hitTestPoints, this](HitTestingTreeNode* aNode) {
+      [&resultNode, &hitTestPoints, &hit, this](HitTestingTreeNode* aNode) {
         ParentLayerPoint hitTestPointForParent = ViewAs<ParentLayerPixel>(
             hitTestPoints.top(), PixelCastJustification::MovingDownToChildren);
         if (aNode->IsOutsideClip(hitTestPointForParent)) {
           
           
           
-          APZCTM_LOG("Point %f %f outside clip for node %p\n",
-                     hitTestPoints.top().x, hitTestPoints.top().y, aNode);
+          APZCTM_LOG("Point %s outside clip for node %p\n",
+                     ToString(hitTestPointForParent).c_str(), aNode);
           return TraversalFlag::Skip;
         }
         
         
-        Maybe<LayerPoint> hitTestPoint = aNode->Untransform(
-            hitTestPointForParent, ComputeTransformForNode(aNode));
+        
+        
+        
+        
+        
+        const AsyncPanZoomController* sourceOfOverscrollTransform = nullptr;
+        auto transform =
+            ComputeTransformForNode(aNode, &sourceOfOverscrollTransform);
+        if (sourceOfOverscrollTransform &&
+            sourceOfOverscrollTransform->IsInOverscrollGutter(
+                hitTestPointForParent)) {
+          APZCTM_LOG(
+              "ParentLayer point %s in overscroll gutter of APZC %p (node "
+              "%p)\n",
+              ToString(hitTestPointForParent).c_str(), aNode->GetApzc(), aNode);
+          resultNode = aNode;
+          
+          
+          
+          
+          
+          
+          hit.mHitResult = {CompositorHitTestFlags::eVisibleToHitTest};
+          hit.mHitOverscrollGutter = true;
+          return TraversalFlag::Abort;
+        }
+        
+        
+        Maybe<LayerPoint> hitTestPoint =
+            aNode->Untransform(hitTestPointForParent, transform);
         APZCTM_LOG("Transformed ParentLayer point %s to layer %s\n",
                    ToString(hitTestPointForParent).c_str(),
                    hitTestPoint ? ToString(hitTestPoint.ref()).c_str() : "nil");
@@ -3105,8 +3133,13 @@ APZCTreeManager::HitTestResult APZCTreeManager::GetAPZCAtPoint(
     hit.mLayersId = resultNode->GetLayersId();
   }
 
-  hit.mHitOverscrollGutter =
-      hit.mTargetApzc && hit.mTargetApzc->IsInOverscrollGutter(aHitTestPoint);
+  
+  
+  if (hit.mTargetApzc && resultNode &&
+      (hit.mTargetApzc != resultNode->GetApzc())) {
+    hit.mHitOverscrollGutter =
+        hit.mTargetApzc->IsInOverscrollGutter(aHitTestPoint);
+  }
 
   return hit;
 }
