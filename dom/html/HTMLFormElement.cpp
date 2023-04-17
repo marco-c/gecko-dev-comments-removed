@@ -600,7 +600,7 @@ nsresult HTMLFormElement::DoReset() {
 
   mEverTriedInvalidSubmit = false;
   
-  uint32_t numElements = GetElementCount();
+  uint32_t numElements = mControls->Length();
   for (uint32_t elementX = 0; elementX < numElements; ++elementX) {
     
     nsCOMPtr<nsIFormControl> controlNode = GetElementAt(elementX);
@@ -1068,9 +1068,6 @@ NotNull<const Encoding*> HTMLFormElement::GetSubmitEncoding() {
 }
 
 
-
-NS_IMETHODIMP_(uint32_t)
-HTMLFormElement::GetElementCount() const { return mControls->Length(); }
 
 Element* HTMLFormElement::IndexedGetter(uint32_t aIndex, bool& aFound) {
   Element* element = mControls->mElements.SafeElementAt(aIndex, nullptr);
