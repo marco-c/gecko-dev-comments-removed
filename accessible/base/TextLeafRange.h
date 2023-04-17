@@ -9,6 +9,9 @@
 
 #include <stdint.h>
 
+#include "nsDirection.h"
+#include "nsIAccessibleText.h"
+
 namespace mozilla::a11y {
 class Accessible;
 
@@ -49,6 +52,30 @@ class TextLeafPoint final {
 
 
   explicit operator bool() const { return !!mAcc; }
+
+  
+
+
+
+
+
+
+  TextLeafPoint FindBoundary(AccessibleTextBoundary aBoundaryType,
+                             nsDirection aDirection,
+                             bool aIncludeOrigin = false) const;
+
+  
+
+
+
+
+
+
+  TextLeafPoint FindPrevLineStartSameLocalAcc(bool aIncludeOrigin) const;
+  TextLeafPoint FindNextLineStartSameLocalAcc(bool aIncludeOrigin) const;
+
+ private:
+  bool IsEmptyLastLine() const;
 };
 
 
