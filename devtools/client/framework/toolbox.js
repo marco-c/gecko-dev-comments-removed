@@ -3012,7 +3012,7 @@ Toolbox.prototype = {
   
 
 
-  async _onWillNavigate({ isFrameSwitching } = {}) {
+  async _onWillNavigate() {
     
     
     
@@ -3027,11 +3027,7 @@ Toolbox.prototype = {
 
     
     this.setErrorCount(0);
-    if (!isFrameSwitching) {
-      this._updateFrames({ destroyAll: true });
-    }
     this.updateToolboxButtons();
-
     const toolId = this.currentToolId;
     
     if (
@@ -4377,9 +4373,7 @@ Toolbox.prototype = {
         resource.name === "will-navigate" &&
         resource.targetFront.isTopLevel
       ) {
-        this._onWillNavigate({
-          isFrameSwitching: resource.isFrameSwitching,
-        });
+        this._onWillNavigate();
         
         
         

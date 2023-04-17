@@ -996,6 +996,18 @@ const browsingContextTargetPrototype = {
     });
   },
 
+  _notifyDocShellDestroyAll() {
+    
+    
+    if (!this.isTopLevelTarget) {
+      return;
+    }
+
+    this.emit("frameUpdate", {
+      destroyAll: true,
+    });
+  },
+
   
 
 
@@ -1463,6 +1475,9 @@ const browsingContextTargetPrototype = {
     let reset = false;
 
     if (window == this._originalWindow && !isFrameSwitching) {
+      
+      this._notifyDocShellDestroyAll();
+
       
       
       

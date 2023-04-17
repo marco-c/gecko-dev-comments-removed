@@ -602,10 +602,7 @@ class DevToolsFrameChild extends JSWindowActorChild {
         if (!existingTarget) {
           continue;
         }
-
-        
-        
-        if (existingTarget.originalWindow.document != target) {
+        if (existingTarget.window.document != target) {
           throw new Error("Existing target actor is for a distinct document");
         }
         
