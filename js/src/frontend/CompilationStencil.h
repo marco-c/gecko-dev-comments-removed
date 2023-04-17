@@ -380,6 +380,8 @@ struct CompilationInput {
 class CompilationSyntaxParseCache {
   
   
+  
+  
   mozilla::Span<TaggedScriptThingIndex> cachedGCThings_;
 
   
@@ -389,6 +391,11 @@ class CompilationSyntaxParseCache {
   
   mozilla::Span<ScriptStencil> cachedScriptData_;
   mozilla::Span<ScriptStencilExtra> cachedScriptExtra_;
+
+  
+  
+  
+  mozilla::Span<TaggedParserAtomIndex> closedOverBindings_;
 
 #ifdef DEBUG
   
@@ -400,17 +407,15 @@ class CompilationSyntaxParseCache {
   
   
   
-  mozilla::Span<TaggedScriptThingIndex> gcThings() const {
+  mozilla::Span<TaggedParserAtomIndex> closedOverBindings() const {
     MOZ_ASSERT(isInitialized);
-    return cachedGCThings_;
+    return closedOverBindings_;
   }
-  mozilla::Span<ScriptStencil> scriptData() const {
-    MOZ_ASSERT(isInitialized);
-    return cachedScriptData_;
+  const ScriptStencil& scriptData(size_t functionIndex) const {
+    return cachedScriptData_[scriptIndex(functionIndex)];
   }
-  mozilla::Span<ScriptStencilExtra> scriptExtra() const {
-    MOZ_ASSERT(isInitialized);
-    return cachedScriptExtra_;
+  const ScriptStencilExtra& scriptExtra(size_t functionIndex) const {
+    return cachedScriptExtra_[scriptIndex(functionIndex)];
   }
 
   
@@ -420,6 +425,20 @@ class CompilationSyntaxParseCache {
                           CompilationAtomCache& atomCache, BaseScript* lazy);
 
  private:
+  
+  
+  
+  
+  
+  
+  
+  ScriptIndex scriptIndex(size_t functionIndex) const {
+    MOZ_ASSERT(isInitialized);
+    auto taggedScriptIndex = cachedGCThings_[functionIndex];
+    MOZ_ASSERT(taggedScriptIndex.isFunction());
+    return taggedScriptIndex.toFunction();
+  }
+
   [[nodiscard]] bool copyScriptInfo(JSContext* cx, LifoAlloc& alloc,
                                     ParserAtomsTable& parseAtoms,
                                     CompilationAtomCache& atomCache,
