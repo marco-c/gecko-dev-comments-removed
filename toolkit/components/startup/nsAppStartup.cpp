@@ -160,7 +160,17 @@ nsAppStartup::nsAppStartup()
       mAttemptingQuit(false),
       mInterrupted(false),
       mIsSafeModeNecessary(false),
-      mStartupCrashTrackingEnded(false) {}
+      mStartupCrashTrackingEnded(false) {
+  char* mozAppSilentRestart = PR_GetEnv("MOZ_APP_SILENT_RESTART");
+
+  
+
+
+  mWasSilentlyRestarted =
+      mozAppSilentRestart && (strcmp(mozAppSilentRestart, "") != 0);
+  
+  PR_SetEnv("MOZ_APP_SILENT_RESTART=");
+}
 
 nsresult nsAppStartup::Init() {
   nsresult rv;
@@ -291,6 +301,11 @@ nsAppStartup::Run(void) {
 
 NS_IMETHODIMP
 nsAppStartup::Quit(uint32_t aMode, int aExitCode, bool* aUserAllowedQuit) {
+  if ((aMode & eSilently) != 0 && (aMode & eRestart) == 0) {
+    
+    return NS_ERROR_INVALID_ARG;
+  }
+
   uint32_t ferocity = (aMode & 0xF);
 
   
@@ -384,6 +399,12 @@ nsAppStartup::Quit(uint32_t aMode, int aExitCode, bool* aUserAllowedQuit) {
       
 
       TimeStamp::RecordProcessRestart();
+    }
+
+    if ((aMode & eSilently) != 0) {
+      
+      
+      PR_SetEnv("MOZ_APP_SILENT_RESTART=1");
     }
 
     obsService = mozilla::services::GetObserverService();
@@ -560,6 +581,12 @@ nsAppStartup::GetWasRestarted(bool* aResult) {
 
   *aResult = mozAppRestart && (strcmp(mozAppRestart, "") != 0);
 
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsAppStartup::GetWasSilentlyRestarted(bool* aResult) {
+  *aResult = mWasSilentlyRestarted;
   return NS_OK;
 }
 
