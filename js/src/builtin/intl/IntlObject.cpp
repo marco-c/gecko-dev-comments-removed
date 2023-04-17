@@ -15,6 +15,7 @@
 #include <array>
 #include <cstring>
 #include <iterator>
+#include <string_view>
 
 #include "builtin/Array.h"
 #include "builtin/intl/Collator.h"
@@ -551,6 +552,38 @@ static ArrayObject* CreateArrayFromSortedList(
 
 
 
+template <const auto& unsupported, class Enumeration>
+static bool EnumerationIntoList(JSContext* cx, Enumeration values,
+                                MutableHandle<StringList> list) {
+  for (auto value : values) {
+    if (value.isErr()) {
+      intl::ReportInternalError(cx);
+      return false;
+    }
+    auto span = value.unwrap();
+
+    
+    std::string_view sv(span.data(), span.size());
+    if (std::any_of(std::begin(unsupported), std::end(unsupported),
+                    [sv](const auto& e) { return sv == e; })) {
+      continue;
+    }
+
+    auto* string = NewStringCopy<CanGC>(cx, span);
+    if (!string) {
+      return false;
+    }
+    if (!list.append(string)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+
+
 template <const auto& unsupported, const auto& missing>
 static bool EnumerationIntoList(JSContext* cx, UEnumeration* values,
                                 MutableHandle<StringList> list) {
@@ -653,6 +686,19 @@ static void CloseEnumeration(UEnumeration* ptr) {
 
 
 
+
+static constexpr auto UnsupportedCalendars() {
+  
+  return std::array<const char*, 0>{};
+}
+
+
+
+static constexpr auto UnsupportedCalendarsArray = UnsupportedCalendars();
+
+
+
+
 static ArrayObject* AvailableCalendars(JSContext* cx) {
   Rooted<StringList> list(cx, StringList(cx));
 
@@ -666,19 +712,10 @@ static ArrayObject* AvailableCalendars(JSContext* cx) {
       return nullptr;
     }
 
-    for (auto keyword : keywords.unwrap()) {
-      if (keyword.isErr()) {
-        intl::ReportInternalError(cx);
-        return nullptr;
-      }
+    static constexpr auto& unsupported = UnsupportedCalendarsArray;
 
-      auto* string = NewStringCopy<CanGC>(cx, keyword.unwrap());
-      if (!string) {
-        return nullptr;
-      }
-      if (!list.append(string)) {
-        return nullptr;
-      }
+    if (!EnumerationIntoList<unsupported>(cx, keywords.unwrap(), &list)) {
+      return nullptr;
     }
   }
 
