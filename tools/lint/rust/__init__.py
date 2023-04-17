@@ -60,13 +60,14 @@ def parse_issues(config, output, paths):
             diff += line + "\n"
     
     issues.append(RustfmtDiff(file, line_no, diff))
+    file = os.path.normcase(os.path.normpath(file))
     results = []
     for issue in issues:
         
         
         
         
-        if any([path in file for path in paths]):
+        if any([os.path.normcase(os.path.normpath(path)) in file for path in paths]):
             res = {
                 "path": issue.file,
                 "diff": issue.diff,
