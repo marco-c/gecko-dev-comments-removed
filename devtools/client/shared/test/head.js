@@ -121,6 +121,10 @@ const createHost = async function(
     DOMHelpers.onceDOMReady(iframe.contentWindow, resolve);
   });
 
+  
+  
+  await waitForPresShell(iframe);
+
   return { host: host, win: iframe.contentWindow, doc: iframe.contentDocument };
 };
 

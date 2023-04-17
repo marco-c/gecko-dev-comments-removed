@@ -1629,3 +1629,23 @@ async function waitForNextTopLevelDomCompleteResource(commands) {
   );
   return { onDomCompleteResource };
 }
+
+
+
+
+
+
+
+
+const waitForPresShell = function(context) {
+  return SpecialPowers.spawn(context, [], async () => {
+    const winUtils = SpecialPowers.getDOMWindowUtils(content);
+    await ContentTaskUtils.waitForCondition(() => {
+      try {
+        return !!winUtils.getPresShellId();
+      } catch (e) {
+        return false;
+      }
+    }, "Waiting for a valid presShell");
+  });
+};
