@@ -43,11 +43,11 @@ class NetworkConnectivityService : public nsINetworkConnectivityService,
   
   
   
-  ConnectivityState mDNSv4 = nsINetworkConnectivityService::UNKNOWN;
-  ConnectivityState mDNSv6 = nsINetworkConnectivityService::UNKNOWN;
+  Atomic<ConnectivityState, Relaxed> mDNSv4;
+  Atomic<ConnectivityState, Relaxed> mDNSv6;
 
-  ConnectivityState mIPv4 = nsINetworkConnectivityService::UNKNOWN;
-  ConnectivityState mIPv6 = nsINetworkConnectivityService::UNKNOWN;
+  Atomic<ConnectivityState, Relaxed> mIPv4;
+  Atomic<ConnectivityState, Relaxed> mIPv6;
 
   Atomic<ConnectivityState, Relaxed> mNAT64;
 
