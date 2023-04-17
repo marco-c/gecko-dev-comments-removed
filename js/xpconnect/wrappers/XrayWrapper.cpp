@@ -664,6 +664,13 @@ bool JSXrayTraits::resolveOwnProperty(
         return true;
       }
 
+#if defined(NIGHTLY_BUILD)
+      
+      if (id == GetJSIDByIndex(cx, XPCJSContext::IDX_CAUSE)) {
+        return getOwnPropertyFromWrapperIfSafe(cx, wrapper, id, desc);
+      }
+#endif
+
       if (key == JSProto_AggregateError &&
           id == GetJSIDByIndex(cx, XPCJSContext::IDX_ERRORS)) {
         return getOwnPropertyFromWrapperIfSafe(cx, wrapper, id, desc);
