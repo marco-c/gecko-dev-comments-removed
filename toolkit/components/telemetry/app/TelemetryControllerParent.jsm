@@ -423,11 +423,6 @@ var Impl = {
     if (aOptions.addEnvironment) {
       pingData.environment =
         aOptions.overrideEnvironment || TelemetryEnvironment.currentEnvironment;
-
-      
-      if (AppConstants.platform == "android" && ClientID.wasCanaryClientID()) {
-        pingData.environment.profile.wasCanary = true;
-      }
     }
 
     return pingData;

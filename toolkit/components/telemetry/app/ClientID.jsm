@@ -11,9 +11,6 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { Log } = ChromeUtils.import("resource://gre/modules/Log.jsm");
-const { AppConstants } = ChromeUtils.import(
-  "resource://gre/modules/AppConstants.jsm"
-);
 
 const LOGGER_NAME = "Toolkit.Telemetry";
 const LOGGER_PREFIX = "ClientID::";
@@ -66,25 +63,8 @@ var ClientID = Object.freeze({
 
 
 
-
-
-
-
-
   getClientID() {
     return ClientIDImpl.getClientID();
-  },
-
-  
-
-
-
-  wasCanaryClientID() {
-    if (AppConstants.platform == "android") {
-      return ClientIDImpl.wasCanaryClientID();
-    }
-
-    return null;
   },
 
   
@@ -144,7 +124,6 @@ var ClientIDImpl = {
   _saveClientIdTask: null,
   _removeClientIdTask: null,
   _logger: null,
-  _wasCanary: null,
 
   _loadClientID() {
     if (this._loadClientIdTask) {
@@ -170,9 +149,6 @@ var ClientIDImpl = {
     let hasCurrentClientID = false;
     try {
       let state = await CommonUtils.readJSON(gStateFilePath);
-      if (AppConstants.platform == "android" && state && "wasCanary" in state) {
-        this._wasCanary = state.wasCanary;
-      }
       if (state) {
         try {
           if (Services.prefs.prefHasUserValue(PREF_CACHED_CLIENTID)) {
@@ -244,10 +220,6 @@ var ClientIDImpl = {
       let obj = {
         clientID: this._clientID,
       };
-      
-      if (AppConstants.platform == "android" && this._wasCanary) {
-        obj.wasCanary = true;
-      }
       try {
         await IOUtils.makeDirectory(gDatareportingPath);
       } catch (ex) {
@@ -276,14 +248,6 @@ var ClientIDImpl = {
     }
 
     return Promise.resolve(this._clientID);
-  },
-
-  
-
-
-
-  wasCanaryClientID() {
-    return this._wasCanary;
   },
 
   
@@ -379,7 +343,6 @@ var ClientIDImpl = {
   async removeClientID() {
     this._log.trace("removeClientID");
     Services.telemetry.scalarAdd("telemetry.removed_client_ids", 1);
-    let oldClientId = this._clientID;
 
     
     
@@ -388,11 +351,6 @@ var ClientIDImpl = {
     this._removeClientIdTask.then(clear, clear);
 
     await this._removeClientIdTask;
-
-    
-    if (AppConstants.platform == "android") {
-      this._wasCanary = oldClientId == CANARY_CLIENT_ID;
-    }
   },
 
   
