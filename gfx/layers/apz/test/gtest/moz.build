@@ -5,6 +5,7 @@
 
 
 UNIFIED_SOURCES += [
+    "APZTestCommon.cpp",
     "TestBasic.cpp",
     "TestEventRegions.cpp",
     "TestEventResult.cpp",
