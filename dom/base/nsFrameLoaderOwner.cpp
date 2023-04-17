@@ -5,6 +5,7 @@
 
 
 #include "nsFrameLoaderOwner.h"
+#include "mozilla/dom/BrowserParent.h"
 #include "nsFrameLoader.h"
 #include "nsFocusManager.h"
 #include "nsNetUtil.h"
@@ -114,6 +115,10 @@ void nsFrameLoaderOwner::ChangeRemotenessCommon(
   doc->BlockOnload();
   auto cleanup = MakeScopeExit([&]() { doc->UnblockOnload(false); });
 
+  
+  
+  RefPtr<SessionHistoryEntry> bfcacheEntry;
+
   {
     
     
@@ -133,16 +138,16 @@ void nsFrameLoaderOwner::ChangeRemotenessCommon(
 
       MOZ_ASSERT_IF(aOptions.mTryUseBFCache, aOptions.mReplaceBrowsingContext);
       if (aOptions.mTryUseBFCache && bc) {
-        SessionHistoryEntry* she =
-            bc->Canonical()->GetActiveSessionHistoryEntry();
-        bool useBFCache = she && she == aOptions.mActiveSessionHistoryEntry &&
-                          !she->GetFrameLoader();
+        bfcacheEntry = bc->Canonical()->GetActiveSessionHistoryEntry();
+        bool useBFCache = bfcacheEntry &&
+                          bfcacheEntry == aOptions.mActiveSessionHistoryEntry &&
+                          !bfcacheEntry->GetFrameLoader();
         if (useBFCache) {
           MOZ_LOG(gSHIPBFCacheLog, LogLevel::Debug,
                   ("nsFrameLoaderOwner::ChangeRemotenessCommon: store the old "
                    "page in bfcache"));
           Unused << bc->SetIsInBFCache(true);
-          she->SetFrameLoader(mFrameLoader);
+          bfcacheEntry->SetFrameLoader(mFrameLoader);
           
           mFrameLoader = nullptr;
         }
@@ -177,14 +182,35 @@ void nsFrameLoaderOwner::ChangeRemotenessCommon(
     }
   }
 
-  ChangeFrameLoaderCommon(owner);
+  
+  
+  
+  
+  
+  
+  
+  bool retainPaint = true;
+  auto* browserParent = BrowserParent::GetFrom(mFrameLoader);
+  if (!bfcacheEntry || !mFrameLoader->IsRemoteFrame()) {
+    MOZ_LOG(gSHIPBFCacheLog, LogLevel::Debug,
+            ("Previous frameLoader not entering BFCache - immediately "
+             "resetting nsSubDocumentFrame (bfcacheEntry=%p, isRemoteFrame=%d, "
+             "browserParent=%p)",
+             bfcacheEntry.get(), mFrameLoader->IsRemoteFrame(), browserParent));
+    retainPaint = false;
+  }
+
+  ChangeFrameLoaderCommon(owner, retainPaint);
 }
 
-void nsFrameLoaderOwner::ChangeFrameLoaderCommon(Element* aOwner) {
+void nsFrameLoaderOwner::ChangeFrameLoaderCommon(Element* aOwner,
+                                                 bool aRetainPaint) {
   
   
   if (nsSubDocumentFrame* ourFrame = do_QueryFrame(aOwner->GetPrimaryFrame())) {
-    ourFrame->ResetFrameLoader(nsSubDocumentFrame::RetainPaintData::No);
+    auto retain = aRetainPaint ? nsSubDocumentFrame::RetainPaintData::Yes
+                               : nsSubDocumentFrame::RetainPaintData::No;
+    ourFrame->ResetFrameLoader(retain);
   }
 
   
@@ -326,7 +352,7 @@ void nsFrameLoaderOwner::ReplaceFrameLoader(nsFrameLoader* aNewFrameLoader) {
   }
 
   RefPtr<Element> owner = do_QueryObject(this);
-  ChangeFrameLoaderCommon(owner);
+  ChangeFrameLoaderCommon(owner,  false);
 }
 
 void nsFrameLoaderOwner::AttachFrameLoader(nsFrameLoader* aFrameLoader) {

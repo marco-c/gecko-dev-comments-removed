@@ -3884,10 +3884,15 @@ void PresShell::UnsuppressAndInvalidate() {
   ScheduleBeforeFirstPaint();
 
   mPaintingSuppressed = false;
-  nsIFrame* rootFrame = mFrameConstructor->GetRootFrame();
-  if (rootFrame) {
+  if (nsIFrame* rootFrame = mFrameConstructor->GetRootFrame()) {
     
     rootFrame->InvalidateFrame();
+  }
+
+  if (mPresContext->IsRootContentDocumentCrossProcess()) {
+    if (auto* bc = BrowserChild::GetFrom(mDocument->GetDocShell())) {
+      bc->SendDidUnsuppressPainting();
+    }
   }
 
   
