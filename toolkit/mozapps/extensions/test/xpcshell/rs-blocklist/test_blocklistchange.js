@@ -233,7 +233,6 @@ const BLOCKLIST_DATA = {
 
 
 if (useMLBF) {
-  Assert.ok(Services.prefs.getBoolPref("extensions.blocklist.useMLBF.stashes"));
   for (let [key, blocks] of Object.entries(BLOCKLIST_DATA)) {
     BLOCKLIST_DATA[key] = [];
     for (let block of blocks) {

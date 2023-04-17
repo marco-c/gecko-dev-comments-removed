@@ -3,7 +3,6 @@
 "use strict";
 
 Services.prefs.setBoolPref("extensions.blocklist.useMLBF", true);
-Services.prefs.setBoolPref("extensions.blocklist.useMLBF.stashes", true);
 
 
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "42.0", "42.0");
