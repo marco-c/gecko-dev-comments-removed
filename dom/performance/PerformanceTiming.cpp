@@ -109,7 +109,7 @@ PerformanceTimingData::PerformanceTimingData(nsITimedChannel* aChannel,
       mDecodedBodySize(0),
       mRedirectCount(0),
       mAllRedirectsSameOrigin(true),
-      mReportCrossOriginRedirect(true),
+      mAllRedirectsPassTAO(true),
       mSecureConnection(false),
       mTimingAllowed(true),
       mInitialized(false) {
@@ -221,9 +221,7 @@ void PerformanceTimingData::SetPropertiesFromHttpChannel(
   }
 
   mTimingAllowed = CheckAllowedOrigin(aHttpChannel, aChannel);
-  bool redirectsPassCheck = false;
-  aChannel->GetAllRedirectsPassTimingAllowCheck(&redirectsPassCheck);
-  mReportCrossOriginRedirect = mTimingAllowed && redirectsPassCheck;
+  aChannel->GetAllRedirectsPassTimingAllowCheck(&mAllRedirectsPassTAO);
 
   aChannel->GetNativeServerTiming(mServerTiming);
 }
@@ -292,16 +290,22 @@ uint8_t PerformanceTimingData::GetRedirectCount() const {
   return mRedirectCount;
 }
 
-bool PerformanceTimingData::ShouldReportCrossOriginRedirect() const {
+bool PerformanceTimingData::ShouldReportCrossOriginRedirect(
+    bool aEnsureSameOriginAndIgnoreTAO) const {
   if (!StaticPrefs::dom_enable_performance() || !IsInitialized() ||
       nsContentUtils::ShouldResistFingerprinting()) {
+    return false;
+  }
+
+  if (!mTimingAllowed || mRedirectCount == 0) {
     return false;
   }
 
   
   
   
-  return (mRedirectCount != 0) && mReportCrossOriginRedirect;
+  return aEnsureSameOriginAndIgnoreTAO ? mAllRedirectsSameOrigin
+                                       : mAllRedirectsPassTAO;
 }
 
 DOMHighResTimeStamp PerformanceTimingData::AsyncOpenHighRes(

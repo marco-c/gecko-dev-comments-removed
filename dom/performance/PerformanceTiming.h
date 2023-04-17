@@ -147,7 +147,12 @@ class PerformanceTimingData final {
   
   
   
-  bool ShouldReportCrossOriginRedirect() const;
+  
+  
+  
+  
+  bool ShouldReportCrossOriginRedirect(
+      bool aEnsureSameOriginAndIgnoreTAO) const;
 
   
   
@@ -200,10 +205,7 @@ class PerformanceTimingData final {
 
   bool mAllRedirectsSameOrigin = false;
 
-  
-  
-  
-  bool mReportCrossOriginRedirect = false;
+  bool mAllRedirectsPassTAO = false;
 
   bool mSecureConnection = false;
 
@@ -448,7 +450,7 @@ struct IPDLParamTraits<mozilla::dom::PerformanceTimingData> {
     WriteIPDLParam(aMsg, aActor, aParam.mDecodedBodySize);
     WriteIPDLParam(aMsg, aActor, aParam.mRedirectCount);
     WriteIPDLParam(aMsg, aActor, aParam.mAllRedirectsSameOrigin);
-    WriteIPDLParam(aMsg, aActor, aParam.mReportCrossOriginRedirect);
+    WriteIPDLParam(aMsg, aActor, aParam.mAllRedirectsPassTAO);
     WriteIPDLParam(aMsg, aActor, aParam.mSecureConnection);
     WriteIPDLParam(aMsg, aActor, aParam.mTimingAllowed);
     WriteIPDLParam(aMsg, aActor, aParam.mInitialized);
@@ -532,8 +534,7 @@ struct IPDLParamTraits<mozilla::dom::PerformanceTimingData> {
                        &aResult->mAllRedirectsSameOrigin)) {
       return false;
     }
-    if (!ReadIPDLParam(aMsg, aIter, aActor,
-                       &aResult->mReportCrossOriginRedirect)) {
+    if (!ReadIPDLParam(aMsg, aIter, aActor, &aResult->mAllRedirectsPassTAO)) {
       return false;
     }
     if (!ReadIPDLParam(aMsg, aIter, aActor, &aResult->mSecureConnection)) {

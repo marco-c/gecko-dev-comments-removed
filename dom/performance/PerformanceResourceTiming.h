@@ -60,22 +60,38 @@ class PerformanceResourceTiming : public PerformanceEntry {
     return mTimingData->FetchStartHighRes(mPerformance);
   }
 
-  DOMHighResTimeStamp RedirectStart(
-      Maybe<nsIPrincipal*>& aSubjectPrincipal) const {
+  DOMHighResTimeStamp RedirectStart(Maybe<nsIPrincipal*>& aSubjectPrincipal,
+                                    bool aEnsureSameOriginAndIgnoreTAO) const {
     
     
-    return ReportRedirectForCaller(aSubjectPrincipal)
+    
+    return ReportRedirectForCaller(aSubjectPrincipal,
+                                   aEnsureSameOriginAndIgnoreTAO)
                ? mTimingData->RedirectStartHighRes(mPerformance)
                : 0;
   }
 
-  DOMHighResTimeStamp RedirectEnd(
+  virtual DOMHighResTimeStamp RedirectStart(
       Maybe<nsIPrincipal*>& aSubjectPrincipal) const {
+    return RedirectStart(aSubjectPrincipal,
+                         false );
+  }
+
+  DOMHighResTimeStamp RedirectEnd(Maybe<nsIPrincipal*>& aSubjectPrincipal,
+                                  bool aEnsureSameOriginAndIgnoreTAO) const {
     
     
-    return ReportRedirectForCaller(aSubjectPrincipal)
+    
+    return ReportRedirectForCaller(aSubjectPrincipal,
+                                   aEnsureSameOriginAndIgnoreTAO)
                ? mTimingData->RedirectEndHighRes(mPerformance)
                : 0;
+  }
+
+  virtual DOMHighResTimeStamp RedirectEnd(
+      Maybe<nsIPrincipal*>& aSubjectPrincipal) const {
+    return RedirectEnd(aSubjectPrincipal,
+                       false );
   }
 
   DOMHighResTimeStamp DomainLookupStart(
@@ -170,7 +186,8 @@ class PerformanceResourceTiming : public PerformanceEntry {
   bool TimingAllowedForCaller(Maybe<nsIPrincipal*>& aCaller) const;
 
   
-  bool ReportRedirectForCaller(Maybe<nsIPrincipal*>& aCaller) const;
+  bool ReportRedirectForCaller(Maybe<nsIPrincipal*>& aCaller,
+                               bool aEnsureSameOriginAndIgnoreTAO) const;
 
   nsString mInitiatorType;
   const UniquePtr<PerformanceTimingData> mTimingData;  
