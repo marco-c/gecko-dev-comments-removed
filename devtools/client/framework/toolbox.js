@@ -720,7 +720,13 @@ Toolbox.prototype = {
   _onTargetDestroyed({ targetFront }) {
     if (targetFront.isTopLevel) {
       const consoleFront = targetFront.getCachedFront("console");
-      consoleFront.off("inspectObject", this._onInspectObject);
+      
+      
+      
+      
+      if (consoleFront) {
+        consoleFront.off("inspectObject", this._onInspectObject);
+      }
       targetFront.off("frame-update", this._updateFrames);
     } else if (this.selection) {
       this.selection.onTargetDestroyed(targetFront);
