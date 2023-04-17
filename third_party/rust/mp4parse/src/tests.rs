@@ -426,7 +426,7 @@ fn read_vpcc_version_0() {
 
 
 #[test]
-#[allow(clippy::inconsistent_digit_grouping)] 
+#[allow(clippy::unusual_byte_groupings)] 
 fn read_vpcc_version_1() {
     let data_length = 12u16;
     let mut stream = make_fullbox(BoxSize::Auto, b"vpcC", 1, |s| {
