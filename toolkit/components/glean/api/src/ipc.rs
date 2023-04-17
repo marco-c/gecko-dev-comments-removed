@@ -13,7 +13,6 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 #[cfg(feature = "with_gecko")]
 use {
-    std::convert::TryInto,
     std::sync::atomic::{AtomicU32, Ordering},
     xpcom::interfaces::nsIXULRuntime,
 };
@@ -54,54 +53,19 @@ where
 
 #[cfg(feature = "with_gecko")]
 static PROCESS_TYPE: Lazy<AtomicU32> = Lazy::new(|| {
-    extern "C" {
-        fn FOG_GetProcessType() -> i32;
+    if let Some(appinfo) = xpcom::services::get_XULRuntime() {
+        let mut process_type = nsIXULRuntime::PROCESS_TYPE_DEFAULT as u32;
+        let rv = unsafe { appinfo.GetProcessType(&mut process_type) };
+        if rv.succeeded() {
+            return AtomicU32::new(process_type);
+        }
     }
-    
-    let process_type = unsafe { FOG_GetProcessType() };
-    
-    
-    let process_type = process_type
-        .try_into()
-        .unwrap_or(nsIXULRuntime::PROCESS_TYPE_DEFAULT as u32);
-    
-    
-    
-    
-    register_process_shutdown(process_type);
-    AtomicU32::new(process_type)
+    AtomicU32::new(nsIXULRuntime::PROCESS_TYPE_DEFAULT as u32)
 });
 
 #[cfg(feature = "with_gecko")]
 pub fn need_ipc() -> bool {
     PROCESS_TYPE.load(Ordering::Relaxed) != nsIXULRuntime::PROCESS_TYPE_DEFAULT as u32
-}
-
-
-
-
-
-
-#[cfg(feature = "with_gecko")]
-fn register_process_shutdown(process_type: u32) {
-    match process_type as i64 {
-        nsIXULRuntime::PROCESS_TYPE_DEFAULT => {
-            
-        }
-        nsIXULRuntime::PROCESS_TYPE_CONTENT => {
-            
-            extern "C" {
-                fn FOG_RegisterContentChildShutdown();
-            }
-            unsafe {
-                FOG_RegisterContentChildShutdown();
-            };
-        }
-        _ => {
-            
-            log::error!("Process type {} tried to use FOG, but isn't supported! (Process type constants are in nsIXULRuntime.rs)", process_type);
-        }
-    }
 }
 
 

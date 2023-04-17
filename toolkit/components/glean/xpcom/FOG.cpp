@@ -135,12 +135,9 @@ FOG::Observe(nsISupports* aSubject, const char* aTopic, const char16_t* aData) {
   
   
   if (!strcmp(aTopic, OBSERVER_TOPIC_IDLE)) {
-#ifdef MOZ_GLEAN_ANDROID
     glean::FlushAndUseFOGData();
-#else
-    glean::FlushAndUseFOGData()->Then(
-        GetCurrentSerialEventTarget(), __func__,
-        []() { Unused << glean::impl::fog_persist_ping_lifetime_data(); });
+#ifndef MOZ_GLEAN_ANDROID
+    Unused << glean::impl::fog_persist_ping_lifetime_data();
 #endif
   }
 
