@@ -299,6 +299,7 @@ extern "C" const char* __tsan_default_suppressions() {
          
          "race:js::wasm::Code::bestTier\n"
          "race:js::wasm::Code::commitTier2\n"
+         "race:js::wasm::Code::setTier2\n"
 
       
       ;  
