@@ -203,6 +203,9 @@ class ThreadRegistrationData {
   static const int SLEEPING_OBSERVED = 2;
   
   Atomic<int> mSleep{AWAKE};
+
+  
+  RegisteredThread* mRegisteredThread;
 };
 
 
@@ -215,6 +218,9 @@ class ThreadRegistrationUnlockedConstReader : public ThreadRegistrationData {
   }
 
   [[nodiscard]] const void* StackTop() const { return mStackTop; }
+
+  
+  [[nodiscard]] const RacyRegisteredThread& RacyRegisteredThreadCRef() const;
 
  protected:
   ThreadRegistrationUnlockedConstReader(const char* aName,
@@ -283,6 +289,9 @@ class ThreadRegistrationUnlockedConstReaderAndAtomicRW
   }
 
   [[nodiscard]] bool IsSleeping() const { return mSleep != AWAKE; }
+
+  
+  [[nodiscard]] RacyRegisteredThread& RacyRegisteredThreadRef();
 
  protected:
   ThreadRegistrationUnlockedConstReaderAndAtomicRW(const char* aName,
@@ -389,6 +398,9 @@ class ThreadRegistrationLockedRWFromAnyThread
     mJSSampling = INACTIVE_REQUESTED;
   }
 
+  
+  [[nodiscard]] RegisteredThread& RegisteredThreadRef();
+
  protected:
   ThreadRegistrationLockedRWFromAnyThread(const char* aName,
                                           const void* aStackTop)
@@ -409,6 +421,9 @@ class ThreadRegistrationLockedRWOnThread
 
   
   void PollJSSampling();
+
+  
+  void SetRegisteredThread(RegisteredThread* aRegisteredThread);
 
  public:
   ThreadRegistrationLockedRWOnThread(const char* aName, const void* aStackTop)
