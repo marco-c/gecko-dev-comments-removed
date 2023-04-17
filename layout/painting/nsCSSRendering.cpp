@@ -951,18 +951,19 @@ nsCSSRendering::CreateBorderRendererForNonThemedOutline(
     return Nothing();
   }
 
-  
-  
-  
-  
-  
-  if (aInnerRect.Contains(aDirtyRect)) {
-    return Nothing();
-  }
-
   const nscoord offset = ourOutline->mOutlineOffset.ToAppUnits();
   nsRect innerRect = aInnerRect;
   innerRect.Inflate(offset);
+
+  
+  
+  
+  
+  
+  if (innerRect.Contains(aDirtyRect)) {
+    return Nothing();
+  }
+
   nscoord width = ourOutline->GetOutlineWidth();
 
   StyleBorderStyle outlineStyle;
