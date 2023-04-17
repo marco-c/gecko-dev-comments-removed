@@ -30,7 +30,8 @@ class ContentBlockingNotifier final {
   enum StorageAccessPermissionGrantedReason {
     eStorageAccessAPI,
     eOpenerAfterUserInteraction,
-    eOpener
+    eOpener,
+    ePrivilegeStorageAccessForOriginAPI,
   };
 
   
