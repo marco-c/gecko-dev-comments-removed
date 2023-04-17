@@ -300,6 +300,33 @@ class Suggestions {
 
 
   async _ensureAttachmentsDownloaded() {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (this._ensureAttachmentsDownloadedRunning) {
+      return;
+    }
+    this._ensureAttachmentsDownloadedRunning = true;
+    try {
+      await this._ensureAttachmentsDownloadedHelper();
+    } finally {
+      this._ensureAttachmentsDownloadedRunning = false;
+    }
+  }
+
+  async _ensureAttachmentsDownloadedHelper() {
     log.info("_ensureAttachmentsDownloaded started");
     let dataOpts = { useCache: true };
     let data = await this._rs.get({ filters: { type: "data" } });

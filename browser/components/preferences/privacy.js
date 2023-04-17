@@ -1926,12 +1926,14 @@ var gPrivacyPane = {
 
   _initAddressBar() {
     
-    this._updateFirefoxSuggestSection = this._updateFirefoxSuggestSection.bind(
-      this
-    );
-    NimbusFeatures.urlbar.onUpdate(this._updateFirefoxSuggestSection);
+    
+    
+    
+    this._firefoxSuggestNimbusUpdate = () =>
+      this._updateFirefoxSuggestSection();
+    NimbusFeatures.urlbar.onUpdate(this._firefoxSuggestNimbusUpdate);
     window.addEventListener("unload", () =>
-      NimbusFeatures.urlbar.off(this._updateFirefoxSuggestSection)
+      NimbusFeatures.urlbar.off(this._firefoxSuggestNimbusUpdate)
     );
 
     

@@ -57,41 +57,27 @@ async function assertNoQuickSuggestResults(win = window) {
 
 add_task(async function init() {
   await PlacesUtils.history.clear();
+  await PlacesUtils.bookmarks.eraseEverything();
   await UrlbarTestUtils.formHistory.clear();
 
-  Services.prefs.clearUserPref(SEEN_DIALOG_PREF);
-  Services.prefs.clearUserPref("browser.urlbar.quicksuggest.seenRestarts");
-
-  let doExperimentCleanup = await UrlbarTestUtils.enrollExperiment({
-    valueOverrides: {
-      quickSuggestEnabled: true,
-      quickSuggestShouldShowOnboardingDialog: true,
-    },
-  });
-
-  await UrlbarQuickSuggest.init();
-  await UrlbarQuickSuggest._processSuggestionsJSON(TEST_DATA);
-  let onEnabled = UrlbarQuickSuggest.onEnabledUpdate;
-  UrlbarQuickSuggest.onEnabledUpdate = () => {};
-
-  registerCleanupFunction(async function() {
-    await doExperimentCleanup();
-    UrlbarQuickSuggest.onEnabledUpdate = onEnabled;
-
-    
-    
-    UrlbarPrefs.clear("suggest.quicksuggest");
-    UrlbarPrefs.clear("suggest.quicksuggest.sponsored");
-    UrlbarPrefs.clear("quicksuggest.shouldShowOnboardingDialog");
-    UrlbarPrefs.clear("quicksuggest.showedOnboardingDialog");
-    UrlbarPrefs.clear("quicksuggest.seenRestarts");
-  });
+  await UrlbarTestUtils.ensureQuickSuggestInit(TEST_DATA);
 });
 
-
-
-
 add_task(async function test_onboarding() {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.quicksuggest.shouldShowOnboardingDialog", true],
+      [
+        "browser.urlbar.quicksuggest.quicksuggest.showedOnboardingDialog",
+        false,
+      ],
+      ["browser.urlbar.quicksuggest.seenRestarts", 0],
+      ["browser.urlbar.suggest.quicksuggest", false],
+      ["browser.urlbar.suggest.quicksuggest.sponsored", false],
+    ],
+  });
+
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value: "fra",
@@ -119,6 +105,13 @@ add_task(async function test_onboarding() {
 
   info("Waiting for dialog and pref change");
   await Promise.all([dialogPromise, prefPromise]);
+
+  await SpecialPowers.popPrefEnv();
+
+  
+  UrlbarPrefs.clear("quicksuggest.shouldShowOnboardingDialog");
+  UrlbarPrefs.clear("quicksuggest.showedOnboardingDialog");
+  UrlbarPrefs.clear("quicksuggest.seenRestarts");
 });
 
 

@@ -90,9 +90,7 @@ add_task(async function init() {
   
   
   UrlbarPrefs.set("suggest.quicksuggest", true);
-  await UrlbarQuickSuggest.init();
-  await UrlbarQuickSuggest._processSuggestionsJSON(REMOTE_SETTINGS_DATA);
-  sinon.stub(UrlbarQuickSuggest, "onEnabledUpdate").get(() => {});
+  await UrlbarTestUtils.ensureQuickSuggestInit(REMOTE_SETTINGS_DATA);
 });
 
 

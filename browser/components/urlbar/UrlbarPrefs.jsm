@@ -19,6 +19,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   NimbusFeatures: "resource://nimbus/ExperimentAPI.jsm",
+  Region: "resource://gre/modules/Region.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
 
@@ -523,6 +524,38 @@ class Preferences {
         })
       )
     );
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async maybeEnableOfflineQuickSuggest() {
+    
+    await Region.init();
+    if (
+      Region.home == "US" &&
+      Services.locale.appLocaleAsBCP47.substring(0, 2) == "en"
+    ) {
+      let prefs = Services.prefs.getDefaultBranch("browser.urlbar.");
+      prefs.setBoolPref("quicksuggest.enabled", true);
+      prefs.setCharPref("quicksuggest.scenario", "offline");
+      prefs.setBoolPref("quicksuggest.shouldShowOnboardingDialog", false);
+      prefs.setBoolPref("suggest.quicksuggest", true);
+      prefs.setBoolPref("suggest.quicksuggest.sponsored", true);
+    }
   }
 
   

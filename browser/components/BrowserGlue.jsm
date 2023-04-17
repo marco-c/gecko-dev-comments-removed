@@ -1646,6 +1646,8 @@ BrowserGlue.prototype = {
 
     ProcessHangMonitor.init();
 
+    UrlbarPrefs.maybeEnableOfflineQuickSuggest();
+
     
     let channel = new WebChannel(
       "remote-troubleshooting",

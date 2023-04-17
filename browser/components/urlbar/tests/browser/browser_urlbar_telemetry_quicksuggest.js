@@ -57,17 +57,10 @@ add_task(async function init() {
     PartnerLinkAttribution._pingCentre,
     "sendStructuredIngestionPing"
   );
-  sandbox.stub(UrlbarQuickSuggest, "_setupRemoteSettings").resolves(true);
 
   await PlacesUtils.history.clear();
+  await PlacesUtils.bookmarks.eraseEverything();
   await UrlbarTestUtils.formHistory.clear();
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      [EXPERIMENT_PREF, true],
-      ["browser.urlbar." + SUGGEST_PREF, true],
-      ["browser.urlbar.suggest.quicksuggest.sponsored", true],
-    ],
-  });
 
   
   await SearchTestUtils.installSearchExtension();
@@ -75,8 +68,7 @@ add_task(async function init() {
   Services.search.setDefault(Services.search.getEngineByName("Example"));
 
   
-  await UrlbarQuickSuggest.init();
-  await UrlbarQuickSuggest._processSuggestionsJSON(TEST_DATA);
+  await UrlbarTestUtils.ensureQuickSuggestInit(TEST_DATA);
   UrlbarProviderQuickSuggest._helpUrl = TEST_HELP_URL;
 
   

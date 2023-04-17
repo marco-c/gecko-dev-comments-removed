@@ -16,18 +16,27 @@ const SHOWED_ONBOARDING_DIALOG_PREF =
 const SEEN_RESTART_PREF = "browser.urlbar.quicksuggest.seenRestarts";
 
 add_task(async function init() {
-  await UrlbarQuickSuggest.init();
-  let onEnabled = UrlbarQuickSuggest.onEnabledUpdate;
-  UrlbarQuickSuggest.onEnabledUpdate = () => {};
-  registerCleanupFunction(async function() {
-    UrlbarQuickSuggest.onEnabledUpdate = onEnabled;
-  });
+  await UrlbarTestUtils.ensureQuickSuggestInit();
 });
 
 
 
 
 add_task(async function test_override_wait_after_n_restarts() {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.quicksuggest.shouldShowOnboardingDialog", true],
+      [
+        "browser.urlbar.quicksuggest.quicksuggest.showedOnboardingDialog",
+        false,
+      ],
+      ["browser.urlbar.quicksuggest.seenRestarts", 0],
+      ["browser.urlbar.suggest.quicksuggest", false],
+      ["browser.urlbar.suggest.quicksuggest.sponsored", false],
+    ],
+  });
+
   await UrlbarTestUtils.withExperiment({
     valueOverrides: {
       quickSuggestEnabled: true,
@@ -58,6 +67,8 @@ add_task(async function test_override_wait_after_n_restarts() {
       await Promise.all([dialogPromise, prefPromise]);
     },
   });
+
+  await SpecialPowers.popPrefEnv();
   clearOnboardingPrefs();
 });
 
