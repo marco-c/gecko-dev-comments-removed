@@ -4,22 +4,14 @@
 
 
 
+use crate::values::generics::NonNegative;
+use crate::values::specified::length::AbsoluteLength;
+
 
 
 
 #[derive(
-    Clone,
-    Copy,
-    Debug,
-    Eq,
-    MallocSizeOf,
-    Parse,
-    PartialEq,
-    SpecifiedValueInfo,
-    ToComputedValue,
-    ToCss,
-    ToResolvedValue,
-    ToShmem,
+    Clone, Copy, Debug, Eq, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem,
 )]
 #[repr(u8)]
 pub enum PaperSize {
@@ -45,6 +37,39 @@ pub enum PaperSize {
     Ledger,
 }
 
+impl PaperSize {
+    
+    pub fn long_edge(&self) -> NonNegative<AbsoluteLength> {
+        NonNegative(match *self {
+            PaperSize::A5 => AbsoluteLength::Mm(210.0),
+            PaperSize::A4 => AbsoluteLength::Mm(297.0),
+            PaperSize::A3 => AbsoluteLength::Mm(420.0),
+            PaperSize::B5 => AbsoluteLength::Mm(250.0),
+            PaperSize::B4 => AbsoluteLength::Mm(353.0),
+            PaperSize::JisB5 => AbsoluteLength::Mm(257.0),
+            PaperSize::JisB4 => AbsoluteLength::Mm(364.0),
+            PaperSize::Letter => AbsoluteLength::In(11.0),
+            PaperSize::Legal => AbsoluteLength::In(14.0),
+            PaperSize::Ledger => AbsoluteLength::In(17.0),
+        })
+    }
+    
+    pub fn short_edge(&self) -> NonNegative<AbsoluteLength> {
+        NonNegative(match *self {
+            PaperSize::A5 => AbsoluteLength::Mm(148.0),
+            PaperSize::A4 => AbsoluteLength::Mm(210.0),
+            PaperSize::A3 => AbsoluteLength::Mm(297.0),
+            PaperSize::B5 => AbsoluteLength::Mm(176.0),
+            PaperSize::B4 => AbsoluteLength::Mm(250.0),
+            PaperSize::JisB5 => AbsoluteLength::Mm(182.0),
+            PaperSize::JisB4 => AbsoluteLength::Mm(257.0),
+            PaperSize::Letter => AbsoluteLength::In(8.5),
+            PaperSize::Legal => AbsoluteLength::In(8.5),
+            PaperSize::Ledger => AbsoluteLength::In(11.0),
+        })
+    }
+}
+
 
 
 
@@ -57,7 +82,6 @@ pub enum PaperSize {
     Parse,
     PartialEq,
     SpecifiedValueInfo,
-    ToComputedValue,
     ToCss,
     ToResolvedValue,
     ToShmem,
@@ -73,18 +97,7 @@ pub enum Orientation {
 
 
 
-#[derive(
-    Clone,
-    Copy,
-    Debug,
-    MallocSizeOf,
-    PartialEq,
-    SpecifiedValueInfo,
-    ToComputedValue,
-    ToCss,
-    ToResolvedValue,
-    ToShmem,
-)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
 #[repr(C, u8)]
 pub enum GenericPageSize<S> {
     
