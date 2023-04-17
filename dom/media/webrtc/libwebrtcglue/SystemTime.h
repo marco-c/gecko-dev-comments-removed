@@ -7,13 +7,38 @@
 #ifndef DOM_MEDIA_WEBRTC_LIBWEBRTCGLUE_SYSTEMTIMENANOS_H_
 #define DOM_MEDIA_WEBRTC_LIBWEBRTCGLUE_SYSTEMTIMENANOS_H_
 
+#include "jsapi/RTCStatsReport.h"
 #include "mozilla/TimeStamp.h"
 #include "system_wrappers/include/clock.h"
 
 namespace mozilla {
+class RTCStatsTimestampMakerRealtimeClock : public webrtc::Clock {
+ public:
+  explicit RTCStatsTimestampMakerRealtimeClock(
+      const dom::RTCStatsTimestampMaker& aTimestampMaker);
+
+  webrtc::Timestamp CurrentTime() override;
+
+  
+  
+  
+  
+  
+  webrtc::NtpTime ConvertTimestampToNtpTime(
+      webrtc::Timestamp aRealtime) override;
+
+  const dom::RTCStatsTimestampMaker mTimestampMaker;
+
+ private:
+  webrtc::NtpTime WebrtcSystemTimeToNtp(TimeDuration aSystemTime);
+};
 
 
 TimeStamp WebrtcSystemTimeBase();
+
+
+
+
 webrtc::Timestamp WebrtcSystemTime();
 
 webrtc::NtpTime CreateNtp(webrtc::Timestamp aTime);
