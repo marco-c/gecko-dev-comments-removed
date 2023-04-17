@@ -119,6 +119,20 @@ const Snapshots = new (class Snapshots {
     
   }
 
+  
+
+
+
+
+
+  get urlRequirements() {
+    return new Map([
+      ["http:", {}],
+      ["https:", {}],
+      ["file:", { extension: "pdf" }],
+    ]);
+  }
+
   #notify(topic, urls) {
     Services.obs.notifyObservers(null, topic, JSON.stringify(urls));
   }
@@ -182,17 +196,45 @@ const Snapshots = new (class Snapshots {
 
 
 
+  canSnapshotUrl(url) {
+    let protocol, pathname;
+    if (typeof url == "string") {
+      url = new URL(url);
+    }
+    if (url instanceof Ci.nsIURI) {
+      protocol = url.scheme + ":";
+      pathname = url.filePath;
+    } else {
+      protocol = url.protocol;
+      pathname = url.pathname;
+    }
+    let requirements = this.urlRequirements.get(protocol);
+    return (
+      requirements &&
+      (!requirements.extension || pathname.endsWith(requirements.extension))
+    );
+  }
 
-
-
-
-
-
-
-
+  /**
+   * Adds a new snapshot.
+   *
+   * If the snapshot already exists, and this is a user-persisted addition,
+   * then the userPersisted flag will be set, and the removed_at flag will be
+   * cleared.
+   *
+   * @param {object} details
+   * @param {string} details.url
+   *   The url associated with the snapshot.
+   * @param {boolean} [details.userPersisted]
+   *   True if the user created or persisted the snapshot in some way, defaults to
+   *   false.
+   */
   async add({ url, userPersisted = false }) {
     if (!url) {
       throw new Error("Missing url parameter to Snapshots.add()");
+    }
+    if (!this.canSnapshotUrl(url)) {
+      throw new Error("This url cannot be added to snapshots");
     }
 
     let placeId = await PlacesUtils.withConnectionWrapper(
@@ -200,12 +242,12 @@ const Snapshots = new (class Snapshots {
       async db => {
         let now = Date.now();
         await this.#maybeInsertPlace(db, new URL(url));
-        
-        
-        
-        
-        
-        
+        // When the user asks for a snapshot to be created, we may not yet have
+        // a corresponding interaction. We create a snapshot with 0 as the value
+        // for first_interaction_at to flag it as missing a corresponding
+        // interaction. We have a database trigger that will update this
+        // snapshot with real values from the corresponding interaction when the
+        // latter is created.
         let rows = await db.executeCached(
           `
             INSERT INTO moz_places_metadata_snapshots
@@ -230,8 +272,8 @@ const Snapshots = new (class Snapshots {
         );
 
         if (rows.length) {
-          
-          
+          // If created_at doesn't match then this url was already a snapshot,
+          // and we only overwrite it when the new request is user_persisted.
           if (
             rows[0].getResultByName("created_at") != now &&
             !rows[0].getResultByName("user_persisted")
@@ -359,7 +401,7 @@ const Snapshots = new (class Snapshots {
       SELECT h.url AS url, h.title AS title, created_at, removed_at,
              document_type, first_interaction_at, last_interaction_at,
              user_persisted, group_concat(e.data, ",") AS page_data
-             FROM moz_places_metadata_snapshots s
+      FROM moz_places_metadata_snapshots s
       JOIN moz_places h ON h.id = s.place_id
       LEFT JOIN moz_places_metadata_snapshots_extra e ON e.place_id = s.place_id
       ${whereStatement}
@@ -498,16 +540,35 @@ const Snapshots = new (class Snapshots {
         let bindings = {};
 
         let urlFilter = "";
-        if (urls !== undefined) {
+        if (urls == undefined) {
+          
+          
+          
+          
+          
+          let filters = [];
+          for (let protocol of this.urlRequirements.keys()) {
+            filters.push(
+              `(url_hash BETWEEN hash('${protocol}', 'prefix_lo') AND hash('${protocol}', 'prefix_hi'))`
+            );
+          }
+          urlFilter = " WHERE " + filters.join(" OR ");
+        } else {
           let urlMatches = [];
-
           urls.forEach((url, idx) => {
+            if (!this.canSnapshotUrl(url)) {
+              logConsole.debug(`Url can't be added to snapshots: ${url}`);
+              return;
+            }
             bindings[`url${idx}`] = url;
             urlMatches.push(
               `(url_hash = hash(:url${idx}) AND url = :url${idx})`
             );
           });
-
+          if (!urlMatches.length) {
+            
+            return [];
+          }
           urlFilter = `WHERE ${urlMatches.join(" OR ")}`;
         }
 
@@ -550,7 +611,8 @@ const Snapshots = new (class Snapshots {
                 moz_places_metadata.*,
                 row_number() OVER (PARTITION BY place_id ORDER BY created_at DESC) AS row,
                 first_value(document_type) OVER (PARTITION BY place_id ORDER BY created_at DESC) AS doc_type
-              FROM moz_places_metadata JOIN moz_places ON moz_places_metadata.place_id = moz_places.id
+              FROM moz_places_metadata
+              JOIN moz_places h ON moz_places_metadata.place_id = h.id
               ${urlFilter}
           )
           INSERT OR IGNORE INTO moz_places_metadata_snapshots
@@ -565,6 +627,8 @@ const Snapshots = new (class Snapshots {
           ...bindings,
           createdAt: now,
         });
+
+        logConsole.debug(`Inserted ${results.length} snapshots`);
 
         let newUrls = [];
         for (let row of results) {
