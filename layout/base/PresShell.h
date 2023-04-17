@@ -881,9 +881,8 @@ class PresShell final : public nsStubDocumentObserver,
     return mObservesMutationsForPrint;
   }
 
-  nsresult SetIsActive(bool aIsActive);
-
-  bool IsActive() { return mIsActive; }
+  void ActivenessMaybeChanged();
+  bool IsActive() const { return mIsActive; }
 
   
 
@@ -1692,6 +1691,10 @@ class PresShell final : public nsStubDocumentObserver,
  private:
   ~PresShell();
 
+  void SetIsActive(bool aIsActive);
+  bool ShouldBeActive() const;
+
+
   
 
 
@@ -1936,8 +1939,7 @@ class PresShell final : public nsStubDocumentObserver,
   };
   MOZ_CAN_RUN_SCRIPT void ProcessSynthMouseMoveEvent(bool aFromScroll);
 
-  void QueryIsActive();
-  nsresult UpdateImageLockingState();
+  void UpdateImageLockingState();
 
   already_AddRefed<PresShell> GetParentPresShellForEventHandling();
 
