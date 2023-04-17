@@ -11,6 +11,7 @@
 #include "mozilla/css/SheetParsingMode.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/PreloaderBase.h"
+#include "mozilla/SharedSubResourceCache.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/UniquePtr.h"
 #include "nsIThreadInternal.h"
@@ -24,7 +25,6 @@ class nsINode;
 class nsIPrincipal;
 class nsIURI;
 class nsIReferrerInfo;
-struct StyleUseCounters;
 
 namespace mozilla::css {
 
@@ -37,12 +37,14 @@ static_assert(eAuthorSheetFeatures == 0 && eUserSheetFeatures == 1 &&
               "sheet parsing mode constants won't fit "
               "in SheetLoadData::mParsingMode");
 
-class SheetLoadData final : public PreloaderBase,
-                            public nsIRunnable,
-                            public nsIThreadObserver {
+class SheetLoadData final
+    : public PreloaderBase,
+      public SharedSubResourceCacheLoadingValueBase<SheetLoadData>,
+      public nsIRunnable,
+      public nsIThreadObserver {
   using MediaMatched = dom::LinkStyle::MediaMatched;
   using IsAlternate = dom::LinkStyle::IsAlternate;
-  using UseSystemPrincipal = Loader::UseSystemPrincipal;
+  using UseSystemPrincipal = css::Loader::UseSystemPrincipal;
 
  protected:
   virtual ~SheetLoadData();
@@ -53,7 +55,10 @@ class SheetLoadData final : public PreloaderBase,
   void PrioritizeAsPreload() final;
 
   
-  SheetLoadData(Loader* aLoader, const nsAString& aTitle, nsIURI* aURI,
+  void StartPendingLoad();
+
+  
+  SheetLoadData(css::Loader* aLoader, const nsAString& aTitle, nsIURI* aURI,
                 StyleSheet* aSheet, bool aSyncLoad, nsINode* aOwningNode,
                 IsAlternate aIsAlternate, MediaMatched aMediaMatched,
                 StylePreloadKind aPreloadKind, nsICSSLoaderObserver* aObserver,
@@ -61,13 +66,13 @@ class SheetLoadData final : public PreloaderBase,
                 nsIReferrerInfo* aReferrerInfo);
 
   
-  SheetLoadData(Loader* aLoader, nsIURI* aURI, StyleSheet* aSheet,
+  SheetLoadData(css::Loader* aLoader, nsIURI* aURI, StyleSheet* aSheet,
                 SheetLoadData* aParentData, nsICSSLoaderObserver* aObserver,
                 nsIPrincipal* aTriggeringPrincipal,
                 nsIReferrerInfo* aReferrerInfo);
 
   
-  SheetLoadData(Loader* aLoader, nsIURI* aURI, StyleSheet* aSheet,
+  SheetLoadData(css::Loader* aLoader, nsIURI* aURI, StyleSheet* aSheet,
                 bool aSyncLoad, UseSystemPrincipal, StylePreloadKind,
                 const Encoding* aPreloadEncoding,
                 nsICSSLoaderObserver* aObserver,
@@ -91,9 +96,13 @@ class SheetLoadData final : public PreloaderBase,
   NS_DECL_NSIRUNNABLE
   NS_DECL_NSITHREADOBSERVER
 
+  css::Loader& Loader() { return *mLoader; }
+
+  void DidCancelLoad() { mIsCancelled = true; }
+
   
   
-  const RefPtr<Loader> mLoader;
+  const RefPtr<css::Loader> mLoader;
 
   
   
@@ -110,9 +119,6 @@ class SheetLoadData final : public PreloaderBase,
 
   
   const RefPtr<StyleSheet> mSheet;
-
-  
-  RefPtr<SheetLoadData> mNext;
 
   
   
@@ -138,12 +144,6 @@ class SheetLoadData final : public PreloaderBase,
   
   
   const bool mIsChildSheet : 1;
-
-  
-  
-  
-  
-  bool mIsLoading : 1;
 
   
   bool mIsBeingParsed : 1;
@@ -224,10 +224,6 @@ class SheetLoadData final : public PreloaderBase,
   const NotNull<const Encoding*> mGuessedEncoding;
 
   
-  
-  UniquePtr<StyleUseCounters> mUseCounters;
-
-  
   const nsCompatibility mCompatMode;
 
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
@@ -239,6 +235,9 @@ class SheetLoadData final : public PreloaderBase,
 #endif
 
   bool ShouldDefer() const { return mWasAlternate || !mMediaMatched; }
+
+  RefPtr<StyleSheet> ValueForCache() const;
+  uint32_t ExpirationTime() const { return mExpirationTime; }
 
   
   

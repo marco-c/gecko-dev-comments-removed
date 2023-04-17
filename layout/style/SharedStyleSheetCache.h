@@ -19,125 +19,60 @@
 
 
 
-#include "mozilla/PrincipalHashKey.h"
-#include "mozilla/WeakPtr.h"
-#include "mozilla/css/Loader.h"
-#include "nsTHashMap.h"
-#include "nsIMemoryReporter.h"
+#include "mozilla/SharedSubResourceCache.h"
 #include "nsRefPtrHashtable.h"
-#include "nsURIHashKey.h"
+#include "mozilla/MemoryReporting.h"
+#include "mozilla/css/Loader.h"
 
 namespace mozilla {
 
+class StyleSheet;
+class SheetLoadDataHashKey;
+
 namespace css {
 class SheetLoadData;
-}
+class Loader;
+}  
 
-class SharedStyleSheetCache final : public nsIMemoryReporter {
+struct SharedStyleSheetCacheTraits {
+  using Loader = css::Loader;
+  using Key = SheetLoadDataHashKey;
+  using Value = StyleSheet;
+  using LoadingValue = css::SheetLoadData;
+
+  static SheetLoadDataHashKey KeyFromLoadingValue(const LoadingValue& aValue) {
+    return SheetLoadDataHashKey(aValue);
+  }
+};
+
+class SharedStyleSheetCache final
+    : public SharedSubResourceCache<SharedStyleSheetCacheTraits,
+                                    SharedStyleSheetCache>,
+      public nsIMemoryReporter {
  public:
+  using Base = SharedSubResourceCache<SharedStyleSheetCacheTraits,
+                                      SharedStyleSheetCache>;
+
   NS_DECL_ISUPPORTS
   NS_DECL_NSIMEMORYREPORTER
 
-  SharedStyleSheetCache(const SharedStyleSheetCache&) = delete;
-  SharedStyleSheetCache(SharedStyleSheetCache&&) = delete;
-
-  static already_AddRefed<SharedStyleSheetCache> Get() {
-    if (sInstance) {
-      return do_AddRef(sInstance);
-    }
-    return Create();
-  }
-
- public:
-  
-  
-  
-  
-
-  
-  using CacheResult = std::tuple<RefPtr<StyleSheet>, css::Loader::SheetState>;
-  CacheResult Lookup(css::Loader&, const SheetLoadDataHashKey&, bool aSyncLoad);
-
-  
-  
-  
-  
-  
-  [[nodiscard]] bool CoalesceLoad(const SheetLoadDataHashKey&,
-                                  css::SheetLoadData& aNewLoad,
-                                  css::Loader::SheetState aExistingLoadState);
-
-  size_t SizeOfIncludingThis(MallocSizeOf) const;
-
-  
-  void LoadStarted(const SheetLoadDataHashKey&, css::SheetLoadData&);
-  
-  void DeferSheetLoad(const SheetLoadDataHashKey&, css::SheetLoadData&);
-
-  enum class StartLoads {
-    Always,
-    IfNonAlternate,
-  };
-
-  void StartDeferredLoadsForLoader(css::Loader&, StartLoads);
-  void CancelLoadsForLoader(css::Loader&);
+  SharedStyleSheetCache();
+  void Init();
 
   
   
   static void LoadCompleted(SharedStyleSheetCache*, css::SheetLoadData&,
                             nsresult);
-
-  
-  
-  
-  void RegisterLoader(css::Loader&);
-
-  
-  
-  
-  
-  
-  void UnregisterLoader(css::Loader&);
-
+  using Base::LoadCompleted;
+  static void LoadCompletedInternal(SharedStyleSheetCache*, css::SheetLoadData&,
+                                    nsTArray<RefPtr<css::SheetLoadData>>&);
   static void Clear(nsIPrincipal* aForPrincipal = nullptr,
                     const nsACString* aBaseDomain = nullptr);
 
- private:
-  static already_AddRefed<SharedStyleSheetCache> Create();
-  void CancelDeferredLoadsForLoader(css::Loader&);
-
-  static void LoadCompletedInternal(SharedStyleSheetCache*, css::SheetLoadData&,
-                                    nsTArray<RefPtr<css::SheetLoadData>>&);
-  void InsertIntoCompleteCacheIfNeeded(css::SheetLoadData&);
-
-  SharedStyleSheetCache() = default;
+ protected:
+  void InsertIfNeeded(css::SheetLoadData&);
 
   ~SharedStyleSheetCache();
-
-  struct CompleteSheet {
-    uint32_t mExpirationTime = 0;
-    UniquePtr<StyleUseCounters> mUseCounters;
-    RefPtr<StyleSheet> mSheet;
-
-    bool Expired() const;
-  };
-
-  void WillStartPendingLoad(css::SheetLoadData&);
-
-  nsTHashMap<SheetLoadDataHashKey, CompleteSheet> mCompleteSheets;
-  nsRefPtrHashtable<SheetLoadDataHashKey, css::SheetLoadData> mPendingDatas;
-  
-  
-  
-  
-  
-  nsTHashMap<SheetLoadDataHashKey, WeakPtr<css::SheetLoadData>> mLoadingDatas;
-
-  
-  
-  nsTHashMap<PrincipalHashKey, uint32_t> mLoaderPrincipalRefCnt;
-
-  static SharedStyleSheetCache* sInstance;
 };
 
 }  

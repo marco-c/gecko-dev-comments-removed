@@ -119,7 +119,8 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
 
   
   
-  void FinishAsyncParse(already_AddRefed<RawServoStyleSheetContents>);
+  void FinishAsyncParse(already_AddRefed<RawServoStyleSheetContents>,
+                        UniquePtr<StyleUseCounters>);
 
   
   
@@ -138,9 +139,8 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
     return Inner().mContents;
   }
 
-  void SetContentsForImport(const RawServoStyleSheetContents* aContents) {
-    MOZ_ASSERT(!Inner().mContents);
-    Inner().mContents = aContents;
+  const StyleUseCounters* GetStyleUseCounters() const {
+    return Inner().mUseCounters.get();
   }
 
   URLExtraData* URLData() const { return Inner().mURLData; }
