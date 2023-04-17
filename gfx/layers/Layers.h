@@ -35,7 +35,6 @@
 #include "mozilla/layers/LayerAttributes.h"  
 #include "mozilla/layers/LayerManager.h"  
 #include "mozilla/layers/ScrollableLayerGuid.h"  
-#include "mozilla/layers/BSPTree.h"
 #include "nsISupports.h"    
 #include "nsPoint.h"        
 #include "nsRect.h"         
@@ -78,6 +77,7 @@ class ShadowableLayer;
 class SpecificLayerAttributes;
 class Compositor;
 class TransformData;
+struct LayerPolygon;
 struct PropertyAnimationGroup;
 
 namespace layerscope {
