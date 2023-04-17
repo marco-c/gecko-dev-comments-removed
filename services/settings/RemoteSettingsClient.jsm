@@ -243,6 +243,7 @@ class RemoteSettingsClient extends EventEmitter {
   constructor(
     collectionName,
     {
+      bucketName,
       bucketNamePref,
       signerName,
       filterFunc,
@@ -253,6 +254,7 @@ class RemoteSettingsClient extends EventEmitter {
     super(["sync"]); 
 
     this.collectionName = collectionName;
+    this.bucketName = bucketName;
     this.signerName = signerName;
     this.filterFunc = filterFunc;
     this.localFields = localFields;
@@ -264,18 +266,21 @@ class RemoteSettingsClient extends EventEmitter {
     
     this.verifySignature = AppConstants.REMOTE_SETTINGS_VERIFY_SIGNATURE;
 
-    
-    
-    this.bucketNamePref = bucketNamePref;
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
-      "bucketName",
-      this.bucketNamePref,
-      null,
-      () => {
-        this.db.identifier = this.identifier;
-      }
-    );
+    if (!bucketName) {
+      
+      
+      
+      this.bucketNamePref = bucketNamePref;
+      XPCOMUtils.defineLazyPreferenceGetter(
+        this,
+        "bucketName",
+        this.bucketNamePref,
+        null,
+        () => {
+          this.db.identifier = this.identifier;
+        }
+      );
+    }
 
     XPCOMUtils.defineLazyGetter(
       this,
