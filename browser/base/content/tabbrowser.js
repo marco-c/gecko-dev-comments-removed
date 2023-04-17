@@ -7172,11 +7172,8 @@ var TabContextMenu = {
   updateShareURLMenuItem() {
     
     if (
-      !gProton ||
-      !(
-        AppConstants.platform == "macosx" ||
-        AppConstants.isPlatformAndVersionAtLeast("win", "6.4")
-      )
+      AppConstants.platform != "macosx" &&
+      !AppConstants.isPlatformAndVersionAtLeast("win", "6.4")
     ) {
       return;
     }

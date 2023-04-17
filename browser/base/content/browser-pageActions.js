@@ -631,7 +631,7 @@ var BrowserPageActions = {
     
     
     
-    const isProtonExtensionAction = action.extensionID && gProton;
+    const isProtonExtensionAction = action.extensionID;
 
     if (action.__transient || isProtonExtensionAction) {
       this.placeActionInPanel(action);
@@ -942,11 +942,8 @@ var BrowserPageActions = {
     }
 
     let action = this.actionForNode(popup.triggerNode);
-    if (
-      !action ||
-      
-      (gProton && !action.extensionID)
-    ) {
+    
+    if (!action?.extensionID) {
       this._contextAction = null;
       event.preventDefault();
       return;
