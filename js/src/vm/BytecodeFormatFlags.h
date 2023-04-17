@@ -37,6 +37,7 @@ enum {
   JOF_TWO_UINT8 = 23,   
   JOF_DEBUGCOORD = 24,  
 
+  JOF_SHAPE = 25,       
   JOF_TYPEMASK = 0xFF,  
 
   JOF_NAME = 1 << 8,        
