@@ -337,6 +337,8 @@ add_task(async function nimbusExposure() {
   UrlbarProviderQuickSuggest._recordedExposureEvent = false;
   let doExperimentCleanup = await UrlbarTestUtils.enrollExperiment({
     valueOverrides: {
+      
+      merinoEnabled: false,
       quickSuggestEnabled: true,
       quickSuggestShouldShowOnboardingDialog: false,
     },

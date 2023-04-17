@@ -980,7 +980,7 @@ var UrlbarUtils = {
       userContextId: window.gBrowser.selectedBrowser.getAttribute(
         "usercontextid"
       ),
-      allowSearchSuggestions: false,
+      prohibitRemoteResults: true,
       providers: ["AliasEngines", "BookmarkKeywords", "HeuristicFallback"],
     };
     if (window.gURLBar.searchMode) {
@@ -1556,9 +1556,9 @@ class UrlbarQueryContext {
 
     
     for (let [prop, checkFn, defaultValue] of [
-      ["allowSearchSuggestions", v => true, true],
       ["currentPage", v => typeof v == "string" && !!v.length],
       ["formHistoryName", v => typeof v == "string" && !!v.length],
+      ["prohibitRemoteResults", v => true, false],
       ["providers", v => Array.isArray(v) && v.length],
       ["searchMode", v => v && typeof v == "object"],
       ["sources", v => Array.isArray(v) && v.length],
@@ -1645,6 +1645,47 @@ class UrlbarQueryContext {
     }
 
     return null;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  allowRemoteResults(searchString = this.searchString) {
+    if (this.prohibitRemoteResults) {
+      return false;
+    }
+
+    
+    if (searchString.length < 2) {
+      return false;
+    }
+
+    
+    
+    
+    if (
+      this.tokens.length == 1 &&
+      this.tokens[0].type == UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN
+    ) {
+      return false;
+    }
+
+    
+    
+    if (this.fixupInfo?.href && !this.fixupInfo?.isSearch) {
+      return false;
+    }
+
+    
+    return true;
   }
 }
 

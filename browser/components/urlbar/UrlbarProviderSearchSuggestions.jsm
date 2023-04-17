@@ -139,7 +139,6 @@ class ProviderSearchSuggestions extends UrlbarProvider {
 
   _allowSuggestions(queryContext) {
     if (
-      !queryContext.allowSearchSuggestions ||
       
       
       (!UrlbarPrefs.get("suggest.searches") &&
@@ -166,6 +165,13 @@ class ProviderSearchSuggestions extends UrlbarProvider {
     searchString = queryContext.searchString
   ) {
     
+    
+    
+    if (queryContext.prohibitRemoteResults) {
+      return false;
+    }
+
+    
     if (!searchString.trim()) {
       return false;
     }
@@ -188,30 +194,7 @@ class ProviderSearchSuggestions extends UrlbarProvider {
       return false;
     }
 
-    
-    if (searchString.length < 2) {
-      return false;
-    }
-
-    
-    
-    
-    
-    if (
-      queryContext.tokens.length == 1 &&
-      queryContext.tokens[0].type == UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN
-    ) {
-      return false;
-    }
-
-    
-    
-    if (queryContext.fixupInfo?.href && !queryContext.fixupInfo?.isSearch) {
-      return false;
-    }
-
-    
-    return true;
+    return queryContext.allowRemoteResults(searchString);
   }
 
   
@@ -358,19 +341,14 @@ class ProviderSearchSuggestions extends UrlbarProvider {
     let results = [];
 
     
-    let seenSuggestions = new Set();
-
     
     
     
     
-    let maxInitialFormHistory = UrlbarPrefs.get(
-      "maxHistoricalSearchSuggestions"
-    );
-    while (results.length < maxInitialFormHistory && fetchData.local.length) {
-      let entry = fetchData.local.shift();
-      results.push(makeFormHistoryResult(queryContext, engine, entry));
-      seenSuggestions.add(entry.value);
+    if (UrlbarPrefs.get("maxHistoricalSearchSuggestions")) {
+      for (let entry of fetchData.local) {
+        results.push(makeFormHistoryResult(queryContext, engine, entry));
+      }
     }
 
     
@@ -395,7 +373,7 @@ class ProviderSearchSuggestions extends UrlbarProvider {
     });
 
     for (let entry of fetchData.remote) {
-      if (looksLikeUrl(entry.value) || seenSuggestions.has(entry.value)) {
+      if (looksLikeUrl(entry.value)) {
         continue;
       }
 
@@ -436,23 +414,9 @@ class ProviderSearchSuggestions extends UrlbarProvider {
             })
           )
         );
-        seenSuggestions.add(entry.value);
       } catch (err) {
         Cu.reportError(err);
         continue;
-      }
-    }
-
-    
-    
-    while (
-      maxInitialFormHistory &&
-      results.length < queryContext.maxResults + 1 &&
-      fetchData.local.length
-    ) {
-      let entry = fetchData.local.shift();
-      if (!seenSuggestions.has(entry.value)) {
-        results.push(makeFormHistoryResult(queryContext, engine, entry));
       }
     }
 

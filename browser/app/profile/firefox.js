@@ -381,6 +381,9 @@ pref("browser.urlbar.quicksuggest.sponsoredIndex", -1);
 pref("browser.urlbar.quicksuggest.nonSponsoredIndex", -1);
 
 
+pref("browser.urlbar.quicksuggest.remoteSettings.enabled", true);
+
+
 #ifdef NIGHTLY_BUILD
 pref("browser.urlbar.unitConversion.enabled", true);
 #else
@@ -448,6 +451,12 @@ pref("browser.urlbar.keepPanelOpenDuringImeComposition", false);
 
 
 pref("browser.urlbar.groupLabels.enabled", true);
+
+
+pref("browser.urlbar.merino.enabled", false);
+
+
+pref("browser.urlbar.merino.endpointURL", "https://merino.services.mozilla.com/api/v1/suggest");
 
 pref("browser.altClickSave", false);
 

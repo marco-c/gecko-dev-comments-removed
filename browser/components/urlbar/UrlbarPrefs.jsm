@@ -114,13 +114,20 @@ const PREF_URLBAR_DEFAULTS = new Map([
 
   
   
-  ["maxCharsForSearchSuggestions", 20],
+  
+  ["maxCharsForSearchSuggestions", 100],
 
   
   ["maxHistoricalSearchSuggestions", 0],
 
   
   ["maxRichResults", 10],
+
+  
+  ["merino.enabled", false],
+
+  
+  ["merino.endpointURL", "https://merino.services.mozilla.com/api/v1/suggest"],
 
   
   
@@ -185,13 +192,23 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["suggest.quicksuggest", false],
 
   
+  
+  ["quicksuggest.enabled", false],
+
+  
+  ["quicksuggest.log", false],
+
+  
+  ["quicksuggest.remoteSettings.enabled", true],
+
+  
+  ["quicksuggest.shouldShowOnboardingDialog", true],
+
+  
   ["quicksuggest.showedOnboardingDialog", false],
 
   
   ["quicksuggest.seenRestarts", 0],
-
-  
-  ["quicksuggest.log", false],
 
   
   

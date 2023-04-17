@@ -40,6 +40,7 @@ XPCOMUtils.defineLazyServiceGetter(
 
 
 const DEFAULT_EXPERIMENT_FEATURE_VARIABLES = {
+  merinoEnabled: false,
   quickSuggestEnabled: false,
   quickSuggestNonSponsoredIndex: -1,
   quickSuggestShouldShowOnboardingDialog: true,
