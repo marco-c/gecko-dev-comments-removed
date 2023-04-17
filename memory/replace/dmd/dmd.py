@@ -49,6 +49,9 @@ allocatorFns = [
     
     
     "???",
+    
+    "mozilla::dmd::AllocCallback",
+    "mozilla::dmd::StackTrace::Get",
 ]
 
 
