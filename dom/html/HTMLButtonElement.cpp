@@ -228,25 +228,7 @@ nsresult HTMLButtonElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
   }
 
   if (nsEventStatus_eIgnore == aVisitor.mEventStatus) {
-    switch (aVisitor.mEvent->mMessage) {
-      case eKeyPress:
-      case eKeyUp: {
-        
-        
-        WidgetKeyboardEvent* keyEvent = aVisitor.mEvent->AsKeyboardEvent();
-        if ((keyEvent->mKeyCode == NS_VK_RETURN &&
-             eKeyPress == aVisitor.mEvent->mMessage) ||
-            (keyEvent->mKeyCode == NS_VK_SPACE &&
-             eKeyUp == aVisitor.mEvent->mMessage)) {
-          DispatchSimulatedClick(this, aVisitor.mEvent->IsTrusted(),
-                                 aVisitor.mPresContext);
-          aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
-        }
-      } break;
-
-      default:
-        break;
-    }
+    HandleKeyboardActivation(aVisitor);
     if (aVisitor.mItemFlags & NS_OUTER_ACTIVATE_EVENT) {
       if (mForm) {
         

@@ -700,10 +700,12 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
       nsAtom* aAttrName, bool* aDefer) override;
 
   
+  void HandleKeyboardActivation(mozilla::EventChainPostVisitor&);
 
-
-  nsresult DispatchSimulatedClick(nsGenericHTMLElement* aElement,
-                                  bool aIsTrusted, nsPresContext* aPresContext);
+  
+  static nsresult DispatchSimulatedClick(nsGenericHTMLElement* aElement,
+                                         bool aIsTrusted,
+                                         nsPresContext* aPresContext);
 
   
 

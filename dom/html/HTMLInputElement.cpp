@@ -3593,6 +3593,22 @@ bool HTMLInputElement::StepsInputValue(
   return true;
 }
 
+static bool ActivatesWithKeyboard(uint8_t aType) {
+  switch (aType) {
+    case NS_FORM_INPUT_CHECKBOX:
+    case NS_FORM_INPUT_RADIO:
+    case NS_FORM_INPUT_BUTTON:
+    case NS_FORM_INPUT_RESET:
+    case NS_FORM_INPUT_SUBMIT:
+    case NS_FORM_INPUT_FILE:
+    case NS_FORM_INPUT_IMAGE:  
+    case NS_FORM_INPUT_COLOR:
+      return true;
+    default:
+      return false;
+  }
+}
+
 nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
   if (aVisitor.mEvent->mMessage == eFocus ||
       aVisitor.mEvent->mMessage == eBlur) {
@@ -3733,6 +3749,16 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
       FireChangeEventIfNeeded();
       aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
     } else if (!preventDefault) {
+      
+      if (aVisitor.mEvent->mMessage == eKeyPress &&
+          (mType == NS_FORM_INPUT_CHECKBOX || mType == NS_FORM_INPUT_RADIO) &&
+          keyEvent->mKeyCode == NS_VK_RETURN && aVisitor.mPresContext) {
+        MaybeSubmitForm(aVisitor.mPresContext);
+      } else if (ActivatesWithKeyboard(mType)) {
+        
+        HandleKeyboardActivation(aVisitor);
+      }
+
       switch (aVisitor.mEvent->mMessage) {
         case eFocus: {
           
@@ -3761,43 +3787,8 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
           }
           break;
         }
-
-        case eKeyPress:
-        case eKeyUp: {
-          
-          
-          WidgetKeyboardEvent* keyEvent = aVisitor.mEvent->AsKeyboardEvent();
-          if ((aVisitor.mEvent->mMessage == eKeyPress &&
-               keyEvent->mKeyCode == NS_VK_RETURN) ||
-              (aVisitor.mEvent->mMessage == eKeyUp &&
-               keyEvent->mKeyCode == NS_VK_SPACE)) {
-            switch (mType) {
-              case NS_FORM_INPUT_CHECKBOX:
-              case NS_FORM_INPUT_RADIO: {
-                
-                if (keyEvent->mKeyCode != NS_VK_SPACE &&
-                    aVisitor.mPresContext) {
-                  MaybeSubmitForm(aVisitor.mPresContext);
-
-                  break;  
-                }
-                
-                [[fallthrough]];
-              }
-              case NS_FORM_INPUT_BUTTON:
-              case NS_FORM_INPUT_RESET:
-              case NS_FORM_INPUT_SUBMIT:
-              case NS_FORM_INPUT_FILE:
-              case NS_FORM_INPUT_IMAGE:  
-              case NS_FORM_INPUT_COLOR: {
-                DispatchSimulatedClick(this, aVisitor.mEvent->IsTrusted(),
-                                       aVisitor.mPresContext);
-                aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
-              }  
-            }    
-          }
-          if (aVisitor.mEvent->mMessage == eKeyPress &&
-              mType == NS_FORM_INPUT_RADIO && !keyEvent->IsAlt() &&
+        case eKeyPress: {
+          if (mType == NS_FORM_INPUT_RADIO && !keyEvent->IsAlt() &&
               !keyEvent->IsControl() && !keyEvent->IsMeta()) {
             bool isMovingBack = false;
             switch (keyEvent->mKeyCode) {
@@ -3849,8 +3840,7 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
 
 
 
-          if (aVisitor.mEvent->mMessage == eKeyPress &&
-              keyEvent->mKeyCode == NS_VK_RETURN &&
+          if (keyEvent->mKeyCode == NS_VK_RETURN &&
               (IsSingleLineTextControl(false, mType) ||
                mType == NS_FORM_INPUT_NUMBER || IsDateTimeInputType(mType))) {
             FireChangeEventIfNeeded();
@@ -3860,8 +3850,7 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
             }
           }
 
-          if (aVisitor.mEvent->mMessage == eKeyPress &&
-              mType == NS_FORM_INPUT_RANGE && !keyEvent->IsAlt() &&
+          if (mType == NS_FORM_INPUT_RANGE && !keyEvent->IsAlt() &&
               !keyEvent->IsControl() && !keyEvent->IsMeta() &&
               (keyEvent->mKeyCode == NS_VK_LEFT ||
                keyEvent->mKeyCode == NS_VK_RIGHT ||
