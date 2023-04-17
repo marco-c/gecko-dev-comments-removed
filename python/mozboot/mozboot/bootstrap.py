@@ -325,10 +325,6 @@ class Bootstrapper(object):
 
         self.instance.warn_if_pythonpath_is_set()
 
-        
-        
-        self.instance.ensure_python_modern()
-
         state_dir = self.create_state_dir()
         self.instance.state_dir = state_dir
 
