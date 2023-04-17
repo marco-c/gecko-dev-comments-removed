@@ -1236,7 +1236,7 @@ js::Nursery::CollectionResult js::Nursery::doCollection(JS::GCReason reason) {
   
   
   startProfile(ProfileKey::Sweep);
-  sweep(&mover);
+  sweep();
   endProfile(ProfileKey::Sweep);
 
   
@@ -1431,7 +1431,9 @@ bool js::Nursery::registerMallocedBuffer(void* buffer, size_t nbytes) {
   return true;
 }
 
-void js::Nursery::sweep(JSTracer* trc) {
+void js::Nursery::sweep() {
+  MinorSweepingTracer trc(runtime());
+
   
   
   for (Cell* cell : cellsWithUid_) {
@@ -1445,12 +1447,8 @@ void js::Nursery::sweep(JSTracer* trc) {
   }
   cellsWithUid_.clear();
 
-  for (CompartmentsIter c(runtime()); !c.done(); c.next()) {
-    c->sweepAfterMinorGC(trc);
-  }
-
-  for (ZonesIter zone(trc->runtime(), SkipAtoms); !zone.done(); zone.next()) {
-    zone->sweepAfterMinorGC(trc);
+  for (ZonesIter zone(runtime(), SkipAtoms); !zone.done(); zone.next()) {
+    zone->sweepAfterMinorGC(&trc);
   }
 
   sweepMapAndSetObjects();

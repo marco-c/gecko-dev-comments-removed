@@ -44,6 +44,7 @@ enum class TracerKind {
   GrayBuffering,
   ClearEdges,
   Sweeping,
+  MinorSweeping,
   Barrier,
 
   

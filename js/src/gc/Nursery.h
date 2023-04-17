@@ -677,7 +677,7 @@ class Nursery {
 
   
   
-  void sweep(JSTracer* trc);
+  void sweep();
 
   
   
