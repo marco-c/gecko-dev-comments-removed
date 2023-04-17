@@ -133,7 +133,7 @@ async function navigateIframeTo(inspector, url) {
   await inspector.markup._waitForChildren();
 
   if (isFissionEnabled()) {
-    info("Wait until the new target has been processed by TargetList");
+    info("Wait until the new target has been processed by TargetCommand");
     await onTargetProcessed;
   }
 
