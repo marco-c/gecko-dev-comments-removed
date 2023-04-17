@@ -137,6 +137,7 @@ class ContentPermissionRequestBase : public nsIContentPermissionRequest {
 
  protected:
   
+  
   ContentPermissionRequestBase(nsIPrincipal* aPrincipal,
                                nsPIDOMWindowInner* aWindow,
                                const nsACString& aPrefName,
@@ -155,7 +156,10 @@ class ContentPermissionRequestBase : public nsIContentPermissionRequest {
   
   
   const nsCString mPrefName;
+
+  
   const nsCString mType;
+
   bool mIsHandlingUserInput;
   bool mMaybeUnsafePermissionDelegate;
 };
