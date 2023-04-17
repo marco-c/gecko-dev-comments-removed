@@ -291,6 +291,14 @@ bool nsHTTPSOnlyUtils::IsUpgradeDowngradeEndlessLoop(
         }
       }
     }
+  } else {
+    
+    
+    
+    
+    if (aLoadInfo->GetHasValidUserGestureActivation()) {
+      return false;
+    }
   }
 
   
