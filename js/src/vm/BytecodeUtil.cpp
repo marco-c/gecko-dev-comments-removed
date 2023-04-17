@@ -1940,6 +1940,7 @@ bool ExpressionDecompiler::decompilePC(jsbytecode* pc, uint8_t defIndex) {
     case JSOp::Undefined:
       return write(js_undefined_str);
     case JSOp::GlobalThis:
+    case JSOp::NonSyntacticGlobalThis:
       
       
       return write(js_this_str);

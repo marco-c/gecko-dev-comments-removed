@@ -53,6 +53,8 @@ namespace jit {
   /* Private Fields */                   \
   _(InitLockedElem)                      \
   _(GetAliasedDebugVar)                  \
+  /* Non-syntactic scope */              \
+  _(NonSyntacticGlobalThis)              \
   // === !! WARNING WARNING WARNING !! ===
   
   
