@@ -274,10 +274,20 @@ var rememberedDecisionsRichList = {
       hbox.appendChild(createRichlistItem({ raw: "" }));
     } else {
       let tmpCert = certdb.findCertByDBKey(item.dbKey);
-
-      hbox.appendChild(createRichlistItem({ raw: tmpCert.commonName }));
-
-      hbox.appendChild(createRichlistItem({ raw: tmpCert.serialNumber }));
+      
+      
+      
+      if (tmpCert) {
+        hbox.appendChild(createRichlistItem({ raw: tmpCert.commonName }));
+        hbox.appendChild(createRichlistItem({ raw: tmpCert.serialNumber }));
+      } else {
+        hbox.appendChild(
+          createRichlistItem({ l10nid: "certificate-not-available" })
+        );
+        hbox.appendChild(
+          createRichlistItem({ l10nid: "certificate-not-available" })
+        );
+      }
     }
 
     richlistitem.appendChild(hbox);
