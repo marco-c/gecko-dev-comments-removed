@@ -41,7 +41,8 @@ function test_feature_availability(
   }
 
   window.addEventListener('message', test.step_func(function handler(evt) {
-    if (evt.source === frame.contentWindow) {
+    if (evt.source === frame.contentWindow &&
+        evt.data.type === 'availability-result') {
       expect_feature_available(evt.data, feature_description);
       document.body.removeChild(frame);
       window.removeEventListener('message', handler);
@@ -73,8 +74,8 @@ function expect_feature_unavailable_default(data, feature_description) {
 
 function test_feature_availability_with_post_message_result(
     test, src, expected_result, allow_attribute) {
-  var test_result = function(data, feature_description) {
-    assert_equals(data, expected_result);
+  var test_result = function({message}, feature_description) {
+    assert_equals(message, expected_result);
   };
   test_feature_availability(null, test, src, test_result, allow_attribute);
 }
@@ -82,11 +83,15 @@ function test_feature_availability_with_post_message_result(
 
 
 
-function test_feature_in_iframe(feature_name, feature_promise_factory) {
+async function test_feature_in_iframe(feature_name, feature_promise_factory) {
   if (location.hash.endsWith(`#${feature_name}`)) {
-    feature_promise_factory().then(
-        () => window.parent.postMessage('#OK', '*'),
-        (e) => window.parent.postMessage('#' + e.name, '*'));
+    let message = '#OK';
+    try {
+      await feature_promise_factory();
+    } catch (e) {
+      message = '#' + e.name;
+    }
+    window.parent.postMessage({ type: 'availability-result', message }, '*');
   }
 }
 
