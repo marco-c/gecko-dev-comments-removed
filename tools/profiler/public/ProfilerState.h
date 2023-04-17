@@ -165,9 +165,6 @@ using ProfilingStateChangeCallback = std::function<void(ProfilingState)>;
 [[nodiscard]] inline bool profiler_is_active() { return false; }
 [[nodiscard]] inline bool profiler_can_accept_markers() { return false; }
 [[nodiscard]] inline bool profiler_thread_is_being_profiled() { return false; }
-[[nodiscard]] inline bool profiler_is_active_and_thread_is_registered() {
-  return false;
-}
 [[nodiscard]] inline bool profiler_feature_active(uint32_t aFeature) {
   return false;
 }
@@ -280,8 +277,6 @@ class RacyFeatures {
 };
 
 [[nodiscard]] bool IsThreadBeingProfiled();
-[[nodiscard]] bool IsThreadRegistered();
-
 }  
 
 
@@ -325,14 +320,6 @@ class RacyFeatures {
 [[nodiscard]] inline bool profiler_thread_is_being_profiled() {
   return profiler_is_active() &&
          mozilla::profiler::detail::IsThreadBeingProfiled();
-}
-
-
-
-
-[[nodiscard]] inline bool profiler_is_active_and_thread_is_registered() {
-  return profiler_is_active() &&
-         mozilla::profiler::detail::IsThreadRegistered();
 }
 
 

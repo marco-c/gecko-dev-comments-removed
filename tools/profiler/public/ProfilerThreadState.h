@@ -14,4 +14,12 @@
 #include "mozilla/ProfilerThreadRegistration.h"
 #include "mozilla/ProfilerThreadRegistry.h"
 
+
+
+
+[[nodiscard]] inline bool profiler_is_active_and_thread_is_registered() {
+  return profiler_is_active() &&
+         mozilla::profiler::ThreadRegistration::IsRegistered();
+}
+
 #endif  
