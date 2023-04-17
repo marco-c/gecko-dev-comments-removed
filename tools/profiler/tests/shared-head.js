@@ -160,39 +160,16 @@ function getInflatedNetworkMarkers(thread) {
 function getPairsOfNetworkMarkers(allNetworkMarkers) {
   
   
-  const result = [];
-  const mapOfStartMarkers = new Map(); 
-  for (const marker of allNetworkMarkers) {
-    const { data } = marker;
-    if (data.status === "STATUS_START") {
-      if (mapOfStartMarkers.has(data.id)) {
-        const previousMarker = result[mapOfStartMarkers.get(data.id)][0];
-        Assert.ok(
-          false,
-          `We found 2 start markers with the same id ${data.id}, without end marker in-between.` +
-            `The first marker has URI ${previousMarker.data.URI}, the second marker has URI ${data.URI}.` +
-            ` This should not happen.`
-        );
-        continue;
-      }
-
-      mapOfStartMarkers.set(data.id, result.length);
-      result.push([marker]);
-    } else {
-      
-      if (!mapOfStartMarkers.has(data.id)) {
-        Assert.ok(
-          false,
-          `We found an end marker without a start marker (id: ${data.id}, URI: ${data.URI}). This should not happen.`
-        );
-        continue;
-      }
-      result[mapOfStartMarkers.get(data.id)].push(marker);
-      mapOfStartMarkers.delete(data.id);
-    }
-  }
-
-  return result;
+  
+  
+  
+  
+  
+  return allNetworkMarkers
+    .filter(({ data }) => data.status === "STATUS_START")
+    .map(startMarker =>
+      allNetworkMarkers.filter(({ data }) => data.id === startMarker.data.id)
+    );
 }
 
 
