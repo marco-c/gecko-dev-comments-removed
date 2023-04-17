@@ -34,6 +34,7 @@
 #include "js/UbiNode.h"
 #include "util/EnumFlags.h"
 #include "vm/JSAtom.h"
+#include "vm/ObjectFlags.h"
 #include "vm/Printer.h"
 #include "vm/PropertyInfo.h"
 #include "vm/PropertyKey.h"
@@ -533,46 +534,6 @@ class MOZ_RAII AutoKeepShapeCaches {
 
 
 
-
-
-
-
-
-
-
-enum class ObjectFlag : uint16_t {
-  IsUsedAsPrototype = 1 << 0,
-  NotExtensible = 1 << 1,
-  Indexed = 1 << 2,
-  HasInterestingSymbol = 1 << 3,
-  HadElementsAccess = 1 << 4,
-  FrozenElements = 1 << 5,  
-  UncacheableProto = 1 << 6,
-  ImmutablePrototype = 1 << 7,
-
-  
-  QualifiedVarObj = 1 << 8,
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  HasNonWritableOrAccessorPropExclProto = 1 << 9,
-
-  
-  
-  
-  HadGetterSetterChange = 1 << 10,
-};
-
-using ObjectFlags = EnumFlags<ObjectFlag>;
 
 class BaseShape : public gc::TenuredCellWithNonGCPointer<const JSClass> {
  public:
