@@ -363,14 +363,23 @@ this.tabs = class extends ExtensionAPI {
             tabListener.initializingTabs.add(nativeTab);
           } else {
             url = "about:blank";
+          }
+
+          let { principal } = context;
+          if (url.startsWith("about:")) {
+            
+            
             flags |= Ci.nsIWebNavigation.LOAD_FLAGS_DISALLOW_INHERIT_PRINCIPAL;
+            
+            principal = Services.scriptSecurityManager.getLoadContextContentPrincipal(
+              Services.io.newURI(url),
+              browser.loadContext
+            );
           }
 
           browser.loadURI(url, {
             flags,
-            
-            
-            triggeringPrincipal: context.principal,
+            triggeringPrincipal: principal,
           });
 
           if (active) {
