@@ -69,7 +69,7 @@ add_task(async function() {
                     
                     
                     
-                    (r.h == 13 && r.w <= 2 * 13 + kMaxEmptyPixels) ||
+                    (r.h == 14 && r.w <= 2 * 14 + kMaxEmptyPixels) ||
                     
                     (r.h == 2 && r.w == 2))
                 )
