@@ -1575,11 +1575,11 @@ class gfxFont {
   }
 
   
-  gfxFloat GetGlyphHAdvance(uint16_t aGID);
+  gfxFloat GetGlyphAdvance(uint16_t aGID, bool aVertical = false);
 
   
   
-  gfxFloat GetCharAdvance(uint32_t aUnicode);
+  gfxFloat GetCharAdvance(uint32_t aUnicode, bool aVertical = false);
 
   gfxFloat SynthesizeSpaceWidth(uint32_t aCh);
 

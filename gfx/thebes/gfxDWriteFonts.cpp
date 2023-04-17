@@ -166,33 +166,30 @@ void gfxDWriteFont::ComputeMetrics(AntialiasOption anAAOption) {
         MOZ_ASSERT_UNREACHABLE("unhandled sizeAdjustBasis?");
         aspect = 0.0;
         break;
-      case FontSizeAdjust::Tag::Ex:
+      case FontSizeAdjust::Tag::ExHeight:
         aspect = (gfxFloat)fontMetrics.xHeight / fontMetrics.designUnitsPerEm;
         break;
-      case FontSizeAdjust::Tag::Cap:
+      case FontSizeAdjust::Tag::CapHeight:
         aspect = (gfxFloat)fontMetrics.capHeight / fontMetrics.designUnitsPerEm;
         break;
-      case FontSizeAdjust::Tag::Ch: {
-        aspect = GetCharAdvance('0');
-        if (aspect < 0.0) {
-          
-          aspect = 0.5;
-        } else {
-          aspect /= mAdjustedSize;
-        }
+      case FontSizeAdjust::Tag::ChWidth: {
+        gfxFloat advance = GetCharAdvance('0');
+        aspect = advance > 0.0 ? advance / mAdjustedSize : 0.5;
         break;
       }
-      case FontSizeAdjust::Tag::Ic:
-        aspect = GetCharAdvance(0x6C34);
-        if (aspect < 0.0) {
-          
-          aspect = 1.0;
-        } else {
-          aspect /= mAdjustedSize;
-        }
+      case FontSizeAdjust::Tag::IcWidth:
+      case FontSizeAdjust::Tag::IcHeight: {
+        bool vertical = FontSizeAdjust::Tag(mStyle.sizeAdjustBasis) ==
+                        FontSizeAdjust::Tag::IcHeight;
+        gfxFloat advance = GetCharAdvance(0x6C34, vertical);
+        aspect = advance > 0.0 ? advance / mAdjustedSize : 1.0;
         break;
+      }
     }
     if (aspect > 0.0) {
+      
+      
+      mHarfBuzzShaper = nullptr;
       mAdjustedSize = mStyle.GetAdjustedSize(aspect);
     }
   }

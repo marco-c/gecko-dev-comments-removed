@@ -235,26 +235,29 @@ void gfxFT2FontBase::InitMetrics() {
         MOZ_ASSERT_UNREACHABLE("unhandled sizeAdjustBasis?");
         aspect = 0.0;
         break;
-      case FontSizeAdjust::Tag::Ex:
+      case FontSizeAdjust::Tag::ExHeight:
         aspect = mMetrics.xHeight / mAdjustedSize;
         break;
-      case FontSizeAdjust::Tag::Cap:
+      case FontSizeAdjust::Tag::CapHeight:
         aspect = mMetrics.capHeight / mAdjustedSize;
         break;
-      case FontSizeAdjust::Tag::Ch:
+      case FontSizeAdjust::Tag::ChWidth:
         aspect =
             mMetrics.zeroWidth > 0.0 ? mMetrics.zeroWidth / mAdjustedSize : 0.5;
         break;
-      case FontSizeAdjust::Tag::Ic: {
-        
-        
-        
-        gfxFloat advance = GetCharAdvance(0x6C34);
-        aspect = advance > 0 ? advance / mAdjustedSize : 1.0;
+      case FontSizeAdjust::Tag::IcWidth:
+      case FontSizeAdjust::Tag::IcHeight: {
+        bool vertical = FontSizeAdjust::Tag(mStyle.sizeAdjustBasis) ==
+                        FontSizeAdjust::Tag::IcHeight;
+        gfxFloat advance = GetCharAdvance(0x6C34, vertical);
+        aspect = advance > 0.0 ? advance / mAdjustedSize : 1.0;
         break;
       }
     }
     if (aspect > 0.0) {
+      
+      
+      mHarfBuzzShaper = nullptr;
       mAdjustedSize = mStyle.GetAdjustedSize(aspect);
       
       

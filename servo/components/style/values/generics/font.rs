@@ -207,6 +207,7 @@ pub enum FontStyle<Angle> {
 
 
 
+
 #[allow(missing_docs)]
 #[repr(u8)]
 #[derive(
@@ -229,13 +230,15 @@ pub enum GenericFontSizeAdjust<Number> {
     #[animation(error)]
     None,
     
-    Ex(Number),
+    ExHeight(Number),
     #[value_info(starts_with_keyword)]
-    Cap(Number),
+    CapHeight(Number),
     #[value_info(starts_with_keyword)]
-    Ch(Number),
+    ChWidth(Number),
     #[value_info(starts_with_keyword)]
-    Ic(Number),
+    IcWidth(Number),
+    #[value_info(starts_with_keyword)]
+    IcHeight(Number),
 }
 
 impl<Number: ToCss> ToCss for GenericFontSizeAdjust<Number> {
@@ -245,10 +248,11 @@ impl<Number: ToCss> ToCss for GenericFontSizeAdjust<Number> {
     {
         let (prefix, value) = match self {
             Self::None => return dest.write_str("none"),
-            Self::Ex(v) => ("", v),
-            Self::Cap(v) => ("cap ", v),
-            Self::Ch(v) => ("ch ", v),
-            Self::Ic(v) => ("ic ", v),
+            Self::ExHeight(v) => ("", v),
+            Self::CapHeight(v) => ("cap-height ", v),
+            Self::ChWidth(v) => ("ch-width ", v),
+            Self::IcWidth(v) => ("ic-width ", v),
+            Self::IcHeight(v) => ("ic-height ", v),
         };
 
         dest.write_str(prefix)?;
