@@ -20,7 +20,7 @@ use crate::render_api::CaptureBits;
 #[cfg(feature = "replay")]
 use crate::render_api::CapturedDocument;
 use crate::render_api::{MemoryReport, TransactionMsg, ResourceUpdate, ApiMsg, FrameMsg, ClearCache, DebugCommand};
-use crate::clip::ClipIntern;
+use crate::clip::{ClipIntern, ClipStoreScratchBuffer};
 use crate::filterdata::FilterDataIntern;
 #[cfg(any(feature = "capture", feature = "replay"))]
 use crate::capture::CaptureConfig;
@@ -387,6 +387,7 @@ pub struct ScratchBuffer {
     pub primitive: PrimitiveScratchBuffer,
     pub picture: PictureScratchBuffer,
     pub frame: FrameScratchBuffer,
+    pub clip_store: ClipStoreScratchBuffer,
 }
 
 impl ScratchBuffer {
@@ -407,6 +408,7 @@ impl ScratchBuffer {
         
         self.picture = Default::default();
         self.frame = Default::default();
+        self.clip_store = Default::default();
     }
 }
 
