@@ -356,10 +356,12 @@ bool WebrtcAudioConduit::OverrideRemoteSSRC(uint32_t ssrc) {
   return true;
 }
 
-bool WebrtcAudioConduit::GetRemoteSSRC(uint32_t* ssrc) const {
+Maybe<Ssrc> WebrtcAudioConduit::GetRemoteSSRC() const {
   MOZ_ASSERT(mCallThread->IsOnCurrentThread());
   
-  return (*ssrc = mRecvStreamConfig.rtp.remote_ssrc) != 0;
+  return mRecvStreamConfig.rtp.remote_ssrc == 0
+             ? Nothing()
+             : Some(mRecvStreamConfig.rtp.remote_ssrc);
 }
 
 Maybe<webrtc::AudioReceiveStream::Stats> WebrtcAudioConduit::GetReceiverStats()

@@ -155,10 +155,8 @@ class WebrtcVideoConduit
   
   void InitCall();
 
-  std::vector<uint32_t> GetLocalSSRCs() const override;
-
-  
-  bool GetRemoteSSRC(uint32_t* ssrc) const override;
+  Ssrcs GetLocalSSRCs() const override;
+  Maybe<Ssrc> GetRemoteSSRC() const override;
 
   void UnsetRemoteSSRC(uint32_t ssrc) override;
   void SetRemoteSSRCConfig(uint32_t ssrc, uint32_t rtxSsrc);
