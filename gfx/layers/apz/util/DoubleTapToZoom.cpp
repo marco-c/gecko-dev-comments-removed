@@ -107,8 +107,31 @@ static bool IsRectZoomedIn(const CSSRect& aRect,
 
 }  
 
-CSSRect CalculateRectToZoomTo(const RefPtr<dom::Document>& aRootContentDocument,
-                              const CSSPoint& aPoint) {
+static CSSRect AddHMargin(const CSSRect& aRect, const CSSCoord& aMargin,
+                          const FrameMetrics& aMetrics) {
+  CSSRect rect =
+      CSSRect(std::max(aMetrics.GetScrollableRect().X(), aRect.X() - aMargin),
+              aRect.Y(), aRect.Width() + 2 * aMargin, aRect.Height());
+  
+  rect.SetWidth(
+      std::min(rect.Width(), aMetrics.GetScrollableRect().XMost() - rect.X()));
+  return rect;
+}
+
+static CSSRect AddVMargin(const CSSRect& aRect, const CSSCoord& aMargin,
+                          const FrameMetrics& aMetrics) {
+  CSSRect rect =
+      CSSRect(aRect.X(),
+              std::max(aMetrics.GetScrollableRect().Y(), aRect.Y() - aMargin),
+              aRect.Width(), aRect.Height() + 2 * aMargin);
+  
+  rect.SetHeight(
+      std::min(rect.Height(), aMetrics.GetScrollableRect().YMost() - rect.Y()));
+  return rect;
+}
+
+ZoomTarget CalculateRectToZoomTo(
+    const RefPtr<dom::Document>& aRootContentDocument, const CSSPoint& aPoint) {
   
   aRootContentDocument->FlushPendingNotifications(FlushType::Layout);
 
@@ -117,18 +140,18 @@ CSSRect CalculateRectToZoomTo(const RefPtr<dom::Document>& aRootContentDocument,
 
   RefPtr<PresShell> presShell = aRootContentDocument->GetPresShell();
   if (!presShell) {
-    return zoomOut;
+    return ZoomTarget{zoomOut, Nothing()};
   }
 
   nsIScrollableFrame* rootScrollFrame =
       presShell->GetRootScrollFrameAsScrollable();
   if (!rootScrollFrame) {
-    return zoomOut;
+    return ZoomTarget{zoomOut, Nothing()};
   }
 
   nsCOMPtr<dom::Element> element = ElementFromPoint(presShell, aPoint);
   if (!element) {
-    return zoomOut;
+    return ZoomTarget{zoomOut, Nothing()};
   }
 
   while (element && !ShouldZoomToElement(element, aRootContentDocument)) {
@@ -136,7 +159,7 @@ CSSRect CalculateRectToZoomTo(const RefPtr<dom::Document>& aRootContentDocument,
   }
 
   if (!element) {
-    return zoomOut;
+    return ZoomTarget{zoomOut, Nothing()};
   }
 
   FrameMetrics metrics =
@@ -144,7 +167,6 @@ CSSRect CalculateRectToZoomTo(const RefPtr<dom::Document>& aRootContentDocument,
   CSSPoint visualScrollOffset = metrics.GetVisualScrollOffset();
   CSSRect compositedArea(visualScrollOffset,
                          metrics.CalculateCompositedSizeInCssPixels());
-  const CSSCoord margin = 15;
   Maybe<CSSRect> nearestScrollClip;
   CSSRect rect = nsLayoutUtils::GetBoundingContentRect(element, rootScrollFrame,
                                                        &nearestScrollClip);
@@ -176,6 +198,8 @@ CSSRect CalculateRectToZoomTo(const RefPtr<dom::Document>& aRootContentDocument,
     }
   }
 
+  CSSRect elementBoundingRect = rect;
+
   
   
   
@@ -194,20 +218,25 @@ CSSRect CalculateRectToZoomTo(const RefPtr<dom::Document>& aRootContentDocument,
     }
   }
 
-  rect = CSSRect(std::max(metrics.GetScrollableRect().X(), rect.X() - margin),
-                 rect.Y(), rect.Width() + 2 * margin, rect.Height());
-  
-  rect.SetWidth(
-      std::min(rect.Width(), metrics.GetScrollableRect().XMost() - rect.X()));
+  const CSSCoord margin = 15;
+  rect = AddHMargin(rect, margin, metrics);
 
   
   
   if (IsRectZoomedIn(rect, compositedArea)) {
-    return zoomOut;
+    return ZoomTarget{zoomOut, Nothing()};
   }
 
+  elementBoundingRect = AddHMargin(elementBoundingRect, margin, metrics);
+
+  
+  
+  
+  elementBoundingRect = AddVMargin(elementBoundingRect, margin, metrics);
+
   rect.Round();
-  return rect;
+  elementBoundingRect.Round();
+  return ZoomTarget{rect, Some(elementBoundingRect)};
 }
 
 }  

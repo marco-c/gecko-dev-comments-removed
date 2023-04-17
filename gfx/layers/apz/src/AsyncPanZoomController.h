@@ -72,6 +72,7 @@ class WidgetOverscrollEffect;
 class GenericOverscrollEffect;
 class AndroidSpecificState;
 struct KeyboardScrollAction;
+struct ZoomTarget;
 
 
 class PlatformSpecificStateBase {
@@ -219,7 +220,7 @@ class AsyncPanZoomController {
 
 
 
-  void ZoomToRect(CSSRect aRect, const uint32_t aFlags);
+  void ZoomToRect(const ZoomTarget& aZoomTarget, const uint32_t aFlags);
 
   
 

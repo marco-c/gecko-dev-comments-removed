@@ -19,13 +19,27 @@ class Document;
 
 namespace layers {
 
+struct ZoomTarget {
+  
+  
+  CSSRect targetRect;
+
+  
+  
+  
+  
+  
+  
+  Maybe<CSSRect> elementBoundingRect;
+};
 
 
 
 
 
 
-CSSRect CalculateRectToZoomTo(
+
+ZoomTarget CalculateRectToZoomTo(
     const RefPtr<mozilla::dom::Document>& aRootContentDocument,
     const CSSPoint& aPoint);
 

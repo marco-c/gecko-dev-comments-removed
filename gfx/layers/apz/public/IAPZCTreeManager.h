@@ -21,6 +21,7 @@ namespace layers {
 
 class APZInputBridge;
 class KeyboardMap;
+struct ZoomTarget;
 
 enum AllowedTouchBehavior {
   NONE = 0,
@@ -57,7 +58,7 @@ class IAPZCTreeManager {
 
 
   virtual void ZoomToRect(const ScrollableLayerGuid& aGuid,
-                          const CSSRect& aRect,
+                          const ZoomTarget& aZoomTarget,
                           const uint32_t aFlags = DEFAULT_BEHAVIOR) = 0;
 
   

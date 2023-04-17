@@ -31,6 +31,7 @@
 #include "mozilla/layers/APZUtils.h"        
 #include "mozilla/layers/AsyncDragMetrics.h"        
 #include "mozilla/layers/CompositorBridgeParent.h"  
+#include "mozilla/layers/DoubleTapToZoom.h"         
 #include "mozilla/layers/LayerMetricsWrapper.h"
 #include "mozilla/layers/MatrixMessage.h"
 #include "mozilla/layers/UiCompositorControllerParent.h"
@@ -2339,7 +2340,8 @@ void APZCTreeManager::SetKeyboardMap(const KeyboardMap& aKeyboardMap) {
 }
 
 void APZCTreeManager::ZoomToRect(const ScrollableLayerGuid& aGuid,
-                                 const CSSRect& aRect, const uint32_t aFlags) {
+                                 const ZoomTarget& aZoomTarget,
+                                 const uint32_t aFlags) {
   
   
   
@@ -2347,7 +2349,7 @@ void APZCTreeManager::ZoomToRect(const ScrollableLayerGuid& aGuid,
 
   RefPtr<AsyncPanZoomController> apzc = GetTargetAPZC(aGuid);
   if (apzc) {
-    apzc->ZoomToRect(aRect, aFlags);
+    apzc->ZoomToRect(aZoomTarget, aFlags);
   }
 }
 

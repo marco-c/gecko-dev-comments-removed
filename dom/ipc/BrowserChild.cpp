@@ -1286,7 +1286,7 @@ void BrowserChild::HandleDoubleTap(const CSSPoint& aPoint,
   
   
   RefPtr<Document> document = GetTopLevelDocument();
-  CSSRect zoomToRect = CalculateRectToZoomTo(document, aPoint);
+  ZoomTarget zoomTarget = CalculateRectToZoomTo(document, aPoint);
   
   
   
@@ -1298,7 +1298,7 @@ void BrowserChild::HandleDoubleTap(const CSSPoint& aPoint,
       mApzcTreeManager) {
     ScrollableLayerGuid guid(mLayersId, presShellId, viewId);
 
-    mApzcTreeManager->ZoomToRect(guid, zoomToRect, DEFAULT_BEHAVIOR);
+    mApzcTreeManager->ZoomToRect(guid, zoomTarget, DEFAULT_BEHAVIOR);
   }
 }
 
@@ -1401,7 +1401,7 @@ void BrowserChild::ZoomToRect(const uint32_t& aPresShellId,
   ScrollableLayerGuid guid(mLayersId, aPresShellId, aViewId);
 
   if (mApzcTreeManager) {
-    mApzcTreeManager->ZoomToRect(guid, aRect, aFlags);
+    mApzcTreeManager->ZoomToRect(guid, ZoomTarget{aRect, Nothing()}, aFlags);
   }
 }
 
