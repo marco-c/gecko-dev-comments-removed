@@ -41,9 +41,9 @@ JSObject* AllocateObject(JSContext* cx, gc::AllocKind kind,
                          size_t nDynamicSlots, gc::InitialHeap heap,
                          const JSClass* clasp, gc::AllocSite* site = nullptr);
 
-
-template <typename StringAllocT, AllowGC allowGC = CanGC>
-StringAllocT* AllocateStringImpl(JSContext* cx, gc::InitialHeap heap);
+template <AllowGC allowGC = CanGC>
+JSString* AllocateStringImpl(JSContext* cx, gc::AllocKind kind, size_t size,
+                             gc::InitialHeap heap);
 
 
 
@@ -51,24 +51,11 @@ StringAllocT* AllocateStringImpl(JSContext* cx, gc::InitialHeap heap);
 
 template <typename StringT, AllowGC allowGC = CanGC>
 StringT* AllocateString(JSContext* cx, gc::InitialHeap heap) {
-  return static_cast<StringT*>(AllocateStringImpl<JSString, allowGC>(cx, heap));
-}
-
-
-
-
-template <>
-inline JSFatInlineString* AllocateString<JSFatInlineString, CanGC>(
-    JSContext* cx, gc::InitialHeap heap) {
-  return static_cast<JSFatInlineString*>(
-      js::AllocateStringImpl<JSFatInlineString, CanGC>(cx, heap));
-}
-
-template <>
-inline JSFatInlineString* AllocateString<JSFatInlineString, NoGC>(
-    JSContext* cx, gc::InitialHeap heap) {
-  return static_cast<JSFatInlineString*>(
-      js::AllocateStringImpl<JSFatInlineString, NoGC>(cx, heap));
+  static_assert(std::is_base_of_v<JSString, StringT>);
+  gc::AllocKind kind = gc::MapTypeToFinalizeKind<StringT>::kind;
+  JSString* string =
+      AllocateStringImpl<allowGC>(cx, kind, sizeof(StringT), heap);
+  return static_cast<StringT*>(string);
 }
 
 

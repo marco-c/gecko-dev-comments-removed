@@ -8,6 +8,7 @@
 
 
 
+
 #ifndef gc_AllocKind_h
 #define gc_AllocKind_h
 
@@ -20,9 +21,18 @@
 #include "js/TraceKind.h"
 #include "js/Utility.h"
 
+class JSDependentString;
+class JSExternalString;
+class JSFatInlineString;
+class JSLinearString;
+class JSRope;
+class JSThinInlineString;
+
 namespace js {
 
 class CompactPropMap;
+class FatInlineAtom;
+class NormalAtom;
 class NormalPropMap;
 class DictionaryPropMap;
 
@@ -182,6 +192,43 @@ using AllAllocKindArray =
 template <typename ValueType>
 using ObjectAllocKindArray =
     mozilla::EnumeratedArray<AllocKind, AllocKind::OBJECT_LIMIT, ValueType>;
+
+
+
+
+
+
+
+
+
+
+template <typename T>
+struct MapTypeToFinalizeKind {};
+#define EXPAND_MAPTYPETOFINALIZEKIND(allocKind, traceKind, type, sizedType, \
+                                     bgFinal, nursery, compact)             \
+  template <>                                                               \
+  struct MapTypeToFinalizeKind<type> {                                      \
+    static const AllocKind kind = AllocKind::allocKind;                     \
+  };
+FOR_EACH_NONOBJECT_ALLOCKIND(EXPAND_MAPTYPETOFINALIZEKIND)
+#undef EXPAND_MAPTYPETOFINALIZEKIND
+
+template <>
+struct MapTypeToFinalizeKind<JSDependentString> {
+  static const AllocKind kind = AllocKind::STRING;
+};
+template <>
+struct MapTypeToFinalizeKind<JSRope> {
+  static const AllocKind kind = AllocKind::STRING;
+};
+template <>
+struct MapTypeToFinalizeKind<JSLinearString> {
+  static const AllocKind kind = AllocKind::STRING;
+};
+template <>
+struct MapTypeToFinalizeKind<JSThinInlineString> {
+  static const AllocKind kind = AllocKind::STRING;
+};
 
 static inline JS::TraceKind MapAllocToTraceKind(AllocKind kind) {
   static const JS::TraceKind map[] = {

@@ -19,8 +19,6 @@
 #include "js/RealmOptions.h"
 #include "js/TraceKind.h"
 
-class JSExternalString;
-class JSFatInlineString;
 class JSTracer;
 
 namespace js {
@@ -35,23 +33,6 @@ namespace gc {
 class Arena;
 class TenuredChunk;
 struct Cell;
-
-
-
-
-
-
-
-template <typename T>
-struct MapTypeToFinalizeKind {};
-#define EXPAND_MAPTYPETOFINALIZEKIND(allocKind, traceKind, type, sizedType, \
-                                     bgFinal, nursery, compact)             \
-  template <>                                                               \
-  struct MapTypeToFinalizeKind<type> {                                      \
-    static const AllocKind kind = AllocKind::allocKind;                     \
-  };
-FOR_EACH_NONOBJECT_ALLOCKIND(EXPAND_MAPTYPETOFINALIZEKIND)
-#undef EXPAND_MAPTYPETOFINALIZEKIND
 
 } 
 
