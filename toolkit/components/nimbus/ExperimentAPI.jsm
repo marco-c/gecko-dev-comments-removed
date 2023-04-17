@@ -314,22 +314,6 @@ class ExperimentFeature {
     this._listenForRemoteDefaults = this._listenForRemoteDefaults.bind(this);
     const variables = this.manifest?.variables || {};
 
-    
-    if (this.manifest?.enabledFallbackPref) {
-      XPCOMUtils.defineLazyPreferenceGetter(
-        this,
-        "enabled",
-        this.manifest?.enabledFallbackPref,
-        null,
-        () => {
-          ExperimentAPI._store._emitFeatureUpdate(
-            this.featureId,
-            "pref-updated"
-          );
-        }
-      );
-    }
-
     Object.keys(variables).forEach(key => {
       const { type, fallbackPref } = variables[key];
       if (fallbackPref) {
@@ -444,12 +428,16 @@ class ExperimentFeature {
       return this.getRemoteConfig().enabled;
     }
 
-    
-    if (isBooleanValueDefined(this.enabled)) {
-      return this.enabled;
+    let enabled;
+    try {
+      enabled = this.getVariable("enabled", { sendExposureEvent });
+    } catch (e) {
+      
+    }
+    if (isBooleanValueDefined(enabled)) {
+      return enabled;
     }
 
-    
     return defaultValue;
   }
 
@@ -533,7 +521,7 @@ class ExperimentFeature {
     })?.feature?.value?.[variable];
 
     
-    if (experimentValue && sendExposureEvent) {
+    if (typeof experimentValue !== "undefined" && sendExposureEvent) {
       this._sendExposureEventOnce = false;
     }
 
