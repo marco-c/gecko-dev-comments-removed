@@ -112,6 +112,8 @@ class GeckoInstance(object):
         "toolkit.startup.max_resumed_crashes": -1,
         
         "dom.file.createInChild": True,
+        
+        "browser.topsites.contile.enabled": False,
     }
 
     def __init__(

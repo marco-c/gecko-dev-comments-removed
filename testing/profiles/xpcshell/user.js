@@ -36,3 +36,5 @@ user_pref("network.cookie.sameSite.laxByDefault", false);
 
 user_pref("gfx.color_management.force_srgb", true);
 user_pref("gfx.color_management.mode", 1);
+
+user_pref("browser.topsites.contile.enabled", false);
