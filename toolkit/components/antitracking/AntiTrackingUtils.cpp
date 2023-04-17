@@ -651,7 +651,7 @@ bool AntiTrackingUtils::IsThirdPartyWindow(nsPIDOMWindowInner* aWindow,
   }
 
   RefPtr<Document> doc = aWindow->GetDoc();
-  if (!doc || !doc->GetChannel()) {
+  if (!doc) {
     
     
     nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
@@ -659,6 +659,13 @@ bool AntiTrackingUtils::IsThirdPartyWindow(nsPIDOMWindowInner* aWindow,
     Unused << thirdPartyUtil->IsThirdPartyWindow(aWindow->GetOuterWindow(),
                                                  nullptr, &thirdParty);
     return thirdParty;
+  }
+
+  if (!doc->GetChannel()) {
+    
+    
+    
+    return IsThirdPartyContext(doc->GetBrowsingContext());
   }
 
   
