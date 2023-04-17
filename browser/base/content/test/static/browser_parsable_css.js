@@ -445,10 +445,24 @@ add_task(async function checkAllTheCSS() {
   await throttledMapPromises(allPromises, loadCSS);
 
   
+  
   for (let [image, references] of imageURIsToReferencesMap) {
     if (!chromeFileExists(image)) {
       for (let ref of references) {
         ok(false, "missing " + image + " referenced from " + ref);
+      }
+    }
+
+    let imageHost = image.split("/")[2];
+    if (imageHost == "browser") {
+      for (let ref of references) {
+        let refHost = ref.split("/")[2];
+        if (!["activity-stream", "browser"].includes(refHost)) {
+          ok(
+            false,
+            "browser file " + image + " referenced outside browser in " + ref
+          );
+        }
       }
     }
   }

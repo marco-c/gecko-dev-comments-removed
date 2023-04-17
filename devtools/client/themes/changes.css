@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+/* CSS Variables specific to the Changes panel that aren't defined by the themes */
 :root {
   --diff-add-background-color: #f1feec;
   --diff-add-text-color: #54983f;
@@ -11,10 +11,10 @@
   --diff-source-background: var(--theme-toolbar-background);
   --diff-level: 0;
   --diff-level-offset: 10px;
-  
-
-
-
+  /*
+    Minimum padding so content on the first level (zero) isn't touching the edge. Added
+    and removed lines will re-declare this to add extra padding to clear the +/- icons.
+  */
   --diff-level-min-offset: 5px;
 }
 
@@ -27,12 +27,12 @@
 }
 
 :root[dir="rtl"] {
-  
+  /* Increase minimum offset on right-to-left layout to clear the floating scrollbar. */
   --diff-level-min-offset: 15px;
 }
 
 :root[dir="rtl"] #sidebar-panel-changes .source {
-  
+  /* Enforce left-to-right code rendering on right-to-left layout. */
   direction: ltr;
 }
 
@@ -62,7 +62,7 @@
 }
 
 #sidebar-panel-changes .href span {
-  
+  /* Allows trimming of flex item with overflow ellipsis within the flex container */
   min-width: 0;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -86,15 +86,15 @@
   z-index: 1;
 }
 
-
+/* Remove the top border of the first source to avoid double border from sticky toolbar */
 #sidebar-panel-changes .changes__toolbar + .source .href {
   border-top: none;
 }
 
 .changes__copy-all-changes-button {
   -moz-context-properties: fill;
-  
-  background: url(chrome://browser/skin/edit-copy.svg) no-repeat;
+  /* Use the Firefox copy icon (16px) instead of the smaller DevTools one (12px) */
+  background: url(chrome://global/skin/icons/edit-copy.svg) no-repeat;
   background-position: 4px 3px;
   background-size: 16px;
   border: none;
@@ -118,18 +118,18 @@
   background-color: var(--theme-button-active-background);
 }
 
-
+/* Hide the Copy Rule button by default. */
 .changes__copy-rule-button {
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * The rgba() format of the background colors makes the button see-through and it looks
+   * bad when stacked on top of long selectors.
+   *
+   * To solve this and not change the color format which is inherited from the Photon
+   * color guide in `client/themes/variables.css`, we use a blending trick to overlay the
+   * rgba() color value onto a solid color used for the panel background (achieved with
+   * a linear gradient with no transition). This keeps the rgba() color, but prevents the
+   * see-through effect.
+   */
   background-blend-mode: overlay;
   background-color: var(--theme-button-background);
   background-image:
@@ -156,7 +156,7 @@
   word-wrap: break-word;
 }
 
-
+/* Show the Copy Rule button when hovering over the rule's selector elements */
 .changes__selector:hover + .changes__copy-rule-button,
 .changes__selector:hover + .changes__selector + .changes__copy-rule-button,
 .changes__copy-rule-button:hover {
