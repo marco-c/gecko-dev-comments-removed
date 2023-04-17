@@ -1839,10 +1839,13 @@ import android.view.inputmethod.EditorInfo;
 
     @Override 
     public void onSelectionChange(final IBinder token,
-                                  final int start, final int end) {
+                                  final int start, final int end, final boolean causedOnlyByComposition) {
         
         if (DEBUG) {
-            Log.d(LOGTAG, "onSelectionChange(" + start + ", " + end + ")");
+            final StringBuilder sb = new StringBuilder("onSelectionChange(");
+            sb.append(start).append(", ").append(end).append(", ")
+                .append(causedOnlyByComposition).append(")");
+            Log.d(LOGTAG, sb.toString());
         }
 
         if (!binderCheckToken(token,  false)) {
@@ -1862,6 +1865,14 @@ import android.view.inputmethod.EditorInfo;
         mLastTextChangeNewEnd = -1;
         mLastTextChangeReplacedSelection = false;
 
+        if (causedOnlyByComposition) {
+            
+            
+            return;
+        }
+
+        
+        
         mIcPostHandler.post(new Runnable() {
             @Override
             public void run() {
