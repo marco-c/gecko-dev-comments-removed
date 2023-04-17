@@ -950,31 +950,22 @@ class HTMLEditor final : public TextEditor,
 
 
   nsIContent* GetPreviousHTMLElementOrText(const nsINode& aNode) const {
-    return GetPreviousHTMLElementOrTextInternal(aNode, false);
-  }
-  nsIContent* GetPreviousHTMLElementOrTextInBlock(const nsINode& aNode) const {
-    return GetPreviousHTMLElementOrTextInternal(aNode, true);
+    return GetPreviousHTMLElementOrTextInternal(aNode);
   }
   template <typename PT, typename CT>
   nsIContent* GetPreviousHTMLElementOrText(
       const EditorDOMPointBase<PT, CT>& aPoint) const {
-    return GetPreviousHTMLElementOrTextInternal(aPoint, false);
-  }
-  template <typename PT, typename CT>
-  nsIContent* GetPreviousHTMLElementOrTextInBlock(
-      const EditorDOMPointBase<PT, CT>& aPoint) const {
-    return GetPreviousHTMLElementOrTextInternal(aPoint, true);
+    return GetPreviousHTMLElementOrTextInternal(aPoint);
   }
 
   
 
 
 
-  nsIContent* GetPreviousHTMLElementOrTextInternal(const nsINode& aNode,
-                                                   bool aNoBlockCrossing) const;
+  nsIContent* GetPreviousHTMLElementOrTextInternal(const nsINode& aNode) const;
   template <typename PT, typename CT>
   nsIContent* GetPreviousHTMLElementOrTextInternal(
-      const EditorDOMPointBase<PT, CT>& aPoint, bool aNoBlockCrossing) const;
+      const EditorDOMPointBase<PT, CT>& aPoint) const;
 
   
 
@@ -1019,31 +1010,22 @@ class HTMLEditor final : public TextEditor,
 
 
   nsIContent* GetNextHTMLElementOrText(const nsINode& aNode) const {
-    return GetNextHTMLElementOrTextInternal(aNode, false);
-  }
-  nsIContent* GetNextHTMLElementOrTextInBlock(const nsINode& aNode) const {
-    return GetNextHTMLElementOrTextInternal(aNode, true);
+    return GetNextHTMLElementOrTextInternal(aNode);
   }
   template <typename PT, typename CT>
   nsIContent* GetNextHTMLElementOrText(
       const EditorDOMPointBase<PT, CT>& aPoint) const {
-    return GetNextHTMLElementOrTextInternal(aPoint, false);
-  }
-  template <typename PT, typename CT>
-  nsIContent* GetNextHTMLElementOrTextInBlock(
-      const EditorDOMPointBase<PT, CT>& aPoint) const {
-    return GetNextHTMLElementOrTextInternal(aPoint, true);
+    return GetNextHTMLElementOrTextInternal(aPoint);
   }
 
   
 
 
 
-  nsIContent* GetNextHTMLElementOrTextInternal(const nsINode& aNode,
-                                               bool aNoBlockCrossing) const;
+  nsIContent* GetNextHTMLElementOrTextInternal(const nsINode& aNode) const;
   template <typename PT, typename CT>
   nsIContent* GetNextHTMLElementOrTextInternal(
-      const EditorDOMPointBase<PT, CT>& aPoint, bool aNoBlockCrossing) const;
+      const EditorDOMPointBase<PT, CT>& aPoint) const;
 
   
 
