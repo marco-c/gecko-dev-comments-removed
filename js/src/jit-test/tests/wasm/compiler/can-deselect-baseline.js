@@ -2,13 +2,4 @@
 
 
 
-
-
-
-
-
-
-assertEq(true,
-	 (wasmCompilersPresent().match("ion") && wasmCompileMode() === "ion") ||
-	 (wasmCompilersPresent().match("cranelift") &&
-	  wasmCompileMode() === "cranelift"));
+assertEq(true, wasmCompileMode() === "ion" || wasmCompileMode() === "cranelift");

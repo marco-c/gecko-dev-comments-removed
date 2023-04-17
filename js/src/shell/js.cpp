@@ -590,6 +590,11 @@ bool shell::enableWasm = false;
 bool shell::enableSharedMemory = SHARED_MEMORY_DEFAULT;
 bool shell::enableWasmBaseline = false;
 bool shell::enableWasmOptimizing = false;
+#ifdef JS_CODEGEN_ARM64
+
+
+bool shell::forceWasmIon = false;
+#endif
 
 #define WASM_DEFAULT_FEATURE(NAME, ...) bool shell::enableWasm##NAME = true;
 #define WASM_EXPERIMENTAL_FEATURE(NAME, ...) \
@@ -10865,6 +10870,9 @@ static bool SetContextOptions(JSContext* cx, const OptionParser& op) {
   enableWasmBaseline = true;
   enableWasmOptimizing = true;
 
+  bool commandLineRequestedWasmIon = false;
+  bool commandLineRequestedWasmCranelift = false;
+
   if (const char* str = op.getStringOption("wasm-compiler")) {
     if (strcmp(str, "none") == 0) {
       enableWasm = false;
@@ -10883,17 +10891,20 @@ static bool SetContextOptions(JSContext* cx, const OptionParser& op) {
     } else if (strcmp(str, "cranelift") == 0) {
       enableWasmBaseline = false;
       enableWasmOptimizing = true;
+      commandLineRequestedWasmCranelift = true;
     } else if (strcmp(str, "baseline+cranelift") == 0) {
       MOZ_ASSERT(enableWasmBaseline);
       enableWasmOptimizing = true;
-#else
+      commandLineRequestedWasmCranelift = true;
+#endif
     } else if (strcmp(str, "ion") == 0) {
       enableWasmBaseline = false;
       enableWasmOptimizing = true;
+      commandLineRequestedWasmIon = true;
     } else if (strcmp(str, "baseline+ion") == 0) {
       MOZ_ASSERT(enableWasmBaseline);
       enableWasmOptimizing = true;
-#endif
+      commandLineRequestedWasmIon = true;
     } else {
       return OptionFailure("wasm-compiler", str);
     }
@@ -10934,16 +10945,36 @@ static bool SetContextOptions(JSContext* cx, const OptionParser& op) {
   enableTopLevelAwait = op.getBoolOption("enable-top-level-await");
   useOffThreadParseGlobal = op.getBoolOption("off-thread-parse-global");
 
+  
+  
+  mozilla::Unused << commandLineRequestedWasmIon;
+  mozilla::Unused << commandLineRequestedWasmCranelift;
+#ifdef JS_CODEGEN_ARM64
+  
+  
+  
+  
+  MOZ_ASSERT(
+      !(commandLineRequestedWasmIon && commandLineRequestedWasmCranelift));
+  if (commandLineRequestedWasmIon) {
+    forceWasmIon = true;
+  } else if (commandLineRequestedWasmCranelift) {
+    forceWasmIon = false;
+  } else {
+    forceWasmIon = op.getBoolOption("wasm-force-ion");
+  }
+#endif
+
   JS::ContextOptionsRef(cx)
       .setAsmJS(enableAsmJS)
       .setWasm(enableWasm)
       .setWasmForTrustedPrinciples(enableWasm)
       .setWasmBaseline(enableWasmBaseline)
-#if defined(ENABLE_WASM_CRANELIFT)
-      .setWasmCranelift(enableWasmOptimizing)
-      .setWasmIon(false)
+#if defined(ENABLE_WASM_CRANELIFT) && defined(JS_CODEGEN_ARM64)
+      
+      .setWasmCranelift(enableWasmOptimizing && !forceWasmIon)
+      .setWasmIon(enableWasmOptimizing && forceWasmIon)
 #else
-      .setWasmCranelift(false)
       .setWasmIon(enableWasmOptimizing)
 #endif
 
@@ -11336,11 +11367,11 @@ static void SetWorkerContextOptions(JSContext* cx) {
       .setAsmJS(enableAsmJS)
       .setWasm(enableWasm)
       .setWasmBaseline(enableWasmBaseline)
-#if defined(ENABLE_WASM_CRANELIFT)
-      .setWasmCranelift(enableWasmOptimizing)
-      .setWasmIon(false)
+#if defined(ENABLE_WASM_CRANELIFT) && defined(JS_CODEGEN_ARM64)
+      
+      .setWasmCranelift(enableWasmOptimizing && !forceWasmIon)
+      .setWasmIon(enableWasmOptimizing && forceWasmIon)
 #else
-      .setWasmCranelift(false)
       .setWasmIon(enableWasmOptimizing)
 #endif
 #define WASM_FEATURE(NAME, ...) .setWasm##NAME(enableWasm##NAME)
@@ -11859,6 +11890,13 @@ int main(int argc, char** argv, char** envp) {
                             "Enable wasm SIMD wormhole (UTSL)") ||
 #else
           !op.addBoolOption('\0', "wasm-simd-wormhole", "No-op") ||
+#endif
+#ifdef JS_CODEGEN_ARM64
+      
+      
+      !op.addBoolOption(
+          '\0', "wasm-force-ion",
+          "Temporary: Force Ion in builds with both Cranelift and Ion") ||
 #endif
       !op.addBoolOption('\0', "no-native-regexp",
                         "Disable native regexp compilation") ||
@@ -12477,7 +12515,11 @@ int main(int argc, char** argv, char** envp) {
       
       "--wasm-simd-wormhole",
       
-      "--test-wasm-await-tier2", NULL};
+      "--test-wasm-await-tier2",
+#ifdef JS_CODEGEN_ARM64
+      "--wasm-force-ion",
+#endif
+      NULL};
   for (const char** p = &to_propagate[0]; *p; p++) {
     if (op.getBoolOption(&(*p)[2] )) {
       if (!sCompilerProcessFlags.append(*p)) {
