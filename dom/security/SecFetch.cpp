@@ -219,6 +219,12 @@ bool IsUserTriggeredForSecFetchSite(nsIHttpChannel* aHTTPChannel) {
   }
 
   
+  
+  if (loadInfo->GetLoadTriggeredFromExternal()) {
+    return true;
+  }
+
+  
   if (!loadInfo->GetHasValidUserGestureActivation()) {
     return false;
   }
@@ -325,7 +331,9 @@ void mozilla::dom::SecFetch::AddSecFetchUser(nsIHttpChannel* aHTTPChannel) {
   }
 
   
-  if (!loadInfo->GetHasValidUserGestureActivation()) {
+  
+  if (!loadInfo->GetLoadTriggeredFromExternal() &&
+      !loadInfo->GetHasValidUserGestureActivation()) {
     return;
   }
 
