@@ -1938,13 +1938,6 @@ static nsresult PrepareAcceptLanguages(const char* i_AcceptLanguages,
                                        &o_AcceptLanguages);
 }
 
-
-
-void nsHttpHandler::PresetAcceptLanguages() {
-  (void)GetInstance();
-  gHttpHandler->SetAcceptLanguages();
-}
-
 nsresult nsHttpHandler::SetAcceptLanguages() {
   if (!NS_IsMainThread()) {
     nsCOMPtr<nsIThread> mainThread;
