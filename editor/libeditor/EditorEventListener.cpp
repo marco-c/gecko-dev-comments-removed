@@ -606,6 +606,21 @@ nsresult EditorEventListener::KeyPress(WidgetKeyboardEvent* aKeyboardEvent) {
     return NS_OK;
   }
 
+  
+  
+  
+  
+  
+  
+  RefPtr<Document> document = editorBase->GetDocument();
+  if (!document) {
+    return NS_OK;
+  }
+  document->FlushPendingNotifications(FlushType::Layout);
+  if (editorBase->Destroyed() || DetachedFromEditor()) {
+    return NS_OK;
+  }
+
   nsresult rv = editorBase->HandleKeyPressEvent(aKeyboardEvent);
   if (NS_FAILED(rv)) {
     NS_WARNING("EditorBase::HandleKeyPressEvent() failed");

@@ -5000,26 +5000,35 @@ Document::InternalCommandData Document::ConvertToInternalCommand(
 }
 
 Document::AutoEditorCommandTarget::AutoEditorCommandTarget(
-    nsPresContext* aPresContext, const InternalCommandData& aCommandData)
+    Document& aDocument, const InternalCommandData& aCommandData)
     : mCommandData(aCommandData) {
   
   
   
-  
-  
-  
-  
-  if (aPresContext) {
+  aDocument.FlushPendingNotifications(FlushType::Layout);
+  if (!aDocument.GetPresShell() || aDocument.GetPresShell()->IsDestroying()) {
+    mDoNothing = true;
+    return;
+  }
+
+  if (nsPresContext* presContext = aDocument.GetPresContext()) {
+    
+    
+    
+    
+    
+    
+    
     if (aCommandData.IsCutOrCopyCommand()) {
       
       
       
       
       
-      mActiveEditor = nsContentUtils::GetActiveEditor(aPresContext);
+      mActiveEditor = nsContentUtils::GetActiveEditor(presContext);
     } else {
-      mActiveEditor = nsContentUtils::GetActiveEditor(aPresContext);
-      mHTMLEditor = nsContentUtils::GetHTMLEditor(aPresContext);
+      mActiveEditor = nsContentUtils::GetActiveEditor(presContext);
+      mHTMLEditor = nsContentUtils::GetHTMLEditor(presContext);
       if (!mActiveEditor) {
         mActiveEditor = mHTMLEditor;
       }
@@ -5223,10 +5232,11 @@ bool Document::ExecCommand(const nsAString& aHTMLCommandName, bool aShowUI,
     }
   }
 
+  AutoRunningExecCommandMarker markRunningExecCommand(*this);
+
   
   
-  RefPtr<nsPresContext> presContext = GetPresContext();
-  AutoEditorCommandTarget editCommandTarget(presContext, commandData);
+  AutoEditorCommandTarget editCommandTarget(*this, commandData);
   if (commandData.IsAvailableOnlyWhenEditable() &&
       !editCommandTarget.IsEditable(this)) {
     return false;
@@ -5235,8 +5245,6 @@ bool Document::ExecCommand(const nsAString& aHTMLCommandName, bool aShowUI,
   if (editCommandTarget.DoNothing()) {
     return false;
   }
-
-  AutoRunningExecCommandMarker markRunningExecCommand(*this);
 
   
   
@@ -5407,8 +5415,7 @@ bool Document::QueryCommandEnabled(const nsAString& aHTMLCommandName,
     return false;
   }
 
-  RefPtr<nsPresContext> presContext = GetPresContext();
-  AutoEditorCommandTarget editCommandTarget(presContext, commandData);
+  AutoEditorCommandTarget editCommandTarget(*this, commandData);
   if (commandData.IsAvailableOnlyWhenEditable() &&
       !editCommandTarget.IsEditable(this)) {
     return false;
@@ -5448,8 +5455,7 @@ bool Document::QueryCommandIndeterm(const nsAString& aHTMLCommandName,
     return false;
   }
 
-  RefPtr<nsPresContext> presContext = GetPresContext();
-  AutoEditorCommandTarget editCommandTarget(presContext, commandData);
+  AutoEditorCommandTarget editCommandTarget(*this, commandData);
   if (commandData.IsAvailableOnlyWhenEditable() &&
       !editCommandTarget.IsEditable(this)) {
     return false;
@@ -5526,8 +5532,7 @@ bool Document::QueryCommandState(const nsAString& aHTMLCommandName,
     return false;
   }
 
-  RefPtr<nsPresContext> presContext = GetPresContext();
-  AutoEditorCommandTarget editCommandTarget(presContext, commandData);
+  AutoEditorCommandTarget editCommandTarget(*this, commandData);
   if (commandData.IsAvailableOnlyWhenEditable() &&
       !editCommandTarget.IsEditable(this)) {
     return false;
@@ -5713,8 +5718,7 @@ void Document::QueryCommandValue(const nsAString& aHTMLCommandName,
       break;
   }
 
-  RefPtr<nsPresContext> presContext = GetPresContext();
-  AutoEditorCommandTarget editCommandTarget(presContext, commandData);
+  AutoEditorCommandTarget editCommandTarget(*this, commandData);
   if (commandData.IsAvailableOnlyWhenEditable() &&
       !editCommandTarget.IsEditable(this)) {
     return;
