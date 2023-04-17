@@ -16,6 +16,11 @@ class WidgetUtilsGTK {
  public:
   
   static int32_t IsTouchDeviceSupportPresent();
+
+  
+
+
+  static const char* GetSnapInstanceName();
 };
 
 bool IsMainWindowTransparent();
