@@ -36,6 +36,8 @@ extern crate cstr;
 extern crate xpcom;
 
 use std::env;
+use std::ffi::CString;
+use std::ops::DerefMut;
 use std::path::PathBuf;
 
 use nserror::{nsresult, NS_ERROR_FAILURE, NS_OK};
@@ -201,9 +203,23 @@ fn get_data_path() -> Result<String, nsresult> {
 fn get_app_info() -> Result<(String, String, String), nsresult> {
     let xul = xpcom::services::get_XULRuntime().ok_or(NS_ERROR_FAILURE)?;
 
+    let pref_service = xpcom::services::get_PrefService().ok_or(NS_ERROR_FAILURE)?;
+    let branch = xpcom::getter_addrefs(|p| {
+        
+        
+        
+        unsafe { pref_service.GetDefaultBranch(std::ptr::null(), p) }
+    })?;
+    let pref_name = CString::new("app.update.channel").map_err(|_| NS_ERROR_FAILURE)?;
     let mut channel = nsCString::new();
+    
+    
+    
+    
     unsafe {
-        xul.GetDefaultUpdateChannel(&mut *channel).to_result()?;
+        (*branch)
+            .GetCharPref(pref_name.as_ptr(), channel.deref_mut() as *mut nsACString)
+            .to_result()?;
     }
 
     let app_info = match xul.query_interface::<nsIXULAppInfo>() {
