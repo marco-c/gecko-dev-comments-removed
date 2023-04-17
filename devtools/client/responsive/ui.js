@@ -4,7 +4,6 @@
 
 "use strict";
 
-const { Ci } = require("chrome");
 const Services = require("Services");
 const EventEmitter = require("devtools/shared/event-emitter");
 const {
@@ -875,24 +874,7 @@ class ResponsiveUI {
 
 
 
-
   async updateTouchSimulation(enabled, reloadOnTouchSimulationToggle) {
-    
-    
-    if (enabled) {
-      const metaViewportEnabled = Services.prefs.getBoolPref(
-        "devtools.responsive.metaViewport.enabled",
-        false
-      );
-      if (metaViewportEnabled) {
-        await this.responsiveFront.setMetaViewportOverride(
-          Ci.nsIDocShell.META_VIEWPORT_OVERRIDE_ENABLED
-        );
-      }
-    } else {
-      await this.responsiveFront.clearMetaViewportOverride();
-    }
-
     await this.commands.targetConfigurationCommand.updateConfiguration({
       touchEventsOverride: enabled ? "enabled" : null,
       reloadOnTouchSimulationToggle,

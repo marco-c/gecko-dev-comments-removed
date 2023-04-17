@@ -2495,9 +2495,6 @@ pref("devtools.responsive.reloadNotification.enabled", true);
 
 pref("devtools.responsive.touchSimulation.enabled", false);
 
-
-pref("devtools.responsive.metaViewport.enabled", true);
-
 pref("devtools.responsive.userAgent", "");
 
 
