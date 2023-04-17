@@ -3199,6 +3199,12 @@ void BrowserChild::ReinitRendering() {
 
   
   
+  if (mLayersConnected.isNothing() || !*mLayersConnected) {
+    return;
+  }
+
+  
+  
   
   
   
@@ -3245,10 +3251,6 @@ void BrowserChild::ReinitRenderingForDeviceReset() {
       mPuppetWidget->GetWindowRenderer()->AsLayerManager();
   if (lm && lm->AsWebRenderLayerManager()) {
     lm->AsWebRenderLayerManager()->DoDestroy( true);
-  } else {
-    if (mLayersConnected.isNothing()) {
-      return;
-    }
   }
 
   
