@@ -124,15 +124,16 @@
 
 "use strict";
 
-
-
-this.EXPORTED_SYMBOLS = ["formAutofillStorage"];
+this.EXPORTED_SYMBOLS = [
+  "FormAutofillStorageBase",
+  "CreditCardsBase",
+  "AddressesBase",
+];
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 const { FormAutofill } = ChromeUtils.import(
   "resource://autofill/FormAutofill.jsm"
@@ -142,11 +143,6 @@ ChromeUtils.defineModuleGetter(
   this,
   "CreditCard",
   "resource://gre/modules/CreditCard.jsm"
-);
-ChromeUtils.defineModuleGetter(
-  this,
-  "JSONFile",
-  "resource://gre/modules/JSONFile.jsm"
 );
 ChromeUtils.defineModuleGetter(
   this,
@@ -181,8 +177,6 @@ const CryptoHash = Components.Constructor(
   "nsICryptoHash",
   "initWithString"
 );
-
-const PROFILE_JSON_FILE_NAME = "autofill-profiles.json";
 
 const STORAGE_SCHEMA_VERSION = 1;
 const ADDRESS_SCHEMA_VERSION = 1;
@@ -298,6 +292,10 @@ class AutofillRecords {
     this._collectionName = collectionName;
     this._schemaVersion = schemaVersion;
 
+    this._initialize();
+  }
+
+  _initialize() {
     this._initializePromise = Promise.all(
       this._data.map(async (record, index) =>
         this._migrateRecord(record, index)
@@ -327,6 +325,10 @@ class AutofillRecords {
 
 
   get _data() {
+    return this._getData();
+  }
+
+  _getData() {
     return this._store.data[this._collectionName];
   }
 
@@ -691,9 +693,7 @@ class AutofillRecords {
 
 
 
-
-
-  getSavedFieldNames() {
+  async getSavedFieldNames() {
     this.log.debug("getSavedFieldNames");
 
     let records = this._data.filter(r => !r.deleted);
@@ -1441,7 +1441,7 @@ class AutofillRecords {
   async mergeIfPossible(guid, record, strict) {}
 }
 
-class Addresses extends AutofillRecords {
+class AddressesBase extends AutofillRecords {
   constructor(store) {
     super(
       store,
@@ -1669,96 +1669,11 @@ class Addresses extends AutofillRecords {
 
 
   async mergeIfPossible(guid, address, strict) {
-    this.log.debug("mergeIfPossible:", guid, address);
-
-    let addressFound = this._findByGUID(guid);
-    if (!addressFound) {
-      throw new Error("No matching address.");
-    }
-
-    let addressToMerge = this._clone(address);
-    this._normalizeRecord(addressToMerge, strict);
-    let hasMatchingField = false;
-
-    let country =
-      addressFound.country ||
-      addressToMerge.country ||
-      FormAutofill.DEFAULT_REGION;
-    let collators = FormAutofillUtils.getSearchCollators(country);
-    for (let field of this.VALID_FIELDS) {
-      let existingField = addressFound[field];
-      let incomingField = addressToMerge[field];
-      if (incomingField !== undefined && existingField !== undefined) {
-        if (incomingField != existingField) {
-          
-          
-          if (
-            field == "street-address" &&
-            FormAutofillUtils.compareStreetAddress(
-              existingField,
-              incomingField,
-              collators
-            )
-          ) {
-            
-            
-            if (
-              existingField.split("\n").length >=
-              incomingField.split("\n").length
-            ) {
-              
-              
-              addressToMerge[field] = existingField;
-            }
-          } else if (
-            field != "street-address" &&
-            FormAutofillUtils.strCompare(
-              existingField,
-              incomingField,
-              collators
-            )
-          ) {
-            addressToMerge[field] = existingField;
-          } else {
-            this.log.debug("Conflicts: field", field, "has different value.");
-            return false;
-          }
-        }
-        hasMatchingField = true;
-      }
-    }
-
-    
-    if (!hasMatchingField) {
-      this.log.debug("Unable to merge because no field has the same value");
-      return false;
-    }
-
-    
-    let noNeedToUpdate = this.VALID_FIELDS.every(field => {
-      
-      
-      if (addressFound[field] === undefined) {
-        return !addressToMerge[field];
-      }
-
-      
-      
-      return (
-        addressToMerge[field] === undefined ||
-        addressFound[field] === addressToMerge[field]
-      );
-    });
-    if (noNeedToUpdate) {
-      return true;
-    }
-
-    await this.update(guid, addressToMerge, true);
-    return true;
+    throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
   }
 }
 
-class CreditCards extends AutofillRecords {
+class CreditCardsBase extends AutofillRecords {
   constructor(store) {
     super(
       store,
@@ -1826,24 +1741,13 @@ class CreditCards extends AutofillRecords {
     }
 
     
-    if (!("cc-number-encrypted" in creditCard)) {
-      if ("cc-number" in creditCard) {
-        let ccNumber = creditCard["cc-number"];
-        if (CreditCard.isValidNumber(ccNumber)) {
-          creditCard["cc-number"] = CreditCard.getLongMaskedNumber(ccNumber);
-        } else {
-          
-          
-          
-          creditCard["cc-number"] = "*".repeat(ccNumber.length);
-        }
-        creditCard["cc-number-encrypted"] = await OSKeyStore.encrypt(ccNumber);
-      } else {
-        creditCard["cc-number-encrypted"] = "";
-      }
-    }
+    await this._encryptNumber(creditCard);
 
     return hasNewComputedFields;
+  }
+
+  async _encryptNumber(creditCard) {
+    throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
   }
 
   async _computeMigratedRecord(creditCard) {
@@ -2050,56 +1954,7 @@ class CreditCards extends AutofillRecords {
 
 
   async mergeIfPossible(guid, creditCard) {
-    this.log.debug("mergeIfPossible:", guid, creditCard);
-
-    
-    if (!creditCard["cc-number"]) {
-      return false;
-    }
-
-    
-    let creditCardFound = await this.get(guid, { rawData: true });
-    if (!creditCardFound) {
-      throw new Error("No matching credit card.");
-    }
-
-    let creditCardToMerge = this._clone(creditCard);
-    this._normalizeRecord(creditCardToMerge);
-
-    for (let field of this.VALID_FIELDS) {
-      let existingField = creditCardFound[field];
-
-      
-      if (
-        field == "cc-number" &&
-        (!existingField || !creditCardToMerge[field])
-      ) {
-        return false;
-      }
-
-      if (!creditCardToMerge[field] && typeof existingField != "undefined") {
-        creditCardToMerge[field] = existingField;
-      }
-
-      let incomingField = creditCardToMerge[field];
-      if (incomingField && existingField) {
-        if (incomingField != existingField) {
-          this.log.debug("Conflicts: field", field, "has different value.");
-          return false;
-        }
-      }
-    }
-
-    
-    let exactlyMatch = this.VALID_FIELDS.every(
-      field => creditCardFound[field] === creditCardToMerge[field]
-    );
-    if (exactlyMatch) {
-      return true;
-    }
-
-    await this.update(guid, creditCardToMerge, true);
-    return true;
+    throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
   }
 
   updateUseCountTelemetry() {
@@ -2114,32 +1969,32 @@ class CreditCards extends AutofillRecords {
   }
 }
 
-function FormAutofillStorage(path) {
-  this._path = path;
-  this._initializePromise = null;
-  this.INTERNAL_FIELDS = INTERNAL_FIELDS;
-}
+class FormAutofillStorageBase {
+  constructor(path) {
+    this._path = path;
+    this._initializePromise = null;
+    this.INTERNAL_FIELDS = INTERNAL_FIELDS;
+  }
 
-FormAutofillStorage.prototype = {
   get version() {
     return STORAGE_SCHEMA_VERSION;
-  },
+  }
 
   get addresses() {
-    if (!this._addresses) {
-      this._store.ensureDataReady();
-      this._addresses = new Addresses(this._store);
-    }
-    return this._addresses;
-  },
+    return this.getAddresses();
+  }
 
   get creditCards() {
-    if (!this._creditCards) {
-      this._store.ensureDataReady();
-      this._creditCards = new CreditCards(this._store);
-    }
-    return this._creditCards;
-  },
+    return this.getCreditCards();
+  }
+
+  getAddresses() {
+    throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
+  }
+
+  getCreditCards() {
+    throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
+  }
 
   
 
@@ -2150,10 +2005,7 @@ FormAutofillStorage.prototype = {
 
   initialize() {
     if (!this._initializePromise) {
-      this._store = new JSONFile({
-        path: this._path,
-        dataPostProcessor: this._dataPostProcessor.bind(this),
-      });
+      this._store = this._initializeStore();
       this._initializePromise = this._store.load().then(() => {
         let initializeAutofillRecords = [this.addresses.initialize()];
         if (FormAutofill.isAutofillCreditCardsAvailable) {
@@ -2174,30 +2026,18 @@ FormAutofillStorage.prototype = {
       });
     }
     return this._initializePromise;
-  },
+  }
 
-  _dataPostProcessor(data) {
-    data.version = this.version;
-    if (!data.addresses) {
-      data.addresses = [];
-    }
-    if (!data.creditCards) {
-      data.creditCards = [];
-    }
-    return data;
-  },
+  _initializeStore() {
+    throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
+  }
 
   
   _saveImmediately() {
     return this._store._save();
-  },
+  }
 
   _finalize() {
     return this._store.finalize();
-  },
-};
-
-
-this.formAutofillStorage = new FormAutofillStorage(
-  OS.Path.join(OS.Constants.Path.profileDir, PROFILE_JSON_FILE_NAME)
-);
+  }
+}
