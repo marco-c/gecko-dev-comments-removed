@@ -11,6 +11,7 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/Logging.h"
+#include "mozilla/Unused.h"
 
 #define LOG_FONTLIST(args) \
   MOZ_LOG(gfxPlatform::GetLog(eGfxLog_fontlist), LogLevel::Debug, args)
@@ -231,25 +232,37 @@ void Family::AddFaces(FontList* aList, const nsTArray<Face::InitData>& aFaces) {
   }
 }
 
-void Family::FindAllFacesForStyle(FontList* aList, const gfxFontStyle& aStyle,
-                                  nsTArray<Face*>& aFaceList,
-                                  bool aIgnoreSizeTolerance) const {
+bool Family::FindAllFacesForStyleInternal(FontList* aList,
+                                          const gfxFontStyle& aStyle,
+                                          nsTArray<Face*>& aFaceList) const {
   MOZ_ASSERT(aFaceList.IsEmpty());
   if (!IsInitialized()) {
-    return;
+    return false;
   }
 
   Pointer* facePtrs = Faces(aList);
   if (!facePtrs) {
-    return;
+    return false;
   }
 
   
   
+
+  
+  
+  
   if (NumFaces() == 1) {
     MOZ_ASSERT(!facePtrs[0].IsNull());
-    aFaceList.AppendElement(static_cast<Face*>(facePtrs[0].ToPtr(aList)));
-    return;
+    Face* face = static_cast<Face*>(facePtrs[0].ToPtr(aList));
+    if (face && face->HasValidDescriptor()) {
+      aFaceList.AppendElement(face);
+#ifdef MOZ_WIDGET_GTK
+      if (face->mSize) {
+        return true;
+      }
+#endif
+    }
+    return false;
   }
 
   
@@ -274,7 +287,12 @@ void Family::FindAllFacesForStyle(FontList* aList, const gfxFontStyle& aStyle,
     Face* face = static_cast<Face*>(facePtrs[faceIndex].ToPtr(aList));
     if (face && face->HasValidDescriptor()) {
       aFaceList.AppendElement(face);
-      return;
+#ifdef MOZ_WIDGET_GTK
+      if (face->mSize) {
+        return true;
+      }
+#endif
+      return false;
     }
 
     
@@ -294,7 +312,12 @@ void Family::FindAllFacesForStyle(FontList* aList, const gfxFontStyle& aStyle,
       face = static_cast<Face*>(facePtrs[order[trial]].ToPtr(aList));
       if (face && face->HasValidDescriptor()) {
         aFaceList.AppendElement(face);
-        return;
+#ifdef MOZ_WIDGET_GTK
+        if (face->mSize) {
+          return true;
+        }
+#endif
+        return false;
       }
     }
 
@@ -302,7 +325,7 @@ void Family::FindAllFacesForStyle(FontList* aList, const gfxFontStyle& aStyle,
     
     
     
-    return;
+    return false;
   }
 
   
@@ -315,9 +338,11 @@ void Family::FindAllFacesForStyle(FontList* aList, const gfxFontStyle& aStyle,
   
   
   
-
   double minDistance = INFINITY;
   Face* matched = nullptr;
+  
+  
+  bool anyNonScalable = false;
   for (uint32_t i = 0; i < NumFaces(); i++) {
     Face* face = static_cast<Face*>(facePtrs[i].ToPtr(aList));
     if (face) {
@@ -332,6 +357,11 @@ void Family::FindAllFacesForStyle(FontList* aList, const gfxFontStyle& aStyle,
       } else if (distance == minDistance) {
         if (matched) {
           aFaceList.AppendElement(matched);
+#ifdef MOZ_WIDGET_GTK
+          if (matched->mSize) {
+            anyNonScalable = true;
+          }
+#endif
         }
         matched = face;
       }
@@ -341,7 +371,69 @@ void Family::FindAllFacesForStyle(FontList* aList, const gfxFontStyle& aStyle,
   MOZ_ASSERT(matched, "didn't match a font within a family");
   if (matched) {
     aFaceList.AppendElement(matched);
+#ifdef MOZ_WIDGET_GTK
+    if (matched->mSize) {
+      anyNonScalable = true;
+    }
+#endif
   }
+
+  return anyNonScalable;
+}
+
+void Family::FindAllFacesForStyle(FontList* aList, const gfxFontStyle& aStyle,
+                                  nsTArray<Face*>& aFaceList,
+                                  bool aIgnoreSizeTolerance) const {
+#ifdef MOZ_WIDGET_GTK
+  bool anyNonScalable =
+#else
+  Unused <<
+#endif
+      FindAllFacesForStyleInternal(aList, aStyle, aFaceList);
+
+#ifdef MOZ_WIDGET_GTK
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (anyNonScalable) {
+    uint16_t best = 0;
+    gfxFloat dist = 0.0;
+    for (const auto& f : aFaceList) {
+      if (f->mSize == 0) {
+        
+        continue;
+      }
+      gfxFloat d = fabs(gfxFloat(f->mSize) - aStyle.size);
+      if (!aIgnoreSizeTolerance && (d * 5.0 > f->mSize)) {
+        continue;  
+      }
+      
+      
+      if (!best || d < dist) {
+        best = f->mSize;
+        dist = d;
+      }
+    }
+    
+    
+    
+    
+    
+    aFaceList.RemoveElementsBy([=](const auto& e) { return e->mSize != best; });
+  }
+#endif
 }
 
 Face* Family::FindFaceForStyle(FontList* aList, const gfxFontStyle& aStyle,

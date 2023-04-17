@@ -157,7 +157,10 @@ struct Face {
     nsCString mDescriptor;  
                             
     uint16_t mIndex;        
-    bool mFixedPitch;       
+#ifdef MOZ_WIDGET_GTK
+    uint16_t mSize;  
+#endif
+    bool mFixedPitch;                  
     mozilla::WeightRange mWeight;      
     mozilla::StretchRange mStretch;    
     mozilla::SlantStyleRange mStyle;   
@@ -169,11 +172,15 @@ struct Face {
   Face(FontList* aList, const InitData& aData)
       : mDescriptor(aList, aData.mDescriptor),
         mIndex(aData.mIndex),
+#ifdef MOZ_WIDGET_GTK
+        mSize(aData.mSize),
+#endif
         mFixedPitch(aData.mFixedPitch),
         mWeight(aData.mWeight),
         mStretch(aData.mStretch),
         mStyle(aData.mStyle),
-        mCharacterMap(Pointer::Null()) {}
+        mCharacterMap(Pointer::Null()) {
+  }
 
   bool HasValidDescriptor() const {
     return !mDescriptor.IsNull() && mIndex != uint16_t(-1);
@@ -183,6 +190,9 @@ struct Face {
 
   String mDescriptor;
   uint16_t mIndex;
+#ifdef MOZ_WIDGET_GTK
+  uint16_t mSize;
+#endif
   bool mFixedPitch;
   mozilla::WeightRange mWeight;
   mozilla::StretchRange mStretch;
@@ -309,6 +319,11 @@ struct Family {
   void SetupFamilyCharMap(FontList* aList);
 
  private:
+  
+  
+  bool FindAllFacesForStyleInternal(FontList* aList, const gfxFontStyle& aStyle,
+                                    nsTArray<Face*>& aFaceList) const;
+
   std::atomic<uint32_t> mFaceCount;
   String mKey;
   String mName;
