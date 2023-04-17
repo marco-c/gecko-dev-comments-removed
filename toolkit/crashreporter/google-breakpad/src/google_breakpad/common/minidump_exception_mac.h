@@ -67,6 +67,8 @@ typedef enum {
       
   MD_EXCEPTION_MAC_RPC_ALERT       = 9,
       
+  MD_EXCEPTION_MAC_RESOURCE        = 11,
+      
   MD_EXCEPTION_MAC_SIMULATED       = 0x43507378
       
 } MDExceptionMac;
@@ -205,5 +207,38 @@ typedef enum {
   
   
 } MDExceptionCodeMac;
+
+
+
+
+typedef enum MDMacExcResourceType {
+  MD_MAC_EXC_RESOURCE_TYPE_CPU     = 1,
+  MD_MAC_EXC_RESOURCE_TYPE_WAKEUPS = 2,
+  MD_MAC_EXC_RESOURCE_TYPE_MEMORY  = 3,
+  MD_MAC_EXC_RESOURCE_TYPE_IO      = 4,
+  MD_MAC_EXC_RESOURCE_TYPE_THREADS = 5
+} MDMacExcResourceType;
+
+typedef enum MDMacExcResourceFlavorCpu {
+  MD_MAC_EXC_RESOURCE_FLAVOR_CPU_MONITOR       = 1,
+  MD_MAC_EXC_RESOURCE_FLAVOR_CPU_MONITOR_FATAL = 2
+} MDMacExcResourceFlavorCpu;
+
+typedef enum MDMacExcResourceFlavorWakeup {
+  MD_MAC_EXC_RESOURCE_FLAVOR_WAKEUPS_MONITOR = 1,
+} MDMacExcResourceFlavorWakeup;
+
+typedef enum MDMacExcResourceFlavorMemory {
+  MD_MAC_EXC_RESOURCE_FLAVOR_HIGH_WATERMARK = 1,
+} MDMacExcResourceFlavorMemory;
+
+typedef enum MDMacExcResourceIOFlavor {
+  MD_MAC_EXC_RESOURCE_FLAVOR_IO_PHYSICAL_WRITES = 1,
+  MD_MAC_EXC_RESOURCE_FLAVOR_IO_LOGICAL_WRITES = 2,
+} MDMacExcResourceIOFlavor;
+
+typedef enum MDMacExcResourceThreadsFlavor {
+  MD_MAC_EXC_RESOURCE_FLAVOR_THREADS_HIGH_WATERMARK = 1,
+} MDMacExcResourceThreadsFlavor;
 
 #endif  
