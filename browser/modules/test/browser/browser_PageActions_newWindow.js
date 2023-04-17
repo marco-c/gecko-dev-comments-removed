@@ -6,22 +6,7 @@
 
 
 add_task(async function init() {
-  
-  
-  
-  let tab = await BrowserTestUtils.openNewForegroundTab({
-    gBrowser,
-    url: "http://example.com/",
-  });
-
-  await disableNonReleaseActions();
-  registerCleanupFunction(async () => {
-    BrowserTestUtils.removeTab(tab);
-  });
-
-  
-  const addon = await AddonManager.getAddonByID("screenshots@mozilla.org");
-  await addon.disable({ allowSystemAddons: true });
+  await initPageActionsTest();
 });
 
 
@@ -115,9 +100,19 @@ add_task(async function urlbarOrderNewWindow() {
 
 add_task(async function migrate1() {
   
+  let actionId = "test-migrate1";
+  PageActions.addAction(
+    new PageActions.Action({
+      id: actionId,
+      title: "Test migrate1",
+      pinnedToUrlbar: true,
+    })
+  );
+
   
   
-  let ids = [PageActions.ACTION_ID_BOOKMARK, "copyURL"];
+  
+  let ids = [PageActions.ACTION_ID_BOOKMARK, actionId];
   let persisted = ids.reduce(
     (memo, id) => {
       memo.ids[id] = true;
@@ -138,11 +133,7 @@ add_task(async function migrate1() {
   Assert.equal(PageActions._persistedActions.version, 1, "Correct version");
 
   
-  
-  PageActions.actionForID("copyURL")._pinnedToUrlbar = true;
-
-  
-  let orderedIDs = ["copyURL", PageActions.ACTION_ID_BOOKMARK];
+  let orderedIDs = [actionId, PageActions.ACTION_ID_BOOKMARK];
 
   
   Assert.deepEqual(
@@ -185,7 +176,7 @@ add_task(async function migrate1() {
   
   await BrowserTestUtils.closeWindow(win);
   Services.prefs.clearUserPref(PageActions.PREF_PERSISTED_ACTIONS);
-  PageActions.actionForID("copyURL").pinnedToUrlbar = false;
+  PageActions.actionForID(actionId).remove();
 });
 
 
