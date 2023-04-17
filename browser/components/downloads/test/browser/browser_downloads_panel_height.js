@@ -13,6 +13,8 @@ add_task(async function test_height_reduced_after_removal() {
     set: [["browser.download.autohideButton", false]],
   });
   await promiseButtonShown("downloads-button");
+  
+  await task_addDownloads([{ state: DownloadsCommon.DOWNLOAD_FINISHED }]);
   await task_addDownloads([{ state: DownloadsCommon.DOWNLOAD_FINISHED }]);
 
   await task_openPanel();
@@ -22,6 +24,8 @@ add_task(async function test_height_reduced_after_removal() {
   
   DownloadsPanel.hidePanel();
   await task_resetState();
+  
+  await task_addDownloads([{ state: DownloadsCommon.DOWNLOAD_FINISHED }]);
 
   await task_openPanel();
   let heightAfterRemoval = panel.getBoundingClientRect().height;
