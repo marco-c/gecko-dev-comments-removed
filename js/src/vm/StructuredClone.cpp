@@ -954,6 +954,8 @@ void SCOutput::discardTransferables() { buf.discardTransferables(); }
 
 }  
 
+JSStructuredCloneData::~JSStructuredCloneData() { discardTransferables(); }
+
 
 
 
