@@ -5,6 +5,7 @@
 
 
 UNIFIED_SOURCES += [
+    "TestCollation.cpp",
     "TestDateTimeFormat.cpp",
     "TestLocaleService.cpp",
     "TestLocaleServiceNegotiate.cpp",

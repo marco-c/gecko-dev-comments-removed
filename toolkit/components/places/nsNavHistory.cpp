@@ -9,7 +9,6 @@
 #include "mozilla/Components.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/IntegerPrintfMacros.h"
-#include "mozilla/intl/LocaleService.h"
 
 #include "nsNavHistory.h"
 
@@ -24,6 +23,7 @@
 #include "NotifyRankingChanged.h"
 
 #include "nsTArray.h"
+#include "nsCollationCID.h"
 #include "nsNetUtil.h"
 #include "nsPrintfCString.h"
 #include "nsPromiseFlatString.h"
@@ -3235,26 +3235,17 @@ nsresult nsNavHistory::UpdateFrecency(int64_t aPlaceId) {
   return NS_OK;
 }
 
-const mozilla::intl::Collator* nsNavHistory::GetCollator() {
-  if (mCollator) {
-    return mCollator.get();
-  }
-
-  auto result = mozilla::intl::LocaleService::TryCreateComponent<
-      mozilla::intl::Collator>();
-  NS_ENSURE_TRUE(result.isOk(), nullptr);
-  auto collator = result.unwrap();
+nsICollation* nsNavHistory::GetCollation() {
+  if (mCollation) return mCollation;
 
   
-  
-  using mozilla::intl::Collator;
-  auto optResult = collator->SetOptions(
-      Collator::Options{.sensitivity = Collator::Sensitivity::Base});
-  NS_ENSURE_TRUE(optResult.isOk(), nullptr);
+  nsCOMPtr<nsICollationFactory> cfact =
+      do_CreateInstance(NS_COLLATIONFACTORY_CONTRACTID);
+  NS_ENSURE_TRUE(cfact, nullptr);
+  nsresult rv = cfact->CreateCollation(getter_AddRefs(mCollation));
+  NS_ENSURE_SUCCESS(rv, nullptr);
 
-  mCollator = UniquePtr<const Collator>(collator.release());
-
-  return mCollator.get();
+  return mCollation;
 }
 
 nsIStringBundle* nsNavHistory::GetBundle() {

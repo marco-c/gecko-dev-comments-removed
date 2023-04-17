@@ -10,6 +10,7 @@
 
 #include "mozStorageService.h"
 #include "mozStorageConnection.h"
+#include "nsCollationCID.h"
 #include "nsComponentManagerUtils.h"
 #include "nsEmbedCID.h"
 #include "nsExceptionHandler.h"
@@ -22,8 +23,6 @@
 #include "mozIStorageCompletionCallback.h"
 #include "mozIStoragePendingStatement.h"
 #include "mozilla/StaticPrefs_storage.h"
-#include "mozilla/intl/Collator.h"
-#include "mozilla/intl/LocaleService.h"
 
 #include "sqlite3.h"
 #include "mozilla/AutoSQLiteLifetime.h"
@@ -32,8 +31,6 @@
 
 #  undef CompareString
 #endif
-
-using mozilla::intl::Collator;
 
 namespace mozilla {
 namespace storage {
@@ -358,58 +355,47 @@ nsresult Service::initialize() {
 
 int Service::localeCompareStrings(const nsAString& aStr1,
                                   const nsAString& aStr2,
-                                  Collator::Sensitivity aSensitivity) {
+                                  int32_t aComparisonStrength) {
+  
   
   
   MutexAutoLock mutex(mMutex);
 
-  Collator* collator = getCollator();
-  if (!collator) {
+  nsICollation* coll = getLocaleCollation();
+  if (!coll) {
     NS_ERROR("Storage service has no collation");
     return 0;
   }
 
-  if (aSensitivity != mLastSensitivity) {
-    auto result =
-        mCollator->SetOptions(Collator::Options{.sensitivity = aSensitivity});
-
-    if (result.isErr()) {
-      NS_WARNING("Could not configure the mozilla::intl::Collation.");
-      return 0;
-    }
-    mLastSensitivity = aSensitivity;
+  int32_t res;
+  nsresult rv = coll->CompareString(aComparisonStrength, aStr1, aStr2, &res);
+  if (NS_FAILED(rv)) {
+    NS_ERROR("Collation compare string failed");
+    return 0;
   }
 
-  return collator->CompareStrings(aStr1, aStr2);
+  return res;
 }
 
-Collator* Service::getCollator() {
+nsICollation* Service::getLocaleCollation() {
   mMutex.AssertCurrentThreadOwns();
 
-  if (mCollator) {
-    return mCollator.get();
-  }
+  if (mLocaleCollation) return mLocaleCollation;
 
-  auto result = mozilla::intl::LocaleService::TryCreateComponent<Collator>();
-  if (result.isErr()) {
-    NS_WARNING("Could not create mozilla::intl::Collation.");
+  nsCOMPtr<nsICollationFactory> collFact =
+      do_CreateInstance(NS_COLLATIONFACTORY_CONTRACTID);
+  if (!collFact) {
+    NS_WARNING("Could not create collation factory");
     return nullptr;
   }
 
-  mCollator = result.unwrap();
-
-  
-  
-  auto optResult = mCollator->SetOptions(
-      Collator::Options{.sensitivity = Collator::Sensitivity::Base});
-
-  if (optResult.isErr()) {
-    NS_WARNING("Could not configure the mozilla::intl::Collation.");
-    mCollator = nullptr;
+  nsresult rv = collFact->CreateCollation(getter_AddRefs(mLocaleCollation));
+  if (NS_FAILED(rv)) {
+    NS_WARNING("Could not create collation");
     return nullptr;
   }
 
-  return mCollator.get();
+  return mLocaleCollation;
 }
 
 

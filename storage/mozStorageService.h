@@ -8,21 +8,17 @@
 #define MOZSTORAGESERVICE_H
 
 #include "nsCOMPtr.h"
+#include "nsICollation.h"
 #include "nsIFile.h"
 #include "nsIMemoryReporter.h"
 #include "nsIObserver.h"
 #include "nsTArray.h"
 #include "mozilla/Mutex.h"
-#include "mozilla/UniquePtr.h"
-#include "mozilla/intl/Collator.h"
 
 #include "mozIStorageService.h"
 
 class nsIMemoryReporter;
 struct sqlite3_vfs;
-namespace mozilla::intl {
-class Collator;
-}
 
 namespace mozilla {
 namespace storage {
@@ -51,7 +47,7 @@ class Service : public mozIStorageService,
 
 
   int localeCompareStrings(const nsAString& aStr1, const nsAString& aStr2,
-                           mozilla::intl::Collator::Sensitivity aSensitivity);
+                           int32_t aComparisonStrength);
 
   static already_AddRefed<Service> getSingleton();
 
@@ -157,7 +153,7 @@ class Service : public mozIStorageService,
 
 
 
-  mozilla::intl::Collator* getCollator();
+  nsICollation* getLocaleCollation();
 
   
 
@@ -166,15 +162,13 @@ class Service : public mozIStorageService,
 
 
 
-  mozilla::UniquePtr<mozilla::intl::Collator> mCollator = nullptr;
+  nsCOMPtr<nsICollation> mLocaleCollation;
 
   nsCOMPtr<nsIFile> mProfileStorageFile;
 
   nsCOMPtr<nsIMemoryReporter> mStorageSQLiteReporter;
 
   static Service* gService;
-
-  mozilla::intl::Collator::Sensitivity mLastSensitivity;
 };
 
 }  

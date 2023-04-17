@@ -17,9 +17,16 @@
 #include "nsDirectoryIndexStream.h"
 #include "mozilla/Logging.h"
 #include "prtime.h"
+#ifdef THREADSAFE_I18N
+#  include "nsCollationCID.h"
+#  include "nsICollation.h"
+#endif
 #include "nsIFile.h"
 #include "nsURLHelper.h"
 #include "nsNativeCharsetUtils.h"
+
+
+
 
 
 
@@ -93,7 +100,19 @@ nsresult nsDirectoryIndexStream::Init(nsIFile* aDir) {
     mArray.AppendObject(file);  
   }
 
+#ifdef THREADSAFE_I18N
+  nsCOMPtr<nsICollationFactory> cf =
+      do_CreateInstance(NS_COLLATIONFACTORY_CONTRACTID, &rv);
+  if (NS_FAILED(rv)) return rv;
+
+  nsCOMPtr<nsICollation> coll;
+  rv = cf->CreateCollation(getter_AddRefs(coll));
+  if (NS_FAILED(rv)) return rv;
+
+  mArray.Sort(compare, coll);
+#else
   mArray.Sort(compare, nullptr);
+#endif
 
   mBuf.AppendLiteral("300: ");
   nsAutoCString url;

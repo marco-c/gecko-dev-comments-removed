@@ -30,38 +30,11 @@ using ICUResult = Result<Ok, ICUError>;
 
 
 
-ICUResult ToICUResult(UErrorCode status);
-
-
-
-
 
 
 static inline bool ICUSuccessForStringSpan(UErrorCode status) {
   return U_SUCCESS(status) || status == U_STRING_NOT_TERMINATED_WARNING;
 }
-
-
-
-
-
-
-
-template <typename T>
-class ICUPointer {
- public:
-  explicit ICUPointer(T* aPointer) : mPointer(aPointer) {}
-
-  
-  ICUPointer(ICUPointer&& other) noexcept = default;
-  ICUPointer& operator=(ICUPointer&& other) noexcept = default;
-
-  const T* GetConst() const { return const_cast<const T*>(mPointer); }
-  T* GetMut() { return mPointer; }
-
- private:
-  T* mPointer;
-};
 
 
 
