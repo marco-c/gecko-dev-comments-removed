@@ -3,7 +3,12 @@
 
 
 #include "TRRQuery.h"
+
+#include "mozilla/StaticPrefs_network.h"
+#include "mozilla/Telemetry.h"
+#include "nsQueryObject.h"
 #include "TRR.h"
+#include "TRRService.h"
 #include "ODoH.h"
 
 #include "DNSLogging.h"
