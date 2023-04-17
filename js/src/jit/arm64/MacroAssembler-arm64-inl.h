@@ -1947,11 +1947,9 @@ void MacroAssembler::storeUncanonicalizedFloat32(FloatRegister src,
 }
 
 void MacroAssembler::memoryBarrier(MemoryBarrierBits barrier) {
-  if (barrier == MembarStoreStore) {
-    Dmb(vixl::InnerShareable, vixl::BarrierWrites);
-  } else if (barrier == MembarLoadLoad) {
-    Dmb(vixl::InnerShareable, vixl::BarrierReads);
-  } else if (barrier) {
+  
+  
+  if (barrier) {
     Dmb(vixl::InnerShareable, vixl::BarrierAll);
   }
 }
