@@ -7,6 +7,7 @@
 #include "ProcessUtils.h"
 
 #include "mozilla/Preferences.h"
+#include "mozilla/GeckoArgs.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
 #include "mozilla/UniquePtrExtensions.h"
 #include "nsPrintfCString.h"
@@ -63,21 +64,14 @@ bool SharedPreferenceSerializer::SerializeToSharedMemory() {
 void SharedPreferenceSerializer::AddSharedPrefCmdLineArgs(
     mozilla::ipc::GeckoChildProcessHost& procHost,
     std::vector<std::string>& aExtraOpts) const {
-  
-  
-  auto formatPtrArg = [](auto arg) {
-    return nsPrintfCString("%zu", uintptr_t(arg));
-  };
-
 #if defined(XP_WIN)
   
   
   procHost.AddHandleToShare(GetPrefsHandle().get());
   procHost.AddHandleToShare(GetPrefMapHandle().get());
-  aExtraOpts.push_back("-prefsHandle");
-  aExtraOpts.push_back(formatPtrArg(GetPrefsHandle().get()).get());
-  aExtraOpts.push_back("-prefMapHandle");
-  aExtraOpts.push_back(formatPtrArg(GetPrefMapHandle().get()).get());
+  geckoargs::sPrefsHandle.Put((uintptr_t)(GetPrefsHandle().get()), aExtraOpts);
+  geckoargs::sPrefMapHandle.Put((uintptr_t)(GetPrefMapHandle().get()),
+                                aExtraOpts);
 #else
   
   
@@ -91,10 +85,8 @@ void SharedPreferenceSerializer::AddSharedPrefCmdLineArgs(
 #endif
 
   
-  aExtraOpts.push_back("-prefsLen");
-  aExtraOpts.push_back(formatPtrArg(GetPrefsLength()).get());
-  aExtraOpts.push_back("-prefMapSize");
-  aExtraOpts.push_back(formatPtrArg(GetPrefMapSize()).get());
+  geckoargs::sPrefsLen.Put((uintptr_t)(GetPrefsLength()), aExtraOpts);
+  geckoargs::sPrefMapSize.Put((uintptr_t)(GetPrefMapSize()), aExtraOpts);
 }
 
 #ifdef ANDROID
@@ -115,47 +107,30 @@ SharedPreferenceDeserializer::~SharedPreferenceDeserializer() {
 }
 
 bool SharedPreferenceDeserializer::DeserializeFromSharedMemory(
-    char* aPrefsHandleStr, char* aPrefMapHandleStr, char* aPrefsLenStr,
-    char* aPrefMapSizeStr) {
+    uint64_t aPrefsHandle, uint64_t aPrefMapHandle, uint64_t aPrefsLen,
+    uint64_t aPrefMapSize) {
 #ifdef XP_WIN
-  MOZ_ASSERT(aPrefsHandleStr && aPrefMapHandleStr, "Can't be null");
-#endif
-  MOZ_ASSERT(aPrefsLenStr && aPrefMapSizeStr, "Can't be null");
-
-  
-  auto parseUIntPtrArg = [](char*& aArg) {
-    
-    
-    
-    return uintptr_t(strtoull(aArg, &aArg, 10));
-  };
-
-#ifdef XP_WIN
-  auto parseHandleArg = [&](char*& aArg) {
-    return HANDLE(parseUIntPtrArg(aArg));
-  };
-
-  mPrefsHandle = Some(parseHandleArg(aPrefsHandleStr));
-  if (!aPrefsHandleStr || aPrefsHandleStr[0] != '\0') {
+  mPrefsHandle = Some(HANDLE((uintptr_t)(aPrefsHandle)));
+  if (!aPrefsHandle) {
     return false;
   }
 
   FileDescriptor::UniquePlatformHandle handle(
-      parseHandleArg(aPrefMapHandleStr));
-  if (!aPrefMapHandleStr || aPrefMapHandleStr[0] != '\0') {
+      HANDLE((uintptr_t)(aPrefMapHandle)));
+  if (!aPrefMapHandle) {
     return false;
   }
 
   mPrefMapHandle.emplace(std::move(handle));
 #endif
 
-  mPrefsLen = Some(parseUIntPtrArg(aPrefsLenStr));
-  if (!aPrefsLenStr || aPrefsLenStr[0] != '\0') {
+  mPrefsLen = Some((uintptr_t)(aPrefsLen));
+  if (!aPrefsLen) {
     return false;
   }
 
-  mPrefMapSize = Some(parseUIntPtrArg(aPrefMapSizeStr));
-  if (!aPrefMapSizeStr || aPrefMapSizeStr[0] != '\0') {
+  mPrefMapSize = Some((uintptr_t)(aPrefMapSize));
+  if (!aPrefMapSize) {
     return false;
   }
 
@@ -221,12 +196,6 @@ void ExportSharedJSInit(mozilla::ipc::GeckoChildProcessHost& procHost,
   
   return;
 #else
-  
-  
-  auto formatPtrArg = [](auto arg) {
-    return nsPrintfCString("%zu", uintptr_t(arg));
-  };
-
   auto& shmem = xpc::SelfHostedShmem::GetSingleton();
   const mozilla::UniqueFileHandle& uniqHandle = shmem.Handle();
   size_t len = shmem.Content().Length();
@@ -238,14 +207,11 @@ void ExportSharedJSInit(mozilla::ipc::GeckoChildProcessHost& procHost,
   }
 
   mozilla::detail::FileHandleType handle = uniqHandle.get();
-
   
-  aExtraOpts.push_back("-jsInit");
-
 #  if defined(XP_WIN)
   
   procHost.AddHandleToShare(HANDLE(handle));
-  aExtraOpts.push_back(formatPtrArg(HANDLE(handle)).get());
+  geckoargs::sJsInitHandle.Put((uintptr_t)(HANDLE(handle)), aExtraOpts);
 #  else
   
   
@@ -258,44 +224,32 @@ void ExportSharedJSInit(mozilla::ipc::GeckoChildProcessHost& procHost,
 #  endif
 
   
-  aExtraOpts.push_back(formatPtrArg(len).get());
+  geckoargs::sJsInitLen.Put((uintptr_t)(len), aExtraOpts);
 #endif
 }
 
-bool ImportSharedJSInit(char* aJsInitHandleStr, char* aJsInitLenStr) {
+bool ImportSharedJSInit(uint64_t aJsInitHandle, uint64_t aJsInitLen) {
   
   
-  if (!aJsInitLenStr) {
+  if (!aJsInitLen) {
     return true;
   }
 
 #ifdef XP_WIN
-  if (!aJsInitHandleStr) {
+  if (!aJsInitHandle) {
     return true;
   }
 #endif
 
-  
-  auto parseUIntPtrArg = [](char*& aArg) {
-    
-    
-    
-    return uintptr_t(strtoull(aArg, &aArg, 10));
-  };
-
 #ifdef XP_WIN
-  auto parseHandleArg = [&](char*& aArg) {
-    return HANDLE(parseUIntPtrArg(aArg));
-  };
-
-  base::SharedMemoryHandle handle(parseHandleArg(aJsInitHandleStr));
-  if (aJsInitHandleStr[0] != '\0') {
+  base::SharedMemoryHandle handle(HANDLE((uintptr_t)(aJsInitHandle)));
+  if (!aJsInitHandle) {
     return false;
   }
 #endif
 
-  size_t len = parseUIntPtrArg(aJsInitLenStr);
-  if (aJsInitLenStr[0] != '\0') {
+  size_t len = (uintptr_t)(aJsInitLen);
+  if (!aJsInitLen) {
     return false;
   }
 
