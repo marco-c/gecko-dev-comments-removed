@@ -40,6 +40,10 @@ ITypeInfo* MsaaAccessible::gTypeInfo = nullptr;
 MsaaAccessible* MsaaAccessible::Create(Accessible* aAcc) {
   
   
+  MOZ_ASSERT(!StaticPrefs::accessibility_cache_enabled_AtStartup() ||
+             XRE_IsParentProcess());
+  
+  
   
   if (aAcc->IsLocal() && aAcc->IsRoot()) {
     return new MsaaRootAccessible(aAcc);
