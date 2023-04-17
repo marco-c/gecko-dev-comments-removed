@@ -237,7 +237,6 @@ var PermissionPromptPrototype = {
 
 
 
-
   get message() {
     throw new Error("Not implemented.");
   },
