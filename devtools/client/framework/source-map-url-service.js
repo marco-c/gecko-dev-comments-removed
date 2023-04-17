@@ -28,7 +28,6 @@ class SourceMapURLService {
     this._urlToIDMap = new Map();
     this._mapsById = new Map();
     this._sourcesLoading = null;
-    this._onTargetAvailable = this._onTargetAvailable.bind(this);
     this._onResourceAvailable = this._onResourceAvailable.bind(this);
     this._runningCallback = false;
 
@@ -41,18 +40,16 @@ class SourceMapURLService {
   destroy() {
     Services.prefs.removeObserver(SOURCE_MAP_PREF, this._syncPrevValue);
 
-    
-    const { targetCommand, resourceCommand } = this._commands;
-    targetCommand.targetFront.off("will-navigate", this._clearAllState);
     this._clearAllState();
 
-    targetCommand.unwatchTargets(
-      targetCommand.ALL_TYPES,
-      this._onTargetAvailable
-    );
+    const { resourceCommand } = this._commands;
     try {
       resourceCommand.unwatchResources(
-        [resourceCommand.TYPES.STYLESHEET, resourceCommand.TYPES.SOURCE],
+        [
+          resourceCommand.TYPES.STYLESHEET,
+          resourceCommand.TYPES.SOURCE,
+          resourceCommand.TYPES.DOCUMENT_EVENT,
+        ],
         { onAvailable: this._onResourceAvailable }
       );
     } catch (e) {
@@ -422,17 +419,16 @@ class SourceMapURLService {
     }
 
     if (!this._sourcesLoading) {
-      const { targetCommand, resourceCommand } = this._commands;
-      const { STYLESHEET, SOURCE } = resourceCommand.TYPES;
+      const { resourceCommand } = this._commands;
+      const { STYLESHEET, SOURCE, DOCUMENT_EVENT } = resourceCommand.TYPES;
 
-      const onTargets = targetCommand.watchTargets(
-        targetCommand.ALL_TYPES,
-        this._onTargetAvailable
+      const onResources = resourceCommand.watchResources(
+        [STYLESHEET, SOURCE, DOCUMENT_EVENT],
+        {
+          onAvailable: this._onResourceAvailable,
+        }
       );
-      const onResources = resourceCommand.watchResources([STYLESHEET, SOURCE], {
-        onAvailable: this._onResourceAvailable,
-      });
-      this._sourcesLoading = Promise.all([onTargets, onResources]);
+      this._sourcesLoading = onResources;
     }
 
     return this._sourcesLoading;
@@ -445,24 +441,18 @@ class SourceMapURLService {
     return Promise.resolve();
   }
 
-  _onTargetAvailable({ targetFront, isTargetSwitching }) {
-    if (targetFront.isTopLevel) {
-      
-      targetFront.on("will-navigate", this._clearAllState);
-      
-      
-      if (isTargetSwitching) {
-        
-        this._clearAllState();
-      }
-    }
-  }
-
   _onResourceAvailable(resources) {
     const { resourceCommand } = this._commands;
-    const { STYLESHEET, SOURCE } = resourceCommand.TYPES;
+    const { STYLESHEET, SOURCE, DOCUMENT_EVENT } = resourceCommand.TYPES;
     for (const resource of resources) {
-      if (resource.resourceType == STYLESHEET) {
+      
+      if (
+        resource.resourceType == DOCUMENT_EVENT &&
+        resource.name == "will-navigate" &&
+        resource.isTopLevel
+      ) {
+        this._clearAllState();
+      } else if (resource.resourceType == STYLESHEET) {
         this._onNewStyleSheet(resource);
       } else if (resource.resourceType == SOURCE) {
         this._onNewJavascript(resource);

@@ -134,6 +134,9 @@ function waitForSourceLoad(toolbox, url) {
     }
     resourceCommand.watchResources([resourceCommand.TYPES.SOURCE], {
       onAvailable,
+      
+      
+      ignoreExistingResources: true,
     });
   });
 }
