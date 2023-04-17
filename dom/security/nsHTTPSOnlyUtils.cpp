@@ -227,11 +227,21 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeWebSocket(nsIURI* aURI,
 }
 
 
-bool nsHTTPSOnlyUtils::IsUpgradeDowngradeEndlessLoop(nsIURI* aURI,
-                                                     nsILoadInfo* aLoadInfo) {
+bool nsHTTPSOnlyUtils::IsUpgradeDowngradeEndlessLoop(
+    nsIURI* aURI, nsILoadInfo* aLoadInfo,
+    const mozilla::EnumSet<UpgradeDowngradeEndlessLoopOptions>& aOptions) {
+  
   
   bool isPrivateWin = aLoadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
-  if (!IsHttpsOnlyModeEnabled(isPrivateWin)) {
+  bool enforceForHTTPSOnlyMode =
+      IsHttpsOnlyModeEnabled(isPrivateWin) &&
+      aOptions.contains(
+          UpgradeDowngradeEndlessLoopOptions::EnforceForHTTPSOnlyMode);
+  bool enforceForHTTPSFirstMode =
+      IsHttpsFirstModeEnabled(isPrivateWin) &&
+      aOptions.contains(
+          UpgradeDowngradeEndlessLoopOptions::EnforceForHTTPSFirstMode);
+  if (!enforceForHTTPSOnlyMode && !enforceForHTTPSFirstMode) {
     return false;
   }
 
@@ -341,6 +351,22 @@ bool nsHTTPSOnlyUtils::ShouldUpgradeHttpsFirstRequest(nsIURI* aURI,
   nsresult rv = aURI->GetPort(&port);
   NS_ENSURE_SUCCESS(rv, false);
   if (port != defaultPortforScheme && port != -1) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool isUpgradeDowngradeEndlessLoop = IsUpgradeDowngradeEndlessLoop(
+      aURI, aLoadInfo,
+      {UpgradeDowngradeEndlessLoopOptions::EnforceForHTTPSFirstMode});
+  if (isUpgradeDowngradeEndlessLoop) {
     return false;
   }
 

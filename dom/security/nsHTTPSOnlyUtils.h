@@ -67,8 +67,16 @@ class nsHTTPSOnlyUtils {
 
 
 
-  static bool IsUpgradeDowngradeEndlessLoop(nsIURI* aURI,
-                                            nsILoadInfo* aLoadInfo);
+
+
+  enum class UpgradeDowngradeEndlessLoopOptions {
+    EnforceForHTTPSOnlyMode,
+    EnforceForHTTPSFirstMode,
+  };
+  static bool IsUpgradeDowngradeEndlessLoop(
+      nsIURI* aURI, nsILoadInfo* aLoadInfo,
+      const mozilla::EnumSet<UpgradeDowngradeEndlessLoopOptions>& aOptions =
+          {});
 
   
 
