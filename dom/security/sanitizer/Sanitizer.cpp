@@ -84,16 +84,8 @@ already_AddRefed<DocumentFragment> Sanitizer::InputToNewFragment(
     return emptyFragment.forget();
   }
   
-  
-  RefPtr<Document> emptyDoc =
-      nsContentUtils::CreateInertHTMLDocument(window->GetDoc());
-  if (!emptyDoc) {
-    aRv.Throw(NS_ERROR_FAILURE);
-    return nullptr;
-  }
-  
   RefPtr<mozilla::dom::NodeInfo> info =
-      emptyDoc->NodeInfoManager()->GetNodeInfo(
+      window->GetDoc()->NodeInfoManager()->GetNodeInfo(
           nsGkAtoms::body, nullptr, kNameSpaceID_XHTML, nsINode::ELEMENT_NODE);
 
   nsCOMPtr<nsINode> context = NS_NewHTMLBodyElement(
