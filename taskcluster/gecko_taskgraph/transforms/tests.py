@@ -543,9 +543,7 @@ test_description_schema = Schema(
         Optional("expires-after"): str,
         
         
-        Optional("variants"): optionally_keyed_by(
-            "test-platform", "project", Any(list(TEST_VARIANTS))
-        ),
+        Optional("variants"): Any(list(TEST_VARIANTS)),
         
         
         
@@ -1060,7 +1058,6 @@ def handle_keyed_by(config, tasks):
         "docker-image",
         "max-run-time",
         "chunks",
-        "variants",
         "e10s",
         "suite",
         "run-on-projects",
