@@ -37,20 +37,21 @@ var std_Symbol = Symbol;
 
 
 
-function List() {
-    this.length = 0;
-}
-MakeConstructible(List, {__proto__: null});
 
 
 
 
-
-
-function Record() {
+function new_List() {
     return std_Object_create(null);
 }
-MakeConstructible(Record, {});
+
+
+
+
+
+function new_Record() {
+    return std_Object_create(null);
+}
 
 
 

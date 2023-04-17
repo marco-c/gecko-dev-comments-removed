@@ -767,7 +767,7 @@ function StringIteratorNext() {
 }
 
 #if JS_HAS_INTL_API
-var collatorCache = new Record();
+var collatorCache = new_Record();
 
 
 

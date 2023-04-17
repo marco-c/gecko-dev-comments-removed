@@ -3,7 +3,7 @@
 
 
 #if JS_HAS_INTL_API
-var numberFormatCache = new Record();
+var numberFormatCache = new_Record();
 
 
 

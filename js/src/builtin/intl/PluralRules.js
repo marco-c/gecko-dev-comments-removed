@@ -138,7 +138,7 @@ function InitializePluralRules(pluralRules, locales, options) {
         options = ToObject(options);
 
     
-    let opt = new Record();
+    let opt = new_Record();
     lazyPluralRulesData.opt = opt;
 
     

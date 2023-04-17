@@ -119,7 +119,7 @@ function InitializeListFormat(listFormat, locales, options, supportsTypeAndStyle
         ThrowTypeError(JSMSG_OBJECT_REQUIRED, options === null ? "null" : typeof options);
 
     
-    var opt = new Record();
+    var opt = new_Record();
     lazyListFormatData.opt = opt;
 
     

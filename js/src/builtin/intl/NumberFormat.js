@@ -413,7 +413,7 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
 
     
     
-    var opt = new Record();
+    var opt = new_Record();
     lazyNumberFormatData.opt = opt;
 
     
