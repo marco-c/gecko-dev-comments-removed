@@ -108,7 +108,7 @@ void nsLookAndFeel::NativeInit() { EnsureInit(); }
 
 void nsLookAndFeel::RefreshImpl() {
   nsXPLookAndFeel::RefreshImpl();
-  mInitialized = false; 
+  mInitialized = false;  
 }
 
 nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme,

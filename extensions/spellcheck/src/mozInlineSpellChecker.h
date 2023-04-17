@@ -244,8 +244,8 @@ class mozInlineSpellChecker final : public nsIInlineSpellChecker,
   
   
   static nsresult IsPointInSelection(mozilla::dom::Selection& aSelection,
-                              nsINode* aNode, int32_t aOffset,
-                              nsRange** aRange);
+                                     nsINode* aNode, int32_t aOffset,
+                                     nsRange** aRange);
 
   nsresult CleanupRangesInSelection(mozilla::dom::Selection* aSelection);
 

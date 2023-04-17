@@ -34,7 +34,7 @@
 #include "js/RootingAPI.h"     
 #include "js/SweepingAPI.h"    
 #include "js/TypeDecls.h"  
-#include "js/Vector.h"        
+#include "js/Vector.h"  
 #include "js/WasmFeatures.h"
 #include "vm/JSFunction.h"    
 #include "vm/NativeObject.h"  

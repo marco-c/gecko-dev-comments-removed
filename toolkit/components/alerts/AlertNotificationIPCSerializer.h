@@ -48,10 +48,8 @@ struct IPDLParamTraits<nsIAlertNotification*> {
             NS_FAILED(aParam->GetInPrivateBrowsing(&inPrivateBrowsing))) ||
         NS_WARN_IF(
             NS_FAILED(aParam->GetRequireInteraction(&requireInteraction))) ||
-        NS_WARN_IF(
-            NS_FAILED(aParam->GetSilent(&silent))) ||
-        NS_WARN_IF(
-            NS_FAILED(aParam->GetVibrate(vibrate)))) {
+        NS_WARN_IF(NS_FAILED(aParam->GetSilent(&silent))) ||
+        NS_WARN_IF(NS_FAILED(aParam->GetVibrate(vibrate)))) {
       
       
       WriteIPDLParam(aMsg, aActor,  true);
@@ -112,10 +110,9 @@ struct IPDLParamTraits<nsIAlertNotification*> {
       *aResult = nullptr;
       return true;
     }
-    nsresult rv = alert->Init(name, imageURL, title, text, textClickable,
-                              cookie, dir, lang, data, principal,
-                              inPrivateBrowsing, requireInteraction,
-                              silent, vibrate);
+    nsresult rv = alert->Init(
+        name, imageURL, title, text, textClickable, cookie, dir, lang, data,
+        principal, inPrivateBrowsing, requireInteraction, silent, vibrate);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       *aResult = nullptr;
       return true;
