@@ -415,7 +415,8 @@ TextLeafPoint TextLeafPoint::FindPrevLineStartSameLocalAcc(
   }
   nsIFrame* frame = acc->GetFrame();
   if (!frame) {
-    MOZ_ASSERT_UNREACHABLE("No frame");
+    
+    
     return TextLeafPoint();
   }
   if (!frame->IsTextFrame()) {
@@ -461,7 +462,8 @@ TextLeafPoint TextLeafPoint::FindNextLineStartSameLocalAcc(
   }
   nsIFrame* frame = acc->GetFrame();
   if (!frame) {
-    MOZ_ASSERT_UNREACHABLE("No frame");
+    
+    
     return TextLeafPoint();
   }
   if (!frame->IsTextFrame()) {
