@@ -56,7 +56,7 @@ struct _cairo_paginated_surface_backend {
 
 
 
-    void
+    cairo_warn cairo_int_status_t
     (*set_paginated_mode)	(void			*surface,
 				 cairo_paginated_mode_t	 mode);
 
@@ -77,7 +77,23 @@ struct _cairo_paginated_surface_backend {
 				     cairo_bool_t    fallbacks_required);
 
     cairo_bool_t
-    (*supports_fine_grained_fallbacks) (void		    *surface);
+    (*supports_fine_grained_fallbacks) (void	    *surface);
+
+    
+
+
+
+    cairo_bool_t
+    (*requires_thumbnail_image) (void	*surface,
+				 int    *width,
+				 int    *height);
+
+    
+
+
+    cairo_warn cairo_int_status_t
+    (*set_thumbnail_image) (void	          *surface,
+			    cairo_image_surface_t *image);
 };
 
 
@@ -153,6 +169,9 @@ _cairo_paginated_surface_create (cairo_surface_t				*target,
 
 cairo_private cairo_surface_t *
 _cairo_paginated_surface_get_target (cairo_surface_t *surface);
+
+cairo_private cairo_surface_t *
+_cairo_paginated_surface_get_recording (cairo_surface_t *surface);
 
 cairo_private cairo_bool_t
 _cairo_surface_is_paginated (cairo_surface_t *surface);

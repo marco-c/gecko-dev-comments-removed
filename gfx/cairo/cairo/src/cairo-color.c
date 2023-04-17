@@ -77,21 +77,6 @@ _cairo_stock_color (cairo_stock_t stock)
     }
 }
 
-void
-_cairo_color_init (cairo_color_t *color)
-{
-    *color = cairo_color_white;
-}
-
-void
-_cairo_color_init_rgb (cairo_color_t *color,
-		       double red, double green, double blue)
-{
-    _cairo_color_init_rgba (color, red, green, blue, 1.0);
-}
-
-
-
 
 
 
@@ -99,10 +84,7 @@ _cairo_color_init_rgb (cairo_color_t *color,
 uint16_t
 _cairo_color_double_to_short (double d)
 {
-    uint32_t i;
-    i = (uint32_t) (d * 65536);
-    i -= (i >> 16);
-    return i;
+    return d * 65535.0 + 0.5;
 }
 
 static void

@@ -40,11 +40,15 @@
 #include "cairoint.h"
 #include "cairo-atomic-private.h"
 
-#if HAS_ATOMIC_OPS
+CAIRO_BEGIN_DECLS
+
+#define DISABLE_FREED_POOLS 0
+
+#if HAS_ATOMIC_OPS && ! DISABLE_FREED_POOLS
 
 
 
-#define MAX_FREED_POOL_SIZE 4
+#define MAX_FREED_POOL_SIZE 16
 typedef struct {
     void *pool[MAX_FREED_POOL_SIZE];
     cairo_atomic_int_t top;
@@ -118,6 +122,10 @@ _freed_pool_reset (freed_pool_t *pool);
 
 #else
 
+
+
+
+
 typedef int freed_pool_t;
 
 #define _freed_pool_get(pool) NULL
@@ -125,5 +133,7 @@ typedef int freed_pool_t;
 #define _freed_pool_reset(ptr)
 
 #endif
+
+CAIRO_END_DECLS
 
 #endif 

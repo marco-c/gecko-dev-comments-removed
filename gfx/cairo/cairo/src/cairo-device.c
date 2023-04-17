@@ -156,6 +156,13 @@ _cairo_device_create_in_error (cairo_status_t status)
     case CAIRO_STATUS_INVALID_WEIGHT:
     case CAIRO_STATUS_USER_FONT_NOT_IMPLEMENTED:
     case CAIRO_STATUS_INVALID_CONTENT:
+    case CAIRO_STATUS_INVALID_MESH_CONSTRUCTION:
+    case CAIRO_STATUS_DEVICE_FINISHED:
+    case CAIRO_STATUS_JBIG2_GLOBAL_MISSING:
+    case CAIRO_STATUS_PNG_ERROR:
+    case CAIRO_STATUS_FREETYPE_ERROR:
+    case CAIRO_STATUS_WIN32_GDI_ERROR:
+    case CAIRO_STATUS_TAG_ERROR:
     default:
 	_cairo_error_throw (CAIRO_STATUS_NO_MEMORY);
 	return (cairo_device_t *) &_nil_device;
@@ -254,6 +261,9 @@ cairo_device_flush (cairo_device_t *device)
     if (device == NULL || device->status)
 	return;
 
+    if (device->finished)
+	return;
+
     if (device->backend->flush != NULL) {
 	status = device->backend->flush (device);
 	if (unlikely (status))
@@ -295,10 +305,14 @@ cairo_device_finish (cairo_device_t *device)
 
     cairo_device_flush (device);
 
-    device->finished = TRUE;
-
     if (device->backend->finish != NULL)
 	device->backend->finish (device);
+
+    
+
+
+
+    device->finished = TRUE;
 }
 slim_hidden_def (cairo_device_finish);
 
@@ -360,7 +374,7 @@ cairo_device_get_type (cairo_device_t *device)
     if (device == NULL ||
 	CAIRO_REFERENCE_COUNT_IS_INVALID (&device->ref_count))
     {
-	return (cairo_device_type_t) -1;
+	return CAIRO_DEVICE_TYPE_INVALID;
     }
 
     return device->backend->type;
@@ -406,7 +420,7 @@ cairo_device_acquire (cairo_device_t *device)
 	return device->status;
 
     if (unlikely (device->finished))
-	return _cairo_device_set_error (device, CAIRO_STATUS_SURFACE_FINISHED); 
+	return _cairo_device_set_error (device, CAIRO_STATUS_DEVICE_FINISHED);
 
     CAIRO_MUTEX_LOCK (device->mutex);
     if (device->mutex_depth++ == 0) {
@@ -448,10 +462,8 @@ cairo_status_t
 _cairo_device_set_error (cairo_device_t *device,
 			 cairo_status_t  status)
 {
-    if (status == CAIRO_STATUS_SUCCESS || status >= CAIRO_INT_STATUS_UNSUPPORTED)
-	return status;
-
-    
+    if (status == CAIRO_STATUS_SUCCESS)
+        return CAIRO_STATUS_SUCCESS;
 
     _cairo_status_set_error (&device->status, status);
 

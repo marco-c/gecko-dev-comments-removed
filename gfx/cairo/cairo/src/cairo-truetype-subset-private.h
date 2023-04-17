@@ -39,8 +39,6 @@
 
 #include "cairoint.h"
 
-CAIRO_BEGIN_DECLS
-
 #if CAIRO_HAS_FONT_SUBSET
 
 
@@ -54,7 +52,7 @@ CAIRO_BEGIN_DECLS
 
 
 
-#define MAKE_TT_TAG(a, b, c, d)    (a<<24 | b<<16 | c<<8 | d)
+#define MAKE_TT_TAG(a, b, c, d)    ((int)((uint32_t)a<<24 | b<<16 | c<<8 | d))
 #define TT_TAG_CFF    MAKE_TT_TAG('C','F','F',' ')
 #define TT_TAG_cmap   MAKE_TT_TAG('c','m','a','p')
 #define TT_TAG_cvt    MAKE_TT_TAG('c','v','t',' ')
@@ -66,6 +64,7 @@ CAIRO_BEGIN_DECLS
 #define TT_TAG_loca   MAKE_TT_TAG('l','o','c','a')
 #define TT_TAG_maxp   MAKE_TT_TAG('m','a','x','p')
 #define TT_TAG_name   MAKE_TT_TAG('n','a','m','e')
+#define TT_TAG_OS2    MAKE_TT_TAG('O','S','/','2')
 #define TT_TAG_post   MAKE_TT_TAG('p','o','s','t')
 #define TT_TAG_prep   MAKE_TT_TAG('p','r','e','p')
 
@@ -177,6 +176,18 @@ typedef struct _tt_name {
 
 
 
+#define TT_FS_SELECTION_ITALIC   1
+#define TT_FS_SELECTION_BOLD    32
+
+
+typedef struct _tt_os2 {
+    uint16_t   _unused1[2];
+    uint16_t   usWeightClass;
+    uint16_t   _unused2[28];
+    uint16_t   fsSelection;
+    uint16_t   _unused3[11];
+} tt_os2_t;
+
 
 #define TT_ARG_1_AND_2_ARE_WORDS     0x0001
 #define TT_WE_HAVE_A_SCALE           0x0008
@@ -197,7 +208,5 @@ typedef struct _tt_glyph_data {
 } tt_glyph_data_t;
 
 #endif 
-
-CAIRO_END_DECLS
 
 #endif 

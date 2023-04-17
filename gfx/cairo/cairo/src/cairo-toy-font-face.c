@@ -39,7 +39,7 @@
 
 
 
-#define _BSD_SOURCE
+#define _DEFAULT_SOURCE
 #include "cairoint.h"
 #include "cairo-error-private.h"
 
@@ -148,7 +148,6 @@ _cairo_toy_font_face_init_key (cairo_toy_font_face_t *key,
     hash += ((unsigned long) slant) * 1607;
     hash += ((unsigned long) weight) * 1451;
 
-    assert (hash != 0);
     key->base.hash_entry.hash = hash;
 }
 
@@ -303,20 +302,17 @@ cairo_toy_font_face_create (const char          *family,
 					  &key.base.hash_entry);
     if (font_face != NULL) {
 	if (font_face->base.status == CAIRO_STATUS_SUCCESS) {
-	    
-
-	    _cairo_reference_count_inc (&font_face->base.ref_count);
+	    cairo_font_face_reference (&font_face->base);
 	    _cairo_toy_font_face_hash_table_unlock ();
 	    return &font_face->base;
 	}
 
 	
 	_cairo_hash_table_remove (hash_table, &font_face->base.hash_entry);
-	font_face->base.hash_entry.hash = 0;
     }
 
     
-    font_face = malloc (sizeof (cairo_toy_font_face_t));
+    font_face = _cairo_malloc (sizeof (cairo_toy_font_face_t));
     if (unlikely (font_face == NULL)) {
 	status = _cairo_error (CAIRO_STATUS_NO_MEMORY);
 	goto UNWIND_HASH_TABLE_LOCK;
@@ -346,32 +342,34 @@ cairo_toy_font_face_create (const char          *family,
 }
 slim_hidden_def (cairo_toy_font_face_create);
 
-static void
+static cairo_bool_t
 _cairo_toy_font_face_destroy (void *abstract_face)
 {
     cairo_toy_font_face_t *font_face = abstract_face;
     cairo_hash_table_t *hash_table;
 
-    if (font_face == NULL ||
-	    CAIRO_REFERENCE_COUNT_IS_INVALID (&font_face->base.ref_count))
-	return;
-
     hash_table = _cairo_toy_font_face_hash_table_lock ();
     
     assert (hash_table != NULL);
 
-    if (CAIRO_REFERENCE_COUNT_HAS_REFERENCE (&font_face->base.ref_count)) {
+    if (! _cairo_reference_count_dec_and_test (&font_face->base.ref_count)) {
 	
 	_cairo_toy_font_face_hash_table_unlock ();
-	return;
+	return FALSE;
     }
 
-    if (font_face->base.hash_entry.hash != 0)
+    
+
+
+
+    if (likely (font_face->base.status == CAIRO_STATUS_SUCCESS) ||
+	_cairo_hash_table_lookup (hash_table, &font_face->base.hash_entry) == font_face)
 	_cairo_hash_table_remove (hash_table, &font_face->base.hash_entry);
 
     _cairo_toy_font_face_hash_table_unlock ();
 
     _cairo_toy_font_face_fini (font_face);
+    return TRUE;
 }
 
 static cairo_status_t
