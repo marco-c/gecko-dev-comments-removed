@@ -116,14 +116,18 @@ template <typename Iter> void fixNumericLocaleInput(Iter begin, Iter end) {
 
 
 
-template <typename Iter> Iter fixZerosInTheEnd(Iter begin, Iter end) {
+template <typename Iter>
+Iter fixZerosInTheEnd(Iter begin, Iter end, unsigned int precision) {
   for (; begin != end; --end) {
     if (*(end - 1) != '0') {
       return end;
     }
     
-    if (begin != (end - 1) && *(end - 2) == '.') {
-      return end;
+    if (begin != (end - 1) && begin != (end - 2) && *(end - 2) == '.') {
+      if (precision) {
+        return end;
+      }
+      return end - 2;
     }
   }
   return end;

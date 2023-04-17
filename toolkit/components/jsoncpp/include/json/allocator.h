@@ -36,10 +36,9 @@ public:
 
 
 
-
-
-  void deallocate(volatile pointer p, size_type n) {
-    std::memset(p, 0, n * sizeof(T));
+  void deallocate(pointer p, size_type n) {
+    
+    memset_s(p, n * sizeof(T), 0, n * sizeof(T));
     
     ::operator delete(p);
   }

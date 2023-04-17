@@ -104,8 +104,7 @@ bool Reader::parse(std::istream& is, Value& root, bool collectComments) {
 
   
   
-  String doc;
-  std::getline(is, doc, static_cast<char> EOF);
+  String doc(std::istreambuf_iterator<char>(is), {});
   return parse(doc.data(), doc.data() + doc.size(), root, collectComments);
 }
 
@@ -1921,7 +1920,7 @@ bool CharReaderBuilder::validate(Json::Value* invalid) const {
     if (valid_keys.count(key))
       continue;
     if (invalid)
-      (*invalid)[std::move(key)] = *si;
+      (*invalid)[key] = *si;
     else
       return false;
   }
