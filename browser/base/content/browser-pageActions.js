@@ -532,8 +532,8 @@ var BrowserPageActions = {
   },
 
   _makeUrlbarButtonNode(action) {
-    let buttonNode = document.createXULElement("image");
-    buttonNode.classList.add("urlbar-icon", "urlbar-page-action");
+    let buttonNode = document.createXULElement("hbox");
+    buttonNode.classList.add("urlbar-icon-wrapper", "urlbar-page-action");
     if (action.extensionID) {
       buttonNode.classList.add("urlbar-addon-page-action");
     }
@@ -544,6 +544,10 @@ var BrowserPageActions = {
     };
     buttonNode.addEventListener("click", commandHandler);
     buttonNode.addEventListener("keypress", commandHandler);
+
+    let imageNode = document.createXULElement("image");
+    imageNode.classList.add("urlbar-icon");
+    buttonNode.appendChild(imageNode);
     return buttonNode;
   },
 
@@ -684,14 +688,7 @@ var BrowserPageActions = {
       }
     }
     if (urlbarNode) {
-      
-      
-      
-      
-      
-      if (urlbarNode.nodeName != "hbox") {
-        urlbarNode.setAttribute("aria-label", title);
-      }
+      urlbarNode.setAttribute("aria-label", title);
       
       let tooltip = action.getTooltip(window);
       if (!tooltip) {
@@ -800,6 +797,8 @@ var BrowserPageActions = {
     let actionID = this._actionIDForNodeID(node.id);
     let action = PageActions.actionForID(actionID);
     if (!action) {
+      
+      
       
       
       
