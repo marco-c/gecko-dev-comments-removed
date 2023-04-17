@@ -243,8 +243,6 @@ struct CompilationInput {
   
   
   
-  
-  
   Scope* enclosingScope = nullptr;
 
   explicit CompilationInput(const JS::ReadOnlyCompileOptions& options)
@@ -261,18 +259,7 @@ struct CompilationInput {
 
   bool initForSelfHostingGlobal(JSContext* cx) {
     target = CompilationTarget::SelfHosting;
-    if (!initScriptSource(cx)) {
-      return false;
-    }
-
-    
-    
-    
-    
-    
-    
-    enclosingScope = &cx->global()->emptyGlobalScope();
-    return true;
+    return initScriptSource(cx);
   }
 
   bool initForStandaloneFunction(JSContext* cx) {
@@ -649,6 +636,11 @@ struct CompilationStencil {
       JSContext* cx, CompilationInput& input, const CompilationStencil& stencil,
       CompilationGCOutput& gcOutput);
 
+  
+  [[nodiscard]] bool instantiateSelfHostedForRuntime(
+      JSContext* cx, CompilationAtomCache& atomCache) const;
+  [[nodiscard]] JSScript* instantiateSelfHostedTopLevelForRealm(
+      JSContext* cx, CompilationInput& input);
   [[nodiscard]] JSFunction* instantiateSelfHostedLazyFunction(
       JSContext* cx, CompilationAtomCache& atomCache, ScriptIndex index,
       HandleAtom name);

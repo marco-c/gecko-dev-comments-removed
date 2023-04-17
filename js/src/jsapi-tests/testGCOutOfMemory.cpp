@@ -65,7 +65,7 @@ virtual JSContext* createContext() override {
   
   
   
-  JSContext* cx = JS_NewContext(1024 * 1024);
+  JSContext* cx = JS_NewContext(4 * 1024 * 1024);
   if (!cx) {
     return nullptr;
   }
