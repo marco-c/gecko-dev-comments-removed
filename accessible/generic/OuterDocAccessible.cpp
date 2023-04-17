@@ -65,7 +65,7 @@ void OuterDocAccessible::SendEmbedderAccessible(
 #if defined(XP_WIN)
     ipcDoc->SetEmbedderOnBridge(aBridge, id);
 #else
-    aBridge->SendSetEmbedderAccessible(ipcDoc, id);
+    aBridge->SetEmbedderAccessible(ipcDoc, id);
 #endif
   }
 }
@@ -99,6 +99,16 @@ void OuterDocAccessible::Shutdown() {
 #ifdef A11Y_LOG
   if (logging::IsEnabled(logging::eDocDestroy)) logging::OuterDocDestroy(this);
 #endif
+
+  if (auto* bridge = dom::BrowserBridgeChild::GetFrom(mContent)) {
+    uint64_t id = reinterpret_cast<uintptr_t>(UniqueID());
+    if (bridge->GetEmbedderAccessibleID() == id) {
+      
+      
+      
+      bridge->SetEmbedderAccessible(nullptr, 0);
+    }
+  }
 
   LocalAccessible* child = mChildren.SafeElementAt(0, nullptr);
   if (child) {

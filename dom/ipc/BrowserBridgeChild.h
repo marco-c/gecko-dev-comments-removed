@@ -53,11 +53,21 @@ class BrowserBridgeChild : public PBrowserBridgeChild {
 
   already_AddRefed<BrowserBridgeHost> FinishInit(nsFrameLoader* aFrameLoader);
 
-#if defined(ACCESSIBILITY) && defined(XP_WIN)
+#if defined(ACCESSIBILITY)
+  void SetEmbedderAccessible(PDocAccessibleChild* aDoc, uint64_t aID) {
+    MOZ_ASSERT((aDoc && aID) || (!aDoc && !aID));
+    mEmbedderAccessibleID = aID;
+    Unused << SendSetEmbedderAccessible(aDoc, aID);
+  }
+
+  uint64_t GetEmbedderAccessibleID() { return mEmbedderAccessibleID; }
+
+#  if defined(XP_WIN)
   already_AddRefed<IDispatch> GetEmbeddedDocAccessible() {
     return RefPtr{mEmbeddedDocAccessible}.forget();
   }
-#endif
+#  endif  
+#endif    
 
   static BrowserBridgeChild* GetFrom(nsFrameLoader* aFrameLoader);
 
@@ -106,9 +116,14 @@ class BrowserBridgeChild : public PBrowserBridgeChild {
   bool mHadInitialLoad = false;
   RefPtr<nsFrameLoader> mFrameLoader;
   RefPtr<BrowsingContext> mBrowsingContext;
-#if defined(ACCESSIBILITY) && defined(XP_WIN)
+#if defined(ACCESSIBILITY)
+  
+  
+  uint64_t mEmbedderAccessibleID = 0;
+#  if defined(XP_WIN)
   RefPtr<IDispatch> mEmbeddedDocAccessible;
-#endif
+#  endif  
+#endif    
 };
 
 }  
