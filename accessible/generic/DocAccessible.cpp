@@ -51,6 +51,7 @@
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/DocumentType.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/HTMLSelectElement.h"
 #include "mozilla/dom/MutationEventBinding.h"
 #include "mozilla/dom/UserActivation.h"
 
@@ -1649,6 +1650,27 @@ bool DocAccessible::UpdateAccessibleOnAttrChange(dom::Element* aElement,
     
     RecreateAccessible(aElement);
 
+    return true;
+  }
+
+  if (aAttribute == nsGkAtoms::multiple) {
+    if (dom::HTMLSelectElement* select =
+            dom::HTMLSelectElement::FromNode(aElement)) {
+      if (select->Size() <= 1) {
+        
+        
+        
+        RecreateAccessible(aElement);
+        return true;
+      }
+    }
+  }
+
+  if (aAttribute == nsGkAtoms::size &&
+      aElement->IsHTMLElement(nsGkAtoms::select)) {
+    
+    
+    RecreateAccessible(aElement);
     return true;
   }
 
