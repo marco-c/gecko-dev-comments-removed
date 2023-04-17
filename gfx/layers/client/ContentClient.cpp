@@ -92,11 +92,6 @@ already_AddRefed<ContentClient> ContentClient::CreateContentClient(
       useDoubleBuffering = true;
     } else
 #  endif
-        
-        
-        
-        if (!gfxPlatformGtk::GetPlatform()->UseImageOffscreenSurfaces() ||
-            !gfxVars::UseXRender())
 #endif
     {
       useDoubleBuffering = backend == LayersBackend::LAYERS_BASIC;
