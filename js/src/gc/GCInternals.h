@@ -16,7 +16,6 @@
 
 #include "gc/GC.h"
 #include "vm/GeckoProfiler.h"
-#include "vm/HelperThreads.h"
 #include "vm/JSContext.h"
 
 namespace js {
@@ -181,44 +180,6 @@ class AutoDisableBarriers {
 
  private:
   GCRuntime* gc;
-};
-
-
-
-class AutoUpdateLiveCompartments {
-  GCRuntime* gc;
-
- public:
-  explicit AutoUpdateLiveCompartments(GCRuntime* gc);
-  ~AutoUpdateLiveCompartments();
-};
-
-class MOZ_RAII AutoRunParallelTask : public GCParallelTask {
-  
-  using TaskFunc = JS_MEMBER_FN_PTR_TYPE(GCRuntime, void);
-
-  TaskFunc func_;
-  AutoLockHelperThreadState& lock_;
-
- public:
-  AutoRunParallelTask(GCRuntime* gc, TaskFunc func, gcstats::PhaseKind phase,
-                      AutoLockHelperThreadState& lock)
-      : GCParallelTask(gc, phase), func_(func), lock_(lock) {
-    gc->startTask(*this, lock_);
-  }
-
-  ~AutoRunParallelTask() { gc->joinTask(*this, lock_); }
-
-  void run(AutoLockHelperThreadState& lock) override {
-    AutoUnlockHelperThreadState unlock(lock);
-
-    
-    
-    JS::AutoSuppressGCAnalysis nogc;
-
-    
-    JS_CALL_MEMBER_FN_PTR(gc, func_);
-  }
 };
 
 GCAbortReason IsIncrementalGCUnsafe(JSRuntime* rt);
