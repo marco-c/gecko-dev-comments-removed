@@ -38,6 +38,21 @@ PKT_PANEL.prototype = {
     }
   },
 
+  
+  
+  clickHelper(element, { source = "", position }) {
+    element?.addEventListener(`click`, event => {
+      event.preventDefault();
+
+      pktPanelMessaging.sendMessage("PKT_openTabWithUrl", {
+        url: event.currentTarget.getAttribute(`href`),
+        activate: true,
+        source,
+        position,
+      });
+    });
+  },
+
   setupIntersectionObserver() {
     const observer = new IntersectionObserver(entries => {
       if (entries.find(e => e.isIntersecting)) {

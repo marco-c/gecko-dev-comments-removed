@@ -6,26 +6,24 @@
 
 
 
+
 var PKT_PANEL_OVERLAY = function(options) {
   this.inited = false;
   this.active = false;
-  this.initCloseTabEvents = function() {
-    function clickHelper(selector, source) {
-      document.querySelector(selector)?.addEventListener(`click`, event => {
-        event.preventDefault();
 
-        pktPanelMessaging.sendMessage("PKT_openTabWithUrl", {
-          url: event.currentTarget.getAttribute(`href`),
-          activate: true,
-          source: source || "",
-        });
-      });
-    }
-
-    clickHelper(`.pkt_ext_learnmore`, `learn_more`);
-    clickHelper(`.signup-btn-firefox`, `sign_up_1`);
-    clickHelper(`.signup-btn-email`, `sign_up_2`);
-    clickHelper(`.pkt_ext_login`, `log_in`);
+  this.setupClickEvents = function() {
+    thePKT_PANEL.clickHelper(document.querySelector(`.pkt_ext_learnmore`), {
+      source: `learn_more`,
+    });
+    thePKT_PANEL.clickHelper(document.querySelector(`.signup-btn-firefox`), {
+      source: `sign_up_1`,
+    });
+    thePKT_PANEL.clickHelper(document.querySelector(`.signup-btn-email`), {
+      source: `sign_up_2`,
+    });
+    thePKT_PANEL.clickHelper(document.querySelector(`.pkt_ext_login`), {
+      source: `log_in`,
+    });
   };
   this.create = function() {
     const parser = new DOMParser();
@@ -64,7 +62,7 @@ var PKT_PANEL_OVERLAY = function(options) {
     );
 
     
-    this.initCloseTabEvents();
+    this.setupClickEvents();
 
     
     pktPanelMessaging.sendMessage("PKT_show_signup");
