@@ -206,22 +206,3 @@ function Intl_getDisplayNames(locales, options) {
     
     return result;
 }
-
-function Intl_getLocaleInfo(locales) {
-  const requestedLocales = CanonicalizeLocaleList(locales);
-
-  
-  const DateTimeFormat = dateTimeFormatInternalProperties;
-  const localeData = DateTimeFormat.localeData;
-
-  const localeOpt = new_Record();
-  localeOpt.localeMatcher = "best fit";
-
-  const r = ResolveLocale("DateTimeFormat",
-                          requestedLocales,
-                          localeOpt,
-                          DateTimeFormat.relevantExtensionKeys,
-                          localeData);
-
-  return intl_GetLocaleInfo(r.locale);
-}

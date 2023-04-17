@@ -52,20 +52,6 @@ extern const JSClass IntlClass;
 
 
 
-[[nodiscard]] extern bool intl_GetLocaleInfo(JSContext* cx, unsigned argc,
-                                             JS::Value* vp);
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
