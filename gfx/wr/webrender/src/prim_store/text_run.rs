@@ -3,7 +3,7 @@
 
 
 use api::{ColorF, FontInstanceFlags, GlyphInstance, RasterSpace, Shadow};
-use api::units::{LayoutToWorldTransform, LayoutVector2D};
+use api::units::{LayoutToWorldTransform, LayoutVector2D, RasterPixelScale};
 use crate::scene_building::{CreateShadow, IsVisible};
 use crate::frame_builder::FrameBuildingState;
 use crate::glyph_rasterizer::{FontInstance, FontTransform, GlyphKey, FONT_SIZE_LIMIT};
@@ -321,10 +321,15 @@ impl TextRunPrimitive {
         } else {
             
             
+            
+            let raster_pixel_scale = RasterPixelScale::new(surface.device_pixel_scale.0);
+
+            
+            
             let snap_to_device = SpaceSnapper::new_with_target(
                 surface.raster_spatial_node_index,
                 spatial_node_index,
-                surface.device_pixel_scale,
+                raster_pixel_scale,
                 spatial_tree,
             );
             snap_to_device.snap_point(&self.reference_frame_relative_offset.to_point()).to_vector()

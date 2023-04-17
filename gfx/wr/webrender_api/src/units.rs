@@ -134,6 +134,9 @@ pub type PictureToRasterTransform = Transform3D<f32, PicturePixel, RasterPixel>;
 pub type RasterToPictureTransform = Transform3D<f32, RasterPixel, PicturePixel>;
 
 
+pub type RasterPixelScale = Scale<f32, PicturePixel, RasterPixel>;
+
+
 pub type LayoutPointAu = Point2D<Au, LayoutPixel>;
 pub type LayoutRectAu = Rect<Au, LayoutPixel>;
 pub type LayoutSizeAu = Size2D<Au, LayoutPixel>;
