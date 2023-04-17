@@ -101,7 +101,14 @@ class CacheStorageService final : public nsICacheStorageService,
   mozilla::Mutex& Lock() { return mLock; }
 
   
-  nsTHashMap<nsCStringHashKey, TimeStamp> mForcedValidEntries;
+  struct ForcedValidData {
+    
+    
+    TimeStamp validUntil;
+    
+    bool viewed = false;
+  };
+  nsTHashMap<nsCStringHashKey, ForcedValidData> mForcedValidEntries;
   void ForcedValidEntriesPrune(TimeStamp& now);
 
   
@@ -189,6 +196,11 @@ class CacheStorageService final : public nsICacheStorageService,
 
   bool IsForcedValidEntry(nsACString const& aContextKey,
                           nsACString const& aEntryKey);
+
+  
+  
+  void MarkForcedValidEntryUse(nsACString const& aContextKey,
+                               nsACString const& aEntryKey);
 
  private:
   friend class CacheIndex;
