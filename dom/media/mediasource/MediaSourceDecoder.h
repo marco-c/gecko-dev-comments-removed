@@ -56,7 +56,9 @@ class MediaSourceDecoder : public MediaDecoder,
 
   
   
-  void GetDebugInfo(dom::MediaSourceDecoderDebugInfo& aInfo);
+  
+  RefPtr<GenericPromise> RequestDebugInfo(
+      dom::MediaSourceDecoderDebugInfo& aInfo);
 
   void AddSizeOfResources(ResourceSizes* aSizes) override;
 
