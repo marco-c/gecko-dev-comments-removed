@@ -183,10 +183,13 @@ ABORT_SIGNATURES = (
     
     "core::ops::function::Fn::call",
     "gkrust_shared::panic_hook",
+    "mozglue_static::panic_hook",
     "intentional_panic",
     "mozalloc_abort",
     "mozalloc_abort(char const* const)",
     "static void Abort(const char *)",
+    "std::sys_common::backtrace::__rust_end_short_backtrace",
+    "rust_begin_unwind",
 )
 
 
@@ -196,6 +199,7 @@ ABORT_SUBSTRINGS = (
     
     "_panic_",
     "core::panic::",
+    "core::panicking::",
     "core::result::unwrap_failed",
     "std::panicking::",
 )
