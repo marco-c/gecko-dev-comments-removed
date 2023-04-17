@@ -367,10 +367,18 @@ async function toggleBookmarksToolbar(visible = true) {
   
   
   setToolbarVisibility(bookmarksToolbar, visible, true, false);
+  if (!visible) {
+    return BrowserTestUtils.waitForMutationCondition(
+      bookmarksToolbar,
+      { attributes: true },
+      () => bookmarksToolbar.collapsed
+    );
+  }
 
-  return TestUtils.waitForCondition(() => {
-    return visible ? !bookmarksToolbar.collapsed : bookmarksToolbar.collapsed;
-  }, "waiting for toolbar to become " + (visible ? "visible" : "hidden"));
+  return BrowserTestUtils.waitForEvent(
+    bookmarksToolbar,
+    "BookmarksToolbarVisibilityUpdated"
+  );
 }
 
 async function openContextMenuInPopup(extension, selector = "body") {
