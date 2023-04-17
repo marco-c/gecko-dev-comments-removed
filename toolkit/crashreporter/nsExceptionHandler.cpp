@@ -1340,17 +1340,9 @@ static void WriteAnnotationsForMainProcessCrash(PlatformWriter& pw,
     writer.Write(Annotation::EventLoopNestingLevel, eventloopNestingLevel);
   }
 
-#ifdef XP_WIN
-  if (gBreakpadReservedVM) {
-    writer.Write(Annotation::BreakpadReserveAddress,
-                 uintptr_t(gBreakpadReservedVM));
-    writer.Write(Annotation::BreakpadReserveSize, kReserveSize);
-  }
-
-#  ifdef HAS_DLL_BLOCKLIST
+#if defined(XP_WIN) && defined(HAS_DLL_BLOCKLIST)
   
   DllBlocklist_WriteNotes(writer);
-#  endif
 #endif  
 
   WriteMozCrashReason(writer);
