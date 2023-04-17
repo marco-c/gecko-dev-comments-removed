@@ -156,7 +156,8 @@ nsresult nsHttpConnectionMgr::Shutdown() {
   }
 
   
-  SpinEventLoopUntil([&, shutdownWrapper]() { return shutdownWrapper->mBool; });
+  SpinEventLoopUntil("nsHttpConnectionMgr::Shutdown"_ns,
+                     [&, shutdownWrapper]() { return shutdownWrapper->mBool; });
 
   return NS_OK;
 }
