@@ -35,6 +35,13 @@ ICUError ToICUError(UErrorCode status);
 
 
 
+
+ICUError ToICUError(UErrorCode status);
+
+
+
+
+
 ICUResult ToICUResult(UErrorCode status);
 
 

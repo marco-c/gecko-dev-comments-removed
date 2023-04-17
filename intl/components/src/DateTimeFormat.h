@@ -46,7 +46,30 @@ class DateTimeFormat final {
   DateTimeFormat(const DateTimeFormat&) = delete;
   DateTimeFormat& operator=(const DateTimeFormat&) = delete;
 
-  enum class StyleError { DateFormatFailure };
+  
+
+
+
+
+
+
+
+
+
+
+  static Result<UniquePtr<DateTimeFormat>, ICUError> TryCreateFromStyle(
+      Span<const char> aLocale, DateTimeStyle aDateStyle,
+      DateTimeStyle aTimeStyle,
+      Maybe<Span<const char16_t>> aTimeZoneOverride = Nothing{});
+
+  
+
+
+
+
+  static Result<UniquePtr<DateTimeFormat>, ICUError> TryCreateFromSkeleton(
+      Span<const char> aLocale, Span<const char> aSkeleton,
+      Maybe<Span<const char>> aTimeZoneOverride = Nothing{});
 
   
 
@@ -59,48 +82,12 @@ class DateTimeFormat final {
 
 
 
-  static Result<UniquePtr<DateTimeFormat>, DateTimeFormat::StyleError>
-  TryCreateFromStyle(Span<const char> aLocale, DateTimeStyle aDateStyle,
-                     DateTimeStyle aTimeStyle,
-                     Maybe<Span<const char16_t>> aTimeZoneOverride = Nothing{});
 
-  enum class SkeletonError {
-    OutOfMemory,
-    PatternGeneratorFailure,
-    GetBestPatternFailure,
-    DateFormatFailure
-  };
-
-  
-
-
-
-
-  static Result<UniquePtr<DateTimeFormat>, DateTimeFormat::SkeletonError>
-  TryCreateFromSkeleton(Span<const char> aLocale, Span<const char> aSkeleton,
-                        Maybe<Span<const char>> aTimeZoneOverride = Nothing{});
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  static Result<UniquePtr<DateTimeFormat>, DateTimeFormat::SkeletonError>
-  TryCreateFromSkeleton(
+  static Result<UniquePtr<DateTimeFormat>, ICUError> TryCreateFromSkeleton(
       Span<const char> aLocale, Span<const char16_t> aSkeleton,
       Maybe<Span<const char16_t>> aTimeZoneOverride = Nothing{});
 
-  enum class PatternError { DateFormatFailure };
-
-  static Result<UniquePtr<DateTimeFormat>, DateTimeFormat::PatternError>
-  TryCreateFromPattern(
+  static Result<UniquePtr<DateTimeFormat>, ICUError> TryCreateFromPattern(
       Span<const char> aLocale, Span<const char16_t> aPattern,
       Maybe<Span<const char16_t>> aTimeZoneOverride = Nothing{});
 
