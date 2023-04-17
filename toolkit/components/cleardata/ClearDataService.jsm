@@ -702,7 +702,12 @@ const PredictorNetworkCleaner = {
 };
 
 const PushNotificationsCleaner = {
-  deleteByHost(aHost, aOriginAttributes) {
+  
+
+
+
+
+  _deleteByRootDomain(aDomain) {
     if (!Services.prefs.getBoolPref("dom.push.enabled", false)) {
       return Promise.resolve();
     }
@@ -711,7 +716,8 @@ const PushNotificationsCleaner = {
       let push = Cc["@mozilla.org/push/Service;1"].getService(
         Ci.nsIPushService
       );
-      push.clearForDomain(aHost, aStatus => {
+      
+      push.clearForDomain(aDomain, aStatus => {
         if (!Components.isSuccessCode(aStatus)) {
           aReject();
         } else {
@@ -721,13 +727,20 @@ const PushNotificationsCleaner = {
     });
   },
 
+  deleteByHost(aHost, aOriginAttributes) {
+    
+    
+    return this._deleteByRootDomain(aHost);
+  },
+
   deleteByPrincipal(aPrincipal) {
-    return this.deleteByHost(aPrincipal.host, aPrincipal.originAttributes);
+    
+    
+    return this._deleteByRootDomain(aPrincipal.host);
   },
 
   deleteByBaseDomain(aBaseDomain) {
-    
-    return this.deleteByHost(aBaseDomain, {});
+    return this._deleteByRootDomain(aBaseDomain);
   },
 
   deleteAll() {
