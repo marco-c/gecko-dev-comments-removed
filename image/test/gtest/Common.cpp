@@ -48,6 +48,10 @@ AutoInitializeImageLib::AutoInitializeImageLib() {
   EXPECT_TRUE(rv == NS_OK);
 
   
+  rv = Preferences::SetBool("image.jxl.enabled", true);
+  EXPECT_TRUE(rv == NS_OK);
+
+  
   nsCOMPtr<imgITools> imgTools =
       do_CreateInstance("@mozilla.org/image/tools;1");
   EXPECT_TRUE(imgTools != nullptr);
@@ -438,6 +442,10 @@ ImageTestCase GreenAVIFTestCase() {
       .WithSurfaceFlags(SurfaceFlags::TO_SRGB_COLORSPACE);
 }
 
+ImageTestCase GreenJXLTestCase() {
+  return ImageTestCase("green.jxl", "image/jxl", IntSize(100, 100));
+}
+
 
 
 ImageTestCase Transparent10bit420AVIFTestCase() {
@@ -565,6 +573,11 @@ ImageTestCase LargeAVIFTestCase() {
                        TEST_CASE_IGNORE_OUTPUT);
 }
 
+ImageTestCase LargeJXLTestCase() {
+  return ImageTestCase("large.jxl", "image/jxl", IntSize(1200, 660),
+                       TEST_CASE_IGNORE_OUTPUT);
+}
+
 ImageTestCase GreenWebPIccSrgbTestCase() {
   return ImageTestCase("green.icc_srgb.webp", "image/webp", IntSize(100, 100));
 }
@@ -661,6 +674,11 @@ ImageTestCase TransparentWebPTestCase() {
   return test;
 }
 
+ImageTestCase TransparentJXLTestCase() {
+  return ImageTestCase("transparent.jxl", "image/jxl", IntSize(1200, 1200),
+                       TEST_CASE_IS_TRANSPARENT);
+}
+
 ImageTestCase TransparentNoAlphaHeaderWebPTestCase() {
   ImageTestCase test("transparent-no-alpha-header.webp", "image/webp",
                      IntSize(100, 100), TEST_CASE_IS_FUZZY);
@@ -747,6 +765,11 @@ ImageTestCase DownscaledWebPTestCase() {
 
 ImageTestCase DownscaledAVIFTestCase() {
   return ImageTestCase("downscaled.avif", "image/avif", IntSize(100, 100),
+                       IntSize(20, 20));
+}
+
+ImageTestCase DownscaledJXLTestCase() {
+  return ImageTestCase("downscaled.jxl", "image/jxl", IntSize(100, 100),
                        IntSize(20, 20));
 }
 
