@@ -208,6 +208,10 @@ class GlobalObjectData {
   HeapPtr<PlainObject*> iterResultWithoutPrototypeTemplate;
 
   
+  
+  HeapPtr<ScriptSourceObject*> selfHostingScriptSource;
+
+  
   bool globalThisResolved = false;
 
   void trace(JSTracer* trc);
@@ -988,6 +992,9 @@ class GlobalObject : public NativeObject {
       JSContext* cx, WithObjectPrototype withProto);
 
  public:
+  static ScriptSourceObject* getOrCreateSelfHostingScriptSourceObject(
+      JSContext* cx, Handle<GlobalObject*> global);
+
   
   static bool initIteratorProto(JSContext* cx, Handle<GlobalObject*> global);
   template <ProtoKind Kind, const JSClass* ProtoClass,

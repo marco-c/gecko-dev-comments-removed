@@ -407,12 +407,6 @@ class JS::Realm : public JS::shadow::Realm {
   js::PromiseLookup promiseLookup;
 
   
-
-
-
-  js::WeakHeapPtrScriptSourceObject selfHostingScriptSource{nullptr};
-
-  
   js::MainThreadData<mozilla::TimeStamp> lastAnimationTime;
 
   
@@ -529,7 +523,6 @@ class JS::Realm : public JS::shadow::Realm {
   void sweepDebugEnvironments();
   void traceWeakObjectRealm(JSTracer* trc);
   void traceWeakRegExps(JSTracer* trc);
-  void traceWeakSelfHostingScriptSource(JSTracer* trc);
 
   void clearScriptCounts();
   void clearScriptLCov();
