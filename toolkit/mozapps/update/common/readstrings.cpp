@@ -337,7 +337,7 @@ int IniReader::Read() {
     return mMaybeStatusCode.value();
   }
 
-  if (mKeys.size() < 1) {
+  if (mKeys.empty()) {
     
     mMaybeStatusCode = mozilla::Some(OK);
     return OK;
