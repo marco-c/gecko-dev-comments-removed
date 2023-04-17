@@ -369,6 +369,8 @@ class JS_PUBLIC_API ArrayBufferOrView {
 
   void reset() { obj = nullptr; }
 
+  bool isDetached() const;
+
   JSObject* asObject() const { return obj; }
 };
 
@@ -377,6 +379,8 @@ class JS_PUBLIC_API ArrayBufferView : public ArrayBufferOrView {
  protected:
   explicit ArrayBufferView(JSObject* unwrapped)
       : ArrayBufferOrView(unwrapped) {}
+
+  bool isDetached() const;
 };
 
 
@@ -418,18 +422,33 @@ class JS_PUBLIC_API TypedArray : public TypedArray_base {
 
   
   
-  static inline TypedArray fromObject(JSObject* unwrapped) {
-    if (GetClass(unwrapped) == clasp()) {
+  static TypedArray fromObject(JSObject* unwrapped) {
+    if (unwrapped && GetClass(unwrapped) == clasp()) {
       return TypedArray(unwrapped);
     }
     return TypedArray(nullptr);
   }
 
-  bool isDetached();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  DataType* getLengthAndData(size_t* length, bool* isSharedMemory,
+                             const JS::AutoRequireNoGC& nogc);
 
-  DataType* getData(bool* isSharedMemory, const JS::AutoRequireNoGC&);
-
-  DataType* getLengthAndData(size_t* length, bool* isSharedMemory);
+  DataType* getData(bool* isSharedMemory, const JS::AutoRequireNoGC& nogc) {
+    size_t length;
+    return getLengthAndData(&length, isSharedMemory, nogc);
+  }
 };
 
 } 
@@ -505,22 +524,6 @@ namespace JS {
       int64_t length) {                                                       \
     return fromObject(                                                        \
         JS_New##Name##ArrayWithBuffer(cx, arrayBuffer, byteOffset, length));  \
-  };                                                                          \
-                                                                              \
-  template <>                                                                 \
-  inline ExternalType* JS::TypedArray<js::Scalar::Name>::getData(             \
-      bool* isSharedMemory, const JS::AutoRequireNoGC& nogc) {                \
-    MOZ_ASSERT(!isDetached());                                                \
-    return JS_Get##Name##ArrayData(obj, isSharedMemory, nogc);                \
-  };                                                                          \
-                                                                              \
-  template <>                                                                 \
-  inline ExternalType* JS::TypedArray<js::Scalar::Name>::getLengthAndData(    \
-      size_t* length, bool* isSharedMemory) {                                 \
-    MOZ_ASSERT(!isDetached());                                                \
-    JS::TypedArray<js::Scalar::Name>::DataType* data;                         \
-    js::Get##Name##ArrayLengthAndData(obj, length, isSharedMemory, &data);    \
-    return data;                                                              \
   };
 
 JS_FOR_EACH_TYPED_ARRAY(IMPL_TYPED_ARRAY_CLASS)
