@@ -8,7 +8,7 @@
 
 metrics_yamls = [
     "toolkit/components/glean/metrics.yaml",
-    "toolkit/components/glean/test_metrics.yaml",
+    "toolkit/components/glean/tests/test_metrics.yaml",
     "toolkit/mozapps/update/metrics.yaml",
     "browser/base/content/metrics.yaml",
 ]
@@ -17,6 +17,6 @@ metrics_yamls = [
 
 pings_yamls = [
     "toolkit/components/glean/pings.yaml",
-    "toolkit/components/glean/test_pings.yaml",
+    "toolkit/components/glean/tests/test_pings.yaml",
     "toolkit/mozapps/update/pings.yaml",
 ]

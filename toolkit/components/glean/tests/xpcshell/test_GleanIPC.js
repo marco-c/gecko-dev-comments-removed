@@ -1,12 +1,6 @@
 
 
 
-
-
-
-
-
-
 "use strict";
 
 Cu.importGlobalProperties(["Glean", "GleanPings"]);
