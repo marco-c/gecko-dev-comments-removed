@@ -47,41 +47,6 @@ using namespace dom;
     return EditActionCanceled(NS_OK);                              \
   }
 
-nsresult TextEditor::InitEditorContentAndSelection() {
-  MOZ_ASSERT(IsEditActionDataAvailable());
-
-  nsresult rv = MaybeCreatePaddingBRElementForEmptyEditor();
-  if (NS_FAILED(rv)) {
-    NS_WARNING(
-        "EditorBase::MaybeCreatePaddingBRElementForEmptyEditor() failed");
-    return rv;
-  }
-
-  
-  
-  
-  
-  
-  if (!SelectionRef().RangeCount()) {
-    nsresult rv = CollapseSelectionToEnd();
-    if (NS_FAILED(rv)) {
-      NS_WARNING("EditorBase::CollapseSelectionToEnd() failed");
-      return rv;
-    }
-  }
-
-  if (IsPlaintextEditor() && !IsSingleLineEditor()) {
-    nsresult rv = EnsurePaddingBRElementInMultilineEditor();
-    if (NS_FAILED(rv)) {
-      NS_WARNING(
-          "EditorBase::EnsurePaddingBRElementInMultilineEditor() failed");
-      return rv;
-    }
-  }
-
-  return NS_OK;
-}
-
 void TextEditor::OnStartToHandleTopLevelEditSubAction(
     EditSubAction aTopLevelEditSubAction,
     nsIEditor::EDirection aDirectionOfTopLevelEditSubAction, ErrorResult& aRv) {

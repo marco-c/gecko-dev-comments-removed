@@ -136,7 +136,7 @@ nsresult TextEditor::Init(Document& aDoc, Element* aRoot,
 
   rv = InitEditorContentAndSelection();
   if (NS_FAILED(rv)) {
-    NS_WARNING("TextEditor::InitEditorContentAndSelection() failed");
+    NS_WARNING("EditorBase::InitEditorContentAndSelection() failed");
     
     
     mInitSucceeded = false;

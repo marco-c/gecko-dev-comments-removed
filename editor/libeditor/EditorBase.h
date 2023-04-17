@@ -2254,6 +2254,13 @@ class EditorBase : public nsIEditor,
     return mIsHTMLEditorClass ? EditorType::HTML : EditorType::Text;
   }
 
+  
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult InitEditorContentAndSelection();
+
   int32_t WrapWidth() const { return mWrapColumn; }
 
   

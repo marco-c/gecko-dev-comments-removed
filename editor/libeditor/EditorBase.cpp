@@ -339,6 +339,41 @@ nsresult EditorBase::Init(Document& aDocument, Element* aRoot,
   return NS_OK;
 }
 
+nsresult EditorBase::InitEditorContentAndSelection() {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+
+  nsresult rv = MaybeCreatePaddingBRElementForEmptyEditor();
+  if (NS_FAILED(rv)) {
+    NS_WARNING(
+        "EditorBase::MaybeCreatePaddingBRElementForEmptyEditor() failed");
+    return rv;
+  }
+
+  
+  
+  
+  
+  
+  if (!SelectionRef().RangeCount()) {
+    nsresult rv = CollapseSelectionToEnd();
+    if (NS_FAILED(rv)) {
+      NS_WARNING("EditorBase::CollapseSelectionToEnd() failed");
+      return rv;
+    }
+  }
+
+  if (IsPlaintextEditor() && !IsSingleLineEditor()) {
+    nsresult rv = EnsurePaddingBRElementInMultilineEditor();
+    if (NS_FAILED(rv)) {
+      NS_WARNING(
+          "EditorBase::EnsurePaddingBRElementInMultilineEditor() failed");
+      return rv;
+    }
+  }
+
+  return NS_OK;
+}
+
 nsresult EditorBase::PostCreate() {
   AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
   if (NS_WARN_IF(!editActionData.CanHandle())) {
