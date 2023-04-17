@@ -16,7 +16,7 @@ t.step(function() {
 var offscreenCanvas = new OffscreenCanvas(100, 50);
 var ctx = offscreenCanvas.getContext('2d');
 
-const g = ctx.createConicGradient(0, 0, 25);
+const g = ctx.createConicGradient(-Math.PI/2, 0, 25);
 g.addColorStop(0, "#0f0");
 g.addColorStop(0.5, "#0f0");
 g.addColorStop(0.5, "#f00");
