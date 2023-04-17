@@ -92,6 +92,19 @@ static_assert(F_GET_SEALS == (F_LINUX_SPECIFIC_BASE + 10));
 #  define DESKTOP
 #endif
 
+namespace {
+  static const unsigned long kIoctlTypeMask = _IOC_TYPEMASK << _IOC_TYPESHIFT;
+  static const unsigned long kTtyIoctls = TIOCSTI & kIoctlTypeMask;
+  
+  
+  
+  
+  
+  static_assert(kTtyIoctls == (TCSETA & kIoctlTypeMask) &&
+      kTtyIoctls == (FIOASYNC & kIoctlTypeMask),
+      "tty-related ioctls use the same type");
+};
+
 
 
 
@@ -1298,19 +1311,8 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
           return Allow();
         }
 #endif
-        static const unsigned long kTypeMask = _IOC_TYPEMASK << _IOC_TYPESHIFT;
-        static const unsigned long kTtyIoctls = TIOCSTI & kTypeMask;
-        
-        
-        
-        
-        
-        static_assert(kTtyIoctls == (TCSETA & kTypeMask) &&
-                          kTtyIoctls == (FIOASYNC & kTypeMask),
-                      "tty-related ioctls use the same type");
-
         Arg<unsigned long> request(1);
-        auto shifted_type = request & kTypeMask;
+        auto shifted_type = request & kIoctlTypeMask;
 
         
         return If(request == FIOCLEX, Allow())
@@ -1799,19 +1801,8 @@ class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
         return Allow();
 
       case __NR_ioctl: {
-        static const unsigned long kTypeMask = _IOC_TYPEMASK << _IOC_TYPESHIFT;
-        static const unsigned long kTtyIoctls = TIOCSTI & kTypeMask;
-        
-        
-        
-        
-        
-        static_assert(kTtyIoctls == (TCSETA & kTypeMask) &&
-                          kTtyIoctls == (FIOASYNC & kTypeMask),
-                      "tty-related ioctls use the same type");
-
         Arg<unsigned long> request(1);
-        auto shifted_type = request & kTypeMask;
+        auto shifted_type = request & kIoctlTypeMask;
 
         
         return If(request == FIOCLEX, Allow())
