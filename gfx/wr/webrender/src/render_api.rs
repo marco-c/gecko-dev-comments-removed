@@ -357,11 +357,6 @@ impl Transaction {
     }
 
     
-    pub fn set_pan(&mut self, pan: DeviceIntPoint) {
-        self.frame_ops.push(FrameMsg::SetPan(pan));
-    }
-
-    
     
     
     
@@ -799,8 +794,6 @@ pub enum FrameMsg {
     
     RequestHitTester(Sender<Arc<dyn ApiHitTester>>),
     
-    SetPan(DeviceIntPoint),
-    
     ScrollNodeWithId(LayoutPoint, ExternalScrollId, ScrollClamping),
     
     GetScrollNodeState(Sender<Vec<ScrollNodeState>>),
@@ -831,7 +824,6 @@ impl fmt::Debug for FrameMsg {
             FrameMsg::UpdateEpoch(..) => "FrameMsg::UpdateEpoch",
             FrameMsg::HitTest(..) => "FrameMsg::HitTest",
             FrameMsg::RequestHitTester(..) => "FrameMsg::RequestHitTester",
-            FrameMsg::SetPan(..) => "FrameMsg::SetPan",
             FrameMsg::ScrollNodeWithId(..) => "FrameMsg::ScrollNodeWithId",
             FrameMsg::GetScrollNodeState(..) => "FrameMsg::GetScrollNodeState",
             FrameMsg::UpdateDynamicProperties(..) => "FrameMsg::UpdateDynamicProperties",
