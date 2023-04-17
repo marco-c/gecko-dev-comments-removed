@@ -51,11 +51,19 @@ CompositorThreadHolder::CreateCompositorThread() {
   MOZ_ASSERT(!sCompositorThreadHolder,
              "The compositor thread has already been started!");
 
+  
+  
+  
+  
+  const uint32_t stackSize =
+      nsIThreadManager::DEFAULT_STACK_SIZE ? 320 << 10 : 0;
+
   nsCOMPtr<nsIThread> compositorThread;
   nsresult rv = NS_NewNamedThread(
       "Compositor", getter_AddRefs(compositorThread),
       NS_NewRunnableFunction(
-          "CompositorThreadHolder::CompositorThreadHolderSetup", []() {
+          "CompositorThreadHolder::CompositorThreadHolderSetup",
+          []() {
             sBackgroundHangMonitor = new mozilla::BackgroundHangMonitor(
                 "Compositor",
                 
@@ -69,7 +77,8 @@ CompositorThreadHolder::CreateCompositorThread() {
                 2048);
             nsCOMPtr<nsIThread> thread = NS_GetCurrentThread();
             static_cast<nsThread*>(thread.get())->SetUseHangMonitor(true);
-          }));
+          }),
+      stackSize);
 
   if (NS_FAILED(rv)) {
     return nullptr;
