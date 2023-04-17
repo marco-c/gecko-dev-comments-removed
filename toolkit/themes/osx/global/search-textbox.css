@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 @namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
 @namespace html url("http://www.w3.org/1999/xhtml");
@@ -10,7 +10,7 @@
   -moz-default-appearance: searchfield;
   font-size: 12px;
   cursor: text;
-  margin: 4px; 
+  margin: 4px; /* matches <input> global.css margin */
   padding: 1px;
   background-color: Field;
   color: FieldText;
@@ -40,10 +40,10 @@ html|input {
   color: GrayText;
 }
 
-
+/* ::::: icons ::::: */
 
 .textbox-search-clear {
-  list-style-image: url(chrome://global/skin/icons/searchfield-cancel.svg);
+  list-style-image: url(resource://gre-resources/searchfield-cancel.svg);
   margin-bottom: 1px;
 }
 
@@ -51,7 +51,7 @@ html|input {
   cursor: default;
 }
 
-
+/* Don't leave extra blank space with long placeholders (see bug 1385902) */
 .textbox-search-icons:not([selectedIndex="1"]) {
   display: none;
 }

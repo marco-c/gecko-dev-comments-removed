@@ -1,17 +1,17 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 @namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
 @namespace html url("http://www.w3.org/1999/xhtml");
 
-
+/* ::::: search textbox ::::: */
 
 :host {
   appearance: auto;
   -moz-default-appearance: textfield;
   cursor: text;
-  margin: 2px 4px; 
+  margin: 2px 4px; /* matches <input> global.css margin */
   padding: 2px 2px 3px;
   padding-inline-start: 4px;
   background-color: Field;
@@ -31,14 +31,14 @@ html|input {
   text-align: inherit;
 }
 
-
+/* ..... readonly state ..... */
 
 :host([readonly="true"]) {
   background-color: -moz-Dialog;
   color: -moz-DialogText;
 }
 
-
+/* ..... disabled state ..... */
 
 :host([disabled="true"]) {
   cursor: default;
@@ -46,7 +46,7 @@ html|input {
   color: GrayText;
 }
 
-
+/* ::::: icons ::::: */
 
 :host(:not([searchbutton])) > .textbox-search-sign {
   list-style-image: url(chrome://global/skin/icons/search-textbox.svg);
@@ -67,14 +67,14 @@ html|input {
 }
 
 .textbox-search-clear {
-  list-style-image: url(chrome://global/skin/icons/searchfield-cancel.svg);
+  list-style-image: url(resource://gre-resources/searchfield-cancel.svg);
 }
 
 .textbox-search-clear:not([disabled]) {
   cursor: default;
 }
 
-
+/* Don't leave extra blank space with long placeholders (see bug 1385902) */
 :host(:not([searchbutton])) > .textbox-search-icons:not([selectedIndex="1"]) {
   display: none;
 }
