@@ -18,7 +18,7 @@ use winapi::um::ncrypt::*;
 use winapi::um::wincrypt::{HCRYPTHASH, HCRYPTPROV, *};
 
 use crate::error::{Error, ErrorType};
-use crate::manager::SlotType;
+use crate::manager::{ClientCertsBackend, CryptokiObject, Sign, SlotType};
 use crate::util::*;
 
 
@@ -122,7 +122,7 @@ impl Cert {
         &self.token
     }
 
-    pub fn id(&self) -> &[u8] {
+    fn id(&self) -> &[u8] {
         &self.id
     }
 
@@ -145,7 +145,9 @@ impl Cert {
     fn subject(&self) -> &[u8] {
         &self.subject
     }
+}
 
+impl CryptokiObject for Cert {
     fn matches(&self, slot_type: SlotType, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool {
         if slot_type != self.slot_type {
             return false;
@@ -614,7 +616,7 @@ impl Key {
         &self.token
     }
 
-    pub fn id(&self) -> &[u8] {
+    fn id(&self) -> &[u8] {
         &self.id
     }
 
@@ -640,6 +642,48 @@ impl Key {
         }
     }
 
+    fn sign_with_retry(
+        &mut self,
+        data: &[u8],
+        params: &Option<CK_RSA_PKCS_PSS_PARAMS>,
+        do_signature: bool,
+    ) -> Result<Vec<u8>, Error> {
+        let result = self.sign_internal(data, params, do_signature);
+        if result.is_ok() {
+            return result;
+        }
+        
+        
+        debug!("sign failed: refreshing key handle");
+        let _ = self.key_handle.take();
+        self.sign_internal(data, params, do_signature)
+    }
+
+    
+    
+    
+    fn sign_internal(
+        &mut self,
+        data: &[u8],
+        params: &Option<CK_RSA_PKCS_PSS_PARAMS>,
+        do_signature: bool,
+    ) -> Result<Vec<u8>, Error> {
+        
+        
+        
+        
+        if self.key_handle.is_none() {
+            let _ = self.key_handle.replace(KeyHandle::from_cert(&self.cert)?);
+        }
+        let key = match &self.key_handle {
+            Some(key) => key,
+            None => return Err(error_here!(ErrorType::LibraryFailure)),
+        };
+        key.sign(data, params, do_signature, self.key_type_enum)
+    }
+}
+
+impl CryptokiObject for Key {
     fn matches(&self, slot_type: SlotType, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool {
         if slot_type != self.slot_type {
             return false;
@@ -686,8 +730,10 @@ impl Key {
             _ => None,
         }
     }
+}
 
-    pub fn get_signature_length(
+impl Sign for Key {
+    fn get_signature_length(
         &mut self,
         data: &[u8],
         params: &Option<CK_RSA_PKCS_PSS_PARAMS>,
@@ -698,75 +744,12 @@ impl Key {
         }
     }
 
-    pub fn sign(
+    fn sign(
         &mut self,
         data: &[u8],
         params: &Option<CK_RSA_PKCS_PSS_PARAMS>,
     ) -> Result<Vec<u8>, Error> {
         self.sign_with_retry(data, params, true)
-    }
-
-    fn sign_with_retry(
-        &mut self,
-        data: &[u8],
-        params: &Option<CK_RSA_PKCS_PSS_PARAMS>,
-        do_signature: bool,
-    ) -> Result<Vec<u8>, Error> {
-        let result = self.sign_internal(data, params, do_signature);
-        if result.is_ok() {
-            return result;
-        }
-        
-        
-        debug!("sign failed: refreshing key handle");
-        let _ = self.key_handle.take();
-        self.sign_internal(data, params, do_signature)
-    }
-
-    
-    
-    
-    fn sign_internal(
-        &mut self,
-        data: &[u8],
-        params: &Option<CK_RSA_PKCS_PSS_PARAMS>,
-        do_signature: bool,
-    ) -> Result<Vec<u8>, Error> {
-        
-        
-        
-        
-        if self.key_handle.is_none() {
-            let _ = self.key_handle.replace(KeyHandle::from_cert(&self.cert)?);
-        }
-        let key = match &self.key_handle {
-            Some(key) => key,
-            None => return Err(error_here!(ErrorType::LibraryFailure)),
-        };
-        key.sign(data, params, do_signature, self.key_type_enum)
-    }
-}
-
-
-
-pub enum Object {
-    Cert(Cert),
-    Key(Key),
-}
-
-impl Object {
-    pub fn matches(&self, slot_type: SlotType, attrs: &[(CK_ATTRIBUTE_TYPE, Vec<u8>)]) -> bool {
-        match self {
-            Object::Cert(cert) => cert.matches(slot_type, attrs),
-            Object::Key(key) => key.matches(slot_type, attrs),
-        }
-    }
-
-    pub fn get_attribute(&self, attribute: CK_ATTRIBUTE_TYPE) -> Option<&[u8]> {
-        match self {
-            Object::Cert(cert) => cert.get_attribute(attribute),
-            Object::Key(key) => key.get_attribute(attribute),
-        }
     }
 }
 
@@ -797,21 +780,6 @@ impl CertStore {
         CertStore { handle }
     }
 }
-
-pub const SUPPORTED_ATTRIBUTES: &[CK_ATTRIBUTE_TYPE] = &[
-    CKA_CLASS,
-    CKA_TOKEN,
-    CKA_LABEL,
-    CKA_ID,
-    CKA_VALUE,
-    CKA_ISSUER,
-    CKA_SERIAL_NUMBER,
-    CKA_SUBJECT,
-    CKA_PRIVATE,
-    CKA_KEY_TYPE,
-    CKA_MODULUS,
-    CKA_EC_PARAMS,
-];
 
 
 
@@ -853,89 +821,94 @@ fn gather_cert_contexts(cert_chain_context: *const CERT_CHAIN_CONTEXT) -> Vec<*c
     cert_contexts
 }
 
+pub struct Backend {}
 
+impl ClientCertsBackend for Backend {
+    type Cert = Cert;
+    type Key = Key;
 
-pub fn list_objects() -> Vec<Object> {
-    let mut objects = Vec::new();
-    let location_flags = CERT_SYSTEM_STORE_CURRENT_USER 
-        | CERT_STORE_OPEN_EXISTING_FLAG
-        | CERT_STORE_READONLY_FLAG;
-    let store_name = match CString::new("My") {
-        Ok(store_name) => store_name,
-        Err(null_error) => {
-            error!("CString::new given input with a null byte: {}", null_error);
-            return objects;
-        }
-    };
-    let store = CertStore::new(unsafe {
-        CertOpenStore(
-            CERT_STORE_PROV_SYSTEM_REGISTRY_A,
-            0,
-            0,
-            location_flags,
-            store_name.as_ptr() as *const winapi::ctypes::c_void,
-        )
-    });
-    if store.is_null() {
-        error!("CertOpenStore failed");
-        return objects;
-    }
-    let find_params = CERT_CHAIN_FIND_ISSUER_PARA {
-        cbSize: std::mem::size_of::<CERT_CHAIN_FIND_ISSUER_PARA>() as u32,
-        pszUsageIdentifier: std::ptr::null(),
-        dwKeySpec: 0,
-        dwAcquirePrivateKeyFlags: 0,
-        cIssuer: 0,
-        rgIssuer: std::ptr::null_mut(),
-        pfnFindCallback: None,
-        pvFindArg: std::ptr::null_mut(),
-        pdwIssuerChainIndex: std::ptr::null_mut(),
-        pdwIssuerElementIndex: std::ptr::null_mut(),
-    };
-    let mut cert_chain_context: PCCERT_CHAIN_CONTEXT = std::ptr::null_mut();
-    loop {
-        
-        
-        
-        
-        
-        cert_chain_context = unsafe {
-            CertFindChainInStore(
-                *store,
-                X509_ASN_ENCODING,
-                CERT_CHAIN_FIND_BY_ISSUER_CACHE_ONLY_FLAG
-                    | CERT_CHAIN_FIND_BY_ISSUER_CACHE_ONLY_URL_FLAG,
-                CERT_CHAIN_FIND_BY_ISSUER,
-                &find_params as *const CERT_CHAIN_FIND_ISSUER_PARA as *const winapi::ctypes::c_void,
-                cert_chain_context,
+    
+    
+    fn find_objects(&self) -> Result<(Vec<Cert>, Vec<Key>), Error> {
+        let mut certs = Vec::new();
+        let mut keys = Vec::new();
+        let location_flags = CERT_SYSTEM_STORE_CURRENT_USER
+            | CERT_STORE_OPEN_EXISTING_FLAG
+            | CERT_STORE_READONLY_FLAG;
+        let store_name = match CString::new("My") {
+            Ok(store_name) => store_name,
+            Err(_) => return Err(error_here!(ErrorType::LibraryFailure)),
+        };
+        let store = CertStore::new(unsafe {
+            CertOpenStore(
+                CERT_STORE_PROV_SYSTEM_REGISTRY_A,
+                0,
+                0,
+                location_flags,
+                store_name.as_ptr() as *const winapi::ctypes::c_void,
             )
-        };
-        if cert_chain_context.is_null() {
-            break;
+        });
+        if store.is_null() {
+            return Err(error_here!(ErrorType::ExternalError));
         }
-        let cert_contexts = gather_cert_contexts(cert_chain_context);
-        
-        
-        match cert_contexts.get(0) {
-            Some(cert_context) => {
-                let key = match Key::new(*cert_context) {
-                    Ok(key) => key,
-                    Err(_) => continue,
-                };
-                let cert = match Cert::new(*cert_context) {
-                    Ok(cert) => cert,
-                    Err(_) => continue,
-                };
-                objects.push(Object::Cert(cert));
-                objects.push(Object::Key(key));
-            }
-            None => {}
+        let find_params = CERT_CHAIN_FIND_ISSUER_PARA {
+            cbSize: std::mem::size_of::<CERT_CHAIN_FIND_ISSUER_PARA>() as u32,
+            pszUsageIdentifier: std::ptr::null(),
+            dwKeySpec: 0,
+            dwAcquirePrivateKeyFlags: 0,
+            cIssuer: 0,
+            rgIssuer: std::ptr::null_mut(),
+            pfnFindCallback: None,
+            pvFindArg: std::ptr::null_mut(),
+            pdwIssuerChainIndex: std::ptr::null_mut(),
+            pdwIssuerElementIndex: std::ptr::null_mut(),
         };
-        for cert_context in cert_contexts.iter().skip(1) {
-            if let Ok(cert) = Cert::new(*cert_context) {
-                objects.push(Object::Cert(cert));
+        let mut cert_chain_context: PCCERT_CHAIN_CONTEXT = std::ptr::null_mut();
+        loop {
+            
+            
+            
+            
+            
+            cert_chain_context = unsafe {
+                CertFindChainInStore(
+                    *store,
+                    X509_ASN_ENCODING,
+                    CERT_CHAIN_FIND_BY_ISSUER_CACHE_ONLY_FLAG
+                        | CERT_CHAIN_FIND_BY_ISSUER_CACHE_ONLY_URL_FLAG,
+                    CERT_CHAIN_FIND_BY_ISSUER,
+                    &find_params as *const CERT_CHAIN_FIND_ISSUER_PARA
+                        as *const winapi::ctypes::c_void,
+                    cert_chain_context,
+                )
+            };
+            if cert_chain_context.is_null() {
+                break;
+            }
+            let cert_contexts = gather_cert_contexts(cert_chain_context);
+            
+            
+            match cert_contexts.get(0) {
+                Some(cert_context) => {
+                    let key = match Key::new(*cert_context) {
+                        Ok(key) => key,
+                        Err(_) => continue,
+                    };
+                    let cert = match Cert::new(*cert_context) {
+                        Ok(cert) => cert,
+                        Err(_) => continue,
+                    };
+                    certs.push(cert);
+                    keys.push(key);
+                }
+                None => {}
+            };
+            for cert_context in cert_contexts.iter().skip(1) {
+                if let Ok(cert) = Cert::new(*cert_context) {
+                    certs.push(cert);
+                }
             }
         }
+        Ok((certs, keys))
     }
-    objects
 }
