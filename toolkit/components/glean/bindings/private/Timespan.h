@@ -90,6 +90,26 @@ class TimespanMetric {
 
 
 
+  void SetRaw(uint32_t aDuration) const {
+    auto optScalarId = ScalarIdForMetric(mId);
+    if (optScalarId) {
+      auto scalarId = optScalarId.extract();
+      Telemetry::ScalarSet(scalarId, aDuration);
+    }
+#ifndef MOZ_GLEAN_ANDROID
+    fog_timespan_set_raw(mId, aDuration);
+#endif
+  }
+
+  
+
+
+
+
+
+
+
+
 
 
 

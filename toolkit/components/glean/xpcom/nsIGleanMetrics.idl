@@ -321,6 +321,17 @@ interface nsIGleanTimespan : nsISupports
 
 
 
+  void setRaw(in uint32_t aDuration);
+
+  
+
+
+
+
+
+
+
+
 
 
 
