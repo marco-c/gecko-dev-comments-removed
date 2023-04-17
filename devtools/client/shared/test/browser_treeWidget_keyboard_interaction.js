@@ -116,23 +116,25 @@ function click(node) {
 
 async function testKeyboardInteraction(tree, win) {
   info("Testing keyboard interaction with the tree");
-  let event;
-  const pass = (d, a) => event.resolve([d, a]);
+  const waitForSelect = () =>
+    new Promise(resolve => {
+      tree.once("select", (d, a) => resolve({ data: d, attachment: a }));
+    });
 
   info("clicking on first top level item");
   let node = tree.root.children.firstChild.firstChild;
-  event = defer();
+
   
   
   const clicked = once(node, "click");
-  tree.once("select", pass);
+  let onTreeSelect = waitForSelect();
   click(node);
 
   info("Wait for the click event");
   await clicked;
 
   info("Wait for the select event on tree");
-  await event.promise;
+  await onTreeSelect;
 
   node = tree.root.children.firstChild.nextSibling.firstChild;
   
@@ -143,11 +145,10 @@ async function testKeyboardInteraction(tree, win) {
   ok(!node.hasAttribute("expanded"), "Node is not expanded");
 
   info("Pressing down key to select next item");
-  event = defer();
-  tree.once("select", pass);
+  onTreeSelect = waitForSelect();
   EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
 
-  let [data, attachment] = await event.promise;
+  let { data, attachment } = await onTreeSelect;
   is(data.length, 1, "Correct level item was selected after keydown");
   is(data[0], "level1", "Correct item was selected after pressing down");
   ok(!attachment, "null attachment was emitted");
@@ -155,10 +156,9 @@ async function testKeyboardInteraction(tree, win) {
   ok(node.hasAttribute("expanded"), "Node is expanded now");
 
   info("Pressing down key again to select next item");
-  event = defer();
-  tree.once("select", pass);
+  onTreeSelect = waitForSelect();
   EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
-  [data, attachment] = await event.promise;
+  ({ data, attachment } = await onTreeSelect);
   is(
     data.length,
     2,
@@ -168,10 +168,9 @@ async function testKeyboardInteraction(tree, win) {
   is(data[1], "level2", "Correct second level");
 
   info("Pressing down key again to select next item");
-  event = defer();
-  tree.once("select", pass);
+  onTreeSelect = waitForSelect();
   EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
-  [data, attachment] = await event.promise;
+  ({ data, attachment } = await onTreeSelect);
   is(
     data.length,
     3,
@@ -182,10 +181,9 @@ async function testKeyboardInteraction(tree, win) {
   is(data[2], "level3", "Correct third level");
 
   info("Pressing down key again to select next item");
-  event = defer();
-  tree.once("select", pass);
+  onTreeSelect = waitForSelect();
   EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
-  [data, attachment] = await event.promise;
+  ({ data, attachment } = await onTreeSelect);
   is(
     data.length,
     2,
@@ -194,22 +192,26 @@ async function testKeyboardInteraction(tree, win) {
   is(data[0], "level1", "Correct parent level");
   is(data[1], "level2-1", "Correct second level");
 
+  const waitForKeydown = () =>
+    new Promise(resolve => {
+      tree.root.children.addEventListener(
+        "keydown",
+        () => {
+          
+          executeSoon(() => resolve());
+        },
+        { once: true }
+      );
+    });
+
   
   
-  tree.root.children.addEventListener(
-    "keydown",
-    () => {
-      
-      executeSoon(() => event.resolve(null));
-    },
-    { once: true }
-  );
+  let onTreeKeydown = waitForKeydown();
   info("Pressing left key to collapse the item");
-  event = defer();
   node = tree._selectedLabel;
   ok(node.hasAttribute("expanded"), "Item is expanded before left keypress");
   EventUtils.synthesizeKey("KEY_ArrowLeft", {}, win);
-  await event.promise;
+  await onTreeKeydown;
 
   ok(
     !node.hasAttribute("expanded"),
@@ -219,13 +221,12 @@ async function testKeyboardInteraction(tree, win) {
   
 
   info("Pressing left key on collapsed item to select previous");
-  tree.once("select", pass);
-  event = defer();
+  onTreeSelect = waitForSelect();
   
   node = tree.root.children.firstChild.nextSibling.firstChild;
   ok(node.hasAttribute("expanded"), "Parent is expanded");
   EventUtils.synthesizeKey("KEY_ArrowLeft", {}, win);
-  [data] = await event.promise;
+  ({ data } = await onTreeSelect);
   is(
     data.length,
     3,
@@ -242,10 +243,9 @@ async function testKeyboardInteraction(tree, win) {
   
 
   info("Pressing down key to select next item");
-  event = defer();
-  tree.once("select", pass);
+  onTreeSelect = waitForSelect();
   EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
-  [data, attachment] = await event.promise;
+  ({ data, attachment } = await onTreeSelect);
   is(
     data.length,
     2,
@@ -255,37 +255,21 @@ async function testKeyboardInteraction(tree, win) {
   is(data[1], "level2-1", "Correct second level");
 
   
-
-  tree.root.children.addEventListener(
-    "keydown",
-    () => {
-      executeSoon(() => event.resolve(null));
-    },
-    { once: true }
-  );
+  onTreeKeydown = waitForKeydown();
   info("Pressing left key to collapse the item");
-  event = defer();
   node = tree._selectedLabel;
   ok(node.hasAttribute("expanded"), "Item is expanded before left keypress");
   EventUtils.synthesizeKey("KEY_ArrowLeft", {}, win);
-  await event.promise;
+  await onTreeKeydown;
   ok(!node.hasAttribute("expanded"), "Item is collapsed after left keypress");
 
   
-
-  tree.root.children.addEventListener(
-    "keydown",
-    () => {
-      executeSoon(() => event.resolve(null));
-    },
-    { once: true }
-  );
+  onTreeKeydown = waitForKeydown();
   info("Pressing right key to expend the collapsed item");
-  event = defer();
   node = tree._selectedLabel;
   ok(!node.hasAttribute("expanded"), "Item is collapsed before right keypress");
   EventUtils.synthesizeKey("KEY_ArrowRight", {}, win);
-  await event.promise;
+  await onTreeKeydown;
   ok(node.hasAttribute("expanded"), "Item is expanded after right keypress");
 
   
@@ -293,17 +277,10 @@ async function testKeyboardInteraction(tree, win) {
   tree.selectedItem = ["level1.1", "level2", "level3"];
   node = tree._selectedLabel;
   
-  event = defer();
-  tree.root.children.addEventListener(
-    "keydown",
-    () => {
-      executeSoon(() => event.resolve(null));
-    },
-    { once: true }
-  );
+  onTreeKeydown = waitForKeydown();
   info("Pressing down key on last item of the tree");
   EventUtils.synthesizeKey("KEY_ArrowDown", {}, win);
-  await event.promise;
+  await onTreeKeydown;
 
   ok(
     tree.isSelected(["level1.1", "level2", "level3"]),
