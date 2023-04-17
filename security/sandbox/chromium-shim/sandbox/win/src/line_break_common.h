@@ -11,6 +11,11 @@
 
 namespace sandbox {
 
+#if defined(ENABLE_TESTS)
+
+static const std::ptrdiff_t kMaxBrokeredLen = 50;
+
+#else
 
 
 
@@ -19,6 +24,7 @@ namespace sandbox {
 
 static const std::ptrdiff_t kMaxBrokeredLen =
     (ActualCallParams<3, kIPCChannelSize>::MaxParamsSize() - 8 - 6 - 7) / 3;
+#endif
 
 }  
 
