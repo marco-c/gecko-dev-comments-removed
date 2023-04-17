@@ -664,12 +664,16 @@ class HashSet {
   
   
   
-  void replaceKey(Ptr aPtr, const T& aNewValue) {
+  void replaceKey(Ptr aPtr, const Lookup& aLookup, const T& aNewValue) {
     MOZ_ASSERT(aPtr.found());
     MOZ_ASSERT(*aPtr != aNewValue);
-    MOZ_ASSERT(HashPolicy::hash(*aPtr) == HashPolicy::hash(aNewValue));
-    MOZ_ASSERT(HashPolicy::match(*aPtr, aNewValue));
+    MOZ_ASSERT(HashPolicy::match(*aPtr, aLookup));
+    MOZ_ASSERT(HashPolicy::match(aNewValue, aLookup));
     const_cast<T&>(*aPtr) = aNewValue;
+    MOZ_ASSERT(*lookup(aLookup) == aNewValue);
+  }
+  void replaceKey(Ptr aPtr, const T& aNewValue) {
+    replaceKey(aPtr, aNewValue, aNewValue);
   }
 
   
