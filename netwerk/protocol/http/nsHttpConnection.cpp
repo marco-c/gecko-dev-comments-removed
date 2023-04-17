@@ -1925,11 +1925,7 @@ nsresult nsHttpConnection::OnSocketWritable() {
 
     if (!again && mWaitingFor0RTTResponse) {
       
-      
-      
-      
-      
-      rv = mSocketIn->AsyncWait(this, 0, 0, nullptr);
+      rv = mSocketOut->AsyncWait(this, 0, 0, nullptr);
     }
     if (NS_FAILED(rv)) {
       
@@ -1938,11 +1934,7 @@ nsresult nsHttpConnection::OnSocketWritable() {
         rv = NS_OK;
         if (mWaitingFor0RTTResponse) {
           
-          
-          
-          
-          
-          rv = mSocketIn->AsyncWait(this, 0, 0, nullptr);
+          rv = mSocketOut->AsyncWait(this, 0, 0, nullptr);
         }
       }
       again = false;
@@ -1963,12 +1955,7 @@ nsresult nsHttpConnection::OnSocketWritable() {
 
       if (mWaitingFor0RTTResponse) {
         
-        
-        
-        
-        
-        
-        rv = mSocketIn->AsyncWait(this, 0, 0, nullptr);
+        rv = mSocketOut->AsyncWait(this, 0, 0, nullptr);
       } else if (mTransaction) {  
                                   
         
@@ -2426,13 +2413,7 @@ nsHttpConnection::OnInputStreamReady(nsIAsyncInputStream* in) {
     return NS_OK;
   }
 
-  nsresult rv = NS_OK;
-  if (mWaitingFor0RTTResponse) {
-    
-    rv = OnSocketWritable();
-  } else {
-    rv = OnSocketReadable();
-  }
+  nsresult rv = OnSocketReadable();
   if (NS_FAILED(rv)) CloseTransaction(mTransaction, rv);
 
   return NS_OK;
