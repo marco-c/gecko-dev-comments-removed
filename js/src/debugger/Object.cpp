@@ -2117,11 +2117,6 @@ bool DebuggerObject::getOwnPropertyDescriptor(
       desc.setSetterObject(set.toObjectOrNull());
     }
 
-    
-    
-    
-    
-    desc.object().set(object);
     desc_.set(mozilla::Some(desc.get()));
   }
 

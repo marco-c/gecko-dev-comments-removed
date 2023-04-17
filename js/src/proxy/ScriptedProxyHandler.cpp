@@ -638,7 +638,6 @@ bool ScriptedProxyHandler::getOwnPropertyDescriptor(
   }
 
   
-  resultDesc.object().set(proxy);
   desc.set(mozilla::Some(resultDesc.get()));
   return true;
 }
