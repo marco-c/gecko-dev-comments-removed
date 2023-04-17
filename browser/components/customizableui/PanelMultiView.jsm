@@ -1369,6 +1369,13 @@ var PanelView = class extends AssociatedToNode {
 
 
   set headerText(value) {
+    let ensureHeaderSeparator = headerNode => {
+      if (headerNode.nextSibling.tagName != "toolbarseparator") {
+        let separator = this.document.createXULElement("toolbarseparator");
+        this.node.insertBefore(separator, headerNode.nextSibling);
+      }
+    };
+
     
     let header = this.node.firstElementChild;
     if (header && header.classList.contains("panel-header")) {
@@ -1376,6 +1383,7 @@ var PanelView = class extends AssociatedToNode {
         
         
         header.querySelector(".panel-header > h1 > span").textContent = value;
+        ensureHeaderSeparator(header);
       } else {
         if (header.nextSibling.tagName == "toolbarseparator") {
           header.nextSibling.remove();
@@ -1416,10 +1424,7 @@ var PanelView = class extends AssociatedToNode {
     header.append(backButton, h1);
     this.node.prepend(header);
 
-    if (header.nextSibling.tagName != "toolbarseparator") {
-      let separator = this.document.createXULElement("toolbarseparator");
-      this.node.insertBefore(separator, header.nextSibling);
-    }
+    ensureHeaderSeparator(header);
   }
 
   
