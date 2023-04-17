@@ -76,10 +76,8 @@ async function testReturnStatus(expectedStatus) {
 
   if (expectedStatus == "saved" || expectedStatus == "replaced") {
     
-    let text = await OS.File.read(saveFile.path, {
-      encoding: "utf-8",
-      bytes: 4,
-    });
+    let text = await IOUtils.read(saveFile.path, { maxBytes: 4 });
+    text = new TextDecoder().decode(text);
     is(text, "%PDF", "Got correct magic number - %PDF");
   }
 
@@ -183,10 +181,8 @@ async function testFileName(expectedFileName) {
   await extension.unload();
 
   
-  let text = await OS.File.read(saveFile.path, {
-    encoding: "utf-8",
-    bytes: 4,
-  });
+  let text = await IOUtils.read(saveFile.path, { maxBytes: 4 });
+  text = new TextDecoder().decode(text);
   is(text, "%PDF", "Got correct magic number - %PDF");
 
   MockFilePicker.cleanup();
