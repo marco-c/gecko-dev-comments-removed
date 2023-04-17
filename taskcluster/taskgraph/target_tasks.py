@@ -981,10 +981,19 @@ def target_tasks_coverity_full(full_task_graph, parameters, graph_config):
 
 
 
-@_target_task("linux64_bp_clang_trunk")
-def target_tasks_build_linux64_clang_trunk(full_task_graph, parameters, graph_config):
-    """Select tasks required to run the build of linux64 build plain with clang trunk"""
-    return ["build-linux64-plain-clang-trunk/opt"]
+@_target_task("linux64_clang_trunk_perf")
+def target_tasks_build_linux64_clang_trunk_perf(
+    full_task_graph, parameters, graph_config
+):
+    """Select tasks required to run perf test on linux64 build with clang trunk"""
+
+    
+    def filter(task_label):
+        if "linux1804-64-clang-trunk/opt" in task_label:
+            return True
+        return False
+
+    return [l for l, t in six.iteritems(full_task_graph.tasks) if filter(t.label)]
 
 
 
