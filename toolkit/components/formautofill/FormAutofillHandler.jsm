@@ -1040,25 +1040,51 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
       ccExpYear = profile["cc-exp-year"],
       placeholder = element.placeholder;
 
-    result = /(?:[^m]|\b)(m{1,2})\s*([-/\\]*)\s*(y{2,4})(?!y)/i.exec(
-      placeholder
+    
+    
+    
+    
+    let monthChars = "m";
+    let yearChars = "ya";
+
+    let monthFirstCheck = new RegExp(
+      "(?:\\b|^)((?:[" +
+        monthChars +
+        "]{2}){1,2})\\s*([\\-/])\\s*((?:[" +
+        yearChars +
+        "]{2}){1,2})(?:\\b|$)",
+      "i"
     );
+
+    
+    
+    result = monthFirstCheck.exec(placeholder);
     if (result) {
       profile["cc-exp"] =
-        String(ccExpMonth).padStart(result[1].length, "0") +
+        ccExpMonth.toString().padStart(result[1].length, "0") +
         result[2] +
-        String(ccExpYear).substr(-1 * result[3].length);
+        ccExpYear.toString().substr(-1 * result[3].length);
       return;
     }
 
-    result = /(?:[^y]|\b)(y{2,4})\s*([-/\\]*)\s*(m{1,2})(?!m)/i.exec(
-      placeholder
+    let yearFirstCheck = new RegExp(
+      "(?:\\b|^)((?:[" +
+      yearChars +
+      "]{2}){1,2})\\s*([\\-/])\\s*((?:[" + 
+        monthChars +
+        "]){1,2})(?:\\b|$)",
+      "i" 
     );
+
+    
+    
+    result = yearFirstCheck.exec(placeholder);
+
     if (result) {
       profile["cc-exp"] =
-        String(ccExpYear).substr(-1 * result[1].length) +
+        ccExpYear.toString().substr(-1 * result[1].length) +
         result[2] +
-        String(ccExpMonth).padStart(result[3].length, "0");
+        ccExpMonth.toString().padStart(result[3].length, "0");
     }
   }
 
