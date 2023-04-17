@@ -5168,6 +5168,10 @@ void nsWindow::ConfigureGdkWindow() {
     WaylandStartVsync();
   }
 
+  if (mHasMappedToplevel) {
+    EnsureGrabs();
+  }
+
   LOG("  finished, new GdkWindow %p XID 0x%lx\n", mGdkWindow,
       GdkIsX11Display() ? gdk_x11_window_get_xid(mGdkWindow) : 0);
 }
@@ -6109,6 +6113,8 @@ void nsWindow::NativeShow(bool aAction) {
 }
 
 void nsWindow::SetHasMappedToplevel(bool aState) {
+  LOG("nsWindow::SetHasMappedToplevel() [%p] state %d\n", (void*)this, aState);
+
   
   
   
@@ -6122,7 +6128,10 @@ void nsWindow::SetHasMappedToplevel(bool aState) {
   
   
   
-  if (!mIsShown || !mGdkWindow) return;
+  if (!mIsShown || !mGdkWindow) {
+    LOG("  hidden, quit.\n");
+    return;
+  }
 
   if (aState && !oldState) {
     
@@ -6154,7 +6163,9 @@ LayoutDeviceIntSize nsWindow::GetSafeWindowSize(LayoutDeviceIntSize aSize) {
 }
 
 void nsWindow::EnsureGrabs(void) {
-  if (mRetryPointerGrab) GrabPointer(sRetryGrabTime);
+  if (mRetryPointerGrab) {
+    GrabPointer(sRetryGrabTime);
+  }
 }
 
 void nsWindow::CleanLayerManagerRecursive(void) {
@@ -6620,12 +6631,14 @@ void nsWindow::GrabPointer(guint32 aTime) {
   
   
   if (!mHasMappedToplevel) {
-    LOG("  window not visible\n");
+    LOG("  window not visible, mHasMappedToplevel = false, mRetryPointerGrab = "
+        "true\n");
     mRetryPointerGrab = true;
     return;
   }
 
   if (!mGdkWindow) {
+    LOG("  mGdkWindow is null\n");
     return;
   }
 
