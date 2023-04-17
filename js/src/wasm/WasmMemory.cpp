@@ -61,6 +61,127 @@ bool wasm::ToIndexType(JSContext* cx, HandleValue value, IndexType* indexType) {
   return true;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifdef JS_64BIT
 #  ifdef ENABLE_WASM_CRANELIFT
 
@@ -189,7 +310,8 @@ size_t wasm::ComputeMappedSize(wasm::Pages clampedMaxPages) {
   
   
   
-
+  
+  
   uint64_t boundsCheckLimit = RoundUpToNextValidBoundsCheckImmediate(maxSize);
   MOZ_ASSERT(IsValidBoundsCheckImmediate(boundsCheckLimit));
 
@@ -213,6 +335,8 @@ uint64_t wasm::RoundUpToNextValidBoundsCheckImmediate(uint64_t i) {
   return i;
 #endif
 }
+
+
 
 
 

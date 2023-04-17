@@ -140,7 +140,6 @@ extern Pages ClampedMaxPages(Pages initialPages,
 
 
 
-
 extern size_t ComputeMappedSize(Pages clampedMaxPages);
 
 extern size_t GetMaxOffsetGuardLimit(bool hugeMemory);
@@ -159,6 +158,7 @@ extern uint64_t RoundUpToNextValidBoundsCheckImmediate(uint64_t i);
 extern uint64_t RoundUpToNextValidARMImmediate(uint64_t i);
 
 #ifdef WASM_SUPPORTS_HUGE_MEMORY
+
 
 
 

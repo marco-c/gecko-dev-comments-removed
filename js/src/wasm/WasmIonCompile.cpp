@@ -812,104 +812,17 @@ class FunctionCompiler {
     return ins;
   }
 
-  MDefinition* loadSplatSimd128(Scalar::Type viewType,
-                                const LinearMemoryAddress<MDefinition*>& addr,
-                                wasm::SimdOp splatOp) {
-    if (inDeadCode()) {
-      return nullptr;
-    }
+  
 
-    MemoryAccessDesc access(viewType, addr.align, addr.offset,
-                            bytecodeIfNotAsmJS());
-
-    
-    if (viewType == Scalar::Float64) {
-      access.setSplatSimd128Load();
-      return load(addr.base, &access, ValType::V128);
-    }
-
-    ValType resultType = ValType::I32;
-    if (viewType == Scalar::Float32) {
-      resultType = ValType::F32;
-      splatOp = wasm::SimdOp::F32x4Splat;
-    }
-    auto* scalar = load(addr.base, &access, resultType);
-    if (!inDeadCode() && !scalar) {
-      return nullptr;
-    }
-    return scalarToSimd128(scalar, splatOp);
-  }
-
-  MDefinition* loadExtendSimd128(const LinearMemoryAddress<MDefinition*>& addr,
-                                 wasm::SimdOp op) {
-    if (inDeadCode()) {
-      return nullptr;
-    }
-
-    
-    
-    MemoryAccessDesc access(Scalar::Float64, addr.align, addr.offset,
-                            bytecodeIfNotAsmJS());
-    access.setWidenSimd128Load(op);
-    return load(addr.base, &access, ValType::V128);
-  }
-
-  MDefinition* loadZeroSimd128(Scalar::Type viewType, size_t numBytes,
-                               const LinearMemoryAddress<MDefinition*>& addr) {
-    if (inDeadCode()) {
-      return nullptr;
-    }
-
-    MemoryAccessDesc access(viewType, addr.align, addr.offset,
-                            bytecodeIfNotAsmJS());
-    access.setZeroExtendSimd128Load();
-    return load(addr.base, &access, ValType::V128);
-  }
-
-  MDefinition* loadLaneSimd128(uint32_t laneSize,
-                               const LinearMemoryAddress<MDefinition*>& addr,
-                               uint32_t laneIndex, MDefinition* src) {
-    if (inDeadCode()) {
-      return nullptr;
-    }
-
-    MemoryAccessDesc access(Scalar::Simd128, addr.align, addr.offset,
-                            bytecodeIfNotAsmJS());
-    MWasmLoadTls* memoryBase = maybeLoadMemoryBase();
-    MDefinition* base = addr.base;
-    MOZ_ASSERT(!moduleEnv_.isAsmJS());
-    checkOffsetAndAlignmentAndBounds(&access, &base);
-    MInstruction* load = MWasmLoadLaneSimd128::New(
-        alloc(), memoryBase, base, access, laneSize, laneIndex, src);
-    if (!load) {
-      return nullptr;
-    }
-    curBlock_->add(load);
-    return load;
-  }
-
-  void storeLaneSimd128(uint32_t laneSize,
-                        const LinearMemoryAddress<MDefinition*>& addr,
-                        uint32_t laneIndex, MDefinition* src) {
-    if (inDeadCode()) {
-      return;
-    }
-    MemoryAccessDesc access(Scalar::Simd128, addr.align, addr.offset,
-                            bytecodeIfNotAsmJS());
-    MWasmLoadTls* memoryBase = maybeLoadMemoryBase();
-    MDefinition* base = addr.base;
-    MOZ_ASSERT(!moduleEnv_.isAsmJS());
-    checkOffsetAndAlignmentAndBounds(&access, &base);
-    MInstruction* store = MWasmStoreLaneSimd128::New(
-        alloc(), memoryBase, base, access, laneSize, laneIndex, src);
-    if (!store) {
-      return;
-    }
-    curBlock_->add(store);
-  }
 #endif  
 
+  
+
+  
+  
+
  private:
+  
   MWasmLoadTls* maybeLoadMemoryBase() {
     MWasmLoadTls* load = nullptr;
 #ifdef JS_CODEGEN_X86
@@ -924,6 +837,22 @@ class FunctionCompiler {
     return load;
   }
 
+ public:
+  
+  
+  MWasmHeapBase* memoryBase() {
+    MWasmHeapBase* base = nullptr;
+    AliasSet aliases = !moduleEnv_.memory->canMovingGrow()
+                           ? AliasSet::None()
+                           : AliasSet::Load(AliasSet::WasmHeapMeta);
+    base = MWasmHeapBase::New(alloc(), tlsPointer_, aliases);
+    curBlock_->add(base);
+    return base;
+  }
+
+ private:
+  
+  
   MWasmLoadTls* maybeLoadBoundsCheckLimit(MIRType type) {
 #ifdef JS_64BIT
     MOZ_ASSERT(type == MIRType::Int32 || type == MIRType::Int64);
@@ -943,18 +872,8 @@ class FunctionCompiler {
     return load;
   }
 
- public:
-  MWasmHeapBase* memoryBase() {
-    MWasmHeapBase* base = nullptr;
-    AliasSet aliases = !moduleEnv_.memory->canMovingGrow()
-                           ? AliasSet::None()
-                           : AliasSet::Load(AliasSet::WasmHeapMeta);
-    base = MWasmHeapBase::New(alloc(), tlsPointer_, aliases);
-    curBlock_->add(base);
-    return base;
-  }
-
- private:
+  
+  
   
   bool needAlignmentCheck(MemoryAccessDesc* access, MDefinition* base,
                           bool* mustAdd) {
@@ -965,6 +884,7 @@ class FunctionCompiler {
       return false;
     }
 
+    
     if (base->isConstant()) {
       int32_t ptr = base->toConstant()->toInt32();
       
@@ -973,22 +893,20 @@ class FunctionCompiler {
       }
     }
 
+    
+    
     *mustAdd = (access->offset() & (access->byteSize() - 1)) != 0;
     return true;
   }
 
-  void checkOffsetAndAlignmentAndBounds(MemoryAccessDesc* access,
-                                        MDefinition** base) {
-    MOZ_ASSERT(!inDeadCode());
-    MOZ_ASSERT(!moduleEnv_.isAsmJS());
-
+  
+  
+  
+  
+  void foldConstantPointer(MemoryAccessDesc* access, MDefinition** base) {
     uint32_t offsetGuardLimit =
         GetMaxOffsetGuardLimit(moduleEnv_.hugeMemoryEnabled());
 
-    
-    
-    
-    
     if ((*base)->isConstant()) {
       uint32_t basePtr = (*base)->toConstant()->toInt32();
       uint32_t offset = access->offset();
@@ -1000,25 +918,22 @@ class FunctionCompiler {
         access->setOffset(access->offset() + basePtr);
       }
     }
+  }
 
-    bool mustAdd = false;
-    bool alignmentCheck = needAlignmentCheck(access, *base, &mustAdd);
+  
+  
+  void maybeComputeEffectiveAddress(MemoryAccessDesc* access,
+                                    MDefinition** base, bool mustAddOffset) {
+    uint32_t offsetGuardLimit =
+        GetMaxOffsetGuardLimit(moduleEnv_.hugeMemoryEnabled());
 
-    
-    
-    
-    
-    
-    if (access->offset() >= offsetGuardLimit || mustAdd ||
+    if (access->offset() >= offsetGuardLimit || mustAddOffset ||
         !JitOptions.wasmFoldOffsets) {
       *base = computeEffectiveAddress(*base, access);
     }
+  }
 
-    if (alignmentCheck) {
-      curBlock_->add(MWasmAlignmentCheck::New(
-          alloc(), *base, access->byteSize(), bytecodeOffset()));
-    }
-
+  MWasmLoadTls* needBoundsCheck(bool* limitIs64Bits_) {
 #ifdef JS_64BIT
     
     
@@ -1027,45 +942,93 @@ class FunctionCompiler {
     
     
     
-    bool check64 = !moduleEnv_.memory->boundsCheckLimitIs32Bits() &&
-                   ArrayBufferObject::maxBufferByteLength() >= 0x100000000;
+    
+    
+    bool limitIs64Bits =
+        !moduleEnv_.memory->boundsCheckLimitIs32Bits() &&
+        ArrayBufferObject::maxBufferByteLength() >= 0x100000000;
 #else
-    bool check64 = false;
+    
+    
+    bool limitIs64Bits = false;
 #endif
-    MWasmLoadTls* boundsCheckLimit =
-        maybeLoadBoundsCheckLimit(check64 ? MIRType::Int64 : MIRType::Int32);
+    MWasmLoadTls* boundsCheckLimit = maybeLoadBoundsCheckLimit(
+        limitIs64Bits ? MIRType::Int64 : MIRType::Int32);
     if (boundsCheckLimit) {
-      
-      
-      
-      
-      MDefinition* actualBase = *base;
+      *limitIs64Bits_ = limitIs64Bits;
+    }
+    return boundsCheckLimit;
+  }
 
-      
-      
+  void performBoundsCheck(MDefinition** base, MWasmLoadTls* boundsCheckLimit,
+                          bool limitIs64Bits) {
+    
+    
+    
+    
+    MDefinition* actualBase = *base;
 
-      if (check64) {
-        auto* extended = MWasmExtendU32Index::New(alloc(), actualBase);
-        curBlock_->add(extended);
-        actualBase = extended;
+    
+    
+
+    if (limitIs64Bits) {
+      auto* extended = MWasmExtendU32Index::New(alloc(), actualBase);
+      curBlock_->add(extended);
+      actualBase = extended;
+    }
+    auto* ins = MWasmBoundsCheck::New(alloc(), actualBase, boundsCheckLimit,
+                                      bytecodeOffset());
+    curBlock_->add(ins);
+    actualBase = ins;
+
+    
+    
+    
+
+    if (JitOptions.spectreIndexMasking) {
+      if (limitIs64Bits) {
+        auto* wrapped = MWasmWrapU32Index::New(alloc(), actualBase);
+        curBlock_->add(wrapped);
+        actualBase = wrapped;
       }
-      auto* ins = MWasmBoundsCheck::New(alloc(), actualBase, boundsCheckLimit,
-                                        bytecodeOffset());
-      curBlock_->add(ins);
-      actualBase = ins;
+      *base = actualBase;
+    }
+  }
 
-      
-      
-      
+  
+  
+  void checkOffsetAndAlignmentAndBounds(MemoryAccessDesc* access,
+                                        MDefinition** base) {
+    MOZ_ASSERT(!inDeadCode());
+    MOZ_ASSERT(!moduleEnv_.isAsmJS());
 
-      if (JitOptions.spectreIndexMasking) {
-        if (check64) {
-          auto* wrapped = MWasmWrapU32Index::New(alloc(), actualBase);
-          curBlock_->add(wrapped);
-          actualBase = wrapped;
-        }
-        *base = actualBase;
-      }
+    
+    
+    foldConstantPointer(access, base);
+
+    
+    
+    bool mustAddOffsetForAlignmentCheck = false;
+    bool alignmentCheck =
+        needAlignmentCheck(access, *base, &mustAddOffsetForAlignmentCheck);
+
+    
+    
+    
+    maybeComputeEffectiveAddress(access, base, mustAddOffsetForAlignmentCheck);
+
+    
+    if (alignmentCheck) {
+      curBlock_->add(MWasmAlignmentCheck::New(
+          alloc(), *base, access->byteSize(), bytecodeOffset()));
+    }
+
+    
+    
+    bool limitIs64Bits = false;
+    MWasmLoadTls* boundsCheckLimit = needBoundsCheck(&limitIs64Bits);
+    if (boundsCheckLimit) {
+      performBoundsCheck(base, boundsCheckLimit, limitIs64Bits);
     }
   }
 
@@ -1079,6 +1042,7 @@ class FunctionCompiler {
   }
 
  public:
+  
   MDefinition* computeEffectiveAddress(MDefinition* base,
                                        MemoryAccessDesc* access) {
     if (inDeadCode()) {
@@ -1246,6 +1210,106 @@ class FunctionCompiler {
 
     return binop;
   }
+
+#ifdef ENABLE_WASM_SIMD
+  MDefinition* loadSplatSimd128(Scalar::Type viewType,
+                                const LinearMemoryAddress<MDefinition*>& addr,
+                                wasm::SimdOp splatOp) {
+    if (inDeadCode()) {
+      return nullptr;
+    }
+
+    MemoryAccessDesc access(viewType, addr.align, addr.offset,
+                            bytecodeIfNotAsmJS());
+
+    
+    if (viewType == Scalar::Float64) {
+      access.setSplatSimd128Load();
+      return load(addr.base, &access, ValType::V128);
+    }
+
+    ValType resultType = ValType::I32;
+    if (viewType == Scalar::Float32) {
+      resultType = ValType::F32;
+      splatOp = wasm::SimdOp::F32x4Splat;
+    }
+    auto* scalar = load(addr.base, &access, resultType);
+    if (!inDeadCode() && !scalar) {
+      return nullptr;
+    }
+    return scalarToSimd128(scalar, splatOp);
+  }
+
+  MDefinition* loadExtendSimd128(const LinearMemoryAddress<MDefinition*>& addr,
+                                 wasm::SimdOp op) {
+    if (inDeadCode()) {
+      return nullptr;
+    }
+
+    
+    
+    MemoryAccessDesc access(Scalar::Float64, addr.align, addr.offset,
+                            bytecodeIfNotAsmJS());
+    access.setWidenSimd128Load(op);
+    return load(addr.base, &access, ValType::V128);
+  }
+
+  MDefinition* loadZeroSimd128(Scalar::Type viewType, size_t numBytes,
+                               const LinearMemoryAddress<MDefinition*>& addr) {
+    if (inDeadCode()) {
+      return nullptr;
+    }
+
+    MemoryAccessDesc access(viewType, addr.align, addr.offset,
+                            bytecodeIfNotAsmJS());
+    access.setZeroExtendSimd128Load();
+    return load(addr.base, &access, ValType::V128);
+  }
+
+  MDefinition* loadLaneSimd128(uint32_t laneSize,
+                               const LinearMemoryAddress<MDefinition*>& addr,
+                               uint32_t laneIndex, MDefinition* src) {
+    if (inDeadCode()) {
+      return nullptr;
+    }
+
+    MemoryAccessDesc access(Scalar::Simd128, addr.align, addr.offset,
+                            bytecodeIfNotAsmJS());
+    MWasmLoadTls* memoryBase = maybeLoadMemoryBase();
+    MDefinition* base = addr.base;
+    MOZ_ASSERT(!moduleEnv_.isAsmJS());
+    checkOffsetAndAlignmentAndBounds(&access, &base);
+    MInstruction* load = MWasmLoadLaneSimd128::New(
+        alloc(), memoryBase, base, access, laneSize, laneIndex, src);
+    if (!load) {
+      return nullptr;
+    }
+    curBlock_->add(load);
+    return load;
+  }
+
+  void storeLaneSimd128(uint32_t laneSize,
+                        const LinearMemoryAddress<MDefinition*>& addr,
+                        uint32_t laneIndex, MDefinition* src) {
+    if (inDeadCode()) {
+      return;
+    }
+    MemoryAccessDesc access(Scalar::Simd128, addr.align, addr.offset,
+                            bytecodeIfNotAsmJS());
+    MWasmLoadTls* memoryBase = maybeLoadMemoryBase();
+    MDefinition* base = addr.base;
+    MOZ_ASSERT(!moduleEnv_.isAsmJS());
+    checkOffsetAndAlignmentAndBounds(&access, &base);
+    MInstruction* store = MWasmStoreLaneSimd128::New(
+        alloc(), memoryBase, base, access, laneSize, laneIndex, src);
+    if (!store) {
+      return;
+    }
+    curBlock_->add(store);
+  }
+#endif  
+
+  
 
   MDefinition* loadGlobalVar(unsigned globalDataOffset, bool isConst,
                              bool isIndirect, MIRType type) {

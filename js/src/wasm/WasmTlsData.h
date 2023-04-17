@@ -54,16 +54,6 @@ struct TlsData {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   uintptr_t boundsCheckLimit;
 
   
