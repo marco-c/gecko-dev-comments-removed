@@ -30,21 +30,6 @@ add_task(async function testExecuteScript() {
 
   async function background() {
     try {
-      
-      
-      
-      
-      const promiseRuntimeOnMessage = new Promise(resolve => {
-        browser.runtime.onMessage.addListener(message => {
-          browser.test.assertEq(
-            "script ran",
-            message,
-            "Expected runtime message"
-          );
-          resolve();
-        });
-      });
-
       let [tab] = await browser.tabs.query({
         active: true,
         currentWindow: true,
@@ -401,7 +386,16 @@ add_task(async function testExecuteScript() {
           await browser.tabs.remove(tab.id);
         }),
 
-        promiseRuntimeOnMessage,
+        new Promise(resolve => {
+          browser.runtime.onMessage.addListener(message => {
+            browser.test.assertEq(
+              "script ran",
+              message,
+              "Expected runtime message"
+            );
+            resolve();
+          });
+        }),
       ]);
 
       browser.test.notifyPass("executeScript");
