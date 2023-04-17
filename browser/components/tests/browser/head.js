@@ -26,18 +26,6 @@ const BROWSER_GLUE = Cc["@mozilla.org/browser/browserglue;1"].getService()
 
 
 
-let didMockWin7 = false;
-function mockWin7(value) {
-  if (!didMockWin7) {
-    sinon.stub(BROWSER_GLUE, "_onWindows7");
-    registerCleanupFunction(() => BROWSER_GLUE._onWindows7.restore());
-    didMockWin7 = true;
-  }
-  BROWSER_GLUE._onWindows7.returns(value);
-}
-
-
-
 function waitForDialog(callback = win => win.close()) {
   return BrowserTestUtils.promiseAlertDialog(
     null,

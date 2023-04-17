@@ -3982,11 +3982,6 @@ BrowserGlue.prototype = {
     );
   },
 
-  
-  _onWindows7() {
-    return AppConstants.isPlatformAndVersionAtMost("win", "6.1");
-  },
-
   async _maybeShowDefaultBrowserPrompt() {
     
     
@@ -4019,9 +4014,6 @@ BrowserGlue.prototype = {
       }
       if (!Services.policies.isAllowed("postUpdateCustomPage")) {
         return "disallow-postUpdate";
-      }
-      if (this._onWindows7()) {
-        return "win7";
       }
 
       return NimbusFeatures.upgradeDialog.isEnabled() ? "" : "disabled";
