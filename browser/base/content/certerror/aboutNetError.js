@@ -1018,23 +1018,6 @@ function setCertErrorDetails(event) {
       }
       break;
   }
-
-  
-  
-  let cssClass = getCSSClass();
-  
-  if (
-    cssClass != "badStsCert" &&
-    
-    window.parent == window &&
-    
-    !clockSkew &&
-    
-    failedCertInfo.errorCodeString !=
-      "MOZILLA_PKIX_ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED"
-  ) {
-    document.body.classList.add("caution");
-  }
 }
 
 
