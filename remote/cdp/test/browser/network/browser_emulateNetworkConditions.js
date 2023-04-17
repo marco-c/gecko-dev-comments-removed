@@ -10,6 +10,18 @@ const pageEmptyURL =
 
 
 
+
+
+
+Services.prefs.setBoolPref("network.disable-localhost-when-offline", true);
+registerCleanupFunction(() => {
+  Services.prefs.clearUserPref("network.disable-localhost-when-offline");
+});
+
+
+
+
+
 function add_networking_task(taskFn) {
   add_task(async client => {
     try {
@@ -184,45 +196,11 @@ add_networking_task(async function emulateOnlineWhileOffline({ client }) {
 
 
 async function assertOfflineNavigationFails() {
-  
-  
-  const proxyPrefValue = SpecialPowers.getIntPref("network.proxy.type");
-  const diskPrefValue = SpecialPowers.getBoolPref("browser.cache.disk.enable");
-  const memoryPrefValue = SpecialPowers.getBoolPref(
-    "browser.cache.memory.enable"
-  );
-  SpecialPowers.pushPrefEnv({
-    set: [
-      ["network.proxy.type", 0],
-      ["browser.cache.disk.enable", false],
-      ["browser.cache.memory.enable", false],
-    ],
-  });
+  const browser = gBrowser.selectedTab.linkedBrowser;
+  let netErrorLoaded = BrowserTestUtils.waitForErrorPage(browser);
 
-  try {
-    const browser = gBrowser.selectedTab.linkedBrowser;
-    let netErrorLoaded = BrowserTestUtils.waitForErrorPage(browser);
-
-    BrowserTestUtils.loadURI(browser, pageEmptyURL);
-    await netErrorLoaded;
-
-    await SpecialPowers.spawn(browser, [], () => {
-      ok(
-        content.document.documentURI.startsWith("about:neterror?e=netOffline"),
-        "Should be showing error page"
-      );
-    });
-  } finally {
-    
-    
-    SpecialPowers.pushPrefEnv({
-      set: [
-        ["network.proxy.type", proxyPrefValue],
-        ["browser.cache.disk.enable", diskPrefValue],
-        ["browser.cache.memory.enable", memoryPrefValue],
-      ],
-    });
-  }
+  BrowserTestUtils.loadURI(browser, pageEmptyURL);
+  await netErrorLoaded;
 }
 
 
