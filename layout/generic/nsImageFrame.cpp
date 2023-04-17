@@ -90,6 +90,7 @@
 
 #include "mozilla/dom/Link.h"
 #include "mozilla/dom/HTMLAnchorElement.h"
+#include "mozilla/dom/BrowserChild.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -1063,6 +1064,12 @@ void nsImageFrame::MaybeDecodeForPredictedSize() {
   LayoutDeviceToScreenScale2D resolutionToScreen(
       presShell->GetCumulativeResolution() *
       nsLayoutUtils::GetTransformToAncestorScaleExcludingAnimated(this));
+
+  
+  if (BrowserChild* browserChild = BrowserChild::GetFrom(presShell)) {
+    resolutionToScreen.xScale *= browserChild->GetEffectsInfo().mScaleX;
+    resolutionToScreen.yScale *= browserChild->GetEffectsInfo().mScaleY;
+  }
 
   
   const nsPoint offset =
