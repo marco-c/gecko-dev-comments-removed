@@ -1,5 +1,5 @@
-load(libdir + "asserts.js");
 
+load(libdir + "asserts.js");
 function main() {
   class Base {}
 
