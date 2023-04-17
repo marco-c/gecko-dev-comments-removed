@@ -137,7 +137,8 @@ void nsHistory::GetState(JSContext* aCx, JS::MutableHandle<JS::Value> aResult,
   aResult.setNull();
 }
 
-void nsHistory::Go(int32_t aDelta, CallerType aCallerType, ErrorResult& aRv) {
+void nsHistory::Go(int32_t aDelta, nsIPrincipal& aSubjectPrincipal,
+                   ErrorResult& aRv) {
   LOG(("nsHistory::Go(%d)", aDelta));
   nsCOMPtr<nsPIDOMWindowInner> win(do_QueryReferent(mInnerWindow));
   if (!win || !win->HasActiveDocument()) {
@@ -149,7 +150,7 @@ void nsHistory::Go(int32_t aDelta, CallerType aCallerType, ErrorResult& aRv) {
     
     
     RefPtr<Location> location = win->Location();
-    return location->Reload(false, aRv);
+    return location->Reload(false, aSubjectPrincipal, aRv);
   }
 
   RefPtr<ChildSHistory> session_history = GetSessionHistory();
@@ -163,12 +164,16 @@ void nsHistory::Go(int32_t aDelta, CallerType aCallerType, ErrorResult& aRv) {
           ? win->GetWindowContext()->HasValidTransientUserGestureActivation()
           : false;
 
+  CallerType callerType = aSubjectPrincipal.IsSystemPrincipal()
+                              ? CallerType::System
+                              : CallerType::NonSystem;
+
   
   
   
   if (StaticPrefs::dom_window_history_async()) {
     session_history->AsyncGo(aDelta,  false,
-                             userActivation, aCallerType, aRv);
+                             userActivation, callerType, aRv);
   } else {
     session_history->Go(aDelta,  false,
                         userActivation, IgnoreErrors());
