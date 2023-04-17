@@ -29,10 +29,6 @@ var PKT_PANEL_OVERLAY = function(options) {
     clickHelper(`.signup-btn-firefox`, `sign_up_1`);
     clickHelper(`.signup-btn-email`, `sign_up_2`);
     clickHelper(`.pkt_ext_login`, `log_in`);
-
-    
-    
-    clickHelper(`.signup-btn-tryitnow`);
   };
 
   this.getTranslations = function() {
@@ -45,9 +41,6 @@ var PKT_PANEL_OVERLAY = function(options) {
 
     
     let queryParams = new URL(window.location.href).searchParams;
-    let controlvariant = queryParams.get(`controlvariant`);
-    let variant = queryParams.get(`variant`);
-    let loggedOutVariant = queryParams.get(`loggedOutVariant`);
     let pockethost = queryParams.get(`pockethost`) || `getpocket.com`;
     let language = queryParams
       .get(`locale`)
@@ -61,11 +54,8 @@ var PKT_PANEL_OVERLAY = function(options) {
 
     
     this.getTranslations();
-    this.dictJSON.controlvariant = controlvariant == "true" ? 1 : 0;
-    this.dictJSON.variant = variant ? variant : "undefined";
     this.dictJSON.pockethost = pockethost;
-    this.dictJSON.showlearnmore = true;
-    this.dictJSON.utmCampaign = "logged_out_save_test";
+    this.dictJSON.utmCampaign = "firefox_door_hanger_menu";
     this.dictJSON.utmSource = "control";
 
     
@@ -74,41 +64,9 @@ var PKT_PANEL_OVERLAY = function(options) {
     }
 
     
-    let variants = {
-      control: "signup_shell",
-      variant_a: "variant_a",
-      variant_b: "variant_b",
-      variant_c: "variant_c",
-      button_variant: "signup_shell",
-      button_control: "signup_shell",
-    };
-
-    let loggedOutVariantTemplate = variants[loggedOutVariant];
-
-    if (
-      loggedOutVariant === "button_variant" ||
-      loggedOutVariant === "button_control"
-    ) {
-      this.dictJSON.buttonVariant = true;
-      this.dictJSON.utmCampaign = "logged_out_button_test";
-      this.dictJSON.utmSource = "button_control";
-      if (loggedOutVariant === "button_variant") {
-        this.dictJSON.oneButton = true;
-        this.dictJSON.utmSource = "button_variant";
-      }
-    }
-
-    if (loggedOutVariantTemplate !== `signup_shell`) {
-      elBody.classList.add(`los_variant`);
-      elBody.classList.add(`los_${loggedOutVariantTemplate}`);
-    }
-
-    
     elBody.append(
       parser.parseFromString(
-        Handlebars.templates[loggedOutVariantTemplate || variants.control](
-          this.dictJSON
-        ),
+        Handlebars.templates.signup_shell(this.dictJSON),
         `text/html`
       ).documentElement
     );
