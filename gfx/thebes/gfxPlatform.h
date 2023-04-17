@@ -511,11 +511,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   void UpdateCanUseHardwareVideoDecoding();
 
   
-  void GetCompositorBackends(
-      bool useAcceleration,
-      nsTArray<mozilla::layers::LayersBackend>& aBackends);
-
-  
 
 
 
