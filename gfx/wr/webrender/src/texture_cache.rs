@@ -17,7 +17,6 @@ use crate::internal_types::{
     TextureCacheAllocInfo, TextureCacheUpdate, TextureCacheCategory,
 };
 use crate::lru_cache::LRUCache;
-use crate::picture_textures::{PictureTextures, PictureCacheTextureHandle};
 use crate::profiler::{self, TransactionProfile};
 use crate::render_backend::{FrameStamp, FrameId};
 use crate::resource_cache::{CacheItem, CachedImageData};
@@ -207,9 +206,6 @@ impl CacheEntry {
 pub enum TextureCacheHandle {
     
     Empty,
-
-    
-    Picture(PictureCacheTextureHandle),
 
     
     Auto(WeakFreeListHandle<AutoCacheEntryMarker>),
@@ -564,9 +560,6 @@ pub struct TextureCache {
     shared_textures: SharedTextures,
 
     
-    pub picture_textures: PictureTextures,
-
-    
     max_texture_size: i32,
 
     
@@ -580,12 +573,12 @@ pub struct TextureCache {
     debug_flags: DebugFlags,
 
     
-    next_id: CacheTextureId,
+    pub next_id: CacheTextureId,
 
     
     
     #[cfg_attr(all(feature = "serde", any(feature = "capture", feature = "replay")), serde(skip))]
-    pending_updates: TextureUpdateList,
+    pub pending_updates: TextureUpdateList,
 
     
     now: FrameStamp,
@@ -615,11 +608,9 @@ impl TextureCache {
     pub fn new(
         max_texture_size: i32,
         tiling_threshold: i32,
-        default_picture_tile_size: DeviceIntSize,
         color_formats: TextureFormatPair<ImageFormat>,
         swizzle: Option<SwizzleSettings>,
         config: &TextureCacheConfig,
-        picture_texture_filter: TextureFilter,
     ) -> Self {
         let pending_updates = TextureUpdateList::new();
 
@@ -634,10 +625,6 @@ impl TextureCache {
 
         TextureCache {
             shared_textures: SharedTextures::new(color_formats, config),
-            picture_textures: PictureTextures::new(
-                default_picture_tile_size,
-                picture_texture_filter,
-            ),
             max_texture_size,
             tiling_threshold,
             swizzle,
@@ -663,11 +650,9 @@ impl TextureCache {
         let mut cache = Self::new(
             max_texture_size,
             max_texture_size,
-            crate::picture::TILE_SIZE_DEFAULT,
             TextureFormatPair::from(image_format),
             None,
             &TextureCacheConfig::DEFAULT,
-            TextureFilter::Nearest,
         );
         let mut now = FrameStamp::first(DocumentId::new(IdNamespace(1), 1));
         now.advance();
@@ -677,7 +662,6 @@ impl TextureCache {
 
     pub fn set_debug_flags(&mut self, flags: DebugFlags) {
         self.debug_flags = flags;
-        self.picture_textures.set_debug_flags(flags);
     }
 
     
@@ -702,7 +686,6 @@ impl TextureCache {
         }
 
         
-        self.picture_textures.clear(&mut self.pending_updates);
         self.shared_textures.clear(&mut self.pending_updates);
         self.pending_updates.note_clear();
     }
@@ -713,21 +696,15 @@ impl TextureCache {
         profile_scope!("begin_frame");
         self.now = stamp;
 
-        self.picture_textures.begin_frame(stamp);
-
         
         
         
         
         self.evict_items_from_cache_if_required(profile);
-        self.expire_old_picture_cache_tiles();
     }
 
     pub fn end_frame(&mut self, profile: &mut TransactionProfile) {
         debug_assert!(self.now.is_valid());
-        self.picture_textures.gc(
-            &mut self.pending_updates,
-        );
 
         let updates = &mut self.pending_updates; 
         let callback = &mut|texture_id| { updates.push_free(texture_id); };
@@ -761,8 +738,6 @@ impl TextureCache {
         profile.set(profiler::ATLAS_RGBA8_GLYPHS_PIXELS, self.shared_textures.color8_glyphs.allocated_space());
         profile.set(profiler::ATLAS_RGBA8_GLYPHS_TEXTURES, self.shared_textures.color8_glyphs.allocated_textures());
 
-        self.picture_textures.update_profile(profile);
-
         let shared_bytes = [
             BudgetType::SharedColor8Linear,
             BudgetType::SharedColor8Nearest,
@@ -789,9 +764,6 @@ impl TextureCache {
         let now = self.now;
         let entry = match handle {
             TextureCacheHandle::Empty => None,
-            TextureCacheHandle::Picture(_) => {
-                unreachable!();
-            },
             TextureCacheHandle::Auto(handle) => {
                 
                 
@@ -810,24 +782,9 @@ impl TextureCache {
         })
     }
 
-    pub fn request_picture_tile(&mut self, handle: &TextureCacheHandle, gpu_cache: &mut GpuCache) -> bool {
-        match handle {
-            TextureCacheHandle::Picture(handle) => {
-                self.picture_textures.request(handle, gpu_cache)
-            }
-            TextureCacheHandle::Empty => {
-                true
-            }
-            _ => {
-                unreachable!();
-            }
-        }
-    }
-
     fn get_entry_opt(&self, handle: &TextureCacheHandle) -> Option<&CacheEntry> {
         match handle {
             TextureCacheHandle::Empty => None,
-            TextureCacheHandle::Picture(_) => unreachable!(),
             TextureCacheHandle::Auto(handle) => self.lru_cache.get_opt(handle),
             TextureCacheHandle::Manual(handle) => self.manual_entries.get_opt(handle),
         }
@@ -836,7 +793,6 @@ impl TextureCache {
     fn get_entry_opt_mut(&mut self, handle: &TextureCacheHandle) -> Option<&mut CacheEntry> {
         match handle {
             TextureCacheHandle::Empty => None,
-            TextureCacheHandle::Picture(_) => unreachable!(),
             TextureCacheHandle::Auto(handle) => self.lru_cache.get_opt_mut(handle),
             TextureCacheHandle::Manual(handle) => self.manual_entries.get_opt_mut(handle),
         }
@@ -865,11 +821,6 @@ impl TextureCache {
     #[cfg(feature = "replay")]
     pub fn swizzle_settings(&self) -> Option<SwizzleSettings> {
         self.swizzle
-    }
-
-    #[cfg(feature = "replay")]
-    pub fn picture_texture_filter(&self) -> TextureFilter {
-        self.picture_textures.filter()
     }
 
     pub fn pending_updates(&mut self) -> TextureUpdateList {
@@ -964,17 +915,6 @@ impl TextureCache {
 
     
     
-    pub fn picture_tile_is_allocated(&self, handle: &TextureCacheHandle) -> bool {
-        match handle {
-            TextureCacheHandle::Picture(handle) => {
-                self.picture_textures.entry_exists(handle)
-            }
-            _ => false
-        }
-    }
-
-    
-    
     pub fn is_recently_used(&self, handle: &TextureCacheHandle, margin: usize) -> bool {
         self.get_entry_opt(handle).map_or(false, |entry| {
             entry.last_access.frame_id() + margin >= self.now.frame_id()
@@ -987,15 +927,6 @@ impl TextureCache {
         self.get_entry_opt(handle).map(|entry| {
             (entry.input_format.bytes_per_pixel() * entry.size.area()) as usize
         })
-    }
-
-    pub fn get_picture_texture(&self, handle: &TextureCacheHandle) -> TextureSource {
-        match handle {
-            TextureCacheHandle::Picture(handle) => {
-                self.picture_textures.get_texture_source(handle)
-            }
-            _ => unreachable!(),
-        }
     }
 
     
@@ -1090,13 +1021,6 @@ impl TextureCache {
 
     pub fn dump_alpha8_linear_as_svg(&self, output: &mut dyn std::io::Write) -> std::io::Result<()> {
         self.shared_textures.alpha8_linear.dump_as_svg(output)
-    }
-
-    
-    
-    
-    fn expire_old_picture_cache_tiles(&mut self) {
-        self.picture_textures.expire_old_tiles(&mut self.pending_updates);
     }
 
     
@@ -1505,30 +1429,11 @@ impl TextureCache {
                 *handle = TextureCacheHandle::Manual(new_handle);
                 None
             },
-            (TextureCacheHandle::Picture(_), _) => {
-                panic!("Picture cache entries are managed separately and shouldn't appear in this function");
-            },
         };
         if let Some(old_entry) = old_entry {
             old_entry.evict();
             self.free(&old_entry);
         }
-    }
-
-    
-    pub fn update_picture_cache(
-        &mut self,
-        tile_size: DeviceIntSize,
-        handle: &mut TextureCacheHandle,
-        gpu_cache: &mut GpuCache,
-    ) {
-        self.picture_textures.update(
-            tile_size,
-            handle,
-            gpu_cache,
-            &mut self.next_id,
-            &mut self.pending_updates,
-        );
     }
 
     pub fn shared_alpha_expected_format(&self) -> ImageFormat {
@@ -1539,10 +1444,6 @@ impl TextureCache {
         self.shared_textures.color8_linear.texture_parameters().formats.external
     }
 
-
-    pub fn default_picture_tile_size(&self) -> DeviceIntSize {
-        self.picture_textures.default_tile_size()
-    }
 
     #[cfg(test)]
     pub fn total_allocated_bytes_for_testing(&self) -> usize {
