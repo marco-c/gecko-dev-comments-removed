@@ -3201,6 +3201,9 @@ class StringIdChars {
 #endif  
 };
 
+already_AddRefed<Promise> CreateRejectedPromiseFromThrownException(
+    JSContext* aCx, ErrorResult& aError);
+
 }  
 
 }  
