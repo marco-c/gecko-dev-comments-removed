@@ -118,10 +118,20 @@ inline void SetReservedSlot(JSObject* obj, size_t slot, const Value& value) {
 
 
 template <typename T>
+inline T* GetMaybePtrFromReservedSlot(JSObject* obj, size_t slot) {
+  Value v = GetReservedSlot(obj, slot);
+  return v.isUndefined() ? nullptr : static_cast<T*>(v.toPrivate());
+}
+
+
+
+
+
+
+template <typename T>
 inline T* GetObjectISupports(JSObject* obj) {
   MOZ_ASSERT(GetClass(obj)->slot0IsISupports());
-  Value v = GetReservedSlot(obj, 0);
-  return v.isUndefined() ? nullptr : static_cast<T*>(v.toPrivate());
+  return GetMaybePtrFromReservedSlot<T>(obj, 0);
 }
 
 
