@@ -57,6 +57,10 @@ if CONFIG["OS_ARCH"] == "WINNT":
         "xul.dll",
     ]
 
+    
+    
+    LINK_FLAGS["CETCOMPAT"] = []
+
 if CONFIG["MOZ_SANDBOX"] and CONFIG["OS_TARGET"] == "Darwin":
     
     LOCAL_INCLUDES += [

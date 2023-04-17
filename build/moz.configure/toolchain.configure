@@ -1949,6 +1949,24 @@ set_config("MOZ_HARDENING_LDFLAGS_JS", security_hardening_cflags.js_ldflags)
 
 
 
+
+
+@depends(c_compiler, target)
+def cet_ldflags(c_compiler, target):
+    ldflags = []
+    if (
+        c_compiler.type == "clang-cl"
+        and c_compiler.version >= "11"
+        and target.cpu == "x86_64"
+    ):
+        ldflags.append("-CETCOMPAT")
+    return ldflags
+
+
+set_config("MOZ_CETCOMPAT_LDFLAGS", cet_ldflags)
+
+
+
 @depends(c_compiler)
 def frame_pointer_flags(compiler):
     if compiler.type == "clang-cl":
