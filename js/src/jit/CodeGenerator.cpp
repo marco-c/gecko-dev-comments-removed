@@ -5351,8 +5351,8 @@ void CodeGenerator::visitCallGeneric(LCallGeneric* call) {
 
   
   if (call->mir()->needsClassCheck()) {
-    masm.branchTestObjClass(Assembler::NotEqual, calleereg, &JSFunction::class_,
-                            nargsreg, calleereg, &invoke);
+    masm.branchTestObjIsFunction(Assembler::NotEqual, calleereg, nargsreg,
+                                 calleereg, &invoke);
   }
 
   
@@ -5936,8 +5936,8 @@ void CodeGenerator::emitApplyGeneric(T* apply) {
 
   
   if (!apply->hasSingleTarget()) {
-    masm.branchTestObjClass(Assembler::NotEqual, calleereg, &JSFunction::class_,
-                            objreg, calleereg, &invoke);
+    masm.branchTestObjIsFunction(Assembler::NotEqual, calleereg, objreg,
+                                 calleereg, &invoke);
   }
 
   
@@ -14850,8 +14850,8 @@ void CodeGenerator::visitFinishBoundFunctionInit(
       FunctionExtended::offsetOfBoundFunctionLengthSlot();
 
   
-  masm.branchTestObjClass(Assembler::NotEqual, target, &JSFunction::class_,
-                          temp0, target, slowPath);
+  masm.branchTestObjIsFunction(Assembler::NotEqual, target, temp0, target,
+                               slowPath);
 
   
   masm.loadObjProto(bound, temp0);
@@ -14971,8 +14971,8 @@ void CodeGenerator::visitSuperFunction(LSuperFunction* lir) {
 
 #ifdef DEBUG
   Label classCheckDone;
-  masm.branchTestObjClass(Assembler::Equal, callee, &JSFunction::class_, temp,
-                          callee, &classCheckDone);
+  masm.branchTestObjIsFunction(Assembler::Equal, callee, temp, callee,
+                               &classCheckDone);
   masm.assumeUnreachable("Unexpected non-JSFunction callee in JSOp::SuperFun");
   masm.bind(&classCheckDone);
 #endif

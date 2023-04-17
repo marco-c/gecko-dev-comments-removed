@@ -1676,7 +1676,7 @@ void MacroAssembler::typeOfObject(Register obj, Register scratch, Label* slow,
   branchTestClassIsProxy(true, scratch, slow);
 
   
-  branchPtr(Assembler::Equal, scratch, ImmPtr(&JSFunction::class_), isCallable);
+  branchTestClassIsFunction(Assembler::Equal, scratch, isCallable);
 
   
   Address flags(scratch, JSClass::offsetOfFlags());
@@ -1706,8 +1706,7 @@ void MacroAssembler::isCallableOrConstructor(bool isCallable, Register obj,
   
   
   
-  branchPtr(Assembler::NotEqual, output, ImmPtr(&JSFunction::class_),
-            &notFunction);
+  branchTestClassIsFunction(Assembler::NotEqual, output, &notFunction);
   if (isCallable) {
     move32(Imm32(1), output);
   } else {
@@ -1814,8 +1813,7 @@ void MacroAssembler::setIsCrossRealmArrayConstructor(Register obj,
             &isFalse);
 
   
-  branchTestObjClass(Assembler::NotEqual, obj, &JSFunction::class_, output, obj,
-                     &isFalse);
+  branchTestObjIsFunction(Assembler::NotEqual, obj, output, obj, &isFalse);
 
   
   branchPtr(Assembler::NotEqual,
@@ -1836,8 +1834,7 @@ void MacroAssembler::setIsDefinitelyTypedArrayConstructor(Register obj,
   Label isFalse, isTrue, done;
 
   
-  branchTestObjClass(Assembler::NotEqual, obj, &JSFunction::class_, output, obj,
-                     &isFalse);
+  branchTestObjIsFunction(Assembler::NotEqual, obj, output, obj, &isFalse);
 
   
   loadPtr(Address(obj, JSFunction::offsetOfNativeOrEnv()), output);
