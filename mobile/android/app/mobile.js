@@ -391,12 +391,6 @@ pref("apz.touch_start_tolerance", "0.06");
 
 pref("layers.low-precision-buffer", true);
 
-
-
-
-
-pref("layers.max-active", 20);
-
 pref("notification.feature.enabled", true);
 
 
