@@ -101,13 +101,6 @@ var testSpec = protocol.generateActorSpec({
       },
       response: {},
     },
-    waitForHighlighterEvent: {
-      request: {
-        event: Arg(0, "string"),
-        actorID: Arg(1, "string"),
-      },
-      response: {},
-    },
     waitForEventOnNode: {
       request: {
         eventName: Arg(0, "string"),
@@ -144,12 +137,6 @@ var testSpec = protocol.generateActorSpec({
       response: {
         value: RetVal("boolean"),
       },
-    },
-    loadAndWaitForCustomEvent: {
-      request: {
-        url: Arg(0, "string"),
-      },
-      response: {},
     },
     hasNode: {
       request: {
@@ -397,18 +384,6 @@ var TestActor = protocol.ActorClassWithSpec(testSpec, {
 
 
 
-  waitForHighlighterEvent: function(event, actorID) {
-    const highlighter = this.conn.getActor(actorID);
-    const { _highlighter: h } = highlighter;
-
-    return h.once(event);
-  },
-
-  
-
-
-
-
 
   waitForEventOnNode: function(eventName, selector) {
     return new Promise(resolve => {
@@ -480,24 +455,6 @@ var TestActor = protocol.ActorClassWithSpec(testSpec, {
   hasPseudoClassLock: function(selector, pseudo) {
     const node = this._querySelector(selector);
     return InspectorUtils.hasPseudoClassLock(node, pseudo);
-  },
-
-  loadAndWaitForCustomEvent: function(url) {
-    return new Promise(resolve => {
-      
-      
-      this.targetActor.chromeEventHandler.addEventListener(
-        "DOMWindowCreated",
-        () => {
-          this.content.addEventListener("test-page-processing-done", resolve, {
-            once: true,
-          });
-        },
-        { once: true }
-      );
-
-      this.content.location = url;
-    });
   },
 
   hasNode: function(selector) {
@@ -1070,10 +1027,6 @@ class TestFront extends protocol.FrontClassWithSpec(testSpec) {
       p3: { x: +rGuide.x1 + 1, y: +bGuide.y1 + 1 },
       p4: { x: lGuide.x1, y: +bGuide.y1 + 1 },
     };
-  }
-
-  waitForHighlighterEvent(event) {
-    return super.waitForHighlighterEvent(event, this.highlighter.actorID);
   }
 
   
