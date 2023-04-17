@@ -9,7 +9,6 @@ import sys
 
 def main():
     """Patch what needed, and invoke the original site.py"""
-    here = __file__  
     config = read_pyvenv()
     sys.real_prefix = sys.base_prefix = config["base-prefix"]
     sys.base_exec_prefix = config["base-exec-prefix"]
@@ -17,13 +16,12 @@ def main():
     global_site_package_enabled = config.get("include-system-site-packages", False) == "true"
     rewrite_standard_library_sys_path()
     disable_user_site_package()
-    load_host_site(here)
+    load_host_site()
     if global_site_package_enabled:
         add_global_site_package()
-    rewrite_getsitepackages(here)
 
 
-def load_host_site(here):
+def load_host_site():
     """trigger reload of site.py - now it will use the standard library instance that will take care of init"""
     
     
@@ -38,26 +36,23 @@ def load_host_site(here):
     
     
 
-    
+    here = __file__  
 
     
+
     
-
-    add_site_dir = sys.modules["site"].addsitedir
-    for path in get_site_packages_dirs(here):
-        add_site_dir(path)
-
-
-def get_site_packages_dirs(here):
-    import json
+    
     import os
 
     site_packages = r"""
     ___EXPECTED_SITE_PACKAGES___
     """
+    import json
 
+    add_site_dir = sys.modules["site"].addsitedir
     for path in json.loads(site_packages):
-        yield os.path.abspath(os.path.join(here, path.encode("utf-8")))
+        full_path = os.path.abspath(os.path.join(here, path.encode("utf-8")))
+        add_site_dir(full_path)
 
 
 sep = "\\" if sys.platform == "win32" else "/"  
@@ -163,28 +158,7 @@ def add_global_site_package():
         site.PREFIXES = [sys.base_prefix, sys.base_exec_prefix]
         site.main()
     finally:
-        site.PREFIXES = orig_prefixes + site.PREFIXES
-
-
-
-def rewrite_getsitepackages(here):
-    site = sys.modules["site"]
-
-    site_package_dirs = get_site_packages_dirs(here)
-    orig_getsitepackages = site.getsitepackages
-
-    def getsitepackages():
-        sitepackages = orig_getsitepackages()
-        if sys.prefix not in site.PREFIXES or sys.exec_prefix not in site.PREFIXES:
-            
-            return sitepackages
-        for path in site_package_dirs:
-            if path not in sitepackages:
-                sitepackages.insert(0, path)
-
-        return sitepackages
-
-    site.getsitepackages = getsitepackages
+        site.PREFIXES = orig_prefixes
 
 
 main()
