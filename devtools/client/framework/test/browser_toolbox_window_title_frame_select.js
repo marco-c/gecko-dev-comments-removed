@@ -79,7 +79,18 @@ add_task(async function() {
   ok(iframeBtn, "Got iframe document in the list");
 
   
-  const willNavigate = toolbox.target.once("will-navigate");
+  const { resourceCommand } = toolbox.commands;
+  const {
+    onResource: willNavigate,
+  } = await resourceCommand.waitForNextResource(
+    resourceCommand.TYPES.DOCUMENT_EVENT,
+    {
+      ignoreExistingResources: true,
+      predicate(resource) {
+        return resource.name == "will-navigate";
+      },
+    }
+  );
 
   
   
