@@ -297,6 +297,7 @@ var TelemetryEnvironmentTesting = {
     Assert.ok(this.checkNullOrString(update.channel));
     Assert.equal(typeof update.enabled, "boolean");
     Assert.equal(typeof update.autoDownload, "boolean");
+    Assert.equal(typeof update.background, "boolean");
 
     
     if ("defaultSearchEngine" in data.settings) {
