@@ -708,6 +708,10 @@ Toolbox.prototype = {
       
       
       await this._listFrames();
+      
+      if (targetFront.isDestroyed()) {
+        return;
+      }
       await this.initPerformance();
     }
   },
