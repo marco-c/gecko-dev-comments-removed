@@ -143,42 +143,39 @@ def locate_java_bin_path():
         no_matching_java_version_exception = JavaLocationFailedException(
             'Could not find Java on your machine. Please install it, either via "mach bootstrap" '
             "(if you have brew) or directly from https://adoptopenjdk.net/?variant=openjdk8."
+            "If you have already installed a 1.8 JDK, you may need to set $JAVA_HOME"
         )
+        
+        
+        
+        
+        
+        
+        
         try:
-            java_home_path = subprocess.check_output(
-                ["/usr/libexec/java_home", "-v", "1.8"], universal_newlines=True
-            ).strip()
+            java_home_verbose_xml_output = subprocess.check_output(
+                ["/usr/libexec/java_home", "-VX", "-v", "1.8"], stderr=subprocess.PIPE
+            )
+            import plistlib
+
+            list_of_java_homes = plistlib.loads(java_home_verbose_xml_output)
         except CalledProcessError:
             raise no_matching_java_version_exception
 
-        if not java_home_path:
-            raise no_matching_java_version_exception
+        
+        for java_home_item in list_of_java_homes:
+            if java_home_item["JVMBundleID"] == "net.adoptopenjdk.8.jdk":
+                return java_home_item["JVMHomePath"]
 
-        bin_path = os.path.join(java_home_path, "bin")
-        javac_path = which("javac", path=bin_path)
+        
+        for java_home_item in list_of_java_homes:
+            java_home_path = java_home_item["JVMHomePath"]
+            bin_path = os.path.join(java_home_path, "bin")
+            javac_path = which("javac", path=bin_path)
+            if javac_path:
+                return bin_path
 
-        if not javac_path:
-            raise JavaLocationFailedException(
-                "The Java 1.8 installation found by "
-                '"/usr/libexec/java_home" ("{}") is a JRE, not a '
-                "JDK. Since Firefox depends on the JDK to compile "
-                "Java, you should install the Java 1.8 JDK, either "
-                'via "mach bootstrap" (if you have brew) or '
-                "directly from "
-                "https://adoptopenjdk.net/?variant=openjdk8.\n"
-                
-                
-                
-                
-                
-                
-                
-                "Note: if you have already installed a 1.8 JDK and "
-                "are still seeing this message, then you may need "
-                "to set $JAVA_HOME.".format(java_home_path)
-            )
-
-        return bin_path
+        raise no_matching_java_version_exception
     else:  
         java_path = which("java")
         javac_path = which("javac")
