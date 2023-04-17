@@ -13,6 +13,7 @@
 
 
 
+
 #include "jconfigint.h"
 
 
@@ -77,6 +78,11 @@ EXTERN(void) jpeg_make_d_derived_tbl(j_decompress_ptr cinfo, boolean isDC,
 
 typedef size_t bit_buf_type;            
 #define BIT_BUF_SIZE  64                /* size of buffer in bits */
+
+#elif defined(__x86_64__) && defined(__ILP32__)
+
+typedef unsigned long long bit_buf_type; 
+#define BIT_BUF_SIZE  64                 /* size of buffer in bits */
 
 #else
 
@@ -211,7 +217,7 @@ slowlabel: \
   } \
 }
 
-#define HUFF_DECODE_FAST(s, nb, htbl, slowlabel) \
+#define HUFF_DECODE_FAST(s, nb, htbl) \
   FILL_BIT_BUFFER_FAST; \
   s = PEEK_BITS(HUFF_LOOKAHEAD); \
   s = htbl->lookup[s]; \
@@ -229,8 +235,9 @@ slowlabel: \
       nb++; \
     } \
     if (nb > 16) \
-      goto slowlabel; \
-    s = htbl->pub->huffval[ (int) (s + htbl->valoffset[nb]) ]; \
+      s = 0; \
+    else \
+      s = htbl->pub->huffval[(int)(s + htbl->valoffset[nb]) & 0xFF]; \
   }
 
 

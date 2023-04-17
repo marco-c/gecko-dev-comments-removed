@@ -18,6 +18,7 @@
 
 
 
+
 typedef enum {            
   JBUF_PASS_THRU,         
   
@@ -47,6 +48,18 @@ typedef enum {
 
 typedef long JLONG;
 
+
+#ifdef __UINTPTR_TYPE__
+
+
+
+
+
+
+typedef __UINTPTR_TYPE__ JUINTPTR;
+#else
+typedef size_t JUINTPTR;
+#endif
 
 
 
@@ -158,6 +171,9 @@ struct jpeg_decomp_master {
   JDIMENSION first_MCU_col[MAX_COMPONENTS];
   JDIMENSION last_MCU_col[MAX_COMPONENTS];
   boolean jinit_upsampler_no_alloc;
+
+  
+  JDIMENSION last_good_iMCU_row;
 };
 
 

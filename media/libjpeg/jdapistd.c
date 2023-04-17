@@ -319,6 +319,8 @@ read_and_discard_scanlines(j_decompress_ptr cinfo, JDIMENSION num_lines)
 {
   JDIMENSION n;
   my_master_ptr master = (my_master_ptr)cinfo->master;
+  JSAMPLE dummy_sample[1] = { 0 };
+  JSAMPROW dummy_row = dummy_sample;
   JSAMPARRAY scanlines = NULL;
   void (*color_convert) (j_decompress_ptr cinfo, JSAMPIMAGE input_buf,
                          JDIMENSION input_row, JSAMPARRAY output_buf,
@@ -329,6 +331,10 @@ read_and_discard_scanlines(j_decompress_ptr cinfo, JDIMENSION num_lines)
   if (cinfo->cconvert && cinfo->cconvert->color_convert) {
     color_convert = cinfo->cconvert->color_convert;
     cinfo->cconvert->color_convert = noop_convert;
+    
+
+
+    scanlines = &dummy_row;
   }
 
   if (cinfo->cquantize && cinfo->cquantize->color_quantize) {
@@ -532,6 +538,8 @@ jpeg_skip_scanlines(j_decompress_ptr cinfo, JDIMENSION num_lines)
 
 
 
+        if (!cinfo->entropy->insufficient_data)
+          cinfo->master->last_good_iMCU_row = cinfo->input_iMCU_row;
         (*cinfo->entropy->decode_mcu) (cinfo, NULL);
       }
     }

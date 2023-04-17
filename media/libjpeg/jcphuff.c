@@ -16,6 +16,8 @@
 
 
 
+
+
 #define JPEG_INTERNALS
 #include "jinclude.h"
 #include "jpeglib.h"
@@ -52,14 +54,19 @@
 
 
 
-#if defined(__GNUC__) && (defined(__arm__) || defined(__aarch64__))
+#if (defined(__GNUC__) && (defined(__arm__) || defined(__aarch64__))) || \
+    defined(_M_ARM) || defined(_M_ARM64)
 #if !defined(__thumb__) || defined(__thumb2__)
 #define USE_CLZ_INTRINSIC
 #endif
 #endif
 
 #ifdef USE_CLZ_INTRINSIC
+#if defined(_MSC_VER) && !defined(__clang__)
+#define JPEG_NBITS_NONZERO(x)  (32 - _CountLeadingZeros(x))
+#else
 #define JPEG_NBITS_NONZERO(x)  (32 - __builtin_clz(x))
+#endif
 #define JPEG_NBITS(x)          (x ? JPEG_NBITS_NONZERO(x) : 0)
 #else
 #include "jpeg_nbits_table.h"
@@ -169,24 +176,26 @@ INLINE
 METHODDEF(int)
 count_zeroes(size_t *x)
 {
-  int result;
 #if defined(HAVE_BUILTIN_CTZL)
+  int result;
   result = __builtin_ctzl(*x);
   *x >>= result;
 #elif defined(HAVE_BITSCANFORWARD64)
+  unsigned long result;
   _BitScanForward64(&result, *x);
   *x >>= result;
 #elif defined(HAVE_BITSCANFORWARD)
+  unsigned long result;
   _BitScanForward(&result, *x);
   *x >>= result;
 #else
-  result = 0;
+  int result = 0;
   while ((*x & 1) == 0) {
     ++result;
     *x >>= 1;
   }
 #endif
-  return result;
+  return (int)result;
 }
 
 
@@ -672,7 +681,7 @@ encode_mcu_AC_first(j_compress_ptr cinfo, JBLOCKROW *MCU_data)
       emit_restart(entropy, entropy->next_restart_num);
 
 #ifdef WITH_SIMD
-  cvalue = values = (JCOEF *)PAD((size_t)values_unaligned, 16);
+  cvalue = values = (JCOEF *)PAD((JUINTPTR)values_unaligned, 16);
 #else
   
   cvalue = values = values_unaligned;
@@ -860,7 +869,7 @@ encode_mcu_AC_refine_prepare(const JCOEF *block,
 
 #define ENCODE_COEFS_AC_REFINE(label) { \
   while (zerobits) { \
-    int idx = count_zeroes(&zerobits); \
+    idx = count_zeroes(&zerobits); \
     r += idx; \
     cabsvalue += idx; \
     signbits >>= idx; \
@@ -917,7 +926,7 @@ METHODDEF(boolean)
 encode_mcu_AC_refine(j_compress_ptr cinfo, JBLOCKROW *MCU_data)
 {
   phuff_entropy_ptr entropy = (phuff_entropy_ptr)cinfo->entropy;
-  register int temp, r;
+  register int temp, r, idx;
   char *BR_buffer;
   unsigned int BR;
   int Sl = cinfo->Se - cinfo->Ss + 1;
@@ -937,7 +946,7 @@ encode_mcu_AC_refine(j_compress_ptr cinfo, JBLOCKROW *MCU_data)
       emit_restart(entropy, entropy->next_restart_num);
 
 #ifdef WITH_SIMD
-  cabsvalue = absvalues = (JCOEF *)PAD((size_t)absvalues_unaligned, 16);
+  cabsvalue = absvalues = (JCOEF *)PAD((JUINTPTR)absvalues_unaligned, 16);
 #else
   
   cabsvalue = absvalues = absvalues_unaligned;
@@ -968,7 +977,7 @@ encode_mcu_AC_refine(j_compress_ptr cinfo, JBLOCKROW *MCU_data)
 
   if (zerobits) {
     int diff = ((absvalues + DCTSIZE2 / 2) - cabsvalue);
-    int idx = count_zeroes(&zerobits);
+    idx = count_zeroes(&zerobits);
     signbits >>= idx;
     idx += diff;
     r += idx;

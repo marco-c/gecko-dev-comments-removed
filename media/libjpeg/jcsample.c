@@ -103,7 +103,7 @@ expand_right_edge(JSAMPARRAY image_data, int num_rows, JDIMENSION input_cols,
   if (numcols > 0) {
     for (row = 0; row < num_rows; row++) {
       ptr = image_data[row] + input_cols;
-      pixval = ptr[-1];         
+      pixval = ptr[-1];
       for (count = numcols; count > 0; count--)
         *ptr++ = pixval;
     }
@@ -174,7 +174,7 @@ int_downsample(j_compress_ptr cinfo, jpeg_component_info *compptr,
       for (v = 0; v < v_expand; v++) {
         inptr = input_data[inrow + v] + outcol_h;
         for (h = 0; h < h_expand; h++) {
-          outvalue += (JLONG)GETJSAMPLE(*inptr++);
+          outvalue += (JLONG)(*inptr++);
         }
       }
       *outptr++ = (JSAMPLE)((outvalue + numpix2) / numpix);
@@ -237,8 +237,7 @@ h2v1_downsample(j_compress_ptr cinfo, jpeg_component_info *compptr,
     inptr = input_data[outrow];
     bias = 0;                   
     for (outcol = 0; outcol < output_cols; outcol++) {
-      *outptr++ =
-        (JSAMPLE)((GETJSAMPLE(*inptr) + GETJSAMPLE(inptr[1]) + bias) >> 1);
+      *outptr++ = (JSAMPLE)((inptr[0] + inptr[1] + bias) >> 1);
       bias ^= 1;                
       inptr += 2;
     }
@@ -277,8 +276,7 @@ h2v2_downsample(j_compress_ptr cinfo, jpeg_component_info *compptr,
     bias = 1;                   
     for (outcol = 0; outcol < output_cols; outcol++) {
       *outptr++ =
-        (JSAMPLE)((GETJSAMPLE(*inptr0) + GETJSAMPLE(inptr0[1]) +
-                   GETJSAMPLE(*inptr1) + GETJSAMPLE(inptr1[1]) + bias) >> 2);
+        (JSAMPLE)((inptr0[0] + inptr0[1] + inptr1[0] + inptr1[1] + bias) >> 2);
       bias ^= 3;                
       inptr0 += 2;  inptr1 += 2;
     }
@@ -337,33 +335,25 @@ h2v2_smooth_downsample(j_compress_ptr cinfo, jpeg_component_info *compptr,
     below_ptr = input_data[inrow + 2];
 
     
-    membersum = GETJSAMPLE(*inptr0) + GETJSAMPLE(inptr0[1]) +
-                GETJSAMPLE(*inptr1) + GETJSAMPLE(inptr1[1]);
-    neighsum = GETJSAMPLE(*above_ptr) + GETJSAMPLE(above_ptr[1]) +
-               GETJSAMPLE(*below_ptr) + GETJSAMPLE(below_ptr[1]) +
-               GETJSAMPLE(*inptr0) + GETJSAMPLE(inptr0[2]) +
-               GETJSAMPLE(*inptr1) + GETJSAMPLE(inptr1[2]);
+    membersum = inptr0[0] + inptr0[1] + inptr1[0] + inptr1[1];
+    neighsum = above_ptr[0] + above_ptr[1] + below_ptr[0] + below_ptr[1] +
+               inptr0[0] + inptr0[2] + inptr1[0] + inptr1[2];
     neighsum += neighsum;
-    neighsum += GETJSAMPLE(*above_ptr) + GETJSAMPLE(above_ptr[2]) +
-                GETJSAMPLE(*below_ptr) + GETJSAMPLE(below_ptr[2]);
+    neighsum += above_ptr[0] + above_ptr[2] + below_ptr[0] + below_ptr[2];
     membersum = membersum * memberscale + neighsum * neighscale;
     *outptr++ = (JSAMPLE)((membersum + 32768) >> 16);
     inptr0 += 2;  inptr1 += 2;  above_ptr += 2;  below_ptr += 2;
 
     for (colctr = output_cols - 2; colctr > 0; colctr--) {
       
-      membersum = GETJSAMPLE(*inptr0) + GETJSAMPLE(inptr0[1]) +
-                  GETJSAMPLE(*inptr1) + GETJSAMPLE(inptr1[1]);
+      membersum = inptr0[0] + inptr0[1] + inptr1[0] + inptr1[1];
       
-      neighsum = GETJSAMPLE(*above_ptr) + GETJSAMPLE(above_ptr[1]) +
-                 GETJSAMPLE(*below_ptr) + GETJSAMPLE(below_ptr[1]) +
-                 GETJSAMPLE(inptr0[-1]) + GETJSAMPLE(inptr0[2]) +
-                 GETJSAMPLE(inptr1[-1]) + GETJSAMPLE(inptr1[2]);
+      neighsum = above_ptr[0] + above_ptr[1] + below_ptr[0] + below_ptr[1] +
+                 inptr0[-1] + inptr0[2] + inptr1[-1] + inptr1[2];
       
       neighsum += neighsum;
       
-      neighsum += GETJSAMPLE(above_ptr[-1]) + GETJSAMPLE(above_ptr[2]) +
-                  GETJSAMPLE(below_ptr[-1]) + GETJSAMPLE(below_ptr[2]);
+      neighsum += above_ptr[-1] + above_ptr[2] + below_ptr[-1] + below_ptr[2];
       
       membersum = membersum * memberscale + neighsum * neighscale;
       
@@ -372,15 +362,11 @@ h2v2_smooth_downsample(j_compress_ptr cinfo, jpeg_component_info *compptr,
     }
 
     
-    membersum = GETJSAMPLE(*inptr0) + GETJSAMPLE(inptr0[1]) +
-                GETJSAMPLE(*inptr1) + GETJSAMPLE(inptr1[1]);
-    neighsum = GETJSAMPLE(*above_ptr) + GETJSAMPLE(above_ptr[1]) +
-               GETJSAMPLE(*below_ptr) + GETJSAMPLE(below_ptr[1]) +
-               GETJSAMPLE(inptr0[-1]) + GETJSAMPLE(inptr0[1]) +
-               GETJSAMPLE(inptr1[-1]) + GETJSAMPLE(inptr1[1]);
+    membersum = inptr0[0] + inptr0[1] + inptr1[0] + inptr1[1];
+    neighsum = above_ptr[0] + above_ptr[1] + below_ptr[0] + below_ptr[1] +
+               inptr0[-1] + inptr0[1] + inptr1[-1] + inptr1[1];
     neighsum += neighsum;
-    neighsum += GETJSAMPLE(above_ptr[-1]) + GETJSAMPLE(above_ptr[1]) +
-                GETJSAMPLE(below_ptr[-1]) + GETJSAMPLE(below_ptr[1]);
+    neighsum += above_ptr[-1] + above_ptr[1] + below_ptr[-1] + below_ptr[1];
     membersum = membersum * memberscale + neighsum * neighscale;
     *outptr = (JSAMPLE)((membersum + 32768) >> 16);
 
@@ -429,21 +415,18 @@ fullsize_smooth_downsample(j_compress_ptr cinfo, jpeg_component_info *compptr,
     below_ptr = input_data[outrow + 1];
 
     
-    colsum = GETJSAMPLE(*above_ptr++) + GETJSAMPLE(*below_ptr++) +
-             GETJSAMPLE(*inptr);
-    membersum = GETJSAMPLE(*inptr++);
-    nextcolsum = GETJSAMPLE(*above_ptr) + GETJSAMPLE(*below_ptr) +
-                 GETJSAMPLE(*inptr);
+    colsum = (*above_ptr++) + (*below_ptr++) + inptr[0];
+    membersum = *inptr++;
+    nextcolsum = above_ptr[0] + below_ptr[0] + inptr[0];
     neighsum = colsum + (colsum - membersum) + nextcolsum;
     membersum = membersum * memberscale + neighsum * neighscale;
     *outptr++ = (JSAMPLE)((membersum + 32768) >> 16);
     lastcolsum = colsum;  colsum = nextcolsum;
 
     for (colctr = output_cols - 2; colctr > 0; colctr--) {
-      membersum = GETJSAMPLE(*inptr++);
+      membersum = *inptr++;
       above_ptr++;  below_ptr++;
-      nextcolsum = GETJSAMPLE(*above_ptr) + GETJSAMPLE(*below_ptr) +
-                   GETJSAMPLE(*inptr);
+      nextcolsum = above_ptr[0] + below_ptr[0] + inptr[0];
       neighsum = lastcolsum + (colsum - membersum) + nextcolsum;
       membersum = membersum * memberscale + neighsum * neighscale;
       *outptr++ = (JSAMPLE)((membersum + 32768) >> 16);
@@ -451,7 +434,7 @@ fullsize_smooth_downsample(j_compress_ptr cinfo, jpeg_component_info *compptr,
     }
 
     
-    membersum = GETJSAMPLE(*inptr);
+    membersum = *inptr;
     neighsum = lastcolsum + (colsum - membersum) + colsum;
     membersum = membersum * memberscale + neighsum * neighscale;
     *outptr = (JSAMPLE)((membersum + 32768) >> 16);

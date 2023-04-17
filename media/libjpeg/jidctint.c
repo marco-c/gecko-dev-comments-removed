@@ -2398,7 +2398,7 @@ jpeg_idct_16x16(j_decompress_ptr cinfo, jpeg_component_info *compptr,
     tmp0 = DEQUANTIZE(inptr[DCTSIZE * 0], quantptr[DCTSIZE * 0]);
     tmp0 = LEFT_SHIFT(tmp0, CONST_BITS);
     
-    tmp0 += 1 << (CONST_BITS - PASS1_BITS - 1);
+    tmp0 += ONE << (CONST_BITS - PASS1_BITS - 1);
 
     z1 = DEQUANTIZE(inptr[DCTSIZE * 4], quantptr[DCTSIZE * 4]);
     tmp1 = MULTIPLY(z1, FIX(1.306562965));      

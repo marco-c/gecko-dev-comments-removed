@@ -9,6 +9,7 @@
 
 
 
+
 #define JPEG_INTERNALS
 #include "jpeglib.h"
 
@@ -51,7 +52,7 @@ typedef struct {
 #ifdef BLOCK_SMOOTHING_SUPPORTED
   
   int *coef_bits_latch;
-#define SAVED_COEFS  6          /* we save coef_bits[0..5] */
+#define SAVED_COEFS  10         /* we save coef_bits[0..9] */
 #endif
 } my_coef_controller;
 

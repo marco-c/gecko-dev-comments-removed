@@ -392,11 +392,11 @@ cmyk_ycck_convert(j_compress_ptr cinfo, JSAMPARRAY input_buf,
     outptr3 = output_buf[3][output_row];
     output_row++;
     for (col = 0; col < num_cols; col++) {
-      r = MAXJSAMPLE - GETJSAMPLE(inptr[0]);
-      g = MAXJSAMPLE - GETJSAMPLE(inptr[1]);
-      b = MAXJSAMPLE - GETJSAMPLE(inptr[2]);
+      r = MAXJSAMPLE - inptr[0];
+      g = MAXJSAMPLE - inptr[1];
+      b = MAXJSAMPLE - inptr[2];
       
-      outptr3[col] = inptr[3];  
+      outptr3[col] = inptr[3];
       inptr += 4;
       
 
@@ -438,7 +438,7 @@ grayscale_convert(j_compress_ptr cinfo, JSAMPARRAY input_buf,
     outptr = output_buf[0][output_row];
     output_row++;
     for (col = 0; col < num_cols; col++) {
-      outptr[col] = inptr[0];   
+      outptr[col] = inptr[0];
       inptr += instride;
     }
   }
@@ -497,7 +497,7 @@ null_convert(j_compress_ptr cinfo, JSAMPARRAY input_buf, JSAMPIMAGE output_buf,
         inptr = *input_buf;
         outptr = output_buf[ci][output_row];
         for (col = 0; col < num_cols; col++) {
-          outptr[col] = inptr[ci]; 
+          outptr[col] = inptr[ci];
           inptr += nc;
         }
       }

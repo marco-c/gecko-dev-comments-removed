@@ -46,22 +46,8 @@
 
 
 
-
-#ifdef HAVE_UNSIGNED_CHAR
-
 typedef unsigned char JSAMPLE;
 #define GETJSAMPLE(value)  ((int)(value))
-
-#else 
-
-typedef char JSAMPLE;
-#ifdef __CHAR_UNSIGNED__
-#define GETJSAMPLE(value)  ((int)(value))
-#else
-#define GETJSAMPLE(value)  ((int)(value) & 0xFF)
-#endif 
-
-#endif 
 
 #define MAXJSAMPLE      255
 #define CENTERJSAMPLE   128
@@ -98,21 +84,8 @@ typedef short JCOEF;
 
 
 
-#ifdef HAVE_UNSIGNED_CHAR
-
 typedef unsigned char JOCTET;
 #define GETJOCTET(value)  (value)
-
-#else 
-
-typedef char JOCTET;
-#ifdef __CHAR_UNSIGNED__
-#define GETJOCTET(value)  (value)
-#else
-#define GETJOCTET(value)  ((value) & 0xFF)
-#endif 
-
-#endif 
 
 
 
