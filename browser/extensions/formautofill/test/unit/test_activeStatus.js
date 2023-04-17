@@ -27,6 +27,7 @@ add_task(async function test_activeStatus_init() {
 
   
   await FormAutofillStatus.formAutofillStorage.initialize();
+  await FormAutofillStatus.updateSavedFieldNames();
   
   Assert.equal(FormAutofillStatus.updateStatus.called, true);
   Assert.equal(Services.ppmm.sharedData.get("FormAutofill:enabled"), false);
@@ -107,14 +108,14 @@ add_task(async function test_activeStatus_computeStatus() {
     "getSavedFieldNames"
   );
   FormAutofillStatus.formAutofillStorage.addresses.getSavedFieldNames.returns(
-    new Set()
+    Promise.resolve(new Set())
   );
   sinon.stub(
     FormAutofillStatus.formAutofillStorage.creditCards,
     "getSavedFieldNames"
   );
   FormAutofillStatus.formAutofillStorage.creditCards.getSavedFieldNames.returns(
-    new Set()
+    Promise.resolve(new Set())
   );
 
   
@@ -137,9 +138,9 @@ add_task(async function test_activeStatus_computeStatus() {
   Assert.equal(FormAutofillStatus.computeStatus(), false);
 
   FormAutofillStatus.formAutofillStorage.addresses.getSavedFieldNames.returns(
-    new Set(["given-name"])
+    Promise.resolve(new Set(["given-name"]))
   );
-  FormAutofillStatus.observe(null, "formautofill-storage-changed", "add");
+  await FormAutofillStatus.observe(null, "formautofill-storage-changed", "add");
 
   
   Services.prefs.setBoolPref("extensions.formautofill.addresses.enabled", true);
