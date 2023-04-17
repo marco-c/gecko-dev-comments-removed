@@ -127,7 +127,8 @@ class _ExperimentManager {
 
 
 
-  onFinalize(sourceToCheck) {
+
+  onFinalize(sourceToCheck, { recipeMismatches } = { recipeMismatches: [] }) {
     if (!sourceToCheck) {
       throw new Error("When calling onFinalize, you must specify a source.");
     }
@@ -141,7 +142,10 @@ class _ExperimentManager {
       if (!this.sessions.get(source)?.has(slug)) {
         log.debug(`Stopping study for recipe ${slug}`);
         try {
-          this.unenroll(slug, "recipe-not-seen");
+          let reason = recipeMismatches.includes(slug)
+            ? "targeting-mismatch"
+            : "recipe-not-seen";
+          this.unenroll(slug, reason);
         } catch (err) {
           Cu.reportError(err);
         }
