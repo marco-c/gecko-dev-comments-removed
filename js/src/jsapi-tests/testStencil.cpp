@@ -15,8 +15,8 @@
 #include "js/OffThreadScriptCompilation.h"
 #include "js/Transcoding.h"
 #include "jsapi-tests/tests.h"
-#include "vm/HelperThreadState.h"  
-#include "vm/Monitor.h"            
+#include "vm/HelperThreads.h"  
+#include "vm/Monitor.h"        
 
 BEGIN_TEST(testStencil_Basic) {
   const char* chars =

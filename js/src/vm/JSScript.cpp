@@ -2292,8 +2292,8 @@ bool js::IsOffThreadSourceCompressionEnabled() {
   
   
   
-  return HelperThreadState().cpuCount > 1 &&
-         HelperThreadState().threadCount > 1 && CanUseExtraThreads();
+  return GetHelperThreadCPUCount() > 1 && GetHelperThreadCount() > 1 &&
+         CanUseExtraThreads();
 }
 
 bool ScriptSource::tryCompressOffThread(JSContext* cx) {
