@@ -299,6 +299,11 @@ using ExternalTypeOf_t = typename ExternalTypeOf<ArrayType>::Type;
 
 
 class JS_PUBLIC_API ArrayBufferOrView {
+ public:
+  
+  
+  using DataType = uint8_t;
+
  protected:
   Heap<JSObject*> obj;
 
