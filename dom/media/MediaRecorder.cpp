@@ -668,26 +668,6 @@ class MediaRecorder::Session : public PrincipalChangeObserver<MediaStreamTrack>,
         }
       }
 
-      if (audioTracks > 1 || videoTracks > 1) {
-        
-        
-        
-        nsPIDOMWindowInner* window = mRecorder->GetOwner();
-        Document* document = window ? window->GetExtantDoc() : nullptr;
-        nsContentUtils::ReportToConsole(nsIScriptError::errorFlag, "Media"_ns,
-                                        document,
-                                        nsContentUtils::eDOM_PROPERTIES,
-                                        "MediaRecorderMultiTracksNotSupported");
-        if (!mRecorder->mOtherDomException) {
-          mRecorder->mOtherDomException = DOMException::Create(
-              NS_ERROR_DOM_NOT_SUPPORTED_ERR,
-              "MediaRecorder does not support recording multiple tracks of the "
-              "same kind"_ns);
-        }
-        DoSessionEndTask(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
-        return;
-      }
-
       for (const auto& t : mMediaStreamTracks) {
         t->AddPrincipalChangeObserver(this);
       }
@@ -1317,20 +1297,20 @@ void MediaRecorder::Start(const Optional<uint32_t>& aTimeslice,
   
   
   
-  if (mConstrainedBitsPerSecond) {
-    uint8_t numVideoTracks = 0;
-    uint8_t numAudioTracks = 0;
-    for (const auto& t : tracks) {
-      if (t->AsVideoStreamTrack() && numVideoTracks < UINT8_MAX) {
-        ++numVideoTracks;
-      } else if (t->AsAudioStreamTrack() && numAudioTracks < UINT8_MAX) {
-        ++numAudioTracks;
-      }
-    }
-    if (mAudioNode) {
-      MOZ_DIAGNOSTIC_ASSERT(!mStream);
+  uint8_t numVideoTracks = 0;
+  uint8_t numAudioTracks = 0;
+  for (const auto& t : tracks) {
+    if (t->AsVideoStreamTrack() && numVideoTracks < UINT8_MAX) {
+      ++numVideoTracks;
+    } else if (t->AsAudioStreamTrack() && numAudioTracks < UINT8_MAX) {
       ++numAudioTracks;
     }
+  }
+  if (mAudioNode) {
+    MOZ_DIAGNOSTIC_ASSERT(!mStream);
+    ++numAudioTracks;
+  }
+  if (mConstrainedBitsPerSecond) {
     SelectBitrates(*mConstrainedBitsPerSecond, numVideoTracks,
                    &mVideoBitsPerSecond, numAudioTracks, &mAudioBitsPerSecond);
   }
@@ -1350,6 +1330,25 @@ void MediaRecorder::Start(const Optional<uint32_t>& aTimeslice,
   
   
   const uint32_t audioBitrate = mAudioBitsPerSecond;
+
+  
+  
+  
+  
+
+  
+  
+  
+  if (numVideoTracks > 1) {
+    aResult.ThrowNotSupportedError(
+        "MediaRecorder does not support recording more than one video track"_ns);
+    return;
+  }
+  if (numAudioTracks > 1) {
+    aResult.ThrowNotSupportedError(
+        "MediaRecorder does not support recording more than one audio track"_ns);
+    return;
+  }
 
   
   mState = RecordingState::Recording;
