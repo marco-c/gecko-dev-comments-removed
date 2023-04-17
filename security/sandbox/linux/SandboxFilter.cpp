@@ -514,6 +514,9 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
                 PR_SET_DUMPABLE,  
                 PR_SET_PTRACER),  
                Allow())
+        .CASES((PR_CAPBSET_READ),  
+                                   
+               Error(EINVAL))
         .Default(InvalidSyscall());
   }
 
