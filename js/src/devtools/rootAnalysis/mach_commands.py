@@ -9,7 +9,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import argparse
 import json
-import multiprocessing
 import os
 import textwrap
 
@@ -241,31 +240,12 @@ no shell found in %s -- must build the JS shell with `mach hazards build-shell` 
             )
             fh.write(data)
 
-        jobs = kwargs.get("jobs")
-        if not jobs:
-            
-            
-            
-            
-            cores = multiprocessing.cpu_count()
-            try:
-                import psutil
-
-                available = psutil.virtual_memory().available
-                mem_allowed = 2.5 * 2 ** 30  
-                jobs = min(cores, int(available / mem_allowed))
-                jobs = max(jobs, 2)
-            except ModuleNotFoundError:
-                
-                
-                pass
-
         buildscript = " ".join(
             [
                 self.topsrcdir + "/mach hazards compile",
                 "--application=" + application,
                 "--haz-objdir=" + objdir,
-            ] + ["--jobs=" + str(jobs)] if jobs else []
+            ]
         )
         args = [
             os.path.join(self.script_dir(), "analyze.py"),
