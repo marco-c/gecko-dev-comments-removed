@@ -559,11 +559,17 @@ nsresult nsXULTooltipListener::FindTooltip(nsIContent* aTarget,
     return NS_ERROR_FAILURE;
   }
 
-  nsAutoString tooltipText;
-  if (aTarget->IsElement()) {
-    aTarget->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::tooltiptext,
-                                  tooltipText);
+  
+#ifdef XP_WIN
+  if (aTarget->AsElement()->HasAttr(nsGkAtoms::titlebar_button)) {
+    return NS_OK;
   }
+#endif
+
+  nsAutoString tooltipText;
+  aTarget->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::tooltiptext,
+                                tooltipText);
+
   if (!tooltipText.IsEmpty()) {
     
     nsIPopupContainer* popupContainer =
@@ -577,10 +583,8 @@ nsresult nsXULTooltipListener::FindTooltip(nsIContent* aTarget,
   }
 
   nsAutoString tooltipId;
-  if (aTarget->IsElement()) {
-    aTarget->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::tooltip,
-                                  tooltipId);
-  }
+  aTarget->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::tooltip,
+                                tooltipId);
 
   
   if (tooltipId.EqualsLiteral("_child")) {
