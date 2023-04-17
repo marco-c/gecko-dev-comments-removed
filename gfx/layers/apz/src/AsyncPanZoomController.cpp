@@ -1082,7 +1082,7 @@ nsEventStatus AsyncPanZoomController::HandleInputEvent(
           rv = OnPanBegin(panGestureInput);
           break;
         case PanGestureInput::PANGESTURE_PAN:
-          rv = OnPan(panGestureInput, true);
+          rv = OnPan(panGestureInput, FingersOnTouchpad::Yes);
           break;
         case PanGestureInput::PANGESTURE_END:
           rv = OnPanEnd(panGestureInput);
@@ -1091,7 +1091,7 @@ nsEventStatus AsyncPanZoomController::HandleInputEvent(
           rv = OnPanMomentumStart(panGestureInput);
           break;
         case PanGestureInput::PANGESTURE_MOMENTUMPAN:
-          rv = OnPan(panGestureInput, false);
+          rv = OnPan(panGestureInput, FingersOnTouchpad::No);
           break;
         case PanGestureInput::PANGESTURE_MOMENTUMEND:
           rv = OnPanMomentumEnd(panGestureInput);
@@ -2564,7 +2564,7 @@ nsEventStatus AsyncPanZoomController::OnPanBegin(
   }
 
   
-  OnPan(aEvent, true);
+  OnPan(aEvent, FingersOnTouchpad::Yes);
 
   return nsEventStatus_eConsumeNoDefault;
 }
@@ -2639,12 +2639,12 @@ AsyncPanZoomController::GetDisplacementsForPanGesture(
   return {logicalPanDisplacement, physicalPanDisplacement};
 }
 
-nsEventStatus AsyncPanZoomController::OnPan(const PanGestureInput& aEvent,
-                                            bool aFingersOnTouchpad) {
+nsEventStatus AsyncPanZoomController::OnPan(
+    const PanGestureInput& aEvent, FingersOnTouchpad aFingersOnTouchpad) {
   APZC_LOG("%p got a pan-pan in state %d\n", this, mState);
 
   if (mState == SMOOTHMSD_SCROLL) {
-    if (!aFingersOnTouchpad) {
+    if (aFingersOnTouchpad == FingersOnTouchpad::No) {
       
       
       
@@ -2661,7 +2661,7 @@ nsEventStatus AsyncPanZoomController::OnPan(const PanGestureInput& aEvent,
     
     
     
-    if (!aFingersOnTouchpad) {
+    if (aFingersOnTouchpad == FingersOnTouchpad::No) {
       return nsEventStatus_eConsumeNoDefault;
     }
     
@@ -2669,7 +2669,8 @@ nsEventStatus AsyncPanZoomController::OnPan(const PanGestureInput& aEvent,
     return OnPanBegin(aEvent);
   }
 
-  if (mState == OVERSCROLL_ANIMATION && !aFingersOnTouchpad) {
+  if (mState == OVERSCROLL_ANIMATION &&
+      aFingersOnTouchpad == FingersOnTouchpad::No) {
     return nsEventStatus_eConsumeNoDefault;
   }
 
@@ -2718,7 +2719,7 @@ nsEventStatus AsyncPanZoomController::OnPan(const PanGestureInput& aEvent,
   const ParentLayerPoint velocity = GetVelocityVector();
   bool consumed = CallDispatchScroll(startPoint, endPoint, handoffState);
 
-  if (!aFingersOnTouchpad) {
+  if (aFingersOnTouchpad == FingersOnTouchpad::No) {
     if (IsOverscrolled() && mState != OVERSCROLL_ANIMATION) {
       StartOverscrollAnimation(velocity);
     } else if (!consumed) {
@@ -2739,7 +2740,7 @@ nsEventStatus AsyncPanZoomController::OnPanEnd(const PanGestureInput& aEvent) {
 
   if (aEvent.mPanDisplacement != ScreenPoint{}) {
     
-    OnPan(aEvent, true);
+    OnPan(aEvent, FingersOnTouchpad::Yes);
   }
 
   EndTouch(aEvent.mTimeStamp);
@@ -2802,7 +2803,7 @@ nsEventStatus AsyncPanZoomController::OnPanMomentumStart(
   ScrollSnapToDestination();
 
   
-  OnPan(aEvent, false);
+  OnPan(aEvent, FingersOnTouchpad::No);
 
   return nsEventStatus_eConsumeNoDefault;
 }
@@ -2816,7 +2817,7 @@ nsEventStatus AsyncPanZoomController::OnPanMomentumEnd(
   }
 
   
-  OnPan(aEvent, false);
+  OnPan(aEvent, FingersOnTouchpad::No);
 
   
   
