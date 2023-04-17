@@ -18,8 +18,6 @@
 
 
 #include "mozilla/dom/ContentParent.h"
-#include "mozilla/plugins/PluginInstanceParent.h"
-using mozilla::plugins::PluginInstanceParent;
 
 #include "nsWindowGfx.h"
 #include "nsAppRunner.h"
@@ -136,13 +134,6 @@ void nsWindow::ForcePresent() {
 }
 
 bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
-  
-  
-  
-  
-  if (mozilla::ipc::MessageChannel::IsSpinLoopActive() && mPainting)
-    return false;
-
   DeviceResetReason resetReason = DeviceResetReason::OK;
   if (gfxWindowsPlatform::GetPlatform()->DidRenderingDeviceReset(
           &resetReason)) {
@@ -166,43 +157,6 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
 
     gfxCriticalNote << "(nsWindow) Finished device reset.";
     return false;
-  }
-
-  
-  
-  
-  
-  if (IsPlugin()) {
-    RECT updateRect;
-    if (!GetUpdateRect(mWnd, &updateRect, FALSE) ||
-        (updateRect.left == updateRect.right &&
-         updateRect.top == updateRect.bottom)) {
-      PAINTSTRUCT ps;
-      BeginPaint(mWnd, &ps);
-      EndPaint(mWnd, &ps);
-      return true;
-    }
-
-    if (mWindowType == eWindowType_plugin_ipc_chrome) {
-      
-      mozilla::dom::ContentParent::SendAsyncUpdate(this);
-      ValidateRect(mWnd, nullptr);
-      return true;
-    }
-
-    PluginInstanceParent* instance = reinterpret_cast<PluginInstanceParent*>(
-        ::GetPropW(mWnd, L"PluginInstanceParentProperty"));
-    if (instance) {
-      Unused << instance->CallUpdateWindow();
-    } else {
-      
-      
-      
-      NS_WARNING("Plugin failed to subclass our window");
-    }
-
-    ValidateRect(mWnd, nullptr);
-    return true;
   }
 
   PAINTSTRUCT ps;
@@ -257,8 +211,6 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
     aDC = mBasicLayersSurface->GetTransparentDC();
   }
 #endif
-
-  mPainting = true;
 
 #ifdef WIDGET_DEBUG_OUTPUT
   HRGN debugPaintFlashRegion = nullptr;
@@ -432,8 +384,6 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
     ::DeleteObject(debugPaintFlashRegion);
   }
 #endif  
-
-  mPainting = false;
 
   
   listener = GetPaintListener();
