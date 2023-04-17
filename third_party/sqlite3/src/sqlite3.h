@@ -123,9 +123,9 @@ extern "C" {
 
 
 
-#define SQLITE_VERSION        "3.35.4"
-#define SQLITE_VERSION_NUMBER 3035004
-#define SQLITE_SOURCE_ID      "2021-04-02 15:20:15 5d4c65779dab868b285519b19e4cf9d451d50c6048f06f653aa701ec212df45e"
+#define SQLITE_VERSION        "3.36.0"
+#define SQLITE_VERSION_NUMBER 3036000
+#define SQLITE_SOURCE_ID      "2021-06-18 18:36:39 5c9a6c06871cb9fe42814af9c039eb6da5427a6ec28f187af7ebfb62eafa66e5"
 
 
 
@@ -1129,6 +1129,23 @@ struct sqlite3_io_methods {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define SQLITE_FCNTL_LOCKSTATE               1
 #define SQLITE_FCNTL_GET_LOCKPROXYFILE       2
 #define SQLITE_FCNTL_SET_LOCKPROXYFILE       3
@@ -1167,6 +1184,8 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_CKPT_DONE              37
 #define SQLITE_FCNTL_RESERVE_BYTES          38
 #define SQLITE_FCNTL_CKPT_START             39
+#define SQLITE_FCNTL_EXTERNAL_READER        40
+#define SQLITE_FCNTL_CKSM_FILE              41
 
 
 #define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE
@@ -4180,6 +4199,15 @@ SQLITE_API const char *sqlite3_normalized_sql(sqlite3_stmt *pStmt);
 
 
 
+
+
+
+
+
+
+
+
+
 SQLITE_API int sqlite3_stmt_readonly(sqlite3_stmt *pStmt);
 
 
@@ -4270,6 +4298,10 @@ typedef struct sqlite3_value sqlite3_value;
 
 
 typedef struct sqlite3_context sqlite3_context;
+
+
+
+
 
 
 
@@ -5039,8 +5071,6 @@ SQLITE_API int sqlite3_finalize(sqlite3_stmt *pStmt);
 
 
 SQLITE_API int sqlite3_reset(sqlite3_stmt *pStmt);
-
-
 
 
 
@@ -7779,7 +7809,8 @@ SQLITE_API int sqlite3_test_control(int op, ...);
 #define SQLITE_TESTCTRL_EXTRA_SCHEMA_CHECKS     29
 #define SQLITE_TESTCTRL_SEEK_COUNT              30
 #define SQLITE_TESTCTRL_TRACEFLAGS              31
-#define SQLITE_TESTCTRL_LAST                    31  /* Largest TESTCTRL */
+#define SQLITE_TESTCTRL_TUNE                    32
+#define SQLITE_TESTCTRL_LAST                    32  /* Largest TESTCTRL */
 
 
 
@@ -9533,6 +9564,15 @@ SQLITE_API int sqlite3_db_cacheflush(sqlite3*);
 
 
 
+
+
+
+
+
+
+
+
+
 #if defined(SQLITE_ENABLE_PREUPDATE_HOOK)
 SQLITE_API void *sqlite3_preupdate_hook(
   sqlite3 *db,
@@ -9551,6 +9591,7 @@ SQLITE_API int sqlite3_preupdate_old(sqlite3 *, int, sqlite3_value **);
 SQLITE_API int sqlite3_preupdate_count(sqlite3 *);
 SQLITE_API int sqlite3_preupdate_depth(sqlite3 *);
 SQLITE_API int sqlite3_preupdate_new(sqlite3 *, int, sqlite3_value **);
+SQLITE_API int sqlite3_preupdate_blobwrite(sqlite3 *);
 #endif
 
 
@@ -10110,6 +10151,38 @@ SQLITE_API void sqlite3session_delete(sqlite3_session *pSession);
 
 
 
+
+
+
+
+
+
+
+
+SQLITE_API int sqlite3session_object_config(sqlite3_session*, int op, void *pArg);
+
+
+
+#define SQLITE_SESSION_OBJCONFIG_SIZE 1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 SQLITE_API int sqlite3session_enable(sqlite3_session *pSession, int bEnable);
 
 
@@ -10334,6 +10407,22 @@ SQLITE_API int sqlite3session_changeset(
   int *pnChangeset,               
   void **ppChangeset              
 );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SQLITE_API sqlite3_int64 sqlite3session_changeset_size(sqlite3_session *pSession);
 
 
 
