@@ -384,6 +384,14 @@ class MarkerTiming {
     return static_cast<uint8_t>(mPhase);
   }
 
+  
+  
+  static void UnsafeConstruct(MarkerTiming* aMarkerTiming,
+                              const TimeStamp& aStartTime,
+                              const TimeStamp& aEndTime, Phase aPhase) {
+    new (aMarkerTiming) MarkerTiming{aStartTime, aEndTime, aPhase};
+  }
+
  private:
   friend ProfileBufferEntryWriter::Serializer<MarkerTiming>;
   friend ProfileBufferEntryReader::Deserializer<MarkerTiming>;
