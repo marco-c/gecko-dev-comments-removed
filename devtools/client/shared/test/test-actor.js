@@ -175,15 +175,6 @@ var testSpec = protocol.generateActorSpec({
       },
       response: {},
     },
-    getProperty: {
-      request: {
-        selector: Arg(0, "string"),
-        property: Arg(1, "string"),
-      },
-      response: {
-        value: RetVal("string"),
-      },
-    },
     reload: {
       request: {},
       response: {},
@@ -558,17 +549,6 @@ var TestActor = protocol.ActorClassWithSpec(testSpec, {
   setProperty: function(selector, property, value) {
     const node = this._querySelector(selector);
     node[property] = value;
-  },
-
-  
-
-
-
-
-
-  getProperty: function(selector, property) {
-    const node = this._querySelector(selector);
-    return node[property];
   },
 
   

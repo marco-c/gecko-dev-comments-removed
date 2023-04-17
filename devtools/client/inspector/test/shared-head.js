@@ -798,3 +798,20 @@ function getNumberOfMatchingElementsInContentPage(selector) {
     return content.document.querySelectorAll(innerSelector).length;
   });
 }
+
+
+
+
+
+
+
+
+function getContentPageElementProperty(selector, propertyName) {
+  return SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [selector, propertyName],
+    function(innerSelector, innerPropertyName) {
+      return content.document.querySelector(innerSelector)[innerPropertyName];
+    }
+  );
+}
