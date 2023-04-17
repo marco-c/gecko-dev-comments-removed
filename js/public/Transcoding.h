@@ -89,20 +89,6 @@ inline bool IsTranscodingBytecodeAligned(const void* offset) {
 
 
 
-
-
-
-
-
-extern JS_PUBLIC_API TranscodeResult EncodeScript(JSContext* cx,
-                                                  TranscodeBuffer& buffer,
-                                                  Handle<JSScript*> script);
-
-
-
-
-
-
 extern JS_PUBLIC_API TranscodeResult DecodeScriptMaybeStencil(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     TranscodeBuffer& buffer, MutableHandle<JSScript*> scriptp,
