@@ -30,20 +30,14 @@ const {
 
 class Range extends PureComponent {
   
-  constructor(props) {
-    super(props);
-    this.handleInput = this.handleInput.bind(this);
-  }
-
-  
 
 
-  handleInput(event) {
+  handleInput = event => {
     event.preventDefault();
     const { scale, onChange } = this.props;
     const frac = Number(event.target.value) / 100;
     onChange(scale.fromFractionToSingleDigitValue(frac));
-  }
+  };
 
   render() {
     const { label: labelText, scale, id, value, display } = this.props;

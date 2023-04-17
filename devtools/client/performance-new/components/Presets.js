@@ -97,19 +97,13 @@ class Preset extends PureComponent {
 
 class Presets extends PureComponent {
   
-  constructor(props) {
-    super(props);
-    this.onChange = this.onChange.bind(this);
-  }
-
-  
 
 
 
-  onChange(presetName) {
+  onChange = presetName => {
     const { presets } = this.props;
     this.props.changePreset(presets, presetName);
-  }
+  };
 
   render() {
     const { presets, selectedPresetName } = this.props;

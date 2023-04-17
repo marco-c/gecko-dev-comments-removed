@@ -71,7 +71,6 @@ class DevToolsPresetSelection extends PureComponent {
   
   constructor(props) {
     super(props);
-    this.onPresetChange = this.onPresetChange.bind(this);
 
     
 
@@ -87,10 +86,10 @@ class DevToolsPresetSelection extends PureComponent {
 
 
 
-  onPresetChange(event) {
+  onPresetChange = event => {
     const { presets } = this.props;
     this.props.changePreset(presets, event.target.value);
-  }
+  };
 
   render() {
     const { presetName, presets, onEditSettingsLinkClicked } = this.props;

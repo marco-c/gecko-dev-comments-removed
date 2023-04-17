@@ -31,22 +31,14 @@ class Description extends PureComponent {
   
 
 
-  constructor(props) {
-    super(props);
-    this.handleLinkClick = this.handleLinkClick.bind(this);
-  }
-
-  
-
-
-  handleLinkClick(event) {
+  handleLinkClick = event => {
     const { openDocLink } = require("devtools/client/shared/link");
 
     
     const target =  (event.target);
 
     openDocLink(target.value, {});
-  }
+  };
 
   render() {
     return div(
