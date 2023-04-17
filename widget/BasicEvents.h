@@ -65,8 +65,6 @@ struct BaseEventFlags {
   
   bool mInCapturePhase : 1;
   
-  bool mInTargetPhase : 1;
-  
   bool mInSystemGroup : 1;
   
   
@@ -187,6 +185,11 @@ struct BaseEventFlags {
   
   
   bool mHadNonPrivilegedClickListeners : 1;
+
+  
+  inline bool InTargetPhase() const {
+    return (mInBubblingPhase && mInCapturePhase);
+  }
 
   
 
