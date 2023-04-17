@@ -30,7 +30,7 @@ add_task(async function() {
   privateWindow = await BrowserTestUtils.openNewBrowserWindow({
     private: true,
   });
-  await runTest(privateWindow, privateWindow, false);
+  await runTest(privateWindow, privateWindow, true);
   await BrowserTestUtils.closeWindow(privateWindow);
 
   normalWindow = await BrowserTestUtils.openNewBrowserWindow();

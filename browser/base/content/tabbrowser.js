@@ -2792,7 +2792,8 @@
             
             this.UrlbarProviderOpenTabs.registerOpenTab(
               lazyBrowserURI.spec,
-              userContextId
+              userContextId || 0,
+              PrivateBrowsingUtils.isWindowPrivate(window)
             );
             b.registeredOpenURI = lazyBrowserURI;
           }
@@ -3857,7 +3858,8 @@
         let userContextId = browser.getAttribute("usercontextid") || 0;
         this.UrlbarProviderOpenTabs.unregisterOpenTab(
           browser.registeredOpenURI.spec,
-          userContextId
+          userContextId,
+          PrivateBrowsingUtils.isWindowPrivate(window)
         );
         delete browser.registeredOpenURI;
       }
@@ -4233,7 +4235,8 @@
         let userContextId = otherBrowser.getAttribute("usercontextid") || 0;
         this.UrlbarProviderOpenTabs.unregisterOpenTab(
           otherBrowser.registeredOpenURI.spec,
-          userContextId
+          userContextId,
+          PrivateBrowsingUtils.isWindowPrivate(window)
         );
         delete otherBrowser.registeredOpenURI;
       }
@@ -5560,7 +5563,8 @@
           let userContextId = browser.getAttribute("usercontextid") || 0;
           this.UrlbarProviderOpenTabs.unregisterOpenTab(
             browser.registeredOpenURI.spec,
-            userContextId
+            userContextId,
+            PrivateBrowsingUtils.isWindowPrivate(window)
           );
           delete browser.registeredOpenURI;
         }
@@ -6550,20 +6554,16 @@
           let uri = this.mBrowser.registeredOpenURI;
           gBrowser.UrlbarProviderOpenTabs.unregisterOpenTab(
             uri.spec,
-            userContextId
+            userContextId,
+            PrivateBrowsingUtils.isWindowPrivate(window)
           );
           delete this.mBrowser.registeredOpenURI;
         }
-        
-        
-        if (
-          !isBlankPageURL(aLocation.spec) &&
-          (!PrivateBrowsingUtils.isWindowPrivate(window) ||
-            PrivateBrowsingUtils.permanentPrivateBrowsing)
-        ) {
+        if (!isBlankPageURL(aLocation.spec)) {
           gBrowser.UrlbarProviderOpenTabs.registerOpenTab(
             aLocation.spec,
-            userContextId
+            userContextId,
+            PrivateBrowsingUtils.isWindowPrivate(window)
           );
           this.mBrowser.registeredOpenURI = aLocation;
         }

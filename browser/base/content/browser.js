@@ -8385,9 +8385,8 @@ function switchToTabHavingURI(aURI, aOpenNew, aOpenParams = {}) {
     
     if (
       !kPrivateBrowsingWhitelist.has(aURI.spec) &&
-      (PrivateBrowsingUtils.isWindowPrivate(window) ||
-        PrivateBrowsingUtils.isWindowPrivate(aWindow)) &&
-      !PrivateBrowsingUtils.permanentPrivateBrowsing
+      PrivateBrowsingUtils.isWindowPrivate(window) !==
+        PrivateBrowsingUtils.isWindowPrivate(aWindow)
     ) {
       return false;
     }

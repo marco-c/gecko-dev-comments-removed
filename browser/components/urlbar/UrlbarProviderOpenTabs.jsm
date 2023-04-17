@@ -22,6 +22,8 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
 
+const PRIVATE_USER_CONTEXT_ID = -1;
+
 
 
 
@@ -69,7 +71,31 @@ class UrlbarProviderOpenTabs extends UrlbarProvider {
   
 
 
-  static openTabs = new Map();
+  static _openTabs = new Map();
+
+  
+
+
+
+
+
+  static getOpenTabs(userContextId, isInPrivateWindow) {
+    userContextId = UrlbarProviderOpenTabs.getUserContextIdForOpenPagesTable(
+      userContextId,
+      isInPrivateWindow
+    );
+    return UrlbarProviderOpenTabs._openTabs.get(userContextId);
+  }
+
+  
+
+
+
+
+
+  static getUserContextIdForOpenPagesTable(userContextId, isInPrivateWindow) {
+    return isInPrivateWindow ? PRIVATE_USER_CONTEXT_ID : userContextId;
+  }
 
   
 
@@ -80,7 +106,7 @@ class UrlbarProviderOpenTabs extends UrlbarProvider {
       
       UrlbarProviderOpenTabs.memoryTableInitialized = true;
       
-      for (let [userContextId, urls] of UrlbarProviderOpenTabs.openTabs) {
+      for (let [userContextId, urls] of UrlbarProviderOpenTabs._openTabs) {
         for (let url of urls) {
           await addToMemoryTable(url, userContextId).catch(Cu.reportError);
         }
@@ -93,11 +119,17 @@ class UrlbarProviderOpenTabs extends UrlbarProvider {
 
 
 
-  static async registerOpenTab(url, userContextId = 0) {
-    if (!UrlbarProviderOpenTabs.openTabs.has(userContextId)) {
-      UrlbarProviderOpenTabs.openTabs.set(userContextId, []);
+
+  static async registerOpenTab(url, userContextId, isInPrivateWindow) {
+    userContextId = UrlbarProviderOpenTabs.getUserContextIdForOpenPagesTable(
+      userContextId,
+      isInPrivateWindow
+    );
+
+    if (!UrlbarProviderOpenTabs._openTabs.has(userContextId)) {
+      UrlbarProviderOpenTabs._openTabs.set(userContextId, []);
     }
-    UrlbarProviderOpenTabs.openTabs.get(userContextId).push(url);
+    UrlbarProviderOpenTabs._openTabs.get(userContextId).push(url);
     await addToMemoryTable(url, userContextId).catch(Cu.reportError);
   }
 
@@ -106,8 +138,14 @@ class UrlbarProviderOpenTabs extends UrlbarProvider {
 
 
 
-  static async unregisterOpenTab(url, userContextId = 0) {
-    let openTabs = UrlbarProviderOpenTabs.openTabs.get(userContextId);
+
+  static async unregisterOpenTab(url, userContextId, isInPrivateWindow) {
+    userContextId = UrlbarProviderOpenTabs.getUserContextIdForOpenPagesTable(
+      userContextId,
+      isInPrivateWindow
+    );
+
+    let openTabs = UrlbarProviderOpenTabs._openTabs.get(userContextId);
     if (openTabs) {
       let index = openTabs.indexOf(url);
       if (index != -1) {
