@@ -4291,7 +4291,11 @@ pref("dom.clients.openwindow_favors_same_process", true);
 
 pref("toolkit.aboutProcesses.showAllSubframes", false);
 
-pref("toolkit.aboutProcesses.showThreads", false);
+#ifdef NIGHTLY_BUILD
+  pref("toolkit.aboutProcesses.showThreads", true);
+#else
+  pref("toolkit.aboutProcesses.showThreads", false);
+#endif
 
 
 
