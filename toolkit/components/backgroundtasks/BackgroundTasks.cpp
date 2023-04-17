@@ -13,8 +13,8 @@ namespace mozilla {
 
 NS_IMPL_ISUPPORTS(BackgroundTasks, nsIBackgroundTasks);
 
-nsresult BackgroundTasks::GetOrCreateTemporaryProfileDirectoryImpl(
-    nsIFile** aFile) {
+nsresult BackgroundTasks::CreateTemporaryProfileDirectoryImpl(
+    const nsCString& aInstallHash, nsIFile** aFile) {
   if (mBackgroundTask.isNothing()) {
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -31,33 +31,19 @@ nsresult BackgroundTasks::GetOrCreateTemporaryProfileDirectoryImpl(
     NS_ENSURE_SUCCESS(rv, rv);
 
     
-    
-    rv = file->AppendNative(
-        nsPrintfCString("backgroundtask-%s", mBackgroundTask.ref().get()));
+    rv = file->AppendNative(nsPrintfCString("%sBackgroundTask-%s-%s",
+                                            MOZ_APP_VENDOR, aInstallHash.get(),
+                                            mBackgroundTask.ref().get()));
     NS_ENSURE_SUCCESS(rv, rv);
 
     
-    bool exists;
-    rv = file->Exists(&exists);
+    
+    rv = file->CreateUnique(nsIFile::DIRECTORY_TYPE, 0700);
     NS_ENSURE_SUCCESS(rv, rv);
-    if (!exists) {
-      rv = file->Create(nsIFile::DIRECTORY_TYPE, 0700);
-      NS_ENSURE_SUCCESS(rv, rv);
-    } else {
-      bool isDir;
-      rv = file->IsDirectory(&isDir);
-      NS_ENSURE_SUCCESS(rv, rv);
-      if (!isDir) {
-        return NS_ERROR_FILE_DESTINATION_NOT_DIR;
-      }
-    }
 
     rv = file->Clone(getter_AddRefs(mProfD));
     NS_ENSURE_SUCCESS(rv, rv);
   }
-
-  nsString path;
-  file->GetPath(path);
 
   file.forget(aFile);
   return NS_OK;
