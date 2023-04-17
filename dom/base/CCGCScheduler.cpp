@@ -169,7 +169,7 @@ struct CCIntervalMarker {
 };
 #endif
 
-void CCGCScheduler::NoteCCBegin(TimeStamp aWhen) {
+void CCGCScheduler::NoteCCBegin(CCReason aReason, TimeStamp aWhen) {
 #ifdef MOZ_GECKO_PROFILER
   profiler_add_marker("CC", baseprofiler::category::GCCC,
                       MarkerOptions(MarkerTiming::IntervalStart(aWhen)),
@@ -540,14 +540,13 @@ void CCGCScheduler::MaybePokeCC(TimeStamp aNow, uint32_t aSuspectedCCObjects) {
     return;
   }
 
-  MOZ_ASSERT(mCCReason == CCReason::NO_REASON);
   CCReason reason = ShouldScheduleCC(aNow, aSuspectedCCObjects);
   if (reason != CCReason::NO_REASON) {
     
     nsCycleCollector_dispatchDeferredDeletion();
 
     if (!mCCRunner) {
-      InitCCRunnerStateMachine(CCRunnerState::ReducePurple);
+      InitCCRunnerStateMachine(CCRunnerState::ReducePurple, reason);
     }
     EnsureCCRunner(kCCSkippableDelay, kForgetSkippableSliceDuration);
   }
@@ -836,8 +835,12 @@ CCRunnerStep CCGCScheduler::AdvanceCCRunner(TimeStamp aDeadline, TimeStamp aNow,
       [[fallthrough]];
 
       
-    case CCRunnerState::CycleCollecting:
-      return {CCRunnerAction::CycleCollect, Yield};
+    case CCRunnerState::CycleCollecting: {
+      CCRunnerStep step{CCRunnerAction::CycleCollect, Yield};
+      step.mCCReason = mCCReason;
+      mCCReason = CCReason::SLICE;  
+      return step;
+    }
 
     default:
       MOZ_CRASH("Unexpected CCRunner state");

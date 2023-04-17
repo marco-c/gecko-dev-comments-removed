@@ -740,8 +740,8 @@ void XPCJSRuntime::PrepareForForgetSkippable() {
   }
 }
 
-void XPCJSRuntime::BeginCycleCollectionCallback() {
-  nsJSContext::BeginCycleCollectionCallback();
+void XPCJSRuntime::BeginCycleCollectionCallback(CCReason aReason) {
+  nsJSContext::BeginCycleCollectionCallback(aReason);
 
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
   if (obs) {
@@ -801,9 +801,12 @@ void XPCJSRuntime::GCSliceCallback(JSContext* cx, JS::GCProgress progress,
 void XPCJSRuntime::DoCycleCollectionCallback(JSContext* cx) {
   
   
-  NS_DispatchToCurrentThread(
-      NS_NewRunnableFunction("XPCJSRuntime::DoCycleCollectionCallback",
-                             []() { nsJSContext::CycleCollectNow(nullptr); }));
+  
+  
+  
+  NS_DispatchToCurrentThread(NS_NewRunnableFunction(
+      "XPCJSRuntime::DoCycleCollectionCallback",
+      []() { nsJSContext::CycleCollectNow(CCReason::GC_WAITING, nullptr); }));
 
   XPCJSRuntime* self = nsXPConnect::GetRuntimeInstance();
   if (!self) {
