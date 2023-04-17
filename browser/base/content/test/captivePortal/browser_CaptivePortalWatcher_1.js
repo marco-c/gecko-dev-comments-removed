@@ -51,18 +51,10 @@ let testcases = [
     let button = notification.buttonContainer.querySelector(
       "button.notification-button"
     );
-    async function clickButtonAndExpectNewPortalTabAndNotification() {
-      let newTabCreation = BrowserTestUtils.waitForNewTab(
-        win.gBrowser,
-        CANONICAL_URL
-      );
-      let buttonPressedEvent = TestUtils.topicObserved(
-        "captive-portal-login-button-pressed"
-      );
-
+    async function clickButtonAndExpectNewPortalTab() {
+      let p = BrowserTestUtils.waitForNewTab(win.gBrowser, CANONICAL_URL);
       button.click();
-
-      const [tab] = await Promise.all([newTabCreation, buttonPressedEvent]);
+      let tab = await p;
       is(
         win.gBrowser.selectedTab,
         tab,
@@ -73,7 +65,7 @@ let testcases = [
 
     
     
-    let tab = await clickButtonAndExpectNewPortalTabAndNotification();
+    let tab = await clickButtonAndExpectNewPortalTab();
     testPortalTabSelectedAndButtonNotVisible();
 
     
@@ -83,7 +75,7 @@ let testcases = [
 
     
     
-    tab = await clickButtonAndExpectNewPortalTabAndNotification();
+    tab = await clickButtonAndExpectNewPortalTab();
 
     
     
@@ -101,74 +93,13 @@ let testcases = [
     BrowserTestUtils.removeTab(tab);
     win.gBrowser.selectedTab = anotherTab;
     testShowLoginPageButtonVisibility(notification, "visible");
-    tab = await clickButtonAndExpectNewPortalTabAndNotification();
+    tab = await clickButtonAndExpectNewPortalTab();
 
     BrowserTestUtils.removeTab(anotherTab);
     await freePortal(true);
     ensureNoPortalTab(win);
     ensureNoPortalNotification(win);
     await closeWindowAndWaitForWindowActivate(win);
-  },
-  async function testLoginSuccessAfterButtonPress() {
-    
-    let loginSuccessAfterButtonPress = TestUtils.topicObserved(
-      "captive-portal-login-success-after-button-pressed"
-    );
-    window.CaptivePortalWatcher.observe(null, "captive-portal-login-success");
-
-    let exception = undefined;
-    try {
-      await waitForPromiseWithTimeout(loginSuccessAfterButtonPress);
-    } catch (ex) {
-      exception = ex;
-    }
-    isnot(
-      exception,
-      undefined,
-      "captive-portal-login-success-after-button-pressed should not have" +
-        " been sent, because button was not pressed"
-    );
-
-    
-    loginSuccessAfterButtonPress = TestUtils.topicObserved(
-      "captive-portal-login-success-after-button-pressed"
-    );
-
-    window.CaptivePortalWatcher.observe(
-      null,
-      "captive-portal-login-button-pressed"
-    );
-    window.CaptivePortalWatcher.observe(null, "captive-portal-login-success");
-
-    await loginSuccessAfterButtonPress;
-
-    
-    
-
-    
-    
-    
-    window.CaptivePortalWatcher._loginButtonPressedTimeStamp -=
-      window.CaptivePortalWatcher._LOGIN_BUTTON_PRESSED_TIMEOUT;
-
-    loginSuccessAfterButtonPress = TestUtils.topicObserved(
-      "captive-portal-login-success-after-button-pressed"
-    );
-
-    window.CaptivePortalWatcher.observe(null, "captive-portal-login-success");
-    exception = undefined;
-    try {
-      await waitForPromiseWithTimeout(loginSuccessAfterButtonPress);
-    } catch (ex) {
-      exception = ex;
-    }
-
-    isnot(
-      exception,
-      undefined,
-      "captive-portal-login-success-after-button-pressed should not have" +
-        " been sent, button was not pressed again"
-    );
   },
 ];
 

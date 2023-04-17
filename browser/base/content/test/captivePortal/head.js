@@ -268,15 +268,3 @@ async function openCaptivePortalLoginTab(
 
   return portalTab;
 }
-
-
-
-async function waitForPromiseWithTimeout(promise, timeoutMs = 5000) {
-  let timedOut = new Promise((resolve, reject) => {
-    
-    setTimeout(() => {
-      reject(new Error(`Timed out in ${timeoutMs} ms.`));
-    }, timeoutMs);
-  });
-  await Promise.race([promise, timedOut]);
-}

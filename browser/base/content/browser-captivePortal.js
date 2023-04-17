@@ -26,22 +26,6 @@ var CaptivePortalWatcher = {
   
   _previousCaptivePortalTab: null,
 
-  
-  
-  
-  
-  
-  _loginButtonPressedTimeStamp: 0, 
-
-  
-  
-  
-  
-  
-  
-  
-  _LOGIN_BUTTON_PRESSED_TIMEOUT: 60 * 1000 * 1000, 
-
   get _captivePortalNotification() {
     return gNotificationBox.getNotificationWithValue(
       this.PORTAL_NOTIFICATION_VALUE
@@ -64,7 +48,6 @@ var CaptivePortalWatcher = {
     Services.obs.addObserver(this, "captive-portal-login");
     Services.obs.addObserver(this, "captive-portal-login-abort");
     Services.obs.addObserver(this, "captive-portal-login-success");
-    Services.obs.addObserver(this, "captive-portal-login-button-pressed");
 
     this._cps = Cc["@mozilla.org/network/captive-portal-service;1"].getService(
       Ci.nsICaptivePortalService
@@ -100,7 +83,6 @@ var CaptivePortalWatcher = {
     Services.obs.removeObserver(this, "captive-portal-login");
     Services.obs.removeObserver(this, "captive-portal-login-abort");
     Services.obs.removeObserver(this, "captive-portal-login-success");
-    Services.obs.removeObserver(this, "captive-portal-login-button-pressed");
 
     this._cancelDelayedCaptivePortal();
   },
@@ -123,23 +105,8 @@ var CaptivePortalWatcher = {
       case "captive-portal-login-abort":
         this._captivePortalGone(false);
         break;
-      case "captive-portal-login-button-pressed":
-        this._loginButtonPressedTimeStamp = Cu.now();
-        break;
       case "captive-portal-login-success":
         this._captivePortalGone(true);
-
-        if (
-          this._loginButtonPressedTimeStamp &&
-          Cu.now() - this._loginButtonPressedTimeStamp <
-            this._LOGIN_BUTTON_PRESSED_TIMEOUT
-        ) {
-          Services.obs.notifyObservers(
-            null,
-            "captive-portal-login-success-after-button-pressed"
-          );
-          this._loginButtonPressedTimeStamp = 0;
-        }
         break;
       case "delayed-captive-portal-handled":
         this._cancelDelayedCaptivePortal();
@@ -338,11 +305,6 @@ var CaptivePortalWatcher = {
         ),
         callback: () => {
           this.ensureCaptivePortalTab();
-
-          Services.obs.notifyObservers(
-            null,
-            "captive-portal-login-button-pressed"
-          );
 
           Services.telemetry.recordEvent(
             "networking.captive_portal",
