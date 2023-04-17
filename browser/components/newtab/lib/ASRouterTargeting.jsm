@@ -399,8 +399,6 @@ const TargetingGetters = {
   get browserSettings() {
     const { settings } = TelemetryEnvironment.currentEnvironment;
     return {
-      
-      attribution: settings.attribution,
       update: settings.update,
     };
   },
