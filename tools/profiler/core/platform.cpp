@@ -3534,8 +3534,16 @@ void SamplerThread::Run() {
             
             
             
+            
+            
+            
+            
+            
+            
+            
             if (registeredThread->RacyRegisteredThread()
-                    .CanDuplicateLastSampleDueToSleep()) {
+                    .CanDuplicateLastSampleDueToSleep() ||
+                runningTimesDiff.GetThreadCPUDelta() == Some(uint64_t(0))) {
               const bool dup_ok = ActivePS::Buffer(lock).DuplicateLastSample(
                   info->ThreadId(), threadSampleDeltaMs,
                   profiledThreadData->LastSample(), runningTimesDiff);
