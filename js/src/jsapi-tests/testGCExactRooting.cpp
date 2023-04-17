@@ -123,7 +123,7 @@ BEGIN_TEST(testGCRootedStaticStructInternalStackStorageAugmented) {
 
   JS::Rooted<Value> rv(cx);
 
-  CHECK_EQUAL(r1.constructor(), 1);    
+  CHECK_EQUAL(r1.constructor(), 101);  
   CHECK_EQUAL(r2.constructor(), 2);    
   CHECK_EQUAL(r3.constructor(), 103);  
   CHECK_EQUAL(r4.constructor(), 3);    
@@ -169,7 +169,7 @@ BEGIN_TEST(testGCRootedStaticStructInternalStackStorageAugmented) {
     JS::PersistentRooted<MyContainer> cp3(cx, cx);
     JS::PersistentRooted<MyContainer> cp4(cx, cx, cx, cx);
 
-    CHECK_EQUAL(cp1.constructor(), 1);    
+    CHECK_EQUAL(cp1.constructor(), 101);  
     CHECK_EQUAL(cp2.constructor(), 2);    
     CHECK_EQUAL(cp3.constructor(), 3);    
     CHECK_EQUAL(cp4.constructor(), 4);    

@@ -1217,7 +1217,7 @@ class MutableWrappedPtrOperations<JS::Value, Wrapper>
 
 
 template <typename Wrapper>
-class HeapOperations<JS::Value, Wrapper>
+class HeapBase<JS::Value, Wrapper>
     : public MutableWrappedPtrOperations<JS::Value, Wrapper> {};
 
 MOZ_HAVE_NORETURN MOZ_COLD MOZ_NEVER_INLINE void ReportBadValueTypeAndCrash(
