@@ -56,7 +56,9 @@ struct AutoLockFile {
 
   
   
-  FILE *openFile();
+  
+  
+
   
   
   FILE *openTmp();
