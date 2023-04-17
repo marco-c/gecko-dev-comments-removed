@@ -987,83 +987,132 @@ nsresult WhiteSpaceVisibilityKeeper::ReplaceText(
   
   
   
-
-  if (nsCRT::IsAsciiSpace(theString[0])) {
-    
-    
-    if (invisibleLeadingWhiteSpaceRangeAtStart.IsPositioned()) {
-      theString.SetCharAt(HTMLEditUtils::kNBSP, 0);
-    }
-    
-    
-    else if (pointPositionWithVisibleWhiteSpacesAtStart ==
-                 PointPosition::MiddleOfFragment ||
-             pointPositionWithVisibleWhiteSpacesAtStart ==
-                 PointPosition::EndOfFragment) {
-      EditorDOMPointInText atPreviousChar =
-          textFragmentDataAtStart.GetPreviousEditableCharPoint(pointToInsert);
-      if (atPreviousChar.IsSet() && !atPreviousChar.IsEndOfContainer() &&
-          atPreviousChar.IsCharASCIISpace()) {
+  
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(!theString.IsEmpty());
+  if (NS_WARN_IF(!pointToInsert.IsInContentNode()) ||
+      !EditorUtils::IsWhiteSpacePreformatted(
+          *pointToInsert.ContainerAsContent())) {
+    const bool isNewLineCollapsible = !pointToInsert.IsInContentNode() ||
+                                      !EditorUtils::IsNewLinePreformatted(
+                                          *pointToInsert.ContainerAsContent());
+    auto isCollapsibleChar = [&isNewLineCollapsible](char16_t aChar) -> bool {
+      return nsCRT::IsAsciiSpace(aChar) &&
+             (isNewLineCollapsible || aChar != HTMLEditUtils::kNewLine);
+    };
+    if (isCollapsibleChar(theString[0])) {
+      
+      
+      if (invisibleLeadingWhiteSpaceRangeAtStart.IsPositioned()) {
+        theString.SetCharAt(HTMLEditUtils::kNBSP, 0);
+      }
+      
+      
+      else if (pointPositionWithVisibleWhiteSpacesAtStart ==
+                   PointPosition::MiddleOfFragment ||
+               pointPositionWithVisibleWhiteSpacesAtStart ==
+                   PointPosition::EndOfFragment) {
+        EditorDOMPointInText atPreviousChar =
+            textFragmentDataAtStart.GetPreviousEditableCharPoint(pointToInsert);
+        if (atPreviousChar.IsSet() && !atPreviousChar.IsEndOfContainer() &&
+            atPreviousChar.IsCharASCIISpace()) {
+          theString.SetCharAt(HTMLEditUtils::kNBSP, 0);
+        }
+      }
+      
+      
+      
+      else if (textFragmentDataAtStart.StartsFromHardLineBreak() &&
+               isInsertionPointEqualsOrIsBeforeStartOfText) {
         theString.SetCharAt(HTMLEditUtils::kNBSP, 0);
       }
     }
-    
-    
-    
-    else if (textFragmentDataAtStart.StartsFromHardLineBreak() &&
-             isInsertionPointEqualsOrIsBeforeStartOfText) {
-      theString.SetCharAt(HTMLEditUtils::kNBSP, 0);
-    }
-  }
 
-  
-  uint32_t lastCharIndex = theString.Length() - 1;
-
-  if (nsCRT::IsAsciiSpace(theString[lastCharIndex])) {
     
-    
-    if (invisibleTrailingWhiteSpaceRangeAtEnd.IsPositioned()) {
-      theString.SetCharAt(HTMLEditUtils::kNBSP, lastCharIndex);
-    }
-    
-    
-    
-    if (pointPositionWithVisibleWhiteSpacesAtEnd ==
-            PointPosition::StartOfFragment ||
-        pointPositionWithVisibleWhiteSpacesAtEnd ==
-            PointPosition::MiddleOfFragment) {
-      EditorDOMPointInText atNextChar =
-          textFragmentDataAtEnd.GetInclusiveNextEditableCharPoint(
-              pointToInsert);
-      if (atNextChar.IsSet() && !atNextChar.IsEndOfContainer() &&
-          atNextChar.IsCharASCIISpace()) {
+    const uint32_t lastCharIndex = theString.Length() - 1;
+    if (isCollapsibleChar(theString[lastCharIndex])) {
+      
+      
+      if (invisibleTrailingWhiteSpaceRangeAtEnd.IsPositioned()) {
+        theString.SetCharAt(HTMLEditUtils::kNBSP, lastCharIndex);
+      }
+      
+      
+      
+      if (pointPositionWithVisibleWhiteSpacesAtEnd ==
+              PointPosition::StartOfFragment ||
+          pointPositionWithVisibleWhiteSpacesAtEnd ==
+              PointPosition::MiddleOfFragment) {
+        EditorDOMPointInText atNextChar =
+            textFragmentDataAtEnd.GetInclusiveNextEditableCharPoint(
+                pointToInsert);
+        if (atNextChar.IsSet() && !atNextChar.IsEndOfContainer() &&
+            atNextChar.IsCharASCIISpace()) {
+          theString.SetCharAt(HTMLEditUtils::kNBSP, lastCharIndex);
+        }
+      }
+      
+      
+      
+      else if (textFragmentDataAtEnd.EndsByBlockBoundary() &&
+               isInsertionPointEqualsOrAfterEndOfText) {
         theString.SetCharAt(HTMLEditUtils::kNBSP, lastCharIndex);
       }
     }
-    
-    
-    
-    else if (textFragmentDataAtEnd.EndsByBlockBoundary() &&
-             isInsertionPointEqualsOrAfterEndOfText) {
-      theString.SetCharAt(HTMLEditUtils::kNBSP, lastCharIndex);
-    }
-  }
 
-  
-  
-  
-  
-  bool prevWS = false;
-  for (uint32_t i = 0; i <= lastCharIndex; i++) {
-    if (nsCRT::IsAsciiSpace(theString[i])) {
-      if (prevWS) {
+    
+    
+    
+    
+    enum class PreviousChar {
+      NonCollapsibleChar,
+      CollapsibleChar,
+      PreformattedNewLine,
+    };
+    PreviousChar previousChar = PreviousChar::NonCollapsibleChar;
+    for (uint32_t i = 0; i <= lastCharIndex; i++) {
+      if (isCollapsibleChar(theString[i])) {
         
-        theString.SetCharAt(HTMLEditUtils::kNBSP, i - 1);
-      } else {
-        prevWS = true;
+        
+        
+        if (previousChar == PreviousChar::CollapsibleChar) {
+          MOZ_ASSERT(i > 0);
+          theString.SetCharAt(HTMLEditUtils::kNBSP, i - 1);
+          
+          continue;
+        }
+
+        
+        
+        
+        
+        if (previousChar == PreviousChar::PreformattedNewLine) {
+          MOZ_ASSERT(i > 0);
+          theString.SetCharAt(HTMLEditUtils::kNBSP, i);
+          previousChar = PreviousChar::NonCollapsibleChar;
+          continue;
+        }
+
+        previousChar = PreviousChar::CollapsibleChar;
+        continue;
       }
-    } else {
-      prevWS = false;
+
+      if (theString[i] != HTMLEditUtils::kNewLine) {
+        previousChar = PreviousChar::NonCollapsibleChar;
+        continue;
+      }
+
+      
+      
+      
+      
+      MOZ_ASSERT(!isNewLineCollapsible);
+      if (previousChar == PreviousChar::CollapsibleChar) {
+        MOZ_ASSERT(i > 0);
+        theString.SetCharAt(HTMLEditUtils::kNBSP, i - 1);
+      }
+      previousChar = PreviousChar::PreformattedNewLine;
     }
   }
 
@@ -2166,10 +2215,6 @@ WSRunScanner::TextFragmentData::GetReplaceRangeDataAtEndOfDeletionRange(
     return ReplaceRangeData(invisibleTrailingWhiteSpaceRangeAtEnd, u""_ns);
   }
 
-  if (!IsWhiteSpaceCollapsible()) {
-    return ReplaceRangeData();
-  }
-
   
   
   
@@ -2197,13 +2242,11 @@ WSRunScanner::TextFragmentData::GetReplaceRangeDataAtEndOfDeletionRange(
       GetInclusiveNextEditableCharPoint(endToDelete);
   if (!nextCharOfStartOfEnd.IsSet() ||
       nextCharOfStartOfEnd.IsEndOfContainer() ||
-      !nextCharOfStartOfEnd.IsCharASCIISpace() ||
-      EditorUtils::IsWhiteSpacePreformatted(
-          *nextCharOfStartOfEnd.ContainerAsText())) {
+      !nextCharOfStartOfEnd.IsCharCollapsibleASCIISpace()) {
     return ReplaceRangeData();
   }
   if (nextCharOfStartOfEnd.IsStartOfContainer() ||
-      nextCharOfStartOfEnd.IsPreviousCharASCIISpace()) {
+      nextCharOfStartOfEnd.IsPreviousCharCollapsibleASCIISpace()) {
     nextCharOfStartOfEnd = aTextFragmentDataAtStartToDelete
                                .GetFirstASCIIWhiteSpacePointCollapsedTo(
                                    nextCharOfStartOfEnd, nsIEditor::eNone);
@@ -2243,10 +2286,6 @@ WSRunScanner::TextFragmentData::GetReplaceRangeDataAtStartOfDeletionRange(
 
     
     return ReplaceRangeData(invisibleLeadingWhiteSpaceRangeAtStart, u""_ns);
-  }
-
-  if (!IsWhiteSpaceCollapsible()) {
-    return ReplaceRangeData();
   }
 
   
