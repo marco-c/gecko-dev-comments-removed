@@ -937,14 +937,15 @@ already_AddRefed<nsHostRecord> nsHostResolver::InitLoopbackRecord(
   RefPtr<nsHostRecord> rec = InitRecord(key);
 
   nsTArray<NetAddr> addresses;
-  NetAddr addr;
+  PRNetAddr prAddr;
+  memset(&prAddr, 0, sizeof(prAddr));
   if (key.af == PR_AF_INET || key.af == PR_AF_UNSPEC) {
-    MOZ_RELEASE_ASSERT(NS_SUCCEEDED(addr.InitFromString("127.0.0.1"_ns)));
-    addresses.AppendElement(addr);
+    MOZ_RELEASE_ASSERT(PR_StringToNetAddr("127.0.0.1", &prAddr) == PR_SUCCESS);
+    addresses.AppendElement(NetAddr(&prAddr));
   }
   if (key.af == PR_AF_INET6 || key.af == PR_AF_UNSPEC) {
-    MOZ_RELEASE_ASSERT(NS_SUCCEEDED(addr.InitFromString("::1"_ns)));
-    addresses.AppendElement(addr);
+    MOZ_RELEASE_ASSERT(PR_StringToNetAddr("::1", &prAddr) == PR_SUCCESS);
+    addresses.AppendElement(NetAddr(&prAddr));
   }
 
   RefPtr<AddrInfo> ai =
@@ -989,11 +990,17 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
   }
 
   
-  NetAddr tempAddr;
-  if (IS_OTHER_TYPE(type) && (NS_SUCCEEDED(tempAddr.InitFromString(host)))) {
+  PRNetAddr tempAddr;
+  
+  
+  memset(&tempAddr, 0, sizeof(PRNetAddr));
+
+  if (IS_OTHER_TYPE(type) &&
+      (PR_StringToNetAddr(host.get(), &tempAddr) == PR_SUCCESS)) {
     
     return NS_ERROR_UNKNOWN_HOST;
   }
+  memset(&tempAddr, 0, sizeof(PRNetAddr));
 
   RefPtr<nsResolveHostCallback> callback(aCallback);
   
@@ -1084,7 +1091,8 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
       LOG(("  Using cached address for IP Literal [%s].\n", host.get()));
       Telemetry::Accumulate(Telemetry::DNS_LOOKUP_METHOD2, METHOD_LITERAL);
       result = rec;
-    } else if (addrRec && NS_SUCCEEDED(tempAddr.InitFromString(host))) {
+    } else if (addrRec &&
+               PR_StringToNetAddr(host.get(), &tempAddr) == PR_SUCCESS) {
       
       
       
@@ -1092,7 +1100,8 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
 
       
       
-      addrRec->addr = MakeUnique<NetAddr>(tempAddr);
+      addrRec->addr = MakeUnique<NetAddr>();
+      PRNetAddrToNetAddr(&tempAddr, addrRec->addr.get());
       
       Telemetry::Accumulate(Telemetry::DNS_LOOKUP_METHOD2, METHOD_LITERAL);
       result = rec;

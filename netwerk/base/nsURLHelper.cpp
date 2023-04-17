@@ -26,7 +26,6 @@
 #include "nsEscape.h"
 #include "nsDOMString.h"
 #include "mozilla/net/rust_helper.h"
-#include "mozilla/net/DNS.h"
 
 using namespace mozilla;
 
@@ -890,7 +889,9 @@ bool net_IsValidHostName(const nsACString& host) {
     return true;
 
   
-  return mozilla::net::HostIsIPLiteral(host);
+  nsAutoCString strhost(host);
+  PRNetAddr addr;
+  return PR_StringToNetAddr(strhost.get(), &addr) == PR_SUCCESS;
 }
 
 bool net_IsValidIPv4Addr(const nsACString& aAddr) {
