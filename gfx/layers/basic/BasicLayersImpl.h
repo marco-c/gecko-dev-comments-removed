@@ -8,7 +8,6 @@
 #define GFX_BASICLAYERSIMPL_H
 
 #include "BasicImplData.h"       
-#include "BasicLayers.h"         
 #include "ReadbackLayer.h"       
 #include "gfxContext.h"          
 #include "mozilla/Attributes.h"  
@@ -45,29 +44,6 @@ class AutoSetOperator {
 
  private:
   RefPtr<gfxContext> mContext;
-};
-
-class BasicReadbackLayer : public ReadbackLayer, public BasicImplData {
- public:
-  explicit BasicReadbackLayer(BasicLayerManager* aLayerManager)
-      : ReadbackLayer(aLayerManager, static_cast<BasicImplData*>(this)) {
-    MOZ_COUNT_CTOR(BasicReadbackLayer);
-  }
-
- protected:
-  MOZ_COUNTED_DTOR_OVERRIDE(BasicReadbackLayer)
-
- public:
-  void SetVisibleRegion(const LayerIntRegion& aRegion) override {
-    NS_ASSERTION(BasicManager()->InConstruction(),
-                 "Can only set properties in construction phase");
-    ReadbackLayer::SetVisibleRegion(aRegion);
-  }
-
- protected:
-  BasicLayerManager* BasicManager() {
-    return static_cast<BasicLayerManager*>(mManager);
-  }
 };
 
 

@@ -5,7 +5,6 @@
 
 
 #include "mozilla/layers/ContentClient.h"
-#include "BasicLayers.h"  
 #include "gfxContext.h"   
 #include "gfxPlatform.h"  
 #include "gfxEnv.h"       
@@ -445,59 +444,6 @@ bool ContentClient::ValidBufferSize(BufferSizePolicy aPolicy,
 void ContentClient::PrintInfo(std::stringstream& aStream, const char* aPrefix) {
   aStream << aPrefix;
   aStream << nsPrintfCString("ContentClient (0x%p)", this).get();
-}
-
-
-
-ContentClientBasic::ContentClientBasic(gfx::BackendType aBackend)
-    : ContentClient(nullptr, ContainsVisibleBounds), mBackend(aBackend) {}
-
-void ContentClientBasic::DrawTo(PaintedLayer* aLayer, gfx::DrawTarget* aTarget,
-                                float aOpacity, gfx::CompositionOp aOp,
-                                gfx::SourceSurface* aMask,
-                                const gfx::Matrix* aMaskTransform) {
-  if (!mBuffer) {
-    return;
-  }
-
-  mBuffer->DrawTo(aLayer, aTarget, aOpacity, aOp, aMask, aMaskTransform);
-}
-
-RefPtr<RotatedBuffer> ContentClientBasic::CreateBuffer(gfxContentType aType,
-                                                       const IntRect& aRect,
-                                                       uint32_t aFlags) {
-  MOZ_ASSERT(!(aFlags & BUFFER_COMPONENT_ALPHA));
-  if (aFlags & BUFFER_COMPONENT_ALPHA) {
-    gfxDevCrash(LogReason::AlphaWithBasicClient)
-        << "Asking basic content client for component alpha";
-  }
-
-  IntSize size(aRect.Width(), aRect.Height());
-  RefPtr<gfx::DrawTarget> drawTarget;
-
-#ifdef XP_WIN
-  if (mBackend == BackendType::CAIRO &&
-      (aType == gfxContentType::COLOR ||
-       aType == gfxContentType::COLOR_ALPHA)) {
-    RefPtr<gfxASurface> surf = new gfxWindowsSurface(
-        size, aType == gfxContentType::COLOR ? gfxImageFormat::X8R8G8B8_UINT32
-                                             : gfxImageFormat::A8R8G8B8_UINT32);
-    drawTarget = gfxPlatform::CreateDrawTargetForSurface(surf, size);
-  }
-#endif
-
-  if (!drawTarget) {
-    drawTarget = gfxPlatform::GetPlatform()->CreateDrawTargetForBackend(
-        mBackend, size,
-        gfxPlatform::GetPlatform()->Optimal2DFormatForContent(aType));
-  }
-
-  if (!drawTarget) {
-    return nullptr;
-  }
-
-  return new DrawTargetRotatedBuffer(drawTarget, nullptr, aRect,
-                                     IntPoint(0, 0));
 }
 
 class RemoteBufferReadbackProcessor : public TextureReadbackSink {
