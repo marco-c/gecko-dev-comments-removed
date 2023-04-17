@@ -15,6 +15,7 @@ import static android.media.AudioManager.MODE_IN_COMMUNICATION;
 import static android.media.AudioManager.MODE_NORMAL;
 import static android.media.AudioManager.MODE_RINGTONE;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -236,6 +237,10 @@ final class WebRtcAudioUtils {
     }
   }
 
+  
+  
+  
+  @SuppressLint("WrongConstant")
   private static void logAudioDeviceInfo(String tag, AudioManager audioManager) {
     if (Build.VERSION.SDK_INT < 23) {
       return;
