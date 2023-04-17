@@ -1757,9 +1757,7 @@ nsresult Element::BindToTree(BindContext& aContext, nsINode& aParent) {
     HandleShadowDOMRelatedInsertionSteps(hadParent);
   }
 
-  if (MayHaveStyle() && !IsXULElement()) {
-    
-    
+  if (MayHaveStyle()) {
     
     static_cast<nsStyledElement*>(this)->ReparseStyleAttribute(
          false);
