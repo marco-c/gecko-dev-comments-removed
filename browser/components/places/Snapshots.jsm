@@ -15,6 +15,7 @@ const VERSION_PREF = "browser.places.snapshots.version";
 XPCOMUtils.defineLazyModuleGetters(this, {
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
+  PageDataService: "resource:///modules/pagedata/PageDataService.jsm",
 });
 
 
@@ -103,9 +104,82 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 
 
+
+
 const Snapshots = new (class Snapshots {
+  constructor() {
+    
+    
+    
+    
+    
+    
+  }
+
+  
+
+
+  get DATA_TYPE() {
+    return {
+      PRODUCT: 1,
+    };
+  }
+
   #notify(topic, urls) {
     Services.obs.notifyObservers(null, topic, JSON.stringify(urls));
+  }
+
+  
+
+
+
+  async #addPageData(urls) {
+    let index = 0;
+    let values = [];
+    let bindings = {};
+    for (let { placeId, url } of urls) {
+      let pageData = PageDataService.getCached(url);
+      if (pageData?.data.length) {
+        for (let data of pageData.data) {
+          if (Object.values(this.DATA_TYPE).includes(data.type)) {
+            bindings[`id${index}`] = placeId;
+            bindings[`type${index}`] = data.type;
+            
+            
+            
+            bindings[`data${index}`] = JSON.stringify(data);
+            values.push(`(:id${index}, :type${index}, :data${index})`);
+            index++;
+          }
+        }
+      } else {
+        
+        
+        PageDataService.queueFetch(url).catch(console.error);
+      }
+    }
+
+    logConsole.debug(
+      `Inserting ${index} page data for: ${urls.map(u => u.url)}.`
+    );
+
+    if (index == 0) {
+      return;
+    }
+
+    await PlacesUtils.withConnectionWrapper(
+      "Snapshots.jsm::addPageData",
+      async db => {
+        await db.execute(
+          `
+          INSERT OR REPLACE INTO moz_places_metadata_snapshots_extra
+            (place_id, type, data)
+            VALUES ${values.join(", ")}
+          `,
+          bindings
+        );
+      }
+    );
   }
 
   
@@ -127,7 +201,7 @@ const Snapshots = new (class Snapshots {
       throw new Error("Missing url parameter to Snapshots.add()");
     }
 
-    let added = await PlacesUtils.withConnectionWrapper(
+    let placeId = await PlacesUtils.withConnectionWrapper(
       "Snapshots: add",
       async db => {
         let now = Date.now();
@@ -142,17 +216,30 @@ const Snapshots = new (class Snapshots {
         FROM moz_places_metadata
         WHERE place_id = (SELECT id FROM moz_places WHERE url_hash = hash(:url) AND url = :url)
         ON CONFLICT DO UPDATE SET user_persisted = :userPersisted, removed_at = NULL WHERE :userPersisted = 1
-        RETURNING created_at
+        RETURNING place_id, created_at, user_persisted
       `,
           { createdAt: now, url, userPersisted }
         );
 
         
-        return !!rows.length;
+        if (rows.length) {
+          
+          
+          if (
+            rows[0].getResultByName("created_at") != now &&
+            !rows[0].getResultByName("user_persisted")
+          ) {
+            return null;
+          }
+          return rows[0].getResultByName("place_id");
+        }
+        return null;
       }
     );
 
-    if (added) {
+    if (placeId) {
+      await this.#addPageData([{ placeId, url }]);
+
       this.#notify("places-snapshots-added", [url]);
     }
   }
@@ -166,13 +253,20 @@ const Snapshots = new (class Snapshots {
 
   async delete(url) {
     await PlacesUtils.withConnectionWrapper("Snapshots: delete", async db => {
+      let placeId = (
+        await db.executeCached(
+          `UPDATE moz_places_metadata_snapshots
+           SET removed_at = :removedAt
+           WHERE place_id = (SELECT id FROM moz_places WHERE url_hash = hash(:url) AND url = :url)
+           RETURNING place_id`,
+          { removedAt: Date.now(), url }
+        )
+      )[0].getResultByName("place_id");
+      
       await db.executeCached(
-        `
-        UPDATE moz_places_metadata_snapshots
-          SET removed_at = :removedAt
-        WHERE place_id = (SELECT id FROM moz_places WHERE url_hash = hash(:url) AND url = :url)
-      `,
-        { removedAt: Date.now(), url }
+        `DELETE FROM moz_places_metadata_snapshots_extra
+         WHERE place_id = :placeId`,
+        { placeId }
       );
     });
 
@@ -200,10 +294,13 @@ const Snapshots = new (class Snapshots {
       `
       SELECT h.url AS url, h.title AS title, created_at, removed_at,
              document_type, first_interaction_at, last_interaction_at,
-             user_persisted FROM moz_places_metadata_snapshots s
+             user_persisted, group_concat(e.data, ",") AS page_data
+             FROM moz_places_metadata_snapshots s
       JOIN moz_places h ON h.id = s.place_id
+      LEFT JOIN moz_places_metadata_snapshots_extra e ON e.place_id = s.place_id
       WHERE h.url_hash = hash(:url) AND h.url = :url
        ${extraWhereCondition}
+      GROUP BY s.place_id
     `,
       { url }
     );
@@ -226,27 +323,44 @@ const Snapshots = new (class Snapshots {
 
 
 
-  async query({ limit = 100, includeTombstones = false } = {}) {
+
+
+  async query({
+    limit = 100,
+    includeTombstones = false,
+    type = undefined,
+  } = {}) {
     await this.#ensureVersionUpdates();
     let db = await PlacesUtils.promiseDBConnection();
 
-    let whereStatement = "";
+    let clauses = [];
+    let bindings = { limit };
 
     if (!includeTombstones) {
-      whereStatement = " WHERE removed_at IS NULL";
+      clauses.push("removed_at IS NULL");
     }
+
+    if (type) {
+      clauses.push("type = :type");
+      bindings.type = type;
+    }
+
+    let whereStatement = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
 
     let rows = await db.executeCached(
       `
       SELECT h.url AS url, h.title AS title, created_at, removed_at,
              document_type, first_interaction_at, last_interaction_at,
-             user_persisted FROM moz_places_metadata_snapshots s
+             user_persisted, group_concat(e.data, ",") AS page_data
+             FROM moz_places_metadata_snapshots s
       JOIN moz_places h ON h.id = s.place_id
+      LEFT JOIN moz_places_metadata_snapshots_extra e ON e.place_id = s.place_id
       ${whereStatement}
+      GROUP BY s.place_id
       ORDER BY last_interaction_at DESC
       LIMIT :limit
     `,
-      { limit }
+      bindings
     );
 
     return rows.map(row => this.#translateRow(row));
@@ -291,6 +405,18 @@ const Snapshots = new (class Snapshots {
 
 
   #translateRow(row) {
+    
+    let pageData = new Map();
+    let pageDataStr = row.getResultByName("page_data");
+    if (pageDataStr) {
+      try {
+        let dataArray = JSON.parse(`[${pageDataStr}]`);
+        dataArray.forEach(d => pageData.set(d.type, d.data));
+      } catch (e) {
+        logConsole.error(e);
+      }
+    }
+
     return {
       url: row.getResultByName("url"),
       title: row.getResultByName("title"),
@@ -304,6 +430,7 @@ const Snapshots = new (class Snapshots {
       ),
       documentType: row.getResultByName("document_type"),
       userPersisted: !!row.getResultByName("user_persisted"),
+      pageData,
     };
   }
 
@@ -417,7 +544,7 @@ const Snapshots = new (class Snapshots {
           INSERT OR IGNORE INTO moz_places_metadata_snapshots
             (place_id, first_interaction_at, last_interaction_at, document_type, created_at)
           ${modelQueries.join(" UNION ")}
-          RETURNING (SELECT url FROM moz_places WHERE id=place_id) AS url, created_at
+          RETURNING place_id, (SELECT url FROM moz_places WHERE id=place_id) AS url, created_at
           `;
 
         let now = Date.now();
@@ -431,7 +558,10 @@ const Snapshots = new (class Snapshots {
         for (let row of results) {
           
           if (row.getResultByName("created_at") == now) {
-            newUrls.push(row.getResultByName("url"));
+            newUrls.push({
+              placeId: row.getResultByName("place_id"),
+              url: row.getResultByName("url"),
+            });
           }
         }
 
@@ -441,7 +571,11 @@ const Snapshots = new (class Snapshots {
 
     if (insertedUrls.length) {
       logConsole.debug(`Inserted ${insertedUrls.length} snapshots.`);
-      this.#notify("places-snapshots-added", insertedUrls);
+      await this.#addPageData(insertedUrls);
+      this.#notify(
+        "places-snapshots-added",
+        insertedUrls.map(result => result.url)
+      );
     }
   }
 
