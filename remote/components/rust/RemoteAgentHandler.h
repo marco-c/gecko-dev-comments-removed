@@ -1,0 +1,12 @@
+
+
+
+
+#ifndef mozilla_remote_startup_RemoteAgentHandler_h
+#define mozilla_remote_startup_RemoteAgentHandler_h
+
+#include "nsICommandLineHandler.h"
+
+already_AddRefed<nsICommandLineHandler> GetRemoteAgentHandler();
+
+#endif  

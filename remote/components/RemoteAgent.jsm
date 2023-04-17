@@ -34,28 +34,27 @@ XPCOMUtils.defineLazyGetter(this, "activeProtocols", () => {
 const WEBDRIVER_BIDI_ACTIVE = 0x1;
 const CDP_ACTIVE = 0x2;
 
-const DEFAULT_PORT = 9222;
 
 const LOOPBACKS = ["localhost", "127.0.0.1", "[::1]"];
 const PREF_FORCE_LOCAL = "remote.force-local";
 
 class RemoteAgentClass {
   constructor() {
-    this.classID = Components.ID("{8f685a9d-8181-46d6-a71d-869289099c6d}");
-    this.helpInfo = `  --remote-debugging-port [<port>] Start the Firefox remote agent,
-                     which is a low-level debugging interface based on the
-                     CDP protocol. Defaults to listen on localhost:9222.\n`;
+    this.server = null;
 
-    this._enabled = false;
-    this._port = DEFAULT_PORT;
-    this._server = null;
+    if ((activeProtocols & WEBDRIVER_BIDI_ACTIVE) === WEBDRIVER_BIDI_ACTIVE) {
+      this.webDriverBiDi = new WebDriverBiDi(this);
+      logger.debug("WebDriver BiDi enabled");
+    } else {
+      this.webDriverBiDi = null;
+    }
 
-    this._cdp = null;
-    this._webDriverBiDi = null;
-  }
-
-  get cdp() {
-    return this._cdp;
+    if ((activeProtocols & CDP_ACTIVE) === CDP_ACTIVE) {
+      this.cdp = new CDP(this);
+      logger.debug("CDP enabled");
+    } else {
+      this.cdp = null;
+    }
   }
 
   get debuggerAddress() {
@@ -64,10 +63,6 @@ class RemoteAgentClass {
     }
 
     return `${this.host}:${this.port}`;
-  }
-
-  get enabled() {
-    return this._enabled;
   }
 
   get host() {
@@ -90,15 +85,7 @@ class RemoteAgentClass {
     return this.server?.identity.primaryScheme;
   }
 
-  get server() {
-    return this._server;
-  }
-
-  get webDriverBiDi() {
-    return this._webDriverBiDi;
-  }
-
-  async listen(url) {
+  listen(url) {
     if (Services.appinfo.processType != Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT) {
       throw Components.Exception(
         "May only be instantiated in parent process",
@@ -107,7 +94,7 @@ class RemoteAgentClass {
     }
 
     if (this.listening) {
-      return;
+      return Promise.resolve();
     }
 
     if (!(url instanceof Ci.nsIURI)) {
@@ -127,11 +114,14 @@ class RemoteAgentClass {
       port = -1;
     }
 
-    try {
-      this._server = new HttpServer();
-      this.server._start(port, host);
+    this.server = new HttpServer();
 
-      Services.obs.notifyObservers(null, "remote-listening", true);
+    return this.asyncListen(host, port);
+  }
+
+  async asyncListen(host, port) {
+    try {
+      this.server._start(port, host);
 
       await this.cdp?.start();
       await this.webDriverBiDi?.start();
@@ -141,134 +131,30 @@ class RemoteAgentClass {
     }
   }
 
-  async close() {
-    if (!this.listening) {
-      return;
-    }
-
+  close() {
     try {
       
       
       this.cdp?.stop();
       this.webDriverBiDi?.stop();
 
-      await this.server.stop();
-      this._server = null;
-      Services.obs.notifyObservers(null, "remote-listening");
-    } catch (e) {
-      
-      logger.error("unable to stop listener", e);
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-  handleRemoteDebuggingPortFlag(cmdLine) {
-    let enabled = false;
-
-    try {
-      
-      const port = cmdLine.handleFlagWithParam("remote-debugging-port", false);
-      if (port !== null) {
-        enabled = true;
-
-        
-        const parsed = Number(port);
-        if (!isNaN(parsed)) {
-          this._port = parsed;
-        }
+      if (this.listening) {
+        return this.server.stop();
       }
     } catch (e) {
       
-      enabled = cmdLine.handleFlag("remote-debugging-port", false);
+      logger.error("unable to stop listener", e);
+    } finally {
+      this.server = null;
     }
 
-    return enabled;
-  }
-
-  async observe(subject, topic) {
-    if (this.enabled) {
-      logger.trace(`Received observer notification ${topic}`);
-    }
-
-    switch (topic) {
-      case "profile-after-change":
-        Services.obs.addObserver(this, "command-line-startup");
-        break;
-
-      case "command-line-startup":
-        Services.obs.removeObserver(this, topic);
-        this._enabled = this.handleRemoteDebuggingPortFlag(subject);
-
-        if (this.enabled) {
-          Services.obs.addObserver(this, "remote-startup-requested");
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        
-        if (
-          (activeProtocols & WEBDRIVER_BIDI_ACTIVE) ===
-          WEBDRIVER_BIDI_ACTIVE
-        ) {
-          this._webDriverBiDi = new WebDriverBiDi(this);
-          if (this.enabled) {
-            logger.debug("WebDriver BiDi enabled");
-          }
-        }
-
-        if ((activeProtocols & CDP_ACTIVE) === CDP_ACTIVE) {
-          this._cdp = new CDP(this);
-          if (this.enabled) {
-            logger.debug("CDP enabled");
-          }
-        }
-
-        break;
-
-      case "remote-startup-requested":
-        Services.obs.removeObserver(this, topic);
-
-        
-        Services.obs.addObserver(this, "quit-application");
-
-        try {
-          let address = Services.io.newURI(`http://localhost:${this._port}`);
-          await this.listen(address);
-        } catch (e) {
-          throw Error(`Unable to start remote agent: ${e}`);
-        }
-
-        break;
-
-      case "quit-application":
-        Services.obs.removeObserver(this, "quit-application");
-
-        this.close();
-        break;
-    }
+    return Promise.resolve();
   }
 
   
 
   get QueryInterface() {
-    return ChromeUtils.generateQI([
-      "nsICommandLineHandler",
-      "nsIObserver",
-      "nsIRemoteAgent",
-    ]);
+    return ChromeUtils.generateQI(["nsIRemoteAgent"]);
   }
 }
 

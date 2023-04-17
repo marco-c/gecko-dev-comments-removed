@@ -49,23 +49,28 @@ add_agent_task(async function listening() {
   is(remoteAgentInstance.listening, true, "Agent is listening");
 });
 
-add_agent_task(async function remoteListeningNotification() {
-  let active;
+add_agent_task(async function listen() {
   const port = getNonAtomicFreePort();
 
+  let boundURL;
   function observer(subject, topic, data) {
+    const prefix = "DevTools listening on ";
+    if (!data.startsWith(prefix)) {
+      return;
+    }
+
     Services.obs.removeObserver(observer, topic);
-
-    active = data;
+    boundURL = Services.io.newURI(data.split(prefix)[1]);
   }
-
   Services.obs.addObserver(observer, "remote-listening");
+
   await RemoteAgent.listen("http://localhost:" + port);
-  is(active, "true", "remote-listening observer notified enabled state");
-
-  Services.obs.addObserver(observer, "remote-listening");
-  await RemoteAgent.close();
-  is(active, "false", "remote-listening observer notified disabled state");
+  isnot(boundURL, undefined, "remote-listening observer notified");
+  is(
+    boundURL.port,
+    port,
+    `expected default port ${port}, got ${boundURL.port}`
+  );
 });
 
 
