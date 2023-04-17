@@ -620,6 +620,16 @@ class TargetCommand extends EventEmitter {
     
     const newTarget = await this.descriptorFront.getTarget();
 
+    
+    
+    
+    if (!newTarget) {
+      console.warn(
+        `Couldn't get the target for descriptor ${this.descriptorFront.actorID}`
+      );
+      return;
+    }
+
     this.switchToTarget(newTarget);
   }
 
