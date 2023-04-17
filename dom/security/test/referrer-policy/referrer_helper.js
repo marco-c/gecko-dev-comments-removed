@@ -88,7 +88,7 @@ var tests = (function*() {
     advance
   );
   yield SpecialPowers.pushPrefEnv(
-    { set: [["network.http.referer.disallowRelaxingDefault", false]] },
+    { set: [["network.http.referer.disallowCrossSiteRelaxingDefault", false]] },
     advance
   );
   yield SpecialPowers.pushPermissions(
