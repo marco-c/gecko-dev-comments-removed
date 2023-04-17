@@ -1328,6 +1328,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "DEBUG_LOG",
     this.buffer = "";
     this.decoder = decoder || new TextDecoder("utf8");
     this.regionList = [];
+    this.isPrevLineBlank = false;
   };
 
   WebVTT.Parser.prototype = {
@@ -1369,9 +1370,19 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "DEBUG_LOG",
         
         line = line.replace(/[\u0000]/g, "\uFFFD");
 
-        if (!/^NOTE($|[ \t])/.test(line)) {
+        
+        
+        
+        
+        
+        
+        
+        if (this.isPrevLineBlank && /^NOTE($|[ \t])/.test(line)) {
+          LOG("Ignore comment that starts with 'NOTE'");
+        } else {
           this.parseLine(line);
         }
+        this.isPrevLineBlank = emptyOrOnlyContainsWhiteSpaces(line);
       }
 
       return this;
@@ -1648,6 +1659,7 @@ XPCOMUtils.defineLazyPreferenceGetter(this, "DEBUG_LOG",
       } catch(e) {
         self.reportOrThrowError(e);
       }
+      self.isPrevLineBlank = false;
       self.onflush && self.onflush();
       return this;
     }
