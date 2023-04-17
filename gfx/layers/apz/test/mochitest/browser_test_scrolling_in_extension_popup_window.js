@@ -89,7 +89,7 @@ add_task(async () => {
 
   
   
-  await flushApzRepaintsInPopup(browserForPopup);
+  await promiseApzFlushedRepaintsInPopup(browserForPopup);
 
   const scrollEventPromise = SpecialPowers.spawn(
     browserForPopup,
@@ -113,7 +113,7 @@ add_task(async () => {
 
   
   
-  const apzPromise = flushApzRepaintsInPopup(browserForPopup);
+  const apzPromise = promiseApzFlushedRepaintsInPopup(browserForPopup);
 
   await Promise.all([apzPromise, scrollEventPromise]);
 

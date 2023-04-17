@@ -1176,30 +1176,42 @@ function waitForScrollEvent(target) {
 
 
 
-async function flushApzRepaintsInPopup(popup) {
+async function promiseApzFlushedRepaintsInPopup(popup) {
   
   await SpecialPowers.spawn(popup, [], async () => {
-    return new Promise(resolve => {
-      const utils = SpecialPowers.getDOMWindowUtils(content.window);
+    const utils = SpecialPowers.getDOMWindowUtils(content.window);
+
+    async function promiseAllPaintsDone() {
+      return new Promise(resolve => {
+        function waitForPaints() {
+          if (utils.isMozAfterPaintPending) {
+            dump("Waits for a MozAfterPaint event\n");
+            content.window.addEventListener(
+              "MozAfterPaint",
+              () => {
+                dump("Got a MozAfterPaint event\n");
+                waitForPaints();
+              },
+              { once: true }
+            );
+          } else {
+            dump("No more pending MozAfterPaint\n");
+            content.window.setTimeout(resolve, 0);
+          }
+        }
+        waitForPaints();
+      });
+    }
+    await promiseAllPaintsDone();
+
+    await new Promise(resolve => {
       var repaintDone = function() {
         dump("APZ flush done\n");
         SpecialPowers.Services.obs.removeObserver(
           repaintDone,
           "apz-repaints-flushed"
         );
-        if (utils.isMozAfterPaintPending) {
-          dump("Waits for a MozAfterPaint event\n");
-          content.window.addEventListener(
-            "MozAfterPaint",
-            () => {
-              dump("Got a MozAfterPaint event\n");
-              resolve();
-            },
-            { once: true }
-          );
-        } else {
-          content.window.setTimeout(resolve, 0);
-        }
+        content.window.setTimeout(resolve, 0);
       };
       SpecialPowers.Services.obs.addObserver(
         repaintDone,
@@ -1214,5 +1226,7 @@ async function flushApzRepaintsInPopup(popup) {
         repaintDone();
       }
     });
+
+    await promiseAllPaintsDone();
   });
 }
