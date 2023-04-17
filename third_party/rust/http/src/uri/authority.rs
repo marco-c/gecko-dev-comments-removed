@@ -23,15 +23,9 @@ impl Authority {
 
     
     pub(super) fn from_shared(s: Bytes) -> Result<Self, InvalidUri> {
-        let authority_end = Authority::parse_non_empty(&s[..])?;
-
-        if authority_end != s.len() {
-            return Err(ErrorKind::InvalidUriChar.into());
-        }
-
-        Ok(Authority {
-            data: unsafe { ByteStr::from_utf8_unchecked(s) },
-        })
+        
+        
+        create_authority(s, |s| s)
     }
 
     
@@ -52,20 +46,9 @@ impl Authority {
     
     
     pub fn from_static(src: &'static str) -> Self {
-        let s = src.as_bytes();
-        let b = Bytes::from_static(s);
-        let authority_end =
-            Authority::parse_non_empty(&b[..]).expect("static str is not valid authority");
-
-        if authority_end != b.len() {
-            panic!("static str is not valid authority");
-        }
-
-        Authority {
-            data: unsafe { ByteStr::from_utf8_unchecked(b) },
-        }
+        Authority::from_shared(Bytes::from_static(src.as_bytes()))
+            .expect("static str is not valid authority")
     }
-
 
     
     
@@ -83,6 +66,8 @@ impl Authority {
     }
 
     
+    
+    
     pub(super) fn parse(s: &[u8]) -> Result<usize, InvalidUri> {
         let mut colon_cnt = 0;
         let mut start_bracket = false;
@@ -91,6 +76,10 @@ impl Authority {
         let mut end = s.len();
         let mut at_sign_pos = None;
 
+        
+        
+        
+        
         for (i, &b) in s.iter().enumerate() {
             match URI_CHARS[b as usize] {
                 b'/' | b'?' | b'#' => {
@@ -101,13 +90,16 @@ impl Authority {
                     colon_cnt += 1;
                 }
                 b'[' => {
-                    start_bracket = true;
-                    if has_percent {
+                    if has_percent || start_bracket {
                         
                         return Err(ErrorKind::InvalidAuthority.into());
                     }
+                    start_bracket = true;
                 }
                 b']' => {
+                    if end_bracket {
+                        return Err(ErrorKind::InvalidAuthority.into());
+                    }
                     end_bracket = true;
 
                     
@@ -164,6 +156,9 @@ impl Authority {
         Ok(end)
     }
 
+    
+    
+    
     
     
     
@@ -432,17 +427,10 @@ impl<'a> TryFrom<&'a [u8]> for Authority {
     #[inline]
     fn try_from(s: &'a [u8]) -> Result<Self, Self::Error> {
         
-        let end = Authority::parse_non_empty(s)?;
 
-        if end != s.len() {
-            return Err(ErrorKind::InvalidAuthority.into());
-        }
-
-        Ok(Authority {
-            data: unsafe {
-                ByteStr::from_utf8_unchecked(Bytes::copy_from_slice(s))
-            },
-        })
+        
+        
+        create_authority(s, |s| Bytes::copy_from_slice(s))
     }
 }
 
@@ -494,6 +482,30 @@ fn host(auth: &str) -> &str {
     }
 }
 
+
+
+fn create_authority<B, F>(b: B, f: F) -> Result<Authority, InvalidUri>
+where
+    B: AsRef<[u8]>,
+    F: FnOnce(B) -> Bytes,
+{
+    let s = b.as_ref();
+    let authority_end = Authority::parse_non_empty(s)?;
+
+    if authority_end != s.len() {
+        return Err(ErrorKind::InvalidUriChar.into());
+    }
+
+    let bytes = f(b);
+
+    Ok(Authority {
+        
+        
+        
+        data: unsafe { ByteStr::from_utf8_unchecked(bytes) },
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -527,6 +539,12 @@ mod tests {
         assert_eq!("EXAMPLE.com", &authority);
         assert_eq!(authority, "EXAMPLE.com");
         assert_eq!("EXAMPLE.com", authority);
+    }
+
+    #[test]
+    fn from_static_equates_with_a_str() {
+        let authority = Authority::from_static("example.com");
+        assert_eq!(authority, "example.com");
     }
 
     #[test]
@@ -614,6 +632,22 @@ mod tests {
         assert_eq!(err.0, ErrorKind::InvalidAuthority);
 
         let err = Authority::parse_non_empty(b"[fe80::1:2:3:4]%20").unwrap_err();
+        assert_eq!(err.0, ErrorKind::InvalidAuthority);
+    }
+
+    #[test]
+    fn rejects_invalid_utf8() {
+        let err = Authority::try_from([0xc0u8].as_ref()).unwrap_err();
+        assert_eq!(err.0, ErrorKind::InvalidUriChar);
+
+        let err = Authority::from_shared(Bytes::from_static([0xc0u8].as_ref()))
+            .unwrap_err();
+        assert_eq!(err.0, ErrorKind::InvalidUriChar);
+    }
+
+    #[test]
+    fn rejects_invalid_use_of_brackets() {
+        let err = Authority::parse_non_empty(b"[]@[").unwrap_err();
         assert_eq!(err.0, ErrorKind::InvalidAuthority);
     }
 }

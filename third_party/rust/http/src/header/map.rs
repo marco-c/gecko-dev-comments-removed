@@ -206,10 +206,8 @@ pub struct ValueIterMut<'a, T> {
 
 #[derive(Debug)]
 pub struct ValueDrain<'a, T> {
-    raw_links: RawLinks<T>,
-    extra_values: *mut Vec<ExtraValue<T>>,
     first: Option<T>,
-    next: Option<usize>,
+    next: Option<::std::vec::IntoIter<T>>,
     lt: PhantomData<&'a mut HeaderMap<T>>,
 }
 
@@ -232,10 +230,10 @@ enum Cursor {
 
 
 
-type Size = usize;
+type Size = u16;
 
 
-const MAX_SIZE: usize = (1 << 15);
+const MAX_SIZE: usize = 1 << 15;
 
 
 
@@ -252,7 +250,7 @@ struct Pos {
 
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
-struct HashValue(usize);
+struct HashValue(u16);
 
 
 
@@ -465,8 +463,6 @@ impl<T> HeaderMap<T> {
     
     
     pub fn with_capacity(capacity: usize) -> HeaderMap<T> {
-        assert!(capacity <= MAX_SIZE, "requested capacity too large");
-
         if capacity == 0 {
             HeaderMap {
                 mask: 0,
@@ -477,6 +473,7 @@ impl<T> HeaderMap<T> {
             }
         } else {
             let raw_cap = to_raw_capacity(capacity).next_power_of_two();
+            assert!(raw_cap <= MAX_SIZE, "requested capacity too large");
             debug_assert!(raw_cap > 0);
 
             HeaderMap {
@@ -642,11 +639,11 @@ impl<T> HeaderMap<T> {
 
         if cap > self.indices.len() {
             let cap = cap.next_power_of_two();
-            assert!(cap < MAX_SIZE, "header map reserve over max capacity");
+            assert!(cap <= MAX_SIZE, "header map reserve over max capacity");
             assert!(cap != 0, "header map reserve overflowed");
 
             if self.entries.len() == 0 {
-                self.mask = cap - 1;
+                self.mask = cap as Size - 1;
                 self.indices = vec![Pos::none(); cap].into_boxed_slice();
                 self.entries = Vec::with_capacity(usable_capacity(cap));
             } else {
@@ -1194,13 +1191,16 @@ impl<T> HeaderMap<T> {
         }
 
         let raw_links = self.raw_links();
-        let extra_values = &mut self.extra_values as *mut _;
+        let extra_values = &mut self.extra_values;
+
+        let next = links.map(|l| {
+            drain_all_extra_values(raw_links, extra_values, l.next)
+                .into_iter()
+        });
 
         ValueDrain {
-            raw_links,
-            extra_values,
             first: Some(old),
-            next: links.map(|l| l.next),
+            next: next,
             lt: PhantomData,
         }
     }
@@ -1368,6 +1368,10 @@ impl<T> HeaderMap<T> {
         }
     }
 
+    
+    
+    
+    
     
     #[inline]
     fn remove_found(&mut self, probe: usize, found: usize) -> Bucket<T> {
@@ -1543,6 +1547,7 @@ impl<T> HeaderMap<T> {
 
     #[inline]
     fn grow(&mut self, new_raw_cap: usize) {
+        assert!(new_raw_cap <= MAX_SIZE, "requested capacity too large");
         
         
 
@@ -1587,7 +1592,12 @@ impl<T> HeaderMap<T> {
 
 
 #[inline]
-fn remove_extra_value<T>(mut raw_links: RawLinks<T>, extra_values: &mut Vec<ExtraValue<T>>, idx: usize) -> ExtraValue<T> {
+fn remove_extra_value<T>(
+    mut raw_links: RawLinks<T>,
+    extra_values: &mut Vec<ExtraValue<T>>,
+    idx: usize)
+    -> ExtraValue<T>
+{
     let prev;
     let next;
 
@@ -1701,6 +1711,26 @@ fn remove_extra_value<T>(mut raw_links: RawLinks<T>, extra_values: &mut Vec<Extr
     });
 
     extra
+}
+
+fn drain_all_extra_values<T>(
+    raw_links: RawLinks<T>,
+    extra_values: &mut Vec<ExtraValue<T>>,
+    mut head: usize)
+    -> Vec<T>
+{
+    let mut vec = Vec::new();
+    loop {
+        let extra = remove_extra_value(raw_links, extra_values, head);
+        vec.push(extra.value);
+
+        if let Link::Extra(idx) = extra.next {
+            head = idx;
+        } else {
+            break;
+        }
+    }
+    vec
 }
 
 impl<'a, T> IntoIterator for &'a HeaderMap<T> {
@@ -2922,11 +2952,11 @@ impl<'a, T> OccupiedEntry<'a, T> {
     
     
     pub fn remove_entry(self) -> (HeaderName, T) {
-        let entry = self.map.remove_found(self.probe, self.index);
-
-        if let Some(links) = entry.links {
+        if let Some(links) = self.map.entries[self.index].links {
             self.map.remove_all_extra_values(links.next);
         }
+
+        let entry = self.map.remove_found(self.probe, self.index);
 
         (entry.key, entry.value)
     }
@@ -2936,14 +2966,19 @@ impl<'a, T> OccupiedEntry<'a, T> {
     
     
     pub fn remove_entry_mult(self) -> (HeaderName, ValueDrain<'a, T>) {
-        let entry = self.map.remove_found(self.probe, self.index);
         let raw_links = self.map.raw_links();
-        let extra_values = &mut self.map.extra_values as *mut _;
+        let extra_values = &mut self.map.extra_values;
+
+        let next = self.map.entries[self.index].links.map(|l| {
+            drain_all_extra_values(raw_links, extra_values, l.next)
+                .into_iter()
+        });
+
+        let entry = self.map.remove_found(self.probe, self.index);
+
         let drain = ValueDrain {
-            raw_links,
-            extra_values,
             first: Some(entry.value),
-            next: entry.links.map(|l| l.next),
+            next,
             lt: PhantomData,
         };
         (entry.key, drain)
@@ -3036,31 +3071,26 @@ impl<'a, T> Iterator for ValueDrain<'a, T> {
     fn next(&mut self) -> Option<T> {
         if self.first.is_some() {
             self.first.take()
-        } else if let Some(next) = self.next {
-            
-            let extra = unsafe {
-                remove_extra_value(self.raw_links, &mut *self.extra_values, next)
-            };
-
-            match extra.next {
-                Link::Extra(idx) => self.next = Some(idx),
-                Link::Entry(_) => self.next = None,
-            }
-
-            Some(extra.value)
+        } else if let Some(ref mut extras) = self.next {
+            extras.next()
         } else {
             None
         }
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        match (&self.first, self.next) {
+        match (&self.first, &self.next) {
             
-            (&Some(_), None) => (1, Some(1)),
+            (&Some(_), &None) => (1, Some(1)),
             
-            (&_, Some(_)) => (1, None),
+            (&Some(_), &Some(ref extras)) => {
+                let (l, u) = extras.size_hint();
+                (l + 1, u.map(|u| u + 1))
+            },
             
-            (&None, None) => (0, Some(0)),
+            (&None, &Some(ref extras)) => extras.size_hint(),
+            
+            (&None, &None) => (0, Some(0)),
         }
     }
 }
@@ -3109,6 +3139,7 @@ impl<T> ops::IndexMut<usize> for RawLinks<T> {
 impl Pos {
     #[inline]
     fn new(index: usize, hash: HashValue) -> Self {
+        debug_assert!(index < MAX_SIZE);
         Pos {
             index: index as Size,
             hash: hash,
@@ -3136,7 +3167,7 @@ impl Pos {
     #[inline]
     fn resolve(&self) -> Option<(usize, HashValue)> {
         if self.is_some() {
-            Some((self.index, self.hash))
+            Some((self.index as usize, self.hash))
         } else {
             None
         }
@@ -3192,13 +3223,13 @@ fn to_raw_capacity(n: usize) -> usize {
 
 #[inline]
 fn desired_pos(mask: Size, hash: HashValue) -> usize {
-    (hash.0 & mask)
+    (hash.0 & mask) as usize
 }
 
 
 #[inline]
 fn probe_distance(mask: Size, hash: HashValue, current: usize) -> usize {
-    current.wrapping_sub(desired_pos(mask, hash)) & mask
+    current.wrapping_sub(desired_pos(mask, hash)) & mask as usize
 }
 
 fn hash_elem_using<K: ?Sized>(danger: &Danger, k: &K) -> HashValue
@@ -3224,7 +3255,7 @@ where
         }
     };
 
-    HashValue((hash & MASK) as usize)
+    HashValue((hash & MASK) as u16)
 }
 
 

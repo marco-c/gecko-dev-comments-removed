@@ -77,10 +77,13 @@ impl<'a> TryFrom<&'a [u8]> for Scheme {
             None => Err(ErrorKind::InvalidScheme.into()),
             Standard(p) => Ok(Standard(p).into()),
             Other(_) => {
+                let bytes = Bytes::copy_from_slice(s);
+
                 
-                Ok(Other(Box::new(unsafe {
-                    ByteStr::from_utf8_unchecked(Bytes::copy_from_slice(s))
-                })).into())
+                
+                let string = unsafe { ByteStr::from_utf8_unchecked(bytes) };
+
+                Ok(Other(Box::new(string)).into())
             }
         }
     }
@@ -195,6 +198,12 @@ const MAX_SCHEME_LEN: usize = 64;
 
 
 
+
+
+
+
+
+
 const SCHEME_CHARS: [u8; 256] = [
     
         0,     0,     0,     0,     0,     0,     0,     0,     0,     0, 
@@ -226,6 +235,7 @@ const SCHEME_CHARS: [u8; 256] = [
 ];
 
 impl Scheme2<usize> {
+    
     fn parse_exact(s: &[u8]) -> Result<Scheme2<()>, InvalidUri> {
         match s {
             b"http" => Ok(Protocol::Http.into()),
@@ -235,6 +245,8 @@ impl Scheme2<usize> {
                     return Err(ErrorKind::SchemeTooLong.into());
                 }
 
+                
+                
                 for &b in s {
                     match SCHEME_CHARS[b as usize] {
                         b':' => {
@@ -322,5 +334,30 @@ impl<T> From<Protocol> for Scheme2<T> {
 impl From<Scheme2> for Scheme {
     fn from(src: Scheme2) -> Self {
         Scheme { inner: src }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn scheme_eq_to_str() {
+        assert_eq!(&scheme("http"), "http");
+        assert_eq!(&scheme("https"), "https");
+        assert_eq!(&scheme("ftp"), "ftp");
+        assert_eq!(&scheme("my+funky+scheme"), "my+funky+scheme");
+    }
+
+    #[test]
+    fn invalid_scheme_is_error() {
+        Scheme::try_from("my_funky_scheme").expect_err("Unexpectly valid Scheme");
+
+        
+        Scheme::try_from([0xC0].as_ref()).expect_err("Unexpectly valid Scheme");
+    }
+
+    fn scheme(s: &str) -> Scheme {
+        s.parse().expect(&format!("Invalid scheme: {}", s))
     }
 }

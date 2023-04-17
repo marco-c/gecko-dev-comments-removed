@@ -711,6 +711,41 @@ impl Builder {
     
     
     
+    pub fn extensions_ref(&self) -> Option<&Extensions> {
+        self.inner.as_ref().ok().map(|h| &h.extensions)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn extensions_mut(&mut self) -> Option<&mut Extensions> {
+        self.inner.as_mut().ok().map(|h| &mut h.extensions)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     

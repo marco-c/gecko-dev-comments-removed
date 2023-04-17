@@ -23,10 +23,6 @@ impl PathAndQuery {
         let mut fragment = None;
 
         
-        
-        
-        
-        #[allow(warnings)]
         {
             let mut iter = src.as_ref().iter().enumerate();
 
@@ -61,10 +57,6 @@ impl PathAndQuery {
 
             
             if query != NONE {
-
-                
-                
-                #[allow(warnings)]
                 for (i, &b) in iter {
                     match b {
                         
@@ -283,6 +275,22 @@ impl<'a> TryFrom<&'a str> for PathAndQuery {
     type Error = InvalidUri;
     #[inline]
     fn try_from(s: &'a str) -> Result<Self, Self::Error> {
+        TryFrom::try_from(s.as_bytes())
+    }
+}
+
+impl TryFrom<String> for PathAndQuery {
+    type Error = InvalidUri;
+    #[inline]
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        TryFrom::try_from(s.as_bytes())
+    }
+}
+
+impl TryFrom<&String> for PathAndQuery {
+    type Error = InvalidUri;
+    #[inline]
+    fn try_from(s: &String) -> Result<Self, Self::Error> {
         TryFrom::try_from(s.as_bytes())
     }
 }

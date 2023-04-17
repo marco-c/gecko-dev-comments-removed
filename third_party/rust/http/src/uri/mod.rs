@@ -143,6 +143,12 @@ enum ErrorKind {
 
 const MAX_LEN: usize = (u16::MAX - 1) as usize;
 
+
+
+
+
+
+
 const URI_CHARS: [u8; 256] = [
     
         0,     0,     0,     0,     0,     0,     0,     0,     0,     0, 
@@ -1025,14 +1031,8 @@ impl From<ErrorKind> for InvalidUriParts {
     }
 }
 
-impl fmt::Display for InvalidUri {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.description().fmt(f)
-    }
-}
-
-impl Error for InvalidUri {
-    fn description(&self) -> &str {
+impl InvalidUri {
+    fn s(&self) -> &str {
         match self.0 {
             ErrorKind::InvalidUriChar => "invalid uri character",
             ErrorKind::InvalidScheme => "invalid scheme",
@@ -1049,17 +1049,21 @@ impl Error for InvalidUri {
     }
 }
 
+impl fmt::Display for InvalidUri {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.s().fmt(f)
+    }
+}
+
+impl Error for InvalidUri {}
+
 impl fmt::Display for InvalidUriParts {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.0.fmt(f)
     }
 }
 
-impl Error for InvalidUriParts {
-    fn description(&self) -> &str {
-        self.0.description()
-    }
-}
+impl Error for InvalidUriParts {}
 
 impl Hash for Uri {
     fn hash<H>(&self, state: &mut H)
