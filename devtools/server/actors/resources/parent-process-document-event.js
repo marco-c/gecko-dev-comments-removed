@@ -44,6 +44,11 @@ class ParentProcessDocumentEventWatcher {
     this.onAvailable = onAvailable;
 
     
+    
+    
+    this._onceWillNavigate = new Map();
+
+    
     const allBrowsingContexts = this.watcherActor.browserElement
       ? [this.watcherActor.browserElement.browsingContext]
       : getAllRemoteBrowsingContexts();
@@ -73,6 +78,31 @@ class ParentProcessDocumentEventWatcher {
     });
   }
 
+  
+
+
+
+
+
+
+
+
+
+  onceWillNavigateIsEmitted(innerWindowId) {
+    
+    const isTracked = this.webProgresses.find(
+      webProgress =>
+        webProgress.browsingContext.currentWindowGlobal.innerWindowId ==
+        innerWindowId
+    );
+    if (isTracked) {
+      return new Promise(resolve => {
+        this._onceWillNavigate.set(innerWindowId, resolve);
+      });
+    }
+    return Promise.resolve();
+  }
+
   onStateChange(progress, request, flag, status) {
     const isStart = flag & Ci.nsIWebProgressListener.STATE_START;
     const isDocument = flag & Ci.nsIWebProgressListener.STATE_IS_DOCUMENT;
@@ -90,7 +120,17 @@ class ParentProcessDocumentEventWatcher {
         return;
       }
 
+      
+      
+      
+      const isTopLevel = browsingContext.top == browsingContext;
+      const isRestoring = flag & Ci.nsIWebProgressListener.STATE_RESTORING;
+      if (!isTopLevel && isRestoring) {
+        return;
+      }
+
       const newURI = request instanceof Ci.nsIChannel ? request.URI.spec : null;
+      const { innerWindowId } = browsingContext.currentWindowGlobal;
       this.onAvailable([
         {
           browsingContextID: browsingContext.id,
@@ -101,6 +141,11 @@ class ParentProcessDocumentEventWatcher {
           newURI,
         },
       ]);
+      const callback = this._onceWillNavigate.get(innerWindowId);
+      if (callback) {
+        this._onceWillNavigate.delete(innerWindowId);
+        callback();
+      }
     }
   }
 

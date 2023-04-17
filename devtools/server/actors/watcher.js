@@ -277,11 +277,38 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
   
 
 
-  notifyTargetDestroyed(actor) {
+  async notifyTargetDestroyed(actor) {
     if (this._earlyIframeTargets[actor.innerWindowId]) {
       delete this._earlyIframeTargets[actor.innerWindowId];
     }
     this._currentTopLevelWindowGlobalTargets.delete(actor.innerWindowId);
+    const documentEventWatcher = Resources.getResourceWatcher(
+      this,
+      Resources.TYPES.DOCUMENT_EVENT
+    );
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (
+      documentEventWatcher &&
+      this.isServerTargetSwitchingEnabled &&
+      actor.isTopLevelTarget
+    ) {
+      await documentEventWatcher.onceWillNavigateIsEmitted(actor.innerWindowId);
+    }
     this.emit("target-destroyed-form", actor);
   },
 
