@@ -34,11 +34,29 @@ async function recordViewTelemetry(param) {
 
   let { currentViewId } = gViewController;
   let viewType = gViewController.parseViewId(currentViewId)?.type;
-  AMTelemetry.recordViewEvent({
+  let details = {
     view: viewType || "other",
     addon,
     type,
-  });
+  };
+
+  
+  
+  if (
+    viewType === "discover" ||
+    (viewType === "list" && type === "extension")
+  ) {
+    
+    
+    
+    
+    
+    
+    const { DiscoveryAPI } = window;
+    details.taarEnabled = !!DiscoveryAPI.clientIdDiscoveryEnabled;
+  }
+
+  AMTelemetry.recordViewEvent(details);
 }
 
 
