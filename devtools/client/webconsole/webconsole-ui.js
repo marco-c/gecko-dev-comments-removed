@@ -347,19 +347,28 @@ class WebConsoleUI {
   async _attachTargets() {
     this.additionalProxies = new Map();
 
+    const { commands } = this.hud;
+    this.networkDataProvider = new FirefoxDataProvider({
+      commands,
+      actions: {
+        updateRequest: (id, data) =>
+          this.wrapper.batchedRequestUpdates({ id, data }),
+      },
+    });
+
     
     
     
     
     
     
-    await this.hud.commands.targetCommand.watchTargets(
-      this.hud.commands.targetCommand.ALL_TYPES,
+    await commands.targetCommand.watchTargets(
+      commands.targetCommand.ALL_TYPES,
       this._onTargetAvailable,
       this._onTargetDestroy
     );
 
-    const resourceCommand = this.hud.resourceCommand;
+    const resourceCommand = commands.resourceCommand;
     await resourceCommand.watchResources(
       [
         resourceCommand.TYPES.CONSOLE_MESSAGE,
@@ -510,16 +519,6 @@ class WebConsoleUI {
     
     
     if (targetFront.isTopLevel) {
-      const webConsoleFront = await this.hud.currentTarget.getFront("console");
-      this.networkDataProvider = new FirefoxDataProvider({
-        actions: {
-          updateRequest: (id, data) =>
-            this.wrapper.batchedRequestUpdates({ id, data }),
-        },
-        webConsoleFront,
-        resourceCommand: this.hud.resourceCommand,
-      });
-
       this.proxy = new WebConsoleConnectionProxy(this, targetFront);
       await this.proxy.connect();
       dispatchTargetAvailable();

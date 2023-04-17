@@ -30,15 +30,13 @@ class FirefoxDataProvider {
 
 
 
-
-  constructor({ webConsoleFront, actions, owner, resourceCommand }) {
+  constructor({ commands, actions, owner }) {
     
-    this.client = webConsoleFront._client;
-    this.webConsoleFront = webConsoleFront;
+    this.commands = commands;
     this.actions = actions || {};
     this.actionsEnabled = true;
     this.owner = owner;
-    this.resourceCommand = resourceCommand;
+
     
     this.stackTraces = new Map();
     
@@ -287,11 +285,13 @@ class FirefoxDataProvider {
 
 
 
-  getLongString(stringGrip) {
-    return this.webConsoleFront.getString(stringGrip).then(payload => {
-      this.emitForTests(TEST_EVENTS.LONGSTRING_RESOLVED, { payload });
-      return payload;
-    });
+  async getLongString(stringGrip) {
+    const webConsoleFront = await this.commands.targetCommand.targetFront.getFront(
+      "console"
+    );
+    const payload = await webConsoleFront.getString(stringGrip);
+    this.emitForTests(TEST_EVENTS.LONGSTRING_RESOLVED, { payload });
+    return payload;
   }
 
   
@@ -528,8 +528,8 @@ class FirefoxDataProvider {
     let response;
     if (
       clientMethodName == "getStackTrace" &&
-      this.resourceCommand.hasResourceCommandSupport(
-        this.resourceCommand.TYPES.NETWORK_EVENT_STACKTRACE
+      this.commands.resourceCommand.hasResourceCommandSupport(
+        this.commands.resourceCommand.TYPES.NETWORK_EVENT_STACKTRACE
       )
     ) {
       const requestInfo = this.stackTraceRequestInfoByActorID.get(actorID);
@@ -543,7 +543,7 @@ class FirefoxDataProvider {
           to: actorID,
           type: clientMethodName,
         };
-        response = await this.client.request(packet);
+        response = await this.commands.client.request(packet);
       } catch (e) {
         throw new Error(
           `Error while calling method ${clientMethodName}: ${e.message}`
