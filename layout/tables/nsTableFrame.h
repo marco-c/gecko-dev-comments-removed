@@ -159,8 +159,6 @@ class nsTableFrame : public nsContainerFrame {
   virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
                     nsIFrame* aPrevInFlow) override;
 
-  static float GetTwipsToPixels(nsPresContext* aPresContext);
-
   
   
   static bool AncestorsHaveStyleBSize(const ReflowInput& aParentReflowInput);
@@ -185,8 +183,6 @@ class nsTableFrame : public nsContainerFrame {
   
   static void UnregisterPositionedTablePart(nsIFrame* aFrame,
                                             nsIFrame* aDestructRoot);
-
-  nsPoint GetFirstSectionOrigin(const ReflowInput& aReflowInput) const;
 
   
 
