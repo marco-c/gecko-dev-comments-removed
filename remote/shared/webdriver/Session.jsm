@@ -16,6 +16,10 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Capabilities: "chrome://remote/content/shared/webdriver/Capabilities.jsm",
   error: "chrome://remote/content/shared/webdriver/Errors.jsm",
   Log: "chrome://remote/content/shared/Log.jsm",
+  MessageHandlerRegistry:
+    "chrome://remote/content/shared/messagehandler/MessageHandlerRegistry.jsm",
+  RootMessageHandler:
+    "chrome://remote/content/shared/messagehandler/RootMessageHandler.jsm",
   WebDriverBiDiConnection:
     "chrome://remote/content/webdriver-bidi/WebDriverBiDiConnection.jsm",
   WebSocketHandshake: "chrome://remote/content/server/WebSocketHandshake.jsm",
@@ -205,10 +209,42 @@ class WebDriverSession {
     
     this._connections.forEach(connection => connection.close());
     this._connections.clear();
+
+    
+    this._messageHandler?.destroy();
+  }
+
+  execute(module, command, params) {
+    return this.messageHandler.handleCommand({
+      moduleName: module,
+      commandName: command,
+      
+      
+      
+      
+      
+      
+      
+      destination: {
+        type: RootMessageHandler.type,
+      },
+      params,
+    });
   }
 
   get a11yChecks() {
     return this.capabilities.get("moz:accessibilityChecks");
+  }
+
+  get messageHandler() {
+    if (!this._messageHandler) {
+      this._messageHandler = MessageHandlerRegistry.getOrCreateMessageHandler(
+        this.id,
+        RootMessageHandler.type
+      );
+    }
+
+    return this._messageHandler;
   }
 
   get pageLoadStrategy() {

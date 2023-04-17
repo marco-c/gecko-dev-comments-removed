@@ -153,7 +153,7 @@ class WebDriverBiDiConnection extends WebSocketConnection {
         assert.session(this.session);
 
         
-        
+        result = await this.session.execute(module, command, params);
       }
 
       this.sendResult(id, result);
