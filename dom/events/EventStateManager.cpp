@@ -1161,8 +1161,10 @@ bool EventStateManager::LookForAccessKeyAndExecute(
           }
         }
 
-        if (element->PerformAccesskey(shouldActivate, aIsTrustedEvent)) {
-          if (aIsTrustedEvent) {
+        auto result =
+            element->PerformAccesskey(shouldActivate, aIsTrustedEvent);
+        if (result.isOk()) {
+          if (result.unwrap() && aIsTrustedEvent) {
             
             
             
