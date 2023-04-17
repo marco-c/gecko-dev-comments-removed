@@ -19,12 +19,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
-  "useSeparateDataUriProcess",
-  "browser.tabs.remote.dataUriInDefaultWebProcess",
-  false
-);
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
   "useSeparatePrivilegedAboutContentProcess",
   "browser.tabs.remote.separatePrivilegedContentProcess",
   false
@@ -620,74 +614,6 @@ var E10SUtils = {
         log.debug(`  validatedWebRemoteType() returning: ${remoteType}`);
         return remoteType;
     }
-  },
-
-  getRemoteTypeForPrincipal(
-    aPrincipal,
-    aOriginalURI,
-    aMultiProcess,
-    aRemoteSubframes,
-    aPreferredRemoteType = DEFAULT_REMOTE_TYPE,
-    aCurrentPrincipal,
-    aIsSubframe
-  ) {
-    if (!aMultiProcess) {
-      return NOT_REMOTE;
-    }
-
-    
-    
-    
-    let useOriginalURI;
-    if (aOriginalURI.scheme == "about") {
-      useOriginalURI = !["about:srcdoc", "about:blank"].includes(
-        aOriginalURI.spec
-      );
-    } else {
-      useOriginalURI = aOriginalURI.scheme == "chrome";
-    }
-
-    if (!useOriginalURI) {
-      
-      
-      if (aPrincipal.isSystemPrincipal || aPrincipal.isExpandedPrincipal) {
-        throw Components.Exception("", Cr.NS_ERROR_UNEXPECTED);
-      }
-
-      
-      
-      
-      if (aPrincipal.isNullPrincipal) {
-        if (aOriginalURI.spec == "about:blank") {
-          useOriginalURI = true;
-        } else if (
-          (aRemoteSubframes && useSeparateDataUriProcess) ||
-          aPreferredRemoteType == NOT_REMOTE
-        ) {
-          return WEB_REMOTE_TYPE;
-        }
-        return aPreferredRemoteType;
-      }
-    }
-    
-    
-    
-    let currentURI =
-      aCurrentPrincipal && aCurrentPrincipal.isContentPrincipal
-        ? Services.io.newURI(aCurrentPrincipal.spec)
-        : null;
-
-    return E10SUtils.getRemoteTypeForURIObject(
-      useOriginalURI ? aOriginalURI : Services.io.newURI(aPrincipal.spec),
-      aMultiProcess,
-      aRemoteSubframes,
-      aPreferredRemoteType,
-      currentURI,
-      aPrincipal,
-      aIsSubframe,
-      false, 
-      aPrincipal.originAttributes
-    );
   },
 
   getRemoteTypeForWorkerPrincipal(

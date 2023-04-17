@@ -37,31 +37,6 @@ interface nsIE10SUtils : nsISupports {
 
 
 
-  AUTF8String getRemoteTypeForPrincipal(in nsIPrincipal aPrincipal,
-                                        in nsIURI aChannelOriginalURI,
-                                        in boolean aMultiProcess,
-                                        in boolean aRemoteSubframes,
-                                        in AUTF8String aPreferredRemoteType,
-                                        in nsIPrincipal aCurrentPrincipal,
-                                        in boolean aIsSubframe);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   AUTF8String getRemoteTypeForWorkerPrincipal(in nsIPrincipal aPrincipal,
                                               in nsIE10SUtils_RemoteWorkerType aWorkerType,
