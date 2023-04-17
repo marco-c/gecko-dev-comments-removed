@@ -10,6 +10,8 @@
 
 
 
+#![allow(deprecated)]
+
 mod raw_vec;
 
 pub mod vec;

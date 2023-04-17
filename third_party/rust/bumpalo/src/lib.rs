@@ -149,9 +149,81 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![deny(missing_debug_implementations)]
 #![deny(missing_docs)]
 #![no_std]
+#![cfg_attr(
+    feature = "allocator_api",
+    feature(allocator_api, nonnull_slice_from_raw_parts)
+)]
 
 #[doc(hidden)]
 pub extern crate alloc as core_alloc;
@@ -164,6 +236,7 @@ pub mod collections;
 mod alloc;
 
 use core::cell::Cell;
+use core::fmt::Display;
 use core::iter;
 use core::marker::PhantomData;
 use core::mem;
@@ -171,6 +244,168 @@ use core::ptr::{self, NonNull};
 use core::slice;
 use core::str;
 use core_alloc::alloc::{alloc, dealloc, Layout};
+#[cfg(feature = "allocator_api")]
+use core_alloc::alloc::{AllocError, Allocator};
+
+
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub enum AllocOrInitError<E> {
+    
+    Alloc(alloc::AllocErr),
+    
+    
+    
+    
+    
+    Init(E),
+}
+impl<E> From<alloc::AllocErr> for AllocOrInitError<E> {
+    fn from(e: alloc::AllocErr) -> Self {
+        Self::Alloc(e)
+    }
+}
+impl<E: Display> Display for AllocOrInitError<E> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            AllocOrInitError::Alloc(err) => err.fmt(f),
+            AllocOrInitError::Init(err) => write!(f, "initialization failed: {}", err),
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -318,27 +553,6 @@ const FIRST_ALLOCATION_GOAL: usize = 1 << 9;
 
 const DEFAULT_CHUNK_SIZE_WITHOUT_FOOTER: usize = FIRST_ALLOCATION_GOAL - OVERHEAD;
 
-#[inline]
-fn layout_for_array<T>(len: usize) -> Option<Layout> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    let layout = Layout::new::<T>();
-    let size_rounded_up = round_up_to(layout.size(), layout.align())?;
-    let total_size = len.checked_mul(size_rounded_up)?;
-
-    Layout::from_size_align(total_size, layout.align()).ok()
-}
-
 
 #[inline]
 unsafe fn layout_from_size_align(size: usize, align: usize) -> Layout {
@@ -418,20 +632,13 @@ impl Bump {
     
     
     fn new_chunk(
-        old_size_with_footer: Option<usize>,
+        new_size_without_footer: Option<usize>,
         requested_layout: Option<Layout>,
         prev: Option<NonNull<ChunkFooter>>,
     ) -> Option<NonNull<ChunkFooter>> {
         unsafe {
-            
-            
             let mut new_size_without_footer =
-                if let Some(old_size_with_footer) = old_size_with_footer {
-                    let old_size_without_footer = old_size_with_footer - FOOTER_SIZE;
-                    old_size_without_footer.checked_mul(2)?
-                } else {
-                    DEFAULT_CHUNK_SIZE_WITHOUT_FOOTER
-                };
+                new_size_without_footer.unwrap_or(DEFAULT_CHUNK_SIZE_WITHOUT_FOOTER);
 
             
             let mut align = CHUNK_ALIGN;
@@ -467,7 +674,7 @@ impl Bump {
                 .unwrap_or_else(allocation_size_overflow);
             let layout = layout_from_size_align(size, align);
 
-            debug_assert!(size >= old_size_with_footer.unwrap_or(0) * 2);
+            debug_assert!(requested_layout.map_or(true, |layout| size >= layout.size()));
 
             let data = alloc(layout);
             let data = NonNull::new(data)?;
@@ -592,13 +799,12 @@ impl Bump {
     
     
     
-    
-    
-    
-    
-    
-    
-    
+    #[inline(always)]
+    #[allow(clippy::mut_from_ref)]
+    pub fn try_alloc<T>(&self, val: T) -> Result<&mut T, alloc::AllocErr> {
+        self.try_alloc_with(|| val)
+    }
+
     
     
     
@@ -649,6 +855,271 @@ impl Bump {
             let p = p.as_ptr() as *mut T;
             inner_writer(p, f);
             &mut *p
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline(always)]
+    #[allow(clippy::mut_from_ref)]
+    pub fn try_alloc_with<F, T>(&self, f: F) -> Result<&mut T, alloc::AllocErr>
+    where
+        F: FnOnce() -> T,
+    {
+        #[inline(always)]
+        unsafe fn inner_writer<T, F>(ptr: *mut T, f: F)
+        where
+            F: FnOnce() -> T,
+        {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            ptr::write(ptr, f())
+        }
+
+        
+        
+        let layout = Layout::new::<T>();
+        let p = self.try_alloc_layout(layout)?;
+        let p = p.as_ptr() as *mut T;
+
+        unsafe {
+            inner_writer(p, f);
+            Ok(&mut *p)
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline(always)]
+    #[allow(clippy::mut_from_ref)]
+    pub fn alloc_try_with<F, T, E>(&self, f: F) -> Result<&mut T, E>
+    where
+        F: FnOnce() -> Result<T, E>,
+    {
+        let rewind_footer = self.current_chunk_footer.get();
+        let rewind_ptr = unsafe { rewind_footer.as_ref() }.ptr.get();
+        let mut inner_result_ptr = NonNull::from(self.alloc_with(f));
+        let inner_result_address = inner_result_ptr.as_ptr() as usize;
+        match unsafe { inner_result_ptr.as_mut() } {
+            Ok(t) => Ok(unsafe {
+                
+                
+                
+                
+                
+
+                
+                
+                
+                
+                &mut *(t as *mut _)
+            }),
+            Err(e) => unsafe {
+                
+                
+                
+                
+                
+                
+                if self.is_last_allocation(NonNull::new_unchecked(inner_result_address as *mut _)) {
+                    let current_footer_p = self.current_chunk_footer.get();
+                    let current_ptr = &current_footer_p.as_ref().ptr;
+                    if current_footer_p == rewind_footer {
+                        
+                        
+                        
+                        
+                        current_ptr.set(rewind_ptr);
+                    } else {
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        current_ptr.set(current_footer_p.as_ref().data);
+                    }
+                }
+                
+                
+                
+                
+                
+                
+                
+                
+                Err(ptr::read(e as *const _))
+            },
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline(always)]
+    #[allow(clippy::mut_from_ref)]
+    pub fn try_alloc_try_with<F, T, E>(&self, f: F) -> Result<&mut T, AllocOrInitError<E>>
+    where
+        F: FnOnce() -> Result<T, E>,
+    {
+        let rewind_footer = self.current_chunk_footer.get();
+        let rewind_ptr = unsafe { rewind_footer.as_ref() }.ptr.get();
+        let mut inner_result_ptr = NonNull::from(self.try_alloc_with(f)?);
+        let inner_result_address = inner_result_ptr.as_ptr() as usize;
+        match unsafe { inner_result_ptr.as_mut() } {
+            Ok(t) => Ok(unsafe {
+                
+                
+                
+                
+                
+
+                
+                
+                
+                
+                &mut *(t as *mut _)
+            }),
+            Err(e) => unsafe {
+                
+                
+                
+                
+                
+                
+                if self.is_last_allocation(NonNull::new_unchecked(inner_result_address as *mut _)) {
+                    let current_footer_p = self.current_chunk_footer.get();
+                    let current_ptr = &current_footer_p.as_ref().ptr;
+                    if current_footer_p == rewind_footer {
+                        
+                        
+                        
+                        
+                        current_ptr.set(rewind_ptr);
+                    } else {
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        current_ptr.set(current_footer_p.as_ref().data);
+                    }
+                }
+                
+                
+                
+                
+                
+                
+                
+                
+                Err(AllocOrInitError::Init(ptr::read(e as *const _)))
+            },
         }
     }
 
@@ -770,7 +1241,7 @@ impl Bump {
     where
         F: FnMut(usize) -> T,
     {
-        let layout = layout_for_array::<T>(len).unwrap_or_else(|| oom());
+        let layout = Layout::array::<T>(len).unwrap_or_else(|_| oom());
         let dst = self.alloc_layout(layout).cast::<T>();
 
         unsafe {
@@ -888,11 +1359,19 @@ impl Bump {
     
     
     
+    
+    
+    
+    
     #[inline(always)]
     pub fn alloc_layout(&self, layout: Layout) -> NonNull<u8> {
         self.try_alloc_layout(layout).unwrap_or_else(|_| oom())
     }
 
+    
+    
+    
+    
     
     
     
@@ -964,11 +1443,29 @@ impl Bump {
             
             let current_footer = self.current_chunk_footer.get();
             let current_layout = current_footer.as_ref().layout;
-            let new_footer = Bump::new_chunk(
-                Some(current_layout.size()),
-                Some(layout),
-                Some(current_footer),
-            )?;
+
+            
+            
+            
+            
+            let min_new_chunk_size = layout.size().max(DEFAULT_CHUNK_SIZE_WITHOUT_FOOTER);
+            let mut base_size = (current_layout.size() - FOOTER_SIZE)
+                .checked_mul(2)?
+                .max(min_new_chunk_size);
+            let sizes = iter::from_fn(|| {
+                if base_size >= min_new_chunk_size {
+                    let size = base_size;
+                    base_size = base_size / 2;
+                    Some(size)
+                } else {
+                    None
+                }
+            });
+
+            let new_footer = sizes
+                .filter_map(|size| Bump::new_chunk(Some(size), Some(layout), Some(current_footer)))
+                .next()?;
+
             debug_assert_eq!(
                 new_footer.as_ref().data.as_ptr() as usize % layout.align(),
                 0
@@ -1106,6 +1603,7 @@ impl Bump {
     
     
     
+    
     pub fn allocated_bytes(&self) -> usize {
         let mut footer = Some(self.current_chunk_footer.get());
 
@@ -1130,6 +1628,73 @@ impl Bump {
         let footer = self.current_chunk_footer.get();
         let footer = footer.as_ref();
         footer.ptr.get() == ptr
+    }
+
+    #[inline]
+    unsafe fn dealloc(&self, ptr: NonNull<u8>, layout: Layout) {
+        
+        
+        if self.is_last_allocation(ptr) {
+            let ptr = NonNull::new_unchecked(ptr.as_ptr().add(layout.size()));
+            self.current_chunk_footer.get().as_ref().ptr.set(ptr);
+        }
+    }
+
+    #[inline]
+    unsafe fn shrink(
+        &self,
+        ptr: NonNull<u8>,
+        layout: Layout,
+        new_size: usize,
+    ) -> Result<NonNull<u8>, alloc::AllocErr> {
+        let old_size = layout.size();
+        if self.is_last_allocation(ptr)
+                
+                
+                
+                && new_size <= old_size / 2
+        {
+            let delta = old_size - new_size;
+            let footer = self.current_chunk_footer.get();
+            let footer = footer.as_ref();
+            footer
+                .ptr
+                .set(NonNull::new_unchecked(footer.ptr.get().as_ptr().add(delta)));
+            let new_ptr = footer.ptr.get();
+            
+            
+            ptr::copy_nonoverlapping(ptr.as_ptr(), new_ptr.as_ptr(), new_size);
+            return Ok(new_ptr);
+        } else {
+            return Ok(ptr);
+        }
+    }
+
+    #[inline]
+    unsafe fn grow(
+        &self,
+        ptr: NonNull<u8>,
+        layout: Layout,
+        new_size: usize,
+    ) -> Result<NonNull<u8>, alloc::AllocErr> {
+        let old_size = layout.size();
+        if self.is_last_allocation(ptr) {
+            
+            
+            let delta = new_size - old_size;
+            if let Some(p) =
+                self.try_alloc_layout_fast(layout_from_size_align(delta, layout.align()))
+            {
+                ptr::copy(ptr.as_ptr(), p.as_ptr(), old_size);
+                return Ok(p);
+            }
+        }
+
+        
+        let new_layout = layout_from_size_align(new_size, layout.align());
+        let new_ptr = self.try_alloc_layout(new_layout)?;
+        ptr::copy_nonoverlapping(ptr.as_ptr(), new_ptr.as_ptr(), old_size);
+        Ok(new_ptr)
     }
 }
 
@@ -1188,12 +1753,7 @@ unsafe impl<'a> alloc::Alloc for &'a Bump {
 
     #[inline]
     unsafe fn dealloc(&mut self, ptr: NonNull<u8>, layout: Layout) {
-        
-        
-        if self.is_last_allocation(ptr) {
-            let ptr = NonNull::new_unchecked(ptr.as_ptr().add(layout.size()));
-            self.current_chunk_footer.get().as_ref().ptr.set(ptr);
-        }
+        Bump::dealloc(self, ptr, layout)
     }
 
     #[inline]
@@ -1206,49 +1766,62 @@ unsafe impl<'a> alloc::Alloc for &'a Bump {
         let old_size = layout.size();
 
         if old_size == 0 {
-            return self.alloc(layout);
+            return self.try_alloc_layout(layout);
         }
 
         if new_size <= old_size {
-            if self.is_last_allocation(ptr)
-                
-                
-                
-                && new_size <= old_size / 2
-            {
-                let delta = old_size - new_size;
-                let footer = self.current_chunk_footer.get();
-                let footer = footer.as_ref();
-                footer
-                    .ptr
-                    .set(NonNull::new_unchecked(footer.ptr.get().as_ptr().add(delta)));
-                let new_ptr = footer.ptr.get();
-                
-                
-                ptr::copy_nonoverlapping(ptr.as_ptr(), new_ptr.as_ptr(), new_size);
-                return Ok(new_ptr);
-            } else {
-                return Ok(ptr);
-            }
+            self.shrink(ptr, layout, new_size)
+        } else {
+            self.grow(ptr, layout, new_size)
         }
+    }
+}
 
-        if self.is_last_allocation(ptr) {
-            
-            
-            let delta = new_size - old_size;
-            if let Some(p) =
-                self.try_alloc_layout_fast(layout_from_size_align(delta, layout.align()))
-            {
-                ptr::copy(ptr.as_ptr(), p.as_ptr(), old_size);
-                return Ok(p);
-            }
-        }
+#[cfg(feature = "allocator_api")]
+unsafe impl<'a> Allocator for &'a Bump {
+    fn allocate(&self, layout: Layout) -> Result<NonNull<[u8]>, AllocError> {
+        self.try_alloc_layout(layout)
+            .map(|p| NonNull::slice_from_raw_parts(p, layout.size()))
+            .map_err(|_| AllocError)
+    }
 
-        
-        let new_layout = layout_from_size_align(new_size, layout.align());
-        let new_ptr = self.try_alloc_layout(new_layout)?;
-        ptr::copy_nonoverlapping(ptr.as_ptr(), new_ptr.as_ptr(), old_size);
-        Ok(new_ptr)
+    unsafe fn deallocate(&self, ptr: NonNull<u8>, layout: Layout) {
+        Bump::dealloc(self, ptr, layout)
+    }
+
+    unsafe fn shrink(
+        &self,
+        ptr: NonNull<u8>,
+        old_layout: Layout,
+        new_layout: Layout,
+    ) -> Result<NonNull<[u8]>, AllocError> {
+        let new_size = new_layout.size();
+        Bump::shrink(self, ptr, old_layout, new_size)
+            .map(|p| NonNull::slice_from_raw_parts(p, new_size))
+            .map_err(|_| AllocError)
+    }
+
+    unsafe fn grow(
+        &self,
+        ptr: NonNull<u8>,
+        old_layout: Layout,
+        new_layout: Layout,
+    ) -> Result<NonNull<[u8]>, AllocError> {
+        let new_size = new_layout.size();
+        Bump::grow(self, ptr, old_layout, new_size)
+            .map(|p| NonNull::slice_from_raw_parts(p, new_size))
+            .map_err(|_| AllocError)
+    }
+
+    unsafe fn grow_zeroed(
+        &self,
+        ptr: NonNull<u8>,
+        old_layout: Layout,
+        new_layout: Layout,
+    ) -> Result<NonNull<[u8]>, AllocError> {
+        let mut ptr = self.grow(ptr, old_layout, new_layout)?;
+        ptr.as_mut()[old_layout.size()..].fill(0);
+        Ok(ptr)
     }
 }
 
