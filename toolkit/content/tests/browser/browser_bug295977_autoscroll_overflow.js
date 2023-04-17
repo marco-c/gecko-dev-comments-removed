@@ -190,14 +190,6 @@ body > div > div {width: 1000px;height: 1000px;}\
       );
       BrowserTestUtils.loadURI(gBrowser, test.dataUri);
       await loadedPromise;
-      await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
-        
-        await new Promise(resolve =>
-          content.requestAnimationFrame(() =>
-            content.requestAnimationFrame(resolve)
-          )
-        );
-      });
       continue;
     }
 
@@ -216,10 +208,10 @@ body > div > div {width: 1000px;height: 1000px;}\
 
     
     
-    await SpecialPowers.spawn(
+    await ContentTask.spawn(
       gBrowser.selectedBrowser,
-      [test.expected != expectScrollNone],
-      async waitForAutoScrollStart => {
+      { waitForAutoScrollStart: test.expected != expectScrollNone },
+      async ({ waitForAutoScrollStart }) => {
         var iframe = content.document.getElementById("iframe");
 
         if (iframe) {
