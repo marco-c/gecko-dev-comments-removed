@@ -65,7 +65,9 @@ class WeakCacheBase : public mozilla::LinkedListElement<WeakCacheBase> {
   
   virtual bool empty() = 0;
 
-  virtual bool setNeedsIncrementalBarrier(bool needs) {
+  
+  
+  virtual bool setIncrementalBarrierTracer(JSTracer* trc) {
     
     return false;
   }
