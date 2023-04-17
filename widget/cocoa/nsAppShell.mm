@@ -279,6 +279,10 @@ void RunLoopObserverCallback(CFRunLoopObserverRef aObserver, CFRunLoopActivity a
 }
 
 void nsAppShell::OnRunLoopActivityChanged(CFRunLoopActivity aActivity) {
+  if (aActivity == kCFRunLoopBeforeWaiting) {
+    mozilla::BackgroundHangMonitor().NotifyWait();
+  }
+
 #ifdef MOZ_GECKO_PROFILER
   
   
