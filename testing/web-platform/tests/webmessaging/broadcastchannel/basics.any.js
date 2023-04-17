@@ -1,9 +1,3 @@
-<!DOCTYPE html>
-<meta charset=utf-8>
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script>
-
 async_test(t => {
     let c1 = new BroadcastChannel('eventType');
     let c2 = new BroadcastChannel('eventType');
@@ -107,7 +101,7 @@ async_test(t => {
     c2.onmessage = e => events.push('c2: ' + e.data);
     c3.onmessage = e => events.push('c3: ' + e.data);
 
-    // c2 closes itself when it receives the first message
+    
     c2.addEventListener('message', e => {
         c2.close();
       });
@@ -124,5 +118,3 @@ async_test(t => {
     c1.postMessage('first');
     c1.postMessage('done');
   }, 'Closing a channel in onmessage prevents already queued tasks from firing onmessage events');
-
-</script>
