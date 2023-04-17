@@ -168,6 +168,9 @@ struct PrintPreviewResultInfo
   bool hasSelection;
   
   bool hasSelfSelection;
+  
+  
+  bool? printLandscape;
 };
 
 
