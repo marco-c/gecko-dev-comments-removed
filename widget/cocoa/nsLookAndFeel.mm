@@ -223,7 +223,7 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme, nscolor
       break;
     case ColorID::Buttonface:
     case ColorID::MozButtonhoverface:
-      color = NS_RGB(0xF0, 0xF0, 0xF0);
+      color = GetColorFromNSColor(NSColor.controlColor);
       break;
     case ColorID::Buttonhighlight:
       color = NS_RGB(0xFF, 0xFF, 0xFF);
@@ -260,7 +260,7 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme, nscolor
       color = NS_RGB(0xDA, 0xDA, 0xDA);
       break;
     case ColorID::Menu:
-      color = GetColorFromNSColor(NSColor.alternateSelectedControlTextColor);
+      color = GetColorFromNSColor(NSColor.textBackgroundColor);
       break;
     case ColorID::Windowframe:
       color = GetColorFromNSColor(NSColor.windowFrameColor);
@@ -277,7 +277,7 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme, nscolor
       color = GetColorFromNSColor(NSColor.controlTextColor);
       break;
     case ColorID::MozDialog:
-      color = GetColorFromNSColor(NSColor.controlHighlightColor);
+      color = GetColorFromNSColor(NSColor.controlBackgroundColor);
       break;
     case ColorID::MozDialogtext:
     case ColorID::MozCellhighlighttext:
@@ -335,8 +335,7 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme, nscolor
       color = GetColorFromNSColor(NSColor.controlAlternatingRowBackgroundColors[1]);
       break;
     case ColorID::MozNativehyperlinktext:
-      
-      color = NS_RGB(0x14, 0x4F, 0xAE);
+      color = GetColorFromNSColor(NSColor.linkColor);
       break;
     
     
