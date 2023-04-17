@@ -171,7 +171,7 @@ class nsMenuFrame final : public nsBoxFrame, public nsIReflowCallback {
   void ToggleMenuState();
 
   
-  void ActivateItem(mozilla::Modifiers aModifiers);
+  void ActivateItem(mozilla::Modifiers aModifiers, int16_t aButton);
 
   
   
