@@ -181,6 +181,12 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
   void AddSecondarySink(RtpPacketSinkInterface* sink);
   void RemoveSecondarySink(const RtpPacketSinkInterface* sink);
 
+  
+  
+  
+  void RemoteRTCPSenderInfo(uint32_t* packet_count, uint32_t* octet_count,
+                            int64_t* ntp_timestamp_ms) const;
+
  private:
   
   void ManageFrame(

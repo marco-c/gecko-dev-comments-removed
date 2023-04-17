@@ -947,6 +947,16 @@ void RtpVideoStreamReceiver2::RemoveSecondarySink(
   secondary_sinks_.erase(it);
 }
 
+
+
+
+void RtpVideoStreamReceiver2::RemoteRTCPSenderInfo(
+    uint32_t* packet_count, uint32_t* octet_count,
+    int64_t* ntp_timestamp_ms) const {
+  RTC_DCHECK_RUN_ON(&worker_task_checker_);
+  rtp_rtcp_->RemoteRTCPSenderInfo(packet_count, octet_count, ntp_timestamp_ms);
+}
+
 void RtpVideoStreamReceiver2::ManageFrame(
     std::unique_ptr<video_coding::RtpFrameObject> frame) {
   RTC_DCHECK_RUN_ON(&worker_task_checker_);

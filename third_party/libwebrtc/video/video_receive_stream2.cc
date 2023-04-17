@@ -441,6 +441,14 @@ VideoReceiveStream::Stats VideoReceiveStream2::GetStats() const {
     if (rtx_statistician)
       stats.total_bitrate_bps += rtx_statistician->BitrateReceived();
   }
+
+  
+  
+  
+  rtp_video_stream_receiver_.RemoteRTCPSenderInfo(
+      &stats.rtcp_sender_packets_sent, &stats.rtcp_sender_octets_sent,
+      &stats.rtcp_sender_ntp_timestamp_ms);
+
   return stats;
 }
 
