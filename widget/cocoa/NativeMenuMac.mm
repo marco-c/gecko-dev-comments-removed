@@ -247,11 +247,14 @@ void NativeMenuMac::ShowAsContextMenu(const mozilla::DesktopPoint& aPosition) {
   
   mozilla::DesktopPoint position = aPosition;
   RefPtr<NativeMenuMac> self = this;
-  NS_DispatchToCurrentThread(NS_NewRunnableFunction("nsStandaloneNativeMenu::OpenMenu",
-                                                    [=]() { self->OpenMenu(position); }));
+  mOpenRunnable = NS_NewCancelableRunnableFunction("NativeMenuMac::ShowAsContextMenu",
+                                                   [=]() { self->OpenMenu(position); });
+  NS_DispatchToCurrentThread(mOpenRunnable);
 }
 
 void NativeMenuMac::OpenMenu(const mozilla::DesktopPoint& aPosition) {
+  mOpenRunnable = nullptr;
+
   
   
   
@@ -314,7 +317,14 @@ void NativeMenuMac::OpenMenu(const mozilla::DesktopPoint& aPosition) {
   }
 }
 
-bool NativeMenuMac::Close() { return mMenu->Close(); }
+bool NativeMenuMac::Close() {
+  if (mOpenRunnable) {
+    
+    mOpenRunnable->Cancel();
+    mOpenRunnable = nullptr;
+  }
+  return mMenu->Close();
+}
 
 RefPtr<nsMenuX> NativeMenuMac::GetOpenMenuContainingElement(dom::Element* aElement) {
   nsTArray<RefPtr<dom::Element>> submenuChain;

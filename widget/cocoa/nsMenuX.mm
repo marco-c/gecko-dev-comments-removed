@@ -591,6 +591,14 @@ void nsMenuX::ActivateItemAndClose(RefPtr<nsMenuItemX>&& aItem, NSEventModifierF
 bool nsMenuX::Close() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
+  if (mDidFirePopupshowingAndIsApprovedToOpen && !mIsOpen) {
+    
+    
+    
+    
+    MenuOpened();
+  }
+
   FlushMenuOpenedRunnable();
 
   bool wasOpen = mIsOpenForGecko;
@@ -603,6 +611,9 @@ bool nsMenuX::Close() {
     
     
     [mNativeMenu cancelTrackingWithoutAnimation];
+
+    
+    MenuClosed();
   }
 
   FlushMenuClosedRunnable();
