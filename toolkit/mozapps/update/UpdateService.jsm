@@ -199,7 +199,7 @@ const ERR_CHANNEL_CHANGE = 92;
 const INVALID_UPDATER_STATE_CODE = 98;
 const INVALID_UPDATER_STATUS_CODE = 99;
 
-const BACKGROUND_TASK_NEEDED_ELEVATION_ERROR = 105;
+const SILENT_UPDATE_NEEDED_ELEVATION_ERROR = 105;
 const WRITE_ERROR_BACKGROUND_TASK_SHARING_VIOLATION = 106;
 
 
@@ -1517,7 +1517,7 @@ function handleUpdateFailure(update, errorCode) {
     return true;
   }
 
-  if (update.errorCode == BACKGROUND_TASK_NEEDED_ELEVATION_ERROR) {
+  if (update.errorCode == SILENT_UPDATE_NEEDED_ELEVATION_ERROR) {
     
     
     
@@ -1526,7 +1526,7 @@ function handleUpdateFailure(update, errorCode) {
 
     let bestState = getBestPendingState();
     LOG(
-      "handleUpdateFailure - witnessed BACKGROUND_TASK_NEEDED_ELEVATION_ERROR, " +
+      "handleUpdateFailure - witnessed SILENT_UPDATE_NEEDED_ELEVATION_ERROR, " +
         "returning to " +
         bestState
     );

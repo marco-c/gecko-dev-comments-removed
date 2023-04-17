@@ -293,7 +293,7 @@ static bool sUsingService = false;
 
 
 
-static bool sCallbackIsBackgroundTask = false;
+static bool sUpdateSilently = false;
 
 #ifdef XP_WIN
 static NS_tchar gCallbackRelPath[MAXPATHLEN];
@@ -2678,7 +2678,7 @@ int LaunchCallbackAndPostProcessApps(int argc, NS_tchar** argv,
 return 0;
 }
 
-bool IsCallbackBackgroundTask(int argc, NS_tchar** argv) {
+bool ShouldRunSilently(int argc, NS_tchar** argv) {
 #ifdef MOZ_BACKGROUNDTASKS
   
   
@@ -2968,8 +2968,8 @@ int NS_main(int argc, NS_tchar** argv) {
       return 1;
     }
 
-    sCallbackIsBackgroundTask =
-        IsCallbackBackgroundTask(argc - callbackIndex, argv + callbackIndex);
+    sUpdateSilently =
+        ShouldRunSilently(argc - callbackIndex, argv + callbackIndex);
   }
 
 #ifdef XP_MACOSX
@@ -2984,7 +2984,7 @@ int NS_main(int argc, NS_tchar** argv) {
     if (t1.Run(ServeElevatedUpdateThreadFunc, &threadArgs) == 0) {
       
       
-      if (!sCallbackIsBackgroundTask) {
+      if (!sUpdateSilently) {
         ShowProgressUI(true);
       }
     }
@@ -3290,7 +3290,7 @@ int NS_main(int argc, NS_tchar** argv) {
           bool showProgressUI = false;
           
           
-          if (!sStagedUpdate && !sCallbackIsBackgroundTask) {
+          if (!sStagedUpdate && !sUpdateSilently) {
             
             
             
@@ -3354,14 +3354,14 @@ int NS_main(int argc, NS_tchar** argv) {
 
       
       
-      if (!useService && sCallbackIsBackgroundTask) {
+      if (!useService && sUpdateSilently) {
         if (updateLockFileHandle != INVALID_HANDLE_VALUE) {
           CloseHandle(updateLockFileHandle);
         }
         
         
         
-        WriteStatusFile(BACKGROUND_TASK_NEEDED_ELEVATION_ERROR);
+        WriteStatusFile(SILENT_UPDATE_NEEDED_ELEVATION_ERROR);
         LOG(("Skipping update to avoid UAC prompt from background task."));
         output_finish();
 
@@ -3705,8 +3705,7 @@ int NS_main(int argc, NS_tchar** argv) {
         
         
         
-        if (lastWriteError == ERROR_SHARING_VIOLATION &&
-            sCallbackIsBackgroundTask) {
+        if (lastWriteError == ERROR_SHARING_VIOLATION && sUpdateSilently) {
           LOG(
               ("NS_main: callback app file in use, failed to exclusively open "
                "executable file from background task: " LOG_S,
@@ -3765,7 +3764,7 @@ int NS_main(int argc, NS_tchar** argv) {
   
   Thread t;
   if (t.Run(UpdateThreadFunc, nullptr) == 0) {
-    if (!sStagedUpdate && !sReplaceRequest && !sCallbackIsBackgroundTask
+    if (!sStagedUpdate && !sReplaceRequest && !sUpdateSilently
 #ifdef XP_MACOSX
         && !isElevated
 #endif
