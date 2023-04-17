@@ -791,6 +791,20 @@ async function waitUntilVisitedState(tab, selectors) {
 
 
 
+function hasMatchingElementInContentPage(selector) {
+  return SpecialPowers.spawn(gBrowser.selectedBrowser, [selector], function(
+    innerSelector
+  ) {
+    return content.document.querySelector(innerSelector) !== null;
+  });
+}
+
+
+
+
+
+
+
 function getNumberOfMatchingElementsInContentPage(selector) {
   return SpecialPowers.spawn(gBrowser.selectedBrowser, [selector], function(
     innerSelector
