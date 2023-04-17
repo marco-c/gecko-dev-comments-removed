@@ -106,7 +106,7 @@ Result<UsageInfo, nsresult> GetBodyUsage(nsIFile& aMorgueDir,
         
         
         
-        QM_TRY(QM_OR_ELSE_LOG_IF(
+        QM_TRY(QM_OR_ELSE_LOG_VERBOSE_IF(
             ToResult(BodyTraverseFiles(QuotaInfo{}, *bodyDir, getUsage,
                                         true,
                                         false)),

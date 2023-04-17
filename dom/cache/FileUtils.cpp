@@ -83,7 +83,7 @@ Result<NotNull<nsCOMPtr<nsIFile>>, nsresult> BodyGetCacheDir(nsIFile& aBaseDir,
   
   
   
-  QM_TRY(QM_OR_ELSE_LOG_IF(
+  QM_TRY(QM_OR_ELSE_LOG_VERBOSE_IF(
       ToResult(cacheDir->Create(nsIFile::DIRECTORY_TYPE, 0755)),
       IsSpecificError<NS_ERROR_FILE_ALREADY_EXISTS>, ErrToDefaultOk<>));
 
@@ -100,7 +100,7 @@ nsresult BodyCreateDir(nsIFile& aBaseDir) {
   
   
   
-  QM_TRY(QM_OR_ELSE_LOG_IF(
+  QM_TRY(QM_OR_ELSE_LOG_VERBOSE_IF(
       ToResult(bodyDir->Create(nsIFile::DIRECTORY_TYPE, 0755)),
       IsSpecificError<NS_ERROR_FILE_ALREADY_EXISTS>, ErrToDefaultOk<>));
 
@@ -378,7 +378,7 @@ nsresult BodyDeleteOrphanedFiles(const QuotaInfo& aQuotaInfo, nsIFile& aBaseDir,
             
             
             
-            QM_TRY(QM_OR_ELSE_LOG_IF(
+            QM_TRY(QM_OR_ELSE_LOG_VERBOSE_IF(
                 ToResult(BodyTraverseFiles(aQuotaInfo, *subdir,
                                            removeOrphanedFiles,
                                             true,
@@ -439,7 +439,7 @@ nsresult CreateMarkerFile(const QuotaInfo& aQuotaInfo) {
   
   
   
-  QM_TRY(QM_OR_ELSE_LOG_IF(
+  QM_TRY(QM_OR_ELSE_LOG_VERBOSE_IF(
       ToResult(marker->Create(nsIFile::NORMAL_FILE_TYPE, 0644)),
       IsSpecificError<NS_ERROR_FILE_ALREADY_EXISTS>, ErrToDefaultOk<>));
 

@@ -2392,11 +2392,11 @@ Result<bool, nsresult> EnsureDirectory(nsIFile& aDirectory) {
   
   QM_TRY_INSPECT(
       const auto& exists,
-      QM_OR_ELSE_LOG_IF(MOZ_TO_RESULT_INVOKE(aDirectory, Create,
-                                             nsIFile::DIRECTORY_TYPE, 0755)
-                            .map([](Ok) { return false; }),
-                        IsSpecificError<NS_ERROR_FILE_ALREADY_EXISTS>,
-                        ErrToOk<true>));
+      QM_OR_ELSE_LOG_VERBOSE_IF(
+          MOZ_TO_RESULT_INVOKE(aDirectory, Create, nsIFile::DIRECTORY_TYPE,
+                               0755)
+              .map([](Ok) { return false; }),
+          IsSpecificError<NS_ERROR_FILE_ALREADY_EXISTS>, ErrToOk<true>));
 
   if (exists) {
     QM_TRY_INSPECT(const bool& isDirectory,
@@ -10547,6 +10547,7 @@ nsresult CreateOrUpgradeDirectoryMetadataHelper::MaybeUpgradeOriginDirectory(
     QM_TRY_INSPECT(const auto& idbDirectory,
                    CloneFileAndAppend(*aDirectory, idbDirectoryName));
 
+    
     
     
     

@@ -172,7 +172,7 @@ Result<nsIFileKind, nsresult> GetDirEntryKind(nsIFile& aFile) {
   
   
   
-  QM_TRY_RETURN(QM_OR_ELSE_LOG_IF(
+  QM_TRY_RETURN(QM_OR_ELSE_LOG_VERBOSE_IF(
       MOZ_TO_RESULT_INVOKE(aFile, IsDirectory).map([](const bool isDirectory) {
         return isDirectory ? nsIFileKind::ExistsAsDirectory
                            : nsIFileKind::ExistsAsFile;
@@ -418,7 +418,7 @@ void LogError(const nsACString& aExpr, const Maybe<nsresult> aMaybeRv,
 
   
   
-  if (aSeverity == Severity::Log) {
+  if (aSeverity == Severity::Verbose) {
     return;
   }
 
@@ -502,8 +502,8 @@ void LogError(const nsACString& aExpr, const Maybe<nsresult> aMaybeRv,
         return "WARNING"_ns;
       case Severity::Note:
         return "NOTE"_ns;
-      case Severity::Log:
-        return "LOG"_ns;
+      case Severity::Verbose:
+        return "VERBOSE"_ns;
     }
     MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Bad severity value!");
   }();

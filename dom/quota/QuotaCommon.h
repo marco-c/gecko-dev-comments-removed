@@ -892,7 +892,7 @@ class NotNull;
 
 
 
-#define QM_OR_ELSE_LOG(...) QM_OR_ELSE_REPORT(Log, __VA_ARGS__)
+#define QM_OR_ELSE_LOG_VERBOSE(...) QM_OR_ELSE_REPORT(Log, __VA_ARGS__)
 
 namespace mozilla::dom::quota {
 
@@ -955,7 +955,8 @@ auto OrElseIf(Result<V, E>&& aResult, P&& aPred, F&& aFunc) -> Result<V, E> {
 
 
 
-#define QM_OR_ELSE_LOG_IF(...) QM_OR_ELSE_REPORT_IF(Log, __VA_ARGS__)
+#define QM_OR_ELSE_LOG_VERBOSE_IF(...) \
+  QM_OR_ELSE_REPORT_IF(Verbose, __VA_ARGS__)
 
 
 #ifdef NIGHTLY_BUILD
@@ -1319,7 +1320,7 @@ enum class Severity {
   Error,
   Warning,
   Note,
-  Log,
+  Verbose,
 };
 
 #if defined(EARLY_BETA_OR_EARLIER) || defined(DEBUG)

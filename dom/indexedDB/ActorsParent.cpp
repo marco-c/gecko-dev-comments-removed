@@ -5736,7 +5736,7 @@ nsresult DeleteFile(nsIFile& aFile, QuotaManager* const aQuotaManager,
         if (aQuotaManager) {
           QM_TRY_INSPECT(
               const Maybe<int64_t>& fileSize,
-              QM_OR_ELSE_LOG_IF(
+              QM_OR_ELSE_LOG_VERBOSE_IF(
                   MOZ_TO_RESULT_INVOKE(aFile, GetFileSize)
                       .map([](const int64_t val) { return Some(val); }),
                   isIgnorableError, ErrToDefaultOk<Maybe<int64_t>>));
@@ -5758,8 +5758,8 @@ nsresult DeleteFile(nsIFile& aFile, QuotaManager* const aQuotaManager,
 
   QM_TRY_INSPECT(
       const auto& didExist,
-      QM_OR_ELSE_LOG_IF(ToResult(aFile.Remove(false)).map(Some<Ok>),
-                        isIgnorableError, ErrToDefaultOk<Maybe<Ok>>));
+      QM_OR_ELSE_LOG_VERBOSE_IF(ToResult(aFile.Remove(false)).map(Some<Ok>),
+                                isIgnorableError, ErrToDefaultOk<Maybe<Ok>>));
 
   if (!didExist) {
     
@@ -5849,7 +5849,7 @@ Result<nsCOMPtr<nsIFile>, nsresult> CreateMarkerFile(
   
   
   
-  QM_TRY(QM_OR_ELSE_LOG_IF(
+  QM_TRY(QM_OR_ELSE_LOG_VERBOSE_IF(
       ToResult(markerFile->Create(nsIFile::NORMAL_FILE_TYPE, 0644)),
       IsSpecificError<NS_ERROR_FILE_ALREADY_EXISTS>, ErrToDefaultOk<>));
 
@@ -12916,7 +12916,7 @@ nsresult QuotaClient::GetUsageForOriginInternal(
         
         
         QM_TRY_INSPECT(const int64_t& walFileSize,
-                       QM_OR_ELSE_LOG_IF(
+                       QM_OR_ELSE_LOG_VERBOSE_IF(
                            MOZ_TO_RESULT_INVOKE(walFile, GetFileSize),
                            ([](const nsresult rv) {
                              return rv == NS_ERROR_FILE_NOT_FOUND ||
@@ -14657,7 +14657,7 @@ nsresult DatabaseOperationBase::InsertIndexTableRows(
 
     
     
-    QM_TRY(QM_OR_ELSE_LOG_IF(
+    QM_TRY(QM_OR_ELSE_LOG_VERBOSE_IF(
         ToResult(borrowedStmt->Execute()),
         ([&info, index, &aIndexValues](nsresult rv) {
           if (rv == NS_ERROR_STORAGE_CONSTRAINT && info.mUnique) {

@@ -957,7 +957,7 @@ Result<bool, nsresult> ExistsAsFile(nsIFile& aFile) {
   
   
   QM_TRY_INSPECT(const auto& res,
-                 QM_OR_ELSE_LOG_IF(
+                 QM_OR_ELSE_LOG_VERBOSE_IF(
                      MOZ_TO_RESULT_INVOKE(aFile, IsDirectory)
                          .map([](const bool isDirectory) {
                            return isDirectory ? ExistsAsFileResult::IsDirectory
