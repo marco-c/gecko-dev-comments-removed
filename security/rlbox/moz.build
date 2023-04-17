@@ -21,6 +21,9 @@ SOURCES += [
 ]
 
 
+DEFINES["WASM_RT_CUSTOM_TRAP_HANDLER"] = "moz_wasm2c_trap_handler"
+
+
 DEFINES["WASM_DONT_EXPORT_FUNCS"] = True
 
 FINAL_LIBRARY = "xul"

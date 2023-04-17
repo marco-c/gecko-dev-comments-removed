@@ -6,6 +6,9 @@
 #ifdef MOZ_USING_WASM_SANDBOXING
 
 
+#  include "mozilla/Assertions.h"
+
+
 #  include "mozilla/rlbox/rlbox_config.h"
 
 #  include "mozilla/rlbox/rlbox_wasm2c_sandbox.hpp"
@@ -16,5 +19,14 @@
 
 
 RLBOX_WASM2C_SANDBOX_STATIC_VARIABLES();
+
+extern "C" {
+
+
+
+void moz_wasm2c_trap_handler(const char* msg) {
+  MOZ_CRASH_UNSAFE_PRINTF("wasm2c crash: %s", msg);
+}
+}
 
 #endif
