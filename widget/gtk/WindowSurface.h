@@ -31,10 +31,6 @@ class WindowSurface {
   
   virtual bool IsFallback() const { return false; }
 
-  virtual void PrepareBufferForFrame(){};
-  virtual size_t GetBufferAge() const { return 0; };
-  virtual bool ShouldDrawPreviousPartialPresentRegions() { return false; };
-
  protected:
   virtual ~WindowSurface() = default;
 };
