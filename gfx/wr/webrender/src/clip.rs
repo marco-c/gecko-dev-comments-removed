@@ -112,7 +112,6 @@ use crate::space::SpaceMapper;
 use crate::util::{clamp_to_scale_factor, MaxRect, extract_inner_rect_safe, project_rect, ScaleOffset, VecHelper};
 use euclid::approxeq::ApproxEq;
 use std::{iter, ops, u32};
-use smallvec::SmallVec;
 
 
 
@@ -126,6 +125,7 @@ pub type ClipDataHandle = intern::Handle<ClipIntern>;
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[derive(Copy, Clone, PartialEq)]
+#[derive(MallocSizeOf)]
 pub struct ClipInstance {
     
     pub handle: ClipDataHandle,
@@ -150,6 +150,7 @@ impl ClipInstance {
 
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
+#[derive(MallocSizeOf)]
 #[derive(Copy, Clone)]
 pub struct SceneClipInstance {
     
@@ -166,7 +167,7 @@ pub struct ClipTemplate {
     
     pub parent: ClipId,
     
-    pub clips: SmallVec<[SceneClipInstance; 2]>,
+    pub clips: ops::Range<u32>,
 }
 
 
@@ -197,6 +198,7 @@ impl ClipChainBuilder {
         clip_id: Option<ClipId>,
         clip_chain_nodes: &mut Vec<ClipChainNode>,
         templates: &FastHashMap<ClipId, ClipTemplate>,
+        instances: &[SceneClipInstance],
     ) -> Self {
         let mut parent_clips = FastHashSet::default();
 
@@ -217,6 +219,7 @@ impl ClipChainBuilder {
                     &mut parent_clips,
                     clip_chain_nodes,
                     templates,
+                    instances,
                 )
             }
             None => {
@@ -243,11 +246,13 @@ impl ClipChainBuilder {
         existing_clips: &mut FastHashSet<(ItemUid, SpatialNodeIndex)>,
         clip_chain_nodes: &mut Vec<ClipChainNode>,
         templates: &FastHashMap<ClipId, ClipTemplate>,
+        clip_instances: &[SceneClipInstance],
     ) -> ClipChainId {
         let template = &templates[&clip_id];
+        let instances = &clip_instances[template.clips.start as usize .. template.clips.end as usize];
         let mut clip_chain_id = parent_clip_chain_id;
 
-        for clip in &template.clips {
+        for clip in instances {
             let key = (clip.clip.handle.uid(), clip.clip.spatial_node_index);
 
             
@@ -277,6 +282,7 @@ impl ClipChainBuilder {
             existing_clips,
             clip_chain_nodes,
             templates,
+            clip_instances,
         )
     }
 
@@ -288,11 +294,13 @@ impl ClipChainBuilder {
         &self,
         clip_id: ClipId,
         templates: &FastHashMap<ClipId, ClipTemplate>,
+        instances: &[SceneClipInstance],
     ) -> bool {
         let template = &templates[&clip_id];
 
         
-        for clip in &template.clips {
+        let clips = &instances[template.clips.start as usize .. template.clips.end as usize];
+        for clip in clips {
             if let ClipNodeKind::Complex = clip.key.kind.node_kind() {
                 return true;
             }
@@ -307,6 +315,7 @@ impl ClipChainBuilder {
         self.has_complex_clips(
             template.parent,
             templates,
+            instances,
         )
     }
 
@@ -318,6 +327,7 @@ impl ClipChainBuilder {
         clip_id: ClipId,
         clip_chain_nodes: &mut Vec<ClipChainNode>,
         templates: &FastHashMap<ClipId, ClipTemplate>,
+        instances: &[SceneClipInstance],
     ) -> ClipChainId {
         if self.prev_clip_id == clip_id {
             return self.prev_clip_chain_id;
@@ -338,6 +348,7 @@ impl ClipChainBuilder {
             &mut self.existing_clips_cache,
             clip_chain_nodes,
             templates,
+            instances,
         );
 
         self.prev_clip_id = clip_id;
@@ -724,12 +735,14 @@ impl ClipNode {
 
 pub struct ClipStoreStats {
     templates_capacity: usize,
+    instances_capacity: usize,
 }
 
 impl ClipStoreStats {
     pub fn empty() -> Self {
         ClipStoreStats {
             templates_capacity: 0,
+            instances_capacity: 0,
         }
     }
 }
@@ -751,6 +764,7 @@ pub struct ClipStore {
     
     #[ignore_malloc_size_of = "range missing"]
     pub templates: FastHashMap<ClipId, ClipTemplate>,
+    pub instances: Vec<SceneClipInstance>,
 
     
     
@@ -994,6 +1008,7 @@ impl ClipStore {
             active_local_clip_rect: None,
             active_pic_clip_rect: PictureRect::max_rect(),
             templates,
+            instances: Vec::with_capacity(stats.instances_capacity),
             chain_builder_stack: Vec::new(),
         }
     }
@@ -1003,9 +1018,11 @@ impl ClipStore {
         
         
         let templates_capacity = self.templates.capacity().min(self.templates.len() * 2);
+        let instances_capacity = self.instances.capacity().min(self.instances.len() * 2);
 
         ClipStoreStats {
             templates_capacity,
+            instances_capacity,
         }
     }
 
@@ -1016,9 +1033,13 @@ impl ClipStore {
         parent: ClipId,
         clips: &[SceneClipInstance],
     ) {
+        let start = self.instances.len() as u32;
+        self.instances.extend_from_slice(clips);
+        let end = self.instances.len() as u32;
+
         self.templates.insert(clip_id, ClipTemplate {
             parent,
-            clips: clips.into(),
+            clips: start..end,
         });
     }
 
@@ -1045,6 +1066,7 @@ impl ClipStore {
                 clip_id,
                 &mut self.clip_chain_nodes,
                 &self.templates,
+                &self.instances,
             )
     }
 
@@ -1062,6 +1084,7 @@ impl ClipStore {
             .has_complex_clips(
                 clip_id,
                 &self.templates,
+                &self.instances,
             )
     }
 
@@ -1085,6 +1108,7 @@ impl ClipStore {
             clip_id,
             &mut self.clip_chain_nodes,
             &self.templates,
+            &self.instances,
         );
 
         self.chain_builder_stack.push(builder);
