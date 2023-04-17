@@ -152,6 +152,7 @@ var PKT_PANEL_OVERLAY = function(options) {
     }
   };
   
+  
   this.initTagInput = function() {
     var inputwrapper = $(".pkt_ext_tag_input_wrapper");
     inputwrapper.find(".pkt_ext_tag_input").tokenInput([], {
@@ -293,6 +294,7 @@ var PKT_PANEL_OVERLAY = function(options) {
       }
     });
   };
+  
   this.disableInput = function() {
     document
       .querySelector(`.pkt_ext_containersaved .pkt_ext_item_actions`)
