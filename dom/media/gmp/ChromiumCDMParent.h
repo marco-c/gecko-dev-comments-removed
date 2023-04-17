@@ -15,7 +15,6 @@
 #include "nsTHashMap.h"
 #include "PlatformDecoderModule.h"
 #include "ImageContainer.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/Span.h"
 #include "ReorderQueue.h"
 
@@ -68,12 +67,6 @@ class ChromiumCDMParent final : public PChromiumCDMParent,
 
   void RemoveSession(const nsCString& aSessionId, uint32_t aPromiseId);
 
-  
-  
-  
-  void NotifyOutputProtectionStatus(bool aSuccess, uint32_t aLinkMask,
-                                    uint32_t aProtectionMask);
-
   void GetStatusForPolicy(uint32_t aPromiseId,
                           const nsCString& aMinHdcpVersion);
 
@@ -119,7 +112,6 @@ class ChromiumCDMParent final : public PChromiumCDMParent,
   ipc::IPCResult RecvOnExpirationChange(const nsCString& aSessionId,
                                         const double& aSecondsSinceEpoch);
   ipc::IPCResult RecvOnSessionClosed(const nsCString& aSessionId);
-  ipc::IPCResult RecvOnQueryOutputProtectionStatus();
   ipc::IPCResult RecvDecrypted(const uint32_t& aId, const uint32_t& aStatus,
                                ipc::Shmem&& aData);
   ipc::IPCResult RecvDecryptFailed(const uint32_t& aId,
@@ -149,11 +141,6 @@ class ChromiumCDMParent final : public PChromiumCDMParent,
   
   void RejectPromiseWithStateError(uint32_t aPromiseId,
                                    const nsCString& aErrorMessage);
-
-  
-  
-  void CompleteQueryOutputProtectionStatus(bool aSuccess, uint32_t aLinkMask,
-                                           uint32_t aProtectionMask);
 
   bool InitCDMInputBuffer(gmp::CDMInputBuffer& aBuffer, MediaRawData* aSample);
 
@@ -188,16 +175,6 @@ class ChromiumCDMParent final : public PChromiumCDMParent,
   uint32_t mVideoShmemsActive = 0;
   
   uint32_t mVideoShmemLimit;
-
-  
-  
-  
-  bool mAwaitingOutputProtectionInformation = false;
-  
-  
-  
-  
-  Maybe<uint32_t> mOutputProtectionLinkMask;
 
   bool mIsShutdown = false;
   bool mVideoDecoderInitialized = false;

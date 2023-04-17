@@ -18,7 +18,6 @@
 #include "mozilla/dom/Promise.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsIObserver.h"
 #include "nsRefPtrHashtable.h"
 #include "nsWrapperCache.h"
 
@@ -47,7 +46,7 @@ typedef uint32_t PromiseId;
 
 
 
-class MediaKeys final : public nsIObserver,
+class MediaKeys final : public nsISupports,
                         public nsWrapperCache,
                         public SupportsWeakPtr,
                         public DecoderDoctorLifeLogger<MediaKeys> {
@@ -56,8 +55,6 @@ class MediaKeys final : public nsIObserver,
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(MediaKeys)
-
-  NS_DECL_NSIOBSERVER
 
   MediaKeys(nsPIDOMWindowInner* aParentWindow, const nsAString& aKeySystem,
             const MediaKeySystemConfiguration& aConfig);
@@ -71,14 +68,6 @@ class MediaKeys final : public nsIObserver,
 
   nsresult Bind(HTMLMediaElement* aElement);
   void Unbind();
-
-  
-  
-  
-  
-  
-  
-  void CheckIsElementCapturePossible();
 
   
   void GetKeySystem(nsString& retval) const;
@@ -212,17 +201,6 @@ class MediaKeys final : public nsIObserver,
   const MediaKeySystemConfiguration mConfig;
 
   PendingPromiseIdTokenHashMap mPromiseIdToken;
-
-  
-  
-  constexpr static const char* kMediaKeysResponseTopic = "mediakeys-response";
-  
-  
-  
-  bool mObserverAdded = false;
-  
-  
-  nsString mCaptureCheckRequestJson;
 };
 
 }  

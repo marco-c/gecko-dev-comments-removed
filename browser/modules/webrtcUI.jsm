@@ -466,7 +466,6 @@ var webrtcUI = {
       this.tabSwitchCountForSession = 0;
     }
 
-    this._setSharedData();
     if (
       Services.prefs.getBoolPref(
         "privacy.webrtc.allowSilencingNotifications",
@@ -508,7 +507,6 @@ var webrtcUI = {
     }
 
     this.updateGlobalIndicator();
-    this._setSharedData();
   },
 
   
@@ -902,33 +900,6 @@ var webrtcUI = {
       object,
       this.sharingDisplaySessionId.toString(),
       args
-    );
-  },
-
-  
-
-
-
-
-
-
-
-  _setSharedData() {
-    let sharedTopInnerWindowIds = new Set();
-    for (let win of BrowserWindowTracker.orderedWindows) {
-      if (this.sharedBrowserWindows.has(win)) {
-        sharedTopInnerWindowIds.add(
-          win.browsingContext.currentWindowGlobal.innerWindowId
-        );
-      }
-    }
-    Services.ppmm.sharedData.set(
-      "webrtcUI:isSharingScreen",
-      this.sharingScreen
-    );
-    Services.ppmm.sharedData.set(
-      "webrtcUI:sharedTopInnerWindowIds",
-      sharedTopInnerWindowIds
     );
   },
 };

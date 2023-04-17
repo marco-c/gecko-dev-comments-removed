@@ -151,43 +151,6 @@ class CDMProxy {
                              PromiseId aPromiseId) = 0;
 
   
-  
-  
-  
-  virtual void QueryOutputProtectionStatus() = 0;
-
-  
-  
-  enum class OutputProtectionCheckStatus : uint8_t {
-    CheckFailed = 0,
-    CheckSuccessful = 1,
-  };
-
-  enum class OutputProtectionCaptureStatus : uint8_t {
-    CapturePossilbe = 0,
-    CaptureNotPossible = 1,
-    Unused = 2,
-  };
-  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual void NotifyOutputProtectionStatus(
-      OutputProtectionCheckStatus aCheckStatus,
-      OutputProtectionCaptureStatus aCaptureStatus) = 0;
-
-  
   virtual void Shutdown() = 0;
 
   
