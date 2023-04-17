@@ -1211,13 +1211,6 @@ static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
     loadingBC->SetActiveSessionHistoryEntry(nullptr);
     RemotenessChangeOptions options;
     aBrowsingContext->ReplacedBy(loadingBC, options);
-    frameLoaderOwner->ReplaceFrameLoader(aFrameLoader);
-
-    
-    
-    if (!aCanSave && currentFrameLoader) {
-      currentFrameLoader->Destroy();
-    }
 
     
     if (loadingBC->GetSessionHistory()) {
@@ -1228,6 +1221,15 @@ static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
     
     
     
+
+    frameLoaderOwner->ReplaceFrameLoader(aFrameLoader);
+
+    
+    
+    if (!aCanSave && currentFrameLoader) {
+      currentFrameLoader->Destroy();
+    }
+
     return;
   }
 
