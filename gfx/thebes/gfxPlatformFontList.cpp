@@ -471,22 +471,17 @@ bool gfxPlatformFontList::InitFontList() {
 
     gfxPlatform::PurgeSkiaFontCache();
 
+    
+    
+    
     if (NS_IsMainThread()) {
-      nsCOMPtr<nsIObserverService> obs =
-          mozilla::services::GetObserverService();
-      if (obs) {
-        
-        
-        obs->NotifyObservers(nullptr, "font-info-updated", nullptr);
-      }
+      gfxPlatform::ForceGlobalReflow(gfxPlatform::NeedsReframe::Yes,
+                                     gfxPlatform::BroadcastToChildren::No);
     } else {
       NS_DispatchToMainThread(
           NS_NewRunnableFunction("font-info-updated notification callback", [] {
-            nsCOMPtr<nsIObserverService> obs =
-                mozilla::services::GetObserverService();
-            if (obs) {
-              obs->NotifyObservers(nullptr, "font-info-updated", nullptr);
-            }
+            gfxPlatform::ForceGlobalReflow(gfxPlatform::NeedsReframe::Yes,
+                                           gfxPlatform::BroadcastToChildren::No);
           }));
     }
 

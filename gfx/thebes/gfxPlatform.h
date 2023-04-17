@@ -612,8 +612,14 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
 
 
+
+
+
+
   enum class NeedsReframe : bool { No, Yes };
-  static void ForceGlobalReflow(NeedsReframe);
+  enum class BroadcastToChildren : bool { No, Yes };
+  static void ForceGlobalReflow(NeedsReframe,
+                                BroadcastToChildren = BroadcastToChildren::Yes);
 
   static void FlushFontAndWordCaches();
 
