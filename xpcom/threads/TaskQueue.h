@@ -15,6 +15,7 @@
 #include "mozilla/MozPromise.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TaskDispatcher.h"
+#include "nsIDelayedRunnableObserver.h"
 #include "nsIDirectTaskDispatcher.h"
 #include "nsThreadUtils.h"
 
@@ -47,7 +48,9 @@ typedef MozPromise<bool, bool, false> ShutdownPromise;
 
 
 
-class TaskQueue : public AbstractThread, public nsIDirectTaskDispatcher {
+class TaskQueue : public AbstractThread,
+                  public nsIDirectTaskDispatcher,
+                  public nsIDelayedRunnableObserver {
   class EventTargetWrapper;
 
  public:
@@ -94,6 +97,18 @@ class TaskQueue : public AbstractThread, public nsIDirectTaskDispatcher {
   using nsIEventTarget::Dispatch;
 
   
+  void OnDelayedRunnableCreated(DelayedRunnable* aRunnable) override;
+  void OnDelayedRunnableScheduled(DelayedRunnable* aRunnable) override;
+  void OnDelayedRunnableRan(DelayedRunnable* aRunnable) override;
+
+  using CancelPromise = MozPromise<bool, bool, false>;
+
+  
+  
+  
+  RefPtr<CancelPromise> CancelDelayedRunnables();
+
+  
   
   
   
@@ -126,6 +141,11 @@ class TaskQueue : public AbstractThread, public nsIDirectTaskDispatcher {
   nsresult DispatchLocked(nsCOMPtr<nsIRunnable>& aRunnable, uint32_t aFlags,
                           DispatchReason aReason = NormalDispatch);
 
+  RefPtr<CancelPromise> CancelDelayedRunnablesLocked();
+
+  
+  void CancelDelayedRunnablesImpl();
+
   void MaybeResolveShutdown() {
     mQueueMonitor.AssertCurrentThreadOwns();
     if (mIsShutdown && !mIsRunning) {
@@ -137,6 +157,7 @@ class TaskQueue : public AbstractThread, public nsIDirectTaskDispatcher {
   nsCOMPtr<nsIEventTarget> mTarget;
 
   
+  
   Monitor mQueueMonitor;
 
   typedef struct TaskStruct {
@@ -146,6 +167,18 @@ class TaskQueue : public AbstractThread, public nsIDirectTaskDispatcher {
 
   
   std::queue<TaskStruct> mTasks;
+
+  
+  
+  
+  nsTArray<RefPtr<DelayedRunnable>> mScheduledDelayedRunnables;
+
+  
+  MozPromiseHolder<CancelPromise> mDelayedRunnablesCancelHolder;
+
+  
+  
+  RefPtr<CancelPromise> mDelayedRunnablesCancelPromise;
 
   
   
