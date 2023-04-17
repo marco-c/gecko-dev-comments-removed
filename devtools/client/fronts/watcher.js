@@ -160,6 +160,24 @@ class WatcherFront extends FrontClassWithSpec(watcherSpec) {
     return null;
   }
 
+  getWindowGlobalTargetByInnerWindowId(innerWindowId) {
+    for (const front of this.poolChildren()) {
+      if (front.innerWindowId == innerWindowId) {
+        return front;
+      }
+    }
+    
+    
+    
+    
+    const topLevelTarget = this.parentFront.getCachedTarget();
+    if (topLevelTarget?.innerWindowId == innerWindowId) {
+      return topLevelTarget;
+    }
+    console.error("Unable to find target with innerWindowId:" + innerWindowId);
+    return null;
+  }
+
   
 
 
