@@ -8,10 +8,12 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_browser.h"
+#include "mozilla/Unused.h"
 #include "nsAppRunner.h"
 #include "nsExceptionHandler.h"
 #include "nsICrashReporter.h"
 #include "nsIObserver.h"
+#include "nsIObserverService.h"
 #include "nsISupports.h"
 #include "nsITimer.h"
 #include "nsMemoryPressure.h"
@@ -32,7 +34,8 @@ namespace mozilla {
 
 
 
-class nsAvailableMemoryWatcher final : public nsITimerCallback,
+class nsAvailableMemoryWatcher final : public nsIObserver,
+                                       public nsITimerCallback,
                                        public nsINamed,
                                        public nsAvailableMemoryWatcherBase {
  public:
@@ -42,9 +45,12 @@ class nsAvailableMemoryWatcher final : public nsITimerCallback,
   NS_DECL_NSINAMED
 
   nsAvailableMemoryWatcher();
-  nsresult Init() override;
+  nsresult Init(uint32_t aPollingInterval);
 
  private:
+  
+  static const char* const kObserverTopics[];
+
   static VOID CALLBACK LowMemoryCallback(PVOID aContext, BOOLEAN aIsTimer);
   static void RecordLowMemoryEvent();
   static bool IsCommitSpaceLow();
@@ -61,6 +67,7 @@ class nsAvailableMemoryWatcher final : public nsITimerCallback,
   void StopPolling();
   void StopPollingIfUserIdle(const MutexAutoLock&);
   void OnUserInteracting(const MutexAutoLock&);
+  void OnUserIdle(const MutexAutoLock&);
 
   
   
@@ -71,6 +78,7 @@ class nsAvailableMemoryWatcher final : public nsITimerCallback,
   nsAutoHandle mLowMemoryHandle;
   HANDLE mWaitHandle;
   bool mPolling;
+  bool mInteracting;
 
   
   
@@ -85,10 +93,16 @@ class nsAvailableMemoryWatcher final : public nsITimerCallback,
   bool mIsShutdown;
 
   
-  
-
-  
+  bool mInitialized;
   uint32_t mPollingInterval;
+  nsCOMPtr<nsIObserverService> mObserverSvc;
+};
+
+const char* const nsAvailableMemoryWatcher::kObserverTopics[] = {
+    
+    "xpcom-shutdown",
+    "user-interaction-active",
+    "user-interaction-inactive",
 };
 
 NS_IMPL_ISUPPORTS_INHERITED(nsAvailableMemoryWatcher,
@@ -99,16 +113,20 @@ nsAvailableMemoryWatcher::nsAvailableMemoryWatcher()
     : mMutex("low memory callback mutex"),
       mWaitHandle(nullptr),
       mPolling(false),
+      mInteracting(false),
       mNeedToRestartTimerOnUserInteracting(false),
       mUnderMemoryPressure(false),
       mSavedReport(false),
       mIsShutdown(false),
+      mInitialized(false),
       mPollingInterval(0) {}
 
-nsresult nsAvailableMemoryWatcher::Init() {
-  nsresult rv = nsAvailableMemoryWatcherBase::Init();
-  if (NS_FAILED(rv)) {
-    return rv;
+nsresult nsAvailableMemoryWatcher::Init(uint32_t aPollingInterval) {
+  MOZ_ASSERT(
+      NS_IsMainThread(),
+      "nsAvailableMemoryWatcher needs to be initialized in the main thread.");
+  if (mInitialized) {
+    return NS_ERROR_ALREADY_INITIALIZED;
   }
 
   mTimer = NS_NewTimer();
@@ -116,13 +134,21 @@ nsresult nsAvailableMemoryWatcher::Init() {
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  
-  mPollingInterval = gIsGtest ? 10 : 10000;
+  mObserverSvc = services::GetObserverService();
+  MOZ_ASSERT(mObserverSvc);
+  mPollingInterval = aPollingInterval;
 
   if (!RegisterMemoryResourceHandler()) {
     return NS_ERROR_FAILURE;
   }
 
+  for (auto topic : kObserverTopics) {
+    nsresult rv = mObserverSvc->AddObserver(this, topic,
+                                             false);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  mInitialized = true;
   return NS_OK;
 }
 
@@ -207,7 +233,10 @@ void nsAvailableMemoryWatcher::UnregisterMemoryResourceHandler() {
 
 void nsAvailableMemoryWatcher::Shutdown(const MutexAutoLock&) {
   mIsShutdown = true;
-  mNeedToRestartTimerOnUserInteracting = false;
+
+  for (auto topic : kObserverTopics) {
+    Unused << mObserverSvc->RemoveObserver(this, topic);
+  }
 
   if (mTimer) {
     mTimer->Cancel();
@@ -340,9 +369,14 @@ void nsAvailableMemoryWatcher::StopPollingIfUserIdle(const MutexAutoLock&) {
 }
 
 void nsAvailableMemoryWatcher::OnUserInteracting(const MutexAutoLock& aLock) {
+  mInteracting = true;
   if (mNeedToRestartTimerOnUserInteracting) {
     StartPollingIfUserInteracting(aLock);
   }
+}
+
+void nsAvailableMemoryWatcher::OnUserIdle(const MutexAutoLock&) {
+  mInteracting = false;
 }
 
 
@@ -374,25 +408,28 @@ nsAvailableMemoryWatcher::GetName(nsACString& aName) {
 NS_IMETHODIMP
 nsAvailableMemoryWatcher::Observe(nsISupports* aSubject, const char* aTopic,
                                   const char16_t* aData) {
-  nsresult rv = nsAvailableMemoryWatcherBase::Observe(aSubject, aTopic, aData);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
   MutexAutoLock lock(mMutex);
 
   if (strcmp(aTopic, "xpcom-shutdown") == 0) {
     Shutdown(lock);
+  } else if (strcmp(aTopic, "user-interaction-inactive") == 0) {
+    OnUserIdle(lock);
   } else if (strcmp(aTopic, "user-interaction-active") == 0) {
     OnUserInteracting(lock);
+  } else {
+    MOZ_ASSERT_UNREACHABLE("Unknown topic");
   }
 
   return NS_OK;
 }
 
 already_AddRefed<nsAvailableMemoryWatcherBase> CreateAvailableMemoryWatcher() {
+  
+  
+  const uint32_t kLowMemoryNotificationIntervalMS = gIsGtest ? 10 : 10000;
+
   RefPtr watcher(new nsAvailableMemoryWatcher);
-  if (NS_FAILED(watcher->Init())) {
+  if (NS_FAILED(watcher->Init(kLowMemoryNotificationIntervalMS))) {
     return do_AddRef(new nsAvailableMemoryWatcherBase);  
   }
   return watcher.forget();
