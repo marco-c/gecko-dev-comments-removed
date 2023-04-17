@@ -985,16 +985,14 @@ bool NativeObject::putProperty(JSContext* cx, HandleNativeObject obj,
   if (obj->inDictionaryMode()) {
     
     
-    
-    
     bool updateLast = (shape == obj->lastProperty());
-    shape =
-        NativeObject::replaceWithNewEquivalentShape(cx, obj, shape, nullptr);
-    if (!shape) {
+    if (!NativeObject::generateOwnShape(cx, obj)) {
       return false;
     }
-    if (!updateLast && !NativeObject::generateOwnShape(cx, obj)) {
-      return false;
+
+    
+    if (updateLast) {
+      shape = obj->lastProperty();
     }
 
     if (slot == SHAPE_INVALID_SLOT) {
@@ -1008,10 +1006,9 @@ bool NativeObject::putProperty(JSContext* cx, HandleNativeObject obj,
     
     obj->lastProperty()->setObjectFlags(objectFlags);
 
-    shape->setBase(obj->lastProperty()->base());
+    MOZ_ASSERT(shape->inDictionary());
     shape->setSlot(slot);
     shape->attrs = uint8_t(attrs);
-    shape->immutableFlags |= Shape::IN_DICTIONARY;
   } else {
     
     
@@ -1081,16 +1078,14 @@ bool NativeObject::changeCustomDataPropAttributes(JSContext* cx,
   if (obj->inDictionaryMode()) {
     
     
-    
-    
     bool updateLast = (shape == obj->lastProperty());
-    shape =
-        NativeObject::replaceWithNewEquivalentShape(cx, obj, shape, nullptr);
-    if (!shape) {
+    if (!NativeObject::generateOwnShape(cx, obj)) {
       return false;
     }
-    if (!updateLast && !NativeObject::generateOwnShape(cx, obj)) {
-      return false;
+
+    
+    if (updateLast) {
+      shape = obj->lastProperty();
     }
 
     
@@ -1098,10 +1093,9 @@ bool NativeObject::changeCustomDataPropAttributes(JSContext* cx,
     
     obj->lastProperty()->setObjectFlags(objectFlags);
 
-    shape->setBase(obj->lastProperty()->base());
+    MOZ_ASSERT(shape->inDictionary());
     shape->setSlot(SHAPE_INVALID_SLOT);
     shape->attrs = uint8_t(attrs);
-    shape->immutableFlags |= Shape::IN_DICTIONARY;
   } else {
     
     
@@ -1267,48 +1261,32 @@ bool NativeObject::removeProperty(JSContext* cx, HandleNativeObject obj,
   return true;
 }
 
-#ifdef DEBUG
-static bool ContainsShape(NativeObject* obj, Shape* shape, JSContext* cx) {
-  PropertyKey key = shape->propertyWithKey().key();
-  return obj->lastProperty()->search(cx, key) == shape;
-}
-#endif
 
-
-Shape* NativeObject::replaceWithNewEquivalentShape(JSContext* cx,
-                                                   HandleNativeObject obj,
-                                                   Shape* oldShape,
-                                                   Shape* newShape) {
-  MOZ_ASSERT(cx->isInsideCurrentZone(oldShape));
-  MOZ_ASSERT_IF(oldShape != obj->lastProperty(),
-                obj->inDictionaryMode() && ContainsShape(obj, oldShape, cx));
-
+bool NativeObject::generateOwnShape(JSContext* cx, HandleNativeObject obj,
+                                    Shape* newShape) {
   if (!obj->inDictionaryMode()) {
     RootedShape newRoot(cx, newShape);
     if (!toDictionaryMode(cx, obj)) {
-      return nullptr;
+      return false;
     }
-    oldShape = obj->lastProperty();
     newShape = newRoot;
   }
 
   if (!newShape) {
-    RootedShape oldRoot(cx, oldShape);
-
     newShape = Allocate<Shape>(cx);
     if (!newShape) {
-      return nullptr;
+      return false;
     }
 
-    new (newShape) Shape(oldRoot->base(), ObjectFlags(), 0);
-
-    oldShape = oldRoot;
+    new (newShape) Shape(obj->lastProperty()->base(), ObjectFlags(), 0);
   }
 
+  Shape* oldShape = obj->lastProperty();
+
   AutoCheckCannotGC nogc;
-  ShapeTable* table = obj->lastProperty()->ensureTableForDictionary(cx, nogc);
+  ShapeTable* table = oldShape->ensureTableForDictionary(cx, nogc);
   if (!table) {
-    return nullptr;
+    return false;
   }
 
   ShapeTable::Entry* entry =
@@ -1317,24 +1295,20 @@ Shape* NativeObject::replaceWithNewEquivalentShape(JSContext* cx,
           : &table->search<MaybeAdding::NotAdding>(oldShape->propidRef(), nogc);
 
   
-
-
-
   StackShape nshape(oldShape);
   newShape->initDictionaryShape(nshape, obj->numFixedSlots(),
-                                oldShape->dictNext);
+                                DictionaryShapeLink(obj));
 
   MOZ_ASSERT(newShape->parent == oldShape);
   oldShape->removeFromDictionary(obj);
 
-  if (newShape == obj->lastProperty()) {
-    oldShape->handoffTableTo(newShape);
-  }
+  MOZ_ASSERT(newShape == obj->lastProperty());
+  oldShape->handoffTableTo(newShape);
 
   if (entry) {
     entry->setPreservingCollision(newShape);
   }
-  return newShape;
+  return true;
 }
 
 

@@ -648,11 +648,6 @@ class NativeObject : public JSObject {
   void checkShapeConsistency() {}
 #endif
 
-  static Shape* replaceWithNewEquivalentShape(JSContext* cx,
-                                              HandleNativeObject obj,
-                                              Shape* existingShape,
-                                              Shape* newShape = nullptr);
-
   
 
 
@@ -780,10 +775,7 @@ class NativeObject : public JSObject {
 
   [[nodiscard]] static bool generateOwnShape(JSContext* cx,
                                              HandleNativeObject obj,
-                                             Shape* newShape = nullptr) {
-    return replaceWithNewEquivalentShape(cx, obj, obj->lastProperty(),
-                                         newShape);
-  }
+                                             Shape* newShape = nullptr);
 
   [[nodiscard]] static bool reshapeForShadowedProp(JSContext* cx,
                                                    HandleNativeObject obj);
