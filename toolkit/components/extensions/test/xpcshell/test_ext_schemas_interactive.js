@@ -1,8 +1,7 @@
 "use strict";
 
-const { ExtensionManager } = ChromeUtils.import(
-  "resource://gre/modules/ExtensionChild.jsm",
-  null
+const { ExtensionProcessScript } = ChromeUtils.import(
+  "resource://gre/modules/ExtensionProcessScript.jsm"
 );
 
 let experimentAPIs = {
@@ -73,7 +72,7 @@ let experimentFiles = {
 
 
 function setHandlingUserInput(extension) {
-  let extensionChild = ExtensionManager.extensions.get(extension.extension.id);
+  let extensionChild = ExtensionProcessScript.getExtensionChild(extension.id);
   let bgwin = null;
   for (let view of extensionChild.views) {
     if (view.viewType == "background") {
