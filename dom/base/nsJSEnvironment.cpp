@@ -1760,7 +1760,7 @@ static void DOMGCSliceCallback(JSContext* aCx, JS::GCProgress aProgress,
         
         
         
-        sScheduler.EnsureGCRunner();
+        sScheduler.EnsureGCRunner(0);
       }
 
       if (sScheduler.IsCCNeeded()) {
