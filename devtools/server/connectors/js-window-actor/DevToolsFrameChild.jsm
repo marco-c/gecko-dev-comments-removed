@@ -500,13 +500,16 @@ class DevToolsFrameChild extends JSWindowActorChild {
 
     
     
+    
+    
+    const shouldHandleBfCacheEvents =
+      this.isBfcacheInParentEnabled || this.isServerTargetSwitchingEnabled;
+
+    
+    
     if (type == "DOMWindowCreated") {
       this.instantiate();
-    } else if (
-      this.isBfcacheInParentEnabled &&
-      type == "pageshow" &&
-      persisted
-    ) {
+    } else if (shouldHandleBfCacheEvents && type == "pageshow" && persisted) {
       
       
       
@@ -516,9 +519,8 @@ class DevToolsFrameChild extends JSWindowActorChild {
       
       this.instantiate({ forceOverridingFirstTarget: true });
     }
-    if (this.isBfcacheInParentEnabled && type == "pagehide" && persisted) {
+    if (shouldHandleBfCacheEvents && type == "pagehide" && persisted) {
       this.didDestroy();
-
       
       
       
