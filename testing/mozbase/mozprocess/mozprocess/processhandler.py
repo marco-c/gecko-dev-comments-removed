@@ -806,7 +806,7 @@ falling back to not using job objects for managing child processes""",
                 else:
                     self._handle = None
 
-        elif isPosix:
+        else:
 
             def _custom_wait(self, timeout=None):
                 """Haven't found any reason to differentiate between these platforms
@@ -814,60 +814,16 @@ falling back to not using job objects for managing child processes""",
                 craft different styles of wait, then a new _custom_wait method
                 could be easily implemented.
                 """
-
-                if not self._ignore_children:
-                    try:
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        status = os.waitpid(self.pid, 0)[1]
-
-                        
-                        
-                        if status > 255:
-                            return status >> 8
-                        return -status
-                    except OSError as e:
-                        if getattr(e, "errno", None) != 10:
-                            
-                            
-                            print(
-                                "Encountered error waiting for pid to close: %s" % e,
-                                file=sys.stderr,
-                            )
-                            raise
-
-                        return self.returncode
-
-                else:
-                    
+                
+                try:
                     if six.PY2:
                         subprocess.Popen.wait(self)
                     else:
                         
                         subprocess.Popen.wait(self, timeout=timeout)
-                    return self.returncode
-
-            def _cleanup(self):
-                pass
-
-        else:
-            
-            print(
-                "Unrecognized platform, process groups may not " "be managed properly",
-                file=sys.stderr,
-            )
-
-            def _custom_wait(self, timeout=None):
-                if six.PY2:
-                    self.returncode = subprocess.Popen.wait(self)
-                else:
+                except subprocess.TimeoutExpired:
                     
-                    self.returncode = subprocess.Popen.wait(self, timeout=timeout)
+                    pass
                 return self.returncode
 
             def _cleanup(self):
