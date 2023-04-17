@@ -5,7 +5,9 @@
 import argparse
 import os
 import six
+import sys
 import buildconfig
+import mozpack.path as mozpath
 from mozpack.packager.formats import (
     FlatFormatter,
     JarFormatter,
@@ -21,6 +23,34 @@ from mozpack.files import FileFinder
 from mozpack.mozjar import JAR_DEFLATED
 from mozpack.packager.unpack import UnpackFinder
 from mozpack.unify import UnifiedBuildFinder
+
+
+
+
+
+
+WASM_LIBS = ("Contents/MacOS/librlbox.dylib",)
+
+
+class UnifiedBuildFinderWasmHack(UnifiedBuildFinder):
+    def unify_file(self, path, file1, file2):
+        if path in WASM_LIBS:
+            
+            
+            assert not file2
+            return file1
+        if file1 and file2 and path == "Contents/Resources/precomplete":
+            
+            wasm_lines = ['remove "{}"\n'.format(l).encode("utf-8") for l in WASM_LIBS]
+            content1 = [
+                l
+                for l in file1.open().readlines()
+                if not any(x == l for x in wasm_lines)
+            ]
+            content2 = file2.open().readlines()
+            if content1 == content2:
+                return file1
+        return super(UnifiedBuildFinderWasmHack, self).unify_file(path, file1, file2)
 
 
 def main():
@@ -44,7 +74,7 @@ def main():
 
     app1_finder = UnpackFinder(FileFinder(options.app1, find_executables=True))
     app2_finder = UnpackFinder(FileFinder(options.app2, find_executables=True))
-    app_finder = UnifiedBuildFinder(app1_finder, app2_finder)
+    app_finder = UnifiedBuildFinderWasmHack(app1_finder, app2_finder)
 
     copier = FileCopier()
     compress = min(app1_finder.compressed, JAR_DEFLATED)
