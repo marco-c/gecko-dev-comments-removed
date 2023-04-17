@@ -1169,6 +1169,10 @@ class AccessibilityTest : BaseSessionTest() {
     @Setting(key = Setting.Key.FULL_ACCESSIBILITY_TREE, value = "true")
     @Test fun autoFill_navigation() {
         
+        
+        sessionRule.setPrefsUntilTestEnd(mapOf(
+                "fission.bfcacheInParent" to false))
+        
         assumeThat(sessionRule.env.isDebugBuild, equalTo(false))
         fun countAutoFillNodes(cond: (AccessibilityNodeInfo) -> Boolean =
                                        { it.className == "android.widget.EditText" },
