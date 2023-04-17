@@ -36,6 +36,9 @@ function check_channel(subject) {
 let gPrivateWin;
 async function test() {
   waitForExplicitFinish(); 
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.security.https_first_pbm", false]],
+  });
   Harness.installConfirmCallback = confirm_install;
   Harness.installEndedCallback = install_ended;
   Harness.installsCompletedCallback = finish_test;
