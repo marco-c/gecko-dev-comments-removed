@@ -106,11 +106,10 @@ static JitExecStatus EnterBaseline(JSContext* cx, EnterJitData& data) {
   MOZ_ASSERT(data.osrFrame);
 
   
-  uint8_t spDummy;
   uint32_t extra =
       BaselineFrame::Size() + (data.osrNumStackValues * sizeof(Value));
-  uint8_t* checkSp = (&spDummy) - extra;
-  if (!CheckRecursionLimitWithStackPointer(cx, checkSp)) {
+  AutoCheckRecursionLimit recursion(cx);
+  if (!recursion.checkWithExtra(cx, extra)) {
     return JitExec_Aborted;
   }
 
