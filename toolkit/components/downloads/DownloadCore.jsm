@@ -2740,11 +2740,6 @@ DownloadLegacySaver.prototype = {
       }
     }
 
-    
-    if (aRequest instanceof Ci.nsIHttpChannel) {
-      this.download.source.referrerInfo = aRequest.referrerInfo;
-    }
-
     this.addToHistory();
   },
 

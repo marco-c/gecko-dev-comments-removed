@@ -16,7 +16,7 @@
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/Services.h"
 #include "nsString.h"
-#include "js/PropertyAndElement.h" 
+#include "js/PropertyAndElement.h"  
 
 #import "mozAccessible.h"
 
