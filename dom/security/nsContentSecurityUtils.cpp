@@ -54,8 +54,6 @@ using namespace mozilla::Telemetry;
 extern mozilla::LazyLogModule sCSMLog;
 extern Atomic<bool, mozilla::Relaxed> sJSHacksChecked;
 extern Atomic<bool, mozilla::Relaxed> sJSHacksPresent;
-extern Atomic<bool, mozilla::Relaxed> sCSSHacksChecked;
-extern Atomic<bool, mozilla::Relaxed> sCSSHacksPresent;
 extern Atomic<bool, mozilla::Relaxed> sTelemetryEventEnabled;
 
 
@@ -796,10 +794,7 @@ void nsContentSecurityUtils::DetectJsHacks() {
   
   
   nsAutoString jsConfigPref;
-  nsresult rv = Preferences::GetString("general.config.filename", jsConfigPref);
-  if (NS_FAILED(rv)) {
-    return;
-  }
+  Preferences::GetString("general.config.filename", jsConfigPref);
   if (!jsConfigPref.IsEmpty()) {
     sJSHacksPresent = true;
   }
@@ -807,36 +802,13 @@ void nsContentSecurityUtils::DetectJsHacks() {
   
   
   
-  bool xpinstallSignatures =
-      Preferences::GetBool("xpinstall.signatures.required", false);
+  bool xpinstallSignatures;
+  Preferences::GetBool("xpinstall.signatures.required", &xpinstallSignatures);
   if (!xpinstallSignatures) {
     sJSHacksPresent = true;
   }
 
   sJSHacksChecked = true;
-}
-
-
-void nsContentSecurityUtils::DetectCssHacks() {
-  
-  
-  
-  if (!NS_IsMainThread()) {
-    return;
-  }
-  
-  if (MOZ_LIKELY(sCSSHacksChecked)) {
-    return;
-  }
-  
-  bool customStylesPresent = Preferences::GetBool(
-      "toolkit.legacyUserProfileCustomizations.stylesheets", false);
-
-  if (customStylesPresent) {
-    sCSSHacksPresent = true;
-  }
-
-  sCSSHacksChecked = true;
 }
 
 

@@ -49,8 +49,6 @@ class nsContentSecurityUtils {
   
   
   static void DetectJsHacks();
-  
-  static void DetectCssHacks();
 
   
   

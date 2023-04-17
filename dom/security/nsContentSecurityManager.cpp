@@ -64,8 +64,6 @@ mozilla::LazyLogModule sCSMLog("CSMLog");
 
 Atomic<bool, mozilla::Relaxed> sJSHacksChecked(false);
 Atomic<bool, mozilla::Relaxed> sJSHacksPresent(false);
-Atomic<bool, mozilla::Relaxed> sCSSHacksChecked(false);
-Atomic<bool, mozilla::Relaxed> sCSSHacksPresent(false);
 Atomic<bool, mozilla::Relaxed> sTelemetryEventEnabled(false);
 
 
@@ -877,12 +875,7 @@ void nsContentSecurityManager::MeasureUnexpectedPrivilegedLoads(
     return;
   }
   nsContentSecurityUtils::DetectJsHacks();
-  nsContentSecurityUtils::DetectCssHacks();
-  
-  
-  
-  if (MOZ_UNLIKELY(sJSHacksPresent || !sJSHacksChecked || sCSSHacksPresent ||
-                   !sCSSHacksChecked)) {
+  if (MOZ_UNLIKELY(sJSHacksPresent)) {
     return;
   }
 
