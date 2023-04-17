@@ -64,17 +64,11 @@ class ExtensionPort final : public nsISupports,
   ExtensionEventManager* OnMessage();
 
   void GetName(nsAString& aString);
-  void GetError(JSContext* aCx, JS::MutableHandle<JSObject*> aResult) {
-    
-    
-    
-    
+  void GetError(JSContext* aCx, JS::MutableHandle<JS::Value> aRetval) {
+    GetWebExtPropertyAsJSValue(aCx, u"error"_ns, aRetval);
   }
-  void GetSender(JSContext* aCx, JS::MutableHandle<JSObject*> aResult) {
-    
-    
-    
-    aResult.set(JS_NewPlainObject(aCx));
+  void GetSender(JSContext* aCx, JS::MutableHandle<JS::Value> aRetval) {
+    GetWebExtPropertyAsJSValue(aCx, u"sender"_ns, aRetval);
   };
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
