@@ -509,6 +509,18 @@ class UrlbarInput {
     }
 
     
+    if (
+      UrlbarPrefs.get("experimental.hideHeuristic") &&
+      !element &&
+      !isComposing &&
+      !oneOffParams?.engine &&
+      this._resultForCurrentValue?.heuristic
+    ) {
+      this.pickResult(this._resultForCurrentValue, event);
+      return;
+    }
+
+    
     
     if (!result && this.value.startsWith("@")) {
       let tokenAliasResult = this.view.getResultAtIndex(0);

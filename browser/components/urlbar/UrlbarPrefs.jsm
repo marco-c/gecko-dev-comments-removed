@@ -89,6 +89,9 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["experimental.expandTextOnFocus", false],
 
   
+  ["experimental.hideHeuristic", false],
+
+  
   ["experimental.searchButton", false],
 
   

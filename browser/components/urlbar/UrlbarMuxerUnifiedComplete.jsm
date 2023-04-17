@@ -79,6 +79,11 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     };
 
     
+    if (UrlbarPrefs.get("experimental.hideHeuristic")) {
+      state.availableResultSpan++;
+    }
+
+    
     for (let result of context.results) {
       if (result.providerName == "UrlbarProviderQuickSuggest") {
         
