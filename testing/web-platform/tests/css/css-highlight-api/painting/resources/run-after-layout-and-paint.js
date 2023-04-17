@@ -1,0 +1,11 @@
+
+
+function runAfterLayoutAndPaint(callback) {
+  
+  
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      callback();
+    });
+  });
+}
