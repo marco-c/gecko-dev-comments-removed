@@ -309,6 +309,9 @@ var PrintEventHandler = {
       settings.showPrintProgress = false;
       
       
+      settings.isPrintSelectionRBEnabled = this.hasSelection;
+      
+      
       
       settings.title = this.activeTitle;
       const PRINTPROMPTSVC = Cc[
