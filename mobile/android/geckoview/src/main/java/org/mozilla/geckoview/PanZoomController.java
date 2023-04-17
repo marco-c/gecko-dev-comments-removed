@@ -486,12 +486,25 @@ public class PanZoomController {
 
 
 
+    private boolean mayTouchpadScroll(final @NonNull MotionEvent event) {
+        final int action = event.getActionMasked();
+        return event.getButtonState() == 0 &&
+               (action == MotionEvent.ACTION_DOWN ||
+                (mLastDownTime == event.getDownTime() &&
+                 (action == MotionEvent.ACTION_MOVE || action == MotionEvent.ACTION_UP)));
+    }
+
+    
+
+
+
+
 
 
     public void onTouchEvent(final @NonNull MotionEvent event) {
         ThreadUtils.assertOnUiThread();
 
-        if (!sTreatMouseAsTouch && event.getToolType(0) == MotionEvent.TOOL_TYPE_MOUSE) {
+        if (!sTreatMouseAsTouch && event.getToolType(0) == MotionEvent.TOOL_TYPE_MOUSE && !mayTouchpadScroll(event)) {
             handleMouseEvent(event);
             return;
         }
@@ -534,7 +547,7 @@ public class PanZoomController {
     public @NonNull GeckoResult<InputResultDetail> onTouchEventForDetailResult(final @NonNull MotionEvent event) {
         ThreadUtils.assertOnUiThread();
 
-        if (!sTreatMouseAsTouch && event.getToolType(0) == MotionEvent.TOOL_TYPE_MOUSE) {
+        if (!sTreatMouseAsTouch && event.getToolType(0) == MotionEvent.TOOL_TYPE_MOUSE && !mayTouchpadScroll(event)) {
             return GeckoResult.fromValue(
                 new InputResultDetail(handleMouseEvent(event), SCROLLABLE_FLAG_NONE, OVERSCROLL_FLAG_NONE));
         }
