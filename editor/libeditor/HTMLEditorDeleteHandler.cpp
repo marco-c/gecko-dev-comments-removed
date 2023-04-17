@@ -5381,6 +5381,32 @@ HTMLEditor::AutoDeleteRangesHandler::ExtendOrShrinkRangeToDelete(
   }
 
   
+  
+  
+  if (const Element* maybeListElement =
+          HTMLEditUtils::GetElementIfOnlyOneSelected(aRangeToDelete)) {
+    if (HTMLEditUtils::IsAnyListElement(maybeListElement) &&
+        !HTMLEditUtils::IsEmptyNode(*maybeListElement)) {
+      EditorRawDOMRange range =
+          HTMLEditUtils::GetRangeSelectingAllContentInAllListItems<
+              EditorRawDOMRange>(*maybeListElement);
+      if (range.IsPositioned()) {
+        if (EditorUtils::IsEditableContent(
+                *range.StartRef().ContainerAsContent(), EditorType::HTML) &&
+            EditorUtils::IsEditableContent(*range.EndRef().ContainerAsContent(),
+                                           EditorType::HTML)) {
+          return range;
+        }
+      }
+      
+      
+      
+    }
+    
+    
+  }
+
+  
   EditorRawDOMRange rangeToDelete(aRangeToDelete);
   if (rangeToDelete.StartRef().GetContainer() != maybeNonEditableBlockElement &&
       rangeToDelete.StartRef().GetContainer() != editingHost) {
@@ -5469,6 +5495,38 @@ HTMLEditor::AutoDeleteRangesHandler::ExtendOrShrinkRangeToDelete(
                                rangeToDelete.EndRef().GetContainer())) {
       NS_WARNING("Computed end container was out of selection limiter");
       return Err(NS_ERROR_FAILURE);
+    }
+  }
+
+  
+  
+  
+  Element* selectedListElement =
+      HTMLEditUtils::GetElementIfOnlyOneSelected(rangeToDelete);
+  if (!selectedListElement ||
+      !HTMLEditUtils::IsAnyListElement(selectedListElement)) {
+    if (rangeToDelete.IsInContentNodes() && rangeToDelete.InSameContainer() &&
+        HTMLEditUtils::IsAnyListElement(
+            rangeToDelete.StartRef().ContainerAsContent()) &&
+        rangeToDelete.StartRef().IsStartOfContainer() &&
+        rangeToDelete.EndRef().IsEndOfContainer()) {
+      selectedListElement = rangeToDelete.StartRef().ContainerAsElement();
+    } else {
+      selectedListElement = nullptr;
+    }
+  }
+  if (selectedListElement &&
+      !HTMLEditUtils::IsEmptyNode(*selectedListElement)) {
+    EditorRawDOMRange range =
+        HTMLEditUtils::GetRangeSelectingAllContentInAllListItems<
+            EditorRawDOMRange>(*selectedListElement);
+    if (range.IsPositioned()) {
+      if (EditorUtils::IsEditableContent(*range.StartRef().ContainerAsContent(),
+                                         EditorType::HTML) &&
+          EditorUtils::IsEditableContent(*range.EndRef().ContainerAsContent(),
+                                         EditorType::HTML)) {
+        return range;
+      }
     }
   }
 
