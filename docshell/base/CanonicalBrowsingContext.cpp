@@ -1886,6 +1886,20 @@ CanonicalBrowsingContext::ChangeRemoteness(
   
   
   
+  RefPtr<ContentParent> existingProcess = GetContentParent();
+  if (existingProcess && existingProcess->IsAlive() &&
+      aOptions.mReplaceBrowsingContext &&
+      aOptions.mRemoteType == existingProcess->GetRemoteType() &&
+      aOptions.mRemoteType != LARGE_ALLOCATION_REMOTE_TYPE) {
+    change->mContentParent = existingProcess;
+    change->mContentParent->AddKeepAlive();
+    change->ProcessLaunched();
+    return promise.forget();
+  }
+
+  
+  
+  
   
   
   
