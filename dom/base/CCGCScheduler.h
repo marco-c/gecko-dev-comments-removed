@@ -146,13 +146,7 @@ class CCGCScheduler {
   void SetNeedsFullGC(bool aNeedGC = true) { mNeedsFullGC = aNeedGC; }
 
   void SetWantMajorGC(JS::GCReason aReason) {
-    if (mMajorGCReason == JS::GCReason::NO_REASON) {
-      
-      
-      
-      
-      mMajorGCReason = aReason;
-    }
+    mMajorGCReason = aReason;
 
     
     
@@ -168,8 +162,7 @@ class CCGCScheduler {
     mNeedsGCAfterCC = true;
   }
 
-  void NoteReadyForMajorGC(JS::GCReason aReason) {
-    mMajorGCReason = aReason;
+  void NoteReadyForMajorGC() {
     mReadyForMajorGC = true;
   }
 
@@ -181,6 +174,8 @@ class CCGCScheduler {
   }
 
   void NoteGCEnd() {
+    mMajorGCReason = JS::GCReason::NO_REASON;
+
     mInIncrementalGC = false;
     mCCBlockStart = TimeStamp();
     mInIncrementalGC = false;
@@ -192,6 +187,27 @@ class CCGCScheduler {
     mCCollectedWaitingForGC = 0;
     mCCollectedZonesWaitingForGC = 0;
     mLikelyShortLivingObjectsNeedingGC = 0;
+  }
+
+  void NoteGCSliceEnd() {
+    if (mMajorGCReason == JS::GCReason::NO_REASON) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      mMajorGCReason = JS::GCReason::INTER_SLICE_GC;
+
+      
+      
+      
+      mReadyForMajorGC = true;
+    }
   }
 
   
@@ -327,7 +343,7 @@ class CCGCScheduler {
 
   inline GCRunnerStep GetNextGCRunnerAction(TimeStamp aDeadline);
 
-  inline CCRunnerStep GetNextCCRunnerAction(TimeStamp aDeadline);
+  inline CCRunnerStep AdvanceCCRunner(TimeStamp aDeadline);
 
   
   
@@ -369,11 +385,11 @@ class CCGCScheduler {
   bool mNeedsGCAfterCC = false;
   uint32_t mPreviousSuspectedCount = 0;
 
-  JS::GCReason mMajorGCReason = JS::GCReason::NO_REASON;
-
   uint32_t mCleanupsSinceLastGC = UINT32_MAX;
 
  public:
+  JS::GCReason mMajorGCReason = JS::GCReason::NO_REASON;
+
   uint32_t mCCollectedWaitingForGC = 0;
   uint32_t mCCollectedZonesWaitingForGC = 0;
   uint32_t mLikelyShortLivingObjectsNeedingGC = 0;
@@ -476,7 +492,7 @@ bool CCGCScheduler::ShouldScheduleCC() const {
   return IsCCNeeded(now);
 }
 
-CCRunnerStep CCGCScheduler::GetNextCCRunnerAction(TimeStamp aDeadline) {
+CCRunnerStep CCGCScheduler::AdvanceCCRunner(TimeStamp aDeadline) {
   struct StateDescriptor {
     
     
@@ -661,22 +677,14 @@ CCRunnerStep CCGCScheduler::GetNextCCRunnerAction(TimeStamp aDeadline) {
 
 GCRunnerStep CCGCScheduler::GetNextGCRunnerAction(TimeStamp aDeadline) {
   if (InIncrementalGC()) {
-    return {GCRunnerAction::GCSlice, JS::GCReason::INTER_SLICE_GC};
+    return {GCRunnerAction::GCSlice, mMajorGCReason};
   }
 
   if (mReadyForMajorGC) {
-    GCRunnerStep step{GCRunnerAction::StartMajorGC, mMajorGCReason};
-    mMajorGCReason = JS::GCReason::NO_REASON;
-    return step;
+    return {GCRunnerAction::StartMajorGC, mMajorGCReason};
   }
 
-  if (mMajorGCReason != JS::GCReason::NO_REASON) {
-    GCRunnerStep step{GCRunnerAction::WaitToMajorGC, mMajorGCReason};
-    mMajorGCReason = JS::GCReason::NO_REASON;
-    return step;
-  }
-
-  return {GCRunnerAction::None, JS::GCReason::NO_REASON};
+  return {GCRunnerAction::WaitToMajorGC, mMajorGCReason};
 }
 
 inline js::SliceBudget CCGCScheduler::ComputeForgetSkippableBudget(

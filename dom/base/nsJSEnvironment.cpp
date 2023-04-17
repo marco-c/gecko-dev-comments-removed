@@ -1599,7 +1599,8 @@ void nsJSContext::EndCycleCollectionCallback(CycleCollectorResults& aResults) {
 }
 
 
-bool GCRunnerFired(TimeStamp aDeadline, void* ) {
+bool GCRunnerFired(TimeStamp aDeadline, void* aClosure) {
+  MOZ_ASSERT(!aClosure, "Don't pass a closure to GCRunnerFired");
   MOZ_ASSERT(!sShuttingDown, "GCRunner still alive during shutdown");
 
   GCRunnerStep step = sScheduler.GetNextGCRunnerAction(aDeadline);
@@ -1617,11 +1618,10 @@ bool GCRunnerFired(TimeStamp aDeadline, void* ) {
       }
 
       nsJSContext::KillGCRunner();
-      JS::GCReason reason = step.mReason;
       mbPromise->Then(
           GetMainThreadSerialEventTarget(), __func__,
-          [reason](bool aIgnored) {
-            sScheduler.NoteReadyForMajorGC(reason);
+          [](bool aIgnored) {
+            sScheduler.NoteReadyForMajorGC();
             
             
             nsJSContext::KillGCRunner();
@@ -1638,6 +1638,7 @@ bool GCRunnerFired(TimeStamp aDeadline, void* ) {
 
       return true;
     }
+
     case GCRunnerAction::StartMajorGC:
     case GCRunnerAction::GCSlice:
       break;
@@ -1722,7 +1723,7 @@ static bool CCRunnerFired(TimeStamp aDeadline) {
   
   CCRunnerStep step;
   do {
-    step = sScheduler.GetNextCCRunnerAction(aDeadline);
+    step = sScheduler.AdvanceCCRunner(aDeadline);
     switch (step.mAction) {
       case CCRunnerAction::None:
         break;
@@ -1801,7 +1802,11 @@ void nsJSContext::RunNextCollectorTimer(JS::GCReason aReason,
     
     
     
-    sScheduler.SetWantMajorGC(aReason);
+    
+    
+    if (!sScheduler.InIncrementalGC() && sScheduler.mMajorGCReason != JS::GCReason::INTER_SLICE_GC) {
+      sScheduler.SetWantMajorGC(aReason);
+    }
     sGCRunner->SetIdleDeadline(aDeadline);
     runnable = sGCRunner;
   } else {
@@ -2061,6 +2066,8 @@ static void DOMGCSliceCallback(JSContext* aCx, JS::GCProgress aProgress,
       break;
 
     case JS::GC_SLICE_END:
+      sScheduler.NoteGCSliceEnd();
+
       sGCUnnotifiedTotalTime +=
           aDesc.lastSliceEnd(aCx) - aDesc.lastSliceStart(aCx);
 

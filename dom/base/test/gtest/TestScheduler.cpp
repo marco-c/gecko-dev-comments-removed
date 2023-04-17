@@ -120,7 +120,7 @@ void TestCC::TimerFires(int aNumSlices) {
   while (true) {
     SuspectMore(1000);
     TimeStamp idleDeadline = Now() + kOneSecond;
-    step = mScheduler.GetNextCCRunnerAction(idleDeadline);
+    step = mScheduler.AdvanceCCRunner(idleDeadline);
     
     if (step.mAction != CCRunnerAction::ForgetSkippable ||
         step.mRemoveChildless != KeepChildless) {
@@ -132,16 +132,16 @@ void TestCC::TimerFires(int aNumSlices) {
 
   while (step.mYield == Continue) {
     TimeStamp idleDeadline = Now() + kOneSecond;
-    step = mScheduler.GetNextCCRunnerAction(idleDeadline);
+    step = mScheduler.AdvanceCCRunner(idleDeadline);
   }
   EXPECT_EQ(step.mAction, CCRunnerAction::ForgetSkippable);
   EXPECT_EQ(step.mRemoveChildless, RemoveChildless);
   ForgetSkippable();
 
   TimeStamp idleDeadline = Now() + kOneSecond;
-  step = mScheduler.GetNextCCRunnerAction(idleDeadline);
+  step = mScheduler.AdvanceCCRunner(idleDeadline);
   EXPECT_EQ(step.mAction, CCRunnerAction::CleanupContentUnbinder);
-  step = mScheduler.GetNextCCRunnerAction(idleDeadline);
+  step = mScheduler.AdvanceCCRunner(idleDeadline);
   EXPECT_EQ(step.mAction, CCRunnerAction::CleanupDeferred);
 
   RunSlices(aNumSlices);
@@ -203,7 +203,7 @@ void TestIdleCC::RunSlice(TimeStamp aCCStartTime, TimeStamp aPrevSliceEnd,
   TimeStamp idleDeadline = Now() + kTenthSecond;
 
   
-  step = mScheduler.GetNextCCRunnerAction(idleDeadline);
+  step = mScheduler.AdvanceCCRunner(idleDeadline);
   EXPECT_EQ(step.mAction, CCRunnerAction::CycleCollect);
 
   
@@ -241,7 +241,7 @@ void TestNonIdleCC::RunSlice(TimeStamp aCCStartTime, TimeStamp aPrevSliceEnd,
   TimeStamp nullDeadline;
 
   
-  step = mScheduler.GetNextCCRunnerAction(nullDeadline);
+  step = mScheduler.AdvanceCCRunner(nullDeadline);
   EXPECT_EQ(step.mAction, CCRunnerAction::CycleCollect);
 
   
