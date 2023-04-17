@@ -563,6 +563,25 @@ class SharedPropMap : public PropMap {
   }
 
  public:
+  
+  
+  
+  
+  
+  
+  
+  
+  static constexpr size_t NumPrevMapsConsiderDictionary = 32;
+  static constexpr size_t NumPrevMapsAlwaysDictionary = 100;
+
+  static_assert(NumPrevMapsConsiderDictionary < NumPreviousMapsMax);
+  static_assert(NumPrevMapsAlwaysDictionary < NumPreviousMapsMax);
+
+  
+  
+  static constexpr size_t MaxPropsForNonDictionary =
+      NumPrevMapsConsiderDictionary * Capacity;
+
   bool isDictionary() const = delete;
   bool isShared() const = delete;
   SharedPropMap* asShared() = delete;
@@ -577,6 +596,8 @@ class SharedPropMap : public PropMap {
     MOZ_ASSERT_IF(hasPrevious(), val > 0);
     return val;
   }
+
+  MOZ_ALWAYS_INLINE bool shouldConvertToDictionaryForAdd() const;
 
   void fixupAfterMovingGC();
   inline void sweep(JSFreeOp* fop);

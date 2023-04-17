@@ -182,6 +182,30 @@ inline bool PropMap::lookupForRemove(JSContext* cx, PropMap* map,
   return true;
 }
 
+MOZ_ALWAYS_INLINE bool SharedPropMap::shouldConvertToDictionaryForAdd() const {
+  if (MOZ_LIKELY(numPreviousMaps() < NumPrevMapsConsiderDictionary)) {
+    return false;
+  }
+  if (numPreviousMaps() >= NumPrevMapsAlwaysDictionary) {
+    return true;
+  }
+
+  
+  
+  
+  const SharedPropMap* curMap = this;
+  for (size_t i = 0; i < 2; i++) {
+    if (curMap->hadDictionaryConversion()) {
+      return true;
+    }
+    if (curMap->treeDataRef().parent.map() != curMap->asNormal()->previous()) {
+      return true;
+    }
+    curMap = curMap->asNormal()->previous();
+  }
+  return false;
+}
+
 inline void SharedPropMap::sweep(JSFreeOp* fop) {
   
   
