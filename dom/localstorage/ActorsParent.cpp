@@ -468,8 +468,8 @@ Result<nsCOMPtr<mozIStorageConnection>, nsresult> CreateStorageConnection(
       MOZ_TO_RESULT_INVOKE_TYPED(nsCOMPtr<mozIStorageConnection>,
                                  storageService, OpenDatabase, &aDBFile)
           .orElse([&aUsageFile, &aDBFile, &aCorruptedFileHandler,
-                    &storageService](const nsresult rv)
-                       -> Result<nsCOMPtr<mozIStorageConnection>, nsresult> {
+                   &storageService](const nsresult rv)
+                      -> Result<nsCOMPtr<mozIStorageConnection>, nsresult> {
             if (IsDatabaseCorruptionError(rv)) {
               
               
