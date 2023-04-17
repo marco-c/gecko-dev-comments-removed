@@ -815,11 +815,7 @@ void WindowSurfaceWayland::BufferReleaseCallbackHandler(void* aData,
 
 void WindowSurfaceWayland::Reset() {
   LOGWAYLAND(("WindowSurfaceWayland::Reset [%p]\n", this));
-  MutexAutoLock lock(mSurfaceLock);
-  if (mFrameCallback) {
-    wl_callback_destroy(mFrameCallback);
-    mFrameCallback = nullptr;
-  }
+  
   mLastCommittedSurfaceID = -1;
 }
 
