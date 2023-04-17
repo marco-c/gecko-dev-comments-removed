@@ -93,25 +93,6 @@ const createDummyRecommendation = ({
   return recommendation;
 };
 
-function checkCFRFeaturesElements(notification) {
-  Assert.ok(notification.hidden === false, "Panel should be visible");
-  Assert.equal(
-    notification.getAttribute("data-notification-category"),
-    "message_and_animation",
-    "Panel have correct data attribute"
-  );
-  Assert.ok(
-    notification.querySelector(
-      "#cfr-notification-footer-pintab-animation-container"
-    ),
-    "Pin tab animation exists"
-  );
-  Assert.ok(
-    notification.querySelector("#cfr-notification-feature-steps"),
-    "Pin tab steps"
-  );
-}
-
 function checkCFRAddonsElements(notification) {
   Assert.ok(notification.hidden === false, "Panel should be visible");
   Assert.equal(
@@ -518,61 +499,6 @@ add_task(async function test_cfr_addon_install() {
   clearNotifications();
 });
 
-add_task(async function test_cfr_pin_tab_notification_show() {
-  
-  let browser = gBrowser.selectedBrowser;
-  BrowserTestUtils.loadURI(browser, "http://example.com/");
-  await BrowserTestUtils.browserLoaded(browser, false, "http://example.com/");
-
-  const response = await trigger_cfr_panel(browser, "example.com", {
-    action: { type: "PIN_CURRENT_TAB" },
-    category: "cfrFeatures",
-    layout: "message_and_animation",
-  });
-  Assert.ok(
-    response,
-    "Should return true if addRecommendation checks were successful"
-  );
-
-  const showPanel = BrowserTestUtils.waitForEvent(
-    PopupNotifications.panel,
-    "popupshown"
-  );
-  
-  document.getElementById("contextual-feature-recommendation").click();
-  await showPanel;
-
-  const notification = document.getElementById(
-    "contextual-feature-recommendation-notification"
-  );
-  checkCFRFeaturesElements(notification);
-
-  
-  Assert.ok(notification.button);
-  let hidePanel = BrowserTestUtils.waitForEvent(
-    PopupNotifications.panel,
-    "popuphidden"
-  );
-  document
-    .getElementById("contextual-feature-recommendation-notification")
-    .button.click();
-  await hidePanel;
-
-  await BrowserTestUtils.waitForCondition(
-    () => gBrowser.selectedTab.pinned,
-    "Primary action should pin tab"
-  );
-  Assert.ok(gBrowser.selectedTab.pinned, "Current tab should be pinned");
-  gBrowser.unpinTab(gBrowser.selectedTab);
-
-  
-  Assert.equal(
-    PopupNotifications._currentNotifications.length,
-    0,
-    "Should have removed the notification"
-  );
-});
-
 add_task(
   async function test_cfr_social_tracking_protection_notification_show() {
     
@@ -673,97 +599,6 @@ add_task(
     await SpecialPowers.popPrefEnv();
   }
 );
-
-add_task(async function test_cfr_features_and_addon_show() {
-  
-  let browser = gBrowser.selectedBrowser;
-  BrowserTestUtils.loadURI(browser, "http://example.com/");
-  await BrowserTestUtils.browserLoaded(browser, false, "http://example.com/");
-
-  
-  let response = await trigger_cfr_panel(browser, "example.com", {
-    action: { type: "PIN_CURRENT_TAB" },
-    category: "cfrFeatures",
-    layout: "message_and_animation",
-  });
-  Assert.ok(
-    response,
-    "Should return true if addRecommendation checks were successful"
-  );
-
-  let showPanel = BrowserTestUtils.waitForEvent(
-    PopupNotifications.panel,
-    "popupshown"
-  );
-  
-  document.getElementById("contextual-feature-recommendation").click();
-  await showPanel;
-
-  const notification = document.getElementById(
-    "contextual-feature-recommendation-notification"
-  );
-  checkCFRFeaturesElements(notification);
-
-  
-  Assert.ok(notification.button);
-  let hidePanel = BrowserTestUtils.waitForEvent(
-    PopupNotifications.panel,
-    "popuphidden"
-  );
-  document
-    .getElementById("contextual-feature-recommendation-notification")
-    .button.click();
-  await hidePanel;
-
-  
-  Assert.equal(
-    PopupNotifications._currentNotifications.length,
-    0,
-    "Should have removed the notification"
-  );
-
-  
-  response = await trigger_cfr_panel(browser, "example.com");
-  Assert.ok(
-    response,
-    "Should return true if addRecommendation checks were successful"
-  );
-
-  showPanel = BrowserTestUtils.waitForEvent(
-    PopupNotifications.panel,
-    "popupshown"
-  );
-  
-  document.getElementById("contextual-feature-recommendation").click();
-  await showPanel;
-
-  Assert.ok(
-    document.getElementById("contextual-feature-recommendation-notification")
-      .hidden === false,
-    "Panel should be visible"
-  );
-  checkCFRAddonsElements(
-    document.getElementById("contextual-feature-recommendation-notification")
-  );
-
-  
-  Assert.ok(notification.button);
-  hidePanel = BrowserTestUtils.waitForEvent(
-    PopupNotifications.panel,
-    "popuphidden"
-  );
-  document
-    .getElementById("contextual-feature-recommendation-notification")
-    .button.click();
-  await hidePanel;
-
-  
-  Assert.equal(
-    PopupNotifications._currentNotifications.length,
-    0,
-    "Should have removed the notification"
-  );
-});
 
 add_task(async function test_cfr_addon_and_features_show() {
   
