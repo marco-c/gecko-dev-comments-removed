@@ -10509,7 +10509,7 @@ bool BytecodeEmitter::emitInitializeFunctionSpecialNames() {
       };
 
   
-  if (funbox->argumentsHasVarBinding()) {
+  if (funbox->needsArgsObj()) {
     if (!emitInitializeFunctionSpecialName(
             this, TaggedParserAtomIndex::WellKnown::arguments(),
             JSOp::Arguments)) {

@@ -652,16 +652,7 @@ bool ParseContext::declareFunctionArgumentsObject(
   }
 
   if (usesArguments) {
-    
-    
-    
-    
-    funbox->setArgumentsHasVarBinding();
-
-    
-    if (sc()->bindingsAccessedDynamically()) {
-      funbox->setAlwaysNeedsArgsObj();
-    }
+    funbox->setNeedsArgsObj();
   }
 
   return true;

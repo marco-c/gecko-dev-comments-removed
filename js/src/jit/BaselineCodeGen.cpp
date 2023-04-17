@@ -4021,7 +4021,7 @@ bool BaselineCompilerCodeGen::emitFormalArgAccess(JSOp op) {
 
   
   
-  if (!handler.script()->argumentsAliasesFormals()) {
+  if (!handler.script()->argsObjAliasesFormals()) {
     if (op == JSOp::GetArg) {
       frame.pushArg(arg);
     } else {

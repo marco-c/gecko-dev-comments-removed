@@ -237,23 +237,16 @@ enum class ImmutableScriptFlagsEnum : uint32_t {
   
   
   
-  ArgumentsHasVarBinding = 1 << 26,
+  NeedsArgsObj = 1 << 26,
 
   
   
   
-  
-  
-  AlwaysNeedsArgsObj = 1 << 27,
+  HasMappedArgsObj = 1 << 27,
 
   
   
-  
-  HasMappedArgsObj = 1 << 28,
-
-  
-  
-  IsInlinableLargeFunction = 1 << 29,
+  IsInlinableLargeFunction = 1 << 28,
 };
 
 enum class MutableScriptFlagsEnum : uint32_t {
@@ -275,7 +268,6 @@ enum class MutableScriptFlagsEnum : uint32_t {
 
   
   
-  NeedsArgsObj = 1 << 13,
 
   
   
