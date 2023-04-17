@@ -10,6 +10,9 @@
 if (typeof InterventionHelpers === "undefined") {
   var InterventionHelpers = require("../lib/intervention_helpers");
 }
+if (typeof UAHelpers === "undefined") {
+  var UAHelpers = require("../lib/ua_helpers");
+}
 
 
 
@@ -44,10 +47,10 @@ const AVAILABLE_UA_OVERRIDES = [
 
     id: "bug1577519",
     platform: "desktop",
-    domain: "att.tv",
+    domain: "directv.com",
     bug: "1577519",
     config: {
-      matches: ["*://*.att.tv/*"],
+      matches: ["*://*.directv.com/*", "*://*.attwatchtv.com/*"],
       uaTransformer: originalUA => {
         return (
           UAHelpers.getPrefix(originalUA) +
@@ -119,35 +122,6 @@ const AVAILABLE_UA_OVERRIDES = [
           UAHelpers.getPrefix(originalUA) +
           " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.88 Safari/537.36"
         );
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
-
-
-    id: "bug945963",
-    platform: "android",
-    domain: "tieba.baidu.com",
-    bug: "945963",
-    config: {
-      matches: [
-        "*://baike.baidu.com/*",
-        "*://image.baidu.com/*",
-        "*://news.baidu.com/*",
-        "*://tieba.baidu.com/*",
-        "*://tiebac.baidu.com/*",
-        "*://wenku.baidu.com/*",
-        "*://zhidao.baidu.com/*",
-      ],
-      uaTransformer: originalUA => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
   },
@@ -545,47 +519,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1679847",
-    platform: "android",
-    domain: "avto.pro",
-    bug: "1679847",
-    config: {
-      matches: ["https://avto.pro/catalog/*"],
-      uaTransformer: () => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
-    id: "bug1693827",
-    platform: "desktop",
-    domain: "spectrum.net",
-    bug: "1693827",
-    config: {
-      matches: ["*://*.spectrum.net/voice/*"],
-      uaTransformer: originalUA => {
-        return (
-          UAHelpers.getPrefix(originalUA) +
-          " AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36"
-        );
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
     id: "bug1704673",
     platform: "android",
     domain: "app.xiaomi.com",
@@ -682,25 +615,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1722955",
-    platform: "android",
-    domain: "frontgate.com",
-    bug: "1722955",
-    config: {
-      matches: ["*://frontgate.com/*"],
-      uaTransformer: () => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
     id: "bug1722954",
     platform: "android",
     domain: "granbluefantasy.jp",
@@ -713,31 +627,5 @@ const AVAILABLE_UA_OVERRIDES = [
     },
   },
 ];
-
-const UAHelpers = {
-  getDeviceAppropriateChromeUA() {
-    if (!UAHelpers._deviceAppropriateChromeUA) {
-      const userAgent =
-        typeof navigator !== "undefined" ? navigator.userAgent : "";
-      const RunningFirefoxVersion = (userAgent.match(/Firefox\/([0-9.]+)/) || [
-        "",
-        "58.0",
-      ])[1];
-      const RunningAndroidVersion =
-        userAgent.match(/Android\/[0-9.]+/) || "Android 6.0";
-      const ChromeVersionToMimic = "76.0.3809.111";
-      const ChromePhoneUA = `Mozilla/5.0 (Linux; ${RunningAndroidVersion}; Nexus 5 Build/MRA58N) FxQuantum/${RunningFirefoxVersion} AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${ChromeVersionToMimic} Mobile Safari/537.36`;
-      const ChromeTabletUA = `Mozilla/5.0 (Linux; ${RunningAndroidVersion}; Nexus 7 Build/JSS15Q) FxQuantum/${RunningFirefoxVersion} AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${ChromeVersionToMimic} Safari/537.36`;
-      const IsPhone = userAgent.includes("Mobile");
-      UAHelpers._deviceAppropriateChromeUA = IsPhone
-        ? ChromePhoneUA
-        : ChromeTabletUA;
-    }
-    return UAHelpers._deviceAppropriateChromeUA;
-  },
-  getPrefix(originalUA) {
-    return originalUA.substr(0, originalUA.indexOf(")") + 1);
-  },
-};
 
 module.exports = AVAILABLE_UA_OVERRIDES;
