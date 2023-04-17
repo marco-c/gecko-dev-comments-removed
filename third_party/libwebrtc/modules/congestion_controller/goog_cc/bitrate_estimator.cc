@@ -43,8 +43,10 @@ BitrateEstimator::BitrateEstimator(const WebRtcKeyValueConfig* key_value_config)
                             kMinRateWindowMs,
                             kMaxRateWindowMs),
       uncertainty_scale_("scale", 10.0),
-      uncertainty_scale_in_alr_("scale_alr", uncertainty_scale_),
-      small_sample_uncertainty_scale_("scale_small", uncertainty_scale_),
+      uncertainty_scale_in_alr_("scale_alr",
+                                static_cast<double>(uncertainty_scale_)),
+      small_sample_uncertainty_scale_("scale_small",
+                                      static_cast<double>(uncertainty_scale_)),
       small_sample_threshold_("small_thresh", DataSize::Zero()),
       uncertainty_symmetry_cap_("symmetry_cap", DataRate::Zero()),
       estimate_floor_("floor", DataRate::Zero()),
@@ -80,12 +82,12 @@ void BitrateEstimator::Update(Timestamp at_time, DataSize amount, bool in_alr) {
   }
   
   
-  float scale = uncertainty_scale_;
+  float scale = static_cast<double>(uncertainty_scale_);
   if (is_small_sample && bitrate_sample_kbps < bitrate_estimate_kbps_) {
-    scale = small_sample_uncertainty_scale_;
+    scale = static_cast<double>(small_sample_uncertainty_scale_);
   } else if (in_alr && bitrate_sample_kbps < bitrate_estimate_kbps_) {
     
-    scale = uncertainty_scale_in_alr_;
+    scale = static_cast<double>(uncertainty_scale_in_alr_);
   }
   
   
