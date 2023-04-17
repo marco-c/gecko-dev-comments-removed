@@ -2050,16 +2050,11 @@ JS_PUBLIC_API bool JS_DefinePropertyById(JSContext* cx, HandleObject obj,
 static bool DefineAccessorPropertyById(JSContext* cx, HandleObject obj,
                                        HandleId id, HandleObject getter,
                                        HandleObject setter, unsigned attrs) {
-  MOZ_ASSERT_IF(getter, attrs & JSPROP_GETTER);
-  MOZ_ASSERT_IF(setter, attrs & JSPROP_SETTER);
-
   
   
   
   
-  if (attrs & (JSPROP_GETTER | JSPROP_SETTER)) {
-    attrs &= ~JSPROP_READONLY;
-  }
+  attrs &= ~JSPROP_READONLY;
 
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
@@ -2073,8 +2068,6 @@ static bool DefineAccessorPropertyById(JSContext* cx, HandleObject obj,
                                        const JSNativeWrapper& set,
                                        unsigned attrs) {
   
-
-  MOZ_ASSERT(!(attrs & (JSPROP_GETTER | JSPROP_SETTER)));
 
   RootedFunction getter(cx);
   if (get.op) {
@@ -2090,8 +2083,6 @@ static bool DefineAccessorPropertyById(JSContext* cx, HandleObject obj,
     if (get.info) {
       getter->setJitInfo(get.info);
     }
-
-    attrs |= JSPROP_GETTER;
   }
 
   RootedFunction setter(cx);
@@ -2108,8 +2099,6 @@ static bool DefineAccessorPropertyById(JSContext* cx, HandleObject obj,
     if (set.info) {
       setter->setJitInfo(set.info);
     }
-
-    attrs |= JSPROP_SETTER;
   }
 
   return DefineAccessorPropertyById(cx, obj, id, getter, setter, attrs);
@@ -2117,8 +2106,6 @@ static bool DefineAccessorPropertyById(JSContext* cx, HandleObject obj,
 
 static bool DefineDataPropertyById(JSContext* cx, HandleObject obj, HandleId id,
                                    HandleValue value, unsigned attrs) {
-  MOZ_ASSERT(!(attrs & (JSPROP_GETTER | JSPROP_SETTER)));
-
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
   cx->check(obj, id, value);

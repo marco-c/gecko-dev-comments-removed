@@ -37,7 +37,6 @@ static constexpr uint8_t JSPROP_ENUMERATE = 0x01;
 
 
 
-
 static constexpr uint8_t JSPROP_READONLY = 0x02;
 
 
@@ -49,10 +48,6 @@ static constexpr uint8_t JSPROP_PERMANENT = 0x04;
 
 
 
-static constexpr uint8_t JSPROP_GETTER = 0x10;
-
-
-static constexpr uint8_t JSPROP_SETTER = 0x20;
 
 
 
@@ -62,21 +57,12 @@ static constexpr uint8_t JSPROP_SETTER = 0x20;
 
 
 
-
-
-
-
-
-
-
-
-static constexpr unsigned JSPROP_RESOLVING = 0x2000;
+static constexpr unsigned JSPROP_RESOLVING = 0x08;
 
 
 
 static constexpr unsigned JSPROP_FLAGS_MASK =
-    JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT | JSPROP_GETTER |
-    JSPROP_SETTER | JSPROP_RESOLVING;
+    JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT | JSPROP_RESOLVING;
 
 namespace JS {
 
