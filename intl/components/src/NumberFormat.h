@@ -19,8 +19,12 @@
 #include "unicode/unum.h"
 #include "unicode/unumberformatter.h"
 
+struct UPluralRules;
+
 namespace mozilla {
 namespace intl {
+
+struct PluralRulesOptions;
 
 
 
@@ -338,6 +342,23 @@ class NumberFormat final {
 
     return formatResult<typename B::CharType, B>(buffer);
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  Result<int32_t, NumberFormat::FormatError> selectFormatted(
+      double number, char16_t* keyword, int32_t keywordSize,
+      UPluralRules* pluralRules) const;
 
  private:
   UNumberFormatter* mNumberFormatter = nullptr;

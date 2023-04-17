@@ -4,6 +4,10 @@
 
 
 
-UNIFIED_SOURCES += ["TestDateTimeFormat.cpp", "TestNumberFormat.cpp"]
+UNIFIED_SOURCES += [
+    "TestDateTimeFormat.cpp",
+    "TestNumberFormat.cpp",
+    "TestPluralRules.cpp",
+]
 
 FINAL_LIBRARY = "xul-gtest"
