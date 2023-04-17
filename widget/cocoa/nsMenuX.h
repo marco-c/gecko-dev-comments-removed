@@ -156,10 +156,6 @@ class nsMenuX final : public nsMenuParentX,
   
   NSInteger CalculateNativeInsertionPoint(nsMenuX* aChild);
 
-  
-  
-  void FlushMenuClosedRunnable();
-
   nsCOMPtr<nsIContent> mContent;  
 
   

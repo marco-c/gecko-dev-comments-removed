@@ -731,12 +731,7 @@ void nsXULPopupManager::ShowPopupAtScreen(nsIContent* aPopup, int32_t aXPos,
     bool haveNativeMenu = popupFrame->InitializePopupAsNativeContextMenu(
         triggerContent, aXPos, aYPos);
     if (haveNativeMenu) {
-      
-      
-      
-      mOpeningPopup = aPopup;
       popupFrame->ShowNativeMenu();
-      mOpeningPopup = nullptr;
       return;
     }
   }
