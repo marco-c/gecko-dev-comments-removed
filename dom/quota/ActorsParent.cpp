@@ -431,6 +431,7 @@ nsresult InvalidateCache(mozIStorageConnection& aConnection) {
   static constexpr auto kSetInvalidFlagQuery = "UPDATE cache SET valid = 0"_ns;
 
   QM_TRY(QM_OR_ELSE_WARN(
+      
       ([&]() -> Result<Ok, nsresult> {
         mozStorageTransaction transaction(&aConnection, false);
 
@@ -441,6 +442,7 @@ nsresult InvalidateCache(mozIStorageConnection& aConnection) {
 
         return Ok{};
       }()),
+      
       ([&](const nsresult rv) -> Result<Ok, nsresult> {
         QM_TRY(aConnection.ExecuteSimpleSQL(kSetInvalidFlagQuery));
 
@@ -570,15 +572,17 @@ Result<nsCOMPtr<mozIStorageConnection>, nsresult> CreateWebAppsStoreConnection(
     return nsCOMPtr<mozIStorageConnection>{};
   }
 
-  QM_TRY_INSPECT(
-      const auto& connection,
-      QM_OR_ELSE_WARN_IF(MOZ_TO_RESULT_INVOKE_TYPED(
-                             nsCOMPtr<mozIStorageConnection>, aStorageService,
-                             OpenUnsharedDatabase, &aWebAppsStoreFile),
-                         IsDatabaseCorruptionError,
-                         
-                         
-                         ErrToDefaultOk<nsCOMPtr<mozIStorageConnection>>));
+  QM_TRY_INSPECT(const auto& connection,
+                 QM_OR_ELSE_WARN_IF(
+                     
+                     MOZ_TO_RESULT_INVOKE_TYPED(
+                         nsCOMPtr<mozIStorageConnection>, aStorageService,
+                         OpenUnsharedDatabase, &aWebAppsStoreFile),
+                     
+                     IsDatabaseCorruptionError,
+                     
+                     
+                     ErrToDefaultOk<nsCOMPtr<mozIStorageConnection>>));
 
   if (connection) {
     
@@ -2390,13 +2394,16 @@ Result<bool, nsresult> EnsureDirectory(nsIFile& aDirectory) {
   
   
   
-  QM_TRY_INSPECT(
-      const auto& exists,
-      QM_OR_ELSE_LOG_VERBOSE_IF(
-          MOZ_TO_RESULT_INVOKE(aDirectory, Create, nsIFile::DIRECTORY_TYPE,
-                               0755)
-              .map([](Ok) { return false; }),
-          IsSpecificError<NS_ERROR_FILE_ALREADY_EXISTS>, ErrToOk<true>));
+  QM_TRY_INSPECT(const auto& exists,
+                 QM_OR_ELSE_LOG_VERBOSE_IF(
+                     
+                     MOZ_TO_RESULT_INVOKE(aDirectory, Create,
+                                          nsIFile::DIRECTORY_TYPE, 0755)
+                         .map([](Ok) { return false; }),
+                     
+                     IsSpecificError<NS_ERROR_FILE_ALREADY_EXISTS>,
+                     
+                     ErrToOk<true>));
 
   if (exists) {
     QM_TRY_INSPECT(const bool& isDirectory,
@@ -4615,7 +4622,9 @@ QuotaManager::LoadFullOriginMetadataWithRestore(nsIFile* aDirectory) {
   const auto& persistenceType = maybePersistenceType.value();
 
   QM_TRY_RETURN(QM_OR_ELSE_WARN(
+      
       LoadFullOriginMetadata(aDirectory, persistenceType),
+      
       ([&aDirectory, &persistenceType,
         this](const nsresult rv) -> Result<FullOriginMetadata, nsresult> {
         QM_TRY(RestoreDirectoryMetadata2(aDirectory));
@@ -4716,11 +4725,14 @@ nsresult QuotaManager::InitializeRepository(PersistenceType aPersistenceType) {
                         }
 
                         QM_TRY(QM_OR_ELSE_WARN_IF(
+                            
                             ToResult(InitializeOrigin(
                                 aPersistenceType, metadata,
                                 metadata.mLastAccessTime, metadata.mPersisted,
                                 childDirectory)),
+                            
                             IsDatabaseCorruptionError,
+                            
                             ([&childDirectory](
                                  const nsresult rv) -> Result<Ok, nsresult> {
                               
@@ -5993,9 +6005,12 @@ nsresult QuotaManager::EnsureStorageIsInitialized() {
   QM_TRY_UNWRAP(
       auto connection,
       QM_OR_ELSE_WARN_IF(
+          
           MOZ_TO_RESULT_INVOKE_TYPED(nsCOMPtr<mozIStorageConnection>, ss,
                                      OpenUnsharedDatabase, storageFile),
+          
           IsDatabaseCorruptionError,
+          
           ErrToDefaultOk<nsCOMPtr<mozIStorageConnection>>));
 
   if (!connection) {
@@ -6020,8 +6035,11 @@ nsresult QuotaManager::EnsureStorageIsInitialized() {
 
   if (CachedNextGenLocalStorageEnabled()) {
     QM_TRY(QM_OR_ELSE_WARN_IF(
+        
         MaybeCreateOrUpgradeLocalStorageArchive(*lsArchiveFile),
+        
         IsDatabaseCorruptionError,
+        
         ([&](const nsresult rv) -> Result<Ok, nsresult> {
           QM_TRY_RETURN(CreateEmptyLocalStorageArchive(*lsArchiveFile));
         })));
@@ -10553,8 +10571,11 @@ nsresult CreateOrUpgradeDirectoryMetadataHelper::MaybeUpgradeOriginDirectory(
     
     
     QM_TRY(QM_OR_ELSE_WARN_IF(
+        
         ToResult(idbDirectory->Create(nsIFile::DIRECTORY_TYPE, 0755)),
+        
         IsSpecificError<NS_ERROR_FILE_ALREADY_EXISTS>,
+        
         ([&idbDirectory](const nsresult rv) -> Result<Ok, nsresult> {
           QM_TRY_INSPECT(const bool& isDirectory,
                          MOZ_TO_RESULT_INVOKE(idbDirectory, IsDirectory));

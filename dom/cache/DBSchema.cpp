@@ -552,8 +552,12 @@ nsresult InitializeConnection(mozIStorageConnection& aConn) {
 
   
   QM_TRY(QM_OR_ELSE_WARN_IF(
+      
       ToResult(aConn.SetGrowthIncrement(kGrowthSize, ""_ns)),
-      IsSpecificError<NS_ERROR_FILE_TOO_BIG>, ErrToDefaultOk<>));
+      
+      IsSpecificError<NS_ERROR_FILE_TOO_BIG>,
+      
+      ErrToDefaultOk<>));
 
   
   

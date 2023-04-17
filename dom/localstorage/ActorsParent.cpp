@@ -438,10 +438,14 @@ nsresult SetDefaultPragmas(mozIStorageConnection* aConnection) {
   if (kSQLiteGrowthIncrement) {
     
     
-    QM_TRY(QM_OR_ELSE_WARN_IF(ToResult(aConnection->SetGrowthIncrement(
-                                  kSQLiteGrowthIncrement, ""_ns)),
-                              IsSpecificError<NS_ERROR_FILE_TOO_BIG>,
-                              ErrToDefaultOk<>));
+    QM_TRY(QM_OR_ELSE_WARN_IF(
+        
+        ToResult(
+            aConnection->SetGrowthIncrement(kSQLiteGrowthIncrement, ""_ns)),
+        
+        IsSpecificError<NS_ERROR_FILE_TOO_BIG>,
+        
+        ErrToDefaultOk<>));
   }
 #endif  
 
@@ -467,9 +471,12 @@ Result<nsCOMPtr<mozIStorageConnection>, nsresult> CreateStorageConnection(
   QM_TRY_UNWRAP(
       auto connection,
       OrElseIf(
+          
           MOZ_TO_RESULT_INVOKE_TYPED(nsCOMPtr<mozIStorageConnection>,
                                      storageService, OpenDatabase, &aDBFile),
+          
           IsDatabaseCorruptionError,
+          
           ([&aUsageFile, &aDBFile, &aCorruptedFileHandler,
             &storageService](const nsresult rv)
                -> Result<nsCOMPtr<mozIStorageConnection>, nsresult> {
@@ -481,10 +488,14 @@ Result<nsCOMPtr<mozIStorageConnection>, nsresult> CreateStorageConnection(
             
             
             QM_TRY(QM_OR_ELSE_WARN_IF(
-                ToResult(aUsageFile.Remove(false)), ([](const nsresult rv) {
+                
+                ToResult(aUsageFile.Remove(false)),
+                
+                ([](const nsresult rv) {
                   return rv == NS_ERROR_FILE_NOT_FOUND ||
                          rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST;
                 }),
+                
                 ErrToDefaultOk<>));
 
             
@@ -683,8 +694,10 @@ CreateArchiveStorageConnection(const nsAString& aStoragePath) {
   QM_TRY_UNWRAP(
       auto connection,
       QM_OR_ELSE_WARN_IF(
+          
           MOZ_TO_RESULT_INVOKE_TYPED(nsCOMPtr<mozIStorageConnection>, ss,
                                      OpenUnsharedDatabase, archiveFile),
+          
           IsDatabaseCorruptionError,
           
           
@@ -814,9 +827,12 @@ Result<nsCOMPtr<mozIStorageConnection>, nsresult> CreateShadowStorageConnection(
   QM_TRY_UNWRAP(
       auto connection,
       QM_OR_ELSE_WARN_IF(
+          
           MOZ_TO_RESULT_INVOKE_TYPED(nsCOMPtr<mozIStorageConnection>, ss,
                                      OpenUnsharedDatabase, shadowFile),
+          
           IsDatabaseCorruptionError,
+          
           ([&shadowFile, &ss](const nsresult rv)
                -> Result<nsCOMPtr<mozIStorageConnection>, nsresult> {
             QM_TRY(shadowFile->Remove(false));
@@ -843,7 +859,9 @@ Result<nsCOMPtr<mozIStorageConnection>, nsresult> CreateShadowStorageConnection(
   
   
   QM_TRY(QM_OR_ELSE_WARN(
+      
       ToResult(StorageDBUpdater::Update(connection)),
+      
       ([&connection, &shadowFile, &ss](const nsresult) -> Result<Ok, nsresult> {
         QM_TRY(connection->Close());
         QM_TRY(shadowFile->Remove(false));
@@ -958,15 +976,18 @@ Result<bool, nsresult> ExistsAsFile(nsIFile& aFile) {
   
   QM_TRY_INSPECT(const auto& res,
                  QM_OR_ELSE_LOG_VERBOSE_IF(
+                     
                      MOZ_TO_RESULT_INVOKE(aFile, IsDirectory)
                          .map([](const bool isDirectory) {
                            return isDirectory ? ExistsAsFileResult::IsDirectory
                                               : ExistsAsFileResult::IsFile;
                          }),
+                     
                      ([](const nsresult rv) {
                        return rv == NS_ERROR_FILE_NOT_FOUND ||
                               rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST;
                      }),
+                     
                      ErrToOk<ExistsAsFileResult::DoesNotExist>));
 
   QM_TRY(OkIf(res != ExistsAsFileResult::IsDirectory), Err(NS_ERROR_FAILURE));
@@ -8103,6 +8124,7 @@ Result<UsageInfo, nsresult> QuotaClient::InitOrigin(
               
               
               LoadUsageFile(*usageFile),
+              
               ([&file, &usageFile, &usageJournalFile, &aOriginMetadata](
                    const nsresult) -> Result<UsageInfo, nsresult> {
                 QM_TRY_INSPECT(

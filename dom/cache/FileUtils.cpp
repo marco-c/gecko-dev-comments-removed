@@ -84,8 +84,12 @@ Result<NotNull<nsCOMPtr<nsIFile>>, nsresult> BodyGetCacheDir(nsIFile& aBaseDir,
   
   
   QM_TRY(QM_OR_ELSE_LOG_VERBOSE_IF(
+      
       ToResult(cacheDir->Create(nsIFile::DIRECTORY_TYPE, 0755)),
-      IsSpecificError<NS_ERROR_FILE_ALREADY_EXISTS>, ErrToDefaultOk<>));
+      
+      IsSpecificError<NS_ERROR_FILE_ALREADY_EXISTS>,
+      
+      ErrToDefaultOk<>));
 
   return WrapNotNullUnchecked(std::move(cacheDir));
 }
@@ -101,8 +105,12 @@ nsresult BodyCreateDir(nsIFile& aBaseDir) {
   
   
   QM_TRY(QM_OR_ELSE_LOG_VERBOSE_IF(
+      
       ToResult(bodyDir->Create(nsIFile::DIRECTORY_TYPE, 0755)),
-      IsSpecificError<NS_ERROR_FILE_ALREADY_EXISTS>, ErrToDefaultOk<>));
+      
+      IsSpecificError<NS_ERROR_FILE_ALREADY_EXISTS>,
+      
+      ErrToDefaultOk<>));
 
   return NS_OK;
 }
@@ -379,10 +387,12 @@ nsresult BodyDeleteOrphanedFiles(const QuotaInfo& aQuotaInfo, nsIFile& aBaseDir,
             
             
             QM_TRY(QM_OR_ELSE_LOG_VERBOSE_IF(
+                
                 ToResult(BodyTraverseFiles(aQuotaInfo, *subdir,
                                            removeOrphanedFiles,
                                             true,
                                             true)),
+                
                 IsSpecificError<NS_ERROR_FILE_FS_CORRUPTED>,
                 
                 
@@ -440,8 +450,12 @@ nsresult CreateMarkerFile(const QuotaInfo& aQuotaInfo) {
   
   
   QM_TRY(QM_OR_ELSE_LOG_VERBOSE_IF(
+      
       ToResult(marker->Create(nsIFile::NORMAL_FILE_TYPE, 0644)),
-      IsSpecificError<NS_ERROR_FILE_ALREADY_EXISTS>, ErrToDefaultOk<>));
+      
+      IsSpecificError<NS_ERROR_FILE_ALREADY_EXISTS>,
+      
+      ErrToDefaultOk<>));
 
   
   
@@ -514,8 +528,12 @@ nsresult RemoveNsIFile(const QuotaInfo& aQuotaInfo, nsIFile& aFile,
     QM_TRY_INSPECT(
         const auto& maybeFileSize,
         QM_OR_ELSE_WARN_IF(
+            
             MOZ_TO_RESULT_INVOKE(aFile, GetFileSize).map(Some<int64_t>),
-            IsFileNotFoundError, ErrToDefaultOk<Maybe<int64_t>>));
+            
+            IsFileNotFoundError,
+            
+            ErrToDefaultOk<Maybe<int64_t>>));
 
     if (!maybeFileSize) {
       return NS_OK;
@@ -524,8 +542,13 @@ nsresult RemoveNsIFile(const QuotaInfo& aQuotaInfo, nsIFile& aFile,
     fileSize = *maybeFileSize;
   }
 
-  QM_TRY(QM_OR_ELSE_WARN_IF(ToResult(aFile.Remove( false)),
-                            IsFileNotFoundError, ErrToDefaultOk<>));
+  QM_TRY(QM_OR_ELSE_WARN_IF(
+      
+      ToResult(aFile.Remove( false)),
+      
+      IsFileNotFoundError,
+      
+      ErrToDefaultOk<>));
 
   if (fileSize > 0) {
     MOZ_ASSERT(aTrackQuota);
@@ -597,8 +620,12 @@ nsresult UpdateDirectoryPaddingFile(nsIFile& aBaseDir,
   const auto directoryPaddingGetResult =
       aTemporaryFileExist ? Maybe<int64_t>{} : [&aBaseDir] {
         QM_TRY_RETURN(QM_OR_ELSE_WARN_IF(
+                          
                           DirectoryPaddingGet(aBaseDir).map(Some<int64_t>),
-                          IsFileNotFoundError, ErrToDefaultOk<Maybe<int64_t>>),
+                          
+                          IsFileNotFoundError,
+                          
+                          ErrToDefaultOk<Maybe<int64_t>>),
                       Maybe<int64_t>{});
       }();
 
@@ -712,8 +739,13 @@ nsresult DirectoryPaddingDeleteFile(nsIFile& aBaseDir,
                                        ? nsLiteralString(PADDING_TMP_FILE_NAME)
                                        : nsLiteralString(PADDING_FILE_NAME)));
 
-  QM_TRY(QM_OR_ELSE_WARN_IF(ToResult(file->Remove( false)),
-                            IsFileNotFoundError, ErrToDefaultOk<>));
+  QM_TRY(QM_OR_ELSE_WARN_IF(
+      
+      ToResult(file->Remove( false)),
+      
+      IsFileNotFoundError,
+      
+      ErrToDefaultOk<>));
 
   return NS_OK;
 }
