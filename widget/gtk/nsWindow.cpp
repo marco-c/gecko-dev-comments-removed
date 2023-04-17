@@ -4287,6 +4287,14 @@ bool nsWindow::IsHandlingTouchSequence(GdkEventSequence* aSequence) {
 
 gboolean nsWindow::OnTouchpadPinchEvent(GdkEventTouchpadPinch* aEvent) {
   if (StaticPrefs::apz_gtk_touchpad_pinch_enabled()) {
+    
+    
+    
+    
+    if (aEvent->n_fingers > 2 &&
+        !StaticPrefs::apz_gtk_touchpad_pinch_three_fingers_enabled()) {
+      return FALSE;
+    }
     PinchGestureInput::PinchGestureType pinchGestureType =
         PinchGestureInput::PINCHGESTURE_SCALE;
     ScreenCoord CurrentSpan;
