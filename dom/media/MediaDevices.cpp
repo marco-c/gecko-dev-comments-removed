@@ -405,30 +405,65 @@ static RefPtr<AudioDeviceInfo> CopyWithNullDeviceId(
 RefPtr<MediaDevices::SinkInfoPromise> MediaDevices::GetSinkDevice(
     const nsString& aDeviceId) {
   MOZ_ASSERT(NS_IsMainThread());
+
+  bool isExposed = aDeviceId.IsEmpty() ||
+                   mExplicitlyGrantedAudioOutputIds.Contains(aDeviceId);
+  
+  MediaSourceEnum audioInputType = isExposed || !mCanExposeMicrophoneInfo
+                                       ? MediaSourceEnum::Other
+                                       : MediaSourceEnum::Microphone;
+
   auto devices = MakeRefPtr<MediaManager::MediaDeviceSetRefCnt>();
   return MediaManager::Get()
-      ->EnumerateDevicesImpl(GetOwner(), MediaSourceEnum::Other,
-                             MediaSourceEnum::Other, MediaSinkEnum::Speaker,
+      ->EnumerateDevicesImpl(GetOwner(), MediaSourceEnum::Other, audioInputType,
+                             MediaSinkEnum::Speaker,
                              DeviceEnumerationType::Normal,
                              DeviceEnumerationType::Normal, true, devices)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [aDeviceId, devices](bool) {
-            for (RefPtr<MediaDevice>& device : *devices) {
-              if (aDeviceId.IsEmpty() && device->mSinkInfo->Preferred()) {
-                return SinkInfoPromise::CreateAndResolve(
-                    CopyWithNullDeviceId(device->mSinkInfo), __func__);
+          [aDeviceId, isExposed, devices](bool) mutable {
+            RefPtr<AudioDeviceInfo> outputInfo;
+            nsString groupId;
+            
+            for (const RefPtr<MediaDevice>& device : *devices) {
+              if (device->mKind != dom::MediaDeviceKind::Audiooutput) {
+                continue;
               }
-              if (device->mID.Equals(aDeviceId)) {
-                
-                
-                return SinkInfoPromise::CreateAndResolve(device->mSinkInfo,
-                                                         __func__);
+              if (aDeviceId.IsEmpty()) {
+                if (device->mSinkInfo->Preferred()) {
+                  outputInfo = CopyWithNullDeviceId(device->mSinkInfo);
+                  break;
+                }
+              } else if (aDeviceId.Equals(device->mID)) {
+                outputInfo = device->mSinkInfo;
+                groupId = device->mGroupID;
+                break;
               }
             }
-            return SinkInfoPromise::CreateAndReject(NS_ERROR_NOT_AVAILABLE,
-                                                    __func__);
+            if (outputInfo && !isExposed) {
+              
+              MOZ_ASSERT(!groupId.IsEmpty());
+              for (const RefPtr<MediaDevice>& device : *devices) {
+                if (device->mKind != dom::MediaDeviceKind::Audioinput) {
+                  continue;
+                }
+                if (groupId.Equals(device->mGroupID)) {
+                  isExposed = true;
+                  break;
+                }
+              }
+            }
+            
+
+
+
+            if (!outputInfo || !isExposed) {
+              return SinkInfoPromise::CreateAndReject(NS_ERROR_NOT_AVAILABLE,
+                                                      __func__);
+            }
+            return SinkInfoPromise::CreateAndResolve(outputInfo, __func__);
           },
+          
           [](RefPtr<MediaMgrError>&& aError) {
             return SinkInfoPromise::CreateAndReject(NS_ERROR_NOT_AVAILABLE,
                                                     __func__);

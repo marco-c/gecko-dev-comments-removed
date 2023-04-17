@@ -75,13 +75,6 @@ class MediaDevices final : public DOMEventTargetHelper {
   
   
   
-  
-  
-  
-  
-  
-  
-  
   RefPtr<SinkInfoPromise> GetSinkDevice(const nsString& aDeviceId);
 
   
