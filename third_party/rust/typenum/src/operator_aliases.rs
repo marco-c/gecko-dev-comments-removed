@@ -17,12 +17,10 @@
 
 
 
-
-
-
-
+use crate::type_operators::{
+    Abs, Cmp, Gcd, Len, Logarithm2, Max, Min, PartialDiv, Pow, SquareRoot,
+};
 use core::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Neg, Rem, Shl, Shr, Sub};
-use type_operators::{Abs, Cmp, Gcd, Len, Logarithm2, Max, Min, PartialDiv, Pow, SquareRoot};
 
 
 pub type And<A, B> = <A as BitAnd<B>>::Output;
@@ -64,12 +62,12 @@ pub type Exp<A, B> = <A as Pow<B>>::Output;
 pub type Gcf<A, B> = <A as Gcd<B>>::Output;
 
 
-pub type Add1<A> = <A as Add<::bit::B1>>::Output;
+pub type Add1<A> = <A as Add<crate::bit::B1>>::Output;
 
-pub type Sub1<A> = <A as Sub<::bit::B1>>::Output;
+pub type Sub1<A> = <A as Sub<crate::bit::B1>>::Output;
 
 
-pub type Double<A> = Shleft<A, ::bit::B1>;
+pub type Double<A> = Shleft<A, crate::bit::B1>;
 
 
 pub type Square<A> = <A as Mul>::Output;
@@ -91,7 +89,9 @@ pub type Minimum<A, B> = <A as Min<B>>::Output;
 
 pub type Maximum<A, B> = <A as Max<B>>::Output;
 
-use type_operators::{IsEqual, IsGreater, IsGreaterOrEqual, IsLess, IsLessOrEqual, IsNotEqual};
+use crate::type_operators::{
+    IsEqual, IsGreater, IsGreaterOrEqual, IsLess, IsLessOrEqual, IsNotEqual,
+};
 
 pub type Le<A, B> = <A as IsLess<B>>::Output;
 

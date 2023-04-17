@@ -17,8 +17,11 @@
 
 
 
-
 pub trait NonZero {}
+
+
+
+pub trait Zero {}
 
 
 
@@ -36,6 +39,9 @@ pub trait Bit: Copy + Default {
     const U8: u8;
     #[allow(missing_docs)]
     const BOOL: bool;
+
+    
+    fn new() -> Self;
 
     #[allow(missing_docs)]
     fn to_u8() -> u8;

@@ -42,7 +42,6 @@
 
 
 
-
 #![no_std]
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
@@ -51,10 +50,12 @@
 #![cfg_attr(
     feature = "cargo-clippy",
     allow(
-        clippy::type_complexity,
         clippy::len_without_is_empty,
+        clippy::many_single_char_names,
         clippy::new_without_default,
-        clippy::many_single_char_names
+        clippy::suspicious_arithmetic_impl,
+        clippy::type_complexity,
+        clippy::wrong_self_convention,
     )
 )]
 #![cfg_attr(feature = "cargo-clippy", deny(clippy::missing_inline_in_public_items))]
@@ -87,15 +88,16 @@ pub mod uint;
 
 pub mod array;
 
-pub use consts::*;
-pub use generated::consts;
-pub use marker_traits::*;
-pub use operator_aliases::*;
-pub use type_operators::*;
-
-pub use array::{ATerm, TArr};
-pub use int::{NInt, PInt};
-pub use uint::{UInt, UTerm};
+pub use crate::{
+    array::{ATerm, TArr},
+    consts::*,
+    generated::consts,
+    int::{NInt, PInt},
+    marker_traits::*,
+    operator_aliases::*,
+    type_operators::*,
+    uint::{UInt, UTerm},
+};
 
 
 
@@ -140,7 +142,8 @@ impl Ord for Equal {
 #[macro_export]
 macro_rules! assert_type_eq {
     ($a:ty, $b:ty) => {
-        let _: <$a as $crate::Same<$b>>::Output;
+        const _: core::marker::PhantomData<<$a as $crate::Same<$b>>::Output> =
+            core::marker::PhantomData;
     };
 }
 
@@ -148,6 +151,7 @@ macro_rules! assert_type_eq {
 #[macro_export]
 macro_rules! assert_type {
     ($a:ty) => {
-        let _: <$a as $crate::Same<True>>::Output;
+        const _: core::marker::PhantomData<<$a as $crate::Same<True>>::Output> =
+            core::marker::PhantomData;
     };
 }
