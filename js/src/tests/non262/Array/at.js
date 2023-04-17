@@ -1,5 +1,3 @@
-
-
 function basic() {
   assertEq([0].at(0), 0);
   assertEq([0].at(-1), 0);

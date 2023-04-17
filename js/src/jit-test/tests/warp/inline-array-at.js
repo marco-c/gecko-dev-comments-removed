@@ -1,5 +1,3 @@
-
-
 function f(x) {
   assertEq(x.at(0), 1);
   assertEq(x.at(-1), 3);
