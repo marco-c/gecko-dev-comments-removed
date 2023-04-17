@@ -127,10 +127,13 @@ typedef void* nsNativeWidget;
 #define NS_NATIVE_REGION 5
 #define NS_NATIVE_OFFSETX 6
 #define NS_NATIVE_OFFSETY 7
+#define NS_NATIVE_PLUGIN_PORT 8
 #define NS_NATIVE_SCREEN 9
 
 #define NS_NATIVE_SHELLWIDGET 10
 #define NS_NATIVE_OPENGL_CONTEXT 12
+
+#define NS_NATIVE_PLUGIN_ID 13
 
 
 
@@ -139,6 +142,10 @@ typedef void* nsNativeWidget;
 
 #define NS_RAW_NATIVE_IME_CONTEXT 14
 #define NS_NATIVE_WINDOW_WEBRTC_DEVICE_ID 15
+#ifdef XP_MACOSX
+#  define NS_NATIVE_PLUGIN_PORT_QD 100
+#  define NS_NATIVE_PLUGIN_PORT_CG 101
+#endif
 #ifdef XP_WIN
 #  define NS_NATIVE_TSF_THREAD_MGR 100
 #  define NS_NATIVE_TSF_CATEGORY_MGR 101
@@ -146,6 +153,8 @@ typedef void* nsNativeWidget;
 #  define NS_NATIVE_ICOREWINDOW 103  // winrt specific
 #endif
 #if defined(MOZ_WIDGET_GTK)
+
+#  define NS_NATIVE_PLUGIN_OBJECT_PTR 104
 #  define NS_NATIVE_EGL_WINDOW 106
 #endif
 #ifdef MOZ_WIDGET_ANDROID
@@ -1019,6 +1028,15 @@ class nsIWidget : public nsISupports {
   
 
 
+  bool IsPlugin() {
+    return mWindowType == eWindowType_plugin ||
+           mWindowType == eWindowType_plugin_ipc_chrome ||
+           mWindowType == eWindowType_plugin_ipc_content;
+  }
+
+  
+
+
 
 
 
@@ -1040,6 +1058,94 @@ class nsIWidget : public nsISupports {
 
 
   virtual nsTransparencyMode GetTransparencyMode() = 0;
+
+  
+
+
+
+  struct Configuration {
+    nsCOMPtr<nsIWidget> mChild;
+    uintptr_t mWindowID;  
+    bool mVisible;        
+    LayoutDeviceIntRect mBounds;
+    CopyableTArray<LayoutDeviceIntRect> mClipRegion;
+  };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual nsresult ConfigureChildren(
+      const nsTArray<Configuration>& aConfigurations) = 0;
+  virtual nsresult SetWindowClipRegion(
+      const nsTArray<LayoutDeviceIntRect>& aRects,
+      bool aIntersectWithExisting) = 0;
+
+  
+
+
+
+
+  virtual void GetWindowClipRegion(nsTArray<LayoutDeviceIntRect>* aRects) = 0;
+
+  
+
+
+
+
+
+
+
+
+
+  virtual void RegisterPluginWindowForRemoteUpdates() = 0;
+  virtual void UnregisterPluginWindowForRemoteUpdates() = 0;
+  static nsIWidget* LookupRegisteredPluginWindow(uintptr_t aWindowID);
+
+  
+
+
+
+
+
+
+
+  static void UpdateRegisteredPluginWindowVisibility(
+      uintptr_t aOwnerWidget, nsTArray<uintptr_t>& aPluginIds);
+
+#if defined(XP_WIN)
+  
+
+
+
+
+
+  static void CaptureRegisteredPlugins(uintptr_t aOwnerWidget);
+
+  
+
+
+  virtual void UpdateScrollCapture() = 0;
+
+  
+
+
+
+
+  virtual uint64_t CreateScrollCaptureContainer() = 0;
+#endif
 
   
 
