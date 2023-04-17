@@ -244,8 +244,7 @@ class DocAccessibleParent : public RemoteAccessible,
 
 
 
-
-  void SendParentCOMProxy(LocalAccessible* aOuterDoc);
+  void SendParentCOMProxy(Accessible* aOuterDoc);
 
   
 

@@ -141,7 +141,7 @@ uint32_t DocAccessibleParent::AddSubtree(
 
 #if defined(XP_WIN)
   if (!StaticPrefs::accessibility_cache_enabled_AtStartup()) {
-    WrapperFor(newProxy)->GetMsaa()->SetID(newChild.MsaaID());
+    MsaaAccessible::GetFrom(newProxy)->SetID(newChild.MsaaID());
   }
 #endif
 
@@ -640,7 +640,7 @@ ipc::IPCResult DocAccessibleParent::AddChildDoc(DocAccessibleParent* aChildDoc,
         
         
         
-        aChildDoc->SendParentCOMProxy(WrapperFor(outerDoc));
+        aChildDoc->SendParentCOMProxy(outerDoc);
         if (nsWinUtils::IsWindowEmulationStarted()) {
           
           
@@ -879,7 +879,7 @@ void DocAccessibleParent::MaybeInitWindowEmulation() {
   MOZ_ASSERT(hWnd);
 }
 
-void DocAccessibleParent::SendParentCOMProxy(LocalAccessible* aOuterDoc) {
+void DocAccessibleParent::SendParentCOMProxy(Accessible* aOuterDoc) {
   
   auto tab = static_cast<dom::BrowserParent*>(Manager());
   MOZ_ASSERT(tab);
@@ -887,8 +887,8 @@ void DocAccessibleParent::SendParentCOMProxy(LocalAccessible* aOuterDoc) {
     return;
   }
 
-  RefPtr<IAccessible> nativeAcc;
-  aOuterDoc->GetNativeInterface(getter_AddRefs(nativeAcc));
+  RefPtr<IDispatch> nativeAcc =
+      already_AddRefed<IDispatch>(MsaaAccessible::NativeAccessible(aOuterDoc));
   if (NS_WARN_IF(!nativeAcc)) {
     
     

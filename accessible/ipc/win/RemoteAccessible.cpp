@@ -32,11 +32,10 @@ bool RemoteAccessible::GetCOMInterface(void** aOutAccessible) const {
   }
 
   if (!mCOMProxy && mSafeToRecurse) {
-    
-    AccessibleWrap* wrap = WrapperFor(this);
-    MsaaAccessible* msaa = wrap->GetMsaa();
-    bool isDefunct = false;
     RemoteAccessible* thisPtr = const_cast<RemoteAccessible*>(this);
+    
+    MsaaAccessible* msaa = MsaaAccessible::GetFrom(thisPtr);
+    bool isDefunct = false;
     
     
     

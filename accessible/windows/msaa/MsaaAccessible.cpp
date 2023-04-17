@@ -43,6 +43,11 @@ MsaaAccessible* MsaaAccessible::Create(Accessible* aAcc) {
   
   MOZ_ASSERT(!StaticPrefs::accessibility_cache_enabled_AtStartup() ||
              XRE_IsParentProcess());
+  if (!StaticPrefs::accessibility_cache_enabled_AtStartup() &&
+      aAcc->IsRemote()) {
+    
+    return new MsaaAccessible(aAcc);
+  }
   
   
   
@@ -95,7 +100,8 @@ void MsaaAccessible::MsaaShutdown() {
     return;
   }
 
-  if (mAcc->IsProxy()) {
+  if (!StaticPrefs::accessibility_cache_enabled_AtStartup() &&
+      mAcc->IsRemote()) {
     
     mAcc = nullptr;
     return;
@@ -133,7 +139,8 @@ void MsaaAccessible::MsaaShutdown() {
 }
 
 void MsaaAccessible::SetID(uint32_t aID) {
-  MOZ_ASSERT(XRE_IsParentProcess() && mAcc && mAcc->IsProxy());
+  MOZ_ASSERT(XRE_IsParentProcess() && mAcc &&
+             !StaticPrefs::accessibility_cache_enabled_AtStartup());
   mID = aID;
 }
 
@@ -147,7 +154,9 @@ int32_t MsaaAccessible::GetChildIDFor(Accessible* aAccessible) {
   }
 
   
-  if (aAccessible->IsProxy()) {
+  
+  if (!StaticPrefs::accessibility_cache_enabled_AtStartup() &&
+      aAccessible->IsRemote()) {
     const uint32_t id = MsaaAccessible::GetFrom(aAccessible)->mID;
     MOZ_ASSERT(id != kNoID);
     return id;
@@ -198,9 +207,8 @@ HWND MsaaAccessible::GetHWNDFor(Accessible* aAccessible) {
   }
 
   LocalAccessible* localAcc = aAccessible->AsLocal();
-  if (!localAcc || localAcc->IsProxy()) {
-    RemoteAccessible* proxy =
-        localAcc ? localAcc->Proxy() : aAccessible->AsRemote();
+  if (!localAcc) {
+    RemoteAccessible* proxy = aAccessible->AsRemote();
     if (!proxy) {
       return nullptr;
     }
@@ -297,15 +305,10 @@ void MsaaAccessible::FireWinEvent(Accessible* aTarget, uint32_t aEventType) {
   uint32_t winEvent = gWinEventMap[aEventType];
   if (!winEvent) return;
 
-  Accessible* target = aTarget;
-  if (!StaticPrefs::accessibility_cache_enabled_AtStartup() &&
-      target->IsRemote()) {
-    target = WrapperFor(target->AsRemote());
-  }
-  int32_t childID = MsaaAccessible::GetChildIDFor(target);
+  int32_t childID = MsaaAccessible::GetChildIDFor(aTarget);
   if (!childID) return;  
 
-  HWND hwnd = GetHWNDFor(target);
+  HWND hwnd = GetHWNDFor(aTarget);
   if (!hwnd) {
     return;
   }
@@ -319,7 +322,7 @@ void MsaaAccessible::FireWinEvent(Accessible* aTarget, uint32_t aEventType) {
 }
 
 AccessibleWrap* MsaaAccessible::LocalAcc() {
-  if (!mAcc || mAcc->IsRemote() || mAcc->IsProxy()) {
+  if (!mAcc || mAcc->IsRemote()) {
     return nullptr;
   }
   auto acc = static_cast<AccessibleWrap*>(mAcc);
@@ -416,15 +419,14 @@ static Accessible* GetAccessibleInSubtree(DocAccessibleParent* aDoc,
 }
 
 static already_AddRefed<IDispatch> GetProxiedAccessibleInSubtree(
-    const DocAccessibleParent* aDoc, const VARIANT& aVarChild) {
+    DocAccessibleParent* aDoc, const VARIANT& aVarChild) {
   MOZ_ASSERT(!StaticPrefs::accessibility_cache_enabled_AtStartup());
-  auto wrapper = static_cast<DocRemoteAccessibleWrap*>(WrapperFor(aDoc));
   RefPtr<IAccessible> comProxy;
-  int32_t docWrapperChildId = MsaaAccessible::GetChildIDFor(wrapper);
+  int32_t docWrapperChildId = MsaaAccessible::GetChildIDFor(aDoc);
   
   
   if (aDoc->IsTopLevelInContentProcess()) {
-    wrapper->GetNativeInterface(getter_AddRefs(comProxy));
+    aDoc->GetCOMInterface(getter_AddRefs(comProxy));
   } else {
     auto tab = static_cast<dom::BrowserParent*>(aDoc->Manager());
     MOZ_ASSERT(tab);
@@ -499,15 +501,13 @@ already_AddRefed<IAccessible> MsaaAccessible::GetIAccessibleFor(
 
   AccessibleWrap* localAcc = static_cast<AccessibleWrap*>(mAcc->AsLocal());
   if (varChild.lVal == CHILDID_SELF) {
-    MOZ_ASSERT(!localAcc || !localAcc->IsProxy());
+    MOZ_ASSERT(localAcc ||
+               StaticPrefs::accessibility_cache_enabled_AtStartup());
     result = this;
     return result.forget();
   }
 
-  if (varChild.ulVal != GetExistingID() &&
-      ((localAcc && localAcc->IsProxy())
-           ? nsAccUtils::MustPrune(localAcc->Proxy())
-           : nsAccUtils::MustPrune(mAcc))) {
+  if (varChild.ulVal != GetExistingID() && nsAccUtils::MustPrune(mAcc)) {
     
     
     return nullptr;
@@ -519,9 +519,8 @@ already_AddRefed<IAccessible> MsaaAccessible::GetIAccessibleFor(
   
   
   
-  
-  if (XRE_IsParentProcess() && localAcc && !localAcc->IsProxy() &&
-      varChild.lVal < 0 && !sIDGen.IsChromeID(varChild.lVal)) {
+  if (XRE_IsParentProcess() && localAcc && varChild.lVal < 0 &&
+      !sIDGen.IsChromeID(varChild.lVal)) {
     MOZ_ASSERT(!StaticPrefs::accessibility_cache_enabled_AtStartup());
     if (!localAcc->IsRootForHWND()) {
       
@@ -568,9 +567,8 @@ already_AddRefed<IAccessible> MsaaAccessible::GetIAccessibleFor(
   
   
   
-  if (localAcc && localAcc->IsProxy()) {
-    MOZ_ASSERT(!StaticPrefs::accessibility_cache_enabled_AtStartup());
-    DocAccessibleParent* proxyDoc = localAcc->Proxy()->Document();
+  if (!localAcc && !StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+    DocAccessibleParent* proxyDoc = mAcc->AsRemote()->Document();
     RefPtr<IDispatch> disp = GetProxiedAccessibleInSubtree(proxyDoc, varChild);
     if (!disp) {
       return nullptr;
@@ -709,7 +707,7 @@ already_AddRefed<IAccessible> MsaaAccessible::GetRemoteIAccessibleFor(
     auto checkDoc = [&aVarChild,
                      &disp](DocAccessibleParent* aRemoteDoc) -> bool {
       uint32_t remoteDocMsaaId =
-          WrapperFor(aRemoteDoc)->GetMsaa()->GetExistingID();
+          MsaaAccessible::GetFrom(aRemoteDoc)->GetExistingID();
       if (!sIDGen.IsSameContentProcessFor(aVarChild.lVal, remoteDocMsaaId)) {
         return true;  
       }
@@ -750,13 +748,8 @@ IDispatch* MsaaAccessible::NativeAccessible(Accessible* aAccessible) {
   }
 
   RefPtr<IDispatch> disp;
-  if (aAccessible->IsProxy()) {
-    MOZ_ASSERT(!StaticPrefs::accessibility_cache_enabled_AtStartup());
-    
-    
-    aAccessible->AsLocal()->GetNativeInterface(getter_AddRefs(disp));
-  } else if (!StaticPrefs::accessibility_cache_enabled_AtStartup() &&
-             aAccessible->IsRemote()) {
+  if (!StaticPrefs::accessibility_cache_enabled_AtStartup() &&
+      aAccessible->IsRemote()) {
     
     
     aAccessible->AsRemote()->GetCOMInterface(getter_AddRefs(disp));
@@ -786,7 +779,6 @@ ITypeInfo* MsaaAccessible::GetTI(LCID lcid) {
 
 MsaaAccessible* MsaaAccessible::GetFrom(Accessible* aAcc) {
   if (RemoteAccessible* remoteAcc = aAcc->AsRemote()) {
-    MOZ_ASSERT(StaticPrefs::accessibility_cache_enabled_AtStartup());
     return reinterpret_cast<MsaaAccessible*>(remoteAcc->GetWrapper());
   }
   return static_cast<AccessibleWrap*>(aAcc)->GetMsaa();
@@ -1560,7 +1552,9 @@ MsaaAccessible::accNavigate(
   if (accessible) {
     return accessible->accNavigate(navDir, kVarChildIdSelf, pvarEndUpAt);
   }
-  MOZ_ASSERT(!mAcc->IsProxy());
+  
+  MOZ_ASSERT(mAcc->IsLocal() ||
+             StaticPrefs::accessibility_cache_enabled_AtStartup());
 
   Accessible* navAccessible = nullptr;
   Maybe<RelationType> xpRelation;
