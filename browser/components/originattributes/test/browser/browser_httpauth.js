@@ -35,7 +35,7 @@ function fileHandler(metadata, response) {
   response.bodyOutputStream.write(body, body.length);
 }
 
-function onCommonDialogLoaded(subject) {
+async function onCommonDialogLoaded(subject) {
   let dialog;
   if (commonDialogEnabled) {
     dialog = subject.Dialog;
@@ -47,6 +47,14 @@ function onCommonDialogLoaded(subject) {
   
   dialog.ui.loginTextbox.setAttribute("value", Math.random());
   dialog.ui.password1Textbox.setAttribute("value", Math.random());
+  
+  
+  await (async function() {
+    let rAFCount = 3;
+    while (rAFCount--) {
+      await new Promise(requestAnimationFrame);
+    }
+  })();
   dialog.ui.button0.click();
 }
 
