@@ -1254,10 +1254,10 @@ nsresult HTMLFormElement::AddElement(nsGenericHTMLFormElement* aChild,
   AssertDocumentOrder(controlList, this);
 #endif
 
-  int32_t type = aChild->ControlType();
+  auto type = aChild->ControlType();
 
   
-  if (type == NS_FORM_INPUT_PASSWORD) {
+  if (type == FormControlType::InputPassword) {
     PostPasswordEvent();
   }
 
@@ -1320,7 +1320,7 @@ nsresult HTMLFormElement::AddElement(nsGenericHTMLFormElement* aChild,
   
   
   
-  if (type == NS_FORM_INPUT_RADIO) {
+  if (type == FormControlType::InputRadio) {
     RefPtr<HTMLInputElement> radio = static_cast<HTMLInputElement*>(aChild);
     radio->AddedToRadioGroup();
   }
@@ -1341,7 +1341,7 @@ nsresult HTMLFormElement::RemoveElement(nsGenericHTMLFormElement* aChild,
   
   
   nsresult rv = NS_OK;
-  if (aChild->ControlType() == NS_FORM_INPUT_RADIO) {
+  if (aChild->ControlType() == FormControlType::InputRadio) {
     RefPtr<HTMLInputElement> radio = static_cast<HTMLInputElement*>(aChild);
     radio->WillRemoveFromRadioGroup();
   }

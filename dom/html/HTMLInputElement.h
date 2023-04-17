@@ -324,7 +324,7 @@ class HTMLInputElement final : public TextControlElement,
   void MaybeUpdateAllValidityStates(bool aNotify) {
     
     
-    if (mType == NS_FORM_INPUT_EMAIL) {
+    if (mType == FormControlType::InputEmail) {
       UpdateAllValidityStates(aNotify);
     }
   }
@@ -1079,7 +1079,7 @@ class HTMLInputElement final : public TextControlElement,
 
 
   MOZ_CAN_RUN_SCRIPT
-  void HandleTypeChange(uint8_t aNewType, bool aNotify);
+  void HandleTypeChange(FormControlType aNewType, bool aNotify);
 
   enum class ForValueGetter { No, Yes };
 
@@ -1363,13 +1363,13 @@ class HTMLInputElement final : public TextControlElement,
   
 
 
-  static bool IsExperimentalMobileType(uint8_t aType);
+  static bool IsExperimentalMobileType(FormControlType);
 
   
 
 
 
-  static bool IsDateTimeInputType(uint8_t aType);
+  static bool IsDateTimeInputType(FormControlType);
 
   
 
@@ -1567,23 +1567,32 @@ class HTMLInputElement final : public TextControlElement,
 
 
   bool SupportsTextSelection() const {
-    return mType == NS_FORM_INPUT_TEXT || mType == NS_FORM_INPUT_SEARCH ||
-           mType == NS_FORM_INPUT_URL || mType == NS_FORM_INPUT_TEL ||
-           mType == NS_FORM_INPUT_PASSWORD;
+    switch (mType) {
+      case FormControlType::InputText:
+      case FormControlType::InputSearch:
+      case FormControlType::InputUrl:
+      case FormControlType::InputTel:
+      case FormControlType::InputPassword:
+        return true;
+      default:
+        return false;
+    }
   }
 
-  static bool CreatesDateTimeWidget(uint8_t aType) {
-    return aType == NS_FORM_INPUT_DATE || aType == NS_FORM_INPUT_TIME ||
-           (aType == NS_FORM_INPUT_DATETIME_LOCAL &&
+  static bool CreatesDateTimeWidget(FormControlType aType) {
+    return aType == FormControlType::InputDate ||
+           aType == FormControlType::InputTime ||
+           (aType == FormControlType::InputDatetimeLocal &&
             StaticPrefs::dom_forms_datetime_local_widget());
   }
 
   bool CreatesDateTimeWidget() const { return CreatesDateTimeWidget(mType); }
 
-  static bool MayFireChangeOnBlur(uint8_t aType) {
+  static bool MayFireChangeOnBlur(FormControlType aType) {
     return IsSingleLineTextControl(false, aType) ||
-           CreatesDateTimeWidget(aType) || aType == NS_FORM_INPUT_RANGE ||
-           aType == NS_FORM_INPUT_NUMBER;
+           CreatesDateTimeWidget(aType) ||
+           aType == FormControlType::InputRange ||
+           aType == FormControlType::InputNumber;
   }
 
   
@@ -1595,7 +1604,7 @@ class HTMLInputElement final : public TextControlElement,
   
 
 
-  static bool IsDateTimeTypeSupported(uint8_t aDateTimeInputType);
+  static bool IsDateTimeTypeSupported(FormControlType);
 
   struct nsFilePickerFilter {
     nsFilePickerFilter() : mFilterMask(0) {}

@@ -154,7 +154,7 @@ static bool ShouldFindAnonymousContent(const nsIContent& aContent) {
     }
 
     
-    if (formControl->ControlType() == NS_FORM_INPUT_PASSWORD) {
+    if (formControl->ControlType() == FormControlType::InputPassword) {
       return false;
     }
   }

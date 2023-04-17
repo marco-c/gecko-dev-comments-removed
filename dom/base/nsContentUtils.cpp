@@ -3044,7 +3044,7 @@ void nsContentUtils::GenerateStateKey(nsIContent* aContent, Document* aDocument,
       }
 
       
-      KeyAppendInt(control->ControlType(), aKey);
+      KeyAppendInt(int32_t(control->ControlType()), aKey);
 
       
       HTMLFormElement* formElement = control->GetFormElement();
