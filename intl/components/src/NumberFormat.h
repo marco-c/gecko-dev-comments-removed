@@ -236,6 +236,12 @@ class NumberFormat final {
 
 
 
+
+
+
+
+
+
   Result<std::u16string_view, ICUError> formatToParts(
       double number, NumberPartVector& parts) const {
     if (!formatInternal(number)) {
@@ -284,6 +290,12 @@ class NumberFormat final {
 
 
 
+
+
+
+
+
+
   Result<std::u16string_view, ICUError> formatToParts(
       int64_t number, NumberPartVector& parts) const {
     if (!formatInternal(number)) {
@@ -324,6 +336,12 @@ class NumberFormat final {
   }
 
   
+
+
+
+
+
+
 
 
 
