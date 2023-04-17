@@ -513,26 +513,6 @@ public class PanZoomController {
 
 
 
-
-
-    @Deprecated @DeprecationSchedule(version = 90, id = "on-touch-event-for-result")
-    public @NonNull GeckoResult<Integer> onTouchEventForResult(final @NonNull MotionEvent event) {
-        return onTouchEventForDetailResult(event).map(detail -> detail.handledResult());
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
     public @NonNull GeckoResult<InputResultDetail> onTouchEventForDetailResult(final @NonNull MotionEvent event) {
         ThreadUtils.assertOnUiThread();
 
