@@ -1483,7 +1483,7 @@ nsresult HTMLEditor::InsertBRElement(const EditorDOMPoint& aPointToBreak) {
     }
   } else {
     EditorDOMPoint pointToBreak(aPointToBreak);
-    WSRunScanner wsRunScanner(*this, pointToBreak);
+    WSRunScanner wsRunScanner(GetActiveEditingHost(), pointToBreak);
     WSScanResult backwardScanResult =
         wsRunScanner.ScanPreviousVisibleNodeOrBlockBoundaryFrom(pointToBreak);
     if (backwardScanResult.Failed()) {
@@ -2279,7 +2279,7 @@ nsresult HTMLEditor::InsertBRElementIfHardLineIsEmptyAndEndsWithBlockBoundary(
     return NS_OK;
   }
 
-  WSRunScanner wsRunScanner(*this, aPointToInsert);
+  WSRunScanner wsRunScanner(GetActiveEditingHost(), aPointToInsert);
   
   
   if (!wsRunScanner.StartsFromHardLineBreak()) {
@@ -5348,7 +5348,7 @@ nsresult HTMLEditor::MaybeExtendSelectionToHardLineEdgesForBlockEditAction() {
 
   
   
-  WSRunScanner wsScannerAtEnd(*this, endPoint);
+  WSRunScanner wsScannerAtEnd(GetActiveEditingHost(), endPoint);
   WSScanResult scanResultAtEnd =
       wsScannerAtEnd.ScanPreviousVisibleNodeOrBlockBoundaryFrom(endPoint);
   if (scanResultAtEnd.Failed()) {
@@ -5383,7 +5383,7 @@ nsresult HTMLEditor::MaybeExtendSelectionToHardLineEdgesForBlockEditAction() {
 
   
   
-  WSRunScanner wsScannerAtStart(*this, startPoint);
+  WSRunScanner wsScannerAtStart(wsScannerAtEnd.GetEditingHost(), startPoint);
   WSScanResult scanResultAtStart =
       wsScannerAtStart.ScanNextVisibleNodeOrBlockBoundaryFrom(startPoint);
   if (scanResultAtStart.Failed()) {

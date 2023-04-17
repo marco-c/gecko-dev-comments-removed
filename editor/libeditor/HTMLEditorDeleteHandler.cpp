@@ -1265,7 +1265,7 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDelete(
                                           EditorType::HTML)) {
         return NS_SUCCESS_DOM_NO_OPERATION;
       }
-      WSRunScanner wsRunScannerAtCaret(aHTMLEditor, caretPoint);
+      WSRunScanner wsRunScannerAtCaret(editingHost, caretPoint);
       WSScanResult scanFromCaretPointResult =
           aDirectionAndAmount == nsIEditor::eNext
               ? wsRunScannerAtCaret.ScanNextVisibleNodeOrBlockBoundaryFrom(
@@ -1540,7 +1540,7 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::Run(
               *caretPoint.ref().ContainerAsContent(), EditorType::HTML)) {
         return EditActionCanceled();
       }
-      WSRunScanner wsRunScannerAtCaret(aHTMLEditor, caretPoint.ref());
+      WSRunScanner wsRunScannerAtCaret(editingHost, caretPoint.ref());
       WSScanResult scanFromCaretPointResult =
           aDirectionAndAmount == nsIEditor::eNext
               ? wsRunScannerAtCaret.ScanNextVisibleNodeOrBlockBoundaryFrom(
@@ -1603,7 +1603,7 @@ EditActionResult HTMLEditor::AutoDeleteRangesHandler::Run(
                   NS_EVENT_BITS_MUTATION_NODEREMOVEDFROMDOCUMENT)) {
             
             
-            WSRunScanner wsRunScannerAtCaret(aHTMLEditor, caretPoint.ref());
+            WSRunScanner wsRunScannerAtCaret(editingHost, caretPoint.ref());
             WSScanResult scanFromCaretPointResult =
                 aDirectionAndAmount == nsIEditor::eNext
                     ? wsRunScannerAtCaret
@@ -3696,7 +3696,7 @@ HTMLEditor::AutoDeleteRangesHandler::DeleteParentBlocksWithTransactionIfEmpty(
   MOZ_ASSERT(aHTMLEditor.mPlaceholderBatch);
 
   
-  WSRunScanner wsScannerForPoint(aHTMLEditor, aPoint);
+  WSRunScanner wsScannerForPoint(aHTMLEditor.GetActiveEditingHost(), aPoint);
   if (!wsScannerForPoint.StartsFromCurrentBlockBoundary()) {
     
     
@@ -5268,7 +5268,7 @@ bool HTMLEditor::AutoDeleteRangesHandler::ExtendRangeToIncludeInvisibleNodes(
   }
 
   
-  Element* editingHost = aHTMLEditor.GetActiveEditingHost();
+  RefPtr<Element> editingHost = aHTMLEditor.GetActiveEditingHost();
   if (NS_WARN_IF(!editingHost)) {
     return false;
   }
@@ -5284,7 +5284,7 @@ bool HTMLEditor::AutoDeleteRangesHandler::ExtendRangeToIncludeInvisibleNodes(
         break;
       }
       MOZ_ASSERT(backwardScanFromStartResult.GetContent() ==
-                 WSRunScanner(aHTMLEditor, atStart).GetStartReasonContent());
+                 WSRunScanner(editingHost, atStart).GetStartReasonContent());
       
       
       if (HTMLEditUtils::IsAnyTableElement(
@@ -5311,7 +5311,7 @@ bool HTMLEditor::AutoDeleteRangesHandler::ExtendRangeToIncludeInvisibleNodes(
       atEnd.GetContainer() != editingHost) {
     EditorDOMPoint atFirstInvisibleBRElement;
     for (;;) {
-      WSRunScanner wsScannerAtEnd(aHTMLEditor, atEnd);
+      WSRunScanner wsScannerAtEnd(editingHost, atEnd);
       WSScanResult forwardScanFromEndResult =
           wsScannerAtEnd.ScanNextVisibleNodeOrBlockBoundaryFrom(atEnd);
       if (forwardScanFromEndResult.ReachedBRElement()) {

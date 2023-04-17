@@ -1636,7 +1636,7 @@ EditorRawDOMPoint HTMLEditor::GetBetterInsertionPointFor(
     return pointToInsert;
   }
 
-  WSRunScanner wsScannerForPointToInsert(*this, pointToInsert);
+  WSRunScanner wsScannerForPointToInsert(GetActiveEditingHost(), pointToInsert);
 
   
   
