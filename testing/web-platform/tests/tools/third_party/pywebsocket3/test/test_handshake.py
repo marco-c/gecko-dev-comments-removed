@@ -28,7 +28,7 @@
 
 
 
-"""Tests for handshake._base module."""
+"""Tests for handshake.base module."""
 
 from __future__ import absolute_import
 import unittest
@@ -39,8 +39,8 @@ from mod_pywebsocket.common import ExtensionParameter
 from mod_pywebsocket.common import ExtensionParsingException
 from mod_pywebsocket.common import format_extensions
 from mod_pywebsocket.common import parse_extensions
-from mod_pywebsocket.handshake._base import HandshakeException
-from mod_pywebsocket.handshake._base import validate_subprotocol
+from mod_pywebsocket.handshake.base import HandshakeException
+from mod_pywebsocket.handshake.base import validate_subprotocol
 
 
 class ValidateSubprotocolTest(unittest.TestCase):
