@@ -21,6 +21,22 @@
 
 namespace mozilla {
 
+#ifdef MOZ_GLEAN_ANDROID
+
+extern "C" NS_EXPORT void glean_enable_logging(void);
+
+
+
+
+
+
+
+
+extern "C" NS_EXPORT void _fog_force_reexport_donotcall(void) {
+  glean_enable_logging();
+}
+#endif
+
 static StaticRefPtr<FOG> gFOG;
 
 

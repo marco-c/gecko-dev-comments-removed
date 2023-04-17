@@ -11,23 +11,6 @@ pub use glean_ffi;
 
 
 
-
-
-
-
-
-
-
-
-
-#[no_mangle]
-pub unsafe extern "C" fn _fog_force_reexport_donotcall() {
-    glean_ffi::glean_enable_logging();
-}
-
-
-
-
 #[no_mangle]
 pub unsafe extern "C" fn fog_init(
     _data_path_override: &nsACString,
