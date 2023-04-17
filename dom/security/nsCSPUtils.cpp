@@ -332,6 +332,8 @@ CSPDirective CSP_ContentTypeToDirective(nsContentPolicyType aType) {
       return nsIContentSecurityPolicy::DEFAULT_SRC_DIRECTIVE;
 
     
+    case nsIContentPolicy::TYPE_PROXIED_WEBRTC_MEDIA:
+    
     
     case nsIContentPolicy::TYPE_DOCUMENT:
     

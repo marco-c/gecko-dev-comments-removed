@@ -228,6 +228,7 @@ XPC_MSG_DEF(NS_ERROR_GFX_PRINTER_DOC_IS_BUSY          , "Cannot print this docum
 XPC_MSG_DEF(NS_ERROR_CONTENT_CRASHED                  , "The process that hosted this content has crashed.")
 XPC_MSG_DEF(NS_ERROR_FRAME_CRASHED                    , "The process that hosted this frame has crashed.")
 XPC_MSG_DEF(NS_ERROR_BUILDID_MISMATCH                 , "The process that hosted this content did not have the same buildID as the parent.")
+XPC_MSG_DEF(NS_ERROR_CONTENT_BLOCKED                  , "The load for this content was blocked.")
 
 
 XPC_MSG_DEF(NS_ERROR_DOM_PUSH_INVALID_KEY_ERR         , "Invalid raw ECDSA P-256 public key.")
