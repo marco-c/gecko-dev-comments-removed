@@ -4,7 +4,7 @@
 
 
 
-const TESTCASE_URI = TEST_BASE_HTTP + "longload.html";
+const TESTCASE_URI = TEST_BASE_HTTPS + "longload.html";
 
 add_task(async function() {
   

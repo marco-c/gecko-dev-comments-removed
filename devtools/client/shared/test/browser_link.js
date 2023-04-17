@@ -6,7 +6,7 @@
 
 
 
-const TEST_URI = TEST_URI_ROOT + "dummy.html";
+const TEST_URI = TEST_URI_ROOT_SSL + "dummy.html";
 
 const { openDocLink, openTrustedLink } = require("devtools/client/shared/link");
 
