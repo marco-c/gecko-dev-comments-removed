@@ -122,6 +122,8 @@ var Utils = {
           reject(err);
           return;
         }
+        
+        ServiceRequest.logProxySource?.(request.channel, "remote-settings");
         resolve(Utils.fetch(input, { ...init, bypassProxy: true }));
       }
 
