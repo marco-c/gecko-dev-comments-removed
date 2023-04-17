@@ -39,6 +39,7 @@
 
 #include "js/ProfilingStack.h"
 #include "mozilla/Atomics.h"
+#include "mozilla/MemoryReporting.h"
 #include "mozilla/ProfilerThreadPlatformData.h"
 #include "mozilla/ProfilerThreadRegistrationInfo.h"
 #include "nsCOMPtr.h"
@@ -62,6 +63,15 @@ class ThreadRegistrationData {
  public:
   
   
+
+  size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
+    
+    return 0;
+  }
+
+  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
+    return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
+  }
 
   
  protected:

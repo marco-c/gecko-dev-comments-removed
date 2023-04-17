@@ -309,6 +309,18 @@ class ThreadRegistration {
     return false;
   }
 
+  size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
+    DataLock lock(mDataMutex);
+    return mData.SizeOfExcludingThis(aMallocSizeOf);
+  }
+
+  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
+    
+    
+    return (mIsOnHeap ? aMallocSizeOf(this) : 0) +
+           SizeOfExcludingThis(aMallocSizeOf);
+  }
+
  private:
   friend class ThreadRegistry;
 
@@ -330,7 +342,7 @@ class ThreadRegistration {
 
   
   
-  DataMutex mDataMutex;
+  mutable DataMutex mDataMutex;
 
   
   int mOtherRegistrations = 0;
