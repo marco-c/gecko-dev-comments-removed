@@ -15,15 +15,11 @@ loader.lazyRequireGetter(
 
 
 
-const HIGHLIGHTER_STYLES_SHEET = `data:text/css;charset=utf-8,
+const BACKGROUND_CALCULATION_STYLE_SHEET = `data:text/css;charset=utf-8,
 * {
   transition: none !important;
 }
-
-:-moz-devtools-highlighted {
-  color: transparent !important;
-  text-shadow: none !important;
-}`;
+`;
 
 
 
@@ -63,7 +59,7 @@ function isDefunct(accessible) {
 
 
 function loadSheetForBackgroundCalculation(win) {
-  loadSheet(win, HIGHLIGHTER_STYLES_SHEET);
+  loadSheet(win, BACKGROUND_CALCULATION_STYLE_SHEET);
 }
 
 
@@ -74,7 +70,7 @@ function loadSheetForBackgroundCalculation(win) {
 
 
 function removeSheetForBackgroundCalculation(win) {
-  removeSheet(win, HIGHLIGHTER_STYLES_SHEET);
+  removeSheet(win, BACKGROUND_CALCULATION_STYLE_SHEET);
 }
 
 
