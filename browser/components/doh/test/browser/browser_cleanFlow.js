@@ -62,7 +62,8 @@ add_task(async function testCleanFlow() {
   
   await restartDoHController();
   ensureNoTRRSelectionTelemetry();
-  await ensureNoTRRModeChange(0);
+  
+  await ensureTRRMode(0);
   await checkHeuristicsTelemetry("disable_doh", "startup");
 
   
