@@ -11,6 +11,8 @@
 #include "nsStringFwd.h"
 #include "ContentBlockingNotifier.h"
 
+#include "nsILoadInfo.h"
+
 class nsPIDOMWindowInner;
 class nsPIDOMWindowOuter;
 class nsIChannel;
@@ -63,7 +65,9 @@ class AntiTrackingUtils final {
   
   
   
-  static bool HasStoragePermissionInParent(nsIChannel* aChannel);
+  
+  static nsILoadInfo::StoragePermissionState GetStoragePermissionStateInParent(
+      nsIChannel* aChannel);
 
   
   
