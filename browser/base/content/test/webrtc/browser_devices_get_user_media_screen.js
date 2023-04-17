@@ -757,11 +757,13 @@ var gTests = [
       );
 
       
-      observerPromise = expectObserverCalled("recording-window-ended");
-      promise = promiseMessage(permissionError);
-      await promiseRequestDevice(false, true, null, "screen");
-      await promise;
-      await observerPromise;
+      await Promise.all([
+        expectObserverCalled("getUserMedia:request"),
+        expectObserverCalled("getUserMedia:response:deny"),
+        expectObserverCalled("recording-window-ended"),
+        promiseMessage(permissionError),
+        promiseRequestDevice(false, true, null, "screen"),
+      ]);
 
       
       SitePermissions.setForPrincipal(
