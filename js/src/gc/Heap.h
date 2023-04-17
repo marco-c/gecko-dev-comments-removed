@@ -173,6 +173,13 @@ class alignas(ArenaSize) Arena {
 
 
 
+  AllocKind allocKind;
+
+  
+
+
+
+
   JS::Zone* zone;
 
   
@@ -188,20 +195,9 @@ class alignas(ArenaSize) Arena {
 
 
 
-
-
-
-  size_t allocKind : 8;
-
- private:
-  
-
-
-
-
   static const size_t DELAYED_MARKING_FLAG_BITS = 3;
   static const size_t DELAYED_MARKING_ARENA_BITS =
-      JS_BITS_PER_WORD - 8 - DELAYED_MARKING_FLAG_BITS;
+      JS_BITS_PER_WORD - DELAYED_MARKING_FLAG_BITS;
   size_t onDelayedMarkingList_ : 1;
   size_t hasDelayedBlackMarking_ : 1;
   size_t hasDelayedGrayMarking_ : 1;
@@ -258,7 +254,7 @@ class alignas(ArenaSize) Arena {
     AlwaysPoison(&zone, JS_FREED_ARENA_PATTERN, sizeof(zone),
                  MemCheckKind::MakeNoAccess);
 
-    allocKind = size_t(AllocKind::LIMIT);
+    allocKind = AllocKind::LIMIT;
     onDelayedMarkingList_ = 0;
     hasDelayedBlackMarking_ = 0;
     hasDelayedGrayMarking_ = 0;
@@ -287,7 +283,7 @@ class alignas(ArenaSize) Arena {
 
   AllocKind getAllocKind() const {
     MOZ_ASSERT(allocated());
-    return AllocKind(allocKind);
+    return allocKind;
   }
 
   FreeSpan* getFirstFreeSpan() { return &firstFreeSpan; }
