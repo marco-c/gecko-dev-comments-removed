@@ -24,12 +24,17 @@ namespace gl
 
 struct SamplerBinding
 {
-    SamplerBinding(TextureType textureTypeIn, SamplerFormat formatIn, size_t elementCount);
+    SamplerBinding(TextureType textureTypeIn,
+                   GLenum samplerTypeIn,
+                   SamplerFormat formatIn,
+                   size_t elementCount);
     SamplerBinding(const SamplerBinding &other);
     ~SamplerBinding();
 
     
     TextureType textureType;
+
+    GLenum samplerType;
 
     SamplerFormat format;
 
@@ -40,10 +45,13 @@ struct SamplerBinding
 
 struct ImageBinding
 {
-    ImageBinding(size_t count);
-    ImageBinding(GLuint imageUnit, size_t count);
+    ImageBinding(size_t count, TextureType textureTypeIn);
+    ImageBinding(GLuint imageUnit, size_t count, TextureType textureTypeIn);
     ImageBinding(const ImageBinding &other);
     ~ImageBinding();
+
+    
+    TextureType textureType;
 
     
     
@@ -67,8 +75,14 @@ struct TransformFeedbackVarying : public sh::ShaderVariable
         *thisVar                    = field;
         interpolation               = parent.interpolation;
         isInvariant                 = parent.isInvariant;
-        name                        = parent.name + "." + name;
-        mappedName                  = parent.mappedName + "." + mappedName;
+        ASSERT(parent.isShaderIOBlock || !parent.name.empty());
+        if (!parent.name.empty())
+        {
+            name       = parent.name + "." + name;
+            mappedName = parent.mappedName + "." + mappedName;
+        }
+        structOrBlockName       = parent.structOrBlockName;
+        mappedStructOrBlockName = parent.mappedStructOrBlockName;
     }
 
     std::string nameWithArrayIndex() const
@@ -101,8 +115,8 @@ class ProgramExecutable final : public angle::Subject
 
     void reset();
 
-    void save(gl::BinaryOutputStream *stream) const;
-    void load(gl::BinaryInputStream *stream);
+    void save(bool isSeparable, gl::BinaryOutputStream *stream) const;
+    void load(bool isSeparable, gl::BinaryInputStream *stream);
 
     int getInfoLogLength() const;
     InfoLog &getInfoLog() { return mInfoLog; }
@@ -143,6 +157,15 @@ class ProgramExecutable final : public angle::Subject
         return isCompute() ? mLinkedComputeShaderStages.count()
                            : mLinkedGraphicsShaderStages.count();
     }
+    bool hasLinkedTessellationShader() const
+    {
+        return mLinkedGraphicsShaderStages[ShaderType::TessControl] ||
+               mLinkedGraphicsShaderStages[ShaderType::TessEvaluation];
+    }
+
+    ShaderType getTransformFeedbackStage() const;
+
+    ShaderType getLinkedTransformFeedbackStage() const;
 
     
     
@@ -177,6 +200,8 @@ class ProgramExecutable final : public angle::Subject
         return mActiveImageShaderBits;
     }
 
+    const ActiveTextureMask &getActiveYUVSamplers() const { return mActiveSamplerYUV; }
+
     const ActiveTextureArray<TextureType> &getActiveSamplerTypes() const
     {
         return mActiveSamplerTypes;
@@ -198,12 +223,10 @@ class ProgramExecutable final : public angle::Subject
     {
         return !getLinkedTransformFeedbackVaryings().empty();
     }
+    bool usesFramebufferFetch() const;
 
     
     size_t getTransformFeedbackBufferCount() const { return mTransformFeedbackStrides.size(); }
-
-    bool linkValidateGlobalNames(InfoLog &infoLog,
-                                 const ShaderMap<const ProgramState *> &programStates) const;
 
     void updateCanDrawWith();
     bool hasVertexAndFragmentShader() const { return mCanDrawWith; }
@@ -211,8 +234,16 @@ class ProgramExecutable final : public angle::Subject
     const std::vector<sh::ShaderVariable> &getProgramInputs() const { return mProgramInputs; }
     const std::vector<sh::ShaderVariable> &getOutputVariables() const { return mOutputVariables; }
     const std::vector<VariableLocation> &getOutputLocations() const { return mOutputLocations; }
+    const std::vector<VariableLocation> &getSecondaryOutputLocations() const
+    {
+        return mSecondaryOutputLocations;
+    }
     const std::vector<LinkedUniform> &getUniforms() const { return mUniforms; }
     const std::vector<InterfaceBlock> &getUniformBlocks() const { return mUniformBlocks; }
+    const UniformBlockBindingMask &getActiveUniformBlockBindings() const
+    {
+        return mActiveUniformBlockBindings;
+    }
     const std::vector<SamplerBinding> &getSamplerBindings() const { return mSamplerBindings; }
     const std::vector<ImageBinding> &getImageBindings() const
     {
@@ -225,6 +256,7 @@ class ProgramExecutable final : public angle::Subject
     const RangeUI &getDefaultUniformRange() const { return mDefaultUniformRange; }
     const RangeUI &getSamplerUniformRange() const { return mSamplerUniformRange; }
     const RangeUI &getImageUniformRange() const { return mImageUniformRange; }
+    const RangeUI &getFragmentInoutRange() const { return mFragmentInoutRange; }
     const std::vector<TransformFeedbackVarying> &getLinkedTransformFeedbackVaryings() const
     {
         return mLinkedTransformFeedbackVaryings;
@@ -279,22 +311,52 @@ class ProgramExecutable final : public angle::Subject
 
     GLuint getUniformIndexFromImageIndex(GLuint imageIndex) const;
 
-    gl::ProgramLinkedResources &getResources() const
-    {
-        ASSERT(mResources);
-        return *mResources;
-    }
-
     void saveLinkedStateInfo(const ProgramState &state);
-    std::vector<sh::ShaderVariable> getLinkedOutputVaryings(ShaderType shaderType)
+    const std::vector<sh::ShaderVariable> &getLinkedOutputVaryings(ShaderType shaderType) const
     {
         return mLinkedOutputVaryings[shaderType];
     }
-    std::vector<sh::ShaderVariable> getLinkedInputVaryings(ShaderType shaderType)
+    const std::vector<sh::ShaderVariable> &getLinkedInputVaryings(ShaderType shaderType) const
     {
         return mLinkedInputVaryings[shaderType];
     }
-    int getLinkedShaderVersion(ShaderType shaderType) { return mLinkedShaderVersions[shaderType]; }
+
+    int getLinkedShaderVersion(ShaderType shaderType) const
+    {
+        return mLinkedShaderVersions[shaderType];
+    }
+
+    bool isYUVOutput() const;
+
+    PrimitiveMode getGeometryShaderInputPrimitiveType() const
+    {
+        return mGeometryShaderInputPrimitiveType;
+    }
+
+    PrimitiveMode getGeometryShaderOutputPrimitiveType() const
+    {
+        return mGeometryShaderOutputPrimitiveType;
+    }
+
+    int getGeometryShaderInvocations() const { return mGeometryShaderInvocations; }
+
+    int getGeometryShaderMaxVertices() const { return mGeometryShaderMaxVertices; }
+
+    GLenum getTessGenMode() const { return mTessGenMode; }
+
+    void resetCachedValidateSamplersResult() { mCachedValidateSamplersResult.reset(); }
+    bool validateSamplers(InfoLog *infoLog, const Caps &caps) const
+    {
+        
+        
+        
+        if (infoLog == nullptr && mCachedValidateSamplersResult.valid())
+        {
+            return mCachedValidateSamplersResult.value();
+        }
+
+        return validateSamplersImpl(infoLog, caps);
+    }
 
   private:
     
@@ -308,6 +370,28 @@ class ProgramExecutable final : public angle::Subject
     
     void setSamplerUniformTextureTypeAndFormat(size_t textureUnitIndex,
                                                std::vector<SamplerBinding> &samplerBindings);
+
+    bool linkMergedVaryings(const Context *context,
+                            const HasAttachedShaders &programOrPipeline,
+                            const ProgramMergedVaryings &mergedVaryings,
+                            const std::vector<std::string> &transformFeedbackVaryingNames,
+                            bool isSeparable,
+                            ProgramVaryingPacking *varyingPacking);
+
+    bool linkValidateTransformFeedback(
+        const Context *context,
+        const ProgramMergedVaryings &varyings,
+        ShaderType stage,
+        const std::vector<std::string> &transformFeedbackVaryingNames);
+
+    void gatherTransformFeedbackVaryings(
+        const ProgramMergedVaryings &varyings,
+        ShaderType stage,
+        const std::vector<std::string> &transformFeedbackVaryingNames);
+
+    void updateTransformFeedbackStrides();
+
+    bool validateSamplersImpl(InfoLog *infoLog, const Caps &caps) const;
 
     InfoLog mInfoLog;
 
@@ -324,6 +408,7 @@ class ProgramExecutable final : public angle::Subject
     ActiveTextureMask mActiveSamplersMask;
     ActiveTextureArray<uint32_t> mActiveSamplerRefCounts;
     ActiveTextureArray<TextureType> mActiveSamplerTypes;
+    ActiveTextureMask mActiveSamplerYUV;
     ActiveTextureArray<SamplerFormat> mActiveSamplerFormats;
     ActiveTextureArray<ShaderBitSet> mActiveSamplerShaderBits;
 
@@ -337,6 +422,9 @@ class ProgramExecutable final : public angle::Subject
     
     std::vector<sh::ShaderVariable> mOutputVariables;
     std::vector<VariableLocation> mOutputLocations;
+    
+    std::vector<VariableLocation> mSecondaryOutputLocations;
+    bool mYUVOutput;
     
     std::vector<sh::ShaderVariable> mProgramInputs;
     std::vector<TransformFeedbackVarying> mLinkedTransformFeedbackVaryings;
@@ -354,14 +442,20 @@ class ProgramExecutable final : public angle::Subject
     
     
     
+    
     std::vector<LinkedUniform> mUniforms;
     RangeUI mDefaultUniformRange;
     RangeUI mSamplerUniformRange;
     std::vector<InterfaceBlock> mUniformBlocks;
+
+    
+    UniformBlockBindingMask mActiveUniformBlockBindings;
+
     std::vector<AtomicCounterBuffer> mAtomicCounterBuffers;
     RangeUI mImageUniformRange;
     std::vector<InterfaceBlock> mComputeShaderStorageBlocks;
     std::vector<InterfaceBlock> mGraphicsShaderStorageBlocks;
+    RangeUI mFragmentInoutRange;
 
     
     std::vector<SamplerBinding> mSamplerBindings;
@@ -390,10 +484,23 @@ class ProgramExecutable final : public angle::Subject
     ShaderMap<std::vector<sh::ShaderVariable>> mLinkedOutputVaryings;
     ShaderMap<std::vector<sh::ShaderVariable>> mLinkedInputVaryings;
     ShaderMap<int> mLinkedShaderVersions;
-    
-    std::unique_ptr<gl::ProgramLinkedResources> mResources;
-};
 
+    
+    PrimitiveMode mGeometryShaderInputPrimitiveType;
+    PrimitiveMode mGeometryShaderOutputPrimitiveType;
+    int mGeometryShaderInvocations;
+    int mGeometryShaderMaxVertices;
+
+    
+    int mTessControlShaderVertices;
+    GLenum mTessGenMode;
+    GLenum mTessGenSpacing;
+    GLenum mTessGenVertexOrder;
+    GLenum mTessGenPointMode;
+
+    
+    mutable Optional<bool> mCachedValidateSamplersResult;
+};
 }  
 
 #endif  

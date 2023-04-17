@@ -141,7 +141,10 @@ void StretchedBlitNearest(const gl::Box &sourceArea,
                           uint8_t *destData)
 {
     gl::Rectangle clippedDestArea(destArea.x, destArea.y, destArea.width, destArea.height);
-    gl::ClipRectangle(clippedDestArea, clipRect, &clippedDestArea);
+    if (!gl::ClipRectangle(clippedDestArea, clipRect, &clippedDestArea))
+    {
+        return;
+    }
 
     
     

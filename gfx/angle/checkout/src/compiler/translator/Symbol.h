@@ -138,7 +138,7 @@ class TStructure : public TSymbol, public TFieldListCollection
     
     
     
-    friend class RegenerateStructNames;
+    friend class RegenerateStructNamesTraverser;
     void setName(const ImmutableString &name);
 
     bool mAtGlobalScope;

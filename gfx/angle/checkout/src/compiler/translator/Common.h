@@ -54,9 +54,8 @@ typedef std::basic_ostringstream<char, std::char_traits<char>, TStringAllocator>
 
 
 
-
-#define TPersistString std::string
-#define TPersistStringStream std::ostringstream
+using TPersistString       = std::string;
+using TPersistStringStream = std::ostringstream;
 
 
 
