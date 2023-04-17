@@ -208,8 +208,8 @@ CachePushChecker::OnCacheEntryCheck(nsICacheEntry* entry, uint32_t* result) {
 
   bool validationRequired = nsHttp::ValidationRequired(
       isForcedValid, &cachedResponseHead, 0 , false,
-      isImmutable, false, requestHead, entry, cacheControlRequest,
-      fromPreviousSession);
+      false , isImmutable, false, requestHead,
+      entry, cacheControlRequest, fromPreviousSession);
 
   if (validationRequired) {
     

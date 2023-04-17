@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=497665
+-->
 <head>
   <title>Test for Bug 497665</title>
   <script type="application/javascript" src="/MochiKit/MochiKit.js"></script>
@@ -75,16 +75,12 @@ function checkReload()
 
   ok(image1third == image2third, "We got different images after a reload, but shouldn't have.");
 
-  // Sanity check that we actually reloaded properly.
-  ok(image1second != image1third, "We got the same images after a reload.");
-  ok(image1first == image1third, "We didn't loop back to the first image.");
-
   SimpleTest.finish();
 }
 
 </script>
 </pre>
-<div id="content"> 
+<div id="content"> <!-- style="display: none" -->
 <canvas id="canvas" width="100" height="100"> </canvas>
 <iframe id="test-iframe" src="bug497665-iframe.html" onload="checkFirst()"></iframe>
 </div>

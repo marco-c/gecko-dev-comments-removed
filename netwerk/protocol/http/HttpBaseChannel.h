@@ -820,6 +820,10 @@ class HttpBaseChannel : public nsHashPropertyBag,
 
     
     
+    (uint32_t, ForceValidateCacheContent, 1),
+
+    
+    
     (uint32_t, PreferCacheLoadOverBypass, 1)
   ))
 
