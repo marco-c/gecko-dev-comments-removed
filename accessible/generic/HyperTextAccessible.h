@@ -147,11 +147,6 @@ class HyperTextAccessible : public HyperTextAccessibleBase,
   
 
 
-  uint32_t CharacterCount() const { return GetChildOffset(ChildCount()); }
-
-  
-
-
   bool CharAt(int32_t aOffset, nsAString& aChar,
               int32_t* aStartOffset = nullptr, int32_t* aEndOffset = nullptr) {
     NS_ASSERTION(!aStartOffset == !aEndOffset,
