@@ -62,6 +62,12 @@ add_task(async function triggerDefaultActionHandler() {
     info(`default action handler should pause media`);
     await checkOrWaitUntilMediaPauses(tab, { videoId });
 
+    const controller = tab.linkedBrowser.browsingContext.mediaController;
+    ok(
+      !controller.isActive,
+      `controller should be deactivated after receiving stop`
+    );
+
     info(`remove tab`);
     await tab.close();
   }
@@ -115,8 +121,16 @@ add_task(
         await waitUntilActionHandlerIsTriggered(tab, action, frameId);
 
         info(`start media from main frame so iframe would become inactive`);
+        
+        
+        
+        
+        let waitForControllerStatusChanged =
+          action == "play"
+            ? waitUntilActiveMediaSessionChanged()
+            : ensureControllerIsPlaying(tab.controller);
         await Promise.all([
-          waitUntilActiveMediaSessionChanged(),
+          waitForControllerStatusChanged,
           startMedia(tab, { videoId }),
         ]);
 
@@ -391,4 +405,18 @@ function loadIframe(tab, iframeId, url) {
 
 function waitUntilActiveMediaSessionChanged() {
   return BrowserUtils.promiseObserved("active-media-session-changed");
+}
+
+function ensureControllerIsPlaying(controller) {
+  return new Promise(r => {
+    if (controller.isPlaying) {
+      r();
+      return;
+    }
+    controller.onplaybackstatechange = () => {
+      if (controller.isPlaying) {
+        r();
+      }
+    };
+  });
 }
