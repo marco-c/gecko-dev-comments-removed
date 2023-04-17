@@ -341,7 +341,6 @@ class ResourceCommand {
 
     const resources = [];
     if (isTargetSwitching) {
-      this._onWillNavigate(targetFront);
       
       
       
@@ -367,10 +366,6 @@ class ResourceCommand {
     if (targetFront.isDestroyed()) {
       return;
     }
-
-    const offWillNavigate = targetFront.on("will-navigate", () =>
-      this._onWillNavigate(targetFront)
-    );
 
     
     
@@ -406,7 +401,6 @@ class ResourceCommand {
     );
 
     this._offTargetFrontListeners.push(
-      offWillNavigate,
       offResourceAvailable,
       offResourceUpdated,
       offResourceDestroyed
@@ -431,7 +425,7 @@ class ResourceCommand {
         "supportsDocumentEventWillNavigate"
       )
     ) {
-      const offWillNavigate2 = targetFront.on(
+      const offWillNavigate = targetFront.on(
         "will-navigate",
         ({ url, isFrameSwitching }) => {
           targetFront.emit("resource-available-form", [
@@ -446,7 +440,7 @@ class ResourceCommand {
           ]);
         }
       );
-      this._offTargetFrontListeners.push(offWillNavigate2);
+      this._offTargetFrontListeners.push(offWillNavigate);
     }
   }
 
@@ -469,6 +463,16 @@ class ResourceCommand {
   _onTargetDestroyed({ targetFront }) {
     
     this._existingLegacyListeners.set(targetFront, []);
+
+    
+    
+    
+    
+    if (!targetFront.isTopLevel || !targetFront.isBrowsingContext) {
+      this._cache = this._cache.filter(
+        cachedResource => cachedResource.targetFront !== targetFront
+      );
+    }
 
     
     
@@ -526,6 +530,7 @@ class ResourceCommand {
         resource.name == "will-navigate"
       ) {
         includesDocumentEventWillNavigate = true;
+        this._onWillNavigate(resource.targetFront);
       }
 
       this._queueResourceEvent("available", resourceType, resource);
@@ -745,14 +750,11 @@ class ResourceCommand {
   }
 
   _onWillNavigate(targetFront) {
-    if (targetFront.isTopLevel) {
-      this._cache = [];
-      return;
-    }
-
-    this._cache = this._cache.filter(
-      cachedResource => cachedResource.targetFront !== targetFront
-    );
+    
+    
+    
+    
+    this._cache = [];
   }
 
   

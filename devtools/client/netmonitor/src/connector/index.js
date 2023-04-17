@@ -179,12 +179,12 @@ class Connector {
     }
   }
 
-  async onResourceAvailable(resources) {
+  async onResourceAvailable(resources, { areExistingResources }) {
     for (const resource of resources) {
       const { TYPES } = this.toolbox.resourceCommand;
 
       if (resource.resourceType === TYPES.DOCUMENT_EVENT) {
-        this.onDocEvent(resource);
+        this.onDocEvent(resource, { areExistingResources });
         continue;
       }
 
@@ -334,12 +334,7 @@ class Connector {
 
 
 
-  onDocEvent(resource) {
-    if (!resource.targetFront.isTopLevel) {
-      
-      return;
-    }
-
+  onDocEvent(resource, { areExistingResources }) {
     
     if (
       resource.name != "dom-interactive" &&
@@ -350,7 +345,13 @@ class Connector {
     }
 
     if (resource.name == "will-navigate") {
-      this.willNavigate();
+      
+      
+      
+      
+      if (!areExistingResources) {
+        this.willNavigate();
+      }
       return;
     }
 
