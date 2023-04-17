@@ -16,13 +16,18 @@
 #include "gfxUserFontSet.h"
 #include "gfxConfig.h"
 
+#include "AppleUtils.h"
 #include "nsTArray.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/VsyncDispatcher.h"
 #include "nsCocoaFeatures.h"
+#include "nsComponentManagerUtils.h"
+#include "nsIFile.h"
 #include "nsUnicodeProperties.h"
 #include "qcms.h"
 #include "gfx2DGlue.h"
+#include "GeckoProfiler.h"
+#include "nsThreadUtils.h"
 
 #include <dlfcn.h>
 #include <CoreVideo/CoreVideo.h>
@@ -69,6 +74,126 @@ static void DisableFontActivation() {
   if (CTFontManagerSetAutoActivationSettingPtr) {
     CTFontManagerSetAutoActivationSettingPtr(mainBundleID,
                                              kAutoActivationDisabled);
+  }
+}
+
+
+static void ActivateFontsFromDir(const nsACString& aDir) {
+  AutoCFRelease<CFURLRef> directory = CFURLCreateFromFileSystemRepresentation(
+      kCFAllocatorDefault, (const UInt8*)nsPromiseFlatCString(aDir).get(),
+      aDir.Length(), true);
+  if (!directory) {
+    return;
+  }
+  AutoCFRelease<CFURLEnumeratorRef> enumerator =
+      CFURLEnumeratorCreateForDirectoryURL(kCFAllocatorDefault, directory,
+                                           kCFURLEnumeratorDefaultBehavior,
+                                           nullptr);
+  if (!enumerator) {
+    return;
+  }
+  AutoCFRelease<CFMutableArrayRef> urls =
+      ::CFArrayCreateMutable(kCFAllocatorDefault, 0, &kCFTypeArrayCallBacks);
+  if (!urls) {
+    return;
+  }
+
+  CFURLRef url;
+  CFURLEnumeratorResult result;
+  do {
+    result = CFURLEnumeratorGetNextURL(enumerator, &url, nullptr);
+    if (result == kCFURLEnumeratorSuccess) {
+      CFArrayAppendValue(urls, url);
+    }
+  } while (result != kCFURLEnumeratorEnd);
+
+  CTFontManagerRegisterFontsForURLs(urls, kCTFontManagerScopeProcess, nullptr);
+}
+
+#ifdef MOZ_BUNDLED_FONTS
+static void ActivateBundledFonts() {
+  nsCOMPtr<nsIFile> localDir;
+  if (NS_FAILED(NS_GetSpecialDirectory(NS_GRE_DIR, getter_AddRefs(localDir)))) {
+    return;
+  }
+  if (NS_FAILED(localDir->Append(u"fonts"_ns))) {
+    return;
+  }
+  nsAutoCString path;
+  if (NS_FAILED(localDir->GetNativePath(path))) {
+    return;
+  }
+  ActivateFontsFromDir(path);
+}
+#endif
+
+
+
+
+
+
+
+
+
+
+#if __MAC_OS_X_VERSION_MAX_ALLOWED < 101500
+static const nsLiteralCString kLangFontsDirs[] = {
+    "/Library/Application Support/Apple/Fonts/Language Support"_ns};
+#else
+static const nsLiteralCString kLangFontsDirs[] = {
+    "/Library/Application Support/Apple/Fonts/Language Support"_ns,
+    "/System/Library/Fonts/Supplemental"_ns};
+#endif
+
+static void FontRegistrationCallback(void* aUnused) {
+  AUTO_PROFILER_REGISTER_THREAD("RegisterFonts");
+  PR_SetCurrentThreadName("RegisterFonts");
+
+  for (const auto& dir : kLangFontsDirs) {
+    ActivateFontsFromDir(dir);
+  }
+}
+
+PRThread* gfxPlatformMac::sFontRegistrationThread = nullptr;
+
+
+
+
+
+
+void gfxPlatformMac::RegisterSupplementalFonts() {
+  
+  
+  
+  
+  if (XRE_IsParentProcess() || !nsCocoaFeatures::OnCatalinaOrLater()) {
+    sFontRegistrationThread = PR_CreateThread(
+        PR_USER_THREAD, FontRegistrationCallback, nullptr, PR_PRIORITY_NORMAL,
+        PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 0);
+  }
+}
+
+
+void gfxPlatformMac::WaitForFontRegistration() {
+  if (sFontRegistrationThread) {
+    PR_JoinThread(sFontRegistrationThread);
+    sFontRegistrationThread = nullptr;
+
+#ifdef MOZ_BUNDLED_FONTS
+    
+    
+    
+    
+    
+    
+    if (StaticPrefs::gfx_bundled_fonts_activate_AtStartup() != 0) {
+      TimeStamp start = TimeStamp::Now();
+      ActivateBundledFonts();
+      TimeStamp end = TimeStamp::Now();
+      Telemetry::Accumulate(Telemetry::FONTLIST_BUNDLEDFONTS_ACTIVATE,
+                            (end - start).ToMilliseconds());
+    }
+#endif
   }
 }
 

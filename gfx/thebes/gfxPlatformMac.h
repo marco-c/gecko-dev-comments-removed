@@ -22,6 +22,17 @@ class gfxPlatformMac : public gfxPlatform {
   gfxPlatformMac();
   virtual ~gfxPlatformMac();
 
+  
+  
+  
+  
+  static void RegisterSupplementalFonts();
+
+  
+  
+  
+  static void WaitForFontRegistration();
+
   static gfxPlatformMac* GetPlatform() {
     return (gfxPlatformMac*)gfxPlatform::GetPlatform();
   }
@@ -85,6 +96,8 @@ class gfxPlatformMac : public gfxPlatform {
   static uint32_t ReadAntiAliasingThreshold();
 
   uint32_t mFontAntiAliasingThreshold;
+
+  static PRThread* sFontRegistrationThread;
 };
 
 #endif 

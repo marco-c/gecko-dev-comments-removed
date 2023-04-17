@@ -92,6 +92,9 @@
 #include "mozilla/dom/quota/QuotaManager.h"
 #include "mozilla/scache/StartupCache.h"
 #include "gfxPlatform.h"
+#ifdef XP_MACOSX
+#  include "gfxPlatformMac.h"
+#endif
 
 #include "mozilla/Unused.h"
 
@@ -5416,6 +5419,13 @@ int XREMain::XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) {
   AUTO_BASE_PROFILER_LABEL("XREMain::XRE_main (around Gecko Profiler)", OTHER);
   AUTO_PROFILER_INIT;
   AUTO_PROFILER_LABEL("XREMain::XRE_main", OTHER);
+
+#ifdef XP_MACOSX
+  
+  
+  
+  gfxPlatformMac::RegisterSupplementalFonts();
+#endif
 
 #ifdef MOZ_CODE_COVERAGE
   CodeCoverageHandler::Init();
