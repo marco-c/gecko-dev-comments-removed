@@ -780,6 +780,11 @@ impl ResourceCache {
         visible_rect: &DeviceIntRect,
         mut tiling: Option<TileSize>,
     ) {
+        if let Some(ref mut tile_size) = tiling {
+            
+            *tile_size = (*tile_size).max(16).min(2048);
+        }
+
         if tiling.is_none() && Self::should_tile(self.tiling_threshold(), &descriptor, &data) {
             
             

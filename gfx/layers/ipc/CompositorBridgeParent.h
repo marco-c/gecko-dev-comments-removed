@@ -621,7 +621,7 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase,
   
 
 
-  static void UpdateWebRenderBatchingParameters();
+  static void UpdateWebRenderParameters();
 
   
 
