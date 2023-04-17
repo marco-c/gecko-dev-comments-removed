@@ -53,18 +53,6 @@ var GeckoViewRemoteDebugger = {
     debug`onInit`;
     this._isEnabled = false;
     this._usbDebugger = new USBRemoteDebugger();
-
-    
-    
-    
-    
-    
-    
-    
-    Services.tm.dispatchToMainThread(() => {
-      Services.obs.notifyObservers(null, "marionette-startup-requested");
-      Services.obs.notifyObservers(null, "remote-startup-requested");
-    });
   },
 
   onEnable() {

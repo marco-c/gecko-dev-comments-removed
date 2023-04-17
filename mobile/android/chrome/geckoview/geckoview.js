@@ -763,6 +763,18 @@ function startup() {
         "browser-idle-startup-tasks-finished"
       )
     );
+
+    InitLater(() => {
+      
+      
+      
+      
+      
+      
+      
+      Services.obs.notifyObservers(null, "marionette-startup-requested");
+      Services.obs.notifyObservers(null, "remote-startup-requested");
+    });
   });
 
   
