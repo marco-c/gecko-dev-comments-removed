@@ -9,13 +9,23 @@
 #include <utility>
 
 #include "mozilla/intl/NumberFormat.h"
+#include "mozilla/intl/NumberRangeFormat.h"
 #include "mozilla/EnumSet.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
 #include "mozilla/Span.h"
 
+#include "unicode/utypes.h"
+
 namespace mozilla {
 namespace intl {
+
+#ifndef U_HIDE_DRAFT_API
+
+
+
+#  define MOZ_INTL_PLURAL_RULES_HAS_SELECT_RANGE
+#endif
 
 class PluralRules final {
  public:
@@ -69,6 +79,17 @@ class PluralRules final {
 
   Result<PluralRules::Keyword, PluralRules::Error> Select(double aNumber) const;
 
+#ifdef MOZ_INTL_PLURAL_RULES_HAS_SELECT_RANGE
+  
+
+
+
+
+
+  Result<PluralRules::Keyword, PluralRules::Error> SelectRange(
+      double aStart, double aEnd) const;
+#endif
+
   
 
 
@@ -83,8 +104,10 @@ class PluralRules final {
 
   UPluralRules* mPluralRules = nullptr;
   UniquePtr<NumberFormat> mNumberFormat;
+  UniquePtr<NumberRangeFormat> mNumberRangeFormat;
 
-  PluralRules(UPluralRules*&, UniquePtr<NumberFormat>&&);
+  PluralRules(UPluralRules*&, UniquePtr<NumberFormat>&&,
+              UniquePtr<NumberRangeFormat>&&);
 
   
 

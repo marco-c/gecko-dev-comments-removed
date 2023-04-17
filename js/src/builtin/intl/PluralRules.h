@@ -34,7 +34,8 @@ class PluralRulesObject : public NativeObject {
   
   
   
-  static constexpr size_t UPluralRulesEstimatedMemoryUse = 3726;
+  
+  static constexpr size_t UPluralRulesEstimatedMemoryUse = 5736;
 
   mozilla::intl::PluralRules* getPluralRules() const {
     const auto& slot = getFixedSlot(UPLURAL_RULES_SLOT);
