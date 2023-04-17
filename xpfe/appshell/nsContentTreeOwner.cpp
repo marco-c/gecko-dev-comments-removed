@@ -645,29 +645,6 @@ nsSiteWindow::GetDimensions(uint32_t aFlags, int32_t* aX, int32_t* aY,
   return mAggregator->GetPositionAndSize(aX, aY, aCX, aCY);
 }
 
-NS_IMETHODIMP
-nsSiteWindow::SetFocus(void) {
-#if 0
-  
-
-
-
-
-
-  AppWindow *window = mAggregator->AppWindow();
-  if (window) {
-    nsCOMPtr<nsIDocShell> docshell;
-    window->GetDocShell(getter_AddRefs(docshell));
-    if (docShell) {
-      nsCOMPtr<nsPIDOMWindowOuter> domWindow(docShell->GetWindow());
-      if (domWindow)
-        domWindow->Focus();
-    }
-  }
-#endif
-  return NS_OK;
-}
-
 
 
 NS_IMETHODIMP
