@@ -1980,6 +1980,11 @@
       return !aTab.closing;
     }
 
+    
+
+
+
+
     getRelatedElement(aTab) {
       if (!aTab) {
         return null;
@@ -1993,7 +1998,11 @@
       
       
       
-      gBrowser._insertBrowser(aTab);
+      
+      
+      if (aTab.selected) {
+        gBrowser._insertBrowser(aTab);
+      }
       return document.getElementById(aTab.linkedPanel);
     }
 
