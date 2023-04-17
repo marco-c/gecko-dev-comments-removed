@@ -36,7 +36,8 @@ nsClipboardHelper::~nsClipboardHelper() {
 
 NS_IMETHODIMP
 nsClipboardHelper::CopyStringToClipboard(const nsAString& aString,
-                                         int32_t aClipboardID) {
+                                         int32_t aClipboardID,
+                                         SensitiveData aSensitive) {
   nsresult rv;
 
   
@@ -69,6 +70,9 @@ nsClipboardHelper::CopyStringToClipboard(const nsAString& aString,
   NS_ENSURE_TRUE(trans, NS_ERROR_FAILURE);
 
   trans->Init(nullptr);
+  if (aSensitive == SensitiveData::Sensitive) {
+    trans->SetIsPrivateData(true);
+  }
 
   
   rv = trans->AddDataFlavor(kUnicodeMime);
@@ -102,11 +106,13 @@ nsClipboardHelper::CopyStringToClipboard(const nsAString& aString,
 }
 
 NS_IMETHODIMP
-nsClipboardHelper::CopyString(const nsAString& aString) {
+nsClipboardHelper::CopyString(const nsAString& aString,
+                              SensitiveData aSensitive) {
   nsresult rv;
 
   
-  rv = CopyStringToClipboard(aString, nsIClipboard::kGlobalClipboard);
+  rv = CopyStringToClipboard(aString, nsIClipboard::kGlobalClipboard,
+                             aSensitive);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -118,7 +124,7 @@ nsClipboardHelper::CopyString(const nsAString& aString) {
   
   
   
-  CopyStringToClipboard(aString, nsIClipboard::kSelectionClipboard);
+  CopyStringToClipboard(aString, nsIClipboard::kSelectionClipboard, aSensitive);
 
   return NS_OK;
 }
