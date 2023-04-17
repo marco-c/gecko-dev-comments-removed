@@ -19,10 +19,6 @@ const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 
 XPCOMUtils.defineLazyGlobalGetters(this, ["XMLHttpRequest"]);
 
-XPCOMUtils.defineLazyModuleGetters(this, {
-  ServiceRequest: "resource://gre/modules/ServiceRequest.jsm",
-});
-
 
 
 var CreateXHR = function() {
@@ -78,141 +74,11 @@ function getRequestStatus(request) {
 
 
 
-async function conservativeFetch(input) {
-  return new Promise(function(resolve, reject) {
-    const request = new ServiceRequest({ mozAnon: true });
-
-    request.onerror = () =>
-      reject(new TypeError("NetworkError: Network request failed"));
-    request.ontimeout = () =>
-      reject(new TypeError("Timeout: Network request failed"));
-    request.onabort = () => reject(new DOMException("Aborted", "AbortError"));
-    request.onload = () => {
-      const responseAttributes = {
-        status: request.status,
-        statusText: request.statusText,
-        url: request.responseURL,
-      };
-      resolve(new Response(request.response, responseAttributes));
-    };
-
-    const method = "GET";
-
-    request.open(method, input, true);
-
-    request.send();
-  });
-}
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-async function verifyGmpContentSignature(data, contentSignatureHeader) {
-  if (!contentSignatureHeader) {
-    logger.warn(
-      "Unexpected missing content signature header during content signature validation"
-    );
-    throw new Error(
-      "Content signature validation failed: missing content signature header"
-    );
-  }
-  
-  
-  
-  const headerFields = contentSignatureHeader
-    .split(";") 
-    .map(s => s.trim()) 
-    .map(s => [
-      
-      
-      
-      
-      
-      s.substring(0, s.indexOf("=")), 
-      s.substring(s.indexOf("=") + 1), 
-    ]);
-
-  let x5u;
-  let signature;
-  for (const [fieldName, fieldValue] of headerFields) {
-    if (fieldName == "x5u") {
-      x5u = fieldValue;
-    } else if (fieldName == "p384ecdsa") {
-      
-      signature = `p384ecdsa=${fieldValue}`;
-    }
-  }
-
-  if (!x5u) {
-    logger.warn("Unexpected missing x5u during content signature validation");
-    throw new Error("Content signature validation failed: missing x5u");
-  }
-
-  if (!signature) {
-    logger.warn(
-      "Unexpected missing signature during content signature validation"
-    );
-    throw new Error("Content signature validation failed: missing signature");
-  }
-
-  
-  
-  
-  const certChain = await (await conservativeFetch(x5u)).text();
-
-  const verifier = Cc[
-    "@mozilla.org/security/contentsignatureverifier;1"
-  ].createInstance(Ci.nsIContentSignatureVerifier);
-
-  let valid;
-  try {
-    valid = await verifier.asyncVerifyContentSignature(
-      data,
-      signature,
-      certChain,
-      "aus.content-signature.mozilla.org"
-    );
-  } catch (err) {
-    logger.warn(`Unexpected error while validating content signature: ${err}`);
-    throw new Error(`Content signature validation failed: ${err}`);
-  }
-
-  if (!valid) {
-    logger.warn("Unexpected invalid content signature found during validation");
-    throw new Error("Content signature is not valid");
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function downloadXMLWithRequest(
-  url,
-  allowNonBuiltIn = false,
-  allowedCerts = null
-) {
+function downloadXML(url, allowNonBuiltIn = false, allowedCerts = null) {
   return new Promise((resolve, reject) => {
     let request = CreateXHR();
     
@@ -271,7 +137,7 @@ function downloadXMLWithRequest(
         return;
       }
 
-      resolve(request);
+      resolve(request.responseXML);
     };
 
     request.addEventListener("error", fail);
@@ -282,43 +148,6 @@ function downloadXMLWithRequest(
     logger.info("sending request to: " + url);
     request.send(null);
   });
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function downloadXML(
-  url,
-  allowNonBuiltIn = false,
-  allowedCerts = null,
-  verifyContentSignature = false
-) {
-  let request = await downloadXMLWithRequest(
-    url,
-    allowNonBuiltIn,
-    allowedCerts
-  );
-  if (verifyContentSignature) {
-    await verifyGmpContentSignature(
-      request.response,
-      request.getResponseHeader("content-signature")
-    );
-  }
-  return request.responseXML;
 }
 
 
@@ -543,21 +372,8 @@ const ProductAddonChecker = {
 
 
 
-
-
-
-  getProductAddonList(
-    url,
-    allowNonBuiltIn = false,
-    allowedCerts = null,
-    verifyContentSignature = false
-  ) {
-    return downloadXML(
-      url,
-      allowNonBuiltIn,
-      allowedCerts,
-      verifyContentSignature
-    ).then(parseXML);
+  getProductAddonList(url, allowNonBuiltIn = false, allowedCerts = null) {
+    return downloadXML(url, allowNonBuiltIn, allowedCerts).then(parseXML);
   },
 
   
