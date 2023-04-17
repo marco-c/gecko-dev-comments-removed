@@ -102,6 +102,7 @@ static HWND sPreXULSkeletonUIWindow;
 static LPWSTR const gStockApplicationIcon = MAKEINTRESOURCEW(32512);
 static LPWSTR const gIDCWait = MAKEINTRESOURCEW(32514);
 static HANDLE sPreXULSKeletonUIAnimationThread;
+static HANDLE sPreXULSKeletonUILockFile = INVALID_HANDLE_VALUE;
 
 static uint32_t* sPixelBuffer = nullptr;
 static Vector<ColorRect>* sAnimatedRects = nullptr;
@@ -299,6 +300,10 @@ static Result<Ok, PreXULSkeletonUIError> GetSkeletonUILock() {
     return Err(PreXULSkeletonUIError::FilesystemFailure);
   }
 
+  if (sPreXULSKeletonUILockFile != INVALID_HANDLE_VALUE) {
+    return Ok();
+  }
+
   
   
   
@@ -332,13 +337,13 @@ static Result<Ok, PreXULSkeletonUIError> GetSkeletonUILock() {
   
   
   
-  HANDLE lockFile =
+  sPreXULSKeletonUILockFile =
       ::CreateFileW(lockFilePath.c_str(), GENERIC_READ | GENERIC_WRITE,
                     0,  
                     nullptr, CREATE_ALWAYS,
                     FILE_FLAG_DELETE_ON_CLOSE,  
                     nullptr);
-  if (lockFile == INVALID_HANDLE_VALUE) {
+  if (sPreXULSKeletonUILockFile == INVALID_HANDLE_VALUE) {
     return Err(PreXULSkeletonUIError::FailedGettingLock);
   }
 
@@ -1696,8 +1701,10 @@ static Result<Ok, PreXULSkeletonUIError> ValidateCmdlineArguments(
 }
 
 static Result<Ok, PreXULSkeletonUIError> ValidateEnvVars() {
-  if (EnvHasValue("MOZ_SAFE_MODE_RESTART") || EnvHasValue("XRE_PROFILE_PATH") ||
-      EnvHasValue("MOZ_RESET_PROFILE_RESTART") || EnvHasValue("MOZ_HEADLESS")) {
+  if (EnvHasValue("MOZ_SAFE_MODE_RESTART") ||
+      EnvHasValue("MOZ_RESET_PROFILE_RESTART") || EnvHasValue("MOZ_HEADLESS") ||
+      (EnvHasValue("XRE_PROFILE_PATH") &&
+       !EnvHasValue("MOZ_SKELETON_UI_RESTARTING"))) {
     return Err(PreXULSkeletonUIError::EnvVars);
   }
 
@@ -2205,6 +2212,23 @@ MFBT_API void PollPreXULSkeletonUIEvents() {
     MSG outMsg = {};
     PeekMessageW(&outMsg, sPreXULSkeletonUIWindow, 0, 0, 0);
   }
+}
+
+Result<Ok, PreXULSkeletonUIError> NotePreXULSkeletonUIRestarting() {
+  if (!sPreXULSkeletonUIEnabled) {
+    return Err(PreXULSkeletonUIError::Disabled);
+  }
+
+  ::SetEnvironmentVariableW(L"MOZ_SKELETON_UI_RESTARTING", L"1");
+
+  
+  
+  
+  
+  if (sPreXULSKeletonUILockFile != INVALID_HANDLE_VALUE) {
+    ::CloseHandle(sPreXULSKeletonUILockFile);
+  }
+  return Ok();
 }
 
 }  
