@@ -1316,17 +1316,6 @@ void LocalAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
   }
 
   
-  
-  
-  if (IsTable() || IsTableRow() || IsTableCell()) {
-    if (aAttribute == nsGkAtoms::summary || aAttribute == nsGkAtoms::headers ||
-        aAttribute == nsGkAtoms::scope || aAttribute == nsGkAtoms::abbr) {
-      mDoc->FireDelayedEvent(nsIAccessibleEvent::EVENT_OBJECT_ATTRIBUTE_CHANGED,
-                             this);
-    }
-  }
-
-  
   if ((mContent->IsXULElement() && aAttribute == nsGkAtoms::selected) ||
       aAttribute == nsGkAtoms::aria_selected) {
     LocalAccessible* widget = nsAccUtils::GetSelectableContainer(this, State());
@@ -1345,12 +1334,6 @@ void LocalAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
     return;
   }
 
-  if (aAttribute == nsGkAtoms::value) {
-    if (IsProgress()) {
-      mDoc->FireDelayedEvent(nsIAccessibleEvent::EVENT_VALUE_CHANGE, this);
-    }
-    return;
-  }
 }
 
 GroupPos LocalAccessible::GroupPosition() {
