@@ -239,7 +239,6 @@
 #  include "mozilla/CodeCoverageHandler.h"
 #endif
 
-#include "mozilla/mozalloc_oom.h"
 #include "SafeMode.h"
 
 #ifdef MOZ_BACKGROUNDTASKS
@@ -5688,10 +5687,6 @@ mozilla::BinPathType XRE_GetChildProcBinPathType(
       return BinPathType::PluginContainer;
   }
 }
-
-
-
-extern "C" void GeckoHandleOOM(size_t size) { mozalloc_handle_oom(size); }
 
 
 extern "C" void install_rust_panic_hook();
