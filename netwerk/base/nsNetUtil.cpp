@@ -3319,7 +3319,7 @@ void CheckForBrokenChromeURL(nsILoadInfo* aLoadInfo, nsIURI* aURI) {
   nsAutoCString host;
   aURI->GetHost(host);
   
-  if (host.EqualsLiteral("mochitests")) {
+  if (host.EqualsLiteral("mochitests") || host.EqualsLiteral("reftest")) {
     return;
   }
 
@@ -3352,6 +3352,11 @@ void CheckForBrokenChromeURL(nsILoadInfo* aLoadInfo, nsIURI* aURI) {
   }
   
   if (StringEndsWith(filePath, "/SessionStore.jsm"_ns)) {
+    return;
+  }
+
+  
+  if (StringEndsWith(filePath, "/AttributionCode.jsm"_ns)) {
     return;
   }
 #endif
