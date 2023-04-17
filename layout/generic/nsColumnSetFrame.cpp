@@ -31,13 +31,13 @@ class nsDisplayColumnRule : public nsPaintedDisplayItem {
   }
   MOZ_COUNTED_DTOR_OVERRIDE(nsDisplayColumnRule)
 
-  
-
-
   nsRect GetBounds(nsDisplayListBuilder* aBuilder, bool* aSnap) const override {
     *aSnap = false;
-    return static_cast<nsColumnSetFrame*>(mFrame)->CalculateColumnRuleBounds(
-        ToReferenceFrame());
+    
+    
+    
+    
+    return mFrame->InkOverflowRect() + ToReferenceFrame();
   }
 
   bool CreateWebRenderCommands(
@@ -162,17 +162,6 @@ void nsColumnSetFrame::ForEachColumnRule(
     child = nextSibling;
     nextSibling = nextSibling->GetNextSibling();
   }
-}
-
-nsRect nsColumnSetFrame::CalculateColumnRuleBounds(
-    const nsPoint& aOffset) const {
-  nsRect combined;
-  ForEachColumnRule(
-      [&combined](const nsRect& aLineRect) {
-        combined = combined.Union(aLineRect);
-      },
-      aOffset);
-  return combined;
 }
 
 void nsColumnSetFrame::CreateBorderRenderers(
