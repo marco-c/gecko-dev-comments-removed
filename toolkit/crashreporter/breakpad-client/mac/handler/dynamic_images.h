@@ -136,6 +136,7 @@ class DynamicImage {
       vmaddr_(0),
       vmsize_(0),
       slide_(0),
+      crash_info_(),
       version_(0),
       file_path_(file_path),
       file_mod_date_(image_mod_date),
@@ -168,6 +169,20 @@ class DynamicImage {
 
   
   mach_vm_size_t GetVMSize() const {return vmsize_;}
+
+  
+  
+  
+  
+  
+  mach_vm_address_t GetCrashInfo() const {
+    return reinterpret_cast<mach_vm_address_t>(&crash_info_[0]);
+  }
+
+  
+  
+  
+  size_t GetCrashInfoSize() const {return crash_info_.size();}
 
   
   mach_port_t GetTask() {return task_;}
@@ -212,6 +227,7 @@ class DynamicImage {
   mach_vm_address_t       vmaddr_;
   mach_vm_size_t          vmsize_;
   ptrdiff_t               slide_;
+  vector<uint8_t>         crash_info_;
   uint32_t                version_;        
   string                  file_path_;     
   uintptr_t               file_mod_date_;  

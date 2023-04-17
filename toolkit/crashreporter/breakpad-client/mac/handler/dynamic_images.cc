@@ -152,8 +152,8 @@ static mach_vm_size_t GetMemoryRegionSize(task_port_t target_task,
 
 
 
-static string ReadTaskString(task_port_t target_task,
-                             const uint64_t address) {
+string ReadTaskString(task_port_t target_task,
+                      const uint64_t address) {
   
   
   
@@ -222,6 +222,7 @@ struct MachO32 {
   typedef segment_command mach_segment_command_type;
   typedef dyld_image_info32 dyld_image_info;
   typedef dyld_all_image_infos32 dyld_all_image_infos;
+  typedef section mach_section_type;
   typedef struct nlist nlist_type;
   static const uint32_t magic = MH_MAGIC;
   static const uint32_t segment_load_command = LC_SEGMENT;
@@ -232,6 +233,7 @@ struct MachO64 {
   typedef segment_command_64 mach_segment_command_type;
   typedef dyld_image_info64 dyld_image_info;
   typedef dyld_all_image_infos64 dyld_all_image_infos;
+  typedef section_64 mach_section_type;
   typedef struct nlist_64 nlist_type;
   static const uint32_t magic = MH_MAGIC_64;
   static const uint32_t segment_load_command = LC_SEGMENT_64;
@@ -242,6 +244,7 @@ bool FindTextSection(DynamicImage& image) {
   typedef typename MachBits::mach_header_type mach_header_type;
   typedef typename MachBits::mach_segment_command_type
       mach_segment_command_type;
+  typedef typename MachBits::mach_section_type mach_section_type;
   
   const mach_header_type* header =
       reinterpret_cast<const mach_header_type*>(&image.header_[0]);
@@ -258,9 +261,25 @@ bool FindTextSection(DynamicImage& image) {
   const struct load_command *cmd =
       reinterpret_cast<const struct load_command *>(header + 1);
 
+  bool retval = false;
+
+  uint32_t num_data_sections = 0;
+  const mach_section_type *data_sections = NULL;
   bool found_text_section = false;
   bool found_dylib_id_command = false;
   for (unsigned int i = 0; cmd && (i < header->ncmds); ++i) {
+    if (!data_sections) {
+      if (cmd->cmd == MachBits::segment_load_command) {
+        const mach_segment_command_type *seg =
+          reinterpret_cast<const mach_segment_command_type *>(cmd);
+
+        if (!strcmp(seg->segname, "__DATA")) {
+          num_data_sections = seg->nsects;
+          data_sections = reinterpret_cast<const mach_section_type *>(seg + 1);
+        }
+      }
+    }
+
     if (!found_text_section) {
       if (cmd->cmd == MachBits::segment_load_command) {
         const mach_segment_command_type *seg =
@@ -291,15 +310,33 @@ bool FindTextSection(DynamicImage& image) {
       }
     }
 
-    if (found_dylib_id_command && found_text_section) {
-      return true;
+    if (found_dylib_id_command && found_text_section && data_sections) {
+      break;
     }
 
     cmd = reinterpret_cast<const struct load_command *>
         (reinterpret_cast<const char *>(cmd) + cmd->cmdsize);
   }
 
-  return false;
+  if (found_dylib_id_command && found_text_section) {
+    retval = true;
+  }
+
+  
+  
+  if (is_in_shared_cache) {
+    for (unsigned int i = 0; i < num_data_sections; ++i) {
+      if (!strcmp(data_sections[i].sectname, "__crash_info")) {
+        ReadTaskMemory(image.task_,
+                       data_sections[i].addr + image.slide_,
+                       data_sections[i].size,
+                       image.crash_info_);
+        break;
+      }
+    }
+  }
+
+  return retval;
 }
 
 

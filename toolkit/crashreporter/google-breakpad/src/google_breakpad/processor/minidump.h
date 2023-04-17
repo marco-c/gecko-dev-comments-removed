@@ -1154,6 +1154,57 @@ class MinidumpCrashpadInfo : public MinidumpStream {
 
 
 
+
+
+
+typedef struct crash_info_record {
+  string module_path;
+  unsigned long version;
+  string message;
+  string signature_string;
+  string backtrace;
+  string message2;
+  unsigned long long thread;
+  unsigned int dialog_mode;
+  long long abort_cause; 
+  crash_info_record()
+      : version(0), thread(0), dialog_mode(0), abort_cause(0)
+    {}
+} crash_info_record_t;
+
+class MinidumpMacCrashInfo : public MinidumpStream {
+ public:
+  
+  
+  
+  string description() const { return description_; }
+  
+  
+  vector<crash_info_record_t> const records() {
+    return records_;
+  }
+
+  
+  void Print();
+
+ private:
+  friend class Minidump;
+
+  static const uint32_t kStreamType = MOZ_MACOS_CRASH_INFO_STREAM;
+
+  explicit MinidumpMacCrashInfo(Minidump* minidump_);
+
+  bool ReadCrashInfoRecord(MDLocationDescriptor location,
+                           uint32_t record_start_size);
+  bool Read(uint32_t expected_size);
+
+  string description_;
+  vector<crash_info_record_t> records_;
+};
+
+
+
+
 class Minidump {
  public:
   
@@ -1214,6 +1265,7 @@ class Minidump {
   virtual MinidumpBreakpadInfo* GetBreakpadInfo();
   virtual MinidumpMemoryInfoList* GetMemoryInfoList();
   MinidumpCrashpadInfo* GetCrashpadInfo();
+  MinidumpMacCrashInfo* GetMacCrashInfo();
 
   
   virtual MinidumpLinuxMapsList *GetLinuxMapsList();
