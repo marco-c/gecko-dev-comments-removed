@@ -220,10 +220,8 @@ class nsTArrayToBufferAdapter {
 
 
   [[nodiscard]] bool reserve(size_t size) {
-    mArray.SetCapacity(size);
     
-    
-    return true;
+    return mArray.SetCapacity(size, fallible);
   }
 
   
