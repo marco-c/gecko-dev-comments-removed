@@ -183,6 +183,7 @@ XPCOMUtils.defineLazyGetter(this, "sourceToBehaviorMap", () => {
 
 
 
+
 function stripAnyPrefix(str) {
   let match = REGEXP_STRIP_PREFIX.exec(str);
   if (!match) {
@@ -343,8 +344,6 @@ const MATCH_TYPE = {
   SUGGESTION: "suggestion",
   EXTENSION: "extension",
 };
-
-
 
 
 
@@ -689,7 +688,7 @@ Search.prototype = {
     let count = this._counts[MATCH_TYPE.GENERAL];
     if (count < this._maxResults) {
       this._matchBehavior = Ci.mozIPlacesAutoComplete.MATCH_ANYWHERE;
-      let queries = [this._searchQuery];
+      queries = [this._searchQuery];
       if (this.hasBehavior("openpage")) {
         queries.unshift(this._switchToTabQuery);
       }
@@ -793,6 +792,8 @@ Search.prototype = {
   },
 
   
+
+
 
 
 
@@ -1200,6 +1201,7 @@ Search.prototype = {
 
 
 
+
   get _suggestionPrefQuery() {
     let conditions = [];
     if (this._filterOnHost) {
@@ -1308,6 +1310,7 @@ Search.prototype = {
 
 
 
+
   get _searchQuery() {
     let params = {
       parent: PlacesUtils.tagsFolderId,
@@ -1329,6 +1332,7 @@ Search.prototype = {
   },
 
   
+
 
 
 
@@ -1484,6 +1488,7 @@ UnifiedComplete.prototype = {
   },
 
   
+
 
 
 
