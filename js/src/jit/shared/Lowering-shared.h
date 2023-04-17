@@ -151,6 +151,19 @@ class LIRGeneratorShared {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   inline LUse use(MDefinition* mir, LUse policy);
   inline LUse use(MDefinition* mir);
   inline LUse useAtStart(MDefinition* mir);
@@ -205,6 +218,16 @@ class LIRGeneratorShared {
   
   inline void fillBoxUses(LInstruction* lir, size_t n, MDefinition* mir);
 #endif
+
+  
+  
+  
+  
+  
+  
+  
+  
+  inline bool willHaveDifferentLIRNodes(MDefinition* mir1, MDefinition* mir2);
 
   
   inline LDefinition temp(LDefinition::Type type = LDefinition::GENERAL,
