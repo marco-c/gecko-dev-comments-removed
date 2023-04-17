@@ -565,6 +565,14 @@ class TypeContext : public AtomicRefCounted<TypeContext> {
 
   
 
+  uint32_t indexOf(const TypeDef& typeDef) const {
+    const TypeDef* elem = &typeDef;
+    MOZ_ASSERT(elem >= types_.begin() && elem < types_.end());
+    return elem - types_.begin();
+  }
+
+  
+
   bool isFuncType(uint32_t index) const { return types_[index].isFuncType(); }
   bool isFuncType(RefType t) const {
     return t.isTypeIndex() && isFuncType(t.typeIndex());
@@ -722,22 +730,27 @@ class TypeContext : public AtomicRefCounted<TypeContext> {
 using SharedTypeContext = RefPtr<const TypeContext>;
 using MutableTypeContext = RefPtr<TypeContext>;
 
+
+
 class TypeHandle {
  private:
+  SharedTypeContext context_;
   uint32_t index_;
 
  public:
-  explicit TypeHandle(uint32_t index) : index_(index) {}
+  TypeHandle(SharedTypeContext context, uint32_t index)
+      : context_(context), index_(index) {
+    MOZ_ASSERT(index_ < context_->length());
+  }
+  TypeHandle(SharedTypeContext context, const TypeDef& def)
+      : context_(context), index_(context->indexOf(def)) {}
 
   TypeHandle(const TypeHandle&) = default;
   TypeHandle& operator=(const TypeHandle&) = default;
 
-  TypeDef& get(TypeContext* tycx) const { return tycx->type(index_); }
-  const TypeDef& get(const TypeContext* tycx) const {
-    return tycx->type(index_);
-  }
-
+  const SharedTypeContext& context() const { return context_; }
   uint32_t index() const { return index_; }
+  const TypeDef& def() const { return context_->type(index_); }
 };
 
 
