@@ -412,10 +412,10 @@ const trackFactories = {
       ctx.fillStyle = `rgb(${contrast%255}, ${contrast*contrast%255}, ${contrast%255})`;
       const xpos = count % (width - 20);
       const ypos = count % (height - 20);
-      ctx.fillRect(xpos, ypos, xpos + 20, ypos + 20);
+      ctx.fillRect(xpos, ypos, 20, 20);
       const xpos2 = (count + width / 2) % (width - 20);
       const ypos2 = (count + height / 2) % (height - 20);
-      ctx.fillRect(xpos2, ypos2, xpos2 + 20, ypos2 + 20);
+      ctx.fillRect(xpos2, ypos2, 20, 20);
       
       
       
