@@ -48,8 +48,6 @@ const { SUPPORTED_DATA } = SessionDataHelpers;
 
 
 
-
-
 const sessionDataByWatcherActor = new Map();
 
 
@@ -113,9 +111,7 @@ const WatcherRegistry = {
       sessionData = {
         
         
-        
-        
-        browserId: watcher.context.browserId,
+        context: watcher.context,
         
         connectionPrefix: watcher.conn.prefix,
         
