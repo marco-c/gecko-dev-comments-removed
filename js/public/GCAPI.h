@@ -30,16 +30,32 @@ struct Statistics;
 }  
 }  
 
+namespace JS {
 
 
-
-typedef enum JSGCInvocationKind {
+enum class GCOptions : uint32_t {
   
-  GC_NORMAL = 0,
+  
+  
+  
+  Normal = 0,
 
   
-  GC_SHRINK = 1
-} JSGCInvocationKind;
+  
+  
+  
+  
+  Shrink = 1,
+};
+
+}  
+
+
+
+
+using JSGCInvocationKind = JS::GCOptions;
+static constexpr JSGCInvocationKind GC_NORMAL = JS::GCOptions::Normal;
+static constexpr JSGCInvocationKind GC_SHRINK = JS::GCOptions::Shrink;
 
 typedef enum JSGCParamKey {
   
@@ -635,14 +651,7 @@ extern JS_PUBLIC_API void SkipZoneForGC(JSContext* cx, Zone* zone);
 
 
 
-
-
-
-
-
-
-extern JS_PUBLIC_API void NonIncrementalGC(JSContext* cx,
-                                           JSGCInvocationKind gckind,
+extern JS_PUBLIC_API void NonIncrementalGC(JSContext* cx, JS::GCOptions options,
                                            GCReason reason);
 
 
@@ -674,7 +683,7 @@ extern JS_PUBLIC_API void NonIncrementalGC(JSContext* cx,
 
 
 extern JS_PUBLIC_API void StartIncrementalGC(JSContext* cx,
-                                             JSGCInvocationKind gckind,
+                                             JS::GCOptions options,
                                              GCReason reason,
                                              int64_t millis = 0);
 
@@ -778,14 +787,14 @@ enum GCProgress {
 struct JS_PUBLIC_API GCDescription {
   bool isZone_;
   bool isComplete_;
-  JSGCInvocationKind invocationKind_;
+  JS::GCOptions options_;
   GCReason reason_;
 
-  GCDescription(bool isZone, bool isComplete, JSGCInvocationKind kind,
+  GCDescription(bool isZone, bool isComplete, JS::GCOptions options,
                 GCReason reason)
       : isZone_(isZone),
         isComplete_(isComplete),
-        invocationKind_(kind),
+        options_(options),
         reason_(reason) {}
 
   char16_t* formatSliceMessage(JSContext* cx) const;

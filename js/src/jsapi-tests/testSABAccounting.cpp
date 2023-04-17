@@ -8,7 +8,7 @@
 BEGIN_TEST(testSABAccounting) {
   
   JS::PrepareForFullGC(cx);
-  NonIncrementalGC(cx, GC_SHRINK, JS::GCReason::API);
+  NonIncrementalGC(cx, JS::GCOptions::Shrink, JS::GCReason::API);
 
   
   
@@ -24,7 +24,7 @@ BEGIN_TEST(testSABAccounting) {
   obj = nullptr;
   obj2 = nullptr;
   JS::PrepareForFullGC(cx);
-  NonIncrementalGC(cx, GC_SHRINK, JS::GCReason::API);
+  NonIncrementalGC(cx, JS::GCOptions::Shrink, JS::GCReason::API);
 
   
   CHECK(!JS::ContainsSharedArrayBuffer(cx));

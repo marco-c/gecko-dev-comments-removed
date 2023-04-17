@@ -300,7 +300,7 @@ class Nursery {
   static const size_t MaxNurseryBufferSize = 1024;
 
   
-  void collect(JSGCInvocationKind kind, JS::GCReason reason);
+  void collect(JS::GCOptions options, JS::GCReason reason);
 
   
   
@@ -735,8 +735,8 @@ class Nursery {
   void sweepMapAndSetObjects();
 
   
-  void maybeResizeNursery(JSGCInvocationKind kind, JS::GCReason reason);
-  size_t targetSize(JSGCInvocationKind kind, JS::GCReason reason);
+  void maybeResizeNursery(JS::GCOptions options, JS::GCReason reason);
+  size_t targetSize(JS::GCOptions options, JS::GCReason reason);
   void clearRecentGrowthData();
   void growAllocableSpace(size_t newCapacity);
   void shrinkAllocableSpace(size_t newCapacity);

@@ -829,7 +829,7 @@ class HeapThreshold {
 
 class GCHeapThreshold : public HeapThreshold {
  public:
-  void updateStartThreshold(size_t lastBytes, JSGCInvocationKind gckind,
+  void updateStartThreshold(size_t lastBytes, JS::GCOptions options,
                             const GCSchedulingTunables& tunables,
                             const GCSchedulingState& state, bool isAtomsZone,
                             const AutoLockGC& lock);
@@ -839,7 +839,7 @@ class GCHeapThreshold : public HeapThreshold {
       size_t lastBytes, const GCSchedulingTunables& tunables,
       const GCSchedulingState& state);
   static size_t computeZoneTriggerBytes(double growthFactor, size_t lastBytes,
-                                        JSGCInvocationKind gckind,
+                                        JS::GCOptions options,
                                         const GCSchedulingTunables& tunables,
                                         const AutoLockGC& lock);
 };
