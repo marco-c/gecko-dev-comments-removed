@@ -83,6 +83,7 @@
 #include "mozilla/gfx/DeviceManagerDx.h"
 #include "mozilla/gfx/DisplayConfigWindows.h"
 #include "mozilla/layers/DeviceAttachmentsD3D11.h"
+#include "mozilla/WindowsProcessMitigations.h"
 #include "D3D11Checks.h"
 
 using namespace mozilla;
@@ -288,13 +289,17 @@ gfxWindowsPlatform::gfxWindowsPlatform()
     : mRenderMode(RENDER_GDI),
       mDwmCompositionStatus(DwmCompositionStatus::Unknown) {
   
+  
+  if (!IsWin32kLockedDown()) {
+    
 
 
-  CoInitialize(nullptr);
+    CoInitialize(nullptr);
 
-  RegisterStrongMemoryReporter(new GfxD2DVramReporter());
-  RegisterStrongMemoryReporter(new GPUAdapterReporter());
-  RegisterStrongMemoryReporter(new D3DSharedTexturesReporter());
+    RegisterStrongMemoryReporter(new GfxD2DVramReporter());
+    RegisterStrongMemoryReporter(new GPUAdapterReporter());
+    RegisterStrongMemoryReporter(new D3DSharedTexturesReporter());
+  }
 }
 
 gfxWindowsPlatform::~gfxWindowsPlatform() {
