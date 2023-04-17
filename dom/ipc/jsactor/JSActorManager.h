@@ -37,6 +37,12 @@ class JSActorManager : public nsISupports {
   
 
 
+
+  already_AddRefed<JSActor> GetExistingActor(const nsACString& aName);
+
+  
+
+
   void ReceiveRawMessage(const JSActorMessageMeta& aMetadata,
                          Maybe<ipc::StructuredCloneData>&& aData,
                          Maybe<ipc::StructuredCloneData>&& aStack);

@@ -41,6 +41,7 @@ interface nsIDOMProcessParent: nsISupports {
 
 
   [implicit_jscontext] JSProcessActorParent getActor(in ACString name);
+  JSProcessActorParent getExistingActor(in ACString name);
 
   
   [infallible] readonly attribute boolean canSend;
