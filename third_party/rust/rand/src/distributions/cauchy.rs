@@ -11,19 +11,19 @@
 #![allow(deprecated)]
 #![allow(clippy::all)]
 
-use crate::Rng;
 use crate::distributions::Distribution;
+use crate::Rng;
 use std::f64::consts::PI;
 
 
 
 
 
-#[deprecated(since="0.7.0", note="moved to rand_distr crate")]
+#[deprecated(since = "0.7.0", note = "moved to rand_distr crate")]
 #[derive(Clone, Copy, Debug)]
 pub struct Cauchy {
     median: f64,
-    scale: f64
+    scale: f64,
 }
 
 impl Cauchy {
@@ -32,10 +32,7 @@ impl Cauchy {
     
     pub fn new(median: f64, scale: f64) -> Cauchy {
         assert!(scale > 0.0, "Cauchy::new called with scale factor <= 0");
-        Cauchy {
-            median,
-            scale
-        }
+        Cauchy { median, scale }
     }
 }
 
@@ -54,8 +51,8 @@ impl Distribution<f64> for Cauchy {
 
 #[cfg(test)]
 mod test {
-    use crate::distributions::Distribution;
     use super::Cauchy;
+    use crate::distributions::Distribution;
 
     fn median(mut numbers: &mut [f64]) -> f64 {
         sort(&mut numbers);
@@ -68,7 +65,6 @@ mod test {
     }
 
     #[test]
-    #[cfg(not(miri))] 
     fn test_cauchy_averages() {
         
         

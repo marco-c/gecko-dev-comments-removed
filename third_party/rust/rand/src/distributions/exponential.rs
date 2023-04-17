@@ -10,9 +10,9 @@
 
 #![allow(deprecated)]
 
-use crate::{Rng};
-use crate::distributions::{ziggurat_tables, Distribution};
 use crate::distributions::utils::ziggurat;
+use crate::distributions::{ziggurat_tables, Distribution};
+use crate::Rng;
 
 
 
@@ -28,7 +28,7 @@ use crate::distributions::utils::ziggurat;
 
 
 
-#[deprecated(since="0.7.0", note="moved to rand_distr crate")]
+#[deprecated(since = "0.7.0", note = "moved to rand_distr crate")]
 #[derive(Clone, Copy, Debug)]
 pub struct Exp1;
 
@@ -45,10 +45,14 @@ impl Distribution<f64> for Exp1 {
             ziggurat_tables::ZIG_EXP_R - rng.gen::<f64>().ln()
         }
 
-        ziggurat(rng, false,
-                 &ziggurat_tables::ZIG_EXP_X,
-                 &ziggurat_tables::ZIG_EXP_F,
-                 pdf, zero_case)
+        ziggurat(
+            rng,
+            false,
+            &ziggurat_tables::ZIG_EXP_X,
+            &ziggurat_tables::ZIG_EXP_F,
+            pdf,
+            zero_case,
+        )
     }
 }
 
@@ -58,11 +62,11 @@ impl Distribution<f64> for Exp1 {
 
 
 
-#[deprecated(since="0.7.0", note="moved to rand_distr crate")]
+#[deprecated(since = "0.7.0", note = "moved to rand_distr crate")]
 #[derive(Clone, Copy, Debug)]
 pub struct Exp {
     
-    lambda_inverse: f64
+    lambda_inverse: f64,
 }
 
 impl Exp {
@@ -71,7 +75,9 @@ impl Exp {
     #[inline]
     pub fn new(lambda: f64) -> Exp {
         assert!(lambda > 0.0, "Exp::new called with `lambda` <= 0");
-        Exp { lambda_inverse: 1.0 / lambda }
+        Exp {
+            lambda_inverse: 1.0 / lambda,
+        }
     }
 }
 
@@ -84,8 +90,8 @@ impl Distribution<f64> for Exp {
 
 #[cfg(test)]
 mod test {
-    use crate::distributions::Distribution;
     use super::Exp;
+    use crate::distributions::Distribution;
 
     #[test]
     fn test_exp() {
