@@ -9,7 +9,7 @@ use crate::clip::{ClipItemKind, ClipStore, ClipNode, rounded_rectangle_contains_
 use crate::clip::{polygon_contains_point};
 use crate::prim_store::PolygonKey;
 use crate::spatial_tree::{SpatialNodeIndex, SpatialTree};
-use crate::internal_types::{FastHashMap, LayoutPrimitiveInfo};
+use crate::internal_types::{FastHashMap, FastHashSet, LayoutPrimitiveInfo};
 use std::ops;
 use std::sync::{Arc, Mutex};
 use crate::util::{LayoutToWorldFastTransform, VecHelper};
@@ -175,6 +175,11 @@ pub struct HitTestingScene {
     
     #[ignore_malloc_size_of = "simple"]
     cached_clip_id: Option<(ClipId, ops::Range<ClipNodeIndex>)>,
+
+    
+    
+    #[ignore_malloc_size_of = "ClipId"]
+    seen_clips: FastHashSet<ClipId>,
 }
 
 impl HitTestingScene {
@@ -186,6 +191,7 @@ impl HitTestingScene {
             items: Vec::with_capacity(stats.items_count),
             clip_id_stack: Vec::with_capacity(8),
             cached_clip_id: None,
+            seen_clips: FastHashSet::default(),
         }
     }
 
@@ -214,11 +220,15 @@ impl HitTestingScene {
                 let start = ClipNodeIndex(self.clip_nodes.len() as u32);
 
                 
+                self.seen_clips.clear();
+
+                
                 for clip_id in &self.clip_id_stack {
                     add_clips(
                         *clip_id,
                         clip_store,
                         &mut self.clip_nodes,
+                        &mut self.seen_clips,
                     );
                 }
 
@@ -227,6 +237,7 @@ impl HitTestingScene {
                     clip_id,
                     clip_store,
                     &mut self.clip_nodes,
+                    &mut self.seen_clips,
                 );
 
                 let end = ClipNodeIndex(self.clip_nodes.len() as u32);
@@ -485,8 +496,15 @@ fn add_clips(
     clip_id: ClipId,
     clip_store: &ClipStore,
     clip_nodes: &mut Vec<HitTestClipNode>,
+    seen_clips: &mut FastHashSet<ClipId>,
 ) {
     let template = &clip_store.templates[&clip_id];
+
+    
+    if seen_clips.contains(&clip_id) {
+        return;
+    }
+    seen_clips.insert(clip_id);
 
     for clip in &template.clips {
         clip_nodes.alloc().init(
@@ -503,6 +521,7 @@ fn add_clips(
             template.parent,
             clip_store,
             clip_nodes,
+            seen_clips,
         );
     }
 }
