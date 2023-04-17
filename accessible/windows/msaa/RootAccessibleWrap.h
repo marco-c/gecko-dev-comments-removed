@@ -6,8 +6,7 @@
 #ifndef mozilla_a11y_RootAccessibleWrap_h__
 #define mozilla_a11y_RootAccessibleWrap_h__
 
-#include "mozilla/mscom/Aggregation.h"
-#include "RootAccessible.h"
+#include "MsaaRootAccessible.h"
 
 namespace mozilla {
 
@@ -15,44 +14,13 @@ class PresShell;
 
 namespace a11y {
 
-class RootAccessibleWrap : public RootAccessible {
+class RootAccessibleWrap : public MsaaRootAccessible {
  public:
   RootAccessibleWrap(dom::Document* aDocument, PresShell* aPresShell);
   virtual ~RootAccessibleWrap();
 
   
   virtual void DocumentActivated(DocAccessible* aDocument);
-
-  
-
-
-
-
-
-
-
-
-  already_AddRefed<IUnknown> Aggregate(IUnknown* aOuter);
-
-  
-
-
-
-  already_AddRefed<IUnknown> GetInternalUnknown();
-
-  virtual  HRESULT STDMETHODCALLTYPE accNavigate(
-       long navDir,
-       VARIANT varStart,
-       VARIANT __RPC_FAR* pvarEndUpAt) override;
-
-  virtual  HRESULT STDMETHODCALLTYPE get_accFocus(
-       VARIANT __RPC_FAR* pvarChild) override;
-
- private:
-  
-  
-  DECLARE_AGGREGATABLE(RootAccessibleWrap);
-  IUnknown* mOuter;
 };
 
 }  

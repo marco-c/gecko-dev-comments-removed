@@ -7,10 +7,8 @@
 
 #include "Compatibility.h"
 #include "mozilla/PresShell.h"
-#include "mozilla/WindowsVersion.h"
 #include "nsCoreUtils.h"
 #include "nsWinUtils.h"
-#include "Relation.h"
 
 using namespace mozilla;
 using namespace mozilla::a11y;
@@ -20,55 +18,9 @@ using namespace mozilla::a11y;
 
 RootAccessibleWrap::RootAccessibleWrap(dom::Document* aDocument,
                                        PresShell* aPresShell)
-    : RootAccessible(aDocument, aPresShell), mOuter(&mInternalUnknown) {}
+    : MsaaRootAccessible(aDocument, aPresShell) {}
 
 RootAccessibleWrap::~RootAccessibleWrap() {}
-
-
-
-HRESULT
-RootAccessibleWrap::InternalQueryInterface(REFIID aIid, void** aOutInterface) {
-  if (!aOutInterface) {
-    return E_INVALIDARG;
-  }
-
-  
-  
-  if (aIid == IID_IUnknown) {
-    RefPtr<IUnknown> punk(&mInternalUnknown);
-    punk.forget(aOutInterface);
-    return S_OK;
-  }
-
-  
-  
-  return DocAccessibleWrap::QueryInterface(aIid, aOutInterface);
-}
-
-ULONG
-RootAccessibleWrap::InternalAddRef() { return DocAccessible::AddRef(); }
-
-ULONG
-RootAccessibleWrap::InternalRelease() { return DocAccessible::Release(); }
-
-already_AddRefed<IUnknown> RootAccessibleWrap::Aggregate(IUnknown* aOuter) {
-  MOZ_ASSERT(mOuter &&
-             (mOuter == &mInternalUnknown || mOuter == aOuter || !aOuter));
-  if (!aOuter) {
-    
-    
-    mOuter = &mInternalUnknown;
-    return nullptr;
-  }
-
-  mOuter = aOuter;
-  return GetInternalUnknown();
-}
-
-already_AddRefed<IUnknown> RootAccessibleWrap::GetInternalUnknown() {
-  RefPtr<IUnknown> result(&mInternalUnknown);
-  return result.forget();
-}
 
 
 
@@ -89,101 +41,4 @@ void RootAccessibleWrap::DocumentActivated(DocAccessible* aDocument) {
         nsWinUtils::ShowNativeWindow(childDocHWND);
     }
   }
-}
-
-STDMETHODIMP
-RootAccessibleWrap::accNavigate(
-     long navDir,
-     VARIANT varStart,
-     VARIANT __RPC_FAR* pvarEndUpAt) {
-  
-  
-  
-  
-  
-  if (navDir != NAVRELATION_EMBEDS || varStart.vt != VT_I4 ||
-      varStart.lVal != CHILDID_SELF) {
-    
-    
-    return DocAccessibleWrap::accNavigate(navDir, varStart, pvarEndUpAt);
-  }
-
-  if (!pvarEndUpAt) {
-    return E_INVALIDARG;
-  }
-  if (IsDefunct()) {
-    return CO_E_OBJNOTCONNECTED;
-  }
-
-  LocalAccessible* target = nullptr;
-  
-  RemoteAccessible* docProxy = GetPrimaryRemoteTopLevelContentDoc();
-  if (docProxy) {
-    target = WrapperFor(docProxy);
-  } else {
-    
-    
-    Relation rel = RelationByType(RelationType::EMBEDS);
-    target = rel.Next();
-  }
-
-  if (!target) {
-    return E_FAIL;
-  }
-
-  VariantInit(pvarEndUpAt);
-  pvarEndUpAt->pdispVal = NativeAccessible(target);
-  pvarEndUpAt->vt = VT_DISPATCH;
-  return S_OK;
-}
-
-STDMETHODIMP
-RootAccessibleWrap::get_accFocus(
-     VARIANT __RPC_FAR* pvarChild) {
-  HRESULT hr = DocAccessibleWrap::get_accFocus(pvarChild);
-  if (FAILED(hr) || pvarChild->vt != VT_EMPTY || !IsWin8OrLater()) {
-    
-    
-    
-    
-    return hr;
-  }
-
-  
-  
-  
-  
-  RemoteAccessible* docProxy = GetPrimaryRemoteTopLevelContentDoc();
-  if (!docProxy) {
-    return hr;
-  }
-  LocalAccessible* docAcc = WrapperFor(docProxy);
-  if (!docAcc) {
-    return E_FAIL;
-  }
-  RefPtr<IDispatch> docDisp = NativeAccessible(docAcc);
-  if (!docDisp) {
-    return E_FAIL;
-  }
-  RefPtr<IAccessible> docIa;
-  hr = docDisp->QueryInterface(IID_IAccessible, (void**)getter_AddRefs(docIa));
-  MOZ_ASSERT(SUCCEEDED(hr));
-  MOZ_ASSERT(docIa);
-
-  
-  
-  hr = docIa->get_accFocus(pvarChild);
-  if (FAILED(hr)) {
-    return hr;
-  }
-
-  if (pvarChild->vt == VT_I4 && pvarChild->lVal == CHILDID_SELF) {
-    
-    
-    
-    pvarChild->vt = VT_DISPATCH;
-    docDisp.forget(&pvarChild->pdispVal);
-  }
-
-  return S_OK;
 }
