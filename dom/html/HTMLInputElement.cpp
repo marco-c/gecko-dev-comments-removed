@@ -2966,6 +2966,8 @@ void HTMLInputElement::SetCheckedInternal(bool aChecked, bool aNotify) {
 void HTMLInputElement::Blur(ErrorResult& aError) {
   if (CreatesDateTimeWidget()) {
     if (Element* dateTimeBoxElement = GetDateTimeBoxElement()) {
+      
+      
       AsyncEventDispatcher* dispatcher = new AsyncEventDispatcher(
           dateTimeBoxElement, u"MozBlurInnerTextBox"_ns, CanBubble::eNo,
           ChromeOnlyDispatch::eNo);
@@ -2981,6 +2983,8 @@ void HTMLInputElement::Focus(const FocusOptions& aOptions,
                              CallerType aCallerType, ErrorResult& aError) {
   if (CreatesDateTimeWidget()) {
     if (Element* dateTimeBoxElement = GetDateTimeBoxElement()) {
+      
+      
       AsyncEventDispatcher* dispatcher = new AsyncEventDispatcher(
           dateTimeBoxElement, u"MozFocusInnerTextBox"_ns, CanBubble::eNo,
           ChromeOnlyDispatch::eNo);
