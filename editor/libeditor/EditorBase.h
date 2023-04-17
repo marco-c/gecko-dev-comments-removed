@@ -2486,6 +2486,13 @@ class EditorBase : public nsIEditor,
 
 
 
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  DeleteSelectionByDragAsAction(bool aDispatchInputEvent);
+
+  
+
+
+
 
 
 

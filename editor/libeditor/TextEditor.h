@@ -213,13 +213,6 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  DeleteSelectionByDragAsAction(bool aDispatchInputEvent);
-
-  
-
-
-
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
