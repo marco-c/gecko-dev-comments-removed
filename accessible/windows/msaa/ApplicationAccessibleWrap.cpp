@@ -34,3 +34,12 @@ ApplicationAccessibleWrap::NativeAttributes() {
 
   return attributes.forget();
 }
+
+void ApplicationAccessibleWrap::Shutdown() {
+  
+  
+  if (mMsaa) {
+    mMsaa->MsaaShutdown();
+  }
+  ApplicationAccessible::Shutdown();
+}
