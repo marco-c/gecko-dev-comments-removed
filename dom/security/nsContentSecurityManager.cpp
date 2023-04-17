@@ -884,7 +884,8 @@ void nsContentSecurityManager::MeasureUnexpectedPrivilegedLoads(
   
   
   if (contentPolicyType != ExtContentPolicyType::TYPE_SCRIPT &&
-      contentPolicyType != ExtContentPolicyType::TYPE_STYLESHEET) {
+      contentPolicyType != ExtContentPolicyType::TYPE_STYLESHEET &&
+      contentPolicyType != ExtContentPolicyType::TYPE_DOCUMENT) {
     return;
   }
 

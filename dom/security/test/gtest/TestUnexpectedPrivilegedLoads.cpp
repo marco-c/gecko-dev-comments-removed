@@ -92,9 +92,9 @@ TEST_F(TelemetryTestFixture, UnexpectedPrivilegedLoadsTelemetryTest) {
       {
        
        "moz-icon:blahblah"_ns,
-       nsContentPolicyType::TYPE_STYLESHEET,
+       nsContentPolicyType::TYPE_DOCUMENT,
        "web"_ns,
-       {"other"_ns, "TYPE_STYLESHEET"_ns, "web"_ns, "unknown"_ns, ""_ns}},
+       {"other"_ns, "TYPE_DOCUMENT"_ns, "web"_ns, "unknown"_ns, ""_ns}},
       {
        
        "data://blahblahblah"_ns,
