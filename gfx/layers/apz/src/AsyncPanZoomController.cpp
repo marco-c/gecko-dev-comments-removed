@@ -4752,12 +4752,23 @@ CSSRect AsyncPanZoomController::GetVisibleRect(
   return visible;
 }
 
+static CSSRect GetPaintedRect(const FrameMetrics& aFrameMetrics) {
+  CSSRect displayPort = aFrameMetrics.GetDisplayPort();
+  if (displayPort.IsEmpty()) {
+    
+    
+    
+    return aFrameMetrics.GetVisualViewport();
+  }
+
+  return displayPort + aFrameMetrics.GetLayoutScrollOffset();
+}
+
 uint32_t AsyncPanZoomController::GetCheckerboardMagnitude(
     const ParentLayerRect& aClippedCompositionBounds) const {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
 
-  CSSRect painted = mLastContentPaintMetrics.GetDisplayPort() +
-                    mLastContentPaintMetrics.GetLayoutScrollOffset();
+  CSSRect painted = GetPaintedRect(mLastContentPaintMetrics);
   painted.Inflate(CSSMargin::FromAppUnits(
       nsMargin(1, 1, 1, 1)));  
 
@@ -4929,8 +4940,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(
           CheckerboardEvent::Page, aLayerMetrics.GetScrollableRect());
       mCheckerboardEvent->UpdateRendertraceProperty(
           CheckerboardEvent::PaintedDisplayPort,
-          aLayerMetrics.GetDisplayPort() +
-              aLayerMetrics.GetLayoutScrollOffset(),
+          GetPaintedRect(aLayerMetrics),
           str);
       if (!aLayerMetrics.GetCriticalDisplayPort().IsEmpty()) {
         mCheckerboardEvent->UpdateRendertraceProperty(
