@@ -942,9 +942,7 @@ void nsCSPContext::logToConsole(const char* aName,
 
 
 
-
-void StripURIForReporting(nsIURI* aURI, nsIURI* aSelfURI,
-                          nsACString& outStrippedURI) {
+void StripURIForReporting(nsIURI* aURI, nsACString& outStrippedURI) {
   
   
   
@@ -980,7 +978,7 @@ nsresult nsCSPContext::GatherSecurityPolicyViolationEventData(
 
   
   nsAutoCString reportDocumentURI;
-  StripURIForReporting(mSelfURI, mSelfURI, reportDocumentURI);
+  StripURIForReporting(mSelfURI, reportDocumentURI);
   CopyUTF8toUTF16(reportDocumentURI, aViolationEventInit.mDocumentURI);
 
   
@@ -988,17 +986,9 @@ nsresult nsCSPContext::GatherSecurityPolicyViolationEventData(
 
   
   if (aBlockedURI) {
-    
-    
-    
-    nsCOMPtr<nsIURI> uriToReport;
-    if (aViolatedDirective.EqualsLiteral("frame-src")) {
-      uriToReport = aBlockedURI;
-    } else {
-      uriToReport = aOriginalURI ? aOriginalURI : aBlockedURI;
-    }
     nsAutoCString reportBlockedURI;
-    StripURIForReporting(uriToReport, mSelfURI, reportBlockedURI);
+    StripURIForReporting(aOriginalURI ? aOriginalURI : aBlockedURI,
+                         reportBlockedURI);
     CopyUTF8toUTF16(reportBlockedURI, aViolationEventInit.mBlockedURI);
   } else {
     CopyUTF8toUTF16(aBlockedString, aViolationEventInit.mBlockedURI);
@@ -1026,7 +1016,7 @@ nsresult nsCSPContext::GatherSecurityPolicyViolationEventData(
     NS_NewURI(getter_AddRefs(sourceURI), aSourceFile);
     if (sourceURI) {
       nsAutoCString spec;
-      sourceURI->GetSpecIgnoringRef(spec);
+      StripURIForReporting(sourceURI, spec);
       CopyUTF8toUTF16(spec, aSourceFile);
     }
     aViolationEventInit.mSourceFile = aSourceFile;
