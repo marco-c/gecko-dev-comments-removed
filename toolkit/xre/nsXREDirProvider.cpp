@@ -170,10 +170,11 @@ nsresult nsXREDirProvider::Initialize(
     NS_WARNING("Failed to resolve XUL App Dir.");
   }
 #endif
-  mGREDir->Clone(getter_AddRefs(mGREBinDir));
-#ifdef XP_MACOSX
-  mGREBinDir->SetNativeLeafName("MacOS"_ns);
-#endif
+  nsCOMPtr<nsIFile> binaryPath;
+  nsresult rv = XRE_GetBinaryPath(getter_AddRefs(binaryPath));
+  if (NS_FAILED(rv)) return rv;
+  rv = binaryPath->GetParent(getter_AddRefs(mGREBinDir));
+  if (NS_FAILED(rv)) return rv;
 
   if (!mProfileDir) {
     nsCOMPtr<nsIDirectoryServiceProvider> app(mAppProvider);
@@ -373,12 +374,7 @@ nsXREDirProvider::GetFile(const char* aProperty, bool* aPersistent,
     return mGREDir->Clone(aFile);
 #endif
   } else if (!strcmp(aProperty, NS_GRE_BIN_DIR)) {
-#if defined(MOZ_WIDGET_ANDROID)
-    
-    return NS_ERROR_FAILURE;
-#else
     return mGREBinDir->Clone(aFile);
-#endif
   } else if (!strcmp(aProperty, NS_OS_CURRENT_PROCESS_DIR) ||
              !strcmp(aProperty, NS_APP_INSTALL_CLEANUP_DIR)) {
     return GetAppDir()->Clone(aFile);
