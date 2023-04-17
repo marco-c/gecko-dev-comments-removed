@@ -26,6 +26,7 @@
 #include "nsStyleConsts.h"
 #include "nsWidgetInitData.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/widget/NativeMenu.h"
 #include "Units.h"
 
 
@@ -317,7 +318,8 @@ class nsXULMenuCommandEvent : public mozilla::Runnable {
 
 class nsXULPopupManager final : public nsIDOMEventListener,
                                 public nsIRollupListener,
-                                public nsIObserver {
+                                public nsIObserver,
+                                public mozilla::widget::NativeMenu::Observer {
  public:
   friend class nsXULPopupShowingEvent;
   friend class nsXULPopupHidingEvent;
@@ -340,6 +342,10 @@ class nsXULPopupManager final : public nsIDOMEventListener,
       nsTArray<nsIWidget*>* aWidgetChain) override;
   virtual void NotifyGeometryChange() override {}
   virtual nsIWidget* GetRollupWidget() override;
+
+  
+  void OnNativeMenuOpened() override {}
+  void OnNativeMenuClosed() override;
 
   static nsXULPopupManager* sInstance;
 
@@ -458,6 +464,18 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   void ShowPopupAtScreenRect(nsIContent* aPopup, const nsAString& aPosition,
                              const nsIntRect& aRect, bool aIsContextMenu,
                              bool aAttributesOverride,
+                             mozilla::dom::Event* aTriggerEvent);
+
+  
+
+
+
+
+
+
+
+  bool ShowPopupAsNativeMenu(nsIContent* aPopup, int32_t aXPos, int32_t aYPos,
+                             bool aIsContextMenu,
                              mozilla::dom::Event* aTriggerEvent);
 
   void ShowTooltipAtPosition(nsIContent* aPopup, nsIContent* aTriggerContent,
@@ -819,6 +837,11 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   
   
   nsCOMPtr<nsIContent> mOpeningPopup;
+
+  
+  
+  
+  RefPtr<mozilla::widget::NativeMenu> mNativeMenu;
 };
 
 #endif
