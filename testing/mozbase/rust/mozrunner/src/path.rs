@@ -30,7 +30,7 @@ fn is_executable(_: &Path) -> bool {
 
 
 pub fn is_binary(path: &Path) -> bool {
-    path.exists() && path.is_file() && is_executable(&path)
+    path.exists() && path.is_file() && is_executable(path)
 }
 
 
