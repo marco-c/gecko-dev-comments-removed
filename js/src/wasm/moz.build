@@ -55,6 +55,13 @@ UNIFIED_SOURCES += [
 ]
 
 
+GeneratedFile(
+    "WasmIntrinsicGenerated.h",
+    script="GenerateIntrinsics.py",
+    inputs=["WasmIntrinsic.yaml"],
+)
+
+
 if CONFIG["OS_ARCH"] != "WASI":
     UNIFIED_SOURCES += ["WasmSignalHandlers.cpp"]
 

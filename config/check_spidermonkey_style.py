@@ -123,6 +123,7 @@ included_inclnames_to_ignore = set(
         "unicode/utypes.h",  
         "unicode/uversion.h",  
         "vtune/VTuneWrapper.h",  
+        "wasm/WasmIntrinsicGenerated.h",  
         "zydis/ZydisAPI.h",  
     ]
 )

@@ -21,6 +21,8 @@
 
 #include <stdint.h>
 
+#include "wasm/WasmIntrinsicGenerated.h"
+
 namespace js {
 namespace wasm {
 
@@ -939,17 +941,16 @@ enum class ThreadOp {
 };
 
 enum class IntrinsicOp {
-  
-  
-  
-  
+
+
+
+
+#define DECL_INTRINSIC_OP(op, export, sa_name, abitype, entry, idx) \
+  op = idx,  // NOLINT
+  FOR_EACH_INTRINSIC(DECL_INTRINSIC_OP)
+#undef DECL_INTRINSIC_OP
 
   
-  
-  
-  
-  I8VecMul = 0x0,
-
   Limit
 };
 
