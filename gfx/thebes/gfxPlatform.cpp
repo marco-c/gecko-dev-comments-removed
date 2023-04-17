@@ -1986,6 +1986,12 @@ void gfxPlatform::InitBackendPrefs(BackendPrefsData&& aPrefsData) {
     mSoftwareBackend = BackendType::SKIA;
   }
 
+  
+  
+  if (mFallbackCanvasBackend == BackendType::NONE) {
+    mFallbackCanvasBackend = mSoftwareBackend;
+  }
+
   if (XRE_IsParentProcess()) {
     gfxVars::SetContentBackend(mContentBackend);
     gfxVars::SetSoftwareBackend(mSoftwareBackend);
