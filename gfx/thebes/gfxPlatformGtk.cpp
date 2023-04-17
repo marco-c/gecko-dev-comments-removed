@@ -240,7 +240,15 @@ void gfxPlatformGtk::InitWebRenderConfig() {
                            "FEATURE_FAILURE_NO_WAYLAND"_ns);
     }
 #ifdef MOZ_WAYLAND
-    else if (!widget::WaylandDisplayGet()->GetViewporter()) {
+    else if (gfxConfig::IsEnabled(Feature::WEBRENDER) &&
+             !gfxConfig::IsEnabled(Feature::DMABUF)) {
+      
+      
+      
+      feature.ForceDisable(FeatureStatus::Unavailable,
+                           "Hardware Webrender requires DMAbuf support",
+                           "FEATURE_FAILURE_NO_DMABUF"_ns);
+    } else if (!widget::WaylandDisplayGet()->GetViewporter()) {
       feature.ForceDisable(FeatureStatus::Unavailable,
                            "Requires wp_viewporter protocol support",
                            "FEATURE_FAILURE_REQUIRES_WPVIEWPORTER"_ns);
