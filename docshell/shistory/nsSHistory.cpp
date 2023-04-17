@@ -36,6 +36,7 @@
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/RemoteWebProgressRequest.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/MathAlgorithms.h"
@@ -1198,6 +1199,27 @@ static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
   nsCOMPtr<nsFrameLoaderOwner> frameLoaderOwner =
       do_QueryInterface(aBrowsingContext->GetEmbedderElement());
   if (frameLoaderOwner && aFrameLoader->GetMaybePendingBrowsingContext()) {
+    
+    
+    
+    
+    
+    
+    nsCOMPtr<nsIURI> nextURI = aEntry->GetURI();
+    nsCOMPtr<nsIURI> nextOriginalURI = aEntry->GetOriginalURI();
+    nsCOMPtr<nsIRequest> request = MakeAndAddRef<RemoteWebProgressRequest>(
+        nextURI, nextOriginalURI ? nextOriginalURI : nextURI,
+        ""_ns );
+    BrowsingContextWebProgress* webProgress =
+        aBrowsingContext->GetWebProgress();
+    webProgress->OnStateChange(webProgress, request,
+                               nsIWebProgressListener::STATE_START |
+                                   nsIWebProgressListener::STATE_IS_DOCUMENT |
+                                   nsIWebProgressListener::STATE_IS_REQUEST |
+                                   nsIWebProgressListener::STATE_IS_WINDOW |
+                                   nsIWebProgressListener::STATE_IS_NETWORK,
+                               NS_OK);
+
     RefPtr<CanonicalBrowsingContext> loadingBC =
         aFrameLoader->GetMaybePendingBrowsingContext()->Canonical();
     RefPtr<nsFrameLoader> currentFrameLoader =
