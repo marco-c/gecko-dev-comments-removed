@@ -7,6 +7,9 @@
 const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
 );
+const { ProcessType } = ChromeUtils.import(
+  "resource://gre/modules/ProcessType.jsm"
+);
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 let AboutThirdParty = null;
@@ -207,8 +210,9 @@ function copyDataToClipboard(aData) {
 function correctProcessTypeForFluent(type) {
   
   
-  const fluentType = type == "tab" ? "web" : type;
-  return "process-type-" + fluentType;
+  
+  const geckoType = type == "browser" ? "default" : type;
+  return ProcessType.fluentNameFromProcessTypeString(geckoType);
 }
 
 function visualizeData(aData) {
