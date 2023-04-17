@@ -65,9 +65,6 @@ class NativeInputTrack : public ProcessedMediaTrack {
   void DeviceChanged(MediaTrackGraphImpl* aGraph);
 
   
-  void InitDataHolderIfNeeded();
-
-  
   NativeInputTrack* AsNativeInputTrack() override { return this; }
 
  public:
@@ -75,30 +72,13 @@ class NativeInputTrack : public ProcessedMediaTrack {
   nsTArray<RefPtr<AudioDataListener>> mDataUsers;
 
  private:
-  class AudioDataBuffers {
-   public:
-    AudioDataBuffers() = default;
-    void SetOutputData(AudioDataValue* aBuffer, size_t aFrames,
-                       uint32_t aChannels, TrackRate aRate);
-    void SetInputData(AudioDataValue* aBuffer, size_t aFrames,
-                      uint32_t aChannels, TrackRate aRate);
-
-    enum Scope : unsigned char {
-      Input = 0x01,
-      Output = 0x02,
-    };
-    void Clear(Scope aScope);
-
-    typedef AudioDataListenerInterface::BufferInfo BufferInfo;
-    
-    Maybe<BufferInfo> mOutputData;
-    
-    Maybe<BufferInfo> mInputData;
-  };
-
+  typedef AudioDataListenerInterface::BufferInfo BufferInfo;
   
   
-  Maybe<AudioDataBuffers> mDataHolder;
+  Maybe<BufferInfo> mOutputData;
+  
+  
+  Maybe<BufferInfo> mInputData;
 
   
   uint32_t mInputChannels = 0;
