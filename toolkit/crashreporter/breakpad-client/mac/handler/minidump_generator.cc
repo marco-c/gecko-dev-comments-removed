@@ -1152,7 +1152,8 @@ MinidumpGenerator::WriteExceptionStream(MDRawDirectory *exception_stream) {
   exception_ptr->exception_record.exception_code = exception_type_;
 
   uint32_t exception_flags = 0;
-  if (exception_type_ == EXC_RESOURCE) {
+  if (exception_type_ == EXC_RESOURCE || exception_type_ == EXC_GUARD) {
+    
     
     
     uint64_t unsigned_exception_code = exception_code_;
