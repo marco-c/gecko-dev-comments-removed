@@ -940,11 +940,15 @@ class GlobalObject : public NativeObject {
     data().sourceURLsHolder.unbarrieredSet(nullptr);
   }
 
-  void setArrayShape(Shape* shape) {
-    MOZ_ASSERT(!data().arrayShape);
-    data().arrayShape.init(shape);
-  }
   Shape* maybeArrayShape() const { return data().arrayShape; }
+
+  static Shape* getArrayShapeWithDefaultProto(JSContext* cx) {
+    if (Shape* shape = cx->global()->data().arrayShape; MOZ_LIKELY(shape)) {
+      return shape;
+    }
+    return createArrayShapeWithDefaultProto(cx);
+  }
+  static Shape* createArrayShapeWithDefaultProto(JSContext* cx);
 
   
   static JSObject* getOrCreateRealmKeyObject(JSContext* cx,
