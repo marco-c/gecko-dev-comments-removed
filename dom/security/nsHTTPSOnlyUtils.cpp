@@ -45,8 +45,19 @@ bool nsHTTPSOnlyUtils::IsHttpsOnlyModeEnabled(bool aFromPrivateWindow) {
 }
 
 
-bool nsHTTPSOnlyUtils::IsHttpsFirstModeEnabled() {
-  return mozilla::StaticPrefs::dom_security_https_only_mode_https_first();
+bool nsHTTPSOnlyUtils::IsHttpsFirstModeEnabled(bool aFromPrivateWindow) {
+  
+  if (mozilla::StaticPrefs::dom_security_https_only_mode_https_first()) {
+    return true;
+  }
+
+  
+  
+  if (aFromPrivateWindow &&
+      mozilla::StaticPrefs::dom_security_https_only_mode_https_first_pbm()) {
+    return true;
+  }
+  return false;
 }
 
 
@@ -69,7 +80,8 @@ void nsHTTPSOnlyUtils::PotentiallyFireHttpRequestToShortenTimout(
 
   
   
-  if (!IsHttpsOnlyModeEnabled(isPrivateWin) && !IsHttpsFirstModeEnabled()) {
+  if (!IsHttpsOnlyModeEnabled(isPrivateWin) &&
+      !IsHttpsFirstModeEnabled(isPrivateWin)) {
     return;
   }
 
@@ -219,7 +231,8 @@ bool nsHTTPSOnlyUtils::IsUpgradeDowngradeEndlessLoop(nsIURI* aURI,
                                                      nsILoadInfo* aLoadInfo) {
   
   bool isPrivateWin = aLoadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
-  if (!IsHttpsOnlyModeEnabled(isPrivateWin) && !IsHttpsFirstModeEnabled()) {
+  if (!IsHttpsOnlyModeEnabled(isPrivateWin) &&
+      !IsHttpsFirstModeEnabled(isPrivateWin)) {
     return false;
   }
 
@@ -296,7 +309,8 @@ bool nsHTTPSOnlyUtils::IsUpgradeDowngradeEndlessLoop(nsIURI* aURI,
 bool nsHTTPSOnlyUtils::ShouldUpgradeHttpsFirstRequest(nsIURI* aURI,
                                                       nsILoadInfo* aLoadInfo) {
   
-  if (!IsHttpsFirstModeEnabled()) {
+  bool isPrivateWin = aLoadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
+  if (!IsHttpsFirstModeEnabled(isPrivateWin)) {
     return false;
   }
 

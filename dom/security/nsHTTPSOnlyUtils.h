@@ -24,7 +24,8 @@ class nsHTTPSOnlyUtils {
 
 
 
-  static bool IsHttpsFirstModeEnabled();
+
+  static bool IsHttpsFirstModeEnabled(bool aFromPrivateWindow);
 
   
 
