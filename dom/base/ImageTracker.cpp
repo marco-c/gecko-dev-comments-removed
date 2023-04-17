@@ -94,14 +94,10 @@ nsresult ImageTracker::Remove(imgIRequest* aImage, uint32_t aFlags) {
 }
 
 nsresult ImageTracker::SetLockingState(bool aLocked) {
-  if (XRE_IsContentProcess() &&
-      !Preferences::GetBool("image.mem.allow_locking_in_content_processes",
-                            true)) {
+  
+  if (mLocking == aLocked) {
     return NS_OK;
   }
-
-  
-  if (mLocking == aLocked) return NS_OK;
 
   
   for (imgIRequest* image : mImages.Keys()) {
