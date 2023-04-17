@@ -4,10 +4,14 @@
 
 
 #include "EditAggregateTransaction.h"
+
+#include "mozilla/Logging.h"
 #include "mozilla/ReverseIterator.h"  
 #include "nsAString.h"
-#include "nsCOMPtr.h"          
-#include "nsError.h"           
+#include "nsAtom.h"
+#include "nsCOMPtr.h"  
+#include "nsError.h"   
+#include "nsGkAtoms.h"
 #include "nsISupportsUtils.h"  
 #include "nsString.h"          
 
@@ -22,6 +26,12 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(EditAggregateTransaction)
 NS_INTERFACE_MAP_END_INHERITING(EditTransactionBase)
 
 NS_IMETHODIMP EditAggregateTransaction::DoTransaction() {
+  MOZ_LOG(GetLogModule(), LogLevel::Info,
+          ("%p EditAggregateTransaction::%s this={ mName=%s, mChildren=%zu } "
+           "Start==============================",
+           this, __FUNCTION__,
+           nsAtomCString(mName ? mName.get() : nsGkAtoms::_empty).get(),
+           mChildren.Length()));
   
   for (const OwningNonNull<EditTransactionBase>& childTransaction :
        CopyableAutoTArray<OwningNonNull<EditTransactionBase>, 10>(mChildren)) {
@@ -31,10 +41,21 @@ NS_IMETHODIMP EditAggregateTransaction::DoTransaction() {
       return rv;
     }
   }
+  MOZ_LOG(GetLogModule(), LogLevel::Info,
+          ("%p EditAggregateTransaction::%s this={ mName=%s } "
+           "End================================",
+           this, __FUNCTION__,
+           nsAtomCString(mName ? mName.get() : nsGkAtoms::_empty).get()));
   return NS_OK;
 }
 
 NS_IMETHODIMP EditAggregateTransaction::UndoTransaction() {
+  MOZ_LOG(GetLogModule(), LogLevel::Info,
+          ("%p EditAggregateTransaction::%s this={ mName=%s, mChildren=%zu } "
+           "Start==============================",
+           this, __FUNCTION__,
+           nsAtomCString(mName ? mName.get() : nsGkAtoms::_empty).get(),
+           mChildren.Length()));
   
   
   const CopyableAutoTArray<OwningNonNull<EditTransactionBase>, 10> children(
@@ -47,10 +68,21 @@ NS_IMETHODIMP EditAggregateTransaction::UndoTransaction() {
       return rv;
     }
   }
+  MOZ_LOG(GetLogModule(), LogLevel::Info,
+          ("%p EditAggregateTransaction::%s this={ mName=%s } "
+           "End================================",
+           this, __FUNCTION__,
+           nsAtomCString(mName ? mName.get() : nsGkAtoms::_empty).get()));
   return NS_OK;
 }
 
 NS_IMETHODIMP EditAggregateTransaction::RedoTransaction() {
+  MOZ_LOG(GetLogModule(), LogLevel::Info,
+          ("%p EditAggregateTransaction::%s this={ mName=%s, mChildren=%zu } "
+           "Start==============================",
+           this, __FUNCTION__,
+           nsAtomCString(mName ? mName.get() : nsGkAtoms::_empty).get(),
+           mChildren.Length()));
   
   const CopyableAutoTArray<OwningNonNull<EditTransactionBase>, 10> children(
       mChildren);
@@ -61,6 +93,11 @@ NS_IMETHODIMP EditAggregateTransaction::RedoTransaction() {
       return rv;
     }
   }
+  MOZ_LOG(GetLogModule(), LogLevel::Info,
+          ("%p EditAggregateTransaction::%s this={ mName=%s } "
+           "End================================",
+           this, __FUNCTION__,
+           nsAtomCString(mName ? mName.get() : nsGkAtoms::_empty).get()));
   return NS_OK;
 }
 
@@ -70,6 +107,11 @@ NS_IMETHODIMP EditAggregateTransaction::Merge(nsITransaction* aOtherTransaction,
     *aDidMerge = false;
   }
   if (mChildren.IsEmpty()) {
+    MOZ_LOG(GetLogModule(), LogLevel::Debug,
+            ("%p EditAggregateTransaction::%s this={ mName=%s } returned false "
+             "due to no children",
+             this, __FUNCTION__,
+             nsAtomCString(mName ? mName.get() : nsGkAtoms::_empty).get()));
     return NS_OK;
   }
   

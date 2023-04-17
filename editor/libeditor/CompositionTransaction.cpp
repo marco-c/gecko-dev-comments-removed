@@ -5,17 +5,19 @@
 
 #include "CompositionTransaction.h"
 
-#include "mozilla/EditorBase.h"       
+#include "mozilla/EditorBase.h"  
+#include "mozilla/Logging.h"
 #include "mozilla/SelectionState.h"   
 #include "mozilla/TextComposition.h"  
-#include "mozilla/dom/Selection.h"    
-#include "mozilla/dom/Text.h"         
-#include "nsAString.h"                
-#include "nsDebug.h"                  
-#include "nsError.h"                  
-#include "nsRange.h"                  
-#include "nsISelectionController.h"   
-#include "nsQueryObject.h"            
+#include "mozilla/ToString.h"
+#include "mozilla/dom/Selection.h"   
+#include "mozilla/dom/Text.h"        
+#include "nsAString.h"               
+#include "nsDebug.h"                 
+#include "nsError.h"                 
+#include "nsRange.h"                 
+#include "nsISelectionController.h"  
+#include "nsQueryObject.h"           
 
 namespace mozilla {
 
@@ -68,6 +70,21 @@ CompositionTransaction::CompositionTransaction(
   MOZ_ASSERT(mTextNode->TextLength() >= mOffset);
 }
 
+std::ostream& operator<<(std::ostream& aStream,
+                         const CompositionTransaction& aTransaction) {
+  aStream << "{ mTextNode=" << aTransaction.mTextNode.get();
+  if (aTransaction.mTextNode) {
+    aStream << " (" << *aTransaction.mTextNode << ")";
+  }
+  aStream << ", mOffset=" << aTransaction.mOffset
+          << ", mReplaceLength=" << aTransaction.mReplaceLength
+          << ", mRanges={ Length()=" << aTransaction.mRanges->Length() << " }"
+          << ", mStringToInsert=\""
+          << NS_ConvertUTF16toUTF8(aTransaction.mStringToInsert).get() << "\""
+          << ", mEditorBase=" << aTransaction.mEditorBase.get() << " }";
+  return aStream;
+}
+
 NS_IMPL_CYCLE_COLLECTION_INHERITED(CompositionTransaction, EditTransactionBase,
                                    mEditorBase, mTextNode)
 
@@ -78,6 +95,10 @@ NS_IMPL_ADDREF_INHERITED(CompositionTransaction, EditTransactionBase)
 NS_IMPL_RELEASE_INHERITED(CompositionTransaction, EditTransactionBase)
 
 NS_IMETHODIMP CompositionTransaction::DoTransaction() {
+  MOZ_LOG(GetLogModule(), LogLevel::Info,
+          ("%p CompositionTransaction::%s this=%s", this, __FUNCTION__,
+           ToString(*this).c_str()));
+
   if (NS_WARN_IF(!mEditorBase) || NS_WARN_IF(!mTextNode)) {
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -158,6 +179,10 @@ NS_IMETHODIMP CompositionTransaction::DoTransaction() {
 }
 
 NS_IMETHODIMP CompositionTransaction::UndoTransaction() {
+  MOZ_LOG(GetLogModule(), LogLevel::Info,
+          ("%p CompositionTransaction::%s this=%s", this, __FUNCTION__,
+           ToString(*this).c_str()));
+
   if (NS_WARN_IF(!mEditorBase) || NS_WARN_IF(!mTextNode)) {
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -184,8 +209,19 @@ NS_IMETHODIMP CompositionTransaction::UndoTransaction() {
   return rv;
 }
 
+NS_IMETHODIMP CompositionTransaction::RedoTransaction() {
+  MOZ_LOG(GetLogModule(), LogLevel::Info,
+          ("%p CompositionTransaction::%s this=%s", this, __FUNCTION__,
+           ToString(*this).c_str()));
+  return DoTransaction();
+}
+
 NS_IMETHODIMP CompositionTransaction::Merge(nsITransaction* aOtherTransaction,
                                             bool* aDidMerge) {
+  MOZ_LOG(GetLogModule(), LogLevel::Debug,
+          ("%p CompositionTransaction::%s(aOtherTransaction=%p) this=%s", this,
+           __FUNCTION__, aOtherTransaction, ToString(*this).c_str()));
+
   if (NS_WARN_IF(!aOtherTransaction) || NS_WARN_IF(!aDidMerge)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -193,12 +229,19 @@ NS_IMETHODIMP CompositionTransaction::Merge(nsITransaction* aOtherTransaction,
 
   
   if (mFixed) {
+    MOZ_LOG(GetLogModule(), LogLevel::Debug,
+            ("%p CompositionTransaction::%s returned false due to fixed", this,
+             __FUNCTION__));
     return NS_OK;
   }
 
   RefPtr<EditTransactionBase> otherTransactionBase =
       aOtherTransaction->GetAsEditTransactionBase();
   if (!otherTransactionBase) {
+    MOZ_LOG(GetLogModule(), LogLevel::Debug,
+            ("%p CompositionTransaction::%s returned false due to not edit "
+             "transaction",
+             this, __FUNCTION__));
     return NS_OK;
   }
 
@@ -213,6 +256,8 @@ NS_IMETHODIMP CompositionTransaction::Merge(nsITransaction* aOtherTransaction,
   mStringToInsert = otherCompositionTransaction->mStringToInsert;
   mRanges = otherCompositionTransaction->mRanges;
   *aDidMerge = true;
+  MOZ_LOG(GetLogModule(), LogLevel::Debug,
+          ("%p CompositionTransaction::%s returned true", this, __FUNCTION__));
   return NS_OK;
 }
 
