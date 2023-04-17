@@ -1,50 +1,11 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#![no_std]
-#![deny(missing_docs)]
-
-#[cfg(test)]
-#[macro_use]
-extern crate std;
-
-mod legacy;
-mod v0;
-
+use core::char;
 use core::fmt;
 
 
 pub struct Demangle<'a> {
-    style: Option<DemangleStyle<'a>>,
-    original: &'a str,
-    suffix: &'a str,
-}
-
-enum DemangleStyle<'a> {
-    Legacy(legacy::Demangle<'a>),
-    V0(v0::Demangle<'a>),
+    inner: &'a str,
+    
+    elements: usize,
 }
 
 
@@ -62,134 +23,170 @@ enum DemangleStyle<'a> {
 
 
 
-pub fn demangle(mut s: &str) -> Demangle {
-    
-    
-    
-    let llvm = ".llvm.";
-    if let Some(i) = s.find(llvm) {
-        let candidate = &s[i + llvm.len()..];
-        let all_hex = candidate.chars().all(|c| match c {
-            'A'..='F' | '0'..='9' | '@' => true,
-            _ => false,
-        });
 
-        if all_hex {
-            s = &s[..i];
-        }
-    }
 
-    let mut suffix = "";
-    let mut style = match legacy::demangle(s) {
-        Ok((d, s)) => {
-            suffix = s;
-            Some(DemangleStyle::Legacy(d))
-        }
-        Err(()) => match v0::demangle(s) {
-            Ok((d, s)) => {
-                suffix = s;
-                Some(DemangleStyle::V0(d))
-            }
-            Err(v0::Invalid) => None,
-        },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn demangle(s: &str) -> Result<(Demangle, &str), ()> {
+    
+    
+    
+    let inner = if s.starts_with("_ZN") {
+        &s[3..]
+    } else if s.starts_with("ZN") {
+        
+        
+        &s[2..]
+    } else if s.starts_with("__ZN") {
+        
+        &s[4..]
+    } else {
+        return Err(());
     };
 
     
-    
-    if !suffix.is_empty() {
-        if suffix.starts_with('.') && is_symbol_like(suffix) {
-            
-        } else {
-            
-            suffix = "";
-            style = None;
+    if inner.bytes().any(|c| c & 0x80 != 0) {
+        return Err(());
+    }
+
+    let mut elements = 0;
+    let mut chars = inner.chars();
+    let mut c = chars.next().ok_or(())?;
+    while c != 'E' {
+        
+        if !c.is_digit(10) {
+            return Err(());
         }
-    }
+        let mut len = 0usize;
+        while let Some(d) = c.to_digit(10) {
+            len = len
+                .checked_mul(10)
+                .and_then(|len| len.checked_add(d as usize))
+                .ok_or(())?;
+            c = chars.next().ok_or(())?;
+        }
 
-    Demangle {
-        style,
-        original: s,
-        suffix,
-    }
-}
-
-
-#[derive(Debug, Clone)]
-pub struct TryDemangleError {
-    _priv: (),
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub fn try_demangle(s: &str) -> Result<Demangle, TryDemangleError> {
-    let sym = demangle(s);
-    if sym.style.is_some() {
-        Ok(sym)
-    } else {
-        Err(TryDemangleError { _priv: () })
-    }
-}
-
-impl<'a> Demangle<'a> {
-    
-    pub fn as_str(&self) -> &'a str {
-        self.original
-    }
-}
-
-fn is_symbol_like(s: &str) -> bool {
-    s.chars().all(|c| {
         
         
-        is_ascii_alphanumeric(c) || is_ascii_punctuation(c)
-    })
+        for _ in 0..len {
+            c = chars.next().ok_or(())?;
+        }
+
+        elements += 1;
+    }
+
+    Ok((Demangle { inner, elements }, chars.as_str()))
 }
 
 
-fn is_ascii_alphanumeric(c: char) -> bool {
-    match c {
-        '\u{0041}'..='\u{005A}' | '\u{0061}'..='\u{007A}' | '\u{0030}'..='\u{0039}' => true,
-        _ => false,
-    }
-}
-
-
-fn is_ascii_punctuation(c: char) -> bool {
-    match c {
-        '\u{0021}'..='\u{002F}'
-        | '\u{003A}'..='\u{0040}'
-        | '\u{005B}'..='\u{0060}'
-        | '\u{007B}'..='\u{007E}' => true,
-        _ => false,
-    }
+fn is_rust_hash(s: &str) -> bool {
+    s.starts_with('h') && s[1..].chars().all(|c| c.is_digit(16))
 }
 
 impl<'a> fmt::Display for Demangle<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.style {
-            None => f.write_str(self.original)?,
-            Some(DemangleStyle::Legacy(ref d)) => fmt::Display::fmt(d, f)?,
-            Some(DemangleStyle::V0(ref d)) => fmt::Display::fmt(d, f)?,
-        }
-        f.write_str(self.suffix)
-    }
-}
+        
+        let mut inner = self.inner;
+        for element in 0..self.elements {
+            let mut rest = inner;
+            while rest.chars().next().unwrap().is_digit(10) {
+                rest = &rest[1..];
+            }
+            let i: usize = inner[..(inner.len() - rest.len())].parse().unwrap();
+            inner = &rest[i..];
+            rest = &rest[..i];
+            
+            
+            if f.alternate() && element + 1 == self.elements && is_rust_hash(&rest) {
+                break;
+            }
+            if element != 0 {
+                f.write_str("::")?;
+            }
+            if rest.starts_with("_$") {
+                rest = &rest[1..];
+            }
+            loop {
+                if rest.starts_with('.') {
+                    if let Some('.') = rest[1..].chars().next() {
+                        f.write_str("::")?;
+                        rest = &rest[2..];
+                    } else {
+                        f.write_str(".")?;
+                        rest = &rest[1..];
+                    }
+                } else if rest.starts_with('$') {
+                    let (escape, after_escape) = if let Some(end) = rest[1..].find('$') {
+                        (&rest[1..=end], &rest[end + 2..])
+                    } else {
+                        break;
+                    };
 
-impl<'a> fmt::Debug for Demangle<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Display::fmt(self, f)
+                    
+                    let unescaped = match escape {
+                        "SP" => "@",
+                        "BP" => "*",
+                        "RF" => "&",
+                        "LT" => "<",
+                        "GT" => ">",
+                        "LP" => "(",
+                        "RP" => ")",
+                        "C" => ",",
+
+                        _ => {
+                            if escape.starts_with('u') {
+                                let digits = &escape[1..];
+                                let all_lower_hex = digits.chars().all(|c| match c {
+                                    '0'..='9' | 'a'..='f' => true,
+                                    _ => false,
+                                });
+                                let c = u32::from_str_radix(digits, 16)
+                                    .ok()
+                                    .and_then(char::from_u32);
+                                if let (true, Some(c)) = (all_lower_hex, c) {
+                                    
+                                    if !c.is_control() {
+                                        c.fmt(f)?;
+                                        rest = after_escape;
+                                        continue;
+                                    }
+                                }
+                            }
+                            break;
+                        }
+                    };
+                    f.write_str(unescaped)?;
+                    rest = after_escape;
+                } else if let Some(i) = rest.find(|c| c == '$' || c == '.') {
+                    f.write_str(&rest[..i])?;
+                    rest = &rest[i..];
+                } else {
+                    break;
+                }
+            }
+            f.write_str(rest)?;
+        }
+
+        Ok(())
     }
 }
 
@@ -211,12 +208,12 @@ mod tests {
 
     macro_rules! t_nohash {
         ($a:expr, $b:expr) => {{
-            assert_eq!(format!("{:#}", super::demangle($a)), $b);
+            assert_eq!(format!("{:#}", ::demangle($a)), $b);
         }};
     }
 
     fn ok(sym: &str, expected: &str) -> bool {
-        match super::try_demangle(sym) {
+        match ::try_demangle(sym) {
             Ok(s) => {
                 if s.to_string() == expected {
                     true
@@ -233,12 +230,12 @@ mod tests {
     }
 
     fn ok_err(sym: &str) -> bool {
-        match super::try_demangle(sym) {
+        match ::try_demangle(sym) {
             Ok(_) => {
                 println!("succeeded in demangling");
                 false
             }
-            Err(_) => super::demangle(sym).to_string() == sym,
+            Err(_) => ::demangle(sym).to_string() == sym,
         }
     }
 
@@ -346,10 +343,10 @@ mod tests {
 
     #[test]
     fn dont_panic() {
-        super::demangle("_ZN2222222222222222222222EE").to_string();
-        super::demangle("_ZN5*70527e27.ll34csaғE").to_string();
-        super::demangle("_ZN5*70527a54.ll34_$b.1E").to_string();
-        super::demangle(
+        ::demangle("_ZN2222222222222222222222EE").to_string();
+        ::demangle("_ZN5*70527e27.ll34csaғE").to_string();
+        ::demangle("_ZN5*70527a54.ll34_$b.1E").to_string();
+        ::demangle(
             "\
              _ZN5~saäb4e\n\
              2734cOsbE\n\
@@ -378,21 +375,18 @@ mod tests {
     }
 
     #[test]
-    fn limit_recursion() {
-        use std::fmt::Write;
-        let mut s = String::new();
-        assert!(write!(s, "{}", super::demangle("_RNvB_1a")).is_err());
+    fn demangle_utf8_idents() {
+        t_nohash!(
+            "_ZN11utf8_idents157_$u10e1$$u10d0$$u10ed$$u10db$$u10d4$$u10da$$u10d0$$u10d3$_$u10d2$$u10d4$$u10db$$u10e0$$u10d8$$u10d4$$u10da$$u10d8$_$u10e1$$u10d0$$u10d3$$u10d8$$u10da$$u10d8$17h21634fd5714000aaE",
+            "utf8_idents::საჭმელად_გემრიელი_სადილი"
+        );
     }
 
     #[test]
-    fn limit_output() {
-        use std::fmt::Write;
-        let mut s = String::new();
-        assert!(write!(
-            s,
-            "{}",
-            super::demangle("RYFG_FGyyEvRYFF_EvRYFFEvERLB_B_B_ERLRjB_B_B_")
-        )
-        .is_err());
+    fn demangle_issue_60925() {
+        t_nohash!(
+            "_ZN11issue_609253foo37Foo$LT$issue_60925..llv$u6d$..Foo$GT$3foo17h059a991a004536adE",
+            "issue_60925::foo::Foo<issue_60925::llvm::Foo>::foo"
+        );
     }
 }
