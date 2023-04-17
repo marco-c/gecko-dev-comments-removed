@@ -3149,7 +3149,7 @@ BrowserGlue.prototype = {
   _migrateUI: function BG__migrateUI() {
     
     
-    const UI_VERSION = 108;
+    const UI_VERSION = 109;
     const BROWSER_DOCURL = AppConstants.BROWSER_CHROME_URL;
 
     if (!Services.prefs.prefHasUserValue("browser.migration.version")) {
@@ -3745,6 +3745,24 @@ BrowserGlue.prototype = {
         );
       }
       Services.prefs.clearUserPref(oldPrefName);
+    }
+
+    if (currentUIVersion < 109) {
+      
+      if (
+        Services.prefs.prefHasUserValue("signon.recipes.remoteRecipesEnabled")
+      ) {
+        
+        Services.prefs.setBoolPref(
+          "signon.recipes.remoteRecipes.enabled",
+          Services.prefs.getBoolPref(
+            "signon.recipes.remoteRecipesEnabled",
+            true
+          )
+        );
+        
+        Services.prefs.clearUserPref("signon.recipes.remoteRecipesEnabled");
+      }
     }
 
     
