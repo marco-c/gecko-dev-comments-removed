@@ -1,0 +1,20 @@
+
+
+
+
+'use strict';
+
+idl_test(
+  ['webtransport'],
+  ['streams'],
+  idl_array => {
+    idl_array.add_objects({
+      WebTransport: ['webTransport'],
+      
+      
+      
+      
+    });
+    self.webTransport = new WebTransport("quic-transport://example.com/");
+  }
+);
