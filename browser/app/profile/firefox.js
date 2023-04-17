@@ -46,7 +46,6 @@ pref("extensions.getAddons.discovery.api_url", "https://services.addons.mozilla.
 
 
 pref("extensions.blocklist.useMLBF", true);
-pref("extensions.blocklist.useMLBF.stashes", true);
 
 
 pref("extensions.recommendations.privacyPolicyUrl", "https://www.mozilla.org/privacy/firefox/?utm_source=firefox-browser&utm_medium=firefox-browser&utm_content=privacy-policy-link#addons");

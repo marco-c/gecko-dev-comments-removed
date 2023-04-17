@@ -4,7 +4,6 @@
 "use strict";
 
 Services.prefs.setBoolPref("extensions.blocklist.useMLBF", true);
-Services.prefs.setBoolPref("extensions.blocklist.useMLBF.stashes", true);
 
 createAppInfo("xpcshell@tests.mozilla.org", "XPCShell", "1", "1");
 
@@ -189,38 +188,6 @@ add_task(async function stash_time_order() {
   await checkBlockState("@b", "1", true);
   await checkBlockState("@b", "2", true);
 });
-
-
-add_task(async function mlbf_attachment_type_and_stash_is_correct() {
-  MLBF_LOAD_ATTEMPTS.length = 0;
-  const records = [
-    { stash_time: 0, stash: { blocked: ["@blocked:1"], unblocked: [] } },
-    { attachment_type: "bloomfilter-base", attachment: {}, generation_time: 0 },
-    { attachment_type: "bloomfilter-full", attachment: {}, generation_time: 1 },
-  ];
-  await AddonTestUtils.loadBlocklistRawData({ extensionsMLBF: records });
-  
-  await checkBlockState("@blocked", "1", true);
-  await toggleStashPref(false);
-  await checkBlockState("@blocked", "1", false);
-  await toggleStashPref(true);
-  await checkBlockState("@blocked", "1", true);
-
-  Assert.deepEqual(
-    MLBF_LOAD_ATTEMPTS.map(r => r?.attachment_type),
-    [
-      
-      "bloomfilter-base",
-      
-      "bloomfilter-full",
-      
-      "bloomfilter-base",
-    ],
-    "Expected attempts to load MLBF as part of update"
-  );
-});
-
-
 
 
 add_task(async function mlbf_bloomfilter_full_ignored() {

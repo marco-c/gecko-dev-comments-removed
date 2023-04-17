@@ -39,13 +39,3 @@ function getExtensionBlocklistMLBF() {
   );
   return ExtensionBlocklistMLBF;
 }
-
-async function toggleStashPref(val, callbackAfterPrefChange = () => {}) {
-  const ExtensionBlocklistMLBF = getExtensionBlocklistMLBF();
-  Assert.ok(!ExtensionBlocklistMLBF._updatePromise, "no pending update");
-  Services.prefs.setBoolPref("extensions.blocklist.useMLBF.stashes", val);
-  callbackAfterPrefChange();
-  
-  Assert.ok(ExtensionBlocklistMLBF._updatePromise, "update pending");
-  await Blocklist.ExtensionBlocklist._updatePromise;
-}
