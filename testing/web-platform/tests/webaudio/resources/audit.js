@@ -320,11 +320,16 @@ window.Audit = (function() {
           didThrowCorrectly = true;
           passDetail = '${actual} threw ' + error.name + errorMessage + '.';
         } else if (this._expected === DOMException &&
-                   (this._expectedDescription === undefined ||
-                    this._expectedDescription === error.name)) {
+                   this._expectedDescription !== undefined) {
           
-          didThrowCorrectly = true;
-          passDetail = '${actual} threw ${expected}' + errorMessage + '.';
+          if (this._expectedDescription === error.name) {
+            didThrowCorrectly = true;
+            passDetail = '${actual} threw ${expected}' + errorMessage + '.';
+          } else {
+            didThrowCorrectly = false;
+            failDetail =
+                '${actual} threw "' + error.name + '" instead of ${expected}.';
+          }
         } else if (this._expected == error.constructor) {
           
           didThrowCorrectly = true;
