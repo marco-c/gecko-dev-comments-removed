@@ -215,6 +215,10 @@ class MozlintParser(ArgumentParser):
         if args.formats:
             formats = []
             for fmt in args.formats:
+                if isinstance(fmt, tuple):  
+                    formats.append(fmt)
+                    continue
+
                 path = None
                 if ":" in fmt:
                     
