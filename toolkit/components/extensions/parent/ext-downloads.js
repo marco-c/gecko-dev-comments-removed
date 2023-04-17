@@ -916,12 +916,19 @@ this.downloads = class extends ExtensionAPI {
           return Downloads.getPreferredDownloadsDirectory()
             .then(downloadsDir => createTarget(downloadsDir))
             .then(target => {
+              let uri = Services.io.newURI(options.url);
+              let cookieJarSettings = Cc[
+                "@mozilla.org/cookieJarSettings;1"
+              ].createInstance(Ci.nsICookieJarSettings);
+              cookieJarSettings.initWithURI(uri, options.incognito);
+
               const source = {
                 url: options.url,
                 isPrivate: options.incognito,
                 
                 
                 loadingPrincipal: context.principal,
+                cookieJarSettings,
               };
 
               
