@@ -203,6 +203,12 @@ class nsMenuX final : public nsMenuParentX,
   
   void FlushMenuClosedRunnable();
 
+  
+  
+  void InsertPlaceholderIfNeeded();
+  
+  void RemovePlaceholderIfPresent();
+
   nsCOMPtr<nsIContent> mContent;  
 
   
