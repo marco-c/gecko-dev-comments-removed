@@ -1376,26 +1376,18 @@ nsresult mozInlineSpellChecker::SpellCheckerTimeSlice::Execute() {
   
   int32_t originalRangeCount = mSpellCheckSelection.RangeCount();
 
+  if (!ShouldSpellCheckRange(*mStatus->mRange)) {
+    
+    return NS_OK;
+  }
+
   
-  {
+  if (nsresult rv = mWordUtil.SetPositionAndEnd(
+          mStatus->mRange->GetStartContainer(), mStatus->mRange->StartOffset(),
+          mStatus->mRange->GetEndContainer(), mStatus->mRange->EndOffset());
+      NS_FAILED(rv)) {
     
-    
-    nsINode* beginNode = mStatus->mRange->GetStartContainer();
-    int32_t beginOffset = mStatus->mRange->StartOffset();
-    nsINode* endNode = mStatus->mRange->GetEndContainer();
-    int32_t endOffset = mStatus->mRange->EndOffset();
-
-    if (!ShouldSpellCheckRange(*mStatus->mRange)) {
-      
-      return NS_OK;
-    }
-
-    nsresult rv =
-        mWordUtil.SetPositionAndEnd(beginNode, beginOffset, endNode, endOffset);
-    if (NS_FAILED(rv)) {
-      
-      return NS_OK;
-    }
+    return NS_OK;
   }
 
   
