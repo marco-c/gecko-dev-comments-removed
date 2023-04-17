@@ -4577,14 +4577,6 @@ class HTMLEditor final : public TextEditor,
 
 
 
-  bool IsEmptyTextNode(nsINode& aNode) const {
-    return aNode.IsText() && IsEmptyNode(aNode);
-  }
-
-  
-
-
-
 
 
 
