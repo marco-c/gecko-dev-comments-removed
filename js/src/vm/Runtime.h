@@ -115,6 +115,9 @@ class Simulator;
 }  
 
 namespace frontend {
+struct CompilationGCOutput;
+struct CompilationInput;
+struct CompilationStencil;
 class WellKnownParserAtoms;
 }  
 
@@ -390,6 +393,25 @@ struct JSRuntime {
   
   
   js::UnprotectedData<js::SelfHostedLazyScript> selfHostedLazyScript;
+
+ private:
+  
+  
+  js::WriteOnceData<js::frontend::CompilationInput*> selfHostStencilInput_;
+  js::WriteOnceData<js::frontend::CompilationStencil*> selfHostStencil_;
+
+ public:
+  
+  
+  js::frontend::CompilationInput& selfHostStencilInput() {
+    MOZ_ASSERT(hasSelfHostStencil());
+    return *selfHostStencilInput_.ref();
+  }
+  js::frontend::CompilationStencil& selfHostStencil() {
+    MOZ_ASSERT(hasSelfHostStencil());
+    return *selfHostStencil_.ref();
+  }
+  bool hasSelfHostStencil() { return bool(selfHostStencil_.ref()); }
 
  private:
   
@@ -669,6 +691,7 @@ struct JSRuntime {
                        JS::SelfHostedWriter xdrWriter = nullptr);
   void finishSelfHosting();
   void traceSelfHostingGlobal(JSTracer* trc);
+  void traceSelfHostingStencil(JSTracer* trc);
   bool isSelfHostingGlobal(JSObject* global) {
     return global == selfHostingGlobal_;
   }
