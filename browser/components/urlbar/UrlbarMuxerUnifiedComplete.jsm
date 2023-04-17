@@ -57,7 +57,12 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     
     let state = {
       context,
+      
+      
       resultsByGroup: new Map(),
+      
+      
+      suggestedIndexResultsByGroup: new Map(),
       
       
       
@@ -85,42 +90,21 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
     
     for (let result of context.results) {
-      if (result.providerName == "UrlbarProviderQuickSuggest") {
-        
-        
-        
-        state.quickSuggestResult = result;
-        this._updateStatePreAdd(result, state);
-        continue;
-      }
-
-      
       
       let group = UrlbarUtils.getResultGroup(result);
-      let results = state.resultsByGroup.get(group);
+      let resultsByGroup =
+        result.hasSuggestedIndex && result.isSuggestedIndexRelativeToGroup
+          ? state.suggestedIndexResultsByGroup
+          : state.resultsByGroup;
+      let results = resultsByGroup.get(group);
       if (!results) {
         results = [];
-        state.resultsByGroup.set(group, results);
+        resultsByGroup.set(group, results);
       }
       results.push(result);
 
       
       this._updateStatePreAdd(result, state);
-    }
-
-    
-    
-    let suggestedIndexResults = state.resultsByGroup.get(
-      UrlbarUtils.RESULT_GROUP.SUGGESTED_INDEX
-    );
-    if (suggestedIndexResults) {
-      let span = suggestedIndexResults.reduce((sum, result) => {
-        if (this._canAddResult(result, state)) {
-          sum += UrlbarUtils.getSpanForResult(result);
-        }
-        return sum;
-      }, 0);
-      state.availableResultSpan = Math.max(state.availableResultSpan - span, 0);
     }
 
     
@@ -137,7 +121,17 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       state
     );
 
-    this._addSuggestedIndexResults(sortedResults, state);
+    
+    let suggestedIndexResults = state.resultsByGroup.get(
+      UrlbarUtils.RESULT_GROUP.SUGGESTED_INDEX
+    );
+    if (suggestedIndexResults) {
+      this._addSuggestedIndexResults(
+        suggestedIndexResults,
+        sortedResults,
+        state
+      );
+    }
 
     context.results = sortedResults;
   }
@@ -156,6 +150,7 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
   _copyState(state) {
     let copy = Object.assign({}, state, {
       resultsByGroup: new Map(),
+      suggestedIndexResultsByGroup: new Map(),
       strippedUrlToTopPrefixAndTitle: new Map(
         state.strippedUrlToTopPrefixAndTitle
       ),
@@ -163,9 +158,14 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       addedRemoteTabUrls: new Set(state.addedRemoteTabUrls),
       suggestions: new Set(state.suggestions),
     });
-    for (let [group, results] of state.resultsByGroup) {
-      copy.resultsByGroup.set(group, [...results]);
+
+    
+    for (let key of ["resultsByGroup", "suggestedIndexResultsByGroup"]) {
+      for (let [group, results] of state[key]) {
+        copy[key].set(group, [...results]);
+      }
     }
+
     return copy;
   }
 
@@ -210,8 +210,34 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
   _fillGroup(group, limits, state, flexDataArray = null) {
     
+    let suggestedIndexResults;
+    if ("group" in group) {
+      
+      suggestedIndexResults = state.suggestedIndexResultsByGroup.get(
+        group.group
+      );
+      if (suggestedIndexResults) {
+        
+        
+        let span = suggestedIndexResults.reduce((sum, result) => {
+          sum += UrlbarUtils.getSpanForResult(result);
+          return sum;
+        }, 0);
+        limits.availableSpan = Math.max(limits.availableSpan - span, 0);
+        limits.maxResultCount = Math.max(
+          limits.maxResultCount - suggestedIndexResults.length,
+          0
+        );
+      }
+    }
+
+    
     if (!group.children) {
-      return this._addResults(group.group, limits, state);
+      let [results, ...rest] = this._addResults(group.group, limits, state);
+      if (suggestedIndexResults) {
+        this._addSuggestedIndexResults(suggestedIndexResults, results, state);
+      }
+      return [results, ...rest];
     }
 
     
@@ -303,6 +329,10 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       for (let [key, value] of Object.entries(stateCopy)) {
         state[key] = value;
       }
+    }
+
+    if (suggestedIndexResults) {
+      this._addSuggestedIndexResults(suggestedIndexResults, results, state);
     }
 
     return [results, usedLimits, anyChildHasMoreResults];
@@ -508,17 +538,6 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       limits.maxResultCount = 0;
     }
 
-    let addQuickSuggest =
-      state.quickSuggestResult &&
-      groupConst == UrlbarUtils.RESULT_GROUP.GENERAL &&
-      this._canAddResult(state.quickSuggestResult, state);
-    if (addQuickSuggest) {
-      let span = UrlbarUtils.getSpanForResult(state.quickSuggestResult);
-      usedLimits.availableSpan += span;
-      usedLimits.maxResultCount++;
-      state.usedResultSpan += span;
-    }
-
     let addedResults = [];
     let groupResults = state.resultsByGroup.get(groupConst);
     while (
@@ -548,31 +567,6 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       
       
       groupResults.shift();
-    }
-
-    if (addQuickSuggest) {
-      let { quickSuggestResult } = state;
-      state.quickSuggestResult = null;
-      
-      
-      
-      
-      
-      
-      let index = UrlbarPrefs.get(
-        quickSuggestResult.payload.sponsoredText
-          ? "quickSuggestNonSponsoredIndex"
-          : "quickSuggestSponsoredIndex"
-      );
-      
-      
-      if (index < 0) {
-        index = Math.max(index + addedResults.length + 1, 0);
-      } else {
-        index = Math.min(index, addedResults.length);
-      }
-      addedResults.splice(index, 0, quickSuggestResult);
-      this._updateStatePostAdd(quickSuggestResult, state);
     }
 
     return [addedResults, usedLimits, !!groupResults?.length];
@@ -846,6 +840,19 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
   _updateStatePreAdd(result, state) {
     
+    
+    if (
+      result.hasSuggestedIndex &&
+      !result.isSuggestedIndexRelativeToGroup &&
+      this._canAddResult(result, state)
+    ) {
+      state.availableResultSpan = Math.max(
+        state.availableResultSpan - UrlbarUtils.getSpanForResult(result),
+        0
+      );
+    }
+
+    
     if (
       (result.type == UrlbarUtils.RESULT_TYPE.URL ||
         result.type == UrlbarUtils.RESULT_TYPE.KEYWORD) &&
@@ -984,11 +991,16 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
 
 
-  _addSuggestedIndexResults(sortedResults, state) {
-    let suggestedIndexResults = state.resultsByGroup.get(
-      UrlbarUtils.RESULT_GROUP.SUGGESTED_INDEX
-    );
-    if (!suggestedIndexResults) {
+
+
+
+
+
+
+
+  _addSuggestedIndexResults(suggestedIndexResults, sortedResults, state) {
+    if (!suggestedIndexResults?.length) {
+      
       return;
     }
 
@@ -1017,7 +1029,6 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     
     for (let results of [positive, negative]) {
       for (let result of results) {
-        this._updateStatePreAdd(result, state);
         if (this._canAddResult(result, state)) {
           let index =
             result.suggestedIndex >= 0

@@ -936,15 +936,6 @@ class UrlbarView {
       
       return false;
     }
-    if (
-      (result.providerName == "UrlbarProviderQuickSuggest") !=
-      (row.result.providerName == "UrlbarProviderQuickSuggest")
-    ) {
-      
-      
-      
-      return false;
-    }
     let resultIsSearchSuggestion = this._resultIsSearchSuggestion(result);
     
     if (
@@ -1003,12 +994,7 @@ class UrlbarView {
           resultIndex++;
           continue;
         }
-        if (
-          result.hasSuggestedIndex ||
-          row.result.hasSuggestedIndex ||
-          result.providerName == "UrlbarProviderQuickSuggest" ||
-          row.result.providerName == "UrlbarProviderQuickSuggest"
-        ) {
+        if (result.hasSuggestedIndex || row.result.hasSuggestedIndex) {
           seenMisplacedResult = true;
         }
       }
@@ -1033,32 +1019,29 @@ class UrlbarView {
       let result = results[resultIndex];
       this._updateRow(row, result);
       if (!seenMisplacedResult && result.hasSuggestedIndex) {
-        
-        
-        
-        
-        
-        
-        
-        
-        let finalIndex =
-          result.suggestedIndex >= 0
-            ? Math.min(results.length - 1, result.suggestedIndex)
-            : Math.max(0, results.length + result.suggestedIndex);
-        if (this._rows.children.length != finalIndex) {
+        if (result.isSuggestedIndexRelativeToGroup) {
+          
+          
+          
+          
           seenMisplacedResult = true;
+        } else {
+          
+          
+          
+          
+          
+          
+          
+          
+          let finalIndex =
+            result.suggestedIndex >= 0
+              ? Math.min(results.length - 1, result.suggestedIndex)
+              : Math.max(0, results.length + result.suggestedIndex);
+          if (this._rows.children.length != finalIndex) {
+            seenMisplacedResult = true;
+          }
         }
-      }
-      if (
-        !seenMisplacedResult &&
-        result.providerName == "UrlbarProviderQuickSuggest"
-      ) {
-        
-        
-        
-        
-        
-        seenMisplacedResult = true;
       }
       let newVisibleSpanCount =
         visibleSpanCount + UrlbarUtils.getSpanForResult(result);

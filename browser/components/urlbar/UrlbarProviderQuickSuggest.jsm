@@ -147,9 +147,6 @@ class ProviderQuickSuggest extends UrlbarProvider {
     };
 
     if (!suggestion.isSponsored) {
-      
-      
-      
       payload.sponsoredText = NONSPONSORED_ACTION_TEXT;
     }
 
@@ -157,6 +154,12 @@ class ProviderQuickSuggest extends UrlbarProvider {
       UrlbarUtils.RESULT_TYPE.URL,
       UrlbarUtils.RESULT_SOURCE.SEARCH,
       ...UrlbarResult.payloadAndSimpleHighlights(queryContext.tokens, payload)
+    );
+    result.isSuggestedIndexRelativeToGroup = true;
+    result.suggestedIndex = UrlbarPrefs.get(
+      suggestion.isSponsored
+        ? "quickSuggestSponsoredIndex"
+        : "quickSuggestNonSponsoredIndex"
     );
     addCallback(this, result);
 
