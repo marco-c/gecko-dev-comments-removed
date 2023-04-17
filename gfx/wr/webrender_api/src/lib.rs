@@ -279,9 +279,7 @@ pub trait ApiHitTester: Send + Sync {
     
     
     
-    
-    
-    fn hit_test(&self, pipeline_id: Option<PipelineId>, point: WorldPoint) -> HitTestResult;
+    fn hit_test(&self, point: WorldPoint) -> HitTestResult;
 }
 
 
