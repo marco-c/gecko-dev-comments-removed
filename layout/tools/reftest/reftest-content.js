@@ -425,6 +425,11 @@ async function FlushRendering(aFlushMode) {
     
     
     let needsAnimationFrame = IsSnapshottableTestType();
+    if (needsAnimationFrame) {
+        
+        
+        await new Promise(resolve => content.requestAnimationFrame(resolve));
+    }
     try {
         let result = await content.windowGlobalChild.getActor("ReftestFission").sendQuery("FlushRendering", {browsingContext, ignoreThrottledAnimations, needsAnimationFrame});
         for (let errorString of result.errorStrings) {
