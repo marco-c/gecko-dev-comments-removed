@@ -35,3 +35,18 @@ pub unsafe fn transmute_from_vtable_ptr<'a, T, U>(
 ) -> &'a U {
     &*((*this as *const *const ()).sub(vtable_index) as *const U)
 }
+
+
+
+
+
+
+
+#[repr(C)]
+pub struct VTableExtra<T> {
+    #[cfg(not(windows))]
+    pub offset: isize,
+    #[cfg(not(windows))]
+    pub typeinfo: *const libc::c_void,
+    pub vtable: T,
+}

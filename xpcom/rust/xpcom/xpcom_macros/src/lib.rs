@@ -465,10 +465,21 @@ fn gen_root_vtable(
         // The actual VTable definition. This is in a separate method in order
         // to allow it to be generic.
         #[inline]
-        fn get_vtable #impl_generics () -> &'static #vtable_ty #where_clause {
-            &#vtable
+        fn get_vtable #impl_generics () -> &'static ::xpcom::reexports::VTableExtra<#vtable_ty> #where_clause {
+            &::xpcom::reexports::VTableExtra {
+                #[cfg(not(windows))]
+                offset: {
+                    // NOTE: workaround required to avoid depending on the
+                    // unstable const expression feature `const {}`.
+                    const OFFSET: isize = -((::std::mem::size_of::<usize>() * #idx) as isize);
+                    OFFSET
+                },
+                #[cfg(not(windows))]
+                typeinfo: 0 as *const _,
+                vtable: #vtable,
+            }
         }
-        get_vtable #turbofish ()
+        &get_vtable #turbofish ().vtable
     },})
 }
 
@@ -742,7 +753,7 @@ fn xpcom(init: DeriveInput) -> Result<TokenStream, syn::Error> {
         ///
         /// The trait and its method should usually not be used directly, but
         /// rather acts as a trait bound and implementation for the `coerce`
-        /// methods.
+        
         #[doc(hidden)]
         #vis trait #coerce_name #impl_generics #where_clause {
             /// Convert a value of the `#[derive(xpcom)]` type into the
