@@ -3,11 +3,13 @@
 
 
 
-function getResolution() {
+async function getResolution() {
   let resolution = -1; 
   
   
-  resolution = SpecialPowers.getDOMWindowUtils(window.top).getResolution();
+  resolution = await SpecialPowers.spawn(window.top, [], () => {
+    return SpecialPowers.getDOMWindowUtils(content.window).getResolution();
+  });
   return resolution;
 }
 
@@ -273,7 +275,7 @@ function getTargetRect(aTarget) {
 
 
 
-function coordinatesRelativeToScreen(aParams) {
+async function coordinatesRelativeToScreen(aParams) {
   const {
     target, 
     offsetX, 
@@ -295,7 +297,7 @@ function coordinatesRelativeToScreen(aParams) {
   const utils = SpecialPowers.getDOMWindowUtils(window);
   const deviceScale = utils.screenPixelsPerCSSPixel;
   const deviceScaleNoOverride = utils.screenPixelsPerCSSPixelNoOverride;
-  const resolution = getResolution();
+  const resolution = await getResolution();
   const rect = getTargetRect(target);
   
   
@@ -339,8 +341,15 @@ function rectRelativeToScreen(aElement) {
 
 
 
-function synthesizeNativeWheel(aTarget, aX, aY, aDeltaX, aDeltaY, aObserver) {
-  var pt = coordinatesRelativeToScreen({
+async function synthesizeNativeWheel(
+  aTarget,
+  aX,
+  aY,
+  aDeltaX,
+  aDeltaY,
+  aObserver
+) {
+  var pt = await coordinatesRelativeToScreen({
     offsetX: aX,
     offsetY: aY,
     target: aTarget,
@@ -376,7 +385,7 @@ function synthesizeNativeWheel(aTarget, aX, aY, aDeltaX, aDeltaY, aObserver) {
 
 
 
-function synthesizeNativePanGestureEvent(
+async function synthesizeNativePanGestureEvent(
   aTarget,
   aX,
   aY,
@@ -391,7 +400,7 @@ function synthesizeNativePanGestureEvent(
     );
   }
 
-  var pt = coordinatesRelativeToScreen({
+  var pt = await coordinatesRelativeToScreen({
     offsetX: aX,
     offsetY: aY,
     target: aTarget,
@@ -547,7 +556,7 @@ async function synthesizeTouchpadPinch(scales, focusX, focusY, options) {
   let transformEndPromise = promiseTransformEnd();
 
   var modifierFlags = 0;
-  var pt = coordinatesRelativeToScreen({
+  var pt = await coordinatesRelativeToScreen({
     offsetX: focusX,
     offsetY: focusY,
     target: document.body,
@@ -593,7 +602,7 @@ async function synthesizeTouchpadPan(
   let transformEndPromise = promiseTransformEnd();
 
   var modifierFlags = 0;
-  var pt = coordinatesRelativeToScreen({
+  var pt = await coordinatesRelativeToScreen({
     offsetX: focusX,
     offsetY: focusY,
     target: document.body,
@@ -629,7 +638,7 @@ async function synthesizeTouchpadPan(
 
 
 
-function synthesizeNativeTouch(
+async function synthesizeNativeTouch(
   aTarget,
   aX,
   aY,
@@ -637,7 +646,7 @@ function synthesizeNativeTouch(
   aObserver = null,
   aTouchId = 0
 ) {
-  var pt = coordinatesRelativeToScreen({
+  var pt = await coordinatesRelativeToScreen({
     offsetX: aX,
     offsetY: aY,
     target: aTarget,
@@ -699,7 +708,7 @@ function sendBasicNativePointerInput(
 
 
 
-function synthesizeNativePointerSequences(
+async function synthesizeNativePointerSequences(
   aTarget,
   aPointerType,
   aPositions,
@@ -726,7 +735,7 @@ function synthesizeNativePointerSequences(
         
         
         
-        aPositions[i][j] = coordinatesRelativeToScreen({
+        aPositions[i][j] = await coordinatesRelativeToScreen({
           offsetX: aPositions[i][j].x,
           offsetY: aPositions[i][j].y,
           target: aTarget,
@@ -920,8 +929,8 @@ function promiseNativeTouchDrag(
   });
 }
 
-function synthesizeNativeTap(aTarget, aX, aY, aObserver = null) {
-  var pt = coordinatesRelativeToScreen({
+async function synthesizeNativeTap(aTarget, aX, aY, aObserver = null) {
+  var pt = await coordinatesRelativeToScreen({
     offsetX: aX,
     offsetY: aY,
     target: aTarget,
@@ -932,13 +941,13 @@ function synthesizeNativeTap(aTarget, aX, aY, aObserver = null) {
 }
 
 
-function synthesizeNativeTouchpadDoubleTap(aTarget, aX, aY) {
+async function synthesizeNativeTouchpadDoubleTap(aTarget, aX, aY) {
   ok(
     getPlatform() == "mac",
     "only implemented on mac. implement sendNativeTouchpadDoubleTap for this platform," +
       " see bug 1696802 for how it was done on macOS"
   );
-  let pt = coordinatesRelativeToScreen({
+  let pt = await coordinatesRelativeToScreen({
     offsetX: aX,
     offsetY: aY,
     target: aTarget,
@@ -950,7 +959,7 @@ function synthesizeNativeTouchpadDoubleTap(aTarget, aX, aY) {
 
 
 
-function synthesizeNativeMouseEventWithAPZ(aParams, aObserver = null) {
+async function synthesizeNativeMouseEventWithAPZ(aParams, aObserver = null) {
   if (aParams.win !== undefined) {
     throw Error(
       "Are you trying to use EventUtils' API? `win` won't be used with synthesizeNativeMouseClickWithAPZ."
@@ -1001,7 +1010,7 @@ function synthesizeNativeMouseEventWithAPZ(aParams, aObserver = null) {
       );
     }
   }
-  const pt = (() => {
+  const pt = await (async () => {
     if (screenX != undefined) {
       return { x: screenX, y: screenY };
     }
