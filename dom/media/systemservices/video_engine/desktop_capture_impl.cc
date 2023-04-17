@@ -597,7 +597,6 @@ int32_t DesktopCaptureImpl::StartCapture(
     return err;
   }
 
-  desktop_capturer_cursor_composer_->Start(this);
   capturer_thread_->Start();
   started_ = true;
 
@@ -646,9 +645,17 @@ void DesktopCaptureImpl::OnCaptureResult(DesktopCapturer::Result result,
 
 void DesktopCaptureImpl::process() {
   
+  desktop_capturer_cursor_composer_->Start(this);
+
+  
   do {
 #if !defined(_WIN32)
     int64_t startProcessTime = rtc::TimeNanos();
+#endif
+
+#if defined(WEBRTC_MAC)
+    
+    CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.01, true);
 #endif
 
     desktop_capturer_cursor_composer_->CaptureFrame();
