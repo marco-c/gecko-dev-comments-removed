@@ -1430,11 +1430,8 @@ bool MissingEnvironmentKey::match(MissingEnvironmentKey ek1,
   return ek1.frame_ == ek2.frame_ && ek1.scope_ == ek2.scope_;
 }
 
-bool LiveEnvironmentVal::needsSweep() {
-  if (scope_) {
-    MOZ_ALWAYS_FALSE(IsAboutToBeFinalized(&scope_));
-  }
-  return false;
+bool LiveEnvironmentVal::traceWeak(JSTracer* trc) {
+  return TraceWeakEdge(trc, &scope_, "LiveEnvironmentVal::scope_");
 }
 
 
@@ -2466,13 +2463,15 @@ DebugEnvironments::~DebugEnvironments() { MOZ_ASSERT(missingEnvs.empty()); }
 
 void DebugEnvironments::trace(JSTracer* trc) { proxiedEnvs.trace(trc); }
 
-void DebugEnvironments::sweep() {
+void DebugEnvironments::traceWeak(JSTracer* trc) {
   
 
 
 
   for (MissingEnvironmentMap::Enum e(missingEnvs); !e.empty(); e.popFront()) {
-    if (IsAboutToBeFinalized(&e.front().value())) {
+    auto result =
+        TraceWeakEdge(trc, &e.front().value(), "MissingEnvironmentMap value");
+    if (result.isDead()) {
       
 
 
@@ -2490,13 +2489,15 @@ void DebugEnvironments::sweep() {
 
 
 
-
-      liveEnvs.remove(&e.front().value().unbarrieredGet()->environment());
+      liveEnvs.remove(&result.initialTarget()->environment());
       e.removeFront();
     } else {
       MissingEnvironmentKey key = e.front().key();
-      if (IsForwarded(key.scope())) {
-        key.updateScope(Forwarded(key.scope()));
+      Scope* scope = key.scope();
+      MOZ_ALWAYS_TRUE(TraceManuallyBarrieredWeakEdge(
+          trc, &scope, "MissingEnvironmentKey scope"));
+      if (scope != key.scope()) {
+        key.updateScope(scope);
         e.rekeyFront(key);
       }
     }
@@ -2506,7 +2507,7 @@ void DebugEnvironments::sweep() {
 
 
 
-  liveEnvs.sweep();
+  liveEnvs.traceWeak(trc);
 }
 
 void DebugEnvironments::finish() { proxiedEnvs.clear(); }
