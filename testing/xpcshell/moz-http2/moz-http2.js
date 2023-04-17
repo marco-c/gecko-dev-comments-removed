@@ -346,6 +346,13 @@ function handleRequest(req, res) {
       return null;
     }
 
+    if (u.query.corruptedAnswer) {
+      
+      
+      
+      return "<12bytes";
+    }
+
     function responseData() {
       if (
         packet.questions.length > 0 &&
