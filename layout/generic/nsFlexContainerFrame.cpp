@@ -464,7 +464,7 @@ class nsFlexContainerFrame::FlexItem final {
   nscoord BaselineOffsetFromOuterCrossEdge(mozilla::Side aStartSide,
                                            bool aUseFirstLineBaseline) const;
 
-  float ShareOfWeightSoFar() const { return mShareOfWeightSoFar; }
+  double ShareOfWeightSoFar() const { return mShareOfWeightSoFar; }
 
   bool IsFrozen() const { return mIsFrozen; }
 
@@ -676,8 +676,8 @@ class nsFlexContainerFrame::FlexItem final {
     mMainSize = aNewMainSize;
   }
 
-  void SetShareOfWeightSoFar(float aNewShare) {
-    MOZ_ASSERT(!mIsFrozen || aNewShare == 0.0f,
+  void SetShareOfWeightSoFar(double aNewShare) {
+    MOZ_ASSERT(!mIsFrozen || aNewShare == 0.0,
                "shouldn't be giving this item any share of the weight "
                "after it's frozen");
     mShareOfWeightSoFar = aNewShare;
@@ -876,7 +876,7 @@ class nsFlexContainerFrame::FlexItem final {
   
   
   
-  float mShareOfWeightSoFar = 0.0f;
+  double mShareOfWeightSoFar = 0.0;
 
   bool mIsFrozen = false;
   bool mHadMinViolation = false;
@@ -3105,9 +3105,9 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
       
       
       
-      float weightSum = 0.0f;
-      float flexFactorSum = 0.0f;
-      float largestWeight = 0.0f;
+      double weightSum = 0.0;
+      double flexFactorSum = 0.0;
+      double largestWeight = 0.0;
       uint32_t numItemsWithLargestWeight = 0;
 
       
@@ -3121,17 +3121,17 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
         if (!item.IsFrozen()) {
           numUnfrozenItemsToBeSeen--;
 
-          float curWeight = item.GetWeight(isUsingFlexGrow);
-          float curFlexFactor = item.GetFlexFactor(isUsingFlexGrow);
-          MOZ_ASSERT(curWeight >= 0.0f, "weights are non-negative");
-          MOZ_ASSERT(curFlexFactor >= 0.0f, "flex factors are non-negative");
+          const double curWeight = item.GetWeight(isUsingFlexGrow);
+          const double curFlexFactor = item.GetFlexFactor(isUsingFlexGrow);
+          MOZ_ASSERT(curWeight >= 0.0, "weights are non-negative");
+          MOZ_ASSERT(curFlexFactor >= 0.0, "flex factors are non-negative");
 
           weightSum += curWeight;
           flexFactorSum += curFlexFactor;
 
           if (IsFinite(weightSum)) {
-            if (curWeight == 0.0f) {
-              item.SetShareOfWeightSoFar(0.0f);
+            if (curWeight == 0.0) {
+              item.SetShareOfWeightSoFar(0.0);
             } else {
               item.SetShareOfWeightSoFar(curWeight / weightSum);
             }
@@ -3152,11 +3152,11 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
 
       MOZ_ASSERT(numUnfrozenItemsToBeSeen == 0, "miscounted frozen items?");
 
-      if (weightSum != 0.0f) {
-        MOZ_ASSERT(flexFactorSum != 0.0f,
+      if (weightSum != 0.0) {
+        MOZ_ASSERT(flexFactorSum != 0.0,
                    "flex factor sum can't be 0, if a weighted sum "
                    "of its components (weightSum) is nonzero");
-        if (flexFactorSum < 1.0f) {
+        if (flexFactorSum < 1.0) {
           
           
           
@@ -3204,17 +3204,17 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
             
             nscoord sizeDelta = 0;
             if (IsFinite(weightSum)) {
-              float myShareOfRemainingSpace = item.ShareOfWeightSoFar();
+              double myShareOfRemainingSpace = item.ShareOfWeightSoFar();
 
-              MOZ_ASSERT(myShareOfRemainingSpace >= 0.0f &&
-                             myShareOfRemainingSpace <= 1.0f,
+              MOZ_ASSERT(myShareOfRemainingSpace >= 0.0 &&
+                             myShareOfRemainingSpace <= 1.0,
                          "my share should be nonnegative fractional amount");
 
-              if (myShareOfRemainingSpace == 1.0f) {
+              if (myShareOfRemainingSpace == 1.0) {
                 
                 
                 sizeDelta = availableFreeSpace;
-              } else if (myShareOfRemainingSpace > 0.0f) {
+              } else if (myShareOfRemainingSpace > 0.0) {
                 sizeDelta = NSToCoordRound(availableFreeSpace *
                                            myShareOfRemainingSpace);
               }
@@ -3223,7 +3223,7 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
               
               
               sizeDelta = NSToCoordRound(availableFreeSpace /
-                                         float(numItemsWithLargestWeight));
+                                         double(numItemsWithLargestWeight));
               numItemsWithLargestWeight--;
             }
 
