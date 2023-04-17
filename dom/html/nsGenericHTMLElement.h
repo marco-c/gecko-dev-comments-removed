@@ -41,7 +41,7 @@ class HTMLMenuElement;
 }  
 }  
 
-typedef nsMappedAttributeElement nsGenericHTMLElementBase;
+using nsGenericHTMLElementBase = nsMappedAttributeElement;
 
 
 
@@ -1187,9 +1187,9 @@ class nsGenericHTMLFormElementWithState : public nsGenericHTMLFormElement {
 namespace mozilla {
 namespace dom {
 
-typedef nsGenericHTMLElement* (*HTMLContentCreatorFunction)(
-    already_AddRefed<mozilla::dom::NodeInfo>&&,
-    mozilla::dom::FromParser aFromParser);
+using HTMLContentCreatorFunction =
+    nsGenericHTMLElement* (*)(already_AddRefed<mozilla::dom::NodeInfo>&&,
+                              mozilla::dom::FromParser);
 
 }  
 }  

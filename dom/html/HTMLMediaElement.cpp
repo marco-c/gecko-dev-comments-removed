@@ -3969,7 +3969,7 @@ class MediaElementSetForURI : public nsURIHashKey {
   nsTArray<HTMLMediaElement*> mElements;
 };
 
-typedef nsTHashtable<MediaElementSetForURI> MediaElementURITable;
+using MediaElementURITable = nsTHashtable<MediaElementSetForURI>;
 
 
 
