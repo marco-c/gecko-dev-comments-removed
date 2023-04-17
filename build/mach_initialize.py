@@ -197,7 +197,7 @@ install a recent enough Python 3.
 """.strip()
 
 
-def bootstrap(topsrcdir):
+def initialize(topsrcdir):
     
     
     if sys.version_info < (3, 6):
