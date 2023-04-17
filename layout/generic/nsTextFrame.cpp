@@ -1766,32 +1766,23 @@ static float GetSVGFontSizeScaleFactor(nsIFrame* aFrame) {
   return static_cast<SVGTextFrame*>(container)->GetFontSizeScaleFactor();
 }
 
-static nscoord LetterSpacing(nsIFrame* aFrame,
-                             const nsStyleText* aStyleText = nullptr) {
-  if (!aStyleText) {
-    aStyleText = aFrame->StyleText();
-  }
-
+static nscoord LetterSpacing(nsIFrame* aFrame, const nsStyleText& aStyleText) {
   if (SVGUtils::IsInSVGTextSubtree(aFrame)) {
     
     
     
     
-    Length spacing = aStyleText->mLetterSpacing;
+    Length spacing = aStyleText.mLetterSpacing;
     spacing.ScaleBy(GetSVGFontSizeScaleFactor(aFrame));
     return spacing.ToAppUnits();
   }
 
-  return aStyleText->mLetterSpacing.ToAppUnits();
+  return aStyleText.mLetterSpacing.ToAppUnits();
 }
 
 
 static nscoord WordSpacing(nsIFrame* aFrame, const gfxTextRun* aTextRun,
-                           const nsStyleText* aStyleText = nullptr) {
-  if (!aStyleText) {
-    aStyleText = aFrame->StyleText();
-  }
-
+                           const nsStyleText& aStyleText) {
   if (SVGUtils::IsInSVGTextSubtree(aFrame)) {
     
     
@@ -1799,12 +1790,12 @@ static nscoord WordSpacing(nsIFrame* aFrame, const gfxTextRun* aTextRun,
     
     
     
-    auto spacing = aStyleText->mWordSpacing;
+    auto spacing = aStyleText.mWordSpacing;
     spacing.ScaleLengthsBy(GetSVGFontSizeScaleFactor(aFrame));
     return spacing.Resolve([&] { return GetSpaceWidthAppUnits(aTextRun); });
   }
 
-  return aStyleText->mWordSpacing.Resolve(
+  return aStyleText.mWordSpacing.Resolve(
       [&] { return GetSpaceWidthAppUnits(aTextRun); });
 }
 
@@ -1978,8 +1969,8 @@ bool BuildTextRunsScanner::ContinueTextRunAcrossFrames(nsTextFrame* aFrame1,
 
   const nsStyleFont* fontStyle1 = sc1->StyleFont();
   const nsStyleFont* fontStyle2 = sc2->StyleFont();
-  nscoord letterSpacing1 = LetterSpacing(aFrame1);
-  nscoord letterSpacing2 = LetterSpacing(aFrame2);
+  nscoord letterSpacing1 = LetterSpacing(aFrame1, *textStyle1);
+  nscoord letterSpacing2 = LetterSpacing(aFrame2, *textStyle2);
   return fontStyle1->mFont == fontStyle2->mFont &&
          fontStyle1->mLanguage == fontStyle2->mLanguage &&
          nsLayoutUtils::GetTextRunFlagsForStyle(sc1, pc, fontStyle1, textStyle1,
@@ -2416,7 +2407,7 @@ already_AddRefed<gfxTextRun> BuildTextRunsScanner::BuildTextRunForFrames(
   
   flags |= nsLayoutUtils::GetTextRunFlagsForStyle(
       lastComputedStyle, firstFrame->PresContext(), fontStyle, textStyle,
-      LetterSpacing(firstFrame, textStyle));
+      LetterSpacing(firstFrame, *textStyle));
   
   
   if (!(flags & gfx::ShapedTextFlags::TEXT_OPTIMIZE_SPEED)) {
@@ -3250,8 +3241,8 @@ nsTextFrame::PropertyProvider::PropertyProvider(
       mTabWidths(nullptr),
       mTabWidthsAnalyzedLimit(0),
       mLength(aLength),
-      mWordSpacing(WordSpacing(aFrame, mTextRun, aTextStyle)),
-      mLetterSpacing(LetterSpacing(aFrame, aTextStyle)),
+      mWordSpacing(WordSpacing(aFrame, mTextRun, *aTextStyle)),
+      mLetterSpacing(LetterSpacing(aFrame, *aTextStyle)),
       mMinTabAdvance(-1.0),
       mHyphenWidth(-1),
       mOffsetFromBlockOriginForTabs(aOffsetFromBlockOriginForTabs),
@@ -3276,8 +3267,8 @@ nsTextFrame::PropertyProvider::PropertyProvider(
       mTabWidths(nullptr),
       mTabWidthsAnalyzedLimit(0),
       mLength(aFrame->GetContentLength()),
-      mWordSpacing(WordSpacing(aFrame, mTextRun)),
-      mLetterSpacing(LetterSpacing(aFrame)),
+      mWordSpacing(WordSpacing(aFrame, mTextRun, *mTextStyle)),
+      mLetterSpacing(LetterSpacing(aFrame, *mTextStyle)),
       mMinTabAdvance(-1.0),
       mHyphenWidth(-1),
       mOffsetFromBlockOriginForTabs(0),
