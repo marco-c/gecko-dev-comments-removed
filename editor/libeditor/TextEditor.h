@@ -425,13 +425,6 @@ class TextEditor final : public EditorBase,
 
 
 
-
-  MOZ_CAN_RUN_SCRIPT nsresult EnsurePaddingBRElementForEmptyEditor();
-
-  
-
-
-
   nsresult HandleInlineSpellCheckAfterEdit() {
     MOZ_ASSERT(IsEditActionDataAvailable());
     if (!GetSpellCheckRestartPoint().IsSet()) {
