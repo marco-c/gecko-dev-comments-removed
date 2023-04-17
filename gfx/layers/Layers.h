@@ -798,14 +798,6 @@ class Layer {
   ApplyPendingUpdatesToSubtree();
 
   
-
-
-
-
-
-  virtual void FillSpecificAttributes(SpecificLayerAttributes& aAttrs) {}
-
-  
   
   
   
@@ -1521,8 +1513,6 @@ class ContainerLayer : public Layer {
     Mutated();
   }
 
-  void FillSpecificAttributes(SpecificLayerAttributes& aAttrs) override;
-
   enum class SortMode {
     WITH_GEOMETRY,
     WITHOUT_GEOMETRY,
@@ -1953,11 +1943,6 @@ class RefLayer : public ContainerLayer {
   RefLayer* AsRefLayer() override { return this; }
 
   virtual LayersId GetReferentId() { return mId; }
-
-  
-
-
-  void FillSpecificAttributes(SpecificLayerAttributes& aAttrs) override;
 
   MOZ_LAYER_DECL_NAME("RefLayer", TYPE_REF)
 
