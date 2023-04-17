@@ -445,6 +445,7 @@ enum MouseButton : int16_t {
   eSecondary = 2,
   eX1 = 3,  
   eX2 = 4,  
+  eEraser = 5
 };
 
 enum MouseButtonsFlag {
@@ -457,7 +458,8 @@ enum MouseButtonsFlag {
   e4thFlag = 0x08,
   
   
-  e5thFlag = 0x10
+  e5thFlag = 0x10,
+  eEraserFlag = 0x20
 };
 
 enum class TextRangeType : RawTextRangeType;
