@@ -29,7 +29,7 @@ function setup() {
   prefs.setBoolPref("network.dns.native-is-localhost", true);
 
   
-  prefs.setIntPref("network.trr.mode", 2); 
+  prefs.setIntPref("network.trr.mode", 3); 
   prefs.setBoolPref("network.trr.wait-for-portal", false);
   
   prefs.setCharPref("network.trr.confirmationNS", "skip");
@@ -67,6 +67,7 @@ registerCleanupFunction(() => {
 });
 
 function run_test() {
+  prefs.setIntPref("network.trr.mode", 3);
   prefs.setCharPref(
     "network.trr.uri",
     "https://foo.example.com:" + h2Port + "/httpssvc"
