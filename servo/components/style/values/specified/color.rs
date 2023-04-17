@@ -331,14 +331,14 @@ pub enum SystemColor {
     
     MozDragtargetzone,
     
+    #[parse(aliases = "-moz-html-cellhighlight")]
     MozCellhighlight,
     
+    #[parse(aliases = "-moz-html-cellhighlighttext")]
     MozCellhighlighttext,
     
-    #[parse(aliases = "-moz-html-cellhighlight")]
     Selecteditem,
     
-    #[parse(aliases = "-moz-html-cellhighlighttext")]
     Selecteditemtext,
     
     MozButtonhoverface,

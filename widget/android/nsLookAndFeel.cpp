@@ -177,6 +177,7 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aColorScheme,
     case ColorID::Graytext:  
       aColor = NS_RGB(0xb1, 0xa5, 0x98);
       break;
+    
     case ColorID::MozCellhighlight:
     case ColorID::Selecteditem:
     case ColorID::MozAccentColor:
