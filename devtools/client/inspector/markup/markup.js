@@ -313,6 +313,11 @@ function MarkupView(inspector, frame, controllerWindow) {
   this._frame.addEventListener("focus", this._onFocus);
   this.inspector.selection.on("new-node-front", this._onNewSelection);
 
+  if (flags.testing) {
+    
+    this._initTooltips();
+  }
+
   this.win.addEventListener("copy", this._onCopy);
   this.win.addEventListener("mouseup", this._onMouseUp);
   this.inspector.toolbox.nodePicker.on(
@@ -334,19 +339,6 @@ function MarkupView(inspector, frame, controllerWindow) {
     "highlighter-hidden",
     this.onHighlighterHidden
   );
-
-  if (flags.testing) {
-    
-    this._initTooltips();
-  } else {
-    this._elt.addEventListener(
-      "mousemove",
-      () => {
-        this._initTooltips();
-      },
-      { once: true }
-    );
-  }
 
   this._onNewSelection();
   if (this.inspector.selection.nodeFront) {
@@ -432,6 +424,9 @@ MarkupView.prototype = {
   },
 
   _initTooltips: function() {
+    if (this.imagePreviewTooltip) {
+      return;
+    }
     
     this.imagePreviewTooltip = new HTMLTooltip(this.toolbox.doc, {
       type: "arrow",
@@ -471,6 +466,11 @@ MarkupView.prototype = {
   _draggedContainer: null,
 
   _onMouseMove: function(event) {
+    
+    
+    
+    this._initTooltips();
+
     let target = event.target;
 
     if (this._draggedContainer) {
