@@ -553,7 +553,7 @@ class Preferences {
 
   get _nimbus() {
     if (!this.__nimbus) {
-      this.__nimbus = NimbusFeatures.urlbar.getValue();
+      this.__nimbus = NimbusFeatures.urlbar.getAllVariables();
     }
     return this.__nimbus;
   }

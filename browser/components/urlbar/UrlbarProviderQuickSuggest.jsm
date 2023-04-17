@@ -297,12 +297,12 @@ class ProviderQuickSuggest extends UrlbarProvider {
   _updateExperimentState() {
     Services.telemetry.setEventRecordingEnabled(
       TELEMETRY_EVENT_CATEGORY,
-      NimbusFeatures.urlbar.getValue().quickSuggestEnabled
+      UrlbarPrefs.get("quickSuggestEnabled")
     );
     
     
     
-    if (NimbusFeatures.urlbar.getValue().quickSuggestEnabled) {
+    if (UrlbarPrefs.get("quickSuggestEnabled")) {
       UrlbarQuickSuggest; 
     }
   }

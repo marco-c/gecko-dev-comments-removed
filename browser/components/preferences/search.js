@@ -248,7 +248,7 @@ var gSearchPane = {
     let container = document.getElementById("showQuickSuggestContainer");
     let desc = document.getElementById("searchSuggestionsDesc");
 
-    if (!NimbusFeatures.urlbar.getValue().quickSuggestEnabled) {
+    if (!UrlbarPrefs.get("quickSuggestEnabled")) {
       
       
       
