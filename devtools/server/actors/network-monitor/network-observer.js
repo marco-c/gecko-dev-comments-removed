@@ -106,9 +106,13 @@ function matchRequest(channel, filters) {
   }
 
   if (filters.window) {
-    
-    
     let win = NetworkHelper.getWindowForRequest(channel);
+    if (filters.matchExactWindow) {
+      return win == filters.window;
+    }
+
+    
+    
     while (win) {
       if (win == filters.window) {
         return true;
@@ -118,6 +122,7 @@ function matchRequest(channel, filters) {
       }
       win = win.parent;
     }
+    return false;
   }
 
   if (filters.browserId) {
@@ -143,6 +148,9 @@ function matchRequest(channel, filters) {
   return false;
 }
 exports.matchRequest = matchRequest;
+
+
+
 
 
 

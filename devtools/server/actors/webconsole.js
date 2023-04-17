@@ -696,7 +696,10 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
             
             new NetworkMonitorActor(
               this.conn,
-              { window: global },
+              {
+                window: global,
+                matchExactWindow: this.parentActor.ignoreSubFrames,
+              },
               this.actorID,
               mmMockParent
             );
@@ -711,7 +714,10 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
             
             
             this.stackTraceCollector = new StackTraceCollector(
-              { window: global },
+              {
+                window: global,
+                matchExactWindow: this.parentActor.ignoreSubFrames,
+              },
               this.netmonitors
             );
             this.stackTraceCollector.init();

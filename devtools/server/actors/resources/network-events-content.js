@@ -73,6 +73,17 @@ class NetworkEventContentWatcher {
     const event = NetworkUtils.createNetworkEvent(channel, {
       blockedReason: channel.loadInfo.requestBlockingReason,
     });
+
+    
+    
+    
+    if (
+      this.targetActor.ignoreSubFrames &&
+      event.browsingContextID !== this.targetActor.browsingContext.id
+    ) {
+      return;
+    }
+
     const actor = new NetworkEventActor(
       this,
       {

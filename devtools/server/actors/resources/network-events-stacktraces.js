@@ -108,7 +108,12 @@ class NetworkEventStackTracesWatcher {
     }
 
     
-    if (!matchRequest(channel, { window: this.targetActor.window })) {
+    if (
+      !matchRequest(channel, {
+        window: this.targetActor.window,
+        matchExactWindow: this.targetActor.ignoreSubFrames,
+      })
+    ) {
       return;
     }
 
