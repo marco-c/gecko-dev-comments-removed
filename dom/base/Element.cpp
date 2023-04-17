@@ -1139,9 +1139,7 @@ bool Element::CanAttachShadowDOM() const {
 
   
   
-  CustomElementData* ceData = GetCustomElementData();
-  if (StaticPrefs::dom_webcomponents_formAssociatedCustomElement_enabled() &&
-      ceData) {
+  if (CustomElementData* ceData = GetCustomElementData()) {
     CustomElementDefinition* definition = ceData->GetCustomElementDefinition();
     
     

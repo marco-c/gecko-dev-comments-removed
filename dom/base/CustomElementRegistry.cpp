@@ -916,7 +916,8 @@ void CustomElementRegistry::Define(
       }
     }
 
-    
+    if (StaticPrefs::dom_webcomponents_disabledFeatures_enabled()) {
+      
 
 
 
@@ -925,7 +926,6 @@ void CustomElementRegistry::Define(
 
 
 
-    if (StaticPrefs::dom_webcomponents_formAssociatedCustomElement_enabled()) {
       if (!JSObjectToAtomArray(aCx, constructor, u"disabledFeatures"_ns,
                                disabledFeatures, aRv)) {
         return;
@@ -940,7 +940,9 @@ void CustomElementRegistry::Define(
       
       disableShadow = disabledFeatures.Contains(
           static_cast<nsStaticAtom*>(nsGkAtoms::shadow));
+    }
 
+    if (StaticPrefs::dom_webcomponents_formAssociatedCustomElement_enabled()) {
       
       
       JS::Rooted<JS::Value> formAssociatedValue(aCx);
