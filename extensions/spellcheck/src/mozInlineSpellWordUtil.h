@@ -120,6 +120,13 @@ class MOZ_STACK_CLASS mozInlineSpellWordUtil {
   const nsINode* GetRootNode() const { return mRootNode; }
 
  private:
+  struct SoftText {
+    
+    nsString mValue;
+  };
+
+  SoftText mSoftText;
+
   mozInlineSpellWordUtil(mozilla::dom::Document& aDocument,
                          bool aIsContentEditableOrDesignMode, nsINode& aRootNode
 
@@ -141,8 +148,6 @@ class MOZ_STACK_CLASS mozInlineSpellWordUtil {
   NodeOffset mSoftBegin;
   NodeOffset mSoftEnd;
 
-  
-  nsString mSoftText;
   
   
   struct DOMTextMapping {
