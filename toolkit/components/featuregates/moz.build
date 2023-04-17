@@ -5,7 +5,7 @@
 
 
 with Files("**"):
-    BUG_COMPONENT = ("Toolkit", "General")
+    BUG_COMPONENT = ("Toolkit", "FeatureGate")
 
 SPHINX_TREES["featuregates"] = "docs"
 
