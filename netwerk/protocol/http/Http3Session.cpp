@@ -516,6 +516,15 @@ nsresult Http3Session::ProcessEvents() {
                           0);
 
         ReportHttp3Connection();
+        
+        
+        
+        
+        
+        
+        
+        
+        MaybeResumeSend();
       } break;
       case Http3Event::Tag::GoawayReceived:
         LOG(("Http3Session::ProcessEvents - GoawayReceived"));
