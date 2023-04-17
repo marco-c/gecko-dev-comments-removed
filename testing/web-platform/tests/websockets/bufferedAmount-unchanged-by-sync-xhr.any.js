@@ -1,9 +1,11 @@
 
 
 
+
+
+
 async_test(t => {
-  const url = 'wss://' + __SERVER__NAME + ':' + __SECURE__PORT + '/echo';
-  const ws = new WebSocket(url);
+  const ws = CreateWebSocket(false, false);
   ws.onopen = t.step_func(() => {
     ws.onclose = ws.onerror = null;
     assert_equals(ws.bufferedAmount, 0);

@@ -1,9 +1,11 @@
 
 
+
+
+
 function testEventHandler(name) {
   test(function() {
-    var ws = new WebSocket("ws://" + __SERVER__NAME + ":" + __PORT + "/" + __PATH,
-      "echo")
+    var ws = CreateWebSocket(true, false);
     assert_equals(ws["on" + name], null);
     ws["on" + name] = function() {};
     ws["on" + name] = 2;
