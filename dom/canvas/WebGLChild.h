@@ -6,20 +6,9 @@
 #ifndef WEBGLCHILD_H_
 #define WEBGLCHILD_H_
 
-#include <string>
-
 #include "mozilla/dom/PWebGLChild.h"
-#include "mozilla/dom/IpdlQueue.h"
 
-
-
-
-
-
-
-
-
-#include "mozilla/dom/WebGLParent.h"
+#include <string>
 
 namespace mozilla {
 
@@ -41,7 +30,6 @@ class WebGLChild final : public PWebGLChild, public SupportsWeakPtr {
 
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WebGLChild, override);
-  using OtherSideActor = WebGLParent;
 
   explicit WebGLChild(ClientWebGLContext&);
 
