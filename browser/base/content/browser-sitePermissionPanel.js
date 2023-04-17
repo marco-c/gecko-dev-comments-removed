@@ -192,6 +192,9 @@ var gPermissionPanel = {
     this._refreshPermissionPopup();
 
     
+    this._identityPermissionBox.setAttribute("open", "true");
+
+    
     let openPanels = Array.from(document.querySelectorAll("panel[openpanel]"));
     for (let panel of openPanels) {
       PanelMultiView.hidePopup(panel);
@@ -317,6 +320,7 @@ var gPermissionPanel = {
   onPopupHidden(event) {
     if (event.target == this._permissionPopup) {
       window.removeEventListener("focus", this, true);
+      this._identityPermissionBox.removeAttribute("open");
     }
   },
 
