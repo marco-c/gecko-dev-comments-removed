@@ -820,7 +820,7 @@ var DownloadsView = {
 
   onDownloadClick(aEvent) {
     
-    if (aEvent.button == 0 && aEvent.originalTarget.localName != "button") {
+    if (aEvent.button == 0 && aEvent.target.closest(".downloadMainArea")) {
       let target = aEvent.target;
       while (target.nodeName != "richlistitem") {
         target = target.parentNode;
@@ -914,6 +914,11 @@ var DownloadsView = {
     if (aEvent.target.classList.contains("downloadButton")) {
       item.classList.add("downloadHoveringButton");
     }
+
+    item.classList.toggle(
+      "hoveringMainArea",
+      aEvent.target.closest(".downloadMainArea")
+    );
 
     if (!this.contextMenuOpen && !this.subViewOpen) {
       this.richListBox.selectedItem = item;
