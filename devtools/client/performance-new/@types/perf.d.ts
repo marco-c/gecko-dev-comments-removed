@@ -500,18 +500,32 @@ export interface FeatureDescription {
   disabledReason?: string;
 }
 
+
+export type LibInfoMapKey = string;
+
+
+export type LibInfoMapValue = {
+  name: string;
+  path: string;
+  debugName: string;
+  debugPath: string;
+  breakpadId: string;
+  arch: string;
+}
+
 export type SymbolicationWorkerInitialMessage = {
   
-  binaryPath: string;
-  
-  
-  debugPath: string;
-  
-  
-  
-  
+  debugName: string;
   
   breakpadId: string;
+  
+  
+  
+  
+  libInfoMap: Map<LibInfoMapKey, LibInfoMapValue>;
+  
+  
+  objdirs: string[];
   
   module: WebAssembly.Module;
 };

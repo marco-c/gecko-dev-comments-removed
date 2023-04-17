@@ -4,9 +4,6 @@
 
 "use strict";
 
-const { createLazyLoaders } = ChromeUtils.import(
-  "resource://devtools/client/performance-new/typescript-lazy-load.jsm.js"
-);
 
 
 
@@ -19,11 +16,6 @@ const { createLazyLoaders } = ChromeUtils.import(
 
 
 
-
-
-const lazy = createLazyLoaders({
-  OS: () => ChromeUtils.import("resource://gre/modules/osfile.jsm"),
-});
 
 ChromeUtils.defineModuleGetter(
   this,
@@ -198,23 +190,6 @@ async function getSymbolTableFromDebuggee(perfFront, path, breakpadId) {
 
 
 
-async function doesFileExistAtPath(path) {
-  const { OS } = lazy.OS();
-  try {
-    const result = await OS.File.stat(path);
-    return !result.isDir;
-  } catch (e) {
-    if (e instanceof OS.File.Error && e.becauseNoSuchFile) {
-      return false;
-    }
-    throw e;
-  }
-}
-
-
-
-
-
 
 
 
@@ -253,100 +228,19 @@ class LocalSymbolicationService {
 
 
   async getSymbolTable(debugName, breakpadId) {
-    
-    
-    const candidatePaths = this._getCandidatePaths(debugName, breakpadId);
-
-    
     const module = await getWASMProfilerGetSymbolsModule();
-    const errors = [];
-    for (const { path, debugPath } of candidatePaths) {
-      if (await doesFileExistAtPath(path)) {
-        try {
-          
-          const initialMessage = {
-            binaryPath: path,
-            debugPath,
-            breakpadId,
-            module,
-          };
-          return await getResultFromWorker(
-            "resource://devtools/client/performance-new/symbolication-worker.js",
-            initialMessage
-          );
-        } catch (e) {
-          
-          
-          
-          
-          errors.push(e);
-        }
-      }
-    }
-
-    throw new Error(
-      `Could not obtain symbols for the library ${debugName} ${breakpadId} ` +
-        `because there was no matching file at any of the candidate paths: ${JSON.stringify(
-          candidatePaths
-        )}. Errors: ${errors.map(e => e.message).join(", ")}`
+    
+    const initialMessage = {
+      debugName,
+      breakpadId,
+      libInfoMap: this._libInfoMap,
+      objdirs: this._objdirs,
+      module,
+    };
+    return getResultFromWorker(
+      "resource://devtools/client/performance-new/symbolication-worker.js",
+      initialMessage
     );
-  }
-
-  
-
-
-
-
-
-
-  _getCandidatePaths(debugName, breakpadId) {
-    const key = `${debugName}:${breakpadId}`;
-    const lib = this._libInfoMap.get(key);
-    if (!lib) {
-      throw new Error(
-        `Could not find the library for "${debugName}", "${breakpadId}".`
-      );
-    }
-
-    const { name, path, debugPath } = lib;
-    const { OS } = lazy.OS();
-    const candidatePaths = [];
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    for (const objdirPath of this._objdirs) {
-      
-      candidatePaths.push({
-        path: OS.Path.join(objdirPath, "dist", "bin", name),
-        debugPath: OS.Path.join(objdirPath, "dist", "bin", name),
-      });
-      
-      
-      
-      
-      candidatePaths.push({
-        path: OS.Path.join(objdirPath, name),
-        debugPath: OS.Path.join(objdirPath, name),
-      });
-    }
-
-    
-    
-    
-    
-    candidatePaths.push({ path, debugPath });
-
-    return candidatePaths;
   }
 }
 

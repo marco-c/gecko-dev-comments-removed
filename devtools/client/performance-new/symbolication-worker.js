@@ -82,6 +82,69 @@ function createPlainErrorObject(e) {
   };
 }
 
+class PathHelper {
+  constructor(libInfoMap, objdirs) {
+    this._libInfoMap = libInfoMap;
+    this._objdirs = objdirs;
+  }
+
+  
+
+
+
+
+
+
+  getCandidatePaths(debugName, breakpadId) {
+    const key = `${debugName}:${breakpadId}`;
+    const lib = this._libInfoMap.get(key);
+    if (!lib) {
+      throw new Error(
+        `Could not find the library for "${debugName}", "${breakpadId}".`
+      );
+    }
+
+    const { name, path, debugPath } = lib;
+    const candidatePaths = [];
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    for (const objdirPath of this._objdirs) {
+      
+      candidatePaths.push({
+        path: OS.Path.join(objdirPath, "dist", "bin", name),
+        debugPath: OS.Path.join(objdirPath, "dist", "bin", name),
+      });
+      
+      
+      
+      
+      candidatePaths.push({
+        path: OS.Path.join(objdirPath, name),
+        debugPath: OS.Path.join(objdirPath, name),
+      });
+    }
+
+    
+    
+    
+    
+    candidatePaths.push({ path, debugPath });
+
+    return candidatePaths;
+  }
+}
+
 function getCompactSymbolTableFromPath(binaryPath, debugPath, breakpadId) {
   
   const binaryFile = OS.File.open(binaryPath, { read: true });
@@ -118,10 +181,35 @@ function getCompactSymbolTableFromPath(binaryPath, debugPath, breakpadId) {
   }
 }
 
+function getSymbolTable(debugName, breakpadId, libInfoMap, objdirs) {
+  const helper = new PathHelper(libInfoMap, objdirs);
+  const candidatePaths = helper.getCandidatePaths(debugName, breakpadId);
+
+  const errors = [];
+  for (const { path, debugPath } of candidatePaths) {
+    try {
+      return getCompactSymbolTableFromPath(path, debugPath, breakpadId);
+    } catch (e) {
+      
+      
+      
+      
+      errors.push(e);
+    }
+  }
+
+  throw new Error(
+    `Could not obtain symbols for the library ${debugName} ${breakpadId} ` +
+      `because there was no matching file at any of the candidate paths: ${JSON.stringify(
+        candidatePaths
+      )}. Errors: ${errors.map(e => e.message).join(", ")}`
+  );
+}
+
 
 onmessage = async e => {
   try {
-    const { binaryPath, debugPath, breakpadId, module } = e.data;
+    const { debugName, breakpadId, libInfoMap, objdirs, module } = e.data;
 
     if (!(module instanceof WebAssembly.Module)) {
       throw new Error("invalid WebAssembly module");
@@ -130,11 +218,7 @@ onmessage = async e => {
     
     await wasm_bindgen(module);
 
-    const result = getCompactSymbolTableFromPath(
-      binaryPath,
-      debugPath,
-      breakpadId
-    );
+    const result = getSymbolTable(debugName, breakpadId, libInfoMap, objdirs);
     postMessage(
       { result },
       result.map(r => r.buffer)
