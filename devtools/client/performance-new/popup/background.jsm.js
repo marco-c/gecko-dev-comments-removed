@@ -36,7 +36,6 @@ const AppConstants = ChromeUtils.import(
 
 
 
-
 const ENTRIES_PREF = "devtools.performance.recording.entries";
 
 const INTERVAL_PREF = "devtools.performance.recording.interval";
