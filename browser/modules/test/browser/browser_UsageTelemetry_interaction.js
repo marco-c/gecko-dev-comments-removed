@@ -78,16 +78,6 @@ add_task(async function toolbarButtons() {
     let newTab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
     let tabClose = BrowserTestUtils.waitForTabClosing(newTab);
 
-    let bookmarksToolbarVisible = TestUtils.waitForCondition(() => {
-      let toolbar = gNavToolbox.querySelector("#PersonalToolbar");
-      return toolbar.getAttribute("collapsed") != "true";
-    }, "waiting for toolbar to become visible");
-    CustomizableUI.setToolbarVisibility("PersonalToolbar", true);
-    registerCleanupFunction(() => {
-      CustomizableUI.setToolbarVisibility("PersonalToolbar", false);
-    });
-    await bookmarksToolbarVisible;
-
     let tabs = elem("tabbrowser-tabs");
     if (!tabs.hasAttribute("overflow")) {
       tabs.setAttribute("overflow", "true");
@@ -113,7 +103,47 @@ add_task(async function toolbarButtons() {
 
     click(newTab.querySelector(".tab-close-button"));
     await tabClose;
-    click(document.querySelector("#PlacesToolbarItems .bookmark-item"));
+
+    let bookmarksToolbar = gNavToolbox.querySelector("#PersonalToolbar");
+
+    let bookmarksToolbarReady = BrowserTestUtils.waitForMutationCondition(
+      bookmarksToolbar,
+      { attributes: true },
+      () => {
+        return (
+          bookmarksToolbar.getAttribute("collapsed") != "true" &&
+          bookmarksToolbar.getAttribute("initialized") == "true"
+        );
+      }
+    );
+
+    window.setToolbarVisibility(
+      bookmarksToolbar,
+      true ,
+      false ,
+      false 
+    );
+    registerCleanupFunction(() => {
+      window.setToolbarVisibility(
+        bookmarksToolbar,
+        false ,
+        false ,
+        false 
+      );
+    });
+    await bookmarksToolbarReady;
+
+    
+    
+    
+    let placesToolbarItems = document.getElementById("PlacesToolbarItems");
+    await BrowserTestUtils.waitForMutationCondition(
+      placesToolbarItems,
+      { childList: true },
+      () => placesToolbarItems.querySelector(".bookmark-item") != null
+    );
+
+    click(placesToolbarItems.querySelector(".bookmark-item"));
 
     click(customButton);
 
