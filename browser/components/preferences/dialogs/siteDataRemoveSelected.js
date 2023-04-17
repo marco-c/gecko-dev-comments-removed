@@ -5,23 +5,6 @@
 
 "use strict";
 
-const { SiteDataManager } = ChromeUtils.import(
-  "resource:///modules/SiteDataManager.jsm"
-);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -37,55 +20,25 @@ let gSiteDataRemoveSelected = {
 
     let list = document.getElementById("removalList");
 
-    let baseDomain = window.arguments[0].baseDomain;
-    if (baseDomain) {
-      let hosts = new Set();
-      SiteDataManager.updateSites((host, site) => {
-        
-        if (!host) {
-          return;
-        }
-
-        if (site.baseDomain != baseDomain) {
-          return;
-        }
-
-        
-        if (hosts.has(host)) {
-          return;
-        }
-        hosts.add(host);
-
-        let listItem = document.createXULElement("richlistitem");
-        let label = document.createXULElement("label");
-        label.setAttribute("value", host);
-        listItem.appendChild(label);
-        list.appendChild(listItem);
-      });
-      return;
-    }
-
     let hosts = window.arguments[0].hosts;
-    if (hosts) {
-      hosts.sort();
-      let fragment = document.createDocumentFragment();
-      for (let host of hosts) {
-        let listItem = document.createXULElement("richlistitem");
-        let label = document.createXULElement("label");
-        if (host) {
-          label.setAttribute("value", host);
-        } else {
-          document.l10n.setAttributes(label, "site-data-local-file-host");
-        }
-        listItem.appendChild(label);
-        fragment.appendChild(listItem);
-      }
-      list.appendChild(fragment);
-      return;
+
+    if (!hosts) {
+      throw new Error("Must specify hosts option in arguments.");
     }
 
-    throw new Error(
-      "Must specify either a hosts or baseDomain option in arguments."
-    );
+    hosts.sort();
+    let fragment = document.createDocumentFragment();
+    for (let host of hosts) {
+      let listItem = document.createXULElement("richlistitem");
+      let label = document.createXULElement("label");
+      if (host) {
+        label.setAttribute("value", host);
+      } else {
+        document.l10n.setAttributes(label, "site-data-local-file-host");
+      }
+      listItem.appendChild(label);
+      fragment.appendChild(listItem);
+    }
+    list.appendChild(fragment);
   },
 };
