@@ -508,7 +508,7 @@ def repackage_msix(
         makeappx = find_sdk_tool("makeappx.exe", log=log)
     if not makeappx:
         raise ValueError(
-            "makeappx is required; " "set SIGNTOOL or WINDOWSSDKDIR or PATH"
+            "makeappx is required; " "set MAKEAPPX or WINDOWSSDKDIR or PATH"
         )
 
     
