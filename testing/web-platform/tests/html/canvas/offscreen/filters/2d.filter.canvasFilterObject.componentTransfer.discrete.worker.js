@@ -19,7 +19,7 @@ var ctx = offscreenCanvas.getContext('2d');
 
 function getTransformedValue(C, V) {
     
-    const n = V.length - 1;
+    const n = V.length;
     const k = C == 1 ? n - 1 : Math.floor(C * n);
     return V[k];
 }
