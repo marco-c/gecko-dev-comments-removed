@@ -5,15 +5,9 @@
 
 
 #include "gk_rust_utils_ffi_generated.h"
-#include "nsString.h"
 #include "GkRustUtils.h"
 
 using namespace mozilla;
-
-
-void GkRustUtils::GenerateUUID(nsACString& aResult) {
-  GkRustUtils_GenerateUUID(&aResult);
-};
 
 
 bool GkRustUtils::ParseSemVer(const nsACString& aVersion, uint64_t& aOutMajor,
