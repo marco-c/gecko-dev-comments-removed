@@ -70,12 +70,19 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
     
     
     this._earlyIframeTargets = {};
+
     
     
     
     
     
-    this._currentTopLevelWindowGlobalTargets = new Set();
+    
+    
+    
+    
+    
+    
+    this._currentWindowGlobalTargets = new Map();
 
     this.notifyResourceAvailable = this.notifyResourceAvailable.bind(this);
     this.notifyResourceDestroyed = this.notifyResourceDestroyed.bind(this);
@@ -243,26 +250,27 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
   notifyTargetAvailable(actor) {
     
-    if (!this.browserId) {
-      this.emit("target-available-form", actor);
-      return;
-    }
-
-    
     
     if (!actor.traits?.isBrowsingContext) {
       this.emit("target-available-form", actor);
       return;
     }
 
+    
+    
+    this._currentWindowGlobalTargets.set(actor.innerWindowId, actor);
+
+    
+    if (!this.browserId) {
+      this.emit("target-available-form", actor);
+      return;
+    }
+
     if (actor.isTopLevelTarget) {
       this.emit("target-available-form", actor);
-      this._currentTopLevelWindowGlobalTargets.add(actor.innerWindowId);
       
       this._flushIframeTargets(actor.innerWindowId);
-    } else if (
-      this._currentTopLevelWindowGlobalTargets.has(actor.topInnerWindowId)
-    ) {
+    } else if (this._currentWindowGlobalTargets.has(actor.topInnerWindowId)) {
       
       this.emit("target-available-form", actor);
     } else if (this._earlyIframeTargets[actor.topInnerWindowId]) {
@@ -278,10 +286,29 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
   async notifyTargetDestroyed(actor) {
+    
+    
+    if (!actor.innerWindowId) {
+      this.emit("target-destroyed-form", actor);
+      return;
+    }
+    
+    if (actor.isTopLevelTarget) {
+      
+      const childrenActors = [
+        ...this._currentWindowGlobalTargets.values(),
+      ].filter(
+        form =>
+          form.topInnerWindowId == actor.innerWindowId &&
+          
+          form.innerWindowId != actor.innerWindowId
+      );
+      childrenActors.map(form => this.notifyTargetDestroyed(form));
+    }
     if (this._earlyIframeTargets[actor.innerWindowId]) {
       delete this._earlyIframeTargets[actor.innerWindowId];
     }
-    this._currentTopLevelWindowGlobalTargets.delete(actor.innerWindowId);
+    this._currentWindowGlobalTargets.delete(actor.innerWindowId);
     const documentEventWatcher = Resources.getResourceWatcher(
       this,
       Resources.TYPES.DOCUMENT_EVENT
