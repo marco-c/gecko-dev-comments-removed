@@ -2529,6 +2529,13 @@ pref("first-startup.timeout", 30000);
 #endif
 
 
+#ifdef MOZ_DEV_EDITION
+  pref("browser.menu.showViewImageInfo", true);
+#else
+  pref("browser.menu.showViewImageInfo", false);
+#endif
+
+
 
 
 

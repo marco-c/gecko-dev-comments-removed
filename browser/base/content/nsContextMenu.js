@@ -580,6 +580,19 @@ class nsContextMenu {
     this.showItem("context-sendimage", this.onImage || showBGImage);
 
     
+    var showViewImageInfo =
+      this.onImage &&
+      Services.prefs.getBoolPref("browser.menu.showViewImageInfo", false);
+
+    this.showItem("context-viewimageinfo", showViewImageInfo);
+    
+    
+    this.setItemAttr(
+      "context-viewimageinfo",
+      "disabled",
+      this.webExtBrowserType === "popup"
+    );
+    
     
     this.showItem(
       "context-viewimagedesc",
@@ -1329,6 +1342,16 @@ class nsContextMenu {
       this.contentData.docLocation,
       null,
       null,
+      null,
+      this.browser
+    );
+  }
+
+  viewImageInfo() {
+    BrowserPageInfo(
+      this.contentData.docLocation,
+      "mediaTab",
+      this.imageInfo,
       null,
       this.browser
     );
