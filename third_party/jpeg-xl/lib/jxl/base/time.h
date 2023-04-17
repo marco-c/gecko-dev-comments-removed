@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef LIB_JXL_BASE_TIME_H_
+#define LIB_JXL_BASE_TIME_H_
+
+
+
+namespace jxl {
+
+
+
+double Now();
+
+}  
+
+#endif  
