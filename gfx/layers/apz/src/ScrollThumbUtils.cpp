@@ -26,6 +26,8 @@ struct AsyncScrollThumbTransformer {
   
   AsyncTransformComponentMatrix mAsyncTransform;
   AsyncTransformComponentMatrix mScrollbarTransform;
+  CSSToParentLayerScale mEffectiveZoom;
+  float mUnitlessThumbRatio;
 
   LayerToParentLayerMatrix4x4 ComputeTransform();
 
@@ -35,7 +37,35 @@ struct AsyncScrollThumbTransformer {
   
   
   void ApplyTransformForAxis(const Axis& aAxis);
+
+  
+  
+  void ScaleThumbBy(const Axis& aAxis, float aScale);
 };
+
+void AsyncScrollThumbTransformer::ScaleThumbBy(const Axis& aAxis,
+                                               float aScale) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const CSSCoord thumbOrigin =
+      (aAxis.GetPointOffset(mMetrics.GetVisualScrollOffset()) *
+       mUnitlessThumbRatio);
+  const CSSCoord thumbOriginScaled = thumbOrigin * aScale;
+  const CSSCoord thumbOriginDelta = thumbOriginScaled - thumbOrigin;
+  const ParentLayerCoord thumbOriginDeltaPL = thumbOriginDelta * mEffectiveZoom;
+
+  aAxis.PostScale(mScrollbarTransform, aScale);
+  aAxis.PostTranslate(mScrollbarTransform, -thumbOriginDeltaPL);
+}
 
 void AsyncScrollThumbTransformer::ApplyTransformForAxis(const Axis& aAxis) {
   ParentLayerCoord asyncScroll = aAxis.GetTransformTranslation(mAsyncTransform);
@@ -47,7 +77,7 @@ void AsyncScrollThumbTransformer::ApplyTransformForAxis(const Axis& aAxis) {
   const float scale = 1.f / asyncZoom;
 
   
-  const CSSToParentLayerScale effectiveZoom(
+  mEffectiveZoom = CSSToParentLayerScale(
       aAxis.GetAxisScale(mMetrics.GetZoom()).scale * asyncZoom);
 
   if (gfxPlatform::UseDesktopZoomingScrollbars()) {
@@ -66,38 +96,21 @@ void AsyncScrollThumbTransformer::ApplyTransformForAxis(const Axis& aAxis) {
 
     asyncScroll -= aAxis.GetPointOffset(
         (mMetrics.GetLayoutScrollOffset() - mMetrics.GetVisualScrollOffset()) *
-        effectiveZoom);
+        mEffectiveZoom);
   }
 
   
   
   
-  const float ratio = mScrollbarData.mThumbRatio /
-                      (mMetrics.GetPresShellResolution() * asyncZoom);
-  
-  
-  
-  ParentLayerCoord translation = -asyncScroll * ratio;
+  mUnitlessThumbRatio = mScrollbarData.mThumbRatio /
+                        (mMetrics.GetPresShellResolution() * asyncZoom);
 
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  const CSSCoord thumbOrigin =
-      (aAxis.GetPointOffset(mMetrics.GetVisualScrollOffset()) * ratio);
-  const CSSCoord thumbOriginScaled = thumbOrigin * scale;
-  const CSSCoord thumbOriginDelta = thumbOriginScaled - thumbOrigin;
-  const ParentLayerCoord thumbOriginDeltaPL = thumbOriginDelta * effectiveZoom;
-  translation -= thumbOriginDeltaPL;
+  ParentLayerCoord translation = -asyncScroll * mUnitlessThumbRatio;
 
-  aAxis.PostScale(mScrollbarTransform, scale);
+  ScaleThumbBy(aAxis, scale);
   aAxis.PostTranslate(mScrollbarTransform, translation);
 }
 
