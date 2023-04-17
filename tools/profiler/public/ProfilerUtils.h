@@ -21,18 +21,12 @@ using ProfilerThreadId = mozilla::baseprofiler::BaseProfilerThreadId;
 
 [[nodiscard]] ProfilerThreadId profiler_current_thread_id();
 
-namespace mozilla::profiler::detail {
 
 
-extern ProfilerThreadId scProfilerMainThreadId;
-}  
+void profiler_init_main_thread_id();
 
-[[nodiscard]] inline ProfilerThreadId profiler_main_thread_id() {
-  return mozilla::profiler::detail::scProfilerMainThreadId;
-}
+[[nodiscard]] ProfilerThreadId profiler_main_thread_id();
 
-[[nodiscard]] inline bool profiler_is_main_thread() {
-  return profiler_current_thread_id() == profiler_main_thread_id();
-}
+[[nodiscard]] bool profiler_is_main_thread();
 
 #endif  

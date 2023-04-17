@@ -119,12 +119,7 @@ void TestProfilerUtils() {
   }
 
   {
-    if (!mozilla::baseprofiler::detail::scProfilerMainThreadId.IsSpecified()) {
-      
-      
-      mozilla::baseprofiler::detail::scProfilerMainThreadId =
-          mozilla::baseprofiler::profiler_current_thread_id();
-    }
+    mozilla::baseprofiler::profiler_init_main_thread_id();
 
     using mozilla::baseprofiler::BaseProfilerThreadId;
     using Number = BaseProfilerThreadId::NumberType;

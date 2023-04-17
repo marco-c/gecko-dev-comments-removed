@@ -118,19 +118,13 @@ namespace mozilla::baseprofiler {
 
 [[nodiscard]] MFBT_API BaseProfilerThreadId profiler_current_thread_id();
 
-namespace detail {
 
 
-extern MFBT_DATA BaseProfilerThreadId scProfilerMainThreadId;
-}  
+MFBT_API void profiler_init_main_thread_id();
 
-[[nodiscard]] inline BaseProfilerThreadId profiler_main_thread_id() {
-  return detail::scProfilerMainThreadId;
-}
+[[nodiscard]] MFBT_API BaseProfilerThreadId profiler_main_thread_id();
 
-[[nodiscard]] inline bool profiler_is_main_thread() {
-  return profiler_current_thread_id() == profiler_main_thread_id();
-}
+[[nodiscard]] MFBT_API bool profiler_is_main_thread();
 
 }  
 

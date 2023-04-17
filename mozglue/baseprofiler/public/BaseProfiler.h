@@ -38,7 +38,8 @@
 
 
 
-#  define AUTO_BASE_PROFILER_INIT
+#  define AUTO_BASE_PROFILER_INIT \
+    ::mozilla::baseprofiler::profiler_init_main_thread_id()
 
 #  define BASE_PROFILER_REGISTER_THREAD(name)
 #  define BASE_PROFILER_UNREGISTER_THREAD()

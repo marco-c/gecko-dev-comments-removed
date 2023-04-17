@@ -131,8 +131,22 @@ BaseProfilerThreadId profiler_current_thread_id() {
 
 
 
-namespace mozilla::baseprofiler::detail {
+namespace mozilla::baseprofiler {
 
+static BaseProfilerThreadId scBaseProfilerMainThreadId{};
 
-BaseProfilerThreadId scProfilerMainThreadId;
+void profiler_init_main_thread_id() {
+  if (!scBaseProfilerMainThreadId.IsSpecified()) {
+    scBaseProfilerMainThreadId = profiler_current_thread_id();
+  }
+}
+
+BaseProfilerThreadId profiler_main_thread_id() {
+  return scBaseProfilerMainThreadId;
+}
+
+bool profiler_is_main_thread() {
+  return profiler_current_thread_id() == scBaseProfilerMainThreadId;
+}
+
 }  
