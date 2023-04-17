@@ -18,7 +18,6 @@ namespace layers {
 class LayerManager;
 class WebRenderLayerManager;
 class KnowsCompositor;
-class ShadowLayerForwarder;
 class CompositorBridgeChild;
 class FrameUniformityData;
 class PersistentBufferProvider;
@@ -199,8 +198,6 @@ class WindowRenderer : public FrameRecorder {
   
 
   virtual layers::KnowsCompositor* AsKnowsCompositor() { return nullptr; }
-
-  virtual layers::ShadowLayerForwarder* AsShadowForwarder() { return nullptr; }
 
   virtual layers::CompositorBridgeChild* GetCompositorBridgeChild() {
     return nullptr;
