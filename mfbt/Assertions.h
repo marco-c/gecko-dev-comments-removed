@@ -609,4 +609,15 @@ struct AssertionConditionType {
 #undef MOZ_DUMP_ASSERTION_STACK
 #undef MOZ_CRASH_CRASHREPORT
 
+
+
+
+
+#ifdef __cplusplus
+namespace mozilla::detail {
+MFBT_API MOZ_NORETURN MOZ_COLD void InvalidArrayIndex_CRASH(size_t aIndex,
+                                                            size_t aLength);
+}  
+#endif  
+
 #endif 
