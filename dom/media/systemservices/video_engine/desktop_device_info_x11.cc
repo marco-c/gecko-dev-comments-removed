@@ -3,6 +3,7 @@
 
 
 #include "desktop_device_info_x11.h"
+#include "mozilla/Sprintf.h"
 
 #include <inttypes.h>
 
