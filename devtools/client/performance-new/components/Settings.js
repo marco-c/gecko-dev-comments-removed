@@ -162,9 +162,10 @@ const threadColumns = [
       l10nId: "perftools-thread-dns-resolver",
     },
     {
-      name: "JS Helper",
-      id: "js-helper",
-      l10nId: "perftools-thread-js-helper",
+      
+      name: "TaskController",
+      id: "task-controller",
+      l10nId: "perftools-thread-task-controller",
     },
   ],
 ];
