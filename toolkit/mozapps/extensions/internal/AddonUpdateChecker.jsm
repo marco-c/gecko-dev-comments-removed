@@ -554,8 +554,11 @@ var AddonUpdateChecker = {
 
 
 
+
+
   async getNewestCompatibleUpdate(
     aUpdates,
+    aAddon,
     aAppVersion,
     aPlatformVersion,
     aIgnoreMaxVersion,
@@ -568,9 +571,14 @@ var AddonUpdateChecker = {
       aPlatformVersion = Services.appinfo.platformVersion;
     }
 
+    let newestVersion = aAddon.version;
     let newest = null;
     for (let update of aUpdates) {
       if (!update.updateURL) {
+        continue;
+      }
+      if (Services.vc.compare(newestVersion, update.version) >= 0) {
+        
         continue;
       }
       let state = await Blocklist.getAddonBlocklistState(
@@ -582,9 +590,7 @@ var AddonUpdateChecker = {
         continue;
       }
       if (
-        (newest == null ||
-          Services.vc.compare(newest.version, update.version) < 0) &&
-        matchesVersions(
+        !matchesVersions(
           update,
           aAppVersion,
           aPlatformVersion,
@@ -592,8 +598,10 @@ var AddonUpdateChecker = {
           aIgnoreStrictCompat
         )
       ) {
-        newest = update;
+        continue;
       }
+      newest = update;
+      newestVersion = update.version;
     }
     return newest;
   },
