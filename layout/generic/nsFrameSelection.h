@@ -438,6 +438,7 @@ class nsFrameSelection final {
 
 
 
+
   static nsIFrame* GetFrameForNodeOffset(nsIContent* aNode, int32_t aOffset,
                                          CaretAssociateHint aHint,
                                          int32_t* aReturnOffset);

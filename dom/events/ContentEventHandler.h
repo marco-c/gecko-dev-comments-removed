@@ -314,8 +314,10 @@ class MOZ_STACK_CLASS ContentEventHandler {
   nsresult ConvertToRootRelativeOffset(nsIFrame* aFrame, nsRect& aRect);
   
   
-  nsresult ExpandToClusterBoundary(nsIContent* aContent, bool aForward,
-                                   uint32_t* aXPOffset);
+  
+  
+  nsresult ExpandToClusterBoundary(dom::Text& aTextNode, bool aForward,
+                                   uint32_t* aXPOffset) const;
 
   using FontRangeArray = nsTArray<mozilla::FontRange>;
   static void AppendFontRanges(FontRangeArray& aFontRanges,
