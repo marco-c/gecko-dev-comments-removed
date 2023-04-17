@@ -1058,14 +1058,11 @@ WEBIDL_FILES += [
 
 
 WEBIDL_FILES += [
-    "ExtensionAlarms.webidl",
     "ExtensionBrowser.webidl",
     "ExtensionEventManager.webidl",
     
     "ExtensionMockAPI.webidl",
     "ExtensionPort.webidl",
-    "ExtensionRuntime.webidl",
-    "ExtensionTest.webidl",
 ]
 
 

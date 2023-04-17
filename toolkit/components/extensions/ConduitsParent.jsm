@@ -3,11 +3,7 @@
 
 "use strict";
 
-const EXPORTED_SYMBOLS = [
-  "BroadcastConduit",
-  "ConduitsParent",
-  "ProcessConduitsParent",
-];
+const EXPORTED_SYMBOLS = ["BroadcastConduit", "ConduitsParent"];
 
 
 
@@ -118,42 +114,10 @@ const Hub = {
 
 
 
-
-  verifyWorkerEnv({ actor, extensionId, workerScriptURL }) {
-    const addonPolicy = WebExtensionPolicy.getByID(extensionId);
-    if (!addonPolicy) {
-      throw new Error(`No WebExtensionPolicy found for ${extensionId}`);
-    }
-    if (actor.manager.remoteType !== addonPolicy.extension.remoteType) {
-      throw new Error(
-        `Bad ${extensionId} process: ${actor.manager.remoteType}`
-      );
-    }
-    if (!addonPolicy.isManifestBackgroundWorker(workerScriptURL)) {
-      throw new Error(
-        `Bad ${extensionId} background service worker script url: ${workerScriptURL}`
-      );
-    }
-    return true;
-  },
-
-  
-
-
-
-
-
-
-  verifyEnv({ actor, envType, extensionId, ...rest }) {
+  verifyEnv({ actor, envType, extensionId }) {
     if (!extensionId || !ADDON_ENV.has(envType)) {
       return false;
     }
-
-    
-    if (actor.manager && actor.manager instanceof Ci.nsIDOMProcessParent) {
-      return this.verifyWorkerEnv({ actor, envType, extensionId, ...rest });
-    }
-
     let windowGlobal = actor.manager;
 
     while (windowGlobal) {
@@ -182,19 +146,8 @@ const Hub = {
   fillInAddress(address, actor) {
     address.actor = actor;
     address.verified = this.verifyEnv(address);
-    if (actor instanceof JSWindowActorParent) {
-      address.frameId = WebNavigationFrames.getFrameId(actor.browsingContext);
-      address.url = actor.browsingContext.currentURI.spec;
-    } else {
-      
-      
-      
-      
-      
-      
-      address.frameId = -1;
-      address.url = address.workerScriptURL;
-    }
+    address.frameId = WebNavigationFrames.getFrameId(actor.browsingContext);
+    address.url = actor.browsingContext.currentURI.spec;
   },
 
   
@@ -317,12 +270,9 @@ class BroadcastConduit extends BaseConduit {
       
       tab: remote =>
         remote.extensionId === arg.extensionId &&
-        remote.actor.manager.browsingContext?.top.id === arg.topBC &&
+        remote.actor.manager.browsingContext.top.id === arg.topBC &&
         (arg.frameId == null || remote.frameId === arg.frameId) &&
         remote.recv.includes(method),
-
-      
-      extension: remote => remote.instanceId === arg.instanceId,
     };
 
     let targets = Array.from(Hub.remotes.values()).filter(filters[kind]);
@@ -456,13 +406,4 @@ class ConduitsParent extends JSWindowActorParent {
   didDestroy() {
     Hub.actorClosed(this);
   }
-}
-
-
-
-
-class ProcessConduitsParent extends JSProcessActorParent {
-  receiveMessage = ConduitsParent.prototype.receiveMessage;
-  willDestroy = ConduitsParent.prototype.willDestroy;
-  didDestroy = ConduitsParent.prototype.didDestroy;
 }

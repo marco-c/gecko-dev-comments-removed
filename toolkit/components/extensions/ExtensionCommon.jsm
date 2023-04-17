@@ -489,18 +489,6 @@ class BaseContext {
     return this.extension.privateBrowsingAllowed;
   }
 
-  
-
-
-
-
-
-
-
-  get useWebIDLBindings() {
-    return false;
-  }
-
   canAccessWindow(window) {
     return this.extension.canAccessWindow(window);
   }

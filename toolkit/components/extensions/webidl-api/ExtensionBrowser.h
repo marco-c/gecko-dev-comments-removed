@@ -19,51 +19,18 @@ class ErrorResult;
 
 namespace extensions {
 
-class ExtensionAlarms;
 class ExtensionMockAPI;
-class ExtensionPort;
-class ExtensionRuntime;
-class ExtensionTest;
 
 bool ExtensionAPIAllowed(JSContext* aCx, JSObject* aGlobal);
 
 class ExtensionBrowser final : public nsISupports, public nsWrapperCache {
   nsCOMPtr<nsIGlobalObject> mGlobal;
-  JS::Heap<JS::Value> mLastError;
-  bool mCheckedLastError;
-  RefPtr<ExtensionAlarms> mExtensionAlarms;
   RefPtr<ExtensionMockAPI> mExtensionMockAPI;
-  RefPtr<ExtensionRuntime> mExtensionRuntime;
-  RefPtr<ExtensionTest> mExtensionTest;
-  nsTHashMap<nsStringHashKey, WeakPtr<ExtensionPort>> mPortsLookup;
 
   ~ExtensionBrowser() = default;
 
  public:
   explicit ExtensionBrowser(nsIGlobalObject* aGlobal);
-
-  
-  
-  void SetLastError(JS::Handle<JS::Value> aLastError);
-  void GetLastError(JS::MutableHandle<JS::Value> aRetVal);
-  
-  
-  
-  
-  bool ClearLastError();
-
-  
-
-  
-  
-  
-  already_AddRefed<ExtensionPort> GetPort(
-      JS::Handle<JS::Value> aDescriptorValue, ErrorResult& aRv);
-
-  
-  
-  
-  void ForgetReleasedPort(const nsAString& aPortId);
 
   
   JSObject* WrapObject(JSContext* aCx,
@@ -73,10 +40,7 @@ class ExtensionBrowser final : public nsISupports, public nsWrapperCache {
 
   nsIGlobalObject* GetParentObject() const;
 
-  ExtensionAlarms* GetExtensionAlarms();
   ExtensionMockAPI* GetExtensionMockAPI();
-  ExtensionRuntime* GetExtensionRuntime();
-  ExtensionTest* GetExtensionTest();
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(ExtensionBrowser)

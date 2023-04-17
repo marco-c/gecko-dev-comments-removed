@@ -23,7 +23,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   ExtensionCommon: "resource://gre/modules/ExtensionCommon.jsm",
   ExtensionContent: "resource://gre/modules/ExtensionContent.jsm",
   ExtensionPageChild: "resource://gre/modules/ExtensionPageChild.jsm",
-  Schemas: "resource://gre/modules/Schemas.jsm",
 });
 
 const { ExtensionUtils } = ChromeUtils.import(
@@ -277,11 +276,6 @@ ExtensionManager = {
           let policy = WebExtensionPolicy.getByID(data.id);
           if (policy) {
             if (extensions.has(policy)) {
-              
-              
-              if (WebExtensionPolicy.isExtensionProcess) {
-                ExtensionPageChild.shutdownExtension(data.id);
-              }
               extensions.get(policy).shutdown();
             }
 
@@ -402,95 +396,11 @@ var ExtensionProcessScript = {
 
 var ExtensionAPIRequestHandler = {
   handleAPIRequest(policy, request) {
-    try {
-      let extension = extensions.get(policy);
-
-      if (!extension) {
-        throw new Error(`Extension instance not found for addon ${policy.id}`);
-      }
-
-      let context = this.getExtensionContextForAPIRequest({
-        extension,
-        request,
-      });
-
-      
-      request.normalizedArgs = this.validateAndNormalizeRequestArgs({
-        context,
-        request,
-      });
-
-      return context.childManager.handleWebIDLAPIRequest(request);
-    } catch (error) {
-      
-      
-      
-      Cu.reportError(error);
-      return {
-        type: Ci.mozIExtensionAPIRequestResult.EXTENSION_ERROR,
-        value: new Error("An unexpected error occurred"),
-      };
-    }
-  },
-
-  getExtensionContextForAPIRequest({ extension, request }) {
-    let context;
-
-    if (request.window) {
-      throw new Error(
-        `Extension API request originated from an extension window are not yet supported`
-      );
-    } else if (request.serviceWorkerInfo) {
-      context = ExtensionPageChild.getContextForWorker(
-        extension,
-        request.serviceWorkerInfo
-      );
-      if (!context) {
-        throw new Error(
-          `Extension context not found for the extension service worker`
-        );
-      }
-    } else {
-      throw new Error(
-        `Extension API request originated from an unsupported extension global`
-      );
-    }
-
-    if (!context.useWebIDLBindings) {
-      const { viewType, contextId } = context;
-      throw new Error(
-        `Extension ${extension.id} context "${viewType}" ${contextId} does not support WebIDL bindings`
-      );
-    }
-
-    return context;
-  },
-
-  validateAndNormalizeRequestArgs({ context, request }) {
-    if (!Schemas.checkPermissions(request.apiNamespace, context.extension)) {
-      throw new context.Error(
-        `Not enough privileges to access ${request.apiNamespace}`
-      );
-    }
-    if (request.requestType === "getProperty") {
-      return [];
-    }
-
-    if (request.apiObjectType) {
-      
-      
-      
-      
-      
-      
-      
-      return request.args;
-    }
-
-    const { apiNamespace, apiName, args } = request;
     
     
-    return Schemas.checkParameters(context, apiNamespace, apiName, args);
+    
+    
+    throw new Error("Not implemented");
   },
 };
 

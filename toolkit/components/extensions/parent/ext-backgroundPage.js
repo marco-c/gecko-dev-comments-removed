@@ -121,49 +121,12 @@ class BackgroundWorker {
   }
 
   async build() {
-    const { extension } = this;
-
-    try {
-      
-      
-      const regInfo = await serviceWorkerManager.registerForAddonPrincipal(
-        this.extension.principal
-      );
-      this.registrationInfo = regInfo.QueryInterface(
-        Ci.nsIServiceWorkerRegistrationInfo
-      );
-
-      
-      
-      await this.waitForActiveWorker();
-    } catch (e) {
-      
-      
-      Cu.reportError(e);
-
-      if (extension.persistentListeners) {
-        EventManager.clearPrimedListeners(this.extension, false);
-      }
-
-      
-      extension.emit("background-page-aborted");
-      return;
-    }
-
-    
-    
-    
-    
-
-    if (extension.persistentListeners) {
-      
-      
-      
-      EventManager.clearPrimedListeners(extension, !!this.extension);
-    }
-
-    
-    extension.emit("background-page-started");
+    const regInfo = await serviceWorkerManager.registerForAddonPrincipal(
+      this.extension.principal
+    );
+    this.registrationInfo = regInfo.QueryInterface(
+      Ci.nsIServiceWorkerRegistrationInfo
+    );
   }
 
   shutdown(isAppShutdown) {
@@ -172,52 +135,11 @@ class BackgroundWorker {
     
     
     
-    if (!isAppShutdown) {
-      this.registrationInfo?.forceShutdown();
+    if (!isAppShutdown && this.registrationInfo) {
+      this.registrationInfo.forceShutdown();
     }
 
     this.registrationInfo = null;
-  }
-
-  waitForActiveWorker() {
-    const { extension, registrationInfo } = this;
-    return new Promise((resolve, reject) => {
-      const resolveOnActive = () => {
-        if (
-          registrationInfo.activeWorker?.state ===
-          Ci.nsIServiceWorkerInfo.STATE_ACTIVATED
-        ) {
-          resolve();
-          return true;
-        }
-        return false;
-      };
-
-      const rejectOnUnregistered = () => {
-        if (registrationInfo.unregistered) {
-          reject(
-            new Error(
-              `Background service worker unregistered for "${extension.policy.debugName}"`
-            )
-          );
-          return true;
-        }
-        return false;
-      };
-
-      if (resolveOnActive() || rejectOnUnregistered()) {
-        return;
-      }
-
-      const listener = {
-        onChange() {
-          if (resolveOnActive() || rejectOnUnregistered()) {
-            registrationInfo.removeListener(listener);
-          }
-        },
-      };
-      registrationInfo.addListener(listener);
-    });
   }
 }
 
