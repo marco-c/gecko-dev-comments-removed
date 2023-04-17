@@ -163,7 +163,7 @@ class GlobalHelperThreadState {
 
   
   
-  size_t externalTasksPending_ = 0;
+  size_t tasksPending_ = 0;
 
   bool isInitialized_ = false;
 
@@ -198,7 +198,7 @@ class GlobalHelperThreadState {
 
   void setCpuCount(size_t count);
 
-  void setExternalTaskCallback(JS::HelperThreadTaskCallback callback,
+  void setDispatchTaskCallback(JS::HelperThreadTaskCallback callback,
                                size_t threadCount);
 
   [[nodiscard]] bool ensureContextList(size_t count,
@@ -457,8 +457,8 @@ class GlobalHelperThreadState {
   bool submitTask(PromiseHelperTask* task);
   bool submitTask(GCParallelTask* task,
                   const AutoLockHelperThreadState& locked);
+  void runOneTask(AutoLockHelperThreadState& lock);
   void runTaskLocked(HelperThreadTask* task, AutoLockHelperThreadState& lock);
-  void runTaskFromExternalThread(AutoLockHelperThreadState& lock);
 
   using Selector = HelperThreadTask* (
       GlobalHelperThreadState::*)(const AutoLockHelperThreadState&);
