@@ -40,9 +40,6 @@ class AccessibleWrap : public LocalAccessible, public MsaaAccessible {
   STDMETHODIMP QueryInterface(REFIID, void**) override;
 
   
-  CLSID GetClassID() const;
-
-  
   virtual nsresult HandleAccEvent(AccEvent* aEvent) override;
   virtual void Shutdown() override;
 
@@ -79,11 +76,6 @@ class AccessibleWrap : public LocalAccessible, public MsaaAccessible {
 
  protected:
   virtual ~AccessibleWrap() = default;
-
-  
-
-
-  DocRemoteAccessibleWrap* DocProxyWrapper() const;
 
   struct HandlerControllerData final {
     HandlerControllerData(DWORD aPid, RefPtr<IHandlerControl>&& aCtrl)
