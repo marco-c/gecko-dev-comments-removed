@@ -900,6 +900,15 @@ struct RootedTraceable final : public VirtualTraceable {
   }
 };
 
+class StackRootedBase {
+ public:
+  StackRootedBase* previous() { return prev; }
+
+ protected:
+  StackRootedBase** stack;
+  StackRootedBase* prev;
+};
+
 class PersistentRootedBase
     : protected mozilla::LinkedListElement<PersistentRootedBase> {
  protected:
@@ -935,29 +944,8 @@ enum class AutoGCRooterKind : uint8_t {
   Limit
 };
 
-namespace detail {
-
-
-
-
-struct RootListEntry;
-}  
-
-template <>
-struct MapTypeToRootKind<detail::RootListEntry*> {
-  static const RootKind kind = RootKind::Traceable;
-};
-
-
-
-
-template <>
-struct GCPolicy<detail::RootListEntry*>
-    : public IgnoreGCPolicy<detail::RootListEntry*> {};
-
 using RootedListHeads =
-    mozilla::EnumeratedArray<RootKind, RootKind::Limit,
-                             Rooted<detail::RootListEntry*>*>;
+    mozilla::EnumeratedArray<RootKind, RootKind::Limit, js::StackRootedBase*>;
 
 using AutoRooterListHeads =
     mozilla::EnumeratedArray<AutoGCRooterKind, AutoGCRooterKind::Limit,
@@ -1114,14 +1102,15 @@ using RootedPtrTraits =
 
 
 template <typename T>
-class MOZ_RAII Rooted : public js::RootedOperations<T, Rooted<T>> {
+class MOZ_RAII Rooted : public js::StackRootedBase,
+                        public js::RootedOperations<T, Rooted<T>> {
   using Ptr = detail::RootedPtr<T>;
   using PtrTraits = detail::RootedPtrTraits<T>;
 
   inline void registerWithRootLists(RootedListHeads& roots) {
     this->stack = &roots[JS::MapTypeToRootKind<T>::kind];
     this->prev = *stack;
-    *stack = reinterpret_cast<Rooted<detail::RootListEntry*>*>(this);
+    *stack = this;
   }
 
   inline RootedListHeads& rootLists(RootingContext* cx) {
@@ -1174,12 +1163,9 @@ class MOZ_RAII Rooted : public js::RootedOperations<T, Rooted<T>> {
   }
 
   ~Rooted() {
-    MOZ_ASSERT(*stack ==
-               reinterpret_cast<Rooted<detail::RootListEntry*>*>(this));
+    MOZ_ASSERT(*stack == this);
     *stack = prev;
   }
-
-  Rooted<T>* previous() { return reinterpret_cast<Rooted<T>*>(prev); }
 
   
 
@@ -1206,14 +1192,6 @@ class MOZ_RAII Rooted : public js::RootedOperations<T, Rooted<T>> {
   void trace(JSTracer* trc, const char* name);
 
  private:
-  
-
-
-
-
-  Rooted<detail::RootListEntry*>** stack;
-  Rooted<detail::RootListEntry*>* prev;
-
   Ptr ptr;
 
   Rooted(const Rooted&) = delete;
