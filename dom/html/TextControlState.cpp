@@ -2104,9 +2104,9 @@ void TextControlState::SetSelectionRange(
   
   
   if (IsSelectionCached() &&
-      StaticPrefs::dom_select_events_textcontrols_selectionchange_enabled()) {
+      StaticPrefs::dom_select_events_textcontrols_enabled()) {
     asyncDispatcher = new AsyncEventDispatcher(
-        mTextCtrlElement, eSelectionChange, CanBubble::eYes);
+        mTextCtrlElement, eSelectionChange, CanBubble::eNo);
     asyncDispatcher->PostDOMEvent();
   }
 }
