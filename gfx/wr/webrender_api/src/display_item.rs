@@ -299,14 +299,12 @@ pub enum ScrollSensitivity {
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub struct ScrollFrameDisplayItem {
     
-    pub clip_id: ClipId,
-    
     pub scroll_frame_id: SpatialId,
     
     
     pub content_rect: LayoutRect,
-    pub clip_rect: LayoutRect,
-    pub parent_space_and_clip: SpaceAndClipInfo,
+    pub frame_rect: LayoutRect,
+    pub parent_space: SpatialId,
     pub external_id: ExternalScrollId,
     pub scroll_sensitivity: ScrollSensitivity,
     
