@@ -527,6 +527,11 @@ pub trait TElement:
     }
 
     
+    fn each_attr_name<F>(&self, callback: F)
+    where
+        F: FnMut(&AtomIdent);
+
+    
     
     fn each_exported_part<F>(&self, _name: &AtomIdent, _callback: F)
     where
