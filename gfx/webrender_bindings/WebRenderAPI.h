@@ -413,7 +413,7 @@ struct MOZ_STACK_CLASS StackingContextParams : public WrStackingContextParams {
   wr::LayoutRect mBounds = wr::ToLayoutRect(LayoutDeviceRect());
   const gfx::Matrix4x4* mBoundTransform = nullptr;
   const gfx::Matrix4x4* mTransformPtr = nullptr;
-  Maybe<nsDisplayTransform*> mDeferredTransformItem;
+  nsDisplayTransform* mDeferredTransformItem = nullptr;
   
   
   

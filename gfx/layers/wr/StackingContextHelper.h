@@ -54,7 +54,7 @@ class MOZ_RAII StackingContextHelper {
     return mSnappingSurfaceTransform;
   }
 
-  const Maybe<nsDisplayTransform*>& GetDeferredTransformItem() const;
+  nsDisplayTransform* GetDeferredTransformItem() const;
   Maybe<gfx::Matrix4x4> GetDeferredTransformMatrix() const;
 
   bool AffectsClipPositioning() const { return mAffectsClipPositioning; }
@@ -117,7 +117,7 @@ class MOZ_RAII StackingContextHelper {
   
   
   
-  Maybe<nsDisplayTransform*> mDeferredTransformItem;
+  nsDisplayTransform* mDeferredTransformItem;
   Maybe<gfx::Matrix4x4> mDeferredAncestorTransform;
 
   bool mRasterizeLocally;

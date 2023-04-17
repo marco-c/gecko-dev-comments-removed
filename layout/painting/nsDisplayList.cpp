@@ -8089,14 +8089,14 @@ bool nsDisplayTransform::CreateWebRenderCommands(
       animationsId,
   };
 
-  Maybe<nsDisplayTransform*> deferredTransformItem;
+  nsDisplayTransform* deferredTransformItem = nullptr;
   if (!mFrame->ChildrenHavePerspective()) {
     
     
     
     
     
-    deferredTransformItem = Some(this);
+    deferredTransformItem = this;
   }
 
   

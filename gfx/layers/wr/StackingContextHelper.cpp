@@ -17,6 +17,7 @@ StackingContextHelper::StackingContextHelper()
     : mBuilder(nullptr),
       mScale(1.0f, 1.0f),
       mAffectsClipPositioning(false),
+      mDeferredTransformItem(nullptr),
       mRasterizeLocally(false) {
   
 }
@@ -104,7 +105,7 @@ StackingContextHelper::StackingContextHelper(
   
   
   if (aParentSC.mDeferredTransformItem &&
-      aAsr == (*aParentSC.mDeferredTransformItem)->GetActiveScrolledRoot()) {
+      aAsr == aParentSC.mDeferredTransformItem->GetActiveScrolledRoot()) {
     if (mDeferredTransformItem) {
       
       
@@ -125,8 +126,7 @@ StackingContextHelper::~StackingContextHelper() {
   }
 }
 
-const Maybe<nsDisplayTransform*>&
-StackingContextHelper::GetDeferredTransformItem() const {
+nsDisplayTransform* StackingContextHelper::GetDeferredTransformItem() const {
   return mDeferredTransformItem;
 }
 
@@ -138,8 +138,7 @@ Maybe<gfx::Matrix4x4> StackingContextHelper::GetDeferredTransformMatrix()
     
     
     
-    gfx::Matrix4x4 result =
-        (*mDeferredTransformItem)->GetTransform().GetMatrix();
+    gfx::Matrix4x4 result = mDeferredTransformItem->GetTransform().GetMatrix();
     if (mDeferredAncestorTransform) {
       result = result * *mDeferredAncestorTransform;
     }
