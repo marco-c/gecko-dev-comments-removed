@@ -1532,19 +1532,14 @@ const nsIFrame* nsDisplayListBuilder::FindReferenceFrameFor(
 
 
 static bool IsStickyFrameActive(nsDisplayListBuilder* aBuilder,
-                                nsIFrame* aFrame, nsIFrame* aParent) {
+                                nsIFrame* aFrame) {
   MOZ_ASSERT(aFrame->StyleDisplay()->mPosition ==
              StylePositionProperty::Sticky);
 
-  
-  nsIScrollableFrame* sf = nsLayoutUtils::GetNearestScrollableFrame(
-      aFrame->GetParent(), nsLayoutUtils::SCROLLABLE_SAME_DOC |
-                               nsLayoutUtils::SCROLLABLE_INCLUDE_HIDDEN);
-  if (!sf) {
-    return false;
-  }
-
-  return sf->IsScrollingActive();
+  StickyScrollContainer* stickyScrollContainer =
+      StickyScrollContainer::GetStickyScrollContainerForFrame(aFrame);
+  return stickyScrollContainer &&
+         stickyScrollContainer->ScrollFrame()->IsMaybeAsynchronouslyScrolled();
 }
 
 bool nsDisplayListBuilder::IsAnimatedGeometryRoot(nsIFrame* aFrame,
@@ -1567,7 +1562,7 @@ bool nsDisplayListBuilder::IsAnimatedGeometryRoot(nsIFrame* aFrame,
   *aParent = parent;
 
   if (aFrame->StyleDisplay()->mPosition == StylePositionProperty::Sticky &&
-      IsStickyFrameActive(this, aFrame, parent)) {
+      IsStickyFrameActive(this, aFrame)) {
     return true;
   }
 
@@ -5596,6 +5591,8 @@ StickyScrollContainer* nsDisplayStickyPosition::GetStickyScrollContainer() {
     
     
     
+    MOZ_ASSERT(
+        stickyScrollContainer->ScrollFrame()->IsMaybeAsynchronouslyScrolled());
     if (!stickyScrollContainer->ScrollFrame()
              ->IsMaybeAsynchronouslyScrolled()) {
       stickyScrollContainer = nullptr;

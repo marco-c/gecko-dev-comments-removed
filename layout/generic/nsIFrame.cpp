@@ -2788,11 +2788,6 @@ static void DisplayDebugBorders(nsDisplayListBuilder* aBuilder,
 }
 #endif
 
-static bool IsScrollFrameActive(nsDisplayListBuilder* aBuilder,
-                                nsIScrollableFrame* aScrollableFrame) {
-  return aScrollableFrame && aScrollableFrame->IsScrollingActive();
-}
-
 
 
 
@@ -3277,13 +3272,16 @@ void nsIFrame::BuildDisplayListForStackingContext(
     aBuilder->EnterSVGEffectsContents(this, &hoistedScrollInfoItemsStorage);
   }
 
-  bool useStickyPosition =
-      disp->mPosition == StylePositionProperty::Sticky &&
-      IsScrollFrameActive(
-          aBuilder,
-          nsLayoutUtils::GetNearestScrollableFrame(
-              GetParent(), nsLayoutUtils::SCROLLABLE_SAME_DOC |
-                               nsLayoutUtils::SCROLLABLE_INCLUDE_HIDDEN));
+  bool useStickyPosition = false;
+  if (disp->mPosition == StylePositionProperty::Sticky) {
+    StickyScrollContainer* stickyScrollContainer =
+        StickyScrollContainer::GetStickyScrollContainerForFrame(this);
+    if (stickyScrollContainer &&
+        stickyScrollContainer->ScrollFrame()->IsMaybeAsynchronouslyScrolled()) {
+      useStickyPosition = true;
+    }
+  }
+
   bool useFixedPosition =
       disp->mPosition == StylePositionProperty::Fixed &&
       (DisplayPortUtils::IsFixedPosFrameInDisplayPort(this) ||
