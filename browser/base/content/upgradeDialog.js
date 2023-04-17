@@ -202,7 +202,7 @@ function onLoad(ready) {
   function showColorways() {
     
     variations.querySelectorAll("input")[
-      2 * matchMedia("(-moz-toolbar-prefers-color-scheme: dark)").matches
+      2 * matchMedia("(prefers-color-scheme: dark)").matches
     ].checked = true;
 
     
