@@ -19,7 +19,7 @@ namespace mozilla {
 
 
 
-typedef void (*SandboxCrashFunc)(int, siginfo_t*, void*);
+typedef void (*SandboxCrashFunc)(int, siginfo_t*, void*, const void*);
 extern MOZ_EXPORT SandboxCrashFunc gSandboxCrashFunc;
 extern const sock_fprog* gSetSandboxFilter;
 

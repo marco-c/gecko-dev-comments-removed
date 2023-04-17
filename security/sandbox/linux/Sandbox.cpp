@@ -36,8 +36,10 @@
 
 #include "mozilla/Array.h"
 #include "mozilla/Atomics.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/Range.h"
 #include "mozilla/SandboxInfo.h"
+#include "mozilla/StackWalk.h"
 #include "mozilla/Span.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
@@ -116,7 +118,8 @@ static bool ContextIsError(const ucontext_t* aContext, int aError) {
 
 
 
-static void SigSysHandler(int nr, siginfo_t* info, void* void_context) {
+MOZ_NEVER_INLINE static void SigSysHandler(int nr, siginfo_t* info,
+                                           void* void_context) {
   ucontext_t* ctx = static_cast<ucontext_t*>(void_context);
   
   
@@ -149,7 +152,7 @@ static void SigSysHandler(int nr, siginfo_t* info, void* void_context) {
     
     info->si_addr = reinterpret_cast<void*>(report.mSyscall);
 
-    gSandboxCrashFunc(nr, info, &savedCtx);
+    gSandboxCrashFunc(nr, info, &savedCtx, CallerPC());
     _exit(127);
   }
 }
