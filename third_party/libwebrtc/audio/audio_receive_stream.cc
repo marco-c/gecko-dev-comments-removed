@@ -177,8 +177,7 @@ void AudioReceiveStream::Stop() {
 
 webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats(
     bool get_and_clear_legacy_stats) const {
-  
-  
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   webrtc::AudioReceiveStream::Stats stats;
   stats.remote_ssrc = config_.rtp.remote_ssrc;
 
