@@ -20,6 +20,13 @@
 
 #include <thread>
 
+#if defined(_MSC_VER) || defined(__MINGW32__)
+#  include <processthreadsapi.h>
+#  include <realtimeapiset.h>
+#elif defined(__APPLE__)
+#  include <mach/thread_act.h>
+#endif
+
 #ifdef MOZ_GECKO_PROFILER
 
 #  include "GeckoProfiler.h"
@@ -185,8 +192,36 @@ static void TestConstUnlockedConstReader(
   EXPECT_EQ(aData.Info().ThreadId(), aThreadId);
   EXPECT_FALSE(aData.Info().IsMainThread());
 
+#if defined(_MSC_VER) || defined(__MINGW32__)
+  HANDLE threadHandle = aData.PlatformDataCRef().ProfiledThread();
+  EXPECT_NE(threadHandle, nullptr);
+  EXPECT_EQ(ProfilerThreadId::FromNumber(::GetThreadId(threadHandle)),
+            aThreadId);
   
+  
+  ULONG64 cycles;
+  (void)QueryThreadCycleTime(threadHandle, &cycles);
+#elif defined(__APPLE__)
+  
+  
+  thread_basic_info_data_t threadBasicInfo;
+  mach_msg_type_number_t basicCount = THREAD_BASIC_INFO_COUNT;
+  (void)thread_info(
+      aData.PlatformDataCRef().ProfiledThread(), THREAD_BASIC_INFO,
+      reinterpret_cast<thread_info_t>(&threadBasicInfo), &basicCount);
+#elif defined(__linux__) || defined(__ANDROID__) || defined(__FreeBSD__)
+  
+  
+  Maybe<clockid_t> maybeClockId = aData.PlatformDataCRef().GetClockId();
+  if (maybeClockId) {
+    
+    
+    timespec ts;
+    (void)clock_gettime(*maybeClockId, &ts);
+  }
+#else
   (void)aData.PlatformDataCRef();
+#endif
 
   EXPECT_GE(aData.StackTop(), aOnStackObject)
       << "StackTop should be at &onStackChar, or higher on some "

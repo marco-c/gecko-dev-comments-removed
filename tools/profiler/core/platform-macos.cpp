@@ -62,6 +62,14 @@ class PlatformData {
   RunningTimes mPreviousThreadRunningTimes;
 };
 
+mozilla::profiler::PlatformData::PlatformData(ProfilerThreadId aThreadId)
+    : mProfiledThread(mach_thread_self()) {}
+
+mozilla::profiler::PlatformData::~PlatformData() {
+  
+  mach_port_deallocate(mach_task_self(), mProfiledThread);
+}
+
 
 
 
