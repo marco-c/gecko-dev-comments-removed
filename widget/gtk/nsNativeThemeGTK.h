@@ -43,7 +43,21 @@ class nsNativeThemeGTK final : public nsNativeBasicThemeGTK {
                          StyleAppearance aAppearance,
                          nsRect* aOverflowRect) override;
 
-  static bool IsNonNativeWidgetType(StyleAppearance aAppearance);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  enum class NonNative { No, Always, BecauseColorMismatch };
+  NonNative IsWidgetNonNative(nsIFrame*, StyleAppearance);
 
   NS_IMETHOD GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* aFrame,
                                   StyleAppearance aAppearance,
