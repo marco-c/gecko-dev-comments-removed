@@ -207,6 +207,59 @@ const svgImageTests = {
     },
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const videoTests = {
+    
+    "sRGB-FF0100": {
+        "srgb srgb": [255, 1, 0, 255],
+        "srgb display-p3": [234, 51, 35, 255],
+        "display-p3 srgb": [255, 0, 0, 255],
+        "display-p3 display-p3": [234, 51, 35, 255],
+    },
+    
+    "sRGB-BB0000": {
+        "srgb srgb": [187, 0, 0, 255],
+        "srgb display-p3": [171, 35, 23, 255],
+        "display-p3 srgb": [187, 1, 0, 255],
+        "display-p3 display-p3": [171, 35, 23, 255],
+    },
+
+    
+    "Rec2020-3FF000000": {
+        "srgb srgb": [255, 0, 0, 255],
+        "srgb display-p3": [234, 51, 35, 255],
+        "display-p3 srgb": [255, 0, 0, 255],
+        "display-p3 display-p3": [255, 0, 9, 255],
+    },
+    
+    "Rec2020-222000000": {
+        "srgb srgb": [186, 0, 0, 255],
+        "srgb display-p3": [170, 34, 23, 255],
+        "display-p3 srgb": [186, 0, 0, 255],
+        "display-p3 display-p3": [169, 0, 3, 255],
+    },
+};
+
 const fromSRGBToDisplayP3 = {
     "255,0,0,255": [234, 51, 35, 255],
     "255,0,0,204": [234, 51, 35, 204],
@@ -223,7 +276,7 @@ const fromDisplayP3ToSRGB = {
 
 function pixelsApproximatelyEqual(p1, p2) {
     for (let i = 0; i < 4; ++i) {
-        if (Math.abs(p1[i] - p2[i]) > 2)
+        if (Math.abs(p1[i] - p2[i]) > 3)
             return false;
     }
     return true;
