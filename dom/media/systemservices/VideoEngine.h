@@ -39,7 +39,8 @@ class VideoEngine {
 #if defined(ANDROID)
   static int SetAndroidObjects();
 #endif
-  void CreateVideoCapture(int32_t& id, const char* deviceUniqueIdUTF8);
+  
+  int32_t CreateVideoCapture(const char* deviceUniqueIdUTF8);
 
   int ReleaseVideoCapture(const int32_t id);
 
@@ -88,7 +89,6 @@ class VideoEngine {
   
   int64_t mExpiryTimeInMs = 0;
   int32_t GenerateId();
-  static int32_t sId;
 };
 }  
 }  
