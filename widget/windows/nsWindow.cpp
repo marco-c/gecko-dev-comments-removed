@@ -563,6 +563,12 @@ WindowsDllInterceptor::FuncHookType<decltype(&SendMessageTimeoutW)>
     TIPMessageHandler::sSendMessageTimeoutWStub;
 StaticAutoPtr<TIPMessageHandler> TIPMessageHandler::sInstance;
 
+}  
+
+#endif  
+
+namespace mozilla {
+
 
 
 
@@ -576,7 +582,7 @@ class InitializeVirtualDesktopManagerTask : public Task {
   InitializeVirtualDesktopManagerTask() : Task(false, kDefaultPriorityValue) {}
 
   virtual bool Run() override {
-#  ifndef __MINGW32__
+#ifndef __MINGW32__
     if (!IsWin10OrLater()) {
       return true;
     }
@@ -590,14 +596,12 @@ class InitializeVirtualDesktopManagerTask : public Task {
     }
 
     gVirtualDesktopManager = desktopManager;
-#  endif
+#endif
     return true;
   }
 };
 
 }  
-
-#endif  
 
 
 
