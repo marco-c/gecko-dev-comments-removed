@@ -153,22 +153,12 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
   
   
   
-  static inline void addWeakEntry(GCMarker* marker, gc::Cell* key,
-                                  const gc::WeakMarkable& markable);
+  inline bool addImplicitEdges(gc::Cell* key, gc::Cell* delegate,
+                               gc::Cell* value);
 
   
   
   virtual void markKey(GCMarker* marker, gc::Cell* markedCell, gc::Cell* l) = 0;
-
-  
-  
-  
-  virtual void postSeverDelegate(GCMarker* marker, JSObject* key) = 0;
-
-  
-  
-  virtual void postRestoreDelegate(GCMarker* marker, JSObject* key,
-                                   JSObject* delegate) = 0;
 
   virtual bool markEntries(GCMarker* marker) = 0;
 
@@ -253,22 +243,6 @@ class WeakMap
     return p;
   }
 
-  void remove(Ptr p) {
-    MOZ_ASSERT(p.found());
-    if (mapColor) {
-      forgetKey(p->key());
-    }
-    Base::remove(p);
-  }
-
-  void remove(const Lookup& l) {
-    if (Ptr p = lookup(l)) {
-      remove(p);
-    }
-  }
-
-  void clear();
-
   template <typename KeyInput, typename ValueInput>
   [[nodiscard]] bool add(AddPtr& p, KeyInput&& k, ValueInput&& v) {
     MOZ_ASSERT(k);
@@ -313,18 +287,9 @@ class WeakMap
 
   bool markEntry(GCMarker* marker, Key& key, Value& value);
 
-  
-  void postSeverDelegate(GCMarker* marker, JSObject* key) override;
-
-  
-  void postRestoreDelegate(GCMarker* marker, JSObject* key,
-                           JSObject* delegate) override;
-
   void trace(JSTracer* trc) override;
 
  protected:
-  inline void forgetKey(UnbarrieredKey key);
-
   inline void assertMapIsSameZoneWithValue(const Value& v);
 
   bool markEntries(GCMarker* marker) override;

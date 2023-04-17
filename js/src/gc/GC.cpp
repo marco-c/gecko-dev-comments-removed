@@ -4601,7 +4601,7 @@ IncrementalProgress GCRuntime::markWeakReferences(
     if (!marker.incrementalWeakMapMarkingEnabled) {
       for (ZoneIterT zone(this); !zone.done(); zone.next()) {
         AutoEnterOOMUnsafeRegion oomUnsafe;
-        if (!zone->gcWeakKeys().clear()) {
+        if (!zone->gcEphemeronEdges().clear()) {
           oomUnsafe.crash("clearing weak keys when entering weak marking mode");
         }
       }
@@ -4615,12 +4615,6 @@ IncrementalProgress GCRuntime::markWeakReferences(
       }
     }
   }
-
-#ifdef DEBUG
-  for (ZoneIterT zone(this); !zone.done(); zone.next()) {
-    zone->checkWeakMarkingMode();
-  }
-#endif
 
   
   
@@ -5348,7 +5342,7 @@ void GCRuntime::sweepWeakMaps() {
   for (SweepGroupZonesIter zone(this); !zone.done(); zone.next()) {
     
     AutoEnterOOMUnsafeRegion oomUnsafe;
-    if (!zone->gcWeakKeys().clear()) {
+    if (!zone->gcEphemeronEdges().clear()) {
       oomUnsafe.crash("clearing weak keys in beginSweepingSweepGroup()");
     }
 
