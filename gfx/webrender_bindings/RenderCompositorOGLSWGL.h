@@ -35,6 +35,11 @@ class RenderCompositorOGLSWGL : public RenderCompositorLayersSWGL {
   bool BeginFrame() override;
   RenderedFrameId EndFrame(const nsTArray<DeviceIntRect>& aDirtyRects) override;
 
+  
+  
+  
+  
+  bool UsePartialPresent() override { return true; }
   bool RequestFullRender() override;
 
   void Pause() override;
