@@ -1594,9 +1594,8 @@ nsresult ScriptLoader::StartLoad(ScriptLoadRequest* aRequest) {
       
       
       LOG(("ScriptLoadRequest (%p): Maybe request bytecode", aRequest));
-      cic->PreferAlternativeDataType(
-          nsContentUtils::JSBytecodeMimeType(), ""_ns,
-          nsICacheInfoChannel::PreferredAlternativeDataDeliveryType::ASYNC);
+      cic->PreferAlternativeDataType(nsContentUtils::JSBytecodeMimeType(),
+                                     ""_ns, true);
     } else {
       
       
@@ -1605,9 +1604,7 @@ nsresult ScriptLoader::StartLoad(ScriptLoadRequest* aRequest) {
       
       
       LOG(("ScriptLoadRequest (%p): Request saving bytecode later", aRequest));
-      cic->PreferAlternativeDataType(
-          kNullMimeType, ""_ns,
-          nsICacheInfoChannel::PreferredAlternativeDataDeliveryType::ASYNC);
+      cic->PreferAlternativeDataType(kNullMimeType, ""_ns, true);
     }
   }
 

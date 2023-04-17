@@ -142,6 +142,9 @@ class HttpChannelChild final : public PHttpChannelChild,
   mozilla::ipc::IPCResult RecvOriginalCacheInputStreamAvailable(
       const Maybe<IPCStream>& aStream) override;
 
+  mozilla::ipc::IPCResult RecvAltDataCacheInputStreamAvailable(
+      const Maybe<IPCStream>& aStream) override;
+
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
   virtual void DoNotifyListenerCleanup() override;
@@ -194,8 +197,7 @@ class HttpChannelChild final : public PHttpChannelChild,
   void ProcessOnStartRequest(const nsHttpResponseHead& aResponseHead,
                              const bool& aUseResponseHead,
                              const nsHttpHeaderArray& aRequestHeaders,
-                             const HttpChannelOnStartRequestArgs& aArgs,
-                             const HttpChannelAltDataStream& aAltData);
+                             const HttpChannelOnStartRequestArgs& aArgs);
 
   
   
@@ -270,7 +272,7 @@ class HttpChannelChild final : public PHttpChannelChild,
   RefPtr<ChannelEventQueue> mEventQ;
 
   nsCOMPtr<nsIInputStreamReceiver> mOriginalInputStreamReceiver;
-  nsCOMPtr<nsIInputStream> mAltDataInputStream;
+  nsCOMPtr<nsIInputStreamReceiver> mAltDataInputStreamReceiver;
 
   
   Mutex mBgChildMutex{"HttpChannelChild::BgChildMutex"};
