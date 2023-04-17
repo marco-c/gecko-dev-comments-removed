@@ -184,7 +184,7 @@ class AudioDecoderInputTrack final : public ProcessedMediaTrack {
   
   
   
-  SPSCQueue<SPSCData> mSPSCQueue{20};
+  SPSCQueue<SPSCData> mSPSCQueue{40};
 
   
   
