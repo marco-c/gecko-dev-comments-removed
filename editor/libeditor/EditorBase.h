@@ -1911,6 +1911,20 @@ class EditorBase : public nsIEditor,
 
 
 
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  EnsureNoPaddingBRElementForEmptyEditor();
+
+  
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  MaybeCreatePaddingBRElementForEmptyEditor();
+
+  
+
+
+
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult MarkElementDirty(Element& aElement);
@@ -2806,6 +2820,10 @@ class EditorBase : public nsIEditor,
   RefPtr<TransactionManager> mTransactionManager;
   
   RefPtr<Element> mRootElement;
+
+  
+  
+  RefPtr<dom::HTMLBRElement> mPaddingBRElementForEmptyEditor;
 
   
   nsCOMPtr<dom::EventTarget> mEventTarget;

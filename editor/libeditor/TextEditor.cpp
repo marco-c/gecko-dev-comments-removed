@@ -329,6 +329,10 @@ already_AddRefed<Element> TextEditor::GetInputEventTargetElement() const {
 }
 
 bool TextEditor::IsEmpty() const {
+  if (mPaddingBRElementForEmptyEditor) {
+    return true;
+  }
+
   
   
   
@@ -539,6 +543,12 @@ nsresult TextEditor::InsertWithQuotationsAsSubAction(
   
   MaybeDoAutoPasswordMasking();
 
+  rv = EnsureNoPaddingBRElementForEmptyEditor();
+  if (NS_FAILED(rv)) {
+    NS_WARNING("EditorBase::EnsureNoPaddingBRElementForEmptyEditor() failed");
+    return rv;
+  }
+
   rv = InsertTextAsSubAction(quotedStuff);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::InsertTextAsSubAction() failed");
@@ -611,6 +621,58 @@ nsresult TextEditor::RemoveAttributeOrEquivalent(Element* aElement,
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::RemoveAttributeWithTransaction() failed");
   return EditorBase::ToGenericNSResult(rv);
+}
+
+nsresult TextEditor::EnsurePaddingBRElementForEmptyEditor() {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+
+  
+  if (mPaddingBRElementForEmptyEditor) {
+    return NS_OK;
+  }
+
+  
+  
+  
+  if (IsSingleLineEditor()) {
+    nsresult rv = MaybeCreatePaddingBRElementForEmptyEditor();
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "EditorBase::MaybeCreatePaddingBRElementForEmptyEditor() failed");
+    return rv;
+  }
+
+  if (NS_WARN_IF(!mRootElement)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  uint32_t childCount = mRootElement->GetChildCount();
+  if (childCount == 0) {
+    nsresult rv = MaybeCreatePaddingBRElementForEmptyEditor();
+    NS_WARNING_ASSERTION(
+        NS_SUCCEEDED(rv),
+        "EditorBase::MaybeCreatePaddingBRElementForEmptyEditor() failed");
+    return rv;
+  }
+
+  if (childCount > 1) {
+    return NS_OK;
+  }
+
+  RefPtr<HTMLBRElement> brElement =
+      HTMLBRElement::FromNodeOrNull(mRootElement->GetFirstChild());
+  if (!brElement ||
+      !EditorUtils::IsPaddingBRElementForEmptyLastLine(*brElement)) {
+    return NS_OK;
+  }
+
+  
+  
+  mPaddingBRElementForEmptyEditor = std::move(brElement);
+  mPaddingBRElementForEmptyEditor->UnsetFlags(NS_PADDING_FOR_EMPTY_LAST_LINE);
+  mPaddingBRElementForEmptyEditor->SetFlags(NS_PADDING_FOR_EMPTY_EDITOR);
+
+  return NS_OK;
 }
 
 nsresult TextEditor::SetUnmaskRangeInternal(uint32_t aStart, uint32_t aLength,

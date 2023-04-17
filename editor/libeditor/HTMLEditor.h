@@ -966,27 +966,6 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  MaybeCreatePaddingBRElementForEmptyEditor();
-
-  
-
-
-
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  EnsureNoPaddingBRElementForEmptyEditor();
-
-  
-
-
-
-
-  [[nodiscard]] nsresult ReflectPaddingBRElementForEmptyEditor();
-
-  
-
-
-
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult PrepareInlineStylesForCaret();
@@ -4310,10 +4289,6 @@ class HTMLEditor final : public EditorBase,
 
   RefPtr<Runnable> mPendingRootElementUpdatedRunner;
   RefPtr<Runnable> mPendingDocumentModifiedRunner;
-
-  
-  
-  RefPtr<dom::HTMLBRElement> mPaddingBRElementForEmptyEditor;
 
   bool mCRInParagraphCreatesParagraph;
 
