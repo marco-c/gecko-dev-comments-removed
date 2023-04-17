@@ -67,6 +67,11 @@ class MsaaAccessible : public ia2Accessible,
   static IDispatch* NativeAccessible(LocalAccessible* aAccessible);
 
   
+  STDMETHODIMP QueryInterface(REFIID, void**) override;
+  ULONG STDMETHODCALLTYPE AddRef() override;
+  ULONG STDMETHODCALLTYPE Release() override;
+
+  
   virtual  HRESULT STDMETHODCALLTYPE get_accParent(
        IDispatch __RPC_FAR* __RPC_FAR* ppdispParent)
       override;

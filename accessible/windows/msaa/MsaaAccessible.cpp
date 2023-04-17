@@ -620,6 +620,20 @@ ITypeInfo* MsaaAccessible::GetTI(LCID lcid) {
 
 
 
+
+
+STDMETHODIMP MsaaAccessible::QueryInterface(REFIID iid, void** ppv) {
+  return static_cast<AccessibleWrap*>(this)->QueryInterface(iid, ppv);
+}
+ULONG STDMETHODCALLTYPE MsaaAccessible::AddRef() {
+  return static_cast<AccessibleWrap*>(this)->AddRef();
+}
+ULONG STDMETHODCALLTYPE MsaaAccessible::Release() {
+  return static_cast<AccessibleWrap*>(this)->Release();
+}
+
+
+
 STDMETHODIMP
 MsaaAccessible::get_accParent(IDispatch __RPC_FAR* __RPC_FAR* ppdispParent) {
   if (!ppdispParent) return E_INVALIDARG;
