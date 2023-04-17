@@ -85,11 +85,10 @@ const TEST_CONDITIONS = {
 
 
 
-
 const TESTS = {
   
   badVersion: {
-    fails: true,
+    fails: /Error: Rejecting updated system add-on set that either could not be downloaded or contained unusable add-ons./,
     updateList: [
       {
         id: "system2@tests.mozilla.org",
@@ -106,7 +105,7 @@ const TESTS = {
 
   
   badSize: {
-    fails: true,
+    fails: /Error: Rejecting updated system add-on set that either could not be downloaded or contained unusable add-ons./,
     updateList: [
       {
         id: "system2@tests.mozilla.org",
@@ -124,7 +123,7 @@ const TESTS = {
 
   
   badHash: {
-    fails: true,
+    fails: /Error: Rejecting updated system add-on set that either could not be downloaded or contained unusable add-ons./,
     updateList: [
       {
         id: "system2@tests.mozilla.org",
@@ -143,7 +142,9 @@ const TESTS = {
 
   
   badCert: {
-    fails: true,
+    fails: /Error: Rejecting updated system add-on set that either could not be downloaded or contained unusable add-ons./,
+    
+    usePrivilegedSignatures: true,
     updateList: [
       {
         id: "system1@tests.mozilla.org",

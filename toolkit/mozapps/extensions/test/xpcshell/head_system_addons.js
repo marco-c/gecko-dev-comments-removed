@@ -427,24 +427,28 @@ async function verifySystemAddonState(
 
 
 async function execSystemAddonTest(setupName, setup, test, distroDir) {
+  
+  AddonTestUtils.usePrivilegedSignatures = "system";
   await setupSystemAddonConditions(setup, distroDir);
 
-  try {
-    if ("test" in test) {
-      await test.test();
-    } else {
-      let xml = buildSystemAddonUpdates(test.updateList);
-      let ids = (test.updateList || []).map(item => item.id);
-      await installSystemAddons(xml, ids);
-    }
+  
+  if (test.usePrivilegedSignatures != undefined) {
+    AddonTestUtils.usePrivilegedSignatures = test.usePrivilegedSignatures;
+  }
 
-    if (test.fails) {
-      do_throw("Expected this test to fail");
+  function runTest() {
+    if ("test" in test) {
+      return test.test();
     }
-  } catch (e) {
-    if (!test.fails) {
-      do_throw(e);
-    }
+    let xml = buildSystemAddonUpdates(test.updateList);
+    let ids = (test.updateList || []).map(item => item.id);
+    return installSystemAddons(xml, ids);
+  }
+
+  if (test.fails) {
+    await Assert.rejects(runTest(), test.fails);
+  } else {
+    await runTest();
   }
 
   
