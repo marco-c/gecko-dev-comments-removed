@@ -23,7 +23,9 @@ function DateKeeper(props) {
     
     MAX_DATE = 8640000000000000,
     MAX_YEAR = 275760,
-    MAX_MONTH = 9;
+    MAX_MONTH = 9,
+    
+    ONE_DAY = 86400000;
 
   DateKeeper.prototype = {
     get year() {
@@ -254,8 +256,11 @@ function DateKeeper(props) {
           this.state.selection.year == dateObj.getUTCFullYear() &&
           this.state.selection.month == dateObj.getUTCMonth() &&
           this.state.selection.day == dateObj.getUTCDate();
+        
+        
+        
         const isOutOfRange =
-          dateObj.getTime() < this.state.min.getTime() ||
+          dateObj.getTime() + ONE_DAY - 1 < this.state.min.getTime() ||
           dateObj.getTime() > this.state.max.getTime();
         const isToday = this.state.today.getTime() == dateObj.getTime();
         const isOffStep = this._checkIsOffStep(
