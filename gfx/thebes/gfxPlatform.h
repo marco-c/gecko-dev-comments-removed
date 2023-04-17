@@ -377,12 +377,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
 
 
-  virtual gfxPlatformFontList* CreatePlatformFontList() {
-    MOZ_ASSERT_UNREACHABLE(
-        "oops, this platform doesn't have a "
-        "gfxPlatformFontList implementation");
-    return nullptr;
-  }
+  virtual bool CreatePlatformFontList() = 0;
 
   
 

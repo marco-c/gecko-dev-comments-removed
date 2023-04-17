@@ -558,20 +558,16 @@ mozilla::gfx::BackendType gfxWindowsPlatform::GetPreferredCanvasBackend() {
   return backend;
 }
 
-gfxPlatformFontList* gfxWindowsPlatform::CreatePlatformFontList() {
-  gfxPlatformFontList* pfl;
-
+bool gfxWindowsPlatform::CreatePlatformFontList() {
   
   
   if (IsNotWin7PreRTM() && DWriteEnabled()) {
-    pfl = new gfxDWriteFontList();
-    if (NS_SUCCEEDED(pfl->InitFontList())) {
-      return pfl;
+    if (gfxPlatformFontList::Initialize(new gfxDWriteFontList)) {
+      return true;
     }
     
     
     
-    gfxPlatformFontList::Shutdown();
     DisableD2D(FeatureStatus::Failed, "Failed to initialize fonts",
                "FEATURE_FAILURE_FONT_FAIL"_ns);
   }
@@ -580,14 +576,7 @@ gfxPlatformFontList* gfxWindowsPlatform::CreatePlatformFontList() {
   
   mHasVariationFontSupport = false;
 
-  pfl = new gfxGDIFontList();
-
-  if (NS_SUCCEEDED(pfl->InitFontList())) {
-    return pfl;
-  }
-
-  gfxPlatformFontList::Shutdown();
-  return nullptr;
+  return gfxPlatformFontList::Initialize(new gfxGDIFontList);
 }
 
 
