@@ -5,8 +5,8 @@
 
 
 #include "OSPreferences.h"
+#include "mozilla/intl/Locale.h"
 #include "mozilla/intl/LocaleService.h"
-#include "mozilla/intl/MozLocale.h"
 #include "mozilla/WindowsVersion.h"
 #include "nsReadableUtils.h"
 
@@ -66,10 +66,12 @@ bool OSPreferences::ReadSystemLocales(nsTArray<nsCString>& aLocaleList) {
                 
                 
                 
-                MozLocale locale(loc);
-                if (locale.Maximize() && !locale.GetRegion().IsEmpty()) {
+                Locale locale;
+                auto result = LocaleParser::tryParse(loc, locale);
+                if (result.isOk() && locale.addLikelySubtags().isOk() &&
+                    locale.region().present()) {
                   loc.Append('-');
-                  loc.Append(locale.GetRegion());
+                  loc.Append(locale.region().span());
                 }
               }
               aLocaleList.AppendElement(loc);
