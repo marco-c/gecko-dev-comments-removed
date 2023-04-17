@@ -188,7 +188,7 @@ def populate_release_history(
 ):
     
     
-    if partial_updates:
+    if partial_updates is not None:
         return _populate_release_history(
             product, branch, partial_updates=partial_updates
         )
