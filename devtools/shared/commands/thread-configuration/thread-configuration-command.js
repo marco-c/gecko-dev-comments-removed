@@ -51,22 +51,14 @@ class ThreadConfigurationCommand {
     
     
     
-    if (
-      this._commands.targetCommand.rootFront.traits
-        .supportsThreadConfigurationOptions
-    ) {
-      
-      
-      
-      
-      
-      threadFronts = threadFronts.filter(
-        threadFront =>
-          !this._commands.targetCommand.hasTargetWatcherSupport(
-            threadFront.targetFront.targetType
-          )
-      );
-    }
+    
+    
+    threadFronts = threadFronts.filter(
+      threadFront =>
+        !this._commands.targetCommand.hasTargetWatcherSupport(
+          threadFront.targetFront.targetType
+        )
+    );
 
     await Promise.all(
       threadFronts.map(threadFront => threadFront.reconfigure(configuration))
