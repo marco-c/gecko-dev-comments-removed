@@ -509,7 +509,6 @@ var actionUtils = {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 (function(global) { __webpack_require__.d(__webpack_exports__, "PrefsButton", function() { return PrefsButton; });
- __webpack_require__.d(__webpack_exports__, "PersonalizeButton", function() { return PersonalizeButton; });
  __webpack_require__.d(__webpack_exports__, "_Base", function() { return _Base; });
  __webpack_require__.d(__webpack_exports__, "BaseContent", function() { return BaseContent; });
  __webpack_require__.d(__webpack_exports__, "Base", function() { return Base; });
@@ -526,10 +525,7 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_8___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_8__);
  var content_src_components_Search_Search__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(65);
  var content_src_components_Sections_Sections__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(47);
- var react_transition_group__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(29);
- var react_transition_group__WEBPACK_IMPORTED_MODULE_11___default = __webpack_require__.n(react_transition_group__WEBPACK_IMPORTED_MODULE_11__);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
-
 
 
 
@@ -554,14 +550,7 @@ const PrefsButton = ({
   className: `icon ${icon || "icon-settings"}`,
   onClick: onClick,
   "data-l10n-id": "newtab-settings-button"
-}));
-const PersonalizeButton = ({
-  onClick
-}) => react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement("button", {
-  className: "personalize-button",
-  onClick: onClick,
-  "data-l10n-id": "newtab-personalize-button-label"
-}); 
+})); 
 
 
 function debounce(func, wait) {
@@ -750,21 +739,16 @@ class BaseContent extends react__WEBPACK_IMPORTED_MODULE_8___default.a.PureCompo
       mayHaveSponsoredTopSites
     } = prefs;
     const outerClassName = ["outer-wrapper", isDiscoveryStream && pocketEnabled && "ds-outer-wrapper-search-alignment", isDiscoveryStream && "ds-outer-wrapper-breakpoint-override", prefs.showSearch && this.state.fixedSearch && !noSectionsEnabled && "fixed-search", prefs.showSearch && noSectionsEnabled && "only-search", prefs["logowordmark.alwaysVisible"] && "visible-logo", newNewtabExperienceEnabled && "newtab-experience"].filter(v => v).join(" ");
-    return react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement("div", null, canShowCustomizationMenu ? react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement("span", null, react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(PersonalizeButton, {
-      onClick: this.openCustomizationMenu
-    }), react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(react_transition_group__WEBPACK_IMPORTED_MODULE_11__["CSSTransition"], {
-      timeout: 0,
-      classNames: "customize-animate",
-      in: showCustomizationMenu,
-      appear: true
-    }, react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(content_src_components_CustomizeMenu_CustomizeMenu__WEBPACK_IMPORTED_MODULE_7__["CustomizeMenu"], {
+    return react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement("div", null, canShowCustomizationMenu ? react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(content_src_components_CustomizeMenu_CustomizeMenu__WEBPACK_IMPORTED_MODULE_7__["CustomizeMenu"], {
       onClose: this.closeCustomizationMenu,
+      onOpen: this.openCustomizationMenu,
       openPreferences: this.openPreferences,
       setPref: this.setPref,
       enabledSections: enabledSections,
       pocketRegion: pocketRegion,
-      mayHaveSponsoredTopSites: mayHaveSponsoredTopSites
-    }))) : react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(PrefsButton, {
+      mayHaveSponsoredTopSites: mayHaveSponsoredTopSites,
+      showing: showCustomizationMenu
+    }) : react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement(PrefsButton, {
       onClick: this.openPreferences,
       icon: prefsButtonIcon
     }), react__WEBPACK_IMPORTED_MODULE_8___default.a.createElement("div", {
@@ -14748,6 +14732,9 @@ class ContentSection_ContentSection extends external_React_default.a.PureCompone
 var external_ReactRedux_ = __webpack_require__(7);
 
 
+var external_ReactTransitionGroup_ = __webpack_require__(29);
+
+
  __webpack_require__.d(__webpack_exports__, "_CustomizeMenu", function() { return CustomizeMenu_CustomizeMenu; });
  __webpack_require__.d(__webpack_exports__, "CustomizeMenu", function() { return CustomizeMenu; });
 
@@ -14758,12 +14745,22 @@ var external_ReactRedux_ = __webpack_require__(7);
 
 
 
+
 class CustomizeMenu_CustomizeMenu extends external_React_default.a.PureComponent {
   render() {
-    return external_React_default.a.createElement("div", {
+    return external_React_default.a.createElement("span", null, external_React_default.a.createElement("button", {
+      className: "personalize-button",
+      onClick: () => this.props.onOpen(),
+      "data-l10n-id": "newtab-personalize-button-label"
+    }), external_React_default.a.createElement(external_ReactTransitionGroup_["CSSTransition"], {
+      timeout: 0,
+      classNames: "customize-animate",
+      in: this.props.showing,
+      appear: true
+    }, external_React_default.a.createElement("div", {
       className: "customize-menu"
     }, external_React_default.a.createElement("button", {
-      onClick: this.props.onClose,
+      onClick: () => this.props.onClose(),
       className: "close-button",
       "data-l10n-id": "newtab-custom-close-button"
     }), external_React_default.a.createElement(ThemesSection_ThemesSection, null), external_React_default.a.createElement(BackgroundsSection_BackgroundsSection, null), external_React_default.a.createElement(ContentSection_ContentSection, {
@@ -14774,7 +14771,7 @@ class CustomizeMenu_CustomizeMenu extends external_React_default.a.PureComponent
       mayHaveSponsoredTopSites: this.props.mayHaveSponsoredTopSites,
       mayHaveSponsoredStories: this.props.DiscoveryStream.config.show_spocs,
       dispatch: this.props.dispatch
-    }));
+    }))));
   }
 
 }
