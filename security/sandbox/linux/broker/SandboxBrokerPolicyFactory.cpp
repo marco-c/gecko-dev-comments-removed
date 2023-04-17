@@ -335,8 +335,10 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
   
   policy->AddDir(rdonly, "/usr/X11R6/lib/X11/fonts");
   policy->AddDir(rdonly, "/nix/store");
+  
   policy->AddDir(rdonly, "/run/host/fonts");
   policy->AddDir(rdonly, "/run/host/user-fonts");
+  policy->AddDir(rdonly, "/run/host/local-fonts");
   policy->AddDir(rdonly, "/var/cache/fontconfig");
 
   if (!headless) {
