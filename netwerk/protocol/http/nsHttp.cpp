@@ -10,7 +10,7 @@
 #include "nsHttp.h"
 #include "CacheControlParser.h"
 #include "PLDHashTable.h"
-#include "mozilla/DataMutex.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_network.h"
@@ -24,7 +24,6 @@
 #include "nsJSUtils.h"
 #include <errno.h>
 #include <functional>
-#include "nsLiteralString.h"
 
 namespace mozilla {
 namespace net {
@@ -36,7 +35,7 @@ const nsCString kHttp3Versions[] = {"h3-27"_ns, "h3-28"_ns, "h3-29"_ns,
 
 
 namespace nsHttp {
-#define HTTP_ATOM(_name, _value) nsHttpAtom _name(nsLiteralCString{_value});
+#define HTTP_ATOM(_name, _value) nsHttpAtom _name(_value);
 #include "nsHttpAtomList.h"
 #undef HTTP_ATOM
 }  
@@ -49,121 +48,124 @@ enum {
 };
 #undef HTTP_ATOM
 
-class nsCaseInsentitiveHashKey : public PLDHashEntryHdr {
- public:
-  using KeyType = const nsACString&;
-  using KeyTypePointer = const nsACString*;
 
-  explicit nsCaseInsentitiveHashKey(KeyTypePointer aStr) : mStr(*aStr) {
-    
-  }
 
-  nsCaseInsentitiveHashKey(const nsCaseInsentitiveHashKey&) = delete;
-  nsCaseInsentitiveHashKey(nsCaseInsentitiveHashKey&& aToMove) noexcept
-      : PLDHashEntryHdr(std::move(aToMove)), mStr(aToMove.mStr) {}
-  ~nsCaseInsentitiveHashKey() = default;
 
-  KeyType GetKey() const { return mStr; }
-  bool KeyEquals(const KeyTypePointer aKey) const {
-    return mStr.Equals(*aKey, nsCaseInsensitiveCStringComparator);
-  }
 
-  static KeyTypePointer KeyToPointer(KeyType aKey) { return &aKey; }
-  static PLDHashNumber HashKey(const KeyTypePointer aKey) {
-    nsAutoCString tmKey(*aKey);
-    ToLowerCase(tmKey);
-    return mozilla::HashString(tmKey);
-  }
-  enum { ALLOW_MEMMOVE = false };
-
-  
-  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
-    return GetKey().SizeOfExcludingThisIfUnshared(aMallocSizeOf);
-  }
-
- private:
-  const nsCString mStr;
+struct HttpHeapAtom {
+  struct HttpHeapAtom* next;
+  char value[1];
 };
 
-static StaticDataMutex<nsTHashtable<nsCaseInsentitiveHashKey>> sAtomTable(
-    "nsHttp::sAtomTable");
+static PLDHashTable* sAtomTable;
+static struct HttpHeapAtom* sHeapAtoms = nullptr;
+static Mutex* sLock = nullptr;
+
+HttpHeapAtom* NewHeapAtom(const char* value) {
+  int len = strlen(value);
+
+  HttpHeapAtom* a = reinterpret_cast<HttpHeapAtom*>(malloc(sizeof(*a) + len));
+  if (!a) return nullptr;
+  memcpy(a->value, value, len + 1);
+
+  
+  a->next = sHeapAtoms;
+  sHeapAtoms = a;
+
+  return a;
+}
 
 
+static PLDHashNumber StringHash(const void* key) {
+  PLDHashNumber h = 0;
+  for (const char* s = reinterpret_cast<const char*>(key); *s; ++s)
+    h = AddToHash(h, nsCRT::ToLower(*s));
+  return h;
+}
 
-static Atomic<bool> sTableDestroyed{false};
+static bool StringCompare(const PLDHashEntryHdr* entry, const void* testKey) {
+  const void* entryKey = reinterpret_cast<const PLDHashEntryStub*>(entry)->key;
+
+  return nsCRT::strcasecmp(reinterpret_cast<const char*>(entryKey),
+                           reinterpret_cast<const char*>(testKey)) == 0;
+}
+
+static const PLDHashTableOps ops = {StringHash, StringCompare,
+                                    PLDHashTable::MoveEntryStub,
+                                    PLDHashTable::ClearEntryStub, nullptr};
 
 
 namespace nsHttp {
+nsresult CreateAtomTable() {
+  MOZ_ASSERT(!sAtomTable, "atom table already initialized");
 
-nsresult CreateAtomTable(nsTHashtable<nsCaseInsentitiveHashKey>& base) {
-  if (sTableDestroyed) {
-    return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
+  if (!sLock) {
+    sLock = new Mutex("nsHttp.sLock");
   }
+
   
-  const nsHttpAtom* atoms[] = {
-#define HTTP_ATOM(_name, _value) &(_name),
+  
+  
+  sAtomTable =
+      new PLDHashTable(&ops, sizeof(PLDHashEntryStub), NUM_HTTP_ATOMS + 10);
+
+  
+  const char* const atoms[] = {
+#define HTTP_ATOM(_name, _value) _name._val,
 #include "nsHttpAtomList.h"
 #undef HTTP_ATOM
-  };
+      nullptr};
 
-  if (!base.IsEmpty()) {
-    return NS_OK;
-  }
-  for (const auto* atom : atoms) {
-    Unused << base.PutEntry(atom->val(), fallible);
+  for (int i = 0; atoms[i]; ++i) {
+    auto stub =
+        static_cast<PLDHashEntryStub*>(sAtomTable->Add(atoms[i], fallible));
+    if (!stub) return NS_ERROR_OUT_OF_MEMORY;
+
+    MOZ_ASSERT(!stub->key, "duplicate static atom");
+    stub->key = atoms[i];
   }
 
-  LOG(("Added static atoms to atomTable"));
   return NS_OK;
 }
 
-nsresult CreateAtomTable() {
-  LOG(("CreateAtomTable"));
-  auto atomTable = sAtomTable.Lock();
-  return CreateAtomTable(atomTable.ref());
-}
-
 void DestroyAtomTable() {
-  LOG(("DestroyAtomTable"));
-  sTableDestroyed = true;
-  auto atomTable = sAtomTable.Lock();
-  atomTable.ref().Clear();
+  delete sAtomTable;
+  sAtomTable = nullptr;
+
+  while (sHeapAtoms) {
+    HttpHeapAtom* next = sHeapAtoms->next;
+    free(sHeapAtoms);
+    sHeapAtoms = next;
+  }
+
+  delete sLock;
+  sLock = nullptr;
 }
 
+Mutex* GetLock() { return sLock; }
 
-nsHttpAtom ResolveAtom(const nsACString& str) {
+
+nsHttpAtom ResolveAtom(const char* str) {
   nsHttpAtom atom;
-  if (str.IsEmpty()) {
+
+  if (!str || !sAtomTable) return atom;
+
+  MutexAutoLock lock(*sLock);
+
+  auto stub = static_cast<PLDHashEntryStub*>(sAtomTable->Add(str, fallible));
+  if (!stub) return atom;  
+
+  if (stub->key) {
+    atom._val = reinterpret_cast<const char*>(stub->key);
     return atom;
   }
 
-  auto atomTable = sAtomTable.Lock();
-
-  if (atomTable.ref().IsEmpty()) {
-    if (sTableDestroyed) {
-      NS_WARNING("ResolveAtom called during shutdown");
-      return atom;
-    }
-
-    NS_WARNING("ResolveAtom called before CreateAtomTable");
-    if (NS_FAILED(CreateAtomTable(atomTable.ref()))) {
-      return atom;
-    }
-  }
-
   
-  auto* entry = atomTable.ref().GetEntry(str);
-  if (entry) {
-    atom._val = entry->GetKey();
-    return atom;
-  }
-
-  LOG(("Putting %s header into atom table", nsPromiseFlatCString(str).get()));
   
-  entry = atomTable.ref().PutEntry(str, fallible);
-  if (entry) {
-    atom._val = entry->GetKey();
-  }
+  HttpHeapAtom* heapAtom = NewHeapAtom(str);
+  if (!heapAtom) return atom;  
+
+  stub->key = atom._val = heapAtom->value;
   return atom;
 }
 
@@ -438,11 +440,10 @@ bool ValidationRequired(bool isForcedValid,
     
     
     
-    if (freshness == 0) {
+    if (freshness == 0)
       doValidation = true;
-    } else {
+    else
       doValidation = fromPreviousSession;
-    }
   } else {
     doValidation = true;
   }
@@ -568,7 +569,7 @@ void NotifyActiveTabLoadOptimization() {
   }
 }
 
-TimeStamp GetLastActiveTabLoadOptimizationHit() {
+TimeStamp const GetLastActiveTabLoadOptimizationHit() {
   return gHttpHandler ? gHttpHandler->GetLastActiveTabLoadOptimizationHit()
                       : TimeStamp();
 }
@@ -611,10 +612,13 @@ void EnsureBuffer(UniquePtr<uint8_t[]>& buf, uint32_t newSize,
 }
 
 static bool IsTokenSymbol(signed char chr) {
-  return !(chr < 33 || chr == 127 || chr == '(' || chr == ')' || chr == '<' ||
-           chr == '>' || chr == '@' || chr == ',' || chr == ';' || chr == ':' ||
-           chr == '"' || chr == '/' || chr == '[' || chr == ']' || chr == '?' ||
-           chr == '=' || chr == '{' || chr == '}' || chr == '\\');
+  if (chr < 33 || chr == 127 || chr == '(' || chr == ')' || chr == '<' ||
+      chr == '>' || chr == '@' || chr == ',' || chr == ';' || chr == ':' ||
+      chr == '"' || chr == '/' || chr == '[' || chr == ']' || chr == '?' ||
+      chr == '=' || chr == '{' || chr == '}' || chr == '\\') {
+    return false;
+  }
+  return true;
 }
 
 ParsedHeaderPair::ParsedHeaderPair(const char* name, int32_t nameLen,
@@ -726,9 +730,8 @@ void ParsedHeaderValueList::ParseNameAndValue(const char* input,
 
   for (; *input && *input != ';' && *input != ',' &&
          !nsCRT::IsAsciiSpace(*input) && *input != '=';
-       input++) {
+       input++)
     ;
-  }
 
   nameEnd = input;
 
@@ -767,9 +770,8 @@ void ParsedHeaderValueList::ParseNameAndValue(const char* input,
     valueStart = input;
     for (valueEnd = input; *valueEnd && !nsCRT::IsAsciiSpace(*valueEnd) &&
                            *valueEnd != ';' && *valueEnd != ',';
-         valueEnd++) {
+         valueEnd++)
       ;
-    }
     if (!allowInvalidValue) {
       for (const char* c = valueStart; c < valueEnd; c++) {
         if (!IsTokenSymbol(*c)) {

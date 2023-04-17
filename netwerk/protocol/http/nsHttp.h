@@ -21,6 +21,8 @@ class nsICacheEntry;
 
 namespace mozilla {
 
+class Mutex;
+
 namespace net {
 class nsHttpResponseHead;
 class nsHttpRequestHead;
@@ -149,14 +151,35 @@ extern const nsCString kHttp3Versions[];
 
 
 
-struct nsHttpAtom;
+struct nsHttpAtom {
+  nsHttpAtom() : _val(nullptr){};
+  explicit nsHttpAtom(const char* val) : _val(val) {}
+  nsHttpAtom(const nsHttpAtom& other) = default;
+
+  operator const char*() const { return _val; }
+  const char* get() const { return _val; }
+
+  void operator=(const char* v) { _val = v; }
+  void operator=(const nsHttpAtom& a) { _val = a._val; }
+
+  
+  const char* _val;
+};
 
 namespace nsHttp {
 [[nodiscard]] nsresult CreateAtomTable();
 void DestroyAtomTable();
 
 
-nsHttpAtom ResolveAtom(const nsACString& s);
+
+
+Mutex* GetLock();
+
+
+nsHttpAtom ResolveAtom(const char*);
+inline nsHttpAtom ResolveAtom(const nsACString& s) {
+  return ResolveAtom(PromiseFlatCString(s).get());
+}
 
 
 
@@ -179,7 +202,8 @@ bool IsReasonableHeaderValue(const nsACString& s);
 
 
 
-const char* FindToken(const char* input, const char* token, const char* seps);
+const char* FindToken(const char* input, const char* token,
+                      const char* separators);
 
 
 
@@ -230,7 +254,7 @@ void DetermineFramingAndImmutability(nsICacheEntry* entry,
 
 
 void NotifyActiveTabLoadOptimization();
-TimeStamp GetLastActiveTabLoadOptimizationHit();
+TimeStamp const GetLastActiveTabLoadOptimizationHit();
 void SetLastActiveTabLoadOptimizationHit(TimeStamp const& when);
 bool IsBeforeLastActiveTabLoadOptimization(TimeStamp const& when);
 
@@ -276,31 +300,6 @@ bool SendDataInChunks(const nsCString& aData, uint64_t aOffset, uint32_t aCount,
 }
 
 }  
-
-struct nsHttpAtom {
-  nsHttpAtom() = default;
-  nsHttpAtom(const nsHttpAtom& other) = default;
-
-  operator const char*() const { return get(); }
-  const char* get() const {
-    if (_val.IsEmpty()) {
-      return nullptr;
-    }
-    return _val.BeginReading();
-  }
-
-  const nsCString& val() const { return _val; }
-
-  void operator=(const nsHttpAtom& a) { _val = a._val; }
-
-  
-  
-  explicit nsHttpAtom(const nsACString& val) : _val(val) {}
-
- private:
-  nsCString _val;
-  friend nsHttpAtom nsHttp::ResolveAtom(const nsACString& s);
-};
 
 
 
@@ -368,7 +367,7 @@ class ParsedHeaderValueListList {
   
   
   
-  explicit ParsedHeaderValueListList(const nsCString& fullHeader,
+  explicit ParsedHeaderValueListList(const nsCString& txt,
                                      bool allowInvalidValue = true);
   nsTArray<ParsedHeaderValueList> mValues;
 
