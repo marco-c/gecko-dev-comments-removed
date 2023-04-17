@@ -55,7 +55,8 @@ bool gecko_profiler_thread_is_being_profiled();
   macro(picture);                          \
   macro(text_run);                         \
   macro(filterdata);                       \
-  macro(backdrop);
+  macro(backdrop);                         \
+  macro(polyon);
 
 
 namespace mozilla {
