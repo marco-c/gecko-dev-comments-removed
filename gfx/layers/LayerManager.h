@@ -58,6 +58,7 @@ namespace layers {
 class AsyncPanZoomController;
 class ClientLayerManager;
 class Layer;
+class ContainerLayer;
 class CompositorBridgeChild;
 class ReadbackProcessor;
 class FocusTarget;
@@ -198,7 +199,7 @@ class LayerManager : public WindowRenderer {
   
 
 
-  Layer* GetRoot() { return nullptr; }
+  Layer* GetRoot() { return mRoot; }
 
   
 
@@ -209,6 +210,11 @@ class LayerManager : public WindowRenderer {
   virtual void Mutated(Layer* aLayer) {}
   virtual void MutatedSimple(Layer* aLayer) {}
 
+  
+
+
+
+  virtual already_AddRefed<ContainerLayer> CreateContainerLayer() = 0;
   
 
 
@@ -379,6 +385,7 @@ class LayerManager : public WindowRenderer {
   void SetContainsSVG(bool aContainsSVG) { mContainsSVG = aContainsSVG; }
 
  protected:
+  RefPtr<Layer> mRoot;
   gfx::UserData mUserData;
   bool mDestroyed;
   bool mSnapEffectiveTransforms;
