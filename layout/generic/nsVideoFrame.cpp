@@ -12,6 +12,7 @@
 #include "nsGkAtoms.h"
 
 #include "mozilla/PresShell.h"
+#include "mozilla/dom/HTMLImageElement.h"
 #include "mozilla/dom/HTMLVideoElement.h"
 #include "mozilla/dom/ShadowRoot.h"
 #include "mozilla/layers/RenderRootStateManager.h"
@@ -104,8 +105,7 @@ nsresult nsVideoFrame::CreateAnonymousContent(
     
     
     
-    nsCOMPtr<nsIImageLoadingContent> imgContent =
-        do_QueryInterface(mPosterImage);
+    HTMLImageElement* imgContent = HTMLImageElement::FromNode(mPosterImage);
     NS_ENSURE_TRUE(imgContent, NS_ERROR_FAILURE);
 
     imgContent->ForceImageState(true, 0);

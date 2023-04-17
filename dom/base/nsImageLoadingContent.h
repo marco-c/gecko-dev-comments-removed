@@ -92,6 +92,13 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
 
   void NotifyOwnerDocumentActivityChanged();
 
+  
+
+
+
+
+  void ForceImageState(bool aForce, mozilla::EventStates::InternalType aState);
+
  protected:
   enum ImageLoadType {
     

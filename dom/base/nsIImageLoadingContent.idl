@@ -146,13 +146,6 @@ interface nsIImageLoadingContent : imgINotificationObserver
 
 
 
-  [notxpcom, nostdcall] void forceImageState(in boolean aForce, in unsigned long long aState);
-
-  
-
-
-
-
 
 
 
