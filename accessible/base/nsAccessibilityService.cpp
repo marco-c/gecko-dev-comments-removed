@@ -48,6 +48,7 @@
 #ifdef XP_WIN
 #  include "mozilla/a11y/Compatibility.h"
 #  include "mozilla/dom/ContentChild.h"
+#  include "mozilla/StaticPrefs_accessibility.h"
 #  include "mozilla/StaticPtr.h"
 #endif
 
@@ -1222,7 +1223,8 @@ bool nsAccessibilityService::Init() {
     MOZ_ASSERT(contentChild);
     
     
-    if (!contentChild->GetMsaaID()) {
+    if (!StaticPrefs::accessibility_cache_enabled_AtStartup() &&
+        !contentChild->GetMsaaID()) {
       
       
       contentChild->SendGetA11yContentId();
