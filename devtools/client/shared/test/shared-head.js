@@ -488,6 +488,7 @@ async function navigateTo(uri, { isErrorPage = false } = {}) {
   info(`Load document "${uri}"`);
   const browser = gBrowser.selectedBrowser;
   const currentPID = browser.browsingContext.currentWindowGlobal.osPid;
+  const currentBrowsingContextID = browser.browsingContext.id;
   const onBrowserLoaded = BrowserTestUtils.browserLoaded(
     browser,
     false,
@@ -504,6 +505,8 @@ async function navigateTo(uri, { isErrorPage = false } = {}) {
   
   const switchedToAnotherProcess =
     currentPID !== browser.browsingContext.currentWindowGlobal.osPid;
+  const switchedToAnotherBrowsingContext =
+    currentBrowsingContextID !== browser.browsingContext.id;
 
   if (onPanelReloaded) {
     info(`Waiting for ${toolbox.currentToolId} to be reloaded…`);
@@ -513,7 +516,14 @@ async function navigateTo(uri, { isErrorPage = false } = {}) {
 
   
   
-  if (switchedToAnotherProcess || targetFollowsWindowLifecycle) {
+  
+  
+  
+  if (
+    switchedToAnotherProcess ||
+    targetFollowsWindowLifecycle ||
+    switchedToAnotherBrowsingContext
+  ) {
     info(`Waiting for target switch…`);
     await onTargetSwitched;
     info(`→ switched-target emitted`);
