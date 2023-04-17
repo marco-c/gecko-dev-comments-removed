@@ -36,8 +36,6 @@ pub struct Zip<T> {
 
 
 
-
-
 pub fn multizip<T, U>(t: U) -> Zip<T>
     where Zip<T>: From<U>,
           Zip<T>: Iterator,

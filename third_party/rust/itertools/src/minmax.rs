@@ -1,6 +1,7 @@
 
 
 
+
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum MinMaxResult<T> {
     

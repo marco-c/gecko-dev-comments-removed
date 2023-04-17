@@ -136,7 +136,6 @@ impl<A, St, F> Iterator for Unfold<St, F>
 
 
 
-
 #[derive(Clone)]
 #[must_use = "iterators are lazy and do nothing unless consumed"]
 pub struct Iterate<St, F> {

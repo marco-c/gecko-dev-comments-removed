@@ -43,8 +43,6 @@
 
 
 
-
-
 #![doc(html_root_url="https://docs.rs/itertools/0.8/")]
 
 #[cfg(not(feature = "use_std"))]
@@ -61,11 +59,14 @@ use alloc::{
 
 pub use either::Either;
 
+use core::borrow::Borrow;
 #[cfg(feature = "use_std")]
 use std::collections::HashMap;
 use std::iter::{IntoIterator, once};
 use std::cmp::Ordering;
 use std::fmt;
+#[cfg(feature = "use_std")]
+use std::collections::HashSet;
 #[cfg(feature = "use_std")]
 use std::hash::Hash;
 #[cfg(feature = "use_alloc")]
@@ -118,6 +119,7 @@ pub mod structs {
     pub use crate::cons_tuples_impl::ConsTuples;
     pub use crate::exactly_one_err::ExactlyOneError;
     pub use crate::format::{Format, FormatWith};
+    pub use crate::flatten_ok::FlattenOk;
     #[cfg(feature = "use_std")]
     pub use crate::grouping_map::{GroupingMap, GroupingMapBy};
     #[cfg(feature = "use_alloc")]
@@ -147,6 +149,8 @@ pub mod structs {
     #[cfg(feature = "use_alloc")]
     pub use crate::tee::Tee;
     pub use crate::tuple_impl::{TupleBuffer, TupleWindows, CircularTupleWindows, Tuples};
+    #[cfg(feature = "use_std")]
+    pub use crate::duplicates_impl::{Duplicates, DuplicatesBy};
     #[cfg(feature = "use_std")]
     pub use crate::unique_impl::{Unique, UniqueBy};
     pub use crate::with_position::WithPosition;
@@ -191,6 +195,7 @@ mod combinations;
 mod combinations_with_replacement;
 mod exactly_one_err;
 mod diff;
+mod flatten_ok;
 mod format;
 #[cfg(feature = "use_std")]
 mod grouping_map;
@@ -228,6 +233,8 @@ mod sources;
 #[cfg(feature = "use_alloc")]
 mod tee;
 mod tuple_impl;
+#[cfg(feature = "use_std")]
+mod duplicates_impl;
 #[cfg(feature = "use_std")]
 mod unique_impl;
 mod with_position;
@@ -305,8 +312,6 @@ macro_rules! iproduct {
 
 
 
-
-
 macro_rules! izip {
     
     
@@ -343,7 +348,68 @@ macro_rules! izip {
     };
 }
 
+#[macro_export]
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+macro_rules! chain {
+    () => {
+        core::iter::empty()
+    };
+    ($first:expr $(, $rest:expr )* $(,)?) => {
+        {
+            let iter = core::iter::IntoIterator::into_iter($first);
+            $(
+                let iter =
+                    core::iter::Iterator::chain(
+                        iter,
+                        core::iter::IntoIterator::into_iter($rest));
+            )*
+            iter
+        }
+    };
+}
 
 
 
@@ -846,6 +912,30 @@ pub trait Itertools : Iterator {
     
     
     
+    
+    
+    
+    fn flatten_ok<T, E>(self) -> FlattenOk<Self, T, E>
+        where Self: Iterator<Item = Result<T, E>> + Sized,
+              T: IntoIterator
+    {
+        flatten_ok::flatten_ok(self)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn merge<J>(self, other: J) -> Merge<Self, J::IntoIter>
         where Self: Sized,
               Self::Item: PartialOrd,
@@ -1120,7 +1210,8 @@ pub trait Itertools : Iterator {
     
     
     fn dedup_with_count(self) -> DedupWithCount<Self>
-        where Self: Sized,
+    where
+        Self: Sized,
     {
         adaptors::dedup_with_count(self)
     }
@@ -1142,10 +1233,59 @@ pub trait Itertools : Iterator {
     
     
     fn dedup_by_with_count<Cmp>(self, cmp: Cmp) -> DedupByWithCount<Self, Cmp>
-        where Self: Sized,
-              Cmp: FnMut(&Self::Item, &Self::Item) -> bool,
+    where
+        Self: Sized,
+        Cmp: FnMut(&Self::Item, &Self::Item) -> bool,
     {
         adaptors::dedup_by_with_count(self, cmp)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "use_std")]
+    fn duplicates(self) -> Duplicates<Self>
+        where Self: Sized,
+              Self::Item: Eq + Hash
+    {
+        duplicates_impl::duplicates(self)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "use_std")]
+    fn duplicates_by<V, F>(self, f: F) -> DuplicatesBy<Self, V, F>
+        where Self: Sized,
+              V: Eq + Hash,
+              F: FnMut(&Self::Item) -> V
+    {
+        duplicates_impl::duplicates_by(self, f)
     }
 
     
@@ -1613,6 +1753,82 @@ pub trait Itertools : Iterator {
         }
         None
     }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn find_or_last<P>(mut self, mut predicate: P) -> Option<Self::Item>
+        where Self: Sized,
+              P: FnMut(&Self::Item) -> bool,
+    {
+        let mut prev = None;
+        self.find_map(|x| if predicate(&x) { Some(x) } else { prev = Some(x); None })
+            .or(prev)
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn find_or_first<P>(mut self, mut predicate: P) -> Option<Self::Item>
+        where Self: Sized,
+              P: FnMut(&Self::Item) -> bool,
+    {
+        let first = self.next()?;
+        Some(if predicate(&first) {
+            first
+        } else {
+            self.find(|x| predicate(&x)).unwrap_or(first)
+        })
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn contains<Q>(&mut self, query: &Q) -> bool
+    where
+        Self: Sized,
+        Self::Item: Borrow<Q>,
+        Q: PartialEq,
+    {
+        self.any(|x| x.borrow() == query)
+    }
 
     
     
@@ -1638,6 +1854,30 @@ pub trait Itertools : Iterator {
             None => true,
             Some(a) => self.all(|x| a == x),
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "use_std")]
+    fn all_unique(&mut self) -> bool
+        where Self: Sized,
+              Self::Item: Eq + Hash
+    {
+        let mut used = HashSet::new();
+        self.all(move |elt| used.insert(elt))
     }
 
     
@@ -2514,6 +2754,33 @@ pub trait Itertools : Iterator {
     
     
     
+    
+    fn partition_result<A, B, T, E>(self) -> (A, B)
+        where
+            Self: Iterator<Item = Result<T, E>> + Sized,
+            A: Default + Extend<T>,
+            B: Default + Extend<E>,
+    {
+        self.partition_map(|r| match r {
+            Ok(v) => Either::Left(v),
+            Err(v) => Either::Right(v),
+        })
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[cfg(feature = "use_std")]
     fn into_group_map<K, V>(self) -> HashMap<K, Vec<V>>
         where Self: Iterator<Item=(K, V)> + Sized,
@@ -2522,6 +2789,8 @@ pub trait Itertools : Iterator {
         group_map::into_group_map(self)
     }
 
+    
+    
     
     
     
@@ -2875,8 +3144,6 @@ pub trait Itertools : Iterator {
     
     
     
-    
-    
     fn position_minmax(self) -> MinMaxResult<usize>
         where Self: Sized, Self::Item: PartialOrd
     {
@@ -2922,7 +3189,6 @@ pub trait Itertools : Iterator {
     
     
     
-    
     fn position_minmax_by_key<K, F>(self, mut key: F) -> MinMaxResult<usize>
         where Self: Sized, K: PartialOrd, F: FnMut(&Self::Item) -> K
     {
@@ -2934,7 +3200,6 @@ pub trait Itertools : Iterator {
         }
     }
 
-    
     
     
     
@@ -3027,6 +3292,42 @@ pub trait Itertools : Iterator {
     
     
     
+    
+    
+    
+    fn at_most_one(mut self) -> Result<Option<Self::Item>, ExactlyOneError<Self>>
+    where
+        Self: Sized,
+    {
+        match self.next() {
+            Some(first) => {
+                match self.next() {
+                    Some(second) => {
+                        Err(ExactlyOneError::new(Some(Either::Left([first, second])), self))
+                    }
+                    None => {
+                        Ok(Some(first))
+                    }
+                }
+            }
+            None => Ok(None),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[cfg(feature = "use_alloc")]
     fn multipeek(self) -> MultiPeek<Self>
     where
@@ -3057,6 +3358,48 @@ pub trait Itertools : Iterator {
         let mut counts = HashMap::new();
         self.for_each(|item| *counts.entry(item).or_default() += 1);
         counts
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "use_std")]
+    fn counts_by<K, F>(self, f: F) -> HashMap<K, usize>
+    where
+        Self: Sized,
+        K: Eq + Hash,
+        F: FnMut(Self::Item) -> K,
+    {
+        self.map(f).counts()
     }
 }
 

@@ -2,6 +2,7 @@ use crate::size_hint;
 use crate::Itertools;
 
 use alloc::vec::Vec;
+use std::iter::FusedIterator;
 use std::mem::replace;
 use std::fmt;
 
@@ -75,13 +76,12 @@ fn sift_down<T, S>(heap: &mut [T], index: usize, mut less_than: S)
     let mut pos = index;
     let mut child = 2 * pos + 1;
     
-    while pos < heap.len() && child < heap.len() {
-        let right = child + 1;
-
+    
+    
+    while child + 1 < heap.len() {
         
-        if right < heap.len() && less_than(&heap[right], &heap[child]) {
-            child = right;
-        }
+        
+        child += less_than(&heap[child+1], &heap[child]) as usize;
 
         
         if !less_than(&heap[child], &heap[pos]) {
@@ -90,6 +90,11 @@ fn sift_down<T, S>(heap: &mut [T], index: usize, mut less_than: S)
         heap.swap(pos, child);
         pos = child;
         child = 2 * pos + 1;
+    }
+    
+    
+    if child + 1 == heap.len() && less_than(&heap[child], &heap[pos]) {
+        heap.swap(pos, child);
     }
 }
 
@@ -215,3 +220,8 @@ impl<I, F> Iterator for KMergeBy<I, F>
                  .unwrap_or((0, Some(0)))
     }
 }
+
+impl<I, F> FusedIterator for KMergeBy<I, F>
+    where I: Iterator,
+          F: KMergePredicate<I::Item>
+{}

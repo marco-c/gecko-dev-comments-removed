@@ -1,9 +1,9 @@
-use crate::EitherOrBoth::*;
+use EitherOrBoth::*;
 
 use either::Either;
 
 
-#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum EitherOrBoth<A, B> {
     
     Both(A, B),
@@ -161,21 +161,6 @@ impl<A, B> EitherOrBoth<A, B> {
         match self {
             Left(a) => Left(a),
             Right(b) | Both(_, b) => f(b),
-        }
-    }
-
-    
-    
-    
-    pub fn or_default(self) -> (A, B)
-    where
-        A: Default,
-        B: Default,
-    {
-        match self {
-            EitherOrBoth::Left(l) => (l, B::default()),
-            EitherOrBoth::Right(r) => (A::default(), r),
-            EitherOrBoth::Both(l, r) => (l, r),
         }
     }
 }

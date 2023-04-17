@@ -231,8 +231,6 @@ pub fn join<I>(iterable: I, sep: &str) -> String
 
 
 
-
-
 #[cfg(feature = "use_alloc")]
 pub fn sorted<I>(iterable: I) -> VecIntoIter<I::Item>
     where I: IntoIterator,

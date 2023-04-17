@@ -1,6 +1,6 @@
 use std::cmp::Ordering::{Equal, Greater, Less};
 use super::size_hint;
-use std::iter::Fuse;
+use std::iter::{Fuse, FusedIterator};
 
 use crate::either_or_both::EitherOrBoth;
 
@@ -20,7 +20,7 @@ pub struct ZipLongest<T, U> {
 }
 
 
-pub fn zip_longest<T, U>(a: T, b: U) -> ZipLongest<T, U> 
+pub fn zip_longest<T, U>(a: T, b: U) -> ZipLongest<T, U>
     where T: Iterator,
           U: Iterator
 {
@@ -75,4 +75,9 @@ impl<T, U> DoubleEndedIterator for ZipLongest<T, U>
 impl<T, U> ExactSizeIterator for ZipLongest<T, U>
     where T: ExactSizeIterator,
           U: ExactSizeIterator
+{}
+
+impl<T, U> FusedIterator for ZipLongest<T, U>
+    where T: Iterator,
+          U: Iterator
 {}

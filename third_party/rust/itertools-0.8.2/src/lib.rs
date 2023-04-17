@@ -56,7 +56,7 @@ pub use either::Either;
 
 #[cfg(feature = "use_std")]
 use std::collections::HashMap;
-use std::iter::{IntoIterator};
+use std::iter::{IntoIterator, once};
 use std::cmp::Ordering;
 use std::fmt;
 #[cfg(feature = "use_std")]
@@ -79,6 +79,7 @@ pub use std::iter as __std_iter;
 pub mod structs {
     pub use adaptors::{
         Dedup,
+        DedupBy,
         Interleave,
         InterleaveShortest,
         Product,
@@ -101,7 +102,10 @@ pub mod structs {
     pub use adaptors::MultiProduct;
     #[cfg(feature = "use_std")]
     pub use combinations::Combinations;
+    #[cfg(feature = "use_std")]
+    pub use combinations_with_replacement::CombinationsWithReplacement;
     pub use cons_tuples_impl::ConsTuples;
+    pub use exactly_one_err::ExactlyOneError;
     pub use format::{Format, FormatWith};
     #[cfg(feature = "use_std")]
     pub use groupbylazy::{IntoChunks, Chunk, Chunks, GroupBy, Group, Groups};
@@ -113,6 +117,8 @@ pub mod structs {
     pub use multipeek_impl::MultiPeek;
     pub use pad_tail::PadUsing;
     pub use peeking_take_while::PeekingTakeWhile;
+    #[cfg(feature = "use_std")]
+    pub use permutations::Permutations;
     pub use process_results_impl::ProcessResults;
     #[cfg(feature = "use_std")]
     pub use put_back_n_impl::PutBackN;
@@ -158,6 +164,9 @@ mod concat_impl;
 mod cons_tuples_impl;
 #[cfg(feature = "use_std")]
 mod combinations;
+#[cfg(feature = "use_std")]
+mod combinations_with_replacement;
+mod exactly_one_err;
 mod diff;
 mod format;
 #[cfg(feature = "use_std")]
@@ -167,12 +176,16 @@ mod groupbylazy;
 mod intersperse;
 #[cfg(feature = "use_std")]
 mod kmerge_impl;
+#[cfg(feature = "use_std")]
+mod lazy_buffer;
 mod merge_join;
 mod minmax;
 #[cfg(feature = "use_std")]
 mod multipeek_impl;
 mod pad_tail;
 mod peeking_take_while;
+#[cfg(feature = "use_std")]
+mod permutations;
 mod process_results_impl;
 #[cfg(feature = "use_std")]
 mod put_back_n_impl;
@@ -968,6 +981,28 @@ pub trait Itertools : Iterator {
     
     
     
+    
+    fn dedup_by<Cmp>(self, cmp: Cmp) -> DedupBy<Self, Cmp>
+        where Self: Sized,
+              Cmp: FnMut(&Self::Item, &Self::Item)->bool,
+    {
+        adaptors::dedup_by(self, cmp)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[cfg(feature = "use_std")]
     fn unique(self) -> Unique<Self>
         where Self: Sized,
@@ -1121,12 +1156,97 @@ pub trait Itertools : Iterator {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[cfg(feature = "use_std")]
-    fn combinations(self, n: usize) -> Combinations<Self>
+    fn combinations(self, k: usize) -> Combinations<Self>
         where Self: Sized,
               Self::Item: Clone
     {
-        combinations::combinations(self, n)
+        combinations::combinations(self, k)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "use_std")]
+    fn combinations_with_replacement(self, k: usize) -> CombinationsWithReplacement<Self>
+    where
+        Self: Sized,
+        Self::Item: Clone,
+    {
+        combinations_with_replacement::combinations_with_replacement(self, k)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "use_std")]
+    fn permutations(self, k: usize) -> Permutations<Self>
+        where Self: Sized,
+              Self::Item: Clone
+    {
+        permutations::permutations(self, k)
     }
 
     
@@ -1308,9 +1428,13 @@ pub trait Itertools : Iterator {
     
     
     fn all_equal(&mut self) -> bool
-        where Self::Item: PartialEq,
+        where Self: Sized,
+              Self::Item: PartialEq,
     {
-        self.dedup().nth(1).is_none()
+        match self.next() {
+            None => true,
+            Some(a) => self.all(|x| a == x),
+        }
     }
 
     
@@ -1691,7 +1815,6 @@ pub trait Itertools : Iterator {
     
     
     
-    
     fn tree_fold1<F>(mut self, mut f: F) -> Option<Self::Item>
         where F: FnMut(Self::Item, Self::Item) -> Self::Item,
               Self: Sized,
@@ -1822,6 +1945,64 @@ pub trait Itertools : Iterator {
     
     
     
+    
+    
+    
+    
+    fn sum1<S>(mut self) -> Option<S>
+        where Self: Sized,
+              S: std::iter::Sum<Self::Item>,
+    {
+        self.next()
+            .map(|first| once(first).chain(self).sum())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn product1<P>(mut self) -> Option<P>
+        where Self: Sized,
+              P: std::iter::Product<Self::Item>,
+    {
+        self.next()
+            .map(|first| once(first).chain(self).product())
+    }
+
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[cfg(feature = "use_std")]
     fn sorted(self) -> VecIntoIter<Self::Item>
         where Self: Sized,
@@ -1922,21 +2103,19 @@ pub trait Itertools : Iterator {
     
     
     
-    fn partition_map<A, B, F, L, R>(self, predicate: F) -> (A, B)
+    fn partition_map<A, B, F, L, R>(self, mut predicate: F) -> (A, B)
         where Self: Sized,
-              F: Fn(Self::Item) -> Either<L, R>,
+              F: FnMut(Self::Item) -> Either<L, R>,
               A: Default + Extend<L>,
               B: Default + Extend<R>,
     {
         let mut left = A::default();
         let mut right = B::default();
 
-        for val in self {
-            match predicate(val) {
-                Either::Left(v) => left.extend(Some(v)),
-                Either::Right(v) => right.extend(Some(v)),
-            }
-        }
+        self.for_each(|val| match predicate(val) {
+            Either::Left(v) => left.extend(Some(v)),
+            Either::Right(v) => right.extend(Some(v)),
+        });
 
         (left, right)
     }
@@ -2037,6 +2216,42 @@ pub trait Itertools : Iterator {
             |_| (),
             |x, y, _, _| Ordering::Less == compare(x, y)
         )
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn exactly_one(mut self) -> Result<Self::Item, ExactlyOneError<Self>>
+    where
+        Self: Sized,
+    {
+        match self.next() {
+            Some(first) => {
+                match self.next() {
+                    Some(second) => {
+                        Err(ExactlyOneError::new((Some(first), Some(second)), self))
+                    }
+                    None => {
+                        Ok(first)
+                    }
+                }
+            }
+            None => Err(ExactlyOneError::new((None, None), self)),
+        }
     }
 }
 

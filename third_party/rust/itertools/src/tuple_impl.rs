@@ -1,6 +1,7 @@
 
 
 use std::iter::Fuse;
+use std::iter::FusedIterator;
 use std::iter::Take;
 use std::iter::Cycle;
 use std::marker::PhantomData;
@@ -187,6 +188,12 @@ impl<I, T> Iterator for TupleWindows<I, T>
     }
 }
 
+impl<I, T> FusedIterator for TupleWindows<I, T>
+    where I: FusedIterator<Item = T::Item>,
+          T: HomogeneousTuple + Clone,
+          T::Item: Clone
+{}
+
 
 
 
@@ -247,9 +254,6 @@ pub trait TupleCollect: Sized {
 macro_rules! count_ident{
     () => {0};
     ($i0:ident, $($i:ident,)*) => {1 + count_ident!($($i,)*)};
-}
-macro_rules! ignore_ident{
-    ($id:ident, $($t:tt)*) => {$($t)*};
 }
 macro_rules! rev_for_each_ident{
     ($m:ident, ) => {};
@@ -317,7 +321,7 @@ macro_rules! impl_tuple_collect {
                 let &mut ($(ref mut $Y),*,) = self;
                 macro_rules! replace_item{($i:ident) => {
                     item = replace($i, item);
-                }};
+                }}
                 rev_for_each_ident!(replace_item, $($Y,)*);
                 drop(item);
             }
