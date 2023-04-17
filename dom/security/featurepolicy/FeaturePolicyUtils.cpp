@@ -36,6 +36,7 @@ static FeatureMap sSupportedFeatures[] = {
     {"fullscreen", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     {"web-share", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     {"gamepad", FeaturePolicyUtils::FeaturePolicyValue::eAll},
+    {"speaker-selection", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
 };
 
 
@@ -52,8 +53,6 @@ static FeatureMap sExperimentalFeatures[] = {
     {"midi", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     {"payment", FeaturePolicyUtils::FeaturePolicyValue::eAll},
     {"document-domain", FeaturePolicyUtils::FeaturePolicyValue::eAll},
-    
-    {"speaker", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
     {"vr", FeaturePolicyUtils::FeaturePolicyValue::eAll},
     
     {"xr-spatial-tracking", FeaturePolicyUtils::FeaturePolicyValue::eSelf},
