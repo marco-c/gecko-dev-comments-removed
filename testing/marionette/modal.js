@@ -47,39 +47,43 @@ modal.findModalDialogs = function(context) {
       win.opener &&
       win.opener === context.window
     ) {
-      logger.trace("Found open modal prompt");
+      logger.trace("Found open window modal prompt");
       return new modal.Dialog(() => context, win);
     }
   }
 
-  
-  
-  
-  if (context.tab && context.tabBrowser.getTabModalPromptBox) {
-    let contentBrowser = context.contentBrowser;
-    let promptManager = context.tabBrowser.getTabModalPromptBox(contentBrowser);
-    let prompts = promptManager.listPrompts();
+  const contentBrowser = context.contentBrowser;
 
-    if (prompts.length) {
+  
+  
+  
+  
+  if (context.tabBrowser?.getTabDialogBox) {
+    const tabDialogBox = context.tabBrowser.getTabDialogBox(contentBrowser);
+
+    let dialogs = tabDialogBox.getTabDialogManager().dialogs;
+    if (dialogs.length) {
       logger.trace("Found open tab modal prompt");
-      return new modal.Dialog(() => context, null);
+      return new modal.Dialog(() => context, dialogs[0].frameContentWindow);
+    }
+
+    dialogs = tabDialogBox.getContentDialogManager().dialogs;
+    if (dialogs.length) {
+      logger.trace("Found open content prompt");
+      return new modal.Dialog(() => context, dialogs[0].frameContentWindow);
     }
   }
 
   
   
-  if (context.tab && context.tabBrowser.getTabDialogBox) {
-    let contentBrowser = context.contentBrowser;
-    let dialogManager = context.tabBrowser
-      .getTabDialogBox(contentBrowser)
-      .getTabDialogManager();
-    let dialogs = dialogManager._dialogs.filter(
-      dialog => dialog._openedURL === COMMON_DIALOG
-    );
+  
+  if (context.tabBrowser?.getTabModalPromptBox) {
+    const promptBox = context.tabBrowser.getTabModalPromptBox(contentBrowser);
 
-    if (dialogs.length) {
-      logger.trace("Found open content prompt");
-      return new modal.Dialog(() => context, dialogs[0]._frame.contentWindow);
+    const prompts = promptBox.listPrompts();
+    if (prompts.length) {
+      logger.trace("Found open old-style content prompt");
+      return new modal.Dialog(() => context, null);
     }
   }
 
