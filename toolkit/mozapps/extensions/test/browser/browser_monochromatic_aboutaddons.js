@@ -23,8 +23,7 @@ add_task(async function testMonochromaticList() {
   let doc = win.document;
 
   
-  let colorwayList = doc.querySelector("section[section='2']");
-  await colorwayList.cardsReady;
+  let colorwayList = doc.querySelector(".monochromatic-addon-list");
   await themeAddon.disable();
 
   
@@ -47,7 +46,7 @@ add_task(async function testMonochromaticList() {
   is(
     subheading.getAttribute("data-l10n-id"),
     "theme-monochromatic-subheading",
-    "Header string is correct."
+    "Subheader string is correct."
   );
 
   
@@ -60,45 +59,36 @@ add_task(async function testMonochromaticList() {
     "Colorways section contains monochromatic theme"
   );
 
-  let addon = await AddonManager.getAddonByID("test-colorway@mozilla.org");
-  await addon.enable();
-  let enabledSection = doc.querySelector("section[section='0']");
-
   
+  let addon = await AddonManager.getAddonByID("test-colorway@mozilla.org");
+  let enabledSection = doc.querySelector("section[section='0']");
   let mutationPromise = BrowserTestUtils.waitForMutationCondition(
     enabledSection,
     { childList: true },
-    () => enabledSection.contains(card)
+    () =>
+      enabledSection.children.length > 1 &&
+      enabledSection.children[1].getAttribute("addon-id") ==
+        "test-colorway@mozilla.org"
   );
-
-  await EventUtils.synthesizeMouseAtCenter(heading, { type: "mousemove" }, win);
+  await addon.enable();
   await mutationPromise;
-
-  ok(
-    enabledSection.contains(card),
-    "Enabled section contains enabled colorway theme"
+  let enabledCard = enabledSection.querySelector(
+    "addon-card[addon-id='test-colorway@mozilla.org']"
   );
-
   ok(
-    !colorwayList.contains(card),
-    "Colorway section no longer contains enabled theme"
+    enabledSection.contains(enabledCard),
+    "Enabled section contains enabled colorway theme"
   );
 
   
   await addon.disable();
 
-  
   mutationPromise = BrowserTestUtils.waitForMutationCondition(
-    colorwayList,
+    enabledSection,
     { childList: true },
-    () => colorwayList.contains(card)
+    () => !enabledSection.contains(enabledCard)
   );
 
-  await EventUtils.synthesizeMouseAtCenter(
-    subheading,
-    { type: "mousemove" },
-    win
-  );
   await mutationPromise;
 
   ok(
