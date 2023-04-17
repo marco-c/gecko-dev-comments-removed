@@ -1336,6 +1336,18 @@ var SessionStoreInternal = {
       return;
     }
 
+    
+    
+    
+    
+    
+    if (
+      aBrowser.browsingContext &&
+      aBrowser.browsingContext.top != aBrowsingContext.top
+    ) {
+      return;
+    }
+
     if (
       Services.appinfo.sessionHistoryInParent &&
       aBrowsingContext === aBrowsingContext.top &&
