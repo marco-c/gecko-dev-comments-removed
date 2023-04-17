@@ -192,9 +192,6 @@ const PanelUI = {
     this.menuButton.removeEventListener("mousedown", this);
     this.menuButton.removeEventListener("keypress", this);
     CustomizableUI.removeListener(this);
-    if (this.libraryView) {
-      this.libraryView.removeEventListener("ViewShowing", this);
-    }
     if (this.whatsNewPanel) {
       this.whatsNewPanel.removeEventListener("ViewShowing", this);
     }
@@ -334,8 +331,6 @@ const PanelUI = {
       case "ViewShowing":
         if (aEvent.target == this.whatsNewPanel) {
           this.onWhatsNewPanelShowing();
-        } else if (aEvent.target == this.libraryView) {
-          this.onLibraryShowing(this.libraryView);
         }
         break;
     }
@@ -467,7 +462,6 @@ const PanelUI = {
       return;
     }
 
-    this.ensureLibraryInitialized(viewNode);
     this.ensureWhatsNewInitialized(viewNode);
     this.ensurePanicViewInitialized(viewNode);
 
@@ -551,24 +545,6 @@ const PanelUI = {
 
 
 
-  ensureLibraryInitialized(viewNode) {
-    if (viewNode.id != "appMenu-libraryView" || viewNode._initialized) {
-      return;
-    }
-
-    if (!this.libraryView) {
-      this.libraryView = viewNode;
-    }
-
-    viewNode._initialized = true;
-    viewNode.addEventListener("ViewShowing", this);
-  },
-
-  
-
-
-
-
   ensureWhatsNewInitialized(panelView) {
     if (panelView.id != "PanelUI-whatsNew" || panelView._initialized) {
       return;
@@ -609,19 +585,6 @@ const PanelUI = {
       document,
       "PanelUI-whatsNew-message-container"
     );
-  },
-
-  onLibraryShowing(libraryPanel) {
-    
-    
-    
-    
-    if (PanelUI.protonAppMenuEnabled) {
-      let toolbarbuttons = libraryPanel.querySelectorAll("toolbarbutton");
-      for (let toolbarbutton of toolbarbuttons) {
-        toolbarbutton.classList.remove("subviewbutton-iconic");
-      }
-    }
   },
 
   
