@@ -50,6 +50,7 @@ class CDP {
   constructor(agent) {
     this.agent = agent;
     this.targetList = null;
+    this._running = false;
   }
 
   get address() {
@@ -61,6 +62,15 @@ class CDP {
 
 
   async start() {
+    if (this._running) {
+      return;
+    }
+
+    
+    
+    
+    this._running = true;
+
     RecommendedPreferences.applyPreferences(RECOMMENDED_PREFS);
 
     this.agent.server.registerPrefixHandler("/json/", new JSONHandler(this));
@@ -75,9 +85,6 @@ class CDP {
 
     await this.targetList.watchForTargets();
 
-    
-    
-
     Services.obs.notifyObservers(
       null,
       "remote-listening",
@@ -89,9 +96,17 @@ class CDP {
 
 
   stop() {
-    this.targetList?.destructor();
-    this.targetList = null;
+    if (!this._running) {
+      return;
+    }
 
-    RecommendedPreferences.restorePreferences(RECOMMENDED_PREFS);
+    try {
+      this.targetList?.destructor();
+      this.targetList = null;
+
+      RecommendedPreferences.restorePreferences(RECOMMENDED_PREFS);
+    } finally {
+      this._running = false;
+    }
   }
 }
