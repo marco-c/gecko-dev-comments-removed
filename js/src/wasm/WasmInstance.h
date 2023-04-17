@@ -22,6 +22,7 @@
 #include "gc/Barrier.h"
 #include "gc/Zone.h"
 #include "vm/SharedMem.h"
+#include "wasm/TypedObject.h"
 #include "wasm/WasmCode.h"
 #include "wasm/WasmDebug.h"
 #include "wasm/WasmFrameIter.h"  
@@ -143,6 +144,16 @@ class Instance {
   [[nodiscard]] bool callExport(JSContext* cx, uint32_t funcIndex,
                                 CallArgs args,
                                 CoercionLevel level = CoercionLevel::Spec);
+
+  
+
+  [[nodiscard]] bool constantRefFunc(uint32_t funcIndex,
+                                     MutableHandleFuncRef result);
+  [[nodiscard]] bool constantRttCanon(JSContext* cx, uint32_t sourceTypeIndex,
+                                      MutableHandleRttValue result);
+  [[nodiscard]] bool constantRttSub(JSContext* cx, HandleRttValue parentRtt,
+                                    uint32_t sourceChildTypeIndex,
+                                    MutableHandleRttValue result);
 
   
   

@@ -20,6 +20,7 @@
 #define wasm_type_def_h
 
 #include "wasm/WasmCompileArgs.h"
+#include "wasm/WasmConstants.h"
 #include "wasm/WasmSerialize.h"
 #include "wasm/WasmUtility.h"
 #include "wasm/WasmValType.h"
@@ -96,12 +97,12 @@ class FuncType {
     return args_.appendAll(src.args_) && results_.appendAll(src.results_);
   }
 
-  void renumber(const RenumberMap& map) {
+  void renumber(const RenumberVector& renumbering) {
     for (auto& arg : args_) {
-      arg.renumber(map);
+      arg.renumber(renumbering);
     }
     for (auto& result : results_) {
-      result.renumber(map);
+      result.renumber(renumbering);
     }
   }
   void offsetTypeIndex(uint32_t offsetBy) {
@@ -212,9 +213,9 @@ class StructType {
     return true;
   }
 
-  void renumber(const RenumberMap& map) {
+  void renumber(const RenumberVector& renumbering) {
     for (auto& field : fields_) {
-      field.type.renumber(map);
+      field.type.renumber(renumbering);
     }
   }
   void offsetTypeIndex(uint32_t offsetBy) {
@@ -262,7 +263,9 @@ class ArrayType {
     return true;
   }
 
-  void renumber(const RenumberMap& map) { elementType_.renumber(map); }
+  void renumber(const RenumberVector& renumbering) {
+    elementType_.renumber(renumbering);
+  }
   void offsetTypeIndex(uint32_t offsetBy) {
     elementType_.offsetTypeIndex(offsetBy);
   }
@@ -416,16 +419,16 @@ class TypeDef {
     return arrayType_;
   }
 
-  void renumber(const RenumberMap& map) {
+  void renumber(const RenumberVector& renumbering) {
     switch (kind_) {
       case TypeDefKind::Func:
-        funcType_.renumber(map);
+        funcType_.renumber(renumbering);
         break;
       case TypeDefKind::Struct:
-        structType_.renumber(map);
+        structType_.renumber(renumbering);
         break;
       case TypeDefKind::Array:
-        arrayType_.renumber(map);
+        arrayType_.renumber(renumbering);
         break;
       case TypeDefKind::None:
         break;
@@ -739,6 +742,114 @@ class TypeHandle {
 
   uint32_t index() const { return index_; }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class TypeIdDesc {
+ public:
+  static const uintptr_t ImmediateBit = 0x1;
+
+ private:
+  TypeIdDescKind kind_;
+  size_t bits_;
+
+  TypeIdDesc(TypeIdDescKind kind, size_t bits) : kind_(kind), bits_(bits) {}
+
+ public:
+  TypeIdDescKind kind() const { return kind_; }
+  static bool isGlobal(const TypeDef& type);
+
+  TypeIdDesc() : kind_(TypeIdDescKind::None), bits_(0) {}
+  static TypeIdDesc global(const TypeDef& type, uint32_t globalDataOffset);
+  static TypeIdDesc immediate(const TypeDef& type);
+
+  bool isGlobal() const { return kind_ == TypeIdDescKind::Global; }
+
+  size_t immediate() const {
+    MOZ_ASSERT(kind_ == TypeIdDescKind::Immediate);
+    return bits_;
+  }
+  uint32_t globalDataOffset() const {
+    MOZ_ASSERT(kind_ == TypeIdDescKind::Global);
+    return bits_;
+  }
+};
+
+using TypeIdDescVector = Vector<TypeIdDesc, 0, SystemAllocPolicy>;
+
+
+
+
+
+struct TypeDefWithId : public TypeDef {
+  TypeIdDesc id;
+
+  TypeDefWithId() = default;
+  explicit TypeDefWithId(TypeDef&& typeDef)
+      : TypeDef(std::move(typeDef)), id() {}
+  TypeDefWithId(TypeDef&& typeDef, TypeIdDesc id)
+      : TypeDef(std::move(typeDef)), id(id) {}
+
+  WASM_DECLARE_SERIALIZABLE(TypeDefWithId)
+};
+
+using TypeDefWithIdVector = Vector<TypeDefWithId, 0, SystemAllocPolicy>;
+using TypeDefWithIdPtrVector =
+    Vector<const TypeDefWithId*, 0, SystemAllocPolicy>;
 
 }  
 }  
