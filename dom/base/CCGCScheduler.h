@@ -148,14 +148,18 @@ class CCGCScheduler {
   bool NeedsFullGC() const { return mNeedsFullGC; }
 
   
+  void PokeGC(JS::GCReason aReason, JSObject* aObj, uint32_t aDelay = 0);
   void PokeShrinkingGC();
   void PokeFullGC();
+  void MaybePokeCC();
+
   void KillShrinkingGCTimer();
   void KillFullGCTimer();
   void KillGCRunner();
   void KillCCRunner();
   void KillAllTimersAndRunners();
 
+  void EnsureGCRunner();
   void EnsureCCRunner(TimeDuration aDelay, TimeDuration aBudget);
 
   
@@ -426,11 +430,8 @@ class CCGCScheduler {
 
   TimeDuration mGCUnnotifiedTotalTime;
 
- public:  
   RefPtr<IdleTaskRunner> mGCRunner;
   RefPtr<IdleTaskRunner> mCCRunner;
-
- private:
   nsITimer* mShrinkingGCTimer = nullptr;
   nsITimer* mFullGCTimer = nullptr;
 
