@@ -205,6 +205,8 @@
 
 namespace js {
 
+enum class IntegrityLevel;
+
 class DictionaryPropMap;
 class SharedPropMap;
 class LinkedPropMap;
@@ -648,6 +650,14 @@ class SharedPropMap : public PropMap {
                                     ObjectFlags* objectFlags);
 
   
+  
+  static bool freezeOrSealProperties(JSContext* cx, IntegrityLevel level,
+                                     const JSClass* clasp,
+                                     MutableHandle<SharedPropMap*> map,
+                                     uint32_t mapLength,
+                                     ObjectFlags* objectFlags);
+
+  
   static DictionaryPropMap* toDictionaryMap(JSContext* cx,
                                             Handle<SharedPropMap*> map,
                                             uint32_t length);
@@ -929,6 +939,12 @@ class DictionaryPropMap final : public PropMap {
   static void densifyElements(JSContext* cx,
                               MutableHandle<DictionaryPropMap*> map,
                               uint32_t* mapLength, NativeObject* obj);
+
+  
+  
+  void freezeOrSealProperties(JSContext* cx, IntegrityLevel level,
+                              const JSClass* clasp, uint32_t mapLength,
+                              ObjectFlags* objectFlags);
 
   
   
