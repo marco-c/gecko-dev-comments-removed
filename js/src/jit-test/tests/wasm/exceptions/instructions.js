@@ -1152,6 +1152,46 @@ assertEq(
 assertEq(
   wasmEvalText(
     `(module
+       (tag $exn (param i32))
+       (func (export "f") (result i32)
+         try (result i32)
+           block
+             try
+               i32.const 1
+               throw $exn
+             delegate 0
+           end
+           i32.const 0
+         catch $exn
+         end))`
+  ).exports.f(),
+  1
+);
+
+assertEq(
+  wasmEvalText(
+    `(module
+       (tag $exn (param))
+       (func (export "f") (result i32)
+         try (result i32)
+           try
+             throw $exn
+           catch $exn
+             try
+               throw $exn
+             delegate 0
+           end
+           i32.const 0
+         catch_all
+           i32.const 1
+         end))`
+  ).exports.f(),
+  1
+);
+
+assertEq(
+  wasmEvalText(
+    `(module
        (type (func (param i32)))
        (tag $exn (type 0))
        (func (export "f") (result i32)

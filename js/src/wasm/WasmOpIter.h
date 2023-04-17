@@ -1626,11 +1626,6 @@ inline bool OpIter<Policy>::readDelegate(uint32_t* relativeDepth,
     return fail("delegate depth exceeds current nesting level");
   }
 
-  LabelKind kind = controlKind(*relativeDepth);
-  if (kind != LabelKind::Try && kind != LabelKind::Body) {
-    return fail("delegate target was not a try or function body");
-  }
-
   
   
   return checkStackAtEndOfBlock(resultType, tryResults);
