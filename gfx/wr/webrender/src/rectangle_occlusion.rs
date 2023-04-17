@@ -62,18 +62,11 @@ use euclid::point2;
 use smallvec::SmallVec;
 use api::units::*;
 
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub enum ItemSource {
-    Opaque(usize),
-    Alpha(usize),
-    Clear(usize),
-}
-
 
 #[derive(Debug, PartialEq)]
 pub struct Item {
     pub rectangle: DeviceBox2D,
-    pub src: ItemSource,
+    pub key: usize,
 }
 
 
@@ -95,7 +88,7 @@ impl FrontToBackBuilder {
     
     
     
-    pub fn add(&mut self, rect: &DeviceBox2D, is_opaque: bool, src: ItemSource) -> bool {
+    pub fn add(&mut self, rect: &DeviceBox2D, is_opaque: bool, key: usize) -> bool {
         let mut fragments: SmallVec<[DeviceBox2D; 16]> = SmallVec::new();
         fragments.push(*rect);
 
@@ -117,7 +110,7 @@ impl FrontToBackBuilder {
         for rect in &fragments {
             list.push(Item {
                 rectangle: *rect,
-                src,
+                key,
             });
         }
 
