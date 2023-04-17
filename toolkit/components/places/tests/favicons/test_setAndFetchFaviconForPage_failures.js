@@ -111,7 +111,7 @@ add_task(async function() {
   
   
   let faviconErrorPageURI = Services.io.newURI(
-    "chrome://global/skin/icons/info.svg"
+    "chrome://global/skin/icons/warning.svg"
   );
   pageURI = Services.io.newURI("http://example.com/errorIcon");
   await PlacesTestUtils.addVisits({
