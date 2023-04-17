@@ -473,9 +473,7 @@ class nsWindow final : public nsBaseWidget {
   void UpdateAlpha(mozilla::gfx::SourceSurface* aSourceSurface,
                    nsIntRect aBoundsRect);
 
-  void NativeMove();
-  void NativeResize();
-  void NativeMoveResize();
+  void NativeMoveResize(bool aMoved, bool aResized);
 
   void NativeShow(bool aAction);
   void SetHasMappedToplevel(bool aState);
@@ -516,7 +514,7 @@ class nsWindow final : public nsBaseWidget {
 
   void ResizeInt(int aX, int aY, int aWidth, int aHeight, bool aMove,
                  bool aRepaint);
-  void NativeMoveResizeWaylandPopup(GdkPoint* aPosition, GdkRectangle* aSize);
+  void NativeMoveResizeWaylandPopup(bool aMove, bool aResize);
 
   
   
@@ -668,7 +666,7 @@ class nsWindow final : public nsBaseWidget {
                                  bool aMustMatchParent);
   void WaylandPopupMarkAsClosed();
   void WaylandPopupRemoveClosedPopups();
-  void WaylandPopupSetDirectPosition(GdkPoint* aPosition, GdkRectangle* aSize);
+  void WaylandPopupSetDirectPosition();
   bool WaylandPopupFitsParentWindow(GdkRectangle* aSize);
   nsWindow* WaylandPopupFindLast(nsWindow* aPopup);
   GtkWindow* GetCurrentTopmostWindow();
@@ -790,7 +788,7 @@ class nsWindow final : public nsBaseWidget {
 
 
   bool mWaitingForMoveToRectCallback;
-  LayoutDeviceIntRect mNewSizeAfterMoveToRect;
+  LayoutDeviceIntRect mNewBoundsAfterMoveToRect;
 
   
 
