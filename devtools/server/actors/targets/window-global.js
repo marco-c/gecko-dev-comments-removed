@@ -556,11 +556,19 @@ const windowGlobalTargetPrototype = {
     );
     assert(this.actorID, "Actor should have an actorID.");
 
-    const innerWindowId = this.window ? getInnerId(this.window) : null;
+    
+    
+    
+    
+    
+    const browsingContextID = this.originalDocShell.browsingContext.id;
+    const innerWindowId = this._originalWindow
+      ? getInnerId(this._originalWindow)
+      : null;
 
     const response = {
       actor: this.actorID,
-      browsingContextID: this.browsingContextID,
+      browsingContextID,
       
       followWindowGlobalLifeCycle: this.followWindowGlobalLifeCycle,
       innerWindowId,
