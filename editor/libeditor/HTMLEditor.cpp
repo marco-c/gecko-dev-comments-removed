@@ -748,10 +748,7 @@ nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
     bool aIgnoreIfSelectionInEditingHost) const {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  
-  
-  
-  RefPtr<Element> editingHost = GetActiveEditingHost();
+  RefPtr<Element> editingHost = GetActiveEditingHost(LimitInBodyElement::No);
   if (NS_WARN_IF(!editingHost)) {
     return NS_OK;
   }
@@ -768,23 +765,24 @@ nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
     }
   }
 
-  
-  EditorRawDOMPoint pointToPutCaret(editingHost, 0);
-  for (;;) {
-    WSScanResult forwardScanFromPointToPutCaretResult =
-        WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(editingHost,
-                                                         pointToPutCaret);
-    if (forwardScanFromPointToPutCaretResult.Failed()) {
-      NS_WARNING("WSRunScanner::ScanNextVisibleNodeOrBlockBoundary failed");
-      return NS_ERROR_FAILURE;
-    }
+  for (nsIContent* leafContent = HTMLEditUtils::GetFirstLeafContent(
+           *editingHost,
+           {LeafNodeType::LeafNodeOrNonEditableNode,
+            LeafNodeType::LeafNodeOrChildBlock},
+           editingHost);
+       leafContent;) {
     
     
-    
-    if (forwardScanFromPointToPutCaretResult.GetContent() &&
-        !forwardScanFromPointToPutCaretResult.IsContentEditable()) {
-      pointToPutCaret.Set(editingHost, 0);
-      break;
+    if (!EditorUtils::IsEditableContent(*leafContent, EditorType::HTML)) {
+      MOZ_ASSERT(leafContent->GetParent());
+      MOZ_ASSERT(EditorUtils::IsEditableContent(*leafContent->GetParent(),
+                                                EditorType::HTML));
+      Element* container =
+          HTMLEditUtils::GetAncestorBlockElement(*leafContent, editingHost);
+      nsresult rv = CollapseSelectionTo(EditorDOMPoint(container, 0));
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                           "HTMLEditor::CollapseSelectionTo() failed");
+      return rv;
     }
 
     
@@ -792,74 +790,91 @@ nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
     
     
     
-    
-    if (forwardScanFromPointToPutCaretResult.ReachedSpecialContent() &&
-        forwardScanFromPointToPutCaretResult.GetContent() &&
-        HTMLEditUtils::CanNodeContain(
-            *forwardScanFromPointToPutCaretResult.GetContent()
-                 ->NodeInfo()
-                 ->NameAtom(),
-            *nsGkAtoms::textTagName)) {
-      pointToPutCaret =
-          forwardScanFromPointToPutCaretResult.RawPointAfterContent();
+    if (leafContent->IsElement() &&
+        HTMLEditUtils::IsInlineElement(*leafContent) &&
+        !HTMLEditUtils::IsNeverElementContentsEditableByUser(*leafContent) &&
+        HTMLEditUtils::CanNodeContain(*leafContent, *nsGkAtoms::textTagName)) {
+      
+      
+      leafContent = HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
+          *leafContent, *editingHost,
+          {LeafNodeType::LeafNodeOrNonEditableNode,
+           LeafNodeType::LeafNodeOrChildBlock},
+          editingHost);
+      continue;
+    }
+
+    if (Text* text = leafContent->GetAsText()) {
+      
+      
+      WSScanResult scanResultInTextNode =
+          WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(
+              editingHost, EditorRawDOMPoint(text, 0));
+      if (scanResultInTextNode.InNormalWhiteSpacesOrText() &&
+          scanResultInTextNode.TextPtr() == text) {
+        nsresult rv = CollapseSelectionTo(scanResultInTextNode.Point());
+        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                             "HTMLEditor::CollapseSelectionTo() failed");
+        return rv;
+      }
+      
+      leafContent = HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
+          *leafContent, *editingHost,
+          {LeafNodeType::LeafNodeOrNonEditableNode,
+           LeafNodeType::LeafNodeOrChildBlock},
+          editingHost);
       continue;
     }
 
     
-    if (forwardScanFromPointToPutCaretResult.InNormalWhiteSpacesOrText()) {
-      pointToPutCaret = forwardScanFromPointToPutCaretResult.RawPoint();
-      break;
-    }
-
     
-    
-    if (forwardScanFromPointToPutCaretResult.ReachedBRElement() ||
-        forwardScanFromPointToPutCaretResult.ReachedSpecialContent()) {
-      pointToPutCaret =
-          forwardScanFromPointToPutCaretResult.RawPointAtContent();
-      break;
-    }
-
-    
-    
-    
-    
-    
-    if (!forwardScanFromPointToPutCaretResult.ReachedOtherBlockElement()) {
-      pointToPutCaret.Set(editingHost, 0);
-      break;
-    }
-
-    
-    
-    
-    
-
-    
-    
-    
-    
-    if (!forwardScanFromPointToPutCaretResult.GetContent() ||
-        !HTMLEditUtils::IsContainerNode(
-            *forwardScanFromPointToPutCaretResult.GetContent())) {
-      pointToPutCaret =
-          forwardScanFromPointToPutCaretResult.RawPointAtContent();
-      break;
-    }
-
-    
-    
-    if (HTMLEditUtils::IsEmptyNode(
-            *forwardScanFromPointToPutCaretResult.GetContent(),
-            {EmptyCheckOption::TreatSingleBRElementAsVisible})) {
+    if (!HTMLEditUtils::CanNodeContain(*leafContent, *nsGkAtoms::textTagName) ||
+        HTMLEditUtils::IsNeverElementContentsEditableByUser(*leafContent)) {
+      MOZ_ASSERT(leafContent->GetParent());
+      if (EditorUtils::IsEditableContent(*leafContent, EditorType::HTML)) {
+        nsresult rv = CollapseSelectionTo(EditorDOMPoint(leafContent));
+        NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                             "HTMLEditor::CollapseSelectionTo() failed");
+        return rv;
+      }
+      MOZ_ASSERT_UNREACHABLE(
+          "How do we reach editable leaf in non-editable element?");
       
-      pointToPutCaret =
-          forwardScanFromPointToPutCaretResult.RawPointAfterContent();
-    } else {
-      pointToPutCaret.Set(forwardScanFromPointToPutCaretResult.GetContent(), 0);
+      
+      nsresult rv = CollapseSelectionTo(EditorDOMPoint(editingHost, 0));
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                           "HTMLEditor::CollapseSelectionTo() failed");
+      return rv;
     }
+
+    
+    if (HTMLEditUtils::IsBlockElement(*leafContent) &&
+        !HTMLEditUtils::IsEmptyNode(
+            *leafContent, {EmptyCheckOption::TreatSingleBRElementAsVisible}) &&
+        !HTMLEditUtils::IsNeverElementContentsEditableByUser(*leafContent)) {
+      leafContent = HTMLEditUtils::GetFirstLeafContent(
+          *leafContent,
+          {LeafNodeType::LeafNodeOrNonEditableNode,
+           LeafNodeType::LeafNodeOrChildBlock},
+          editingHost);
+      continue;
+    }
+
+    
+    
+    leafContent = HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
+        *leafContent, *editingHost,
+        {LeafNodeType::LeafNodeOrNonEditableNode,
+         LeafNodeType::LeafNodeOrChildBlock},
+        editingHost);
   }
-  nsresult rv = CollapseSelectionTo(pointToPutCaret);
+
+  
+  
+  
+  
+  
+  nsresult rv = CollapseSelectionTo(EditorDOMPoint(editingHost, 0));
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "HTMLEditor::CollapseSelectionTo() failed");
   return rv;

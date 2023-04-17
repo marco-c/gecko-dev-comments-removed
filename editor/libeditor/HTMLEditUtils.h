@@ -52,6 +52,21 @@ class HTMLEditUtils final {
 
 
 
+  static bool IsNeverElementContentsEditableByUser(const nsIContent& aContent) {
+    return aContent.IsElement() &&
+           (!HTMLEditUtils::IsContainerNode(aContent) ||
+            aContent.IsAnyOfHTMLElements(
+                nsGkAtoms::applet, nsGkAtoms::colgroup, nsGkAtoms::frameset,
+                nsGkAtoms::head, nsGkAtoms::html, nsGkAtoms::iframe,
+                nsGkAtoms::meter, nsGkAtoms::picture, nsGkAtoms::progress,
+                nsGkAtoms::select, nsGkAtoms::textarea));
+  }
+
+  
+
+
+
+
   static bool IsNonEditableReplacedContent(const nsIContent& aContent) {
     for (Element* element : aContent.InclusiveAncestorsOfType<Element>()) {
       if (element->IsAnyOfHTMLElements(nsGkAtoms::select, nsGkAtoms::option,
@@ -703,6 +718,13 @@ class HTMLEditUtils final {
     MOZ_ASSERT_IF(
         aLeafNodeTypes.contains(LeafNodeType::OnlyEditableLeafNode),
         !aLeafNodeTypes.contains(LeafNodeType::LeafNodeOrNonEditableNode));
+    
+    
+    if (aNode.IsElement() &&
+        HTMLEditUtils::IsNeverElementContentsEditableByUser(
+            *aNode.AsElement())) {
+      return nullptr;
+    }
     for (nsIContent* content = aNode.GetLastChild(); content;) {
       if (aLeafNodeTypes.contains(LeafNodeType::OnlyEditableLeafNode) &&
           !EditorUtils::IsEditableContent(*content,
@@ -716,7 +738,8 @@ class HTMLEditUtils final {
           HTMLEditUtils::IsBlockElement(*content)) {
         return content;
       }
-      if (!content->HasChildren()) {
+      if (!content->HasChildren() ||
+          HTMLEditUtils::IsNeverElementContentsEditableByUser(*content)) {
         return content;
       }
       if (aLeafNodeTypes.contains(LeafNodeType::LeafNodeOrNonEditableNode) &&
@@ -739,6 +762,13 @@ class HTMLEditUtils final {
     MOZ_ASSERT_IF(
         aLeafNodeTypes.contains(LeafNodeType::OnlyEditableLeafNode),
         !aLeafNodeTypes.contains(LeafNodeType::LeafNodeOrNonEditableNode));
+    
+    
+    if (aNode.IsElement() &&
+        HTMLEditUtils::IsNeverElementContentsEditableByUser(
+            *aNode.AsElement())) {
+      return nullptr;
+    }
     for (nsIContent* content = aNode.GetFirstChild(); content;) {
       if (aLeafNodeTypes.contains(LeafNodeType::OnlyEditableLeafNode) &&
           !EditorUtils::IsEditableContent(*content,
@@ -752,7 +782,8 @@ class HTMLEditUtils final {
           HTMLEditUtils::IsBlockElement(*content)) {
         return content;
       }
-      if (!content->HasChildren()) {
+      if (!content->HasChildren() ||
+          HTMLEditUtils::IsNeverElementContentsEditableByUser(*content)) {
         return content;
       }
       if (aLeafNodeTypes.contains(LeafNodeType::LeafNodeOrNonEditableNode) &&
