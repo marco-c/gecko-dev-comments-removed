@@ -8767,19 +8767,11 @@ ScrollMetadata nsLayoutUtils::ComputeScrollMetadata(
   
   
   
-  
-  
-  
-  
-  metrics.SetCumulativeResolution(LayoutDeviceToLayerScale2D(
-      LayoutDeviceToLayerScale(presShell->GetCumulativeResolution())));
-
-  LayoutDeviceToScreenScale2D resolutionToScreen(
+  LayoutDeviceToLayerScale2D cumulativeResolution(
       presShell->GetCumulativeResolution() *
       nsLayoutUtils::GetTransformToAncestorScale(aScrollFrame ? aScrollFrame
                                                               : aForFrame));
-  metrics.SetExtraResolution(metrics.GetCumulativeResolution() /
-                             resolutionToScreen);
+  metrics.SetCumulativeResolution(cumulativeResolution);
 
   metrics.SetDevPixelsPerCSSPixel(presContext->CSSToDevPixelScale());
 
