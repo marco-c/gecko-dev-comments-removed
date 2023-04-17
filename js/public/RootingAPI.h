@@ -993,6 +993,14 @@ class RootingContext {
   
   uintptr_t nativeStackLimit[StackKindCount];
 
+#ifdef __wasi__
+  
+  
+  uint32_t wasiRecursionDepth = 0u;
+
+  static constexpr uint32_t wasiRecursionDepthLimit = 100u;
+#endif  
+
   static const RootingContext* get(const JSContext* cx) {
     return reinterpret_cast<const RootingContext*>(cx);
   }

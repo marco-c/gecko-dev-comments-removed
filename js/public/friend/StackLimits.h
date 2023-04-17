@@ -61,8 +61,26 @@ class MOZ_RAII AutoCheckRecursionLimit {
 
   JS_FRIEND_API bool runningWithTrustedPrincipals(JSContext* cx) const;
 
+#ifdef __wasi__
+  
+  
+  JSContext* cx_;
+#endif  
+
  public:
-  explicit MOZ_ALWAYS_INLINE AutoCheckRecursionLimit(JSContext* cx) {}
+  explicit MOZ_ALWAYS_INLINE AutoCheckRecursionLimit(JSContext* cx) {
+#ifdef __wasi__
+    cx_ = cx;
+    ++JS::RootingContext::get(cx_)->wasiRecursionDepth;
+#endif  
+  }
+
+  MOZ_ALWAYS_INLINE ~AutoCheckRecursionLimit() {
+#ifdef __wasi__
+    MOZ_ASSERT(JS::RootingContext::get(cx_)->wasiRecursionDepth > 0);
+    --JS::RootingContext::get(cx_)->wasiRecursionDepth;
+#endif  
+  }
 
   AutoCheckRecursionLimit(const AutoCheckRecursionLimit&) = delete;
   void operator=(const AutoCheckRecursionLimit&) = delete;
@@ -88,6 +106,17 @@ extern MOZ_COLD JS_FRIEND_API void ReportOverRecursed(JSContext* maybecx);
 MOZ_ALWAYS_INLINE bool AutoCheckRecursionLimit::checkLimitImpl(uintptr_t limit,
                                                                void* sp) const {
   JS_STACK_OOM_POSSIBLY_FAIL();
+
+#ifdef __wasi__
+  
+  
+  
+  
+  if (JS::RootingContext::get(cx_)->wasiRecursionDepth >=
+      JS::RootingContext::wasiRecursionDepthLimit) {
+    return false;
+  }
+#endif  
 
 #if JS_STACK_GROWTH_DIRECTION > 0
   return MOZ_LIKELY(uintptr_t(sp) < limit);
