@@ -818,8 +818,6 @@ MOZ_ALWAYS_INLINE bool GetPrototypeFromBuiltinConstructor(
 extern JSObject* CreateThis(JSContext* cx, const JSClass* clasp,
                             js::HandleObject callee);
 
-extern JSObject* DeepCloneObjectLiteral(JSContext* cx, HandleObject obj);
-
 
 bool ToPropertyDescriptor(JSContext* cx, HandleValue descval,
                           bool checkAccessors,

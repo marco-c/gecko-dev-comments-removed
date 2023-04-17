@@ -210,8 +210,6 @@ template <XDRMode mode>
 XDRResult XDRScriptRegExpObject(XDRState<mode>* xdr,
                                 MutableHandle<RegExpObject*> objp);
 
-extern JSObject* CloneScriptRegExpObject(JSContext* cx, RegExpObject& re);
-
 
 extern JSLinearString* EscapeRegExpPattern(JSContext* cx, HandleAtom src);
 
