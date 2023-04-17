@@ -95,7 +95,6 @@ void nsDateTimeControlFrame::Reflow(nsPresContext* aPresContext,
         this, aReflowInput,  true);
     mFirstBaseline = baseline.valueOr(NS_INTRINSIC_ISIZE_UNKNOWN);
     if (baseline) {
-      printf("SetBlockStartAscent(%d)\n", *baseline);
       aDesiredSize.SetBlockStartAscent(*baseline);
     }
   }
