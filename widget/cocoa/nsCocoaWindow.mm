@@ -3227,9 +3227,15 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
       case nsIWidget::WindowAppearance::eLight:
         self.appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
         break;
-      case nsIWidget::WindowAppearance::eDark:
-        self.appearance = [NSAppearance appearanceNamed:NSAppearanceNameDarkAqua];
-        break;
+      
+      
+      
+      
+      
+      
+      
+
+
       default:
         
         self.appearance = nil;
