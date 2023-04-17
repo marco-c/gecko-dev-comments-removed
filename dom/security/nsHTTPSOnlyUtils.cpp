@@ -231,8 +231,7 @@ bool nsHTTPSOnlyUtils::IsUpgradeDowngradeEndlessLoop(nsIURI* aURI,
                                                      nsILoadInfo* aLoadInfo) {
   
   bool isPrivateWin = aLoadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
-  if (!IsHttpsOnlyModeEnabled(isPrivateWin) &&
-      !IsHttpsFirstModeEnabled(isPrivateWin)) {
+  if (!IsHttpsOnlyModeEnabled(isPrivateWin)) {
     return false;
   }
 
