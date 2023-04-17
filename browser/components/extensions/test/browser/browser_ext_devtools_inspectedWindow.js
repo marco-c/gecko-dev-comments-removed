@@ -36,10 +36,9 @@ function getTargetActorsCount(tab) {
     );
 
     
-    const targets = TargetActorRegistry.getTargetActors(
+    return TargetActorRegistry.getTargetActorsCountForBrowserElement(
       content.browsingContext.browserId
     );
-    return targets.length;
   });
 }
 

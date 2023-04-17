@@ -448,14 +448,12 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
 
 
   _getTargetActorInParentProcess() {
-    if (this.context.type == "all") {
-      return TargetActorRegistry.getParentProcessTargetActor();
-    } else if (this.context.type == "browser-element") {
-      
-      
-      return TargetActorRegistry.getTargetActor(this.context.browserId);
-    }
-    throw new Error("Unsupported context type: " + this.context.type);
+    
+    
+    return TargetActorRegistry.getTopLevelTargetActorForContext(
+      this.context,
+      this.conn.prefix
+    );
   },
 
   

@@ -559,7 +559,7 @@ class DevToolsFrameChild extends JSWindowActorChild {
       
       const connectionPrefix = watcherActorID.replace(/watcher\d+$/, "");
       const targetActors = TargetActorRegistry.getTargetActors(
-        context.browserId,
+        context,
         connectionPrefix
       );
 
