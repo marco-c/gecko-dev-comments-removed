@@ -2220,7 +2220,8 @@ void nsWindow::SetFocus(Raise aRaise, mozilla::dom::CallerType aCallerType) {
     if (gRaiseWindows && owningWindow->mIsShown && owningWindow->mShell &&
         !gtk_window_is_active(GTK_WINDOW(owningWindow->mShell))) {
       if (!mIsX11Display &&
-          Preferences::GetBool("testing.browserTestHarness.running", false)) {
+          Preferences::GetBool("widget.wayland.focus-workaround.enabled",
+                               false)) {
         
         
         owningWindow->NativeShow(false);
