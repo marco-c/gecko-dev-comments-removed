@@ -74,9 +74,7 @@ class nsHttpChannel final : public HttpBaseChannel,
                             public nsSupportsWeakReference,
                             public nsICorsPreflightCallback,
                             public nsIRaceCacheWithNetwork,
-                            public nsIRequestTailUnblockCallback,
-                            public nsITimerCallback,
-                            public nsINamed {
+                            public nsIRequestTailUnblockCallback {
  public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIREQUESTOBSERVER
@@ -93,8 +91,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   NS_DECL_NSIDNSLISTENER
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_HTTPCHANNEL_IID)
   NS_DECL_NSIRACECACHEWITHNETWORK
-  NS_DECL_NSITIMERCALLBACK
-  NS_DECL_NSINAMED
   NS_DECL_NSIREQUESTTAILUNBLOCKCALLBACK
 
   
@@ -733,6 +729,23 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   
   Atomic<bool> mIsReadingFromCache{false};
+
+  
+  
+  
+  class TimerCallback final : public nsITimerCallback, public nsINamed {
+   public:
+    NS_DECL_ISUPPORTS
+    NS_DECL_NSITIMERCALLBACK
+    NS_DECL_NSINAMED
+
+    explicit TimerCallback(nsHttpChannel* aChannel);
+
+   private:
+    ~TimerCallback() = default;
+
+    RefPtr<nsHttpChannel> mChannel;
+  };
 
   
   
