@@ -24,8 +24,7 @@ MoveEmitterARM::MoveEmitterARM(MacroAssembler& masm)
 void MoveEmitterARM::emit(const MoveResolver& moves) {
   if (moves.numCycles()) {
     
-    static_assert(SpillSlotSize == 8);
-    masm.reserveStack(moves.numCycles() * SpillSlotSize);
+    masm.reserveStack(moves.numCycles() * sizeof(double));
     pushedAtCycle_ = masm.framePushed();
   }
 

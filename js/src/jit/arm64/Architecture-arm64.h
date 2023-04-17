@@ -547,10 +547,6 @@ class FloatRegisters {
   }
 };
 
-static const uint32_t SpillSlotSize =
-    std::max(sizeof(Registers::RegisterContent),
-             sizeof(FloatRegisters::RegisterContent));
-
 static const uint32_t ShadowStackSpace = 0;
 
 
