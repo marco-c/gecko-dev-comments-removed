@@ -3,10 +3,6 @@
 
 
 
-const TEST_PATH =
-  "http://example.net/browser/browser/" +
-  "components/resistfingerprinting/test/browser/";
-
 async function testWindow() {
   
   let tab = await BrowserTestUtils.openNewForegroundTab(
