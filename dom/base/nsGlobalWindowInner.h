@@ -394,9 +394,9 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   static bool ContentPropertyEnabled(JSContext* aCx, JSObject*);
 
-  bool DoResolve(JSContext* aCx, JS::Handle<JSObject*> aObj,
-                 JS::Handle<jsid> aId,
-                 JS::MutableHandle<JS::PropertyDescriptor> aDesc);
+  bool DoResolve(
+      JSContext* aCx, JS::Handle<JSObject*> aObj, JS::Handle<jsid> aId,
+      JS::MutableHandle<mozilla::Maybe<JS::PropertyDescriptor>> aDesc);
   
   
   static bool MayResolve(jsid aId);
@@ -1191,8 +1191,9 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   void FireOnNewGlobalObject();
 
   
-  bool ResolveComponentsShim(JSContext* aCx, JS::Handle<JSObject*> aObj,
-                             JS::MutableHandle<JS::PropertyDescriptor> aDesc);
+  bool ResolveComponentsShim(
+      JSContext* aCx, JS::Handle<JSObject*> aObj,
+      JS::MutableHandle<mozilla::Maybe<JS::PropertyDescriptor>> aDesc);
 
   
   friend class nsPIDOMWindowInner;

@@ -58,7 +58,8 @@ static JSObject* FindNamedConstructorForXray(
 
 bool WebIDLGlobalNameHash::DefineIfEnabled(
     JSContext* aCx, JS::Handle<JSObject*> aObj, JS::Handle<jsid> aId,
-    JS::MutableHandle<JS::PropertyDescriptor> aDesc, bool* aFound) {
+    JS::MutableHandle<mozilla::Maybe<JS::PropertyDescriptor>> aDesc,
+    bool* aFound) {
   MOZ_ASSERT(JSID_IS_STRING(aId), "Check for string id before calling this!");
 
   const WebIDLNameTableEntry* entry = GetEntry(JSID_TO_LINEAR_STRING(aId));
@@ -148,7 +149,8 @@ bool WebIDLGlobalNameHash::DefineIfEnabled(
       return Throw(aCx, NS_ERROR_FAILURE);
     }
 
-    FillPropertyDescriptor(aDesc, aObj, 0, JS::ObjectValue(*constructor));
+    FillPropertyDescriptor(aCx, aDesc, aObj, JS::ObjectValue(*constructor),
+                           false, false);
     return true;
   }
 
@@ -165,7 +167,7 @@ bool WebIDLGlobalNameHash::DefineIfEnabled(
   
   
   
-  FillPropertyDescriptor(aDesc, aObj, JS::UndefinedValue(), false);
+  FillPropertyDescriptor(aCx, aDesc, aObj, JS::UndefinedValue(), false);
 
   return true;
 }

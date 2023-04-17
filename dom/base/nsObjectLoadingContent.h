@@ -129,9 +129,9 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
   void NotifyOwnerDocumentActivityChanged();
 
   
-  bool DoResolve(JSContext* aCx, JS::Handle<JSObject*> aObject,
-                 JS::Handle<jsid> aId,
-                 JS::MutableHandle<JS::PropertyDescriptor> aDesc);
+  bool DoResolve(
+      JSContext* aCx, JS::Handle<JSObject*> aObject, JS::Handle<jsid> aId,
+      JS::MutableHandle<mozilla::Maybe<JS::PropertyDescriptor>> aDesc);
   
   
   static bool MayResolve(jsid aId);

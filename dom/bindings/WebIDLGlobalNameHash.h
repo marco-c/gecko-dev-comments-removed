@@ -42,10 +42,10 @@ class WebIDLGlobalNameHash {
 
   
   
-  static bool DefineIfEnabled(JSContext* aCx, JS::Handle<JSObject*> aObj,
-                              JS::Handle<jsid> aId,
-                              JS::MutableHandle<JS::PropertyDescriptor> aDesc,
-                              bool* aFound);
+  static bool DefineIfEnabled(
+      JSContext* aCx, JS::Handle<JSObject*> aObj, JS::Handle<jsid> aId,
+      JS::MutableHandle<mozilla::Maybe<JS::PropertyDescriptor>> aDesc,
+      bool* aFound);
 
   static bool MayResolve(jsid aId);
 
