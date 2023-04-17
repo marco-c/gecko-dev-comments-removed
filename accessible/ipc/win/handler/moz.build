@@ -20,11 +20,9 @@ LOCAL_INCLUDES += [
 
 
 
+
+CONFIGURE_SUBST_FILES += ["HandlerDataUUID.h"]
 flags = []
-if CONFIG["MOZ_UPDATE_CHANNEL"] == "default":
-    flags += ["-DUSE_LOCAL_UUID"]
-elif CONFIG["MOZ_UPDATE_CHANNEL"] == "beta":
-    flags += ["-DUSE_BETA_UUID"]
 
 GeneratedFile(
     "HandlerData.h",
@@ -46,6 +44,8 @@ GeneratedFile(
         TOPSRCDIR + "/other-licenses/ia2",
         "-I",
         SRCDIR,
+        "-I",
+        OBJDIR,
         "-acf",
         SRCDIR + "/HandlerData.acf",
         "-dlldata",
@@ -68,6 +68,7 @@ SOURCES += [
 EXPORTS += [
     "!HandlerData.h",
     "!HandlerData_i.c",
+    "!HandlerDataUUID.h",
 ]
 
 
