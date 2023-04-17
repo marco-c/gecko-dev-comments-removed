@@ -962,6 +962,16 @@ function setupTestCommon(aAppUpdateAutoEnabled = false, aAllowBits = false) {
   
   
   
+  debugDump("resetting update lock");
+  let syncManager = Cc["@mozilla.org/updates/update-sync-manager;1"].getService(
+    Ci.nsIUpdateSyncManager
+  );
+  syncManager.resetLock();
+
+  
+  
+  
+  
   if (AppConstants.platform == "win" || AppConstants.platform == "macosx") {
     let updatesDir = getMockUpdRootD();
     if (updatesDir.exists()) {
@@ -4425,14 +4435,6 @@ function adjustGeneralPaths() {
 
     debugDump("finish - unregistering directory provider");
   });
-
-  
-  
-  debugDump("resetting update lock");
-  let syncManager = Cc["@mozilla.org/updates/update-sync-manager;1"].getService(
-    Ci.nsIUpdateSyncManager
-  );
-  syncManager.resetLock();
 }
 
 

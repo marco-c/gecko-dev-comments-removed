@@ -16,6 +16,10 @@
 #include "nsString.h"
 #include "nsXULAppAPI.h"
 
+#ifdef XP_WIN
+#  include "WinUtils.h"
+#endif
+
 
 
 #define UPDATE_LOCK_NAME_TOKEN "UpdateLock"
@@ -94,6 +98,32 @@ nsresult nsUpdateSyncManager::OpenLock(nsIFile* anAppFile) {
                      getter_AddRefs(appFile));
     NS_ENSURE_SUCCESS(rv, rv);
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+#ifdef XP_WIN
+  
+  if (!mozilla::widget::WinUtils::ResolveJunctionPointsAndSymLinks(appFile)) {
+    NS_WARNING("Failed to resolve install directory.");
+  }
+#elif defined(MOZ_WIDGET_COCOA)
+  
+  FSRef ref;
+  nsCOMPtr<nsILocalFileMac> macFile = do_QueryInterface(appFile);
+  if (macFile && NS_SUCCEEDED(macFile->GetFSRef(&ref)) &&
+      NS_SUCCEEDED(
+          NS_NewLocalFileWithFSRef(&ref, true, getter_AddRefs(macFile)))) {
+    appFile = static_cast<nsIFile*>(macFile);
+  } else {
+    NS_WARNING("Failed to resolve install directory.");
+  }
+#endif
 
   nsCOMPtr<nsIFile> appDirFile;
   rv = appFile->GetParent(getter_AddRefs(appDirFile));
