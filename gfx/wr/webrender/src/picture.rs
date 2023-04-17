@@ -5125,7 +5125,13 @@ impl PicturePrimitive {
                                     }
                                 }
 
-                                let content_origin_f = tile.world_tile_rect.min * device_pixel_scale;
+                                
+                                
+                                
+                                
+                                
+                                
+                                let content_origin_f = tile.local_tile_rect.origin.cast_unit() * device_pixel_scale;
                                 let content_origin = content_origin_f.round();
                                 debug_assert!((content_origin_f.x - content_origin.x).abs() < 0.01);
                                 debug_assert!((content_origin_f.y - content_origin.y).abs() < 0.01);
@@ -6248,12 +6254,19 @@ impl PicturePrimitive {
                 .get_relative_transform(surface_spatial_node_index, parent_raster_node_index);
 
             
+            let mut min_scale = 1.0;
+
+            
             
             let establishes_raster_root = match composite_mode {
                 PictureCompositeMode::TileCache { .. } => {
                     
+                    min_scale = 0.0;
+
                     
-                    false
+                    
+                    
+                    true
                 }
                 PictureCompositeMode::SvgFilter(..) => {
                     
@@ -6274,8 +6287,7 @@ impl PicturePrimitive {
                 let scale_factors = surface_to_parent_transform.scale_factors();
 
                 
-                
-                let scaling_factor = scale_factors.0.max(scale_factors.1).max(1.0);
+                let scaling_factor = scale_factors.0.max(scale_factors.1).max(min_scale);
 
                 let device_pixel_scale = parent_device_pixel_scale * Scale::new(scaling_factor);
                 (surface_spatial_node_index, device_pixel_scale)
