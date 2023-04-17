@@ -9300,7 +9300,7 @@ class TopSiteLink extends react__WEBPACK_IMPORTED_MODULE_4___default.a.PureCompo
       "data-fallback": smallFaviconFallback && letterFallback,
       style: smallFaviconStyle
     })), react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
-      className: `title${link.isPinned ? " has-icon pinned" : ""}${link.type === SPOC_TYPE || link.sponsored_position ? " sponsored" : ""}`
+      className: `title${link.isPinned ? " has-icon pinned" : ""}${link.type === SPOC_TYPE || link.show_sponsored_label ? " sponsored" : ""}`
     }, newNewtabExperienceEnabled && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("span", {
       dir: "auto"
     }, link.isPinned && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
