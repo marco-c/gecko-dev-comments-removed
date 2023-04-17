@@ -1683,6 +1683,11 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
     aChannel->GetURI(getter_AddRefs(mSourceUrl));
   }
 
+  if (StaticPrefs::browser_download_improvements_to_download_panel() &&
+      IsDownloadSpam(aChannel)) {
+    return NS_OK;
+  }
+
   mDownloadClassification =
       nsContentSecurityUtils::ClassifyDownload(aChannel, MIMEType);
 
@@ -1956,6 +1961,62 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
     }
   }
   return NS_OK;
+}
+
+bool nsExternalAppHandler::IsDownloadSpam(nsIChannel* aChannel) {
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+
+  if (loadInfo->GetHasValidUserGestureActivation()) {
+    return false;
+  }
+
+  nsCOMPtr<nsIPermissionManager> permissionManager =
+      mozilla::services::GetPermissionManager();
+  nsIPrincipal* principal = loadInfo->TriggeringPrincipal();
+  bool exactHostMatch = false;
+  nsAutoCString type("automatic-download");
+  nsIPermission* permission;
+
+  permissionManager->GetPermissionObject(principal, type, exactHostMatch,
+                                         &permission);
+
+  if (permission) {
+    uint32_t capability;
+    permission->GetCapability(&capability);
+    if (capability == nsIPermissionManager::DENY_ACTION) {
+      mCanceled = true;
+      aChannel->Cancel(NS_ERROR_ABORT);
+      return true;
+    }
+    if (capability == nsIPermissionManager::ALLOW_ACTION) {
+      return false;
+    }
+    
+    
+    if (capability == nsIPermissionManager::PROMPT_ACTION) {
+      nsCOMPtr<nsIObserverService> observerService =
+          mozilla::services::GetObserverService();
+
+      nsAutoCString cStringURI;
+      loadInfo->TriggeringPrincipal()->GetPrePath(cStringURI);
+      observerService->NotifyObservers(
+          nullptr, "blocked-automatic-download",
+          NS_ConvertASCIItoUTF16(cStringURI.get()).get());
+      
+      
+      
+      mCanceled = true;
+      aChannel->Cancel(NS_ERROR_ABORT);
+      
+      return true;
+    }
+  } else {
+    permissionManager->AddFromPrincipal(
+        principal, type, nsIPermissionManager::PROMPT_ACTION,
+        nsIPermissionManager::EXPIRE_NEVER, 0 );
+  }
+
+  return false;
 }
 
 
