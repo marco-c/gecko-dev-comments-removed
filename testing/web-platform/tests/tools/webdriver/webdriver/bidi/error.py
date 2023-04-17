@@ -1,5 +1,4 @@
 import collections
-import json
 
 from typing import ClassVar, DefaultDict, Optional, Type
 
@@ -8,7 +7,7 @@ class BidiException(Exception):
     
     
     
-    error = None  
+    error_code = None  
 
     def __init__(self, error: str, message: str, stacktrace: Optional[str]):
         super(BidiException, self)
@@ -32,15 +31,15 @@ class BidiException(Exception):
 
 
 class InvalidArgumentException(BidiException):
-    error = "invalid argument"
+    error_code = "invalid argument"
 
 
 class UnknownCommandException(BidiException):
-    error = "unknown command"
+    error_code = "unknown command"
 
 
 class UnknownErrorException(BidiException):
-    error = "unknown error"
+    error_code = "unknown error"
 
 
 def from_error_details(error: str, message: str, stacktrace: Optional[str]) -> BidiException:
@@ -52,15 +51,15 @@ def from_error_details(error: str, message: str, stacktrace: Optional[str]) -> B
     return cls(error, message, stacktrace)
 
 
-def get(error: str) -> BidiException:
+def get(error_code: str) -> Type[BidiException]:
     """Get exception from `error_code`.
 
     It's falling back to ``UnknownErrorException`` if it is not found.
     """
-    return _errors.get(error, UnknownErrorException)
+    return _errors.get(error_code, UnknownErrorException)
 
 
 _errors: DefaultDict[str, Type[BidiException]] = collections.defaultdict()
 for item in list(locals().values()):
     if type(item) == type and issubclass(item, BidiException):
-        _errors[item.error] = item
+        _errors[item.error_code] = item
