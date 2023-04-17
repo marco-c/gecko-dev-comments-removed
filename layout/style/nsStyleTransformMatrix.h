@@ -39,8 +39,8 @@ enum class MatrixTransformOperator : uint8_t { Interpolate, Accumulate };
 
 inline void ApplyPerspectiveToMatrix(mozilla::gfx::Matrix4x4& aMatrix,
                                      float aDepth) {
-  if (aDepth >= std::numeric_limits<float>::epsilon()) {
-    aMatrix.Perspective(aDepth);
+  if (aDepth > 0) {
+    aMatrix.Perspective(std::max(aDepth, 1.0f));
   }
 }
 
