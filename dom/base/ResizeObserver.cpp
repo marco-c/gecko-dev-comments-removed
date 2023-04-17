@@ -342,6 +342,30 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ResizeObserverEntry)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
+void ResizeObserverEntry::GetBorderBoxSize(
+    nsTArray<RefPtr<ResizeObserverSize>>& aRetVal) const {
+  
+  
+  
+  
+  
+  
+  aRetVal.Clear();
+  aRetVal.AppendElement(mBorderBoxSize);
+}
+
+void ResizeObserverEntry::GetContentBoxSize(
+    nsTArray<RefPtr<ResizeObserverSize>>& aRetVal) const {
+  
+  
+  
+  
+  
+  
+  aRetVal.Clear();
+  aRetVal.AppendElement(mContentBoxSize);
+}
+
 void ResizeObserverEntry::SetBorderBoxSize(const nsSize& aSize) {
   nsIFrame* frame = mTarget->GetPrimaryFrame();
   const WritingMode wm = frame ? frame->GetWritingMode() : WritingMode();
