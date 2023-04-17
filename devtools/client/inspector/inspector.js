@@ -149,7 +149,6 @@ function Inspector(toolbox, commands) {
   this.panelWin.inspector = this;
   this.telemetry = toolbox.telemetry;
   this.store = createStore(this);
-  this.isPanelReady = false;
 
   
   
@@ -381,7 +380,6 @@ Inspector.prototype = {
     this.setupSidebar();
 
     await this._onMarkupViewInitialized;
-    this.isPanelReady = true;
 
     
     
@@ -407,7 +405,6 @@ Inspector.prototype = {
       1
     );
 
-    this.emit("devtools-panel-ready");
     return this;
   },
 

@@ -25,9 +25,6 @@ NetMonitorPanel.prototype = {
     });
 
     
-    this.emit("devtools-panel-ready");
-    this.isPanelReady = true;
-
     return this;
   },
 
