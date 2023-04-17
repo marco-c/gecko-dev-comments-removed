@@ -4,8 +4,8 @@
 
 
 
-#ifndef vm_ShapeProperty_h
-#define vm_ShapeProperty_h
+#ifndef vm_PropertyInfo_h
+#define vm_PropertyInfo_h
 
 #include "mozilla/Assertions.h"
 
