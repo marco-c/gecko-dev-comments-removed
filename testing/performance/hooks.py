@@ -20,7 +20,6 @@ get_site = next_site()
 
 options = [
     ("firefox.preference", "network.http.speculative-parallel-limit:6"),
-    ("firefox.preference", "gfx.webrender.force-disabled:true"),
     
     ("pageCompleteWaitTime", "10000"),
     ("visualMetrics", "true"),
