@@ -26,8 +26,8 @@ var TabStateCache = Object.freeze({
 
 
 
-  get(browserOrTab) {
-    return TabStateCacheInternal.get(browserOrTab);
+  get(permanentKey) {
+    return TabStateCacheInternal.get(permanentKey);
   },
 
   
@@ -39,8 +39,8 @@ var TabStateCache = Object.freeze({
 
 
 
-  update(browserOrTab, newData) {
-    TabStateCacheInternal.update(browserOrTab, newData);
+  update(permanentKey, newData) {
+    TabStateCacheInternal.update(permanentKey, newData);
   },
 });
 
@@ -56,8 +56,8 @@ var TabStateCacheInternal = {
 
 
 
-  get(browserOrTab) {
-    return this._data.get(browserOrTab.permanentKey);
+  get(permanentKey) {
+    return this._data.get(permanentKey);
   },
 
   
@@ -219,8 +219,8 @@ var TabStateCacheInternal = {
 
 
 
-  update(browserOrTab, newData) {
-    let data = this._data.get(browserOrTab.permanentKey) || {};
+  update(permanentKey, newData) {
+    let data = this._data.get(permanentKey) || {};
 
     for (let key of Object.keys(newData)) {
       if (key == "storagechange") {
@@ -257,6 +257,6 @@ var TabStateCacheInternal = {
       }
     }
 
-    this._data.set(browserOrTab.permanentKey, data);
+    this._data.set(permanentKey, data);
   },
 };
