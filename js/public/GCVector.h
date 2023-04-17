@@ -7,7 +7,13 @@
 #ifndef js_GCVector_h
 #define js_GCVector_h
 
+#include "mozilla/Assertions.h"       
+#include "mozilla/Attributes.h"       
+#include "mozilla/MemoryReporting.h"  
 #include "mozilla/Vector.h"
+
+#include <stddef.h>  
+#include <utility>   
 
 #include "js/AllocPolicy.h"
 #include "js/GCPolicyAPI.h"
