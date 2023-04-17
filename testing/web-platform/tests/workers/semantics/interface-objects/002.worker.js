@@ -20,8 +20,6 @@ var unexpected = [
   
   "DOMImplementation",
   
-  "WritableStreamDefaultController",
-  
   "IDBEnvironment",
   
   "Database",
