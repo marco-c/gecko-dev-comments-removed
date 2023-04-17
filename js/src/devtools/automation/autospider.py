@@ -271,6 +271,12 @@ if opt is not None:
     CONFIGURE_ARGS += " --enable-jemalloc" if opt else " --disable-jemalloc"
 
 
+
+opt = variant.get("nspr")
+if opt is None or opt:
+    CONFIGURE_ARGS += " --enable-nspr-build"
+
+
 word_bits = variant.get("bits")
 
 
@@ -448,7 +454,6 @@ if use_minidump:
 
 
 mozconfig = os.path.join(DIR.source, "mozconfig.autospider")
-CONFIGURE_ARGS += " --enable-nspr-build"
 CONFIGURE_ARGS += " --prefix={OBJDIR}/dist".format(OBJDIR=quote(OBJDIR))
 
 
