@@ -329,9 +329,10 @@ JS_PUBLIC_API void js::ReportOverRecursed(JSContext* maybecx) {
     } else {
       
       
+      
       JS_ReportErrorNumberASCII(maybecx, GetErrorMessage, nullptr,
                                 JSMSG_OVER_RECURSED);
-      if (!maybecx->isThrowingOutOfMemory()) {
+      if (maybecx->isExceptionPending() && !maybecx->isThrowingOutOfMemory()) {
         MOZ_ASSERT(maybecx->unwrappedException().isObject());
         MOZ_ASSERT(maybecx->status == JS::ExceptionStatus::Throwing);
         maybecx->status = JS::ExceptionStatus::OverRecursed;
