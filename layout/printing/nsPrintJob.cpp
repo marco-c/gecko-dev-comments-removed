@@ -1850,6 +1850,25 @@ nsresult nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO) {
     std::swap(pageSize.width, pageSize.height);
   }
 
+  
+  
+  
+  
+  
+  if (const Maybe<StyleOrientation> maybeOrientation =
+          aPO->mDocument->GetPresShell()
+              ->StyleSet()
+              ->GetDefaultPageOrientation()) {
+    if (maybeOrientation.value() == StyleOrientation::Landscape &&
+        pageSize.width < pageSize.height) {
+      
+      std::swap(pageSize.width, pageSize.height);
+    } else if (maybeOrientation.value() == StyleOrientation::Portrait &&
+               pageSize.width > pageSize.height) {
+      
+      std::swap(pageSize.width, pageSize.height);
+    }
+  }
   aPO->mPresContext->SetPageSize(pageSize);
 
   int32_t p2a = aPO->mPresContext->DeviceContext()->AppUnitsPerDevPixel();
