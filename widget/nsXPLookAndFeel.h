@@ -31,8 +31,7 @@ class nsXPLookAndFeel : public mozilla::LookAndFeel {
   
   
   
-  nsresult GetColorValue(ColorID aID, bool aUseStandinsForNativeColors,
-                         nscolor& aResult);
+  nsresult GetColorValue(ColorID, ColorScheme, UseStandins, nscolor& aResult);
   nsresult GetIntValue(IntID aID, int32_t& aResult);
   nsresult GetFloatValue(FloatID aID, float& aResult);
   
