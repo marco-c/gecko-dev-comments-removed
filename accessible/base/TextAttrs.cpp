@@ -35,15 +35,18 @@ void TextAttrsMgr::GetAttributes(AccAttributes* aAttributes,
   
   
   
+  
   MOZ_ASSERT(
-      mHyperTextAcc &&
-          ((mOffsetAcc && mOffsetAccIdx != -1 && aStartOffset && aEndOffset) ||
-           (!mOffsetAcc && mOffsetAccIdx == -1 && !aStartOffset &&
-            !aEndOffset && mIncludeDefAttrs && aAttributes)),
+      mHyperTextAcc && ((mOffsetAcc && mOffsetAccIdx != -1) ||
+                        (!mOffsetAcc && mOffsetAccIdx == -1 && !aStartOffset &&
+                         !aEndOffset && mIncludeDefAttrs && aAttributes)),
       "Wrong usage of TextAttrsMgr!");
 
   
   if (mOffsetAcc && !mOffsetAcc->IsText()) {
+    if (!aStartOffset) {
+      return;
+    }
     for (int32_t childIdx = mOffsetAccIdx - 1; childIdx >= 0; childIdx--) {
       LocalAccessible* currAcc = mHyperTextAcc->LocalChildAt(childIdx);
       if (currAcc->IsText()) break;
@@ -132,7 +135,7 @@ void TextAttrsMgr::GetAttributes(AccAttributes* aAttributes,
   }
 
   
-  if (mOffsetAcc) {
+  if (aStartOffset) {
     GetRange(attrArray, ArrayLength(attrArray), aStartOffset, aEndOffset);
   }
 }

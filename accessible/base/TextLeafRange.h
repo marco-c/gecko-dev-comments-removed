@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 
+#include "AccAttributes.h"
 #include "nsDirection.h"
 #include "nsIAccessibleText.h"
 
@@ -83,6 +84,42 @@ class TextLeafPoint final {
 
   TextLeafPoint FindPrevWordStartSameAcc(bool aIncludeOrigin) const;
   TextLeafPoint FindNextWordStartSameAcc(bool aIncludeOrigin) const;
+
+  
+
+
+
+
+  already_AddRefed<AccAttributes> GetTextAttributes(
+      bool aIncludeDefaults = true) const;
+
+  
+
+
+
+
+  already_AddRefed<AccAttributes> GetTextAttributesLocalAcc(
+      bool aIncludeDefaults = true) const;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  TextLeafPoint FindTextAttrsStart(nsDirection aDirection,
+                                   bool aIncludeOrigin = false,
+                                   const AccAttributes* aOriginAttrs = nullptr,
+                                   bool aIncludeDefaults = true) const;
 
  private:
   bool IsEmptyLastLine() const;
