@@ -312,13 +312,6 @@
                         status: harness_status.structured_clone(),
                         asserts: asserts.map(assert => assert.structured_clone()),
                     });
-
-                    
-                    
-                    
-                    
-                    
-                    this_obj.close_worker();
                 });
     };
 
@@ -329,9 +322,6 @@
         
         return null;
     };
-
-    
-    WorkerTestEnvironment.prototype.close_worker = function() {};
 
     
 
@@ -356,10 +346,6 @@
         tests.wait_for_finish = true;
     };
 
-    DedicatedWorkerTestEnvironment.prototype.close_worker = function() {
-        self.close();
-    };
-
     
 
 
@@ -370,19 +356,11 @@
     function SharedWorkerTestEnvironment() {
         WorkerTestEnvironment.call(this);
         var this_obj = this;
-
-        this.connected = false;
-        this.close_on_connect = false;
-
         
         
         self.addEventListener("connect",
                 function(message_event) {
-                    this_obj.connected = true;
                     this_obj._add_message_port(message_event.source);
-                    if (this_obj.close_on_connect) {
-                        self.close();
-                    }
                 }, false);
     }
     SharedWorkerTestEnvironment.prototype = Object.create(WorkerTestEnvironment.prototype);
@@ -392,14 +370,6 @@
         
         
         tests.wait_for_finish = true;
-    };
-
-    SharedWorkerTestEnvironment.prototype.close_worker = function() {
-        if (this.connected) {
-            self.close();
-        } else {
-            this.close_on_connect = true;
-        }
     };
 
     
