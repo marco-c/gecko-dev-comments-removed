@@ -865,20 +865,17 @@ static bool CanAddNewPropertyExcludingProtoFast(PlainObject* obj) {
 
   
 
-  using ShapeVector = GCVector<Shape*, 8>;
-  Rooted<ShapeVector> shapes(cx, ShapeVector(cx));
+  Rooted<ShapePropertyVector> props(cx, ShapePropertyVector(cx));
 
 #ifdef DEBUG
   RootedShape fromShape(cx, fromPlain->lastProperty());
 #endif
 
   bool hasPropsWithNonDefaultAttrs = false;
-  for (Shape::Range<NoGC> r(fromPlain->lastProperty()); !r.empty();
-       r.popFront()) {
+  for (ShapePropertyIter<NoGC> iter(fromPlain->shape()); !iter.done(); iter++) {
     
     
-    Shape& propShape = r.front();
-    jsid id = propShape.propidRaw();
+    jsid id = iter->key();
     if (MOZ_UNLIKELY(JSID_IS_SYMBOL(id))) {
       return true;
     }
@@ -886,20 +883,20 @@ static bool CanAddNewPropertyExcludingProtoFast(PlainObject* obj) {
     if (MOZ_UNLIKELY(id.isAtom(cx->names().proto))) {
       return true;
     }
-    if (MOZ_UNLIKELY(!propShape.isDataProperty())) {
+    if (MOZ_UNLIKELY(!iter->isDataProperty())) {
       return true;
     }
-    if (propShape.attributes() == JSPROP_ENUMERATE) {
-      MOZ_ASSERT(propShape.writable());
-      MOZ_ASSERT(propShape.configurable());
-      MOZ_ASSERT(propShape.enumerable());
+    if (iter->attributes() == JSPROP_ENUMERATE) {
+      MOZ_ASSERT(iter->writable());
+      MOZ_ASSERT(iter->configurable());
+      MOZ_ASSERT(iter->enumerable());
     } else {
       hasPropsWithNonDefaultAttrs = true;
     }
-    if (!propShape.enumerable()) {
+    if (!iter->enumerable()) {
       continue;
     }
-    if (MOZ_UNLIKELY(!shapes.append(&propShape))) {
+    if (MOZ_UNLIKELY(!props.append(*iter))) {
       return false;
     }
   }
@@ -916,9 +913,8 @@ static bool CanAddNewPropertyExcludingProtoFast(PlainObject* obj) {
     if (!toPlain->setLastProperty(cx, newShape)) {
       return false;
     }
-    for (size_t i = shapes.length(); i > 0; i--) {
-      Shape* propShape = shapes[i - 1];
-      size_t slot = propShape->slot();
+    for (size_t i = props.length(); i > 0; i--) {
+      size_t slot = props[i - 1].slot();
       toPlain->initSlot(slot, fromPlain->getSlot(slot));
     }
     return true;
@@ -927,16 +923,16 @@ static bool CanAddNewPropertyExcludingProtoFast(PlainObject* obj) {
   RootedValue propValue(cx);
   RootedId nextKey(cx);
 
-  for (size_t i = shapes.length(); i > 0; i--) {
+  for (size_t i = props.length(); i > 0; i--) {
     
     MOZ_ASSERT(fromPlain->lastProperty() == fromShape);
 
-    Shape* fromPropShape = shapes[i - 1];
-    MOZ_ASSERT(fromPropShape->isDataProperty());
-    MOZ_ASSERT(fromPropShape->enumerable());
+    ShapePropertyWithKey fromProp = props[i - 1];
+    MOZ_ASSERT(fromProp.isDataProperty());
+    MOZ_ASSERT(fromProp.enumerable());
 
-    nextKey = fromPropShape->propid();
-    propValue = fromPlain->getSlot(fromPropShape->slot());
+    nextKey = fromProp.key();
+    propValue = fromPlain->getSlot(fromProp.slot());
 
     Maybe<ShapeProperty> toProp;
     if (toWasEmpty) {
@@ -981,39 +977,37 @@ static bool TryAssignNative(JSContext* cx, HandleObject to, HandleObject from,
   
   
 
-  using ShapeVector = GCVector<Shape*, 8>;
-  Rooted<ShapeVector> shapes(cx, ShapeVector(cx));
+  Rooted<ShapePropertyVector> props(cx, ShapePropertyVector(cx));
 
-  RootedShape fromShape(cx, fromNative->lastProperty());
-  for (Shape::Range<NoGC> r(fromShape); !r.empty(); r.popFront()) {
+  RootedShape fromShape(cx, fromNative->shape());
+  for (ShapePropertyIter<NoGC> iter(fromShape); !iter.done(); iter++) {
     
     
-    if (MOZ_UNLIKELY(JSID_IS_SYMBOL(r.front().propidRaw()))) {
+    if (MOZ_UNLIKELY(iter->key().isSymbol())) {
       return true;
     }
-    if (MOZ_UNLIKELY(!shapes.append(&r.front()))) {
+    if (MOZ_UNLIKELY(!props.append(*iter))) {
       return false;
     }
   }
 
   *optimized = true;
 
-  RootedShape shape(cx);
   RootedValue propValue(cx);
   RootedId nextKey(cx);
   RootedValue toReceiver(cx, ObjectValue(*to));
 
-  for (size_t i = shapes.length(); i > 0; i--) {
-    shape = shapes[i - 1];
-    nextKey = shape->propid();
+  for (size_t i = props.length(); i > 0; i--) {
+    ShapePropertyWithKey prop = props[i - 1];
+    nextKey = prop.key();
 
     
     
-    if (MOZ_LIKELY(from->shape() == fromShape && shape->isDataProperty())) {
-      if (!shape->enumerable()) {
+    if (MOZ_LIKELY(from->shape() == fromShape && prop.isDataProperty())) {
+      if (!prop.enumerable()) {
         continue;
       }
-      propValue = from->as<NativeObject>().getSlot(shape->slot());
+      propValue = from->as<NativeObject>().getSlot(prop.slot());
     } else {
       
       
@@ -1604,35 +1598,33 @@ static bool TryEnumerableOwnPropertiesNative(JSContext* cx, HandleObject obj,
     
     
     
-    using ShapeVector = GCVector<Shape*, 8>;
-    Rooted<ShapeVector> shapes(cx, ShapeVector(cx));
+    Rooted<ShapePropertyVector> props(cx, ShapePropertyVector(cx));
 
     
-    RootedShape objShape(cx, nobj->lastProperty());
-    for (Shape::Range<NoGC> r(objShape); !r.empty(); r.popFront()) {
-      Shape* shape = &r.front();
-      if (JSID_IS_SYMBOL(shape->propid())) {
+    RootedShape objShape(cx, nobj->shape());
+    for (ShapePropertyIter<NoGC> iter(objShape); !iter.done(); iter++) {
+      if (iter->key().isSymbol()) {
         continue;
       }
-      MOZ_ASSERT(!JSID_IS_INT(shape->propid()), "Unexpected indexed property");
+      MOZ_ASSERT(!JSID_IS_INT(iter->key()), "Unexpected indexed property");
 
-      if (!shapes.append(shape)) {
+      if (!props.append(*iter)) {
         return false;
       }
     }
 
     RootedId id(cx);
-    for (size_t i = shapes.length(); i > 0; i--) {
-      Shape* shape = shapes[i - 1];
-      id = shape->propid();
+    for (size_t i = props.length(); i > 0; i--) {
+      ShapePropertyWithKey prop = props[i - 1];
+      id = prop.key();
 
       
       
-      if (obj->shape() == objShape && shape->isDataProperty()) {
-        if (!shape->enumerable()) {
+      if (obj->shape() == objShape && prop.isDataProperty()) {
+        if (!prop.enumerable()) {
           continue;
         }
-        value = obj->as<NativeObject>().getSlot(shape->slot());
+        value = obj->as<NativeObject>().getSlot(prop.slot());
       } else {
         
         
