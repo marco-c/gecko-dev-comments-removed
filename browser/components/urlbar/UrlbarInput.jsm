@@ -666,6 +666,28 @@ class UrlbarInput {
 
 
 
+
+
+
+
+
+  handoff(searchString, searchEngine) {
+    if (UrlbarPrefs.get("shouldHandOffToSearchMode") && searchEngine) {
+      this.search(searchString, {
+        searchEngine,
+        searchModeEntry: "handoff",
+      });
+    } else {
+      this.search(searchString);
+    }
+  }
+
+  
+
+
+
+
+
   pickElement(element, event) {
     let result = this.view.getResultFromElement(element);
     if (!result) {
