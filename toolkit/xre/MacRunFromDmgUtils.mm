@@ -243,6 +243,7 @@ static void ShowInstallFailedDialog() {
   
   [NSApp run];
   MOZ_ASSERT(result != -1);
+  (void)result;
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
