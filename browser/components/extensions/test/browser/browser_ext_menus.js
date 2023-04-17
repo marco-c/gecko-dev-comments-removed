@@ -173,6 +173,14 @@ add_task(async function test_actionContextMenus() {
 });
 
 add_task(async function test_hiddenPageActionContextMenu() {
+  
+  
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.proton.urlbar.enabled", false]],
+  });
   const manifest = {
     page_action: {},
     permissions: ["menus"],
@@ -219,6 +227,8 @@ add_task(async function test_hiddenPageActionContextMenu() {
   await closeChromeContextMenu(menu.id);
   await closeChromeContextMenu(BrowserPageActions.panelNode.id);
 
+  
+  await SpecialPowers.popPrefEnv();
   BrowserTestUtils.removeTab(tab);
   await extension.unload();
 });
