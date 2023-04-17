@@ -2121,6 +2121,9 @@ nsresult nsPrintJob::DoPrint(const UniquePtr<nsPrintObject>& aPO) {
   
   
   RefPtr<nsPrintData> printData = mPrt;
+  if (NS_WARN_IF(!printData)) {
+    return NS_ERROR_FAILURE;
+  }
 
   if (printData->mPrintProgressParams) {
     SetURLAndTitleOnProgressParams(aPO, printData->mPrintProgressParams);
