@@ -557,6 +557,10 @@ FINAL_LIBRARY = "js"
 
 selfhosted_inputs = [
     "../public/friend/ErrorNumbers.msg",
+    
+    
+    
+    "!/mozglue/baseprofiler/public/ProfilingCategoryList.h",
     "builtin/TypedArrayConstants.h",
     "builtin/SelfHostingDefines.h",
     "builtin/Utilities.js",
