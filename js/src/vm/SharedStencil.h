@@ -515,7 +515,10 @@ class alignas(uint32_t) ImmutableScriptData final : public TrailingArray {
   static js::UniquePtr<ImmutableScriptData> new_(JSContext* cx,
                                                  uint32_t totalSize);
 
-  uint32_t computedSize();
+  
+  
+  
+  bool validateLayout(uint32_t expectedSize);
 
  private:
   static mozilla::CheckedInt<uint32_t> sizeFor(uint32_t codeLength,

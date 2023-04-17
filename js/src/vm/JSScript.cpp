@@ -3354,11 +3354,26 @@ js::UniquePtr<ImmutableScriptData> js::ImmutableScriptData::new_(
   return result;
 }
 
-uint32_t js::ImmutableScriptData::computedSize() {
+bool js::ImmutableScriptData::validateLayout(uint32_t expectedSize) {
+  constexpr size_t HeaderSize = sizeof(js::ImmutableScriptData);
+  constexpr size_t OptionalOffsetsMaxSize = 3 * sizeof(Offset);
+
+  
+  
+  
+  static_assert(OptionalOffsetsMaxSize <= HeaderSize);
+  if (HeaderSize > optArrayOffset_) {
+    return false;
+  }
+  if (optArrayOffset_ > expectedSize) {
+    return false;
+  }
+
+  
+  
   auto size = sizeFor(codeLength(), noteLength(), resumeOffsets().size(),
                       scopeNotes().size(), tryNotes().size());
-  MOZ_ASSERT(size.isValid());
-  return size.value();
+  return size.isValid() && (size.value() == expectedSize);
 }
 
 
