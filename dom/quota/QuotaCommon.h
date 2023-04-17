@@ -873,6 +873,7 @@ class NotNull;
 
 
 
+
 #define QM_OR_ELSE_WARN(...) QM_OR_ELSE_REPORT(Warning, __VA_ARGS__)
 
 
