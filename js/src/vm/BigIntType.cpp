@@ -1616,17 +1616,12 @@ BigInt* BigInt::parseLiteralDigits(JSContext* cx,
 
 template <typename CharT>
 BigInt* BigInt::parseLiteral(JSContext* cx, const Range<const CharT> chars,
-                             bool* haveParseError) {
+                             bool* haveParseError, js::gc::InitialHeap heap) {
   RangedPtr<const CharT> start = chars.begin();
   const RangedPtr<const CharT> end = chars.end();
   bool isNegative = false;
 
   MOZ_ASSERT(chars.length());
-
-  
-  
-  
-  constexpr gc::InitialHeap heap = gc::TenuredHeap;
 
   if (end - start > 2 && start[0] == '0') {
     if (start[1] == 'b' || start[1] == 'B') {
@@ -3649,8 +3644,13 @@ JS::Result<BigInt*, JS::OOM> js::StringToBigInt(JSContext* cx,
 
 BigInt* js::ParseBigIntLiteral(JSContext* cx,
                                const Range<const char16_t>& chars) {
+  
+  
+  
+  constexpr gc::InitialHeap heap = gc::TenuredHeap;
+
   bool parseError = false;
-  BigInt* res = BigInt::parseLiteral(cx, chars, &parseError);
+  BigInt* res = BigInt::parseLiteral(cx, chars, &parseError, heap);
   if (!res) {
     return nullptr;
   }
