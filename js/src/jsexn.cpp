@@ -292,14 +292,6 @@ void js::ErrorToException(JSContext* cx, JSErrorReport* reportp,
   MOZ_ASSERT(!reportp->isWarning());
 
   
-  
-  
-  if (cx->realm()->isSelfHostingRealm()) {
-    JS::PrintError(stderr, reportp, true);
-    return;
-  }
-
-  
   JSErrNum errorNumber = static_cast<JSErrNum>(reportp->errorNumber);
   if (!callback) {
     callback = GetErrorMessage;
