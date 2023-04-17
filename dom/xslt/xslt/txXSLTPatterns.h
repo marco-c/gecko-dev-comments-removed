@@ -103,8 +103,6 @@ class txPattern {
 class txUnionPattern : public txPattern {
  public:
   nsresult addPattern(txPattern* aPattern) {
-    
-    
     mLocPathPatterns.AppendElement(aPattern);
     return NS_OK;
   }

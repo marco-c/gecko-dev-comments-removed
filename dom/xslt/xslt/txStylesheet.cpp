@@ -310,10 +310,7 @@ nsresult txStylesheet::doneCompiling() {
       itemIter.remove();  
       itemIter.next();
     }
-    
-    
     mStripSpaceTests.AppendElements(frameStripSpaceTests);
-
     frameStripSpaceTests.Clear();
   }
 
@@ -390,8 +387,6 @@ nsresult txStylesheet::addTemplate(txTemplateItem* aTemplate,
     }
 
     MatchableTemplate* nt = templates->InsertElementAt(i);
-    NS_ENSURE_TRUE(nt, NS_ERROR_OUT_OF_MEMORY);
-
     nt->mFirstInstruction = instr;
     nt->mMatch = std::move(simple);
     nt->mPriority = priority;
@@ -442,10 +437,7 @@ nsresult txStylesheet::addStripSpace(
         break;
       }
     }
-    
-    
     aFrameStripSpaceTests.InsertElementAt(i, sst);
-
     aStripSpaceItem->mStripSpaceTests.RemoveElementAt(testCount - 1);
   }
 

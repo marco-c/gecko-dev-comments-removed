@@ -225,8 +225,6 @@ class FunctionCall : public Expr {
 
 
   nsresult addParam(Expr* aExpr) {
-    
-    
     mParams.AppendElement(aExpr);
     return NS_OK;
   }
@@ -451,8 +449,6 @@ class PredicateList {
 
   nsresult add(Expr* aExpr) {
     NS_ASSERTION(aExpr, "missing expression");
-    
-    
     mPredicates.AppendElement(aExpr);
     return NS_OK;
   }
@@ -790,8 +786,6 @@ class UnionExpr : public Expr {
 
 
   nsresult addExpr(Expr* aExpr) {
-    
-    
     mExpressions.AppendElement(aExpr);
     return NS_OK;
   }
@@ -835,8 +829,6 @@ class txNamedAttributeStep : public Expr {
 class txUnionNodeTest : public txNodeTest {
  public:
   nsresult addNodeTest(txNodeTest* aNodeTest) {
-    
-    
     mNodeTests.AppendElement(aNodeTest);
     return NS_OK;
   }
