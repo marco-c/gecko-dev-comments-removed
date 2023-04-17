@@ -261,6 +261,14 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
     
     
     
+    ICU4X_LICENSE_SHA256 = (
+        "02420cc1b4c26d9a3318d60fd57048d015831249a5b776a1ada75cd227e78630"
+    )
+
+    
+    
+    
+    
     
     
     
@@ -271,6 +279,22 @@ Please commit or stash these changes before vendoring, or re-run with `--ignore-
         
         
         "fuchsia-cprng": "03b114f53e6587a398931762ee11e2395bfdba252a329940e2c8c9e81813845b",
+        
+        "fixed_decimal": ICU4X_LICENSE_SHA256,
+        "icu_plurals": ICU4X_LICENSE_SHA256,
+        "icu_datetime": ICU4X_LICENSE_SHA256,
+        "icu_decimal": ICU4X_LICENSE_SHA256,
+        "icu_locale_canonicalizer": ICU4X_LICENSE_SHA256,
+        "icu_locid": ICU4X_LICENSE_SHA256,
+        "icu_locid_macros": ICU4X_LICENSE_SHA256,
+        "icu_provider": ICU4X_LICENSE_SHA256,
+        "icu_provider_macros": ICU4X_LICENSE_SHA256,
+        "icu": ICU4X_LICENSE_SHA256,
+        "icu_uniset": ICU4X_LICENSE_SHA256,
+        "litemap": ICU4X_LICENSE_SHA256,
+        "writeable": ICU4X_LICENSE_SHA256,
+        "yoke": ICU4X_LICENSE_SHA256,
+        "yoke-derive": ICU4X_LICENSE_SHA256,
     }
 
     @staticmethod
