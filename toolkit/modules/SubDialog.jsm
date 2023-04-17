@@ -54,10 +54,18 @@ function SubDialog({
   this._overlay.classList.add(`dialogOverlay-${id}`);
   this._frame.setAttribute("name", `dialogFrame-${id}`);
   this._frameCreated = new Promise(resolve => {
-    this._frame.addEventListener("load", resolve, {
-      once: true,
-      capture: true,
-    });
+    this._frame.addEventListener(
+      "load",
+      () => {
+        
+        
+        resolve();
+      },
+      {
+        once: true,
+        capture: true,
+      }
+    );
   });
 
   parentElement.appendChild(this._overlay);
