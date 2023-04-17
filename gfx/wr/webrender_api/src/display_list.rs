@@ -2143,9 +2143,9 @@ impl DisplayListBuilder {
         
         
         let next_capacity = DisplayListCapacity {
-            cache_size: self.payload.cache_data.len().min(1024),
-            items_size: self.payload.items_data.len().min(1024),
-            spatial_tree_size: self.payload.spatial_tree.len().min(1024),
+            cache_size: self.payload.cache_data.len().min(128 * 1024),
+            items_size: self.payload.items_data.len().min(512 * 1024),
+            spatial_tree_size: self.payload.spatial_tree.len().min(128 * 1024),
         };
         let payload = mem::replace(
             &mut self.payload,
