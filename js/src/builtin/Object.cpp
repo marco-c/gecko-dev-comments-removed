@@ -1160,7 +1160,7 @@ PlainObject* js::ObjectCreateImpl(JSContext* cx, HandleObject proto,
                                   NewObjectKind newKind) {
   
   
-  gc::AllocKind allocKind = GuessObjectGCKind(0);
+  gc::AllocKind allocKind = NewObjectGCKind();
   return NewPlainObjectWithProtoAndAllocKind(cx, proto, allocKind, newKind);
 }
 

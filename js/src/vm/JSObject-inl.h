@@ -493,18 +493,6 @@ inline T* NewBuiltinClassInstance(JSContext* cx, gc::AllocKind allocKind,
 
 bool NewObjectScriptedCall(JSContext* cx, MutableHandleObject obj);
 
-
-
-
-
-
-static inline gc::AllocKind GuessObjectGCKind(size_t numElements) {
-  if (numElements) {
-    return gc::GetGCObjectKind(numElements);
-  }
-  return gc::AllocKind::OBJECT4;
-}
-
 static inline gc::AllocKind GuessArrayGCKind(size_t numElements) {
   if (numElements) {
     return gc::GetGCArrayKind(numElements);
