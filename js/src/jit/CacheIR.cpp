@@ -5992,8 +5992,7 @@ AttachDecision CallIRGenerator::tryAttachObjectHasPrototype(
 
 AttachDecision CallIRGenerator::tryAttachString(HandleFunction callee) {
   
-  
-  if (argc_ != 1 || !args_[0].isString()) {
+  if (argc_ != 1 || !(args_[0].isString() || args_[0].isNumber())) {
     return AttachDecision::NoAction;
   }
 
@@ -6005,7 +6004,7 @@ AttachDecision CallIRGenerator::tryAttachString(HandleFunction callee) {
 
   
   ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
-  StringOperandId strId = writer.guardToString(argId);
+  StringOperandId strId = emitToStringGuard(argId, args_[0]);
 
   
   writer.loadStringResult(strId);
@@ -6018,8 +6017,7 @@ AttachDecision CallIRGenerator::tryAttachString(HandleFunction callee) {
 AttachDecision CallIRGenerator::tryAttachStringConstructor(
     HandleFunction callee) {
   
-  
-  if (argc_ != 1 || !args_[0].isString()) {
+  if (argc_ != 1 || !(args_[0].isString() || args_[0].isNumber())) {
     return AttachDecision::NoAction;
   }
 
@@ -6042,7 +6040,8 @@ AttachDecision CallIRGenerator::tryAttachStringConstructor(
   
   ValOperandId argId =
       writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_, flags);
-  StringOperandId strId = writer.guardToString(argId);
+  StringOperandId strId = emitToStringGuard(argId, args_[0]);
+
   writer.newStringObjectResult(templateObj, strId);
   writer.returnFromIC();
 
