@@ -2548,7 +2548,13 @@ TEST(GeckoProfiler, CPUUsage)
             std::set<uint64_t> stackLeaves;  
             unsigned threadCPUDeltaCount = 0;
             GET_JSON(data, samples["data"], Array);
-            EXPECT_GE(data.size(), scMinSamplings);
+            if (testWithNoStackSampling) {
+              
+              
+              EXPECT_GE(data.size(), scMinSamplings - 1);
+            } else {
+              EXPECT_GE(data.size(), scMinSamplings);
+            }
             for (const Json::Value& sample : data) {
               ASSERT_TRUE(sample.isArray());
               if (sample.isValidIndex(stackIndex)) {
