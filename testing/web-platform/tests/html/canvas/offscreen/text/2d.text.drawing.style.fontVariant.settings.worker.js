@@ -17,54 +17,54 @@ var offscreenCanvas = new OffscreenCanvas(100, 50);
 var ctx = offscreenCanvas.getContext('2d');
 
 
-_assertSame(ctx.fontVariantCaps, "Normal", "ctx.fontVariantCaps", "\"Normal\"");
+_assertSame(ctx.fontVariantCaps, "normal", "ctx.fontVariantCaps", "\"normal\"");
 
 ctx.fontVariantCaps = "normal";
-_assertSame(ctx.fontVariantCaps, "Normal", "ctx.fontVariantCaps", "\"Normal\"");
+_assertSame(ctx.fontVariantCaps, "normal", "ctx.fontVariantCaps", "\"normal\"");
 
 ctx.fontVariantCaps = "small-caps";
-_assertSame(ctx.fontVariantCaps, "SmallCaps", "ctx.fontVariantCaps", "\"SmallCaps\"");
+_assertSame(ctx.fontVariantCaps, "small-caps", "ctx.fontVariantCaps", "\"small-caps\"");
 
 ctx.fontVariantCaps = "all-small-caps";
-_assertSame(ctx.fontVariantCaps, "AllSmallCaps", "ctx.fontVariantCaps", "\"AllSmallCaps\"");
+_assertSame(ctx.fontVariantCaps, "all-small-caps", "ctx.fontVariantCaps", "\"all-small-caps\"");
 
 ctx.fontVariantCaps = "petite-caps";
-_assertSame(ctx.fontVariantCaps, "PetiteCaps", "ctx.fontVariantCaps", "\"PetiteCaps\"");
+_assertSame(ctx.fontVariantCaps, "petite-caps", "ctx.fontVariantCaps", "\"petite-caps\"");
 
 ctx.fontVariantCaps = "all-petite-caps";
-_assertSame(ctx.fontVariantCaps, "AllPetiteCaps", "ctx.fontVariantCaps", "\"AllPetiteCaps\"");
+_assertSame(ctx.fontVariantCaps, "all-petite-caps", "ctx.fontVariantCaps", "\"all-petite-caps\"");
 
 ctx.fontVariantCaps = "unicase";
-_assertSame(ctx.fontVariantCaps, "Unicase", "ctx.fontVariantCaps", "\"Unicase\"");
+_assertSame(ctx.fontVariantCaps, "unicase", "ctx.fontVariantCaps", "\"unicase\"");
 
 ctx.fontVariantCaps = "titling-caps";
-_assertSame(ctx.fontVariantCaps, "TitlingCaps", "ctx.fontVariantCaps", "\"TitlingCaps\"");
+_assertSame(ctx.fontVariantCaps, "titling-caps", "ctx.fontVariantCaps", "\"titling-caps\"");
 
 
 ctx.fontVariantCaps = "nORmal";
-_assertSame(ctx.fontVariantCaps, "Normal", "ctx.fontVariantCaps", "\"Normal\"");
+_assertSame(ctx.fontVariantCaps, "normal", "ctx.fontVariantCaps", "\"normal\"");
 
 ctx.fontVariantCaps = "smaLL-caps";
-_assertSame(ctx.fontVariantCaps, "SmallCaps", "ctx.fontVariantCaps", "\"SmallCaps\"");
+_assertSame(ctx.fontVariantCaps, "small-caps", "ctx.fontVariantCaps", "\"small-caps\"");
 
 ctx.fontVariantCaps = "all-small-CAPS";
-_assertSame(ctx.fontVariantCaps, "AllSmallCaps", "ctx.fontVariantCaps", "\"AllSmallCaps\"");
+_assertSame(ctx.fontVariantCaps, "all-small-caps", "ctx.fontVariantCaps", "\"all-small-caps\"");
 
 ctx.fontVariantCaps = "pEtitE-caps";
-_assertSame(ctx.fontVariantCaps, "PetiteCaps", "ctx.fontVariantCaps", "\"PetiteCaps\"");
+_assertSame(ctx.fontVariantCaps, "petite-caps", "ctx.fontVariantCaps", "\"petite-caps\"");
 
 ctx.fontVariantCaps = "All-Petite-Caps";
-_assertSame(ctx.fontVariantCaps, "AllPetiteCaps", "ctx.fontVariantCaps", "\"AllPetiteCaps\"");
+_assertSame(ctx.fontVariantCaps, "all-petite-caps", "ctx.fontVariantCaps", "\"all-petite-caps\"");
 
 ctx.fontVariantCaps = "uNIcase";
-_assertSame(ctx.fontVariantCaps, "Unicase", "ctx.fontVariantCaps", "\"Unicase\"");
+_assertSame(ctx.fontVariantCaps, "unicase", "ctx.fontVariantCaps", "\"unicase\"");
 
 ctx.fontVariantCaps = "titling-CAPS";
-_assertSame(ctx.fontVariantCaps, "TitlingCaps", "ctx.fontVariantCaps", "\"TitlingCaps\"");
+_assertSame(ctx.fontVariantCaps, "titling-caps", "ctx.fontVariantCaps", "\"titling-caps\"");
 
 
 ctx.fontVariantCaps = "abcd";
-_assertSame(ctx.fontVariantCaps, "TitlingCaps", "ctx.fontVariantCaps", "\"TitlingCaps\"");
+_assertSame(ctx.fontVariantCaps, "titling-caps", "ctx.fontVariantCaps", "\"titling-caps\"");
 t.done();
 
 });
