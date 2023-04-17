@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 @import "chrome://global/skin/global.css";
 @namespace html url("http://www.w3.org/1999/xhtml");
@@ -29,17 +29,19 @@
   height: 22px;
 }
 
-#viewGroup > radio[selected=true],
-#viewGroup > toolbarbutton[checked=true] {
-  color: #FFF !important;
-  text-shadow: rgba(0, 0, 0, 0.4) 0 1px;
+@media (-moz-mac-big-sur-theme: 0) {
+  #viewGroup > radio[selected=true],
+  #viewGroup > toolbarbutton[checked=true] {
+    color: #FFF !important;
+    text-shadow: rgba(0, 0, 0, 0.4) 0 1px;
+  }
 }
 
 #mainDeck {
   padding: 10px;
 }
 
-
+/* Misc */
 tree {
   margin: .5em;
 }
@@ -65,7 +67,7 @@ html|input:disabled {
   font-style: italic;
 }
 
-
+/* General Tab */
 
 #securityBox description {
   margin-inline-start: 10px;
@@ -76,7 +78,7 @@ html|input:disabled {
   line-height: 2em;
 }
 
-
+/* Media Tab */
 #imagetree {
   min-height: 10em;
   margin-bottom: 0;
@@ -103,7 +105,7 @@ treechildren::-moz-tree-cell-text(broken) {
   color: graytext;
 }
 
-
+/* Permissions Tab */
 #permList {
   margin: .5em;
   overflow: auto;
@@ -127,7 +129,7 @@ treechildren::-moz-tree-cell-text(broken) {
   color: -moz-DialogText;
 }
 
-
+/* Security Tab */
 
 #securityPanel table {
   margin-bottom: 1em;
