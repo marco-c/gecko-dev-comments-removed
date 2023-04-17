@@ -497,6 +497,32 @@ public class GeckoResult<T> {
     return then(valueListener, exceptionListener);
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+  public @NonNull GeckoResult<Void> finally_(@NonNull final Runnable finallyRunnable) {
+    final OnValueListener<T, Void> valueListener =
+        value -> {
+          finallyRunnable.run();
+          return null;
+        };
+    final OnExceptionListener<Void> exceptionListener =
+        value -> {
+          finallyRunnable.run();
+          return null;
+        };
+    return then(valueListener, exceptionListener);
+  }
+
    @NonNull
   GeckoResult<Void> getOrAccept(@Nullable final Consumer<T> valueConsumer) {
     return getOrAccept(valueConsumer, null);
