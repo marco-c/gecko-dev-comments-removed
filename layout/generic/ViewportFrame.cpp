@@ -235,7 +235,7 @@ nsDisplayWrapList* ViewportFrame::BuildDisplayListForTopLayer(
       aBuilder->GetDirtyRect() + offset);
   
   
-  nsDisplayWrapList* wrapList = MakeDisplayItemWithIndex<nsDisplayWrapList>(
+  nsDisplayWrapList* wrapList = MakeDisplayItemWithIndex<nsDisplayWrapper>(
       aBuilder, this, 2, &topLayerList, aBuilder->CurrentActiveScrolledRoot(),
       false);
   if (!wrapList) {
