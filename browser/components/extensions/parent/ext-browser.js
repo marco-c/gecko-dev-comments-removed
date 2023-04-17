@@ -938,16 +938,20 @@ class Tab extends TabBase {
         : tabData.lastAccessed,
     };
 
+    let entries = tabData.state ? tabData.state.entries : tabData.entries;
+    let lastTabIndex = tabData.state ? tabData.state.index : tabData.index;
+    
+    
+    let entry = entries[lastTabIndex - 1];
+
     
     
     
     
-    if (extension.hasPermission("tabs")) {
-      let entries = tabData.state ? tabData.state.entries : tabData.entries;
-      let lastTabIndex = tabData.state ? tabData.state.index : tabData.index;
-      
-      
-      let entry = entries[lastTabIndex - 1];
+    if (
+      extension.hasPermission("tabs") ||
+      extension.allowedOrigins.matches(entry.url)
+    ) {
       result.url = entry.url;
       result.title = entry.title;
       if (tabData.image) {

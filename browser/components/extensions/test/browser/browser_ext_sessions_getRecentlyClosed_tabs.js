@@ -162,4 +162,44 @@ add_task(async function test_sessions_get_recently_closed_tabs() {
   }
 
   await extension.unload();
+
+  
+  win = await BrowserTestUtils.openNewBrowserWindow();
+  tabBrowser = win.gBrowser.selectedBrowser;
+  BrowserTestUtils.loadURI(tabBrowser, "http://example.com/testpage");
+  await BrowserTestUtils.browserLoaded(
+    tabBrowser,
+    false,
+    "http://example.com/testpage"
+  );
+  tab = win.gBrowser.getTabForBrowser(tabBrowser);
+  try {
+    await BrowserTestUtils.waitForCondition(
+      () => {
+        return gBrowser.getIcon(tab) != null;
+      },
+      "wait for favicon load to finish",
+      100,
+      5
+    );
+  } catch (e) {
+    
+  }
+  expectedTab = expectedTabInfo(tab, win);
+  await BrowserTestUtils.closeWindow(win);
+
+  extension = ExtensionTestUtils.loadExtension({
+    manifest: {
+      permissions: ["sessions", "http://example.com/*"],
+    },
+    background,
+  });
+  await extension.startup();
+
+  extension.sendMessage("check-sessions");
+  recentlyClosed = await extension.awaitMessage("recentlyClosed");
+  tabInfo = recentlyClosed[0].window.tabs[0];
+  checkTabInfo(expectedTab, tabInfo);
+
+  await extension.unload();
 });
