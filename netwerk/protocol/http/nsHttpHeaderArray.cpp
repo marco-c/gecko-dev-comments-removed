@@ -71,7 +71,8 @@ nsresult nsHttpHeaderArray::SetHeader(
   }
   if (merge && !IsSingletonHeader(header)) {
     return MergeHeader(header, entry, value, variety);
-  } else if (!IsIgnoreMultipleHeader(header)) {
+  }
+  if (!IsIgnoreMultipleHeader(header)) {
     
     if (entry->variety == eVarietyResponseNetOriginalAndResponse) {
       MOZ_ASSERT(variety == eVarietyResponse);
@@ -161,7 +162,8 @@ nsresult nsHttpHeaderArray::SetHeaderFromNet(
                               eVarietyResponseNetOriginal);
     }
     return rv;
-  } else if (!IsIgnoreMultipleHeader(header)) {
+  }
+  if (!IsIgnoreMultipleHeader(header)) {
     
     
     if (!entry->value.Equals(value)) {

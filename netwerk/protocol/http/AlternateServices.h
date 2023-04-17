@@ -115,27 +115,29 @@ class AltSvcMapping {
 
   
   nsCString mAlternateHost;
-  MOZ_INIT_OUTSIDE_CTOR int32_t mAlternatePort;
+  int32_t mAlternatePort{-1};
 
   nsCString mOriginHost;
-  MOZ_INIT_OUTSIDE_CTOR int32_t mOriginPort;
+  int32_t mOriginPort{-1};
 
   nsCString mUsername;
-  MOZ_INIT_OUTSIDE_CTOR bool mPrivate;
+  bool mPrivate{false};
 
-  MOZ_INIT_OUTSIDE_CTOR uint32_t mExpiresAt;  
+  
+  uint32_t mExpiresAt{0};
 
-  MOZ_INIT_OUTSIDE_CTOR bool mValidated;
-  MOZ_INIT_OUTSIDE_CTOR bool mHttps{};  
-  MOZ_INIT_OUTSIDE_CTOR bool
-      mMixedScheme;  
+  bool mValidated{false};
+  
+  MOZ_INIT_OUTSIDE_CTOR bool mHttps{false};
+  
+  MOZ_INIT_OUTSIDE_CTOR bool mMixedScheme{false};
 
   nsCString mNPNToken;
 
   OriginAttributes mOriginAttributes;
 
-  bool mSyncOnlyOnSuccess;
-  bool mIsHttp3;
+  bool mSyncOnlyOnSuccess{false};
+  bool mIsHttp3{false};
 };
 
 class AltSvcOverride : public nsIInterfaceRequestor,
@@ -180,7 +182,7 @@ class TransactionObserver final : public nsIStreamListener {
 
 class AltSvcCache {
  public:
-  AltSvcCache() : mStorageEpoch(0) {}
+  AltSvcCache() = default;
   virtual ~AltSvcCache() = default;
   void UpdateAltServiceMapping(
       AltSvcMapping* map, nsProxyInfo* pi, nsIInterfaceRequestor*,
@@ -207,7 +209,7 @@ class AltSvcCache {
   already_AddRefed<AltSvcMapping> LookupMapping(const nsCString& key,
                                                 bool privateBrowsing);
   RefPtr<DataStorage> mStorage;
-  int32_t mStorageEpoch;
+  int32_t mStorageEpoch{0};
 };
 
 
