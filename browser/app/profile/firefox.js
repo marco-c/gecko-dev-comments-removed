@@ -1064,11 +1064,7 @@ pref("toolkit.crashreporter.infoURL",
 pref("app.support.baseURL", "https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/");
 
 
-#ifdef MOZ_DEV_EDITION
-  pref("app.feedback.baseURL", "https://input.mozilla.org/%LOCALE%/feedback/firefoxdev/%VERSION%/");
-#else
-  pref("app.feedback.baseURL", "https://input.mozilla.org/%LOCALE%/feedback/%APP%/%VERSION%/");
-#endif
+pref("app.feedback.baseURL", "https://ideas.mozilla.org/");
 
 
 pref("security.alternate_certificate_error_page", "certerror");
