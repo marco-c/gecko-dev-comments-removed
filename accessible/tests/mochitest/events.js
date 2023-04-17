@@ -1284,6 +1284,27 @@ function synthClick(aNodeOrID, aCheckerOrEventSeq, aArgs) {
 
 
 
+function scrollIntoView(aNodeOrID, aCheckerOrEventSeq) {
+  this.__proto__ = new synthAction(aNodeOrID, aCheckerOrEventSeq);
+
+  this.invoke = function scrollIntoView_invoke() {
+    var targetNode = this.DOMNode;
+    if (isHTMLElement(targetNode)) {
+      targetNode.scrollIntoView(true);
+    } else if (isXULElement(targetNode)) {
+      var targetAcc = getAccessible(targetNode);
+      targetAcc.scrollTo(SCROLL_TYPE_ANYWHERE);
+    }
+  };
+
+  this.getID = function scrollIntoView_getID() {
+    return prettyName(aNodeOrID) + " scrollIntoView";
+  };
+}
+
+
+
+
 function synthMouseMove(aID, aCheckerOrEventSeq) {
   this.__proto__ = new synthAction(aID, aCheckerOrEventSeq);
 
