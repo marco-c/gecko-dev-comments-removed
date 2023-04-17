@@ -3401,10 +3401,15 @@ bool gfxPlatform::FallbackFromAcceleration(FeatureStatus aStatus,
     return false;
   }
 
-  
-  gfxCriticalNoteOnce << "Fallback remains SW-WR";
+  if (gfxVars::UseSoftwareWebRender()) {
+    
+    gfxCriticalNoteOnce << "Fallback remains SW-WR";
+  } else {
+    
+    
+    gfxCriticalNoteOnce << "Fallback remains WR";
+  }
   MOZ_ASSERT(gfxVars::UseWebRender());
-  MOZ_ASSERT(gfxVars::UseSoftwareWebRender());
   return false;
 }
 
