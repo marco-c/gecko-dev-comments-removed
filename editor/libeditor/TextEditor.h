@@ -61,15 +61,6 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
   NS_IMETHOD GetTextLength(int32_t* aCount) override;
 
-  
-
-
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT nsresult CutAsAction(nsIPrincipal* aPrincipal = nullptr);
-
   NS_IMETHOD Copy() override;
 
   

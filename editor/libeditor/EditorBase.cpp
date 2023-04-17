@@ -67,6 +67,7 @@
 #include "mozilla/dom/Attr.h"             
 #include "mozilla/dom/CharacterData.h"    
 #include "mozilla/dom/DataTransfer.h"     
+#include "mozilla/dom/Document.h"         
 #include "mozilla/dom/DocumentInlines.h"  
 #include "mozilla/dom/Element.h"          
 #include "mozilla/dom/EventTarget.h"      
@@ -91,8 +92,8 @@
 #include "nsFrameSelection.h"          
 #include "nsGenericHTMLElement.h"      
 #include "nsGkAtoms.h"                 
+#include "nsIClipboard.h"              
 #include "nsIContent.h"                
-#include "mozilla/dom/Document.h"      
 #include "nsIDocumentStateListener.h"  
 #include "nsIEditActionListener.h"     
 #include "nsIEditorObserver.h"         
@@ -1502,9 +1503,40 @@ bool EditorBase::FireClipboardEvent(EventMessage aEventMessage,
 }
 
 NS_IMETHODIMP EditorBase::Cut() {
-  nsresult rv = MOZ_KnownLive(AsTextEditor())->CutAsAction();
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "TextEditor::CutAsAction() failed");
+  nsresult rv = CutAsAction();
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "EditorBase::CutAsAction() failed");
   return rv;
+}
+
+nsresult EditorBase::CutAsAction(nsIPrincipal* aPrincipal) {
+  AutoEditActionDataSetter editActionData(*this, EditAction::eCut, aPrincipal);
+  if (NS_WARN_IF(!editActionData.CanHandle())) {
+    return NS_ERROR_NOT_INITIALIZED;
+  }
+
+  bool actionTaken = false;
+  if (!FireClipboardEvent(eCut, nsIClipboard::kGlobalClipboard, &actionTaken)) {
+    return EditorBase::ToGenericNSResult(
+        actionTaken ? NS_OK : NS_ERROR_EDITOR_ACTION_CANCELED);
+  }
+
+  
+  nsresult rv = editActionData.MaybeDispatchBeforeInputEvent();
+  if (NS_FAILED(rv)) {
+    NS_WARNING_ASSERTION(rv == NS_ERROR_EDITOR_ACTION_CANCELED,
+                         "MaybeDispatchBeforeInputEvent() failed");
+    return EditorBase::ToGenericNSResult(rv);
+  }
+  
+  
+  AutoPlaceholderBatch treatAsOneTransaction(*this, *nsGkAtoms::DeleteTxnName,
+                                             ScrollSelectionIntoView::Yes);
+  rv = DeleteSelectionAsSubAction(
+      eNone, IsTextEditor() ? nsIEditor::eNoStrip : nsIEditor::eStrip);
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rv),
+      "EditorBase::DeleteSelectionAsSubAction(eNone) failed, but ignored");
+  return EditorBase::ToGenericNSResult(rv);
 }
 
 NS_IMETHODIMP EditorBase::CanCut(bool* aCanCut) {

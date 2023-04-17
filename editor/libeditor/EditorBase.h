@@ -701,6 +701,15 @@ class EditorBase : public nsIEditor,
 
 
 
+  MOZ_CAN_RUN_SCRIPT nsresult CutAsAction(nsIPrincipal* aPrincipal = nullptr);
+
+  
+
+
+
+
+
+
 
 
   MOZ_CAN_RUN_SCRIPT nsresult UndoAsAction(uint32_t aCount,
