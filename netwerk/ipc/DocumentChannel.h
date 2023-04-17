@@ -55,6 +55,9 @@ class DocumentChannel : public nsIIdentChannel {
     mInitialClientInfo = aInfo;
   }
 
+  void DisconnectChildListeners(const nsresult& aStatus,
+                                const nsresult& aLoadGroupStatus);
+
   
 
 
@@ -77,8 +80,6 @@ class DocumentChannel : public nsIIdentChannel {
                   bool aIsXFOError);
 
   void ShutdownListeners(nsresult aStatusCode);
-  void DisconnectChildListeners(const nsresult& aStatus,
-                                const nsresult& aLoadGroupStatus);
   virtual void DeleteIPDL() {}
 
   nsDocShell* GetDocShell();

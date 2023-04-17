@@ -88,6 +88,7 @@
 #include "mozilla/dom/JSWindowActorChild.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/net/DocumentChannel.h"
+#include "mozilla/net/DocumentChannelChild.h"
 #include "mozilla/net/ParentChannelWrapper.h"
 #include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "ReferrerInfo.h"
@@ -383,6 +384,7 @@ nsDocShell::nsDocShell(BrowsingContext* aBrowsingContext,
       mFailedLoadType(0),
       mJSRunToCompletionDepth(0),
       mMetaViewportOverride(nsIDocShell::META_VIEWPORT_OVERRIDE_NONE),
+      mChannelToDisconnectOnPageHide(0),
       mCreatingDocument(false),
 #ifdef DEBUG
       mInEnsureScriptEnv(false),
@@ -4369,6 +4371,11 @@ nsDocShell::Stop(uint32_t aStopFlags) {
     
     
     Stop();
+
+    
+    
+    
+    mChannelToDisconnectOnPageHide = 0;
   }
 
   for (auto* child : mChildList.ForwardRange()) {
@@ -13624,4 +13631,21 @@ nsDocShell::OnStopRequest(nsIRequest* aRequest, nsresult aStatusCode) {
   }
   RecordSingleChannelId();
   return nsDocLoader::OnStopRequest(aRequest, aStatusCode);
+}
+
+void nsDocShell::MaybeDisconnectChildListenersOnPageHide() {
+  MOZ_RELEASE_ASSERT(XRE_IsContentProcess());
+
+  if (mChannelToDisconnectOnPageHide != 0 && mLoadGroup) {
+    nsCOMPtr<nsISimpleEnumerator> requests;
+    mLoadGroup->GetRequests(getter_AddRefs(requests));
+    for (const auto& request : SimpleEnumerator<nsIRequest>(requests)) {
+      RefPtr<DocumentChannel> channel = do_QueryObject(request);
+      if (channel && channel->ChannelId() == mChannelToDisconnectOnPageHide) {
+        static_cast<DocumentChannelChild*>(channel.get())
+            ->DisconnectChildListeners(NS_BINDING_ABORTED, NS_BINDING_ABORTED);
+      }
+    }
+    mChannelToDisconnectOnPageHide = 0;
+  }
 }

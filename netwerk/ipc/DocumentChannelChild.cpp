@@ -194,18 +194,27 @@ IPCResult DocumentChannelChild::RecvDisconnectChildListeners(
     bool aSwitchedProcess) {
   
   
-  
-  
-  
-  bool disconnectChildListeners = !aSwitchedProcess;
-  if (!disconnectChildListeners && mozilla::BFCacheInParent()) {
-    nsDocShell* shell = GetDocShell();
-    disconnectChildListeners = shell && shell->GetBrowsingContext() &&
-                               shell->GetBrowsingContext()->IsTop();
-  }
-  if (disconnectChildListeners) {
+  if (!aSwitchedProcess) {
     DisconnectChildListeners(aStatus, aLoadGroupStatus);
+    return IPC_OK();
   }
+
+  
+  
+  
+  
+  
+  
+  
+  nsDocShell* shell = GetDocShell();
+  if (mLoadInfo->GetExternalContentPolicyType() ==
+          ExtContentPolicy::TYPE_DOCUMENT &&
+      shell) {
+    MOZ_ASSERT(shell->GetBrowsingContext()->IsTop());
+    
+    shell->SetChannelToDisconnectOnPageHide(mChannelId);
+  }
+
   return IPC_OK();
 }
 

@@ -1088,6 +1088,12 @@ class nsDocShell final : public nsDocLoader,
 
   void RecordSingleChannelId();
 
+  void SetChannelToDisconnectOnPageHide(uint64_t aChannelId) {
+    MOZ_ASSERT(mChannelToDisconnectOnPageHide == 0);
+    mChannelToDisconnectOnPageHide = aChannelId;
+  }
+  void MaybeDisconnectChildListenersOnPageHide();
+
  private:  
   nsString mTitle;
   nsCString mOriginalUriString;
@@ -1226,6 +1232,8 @@ class nsDocShell final : public nsDocLoader,
 
   
   mozilla::Maybe<uint64_t> mSingleChannelId;
+
+  uint64_t mChannelToDisconnectOnPageHide;
 
   
   
