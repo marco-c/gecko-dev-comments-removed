@@ -31,10 +31,6 @@ namespace widget {
 
 
 
-
-
-
-
 struct LookAndFeelTables {
     int32_t[] ints;
     float[] floats;
