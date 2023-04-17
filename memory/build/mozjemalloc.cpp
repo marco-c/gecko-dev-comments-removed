@@ -104,6 +104,23 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include "mozmemory_wrap.h"
 #include "mozjemalloc.h"
 #include "mozjemalloc_types.h"
@@ -380,6 +397,10 @@ static const size_t kCacheLineSize = 64;
 
 
 
+
+
+
+
 #ifdef XP_WIN
 static const size_t kMinTinyClass = sizeof(void*) * 2;
 #else
@@ -390,27 +411,46 @@ static const size_t kMinTinyClass = sizeof(void*);
 static const size_t kMaxTinyClass = 8;
 
 
-static const size_t kQuantum = 16;
-static const size_t kQuantumMask = kQuantum - 1;
-
-
 
 
 
 static const size_t kMinQuantumClass = kMaxTinyClass * 2;
+static const size_t kMinQuantumWideClass = 512;
+static const size_t kMinSubPageClass = 4_KiB;
 
 
-static const size_t kMaxQuantumClass = 512;
+static const size_t kQuantum = 16;
+static const size_t kQuantumMask = kQuantum - 1;
+static const size_t kQuantumWide = 256;
+static const size_t kQuantumWideMask = kQuantumWide - 1;
+
+static const size_t kMaxQuantumClass = kMinQuantumWideClass - kQuantum;
+static const size_t kMaxQuantumWideClass = kMinSubPageClass - kQuantumWide;
+
+
+static_assert(mozilla::IsPowerOfTwo(kQuantum),
+              "kQuantum is not a power of two");
+static_assert(mozilla::IsPowerOfTwo(kQuantumWide),
+              "kQuantumWide is not a power of two");
 
 static_assert(kMaxQuantumClass % kQuantum == 0,
               "kMaxQuantumClass is not a multiple of kQuantum");
+static_assert(kMaxQuantumWideClass % kQuantumWide == 0,
+              "kMaxQuantumWideClass is not a multiple of kQuantumWide");
+static_assert(kQuantum < kQuantumWide,
+              "kQuantum must be smaller than kQuantumWide");
+static_assert(mozilla::IsPowerOfTwo(kMinSubPageClass),
+              "kMinSubPageClass is not a power of two");
 
 
 static const size_t kNumTinyClasses =
-    LOG2(kMinQuantumClass) - LOG2(kMinTinyClass);
+    LOG2(kMaxTinyClass) - LOG2(kMinTinyClass) + 1;
 
 
-static const size_t kNumQuantumClasses = kMaxQuantumClass / kQuantum;
+static const size_t kNumQuantumClasses =
+    (kMaxQuantumClass - kMinQuantumClass) / kQuantum + 1;
+static const size_t kNumQuantumWideClasses =
+    (kMaxQuantumWideClass - kMinQuantumWideClass) / kQuantumWide + 1;
 
 
 
@@ -443,6 +483,7 @@ static size_t gPageSize;
 #  define END_GLOBALS
 #  define DEFINE_GLOBAL(type) static const type
 #  define GLOBAL_LOG2 LOG2
+#  define GLOBAL_LOG2_OR_0 LOG2_OR_0
 #  define GLOBAL_ASSERT_HELPER1(x) static_assert(x, #  x)
 #  define GLOBAL_ASSERT_HELPER2(x, y) static_assert(x, y)
 #  define GLOBAL_ASSERT(...)                                               \
@@ -455,6 +496,7 @@ static size_t gPageSize;
 #  define END_GLOBALS }
 #  define DEFINE_GLOBAL(type)
 #  define GLOBAL_LOG2 FloorLog2
+#  define GLOBAL_LOG2_OR_0 FloorLog2
 #  define GLOBAL_ASSERT MOZ_RELEASE_ASSERT
 #endif
 
@@ -468,14 +510,20 @@ DECLARE_GLOBAL(size_t, gMaxLargeClass)
 
 DEFINE_GLOBALS
 
-DEFINE_GLOBAL(size_t) gMaxSubPageClass = gPageSize / 2;
+
+DEFINE_GLOBAL(size_t)
+gMaxSubPageClass = gPageSize / 2 >= kMinSubPageClass ? gPageSize / 2 : 0;
 
 
-#define gMaxBinClass gMaxSubPageClass
+#define gMaxBinClass \
+  (gMaxSubPageClass ? gMaxSubPageClass : kMaxQuantumWideClass)
 
 
 DEFINE_GLOBAL(uint8_t)
-gNumSubPageClasses = GLOBAL_LOG2(gMaxSubPageClass) - LOG2(kMaxQuantumClass);
+gNumSubPageClasses =
+    static_cast<uint8_t>(gMaxSubPageClass ? GLOBAL_LOG2_OR_0(gMaxSubPageClass) -
+                                                LOG2(kMinSubPageClass) + 1
+                                          : 0);
 
 DEFINE_GLOBAL(uint8_t) gPageSize2Pow = GLOBAL_LOG2(gPageSize);
 DEFINE_GLOBAL(size_t) gPageSizeMask = gPageSize - 1;
@@ -500,9 +548,16 @@ gMaxLargeClass =
 GLOBAL_ASSERT(1ULL << gPageSize2Pow == gPageSize,
               "Page size is not a power of two");
 GLOBAL_ASSERT(kQuantum >= sizeof(void*));
-GLOBAL_ASSERT(kQuantum <= gPageSize);
+GLOBAL_ASSERT(kQuantum <= kQuantumWide);
+GLOBAL_ASSERT(kQuantumWide <= (kMinSubPageClass - kMaxQuantumClass));
+
+GLOBAL_ASSERT(kQuantumWide <= kMaxQuantumClass);
+
+GLOBAL_ASSERT(gMaxSubPageClass >= kMinSubPageClass || gMaxSubPageClass == 0);
+GLOBAL_ASSERT(gMaxLargeClass >= gMaxSubPageClass);
 GLOBAL_ASSERT(kChunkSize >= gPageSize);
 GLOBAL_ASSERT(kQuantum * 4 <= kChunkSize);
+
 END_GLOBALS
 
 
@@ -526,13 +581,19 @@ static size_t opt_dirty_max = DIRTY_MAX_DEFAULT;
 
 
 #define QUANTUM_CEILING(a) (((a) + (kQuantumMask)) & ~(kQuantumMask))
+#define QUANTUM_WIDE_CEILING(a) \
+  (((a) + (kQuantumWideMask)) & ~(kQuantumWideMask))
+
+
+#define SUBPAGE_CEILING(a) (RoundUpPow2(a))
 
 
 #define PAGE_CEILING(s) (((s) + gPageSizeMask) & ~gPageSizeMask)
 
 
-#define NUM_SMALL_CLASSES \
-  (kNumTinyClasses + kNumQuantumClasses + gNumSubPageClasses)
+#define NUM_SMALL_CLASSES                                          \
+  (kNumTinyClasses + kNumQuantumClasses + kNumQuantumWideClasses + \
+   gNumSubPageClasses)
 
 
 
@@ -658,6 +719,7 @@ class SizeClass {
   enum ClassType {
     Tiny,
     Quantum,
+    QuantumWide,
     SubPage,
     Large,
   };
@@ -669,9 +731,12 @@ class SizeClass {
     } else if (aSize <= kMaxQuantumClass) {
       mType = Quantum;
       mSize = QUANTUM_CEILING(aSize);
+    } else if (aSize <= kMaxQuantumWideClass) {
+      mType = QuantumWide;
+      mSize = QUANTUM_WIDE_CEILING(aSize);
     } else if (aSize <= gMaxSubPageClass) {
       mType = SubPage;
-      mSize = RoundUpPow2(aSize);
+      mSize = SUBPAGE_CEILING(aSize);
     } else if (aSize <= gMaxLargeClass) {
       mType = Large;
       mSize = PAGE_CEILING(aSize);
@@ -879,6 +944,9 @@ struct arena_bin_t {
   
   
   
+  
+  
+  
   inline void Init(SizeClass aSizeClass);
 };
 
@@ -954,6 +1022,10 @@ struct arena_t {
   RedBlackTree<arena_chunk_map_t, ArenaAvailTreeTrait> mRunsAvail;
 
  public:
+  
+  
+  
+  
   
   
   
@@ -2821,11 +2893,21 @@ void* arena_t::MallocSmall(size_t aSize, bool aZero) {
       bin = &mBins[FloorLog2(aSize / kMinTinyClass)];
       break;
     case SizeClass::Quantum:
-      bin = &mBins[kNumTinyClasses + (aSize / kQuantum) - 1];
+      
+      
+      
+      bin = &mBins[kNumTinyClasses + (aSize / kQuantum) -
+                   (kMinQuantumClass / kQuantum)];
+      break;
+    case SizeClass::QuantumWide:
+      bin =
+          &mBins[kNumTinyClasses + kNumQuantumClasses + (aSize / kQuantumWide) -
+                 (kMinQuantumWideClass / kQuantumWide)];
       break;
     case SizeClass::SubPage:
-      bin = &mBins[kNumTinyClasses + kNumQuantumClasses +
-                   (FloorLog2(aSize / kMaxQuantumClass) - 1)];
+      bin =
+          &mBins[kNumTinyClasses + kNumQuantumClasses + kNumQuantumWideClasses +
+                 (FloorLog2(aSize) - LOG2(kMinSubPageClass))];
       break;
     default:
       MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Unexpected size class type");
@@ -3559,7 +3641,7 @@ arena_t::arena_t(arena_params_t* aParams, bool aIsPrivate) {
     bin.Init(sizeClass);
 
     
-    if (sizeClass.Size() == gMaxSubPageClass) {
+    if (sizeClass.Size() == gMaxBinClass) {
       break;
     }
     sizeClass = sizeClass.Next();
@@ -4253,6 +4335,9 @@ inline void MozJemalloc::jemalloc_stats_internal(
   aStats->opt_zero = opt_zero;
   aStats->quantum = kQuantum;
   aStats->quantum_max = kMaxQuantumClass;
+  aStats->quantum_wide = kQuantumWide;
+  aStats->quantum_wide_max = kMaxQuantumWideClass;
+  aStats->subpage_max = gMaxSubPageClass;
   aStats->large_max = gMaxLargeClass;
   aStats->chunksize = kChunkSize;
   aStats->page_size = gPageSize;
