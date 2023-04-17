@@ -246,9 +246,9 @@ nsresult mozInlineSpellWordUtil::SetPositionAndEnd(nsINode* aPositionNode,
     aEndNode = FindNextTextNode(aEndNode, aEndOffset, mRootNode);
     aEndOffset = 0;
   }
-  mSoftText.mEnd = NodeOffset(aEndNode, aEndOffset);
+  NodeOffset softEnd = NodeOffset(aEndNode, aEndOffset);
 
-  nsresult rv = EnsureWords(std::move(softBegin));
+  nsresult rv = EnsureWords(std::move(softBegin), std::move(softEnd));
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -262,9 +262,11 @@ nsresult mozInlineSpellWordUtil::SetPositionAndEnd(nsINode* aPositionNode,
   return NS_OK;
 }
 
-nsresult mozInlineSpellWordUtil::EnsureWords(NodeOffset aSoftBegin) {
+nsresult mozInlineSpellWordUtil::EnsureWords(NodeOffset aSoftBegin,
+                                             NodeOffset aSoftEnd) {
   if (mSoftText.mIsValid) return NS_OK;
-  mSoftText.AdjustBeginAndBuildText(std::move(aSoftBegin), mRootNode);
+  mSoftText.AdjustBeginAndBuildText(std::move(aSoftBegin), std::move(aSoftEnd),
+                                    mRootNode);
 
   mRealWords.Clear();
   Result<RealWords, nsresult> realWords = BuildRealWords();
@@ -301,11 +303,11 @@ nsresult mozInlineSpellWordUtil::GetRangeForWord(nsINode* aWordNode,
   NodeOffset pt(aWordNode, aWordOffset);
 
   if (!mSoftText.mIsValid || pt != mSoftText.GetBegin() ||
-      pt != mSoftText.mEnd) {
+      pt != mSoftText.GetEnd()) {
     mSoftText.Invalidate();
-    mSoftText.mEnd = pt;
     NodeOffset softBegin = pt;
-    nsresult rv = EnsureWords(std::move(softBegin));
+    NodeOffset softEnd = pt;
+    nsresult rv = EnsureWords(std::move(softBegin), std::move(softEnd));
     if (NS_FAILED(rv)) {
       return rv;
     }
@@ -769,10 +771,11 @@ void mozInlineSpellWordUtil::NormalizeWord(nsAString& aWord) {
 }
 
 void mozInlineSpellWordUtil::SoftText::AdjustBeginAndBuildText(
-    NodeOffset aBegin, const nsINode* aRootNode) {
+    NodeOffset aBegin, NodeOffset aEnd, const nsINode* aRootNode) {
   MOZ_LOG(sInlineSpellWordUtilLog, LogLevel::Debug, ("%s", __FUNCTION__));
 
   mBegin = std::move(aBegin);
+  mEnd = std::move(aEnd);
 
   
   
