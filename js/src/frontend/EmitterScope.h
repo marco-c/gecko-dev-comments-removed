@@ -160,6 +160,42 @@ class EmitterScope : public Nestable<EmitterScope> {
 
   NameLocation lookup(BytecodeEmitter* bce, TaggedParserAtomIndex name);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  NameLocation lookupPrivate(BytecodeEmitter* bce, TaggedParserAtomIndex name,
+                             mozilla::Maybe<NameLocation>& brandLoc);
+
   mozilla::Maybe<NameLocation> locationBoundInScope(TaggedParserAtomIndex name,
                                                     EmitterScope* target);
 };

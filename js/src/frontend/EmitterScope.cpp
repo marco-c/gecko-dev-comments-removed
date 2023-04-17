@@ -11,6 +11,7 @@
 #include "frontend/ModuleSharedContext.h"
 #include "frontend/TDZCheckCache.h"
 #include "js/friend/ErrorMessages.h"  
+#include "vm/EnvironmentObject.h"     
 #include "vm/GlobalObject.h"
 #include "vm/WellKnownAtom.h"  
 
@@ -987,6 +988,26 @@ NameLocation EmitterScope::lookup(BytecodeEmitter* bce,
     return *loc;
   }
   return searchAndCache(bce, name);
+}
+
+NameLocation EmitterScope::lookupPrivate(
+    BytecodeEmitter* bce, TaggedParserAtomIndex name,
+    mozilla::Maybe<NameLocation>& brandLoc) {
+  NameLocation loc = lookup(bce, name);
+
+  
+  
+  
+  MOZ_RELEASE_ASSERT(loc.kind() == NameLocation::Kind::EnvironmentCoordinate);
+
+  if (loc.bindingKind() == BindingKind::PrivateMethod) {
+    brandLoc = Some(NameLocation::EnvironmentCoordinate(
+        BindingKind::Synthetic, loc.environmentCoordinate().hops(),
+        JSSLOT_FREE(&ClassBodyLexicalEnvironmentObject::class_)));
+  } else {
+    brandLoc = Nothing();
+  }
+  return loc;
 }
 
 Maybe<NameLocation> EmitterScope::locationBoundInScope(
