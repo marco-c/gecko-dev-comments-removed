@@ -108,7 +108,7 @@
 #include "wasm/WasmInstance.h"        
 #include "wasm/WasmJS.h"              
 #include "wasm/WasmRealm.h"           
-#include "wasm/WasmTypes.h"           
+#include "wasm/WasmTypeDecls.h"       
 
 #include "debugger/DebugAPI-inl.h"
 #include "debugger/Environment-inl.h"  

@@ -20,10 +20,13 @@
 #include "wasm/WasmInstance.h"
 #include "jit/MacroAssembler-inl.h"
 
-namespace js {
-namespace wasm {
+using mozilla::DebugOnly;
 
-wasm::StackMap* ConvertStackMapBoolVectorToStackMap(
+using namespace js;
+using namespace js::jit;
+using namespace js::wasm;
+
+wasm::StackMap* wasm::ConvertStackMapBoolVectorToStackMap(
     const StackMapBoolVector& vec, bool hasRefs) {
   wasm::StackMap* stackMap = wasm::StackMap::create(vec.length());
   if (!stackMap) {
@@ -63,12 +66,10 @@ wasm::StackMap* ConvertStackMapBoolVectorToStackMap(
 
 
 
-bool CreateStackMapForFunctionEntryTrap(const wasm::ArgTypeVector& argTypes,
-                                        const MachineState& trapExitLayout,
-                                        size_t trapExitLayoutWords,
-                                        size_t nBytesReservedBeforeTrap,
-                                        size_t nInboundStackArgBytes,
-                                        wasm::StackMap** result) {
+bool wasm::CreateStackMapForFunctionEntryTrap(
+    const wasm::ArgTypeVector& argTypes, const MachineState& trapExitLayout,
+    size_t trapExitLayoutWords, size_t nBytesReservedBeforeTrap,
+    size_t nInboundStackArgBytes, wasm::StackMap** result) {
   
   *result = nullptr;
 
@@ -169,10 +170,9 @@ bool CreateStackMapForFunctionEntryTrap(const wasm::ArgTypeVector& argTypes,
   return true;
 }
 
-bool GenerateStackmapEntriesForTrapExit(const ArgTypeVector& args,
-                                        const MachineState& trapExitLayout,
-                                        const size_t trapExitLayoutNumWords,
-                                        ExitStubMapVector* extras) {
+bool wasm::GenerateStackmapEntriesForTrapExit(
+    const ArgTypeVector& args, const MachineState& trapExitLayout,
+    const size_t trapExitLayoutNumWords, ExitStubMapVector* extras) {
   MOZ_ASSERT(extras->empty());
 
   
@@ -207,9 +207,9 @@ bool GenerateStackmapEntriesForTrapExit(const ArgTypeVector& args,
   return true;
 }
 
-void EmitWasmPreBarrierGuard(MacroAssembler& masm, Register tls,
-                             Register scratch, Register valueAddr,
-                             Label* skipBarrier) {
+void wasm::EmitWasmPreBarrierGuard(MacroAssembler& masm, Register tls,
+                                   Register scratch, Register valueAddr,
+                                   Label* skipBarrier) {
   
   masm.loadPtr(
       Address(tls, offsetof(TlsData, addressOfNeedsIncrementalBarrier)),
@@ -222,8 +222,8 @@ void EmitWasmPreBarrierGuard(MacroAssembler& masm, Register tls,
   masm.branchTestPtr(Assembler::Zero, scratch, scratch, skipBarrier);
 }
 
-void EmitWasmPreBarrierCall(MacroAssembler& masm, Register tls,
-                            Register scratch, Register valueAddr) {
+void wasm::EmitWasmPreBarrierCall(MacroAssembler& masm, Register tls,
+                                  Register scratch, Register valueAddr) {
   MOZ_ASSERT(valueAddr == PreBarrierReg);
 
   masm.loadPtr(Address(tls, offsetof(TlsData, instance)), scratch);
@@ -239,10 +239,10 @@ void EmitWasmPreBarrierCall(MacroAssembler& masm, Register tls,
   masm.call(scratch);
 }
 
-void EmitWasmPostBarrierGuard(MacroAssembler& masm,
-                              const Maybe<Register>& object,
-                              Register otherScratch, Register setValue,
-                              Label* skipBarrier) {
+void wasm::EmitWasmPostBarrierGuard(MacroAssembler& masm,
+                                    const Maybe<Register>& object,
+                                    Register otherScratch, Register setValue,
+                                    Label* skipBarrier) {
   
   masm.branchTestPtr(Assembler::Zero, setValue, setValue, skipBarrier);
 
@@ -258,7 +258,7 @@ void EmitWasmPostBarrierGuard(MacroAssembler& masm,
 }
 
 #ifdef DEBUG
-bool IsValidStackMapKey(bool debugEnabled, const uint8_t* nextPC) {
+bool wasm::IsValidStackMapKey(bool debugEnabled, const uint8_t* nextPC) {
 #  if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86)
   const uint8_t* insn = nextPC;
   return (insn[-2] == 0x0F && insn[-1] == 0x0B) ||           
@@ -294,6 +294,3 @@ bool IsValidStackMapKey(bool debugEnabled, const uint8_t* nextPC) {
 #  endif
 }
 #endif
-
-}  
-}  

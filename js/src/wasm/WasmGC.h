@@ -34,7 +34,9 @@ class MacroAssembler;
 
 namespace wasm {
 
-using namespace js::jit;
+using jit::Label;
+using jit::MIRType;
+using jit::Register;
 
 
 
@@ -265,7 +267,7 @@ class StackMaps {
 
 template <class T>
 static inline size_t StackArgAreaSizeUnaligned(const T& argTypes) {
-  WasmABIArgIter<const T> i(argTypes);
+  jit::WasmABIArgIter<const T> i(argTypes);
   while (!i.done()) {
     i++;
   }
@@ -336,7 +338,7 @@ wasm::StackMap* ConvertStackMapBoolVectorToStackMap(
 
 
 [[nodiscard]] bool CreateStackMapForFunctionEntryTrap(
-    const ArgTypeVector& argTypes, const MachineState& trapExitLayout,
+    const ArgTypeVector& argTypes, const jit::MachineState& trapExitLayout,
     size_t trapExitLayoutWords, size_t nBytesReservedBeforeTrap,
     size_t nInboundStackArgBytes, wasm::StackMap** result);
 
@@ -346,7 +348,7 @@ wasm::StackMap* ConvertStackMapBoolVectorToStackMap(
 
 
 [[nodiscard]] bool GenerateStackmapEntriesForTrapExit(
-    const ArgTypeVector& args, const MachineState& trapExitLayout,
+    const ArgTypeVector& args, const jit::MachineState& trapExitLayout,
     const size_t trapExitLayoutNumWords, ExitStubMapVector* extras);
 
 
@@ -376,7 +378,7 @@ wasm::StackMap* ConvertStackMapBoolVectorToStackMap(
 
 
 
-void EmitWasmPreBarrierGuard(MacroAssembler& masm, Register tls,
+void EmitWasmPreBarrierGuard(jit::MacroAssembler& masm, Register tls,
                              Register scratch, Register valueAddr,
                              Label* skipBarrier);
 
@@ -388,7 +390,7 @@ void EmitWasmPreBarrierGuard(MacroAssembler& masm, Register tls,
 
 
 
-void EmitWasmPreBarrierCall(MacroAssembler& masm, Register tls,
+void EmitWasmPreBarrierCall(jit::MacroAssembler& masm, Register tls,
                             Register scratch, Register valueAddr);
 
 
@@ -399,7 +401,7 @@ void EmitWasmPreBarrierCall(MacroAssembler& masm, Register tls,
 
 
 
-void EmitWasmPostBarrierGuard(MacroAssembler& masm,
+void EmitWasmPostBarrierGuard(jit::MacroAssembler& masm,
                               const Maybe<Register>& object,
                               Register otherScratch, Register setValue,
                               Label* skipBarrier);

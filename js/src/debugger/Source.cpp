@@ -33,7 +33,7 @@
 #include "wasm/WasmDebug.h"       
 #include "wasm/WasmInstance.h"    
 #include "wasm/WasmJS.h"          
-#include "wasm/WasmTypes.h"       
+#include "wasm/WasmTypeDecls.h"   
 
 #include "debugger/Debugger-inl.h"  
 #include "vm/JSObject-inl.h"        

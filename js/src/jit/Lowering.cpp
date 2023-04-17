@@ -21,7 +21,9 @@
 #include "jit/SharedICRegisters.h"
 #include "js/experimental/JitInfo.h"  
 #include "util/Memory.h"
-#include "wasm/WasmTypes.h"
+#include "wasm/WasmCodegenTypes.h"
+#include "wasm/WasmJS.h"  
+#include "wasm/WasmTlsData.h"
 
 #include "jit/shared/Lowering-shared-inl.h"
 #include "vm/BytecodeUtil-inl.h"

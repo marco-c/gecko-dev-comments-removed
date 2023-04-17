@@ -27,8 +27,8 @@
 #include "js/UniquePtr.h"             
 #include "vm/Activation.h"            
 #include "wasm/WasmConstants.h"       
+#include "wasm/WasmFrame.h"           
 #include "wasm/WasmFrameIter.h"  
-#include "wasm/WasmTypes.h"  
 
 struct JS_PUBLIC_API JSContext;
 class JS_PUBLIC_API JSTracer;

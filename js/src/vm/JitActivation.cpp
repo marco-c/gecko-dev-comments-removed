@@ -24,7 +24,7 @@
 #include "wasm/WasmFrameIter.h"  
 #include "wasm/WasmInstance.h"  
 #include "wasm/WasmProcess.h"   
-#include "wasm/WasmTypes.h"     
+#include "wasm/WasmTlsData.h"   
 
 #include "vm/Realm-inl.h"  
 

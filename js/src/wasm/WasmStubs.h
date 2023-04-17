@@ -26,6 +26,10 @@
 namespace js {
 namespace wasm {
 
+using jit::FloatRegister;
+using jit::Register;
+using jit::Register64;
+
 
 
 
@@ -264,7 +268,7 @@ extern bool GenerateEntryStubs(jit::MacroAssembler& masm,
 extern void GenerateTrapExitMachineState(jit::MachineState* machine,
                                          size_t* numWords);
 
-extern bool GenerateProvisionalLazyJitEntryStub(MacroAssembler& masm,
+extern bool GenerateProvisionalLazyJitEntryStub(jit::MacroAssembler& masm,
                                                 Offsets* offsets);
 
 

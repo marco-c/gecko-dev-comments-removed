@@ -26,8 +26,8 @@
 #include "vm/Activation.h"       
 #include "vm/Stack.h"            
 #include "wasm/WasmConstants.h"  
+#include "wasm/WasmFrame.h"      
 #include "wasm/WasmFrameIter.h"  
-#include "wasm/WasmTypes.h"  
 
 struct JSPrincipals;
 
