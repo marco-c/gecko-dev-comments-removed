@@ -5190,7 +5190,7 @@ bool MinidumpMacCrashInfo::ReadCrashInfoRecord(MDLocationDescriptor location,
   
   const char* string_data = (const char*) &(*data)[0];
   size_t offset = 0;
-  for (int i = 1; (i <= 5) && (string_data != nullptr); ++i) {
+  for (int i = 1; i <= 5; ++i) {
     switch (i) {
       case 1:
         record.module_path.append(string_data);
@@ -5210,7 +5210,7 @@ bool MinidumpMacCrashInfo::ReadCrashInfoRecord(MDLocationDescriptor location,
     }
     size_t char_array_size = strlen(string_data) + 1;
     offset += char_array_size;
-    if (offset > string_data_size) {
+    if (offset >= string_data_size) {
       break;
     }
     string_data += char_array_size;
