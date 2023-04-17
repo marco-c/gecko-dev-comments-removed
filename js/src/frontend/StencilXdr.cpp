@@ -318,6 +318,12 @@ XDRResult StencilXDR::codeSharedData(XDRState<mode>* xdr,
   return Ok();
 }
 
+
+template  XDRResult StencilXDR::codeSharedData(
+    XDRState<XDR_ENCODE>* xdr, RefPtr<SharedImmutableScriptData>& sisd);
+template  XDRResult StencilXDR::codeSharedData(
+    XDRState<XDR_DECODE>* xdr, RefPtr<SharedImmutableScriptData>& sisd);
+
 template <XDRMode mode>
  XDRResult StencilXDR::codeSharedDataContainer(
     XDRState<mode>* xdr, SharedDataContainer& sharedData) {
