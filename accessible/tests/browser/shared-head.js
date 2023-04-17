@@ -413,16 +413,23 @@ function snippetToURL(doc, options = {}) {
     doc = wrapWithIFrame(doc, options);
   }
 
-  const encodedDoc = encodeURIComponent(
-    `<html>
-      <head>
-        <meta charset="utf-8"/>
-        <title>Accessibility Test</title>
-      </head>
-      <body ${attrsToString(attrs)}>${doc}</body>
-    </html>`
-  );
+  const fullDoc = `<html>
+    <head>
+      <meta charset="utf-8"/>
+      <title>Accessibility Test</title>
+    </head>
+    <body ${attrsToString(attrs)}>${doc}</body>
+  </html>`;
 
+  if (options.chrome) {
+    
+    
+    const url = new URL(`${CURRENT_DIR}chrome-document-builder.html`);
+    url.searchParams.append("html", fullDoc);
+    return url.href;
+  }
+
+  const encodedDoc = encodeURIComponent(fullDoc);
   return `data:text/html;charset=utf-8,${encodedDoc}`;
 }
 
@@ -435,7 +442,7 @@ function accessibleTask(doc, task, options = {}) {
       
       
       url = `${CURRENT_DIR}${doc}`;
-    } else if (doc.endsWith("html") && !gIsIframe) {
+    } else if (!options.chrome && doc.endsWith("html") && !gIsIframe) {
       url = `${CURRENT_CONTENT_DIR}${doc}`;
     } else {
       url = snippetToURL(doc, options);
@@ -526,6 +533,7 @@ function accessibleTask(doc, task, options = {}) {
     );
   };
 }
+
 
 
 
