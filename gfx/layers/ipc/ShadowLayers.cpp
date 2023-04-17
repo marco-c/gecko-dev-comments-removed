@@ -586,13 +586,6 @@ bool ShadowLayerForwarder::EndTransaction(
     return true;
   }
 
-  if (!mTxn->mPaints.IsEmpty()) {
-    
-    
-    
-    gfxPlatform::GetPlatform()->FlushContentDrawing();
-  }
-
   MOZ_LAYERS_LOG(("[LayersForwarder] destroying buffers..."));
 
   MOZ_LAYERS_LOG(("[LayersForwarder] building transaction..."));

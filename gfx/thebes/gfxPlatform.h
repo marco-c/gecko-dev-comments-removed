@@ -735,8 +735,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   bool SupportsApzAutoscrolling() const;
   bool SupportsApzZooming() const;
 
-  virtual void FlushContentDrawing() {}
-
   
   
   virtual void SchedulePaintIfDeviceReset() {}
