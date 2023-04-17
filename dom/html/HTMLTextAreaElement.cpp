@@ -678,11 +678,6 @@ nsresult HTMLTextAreaElement::Reset() {
 NS_IMETHODIMP
 HTMLTextAreaElement::SubmitNamesValues(FormData* aFormData) {
   
-  if (IsDisabled()) {
-    return NS_OK;
-  }
-
-  
   
   
   nsAutoString name;

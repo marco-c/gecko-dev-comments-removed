@@ -5625,8 +5625,7 @@ HTMLInputElement::SubmitNamesValues(FormData* aFormData) {
   
   
   
-  
-  if (IsDisabled() || mType == FormControlType::InputReset ||
+  if (mType == FormControlType::InputReset ||
       mType == FormControlType::InputButton ||
       ((mType == FormControlType::InputSubmit ||
         mType == FormControlType::InputImage) &&

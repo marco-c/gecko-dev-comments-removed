@@ -299,11 +299,6 @@ HTMLButtonElement::SubmitNamesValues(FormData* aFormData) {
   }
 
   
-  if (IsDisabled()) {
-    return NS_OK;
-  }
-
-  
   
   
   nsAutoString name;

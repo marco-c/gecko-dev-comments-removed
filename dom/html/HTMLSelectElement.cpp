@@ -1386,11 +1386,6 @@ HTMLSelectElement::Reset() {
 NS_IMETHODIMP
 HTMLSelectElement::SubmitNamesValues(FormData* aFormData) {
   
-  if (IsDisabled()) {
-    return NS_OK;
-  }
-
-  
   
   
   nsAutoString name;
