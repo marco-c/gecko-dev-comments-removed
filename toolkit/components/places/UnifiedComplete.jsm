@@ -1697,7 +1697,7 @@ function UnifiedComplete() {
     
     ProfileAgeCreatedPromise;
 
-    fetch("chrome://global/content/unifiedcomplete-top-urls.json")
+    fetch("chrome://browser/content/urlbar/preloaded-top-urls.json")
       .then(response => response.json())
       .then(sites => PreloadedSiteStorage.populate(sites))
       .catch(ex => Cu.reportError(ex));
