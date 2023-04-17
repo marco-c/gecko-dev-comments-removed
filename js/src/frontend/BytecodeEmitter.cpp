@@ -9250,7 +9250,9 @@ mozilla::Maybe<MemberInitializers> BytecodeEmitter::setupMemberInitializers(
   if (numFields + numPrivateMethods > MemberInitializers::MaxInitializers) {
     return Nothing();
   }
-  return Some(MemberInitializers(numFields + numPrivateMethods));
+  bool hasPrivateBrand = numPrivateMethods > 0;
+  return Some(
+      MemberInitializers(hasPrivateBrand, numFields + numPrivateMethods));
 }
 
 
@@ -9638,8 +9640,36 @@ bool BytecodeEmitter::emitInitializeInstanceMembers() {
   const MemberInitializers& memberInitializers =
       findMemberInitializersForCall();
   MOZ_ASSERT(memberInitializers.valid);
-  size_t numInitializers = memberInitializers.numMemberInitializers;
 
+  if (memberInitializers.hasPrivateBrand) {
+    
+    
+    
+
+    
+    if (!emitGetName(TaggedParserAtomIndex::WellKnown::dotThis())) {
+      
+      return false;
+    }
+    if (!emitGetName(TaggedParserAtomIndex::WellKnown::dotPrivateBrand())) {
+      
+      return false;
+    }
+    if (!emitBuiltinObject(BuiltinObjectKind::FunctionPrototype)) {
+      
+      return false;
+    }
+    if (!emit1(JSOp::InitHiddenElemGetter)) {
+      
+      return false;
+    }
+    if (!emit1(JSOp::Pop)) {
+      
+      return false;
+    }
+  }
+
+  size_t numInitializers = memberInitializers.numMemberInitializers;
   if (numInitializers == 0) {
     return true;
   }

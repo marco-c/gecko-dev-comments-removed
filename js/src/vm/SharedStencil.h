@@ -587,22 +587,29 @@ using SharedImmutableScriptDataTable =
                      SharedImmutableScriptData::Hasher, SystemAllocPolicy>;
 
 struct MemberInitializers {
-  static constexpr uint32_t MaxInitializers = INT32_MAX;
+  static constexpr size_t NumBits = 31;
+  static constexpr uint32_t MaxInitializers = BitMask(NumBits);
 
 #ifdef DEBUG
   bool valid = false;
 #endif
 
-  
-  
-  uint32_t numMemberInitializers = 0;
+  bool hasPrivateBrand : 1;
 
-  explicit MemberInitializers(uint32_t numMemberInitializers)
+  
+  
+  uint32_t numMemberInitializers : NumBits;
+
+  MemberInitializers(bool hasPrivateBrand, uint32_t numMemberInitializers)
       :
 #ifdef DEBUG
         valid(true),
 #endif
+        hasPrivateBrand(hasPrivateBrand),
         numMemberInitializers(numMemberInitializers) {
+    MOZ_ASSERT(
+        this->numMemberInitializers == numMemberInitializers,
+        "numMemberInitializers should easily fit in the 31-bit bitfield");
   }
 
   static MemberInitializers Invalid() { return MemberInitializers(); }
@@ -611,14 +618,28 @@ struct MemberInitializers {
   
   
   static const MemberInitializers& Empty() {
-    static const MemberInitializers zeroInitializers(0);
+    static const MemberInitializers zeroInitializers(false, 0);
     return zeroInitializers;
   }
 
-  uint32_t serialize() const { return numMemberInitializers; }
+  uint32_t serialize() const {
+    return (hasPrivateBrand << NumBits) | numMemberInitializers;
+  }
+
+  static MemberInitializers deserialize(uint32_t bits) {
+    return MemberInitializers((bits & Bit(NumBits)) != 0,
+                              bits & BitMask(NumBits));
+  }
 
  private:
-  MemberInitializers() = default;
+  MemberInitializers()
+      :
+#ifdef DEBUG
+        valid(false),
+#endif
+        hasPrivateBrand(false),
+        numMemberInitializers(0) {
+  }
 };
 
 }  

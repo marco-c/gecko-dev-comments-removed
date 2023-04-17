@@ -575,7 +575,8 @@ bool PerHandlerParser<ParseHandler>::noteDestructuredPositionalFormalParameter(
 
 template <class ParseHandler, typename Unit>
 bool GeneralParser<ParseHandler, Unit>::noteDeclaredName(
-    TaggedParserAtomIndex name, DeclarationKind kind, TokenPos pos) {
+    TaggedParserAtomIndex name, DeclarationKind kind, TokenPos pos,
+    ClosedOver isClosedOver) {
   
   
   if (pc_->useAsmOrInsideUseAsm()) {
@@ -609,7 +610,8 @@ bool GeneralParser<ParseHandler, Unit>::noteDeclaredName(
         return false;
       }
 
-      if (!pc_->varScope().addDeclaredName(pc_, p, name, kind, pos.begin)) {
+      if (!pc_->varScope().addDeclaredName(pc_, p, name, kind, pos.begin,
+                                           isClosedOver)) {
         return false;
       }
 
@@ -630,8 +632,8 @@ bool GeneralParser<ParseHandler, Unit>::noteDeclaredName(
         return false;
       }
 
-      if (!pc_->functionScope().addDeclaredName(pc_, p, name, kind,
-                                                pos.begin)) {
+      if (!pc_->functionScope().addDeclaredName(pc_, p, name, kind, pos.begin,
+                                                isClosedOver)) {
         return false;
       }
 
@@ -647,7 +649,8 @@ bool GeneralParser<ParseHandler, Unit>::noteDeclaredName(
         return false;
       }
 
-      if (!scope->addDeclaredName(pc_, p, name, kind, pos.begin)) {
+      if (!scope->addDeclaredName(pc_, p, name, kind, pos.begin,
+                                  isClosedOver)) {
         return false;
       }
 
@@ -672,7 +675,8 @@ bool GeneralParser<ParseHandler, Unit>::noteDeclaredName(
           return false;
         }
       } else {
-        if (!scope->addDeclaredName(pc_, p, name, kind, pos.begin)) {
+        if (!scope->addDeclaredName(pc_, p, name, kind, pos.begin,
+                                    isClosedOver)) {
           return false;
         }
       }
@@ -723,7 +727,8 @@ bool GeneralParser<ParseHandler, Unit>::noteDeclaredName(
         return false;
       }
 
-      if (!scope->addDeclaredName(pc_, p, name, kind, pos.begin)) {
+      if (!scope->addDeclaredName(pc_, p, name, kind, pos.begin,
+                                  isClosedOver)) {
         return false;
       }
 
@@ -7749,9 +7754,10 @@ bool GeneralParser<ParseHandler, Unit>::finishClassConstructor(
 
   size_t numMemberInitializers = classInitializedMembers.privateMethods +
                                  classInitializedMembers.instanceFields;
-  if (numMemberInitializers) {
+  bool hasPrivateBrand = classInitializedMembers.hasPrivateBrand();
+  if (hasPrivateBrand || numMemberInitializers > 0) {
     
-    MemberInitializers initializers(numMemberInitializers);
+    MemberInitializers initializers(hasPrivateBrand, numMemberInitializers);
     ctorbox->setMemberInitializers(initializers);
 
     
@@ -7868,9 +7874,13 @@ GeneralParser<ParseHandler, Unit>::classDefinition(
       }
 
       if (classInitializedMembers.privateMethods > 0) {
+        
+        
+        
+        
         if (!noteDeclaredName(
                 TaggedParserAtomIndex::WellKnown::dotPrivateBrand(),
-                DeclarationKind::Let, namePos)) {
+                DeclarationKind::Let, namePos, ClosedOver::Yes)) {
           return null();
         }
       }
