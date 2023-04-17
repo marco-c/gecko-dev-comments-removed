@@ -41,6 +41,7 @@ add_task(async function contextMenu() {
   
   await promiseOpenPageActionPanel();
   let panelButton = BrowserPageActions.panelButtonNodeForActionID(actionId);
+  let cxmenu = document.getElementById("pageActionContextMenu");
 
   let contextMenuPromise;
   let menuItems;
@@ -61,7 +62,7 @@ add_task(async function contextMenu() {
 
     
     contextMenuPromise = promisePanelHidden("pageActionContextMenu");
-    EventUtils.synthesizeMouseAtCenter(menuItems[0], {});
+    cxmenu.activateItem(menuItems[0]);
     await contextMenuPromise;
 
     
@@ -85,7 +86,7 @@ add_task(async function contextMenu() {
 
     
     contextMenuPromise = promisePanelHidden("pageActionContextMenu");
-    EventUtils.synthesizeMouseAtCenter(menuItems[0], {});
+    cxmenu.activateItem(menuItems[0]);
     await contextMenuPromise;
 
     
@@ -115,7 +116,7 @@ add_task(async function contextMenu() {
     gBrowser,
     "about:addons"
   );
-  EventUtils.synthesizeMouseAtCenter(menuItems[manageItemIndex], {});
+  cxmenu.activateItem(menuItems[manageItemIndex]);
   let values = await Promise.all([aboutAddonsPromise, contextMenuPromise]);
   let aboutAddonsTab = values[0];
   BrowserTestUtils.removeTab(aboutAddonsTab);
@@ -145,7 +146,7 @@ add_task(async function contextMenu() {
 
     
     contextMenuPromise = promisePanelHidden("pageActionContextMenu");
-    EventUtils.synthesizeMouseAtCenter(menuItems[0], {});
+    cxmenu.activateItem(menuItems[0]);
     await contextMenuPromise;
 
     
@@ -169,7 +170,7 @@ add_task(async function contextMenu() {
 
     
     contextMenuPromise = promisePanelHidden("pageActionContextMenu");
-    EventUtils.synthesizeMouseAtCenter(menuItems[0], {});
+    cxmenu.activateItem(menuItems[0]);
     await contextMenuPromise;
 
     
@@ -195,7 +196,7 @@ add_task(async function contextMenu() {
   
   contextMenuPromise = promisePanelHidden("pageActionContextMenu");
   aboutAddonsPromise = BrowserTestUtils.waitForNewTab(gBrowser, "about:addons");
-  EventUtils.synthesizeMouseAtCenter(menuItems[manageItemIndex], {});
+  cxmenu.activateItem(menuItems[manageItemIndex]);
   values = await Promise.all([aboutAddonsPromise, contextMenuPromise]);
   aboutAddonsTab = values[0];
   BrowserTestUtils.removeTab(aboutAddonsTab);
@@ -240,7 +241,7 @@ add_task(async function contextMenu() {
   let removeItemIndex = manageItemIndex + 1;
   contextMenuPromise = promisePanelHidden("pageActionContextMenu");
   let promiseUninstalled = promiseAddonUninstalled(extension.id);
-  EventUtils.synthesizeMouseAtCenter(menuItems[removeItemIndex], {});
+  cxmenu.activateItem(menuItems[removeItemIndex]);
   await contextMenuPromise;
   await promiseUninstalled;
   let addonId = extension.id;
