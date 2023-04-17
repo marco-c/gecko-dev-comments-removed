@@ -1,3 +1,0 @@
-
-def mian(request, response):
-    return "FAIL"
