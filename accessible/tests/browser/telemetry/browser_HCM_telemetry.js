@@ -96,11 +96,11 @@ async function setBackgroundColor(color) {
 add_task(async function testInit() {
   const dialogWin = await openColorsDialog();
   const menulistHCM = dialogWin.document.getElementById("useDocumentColors");
-  if (AppConstants.platform == "win") {
+  if (AppConstants.platform == "win" || AppConstants.platform == "macosx") {
     is(
       menulistHCM.value,
       "0",
-      "HCM menulist should be set to only with HCM theme on startup for windows"
+      "HCM menulist should be set to only with HCM theme on startup for windows and mac"
     );
 
     
@@ -114,7 +114,7 @@ add_task(async function testInit() {
     is(
       menulistHCM.value,
       "1",
-      "HCM menulist should be set to never on startup for non-windows platforms"
+      "HCM menulist should be set to never on startup for other platforms"
     );
 
     
