@@ -6769,9 +6769,6 @@ void HTMLInputElement::SetFilePickerFiltersFromAccept(
   nsTArray<nsFilePickerFilter> filters;
   nsString allExtensionsList;
 
-  bool allMimeTypeFiltersAreValid = true;
-  bool atLeastOneFileExtensionFilter = false;
-
   
   while (tokenizer.hasMoreTokens()) {
     const nsDependentSubstring& token = tokenizer.nextToken();
@@ -6801,7 +6798,6 @@ void HTMLInputElement::SetFilePickerFiltersFromAccept(
       }
       extensionListStr = u"*"_ns + token;
       filterName = extensionListStr;
-      atLeastOneFileExtensionFilter = true;
     } else {
       
       nsCOMPtr<nsIMIMEInfo> mimeInfo;
@@ -6810,7 +6806,6 @@ void HTMLInputElement::SetFilePickerFiltersFromAccept(
                                                    ""_ns,  
                                                    getter_AddRefs(mimeInfo))) ||
           !mimeInfo) {
-        allMimeTypeFiltersAreValid = false;
         continue;
       }
 
@@ -6842,7 +6837,6 @@ void HTMLInputElement::SetFilePickerFiltersFromAccept(
 
     if (!filterMask && (extensionListStr.IsEmpty() || filterName.IsEmpty())) {
       
-      allMimeTypeFiltersAreValid = false;
       continue;
     }
 
@@ -6914,8 +6908,7 @@ void HTMLInputElement::SetFilePickerFiltersFromAccept(
     }
   }
 
-  if (filters.Length() >= 1 &&
-      (allMimeTypeFiltersAreValid || atLeastOneFileExtensionFilter)) {
+  if (filters.Length() >= 1) {
     
     
     filePicker->SetFilterIndex(1);
