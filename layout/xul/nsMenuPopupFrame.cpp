@@ -1394,22 +1394,6 @@ nsRect nsMenuPopupFrame::ComputeAnchorRect(nsPresContext* aRootPresContext,
       PresContext()->AppUnitsPerDevPixel());
 }
 
-static void NotifyPositionUpdatedForRemoteContents(nsIContent* aContent) {
-  for (nsIContent* content = aContent->GetFirstChild(); content;
-       content = content->GetNextSibling()) {
-    if (content->IsXULElement(nsGkAtoms::browser) &&
-        content->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::remote,
-                                          nsGkAtoms::_true, eIgnoreCase)) {
-      if (dom::BrowserParent* browserParent =
-              dom::BrowserParent::GetFrom(content)) {
-        browserParent->NotifyPositionUpdatedForContentsInPopup();
-      }
-    } else {
-      NotifyPositionUpdatedForRemoteContents(content);
-    }
-  }
-}
-
 nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
                                             bool aIsMove, bool aSizedToPopup) {
   if (!mShouldAutoPosition) return NS_OK;
@@ -1756,11 +1740,38 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
   
   
   
-  if (HasRemoteContent()) {
-    NotifyPositionUpdatedForRemoteContents(mContent);
-  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  WidgetPositionOrSizeDidChange();
 
   return NS_OK;
+}
+
+void nsMenuPopupFrame::WidgetPositionOrSizeDidChange() {
+  
+  
+  
+  
+  if (!HasRemoteContent()) {
+    return;
+  }
+  for (nsIContent* content = mContent->GetFirstChild(); content;
+       content = content->GetNextNode(mContent)) {
+    if (content->IsXULElement(nsGkAtoms::browser) &&
+        content->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::remote,
+                                          nsGkAtoms::_true, eIgnoreCase)) {
+      if (auto* browserParent = dom::BrowserParent::GetFrom(content)) {
+        browserParent->NotifyPositionUpdatedForContentsInPopup();
+      }
+    }
+  }
 }
 
 void nsMenuPopupFrame::GenerateFrames() {

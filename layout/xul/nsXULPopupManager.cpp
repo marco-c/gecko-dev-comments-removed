@@ -555,10 +555,16 @@ static nsMenuPopupFrame* GetPopupToMoveOrResize(nsIFrame* aFrame) {
 
 void nsXULPopupManager::PopupMoved(nsIFrame* aFrame, nsIntPoint aPnt) {
   nsMenuPopupFrame* menuPopupFrame = GetPopupToMoveOrResize(aFrame);
-  if (!menuPopupFrame) return;
+  if (!menuPopupFrame) {
+    return;
+  }
 
   nsView* view = menuPopupFrame->GetView();
-  if (!view) return;
+  if (!view) {
+    return;
+  }
+
+  menuPopupFrame->WidgetPositionOrSizeDidChange();
 
   
   
@@ -587,15 +593,22 @@ void nsXULPopupManager::PopupMoved(nsIFrame* aFrame, nsIntPoint aPnt) {
 void nsXULPopupManager::PopupResized(nsIFrame* aFrame,
                                      LayoutDeviceIntSize aSize) {
   nsMenuPopupFrame* menuPopupFrame = GetPopupToMoveOrResize(aFrame);
-  if (!menuPopupFrame) return;
+  if (!menuPopupFrame) {
+    return;
+  }
+
+  menuPopupFrame->WidgetPositionOrSizeDidChange();
 
   nsView* view = menuPopupFrame->GetView();
-  if (!view) return;
+  if (!view) {
+    return;
+  }
 
   LayoutDeviceIntRect curDevSize = view->CalcWidgetBounds(eWindowType_popup);
   
-  if (curDevSize.width == aSize.width && curDevSize.height == aSize.height)
+  if (curDevSize.width == aSize.width && curDevSize.height == aSize.height) {
     return;
+  }
 
   Element* popup = menuPopupFrame->GetContent()->AsElement();
 
