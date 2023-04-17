@@ -396,7 +396,7 @@ nsresult nsMenuFrame::HandleEvent(nsPresContext* aPresContext,
   } else if (
 #ifndef NSCONTEXTMENUISMOUSEUP
       (aEvent->mMessage == eMouseUp &&
-       (aEvent->AsMouseEvent()->mButton != MouseButton::ePrimary
+       (aEvent->AsMouseEvent()->mButton == MouseButton::eSecondary
 #  ifdef XP_MACOSX
         
         
@@ -895,21 +895,14 @@ void nsMenuFrame::Execute(WidgetGUIEvent* aEvent) {
     modifiers = inputEvent->mModifiers;
   }
 
-  int16_t button = 0;
-  WidgetMouseEventBase* mouseEvent =
-      aEvent ? aEvent->AsMouseEventBase() : nullptr;
-  if (mouseEvent) {
-    button = mouseEvent->mButton;
-  }
-
   StopBlinking();
-  CreateMenuCommandEvent(isTrusted, modifiers, button);
+  CreateMenuCommandEvent(isTrusted, modifiers);
   StartBlinking();
 }
 
-void nsMenuFrame::ActivateItem(Modifiers aModifiers, int16_t aButton) {
+void nsMenuFrame::ActivateItem(Modifiers aModifiers) {
   StopBlinking();
-  CreateMenuCommandEvent(nsContentUtils::IsCallerChrome(), aModifiers, aButton);
+  CreateMenuCommandEvent(nsContentUtils::IsCallerChrome(), aModifiers);
   StartBlinking();
 }
 
@@ -957,8 +950,7 @@ void nsMenuFrame::StopBlinking() {
 }
 
 void nsMenuFrame::CreateMenuCommandEvent(bool aIsTrusted,
-                                         mozilla::Modifiers aModifiers,
-                                         int16_t aButton) {
+                                         mozilla::Modifiers aModifiers) {
   
   
   
@@ -974,7 +966,7 @@ void nsMenuFrame::CreateMenuCommandEvent(bool aIsTrusted,
 
   mDelayedMenuCommandEvent =
       new nsXULMenuCommandEvent(mContent->AsElement(), aIsTrusted, aModifiers,
-                                userinput, needToFlipChecked, aButton);
+                                userinput, needToFlipChecked);
 }
 
 void nsMenuFrame::PassMenuCommandEventToPopupManager() {

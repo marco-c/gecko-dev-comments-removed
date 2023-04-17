@@ -509,7 +509,12 @@ async function closeExtensionContextMenu(itemToSelect, modifiers = {}) {
     "popuphidden"
   );
   if (itemToSelect) {
-    itemToSelect.closest("menupopup").activateItem(itemToSelect, modifiers);
+    if ("button" in modifiers) {
+      
+      EventUtils.synthesizeMouseAtCenter(itemToSelect, modifiers);
+    } else {
+      itemToSelect.closest("menupopup").activateItem(itemToSelect, modifiers);
+    }
   } else {
     contentAreaContextMenu.hidePopup();
   }
