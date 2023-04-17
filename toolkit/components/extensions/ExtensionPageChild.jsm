@@ -7,7 +7,7 @@
 
 
 
-var EXPORTED_SYMBOLS = ["ExtensionPageChild"];
+var EXPORTED_SYMBOLS = ["ExtensionPageChild", "getContextChildManagerGetter"];
 
 
 
@@ -40,7 +40,7 @@ const { ExtensionUtils } = ChromeUtils.import(
   "resource://gre/modules/ExtensionUtils.jsm"
 );
 
-const { getInnerWindowID, getUniqueId, promiseEvent } = ExtensionUtils;
+const { getInnerWindowID, promiseEvent } = ExtensionUtils;
 
 const {
   BaseContext,
@@ -49,12 +49,7 @@ const {
   defineLazyGetter,
 } = ExtensionCommon;
 
-const {
-  ChildAPIManager,
-  Messenger,
-  WebIDLChildAPIManager,
-  WorkerMessenger,
-} = ExtensionChild;
+const { ChildAPIManager, Messenger } = ExtensionChild;
 
 var ExtensionPageChild;
 
@@ -147,7 +142,10 @@ var devtoolsAPIManager = new (class extends SchemaAPIManager {
   }
 })();
 
-function getContextChildManagerGetter({ envType }) {
+function getContextChildManagerGetter(
+  { envType },
+  ChildAPIManagerClass = ChildAPIManager
+) {
   return function() {
     let apiManager =
       envType === "devtools_parent"
@@ -158,10 +156,6 @@ function getContextChildManagerGetter({ envType }) {
 
     let localApis = {};
     let can = new CanOfAPIs(this, apiManager, localApis);
-
-    const ChildAPIManagerClass = this.useWebIDLBindings
-      ? WebIDLChildAPIManager
-      : ChildAPIManager;
 
     let childManager = new ChildAPIManagerClass(
       this,
@@ -180,134 +174,6 @@ function getContextChildManagerGetter({ envType }) {
     return childManager;
   };
 }
-
-class WorkerContextChild extends BaseContext {
-  
-
-
-
-
-
-
-
-  constructor(extension, { serviceWorkerInfo }) {
-    if (
-      !serviceWorkerInfo?.scriptURL ||
-      !serviceWorkerInfo?.clientInfoId ||
-      !serviceWorkerInfo?.principal
-    ) {
-      throw new Error("Missing or invalid serviceWorkerInfo");
-    }
-
-    super("addon_child", extension);
-    this.viewType = "background_worker";
-    this.uri = Services.io.newURI(serviceWorkerInfo.scriptURL);
-    this.workerClientInfoId = serviceWorkerInfo.clientInfoId;
-    this.workerPrincipal = serviceWorkerInfo.principal;
-    this.incognito = serviceWorkerInfo.principal.privateBrowsingId > 0;
-
-    
-    
-    
-    
-    
-    this.webidlAPIRequest = null;
-
-    
-    
-    
-    
-    this.workerCloneScope = {
-      Promise,
-      
-      
-      
-      
-      Error: ExtensionUtils.WorkerExtensionError,
-    };
-  }
-
-  openConduit(subject, address) {
-    let proc = ChromeUtils.domProcessChild;
-    let conduit = proc.getActor("ProcessConduits").openConduit(subject, {
-      id: subject.id || getUniqueId(),
-      extensionId: this.extension.id,
-      envType: this.envType,
-      workerScriptURL: this.uri.spec,
-      ...address,
-    });
-    this.callOnClose(conduit);
-    conduit.setCloseCallback(() => {
-      this.forgetOnClose(conduit);
-    });
-    return conduit;
-  }
-
-  withAPIRequest(request, callable) {
-    this.webidlAPIRequest = request;
-    try {
-      return callable();
-    } finally {
-      this.webidlAPIRequest = null;
-    }
-  }
-
-  getAPIRequest() {
-    return this.webidlAPIRequest;
-  }
-
-  
-
-
-
-
-
-  getCaller() {
-    return this.webidlAPIRequest?.callerSavedFrame;
-  }
-
-  logActivity(type, name, data) {
-    ExtensionActivityLogChild.log(this, type, name, data);
-  }
-
-  get cloneScope() {
-    return this.workerCloneScope;
-  }
-
-  get principal() {
-    return this.workerPrincipal;
-  }
-
-  get tabId() {
-    return -1;
-  }
-
-  get useWebIDLBindings() {
-    return true;
-  }
-
-  shutdown() {
-    this.unload();
-  }
-
-  unload() {
-    if (this.unloaded) {
-      return;
-    }
-
-    super.unload();
-  }
-}
-
-defineLazyGetter(WorkerContextChild.prototype, "messenger", function() {
-  return new WorkerMessenger(this);
-});
-
-defineLazyGetter(
-  WorkerContextChild.prototype,
-  "childManager",
-  getContextChildManagerGetter({ envType: "addon_parent" })
-);
 
 class ExtensionBaseContextChild extends BaseContext {
   
@@ -528,30 +394,6 @@ ExtensionPageChild = {
     });
   },
 
-  getContextForWorker(extension, serviceWorkerInfo) {
-    this._init();
-
-    if (!serviceWorkerInfo) {
-      return null;
-    }
-
-    let context = this.extensionWorkerContexts.get(
-      serviceWorkerInfo.clientInfoId
-    );
-    if (context && context.extension === extension) {
-      return context;
-    }
-
-    
-    if (!context) {
-      context = new WorkerContextChild(extension, { serviceWorkerInfo });
-
-      this.extensionWorkerContexts.set(serviceWorkerInfo.clientInfoId, context);
-    }
-
-    return context;
-  },
-
   
 
 
@@ -629,13 +471,6 @@ ExtensionPageChild = {
       if (context.extension.id == extensionId) {
         context.shutdown();
         this.extensionContexts.delete(windowId);
-      }
-    }
-
-    for (let [workerClientInfoId, context] of this.extensionWorkerContexts) {
-      if (context.extension.id == extensionId) {
-        context.shutdown();
-        this.extensionWorkerContexts.delete(workerClientInfoId);
       }
     }
   },
