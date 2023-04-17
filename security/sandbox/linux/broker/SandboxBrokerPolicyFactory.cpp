@@ -276,6 +276,13 @@ static void AddSharedMemoryPaths(SandboxBroker::Policy* aPolicy, pid_t aPid) {
   }
 }
 
+static void AddMemoryReporting(SandboxBroker::Policy* aPolicy, pid_t aPid) {
+  
+  
+  aPolicy->AddPath(rdonly, nsPrintfCString("/proc/%d/statm", aPid).get());
+  aPolicy->AddPath(rdonly, nsPrintfCString("/proc/%d/smaps", aPid).get());
+}
+
 static void AddDynamicPathList(SandboxBroker::Policy* policy,
                                const char* aPathListPref, int perms) {
   nsAutoCString pathList;
@@ -667,8 +674,7 @@ UniquePtr<SandboxBroker::Policy> SandboxBrokerPolicyFactory::GetContentPolicy(
   policy->AddPath(rdonly, nsPrintfCString("/proc/%d/maps", aPid).get());
 
   
-  policy->AddPath(rdonly, nsPrintfCString("/proc/%d/statm", aPid).get());
-  policy->AddPath(rdonly, nsPrintfCString("/proc/%d/smaps", aPid).get());
+  AddMemoryReporting(policy.get(), aPid);
 
   
   
@@ -702,6 +708,9 @@ SandboxBrokerPolicyFactory::GetRDDPolicy(int aPid) {
   policy->AddDir(rdonly, "/usr/lib");
   policy->AddDir(rdonly, "/usr/lib32");
   policy->AddDir(rdonly, "/usr/lib64");
+
+  
+  AddMemoryReporting(policy.get(), aPid);
 
   
   
@@ -762,6 +771,9 @@ SandboxBrokerPolicyFactory::GetSocketProcessPolicy(int aPid) {
   
   
   AddSharedMemoryPaths(policy.get(), aPid);
+
+  
+  AddMemoryReporting(policy.get(), aPid);
 
   
   
