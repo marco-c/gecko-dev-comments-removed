@@ -40,10 +40,43 @@ preflightTest(true, false, "*", "x-test", "SUPER", ["X-Test", "1"])
 preflightTest(true, false, "*", "*", "OK", ["X-Test", "1"])
 preflightTest(false, true, "*", "*", "OK", ["X-Test", "1"])
 preflightTest(false, true, "*", "", "PUT", [])
-preflightTest(true, true, "PUT", "*", "PUT", [])
 preflightTest(false, true, "get", "*", "GET", ["X-Test", "1"])
 preflightTest(false, true, "*", "*", "GET", ["X-Test", "1"])
 
 preflightTest(true, true, "*", "*", "*", ["*", "1"])
 
-preflightTest(false, true, "put", "*", "PUT", [])
+
+
+
+
+
+for (const METHOD of ['GET', 'HEAD', 'POST']) {
+  const method = METHOD.toLowerCase();
+  preflightTest(true, true, METHOD, "*", METHOD, [])
+  preflightTest(true, true, METHOD, "*", method, [])
+  preflightTest(true, true, method, "*", METHOD, [])
+  preflightTest(true, true, method, "*", method, [])
+}
+
+
+
+
+
+
+
+for (const METHOD of ['DELETE', 'PUT']) {
+  const method = METHOD.toLowerCase();
+  preflightTest(true, true, METHOD, "*", METHOD, [])
+  preflightTest(true, true, METHOD, "*", method, [])
+  preflightTest(false, true, method, "*", METHOD, [])
+  preflightTest(false, true, method, "*", method, [])
+}
+
+
+
+
+
+preflightTest(true, true, "PATCH", "*", "PATCH", [])
+preflightTest(false, true, "PATCH", "*", "patch", [])
+preflightTest(false, true, "patch", "*", "PATCH", [])
+preflightTest(true, true, "patch", "*", "patch", [])
