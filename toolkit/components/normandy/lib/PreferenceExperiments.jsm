@@ -504,16 +504,12 @@ var PreferenceExperiments = {
       const { preferenceValue, preferenceBranchType } = preferenceInfo;
 
       if (preferenceBranchType === "default") {
+        
+        
+        
         if (Services.prefs.prefHasUserValue(preferenceName)) {
           alreadyOverriddenPrefs.add(preferenceName);
-        }
-        if (
-          PrefUtils.getPref(preferenceName, { branch: "user" }) !==
-          preferenceValue
-        ) {
-          
-          
-          
+        } else {
           PrefUtils.setPref(preferenceName, preferenceValue, {
             branch: preferenceBranchType,
           });
