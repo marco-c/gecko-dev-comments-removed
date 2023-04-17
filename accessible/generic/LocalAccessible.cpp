@@ -1023,13 +1023,13 @@ already_AddRefed<AccAttributes> LocalAccessible::NativeAttributes() {
 
   
   if (State() & states::CHECKABLE) {
-    attributes->SetAttribute(nsGkAtoms::checkable, u"true"_ns);
+    attributes->SetAttribute(nsGkAtoms::checkable, true);
   }
 
   
   nsAutoString name;
   if (Name(name) != eNameFromSubtree && !name.IsVoid()) {
-    attributes->SetAttribute(u"explicit-name"_ns, u"true"_ns);
+    attributes->SetAttribute(u"explicit-name"_ns, true);
   }
 
   
@@ -1040,13 +1040,12 @@ already_AddRefed<AccAttributes> LocalAccessible::NativeAttributes() {
   bool hierarchical = false;
   uint32_t itemCount = AccGroupInfo::TotalItemCount(this, &hierarchical);
   if (itemCount) {
-    nsAutoString itemCountStr;
-    itemCountStr.AppendInt(itemCount);
-    attributes->SetAttribute(u"child-item-count"_ns, itemCountStr);
+    attributes->SetAttribute(u"child-item-count"_ns,
+                             static_cast<int32_t>(itemCount));
   }
 
   if (hierarchical) {
-    attributes->SetAttribute(u"hierarchical"_ns, u"true"_ns);
+    attributes->SetAttribute(u"hierarchical"_ns, true);
   }
 
   
@@ -1076,14 +1075,12 @@ already_AddRefed<AccAttributes> LocalAccessible::NativeAttributes() {
   }
 
   
-  nsAutoString tagName;
-  mContent->NodeInfo()->GetName(tagName);
-  attributes->SetAttribute(nsGkAtoms::tag, tagName);
+  attributes->SetAttribute(nsGkAtoms::tag, mContent->NodeInfo()->NameAtom());
 
   
   if (auto htmlElement = nsGenericHTMLElement::FromNode(mContent)) {
     if (htmlElement->Draggable()) {
-      attributes->SetAttribute(nsGkAtoms::draggable, u"true"_ns);
+      attributes->SetAttribute(nsGkAtoms::draggable, true);
     }
   }
 
@@ -1096,32 +1093,33 @@ already_AddRefed<AccAttributes> LocalAccessible::NativeAttributes() {
   StyleInfo styleInfo(mContent->AsElement());
 
   
-  styleInfo.Display(value);
-  attributes->SetAttribute(nsGkAtoms::display, value);
+  RefPtr<nsAtom> displayValue = styleInfo.Display();
+  attributes->SetAttribute(nsGkAtoms::display, displayValue);
 
   
-  styleInfo.TextAlign(value);
-  attributes->SetAttribute(nsGkAtoms::textAlign, value);
+  RefPtr<nsAtom> textAlignValue = styleInfo.TextAlign();
+  attributes->SetAttribute(nsGkAtoms::textAlign, textAlignValue);
 
   
-  styleInfo.TextIndent(value);
-  attributes->SetAttribute(nsGkAtoms::textIndent, value);
+  mozilla::LengthPercentage textIndent = styleInfo.TextIndent();
+  if (textIndent.ConvertsToLength()) {
+    attributes->SetAttribute(nsGkAtoms::textIndent,
+                             textIndent.ToLengthInCSSPixels());
+  } else if (textIndent.ConvertsToPercentage()) {
+    attributes->SetAttribute(nsGkAtoms::textIndent, textIndent.ToPercentage());
+  }
 
   
-  styleInfo.MarginLeft(value);
-  attributes->SetAttribute(nsGkAtoms::marginLeft, value);
+  attributes->SetAttribute(nsGkAtoms::marginLeft, styleInfo.MarginLeft());
 
   
-  styleInfo.MarginRight(value);
-  attributes->SetAttribute(nsGkAtoms::marginRight, value);
+  attributes->SetAttribute(nsGkAtoms::marginRight, styleInfo.MarginRight());
 
   
-  styleInfo.MarginTop(value);
-  attributes->SetAttribute(nsGkAtoms::marginTop, value);
+  attributes->SetAttribute(nsGkAtoms::marginTop, styleInfo.MarginTop());
 
   
-  styleInfo.MarginBottom(value);
-  attributes->SetAttribute(nsGkAtoms::marginBottom, value);
+  attributes->SetAttribute(nsGkAtoms::marginBottom, styleInfo.MarginBottom());
 
   
   
