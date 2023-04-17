@@ -3,7 +3,7 @@
 
 
 const { error } = ChromeUtils.import(
-  "chrome://remote/content/marionette/error.js"
+  "chrome://remote/content/shared/webdriver/Errors.jsm"
 );
 const { Command, Message, Response } = ChromeUtils.import(
   "chrome://remote/content/marionette/message.js"
