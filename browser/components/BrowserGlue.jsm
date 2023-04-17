@@ -2862,57 +2862,36 @@ BrowserGlue.prototype = {
     
     win.gDialogBox.replaceDialogIfOpen();
 
-    let warningMessage;
+    let title;
     
     if (windowcount > 1) {
-      let tabSubstring = gTabbrowserBundle.GetStringFromName(
-        "tabs.closeWarningMultipleWindowsTabSnippet"
-      );
-      tabSubstring = PluralForm.get(pagecount, tabSubstring).replace(
-        /#1/,
-        pagecount
-      );
-
-      let stringID = sessionWillBeRestored
-        ? "tabs.closeWarningMultipleWindowsSessionRestore3"
-        : "tabs.closeWarningMultipleWindows2";
-      let windowString = gTabbrowserBundle.GetStringFromName(stringID);
-      windowString = PluralForm.get(windowcount, windowString).replace(
-        /#1/,
-        windowcount
-      );
-      warningMessage = windowString.replace(/%(?:1\$)?S/i, tabSubstring);
+      title = gTabbrowserBundle.GetStringFromName("tabs.closeWindowsTitle");
+      title = PluralForm.get(windowcount, title).replace(/#1/, windowcount);
     } else {
-      let stringID = sessionWillBeRestored
-        ? "tabs.closeWarningMultipleTabsSessionRestore"
-        : "tabs.closeWarningMultipleTabs";
-      warningMessage = gTabbrowserBundle.GetStringFromName(stringID);
-      warningMessage = PluralForm.get(pagecount, warningMessage).replace(
-        "#1",
-        pagecount
-      );
+      title = gTabbrowserBundle.GetStringFromName("tabs.closeTabsTitle");
+      title = PluralForm.get(pagecount, title).replace("#1", pagecount);
     }
 
     let warnOnClose = { value: true };
-    let titleId =
+    let buttonLabel =
       AppConstants.platform == "win"
-        ? "tabs.closeTabsAndQuitTitleWin"
-        : "tabs.closeTabsAndQuitTitle";
+        ? "tabs.closeWindowsButtonWin"
+        : "tabs.closeWindowsButton";
     let flags =
       Services.prompt.BUTTON_TITLE_IS_STRING * Services.prompt.BUTTON_POS_0 +
       Services.prompt.BUTTON_TITLE_CANCEL * Services.prompt.BUTTON_POS_1;
     
     let checkboxLabel = !sessionWillBeRestored
-      ? gTabbrowserBundle.GetStringFromName("tabs.closeWarningPrompt")
+      ? gTabbrowserBundle.GetStringFromName("tabs.closeTabsConfirmCheckbox")
       : null;
 
     
     let buttonPressed = Services.prompt.confirmEx(
       win,
-      gTabbrowserBundle.GetStringFromName(titleId),
-      warningMessage,
+      title,
+      null,
       flags,
-      gTabbrowserBundle.GetStringFromName("tabs.closeButtonMultiple"),
+      gTabbrowserBundle.GetStringFromName(buttonLabel),
       null,
       null,
       checkboxLabel,
