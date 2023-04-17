@@ -121,6 +121,10 @@ struct cubeb_stream {
   CRITICAL_SECTION lock;
   uint64_t written;
   float soft_volume;
+  
+  size_t frame_size;
+  DWORD prev_pos_lo_dword;
+  DWORD pos_hi_dword;
 };
 
 static size_t
@@ -557,6 +561,10 @@ winmm_stream_init(cubeb * context, cubeb_stream ** stream,
     winmm_refill_stream(stm);
   }
 
+  stm->frame_size = bytes_per_frame(stm->params);
+  stm->prev_pos_lo_dword = 0;
+  stm->pos_hi_dword = 0;
+
   *stream = stm;
 
   return CUBEB_OK;
@@ -709,6 +717,58 @@ winmm_stream_stop(cubeb_stream * stm)
   return CUBEB_OK;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static uint64_t
+update_64bit_position(cubeb_stream * stm, DWORD pos_lo_dword)
+{
+  
+  if (pos_lo_dword < stm->prev_pos_lo_dword) {
+    stm->pos_hi_dword++;
+    LOG("waveOutGetPosition() has wrapped around: %#lx -> %#lx",
+        stm->prev_pos_lo_dword, pos_lo_dword);
+    LOG("Wrap-around count = %#lx", stm->pos_hi_dword);
+    LOG("Current 64-bit position = %#llx",
+        (((uint64_t)stm->pos_hi_dword) << 32) | ((uint64_t)pos_lo_dword));
+  }
+  stm->prev_pos_lo_dword = pos_lo_dword;
+
+  return (((uint64_t)stm->pos_hi_dword) << 32) | ((uint64_t)pos_lo_dword);
+}
+
 static int
 winmm_stream_get_position(cubeb_stream * stm, uint64_t * position)
 {
@@ -716,15 +776,17 @@ winmm_stream_get_position(cubeb_stream * stm, uint64_t * position)
   MMTIME time;
 
   EnterCriticalSection(&stm->lock);
-  time.wType = TIME_SAMPLES;
+  
+  time.wType = TIME_BYTES;
   r = waveOutGetPosition(stm->waveout, &time, sizeof(time));
-  LeaveCriticalSection(&stm->lock);
 
-  if (r != MMSYSERR_NOERROR || time.wType != TIME_SAMPLES) {
+  if (r != MMSYSERR_NOERROR || time.wType != TIME_BYTES) {
+    LeaveCriticalSection(&stm->lock);
     return CUBEB_ERROR;
   }
 
-  *position = time.u.sample;
+  *position = update_64bit_position(stm, time.u.cb) / stm->frame_size;
+  LeaveCriticalSection(&stm->lock);
 
   return CUBEB_OK;
 }
@@ -734,20 +796,24 @@ winmm_stream_get_latency(cubeb_stream * stm, uint32_t * latency)
 {
   MMRESULT r;
   MMTIME time;
-  uint64_t written;
+  uint64_t written, position;
 
   EnterCriticalSection(&stm->lock);
-  time.wType = TIME_SAMPLES;
+  
+  time.wType = TIME_BYTES;
   r = waveOutGetPosition(stm->waveout, &time, sizeof(time));
-  written = stm->written;
-  LeaveCriticalSection(&stm->lock);
 
-  if (r != MMSYSERR_NOERROR || time.wType != TIME_SAMPLES) {
+  if (r != MMSYSERR_NOERROR || time.wType != TIME_BYTES) {
+    LeaveCriticalSection(&stm->lock);
     return CUBEB_ERROR;
   }
 
-  XASSERT(written - time.u.sample <= UINT32_MAX);
-  *latency = (uint32_t)(written - time.u.sample);
+  position = update_64bit_position(stm, time.u.cb);
+  written = stm->written;
+  LeaveCriticalSection(&stm->lock);
+
+  XASSERT((written - (position / stm->frame_size)) <= UINT32_MAX);
+  *latency = (uint32_t)(written - (position / stm->frame_size));
 
   return CUBEB_OK;
 }
