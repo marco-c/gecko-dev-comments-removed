@@ -4,14 +4,16 @@
 
 
 
-#include "ProfileBuffer.h"
-#include "ThreadInfo.h"
+#ifdef MOZ_GECKO_PROFILER
 
-#include "mozilla/PowerOfTwo.h"
-#include "mozilla/ProfileBufferChunkManagerWithLocalLimit.h"
-#include "mozilla/ProfileChunkedBuffer.h"
+#  include "ProfileBuffer.h"
+#  include "ThreadInfo.h"
 
-#include "gtest/gtest.h"
+#  include "mozilla/PowerOfTwo.h"
+#  include "mozilla/ProfileBufferChunkManagerWithLocalLimit.h"
+#  include "mozilla/ProfileChunkedBuffer.h"
+
+#  include "gtest/gtest.h"
 
 
 TEST(ThreadProfile, InsertOneEntry)
@@ -55,3 +57,5 @@ TEST(ThreadProfile, InsertEntriesNoWrap)
   }
   ASSERT_EQ(test_size, times);
 }
+
+#endif  
