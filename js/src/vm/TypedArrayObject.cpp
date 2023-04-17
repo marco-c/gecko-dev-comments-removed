@@ -1694,7 +1694,7 @@ bool TypedArrayObject::set_impl(JSContext* cx, const CallArgs& args) {
     size_t targetLength = target->length().get();
 
     
-    uint32_t srcLength;
+    uint64_t srcLength;
     if (!GetLengthProperty(cx, src, &srcLength)) {
       return false;
     }
@@ -1712,6 +1712,8 @@ bool TypedArrayObject::set_impl(JSContext* cx, const CallArgs& args) {
                                 JSMSG_SOURCE_ARRAY_TOO_LONG);
       return false;
     }
+
+    MOZ_ASSERT(srcLength <= targetLength);
 
     
     if (srcLength > 0) {
