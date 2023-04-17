@@ -36,3 +36,10 @@ user_pref('javascript.options.asyncstack', false);
 
 
 user_pref('datareporting.healthreport.uploadEnabled', false);
+
+
+
+
+
+
+user_pref('toolkit.telemetry.initDelay', 99999999);
