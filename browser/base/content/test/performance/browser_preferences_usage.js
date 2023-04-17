@@ -183,6 +183,18 @@ add_task(async function open_10_tabs() {
 
 
 add_task(async function navigate_around() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      
+      
+      
+      
+      
+      
+      ["browser.sessionhistory.max_total_viewers", 0],
+    ],
+  });
+
   let max = 40;
 
   let knownProblematicPrefs = {
