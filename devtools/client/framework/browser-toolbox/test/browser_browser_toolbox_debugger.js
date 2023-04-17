@@ -129,15 +129,15 @@ add_task(async function runTest() {
 
     await onPaused;
 
-    assertPausedLocation(dbg, fileName, 2);
+    const source = findSource(dbg, fileName);
+    assertPausedAtSourceAndLine(dbg, source.id, 2);
 
     await stepIn(dbg);
 
-    assertPausedLocation(dbg, fileName, 3);
+    assertPausedAtSourceAndLine(dbg, source.id, 3);
 
     
     
-    const source = findSource(dbg, fileName);
     await removeBreakpoint(dbg, source.id, 2);
 
     await resume(dbg);

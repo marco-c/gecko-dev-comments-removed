@@ -278,8 +278,6 @@ function waitForPausedLine(dbg, line) {
 
 
 
-
-
 function assertPausedLocation(dbg) {
   ok(isSelectedFrameSelected(dbg), "top frame's source is selected");
 
@@ -394,7 +392,11 @@ function isPaused(dbg) {
 
 
 function assertPausedAtSourceAndLine(dbg, expectedSourceId, expectedLine) {
+  
   assertPaused(dbg);
+
+  
+  assertPausedLocation(dbg);
 
   const frames = dbg.selectors.getCurrentThreadFrames();
   ok(frames.length >= 1, "Got at least one frame");
