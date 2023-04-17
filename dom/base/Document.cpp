@@ -10881,7 +10881,8 @@ void Document::CollectDescendantDocuments(
 
 bool Document::CanSavePresentation(nsIRequest* aNewRequest,
                                    uint16_t& aBFCacheCombo,
-                                   bool aIncludeSubdocuments) {
+                                   bool aIncludeSubdocuments,
+                                   bool aAllowUnloadListeners) {
   bool ret = true;
 
   if (!IsBFCachingAllowed()) {
@@ -10916,10 +10917,21 @@ bool Document::CanSavePresentation(nsIRequest* aNewRequest,
     ret = false;
   }
 
+  nsCOMPtr<nsIChannel> channel = do_QueryInterface(aNewRequest);
+  bool thirdParty = false;
+  
+  
+  
+  bool allowUnloadListeners =
+      aAllowUnloadListeners &&
+      StaticPrefs::docshell_shistory_bfcache_allow_unload_listeners() &&
+      (!channel || (NS_SUCCEEDED(NodePrincipal()->IsThirdPartyChannel(
+                        channel, &thirdParty)) &&
+                    thirdParty));
+
   
   nsCOMPtr<EventTarget> piTarget = do_QueryInterface(mScriptGlobalObject);
-  if (!StaticPrefs::docshell_shistory_bfcache_allow_unload_listeners() &&
-      piTarget) {
+  if (!allowUnloadListeners && piTarget) {
     EventListenerManager* manager = piTarget->GetExistingListenerManager();
     if (manager && manager->HasUnloadListeners()) {
       MOZ_LOG(gPageCacheLog, mozilla::LogLevel::Verbose,
@@ -11017,9 +11029,10 @@ bool Document::CanSavePresentation(nsIRequest* aNewRequest,
 
       uint16_t subDocBFCacheCombo = 0;
       
-      bool canCache = subdoc ? subdoc->CanSavePresentation(
-                                   nullptr, subDocBFCacheCombo, true)
-                             : false;
+      bool canCache =
+          subdoc ? subdoc->CanSavePresentation(nullptr, subDocBFCacheCombo,
+                                               true, allowUnloadListeners)
+                 : false;
       if (!canCache) {
         MOZ_LOG(gPageCacheLog, mozilla::LogLevel::Verbose,
                 ("Save of %s blocked due to subdocument blocked", uri.get()));
