@@ -2,33 +2,77 @@
 
 "use strict";
 
+async function createAndShowDropdown(browser) {
+  
+  await SpecialPowers.spawn(browser, [], async function() {
+    content.document.body.innerHTML += `
+      <select id="testSelect">
+        <option>A</option>
+        <option>B</option>
+      </select>`;
+  });
+
+  
+  await BrowserTestUtils.synthesizeMouseAtCenter("#testSelect", {}, browser);
+}
+
 declTest("test event triggering actor creation", {
+  events: { mozshowdropdown: {} },
+
   async test(browser) {
     
-    await SpecialPowers.spawn(browser, [], async function() {
-      content.document.body.innerHTML += `
-        <select id="testSelect">
-          <option>A</option>
-          <option>B</option>
-        </select>`;
+    let observePromise = TestUtils.topicObserved(
+      "test-js-window-actor-parent-event"
+    );
+
+    await createAndShowDropdown(browser);
+
+    
+    let [subject, data] = await observePromise;
+    is(data, "mozshowdropdown");
+
+    let parent = browser.browsingContext.currentWindowGlobal;
+    let actorParent = parent.getActor("TestWindow");
+    ok(actorParent, "JSWindowActorParent should have value.");
+    is(
+      subject.wrappedJSObject,
+      actorParent,
+      "Should have been recieved on the right actor"
+    );
+  },
+});
+
+declTest("test createActor:false not triggering actor creation", {
+  events: { mozshowdropdown: { createActor: false } },
+
+  async test(browser) {
+    info("before actor has been created");
+    const TOPIC = "test-js-window-actor-parent-event";
+    function obs() {
+      ok(false, "actor should not be created");
+    }
+    Services.obs.addObserver(obs, TOPIC);
+
+    await createAndShowDropdown(browser);
+
+    
+    
+    
+    await SpecialPowers.spawn(browser, [], async () => {
+      content.windowGlobalChild.getActor("TestWindow");
     });
+    ok(true, "observer notification should not have fired");
+    Services.obs.removeObserver(obs, TOPIC);
 
     
-    let observePromise = new Promise(resolve => {
-      const TOPIC = "test-js-window-actor-parent-event";
-      Services.obs.addObserver(function obs(subject, topic, data) {
-        is(topic, TOPIC, "topic matches");
-
-        Services.obs.removeObserver(obs, TOPIC);
-        resolve({ subject, data });
-      }, TOPIC);
-    });
+    info("after actor has been created");
+    let observePromise = TestUtils.topicObserved(
+      "test-js-window-actor-parent-event"
+    );
+    await createAndShowDropdown(browser);
 
     
-    await BrowserTestUtils.synthesizeMouseAtCenter("#testSelect", {}, browser);
-
-    
-    let { subject, data } = await observePromise;
+    let [subject, data] = await observePromise;
     is(data, "mozshowdropdown");
 
     let parent = browser.browsingContext.currentWindowGlobal;
