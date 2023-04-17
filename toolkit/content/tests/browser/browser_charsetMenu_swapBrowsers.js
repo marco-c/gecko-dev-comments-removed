@@ -1,22 +1,17 @@
 
 add_task(async function test() {
+  
+  
   function charsetMenuEnabled() {
-    return !document
-      .getElementById("repair-text-encoding")
-      .hasAttribute("disabled");
+    updateCharacterEncodingMenuState();
+    return !document.getElementById("charsetMenu").hasAttribute("disabled");
   }
 
-  const PAGE =
-    "data:text/html;charset=windows-1252,<!DOCTYPE html><body>hello %e4";
+  const PAGE = "data:text/html,<!DOCTYPE html><body>hello";
   let tab1 = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     url: PAGE,
   });
-  await BrowserTestUtils.waitForMutationCondition(
-    document.getElementById("repair-text-encoding"),
-    { attributes: true },
-    charsetMenuEnabled
-  );
   ok(charsetMenuEnabled(), "should have a charset menu here");
 
   let tab2 = await BrowserTestUtils.openNewForegroundTab({ gBrowser });

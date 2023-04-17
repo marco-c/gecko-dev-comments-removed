@@ -6,7 +6,6 @@
 
 
 
-
 add_task(async function() {
   await startCustomizing();
   CustomizableUI.addWidgetToArea(
@@ -20,7 +19,7 @@ add_task(async function() {
   await panelHiddenPromise;
   CustomizableUI.addWidgetToArea("characterencoding-button", "nav-bar");
   let button = document.getElementById("characterencoding-button");
-  ok(button.hasAttribute("disabled"), "Button should be disabled");
+  ok(!button.hasAttribute("disabled"), "Button shouldn't be disabled");
 });
 
 add_task(function asyncCleanup() {
