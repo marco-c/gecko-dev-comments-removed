@@ -701,43 +701,43 @@ class MarkerSchema {
     
 
     
-    url,
+    Url,
     
-    filePath,
-    
-    
+    FilePath,
     
     
-    string,
+    
+    
+    String,
 
     
     
 
     
     
-    duration,
+    Duration,
     
     
-    time,
+    Time,
     
     
-    seconds,       
-    milliseconds,  
-    microseconds,  
-    nanoseconds,   
+    Seconds,       
+    Milliseconds,  
+    Microseconds,  
+    Nanoseconds,   
     
-    bytes,
-    
-    
-    percentage,
+    Bytes,
     
     
-    
-    integer,
+    Percentage,
     
     
     
-    decimal
+    Integer,
+    
+    
+    
+    Decimal
   };
 
   enum class Searchable { notSearchable, searchable };
