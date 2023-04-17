@@ -336,6 +336,9 @@ class LoadInfo final : public nsILoadInfo {
   bool mIsMediaInitialRequest = false;
 
   
+  bool mIsFromObjectOrEmbed = false;
+
+  
   
   
   

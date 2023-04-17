@@ -1377,5 +1377,11 @@ interface nsILoadInfo : nsISupports
 
 
 
+  [infallible] attribute boolean isFromObjectOrEmbed;
+  
+  
+
+
+
   attribute nsIURI unstrippedURI;
 };
