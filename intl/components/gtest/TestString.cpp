@@ -181,6 +181,49 @@ TEST(IntlString, NormalizeNFKD)
   ASSERT_EQ(buf.get_string_view(), u"1⁄2");
 }
 
+TEST(IntlString, ComposePairNFC)
+{
+  
+  ASSERT_EQ(String::ComposePairNFC(U'a', U'b'), U'\0');
+  
+  ASSERT_EQ(String::ComposePairNFC(U'a', U'\u0308'), U'ä');
+  
+  ASSERT_EQ(String::ComposePairNFC(U'ä', U'\u0304'), U'ǟ');
+  
+  ASSERT_EQ(String::ComposePairNFC(U'ä', U'\u0301'), U'\0');
+  
+  
+  ASSERT_EQ(String::ComposePairNFC(U'\u0308', U'\u0301'), U'\0');
+  
+  ASSERT_EQ(String::ComposePairNFC(U'\U00011099', U'\U000110BA'), U'\U0001109A');
+}
+
+TEST(IntlString, DecomposeRawNFD)
+{
+  char32_t buf[2];
+  
+  ASSERT_EQ(String::DecomposeRawNFD(U'a', buf), 0);
+  
+  ASSERT_EQ(String::DecomposeRawNFD(U'\u212A', buf), 1);
+  ASSERT_EQ(buf[0], U'K');
+  
+  ASSERT_EQ(String::DecomposeRawNFD(U'ä', buf), 2);
+  ASSERT_EQ(buf[0], U'a');
+  ASSERT_EQ(buf[1], U'\u0308');
+  
+  ASSERT_EQ(String::DecomposeRawNFD(U'ǟ', buf), 2);
+  ASSERT_EQ(buf[0], U'ä');
+  ASSERT_EQ(buf[1], U'\u0304');
+  
+  ASSERT_EQ(String::DecomposeRawNFD(U'\u0344', buf), 2);
+  ASSERT_EQ(buf[0], U'\u0308');
+  ASSERT_EQ(buf[1], U'\u0301');
+  
+  ASSERT_EQ(String::DecomposeRawNFD(U'\U0001109A', buf), 2);
+  ASSERT_EQ(buf[0], U'\U00011099');
+  ASSERT_EQ(buf[1], U'\U000110BA');
+}
+
 TEST(IntlString, IsCased)
 {
   ASSERT_TRUE(String::IsCased(U'a'));
