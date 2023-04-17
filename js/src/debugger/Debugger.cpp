@@ -5938,10 +5938,6 @@ bool Debugger::CallData::findAllGlobals() {
 
       GlobalObject* global = r->maybeGlobal();
 
-      if (cx->runtime()->isSelfHostingGlobal(global)) {
-        continue;
-      }
-
       
       
       

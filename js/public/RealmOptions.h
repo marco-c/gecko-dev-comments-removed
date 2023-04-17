@@ -48,9 +48,6 @@ enum class CompartmentSpecifier {
 
   
   ExistingCompartment,
-
-  
-  NewCompartmentInSelfHostingZone,
 };
 
 
@@ -98,7 +95,6 @@ class JS_PUBLIC_API RealmCreationOptions {
   RealmCreationOptions& setNewCompartmentAndZone();
   RealmCreationOptions& setExistingCompartment(JSObject* obj);
   RealmCreationOptions& setExistingCompartment(Compartment* compartment);
-  RealmCreationOptions& setNewCompartmentInSelfHostingZone();
 
   
   

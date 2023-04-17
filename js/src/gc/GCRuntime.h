@@ -290,9 +290,6 @@ class GCRuntime {
 
   JS::HeapState heapState() const { return heapState_; }
 
-  void freezeSelfHostingZone();
-  bool isSelfHostingZoneFrozen() const { return selfHostingZoneFrozen; }
-
   inline bool hasZealMode(ZealMode mode);
   inline void clearZealMode(ZealMode mode);
   inline bool upcomingZealousGC();
@@ -959,12 +956,6 @@ class GCRuntime {
   MainThreadData<bool> perZoneGCEnabled;
 
   mozilla::Atomic<size_t, mozilla::ReleaseAcquire> numActiveZoneIters;
-
-  
-
-
-
-  WriteOnceData<bool> selfHostingZoneFrozen;
 
   
   MainThreadData<bool> cleanUpEverything;

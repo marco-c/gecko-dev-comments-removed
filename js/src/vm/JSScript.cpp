@@ -4840,27 +4840,17 @@ gc::AllocSite* JSScript::createAllocSite() {
 
 void JSScript::AutoDelazify::holdScript(JS::HandleFunction fun) {
   if (fun) {
-    if (fun->realm()->isSelfHostingRealm()) {
-      
-      
-      
-      
-      script_ = fun->nonLazyScript();
-    } else {
-      JSAutoRealm ar(cx_, fun);
-      script_ = JSFunction::getOrCreateScript(cx_, fun);
-      if (script_) {
-        oldAllowRelazify_ = script_->allowRelazify();
-        script_->clearAllowRelazify();
-      }
+    JSAutoRealm ar(cx_, fun);
+    script_ = JSFunction::getOrCreateScript(cx_, fun);
+    if (script_) {
+      oldAllowRelazify_ = script_->allowRelazify();
+      script_->clearAllowRelazify();
     }
   }
 }
 
 void JSScript::AutoDelazify::dropScript() {
-  
-  
-  if (script_ && !script_->realm()->isSelfHostingRealm()) {
+  if (script_) {
     script_->setAllowRelazify(oldAllowRelazify_);
   }
   script_ = nullptr;
