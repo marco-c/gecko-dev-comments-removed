@@ -175,7 +175,12 @@ void RenderCompositorSWGL::StartCompositing(
       !AllocateMappedBuffer(aOpaqueRects, aNumOpaqueRects)) {
     
     
-    wr_swgl_init_default_framebuffer(mContext, 0, 0, 2, 2, 0, nullptr);
+    
+    auto bounds = mDirtyRegion.GetBounds();
+    bounds.width = std::max(bounds.width, 2);
+    bounds.height = std::max(bounds.height, 2);
+    wr_swgl_init_default_framebuffer(mContext, bounds.x, bounds.y, bounds.width,
+                                     bounds.height, 0, nullptr);
   }
 }
 
