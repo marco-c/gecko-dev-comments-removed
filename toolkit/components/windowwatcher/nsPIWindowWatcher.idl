@@ -119,10 +119,13 @@ interface nsPIWindowWatcher : nsISupports
 
 
 
-  void openWindowWithRemoteTab(in nsIRemoteTab aOpeningTab,
-                               in ACString aFeatures,
-                               in boolean aCalledFromJS,
-                               in float aOpenerFullZoom,
-                               in nsIOpenWindowInfo aOpenWindowInfo);
+
+
+
+  nsIRemoteTab openWindowWithRemoteTab(in nsIRemoteTab aOpeningTab,
+                                       in ACString aFeatures,
+                                       in boolean aCalledFromJS,
+                                       in float aOpenerFullZoom,
+                                       in nsIOpenWindowInfo aOpenWindowInfo);
 };
 

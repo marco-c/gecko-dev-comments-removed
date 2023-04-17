@@ -5133,10 +5133,10 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
     const bool& aForWindowDotPrint, nsIURI* aURIToLoad,
     const nsCString& aFeatures, const float& aFullZoom,
     BrowserParent* aNextRemoteBrowser, const nsString& aName, nsresult& aResult,
-    bool* aWindowIsNew, int32_t& aOpenLocation,
-    nsIPrincipal* aTriggeringPrincipal, nsIReferrerInfo* aReferrerInfo,
-    bool aLoadURI, nsIContentSecurityPolicy* aCsp,
-    const OriginAttributes& aOriginAttributes) {
+    nsCOMPtr<nsIRemoteTab>& aNewRemoteTab, bool* aWindowIsNew,
+    int32_t& aOpenLocation, nsIPrincipal* aTriggeringPrincipal,
+    nsIReferrerInfo* aReferrerInfo, bool aLoadURI,
+    nsIContentSecurityPolicy* aCsp, const OriginAttributes& aOriginAttributes) {
   
   
   const uint32_t badFlags = nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW |
@@ -5156,7 +5156,6 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
   openInfo->mOriginAttributes = aOriginAttributes;
 
   MOZ_ASSERT_IF(aForWindowDotPrint, aForPrinting);
-  MOZ_ASSERT_IF(aSetOpener, !aLoadURI);
 
   RefPtr<BrowserParent> topParent = BrowserParent::GetFrom(aThisTab);
   while (topParent && topParent->GetBrowserBridgeParent()) {
@@ -5255,8 +5254,16 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
     }
     RefPtr<nsFrameLoaderOwner> frameLoaderOwner = do_QueryObject(el);
     if (NS_SUCCEEDED(aResult) && frameLoaderOwner) {
-      MOZ_ASSERT_IF(aNextRemoteBrowser,
-                    BrowserParent::GetFrom(el) == aNextRemoteBrowser);
+      RefPtr<nsFrameLoader> frameLoader = frameLoaderOwner->GetFrameLoader();
+      if (frameLoader) {
+        aNewRemoteTab = frameLoader->GetRemoteTab();
+        
+        
+        
+        
+        
+        frameLoader->ForceLayoutIfNecessary();
+      }
     } else if (NS_SUCCEEDED(aResult) && !frameLoaderOwner) {
       
       
@@ -5278,52 +5285,62 @@ mozilla::ipc::IPCResult ContentParent::CommonCreateWindow(
     return IPC_OK();
   }
 
+  aResult = pwwatch->OpenWindowWithRemoteTab(thisBrowserHost, aFeatures,
+                                             aCalledFromJS, aFullZoom, openInfo,
+                                             getter_AddRefs(aNewRemoteTab));
+  if (NS_WARN_IF(NS_FAILED(aResult))) {
+    return IPC_OK();
+  }
+
+  MOZ_ASSERT(aNewRemoteTab);
+  RefPtr<BrowserHost> newBrowserHost = BrowserHost::GetFrom(aNewRemoteTab);
+  RefPtr<BrowserParent> newBrowserParent = newBrowserHost->GetActor();
+
   
   
   
-  RefPtr<nsDocShellLoadState> loadState;
-  if (aURIToLoad && aLoadURI) {
-    loadState = MakeRefPtr<nsDocShellLoadState>(aURIToLoad);
-    loadState->SetReferrerInfo(aReferrerInfo);
-    loadState->SetTriggeringPrincipal(aTriggeringPrincipal);
-    loadState->SetCsp(aCsp);
-    uint32_t loadFlags = nsIWebNavigation::LOAD_FLAGS_NONE;
-    if (!aTriggeringPrincipal->IsSystemPrincipal()) {
-      loadFlags |= nsIWebNavigation::LOAD_FLAGS_FIRST_LOAD;
-    }
-    loadState->SetLoadFlags(loadFlags);
+  
+  
+  
+  
+  
+  {
+    nsCOMPtr<Element> frameElement = newBrowserHost->GetOwnerElement();
+    MOZ_ASSERT(frameElement);
+    RefPtr<nsFrameLoaderOwner> frameLoaderOwner = do_QueryObject(frameElement);
+    MOZ_ASSERT(frameLoaderOwner);
+    RefPtr<nsFrameLoader> frameLoader = frameLoaderOwner->GetFrameLoader();
+    MOZ_ASSERT(frameLoader);
+    frameLoader->ForceLayoutIfNecessary();
   }
 
   
   
-  
-  openInfo->OnBrowsingContextReady(
-      [aName, loadState, nextRemoteBrowser = RefPtr{aNextRemoteBrowser}](
-          BrowsingContext* aBrowsingContext) {
-        if (NS_WARN_IF(!aBrowsingContext)) {
-          return;
-        }
-        MOZ_ASSERT_IF(
-            nextRemoteBrowser,
-            nextRemoteBrowser->GetBrowsingContext() == aBrowsingContext);
-        if (nsContentUtils::IsOverridingWindowName(aName)) {
-          MOZ_ALWAYS_SUCCEEDS(aBrowsingContext->SetName(aName));
-        }
-        if (loadState) {
-          
-          
-          if (RefPtr<nsFrameLoaderOwner> flo =
-                  do_QueryObject(aBrowsingContext->GetEmbedderElement())) {
-            if (RefPtr<nsFrameLoader> fl = flo->GetFrameLoader()) {
-              fl->ForceLayoutIfNecessary();
-            }
-          }
-          aBrowsingContext->LoadURI(loadState);
-        }
-      });
+  if (nsContentUtils::IsOverridingWindowName(aName)) {
+    MOZ_ALWAYS_SUCCEEDS(newBrowserHost->GetBrowsingContext()->SetName(aName));
+  }
 
-  aResult = pwwatch->OpenWindowWithRemoteTab(
-      thisBrowserHost, aFeatures, aCalledFromJS, aFullZoom, openInfo);
+  MOZ_ASSERT(newBrowserHost->GetBrowsingContext()->OriginAttributesRef() ==
+             aOriginAttributes);
+
+  if (aURIToLoad && aLoadURI) {
+    nsCOMPtr<mozIDOMWindowProxy> openerWindow;
+    if (aSetOpener && topParent) {
+      openerWindow = topParent->GetParentWindowOuter();
+    }
+    nsCOMPtr<nsIBrowserDOMWindow> newBrowserDOMWin =
+        newBrowserParent->GetBrowserDOMWindow();
+    if (NS_WARN_IF(!newBrowserDOMWin)) {
+      aResult = NS_ERROR_ABORT;
+      return IPC_OK();
+    }
+    RefPtr<BrowsingContext> bc;
+    aResult = newBrowserDOMWin->OpenURI(
+        aURIToLoad, openInfo, nsIBrowserDOMWindow::OPEN_CURRENTWINDOW,
+        nsIBrowserDOMWindow::OPEN_NEW, aTriggeringPrincipal, aCsp,
+        getter_AddRefs(bc));
+  }
+
   return IPC_OK();
 }
 
@@ -5409,40 +5426,26 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateWindow(
     }
   }
 
-  if (newTab->GetOwnerElement()) {
-    return IPC_FAIL(
-        this, "New BrowserParent must not have been inserted into the DOM");
-  }
-
   BrowserParent::AutoUseNewTab aunt(newTab);
 
+  nsCOMPtr<nsIRemoteTab> newRemoteTab;
   int32_t openLocation = nsIBrowserDOMWindow::OPEN_NEWWINDOW;
   mozilla::ipc::IPCResult ipcResult = CommonCreateWindow(
       aThisTab, parent, newBCOpenerId != 0, aChromeFlags, aCalledFromJS,
       aWidthSpecified, aForPrinting, aForPrintPreview, aURIToLoad, aFeatures,
-      aFullZoom, newTab, VoidString(), rv, &cwi.windowOpened(), openLocation,
-      aTriggeringPrincipal, aReferrerInfo,  false, aCsp,
-      aOriginAttributes);
+      aFullZoom, newTab, VoidString(), rv, newRemoteTab, &cwi.windowOpened(),
+      openLocation, aTriggeringPrincipal, aReferrerInfo,  false,
+      aCsp, aOriginAttributes);
   if (!ipcResult) {
     return ipcResult;
   }
 
-  if (NS_WARN_IF(NS_FAILED(rv)) || !cwi.windowOpened()) {
+  if (NS_WARN_IF(NS_FAILED(rv)) || !newRemoteTab) {
     return IPC_OK();
   }
 
-  
-  
-  
-  
-  
-  RefPtr<nsFrameLoaderOwner> frameLoaderOwner =
-      do_QueryObject(newTab->GetOwnerElement());
-  MOZ_DIAGNOSTIC_ASSERT(frameLoaderOwner,
-                        "The new tab must have been inserted");
-  RefPtr<nsFrameLoader> frameLoader = frameLoaderOwner->GetFrameLoader();
-  MOZ_DIAGNOSTIC_ASSERT(frameLoader, "The new tab should have a frameLoader");
-  frameLoader->ForceLayoutIfNecessary();
+  MOZ_ASSERT(BrowserHost::GetFrom(newRemoteTab.get()) ==
+             newTab->GetBrowserHost());
 
   newTab->SwapFrameScriptsFrom(cwi.frameScripts());
   newTab->MaybeShowFrame();
@@ -5473,7 +5476,8 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateWindowInDifferentProcess(
     return IPC_OK();
   }
 
-  bool windowIsNew = true;
+  nsCOMPtr<nsIRemoteTab> newRemoteTab;
+  bool windowIsNew;
   int32_t openLocation = nsIBrowserDOMWindow::OPEN_NEWWINDOW;
 
   
@@ -5506,9 +5510,9 @@ mozilla::ipc::IPCResult ContentParent::RecvCreateWindowInDifferentProcess(
       aThisTab, parent,  false, aChromeFlags, aCalledFromJS,
       aWidthSpecified,  false,
        false, aURIToLoad, aFeatures, aFullZoom,
-       nullptr, aName, rv, &windowIsNew, openLocation,
-      aTriggeringPrincipal, aReferrerInfo,  true, aCsp,
-      aOriginAttributes);
+       nullptr, aName, rv, newRemoteTab, &windowIsNew,
+      openLocation, aTriggeringPrincipal, aReferrerInfo,
+       true, aCsp, aOriginAttributes);
   if (!ipcResult) {
     return ipcResult;
   }
