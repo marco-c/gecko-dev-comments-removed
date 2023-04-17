@@ -629,7 +629,9 @@ child:
 
 
 
-    async RebuildFontList(bool aFulLRebuild);
+
+
+    [Priority=mediumhigh] async RebuildFontList(bool aFulLRebuild);
 
     
 

@@ -1091,6 +1091,7 @@ class gfxFontGroup final : public gfxTextRunFactory {
       
       mLastPrefFamily = FontFamily();
       mLastPrefFont = nullptr;
+      mDefaultFont = nullptr;
       mFonts.Clear();
       BuildFontList();
     }
