@@ -5186,7 +5186,7 @@ var XULBrowserWindow = {
     
     
     Services.obs.notifyObservers(
-      null,
+      window,
       "toggle-screenshot-disable",
       aLocationURI.scheme == "about" &&
         !aLocationURI.spec.startsWith("about:reader")
