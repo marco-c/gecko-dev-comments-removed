@@ -2128,6 +2128,13 @@ bool TypeAnalyzer::tryEmitFloatOperations() {
     return true;
   }
 
+  
+  
+  
+  if (graph.hasTryBlock()) {
+    return true;
+  }
+
   if (!markPhiConsumers()) {
     return false;
   }
