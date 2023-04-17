@@ -138,19 +138,42 @@ add_task(async () => {
 
       
       const menu = document.getElementById("contentAreaContextMenu");
-      EventUtils.synthesizeMouseAtCenter(document.body, {
-        type: "contextmenu",
-      });
-      await waitForMacEvent("AXMenuOpened");
+      if (
+        Services.prefs.getBoolPref("widget.macos.native-context-menus", false)
+      ) {
+        
+        let popupshown = BrowserTestUtils.waitForPopupEvent(menu, "shown");
+        EventUtils.synthesizeMouseAtCenter(document.body, {
+          type: "contextmenu",
+        });
+        await popupshown;
 
-      
-      is(rootChildCount(), baseRootChildCount + 1, "Root has 1 more child");
+        is(
+          rootChildCount(),
+          baseRootChildCount,
+          "Native context menus do not show up in the root children"
+        );
 
-      
-      let closed = waitForMacEvent("AXMenuClosed", "contentAreaContextMenu");
-      EventUtils.synthesizeKey("KEY_Escape");
-      await BrowserTestUtils.waitForPopupEvent(menu, "hidden");
-      await closed;
+        
+        let popuphidden = BrowserTestUtils.waitForPopupEvent(menu, "hidden");
+        menu.hidePopup();
+        await popuphidden;
+      } else {
+        
+        EventUtils.synthesizeMouseAtCenter(document.body, {
+          type: "contextmenu",
+        });
+        await waitForMacEvent("AXMenuOpened");
+
+        
+        is(rootChildCount(), baseRootChildCount + 1, "Root has 1 more child");
+
+        
+        let closed = waitForMacEvent("AXMenuClosed", "contentAreaContextMenu");
+        EventUtils.synthesizeKey("KEY_Escape");
+        await BrowserTestUtils.waitForPopupEvent(menu, "hidden");
+        await closed;
+      }
 
       
       is(rootChildCount(), baseRootChildCount, "Root has original child count");
@@ -197,6 +220,11 @@ add_task(async () => {
 
 
 add_task(async () => {
+  if (Services.prefs.getBoolPref("widget.macos.native-context-menus", false)) {
+    ok(true, "We cannot inspect native context menu contents; skip this test.");
+    return;
+  }
+
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
