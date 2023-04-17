@@ -447,34 +447,6 @@ class _ExperimentFeature {
 
 
 
-  getValue({ sendExposureEvent } = {}) {
-    
-    let userPrefs = this._getUserPrefsValues();
-    const branch = ExperimentAPI.activateBranch({
-      featureId: this.featureId,
-      sendExposureEvent: sendExposureEvent && this._sendExposureEventOnce,
-    });
-
-    
-    if (branch && sendExposureEvent) {
-      this._sendExposureEventOnce = false;
-    }
-
-    if (branch?.feature?.value) {
-      return { ...branch.feature.value, ...userPrefs };
-    }
-
-    return {
-      ...this.prefGetters,
-      ...this.getRemoteConfig()?.variables,
-      ...userPrefs,
-    };
-  }
-
-  
-
-
-
 
   getAllVariables({ sendExposureEvent, defaultValues = null } = {}) {
     
@@ -574,7 +546,7 @@ class _ExperimentFeature {
   debug() {
     return {
       enabled: this.isEnabled(),
-      value: this.getValue(),
+      variables: this.getAllVariables(),
       experiment: ExperimentAPI.getExperimentMetaData({
         featureId: this.featureId,
       }),
