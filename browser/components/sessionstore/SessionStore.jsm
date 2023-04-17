@@ -33,6 +33,8 @@ const NOTIFY_TAB_RESTORED = "sessionstore-debug-tab-restored";
 const NOTIFY_DOMWINDOWCLOSED_HANDLED =
   "sessionstore-debug-domwindowclosed-handled"; 
 
+const NOTIFY_BROWSER_SHUTDOWN_FLUSH = "sessionstore-browser-shutdown-flush";
+
 
 
 const MAX_CONCURRENT_TAB_RESTORES = 3;
@@ -55,6 +57,7 @@ const OBSERVING = [
   "clear-origin-attributes-data",
   "browsing-context-did-set-embedder",
   "browsing-context-discarded",
+  "browser-shutdown-tabstate-updated",
 ];
 
 
@@ -1005,6 +1008,12 @@ var SessionStoreInternal = {
           }
         }
         break;
+      case "browser-shutdown-tabstate-updated":
+        if (Services.appinfo.sessionHistoryInParent) {
+          
+          this.onFinalTabStateUpdateComplete(aSubject);
+        }
+        break;
     }
   },
 
@@ -1231,71 +1240,68 @@ var SessionStoreInternal = {
     this._browserProgressListenerForRestore.set(browser.permanentKey, listener);
   },
 
-  handleTabStateUpdate(browser, data) {
-    let permanentKey = browser.permanentKey;
-
+  onTabStateUpdate(browser, data) {
     
     
-    if (!this._crashedBrowsers.has(permanentKey)) {
-      
-      
+    if (!this._crashedBrowsers.has(browser.permanentKey)) {
       TabState.update(browser, data);
       this.saveStateDelayed(browser.ownerGlobal);
 
       
       
       
-      if (this._closedTabs.has(permanentKey)) {
-        let { closedTabs, tabData } = this._closedTabs.get(
-          browser.permanentKey
-        );
-
+      let closedTab = this._closedTabs.get(browser.permanentKey);
+      if (closedTab) {
         
         
-        TabState.copyFromCache(browser, tabData.state);
+        TabState.copyFromCache(browser, closedTab.tabData.state);
+      }
+    }
+  },
 
+  onFinalTabStateUpdateComplete(browser) {
+    let permanentKey = browser.permanentKey;
+
+    if (
+      this._closedTabs.has(permanentKey) &&
+      !this._crashedBrowsers.has(permanentKey)
+    ) {
+      let { closedTabs, tabData } = this._closedTabs.get(permanentKey);
+
+      
+      this._closedTabs.delete(permanentKey);
+
+      
+      delete tabData.permanentKey;
+
+      
+      let shouldSave = this._shouldSaveTabState(tabData.state);
+      let index = closedTabs.indexOf(tabData);
+
+      if (shouldSave && index == -1) {
         
-        if (data.isFinal) {
-          
-          this._closedTabs.delete(permanentKey);
-          
-          delete tabData.permanentKey;
-
-          
-          let shouldSave = this._shouldSaveTabState(tabData.state);
-          let index = closedTabs.indexOf(tabData);
-
-          if (shouldSave && index == -1) {
-            
-            
-            
-            
-            this.saveClosedTabData(closedTabs, tabData);
-          } else if (!shouldSave && index > -1) {
-            
-            
-            
-            this.removeClosedTabData(closedTabs, index);
-          }
-        }
+        
+        
+        
+        this.saveClosedTabData(closedTabs, tabData);
+      } else if (!shouldSave && index > -1) {
+        
+        
+        
+        this.removeClosedTabData(closedTabs, index);
       }
     }
 
-    if (data.isFinal) {
-      
-      
-      
-      
-      TabStateFlusher.resolveAll(browser);
+    
+    
+    
+    
+    TabStateFlusher.resolveAll(browser);
 
-      this._browserSHistoryListener.get(permanentKey)?.uninstall();
-      this._browserSHistoryListenerForRestore.get(permanentKey)?.uninstall();
-    } else if (data.flushID) {
-      
-      
-      
-      TabStateFlusher.resolve(browser, data.flushID);
-    }
+    this._browserSHistoryListener.get(permanentKey)?.uninstall();
+    this._browserSHistoryListenerForRestore.get(permanentKey)?.uninstall();
+
+    Services.obs.notifyObservers(browser, NOTIFY_BROWSER_SHUTDOWN_FLUSH);
   },
 
   updateSessionStoreFromTablistener(aBrowser, aBrowsingContext, aData) {
@@ -1344,7 +1350,7 @@ var SessionStoreInternal = {
       }
     }
 
-    this.handleTabStateUpdate(aBrowser, aData);
+    this.onTabStateUpdate(aBrowser, aData);
   },
 
   
@@ -1396,7 +1402,17 @@ var SessionStoreInternal = {
           return;
         }
 
-        this.handleTabStateUpdate(browser, data);
+        this.onTabStateUpdate(browser, data);
+
+        if (data.isFinal) {
+          this.onFinalTabStateUpdateComplete(browser);
+        } else if (data.flushID) {
+          
+          
+          
+          TabStateFlusher.resolve(browser, data.flushID);
+        }
+
         break;
       case "SessionStore:restoreHistoryComplete":
         this._restoreHistoryComplete(browser, data);
