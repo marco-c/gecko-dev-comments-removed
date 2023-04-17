@@ -20,7 +20,8 @@ const ONBOARDING_MESSAGES = () => [
       delay: 10000, 
       target: "fxa-toolbar-menu-button",
     },
-    targeting: "false",
+    
+    targeting: `!hasAccessedFxAPanel && !usesFirefoxSync && isFxAEnabled == true`,
     trigger: { id: "toolbarBadgeUpdate" },
   },
   {
