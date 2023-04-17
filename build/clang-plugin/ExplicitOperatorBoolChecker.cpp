@@ -6,11 +6,8 @@
 #include "CustomMatchers.h"
 
 void ExplicitOperatorBoolChecker::registerMatchers(MatchFinder *AstMatcher) {
-  
-  
-  
   AstMatcher->addMatcher(
-      cxxMethodDecl(anyOf(hasName("operator bool"), hasName("operator _Bool")))
+      cxxMethodDecl(allOf(isFirstParty(), hasName("operator bool")))
           .bind("node"),
       this);
 }
