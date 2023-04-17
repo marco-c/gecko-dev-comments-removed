@@ -344,15 +344,13 @@ class VirtualenvManager(VirtualenvHelper):
                     
                     f.write("{}\n".format(os.path.relpath(path, site_packages_dir)))
 
-        
-        
-        
-        
-        IGNORE_ENV_VARIABLES = ("CC", "CXX", "CFLAGS", "CXXFLAGS", "LDFLAGS")
-
+        old_env_variables = {}
         try:
-            old_env_variables = {}
-            for k in IGNORE_ENV_VARIABLES:
+            
+            
+            
+            
+            for k in ("CC", "CXX", "CFLAGS", "CXXFLAGS", "LDFLAGS"):
                 if k not in os.environ:
                     continue
 
@@ -375,7 +373,6 @@ class VirtualenvManager(VirtualenvHelper):
                         f"Could not install {requirement.requirement.name}, so "
                         f"{requirement.repercussion}. Continuing."
                     )
-
         finally:
             os.environ.update(old_env_variables)
 
