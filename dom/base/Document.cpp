@@ -4341,25 +4341,16 @@ bool Document::HasFocus(ErrorResult& rv) const {
     return false;
   }
 
-  
-  nsCOMPtr<mozIDOMWindowProxy> focusedWindow;
-  fm->GetFocusedWindow(getter_AddRefs(focusedWindow));
-  if (!focusedWindow) {
+  BrowsingContext* bc = GetBrowsingContext();
+  if (!bc) {
     return false;
   }
 
-  nsPIDOMWindowOuter* piWindow = nsPIDOMWindowOuter::From(focusedWindow);
-
-  
-  for (Document* currentDoc = piWindow->GetDoc(); currentDoc;
-       currentDoc = currentDoc->GetInProcessParentDocument()) {
-    if (currentDoc == this) {
-      
-      return true;
-    }
+  if (!fm->IsInActiveWindow(bc)) {
+    return false;
   }
 
-  return false;
+  return fm->IsSameOrAncestor(bc, fm->GetFocusedBrowsingContext());
 }
 
 void Document::GetDesignMode(nsAString& aDesignMode) {
