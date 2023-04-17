@@ -194,7 +194,7 @@ class DevToolsFrameChild extends JSWindowActorChild {
         
         
         if (existingTarget) {
-          existingTarget.destroy();
+          existingTarget.destroy({ isTargetSwitching: true });
         }
 
         this._createTargetActor({

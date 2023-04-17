@@ -603,7 +603,11 @@ const browsingContextTargetPrototype = {
   
 
 
-  destroy() {
+
+
+
+
+  destroy({ isTargetSwitching = false } = {}) {
     if (this.isDestroyed()) {
       return;
     }
@@ -619,7 +623,7 @@ const browsingContextTargetPrototype = {
       this._touchSimulator = null;
     }
 
-    this._detach();
+    this._detach({ isTargetSwitching });
     this.docShell = null;
     this._extraActors = null;
 
@@ -1030,7 +1034,10 @@ const browsingContextTargetPrototype = {
 
 
 
-  _detach() {
+
+
+
+  _detach({ isTargetSwitching } = {}) {
     if (!this.attached) {
       return false;
     }
@@ -1039,7 +1046,13 @@ const browsingContextTargetPrototype = {
     
     if (this.docShell) {
       this._unwatchDocShell(this.docShell);
-      this._restoreTargetConfiguration();
+
+      
+      
+      
+      if (!isTargetSwitching) {
+        this._restoreTargetConfiguration();
+      }
     }
     this._unwatchDocshells();
 
