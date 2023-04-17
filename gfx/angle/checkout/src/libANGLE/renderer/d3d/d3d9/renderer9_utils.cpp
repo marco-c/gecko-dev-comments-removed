@@ -722,7 +722,7 @@ void GenerateCaps(IDirect3D9 *d3d9,
     
     
     extensions->floatBlend             = true;
-    extensions->framebufferBlitANGLE   = true;
+    extensions->framebufferBlit        = true;
     extensions->framebufferMultisample = true;
     extensions->instancedArraysANGLE   = deviceCaps.PixelShaderVersion >= D3DPS_VERSION(3, 0);
     

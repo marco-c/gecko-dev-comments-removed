@@ -45,13 +45,11 @@
 enum class Shader : uint8_t
 {
     ALL,
-    FRAGMENT,             
-    VERTEX,               
-    COMPUTE,              
-    GEOMETRY,             
-    GEOMETRY_EXT,         
-    TESS_CONTROL_EXT,     
-    TESS_EVALUATION_EXT,  
+    FRAGMENT,      
+    VERTEX,        
+    COMPUTE,       
+    GEOMETRY,      
+    GEOMETRY_EXT,  
     NOT_COMPUTE
 };
 

@@ -27,8 +27,6 @@ struct TextureCaps
 {
     TextureCaps();
     TextureCaps(const TextureCaps &other);
-    TextureCaps &operator=(const TextureCaps &other);
-
     ~TextureCaps();
 
     
@@ -81,7 +79,7 @@ class TextureCapsMap final : angle::NonCopyable
     TextureCaps &get(angle::FormatID formatID);
 
     
-    angle::FormatMap<TextureCaps> mFormatData;
+    std::array<TextureCaps, angle::kNumANGLEFormats> mFormatData;
 };
 
 void InitMinimumTextureCapsMap(const Version &clientVersion,
@@ -102,7 +100,6 @@ struct Extensions
     
     std::vector<std::string> getStrings() const;
 
-    
     
     
     
@@ -182,6 +179,9 @@ struct Extensions
     bool textureHalfFloatLinear = false;
 
     
+    bool textureFormat2101010REV = false;
+
+    
     
     
     bool textureFloatOES       = false;
@@ -191,9 +191,6 @@ struct Extensions
     
     
     bool textureRG = false;
-
-    
-    bool textureFormat2101010REV = false;
 
     
     
@@ -348,11 +345,7 @@ struct Extensions
     bool blendMinMax = false;
 
     
-    bool framebufferBlitANGLE = false;
-    
-    bool framebufferBlitNV = false;
-    
-    bool framebufferBlitAny() const { return (framebufferBlitANGLE || framebufferBlitNV); }
+    bool framebufferBlit = false;
 
     
     bool framebufferMultisample = false;
@@ -380,9 +373,6 @@ struct Extensions
     bool shaderTextureLOD = false;
 
     
-    bool shaderFramebufferFetchNonCoherentEXT = false;
-
-    
     bool fragDepth = false;
 
     
@@ -406,9 +396,6 @@ struct Extensions
 
     
     bool debugMarker = false;
-
-    
-    bool debugLabel = false;
 
     
     bool eglImageOES = false;
@@ -511,12 +498,6 @@ struct Extensions
     bool textureBorderClampOES = false;
 
     
-    bool textureBorderClampEXT = false;
-
-    
-    bool textureBorderClampAny() const { return (textureBorderClampOES || textureBorderClampEXT); }
-
-    
     bool textureSRGBDecode = false;
 
     
@@ -582,9 +563,6 @@ struct Extensions
     bool drawTextureOES = false;
 
     
-    bool framebufferObjectOES = false;
-
-    
     
     bool explicitContextGles1 = false;
     
@@ -594,16 +572,10 @@ struct Extensions
     bool parallelShaderCompile = false;
 
     
-    bool separateShaderObjects = false;
-
-    
     bool textureStorageMultisample2DArrayOES = false;
 
     
     bool multiviewMultisample = false;
-
-    
-    bool blendEquationAdvancedKHR = false;
 
     
     bool blendFuncExtended          = false;
@@ -653,22 +625,12 @@ struct Extensions
     bool shaderNonConstGlobalInitializersEXT = false;
 
     
-    bool shaderIoBlocksOES = false;
-    
-    bool shaderIoBlocksEXT = false;
-    
-    bool shaderIoBlocksAny() const { return (shaderIoBlocksOES || shaderIoBlocksEXT); }
-
-    
     bool gpuShader5EXT = false;
     
     bool webglVideoTexture = false;
 
     
     bool clipDistanceAPPLE = false;
-
-    
-    bool clipControlEXT = false;
 
     
     bool textureCubeMapArrayOES = false;
@@ -702,16 +664,10 @@ struct Extensions
     bool shaderImageAtomicOES = false;
 
     
-    bool sampleVariablesOES = false;
-
-    
     bool robustnessVideoMemoryPurgeNV = false;
 
     
     bool getTexLevelParameterANGLE = false;
-
-    
-    bool tessellationShaderEXT = false;
 
     
     bool copyImageEXT = false;
@@ -722,18 +678,6 @@ struct Extensions
     bool textureBufferEXT = false;
     
     bool textureBufferAny() const { return (textureBufferOES || textureBufferEXT); }
-
-    
-    bool yuvTargetEXT = false;
-
-    
-    bool clipCullDistanceEXT = false;
-
-    
-    bool getSerializedContextStringANGLE = false;
-
-    
-    bool primitiveBoundingBoxEXT = false;
 };
 
 
@@ -791,12 +735,6 @@ struct Limitations
     
     
     bool noShadowSamplerCompareModeNone = false;
-
-    
-    bool squarePvrtc1 = false;
-
-    
-    bool emulatedEtc1 = false;
 };
 
 struct TypePrecision
@@ -821,8 +759,6 @@ struct Caps
 {
     Caps();
     Caps(const Caps &other);
-    Caps &operator=(const Caps &other);
-
     ~Caps();
 
     
@@ -967,24 +903,10 @@ struct Caps
     GLint maxGeometryTotalOutputComponents = 0;
     GLint maxGeometryShaderInvocations     = 0;
 
-    
-    GLint maxTessControlInputComponents       = 0;
-    GLint maxTessControlOutputComponents      = 0;
-    GLint maxTessControlTotalOutputComponents = 0;
-
-    GLint maxTessPatchComponents = 0;
-    GLint maxPatchVertices       = 0;
-    GLint maxTessGenLevel        = 0;
-
-    GLint maxTessEvaluationInputComponents  = 0;
-    GLint maxTessEvaluationOutputComponents = 0;
-
     GLuint subPixelBits = 4;
 
     
-    GLuint maxClipDistances                = 0;
-    GLuint maxCullDistances                = 0;
-    GLuint maxCombinedClipAndCullDistances = 0;
+    GLuint maxClipDistances = 0;
 
     
     GLuint maxMultitextureUnits                 = 0;
@@ -1057,6 +979,9 @@ struct DisplayExtensions
 
     
     bool createContext = false;
+
+    
+    bool deviceQuery = false;
 
     
     bool image = false;
@@ -1152,9 +1077,6 @@ struct DisplayExtensions
     bool iosurfaceClientBuffer = false;
 
     
-    bool mtlTextureClientBuffer = false;
-
-    
     bool createContextExtensionsEnabled = false;
 
     
@@ -1240,12 +1162,6 @@ struct DisplayExtensions
 
     
     bool reusableSyncKHR = false;
-
-    
-    bool externalContextAndSurface = false;
-
-    
-    bool bufferAgeEXT = false;
 };
 
 struct DeviceExtensions
@@ -1263,9 +1179,6 @@ struct DeviceExtensions
 
     
     bool deviceEAGL = false;
-
-    
-    bool deviceMetal = false;
 };
 
 struct ClientExtensions
@@ -1344,9 +1257,6 @@ struct ClientExtensions
 
     
     bool platformANGLEDeviceTypeEGLANGLE = false;
-
-    
-    bool deviceQueryEXT = false;
 };
 
 }  

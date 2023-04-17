@@ -374,12 +374,9 @@ angle::Result TextureD3D::subImageCompressed(const gl::Context *context,
     return angle::Result::Continue;
 }
 
-bool TextureD3D::isFastUnpackable(const gl::Buffer *unpackBuffer,
-                                  const gl::PixelUnpackState &unpack,
-                                  GLenum sizedInternalFormat)
+bool TextureD3D::isFastUnpackable(const gl::Buffer *unpackBuffer, GLenum sizedInternalFormat)
 {
-    return unpackBuffer != nullptr && unpack.skipRows == 0 && unpack.skipPixels == 0 &&
-           unpack.imageHeight == 0 && unpack.skipImages == 0 &&
+    return unpackBuffer != nullptr &&
            mRenderer->supportsFastCopyBufferToTexture(sizedInternalFormat);
 }
 
@@ -799,13 +796,6 @@ angle::Result TextureD3D::initializeContents(const gl::Context *context,
         RenderTargetD3D *renderTarget = nullptr;
         ANGLE_TRY(mTexStorage->getRenderTarget(context, index, 0, &renderTarget));
         ANGLE_TRY(mRenderer->initRenderTarget(context, renderTarget));
-
-        
-        if (image)
-        {
-            image->markClean();
-        }
-
         return angle::Result::Continue;
     }
 
@@ -970,7 +960,7 @@ angle::Result TextureD3D_2D::setImage(const gl::Context *context,
     {
         ANGLE_TRY(mTexStorage->releaseMultisampledTexStorageForLevel(index.getLevelIndex()));
     }
-    if (isFastUnpackable(unpackBuffer, unpack, internalFormatInfo.sizedInternalFormat) &&
+    if (isFastUnpackable(unpackBuffer, internalFormatInfo.sizedInternalFormat) &&
         isLevelComplete(index.getLevelIndex()))
     {
         
@@ -1013,7 +1003,7 @@ angle::Result TextureD3D_2D::setSubImage(const gl::Context *context,
     {
         ANGLE_TRY(mTexStorage->releaseMultisampledTexStorageForLevel(index.getLevelIndex()));
     }
-    if (isFastUnpackable(unpackBuffer, unpack, mipFormat) && isLevelComplete(index.getLevelIndex()))
+    if (isFastUnpackable(unpackBuffer, mipFormat) && isLevelComplete(index.getLevelIndex()))
     {
         RenderTargetD3D *renderTarget = nullptr;
         ANGLE_TRY(getRenderTarget(context, index, getRenderToTextureSamples(), &renderTarget));
@@ -1633,8 +1623,8 @@ angle::Result TextureD3D_2D::redefineImage(const gl::Context *context,
         }
 
         if ((level >= storageLevels && storageLevels != 0) || size.width != storageWidth ||
-            size.height != storageHeight || internalformat != storageFormat ||
-            mEGLImageTarget)  
+            size.height != storageHeight ||
+            internalformat != storageFormat)  
         {
             ANGLE_TRY(releaseTexStorage(context));
             markAllImagesDirty();
@@ -2501,8 +2491,8 @@ angle::Result TextureD3D_3D::setImage(const gl::Context *context,
     bool fastUnpacked = false;
 
     
-    if (isFastUnpackable(unpackBuffer, unpack, internalFormatInfo.sizedInternalFormat) &&
-        !size.empty() && isLevelComplete(index.getLevelIndex()))
+    if (isFastUnpackable(unpackBuffer, internalFormatInfo.sizedInternalFormat) && !size.empty() &&
+        isLevelComplete(index.getLevelIndex()))
     {
         
         RenderTargetD3D *destRenderTarget = nullptr;
@@ -2541,7 +2531,7 @@ angle::Result TextureD3D_3D::setSubImage(const gl::Context *context,
 
     
     GLenum mipFormat = getInternalFormat(index.getLevelIndex());
-    if (isFastUnpackable(unpackBuffer, unpack, mipFormat) && isLevelComplete(index.getLevelIndex()))
+    if (isFastUnpackable(unpackBuffer, mipFormat) && isLevelComplete(index.getLevelIndex()))
     {
         RenderTargetD3D *destRenderTarget = nullptr;
         ANGLE_TRY(getRenderTarget(context, index, getRenderToTextureSamples(), &destRenderTarget));

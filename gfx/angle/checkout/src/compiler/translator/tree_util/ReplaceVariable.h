@@ -36,19 +36,107 @@ ANGLE_NO_DISCARD bool ReplaceVariableWithTyped(TCompiler *compiler,
                                                const TVariable *toBeReplaced,
                                                const TIntermTyped *replacement);
 
-using VariableReplacementMap = angle::HashMap<const TVariable *, const TIntermTyped *>;
-
-
-ANGLE_NO_DISCARD bool ReplaceVariables(TCompiler *compiler,
-                                       TIntermBlock *root,
-                                       const VariableReplacementMap &variableMap);
 
 
 
 
-void GetDeclaratorReplacements(TSymbolTable *symbolTable,
-                               TIntermBlock *root,
-                               VariableReplacementMap *variableMap);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class RetypeOpaqueVariablesHelper
+{
+  public:
+    RetypeOpaqueVariablesHelper() {}
+    ~RetypeOpaqueVariablesHelper() {}
+
+    
+    void replaceGlobalVariable(const TVariable *oldVar, TVariable *newVar)
+    {
+        ASSERT(mReplacedGlobalVariables.count(oldVar) == 0);
+        mReplacedGlobalVariables[oldVar] = newVar;
+    }
+    TVariable *getVariableReplacement(const TVariable *oldVar) const
+    {
+        if (mReplacedGlobalVariables.count(oldVar) != 0)
+        {
+            return mReplacedGlobalVariables.at(oldVar);
+        }
+        else
+        {
+            
+            
+            ASSERT(mReplacedFunctionParams.count(oldVar) != 0);
+            return mReplacedFunctionParams.at(oldVar);
+        }
+    }
+
+    
+    void visitFunctionPrototype() { mReplacedFunctionParams.clear(); }
+    void replaceFunctionParam(const TVariable *oldParam, TVariable *newParam)
+    {
+        ASSERT(mReplacedFunctionParams.count(oldParam) == 0);
+        mReplacedFunctionParams[oldParam] = newParam;
+    }
+    TVariable *getFunctionParamReplacement(const TVariable *oldParam) const
+    {
+        ASSERT(mReplacedFunctionParams.count(oldParam) != 0);
+        return mReplacedFunctionParams.at(oldParam);
+    }
+
+    
+    void preVisitAggregate() { mReplacedFunctionCallArgs.emplace(); }
+    bool isInAggregate() const { return !mReplacedFunctionCallArgs.empty(); }
+    void postVisitAggregate() { mReplacedFunctionCallArgs.pop(); }
+    void replaceFunctionCallArg(const TIntermNode *oldArg, TIntermTyped *newArg)
+    {
+        ASSERT(mReplacedFunctionCallArgs.top().count(oldArg) == 0);
+        mReplacedFunctionCallArgs.top()[oldArg] = newArg;
+    }
+    TIntermTyped *getFunctionCallArgReplacement(const TIntermNode *oldArg) const
+    {
+        ASSERT(mReplacedFunctionCallArgs.top().count(oldArg) != 0);
+        return mReplacedFunctionCallArgs.top().at(oldArg);
+    }
+
+    
+    TIntermFunctionPrototype *convertFunctionPrototype(TSymbolTable *symbolTable,
+                                                       const TFunction *oldFunction);
+    TIntermAggregate *convertASTFunction(TIntermAggregate *node);
+
+  private:
+    
+    std::unordered_map<const TVariable *, TVariable *> mReplacedGlobalVariables;
+
+    
+    std::unordered_map<const TFunction *, TFunction *> mReplacedFunctions;
+
+    
+    
+    std::unordered_map<const TVariable *, TVariable *> mReplacedFunctionParams;
+
+    
+    
+    std::stack<std::unordered_map<const TIntermNode *, TIntermTyped *>> mReplacedFunctionCallArgs;
+};
 
 }  
 

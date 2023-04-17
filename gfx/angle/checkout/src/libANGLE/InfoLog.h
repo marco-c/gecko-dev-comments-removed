@@ -39,7 +39,7 @@ class InfoLog : angle::NonCopyable
         ~StreamHelper()
         {
             
-            if (mStream && !mStream->str().empty())
+            if (mStream)
             {
                 (*mStream) << std::endl;
             }

@@ -1128,39 +1128,6 @@ inline unsigned long ScanForward(uint64_t bits)
     ASSERT(ret != 0u);
     return firstBitIndex;
 }
-
-
-
-inline unsigned long ScanReverse(uint32_t bits)
-{
-    ASSERT(bits != 0u);
-    unsigned long lastBitIndex = 0ul;
-    unsigned char ret          = _BitScanReverse(&lastBitIndex, bits);
-    ASSERT(ret != 0u);
-    return lastBitIndex;
-}
-
-inline unsigned long ScanReverse(uint64_t bits)
-{
-    ASSERT(bits != 0u);
-    unsigned long lastBitIndex = 0ul;
-#    if defined(ANGLE_IS_64_BIT_CPU)
-    unsigned char ret = _BitScanReverse64(&lastBitIndex, bits);
-#    else
-    unsigned char ret;
-    if (static_cast<uint32_t>(bits >> 32) == 0)
-    {
-        ret = _BitScanReverse(&lastBitIndex, static_cast<uint32_t>(bits));
-    }
-    else
-    {
-        ret = _BitScanReverse(&lastBitIndex, static_cast<uint32_t>(bits >> 32));
-        lastBitIndex += 32ul;
-    }
-#    endif  
-    ASSERT(ret != 0u);
-    return lastBitIndex;
-}
 #endif  
 
 #if defined(ANGLE_PLATFORM_POSIX)
@@ -1181,30 +1148,6 @@ inline unsigned long ScanForward(uint64_t bits)
                                           : __builtin_ctz(static_cast<uint32_t>(bits)));
 #    endif  
 }
-
-inline unsigned long ScanReverse(uint32_t bits)
-{
-    ASSERT(bits != 0u);
-    return static_cast<unsigned long>(sizeof(uint32_t) * CHAR_BIT - 1 - __builtin_clz(bits));
-}
-
-inline unsigned long ScanReverse(uint64_t bits)
-{
-    ASSERT(bits != 0u);
-#    if defined(ANGLE_IS_64_BIT_CPU)
-    return static_cast<unsigned long>(sizeof(uint64_t) * CHAR_BIT - 1 - __builtin_clzll(bits));
-#    else
-    if (static_cast<uint32_t>(bits >> 32) == 0)
-    {
-        return sizeof(uint32_t) * CHAR_BIT - 1 - __builtin_clz(static_cast<uint32_t>(bits));
-    }
-    else
-    {
-        return sizeof(uint32_t) * CHAR_BIT - 1 - __builtin_clz(static_cast<uint32_t>(bits >> 32)) +
-               32;
-    }
-#    endif  
-}
 #endif  
 
 inline unsigned long ScanForward(uint8_t bits)
@@ -1217,14 +1160,21 @@ inline unsigned long ScanForward(uint16_t bits)
     return ScanForward(static_cast<uint32_t>(bits));
 }
 
-inline unsigned long ScanReverse(uint8_t bits)
-{
-    return ScanReverse(static_cast<uint32_t>(bits));
-}
 
-inline unsigned long ScanReverse(uint16_t bits)
+
+inline unsigned long ScanReverse(unsigned long bits)
 {
-    return ScanReverse(static_cast<uint32_t>(bits));
+    ASSERT(bits != 0u);
+#if defined(ANGLE_PLATFORM_WINDOWS)
+    unsigned long lastBitIndex = 0ul;
+    unsigned char ret          = _BitScanReverse(&lastBitIndex, bits);
+    ASSERT(ret != 0u);
+    return lastBitIndex;
+#elif defined(ANGLE_PLATFORM_POSIX)
+    return static_cast<unsigned long>(sizeof(unsigned long) * CHAR_BIT - 1 - __builtin_clzl(bits));
+#else
+#    error Please implement bit-scan-reverse for your platform!
+#endif
 }
 
 
