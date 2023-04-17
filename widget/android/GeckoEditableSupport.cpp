@@ -579,78 +579,17 @@ void GeckoEditableSupport::SendIMEDummyKeyEvent(nsIWidget* aWidget,
   mDispatcher->DispatchKeyboardEvent(msg, event, status);
 }
 
-void GeckoEditableSupport::AddIMETextChange(const IMETextChange& aChange) {
-  mIMETextChanges.AppendElement(aChange);
+void GeckoEditableSupport::AddIMETextChange(
+    const IMENotification::TextChangeDataBase& aChange) {
+  mIMEPendingTextChange.MergeWith(aChange);
 
   
   
   mIMETextChangedDuringFlush = true;
-
-  
-  
-  
-  
-  const int32_t delta = aChange.mNewEnd - aChange.mOldEnd;
-  for (int32_t i = mIMETextChanges.Length() - 2; i >= 0; i--) {
-    IMETextChange& previousChange = mIMETextChanges[i];
-    if (previousChange.mStart > aChange.mOldEnd) {
-      previousChange.mStart += delta;
-      previousChange.mOldEnd += delta;
-      previousChange.mNewEnd += delta;
-    }
-  }
-
-  
-  
-  
-  int32_t srcIndex = mIMETextChanges.Length() - 1;
-  int32_t dstIndex = srcIndex;
-
-  while (--dstIndex >= 0) {
-    IMETextChange& src = mIMETextChanges[srcIndex];
-    IMETextChange& dst = mIMETextChanges[dstIndex];
-    
-    
-    
-    if (src.mOldEnd < dst.mStart || dst.mNewEnd < src.mStart) {
-      
-      continue;
-    }
-
-    if (src.mStart == dst.mStart && src.mNewEnd == dst.mNewEnd) {
-      
-      dst.mOldEnd = std::min(src.mOldEnd, dst.mOldEnd);
-    } else {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      dst.mStart = std::min(dst.mStart, src.mStart);
-      if (src.mOldEnd < dst.mNewEnd) {
-        
-        dst.mNewEnd += src.mNewEnd - src.mOldEnd;
-      } else {  
-        
-        dst.mOldEnd += src.mOldEnd - dst.mNewEnd;
-        dst.mNewEnd = src.mNewEnd;
-      }
-    }
-    
-    mIMETextChanges.RemoveElementAt(srcIndex);
-    
-    
-    srcIndex = dstIndex;
-  }
 }
 
 void GeckoEditableSupport::PostFlushIMEChanges() {
-  if (!mIMETextChanges.IsEmpty() || mIMESelectionChanged) {
+  if (mIMEPendingTextChange.IsValid() || mIMESelectionChanged) {
     
     return;
   }
@@ -680,13 +619,16 @@ void GeckoEditableSupport::FlushIMEChanges(FlushChangesFlag aFlags) {
   NS_ENSURE_TRUE_VOID(widget);
 
   struct TextRecord {
+    TextRecord() : start(-1), oldEnd(-1), newEnd(-1) {}
+
+    bool IsValid() const { return start >= 0; }
+
     nsString text;
     int32_t start;
     int32_t oldEnd;
     int32_t newEnd;
   };
-  AutoTArray<TextRecord, 4> textTransaction;
-  textTransaction.SetCapacity(mIMETextChanges.Length());
+  TextRecord textTransaction;
 
   nsEventStatus status = nsEventStatus_eIgnore;
   mIMETextChangedDuringFlush = false;
@@ -708,29 +650,35 @@ void GeckoEditableSupport::FlushIMEChanges(FlushChangesFlag aFlags) {
     return true;
   };
 
-  for (const IMETextChange& change : mIMETextChanges) {
-    if (change.mStart == change.mOldEnd && change.mStart == change.mNewEnd) {
-      continue;
-    }
-
-    nsString insertedString;
+  if (mIMEPendingTextChange.IsValid() &&
+      (mIMEPendingTextChange.mStartOffset !=
+           mIMEPendingTextChange.mRemovedEndOffset ||
+       mIMEPendingTextChange.mStartOffset !=
+           mIMEPendingTextChange.mAddedEndOffset)) {
     WidgetQueryContentEvent queryTextContentEvent(true, eQueryTextContent,
                                                   widget);
 
-    if (change.mNewEnd != change.mStart) {
+    if (mIMEPendingTextChange.mAddedEndOffset !=
+        mIMEPendingTextChange.mStartOffset) {
       queryTextContentEvent.InitForQueryTextContent(
-          change.mStart, change.mNewEnd - change.mStart);
+          mIMEPendingTextChange.mStartOffset,
+          mIMEPendingTextChange.mAddedEndOffset -
+              mIMEPendingTextChange.mStartOffset);
       widget->DispatchEvent(&queryTextContentEvent, status);
 
       if (shouldAbort(NS_WARN_IF(queryTextContentEvent.Failed()))) {
         return;
       }
 
-      insertedString = queryTextContentEvent.mReply->DataRef();
+      textTransaction.text = queryTextContentEvent.mReply->DataRef();
     }
 
-    textTransaction.AppendElement(TextRecord{insertedString, change.mStart,
-                                             change.mOldEnd, change.mNewEnd});
+    textTransaction.start =
+        static_cast<int32_t>(mIMEPendingTextChange.mStartOffset);
+    textTransaction.oldEnd =
+        static_cast<int32_t>(mIMEPendingTextChange.mRemovedEndOffset);
+    textTransaction.newEnd =
+        static_cast<int32_t>(mIMEPendingTextChange.mAddedEndOffset);
   }
 
   int32_t selStart = -1;
@@ -750,14 +698,12 @@ void GeckoEditableSupport::FlushIMEChanges(FlushChangesFlag aFlags) {
     selEnd = static_cast<int32_t>(
         querySelectedTextEvent.mReply->SelectionEndOffset());
 
-    if (aFlags == FLUSH_FLAG_RECOVER) {
+    if (aFlags == FLUSH_FLAG_RECOVER && textTransaction.IsValid()) {
       
       
-      for (const TextRecord& record : textTransaction) {
-        const int32_t end = record.start + record.text.Length();
-        selStart = std::min(selStart, end);
-        selEnd = std::min(selEnd, end);
-      }
+      const int32_t end = textTransaction.start + textTransaction.text.Length();
+      selStart = std::min(selStart, end);
+      selEnd = std::min(selEnd, end);
     }
   }
 
@@ -784,11 +730,11 @@ void GeckoEditableSupport::FlushIMEChanges(FlushChangesFlag aFlags) {
   };
 
   
-  mIMETextChanges.Clear();
+  mIMEPendingTextChange.Clear();
 
-  for (const TextRecord& record : textTransaction) {
-    mEditable->OnTextChange(record.text, record.start, record.oldEnd,
-                            record.newEnd);
+  if (textTransaction.IsValid()) {
+    mEditable->OnTextChange(textTransaction.text, textTransaction.start,
+                            textTransaction.oldEnd, textTransaction.newEnd);
     if (flushOnException()) {
       return;
     }
@@ -815,7 +761,7 @@ void GeckoEditableSupport::FlushIMEText(FlushChangesFlag aFlags) {
       "Cannot synchronize Java text with Gecko text");
 
   
-  mIMETextChanges.Clear();
+  mIMEPendingTextChange.Clear();
   mIMESelectionChanged = true;
 
   
@@ -1005,9 +951,8 @@ bool GeckoEditableSupport::DoReplaceText(int32_t aStart, int32_t aEnd,
 
 
 
-    IMETextChange dummyChange;
-    dummyChange.mStart = aStart;
-    dummyChange.mOldEnd = dummyChange.mNewEnd = aEnd;
+    IMENotification::TextChangeData dummyChange(aStart, aEnd, aEnd, false,
+                                                false);
     PostFlushIMEChanges();
     mIMESelectionChanged = true;
     AddIMETextChange(dummyChange);
@@ -1393,7 +1338,7 @@ nsresult GeckoEditableSupport::NotifyIME(
       
       PostFlushIMEChanges();
       mIMESelectionChanged = true;
-      AddIMETextChange(IMETextChange(aNotification));
+      AddIMETextChange(aNotification.mTextChangeData);
       break;
     }
 

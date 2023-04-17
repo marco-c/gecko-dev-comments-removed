@@ -459,7 +459,6 @@ class TextInputDelegateTest : BaseSessionTest() {
     }
 
     
-    @Ignore 
     @WithDisplay(width = 512, height = 512) 
     @Test fun inputConnection_deleteSurroundingText() {
         setupContent("foobarfoo")
