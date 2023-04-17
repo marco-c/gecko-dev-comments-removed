@@ -875,6 +875,11 @@ class PackedType : public T {
     }
   }
 
+  PackedType<ValTypeTraits> valType() const {
+    MOZ_ASSERT(isValType());
+    return PackedType<ValTypeTraits>(tc_);
+  }
+
   bool isValType() const {
     switch (tc_.typeCode()) {
       case TypeCode::I8:
@@ -993,6 +998,8 @@ static inline bool IsNumberType(ValType vt) { return !vt.isReference(); }
 static inline jit::MIRType ToMIRType(const Maybe<ValType>& t) {
   return t ? ToMIRType(ValType(t.ref())) : jit::MIRType::None;
 }
+
+extern bool ToValType(JSContext* cx, HandleValue v, ValType* out);
 
 extern UniqueChars ToString(ValType type);
 
@@ -1461,6 +1468,9 @@ class MOZ_NON_PARAM Val : public LitVal {
     return cell_.ref_.asJSObjectAddress();
   }
 
+  void readFromRootedLocation(const void* loc);
+  void writeToRootedLocation(void* loc, bool mustWrite64) const;
+
   
   static bool fromJSValue(JSContext* cx, ValType targetType, HandleValue val,
                           MutableHandle<Val> rval);
@@ -1504,6 +1514,16 @@ class NoDebug;
 class DebugCodegenVal;
 
 
+enum class CoercionLevel {
+  
+  Spec,
+  
+  
+  
+  Lossless,
+};
+
+
 
 
 
@@ -1514,10 +1534,12 @@ class DebugCodegenVal;
 
 template <typename Debug = NoDebug>
 extern bool ToWebAssemblyValue(JSContext* cx, HandleValue val, FieldType type,
-                               void* loc, bool mustWrite64);
+                               void* loc, bool mustWrite64,
+                               CoercionLevel level = CoercionLevel::Spec);
 template <typename Debug = NoDebug>
 extern bool ToWebAssemblyValue(JSContext* cx, HandleValue val, ValType type,
-                               void* loc, bool mustWrite64);
+                               void* loc, bool mustWrite64,
+                               CoercionLevel level = CoercionLevel::Spec);
 
 
 
@@ -1529,10 +1551,12 @@ extern bool ToWebAssemblyValue(JSContext* cx, HandleValue val, ValType type,
 
 template <typename Debug = NoDebug>
 extern bool ToJSValue(JSContext* cx, const void* src, FieldType type,
-                      MutableHandleValue dst);
+                      MutableHandleValue dst,
+                      CoercionLevel level = CoercionLevel::Spec);
 template <typename Debug = NoDebug>
 extern bool ToJSValue(JSContext* cx, const void* src, ValType type,
-                      MutableHandleValue dst);
+                      MutableHandleValue dst,
+                      CoercionLevel level = CoercionLevel::Spec);
 
 
 

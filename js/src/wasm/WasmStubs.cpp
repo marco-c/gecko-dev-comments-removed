@@ -445,7 +445,7 @@ static void SetupABIArguments(MacroAssembler& masm, const FuncExport& fe,
             
             
             
-            masm.breakpoint();
+            masm.loadUnalignedSimd128(src, iter->fpu());
             break;
 #else
             MOZ_CRASH("V128 not supported in SetupABIArguments");
@@ -492,7 +492,11 @@ static void SetupABIArguments(MacroAssembler& masm, const FuncExport& fe,
             
             
             
-            masm.breakpoint();
+            ScratchSimd128Scope fpscratch(masm);
+            masm.loadUnalignedSimd128(src, fpscratch);
+            masm.storeUnalignedSimd128(
+                fpscratch,
+                Address(masm.getStackPointer(), iter->offsetFromArgBase()));
             break;
 #else
             MOZ_CRASH("V128 not supported in SetupABIArguments");
