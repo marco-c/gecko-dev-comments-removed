@@ -29,6 +29,24 @@ const waitUntil = function(predicate, interval = 100) {
 
 
 
+
+
+const waitForPresShell = function(context) {
+  return SpecialPowers.spawn(context, [], async () => {
+    const winUtils = SpecialPowers.getDOMWindowUtils(content);
+    await ContentTaskUtils.waitForCondition(() => {
+      try {
+        return !!winUtils.getPresShellId();
+      } catch (e) {
+        return false;
+      }
+    }, "Waiting for a valid presShell");
+  });
+};
+
+
+
+
 const addTab = async function(url) {
   info("Adding a new tab with URL: " + url);
 
@@ -38,6 +56,10 @@ const addTab = async function(url) {
   gBrowser.selectedTab = tab;
 
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
+
+  
+  
+  await waitForPresShell(tab.linkedBrowser);
 
   info("Tab added and finished loading");
 
