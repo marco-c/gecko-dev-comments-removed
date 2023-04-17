@@ -522,6 +522,7 @@ class nsDocShell final : public nsDocLoader,
                               nsresult aStatusCode) override;
 
  private:  
+  friend class nsAppShellService;
   friend class nsDSURIContentListener;
   friend class FramingChecker;
   friend class OnLinkClickEvent;
@@ -588,7 +589,7 @@ class nsDocShell final : public nsDocLoader,
   
   nsresult CreateAboutBlankContentViewer(
       nsIPrincipal* aPrincipal, nsIPrincipal* aPartitionedPrincipal,
-      nsIContentSecurityPolicy* aCSP, nsIURI* aBaseURI,
+      nsIContentSecurityPolicy* aCSP, nsIURI* aBaseURI, bool aIsInitialDocument,
       const mozilla::Maybe<nsILoadInfo::CrossOriginEmbedderPolicy>& aCOEP =
           mozilla::Nothing(),
       bool aTryToSaveOldPresentation = true, bool aCheckPermitUnload = true,

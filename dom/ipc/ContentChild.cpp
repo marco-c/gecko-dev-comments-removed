@@ -1742,6 +1742,13 @@ mozilla::ipc::IPCResult ContentChild::RecvConstructBrowser(
     return IPC_FAIL(this, "Null or discarded initial BrowsingContext");
   }
 
+  if (!aWindowInit.isInitialDocument() ||
+      !NS_IsAboutBlank(aWindowInit.documentURI())) {
+    return IPC_FAIL(this,
+                    "Logic in CreateContentViewerForActor currently requires "
+                    "actors to be initial about:blank documents");
+  }
+
   
   
   

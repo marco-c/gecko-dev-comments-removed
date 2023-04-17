@@ -1025,22 +1025,21 @@ nsresult nsWindowWatcher::OpenWindowInternal(
 
   RefPtr<nsGlobalWindowOuter> win(
       nsGlobalWindowOuter::Cast(newBC->GetDOMWindow()));
-  if (win) {
-    if (windowIsNew) {
 #ifdef DEBUG
-      
-      
-      
-      nsCOMPtr<nsIChannel> chan;
-      newDocShell->GetDocumentChannel(getter_AddRefs(chan));
-      MOZ_ASSERT(!chan, "Why is there a document channel?");
-#endif
+  if (win && windowIsNew) {
+    
+    
+    
+    nsCOMPtr<nsIChannel> chan;
+    newDocShell->GetDocumentChannel(getter_AddRefs(chan));
+    MOZ_ASSERT(!chan, "Why is there a document channel?");
 
-      if (RefPtr<Document> doc = win->GetExtantDoc()) {
-        doc->SetIsInitialDocument(true);
-      }
+    if (RefPtr<Document> doc = win->GetExtantDoc()) {
+      MOZ_ASSERT(doc->IsInitialDocument(),
+                 "New window's document should be an initial document");
     }
   }
+#endif
 
   MOZ_ASSERT(win || !windowIsNew, "New windows are always created in-process");
 

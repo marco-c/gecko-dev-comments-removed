@@ -182,6 +182,7 @@ void WindowGlobalChild::OnNewDocument(Document* aDocument) {
   
 
   
+  SendSetIsInitialDocument(aDocument->IsInitialDocument());
   SetDocumentURI(aDocument->GetDocumentURI());
   SetDocumentPrincipal(aDocument->NodePrincipal(),
                        aDocument->EffectiveStoragePrincipal());

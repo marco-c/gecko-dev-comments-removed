@@ -754,12 +754,14 @@ nsresult nsAppShellService::JustCreateTopWindow(
       
       
       
-      rv = docShell->CreateAboutBlankContentViewer(principal, principal,
-                                                    nullptr);
+      rv = docShell->CreateAboutBlankContentViewer(
+          principal, principal,  nullptr,  nullptr,
+           true);
       NS_ENSURE_SUCCESS(rv, rv);
       RefPtr<Document> doc = docShell->GetDocument();
       NS_ENSURE_TRUE(!!doc, NS_ERROR_FAILURE);
-      doc->SetIsInitialDocument(true);
+      MOZ_ASSERT(doc->IsInitialDocument(),
+                 "Document should be an initial document");
     }
 
     
