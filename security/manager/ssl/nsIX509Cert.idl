@@ -172,14 +172,6 @@ interface nsIX509Cert : nsISupports {
 
 
 
-  [must_use]
-  readonly attribute AString keyUsages;
-
-  
-
-
-
-
 
   [must_use]
   Array<octet> getRawDER();
