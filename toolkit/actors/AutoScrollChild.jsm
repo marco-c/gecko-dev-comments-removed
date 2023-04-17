@@ -32,6 +32,19 @@ class AutoScrollChild extends JSWindowActorChild {
     );
     let content = node.ownerGlobal;
 
+    
+    
+    if (mmPaste) {
+      if (node.ownerDocument?.designMode == "on") {
+        return true;
+      }
+      const element =
+        node.nodeType === content.Node.ELEMENT_NODE ? node : node.parentElement;
+      if (element.isContentEditable) {
+        return true;
+      }
+    }
+
     while (node) {
       if (
         (node instanceof content.HTMLAnchorElement ||
