@@ -165,6 +165,10 @@ class MediaKeys final : public nsIObserver,
     promise->MaybeResolve(aResult);
   }
 
+  
+  
+  constexpr static const char* kMediaKeysRequestTopic = "mediakeys-request";
+
  private:
   
   
