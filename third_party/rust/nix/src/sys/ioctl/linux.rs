@@ -93,7 +93,7 @@ macro_rules! ioc {
 
 
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! request_code_none {
     ($ty:expr, $nr:expr) => (ioc!($crate::sys::ioctl::NONE, $ty, $nr, 0))
 }
@@ -108,7 +108,7 @@ macro_rules! request_code_none {
 
 
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! request_code_read {
     ($ty:expr, $nr:expr, $sz:expr) => (ioc!($crate::sys::ioctl::READ, $ty, $nr, $sz))
 }
@@ -123,7 +123,7 @@ macro_rules! request_code_read {
 
 
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! request_code_write {
     ($ty:expr, $nr:expr, $sz:expr) => (ioc!($crate::sys::ioctl::WRITE, $ty, $nr, $sz))
 }
@@ -134,7 +134,7 @@ macro_rules! request_code_write {
 
 
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! request_code_readwrite {
     ($ty:expr, $nr:expr, $sz:expr) => (ioc!($crate::sys::ioctl::READ | $crate::sys::ioctl::WRITE, $ty, $nr, $sz))
 }

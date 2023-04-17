@@ -55,7 +55,7 @@ libc_bitflags!(
 
 
 
-#[derive(Eq, PartialEq, Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum WaitStatus {
     
     

@@ -287,7 +287,7 @@ macro_rules! convert_ioctl_res {
 
 
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! ioctl_none {
     ($(#[$attr:meta])* $name:ident, $ioty:expr, $nr:expr) => (
         $(#[$attr])*
@@ -328,7 +328,7 @@ macro_rules! ioctl_none {
 
 
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! ioctl_none_bad {
     ($(#[$attr:meta])* $name:ident, $nr:expr) => (
         $(#[$attr])*
@@ -365,7 +365,7 @@ macro_rules! ioctl_none_bad {
 
 
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! ioctl_read {
     ($(#[$attr:meta])* $name:ident, $ioty:expr, $nr:expr, $ty:ty) => (
         $(#[$attr])*
@@ -402,7 +402,7 @@ macro_rules! ioctl_read {
 
 
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! ioctl_read_bad {
     ($(#[$attr:meta])* $name:ident, $nr:expr, $ty:ty) => (
         $(#[$attr])*
@@ -439,7 +439,7 @@ macro_rules! ioctl_read_bad {
 
 
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! ioctl_write_ptr {
     ($(#[$attr:meta])* $name:ident, $ioty:expr, $nr:expr, $ty:ty) => (
         $(#[$attr])*
@@ -476,7 +476,7 @@ macro_rules! ioctl_write_ptr {
 
 
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! ioctl_write_ptr_bad {
     ($(#[$attr:meta])* $name:ident, $nr:expr, $ty:ty) => (
         $(#[$attr])*
@@ -503,21 +503,21 @@ cfg_if!{
         /// ```rust,ignore
         /// pub unsafe fn FUNCTION_NAME(fd: libc::c_int, data: nix::sys::ioctl::ioctl_param_type) -> Result<libc::c_int>
         /// ```
-        ///
-        /// `nix::sys::ioctl::ioctl_param_type` depends on the OS:
-        /// *   BSD - `libc::c_int`
-        /// *   Linux - `libc::c_ulong`
-        ///
-        /// For a more in-depth explanation of ioctls, see [`::sys::ioctl`](sys/ioctl/index.html).
-        ///
-        /// # Example
-        ///
-        /// ```
-        /// # #[macro_use] extern crate nix;
-        /// ioctl_write_int!(vt_activate, b'v', 4);
-        /// # fn main() {}
-        /// ```
-        #[macro_export]
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        #[macro_export(local_inner_macros)]
         macro_rules! ioctl_write_int {
             ($(#[$attr:meta])* $name:ident, $ioty:expr, $nr:expr) => (
                 $(#[$attr])*
@@ -542,23 +542,23 @@ cfg_if!{
         /// ```rust,ignore
         /// pub unsafe fn FUNCTION_NAME(fd: libc::c_int, data: nix::sys::ioctl::ioctl_param_type) -> Result<libc::c_int>
         /// ```
-        ///
-        /// `nix::sys::ioctl::ioctl_param_type` depends on the OS:
-        /// *   BSD - `libc::c_int`
-        /// *   Linux - `libc::c_ulong`
-        ///
-        /// For a more in-depth explanation of ioctls, see [`::sys::ioctl`](sys/ioctl/index.html).
-        ///
-        /// # Example
-        ///
-        /// ```
-        /// # #[macro_use] extern crate nix;
-        /// const HCI_IOC_MAGIC: u8 = b'k';
-        /// const HCI_IOC_HCIDEVUP: u8 = 1;
-        /// ioctl_write_int!(hci_dev_up, HCI_IOC_MAGIC, HCI_IOC_HCIDEVUP);
-        /// # fn main() {}
-        /// ```
-        #[macro_export]
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        #[macro_export(local_inner_macros)]
         macro_rules! ioctl_write_int {
             ($(#[$attr:meta])* $name:ident, $ioty:expr, $nr:expr) => (
                 $(#[$attr])*
@@ -603,7 +603,7 @@ cfg_if!{
 
 
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! ioctl_write_int_bad {
     ($(#[$attr:meta])* $name:ident, $nr:expr) => (
         $(#[$attr])*
@@ -640,7 +640,7 @@ macro_rules! ioctl_write_int_bad {
 
 
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! ioctl_readwrite {
     ($(#[$attr:meta])* $name:ident, $ioty:expr, $nr:expr, $ty:ty) => (
         $(#[$attr])*
@@ -668,7 +668,7 @@ macro_rules! ioctl_readwrite {
 
 
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! ioctl_readwrite_bad {
     ($(#[$attr:meta])* $name:ident, $nr:expr, $ty:ty) => (
         $(#[$attr])*
@@ -697,7 +697,7 @@ macro_rules! ioctl_readwrite_bad {
 
 
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! ioctl_read_buf {
     ($(#[$attr:meta])* $name:ident, $ioty:expr, $nr:expr, $ty:ty) => (
         $(#[$attr])*
@@ -736,7 +736,7 @@ macro_rules! ioctl_read_buf {
 
 
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! ioctl_write_buf {
     ($(#[$attr:meta])* $name:ident, $ioty:expr, $nr:expr, $ty:ty) => (
         $(#[$attr])*
@@ -765,7 +765,7 @@ macro_rules! ioctl_write_buf {
 
 
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! ioctl_readwrite_buf {
     ($(#[$attr:meta])* $name:ident, $ioty:expr, $nr:expr, $ty:ty) => (
         $(#[$attr])*

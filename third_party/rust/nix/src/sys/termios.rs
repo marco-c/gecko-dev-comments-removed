@@ -176,8 +176,7 @@ use ::unistd::Pid;
 
 
 
-#[derive(Clone)]
-#[allow(missing_debug_implementations)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Termios {
     inner: RefCell<libc::termios>,
     

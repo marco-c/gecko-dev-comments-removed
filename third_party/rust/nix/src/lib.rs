@@ -8,12 +8,14 @@
 
 
 #![allow(dead_code)]
-
+#![cfg_attr(test, deny(warnings))]
 #![recursion_limit = "500"]
 #![deny(unused)]
 #![deny(unstable_features)]
 #![deny(missing_copy_implementations)]
 #![deny(missing_debug_implementations)]
+
+#![allow(deprecated)]
 
 
 #[macro_use]
@@ -35,7 +37,8 @@ pub mod errno;
 pub mod features;
 pub mod fcntl;
 #[deny(missing_docs)]
-#[cfg(any(target_os = "dragonfly",
+#[cfg(any(target_os = "android",
+          target_os = "dragonfly",
           target_os = "freebsd",
           target_os = "ios",
           target_os = "linux",
@@ -61,8 +64,6 @@ pub mod net;
 pub mod poll;
 #[deny(missing_docs)]
 pub mod pty;
-#[cfg(any(target_os = "android",
-          target_os = "linux"))]
 pub mod sched;
 pub mod sys;
 
@@ -97,7 +98,7 @@ pub type Result<T> = result::Result<T, Error>;
 
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Error {
     Sys(Errno),
     InvalidPath,

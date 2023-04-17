@@ -44,7 +44,7 @@ macro_rules! ioc {
 
 
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! request_code_none {
     ($g:expr, $n:expr) => (ioc!($crate::sys::ioctl::VOID, $g, $n, 0))
 }
@@ -55,7 +55,7 @@ macro_rules! request_code_none {
 
 
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! request_code_write_int {
     ($g:expr, $n:expr) => (ioc!($crate::sys::ioctl::VOID, $g, $n, ::std::mem::size_of::<$crate::libc::c_int>()))
 }
@@ -70,7 +70,7 @@ macro_rules! request_code_write_int {
 
 
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! request_code_read {
     ($g:expr, $n:expr, $len:expr) => (ioc!($crate::sys::ioctl::OUT, $g, $n, $len))
 }
@@ -85,7 +85,7 @@ macro_rules! request_code_read {
 
 
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! request_code_write {
     ($g:expr, $n:expr, $len:expr) => (ioc!($crate::sys::ioctl::IN, $g, $n, $len))
 }
@@ -96,7 +96,7 @@ macro_rules! request_code_write {
 
 
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! request_code_readwrite {
     ($g:expr, $n:expr, $len:expr) => (ioc!($crate::sys::ioctl::INOUT, $g, $n, $len))
 }

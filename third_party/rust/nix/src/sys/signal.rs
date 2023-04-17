@@ -265,8 +265,7 @@ const SIGNALS: [Signal; 31] = [
 
 pub const NSIG: libc::c_int = 32;
 
-#[derive(Clone, Copy)]
-#[allow(missing_debug_implementations)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct SignalIterator {
     next: usize,
 }
@@ -328,8 +327,7 @@ libc_enum! {
     }
 }
 
-#[derive(Clone, Copy)]
-#[allow(missing_debug_implementations)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct SigSet {
     sigset: libc::sigset_t
 }
@@ -427,7 +425,7 @@ impl AsRef<libc::sigset_t> for SigSet {
 
 
 #[allow(unknown_lints)]
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SigHandler {
     
     SigDfl,
@@ -441,8 +439,7 @@ pub enum SigHandler {
 }
 
 
-#[derive(Clone, Copy)]
-#[allow(missing_debug_implementations)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct SigAction {
     sigaction: libc::sigaction
 }
@@ -650,6 +647,22 @@ pub fn kill<T: Into<Option<Signal>>>(pid: ::unistd::Pid, signal: T) -> Result<()
     Errno::result(res).map(drop)
 }
 
+
+
+
+
+
+
+pub fn killpg<T: Into<Option<Signal>>>(pgrp: ::unistd::Pid, signal: T) -> Result<()> {
+    let res = unsafe { libc::killpg(pgrp.into(),
+                                  match signal.into() {
+                                      Some(s) => s as libc::c_int,
+                                      None => 0,
+                                  }) };
+
+    Errno::result(res).map(drop)
+}
+
 pub fn raise(signal: Signal) -> Result<()> {
     let res = unsafe { libc::raise(signal as libc::c_int) };
 
@@ -667,7 +680,7 @@ pub type type_of_thread_id = libc::pid_t;
 
 
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum SigevNotify {
     
     SigevNone,
@@ -694,7 +707,6 @@ mod sigevent {
     use libc;
     use std::mem;
     use std::ptr;
-    use std::fmt::{self, Debug};
     use super::SigevNotify;
     #[cfg(any(target_os = "freebsd", target_os = "linux"))]
     use super::type_of_thread_id;
@@ -702,7 +714,7 @@ mod sigevent {
     
     
     #[repr(C)]
-    #[derive(Clone, Copy)]
+    #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
     pub struct SigEvent {
         sigevent: libc::sigevent
     }
@@ -772,28 +784,6 @@ mod sigevent {
         }
     }
 
-    impl Debug for SigEvent {
-        #[cfg(any(target_os = "freebsd", target_os = "linux"))]
-        fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-            fmt.debug_struct("SigEvent")
-                .field("sigev_notify", &self.sigevent.sigev_notify)
-                .field("sigev_signo", &self.sigevent.sigev_signo)
-                .field("sigev_value", &self.sigevent.sigev_value.sival_ptr)
-                .field("sigev_notify_thread_id",
-                        &self.sigevent.sigev_notify_thread_id)
-                .finish()
-        }
-
-        #[cfg(not(any(target_os = "freebsd", target_os = "linux")))]
-        fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-            fmt.debug_struct("SigEvent")
-                .field("sigev_notify", &self.sigevent.sigev_notify)
-                .field("sigev_signo", &self.sigevent.sigev_signo)
-                .field("sigev_value", &self.sigevent.sigev_value.sival_ptr)
-                .finish()
-        }
-    }
-
     impl<'a> From<&'a libc::sigevent> for SigEvent {
         fn from(sigevent: &libc::sigevent) -> Self {
             SigEvent{ sigevent: *sigevent }
@@ -855,12 +845,6 @@ mod tests {
 
         assert!(two_signals.contains(SIGUSR1));
         assert!(two_signals.contains(SIGUSR2));
-    }
-
-    
-    #[test]
-    fn test_thread_signal_get_mask() {
-        assert!(SigSet::thread_get_mask().is_ok());
     }
 
     #[test]
@@ -967,8 +951,6 @@ mod tests {
         }).join().unwrap();
     }
 
-    
-    #[cfg(not(any(target_os = "macos", target_os = "ios")))]
     #[test]
     fn test_sigwait() {
         thread::spawn(|| {

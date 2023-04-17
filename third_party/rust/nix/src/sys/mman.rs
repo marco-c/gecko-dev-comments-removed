@@ -266,6 +266,35 @@ pub unsafe fn madvise(addr: *mut c_void, length: size_t, advise: MmapAdvise) -> 
     Errno::result(libc::madvise(addr, length, advise as i32)).map(drop)
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub unsafe fn mprotect(addr: *mut c_void, length: size_t, prot: ProtFlags) -> Result<()> {
+    Errno::result(libc::mprotect(addr, length, prot.bits())).map(drop)
+}
+
 pub unsafe fn msync(addr: *mut c_void, length: size_t, flags: MsFlags) -> Result<()> {
     Errno::result(libc::msync(addr, length, flags.bits())).map(drop)
 }

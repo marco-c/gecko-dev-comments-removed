@@ -88,8 +88,7 @@ pub fn pread(fd: RawFd, buf: &mut [u8], offset: off_t) -> Result<usize>{
 
 #[cfg(target_os = "linux")]
 #[repr(C)]
-#[derive(Clone, Copy)]
-#[allow(missing_debug_implementations)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct RemoteIoVec {
     
     pub base: usize,
@@ -117,6 +116,16 @@ pub struct RemoteIoVec {
 
 
 
+#[cfg(target_os = "linux")]
+pub fn process_vm_writev(pid: ::unistd::Pid, local_iov: &[IoVec<&[u8]>], remote_iov: &[RemoteIoVec]) -> Result<usize> {
+    let res = unsafe {
+        libc::process_vm_writev(pid.into(),
+                                local_iov.as_ptr() as *const libc::iovec, local_iov.len() as libc::c_ulong,
+                                remote_iov.as_ptr() as *const libc::iovec, remote_iov.len() as libc::c_ulong, 0)
+    };
+
+    Errno::result(res).map(|r| r as usize)
+}
 
 
 
@@ -138,29 +147,19 @@ pub struct RemoteIoVec {
 
 
 
+#[cfg(any(target_os = "linux"))]
+pub fn process_vm_readv(pid: ::unistd::Pid, local_iov: &[IoVec<&mut [u8]>], remote_iov: &[RemoteIoVec]) -> Result<usize> {
+    let res = unsafe {
+        libc::process_vm_readv(pid.into(),
+                               local_iov.as_ptr() as *const libc::iovec, local_iov.len() as libc::c_ulong,
+                               remote_iov.as_ptr() as *const libc::iovec, remote_iov.len() as libc::c_ulong, 0)
+    };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    Errno::result(res).map(|r| r as usize)
+}
 
 #[repr(C)]
-#[allow(missing_debug_implementations)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct IoVec<T>(libc::iovec, PhantomData<T>);
 
 impl<T> IoVec<T> {

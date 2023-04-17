@@ -11,8 +11,7 @@ pub use libc::FD_SETSIZE;
 
 
 #[repr(C)]
-#[derive(Clone, Copy)]
-#[allow(missing_debug_implementations)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct FdSet(libc::fd_set);
 
 impl FdSet {

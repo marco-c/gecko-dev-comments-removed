@@ -1144,6 +1144,42 @@ pub fn unlink<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     Errno::result(res).map(drop)
 }
 
+
+#[derive(Clone, Copy, Debug)]
+pub enum UnlinkatFlags {
+    RemoveDir,
+    NoRemoveDir,
+}
+
+
+
+
+
+
+
+
+
+
+
+pub fn unlinkat<P: ?Sized + NixPath>(
+    dirfd: Option<RawFd>,
+    path: &P,
+    flag: UnlinkatFlags,
+) -> Result<()> {
+    let atflag =
+        match flag {
+            UnlinkatFlags::RemoveDir => AtFlags::AT_REMOVEDIR,
+            UnlinkatFlags::NoRemoveDir => AtFlags::empty(),
+        };
+    let res = path.with_nix_path(|cstr| {
+        unsafe {
+            libc::unlinkat(at_rawfd(dirfd), cstr.as_ptr(), atflag.bits() as libc::c_int)
+        }
+    })?;
+    Errno::result(res).map(drop)
+}
+
+
 #[inline]
 pub fn chroot<P: ?Sized + NixPath>(path: &P) -> Result<()> {
     let res = path.with_nix_path(|cstr| {
@@ -1231,6 +1267,26 @@ pub fn getgid() -> Gid {
 #[inline]
 pub fn getegid() -> Gid {
     Gid(unsafe { libc::getegid() })
+}
+
+
+
+
+#[inline]
+pub fn seteuid(euid: Uid) -> Result<()> {
+    let res = unsafe { libc::seteuid(euid.into()) };
+
+    Errno::result(res).map(drop)
+}
+
+
+
+
+#[inline]
+pub fn setegid(egid: Gid) -> Result<()> {
+    let res = unsafe { libc::setegid(egid.into()) };
+
+    Errno::result(res).map(drop)
 }
 
 
@@ -2310,4 +2366,29 @@ mod setres {
 
         Errno::result(res).map(drop)
     }
+}
+
+libc_bitflags!{
+    /// Options for access()
+    pub struct AccessFlags : c_int {
+        /// Test for existence of file.
+        F_OK;
+        /// Test for read permission.
+        R_OK;
+        /// Test for write permission.
+        W_OK;
+        /// Test for execute (search) permission.
+        X_OK;
+    }
+}
+
+
+
+pub fn access<P: ?Sized + NixPath>(path: &P, amode: AccessFlags) -> Result<()> {
+    let res = path.with_nix_path(|cstr| {
+        unsafe {
+            libc::access(cstr.as_ptr(), amode.bits)
+        }
+    })?;
+    Errno::result(res).map(drop)
 }

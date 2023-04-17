@@ -6,8 +6,7 @@ use Result;
 use errno::Errno;
 
 
-#[derive(Copy, Clone)]
-#[allow(missing_debug_implementations)] 
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 pub struct SysInfo(libc::sysinfo);
 
 impl SysInfo {

@@ -57,8 +57,7 @@ libc_bitflags!(
 
 
 #[repr(C)]
-#[derive(Clone, Copy)]
-#[allow(missing_debug_implementations)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct Statvfs(libc::statvfs);
 
 impl Statvfs {
