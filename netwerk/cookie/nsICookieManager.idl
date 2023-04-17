@@ -47,9 +47,12 @@ interface nsICookieManager : nsISupports
   
 
 
-  readonly attribute uint32_t cookieBehavior;
+
+
+
+  uint32_t getCookieBehavior(in boolean aIsPrivate);
   %{C++
-    static uint32_t GetCookieBehavior();
+    static uint32_t GetCookieBehavior(bool aIsPrivate);
   %}
 
   

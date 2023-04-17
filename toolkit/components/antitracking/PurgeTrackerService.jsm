@@ -319,7 +319,7 @@ PurgeTrackerService.prototype = {
     
     
     
-    let cookieBehavior = Services.cookies.cookieBehavior;
+    let cookieBehavior = Services.cookies.getCookieBehavior(false);
 
     let activeWithCookieBehavior =
       cookieBehavior == Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN ||

@@ -513,8 +513,10 @@ StorageManager* Navigator::Storage() {
 }
 
 bool Navigator::CookieEnabled() {
-  bool cookieEnabled = (nsICookieManager::GetCookieBehavior() !=
-                        nsICookieService::BEHAVIOR_REJECT);
+  nsCOMPtr<nsILoadContext> loadContext = do_GetInterface(mWindow);
+  bool cookieEnabled =
+      nsICookieManager::GetCookieBehavior(loadContext->UsePrivateBrowsing()) !=
+      nsICookieService::BEHAVIOR_REJECT;
 
   
   
