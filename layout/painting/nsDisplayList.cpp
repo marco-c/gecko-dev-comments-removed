@@ -2745,7 +2745,7 @@ nsDisplayItem::nsDisplayItem(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
     mFrame->AddDisplayItem(this);
   }
 
-  mReferenceFrame = aBuilder->FindReferenceFrameFor(aFrame, &mToReferenceFrame);
+  aBuilder->FindReferenceFrameFor(aFrame, &mToReferenceFrame);
   
   
   mAnimatedGeometryRoot = aBuilder->FindAnimatedGeometryRootFor(aFrame);
@@ -4737,19 +4737,6 @@ nsDisplayWrapList::nsDisplayWrapList(
   mListPtr->AppendToTop(aList);
   mOriginalClipChain = mClipChain;
   nsDisplayWrapList::UpdateBounds(aBuilder);
-
-#ifdef DEBUG
-  if (!aFrame || !aFrame->IsTransformed()) {
-    return;
-  }
-
-  nsDisplayItem* item = mListPtr->GetBottom();
-  if (item && item->Frame() == mFrame &&
-      (mListPtr->Count() == 1 ||
-       item->GetType() == DisplayItemType::TYPE_TRANSFORM)) {
-    MOZ_ASSERT(mReferenceFrame == item->ReferenceFrame());
-  }
-#endif
 }
 
 nsDisplayWrapList::nsDisplayWrapList(nsDisplayListBuilder* aBuilder,
@@ -4773,7 +4760,6 @@ nsDisplayWrapList::nsDisplayWrapList(nsDisplayListBuilder* aBuilder,
 
   
   if (aItem->Frame() == aFrame) {
-    mReferenceFrame = aItem->ReferenceFrame();
     mToReferenceFrame = aItem->ToReferenceFrame();
   }
 
@@ -5899,7 +5885,8 @@ bool nsDisplayStickyPosition::CreateWebRenderCommands(
     stickyScrollContainer->GetScrollRanges(mFrame, &outer, &inner);
 
     nsIFrame* scrollFrame = do_QueryFrame(stickyScrollContainer->ScrollFrame());
-    nsPoint offset = scrollFrame->GetOffsetToCrossDoc(ReferenceFrame());
+    nsPoint offset =
+        scrollFrame->GetOffsetToCrossDoc(Frame()) + ToReferenceFrame();
 
     
     
@@ -6118,9 +6105,9 @@ nsDisplayScrollInfoLayer::nsDisplayScrollInfoLayer(
 UniquePtr<ScrollMetadata> nsDisplayScrollInfoLayer::ComputeScrollMetadata(
     nsDisplayListBuilder* aBuilder, WebRenderLayerManager* aLayerManager) {
   ScrollMetadata metadata = nsLayoutUtils::ComputeScrollMetadata(
-      mScrolledFrame, mScrollFrame, mScrollFrame->GetContent(),
-      ReferenceFrame(), aLayerManager, mScrollParentId, mScrollFrame->GetSize(),
-      false);
+      mScrolledFrame, mScrollFrame, mScrollFrame->GetContent(), Frame(),
+      ToReferenceFrame(), aLayerManager, mScrollParentId,
+      mScrollFrame->GetSize(), false);
   metadata.GetMetrics().SetIsScrollInfoLayer(true);
   nsIScrollableFrame* scrollableFrame = mScrollFrame->GetScrollTargetFrame();
   if (scrollableFrame) {
@@ -6309,11 +6296,9 @@ void nsDisplayTransform::SetReferenceFrameToAncestor(
   
   
   
-#ifdef DEBUG
   nsIFrame* outerFrame = nsLayoutUtils::GetCrossDocParentFrameInProcess(mFrame);
-  MOZ_ASSERT(mReferenceFrame == aBuilder->FindReferenceFrameFor(outerFrame));
-#endif
-  mToReferenceFrame = mFrame->GetOffsetToCrossDoc(mReferenceFrame);
+  const nsIFrame* referenceFrame = aBuilder->FindReferenceFrameFor(outerFrame);
+  mToReferenceFrame = mFrame->GetOffsetToCrossDoc(referenceFrame);
 
   if (DisplayPortUtils::IsFixedPosFrameInDisplayPort(mFrame)) {
     

@@ -1078,12 +1078,8 @@ static bool ProcessFrameInternal(nsIFrame* aFrame,
       
       
       nsRect previousVisible = wrapperItem->GetBuildingRectForChildren();
-      if (wrapperItem->ReferenceFrameForChildren() ==
-          wrapperItem->ReferenceFrame()) {
+      if (wrapperItem->ReferenceFrameForChildren() != wrapperItem->Frame()) {
         previousVisible -= wrapperItem->ToReferenceFrame();
-      } else {
-        MOZ_ASSERT(wrapperItem->ReferenceFrameForChildren() ==
-                   wrapperItem->Frame());
       }
 
       if (!previousVisible.Contains(aOverflow)) {
