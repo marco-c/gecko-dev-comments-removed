@@ -2,8 +2,9 @@
 
 
 
-use pin_project_lite::pin_project;
 use std::{cell::Cell, panic, pin::Pin, thread};
+
+use pin_project_lite::pin_project;
 
 struct D<'a>(&'a Cell<usize>, usize);
 
