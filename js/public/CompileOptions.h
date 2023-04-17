@@ -155,6 +155,23 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  bool borrowBuffer = false;
+
+  
+  
+  
+  
+  
+  
+  
+  
   bool usePinnedBytecode = false;
 
   

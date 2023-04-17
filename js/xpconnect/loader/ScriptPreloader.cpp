@@ -877,6 +877,10 @@ void ScriptPreloader::FillCompileOptionsForCachedStencil(
   
   
   options.setSourceIsLazy(true);
+
+  
+  
+  options.borrowBuffer = true;
 }
 
 already_AddRefed<JS::Stencil> ScriptPreloader::GetCachedStencil(

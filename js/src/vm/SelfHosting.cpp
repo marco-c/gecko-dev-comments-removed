@@ -2672,6 +2672,7 @@ bool JSRuntime::initSelfHosting(JSContext* cx, JS::SelfHostedCache xdrCache,
   if (xdrCache.Length() > 0) {
     
     
+    options.borrowBuffer = true;
     options.usePinnedBytecode = true;
 
     Rooted<UniquePtr<frontend::CompilationInput>> input(
