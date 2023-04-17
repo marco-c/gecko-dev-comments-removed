@@ -1146,7 +1146,7 @@ void nsLookAndFeel::WithAltThemeConfigured(const Callback& aFn) {
     
     
     g_object_set(settings, "gtk-theme-name",
-                 mSystemTheme.mIsDark ? "Adwaita" : "Adwaita Dark", nullptr);
+                 mSystemTheme.mIsDark ? "Adwaita" : "Adwaita-dark", nullptr);
     moz_gtk_refresh();
     fellBackToDefaultTheme = true;
   }
