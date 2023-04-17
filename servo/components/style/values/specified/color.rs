@@ -412,6 +412,10 @@ pub enum SystemColor {
     MozAccentColorForeground,
 
     
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
+    MozAutofillBackground,
+
+    
     MozWinMediatext,
     
     MozWinCommunicationstext,
