@@ -4687,7 +4687,9 @@ var ContentBlockingCategoriesPrefs = {
     
     
     
-    let policy = Services.policies.getActivePolicies();
+    let policy =
+      Services.policies.status != Ci.nsIEnterprisePolicies.INACTIVE &&
+      Services.policies.getActivePolicies();
     if (policy && (policy.EnableTrackingProtection || policy.Cookies)) {
       Services.prefs.setStringPref(this.PREF_CB_CATEGORY, "custom");
     }

@@ -128,6 +128,17 @@ Preferences.addAll([
   { id: "urlclassifier.trackingTable", type: "string" },
 
   
+  {
+    id: "privacy.restrict3rdpartystorage.rollout.enabledByDefault",
+    type: "bool",
+  },
+  {
+    id:
+      "privacy.restrict3rdpartystorage.rollout.preferences.TCPToggleInStandard",
+    type: "bool",
+  },
+
+  
   { id: "pref.privacy.disable_button.cookie_exceptions", type: "bool" },
   { id: "pref.privacy.disable_button.view_cookies", type: "bool" },
   { id: "pref.privacy.disable_button.change_blocklist", type: "bool" },
@@ -310,6 +321,34 @@ function setUpContentBlockingWarnings() {
   for (let link of links) {
     link.setAttribute("href", contentBlockingWarningUrl);
   }
+}
+
+function initTCPRolloutSection() {
+  document
+    .getElementById("tcp-rollout-learn-more-link")
+    .setAttribute(
+      "href",
+      Services.urlFormatter.formatURLPref("app.support.baseURL") +
+        Services.prefs.getStringPref(
+          "privacy.restrict3rdpartystorage.rollout.preferences.learnMoreURLSuffix"
+        )
+    );
+
+  
+  
+  const tcpOnboardingEnabledPref = Preferences.get(
+    "privacy.restrict3rdpartystorage.rollout.preferences.TCPToggleInStandard"
+  );
+
+  let updateTCPRolloutSectionVisibilityState = () => {
+    document.getElementById(
+      "etpStandardTCPRolloutBox"
+    ).hidden = !tcpOnboardingEnabledPref.value;
+  };
+
+  tcpOnboardingEnabledPref.on("change", updateTCPRolloutSectionVisibilityState);
+
+  updateTCPRolloutSectionVisibilityState();
 }
 
 var gPrivacyPane = {
@@ -942,6 +981,8 @@ var gPrivacyPane = {
     }
 
     setUpContentBlockingWarnings();
+
+    initTCPRolloutSection();
   },
 
   populateCategoryContents() {
@@ -984,6 +1025,22 @@ var gPrivacyPane = {
             rulesArray.push("cookieBehavior4");
             break;
           case BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN:
+            
+            
+            
+            
+            
+            
+            
+            if (
+              Services.prefs.getBoolPref(
+                "privacy.restrict3rdpartystorage.rollout.enabledByDefault",
+                false
+              )
+            ) {
+              rulesArray.push("cookieBehavior4");
+              break;
+            }
             rulesArray.push(
               gIsFirstPartyIsolated ? "cookieBehavior4" : "cookieBehavior5"
             );
