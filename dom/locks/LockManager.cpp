@@ -125,12 +125,6 @@ already_AddRefed<Promise> LockManager::Request(const nsAString& aName,
     return nullptr;
   }
 
-  if (aOptions.mSignal.WasPassed()) {
-    
-    aRv.ThrowNotSupportedError("AbortSignal support is not implemented yet");
-    return nullptr;
-  }
-
   if (!mActor) {
     
     aRv.ThrowInvalidStateError(
