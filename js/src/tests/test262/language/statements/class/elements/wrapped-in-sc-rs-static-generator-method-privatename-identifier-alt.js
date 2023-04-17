@@ -58,7 +58,6 @@
 
 
 
-
 class C {
   ;;;;
   ;;;;;;static * #$(value) {

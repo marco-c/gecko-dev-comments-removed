@@ -47,7 +47,6 @@
 
 
 
-
 class C {
   * #method() {};
 

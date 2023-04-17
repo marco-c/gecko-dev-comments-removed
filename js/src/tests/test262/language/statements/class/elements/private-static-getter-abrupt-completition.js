@@ -23,7 +23,6 @@
 
 
 
-
 class C {
   get #m() {
     throw new Test262Error();

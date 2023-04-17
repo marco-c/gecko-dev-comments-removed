@@ -23,7 +23,6 @@
 
 
 
-
 var C = class {
   static #xVal; static #yVal
   static #x(value) {

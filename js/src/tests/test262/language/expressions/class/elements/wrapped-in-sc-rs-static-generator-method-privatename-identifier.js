@@ -58,7 +58,6 @@
 
 
 
-
 var C = class {
   ;;;;
   ;;;;;;static * #$(value) {

@@ -26,7 +26,6 @@
 
 
 
-
 var C = class {
   #m() { return "Test262"; }
 

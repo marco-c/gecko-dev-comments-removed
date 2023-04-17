@@ -1,6 +1,4 @@
 
-
-
 var g7 = newGlobal({ newCompartment: true });
 g7.parent = this;
 g7.eval(`

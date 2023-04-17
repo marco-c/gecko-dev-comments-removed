@@ -73,7 +73,6 @@
 
 
 
-
 var callCount = 0;
 class C {
   static * #method([cls = class {}, xCls = class X {}, xCls2 = class { static name() {} }] = []) {

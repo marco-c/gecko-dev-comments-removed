@@ -24,7 +24,6 @@
 
 
 
-
 var C = class {
   static #xVal; static #yVal
   foo = "foobar"

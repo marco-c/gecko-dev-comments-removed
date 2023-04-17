@@ -71,7 +71,6 @@
 
 
 
-
 var callCount = 0;
 var C = class {
   static #method({ fn = function () {}, xFn = function x() {} }) {

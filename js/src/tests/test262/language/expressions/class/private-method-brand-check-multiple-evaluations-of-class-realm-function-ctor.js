@@ -19,7 +19,6 @@
 
 
 
-
 let classStringExpression = `
 return class C {
   #m() { return 'test262'; }

@@ -60,7 +60,6 @@
 
 
 
-
 var callCount = 0;
 class C {
   * #method({a, b, ...rest}) {

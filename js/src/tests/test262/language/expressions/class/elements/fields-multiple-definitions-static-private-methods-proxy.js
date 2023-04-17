@@ -22,7 +22,6 @@
 
 
 
-
 var C = class {
   static #x(value) {
     return 1;

@@ -20,7 +20,6 @@
 
 
 
-
 let classStringExpression = `(
 class C {
   #m() { return 'test262'; }

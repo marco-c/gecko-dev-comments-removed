@@ -73,7 +73,6 @@
 
 
 
-
 var callCount = 0;
 class C {
   * #method([fn = function () {}, xFn = function x() {}] = []) {

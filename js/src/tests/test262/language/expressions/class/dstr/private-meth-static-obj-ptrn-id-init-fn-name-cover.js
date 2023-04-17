@@ -71,7 +71,6 @@
 
 
 
-
 var callCount = 0;
 var C = class {
   static #method({ cover = (function () {}), xCover = (0, function() {})  }) {

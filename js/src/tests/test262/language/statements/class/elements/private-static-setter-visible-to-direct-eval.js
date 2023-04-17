@@ -38,7 +38,6 @@
 
 
 
-
 class C {
   static set #m(v) {
     this._v = v;

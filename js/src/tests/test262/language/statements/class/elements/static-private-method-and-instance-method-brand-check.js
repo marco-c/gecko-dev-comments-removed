@@ -32,7 +32,6 @@
 
 
 
-
 class C {
   static #f() {
     return 'static';

@@ -49,7 +49,6 @@
 
 
 
-
 class C {
   static async #method() {};
 

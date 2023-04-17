@@ -19,7 +19,6 @@
 
 
 
-
 let createAndInstantiateClass = function () {
   class C {
     get #m() { return 'test262'; }

@@ -79,7 +79,6 @@
 
 
 
-
 var callCount = 0;
 class C {
   * #method([x, y, z] = [1, 2, 3]) {

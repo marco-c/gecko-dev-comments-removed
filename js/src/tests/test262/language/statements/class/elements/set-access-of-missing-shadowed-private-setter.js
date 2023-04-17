@@ -24,7 +24,6 @@
 
 
 
-
 class A {
   set #f(v) {
     throw new Test262Error();

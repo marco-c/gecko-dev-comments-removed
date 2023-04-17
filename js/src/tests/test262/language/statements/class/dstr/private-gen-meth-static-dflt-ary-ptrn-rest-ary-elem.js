@@ -92,7 +92,6 @@
 
 
 
-
 var callCount = 0;
 class C {
   static * #method([...[x, y, z]] = [3, 4, 5]) {

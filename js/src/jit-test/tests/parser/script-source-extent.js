@@ -8,8 +8,6 @@
 
 
 
-
-
 let dbg = new Debugger();
 let debuggeeCompartment = newGlobal({newCompartment: true});
 

@@ -21,7 +21,6 @@
 
 
 
-
 var C = class {
   get #m() { return 'outer class'; }
 

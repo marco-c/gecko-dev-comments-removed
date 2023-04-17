@@ -38,7 +38,6 @@
 
 
 
-
 class C {
   #m() { return "Test262"; };
 
