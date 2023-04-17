@@ -339,35 +339,85 @@ void NativeLayerRootCA::Representation::Commit(WhichRepresentation aRepresentati
   }
 
   if (mMutatedLayerStructure || mustRebuild) {
-    NSMutableArray<CALayer*>* sublayers = [NSMutableArray arrayWithCapacity:aSublayers.Length()];
-    for (auto layer : aSublayers) {
-      [sublayers addObject:layer->UnderlyingCALayer(aRepresentation)];
-    }
-    mRootCALayer.sublayers = sublayers;
+    
+    
 
     
     
     
     
     
+    
+    
+    
+    
+
+    
+    
+    void (^acceptProvidedSublayers)() = ^() {
+      NSMutableArray<CALayer*>* sublayers = [NSMutableArray arrayWithCapacity:aSublayers.Length()];
+      for (auto layer : aSublayers) {
+        [sublayers addObject:layer->UnderlyingCALayer(aRepresentation)];
+      }
+      mRootCALayer.sublayers = sublayers;
+    };
+
+    
+    
+    bool topLayerIsRooted =
+        aSublayers.Length() &&
+        (aSublayers.LastElement()->UnderlyingCALayer(aRepresentation).superlayer == mRootCALayer);
+
+    if (!topLayerIsRooted) {
+      
+      
+      
+      acceptProvidedSublayers();
+    }
+
+    
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT(
+        !aSublayers.Length() ||
+            (aSublayers.LastElement()->UnderlyingCALayer(aRepresentation).superlayer ==
+             mRootCALayer),
+        "The topmost layer must be a child of mRootCALayer.");
+
+    bool didIsolate = false;
     if (mightIsolate && aWindowIsFullscreen && !aMouseMovedRecently) {
       CALayer* isolatedLayer = FindVideoLayerToIsolate(aRepresentation, aSublayers);
       if (isolatedLayer) {
         
-        CGFloat rootWidth = mRootCALayer.bounds.size.width;
-        CGFloat rootHeight = mRootCALayer.bounds.size.height;
+        didIsolate = true;
 
         
         
-        CALayer* blackLayer = [CALayer layer];
-        blackLayer.position = NSZeroPoint;
-        blackLayer.anchorPoint = NSZeroPoint;
-        blackLayer.bounds = CGRectMake(0, 0, rootWidth, rootHeight);
-        blackLayer.backgroundColor = [[NSColor blackColor] CGColor];
+        if (!mIsIsolatingVideo || isolatedLayer != mRootCALayer.sublayers.lastObject) {
+          
+          CGFloat rootWidth = mRootCALayer.bounds.size.width;
+          CGFloat rootHeight = mRootCALayer.bounds.size.height;
 
-        mRootCALayer.sublayers = @[ blackLayer, isolatedLayer ];
+          
+          
+          CALayer* blackLayer = [CALayer layer];
+          blackLayer.position = NSZeroPoint;
+          blackLayer.anchorPoint = NSZeroPoint;
+          blackLayer.bounds = CGRectMake(0, 0, rootWidth, rootHeight);
+          blackLayer.backgroundColor = [[NSColor blackColor] CGColor];
+
+          mRootCALayer.sublayers = @[ blackLayer, isolatedLayer ];
+        }
       }
     }
+
+    
+    
+    if (topLayerIsRooted && !didIsolate) {
+      acceptProvidedSublayers();
+    }
+
+    mIsIsolatingVideo = didIsolate;
   }
 
   mMutatedLayerStructure = false;
