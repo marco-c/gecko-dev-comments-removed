@@ -4389,6 +4389,14 @@
   value: 2592000   # 30 days (in seconds)
   mirror: always
 
+# Time in seconds before a site are considered high-value by the login detection
+# service is no longer considered high-value and isolated in the "highValueHasSavedLogin"
+# or "highValueIsLoggedIn" configuration.
+- name: fission.highValue.login.expiration
+  type: uint32_t
+  value: 2592000   # 30 days (in seconds)
+  mirror: always
+
 #---------------------------------------------------------------------------
 # Prefs starting with "font."
 #---------------------------------------------------------------------------
@@ -12072,7 +12080,7 @@
 
 - name: widget.windows.window_occlusion_tracking.enabled
   type: bool
-  value: false
+  value: @IS_NIGHTLY_BUILD@
   mirror: always
 
 - name: widget.windows.window_occlusion_tracking_display_state.enabled
