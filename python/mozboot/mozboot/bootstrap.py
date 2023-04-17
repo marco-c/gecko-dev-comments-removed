@@ -249,7 +249,9 @@ class Bootstrapper(object):
 
         return state_dir
 
-    def maybe_install_private_packages_or_exit(self, state_dir, checkout_root):
+    def maybe_install_private_packages_or_exit(
+        self, state_dir, checkout_root, application
+    ):
         
         
         
@@ -264,6 +266,10 @@ class Bootstrapper(object):
             self.instance.ensure_nasm_packages(state_dir, checkout_root)
             self.instance.ensure_sccache_packages(state_dir, checkout_root)
             self.instance.ensure_wasi_sysroot_packages(state_dir, checkout_root)
+        
+        getattr(self.instance, "ensure_%s_packages" % application)(
+            state_dir, checkout_root
+        )
 
     def check_code_submission(self, checkout_root):
         if self.instance.no_interactive or which("moz-phab"):
@@ -384,7 +390,9 @@ class Bootstrapper(object):
                     which("git"), which("git-cinnabar"), state_dir, checkout_root
                 )
 
-        self.maybe_install_private_packages_or_exit(state_dir, checkout_root)
+        self.maybe_install_private_packages_or_exit(
+            state_dir, checkout_root, application
+        )
         self.check_code_submission(checkout_root)
         
         
