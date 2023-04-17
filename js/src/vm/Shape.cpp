@@ -962,7 +962,8 @@ bool NativeObject::putProperty(JSContext* cx, HandleNativeObject obj,
   ObjectFlags objectFlags =
       GetObjectFlagsForNewProperty(obj->lastProperty(), id, attrs, cx);
 
-  if (shape->isAccessorDescriptor()) {
+  ShapeProperty prop = ShapeProperty(shape);
+  if (prop.isAccessorProperty()) {
     objectFlags.setFlag(ObjectFlag::HadGetterSetterChange);
   }
 
@@ -1147,7 +1148,8 @@ bool NativeObject::removeProperty(JSContext* cx, HandleNativeObject obj,
   
   
   
-  if (shape->isAccessorDescriptor() && !obj->hadGetterSetterChange()) {
+  ShapeProperty prop = ShapeProperty(shape);
+  if (prop.isAccessorProperty() && !obj->hadGetterSetterChange()) {
     if (!NativeObject::setHadGetterSetterChange(cx, obj)) {
       return false;
     }
