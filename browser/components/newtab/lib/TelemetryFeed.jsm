@@ -69,6 +69,10 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   TelemetrySession: "resource://gre/modules/TelemetrySession.jsm",
 });
 
+XPCOMUtils.defineLazyServiceGetters(this, {
+  gUUIDGenerator: ["@mozilla.org/uuid-generator;1", "nsIUUIDGenerator"],
+});
+
 const ACTIVITY_STREAM_ID = "activity-stream";
 const DOMWINDOW_OPENED_TOPIC = "domwindowopened";
 const DOMWINDOW_UNLOAD_TOPIC = "unload";
@@ -122,7 +126,7 @@ const CONTEXT_ID_PREF = "browser.contextual-services.contextId";
 XPCOMUtils.defineLazyGetter(this, "contextId", () => {
   let _contextId = Services.prefs.getStringPref(CONTEXT_ID_PREF, null);
   if (!_contextId) {
-    _contextId = String(Services.uuid.generateUUID());
+    _contextId = String(gUUIDGenerator.generateUUID());
     Services.prefs.setStringPref(CONTEXT_ID_PREF, _contextId);
   }
   return _contextId;
@@ -242,7 +246,7 @@ this.TelemetryFeed = class TelemetryFeed {
   getOrCreateImpressionId() {
     let impressionId = this._prefs.get(PREF_IMPRESSION_ID);
     if (!impressionId) {
-      impressionId = String(Services.uuid.generateUUID());
+      impressionId = String(gUUIDGenerator.generateUUID());
       this._prefs.set(PREF_IMPRESSION_ID, impressionId);
     }
     return impressionId;
@@ -385,7 +389,7 @@ this.TelemetryFeed = class TelemetryFeed {
     }
 
     const session = {
-      session_id: String(Services.uuid.generateUUID()),
+      session_id: String(gUUIDGenerator.generateUUID()),
       
       page: url ? url : "unknown",
       perf: {
@@ -803,7 +807,7 @@ this.TelemetryFeed = class TelemetryFeed {
 
 
   _generateStructuredIngestionEndpoint(namespace, pingType, version) {
-    const uuid = Services.uuid.generateUUID().toString();
+    const uuid = gUUIDGenerator.generateUUID().toString();
     
     
     const docID = uuid.slice(1, -1);

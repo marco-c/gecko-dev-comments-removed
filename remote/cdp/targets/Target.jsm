@@ -12,9 +12,15 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   CDPConnection: "chrome://remote/content/cdp/CDPConnection.jsm",
-  Services: "resource://gre/modules/Services.jsm",
   WebSocketHandshake: "chrome://remote/content/server/WebSocketHandshake.jsm",
 });
+
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "UUIDGen",
+  "@mozilla.org/uuid-generator;1",
+  "nsIUUIDGenerator"
+);
 
 
 
@@ -37,8 +43,7 @@ class Target {
 
     
     this.connections = new Set();
-    this.id = Services.uuid
-      .generateUUID()
+    this.id = UUIDGen.generateUUID()
       .toString()
       .slice(1, -1);
   }

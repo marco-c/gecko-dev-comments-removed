@@ -13,6 +13,10 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/PromiseUtils.jsm"
 );
 
+XPCOMUtils.defineLazyServiceGetters(this, {
+  uuidGen: ["@mozilla.org/uuid-generator;1", "nsIUUIDGenerator"],
+});
+
 
 
 

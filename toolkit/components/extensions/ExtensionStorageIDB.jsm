@@ -21,6 +21,13 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   OS: "resource://gre/modules/osfile.jsm",
 });
 
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "quotaManagerService",
+  "@mozilla.org/dom/quota-manager-service;1",
+  "nsIQuotaManagerService"
+);
+
 
 
 
@@ -742,7 +749,7 @@ this.ExtensionStorageIDB = {
 
   persist(storagePrincipal) {
     return new Promise((resolve, reject) => {
-      const request = Services.qms.persist(storagePrincipal);
+      const request = quotaManagerService.persist(storagePrincipal);
       request.callback = () => {
         if (request.resultCode === Cr.NS_OK) {
           resolve();
