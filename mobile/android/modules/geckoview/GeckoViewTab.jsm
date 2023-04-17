@@ -115,29 +115,20 @@ const GeckoViewTabBridge = {
   async createNewTab({ extensionId, createProperties } = {}) {
     debug`createNewTab`;
 
-    let sessionId;
-    try {
-      sessionId = await EventDispatcher.instance.sendRequestForResult({
-        type: "GeckoView:WebExtension:NewTab",
-        extensionId,
-        createProperties,
-      });
-    } catch (errorMessage) {
-      
-      
-      throw new ExtensionError("tabs.create is not supported");
-    }
+    const newSessionId = Services.uuid
+      .generateUUID()
+      .toString()
+      .slice(1, -1)
+      .replace(/-/g, "");
 
-    if (!sessionId) {
-      throw new ExtensionError("Cannot create new tab");
-    }
-
-    const window = await new Promise(resolve => {
+    
+    
+    const windowPromise = new Promise(resolve => {
       const handler = {
         observe(aSubject, aTopic, aData) {
           if (
             aTopic === "geckoview-window-created" &&
-            aSubject.name === sessionId
+            aSubject.name === newSessionId
           ) {
             Services.obs.removeObserver(handler, "geckoview-window-created");
             resolve(aSubject);
@@ -147,6 +138,25 @@ const GeckoViewTabBridge = {
       Services.obs.addObserver(handler, "geckoview-window-created");
     });
 
+    let didOpenSession = false;
+    try {
+      didOpenSession = await EventDispatcher.instance.sendRequestForResult({
+        type: "GeckoView:WebExtension:NewTab",
+        extensionId,
+        createProperties,
+        newSessionId,
+      });
+    } catch (errorMessage) {
+      
+      
+      throw new ExtensionError("tabs.create is not supported");
+    }
+
+    if (!didOpenSession) {
+      throw new ExtensionError("Cannot create new tab");
+    }
+
+    const window = await windowPromise;
     if (!window.tab) {
       window.tab = new Tab(window);
     }
