@@ -80,7 +80,7 @@ function resolveCollatorInternals(lazyCollatorData) {
 
 function getCollatorInternals(obj) {
     assert(IsObject(obj), "getCollatorInternals called with non-object");
-    assert(GuardToCollator(obj) !== null, "getCollatorInternals called with non-Collator");
+    assert(intl_GuardToCollator(obj) !== null, "getCollatorInternals called with non-Collator");
 
     var internals = getIntlObjectInternals(obj);
     assert(internals.type === "Collator", "bad type escaped getIntlObjectInternals");
@@ -109,7 +109,7 @@ function getCollatorInternals(obj) {
 
 function InitializeCollator(collator, locales, options) {
     assert(IsObject(collator), "InitializeCollator called with non-object");
-    assert(GuardToCollator(collator) != null, "InitializeCollator called with non-Collator");
+    assert(intl_GuardToCollator(collator) != null, "InitializeCollator called with non-Collator");
 
     
     
@@ -324,7 +324,7 @@ function createCollatorCompare(collator) {
 
         
         assert(IsObject(collator), "collatorCompareToBind called with non-object");
-        assert(GuardToCollator(collator) !== null, "collatorCompareToBind called with non-Collator");
+        assert(intl_GuardToCollator(collator) !== null, "collatorCompareToBind called with non-Collator");
 
         
         var X = ToString(x);
@@ -351,8 +351,8 @@ function $Intl_Collator_compare_get() {
     var collator = this;
 
     
-    if (!IsObject(collator) || (collator = GuardToCollator(collator)) === null)
-        return callFunction(CallCollatorMethodIfWrapped, this, "$Intl_Collator_compare_get");
+    if (!IsObject(collator) || (collator = intl_GuardToCollator(collator)) === null)
+        return callFunction(intl_CallCollatorMethodIfWrapped, this, "$Intl_Collator_compare_get");
 
     var internals = getCollatorInternals(collator);
 
@@ -377,8 +377,8 @@ function Intl_Collator_resolvedOptions() {
     var collator = this;
 
     
-    if (!IsObject(collator) || (collator = GuardToCollator(collator)) === null)
-        return callFunction(CallCollatorMethodIfWrapped, this, "Intl_Collator_resolvedOptions");
+    if (!IsObject(collator) || (collator = intl_GuardToCollator(collator)) === null)
+        return callFunction(intl_CallCollatorMethodIfWrapped, this, "Intl_Collator_resolvedOptions");
 
     var internals = getCollatorInternals(collator);
 

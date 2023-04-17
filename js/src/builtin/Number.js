@@ -25,9 +25,9 @@ function Number_toLocaleString() {
     if (locales === undefined && options === undefined) {
         
         
-        if (!IsRuntimeDefaultLocale(numberFormatCache.runtimeDefaultLocale)) {
+        if (!intl_IsRuntimeDefaultLocale(numberFormatCache.runtimeDefaultLocale)) {
             numberFormatCache.numberFormat = intl_NumberFormat(locales, options);
-            numberFormatCache.runtimeDefaultLocale = RuntimeDefaultLocale();
+            numberFormatCache.runtimeDefaultLocale = intl_RuntimeDefaultLocale();
         }
         numberFormat = numberFormatCache.numberFormat;
     } else {

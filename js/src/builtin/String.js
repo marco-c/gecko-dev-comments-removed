@@ -793,9 +793,9 @@ function String_localeCompare(that) {
     if (locales === undefined && options === undefined) {
         
         
-        if (!IsRuntimeDefaultLocale(collatorCache.runtimeDefaultLocale)) {
+        if (!intl_IsRuntimeDefaultLocale(collatorCache.runtimeDefaultLocale)) {
             collatorCache.collator = intl_Collator(locales, options);
-            collatorCache.runtimeDefaultLocale = RuntimeDefaultLocale();
+            collatorCache.runtimeDefaultLocale = intl_RuntimeDefaultLocale();
         }
         collator = collatorCache.collator;
     } else {
