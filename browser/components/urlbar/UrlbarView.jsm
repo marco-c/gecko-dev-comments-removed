@@ -909,16 +909,15 @@ class UrlbarView {
       return true;
     }
     let row = this._rows.children[rowIndex];
-    if (result.hasSuggestedIndex) {
+    if (result.hasSuggestedIndex != row.result.hasSuggestedIndex) {
       
       
-      
-      
-      
-      return true;
+      return false;
     }
-    if (row.result.hasSuggestedIndex) {
-      
+    if (
+      result.hasSuggestedIndex &&
+      result.suggestedIndex != row.result.suggestedIndex
+    ) {
       
       
       return false;
@@ -949,7 +948,9 @@ class UrlbarView {
     let rowIndex = 0;
     let resultIndex = 0;
     let visibleSpanCount = 0;
+    let seenMisplacedSuggestedIndex = false;
     let seenSearchSuggestion = false;
+
     
     for (
       ;
@@ -957,25 +958,29 @@ class UrlbarView {
       ++rowIndex
     ) {
       let row = this._rows.children[rowIndex];
-      let result = results[resultIndex];
-      if (
-        !seenSearchSuggestion &&
-        !row.result.heuristic &&
-        this._resultIsSearchSuggestion(row.result)
-      ) {
-        seenSearchSuggestion = true;
-      }
-      if (this._rowCanUpdateToResult(rowIndex, result, seenSearchSuggestion)) {
-        
-        this._updateRow(row, result);
-        resultIndex++;
-      } else {
-        
-        row.setAttribute("stale", "true");
-      }
       if (this._isElementVisible(row)) {
         visibleSpanCount += UrlbarUtils.getSpanForResult(row.result);
       }
+      
+      
+      if (!seenMisplacedSuggestedIndex) {
+        seenSearchSuggestion =
+          seenSearchSuggestion ||
+          (!row.result.heuristic && this._resultIsSearchSuggestion(row.result));
+        let result = results[resultIndex];
+        if (
+          this._rowCanUpdateToResult(rowIndex, result, seenSearchSuggestion)
+        ) {
+          
+          this._updateRow(row, result);
+          resultIndex++;
+          continue;
+        }
+        if (result.hasSuggestedIndex || row.result.hasSuggestedIndex) {
+          seenMisplacedSuggestedIndex = true;
+        }
+      }
+      row.setAttribute("stale", "true");
     }
 
     
@@ -995,12 +1000,28 @@ class UrlbarView {
       let row = this._createRow();
       let result = results[resultIndex];
       this._updateRow(row, result);
+      
+      
+      if (!seenMisplacedSuggestedIndex && result.hasSuggestedIndex) {
+        let targetIndex =
+          result.suggestedIndex >= 0
+            ? Math.min(this._rows.children.length, result.suggestedIndex)
+            : Math.max(0, this._rows.children.length + result.suggestedIndex);
+        if (this._rows.children.length != targetIndex) {
+          seenMisplacedSuggestedIndex = true;
+        }
+      }
       let newVisibleSpanCount =
         visibleSpanCount + UrlbarUtils.getSpanForResult(result);
-      if (newVisibleSpanCount <= queryContext.maxResults) {
+      if (
+        newVisibleSpanCount <= queryContext.maxResults &&
+        !seenMisplacedSuggestedIndex
+      ) {
         
         visibleSpanCount = newVisibleSpanCount;
       } else {
+        
+        
         
         
         this._setRowVisibility(row, false);

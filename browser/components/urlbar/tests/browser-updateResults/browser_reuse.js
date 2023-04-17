@@ -7,11 +7,6 @@
 
 let TEST_BASE_URL = "http://example.com/";
 
-add_task(async function init() {
-  await PlacesUtils.history.clear();
-  await PlacesUtils.bookmarks.eraseEverything();
-});
-
 
 add_task(async function urlToTip() {
   

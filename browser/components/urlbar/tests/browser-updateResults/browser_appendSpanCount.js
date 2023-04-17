@@ -9,31 +9,6 @@
 
 "use strict";
 
-XPCOMUtils.defineLazyModuleGetters(this, {
-  UrlbarView: "resource:///modules/UrlbarView.jsm",
-});
-
-add_task(async function init() {
-  await PlacesUtils.history.clear();
-  await PlacesUtils.bookmarks.eraseEverything();
-
-  
-  
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["ui.popup.disable_autohide", true]],
-  });
-
-  
-  
-  let originalRemoveStaleRowsTimeout = UrlbarView.removeStaleRowsTimeout;
-  UrlbarView.removeStaleRowsTimeout = 30000;
-  registerCleanupFunction(() => {
-    UrlbarView.removeStaleRowsTimeout = originalRemoveStaleRowsTimeout;
-  });
-});
-
 add_task(async function viewUpdateAppendHidden() {
   
   
@@ -203,17 +178,3 @@ add_task(async function viewUpdateAppendHidden() {
   
   UrlbarProvidersManager.unregisterProvider(provider);
 });
-
-
-
-
-
-class DelayingTestProvider extends UrlbarTestUtils.TestProvider {
-  finishQueryPromise = null;
-  async startQuery(context, addCallback) {
-    for (let result of this._results) {
-      addCallback(this, result);
-    }
-    await this.finishQueryPromise;
-  }
-}
