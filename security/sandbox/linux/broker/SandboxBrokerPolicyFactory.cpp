@@ -357,14 +357,17 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
   
   
   
-  if (const auto* xdgConfigPath = PR_GetEnv("XDG_CONFIG_HOME")) {
-    policy->AddPath(rdonly, xdgConfigPath,
+  nsAutoCString xdgConfigHome(PR_GetEnv("XDG_CONFIG_HOME"));
+  if (!xdgConfigHome.IsEmpty()) {  
+    policy->AddPath(rdonly, xdgConfigHome.get(),
                     SandboxBroker::Policy::AddCondition::AddAlways);
   }
   nsAutoCString xdgConfigDirs(PR_GetEnv("XDG_CONFIG_DIRS"));
   for (const auto& path : xdgConfigDirs.Split(':')) {
-    policy->AddPath(rdonly, PromiseFlatCString(path).get(),
-                    SandboxBroker::Policy::AddCondition::AddAlways);
+    if (!path.IsEmpty()) {  
+      policy->AddPath(rdonly, PromiseFlatCString(path).get(),
+                      SandboxBroker::Policy::AddCondition::AddAlways);
+    }
   }
 
   

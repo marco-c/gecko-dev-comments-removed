@@ -1,0 +1,11 @@
+
+
+
+"use strict";
+
+
+
+
+add_task(async function() {
+  ok(true, "Process can run");
+});

@@ -4,7 +4,11 @@
 
 
 
-BROWSER_CHROME_MANIFESTS += ["test/browser.ini"]
+BROWSER_CHROME_MANIFESTS += [
+    "test/browser.ini",
+    "test/browser_bug1717599_XDG-CONFIG-DIRS.ini",
+    "test/browser_bug1717599_XDG-CONFIG-HOME.ini",
+]
 
 with Files("**"):
     BUG_COMPONENT = ("Core", "Security: Process Sandboxing")
