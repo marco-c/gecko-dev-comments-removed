@@ -72,6 +72,21 @@ class MacroAssembler;
 
 namespace wasm {
 
+struct IndirectStubTarget {
+  uint32_t functionIdx;
+  void* checkedCallEntryAddress;
+  TlsData* tls;
+
+  bool operator==(const IndirectStubTarget& other) const {
+    return functionIdx == other.functionIdx &&
+           checkedCallEntryAddress == other.checkedCallEntryAddress &&
+           tls == other.tls;
+  }
+};
+
+using VectorOfIndirectStubTarget =
+    Vector<IndirectStubTarget, 8, SystemAllocPolicy>;
+
 struct MetadataTier;
 struct Metadata;
 
@@ -521,6 +536,11 @@ class LazyStubSegment : public CodeSegment {
                 const CodeRangeVector& codeRanges, uint8_t** codePtr,
                 size_t* indexFirstInsertedCodeRange);
 
+  bool addIndirectStubs(size_t codeLength,
+                        const VectorOfIndirectStubTarget& targets,
+                        const CodeRangeVector& codeRanges, uint8_t** codePtr,
+                        size_t* indexFirstInsertedCodeRange);
+
   const CodeRangeVector& codeRanges() const { return codeRanges_; }
   const CodeRange* lookupRange(const void* pc) const;
 
@@ -548,6 +568,25 @@ using LazyFuncExportVector = Vector<LazyFuncExport, 0, SystemAllocPolicy>;
 
 
 
+struct IndirectStub {
+  size_t funcIndex;
+  size_t segmentIndex;
+  size_t codeRangeIndex;
+  void* tls;
+  IndirectStub(size_t funcIndex, size_t segmentIndex, size_t codeRangeIndex,
+               TlsData* tls)
+      : funcIndex(funcIndex),
+        segmentIndex(segmentIndex),
+        codeRangeIndex(codeRangeIndex),
+        tls(tls) {}
+};
+
+using IndirectStubVector = Vector<IndirectStub, 0, SystemAllocPolicy>;
+
+
+
+
+
 
 
 
@@ -555,25 +594,36 @@ using LazyFuncExportVector = Vector<LazyFuncExport, 0, SystemAllocPolicy>;
 class LazyStubTier {
   LazyStubSegmentVector stubSegments_;
   LazyFuncExportVector exports_;
+  IndirectStubVector indirectStubVector_;
   size_t lastStubSegmentIndex_;
 
-  bool createMany(const Uint32Vector& funcExportIndices,
-                  const CodeTier& codeTier, bool flushAllThreadsIcaches,
-                  size_t* stubSegmentIndex);
+  bool createManyEntryStubs(const Uint32Vector& funcExportIndices,
+                            const CodeTier& codeTier,
+                            bool flushAllThreadsIcaches,
+                            size_t* stubSegmentIndex);
 
  public:
   LazyStubTier() : lastStubSegmentIndex_(0) {}
 
-  bool empty() const { return stubSegments_.empty(); }
-  bool hasStub(uint32_t funcIndex) const;
+  
+  
+  bool createOneEntryStub(uint32_t funcExportIndex, const CodeTier& codeTier);
+
+  bool entryStubsEmpty() const { return stubSegments_.empty(); }
+  bool hasEntryStub(uint32_t funcIndex) const;
 
   
   
   void* lookupInterpEntry(uint32_t funcIndex) const;
 
   
+  bool createManyIndirectStubs(const VectorOfIndirectStubTarget& targets,
+                               const CodeTier& codeTier);
+
   
-  bool createOne(uint32_t funcExportIndex, const CodeTier& codeTier);
+  void* lookupIndirectStub(uint32_t funcIndex, void* tls) const;
+
+  const CodeRange* lookupRange(const void* pc) const;
 
   
   
@@ -795,6 +845,7 @@ class Code : public ShareableBase<Code> {
 
   const CallSite* lookupCallSite(void* returnAddress) const;
   const CodeRange* lookupFuncRange(void* pc) const;
+  const CodeRange* lookupIndirectStubRange(void* pc) const;
   const StackMap* lookupStackMap(uint8_t* nextPC) const;
 #ifdef ENABLE_WASM_EXCEPTIONS
   const WasmTryNote* lookupWasmTryNote(void* pc, Tier* tier) const;

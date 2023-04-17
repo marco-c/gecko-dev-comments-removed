@@ -270,6 +270,11 @@ constexpr uint32_t WasmCallerTLSOffsetBeforeCall =
 constexpr uint32_t WasmCalleeTLSOffsetBeforeCall =
     wasm::FrameWithTls::calleeTLSOffset() + ShadowStackSpace;
 
+constexpr uint32_t WasmCallerTLSOffsetAfterCall =
+    WasmCallerTLSOffsetBeforeCall + SizeOfReturnAddressAfterCall;
+constexpr uint32_t WasmCalleeTLSOffsetAfterCall =
+    WasmCalleeTLSOffsetBeforeCall + SizeOfReturnAddressAfterCall;
+
 
 
 

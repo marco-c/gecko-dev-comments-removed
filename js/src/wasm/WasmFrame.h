@@ -44,6 +44,25 @@ struct TlsData;
 constexpr uintptr_t ExitOrJitEntryFPTag = 0x1;
 
 
+constexpr uintptr_t TrampolineFpTag = 0x2;
+
+
+
+
+
+
+
+
+
+
+
+#if defined(JS_CODEGEN_X86)
+constexpr uint32_t IndirectStubAdditionalAlignment = 8u;
+#else
+constexpr uint32_t IndirectStubAdditionalAlignment = 0u;
+#endif
+
+
 
 
 
@@ -89,8 +108,23 @@ class Frame {
     return reinterpret_cast<Frame*>(callerFP_);
   }
 
+  Frame* trampolineCaller() const {
+    MOZ_ASSERT(callerIsTrampolineFP());
+    return reinterpret_cast<Frame*>(reinterpret_cast<uintptr_t>(callerFP_) &
+                                    ~TrampolineFpTag);
+  }
+
   bool callerIsExitOrJitEntryFP() const {
     return isExitOrJitEntryFP(callerFP_);
+  }
+
+  bool callerIsTrampolineFP() const { return isTrampolineFP(callerFP_); }
+
+  size_t trampolineSlots() const {
+    return callerIsTrampolineFP()
+               ? ((sizeof(Frame) + IndirectStubAdditionalAlignment) /
+                  sizeof(void*))
+               : 0;
   }
 
   uint8_t* jitEntryCaller() const { return toJitEntryCaller(callerFP_); }
@@ -108,6 +142,10 @@ class Frame {
     MOZ_ASSERT(isExitOrJitEntryFP(fp));
     return reinterpret_cast<uint8_t*>(reinterpret_cast<uintptr_t>(fp) &
                                       ~ExitOrJitEntryFPTag);
+  }
+
+  static bool isTrampolineFP(const void* fp) {
+    return reinterpret_cast<uintptr_t>(fp) & TrampolineFpTag;
   }
 
   static uint8_t* addExitOrJitEntryFPTag(const Frame* fp) {

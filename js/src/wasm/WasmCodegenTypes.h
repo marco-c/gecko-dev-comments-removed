@@ -245,7 +245,9 @@ class CodeRange {
     TrapExit,          
     DebugTrap,         
     FarJumpIsland,     
-    Throw              
+    Throw,             
+    IndirectStub,  
+                   
   };
 
  private:
@@ -327,8 +329,9 @@ class CodeRange {
   bool isJitEntry() const { return kind() == JitEntry; }
   bool isInterpEntry() const { return kind() == InterpEntry; }
   bool isEntry() const { return isInterpEntry() || isJitEntry(); }
+  bool isIndirectStub() const { return kind() == IndirectStub; }
   bool hasFuncIndex() const {
-    return isFunction() || isImportExit() || isEntry();
+    return isFunction() || isImportExit() || isEntry() || isIndirectStub();
   }
   uint32_t funcIndex() const {
     MOZ_ASSERT(hasFuncIndex());
@@ -410,7 +413,8 @@ class CallSiteDesc {
 
   enum Kind {
     Func,        
-    Dynamic,     
+    Import,      
+    Indirect,    
     Symbolic,    
     EnterFrame,  
     LeaveFrame,  
@@ -427,7 +431,8 @@ class CallSiteDesc {
   }
   uint32_t lineOrBytecode() const { return lineOrBytecode_; }
   Kind kind() const { return Kind(kind_); }
-  bool mightBeCrossInstance() const { return kind() == CallSiteDesc::Dynamic; }
+  bool isImportCall() const { return kind() == CallSiteDesc::Import; }
+  bool isIndirectCall() const { return kind() == CallSiteDesc::Indirect; }
 };
 
 class CallSite : public CallSiteDesc {
