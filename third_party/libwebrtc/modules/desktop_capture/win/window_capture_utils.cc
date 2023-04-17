@@ -30,24 +30,19 @@ struct GetWindowListParams {
   GetWindowListParams(int flags, DesktopCapturer::SourceList* result)
       : ignoreUntitled(flags & GetWindowListFlags::kIgnoreUntitled),
         ignoreUnresponsive(flags & GetWindowListFlags::kIgnoreUnresponsive),
+        ignore_current_process_windows(
+            flags & GetWindowListFlags::kIgnoreCurrentProcessWindows),
         result(result) {}
   const bool ignoreUntitled;
   const bool ignoreUnresponsive;
+  const bool ignore_current_process_windows;
   DesktopCapturer::SourceList* const result;
 };
 
-
-
-
-
-bool CanSafelyMakeBlockingCalls(HWND hwnd) {
+bool IsWindowOwnedByCurrentProcess(HWND hwnd) {
   DWORD process_id;
   GetWindowThreadProcessId(hwnd, &process_id);
-  if (process_id != GetCurrentProcessId() || IsWindowResponding(hwnd)) {
-    return true;
-  }
-
-  return false;
+  return process_id == GetCurrentProcessId();
 }
 
 BOOL CALLBACK GetWindowListHandler(HWND hwnd, LPARAM param) {
@@ -79,7 +74,22 @@ BOOL CALLBACK GetWindowListHandler(HWND hwnd, LPARAM param) {
   
   
   
-  if (params->ignoreUnresponsive || CanSafelyMakeBlockingCalls(hwnd)) {
+  
+  
+  
+  
+  
+  bool owned_by_current_process = IsWindowOwnedByCurrentProcess(hwnd);
+  if (owned_by_current_process && params->ignore_current_process_windows) {
+    return TRUE;
+  }
+
+  
+  
+  
+  
+  
+  if (!owned_by_current_process || IsWindowResponding(hwnd)) {
     const size_t kTitleLength = 500;
     WCHAR window_title[kTitleLength] = L"";
     if (GetWindowTextLength(hwnd) != 0 &&
@@ -432,10 +442,15 @@ bool WindowCaptureHelperWin::IsWindowCloaked(HWND hwnd) {
 }
 
 bool WindowCaptureHelperWin::EnumerateCapturableWindows(
-    DesktopCapturer::SourceList* results) {
-  if (!webrtc::GetWindowList((GetWindowListFlags::kIgnoreUntitled |
-                              GetWindowListFlags::kIgnoreUnresponsive),
-                             results)) {
+    DesktopCapturer::SourceList* results,
+    bool enumerate_current_process_windows) {
+  int flags = (GetWindowListFlags::kIgnoreUntitled |
+               GetWindowListFlags::kIgnoreUnresponsive);
+  if (!enumerate_current_process_windows) {
+    flags |= GetWindowListFlags::kIgnoreCurrentProcessWindows;
+  }
+
+  if (!webrtc::GetWindowList(flags, results)) {
     return false;
   }
 

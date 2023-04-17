@@ -98,6 +98,24 @@ class RTC_EXPORT DesktopCaptureOptions {
   }
 
 #if defined(WEBRTC_WIN)
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool enumerate_current_process_windows() const {
+    return enumerate_current_process_windows_;
+  }
+  void set_enumerate_current_process_windows(
+      bool enumerate_current_process_windows) {
+    enumerate_current_process_windows_ = enumerate_current_process_windows;
+  }
+
   bool allow_use_magnification_api() const {
     return allow_use_magnification_api_;
   }
@@ -146,6 +164,7 @@ class RTC_EXPORT DesktopCaptureOptions {
   rtc::scoped_refptr<FullScreenWindowDetector> full_screen_window_detector_;
 
 #if defined(WEBRTC_WIN)
+  bool enumerate_current_process_windows_ = true;
   bool allow_use_magnification_api_ = false;
   bool allow_directx_capturer_ = false;
   bool allow_cropping_window_capturer_ = false;

@@ -78,7 +78,9 @@ enum GetWindowListFlags {
   kNone = 0x00,
   kIgnoreUntitled = 1 << 0,
   kIgnoreUnresponsive = 1 << 1,
+  kIgnoreCurrentProcessWindows = 1 << 2,
 };
+
 
 
 
@@ -107,7 +109,8 @@ class WindowCaptureHelperWin {
   bool IsWindowOnCurrentDesktop(HWND hwnd);
   bool IsWindowVisibleOnCurrentDesktop(HWND hwnd);
   bool IsWindowCloaked(HWND hwnd);
-  bool EnumerateCapturableWindows(DesktopCapturer::SourceList* results);
+  bool EnumerateCapturableWindows(DesktopCapturer::SourceList* results,
+                                  bool enumerate_current_process_windows);
 
  private:
   HMODULE dwmapi_library_ = nullptr;

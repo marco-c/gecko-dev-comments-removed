@@ -21,7 +21,7 @@ namespace webrtc {
 
 class WindowCapturerWinWgc : public DesktopCapturer {
  public:
-  WindowCapturerWinWgc();
+  WindowCapturerWinWgc(bool enumerate_current_process_windows);
 
   
   WindowCapturerWinWgc(const WindowCapturerWinWgc&) = delete;
@@ -45,6 +45,7 @@ class WindowCapturerWinWgc : public DesktopCapturer {
   
   HWND window_ = nullptr;
   WindowCaptureHelperWin window_capture_helper_;
+  bool enumerate_current_process_windows_;
 };
 
 }  

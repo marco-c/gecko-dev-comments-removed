@@ -24,7 +24,7 @@ namespace webrtc {
 
 class WindowCapturerWinGdi : public DesktopCapturer {
  public:
-  WindowCapturerWinGdi();
+  explicit WindowCapturerWinGdi(bool enumerate_current_process_windows);
 
   
   WindowCapturerWinGdi(const WindowCapturerWinGdi&) = delete;
@@ -60,6 +60,8 @@ class WindowCapturerWinGdi : public DesktopCapturer {
   DesktopSize previous_size_;
 
   WindowCaptureHelperWin window_capture_helper_;
+
+  bool enumerate_current_process_windows_;
 
   
   
