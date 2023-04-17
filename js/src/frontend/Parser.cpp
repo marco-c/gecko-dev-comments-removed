@@ -1763,7 +1763,7 @@ LexicalScopeNode* Parser<FullParseHandler, Unit>::evalBody(
 
 #ifdef DEBUG
   if (evalpc.superScopeNeedsHomeObject() &&
-      this->compilationState_.input.enclosingScope) {
+      !this->compilationState_.input.enclosingScope.isNull()) {
     
     
     

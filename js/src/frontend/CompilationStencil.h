@@ -576,7 +576,7 @@ struct CompilationInput {
   
   
   
-  Scope* enclosingScope = nullptr;
+  InputScope enclosingScope = InputScope(nullptr);
 
   explicit CompilationInput(const JS::ReadOnlyCompileOptions& options)
       : options(options) {}
@@ -600,7 +600,7 @@ struct CompilationInput {
     if (!initScriptSource(cx)) {
       return false;
     }
-    enclosingScope = &cx->global()->emptyGlobalScope();
+    enclosingScope = InputScope(&cx->global()->emptyGlobalScope());
     return true;
   }
 
@@ -612,7 +612,7 @@ struct CompilationInput {
     if (!initScriptSource(cx)) {
       return false;
     }
-    enclosingScope = evalEnclosingScope;
+    enclosingScope = InputScope(evalEnclosingScope);
     return true;
   }
 
@@ -635,7 +635,7 @@ struct CompilationInput {
     target = CompilationTarget::Delazification;
     lazy_ = lazyScript;
     source = ss;
-    enclosingScope = lazy_->function()->enclosingScope();
+    enclosingScope = InputScope(lazy_->function()->enclosingScope());
   }
 
   
@@ -648,11 +648,11 @@ struct CompilationInput {
 
   
   
-  Scope* maybeNonDefaultEnclosingScope() const {
+  InputScope maybeNonDefaultEnclosingScope() const {
     if (hasNonDefaultEnclosingScope()) {
       return enclosingScope;
     }
-    return nullptr;
+    return InputScope(nullptr);
   }
 
   
