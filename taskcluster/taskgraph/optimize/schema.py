@@ -2,11 +2,9 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
 import voluptuous
-from six import text_type
 
 from mozbuild import schedules
 
@@ -22,14 +20,14 @@ default_optimizations = (
     {"build": list(schedules.ALL_COMPONENTS)},
     
     
-    {"index-search": [text_type]},
+    {"index-search": [str]},
     
     {"never": None},
     
     {"skip-unless-expanded": None},
     {"skip-unless-backstop": None},
     
-    {"skip-unless-changed": [text_type]},
+    {"skip-unless-changed": [str]},
     
     {"skip-unless-schedules": list(schedules.ALL_COMPONENTS)},
     

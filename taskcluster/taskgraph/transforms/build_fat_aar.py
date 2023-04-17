@@ -2,7 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
 
 import copy
 
@@ -70,8 +69,6 @@ def _get_aar_location(config, job, platform):
         path for path in artifacts_locations[0]["paths"] if path.endswith(".aar")
     ]
     if len(aar_locations) != 1:
-        raise ValueError(
-            "Only a single AAR must be given. Got: {}".format(aar_locations)
-        )
+        raise ValueError(f"Only a single AAR must be given. Got: {aar_locations}")
 
     return aar_locations[0]

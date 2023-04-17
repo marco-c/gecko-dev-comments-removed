@@ -5,9 +5,7 @@
 Transform the signing task into an actual task description.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
 
-from six import text_type
 from taskgraph.loader.single_dep import schema
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.attributes import copy_attributes_from_dependent_job
@@ -29,31 +27,31 @@ signing_description_schema = schema.extend(
                 
                 Required("taskId"): taskref_or_string,
                 
-                Required("taskType"): text_type,
+                Required("taskType"): str,
                 
-                Required("paths"): [text_type],
+                Required("paths"): [str],
                 
-                Required("formats"): [text_type],
+                Required("formats"): [str],
             }
         ],
         
-        Required("depname"): text_type,
+        Required("depname"): str,
         
-        Optional("attributes"): {text_type: object},
+        Optional("attributes"): {str: object},
         
-        Optional("label"): text_type,
+        Optional("label"): str,
         
         
         
         Optional("treeherder"): task_description_schema["treeherder"],
         
-        Optional("routes"): [text_type],
+        Optional("routes"): [str],
         Optional("shipping-phase"): task_description_schema["shipping-phase"],
         Optional("shipping-product"): task_description_schema["shipping-product"],
-        Optional("dependent-tasks"): {text_type: object},
+        Optional("dependent-tasks"): {str: object},
         
         Optional("max-run-time"): int,
-        Optional("extra"): {text_type: object},
+        Optional("extra"): {str: object},
         
         Optional("repacks-per-chunk"): int,
         
@@ -99,7 +97,7 @@ def make_task_description(config, jobs):
         attributes = dep_job.attributes
 
         signing_format_scopes = []
-        formats = set([])
+        formats = set()
         for artifacts in job["upstream-artifacts"]:
             for f in artifacts["formats"]:
                 formats.add(f)  
@@ -202,9 +200,7 @@ def make_task_description(config, jobs):
                 elif config.kind.endswith("signing"):
                     mac_behavior = "mac_notarize_part_3"
                 else:
-                    raise Exception(
-                        "Unknown kind {} for mac_behavior!".format(config.kind)
-                    )
+                    raise Exception(f"Unknown kind {config.kind} for mac_behavior!")
             else:
                 if "part-1" in config.kind:
                     continue
@@ -251,7 +247,7 @@ def _generate_treeherder_platform(dep_th_platform, build_platform, build_type):
         actual_build_type = "ccov"
     else:
         actual_build_type = build_type
-    return "{}/{}".format(dep_th_platform, actual_build_type)
+    return f"{dep_th_platform}/{actual_build_type}"
 
 
 def _generate_treeherder_symbol(build_symbol):

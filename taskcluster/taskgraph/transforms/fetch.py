@@ -5,16 +5,13 @@
 
 
 
-from __future__ import absolute_import, unicode_literals
 
 import attr
 
 from mozbuild.shellutil import quote as shell_quote
 
-import io
 import os
 import re
-from six import text_type
 
 from voluptuous import (
     Optional,
@@ -38,26 +35,26 @@ CACHE_TYPE = "content.v1"
 FETCH_SCHEMA = Schema(
     {
         
-        Required("name"): text_type,
+        Required("name"): str,
         
         
-        Optional("job-from"): text_type,
+        Optional("job-from"): str,
         
-        Required("description"): text_type,
+        Required("description"): str,
         Optional(
             "fetch-alias",
             description="An alias that can be used instead of the real fetch job name in "
             "fetch stanzas for jobs.",
-        ): text_type,
+        ): str,
         Optional(
             "artifact-prefix",
             description="The prefix of the taskcluster artifact being uploaded. "
             "Defaults to `public/`; if it starts with something other than "
             "`public/` the artifact will require scopes to access.",
-        ): text_type,
-        Optional("attributes"): {text_type: object},
+        ): str,
+        Optional("attributes"): {str: object},
         Required("fetch"): {
-            Required("type"): text_type,
+            Required("type"): str,
             Extra: object,
         },
     }
@@ -69,7 +66,7 @@ fetch_builders = {}
 
 
 @attr.s(frozen=True)
-class FetchBuilder(object):
+class FetchBuilder:
     schema = attr.ib(type=Schema)
     builder = attr.ib()
 
@@ -97,10 +94,8 @@ def process_fetch_job(config, jobs):
         fetch = job.pop("fetch")
 
         if typ not in fetch_builders:
-            raise Exception("Unknown fetch type {} in fetch {}".format(typ, name))
-        validate_schema(
-            fetch_builders[typ].schema, fetch, "In task.fetch {!r}:".format(name)
-        )
+            raise Exception(f"Unknown fetch type {typ} in fetch {name}")
+        validate_schema(fetch_builders[typ].schema, fetch, f"In task.fetch {name!r}:")
 
         job.update(configure_fetch(config, typ, name, fetch))
 
@@ -109,10 +104,8 @@ def process_fetch_job(config, jobs):
 
 def configure_fetch(config, typ, name, fetch):
     if typ not in fetch_builders:
-        raise Exception("No fetch type {} in fetch {}".format(typ, name))
-    validate_schema(
-        fetch_builders[typ].schema, fetch, "In task.fetch {!r}:".format(name)
-    )
+        raise Exception(f"No fetch type {typ} in fetch {name}")
+    validate_schema(fetch_builders[typ].schema, fetch, f"In task.fetch {name!r}:")
 
     return fetch_builders[typ].builder(config, name, fetch)
 
@@ -180,7 +173,7 @@ def make_task(config, jobs):
             task["worker"]["taskcluster-proxy"] = True
 
         if not taskgraph.fast:
-            cache_name = task["label"].replace("{}-".format(config.kind), "", 1)
+            cache_name = task["label"].replace(f"{config.kind}-", "", 1)
 
             
             add_optimization(
@@ -197,9 +190,9 @@ def make_task(config, jobs):
     "static-url",
     schema={
         
-        Required("url"): text_type,
+        Required("url"): str,
         
-        Required("sha256"): text_type,
+        Required("sha256"): str,
         
         Required("size"): int,
         
@@ -207,23 +200,23 @@ def make_task(config, jobs):
             
             
             
-            Required("sig-url"): text_type,
+            Required("sig-url"): str,
             
             
-            Required("key-path"): text_type,
+            Required("key-path"): str,
         },
         
         
         
         
-        Optional("artifact-name"): text_type,
+        Optional("artifact-name"): str,
         
         
         
         Optional("strip-components"): int,
         
         
-        Optional("add-prefix"): text_type,
+        Optional("add-prefix"): str,
         
         
     },
@@ -260,7 +253,7 @@ def create_fetch_url_task(config, name, fetch):
         sig_url = fetch["gpg-signature"]["sig-url"].format(url=fetch["url"])
         key_path = os.path.join(taskgraph.GECKO, fetch["gpg-signature"]["key-path"])
 
-        with io.open(key_path, "r") as fh:
+        with open(key_path, "r") as fh:
             gpg_key = fh.read()
 
         env["FETCH_GPG_KEY"] = gpg_key
@@ -294,15 +287,15 @@ def create_fetch_url_task(config, name, fetch):
 @fetch_builder(
     "git",
     schema={
-        Required("repo"): text_type,
-        Required(Any("revision", "branch")): text_type,
-        Optional("artifact-name"): text_type,
-        Optional("path-prefix"): text_type,
+        Required("repo"): str,
+        Required(Any("revision", "branch")): str,
+        Optional("artifact-name"): str,
+        Optional("path-prefix"): str,
         
         
         
         
-        Optional("ssh-key"): text_type,
+        Optional("ssh-key"): str,
     },
 )
 def create_git_fetch_task(config, name, fetch):
@@ -311,7 +304,7 @@ def create_git_fetch_task(config, name, fetch):
         path_prefix = fetch["repo"].rstrip("/").rsplit("/", 1)[-1]
     artifact_name = fetch.get("artifact-name")
     if not artifact_name:
-        artifact_name = "{}.tar.zst".format(path_prefix)
+        artifact_name = f"{path_prefix}.tar.zst"
 
     if "revision" in fetch and "branch" in fetch:
         raise Exception("revision and branch cannot be used in the same context")
@@ -321,7 +314,7 @@ def create_git_fetch_task(config, name, fetch):
     if "revision" in fetch:
         revision_or_branch = fetch["revision"]
         if not re.match(r"[0-9a-fA-F]{40}", fetch["revision"]):
-            raise Exception('Revision is not a sha1 in fetch task "{}"'.format(name))
+            raise Exception(f'Revision is not a sha1 in fetch task "{name}"')
     else:
         
         revision_or_branch = fetch["branch"]
@@ -352,13 +345,13 @@ def create_git_fetch_task(config, name, fetch):
 @fetch_builder(
     "chromium-fetch",
     schema={
-        Required("script"): text_type,
+        Required("script"): str,
         
-        Required("platform"): text_type,
+        Required("platform"): str,
         
-        Optional("revision"): text_type,
+        Optional("revision"): str,
         
-        Required("artifact-name"): text_type,
+        Required("artifact-name"): str,
     },
 )
 def create_chromium_fetch_task(config, name, fetch):
@@ -383,8 +376,8 @@ def create_chromium_fetch_task(config, name, fetch):
         "command": cmd,
         "artifact_name": artifact_name,
         "digest_data": [
-            "revision={}".format(revision),
-            "platform={}".format(platform),
-            "artifact_name={}".format(artifact_name),
+            f"revision={revision}",
+            f"platform={platform}",
+            f"artifact_name={artifact_name}",
         ],
     }

@@ -5,15 +5,11 @@
 Do transforms specific to l10n kind
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
 
 import copy
-import io
 import json
-import six
 
 from mozbuild.chunkify import chunkify
-from six import text_type
 from taskgraph.loader.multi_dep import schema
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.schema import (
@@ -40,26 +36,26 @@ def _by_platform(arg):
 l10n_description_schema = schema.extend(
     {
         
-        Required("name"): text_type,
+        Required("name"): str,
         
-        Required("build-platform"): text_type,
+        Required("build-platform"): str,
         
         Required("run-time"): _by_platform(int),
         
-        Required("ignore-locales"): _by_platform([text_type]),
+        Required("ignore-locales"): _by_platform([str]),
         
         Required("mozharness"): {
             
-            Required("script"): _by_platform(text_type),
+            Required("script"): _by_platform(str),
             
-            Required("config"): _by_platform([text_type]),
+            Required("config"): _by_platform([str]),
             
             
-            Optional("config-paths"): [text_type],
+            Optional("config-paths"): [str],
             
-            Optional("options"): _by_platform([text_type]),
+            Optional("options"): _by_platform([str]),
             
-            Required("actions"): _by_platform([text_type]),
+            Required("actions"): _by_platform([str]),
             
             
             Optional("comm-checkout"): bool,
@@ -67,54 +63,54 @@ l10n_description_schema = schema.extend(
         
         Optional("index"): {
             
-            Required("product"): _by_platform(text_type),
+            Required("product"): _by_platform(str),
             
-            Required("job-name"): _by_platform(text_type),
+            Required("job-name"): _by_platform(str),
             
-            Optional("type"): _by_platform(text_type),
+            Optional("type"): _by_platform(str),
         },
         
-        Required("description"): _by_platform(text_type),
+        Required("description"): _by_platform(str),
         Optional("run-on-projects"): job_description_schema["run-on-projects"],
         
-        Required("worker-type"): _by_platform(text_type),
+        Required("worker-type"): _by_platform(str),
         
-        Required("locales-file"): _by_platform(text_type),
+        Required("locales-file"): _by_platform(str),
         
         Required("tooltool"): _by_platform(Any("internal", "public")),
         
         
         Optional("docker-image"): _by_platform(
             
-            {"in-tree": text_type},
+            {"in-tree": str},
         ),
         Optional("fetches"): {
-            text_type: _by_platform([text_type]),
+            str: _by_platform([str]),
         },
         
         
         
         
         
-        Optional("secrets"): _by_platform(Any(bool, [text_type])),
+        Optional("secrets"): _by_platform(Any(bool, [str])),
         
         Required("treeherder"): {
             
-            Required("platform"): _by_platform(text_type),
+            Required("platform"): _by_platform(str),
             
-            Required("symbol"): text_type,
+            Required("symbol"): str,
             
             Required("tier"): _by_platform(int),
         },
         
-        Optional("env"): _by_platform({text_type: taskref_or_string}),
+        Optional("env"): _by_platform({str: taskref_or_string}),
         
         Optional("locales-per-chunk"): _by_platform(int),
         
         
-        Optional("dependencies"): {text_type: text_type},
+        Optional("dependencies"): {str: str},
         
-        Optional("when"): {"files-changed": [text_type]},
+        Optional("when"): {"files-changed": [str]},
         
         Optional("attributes"): job_description_schema["attributes"],
         Optional("extra"): job_description_schema["extra"],
@@ -131,7 +127,7 @@ def parse_locales_file(locales_file, platform=None):
     """Parse the passed locales file for a list of locales."""
     locales = []
 
-    with io.open(locales_file, mode="r") as f:
+    with open(locales_file, mode="r") as f:
         if locales_file.endswith("json"):
             all_locales = json.load(f)
             
@@ -241,11 +237,11 @@ def handle_artifact_prefix(config, jobs):
     """Resolve ``artifact_prefix`` in env vars"""
     for job in jobs:
         artifact_prefix = get_artifact_prefix(job)
-        for k1, v1 in six.iteritems(job.get("env", {})):
-            if isinstance(v1, text_type):
+        for k1, v1 in job.get("env", {}).items():
+            if isinstance(v1, str):
                 job["env"][k1] = v1.format(artifact_prefix=artifact_prefix)
             elif isinstance(v1, dict):
-                for k2, v2 in six.iteritems(v1):
+                for k2, v2 in v1.items():
                     job["env"][k1][k2] = v2.format(artifact_prefix=artifact_prefix)
         yield job
 
@@ -283,9 +279,7 @@ def chunk_locales(config, jobs):
                 chunks = int(chunks + 1)
             for this_chunk in range(1, chunks + 1):
                 chunked = copy.deepcopy(job)
-                chunked["name"] = chunked["name"].replace(
-                    "/", "-{}/".format(this_chunk), 1
-                )
+                chunked["name"] = chunked["name"].replace("/", f"-{this_chunk}/", 1)
                 chunked["mozharness"]["options"] = chunked["mozharness"].get(
                     "options", []
                 )
@@ -298,7 +292,7 @@ def chunk_locales(config, jobs):
                 )
                 chunked["mozharness"]["options"].extend(
                     [
-                        "locale={}:{}".format(locale, changeset)
+                        f"locale={locale}:{changeset}"
                         for locale, changeset in chunked_locales
                     ]
                 )
@@ -317,7 +311,7 @@ def chunk_locales(config, jobs):
             job["mozharness"]["options"] = job["mozharness"].get("options", [])
             job["mozharness"]["options"].extend(
                 [
-                    "locale={}:{}".format(locale, changeset)
+                    f"locale={locale}:{changeset}"
                     for locale, changeset in sorted(locales_with_changesets.items())
                 ]
             )

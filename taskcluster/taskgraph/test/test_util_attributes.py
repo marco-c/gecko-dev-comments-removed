@@ -1,10 +1,7 @@
-# -*- coding: utf-8 -*-
 
 
 
 
-
-from __future__ import absolute_import, print_function, unicode_literals
 
 import unittest
 from taskgraph.util.attributes import (
@@ -30,8 +27,8 @@ class Attrmatch(unittest.TestCase):
 
     def test_set_attribute(self):
         """Set attributes require set membership"""
-        self.assertTrue(attrmatch({"att": 10}, att=set([9, 10])))
-        self.assertFalse(attrmatch({"att": 10}, att=set([19, 20])))
+        self.assertTrue(attrmatch({"att": 10}, att={9, 10}))
+        self.assertFalse(attrmatch({"att": 10}, att={19, 20}))
 
     def test_callable_attribute(self):
         """Callable attributes are called and any False causes the match to fail"""

@@ -5,11 +5,9 @@
 Support for running toolchain-building jobs via dedicated scripts
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
 
 from mozbuild.shellutil import quote as shell_quote
 
-from six import text_type
 from taskgraph.util.schema import Schema
 from voluptuous import Optional, Required, Any
 
@@ -35,9 +33,9 @@ toolchain_run_schema = Schema(
         
         
         
-        Required("script"): text_type,
+        Required("script"): str,
         
-        Optional("arguments"): [text_type],
+        Optional("arguments"): [str],
         
         
         Required("tooltool-downloads"): Any(
@@ -51,21 +49,21 @@ toolchain_run_schema = Schema(
         
         
         
-        Required("sparse-profile"): Any(text_type, None),
+        Required("sparse-profile"): Any(str, None),
         
-        Optional("sparse-profile-prefix"): text_type,
+        Optional("sparse-profile-prefix"): str,
         
         
-        Optional("resources"): [text_type],
+        Optional("resources"): [str],
         
-        Required("toolchain-artifact"): text_type,
+        Required("toolchain-artifact"): str,
         Optional(
             "toolchain-alias",
             description="An alias that can be used instead of the real toolchain job name in "
             "fetch stanzas for jobs.",
-        ): Any(text_type, [text_type]),
+        ): Any(str, [str]),
         
-        Optional("workdir"): text_type,
+        Optional("workdir"): str,
     }
 )
 
@@ -135,7 +133,7 @@ def docker_worker_toolchain(config, job, taskdesc):
 
     
     workspace = "{workdir}/workspace/build".format(**run)
-    gecko_path = "{}/src".format(workspace)
+    gecko_path = f"{workspace}/src"
 
     env = worker.setdefault("env", {})
     env.update(
@@ -155,7 +153,7 @@ def docker_worker_toolchain(config, job, taskdesc):
     digest_data = get_digest_data(config, run, taskdesc)
 
     if job.get("attributes", {}).get("cached_task") is not False and not taskgraph.fast:
-        name = taskdesc["label"].replace("{}-".format(config.kind), "", 1)
+        name = taskdesc["label"].replace(f"{config.kind}-", "", 1)
         taskdesc["cache"] = {
             "type": CACHE_TYPE,
             "name": name,
@@ -218,7 +216,7 @@ def generic_worker_toolchain(config, job, taskdesc):
     digest_data = get_digest_data(config, run, taskdesc)
 
     if job.get("attributes", {}).get("cached_task") is not False and not taskgraph.fast:
-        name = taskdesc["label"].replace("{}-".format(config.kind), "", 1)
+        name = taskdesc["label"].replace(f"{config.kind}-", "", 1)
         taskdesc["cache"] = {
             "type": CACHE_TYPE,
             "name": name,

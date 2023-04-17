@@ -5,11 +5,9 @@
 Transform the beetmover task into an actual task description.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
 
 from voluptuous import Optional, Required
 
-from six import text_type
 from taskgraph.loader.single_dep import schema
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.transforms.task import task_description_schema
@@ -28,13 +26,13 @@ transforms = TransformSequence()
 beetmover_description_schema = schema.extend(
     {
         
-        Optional("label"): text_type,
+        Optional("label"): str,
         
         
         
         Optional("treeherder"): task_description_schema["treeherder"],
         
-        Optional("locale"): text_type,
+        Optional("locale"): str,
         Required("shipping-phase"): task_description_schema["shipping-phase"],
         Optional("shipping-product"): task_description_schema["shipping-product"],
         Optional("attributes"): task_description_schema["attributes"],
@@ -61,7 +59,7 @@ def make_task_description(config, jobs):
             .get("machine", {})
             .get("platform", "")
         )
-        treeherder.setdefault("platform", "{}/opt".format(dep_th_platform))
+        treeherder.setdefault("platform", f"{dep_th_platform}/opt")
         treeherder.setdefault(
             "tier", dep_job.task.get("extra", {}).get("treeherder", {}).get("tier", 1)
         )

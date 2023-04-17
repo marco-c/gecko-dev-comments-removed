@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 
 
@@ -10,7 +9,6 @@ taskgraph.util.verify.verify_docs with different parameters to do the
 actual checking.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
 
 import os.path
 

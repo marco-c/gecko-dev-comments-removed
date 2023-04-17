@@ -1,10 +1,7 @@
-# -*- coding: utf-8 -*-
 
 
 
 
-
-from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
 import requests
@@ -33,8 +30,6 @@ def cancel_action(parameters, graph_config, input, task_group_id, task_id):
             
             
             
-            logger.info(
-                "Task {} is past its deadline and cannot be cancelled.".format(task_id)
-            )
+            logger.info(f"Task {task_id} is past its deadline and cannot be cancelled.")
             return
         raise

@@ -5,11 +5,9 @@
 Support for running spidermonkey jobs via dedicated scripts
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import re
-from six import text_type
 
 from taskgraph.util.schema import Schema
 from voluptuous import Any, Optional, Required
@@ -23,11 +21,11 @@ from taskgraph import GECKO
 import taskgraph
 
 DSC_PACKAGE_RE = re.compile(".*(?=_)")
-SOURCE_PACKAGE_RE = re.compile(".*(?=[-_]\d)")
+SOURCE_PACKAGE_RE = re.compile(r".*(?=[-_]\d)")
 
 source_definition = {
-    Required("url"): text_type,
-    Required("sha256"): text_type,
+    Required("url"): str,
+    Required("sha256"): str,
 }
 
 common_schema = Schema(
@@ -38,22 +36,22 @@ common_schema = Schema(
         
         
         
-        Optional("name"): text_type,
+        Optional("name"): str,
         
-        Optional("patch"): text_type,
+        Optional("patch"): str,
         
-        Optional("pre-build-command"): text_type,
+        Optional("pre-build-command"): str,
         
-        Optional("arch"): text_type,
+        Optional("arch"): str,
         
-        Optional("packages"): [text_type],
+        Optional("packages"): [str],
         
         
         
         
         Optional("resolver"): Any("apt-get", "aptitude"),
         
-        Required("workdir"): text_type,
+        Required("workdir"): str,
     }
 )
 
@@ -61,7 +59,7 @@ debian_schema = common_schema.extend(
     {
         Required("using"): "debian-package",
         
-        Required("dist"): text_type,
+        Required("dist"): str,
     }
 )
 
@@ -69,7 +67,7 @@ ubuntu_schema = common_schema.extend(
     {
         Required("using"): "ubuntu-package",
         
-        Required("dist"): text_type,
+        Required("dist"): str,
     }
 )
 
@@ -77,7 +75,7 @@ ubuntu_schema = common_schema.extend(
 def common_package(config, job, taskdesc, distro, version):
     run = job["run"]
 
-    name = taskdesc["label"].replace("{}-".format(config.kind), "", 1)
+    name = taskdesc["label"].replace(f"{config.kind}-", "", 1)
 
     arch = run.get("arch", "amd64")
 
@@ -196,11 +194,11 @@ def common_package(config, job, taskdesc, distro, version):
     if run.get("packages"):
         env = worker.setdefault("env", {})
         env["PACKAGES"] = {
-            "task-reference": " ".join("<{}>".format(p) for p in run["packages"])
+            "task-reference": " ".join(f"<{p}>" for p in run["packages"])
         }
         deps = taskdesc.setdefault("dependencies", {})
         for p in run["packages"]:
-            deps[p] = "packages-{}".format(p)
+            deps[p] = f"packages-{p}"
 
     
     

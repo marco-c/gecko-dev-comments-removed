@@ -5,11 +5,9 @@
 Transform the repackage task into an actual task description.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
 
 import copy
 
-from six import text_type
 from taskgraph.loader.single_dep import schema
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.attributes import copy_attributes_from_dependent_job
@@ -27,17 +25,17 @@ from voluptuous import Required, Optional, Extra
 packaging_description_schema = schema.extend(
     {
         
-        Optional("label"): text_type,
-        Optional("worker-type"): text_type,
+        Optional("label"): str,
+        Optional("worker-type"): str,
         Optional("worker"): object,
         
         
         
         Optional("treeherder"): job_description_schema["treeherder"],
         
-        Optional("locale"): text_type,
+        Optional("locale"): str,
         
-        Optional("routes"): [text_type],
+        Optional("routes"): [str],
         
         Optional("extra"): job_description_schema["extra"],
         
@@ -47,24 +45,24 @@ packaging_description_schema = schema.extend(
         Optional("shipping-product"): job_description_schema["shipping-product"],
         Optional("shipping-phase"): job_description_schema["shipping-phase"],
         Required("package-formats"): optionally_keyed_by(
-            "build-platform", "release-type", [text_type]
+            "build-platform", "release-type", [str]
         ),
         Optional("msix"): {
             Optional("channel"): optionally_keyed_by(
-                "level", "build-platform", "release-type", "shipping-product", text_type
+                "level", "build-platform", "release-type", "shipping-product", str
             ),
             Optional("publisher"): optionally_keyed_by(
-                "level", "build-platform", "release-type", "shipping-product", text_type
+                "level", "build-platform", "release-type", "shipping-product", str
             ),
         },
         
         Required("mozharness"): {
             Extra: object,
             
-            Required("config"): optionally_keyed_by("build-platform", [text_type]),
+            Required("config"): optionally_keyed_by("build-platform", [str]),
             
             
-            Optional("config-paths"): [text_type],
+            Optional("config-paths"): [str],
             
             
             Optional("comm-checkout"): bool,
@@ -355,9 +353,7 @@ def make_job_description(config, jobs):
             }
             
             
-            substs.update(
-                {name: "{{{}}}".format(name) for name in MOZHARNESS_EXPANSIONS}
-            )
+            substs.update({name: f"{{{name}}}" for name in MOZHARNESS_EXPANSIONS})
             for msix_key in ("channel", "publisher"):
                 
                 
@@ -459,7 +455,7 @@ def _generate_download_config(
     project=None,
     existing_fetch=None,
 ):
-    locale_path = "{}/".format(locale) if locale else ""
+    locale_path = f"{locale}/" if locale else ""
     fetch = {}
     if existing_fetch:
         fetch.update(existing_fetch)
@@ -467,7 +463,7 @@ def _generate_download_config(
     if repackage_signing_task and build_platform.startswith("win"):
         fetch.update(
             {
-                repackage_signing_task: ["{}target.installer.exe".format(locale_path)],
+                repackage_signing_task: [f"{locale_path}target.installer.exe"],
             }
         )
     elif build_platform.startswith("linux") or build_platform.startswith("macosx"):
@@ -488,28 +484,28 @@ def _generate_download_config(
             {
                 signing_task: [
                     {
-                        "artifact": "{}target.zip".format(locale_path),
+                        "artifact": f"{locale_path}target.zip",
                         "extract": False,
                     },
-                    "{}setup.exe".format(locale_path),
+                    f"{locale_path}setup.exe",
                 ],
             }
         )
 
         use_stub = task.attributes.get("stub-installer")
         if use_stub:
-            fetch[signing_task].append("{}setup-stub.exe".format(locale_path))
+            fetch[signing_task].append(f"{locale_path}setup-stub.exe")
 
     if fetch:
         return fetch
 
-    raise NotImplementedError('Unsupported build_platform: "{}"'.format(build_platform))
+    raise NotImplementedError(f'Unsupported build_platform: "{build_platform}"')
 
 
 def _generate_task_output_files(
     task, worker_implementation, repackage_config, locale=None
 ):
-    locale_output_path = "{}/".format(locale) if locale else ""
+    locale_output_path = f"{locale}/" if locale else ""
     artifact_prefix = get_artifact_prefix(task)
 
     if worker_implementation == ("docker-worker", "linux"):
@@ -518,7 +514,7 @@ def _generate_task_output_files(
         local_prefix = "workspace/"
     else:
         raise NotImplementedError(
-            'Unsupported worker implementation: "{}"'.format(worker_implementation)
+            f'Unsupported worker implementation: "{worker_implementation}"'
         )
 
     output_files = []

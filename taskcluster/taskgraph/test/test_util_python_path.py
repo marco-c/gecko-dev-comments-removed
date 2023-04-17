@@ -2,14 +2,13 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
 
 import unittest
 from taskgraph.util import python_path
 from mozunit import main
 
 
-class TestObject(object):
+class TestObject:
 
     testClassProperty = object()
 

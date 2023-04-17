@@ -17,14 +17,12 @@ what should run where. this is the wrong place for special-casing platforms,
 for example - use `all_tests.py` instead.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
 
 import copy
 import logging
 import re
 
 from mozbuild.schedules import INCLUSIVE_COMPONENTS
-from six import string_types, text_type
 from voluptuous import (
     Any,
     Optional,
@@ -491,34 +489,32 @@ transforms = TransformSequence()
 test_description_schema = Schema(
     {
         
-        Required("description"): text_type,
+        Required("description"): str,
         
         Optional("suite"): Any(
-            text_type,
-            {Optional("category"): text_type, Optional("name"): text_type},
+            str,
+            {Optional("category"): str, Optional("name"): str},
         ),
         
-        Optional("workdir"): optionally_keyed_by(
-            "test-platform", Any(text_type, "default")
-        ),
+        Optional("workdir"): optionally_keyed_by("test-platform", Any(str, "default")),
         
         
         
-        Optional("try-name"): text_type,
+        Optional("try-name"): str,
         
-        Optional("tags"): {text_type: object},
-        
-        
-        Required("treeherder-symbol"): text_type,
+        Optional("tags"): {str: object},
         
         
+        Required("treeherder-symbol"): str,
         
-        Optional("treeherder-machine-platform"): text_type,
         
         
-        Optional("attributes"): {text_type: object},
+        Optional("treeherder-machine-platform"): str,
         
-        Optional("job-from"): text_type,
+        
+        Optional("attributes"): {str: object},
+        
+        Optional("job-from"): str,
         
         
         
@@ -532,7 +528,7 @@ test_description_schema = Schema(
             "test-platform",
             "test-name",
             "variant",
-            Any([text_type], "built-projects"),
+            Any([str], "built-projects"),
         ),
         
         
@@ -552,7 +548,7 @@ test_description_schema = Schema(
         Optional("test-manifest-loader"): Any(None, *list(manifest_loaders)),
         
         
-        Optional("expires-after"): text_type,
+        Optional("expires-after"): str,
         
         
         Optional("variants"): optionally_keyed_by(
@@ -568,7 +564,7 @@ test_description_schema = Schema(
         
         Optional("webrender"): bool,
         Optional("webrender-run-on-projects"): optionally_keyed_by(
-            "app", Any([text_type], "default")
+            "app", Any([str], "default")
         ),
         
         Required("instance-size"): optionally_keyed_by(
@@ -595,11 +591,11 @@ test_description_schema = Schema(
             "test-platform",
             Any(
                 
-                text_type,
+                str,
                 
-                {"in-tree": text_type},
+                {"in-tree": str},
                 
-                {"indexed": text_type},
+                {"indexed": str},
             ),
         ),
         
@@ -614,22 +610,20 @@ test_description_schema = Schema(
         
         Required("mozharness"): {
             
-            Required("script"): optionally_keyed_by("test-platform", text_type),
+            Required("script"): optionally_keyed_by("test-platform", str),
             
-            Required("config"): optionally_keyed_by("test-platform", [text_type]),
+            Required("config"): optionally_keyed_by("test-platform", [str]),
             
-            Optional("mochitest-flavor"): text_type,
+            Optional("mochitest-flavor"): str,
             
-            Optional("actions"): [text_type],
-            
-            
-            Required("extra-options"): optionally_keyed_by(
-                "test-platform", [text_type]
-            ),
+            Optional("actions"): [str],
             
             
-            Optional("build-artifact-name"): text_type,
-            Optional("installer-url"): text_type,
+            Required("extra-options"): optionally_keyed_by("test-platform", [str]),
+            
+            
+            Optional("build-artifact-name"): str,
+            Optional("installer-url"): str,
             
             
             Required("tooltool-downloads"): Any(
@@ -656,37 +650,37 @@ test_description_schema = Schema(
         },
         
         Optional("test-manifests"): Any(
-            [text_type],
-            {"active": [text_type], "skipped": [text_type]},
+            [str],
+            {"active": [str], "skipped": [str]},
         ),
         
         Optional("this-chunk"): int,
         
         
-        Optional("os-groups"): optionally_keyed_by("test-platform", [text_type]),
+        Optional("os-groups"): optionally_keyed_by("test-platform", [str]),
         Optional("run-as-administrator"): optionally_keyed_by("test-platform", bool),
         
         
-        Required("build-platform"): text_type,
+        Required("build-platform"): str,
         
-        Required("build-label"): text_type,
-        
-        
-        Optional("build-signing-label"): text_type,
-        
-        Required("build-attributes"): {text_type: object},
-        
-        Required("test-platform"): text_type,
+        Required("build-label"): str,
         
         
-        Optional("limit-platforms"): optionally_keyed_by("app", [text_type]),
+        Optional("build-signing-label"): str,
         
-        Required("test-name"): text_type,
+        Required("build-attributes"): {str: object},
         
-        Optional("product"): text_type,
+        Required("test-platform"): str,
+        
+        
+        Optional("limit-platforms"): optionally_keyed_by("app", [str]),
+        
+        Required("test-name"): str,
+        
+        Optional("product"): str,
         
         Exclusive("when", "optimization"): {
-            Optional("files-changed"): [text_type],
+            Optional("files-changed"): [str],
         },
         
         
@@ -694,12 +688,12 @@ test_description_schema = Schema(
         
         
         Exclusive("schedules-component", "optimization"): Any(
-            text_type,
-            [text_type],
+            str,
+            [str],
         ),
         Optional("worker-type"): optionally_keyed_by(
             "test-platform",
-            Any(text_type, None),
+            Any(str, None),
         ),
         Optional(
             "require-signed-extensions",
@@ -712,23 +706,21 @@ test_description_schema = Schema(
         Optional("target"): optionally_keyed_by(
             "test-platform",
             Any(
-                text_type,
+                str,
                 None,
-                {Required("index"): text_type, Required("name"): text_type},
+                {Required("index"): str, Required("name"): str},
             ),
         ),
         
-        Optional("fetches"): {
-            text_type: optionally_keyed_by("test-platform", [text_type])
-        },
+        Optional("fetches"): {str: optionally_keyed_by("test-platform", [str])},
         
         Optional("python-3"): bool,
         
         
         
         
-        Optional("app"): text_type,
-        Optional("subtest"): text_type,
+        Optional("app"): str,
+        Optional("subtest"): str,
         
         Optional("supports-artifact-builds"): bool,
     }
@@ -824,7 +816,7 @@ def resolve_keys(config, tasks):
             enforce_single_match=False,
             **{
                 "release-type": config.params["release_type"],
-            }
+            },
         )
         yield task
 
@@ -839,8 +831,7 @@ def setup_raptor(config, tasks):
             yield task
             continue
 
-        for t in raptor_transforms(config, [task]):
-            yield t
+        yield from raptor_transforms(config, [task])
 
 
 @transforms.add
@@ -863,7 +854,7 @@ def handle_suite_category(config, tasks):
     for task in tasks:
         task.setdefault("suite", {})
 
-        if isinstance(task["suite"], text_type):
+        if isinstance(task["suite"], str):
             task["suite"] = {"name": task["suite"]}
 
         suite = task["suite"].setdefault("name", task["test-name"])
@@ -880,13 +871,13 @@ def handle_suite_category(config, tasks):
         elif script in ("android_emulator_unittest.py", "android_hardware_unittest.py"):
             category_arg = "--test-suite"
         elif script == "desktop_unittest.py":
-            category_arg = "--{}-suite".format(category)
+            category_arg = f"--{category}-suite"
 
         if category_arg:
             task["mozharness"].setdefault("extra-options", [])
             extra = task["mozharness"]["extra-options"]
             if not any(arg.startswith(category_arg) for arg in extra):
-                extra.append("{}={}".format(category_arg, suite))
+                extra.append(f"{category_arg}={suite}")
 
         
         task["suite"] = suite
@@ -2008,7 +1999,7 @@ def set_worker_type(config, tasks):
             else:
                 task["worker-type"] = LINUX_WORKER_TYPES[task["instance-size"]]
         else:
-            raise Exception("unknown test_platform {}".format(test_platform))
+            raise Exception(f"unknown test_platform {test_platform}")
 
         yield task
 
@@ -2022,7 +2013,7 @@ def set_schedules_components(config, tasks):
 
         category = task["attributes"]["unittest_category"]
         schedules = task.get("schedules-component", category)
-        if isinstance(schedules, string_types):
+        if isinstance(schedules, str):
             schedules = [schedules]
 
         schedules = set(schedules)
@@ -2155,5 +2146,5 @@ def normpath(path):
 
 
 def get_firefox_version():
-    with open("browser/config/version.txt", "r") as f:
+    with open("browser/config/version.txt") as f:
         return f.readline().strip()

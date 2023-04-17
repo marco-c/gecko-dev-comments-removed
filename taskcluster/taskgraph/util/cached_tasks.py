@@ -2,7 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
 
 import hashlib
 import time
@@ -64,7 +63,7 @@ def add_optimization(
 
     
     taskdesc.setdefault("routes", []).append(
-        "index.{}".format(TARGET_CACHE_INDEX.format(**subs))
+        f"index.{TARGET_CACHE_INDEX.format(**subs)}"
     )
 
     
@@ -72,7 +71,7 @@ def add_optimization(
         "%Y.%m.%d.%Y%m%d%H%M%S", time.gmtime(config.params["build_date"])
     )
     taskdesc["routes"].extend(
-        ["index.{}".format(route.format(**subs)) for route in EXTRA_CACHE_INDEXES]
+        [f"index.{route.format(**subs)}" for route in EXTRA_CACHE_INDEXES]
     )
 
     taskdesc["attributes"]["cached_task"] = {

@@ -2,7 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
 
 import mozunit
 
@@ -15,7 +14,7 @@ from taskgraph.util.bugbug import (
 def test_group_translation(responses):
     branch = ("integration/autoland",)
     rev = "abcdef"
-    query = "/push/{}/{}/schedules".format(branch, rev)
+    query = f"/push/{branch}/{rev}/schedules"
     url = BUGBUG_BASE_URL + query
 
     responses.add(

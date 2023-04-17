@@ -5,9 +5,7 @@
 Transform the beetmover task into an actual task description.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
 
-from six import text_type
 from taskgraph.loader.multi_dep import schema
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.transforms.beetmover import craft_release_properties
@@ -37,14 +35,14 @@ logger = logging.getLogger(__name__)
 beetmover_description_schema = schema.extend(
     {
         
-        Required("label"): text_type,
+        Required("label"): str,
         
         
         
         Optional("treeherder"): task_description_schema["treeherder"],
         Optional("attributes"): task_description_schema["attributes"],
         
-        Optional("locale"): text_type,
+        Optional("locale"): str,
         Required("shipping-phase"): task_description_schema["shipping-phase"],
         
         Optional("shipping-product"): task_description_schema["shipping-product"],
@@ -132,13 +130,13 @@ def make_task_description(config, jobs):
 def generate_partials_upstream_artifacts(job, artifacts, platform, locale=None):
     artifact_prefix = get_artifact_prefix(job)
     if locale and locale != "en-US":
-        artifact_prefix = "{}/{}".format(artifact_prefix, locale)
+        artifact_prefix = f"{artifact_prefix}/{locale}"
 
     upstream_artifacts = [
         {
             "taskId": {"task-reference": "<partials-signing>"},
             "taskType": "signing",
-            "paths": ["{}/{}".format(artifact_prefix, path) for path, _ in artifacts],
+            "paths": [f"{artifact_prefix}/{path}" for path, _ in artifacts],
             "locale": locale or "en-US",
         }
     ]

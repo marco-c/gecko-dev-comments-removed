@@ -4,13 +4,12 @@
 This transform passes options from `mach perftest` to the corresponding task.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
 
 from copy import deepcopy
 from datetime import date, timedelta
 import json
 
-from six import ensure_text, text_type
+from six import ensure_text
 
 from voluptuous import (
     Any,
@@ -29,25 +28,23 @@ transforms = TransformSequence()
 perftest_description_schema = Schema(
     {
         
-        Optional("perftest"): [[text_type]],
+        Optional("perftest"): [[str]],
         
         
         Optional("perftest-metrics"): optionally_keyed_by(
             "perftest",
             Any(
-                [text_type],
-                {text_type: Any(None, {text_type: Any(None, text_type, [text_type])})},
+                [str],
+                {str: Any(None, {str: Any(None, str, [str])})},
             ),
         ),
         
         
         Optional("perftest-perfherder-global"): optionally_keyed_by(
-            "perftest", {text_type: Any(None, text_type, [text_type])}
+            "perftest", {str: Any(None, str, [str])}
         ),
         
-        Optional("perftest-extra-options"): optionally_keyed_by(
-            "perftest", [text_type]
-        ),
+        Optional("perftest-extra-options"): optionally_keyed_by("perftest", [str]),
         
         
         
@@ -55,7 +52,7 @@ perftest_description_schema = Schema(
         
         
         Optional("perftest-btime-variants"): optionally_keyed_by(
-            "perftest", [[Any(None, text_type)]]
+            "perftest", [[Any(None, str)]]
         ),
         
         Extra: object,

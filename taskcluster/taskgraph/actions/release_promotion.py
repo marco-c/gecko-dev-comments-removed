@@ -1,10 +1,7 @@
-# -*- coding: utf-8 -*-
 
 
 
 
-
-from __future__ import absolute_import, print_function, unicode_literals
 
 import json
 import os
@@ -71,11 +68,9 @@ def get_flavors(graph_config, param):
     """
     promotion_flavors = graph_config["release-promotion"]["flavors"]
     return sorted(
-        [
-            flavor
-            for (flavor, config) in promotion_flavors.items()
-            if config.get(param, False)
-        ]
+        flavor
+        for (flavor, config) in promotion_flavors.items()
+        if config.get(param, False)
     )
 
 

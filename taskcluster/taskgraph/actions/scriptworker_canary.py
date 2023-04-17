@@ -1,10 +1,7 @@
-# -*- coding: utf-8 -*-
 
 
 
 
-
-from __future__ import absolute_import, print_function, unicode_literals
 
 from taskgraph.decision import taskgraph_decision
 from taskgraph.parameters import Parameters

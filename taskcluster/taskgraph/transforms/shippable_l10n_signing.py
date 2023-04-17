@@ -5,7 +5,6 @@
 Transform the signing task into an actual task description.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
 
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.attributes import copy_attributes_from_dependent_job
@@ -59,24 +58,20 @@ def define_upstream_artifacts(config, jobs):
                 task_type = "scriptworker"
             upstream_artifacts.append(
                 {
-                    "taskId": {
-                        "task-reference": "<{}>".format(upstream_artifact_task.kind)
-                    },
+                    "taskId": {"task-reference": f"<{upstream_artifact_task.kind}>"},
                     "taskType": task_type,
                     
                     
                     
                     
                     "paths": sorted(
-                        set(
-                            [
-                                path_template.format(locale=locale)
-                                for locale in upstream_artifact_task.attributes.get(
-                                    "chunk_locales", []
-                                )
-                                for path_template in spec["artifacts"]
-                            ]
-                        )
+                        {
+                            path_template.format(locale=locale)
+                            for locale in upstream_artifact_task.attributes.get(
+                                "chunk_locales", []
+                            )
+                            for path_template in spec["artifacts"]
+                        }
                     ),
                     "formats": spec["formats"],
                 }

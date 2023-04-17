@@ -1,10 +1,7 @@
-# -*- coding: utf-8 -*-
 
 
 
 
-
-from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
 
@@ -91,7 +88,7 @@ def get_push_data(repository, project, push_id_start, push_id_end):
 
     
     except ValueError as error:
-        logger.warning("Invalid JSON, possible server error: {}".format(error))
+        logger.warning(f"Invalid JSON, possible server error: {error}")
 
     
     except requests.exceptions.RequestException as error:

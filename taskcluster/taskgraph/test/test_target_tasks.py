@@ -1,8 +1,7 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from __future__ import absolute_import, print_function, unicode_literals
+
+
+
 
 import contextlib
 import re
@@ -18,7 +17,7 @@ from taskgraph.taskgraph import TaskGraph
 from taskgraph.task import Task
 
 
-class FakeTryOptionSyntax(object):
+class FakeTryOptionSyntax:
     def __init__(self, message, task_graph, graph_config):
         self.trigger_tests = 0
         self.talos_trigger_tests = 0
@@ -115,7 +114,7 @@ class TestTargetTasks(unittest.TestCase):
         )
         self.assertTrue(
             self.default_matches_hg_branch(
-                ["GECKOVIEW_\d+_RELBRANCH"], "GECKOVIEW_62_RELBRANCH"
+                [r"GECKOVIEW_\d+_RELBRANCH"], "GECKOVIEW_62_RELBRANCH"
             )
         )
         self.assertTrue(
@@ -156,7 +155,7 @@ class TestTargetTasks(unittest.TestCase):
             "project": "try",
             "message": "",
         }
-        # only runs the task with run_on_projects: try
+        
         self.assertEqual(method(tg, params, {}), [])
 
     def test_try_option_syntax(self):
@@ -181,7 +180,7 @@ class TestTargetTasks(unittest.TestCase):
         self.assertEqual(method(tg, params, {}), ["a"])
 
 
-# tests for specific filters
+
 
 
 @pytest.mark.parametrize(

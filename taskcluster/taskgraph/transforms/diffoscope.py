@@ -6,9 +6,7 @@ This transform construct tasks to perform diffs between builds, as
 defined in kind.yml
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
 
-from six import text_type
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.transforms.task import task_description_schema
 from taskgraph.util.schema import Schema
@@ -20,40 +18,40 @@ from voluptuous import (
 )
 
 index_or_string = Any(
-    text_type,
-    {Required("index-search"): text_type},
+    str,
+    {Required("index-search"): str},
 )
 
 diff_description_schema = Schema(
     {
         
-        Required("name"): text_type,
+        Required("name"): str,
         
         Required("tier"): int,
         
-        Required("symbol"): text_type,
+        Required("symbol"): str,
         
-        Optional("job-from"): text_type,
+        Optional("job-from"): str,
         
         Required("original"): index_or_string,
         Required("new"): index_or_string,
         
         
-        Optional("args"): text_type,
+        Optional("args"): str,
         
-        Optional("extra-args"): text_type,
+        Optional("extra-args"): str,
         
         Optional("fail-on-diff"): bool,
         
         
         
-        Optional("artifact"): text_type,
+        Optional("artifact"): str,
         
         
         
         Optional("unpack"): bool,
         
-        Optional("pre-diff-commands"): [text_type],
+        Optional("pre-diff-commands"): [str],
         
         Optional("run-on-projects"): task_description_schema["run-on-projects"],
         Optional("optimization"): task_description_schema["optimization"],
@@ -77,7 +75,7 @@ def fill_template(config, tasks):
         artifact = task.get("artifact")
         for k in ("original", "new"):
             value = task[k]
-            if isinstance(value, text_type):
+            if isinstance(value, str):
                 deps[k] = value
                 dep_name = k
                 os_hint = value
@@ -110,7 +108,7 @@ def fill_template(config, tasks):
             elif "win" in os_hint:
                 artifact = "target.zip"
             else:
-                raise Exception("Cannot figure out the OS for {!r}".format(value))
+                raise Exception(f"Cannot figure out the OS for {value!r}")
             if previous_artifact is not None and previous_artifact != artifact:
                 raise Exception("Cannot compare builds from different OSes")
             urls[k] = {
@@ -135,8 +133,8 @@ def fill_template(config, tasks):
                 "artifacts": [
                     {
                         "type": "file",
-                        "path": "/builds/worker/{}".format(f),
-                        "name": "public/{}".format(f),
+                        "path": f"/builds/worker/{f}",
+                        "name": f"public/{f}",
                     }
                     for f in (
                         "diff.html",

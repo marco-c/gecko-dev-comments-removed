@@ -8,11 +8,9 @@ way, and certainly anything using mozharness should use this approach.
 
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
 import json
 
 import six
-from six import text_type
 from textwrap import dedent
 
 from taskgraph.util.schema import Schema
@@ -40,14 +38,14 @@ mozharness_run_schema = Schema(
         Required("using"): "mozharness",
         
         
-        Required("script"): text_type,
+        Required("script"): str,
         
         
-        Optional("config-paths"): [text_type],
+        Optional("config-paths"): [str],
         
         
         
-        Required("config"): [text_type],
+        Required("config"): [str],
         
         Optional("actions"): [
             Match("^[a-z0-9-]+$", "actions must be `-` seperated alphanumeric strings")
@@ -60,7 +58,7 @@ mozharness_run_schema = Schema(
             )
         ],
         
-        Optional("custom-build-variant-cfg"): text_type,
+        Optional("custom-build-variant-cfg"): str,
         
         Optional("extra-config"): dict,
         
@@ -75,7 +73,7 @@ mozharness_run_schema = Schema(
         
         
         
-        Required("secrets"): Any(bool, [text_type]),
+        Required("secrets"): Any(bool, [str]),
         
         
         Required("taskcluster-proxy"): bool,
@@ -85,7 +83,7 @@ mozharness_run_schema = Schema(
         
         Required("keep-artifacts"): bool,
         
-        Optional("job-script"): text_type,
+        Optional("job-script"): str,
         Required("requires-signed-builds"): bool,
         
         Optional("use-caches"): bool,
@@ -99,7 +97,7 @@ mozharness_run_schema = Schema(
         
         Required("comm-checkout"): bool,
         
-        Optional("workdir"): text_type,
+        Optional("workdir"): str,
     }
 )
 
@@ -305,14 +303,14 @@ def mozharness_on_generic_worker(config, job, taskdesc):
         gecko_path = "$GECKO_PATH"
 
     mh_command += [
-        "{}/mach".format(gecko_path),
+        f"{gecko_path}/mach",
         "python",
         "--no-activate",
         "{}/testing/{}".format(gecko_path, run.pop("script")),
     ]
 
     for path in run.pop("config-paths", []):
-        mh_command.append("--extra-config-path {}/{}".format(gecko_path, path))
+        mh_command.append(f"--extra-config-path {gecko_path}/{path}")
 
     for cfg in run.pop("config"):
         mh_command.extend(("--config", cfg))

@@ -2,7 +2,6 @@
 
 
 
-from __future__ import absolute_import, print_function, unicode_literals
 
 import unittest
 from taskgraph.util.treeherder import split_symbol, join_symbol, add_suffix
