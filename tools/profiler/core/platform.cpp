@@ -1709,15 +1709,19 @@ struct AutoWalkJSStack {
   }
 };
 
+class StackWalkControl {
+ public:
+  static constexpr bool scIsSupported = false;
+};
 
 
 
 
-static uint32_t ExtractJsFrames(bool aIsSynchronous,
-                                const RegisteredThread& aRegisteredThread,
-                                const Registers& aRegs,
-                                ProfilerStackCollector& aCollector,
-                                JsFrameBuffer aJsFrames) {
+
+static uint32_t ExtractJsFrames(
+    bool aIsSynchronous, const RegisteredThread& aRegisteredThread,
+    const Registers& aRegs, ProfilerStackCollector& aCollector,
+    JsFrameBuffer aJsFrames, StackWalkControl* aStackWalkControlIfSupported) {
   uint32_t jsFramesCount = 0;
 
   
@@ -1762,6 +1766,8 @@ static uint32_t ExtractJsFrames(bool aIsSynchronous,
             }
           }
         }
+
+        
       }
     }
   }
@@ -1987,10 +1993,10 @@ static void StackWalkCallback(uint32_t aFrameNumber, void* aPC, void* aSP,
 #endif
 
 #if defined(USE_FRAME_POINTER_STACK_WALK)
-static void DoFramePointerBacktrace(PSLockRef aLock,
-                                    const RegisteredThread& aRegisteredThread,
-                                    const Registers& aRegs,
-                                    NativeStack& aNativeStack) {
+static void DoFramePointerBacktrace(
+    PSLockRef aLock, const RegisteredThread& aRegisteredThread,
+    const Registers& aRegs, NativeStack& aNativeStack,
+    StackWalkControl* aStackWalkControlIfSupported) {
   
   
   
@@ -2013,10 +2019,10 @@ static void DoFramePointerBacktrace(PSLockRef aLock,
 #endif
 
 #if defined(USE_MOZ_STACK_WALK)
-static void DoMozStackWalkBacktrace(PSLockRef aLock,
-                                    const RegisteredThread& aRegisteredThread,
-                                    const Registers& aRegs,
-                                    NativeStack& aNativeStack) {
+static void DoMozStackWalkBacktrace(
+    PSLockRef aLock, const RegisteredThread& aRegisteredThread,
+    const Registers& aRegs, NativeStack& aNativeStack,
+    StackWalkControl* aStackWalkControlIfSupported) {
   
   
   
@@ -2039,8 +2045,8 @@ static void DoMozStackWalkBacktrace(PSLockRef aLock,
 #ifdef USE_EHABI_STACKWALK
 static void DoEHABIBacktrace(PSLockRef aLock,
                              const RegisteredThread& aRegisteredThread,
-                             const Registers& aRegs,
-                             NativeStack& aNativeStack) {
+                             const Registers& aRegs, NativeStack& aNativeStack,
+                             StackWalkControl* aStackWalkControlIfSupported) {
   
   
   
@@ -2049,6 +2055,7 @@ static void DoEHABIBacktrace(PSLockRef aLock,
       EHABIStackWalk(aRegs.mContext->uc_mcontext,
                      const_cast<void*>(aRegisteredThread.StackTop()),
                      aNativeStack.mSPs, aNativeStack.mPCs, MAX_NATIVE_FRAMES);
+  (void)aStackWalkControlIfSupported;  
 }
 #endif
 
@@ -2073,10 +2080,13 @@ MOZ_ASAN_BLACKLIST static void ASAN_memcpy(void* aDst, const void* aSrc,
 
 static void DoLULBacktrace(PSLockRef aLock,
                            const RegisteredThread& aRegisteredThread,
-                           const Registers& aRegs, NativeStack& aNativeStack) {
+                           const Registers& aRegs, NativeStack& aNativeStack,
+                           StackWalkControl* aStackWalkControlIfSupported) {
   
   
   
+
+  (void)aStackWalkControlIfSupported;  
 
   const mcontext_t* mc = &aRegs.mContext->uc_mcontext;
 
@@ -2224,21 +2234,25 @@ static void DoLULBacktrace(PSLockRef aLock,
 #ifdef HAVE_NATIVE_UNWIND
 static void DoNativeBacktrace(PSLockRef aLock,
                               const RegisteredThread& aRegisteredThread,
-                              const Registers& aRegs,
-                              NativeStack& aNativeStack) {
+                              const Registers& aRegs, NativeStack& aNativeStack,
+                              StackWalkControl* aStackWalkControlIfSupported) {
   
   
   
   
   
 #  if defined(USE_LUL_STACKWALK)
-  DoLULBacktrace(aLock, aRegisteredThread, aRegs, aNativeStack);
+  DoLULBacktrace(aLock, aRegisteredThread, aRegs, aNativeStack,
+                 aStackWalkControlIfSupported);
 #  elif defined(USE_EHABI_STACKWALK)
-  DoEHABIBacktrace(aLock, aRegisteredThread, aRegs, aNativeStack);
+  DoEHABIBacktrace(aLock, aRegisteredThread, aRegs, aNativeStack,
+                   aStackWalkControlIfSupported);
 #  elif defined(USE_FRAME_POINTER_STACK_WALK)
-  DoFramePointerBacktrace(aLock, aRegisteredThread, aRegs, aNativeStack);
+  DoFramePointerBacktrace(aLock, aRegisteredThread, aRegs, aNativeStack,
+                          aStackWalkControlIfSupported);
 #  elif defined(USE_MOZ_STACK_WALK)
-  DoMozStackWalkBacktrace(aLock, aRegisteredThread, aRegs, aNativeStack);
+  DoMozStackWalkBacktrace(aLock, aRegisteredThread, aRegs, aNativeStack,
+                          aStackWalkControlIfSupported);
 #  else
 #    error "Invalid configuration"
 #  endif
@@ -2265,13 +2279,25 @@ static inline void DoSharedSample(
 
   ProfileBufferCollector collector(aBuffer, aSamplePos, aBufferRangeStart);
   JsFrameBuffer& jsFrames = CorePS::JsFrames(aLock);
-  const uint32_t jsFramesCount = ExtractJsFrames(
-      aIsSynchronous, aRegisteredThread, aRegs, collector, jsFrames);
+  StackWalkControl* stackWalkControlIfSupported = nullptr;
+#if defined(HAVE_NATIVE_UNWIND)
+  const bool captureNative = ActivePS::FeatureStackWalk(aLock) &&
+                             aCaptureOptions == StackCaptureOptions::Full;
+  StackWalkControl stackWalkControl;
+  if constexpr (StackWalkControl::scIsSupported) {
+    if (captureNative) {
+      stackWalkControlIfSupported = &stackWalkControl;
+    }
+  }
+#endif  
+  const uint32_t jsFramesCount =
+      ExtractJsFrames(aIsSynchronous, aRegisteredThread, aRegs, collector,
+                      jsFrames, stackWalkControlIfSupported);
   NativeStack nativeStack;
 #if defined(HAVE_NATIVE_UNWIND)
-  if (ActivePS::FeatureStackWalk(aLock) &&
-      aCaptureOptions == StackCaptureOptions::Full) {
-    DoNativeBacktrace(aLock, aRegisteredThread, aRegs, nativeStack);
+  if (captureNative) {
+    DoNativeBacktrace(aLock, aRegisteredThread, aRegs, nativeStack,
+                      stackWalkControlIfSupported);
 
     MergeStacks(ActivePS::Features(aLock), aIsSynchronous, aRegisteredThread,
                 aRegs, nativeStack, collector, jsFrames, jsFramesCount);
@@ -5974,8 +6000,18 @@ void profiler_suspend_and_sample_thread(int aThreadId, uint32_t aFeatures,
         
         
         JsFrameBuffer& jsFrames = CorePS::JsFrames(lock);
-        const uint32_t jsFramesCount = ExtractJsFrames(
-            isSynchronous, registeredThread, aRegs, aCollector, jsFrames);
+        StackWalkControl* stackWalkControlIfSupported = nullptr;
+#if defined(HAVE_FASTINIT_NATIVE_UNWIND)
+        StackWalkControl stackWalkControl;
+        if constexpr (StackWalkControl::scIsSupported) {
+          if (aSampleNative) {
+            stackWalkControlIfSupported = &stackWalkControl;
+          }
+        }
+#endif
+        const uint32_t jsFramesCount =
+            ExtractJsFrames(isSynchronous, registeredThread, aRegs, aCollector,
+                            jsFrames, stackWalkControlIfSupported);
 
 #if defined(HAVE_FASTINIT_NATIVE_UNWIND)
         if (aSampleNative) {
@@ -5983,9 +6019,11 @@ void profiler_suspend_and_sample_thread(int aThreadId, uint32_t aFeatures,
           
           
 #  if defined(USE_FRAME_POINTER_STACK_WALK)
-          DoFramePointerBacktrace(lock, registeredThread, aRegs, nativeStack);
+          DoFramePointerBacktrace(lock, registeredThread, aRegs, nativeStack,
+                                  stackWalkControlIfSupported);
 #  elif defined(USE_MOZ_STACK_WALK)
-          DoMozStackWalkBacktrace(lock, registeredThread, aRegs, nativeStack);
+          DoMozStackWalkBacktrace(lock, registeredThread, aRegs, nativeStack,
+                                  stackWalkControlIfSupported);
 #  else
 #    error "Invalid configuration"
 #  endif
