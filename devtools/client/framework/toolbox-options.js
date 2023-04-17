@@ -423,12 +423,14 @@ OptionsPanel.prototype = {
   setupAdditionalOptions: function() {
     const prefDefinitions = [];
 
-    const isNightly = AppConstants.NIGHTLY_BUILD;
-    if (isNightly) {
-      
+    
+    
+    const isNewPerfAllowed =
+      AppConstants.NIGHTLY_BUILD || AppConstants.MOZ_DEV_EDITION;
+    if (isNewPerfAllowed) {
       prefDefinitions.push({
         pref: "devtools.performance.new-panel-enabled",
-        label: "Enable new performance recorder (then re-open DevTools)",
+        label: L10N.getStr("options.enableNewPerformancePanel"),
         id: "devtools-new-performance",
         parentId: "context-options",
       });
