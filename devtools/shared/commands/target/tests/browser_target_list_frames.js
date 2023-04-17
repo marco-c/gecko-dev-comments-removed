@@ -209,6 +209,12 @@ async function testTabFrames(mainRoot) {
   });
 
   info("Navigate to another domain and process (if fission is enabled)");
+  
+  
+  const onNewTargetProcessed = isFissionEnabled()
+    ? targetCommand.once("processed-available-target")
+    : null;
+
   const browser = tab.linkedBrowser;
   const onLoaded = BrowserTestUtils.browserLoaded(browser);
   await BrowserTestUtils.loadURI(browser, SECOND_PAGE_URL);
@@ -279,6 +285,8 @@ async function testTabFrames(mainRoot) {
       "and that target is never destroyed"
     );
   }
+
+  await onNewTargetProcessed;
 
   targetCommand.unwatchTargets([TYPES.FRAME], onAvailable);
 
