@@ -1100,8 +1100,6 @@ void nsLookAndFeel::RestoreSystemTheme() {
 
 template <typename Callback>
 void nsLookAndFeel::WithAltThemeConfigured(const Callback& aFn) {
-  AutoRestore<bool> restoreIgnoreSettings(sIgnoreChangedSettings);
-  sIgnoreChangedSettings = true;
   GtkSettings* settings = gtk_settings_get_default();
 
   bool fellBackToDefaultTheme = false;
@@ -1204,6 +1202,9 @@ void nsLookAndFeel::EnsureInit() {
   }
 
   LOGLNF("nsLookAndFeel::EnsureInit");
+
+  AutoRestore<bool> restoreIgnoreSettings(sIgnoreChangedSettings);
+  sIgnoreChangedSettings = true;
 
   
   
