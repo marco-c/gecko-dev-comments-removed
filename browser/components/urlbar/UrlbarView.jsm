@@ -1648,6 +1648,7 @@ class UrlbarView {
       
       this._setElementOverflowing(row._elements.get("title"), false);
       this._setElementOverflowing(row._elements.get("url"), false);
+      this._setElementOverflowing(row._elements.get("tagsContainer"), false);
     }
   }
 
@@ -2222,7 +2223,8 @@ class UrlbarView {
     if (
       event.detail == 1 &&
       (event.target.classList.contains("urlbarView-url") ||
-        event.target.classList.contains("urlbarView-title"))
+        event.target.classList.contains("urlbarView-title") ||
+        event.target.classList.contains("urlbarView-tags"))
     ) {
       this._setElementOverflowing(event.target, true);
     }
@@ -2232,7 +2234,8 @@ class UrlbarView {
     if (
       event.detail == 1 &&
       (event.target.classList.contains("urlbarView-url") ||
-        event.target.classList.contains("urlbarView-title"))
+        event.target.classList.contains("urlbarView-title") ||
+        event.target.classList.contains("urlbarView-tags"))
     ) {
       this._setElementOverflowing(event.target, false);
     }
