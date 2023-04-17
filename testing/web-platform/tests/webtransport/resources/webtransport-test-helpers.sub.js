@@ -6,6 +6,9 @@ const PORT = '{{ports[webtransport-h3][0]}}';
 const BASE = `https://${HOST}:${PORT}`;
 
 
+function wait(ms) { return new Promise(res => step_timeout(res, ms)); }
+
+
 function webtransport_url(handler) {
   return `${BASE}/webtransport/handlers/${handler}`;
 }
