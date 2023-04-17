@@ -4,8 +4,6 @@
 
 "use strict";
 
-const { combineReducers } = require("devtools/client/shared/vendor/redux");
-
 
 
 
@@ -209,19 +207,26 @@ function promptEnvRestart(state = null, action) {
 
 
 
-module.exports = combineReducers({
-  
-  
-  
-  recordingState,
-  recordingUnexpectedlyStopped,
-  isSupportedPlatform,
-  interval,
-  entries,
-  features,
-  threads,
-  objdirs,
-  presetName,
-  initializedValues,
-  promptEnvRestart,
-});
+module.exports = (state = undefined, action) => {
+  return {
+    recordingState: recordingState(state?.recordingState, action),
+    recordingUnexpectedlyStopped: recordingUnexpectedlyStopped(
+      state?.recordingUnexpectedlyStopped,
+      action
+    ),
+    isSupportedPlatform: isSupportedPlatform(
+      state?.isSupportedPlatform,
+      action
+    ),
+    interval: interval(state?.interval, action),
+    entries: entries(state?.entries, action),
+    features: features(state?.features, action),
+    threads: threads(state?.threads, action),
+    objdirs: objdirs(state?.objdirs, action),
+    presetName: presetName(state?.presetName, action),
+    initializedValues: initializedValues(state?.initializedValues, action),
+    promptEnvRestart: promptEnvRestart(state?.promptEnvRestart, action),
+
+    profilerViewMode: state?.profilerViewMode,
+  };
+};
