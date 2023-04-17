@@ -26,7 +26,7 @@ struct WebIDLNameTableEntry {
   
   
   
-  typedef bool (*ConstructorEnabled)(JSContext* cx, JS::Handle<JSObject*> obj);
+  using ConstructorEnabled = bool (*)(JSContext* cx, JS::Handle<JSObject*> obj);
 
   uint16_t mNameOffset;
   uint16_t mNameLength;
@@ -38,7 +38,7 @@ struct WebIDLNameTableEntry {
 
 class WebIDLGlobalNameHash {
  public:
-  typedef WebIDLNameTableEntry::ConstructorEnabled ConstructorEnabled;
+  using ConstructorEnabled = WebIDLNameTableEntry::ConstructorEnabled;
 
   
   
