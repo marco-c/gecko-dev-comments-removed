@@ -46,7 +46,6 @@ async function testSteps() {
   
   
   
-  
   installPackage("unsetLastAccessTime_profile");
 
   info("Verifying last access time");
