@@ -225,7 +225,7 @@ void gfxFT2FontBase::InitMetrics() {
     
     
     
-    mFTSize = FindClosestSize(mFTFace->GetFace(), GetAdjustedSize());
+    mFTSize = 1.0;
     InitMetrics();
     
     gfxFloat aspect = mMetrics.xHeight / mMetrics.emHeight;
@@ -234,6 +234,10 @@ void gfxFT2FontBase::InitMetrics() {
     
     mFTFace->ForgetLockOwner(this);
   }
+
+  
+  
+  mAdjustedSize = GetAdjustedSize();
 
   
   

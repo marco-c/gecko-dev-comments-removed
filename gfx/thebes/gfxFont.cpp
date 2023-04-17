@@ -796,7 +796,7 @@ gfxFont::gfxFont(const RefPtr<UnscaledFont>& aUnscaledFont,
     : mFontEntry(aFontEntry),
       mUnscaledFont(aUnscaledFont),
       mStyle(*aFontStyle),
-      mAdjustedSize(0.0),
+      mAdjustedSize(-1.0),  
       mFUnitsConvFactor(-1.0f),  
       mAntialiasOption(anAAOption),
       mIsValid(true),
@@ -3664,7 +3664,8 @@ void gfxFont::SanitizeMetrics(gfxFont::Metrics* aMetrics,
   
   
   
-  if (mStyle.size == 0.0 || mStyle.sizeAdjust == 0.0) {
+  if (mStyle.size == 0.0 || mStyle.sizeAdjust == 0.0 ||
+      mFontEntry->mSizeAdjust == 0.0) {
     memset(aMetrics, 0, sizeof(gfxFont::Metrics));
     return;
   }

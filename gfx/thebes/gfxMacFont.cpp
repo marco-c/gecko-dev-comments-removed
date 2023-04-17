@@ -244,7 +244,9 @@ void gfxMacFont::InitMetrics() {
     return;
   }
 
-  mAdjustedSize = std::max(mStyle.size, 1.0);
+  
+  
+  mAdjustedSize = std::max(GetAdjustedSize(), 1.0);
   mFUnitsConvFactor = mAdjustedSize / upem;
 
   
@@ -275,9 +277,9 @@ void gfxMacFont::InitMetrics() {
     mMetrics.capHeight = ::CGFontGetCapHeight(mCGFont) * cgConvFactor;
   }
 
-  if (mStyle.sizeAdjust > 0.0 && mStyle.size > 0.0 && mMetrics.xHeight > 0.0) {
+  if (mStyle.sizeAdjust > 0.0 && mMetrics.xHeight > 0.0) {
     
-    gfxFloat aspect = mMetrics.xHeight / mStyle.size;
+    gfxFloat aspect = mMetrics.xHeight / mAdjustedSize;
     mAdjustedSize = mStyle.GetAdjustedSize(aspect);
     mFUnitsConvFactor = mAdjustedSize / upem;
     if (static_cast<MacOSFontEntry*>(mFontEntry.get())->IsCFF()) {
@@ -462,7 +464,7 @@ int32_t gfxMacFont::GetGlyphWidth(uint16_t aGID) {
   }
 
   CGSize advance;
-  ::CTFontGetAdvancesForGlyphs(mCTFont, kCTFontDefaultOrientation, &aGID,
+  ::CTFontGetAdvancesForGlyphs(mCTFont, kCTFontOrientationDefault, &aGID,
                                &advance, 1);
   return advance.width * 0x10000;
 }

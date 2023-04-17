@@ -501,6 +501,9 @@ class gfxFontEntry {
   float mLineGapOverride = -1.0;
 
   
+  float mSizeAdjust = 1.0;
+
+  
   
   
   

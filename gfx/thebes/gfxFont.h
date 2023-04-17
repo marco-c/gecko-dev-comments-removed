@@ -1490,8 +1490,13 @@ class gfxFont {
   }
 
   gfxFloat GetAdjustedSize() const {
-    return mAdjustedSize > 0.0 ? mAdjustedSize
-                               : (mStyle.sizeAdjust == 0.0 ? 0.0 : mStyle.size);
+    
+    
+    
+    if (mAdjustedSize < 0.0) {
+      mAdjustedSize = mStyle.sizeAdjust == 0.0 ? 0.0 : mStyle.size * mFontEntry->mSizeAdjust;
+    }
+    return mAdjustedSize;
   }
 
   float FUnitsToDevUnitsFactor() const {
@@ -2155,7 +2160,7 @@ class gfxFont {
   mozilla::UniquePtr<gfxMathTable> mMathTable;
 
   gfxFontStyle mStyle;
-  gfxFloat mAdjustedSize;
+  mutable gfxFloat mAdjustedSize;
 
   
   
