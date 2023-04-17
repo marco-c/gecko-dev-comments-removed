@@ -336,12 +336,6 @@ var SessionStore = {
     return SessionStoreInternal.getClosedWindowData(aAsString);
   },
 
-  maybeDontSaveTabs(aWindow) {
-    if (this.willAutoRestore) {
-      aWindow._dontSaveTabs = true;
-    }
-  },
-
   undoCloseWindow: function ss_undoCloseWindow(aIndex) {
     return SessionStoreInternal.undoCloseWindow(aIndex);
   },
@@ -513,9 +507,7 @@ var SessionStore = {
           }
         }
       }
-
-      
-      if (!win.tabs.length && aState.windows.length > 1) {
+      if (!win.tabs.length) {
         aState.windows.splice(i, 1);
         if (aState.selectedWindow > i) {
           aState.selectedWindow--;
@@ -1805,15 +1797,6 @@ var SessionStoreInternal = {
       for (let [tab, tabData] of tabMap) {
         let permanentKey = tab.linkedBrowser.permanentKey;
         this._closedWindowTabs.set(permanentKey, tabData);
-        if (aWindow._dontSaveTabs && !tabData.isPrivate) {
-          
-          this.maybeSaveClosedTab(aWindow, tab, tabData);
-        }
-      }
-
-      if (aWindow._dontSaveTabs) {
-        winData.tabs.splice(0, winData.tabs.length);
-        winData.selected = -1;
       }
 
       if (isFullyLoaded) {
@@ -2437,32 +2420,21 @@ var SessionStoreInternal = {
     let tabState = TabState.collect(aTab, TAB_CUSTOM_VALUES.get(aTab));
 
     
-    this.maybeSaveClosedTab(aWindow, aTab, tabState);
-  },
-
-  
-
-
-
-
-
-
-
-
-  maybeSaveClosedTab(aWindow, aTab, tabState) {
-    
     let isPrivateWindow = PrivateBrowsingUtils.isWindowPrivate(aWindow);
     if (!isPrivateWindow && tabState.isPrivate) {
       return;
     }
 
-    let permanentKey = aTab.linkedBrowser.permanentKey;
+    
+    let tabbrowser = aWindow.gBrowser;
+    let tabTitle = aTab.label;
+    let { permanentKey } = aTab.linkedBrowser;
 
     let tabData = {
       permanentKey,
       state: tabState,
-      title: aTab.label,
-      image: aWindow.gBrowser.getIcon(aTab),
+      title: tabTitle,
+      image: tabbrowser.getIcon(aTab),
       pos: aTab._tPos,
       closedAt: Date.now(),
     };
@@ -4076,13 +4048,11 @@ var SessionStoreInternal = {
       this._prefBranch.getBoolPref("sessionstore.restore_tabs_lazily") &&
       this._restore_on_demand;
 
-    if (winData.tabs.length) {
-      var tabs = tabbrowser.addMultipleTabs(
-        restoreTabsLazily,
-        selectTab,
-        winData.tabs
-      );
-    }
+    var tabs = tabbrowser.addMultipleTabs(
+      restoreTabsLazily,
+      selectTab,
+      winData.tabs
+    );
 
     
     if (initialTabs) {
