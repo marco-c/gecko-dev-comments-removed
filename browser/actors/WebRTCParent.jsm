@@ -452,8 +452,9 @@ class WebRTCParent extends JSWindowActorParent {
           
           
           activeCamera = device;
-          break;
         }
+        
+        break;
       }
 
       for (let device of audioDevices) {
@@ -470,8 +471,9 @@ class WebRTCParent extends JSWindowActorParent {
           
           
           activeMic = device;
-          break;
         }
+        
+        break;
       }
     }
     if (
