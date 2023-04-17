@@ -4412,6 +4412,7 @@ fn read_alac<T: Read>(src: &mut BMFFBox<T>) -> Result<ALACSpecificBox> {
 
 
 
+
 fn read_hdlr<T: Read>(src: &mut BMFFBox<T>, strictness: ParseStrictness) -> Result<HandlerBox> {
     if read_fullbox_version_no_flags(src)? != 0 {
         return Err(Error::Unsupported("hdlr version"));
@@ -4420,7 +4421,7 @@ fn read_hdlr<T: Read>(src: &mut BMFFBox<T>, strictness: ParseStrictness) -> Resu
     let pre_defined = be_u32(src)?;
     if pre_defined != 0 {
         fail_if(
-            strictness != ParseStrictness::Permissive,
+            strictness == ParseStrictness::Strict,
             "The HandlerBox 'pre_defined' field shall be 0 \
              per ISOBMFF (ISO 14496-12:2020) § 8.4.3.2",
         )?;
@@ -4432,7 +4433,7 @@ fn read_hdlr<T: Read>(src: &mut BMFFBox<T>, strictness: ParseStrictness) -> Resu
         let reserved = be_u32(src)?;
         if reserved != 0 {
             fail_if(
-                strictness != ParseStrictness::Permissive,
+                strictness == ParseStrictness::Strict,
                 "The HandlerBox 'reserved' fields shall be 0 \
                  per ISOBMFF (ISO 14496-12:2020) § 8.4.3.2",
             )?;
