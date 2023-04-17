@@ -533,9 +533,6 @@ class ContentSessionStore {
 
     MESSAGES.forEach(m => mm.addMessageListener(m, this));
 
-    
-    
-    mm.addEventListener("pagehide", this);
     mm.addEventListener("unload", this);
   }
 
@@ -680,9 +677,7 @@ class ContentSessionStore {
   }
 
   handleEvent(event) {
-    if (event.type == "pagehide") {
-      this.handleRevivedTab();
-    } else if (event.type == "unload") {
+    if (event.type == "unload") {
       this.onUnload();
     }
   }
@@ -691,13 +686,6 @@ class ContentSessionStore {
     
     
     this.messageQueue.send({ isFinal: true });
-
-    
-    
-    
-    
-    
-    this.handleRevivedTab();
 
     for (let handler of this.handlers) {
       if (handler.uninit) {
@@ -713,31 +701,5 @@ class ContentSessionStore {
     
     
     
-  }
-
-  handleRevivedTab() {
-    let { content } = this.mm;
-
-    if (!content) {
-      this.mm.removeEventListener("pagehide", this);
-      return;
-    }
-
-    if (content.document.documentURI.startsWith("about:tabcrashed")) {
-      if (
-        Services.appinfo.processType != Services.appinfo.PROCESS_TYPE_DEFAULT
-      ) {
-        
-        throw new Error(
-          "We seem to be navigating away from about:tabcrashed in " +
-            "a non-remote browser. This should really never happen."
-        );
-      }
-
-      this.mm.removeEventListener("pagehide", this);
-
-      
-      this.mm.sendAsyncMessage("SessionStore:crashedTabRevived");
-    }
   }
 }

@@ -92,10 +92,6 @@ const MESSAGES = [
   "SessionStore:restoreTabContentComplete",
 
   
-  
-  "SessionStore:crashedTabRevived",
-
-  
   "SessionStore:error",
 ];
 
@@ -104,9 +100,6 @@ const MESSAGES = [
 
 
 const NOTAB_MESSAGES = new Set([
-  
-  "SessionStore:crashedTabRevived",
-
   
   "SessionStore:update",
 
@@ -118,9 +111,6 @@ const NOTAB_MESSAGES = new Set([
 
 const NOEPOCH_MESSAGES = new Set([
   
-  "SessionStore:crashedTabRevived",
-
-  
   "SessionStore:error",
 ]);
 
@@ -128,9 +118,6 @@ const NOEPOCH_MESSAGES = new Set([
 
 
 const CLOSED_MESSAGES = new Set([
-  
-  "SessionStore:crashedTabRevived",
-
   
   "SessionStore:update",
 
@@ -436,6 +423,14 @@ var SessionStore = {
 
   resetBrowserToLazyState(tab) {
     return SessionStoreInternal.resetBrowserToLazyState(tab);
+  },
+
+  maybeExitCrashedState(browser) {
+    SessionStoreInternal.maybeExitCrashedState(browser);
+  },
+
+  isBrowserInCrashedSet(browser) {
+    return SessionStoreInternal.isBrowserInCrashedSet(browser);
   },
 
   
@@ -1415,11 +1410,6 @@ var SessionStoreInternal = {
         break;
       case "SessionStore:restoreTabContentComplete":
         this._restoreTabContentComplete(browser, data);
-        break;
-      case "SessionStore:crashedTabRevived":
-        
-        
-        this._crashedBrowsers.delete(browser.permanentKey);
         break;
       case "SessionStore:error":
         TabStateFlusher.resolveAll(
@@ -2585,6 +2575,34 @@ var SessionStoreInternal = {
       userTypedValue,
       userTypedClear,
     });
+  },
+
+  
+
+
+
+
+
+
+  maybeExitCrashedState(aBrowser) {
+    let uri = aBrowser.documentURI;
+    if (uri?.spec?.startsWith("about:tabcrashed")) {
+      this._crashedBrowsers.delete(aBrowser.permanentKey);
+    }
+  },
+
+  
+
+
+
+
+  isBrowserInCrashedSet(aBrowser) {
+    if (gDebuggingEnabled) {
+      return this._crashedBrowsers.has(aBrowser.permanentKey);
+    }
+    throw new Error(
+      "SessionStore.isBrowserInCrashedSet() should only be called in debug mode!"
+    );
   },
 
   

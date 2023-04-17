@@ -68,6 +68,22 @@
     },
   });
 
+  
+  Object.defineProperty(LazyModules, "SessionStore", {
+    configurable: true,
+    get() {
+      const kURL = "resource:///modules/sessionstore/SessionStore.jsm";
+      if (Cu.isModuleLoaded(kURL)) {
+        let { SessionStore } = ChromeUtils.import(kURL);
+        Object.defineProperty(LazyModules, "SessionStore", {
+          value: SessionStore,
+        });
+        return SessionStore;
+      }
+      return null;
+    },
+  });
+
   const elementsToDestroyOnUnload = new Set();
 
   window.addEventListener(
@@ -340,7 +356,7 @@
     get documentURI() {
       return this.isRemoteBrowser
         ? this._documentURI
-        : this.contentDocument.documentURIObject;
+        : this.contentDocument?.documentURIObject;
     }
 
     get documentContentType() {
@@ -884,6 +900,10 @@
     }
 
     onPageHide(aEvent) {
+      
+      
+      LazyModules.SessionStore?.maybeExitCrashedState(this);
+
       if (!this.docShell || !this.fastFind) {
         return;
       }
@@ -1066,6 +1086,13 @@
 
     destroy() {
       elementsToDestroyOnUnload.delete(this);
+
+      
+      
+      
+      
+      
+      LazyModules.SessionStore?.maybeExitCrashedState(this);
 
       
       if (this.hasAttribute("selectmenulist")) {
