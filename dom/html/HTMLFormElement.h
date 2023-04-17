@@ -204,7 +204,7 @@ class HTMLFormElement final : public nsGenericHTMLElement,
 
 
 
-  bool IsLastActiveElement(const nsIFormControl* aControl) const;
+  bool IsLastActiveElement(const nsGenericHTMLFormElement* aElement) const;
 
   
 

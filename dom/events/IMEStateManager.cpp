@@ -1310,8 +1310,9 @@ static void GetActionHint(const IMEState& aState, const nsIContent& aContent,
 
   
   
-  nsIContent* inputContent = aContent.FindFirstNonChromeOnlyAccessContent();
-  if (!inputContent->IsHTMLElement(nsGkAtoms::input)) {
+  HTMLInputElement* inputElement = HTMLInputElement::FromNode(
+      aContent.FindFirstNonChromeOnlyAccessContent());
+  if (!inputElement) {
     return;
   }
 
@@ -1319,37 +1320,34 @@ static void GetActionHint(const IMEState& aState, const nsIContent& aContent,
   
   bool willSubmit = false;
   bool isLastElement = false;
-  nsCOMPtr<nsIFormControl> control(do_QueryInterface(inputContent));
-  if (control) {
-    HTMLFormElement* formElement = control->GetForm();
-    
-    if (formElement) {
-      if (formElement->IsLastActiveElement(control)) {
-        isLastElement = true;
-      }
-
-      if (formElement->GetDefaultSubmitElement()) {
-        willSubmit = true;
-        
-      } else {
-        
-        if (!formElement->ImplicitSubmissionIsDisabled() ||
-            
-            isLastElement) {
-          willSubmit = true;
-        }
-      }
+  HTMLFormElement* formElement = inputElement->GetForm();
+  
+  if (formElement) {
+    if (formElement->IsLastActiveElement(inputElement)) {
+      isLastElement = true;
     }
 
-    if (!isLastElement && formElement) {
+    if (formElement->GetDefaultSubmitElement()) {
+      willSubmit = true;
       
+    } else {
       
-      if (IsNextFocusableElementTextControl(inputContent->AsElement())) {
-        
-        
-        aActionHint.AssignLiteral("maybenext");
-        return;
+      if (!formElement->ImplicitSubmissionIsDisabled() ||
+          
+          isLastElement) {
+        willSubmit = true;
       }
+    }
+  }
+
+  if (!isLastElement && formElement) {
+    
+    
+    if (IsNextFocusableElementTextControl(inputElement)) {
+      
+      
+      aActionHint.AssignLiteral("maybenext");
+      return;
     }
   }
 
@@ -1357,7 +1355,7 @@ static void GetActionHint(const IMEState& aState, const nsIContent& aContent,
     return;
   }
 
-  if (control->ControlType() == FormControlType::InputSearch) {
+  if (inputElement->ControlType() == FormControlType::InputSearch) {
     aActionHint.AssignLiteral("search");
     return;
   }
