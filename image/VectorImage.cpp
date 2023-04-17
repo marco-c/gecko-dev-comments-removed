@@ -999,11 +999,13 @@ Tuple<RefPtr<SourceSurface>, IntSize> VectorImage::LookupCachedSurface(
     const IntSize& aSize, const Maybe<SVGImageContext>& aSVGContext,
     uint32_t aFlags) {
   
+  if (aFlags & FLAG_BYPASS_SURFACE_CACHE) {
+    return MakeTuple(RefPtr<SourceSurface>(), aSize);
+  }
+
   
   
-  
-  if (aFlags & (FLAG_BYPASS_SURFACE_CACHE | FLAG_RECORD_BLOB) ||
-      mHaveAnimations) {
+  if (mHaveAnimations) {
     return MakeTuple(RefPtr<SourceSurface>(), aSize);
   }
 
