@@ -890,6 +890,9 @@ var gTests = [
         set: [
           ["media.devices.insecure.enabled", true],
           ["media.getusermedia.insecure.enabled", true],
+          
+          
+          ["dom.security.https_first", false],
         ],
       });
 
