@@ -1,15 +1,30 @@
 
 
+#![recursion_limit = "256"]
+#![doc(html_root_url = "https://docs.rs/pin-project-internal/0.4.9")]
 #![doc(test(
     no_crate_inject,
     attr(deny(warnings, rust_2018_idioms, single_use_lifetimes), allow(dead_code))
 ))]
 #![warn(unsafe_code)]
 #![warn(rust_2018_idioms, single_use_lifetimes, unreachable_pub)]
-#![warn(clippy::all, clippy::default_trait_access)]
+#![warn(clippy::all)]
 
-#![allow(clippy::mem_replace_with_default, clippy::manual_non_exhaustive)]
+#![allow(clippy::mem_replace_with_default)]
 #![allow(clippy::needless_doctest_main)]
+
+
+
+
+
+
+
+
+
+
+
+
+#![cfg_attr(pin_project_show_unpin_struct, feature(proc_macro_def_site))]
 
 
 #[allow(unused_extern_crates)]
@@ -24,141 +39,7 @@ mod project;
 
 use proc_macro::TokenStream;
 
-use crate::utils::ProjKind;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+use utils::{Immutable, Mutable};
 
 
 
@@ -493,47 +374,6 @@ pub fn pin_project(args: TokenStream, input: TokenStream) -> TokenStream {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #[proc_macro_attribute]
 pub fn pinned_drop(args: TokenStream, input: TokenStream) -> TokenStream {
     let input = syn::parse_macro_input!(input);
@@ -683,34 +523,10 @@ pub fn pinned_drop(args: TokenStream, input: TokenStream) -> TokenStream {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[cfg_attr(
-    deprecated_proc_macro,
-    deprecated(
-        since = "0.4.21",
-        note = "consider naming projected type by passing `project` \
-                argument to #[pin_project] attribute instead, see release note \
-                <https://github.com/taiki-e/pin-project/releases/tag/v0.4.21> \
-                for details"
-    )
-)]
 #[proc_macro_attribute]
 pub fn project(args: TokenStream, input: TokenStream) -> TokenStream {
     let input = syn::parse_macro_input!(input);
-    project::attribute(&args.into(), input, ProjKind::Mutable).into()
+    project::attribute(&args.into(), input, Mutable).into()
 }
 
 
@@ -722,55 +538,10 @@ pub fn project(args: TokenStream, input: TokenStream) -> TokenStream {
 
 
 
-
-
-
-
-
-#[cfg_attr(
-    deprecated_proc_macro,
-    deprecated(
-        since = "0.4.21",
-        note = "consider naming projected type by passing `project_ref` \
-                argument to #[pin_project] attribute instead, see release note \
-                <https://github.com/taiki-e/pin-project/releases/tag/v0.4.21> \
-                for details"
-    )
-)]
 #[proc_macro_attribute]
 pub fn project_ref(args: TokenStream, input: TokenStream) -> TokenStream {
     let input = syn::parse_macro_input!(input);
-    project::attribute(&args.into(), input, ProjKind::Immutable).into()
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#[cfg_attr(
-    deprecated_proc_macro,
-    deprecated(
-        since = "0.4.21",
-        note = "consider naming projected type by passing `project_replace` \
-                argument to #[pin_project] attribute instead, see release note \
-                <https://github.com/taiki-e/pin-project/releases/tag/v0.4.21> \
-                for details"
-    )
-)]
-#[proc_macro_attribute]
-pub fn project_replace(args: TokenStream, input: TokenStream) -> TokenStream {
-    let input = syn::parse_macro_input!(input);
-    project::attribute(&args.into(), input, ProjKind::Owned).into()
+    project::attribute(&args.into(), input, Immutable).into()
 }
 
 

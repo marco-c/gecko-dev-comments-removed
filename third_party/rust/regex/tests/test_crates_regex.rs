@@ -1,3 +1,6 @@
+extern crate quickcheck;
+extern crate regex;
+
 
 
 

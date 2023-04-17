@@ -1,7 +1,7 @@
+use proc_macro2::TokenStream;
+
 mod attribute;
 mod derive;
-
-use proc_macro2::TokenStream;
 
 
 const PIN: &str = "pin";

@@ -6,7 +6,7 @@ use std::cmp::Ordering;
 use std::error;
 use std::fmt;
 
-pub use crate::ast::visitor::{visit, Visitor};
+pub use ast::visitor::{visit, Visitor};
 
 pub mod parse;
 pub mod print;
@@ -158,9 +158,6 @@ pub enum ErrorKind {
     RepetitionMissing,
     
     
-    UnicodeClassInvalid,
-    
-    
     
     UnsupportedBackreference,
     
@@ -179,8 +176,6 @@ pub enum ErrorKind {
 }
 
 impl error::Error for Error {
-    
-    #[allow(deprecated)]
     fn description(&self) -> &str {
         use self::ErrorKind::*;
         match self.kind {
@@ -211,7 +206,6 @@ impl error::Error for Error {
             RepetitionCountInvalid => "invalid repetition count range",
             RepetitionCountUnclosed => "unclosed counted repetition",
             RepetitionMissing => "repetition operator missing expression",
-            UnicodeClassInvalid => "invalid Unicode character class",
             UnsupportedBackreference => "backreferences are not supported",
             UnsupportedLookAround => "look-around is not supported",
             _ => unreachable!(),
@@ -220,13 +214,13 @@ impl error::Error for Error {
 }
 
 impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        crate::error::Formatter::from(self).fmt(f)
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        ::error::Formatter::from(self).fmt(f)
     }
 }
 
 impl fmt::Display for ErrorKind {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use self::ErrorKind::*;
         match *self {
             CaptureLimitExceeded => write!(
@@ -299,9 +293,6 @@ impl fmt::Display for ErrorKind {
             RepetitionMissing => {
                 write!(f, "repetition operator missing expression")
             }
-            UnicodeClassInvalid => {
-                write!(f, "invalid Unicode character class")
-            }
             UnsupportedBackreference => {
                 write!(f, "backreferences are not supported")
             }
@@ -328,7 +319,7 @@ pub struct Span {
 }
 
 impl fmt::Debug for Span {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Span({:?}, {:?})", self.start, self.end)
     }
 }
@@ -361,7 +352,7 @@ pub struct Position {
 }
 
 impl fmt::Debug for Position {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
             "Position(o: {:?}, l: {:?}, c: {:?})",
@@ -542,8 +533,8 @@ impl Ast {
 
 
 impl fmt::Display for Ast {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        use crate::ast::print::Printer;
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use ast::print::Printer;
         Printer::new().print(self, f)
     }
 }

@@ -93,79 +93,74 @@
 
 
 
-use crate::Rng;
-use core::iter;
 
-pub use self::bernoulli::{Bernoulli, BernoulliError};
-pub use self::float::{Open01, OpenClosed01};
+
+
+
+
+
+
+
+use core::iter;
+use crate::Rng;
+
 pub use self::other::Alphanumeric;
 #[doc(inline)] pub use self::uniform::Uniform;
-#[cfg(feature = "alloc")]
-pub use self::weighted::{WeightedError, WeightedIndex};
+pub use self::float::{OpenClosed01, Open01};
+pub use self::bernoulli::{Bernoulli, BernoulliError};
+#[cfg(feature="alloc")] pub use self::weighted::{WeightedIndex, WeightedError};
 
 
 #[allow(deprecated)]
-#[cfg(feature = "std")]
-pub use self::binomial::Binomial;
+#[cfg(feature="std")] pub use self::unit_sphere::UnitSphereSurface;
 #[allow(deprecated)]
-#[cfg(feature = "std")]
-pub use self::cauchy::Cauchy;
+#[cfg(feature="std")] pub use self::unit_circle::UnitCircle;
 #[allow(deprecated)]
-#[cfg(feature = "std")]
-pub use self::dirichlet::Dirichlet;
+#[cfg(feature="std")] pub use self::gamma::{Gamma, ChiSquared, FisherF,
+    StudentT, Beta};
 #[allow(deprecated)]
-#[cfg(feature = "std")]
-pub use self::exponential::{Exp, Exp1};
+#[cfg(feature="std")] pub use self::normal::{Normal, LogNormal, StandardNormal};
 #[allow(deprecated)]
-#[cfg(feature = "std")]
-pub use self::gamma::{Beta, ChiSquared, FisherF, Gamma, StudentT};
+#[cfg(feature="std")] pub use self::exponential::{Exp, Exp1};
 #[allow(deprecated)]
-#[cfg(feature = "std")]
-pub use self::normal::{LogNormal, Normal, StandardNormal};
+#[cfg(feature="std")] pub use self::pareto::Pareto;
 #[allow(deprecated)]
-#[cfg(feature = "std")]
-pub use self::pareto::Pareto;
+#[cfg(feature="std")] pub use self::poisson::Poisson;
 #[allow(deprecated)]
-#[cfg(feature = "std")]
-pub use self::poisson::Poisson;
+#[cfg(feature="std")] pub use self::binomial::Binomial;
 #[allow(deprecated)]
-#[cfg(feature = "std")]
-pub use self::triangular::Triangular;
+#[cfg(feature="std")] pub use self::cauchy::Cauchy;
 #[allow(deprecated)]
-#[cfg(feature = "std")]
-pub use self::unit_circle::UnitCircle;
+#[cfg(feature="std")] pub use self::dirichlet::Dirichlet;
 #[allow(deprecated)]
-#[cfg(feature = "std")]
-pub use self::unit_sphere::UnitSphereSurface;
+#[cfg(feature="std")] pub use self::triangular::Triangular;
 #[allow(deprecated)]
-#[cfg(feature = "std")]
-pub use self::weibull::Weibull;
+#[cfg(feature="std")] pub use self::weibull::Weibull;
 
-mod bernoulli;
-#[cfg(feature = "std")] mod binomial;
-#[cfg(feature = "std")] mod cauchy;
-#[cfg(feature = "std")] mod dirichlet;
-#[cfg(feature = "std")] mod exponential;
-#[cfg(feature = "std")] mod gamma;
-#[cfg(feature = "std")] mod normal;
-#[cfg(feature = "std")] mod pareto;
-#[cfg(feature = "std")] mod poisson;
-#[cfg(feature = "std")] mod triangular;
 pub mod uniform;
-#[cfg(feature = "std")] mod unit_circle;
-#[cfg(feature = "std")] mod unit_sphere;
-#[cfg(feature = "std")] mod weibull;
-#[cfg(feature = "alloc")] pub mod weighted;
+mod bernoulli;
+#[cfg(feature="alloc")] pub mod weighted;
+#[cfg(feature="std")] mod unit_sphere;
+#[cfg(feature="std")] mod unit_circle;
+#[cfg(feature="std")] mod gamma;
+#[cfg(feature="std")] mod normal;
+#[cfg(feature="std")] mod exponential;
+#[cfg(feature="std")] mod pareto;
+#[cfg(feature="std")] mod poisson;
+#[cfg(feature="std")] mod binomial;
+#[cfg(feature="std")] mod cauchy;
+#[cfg(feature="std")] mod dirichlet;
+#[cfg(feature="std")] mod triangular;
+#[cfg(feature="std")] mod weibull;
 
 mod float;
-#[doc(hidden)]
-pub mod hidden_export {
-    pub use super::float::IntoFloat; 
+#[doc(hidden)] pub mod hidden_export {
+    pub use super::float::IntoFloat;   
 }
 mod integer;
 mod other;
 mod utils;
-#[cfg(feature = "std")] mod ziggurat_tables;
+#[cfg(feature="std")] mod ziggurat_tables;
 
 
 
@@ -220,9 +215,7 @@ pub trait Distribution<T> {
     
     
     fn sample_iter<R>(self, rng: R) -> DistIter<Self, R, T>
-    where
-        R: Rng,
-        Self: Sized,
+    where R: Rng, Self: Sized
     {
         DistIter {
             distr: self,
@@ -254,9 +247,7 @@ pub struct DistIter<D, R, T> {
 }
 
 impl<D, R, T> Iterator for DistIter<D, R, T>
-where
-    D: Distribution<T>,
-    R: Rng,
+    where D: Distribution<T>, R: Rng
 {
     type Item = T;
 
@@ -274,19 +265,11 @@ where
 }
 
 impl<D, R, T> iter::FusedIterator for DistIter<D, R, T>
-where
-    D: Distribution<T>,
-    R: Rng,
-{
-}
+    where D: Distribution<T>, R: Rng {}
 
 #[cfg(features = "nightly")]
 impl<D, R, T> iter::TrustedLen for DistIter<D, R, T>
-where
-    D: Distribution<T>,
-    R: Rng,
-{
-}
+    where D: Distribution<T>, R: Rng {}
 
 
 
@@ -372,8 +355,8 @@ pub struct Standard;
 
 #[cfg(all(test, feature = "std"))]
 mod tests {
-    use super::{Distribution, Uniform};
     use crate::Rng;
+    use super::{Distribution, Uniform};
 
     #[test]
     fn test_distributions_iter() {
@@ -383,18 +366,16 @@ mod tests {
         let results: Vec<f32> = distr.sample_iter(&mut rng).take(100).collect();
         println!("{:?}", results);
     }
-
+    
     #[test]
     fn test_make_an_iter() {
-        fn ten_dice_rolls_other_than_five<'a, R: Rng>(
-            rng: &'a mut R,
-        ) -> impl Iterator<Item = i32> + 'a {
+        fn ten_dice_rolls_other_than_five<'a, R: Rng>(rng: &'a mut R) -> impl Iterator<Item = i32> + 'a {
             Uniform::new_inclusive(1, 6)
                 .sample_iter(rng)
                 .filter(|x| *x != 5)
                 .take(10)
         }
-
+        
         let mut rng = crate::test::rng(211);
         let mut count = 0;
         for val in ten_dice_rolls_other_than_five(&mut rng) {

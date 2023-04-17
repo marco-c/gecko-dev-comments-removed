@@ -10,6 +10,8 @@
 
 
 
+extern crate regex;
+
 use std::io::{self, Read};
 use std::sync::Arc;
 use std::thread;

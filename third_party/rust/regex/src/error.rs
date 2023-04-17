@@ -31,7 +31,7 @@ impl ::std::error::Error for Error {
 }
 
 impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Error::Syntax(ref err) => err.fmt(f),
             Error::CompiledTooBig(limit) => write!(
@@ -49,7 +49,7 @@ impl fmt::Display for Error {
 
 
 impl fmt::Debug for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Error::Syntax(ref err) => {
                 let hr: String = repeat('~').take(79).collect();

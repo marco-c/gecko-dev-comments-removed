@@ -11,16 +11,16 @@
 #![allow(deprecated)]
 #![allow(clippy::all)]
 
-use crate::distributions::gamma::Gamma;
-use crate::distributions::Distribution;
 use crate::Rng;
+use crate::distributions::Distribution;
+use crate::distributions::gamma::Gamma;
 
 
 
 
 
 
-#[deprecated(since = "0.7.0", note = "moved to rand_distr crate")]
+#[deprecated(since="0.7.0", note="moved to rand_distr crate")]
 #[derive(Clone, Debug)]
 pub struct Dirichlet {
     
@@ -28,6 +28,7 @@ pub struct Dirichlet {
 }
 
 impl Dirichlet {
+    
     
     
     
@@ -43,6 +44,7 @@ impl Dirichlet {
         Dirichlet { alpha: a }
     }
 
+    
     
     
     

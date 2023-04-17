@@ -17,11 +17,11 @@
 
 use std::mem;
 
-use crate::exec::ProgramCache;
-use crate::input::{Input, InputAt};
-use crate::prog::{InstPtr, Program};
-use crate::re_trait::Slot;
-use crate::sparse::SparseSet;
+use exec::ProgramCache;
+use input::{Input, InputAt};
+use prog::{InstPtr, Program};
+use re_trait::Slot;
+use sparse::SparseSet;
 
 
 #[derive(Debug)]
@@ -231,7 +231,7 @@ impl<'r, I: Input> Fsm<'r, I> {
         at: InputAt,
         at_next: InputAt,
     ) -> bool {
-        use crate::prog::Inst::*;
+        use prog::Inst::*;
         match self.prog[ip] {
             Match(match_slot) => {
                 if match_slot < matches.len() {
@@ -300,7 +300,7 @@ impl<'r, I: Input> Fsm<'r, I> {
         
         
         
-        use crate::prog::Inst::*;
+        use prog::Inst::*;
         loop {
             
             if nlist.set.contains(ip) {

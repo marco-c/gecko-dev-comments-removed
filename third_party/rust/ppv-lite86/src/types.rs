@@ -1,4 +1,3 @@
-#![allow(non_camel_case_types)]
 use core::ops::{Add, AddAssign, BitAnd, BitOr, BitXor, BitXorAssign, Not};
 
 pub trait AndNot {
@@ -45,178 +44,182 @@ pub trait RotateEachWord64 {
 
 pub trait RotateEachWord128 {}
 
-
-
-
-
-
-
-
-
-use crate::arch::{vec128_storage, vec256_storage, vec512_storage};
-
-#[allow(clippy::missing_safety_doc)]
-pub trait UnsafeFrom<T> {
-    unsafe fn unsafe_from(t: T) -> Self;
-}
-
-
-pub trait Vec2<W> {
-    fn extract(self, i: u32) -> W;
-    fn insert(self, w: W, i: u32) -> Self;
-}
-
-
-pub trait Vec4<W> {
-    fn extract(self, i: u32) -> W;
-    fn insert(self, w: W, i: u32) -> Self;
-}
-
-
-
-pub trait Words4 {
-    fn shuffle1230(self) -> Self;
-    fn shuffle2301(self) -> Self;
-    fn shuffle3012(self) -> Self;
-}
-
-
-pub trait LaneWords4 {
-    fn shuffle_lane_words1230(self) -> Self;
-    fn shuffle_lane_words2301(self) -> Self;
-    fn shuffle_lane_words3012(self) -> Self;
-}
-
-
-
-pub trait Swap64 {
-    fn swap1(self) -> Self;
-    fn swap2(self) -> Self;
-    fn swap4(self) -> Self;
-    fn swap8(self) -> Self;
-    fn swap16(self) -> Self;
-    fn swap32(self) -> Self;
-    fn swap64(self) -> Self;
-}
-
-pub trait u32x4<M: Machine>:
-    BitOps32
-    + Store<vec128_storage>
-    + ArithOps
-    + Vec4<u32>
-    + Words4
-    + LaneWords4
-    + StoreBytes
-    + MultiLane<[u32; 4]>
-    + Into<vec128_storage>
-{
-}
-pub trait u64x2<M: Machine>:
-    BitOps64
-    + Store<vec128_storage>
-    + ArithOps
-    + Vec2<u64>
-    + MultiLane<[u64; 2]>
-    + Into<vec128_storage>
-{
-}
-pub trait u128x1<M: Machine>:
-    BitOps128 + Store<vec128_storage> + Swap64 + MultiLane<[u128; 1]> + Into<vec128_storage>
-{
-}
-
-pub trait u32x4x2<M: Machine>:
-    BitOps32
-    + Store<vec256_storage>
-    + Vec2<M::u32x4>
-    + MultiLane<[M::u32x4; 2]>
-    + ArithOps
-    + Into<vec256_storage>
-{
-}
-pub trait u64x2x2<M: Machine>:
-    BitOps64
-    + Store<vec256_storage>
-    + Vec2<M::u64x2>
-    + MultiLane<[M::u64x2; 2]>
-    + ArithOps
-    + StoreBytes
-    + Into<vec256_storage>
-{
-}
-pub trait u64x4<M: Machine>:
-    BitOps64
-    + Store<vec256_storage>
-    + Vec4<u64>
-    + MultiLane<[u64; 4]>
-    + ArithOps
-    + Words4
-    + StoreBytes
-    + Into<vec256_storage>
-{
-}
-pub trait u128x2<M: Machine>:
-    BitOps128
-    + Store<vec256_storage>
-    + Vec2<M::u128x1>
-    + MultiLane<[M::u128x1; 2]>
-    + Swap64
-    + Into<vec256_storage>
-{
-}
-
-pub trait u32x4x4<M: Machine>:
-    BitOps32
-    + Store<vec512_storage>
-    + Vec4<M::u32x4>
-    + MultiLane<[M::u32x4; 4]>
-    + ArithOps
-    + LaneWords4
-    + Into<vec512_storage>
-{
-}
-pub trait u64x2x4<M: Machine>:
-    BitOps64
-    + Store<vec512_storage>
-    + Vec4<M::u64x2>
-    + MultiLane<[M::u64x2; 4]>
-    + ArithOps
-    + Into<vec512_storage>
-{
-}
-
-pub trait u128x4<M: Machine>:
-    BitOps128
-    + Store<vec512_storage>
-    + Vec4<M::u128x1>
-    + MultiLane<[M::u128x1; 4]>
-    + Swap64
-    + Into<vec512_storage>
-{
-}
-
-
-pub trait MultiLane<Lanes> {
+#[allow(non_camel_case_types)]
+mod types {
     
-    fn to_lanes(self) -> Lanes;
     
-    fn from_lanes(lanes: Lanes) -> Self;
+    
+    
+    
+    
+    
+
+    use crate::arch::{vec128_storage, vec256_storage, vec512_storage};
+    use crate::{ArithOps, BitOps128, BitOps32, BitOps64, Machine, Store, StoreBytes};
+
+    pub trait UnsafeFrom<T> {
+        unsafe fn unsafe_from(t: T) -> Self;
+    }
+
+    
+    pub trait Vec2<W> {
+        fn extract(self, i: u32) -> W;
+        fn insert(self, w: W, i: u32) -> Self;
+    }
+
+    
+    pub trait Vec4<W> {
+        fn extract(self, i: u32) -> W;
+        fn insert(self, w: W, i: u32) -> Self;
+    }
+
+    
+    
+    pub trait Words4 {
+        fn shuffle1230(self) -> Self;
+        fn shuffle2301(self) -> Self;
+        fn shuffle3012(self) -> Self;
+    }
+
+    
+    pub trait LaneWords4 {
+        fn shuffle_lane_words1230(self) -> Self;
+        fn shuffle_lane_words2301(self) -> Self;
+        fn shuffle_lane_words3012(self) -> Self;
+    }
+
+    
+    
+    pub trait Swap64 {
+        fn swap1(self) -> Self;
+        fn swap2(self) -> Self;
+        fn swap4(self) -> Self;
+        fn swap8(self) -> Self;
+        fn swap16(self) -> Self;
+        fn swap32(self) -> Self;
+        fn swap64(self) -> Self;
+    }
+
+    pub trait u32x4<M: Machine>:
+        BitOps32
+        + Store<vec128_storage>
+        + ArithOps
+        + Vec4<u32>
+        + Words4
+        + LaneWords4
+        + StoreBytes
+        + MultiLane<[u32; 4]>
+        + Into<vec128_storage>
+    {
+}
+    pub trait u64x2<M: Machine>:
+        BitOps64
+        + Store<vec128_storage>
+        + ArithOps
+        + Vec2<u64>
+        + MultiLane<[u64; 2]>
+        + Into<vec128_storage>
+    {
+}
+    pub trait u128x1<M: Machine>:
+        BitOps128 + Store<vec128_storage> + Swap64 + MultiLane<[u128; 1]> + Into<vec128_storage>
+    {
 }
 
-
-pub trait VZip<V> {
-    fn vzip(self) -> V;
+    pub trait u32x4x2<M: Machine>:
+        BitOps32
+        + Store<vec256_storage>
+        + Vec2<M::u32x4>
+        + MultiLane<[M::u32x4; 2]>
+        + ArithOps
+        + Into<vec256_storage>
+    {
+}
+    pub trait u64x2x2<M: Machine>:
+        BitOps64
+        + Store<vec256_storage>
+        + Vec2<M::u64x2>
+        + MultiLane<[M::u64x2; 2]>
+        + ArithOps
+        + StoreBytes
+        + Into<vec256_storage>
+    {
+}
+    pub trait u64x4<M: Machine>:
+        BitOps64
+        + Store<vec256_storage>
+        + Vec4<u64>
+        + MultiLane<[u64; 4]>
+        + ArithOps
+        + Words4
+        + StoreBytes
+        + Into<vec256_storage>
+    {
+}
+    pub trait u128x2<M: Machine>:
+        BitOps128
+        + Store<vec256_storage>
+        + Vec2<M::u128x1>
+        + MultiLane<[M::u128x1; 2]>
+        + Swap64
+        + Into<vec256_storage>
+    {
 }
 
-impl<V, T> VZip<V> for T
-where
-    V: MultiLane<T>,
-{
-    #[inline(always)]
-    fn vzip(self) -> V {
-        V::from_lanes(self)
+    pub trait u32x4x4<M: Machine>:
+        BitOps32
+        + Store<vec512_storage>
+        + Vec4<M::u32x4>
+        + MultiLane<[M::u32x4; 4]>
+        + ArithOps
+        + LaneWords4
+        + Into<vec512_storage>
+    {
+}
+    pub trait u64x2x4<M: Machine>:
+        BitOps64
+        + Store<vec512_storage>
+        + Vec4<M::u64x2>
+        + MultiLane<[M::u64x2; 4]>
+        + ArithOps
+        + Into<vec512_storage>
+    {
+}
+    
+    pub trait u128x4<M: Machine>:
+        BitOps128
+        + Store<vec512_storage>
+        + Vec4<M::u128x1>
+        + MultiLane<[M::u128x1; 4]>
+        + Swap64
+        + Into<vec512_storage>
+    {
+}
+
+    
+    pub trait MultiLane<Lanes> {
+        
+        fn to_lanes(self) -> Lanes;
+        
+        fn from_lanes(lanes: Lanes) -> Self;
+    }
+
+    
+    pub trait VZip<V> {
+        fn vzip(self) -> V;
+    }
+
+    impl<V, T> VZip<V> for T
+    where
+        V: MultiLane<T>,
+    {
+        #[inline(always)]
+        fn vzip(self) -> V {
+            V::from_lanes(self)
+        }
     }
 }
+pub use self::types::*;
 
 pub trait Machine: Sized + Copy {
     type u32x4: u32x4<Self>;
@@ -261,27 +264,15 @@ pub trait Machine: Sized + Copy {
         unsafe { V::unsafe_read_be(input) }
     }
 
-    
-    
-    
     unsafe fn instance() -> Self;
 }
 
 pub trait Store<S> {
-    
-    
-    
     unsafe fn unpack(p: S) -> Self;
 }
 
 pub trait StoreBytes {
-    
-    
-    
     unsafe fn unsafe_read_le(input: &[u8]) -> Self;
-    
-    
-    
     unsafe fn unsafe_read_be(input: &[u8]) -> Self;
     fn write_le(self, out: &mut [u8]);
     fn write_be(self, out: &mut [u8]);

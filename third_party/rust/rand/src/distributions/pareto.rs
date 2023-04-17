@@ -9,11 +9,11 @@
 
 #![allow(deprecated)]
 
-use crate::distributions::{Distribution, OpenClosed01};
 use crate::Rng;
+use crate::distributions::{Distribution, OpenClosed01};
 
 
-#[deprecated(since = "0.7.0", note = "moved to rand_distr crate")]
+#[deprecated(since="0.7.0", note="moved to rand_distr crate")]
 #[derive(Clone, Copy, Debug)]
 pub struct Pareto {
     scale: f64,
@@ -31,10 +31,7 @@ impl Pareto {
     
     pub fn new(scale: f64, shape: f64) -> Pareto {
         assert!((scale > 0.) & (shape > 0.));
-        Pareto {
-            scale,
-            inv_neg_shape: -1.0 / shape,
-        }
+        Pareto { scale, inv_neg_shape: -1.0 / shape }
     }
 }
 
@@ -47,8 +44,8 @@ impl Distribution<f64> for Pareto {
 
 #[cfg(test)]
 mod tests {
-    use super::Pareto;
     use crate::distributions::Distribution;
+    use super::Pareto;
 
     #[test]
     #[should_panic]

@@ -16,10 +16,10 @@
 
 
 
-use crate::exec::ProgramCache;
-use crate::input::{Input, InputAt};
-use crate::prog::{InstPtr, Program};
-use crate::re_trait::Slot;
+use exec::ProgramCache;
+use input::{Input, InputAt};
+use prog::{InstPtr, Program};
+use re_trait::Slot;
 
 type Bits = u32;
 
@@ -196,7 +196,7 @@ impl<'a, 'm, 'r, 's, I: Input> Bounded<'a, 'm, 'r, 's, I> {
     }
 
     fn step(&mut self, mut ip: InstPtr, mut at: InputAt) -> bool {
-        use crate::prog::Inst::*;
+        use prog::Inst::*;
         loop {
             
             

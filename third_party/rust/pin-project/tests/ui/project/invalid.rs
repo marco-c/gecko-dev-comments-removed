@@ -1,192 +1,24 @@
-#![allow(deprecated)]
+use pin_project::{pin_project, project};
 
-mod argument {
-    use pin_project::{pin_project, project};
-
-    #[pin_project]
-    struct A(#[pin] ());
-
-    #[project]
-    fn unexpected_local1() {
-        let mut x = A(());
-        #[project()] 
-        let A(_) = Pin::new(&mut x).project();
-    }
-
-    #[project]
-    fn unexpected_local1() {
-        let mut x = A(());
-        #[project(foo)] 
-        let A(_) = Pin::new(&mut x).project();
-    }
-
-    #[project]
-    fn unexpected_expr1() {
-        let mut x = A(());
-        #[project()] 
-        match Pin::new(&mut x).project() {
-            A(_) => {}
-        }
-    }
-
-    #[project]
-    fn unexpected_expr1() {
-        let mut x = A(());
-        #[project(foo)] 
-        match Pin::new(&mut x).project() {
-            A(_) => {}
-        }
-    }
-
-    #[project()] 
-    fn unexpected_item1() {}
-
-    #[project(foo)] 
-    fn unexpected_item2() {}
+#[pin_project]
+struct A<T> {
+    #[pin]
+    future: T,
 }
 
-mod attribute {
-    use pin_project::{pin_project, project, project_ref, project_replace};
+#[project]
+fn foo() {
+    let mut x = A { future: 0 };
+    #[project(foo)] 
+    let A { future } = Pin::new(&mut x).project();
+}
 
-    #[pin_project(project_replace)]
-    struct A(#[pin] ());
-
-    #[project]
-    fn duplicate_stmt_project() {
-        let mut x = A(());
-        #[project]
-        #[project] 
-        let A(_) = Pin::new(&mut x).project();
-    }
-
-    #[project_ref]
-    fn duplicate_stmt_project_ref() {
-        let mut x = A(());
-        #[project_ref]
-        #[project_ref] 
-        let A(_) = Pin::new(&mut x).project();
-    }
-
-    #[project_replace]
-    fn duplicate_stmt_project_replace() {
-        let mut x = A(());
-        #[project_replace]
-        #[project_replace] 
-        let A(_) = Pin::new(&mut x).project();
-    }
-
-    #[project]
-    fn combine_stmt_project1() {
-        let mut x = A(());
-        #[project]
-        #[project_ref] 
-        let A(_) = Pin::new(&mut x).project();
-    }
-
-    #[project]
-    fn combine_stmt_project2() {
-        let mut x = A(());
-        #[project]
-        #[project_replace] 
-        let A(_) = Pin::new(&mut x).project();
-    }
-
-    #[project]
-    fn combine_stmt_project3() {
-        let mut x = A(());
-        #[project_ref]
-        #[project_replace] 
-        let A(_) = Pin::new(&mut x).project();
-    }
-
-    #[project_ref]
-    fn combine_stmt_project_ref1() {
-        let mut x = A(());
-        #[project]
-        #[project_ref] 
-        let A(_) = Pin::new(&mut x).project();
-    }
-
-    #[project_ref]
-    fn combine_stmt_project_ref2() {
-        let mut x = A(());
-        #[project]
-        #[project_replace] 
-        let A(_) = Pin::new(&mut x).project();
-    }
-
-    #[project_ref]
-    fn combine_stmt_project_ref3() {
-        let mut x = A(());
-        #[project_ref]
-        #[project_replace] 
-        let A(_) = Pin::new(&mut x).project();
-    }
-
-    #[project_replace]
-    fn combine_stmt_project_replace1() {
-        let mut x = A(());
-        #[project]
-        #[project_ref] 
-        let A(_) = Pin::new(&mut x).project();
-    }
-
-    #[project_replace]
-    fn combine_stmt_project_replace2() {
-        let mut x = A(());
-        #[project]
-        #[project_replace] 
-        let A(_) = Pin::new(&mut x).project();
-    }
-
-    #[project_replace]
-    fn combine_stmt_project_replace3() {
-        let mut x = A(());
-        #[project_ref]
-        #[project_replace] 
-        let A(_) = Pin::new(&mut x).project();
-    }
-
+#[project]
+fn bar() {
+    let mut x = A { future: 0 };
     #[project]
     #[project] 
-    fn duplicate_fn_project() {}
-
-    #[project_ref]
-    #[project_ref] 
-    fn duplicate_fn_project_ref() {}
-
-    #[project_replace]
-    #[project_replace] 
-    fn duplicate_fn_project_replace() {}
-
-    #[project]
-    #[project] 
-    impl A {}
-
-    #[project_ref]
-    #[project_ref] 
-    impl A {}
-
-    #[project_replace]
-    #[project_replace] 
-    impl A {}
-
-    #[allow(unused_imports)]
-    mod use_ {
-        use pin_project::{project, project_ref, project_replace};
-
-        #[project]
-        #[project] 
-        use super::A;
-
-        #[project_ref]
-        #[project_ref] 
-        use super::A;
-
-        #[project_replace]
-        #[project_replace] 
-        use super::A;
-    }
+    let A { future } = Pin::new(&mut x).project();
 }
 
 fn main() {}

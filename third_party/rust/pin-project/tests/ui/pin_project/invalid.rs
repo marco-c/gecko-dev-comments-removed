@@ -1,275 +1,56 @@
-mod pin_argument {
-    use pin_project::pin_project;
+use pin_project::pin_project;
 
-    #[pin_project]
-    struct Struct {
-        #[pin()] 
-        field: (),
-    }
-
-    #[pin_project]
-    struct TupleStruct(#[pin(foo)] ()); 
-
-    #[pin_project]
-    enum EnumTuple {
-        V(#[pin(foo)] ()), 
-    }
-
-    #[pin_project]
-    enum EnumStruct {
-        V {
-            #[pin(foo)] 
-            field: (),
-        },
-    }
+#[pin_project]
+struct A<T> {
+    #[pin()] 
+    pinned: T,
 }
 
-mod pin_attribute {
-    use pin_project::pin_project;
+#[pin_project]
+struct B<T>(#[pin(foo)] T); 
 
-    #[pin_project]
-    struct DuplicateStruct {
-        #[pin]
-        #[pin] 
-        field: (),
-    }
-
-    #[pin_project]
-    struct DuplicateTupleStruct(
-        #[pin]
-        #[pin]
-        (),
-        
-    );
-
-    #[pin_project]
-    enum DuplicateEnumTuple {
-        V(
-            #[pin]
-            #[pin]
-            (),
-            
-        ),
-    }
-
-    #[pin_project]
-    enum DuplicateEnumStruct {
-        V {
-            #[pin]
-            #[pin] 
-            field: (),
-        },
-    }
+#[pin_project]
+enum C<T> {
+    A(#[pin(foo)] T), 
 }
 
-mod pin_item {
-    use pin_project::pin_project;
+#[pin_project]
+enum D<T> {
+    A {
+        #[pin(foo)] 
+        pinned: T,
+    },
+}
 
-    #[pin_project]
+#[pin_project(UnsafeUnpin,,)] 
+struct E<T> {
+    #[pin]
+    pinned: T,
+}
+
+#[pin_project(Foo)] 
+struct F<T> {
+    #[pin]
+    pinned: T,
+}
+
+#[pin_project]
+enum G<T> {
     #[pin] 
-    struct Struct {
-        #[pin]
-        field: (),
-    }
+    A(T),
+}
 
-    #[pin_project]
-    enum Variant {
-        #[pin] 
-        V(()),
-    }
+#[pin_project]
+#[pin] 
+enum H<T> {
+    A(T),
+}
 
-    #[pin_project]
+#[pin_project]
+struct I<T> {
+    #[pin]
     #[pin] 
-    enum Enum {
-        V(()),
-    }
-}
-
-mod pin_project_argument {
-    use pin_project::pin_project;
-
-    #[pin_project(UnsafeUnpin,,)] 
-    struct Unexpected1(#[pin] ());
-
-    #[pin_project(Foo)] 
-    struct Unexpected2(#[pin] ());
-
-    #[pin_project(,UnsafeUnpin)] 
-    struct Unexpected3(#[pin] ());
-
-    #[pin_project()] 
-    struct Unexpected4(#[pin] ());
-
-    #[pin_project(PinnedDrop PinnedDrop)] 
-    struct Unexpected5(#[pin] ());
-
-    #[pin_project(PinnedDrop, PinnedDrop)] 
-    struct DuplicatePinnedDrop(#[pin] ());
-
-    #[pin_project(Replace, Replace)] 
-    struct DuplicateReplace(#[pin] ());
-
-    #[pin_project(UnsafeUnpin, UnsafeUnpin)] 
-    struct DuplicateUnsafeUnpin(#[pin] ());
-
-    #[pin_project(!Unpin, !Unpin)] 
-    struct DuplicateNotUnpin(#[pin] ());
-
-    #[pin_project(PinnedDrop, UnsafeUnpin, UnsafeUnpin)] 
-    struct Duplicate3(#[pin] ());
-
-    #[pin_project(PinnedDrop, UnsafeUnpin, PinnedDrop, UnsafeUnpin)] 
-    struct Duplicate4(#[pin] ());
-
-    #[pin_project(project = A, project = B)] 
-    struct DuplicateProject(#[pin] ());
-
-    #[pin_project(project = A, project_ref = A, project = B)] 
-    struct DuplicateProject2(#[pin] ());
-
-    #[pin_project(project_ref = A, project_ref = B)] 
-    struct DuplicateProjectRef(#[pin] ());
-
-    #[pin_project(project_replace = A, project_replace = B)] 
-    struct DuplicateProjectReplace1(#[pin] ());
-
-    #[pin_project(project_replace, project_replace = B)] 
-    struct DuplicateProjectReplace2(#[pin] ());
-
-    #[pin_project(project_replace = A, project_replace)] 
-    struct DuplicateProjectReplace3(#[pin] ());
-
-    #[pin_project(project_replace = A)] 
-    struct ProjectReplaceWithoutReplace(#[pin] ());
-
-    #[pin_project(PinnedDrop, Replace)] 
-    struct PinnedDropWithReplace1(#[pin] ());
-
-    #[pin_project(Replace, UnsafeUnpin, PinnedDrop)] 
-    struct PinnedDropWithReplace2(#[pin] ());
-
-    #[pin_project(PinnedDrop, project_replace)] 
-    struct PinnedDropWithProjectReplace1(#[pin] ());
-
-    #[pin_project(project_replace, UnsafeUnpin, PinnedDrop)] 
-    struct PinnedDropWithProjectReplace2(#[pin] ());
-
-    #[pin_project(project_replace, Replace)] 
-    struct ProjectReplaceWithReplace1(#[pin] ());
-
-    #[pin_project(project_replace = B, Replace)] 
-    struct ProjectReplaceWithReplace2(#[pin] ());
-
-    #[pin_project(UnsafeUnpin, !Unpin)] 
-    struct UnsafeUnpinWithNotUnpin1(#[pin] ());
-
-    #[pin_project(!Unpin, PinnedDrop, UnsafeUnpin)] 
-    struct UnsafeUnpinWithNotUnpin2(#[pin] ());
-
-    #[pin_project(!)] 
-    struct NotUnpin1(#[pin] ());
-
-    #[pin_project(Unpin)] 
-    struct NotUnpin2(#[pin] ());
-
-    #[pin_project(project)] 
-    struct Project1(#[pin] ());
-
-    #[pin_project(project = )] 
-    struct Project2(#[pin] ());
-
-    #[pin_project(project = !)] 
-    struct Project3(#[pin] ());
-
-    #[pin_project(project_ref)] 
-    struct ProjectRef1(#[pin] ());
-
-    #[pin_project(project_ref = )] 
-    struct ProjectRef2(#[pin] ());
-
-    #[pin_project(project_ref = !)] 
-    struct ProjectRef3(#[pin] ());
-
-    #[pin_project(project_replace)] 
-    struct ProjectReplace1(#[pin] ());
-
-    #[pin_project(project_replace = )] 
-    struct ProjectReplace2(#[pin] ());
-
-    #[pin_project(project_replace = !)] 
-    struct ProjectReplace3(#[pin] ());
-}
-
-mod pin_project_conflict_naming {
-    use pin_project::pin_project;
-
-    #[pin_project(project = A, project_ref = A)] 
-    struct ProjAndProjRef(#[pin] ());
-
-    #[pin_project(project = A, project_replace = A)] 
-    struct ProjAndProjOwn(#[pin] ());
-
-    #[pin_project(project_ref = A, project_replace = A)] 
-    struct ProjRefAndProjOwn(#[pin] ());
-}
-
-mod pin_project_attribute {
-    use pin_project::pin_project;
-
-    #[pin_project]
-    #[pin_project] 
-    struct Duplicate(#[pin] ());
-}
-
-mod pin_project_item {
-    use pin_project::pin_project;
-
-    #[pin_project]
-    struct Struct {} 
-
-    #[pin_project]
-    struct TupleStruct(); 
-
-    #[pin_project]
-    struct UnitStruct; 
-
-    #[pin_project]
-    enum EnumEmpty {} 
-
-    #[pin_project]
-    enum EnumDiscriminant {
-        V = 2, 
-    }
-
-    #[pin_project]
-    enum EnumZeroFields {
-        Unit, 
-        Tuple(),
-        Struct {},
-    }
-
-    #[pin_project]
-    union Union {
-        
-        f: (),
-    }
-}
-
-
-mod pin_project_item_packed {
-    use pin_project::pin_project;
-
-    #[pin_project]
-    #[repr(packed)]
-    struct Struct {} 
-
-    #[pin_project]
-    #[repr(packed)]
-    struct TupleStruct(); 
-
-    #[pin_project]
-    #[repr(packed)]
-    struct UnitStruct; 
+    pinned: T,
 }
 
 fn main() {}

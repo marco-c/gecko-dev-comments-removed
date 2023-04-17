@@ -1,49 +1,40 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 
 #[cfg(feature = "perf-literal")]
 use aho_corasick::{AhoCorasick, AhoCorasickBuilder, MatchKind};
-use regex_syntax::hir::literal::Literals;
-use regex_syntax::hir::Hir;
-use regex_syntax::ParserBuilder;
+use syntax::hir::literal::Literals;
+use syntax::hir::Hir;
+use syntax::ParserBuilder;
 
-use crate::backtrack;
-use crate::compile::Compiler;
+use backtrack;
+use cache::{Cached, CachedGuard};
+use compile::Compiler;
 #[cfg(feature = "perf-dfa")]
-use crate::dfa;
-use crate::error::Error;
-use crate::input::{ByteInput, CharInput};
-use crate::literal::LiteralSearcher;
-use crate::pikevm;
-use crate::pool::{Pool, PoolGuard};
-use crate::prog::Program;
-use crate::re_builder::RegexOptions;
-use crate::re_bytes;
-use crate::re_set;
-use crate::re_trait::{Locations, RegularExpression, Slot};
-use crate::re_unicode;
-use crate::utf8::next_utf8;
+use dfa;
+use error::Error;
+use input::{ByteInput, CharInput};
+use literal::LiteralSearcher;
+use pikevm;
+use prog::Program;
+use re_builder::RegexOptions;
+use re_bytes;
+use re_set;
+use re_trait::{Locations, RegularExpression, Slot};
+use re_unicode;
+use utf8::next_utf8;
 
 
 
 
 
 
-#[derive(Debug)]
 pub struct Exec {
     
     ro: Arc<ExecReadOnly>,
     
-    
-    
-    
-    
-    
-    
-    
-    pool: Box<Pool<ProgramCache>>,
+    cache: Cached<ProgramCache>,
 }
 
 
@@ -54,11 +45,10 @@ pub struct ExecNoSync<'c> {
     
     ro: &'c Arc<ExecReadOnly>,
     
-    cache: PoolGuard<'c, ProgramCache>,
+    cache: CachedGuard<'c, ProgramCache>,
 }
 
 
-#[derive(Debug)]
 pub struct ExecNoSyncStr<'c>(ExecNoSync<'c>);
 
 
@@ -107,9 +97,6 @@ struct ExecReadOnly {
 
 
 
-
-
-#[allow(missing_debug_implementations)]
 pub struct ExecBuilder {
     options: RegexOptions,
     match_type: Option<MatchType>,
@@ -310,8 +297,7 @@ impl ExecBuilder {
                 ac: None,
                 match_type: MatchType::Nothing,
             });
-            let pool = ExecReadOnly::new_pool(&ro);
-            return Ok(Exec { ro: ro, pool });
+            return Ok(Exec { ro: ro, cache: Cached::new() });
         }
         let parsed = self.parse()?;
         let mut nfa = Compiler::new()
@@ -351,8 +337,7 @@ impl ExecBuilder {
         ro.match_type = ro.choose_match_type(self.match_type);
 
         let ro = Arc::new(ro);
-        let pool = ExecReadOnly::new_pool(&ro);
-        Ok(Exec { ro, pool })
+        Ok(Exec { ro: ro, cache: Cached::new() })
     }
 
     #[cfg(feature = "perf-literal")]
@@ -373,6 +358,9 @@ impl ExecBuilder {
             AhoCorasickBuilder::new()
                 .match_kind(MatchKind::LeftmostFirst)
                 .auto_configure(&lits)
+                
+                
+                .byte_classes(true)
                 .build_with_size::<u32, _, _>(&lits)
                 
                 
@@ -736,7 +724,7 @@ impl<'c> ExecNoSync<'c> {
         text: &[u8],
         start: usize,
     ) -> dfa::Result<(usize, usize)> {
-        use crate::dfa::Result::*;
+        use dfa::Result::*;
         let end = match dfa::Fsm::forward(
             &self.ro.dfa,
             self.cache.value(),
@@ -776,7 +764,7 @@ impl<'c> ExecNoSync<'c> {
         text: &[u8],
         start: usize,
     ) -> dfa::Result<(usize, usize)> {
-        use crate::dfa::Result::*;
+        use dfa::Result::*;
         match dfa::Fsm::reverse(
             &self.ro.dfa_reverse,
             self.cache.value(),
@@ -832,7 +820,7 @@ impl<'c> ExecNoSync<'c> {
         text: &[u8],
         original_start: usize,
     ) -> Option<dfa::Result<(usize, usize)>> {
-        use crate::dfa::Result::*;
+        use dfa::Result::*;
 
         let lcs = self.ro.suffixes.lcs();
         debug_assert!(lcs.len() >= 1);
@@ -877,7 +865,7 @@ impl<'c> ExecNoSync<'c> {
         text: &[u8],
         start: usize,
     ) -> dfa::Result<(usize, usize)> {
-        use crate::dfa::Result::*;
+        use dfa::Result::*;
 
         let match_start = match self.exec_dfa_reverse_suffix(text, start) {
             None => return self.find_dfa_forward(text, start),
@@ -1260,16 +1248,17 @@ impl<'c> ExecNoSyncStr<'c> {
 impl Exec {
     
     #[cfg_attr(feature = "perf-inline", inline(always))]
-    pub fn searcher(&self) -> ExecNoSync<'_> {
+    pub fn searcher(&self) -> ExecNoSync {
+        let create = || RefCell::new(ProgramCacheInner::new(&self.ro));
         ExecNoSync {
             ro: &self.ro, 
-            cache: self.pool.get(),
+            cache: self.cache.get_or(create),
         }
     }
 
     
     #[cfg_attr(feature = "perf-inline", inline(always))]
-    pub fn searcher_str(&self) -> ExecNoSyncStr<'_> {
+    pub fn searcher_str(&self) -> ExecNoSyncStr {
         ExecNoSyncStr(self.searcher())
     }
 
@@ -1315,8 +1304,7 @@ impl Exec {
 
 impl Clone for Exec {
     fn clone(&self) -> Exec {
-        let pool = ExecReadOnly::new_pool(&self.ro);
-        Exec { ro: self.ro.clone(), pool }
+        Exec { ro: self.ro.clone(), cache: Cached::new() }
     }
 }
 
@@ -1449,13 +1437,6 @@ impl ExecReadOnly {
         let lcs_len = self.suffixes.lcs().char_len();
         lcs_len >= 3 && lcs_len > self.dfa.prefixes.lcp().char_len()
     }
-
-    fn new_pool(ro: &Arc<ExecReadOnly>) -> Box<Pool<ProgramCache>> {
-        let ro = ro.clone();
-        Box::new(Pool::new(Box::new(move || {
-            AssertUnwindSafe(RefCell::new(ProgramCacheInner::new(&ro)))
-        })))
-    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -1514,11 +1495,7 @@ enum MatchNfaType {
 
 
 
-
-
-
-
-pub type ProgramCache = AssertUnwindSafe<RefCell<ProgramCacheInner>>;
+pub type ProgramCache = RefCell<ProgramCacheInner>;
 
 #[derive(Debug)]
 pub struct ProgramCacheInner {
@@ -1547,7 +1524,7 @@ impl ProgramCacheInner {
 
 #[cfg(feature = "perf-literal")]
 fn alternation_literals(expr: &Hir) -> Option<Vec<Vec<u8>>> {
-    use regex_syntax::hir::{HirKind, Literal};
+    use syntax::hir::{HirKind, Literal};
 
     
     
@@ -1599,7 +1576,7 @@ fn alternation_literals(expr: &Hir) -> Option<Vec<Vec<u8>>> {
 mod test {
     #[test]
     fn uppercut_s_backtracking_bytes_default_bytes_mismatch() {
-        use crate::internal::ExecBuilder;
+        use internal::ExecBuilder;
 
         let backtrack_bytes_re = ExecBuilder::new("^S")
             .bounded_backtracking()
@@ -1627,7 +1604,7 @@ mod test {
 
     #[test]
     fn unicode_lit_star_backtracking_utf8bytes_default_utf8bytes_mismatch() {
-        use crate::internal::ExecBuilder;
+        use internal::ExecBuilder;
 
         let backtrack_bytes_re = ExecBuilder::new(r"^(?u:\*)")
             .bounded_backtracking()

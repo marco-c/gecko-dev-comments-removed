@@ -32,7 +32,6 @@ struct RmdirContext<'a> {
 
 
 
-
 pub fn remove_dir_all<P: AsRef<Path>>(path: P) -> io::Result<()> {
     
     

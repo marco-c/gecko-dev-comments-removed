@@ -9,10 +9,10 @@
 
 
 
-use std::fmt;
 use std::io::Read;
+use std::fmt;
 
-use rand_core::{impls, Error, RngCore};
+use rand_core::{RngCore, Error, impls};
 
 
 
@@ -45,13 +45,15 @@ use rand_core::{impls, Error, RngCore};
 
 #[derive(Debug)]
 pub struct ReadRng<R> {
-    reader: R,
+    reader: R
 }
 
 impl<R: Read> ReadRng<R> {
     
     pub fn new(r: R) -> ReadRng<R> {
-        ReadRng { reader: r }
+        ReadRng {
+            reader: r
+        }
     }
 }
 
@@ -65,22 +67,14 @@ impl<R: Read> RngCore for ReadRng<R> {
     }
 
     fn fill_bytes(&mut self, dest: &mut [u8]) {
-        self.try_fill_bytes(dest).unwrap_or_else(|err| {
-            panic!(
-                "reading random bytes from Read implementation failed; error: {}",
-                err
-            )
-        });
+        self.try_fill_bytes(dest).unwrap_or_else(|err|
+                panic!("reading random bytes from Read implementation failed; error: {}", err));
     }
 
     fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), Error> {
-        if dest.is_empty() {
-            return Ok(());
-        }
+        if dest.is_empty() { return Ok(()); }
         
-        self.reader
-            .read_exact(dest)
-            .map_err(|e| Error::new(ReadError(e)))
+        self.reader.read_exact(dest).map_err(|e| Error::new(ReadError(e)))
     }
 }
 
@@ -109,7 +103,6 @@ mod test {
     #[test]
     fn test_reader_rng_u64() {
         
-        #[rustfmt::skip]
         let v = vec![0u8, 0, 0, 0, 0, 0, 0, 1,
                      0  , 0, 0, 0, 0, 0, 0, 2,
                      0,   0, 0, 0, 0, 0, 0, 3];

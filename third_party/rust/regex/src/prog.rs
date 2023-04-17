@@ -6,8 +6,8 @@ use std::ops::Deref;
 use std::slice;
 use std::sync::Arc;
 
-use crate::input::Char;
-use crate::literal::LiteralSearcher;
+use input::Char;
+use literal::LiteralSearcher;
 
 
 pub type InstPtr = usize;
@@ -168,7 +168,7 @@ impl Deref for Program {
 }
 
 impl fmt::Debug for Program {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use self::Inst::*;
 
         fn with_goto(cur: usize, goto: usize, fmtd: String) -> String {
@@ -374,7 +374,7 @@ pub struct InstRanges {
     
     pub goto: InstPtr,
     
-    pub ranges: Box<[(char, char)]>,
+    pub ranges: Vec<(char, char)>,
 }
 
 impl InstRanges {
@@ -430,18 +430,5 @@ impl InstBytes {
     
     pub fn matches(&self, byte: u8) -> bool {
         self.start <= byte && byte <= self.end
-    }
-}
-
-#[cfg(test)]
-mod test {
-    #[test]
-    #[cfg(target_pointer_width = "64")]
-    fn test_size_of_inst() {
-        use std::mem::size_of;
-
-        use super::Inst;
-
-        assert_eq!(32, size_of::<Inst>());
     }
 }

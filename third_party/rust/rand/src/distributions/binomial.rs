@@ -11,14 +11,14 @@
 #![allow(deprecated)]
 #![allow(clippy::all)]
 
-use crate::distributions::{Distribution, Uniform};
 use crate::Rng;
+use crate::distributions::{Distribution, Uniform};
 
 
 
 
 
-#[deprecated(since = "0.7.0", note = "moved to rand_distr crate")]
+#[deprecated(since="0.7.0", note="moved to rand_distr crate")]
 #[derive(Clone, Copy, Debug)]
 pub struct Binomial {
     
@@ -58,7 +58,11 @@ impl Distribution<u64> for Binomial {
         
         
         
-        let p = if self.p <= 0.5 { self.p } else { 1.0 - self.p };
+        let p = if self.p <= 0.5 {
+            self.p
+        } else {
+            1.0 - self.p
+        };
 
         let result;
         let q = 1. - p;
@@ -75,7 +79,8 @@ impl Distribution<u64> for Binomial {
         
         const BINV_THRESHOLD: f64 = 10.;
 
-        if (self.n as f64) * p < BINV_THRESHOLD && self.n <= (::std::i32::MAX as u64) {
+        if (self.n as f64) * p < BINV_THRESHOLD &&
+           self.n <= (::std::i32::MAX as u64) {
             
             let s = p / q;
             let a = ((self.n + 1) as f64) * s;
@@ -207,8 +212,8 @@ impl Distribution<u64> for Binomial {
                 
                 
                 let k = k as f64;
-                let rho = (k / npq) * ((k * (k / 3. + 0.625) + 1. / 6.) / npq + 0.5);
-                let t = -0.5 * k * k / npq;
+                let rho = (k / npq) * ((k * (k / 3. + 0.625) + 1./6.) / npq + 0.5);
+                let t = -0.5 * k*k / npq;
                 let alpha = v.ln();
                 if alpha < t - rho {
                     break;
@@ -228,19 +233,15 @@ impl Distribution<u64> for Binomial {
                     (13860. - (462. - (132. - (99. - 140. / a2) / a2) / a2) / a2) / a / 166320.
                 }
 
-                if alpha
-                        > x_m * (f1 / x1).ln()
-                        + (n - (m as f64) + 0.5) * (z / w).ln()
-                        + ((y - m) as f64) * (w * p / (x1 * q)).ln()
-                        
-                        
-                        
-                        
-                        
-                        + stirling(f1)
-                        + stirling(z)
-                        - stirling(x1)
-                        - stirling(w)
+                if alpha > x_m * (f1 / x1).ln()
+                    + (n - (m as f64) + 0.5) * (z / w).ln()
+                    + ((y - m) as f64) * (w * p / (x1 * q)).ln()
+                    
+                    
+                    
+                    
+                    
+                    + stirling(f1) + stirling(z) - stirling(x1) - stirling(w)
                 {
                     continue;
                 }
@@ -262,9 +263,9 @@ impl Distribution<u64> for Binomial {
 
 #[cfg(test)]
 mod test {
-    use super::Binomial;
-    use crate::distributions::Distribution;
     use crate::Rng;
+    use crate::distributions::Distribution;
+    use super::Binomial;
 
     fn test_binomial_mean_and_variance<R: Rng>(n: u64, p: f64, rng: &mut R) {
         let binomial = Binomial::new(n, p);
@@ -273,30 +274,21 @@ mod test {
         let expected_variance = n as f64 * p * (1.0 - p);
 
         let mut results = [0.0; 1000];
-        for i in results.iter_mut() {
-            *i = binomial.sample(rng) as f64;
-        }
+        for i in results.iter_mut() { *i = binomial.sample(rng) as f64; }
 
         let mean = results.iter().sum::<f64>() / results.len() as f64;
-        assert!(
-            (mean as f64 - expected_mean).abs() < expected_mean / 50.0,
-            "mean: {}, expected_mean: {}",
-            mean,
-            expected_mean
-        );
+        assert!((mean as f64 - expected_mean).abs() < expected_mean / 50.0,
+                "mean: {}, expected_mean: {}", mean, expected_mean);
 
         let variance =
-            results.iter().map(|x| (x - mean) * (x - mean)).sum::<f64>() / results.len() as f64;
-        assert!(
-            (variance - expected_variance).abs() < expected_variance / 10.0,
-            "variance: {}, expected_variance: {}",
-            variance,
-            expected_variance
-        );
+            results.iter().map(|x| (x - mean) * (x - mean)).sum::<f64>()
+            / results.len() as f64;
+        assert!((variance - expected_variance).abs() < expected_variance / 10.0,
+                "variance: {}, expected_variance: {}", variance, expected_variance);
     }
 
     #[test]
-    #[cfg_attr(miri, ignore)] 
+    #[cfg(not(miri))] 
     fn test_binomial() {
         let mut rng = crate::test::rng(351);
         test_binomial_mean_and_variance(150, 0.1, &mut rng);

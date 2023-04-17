@@ -1,4 +1,4 @@
-use crate::hir::{self, Hir, HirKind};
+use hir::{self, Hir, HirKind};
 
 
 

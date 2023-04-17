@@ -1,6 +1,3 @@
-use std::fmt;
-use std::iter::FusedIterator;
-
 
 
 
@@ -30,7 +27,7 @@ impl Locations {
     
     
     
-    pub fn iter(&self) -> SubCapturesPosIter<'_> {
+    pub fn iter(&self) -> SubCapturesPosIter {
         SubCapturesPosIter { idx: 0, locs: self }
     }
 
@@ -54,7 +51,6 @@ impl Locations {
 
 
 
-#[derive(Clone, Debug)]
 pub struct SubCapturesPosIter<'c> {
     idx: usize,
     locs: &'c Locations,
@@ -76,7 +72,6 @@ impl<'c> Iterator for SubCapturesPosIter<'c> {
     }
 }
 
-impl<'c> FusedIterator for SubCapturesPosIter<'c> {}
 
 
 
@@ -89,10 +84,9 @@ impl<'c> FusedIterator for SubCapturesPosIter<'c> {}
 
 
 
-
-pub trait RegularExpression: Sized + fmt::Debug {
+pub trait RegularExpression: Sized {
     
-    type Text: ?Sized + fmt::Debug;
+    type Text: ?Sized;
 
     
     
@@ -138,19 +132,18 @@ pub trait RegularExpression: Sized + fmt::Debug {
 
     
     
-    fn find_iter(self, text: &Self::Text) -> Matches<'_, Self> {
+    fn find_iter(self, text: &Self::Text) -> Matches<Self> {
         Matches { re: self, text: text, last_end: 0, last_match: None }
     }
 
     
     
-    fn captures_iter(self, text: &Self::Text) -> CaptureMatches<'_, Self> {
+    fn captures_iter(self, text: &Self::Text) -> CaptureMatches<Self> {
         CaptureMatches(self.find_iter(text))
     }
 }
 
 
-#[derive(Debug)]
 pub struct Matches<'t, R>
 where
     R: RegularExpression,
@@ -211,16 +204,8 @@ where
     }
 }
 
-impl<'t, R> FusedIterator for Matches<'t, R>
-where
-    R: RegularExpression,
-    R::Text: 't + AsRef<[u8]>,
-{
-}
 
 
-
-#[derive(Debug)]
 pub struct CaptureMatches<'t, R>(Matches<'t, R>)
 where
     R: RegularExpression,
@@ -273,11 +258,4 @@ where
         self.0.last_match = Some(e);
         Some(locs)
     }
-}
-
-impl<'t, R> FusedIterator for CaptureMatches<'t, R>
-where
-    R: RegularExpression,
-    R::Text: 't + AsRef<[u8]>,
-{
 }

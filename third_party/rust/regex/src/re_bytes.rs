@@ -1,18 +1,17 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt;
-use std::iter::FusedIterator;
 use std::ops::{Index, Range};
 use std::str::FromStr;
 use std::sync::Arc;
 
-use crate::find_byte::find_byte;
+use find_byte::find_byte;
 
-use crate::error::Error;
-use crate::exec::{Exec, ExecNoSync};
-use crate::expand::expand_bytes;
-use crate::re_builder::bytes::RegexBuilder;
-use crate::re_trait::{self, RegularExpression, SubCapturesPosIter};
+use error::Error;
+use exec::{Exec, ExecNoSync};
+use expand::expand_bytes;
+use re_builder::bytes::RegexBuilder;
+use re_trait::{self, RegularExpression, SubCapturesPosIter};
 
 
 
@@ -79,14 +78,14 @@ pub struct Regex(Exec);
 
 impl fmt::Display for Regex {
     
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.as_str())
     }
 }
 
 impl fmt::Debug for Regex {
     
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Display::fmt(self, f)
     }
 }
@@ -120,7 +119,6 @@ impl Regex {
         RegexBuilder::new(re).build()
     }
 
-    
     
     
     
@@ -658,7 +656,7 @@ impl Regex {
     }
 
     
-    pub fn capture_names(&self) -> CaptureNames<'_> {
+    pub fn capture_names(&self) -> CaptureNames {
         CaptureNames(self.0.capture_names().iter())
     }
 
@@ -691,7 +689,6 @@ impl Regex {
 
 
 
-#[derive(Debug)]
 pub struct Matches<'r, 't>(re_trait::Matches<'t, ExecNoSync<'r>>);
 
 impl<'r, 't> Iterator for Matches<'r, 't> {
@@ -703,7 +700,6 @@ impl<'r, 't> Iterator for Matches<'r, 't> {
     }
 }
 
-impl<'r, 't> FusedIterator for Matches<'r, 't> {}
 
 
 
@@ -711,8 +707,6 @@ impl<'r, 't> FusedIterator for Matches<'r, 't> {}
 
 
 
-
-#[derive(Debug)]
 pub struct CaptureMatches<'r, 't>(
     re_trait::CaptureMatches<'t, ExecNoSync<'r>>,
 );
@@ -729,13 +723,10 @@ impl<'r, 't> Iterator for CaptureMatches<'r, 't> {
     }
 }
 
-impl<'r, 't> FusedIterator for CaptureMatches<'r, 't> {}
 
 
 
 
-
-#[derive(Debug)]
 pub struct Split<'r, 't> {
     finder: Matches<'r, 't>,
     last: usize,
@@ -765,15 +756,12 @@ impl<'r, 't> Iterator for Split<'r, 't> {
     }
 }
 
-impl<'r, 't> FusedIterator for Split<'r, 't> {}
 
 
 
 
 
 
-
-#[derive(Debug)]
 pub struct SplitN<'r, 't> {
     splits: Split<'r, 't>,
     n: usize,
@@ -801,21 +789,14 @@ impl<'r, 't> Iterator for SplitN<'r, 't> {
             Some(&text[self.splits.last..])
         }
     }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        (0, Some(self.n))
-    }
 }
 
-impl<'r, 't> FusedIterator for SplitN<'r, 't> {}
 
 
 
 
 
 
-
-#[derive(Clone, Debug)]
 pub struct CaptureNames<'r>(::std::slice::Iter<'r, Option<String>>);
 
 impl<'r> Iterator for CaptureNames<'r> {
@@ -831,15 +812,7 @@ impl<'r> Iterator for CaptureNames<'r> {
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.0.size_hint()
     }
-
-    fn count(self) -> usize {
-        self.0.count()
-    }
 }
-
-impl<'r> ExactSizeIterator for CaptureNames<'r> {}
-
-impl<'r> FusedIterator for CaptureNames<'r> {}
 
 
 
@@ -970,11 +943,6 @@ impl<'t> Captures<'t> {
     
     
     
-    
-    
-    
-    
-    
     pub fn expand(&self, replacement: &[u8], dst: &mut Vec<u8>) {
         expand_bytes(self, replacement, dst)
     }
@@ -990,15 +958,15 @@ impl<'t> Captures<'t> {
 }
 
 impl<'t> fmt::Debug for Captures<'t> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_tuple("Captures").field(&CapturesDebug(self)).finish()
     }
 }
 
-struct CapturesDebug<'c, 't>(&'c Captures<'t>);
+struct CapturesDebug<'c, 't: 'c>(&'c Captures<'t>);
 
 impl<'c, 't> fmt::Debug for CapturesDebug<'c, 't> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fn escape_bytes(bytes: &[u8]) -> String {
             let mut s = String::new();
             for &b in bytes {
@@ -1083,8 +1051,7 @@ impl<'t, 'i> Index<&'i str> for Captures<'t> {
 
 
 
-#[derive(Clone, Debug)]
-pub struct SubCaptureMatches<'c, 't> {
+pub struct SubCaptureMatches<'c, 't: 'c> {
     caps: &'c Captures<'t>,
     it: SubCapturesPosIter<'c>,
 }
@@ -1098,8 +1065,6 @@ impl<'c, 't> Iterator for SubCaptureMatches<'c, 't> {
             .map(|cap| cap.map(|(s, e)| Match::new(self.caps.text, s, e)))
     }
 }
-
-impl<'c, 't> FusedIterator for SubCaptureMatches<'c, 't> {}
 
 
 
@@ -1116,7 +1081,7 @@ pub trait Replacer {
     
     
     
-    fn replace_append(&mut self, caps: &Captures<'_>, dst: &mut Vec<u8>);
+    fn replace_append(&mut self, caps: &Captures, dst: &mut Vec<u8>);
 
     
     
@@ -1159,10 +1124,10 @@ pub trait Replacer {
 
 
 #[derive(Debug)]
-pub struct ReplacerRef<'a, R: ?Sized>(&'a mut R);
+pub struct ReplacerRef<'a, R: ?Sized + 'a>(&'a mut R);
 
 impl<'a, R: Replacer + ?Sized + 'a> Replacer for ReplacerRef<'a, R> {
-    fn replace_append(&mut self, caps: &Captures<'_>, dst: &mut Vec<u8>) {
+    fn replace_append(&mut self, caps: &Captures, dst: &mut Vec<u8>) {
         self.0.replace_append(caps, dst)
     }
     fn no_expansion<'r>(&'r mut self) -> Option<Cow<'r, [u8]>> {
@@ -1171,69 +1136,24 @@ impl<'a, R: Replacer + ?Sized + 'a> Replacer for ReplacerRef<'a, R> {
 }
 
 impl<'a> Replacer for &'a [u8] {
-    fn replace_append(&mut self, caps: &Captures<'_>, dst: &mut Vec<u8>) {
+    fn replace_append(&mut self, caps: &Captures, dst: &mut Vec<u8>) {
         caps.expand(*self, dst);
     }
 
-    fn no_expansion(&mut self) -> Option<Cow<'_, [u8]>> {
-        no_expansion(self)
-    }
-}
-
-impl<'a> Replacer for &'a Vec<u8> {
-    fn replace_append(&mut self, caps: &Captures<'_>, dst: &mut Vec<u8>) {
-        caps.expand(*self, dst);
-    }
-
-    fn no_expansion(&mut self) -> Option<Cow<'_, [u8]>> {
-        no_expansion(self)
-    }
-}
-
-impl Replacer for Vec<u8> {
-    fn replace_append(&mut self, caps: &Captures<'_>, dst: &mut Vec<u8>) {
-        caps.expand(self, dst);
-    }
-
-    fn no_expansion(&mut self) -> Option<Cow<'_, [u8]>> {
-        no_expansion(self)
-    }
-}
-
-impl<'a> Replacer for Cow<'a, [u8]> {
-    fn replace_append(&mut self, caps: &Captures<'_>, dst: &mut Vec<u8>) {
-        caps.expand(self.as_ref(), dst);
-    }
-
-    fn no_expansion(&mut self) -> Option<Cow<'_, [u8]>> {
-        no_expansion(self)
-    }
-}
-
-impl<'a> Replacer for &'a Cow<'a, [u8]> {
-    fn replace_append(&mut self, caps: &Captures<'_>, dst: &mut Vec<u8>) {
-        caps.expand(self.as_ref(), dst);
-    }
-
-    fn no_expansion(&mut self) -> Option<Cow<'_, [u8]>> {
-        no_expansion(self)
-    }
-}
-
-fn no_expansion<T: AsRef<[u8]>>(t: &T) -> Option<Cow<'_, [u8]>> {
-    let s = t.as_ref();
-    match find_byte(b'$', s) {
-        Some(_) => None,
-        None => Some(Cow::Borrowed(s)),
+    fn no_expansion(&mut self) -> Option<Cow<[u8]>> {
+        match find_byte(b'$', *self) {
+            Some(_) => None,
+            None => Some(Cow::Borrowed(*self)),
+        }
     }
 }
 
 impl<F, T> Replacer for F
 where
-    F: FnMut(&Captures<'_>) -> T,
+    F: FnMut(&Captures) -> T,
     T: AsRef<[u8]>,
 {
-    fn replace_append(&mut self, caps: &Captures<'_>, dst: &mut Vec<u8>) {
+    fn replace_append(&mut self, caps: &Captures, dst: &mut Vec<u8>) {
         dst.extend_from_slice((*self)(caps).as_ref());
     }
 }
@@ -1246,15 +1166,14 @@ where
 
 
 
-#[derive(Clone, Debug)]
 pub struct NoExpand<'t>(pub &'t [u8]);
 
 impl<'t> Replacer for NoExpand<'t> {
-    fn replace_append(&mut self, _: &Captures<'_>, dst: &mut Vec<u8>) {
+    fn replace_append(&mut self, _: &Captures, dst: &mut Vec<u8>) {
         dst.extend_from_slice(self.0);
     }
 
-    fn no_expansion(&mut self) -> Option<Cow<'_, [u8]>> {
+    fn no_expansion(&mut self) -> Option<Cow<[u8]>> {
         Some(Cow::Borrowed(self.0))
     }
 }

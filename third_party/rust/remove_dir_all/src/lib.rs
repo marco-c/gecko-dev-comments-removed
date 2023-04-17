@@ -1,19 +1,11 @@
-
-
-
-
-
-#![deny(missing_debug_implementations)]
-#![deny(missing_docs)]
-
 #[cfg(windows)]
 extern crate winapi;
 
-#[cfg(doctest)]
+#[cfg(test)]
 #[macro_use]
 extern crate doc_comment;
 
-#[cfg(doctest)]
+#[cfg(test)]
 doctest!("../README.md");
 
 #[cfg(windows)]

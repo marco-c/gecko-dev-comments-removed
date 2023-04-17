@@ -155,12 +155,11 @@
 
 
 #![deny(missing_docs)]
-#![warn(missing_debug_implementations)]
 #![forbid(unsafe_code)]
 
-pub use crate::error::{Error, Result};
-pub use crate::parser::{Parser, ParserBuilder};
-pub use crate::unicode::UnicodeWordError;
+pub use error::{Error, Result};
+pub use parser::{Parser, ParserBuilder};
+pub use unicode::UnicodeWordError;
 
 pub mod ast;
 mod either;
@@ -176,7 +175,7 @@ pub mod utf8;
 
 
 pub fn escape(text: &str) -> String {
-    let mut quoted = String::new();
+    let mut quoted = String::with_capacity(text.len());
     escape_into(text, &mut quoted);
     quoted
 }
@@ -186,7 +185,6 @@ pub fn escape(text: &str) -> String {
 
 
 pub fn escape_into(text: &str, buf: &mut String) {
-    buf.reserve(text.len());
     for c in text.chars() {
         if is_meta_character(c) {
             buf.push('\\');

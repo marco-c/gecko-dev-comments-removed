@@ -1,8 +1,8 @@
 
 
-mod phantom_pinned {
-    use std::marker::{PhantomData, PhantomPinned};
+use std::marker::{PhantomData, PhantomPinned};
 
+fn phantom_pinned() {
     struct A(PhantomPinned);
 
     impl Unpin for A where PhantomPinned: Unpin {} 
@@ -25,9 +25,7 @@ mod phantom_pinned {
     
 }
 
-mod inner {
-    use std::marker::{PhantomData, PhantomPinned};
-
+fn inner() {
     struct Inner(PhantomPinned);
 
     struct A(Inner);

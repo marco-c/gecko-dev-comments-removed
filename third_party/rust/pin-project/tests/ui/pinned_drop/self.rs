@@ -1,54 +1,91 @@
-pub mod self_in_macro_def {
-    use pin_project::{pin_project, pinned_drop};
-    use std::pin::Pin;
+use pin_project::{pin_project, pinned_drop};
+use std::pin::Pin;
 
+fn self_expr() {
     #[pin_project(PinnedDrop)]
     pub struct Struct {
-        x: (),
+        x: usize,
     }
 
     #[pinned_drop]
     impl PinnedDrop for Struct {
-        fn drop(self: Pin<&mut Self>) {
-            macro_rules! t {
-                () => {{
-                    let _ = self; //~ ERROR E0434
+        fn drop(mut self: Pin<&mut Self>) {
+            let _: Self = Self { x: 0 };
+        }
+    }
 
-                    fn f(self: ()) {} //~ ERROR `self` parameter is only allowed in associated functions
-                }};
-            }
-            t!();
+    #[pin_project(PinnedDrop)]
+    pub struct TupleStruct(usize);
+
+    #[pinned_drop]
+    impl PinnedDrop for TupleStruct {
+        fn drop(mut self: Pin<&mut Self>) {
+            let _: Self = Self(0);
+        }
+    }
+
+    #[pin_project(PinnedDrop)]
+    pub enum Enum {
+        StructVariant { x: usize },
+        TupleVariant(usize),
+    }
+
+    #[pinned_drop]
+    impl PinnedDrop for Enum {
+        fn drop(mut self: Pin<&mut Self>) {
+            let _: Self = Self::StructVariant { x: 0 }; 
+            let _: Self = Self::TupleVariant(0);
         }
     }
 }
 
-pub mod self_span {
-    use pin_project::{pin_project, pinned_drop};
-    use std::pin::Pin;
-
+fn self_pat() {
     #[pin_project(PinnedDrop)]
-    pub struct S {
-        x: (),
+    pub struct Struct {
+        x: usize,
     }
 
     #[pinned_drop]
-    impl PinnedDrop for S {
-        fn drop(self: Pin<&mut Self>) {
-            let _: () = self; 
-            let _: Self = Self; 
+    impl PinnedDrop for Struct {
+        fn drop(mut self: Pin<&mut Self>) {
+            match *self {
+                Self { x: _ } => {} 
+            }
+            if let Self { x: _ } = *self {} 
+            let Self { x: _ } = *self; 
         }
     }
 
     #[pin_project(PinnedDrop)]
-    pub enum E {
-        V { x: () },
+    pub struct TupleStruct(usize);
+
+    #[pinned_drop]
+    impl PinnedDrop for TupleStruct {
+        #[allow(irrefutable_let_patterns)]
+        fn drop(mut self: Pin<&mut Self>) {
+            match *self {
+                Self(_) => {}
+            }
+            if let Self(_) = *self {}
+            let Self(_) = *self;
+        }
+    }
+
+    #[pin_project(PinnedDrop)]
+    pub enum Enum {
+        StructVariant { x: usize },
+        TupleVariant(usize),
     }
 
     #[pinned_drop]
-    impl PinnedDrop for E {
-        fn drop(self: Pin<&mut Self>) {
-            let _: () = self; 
-            let _: Self = Self::V; 
+    impl PinnedDrop for Enum {
+        fn drop(mut self: Pin<&mut Self>) {
+            match *self {
+                Self::StructVariant { x: _ } => {} 
+                Self::TupleVariant(_) => {} 
+            }
+            if let Self::StructVariant { x: _ } = *self {} 
+            if let Self::TupleVariant(_) = *self {} 
         }
     }
 }

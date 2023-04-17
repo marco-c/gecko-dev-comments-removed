@@ -1,6 +1,5 @@
 
 
-#![allow(deprecated)]
 
 
 #![feature(proc_macro_hygiene)]

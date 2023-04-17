@@ -52,10 +52,7 @@ fn simulate<R: Rng>(random_door: &Uniform<u32>, rng: &mut R) -> SimulationResult
         choice = switch_door(choice, open);
     }
 
-    SimulationResult {
-        win: choice == car,
-        switch,
-    }
+    SimulationResult { win: choice == car, switch }
 }
 
 
@@ -100,24 +97,16 @@ fn main() {
     let total_switches = switch_wins + switch_losses;
     let total_keeps = keep_wins + keep_losses;
 
-    println!(
-        "Switched door {} times with {} wins and {} losses",
-        total_switches, switch_wins, switch_losses
-    );
+    println!("Switched door {} times with {} wins and {} losses",
+             total_switches, switch_wins, switch_losses);
 
-    println!(
-        "Kept our choice {} times with {} wins and {} losses",
-        total_keeps, keep_wins, keep_losses
-    );
+    println!("Kept our choice {} times with {} wins and {} losses",
+             total_keeps, keep_wins, keep_losses);
 
     
     
-    println!(
-        "Estimated chance to win if we switch: {}",
-        switch_wins as f32 / total_switches as f32
-    );
-    println!(
-        "Estimated chance to win if we don't: {}",
-        keep_wins as f32 / total_keeps as f32
-    );
+    println!("Estimated chance to win if we switch: {}",
+             switch_wins as f32 / total_switches as f32);
+    println!("Estimated chance to win if we don't: {}",
+             keep_wins as f32 / total_keeps as f32);
 }

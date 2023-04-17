@@ -8,10 +8,10 @@
 
 
 
-#![allow(deprecated)] 
+#![allow(deprecated)]   
 
+use rand_core::{RngCore, CryptoRng, Error};
 use crate::rngs::OsRng;
-use rand_core::{CryptoRng, Error, RngCore};
 
 
 
@@ -20,7 +20,7 @@ use rand_core::{CryptoRng, Error, RngCore};
 
 
 #[derive(Debug)]
-#[deprecated(since = "0.7.0", note = "use rngs::OsRng instead")]
+#[deprecated(since="0.7.0", note="use rngs::OsRng instead")]
 pub struct EntropyRng {
     source: OsRng,
 }
@@ -71,6 +71,6 @@ mod test {
     fn test_entropy() {
         let mut rng = EntropyRng::new();
         let n = (rng.next_u32() ^ rng.next_u32()).count_ones();
-        assert!(n >= 2); 
+        assert!(n >= 2);    
     }
 }

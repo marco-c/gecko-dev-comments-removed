@@ -4,8 +4,6 @@
 
 
 
-
-
 pub const BY_NAME: &'static [(&'static str, &'static [(char, char)])] =
     &[("White_Space", WHITE_SPACE)];
 

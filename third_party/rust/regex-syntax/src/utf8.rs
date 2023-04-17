@@ -84,7 +84,6 @@
 
 use std::char;
 use std::fmt;
-use std::iter::FusedIterator;
 use std::slice;
 
 const MAX_UTF8_BYTES: usize = 4;
@@ -155,31 +154,6 @@ impl Utf8Sequence {
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn reverse(&mut self) {
-        match *self {
-            Utf8Sequence::One(_) => {}
-            Utf8Sequence::Two(ref mut x) => x.reverse(),
-            Utf8Sequence::Three(ref mut x) => x.reverse(),
-            Utf8Sequence::Four(ref mut x) => x.reverse(),
-        }
-    }
-
-    
-    
     pub fn matches(&self, bytes: &[u8]) -> bool {
         if bytes.len() < self.len() {
             return false;
@@ -203,7 +177,7 @@ impl<'a> IntoIterator for &'a Utf8Sequence {
 }
 
 impl fmt::Debug for Utf8Sequence {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         use self::Utf8Sequence::*;
         match *self {
             One(ref r) => write!(f, "{:?}", r),
@@ -227,7 +201,7 @@ pub struct Utf8Range {
 
 impl Utf8Range {
     fn new(start: u8, end: u8) -> Self {
-        Utf8Range { start, end }
+        Utf8Range { start: start, end: end }
     }
 
     
@@ -237,7 +211,7 @@ impl Utf8Range {
 }
 
 impl fmt::Debug for Utf8Range {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.start == self.end {
             write!(f, "[{:X}]", self.start)
         } else {
@@ -296,7 +270,6 @@ impl fmt::Debug for Utf8Range {
 
 
 
-#[derive(Debug)]
 pub struct Utf8Sequences {
     range_stack: Vec<ScalarRange>,
 }
@@ -321,7 +294,7 @@ impl Utf8Sequences {
     }
 
     fn push(&mut self, start: u32, end: u32) {
-        self.range_stack.push(ScalarRange { start, end });
+        self.range_stack.push(ScalarRange { start: start, end: end });
     }
 }
 
@@ -331,7 +304,7 @@ struct ScalarRange {
 }
 
 impl fmt::Debug for ScalarRange {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "ScalarRange({:X}, {:X})", self.start, self.end)
     }
 }
@@ -389,8 +362,6 @@ impl Iterator for Utf8Sequences {
         None
     }
 }
-
-impl FusedIterator for Utf8Sequences {}
 
 impl ScalarRange {
     
@@ -457,7 +428,7 @@ fn max_scalar_value(nbytes: usize) -> u32 {
 mod tests {
     use std::char;
 
-    use crate::utf8::{Utf8Range, Utf8Sequences};
+    use utf8::{Utf8Range, Utf8Sequences};
 
     fn rutf8(s: u8, e: u8) -> Utf8Range {
         Utf8Range::new(s, e)
@@ -504,7 +475,7 @@ mod tests {
 
     #[test]
     fn bmp() {
-        use crate::utf8::Utf8Sequence::*;
+        use utf8::Utf8Sequence::*;
 
         let seqs = Utf8Sequences::new('\u{0}', '\u{FFFF}').collect::<Vec<_>>();
         assert_eq!(
@@ -532,43 +503,6 @@ mod tests {
                     rutf8(0x80, 0xBF),
                     rutf8(0x80, 0xBF)
                 ]),
-            ]
-        );
-    }
-
-    #[test]
-    fn reverse() {
-        use crate::utf8::Utf8Sequence::*;
-
-        let mut s = One(rutf8(0xA, 0xB));
-        s.reverse();
-        assert_eq!(s.as_slice(), &[rutf8(0xA, 0xB)]);
-
-        let mut s = Two([rutf8(0xA, 0xB), rutf8(0xB, 0xC)]);
-        s.reverse();
-        assert_eq!(s.as_slice(), &[rutf8(0xB, 0xC), rutf8(0xA, 0xB)]);
-
-        let mut s = Three([rutf8(0xA, 0xB), rutf8(0xB, 0xC), rutf8(0xC, 0xD)]);
-        s.reverse();
-        assert_eq!(
-            s.as_slice(),
-            &[rutf8(0xC, 0xD), rutf8(0xB, 0xC), rutf8(0xA, 0xB)]
-        );
-
-        let mut s = Four([
-            rutf8(0xA, 0xB),
-            rutf8(0xB, 0xC),
-            rutf8(0xC, 0xD),
-            rutf8(0xD, 0xE),
-        ]);
-        s.reverse();
-        assert_eq!(
-            s.as_slice(),
-            &[
-                rutf8(0xD, 0xE),
-                rutf8(0xC, 0xD),
-                rutf8(0xB, 0xC),
-                rutf8(0xA, 0xB)
             ]
         );
     }

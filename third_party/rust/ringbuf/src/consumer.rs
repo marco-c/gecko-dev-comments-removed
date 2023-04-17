@@ -1,13 +1,11 @@
-use alloc::sync::Arc;
-use core::{
-    cmp::{self, min},
+use std::{
+    cmp::min,
+    io::{self, Read, Write},
     mem::{self, MaybeUninit},
     ops::Range,
     ptr::copy_nonoverlapping,
-    sync::atomic,
+    sync::{atomic::Ordering, Arc},
 };
-#[cfg(feature = "std")]
-use std::io::{self, Read, Write};
 
 use crate::{producer::Producer, ring_buffer::*};
 
@@ -53,14 +51,16 @@ impl<T: Sized> Consumer<T> {
     }
 
     fn get_ranges(&self) -> (Range<usize>, Range<usize>) {
-        let head = self.rb.head.load(atomic::Ordering::Acquire);
-        let tail = self.rb.tail.load(atomic::Ordering::Acquire);
+        let head = self.rb.head.load(Ordering::Acquire);
+        let tail = self.rb.tail.load(Ordering::Acquire);
         let len = unsafe { self.rb.data.get_ref().len() };
 
-        match head.cmp(&tail) {
-            cmp::Ordering::Less => (head..tail, 0..0),
-            cmp::Ordering::Greater => (head..len, 0..tail),
-            cmp::Ordering::Equal => (0..0, 0..0),
+        if head < tail {
+            (head..tail, 0..0)
+        } else if head > tail {
+            (head..len, 0..tail)
+        } else {
+            (0..0, 0..0)
         }
     }
 
@@ -120,25 +120,20 @@ impl<T: Sized> Consumer<T> {
     
     
     
-    
-    
-    
-    
-    
-    
-    
     pub unsafe fn pop_access<F>(&mut self, f: F) -> usize
     where
         F: FnOnce(&mut [MaybeUninit<T>], &mut [MaybeUninit<T>]) -> usize,
     {
-        let head = self.rb.head.load(atomic::Ordering::Acquire);
-        let tail = self.rb.tail.load(atomic::Ordering::Acquire);
+        let head = self.rb.head.load(Ordering::Acquire);
+        let tail = self.rb.tail.load(Ordering::Acquire);
         let len = self.rb.data.get_ref().len();
 
-        let ranges = match head.cmp(&tail) {
-            cmp::Ordering::Less => (head..tail, 0..0),
-            cmp::Ordering::Greater => (head..len, 0..tail),
-            cmp::Ordering::Equal => (0..0, 0..0),
+        let ranges = if head < tail {
+            (head..tail, 0..0)
+        } else if head > tail {
+            (head..len, 0..tail)
+        } else {
+            (0..0, 0..0)
         };
 
         let slices = (
@@ -150,18 +145,11 @@ impl<T: Sized> Consumer<T> {
 
         if n > 0 {
             let new_head = (head + n) % len;
-            self.rb.head.store(new_head, atomic::Ordering::Release);
+            self.rb.head.store(new_head, Ordering::Release);
         }
         n
     }
 
-    
-    
-    
-    
-    
-    
-    
     
     
     
@@ -282,39 +270,6 @@ impl<T: Sized> Consumer<T> {
     
     
     
-    pub fn discard(&mut self, n: usize) -> usize {
-        unsafe {
-            self.pop_access(|left, right| {
-                let (mut cnt, mut rem) = (0, n);
-                let left_elems = if rem <= left.len() {
-                    cnt += rem;
-                    left.get_unchecked_mut(0..rem)
-                } else {
-                    cnt += left.len();
-                    left
-                };
-                rem = n - cnt;
-
-                let right_elems = if rem <= right.len() {
-                    cnt += rem;
-                    right.get_unchecked_mut(0..rem)
-                } else {
-                    cnt += right.len();
-                    right
-                };
-
-                for e in left_elems.iter_mut().chain(right_elems.iter_mut()) {
-                    e.as_mut_ptr().drop_in_place();
-                }
-
-                cnt
-            })
-        }
-    }
-
-    
-    
-    
     
     
     pub fn move_to(&mut self, other: &mut Producer<T>, count: Option<usize>) -> usize {
@@ -332,7 +287,6 @@ impl<T: Sized + Copy> Consumer<T> {
     }
 }
 
-#[cfg(feature = "std")]
 impl Consumer<u8> {
     
     
@@ -368,7 +322,7 @@ impl Consumer<u8> {
                         } else {
                             Err(io::Error::new(
                                 io::ErrorKind::InvalidInput,
-                                "Write operation returned an invalid number",
+                                "Write operation returned invalid number",
                             ))
                         }
                     }) {
@@ -387,12 +341,14 @@ impl Consumer<u8> {
     }
 }
 
-#[cfg(feature = "std")]
 impl Read for Consumer<u8> {
     fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
         let n = self.pop_slice(buffer);
         if n == 0 && !buffer.is_empty() {
-            Err(io::ErrorKind::WouldBlock.into())
+            Err(io::Error::new(
+                io::ErrorKind::WouldBlock,
+                "Ring buffer is empty",
+            ))
         } else {
             Ok(n)
         }

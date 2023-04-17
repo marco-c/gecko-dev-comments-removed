@@ -78,16 +78,25 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/proc-macro2/1.0.27")]
+#![doc(html_root_url = "https://docs.rs/proc-macro2/1.0.20")]
 #![cfg_attr(any(proc_macro_span, super_unstable), feature(proc_macro_span))]
 #![cfg_attr(super_unstable, feature(proc_macro_raw_ident, proc_macro_def_site))]
-#![cfg_attr(doc_cfg, feature(doc_cfg))]
-#![allow(clippy::needless_doctest_main, clippy::vec_init_then_push)]
+#![allow(clippy::needless_doctest_main)]
 
 #[cfg(use_proc_macro)]
 extern crate proc_macro;
 
-mod marker;
+use std::cmp::Ordering;
+use std::fmt::{self, Debug, Display};
+use std::hash::{Hash, Hasher};
+use std::iter::FromIterator;
+use std::marker;
+use std::ops::RangeBounds;
+#[cfg(procmacro2_semver_exempt)]
+use std::path::PathBuf;
+use std::rc::Rc;
+use std::str::FromStr;
+
 mod parse;
 
 #[cfg(wrap_proc_macro)]
@@ -104,17 +113,6 @@ use crate::fallback as imp;
 #[cfg(wrap_proc_macro)]
 mod imp;
 
-use crate::marker::Marker;
-use std::cmp::Ordering;
-use std::error::Error;
-use std::fmt::{self, Debug, Display};
-use std::hash::{Hash, Hasher};
-use std::iter::FromIterator;
-use std::ops::RangeBounds;
-#[cfg(procmacro2_semver_exempt)]
-use std::path::PathBuf;
-use std::str::FromStr;
-
 
 
 
@@ -125,27 +123,27 @@ use std::str::FromStr;
 #[derive(Clone)]
 pub struct TokenStream {
     inner: imp::TokenStream,
-    _marker: Marker,
+    _marker: marker::PhantomData<Rc<()>>,
 }
 
 
 pub struct LexError {
     inner: imp::LexError,
-    _marker: Marker,
+    _marker: marker::PhantomData<Rc<()>>,
 }
 
 impl TokenStream {
     fn _new(inner: imp::TokenStream) -> TokenStream {
         TokenStream {
             inner,
-            _marker: Marker,
+            _marker: marker::PhantomData,
         }
     }
 
     fn _new_stable(inner: fallback::TokenStream) -> TokenStream {
         TokenStream {
             inner: inner.into(),
-            _marker: Marker,
+            _marker: marker::PhantomData,
         }
     }
 
@@ -182,7 +180,7 @@ impl FromStr for TokenStream {
     fn from_str(src: &str) -> Result<TokenStream, LexError> {
         let e = src.parse().map_err(|e| LexError {
             inner: e,
-            _marker: Marker,
+            _marker: marker::PhantomData,
         })?;
         Ok(TokenStream::_new(e))
     }
@@ -250,35 +248,20 @@ impl Debug for TokenStream {
     }
 }
 
-impl LexError {
-    pub fn span(&self) -> Span {
-        Span::_new(self.inner.span())
-    }
-}
-
 impl Debug for LexError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         Debug::fmt(&self.inner, f)
     }
 }
 
-impl Display for LexError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        Display::fmt(&self.inner, f)
-    }
-}
-
-impl Error for LexError {}
-
 
 
 
 #[cfg(procmacro2_semver_exempt)]
-#[cfg_attr(doc_cfg, doc(cfg(procmacro2_semver_exempt)))]
 #[derive(Clone, PartialEq, Eq)]
 pub struct SourceFile {
     inner: imp::SourceFile,
-    _marker: Marker,
+    _marker: marker::PhantomData<Rc<()>>,
 }
 
 #[cfg(procmacro2_semver_exempt)]
@@ -286,7 +269,7 @@ impl SourceFile {
     fn _new(inner: imp::SourceFile) -> Self {
         SourceFile {
             inner,
-            _marker: Marker,
+            _marker: marker::PhantomData,
         }
     }
 
@@ -325,7 +308,6 @@ impl Debug for SourceFile {
 
 
 #[cfg(span_locations)]
-#[cfg_attr(doc_cfg, doc(cfg(feature = "span-locations")))]
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct LineColumn {
     
@@ -356,21 +338,21 @@ impl PartialOrd for LineColumn {
 #[derive(Copy, Clone)]
 pub struct Span {
     inner: imp::Span,
-    _marker: Marker,
+    _marker: marker::PhantomData<Rc<()>>,
 }
 
 impl Span {
     fn _new(inner: imp::Span) -> Span {
         Span {
             inner,
-            _marker: Marker,
+            _marker: marker::PhantomData,
         }
     }
 
     fn _new_stable(inner: fallback::Span) -> Span {
         Span {
             inner: inner.into(),
-            _marker: Marker,
+            _marker: marker::PhantomData,
         }
     }
 
@@ -397,7 +379,6 @@ impl Span {
     
     
     #[cfg(procmacro2_semver_exempt)]
-    #[cfg_attr(doc_cfg, doc(cfg(procmacro2_semver_exempt)))]
     pub fn def_site() -> Span {
         Span::_new(imp::Span::def_site())
     }
@@ -440,7 +421,6 @@ impl Span {
     
     
     #[cfg(procmacro2_semver_exempt)]
-    #[cfg_attr(doc_cfg, doc(cfg(procmacro2_semver_exempt)))]
     pub fn source_file(&self) -> SourceFile {
         SourceFile::_new(self.inner.source_file())
     }
@@ -448,14 +428,7 @@ impl Span {
     
     
     
-    
-    
-    
-    
-    
-    
     #[cfg(span_locations)]
-    #[cfg_attr(doc_cfg, doc(cfg(feature = "span-locations")))]
     pub fn start(&self) -> LineColumn {
         let imp::LineColumn { line, column } = self.inner.start();
         LineColumn { line, column }
@@ -464,14 +437,7 @@ impl Span {
     
     
     
-    
-    
-    
-    
-    
-    
     #[cfg(span_locations)]
-    #[cfg_attr(doc_cfg, doc(cfg(feature = "span-locations")))]
     pub fn end(&self) -> LineColumn {
         let imp::LineColumn { line, column } = self.inner.end();
         LineColumn { line, column }
@@ -494,7 +460,6 @@ impl Span {
     
     
     #[cfg(procmacro2_semver_exempt)]
-    #[cfg_attr(doc_cfg, doc(cfg(procmacro2_semver_exempt)))]
     pub fn eq(&self, other: &Span) -> bool {
         self.inner.eq(&other.inner)
     }
@@ -731,7 +696,7 @@ impl Debug for Group {
 
 #[derive(Clone)]
 pub struct Punct {
-    ch: char,
+    op: char,
     spacing: Spacing,
     span: Span,
 }
@@ -757,9 +722,9 @@ impl Punct {
     
     
     
-    pub fn new(ch: char, spacing: Spacing) -> Punct {
+    pub fn new(op: char, spacing: Spacing) -> Punct {
         Punct {
-            ch,
+            op,
             spacing,
             span: Span::call_site(),
         }
@@ -767,7 +732,7 @@ impl Punct {
 
     
     pub fn as_char(&self) -> char {
-        self.ch
+        self.op
     }
 
     
@@ -794,14 +759,14 @@ impl Punct {
 
 impl Display for Punct {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        Display::fmt(&self.ch, f)
+        Display::fmt(&self.op, f)
     }
 }
 
 impl Debug for Punct {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         let mut debug = fmt.debug_struct("Punct");
-        debug.field("char", &self.ch);
+        debug.field("op", &self.op);
         debug.field("spacing", &self.spacing);
         imp::debug_span_field_if_nontrivial(&mut debug, self.span.inner);
         debug.finish()
@@ -875,14 +840,14 @@ impl Debug for Punct {
 #[derive(Clone)]
 pub struct Ident {
     inner: imp::Ident,
-    _marker: Marker,
+    _marker: marker::PhantomData<Rc<()>>,
 }
 
 impl Ident {
     fn _new(inner: imp::Ident) -> Ident {
         Ident {
             inner,
-            _marker: Marker,
+            _marker: marker::PhantomData,
         }
     }
 
@@ -925,7 +890,6 @@ impl Ident {
     
     
     #[cfg(procmacro2_semver_exempt)]
-    #[cfg_attr(doc_cfg, doc(cfg(procmacro2_semver_exempt)))]
     pub fn new_raw(string: &str, span: Span) -> Ident {
         Ident::_new_raw(string, span)
     }
@@ -1004,7 +968,7 @@ impl Debug for Ident {
 #[derive(Clone)]
 pub struct Literal {
     inner: imp::Literal,
-    _marker: Marker,
+    _marker: marker::PhantomData<Rc<()>>,
 }
 
 macro_rules! suffixed_int_literals {
@@ -1014,7 +978,7 @@ macro_rules! suffixed_int_literals {
         /// This function will create an integer like `1u32` where the integer
         /// value specified is the first part of the token and the integral is
         /// also suffixed at the end. Literals created from negative numbers may
-        /// not survive roundtrips through `TokenStream` or strings and may be
+        /// not survive rountrips through `TokenStream` or strings and may be
         /// broken into two tokens (`-` and positive literal).
         ///
         /// Literals created through this method have the `Span::call_site()`
@@ -1035,7 +999,7 @@ macro_rules! unsuffixed_int_literals {
         /// specified on this token, meaning that invocations like
         /// `Literal::i8_unsuffixed(1)` are equivalent to
         /// `Literal::u32_unsuffixed(1)`. Literals created from negative numbers
-        /// may not survive roundtrips through `TokenStream` or strings and may
+        /// may not survive rountrips through `TokenStream` or strings and may
         /// be broken into two tokens (`-` and positive literal).
         ///
         /// Literals created through this method have the `Span::call_site()`
@@ -1051,14 +1015,14 @@ impl Literal {
     fn _new(inner: imp::Literal) -> Literal {
         Literal {
             inner,
-            _marker: Marker,
+            _marker: marker::PhantomData,
         }
     }
 
     fn _new_stable(inner: fallback::Literal) -> Literal {
         Literal {
             inner: inner.into(),
-            _marker: Marker,
+            _marker: marker::PhantomData,
         }
     }
 
@@ -1203,17 +1167,6 @@ impl Literal {
     }
 }
 
-impl FromStr for Literal {
-    type Err = LexError;
-
-    fn from_str(repr: &str) -> Result<Self, LexError> {
-        repr.parse().map(Literal::_new).map_err(|inner| LexError {
-            inner,
-            _marker: Marker,
-        })
-    }
-}
-
 impl Debug for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         Debug::fmt(&self.inner, f)
@@ -1228,9 +1181,10 @@ impl Display for Literal {
 
 
 pub mod token_stream {
-    use crate::marker::Marker;
     use crate::{imp, TokenTree};
     use std::fmt::{self, Debug};
+    use std::marker;
+    use std::rc::Rc;
 
     pub use crate::TokenStream;
 
@@ -1241,7 +1195,7 @@ pub mod token_stream {
     #[derive(Clone)]
     pub struct IntoIter {
         inner: imp::TokenTreeIter,
-        _marker: Marker,
+        _marker: marker::PhantomData<Rc<()>>,
     }
 
     impl Iterator for IntoIter {
@@ -1265,7 +1219,7 @@ pub mod token_stream {
         fn into_iter(self) -> IntoIter {
             IntoIter {
                 inner: self.inner.into_iter(),
-                _marker: Marker,
+                _marker: marker::PhantomData,
             }
         }
     }

@@ -1,9 +1,8 @@
 ast_enum! {
     /// A binary operator: `+`, `+=`, `&`.
-    
-    
-    
-    #[cfg_attr(doc_cfg, doc(cfg(any(feature = "full", feature = "derive"))))]
+    ///
+    /// *This type is available only if Syn is built with the `"derive"` or `"full"`
+    /// feature.*
     pub enum BinOp {
         /// The `+` operator (addition)
         Add(Token![+]),
@@ -66,10 +65,9 @@ ast_enum! {
 
 ast_enum! {
     /// A unary operator: `*`, `!`, `-`.
-    
-    
-    
-    #[cfg_attr(doc_cfg, doc(cfg(any(feature = "full", feature = "derive"))))]
+    ///
+    /// *This type is available only if Syn is built with the `"derive"` or `"full"`
+    /// feature.*
     pub enum UnOp {
         /// The `*` operator for dereferencing
         Deref(Token![*]),
@@ -83,6 +81,7 @@ ast_enum! {
 #[cfg(feature = "parsing")]
 pub mod parsing {
     use super::*;
+
     use crate::parse::{Parse, ParseStream, Result};
 
     fn parse_binop(input: ParseStream) -> Result<BinOp> {
@@ -127,7 +126,6 @@ pub mod parsing {
         }
     }
 
-    #[cfg_attr(doc_cfg, doc(cfg(feature = "parsing")))]
     impl Parse for BinOp {
         #[cfg(not(feature = "full"))]
         fn parse(input: ParseStream) -> Result<Self> {
@@ -162,7 +160,6 @@ pub mod parsing {
         }
     }
 
-    #[cfg_attr(doc_cfg, doc(cfg(feature = "parsing")))]
     impl Parse for UnOp {
         fn parse(input: ParseStream) -> Result<Self> {
             let lookahead = input.lookahead1();
@@ -185,7 +182,6 @@ mod printing {
     use proc_macro2::TokenStream;
     use quote::ToTokens;
 
-    #[cfg_attr(doc_cfg, doc(cfg(feature = "printing")))]
     impl ToTokens for BinOp {
         fn to_tokens(&self, tokens: &mut TokenStream) {
             match self {
@@ -221,7 +217,6 @@ mod printing {
         }
     }
 
-    #[cfg_attr(doc_cfg, doc(cfg(feature = "printing")))]
     impl ToTokens for UnOp {
         fn to_tokens(&self, tokens: &mut TokenStream) {
             match self {

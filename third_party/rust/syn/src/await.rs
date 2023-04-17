@@ -1,2 +1,2 @@
 
-export_token_macro! {[await]}
+export_token_macro![(await)];

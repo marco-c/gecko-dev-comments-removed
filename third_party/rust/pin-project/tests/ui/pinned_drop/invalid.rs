@@ -1,229 +1,152 @@
-mod argument {
-    use pin_project::{pin_project, pinned_drop};
-    use std::pin::Pin;
+use pin_project::{pin_project, pinned_drop};
 
-    #[pin_project(PinnedDrop)]
-    struct UnexpectedArg1(());
-
-    #[pinned_drop(foo)] 
-    impl PinnedDrop for UnexpectedArg1 {
-        fn drop(self: Pin<&mut Self>) {}
-    }
-
-    #[pin_project(PinnedDrop)]
-    struct UnexpectedArg2(());
-
-    #[pinned_drop()] 
-    impl PinnedDrop for UnexpectedArg2 {
-        fn drop(self: Pin<&mut Self>) {}
-    }
+#[pin_project(PinnedDrop)]
+pub struct A {
+    #[pin]
+    field: u8,
 }
 
-mod attribute {
-    use pin_project::{pin_project, pinned_drop};
-
-    #[pin_project(PinnedDrop)]
-    struct Duplicate(());
-
-    #[pinned_drop]
-    #[pinned_drop] 
-    impl PinnedDrop for Duplicate {
-        fn drop(self: Pin<&mut Self>) {}
-    }
+#[pinned_drop(foo)] 
+impl PinnedDrop for A {
+    fn drop(self: Pin<&mut Self>) {}
 }
 
-mod item {
-    use pin_project::{pin_project, pinned_drop};
-
-    #[pin_project(PinnedDrop)]
-    struct TraitImpl(());
-
-    #[pinned_drop]
-    impl Drop for TraitImpl {} 
-
-    #[pin_project(PinnedDrop)]
-    struct InherentImpl(());
-
-    #[pinned_drop]
-    impl InherentImpl {} 
-
-    #[pinned_drop]
-    fn drop(_: Pin<&mut ()>) {} 
+#[pin_project(PinnedDrop)]
+pub struct B {
+    #[pin]
+    field: u8,
 }
 
-mod unsafety {
-    use pin_project::{pin_project, pinned_drop};
-
-    #[pin_project(PinnedDrop)]
-    struct Impl(());
-
-    #[pinned_drop]
-    unsafe impl PinnedDrop for Impl {
-        
-        fn drop(self: Pin<&mut Self>) {}
-    }
-
-    #[pin_project(PinnedDrop)]
-    struct Method(());
-
-    #[pinned_drop]
-    impl PinnedDrop for Method {
-        unsafe fn drop(self: Pin<&mut Self>) {} 
-    }
+#[pinned_drop]
+impl Drop for B {
+    
+    fn drop(&mut self) {}
 }
 
-mod assoc_item {
-    use pin_project::{pin_project, pinned_drop};
-
-    #[pin_project(PinnedDrop)]
-    struct Empty(());
-
-    #[pinned_drop]
-    impl PinnedDrop for Empty {} 
-
-    #[pin_project(PinnedDrop)]
-    struct Const1(());
-
-    #[pinned_drop]
-    impl PinnedDrop for Const1 {
-        const A: u8 = 0; 
-        fn drop(self: Pin<&mut Self>) {}
-    }
-
-    #[pin_project(PinnedDrop)]
-    struct Const2(());
-
-    #[pinned_drop]
-    impl PinnedDrop for Const2 {
-        fn drop(self: Pin<&mut Self>) {}
-        const A: u8 = 0; 
-    }
-
-    #[pin_project(PinnedDrop)]
-    struct Type1(());
-
-    #[pinned_drop]
-    impl PinnedDrop for Type1 {
-        type A = u8; 
-        fn drop(self: Pin<&mut Self>) {}
-    }
-
-    #[pin_project(PinnedDrop)]
-    struct Type2(());
-
-    #[pinned_drop]
-    impl PinnedDrop for Type2 {
-        fn drop(self: Pin<&mut Self>) {}
-        type A = u8; 
-    }
-
-    #[pin_project(PinnedDrop)]
-    struct Duplicate(());
-
-    #[pinned_drop]
-    impl PinnedDrop for Duplicate {
-        fn drop(self: Pin<&mut Self>) {}
-        fn drop(self: Pin<&mut Self>) {} 
-    }
+#[pin_project(PinnedDrop)]
+pub struct C {
+    #[pin]
+    field: u8,
 }
 
-mod method {
-    use pin_project::{pin_project, pinned_drop};
-    use std::pin::Pin;
-
-    #[pin_project(PinnedDrop)]
-    struct RetUnit(());
-
-    #[pinned_drop]
-    impl PinnedDrop for RetUnit {
-        fn drop(self: Pin<&mut Self>) -> () {} 
-    }
-
-    #[pin_project(PinnedDrop)]
-    struct RetTy(());
-
-    #[pinned_drop]
-    impl PinnedDrop for RetTy {
-        fn drop(self: Pin<&mut Self>) -> Self {} 
-    }
-
-    #[pin_project(PinnedDrop)]
-    struct NoArg(());
-
-    #[pinned_drop]
-    impl PinnedDrop for NoArg {
-        fn drop() {} 
-    }
-
-    #[pin_project(PinnedDrop)]
-    struct MultiArg(());
-
-    #[pinned_drop]
-    impl PinnedDrop for MultiArg {
-        fn drop(self: Pin<&mut Self>, _: ()) {} 
-    }
-
-    #[pin_project(PinnedDrop)]
-    struct InvalidArg1(());
-
-    #[pinned_drop]
-    impl PinnedDrop for InvalidArg1 {
-        fn drop(&mut self) {} 
-    }
-
-    #[pin_project(PinnedDrop)]
-    struct InvalidArg2(());
-
-    #[pinned_drop]
-    impl PinnedDrop for InvalidArg2 {
-        fn drop(_: Pin<&mut Self>) {} 
-    }
-
-    #[pin_project(PinnedDrop)]
-    struct InvalidArg3(());
-
-    #[pinned_drop]
-    impl PinnedDrop for InvalidArg3 {
-        fn drop(self: Pin<&Self>) {} 
-    }
-
-    #[pin_project(PinnedDrop)]
-    struct InvalidArg4(());
-
-    #[pinned_drop]
-    impl PinnedDrop for InvalidArg4 {
-        fn drop(self: Pin<&mut ()>) {} 
-    }
-
-    #[pin_project(PinnedDrop)]
-    struct InvalidName(());
-
-    #[pinned_drop]
-    impl PinnedDrop for InvalidName {
-        fn pinned_drop(&mut self) {} 
-    }
+#[pinned_drop]
+impl C {
+    
+    fn drop(&mut self) {}
 }
 
-mod self_ty {
-    use pin_project::pinned_drop;
-
-    #[pinned_drop]
-    impl PinnedDrop for () {
-        
-        fn drop(self: Pin<&mut Self>) {}
-    }
-
-    #[pinned_drop]
-    impl PinnedDrop for &mut A {
-        
-        fn drop(self: Pin<&mut Self>) {}
-    }
-
-    #[pinned_drop]
-    impl PinnedDrop for [A] {
-        
-        fn drop(self: Pin<&mut Self>) {}
-    }
+#[pin_project(PinnedDrop)]
+pub struct D {
+    #[pin]
+    field: u8,
 }
+
+#[pinned_drop]
+impl PinnedDrop for D {
+    fn drop(&mut self) {} 
+}
+
+#[pin_project(PinnedDrop)]
+pub struct E {
+    #[pin]
+    field: u8,
+}
+
+#[pinned_drop]
+impl PinnedDrop for E {
+    fn drop_baz(&mut self) {} 
+}
+
+#[pin_project(PinnedDrop)]
+pub struct F {
+    #[pin]
+    field: u8,
+}
+
+#[pinned_drop]
+unsafe impl PinnedDrop for F {
+    
+    fn drop(self: Pin<&mut Self>) {}
+}
+
+#[pin_project(PinnedDrop)]
+pub struct G {
+    #[pin]
+    field: u8,
+}
+
+#[pinned_drop]
+impl PinnedDrop for G {
+    unsafe fn drop(self: Pin<&mut Self>) {} 
+}
+
+#[pin_project(PinnedDrop)]
+pub struct H {
+    #[pin]
+    field: u8,
+}
+
+#[pinned_drop]
+impl PinnedDrop for H {
+    const A: u8 = 0; 
+    fn drop(self: Pin<&mut Self>) {}
+}
+
+#[pin_project(PinnedDrop)]
+pub struct I {
+    #[pin]
+    field: u8,
+}
+
+#[pinned_drop]
+impl PinnedDrop for I {
+    fn drop(self: Pin<&mut Self>) {}
+    const A: u8 = 0; 
+}
+
+#[pin_project(PinnedDrop)]
+pub struct J {
+    #[pin]
+    field: u8,
+}
+
+#[pinned_drop]
+impl PinnedDrop for J {
+    type A = u8; 
+    fn drop(self: Pin<&mut Self>) {}
+}
+
+#[pin_project(PinnedDrop)]
+pub struct K {
+    #[pin]
+    field: u8,
+}
+
+#[pinned_drop]
+impl PinnedDrop for K {
+    fn drop(self: Pin<&mut Self>) {}
+    type A = u8; 
+}
+
+#[pin_project(PinnedDrop)]
+pub struct L {
+    #[pin]
+    field: u8,
+}
+
+#[pinned_drop]
+impl PinnedDrop for L {
+    fn drop(self: Pin<&mut Self>) {}
+    fn drop(self: Pin<&mut Self>) {} 
+}
+
+#[pin_project(PinnedDrop)] 
+pub struct M {
+    #[pin]
+    field: u8,
+}
+
+#[pinned_drop]
+fn drop(_this: Pin<&mut M>) {} 
 
 fn main() {}

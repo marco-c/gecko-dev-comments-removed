@@ -1,15 +1,17 @@
-#[cfg(feature = "parsing")]
-use crate::buffer::Cursor;
-use crate::thread::ThreadBound;
+use std::fmt::{self, Debug, Display};
+use std::iter::FromIterator;
+use std::slice;
+use std::vec;
+
 use proc_macro2::{
     Delimiter, Group, Ident, LexError, Literal, Punct, Spacing, Span, TokenStream, TokenTree,
 };
 #[cfg(feature = "printing")]
 use quote::ToTokens;
-use std::fmt::{self, Debug, Display};
-use std::iter::FromIterator;
-use std::slice;
-use std::vec;
+
+#[cfg(feature = "parsing")]
+use crate::buffer::Cursor;
+use crate::thread::ThreadBound;
 
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -199,44 +201,8 @@ impl Error {
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn into_compile_error(self) -> TokenStream {
-        self.to_compile_error()
-    }
-
-    
-    
     pub fn combine(&mut self, another: Error) {
-        self.messages.extend(another.messages);
+        self.messages.extend(another.messages)
     }
 }
 
@@ -345,11 +311,15 @@ impl Clone for ErrorMessage {
     }
 }
 
-impl std::error::Error for Error {}
+impl std::error::Error for Error {
+    fn description(&self) -> &str {
+        "parse error"
+    }
+}
 
 impl From<LexError> for Error {
     fn from(err: LexError) -> Self {
-        Error::new(err.span(), "lex error")
+        Error::new(Span::call_site(), format!("{:?}", err))
     }
 }
 

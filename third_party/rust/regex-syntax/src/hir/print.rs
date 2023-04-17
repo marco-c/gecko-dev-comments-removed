@@ -4,9 +4,9 @@
 
 use std::fmt;
 
-use crate::hir::visitor::{self, Visitor};
-use crate::hir::{self, Hir, HirKind};
-use crate::is_meta_character;
+use hir::visitor::{self, Visitor};
+use hir::{self, Hir, HirKind};
+use is_meta_character;
 
 
 
@@ -239,7 +239,7 @@ impl<'p, W: fmt::Write> Writer<'p, W> {
 #[cfg(test)]
 mod tests {
     use super::Printer;
-    use crate::ParserBuilder;
+    use ParserBuilder;
 
     fn roundtrip(given: &str, expected: &str) {
         roundtrip_with(|b| b, given, expected);
