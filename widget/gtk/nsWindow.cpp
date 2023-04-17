@@ -2001,7 +2001,8 @@ void nsWindow::UpdateWaylandPopupHierarchy() {
       
       
       
-      useMoveToRect = (popup->mPopupAnchored ||
+      useMoveToRect = (mPopupType == ePopupTypeTooltip) ||
+                      (popup->mPopupAnchored ||
                        (!popup->mPopupAnchored &&
                         popup->mWaylandPopupPrev->mWaylandToplevel == nullptr));
     }
@@ -2354,7 +2355,8 @@ void nsWindow::WaylandPopupMove() {
   }
 
   if (!mPopupUseMoveToRect) {
-    if (mNeedsShow) {
+    if (mNeedsShow && mPopupType != ePopupTypeTooltip) {
+      
       
       LOG_POPUP("  use gtk_window_move(%d, %d) for hidden widget\n",
                 mPopupPosition.x + mRelativePopupOffset.x,
@@ -2363,7 +2365,7 @@ void nsWindow::WaylandPopupMove() {
                       mPopupPosition.x + mRelativePopupOffset.x,
                       mPopupPosition.y + mRelativePopupOffset.y);
     } else {
-      LOG_POPUP("  use gtk_window_move(%d, %d)\n",
+      LOG_POPUP("  use gtk_window_move(%d, %d) for visible widget\n",
                 mRelativePopupPosition.x + mRelativePopupOffset.x,
                 mRelativePopupPosition.y + mRelativePopupOffset.y);
       gtk_window_move(GTK_WINDOW(mShell),
