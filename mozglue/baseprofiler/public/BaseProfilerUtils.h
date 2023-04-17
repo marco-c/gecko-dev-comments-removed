@@ -10,6 +10,66 @@
 
 
 
+
+#if defined(XP_WIN)
+
+namespace mozilla::baseprofiler::detail {
+using ProcessIdType = int;
+using ThreadIdType = unsigned long;
+}  
+
+
+#else
+
+
+#  include <unistd.h>
+namespace mozilla::baseprofiler::detail {
+using ProcessIdType = decltype(getpid());
+}  
+
+
+
+#  if defined(XP_MACOSX)
+
+namespace mozilla::baseprofiler::detail {
+using ThreadIdType = uint64_t;
+}  
+
+
+
+#  elif defined(__ANDROID__) || defined(ANDROID)
+
+#    include <sys/types.h>
+namespace mozilla::baseprofiler::detail {
+using ThreadIdType = decltype(gettid());
+}  
+
+
+#  elif defined(XP_LINUX)
+
+namespace mozilla::baseprofiler::detail {
+using ThreadIdType = long;
+}  
+
+
+#  elif defined(XP_FREEBSD)
+
+namespace mozilla::baseprofiler::detail {
+using ThreadIdType = long;
+}  
+
+
+#  else
+
+namespace mozilla::baseprofiler::detail {
+using ThreadIdType = int;
+}  
+
+#  endif
+#endif  
+
+#include <stdint.h>
+#include <string.h>
 #include <type_traits>
 
 namespace mozilla::baseprofiler {
@@ -17,6 +77,12 @@ namespace mozilla::baseprofiler {
 
 class BaseProfilerProcessId {
  public:
+  using NativeType = detail::ProcessIdType;
+
+  using NumberType =
+      std::conditional_t<(sizeof(NativeType) <= 4), uint32_t, uint64_t>;
+  static_assert(sizeof(NativeType) <= sizeof(NumberType));
+
   
   constexpr BaseProfilerProcessId() = default;
 
@@ -24,7 +90,15 @@ class BaseProfilerProcessId {
     return mProcessId != scUnspecified;
   }
 
-  using NumberType = int;
+  
+  [[nodiscard]] static BaseProfilerProcessId FromNativeId(
+      const NativeType& aNativeProcessId) {
+    BaseProfilerProcessId id;
+    
+    static_assert(std::is_trivially_copyable_v<NativeType>);
+    memcpy(&id.mProcessId, &aNativeProcessId, sizeof(NativeType));
+    return id;
+  }
 
   
   
@@ -33,7 +107,9 @@ class BaseProfilerProcessId {
   
   constexpr static BaseProfilerProcessId FromNumber(
       const NumberType& aProcessId) {
-    return BaseProfilerProcessId{aProcessId};
+    BaseProfilerProcessId id;
+    id.mProcessId = aProcessId;
+    return id;
   }
 
   [[nodiscard]] constexpr bool operator==(
@@ -46,9 +122,6 @@ class BaseProfilerProcessId {
   }
 
  private:
-  constexpr explicit BaseProfilerProcessId(const NumberType& aProcessId)
-      : mProcessId(aProcessId) {}
-
   static constexpr NumberType scUnspecified = 0;
   NumberType mProcessId = scUnspecified;
 };
@@ -63,6 +136,12 @@ static_assert(std::is_move_assignable_v<BaseProfilerProcessId>);
 
 class BaseProfilerThreadId {
  public:
+  using NativeType = detail::ThreadIdType;
+
+  using NumberType =
+      std::conditional_t<(sizeof(NativeType) <= 4), uint32_t, uint64_t>;
+  static_assert(sizeof(NativeType) <= sizeof(NumberType));
+
   
   constexpr BaseProfilerThreadId() = default;
 
@@ -70,7 +149,15 @@ class BaseProfilerThreadId {
     return mThreadId != scUnspecified;
   }
 
-  using NumberType = int;
+  
+  [[nodiscard]] static BaseProfilerThreadId FromNativeId(
+      const NativeType& aNativeThreadId) {
+    BaseProfilerThreadId id;
+    
+    static_assert(std::is_trivially_copyable_v<NativeType>);
+    memcpy(&id.mThreadId, &aNativeThreadId, sizeof(NativeType));
+    return id;
+  }
 
   
   
@@ -79,7 +166,9 @@ class BaseProfilerThreadId {
   
   constexpr static BaseProfilerThreadId FromNumber(
       const NumberType& aThreadId) {
-    return BaseProfilerThreadId{aThreadId};
+    BaseProfilerThreadId id;
+    id.mThreadId = aThreadId;
+    return id;
   }
 
   [[nodiscard]] constexpr bool operator==(
@@ -92,9 +181,6 @@ class BaseProfilerThreadId {
   }
 
  private:
-  constexpr explicit BaseProfilerThreadId(const NumberType& aThreadId)
-      : mThreadId(aThreadId) {}
-
   static constexpr NumberType scUnspecified = 0;
   NumberType mThreadId = scUnspecified;
 };

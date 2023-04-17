@@ -14,20 +14,19 @@
 
 #if defined(XP_WIN)
 
-#  include "mozilla/Assertions.h"
-
 #  include <process.h>
 #  include <processthreadsapi.h>
 
 ProfilerProcessId profiler_current_process_id() {
-  return ProfilerProcessId::FromNumber(_getpid());
+  return ProfilerProcessId::FromNativeId(_getpid());
 }
 
 ProfilerThreadId profiler_current_thread_id() {
-  DWORD threadId = GetCurrentThreadId();
-  MOZ_ASSERT(threadId <= INT32_MAX, "native thread ID is > INT32_MAX");
-  return ProfilerThreadId::FromNumber(
-      static_cast<ProfilerThreadId::NumberType>(threadId));
+  static_assert(std::is_same_v<ProfilerThreadId::NativeType,
+                               decltype(GetCurrentThreadId())>,
+                "ProfilerThreadId::NativeType must be exactly the type "
+                "returned by GetCurrentThreadId()");
+  return ProfilerThreadId::FromNativeId(GetCurrentThreadId());
 }
 
 
@@ -37,7 +36,7 @@ ProfilerThreadId profiler_current_thread_id() {
 #  include <unistd.h>
 
 ProfilerProcessId profiler_current_process_id() {
-  return ProfilerProcessId::FromNumber(getpid());
+  return ProfilerProcessId::FromNativeId(getpid());
 }
 
 
@@ -48,24 +47,18 @@ ProfilerProcessId profiler_current_process_id() {
 
 ProfilerThreadId profiler_current_thread_id() {
   uint64_t tid;
-  pthread_threadid_np(nullptr, &tid);
-  
-  
-  
-  
-  return ProfilerThreadId::FromNumber(
-      static_cast<ProfilerThreadId::NumberType>(tid));
+  if (pthread_threadid_np(nullptr, &tid) != 0) {
+    return ProfilerThreadId{};
+  }
+  return ProfilerThreadId::FromNativeId(tid);
 }
 
 
 
 #  elif defined(__ANDROID__) || defined(ANDROID)
 
-#    include <sys/types.h>
-
 ProfilerThreadId profiler_current_thread_id() {
-  return ProfilerThreadId::FromNumber(
-      static_cast<ProfilerThreadId::NumberType>(gettid()));
+  return ProfilerThreadId::FromNativeId(gettid());
 }
 
 
@@ -75,8 +68,7 @@ ProfilerThreadId profiler_current_thread_id() {
 
 ProfilerThreadId profiler_current_thread_id() {
   
-  return ProfilerThreadId::FromNumber(
-      static_cast<ProfilerThreadId::NumberType>(syscall(SYS_gettid)));
+  return ProfilerThreadId::FromNativeId(syscall(SYS_gettid));
 }
 
 
@@ -86,18 +78,19 @@ ProfilerThreadId profiler_current_thread_id() {
 
 ProfilerThreadId profiler_current_thread_id() {
   long id;
-  (void)thr_self(&id);
-  return ProfilerThreadId::FromNumber(
-      static_cast<ProfilerThreadId::NumberType>(id));
+  if (thr_self(&id) != 0) {
+    return ProfilerThreadId{};
+  }
+  return ProfilerThreadId::FromNativeId(id);
 }
 
 
-#  else  
+#  else
 
 ProfilerThreadId profiler_current_thread_id() { return ProfilerThreadId{}; }
 
-#  endif  
-#endif    
+#  endif
+#endif  
 
 
 
