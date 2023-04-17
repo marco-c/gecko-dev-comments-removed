@@ -221,6 +221,15 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
 
   void FireAccessibleEvent(uint32_t aEvent, LocalAccessible* aTarget);
 
+  
+
+
+
+
+
+  void NotifyOfImageSizeAvailable(mozilla::PresShell* aPresShell,
+                                  nsIContent* aContent);
+
   void NotifyOfPossibleBoundsChange(mozilla::PresShell* aPresShell,
                                     nsIContent* aContent);
 
