@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set sw=2 ts=8 et tw=80 : */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef nsHttpConnectionInfo_h__
 #define nsHttpConnectionInfo_h__
@@ -16,18 +16,18 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "ARefBase.h"
 
+//-----------------------------------------------------------------------------
+// nsHttpConnectionInfo - holds the properties of a connection
+//-----------------------------------------------------------------------------
 
-
-
-
-
-
-
-
-
-
-
-
+// http:// uris through a proxy will all share the same CI, because they can
+// all use the same connection. (modulo pb and anonymous flags). They just use
+// the proxy as the origin host name.
+// however, https:// uris tunnel through the proxy so they will have different
+// CIs - the CI reflects both the proxy and the origin.
+// however, proxy conenctions made with http/2 (or spdy) can tunnel to the
+// origin and multiplex non tunneled transactions at the same time, so they have
+// a special wildcard CI that accepts all origins through that proxy.
 
 class nsISVCBRecord;
 
@@ -46,9 +46,9 @@ class nsHttpConnectionInfo final : public ARefBase {
                        const OriginAttributes& originAttributes,
                        bool endToEndSSL = false, bool aIsHttp3 = false);
 
-  
-  
-  
+  // this version must use TLS and you may supply separate
+  // connection (aka routing) information than the authenticated
+  // origin information
   nsHttpConnectionInfo(const nsACString& originHost, int32_t originPort,
                        const nsACString& npnToken, const nsACString& username,
                        nsProxyInfo* proxyInfo,
@@ -71,6 +71,24 @@ class nsHttpConnectionInfo final : public ARefBase {
   void BuildHashKey();
   void RebuildHashKey();
 
+  // See comments in nsHttpConnectionInfo::BuildHashKey for the meaning of each
+  // field.
+  enum class HashKeyIndex : uint32_t {
+    Proxy = 0,
+    EndToEndSSL,
+    Anonymous,
+    Private,
+    InsecureScheme,
+    NoSpdy,
+    BeConservative,
+    AnonymousAllowClientCert,
+    FallbackConnection,
+    End,
+  };
+  constexpr inline auto UnderlyingIndex(HashKeyIndex aIndex) const {
+    return std::underlying_type_t<HashKeyIndex>(aIndex);
+  }
+
  public:
   const nsCString& HashKey() const { return mHashKey; }
 
@@ -82,12 +100,12 @@ class nsHttpConnectionInfo final : public ARefBase {
   const char* RoutedHost() const { return mRoutedHost.get(); }
   int32_t RoutedPort() const { return mRoutedPort; }
 
-  
+  // OK to treat these as an infalible allocation
   already_AddRefed<nsHttpConnectionInfo> Clone() const;
-  
-  
-  
-  
+  // This main prupose of this function is to clone this connection info, but
+  // replace mRoutedHost with SvcDomainName in the given SVCB record. Note that
+  // if SvcParamKeyPort and SvcParamKeyAlpn are presented in the SVCB record,
+  // mRoutedPort and mNPNToken will be replaced as well.
   already_AddRefed<nsHttpConnectionInfo> CloneAndAdoptHTTPSSVCRecord(
       nsISVCBRecord* aRecord) const;
   void CloneAsDirectRoute(nsHttpConnectionInfo** outCI);
@@ -114,13 +132,13 @@ class nsHttpConnectionInfo final : public ARefBase {
     return mProxyInfo ? mProxyInfo->ConnectionIsolationKey() : EmptyCString();
   }
 
-  
-  
-  
-  
-  
-  
-  
+  // Compare this connection info to another...
+  // Two connections are 'equal' if they end up talking the same
+  // protocol to the same server. This is needed to properly manage
+  // persistent connections to proxies
+  // Note that we don't care about transparent proxies -
+  // it doesn't matter if we're talking via socks or not, since
+  // a request will end up at the same host.
   bool Equals(const nsHttpConnectionInfo* info) {
     return mHashKey.Equals(info->HashKey());
   }
@@ -130,44 +148,60 @@ class nsHttpConnectionInfo final : public ARefBase {
   int32_t DefaultPort() const {
     return mEndToEndSSL ? NS_HTTPS_DEFAULT_PORT : NS_HTTP_DEFAULT_PORT;
   }
-  void SetAnonymous(bool anon) { mHashKey.SetCharAt(anon ? 'A' : '.', 2); }
-  bool GetAnonymous() const { return mHashKey.CharAt(2) == 'A'; }
-  void SetPrivate(bool priv) { mHashKey.SetCharAt(priv ? 'P' : '.', 3); }
-  bool GetPrivate() const { return mHashKey.CharAt(3) == 'P'; }
-  void SetInsecureScheme(bool insecureScheme) {
-    mHashKey.SetCharAt(insecureScheme ? 'I' : '.', 4);
+  void SetAnonymous(bool anon) {
+    SetHashCharAt(anon ? 'A' : '.', HashKeyIndex::Anonymous);
   }
-  bool GetInsecureScheme() const { return mHashKey.CharAt(4) == 'I'; }
+  bool GetAnonymous() const {
+    return GetHashCharAt(HashKeyIndex::Anonymous) == 'A';
+  }
+  void SetPrivate(bool priv) {
+    SetHashCharAt(priv ? 'P' : '.', HashKeyIndex::Private);
+  }
+  bool GetPrivate() const {
+    return GetHashCharAt(HashKeyIndex::Private) == 'P';
+  }
+  void SetInsecureScheme(bool insecureScheme) {
+    SetHashCharAt(insecureScheme ? 'I' : '.', HashKeyIndex::InsecureScheme);
+  }
+  bool GetInsecureScheme() const {
+    return GetHashCharAt(HashKeyIndex::InsecureScheme) == 'I';
+  }
 
   void SetNoSpdy(bool aNoSpdy) {
-    mHashKey.SetCharAt(aNoSpdy ? 'X' : '.', 5);
+    SetHashCharAt(aNoSpdy ? 'X' : '.', HashKeyIndex::NoSpdy);
     if (aNoSpdy && mNPNToken == "h2"_ns) {
       mNPNToken.Truncate();
       RebuildHashKey();
     }
   }
-  bool GetNoSpdy() const { return mHashKey.CharAt(5) == 'X'; }
+  bool GetNoSpdy() const { return GetHashCharAt(HashKeyIndex::NoSpdy) == 'X'; }
 
   void SetBeConservative(bool aBeConservative) {
-    mHashKey.SetCharAt(aBeConservative ? 'C' : '.', 6);
+    SetHashCharAt(aBeConservative ? 'C' : '.', HashKeyIndex::BeConservative);
   }
-  bool GetBeConservative() const { return mHashKey.CharAt(6) == 'C'; }
+  bool GetBeConservative() const {
+    return GetHashCharAt(HashKeyIndex::BeConservative) == 'C';
+  }
 
   void SetAnonymousAllowClientCert(bool anon) {
-    mHashKey.SetCharAt(anon ? 'B' : '.', 7);
+    SetHashCharAt(anon ? 'B' : '.', HashKeyIndex::AnonymousAllowClientCert);
   }
-  bool GetAnonymousAllowClientCert() const { return mHashKey.CharAt(7) == 'B'; }
+  bool GetAnonymousAllowClientCert() const {
+    return GetHashCharAt(HashKeyIndex::AnonymousAllowClientCert) == 'B';
+  }
 
   void SetFallbackConnection(bool aFallback) {
-    mHashKey.SetCharAt(aFallback ? 'F' : '.', 8);
+    SetHashCharAt(aFallback ? 'F' : '.', HashKeyIndex::FallbackConnection);
   }
-  bool GetFallbackConnection() const { return mHashKey.CharAt(8) == 'F'; }
+  bool GetFallbackConnection() const {
+    return GetHashCharAt(HashKeyIndex::FallbackConnection) == 'F';
+  }
 
   void SetTlsFlags(uint32_t aTlsFlags);
   uint32_t GetTlsFlags() const { return mTlsFlags; }
 
-  
-  
+  // IsTrrServiceChannel means that this connection is used to send TRR requests
+  // over
   void SetIsTrrServiceChannel(bool aIsTRRChannel) {
     mIsTrrServiceChannel = aIsTRRChannel;
   }
@@ -187,27 +221,27 @@ class nsHttpConnectionInfo final : public ARefBase {
 
   const OriginAttributes& GetOriginAttributes() { return mOriginAttributes; }
 
-  
+  // Returns true for any kind of proxy (http, socks, https, etc..)
   bool UsingProxy();
 
-  
+  // Returns true when proxying over HTTP or HTTPS
   bool UsingHttpProxy() const { return mUsingHttpProxy || mUsingHttpsProxy; }
 
-  
+  // Returns true when proxying over HTTPS
   bool UsingHttpsProxy() const { return mUsingHttpsProxy; }
 
-  
+  // Returns true when a resource is in SSL end to end (e.g. https:// uri)
   bool EndToEndSSL() const { return mEndToEndSSL; }
 
-  
-  
+  // Returns true when at least first hop is SSL (e.g. proxy over https or https
+  // uri)
   bool FirstHopSSL() const { return mEndToEndSSL || mUsingHttpsProxy; }
 
-  
-  
+  // Returns true when CONNECT is used to tunnel through the proxy (e.g.
+  // https:// or ws://)
   bool UsingConnect() const { return mUsingConnect; }
 
-  
+  // Returns true when origin/proxy is an RFC1918 literal.
   bool HostIsLocalIPLiteral() const;
 
   bool GetLessThanTls13() const { return mLessThanTls13; }
@@ -229,6 +263,12 @@ class nsHttpConnectionInfo final : public ARefBase {
             const OriginAttributes& originAttributes, bool e2eSSL,
             bool aIsHttp3);
   void SetOriginServer(const nsACString& host, int32_t port);
+  nsCString::char_type GetHashCharAt(HashKeyIndex aIndex) const {
+    return mHashKey.CharAt(UnderlyingIndex(aIndex));
+  }
+  void SetHashCharAt(nsCString::char_type aValue, HashKeyIndex aIndex) {
+    mHashKey.SetCharAt(aValue, UnderlyingIndex(aIndex));
+  }
 
   nsCString mOrigin;
   int32_t mOriginPort = 0;
@@ -241,7 +281,7 @@ class nsHttpConnectionInfo final : public ARefBase {
   bool mUsingHttpProxy = false;
   bool mUsingHttpsProxy = false;
   bool mEndToEndSSL = false;
-  
+  // if will use CONNECT with http proxy
   bool mUsingConnect = false;
   nsCString mNPNToken;
   OriginAttributes mOriginAttributes;
@@ -252,19 +292,19 @@ class nsHttpConnectionInfo final : public ARefBase {
   uint16_t mIPv4Disabled : 1;
   uint16_t mIPv6Disabled : 1;
 
-  bool mLessThanTls13;  
-                        
-                        
+  bool mLessThanTls13;  // This will be set to true if we negotiate less than
+                        // tls1.3. If the tls version is till not know or it
+                        // is 1.3 or greater the value will be false.
   bool mIsHttp3 = false;
 
   bool mHasIPHintAddress = false;
   nsCString mEchConfig;
 
-  
+  // for RefPtr
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsHttpConnectionInfo, override)
 };
 
-}  
-}  
+}  // namespace net
+}  // namespace mozilla
 
-#endif  
+#endif  // nsHttpConnectionInfo_h__

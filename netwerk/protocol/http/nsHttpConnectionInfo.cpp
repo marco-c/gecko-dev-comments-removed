@@ -144,7 +144,10 @@ void nsHttpConnectionInfo::BuildHashKey() {
   
   
 
-  mHashKey.AssignLiteral(".........[tlsflags0x00000000]");
+  const auto keyTemplate =
+      std::string(UnderlyingIndex(HashKeyIndex::End), '.') +
+      std::string("[tlsflags0x00000000]");
+  mHashKey.Assign(keyTemplate.c_str());
 
   mHashKey.Append(keyHost);
   mHashKey.Append(':');
@@ -156,12 +159,12 @@ void nsHttpConnectionInfo::BuildHashKey() {
   }
 
   if (mUsingHttpsProxy) {
-    mHashKey.SetCharAt('T', 0);
+    SetHashCharAt('T', HashKeyIndex::Proxy);
   } else if (mUsingHttpProxy) {
-    mHashKey.SetCharAt('P', 0);
+    SetHashCharAt('P', HashKeyIndex::Proxy);
   }
   if (mEndToEndSSL) {
-    mHashKey.SetCharAt('S', 1);
+    SetHashCharAt('S', HashKeyIndex::EndToEndSSL);
   }
 
   
@@ -521,8 +524,9 @@ void nsHttpConnectionInfo::SetIPv6Disabled(bool aNoIPv6) {
 
 void nsHttpConnectionInfo::SetTlsFlags(uint32_t aTlsFlags) {
   mTlsFlags = aTlsFlags;
-
-  mHashKey.Replace(20, 8, nsPrintfCString("%08x", mTlsFlags));
+  const uint32_t tlsFlagsIndex =
+      UnderlyingIndex(HashKeyIndex::End) + strlen("[tlsflags0x");
+  mHashKey.Replace(tlsFlagsIndex, 8, nsPrintfCString("%08x", mTlsFlags));
 }
 
 bool nsHttpConnectionInfo::UsingProxy() {
