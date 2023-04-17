@@ -6,28 +6,12 @@
 
 var EXPORTED_SYMBOLS = ["InteractionsChild"];
 
-ChromeUtils.defineModuleGetter(
-  this,
-  "PrivateBrowsingUtils",
-  "resource://gre/modules/PrivateBrowsingUtils.jsm"
-);
-
 
 
 
 
 class InteractionsChild extends JSWindowActorChild {
-  actorCreated() {
-    this.isContentWindowPrivate = PrivateBrowsingUtils.isContentWindowPrivate(
-      this.contentWindow
-    );
-  }
-
   async handleEvent(event) {
-    if (this.isContentWindowPrivate) {
-      
-      return;
-    }
     switch (event.type) {
       case "DOMContentLoaded": {
         if (
