@@ -4333,9 +4333,11 @@ Toolbox.prototype = {
         }
       }
 
+      
       if (
         resource.resourceType === this.resourceCommand.TYPES.DOCUMENT_EVENT &&
-        resource.name === "will-navigate"
+        resource.name === "will-navigate" &&
+        resource.targetFront.isTopLevel
       ) {
         this._onWillNavigate();
         

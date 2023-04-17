@@ -168,6 +168,9 @@ async function onBreakpointAvailable(breakpoints) {
 
 function onDocumentEventAvailable(events) {
   for (const event of events) {
+    
+    if (!event.targetFront.isTopLevel) continue;
+
     if (event.name == "will-navigate") {
       actions.willNavigate({ url: event.newURI });
     } else if (event.name == "dom-complete") {

@@ -335,6 +335,11 @@ class Connector {
 
 
   onDocEvent(resource, { areExistingResources }) {
+    if (!resource.targetFront.isTopLevel) {
+      
+      return;
+    }
+
     
     if (
       resource.name != "dom-interactive" &&

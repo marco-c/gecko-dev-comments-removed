@@ -525,9 +525,11 @@ class ResourceCommand {
         });
       }
 
+      
       if (
         resourceType == ResourceCommand.TYPES.DOCUMENT_EVENT &&
-        resource.name == "will-navigate"
+        resource.name == "will-navigate" &&
+        resource.targetFront.isTopLevel
       ) {
         includesDocumentEventWillNavigate = true;
         this._onWillNavigate(resource.targetFront);

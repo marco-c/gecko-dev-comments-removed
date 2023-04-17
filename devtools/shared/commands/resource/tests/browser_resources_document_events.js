@@ -9,7 +9,7 @@ add_task(async function() {
   await testDocumentEventResources();
   await testDocumentEventResourcesWithIgnoreExistingResources();
   await testDomCompleteWithOverloadedConsole();
-
+  await testIframeNavigation();
   
   
   await pushPref("devtools.target-switching.server.enabled", true);
@@ -181,11 +181,100 @@ async function testDocumentEventResourcesWithIgnoreExistingResources() {
     "Wait for will-navigate, dom-loading, dom-interactive and dom-complete events"
   );
   await waitUntil(() => documentEvents.length === 4);
-  assertEvents(commands, targetBeforeNavigation, ...documentEvents);
+  assertEvents({ commands, targetBeforeNavigation, documentEvents });
 
   await commands.destroy();
 }
 
+async function testIframeNavigation() {
+  info("Test iframe navigations for DOCUMENT_EVENT");
+
+  const tab = await addTab(
+    'http://example.com/document-builder.sjs?html=<iframe src="http://example.net/document-builder.sjs?html=net"></iframe>'
+  );
+  const secondPageUrl = "http://example.org/document-builder.sjs?html=org";
+
+  const { commands } = await initResourceCommand(tab);
+
+  let documentEvents = [];
+  await commands.resourceCommand.watchResources(
+    [commands.resourceCommand.TYPES.DOCUMENT_EVENT],
+    {
+      onAvailable: resources => documentEvents.push(...resources),
+    }
+  );
+  let iframeTarget;
+  if (isFissionEnabled()) {
+    is(
+      documentEvents.length,
+      6,
+      "With fission, we get two targets and two sets of events: dom-loading, dom-interactive, dom-complete"
+    );
+    [, iframeTarget] = await commands.targetCommand.getAllTargets([
+      commands.targetCommand.TYPES.FRAME,
+    ]);
+    
+    const topTargetEvents = documentEvents.filter(
+      r => r.targetFront == commands.targetCommand.targetFront
+    );
+    const iframeTargetEvents = documentEvents.filter(
+      r => r.targetFront != commands.targetCommand.targetFront
+    );
+    assertEvents({
+      commands,
+      documentEvents: [null , ...topTargetEvents],
+    });
+    assertEvents({
+      commands,
+      documentEvents: [null , ...iframeTargetEvents],
+      expectedTargetFront: iframeTarget,
+    });
+  } else {
+    assertEvents({
+      commands,
+      documentEvents: [null , ...documentEvents],
+    });
+  }
+
+  info("Navigate the iframe to another process (if fission is enabled)");
+  documentEvents = [];
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [secondPageUrl], function(
+    url
+  ) {
+    const iframe = content.document.querySelector("iframe");
+    iframe.src = url;
+  });
+
+  
+  if (isFissionEnabled()) {
+    await waitUntil(() => documentEvents.length >= 4);
+    is(
+      documentEvents.length,
+      4,
+      "With fission, we switch to a new target and get a will-navigate followed by a new set of events: dom-loading, dom-interactive, dom-complete"
+    );
+    const [, newIframeTarget] = await commands.targetCommand.getAllTargets([
+      commands.targetCommand.TYPES.FRAME,
+    ]);
+    assertEvents({
+      commands,
+      targetBeforeNavigation: iframeTarget,
+      documentEvents,
+      expectedTargetFront: newIframeTarget,
+      expectedNewURI: secondPageUrl,
+    });
+  } else {
+    
+    await wait(500);
+    is(
+      documentEvents.length,
+      0,
+      "If fission is disabled, we navigate within the same process, we get no new target and no new resource"
+    );
+  }
+
+  await commands.destroy();
+}
 async function testCrossOriginNavigation() {
   info("Test cross origin navigations for DOCUMENT_EVENT");
 
@@ -223,7 +312,7 @@ async function testCrossOriginNavigation() {
     "Wait for will-navigate, dom-loading, dom-interactive and dom-complete events"
   );
   await waitUntil(() => documentEvents.length >= 4);
-  assertEvents(commands, targetBeforeNavigation, ...documentEvents);
+  assertEvents({ commands, targetBeforeNavigation, documentEvents });
 
   
   await wait(1000);
@@ -358,29 +447,36 @@ async function assertPromises(
   const loadingEvent = await onLoading;
   const interactiveEvent = await onInteractive;
   const completeEvent = await onComplete;
-  assertEvents(
+  assertEvents({
     commands,
     targetBeforeNavigation,
+    documentEvents: [
+      willNavigateEvent,
+      loadingEvent,
+      interactiveEvent,
+      completeEvent,
+    ],
+  });
+}
+
+function assertEvents({
+  commands,
+  targetBeforeNavigation,
+  documentEvents,
+  expectedTargetFront = commands.targetCommand.targetFront,
+  expectedNewURI = gBrowser.selectedBrowser.currentURI.spec,
+}) {
+  const [
     willNavigateEvent,
     loadingEvent,
     interactiveEvent,
-    completeEvent
-  );
-}
-
-function assertEvents(
-  commands,
-  targetBeforeNavigation,
-  willNavigateEvent,
-  loadingEvent,
-  interactiveEvent,
-  completeEvent
-) {
+    completeEvent,
+  ] = documentEvents;
   if (willNavigateEvent) {
     is(willNavigateEvent.name, "will-navigate", "Received the will-navigate");
     is(
       willNavigateEvent.newURI,
-      gBrowser.selectedBrowser.currentURI.spec,
+      expectedNewURI,
       "will-navigate newURI is set to the current tab new location"
     );
   }
@@ -434,7 +530,6 @@ function assertEvents(
     "Timestamp for complete event is greater than interactive event"
   );
 
-  const currentTargetFront = commands.targetCommand.targetFront;
   if (willNavigateEvent) {
     
     
@@ -446,18 +541,18 @@ function assertEvents(
   }
   is(
     loadingEvent.targetFront,
-    currentTargetFront,
-    "loading target is the current target"
+    expectedTargetFront,
+    "loading target is the expected one"
   );
   is(
     interactiveEvent.targetFront,
-    currentTargetFront,
-    "interactive target is the current target"
+    expectedTargetFront,
+    "interactive target is the expected one"
   );
   is(
     completeEvent.targetFront,
-    currentTargetFront,
-    "complete target is the current target"
+    expectedTargetFront,
+    "complete target is the expected one"
   );
 
   is(

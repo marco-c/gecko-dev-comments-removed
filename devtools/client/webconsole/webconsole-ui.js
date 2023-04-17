@@ -377,6 +377,25 @@ class WebConsoleUI {
     );
   }
 
+  handleDocumentEvent(resource) {
+    
+    if (!resource.targetFront.isTopLevel) {
+      return;
+    }
+
+    if (resource.name == "will-navigate") {
+      this.handleWillNavigate({
+        timeStamp: resource.time,
+        url: resource.newURI,
+      });
+    } else if (resource.name == "dom-complete") {
+      this.handleNavigated({
+        hasNativeConsoleAPI: resource.hasNativeConsoleAPI,
+      });
+    }
+    
+  }
+
   
 
 
@@ -415,18 +434,7 @@ class WebConsoleUI {
     for (const resource of resources) {
       const { TYPES } = this.hud.resourceCommand;
       if (resource.resourceType === TYPES.DOCUMENT_EVENT) {
-        if (resource.name == "will-navigate") {
-          this.handleWillNavigate({
-            timeStamp: resource.time,
-            url: resource.newURI,
-          });
-        }
-        if (resource.name == "dom-complete") {
-          this.handleNavigated({
-            hasNativeConsoleAPI: resource.hasNativeConsoleAPI,
-          });
-        }
-        
+        this.handleDocumentEvent(resource);
         continue;
       }
       
