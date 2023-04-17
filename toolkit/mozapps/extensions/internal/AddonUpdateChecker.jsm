@@ -573,20 +573,14 @@ var AddonUpdateChecker = {
 
     let newestVersion = aAddon.version;
     let newest = null;
+    let blocked = null;
+    let blockedState;
     for (let update of aUpdates) {
       if (!update.updateURL) {
         continue;
       }
       if (Services.vc.compare(newestVersion, update.version) >= 0) {
         
-        continue;
-      }
-      let state = await Blocklist.getAddonBlocklistState(
-        update,
-        aAppVersion,
-        aPlatformVersion
-      );
-      if (state != Ci.nsIBlocklistService.STATE_NOT_BLOCKED) {
         continue;
       }
       if (
@@ -600,8 +594,40 @@ var AddonUpdateChecker = {
       ) {
         continue;
       }
+      let state = await Blocklist.getAddonBlocklistState(
+        update,
+        aAppVersion,
+        aPlatformVersion
+      );
+      if (state != Ci.nsIBlocklistService.STATE_NOT_BLOCKED) {
+        if (
+          !blocked ||
+          Services.vc.compare(blocked.version, update.version) < 0
+        ) {
+          blocked = update;
+          blockedState = state;
+        }
+        continue;
+      }
       newest = update;
       newestVersion = update.version;
+    }
+    if (
+      blocked &&
+      (!newest || Services.vc.compare(blocked.version, newestVersion) >= 0)
+    ) {
+      
+      
+      
+      
+      Blocklist.recordAddonBlockChangeTelemetry(
+        {
+          id: aAddon.id,
+          version: blocked.version,
+          blocklistState: blockedState,
+        },
+        "addon_update_check"
+      );
     }
     return newest;
   },
