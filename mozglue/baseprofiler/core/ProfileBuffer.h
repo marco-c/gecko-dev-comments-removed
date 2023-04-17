@@ -38,7 +38,7 @@ class ProfileBuffer final {
 
   
   
-  uint64_t AddThreadIdEntry(int aThreadId);
+  uint64_t AddThreadIdEntry(BaseProfilerThreadId aThreadId);
 
   void CollectCodeLocation(const char* aLabel, const char* aStr,
                            uint32_t aFrameFlags, uint64_t aInnerWindowID,
@@ -55,10 +55,13 @@ class ProfileBuffer final {
   
   
   
-  int StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
-                          double aSinceTime, UniqueStacks& aUniqueStacks) const;
+  BaseProfilerThreadId StreamSamplesToJSON(SpliceableJSONWriter& aWriter,
+                                           BaseProfilerThreadId aThreadId,
+                                           double aSinceTime,
+                                           UniqueStacks& aUniqueStacks) const;
 
-  void StreamMarkersToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
+  void StreamMarkersToJSON(SpliceableJSONWriter& aWriter,
+                           BaseProfilerThreadId aThreadId,
                            const TimeStamp& aProcessStartTime,
                            double aSinceTime,
                            UniqueStacks& aUniqueStacks) const;
@@ -75,7 +78,8 @@ class ProfileBuffer final {
   
   
   
-  bool DuplicateLastSample(int aThreadId, const TimeStamp& aProcessStartTime,
+  bool DuplicateLastSample(BaseProfilerThreadId aThreadId,
+                           const TimeStamp& aProcessStartTime,
                            Maybe<uint64_t>& aLastSample);
 
   void DiscardSamplesBeforeTime(double aTime);
@@ -102,7 +106,8 @@ class ProfileBuffer final {
   
   
   static ProfileBufferBlockIndex AddThreadIdEntry(
-      ProfileChunkedBuffer& aProfileChunkedBuffer, int aThreadId);
+      ProfileChunkedBuffer& aProfileChunkedBuffer,
+      BaseProfilerThreadId aThreadId);
 
   
   ProfileChunkedBuffer& mEntries;

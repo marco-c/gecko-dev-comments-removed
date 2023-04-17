@@ -66,9 +66,9 @@ class ProfilerBacktrace {
   
   
   
-  int StreamJSON(SpliceableJSONWriter& aWriter,
-                 const TimeStamp& aProcessStartTime,
-                 UniqueStacks& aUniqueStacks);
+  BaseProfilerThreadId StreamJSON(SpliceableJSONWriter& aWriter,
+                                  const TimeStamp& aProcessStartTime,
+                                  UniqueStacks& aUniqueStacks);
 
  private:
   

@@ -40,14 +40,15 @@ BaseProfilerProcessId profiler_current_process_id() {
   return BaseProfilerProcessId::FromNumber(getpid());
 }
 
-int profiler_current_thread_id() {
+BaseProfilerThreadId profiler_current_thread_id() {
   uint64_t tid;
   pthread_threadid_np(nullptr, &tid);
   
   
   
   
-  return static_cast<int>(tid);
+  return BaseProfilerThreadId::FromNumber(
+      static_cast<BaseProfilerThreadId::NumberType>(tid));
 }
 
 static int64_t MicrosecondsSince1970() {
@@ -63,7 +64,8 @@ void* GetStackTop(void* aGuess) {
 
 class PlatformData {
  public:
-  explicit PlatformData(int aThreadId) : mProfiledThread(mach_thread_self()) {}
+  explicit PlatformData(BaseProfilerThreadId aThreadId)
+      : mProfiledThread(mach_thread_self()) {}
 
   ~PlatformData() {
     

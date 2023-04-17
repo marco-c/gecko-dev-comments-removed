@@ -22,7 +22,7 @@ namespace baseprofiler {
 
 class RacyRegisteredThread final {
  public:
-  explicit RacyRegisteredThread(int aThreadId)
+  explicit RacyRegisteredThread(BaseProfilerThreadId aThreadId)
       : mThreadId(aThreadId), mSleep(AWAKE), mIsBeingProfiled(false) {}
 
   ~RacyRegisteredThread() {}
@@ -72,7 +72,7 @@ class RacyRegisteredThread final {
 
   bool IsSleeping() { return mSleep != AWAKE; }
 
-  int ThreadId() const { return mThreadId; }
+  BaseProfilerThreadId ThreadId() const { return mThreadId; }
 
   class ProfilingStack& ProfilingStack() {
     return mProfilingStack;
@@ -84,7 +84,7 @@ class RacyRegisteredThread final {
 
   
   
-  const int mThreadId;
+  const BaseProfilerThreadId mThreadId;
 
   
   

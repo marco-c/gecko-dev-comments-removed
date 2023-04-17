@@ -297,7 +297,8 @@ ProfileBufferBlockIndex AddMarkerToBuffer(
 template <typename StackCallback>
 [[nodiscard]] bool DeserializeAfterKindAndStream(
     ProfileBufferEntryReader& aEntryReader,
-    baseprofiler::SpliceableJSONWriter& aWriter, int aThreadIdOrZero,
+    baseprofiler::SpliceableJSONWriter& aWriter,
+    baseprofiler::BaseProfilerThreadId aThreadIdOrUnspecified,
     StackCallback&& aStackCallback) {
   
   
@@ -305,8 +306,8 @@ template <typename StackCallback>
   
   
   const MarkerOptions options = aEntryReader.ReadObject<MarkerOptions>();
-  if (aThreadIdOrZero != 0 &&
-      options.ThreadId().ThreadId() != aThreadIdOrZero) {
+  if (aThreadIdOrUnspecified.IsSpecified() &&
+      options.ThreadId().ThreadId() != aThreadIdOrUnspecified) {
     
     return false;
   }

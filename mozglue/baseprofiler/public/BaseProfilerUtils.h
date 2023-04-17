@@ -117,8 +117,12 @@ namespace mozilla::baseprofiler {
 [[nodiscard]] inline BaseProfilerProcessId profiler_current_process_id() {
   return BaseProfilerProcessId{};
 }
-[[nodiscard]] inline int profiler_current_thread_id() { return 0; }
-[[nodiscard]] inline int profiler_main_thread_id() { return 0; }
+[[nodiscard]] inline BaseProfilerThreadId profiler_current_thread_id() {
+  return BaseProfilerThreadId{};
+}
+[[nodiscard]] inline BaseProfilerThreadId profiler_main_thread_id() {
+  return BaseProfilerThreadId{};
+}
 [[nodiscard]] inline bool profiler_is_main_thread() { return false; }
 
 }  
@@ -133,15 +137,15 @@ namespace mozilla::baseprofiler {
 [[nodiscard]] MFBT_API BaseProfilerProcessId profiler_current_process_id();
 
 
-[[nodiscard]] MFBT_API int profiler_current_thread_id();
+[[nodiscard]] MFBT_API BaseProfilerThreadId profiler_current_thread_id();
 
 namespace detail {
 
 
-extern MFBT_DATA int scProfilerMainThreadId;
+extern MFBT_DATA BaseProfilerThreadId scProfilerMainThreadId;
 }  
 
-[[nodiscard]] inline int profiler_main_thread_id() {
+[[nodiscard]] inline BaseProfilerThreadId profiler_main_thread_id() {
   return detail::scProfilerMainThreadId;
 }
 

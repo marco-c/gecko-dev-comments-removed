@@ -106,12 +106,13 @@ class ProfiledThreadData final {
 
 
 
-int StreamSamplesAndMarkers(
-    const char* aName, int aThreadId, const ProfileBuffer& aBuffer,
-    SpliceableJSONWriter& aWriter, const std::string& aProcessName,
-    const std::string& aETLDplus1, const TimeStamp& aProcessStartTime,
-    const TimeStamp& aRegisterTime, const TimeStamp& aUnregisterTime,
-    double aSinceTime, UniqueStacks& aUniqueStacks);
+BaseProfilerThreadId StreamSamplesAndMarkers(
+    const char* aName, BaseProfilerThreadId aThreadId,
+    const ProfileBuffer& aBuffer, SpliceableJSONWriter& aWriter,
+    const std::string& aProcessName, const std::string& aETLDplus1,
+    const TimeStamp& aProcessStartTime, const TimeStamp& aRegisterTime,
+    const TimeStamp& aUnregisterTime, double aSinceTime,
+    UniqueStacks& aUniqueStacks);
 
 }  
 }  

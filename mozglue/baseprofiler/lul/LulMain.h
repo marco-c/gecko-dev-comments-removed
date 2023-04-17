@@ -10,6 +10,7 @@
 #include "PlatformMacros.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/BaseProfilerUtils.h"
 
 
 
@@ -348,7 +349,7 @@ class LUL {
   
   
   
-  int mAdminThreadId;
+  mozilla::baseprofiler::BaseProfilerThreadId mAdminThreadId;
 
   
   

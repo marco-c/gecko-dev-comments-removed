@@ -71,10 +71,10 @@ ProfilerBacktrace::ProfilerBacktrace(
 
 ProfilerBacktrace::~ProfilerBacktrace() {}
 
-int ProfilerBacktrace::StreamJSON(SpliceableJSONWriter& aWriter,
-                                  const TimeStamp& aProcessStartTime,
-                                  UniqueStacks& aUniqueStacks) {
-  int processedThreadId = 0;
+BaseProfilerThreadId ProfilerBacktrace::StreamJSON(
+    SpliceableJSONWriter& aWriter, const TimeStamp& aProcessStartTime,
+    UniqueStacks& aUniqueStacks) {
+  BaseProfilerThreadId processedThreadId;
 
   
   
@@ -82,14 +82,16 @@ int ProfilerBacktrace::StreamJSON(SpliceableJSONWriter& aWriter,
   
   if (mProfileBuffer) {
     processedThreadId = StreamSamplesAndMarkers(
-        mName.c_str(), 0, *mProfileBuffer, aWriter, "", "", aProcessStartTime,
+        mName.c_str(), BaseProfilerThreadId{}, *mProfileBuffer, aWriter, "", "",
+        aProcessStartTime,
          TimeStamp(),
          TimeStamp(),
          0, aUniqueStacks);
   } else if (mProfileChunkedBuffer) {
     ProfileBuffer profileBuffer(*mProfileChunkedBuffer);
     processedThreadId = StreamSamplesAndMarkers(
-        mName.c_str(), 0, profileBuffer, aWriter, "", "", aProcessStartTime,
+        mName.c_str(), BaseProfilerThreadId{}, profileBuffer, aWriter, "", "",
+        aProcessStartTime,
          TimeStamp(),
          TimeStamp(),
          0, aUniqueStacks);

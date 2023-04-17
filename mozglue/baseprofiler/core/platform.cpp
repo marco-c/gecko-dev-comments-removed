@@ -184,7 +184,7 @@ void PrintToConsole(const char* aFmt, ...) {
 namespace detail {
 
 
-int scProfilerMainThreadId;
+BaseProfilerThreadId scProfilerMainThreadId;
 }  
 
 constexpr static bool ValidateFeatures() {
@@ -2156,7 +2156,7 @@ class Sampler {
 
   
   
-  int mSamplerTid;
+  BaseProfilerThreadId mSamplerTid;
 
  public:
   
@@ -2449,7 +2449,7 @@ void SamplerThread::Run() {
 namespace mozilla {
 namespace baseprofiler {
 
-UniquePlatformData AllocPlatformData(int aThreadId) {
+UniquePlatformData AllocPlatformData(BaseProfilerThreadId aThreadId) {
   return UniquePlatformData(new PlatformData(aThreadId));
 }
 
@@ -2496,7 +2496,7 @@ uint32_t ParseFeaturesFromStringArray(const char** aFeatures,
 
 
 static RegisteredThread* FindCurrentThreadRegisteredThread(PSLockRef aLock) {
-  int id = profiler_current_thread_id();
+  BaseProfilerThreadId id = profiler_current_thread_id();
   const Vector<UniquePtr<RegisteredThread>>& registeredThreads =
       CorePS::RegisteredThreads(aLock);
   for (auto& registeredThread : registeredThreads) {
@@ -3366,12 +3366,13 @@ ProfilingStack* profiler_register_thread(const char* aName,
   if (RegisteredThread* thread = FindCurrentThreadRegisteredThread(lock);
       thread) {
     LOG("profiler_register_thread(%s) - thread %d already registered as %s",
-        aName, profiler_current_thread_id(), thread->Info()->Name());
+        aName, int(profiler_current_thread_id().ToNumber()),
+        thread->Info()->Name());
     
     
     
     std::string text("Thread ");
-    text += std::to_string(profiler_current_thread_id());
+    text += std::to_string(profiler_current_thread_id().ToNumber());
     text += " \"";
     text += thread->Info()->Name();
     text += "\" attempted to re-register as \"";
@@ -3416,16 +3417,17 @@ void profiler_unregister_thread() {
     CorePS::RemoveRegisteredThread(lock, registeredThread);
   } else {
     LOG("profiler_unregister_thread() - thread %d already unregistered",
-        profiler_current_thread_id());
+        (profiler_current_thread_id().ToNumber()));
     
     
     
     
-    if (int tid = profiler_current_thread_id();
+    if (BaseProfilerThreadId tid = profiler_current_thread_id();
         tid != profiler_main_thread_id()) {
-      BASE_PROFILER_MARKER_TEXT("profiler_unregister_thread again",
-                                OTHER_Profiling, MarkerThreadId::MainThread(),
-                                std::to_string(profiler_current_thread_id()));
+      BASE_PROFILER_MARKER_TEXT(
+          "profiler_unregister_thread again", OTHER_Profiling,
+          MarkerThreadId::MainThread(),
+          std::to_string(profiler_current_thread_id().ToNumber()));
     }
     
     
@@ -3645,12 +3647,13 @@ void profiler_add_js_marker(const char* aMarkerName, const char* aMarkerText) {
 
 
 
-void profiler_suspend_and_sample_thread(int aThreadId, uint32_t aFeatures,
+void profiler_suspend_and_sample_thread(BaseProfilerThreadId aThreadId,
+                                        uint32_t aFeatures,
                                         ProfilerStackCollector& aCollector,
                                         bool aSampleNative ) {
   const bool isSynchronous = [&aThreadId]() {
-    const int currentThreadId = profiler_current_thread_id();
-    if (aThreadId == 0) {
+    const BaseProfilerThreadId currentThreadId = profiler_current_thread_id();
+    if (!aThreadId.IsSpecified()) {
       aThreadId = currentThreadId;
       return true;
     }
