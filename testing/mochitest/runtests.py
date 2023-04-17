@@ -2913,7 +2913,9 @@ toolbar#nav-bar {
 
         
         if not options.runByManifest:
-            return self.runMochitests(options, [t["path"] for t in tests])
+            result = self.runMochitests(options, [t["path"] for t in tests])
+            self.handleShutdownProfile(options)
+            return result
 
         
         manifests = set(t["manifest"] for t in tests)
@@ -2987,6 +2989,17 @@ toolbar#nav-bar {
             print("4 INFO Mode:    %s" % e10s_mode)
             print("5 INFO SimpleTest FINISHED")
 
+        self.handleShutdownProfile(options)
+
+        if not result:
+            if self.countfail or not (self.countpass or self.counttodo):
+                
+                
+                result = 1
+
+        return result
+
+    def handleShutdownProfile(self, options):
         
         
         
@@ -3015,14 +3028,6 @@ toolbar#nav-bar {
             
             if self.profiler_tempdir:
                 shutil.rmtree(self.profiler_tempdir)
-
-        if not result:
-            if self.countfail or not (self.countpass or self.counttodo):
-                
-                
-                result = 1
-
-        return result
 
     def doTests(self, options, testsToFilter=None):
         
