@@ -35,6 +35,8 @@ struct CompilationStencil;
 
 namespace JS {
 
+class OffThreadToken;
+
 using Stencil = js::frontend::CompilationStencil;
 
 
@@ -66,6 +68,14 @@ extern JS_PUBLIC_API already_AddRefed<Stencil> CompileModuleScriptToStencil(
 extern JS_PUBLIC_API already_AddRefed<Stencil> CompileModuleScriptToStencil(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     SourceText<char16_t>& srcBuf);
+
+
+
+
+
+
+extern JS_PUBLIC_API already_AddRefed<Stencil> FinishOffThreadStencil(
+    JSContext* cx, JS::OffThreadToken* token);
 
 
 extern JS_PUBLIC_API JSScript* InstantiateGlobalStencil(
