@@ -33,8 +33,7 @@ NSString* const openSharingSubpaneProtocolValue = @"com.apple.share-services";
 
 
 static bool ShouldIgnoreProvider(NSString* aProviderName) {
-  return [aProviderName isEqualToString:@"com.apple.share.System.add-to-safari-reading-list"] ||
-         [aProviderName isEqualToString:@"com.apple.share.Mail.compose"];
+  return [aProviderName isEqualToString:@"com.apple.share.System.add-to-safari-reading-list"];
 }
 
 
