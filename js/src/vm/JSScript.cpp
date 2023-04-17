@@ -1096,15 +1096,6 @@ XDRResult js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope,
 
   bool isFunctionScript = funOrMod && funOrMod->is<JSFunction>();
 
-  
-  
-  
-  
-  if (xdr->hasOptions() ? !!xdr->options().instrumentationKinds
-                        : !!cx->global()->getInstrumentationHolder()) {
-    return xdr->fail(JS::TranscodeResult::Failure);
-  }
-
   if (mode == XDR_ENCODE) {
     script = scriptp.get();
 
