@@ -1818,8 +1818,16 @@ LayoutDeviceIntRect HyperTextAccessible::GetCaretRect(nsIWidget** aWidget) {
   
   
   
+  int32_t caretOffset = CaretOffset();
+  if (NS_WARN_IF(caretOffset == -1)) {
+    
+    
+    
+    
+    return LayoutDeviceIntRect();
+  }
   nsIntRect charRect = CharBounds(
-      CaretOffset(), nsIAccessibleCoordinateType::COORDTYPE_SCREEN_RELATIVE);
+      caretOffset, nsIAccessibleCoordinateType::COORDTYPE_SCREEN_RELATIVE);
   if (!charRect.IsEmpty()) {
     caretRect.SetTopEdge(charRect.Y());
   }
