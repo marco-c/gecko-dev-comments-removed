@@ -261,7 +261,8 @@ class EngineRecord {
     }
 
     let incomingData = {};
-    let properties = ["applied", "failed", "newFailed", "reconciled"];
+    
+    let properties = ["applied", "failed"];
     
     
     for (let property of properties) {
