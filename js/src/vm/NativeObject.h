@@ -953,8 +953,9 @@ class NativeObject : public JSObject {
       JSContext* cx, HandleNativeObject obj, HandleId id, ShapeTable** table,
       ShapeTable::Entry** entry, const AutoKeepShapeCaches& keep);
 
-  static bool maybeToDictionaryModeForPut(JSContext* cx, HandleNativeObject obj,
-                                          MutableHandleShape shape);
+  static bool maybeToDictionaryModeForChange(JSContext* cx,
+                                             HandleNativeObject obj,
+                                             MutableHandleShape shape);
 
  public:
   
@@ -975,8 +976,9 @@ class NativeObject : public JSObject {
                           unsigned attrs, uint32_t* slotOut);
 
   
-  static bool putProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
-                          unsigned attrs, uint32_t* slotOut);
+  
+  static bool changeProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
+                             unsigned attrs, uint32_t* slotOut);
 
   static bool changeCustomDataPropAttributes(JSContext* cx,
                                              HandleNativeObject obj,

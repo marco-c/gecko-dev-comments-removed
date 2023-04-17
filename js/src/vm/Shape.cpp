@@ -895,9 +895,9 @@ static void AssertValidArrayIndex(NativeObject* obj, jsid id) {
 }
 
 
-bool NativeObject::maybeToDictionaryModeForPut(JSContext* cx,
-                                               HandleNativeObject obj,
-                                               MutableHandleShape shape) {
+bool NativeObject::maybeToDictionaryModeForChange(JSContext* cx,
+                                                  HandleNativeObject obj,
+                                                  MutableHandleShape shape) {
   
   
   
@@ -919,8 +919,9 @@ bool NativeObject::maybeToDictionaryModeForPut(JSContext* cx,
 }
 
 
-bool NativeObject::putProperty(JSContext* cx, HandleNativeObject obj,
-                               HandleId id, unsigned attrs, uint32_t* slotOut) {
+bool NativeObject::changeProperty(JSContext* cx, HandleNativeObject obj,
+                                  HandleId id, unsigned attrs,
+                                  uint32_t* slotOut) {
   MOZ_ASSERT(!JSID_IS_VOID(id));
 
   AutoCheckShapeConsistency check(obj);
@@ -955,7 +956,7 @@ bool NativeObject::putProperty(JSContext* cx, HandleNativeObject obj,
     return true;
   }
 
-  if (!maybeToDictionaryModeForPut(cx, obj, &shape)) {
+  if (!maybeToDictionaryModeForChange(cx, obj, &shape)) {
     return false;
   }
 
@@ -1050,7 +1051,7 @@ bool NativeObject::changeCustomDataPropAttributes(JSContext* cx,
     return true;
   }
 
-  if (!maybeToDictionaryModeForPut(cx, obj, &shape)) {
+  if (!maybeToDictionaryModeForChange(cx, obj, &shape)) {
     return false;
   }
 

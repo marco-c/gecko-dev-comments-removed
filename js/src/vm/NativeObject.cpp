@@ -1308,7 +1308,7 @@ static bool ChangeProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
 
   uint32_t slot;
   if (existing->isNativeProperty()) {
-    if (!NativeObject::putProperty(cx, obj, id, attrs, &slot)) {
+    if (!NativeObject::changeProperty(cx, obj, id, attrs, &slot)) {
       return false;
     }
   } else {
@@ -1368,8 +1368,6 @@ static MOZ_ALWAYS_INLINE bool AddOrChangeProperty(
     }
   }
 
-  
-  
   if constexpr (AddOrChange == IsAddOrChange::Add) {
     if (desc.isAccessorDescriptor()) {
       Rooted<GetterSetter*> gs(cx, GetterSetter::create(cx, desc.getterObject(),
@@ -1400,7 +1398,8 @@ static MOZ_ALWAYS_INLINE bool AddOrChangeProperty(
     } else {
       uint32_t slot;
       if (existing->isNativeProperty()) {
-        if (!NativeObject::putProperty(cx, obj, id, desc.attributes(), &slot)) {
+        if (!NativeObject::changeProperty(cx, obj, id, desc.attributes(),
+                                          &slot)) {
           return false;
         }
       } else {
