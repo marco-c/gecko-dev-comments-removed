@@ -110,9 +110,6 @@ child:
   async DeleteSelf();
 
   
-  async IssueDeprecationWarning(uint32_t warning, bool asError);
-
-  
   
   
   async LogBlockedCORSRequest(nsString message, nsCString category);
