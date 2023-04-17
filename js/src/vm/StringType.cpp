@@ -732,7 +732,6 @@ JSLinearString* JSRope::flattenInternal(JSRope* root) {
   AutoCheckCannotGC nogc;
 
   Nursery& nursery = root->runtimeFromMainThread()->gc.nursery();
-  gc::StoreBuffer* bufferIfNursery = root->storeBuffer();
 
   
   JSRope* leftmostRope = root;
@@ -773,7 +772,7 @@ JSLinearString* JSRope::flattenInternal(JSRope* root) {
     left.d.s.u3.base = (JSLinearString*)root; 
     if (left.isTenured() && !root->isTenured()) {
       
-      bufferIfNursery->putWholeCell(&left);
+      root->storeBuffer()->putWholeCell(&left);
     }
 
     pos = wholeChars + left_len;
@@ -847,8 +846,8 @@ finish_node : {
   
   
   
-  if (bufferIfNursery && str->isTenured()) {
-    bufferIfNursery->putWholeCell(str);
+  if (str->isTenured() && !root->isTenured()) {
+    root->storeBuffer()->putWholeCell(str);
   }
 
   str = parent;
