@@ -113,6 +113,15 @@ impl Drop for MarkerTiming {
 }
 
 
+pub type MarkerStack = mozilla::StackCaptureOptions;
+
+impl Default for MarkerStack {
+    fn default() -> Self {
+        MarkerStack::NoStack
+    }
+}
+
+
 
 
 
@@ -125,4 +134,5 @@ impl Drop for MarkerTiming {
 #[derive(Debug, Default)]
 pub struct MarkerOptions {
     pub timing: MarkerTiming,
+    pub stack: MarkerStack,
 }
