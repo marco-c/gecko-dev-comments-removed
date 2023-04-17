@@ -4407,6 +4407,29 @@ class HTMLEditor final : public EditorBase,
     MOZ_KNOWN_LIVE HTMLEditor* mHTMLEditor = nullptr;
   };
 
+  
+
+
+
+
+
+
+  class MOZ_RAII AutoTransactionBatch final {
+   public:
+    MOZ_CAN_RUN_SCRIPT explicit AutoTransactionBatch(HTMLEditor& aHTMLEditor)
+        : mHTMLEditor(aHTMLEditor) {
+      MOZ_KnownLive(mHTMLEditor).BeginTransactionInternal();
+    }
+
+    MOZ_CAN_RUN_SCRIPT ~AutoTransactionBatch() {
+      MOZ_KnownLive(mHTMLEditor).EndTransactionInternal();
+    }
+
+   protected:
+    
+    MOZ_KNOWN_LIVE HTMLEditor& mHTMLEditor;
+  };
+
   RefPtr<TypeInState> mTypeInState;
   RefPtr<ComposerCommandsUpdater> mComposerCommandsUpdater;
 

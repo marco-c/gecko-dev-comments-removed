@@ -60,7 +60,6 @@ namespace mozilla {
 class AlignStateAtSelection;
 class AutoRangeArray;
 class AutoTopLevelEditSubActionNotifier;
-class AutoTransactionBatch;
 class AutoTransactionsConserveSelection;
 class AutoUpdateViewBatch;
 class ChangeAttributeTransaction;
@@ -2153,6 +2152,7 @@ class EditorBase : public nsIEditor,
 
 
 
+
   MOZ_CAN_RUN_SCRIPT void BeginTransactionInternal();
   MOZ_CAN_RUN_SCRIPT void EndTransactionInternal();
 
@@ -2606,28 +2606,6 @@ class EditorBase : public nsIEditor,
   nsresult SetTextDirectionTo(TextDirection aTextDirection);
 
  protected:  
-  
-
-
-
-
-
-
-  class MOZ_RAII AutoTransactionBatch final {
-   public:
-    MOZ_CAN_RUN_SCRIPT explicit AutoTransactionBatch(EditorBase& aEditorBase)
-        : mEditorBase(aEditorBase) {
-      MOZ_KnownLive(mEditorBase).BeginTransactionInternal();
-    }
-
-    MOZ_CAN_RUN_SCRIPT ~AutoTransactionBatch() {
-      MOZ_KnownLive(mEditorBase).EndTransactionInternal();
-    }
-
-   protected:
-    EditorBase& mEditorBase;
-  };
-
   
 
 
