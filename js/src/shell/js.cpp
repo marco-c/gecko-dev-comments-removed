@@ -141,6 +141,7 @@
 #include "js/Warnings.h"     
 #include "js/WasmModule.h"   
 #include "js/Wrapper.h"
+#include "proxy/DeadObjectProxy.h"  
 #include "shell/jsoptparse.h"
 #include "shell/jsshell.h"
 #include "shell/OSObject.h"
@@ -4722,6 +4723,13 @@ JSObject* GetElementCallback(JSContext* cx, JS::HandleValue value) {
     return nullptr;
   }
 
+  
+  
+  
+  if (js::IsDeadProxyObject(&privateValue.toObject())) {
+    return nullptr;
+  }
+
   RootedObject infoObject(cx,
                           CheckedUnwrapStatic(privateValue.toObjectOrNull()));
   AutoRealm ar(cx, infoObject);
@@ -4737,6 +4745,7 @@ JSObject* GetElementCallback(JSContext* cx, JS::HandleValue value) {
   if (elementValue.isObject()) {
     return &elementValue.toObject();
   }
+
   return nullptr;
 }
 
