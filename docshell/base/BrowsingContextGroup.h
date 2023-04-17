@@ -138,7 +138,9 @@ class BrowsingContextGroup final : public nsWrapperCache {
                                          Document* aDocument);
 
   
-  void RemoveDocument(const nsACString& aKey, Document* aDocument);
+  
+  
+  void RemoveDocument(Document* aDocument, DocGroup* aDocGroup);
 
   mozilla::ThrottledEventQueue* GetTimerEventQueue() const {
     return mTimerEventQueue;
