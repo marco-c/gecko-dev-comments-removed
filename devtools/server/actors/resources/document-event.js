@@ -45,6 +45,13 @@ class DocumentEventWatcher {
           time,
           shouldBeIgnoredAsRedundantWithTargetAvailable,
           isFrameSwitching,
+          
+          
+          
+          title: name === "dom-interactive" ? targetActor.title : undefined,
+          
+          
+          url: name === "dom-loading" ? targetActor.url : undefined,
         },
       ]);
     };

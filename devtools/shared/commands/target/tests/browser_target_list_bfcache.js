@@ -147,7 +147,28 @@ async function testTopLevelNavigations(bfcacheInParent) {
   
   
   info("Go forward to the second page");
+
   onNavigate = bfcacheInParent ? null : targets[0].once("navigate");
+
+  
+  
+  const onNewTargetProcessed = bfcacheInParent
+    ? new Promise(resolve => {
+        targetCommand.on(
+          "processed-available-target",
+          function onProcessedAvailableTarget(targetFront) {
+            if (targetFront === targets[3]) {
+              resolve();
+              targetCommand.off(
+                "processed-available-target",
+                onProcessedAvailableTarget
+              );
+            }
+          }
+        );
+      })
+    : null;
+
   gBrowser.selectedBrowser.goForward();
 
   if (bfcacheInParent) {
@@ -168,6 +189,7 @@ async function testTopLevelNavigations(bfcacheInParent) {
     
     await targets[3].attachAndInitThread(targetCommand);
     await waitForAllTargetsToBeAttached(targetCommand);
+    await onNewTargetProcessed;
   } else {
     info("Wait for 'navigate'");
     await onNavigate;
