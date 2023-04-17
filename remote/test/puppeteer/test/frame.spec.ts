@@ -20,6 +20,7 @@ import {
   getTestState,
   setupTestBrowserHooks,
   setupTestPageAndContextHooks,
+  itFailsFirefox,
 } from './mocha-utils'; 
 
 describe('Frame specs', function () {

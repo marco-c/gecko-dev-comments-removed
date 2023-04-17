@@ -27,12 +27,18 @@ import { HTTPResponse } from './HTTPResponse.js';
 import { NetworkManagerEmittedEvents } from './NetworkManager.js';
 import { CDPSessionEmittedEvents } from './Connection.js';
 
+
+
 export type PuppeteerLifeCycleEvent =
   | 'load'
   | 'domcontentloaded'
   | 'networkidle0'
   | 'networkidle2';
-type ProtocolLifeCycleEvent =
+
+
+
+
+export type ProtocolLifeCycleEvent =
   | 'load'
   | 'DOMContentLoaded'
   | 'networkIdle'

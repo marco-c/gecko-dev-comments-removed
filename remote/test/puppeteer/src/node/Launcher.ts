@@ -105,7 +105,9 @@ class ChromeLauncher implements ProductLauncher {
 
     let chromeExecutable = executablePath;
     if (!executablePath) {
-      if (os.arch() === 'arm64') {
+      
+      
+      if (os.platform() !== 'darwin' && os.arch() === 'arm64') {
         chromeExecutable = '/usr/bin/chromium-browser';
       } else {
         const { missingText, executablePath } = resolveExecutablePath(this);
@@ -502,6 +504,8 @@ class FirefoxLauncher implements ProductLauncher {
       'geo.wifi.scan': false,
       
       'hangmonitor.timeout': 0,
+      
+      'javascript.options.showInConsole': true,
 
       
       'media.gmp-manager.updateEnabled': false,

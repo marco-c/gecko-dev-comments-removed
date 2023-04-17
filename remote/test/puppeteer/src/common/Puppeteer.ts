@@ -39,6 +39,8 @@ export interface CommonPuppeteerSettings {
   isPuppeteerCore: boolean;
 }
 
+
+
 export interface ConnectOptions extends BrowserConnectOptions {
   browserWSEndpoint?: string;
   browserURL?: string;

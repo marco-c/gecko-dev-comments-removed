@@ -14,7 +14,10 @@
 
 
 
-interface Device {
+
+
+
+export interface Device {
   name: string;
   userAgent: string;
   viewport: {
@@ -1031,12 +1034,15 @@ const devices: Device[] = [
   },
 ];
 
+
+
 export type DevicesMap = {
   [name: string]: Device;
 };
 
-const devicesMap: DevicesMap = {};
+
+
+
+export const devicesMap: DevicesMap = {};
 
 for (const device of devices) devicesMap[device.name] = device;
-
-export { devicesMap };

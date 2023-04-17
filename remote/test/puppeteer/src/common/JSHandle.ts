@@ -33,6 +33,8 @@ import {
 } from './EvalTypes.js';
 import { isNode } from '../environment.js';
 
+
+
 export interface BoxModel {
   content: Array<{ x: number; y: number }>;
   padding: Array<{ x: number; y: number }>;
@@ -771,7 +773,9 @@ export class ElementHandle<
 
 
 
-  async $(selector: string): Promise<ElementHandle | null> {
+  async $<T extends Element = Element>(
+    selector: string
+  ): Promise<ElementHandle<T> | null> {
     const { updatedSelector, queryHandler } = getQueryHandlerAndSelector(
       selector
     );
@@ -782,7 +786,9 @@ export class ElementHandle<
 
 
 
-  async $$(selector: string): Promise<ElementHandle[]> {
+  async $$<T extends Element = Element>(
+    selector: string
+  ): Promise<Array<ElementHandle<T>>> {
     const { updatedSelector, queryHandler } = getQueryHandlerAndSelector(
       selector
     );

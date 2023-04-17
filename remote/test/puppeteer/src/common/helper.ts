@@ -86,6 +86,9 @@ async function releaseObject(
     });
 }
 
+
+
+
 export interface PuppeteerEventListener {
   emitter: CommonEventEmitter;
   eventName: string | symbol;

@@ -39,6 +39,7 @@ import { Protocol } from 'devtools-protocol';
 
 
 
+
 export class Dialog {
   private _client: CDPSession;
   private _type: Protocol.Page.DialogType;

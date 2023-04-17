@@ -40,7 +40,10 @@ export interface ContinueRequestOverrides {
 
 export interface ResponseForRequest {
   status: number;
-  headers: Record<string, string>;
+  
+
+
+  headers: Record<string, unknown>;
   contentType: string;
   body: string | Buffer;
 }
@@ -346,7 +349,7 @@ export class HTTPRequest {
 
 
 
-  async respond(response: ResponseForRequest): Promise<void> {
+  async respond(response: Partial<ResponseForRequest>): Promise<void> {
     
     if (this._url.startsWith('data:')) return;
     assert(this._allowInterception, 'Request Interception is not enabled!');
@@ -361,7 +364,9 @@ export class HTTPRequest {
     const responseHeaders: Record<string, string> = {};
     if (response.headers) {
       for (const header of Object.keys(response.headers))
-        responseHeaders[header.toLowerCase()] = response.headers[header];
+        responseHeaders[header.toLowerCase()] = String(
+          response.headers[header]
+        );
     }
     if (response.contentType)
       responseHeaders['content-type'] = response.contentType;

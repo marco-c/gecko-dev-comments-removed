@@ -35,6 +35,7 @@ import { assert } from './assert.js';
 
 
 
+
 export class FileChooser {
   private _element: ElementHandle;
   private _multiple: boolean;
@@ -75,7 +76,7 @@ export class FileChooser {
   
 
 
-  async cancel(): Promise<void> {
+  cancel() {
     assert(
       !this._handled,
       'Cannot cancel FileChooser which is already handled!'

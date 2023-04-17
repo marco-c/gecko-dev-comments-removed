@@ -19,6 +19,8 @@ import {
   getTestState,
   setupTestBrowserHooks,
   setupTestPageAndContextHooks,
+  itFailsFirefox,
+  describeFailsFirefox,
 } from './mocha-utils'; 
 
 describe('Emulation', () => {

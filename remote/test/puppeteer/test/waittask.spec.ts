@@ -21,6 +21,7 @@ import {
   getTestState,
   setupTestBrowserHooks,
   setupTestPageAndContextHooks,
+  itFailsFirefox,
 } from './mocha-utils'; 
 
 describe('waittask specs', function () {

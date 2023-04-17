@@ -24,6 +24,11 @@ import { EVALUATION_SCRIPT_URL } from './ExecutionContext.js';
 
 
 
+export { PuppeteerEventListener };
+
+
+
+
 
 export interface CoverageEntry {
   
@@ -164,7 +169,10 @@ export class Coverage {
   }
 }
 
-class JSCoverage {
+
+
+
+export class JSCoverage {
   _client: CDPSession;
   _enabled = false;
   _scriptURLs = new Map<string, string>();
@@ -277,7 +285,10 @@ class JSCoverage {
   }
 }
 
-class CSSCoverage {
+
+
+
+export class CSSCoverage {
   _client: CDPSession;
   _enabled = false;
   _stylesheetURLs = new Map<string, string>();

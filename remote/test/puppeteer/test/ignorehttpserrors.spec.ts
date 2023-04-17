@@ -15,7 +15,11 @@
 
 
 import expect from 'expect';
-import { getTestState } from './mocha-utils'; 
+import {
+  getTestState,
+  describeFailsFirefox,
+  itFailsFirefox,
+} from './mocha-utils'; 
 
 describe('ignoreHTTPSErrors', function () {
   

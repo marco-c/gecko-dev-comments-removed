@@ -21,6 +21,7 @@ import {
   getTestState,
   setupTestBrowserHooks,
   setupTestPageAndContextHooks,
+  itFailsFirefox,
 } from './mocha-utils'; 
 import { KeyInput } from '../lib/cjs/puppeteer/common/USKeyboardLayout.js';
 

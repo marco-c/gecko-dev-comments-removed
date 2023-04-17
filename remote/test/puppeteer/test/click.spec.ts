@@ -239,6 +239,7 @@ describe('Page.click', function () {
       )
     ).toBe('clicked');
   });
+  
   it('should double click the button', async () => {
     const { page, server } = getTestState();
 

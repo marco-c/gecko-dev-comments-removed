@@ -20,6 +20,8 @@ import {
   getTestState,
   setupTestBrowserHooks,
   setupTestPageAndContextHooks,
+  itFailsFirefox,
+  describeFailsFirefox,
 } from './mocha-utils'; 
 
 const bigint = typeof BigInt !== 'undefined';

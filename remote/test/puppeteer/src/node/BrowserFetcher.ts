@@ -293,7 +293,10 @@ export class BrowserFetcher {
     if (await existsAsync(outputPath)) return this.revisionInfo(revision);
     if (!(await existsAsync(this._downloadsFolder)))
       await mkdirAsync(this._downloadsFolder);
-    if (os.arch() === 'arm64') {
+
+    
+    
+    if (os.platform() !== 'darwin' && os.arch() === 'arm64') {
       handleArm64();
       return;
     }

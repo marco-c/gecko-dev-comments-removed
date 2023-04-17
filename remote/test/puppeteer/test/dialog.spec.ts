@@ -20,6 +20,7 @@ import {
   getTestState,
   setupTestPageAndContextHooks,
   setupTestBrowserHooks,
+  itFailsFirefox,
 } from './mocha-utils'; 
 
 describe('Page.Events.Dialog', function () {

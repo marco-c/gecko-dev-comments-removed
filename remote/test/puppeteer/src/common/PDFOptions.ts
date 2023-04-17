@@ -151,6 +151,11 @@ export interface PDFOptions {
 
 
   path?: string;
+  
+
+
+
+  omitBackground?: boolean;
 }
 
 

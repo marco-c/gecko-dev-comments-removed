@@ -39,6 +39,7 @@ export interface ConsoleMessageLocation {
 
 
 
+
 export type ConsoleMessageType =
   | 'log'
   | 'debug'

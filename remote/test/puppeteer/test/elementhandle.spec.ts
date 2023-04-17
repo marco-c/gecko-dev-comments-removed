@@ -20,6 +20,8 @@ import {
   getTestState,
   setupTestBrowserHooks,
   setupTestPageAndContextHooks,
+  describeFailsFirefox,
+  itFailsFirefox,
 } from './mocha-utils'; 
 
 import utils from './utils.js';

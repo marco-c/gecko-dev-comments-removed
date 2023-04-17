@@ -22,6 +22,8 @@ import {
   getTestState,
   setupTestBrowserHooks,
   setupTestPageAndContextHooks,
+  itFailsFirefox,
+  describeFailsFirefox,
 } from './mocha-utils'; 
 
 describe('network', function () {
@@ -353,6 +355,20 @@ describe('network', function () {
       expect(requests[0].frame() === page.mainFrame()).toBe(true);
       expect(requests[0].frame().url()).toBe(server.EMPTY_PAGE);
     });
+    it('Page.Events.RequestServedFromCache', async () => {
+      const { page, server } = getTestState();
+
+      const cached = [];
+      page.on('requestservedfromcache', (r) =>
+        cached.push(r.url().split('/').pop())
+      );
+
+      await page.goto(server.PREFIX + '/cached/one-style.html');
+      expect(cached).toEqual([]);
+
+      await page.reload();
+      expect(cached).toEqual(['one-style.css']);
+    });
     it('Page.Events.Response', async () => {
       const { page, server } = getTestState();
 
@@ -566,6 +582,29 @@ describe('network', function () {
       
       response = await page.goto(server.CROSS_PROCESS_PREFIX + '/empty.html');
       expect(response.status()).toBe(401);
+    });
+    it('should not disable caching', async () => {
+      const { page, server } = getTestState();
+
+      
+      server.setAuth('/cached/one-style.css', 'user4', 'pass4');
+      server.setAuth('/cached/one-style.html', 'user4', 'pass4');
+      await page.authenticate({
+        username: 'user4',
+        password: 'pass4',
+      });
+
+      const responses = new Map();
+      page.on('response', (r) => responses.set(r.url().split('/').pop(), r));
+
+      
+      await page.goto(server.PREFIX + '/cached/one-style.html');
+      await page.reload();
+
+      expect(responses.get('one-style.css').status()).toBe(200);
+      expect(responses.get('one-style.css').fromCache()).toBe(true);
+      expect(responses.get('one-style.html').status()).toBe(304);
+      expect(responses.get('one-style.html').fromCache()).toBe(false);
     });
   });
 });

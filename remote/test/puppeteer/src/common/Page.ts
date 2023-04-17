@@ -130,7 +130,10 @@ export interface GeolocationOptions {
   accuracy?: number;
 }
 
-interface MediaFeature {
+
+
+
+export interface MediaFeature {
   name: string;
   value: string;
 }
@@ -183,6 +186,11 @@ export interface ScreenshotOptions {
 
 
   encoding?: 'base64' | 'binary';
+  
+
+
+
+  captureBeyondViewport?: boolean;
 }
 
 
@@ -294,6 +302,14 @@ export const enum PageEmittedEvents {
 
 
 
+  RequestServedFromCache = 'requestservedfromcache',
+  
+
+
+
+
+
+
 
 
 
@@ -319,6 +335,35 @@ export const enum PageEmittedEvents {
 
 
   WorkerDestroyed = 'workerdestroyed',
+}
+
+
+
+
+
+
+
+
+export interface PageEventObject {
+  close: never;
+  console: ConsoleMessage;
+  dialog: Dialog;
+  domcontentloaded: never;
+  error: Error;
+  frameattached: Frame;
+  framedetached: Frame;
+  framenavigated: Frame;
+  load: never;
+  metrics: { title: string; metrics: Metrics };
+  pageerror: Error;
+  popup: Page;
+  request: HTTPRequest;
+  response: HTTPResponse;
+  requestfailed: HTTPRequest;
+  requestfinished: HTTPRequest;
+  requestservedfromcache: HTTPRequest;
+  workercreated: WebWorker;
+  workerdestroyed: WebWorker;
 }
 
 class ScreenshotTaskQueue {
@@ -465,8 +510,8 @@ export class Page extends EventEmitter {
     client.on('Target.detachedFromTarget', (event) => {
       const worker = this._workers.get(event.sessionId);
       if (!worker) return;
-      this.emit(PageEmittedEvents.WorkerDestroyed, worker);
       this._workers.delete(event.sessionId);
+      this.emit(PageEmittedEvents.WorkerDestroyed, worker);
     });
 
     this._frameManager.on(FrameManagerEmittedEvents.FrameAttached, (event) =>
@@ -482,6 +527,10 @@ export class Page extends EventEmitter {
     const networkManager = this._frameManager.networkManager();
     networkManager.on(NetworkManagerEmittedEvents.Request, (event) =>
       this.emit(PageEmittedEvents.Request, event)
+    );
+    networkManager.on(
+      NetworkManagerEmittedEvents.RequestServedFromCache,
+      (event) => this.emit(PageEmittedEvents.RequestServedFromCache, event)
     );
     networkManager.on(NetworkManagerEmittedEvents.Response, (event) =>
       this.emit(PageEmittedEvents.Response, event)
@@ -545,6 +594,27 @@ export class Page extends EventEmitter {
 
   public isJavaScriptEnabled(): boolean {
     return this._javascriptEnabled;
+  }
+
+  
+
+
+  public on<K extends keyof PageEventObject>(
+    eventName: K,
+    handler: (event: PageEventObject[K]) => void
+  ): EventEmitter {
+    
+    
+    return super.on(eventName, handler);
+  }
+
+  public once<K extends keyof PageEventObject>(
+    eventName: K,
+    handler: (event: PageEventObject[K]) => void
+  ): EventEmitter {
+    
+    
+    return super.once(eventName, handler);
   }
 
   
@@ -719,8 +789,13 @@ export class Page extends EventEmitter {
 
 
 
-  async setRequestInterception(value: boolean): Promise<void> {
-    return this._frameManager.networkManager().setRequestInterception(value);
+  async setRequestInterception(
+    value: boolean,
+    cacheSafe = false
+  ): Promise<void> {
+    return this._frameManager
+      .networkManager()
+      .setRequestInterception(value, cacheSafe);
   }
 
   
@@ -763,8 +838,10 @@ export class Page extends EventEmitter {
 
 
 
-  async $(selector: string): Promise<ElementHandle | null> {
-    return this.mainFrame().$(selector);
+  async $<T extends Element = Element>(
+    selector: string
+  ): Promise<ElementHandle<T> | null> {
+    return this.mainFrame().$<T>(selector);
   }
 
   
@@ -1007,8 +1084,10 @@ export class Page extends EventEmitter {
     return this.mainFrame().$$eval<ReturnType>(selector, pageFunction, ...args);
   }
 
-  async $$(selector: string): Promise<ElementHandle[]> {
-    return this.mainFrame().$$(selector);
+  async $$<T extends Element = Element>(
+    selector: string
+  ): Promise<Array<ElementHandle<T>>> {
+    return this.mainFrame().$$<T>(selector);
   }
 
   async $x(expression: string): Promise<ElementHandle[]> {
@@ -1271,6 +1350,22 @@ export class Page extends EventEmitter {
     this.emit(PageEmittedEvents.Dialog, dialog);
   }
 
+  
+
+
+  private async _resetDefaultBackgroundColor() {
+    await this._client.send('Emulation.setDefaultBackgroundColorOverride');
+  }
+
+  
+
+
+  private async _setTransparentBackgroundColor(): Promise<void> {
+    await this._client.send('Emulation.setDefaultBackgroundColorOverride', {
+      color: { r: 0, g: 0, b: 0, a: 0 },
+    });
+  }
+
   url(): string {
     return this.mainFrame().url();
   }
@@ -1316,7 +1411,7 @@ export class Page extends EventEmitter {
   }
 
   async waitForRequest(
-    urlOrPredicate: string | Function,
+    urlOrPredicate: string | ((req: HTTPRequest) => boolean | Promise<boolean>),
     options: { timeout?: number } = {}
   ): Promise<HTTPRequest> {
     const { timeout = this._timeoutSettings.timeout() } = options;
@@ -1336,7 +1431,9 @@ export class Page extends EventEmitter {
   }
 
   async waitForResponse(
-    urlOrPredicate: string | Function,
+    urlOrPredicate:
+      | string
+      | ((res: HTTPResponse) => boolean | Promise<boolean>),
     options: { timeout?: number } = {}
   ): Promise<HTTPResponse> {
     const { timeout = this._timeoutSettings.timeout() } = options;
@@ -1709,6 +1806,9 @@ export class Page extends EventEmitter {
       targetId: this._target._targetId,
     });
     let clip = options.clip ? processClip(options.clip) : undefined;
+    let { captureBeyondViewport = true } = options;
+    captureBeyondViewport =
+      typeof captureBeyondViewport === 'boolean' ? captureBeyondViewport : true;
 
     if (options.fullPage) {
       const metrics = await this._client.send('Page.getLayoutMetrics');
@@ -1717,21 +1817,37 @@ export class Page extends EventEmitter {
 
       
       clip = { x: 0, y: 0, width, height, scale: 1 };
+
+      if (!captureBeyondViewport) {
+        const { isMobile = false, deviceScaleFactor = 1, isLandscape = false } =
+          this._viewport || {};
+        const screenOrientation: Protocol.Emulation.ScreenOrientation = isLandscape
+          ? { angle: 90, type: 'landscapePrimary' }
+          : { angle: 0, type: 'portraitPrimary' };
+        await this._client.send('Emulation.setDeviceMetricsOverride', {
+          mobile: isMobile,
+          width,
+          height,
+          deviceScaleFactor,
+          screenOrientation,
+        });
+      }
     }
     const shouldSetDefaultBackground =
       options.omitBackground && format === 'png';
-    if (shouldSetDefaultBackground)
-      await this._client.send('Emulation.setDefaultBackgroundColorOverride', {
-        color: { r: 0, g: 0, b: 0, a: 0 },
-      });
+    if (shouldSetDefaultBackground) {
+      await this._setTransparentBackgroundColor();
+    }
+
     const result = await this._client.send('Page.captureScreenshot', {
       format,
       quality: options.quality,
       clip,
-      captureBeyondViewport: true,
+      captureBeyondViewport,
     });
-    if (shouldSetDefaultBackground)
-      await this._client.send('Emulation.setDefaultBackgroundColorOverride');
+    if (shouldSetDefaultBackground) {
+      await this._resetDefaultBackgroundColor();
+    }
 
     if (options.fullPage && this._viewport)
       await this.setViewport(this._viewport);
@@ -1740,13 +1856,16 @@ export class Page extends EventEmitter {
       options.encoding === 'base64'
         ? result.data
         : Buffer.from(result.data, 'base64');
-    if (!isNode && options.path) {
-      throw new Error(
-        'Screenshots can only be written to a file path in a Node environment.'
-      );
+
+    if (options.path) {
+      if (!isNode) {
+        throw new Error(
+          'Screenshots can only be written to a file path in a Node environment.'
+        );
+      }
+      const fs = await helper.importFSModule();
+      await fs.promises.writeFile(options.path, buffer);
     }
-    const fs = await helper.importFSModule();
-    if (options.path) await fs.promises.writeFile(options.path, buffer);
     return buffer;
 
     function processClip(
@@ -1790,6 +1909,7 @@ export class Page extends EventEmitter {
       preferCSSPageSize = false,
       margin = {},
       path = null,
+      omitBackground = false,
     } = options;
 
     let paperWidth = 8.5;
@@ -1810,6 +1930,10 @@ export class Page extends EventEmitter {
     const marginBottom = convertPrintParameterToInches(margin.bottom) || 0;
     const marginRight = convertPrintParameterToInches(margin.right) || 0;
 
+    if (omitBackground) {
+      await this._setTransparentBackgroundColor();
+    }
+
     const result = await this._client.send('Page.printToPDF', {
       transferMode: 'ReturnAsStream',
       landscape,
@@ -1827,6 +1951,11 @@ export class Page extends EventEmitter {
       pageRanges,
       preferCSSPageSize,
     });
+
+    if (omitBackground) {
+      await this._resetDefaultBackgroundColor();
+    }
+
     return await helper.readProtocolStream(this._client, result.stream, path);
   }
 

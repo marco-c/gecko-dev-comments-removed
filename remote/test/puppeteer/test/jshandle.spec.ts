@@ -19,6 +19,7 @@ import {
   getTestState,
   setupTestBrowserHooks,
   setupTestPageAndContextHooks,
+  itFailsFirefox,
 } from './mocha-utils'; 
 
 describe('JSHandle', function () {

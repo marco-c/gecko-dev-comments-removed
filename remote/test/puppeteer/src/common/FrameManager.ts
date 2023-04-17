@@ -722,8 +722,10 @@ export class Frame {
 
 
 
-  async $(selector: string): Promise<ElementHandle | null> {
-    return this._mainWorld.$(selector);
+  async $<T extends Element = Element>(
+    selector: string
+  ): Promise<ElementHandle<T> | null> {
+    return this._mainWorld.$<T>(selector);
   }
 
   
@@ -801,8 +803,10 @@ export class Frame {
 
 
 
-  async $$(selector: string): Promise<ElementHandle[]> {
-    return this._mainWorld.$$(selector);
+  async $$<T extends Element = Element>(
+    selector: string
+  ): Promise<Array<ElementHandle<T>>> {
+    return this._mainWorld.$$<T>(selector);
   }
 
   
