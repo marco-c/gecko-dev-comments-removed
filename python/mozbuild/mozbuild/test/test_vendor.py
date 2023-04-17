@@ -23,7 +23,7 @@ def test_up_to_date_vendor():
 
         
         with open(
-            os.path.join(work_dir, "build", "build_virtualenv_packages.txt"), "a"
+            os.path.join(work_dir, "build", "common_virtualenv_packages.txt"), "a"
         ) as file:
             
             
