@@ -282,72 +282,77 @@ static bool GetFilenameAndExtensionFromChannel(nsIChannel* aChannel,
 
 static nsresult GetDownloadDirectory(nsIFile** _directory,
                                      bool aSkipChecks = false) {
-  nsCOMPtr<nsIFile> dir;
+#if defined(ANDROID)
+  return NS_ERROR_FAILURE;
+#endif
+  bool usePrefDir =
+      StaticPrefs::browser_download_improvements_to_download_panel();
 #ifdef XP_MACOSX
-  
-  switch (Preferences::GetInt(NS_PREF_DOWNLOAD_FOLDERLIST, -1)) {
-    case NS_FOLDER_VALUE_DESKTOP:
-      (void)NS_GetSpecialDirectory(NS_OS_DESKTOP_DIR, getter_AddRefs(dir));
-      break;
-    case NS_FOLDER_VALUE_CUSTOM: {
-      Preferences::GetComplex(NS_PREF_DOWNLOAD_DIR, NS_GET_IID(nsIFile),
-                              getter_AddRefs(dir));
-      if (!dir) break;
+  usePrefDir = true;
+#endif
 
-      
-      if (aSkipChecks) {
-        dir.forget(_directory);
-        return NS_OK;
-      }
-
-      
-      bool dirExists = false;
-      (void)dir->Exists(&dirExists);
-      if (dirExists) break;
-
-      nsresult rv = dir->Create(nsIFile::DIRECTORY_TYPE, 0755);
-      if (NS_FAILED(rv)) {
-        dir = nullptr;
+  nsCOMPtr<nsIFile> dir;
+  nsresult rv;
+  if (usePrefDir) {
+    
+    switch (Preferences::GetInt(NS_PREF_DOWNLOAD_FOLDERLIST, -1)) {
+      case NS_FOLDER_VALUE_DESKTOP:
+        (void)NS_GetSpecialDirectory(NS_OS_DESKTOP_DIR, getter_AddRefs(dir));
         break;
-      }
-    } break;
-    case NS_FOLDER_VALUE_DOWNLOADS:
-      
-      break;
+      case NS_FOLDER_VALUE_CUSTOM: {
+        Preferences::GetComplex(NS_PREF_DOWNLOAD_DIR, NS_GET_IID(nsIFile),
+                                getter_AddRefs(dir));
+        if (!dir) break;
+
+        
+        if (aSkipChecks) {
+          dir.forget(_directory);
+          return NS_OK;
+        }
+
+        
+        bool dirExists = false;
+        (void)dir->Exists(&dirExists);
+        if (dirExists) break;
+
+        nsresult rv = dir->Create(nsIFile::DIRECTORY_TYPE, 0755);
+        if (NS_FAILED(rv)) {
+          dir = nullptr;
+          break;
+        }
+      } break;
+      case NS_FOLDER_VALUE_DOWNLOADS:
+        
+        break;
+    }
   }
 
   if (!dir) {
+#ifdef XP_MACOSX
     
-    nsresult rv = NS_GetSpecialDirectory(NS_OSX_DEFAULT_DOWNLOAD_DIR,
-                                         getter_AddRefs(dir));
+    rv = NS_GetSpecialDirectory(NS_OSX_DEFAULT_DOWNLOAD_DIR,
+                                getter_AddRefs(dir));
+#elif defined(XP_WIN)
+    rv = NS_GetSpecialDirectory(
+        StaticPrefs::browser_download_improvements_to_download_panel()
+            ? NS_WIN_DEFAULT_DOWNLOAD_DIR
+            : NS_OS_TEMP_DIR,
+        getter_AddRefs(dir));
+#elif defined(XP_UNIX)
+    rv = NS_GetSpecialDirectory(
+        StaticPrefs::browser_download_improvements_to_download_panel()
+            ? NS_UNIX_DEFAULT_DOWNLOAD_DIR
+            : NS_OS_TEMP_DIR,
+        getter_AddRefs(dir));
+#else
+    
+    rv = NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(dir));
+#endif
+
     NS_ENSURE_SUCCESS(rv, rv);
   }
-#elif defined(ANDROID)
-  return NS_ERROR_FAILURE;
-#elif defined(XP_WIN)
-  
-  const char* directory_to_save_file =
-      StaticPrefs::browser_download_improvements_to_download_panel()
-          ? NS_WIN_DEFAULT_DOWNLOAD_DIR
-          : NS_OS_TEMP_DIR;
-  nsresult rv =
-      NS_GetSpecialDirectory(directory_to_save_file, getter_AddRefs(dir));
-  NS_ENSURE_SUCCESS(rv, rv);
-#elif defined(XP_UNIX)
-  
-  const char* directory_to_save_file =
-      StaticPrefs::browser_download_improvements_to_download_panel()
-          ? NS_UNIX_DEFAULT_DOWNLOAD_DIR
-          : NS_OS_TEMP_DIR;
-  nsresult rv =
-      NS_GetSpecialDirectory(directory_to_save_file, getter_AddRefs(dir));
-  NS_ENSURE_SUCCESS(rv, rv);
-#else
-  
-  nsresult rv = NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(dir));
-  NS_ENSURE_SUCCESS(rv, rv);
 
-#  if defined(XP_UNIX)
+#if defined(XP_UNIX)
   
   
   
@@ -415,7 +420,6 @@ static nsresult GetDownloadDirectory(nsIFile** _directory,
     }
   }
 
-#  endif
 #endif
 
   NS_ASSERTION(dir, "Somehow we didn't get a download directory!");
