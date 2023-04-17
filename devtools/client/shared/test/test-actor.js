@@ -130,12 +130,6 @@ var testSpec = protocol.generateActorSpec({
         value: RetVal("json"),
       },
     },
-    synthesizeKey: {
-      request: {
-        args: Arg(0, "json"),
-      },
-      response: {},
-    },
     scrollIntoView: {
       request: {
         args: Arg(0, "string"),
@@ -484,15 +478,6 @@ var TestActor = protocol.ActorClassWithSpec(testSpec, {
     }
 
     return regions;
-  },
-
-  
-
-
-
-
-  synthesizeKey: function({ key, options, content }) {
-    EventUtils.synthesizeKey(key, options, this.content);
   },
 
   
