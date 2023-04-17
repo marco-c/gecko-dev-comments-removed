@@ -67,29 +67,86 @@ class nsTimerImpl {
 
   int32_t GetGeneration() { return mGeneration; }
 
-  struct UnknownCallback {};
+  struct Callback {
+    Callback() : mType(Type::Unknown), mName(Nothing), mClosure(nullptr) {
+      mCallback.c = nullptr;
+    }
 
-  using InterfaceCallback = nsCOMPtr<nsITimerCallback>;
+    Callback(const Callback& other) : Callback() { *this = other; }
 
-  using ObserverCallback = nsCOMPtr<nsIObserver>;
+    enum class Type : uint8_t {
+      Unknown = 0,
+      Interface = 1,
+      Function = 2,
+      Observer = 3,
+    };
 
-  
-  
-  struct FuncCallback {
-    nsTimerCallbackFunc mFunc;
+    Callback& operator=(const Callback& other) {
+      if (this != &other) {
+        clear();
+        mType = other.mType;
+        switch (mType) {
+          case Type::Unknown:
+            break;
+          case Type::Interface:
+            mCallback.i = other.mCallback.i;
+            NS_ADDREF(mCallback.i);
+            break;
+          case Type::Function:
+            mCallback.c = other.mCallback.c;
+            break;
+          case Type::Observer:
+            mCallback.o = other.mCallback.o;
+            NS_ADDREF(mCallback.o);
+            break;
+        }
+        mName = other.mName;
+        mClosure = other.mClosure;
+      }
+      return *this;
+    }
+
+    ~Callback() { clear(); }
+
+    void clear() {
+      if (mType == Type::Interface) {
+        NS_RELEASE(mCallback.i);
+      } else if (mType == Type::Observer) {
+        NS_RELEASE(mCallback.o);
+      }
+      mType = Type::Unknown;
+    }
+
+    void swap(Callback& other) {
+      std::swap(mType, other.mType);
+      std::swap(mCallback, other.mCallback);
+      std::swap(mName, other.mName);
+      std::swap(mClosure, other.mClosure);
+    }
+
+    Type mType;
+
+    union CallbackUnion {
+      nsTimerCallbackFunc c;
+      
+      
+      nsITimerCallback* MOZ_OWNING_REF i;
+      nsIObserver* MOZ_OWNING_REF o;
+    } mCallback;
+
+    
+    
+    
+    
+    typedef const int NameNothing;
+    typedef const char* NameString;
+    typedef nsTimerNameCallbackFunc NameFunc;
+    typedef mozilla::Variant<NameNothing, NameString, NameFunc> Name;
+    static const NameNothing Nothing;
+    Name mName;
+
     void* mClosure;
-    const char* mName;
   };
-
-  
-  struct ClosureCallback {
-    std::function<void(nsITimer*)> mFunc;
-    const char* mName;
-  };
-
-  using Callback =
-      mozilla::Variant<UnknownCallback, InterfaceCallback, ObserverCallback,
-                       FuncCallback, ClosureCallback>;
 
   nsresult InitCommon(uint32_t aDelayMS, uint32_t aType,
                       Callback&& newCallback);
@@ -133,9 +190,9 @@ class nsTimerImpl {
 
   void LogFiring(const Callback& aCallback, uint8_t aType, uint32_t aDelay);
 
-  nsresult InitWithClosureCallback(std::function<void(nsITimer*)>&& aCallback,
-                                   const mozilla::TimeDuration& aDelay,
-                                   uint32_t aType, const char* aNameString);
+  nsresult InitWithFuncCallbackCommon(nsTimerCallbackFunc aFunc, void* aClosure,
+                                      uint32_t aDelay, uint32_t aType,
+                                      const Callback::Name& aName);
 
   
   
@@ -181,16 +238,6 @@ class nsTimer final : public nsITimer {
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_FORWARD_SAFE_NSITIMER(mImpl);
-
-  
-  
-  nsresult InitWithClosureCallback(std::function<void(nsITimer*)>&& aCallback,
-                                   const mozilla::TimeDuration& aDelay,
-                                   uint32_t aType, const char* aNameString) {
-    return mImpl ? mImpl->InitWithClosureCallback(std::move(aCallback), aDelay,
-                                                  aType, aNameString)
-                 : NS_ERROR_NULL_POINTER;
-  }
 
   virtual size_t SizeOfIncludingThis(
       mozilla::MallocSizeOf aMallocSizeOf) const override;
