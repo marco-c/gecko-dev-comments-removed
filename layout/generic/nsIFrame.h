@@ -2077,6 +2077,11 @@ class nsIFrame : public nsQueryFrame {
   
 
 
+  bool ZIndexApplies() const;
+
+  
+
+
 
   Maybe<int32_t> ZIndex() const;
 

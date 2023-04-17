@@ -97,7 +97,7 @@ bool nsStyleDisplay::IsFixedPosContainingBlockForNonSVGTextFrames(
   
   NS_ASSERTION(aStyle.StyleDisplay() == this, "unexpected aStyle");
 
-  if (mWillChange.bits & mozilla::StyleWillChangeBits::FIXPOS_CB) {
+  if (mWillChange.bits & mozilla::StyleWillChangeBits::FIXPOS_CB_NON_SVG) {
     return true;
   }
 
@@ -107,52 +107,52 @@ bool nsStyleDisplay::IsFixedPosContainingBlockForNonSVGTextFrames(
 
 bool nsStyleDisplay::
     IsFixedPosContainingBlockForContainLayoutAndPaintSupportingFrames() const {
-  return IsContainPaint() || IsContainLayout();
+  return IsContainPaint() || IsContainLayout() ||
+         mWillChange.bits & mozilla::StyleWillChangeBits::CONTAIN;
 }
 
 bool nsStyleDisplay::IsFixedPosContainingBlockForTransformSupportingFrames()
     const {
   
   
-  return HasTransformStyle() || HasPerspectiveStyle();
+  return HasTransformStyle() || HasPerspectiveStyle() ||
+         mWillChange.bits & mozilla::StyleWillChangeBits::PERSPECTIVE;
 }
 
 bool nsStyleDisplay::IsFixedPosContainingBlock(
     const nsIFrame* aContextFrame) const {
-  mozilla::ComputedStyle* style = aContextFrame->Style();
+  const auto* style = aContextFrame->Style();
   NS_ASSERTION(style->StyleDisplay() == this, "unexpected aContextFrame");
   
   
-  if (!IsFixedPosContainingBlockForNonSVGTextFrames(*style) &&
-      (!IsFixedPosContainingBlockForContainLayoutAndPaintSupportingFrames() ||
-       !aContextFrame->IsFrameOfType(
-           nsIFrame::eSupportsContainLayoutAndPaint)) &&
-      (!IsFixedPosContainingBlockForTransformSupportingFrames() ||
-       !aContextFrame->IsFrameOfType(nsIFrame::eSupportsCSSTransforms))) {
-    return false;
-  }
   if (mozilla::SVGUtils::IsInSVGTextSubtree(aContextFrame)) {
     return false;
   }
-  MOZ_ASSERT(IsAbsPosContainingBlock(aContextFrame),
-             "Any fixed-pos CB should also be an abs-pos CB");
-  return true;
+  if (IsFixedPosContainingBlockForNonSVGTextFrames(*style)) {
+    return true;
+  }
+  if (IsFixedPosContainingBlockForContainLayoutAndPaintSupportingFrames() &&
+      aContextFrame->IsFrameOfType(nsIFrame::eSupportsContainLayoutAndPaint)) {
+    return true;
+  }
+  if (IsFixedPosContainingBlockForTransformSupportingFrames() &&
+      aContextFrame->IsFrameOfType(nsIFrame::eSupportsCSSTransforms)) {
+    return true;
+  }
+  return false;
 }
 
 bool nsStyleDisplay::IsAbsPosContainingBlock(
     const nsIFrame* aContextFrame) const {
-  mozilla::ComputedStyle* style = aContextFrame->Style();
+  const auto* style = aContextFrame->Style();
   NS_ASSERTION(style->StyleDisplay() == this, "unexpected aContextFrame");
-  if (!IsPositionedStyle() &&
-      !IsFixedPosContainingBlockForNonSVGTextFrames(*style) &&
-      (!IsFixedPosContainingBlockForContainLayoutAndPaintSupportingFrames() ||
-       !aContextFrame->IsFrameOfType(
-           nsIFrame::eSupportsContainLayoutAndPaint)) &&
-      (!IsFixedPosContainingBlockForTransformSupportingFrames() ||
-       !aContextFrame->IsFrameOfType(nsIFrame::eSupportsCSSTransforms))) {
-    return false;
+  if (IsFixedPosContainingBlock(aContextFrame)) {
+    return true;
   }
-  return !mozilla::SVGUtils::IsInSVGTextSubtree(aContextFrame);
+  
+  
+  return IsPositionedStyle() &&
+         !mozilla::SVGUtils::IsInSVGTextSubtree(aContextFrame);
 }
 
 bool nsStyleDisplay::IsRelativelyPositioned(

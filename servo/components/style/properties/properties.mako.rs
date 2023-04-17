@@ -1069,27 +1069,19 @@ bitflags! {
     
     pub struct PropertyFlags: u16 {
         
-        const CREATES_STACKING_CONTEXT = 1 << 0;
+        const APPLIES_TO_FIRST_LETTER = 1 << 1;
         
+        const APPLIES_TO_FIRST_LINE = 1 << 2;
         
-        const FIXPOS_CB = 1 << 1;
+        const APPLIES_TO_PLACEHOLDER = 1 << 3;
         
+        const APPLIES_TO_CUE = 1 << 4;
         
-        const ABSPOS_CB = 1 << 2;
-        
-        const APPLIES_TO_FIRST_LETTER = 1 << 3;
-        
-        const APPLIES_TO_FIRST_LINE = 1 << 4;
-        
-        const APPLIES_TO_PLACEHOLDER = 1 << 5;
-        
-        const APPLIES_TO_CUE = 1 << 6;
-        
-        const APPLIES_TO_MARKER = 1 << 7;
+        const APPLIES_TO_MARKER = 1 << 5;
         
         
         
-        const IS_LEGACY_SHORTHAND = 1 << 8;
+        const IS_LEGACY_SHORTHAND = 1 << 6;
 
         
 
