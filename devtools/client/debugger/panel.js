@@ -2,7 +2,7 @@
 
 
 
-const { LocalizationHelper } = require("devtools/shared/l10n");
+const { MultiLocalizationHelper } = require("devtools/shared/l10n");
 
 loader.lazyRequireGetter(
   this,
@@ -23,8 +23,13 @@ loader.lazyRequireGetter(
   true
 );
 
-const DBG_STRINGS_URI = "devtools/client/locales/debugger.properties";
-const L10N = new LocalizationHelper(DBG_STRINGS_URI);
+const DBG_STRINGS_URI = [
+  "devtools/client/locales/debugger.properties",
+  
+  "devtools/client/locales/startup.properties",
+  "devtools/client/locales/components.properties",
+];
+const L10N = new MultiLocalizationHelper(...DBG_STRINGS_URI);
 
 async function getNodeFront(gripOrFront, toolbox) {
   
