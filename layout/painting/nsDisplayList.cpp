@@ -7312,12 +7312,12 @@ nsDisplayTransform::nsDisplayTransform(nsDisplayListBuilder* aBuilder,
                                        const nsRect& aChildrenBuildingRect)
     : nsPaintedDisplayItem(aBuilder, aFrame),
       mTransform(Some(Matrix4x4())),
-      mTransformGetter(nullptr),
       mAnimatedGeometryRootForChildren(mAnimatedGeometryRoot),
       mAnimatedGeometryRootForScrollMetadata(mAnimatedGeometryRoot),
       mChildrenBuildingRect(aChildrenBuildingRect),
       mPrerenderDecision(PrerenderDecision::No),
-      mIsTransformSeparator(true) {
+      mIsTransformSeparator(true),
+      mHasTransformGetter(false) {
   MOZ_COUNT_CTOR(nsDisplayTransform);
   MOZ_ASSERT(aFrame, "Must have a frame!");
   Init(aBuilder, aList);
@@ -7328,12 +7328,12 @@ nsDisplayTransform::nsDisplayTransform(nsDisplayListBuilder* aBuilder,
                                        const nsRect& aChildrenBuildingRect,
                                        PrerenderDecision aPrerenderDecision)
     : nsPaintedDisplayItem(aBuilder, aFrame),
-      mTransformGetter(nullptr),
       mAnimatedGeometryRootForChildren(mAnimatedGeometryRoot),
       mAnimatedGeometryRootForScrollMetadata(mAnimatedGeometryRoot),
       mChildrenBuildingRect(aChildrenBuildingRect),
       mPrerenderDecision(aPrerenderDecision),
-      mIsTransformSeparator(false) {
+      mIsTransformSeparator(false),
+      mHasTransformGetter(false) {
   MOZ_COUNT_CTOR(nsDisplayTransform);
   MOZ_ASSERT(aFrame, "Must have a frame!");
   SetReferenceFrameToAncestor(aBuilder);
@@ -7343,16 +7343,17 @@ nsDisplayTransform::nsDisplayTransform(nsDisplayListBuilder* aBuilder,
 nsDisplayTransform::nsDisplayTransform(
     nsDisplayListBuilder* aBuilder, nsIFrame* aFrame, nsDisplayList* aList,
     const nsRect& aChildrenBuildingRect,
-    ComputeTransformFunction aTransformGetter)
+    decltype(WithTransformGetter))
     : nsPaintedDisplayItem(aBuilder, aFrame),
-      mTransformGetter(aTransformGetter),
       mAnimatedGeometryRootForChildren(mAnimatedGeometryRoot),
       mAnimatedGeometryRootForScrollMetadata(mAnimatedGeometryRoot),
       mChildrenBuildingRect(aChildrenBuildingRect),
       mPrerenderDecision(PrerenderDecision::No),
-      mIsTransformSeparator(false) {
+      mIsTransformSeparator(false),
+      mHasTransformGetter(true) {
   MOZ_COUNT_CTOR(nsDisplayTransform);
   MOZ_ASSERT(aFrame, "Must have a frame!");
+  MOZ_ASSERT(aFrame->GetTransformGetter());
   Init(aBuilder, aList);
 }
 
@@ -7880,8 +7881,8 @@ const Matrix4x4Flagged& nsDisplayTransform::GetTransform() const {
 
   float scale = mFrame->PresContext()->AppUnitsPerDevPixel();
 
-  if (mTransformGetter) {
-    mTransform.emplace(mTransformGetter(mFrame, scale));
+  if (mHasTransformGetter) {
+    mTransform.emplace((mFrame->GetTransformGetter())(mFrame, scale));
     Point3D newOrigin =
         Point3D(NSAppUnitsToFloatPixels(mToReferenceFrame.x, scale),
                 NSAppUnitsToFloatPixels(mToReferenceFrame.y, scale), 0.0f);
@@ -7916,8 +7917,8 @@ const Matrix4x4Flagged& nsDisplayTransform::GetInverseTransform() const {
 
 Matrix4x4 nsDisplayTransform::GetTransformForRendering(
     LayoutDevicePoint* aOutOrigin) const {
-  if (!mFrame->HasPerspective() || mTransformGetter || mIsTransformSeparator) {
-    if (!mTransformGetter && !mIsTransformSeparator && aOutOrigin) {
+  if (!mFrame->HasPerspective() || mHasTransformGetter || mIsTransformSeparator) {
+    if (!mHasTransformGetter && !mIsTransformSeparator && aOutOrigin) {
       
       
       
@@ -7934,7 +7935,7 @@ Matrix4x4 nsDisplayTransform::GetTransformForRendering(
     }
     return GetTransform().GetMatrix();
   }
-  MOZ_ASSERT(!mTransformGetter);
+  MOZ_ASSERT(!mHasTransformGetter);
 
   float scale = mFrame->PresContext()->AppUnitsPerDevPixel();
   
@@ -7950,7 +7951,6 @@ const Matrix4x4& nsDisplayTransform::GetAccumulatedPreserved3DTransform(
     return GetTransform().GetMatrix();
   }
 
-  
   if (!mTransformPreserves3D) {
     const nsIFrame* establisher;  
     for (establisher = mFrame;

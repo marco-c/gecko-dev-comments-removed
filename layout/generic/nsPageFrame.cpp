@@ -400,63 +400,6 @@ void nsPageFrame::DrawHeaderFooter(gfxContext& aRenderingContext,
   }
 }
 
-
-
-
-
-
-
-
-static void PruneDisplayListForExtraPage(nsDisplayListBuilder* aBuilder,
-                                         nsPageFrame* aPage,
-                                         nsIFrame* aExtraPage,
-                                         nsDisplayList* aList) {
-  nsDisplayList newList;
-
-  while (true) {
-    nsDisplayItem* i = aList->RemoveBottom();
-    if (!i) break;
-    nsDisplayList* subList = i->GetSameCoordinateSystemChildren();
-    if (subList) {
-      PruneDisplayListForExtraPage(aBuilder, aPage, aExtraPage, subList);
-      i->UpdateBounds(aBuilder);
-    } else {
-      nsIFrame* f = i->Frame();
-      if (!nsLayoutUtils::IsProperAncestorFrameCrossDoc(aPage, f)) {
-        
-        
-        i->Destroy(aBuilder);
-        continue;
-      }
-    }
-    newList.AppendToTop(i);
-  }
-  aList->AppendToTop(&newList);
-}
-
-static void BuildDisplayListForExtraPage(nsDisplayListBuilder* aBuilder,
-                                         nsPageFrame* aPage,
-                                         nsIFrame* aExtraPage,
-                                         nsDisplayList* aList) {
-  
-  
-  
-  
-  if (!aExtraPage->HasAnyStateBits(NS_FRAME_FORCE_DISPLAY_LIST_DESCEND_INTO)) {
-    return;
-  }
-  nsDisplayList list;
-  aExtraPage->BuildDisplayListForStackingContext(aBuilder, &list);
-  PruneDisplayListForExtraPage(aBuilder, aPage, aExtraPage, &list);
-  aList->AppendToTop(&list);
-}
-
-static gfx::Matrix4x4 ComputePageTransform(nsIFrame* aFrame,
-                                           float aAppUnitsPerPixel) {
-  float scale = aFrame->PresContext()->GetPageScale();
-  return gfx::Matrix4x4::Scaling(scale, scale, 1);
-}
-
 class nsDisplayHeaderFooter final : public nsPaintedDisplayItem {
  public:
   nsDisplayHeaderFooter(nsDisplayListBuilder* aBuilder, nsPageFrame* aFrame)
@@ -530,207 +473,69 @@ static void PaintMarginGuides(nsIFrame* aFrame, DrawTarget* aDrawTarget,
                           options);
 }
 
-
-using PageAndOffset = std::pair<nsPageContentFrame*, nscoord>;
-
-
-
-
-
-static nsTArray<PageAndOffset> GetPreviousPagesWithOverflow(
-    nsPageContentFrame* aPage) {
-  nsTArray<PageAndOffset> pages(8);
-
-  auto GetPreviousPageContentFrame = [](nsPageContentFrame* aPageCF) {
-    nsIFrame* prevCont = aPageCF->GetPrevContinuation();
-    MOZ_ASSERT(!prevCont || prevCont->IsPageContentFrame(),
-               "Expected nsPageContentFrame or nullptr");
-
-    return static_cast<nsPageContentFrame*>(prevCont);
-  };
-
-  nsPageContentFrame* pageCF = aPage;
+static std::tuple<uint32_t, uint32_t> GetRowAndColFromIdx(uint32_t aIdxOnSheet,
+                                                          uint32_t aNumCols) {
   
-  nscoord offsetToCurrentPageBStart = 0;
-  const auto wm = pageCF->GetWritingMode();
-  while ((pageCF = GetPreviousPageContentFrame(pageCF))) {
-    offsetToCurrentPageBStart += pageCF->BSize(wm);
-
-    if (pageCF->HasOverflowAreas()) {
-      pages.EmplaceBack(pageCF, offsetToCurrentPageBStart);
-    }
-  }
-
-  return pages;
+  
+  
+  
+  
+  return {aIdxOnSheet / aNumCols, aIdxOnSheet % aNumCols};
 }
 
-static void BuildPreviousPageOverflow(nsDisplayListBuilder* aBuilder,
-                                      nsPageFrame* aPageFrame,
-                                      nsPageContentFrame* aCurrentPageCF,
-                                      const nsDisplayListSet& aLists) {
-  const auto previousPagesAndOffsets =
-      GetPreviousPagesWithOverflow(aCurrentPageCF);
 
-  const auto wm = aCurrentPageCF->GetWritingMode();
-  for (const PageAndOffset& pair : Reversed(previousPagesAndOffsets)) {
-    auto* prevPageCF = pair.first;
-    const nscoord offsetToCurrentPageBStart = pair.second;
-    
-    const LogicalRect scrollableOverflow(
-        wm, prevPageCF->ScrollableOverflowRectRelativeToSelf(),
-        prevPageCF->GetSize());
-    const auto remainingOverflow =
-        scrollableOverflow.BEnd(wm) - offsetToCurrentPageBStart;
-    if (remainingOverflow <= 0) {
-      continue;
-    }
+static gfx::Matrix4x4 ComputePagesPerSheetTransform(const nsIFrame* aFrame,
+                                                    float aAppUnitsPerPixel) {
+  MOZ_ASSERT(aFrame->IsPageFrame());
+  auto* pageFrame = static_cast<const nsPageFrame*>(aFrame);
 
-    
-    
-    
-    LogicalRect overflowRect(wm, prevPageCF->InkOverflowRectRelativeToSelf(),
-                             prevPageCF->GetSize());
-    overflowRect.BStart(wm) = offsetToCurrentPageBStart;
-    overflowRect.BSize(wm) = std::min(remainingOverflow, prevPageCF->BSize(wm));
+  
+  
+  float scale = 1.0f;
+  nsPoint gridOrigin;
+  uint32_t rowIdx = 0;
+  uint32_t colIdx = 0;
 
-    {
-      
-      
-      const nsRect visibleRect =
-          overflowRect.GetPhysicalRect(wm, aPageFrame->GetSize()) +
-          prevPageCF->GetOffsetTo(aPageFrame);
-      nsDisplayListBuilder::AutoBuildingDisplayList buildingForChild(
-          aBuilder, aPageFrame, visibleRect, visibleRect);
-
-      
-      
-      
-      
-      
-      
-      const nsSize containerSize = aPageFrame->GetSize();
-      LogicalPoint pageOffset(wm, aCurrentPageCF->GetOffsetTo(prevPageCF),
-                              containerSize);
-      pageOffset.B(wm) -= offsetToCurrentPageBStart;
-      buildingForChild.SetAdditionalOffset(
-          pageOffset.GetPhysicalPoint(wm, containerSize));
-
-      aPageFrame->BuildDisplayListForChild(aBuilder, prevPageCF, aLists);
+  if (nsSharedPageData* pd = pageFrame->GetSharedPageData()) {
+    const auto* ppsInfo = pd->PagesPerSheetInfo();
+    if (ppsInfo->mNumPages > 1) {
+      scale = pd->mPagesPerSheetScale;
+      gridOrigin = pd->mPagesPerSheetGridOrigin;
+      std::tie(rowIdx, colIdx) = GetRowAndColFromIdx(pageFrame->IndexOnSheet(),
+                                                     pd->mPagesPerSheetNumCols);
     }
   }
+
+  
+  auto transform = gfx::Matrix4x4::Scaling(scale, scale, 1);
+
+  
+  nsSize pageSize = pageFrame->PresContext()->GetPageSize();
+  transform.PreTranslate(
+      NSAppUnitsToFloatPixels(colIdx * pageSize.width, aAppUnitsPerPixel),
+      NSAppUnitsToFloatPixels(rowIdx * pageSize.height, aAppUnitsPerPixel), 0);
+
+  
+  
+  
+  
+  
+  return transform.PostTranslate(
+      NSAppUnitsToFloatPixels(gridOrigin.x, aAppUnitsPerPixel),
+      NSAppUnitsToFloatPixels(gridOrigin.y, aAppUnitsPerPixel), 0);
+}
+
+nsIFrame::ComputeTransformFunction nsPageFrame::GetTransformGetter() const {
+  return ComputePagesPerSheetTransform;
 }
 
 void nsPageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                    const nsDisplayListSet& aLists) {
-  nsDisplayListCollection set(aBuilder);
-
   nsPresContext* pc = PresContext();
-
-  nsIFrame* child = mFrames.FirstChild();
-  float scale = pc->GetPageScale();
-  nsRect clipRect(nsPoint(0, 0), child->GetSize());
-  
-  
-  nscoord expectedPageContentHeight = NSToCoordCeil(GetSize().height / scale);
-  if (clipRect.height > expectedPageContentHeight) {
-    
-    
-    NS_ASSERTION(mPageNum > 0, "page num should be positive");
-    
-    
-    
-    
-    
-    
-    
-    clipRect.y = NSToCoordCeil(
-        (-child->GetRect().y + pc->GetDefaultPageMargin().top) / scale);
-    clipRect.height = expectedPageContentHeight;
-    NS_ASSERTION(clipRect.y < child->GetSize().height,
-                 "Should be clipping to region inside the page content bounds");
-  }
-  clipRect += aBuilder->ToReferenceFrame(child);
-
   nsDisplayList content;
-  {
-    DisplayListClipState::AutoSaveRestore clipState(aBuilder);
-
-    
-    
-    clipState.Clear();
-    clipState.ClipContainingBlockDescendants(clipRect);
-
-    MOZ_ASSERT(child->IsPageContentFrame(), "unexpected child frame type");
-    auto* currentPageCF = static_cast<nsPageContentFrame*>(child);
-
-    if (StaticPrefs::layout_display_list_improve_fragmentation() &&
-        mPageNum <= 255) {
-      nsDisplayListBuilder::AutoPageNumberSetter p(aBuilder, mPageNum);
-      BuildPreviousPageOverflow(aBuilder, this, currentPageCF, set);
-    }
-
-    
-    
-    const nsRect childOverflowRect =
-        child->ScrollableOverflowRectRelativeToSelf();
-    const nsRect visibleRect = childOverflowRect + child->GetOffsetTo(this);
-
-    nsDisplayListBuilder::AutoBuildingDisplayList buildingForChild(
-        aBuilder, this, visibleRect, visibleRect);
-    BuildDisplayListForChild(aBuilder, child, set);
-
-    set.SerializeWithCorrectZOrder(&content, child->GetContent());
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    NS_ASSERTION(mPageNum <= 255, "Too many pages to handle OOFs");
-    if (mPageNum <= 255) {
-      nsDisplayListBuilder::AutoPageNumberSetter p(aBuilder, mPageNum);
-      
-      
-      
-      auto* pageCF = currentPageCF;
-      while ((pageCF = static_cast<nsPageContentFrame*>(
-                  pageCF->GetNextContinuation()))) {
-        nsRect childVisible = childOverflowRect + child->GetOffsetTo(pageCF);
-
-        nsDisplayListBuilder::AutoBuildingDisplayList buildingForChild(
-            aBuilder, pageCF, childVisible, childVisible);
-        BuildDisplayListForExtraPage(aBuilder, this, pageCF, &content);
-      }
-    }
-
-    
-    
-    
-    nsDisplayListBuilder::AutoBuildingDisplayList building(
-        aBuilder, child, childOverflowRect, childOverflowRect);
-
-    
-    
-    
-    nsRect backgroundRect =
-        nsRect(aBuilder->ToReferenceFrame(child), child->GetSize());
-
-    pc->GetPresShell()->AddCanvasBackgroundColorItem(
-        aBuilder, &content, child, backgroundRect, NS_RGBA(0, 0, 0, 0));
-  }
-
-  content.AppendNewToTop<nsDisplayTransform>(aBuilder, child, &content,
-                                             content.GetBuildingRect(),
-                                             ::ComputePageTransform);
-
+  nsDisplayListSet set(&content, &content, &content, &content, &content,
+                       &content);
+  nsContainerFrame::BuildDisplayList(aBuilder, set);
   if (pc->IsRootPaginatedDocument()) {
     content.AppendNewToTop<nsDisplayHeaderFooter>(aBuilder, this);
 
@@ -743,7 +548,18 @@ void nsPageFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     }
   }
 
-  aLists.Content()->AppendToTop(&content);
+  
+  
+  
+  
+  
+  
+  
+  content.AppendNewToTop<nsDisplayTransform>(
+      aBuilder, this, &content, content.GetBuildingRect(),
+      nsDisplayTransform::WithTransformGetter);
+
+  set.MoveTo(aLists);
 }
 
 
