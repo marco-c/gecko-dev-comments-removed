@@ -16,7 +16,6 @@
 #    include "nsTHashtable.h"
 #  endif
 
-#  include "mozilla/Attributes.h"
 #  include "mozilla/CondVar.h"
 #  include "mozilla/DeadlockDetector.h"
 #  include "mozilla/RecursiveMutex.h"
@@ -56,16 +55,20 @@ void BlockingResourceBase::StackWalkCallback(uint32_t aFrameNumber, void* aPc,
 #  endif
 }
 
-void BlockingResourceBase::GetStackTrace(AcquisitionState& aState,
-                                         const void* aFirstFramePC) {
+void BlockingResourceBase::GetStackTrace(AcquisitionState& aState) {
 #  ifndef MOZ_CALLSTACK_DISABLED
+  
+  const uint32_t kSkipFrames = 2;
+
   
   aState.reset();
   
   
   aState.emplace();
 
-  MozStackWalk(StackWalkCallback, aFirstFramePC, kAcquisitionStateStackSize,
+  
+  
+  MozStackWalk(StackWalkCallback, kSkipFrames, kAcquisitionStateStackSize,
                aState.ptr());
 #  endif
 }
@@ -209,7 +212,7 @@ void BlockingResourceBase::Shutdown() {
   sDeadlockDetector = 0;
 }
 
-MOZ_NEVER_INLINE void BlockingResourceBase::CheckAcquire() {
+void BlockingResourceBase::CheckAcquire() {
   if (mType == eCondVar) {
     MOZ_ASSERT_UNREACHABLE(
         "FIXME bug 456272: annots. to allow CheckAcquire()ing condvars");
@@ -225,7 +228,7 @@ MOZ_NEVER_INLINE void BlockingResourceBase::CheckAcquire() {
 
 #  ifndef MOZ_CALLSTACK_DISABLED
   
-  GetStackTrace(mAcquired, CallerPC());
+  GetStackTrace(mAcquired);
 #  endif
 
   fputs("###!!! ERROR: Potential deadlock detected:\n", stderr);
@@ -248,7 +251,7 @@ MOZ_NEVER_INLINE void BlockingResourceBase::CheckAcquire() {
   }
 }
 
-MOZ_NEVER_INLINE void BlockingResourceBase::Acquire() {
+void BlockingResourceBase::Acquire() {
   if (mType == eCondVar) {
     MOZ_ASSERT_UNREACHABLE(
         "FIXME bug 456272: annots. to allow Acquire()ing condvars");
@@ -262,7 +265,7 @@ MOZ_NEVER_INLINE void BlockingResourceBase::Acquire() {
   mAcquired = true;
 #  else
   
-  GetStackTrace(mAcquired, CallerPC());
+  GetStackTrace(mAcquired);
   MOZ_ASSERT(IsAcquired());
 
   if (!mFirstSeen) {

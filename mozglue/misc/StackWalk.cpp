@@ -69,26 +69,6 @@ extern MOZ_EXPORT void* __libc_stack_end;
 #  include <pthread.h>
 #endif
 
-class FrameSkipper {
- public:
-  constexpr FrameSkipper() : mPc(0) {}
-  bool ShouldSkipPC(void* aPC) {
-    
-    
-    if (mPc != 0) {
-      if (mPc != uintptr_t(aPC)) {
-        return true;
-      }
-      mPc = 0;
-    }
-    return false;
-  }
-  explicit FrameSkipper(const void* aPc) : mPc(uintptr_t(aPc)) {}
-
- private:
-  uintptr_t mPc;
-};
-
 #ifdef XP_WIN
 
 #  include <windows.h>
@@ -112,7 +92,7 @@ struct WalkStackData {
   
   
   bool walkCallingThread;
-  const void* firstFramePC;
+  uint32_t skipFrames;
   HANDLE thread;
   HANDLE process;
   HANDLE eventStart;
@@ -263,7 +243,8 @@ static void WalkStackMain64(struct WalkStackData* aData) {
   bool firstFrame = true;
 #  endif
 
-  FrameSkipper skipper(aData->firstFramePC);
+  
+  int skip = (aData->walkCallingThread ? 3 : 0) + aData->skipFrames;
 
   
   while (true) {
@@ -368,7 +349,7 @@ static void WalkStackMain64(struct WalkStackData* aData) {
       break;
     }
 
-    if (skipper.ShouldSkipPC((void*)addr)) {
+    if (skip-- > 0) {
       continue;
     }
 
@@ -403,7 +384,7 @@ static void WalkStackMain64(struct WalkStackData* aData) {
 
 
 static void DoMozStackWalkThread(MozWalkStackCallback aCallback,
-                                 const void* aFirstFramePC, uint32_t aMaxFrames,
+                                 uint32_t aSkipFrames, uint32_t aMaxFrames,
                                  void* aClosure, HANDLE aThread,
                                  CONTEXT* aContext) {
   struct WalkStackData data;
@@ -420,7 +401,7 @@ static void DoMozStackWalkThread(MozWalkStackCallback aCallback,
     data.walkCallingThread = (threadId == currentThreadId);
   }
 
-  data.firstFramePC = aFirstFramePC;
+  data.skipFrames = aSkipFrames;
   data.thread = targetThread;
   data.process = ::GetCurrentProcess();
   void* local_pcs[1024];
@@ -454,17 +435,14 @@ static void DoMozStackWalkThread(MozWalkStackCallback aCallback,
 MFBT_API void MozStackWalkThread(MozWalkStackCallback aCallback,
                                  uint32_t aMaxFrames, void* aClosure,
                                  HANDLE aThread, CONTEXT* aContext) {
-  
-  
-  DoMozStackWalkThread(aCallback, nullptr, aMaxFrames, aClosure, aThread,
-                       aContext);
+  DoMozStackWalkThread(aCallback,  0, aMaxFrames, aClosure,
+                       aThread, aContext);
 }
 
-MFBT_API void MozStackWalk(MozWalkStackCallback aCallback,
-                           const void* aFirstFramePC, uint32_t aMaxFrames,
-                           void* aClosure) {
-  DoMozStackWalkThread(aCallback, aFirstFramePC ? aFirstFramePC : CallerPC(),
-                       aMaxFrames, aClosure, nullptr, nullptr);
+MFBT_API void MozStackWalk(MozWalkStackCallback aCallback, uint32_t aSkipFrames,
+                           uint32_t aMaxFrames, void* aClosure) {
+  DoMozStackWalkThread(aCallback, aSkipFrames, aMaxFrames, aClosure, nullptr,
+                       nullptr);
 }
 
 static BOOL CALLBACK callbackEspecial64(PCSTR aModuleName, DWORD64 aModuleBase,
@@ -713,13 +691,12 @@ void DemangleSymbol(const char* aSymbol, char* aBuffer, int aBufLen) {
        (MOZ_STACKWALK_SUPPORTS_MACOSX || MOZ_STACKWALK_SUPPORTS_LINUX))
 
 static void DoFramePointerStackWalk(MozWalkStackCallback aCallback,
-                                    const void* aFirstFramePC,
-                                    uint32_t aMaxFrames, void* aClosure,
-                                    void** aBp, void* aStackEnd);
+                                    uint32_t aSkipFrames, uint32_t aMaxFrames,
+                                    void* aClosure, void** aBp,
+                                    void* aStackEnd);
 
-MFBT_API void MozStackWalk(MozWalkStackCallback aCallback,
-                           const void* aFirstFramePC, uint32_t aMaxFrames,
-                           void* aClosure) {
+MFBT_API void MozStackWalk(MozWalkStackCallback aCallback, uint32_t aSkipFrames,
+                           uint32_t aMaxFrames, void* aClosure) {
   
   void** bp = (void**)__builtin_frame_address(0);
 
@@ -756,7 +733,7 @@ MFBT_API void MozStackWalk(MozWalkStackCallback aCallback,
 #    else
 #      error Unsupported configuration
 #    endif
-  DoFramePointerStackWalk(aCallback, aFirstFramePC, aMaxFrames, aClosure, bp,
+  DoFramePointerStackWalk(aCallback, aSkipFrames, aMaxFrames, aClosure, bp,
                           stackEnd);
 }
 
@@ -767,7 +744,7 @@ MFBT_API void MozStackWalk(MozWalkStackCallback aCallback,
 
 struct unwind_info {
   MozWalkStackCallback callback;
-  FrameSkipper skipper;
+  int skip;
   int maxFrames;
   int numFrames;
   void* closure;
@@ -778,7 +755,7 @@ static _Unwind_Reason_Code unwind_callback(struct _Unwind_Context* context,
   unwind_info* info = static_cast<unwind_info*>(closure);
   void* pc = reinterpret_cast<void*>(_Unwind_GetIP(context));
   
-  if (!info->skipper.ShouldSkipPC(pc)) {
+  if (--info->skip < 0) {
     info->numFrames++;
     (*info->callback)(info->numFrames, pc, nullptr, info->closure);
     if (info->maxFrames != 0 && info->numFrames == info->maxFrames) {
@@ -789,12 +766,11 @@ static _Unwind_Reason_Code unwind_callback(struct _Unwind_Context* context,
   return _URC_NO_REASON;
 }
 
-MFBT_API void MozStackWalk(MozWalkStackCallback aCallback,
-                           const void* aFirstFramePC, uint32_t aMaxFrames,
-                           void* aClosure) {
+MFBT_API void MozStackWalk(MozWalkStackCallback aCallback, uint32_t aSkipFrames,
+                           uint32_t aMaxFrames, void* aClosure) {
   unwind_info info;
   info.callback = aCallback;
-  info.skipper = FrameSkipper(aFirstFramePC ? aFirstFramePC : CallerPC());
+  info.skip = aSkipFrames + 1;
   info.maxFrames = aMaxFrames;
   info.numFrames = 0;
   info.closure = aClosure;
@@ -864,9 +840,8 @@ bool MFBT_API MozDescribeCodeAddress(void* aPC,
 
 #else  
 
-MFBT_API void MozStackWalk(MozWalkStackCallback aCallback,
-                           const void* aFirstFramePC, uint32_t aMaxFrames,
-                           void* aClosure) {}
+MFBT_API void MozStackWalk(MozWalkStackCallback aCallback, uint32_t aSkipFrames,
+                           uint32_t aMaxFrames, void* aClosure) {}
 
 MFBT_API bool MozDescribeCodeAddress(void* aPC,
                                      MozCodeAddressDetails* aDetails) {
@@ -884,14 +859,13 @@ MFBT_API bool MozDescribeCodeAddress(void* aPC,
 #if defined(XP_WIN) || defined(XP_MACOSX) || defined(XP_LINUX)
 MOZ_ASAN_BLACKLIST
 static void DoFramePointerStackWalk(MozWalkStackCallback aCallback,
-                                    const void* aFirstFramePC,
-                                    uint32_t aMaxFrames, void* aClosure,
-                                    void** aBp, void* aStackEnd) {
+                                    uint32_t aSkipFrames, uint32_t aMaxFrames,
+                                    void* aClosure, void** aBp,
+                                    void* aStackEnd) {
   
 
-  FrameSkipper skipper(aFirstFramePC);
+  int32_t skip = aSkipFrames;
   uint32_t numFrames = 0;
-
   while (aBp) {
     void** next = (void**)*aBp;
     
@@ -911,7 +885,7 @@ static void DoFramePointerStackWalk(MozWalkStackCallback aCallback,
     void* pc = *(aBp + 1);
     aBp += 2;
 #  endif
-    if (!skipper.ShouldSkipPC(pc)) {
+    if (--skip < 0) {
       
       
       
@@ -930,10 +904,8 @@ namespace mozilla {
 
 void FramePointerStackWalk(MozWalkStackCallback aCallback, uint32_t aMaxFrames,
                            void* aClosure, void** aBp, void* aStackEnd) {
-  
-  
-  DoFramePointerStackWalk(aCallback, nullptr, aMaxFrames, aClosure, aBp,
-                          aStackEnd);
+  DoFramePointerStackWalk(aCallback,  0, aMaxFrames,
+                          aClosure, aBp, aStackEnd);
 }
 
 }  
@@ -942,7 +914,6 @@ void FramePointerStackWalk(MozWalkStackCallback aCallback, uint32_t aMaxFrames,
 
 namespace mozilla {
 MFBT_API void FramePointerStackWalk(MozWalkStackCallback aCallback,
-                                    const void* aFirstFramePC,
                                     uint32_t aMaxFrames, void* aClosure,
                                     void** aBp, void* aStackEnd) {}
 }  
@@ -1035,11 +1006,10 @@ static bool WalkTheStackEnabled() {
   return result;
 }
 
-MFBT_API void MozWalkTheStack(FILE* aStream, const void* aFirstFramePC,
+MFBT_API void MozWalkTheStack(FILE* aStream, uint32_t aSkipFrames,
                               uint32_t aMaxFrames) {
   if (WalkTheStackEnabled()) {
-    MozStackWalk(PrintStackFrame, aFirstFramePC ? aFirstFramePC : CallerPC(),
-                 aMaxFrames, aStream);
+    MozStackWalk(PrintStackFrame, aSkipFrames + 1, aMaxFrames, aStream);
   }
 }
 
@@ -1052,10 +1022,9 @@ static void WriteStackFrame(uint32_t aFrameNumber, void* aPC, void* aSP,
 }
 
 MFBT_API void MozWalkTheStackWithWriter(void (*aWriter)(const char*),
-                                        const void* aFirstFramePC,
+                                        uint32_t aSkipFrames,
                                         uint32_t aMaxFrames) {
   if (WalkTheStackEnabled()) {
-    MozStackWalk(WriteStackFrame, aFirstFramePC ? aFirstFramePC : CallerPC(),
-                 aMaxFrames, (void*)aWriter);
+    MozStackWalk(WriteStackFrame, aSkipFrames + 1, aMaxFrames, (void*)aWriter);
   }
 }
