@@ -64,6 +64,12 @@ ChromeUtils.defineModuleGetter(
   "PrivateBrowsingUtils",
   "resource://gre/modules/PrivateBrowsingUtils.jsm"
 );
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "DELEGATE_AUTOCOMPLETE",
+  "toolkit.autocomplete.delegate",
+  false
+);
 
 const formFillController = Cc[
   "@mozilla.org/satchel/form-fill-controller;1"
@@ -690,6 +696,8 @@ var FormAutofillContent = {
         "updateActiveElement: checking if empty field is cc-*: ",
         this.activeFieldDetail?.fieldName
       );
+      
+      
       if (this.activeFieldDetail?.fieldName?.startsWith("cc-")) {
         if (Services.cpmm.sharedData.get("FormAutofill:enabled")) {
           this.debug("updateActiveElement: opening pop up");
@@ -767,7 +775,7 @@ var FormAutofillContent = {
       String(element.ownerDocument.location)
     );
 
-    if (!this.savedFieldNames) {
+    if (DELEGATE_AUTOCOMPLETE || !this.savedFieldNames) {
       this.debug("identifyAutofillFields: savedFieldNames are not known yet");
       let actor = getActorFromWindow(element.ownerGlobal);
       if (actor) {

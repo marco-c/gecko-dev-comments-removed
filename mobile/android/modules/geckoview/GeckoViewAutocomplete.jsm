@@ -154,6 +154,60 @@ const GeckoViewAutocomplete = {
 
 
 
+
+
+
+  fetchCreditCards() {
+    debug`fetchCreditCards`;
+
+    return Promise.resolve(null);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  fetchAddresses() {
+    debug`fetchAddresses`;
+
+    return Promise.resolve(null);
+  },
+
+  
+
+
+
+
+
+  onCreditCardSave(aCreditCard) {
+    debug`onLoginSave ${aCreditCard}`;
+  },
+
+  
+
+
+
+
+
+  onAddressSave(aAddress) {
+    debug`onLoginSave ${aAddress}`;
+  },
+
+  
+
+
+
+
+
+
   onLoginSave(aLogin) {
     debug`onLoginSave ${aLogin}`;
 
