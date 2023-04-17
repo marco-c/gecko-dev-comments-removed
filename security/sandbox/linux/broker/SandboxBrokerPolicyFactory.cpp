@@ -525,11 +525,17 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
 #if defined(MOZ_WIDGET_GTK) && defined(MOZ_X11)
     
     
-    if (mozilla::widget::GdkIsX11Display()) {
+    
+    
+    
+    
+    static const bool kIsX11 =
+        !mozilla::widget::GdkIsWaylandDisplay() && PR_GetEnv("DISPLAY");
+    if (kIsX11) {
       policy->AddPrefix(SandboxBroker::MAY_CONNECT, "/tmp/.X11-unix/X");
-    }
-    if (const auto xauth = PR_GetEnv("XAUTHORITY")) {
-      policy->AddPath(rdonly, xauth);
+      if (auto* const xauth = PR_GetEnv("XAUTHORITY")) {
+        policy->AddPath(rdonly, xauth);
+      }
     }
 #endif
   }

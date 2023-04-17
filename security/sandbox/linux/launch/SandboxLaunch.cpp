@@ -64,18 +64,25 @@ namespace mozilla {
 
 
 
-static bool IsDisplayLocal() {
+static bool IsGraphicsOkWithoutNetwork() {
   
   
   
   
 #ifdef MOZ_X11
   
-  Unused << gfxPlatform::GetPlatform();
+  DebugOnly<gfxPlatform*> gfxPlatform = gfxPlatform::GetPlatform();
 
   const auto display = gdk_display_get_default();
-  if (NS_WARN_IF(display == nullptr)) {
-    return false;
+  if (!display) {
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT(gfxPlatform->IsHeadless());
+    return true;
   }
   if (mozilla::widget::GdkIsX11Display(display)) {
     const int xSocketFd = ConnectionNumber(GDK_DISPLAY_XDISPLAY(display));
@@ -331,7 +338,8 @@ void SandboxLaunchPrepare(GeckoProcessType aType,
         
         static const bool canCloneNet =
             StaticPrefs::security_sandbox_content_headless_AtStartup() ||
-            (IsDisplayLocal() && !PR_GetEnv("RENDERDOC_CAPTUREOPTS"));
+            (IsGraphicsOkWithoutNetwork() &&
+             !PR_GetEnv("RENDERDOC_CAPTUREOPTS"));
 
         if (canCloneNet) {
           flags |= CLONE_NEWNET;
