@@ -10,7 +10,6 @@
 #include <utility>
 
 #include "BasicLayers.h"
-#include "ClientLayerManager.h"
 #include "GLConsts.h"
 #include "InputData.h"
 #include "LiveResizeListener.h"
@@ -1455,16 +1454,6 @@ void nsBaseWidget::CreateCompositor(int aWidth, int aHeight) {
                LayersBackend::LAYERS_WR);
     ImageBridgeChild::IdentifyCompositorTextureHost(textureFactoryIdentifier);
     gfx::VRManagerChild::IdentifyTextureHost(textureFactoryIdentifier);
-  } else if (lm->AsClientLayerManager()) {
-    TextureFactoryIdentifier textureFactoryIdentifier =
-        lm->GetTextureFactoryIdentifier();
-    
-    
-    
-    if (WidgetTypeSupportsAcceleration()) {
-      ImageBridgeChild::IdentifyCompositorTextureHost(textureFactoryIdentifier);
-      gfx::VRManagerChild::IdentifyTextureHost(textureFactoryIdentifier);
-    }
   }
 
   WindowUsesOMTC();

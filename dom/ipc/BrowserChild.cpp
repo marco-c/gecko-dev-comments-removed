@@ -15,7 +15,6 @@
 #include <utility>
 
 #include "BrowserParent.h"
-#include "ClientLayerManager.h"
 #include "ContentChild.h"
 #include "DocumentInlines.h"
 #include "EventStateManager.h"
@@ -3248,14 +3247,6 @@ void BrowserChild::ReinitRenderingForDeviceReset() {
       mPuppetWidget->GetWindowRenderer()->AsLayerManager();
   if (lm && lm->AsWebRenderLayerManager()) {
     lm->AsWebRenderLayerManager()->DoDestroy( true);
-  } else if (lm && lm->AsClientLayerManager()) {
-    if (ShadowLayerForwarder* fwd = lm->AsShadowForwarder()) {
-      
-      
-      
-      
-      fwd->SynchronouslyShutdown();
-    }
   } else {
     if (mLayersConnected.isNothing()) {
       return;
