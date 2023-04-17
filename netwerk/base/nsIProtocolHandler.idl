@@ -277,6 +277,13 @@ interface nsIProtocolHandler : nsISupports
 
 
 
+    const unsigned long URI_FETCHABLE_BY_ANYONE = (1 << 18);
+
+    
+
+
+
+
 
 
     const unsigned long ORIGIN_IS_FULL_SPEC = (1 << 19);
