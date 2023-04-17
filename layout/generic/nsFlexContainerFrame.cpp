@@ -5557,7 +5557,9 @@ nsReflowStatus nsFlexContainerFrame::ReflowFlexItem(
     }
     FLEX_LOGV(" Cross size override: %d", aItem.CrossSize());
   }
-  if (sizeOverrides.mStyleBSize && aItem.HadMeasuringReflow()) {
+  if (sizeOverrides.mStyleBSize) {
+    
+    
     
     
     
