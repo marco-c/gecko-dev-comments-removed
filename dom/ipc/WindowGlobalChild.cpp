@@ -404,6 +404,8 @@ mozilla::ipc::IPCResult WindowGlobalChild::RecvMakeFrameRemote(
     return IPC_OK();
   }
 
+  
+  
   auto deleteBridge =
       MakeScopeExit([&] { BrowserBridgeChild::Send__delete__(bridge); });
 
