@@ -1,8 +1,8 @@
-#[cfg(any(target_os = "windows", target_arch = "wasm32"))]
-use INVALID_UTF8;
 use std::ffi::OsStr;
 #[cfg(not(any(target_os = "windows", target_arch = "wasm32")))]
 use std::os::unix::ffi::OsStrExt;
+#[cfg(any(target_os = "windows", target_arch = "wasm32"))]
+use INVALID_UTF8;
 
 #[cfg(any(target_os = "windows", target_arch = "wasm32"))]
 pub trait OsStrExt3 {
@@ -16,10 +16,75 @@ pub trait OsStrExt2 {
     fn split_at_byte(&self, b: u8) -> (&OsStr, &OsStr);
     fn split_at(&self, i: usize) -> (&OsStr, &OsStr);
     fn trim_left_matches(&self, b: u8) -> &OsStr;
-    fn len_(&self) -> usize;
     fn contains_byte(&self, b: u8) -> bool;
-    fn is_empty_(&self) -> bool;
     fn split(&self, b: u8) -> OsSplit;
+}
+
+
+
+
+
+
+
+
+#[cfg(target_os = "windows")]
+fn windows_osstr_starts_with(osstr: &OsStr, prefix: &[u8]) -> bool {
+    use std::os::windows::ffi::OsStrExt;
+    let prefix_str = if let Ok(s) = std::str::from_utf8(prefix) {
+        s
+    } else {
+        return false;
+    };
+    let mut osstr_units = osstr.encode_wide();
+    let mut prefix_units = prefix_str.encode_utf16();
+    loop {
+        match (osstr_units.next(), prefix_units.next()) {
+            
+            (Some(o), Some(p)) if o == p => continue,
+            
+            (_, None) => return true,
+            
+            _ => return false,
+        }
+    }
+}
+
+#[test]
+#[cfg(target_os = "windows")]
+fn test_windows_osstr_starts_with() {
+    use std::ffi::OsString;
+    use std::os::windows::ffi::OsStringExt;
+
+    fn from_ascii(ascii: &[u8]) -> OsString {
+        let u16_vec: Vec<u16> = ascii.iter().map(|&c| c as u16).collect();
+        OsString::from_wide(&u16_vec)
+    }
+
+    
+    assert!(windows_osstr_starts_with(&from_ascii(b"abcdef"), b"abc"));
+    assert!(windows_osstr_starts_with(&from_ascii(b"abcdef"), b"abcdef"));
+    assert!(!windows_osstr_starts_with(&from_ascii(b"abcdef"), b"def"));
+    assert!(!windows_osstr_starts_with(&from_ascii(b"abc"), b"abcd"));
+
+    
+    
+    
+    assert!(!windows_osstr_starts_with(&from_ascii(b"\xff"), b"\xff"));
+
+    
+    
+    
+    
+    
+    let surrogate_char: u16 = 0xDC00;
+    let mut invalid_unicode =
+        OsString::from_wide(&['a' as u16, 'b' as u16, 'c' as u16, surrogate_char]);
+    assert!(
+        invalid_unicode.to_str().is_none(),
+        "This string is invalid Unicode, and conversion to &str should fail.",
+    );
+    assert!(windows_osstr_starts_with(&invalid_unicode, b"abc"));
+    assert!(!windows_osstr_starts_with(&invalid_unicode, b"abcd"));
 }
 
 #[cfg(any(target_os = "windows", target_arch = "wasm32"))]
@@ -35,11 +100,21 @@ impl OsStrExt3 for OsStr {
 
 impl OsStrExt2 for OsStr {
     fn starts_with(&self, s: &[u8]) -> bool {
+        #[cfg(target_os = "windows")]
+        {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            return windows_osstr_starts_with(self, s);
+        }
         self.as_bytes().starts_with(s)
-    }
-
-    fn is_empty_(&self) -> bool {
-        self.as_bytes().is_empty()
     }
 
     fn contains_byte(&self, byte: u8) -> bool {
@@ -62,7 +137,7 @@ impl OsStrExt2 for OsStr {
         }
         (
             &*self,
-            OsStr::from_bytes(&self.as_bytes()[self.len_()..self.len_()]),
+            OsStr::from_bytes(&self.as_bytes()[self.len()..self.len()]),
         )
     }
 
@@ -76,7 +151,7 @@ impl OsStrExt2 for OsStr {
             }
         }
         if found {
-            return OsStr::from_bytes(&self.as_bytes()[self.len_()..]);
+            return OsStr::from_bytes(&self.as_bytes()[self.len()..]);
         }
         &*self
     }
@@ -86,10 +161,6 @@ impl OsStrExt2 for OsStr {
             OsStr::from_bytes(&self.as_bytes()[..i]),
             OsStr::from_bytes(&self.as_bytes()[i..]),
         )
-    }
-
-    fn len_(&self) -> usize {
-        self.as_bytes().len()
     }
 
     fn split(&self, b: u8) -> OsSplit {
@@ -125,33 +196,5 @@ impl<'a> Iterator for OsSplit<'a> {
             }
         }
         Some(OsStr::from_bytes(&self.val[start..]))
-    }
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        let mut count = 0;
-        for b in &self.val[self.pos..] {
-            if *b == self.sep {
-                count += 1;
-            }
-        }
-        if count > 0 {
-            return (count, Some(count));
-        }
-        (0, None)
-    }
-}
-
-impl<'a> DoubleEndedIterator for OsSplit<'a> {
-    fn next_back(&mut self) -> Option<&'a OsStr> {
-        if self.pos == 0 {
-            return None;
-        }
-        let start = self.pos;
-        for b in self.val[..self.pos].iter().rev() {
-            self.pos -= 1;
-            if *b == self.sep {
-                return Some(OsStr::from_bytes(&self.val[self.pos + 1..start]));
-            }
-        }
-        Some(OsStr::from_bytes(&self.val[..start]))
     }
 }

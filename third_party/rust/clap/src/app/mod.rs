@@ -1,9 +1,9 @@
-mod settings;
-pub mod parser;
-mod meta;
 mod help;
-mod validator;
+mod meta;
+pub mod parser;
+mod settings;
 mod usage;
+mod validator;
 
 
 use std::env;
@@ -20,12 +20,12 @@ use std::result::Result as StdResult;
 use yaml_rust::Yaml;
 
 
+pub use self::settings::AppSettings;
 use app::help::Help;
 use app::parser::Parser;
 use args::{AnyArg, Arg, ArgGroup, ArgMatcher, ArgMatches, ArgSettings};
-use errors::Result as ClapResult;
-pub use self::settings::AppSettings;
 use completions::Shell;
+use errors::Result as ClapResult;
 use map::{self, VecMap};
 
 
@@ -61,9 +61,9 @@ pub struct App<'a, 'b>
 where
     'a: 'b,
 {
-    #[doc(hidden)] pub p: Parser<'a, 'b>,
+    #[doc(hidden)]
+    pub p: Parser<'a, 'b>,
 }
-
 
 impl<'a, 'b> App<'a, 'b> {
     
@@ -84,10 +84,14 @@ impl<'a, 'b> App<'a, 'b> {
     }
 
     
-    pub fn get_name(&self) -> &str { &self.p.meta.name }
+    pub fn get_name(&self) -> &str {
+        &self.p.meta.name
+    }
 
     
-    pub fn get_bin_name(&self) -> Option<&str> { self.p.meta.bin_name.as_ref().map(|s| s.as_str()) }
+    pub fn get_bin_name(&self) -> Option<&str> {
+        self.p.meta.bin_name.as_ref().map(|s| s.as_str())
+    }
 
     
     
@@ -103,7 +107,10 @@ impl<'a, 'b> App<'a, 'b> {
     
     
     
-    #[deprecated(since="2.14.1", note="Can never work; use explicit App::author() and App::version() calls instead")]
+    #[deprecated(
+        since = "2.14.1",
+        note = "Can never work; use explicit App::author() and App::version() calls instead"
+    )]
     pub fn with_defaults<S: Into<String>>(n: S) -> Self {
         let mut a = App {
             p: Parser::with_name(n.into()),
@@ -153,7 +160,9 @@ impl<'a, 'b> App<'a, 'b> {
     
     
     #[cfg(feature = "yaml")]
-    pub fn from_yaml(yaml: &'a Yaml) -> App<'a, 'a> { App::from(yaml) }
+    pub fn from_yaml(yaml: &'a Yaml) -> App<'a, 'a> {
+        App::from(yaml)
+    }
 
     
     
@@ -528,6 +537,7 @@ impl<'a, 'b> App<'a, 'b> {
         self
     }
 
+    
     
     
     
@@ -1186,13 +1196,6 @@ impl<'a, 'b> App<'a, 'b> {
     
     
     pub fn print_long_help(&mut self) -> ClapResult<()> {
-        
-        
-        self.p.propagate_globals();
-        self.p.propagate_settings();
-        self.p.derive_display_order();
-
-        self.p.create_help_and_version();
         let out = io::stdout();
         let mut buf_w = BufWriter::new(out.lock());
         self.write_long_help(&mut buf_w)
@@ -1252,6 +1255,8 @@ impl<'a, 'b> App<'a, 'b> {
     
     
     pub fn write_long_help<W: Write>(&mut self, w: &mut W) -> ClapResult<()> {
+        
+        
         self.p.propagate_globals();
         self.p.propagate_settings();
         self.p.derive_display_order();
@@ -1395,7 +1400,6 @@ impl<'a, 'b> App<'a, 'b> {
         self.p.gen_completions(for_shell, out_dir.into());
     }
 
-
     
     
     
@@ -1452,7 +1456,9 @@ impl<'a, 'b> App<'a, 'b> {
     
     
     
-    pub fn get_matches(self) -> ArgMatches<'a> { self.get_matches_from(&mut env::args_os()) }
+    pub fn get_matches(self) -> ArgMatches<'a> {
+        self.get_matches_from(&mut env::args_os())
+    }
 
     
     
@@ -1662,15 +1668,20 @@ impl<'a> From<&'a Yaml> for App<'a, 'a> {
                 if let Some(v) = $y[stringify!($i)].as_str() {
                     $a = $a.$i(v);
                 } else if $y[stringify!($i)] != Yaml::BadValue {
-                    panic!("Failed to convert YAML value {:?} to a string", $y[stringify!($i)]);
+                    panic!(
+                        "Failed to convert YAML value {:?} to a string",
+                        $y[stringify!($i)]
+                    );
                 }
             };
         }
 
         yaml_str!(a, yaml, version);
+        yaml_str!(a, yaml, long_version);
         yaml_str!(a, yaml, author);
         yaml_str!(a, yaml, bin_name);
         yaml_str!(a, yaml, about);
+        yaml_str!(a, yaml, long_about);
         yaml_str!(a, yaml, before_help);
         yaml_str!(a, yaml, after_help);
         yaml_str!(a, yaml, template);
@@ -1738,25 +1749,27 @@ impl<'a> From<&'a Yaml> for App<'a, 'a> {
 
         macro_rules! vec_or_str {
             ($a:ident, $y:ident, $as_vec:ident, $as_single:ident) => {{
-                    let maybe_vec = $y[stringify!($as_vec)].as_vec();
-                    if let Some(vec) = maybe_vec {
-                        for ys in vec {
-                            if let Some(s) = ys.as_str() {
-                                $a = $a.$as_single(s);
-                            } else {
-                                panic!("Failed to convert YAML value {:?} to a string", ys);
-                            }
-                        }
-                    } else {
-                        if let Some(s) = $y[stringify!($as_vec)].as_str() {
+                let maybe_vec = $y[stringify!($as_vec)].as_vec();
+                if let Some(vec) = maybe_vec {
+                    for ys in vec {
+                        if let Some(s) = ys.as_str() {
                             $a = $a.$as_single(s);
-                        } else if $y[stringify!($as_vec)] != Yaml::BadValue {
-                            panic!("Failed to convert YAML value {:?} to either a vec or string", $y[stringify!($as_vec)]);
+                        } else {
+                            panic!("Failed to convert YAML value {:?} to a string", ys);
                         }
                     }
-                    $a
+                } else {
+                    if let Some(s) = $y[stringify!($as_vec)].as_str() {
+                        $a = $a.$as_single(s);
+                    } else if $y[stringify!($as_vec)] != Yaml::BadValue {
+                        panic!(
+                            "Failed to convert YAML value {:?} to either a vec or string",
+                            $y[stringify!($as_vec)]
+                        );
+                    }
                 }
-            };
+                $a
+            }};
         }
 
         a = vec_or_str!(a, yaml, aliases, alias);
@@ -1783,42 +1796,90 @@ impl<'a> From<&'a Yaml> for App<'a, 'a> {
 }
 
 impl<'a, 'b> Clone for App<'a, 'b> {
-    fn clone(&self) -> Self { App { p: self.p.clone() } }
+    fn clone(&self) -> Self {
+        App { p: self.p.clone() }
+    }
 }
 
 impl<'n, 'e> AnyArg<'n, 'e> for App<'n, 'e> {
     fn name(&self) -> &'n str {
-        unreachable!("App struct does not support AnyArg::name, this is a bug!")
+        ""
     }
-    fn overrides(&self) -> Option<&[&'e str]> { None }
-    fn requires(&self) -> Option<&[(Option<&'e str>, &'n str)]> { None }
-    fn blacklist(&self) -> Option<&[&'e str]> { None }
-    fn required_unless(&self) -> Option<&[&'e str]> { None }
-    fn val_names(&self) -> Option<&VecMap<&'e str>> { None }
-    fn is_set(&self, _: ArgSettings) -> bool { false }
-    fn val_terminator(&self) -> Option<&'e str> { None }
+    fn overrides(&self) -> Option<&[&'e str]> {
+        None
+    }
+    fn requires(&self) -> Option<&[(Option<&'e str>, &'n str)]> {
+        None
+    }
+    fn blacklist(&self) -> Option<&[&'e str]> {
+        None
+    }
+    fn required_unless(&self) -> Option<&[&'e str]> {
+        None
+    }
+    fn val_names(&self) -> Option<&VecMap<&'e str>> {
+        None
+    }
+    fn is_set(&self, _: ArgSettings) -> bool {
+        false
+    }
+    fn val_terminator(&self) -> Option<&'e str> {
+        None
+    }
     fn set(&mut self, _: ArgSettings) {
         unreachable!("App struct does not support AnyArg::set, this is a bug!")
     }
-    fn has_switch(&self) -> bool { false }
-    fn max_vals(&self) -> Option<u64> { None }
-    fn num_vals(&self) -> Option<u64> { None }
-    fn possible_vals(&self) -> Option<&[&'e str]> { None }
-    fn validator(&self) -> Option<&Rc<Fn(String) -> StdResult<(), String>>> { None }
-    fn validator_os(&self) -> Option<&Rc<Fn(&OsStr) -> StdResult<(), OsString>>> { None }
-    fn min_vals(&self) -> Option<u64> { None }
-    fn short(&self) -> Option<char> { None }
-    fn long(&self) -> Option<&'e str> { None }
-    fn val_delim(&self) -> Option<char> { None }
-    fn takes_value(&self) -> bool { true }
-    fn help(&self) -> Option<&'e str> { self.p.meta.about }
-    fn long_help(&self) -> Option<&'e str> { self.p.meta.long_about }
-    fn default_val(&self) -> Option<&'e OsStr> { None }
+    fn has_switch(&self) -> bool {
+        false
+    }
+    fn max_vals(&self) -> Option<u64> {
+        None
+    }
+    fn num_vals(&self) -> Option<u64> {
+        None
+    }
+    fn possible_vals(&self) -> Option<&[&'e str]> {
+        None
+    }
+    fn validator(&self) -> Option<&Rc<Fn(String) -> StdResult<(), String>>> {
+        None
+    }
+    fn validator_os(&self) -> Option<&Rc<Fn(&OsStr) -> StdResult<(), OsString>>> {
+        None
+    }
+    fn min_vals(&self) -> Option<u64> {
+        None
+    }
+    fn short(&self) -> Option<char> {
+        None
+    }
+    fn long(&self) -> Option<&'e str> {
+        None
+    }
+    fn val_delim(&self) -> Option<char> {
+        None
+    }
+    fn takes_value(&self) -> bool {
+        true
+    }
+    fn help(&self) -> Option<&'e str> {
+        self.p.meta.about
+    }
+    fn long_help(&self) -> Option<&'e str> {
+        self.p.meta.long_about
+    }
+    fn default_val(&self) -> Option<&'e OsStr> {
+        None
+    }
     fn default_vals_ifs(&self) -> Option<map::Values<(&'n str, Option<&'e OsStr>, &'e OsStr)>> {
         None
     }
-    fn env<'s>(&'s self) -> Option<(&'n OsStr, Option<&'s OsString>)> { None }
-    fn longest_filter(&self) -> bool { true }
+    fn env<'s>(&'s self) -> Option<(&'n OsStr, Option<&'s OsString>)> {
+        None
+    }
+    fn longest_filter(&self) -> bool {
+        true
+    }
     fn aliases(&self) -> Option<Vec<&'e str>> {
         if let Some(ref aliases) = self.p.meta.aliases {
             let vis_aliases: Vec<_> = aliases
@@ -1837,5 +1898,7 @@ impl<'n, 'e> AnyArg<'n, 'e> for App<'n, 'e> {
 }
 
 impl<'n, 'e> fmt::Display for App<'n, 'e> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result { write!(f, "{}", self.p.meta.name) }
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.p.meta.name)
+    }
 }

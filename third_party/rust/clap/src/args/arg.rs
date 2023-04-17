@@ -1,20 +1,20 @@
-#[cfg(feature = "yaml")]
-use std::collections::BTreeMap;
-use std::rc::Rc;
-use std::ffi::{OsStr, OsString};
 #[cfg(any(target_os = "windows", target_arch = "wasm32"))]
 use osstringext::OsStrExt3;
+#[cfg(feature = "yaml")]
+use std::collections::BTreeMap;
+use std::env;
+use std::ffi::{OsStr, OsString};
 #[cfg(not(any(target_os = "windows", target_arch = "wasm32")))]
 use std::os::unix::ffi::OsStrExt;
-use std::env;
+use std::rc::Rc;
 
+use map::VecMap;
 #[cfg(feature = "yaml")]
 use yaml_rust::Yaml;
-use map::VecMap;
 
-use usage_parser::UsageParser;
-use args::settings::ArgSettings;
 use args::arg_builder::{Base, Switched, Valued};
+use args::settings::ArgSettings;
+use usage_parser::UsageParser;
 
 
 
@@ -44,11 +44,16 @@ pub struct Arg<'a, 'b>
 where
     'a: 'b,
 {
-    #[doc(hidden)] pub b: Base<'a, 'b>,
-    #[doc(hidden)] pub s: Switched<'b>,
-    #[doc(hidden)] pub v: Valued<'a, 'b>,
-    #[doc(hidden)] pub index: Option<u64>,
-    #[doc(hidden)] pub r_ifs: Option<Vec<(&'a str, &'b str)>>,
+    #[doc(hidden)]
+    pub b: Base<'a, 'b>,
+    #[doc(hidden)]
+    pub s: Switched<'b>,
+    #[doc(hidden)]
+    pub v: Valued<'a, 'b>,
+    #[doc(hidden)]
+    pub index: Option<u64>,
+    #[doc(hidden)]
+    pub r_ifs: Option<Vec<(&'a str, &'b str)>>,
 }
 
 impl<'a, 'b> Arg<'a, 'b> {
@@ -139,6 +144,7 @@ impl<'a, 'b> Arg<'a, 'b> {
                 "conflicts_with" => yaml_vec_or_str!(v, a, conflicts_with),
                 "overrides_with" => yaml_vec_or_str!(v, a, overrides_with),
                 "possible_values" => yaml_vec_or_str!(v, a, possible_value),
+                "case_insensitive" => yaml_to_bool!(a, v, case_insensitive),
                 "required_unless_one" => yaml_vec_or_str!(v, a, required_unless),
                 "required_unless_all" => {
                     a = yaml_vec_or_str!(v, a, required_unless);
@@ -1296,9 +1302,9 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     pub fn overrides_with(mut self, name: &'a str) -> Self {
         if let Some(ref mut vec) = self.b.overrides {
-            vec.push(name.as_ref());
+            vec.push(name);
         } else {
-            self.b.overrides = Some(vec![name.as_ref()]);
+            self.b.overrides = Some(vec![name]);
         }
         self
     }
@@ -2297,6 +2303,11 @@ impl<'a, 'b> Arg<'a, 'b> {
         }
     }
 
+    
+    
+    
+    
+    
     
     
     
@@ -3575,6 +3586,12 @@ impl<'a, 'b> Arg<'a, 'b> {
     
     
     
+    
+    
+    
+    
+    
+    
     pub fn env(self, name: &'a str) -> Self {
         self.env_os(OsStr::new(name))
     }
@@ -3737,10 +3754,166 @@ impl<'a, 'b> Arg<'a, 'b> {
 
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn hidden_short_help(self, hide: bool) -> Self {
+        if hide {
+            self.set(ArgSettings::HiddenShortHelp)
+        } else {
+            self.unset(ArgSettings::HiddenShortHelp)
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn hidden_long_help(self, hide: bool) -> Self {
+        if hide {
+            self.set(ArgSettings::HiddenLongHelp)
+        } else {
+            self.unset(ArgSettings::HiddenLongHelp)
+        }
+    }
+
+    
+    
+    
     pub fn is_set(&self, s: ArgSettings) -> bool {
         self.b.is_set(s)
     }
 
+    
     
     
     pub fn set(mut self, s: ArgSettings) -> Self {
@@ -3748,6 +3921,7 @@ impl<'a, 'b> Arg<'a, 'b> {
         self
     }
 
+    
     
     
     pub fn unset(mut self, s: ArgSettings) -> Self {

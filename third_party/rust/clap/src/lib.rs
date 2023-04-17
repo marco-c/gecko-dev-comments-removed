@@ -512,14 +512,27 @@
 
 
 
+
+
+
+
 #![crate_type = "lib"]
-#![doc(html_root_url = "https://docs.rs/clap/2.31.2")]
-#![deny(missing_docs, missing_debug_implementations, missing_copy_implementations, trivial_casts,
-        unused_import_braces, unused_allocation)]
+#![doc(html_root_url = "https://docs.rs/clap/2.33.3")]
+#![deny(
+    missing_docs,
+    missing_debug_implementations,
+    missing_copy_implementations,
+    trivial_casts,
+    unused_import_braces,
+    unused_allocation
+)]
 
 
 
-#![cfg_attr(not(any(feature = "lints", feature = "nightly")), forbid(unstable_features))]
+#![cfg_attr(
+    not(any(feature = "lints", feature = "nightly")),
+    forbid(unstable_features)
+)]
 #![cfg_attr(feature = "lints", feature(plugin))]
 #![cfg_attr(feature = "lints", plugin(clippy))]
 
@@ -545,29 +558,29 @@ extern crate vec_map;
 #[cfg(feature = "yaml")]
 extern crate yaml_rust;
 
+pub use app::{App, AppSettings};
+pub use args::{Arg, ArgGroup, ArgMatches, ArgSettings, OsValues, SubCommand, Values};
+pub use completions::Shell;
+pub use errors::{Error, ErrorKind, Result};
+pub use fmt::Format;
 #[cfg(feature = "yaml")]
 pub use yaml_rust::YamlLoader;
-pub use args::{Arg, ArgGroup, ArgMatches, ArgSettings, OsValues, SubCommand, Values};
-pub use app::{App, AppSettings};
-pub use fmt::Format;
-pub use errors::{Error, ErrorKind, Result};
-pub use completions::Shell;
 
 #[macro_use]
 mod macros;
 mod app;
 mod args;
-mod usage_parser;
-mod fmt;
-mod suggestions;
+mod completions;
 mod errors;
+mod fmt;
+mod map;
 mod osstringext;
 mod strext;
-mod completions;
-mod map;
+mod suggestions;
+mod usage_parser;
 
 const INTERNAL_ERROR_MSG: &'static str = "Fatal internal error. Please consider filing a bug \
-                                          report at https://github.com/kbknapp/clap-rs/issues";
+                                          report at https://github.com/clap-rs/clap/issues";
 const INVALID_UTF8: &'static str = "unexpected invalid UTF-8 code point";
 
 #[cfg(unstable)]
@@ -578,7 +591,9 @@ mod derive {
     
     pub trait ClapApp: IntoApp + FromArgMatches + Sized {
         
-        fn parse() -> Self { Self::from_argmatches(Self::into_app().get_matches()) }
+        fn parse() -> Self {
+            Self::from_argmatches(Self::into_app().get_matches())
+        }
 
         
         fn parse_from<I, T>(argv: I) -> Self
@@ -593,7 +608,6 @@ mod derive {
         fn try_parse() -> Result<Self, clap::Error> {
             Self::try_from_argmatches(Self::into_app().get_matches_safe()?)
         }
-
 
         
         fn try_parse_from<I, T>(argv: I) -> Result<Self, clap::Error>

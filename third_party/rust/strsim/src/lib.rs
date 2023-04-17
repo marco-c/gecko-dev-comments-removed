@@ -179,6 +179,25 @@ pub fn levenshtein(a: &str, b: &str) -> usize {
 
 
 
+
+
+
+
+pub fn normalized_levenshtein(a: &str, b: &str) -> f64 {
+    if a.is_empty() && b.is_empty() {
+        return 1.0;
+    }
+    1.0 - (levenshtein(a, b) as f64) / (a.chars().count().max(b.chars().count()) as f64)
+}
+
+
+
+
+
+
+
+
+
 pub fn osa_distance(a: &str, b: &str) -> usize {
     let a_len = a.chars().count();
     let b_len = b.chars().count();
@@ -293,6 +312,25 @@ pub fn damerau_levenshtein(a: &str, b: &str) -> usize {
     }
 
     distances[a_len + 1][b_len + 1]
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn normalized_damerau_levenshtein(a: &str, b: &str) -> f64 {
+    if a.is_empty() && b.is_empty() {
+        return 1.0;
+    }
+    1.0 - (damerau_levenshtein(a, b) as f64) / (a.chars().count().max(b.chars().count()) as f64)
 }
 
 #[cfg(test)]
@@ -531,6 +569,31 @@ mod tests {
     }
 
     #[test]
+    fn normalized_levenshtein_diff_short() {
+        assert!((normalized_levenshtein("kitten", "sitting") - 0.57142).abs() < 0.00001);
+    }
+
+    #[test]
+    fn normalized_levenshtein_for_empty_strings() {
+        assert!((normalized_levenshtein("", "") - 1.0).abs() < 0.00001);
+    }
+
+    #[test]
+    fn normalized_levenshtein_first_empty() {
+        assert!(normalized_levenshtein("", "second").abs() < 0.00001);
+    }
+
+    #[test]
+    fn normalized_levenshtein_second_empty() {
+        assert!(normalized_levenshtein("first", "").abs() < 0.00001);
+    }
+
+    #[test]
+    fn normalized_levenshtein_identical_strings() {
+        assert!((normalized_levenshtein("identical", "identical") - 1.0).abs() < 0.00001);
+    }
+
+    #[test]
     fn osa_distance_empty() {
         assert_eq!(0, osa_distance("", ""));
     }
@@ -694,5 +757,30 @@ mod tests {
     #[test]
     fn damerau_levenshtein_unrestricted_edit() {
         assert_eq!(3, damerau_levenshtein("a cat", "an abct"));
+    }
+
+    #[test]
+    fn normalized_damerau_levenshtein_diff_short() {
+        assert!((normalized_damerau_levenshtein("levenshtein", "löwenbräu") - 0.27272).abs() < 0.00001);
+    }
+
+    #[test]
+    fn normalized_damerau_levenshtein_for_empty_strings() {
+        assert!((normalized_damerau_levenshtein("", "") - 1.0).abs() < 0.00001);
+    }
+
+    #[test]
+    fn normalized_damerau_levenshtein_first_empty() {
+        assert!(normalized_damerau_levenshtein("", "flower").abs() < 0.00001);
+    }
+
+    #[test]
+    fn normalized_damerau_levenshtein_second_empty() {
+        assert!(normalized_damerau_levenshtein("tree", "").abs() < 0.00001);
+    }
+
+    #[test]
+    fn normalized_damerau_levenshtein_identical_strings() {
+        assert!((normalized_damerau_levenshtein("sunglasses", "sunglasses") - 1.0).abs() < 0.00001);
     }
 }

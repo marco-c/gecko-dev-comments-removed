@@ -1,8 +1,8 @@
 
-#[allow(unused_imports)]
+#[allow(deprecated, unused_imports)]
 use std::ascii::AsciiExt;
-use std::str::FromStr;
 use std::ops::BitOr;
+use std::str::FromStr;
 
 bitflags! {
     struct Flags: u64 {
@@ -47,6 +47,7 @@ bitflags! {
         const INFER_SUBCOMMANDS    = 1 << 38;
         const CONTAINS_LAST        = 1 << 39;
         const ARGS_OVERRIDE_SELF   = 1 << 40;
+        const DISABLE_HELP_FLAGS   = 1 << 41;
     }
 }
 
@@ -56,22 +57,31 @@ pub struct AppFlags(Flags);
 
 impl BitOr for AppFlags {
     type Output = Self;
-    fn bitor(self, rhs: Self) -> Self { AppFlags(self.0 | rhs.0) }
+    fn bitor(self, rhs: Self) -> Self {
+        AppFlags(self.0 | rhs.0)
+    }
 }
 
 impl Default for AppFlags {
     fn default() -> Self {
         AppFlags(
-            Flags::NEEDS_LONG_VERSION | Flags::NEEDS_LONG_HELP | Flags::NEEDS_SC_HELP
-                | Flags::UTF8_NONE | Flags::COLOR_AUTO,
+            Flags::NEEDS_LONG_VERSION
+                | Flags::NEEDS_LONG_HELP
+                | Flags::NEEDS_SC_HELP
+                | Flags::UTF8_NONE
+                | Flags::COLOR_AUTO,
         )
     }
 }
 
 #[allow(deprecated)]
 impl AppFlags {
-    pub fn new() -> Self { AppFlags::default() }
-    pub fn zeroed() -> Self { AppFlags(Flags::empty()) }
+    pub fn new() -> Self {
+        AppFlags::default()
+    }
+    pub fn zeroed() -> Self {
+        AppFlags(Flags::empty())
+    }
 
     impl_settings! { AppSettings,
         ArgRequiredElseHelp => Flags::A_REQUIRED_ELSE_HELP,
@@ -89,6 +99,7 @@ impl AppFlags {
         DontDelimitTrailingValues => Flags::DONT_DELIM_TRAIL,
         DontCollapseArgsInUsage => Flags::DONT_COLLAPSE_ARGS,
         DeriveDisplayOrder => Flags::DERIVE_DISP_ORDER,
+        DisableHelpFlags => Flags::DISABLE_HELP_FLAGS,
         DisableHelpSubcommand => Flags::DISABLE_HELP_SC,
         DisableVersion => Flags::DISABLE_VERSION,
         GlobalVersion => Flags::GLOBAL_VERSION,
@@ -145,6 +156,7 @@ pub enum AppSettings {
     
     #[cfg_attr(not(unix), doc = " ```ignore")]
     #[cfg_attr(unix, doc = " ```")]
+    
     
     
     
@@ -530,8 +542,40 @@ pub enum AppSettings {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    DisableHelpFlags,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     DisableHelpSubcommand,
 
+    
     
     
     
@@ -925,29 +969,39 @@ pub enum AppSettings {
     
     WaitOnError,
 
-    #[doc(hidden)] NeedsLongVersion,
+    #[doc(hidden)]
+    NeedsLongVersion,
 
-    #[doc(hidden)] NeedsLongHelp,
+    #[doc(hidden)]
+    NeedsLongHelp,
 
-    #[doc(hidden)] NeedsSubcommandHelp,
+    #[doc(hidden)]
+    NeedsSubcommandHelp,
 
-    #[doc(hidden)] LowIndexMultiplePositional,
+    #[doc(hidden)]
+    LowIndexMultiplePositional,
 
-    #[doc(hidden)] TrailingValues,
+    #[doc(hidden)]
+    TrailingValues,
 
-    #[doc(hidden)] ValidNegNumFound,
+    #[doc(hidden)]
+    ValidNegNumFound,
 
-    #[doc(hidden)] Propagated,
+    #[doc(hidden)]
+    Propagated,
 
-    #[doc(hidden)] ValidArgFound,
+    #[doc(hidden)]
+    ValidArgFound,
 
-    #[doc(hidden)] ContainsLast,
+    #[doc(hidden)]
+    ContainsLast,
 }
 
 impl FromStr for AppSettings {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, <Self as FromStr>::Err> {
         match &*s.to_ascii_lowercase() {
+            "disablehelpflags" => Ok(AppSettings::DisableHelpFlags),
             "argrequiredelsehelp" => Ok(AppSettings::ArgRequiredElseHelp),
             "argsnegatesubcommands" => Ok(AppSettings::ArgsNegateSubcommands),
             "allowinvalidutf8" => Ok(AppSettings::AllowInvalidUtf8),
@@ -993,6 +1047,10 @@ mod test {
 
     #[test]
     fn app_settings_fromstr() {
+        assert_eq!(
+            "disablehelpflags".parse::<AppSettings>().unwrap(),
+            AppSettings::DisableHelpFlags
+        );
         assert_eq!(
             "argsnegatesubcommands".parse::<AppSettings>().unwrap(),
             AppSettings::ArgsNegateSubcommands

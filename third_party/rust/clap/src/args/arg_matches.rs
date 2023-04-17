@@ -6,9 +6,9 @@ use std::iter::Map;
 use std::slice::Iter;
 
 
-use INVALID_UTF8;
 use args::MatchedArg;
 use args::SubCommand;
+use INVALID_UTF8;
 
 
 
@@ -59,9 +59,12 @@ use args::SubCommand;
 
 #[derive(Debug, Clone)]
 pub struct ArgMatches<'a> {
-    #[doc(hidden)] pub args: HashMap<&'a str, MatchedArg>,
-    #[doc(hidden)] pub subcommand: Option<Box<SubCommand<'a>>>,
-    #[doc(hidden)] pub usage: Option<String>,
+    #[doc(hidden)]
+    pub args: HashMap<&'a str, MatchedArg>,
+    #[doc(hidden)]
+    pub subcommand: Option<Box<SubCommand<'a>>>,
+    #[doc(hidden)]
+    pub usage: Option<String>,
 }
 
 impl<'a> Default for ArgMatches<'a> {
@@ -210,7 +213,9 @@ impl<'a> ArgMatches<'a> {
     
     pub fn values_of<S: AsRef<str>>(&'a self, name: S) -> Option<Values<'a>> {
         if let Some(arg) = self.args.get(name.as_ref()) {
-            fn to_str_slice(o: &OsString) -> &str { o.to_str().expect(INVALID_UTF8) }
+            fn to_str_slice(o: &OsString) -> &str {
+                o.to_str().expect(INVALID_UTF8)
+            }
             let to_str_slice: fn(&OsString) -> &str = to_str_slice; 
             return Some(Values {
                 iter: arg.vals.iter().map(to_str_slice),
@@ -287,7 +292,9 @@ impl<'a> ArgMatches<'a> {
     
     
     pub fn values_of_os<S: AsRef<str>>(&'a self, name: S) -> Option<OsValues<'a>> {
-        fn to_str_slice(o: &OsString) -> &OsStr { &*o }
+        fn to_str_slice(o: &OsString) -> &OsStr {
+            &*o
+        }
         let to_str_slice: fn(&'a OsString) -> &'a OsStr = to_str_slice; 
         if let Some(arg) = self.args.get(name.as_ref()) {
             return Some(OsValues {
@@ -578,7 +585,9 @@ impl<'a> ArgMatches<'a> {
     
     pub fn indices_of<S: AsRef<str>>(&'a self, name: S) -> Option<Indices<'a>> {
         if let Some(arg) = self.args.get(name.as_ref()) {
-            fn to_usize(i: &usize) -> usize { *i }
+            fn to_usize(i: &usize) -> usize {
+                *i
+            }
             let to_usize: fn(&usize) -> usize = to_usize; 
             return Some(Indices {
                 iter: arg.indices.iter().map(to_usize),
@@ -756,7 +765,9 @@ impl<'a> ArgMatches<'a> {
     
     
     
-    pub fn usage(&self) -> &str { self.usage.as_ref().map_or("", |u| &u[..]) }
+    pub fn usage(&self) -> &str {
+        self.usage.as_ref().map_or("", |u| &u[..])
+    }
 }
 
 
@@ -785,9 +796,7 @@ impl<'a> ArgMatches<'a> {
 
 
 
-
-#[derive(Clone)]
-#[allow(missing_debug_implementations)]
+#[derive(Debug, Clone)]
 pub struct Values<'a> {
     iter: Map<Iter<'a, OsString>, fn(&'a OsString) -> &'a str>,
 }
@@ -795,12 +804,18 @@ pub struct Values<'a> {
 impl<'a> Iterator for Values<'a> {
     type Item = &'a str;
 
-    fn next(&mut self) -> Option<&'a str> { self.iter.next() }
-    fn size_hint(&self) -> (usize, Option<usize>) { self.iter.size_hint() }
+    fn next(&mut self) -> Option<&'a str> {
+        self.iter.next()
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
 }
 
 impl<'a> DoubleEndedIterator for Values<'a> {
-    fn next_back(&mut self) -> Option<&'a str> { self.iter.next_back() }
+    fn next_back(&mut self) -> Option<&'a str> {
+        self.iter.next_back()
+    }
 }
 
 impl<'a> ExactSizeIterator for Values<'a> {}
@@ -810,7 +825,9 @@ impl<'a> Default for Values<'a> {
     fn default() -> Self {
         static EMPTY: [OsString; 0] = [];
         
-        fn to_str_slice(_: &OsString) -> &str { unreachable!() };
+        fn to_str_slice(_: &OsString) -> &str {
+            unreachable!()
+        };
         Values {
             iter: EMPTY[..].iter().map(to_str_slice),
         }
@@ -838,8 +855,7 @@ impl<'a> Default for Values<'a> {
 
 
 
-#[derive(Clone)]
-#[allow(missing_debug_implementations)]
+#[derive(Debug, Clone)]
 pub struct OsValues<'a> {
     iter: Map<Iter<'a, OsString>, fn(&'a OsString) -> &'a OsStr>,
 }
@@ -847,20 +863,30 @@ pub struct OsValues<'a> {
 impl<'a> Iterator for OsValues<'a> {
     type Item = &'a OsStr;
 
-    fn next(&mut self) -> Option<&'a OsStr> { self.iter.next() }
-    fn size_hint(&self) -> (usize, Option<usize>) { self.iter.size_hint() }
+    fn next(&mut self) -> Option<&'a OsStr> {
+        self.iter.next()
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
 }
 
 impl<'a> DoubleEndedIterator for OsValues<'a> {
-    fn next_back(&mut self) -> Option<&'a OsStr> { self.iter.next_back() }
+    fn next_back(&mut self) -> Option<&'a OsStr> {
+        self.iter.next_back()
+    }
 }
+
+impl<'a> ExactSizeIterator for OsValues<'a> {}
 
 
 impl<'a> Default for OsValues<'a> {
     fn default() -> Self {
         static EMPTY: [OsString; 0] = [];
         
-        fn to_str_slice(_: &OsString) -> &OsStr { unreachable!() };
+        fn to_str_slice(_: &OsString) -> &OsStr {
+            unreachable!()
+        };
         OsValues {
             iter: EMPTY[..].iter().map(to_str_slice),
         }
@@ -888,21 +914,27 @@ impl<'a> Default for OsValues<'a> {
 
 
 
-#[derive(Clone)]
-#[allow(missing_debug_implementations)]
-pub struct Indices<'a> { 
+#[derive(Debug, Clone)]
+pub struct Indices<'a> {
+    
     iter: Map<Iter<'a, usize>, fn(&'a usize) -> usize>,
 }
 
 impl<'a> Iterator for Indices<'a> {
     type Item = usize;
 
-    fn next(&mut self) -> Option<usize> { self.iter.next() }
-    fn size_hint(&self) -> (usize, Option<usize>) { self.iter.size_hint() }
+    fn next(&mut self) -> Option<usize> {
+        self.iter.next()
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
 }
 
 impl<'a> DoubleEndedIterator for Indices<'a> {
-    fn next_back(&mut self) -> Option<usize> { self.iter.next_back() }
+    fn next_back(&mut self) -> Option<usize> {
+        self.iter.next_back()
+    }
 }
 
 impl<'a> ExactSizeIterator for Indices<'a> {}
@@ -912,7 +944,9 @@ impl<'a> Default for Indices<'a> {
     fn default() -> Self {
         static EMPTY: [usize; 0] = [];
         
-        fn to_usize(_: &usize) -> usize { unreachable!() };
+        fn to_usize(_: &usize) -> usize {
+            unreachable!()
+        };
         Indices {
             iter: EMPTY[..].iter().map(to_usize),
         }
