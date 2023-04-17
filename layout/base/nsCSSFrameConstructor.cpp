@@ -705,6 +705,14 @@ class MOZ_STACK_CLASS nsFrameConstructorState {
 
   nsTArray<RefPtr<nsIContent>> mGeneratedContentWithInitializer;
 
+#ifdef DEBUG
+  
+  
+  
+  
+  nsContainerFrame* mFloatCBCandidate = nullptr;
+#endif
+
   
   
   nsFrameConstructorState(
@@ -947,6 +955,10 @@ void nsFrameConstructorState::MaybePushFloatContainingBlock(
   } else if (aFloatCBCandidate->IsFloatContainingBlock()) {
     PushFloatContainingBlock(aFloatCBCandidate, aSaveState);
   }
+
+#ifdef DEBUG
+  mFloatCBCandidate = aFloatCBCandidate;
+#endif
 }
 
 void nsFrameConstructorState::PushFloatContainingBlock(
@@ -3000,6 +3012,9 @@ nsIFrame* nsCSSFrameConstructor::ConstructSelectFrame(
     MOZ_ASSERT(customFrame);
     childList.AppendFrame(nullptr, customFrame);
 
+    nsFrameConstructorSaveState floatSaveState;
+    aState.MaybePushFloatContainingBlock(comboboxFrame, floatSaveState);
+
     
     AutoFrameConstructionItemList fcItems(this);
     AddFCItemsForAnonymousContent(aState, comboboxFrame, newAnonymousItems,
@@ -4247,6 +4262,9 @@ already_AddRefed<ComputedStyle> nsCSSFrameConstructor::BeginBuildingScrollFrame(
       GetAnonymousContent(aContent, gfxScrollFrame, scrollNAC);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
   if (scrollNAC.Length() > 0) {
+    nsFrameConstructorSaveState floatSaveState;
+    aState.MaybePushFloatContainingBlock(gfxScrollFrame, floatSaveState);
+
     AutoFrameConstructionItemList items(this);
     AddFCItemsForAnonymousContent(aState, gfxScrollFrame, scrollNAC, items);
     ConstructFramesFromItemList(aState, items, gfxScrollFrame,
@@ -6811,6 +6829,9 @@ void nsCSSFrameConstructor::ContentAppended(nsIContent* aFirstNewContent,
   
   items.SetParentHasNoShadowDOM(haveNoShadowDOM);
 
+  nsFrameConstructorSaveState floatSaveState;
+  state.MaybePushFloatContainingBlock(parentFrame, floatSaveState);
+
   nsFrameList frameList;
   ConstructFramesFromItemList(state, items, parentFrame,
                               ParentIsWrapperAnonBox(parentFrame), frameList);
@@ -7260,6 +7281,9 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
     return;
   }
   LAYOUT_PHASE_TEMP_REENTER();
+
+  nsFrameConstructorSaveState floatSaveState;
+  state.MaybePushFloatContainingBlock(insertion.mParentFrame, floatSaveState);
 
   
   
@@ -9483,6 +9507,16 @@ inline void nsCSSFrameConstructor::ConstructFramesFromItemList(
                  iter.item().mComputedStyle->IsPseudoOrAnonBox());
     }
   }
+
+  
+  
+  MOZ_ASSERT(!(ShouldSuppressFloatingOfDescendants(aParentFrame) ||
+               aParentFrame->IsFloatContainingBlock()) ||
+                 aState.mFloatCBCandidate == aParentFrame,
+             "Our caller or ProcessChildren()'s caller should call "
+             "MaybePushFloatContainingBlock() to handle the float containing "
+             "block candidate!");
+  aState.mFloatCBCandidate = nullptr;
 #endif
 
   
