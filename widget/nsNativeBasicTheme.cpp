@@ -21,10 +21,6 @@
 
 #include "nsDeviceContext.h"
 
-#include "nsColorControlFrame.h"
-#include "nsDateTimeControlFrame.h"
-#include "nsMeterFrame.h"
-#include "nsProgressFrame.h"
 #include "nsRangeFrame.h"
 #include "mozilla/dom/HTMLMeterElement.h"
 #include "mozilla/dom/HTMLProgressElement.h"
@@ -403,29 +399,6 @@ auto nsNativeBasicTheme::GetDPIRatio(nsIFrame* aFrame,
 }
 
 
-bool nsNativeBasicTheme::IsDateTimeResetButton(nsIFrame* aFrame) {
-  if (!aFrame) {
-    return false;
-  }
-
-  nsIFrame* parent = aFrame->GetParent();
-  if (parent && (parent = parent->GetParent()) &&
-      (parent = parent->GetParent())) {
-    nsDateTimeControlFrame* dateTimeFrame = do_QueryFrame(parent);
-    if (dateTimeFrame) {
-      return true;
-    }
-  }
-  return false;
-}
-
-
-bool nsNativeBasicTheme::IsColorPickerButton(nsIFrame* aFrame) {
-  nsColorControlFrame* colorPickerButton = do_QueryFrame(aFrame);
-  return colorPickerButton;
-}
-
-
 
 static LayoutDeviceRect CheckBoxRadioRect(const LayoutDeviceRect& aRect) {
   
@@ -543,9 +516,6 @@ std::pair<sRGBColor, sRGBColor> nsNativeBasicTheme::ComputeButtonColors(
 
     if (isDisabled) {
       return sColorGrey10Alpha50;
-    }
-    if (IsDateTimeResetButton(aFrame)) {
-      return sColorWhite;
     }
     if (isActive) {
       return sColorGrey30;
@@ -2212,7 +2182,7 @@ nsNativeBasicTheme::GetMinimumWidgetSize(nsPresContext* aPresContext,
 
   switch (aAppearance) {
     case StyleAppearance::Button:
-      if (IsColorPickerButton(aFrame)) {
+      if (aFrame->IsColorControlFrame()) {
         aResult->height = (kMinimumColorPickerHeight * dpiRatio).Rounded();
       }
       break;
