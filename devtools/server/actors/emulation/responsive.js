@@ -46,7 +46,7 @@ const ResponsiveActor = protocol.ActorClassWithSpec(responsiveSpec, {
 
   destroy() {
     this.clearNetworkThrottling();
-    this.clearTouchEventsOverride();
+    this.toggleTouchSimulator({ enable: false });
     this.clearMetaViewportOverride();
     this.clearUserAgentOverride();
 
@@ -201,35 +201,30 @@ const ResponsiveActor = protocol.ActorClassWithSpec(responsiveSpec, {
     this.touchSimulator.setElementPickerState(state, pickerType);
   },
 
-  setTouchEventsOverride(flag) {
-    if (this.getTouchEventsOverride() == flag) {
+  
+
+
+
+
+
+
+
+  toggleTouchSimulator({ enable = false } = {}) {
+    if (enable) {
+      if (this.touchSimulator.enabled) {
+        return false;
+      }
+
+      this.touchSimulator.start();
+      return true;
+    }
+
+    if (!this.touchSimulator.enabled) {
       return false;
     }
-    if (this._previousTouchEventsOverride === undefined) {
-      this._previousTouchEventsOverride = this.getTouchEventsOverride();
-    }
 
-    
-    
-    if (flag == "enabled") {
-      this.touchSimulator.start();
-    } else {
-      this.touchSimulator.stop();
-    }
-
-    this.docShell.browsingContext.touchEventsOverride = flag;
+    this.touchSimulator.stop();
     return true;
-  },
-
-  getTouchEventsOverride() {
-    return this.docShell.browsingContext.touchEventsOverride;
-  },
-
-  clearTouchEventsOverride() {
-    if (this._previousTouchEventsOverride !== undefined) {
-      return this.setTouchEventsOverride(this._previousTouchEventsOverride);
-    }
-    return false;
   },
 
   
