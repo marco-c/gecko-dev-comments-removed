@@ -6,6 +6,8 @@
 
 #include "FetchUtil.h"
 
+#include "zlib.h"
+
 #include "js/friend/ErrorMessages.h"  
 #include "nsCRT.h"
 #include "nsError.h"
@@ -167,12 +169,12 @@ nsresult FetchUtil::SetRequestReferrer(nsIPrincipal* aPrincipal, Document* aDoc,
 
 class StoreOptimizedEncodingRunnable final : public Runnable {
   nsMainThreadPtrHandle<nsICacheInfoChannel> mCache;
-  JS::UniqueOptimizedEncodingBytes mBytes;
+  Vector<uint8_t> mBytes;
 
  public:
   StoreOptimizedEncodingRunnable(
       nsMainThreadPtrHandle<nsICacheInfoChannel>&& aCache,
-      JS::UniqueOptimizedEncodingBytes&& aBytes)
+      Vector<uint8_t>&& aBytes)
       : Runnable("StoreOptimizedEncodingRunnable"),
         mCache(std::move(aCache)),
         mBytes(std::move(aBytes)) {}
@@ -181,8 +183,9 @@ class StoreOptimizedEncodingRunnable final : public Runnable {
     nsresult rv;
 
     nsCOMPtr<nsIAsyncOutputStream> stream;
-    rv = mCache->OpenAlternativeOutputStream(
-        FetchUtil::WasmAltDataType, mBytes->length(), getter_AddRefs(stream));
+    rv = mCache->OpenAlternativeOutputStream(FetchUtil::WasmAltDataType,
+                                             int64_t(mBytes.length()),
+                                             getter_AddRefs(stream));
     if (NS_FAILED(rv)) {
       return rv;
     }
@@ -190,12 +193,12 @@ class StoreOptimizedEncodingRunnable final : public Runnable {
     auto closeStream = MakeScopeExit([&]() { stream->CloseWithStatus(rv); });
 
     uint32_t written;
-    rv = stream->Write((char*)mBytes->begin(), mBytes->length(), &written);
+    rv = stream->Write((char*)mBytes.begin(), mBytes.length(), &written);
     if (NS_FAILED(rv)) {
       return rv;
     }
 
-    MOZ_RELEASE_ASSERT(mBytes->length() == written);
+    MOZ_RELEASE_ASSERT(mBytes.length() == written);
     return NS_OK;
   };
 };
@@ -329,10 +332,18 @@ class WorkerStreamOwner final {
 
 class JSStreamConsumer final : public nsIInputStreamCallback,
                                public JS::OptimizedEncodingListener {
+  
+  
+  
+  using LengthPrefixType = uint32_t;
+  static const unsigned PrefixBytes = sizeof(LengthPrefixType);
+
   RefPtr<WindowStreamOwner> mWindowStreamOwner;
   RefPtr<WorkerStreamOwner> mWorkerStreamOwner;
   nsMainThreadPtrHandle<nsICacheInfoChannel> mCache;
   const bool mOptimizedEncoding;
+  z_stream mZStream;
+  bool mZStreamInitialized;
   Vector<uint8_t> mOptimizedEncodingBytes;
   JS::StreamConsumer* mConsumer;
   bool mConsumerAborted;
@@ -344,6 +355,7 @@ class JSStreamConsumer final : public nsIInputStreamCallback,
       : mWindowStreamOwner(aWindowStreamOwner),
         mCache(std::move(aCache)),
         mOptimizedEncoding(aOptimizedEncoding),
+        mZStreamInitialized(false),
         mConsumer(aConsumer),
         mConsumerAborted(false) {
     MOZ_DIAGNOSTIC_ASSERT(mWindowStreamOwner);
@@ -357,6 +369,7 @@ class JSStreamConsumer final : public nsIInputStreamCallback,
       : mWorkerStreamOwner(std::move(aWorkerStreamOwner)),
         mCache(std::move(aCache)),
         mOptimizedEncoding(aOptimizedEncoding),
+        mZStreamInitialized(false),
         mConsumer(aConsumer),
         mConsumerAborted(false) {
     MOZ_DIAGNOSTIC_ASSERT(mWorkerStreamOwner);
@@ -364,6 +377,10 @@ class JSStreamConsumer final : public nsIInputStreamCallback,
   }
 
   ~JSStreamConsumer() {
+    if (mZStreamInitialized) {
+      inflateEnd(&mZStream);
+    }
+
     
     
 
@@ -393,8 +410,54 @@ class JSStreamConsumer final : public nsIInputStreamCallback,
     MOZ_DIAGNOSTIC_ASSERT(!self->mConsumerAborted);
 
     if (self->mOptimizedEncoding) {
-      if (!self->mOptimizedEncodingBytes.append((const uint8_t*)aFromSegment,
-                                                aCount)) {
+      if (!self->mZStreamInitialized) {
+        
+        
+        MOZ_ASSERT(self->mOptimizedEncodingBytes.length() < PrefixBytes);
+        uint32_t remain = PrefixBytes - self->mOptimizedEncodingBytes.length();
+        uint32_t consume = std::min(remain, aCount);
+
+        if (!self->mOptimizedEncodingBytes.append(aFromSegment, consume)) {
+          return NS_ERROR_UNEXPECTED;
+        }
+
+        if (consume == remain) {
+          
+          LengthPrefixType length;
+          memcpy(&length, self->mOptimizedEncodingBytes.begin(), PrefixBytes);
+
+          if (!self->mOptimizedEncodingBytes.resizeUninitialized(length)) {
+            return NS_ERROR_UNEXPECTED;
+          }
+
+          memset(&self->mZStream, 0, sizeof(self->mZStream));
+          self->mZStream.avail_out = length;
+          self->mZStream.next_out = self->mOptimizedEncodingBytes.begin();
+
+          if (inflateInit(&self->mZStream) != Z_OK) {
+            return NS_ERROR_UNEXPECTED;
+          }
+          self->mZStreamInitialized = true;
+        }
+
+        *aWriteCount = consume;
+        return NS_OK;
+      }
+
+      
+
+      MOZ_DIAGNOSTIC_ASSERT(aCount > 0);
+      MOZ_DIAGNOSTIC_ASSERT(self->mZStream.avail_out > 0);
+      self->mZStream.avail_in = aCount;
+      self->mZStream.next_in = (uint8_t*)aFromSegment;
+
+      int ret = inflate(&self->mZStream, Z_NO_FLUSH);
+
+      
+      bool ok =
+          (ret == Z_OK || ret == Z_STREAM_END) && self->mZStream.avail_in == 0;
+      MOZ_DIAGNOSTIC_ASSERT(ok, "corrupt optimized wasm cache file");
+      if (!ok) {
         return NS_ERROR_UNEXPECTED;
       }
     } else {
@@ -474,6 +537,14 @@ class JSStreamConsumer final : public nsIInputStreamCallback,
 
     if (rv == NS_BASE_STREAM_CLOSED) {
       if (mOptimizedEncoding) {
+        
+        bool ok = mZStreamInitialized && mZStream.avail_out == 0;
+        MOZ_DIAGNOSTIC_ASSERT(ok, "corrupt optimized wasm cache file");
+        if (!ok) {
+          mConsumer->streamError(size_t(NS_ERROR_UNEXPECTED));
+          return NS_OK;
+        }
+
         mConsumer->consumeOptimizedEncoding(mOptimizedEncodingBytes.begin(),
                                             mOptimizedEncodingBytes.length());
       } else {
@@ -514,11 +585,52 @@ class JSStreamConsumer final : public nsIInputStreamCallback,
 
   
 
-  void storeOptimizedEncoding(JS::UniqueOptimizedEncodingBytes bytes) override {
+  void storeOptimizedEncoding(const uint8_t* aSrcBytes,
+                              size_t aSrcLength) override {
     MOZ_ASSERT(mCache, "we only listen if there's a cache entry");
 
+    z_stream zstream;
+    memset(&zstream, 0, sizeof(zstream));
+    zstream.avail_in = aSrcLength;
+    zstream.next_in = (uint8_t*)aSrcBytes;
+
+    
+    
+    
+    
+    
+    
+    
+    const int COMPRESSION = 2;
+    if (deflateInit(&zstream, COMPRESSION) != Z_OK) {
+      return;
+    }
+    auto autoDestroy = MakeScopeExit([&]() { deflateEnd(&zstream); });
+
+    Vector<uint8_t> dstBytes;
+    if (!dstBytes.resizeUninitialized(PrefixBytes +
+                                      deflateBound(&zstream, aSrcLength))) {
+      return;
+    }
+
+    MOZ_RELEASE_ASSERT(LengthPrefixType(aSrcLength) == aSrcLength);
+    LengthPrefixType srcLength = aSrcLength;
+    memcpy(dstBytes.begin(), &srcLength, PrefixBytes);
+
+    uint8_t* compressBegin = dstBytes.begin() + PrefixBytes;
+    zstream.next_out = compressBegin;
+    zstream.avail_out = dstBytes.length() - PrefixBytes;
+
+    int ret = deflate(&zstream, Z_FINISH);
+    if (ret == Z_MEM_ERROR) {
+      return;
+    }
+    MOZ_RELEASE_ASSERT(ret == Z_STREAM_END);
+
+    dstBytes.shrinkTo(zstream.next_out - compressBegin);
+
     NS_DispatchToMainThread(new StoreOptimizedEncodingRunnable(
-        std::move(mCache), std::move(bytes)));
+        std::move(mCache), std::move(dstBytes)));
   }
 };
 
