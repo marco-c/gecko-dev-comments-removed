@@ -1109,7 +1109,7 @@ ProfilerThreadId ProfileBuffer::StreamSamplesToJSON(
           
           
           
-          break;
+          continue;
         }
 
         
