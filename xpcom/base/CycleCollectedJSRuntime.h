@@ -90,13 +90,11 @@ class JSHolderMap {
  public:
   enum WhichHolders { AllHolders, HoldersInGrayMarkingZones };
 
-  class Iter;
-
   JSHolderMap();
 
-#ifdef DEBUG
-  ~JSHolderMap() { MOZ_RELEASE_ASSERT(!mHasIterator); }
-#endif
+  
+  template <typename F>
+  void ForEach(F&& f, WhichHolders aWhich = AllHolders);
 
   bool Has(void* aHolder) const;
   nsScriptObjectTracer* Get(void* aHolder) const;
@@ -126,7 +124,8 @@ class JSHolderMap {
       mozilla::HashMap<JS::Zone*, UniquePtr<EntryVector>,
                        DefaultHasher<JS::Zone*>, InfallibleAllocPolicy>;
 
-  class EntryVectorIter;
+  template <typename F>
+  void ForEach(EntryVector& aJSHolders, const F& f, JS::Zone* aZone);
 
   bool RemoveEntry(EntryVector& aJSHolders, Entry* aEntry);
 
@@ -143,73 +142,6 @@ class JSHolderMap {
   
   
   EntryVectorMap mPerZoneJSHolders;
-
-#ifdef DEBUG
-  
-  
-  bool mHasIterator = false;
-#endif
-};
-
-
-
-class JSHolderMap::EntryVectorIter {
- public:
-  EntryVectorIter(JSHolderMap& aMap, EntryVector& aVector)
-      : mHolderMap(aMap), mVector(aVector), mIter(aVector.Iter()) {
-    Settle();
-  }
-
-  const EntryVector& Vector() const { return mVector; }
-
-  bool Done() const { return mIter.Done(); }
-  const Entry& Get() const { return mIter.Get(); }
-  void Next() {
-    mIter.Next();
-    Settle();
-  }
-
-  operator const Entry*() const { return &Get(); }
-  const Entry* operator->() const { return &Get(); }
-
- private:
-  void Settle();
-
-  JSHolderMap& mHolderMap;
-  EntryVector& mVector;
-  EntryVector::IterImpl mIter;
-};
-
-class JSHolderMap::Iter {
- public:
-  explicit Iter(JSHolderMap& aMap, WhichHolders aWhich = AllHolders);
-
-#ifdef DEBUG
-  ~Iter() {
-    MOZ_RELEASE_ASSERT(mHolderMap.mHasIterator);
-    mHolderMap.mHasIterator = false;
-  }
-#endif
-
-  bool Done() const { return mIter.Done(); }
-  const Entry& Get() const { return mIter.Get(); }
-  void Next() {
-    mIter.Next();
-    Settle();
-  }
-
-  operator const Entry*() const { return &Get(); }
-  const Entry* operator->() const { return &Get(); }
-
-  JS::Zone* Zone() const { return mZone; }
-
- private:
-  void Settle();
-
-  JSHolderMap& mHolderMap;
-  Vector<JS::Zone*, 1, InfallibleAllocPolicy> mZones;
-  JS::Zone* mZone = nullptr;
-  EntryVectorIter mIter;
 };
 
 class CycleCollectedJSRuntime {
