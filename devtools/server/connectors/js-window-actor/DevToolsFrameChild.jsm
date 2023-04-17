@@ -54,10 +54,11 @@ function shouldNotifyWindowGlobal(
   
   
   
-  if (
-    !window.docShell.hasLoadedNonBlankURI &&
-    window.document?.documentURI === "about:blank"
-  ) {
+  
+  
+  
+  
+  if (window.document.isInitialDocument) {
     return false;
   }
 
