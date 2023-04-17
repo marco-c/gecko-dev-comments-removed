@@ -74,20 +74,41 @@ impl Clang {
     
     
     
+    
+    
+    
+    
+    
+    
+    
     pub fn find(path: Option<&Path>, args: &[String]) -> Option<Clang> {
         if let Ok(path) = env::var("CLANG_PATH") {
             return Some(Clang::new(path, args));
         }
 
+        
+
+        let mut target = None;
+        for i in 0..args.len() {
+            if args[i] == "-target" && i + 1 < args.len() {
+                target = Some(&args[i + 1]);
+            }
+        }
+
+        
+
         let mut paths = vec![];
+
         if let Some(path) = path {
             paths.push(path.into());
         }
+
         if let Ok(path) = run_llvm_config(&["--bindir"]) {
             if let Some(line) = path.lines().next() {
                 paths.push(line.into());
             }
         }
+
         if cfg!(target_os = "macos") {
             if let Ok((path, _)) = run("xcodebuild", &["-find", "clang"]) {
                 if let Some(line) = path.lines().next() {
@@ -95,7 +116,23 @@ impl Clang {
                 }
             }
         }
+
         paths.extend(env::split_paths(&env::var("PATH").unwrap()));
+
+        
+
+        if let Some(target) = target {
+            let default = format!("{}-clang{}", target, env::consts::EXE_SUFFIX);
+            let versioned = format!("{}-clang-[0-9]*{}", target, env::consts::EXE_SUFFIX);
+            let patterns = &[&default[..], &versioned[..]];
+            for path in &paths {
+                if let Some(path) = find(&path, patterns) {
+                    return Some(Clang::new(path, args));
+                }
+            }
+        }
+
+        
 
         let default = format!("clang{}", env::consts::EXE_SUFFIX);
         let versioned = format!("clang-[0-9]*{}", env::consts::EXE_SUFFIX);
