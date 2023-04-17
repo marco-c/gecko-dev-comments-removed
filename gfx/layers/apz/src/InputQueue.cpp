@@ -430,6 +430,15 @@ APZEventResult InputQueue::ReceivePanGestureInput(
   result.SetStatusAsConsumeDoDefault(aTarget);
 
   if (!block || block->WasInterrupted()) {
+    if (event.mType == PanGestureInput::PANGESTURE_MOMENTUMSTART ||
+        event.mType == PanGestureInput::PANGESTURE_MOMENTUMPAN ||
+        event.mType == PanGestureInput::PANGESTURE_MOMENTUMEND) {
+      
+      
+      
+      
+      return result;
+    }
     if (event.mType != PanGestureInput::PANGESTURE_START) {
       
       
@@ -958,6 +967,8 @@ void InputQueue::ProcessQueue() {
       if (curBlock->ShouldDropEvents()) {
         if (curBlock->AsTouchBlock()) {
           target->ResetTouchInputState();
+        } else if (curBlock->AsPanGestureBlock()) {
+          target->ResetPanGestureInputState();
         }
       } else {
         UpdateActiveApzc(target);

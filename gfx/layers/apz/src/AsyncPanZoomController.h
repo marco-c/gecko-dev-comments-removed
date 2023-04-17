@@ -1400,6 +1400,11 @@ class AsyncPanZoomController {
   
 
 
+  void ResetPanGestureInputState();
+
+  
+
+
 
   const RefPtr<InputQueue>& GetInputQueue() const;
 

@@ -5715,6 +5715,17 @@ void AsyncPanZoomController::ResetTouchInputState() {
   }
 }
 
+void AsyncPanZoomController::ResetPanGestureInputState() {
+  
+  
+  CancelAnimationAndGestureState();
+  
+  
+  if (PanGestureBlockState* block = GetCurrentPanGestureBlock()) {
+    block->GetOverscrollHandoffChain()->ClearOverscroll();
+  }
+}
+
 void AsyncPanZoomController::CancelAnimationAndGestureState() {
   mX.CancelGesture();
   mY.CancelGesture();
