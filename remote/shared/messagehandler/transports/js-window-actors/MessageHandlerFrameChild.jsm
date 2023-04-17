@@ -27,68 +27,37 @@ class MessageHandlerFrameChild extends JSWindowActorChild {
     this.type = WindowGlobalMessageHandler.type;
     this.context = this.manager.browsingContext;
 
+    this._registry = new MessageHandlerRegistry(this.type, this.context);
     this._onRegistryEvent = this._onRegistryEvent.bind(this);
 
     
     
     
     
-    MessageHandlerRegistry.on(
-      "message-handler-registry-event",
-      this._onRegistryEvent
-    );
+    this._registry.on("message-handler-registry-event", this._onRegistryEvent);
   }
 
   receiveMessage(message) {
     if (message.name === "MessageHandlerFrameParent:sendCommand") {
       const { sessionId, command } = message.data;
-      const messageHandler = this._getMessageHandler(sessionId);
+      const messageHandler = this._registry.getOrCreateMessageHandler(
+        sessionId
+      );
       return messageHandler.handleCommand(command);
     }
 
     return null;
   }
 
-  
-
-
-
-
-
-
-  _getMessageHandler(sessionId) {
-    return MessageHandlerRegistry.getOrCreateMessageHandler(
-      sessionId,
-      this.type,
-      this.context
-    );
-  }
-
   _onRegistryEvent(eventName, wrappedEvent) {
-    const { messageHandlerInfo, method, params } = wrappedEvent;
-    const { contextId, sessionId, type } = messageHandlerInfo;
-
-    
-    
-    
-    
-    if (
-      type === this.type &&
-      contextId === WindowGlobalMessageHandler.getIdFromContext(this.context)
-    ) {
-      this.sendAsyncMessage("MessageHandlerFrameChild:messageHandlerEvent", {
-        method,
-        params,
-        sessionId,
-      });
-    }
+    this.sendAsyncMessage(
+      "MessageHandlerFrameChild:messageHandlerEvent",
+      wrappedEvent
+    );
   }
 
   didDestroy() {
-    MessageHandlerRegistry.contextDestroyed(this.context, this.type);
-    MessageHandlerRegistry.off(
-      "message-handler-registry-event",
-      this._onRegistryEvent
-    );
+    this._registry.off("message-handler-registry-event", this._onRegistryEvent);
+    this._registry.destroy();
   }
 }
