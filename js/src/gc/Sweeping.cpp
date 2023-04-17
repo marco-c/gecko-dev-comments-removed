@@ -1197,7 +1197,8 @@ void GCRuntime::updateAtomsBitmap() {
 
   
   
-  rt->symbolRegistry().sweep();
+  SweepingTracer trc(rt);
+  rt->symbolRegistry().traceWeak(&trc);
 }
 
 void GCRuntime::sweepCCWrappers() {
