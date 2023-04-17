@@ -1,0 +1,33 @@
+
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["MessageHandlerFrameParent"];
+
+
+
+
+
+
+class MessageHandlerFrameParent extends JSWindowActorParent {
+  
+
+
+
+
+
+
+
+
+
+
+
+  sendCommand(command, sessionId) {
+    return this.sendQuery("MessageHandlerFrameParent:sendCommand", {
+      command,
+      sessionId,
+    });
+  }
+}
