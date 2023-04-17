@@ -392,6 +392,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   void AddFrameConstructionItems(nsFrameConstructorState& aState,
                                  nsIContent* aContent,
                                  bool aSuppressWhiteSpaceOptimizations,
+                                 const ComputedStyle& aParentStyle,
                                  const InsertionPoint& aInsertion,
                                  FrameConstructionItemList& aItems,
                                  ItemFlags = {});
@@ -402,16 +403,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   bool ShouldCreateItemsForChild(nsFrameConstructorState& aState,
                                  nsIContent* aContent,
                                  nsContainerFrame* aParentFrame);
-
-  
-  
-  void DoAddFrameConstructionItems(nsFrameConstructorState& aState,
-                                   nsIContent* aContent,
-                                   ComputedStyle* aComputedStyle,
-                                   bool aSuppressWhiteSpaceOptimizations,
-                                   nsContainerFrame* aParentFrame,
-                                   FrameConstructionItemList& aItems,
-                                   ItemFlags = {});
 
   
   
@@ -1364,6 +1355,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
   
   void AddTextItemIfNeeded(nsFrameConstructorState& aState,
+                           const ComputedStyle& aParentStyle,
                            const InsertionPoint& aInsertion,
                            nsIContent* aPossibleTextContent,
                            FrameConstructionItemList& aItems);
@@ -1894,7 +1886,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   nsFirstLetterFrame* CreateFloatingLetterFrame(
       nsFrameConstructorState& aState, mozilla::dom::Text* aTextContent,
       nsIFrame* aTextFrame, nsContainerFrame* aParentFrame,
-      ComputedStyle* aParentComputedStyle, ComputedStyle* aComputedStyle,
+      ComputedStyle* aParentStyle, ComputedStyle* aComputedStyle,
       nsFrameList& aResult);
 
   void CreateLetterFrame(nsContainerFrame* aBlockFrame,

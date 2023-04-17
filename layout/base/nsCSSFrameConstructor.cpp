@@ -5120,38 +5120,35 @@ bool nsCSSFrameConstructor::ShouldCreateItemsForChild(
   return true;
 }
 
-void nsCSSFrameConstructor::DoAddFrameConstructionItems(
-    nsFrameConstructorState& aState, nsIContent* aContent,
-    ComputedStyle* aComputedStyle, bool aSuppressWhiteSpaceOptimizations,
-    nsContainerFrame* aParentFrame, FrameConstructionItemList& aItems,
-    ItemFlags aFlags) {
-  auto flags = aFlags + ItemFlag::AllowPageBreak;
-  if (aParentFrame) {
-    if (SVGUtils::IsInSVGTextSubtree(aParentFrame)) {
-      flags += ItemFlag::IsWithinSVGText;
-    }
-    if (aParentFrame->IsBlockFrame() && aParentFrame->GetParent() &&
-        aParentFrame->GetParent()->IsSVGTextFrame()) {
-      flags += ItemFlag::AllowTextPathChild;
-    }
-  }
-  AddFrameConstructionItemsInternal(aState, aContent, aParentFrame,
-                                    aSuppressWhiteSpaceOptimizations,
-                                    aComputedStyle, flags, aItems);
-}
-
 void nsCSSFrameConstructor::AddFrameConstructionItems(
     nsFrameConstructorState& aState, nsIContent* aContent,
-    bool aSuppressWhiteSpaceOptimizations, const InsertionPoint& aInsertion,
+    bool aSuppressWhiteSpaceOptimizations,
+    const ComputedStyle& aParentStyle,
+    const InsertionPoint& aInsertion,
     FrameConstructionItemList& aItems, ItemFlags aFlags) {
   nsContainerFrame* parentFrame = aInsertion.mParentFrame;
   if (!ShouldCreateItemsForChild(aState, aContent, parentFrame)) {
     return;
   }
+  if (MOZ_UNLIKELY(aParentStyle.StyleContent()->mContent.IsNone()) &&
+      StaticPrefs::layout_css_element_content_none_enabled()) {
+    return;
+  }
+
   RefPtr<ComputedStyle> computedStyle = ResolveComputedStyle(aContent);
-  DoAddFrameConstructionItems(aState, aContent, computedStyle,
-                              aSuppressWhiteSpaceOptimizations, parentFrame,
-                              aItems, aFlags);
+  auto flags = aFlags + ItemFlag::AllowPageBreak;
+  if (parentFrame) {
+    if (SVGUtils::IsInSVGTextSubtree(parentFrame)) {
+      flags += ItemFlag::IsWithinSVGText;
+    }
+    if (parentFrame->IsBlockFrame() && parentFrame->GetParent() &&
+        parentFrame->GetParent()->IsSVGTextFrame()) {
+      flags += ItemFlag::AllowTextPathChild;
+    }
+  }
+  AddFrameConstructionItemsInternal(aState, aContent, parentFrame,
+                                    aSuppressWhiteSpaceOptimizations,
+                                    computedStyle, flags, aItems);
 }
 
 
@@ -5361,7 +5358,7 @@ void nsCSSFrameConstructor::AddFrameConstructionItemsInternal(
     for (nsIContent* child = iter.GetNextChild(); child;
          child = iter.GetNextChild()) {
       AddFrameConstructionItems(aState, child, aSuppressWhiteSpaceOptimizations,
-                                insertion, aItems, aFlags);
+                                *aComputedStyle, insertion, aItems, aFlags);
     }
     aItems.SetParentHasNoShadowDOM(!iter.ShadowDOMInvolved());
 
@@ -6295,7 +6292,9 @@ static bool IsSpecialFramesetChild(nsIContent* aContent) {
 static void InvalidateCanvasIfNeeded(PresShell* aPresShell, nsIContent* aNode);
 
 void nsCSSFrameConstructor::AddTextItemIfNeeded(
-    nsFrameConstructorState& aState, const InsertionPoint& aInsertion,
+    nsFrameConstructorState& aState,
+    const ComputedStyle& aParentStyle,
+    const InsertionPoint& aInsertion,
     nsIContent* aPossibleTextContent, FrameConstructionItemList& aItems) {
   MOZ_ASSERT(aPossibleTextContent, "Must have node");
   if (!aPossibleTextContent->IsText() ||
@@ -6308,8 +6307,8 @@ void nsCSSFrameConstructor::AddTextItemIfNeeded(
   }
   MOZ_ASSERT(!aPossibleTextContent->GetPrimaryFrame(),
              "Text node has a frame and NS_CREATE_FRAME_IF_NON_WHITESPACE");
-  AddFrameConstructionItems(aState, aPossibleTextContent, false, aInsertion,
-                            aItems);
+  AddFrameConstructionItems(aState, aPossibleTextContent, false,
+                            aParentStyle, aInsertion, aItems);
 }
 
 void nsCSSFrameConstructor::ReframeTextIfNeeded(nsIContent* aContent) {
@@ -6701,6 +6700,8 @@ void nsCSSFrameConstructor::ContentAppended(nsIContent* aFirstNewContent,
 
   LayoutFrameType frameType = parentFrame->Type();
 
+  RefPtr<ComputedStyle> parentStyle =
+      ResolveComputedStyle(insertion.mContainer);
   FlattenedChildIterator iter(insertion.mContainer);
   const bool haveNoShadowDOM =
       !iter.ShadowDOMInvolved() || !iter.GetNextChild();
@@ -6718,12 +6719,13 @@ void nsCSSFrameConstructor::ContentAppended(nsIContent* aFirstNewContent,
     
     
     
-    AddTextItemIfNeeded(state, insertion,
+    AddTextItemIfNeeded(state, *parentStyle, insertion,
                         aFirstNewContent->GetPreviousSibling(), items);
   }
   for (nsIContent* child = aFirstNewContent; child;
        child = child->GetNextSibling()) {
-    AddFrameConstructionItems(state, child, false, insertion, items);
+    AddFrameConstructionItems(state, child, false, *parentStyle, insertion,
+                              items);
   }
 
   nsIFrame* prevSibling = ::FindAppendPrevSibling(parentFrame, nextSibling);
@@ -7158,6 +7160,8 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
   }
 
   AutoFrameConstructionItemList items(this);
+  RefPtr<ComputedStyle> parentStyle =
+      ResolveComputedStyle(insertion.mContainer);
   ParentType parentType = GetParentType(frameType);
   FlattenedChildIterator iter(insertion.mContainer);
   const bool haveNoShadowDOM =
@@ -7169,18 +7173,19 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
     
     
     
-    AddTextItemIfNeeded(state, insertion, aStartChild->GetPreviousSibling(),
-                        items);
+    AddTextItemIfNeeded(state, *parentStyle, insertion,
+                        aStartChild->GetPreviousSibling(), items);
   }
 
   if (isSingleInsert) {
     AddFrameConstructionItems(state, aStartChild,
                               aStartChild->IsRootOfNativeAnonymousSubtree(),
-                              insertion, items);
+                              *parentStyle, insertion, items);
   } else {
     for (nsIContent* child = aStartChild; child != aEndChild;
          child = child->GetNextSibling()) {
-      AddFrameConstructionItems(state, child, false, insertion, items);
+      AddFrameConstructionItems(state, child, false, *parentStyle, insertion,
+                                items);
     }
   }
 
@@ -7190,7 +7195,7 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
     
     
     
-    AddTextItemIfNeeded(state, insertion, aEndChild, items);
+    AddTextItemIfNeeded(state, *parentStyle, insertion, aEndChild, items);
   }
 
   
@@ -7251,8 +7256,7 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
 
     
     bool ignored;
-    InsertionPoint captionInsertion(insertion.mParentFrame,
-                                    insertion.mContainer);
+    InsertionPoint captionInsertion = insertion;
     if (isSingleInsert) {
       captionPrevSibling = GetInsertionPrevSibling(
           &captionInsertion, aStartChild, &captionIsAppend, &ignored);
@@ -9417,6 +9421,16 @@ inline void nsCSSFrameConstructor::ConstructFramesFromItemList(
     nsFrameConstructorState& aState, FrameConstructionItemList& aItems,
     nsContainerFrame* aParentFrame, bool aParentIsWrapperAnonBox,
     nsFrameList& aFrameList) {
+#ifdef DEBUG
+  if (aParentFrame->StyleContent()->mContent.IsNone() &&
+      StaticPrefs::layout_css_element_content_none_enabled()) {
+    for (FCItemIterator iter(aItems); !iter.IsDone(); iter.Next()) {
+      MOZ_ASSERT(iter.item().mContent->IsInNativeAnonymousSubtree() ||
+                 iter.item().mComputedStyle->IsPseudoOrAnonBox());
+    }
+  }
+#endif
+
   
   
   
@@ -9590,12 +9604,11 @@ void nsCSSFrameConstructor::ProcessChildren(
     
     
     
-    ComputedStyle* computedStyle;
+    auto* styleParentFrame =
+        nsIFrame::CorrectStyleParentFrame(aFrame, PseudoStyleType::NotPseudo);
+    ComputedStyle* computedStyle = styleParentFrame->Style();
 
     if (aCanHaveGeneratedContent) {
-      auto* styleParentFrame =
-          nsIFrame::CorrectStyleParentFrame(aFrame, PseudoStyleType::NotPseudo);
-      computedStyle = styleParentFrame->Style();
       if (computedStyle->StyleDisplay()->IsListItem() &&
           (listItem = do_QueryFrame(aFrame)) &&
           !styleParentFrame->IsFieldSetFrame()) {
@@ -9624,7 +9637,7 @@ void nsCSSFrameConstructor::ProcessChildren(
                  "GetInsertionPoint should agree with us");
       if (addChildItems) {
         AddFrameConstructionItems(aState, child, iter.ShadowDOMInvolved(),
-                                  insertion, itemsToConstruct);
+                                  *computedStyle, insertion, itemsToConstruct);
       } else {
         ClearLazyBits(child, child->GetNextSibling());
       }
@@ -9915,9 +9928,9 @@ static bool IsFirstLetterContent(Text* aText) {
 
 nsFirstLetterFrame* nsCSSFrameConstructor::CreateFloatingLetterFrame(
     nsFrameConstructorState& aState, Text* aTextContent, nsIFrame* aTextFrame,
-    nsContainerFrame* aParentFrame, ComputedStyle* aParentComputedStyle,
+    nsContainerFrame* aParentFrame, ComputedStyle* aParentStyle,
     ComputedStyle* aComputedStyle, nsFrameList& aResult) {
-  MOZ_ASSERT(aParentComputedStyle);
+  MOZ_ASSERT(aParentStyle);
 
   nsFirstLetterFrame* letterFrame =
       NS_NewFirstLetterFrame(mPresShell, aComputedStyle);
@@ -9950,7 +9963,7 @@ nsFirstLetterFrame* nsCSSFrameConstructor::CreateFloatingLetterFrame(
     
     nextTextFrame = CreateContinuingFrame(aTextFrame, aParentFrame);
     RefPtr<ComputedStyle> newSC =
-        styleSet->ResolveStyleForText(aTextContent, aParentComputedStyle);
+        styleSet->ResolveStyleForText(aTextContent, aParentStyle);
     nextTextFrame->SetComputedStyle(newSC);
   }
 
@@ -11091,7 +11104,8 @@ void nsCSSFrameConstructor::BuildInlineChildItems(
   for (nsIContent* content = iter.GetNextChild(); content;
        content = iter.GetNextChild()) {
     AddFrameConstructionItems(aState, content, iter.ShadowDOMInvolved(),
-                              InsertionPoint(), aParentItem.mChildItems, flags);
+                              *parentComputedStyle, InsertionPoint(),
+                              aParentItem.mChildItems, flags);
   }
 
   if (!aItemIsWithinSVGText) {
