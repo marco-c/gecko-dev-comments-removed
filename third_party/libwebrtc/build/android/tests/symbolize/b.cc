@@ -1,0 +1,14 @@
+
+
+
+
+class B {
+ public:
+  B();
+  void Baz(float f);
+  void Qux(double d);
+};
+
+B::B() {}
+void B::Baz(float f) {}
+void B::Qux(double d) {}

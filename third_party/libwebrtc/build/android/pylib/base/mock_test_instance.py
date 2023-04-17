@@ -1,0 +1,10 @@
+
+
+
+
+from pylib.base import test_instance
+
+import mock  
+
+
+MockTestInstance = mock.MagicMock(test_instance.TestInstance)

@@ -1,0 +1,12 @@
+
+
+
+
+package org.chromium.helloworld;
+
+public class HelloWorldPrinter {
+    public static void print() {
+        System.out.println("Hello, world!");
+    }
+}
+

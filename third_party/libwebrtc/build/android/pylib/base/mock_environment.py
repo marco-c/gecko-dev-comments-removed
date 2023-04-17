@@ -1,0 +1,10 @@
+
+
+
+
+from pylib.base import environment
+
+import mock  
+
+
+MockEnvironment = mock.MagicMock(environment.Environment)
