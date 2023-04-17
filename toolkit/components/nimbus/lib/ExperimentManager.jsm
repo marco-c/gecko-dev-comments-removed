@@ -35,6 +35,19 @@ const TELEMETRY_DEFAULT_EXPERIMENT_TYPE = "nimbus";
 
 const STUDIES_OPT_OUT_PREF = "app.shield.optoutstudies.enabled";
 
+function featuresCompat(branch) {
+  if (!branch || (!branch.feature && !branch.features)) {
+    return [];
+  }
+  let { features } = branch;
+  
+  if (!features) {
+    features = [branch.feature];
+  }
+
+  return features;
+}
+
 
 
 
@@ -184,19 +197,16 @@ class _ExperimentManager {
     }
 
     const branch = await this.chooseBranch(slug, branches);
+    const features = featuresCompat(branch);
+    for (let feature of features) {
+      if (this.store.hasExperimentForFeature(feature?.featureId)) {
+        log.debug(
+          `Skipping enrollment for "${slug}" because there is an existing experiment for its feature.`
+        );
+        this.sendFailureTelemetry("enrollFailed", slug, "feature-conflict");
 
-    if (
-      this.store.hasExperimentForFeature(
-        
-        branch.feature?.featureId
-      )
-    ) {
-      log.debug(
-        `Skipping enrollment for "${slug}" because there is an existing experiment for its feature.`
-      );
-      this.sendFailureTelemetry("enrollFailed", slug, "feature-conflict");
-
-      return null;
+        return null;
+      }
     }
 
     return this._enroll(recipe, branch, source);
@@ -250,15 +260,16 @@ class _ExperimentManager {
 
 
 
-    let experiment = this.store.getExperimentForFeature(
-      branch.feature?.featureId
-    );
-    if (experiment) {
-      log.debug(
-        `Existing experiment found for the same feature ${branch?.feature.featureId}, unenrolling.`
-      );
+    const features = featuresCompat(branch);
+    for (let feature of features) {
+      let experiment = this.store.getExperimentForFeature(feature?.featureId);
+      if (experiment) {
+        log.debug(
+          `Existing experiment found for the same feature ${feature.featureId}, unenrolling.`
+        );
 
-      this.unenroll(experiment.slug, source);
+        this.unenroll(experiment.slug, source);
+      }
     }
 
     recipe.userFacingName = `${recipe.userFacingName} - Forced enrollment`;
