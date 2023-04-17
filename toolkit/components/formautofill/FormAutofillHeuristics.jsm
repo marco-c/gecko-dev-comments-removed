@@ -222,7 +222,6 @@ class FieldScanner {
         fieldDetail
       );
     }
-    
     this._classifyMultipleCCNumberFields();
   }
 
