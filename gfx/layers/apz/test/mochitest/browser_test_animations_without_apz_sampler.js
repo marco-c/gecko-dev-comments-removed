@@ -47,9 +47,6 @@ add_task(async () => {
   });
 
   await extension.startup();
-  registerCleanupFunction(() => {
-    SpecialPowers.clearUserPref("apz.popups.enabled");
-  });
 
   async function takeSnapshot(browserWin, callback) {
     let browser = await openBrowserActionPanel(extension, browserWin, true);
@@ -103,7 +100,7 @@ add_task(async () => {
   }
 
   
-  await SpecialPowers.setBoolPref("apz.popups.enabled", false);
+  await SpecialPowers.pushPrefEnv({ set: [["apz.popups.enabled", false]] });
 
   
   const newWin = await BrowserTestUtils.openNewBrowserWindow();
