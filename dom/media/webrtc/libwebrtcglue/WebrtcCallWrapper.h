@@ -54,8 +54,6 @@ class WebrtcCallWrapper {
   
   void UnregisterConduit(MediaSessionConduit* conduit);
 
-  DOMHighResTimeStamp GetNow() const;
-
   
   
   

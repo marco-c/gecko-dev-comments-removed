@@ -152,8 +152,7 @@ class MediaPipeline : public sigslot::has_slots<> {
   int64_t RtpBytesReceived() const { return mRtpBytesReceived; }
   int32_t RtcpPacketsReceived() const { return mRtcpPacketsReceived; }
 
-  
-  DOMHighResTimeStamp GetNow() const;
+  const dom::RTCStatsTimestampMaker& GetTimestampMaker() const;
 
   
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaPipeline)
