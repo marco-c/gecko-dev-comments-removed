@@ -4932,7 +4932,7 @@ nsresult nsDocShell::SetCurScrollPosEx(int32_t aCurHorizontalPos,
   NS_ENSURE_TRUE(presContext, NS_ERROR_FAILURE);
 
   
-  if (!presContext->IsRootContentDocument()) {
+  if (!presContext->IsRootContentDocumentCrossProcess()) {
     return NS_OK;
   }
 
