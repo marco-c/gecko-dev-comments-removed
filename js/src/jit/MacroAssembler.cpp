@@ -4743,7 +4743,7 @@ void MacroAssembler::prepareHashNonGCThing(ValueOperand value, Register result,
 #ifdef JS_PUNBOX64
   auto r64 = Register64(temp);
   move64(value.toRegister64(), r64);
-  rshift64(Imm32(32), r64);
+  rshift64Arithmetic(Imm32(32), r64);
 #else
   
   
@@ -4837,7 +4837,7 @@ void MacroAssembler::prepareHashBigInt(Register bigInt, Register result,
   
 
   
-  auto addU32ToHash = [&](Register toAdd) {
+  auto addU32ToHash = [&](auto toAdd) {
     rotateLeft(Imm32(5), result, result);
     xor32(toAdd, result);
     mul32(Imm32(mozilla::kGoldenRatioU32), result);
@@ -4854,19 +4854,26 @@ void MacroAssembler::prepareHashBigInt(Register bigInt, Register result,
   jump(&start);
   bind(&loop);
 
-  loadPtr(Address(temp2, 0), temp3);
   {
     
+#if defined(JS_CODEGEN_MIPS64)
+    
+    addU32ToHash(Address(temp2, 0));
 
-#if JS_PUNBOX64
+    
+    addU32ToHash(Address(temp2, sizeof(int32_t)));
+#elif JS_PUNBOX64
+    
+    loadPtr(Address(temp2, 0), temp3);
+
     
     addU32ToHash(temp3);
 
     
-    rshift64(Imm32(32), Register64(temp3));
+    rshiftPtr(Imm32(32), temp3);
     addU32ToHash(temp3);
 #else
-    addU32ToHash(temp3);
+    addU32ToHash(Address(temp2, 0));
 #endif
   }
   addPtr(Imm32(sizeof(BigInt::Digit)), temp2);
@@ -4911,7 +4918,7 @@ void MacroAssembler::prepareHashObject(Register setObj, ValueOperand value,
 
   
   static_assert(sizeof(mozilla::HashNumber) == 4);
-  move64To32(value.toRegister64(), result);
+  move32To64ZeroExtend(value.valueReg(), Register64(result));
 
   
   auto m = Register64(result);
