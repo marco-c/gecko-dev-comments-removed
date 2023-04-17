@@ -107,6 +107,8 @@ class ScriptPreloader : public nsIObserver,
   void NoteScript(const nsCString& url, const nsCString& cachePath,
                   JS::HandleScript script, bool isRunOnce = false);
 
+  
+  
   void NoteScript(const nsCString& url, const nsCString& cachePath,
                   ProcessType processType, nsTArray<uint8_t>&& xdrData,
                   TimeStamp loadTime);
@@ -393,6 +395,10 @@ class ScriptPreloader : public nsIObserver,
     
     Maybe<JS::TranscodeRange> mXDRRange;
 
+    
+    
+    
+    
     
     
     MaybeOneOf<JS::TranscodeBuffer, nsTArray<uint8_t>> mXDRData;
