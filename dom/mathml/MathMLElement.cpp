@@ -840,8 +840,7 @@ int32_t MathMLElement::TabIndexDefault() {
 
 
 bool MathMLElement::IsFocusableInternal(int32_t* aTabIndex, bool aWithMouse) {
-  Document* doc = GetComposedDoc();
-  if (!doc || doc->HasFlag(NODE_IS_EDITABLE)) {
+  if (!IsInComposedDoc() || IsInDesignMode()) {
     
     if (aTabIndex) {
       *aTabIndex = -1;

@@ -2138,7 +2138,7 @@ bool nsGenericHTMLElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
   }
 
   Document* doc = GetComposedDoc();
-  if (!doc || doc->HasFlag(NODE_IS_EDITABLE)) {
+  if (!doc || IsInDesignMode()) {
     
     if (aTabIndex) {
       *aTabIndex = -1;
@@ -2325,12 +2325,11 @@ void nsGenericHTMLElement::RecompileScriptEventListeners() {
 }
 
 bool nsGenericHTMLElement::IsEditableRoot() const {
-  Document* document = GetComposedDoc();
-  if (!document) {
+  if (!IsInComposedDoc()) {
     return false;
   }
 
-  if (document->HasFlag(NODE_IS_EDITABLE)) {
+  if (IsInDesignMode()) {
     return false;
   }
 
@@ -2343,8 +2342,7 @@ bool nsGenericHTMLElement::IsEditableRoot() const {
   return !parent || !parent->HasFlag(NODE_IS_EDITABLE);
 }
 
-static void MakeContentDescendantsEditable(nsIContent* aContent,
-                                           Document* aDocument) {
+static void MakeContentDescendantsEditable(nsIContent* aContent) {
   
   
   
@@ -2363,7 +2361,7 @@ static void MakeContentDescendantsEditable(nsIContent* aContent,
     if (!child->IsElement() ||
         !child->AsElement()->HasAttr(kNameSpaceID_None,
                                      nsGkAtoms::contenteditable)) {
-      MakeContentDescendantsEditable(child, aDocument);
+      MakeContentDescendantsEditable(child);
     }
   }
 }
@@ -2380,21 +2378,21 @@ void nsGenericHTMLElement::ChangeEditableState(int32_t aChange) {
     previousEditingState = document->GetEditingState();
   }
 
-  if (document->HasFlag(NODE_IS_EDITABLE)) {
-    document = nullptr;
-  }
-
   
   
   
   nsAutoScriptBlocker scriptBlocker;
-  MakeContentDescendantsEditable(this, document);
+  MakeContentDescendantsEditable(this);
 
   
   
   
   
-  if (document && aChange > 0 &&
+  
+  
+  
+  
+  if (IsInDesignMode() && !IsInShadowTree() && aChange > 0 &&
       previousEditingState == Document::EditingState::eContentEditable) {
     if (HTMLEditor* htmlEditor =
             nsContentUtils::GetHTMLEditor(document->GetPresContext())) {

@@ -24,12 +24,13 @@
 #include "mozilla/dom/MouseEvent.h"        
 #include "mozilla/dom/Selection.h"
 #include "nsAString.h"
-#include "nsCaret.h"         
-#include "nsDebug.h"         
-#include "nsFocusManager.h"  
-#include "nsGkAtoms.h"       
-#include "nsIContent.h"      
-#include "nsIController.h"   
+#include "nsCaret.h"            
+#include "nsDebug.h"            
+#include "nsFocusManager.h"     
+#include "nsGkAtoms.h"          
+#include "nsIContent.h"         
+#include "nsIContentInlines.h"  
+#include "nsIController.h"      
 #include "nsID.h"
 #include "mozilla/dom/DOMStringList.h"
 #include "mozilla/dom/DataTransfer.h"
@@ -281,12 +282,11 @@ nsIContent* EditorEventListener::GetFocusedRootContent() {
     return nullptr;
   }
 
-  Document* composedDoc = focusedContent->GetComposedDoc();
-  if (NS_WARN_IF(!composedDoc)) {
+  if (MOZ_UNLIKELY(NS_WARN_IF(!focusedContent->IsInComposedDoc()))) {
     return nullptr;
   }
 
-  if (composedDoc->HasFlag(NODE_IS_EDITABLE)) {
+  if (focusedContent->IsInDesignMode()) {
     return nullptr;
   }
 
@@ -1122,8 +1122,7 @@ nsresult EditorEventListener::Focus(InternalFocusEvent* aFocusEvent) {
 
   
   
-  if (eventTargetNode->IsDocument() &&
-      !eventTargetNode->HasFlag(NODE_IS_EDITABLE)) {
+  if (eventTargetNode->IsDocument() && !eventTargetNode->IsInDesignMode()) {
     return NS_OK;
   }
 
@@ -1191,6 +1190,8 @@ nsresult EditorEventListener::Blur(InternalFocusEvent* aBlurEvent) {
 
   Element* focusedElement = focusManager->GetFocusedElement();
   if (!focusedElement) {
+    
+    
     
     
     
@@ -1263,8 +1264,7 @@ bool EditorEventListener::ShouldHandleNativeKeyBindings(
     return false;
   }
 
-  RefPtr<Document> doc = htmlEditor->GetDocument();
-  if (doc->HasFlag(NODE_IS_EDITABLE)) {
+  if (htmlEditor->IsInDesignMode()) {
     
     return true;
   }

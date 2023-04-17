@@ -73,6 +73,27 @@ class EditorTestUtils {
     return this.sendKey(kEnd, modifier);
   }
 
+  sendSelectAllShortcutKey() {
+    return this.sendKey(
+      "a",
+      (() => {
+        
+        
+        
+        if (
+          this.window.navigator.userAgent.includes("Linux") &&
+          this.window.navigator.userAgent.includes("Gecko") &&
+          !this.window.navigator.userAgent.includes("KHTML")
+        ) {
+          return this.kAlt;
+        }
+        return this.window.navigator.platform.includes("Mac")
+          ? this.kMeta
+          : this.kControl;
+      })()
+    );
+  }
+
   
   
   
@@ -142,7 +163,7 @@ class EditorTestUtils {
           return {
             marker: scanResult[0],
             container: textNode,
-            offset: scanResult.index + offset
+            offset: scanResult.index + offset,
           };
         };
         if (startContainer.nodeType === Node.TEXT_NODE) {
@@ -181,7 +202,7 @@ class EditorTestUtils {
           return {
             marker: scanResult[0],
             container: textNode,
-            offset: scanResult.index + offset
+            offset: scanResult.index + offset,
           };
         };
         if (startContainer.nodeType === Node.TEXT_NODE) {

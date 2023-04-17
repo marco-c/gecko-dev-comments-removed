@@ -1295,6 +1295,18 @@ class nsINode : public mozilla::dom::EventTarget {
   
 
 
+
+
+
+
+
+
+
+  inline bool IsInDesignMode() const;
+
+  
+
+
   bool IsInNativeAnonymousSubtree() const {
     return HasFlag(NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE);
   }

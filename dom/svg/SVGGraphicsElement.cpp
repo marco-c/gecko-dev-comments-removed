@@ -9,6 +9,8 @@
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/Document.h"
 
+#include "nsIContentInlines.h"
+
 namespace mozilla {
 namespace dom {
 
@@ -33,8 +35,7 @@ bool SVGGraphicsElement::IsSVGFocusable(bool* aIsFocusable,
                                         int32_t* aTabIndex) {
   
   
-  Document* doc = GetComposedDoc();
-  if (!doc || doc->HasFlag(NODE_IS_EDITABLE)) {
+  if (!IsInComposedDoc() || IsInDesignMode()) {
     
     if (aTabIndex) {
       *aTabIndex = -1;

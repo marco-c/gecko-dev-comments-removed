@@ -96,6 +96,7 @@
 #include "nsGkAtoms.h"                 
 #include "nsIClipboard.h"              
 #include "nsIContent.h"                
+#include "nsIContentInlines.h"         
 #include "nsIDocumentEncoder.h"        
 #include "nsIDocumentStateListener.h"  
 #include "nsIDocShell.h"               
@@ -4531,7 +4532,11 @@ nsresult EditorBase::HandleDropEvent(DragEvent* aDropEvent) {
   if (IsTextEditor()) {
     newFocusedElement = GetExposedRoot();
     focusedElement = IsActiveInDOMWindow() ? newFocusedElement : nullptr;
-  } else if (!AsHTMLEditor()->IsInDesignMode()) {
+  }
+  
+  
+  
+  else if (!AsHTMLEditor()->IsInDesignMode()) {
     focusedElement = AsHTMLEditor()->GetActiveEditingHost();
     if (focusedElement &&
         droppedAt.GetContainerAsContent()->IsInclusiveDescendantOf(
@@ -5229,8 +5234,7 @@ nsresult EditorBase::InitializeSelection(nsINode& aFocusEventTargetNode) {
   
   
   
-  caret->SetIgnoreUserModify(
-      aFocusEventTargetNode.OwnerDoc()->HasFlag(NODE_IS_EDITABLE));
+  caret->SetIgnoreUserModify(aFocusEventTargetNode.IsInDesignMode());
 
   
   rvIgnored =

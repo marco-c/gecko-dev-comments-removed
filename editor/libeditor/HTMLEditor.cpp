@@ -52,6 +52,7 @@
 #include "nsGkAtoms.h"
 #include "nsHTMLDocument.h"
 #include "nsIContent.h"
+#include "nsIContentInlines.h"
 #include "nsIEditActionListener.h"
 #include "nsIFrame.h"
 #include "nsIPrincipal.h"
@@ -607,14 +608,12 @@ Element* HTMLEditor::FindSelectionRoot(nsINode* aNode) const {
   MOZ_ASSERT(aNode->IsDocument() || aNode->IsContent(),
              "aNode must be content or document node");
 
-  Document* document = aNode->GetComposedDoc();
-  if (NS_WARN_IF(!document)) {
+  if (MOZ_UNLIKELY(NS_WARN_IF(!aNode->IsInComposedDoc()))) {
     return nullptr;
   }
 
-  if (aNode->IsInUncomposedDoc() &&
-      (document->HasFlag(NODE_IS_EDITABLE) || !aNode->IsContent())) {
-    return document->GetRootElement();
+  if (aNode->IsInDesignMode()) {
+    return GetDocument()->GetRootElement();
   }
 
   
@@ -639,6 +638,18 @@ Element* HTMLEditor::FindSelectionRoot(nsINode* aNode) const {
   
   
   return content->GetEditingHost();
+}
+
+bool HTMLEditor::IsInDesignMode() const {
+  
+  
+  
+  
+  
+  
+  
+  Document* document = GetDocument();
+  return document && document->IsInDesignMode();
 }
 
 void HTMLEditor::CreateEventListeners() {
@@ -5746,7 +5757,7 @@ nsIContent* HTMLEditor::GetFocusedContent() const {
   if (NS_WARN_IF(!document)) {
     return nullptr;
   }
-  bool inDesignMode = document->HasFlag(NODE_IS_EDITABLE);
+  const bool inDesignMode = IsInDesignMode();
   if (!focusedContent) {
     
     if (inDesignMode && OurWindowHasFocus()) {
@@ -5784,7 +5795,7 @@ nsIContent* HTMLEditor::GetFocusedContentForIME() const {
   if (NS_WARN_IF(!document)) {
     return nullptr;
   }
-  return document->HasFlag(NODE_IS_EDITABLE) ? nullptr : focusedContent;
+  return IsInDesignMode() ? nullptr : focusedContent;
 }
 
 bool HTMLEditor::IsActiveInDOMWindow() const {
@@ -5797,7 +5808,7 @@ bool HTMLEditor::IsActiveInDOMWindow() const {
   if (NS_WARN_IF(!document)) {
     return false;
   }
-  bool inDesignMode = document->HasFlag(NODE_IS_EDITABLE);
+  const bool inDesignMode = IsInDesignMode();
 
   
   if (inDesignMode) {
@@ -5830,7 +5841,7 @@ Element* HTMLEditor::GetActiveEditingHost(
   if (NS_WARN_IF(!document)) {
     return nullptr;
   }
-  if (document->HasFlag(NODE_IS_EDITABLE)) {
+  if (IsInDesignMode()) {
     return document->GetBodyElement();
   }
 
@@ -5868,9 +5879,10 @@ Element* HTMLEditor::GetActiveEditingHost(
 }
 
 void HTMLEditor::NotifyEditingHostMaybeChanged() {
-  Document* document = GetDocument();
-  if (NS_WARN_IF(!document) ||
-      NS_WARN_IF(document->HasFlag(NODE_IS_EDITABLE))) {
+  
+  
+  
+  if (MOZ_UNLIKELY(NS_WARN_IF(!GetDocument()))) {
     return;
   }
 
@@ -5896,7 +5908,11 @@ void HTMLEditor::NotifyEditingHostMaybeChanged() {
 
   
   
-  if (ancestorLimiter->IsInclusiveDescendantOf(editingHost)) {
+  
+  
+  
+  if (ancestorLimiter->IsInclusiveDescendantOf(editingHost) ||
+      (ancestorLimiter->IsInDesignMode() != editingHost->IsInDesignMode())) {
     
     
     EditorBase::InitializeSelectionAncestorLimit(*editingHost);
@@ -6050,7 +6066,7 @@ bool HTMLEditor::IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent) const {
     return false;
   }
 
-  if (document->HasFlag(NODE_IS_EDITABLE)) {
+  if (IsInDesignMode()) {
     
     
     if (eventTargetNode->IsDocument()) {
@@ -6060,7 +6076,15 @@ bool HTMLEditor::IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent) const {
     if (NS_WARN_IF(!eventTargetNode->IsContent())) {
       return false;
     }
-    return document == eventTargetNode->GetUncomposedDoc();
+    if (document == eventTargetNode->GetUncomposedDoc()) {
+      return true;
+    }
+    
+    
+    
+    if (!eventTargetNode->IsInShadowTree()) {
+      return false;
+    }
   }
 
   

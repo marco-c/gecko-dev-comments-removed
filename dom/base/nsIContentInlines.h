@@ -160,11 +160,59 @@ inline bool nsINode::IsEditable() const {
   }
 
   
+  return IsInDesignMode();
+}
+
+inline bool nsINode::IsInDesignMode() const {
+  if (!OwnerDoc()->HasFlag(NODE_IS_EDITABLE)) {
+    return false;
+  }
+
+  if (IsDocument()) {
+    return HasFlag(NODE_IS_EDITABLE);
+  }
+
   
   
   
-  Document* doc = GetUncomposedDoc();
-  return doc && doc->HasFlag(NODE_IS_EDITABLE);
+  
+  if (IsInUncomposedDoc() && GetUncomposedDoc()->HasFlag(NODE_IS_EDITABLE)) {
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  if (IsInUAWidget()) {
+    nsIContent* host = GetContainingShadowHost();
+    MOZ_DIAGNOSTIC_ASSERT(host != this);
+    return host && host->IsInDesignMode();
+  }
+  MOZ_ASSERT(!IsUAWidget());
+
+  
+  
+  if (IsInNativeAnonymousSubtree()) {
+    nsIContent* host = GetClosestNativeAnonymousSubtreeRootParent();
+    MOZ_DIAGNOSTIC_ASSERT(host != this);
+    return host && host->IsInDesignMode();
+  }
+
+  
+  
+  
+  return false;
 }
 
 inline void nsIContent::HandleInsertionToOrRemovalFromSlot() {

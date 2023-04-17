@@ -245,7 +245,7 @@ dom::Element* nsIContent::GetEditingHost() {
   }
 
   
-  if (doc->HasFlag(NODE_IS_EDITABLE) && !IsInShadowTree()) {
+  if (IsInDesignMode() && !IsInShadowTree()) {
     return doc->GetBodyElement();
   }
 
