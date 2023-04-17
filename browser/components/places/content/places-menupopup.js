@@ -10,10 +10,6 @@
 
 
 {
-  const { AppConstants } = ChromeUtils.import(
-    "resource://gre/modules/AppConstants.jsm"
-  );
-
   
 
 
@@ -367,21 +363,6 @@
       let elt = event.target;
       if (elt.parentNode != this) {
         return;
-      }
-
-      if (AppConstants.platform === "macosx") {
-        
-        
-        let parentElt = elt.parent;
-        while (parentElt) {
-          if (
-            parentElt.id == "bookmarksMenuPopup" ||
-            parentElt.id == "goPopup"
-          ) {
-            return;
-          }
-          parentElt = parentElt.parentNode;
-        }
       }
 
       if (window.XULBrowserWindow) {
