@@ -148,6 +148,15 @@ const NetworkParentActor = ActorClassWithSpec(networkParentSpec, {
     }
     this.networkEventWatcher.unblockRequest(filters);
   },
+
+  setPersist(enabled) {
+    
+    
+    if (!this.networkEventWatcher) {
+      return;
+    }
+    this.networkEventWatcher.setPersist(enabled);
+  },
 });
 
 exports.NetworkParentActor = NetworkParentActor;

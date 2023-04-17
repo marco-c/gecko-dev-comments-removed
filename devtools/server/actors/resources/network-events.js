@@ -4,6 +4,9 @@
 
 "use strict";
 
+const Services = require("Services");
+const { Pool } = require("devtools/shared/protocol/Pool");
+
 loader.lazyRequireGetter(
   this,
   "NetworkObserver",
@@ -39,8 +42,12 @@ class NetworkEventWatcher {
     this.networkEvents = new Map();
 
     this.watcherActor = watcherActor;
+    this.pool = new Pool(watcherActor.conn, "network-events");
+    this.watcherActor.manage(this.pool);
     this.onNetworkEventAvailable = onAvailable;
     this.onNetworkEventUpdated = onUpdated;
+    
+    this.persist = false;
 
     this.listener = new NetworkObserver(
       { browserId: watcherActor.browserId },
@@ -48,6 +55,7 @@ class NetworkEventWatcher {
     );
 
     this.listener.init();
+    Services.obs.addObserver(this, "window-global-destroyed");
   }
 
   get conn() {
@@ -56,6 +64,19 @@ class NetworkEventWatcher {
 
   get browserId() {
     return this.watcherActor.browserId;
+  }
+
+  
+
+
+
+
+
+
+
+
+  setPersist(enabled) {
+    this.persist = enabled;
   }
 
   
@@ -124,6 +145,58 @@ class NetworkEventWatcher {
     return this.listener.getBlockedUrls();
   }
 
+  
+
+
+
+
+  observe(windowGlobal, topic) {
+    if (topic !== "window-global-destroyed") {
+      return;
+    }
+    
+    if (this.persist) {
+      return;
+    }
+    
+    
+    if (
+      this.watcherActor.browserId &&
+      windowGlobal.browsingContext.browserId != this.watcherActor.browserId
+    ) {
+      return;
+    }
+    
+    
+    
+    if (windowGlobal.isInitialDocument) {
+      return;
+    }
+    const { innerWindowId } = windowGlobal;
+
+    for (const child of this.pool.poolChildren()) {
+      
+      if (!child.isNavigationRequest) {
+        if (child.innerWindowId == innerWindowId) {
+          child.destroy();
+        }
+        
+        
+        
+        
+        
+        
+        
+      } else if (
+        child.innerWindowId != innerWindowId &&
+        windowGlobal.browsingContext ==
+          this.watcherActor.browserElement.browsingContext
+      ) {
+        child.destroy();
+      }
+    }
+  }
+
   onNetworkEvent(event) {
     const { channelId } = event;
 
@@ -140,7 +213,7 @@ class NetworkEventWatcher {
       },
       event
     );
-    this.watcherActor.manage(actor);
+    this.pool.manage(actor);
 
     const resource = actor.asResource();
 
@@ -246,6 +319,8 @@ class NetworkEventWatcher {
   destroy(watcherActor) {
     if (this.listener) {
       this.listener.destroy();
+      Services.obs.removeObserver(this, "window-global-destroyed");
+      this.pool.destroy();
     }
   }
 }

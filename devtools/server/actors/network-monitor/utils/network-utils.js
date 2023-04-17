@@ -643,6 +643,27 @@ exports.getChannelBrowsingContextID = function(channel) {
 
 
 
+exports.getChannelInnerWindowId = function(channel) {
+  if (channel.loadInfo.innerWindowId) {
+    return channel.loadInfo.innerWindowId;
+  }
+  
+  
+  
+  const topFrame = NetworkHelper.getTopFrameForRequest(channel);
+  
+  if (topFrame?.browsingContext?.currentWindowGlobal) {
+    return topFrame.browsingContext.currentWindowGlobal.innerWindowId;
+  }
+  return null;
+};
+
+
+
+
+
+
+
 exports.isPreloadRequest = function(channel) {
   const type = channel.loadInfo.internalContentPolicyType;
   return (
@@ -679,6 +700,7 @@ exports.createNetworkEvent = function(
   event.method = channel.requestMethod;
   event.channelId = channel.channelId;
   event.browsingContextID = this.getChannelBrowsingContextID(channel);
+  event.innerWindowId = this.getChannelInnerWindowId(channel);
   event.url = channel.URI.spec;
   event.private = channel.isChannelPrivate;
   event.headersSize = extraStringData ? extraStringData.length : 0;
