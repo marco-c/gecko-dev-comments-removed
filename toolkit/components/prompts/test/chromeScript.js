@@ -119,25 +119,17 @@ async function handlePrompt(action, modalType, isSelect) {
     }
   }
 
-  let promptState = isSelect ? getSelectState(ui) : getPromptState(ui);
-
-  
-  
-  await (async function() {
-    let rAFCount = 3;
-    while (rAFCount--) {
-      await new Promise(getDialogDoc().ownerGlobal.requestAnimationFrame);
-    }
-  })();
-
   let dialogClosed = BrowserTestUtils.waitForEvent(
     browserWin,
     "DOMModalDialogClosed"
   );
 
+  let promptState;
   if (isSelect) {
+    promptState = getSelectState(ui);
     dismissSelect(ui, action);
   } else {
+    promptState = getPromptState(ui);
     dismissPrompt(ui, action);
   }
 

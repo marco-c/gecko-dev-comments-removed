@@ -85,7 +85,7 @@ let PromptTestUtils = {
 
 
 
-  async handlePrompt(
+  handlePrompt(
     dialog,
     {
       checkboxState = null,
@@ -131,18 +131,6 @@ let PromptTestUtils = {
     if (!button) {
       throw new Error("Could not find button with index " + buttonNumClick);
     }
-
-    if (dialog.ui.prompt?.docShell?.chromeEventHandler) {
-      
-      
-      await (async function() {
-        let rAFCount = 3;
-        while (rAFCount--) {
-          await new Promise(win.requestAnimationFrame);
-        }
-      })();
-    }
-
     button.click();
 
     return promptClosePromise;
