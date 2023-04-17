@@ -84,6 +84,7 @@
  CSSProperties.prototype.MozPaddingStart;
  CSSProperties.prototype.MozPerspective;
  CSSProperties.prototype.MozStackSizing;
+ CSSProperties.prototype.MozTabSize;
  CSSProperties.prototype.MozTransform;
  CSSProperties.prototype.MozTransformOrigin;
  CSSProperties.prototype.MozTransition;
