@@ -615,6 +615,44 @@ add_task(async function clickLearnMore() {
 });
 
 
+add_task(async function mainCheckboxDescription_online() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.quicksuggest.scenario", "online"]],
+  });
+  await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
+
+  let doc = gBrowser.selectedBrowser.contentDocument;
+  Assert.ok(
+    BrowserTestUtils.is_visible(
+      doc.getElementById("firefoxSuggestSuggestionDescription")
+    ),
+    "The main checkbox description is visible"
+  );
+
+  gBrowser.removeCurrentTab();
+  await SpecialPowers.popPrefEnv();
+});
+
+
+add_task(async function mainCheckboxDescription_offline() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.quicksuggest.scenario", "offline"]],
+  });
+  await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
+
+  let doc = gBrowser.selectedBrowser.contentDocument;
+  Assert.ok(
+    BrowserTestUtils.is_hidden(
+      doc.getElementById("firefoxSuggestSuggestionDescription")
+    ),
+    "The main checkbox description is hidden"
+  );
+
+  gBrowser.removeCurrentTab();
+  await SpecialPowers.popPrefEnv();
+});
+
+
 
 
 

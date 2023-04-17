@@ -1987,6 +1987,10 @@ var gPrivacyPane = {
         element.dataset.l10nId = l10nId;
       }
       
+      
+      document.getElementById("firefoxSuggestSuggestionDescription").hidden =
+        UrlbarPrefs.get("quickSuggestScenario") != "online";
+      
       this._updateFirefoxSuggestSponsoredCheckbox();
       container.removeAttribute("hidden");
     } else if (!onInit) {
