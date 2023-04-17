@@ -3026,7 +3026,10 @@ gfxFont* gfxFontGroup::FindFontForChar(uint32_t aCh, uint32_t aPrevCh,
 
   
   
-  uint32_t fallbackChar = (aCh == 0x2010 || aCh == 0x2011) ? '-' : 0;
+  
+  uint32_t fallbackChar = (aCh == 0x2010 || aCh == 0x2011) ? '-'
+                          : (aCh == 0x00A0)                ? ' '
+                                                           : 0;
 
   
   
@@ -3416,10 +3419,6 @@ void gfxFontGroup::ComputeRanges(nsTArray<TextRange>& aRanges, const T* aString,
     } else {
       
       nextCh = i < aLength - 1 ? aString[i + 1] : 0;
-    }
-
-    if (ch == 0xa0) {
-      ch = ' ';
     }
 
     gfxFont* font;
