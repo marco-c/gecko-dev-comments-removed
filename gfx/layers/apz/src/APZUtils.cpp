@@ -99,14 +99,7 @@ bool AboutToCheckerboard(const FrameMetrics& aPaintedMetrics,
 
 bool ShouldUseProgressivePaint() {
   
-  
-  
-  
-#if defined(MOZ_SANDBOX) || !defined(MOZ_WIDGET_ANDROID)
   return false;
-#else
-  return StaticPrefs::layers_progressive_paint_DoNotUseDirectly();
-#endif
 }
 
 SideBits GetOverscrollSideBits(const ParentLayerPoint& aOverscrollAmount) {
