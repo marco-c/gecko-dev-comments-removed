@@ -104,10 +104,9 @@ class nsIParser : public nsParserBase {
 
 
 
-
   virtual void SetDocumentCharset(NotNull<const Encoding*> aCharset,
                                   int32_t aSource,
-                                  bool aForceAutoDetection = false) = 0;
+                                  bool aChannelHadCharset = false) = 0;
 
   
 

@@ -31,6 +31,8 @@ enum {
   kCharsetFromMetaTag,      
   kCharsetFromChannel,
   kCharsetFromOtherComponent,
+  kCharsetFromPendingUserForcedAutoDetection,  
+                                               
   kCharsetFromInitialUserForcedAutoDetection,
   kCharsetFromFinalUserForcedAutoDetection,
   kCharsetFromXmlDeclarationUtf16,        

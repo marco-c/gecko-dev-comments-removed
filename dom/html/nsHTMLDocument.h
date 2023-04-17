@@ -175,11 +175,9 @@ class nsHTMLDocument : public mozilla::dom::Document {
                                NotNull<const Encoding*>& aEncoding);
   void TryUserForcedCharset(nsIContentViewer* aCv, nsIDocShell* aDocShell,
                             int32_t& aCharsetSource,
-                            NotNull<const Encoding*>& aEncoding,
-                            bool& aForceAutoDetection);
+                            NotNull<const Encoding*>& aEncoding);
   void TryParentCharset(nsIDocShell* aDocShell, int32_t& charsetSource,
-                        NotNull<const Encoding*>& aEncoding,
-                        bool& aForceAutoDetection);
+                        NotNull<const Encoding*>& aEncoding);
 
   
   uint32_t mLoadFlags;

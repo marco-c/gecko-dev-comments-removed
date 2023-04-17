@@ -229,16 +229,15 @@ class nsHtml5StreamParser final : public nsISupports {
 
 
   inline void SetDocumentCharset(NotNull<const Encoding*> aEncoding,
-                                 int32_t aSource, bool aForceAutoDetection) {
+                                 int32_t aSource, bool aChannelHadCharset) {
     MOZ_ASSERT(mStreamState == STREAM_NOT_STARTED,
                "SetDocumentCharset called too late.");
-    MOZ_ASSERT(NS_IsMainThread(), "Wrong thread!");
-    MOZ_ASSERT(!(aForceAutoDetection && aSource >= kCharsetFromOtherComponent),
-               "Can't force with high-ranking source.");
+    NS_ASSERTION(NS_IsMainThread(), "Wrong thread!");
+    MOZ_ASSERT(!(aSource == kCharsetFromChannel && !aChannelHadCharset),
+               "If charset is from channel, channel must have had charset.");
     mEncoding = aEncoding;
     mCharsetSource = aSource;
-    mForceAutoDetection = aForceAutoDetection;
-    mChannelHadCharset = (aSource == kCharsetFromChannel);
+    mChannelHadCharset = aChannelHadCharset;
   }
 
   nsresult GetChannel(nsIChannel** aChannel);
@@ -531,11 +530,6 @@ class nsHtml5StreamParser final : public nsISupports {
 
 
   bool mReparseForbidden;
-
-  
-
-
-  bool mForceAutoDetection;
 
   
 
