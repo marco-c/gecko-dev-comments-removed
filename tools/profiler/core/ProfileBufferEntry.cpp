@@ -1279,41 +1279,37 @@ void ProfileBuffer::StreamMarkersToJSON(SpliceableJSONWriter& aWriter,
     MOZ_ASSERT(static_cast<ProfileBufferEntry::KindUnderlyingType>(type) <
                static_cast<ProfileBufferEntry::KindUnderlyingType>(
                    ProfileBufferEntry::Kind::MODERN_LIMIT));
-    bool entryWasFullyRead = false;
-
     if (type == ProfileBufferEntry::Kind::Marker) {
-      entryWasFullyRead =
-          mozilla::base_profiler_markers_detail::DeserializeAfterKindAndStream(
-              aER, aWriter, aThreadId,
-              [&](ProfileChunkedBuffer& aChunkedBuffer) {
-                ProfilerBacktrace backtrace("", &aChunkedBuffer);
-                backtrace.StreamJSON(aWriter, aProcessStartTime, aUniqueStacks);
-              },
-              [&](mozilla::base_profiler_markers_detail::Streaming::
-                      DeserializerTag aTag) {
-                size_t payloadSize = aER.RemainingBytes();
+      mozilla::base_profiler_markers_detail::DeserializeAfterKindAndStream(
+          aER,
+          [&](const ProfilerThreadId& aMarkerThreadId) {
+            return (aMarkerThreadId == aThreadId) ? &aWriter : nullptr;
+          },
+          [&](ProfileChunkedBuffer& aChunkedBuffer) {
+            ProfilerBacktrace backtrace("", &aChunkedBuffer);
+            backtrace.StreamJSON(aWriter, aProcessStartTime, aUniqueStacks);
+          },
+          [&](mozilla::base_profiler_markers_detail::Streaming::DeserializerTag
+                  aTag) {
+            size_t payloadSize = aER.RemainingBytes();
 
-                ProfileBufferEntryReader::DoubleSpanOfConstBytes spans =
-                    aER.ReadSpans(payloadSize);
-                if (MOZ_LIKELY(spans.IsSingleSpan())) {
-                  
-                  
-                  profiler::ffi::gecko_profiler_serialize_marker_for_tag(
-                      aTag, spans.mFirstOrOnly.Elements(), payloadSize,
-                      &aWriter);
-                } else {
-                  
-                  uint8_t* payloadBuffer = new uint8_t[payloadSize];
-                  spans.CopyBytesTo(payloadBuffer);
-                  profiler::ffi::gecko_profiler_serialize_marker_for_tag(
-                      aTag, payloadBuffer, payloadSize, &aWriter);
-                  delete[] payloadBuffer;
-                }
-              });
-    }
-
-    if (!entryWasFullyRead) {
-      
+            ProfileBufferEntryReader::DoubleSpanOfConstBytes spans =
+                aER.ReadSpans(payloadSize);
+            if (MOZ_LIKELY(spans.IsSingleSpan())) {
+              
+              
+              profiler::ffi::gecko_profiler_serialize_marker_for_tag(
+                  aTag, spans.mFirstOrOnly.Elements(), payloadSize, &aWriter);
+            } else {
+              
+              uint8_t* payloadBuffer = new uint8_t[payloadSize];
+              spans.CopyBytesTo(payloadBuffer);
+              profiler::ffi::gecko_profiler_serialize_marker_for_tag(
+                  aTag, payloadBuffer, payloadSize, &aWriter);
+              delete[] payloadBuffer;
+            }
+          });
+    } else {
       
       aER.SetRemainingBytes(0);
     }

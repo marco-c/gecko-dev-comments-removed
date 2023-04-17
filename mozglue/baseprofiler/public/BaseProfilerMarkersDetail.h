@@ -295,48 +295,61 @@ ProfileBufferBlockIndex AddMarkerToBuffer(
       aBuffer, aName, aCategory, std::move(aOptions), aTs...);
 }
 
-template <typename StackCallback, typename RustMarkerCallback>
-[[nodiscard]] bool DeserializeAfterKindAndStream(
+
+
+
+
+
+
+
+
+
+
+
+template <typename GetWriterForThreadCallback, typename StackCallback,
+          typename RustMarkerCallback>
+void DeserializeAfterKindAndStream(
     ProfileBufferEntryReader& aEntryReader,
-    baseprofiler::SpliceableJSONWriter& aWriter,
-    baseprofiler::BaseProfilerThreadId aThreadIdOrUnspecified,
+    GetWriterForThreadCallback&& aGetWriterForThreadCallback,
     StackCallback&& aStackCallback, RustMarkerCallback&& aRustMarkerCallback) {
   
   
   
   
   
-  
-  
-  
   const MarkerOptions options = aEntryReader.ReadObject<MarkerOptions>();
-  if (aThreadIdOrUnspecified.IsSpecified() &&
-      options.ThreadId().ThreadId() != aThreadIdOrUnspecified) {
+
+  baseprofiler::SpliceableJSONWriter* writer =
+      std::forward<GetWriterForThreadCallback>(aGetWriterForThreadCallback)(
+          options.ThreadId().ThreadId());
+  if (!writer) {
     
-    return false;
+    aEntryReader.SetRemainingBytes(0);
+    return;
   }
+
   
   
-  aWriter.StartArrayElement();
+  writer->StartArrayElement();
   {
-    aWriter.UniqueStringElement(aEntryReader.ReadObject<ProfilerString8View>());
+    writer->UniqueStringElement(aEntryReader.ReadObject<ProfilerString8View>());
 
     const double startTime = options.Timing().GetStartTime();
-    aWriter.TimeDoubleMsElement(startTime);
+    writer->TimeDoubleMsElement(startTime);
 
     const double endTime = options.Timing().GetEndTime();
-    aWriter.TimeDoubleMsElement(endTime);
+    writer->TimeDoubleMsElement(endTime);
 
-    aWriter.IntElement(static_cast<int64_t>(options.Timing().MarkerPhase()));
+    writer->IntElement(static_cast<int64_t>(options.Timing().MarkerPhase()));
 
     MarkerCategory category = aEntryReader.ReadObject<MarkerCategory>();
-    aWriter.IntElement(static_cast<int64_t>(category.GetCategory()));
+    writer->IntElement(static_cast<int64_t>(category.GetCategory()));
 
     if (const auto tag =
             aEntryReader.ReadObject<mozilla::base_profiler_markers_detail::
                                         Streaming::DeserializerTag>();
         tag != 0) {
-      aWriter.StartObjectElement(JSONWriter::SingleLineStyle);
+      writer->StartObjectElement(JSONWriter::SingleLineStyle);
       {
         
 
@@ -347,7 +360,7 @@ template <typename StackCallback, typename RustMarkerCallback>
           
           
           
-          aWriter.DoubleProperty(
+          writer->DoubleProperty(
               "innerWindowID",
               static_cast<double>(options.InnerWindowId().Id()));
         }
@@ -356,9 +369,9 @@ template <typename StackCallback, typename RustMarkerCallback>
         if (ProfileChunkedBuffer* chunkedBuffer =
                 options.Stack().GetChunkedBuffer();
             chunkedBuffer) {
-          aWriter.StartObjectProperty("stack");
+          writer->StartObjectProperty("stack");
           { std::forward<StackCallback>(aStackCallback)(*chunkedBuffer); }
-          aWriter.EndObject();
+          writer->EndObject();
         }
 
         auto payloadType = static_cast<mozilla::MarkerPayloadType>(
@@ -372,24 +385,25 @@ template <typename StackCallback, typename RustMarkerCallback>
                 MarkerDataDeserializer deserializer =
                     mozilla::base_profiler_markers_detail::Streaming::
                         DeserializerForTag(tag);
-
             MOZ_RELEASE_ASSERT(deserializer);
-            deserializer(aEntryReader, aWriter);
+            deserializer(aEntryReader, *writer);
+            MOZ_ASSERT(aEntryReader.RemainingBytes() == 0u);
             break;
           }
           case mozilla::MarkerPayloadType::Rust:
             std::forward<RustMarkerCallback>(aRustMarkerCallback)(tag);
+            MOZ_ASSERT(aEntryReader.RemainingBytes() == 0u);
             break;
           default:
             MOZ_ASSERT_UNREACHABLE("Unknown payload type.");
             break;
         }
       }
-      aWriter.EndObject();
+      writer->EndObject();
     }
   }
-  aWriter.EndArray();
-  return true;
+  writer->EndArray();
+  MOZ_ASSERT(aEntryReader.RemainingBytes() == 0u);
 }
 
 }  
