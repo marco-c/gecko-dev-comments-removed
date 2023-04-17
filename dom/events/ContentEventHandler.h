@@ -289,7 +289,8 @@ class MOZ_STACK_CLASS ContentEventHandler {
   
   
   
-  static bool ShouldBreakLineBefore(nsIContent* aContent, nsINode* aRootNode);
+  static bool ShouldBreakLineBefore(const nsIContent& aContent,
+                                    const nsINode* aRootNode = nullptr);
   
   static inline uint32_t GetBRLength(LineBreakType aLineBreakType);
   static LineBreakType GetLineBreakType(WidgetQueryContentEvent* aEvent);

@@ -589,7 +589,7 @@ uint32_t ContentEventHandler::GetNativeTextLengthBefore(nsIContent* aContent,
   if (NS_WARN_IF(aContent->IsText())) {
     return 0;
   }
-  return ShouldBreakLineBefore(aContent, aRootNode)
+  return ShouldBreakLineBefore(*aContent, aRootNode)
              ? GetBRLength(LINE_BREAK_TYPE_NATIVE)
              : 0;
 }
@@ -641,10 +641,10 @@ static uint32_t ConvertToXPOffset(nsIContent* aContent,
 }
 
 
-bool ContentEventHandler::ShouldBreakLineBefore(nsIContent* aContent,
-                                                nsINode* aRootNode) {
+bool ContentEventHandler::ShouldBreakLineBefore(
+    const nsIContent& aContent, const nsINode* aRootNode ) {
   
-  if (aContent == aRootNode) {
+  if (&aContent == aRootNode) {
     return false;
   }
 
@@ -652,22 +652,22 @@ bool ContentEventHandler::ShouldBreakLineBefore(nsIContent* aContent,
   
   
   
-  if (!aContent->IsHTMLElement()) {
+  if (!aContent.IsHTMLElement()) {
     return false;
   }
 
   
   
   
-  if (aContent->IsHTMLElement(nsGkAtoms::br)) {
-    return IsContentBR(*aContent);
+  if (aContent.IsHTMLElement(nsGkAtoms::br)) {
+    return IsContentBR(aContent);
   }
 
   
   
   
   
-  if (aContent->IsAnyOfHTMLElements(
+  if (aContent.IsAnyOfHTMLElements(
           nsGkAtoms::a, nsGkAtoms::abbr, nsGkAtoms::acronym, nsGkAtoms::b,
           nsGkAtoms::bdi, nsGkAtoms::bdo, nsGkAtoms::big, nsGkAtoms::cite,
           nsGkAtoms::code, nsGkAtoms::data, nsGkAtoms::del, nsGkAtoms::dfn,
@@ -681,7 +681,8 @@ bool ContentEventHandler::ShouldBreakLineBefore(nsIContent* aContent,
 
   
   
-  RefPtr<HTMLUnknownElement> unknownHTMLElement = do_QueryObject(aContent);
+  RefPtr<HTMLUnknownElement> unknownHTMLElement =
+      do_QueryObject(const_cast<nsIContent*>(&aContent));
   return !unknownHTMLElement;
 }
 
@@ -743,7 +744,7 @@ nsresult ContentEventHandler::GenerateFlatTextContent(
       } else {
         AppendString(aString, *textNode);
       }
-    } else if (ShouldBreakLineBefore(node->AsContent(), mRootContent)) {
+    } else if (ShouldBreakLineBefore(*node->AsContent(), mRootContent)) {
       aString.Append(char16_t('\n'));
     }
   }
@@ -916,7 +917,7 @@ nsresult ContentEventHandler::GenerateFlatFontRanges(
                        aLineBreakType);
       baseOffset +=
           GetTextLengthInRange(content, startOffset, endOffset, aLineBreakType);
-    } else if (ShouldBreakLineBefore(content, mRootContent)) {
+    } else if (ShouldBreakLineBefore(*content, mRootContent)) {
       if (aFontRanges.IsEmpty()) {
         MOZ_ASSERT(baseOffset == 0);
         FontRange* fontRange = AppendFontRange(aFontRanges, baseOffset);
@@ -1055,7 +1056,7 @@ nsresult ContentEventHandler::SetRawRangeFromFlatTextOffset(
 
     uint32_t textLength =
         content->IsText() ? GetTextLength(*content->AsText(), aLineBreakType)
-                          : (ShouldBreakLineBefore(content, mRootContent)
+                          : (ShouldBreakLineBefore(*content, mRootContent)
                                  ? GetBRLength(aLineBreakType)
                                  : 0);
     if (!textLength) {
@@ -1182,7 +1183,7 @@ nsresult ContentEventHandler::SetRawRangeFromFlatTextOffset(
       }
 
       if (content->HasChildren() &&
-          ShouldBreakLineBefore(content, mRootContent)) {
+          ShouldBreakLineBefore(*content, mRootContent)) {
         
         rv = aRawRange->SetEnd(content, 0);
         if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -1513,7 +1514,7 @@ ContentEventHandler::GetFirstFrameInRangeForTextRect(
 
     
     
-    if (ShouldBreakLineBefore(node->AsContent(), mRootContent) ||
+    if (ShouldBreakLineBefore(*node->AsContent(), mRootContent) ||
         IsPaddingBR(*node->AsContent())) {
       nodePosition = {node, 0};
     }
@@ -1606,7 +1607,7 @@ ContentEventHandler::GetLastFrameInRangeForTextRect(const RawRange& aRawRange) {
       break;
     }
 
-    if (ShouldBreakLineBefore(node->AsContent(), mRootContent) ||
+    if (ShouldBreakLineBefore(*node->AsContent(), mRootContent) ||
         IsPaddingBR(*node->AsContent())) {
       nodePosition = {node, 0};
       break;
@@ -1667,8 +1668,9 @@ ContentEventHandler::GetLineBreakerRectBefore(nsIFrame* aFrame) {
   
   
   
-  MOZ_ASSERT(ShouldBreakLineBefore(aFrame->GetContent(), mRootContent) ||
-             (aFrame->GetContent() && IsPaddingBR(*aFrame->GetContent())));
+  MOZ_ASSERT(aFrame->GetContent());
+  MOZ_ASSERT(ShouldBreakLineBefore(*aFrame->GetContent(), mRootContent) ||
+             IsPaddingBR(*aFrame->GetContent()));
 
   nsIFrame* frameForFontMetrics = aFrame;
 
@@ -1929,7 +1931,7 @@ nsresult ContentEventHandler::OnQueryTextRectArray(
     
     
     
-    else if (ShouldBreakLineBefore(firstContent, mRootContent) ||
+    else if (ShouldBreakLineBefore(*firstContent, mRootContent) ||
              IsPaddingBR(*firstContent)) {
       nsRect brRect;
       
@@ -2860,7 +2862,7 @@ nsresult ContentEventHandler::GetFlatTextLengthInRange(
       } else {
         *aLength += GetTextLength(*textNode, aLineBreakType);
       }
-    } else if (ShouldBreakLineBefore(content, aRootContent)) {
+    } else if (ShouldBreakLineBefore(*content, aRootContent)) {
       
       
       if (node == aStartPosition.Container() &&
