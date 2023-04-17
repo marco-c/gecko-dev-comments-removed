@@ -54,17 +54,15 @@ nsDataHandler::GetProtocolFlags(uint32_t* result) {
   nsresult rv;
   nsCOMPtr<nsIURI> uri;
 
-  const nsPromiseFlatCString& spec = PromiseFlatCString(aSpec);
-
-  if (aBaseURI && !spec.IsEmpty() && spec[0] == '#') {
+  if (aBaseURI && !aSpec.IsEmpty() && aSpec[0] == '#') {
     
     
-    rv = NS_MutateURI(aBaseURI).SetRef(spec).Finalize(uri);
+    rv = NS_MutateURI(aBaseURI).SetRef(aSpec).Finalize(uri);
   } else {
     
     nsAutoCString contentType;
     bool base64;
-    rv = ParseURI(spec, contentType,  nullptr, base64,
+    rv = ParseURI(aSpec, contentType,  nullptr, base64,
                    nullptr);
     if (NS_FAILED(rv)) return rv;
 
@@ -74,12 +72,12 @@ nsDataHandler::GetProtocolFlags(uint32_t* result) {
                    contentType.Find("xml") == kNotFound)) {
       
       rv = NS_MutateURI(new mozilla::net::nsSimpleURI::Mutator())
-               .Apply(&nsISimpleURIMutator::SetSpecAndFilterWhitespace, spec,
+               .Apply(&nsISimpleURIMutator::SetSpecAndFilterWhitespace, aSpec,
                       nullptr)
                .Finalize(uri);
     } else {
       rv = NS_MutateURI(new mozilla::net::nsSimpleURI::Mutator())
-               .SetSpec(spec)
+               .SetSpec(aSpec)
                .Finalize(uri);
     }
   }
@@ -230,18 +228,28 @@ nsresult nsDataHandler::ParsePathWithoutRef(
   return NS_OK;
 }
 
-nsresult nsDataHandler::ParseURI(const nsCString& spec, nsCString& contentType,
+static inline char ToLower(const char c) {
+  if (c >= 'A' && c <= 'Z') {
+    return char(c + ('a' - 'A'));
+  }
+  return c;
+}
+
+nsresult nsDataHandler::ParseURI(const nsACString& spec, nsCString& contentType,
                                  nsCString* contentCharset, bool& isBase64,
                                  nsCString* dataBuffer) {
   static constexpr auto kDataScheme = "data:"_ns;
 
   
-  int32_t scheme = spec.Find(kDataScheme,  true);
-  if (scheme == kNotFound) {
-    
+  const char* pos = std::search(
+      spec.BeginReading(), spec.EndReading(), kDataScheme.BeginReading(),
+      kDataScheme.EndReading(),
+      [](const char a, const char b) { return ToLower(a) == ToLower(b); });
+  if (pos == spec.EndReading()) {
     return NS_ERROR_MALFORMED_URI;
   }
 
+  uint32_t scheme = pos - spec.BeginReading();
   scheme += kDataScheme.Length();
 
   
