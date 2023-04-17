@@ -121,9 +121,8 @@ class VideoFrameConverter {
           if (aActive && mLastFrameQueuedForProcessing.Serial() != -2) {
             
             
-            FrameToProcess f = mLastFrameQueuedForProcessing;
-            f.mTime = TimeStamp::Now();
-            ProcessVideoFrame(std::move(f));
+            mLastFrameQueuedForProcessing.mTime = TimeStamp::Now();
+            ProcessVideoFrame(mLastFrameQueuedForProcessing);
           }
         }));
     MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(rv));
