@@ -472,10 +472,6 @@ GeckoDriver.prototype.registerBrowser = function(browserElement) {
 
 
 
-
-
-
-
 GeckoDriver.prototype.newSession = async function(cmd) {
   if (this.currentSession) {
     throw new error.SessionNotCreatedError("Maximum number of active sessions");
@@ -1984,7 +1980,7 @@ GeckoDriver.prototype.addCookie = async function(cmd) {
 
   let { protocol, hostname } = this._getCurrentURL();
 
-  const networkSchemes = ["ftp:", "http:", "https:"];
+  const networkSchemes = ["http:", "https:"];
   if (!networkSchemes.includes(protocol)) {
     throw new error.InvalidCookieDomainError("Document is cookie-averse");
   }

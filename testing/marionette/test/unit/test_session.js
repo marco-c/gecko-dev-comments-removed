@@ -403,6 +403,12 @@ add_test(function test_Proxy_fromJSON() {
   );
 
   
+  Assert.throws(
+    () => Proxy.fromJSON({ proxyType: "manual", ftpProxy: "foo:21" }),
+    /InvalidArgumentError/
+  );
+
+  
   for (let noProxy of [true, 42, {}, null, "foo", [true], [42], [{}], [null]]) {
     Assert.throws(
       () => Proxy.fromJSON({ proxyType: "manual", noProxy }),
