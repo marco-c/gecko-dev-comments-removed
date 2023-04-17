@@ -87,6 +87,23 @@ function getElementByLabel(container, label) {
 
 
 
+
+
+
+
+
+function getElementByTooltip(container, tooltip) {
+  return waitUntil(
+    () => container.querySelector(`[tooltiptext="${tooltip}"]`),
+    `Trying to find the button with the tooltip "${tooltip}".`
+  );
+}
+
+
+
+
+
+
 function getElementByXPath(document, path) {
   return document.evaluate(
     path,
