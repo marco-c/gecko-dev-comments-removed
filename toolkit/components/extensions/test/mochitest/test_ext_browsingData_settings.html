@@ -1,5 +1,5 @@
-
-
+<!-- Any copyright is dedicated to the Public Domain.
+   - http://creativecommons.org/publicdomain/zero/1.0/ -->
 <!DOCTYPE HTML>
 <html>
 <head>
@@ -30,10 +30,8 @@ add_task(async function testSettings() {
   }
 
   let extension = ExtensionTestUtils.loadExtension({
-    useAddonManager: "permanent",
     background,
     manifest: {
-      applications: { gecko: { id: "browsingData-settings@tests.mozilla.org" } },
       permissions: ["browsingData"],
     },
   });
