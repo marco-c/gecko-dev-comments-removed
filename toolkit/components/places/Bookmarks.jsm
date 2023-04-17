@@ -1467,6 +1467,11 @@ var Bookmarks = Object.freeze({
 
 
 
+
+
+
+
+
   fetch(guidOrInfo, onResult = null, options = {}) {
     if (onResult && typeof onResult != "function") {
       throw new Error("onResult callback must be a valid function");
@@ -1506,6 +1511,7 @@ var Bookmarks = Object.freeze({
     
     options = {
       concurrent: !!options.concurrent,
+      includePath: !!options.includePath,
     };
 
     let behavior = {};
@@ -1555,6 +1561,15 @@ var Bookmarks = Object.freeze({
       }
       
       results = results.map(r => Object.assign({}, r));
+
+      if (options.includePath) {
+        for (let result of results) {
+          let folderPath = await retrieveFullBookmarkPath(result.parentGuid);
+          if (folderPath) {
+            result.path = folderPath;
+          }
+        }
+      }
 
       
       
@@ -3427,4 +3442,55 @@ function adjustSeparatorsSyncCounter(
 
 function sqlBindPlaceholders(values, prefix = "", suffix = "") {
   return new Array(values.length).fill(prefix + "?" + suffix).join(",");
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function retrieveFullBookmarkPath(guid, options = {}) {
+  let query = async function(db) {
+    let rows = await db.executeCached(
+      `WITH RECURSIVE parents(guid, _id, _parent, title) AS
+          (SELECT guid, id AS _id, parent AS _parent,
+                  IFNULL(title, '') AS title
+           FROM moz_bookmarks
+           WHERE guid = :pguid
+           UNION ALL
+           SELECT b.guid, b.id AS _id, b.parent AS _parent,
+                  IFNULL(b.title, '') AS title
+           FROM moz_bookmarks b
+           INNER JOIN parents ON b.id=parents._parent)
+        SELECT * FROM parents WHERE guid != :rootGuid;
+      `,
+      { pguid: guid, rootGuid: PlacesUtils.bookmarks.rootGuid }
+    );
+
+    return rows.reverse().map(r => ({
+      guid: r.getResultByName("guid"),
+      title: r.getResultByName("title"),
+    }));
+  };
+
+  if (options.concurrent) {
+    let db = await PlacesUtils.promiseDBConnection();
+    return query(db);
+  }
+  return PlacesUtils.withConnectionWrapper(
+    "Bookmarks.jsm: retrieveFullBookmarkPath",
+    query
+  );
 }
