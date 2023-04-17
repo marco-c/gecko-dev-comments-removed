@@ -159,6 +159,7 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   void NotifyWebRenderError(wr::WebRenderError aError);
   void OnInProcessDeviceReset(bool aTrackThreshold);
   void OnRemoteProcessDeviceReset(GPUProcessHost* aHost) override;
+  void OnProcessDeclaredStable() override;
   void NotifyListenersOnCompositeDeviceReset();
 
   
@@ -186,7 +187,7 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   GPUChild* GetGPUChild() { return mGPUChild; }
 
   
-  bool AttemptedGPUProcess() const { return mNumProcessAttempts > 0; }
+  bool AttemptedGPUProcess() const { return mTotalProcessAttempts > 0; }
 
   
   GPUProcessHost* Process() { return mProcess; }
@@ -293,7 +294,10 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   uint32_t mNextNamespace;
   uint32_t mIdNamespace;
   uint32_t mResourceId;
-  uint32_t mNumProcessAttempts;
+
+  uint32_t mUnstableProcessAttempts;
+  uint32_t mTotalProcessAttempts;
+  TimeStamp mProcessAttemptLastTime;
 
   nsTArray<RefPtr<RemoteCompositorSession>> mRemoteSessions;
   nsTArray<RefPtr<InProcessCompositorSession>> mInProcessSessions;
@@ -305,6 +309,7 @@ class GPUProcessManager final : public GPUProcessHost::Listener {
   
   GPUProcessHost* mProcess;
   uint64_t mProcessToken;
+  bool mProcessStable;
   GPUChild* mGPUChild;
   RefPtr<VsyncBridgeChild> mVsyncBridge;
   
