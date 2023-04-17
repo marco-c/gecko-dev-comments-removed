@@ -62,6 +62,130 @@ LazyLogModule gMediaTrackGraphLog("MediaTrackGraph");
 
 static nsTHashMap<nsUint32HashKey, MediaTrackGraphImpl*> gGraphs;
 
+void NativeInputTrack::AudioDataBuffers::SetOutputData(
+    const AudioDataValue* aBuffer, size_t aFrames, uint32_t aChannels) {
+  mOutputData.Set(aBuffer, aFrames, aChannels);
+}
+
+void NativeInputTrack::AudioDataBuffers::SetInputData(
+    const AudioDataValue* aBuffer, size_t aFrames, uint32_t aChannels) {
+  mInputData.Set(aBuffer, aFrames, aChannels);
+}
+
+void NativeInputTrack::AudioDataBuffers::Clear(Scope aScope) {
+  if (aScope & Scope::Input) {
+    mInputData.Clear();
+  }
+
+  if (aScope & Scope::Output) {
+    mOutputData.Clear();
+  }
+}
+
+NativeInputTrack* NativeInputTrack::Create(MediaTrackGraphImpl* aGraph) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  NativeInputTrack* track = new NativeInputTrack(aGraph->GraphRate());
+  aGraph->AddTrack(track);
+  return track;
+}
+
+size_t NativeInputTrack::AddUser() {
+  MOZ_ASSERT(NS_IsMainThread());
+  mUserCount += 1;
+  return mUserCount;
+}
+
+size_t NativeInputTrack::RemoveUser() {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(mUserCount > 0);
+  mUserCount -= 1;
+  return mUserCount;
+}
+
+void NativeInputTrack::DestroyImpl() {
+  MOZ_ASSERT(mGraph->OnGraphThreadOrNotRunning());
+  if (mDataHolder) {
+    mDataHolder->Clear(static_cast<AudioDataBuffers::Scope>(
+        AudioDataBuffers::Scope::Input | AudioDataBuffers::Scope::Output));
+  }
+  ProcessedMediaTrack::DestroyImpl();
+}
+
+void NativeInputTrack::ProcessInput(GraphTime aFrom, GraphTime aTo,
+                                    uint32_t aFlags) {
+  MOZ_ASSERT(mGraph->OnGraphThreadOrNotRunning());
+  TRACE_COMMENT("NativeInputTrack %p", this);
+  
+}
+
+uint32_t NativeInputTrack::NumberOfChannels() const {
+  MOZ_ASSERT(mGraph->OnGraphThreadOrNotRunning());
+  return mDataHolder ? mDataHolder->mInputData.mChannels : 0;
+}
+
+void NativeInputTrack::InitDataHolderIfNeeded() {
+  MOZ_ASSERT(mGraph->OnGraphThreadOrNotRunning());
+  if (!mDataHolder) {
+    mDataHolder.emplace();
+  }
+}
+
+void NativeInputTrack::NotifyOutputData(MediaTrackGraphImpl* aGraph,
+                                        AudioDataValue* aBuffer, size_t aFrames,
+                                        TrackRate aRate, uint32_t aChannels) {
+  MOZ_ASSERT(aGraph->OnGraphThreadOrNotRunning());
+  MOZ_ASSERT(aGraph == mGraph, "Receive output data from another graph");
+  MOZ_ASSERT(mDataHolder);
+  mDataHolder->SetOutputData(aBuffer, aFrames, aChannels);
+  for (auto& listener : mDataUsers) {
+    listener->NotifyOutputData(aGraph, mDataHolder->mOutputData.mBuffer,
+                               mDataHolder->mOutputData.mFrames, aRate,
+                               mDataHolder->mOutputData.mChannels);
+  }
+}
+
+void NativeInputTrack::NotifyInputStopped(MediaTrackGraphImpl* aGraph) {
+  MOZ_ASSERT(aGraph->OnGraphThreadOrNotRunning());
+  MOZ_ASSERT(aGraph == mGraph,
+             "Receive input stopped signal from another graph");
+  MOZ_ASSERT(mDataHolder);
+  mDataHolder->Clear(AudioDataBuffers::Scope::Input);
+  for (auto& listener : mDataUsers) {
+    listener->NotifyInputStopped(aGraph);
+  }
+}
+
+void NativeInputTrack::NotifyInputData(MediaTrackGraphImpl* aGraph,
+                                       const AudioDataValue* aBuffer,
+                                       size_t aFrames, TrackRate aRate,
+                                       uint32_t aChannels,
+                                       uint32_t aAlreadyBuffered) {
+  MOZ_ASSERT(aGraph->OnGraphThreadOrNotRunning());
+  MOZ_ASSERT(aGraph == mGraph, "Receive input data from another graph");
+
+  MOZ_ASSERT(mDataHolder);
+  mDataHolder->SetInputData(aBuffer, aFrames, aChannels);
+  for (auto& listener : mDataUsers) {
+    listener->NotifyInputData(aGraph, mDataHolder->mInputData.mBuffer,
+                              mDataHolder->mInputData.mFrames, aRate,
+                              mDataHolder->mInputData.mChannels,
+                              aAlreadyBuffered);
+  }
+}
+
+void NativeInputTrack::DeviceChanged(MediaTrackGraphImpl* aGraph) {
+  MOZ_ASSERT(aGraph->OnGraphThreadOrNotRunning());
+  MOZ_ASSERT(aGraph == mGraph,
+             "Receive device changed signal from another graph");
+  MOZ_ASSERT(mDataHolder);
+  mDataHolder->Clear(static_cast<AudioDataBuffers::Scope>(
+      AudioDataBuffers::Scope::Input | AudioDataBuffers::Scope::Output));
+  for (auto& listener : mDataUsers) {
+    listener->DeviceChanged(aGraph);
+  }
+}
+
 MediaTrackGraphImpl::~MediaTrackGraphImpl() {
   MOZ_ASSERT(mTracks.IsEmpty() && mSuspendedTracks.IsEmpty(),
              "All tracks should have been destroyed by messages from the main "
@@ -279,7 +403,7 @@ bool MediaTrackGraphImpl::AudioTrackPresent() {
   
   
   
-  if (!audioTrackPresent && mInputDeviceUsers.Count() != 0) {
+  if (!audioTrackPresent && mDeviceTrackMap.Count() != 0) {
     NS_WARNING("No audio tracks, but full-duplex audio is enabled!!!!!");
     audioTrackPresent = true;
   }
@@ -628,23 +752,51 @@ TrackTime MediaTrackGraphImpl::PlayAudio(AudioMixer* aMixer,
   return ticksWritten;
 }
 
+ProcessedMediaTrack* MediaTrackGraphImpl::GetDeviceTrack(
+    CubebUtils::AudioDeviceID aID) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  RefPtr<NativeInputTrack>& t = mDeviceTracks.LookupOrInsertWith(
+      aID, [self = RefPtr<MediaTrackGraphImpl>(this), aID] {
+        NativeInputTrack* track = NativeInputTrack::Create(self);
+        LOG(LogLevel::Debug,
+            ("Create NativeInputTrack %p for device %p", track, aID));
+        return do_AddRef(track);
+      });
+
+  return t.get();
+}
+
 void MediaTrackGraphImpl::OpenAudioInputImpl(CubebUtils::AudioDeviceID aID,
-                                             AudioDataListener* aListener) {
+                                             AudioDataListener* aListener,
+                                             NativeInputTrack* aInputTrack) {
   MOZ_ASSERT(OnGraphThread());
-  
-  
-  nsTArray<RefPtr<AudioDataListener>>& listeners =
-      mInputDeviceUsers.LookupOrInsert(aID);
-  if (listeners.IsEmpty() && mInputDeviceUsers.Count() > 1) {
+  LOG(LogLevel::Debug,
+      ("%p OpenAudioInputImpl: NativeInputTrack %p for device %p", this,
+       aInputTrack, aID));
+
+  if (mDeviceTrackMap.Count() > 0 && !mDeviceTrackMap.Get(aID, nullptr)) {
     
-    listeners.RemoveElement(aID);
+    LOG(LogLevel::Debug, ("%p Device %p is not native device. Cannot open %p!",
+                          this, aID, aInputTrack));
     return;
   }
 
+  LOG(LogLevel::Debug,
+      ("%p Device %p is native device. Open %p", this, aID, aInputTrack));
+
+  
+  
+  NativeInputTrack* track = mDeviceTrackMap.LookupOrInsertWith(
+      aID, [inputTrack = RefPtr<NativeInputTrack>(aInputTrack)] {
+        return inputTrack.get();
+      });
+  MOZ_ASSERT(track);
+  track->InitDataHolderIfNeeded();
+
+  nsTArray<RefPtr<AudioDataListener>>& listeners = track->mDataUsers;
   MOZ_ASSERT(!listeners.Contains(aListener), "Don't add a listener twice.");
-
   listeners.AppendElement(aListener);
-
   if (listeners.Length() == 1) {  
     mInputDeviceID = aID;
     
@@ -665,28 +817,60 @@ nsresult MediaTrackGraphImpl::OpenAudioInput(CubebUtils::AudioDeviceID aID,
   class Message : public ControlMessage {
    public:
     Message(MediaTrackGraphImpl* aGraph, CubebUtils::AudioDeviceID aID,
-            AudioDataListener* aListener)
+            AudioDataListener* aListener, NativeInputTrack* aInputTrack)
         : ControlMessage(nullptr),
           mGraph(aGraph),
           mID(aID),
-          mListener(aListener) {}
-    void Run() override { mGraph->OpenAudioInputImpl(mID, mListener); }
+          mListener(aListener),
+          mInputTrack(aInputTrack) {}
+    void Run() override {
+      mGraph->OpenAudioInputImpl(mID, mListener, mInputTrack);
+    }
     MediaTrackGraphImpl* mGraph;
     CubebUtils::AudioDeviceID mID;
     RefPtr<AudioDataListener> mListener;
+    NativeInputTrack* mInputTrack;
   };
+
+  auto result = mDeviceTracks.Lookup(aID);
+  MOZ_ASSERT(result);
+  MOZ_ASSERT(result.Data());
+  size_t users = result.Data()->AddUser();
+
+  LOG(LogLevel::Debug,
+      ("%p OpenInput: NativeInputTrack %p for device %p has %zu users now",
+       this, result.Data().get(), aID, users));
+
   
-  this->AppendMessage(MakeUnique<Message>(this, aID, aListener));
+  this->AppendMessage(
+      MakeUnique<Message>(this, aID, aListener, result.Data().get()));
   return NS_OK;
 }
 
 void MediaTrackGraphImpl::CloseAudioInputImpl(CubebUtils::AudioDeviceID aID,
-                                              AudioDataListener* aListener) {
+                                              AudioDataListener* aListener,
+                                              NativeInputTrack* aInputTrack) {
   MOZ_ASSERT(OnGraphThread());
 
-  auto listeners = mInputDeviceUsers.Lookup(aID);
-  MOZ_ASSERT(listeners);
-  bool wasPresent = listeners->RemoveElement(aListener);
+  LOG(LogLevel::Debug,
+      ("%p CloseAudioInputImpl: NativeInputTrack %p for device %p", this,
+       aInputTrack, aID));
+
+  auto result = mDeviceTrackMap.Lookup(aID);
+  if (!result) {
+    LOG(LogLevel::Debug,
+        ("%p Device %p is not native device. Do nothing for %p", this, aID,
+         aInputTrack));
+    return;
+  }
+
+  LOG(LogLevel::Debug,
+      ("%p Device %p is native device. Close %p", this, aID, aInputTrack));
+
+  NativeInputTrack* track = result.Data();
+  MOZ_ASSERT(track == aInputTrack);
+  nsTArray<RefPtr<AudioDataListener>>& listeners = track->mDataUsers;
+  bool wasPresent = listeners.RemoveElement(aListener);
   MOZ_ASSERT(wasPresent);
 
   if (wasPresent) {
@@ -696,13 +880,22 @@ void MediaTrackGraphImpl::CloseAudioInputImpl(CubebUtils::AudioDeviceID aID,
   
   aListener->Disconnect(this);
 
-  if (!listeners->IsEmpty()) {
-    
+  if (!listeners.IsEmpty()) {
+    LOG(LogLevel::Debug,
+        ("%p NativeInputTrack %p for device %p still has consumer", this, track,
+         aID));
     return;
   }
 
+  LOG(LogLevel::Debug,
+      ("%p NativeInputTrack %p for device %p has no consumer now", this, track,
+       aID));
+
   mInputDeviceID = nullptr;  
-  Unused << mInputDeviceUsers.Remove(aID);
+
+  bool r = mDeviceTrackMap.Remove(aID);
+  MOZ_ASSERT(r);
+  Unused << r;
 
   
   
@@ -769,17 +962,55 @@ void MediaTrackGraphImpl::CloseAudioInput(CubebUtils::AudioDeviceID aID,
   class Message : public ControlMessage {
    public:
     Message(MediaTrackGraphImpl* aGraph, CubebUtils::AudioDeviceID aID,
-            AudioDataListener* aListener)
+            AudioDataListener* aListener, NativeInputTrack* aInputTrack)
         : ControlMessage(nullptr),
           mGraph(aGraph),
           mID(aID),
-          mListener(aListener) {}
-    void Run() override { mGraph->CloseAudioInputImpl(mID, mListener); }
+          mListener(aListener),
+          mInputTrack(aInputTrack) {}
+    void Run() override {
+      mGraph->CloseAudioInputImpl(mID, mListener, mInputTrack);
+    }
     MediaTrackGraphImpl* mGraph;
     CubebUtils::AudioDeviceID mID;
     RefPtr<AudioDataListener> mListener;
+    NativeInputTrack* mInputTrack;
   };
-  this->AppendMessage(MakeUnique<Message>(this, aID, aListener));
+
+  auto result = mDeviceTracks.Lookup(aID);
+  MOZ_ASSERT(result);
+  MOZ_ASSERT(result.Data());
+  size_t users = result.Data()->RemoveUser();
+
+  LOG(LogLevel::Debug,
+      ("%p: CloseInput: NativeInputTrack %p for device %p has %zu users now",
+       this, result.Data().get(), aID, users));
+
+  this->AppendMessage(
+      MakeUnique<Message>(this, aID, aListener, result.Data().get()));
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (users == 0) {
+    LOG(LogLevel::Debug,
+        ("%p: CloseInput: NativeInputTrack %p for device %p is removed from "
+         "mDeviceTracks",
+         this, result.Data().get(), aID));
+
+    result.Data()->Destroy();
+    bool r = mDeviceTracks.Remove(aID);
+    MOZ_ASSERT(r);
+    Unused << r;
+  }
 }
 
 
@@ -791,7 +1022,7 @@ void MediaTrackGraphImpl::NotifyOutputData(AudioDataValue* aBuffer,
   
   
   
-  if (!mInputDeviceUsers.Contains(mInputDeviceID)) {
+  if (!mDeviceTrackMap.Contains(mInputDeviceID)) {
     return;
   }
 #else
@@ -801,14 +1032,16 @@ void MediaTrackGraphImpl::NotifyOutputData(AudioDataValue* aBuffer,
 #endif
   
   
-  for (auto& listener : *mInputDeviceUsers.Lookup(mInputDeviceID)) {
-    listener->NotifyOutputData(this, aBuffer, aFrames, aRate, aChannels);
-  }
+  auto result = mDeviceTrackMap.Lookup(mInputDeviceID);
+  MOZ_ASSERT(result);
+  NativeInputTrack* track = result.Data();
+  MOZ_ASSERT(track);
+  track->NotifyOutputData(this, aBuffer, aFrames, aRate, aChannels);
 }
 
 void MediaTrackGraphImpl::NotifyInputStopped() {
 #ifdef ANDROID
-  if (!mInputDeviceUsers.Contains(mInputDeviceID)) {
+  if (!mDeviceTrackMap.Contains(mInputDeviceID)) {
     return;
   }
 #else
@@ -816,9 +1049,11 @@ void MediaTrackGraphImpl::NotifyInputStopped() {
     return;
   }
 #endif
-  for (auto& listener : *mInputDeviceUsers.Lookup(mInputDeviceID)) {
-    listener->NotifyInputStopped(this);
-  }
+  auto result = mDeviceTrackMap.Lookup(mInputDeviceID);
+  MOZ_ASSERT(result);
+  NativeInputTrack* track = result.Data();
+  MOZ_ASSERT(track);
+  track->NotifyInputStopped(this);
 }
 
 void MediaTrackGraphImpl::NotifyInputData(const AudioDataValue* aBuffer,
@@ -826,7 +1061,7 @@ void MediaTrackGraphImpl::NotifyInputData(const AudioDataValue* aBuffer,
                                           uint32_t aChannels,
                                           uint32_t aAlreadyBuffered) {
 #ifdef ANDROID
-  if (!mInputDeviceUsers.Contains(mInputDeviceID)) {
+  if (!mDeviceTrackMap.Contains(mInputDeviceID)) {
     return;
   }
 #else
@@ -838,17 +1073,18 @@ void MediaTrackGraphImpl::NotifyInputData(const AudioDataValue* aBuffer,
     return;
   }
 #endif
-  for (auto& listener : *mInputDeviceUsers.Lookup(mInputDeviceID)) {
-    listener->NotifyInputData(this, aBuffer, aFrames, aRate, aChannels,
-                              aAlreadyBuffered);
-  }
+  auto result = mDeviceTrackMap.Lookup(mInputDeviceID);
+  MOZ_ASSERT(result);
+  NativeInputTrack* track = result.Data();
+  MOZ_ASSERT(track);
+  track->NotifyInputData(this, aBuffer, aFrames, aRate, aChannels,
+                         aAlreadyBuffered);
 }
 
 void MediaTrackGraphImpl::DeviceChangedImpl() {
   MOZ_ASSERT(OnGraphThread());
-
 #ifdef ANDROID
-  if (!mInputDeviceUsers.Contains(mInputDeviceID)) {
+  if (!mDeviceTrackMap.Contains(mInputDeviceID)) {
     return;
   }
 #else
@@ -856,10 +1092,11 @@ void MediaTrackGraphImpl::DeviceChangedImpl() {
     return;
   }
 #endif
-
-  for (auto& listener : *mInputDeviceUsers.Lookup(mInputDeviceID)) {
-    listener->DeviceChanged(this);
-  }
+  auto result = mDeviceTrackMap.Lookup(mInputDeviceID);
+  MOZ_ASSERT(result);
+  NativeInputTrack* track = result.Data();
+  MOZ_ASSERT(track);
+  track->DeviceChanged(this);
 }
 
 void MediaTrackGraphImpl::SetMaxOutputChannelCount(uint32_t aMaxChannelCount) {
@@ -1097,6 +1334,10 @@ void MediaTrackGraphImpl::ProduceDataForTracksBlockByBlock(
     for (uint32_t i = aTrackIndex; i < mTracks.Length(); ++i) {
       ProcessedMediaTrack* pt = mTracks[i]->AsProcessedTrack();
       if (pt) {
+        if (pt->AsNativeInputTrack()) {
+          
+          continue;
+        }
         pt->ProcessInput(
             mProcessedTime, next,
             (next == mStateComputedTime) ? ProcessedMediaTrack::ALLOW_END : 0);
@@ -1243,10 +1484,21 @@ void MediaTrackGraphImpl::Process(AudioMixer* aMixer) {
 
   
   for (uint32_t i = 0; i < mTracks.Length(); ++i) {
+    NativeInputTrack* track = mTracks[i]->AsNativeInputTrack();
+    if (track) {
+      track->ProcessInput(mProcessedTime, mStateComputedTime,
+                          ProcessedMediaTrack::ALLOW_END);
+    }
+  }
+
+  
+  for (uint32_t i = 0; i < mTracks.Length(); ++i) {
     MediaTrack* track = mTracks[i];
     if (!doneAllProducing) {
       ProcessedMediaTrack* pt = track->AsProcessedTrack();
-      if (pt) {
+      
+      bool isNativeInputTrack = track->AsNativeInputTrack();
+      if (pt && !isNativeInputTrack) {
         AudioNodeTrack* n = track->AsAudioNodeTrack();
         if (n) {
 #ifdef DEBUG

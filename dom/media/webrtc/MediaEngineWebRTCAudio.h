@@ -256,6 +256,10 @@ class AudioInputTrack : public ProcessedMediaTrack {
 
   
   
+  RefPtr<MediaInputPort> mPort;
+
+  
+  
   
   
   RefPtr<AudioDataListener> mInputListener;
