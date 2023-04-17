@@ -143,22 +143,28 @@ const invariants = {
 
 
 
-const attribute_test = (load_resource, validate, test_label) => {
+
+const attribute_test = (loader, path, validate, test_label) => {
   promise_test(
     async () => {
-      
-      performance.clearResourceTimings();
+      let loaded_entry = new Promise((resolve, reject) => {
+        new PerformanceObserver((entry_list, self) => {
+          try {
+            const name_matches = entry_list.getEntries().forEach(entry => {
+              if (entry.name.includes(path)) {
+                resolve(entry);
+              }
+            });
+          } catch(e) {
+            
+            
+            reject(e);
+          }
+        }).observe({"type": "resource"});
+      });
 
-      await load_resource();
-
-      const entry_list = performance.getEntriesByType("resource");
-      if (entry_list.length != 1) {
-        const names = entry_list
-          .map(e => e.name)
-          .join(", ");
-        throw new Error(`There should be one entry for one resource (found ${entry_list.length}: ${names})`);
-      }
-
-      validate(entry_list[0]);
+      await loader(path);
+      const entry = await(loaded_entry);
+      validate(entry);
   }, test_label);
 }
