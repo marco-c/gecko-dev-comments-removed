@@ -139,6 +139,9 @@ where
                     debug!(" > {:?}", sheet);
                 }
             }
+            
+            
+            collection.each(|_, _| true);
             return Ok(Some(entry.clone()));
         }
 
