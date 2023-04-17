@@ -1102,6 +1102,18 @@ class MultiStageProtonScreen extends react__WEBPACK_IMPORTED_MODULE_0___default.
     })) : null) : null, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
       className: "section-main"
     }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+      className: `noodle orange-L`
+    }), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+      className: `noodle purple-C`
+    }), isWelcomeScreen ? react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+      className: `noodle solid-L`
+    }) : null, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+      className: `noodle outline-L`
+    }), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+      className: `noodle yellow-circle`
+    }), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+      className: "main-content"
+    }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
       className: "brand-logo"
     }), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
       className: "welcome-text"
@@ -1130,7 +1142,7 @@ class MultiStageProtonScreen extends react__WEBPACK_IMPORTED_MODULE_0___default.
     }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("br", null), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("p", null), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_3__["StepsIndicator"], {
       order: this.props.order,
       totalNumberOfScreens: this.props.totalNumberOfScreens
-    })) : null));
+    })) : null)));
   }
 
 }
