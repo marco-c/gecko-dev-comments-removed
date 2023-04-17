@@ -1107,9 +1107,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   static void PreferenceChanged(const char* aPrefName, void* aSelf);
   void PreferenceChanged(const char* aPrefName);
 
-  void UpdateAfterPreferencesChanged();
-  void DispatchPrefChangedRunnableIfNeeded();
-
   void GetUserPreferences();
 
   void UpdateCharSet(NotNull<const Encoding*> aCharSet);
@@ -1278,8 +1275,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   
   mozilla::TimeStamp mLastStyleUpdateForAllAnimations;
 
-  nsChangeHint mChangeHintForPrefChange;
-
   uint32_t mInterruptChecksToSkip;
 
   
@@ -1328,7 +1323,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   
   unsigned mPendingThemeChangeKind : kThemeChangeKindBits;
   unsigned mPendingUIResolutionChanged : 1;
-  unsigned mPostedPrefChangedRunnable : 1;
 
   
   unsigned mIsGlyph : 1;

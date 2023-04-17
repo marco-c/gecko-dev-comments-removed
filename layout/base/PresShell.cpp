@@ -1550,7 +1550,7 @@ void PresShell::UpdatePreferenceStyles() {
   }
 
   
-  if (nsContentUtils::IsInChromeDocshell(mDocument)) {
+  if (mDocument->IsInChromeDocShell()) {
     return;
   }
 
@@ -4168,6 +4168,9 @@ void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
     mDocument->FlushPendingNotifications(FlushType::ContentAndNotify);
 
     mDocument->UpdateSVGUseElementShadowTrees();
+
+    
+    UpdatePreferenceStyles();
 
     
     

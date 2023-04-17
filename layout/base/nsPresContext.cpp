@@ -142,16 +142,6 @@ bool nsPresContext::IsDOMPaintEventPending() {
 void nsPresContext::ForceReflowForFontInfoUpdate() {
   
   
-  FlushFontCache();
-
-  
-  
-  if (Document()->GetFonts()) {
-    Document()->GetFonts()->GetUserFontSet()->ForgetLocalFaces();
-  }
-
-  
-  
   
   PreferenceChanged("font.internaluseonly.changed");
 }
@@ -180,7 +170,6 @@ nsPresContext::nsPresContext(dom::Document* aDocument, nsPresContextType aType)
       mElementsRestyled(0),
       mFramesConstructed(0),
       mFramesReflowed(0),
-      mChangeHintForPrefChange(nsChangeHint(0)),
       mInterruptChecksToSkip(0),
       mNextFrameRateMultiplier(0),
       mViewportScrollStyles(StyleOverflow::Auto, StyleOverflow::Auto),
@@ -206,7 +195,6 @@ nsPresContext::nsPresContext(dom::Document* aDocument, nsPresContextType aType)
       mPendingThemeChanged(false),
       mPendingThemeChangeKind(0),
       mPendingUIResolutionChanged(false),
-      mPostedPrefChangedRunnable(false),
       mIsGlyph(false),
       mUsesExChUnits(false),
       mCounterStylesDirty(true),
@@ -403,7 +391,6 @@ static void HandleGlobalThemeChange() {
   }
 }
 
-
 void nsPresContext::GetUserPreferences() {
   if (!GetPresShell()) {
     
@@ -555,6 +542,8 @@ void nsPresContext::PreferenceChanged(const char* aPrefName) {
     }
   }
 
+  auto changeHint = nsChangeHint{0};
+  auto restyleHint = RestyleHint{0};
   
   
   if (prefName.EqualsLiteral("layout.css.prefers-contrast.enabled") ||
@@ -570,7 +559,7 @@ void nsPresContext::PreferenceChanged(const char* aPrefName) {
       if (!mMissingFonts) {
         mMissingFonts = MakeUnique<gfxMissingFontRecorder>();
         
-        mChangeHintForPrefChange |= NS_STYLE_HINT_REFLOW;
+        changeHint |= NS_STYLE_HINT_REFLOW;
       }
     } else {
       if (mMissingFonts) {
@@ -583,6 +572,10 @@ void nsPresContext::PreferenceChanged(const char* aPrefName) {
       !IsPrintingOrPrintPreview()) {
     
     
+    if (auto* fonts = Document()->GetFonts()) {
+      fonts->GetUserFontSet()->ForgetLocalFaces();
+    }
+
     
     
     
@@ -598,7 +591,14 @@ void nsPresContext::PreferenceChanged(const char* aPrefName) {
     
     
     
-    mChangeHintForPrefChange |= nsChangeHint_ReconstructFrame;
+    
+    
+    changeHint |= nsChangeHint_ReconstructFrame;
+    
+    
+    if (UsesExChUnits()) {
+      restyleHint |= RestyleHint::RecascadeSubtree();
+    }
   } else if (StringBeginsWith(prefName, "font."_ns) ||
              
              
@@ -608,27 +608,51 @@ void nsPresContext::PreferenceChanged(const char* aPrefName) {
              StringBeginsWith(prefName, "bidi."_ns) ||
              
              StringBeginsWith(prefName, "gfx.font_rendering."_ns)) {
-    mChangeHintForPrefChange |= NS_STYLE_HINT_REFLOW;
+    changeHint |= NS_STYLE_HINT_REFLOW;
+    if (UsesExChUnits()) {
+      restyleHint |= RestyleHint::RecascadeSubtree();
+    }
   }
-
-  
-  
-  
-  
-  
-  
-  GlobalStyleSheetCache::InvalidatePreferenceSheets();
-  PreferenceSheet::Refresh();
-  
-  StaticPresData::Get()->InvalidateFontPrefs();
-  Document()->SetMayNeedFontPrefsUpdate();
-  DispatchPrefChangedRunnableIfNeeded();
 
   if (prefName.EqualsLiteral("nglayout.debug.paint_flashing") ||
       prefName.EqualsLiteral("nglayout.debug.paint_flashing_chrome")) {
     mPaintFlashingInitialized = false;
     return;
   }
+
+  
+  
+  
+  
+  
+  
+  
+  if (GlobalStyleSheetCache::AffectedByPref(prefName)) {
+    restyleHint |= RestyleHint::RestyleSubtree();
+    GlobalStyleSheetCache::InvalidatePreferenceSheets();
+  }
+
+  if (PreferenceSheet::AffectedByPref(prefName)) {
+    restyleHint |= RestyleHint::RestyleSubtree();
+    PreferenceSheet::Refresh();
+  }
+
+  
+  StaticPresData::Get()->InvalidateFontPrefs();
+  Document()->SetMayNeedFontPrefsUpdate();
+
+  
+  GetUserPreferences();
+
+  FlushFontCache();
+
+  
+  
+  if (changeHint || restyleHint) {
+    RebuildAllStyleData(changeHint, restyleHint);
+  }
+
+  InvalidatePaintedLayers();
 }
 
 struct WeakRunnableMethod : Runnable {
@@ -648,45 +672,6 @@ struct WeakRunnableMethod : Runnable {
   WeakPtr<nsPresContext> mPresContext;
   Method mMethod;
 };
-
-void nsPresContext::DispatchPrefChangedRunnableIfNeeded() {
-  if (mPostedPrefChangedRunnable) {
-    return;
-  }
-
-  nsCOMPtr<nsIRunnable> runnable = new WeakRunnableMethod(
-      "nsPresContext::UpdateAfterPreferencesChanged", this,
-      &nsPresContext::UpdateAfterPreferencesChanged);
-  RefreshDriver()->AddEarlyRunner(runnable);
-  mPostedPrefChangedRunnable = true;
-}
-
-void nsPresContext::UpdateAfterPreferencesChanged() {
-  mPostedPrefChangedRunnable = false;
-  if (!mPresShell) {
-    return;
-  }
-
-  if (mDocument->IsInChromeDocShell()) {
-    
-    
-    return;
-  }
-
-  
-  GetUserPreferences();
-
-  
-  mPresShell->UpdatePreferenceStyles();
-
-  InvalidatePaintedLayers();
-  FlushFontCache();
-
-  
-  
-  RebuildAllStyleData(mChangeHintForPrefChange, RestyleHint::RestyleSubtree());
-  mChangeHintForPrefChange = nsChangeHint(0);
-}
 
 nsresult nsPresContext::Init(nsDeviceContext* aDeviceContext) {
   NS_ASSERTION(!mInitialized, "attempt to reinit pres context");
