@@ -6939,7 +6939,8 @@ nsresult HTMLEditor::HandleInsertParagraphInListItemElement(Element& aListItem,
       IsEmptyBlockElement(aListItem, IgnoreSingleBR::Yes)) {
     nsCOMPtr<nsIContent> leftListNode = aListItem.GetParent();
     
-    if (!IsLastEditableChild(&aListItem)) {
+    if (!HTMLEditUtils::IsLastChild(aListItem,
+                                    {WalkTreeOption::IgnoreNonEditableNode})) {
       
       EditorDOMPoint atListItem(&aListItem);
       ErrorResult error;
@@ -8616,7 +8617,8 @@ nsresult HTMLEditor::LiftUpListItemElement(
   
   bool isFirstListItem = HTMLEditUtils::IsFirstChild(
       aListItemElement, {WalkTreeOption::IgnoreNonEditableNode});
-  bool isLastListItem = IsLastEditableChild(&aListItemElement);
+  bool isLastListItem = HTMLEditUtils::IsLastChild(
+      aListItemElement, {WalkTreeOption::IgnoreNonEditableNode});
 
   Element* leftListElement = aListItemElement.GetParentElement();
   if (NS_WARN_IF(!leftListElement)) {

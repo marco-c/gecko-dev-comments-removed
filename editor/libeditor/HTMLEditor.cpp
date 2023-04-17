@@ -1798,7 +1798,9 @@ nsresult HTMLEditor::InsertElementAtSelectionAsAction(
 
   
   
-  if (!HTMLEditUtils::IsTable(aElement) || !IsLastEditableChild(aElement)) {
+  if (!HTMLEditUtils::IsTable(aElement) ||
+      !HTMLEditUtils::IsLastChild(*aElement,
+                                  {WalkTreeOption::IgnoreNonEditableNode})) {
     return NS_OK;
   }
 
@@ -4928,17 +4930,6 @@ nsresult HTMLEditor::DeleteSelectionAndPrepareToCreateNode() {
   NS_WARNING_ASSERTION(!error.Failed(),
                        "Selection::CollapseInLimiter() failed");
   return error.StealNSResult();
-}
-
-bool HTMLEditor::IsLastEditableChild(nsINode* aNode) const {
-  MOZ_ASSERT(aNode);
-  
-  nsCOMPtr<nsINode> parentNode = aNode->GetParentNode();
-  if (NS_WARN_IF(!parentNode)) {
-    return false;
-  }
-  return HTMLEditUtils::GetLastChild(
-             *parentNode, {WalkTreeOption::IgnoreNonEditableNode}) == aNode;
 }
 
 nsIContent* HTMLEditor::GetFirstEditableLeaf(nsINode& aNode) const {
