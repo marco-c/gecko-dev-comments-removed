@@ -51,29 +51,41 @@ class AsyncLogger {
 
   
   struct TracePayload {
+#define MEMBERS_EXCEPT_NAME
+
+                                               \
+  TimeStamp mTimestamp;                                                      \
+  /* The thread on which this tracepoint was gathered. */                    \
+  ProfilerThreadId mTID;                                                     \
+  /* If this marker is of phase X (COMPLETE), this holds the duration of the \
+   * event in microseconds. Else, the value is not used. */                  \
+  uint32_t mDurationUs;                                                      \
+  /* A trace payload can be either:                                          \
+   * - Begin - this marks the beginning of a temporal region                 \
+   * - End - this marks the end of a temporal region                         \
+   * - Complete - this is a timestamp and a length, forming complete a       \
+   * temporal region */                                                      \
+  TracingPhase mPhase
+
+    MEMBERS_EXCEPT_NAME;
+
+   private:
+    
+    struct MembersWithChar {
+      MEMBERS_EXCEPT_NAME;
+      char c;
+    };
+    static constexpr size_t scRemainingSpaceForName =
+        PAYLOAD_TOTAL_SIZE - offsetof(MembersWithChar, c) -
+        ((MPSC_MSG_RESERVERD + alignof(MembersWithChar) - 1) &
+         ~(alignof(MembersWithChar) - 1));
+#undef MEMBERS_EXCEPT_NAME
+
+   public:
     
     
-    TimeStamp mTimestamp;
     
-    
-    uint32_t mDurationUs;
-    
-    ProfilerThreadId mTID;
-    
-    
-    
-    char mName[PAYLOAD_TOTAL_SIZE - sizeof(TracingPhase) - sizeof(int) -
-               sizeof(uint32_t) - sizeof(TimeStamp) -
-               
-               
-               ((MPSC_MSG_RESERVERD + alignof(TimeStamp) - 1) &
-                ~(alignof(TimeStamp) - 1))];
-    
-    
-    
-    
-    
-    TracingPhase mPhase;
+    char mName[scRemainingSpaceForName];
   };
 
   
