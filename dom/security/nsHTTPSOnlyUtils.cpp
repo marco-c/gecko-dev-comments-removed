@@ -19,6 +19,8 @@
 #include "nsIPrincipal.h"
 #include "nsIRedirectHistoryEntry.h"
 #include "nsIScriptError.h"
+#include "nsIURIMutator.h"
+#include "nsNetUtil.h"
 #include "prnetdb.h"
 
 
@@ -480,6 +482,61 @@ bool nsHTTPSOnlyUtils::LoopbackOrLocalException(nsIURI* aURI) {
   bool upgradeLocal =
       mozilla::StaticPrefs::dom_security_https_only_mode_upgrade_local();
   return (!upgradeLocal && addr.IsIPAddrLocal());
+}
+
+
+bool nsHTTPSOnlyUtils::IsEqualURIExceptSchemeAndRef(nsIURI* aHTTPSSchemeURI,
+                                                    nsIURI* aOtherURI,
+                                                    nsILoadInfo* aLoadInfo) {
+  
+  
+  if (!aHTTPSSchemeURI || !aOtherURI || !aLoadInfo) {
+    return false;
+  }
+
+  
+  
+  if (!mozilla::net::SchemeIsHTTP(aOtherURI)) {
+    return false;
+  }
+
+  
+  bool isPrivateWin = aLoadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
+  if (!IsHttpsOnlyModeEnabled(isPrivateWin)) {
+    return false;
+  }
+
+  
+  uint32_t httpsOnlyStatus = aLoadInfo->GetHttpsOnlyStatus();
+  if (httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_EXEMPT) {
+    return false;
+  }
+
+  
+  
+  int32_t port = 0;
+  nsresult rv = aOtherURI->GetPort(&port);
+  NS_ENSURE_SUCCESS(rv, false);
+  
+  
+  
+  if (port == -1) {
+    port = NS_GetDefaultPort("https");
+  }
+  nsCOMPtr<nsIURI> newHTTPSchemeURI;
+  rv = NS_MutateURI(aOtherURI)
+           .SetScheme("https"_ns)
+           .SetPort(port)
+           .Finalize(newHTTPSchemeURI);
+  NS_ENSURE_SUCCESS(rv, false);
+
+  bool uriEquals = false;
+  if (NS_FAILED(
+          aHTTPSSchemeURI->EqualsExceptRef(newHTTPSchemeURI, &uriEquals))) {
+    return false;
+  }
+
+  return uriEquals;
 }
 
 

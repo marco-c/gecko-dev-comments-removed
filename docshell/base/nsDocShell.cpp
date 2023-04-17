@@ -8822,6 +8822,21 @@ bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
               aLoadState->URI(), &aState.mSameExceptHashes))) {
         aState.mSameExceptHashes = false;
       }
+      
+      
+      
+      
+      
+      nsCOMPtr<nsIChannel> docChannel = GetCurrentDocChannel();
+      nsCOMPtr<nsILoadInfo> loadInfo;
+      if (docChannel) {
+        loadInfo = docChannel->LoadInfo();
+      }
+      if (!aState.mSameExceptHashes &&
+          nsHTTPSOnlyUtils::IsEqualURIExceptSchemeAndRef(
+              currentExposableURI, aLoadState->URI(), loadInfo)) {
+        aState.mSameExceptHashes = true;
+      }
     }
   }
 
@@ -8874,7 +8889,6 @@ bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
         (aState.mHistoryNavBetweenSameDoc && mOSHE != aLoadState->SHEntry()) ||
         (!aLoadState->SHEntry() && !aLoadState->PostDataStream() &&
          aState.mSameExceptHashes && aState.mNewURIHasRef);
-
     MOZ_LOG(gSHLog, LogLevel::Debug,
             ("nsDocShell %p NavBetweenSameDoc=%d is same doc = %d", this,
              aState.mHistoryNavBetweenSameDoc, doSameDocumentNavigation));

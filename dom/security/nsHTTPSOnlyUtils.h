@@ -110,6 +110,18 @@ class nsHTTPSOnlyUtils {
 
   static bool IsSafeToAcceptCORSOrMixedContent(nsILoadInfo* aLoadInfo);
 
+  
+
+
+
+
+
+
+
+  static bool IsEqualURIExceptSchemeAndRef(nsIURI* aHTTPSSchemeURI,
+                                           nsIURI* aOtherURI,
+                                           nsILoadInfo* aLoadInfo);
+
  private:
   
 
