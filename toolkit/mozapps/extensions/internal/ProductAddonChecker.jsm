@@ -25,7 +25,11 @@ var CreateXHR = function() {
   return new XMLHttpRequest();
 };
 
+
 var logger = Log.repository.getLogger("addons.productaddons");
+
+
+logger.manageLevelFromPref("extensions.logging.productaddons.level");
 
 
 
