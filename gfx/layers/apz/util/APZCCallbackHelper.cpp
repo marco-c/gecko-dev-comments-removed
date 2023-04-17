@@ -332,8 +332,18 @@ void APZCCallbackHelper::UpdateRootFrame(const RepaintRequest& aRequest) {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
     if (!FuzzyEqualsMultiplicative(presShellResolution,
-                                   aRequest.GetPresShellResolution())) {
+                                   aRequest.GetPresShellResolution()) &&
+        presShell->GetLastResolutionChangeOrigin() !=
+            ResolutionChangeOrigin::Apz) {
       return;
     }
 

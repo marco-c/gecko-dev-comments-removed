@@ -1241,6 +1241,10 @@ class PresShell final : public nsStubDocumentObserver,
   nsresult SetResolutionAndScaleTo(float aResolution,
                                    ResolutionChangeOrigin aOrigin);
 
+  ResolutionChangeOrigin GetLastResolutionChangeOrigin() {
+    return mLastResolutionChangeOrigin;
+  }
+
   
   void WindowSizeMoveDone();
 
@@ -2946,6 +2950,7 @@ class PresShell final : public nsStubDocumentObserver,
   
   
   Maybe<float> mResolution;
+  ResolutionChangeOrigin mLastResolutionChangeOrigin;
 
   TimeStamp mLoadBegin;  
 
