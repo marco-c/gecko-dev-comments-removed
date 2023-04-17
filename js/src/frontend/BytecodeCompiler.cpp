@@ -1061,16 +1061,6 @@ static bool CompileLazyFunction(JSContext* cx, CompilationInput& input,
   Rooted<CompilationGCOutput> gcOutput(cx);
   {
     BorrowingCompilationStencil borrowingStencil(compilationState);
-    if (!CompilationStencil::instantiateStencils(cx, input, borrowingStencil,
-                                                 gcOutput.get())) {
-      return false;
-    }
-
-    MOZ_ASSERT(lazyFlags == gcOutput.get().script->immutableFlags());
-    MOZ_ASSERT(gcOutput.get().script->outermostScope()->hasOnChain(
-                   ScopeKind::NonSyntactic) ==
-               gcOutput.get().script->immutableFlags().hasFlag(
-                   JSScript::ImmutableFlags::HasNonSyntacticScope));
 
     if (input.source->hasEncoder()) {
       MOZ_ASSERT(!js::UseOffThreadParseGlobal());
@@ -1079,6 +1069,22 @@ static bool CompileLazyFunction(JSContext* cx, CompilationInput& input,
         return false;
       }
     }
+
+    if (!CompilationStencil::instantiateStencils(cx, input, borrowingStencil,
+                                                 gcOutput.get())) {
+      return false;
+    }
+
+    
+    
+    
+    
+
+    MOZ_ASSERT(lazyFlags == gcOutput.get().script->immutableFlags());
+    MOZ_ASSERT(gcOutput.get().script->outermostScope()->hasOnChain(
+                   ScopeKind::NonSyntactic) ==
+               gcOutput.get().script->immutableFlags().hasFlag(
+                   JSScript::ImmutableFlags::HasNonSyntacticScope));
   }
 
   assertException.reset();
