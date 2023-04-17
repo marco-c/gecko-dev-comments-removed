@@ -791,6 +791,13 @@ class nsIContent : public nsINode {
 
 
 
+
+  void Dump();
+
+  
+
+
+
   virtual void List(FILE* out = stdout, int32_t aIndent = 0) const = 0;
 
   
