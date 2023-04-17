@@ -829,7 +829,7 @@ var BookmarksEventHandler = {
 
   onMouseUp(aEvent) {
     
-    if (aEvent.button != 0 || PlacesUIUtils.openInTabClosesMenu) {
+    if (aEvent.button == 2 || PlacesUIUtils.openInTabClosesMenu) {
       return;
     }
     let target = aEvent.originalTarget;
@@ -838,7 +838,7 @@ var BookmarksEventHandler = {
     }
     let modifKey =
       AppConstants.platform === "macosx" ? aEvent.metaKey : aEvent.ctrlKey;
-    if (modifKey) {
+    if (modifKey || aEvent.button == 1) {
       target.setAttribute("closemenu", "none");
       var menupopup = target.parentNode;
       menupopup.addEventListener(
@@ -890,7 +890,8 @@ var BookmarksEventHandler = {
           aView
         );
       }
-    } else if (aEvent.button == 1) {
+    } else if (aEvent.button == 1 && !(tag == "menuitem" || tag == "menu")) {
+      
       
       this.onCommand(aEvent);
     }
