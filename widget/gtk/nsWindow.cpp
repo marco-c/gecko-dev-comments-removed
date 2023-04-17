@@ -9068,15 +9068,6 @@ void nsWindow::GetCompositorWidgetInitData(
       isShaped, GdkIsX11Display(), GetClientSize());
 }
 
-#ifdef MOZ_WAYLAND
-bool nsWindow::WaylandSurfaceNeedsClear() {
-  if (mContainer) {
-    return moz_container_wayland_surface_needs_clear(MOZ_CONTAINER(mContainer));
-  }
-  return false;
-}
-#endif
-
 #ifdef MOZ_X11
 
 
