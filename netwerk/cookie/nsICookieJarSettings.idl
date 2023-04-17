@@ -8,6 +8,7 @@
 #include "nsISerializable.idl"
 
 interface nsIPrincipal;
+interface nsIURI;
 
 
 
@@ -56,4 +57,17 @@ interface nsICookieJarSettings : nsISerializable
 
 
   unsigned long cookiePermission(in nsIPrincipal aPrincipal);
+
+  
+
+
+
+
+
+
+
+
+
+
+  void initWithURI(in nsIURI aURI, in boolean aIsPrivate);
 };
