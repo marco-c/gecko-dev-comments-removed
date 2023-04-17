@@ -51,8 +51,9 @@ class IdleTaskRunner {
   
   static already_AddRefed<IdleTaskRunner> Create(
       const CallbackType& aCallback, const char* aRunnableName,
-      uint32_t aStartDelay, uint32_t aMaxDelay, int64_t aMinimumUsefulBudget,
-      bool aRepeating, const MayStopProcessingCallbackType& aMayStopProcessing);
+      TimeDuration aStartDelay, TimeDuration aMaxDelay,
+      TimeDuration aMinimumUsefulBudget, bool aRepeating,
+      const MayStopProcessingCallbackType& aMayStopProcessing);
 
   void Run();
 
@@ -60,7 +61,7 @@ class IdleTaskRunner {
   
   void SetIdleDeadline(mozilla::TimeStamp aDeadline);
 
-  void SetTimer(uint32_t aDelay, nsIEventTarget* aTarget);
+  void SetTimer(TimeDuration aDelay, nsIEventTarget* aTarget);
 
   
   void SetMinimumUsefulBudget(int64_t aMinimumUsefulBudget);
@@ -74,11 +75,12 @@ class IdleTaskRunner {
  private:
   explicit IdleTaskRunner(
       const CallbackType& aCallback, const char* aRunnableName,
-      uint32_t aStartDelay, uint32_t aMaxDelay, int64_t aMinimumUsefulBudget,
-      bool aRepeating, const MayStopProcessingCallbackType& aMayStopProcessing);
+      TimeDuration aStartDelay, TimeDuration aMaxDelay,
+      TimeDuration aMinimumUsefulBudget, bool aRepeating,
+      const MayStopProcessingCallbackType& aMayStopProcessing);
   ~IdleTaskRunner();
   void CancelTimer();
-  void SetTimerInternal(uint32_t aDelay);
+  void SetTimerInternal(TimeDuration aDelay);
 
   nsCOMPtr<nsITimer> mTimer;
   nsCOMPtr<nsITimer> mScheduleTimer;
@@ -89,7 +91,7 @@ class IdleTaskRunner {
 
   
   
-  uint32_t mMaxDelay;
+  TimeDuration mMaxDelay;
 
   
   

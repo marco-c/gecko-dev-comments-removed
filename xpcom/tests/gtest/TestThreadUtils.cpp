@@ -798,7 +798,8 @@ TEST(ThreadUtils, IdleTaskRunner)
         cnt1++;
         return true;
       },
-      "runner1", 0, 10, 3, true, nullptr);
+      "runner1", 0, TimeDuration::FromMilliseconds(10),
+      TimeDuration::FromMilliseconds(3), true, nullptr);
 
   
   int cnt2 = 0;
@@ -807,7 +808,8 @@ TEST(ThreadUtils, IdleTaskRunner)
         cnt2++;
         return false;
       },
-      "runner2", 0, 10, 3, false, nullptr);
+      "runner2", 0, TimeDuration::FromMilliseconds(10),
+      TimeDuration::FromMilliseconds(3), false, nullptr);
 
   
   
@@ -818,7 +820,8 @@ TEST(ThreadUtils, IdleTaskRunner)
         cnt3++;
         return true;
       },
-      "runner3", 0, 10, 3, true, [&cnt3] { return cnt3 >= 2; });
+      "runner3", 0, TimeDuration::FromMilliseconds(10),
+      TimeDuration::FromMilliseconds(3), true, [&cnt3] { return cnt3 >= 2; });
 
   
   
@@ -828,7 +831,8 @@ TEST(ThreadUtils, IdleTaskRunner)
         cnt4++;
         return true;
       },
-      "runner4", 0, 10, 3, false, nullptr);
+      "runner4", 0, TimeDuration::FromMilliseconds(10),
+      TimeDuration::FromMilliseconds(3), false, nullptr);
 
   
   MOZ_ALWAYS_TRUE(SpinEventLoopUntil([&]() { return cnt1 >= 100; }));
