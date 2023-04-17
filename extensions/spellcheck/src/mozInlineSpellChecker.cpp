@@ -1105,8 +1105,9 @@ nsresult mozInlineSpellChecker::SpellCheckBetweenNodes(nsINode* aStartNode,
 
 
 
+
 bool mozInlineSpellChecker::ShouldSpellCheckNode(TextEditor* aTextEditor,
-                                                 nsINode* aNode) const {
+                                                 nsINode* aNode) {
   MOZ_ASSERT(aNode);
   if (!aNode->IsContent()) return false;
 
@@ -1467,7 +1468,7 @@ nsresult mozInlineSpellChecker::SpellCheckerTimeSlice::Execute() {
     }
 
     
-    if (!mInlineSpellChecker.ShouldSpellCheckNode(textEditor, beginNode)) {
+    if (!mozInlineSpellChecker::ShouldSpellCheckNode(textEditor, beginNode)) {
       continue;
     }
 

@@ -233,8 +233,8 @@ class mozInlineSpellChecker final : public nsIInlineSpellChecker,
   
   
   
-  bool ShouldSpellCheckNode(mozilla::TextEditor* aTextEditor,
-                            nsINode* aNode) const;
+  static bool ShouldSpellCheckNode(mozilla::TextEditor* aTextEditor,
+                                   nsINode* aNode);
 
   
   
