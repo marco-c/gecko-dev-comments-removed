@@ -736,20 +736,25 @@ VectorImage::GetFrameInternal(const IntSize& aSize,
                        : mSVGDocumentWrapper->GetCurrentTimeAsFloat();
 
   
+  ImageRegion region =
+      aRegion ? aRegion->ToImageRegion() : ImageRegion::Create(decodeSize);
+
   
   
   
   
-  SVGDrawingParameters params(
-      nullptr, decodeSize, aSize, ImageRegion::Create(decodeSize),
-      SamplingFilter::POINT, aSVGContext, animTime, aFlags, 1.0);
+  
+  SVGDrawingParameters params(nullptr, decodeSize, aSize, region,
+                              SamplingFilter::POINT, aSVGContext, animTime,
+                              aFlags, 1.0);
 
   
   
   
   if (aFlags & FLAG_RECORD_BLOB) {
-    RefPtr<SourceSurface> surface = new SourceSurfaceBlobImage(
-        mSVGDocumentWrapper, aSVGContext, decodeSize, whichFrame, aFlags);
+    RefPtr<SourceSurface> surface =
+        new SourceSurfaceBlobImage(mSVGDocumentWrapper, aSVGContext, aRegion,
+                                   decodeSize, whichFrame, aFlags);
 
     return MakeTuple(ImgDrawResult::SUCCESS, decodeSize, std::move(surface));
   }
