@@ -443,12 +443,8 @@ class BaseAboutNewTabService {
 
 
 
-    if (
-      NimbusFeatures.aboutwelcome.isEnabled({
-        defaultValue: true,
-        sendExposureEvent: true,
-      })
-    ) {
+    NimbusFeatures.aboutwelcome.recordExposureEvent();
+    if (NimbusFeatures.aboutwelcome.isEnabled({ defaultValue: true })) {
       return ABOUT_WELCOME_URL;
     }
     return this.defaultURL;
