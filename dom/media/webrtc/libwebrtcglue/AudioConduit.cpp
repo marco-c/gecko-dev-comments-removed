@@ -358,11 +358,8 @@ bool WebrtcAudioConduit::OverrideRemoteSSRC(uint32_t ssrc) {
 
 bool WebrtcAudioConduit::GetRemoteSSRC(uint32_t* ssrc) const {
   MOZ_ASSERT(mCallThread->IsOnCurrentThread());
-  if (!mRecvStream) {
-    return false;
-  }
-  *ssrc = mRecvStreamConfig.rtp.remote_ssrc;
-  return true;
+  
+  return (*ssrc = mRecvStreamConfig.rtp.remote_ssrc) != 0;
 }
 
 Maybe<webrtc::AudioReceiveStream::Stats> WebrtcAudioConduit::GetReceiverStats()
@@ -501,17 +498,6 @@ void WebrtcAudioConduit::OnRtcpReceived(MediaPacket&& aPacket) {
 
   DeliverPacket(rtc::CopyOnWriteBuffer(aPacket.data(), aPacket.len()),
                 PacketType::RTCP);
-
-  
-  
-  mLastRtcpReceived = Some(GetNow());
-}
-
-
-
-Maybe<DOMHighResTimeStamp> WebrtcAudioConduit::LastRtcpReceived() const {
-  MOZ_ASSERT(mCallThread->IsOnCurrentThread());
-  return mLastRtcpReceived;
 }
 
 Maybe<uint16_t> WebrtcAudioConduit::RtpSendBaseSeqFor(uint32_t aSsrc) const {
