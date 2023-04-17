@@ -26,6 +26,7 @@ class PlatformCompositorWidgetDelegate : public CompositorWidgetDelegate {
  public:
   virtual void NotifyClientSizeChanged(
       const LayoutDeviceIntSize& aClientSize) = 0;
+  virtual GtkCompositorWidget* AsGtkCompositorWidget() { return nullptr; };
 
   
 
@@ -78,6 +79,7 @@ class GtkCompositorWidget : public CompositorWidget,
   
 
   void NotifyClientSizeChanged(const LayoutDeviceIntSize& aClientSize) override;
+  GtkCompositorWidget* AsGtkCompositorWidget() override { return this; }
 
  protected:
   nsWindow* mWidget;

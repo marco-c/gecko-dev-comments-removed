@@ -76,6 +76,8 @@ class NativeLayerRootCA : public NativeLayerRoot {
  public:
   static already_AddRefed<NativeLayerRootCA> CreateForCALayer(CALayer* aLayer);
 
+  virtual NativeLayerRootCA* AsNativeLayerRootCA() override { return this; }
+
   
   
   
@@ -244,6 +246,7 @@ class NativeLayerCA : public NativeLayer {
   typedef NativeLayerRootCA::WhichRepresentation WhichRepresentation;
   CALayer* UnderlyingCALayer(WhichRepresentation aRepresentation);
   void ApplyChanges(WhichRepresentation aRepresentation);
+  bool HasUpdate(WhichRepresentation aRepresentation);
   void SetBackingScale(float aBackingScale);
 
   
@@ -297,6 +300,13 @@ class NativeLayerCA : public NativeLayer {
                       bool aSurfaceIsFlipped,
                       gfx::SamplingFilter aSamplingFilter,
                       CFTypeRefPtr<IOSurfaceRef> aFrontSurface);
+
+    
+    
+    
+    
+    
+    bool HasUpdate();
 
     
     
