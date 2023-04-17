@@ -198,8 +198,6 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
         "last-pb-context-exited"
       );
     }
-
-    this.traits = {};
   },
   
 
@@ -235,12 +233,6 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
 
   conn: null,
-
-  
-
-
-
-  traits: null,
 
   
 
@@ -791,7 +783,6 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
     return {
       startedListeners: startedListeners,
       nativeConsoleAPI: this.hasNativeConsoleAPI(this.global),
-      traits: this.traits,
     };
   },
 
