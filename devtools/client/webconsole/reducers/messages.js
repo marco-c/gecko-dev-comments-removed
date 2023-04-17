@@ -1336,21 +1336,24 @@ function passCssFilters(message, filters) {
 
 
 function passSearchFilters(message, filters) {
-  const trimmed = (filters.text || "").trim().toLocaleLowerCase();
+  const trimmed = (filters.text || "").trim();
 
   
   const exclude = trimmed.startsWith("-");
   const term = exclude ? trimmed.slice(1) : trimmed;
 
+  
+  const regexMatch = /^\/(?<search>.+)\/(?<flags>i)?$/.exec(term);
   let regex;
-  if (term.startsWith("/") && term.endsWith("/") && term.length > 2) {
+  if (regexMatch !== null) {
+    const flags = "m" + (regexMatch.groups.flags || "");
     try {
-      regex = new RegExp(term.slice(1, -1), "im");
+      regex = new RegExp(regexMatch.groups.search, flags);
     } catch (e) {}
   }
   const matchStr = regex
     ? str => regex.test(str)
-    : str => str.toLocaleLowerCase().includes(term);
+    : str => str.toLocaleLowerCase().includes(term.toLocaleLowerCase());
 
   
   if (!term) {
