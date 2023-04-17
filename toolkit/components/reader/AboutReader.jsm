@@ -29,6 +29,11 @@ ChromeUtils.defineModuleGetter(
   "PluralForm",
   "resource://gre/modules/PluralForm.jsm"
 );
+ChromeUtils.defineModuleGetter(
+  this,
+  "NimbusFeatures",
+  "resource://nimbus/ExperimentAPI.jsm"
+);
 
 var gStrings = Services.strings.createBundle(
   "chrome://global/locale/aboutReader.properties"
@@ -971,6 +976,9 @@ AboutReader.prototype = {
         cancelable: false,
       })
     );
+
+    
+    this._setupPocketCTA();
   },
 
   _hideContent() {
@@ -1226,6 +1234,20 @@ AboutReader.prototype = {
   _goToReference(ref) {
     if (ref) {
       this._win.location.hash = ref;
+    }
+  },
+
+  _setupPocketCTA() {
+    let ctaVersion = NimbusFeatures.readerMode.getAllVariables()
+      ?.pocketCTAVersion;
+    let elPocketCTAWrapper = this._doc.querySelector("#pocket-cta-container");
+
+    
+    if (ctaVersion) {
+      elPocketCTAWrapper.hidden = false;
+
+      
+      elPocketCTAWrapper.classList.add(`pocket-cta-container-${ctaVersion}`);
     }
   },
 };

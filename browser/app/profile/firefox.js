@@ -1923,6 +1923,9 @@ pref("reader.parse-node-limit", 0);
 
 pref("reader.errors.includeURLs", true);
 
+
+pref("reader.pocket.ctaVersion", "");
+
 pref("view_source.tab", true);
 
 pref("dom.serviceWorkers.enabled", true);
