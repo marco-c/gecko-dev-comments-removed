@@ -36,10 +36,6 @@ class ProcessedStack {
     
     
     uint16_t mModIndex;
-    
-    
-    
-    nsCString mString;
   };
   struct Module {
     
@@ -123,7 +119,6 @@ struct ParamTraits<mozilla::Telemetry::ProcessedStack::Frame> {
   static void Write(Message* aMsg, const paramType& aParam) {
     WriteParam(aMsg, aParam.mOffset);
     WriteParam(aMsg, aParam.mModIndex);
-    WriteParam(aMsg, aParam.mString);
   }
 
   static bool Read(const Message* aMsg, PickleIterator* aIter,
@@ -133,10 +128,6 @@ struct ParamTraits<mozilla::Telemetry::ProcessedStack::Frame> {
     }
 
     if (!ReadParam(aMsg, aIter, &aResult->mModIndex)) {
-      return false;
-    }
-
-    if (!ReadParam(aMsg, aIter, &aResult->mString)) {
       return false;
     }
 

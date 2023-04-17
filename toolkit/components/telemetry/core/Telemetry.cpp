@@ -960,34 +960,15 @@ static void ReadStack(PathCharPtr aFileName,
   }
 
   for (size_t i = 0; i < numFrames; ++i) {
-    char buf[2];
-    file.read(buf, 2);
+    uint16_t index;
+    file >> index;
+    uintptr_t offset;
+    file >> std::hex >> offset >> std::dec;
     if (file.fail()) {
       return;
     }
-    
-    
-    
-    
-    
-    Telemetry::ProcessedStack::Frame frame;
-    if (!strncmp(buf, "s ", 2)) {
-      frame.mOffset = 0;
-      frame.mModIndex = 0;
-      std::string frameString;
-      file >> frameString;
-      if (file.fail()) {
-        return;
-      }
-      frame.mString.Assign(frameString.c_str(), frameString.size());
-    } else if (!strncmp(buf, "o ", 2)) {
-      file >> frame.mModIndex;
-      file >> std::hex >> frame.mOffset >> std::dec;
-      if (file.fail()) {
-        return;
-      }
-    }
 
+    Telemetry::ProcessedStack::Frame frame = {offset, index};
     stack.AddFrame(frame);
   }
 

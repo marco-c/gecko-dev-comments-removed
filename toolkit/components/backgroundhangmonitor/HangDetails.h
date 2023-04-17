@@ -96,8 +96,6 @@ class SubmitPersistedPermahangRunnable final : public Runnable {
   nsCOMPtr<nsIFile> mPermahangFile;
 };
 
-void ReadModuleInformation(HangStack& stack);
-
 }  
 
 #endif  

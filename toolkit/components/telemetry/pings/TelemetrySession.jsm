@@ -702,23 +702,6 @@ var Impl = {
       payloadObj.slowSQL = protect(() => Telemetry.slowSQL);
       payloadObj.fileIOReports = protect(() => Telemetry.fileIOReports);
       payloadObj.lateWrites = protect(() => Telemetry.lateWrites);
-      for (let stack of payloadObj.lateWrites?.stacks || []) {
-        for (let i = 0; i < stack.length; i++) {
-          
-          
-          
-          
-          
-          let match = /[^\s]+:\/\/.*/.exec(stack[i]);
-          if (
-            match &&
-            !match[0].startsWith("chrome://") &&
-            !match[0].startsWith("resource://")
-          ) {
-            stack[i] = stack[i].replace(match[0], "(excluded)");
-          }
-        }
-      }
 
       payloadObj.addonDetails = protect(() =>
         AddonManagerPrivate.getTelemetryDetails()
