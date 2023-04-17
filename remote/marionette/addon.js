@@ -14,7 +14,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   AddonManager: "resource://gre/modules/AddonManager.jsm",
   FileUtils: "resource://gre/modules/FileUtils.jsm",
 
-  error: "chrome://marionette/content/error.js",
+  error: "chrome://remote/content/marionette/error.js",
 });
 
 

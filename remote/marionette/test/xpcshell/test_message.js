@@ -2,9 +2,11 @@
 
 
 
-const { error } = ChromeUtils.import("chrome://marionette/content/error.js");
+const { error } = ChromeUtils.import(
+  "chrome://remote/content/marionette/error.js"
+);
 const { Command, Message, Response } = ChromeUtils.import(
-  "chrome://marionette/content/message.js"
+  "chrome://remote/content/marionette/message.js"
 );
 
 add_test(function test_Message_Origin() {

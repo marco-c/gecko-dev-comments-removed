@@ -11,8 +11,8 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  Log: "chrome://marionette/content/log.js",
-  MarionettePrefs: "chrome://marionette/content/prefs.js",
+  Log: "chrome://remote/content/marionette/log.js",
+  MarionettePrefs: "chrome://remote/content/marionette/prefs.js",
 });
 
 XPCOMUtils.defineLazyGetter(this, "logger", () => Log.get());

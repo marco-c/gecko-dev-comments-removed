@@ -2,7 +2,9 @@
 
 
 
-const { error } = ChromeUtils.import("chrome://marionette/content/error.js");
+const { error } = ChromeUtils.import(
+  "chrome://remote/content/marionette/error.js"
+);
 
 function notok(condition) {
   ok(!condition);
