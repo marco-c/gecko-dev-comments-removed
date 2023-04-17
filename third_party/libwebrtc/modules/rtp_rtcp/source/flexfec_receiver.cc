@@ -29,16 +29,14 @@ constexpr int kPacketLogIntervalMs = 10000;
 
 }  
 
-
-
-
-
-
-
-
-
-
-
+FlexfecReceiver::FlexfecReceiver(
+    uint32_t ssrc,
+    uint32_t protected_media_ssrc,
+    RecoveredPacketReceiver* recovered_packet_receiver)
+    : FlexfecReceiver(Clock::GetRealTimeClock(),
+                      ssrc,
+                      protected_media_ssrc,
+                      recovered_packet_receiver) {}
 
 FlexfecReceiver::FlexfecReceiver(
     Clock* clock,

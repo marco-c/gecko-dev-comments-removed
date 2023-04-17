@@ -1085,12 +1085,14 @@ void WebrtcVideoConduit::UnsetRemoteSSRC(uint32_t ssrc) {
   SetRemoteSSRCAndRestartAsNeeded(our_ssrc, 0);
 }
 
-Maybe<Ssrc> WebrtcVideoConduit::GetRemoteSSRC() const {
+bool WebrtcVideoConduit::GetRemoteSSRC(uint32_t* aSsrc) const {
   MOZ_ASSERT(mCallThread->IsOnCurrentThread());
+  if (!mRecvStream) {
+    return false;
+  }
   
-  return mRecvStreamConfig.rtp.remote_ssrc == 0
-             ? Nothing()
-             : Some(mRecvStreamConfig.rtp.remote_ssrc);
+  *aSsrc = mRecvStreamConfig.rtp.remote_ssrc;
+  return true;
 }
 
 Maybe<webrtc::VideoReceiveStream::Stats> WebrtcVideoConduit::GetReceiverStats()
@@ -1487,6 +1489,17 @@ void WebrtcVideoConduit::OnRtcpReceived(MediaPacket&& aPacket) {
 
   DeliverPacket(rtc::CopyOnWriteBuffer(aPacket.data(), aPacket.len()),
                 PacketType::RTCP);
+
+  
+  
+  mLastRtcpReceived = Some(GetNow());
+}
+
+
+
+Maybe<DOMHighResTimeStamp> WebrtcVideoConduit::LastRtcpReceived() const {
+  MOZ_ASSERT(mCallThread->IsOnCurrentThread());
+  return mLastRtcpReceived;
 }
 
 Maybe<uint16_t> WebrtcVideoConduit::RtpSendBaseSeqFor(uint32_t aSsrc) const {
@@ -1498,9 +1511,8 @@ Maybe<uint16_t> WebrtcVideoConduit::RtpSendBaseSeqFor(uint32_t aSsrc) const {
   return Some(it->second);
 }
 
-const dom::RTCStatsTimestampMaker& WebrtcVideoConduit::GetTimestampMaker()
-    const {
-  return mCall->GetTimestampMaker();
+DOMHighResTimeStamp WebrtcVideoConduit::GetNow() const {
+  return mCall->GetNow();
 }
 
 void WebrtcVideoConduit::StopTransmitting() {
@@ -1695,7 +1707,7 @@ void WebrtcVideoConduit::OnFrame(const webrtc::VideoFrame& video_frame) {
   }
 
   
-  const auto historyNow = mCall->GetTimestampMaker().GetNow();
+  const auto historyNow = mCall->GetNow();
   if (needsNewHistoryElement) {
     dom::RTCVideoFrameHistoryEntryInternal frameHistoryElement;
     frameHistoryElement.mConsecutiveFrames = 0;

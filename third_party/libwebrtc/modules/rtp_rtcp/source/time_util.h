@@ -25,6 +25,20 @@ namespace webrtc {
 
 
 
+NtpTime TimeMicrosToNtp(int64_t time_us);
+
+
+
+int64_t NtpOffsetMs();
+
+
+
+
+
+
+
+
+
 inline uint32_t CompactNtp(NtpTime ntp) {
   return (ntp.seconds() << 16) | (ntp.fractions() >> 16);
 }

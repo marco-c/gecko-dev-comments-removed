@@ -615,7 +615,7 @@ ANAStats AudioCodingModuleImpl::GetANAStats() const {
 AudioCodingModule::Config::Config(
     rtc::scoped_refptr<AudioDecoderFactory> decoder_factory)
     : neteq_config(),
-      clock(Clock::GetRealTimeClockRaw()),
+      clock(Clock::GetRealTimeClock()),
       decoder_factory(decoder_factory) {
   
   

@@ -12,7 +12,6 @@
 #include "domstubs.h"
 #include "jsapi/RTCStatsReport.h"
 #include "nsISupportsImpl.h"
-#include "SystemTime.h"
 
 
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
@@ -55,6 +54,8 @@ class WebrtcCallWrapper {
   
   void UnregisterConduit(MediaSessionConduit* conduit);
 
+  DOMHighResTimeStamp GetNow() const;
+
   
   
   
@@ -92,7 +93,7 @@ class WebrtcCallWrapper {
   
   
   std::set<MediaSessionConduit*> mConduits;
-  RTCStatsTimestampMakerRealtimeClock mClock;
+  dom::RTCStatsTimestampMaker mTimestampMaker;
   UniquePtr<media::ShutdownBlockingTicket> mShutdownTicket;
 
  public:

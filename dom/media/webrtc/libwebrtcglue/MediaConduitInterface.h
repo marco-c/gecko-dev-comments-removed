@@ -134,14 +134,14 @@ class MediaSessionConduit {
       MediaEventSourceExc<MediaPacket>& aEvent) = 0;
 
   
+  virtual Maybe<DOMHighResTimeStamp> LastRtcpReceived() const = 0;
   virtual Maybe<uint16_t> RtpSendBaseSeqFor(uint32_t aSsrc) const = 0;
 
-  
-  virtual const dom::RTCStatsTimestampMaker& GetTimestampMaker() const = 0;
+  virtual DOMHighResTimeStamp GetNow() const = 0;
 
   virtual Ssrcs GetLocalSSRCs() const = 0;
 
-  virtual Maybe<Ssrc> GetRemoteSSRC() const = 0;
+  virtual bool GetRemoteSSRC(Ssrc* ssrc) const = 0;
   virtual void UnsetRemoteSSRC(Ssrc ssrc) = 0;
 
   virtual bool HasCodecPluginID(uint64_t aPluginID) const = 0;
@@ -203,18 +203,18 @@ class MediaSessionConduit {
         : SourceKey(aSource.timestamp_ms(), aSource.source_id()) {}
 
     SourceKey(uint32_t aTimestamp, uint32_t aSrc)
-        : mLibwebrtcTimestampMs(aTimestamp), mSrc(aSrc) {}
+        : mLibwebrtcTimestamp(aTimestamp), mSrc(aSrc) {}
 
     
     auto operator>(const SourceKey& aRhs) const {
-      if (mLibwebrtcTimestampMs == aRhs.mLibwebrtcTimestampMs) {
+      if (mLibwebrtcTimestamp == aRhs.mLibwebrtcTimestamp) {
         return mSrc > aRhs.mSrc;
       }
-      return mLibwebrtcTimestampMs > aRhs.mLibwebrtcTimestampMs;
+      return mLibwebrtcTimestamp > aRhs.mLibwebrtcTimestamp;
     }
 
    private:
-    uint32_t mLibwebrtcTimestampMs;
+    uint32_t mLibwebrtcTimestamp;
     uint32_t mSrc;
   };
   mutable std::map<SourceKey, dom::RTCRtpSourceEntry, std::greater<SourceKey>>

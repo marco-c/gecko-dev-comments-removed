@@ -5,85 +5,49 @@
 
 
 #include "RTCStatsReport.h"
-#include "libwebrtcglue/SystemTime.h"
 #include "mozilla/dom/Performance.h"
+#include "mozilla/dom/PerformanceService.h"
 #include "nsRFPService.h"
 
 namespace mozilla::dom {
 
-RTCStatsTimestampMaker::RTCStatsTimestampMaker()
-    : mRandomTimelineSeed(0),
-      mStartRealtime(WebrtcSystemTimeBase()),
-      mCrossOriginIsolated(false),
-      mStartWallClockRaw(
-          PerformanceService::GetOrCreate()->TimeOrigin(mStartRealtime)) {}
-
 RTCStatsTimestampMaker::RTCStatsTimestampMaker(nsPIDOMWindowInner* aWindow)
-    : mRandomTimelineSeed(
-          aWindow && aWindow->GetPerformance()
-              ? aWindow->GetPerformance()->GetRandomTimelineSeed()
-              : 0),
-      mStartRealtime(aWindow && aWindow->GetPerformance()
-                         ? aWindow->GetPerformance()->CreationTimeStamp()
-                         : WebrtcSystemTimeBase()),
-      mCrossOriginIsolated(aWindow ? aWindow->AsGlobal()->CrossOriginIsolated()
-                                   : false),
+    : mRandomTimelineSeed(aWindow && aWindow->GetPerformance() ?
+          aWindow->GetPerformance()->GetRandomTimelineSeed() : 0),
+      mStartMonotonic(aWindow && aWindow->GetPerformance() ?
+          aWindow->GetPerformance()->CreationTimeStamp() : mozilla::TimeStamp::Now()),
+      
+      
+      
+      
+      
       mStartWallClockRaw(
-          PerformanceService::GetOrCreate()->TimeOrigin(mStartRealtime)) {}
-
-DOMHighResTimeStamp RTCStatsTimestampMaker::ReduceRealtimePrecision(
-    webrtc::Timestamp aRealtime) const {
-  
-  
-  
-  
-  
-  
-  
-
-  DOMHighResTimeStamp realtime = aRealtime.ms<double>();
-  
-  if (mRandomTimelineSeed) {
-    realtime = nsRFPService::ReduceTimePrecisionAsMSecs(
-        realtime, mRandomTimelineSeed,
-         false, mCrossOriginIsolated);
-  }
-
-  
-  
-  
-  
-  
-  DOMHighResTimeStamp start = nsRFPService::ReduceTimePrecisionAsMSecs(
-      mStartWallClockRaw, 0,  false,
-      mCrossOriginIsolated);
-
-  return start + realtime;
-}
-
-webrtc::Timestamp RTCStatsTimestampMaker::ConvertRealtimeTo1Jan1970(
-    webrtc::Timestamp aRealtime) const {
-  return aRealtime + webrtc::TimeDelta::Millis(mStartWallClockRaw);
-}
-
-DOMHighResTimeStamp RTCStatsTimestampMaker::ConvertNtpToDomTime(
-    webrtc::Timestamp aNtpTime) const {
-  const auto realtime = aNtpTime -
-                        webrtc::TimeDelta::Seconds(webrtc::kNtpJan1970) -
-                        webrtc::TimeDelta::Millis(mStartWallClockRaw);
-  
-  
-  
-  return ReduceRealtimePrecision(realtime - webrtc::TimeDelta::Micros(500));
-}
+          aWindow
+              ? PerformanceService::GetOrCreate()->TimeOrigin(mStartMonotonic)
+              : (double)PR_Now() / PR_USEC_PER_MSEC),
+      mCrossOriginIsolated(aWindow ? aWindow->AsGlobal()->CrossOriginIsolated()
+                                   : false) {}
 
 DOMHighResTimeStamp RTCStatsTimestampMaker::GetNow() const {
-  return ReduceRealtimePrecision(GetNowRealtime());
-}
-
-webrtc::Timestamp RTCStatsTimestampMaker::GetNowRealtime() const {
-  return webrtc::Timestamp::Micros(
-      (TimeStamp::Now() - mStartRealtime).ToMicroseconds());
+  
+  
+  
+  
+  
+  
+  
+  DOMHighResTimeStamp msSinceStart =
+      (TimeStamp::Now() - mStartMonotonic).ToMilliseconds();
+  
+  if (mRandomTimelineSeed) {
+    msSinceStart = nsRFPService::ReduceTimePrecisionAsMSecs(
+        msSinceStart, mRandomTimelineSeed,  false,
+        mCrossOriginIsolated);
+  }
+  return msSinceStart + nsRFPService::ReduceTimePrecisionAsMSecs(
+                            mStartWallClockRaw, 0,
+                             false,
+                            mCrossOriginIsolated);
 }
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(RTCStatsReport, mParent)

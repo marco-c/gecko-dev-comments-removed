@@ -16,7 +16,6 @@
 
 #include "rtc_base/checks.h"
 #include "rtc_base/system/rtc_export.h"
-#include "rtc_base/system_time.h"
 
 namespace rtc {
 
@@ -62,16 +61,11 @@ RTC_EXPORT ClockInterface* GetClockForTesting();
 
 
 void SyncWithNtp(int64_t time_from_ntp_server_ms);
-
-
-
-
-
-int64_t WinUwpSystemTimeNanos();
 #endif  
 
 
 
+int64_t SystemTimeNanos();
 int64_t SystemTimeMillis();
 
 

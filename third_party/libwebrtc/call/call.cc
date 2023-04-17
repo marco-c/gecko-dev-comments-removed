@@ -454,20 +454,18 @@ std::string Call::Stats::ToString(int64_t time_ms) const {
   return ss.str();
 }
 
+Call* Call::Create(const Call::Config& config) {
+  rtc::scoped_refptr<SharedModuleThread> call_thread =
+      SharedModuleThread::Create(ProcessThread::Create("ModuleProcessThread"),
+                                 nullptr);
+  return Create(config, std::move(call_thread));
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+Call* Call::Create(const Call::Config& config,
+                   rtc::scoped_refptr<SharedModuleThread> call_thread) {
+  return Create(config, Clock::GetRealTimeClock(), std::move(call_thread),
+                ProcessThread::Create("PacerThread"));
+}
 
 Call* Call::Create(const Call::Config& config,
                    Clock* clock,

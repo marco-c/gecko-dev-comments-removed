@@ -96,7 +96,6 @@ class RTPSenderVideo {
   
   
   
-  
   bool SendVideo(int payload_type,
                  absl::optional<VideoCodecType> codec_type,
                  uint32_t rtp_timestamp,
