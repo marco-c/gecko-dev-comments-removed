@@ -878,7 +878,6 @@ var gSync = {
       document,
       "PanelUI-fxa-menu-syncnow-button"
     );
-    const fxaMenuPanel = PanelMultiView.getViewNode(document, "PanelUI-fxa");
 
     const fxaMenuAccountButtonEl = PanelMultiView.getViewNode(
       document,
@@ -889,13 +888,6 @@ var gSync = {
     let headerDescription = this.fluentStrings.formatValueSync(
       "fxa-menu-turn-on-sync-default"
     );
-
-    if (PanelUI.protonAppMenuEnabled) {
-      let toolbarbuttons = fxaMenuPanel.querySelectorAll("toolbarbutton");
-      for (let toolbarbutton of toolbarbuttons) {
-        toolbarbutton.classList.remove("subviewbutton-iconic");
-      }
-    }
 
     cadButtonEl.setAttribute("disabled", true);
     syncNowButtonEl.hidden = true;
@@ -1122,12 +1114,8 @@ var gSync = {
     }
 
     
-    if (PanelUI.protonAppMenuEnabled) {
-      appMenuHeaderTitle.hidden = true;
-      appMenuHeaderDescription.value = state.email;
-    } else {
-      appMenuLabel.classList.add("subviewbutton-iconic");
-    }
+    appMenuHeaderTitle.hidden = true;
+    appMenuHeaderDescription.value = state.email;
     appMenuStatus.setAttribute("fxastatus", "signedin");
     appMenuLabel.setAttribute("label", state.email);
     appMenuLabel.classList.add("subviewbutton-nav");
@@ -1391,8 +1379,15 @@ var gSync = {
       state.status == UIState.STATUS_LOGIN_FAILED
     ) {
       this._appendSendTabVerify(fragment, createDeviceNodeFn);
-    }  else {
-      this._appendSendTabUnconfigured(fragment, createDeviceNodeFn);
+    } else {
+      
+      
+      
+      
+      throw new Error(
+        "Called populateSendTabToDevicesMenu when in STATUS_NOT_CONFIGURED " +
+          "state."
+      );
     }
 
     devicesPopup.appendChild(fragment);
@@ -1556,42 +1551,6 @@ var gSync = {
       notVerified,
       actions
     );
-  },
-
-  _appendSendTabUnconfigured(fragment, createDeviceNodeFn) {
-    const brandProductName = gBrandBundle.GetStringFromName("brandProductName");
-    const notConnected = this.fxaStrings.GetStringFromName(
-      "sendTabToDevice.unconfigured.label2"
-    );
-    const learnMore = this.fxaStrings.GetStringFromName(
-      "sendTabToDevice.unconfigured"
-    );
-    const actions = [
-      { label: learnMore, command: () => this.openSendToDevicePromo() },
-    ];
-    this._appendSendTabInfoItems(
-      fragment,
-      createDeviceNodeFn,
-      notConnected,
-      actions
-    );
-
-    
-    const signInToFxA = this.fxaStrings.formatStringFromName(
-      "sendTabToDevice.signintofxa",
-      [brandProductName]
-    );
-    let signInItem = createDeviceNodeFn(null, signInToFxA, null);
-    signInItem.classList.add("sync-menuitem");
-    signInItem.setAttribute("label", signInToFxA);
-    
-    if (signInItem.classList.contains("subviewbutton")) {
-      signInItem.classList.add("subviewbutton-iconic", "signintosync");
-    }
-    signInItem.addEventListener("command", () => {
-      this.openPrefs("sendtab");
-    });
-    fragment.insertBefore(signInItem, fragment.lastElementChild);
   },
 
   _appendSendTabInfoItems(fragment, createDeviceNodeFn, statusLabel, actions) {
