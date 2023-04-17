@@ -69,8 +69,7 @@ enum : bool { DuplicatesNotPossible, DuplicatesPossible };
 
 
 
-template <typename Key, typename Value,
-          typename AllocPolicy = TempAllocPolicy,
+template <typename Key, typename Value, typename AllocPolicy = TempAllocPolicy,
           bool AllowDuplicates = DuplicatesNotPossible>
 class NurseryAwareHashMap {
   using MapKey = UnsafeBarePtr<Key>;
@@ -201,12 +200,13 @@ struct GCPolicy<js::detail::UnsafeBareWeakHeapPtr<T>> {
                         js::detail::UnsafeBareWeakHeapPtr<T>* thingp) {
     return js::TraceWeakEdge(trc, thingp, "UnsafeBareWeakHeapPtr");
   }
+  static bool needsSweep(js::detail::UnsafeBareWeakHeapPtr<T>* thingp) {
+    return js::gc::IsAboutToBeFinalized(thingp);
+  }
 };
 
 }  
 
-namespace mozilla {
-
-}  
+namespace mozilla {}  
 
 #endif  

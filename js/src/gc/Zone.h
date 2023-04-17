@@ -116,7 +116,7 @@ class WeakRefHeapPtrVector
   using GCVector::GCVector;
 
   
-  void traceWeak(JSTracer* trc, JSObject* target);
+  void sweep(js::HeapPtrObject& target);
 };
 
 
@@ -128,7 +128,7 @@ class WeakRefMap
   using GCHashMap::GCHashMap;
   using Base = GCHashMap<HeapPtrObject, WeakRefHeapPtrVector,
                          MovableCellHasher<HeapPtrObject>, ZoneAllocPolicy>;
-  void traceWeak(JSTracer* trc, gc::StoreBuffer* sbToLock);
+  void sweep(gc::StoreBuffer* sbToLock);
 };
 
 }  
