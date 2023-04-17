@@ -659,12 +659,12 @@ void gfxPlatformMac::GetCommonFallbackFonts(uint32_t aCh, Script aRunScript,
       aFontList.AppendElement("Zapf Dingbats");
     }
     aFontList.AppendElement("Geneva");
+    aFontList.AppendElement("STIXGeneral");
     aFontList.AppendElement("Apple Symbols");
     
     aFontList.AppendElement("Hiragino Sans");
     aFontList.AppendElement("Hiragino Kaku Gothic ProN");
   }
-  aFontList.AppendElement("STIXGeneral");
 
   
   
