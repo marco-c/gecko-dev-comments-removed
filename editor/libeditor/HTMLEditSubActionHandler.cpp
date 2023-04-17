@@ -5281,8 +5281,8 @@ nsresult HTMLEditor::AlignBlockContentsWithDivElement(
 
   
   
-  nsCOMPtr<nsIContent> lastEditableContent =
-      GetLastEditableChild(aBlockElement);
+  nsCOMPtr<nsIContent> lastEditableContent = HTMLEditUtils::GetLastChild(
+      aBlockElement, {WalkTreeOption::IgnoreNonEditableNode});
   if (firstEditableContent == lastEditableContent &&
       firstEditableContent->IsHTMLElement(nsGkAtoms::div)) {
     nsresult rv = SetAttributeOrEquivalent(
@@ -5330,7 +5330,8 @@ nsresult HTMLEditor::AlignBlockContentsWithDivElement(
       NS_WARNING("HTMLEditor::MoveNodeWithTransaction() failed");
       return rv;
     }
-    lastEditableContent = GetLastEditableChild(aBlockElement);
+    lastEditableContent = HTMLEditUtils::GetLastChild(
+        aBlockElement, {WalkTreeOption::IgnoreNonEditableNode});
   }
   return NS_OK;
 }
@@ -7759,7 +7760,8 @@ nsresult HTMLEditor::JoinNearestEditableNodesWithTransaction(
   }
 
   
-  nsCOMPtr<nsIContent> lastLeft = GetLastEditableChild(aNodeLeft);
+  nsCOMPtr<nsIContent> lastLeft = HTMLEditUtils::GetLastChild(
+      aNodeLeft, {WalkTreeOption::IgnoreNonEditableNode});
   if (NS_WARN_IF(!lastLeft)) {
     return NS_ERROR_FAILURE;
   }
@@ -8027,7 +8029,8 @@ nsresult HTMLEditor::EnsureCaretInBlockElement(Element& aElement) {
 
   if (nodeBefore) {
     
-    nsIContent* lastEditableContent = GetLastEditableChild(aElement);
+    nsIContent* lastEditableContent = HTMLEditUtils::GetLastChild(
+        aElement, {WalkTreeOption::IgnoreNonEditableNode});
     if (!lastEditableContent) {
       lastEditableContent = &aElement;
     }
@@ -9051,8 +9054,8 @@ nsresult HTMLEditor::EnsureHardLineEndsWithLastChildOf(
     Element& aRemovingContainerElement) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
-  nsIContent* firstEditableContent =
-      GetLastEditableChild(aRemovingContainerElement);
+  nsIContent* firstEditableContent = HTMLEditUtils::GetLastChild(
+      aRemovingContainerElement, {WalkTreeOption::IgnoreNonEditableNode});
   if (!firstEditableContent) {
     return NS_OK;
   }
