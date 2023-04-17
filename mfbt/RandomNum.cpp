@@ -85,41 +85,27 @@ static_assert(GRND_NONBLOCK == 1,
 
 namespace mozilla {
 
+MFBT_API bool GenerateRandomBytesFromOS(void* aBuffer, size_t aLength) {
+  MOZ_ASSERT(aBuffer);
+  MOZ_ASSERT(aLength > 0);
 
-
-
-
-
-
-
-
-
-MFBT_API Maybe<uint64_t> RandomUint64() {
 #if defined(XP_WIN)
 
-  uint64_t result = 0;
-  if (!RtlGenRandom(&result, sizeof(result))) {
-    return Nothing();
-  }
-
-  return Some(result);
+  return !!RtlGenRandom(aBuffer, aLength);
 
 #elif defined(USE_ARC4RANDOM)  
 
-  return Some((static_cast<uint64_t>(arc4random()) << 32) | arc4random());
+  arc4random_buf(aBuffer, aLength);
+  return true;
 
 #elif defined(XP_UNIX)  
 
-  uint64_t result = 0;
-
 #  if defined(__linux__)
 
-  long bytesGenerated =
-      syscall(SYS_getrandom, &result, sizeof(result), GRND_NONBLOCK);
+  long bytesGenerated = syscall(SYS_getrandom, aBuffer, aLength, GRND_NONBLOCK);
 
-  if ((bytesGenerated > 0) &&
-      (static_cast<unsigned long>(bytesGenerated) == sizeof(result))) {
-    return Some(result);
+  if (static_cast<unsigned long>(bytesGenerated) == aLength) {
+    return true;
   }
 
   
@@ -128,34 +114,33 @@ MFBT_API Maybe<uint64_t> RandomUint64() {
 
   int fd = open("/dev/urandom", O_RDONLY);
   if (fd < 0) {
-    return Nothing();
+    return false;
   }
 
-  ssize_t bytesRead = read(fd, &result, sizeof(result));
+  ssize_t bytesRead = read(fd, aBuffer, aLength);
 
   close(fd);
 
-  if (bytesRead < 0) {
-    return Nothing();
-  }
-
-  if (static_cast<size_t>(bytesRead) != sizeof(result)) {
-    return Nothing();
-  }
-
-  return Some(result);
+  return (static_cast<size_t>(bytesRead) == aLength);
 
 #else  
-#  error "Platform needs to implement RandomUint64()"
+#  error "Platform needs to implement GenerateRandomBytesFromOS()"
 #endif
 }
 
+MFBT_API Maybe<uint64_t> RandomUint64() {
+  uint64_t randomNum;
+  if (!GenerateRandomBytesFromOS(&randomNum, sizeof(randomNum))) {
+    return Nothing();
+  }
+
+  return Some(randomNum);
+}
+
 MFBT_API uint64_t RandomUint64OrDie() {
-  Maybe<uint64_t> maybeRandomNum = RandomUint64();
-
-  MOZ_RELEASE_ASSERT(maybeRandomNum.isSome());
-
-  return maybeRandomNum.value();
+  uint64_t randomNum;
+  MOZ_RELEASE_ASSERT(GenerateRandomBytesFromOS(&randomNum, sizeof(randomNum)));
+  return randomNum;
 }
 
 }  

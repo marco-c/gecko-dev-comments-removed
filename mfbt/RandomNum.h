@@ -28,6 +28,16 @@ namespace mozilla {
 
 
 
+
+
+
+[[nodiscard]] MFBT_API bool GenerateRandomBytesFromOS(void* aBuffer,
+                                                      size_t aLength);
+
+
+
+
+
 MFBT_API Maybe<uint64_t> RandomUint64();
 
 
