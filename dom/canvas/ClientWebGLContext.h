@@ -909,9 +909,6 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
   
   
  public:
-  already_AddRefed<layers::Layer> GetCanvasLayer(
-      nsDisplayListBuilder* builder, layers::Layer* oldLayer,
-      layers::LayerManager* manager) override;
   bool InitializeCanvasRenderer(nsDisplayListBuilder* aBuilder,
                                 layers::CanvasRenderer* aRenderer) override;
   
