@@ -2521,11 +2521,6 @@ void gfxPlatform::InitWebRenderConfig() {
   
   
   
-  gfxVars::AddReceiver(&nsCSSProps::GfxVarReceiver());
-
-  
-  
-  
   
   
   
@@ -2537,9 +2532,6 @@ void gfxPlatform::InitWebRenderConfig() {
     
     
     if (gfxVars::UseWebRender()) {
-      
-      
-      nsCSSProps::RecomputeEnabledState("layout.css.backdrop-filter.enabled");
       reporter.SetSuccessful();
     }
     return;

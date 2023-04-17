@@ -76,10 +76,6 @@ void nsCSSProps::RecomputeEnabledState(const char* aPref, void*) {
 #else
       gPropertyEnabled[pref->mPropID] = Preferences::GetBool(pref->mPref);
 #endif
-      if (pref->mPropID == eCSSProperty_backdrop_filter) {
-        gPropertyEnabled[pref->mPropID] &=
-            gfx::gfxVars::GetUseWebRenderOrDefault();
-      }
     }
   }
   MOZ_ASSERT(foundPref);
@@ -215,41 +211,5 @@ bool nsCSSProps::gPropertyEnabled[eCSSProperty_COUNT_with_aliases] = {
 
 #undef IS_ENABLED_BY_DEFAULT
 };
-
-
-
-
-
-
-class nsCSSPropsGfxVarReceiver final : public gfx::gfxVarReceiver {
-  constexpr nsCSSPropsGfxVarReceiver() = default;
-
-  
-  static bool sLastKnownUseWebRender;
-  static nsCSSPropsGfxVarReceiver sInstance;
-
- public:
-  static gfx::gfxVarReceiver& GetInstance() { return sInstance; }
-
-  void OnVarChanged(const gfx::GfxVarUpdate&) override {
-    bool enabled = gfxVars::UseWebRender();
-    if (sLastKnownUseWebRender != enabled) {
-      sLastKnownUseWebRender = enabled;
-      nsCSSProps::RecomputeEnabledState("layout.css.backdrop-filter.enabled");
-    }
-  }
-};
-
-
-nsCSSPropsGfxVarReceiver nsCSSPropsGfxVarReceiver::sInstance =
-    nsCSSPropsGfxVarReceiver();
-
-
-bool nsCSSPropsGfxVarReceiver::sLastKnownUseWebRender = false;
-
-
-gfx::gfxVarReceiver& nsCSSProps::GfxVarReceiver() {
-  return nsCSSPropsGfxVarReceiver::GetInstance();
-}
 
 #include "nsCSSPropsGenerated.inc"
