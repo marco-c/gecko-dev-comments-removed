@@ -233,7 +233,7 @@ function onLoad(ready) {
     await document.l10n.ready;
     requestAnimationFrame(() => {
       
-      primary.focus({ preventFocusRing: true });
+      primary.focus();
 
       
       if (current === 0) {

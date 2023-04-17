@@ -1273,18 +1273,9 @@ function addAutofocus(selector, position = "afterbegin") {
   if (window.top == window) {
     var button = document.querySelector(selector);
     var parent = button.parentNode;
+    button.remove();
+    button.setAttribute("autofocus", "true");
     parent.insertAdjacentElement(position, button);
-    
-    
-    
-    
-    
-    
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        button.focus({ preventFocusRing: true });
-      }, 0);
-    });
   }
 }
 
