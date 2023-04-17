@@ -28,7 +28,6 @@ class JS_PUBLIC_API ContextOptions {
         wasmReftypes_(true),
         wasmFunctionReferences_(false),
         wasmGc_(false),
-        wasmMultiValue_(false),
         wasmSimd_(false),
         wasmSimdWormhole_(false),
         wasmExceptions_(false),
@@ -119,10 +118,6 @@ class JS_PUBLIC_API ContextOptions {
   bool wasmGc() const { return wasmGc_; }
   
   ContextOptions& setWasmGc(bool flag);
-
-  bool wasmMultiValue() const { return wasmMultiValue_; }
-  
-  ContextOptions& setWasmMultiValue(bool flag);
 
   bool wasmSimd() const { return wasmSimd_; }
   
@@ -266,7 +261,6 @@ class JS_PUBLIC_API ContextOptions {
   bool wasmReftypes_ : 1;
   bool wasmFunctionReferences_ : 1;
   bool wasmGc_ : 1;
-  bool wasmMultiValue_ : 1;
   bool wasmSimd_ : 1;
   bool wasmSimdWormhole_ : 1;
   bool wasmExceptions_ : 1;

@@ -720,27 +720,6 @@ set_define(
 
 
 
-option(
-    "--disable-wasm-multi-value",
-    help="Disable WebAssembly multi-value blocks and function calls",
-)
-
-
-@depends("--disable-wasm-multi-value")
-def enable_wasm_multi_value(value):
-    if value:
-        return True
-
-
-set_config("ENABLE_WASM_MULTI_VALUE", enable_wasm_multi_value)
-set_define("ENABLE_WASM_MULTI_VALUE", enable_wasm_multi_value)
-
-
-
-
-
-
-
 
 
 option(
@@ -994,9 +973,9 @@ set_define(
 
 
 
-@depends(milestone.is_nightly, "--enable-wasm-multi-value")
-def default_wasm_exceptions(is_nightly, multi_value):
-    if multi_value and is_nightly:
+@depends(milestone.is_nightly)
+def default_wasm_exceptions(is_nightly):
+    if is_nightly:
         return True
 
 

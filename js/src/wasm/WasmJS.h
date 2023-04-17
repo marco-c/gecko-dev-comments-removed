@@ -141,9 +141,6 @@ bool FunctionReferencesAvailable(JSContext* cx);
 bool GcTypesAvailable(JSContext* cx);
 
 
-bool MultiValuesAvailable(JSContext* cx);
-
-
 bool ThreadsAvailable(JSContext* cx);
 
 
