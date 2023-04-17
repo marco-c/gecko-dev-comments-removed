@@ -6,6 +6,8 @@
 
 #include "vm/EnvironmentObject-inl.h"
 
+#include "mozilla/Maybe.h"
+
 #include "builtin/ModuleObject.h"
 #include "gc/Policy.h"
 #include "js/friend/ErrorMessages.h"  
@@ -3510,11 +3512,11 @@ bool js::CheckLexicalNameConflict(
     }
   } else {
     
-    Rooted<PropertyDescriptor> desc(cx);
+    Rooted<mozilla::Maybe<PropertyDescriptor>> desc(cx);
     if (!GetOwnPropertyDescriptor(cx, varObj, id, &desc)) {
       return false;
     }
-    if (desc.object() && desc.hasConfigurable() && !desc.configurable()) {
+    if (desc.isSome() && !desc->configurable()) {
       redeclKind = "non-configurable global property";
     }
   }
@@ -3552,7 +3554,7 @@ bool js::CheckCanDeclareGlobalBinding(JSContext* cx,
                                       HandlePropertyName name,
                                       bool isFunction) {
   RootedId id(cx, NameToId(name));
-  Rooted<PropertyDescriptor> desc(cx);
+  Rooted<mozilla::Maybe<PropertyDescriptor>> desc(cx);
   if (!GetOwnPropertyDescriptor(cx, global, id, &desc)) {
     return false;
   }
@@ -3561,7 +3563,7 @@ bool js::CheckCanDeclareGlobalBinding(JSContext* cx,
   
 
   
-  if (!desc.object()) {
+  if (desc.isNothing()) {
     
     
     if (global->isExtensible()) {
@@ -3575,12 +3577,12 @@ bool js::CheckCanDeclareGlobalBinding(JSContext* cx,
   
   if (isFunction) {
     
-    if (desc.configurable()) {
+    if (desc->configurable()) {
       return true;
     }
 
     
-    if (desc.isDataDescriptor() && desc.writable() && desc.enumerable()) {
+    if (desc->isDataDescriptor() && desc->writable() && desc->enumerable()) {
       return true;
     }
 

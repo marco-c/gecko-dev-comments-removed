@@ -85,6 +85,8 @@
 
 using namespace js;
 
+using mozilla::Maybe;
+
 void js::ReportNotObject(JSContext* cx, JSErrNum err, int spindex,
                          HandleValue v) {
   MOZ_ASSERT(!v.isObject());
@@ -589,18 +591,18 @@ bool js::SetIntegrityLevel(JSContext* cx, HandleObject obj,
         desc.setAttributes(AllowConfigure | JSPROP_PERMANENT);
       } else {
         
-        Rooted<PropertyDescriptor> currentDesc(cx);
+        Rooted<Maybe<PropertyDescriptor>> currentDesc(cx);
         if (!GetOwnPropertyDescriptor(cx, obj, id, &currentDesc)) {
           return false;
         }
 
         
-        if (!currentDesc.object()) {
+        if (currentDesc.isNothing()) {
           continue;
         }
 
         
-        if (currentDesc.isAccessorDescriptor()) {
+        if (currentDesc->isAccessorDescriptor()) {
           desc.setAttributes(AllowConfigure | JSPROP_PERMANENT);
         } else {
           desc.setAttributes(AllowConfigureAndWritable | JSPROP_PERMANENT |
@@ -725,7 +727,7 @@ bool js::TestIntegrityLevel(JSContext* cx, HandleObject obj,
 
     
     RootedId id(cx);
-    Rooted<PropertyDescriptor> desc(cx);
+    Rooted<Maybe<PropertyDescriptor>> desc(cx);
     for (size_t i = 0, len = props.length(); i < len; i++) {
       id = props[i];
 
@@ -735,13 +737,14 @@ bool js::TestIntegrityLevel(JSContext* cx, HandleObject obj,
       }
 
       
-      if (!desc.object()) {
+      if (desc.isNothing()) {
         continue;
       }
 
       
-      if (desc.configurable() || (level == IntegrityLevel::Frozen &&
-                                  desc.isDataDescriptor() && desc.writable())) {
+      if (desc->configurable() ||
+          (level == IntegrityLevel::Frozen && desc->isDataDescriptor() &&
+           desc->writable())) {
         *result = false;
         return true;
       }
@@ -968,7 +971,7 @@ bool js::GetPrototypeFromConstructor(JSContext* cx, HandleObject newTarget,
     
     
     {
-      mozilla::Maybe<AutoRealm> ar;
+      Maybe<AutoRealm> ar;
       if (cx->realm() != realm) {
         ar.emplace(cx, realm->maybeGlobal());
       }
@@ -2369,7 +2372,7 @@ bool js::GetOwnPropertyDescriptor(JSContext* cx, HandleObject obj, HandleId id,
 
 bool js::GetOwnPropertyDescriptor(
     JSContext* cx, HandleObject obj, HandleId id,
-    MutableHandle<mozilla::Maybe<PropertyDescriptor>> desc) {
+    MutableHandle<Maybe<PropertyDescriptor>> desc) {
   Rooted<PropertyDescriptor> descriptor(cx);
   if (!GetOwnPropertyDescriptor(cx, obj, id, &descriptor)) {
     return false;
