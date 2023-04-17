@@ -6,11 +6,6 @@
 
 var EXPORTED_SYMBOLS = ["Sqlite"];
 
-
-
-
-const TRANSACTIONS_QUEUE_TIMEOUT_MS = 300000; 
-
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
@@ -605,6 +600,14 @@ ConnectionData.prototype = Object.freeze({
   },
 
   executeTransaction(func, type) {
+    
+    let caller = new Error().stack
+      .split("\n", 3)
+      .pop()
+      .match(/^([^@]+@).*\/([^\/:]+)[:0-9]*$/);
+    caller = caller[1] + caller[2];
+    this._log.debug(`Transaction (type ${type}) requested by: ${caller}`);
+
     if (type == OpenedConnection.prototype.TRANSACTION_DEFAULT) {
       type = this.defaultTransactionType;
     } else if (!OpenedConnection.TRANSACTION_TYPES.includes(type)) {
@@ -612,7 +615,11 @@ ConnectionData.prototype = Object.freeze({
     }
     this.ensureOpen();
 
-    this._log.debug("Beginning transaction");
+    
+    
+    
+    
+    let timeoutPromise = this._getTimeoutPromise();
 
     let promise = this._transactionQueue.then(() => {
       if (this._closeRequested) {
@@ -631,6 +638,7 @@ ConnectionData.prototype = Object.freeze({
           
           try {
             await this.execute("BEGIN " + type + " TRANSACTION");
+            this._log.debug(`Begin transaction`);
             this._initiatedTransaction = true;
           } catch (ex) {
             
@@ -654,7 +662,7 @@ ConnectionData.prototype = Object.freeze({
 
           let result;
           try {
-            result = await func();
+            result = await Promise.race([func(), timeoutPromise]);
           } catch (ex) {
             
             
@@ -664,11 +672,31 @@ ConnectionData.prototype = Object.freeze({
                 ex
               );
             } else {
-              this._log.error("Error during transaction. Rolling back", ex);
+              
+              
+              if (ex.becauseTimedOut) {
+                let caller_module = caller.split(":", 1)[0];
+                Services.telemetry.keyedScalarAdd(
+                  "mozstorage.sqlitejsm_transaction_timeout",
+                  caller_module,
+                  1
+                );
+                this._log.error(
+                  `The transaction requested by ${caller} timed out. Rolling back`,
+                  ex
+                );
+              } else {
+                this._log.error(
+                  `Error during transaction requested by ${caller}. Rolling back`,
+                  ex
+                );
+              }
               
               if (this._initiatedTransaction) {
                 try {
                   await this.execute("ROLLBACK TRANSACTION");
+                  this._initiatedTransaction = false;
+                  this._log.debug(`Roll back transaction`);
                 } catch (inner) {
                   this._log.error("Could not roll back transaction", inner);
                 }
@@ -692,6 +720,7 @@ ConnectionData.prototype = Object.freeze({
           if (this._initiatedTransaction) {
             try {
               await this.execute("COMMIT TRANSACTION");
+              this._log.debug(`Commit transaction`);
             } catch (ex) {
               this._log.warn("Error committing transaction", ex);
               throw ex;
@@ -704,11 +733,6 @@ ConnectionData.prototype = Object.freeze({
         }
       })();
 
-      
-      
-      
-      
-      let timeoutPromise = this._getTimeoutPromise();
       return Promise.race([transactionPromise, timeoutPromise]);
     });
     
@@ -948,9 +972,11 @@ ConnectionData.prototype = Object.freeze({
   },
 
   
-  
-  
-  
+
+
+
+
+
   _getTimeoutPromise() {
     if (this._timeoutPromise && Cu.now() <= this._timeoutPromiseExpires) {
       return this._timeoutPromise;
@@ -961,16 +987,16 @@ ConnectionData.prototype = Object.freeze({
         if (this._timeoutPromise == timeoutPromise) {
           this._timeoutPromise = null;
         }
-        reject(
-          new Error(
-            "Transaction timeout, most likely caused by unresolved pending work."
-          )
+        let e = new Error(
+          "Transaction timeout, most likely caused by unresolved pending work."
         );
-      }, TRANSACTIONS_QUEUE_TIMEOUT_MS);
+        e.becauseTimedOut = true;
+        reject(e);
+      }, Sqlite.TRANSACTIONS_TIMEOUT_MS);
     });
     this._timeoutPromise = timeoutPromise;
     this._timeoutPromiseExpires =
-      Cu.now() + TRANSACTIONS_QUEUE_TIMEOUT_MS * 0.2;
+      Cu.now() + Sqlite.TRANSACTIONS_TIMEOUT_MS * 0.2;
     return this._timeoutPromise;
   },
 });
@@ -1693,6 +1719,10 @@ OpenedConnection.prototype = Object.freeze({
 });
 
 var Sqlite = {
+  
+  
+  TRANSACTIONS_TIMEOUT_MS: 300000, 
+
   openConnection,
   cloneStorageConnection,
   wrapStorageConnection,
