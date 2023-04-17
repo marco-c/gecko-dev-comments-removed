@@ -34,7 +34,9 @@ interface nsIClearDataService : nsISupports
   void deleteDataFromLocalFiles(in bool aIsUserRequest,
                                 in uint32_t aFlags,
                                 in nsIClearDataCallback aCallback);
+
   
+
 
 
 
@@ -51,6 +53,32 @@ interface nsIClearDataService : nsISupports
                           in bool aIsUserRequest,
                           in uint32_t aFlags,
                           in nsIClearDataCallback aCallback);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void deleteDataFromBaseDomain(in AUTF8String aDomainOrHost,
+                                in bool aIsUserRequest,
+                                in uint32_t aFlags,
+                                in nsIClearDataCallback aCallback);
 
   
 
