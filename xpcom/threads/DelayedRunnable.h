@@ -9,6 +9,7 @@
 
 #include "mozilla/TimeStamp.h"
 #include "nsCOMPtr.h"
+#include "nsIDelayedRunnableObserver.h"
 #include "nsIRunnable.h"
 #include "nsITimer.h"
 #include "nsThreadUtils.h"
@@ -26,11 +27,18 @@ class DelayedRunnable : public Runnable, public nsITimerCallback {
 
   nsresult Init();
 
+  
+
+
+
+  void CancelTimer();
+
  private:
   ~DelayedRunnable() = default;
   nsresult DoRun();
 
   const nsCOMPtr<nsIEventTarget> mTarget;
+  const nsCOMPtr<nsIDelayedRunnableObserver> mObserver;
   nsCOMPtr<nsIRunnable> mWrappedRunnable;
   nsCOMPtr<nsITimer> mTimer;
   const TimeStamp mDelayedFrom;
