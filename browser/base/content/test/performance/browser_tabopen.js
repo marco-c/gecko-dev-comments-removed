@@ -53,6 +53,9 @@ add_task(async function() {
   let minTabWidth = firstTabRect.width - 2 * tabPaddingStart;
   let maxTabWidth = firstTabRect.width;
   let firstTabLabelRect = gBrowser.selectedTab.textLabel.getBoundingClientRect();
+  let newTabButtonRect = document
+    .getElementById("tabs-newtab-button")
+    .getBoundingClientRect();
   let textBoxRect = gURLBar
     .querySelector("moz-input-box")
     .getBoundingClientRect();
@@ -98,7 +101,10 @@ add_task(async function() {
                     firstTabRect.right - 1, 
                     firstTabRect.right + firstTabRect.width
                   ) &&
-                    r.x2 < firstTabRect.right + firstTabRect.width + 25) || 
+                    r.x2 <
+                      firstTabRect.right +
+                        firstTabRect.width +
+                        newTabButtonRect.width) || 
                     
                     
                     
