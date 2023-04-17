@@ -198,31 +198,42 @@ fn start_scheduler(
             loop {
                 let dur = when.until(now);
                 log::info!("Scheduling for {:?} after {}, reason {:?}", dur, now, when);
-                let result = condvar.wait_timeout_while(cancelled_lock.lock().unwrap(), dur, |cancelled| !*cancelled);
-                now = local_now_with_offset().0;
-                match result {
-                    Err(err) => {
-                        log::warn!("Condvar wait failure, {}", err);
-                        break;
-                    }
-                    Ok((cancelled, wait_result)) => {
-                        if *cancelled {
-                            log::info!("Metrics Ping Scheduler cancelled. Exiting.");
+                let mut timed_out = false;
+                {
+                    match condvar.wait_timeout_while(cancelled_lock.lock().unwrap(), dur, |cancelled| !*cancelled) {
+                        Err(err) => {
+                            log::warn!("Condvar wait failure. MPS exiting. {}", err);
                             break;
-                        } else if wait_result.timed_out() {
-                            log::info!("Time to submit our metrics ping, {:?}", when);
-                            let glean = crate::global_glean().expect("Global Glean not present when trying to send scheduled 'metrics' ping?!").lock().unwrap();
-                            submitter.submit_metrics_ping(&glean, Some(when.reason()), now);
-                            when = When::Reschedule;
-                        } else {
-                            
-                            
-                            
-                            
-                            log::warn!("Spurious wakeup of the MPS condvar should be impossible.");
+                        }
+                        Ok((cancelled, wait_result)) => {
+                            if *cancelled {
+                                log::info!("Metrics Ping Scheduler cancelled. Exiting.");
+                                break;
+                            } else if wait_result.timed_out() {
+                                
+                                timed_out = true;
+                            } else {
+                                
+                                
+                                
+                                
+                                log::warn!("Spurious wakeup of the MPS condvar should be impossible.");
+                            }
                         }
                     }
                 }
+                
+                
+                
+                
+                
+                if timed_out {
+                    log::info!("Time to submit our metrics ping, {:?}", when);
+                    let glean = crate::global_glean().expect("Global Glean not present when trying to send scheduled 'metrics' ping?!").lock().unwrap();
+                    submitter.submit_metrics_ping(&glean, Some(when.reason()), now);
+                    when = When::Reschedule;
+                }
+                now = local_now_with_offset().0;
             }
         }).expect("Unable to spawn Metrics Ping Scheduler thread.")
 }
