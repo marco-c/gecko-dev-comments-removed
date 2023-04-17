@@ -87,16 +87,16 @@
         "Firefox timers do not get affected")
 
 struct ProfilerFeature {
-#define DECLARE(n_, str_, Name_, desc_)                     \
-  static constexpr uint32_t Name_ = (1u << n_);             \
-  static constexpr bool Has##Name_(uint32_t aFeatures) {    \
-    return aFeatures & Name_;                               \
-  }                                                         \
-  static constexpr void Set##Name_(uint32_t& aFeatures) {   \
-    aFeatures |= Name_;                                     \
-  }                                                         \
-  static constexpr void Clear##Name_(uint32_t& aFeatures) { \
-    aFeatures &= ~Name_;                                    \
+#define DECLARE(n_, str_, Name_, desc_)                                \
+  static constexpr uint32_t Name_ = (1u << n_);                        \
+  [[nodiscard]] static constexpr bool Has##Name_(uint32_t aFeatures) { \
+    return aFeatures & Name_;                                          \
+  }                                                                    \
+  static constexpr void Set##Name_(uint32_t& aFeatures) {              \
+    aFeatures |= Name_;                                                \
+  }                                                                    \
+  static constexpr void Clear##Name_(uint32_t& aFeatures) {            \
+    aFeatures &= ~Name_;                                               \
   }
 
   
@@ -119,7 +119,7 @@ MOZ_DEFINE_ENUM_CLASS(ProfilingState,(
 ));
 
 
-inline static const char* ProfilingStateToString(
+[[nodiscard]] inline static const char* ProfilingStateToString(
     ProfilingState aProfilingState) {
   switch (aProfilingState) {
     case ProfilingState::AlreadyActive:
@@ -146,7 +146,7 @@ inline static const char* ProfilingStateToString(
 
 using ProfilingStateSet = mozilla::EnumSet<ProfilingState>;
 
-constexpr ProfilingStateSet AllProfilingStates() {
+[[nodiscard]] constexpr ProfilingStateSet AllProfilingStates() {
   ProfilingStateSet set;
   using Value = std::underlying_type_t<ProfilingState>;
   for (Value stateValue = 0;
@@ -162,13 +162,19 @@ using ProfilingStateChangeCallback = std::function<void(ProfilingState)>;
 
 #ifndef MOZ_GECKO_PROFILER
 
-inline bool profiler_is_active() { return false; }
-inline bool profiler_can_accept_markers() { return false; }
-inline bool profiler_thread_is_being_profiled() { return false; }
-inline bool profiler_is_active_and_thread_is_registered() { return false; }
-inline bool profiler_feature_active(uint32_t aFeature) { return false; }
-inline bool profiler_is_locked_on_current_thread() { return false; }
-inline int profiler_current_thread_id() { return 0; }
+[[nodiscard]] inline bool profiler_is_active() { return false; }
+[[nodiscard]] inline bool profiler_can_accept_markers() { return false; }
+[[nodiscard]] inline bool profiler_thread_is_being_profiled() { return false; }
+[[nodiscard]] inline bool profiler_is_active_and_thread_is_registered() {
+  return false;
+}
+[[nodiscard]] inline bool profiler_feature_active(uint32_t aFeature) {
+  return false;
+}
+[[nodiscard]] inline bool profiler_is_locked_on_current_thread() {
+  return false;
+}
+[[nodiscard]] inline int profiler_current_thread_id() { return 0; }
 inline void profiler_add_state_change_callback(
     ProfilingStateSet aProfilingStateSet,
     ProfilingStateChangeCallback&& aCallback, uintptr_t aUniqueIdentifier = 0) {
@@ -183,9 +189,7 @@ inline void profiler_remove_state_change_callback(uintptr_t aUniqueIdentifier) {
 
 #  include <stdint.h>
 
-namespace mozilla {
-namespace profiler {
-namespace detail {
+namespace mozilla::profiler::detail {
 
 
 
@@ -211,7 +215,7 @@ class RacyFeatures {
 
   static void SetSamplingUnpaused() { sActiveAndFeatures &= ~SamplingPaused; }
 
-  static mozilla::Maybe<uint32_t> FeaturesIfActive() {
+  [[nodiscard]] static mozilla::Maybe<uint32_t> FeaturesIfActive() {
     if (uint32_t af = sActiveAndFeatures; af & Active) {
       
       return Some(af & ~(Active | Paused | SamplingPaused));
@@ -219,7 +223,7 @@ class RacyFeatures {
     return Nothing();
   }
 
-  static mozilla::Maybe<uint32_t> FeaturesIfActiveAndUnpaused() {
+  [[nodiscard]] static mozilla::Maybe<uint32_t> FeaturesIfActiveAndUnpaused() {
     if (uint32_t af = sActiveAndFeatures; (af & (Active | Paused)) == Active) {
       
       
@@ -228,23 +232,25 @@ class RacyFeatures {
     return Nothing();
   }
 
-  static bool IsActive() { return uint32_t(sActiveAndFeatures) & Active; }
+  [[nodiscard]] static bool IsActive() {
+    return uint32_t(sActiveAndFeatures) & Active;
+  }
 
-  static bool IsActiveWithFeature(uint32_t aFeature) {
+  [[nodiscard]] static bool IsActiveWithFeature(uint32_t aFeature) {
     uint32_t af = sActiveAndFeatures;  
     return (af & Active) && (af & aFeature);
   }
 
   
   
-  static bool IsActiveAndUnpaused() {
+  [[nodiscard]] static bool IsActiveAndUnpaused() {
     uint32_t af = sActiveAndFeatures;  
     return (af & Active) && !(af & Paused);
   }
 
   
   
-  static bool IsActiveAndSamplingUnpaused() {
+  [[nodiscard]] static bool IsActiveAndSamplingUnpaused() {
     uint32_t af = sActiveAndFeatures;  
     return (af & Active) && !(af & (Paused | SamplingPaused));
   }
@@ -270,12 +276,10 @@ class RacyFeatures {
       sActiveAndFeatures;
 };
 
-bool IsThreadBeingProfiled();
-bool IsThreadRegistered();
+[[nodiscard]] bool IsThreadBeingProfiled();
+[[nodiscard]] bool IsThreadRegistered();
 
 }  
-}  
-}  
 
 
 
@@ -297,7 +301,7 @@ bool IsThreadRegistered();
 
 
 
-inline bool profiler_is_active() {
+[[nodiscard]] inline bool profiler_is_active() {
   return mozilla::profiler::detail::RacyFeatures::IsActive();
 }
 
@@ -309,13 +313,13 @@ inline bool profiler_is_active() {
 
 
 
-inline bool profiler_can_accept_markers() {
+[[nodiscard]] inline bool profiler_can_accept_markers() {
   return mozilla::profiler::detail::RacyFeatures::IsActiveAndUnpaused();
 }
 
 
 
-inline bool profiler_thread_is_being_profiled() {
+[[nodiscard]] inline bool profiler_thread_is_being_profiled() {
   return profiler_is_active() &&
          mozilla::profiler::detail::IsThreadBeingProfiled();
 }
@@ -323,37 +327,38 @@ inline bool profiler_thread_is_being_profiled() {
 
 
 
-inline bool profiler_is_active_and_thread_is_registered() {
+[[nodiscard]] inline bool profiler_is_active_and_thread_is_registered() {
   return profiler_is_active() &&
          mozilla::profiler::detail::IsThreadRegistered();
 }
 
 
-bool profiler_is_paused();
+[[nodiscard]] bool profiler_is_paused();
 
 
 
-bool profiler_is_sampling_paused();
+[[nodiscard]] bool profiler_is_sampling_paused();
 
 
-bool profiler_thread_is_sleeping();
-
-
-
-
-uint32_t profiler_get_available_features();
+[[nodiscard]] bool profiler_thread_is_sleeping();
 
 
 
 
-inline mozilla::Maybe<uint32_t> profiler_features_if_active() {
+[[nodiscard]] uint32_t profiler_get_available_features();
+
+
+
+
+[[nodiscard]] inline mozilla::Maybe<uint32_t> profiler_features_if_active() {
   return mozilla::profiler::detail::RacyFeatures::FeaturesIfActive();
 }
 
 
 
 
-inline mozilla::Maybe<uint32_t> profiler_features_if_active_and_unpaused() {
+[[nodiscard]] inline mozilla::Maybe<uint32_t>
+profiler_features_if_active_and_unpaused() {
   return mozilla::profiler::detail::RacyFeatures::FeaturesIfActiveAndUnpaused();
 }
 
@@ -361,21 +366,25 @@ inline mozilla::Maybe<uint32_t> profiler_features_if_active_and_unpaused() {
 
 
 
-bool profiler_feature_active(uint32_t aFeature);
+[[nodiscard]] bool profiler_feature_active(uint32_t aFeature);
 
 
-int profiler_current_process_id();
+[[nodiscard]] int profiler_current_process_id();
 
 
-int profiler_current_thread_id();
+[[nodiscard]] int profiler_current_thread_id();
 
+namespace mozilla::profiler::detail {
 
 
 extern int scProfilerMainThreadId;
+}  
 
-inline int profiler_main_thread_id() { return scProfilerMainThreadId; }
+[[nodiscard]] inline int profiler_main_thread_id() {
+  return mozilla::profiler::detail::scProfilerMainThreadId;
+}
 
-inline bool profiler_is_main_thread() {
+[[nodiscard]] inline bool profiler_is_main_thread() {
   return profiler_current_thread_id() == profiler_main_thread_id();
 }
 
@@ -383,7 +392,7 @@ inline bool profiler_is_main_thread() {
 
 
 
-bool profiler_is_locked_on_current_thread();
+[[nodiscard]] bool profiler_is_locked_on_current_thread();
 
 
 

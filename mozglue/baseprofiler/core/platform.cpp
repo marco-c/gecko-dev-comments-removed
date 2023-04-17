@@ -181,9 +181,11 @@ void PrintToConsole(const char* aFmt, ...) {
   va_end(args);
 }
 
+namespace detail {
 
 
 int scProfilerMainThreadId;
+}  
 
 constexpr static bool ValidateFeatures() {
   int expectedFeatureNumber = 0;
@@ -2569,7 +2571,7 @@ static Vector<const char*> SplitAtCommas(const char* aString,
 void profiler_init(void* aStackTop) {
   LOG("profiler_init");
 
-  scProfilerMainThreadId = profiler_current_thread_id();
+  detail::scProfilerMainThreadId = profiler_current_thread_id();
 
   VTUNE_INIT();
 

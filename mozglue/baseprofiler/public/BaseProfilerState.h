@@ -26,15 +26,12 @@
 
 #  define AUTO_PROFILER_STATS(name)
 
-namespace mozilla {
+namespace mozilla::baseprofiler {
 
-namespace baseprofiler {
+[[nodiscard]] inline int profiler_main_thread_id() { return 0; }
 
-inline int profiler_main_thread_id() { return 0; }
+[[nodiscard]] inline bool profiler_is_active() { return false; }
 
-inline bool profiler_is_active() { return false; }
-
-}  
 }  
 
 #else  
@@ -45,9 +42,7 @@ inline bool profiler_is_active() { return false; }
 #  include <stdint.h>
 #  include <string>
 
-namespace mozilla {
-
-namespace baseprofiler {
+namespace mozilla::baseprofiler {
 
 
 
@@ -208,16 +203,16 @@ class MOZ_RAII AutoProfilerStats {
           "other Firefox timers do not get affected")
 
 struct ProfilerFeature {
-#  define DECLARE(n_, str_, Name_, desc_)                     \
-    static constexpr uint32_t Name_ = (1u << n_);             \
-    static constexpr bool Has##Name_(uint32_t aFeatures) {    \
-      return aFeatures & Name_;                               \
-    }                                                         \
-    static constexpr void Set##Name_(uint32_t& aFeatures) {   \
-      aFeatures |= Name_;                                     \
-    }                                                         \
-    static constexpr void Clear##Name_(uint32_t& aFeatures) { \
-      aFeatures &= ~Name_;                                    \
+#  define DECLARE(n_, str_, Name_, desc_)                                \
+    static constexpr uint32_t Name_ = (1u << n_);                        \
+    [[nodiscard]] static constexpr bool Has##Name_(uint32_t aFeatures) { \
+      return aFeatures & Name_;                                          \
+    }                                                                    \
+    static constexpr void Set##Name_(uint32_t& aFeatures) {              \
+      aFeatures |= Name_;                                                \
+    }                                                                    \
+    static constexpr void Clear##Name_(uint32_t& aFeatures) {            \
+      aFeatures &= ~Name_;                                               \
     }
 
   
@@ -250,17 +245,17 @@ class RacyFeatures {
 
   MFBT_API static void SetSamplingUnpaused();
 
-  MFBT_API static bool IsActive();
+  [[nodiscard]] MFBT_API static bool IsActive();
 
-  MFBT_API static bool IsActiveWithFeature(uint32_t aFeature);
-
-  
-  
-  MFBT_API static bool IsActiveAndUnpaused();
+  [[nodiscard]] MFBT_API static bool IsActiveWithFeature(uint32_t aFeature);
 
   
   
-  MFBT_API static bool IsActiveAndSamplingUnpaused();
+  [[nodiscard]] MFBT_API static bool IsActiveAndUnpaused();
+
+  
+  
+  [[nodiscard]] MFBT_API static bool IsActiveAndSamplingUnpaused();
 
  private:
   static constexpr uint32_t Active = 1u << 31;
@@ -306,7 +301,7 @@ MFBT_API bool IsThreadBeingProfiled();
 
 
 
-inline bool profiler_is_active() {
+[[nodiscard]] inline bool profiler_is_active() {
   return baseprofiler::detail::RacyFeatures::IsActive();
 }
 
@@ -317,50 +312,54 @@ inline bool profiler_is_active() {
 
 
 
-inline bool profiler_can_accept_markers() {
+[[nodiscard]] inline bool profiler_can_accept_markers() {
   return baseprofiler::detail::RacyFeatures::IsActiveAndUnpaused();
 }
 
 
 
-inline bool profiler_thread_is_being_profiled() {
+[[nodiscard]] inline bool profiler_thread_is_being_profiled() {
   return profiler_is_active() && baseprofiler::detail::IsThreadBeingProfiled();
 }
 
 
-MFBT_API bool profiler_is_paused();
+[[nodiscard]] MFBT_API bool profiler_is_paused();
 
 
 
-MFBT_API bool profiler_is_sampling_paused();
+[[nodiscard]] MFBT_API bool profiler_is_sampling_paused();
 
 
-MFBT_API bool profiler_thread_is_sleeping();
-
-
-
-
-MFBT_API uint32_t profiler_get_available_features();
+[[nodiscard]] MFBT_API bool profiler_thread_is_sleeping();
 
 
 
 
-
-MFBT_API bool profiler_feature_active(uint32_t aFeature);
-
-
-MFBT_API int profiler_current_process_id();
+[[nodiscard]] MFBT_API uint32_t profiler_get_available_features();
 
 
-MFBT_API int profiler_current_thread_id();
 
+
+
+[[nodiscard]] MFBT_API bool profiler_feature_active(uint32_t aFeature);
+
+
+[[nodiscard]] MFBT_API int profiler_current_process_id();
+
+
+[[nodiscard]] MFBT_API int profiler_current_thread_id();
+
+namespace detail {
 
 
 extern MFBT_DATA int scProfilerMainThreadId;
+}  
 
-inline int profiler_main_thread_id() { return scProfilerMainThreadId; }
+[[nodiscard]] inline int profiler_main_thread_id() {
+  return detail::scProfilerMainThreadId;
+}
 
-inline bool profiler_is_main_thread() {
+[[nodiscard]] inline bool profiler_is_main_thread() {
   return profiler_current_thread_id() == profiler_main_thread_id();
 }
 
@@ -368,9 +367,8 @@ inline bool profiler_is_main_thread() {
 
 
 
-bool profiler_is_locked_on_current_thread();
+[[nodiscard]] bool profiler_is_locked_on_current_thread();
 
-}  
 }  
 
 #endif  
