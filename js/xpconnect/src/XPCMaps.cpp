@@ -17,7 +17,7 @@ using namespace mozilla;
 
 
 
-void JSObject2WrappedJSMap::UpdateWeakPointersAfterGC(JSTracer* trc) {
+void JSObject2WrappedJSMap::UpdateWeakPointersAfterGC() {
   
   
 
