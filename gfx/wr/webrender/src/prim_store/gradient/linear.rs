@@ -31,6 +31,8 @@ use super::{stops_and_min_alpha, GradientStopKey, GradientGpuBlockBuilder, apply
 use std::ops::{Deref, DerefMut};
 use std::mem::swap;
 
+pub const MAX_CACHED_SIZE: f32 = 1024.0;
+
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
@@ -378,18 +380,17 @@ impl From<LinearGradientKey> for LinearGradientTemplate {
         
         
         
-        const MAX_SIZE: f32 = 1024.0;
 
         let mut scale = vec2(1.0, 1.0);
 
-        if task_size.width > MAX_SIZE {
-            scale.x = task_size.width / MAX_SIZE;
-            task_size.width = MAX_SIZE;
+        if task_size.width > MAX_CACHED_SIZE {
+            scale.x = task_size.width / MAX_CACHED_SIZE;
+            task_size.width = MAX_CACHED_SIZE;
         }
 
-        if task_size.height > MAX_SIZE {
-            scale.y = task_size.height / MAX_SIZE;
-            task_size.height = MAX_SIZE;
+        if task_size.height > MAX_CACHED_SIZE {
+            scale.y = task_size.height / MAX_CACHED_SIZE;
+            task_size.height = MAX_CACHED_SIZE;
         }
 
         LinearGradientTemplate {
