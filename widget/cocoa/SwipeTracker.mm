@@ -89,7 +89,8 @@ bool SwipeTracker::ComputeSwipeSuccess() const {
 
 nsEventStatus SwipeTracker::ProcessEvent(const PanGestureInput& aEvent) {
   
-  if (!mEventsAreControllingSwipe) {
+  
+  if (!mEventsAreControllingSwipe || !SwipingInAllowedDirection()) {
     
     
     if (aEvent.mType == PanGestureInput::PANGESTURE_MAYSTART ||
@@ -100,9 +101,6 @@ nsEventStatus SwipeTracker::ProcessEvent(const PanGestureInput& aEvent) {
   }
 
   double delta = -aEvent.mPanDisplacement.x / mWidget.BackingScaleFactor() / kWholePagePixelSize;
-  if (!SwipingInAllowedDirection()) {
-    delta /= kRubberBandResistanceFactor;
-  }
   mGestureAmount = ClampToAllowedRange(mGestureAmount + delta);
   SendSwipeEvent(eSwipeGestureUpdate, 0, mGestureAmount, aEvent.mTimeStamp);
 
@@ -112,9 +110,8 @@ nsEventStatus SwipeTracker::ProcessEvent(const PanGestureInput& aEvent) {
     mLastEventTimeStamp = aEvent.mTimeStamp;
   } else {
     mEventsAreControllingSwipe = false;
-    bool didSwipeSucceed = SwipingInAllowedDirection() && ComputeSwipeSuccess();
     double targetValue = 0.0;
-    if (didSwipeSucceed) {
+    if (ComputeSwipeSuccess()) {
       
       
       SendSwipeEvent(eSwipeGesture, mSwipeDirection, 0.0, aEvent.mTimeStamp);
