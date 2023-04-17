@@ -227,18 +227,6 @@ class WinUtils {
 
 
 
-
-
-
-
-
-
-  static nsString GetPackageFamilyName();
-
-  
-
-
-
   static void Log(const char* fmt, ...);
   static void LogW(const wchar_t* fmt, ...);
 
