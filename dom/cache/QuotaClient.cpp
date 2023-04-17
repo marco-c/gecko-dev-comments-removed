@@ -108,9 +108,9 @@ Result<UsageInfo, nsresult> GetBodyUsage(nsIFile& aMorgueDir,
         
         QM_TRY(QM_OR_ELSE_LOG_VERBOSE_IF(
             
-            ToResult(BodyTraverseFiles(QuotaInfo{}, *bodyDir, getUsage,
-                                        true,
-                                        false)),
+            MOZ_TO_RESULT(BodyTraverseFiles(QuotaInfo{}, *bodyDir, getUsage,
+                                             true,
+                                             false)),
             
             IsSpecificError<NS_ERROR_FILE_FS_CORRUPTED>,
             

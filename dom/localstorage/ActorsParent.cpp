@@ -447,7 +447,7 @@ nsresult SetDefaultPragmas(mozIStorageConnection* aConnection) {
     
     QM_TRY(QM_OR_ELSE_WARN_IF(
         
-        ToResult(
+        MOZ_TO_RESULT(
             aConnection->SetGrowthIncrement(kSQLiteGrowthIncrement, ""_ns)),
         
         IsSpecificError<NS_ERROR_FILE_TOO_BIG>,
@@ -496,7 +496,7 @@ Result<nsCOMPtr<mozIStorageConnection>, nsresult> CreateStorageConnection(
             
             QM_TRY(QM_OR_ELSE_WARN_IF(
                 
-                ToResult(aUsageFile.Remove(false)),
+                MOZ_TO_RESULT(aUsageFile.Remove(false)),
                 
                 ([](const nsresult rv) {
                   return rv == NS_ERROR_FILE_NOT_FOUND ||
@@ -872,7 +872,7 @@ Result<nsCOMPtr<mozIStorageConnection>, nsresult> CreateShadowStorageConnection(
   
   QM_TRY(QM_OR_ELSE_WARN(
       
-      ToResult(StorageDBUpdater::Update(connection)),
+      MOZ_TO_RESULT(StorageDBUpdater::Update(connection)),
       
       ([&connection, &shadowFile, &ss](const nsresult) -> Result<Ok, nsresult> {
         QM_TRY(MOZ_TO_RESULT(connection->Close()));

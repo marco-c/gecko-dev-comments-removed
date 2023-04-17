@@ -4325,7 +4325,7 @@ nsresult QuotaManager::LoadQuota() {
   if (!loadQuotaFromCache ||
       !StaticPrefs::dom_quotaManager_loadQuotaFromCache() ||
       ![&LoadQuotaFromCache] {
-        QM_WARNONLY_TRY_UNWRAP(auto res, ToResult(LoadQuotaFromCache()));
+        QM_WARNONLY_TRY_UNWRAP(auto res, MOZ_TO_RESULT(LoadQuotaFromCache()));
         return static_cast<bool>(res);
       }()) {
     
@@ -4874,7 +4874,7 @@ nsresult QuotaManager::InitializeRepository(PersistenceType aPersistenceType,
 
                         QM_TRY(QM_OR_ELSE_WARN_IF(
                             
-                            ToResult(InitializeOrigin(
+                            MOZ_TO_RESULT(InitializeOrigin(
                                 aPersistenceType, metadata,
                                 metadata.mLastAccessTime, metadata.mPersisted,
                                 childDirectory)),
@@ -5753,7 +5753,7 @@ QuotaManager::CreateLocalStorageArchiveConnection(
   
   
   QM_TRY(
-      ToResult(StorageDBUpdater::Update(connection))
+      MOZ_TO_RESULT(StorageDBUpdater::Update(connection))
           .mapErr([](const nsresult rv) { return NS_ERROR_FILE_CORRUPTED; }));
 
   return connection;
@@ -7205,23 +7205,23 @@ Result<Ok, nsresult> QuotaManager::ArchiveOrigins(
                                          fullOriginMetadata.mOrigin));
 
     
-    QM_TRY_INSPECT(
-        const auto& moved,
-        QM_OR_ELSE_WARN_IF(
-            
-            ToResult(directory->MoveTo(fullOriginMetadata.mPersistenceType ==
-                                               PERSISTENCE_TYPE_DEFAULT
-                                           ? defaultStorageArchiveDir
-                                           : temporaryStorageArchiveDir,
-                                       u""_ns))
-                .map([](Ok) { return true; }),
-            
-            ([](const nsresult rv) {
-              return rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST ||
-                     rv == NS_ERROR_FILE_NOT_FOUND;
-            }),
-            
-            ErrToOk<false>));
+    QM_TRY_INSPECT(const auto& moved,
+                   QM_OR_ELSE_WARN_IF(
+                       
+                       MOZ_TO_RESULT(directory->MoveTo(
+                                         fullOriginMetadata.mPersistenceType ==
+                                                 PERSISTENCE_TYPE_DEFAULT
+                                             ? defaultStorageArchiveDir
+                                             : temporaryStorageArchiveDir,
+                                         u""_ns))
+                           .map([](Ok) { return true; }),
+                       
+                       ([](const nsresult rv) {
+                         return rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST ||
+                                rv == NS_ERROR_FILE_NOT_FOUND;
+                       }),
+                       
+                       ErrToOk<false>));
 
     if (moved) {
       RemoveQuotaForOrigin(fullOriginMetadata.mPersistenceType,
@@ -7352,7 +7352,7 @@ nsresult ClientUsageArray::Deserialize(const nsACString& aText) {
 
     nsresult rv;
     const uint64_t usage = Substring(token, 1).ToInteger(&rv);
-    QM_TRY(ToResult(rv));
+    QM_TRY(MOZ_TO_RESULT(rv));
 
     ElementAt(clientType) = Some(usage);
   }
@@ -10928,7 +10928,7 @@ nsresult CreateOrUpgradeDirectoryMetadataHelper::MaybeUpgradeOriginDirectory(
     
     QM_TRY(QM_OR_ELSE_WARN_IF(
         
-        ToResult(idbDirectory->Create(nsIFile::DIRECTORY_TYPE, 0755)),
+        MOZ_TO_RESULT(idbDirectory->Create(nsIFile::DIRECTORY_TYPE, 0755)),
         
         IsSpecificError<NS_ERROR_FILE_ALREADY_EXISTS>,
         
@@ -10981,8 +10981,8 @@ nsresult CreateOrUpgradeDirectoryMetadataHelper::PrepareOriginDirectory(
 
     QM_WARNONLY_TRY_UNWRAP(
         const auto maybeDirectoryMetadata,
-        ToResult(GetDirectoryMetadata(aOriginProps.mDirectory.get(), timestamp,
-                                      group, origin, isApp)));
+        MOZ_TO_RESULT(GetDirectoryMetadata(aOriginProps.mDirectory.get(),
+                                           timestamp, group, origin, isApp)));
     if (!maybeDirectoryMetadata) {
       aOriginProps.mTimestamp = GetOriginLastModifiedTime(aOriginProps);
       aOriginProps.mNeedsRestore = true;
@@ -11090,8 +11090,8 @@ nsresult UpgradeStorageFrom0_0To1_0Helper::PrepareOriginDirectory(
 
   QM_WARNONLY_TRY_UNWRAP(
       const auto maybeDirectoryMetadata,
-      ToResult(GetDirectoryMetadata(aOriginProps.mDirectory.get(), timestamp,
-                                    group, origin, isApp)));
+      MOZ_TO_RESULT(GetDirectoryMetadata(aOriginProps.mDirectory.get(),
+                                         timestamp, group, origin, isApp)));
   if (!maybeDirectoryMetadata || isApp.IsNull()) {
     aOriginProps.mTimestamp = GetOriginLastModifiedTime(aOriginProps);
     aOriginProps.mNeedsRestore = true;
@@ -11209,17 +11209,17 @@ nsresult UpgradeStorageFrom1_0To2_0Helper::PrepareOriginDirectory(
   Nullable<bool> isApp;
   QM_WARNONLY_TRY_UNWRAP(
       const auto maybeDirectoryMetadata,
-      ToResult(GetDirectoryMetadata(aOriginProps.mDirectory.get(), timestamp,
-                                    group, origin, isApp)));
+      MOZ_TO_RESULT(GetDirectoryMetadata(aOriginProps.mDirectory.get(),
+                                         timestamp, group, origin, isApp)));
   if (!maybeDirectoryMetadata || isApp.IsNull()) {
     aOriginProps.mNeedsRestore = true;
   }
 
   nsCString suffix;
-  QM_WARNONLY_TRY_UNWRAP(
-      const auto maybeDirectoryMetadata2,
-      ToResult(GetDirectoryMetadata2(aOriginProps.mDirectory.get(), timestamp,
-                                     suffix, group, origin, isApp.SetValue())));
+  QM_WARNONLY_TRY_UNWRAP(const auto maybeDirectoryMetadata2,
+                         MOZ_TO_RESULT(GetDirectoryMetadata2(
+                             aOriginProps.mDirectory.get(), timestamp, suffix,
+                             group, origin, isApp.SetValue())));
   if (!maybeDirectoryMetadata2) {
     aOriginProps.mTimestamp = GetOriginLastModifiedTime(aOriginProps);
     aOriginProps.mNeedsRestore2 = true;
@@ -11271,17 +11271,17 @@ nsresult UpgradeStorageFrom2_0To2_1Helper::PrepareOriginDirectory(
   Nullable<bool> isApp;
   QM_WARNONLY_TRY_UNWRAP(
       const auto maybeDirectoryMetadata,
-      ToResult(GetDirectoryMetadata(aOriginProps.mDirectory.get(), timestamp,
-                                    group, origin, isApp)));
+      MOZ_TO_RESULT(GetDirectoryMetadata(aOriginProps.mDirectory.get(),
+                                         timestamp, group, origin, isApp)));
   if (!maybeDirectoryMetadata || isApp.IsNull()) {
     aOriginProps.mNeedsRestore = true;
   }
 
   nsCString suffix;
-  QM_WARNONLY_TRY_UNWRAP(
-      const auto maybeDirectoryMetadata2,
-      ToResult(GetDirectoryMetadata2(aOriginProps.mDirectory.get(), timestamp,
-                                     suffix, group, origin, isApp.SetValue())));
+  QM_WARNONLY_TRY_UNWRAP(const auto maybeDirectoryMetadata2,
+                         MOZ_TO_RESULT(GetDirectoryMetadata2(
+                             aOriginProps.mDirectory.get(), timestamp, suffix,
+                             group, origin, isApp.SetValue())));
   if (!maybeDirectoryMetadata2) {
     aOriginProps.mTimestamp = GetOriginLastModifiedTime(aOriginProps);
     aOriginProps.mNeedsRestore2 = true;
@@ -11326,17 +11326,17 @@ nsresult UpgradeStorageFrom2_1To2_2Helper::PrepareOriginDirectory(
   Nullable<bool> isApp;
   QM_WARNONLY_TRY_UNWRAP(
       const auto maybeDirectoryMetadata,
-      ToResult(GetDirectoryMetadata(aOriginProps.mDirectory.get(), timestamp,
-                                    group, origin, isApp)));
+      MOZ_TO_RESULT(GetDirectoryMetadata(aOriginProps.mDirectory.get(),
+                                         timestamp, group, origin, isApp)));
   if (!maybeDirectoryMetadata || isApp.IsNull()) {
     aOriginProps.mNeedsRestore = true;
   }
 
   nsCString suffix;
-  QM_WARNONLY_TRY_UNWRAP(
-      const auto maybeDirectoryMetadata2,
-      ToResult(GetDirectoryMetadata2(aOriginProps.mDirectory.get(), timestamp,
-                                     suffix, group, origin, isApp.SetValue())));
+  QM_WARNONLY_TRY_UNWRAP(const auto maybeDirectoryMetadata2,
+                         MOZ_TO_RESULT(GetDirectoryMetadata2(
+                             aOriginProps.mDirectory.get(), timestamp, suffix,
+                             group, origin, isApp.SetValue())));
   if (!maybeDirectoryMetadata2) {
     aOriginProps.mTimestamp = GetOriginLastModifiedTime(aOriginProps);
     aOriginProps.mNeedsRestore2 = true;

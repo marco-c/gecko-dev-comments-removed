@@ -86,7 +86,7 @@ Result<NotNull<nsCOMPtr<nsIFile>>, nsresult> BodyGetCacheDir(nsIFile& aBaseDir,
   
   QM_TRY(QM_OR_ELSE_LOG_VERBOSE_IF(
       
-      ToResult(cacheDir->Create(nsIFile::DIRECTORY_TYPE, 0755)),
+      MOZ_TO_RESULT(cacheDir->Create(nsIFile::DIRECTORY_TYPE, 0755)),
       
       IsSpecificError<NS_ERROR_FILE_ALREADY_EXISTS>,
       
@@ -107,7 +107,7 @@ nsresult BodyCreateDir(nsIFile& aBaseDir) {
   
   QM_TRY(QM_OR_ELSE_LOG_VERBOSE_IF(
       
-      ToResult(bodyDir->Create(nsIFile::DIRECTORY_TYPE, 0755)),
+      MOZ_TO_RESULT(bodyDir->Create(nsIFile::DIRECTORY_TYPE, 0755)),
       
       IsSpecificError<NS_ERROR_FILE_ALREADY_EXISTS>,
       
@@ -391,10 +391,10 @@ nsresult BodyDeleteOrphanedFiles(const QuotaInfo& aQuotaInfo, nsIFile& aBaseDir,
             
             QM_TRY(QM_OR_ELSE_LOG_VERBOSE_IF(
                 
-                ToResult(BodyTraverseFiles(aQuotaInfo, *subdir,
-                                           removeOrphanedFiles,
-                                            true,
-                                            true)),
+                MOZ_TO_RESULT(BodyTraverseFiles(aQuotaInfo, *subdir,
+                                                removeOrphanedFiles,
+                                                 true,
+                                                 true)),
                 
                 IsSpecificError<NS_ERROR_FILE_FS_CORRUPTED>,
                 
@@ -454,7 +454,7 @@ nsresult CreateMarkerFile(const QuotaInfo& aQuotaInfo) {
   
   QM_TRY(QM_OR_ELSE_LOG_VERBOSE_IF(
       
-      ToResult(marker->Create(nsIFile::NORMAL_FILE_TYPE, 0644)),
+      MOZ_TO_RESULT(marker->Create(nsIFile::NORMAL_FILE_TYPE, 0644)),
       
       IsSpecificError<NS_ERROR_FILE_ALREADY_EXISTS>,
       
@@ -548,7 +548,7 @@ nsresult RemoveNsIFile(const QuotaInfo& aQuotaInfo, nsIFile& aFile,
 
   QM_TRY(QM_OR_ELSE_WARN_IF(
       
-      ToResult(aFile.Remove( false)),
+      MOZ_TO_RESULT(aFile.Remove( false)),
       
       IsFileNotFoundError,
       
@@ -752,7 +752,7 @@ nsresult DirectoryPaddingDeleteFile(nsIFile& aBaseDir,
 
   QM_TRY(QM_OR_ELSE_WARN_IF(
       
-      ToResult(file->Remove( false)),
+      MOZ_TO_RESULT(file->Remove( false)),
       
       IsFileNotFoundError,
       

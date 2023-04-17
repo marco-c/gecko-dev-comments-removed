@@ -93,7 +93,7 @@ class CacheQuotaClient final : public quota::Client {
     
     QM_TRY(MOZ_TO_RESULT(aCommitHook()));
 
-    QM_WARNONLY_TRY(ToResult(DirectoryPaddingFinalizeWrite(aBaseDir)),
+    QM_WARNONLY_TRY(MOZ_TO_RESULT(DirectoryPaddingFinalizeWrite(aBaseDir)),
                     ([&aBaseDir](const nsresult) {
                       
                       QM_WARNONLY_TRY(QM_TO_RESULT(DirectoryPaddingDeleteFile(
