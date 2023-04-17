@@ -314,7 +314,8 @@ void DnsAndConnectSocket::SetupBackupTimer() {
 
   
   
-  if (timeout && !mSpeculative && !mIsHttp3) {
+  if (timeout && (!mSpeculative || mConnInfo->GetFallbackConnection()) &&
+      !mIsHttp3) {
     
     
     
