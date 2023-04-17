@@ -1309,7 +1309,6 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 
 
-
 const vendored = {
   classnames: _classnames.default,
   "devtools-splitter": _devtoolsSplitter.default,

@@ -40,6 +40,10 @@ add_task(async function() {
     { identifier: "obj.a.b:", value: '"c"' },
   ]);
 
+  await checkInlinePreview(dbg, "classProperties", [
+    { identifier: "i:", value: "2" },
+  ]);
+
   
   invokeInTab("btnClick");
   await checkInspectorIcon(dbg);

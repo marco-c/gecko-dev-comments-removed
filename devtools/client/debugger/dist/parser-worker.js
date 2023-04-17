@@ -8314,12 +8314,12 @@ const sourceOptions = {
   generated: {
     sourceType: "unambiguous",
     tokens: true,
-    plugins: ["classProperties", "objectRestSpread", "optionalChaining", "nullishCoalescingOperator"]
+    plugins: ["classPrivateProperties", "classPrivateMethods", "classProperties", "objectRestSpread", "optionalChaining", "nullishCoalescingOperator"]
   },
   original: {
     sourceType: "unambiguous",
     tokens: true,
-    plugins: ["jsx", "flow", "doExpressions", "optionalChaining", "nullishCoalescingOperator", "decorators-legacy", "objectRestSpread", "classProperties", "exportDefaultFrom", "exportNamespaceFrom", "asyncGenerators", "functionBind", "functionSent", "dynamicImport", "react-jsx"]
+    plugins: ["jsx", "flow", "doExpressions", "optionalChaining", "nullishCoalescingOperator", "decorators-legacy", "objectRestSpread", "classPrivateProperties", "classPrivateMethods", "classProperties", "exportDefaultFrom", "exportNamespaceFrom", "asyncGenerators", "functionBind", "functionSent", "dynamicImport", "react-jsx"]
   }
 };
 
@@ -8391,7 +8391,7 @@ function parseVueScript(code) {
 function parseConsoleScript(text, opts) {
   try {
     return _parse(text, {
-      plugins: ["objectRestSpread", "dynamicImport", "nullishCoalescingOperator", "optionalChaining"],
+      plugins: ["classPrivateProperties", "classPrivateMethods", "objectRestSpread", "dynamicImport", "nullishCoalescingOperator", "optionalChaining"],
       ...opts,
       allowAwaitOutsideFunction: true
     });
@@ -16197,6 +16197,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = createSimplePath;
 
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 
 
 
@@ -16215,8 +16217,17 @@ function createSimplePath(ancestors) {
 
 
 
+
 class SimplePath {
   constructor(ancestors, index = ancestors.length - 1) {
+    _defineProperty(this, "_index", void 0);
+
+    _defineProperty(this, "_ancestors", void 0);
+
+    _defineProperty(this, "_ancestor", void 0);
+
+    _defineProperty(this, "_parentPath", void 0);
+
     if (index < 0 || index >= ancestors.length) {
       console.error(ancestors);
       throw new Error("Created invalid path");
@@ -30217,7 +30228,6 @@ function findScopes(scopes, location) {
 }
 
 function compareLocations(a, b) {
-  
   
   
   return a.line == b.line ? a.column - b.column : a.line - b.line;
@@ -44872,6 +44882,29 @@ function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -1223,7 +1223,11 @@ exports.isNodeTest = isNodeTest;
 
 
 function isNode() {
-  return process && process.release && process.release.name == "node";
+  try {
+    return process.release.name == "node";
+  } catch (e) {
+    return false;
+  }
 }
 
 function isNodeTest() {

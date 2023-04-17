@@ -4534,10 +4534,6 @@ const {
 } = __webpack_require__(922);
 
 const {
-  SourceMapConsumer
-} = __webpack_require__(608);
-
-const {
   convertToJSON
 } = __webpack_require__(610);
 
@@ -4853,6 +4849,8 @@ module.exports = {
  924:
  (function(module, exports, __webpack_require__) {
 
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 
 
 
@@ -5031,6 +5029,10 @@ function filterScopes(items, pc, lastItem, index) {
 
 class XScope {
   constructor(xScopeData, sourceMapContext) {
+    _defineProperty(this, "xScope", void 0);
+
+    _defineProperty(this, "sourceMapContext", void 0);
+
     this.xScope = xScopeData;
     this.sourceMapContext = sourceMapContext;
   }
@@ -5094,6 +5096,8 @@ module.exports = {
  925:
  (function(module, exports) {
 
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 
 
 
@@ -5103,6 +5107,8 @@ module.exports = {
 
 class Value {
   constructor(val) {
+    _defineProperty(this, "val", void 0);
+
     this.val = val;
   }
 
