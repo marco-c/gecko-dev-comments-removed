@@ -190,7 +190,6 @@ nsJARChannel::~nsJARChannel() {
   }
 
   
-  NS_ReleaseOnMainThread("nsJARChannel::mLoadInfo", mLoadInfo.forget());
   NS_ReleaseOnMainThread("nsJARChannel::mCallbacks", mCallbacks.forget());
   NS_ReleaseOnMainThread("nsJARChannel::mProgressSink", mProgressSink.forget());
   NS_ReleaseOnMainThread("nsJARChannel::mLoadGroup", mLoadGroup.forget());
