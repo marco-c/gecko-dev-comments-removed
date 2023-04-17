@@ -214,6 +214,15 @@ interface nsIRequest : nsISupports
 
 
 
+
+
+
+    const long LOAD_RECORD_START_REQUEST_DELAY = 1 << 6;
+
+    
+
+
+
     
 
 

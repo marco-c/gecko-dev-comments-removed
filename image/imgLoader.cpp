@@ -2301,6 +2301,9 @@ nsresult imgLoader::LoadImage(
     
     requestFlags |= nsIRequest::LOAD_BACKGROUND;
   }
+  if (aLoadFlags & nsIRequest::LOAD_RECORD_START_REQUEST_DELAY) {
+    requestFlags |= nsIRequest::LOAD_RECORD_START_REQUEST_DELAY;
+  }
 
   if (aLinkPreload) {
     
