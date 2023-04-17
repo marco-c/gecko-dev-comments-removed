@@ -858,27 +858,11 @@ class NotNull;
 
 
 
-
-
-
-
-#define QM_OR_ELSE_WARN(expr, orElseFunc)                         \
-  (expr).orElse([&](const auto& firstRes) {                       \
-    mozilla::dom::quota::QM_HANDLE_ERROR(                         \
-        #expr, firstRes, mozilla::dom::quota::Severity::Warning); \
-    return orElseFunc(firstRes);                                  \
-  })
-
-
-
-
-
-
-#define QM_OR_ELSE_NOTE(expr, orElseFunc)                                      \
-  (expr).orElse([&](const auto& firstRes) {                                    \
-    mozilla::dom::quota::QM_HANDLE_ERROR(#expr, firstRes,                      \
-                                         mozilla::dom::quota::Severity::Note); \
-    return orElseFunc(firstRes);                                               \
+#define QM_OR_ELSE_REPORT(severity, expr, orElseFunc)              \
+  (expr).orElse([&](const auto& firstRes) {                        \
+    mozilla::dom::quota::QM_HANDLE_ERROR(                          \
+        #expr, firstRes, mozilla::dom::quota::Severity::severity); \
+    return orElseFunc(firstRes);                                   \
   })
 
 
@@ -889,13 +873,25 @@ class NotNull;
 
 
 
+#define QM_OR_ELSE_WARN(...) QM_OR_ELSE_REPORT(Warning, __VA_ARGS__)
 
-#define QM_OR_ELSE_LOG(expr, orElseFunc)                                      \
-  (expr).orElse([&](const auto& firstRes) {                                   \
-    mozilla::dom::quota::QM_HANDLE_ERROR(#expr, firstRes,                     \
-                                         mozilla::dom::quota::Severity::Log); \
-    return orElseFunc(firstRes);                                              \
-  })
+
+
+
+
+
+#define QM_OR_ELSE_NOTE(...) QM_OR_ELSE_REPORT(Note, __VA_ARGS__)
+
+
+
+
+
+
+
+
+
+
+#define QM_OR_ELSE_LOG(...) QM_OR_ELSE_REPORT(Log, __VA_ARGS__)
 
 
 #ifdef NIGHTLY_BUILD
