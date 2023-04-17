@@ -26,7 +26,7 @@ add_task(async function test() {
   
   await openPopupAndAssertUrlForPreset({
     preset: "web-developer",
-    expectedUrl: FRONTEND_BASE_URL + "?view=active-tab",
+    expectedUrl: FRONTEND_BASE_URL + "?view=active-tab&implementation=js",
   });
 });
 

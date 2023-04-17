@@ -97,10 +97,12 @@ function receiveProfile(profile, profilerViewMode, getSymbolTableCallback) {
   
   
   
-  const viewModeQueryString =
-    profilerViewMode !== undefined && profilerViewMode !== "full"
-      ? `?view=${profilerViewMode}`
-      : "";
+  let viewModeQueryString = "";
+  if (profilerViewMode === "active-tab") {
+    viewModeQueryString = "?view=active-tab&implementation=js";
+  } else if (profilerViewMode !== undefined && profilerViewMode !== "full") {
+    viewModeQueryString = `?view=${profilerViewMode}`;
+  }
 
   const tab = browser.addWebTab(
     `${baseUrl}${baseUrlPath}${viewModeQueryString}`,
