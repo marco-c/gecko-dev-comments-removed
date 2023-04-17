@@ -3428,6 +3428,21 @@ void AsyncPanZoomController::OverscrollForPanning(
   OverscrollBy(aOverscroll);
 }
 
+ScrollDirections AsyncPanZoomController::GetOverscrollableDirections() const {
+  ScrollDirections result;
+
+  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  if (mX.CanScroll() && mX.OverscrollBehaviorAllowsOverscrollEffect()) {
+    result += ScrollDirection::eHorizontal;
+  }
+
+  if (mY.CanScroll() && mY.OverscrollBehaviorAllowsOverscrollEffect()) {
+    result += ScrollDirection::eVertical;
+  }
+
+  return result;
+}
+
 void AsyncPanZoomController::OverscrollBy(ParentLayerPoint& aOverscroll) {
   if (!StaticPrefs::apz_overscroll_enabled()) {
     return;
@@ -3436,15 +3451,14 @@ void AsyncPanZoomController::OverscrollBy(ParentLayerPoint& aOverscroll) {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
   
   
-  bool xCanScroll = mX.CanScroll();
-  bool yCanScroll = mY.CanScroll();
+  ScrollDirections overscrollableDirections = GetOverscrollableDirections();
   bool xConsumed = FuzzyEqualsAdditive(aOverscroll.x, 0.0f, COORDINATE_EPSILON);
   bool yConsumed = FuzzyEqualsAdditive(aOverscroll.y, 0.0f, COORDINATE_EPSILON);
 
-  bool shouldOverscrollX =
-      xCanScroll && !xConsumed && mX.OverscrollBehaviorAllowsOverscrollEffect();
-  bool shouldOverscrollY =
-      yCanScroll && !yConsumed && mY.OverscrollBehaviorAllowsOverscrollEffect();
+  bool shouldOverscrollX = !xConsumed && overscrollableDirections.contains(
+                                             ScrollDirection::eHorizontal);
+  bool shouldOverscrollY = !yConsumed && overscrollableDirections.contains(
+                                             ScrollDirection::eVertical);
 
   mOverscrollEffect->ConsumeOverscroll(aOverscroll, shouldOverscrollX,
                                        shouldOverscrollY);

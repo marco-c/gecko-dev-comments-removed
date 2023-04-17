@@ -1449,6 +1449,9 @@ class AsyncPanZoomController {
   void StartOverscrollAnimation(const ParentLayerPoint& aVelocity);
 
   
+  ScrollDirections GetOverscrollableDirections() const;
+
+  
   
   void SmoothScrollTo(const CSSPoint& aDestination,
                       const ScrollOrigin& aOrigin);
