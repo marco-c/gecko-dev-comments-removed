@@ -1,9 +1,7 @@
-from six import ensure_text
-
 MYPY = False
 if MYPY:
     
-    from typing import AnyStr, Optional, Text
+    from typing import Optional, Text
 
 
 class GitHubChecksOutputter(object):
@@ -21,10 +19,9 @@ class GitHubChecksOutputter(object):
 
     def output(self, line):
         
-        text = ensure_text(line)
         with open(self.path, mode="a") as f:
-            f.write(text)
-            f.write(u"\n")
+            f.write(line)
+            f.write("\n")
 
 
 __outputter = None
