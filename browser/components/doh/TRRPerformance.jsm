@@ -59,11 +59,6 @@ XPCOMUtils.defineLazyServiceGetter(
 );
 
 
-const kTRRs = JSON.parse(
-  Services.prefs.getDefaultBranch("").getCharPref("network.trr.resolvers")
-).map(trr => trr.url);
-
-
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
   "kCanonicalDomain",
@@ -154,8 +149,9 @@ DNSLookup.prototype.QueryInterface = ChromeUtils.generateQI(["nsIDNSListener"]);
 
 
 class LookupAggregator {
-  constructor(onCompleteCallback) {
+  constructor(onCompleteCallback, trrList) {
     this.onCompleteCallback = onCompleteCallback;
+    this.trrList = trrList;
     this.aborted = false;
     this.networkUnstable = false;
     this.captivePortal = false;
@@ -166,7 +162,7 @@ class LookupAggregator {
       this.domains.push(null);
     }
     this.domains.push(...kPopularDomains);
-    this.totalLookups = kTRRs.length * this.domains.length;
+    this.totalLookups = this.trrList.length * this.domains.length;
     this.completedLookups = 0;
     this.results = [];
   }
@@ -178,7 +174,7 @@ class LookupAggregator {
     }
 
     this._ran = true;
-    for (let trr of kTRRs) {
+    for (let trr of this.trrList) {
       for (let domain of this.domains) {
         new DNSLookup(
           domain,
@@ -256,11 +252,12 @@ class LookupAggregator {
 
 
 class TRRRacer {
-  constructor(onCompleteCallback) {
+  constructor(onCompleteCallback, trrList) {
     this._aggregator = null;
     this._retryCount = 0;
     this._complete = false;
     this._onCompleteCallback = onCompleteCallback;
+    this._trrList = trrList;
   }
 
   run() {
@@ -365,7 +362,10 @@ class TRRRacer {
   }
 
   _runNewAggregator() {
-    this._aggregator = new LookupAggregator(() => this.onComplete());
+    this._aggregator = new LookupAggregator(
+      () => this.onComplete(),
+      this._trrList
+    );
     this._aggregator.run();
     this._retryCount++;
   }
