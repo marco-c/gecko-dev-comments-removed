@@ -11,6 +11,8 @@ namespace mojo {
 namespace core {
 namespace ports {
 
+class UserMessageEvent;
+
 
 
 
@@ -39,7 +41,11 @@ class UserMessage {
   
   
   
-  virtual bool WillBeRoutedExternally();
+  
+  
+  
+  
+  virtual bool WillBeRoutedExternally(UserMessageEvent& event);
 
   
   
