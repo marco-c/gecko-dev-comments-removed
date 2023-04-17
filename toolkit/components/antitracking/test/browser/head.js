@@ -107,8 +107,23 @@ function setCookieBehaviorPref(cookieBehavior, runInPrivateWindow) {
   
   if (runInPrivateWindow) {
     cbPrivate = cookieBehavior;
-    cbRegular =
-      cookieBehavior == BEHAVIOR_ACCEPT ? BEHAVIOR_REJECT : BEHAVIOR_ACCEPT;
+
+    let defaultPrefBranch = Services.prefs.getDefaultBranch("");
+    
+    
+    
+    
+    
+    
+    if (
+      cookieBehavior ==
+      defaultPrefBranch.getIntPref("network.cookie.cookieBehavior.pbmode")
+    ) {
+      cbRegular = defaultPrefBranch.getIntPref("network.cookie.cookieBehavior");
+    } else {
+      cbRegular =
+        cookieBehavior == BEHAVIOR_ACCEPT ? BEHAVIOR_REJECT : BEHAVIOR_ACCEPT;
+    }
   } else {
     cbRegular = cookieBehavior;
     cbPrivate =

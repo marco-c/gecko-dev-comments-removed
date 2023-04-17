@@ -85,10 +85,21 @@ add_task(async function() {
         TEST_TOP_PAGE
       );
 
+      let expectPBMCookieBehavior = PBMCookieBehavior;
+
+      
+      
+      if (
+        Services.prefs.prefHasUserValue("network.cookie.cookieBehavior") &&
+        !Services.prefs.prefHasUserValue("network.cookie.cookieBehavior.pbmode")
+      ) {
+        expectPBMCookieBehavior = regularCookieBehavior;
+      }
+
       info(
         " Verify if the tab in private window has the expected cookieBehavior."
       );
-      await verifyCookieBehavior(tab.linkedBrowser, PBMCookieBehavior);
+      await verifyCookieBehavior(tab.linkedBrowser, expectPBMCookieBehavior);
       BrowserTestUtils.removeTab(tab);
       await BrowserTestUtils.closeWindow(pb_win);
     }
