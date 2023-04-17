@@ -1179,6 +1179,12 @@ class NativeObject : public JSObject {
     fixedSlots()[slot].init(this, HeapSlot::Slot, slot, value);
   }
 
+  template <typename T>
+  T* maybePtrFromReservedSlot(uint32_t slot) const {
+    Value v = getReservedSlot(slot);
+    return v.isUndefined() ? nullptr : static_cast<T*>(v.toPrivate());
+  }
+
   
 
 
