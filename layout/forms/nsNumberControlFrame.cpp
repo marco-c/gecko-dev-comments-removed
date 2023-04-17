@@ -17,6 +17,7 @@
 #include "nsContentUtils.h"
 #include "nsContentCreatorFunctions.h"
 #include "nsCSSPseudoElements.h"
+#include "nsLayoutUtils.h"
 
 #ifdef ACCESSIBILITY
 #  include "mozilla/a11y/AccTypes.h"
@@ -63,6 +64,8 @@ nsresult nsNumberControlFrame::CreateAnonymousContent(
   
   
 
+  nsTextControlFrame::CreateAnonymousContent(aElements);
+
   
   
   if (StyleDisplay()->EffectiveAppearance() != StyleAppearance::Textfield) {
@@ -75,12 +78,8 @@ nsresult nsNumberControlFrame::CreateAnonymousContent(
     
     mSpinDown = MakeAnonElement(PseudoStyleType::mozNumberSpinDown, mSpinBox);
 
-    
-    
     aElements.AppendElement(mSpinBox);
   }
-
-  nsTextControlFrame::CreateAnonymousContent(aElements);
 
   return NS_OK;
 }
@@ -164,10 +163,10 @@ bool nsNumberControlFrame::SpinnerDownButtonIsDepressed() const {
 
 void nsNumberControlFrame::AppendAnonymousContentTo(
     nsTArray<nsIContent*>& aElements, uint32_t aFilter) {
+  nsTextControlFrame::AppendAnonymousContentTo(aElements, aFilter);
   if (mSpinBox) {
     aElements.AppendElement(mSpinBox);
   }
-  nsTextControlFrame::AppendAnonymousContentTo(aElements, aFilter);
 }
 
 #ifdef ACCESSIBILITY

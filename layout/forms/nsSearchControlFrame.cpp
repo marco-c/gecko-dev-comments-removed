@@ -59,26 +59,26 @@ nsresult nsSearchControlFrame::CreateAnonymousContent(
   
   
 
+  nsTextControlFrame::CreateAnonymousContent(aElements);
+
   
   mClearButton = MakeAnonElement(PseudoStyleType::mozSearchClearButton, nullptr,
                                  nsGkAtoms::button);
 
-  aElements.AppendElement(mClearButton);
-
-  nsTextControlFrame::CreateAnonymousContent(aElements);
-
   
   UpdateClearButtonState();
+
+  aElements.AppendElement(mClearButton);
 
   return NS_OK;
 }
 
 void nsSearchControlFrame::AppendAnonymousContentTo(
     nsTArray<nsIContent*>& aElements, uint32_t aFilter) {
+  nsTextControlFrame::AppendAnonymousContentTo(aElements, aFilter);
   if (mClearButton) {
     aElements.AppendElement(mClearButton);
   }
-  nsTextControlFrame::AppendAnonymousContentTo(aElements, aFilter);
 }
 
 void nsSearchControlFrame::UpdateClearButtonState() {
