@@ -169,17 +169,7 @@ void IdleTaskRunner::Schedule(bool aAllowIdleDispatch) {
   mDeadline = TimeStamp();
 
   TimeStamp now = TimeStamp::Now();
-  bool useRefreshDriver = false;
-  if (now >= mStartTime) {
-    
-    
-    useRefreshDriver = (nsRefreshDriver::GetIdleDeadlineHint(now) != now);
-  } else {
-    NS_WARNING_ASSERTION(!aAllowIdleDispatch,
-                         "early callback, or time went backwards");
-  }
-
-  if (useRefreshDriver) {
+  if (nsRefreshDriver::IsRegularRateTimerTicking()) {
     if (!mTask) {
       
       mTask = new IdleTaskRunnerTask(this);
@@ -189,7 +179,6 @@ void IdleTaskRunner::Schedule(bool aAllowIdleDispatch) {
     
     SetTimerInternal(mMaxDelay);
   } else {
-    
     if (aAllowIdleDispatch) {
       SetTimerInternal(mMaxDelay);
       if (!mTask) {
