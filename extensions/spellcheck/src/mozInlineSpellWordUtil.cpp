@@ -232,7 +232,7 @@ nsresult mozInlineSpellWordUtil::SetPositionAndEnd(nsINode* aPositionNode,
     }
   }
 
-  InvalidateWords();
+  mSoftText.Invalidate();
 
   if (!IsSpellCheckingTextNode(aPositionNode)) {
     
@@ -301,7 +301,7 @@ nsresult mozInlineSpellWordUtil::GetRangeForWord(nsINode* aWordNode,
   NodeOffset pt(aWordNode, aWordOffset);
 
   if (!mSoftText.mIsValid || pt != mSoftText.mBegin || pt != mSoftText.mEnd) {
-    InvalidateWords();
+    mSoftText.Invalidate();
     mSoftText.mBegin = mSoftText.mEnd = pt;
     nsresult rv = EnsureWords();
     if (NS_FAILED(rv)) {

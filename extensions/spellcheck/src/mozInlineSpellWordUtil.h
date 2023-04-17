@@ -135,6 +135,8 @@ class MOZ_STACK_CLASS mozInlineSpellWordUtil {
   };
 
   struct SoftText {
+    void Invalidate() { mIsValid = false; }
+
     
     nsString mValue;
 
@@ -186,7 +188,6 @@ class MOZ_STACK_CLASS mozInlineSpellWordUtil {
   RealWords mRealWords;
   int32_t mNextWordIndex;
 
-  void InvalidateWords() { mSoftText.mIsValid = false; }
   nsresult EnsureWords();
 
   int32_t MapDOMPositionToSoftTextOffset(NodeOffset aNodeOffset) const;
