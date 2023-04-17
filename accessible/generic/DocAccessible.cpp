@@ -369,9 +369,24 @@ void DocAccessible::Init() {
   
   
   
+  
+  
+  
+  
+  
+  
+  
   if (mDocumentNode->GetReadyStateEnum() ==
       dom::Document::READYSTATE_COMPLETE) {
     mLoadState |= eDOMLoaded;
+    
+    
+    
+    
+    
+    
+    
+    mLoadEventType = nsIAccessibleEvent::EVENT_DOCUMENT_LOAD_COMPLETE;
   }
 
   AddEventListeners();
