@@ -52,12 +52,6 @@ class NodePicker {
   _isEventAllowed({ target, view }) {
     
     
-    if (view instanceof Ci.nsIDOMChromeWindow) {
-      return true;
-    }
-
-    
-    
     
     
     
@@ -65,6 +59,12 @@ class NodePicker {
     
     if (isRemoteBrowserElement(target)) {
       return false;
+    }
+
+    
+    
+    if (view instanceof Ci.nsIDOMChromeWindow) {
+      return true;
     }
 
     return this._targetActor.windows.includes(view);
