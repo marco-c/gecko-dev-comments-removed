@@ -1108,6 +1108,8 @@ nsresult EditorBase::SelectAllInternal() {
 }
 
 MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP EditorBase::BeginningOfDocument() {
+  MOZ_ASSERT(IsTextEditor());
+
   AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
   if (NS_WARN_IF(!editActionData.CanHandle())) {
     return NS_ERROR_NOT_INITIALIZED;
@@ -1121,20 +1123,11 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP EditorBase::BeginningOfDocument() {
 
   
   nsCOMPtr<nsIContent> firstEditableLeaf;
-  if (IsTextEditor()) {
-    
-    
-    
-    if (rootElement->GetFirstChild() &&
-        rootElement->GetFirstChild()->IsText()) {
-      firstEditableLeaf = rootElement->GetFirstChild();
-    }
-  } else {
-    MOZ_ASSERT(IsHTMLEditor());
-    
-    
-    firstEditableLeaf =
-        HTMLEditUtils::GetFirstEditableLeafContent(*rootElement);
+  
+  
+  
+  if (rootElement->GetFirstChild() && rootElement->GetFirstChild()->IsText()) {
+    firstEditableLeaf = rootElement->GetFirstChild();
   }
   if (!firstEditableLeaf) {
     

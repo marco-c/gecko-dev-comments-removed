@@ -819,23 +819,6 @@ class HTMLEditUtils final {
   
 
 
-
-
-  static nsIContent* GetFirstEditableLeafContent(const Element& aRootElement) {
-    nsIContent* leafContent = HTMLEditUtils::GetFirstLeafChild(
-        aRootElement, {LeafNodeType::OnlyLeafNode});
-    if (leafContent && !EditorUtils::IsEditableContent(
-                           *leafContent, EditorBase::EditorType::HTML)) {
-      leafContent = HTMLEditUtils::GetNextContent(
-          *leafContent, {WalkTreeOption::IgnoreNonEditableNode}, &aRootElement);
-    }
-    MOZ_ASSERT(leafContent != &aRootElement);
-    return leafContent;
-  }
-
-  
-
-
   enum class InvisibleWhiteSpaces {
     Ignore,    
                
