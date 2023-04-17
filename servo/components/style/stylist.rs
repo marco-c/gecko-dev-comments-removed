@@ -1986,7 +1986,15 @@ impl CascadeData {
             state_dependencies: ElementState::empty(),
             document_state_dependencies: DocumentState::empty(),
             mapped_ids: PrecomputedHashSet::default(),
-            selectors_for_cache_revalidation: SelectorMap::new(),
+            
+            
+            
+            
+            
+            
+            
+            
+            selectors_for_cache_revalidation: SelectorMap::new_without_attribute_bucketing(),
             animations: Default::default(),
             extra_data: ExtraStyleData::default(),
             effective_media_query_results: EffectiveMediaQueryResults::new(),
