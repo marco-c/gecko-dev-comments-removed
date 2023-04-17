@@ -37,7 +37,8 @@ class DateTimeFormat {
 
   enum class Style { Wide, Abbreviated };
 
-  enum class Skeleton { yyyyMM, yyyyMMMM };
+  
+  enum class Skeleton { yyyyMM, yyyyMMMM, E, EEEE };
 
   
   
