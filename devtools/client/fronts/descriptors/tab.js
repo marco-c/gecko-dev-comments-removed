@@ -47,6 +47,7 @@ class TabDescriptorFront extends DescriptorMixin(
     
     
     this._localTab = null;
+    this._isForWebExtension = false;
 
     this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
     this._handleTabEvent = this._handleTabEvent.bind(this);
@@ -140,7 +141,20 @@ class TabDescriptorFront extends DescriptorMixin(
       SERVER_TARGET_SWITCHING_ENABLED_PREF,
       false
     );
-    return isEnabled && this.isLocalTab;
+    
+    
+    const enabled = isEnabled && this.isLocalTab && !this._isForWebExtension;
+    return enabled;
+  }
+
+  
+
+
+
+
+
+  setIsForWebExtension() {
+    this._isForWebExtension = true;
   }
 
   get isZombieTab() {

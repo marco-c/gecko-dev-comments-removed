@@ -211,6 +211,7 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
 
 
 
+
   async getTab(filter) {
     const packet = {};
     if (filter) {
@@ -236,6 +237,12 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
     }
 
     const descriptorFront = await super.getTab(packet);
+
+    
+    
+    if (filter?.isWebExtension) {
+      descriptorFront.setIsForWebExtension(true);
+    }
 
     
     if (filter?.tab?.tagName == "tab") {
