@@ -97,7 +97,7 @@ struct CustomElementData {
   
   
   
-  enum class State { eUndefined, eFailed, eCustom };
+  enum class State { eUndefined, eFailed, eCustom, ePrecustomized };
 
   explicit CustomElementData(nsAtom* aType);
   CustomElementData(nsAtom* aType, State aState);

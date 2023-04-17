@@ -1143,6 +1143,10 @@ static void DoUpgrade(Element* aElement, CustomElementDefinition* aDefinition,
     return;
   }
 
+  RefPtr<CustomElementData> data = aElement->GetCustomElementData();
+  MOZ_ASSERT(data, "CustomElementData should exist");
+  data->mState = CustomElementData::State::ePrecustomized;
+
   JS::Rooted<JS::Value> constructResult(RootingCx());
   
   
@@ -1223,7 +1227,13 @@ void CustomElementRegistry::Upgrade(Element* aElement,
   DoUpgrade(aElement, aDefinition, MOZ_KnownLive(aDefinition->mConstructor),
             aRv);
   if (aRv.Failed()) {
-    MOZ_ASSERT(data->mState == CustomElementData::State::eFailed);
+    MOZ_ASSERT(data->mState == CustomElementData::State::eFailed ||
+               data->mState == CustomElementData::State::ePrecustomized);
+    
+    
+    
+    
+    data->mState = CustomElementData::State::eFailed;
     aElement->SetCustomElementDefinition(nullptr);
     
     data->mReactionQueue.Clear();

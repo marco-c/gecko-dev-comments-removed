@@ -2934,10 +2934,23 @@ already_AddRefed<ElementInternals> nsGenericHTMLElement::AttachInternals(
 
   
   
+  MOZ_ASSERT(ceData);
+
+  
+  
   if (ceData->HasAttachedInternals()) {
     aRv.ThrowNotSupportedError(nsPrintfCString(
         "AttachInternals() has already been called from '%s'",
         NS_ConvertUTF16toUTF8(nameAtom->GetUTF16String()).get()));
+    return nullptr;
+  }
+
+  
+  
+  if (ceData->mState != CustomElementData::State::ePrecustomized &&
+      ceData->mState != CustomElementData::State::eCustom) {
+    aRv.ThrowNotSupportedError(
+        R"(Custom element state is not "precustomized" or "custom".)");
     return nullptr;
   }
 
