@@ -1503,19 +1503,6 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
 
     TryToHandleContainingBlockChange(hint, frame);
 
-    if ((hint & nsChangeHint_AddOrRemoveTransform) && frame &&
-        !(hint & nsChangeHint_ReconstructFrame)) {
-      for (nsIFrame* cont = frame; cont;
-           cont = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(cont)) {
-        if (cont->StyleDisplay()->HasTransform(cont)) {
-          cont->AddStateBits(NS_FRAME_MAY_BE_TRANSFORMED);
-        }
-        
-        
-        
-      }
-    }
-
     if (hint & nsChangeHint_ReconstructFrame) {
       
       
@@ -1530,7 +1517,19 @@ void RestyleManager::ProcessRestyledFrames(nsStyleChangeList& aChangeList) {
           content, nsCSSFrameConstructor::InsertionKind::Sync);
       frame = content->GetPrimaryFrame();
     } else {
-      NS_ASSERTION(frame, "This shouldn't happen");
+      MOZ_ASSERT(frame, "This shouldn't happen");
+
+      if (hint & nsChangeHint_AddOrRemoveTransform) {
+        for (nsIFrame* cont = frame; cont;
+            cont = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(cont)) {
+          if (cont->StyleDisplay()->HasTransform(cont)) {
+            cont->AddStateBits(NS_FRAME_MAY_BE_TRANSFORMED);
+          }
+          
+          
+          
+        }
+      }
 
       if (!frame->FrameMaintainsOverflow()) {
         
