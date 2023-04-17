@@ -1,17 +1,10 @@
 use std::fmt;
 
 
-#[derive(Debug, PartialEq, Eq, Copy, Clone, PartialOrd, Ord)]
+#[derive(PartialEq, Eq, Copy, Clone, PartialOrd, Ord)]
 pub struct Version(u64);
 
 impl Version {
-    fn to_mmp(&self) -> (u16, u16, u16) {
-        let major = self.0 >> 32;
-        let minor = (self.0 << 32) >> 48;
-        let patch = (self.0 << 48) >> 48;
-        (major as u16, minor as u16, patch as u16)
-    }
-
     
     
     
@@ -56,26 +49,70 @@ impl Version {
     
     
     
+    
+    
+    
+    
+    
     pub fn parse(version: &str) -> Option<Version> {
-        let mut mmp: Vec<u16> = version.split('-')
+        let splits = version.split('-')
             .nth(0)
             .unwrap_or("")
             .split('.')
-            .filter_map(|s| s.parse::<u16>().ok())
-            .collect();
+            .map(|s| s.parse::<u16>().ok());
 
-        if mmp.is_empty() {
-            return None
+        let mut mmp = [0u16; 3];
+        for (i, split) in splits.enumerate() {
+            mmp[i] = match (i, split) {
+                (3, _) | (_, None) => return None,
+                (_, Some(v)) => v,
+            };
         }
 
-        while mmp.len() < 3 {
-            mmp.push(0);
-        }
-
-        let (maj, min, patch) = (mmp[0] as u64, mmp[1] as u64, mmp[2] as u64);
-        Some(Version((maj << 32) | (min << 16) | patch))
+        let (maj, min, patch) = (mmp[0], mmp[1], mmp[2]);
+        Some(Version::from_mmp(maj, min, patch))
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn from_mmp(major: u16, minor: u16, patch: u16) -> Version {
+        Version(((major as u64) << 32) | ((minor as u64) << 16) | patch as u64)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn to_mmp(&self) -> (u16, u16, u16) {
+        let major = self.0 >> 32;
+        let minor = (self.0 << 32) >> 48;
+        let patch = (self.0 << 48) >> 48;
+        (major as u16, minor as u16, patch as u16)
+    }
+
+    
+    
+    
+    
+    
     
     
     
@@ -158,35 +195,76 @@ impl fmt::Display for Version {
     }
 }
 
+impl fmt::Debug for Version {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        
+        write!(f, "Version({:?}, {:?})", self.0, self.to_mmp())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::Version;
 
-    macro_rules! check_mmp {
-        ($s:expr => ($x:expr, $y:expr, $z:expr)) => (
-            if let Some(v) = Version::parse($s) {
-                if v.to_mmp() != ($x, $y, $z) {
-                    panic!("{:?} ({}) didn't parse as {}.{}.{}.", $s, v, $x, $y, $z);
-                }
-            } else {
-                panic!("{:?} didn't parse for mmp testing.", $s);
-            }
+    macro_rules! assert_to_mmp {
+        
+        
+        ($s:expr, None) => (
+            assert_eq!(Version::parse($s), None);
+        );
+        ($s:expr, $mmp:expr) => (
+            assert_eq!(Version::parse($s).map(|v| v.to_mmp()), Some($mmp));
         )
+    }
+
+    macro_rules! assert_from_mmp {
+        (($x:expr, $y:expr, $z:expr) => $s:expr) => {
+            assert_eq!(Some(Version::from_mmp($x, $y, $z)), Version::parse($s));
+        };
     }
 
     #[test]
     fn test_str_to_mmp() {
-        check_mmp!("1.18.0" => (1, 18, 0));
-        check_mmp!("3.19.0" => (3, 19, 0));
-        check_mmp!("1.19.0-nightly" => (1, 19, 0));
-        check_mmp!("1.12.2349" => (1, 12, 2349));
-        check_mmp!("0.12" => (0, 12, 0));
-        check_mmp!("1.12.5" => (1, 12, 5));
-        check_mmp!("1.12" => (1, 12, 0));
-        check_mmp!("1" => (1, 0, 0));
-        check_mmp!("1.4.4-nightly (d84693b93 2017-07-09)" => (1, 4, 4));
-        check_mmp!("1.58879.4478-dev" => (1, 58879, 4478));
-        check_mmp!("1.58879.4478-dev (d84693b93 2017-07-09)" => (1, 58879, 4478));
+        assert_to_mmp!("1", (1, 0, 0));
+        assert_to_mmp!("1.2", (1, 2, 0));
+        assert_to_mmp!("1.18.0", (1, 18, 0));
+        assert_to_mmp!("3.19.0", (3, 19, 0));
+        assert_to_mmp!("1.19.0-nightly", (1, 19, 0));
+        assert_to_mmp!("1.12.2349", (1, 12, 2349));
+        assert_to_mmp!("0.12", (0, 12, 0));
+        assert_to_mmp!("1.12.5", (1, 12, 5));
+        assert_to_mmp!("1.12", (1, 12, 0));
+        assert_to_mmp!("1", (1, 0, 0));
+        assert_to_mmp!("1.4.4-nightly (d84693b93 2017-07-09))", (1, 4, 4));
+        assert_to_mmp!("1.58879.4478-dev", (1, 58879, 4478));
+        assert_to_mmp!("1.58879.4478-dev (d84693b93 2017-07-09))", (1, 58879, 4478));
+    }
+
+    #[test]
+    fn test_malformed() {
+        assert_to_mmp!("1.65536.2", None);
+        assert_to_mmp!("-1.2.3", None);
+        assert_to_mmp!("1. 2", None);
+        assert_to_mmp!("", None);
+        assert_to_mmp!(" ", None);
+        assert_to_mmp!(".", None);
+        assert_to_mmp!("one", None);
+        assert_to_mmp!("1.", None);
+        assert_to_mmp!("1.2.3.4.5.6", None);
+    }
+
+    #[test]
+    fn test_from_mmp() {
+        assert_from_mmp!((1, 18, 0) => "1.18.0");
+        assert_from_mmp!((3, 19, 0) => "3.19.0");
+        assert_from_mmp!((1, 19, 0) => "1.19.0");
+        assert_from_mmp!((1, 12, 2349) => "1.12.2349");
+        assert_from_mmp!((0, 12, 0) => "0.12");
+        assert_from_mmp!((1, 12, 5) => "1.12.5");
+        assert_from_mmp!((1, 12, 0) => "1.12");
+        assert_from_mmp!((1, 0, 0) => "1");
+        assert_from_mmp!((1, 4, 4) => "1.4.4");
+        assert_from_mmp!((1, 58879, 4478) => "1.58879.4478");
     }
 
     #[test]
