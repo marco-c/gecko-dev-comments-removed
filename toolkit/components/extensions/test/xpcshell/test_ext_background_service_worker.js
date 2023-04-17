@@ -42,11 +42,26 @@ add_task(async function setup() {
     "force-serviceworkerrestart-init"
   );
 
-  info("Set a low service worker idle timeout");
+  
+  
+  
+  
+  
+  
+  
+  Services.prefs.setBoolPref(
+    "extensions.webextensions.background-delayed-startup",
+    true
+  );
+
   Services.prefs.setBoolPref("dom.serviceWorkers.testing.enabled", true);
+
   registerCleanupFunction(() => {
-    Services.prefs.clearUserPref("dom.serviceWorkers.idle_timeout");
+    Services.prefs.clearUserPref(
+      "extensions.webextensions.background-delayed-startup"
+    );
     Services.prefs.clearUserPref("dom.serviceWorkers.testing.enabled");
+    Services.prefs.clearUserPref("dom.serviceWorkers.idle_timeout");
   });
 });
 
