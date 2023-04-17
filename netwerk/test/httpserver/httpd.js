@@ -52,6 +52,9 @@ var DEBUG_TIMESTAMP = false;
 var gGlobalObject = Cu.getGlobalForObject(this);
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
 
 
 
@@ -926,7 +929,9 @@ class NodeServer {
     }
 
     let req = new XMLHttpRequest();
-    req.open("POST", `http://127.0.0.1:${h2Port}${path}`);
+    const serverIP =
+      AppConstants.platform == "android" ? "10.0.2.2" : "127.0.0.1";
+    req.open("POST", `http://${serverIP}:${h2Port}${path}`);
 
     
     
