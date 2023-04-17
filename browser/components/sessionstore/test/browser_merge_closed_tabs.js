@@ -84,7 +84,7 @@ add_task(async function() {
   
   let iClosed = initialState.windows[0]._closedTabs;
   let rClosed = restoreState.windows[0]._closedTabs;
-  let cData = JSON.parse(SessionStore.getClosedTabData(win));
+  let cData = SessionStore.getClosedTabData(win);
 
   is(
     cData.length,

@@ -49,7 +49,7 @@ add_task(async function test_undoCloseById() {
   );
 
   
-  let initialClosedId = SessionStore.getClosedTabData(win, false)[0].closedId;
+  let initialClosedId = SessionStore.getClosedTabData(win)[0].closedId;
 
   
   let win2 = await openWindow("about:mozilla");
