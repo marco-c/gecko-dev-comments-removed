@@ -664,6 +664,7 @@ RegExpRunStatus RegExpShared::execute(JSContext* cx,
   uint32_t interruptRetries = 0;
   const uint32_t maxInterruptRetries = 4;
   do {
+    DebugOnly<bool> alreadyThrowing = cx->isExceptionPending();
     RegExpRunStatus result = irregexp::Execute(cx, re, input, start, matches);
 
     if (result == RegExpRunStatus_Error) {
@@ -677,6 +678,14 @@ RegExpRunStatus RegExpShared::execute(JSContext* cx,
 
 
 
+      if (cx->isExceptionPending()) {
+        
+        
+        
+        
+        MOZ_ASSERT(alreadyThrowing);
+        return RegExpRunStatus_Error;
+      }
       if (cx->hasAnyPendingInterrupt()) {
         if (!CheckForInterrupt(cx)) {
           return RegExpRunStatus_Error;
