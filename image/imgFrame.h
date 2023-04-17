@@ -13,6 +13,7 @@
 #include "AnimationParams.h"
 #include "MainThreadUtils.h"
 #include "gfxDrawable.h"
+#include "mozilla/layers/SourceSurfaceSharedData.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Monitor.h"
@@ -28,7 +29,7 @@ class RawAccessFrameRef;
 enum class Opacity : uint8_t { FULLY_OPAQUE, SOME_TRANSPARENCY };
 
 class imgFrame {
-  typedef gfx::DataSourceSurface DataSourceSurface;
+  typedef gfx::SourceSurfaceSharedData SourceSurfaceSharedData;
   typedef gfx::DrawTarget DrawTarget;
   typedef gfx::SamplingFilter SamplingFilter;
   typedef gfx::IntPoint IntPoint;
@@ -89,22 +90,7 @@ class imgFrame {
   
 
 
-
-
-
-  RawAccessFrameRef RawAccessRef(bool aOnlyFinished = false);
-
-  
-
-
-
-
-
-
-
-
-
-  void SetRawAccessOnly();
+  RawAccessFrameRef RawAccessRef();
 
   bool Draw(gfxContext* aContext, const ImageRegion& aRegion,
             SamplingFilter aSamplingFilter, uint32_t aImageFlags,
@@ -157,9 +143,6 @@ class imgFrame {
   
 
 
-
-
-
   uint32_t GetBytesPerPixel() const { return 4; }
 
   const IntSize& GetSize() const { return mImageSize; }
@@ -177,8 +160,6 @@ class imgFrame {
 
   const IntRect& GetDirtyRect() const { return mDirtyRect; }
   void SetDirtyRect(const IntRect& aDirtyRect) { mDirtyRect = aDirtyRect; }
-
-  void SetOptimizable();
 
   void FinalizeSurface();
   already_AddRefed<SourceSurface> GetSourceSurface();
@@ -199,20 +180,6 @@ class imgFrame {
 
  private:  
   ~imgFrame();
-
-  
-
-
-
-
-
-
-
-  uint8_t* LockImageData(bool aOnlyFinished);
-  nsresult UnlockImageData();
-  nsresult Optimize(gfx::DrawTarget* aTarget);
-
-  void AssertImageDataLocked() const;
 
   bool AreAllPixelsWritten() const;
   nsresult ImageUpdatedInternal(const nsIntRect& aUpdateRect);
@@ -258,20 +225,10 @@ class imgFrame {
   
 
 
-
-
-  RefPtr<DataSourceSurface> mRawSurface;
-  RefPtr<DataSourceSurface> mBlankRawSurface;
+  RefPtr<SourceSurfaceSharedData> mRawSurface;
+  RefPtr<SourceSurfaceSharedData> mBlankRawSurface;
 
   
-
-
-
-  RefPtr<DataSourceSurface> mLockedSurface;
-  RefPtr<DataSourceSurface> mBlankLockedSurface;
-
-  
-
 
 
 
@@ -279,12 +236,8 @@ class imgFrame {
 
   nsIntRect mDecoded;
 
-  
-  int16_t mLockCount;
-
   bool mAborted;
   bool mFinished;
-  bool mOptimizable;
   bool mShouldRecycle;
 
   
@@ -402,11 +355,11 @@ class RawAccessFrameRef final {
  public:
   RawAccessFrameRef() : mData(nullptr) {}
 
-  explicit RawAccessFrameRef(imgFrame* aFrame, bool aOnlyFinished)
+  explicit RawAccessFrameRef(imgFrame* aFrame)
       : mFrame(aFrame), mData(nullptr) {
     MOZ_ASSERT(mFrame, "Need a frame");
 
-    mData = mFrame->LockImageData(aOnlyFinished);
+    mData = mFrame->GetImageData();
     if (!mData) {
       mFrame = nullptr;
     }
@@ -417,18 +370,10 @@ class RawAccessFrameRef final {
     aOther.mData = nullptr;
   }
 
-  ~RawAccessFrameRef() {
-    if (mFrame) {
-      mFrame->UnlockImageData();
-    }
-  }
+  ~RawAccessFrameRef() {}
 
   RawAccessFrameRef& operator=(RawAccessFrameRef&& aOther) {
     MOZ_ASSERT(this != &aOther, "Self-moves are prohibited");
-
-    if (mFrame) {
-      mFrame->UnlockImageData();
-    }
 
     mFrame = std::move(aOther.mFrame);
     mData = aOther.mData;
@@ -453,9 +398,6 @@ class RawAccessFrameRef final {
   const imgFrame* get() const { return mFrame; }
 
   void reset() {
-    if (mFrame) {
-      mFrame->UnlockImageData();
-    }
     mFrame = nullptr;
     mData = nullptr;
   }
