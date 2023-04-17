@@ -1107,8 +1107,7 @@ void nsHttpChannelAuthProvider::GetIdentityFromURI(uint32_t authFlags,
   }
 }
 
-void nsHttpChannelAuthProvider::ParseRealm(const nsACString& aChallenge,
-                                           nsACString& realm) {
+static void OldParseRealm(const nsACString& aChallenge, nsACString& realm) {
   
   
   
@@ -1138,9 +1137,10 @@ void nsHttpChannelAuthProvider::ParseRealm(const nsACString& aChallenge,
         if (*end == '\\') {
           
           if (!*++end) break;
-        } else if (*end == '\"')
+        } else if (*end == '\"') {
           
           break;
+        }
 
         realm.Append(*end);
         ++end;
@@ -1148,10 +1148,107 @@ void nsHttpChannelAuthProvider::ParseRealm(const nsACString& aChallenge,
     } else {
       
       end = strchr(p, ' ');
-      if (end)
+      if (end) {
         realm.Assign(p, end - p);
-      else
+      } else {
         realm.Assign(p);
+      }
+    }
+  }
+}
+
+void nsHttpChannelAuthProvider::ParseRealm(const nsACString& aChallenge,
+                                           nsACString& realm) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (!StaticPrefs::network_auth_use_new_parse_realm()) {
+    OldParseRealm(aChallenge, realm);
+    return;
+  }
+
+  Tokenizer t(aChallenge);
+
+  
+  
+  t.SkipWhites();
+  nsDependentCSubstring authType;
+  if (!t.ReadWord(authType)) {
+    return;
+  }
+
+  
+  auto readParam = [&](nsDependentCSubstring& key, nsAutoCString& value) {
+    key.Rebind(EmptyCString(), 0);
+    value.Truncate();
+
+    t.SkipWhites();
+    if (!t.ReadWord(key)) {
+      return false;
+    }
+    t.SkipWhites();
+    if (!t.CheckChar('=')) {
+      return true;
+    }
+    t.SkipWhites();
+
+    Tokenizer::Token token1;
+
+    t.Record();
+    if (!t.Next(token1)) {
+      return true;
+    }
+    nsDependentCSubstring sub;
+    bool hasQuote = false;
+    if (token1.Equals(Tokenizer::Token::Char('"'))) {
+      hasQuote = true;
+    } else {
+      t.Claim(sub, Tokenizer::ClaimInclusion::INCLUDE_LAST);
+      value.Append(sub);
+    }
+    t.Record();
+    Tokenizer::Token token2;
+    while (t.Next(token2)) {
+      if (hasQuote && token2.Equals(Tokenizer::Token::Char('"')) &&
+          !token1.Equals(Tokenizer::Token::Char('\\'))) {
+        break;
+      }
+      if (!hasQuote && (token2.Type() == Tokenizer::TokenType::TOKEN_WS ||
+                        token2.Type() == Tokenizer::TokenType::TOKEN_EOL)) {
+        break;
+      }
+
+      t.Claim(sub, Tokenizer::ClaimInclusion::INCLUDE_LAST);
+      if (!sub.Equals(R"(\)")) {
+        value.Append(sub);
+      }
+      t.Record();
+      token1 = token2;
+    }
+    return true;
+  };
+
+  while (!t.CheckEOF()) {
+    nsDependentCSubstring key;
+    nsAutoCString value;
+    
+    
+    if (!readParam(key, value) && !t.Check(Tokenizer::Token::Char(','))) {
+      break;
+    }
+    
+    
+    
+    if (key.Equals("realm"_ns, nsCaseInsensitiveCStringComparator)) {
+      realm = value;
+      break;
     }
   }
 }
