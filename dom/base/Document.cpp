@@ -6797,9 +6797,17 @@ void Document::SetBFCacheEntry(nsIBFCacheEntry* aEntry) {
 }
 
 bool Document::RemoveFromBFCacheSync() {
+  bool removed = false;
   if (nsCOMPtr<nsIBFCacheEntry> entry = GetBFCacheEntry()) {
     entry->RemoveFromBFCacheSync();
-    return true;
+    removed = true;
+  } else if (!IsCurrentActiveDocument()) {
+    
+    
+    
+    
+    DisallowBFCaching();
+    removed = true;
   }
 
   if (XRE_IsContentProcess()) {
@@ -6813,11 +6821,11 @@ bool Document::RemoveFromBFCacheSync() {
         
         
         cc->SendRemoveFromBFCache(top);
-        return true;
+        removed = true;
       }
     }
   }
-  return false;
+  return removed;
 }
 
 static void SubDocClearEntry(PLDHashTable* table, PLDHashEntryHdr* entry) {
