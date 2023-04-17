@@ -148,6 +148,19 @@ class EncodingFormSubmission : public HTMLFormSubmission {
   virtual ~EncodingFormSubmission();
 
   
+  
+  enum EncodeType {
+    
+    
+    eNameEncode,
+    
+    
+    eFilenameEncode,
+    
+    eValueEncode,
+  };
+
+  
 
 
 
@@ -156,8 +169,8 @@ class EncodingFormSubmission : public HTMLFormSubmission {
 
 
 
-  nsresult EncodeVal(const nsAString& aStr, nsCString& aResult,
-                     bool aHeaderEncode);
+  nsresult EncodeVal(const nsAString& aStr, nsCString& aOut,
+                     EncodeType aEncodeType);
 };
 
 class DialogFormSubmission final : public HTMLFormSubmission {
