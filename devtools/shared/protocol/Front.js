@@ -50,6 +50,10 @@ class Front extends Pool {
     
     
     this._beforeListeners = new Map();
+
+    
+    
+    this._initializeResolved = false;
   }
 
   
@@ -141,6 +145,7 @@ class Front extends Pool {
     if (typeof front.initialize == "function") {
       await front.initialize();
     }
+    front._initializeResolved = true;
 
     
     
@@ -189,8 +194,10 @@ class Front extends Pool {
 
     if (onAvailable) {
       
+      
+      
       for (const front of this.poolChildren()) {
-        if (front.typeName == typeName) {
+        if (front.typeName == typeName && front._initializeResolved) {
           onAvailable(front);
         }
       }
