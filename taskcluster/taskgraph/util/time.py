@@ -100,7 +100,8 @@ def json_time_from_now(input_str, now=None, datetime_format=False):
         
         
         
-        return time.isoformat(timespec="milliseconds") + "Z"
+        
+        return time.isoformat()[:23] + "Z"
 
 
 def current_json_time(datetime_format=False):
@@ -112,4 +113,5 @@ def current_json_time(datetime_format=False):
         return datetime.datetime.utcnow()
     else:
         
-        return datetime.datetime.utcnow().isoformat(timespec="milliseconds") + "Z"
+        
+        return datetime.datetime.utcnow().isoformat()[:23] + "Z"
