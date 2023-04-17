@@ -49,9 +49,7 @@ struct Intrinsic {
 };
 
 
-
-
-bool CompileIntrinsicModule(JSContext* cx, IntrinsicOp op,
+bool CompileIntrinsicModule(JSContext* cx, const mozilla::Span<IntrinsicOp> ops,
                             MutableHandleWasmModuleObject result);
 
 }  
