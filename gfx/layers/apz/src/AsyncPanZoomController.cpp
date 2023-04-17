@@ -3432,6 +3432,13 @@ ScrollDirections AsyncPanZoomController::GetOverscrollableDirections() const {
   ScrollDirections result;
 
   RecursiveMutexAutoLock lock(mRecursiveMutex);
+
+  
+  
+  if (mScrollMetadata.GetDisregardedDirection()) {
+    return result;
+  }
+
   if (mX.CanScroll() && mX.OverscrollBehaviorAllowsOverscrollEffect()) {
     result += ScrollDirection::eHorizontal;
   }
