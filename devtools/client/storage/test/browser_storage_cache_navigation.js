@@ -66,9 +66,22 @@ async function testNavigation() {
   
   info("Waiting for storage tree to update…");
   await waitUntil(() => isInTree(doc, ["Cache", "http://example.net", "foo"]));
+
+  ok(
+    !isInTree(doc, ["Cache", "http://example.com"]),
+    "example.com item is not in the tree anymore"
+  );
+
   
   await selectTreeItem(["Cache", "http://example.net", "foo"]);
   checkCacheData(URL_ROOT_NET + "storage-blank.html", "OK");
+
+  info("Check that the Cache node still has the expected label");
+  is(
+    getTreeNodeLabel(doc, ["Cache"]),
+    "Cache Storage",
+    "Cache item is properly displayed"
+  );
 }
 
 function checkCacheData(url, status) {

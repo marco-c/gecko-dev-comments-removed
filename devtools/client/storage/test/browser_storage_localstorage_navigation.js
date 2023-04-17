@@ -52,13 +52,25 @@ async function testNavigation() {
   
   info("Waiting for storage tree to refresh and show correct host…");
   await waitUntil(() => isInTree(doc, ["localStorage", "http://example.net"]));
+  ok(
+    !isInTree(doc, ["localStorage", "http://example.com"]),
+    "example.com item is not in the tree anymore"
+  );
 
   
   await refreshTab();
   
   info("Waiting for storage tree to refresh and show correct host…");
   await waitUntil(() => isInTree(doc, ["localStorage", "http://example.net"]));
+
   
   await selectTreeItem(["localStorage", "http://example.net"]);
   checkStorageData("foo", "bar");
+
+  info("Check that the localStorage node still has the expected label");
+  is(
+    getTreeNodeLabel(doc, ["localStorage"]),
+    "Local Storage",
+    "localStorage item is properly displayed"
+  );
 }

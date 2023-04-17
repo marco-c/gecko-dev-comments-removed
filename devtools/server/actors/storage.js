@@ -301,7 +301,13 @@ StorageActors.defaults = function(typeName, observationTopics) {
 
 
 
-    onWindowDestroyed(window) {
+
+
+
+
+
+
+    onWindowDestroyed(window, { dontCheckHost } = {}) {
       if (!this.hostVsStores) {
         return;
       }
@@ -310,7 +316,7 @@ StorageActors.defaults = function(typeName, observationTopics) {
         return;
       }
       const host = this.getHostName(window.location);
-      if (host && !this.hosts.has(host)) {
+      if (host && (!this.hosts.has(host) || dontCheckHost)) {
         this.hostVsStores.delete(host);
         const data = {};
         data[host] = [];

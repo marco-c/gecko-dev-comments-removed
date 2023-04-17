@@ -516,57 +516,71 @@ class DevToolsFrameChild extends JSWindowActorChild {
     
     if (type == "DOMWindowCreated") {
       this.instantiate();
-    } else if (shouldHandleBfCacheEvents && type == "pageshow" && persisted) {
-      
-      
-      
-      
-      
-      
-      
-      this.instantiate({ forceOverridingFirstTarget: true });
+      return;
     }
-    if (shouldHandleBfCacheEvents && type == "pagehide" && persisted) {
-      
-      
-      
-      
-      const { sharedData } = Services.cpmm;
-      const watchedDataByWatcherActor = sharedData.get(SHARED_DATA_KEY_NAME);
-      if (!watchedDataByWatcherActor) {
-        throw new Error(
-          "Request to instantiate the target(s) for the BrowsingContext, but `sharedData` is empty about watched targets"
-        );
+
+    if (type === "pageshow" && persisted) {
+      this.sendAsyncMessage("DevToolsFrameChild:bf-cache-navigation-pageshow");
+
+      if (shouldHandleBfCacheEvents) {
+        
+        
+        
+        
+        
+        
+        
+        this.instantiate({ forceOverridingFirstTarget: true });
       }
 
-      const actors = [];
-      for (const [watcherActorID, watchedData] of watchedDataByWatcherActor) {
-        const { browserId } = watchedData;
-        const existingTarget = this._getTargetActorForWatcherActorID(
-          watcherActorID,
-          browserId
-        );
+      return;
+    }
 
-        if (!existingTarget) {
-          continue;
+    if (type === "pagehide" && persisted) {
+      this.sendAsyncMessage("DevToolsFrameChild:bf-cache-navigation-pagehide");
+
+      if (shouldHandleBfCacheEvents) {
+        
+        
+        
+        
+        const { sharedData } = Services.cpmm;
+        const watchedDataByWatcherActor = sharedData.get(SHARED_DATA_KEY_NAME);
+        if (!watchedDataByWatcherActor) {
+          throw new Error(
+            "Request to instantiate the target(s) for the BrowsingContext, but `sharedData` is empty about watched targets"
+          );
         }
-        if (existingTarget.window.document != target) {
-          throw new Error("Existing target actor is for a distinct document");
+
+        const actors = [];
+        for (const [watcherActorID, watchedData] of watchedDataByWatcherActor) {
+          const { browserId } = watchedData;
+          const existingTarget = this._getTargetActorForWatcherActorID(
+            watcherActorID,
+            browserId
+          );
+
+          if (!existingTarget) {
+            continue;
+          }
+          if (existingTarget.window.document != target) {
+            throw new Error("Existing target actor is for a distinct document");
+          }
+          actors.push({ watcherActorID, form: existingTarget.form() });
+          existingTarget.destroy();
         }
-        actors.push({ watcherActorID, form: existingTarget.form() });
-        existingTarget.destroy();
+        
+        
+        
+        
+        
+        this.sendAsyncMessage("DevToolsFrameChild:destroy", { actors });
+
+        
+        
+        
+        this.didDestroy();
       }
-      
-      
-      
-      
-      
-      this.sendAsyncMessage("DevToolsFrameChild:destroy", { actors });
-
-      
-      
-      
-      this.didDestroy();
     }
   }
 

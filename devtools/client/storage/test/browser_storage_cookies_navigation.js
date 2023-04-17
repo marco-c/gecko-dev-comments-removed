@@ -7,6 +7,10 @@
 
 
 add_task(async function() {
+  
+  
+  
+  await pushPref("fission.bfcacheInParent", false);
   await testNavigation();
 });
 
@@ -50,7 +54,17 @@ async function testNavigation() {
   await navigateTo(URL2);
   
   info("Waiting for storage tree to refresh and show correct host…");
-  await waitUntil(() => isInTree(doc, ["cookies", "http://example.net"]));
+  await waitUntil(
+    () =>
+      isInTree(doc, ["cookies", "http://example.net"]) &&
+      !isInTree(doc, ["cookies", "http://example.com"])
+  );
+
+  ok(
+    !isInTree(doc, ["cookies", "http://example.com"]),
+    "example.com item is not in the tree anymore"
+  );
+
   
   
   
@@ -92,4 +106,35 @@ async function testNavigation() {
   info("Checking cookie data");
   await selectTreeItem(["cookies", "http://example.org"]);
   checkCookieData("hello", "world");
+
+  info(
+    "Navigate to the first URL to check that the multiple hosts in the current document are all removed"
+  );
+  await navigateTo(URL1);
+  ok(true, "navigated");
+  await waitUntil(() => isInTree(doc, ["cookies", "http://example.com"]));
+  ok(
+    !isInTree(doc, ["cookies", "http://example.net"]),
+    "host of previous document (example.net) is not in the tree anymore"
+  );
+  ok(
+    !isInTree(doc, ["cookies", "http://example.org"]),
+    "host of iframe in previous document (example.org) is not in the tree anymore"
+  );
+
+  info("Navigate backward to test bfcache navigation");
+  gBrowser.goBack();
+  await waitUntil(() => isInTree(doc, ["cookies", "http://example.net"]));
+
+  ok(
+    !isInTree(doc, ["cookies", "http://example.com"]),
+    "host of previous document (example.com) is not in the tree anymore"
+  );
+
+  info("Check that the Cookies node still has the expected label");
+  is(
+    getTreeNodeLabel(doc, ["cookies"]),
+    "Cookies",
+    "Cookies item is properly displayed"
+  );
 }

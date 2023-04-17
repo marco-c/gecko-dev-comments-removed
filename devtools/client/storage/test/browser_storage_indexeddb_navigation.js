@@ -53,6 +53,12 @@ async function testNavigation(shallCleanup = false) {
   
   info("Checking storage tree…");
   await waitUntil(() => isInTree(doc, ["indexedDB", "http://example.net"]));
+
+  ok(
+    !isInTree(doc, ["indexedDB", "http://example.com"]),
+    "example.com item is not in the tree anymore"
+  );
+
   
   
   
@@ -62,6 +68,13 @@ async function testNavigation(shallCleanup = false) {
   
   info("Checking storage tree…");
   await waitUntil(() => isInTree(doc, ["indexedDB", "http://example.net"]));
+
+  info("Check that the indexedDB node still has the expected label");
+  is(
+    getTreeNodeLabel(doc, ["indexedDB"]),
+    "Indexed DB",
+    "indexedDB item is properly displayed"
+  );
 
   
   if (shallCleanup) {

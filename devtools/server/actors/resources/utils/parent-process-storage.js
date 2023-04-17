@@ -49,6 +49,14 @@ class ParentProcessStorage {
     this.watcherActor = watcherActor;
     this.onAvailable = onAvailable;
 
+    
+    
+    
+    this._offPageShow = watcherActor.on(
+      "bf-cache-navigation-pageshow",
+      ({ windowGlobal }) => this._onNewWindowGlobal(windowGlobal)
+    );
+
     const {
       browsingContext,
       innerWindowID: innerWindowId,
@@ -84,7 +92,7 @@ class ParentProcessStorage {
     
     Services.obs.removeObserver(this, "window-global-created");
     Services.obs.removeObserver(this, "window-global-destroyed");
-
+    this._offPageShow();
     this._cleanActor();
   }
 
@@ -97,7 +105,20 @@ class ParentProcessStorage {
 
     
     if (typeof this.actor.preListStores === "function") {
-      await this.actor.preListStores();
+      try {
+        await this.actor.preListStores();
+      } catch (e) {
+        
+        
+        if (this.actor) {
+          throw e;
+        }
+      }
+    }
+
+    
+    if (!this.actor) {
+      return;
     }
 
     
@@ -143,51 +164,67 @@ class ParentProcessStorage {
 
 
 
-  async observe(subject, topic) {
+  observe(subject, topic) {
+    if (topic === "window-global-created") {
+      this._onNewWindowGlobal(subject);
+    }
+  }
+
+  async _onNewWindowGlobal(windowGlobal) {
     
     
     if (
       this.watcherActor.browserId &&
-      subject.browsingContext.browserId != this.watcherActor.browserId
+      windowGlobal.browsingContext.browserId != this.watcherActor.browserId
     ) {
       return;
     }
     
-    if (subject.documentURI.displaySpec === "about:blank") {
+    if (windowGlobal.documentURI.displaySpec === "about:blank") {
       return;
     }
 
-    const isTargetSwitching = Services.prefs.getBoolPref(
+    const isTopContext =
+      windowGlobal.browsingContext.top == windowGlobal.browsingContext;
+
+    if (!isTopContext) {
+      return;
+    }
+
+    const isTargetSwitchingEnabled = Services.prefs.getBoolPref(
       "devtools.target-switching.server.enabled",
       false
     );
-    const isTopContext = subject.browsingContext.top == subject.browsingContext;
+
+    if (!isTargetSwitchingEnabled) {
+      return;
+    }
 
     
     
     
     
+
     
-    if (isTopContext && isTargetSwitching) {
-      if (topic === "window-global-created") {
-        
-        
-        
-        
-        await new Promise(resolve => {
-          const listener = targetActorForm => {
-            if (targetActorForm.innerWindowId != subject.innerWindowId) {
-              return;
-            }
-            this.watcherActor.off("target-available-form", listener);
-            resolve();
-          };
-          this.watcherActor.on("target-available-form", listener);
-        });
-        this._cleanActor();
-        this._spawnActor(subject.browsingContext.id, subject.innerWindowId);
-      }
-    }
+    
+    
+    
+    await new Promise(resolve => {
+      const listener = targetActorForm => {
+        if (targetActorForm.innerWindowId != windowGlobal.innerWindowId) {
+          return;
+        }
+        this.watcherActor.off("target-available-form", listener);
+        resolve();
+      };
+      this.watcherActor.on("target-available-form", listener);
+    });
+
+    this._cleanActor();
+    this._spawnActor(
+      windowGlobal.browsingContext.id,
+      windowGlobal.innerWindowId
+    );
   }
 }
 
@@ -207,6 +244,41 @@ class StorageActorMock extends EventEmitter {
     this.observe = this.observe.bind(this);
     Services.obs.addObserver(this, "window-global-created");
     Services.obs.addObserver(this, "window-global-destroyed");
+
+    
+    
+    
+    
+    
+    
+    
+    const isTargetSwitchingEnabled = Services.prefs.getBoolPref(
+      "devtools.target-switching.server.enabled",
+      false
+    );
+    if (!isTargetSwitchingEnabled) {
+      this._offPageShow = watcherActor.on(
+        "bf-cache-navigation-pageshow",
+        ({ windowGlobal }) => {
+          const windowMock = { location: windowGlobal.documentURI };
+          this.emit("window-ready", windowMock);
+        }
+      );
+
+      this._offPageHide = watcherActor.on(
+        "bf-cache-navigation-pagehide",
+        ({ windowGlobal }) => {
+          const windowMock = { location: windowGlobal.documentURI };
+          
+          
+          
+          
+          
+          
+          this.emit("window-destroyed", windowMock, { dontCheckHost: true });
+        }
+      );
+    }
   }
 
   destroy() {
@@ -216,6 +288,12 @@ class StorageActorMock extends EventEmitter {
     
     Services.obs.removeObserver(this, "window-global-created");
     Services.obs.removeObserver(this, "window-global-destroyed");
+    if (this._offPageShow) {
+      this._offPageShow();
+    }
+    if (this._offPageHide) {
+      this._offPageHide();
+    }
   }
 
   get windows() {

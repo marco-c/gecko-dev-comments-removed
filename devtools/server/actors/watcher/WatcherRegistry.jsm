@@ -150,6 +150,23 @@ const WatcherRegistry = {
 
 
 
+  getWatchersForBrowserId(browserId) {
+    const watchers = [];
+    for (const watcherActor of watcherActors.values()) {
+      if (watcherActor.browserId === browserId) {
+        watchers.push(watcherActor);
+      }
+    }
+
+    return watchers;
+  },
+
+  
+
+
+
+
+
 
 
 

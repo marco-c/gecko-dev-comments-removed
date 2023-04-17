@@ -1111,6 +1111,18 @@ function isInTree(doc, path) {
 
 
 
+
+function getTreeNodeLabel(doc, path) {
+  const treeId = JSON.stringify(path);
+  return doc.querySelector(`[data-id='${treeId}'] .tree-widget-item`)
+    .textContent;
+}
+
+
+
+
+
+
 function checkStorageData(name, value) {
   ok(
     hasStorageData(name, value),
