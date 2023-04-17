@@ -130,33 +130,3 @@ function assert_percents_equal(actual, expected, description) {
   return assert_percents_approx_equal(actual, expected, defaultScrollRange,
                                       description);
 }
-
-
-
-
-
-function createScrollTimelineWithTimeRange(test, options) {
-  options = options || {
-    scrollSource: createScroller(test),
-    timeRange: 1000
-  }
-  return new ScrollTimeline(options);
-}
-
-function createScrollTimelineWithOffsetsWithTimeRange(test, startOffset, endOffset) {
-  return createScrollTimelineWithTimeRange(test, {
-    scrollSource: createScroller(test),
-    orientation: "vertical",
-    scrollOffsets: [startOffset, endOffset],
-    timeRange: 1000
-  });
-}
-
-function createScrollLinkedAnimationWithTimeRange(test, timeline) {
-  if (timeline === undefined)
-    timeline = createScrollTimelineWithTimeRange(test);
-  const DURATION = 1000; 
-  const KEYFRAMES = { opacity: [0, 1] };
-  return new Animation(
-    new KeyframeEffect(createDiv(test), KEYFRAMES, DURATION), timeline);
-}
