@@ -124,17 +124,6 @@ const CustomizableWidgets = [
       let document = panelview.ownerDocument;
       let window = document.defaultView;
 
-      
-      
-      
-      
-      if (window.PanelUI.protonAppMenuEnabled) {
-        let toolbarbuttons = panelview.querySelectorAll("toolbarbutton");
-        for (let toolbarbutton of toolbarbuttons) {
-          toolbarbutton.classList.remove("subviewbutton-iconic");
-        }
-      }
-
       PanelMultiView.getViewNode(
         document,
         "appMenuRecentlyClosedTabs"
@@ -231,10 +220,7 @@ const CustomizableWidgets = [
         element.classList.add("subviewbutton");
         if (element.classList.contains("restoreallitem")) {
           footer = element;
-          element.classList.add(
-            "subviewbutton-iconic",
-            "panel-subview-footer-button"
-          );
+          element.classList.add("panel-subview-footer-button");
         } else {
           element.classList.add("subviewbutton-iconic", "bookmark-item");
         }
@@ -469,18 +455,6 @@ if (Services.prefs.getBoolPref("identity.fxaccounts.enabled")) {
     onViewShowing(aEvent) {
       let panelview = aEvent.target;
       let doc = panelview.ownerDocument;
-      let window = doc.defaultView;
-
-      
-      
-      
-      
-      if (window.PanelUI.protonAppMenuEnabled) {
-        let toolbarbuttons = panelview.querySelectorAll("toolbarbutton");
-        for (let toolbarbutton of toolbarbuttons) {
-          toolbarbutton.classList.remove("subviewbutton-iconic");
-        }
-      }
 
       let syncNowBtn = panelview.querySelector(".syncnow-label");
       let l10nId = syncNowBtn.getAttribute(
