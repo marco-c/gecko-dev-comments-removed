@@ -323,3 +323,12 @@ function ObjectFromEntries(iter) {
     return obj;
 }
 
+
+
+function ObjectHasOwn(O, P) {
+    
+    var obj = ToObject(O);
+    
+    return hasOwn(P, obj);
+}
+
