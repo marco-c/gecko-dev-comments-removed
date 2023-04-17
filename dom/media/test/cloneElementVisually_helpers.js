@@ -196,14 +196,10 @@ function waitForEventOnce(target, event) {
 
 
 
-async function waitForShutdownDecoder(video) {
-  await SimpleTest.promiseWaitForCondition(async () => {
-    
-    
-    
-    return true;
-    
-    
+function waitForShutdownDecoder(video) {
+  return SimpleTest.promiseWaitForCondition(async () => {
+    let readerData = await SpecialPowers.wrap(video).mozRequestDebugInfo();
+    return readerData.decoder.reader.audioDecoderName == "shutdown";
   }, "Video decoder should eventually shut down.");
 }
 
