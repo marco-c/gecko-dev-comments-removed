@@ -221,7 +221,11 @@ fn disabled_by_pref(feature: &Atom, context: &ParserContext) -> bool {
     #[cfg(feature = "gecko")]
     {
         if *feature == atom!("forced-colors") {
-            return !static_prefs::pref!("layout.css.forced-colors.enabled");
+            
+            
+            
+            return !context.in_ua_or_chrome_sheet() &&
+                !static_prefs::pref!("layout.css.forced-colors.enabled");
         }
         
         
