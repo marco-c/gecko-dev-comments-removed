@@ -50,6 +50,9 @@ pub trait BrowserCapabilities {
     
     fn strict_file_interactability(&mut self, _: &Capabilities) -> WebDriverResult<bool>;
 
+    
+    fn web_socket_url(&mut self, _: &Capabilities) -> WebDriverResult<bool>;
+
     fn accept_proxy(
         &mut self,
         proxy_settings: &Map<String, Value>,
@@ -132,7 +135,8 @@ impl SpecNewSessionParameters {
             match &**key {
                 x @ "acceptInsecureCerts"
                 | x @ "setWindowRect"
-                | x @ "strictFileInteractability" => {
+                | x @ "strictFileInteractability"
+                | x @ "webSocketUrl" => {
                     if !value.is_boolean() {
                         return Err(WebDriverError::new(
                             ErrorStatus::InvalidArgument,
@@ -169,6 +173,12 @@ impl SpecNewSessionParameters {
                 }
             }
         }
+
+        
+        if let Some(Value::Bool(false)) = capabilities.get(&"webSocketUrl".to_string()) {
+            capabilities.remove(&"webSocketUrl".to_string());
+        }
+
         Ok(capabilities)
     }
 
@@ -512,6 +522,15 @@ impl CapabilitiesMatching for SpecNewSessionParameters {
                             if !browser_capabilities
                                 .accept_proxy(&proxy, merged)
                                 .unwrap_or(false)
+                            {
+                                return false;
+                            }
+                        }
+                        "webSocketUrl" => {
+                            if value.as_bool().unwrap_or(false)
+                                && !browser_capabilities
+                                    .web_socket_url(merged)
+                                    .unwrap_or(false)
                             {
                                 return false;
                             }

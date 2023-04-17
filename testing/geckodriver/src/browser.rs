@@ -229,6 +229,7 @@ fn set_prefs(
 
     
     prefs.insert("marionette.log.level", logging::max_level().into());
+    prefs.insert("remote.log.level", logging::max_level().into());
 
     prefs.write().map_err(|e| {
         WebDriverError::new(
