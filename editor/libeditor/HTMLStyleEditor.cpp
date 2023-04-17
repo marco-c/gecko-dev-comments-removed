@@ -983,7 +983,6 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
   
   
   if (!splitResult.GetNextNode()) {
-    MOZ_ASSERT(IsCSSEnabled());
     return EditResult(aPoint);
   }
 
