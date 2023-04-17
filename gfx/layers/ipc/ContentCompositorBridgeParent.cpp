@@ -14,7 +14,6 @@
 #  include "mozilla/gfx/DeviceManagerDx.h"  
 #  include "mozilla/layers/ImageDataSerializer.h"
 #endif
-#include "mozilla/dom/WebGLParent.h"
 #include "mozilla/ipc/Transport.h"           
 #include "mozilla/layers/AnimationHelper.h"  
 #include "mozilla/layers/APZCTreeManagerParent.h"  
@@ -458,12 +457,6 @@ void ContentCompositorBridgeParent::ObserveLayersUpdate(
   }
 
   Unused << state->mParent->SendObserveLayersUpdate(aLayersId, aEpoch, aActive);
-}
-
-already_AddRefed<dom::PWebGLParent>
-ContentCompositorBridgeParent::AllocPWebGLParent() {
-  RefPtr<dom::PWebGLParent> parent = new dom::WebGLParent();
-  return parent.forget();
 }
 
 }  

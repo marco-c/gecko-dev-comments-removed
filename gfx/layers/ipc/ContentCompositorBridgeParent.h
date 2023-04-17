@@ -123,8 +123,6 @@ class ContentCompositorBridgeParent final : public CompositorBridgeParentBase {
       const LayersId& aLayersId, const uint64_t& aInputBlockId,
       nsTArray<ScrollableLayerGuid>&& aTargets) override;
 
-  already_AddRefed<dom::PWebGLParent> AllocPWebGLParent() override;
-
   
   
   
