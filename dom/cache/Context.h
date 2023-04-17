@@ -64,7 +64,7 @@ class Manager;
 
 
 class Context final : public SafeRefCounted<Context> {
-  typedef mozilla::dom::quota::DirectoryLock DirectoryLock;
+  using DirectoryLock = mozilla::dom::quota::DirectoryLock;
 
  public:
   

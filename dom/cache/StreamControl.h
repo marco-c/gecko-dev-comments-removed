@@ -72,7 +72,7 @@ class StreamControl {
  private:
   
   
-  typedef nsTObserverArray<SafeRefPtr<ReadStream::Controllable>> ReadStreamList;
+  using ReadStreamList = nsTObserverArray<SafeRefPtr<ReadStream::Controllable>>;
   ReadStreamList mReadStreamList;
 };
 
