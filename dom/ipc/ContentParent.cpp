@@ -1312,10 +1312,15 @@ void ContentParent::LogAndAssertFailedPrincipalValidationInfo(
 
   extra.AppendElement(EventExtraEntry{"principalType"_ns, principalType});
 
-  Telemetry::EventID eventType =
-      Telemetry::EventID::Security_Fissionprincipals_Contentparent;
-  Telemetry::RecordEvent(eventType, mozilla::Some(aMethod),
-                         mozilla::Some(extra));
+  
+  bool isChromeDebuggingEnabled =
+      Preferences::GetBool("devtools.chrome.enabled", false);
+  if (!isChromeDebuggingEnabled) {
+    Telemetry::EventID eventType =
+        Telemetry::EventID::Security_Fissionprincipals_Contentparent;
+    Telemetry::RecordEvent(eventType, mozilla::Some(aMethod),
+                           mozilla::Some(extra));
+  }
 
   
   MOZ_LOG(
