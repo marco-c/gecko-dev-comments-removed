@@ -10788,6 +10788,14 @@ bool PresShell::ShouldBeActive() const {
            mIsActive));
 
   Document* doc = mDocument;
+
+  if (doc->IsBeingUsedAsImage()) {
+    
+    
+    
+    return true;
+  }
+
   if (Document* displayDoc = doc->GetDisplayDocument()) {
     
     
