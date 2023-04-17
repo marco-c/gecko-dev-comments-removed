@@ -155,13 +155,11 @@ host_fetches = {
 
 @CommandProvider
 class MachBrowsertime(MachCommandBase):
-    @property
     def artifact_cache_path(self):
         r"""Downloaded artifacts will be kept here."""
         
         return mozpath.join(self._mach_context.state_dir, "cache", "browsertime")
 
-    @property
     def state_path(self):
         r"""Unpacked artifacts will be kept here."""
         
@@ -196,7 +194,7 @@ class MachBrowsertime(MachCommandBase):
 
         
         artifact_cache = ArtifactCache(
-            self.artifact_cache_path, log=self.log, skip_cache=False
+            self.artifact_cache_path(), log=self.log, skip_cache=False
         )
 
         fetches = host_fetches[host_platform()]
@@ -207,8 +205,8 @@ class MachBrowsertime(MachCommandBase):
             if fetch.get("unpack", True):
                 cwd = os.getcwd()
                 try:
-                    mkdir(self.state_path)
-                    os.chdir(self.state_path)
+                    mkdir(self.state_path())
+                    os.chdir(self.state_path())
                     self.log(
                         logging.INFO,
                         "browsertime",
@@ -220,14 +218,14 @@ class MachBrowsertime(MachCommandBase):
                         
                         
                         mkdir(fetch.get("path"))
-                        os.chdir(os.path.join(self.state_path, fetch.get("path")))
+                        os.chdir(os.path.join(self.state_path(), fetch.get("path")))
                         unpack_file(archive)
-                        os.chdir(self.state_path)
+                        os.chdir(self.state_path())
                     else:
                         unpack_file(archive)
 
                     
-                    path = os.path.join(self.state_path, fetch.get("path"))
+                    path = os.path.join(self.state_path(), fetch.get("path"))
                     if not os.path.exists(path):
                         raise Exception("Cannot find an extracted directory: %s" % path)
 
@@ -344,12 +342,12 @@ class MachBrowsertime(MachCommandBase):
         
         
         path = os.environ.get("PATH", "").split(os.pathsep) if append_path else []
-        path_to_ffmpeg = mozpath.join(self.state_path, fetches["ffmpeg"]["path"])
+        path_to_ffmpeg = mozpath.join(self.state_path(), fetches["ffmpeg"]["path"])
 
         path_to_imagemagick = None
         if "ImageMagick" in fetches:
             path_to_imagemagick = mozpath.join(
-                self.state_path, fetches["ImageMagick"]["path"]
+                self.state_path(), fetches["ImageMagick"]["path"]
             )
 
         if path_to_imagemagick:
@@ -357,7 +355,7 @@ class MachBrowsertime(MachCommandBase):
             
             path.insert(
                 0,
-                self.state_path
+                self.state_path()
                 if host_platform().startswith("win")
                 else mozpath.join(path_to_imagemagick, "bin"),
             )  
