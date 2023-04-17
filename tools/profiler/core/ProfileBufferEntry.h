@@ -311,7 +311,9 @@ class UniqueStacks {
     }
   };
 
-  explicit UniqueStacks(JITFrameInfo&& aJITFrameInfo);
+  explicit UniqueStacks(
+      JITFrameInfo&& aJITFrameInfo,
+      ProfilerCodeAddressService* aCodeAddressService = nullptr);
 
   
   [[nodiscard]] StackKey BeginStack(const FrameKey& aFrame);

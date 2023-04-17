@@ -288,8 +288,11 @@ bool UniqueStacks::FrameKey::JITFrameData::operator==(
 
 
 
-UniqueStacks::UniqueStacks(JITFrameInfo&& aJITFrameInfo)
+UniqueStacks::UniqueStacks(
+    JITFrameInfo&& aJITFrameInfo,
+    ProfilerCodeAddressService* aCodeAddressService )
     : mUniqueStrings(std::move(aJITFrameInfo.mUniqueStrings)),
+      mCodeAddressService(aCodeAddressService),
       mJITInfoRanges(std::move(aJITFrameInfo.mRanges)) {
   mFrameTableWriter.StartBareList();
   mStackTableWriter.StartBareList();
