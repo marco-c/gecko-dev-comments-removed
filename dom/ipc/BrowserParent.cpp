@@ -235,8 +235,7 @@ BrowserParent::BrowserParent(ContentParent* aManager, const TabId& aTabId,
       mHasPresented(false),
       mIsReadyToHandleInputEvents(false),
       mIsMouseEnterIntoWidgetEventSuppressed(false),
-      mLockedNativePointer(false),
-      mShowingTooltip(false) {
+      mLockedNativePointer(false) {
   MOZ_ASSERT(aManager);
   
   
@@ -598,10 +597,6 @@ void BrowserParent::RemoveWindowListeners() {
 }
 
 void BrowserParent::Deactivated() {
-  if (mShowingTooltip) {
-    
-    mozilla::Unused << RecvHideTooltip();
-  }
   UnlockNativePointer();
   UnsetTopLevelWebFocus(this);
   UnsetLastMouseRemoteTarget(this);
@@ -2301,16 +2296,11 @@ mozilla::ipc::IPCResult BrowserParent::RecvShowTooltip(
   nsCOMPtr<Element> el = do_QueryInterface(flo);
   if (!el) return IPC_OK();
 
-  if (NS_SUCCEEDED(
-          xulBrowserWindow->ShowTooltip(aX, aY, aTooltip, aDirection, el))) {
-    mShowingTooltip = true;
-  }
+  xulBrowserWindow->ShowTooltip(aX, aY, aTooltip, aDirection, el);
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult BrowserParent::RecvHideTooltip() {
-  mShowingTooltip = false;
-
   nsCOMPtr<nsIXULBrowserWindow> xulBrowserWindow = GetXULBrowserWindow();
   if (!xulBrowserWindow) {
     return IPC_OK();
