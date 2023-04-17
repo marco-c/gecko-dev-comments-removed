@@ -493,6 +493,10 @@ class BaseContext {
     return this.extension.canAccessWindow(window);
   }
 
+  canAccessContainer(userContextId) {
+    return this.extension.canAccessContainer(userContextId);
+  }
+
   
 
 
