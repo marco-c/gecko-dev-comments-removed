@@ -1334,23 +1334,52 @@ struct Limits {
 
 
 
+
+enum class MemoryKind { Memory32, Memory64 };
+
+
+
 struct MemoryDesc {
+  MemoryKind kind;
   Limits limits;
-  uint64_t initialLength;
-  Maybe<uint64_t> maximumLength;
 
   bool isShared() const { return limits.shared == Shareable::True; }
 
-  MemoryDesc() = default;
-  MemoryDesc(Limits limits) : limits(limits) {
-    MOZ_ASSERT(limits.initial <= MaxMemory32LimitField);
-    initialLength = limits.initial * PageSize;
-    if (limits.maximum) {
-      MOZ_ASSERT(*limits.maximum <= MaxMemory32LimitField);
-      maximumLength = Some(*limits.maximum * PageSize);
-    }
+  
+  bool canMovingGrow() const { return limits.maximum.isNothing(); }
+
+  
+  
+  
+  bool boundsCheckLimitIs32Bits() const {
+    return limits.maximum.isSome() &&
+           limits.maximum.value() < (0x100000000 / PageSize);
   }
+
+  
+  uint64_t initialLength32() const {
+    MOZ_ASSERT(kind == MemoryKind::Memory32);
+    
+    return limits.initial * PageSize;
+  }
+
+  
+  Maybe<uint64_t> maximumLength32() const {
+    MOZ_ASSERT(kind == MemoryKind::Memory32);
+    if (limits.maximum) {
+      
+      return Some(*limits.maximum * PageSize);
+    }
+    return Nothing();
+  }
+
+  MemoryDesc() = default;
+  MemoryDesc(MemoryKind kind, Limits limits) : kind(kind), limits(limits) {}
 };
+
+
+
+static_assert(MaxMemory32LimitField <= UINT64_MAX / PageSize);
 
 
 
@@ -1499,11 +1528,6 @@ class CalleeDesc {
     return u.builtin_;
   }
 };
-
-
-
-
-enum class MemoryKind { Memory32, Memory64 };
 
 
 
