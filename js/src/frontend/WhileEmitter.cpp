@@ -14,13 +14,10 @@
 using namespace js;
 using namespace js::frontend;
 
-using mozilla::Maybe;
-
 WhileEmitter::WhileEmitter(BytecodeEmitter* bce) : bce_(bce) {}
 
-bool WhileEmitter::emitCond(const Maybe<uint32_t>& whilePos,
-                            const Maybe<uint32_t>& condPos,
-                            const Maybe<uint32_t>& endPos) {
+bool WhileEmitter::emitCond(uint32_t whilePos, uint32_t condPos,
+                            uint32_t endPos) {
   MOZ_ASSERT(state_ == State::Start);
 
   
@@ -29,10 +26,9 @@ bool WhileEmitter::emitCond(const Maybe<uint32_t>& whilePos,
   
   
   
-  if (whilePos && endPos &&
-      bce_->parser->errorReporter().lineAt(*whilePos) ==
-          bce_->parser->errorReporter().lineAt(*endPos)) {
-    if (!bce_->updateSourceCoordNotes(*whilePos)) {
+  if (bce_->parser->errorReporter().lineAt(whilePos) ==
+      bce_->parser->errorReporter().lineAt(endPos)) {
+    if (!bce_->updateSourceCoordNotes(whilePos)) {
       return false;
     }
     
@@ -43,7 +39,7 @@ bool WhileEmitter::emitCond(const Maybe<uint32_t>& whilePos,
 
   loopInfo_.emplace(bce_, StatementKind::WhileLoop);
 
-  if (!loopInfo_->emitLoopHead(bce_, condPos)) {
+  if (!loopInfo_->emitLoopHead(bce_, mozilla::Some(condPos))) {
     return false;
   }
 

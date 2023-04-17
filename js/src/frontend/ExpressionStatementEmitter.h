@@ -8,7 +8,6 @@
 #define frontend_ExpressionStatementEmitter_h
 
 #include "mozilla/Attributes.h"
-#include "mozilla/Maybe.h"
 
 #include <stdint.h>
 
@@ -72,9 +71,7 @@ class MOZ_STACK_CLASS ExpressionStatementEmitter {
   
   
   
-  
-  
-  [[nodiscard]] bool prepareForExpr(const mozilla::Maybe<uint32_t>& beginPos);
+  [[nodiscard]] bool prepareForExpr(uint32_t beginPos);
   [[nodiscard]] bool emitEnd();
 };
 

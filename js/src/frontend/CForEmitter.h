@@ -167,7 +167,7 @@ class MOZ_STACK_CLASS CForEmitter {
   [[nodiscard]] bool emitBody(Cond cond);
   [[nodiscard]] bool emitUpdate(Update update,
                                 const mozilla::Maybe<uint32_t>& updatePos);
-  [[nodiscard]] bool emitEnd(const mozilla::Maybe<uint32_t>& forPos);
+  [[nodiscard]] bool emitEnd(uint32_t forPos);
 };
 
 } 

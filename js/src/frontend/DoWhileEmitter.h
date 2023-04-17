@@ -69,10 +69,7 @@ class MOZ_STACK_CLASS DoWhileEmitter {
   
   
   
-  
-  
-  [[nodiscard]] bool emitBody(const mozilla::Maybe<uint32_t>& doPos,
-                              const mozilla::Maybe<uint32_t>& bodyPos);
+  [[nodiscard]] bool emitBody(uint32_t doPos, uint32_t bodyPos);
   [[nodiscard]] bool emitCond();
   [[nodiscard]] bool emitEnd();
 };

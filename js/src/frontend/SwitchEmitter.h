@@ -326,7 +326,7 @@ class MOZ_STACK_CLASS SwitchEmitter {
   
   mozilla::Maybe<BreakableControl> controlInfo_;
 
-  mozilla::Maybe<uint32_t> switchPos_;
+  uint32_t switchPos_ = 0;
 
   
   
@@ -431,10 +431,7 @@ class MOZ_STACK_CLASS SwitchEmitter {
   
   
   
-  
-  
-  [[nodiscard]] bool emitDiscriminant(
-      const mozilla::Maybe<uint32_t>& switchPos);
+  [[nodiscard]] bool emitDiscriminant(uint32_t switchPos);
 
   
   

@@ -105,12 +105,10 @@ class MOZ_STACK_CLASS ForInEmitter {
   
   
   
-  
-  
   [[nodiscard]] bool emitIterated();
   [[nodiscard]] bool emitInitialize();
   [[nodiscard]] bool emitBody();
-  [[nodiscard]] bool emitEnd(const mozilla::Maybe<uint32_t>& forPos);
+  [[nodiscard]] bool emitEnd(uint32_t forPos);
 };
 
 } 

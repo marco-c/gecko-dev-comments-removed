@@ -35,16 +35,14 @@ using mozilla::Maybe;
 
 PropertyEmitter::PropertyEmitter(BytecodeEmitter* bce) : bce_(bce) {}
 
-bool PropertyEmitter::prepareForProtoValue(const Maybe<uint32_t>& keyPos) {
+bool PropertyEmitter::prepareForProtoValue(uint32_t keyPos) {
   MOZ_ASSERT(propertyState_ == PropertyState::Start ||
              propertyState_ == PropertyState::Init);
 
   
 
-  if (keyPos) {
-    if (!bce_->updateSourceCoordNotes(*keyPos)) {
-      return false;
-    }
+  if (!bce_->updateSourceCoordNotes(keyPos)) {
+    return false;
   }
 
 #ifdef DEBUG
@@ -69,17 +67,14 @@ bool PropertyEmitter::emitMutateProto() {
   return true;
 }
 
-bool PropertyEmitter::prepareForSpreadOperand(
-    const Maybe<uint32_t>& spreadPos) {
+bool PropertyEmitter::prepareForSpreadOperand(uint32_t spreadPos) {
   MOZ_ASSERT(propertyState_ == PropertyState::Start ||
              propertyState_ == PropertyState::Init);
 
   
 
-  if (spreadPos) {
-    if (!bce_->updateSourceCoordNotes(*spreadPos)) {
-      return false;
-    }
+  if (!bce_->updateSourceCoordNotes(spreadPos)) {
+    return false;
   }
   if (!bce_->emit1(JSOp::Dup)) {
     
@@ -108,17 +103,16 @@ bool PropertyEmitter::emitSpread() {
   return true;
 }
 
-MOZ_ALWAYS_INLINE bool PropertyEmitter::prepareForProp(
-    const Maybe<uint32_t>& keyPos, bool isStatic, bool isIndexOrComputed) {
+MOZ_ALWAYS_INLINE bool PropertyEmitter::prepareForProp(uint32_t keyPos,
+                                                       bool isStatic,
+                                                       bool isIndexOrComputed) {
   isStatic_ = isStatic;
   isIndexOrComputed_ = isIndexOrComputed;
 
   
 
-  if (keyPos) {
-    if (!bce_->updateSourceCoordNotes(*keyPos)) {
-      return false;
-    }
+  if (!bce_->updateSourceCoordNotes(keyPos)) {
+    return false;
   }
 
   if (isStatic_) {
@@ -149,8 +143,7 @@ bool PropertyEmitter::prepareForPrivateMethod() {
   return true;
 }
 
-bool PropertyEmitter::prepareForPrivateStaticMethod(
-    const mozilla::Maybe<uint32_t>& keyPos) {
+bool PropertyEmitter::prepareForPrivateStaticMethod(uint32_t keyPos) {
   MOZ_ASSERT(propertyState_ == PropertyState::Start ||
              propertyState_ == PropertyState::Init);
   MOZ_ASSERT(isClass_);
@@ -170,8 +163,7 @@ bool PropertyEmitter::prepareForPrivateStaticMethod(
   return true;
 }
 
-bool PropertyEmitter::prepareForPropValue(const Maybe<uint32_t>& keyPos,
-                                          Kind kind ) {
+bool PropertyEmitter::prepareForPropValue(uint32_t keyPos, Kind kind) {
   MOZ_ASSERT(propertyState_ == PropertyState::Start ||
              propertyState_ == PropertyState::Init);
 
@@ -190,8 +182,7 @@ bool PropertyEmitter::prepareForPropValue(const Maybe<uint32_t>& keyPos,
   return true;
 }
 
-bool PropertyEmitter::prepareForIndexPropKey(
-    const Maybe<uint32_t>& keyPos, Kind kind ) {
+bool PropertyEmitter::prepareForIndexPropKey(uint32_t keyPos, Kind kind) {
   MOZ_ASSERT(propertyState_ == PropertyState::Start ||
              propertyState_ == PropertyState::Init);
 
@@ -221,8 +212,7 @@ bool PropertyEmitter::prepareForIndexPropValue() {
   return true;
 }
 
-bool PropertyEmitter::prepareForComputedPropKey(
-    const Maybe<uint32_t>& keyPos, Kind kind ) {
+bool PropertyEmitter::prepareForComputedPropKey(uint32_t keyPos, Kind kind) {
   MOZ_ASSERT(propertyState_ == PropertyState::Start ||
              propertyState_ == PropertyState::Init);
 

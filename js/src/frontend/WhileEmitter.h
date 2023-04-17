@@ -78,11 +78,8 @@ class MOZ_STACK_CLASS WhileEmitter {
   
   
   
-  
-  
-  [[nodiscard]] bool emitCond(const mozilla::Maybe<uint32_t>& whilePos,
-                              const mozilla::Maybe<uint32_t>& condPos,
-                              const mozilla::Maybe<uint32_t>& endPos);
+  [[nodiscard]] bool emitCond(uint32_t whilePos, uint32_t condPos,
+                              uint32_t endPos);
   [[nodiscard]] bool emitBody();
   [[nodiscard]] bool emitEnd();
 };

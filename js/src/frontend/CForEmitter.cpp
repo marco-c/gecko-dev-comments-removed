@@ -138,7 +138,7 @@ bool CForEmitter::emitUpdate(Update update, const Maybe<uint32_t>& updatePos) {
   return true;
 }
 
-bool CForEmitter::emitEnd(const Maybe<uint32_t>& forPos) {
+bool CForEmitter::emitEnd(uint32_t forPos) {
   MOZ_ASSERT(state_ == State::Update);
 
   if (update_ == Update::Present) {
@@ -157,10 +157,8 @@ bool CForEmitter::emitEnd(const Maybe<uint32_t>& forPos) {
     
     
     
-    if (forPos) {
-      if (!bce_->updateSourceCoordNotes(*forPos)) {
-        return false;
-      }
+    if (!bce_->updateSourceCoordNotes(forPos)) {
+      return false;
     }
   }
 

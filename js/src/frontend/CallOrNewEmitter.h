@@ -332,10 +332,7 @@ class MOZ_STACK_CLASS CallOrNewEmitter {
   
   
   
-  
-  
-  [[nodiscard]] bool emitEnd(uint32_t argc,
-                             const mozilla::Maybe<uint32_t>& beginPos);
+  [[nodiscard]] bool emitEnd(uint32_t argc, uint32_t beginPos);
 };
 
 } 

@@ -247,44 +247,38 @@ class MOZ_STACK_CLASS PropertyEmitter {
   
   
   
-  [[nodiscard]] bool prepareForProtoValue(
-      const mozilla::Maybe<uint32_t>& keyPos);
+  [[nodiscard]] bool prepareForProtoValue(uint32_t keyPos);
   [[nodiscard]] bool emitMutateProto();
 
   
   
   
   
-  [[nodiscard]] bool prepareForSpreadOperand(
-      const mozilla::Maybe<uint32_t>& spreadPos);
+  [[nodiscard]] bool prepareForSpreadOperand(uint32_t spreadPos);
   [[nodiscard]] bool emitSpread();
 
   
   
   
   
-  [[nodiscard]] bool prepareForPropValue(const mozilla::Maybe<uint32_t>& keyPos,
-                                         Kind kind = Kind::Prototype);
+  [[nodiscard]] bool prepareForPropValue(uint32_t keyPos, Kind kind);
 
   [[nodiscard]] bool prepareForPrivateMethod();
 
-  [[nodiscard]] bool prepareForPrivateStaticMethod(
-      const mozilla::Maybe<uint32_t>& keyPos);
+  [[nodiscard]] bool prepareForPrivateStaticMethod(uint32_t keyPos);
 
   
   
   
   
-  [[nodiscard]] bool prepareForIndexPropKey(
-      const mozilla::Maybe<uint32_t>& keyPos, Kind kind = Kind::Prototype);
+  [[nodiscard]] bool prepareForIndexPropKey(uint32_t keyPos, Kind kind);
   [[nodiscard]] bool prepareForIndexPropValue();
 
   
   
   
   
-  [[nodiscard]] bool prepareForComputedPropKey(
-      const mozilla::Maybe<uint32_t>& keyPos, Kind kind = Kind::Prototype);
+  [[nodiscard]] bool prepareForComputedPropKey(uint32_t keyPos, Kind kind);
   [[nodiscard]] bool prepareForComputedPropValue();
 
   [[nodiscard]] bool emitInitHomeObject();
@@ -301,8 +295,9 @@ class MOZ_STACK_CLASS PropertyEmitter {
   [[nodiscard]] bool skipInit();
 
  private:
-  [[nodiscard]] MOZ_ALWAYS_INLINE bool prepareForProp(
-      const mozilla::Maybe<uint32_t>& keyPos, bool isStatic, bool isComputed);
+  [[nodiscard]] MOZ_ALWAYS_INLINE bool prepareForProp(uint32_t keyPos,
+                                                      bool isStatic,
+                                                      bool isComputed);
 
   
   
