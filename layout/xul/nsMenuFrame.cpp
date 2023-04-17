@@ -393,46 +393,29 @@ nsresult nsMenuFrame::HandleEvent(nsPresContext* aPresContext,
         OpenMenu(false);
       }
     }
-  } else if (
-#ifndef NSCONTEXTMENUISMOUSEUP
-      (aEvent->mMessage == eMouseUp &&
-       (aEvent->AsMouseEvent()->mButton == MouseButton::eSecondary
-#  ifdef XP_MACOSX
-        
-        
-        || (aEvent->AsMouseEvent()->mButton == MouseButton::ePrimary &&
-            aEvent->AsMouseEvent()->IsControl())
-#  endif
-            )) &&
-#else
-      aEvent->mMessage == eContextMenu &&
+  } else if (aEvent->mMessage == eMouseUp && !IsMenu() && !IsDisabled()) {
+    
+    
+    
+    
+    bool isMacCtrlClick = false;
+#ifdef XP_MACOSX
+    isMacCtrlClick = aEvent->AsMouseEvent()->mButton == MouseButton::ePrimary &&
+                     aEvent->AsMouseEvent()->IsControl();
 #endif
-      onmenu && !IsMenu() && !IsDisabled()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (menuParent->IsContextMenu()) {
+    bool clickMightOpenContextMenu =
+        aEvent->AsMouseEvent()->mButton == MouseButton::eSecondary ||
+        isMacCtrlClick;
+    if (!clickMightOpenContextMenu || (onmenu && menuParent->IsContextMenu())) {
       *aEventStatus = nsEventStatus_eConsumeNoDefault;
       Execute(aEvent);
     }
-  } else if (aEvent->mMessage == eMouseUp &&
-             aEvent->AsMouseEvent()->mButton == MouseButton::ePrimary &&
-#ifdef XP_MACOSX
-             
-             
-             !aEvent->AsMouseEvent()->IsControl() &&
-#endif
-             !IsMenu() && !IsDisabled()) {
+  } else if (aEvent->mMessage == eContextMenu && onmenu && !IsMenu() &&
+             !IsDisabled() && menuParent->IsContextMenu()) {
+    
+    
     
     *aEventStatus = nsEventStatus_eConsumeNoDefault;
-    Execute(aEvent);
   } else if (aEvent->mMessage == eMouseOut) {
     
     if (mOpenTimer) {
