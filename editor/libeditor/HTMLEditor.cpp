@@ -97,7 +97,6 @@ struct MOZ_STACK_CLASS SavedRange final {
 
 HTMLEditor::HTMLEditor()
     : mCRInParagraphCreatesParagraph(false),
-      mCSSAware(false),
       mIsObjectResizingEnabled(
           StaticPrefs::editor_resizing_enabled_by_default()),
       mIsResizing(false),
@@ -623,21 +622,6 @@ void HTMLEditor::RemoveEventListeners() {
   }
 
   EditorBase::RemoveEventListeners();
-}
-
-NS_IMETHODIMP HTMLEditor::SetFlags(uint32_t aFlags) {
-  nsresult rv = EditorBase::SetFlags(aFlags);
-  if (NS_FAILED(rv)) {
-    NS_WARNING("EditorBase::SetFlags() failed");
-    return rv;
-  }
-
-  
-  
-  
-  mCSSAware = !NoCSS() && !IsMailEditor();
-
-  return NS_OK;
 }
 
 NS_IMETHODIMP HTMLEditor::BeginningOfDocument() {
@@ -5104,20 +5088,7 @@ NS_IMETHODIMP HTMLEditor::SetIsCSSEnabled(bool aIsCSSPrefChecked) {
   }
 
   mCSSEditUtils->SetCSSEnabled(aIsCSSPrefChecked);
-
-  
-  uint32_t flags = mFlags;
-  if (aIsCSSPrefChecked) {
-    
-    flags &= ~eEditorNoCSSMask;
-  } else {
-    
-    flags |= eEditorNoCSSMask;
-  }
-
-  nsresult rv = SetFlags(flags);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "HTMLEditor::SetFlags() failed");
-  return rv;
+  return NS_OK;
 }
 
 
