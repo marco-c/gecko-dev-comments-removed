@@ -401,7 +401,14 @@ XPCOMUtils.defineLazyGetter(this, "gHighPriorityNotificationBox", () => {
     if (gProton) {
       
       let tabNotifications = document.getElementById("tab-notification-deck");
-      gNavToolbox.insertBefore(element, tabNotifications);
+      
+      
+      
+      
+      
+      let outer = document.createElement("div");
+      outer.appendChild(element);
+      gNavToolbox.insertBefore(outer, tabNotifications);
     } else {
       document.getElementById("appcontent").prepend(element);
     }
