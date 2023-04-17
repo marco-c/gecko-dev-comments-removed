@@ -412,6 +412,7 @@ void MacroAssembler::PushRegsInMask(LiveRegisterSet set) {
     Push(*iter);
   }
   MOZ_ASSERT(diffG == 0);
+  (void)diffG;
 
   reserveStack(diffF);
   for (FloatRegisterBackwardIterator iter(fpuSet); iter.more(); ++iter) {
@@ -430,6 +431,7 @@ void MacroAssembler::PushRegsInMask(LiveRegisterSet set) {
     }
   }
   MOZ_ASSERT(numFpu == 0);
+  (void)numFpu;
 
   
   
@@ -462,6 +464,7 @@ void MacroAssembler::storeRegsInMask(LiveRegisterSet set, Address dest,
     storePtr(*iter, dest);
   }
   MOZ_ASSERT(diffG == 0);
+  (void)diffG;
 
   for (FloatRegisterBackwardIterator iter(fpuSet); iter.more(); ++iter) {
     FloatRegister reg = *iter;
@@ -479,6 +482,7 @@ void MacroAssembler::storeRegsInMask(LiveRegisterSet set, Address dest,
     }
   }
   MOZ_ASSERT(numFpu == 0);
+  (void)numFpu;
 
   
   
@@ -527,6 +531,7 @@ void MacroAssembler::PopRegsInMaskIgnore(LiveRegisterSet set,
   }
   freeStack(reservedF);
   MOZ_ASSERT(numFpu == 0);
+  (void)numFpu;
   
   
   diffF -= diffF % sizeof(uintptr_t);
