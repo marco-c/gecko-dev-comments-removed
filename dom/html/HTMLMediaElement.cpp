@@ -6943,7 +6943,7 @@ bool HTMLMediaElement::AttachNewMediaKeys() {
 
   
   if (mIncomingMediaKeys) {
-    auto cdmProxy = mIncomingMediaKeys->GetCDMProxy();
+    auto* cdmProxy = mIncomingMediaKeys->GetCDMProxy();
     if (!cdmProxy) {
       SetCDMProxyFailure(MediaResult(
           NS_ERROR_DOM_INVALID_STATE_ERR,
