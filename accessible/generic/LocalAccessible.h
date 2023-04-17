@@ -22,8 +22,6 @@ struct nsRoleMapEntry;
 
 class nsIFrame;
 
-class nsAttrValue;
-
 namespace mozilla::dom {
 class Element;
 }
@@ -930,23 +928,6 @@ class LocalAccessible : public nsISupports, public Accessible {
 
 
   virtual already_AddRefed<AccAttributes> NativeAttributes();
-
-  
-
-
-
-
-  bool AttributeChangesState(nsAtom* aAttribute);
-
-  
-
-
-
-
-  virtual void DOMAttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                                   int32_t aModType,
-                                   const nsAttrValue* aOldValue,
-                                   uint64_t aOldState);
 
   
   
