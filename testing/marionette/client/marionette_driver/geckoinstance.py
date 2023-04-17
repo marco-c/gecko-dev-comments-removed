@@ -60,6 +60,8 @@ class GeckoInstance(object):
         
         "dom.push.connection.enabled": False,
         
+        "dom.successive_dialog_time_limit": 0,
+        
         
         "extensions.autoDisableScopes": 0,
         "extensions.enabledScopes": 5,

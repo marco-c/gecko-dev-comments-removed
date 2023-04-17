@@ -180,6 +180,9 @@ const COMMON_PREFERENCES = new Map([
   ["dom.push.connection.enabled", false],
 
   
+  ["dom.successive_dialog_time_limit", 0],
+
+  
   
   
   
