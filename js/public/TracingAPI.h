@@ -505,29 +505,11 @@ extern JS_PUBLIC_API void UnsafeTraceManuallyBarrieredEdge(JSTracer* trc,
                                                            JSObject** edgep,
                                                            const char* name);
 
-
-
-template <typename T>
-inline bool TraceManuallyBarrieredWeakEdge(JSTracer* trc, T* thingp,
-                                           const char* name);
-
-template <typename T>
-class WeakHeapPtr;
-
-template <typename T>
-inline bool TraceWeakEdge(JSTracer* trc, WeakHeapPtr<T>* thingp,
-                          const char* name);
-
 namespace gc {
 
 
 template <typename T>
 extern JS_PUBLIC_API bool EdgeNeedsSweep(JS::Heap<T>* edgep);
-
-
-
-template <typename T>
-bool IsAboutToBeFinalizedUnbarriered(T* thingp);
 
 }  
 
