@@ -8,6 +8,7 @@
 #define mozilla_dom_BrowserBridgeParent_h
 
 #include "mozilla/dom/PBrowserBridgeParent.h"
+#include "mozilla/Tuple.h"
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/dom/WindowGlobalTypes.h"
 
@@ -47,19 +48,12 @@ class BrowserBridgeParent : public PBrowserBridgeParent {
   
 
 
-  a11y::DocAccessibleParent* GetEmbedderAccessibleDoc();
-
-  
 
 
-
-
-  uint64_t GetEmbedderAccessibleId() { return mEmbedderAccessibleID; }
-
-  
-
-
-  a11y::DocAccessibleParent* GetDocAccessibleParent();
+  Tuple<a11y::DocAccessibleParent*, uint64_t> GetEmbedderAccessible() {
+    return Tuple<a11y::DocAccessibleParent*, uint64_t>(mEmbedderAccessibleDoc,
+                                                       mEmbedderAccessibleID);
+  }
 #endif  
 
   

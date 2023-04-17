@@ -129,9 +129,6 @@ BrowserParent* BrowserBridgeParent::Manager() {
 
 void BrowserBridgeParent::Destroy() {
   if (mBrowserParent) {
-    if (mEmbedderAccessibleDoc && !mEmbedderAccessibleDoc->IsShutdown()) {
-      mEmbedderAccessibleDoc->RemovePendingOOPChildDoc(this);
-    }
     mBrowserParent->Destroy();
     mBrowserParent->SetBrowserBridgeParent(nullptr);
     mBrowserParent = nullptr;
@@ -232,35 +229,32 @@ IPCResult BrowserBridgeParent::RecvSetIsUnderHiddenEmbedderElement(
 }
 
 #ifdef ACCESSIBILITY
-a11y::DocAccessibleParent* BrowserBridgeParent::GetDocAccessibleParent() {
-  auto* embeddedBrowser = GetBrowserParent();
-  if (!embeddedBrowser) {
-    return nullptr;
-  }
-  a11y::DocAccessibleParent* docAcc =
-      embeddedBrowser->GetTopLevelDocAccessible();
-  return docAcc && !docAcc->IsShutdown() ? docAcc : nullptr;
-}
-
 IPCResult BrowserBridgeParent::RecvSetEmbedderAccessible(
     PDocAccessibleParent* aDoc, uint64_t aID) {
   MOZ_ASSERT(!mEmbedderAccessibleDoc || mEmbedderAccessibleDoc == aDoc,
              "Embedder document shouldn't change");
   mEmbedderAccessibleDoc = static_cast<a11y::DocAccessibleParent*>(aDoc);
+  uint64_t oldEmbedderID = mEmbedderAccessibleID;
   mEmbedderAccessibleID = aID;
-  if (auto* childDocAcc = GetDocAccessibleParent()) {
-    
-    
-    
-    mEmbedderAccessibleDoc->AddChildDoc(this);
+  if (auto embeddedBrowser = GetBrowserParent()) {
+    a11y::DocAccessibleParent* childDocAcc =
+        embeddedBrowser->GetTopLevelDocAccessible();
+    if (childDocAcc && !childDocAcc->IsShutdown()) {
+      
+      
+      
+      if (oldEmbedderID) {
+        
+        
+        
+        mEmbedderAccessibleDoc->RemovePendingChildDoc(childDocAcc,
+                                                      oldEmbedderID);
+      }
+      mEmbedderAccessibleDoc->AddChildDoc(childDocAcc, aID,
+                                           false);
+    }
   }
   return IPC_OK();
-}
-
-a11y::DocAccessibleParent* BrowserBridgeParent::GetEmbedderAccessibleDoc() {
-  return mEmbedderAccessibleDoc && !mEmbedderAccessibleDoc->IsShutdown()
-             ? mEmbedderAccessibleDoc.get()
-             : nullptr;
 }
 #endif
 
