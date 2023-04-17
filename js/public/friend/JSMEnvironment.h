@@ -66,8 +66,6 @@ extern JS_PUBLIC_API bool ExecuteInJSMEnvironment(JSContext* cx,
 
 
 
-
-
 extern JS_PUBLIC_API bool ExecuteInJSMEnvironment(
     JSContext* cx, Handle<JSScript*> script, Handle<JSObject*> jsmEnv,
     Handle<StackGCVector<JSObject*>> targetObj);

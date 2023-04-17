@@ -101,24 +101,6 @@ namespace JS {
 
 
 
-
-extern JS_PUBLIC_API bool CloneAndExecuteScript(JSContext* cx,
-                                                Handle<JSScript*> script,
-                                                MutableHandle<Value> rval);
-
-
-
-
-
-extern JS_PUBLIC_API bool CloneAndExecuteScript(JSContext* cx,
-                                                HandleObjectVector envChain,
-                                                Handle<JSScript*> script,
-                                                MutableHandle<Value> rval);
-
-
-
-
-
 extern JS_PUBLIC_API bool Evaluate(JSContext* cx,
                                    const ReadOnlyCompileOptions& options,
                                    SourceText<char16_t>& srcBuf,
