@@ -5617,6 +5617,9 @@ void LIRGenerator::visitConstant(MConstant* ins) {
     case MIRType::Object:
       define(new (alloc()) LPointer(&ins->toObject()), ins);
       break;
+    case MIRType::Shape:
+      MOZ_ASSERT(ins->isEmittedAtUses());
+      break;
     default:
       
       
