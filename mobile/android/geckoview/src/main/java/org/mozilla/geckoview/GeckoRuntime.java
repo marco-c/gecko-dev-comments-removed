@@ -612,6 +612,17 @@ public final class GeckoRuntime implements Parcelable {
 
 
 
+    @UiThread
+    @Nullable
+    public ServiceWorkerDelegate getServiceWorkerDelegate() {
+        return mServiceWorkerDelegate;
+    }
+
+    
+
+
+
+
 
 
     @UiThread
