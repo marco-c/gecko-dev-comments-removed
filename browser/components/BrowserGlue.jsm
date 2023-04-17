@@ -307,7 +307,9 @@ let JSWINDOWACTORS = {
       events: {
         DOMContentLoaded: {},
         pageshow: { mozSystemGroup: true },
-        pagehide: { mozSystemGroup: true },
+        
+        
+        pagehide: { mozSystemGroup: true, createActor: false },
       },
     },
     messageManagerGroups: ["browsers"],
