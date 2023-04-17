@@ -2528,6 +2528,10 @@ mozilla::ipc::IPCResult ContentChild::RecvRemoteType(
     MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
             ("Setting remoteType of process %d to %s", getpid(),
              aRemoteType.get()));
+
+    if (aRemoteType == PREALLOC_REMOTE_TYPE) {
+      PreallocInit();
+    }
   }
 
   auto remoteTypePrefix = RemoteTypePrefix(aRemoteType);
@@ -2582,6 +2586,9 @@ mozilla::ipc::IPCResult ContentChild::RecvRemoteType(
 
   return IPC_OK();
 }
+
+
+void ContentChild::PreallocInit() {}
 
 
 

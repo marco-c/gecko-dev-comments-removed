@@ -381,6 +381,8 @@ class ContentChild final : public PContentChild,
 
   mozilla::ipc::IPCResult RecvRemoteType(const nsCString& aRemoteType);
 
+  void PreallocInit();
+
   
   
   const nsACString& GetRemoteType() const override;
