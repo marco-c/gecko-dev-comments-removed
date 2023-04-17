@@ -474,6 +474,8 @@ class Nursery {
   
   size_t capacity_;
 
+  gc::PretenuringNursery pretenuringNursery;
+
   mozilla::TimeDuration timeInChunkAlloc_;
 
   
@@ -488,6 +490,9 @@ class Nursery {
 
   
   bool reportDeduplications_;
+
+  
+  bool reportPretenuring_;
 
   
   

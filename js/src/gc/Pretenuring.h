@@ -27,6 +27,9 @@
 namespace js {
 namespace gc {
 
+class GCRuntime;
+class PretenuringNursery;
+
 
 
 
@@ -45,7 +48,22 @@ class AllocSite {
   JSScript* script_ = nullptr;
 
   
+  
+  AllocSite* nextNurseryAllocated = nullptr;
+
+  
+  uint32_t nurseryAllocCount = 0;
+
+  
+  uint32_t nurseryTenuredCount = 0;
+
+  
   mozilla::Atomic<State, mozilla::ReleaseAcquire> state_{State::Unknown};
+
+  static AllocSite* const EndSentinel;
+
+  friend class PretenuringZone;
+  friend class PretenuringNursery;
 
  public:
   
@@ -58,15 +76,41 @@ class AllocSite {
   bool hasScript() const { return script_; }
   JSScript* script() const { return script_; }
 
+  enum class Kind : uint32_t { Normal, Unknown, Optimized };
+  Kind kind() const;
+
+  bool isInAllocatedList() const { return nextNurseryAllocated; }
+
   
   
   InitialHeap initialHeap() const {
     return state_ == State::LongLived ? TenuredHeap : DefaultHeap;
   }
+
+  bool hasNurseryAllocations() const {
+    return nurseryAllocCount != 0 || nurseryTenuredCount != 0;
+  }
+  void resetNurseryAllocations() {
+    nurseryAllocCount = 0;
+    nurseryTenuredCount = 0;
+  }
+
+  void incAllocCount() { nurseryAllocCount++; }
+  void incTenuredCount() { nurseryTenuredCount++; }
+
+  void updateStateOnMinorGC(double promotionRate);
+
+  static void printInfoHeader();
+  static void printInfoFooter(size_t sitesActive);
+  void printInfo(bool hasPromotionRate, double promotionRate) const;
+
+ private:
+  const char* stateName() const;
 };
 
 
-struct PretenuringZone {
+class PretenuringZone {
+ public:
   explicit PretenuringZone(JS::Zone* zone)
       : unknownAllocSite(zone), optimizedAllocSite(zone) {}
 
@@ -79,6 +123,26 @@ struct PretenuringZone {
   
   
   AllocSite optimizedAllocSite;
+};
+
+
+class PretenuringNursery {
+  gc::AllocSite* allocatedSites;
+
+ public:
+  PretenuringNursery() : allocatedSites(AllocSite::EndSentinel) {}
+
+  bool hasAllocatedSites() const {
+    return allocatedSites != AllocSite::EndSentinel;
+  }
+
+  void insertIntoAllocatedList(AllocSite* site) {
+    MOZ_ASSERT(!site->isInAllocatedList());
+    site->nextNurseryAllocated = allocatedSites;
+    allocatedSites = site;
+  }
+
+  void doPretenuring(GCRuntime* gc, bool reportInfo);
 };
 
 }  
