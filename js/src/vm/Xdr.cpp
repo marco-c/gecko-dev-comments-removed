@@ -176,14 +176,8 @@ XDRResult XDRState<mode>::codeCharsZ(XDRTranscodeString<char16_t>& buffer) {
   return XDRCodeCharsZ(this, buffer);
 }
 
-enum class XDRFormatType : uint8_t {
-  UseOption,
-  JSScript,
-  Stencil,
-};
-
-static bool GetScriptTranscodingBuildId(XDRFormatType formatType,
-                                        JS::BuildIdCharVector* buildId) {
+JS_PUBLIC_API bool JS::GetScriptTranscodingBuildId(
+    JS::BuildIdCharVector* buildId) {
   MOZ_ASSERT(buildId->empty());
   MOZ_ASSERT(GetBuildId);
 
@@ -205,36 +199,13 @@ static bool GetScriptTranscodingBuildId(XDRFormatType formatType,
   buildId->infallibleAppend(sizeof(uintptr_t) == 4 ? '4' : '8');
   buildId->infallibleAppend(MOZ_LITTLE_ENDIAN() ? 'l' : 'b');
 
-  
-  
-  char formatChar = '0';
-  switch (formatType) {
-    case XDRFormatType::UseOption:
-      
-      
-      formatChar = js::UseOffThreadParseGlobal() ? '1' : '0';
-      break;
-    case XDRFormatType::JSScript:
-      formatChar = '1';
-      break;
-    case XDRFormatType::Stencil:
-      formatChar = '0';
-      break;
-  }
-  buildId->infallibleAppend(formatChar);
-
   return true;
 }
 
-JS_PUBLIC_API bool JS::GetScriptTranscodingBuildId(
-    JS::BuildIdCharVector* buildId) {
-  return GetScriptTranscodingBuildId(XDRFormatType::UseOption, buildId);
-}
-
 template <XDRMode mode>
-static XDRResult VersionCheck(XDRState<mode>* xdr, XDRFormatType formatType) {
+static XDRResult VersionCheck(XDRState<mode>* xdr) {
   JS::BuildIdCharVector buildId;
-  if (!GetScriptTranscodingBuildId(formatType, &buildId)) {
+  if (!JS::GetScriptTranscodingBuildId(&buildId)) {
     ReportOutOfMemory(xdr->cx());
     return xdr->fail(JS::TranscodeResult::Throw);
   }
@@ -281,7 +252,7 @@ static XDRResult XDRStencilHeader(
   
   
 
-  MOZ_TRY(VersionCheck(xdr, XDRFormatType::Stencil));
+  MOZ_TRY(VersionCheck(xdr));
   MOZ_TRY(ScriptSource::XDR(xdr, maybeOptions, source));
 
   return Ok();
