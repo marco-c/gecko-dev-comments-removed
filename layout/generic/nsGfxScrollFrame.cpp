@@ -793,16 +793,18 @@ void nsHTMLScrollFrame::ReflowScrolledFrame(ScrollReflowInput* aState,
     
     
     
-    OverflowAreas childOverflow;
-    mHelper.mScrolledFrame->UnionChildOverflow(childOverflow);
-    nsRect childScrollableOverflow = childOverflow.ScrollableOverflow();
-
-    const LogicalMargin inlinePadding =
-        padding.ApplySkipSides(LogicalSides(wm, eLogicalSideBitsBBoth));
-    childScrollableOverflow.Inflate(inlinePadding.GetPhysicalMargin(wm));
-
+    
+    
+    
+    
     nsRect& so = aMetrics->ScrollableOverflow();
-    so = so.UnionEdges(childScrollableOverflow);
+    const nscoord soInlineSize = wm.IsVertical() ? so.Height() : so.Width();
+    if (soInlineSize > availISize) {
+      const LogicalMargin inlinePaddingEnd =
+          padding.ApplySkipSides(LogicalSides(wm, eLogicalSideBitsBBoth) |
+                                 LogicalSides(wm, eLogicalSideBitsIStart));
+      so.Inflate(inlinePaddingEnd.GetPhysicalMargin(wm));
+    }
   }
 
   aState->mContentsOverflowAreas = aMetrics->mOverflowAreas;
