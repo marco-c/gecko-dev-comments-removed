@@ -3381,14 +3381,22 @@ MainAxisPositionTracker::MainAxisPositionTracker(
   
   if (mJustifyContent.primary == StyleAlignFlags::LEFT ||
       mJustifyContent.primary == StyleAlignFlags::RIGHT) {
-    if (aAxisTracker.IsColumnOriented()) {
+    const auto wm = aAxisTracker.GetWritingMode();
+    if (aAxisTracker.IsColumnOriented() && !wm.IsVertical()) {
+      
       
       
       mJustifyContent.primary = StyleAlignFlags::START;
     } else {
+      MOZ_ASSERT(
+          aAxisTracker.MainAxis() == eLogicalAxisInline ||
+              wm.PhysicalAxis(aAxisTracker.MainAxis()) == eAxisHorizontal,
+          "The container's main axis should be parallel to either line-left "
+          "<-> line-right axis or physical left <-> physical right axis!");
+
       
       
-      const bool isLTR = aAxisTracker.GetWritingMode().IsBidiLTR();
+      const bool isLTR = wm.IsPhysicalLTR();
       const bool isJustifyLeft =
           (mJustifyContent.primary == StyleAlignFlags::LEFT);
       mJustifyContent.primary = (isJustifyLeft == isLTR)
