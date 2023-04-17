@@ -560,7 +560,9 @@ nsTArray<uint8_t> gfxPlatformGtk::GetPlatformCMSOutputProfileData() {
   result.AppendElements(static_cast<uint8_t*>(mem), size);
   free(mem);
 
-  return result;
+  
+  
+  return nsTArray<uint8_t>();
 }
 
 #else  
