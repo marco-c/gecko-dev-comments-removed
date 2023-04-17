@@ -185,6 +185,9 @@ class TextControlState final : public SupportsWeakPtr {
     ByContentAPI,
     
     
+    BySetRangeTextAPI,
+    
+    
     SetValueChanged,
     
     

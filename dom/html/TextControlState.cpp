@@ -2338,7 +2338,10 @@ void TextControlState::SetRangeText(const nsAString& aReplacement,
   }
 
   SetSelectionRange(selectionStart, selectionEnd, Optional<nsAString>(), aRv);
-  
+  if (IsSelectionCached()) {
+    
+    GetSelectionProperties().SetMaxLength(value.Length());
+  }
 }
 
 void TextControlState::DestroyEditor() {
@@ -2902,7 +2905,13 @@ bool TextControlState::SetValueWithoutTextEditor(
             aHandlingSetValue.ValueSetterOptionsRef()));
 
         SelectionProperties& props = GetSelectionProperties();
-        props.SetMaxLength(aHandlingSetValue.GetSettingValue().Length());
+        
+        
+        
+        props.SetMaxLength(aHandlingSetValue.ValueSetterOptionsRef().contains(
+                               ValueSetterOption::BySetRangeTextAPI)
+                               ? UINT32_MAX
+                               : aHandlingSetValue.GetSettingValue().Length());
         if (aHandlingSetValue.ValueSetterOptionsRef().contains(
                 ValueSetterOption::MoveCursorToEndIfValueChanged)) {
           props.SetStart(aHandlingSetValue.GetSettingValue().Length());
