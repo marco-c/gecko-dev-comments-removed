@@ -266,22 +266,22 @@ function handleGUMRequest(aSubject, aTopic, aData) {
   GlobalMuteListener.init();
 
   let constraints = aSubject.getConstraints();
-  let secure = aSubject.isSecure;
-  let isHandlingUserInput = aSubject.isHandlingUserInput;
   let contentWindow = Services.wm.getOuterWindowWithId(aSubject.windowID);
 
   prompt(
+    aSubject.type,
     contentWindow,
     aSubject.windowID,
     aSubject.callID,
     constraints,
     aSubject.devices,
-    secure,
-    isHandlingUserInput
+    aSubject.isSecure,
+    aSubject.isHandlingUserInput
   );
 }
 
 function prompt(
+  aRequestType,
   aContentWindow,
   aWindowID,
   aCallID,
@@ -292,6 +292,7 @@ function prompt(
 ) {
   let audioInputDevices = [];
   let videoInputDevices = [];
+  let audioOutputDevices = [];
   let devices = [];
 
   
@@ -303,18 +304,19 @@ function prompt(
     audio && typeof audio != "boolean" && audio.mediaSource != "microphone";
   for (let device of aDevices) {
     device = device.QueryInterface(Ci.nsIMediaDevice);
+    let deviceObject = {
+      name: device.rawName, 
+      deviceIndex: devices.length,
+      id: device.rawId,
+      mediaSource: device.mediaSource,
+    };
     switch (device.type) {
       case "audioinput":
         
         
         
         if (audio && (device.mediaSource == "microphone") != sharingAudio) {
-          audioInputDevices.push({
-            name: device.rawName, 
-            deviceIndex: devices.length,
-            id: device.rawId,
-            mediaSource: device.mediaSource,
-          });
+          audioInputDevices.push(deviceObject);
           devices.push(device);
         }
         break;
@@ -322,16 +324,16 @@ function prompt(
         
         
         if (video && (device.mediaSource == "camera") != sharingScreen) {
-          let deviceObject = {
-            name: device.rawName, 
-            deviceIndex: devices.length,
-            id: device.rawId,
-            mediaSource: device.mediaSource,
-          };
           if (device.scary) {
             deviceObject.scary = true;
           }
           videoInputDevices.push(deviceObject);
+          devices.push(device);
+        }
+        break;
+      case "audiooutput":
+        if (aRequestType == "selectaudiooutput") {
+          audioOutputDevices.push(deviceObject);
           devices.push(device);
         }
         break;
@@ -344,6 +346,9 @@ function prompt(
   }
   if (audioInputDevices.length) {
     requestTypes.push(sharingAudio ? "AudioCapture" : "Microphone");
+  }
+  if (audioOutputDevices.length) {
+    requestTypes.push("Speaker");
   }
 
   if (!requestTypes.length) {
@@ -401,6 +406,7 @@ function prompt(
     sharingAudio,
     audioInputDevices,
     videoInputDevices,
+    audioOutputDevices,
   };
 
   let actor = getActorForWindow(aContentWindow);
