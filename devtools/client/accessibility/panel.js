@@ -103,6 +103,8 @@ AccessibilityPanel.prototype = {
       EVENTS.ACCESSIBILITY_INSPECTOR_UPDATED,
       this.onAccessibilityInspectorUpdated
     );
+    
+    this._accessibilityViewInitialized = this.panelWin.once(EVENTS.INITIALIZED);
 
     this.shouldRefresh = true;
 
