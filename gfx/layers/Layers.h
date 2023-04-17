@@ -66,7 +66,6 @@ class Animation;
 class AsyncPanZoomController;
 class PaintedLayer;
 class ContainerLayer;
-class ColorLayer;
 class CompositorAnimations;
 class RefLayer;
 class SpecificLayerAttributes;
@@ -791,12 +790,6 @@ class Layer {
   virtual RefLayer* AsRefLayer() { return nullptr; }
 
   
-
-
-
-  virtual ColorLayer* AsColorLayer() { return nullptr; }
-
-  
   
   
   const Maybe<ParentLayerIntRect>& GetLocalClipRect();
@@ -1345,58 +1338,6 @@ class ContainerLayer : public Layer {
   
   
   bool mChildrenChanged;
-};
-
-
-
-
-
-
-class ColorLayer : public Layer {
- public:
-  ColorLayer* AsColorLayer() override { return this; }
-
-  
-
-
-
-  virtual void SetColor(const gfx::DeviceColor& aColor) {
-    if (mColor != aColor) {
-      MOZ_LAYERS_LOG_IF_SHADOWABLE(this, ("Layer::Mutated(%p) Color", this));
-      mColor = aColor;
-      Mutated();
-    }
-  }
-
-  void SetBounds(const gfx::IntRect& aBounds) {
-    if (!mBounds.IsEqualEdges(aBounds)) {
-      mBounds = aBounds;
-      Mutated();
-    }
-  }
-
-  const gfx::IntRect& GetBounds() { return mBounds; }
-
-  
-  virtual const gfx::DeviceColor& GetColor() { return mColor; }
-
-  MOZ_LAYER_DECL_NAME("ColorLayer", TYPE_COLOR)
-
-  void ComputeEffectiveTransforms(
-      const gfx::Matrix4x4& aTransformToSurface) override {
-    gfx::Matrix4x4 idealTransform = GetLocalTransform() * aTransformToSurface;
-    mEffectiveTransform = SnapTransformTranslation(idealTransform, nullptr);
-    ComputeEffectiveTransformForMaskLayers(aTransformToSurface);
-  }
-
- protected:
-  ColorLayer(LayerManager* aManager, void* aImplData)
-      : Layer(aManager, aImplData), mColor() {}
-
-  void PrintInfo(std::stringstream& aStream, const char* aPrefix) override;
-
-  gfx::IntRect mBounds;
-  gfx::DeviceColor mColor;
 };
 
 

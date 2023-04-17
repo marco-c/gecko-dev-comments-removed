@@ -296,11 +296,6 @@ class LayerManager : public WindowRenderer {
 
 
 
-  virtual already_AddRefed<ColorLayer> CreateColorLayer() = 0;
-  
-
-
-
   virtual already_AddRefed<RefLayer> CreateRefLayer() { return nullptr; }
   
 
