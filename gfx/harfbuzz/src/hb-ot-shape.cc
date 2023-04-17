@@ -194,6 +194,12 @@ hb_ot_shape_planner_t::compile (hb_ot_shape_plan_t           &plan,
 
 #ifndef HB_NO_AAT_SHAPE
   
+
+
+  if (plan.apply_morx)
+    plan.adjust_mark_positioning_when_zeroing = false;
+
+  
   plan.apply_trak = plan.requested_tracking && hb_aat_layout_has_tracking (face);
 #endif
 }
