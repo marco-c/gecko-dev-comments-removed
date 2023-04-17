@@ -14,7 +14,7 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/UpdateUtils.jsm"
 );
 
-const ENABLE_UI_PREF = "app.update.background.experimental";
+const ENABLE_UI_PREF = "app.update.background.scheduling.enabled";
 const BACKGROUND_UPDATE_PREF = "app.update.background.enabled";
 
 add_task(async function testBackgroundUpdateSettingUI() {
@@ -72,7 +72,7 @@ WARNING! This test involves background update, but background tasks are
       !defaultValue,
       `The background update UI should be ${
         defaultValue ? "shown" : "hidden"
-      } when app.update.background.experimental is ${defaultValue}.`
+      } when app.update.scheduling.enabled is ${defaultValue}.`
     );
   });
 
@@ -89,23 +89,37 @@ WARNING! This test involves background update, but background tasks are
   
   
   await UpdateUtils.setAppUpdateAutoEnabled(false);
-  await SpecialPowers.spawn(tab.linkedBrowser, [], async function() {
-    let backgroundUpdateCheckbox = content.document.getElementById(
-      "backgroundUpdate"
-    );
-    is(
-      backgroundUpdateCheckbox.hidden,
-      false,
-      `The background update UI should not be hidden when ` +
-        `app.update.background.experimental is true`
-    );
-    is(
-      backgroundUpdateCheckbox.disabled,
-      true,
-      `The background update UI should be disabled when auto update is ` +
-        `disabled`
-    );
-  });
+  await SpecialPowers.spawn(
+    tab.linkedBrowser,
+    [UpdateUtils.PER_INSTALLATION_PREFS_SUPPORTED],
+    async perInstallationPrefsSupported => {
+      let backgroundUpdateCheckbox = content.document.getElementById(
+        "backgroundUpdate"
+      );
+      is(
+        backgroundUpdateCheckbox.hidden,
+        !perInstallationPrefsSupported,
+        `The background update UI should ${
+          perInstallationPrefsSupported ? "not" : ""
+        } be hidden when app.update.background.scheduling.enabled is true ` +
+          `and perInstallationPrefsSupported is ${perInstallationPrefsSupported}`
+      );
+      if (perInstallationPrefsSupported) {
+        is(
+          backgroundUpdateCheckbox.disabled,
+          true,
+          `The background update UI should be disabled when auto update is ` +
+            `disabled`
+        );
+      }
+    }
+  );
+
+  if (!UpdateUtils.PER_INSTALLATION_PREFS_SUPPORTED) {
+    
+    
+    return;
+  }
 
   await UpdateUtils.setAppUpdateAutoEnabled(true);
   await UpdateUtils.writeUpdateConfigSetting(BACKGROUND_UPDATE_PREF, true);

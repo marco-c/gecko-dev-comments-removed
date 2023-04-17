@@ -1838,9 +1838,15 @@ var gMainPane = {
 
   isBackgroundUpdateUIAvailable() {
     return (
-      Services.prefs.getBoolPref("app.update.background.experimental", false) &&
+      Services.prefs.getBoolPref(
+        "app.update.background.scheduling.enabled",
+        false
+      ) &&
       AppConstants.MOZ_UPDATER &&
       AppConstants.MOZ_UPDATE_AGENT &&
+      
+      
+      UpdateUtils.PER_INSTALLATION_PREFS_SUPPORTED &&
       (!Services.policies || Services.policies.isAllowed("appUpdate")) &&
       !UpdateUtils.appUpdateSettingIsLocked("app.update.background.enabled")
     );
