@@ -275,7 +275,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   
   
   using RttValueObjectSet =
-      js::GCHashSet<JSObject*, js::MovableCellHasher<JSObject*>,
+      js::GCHashSet<js::HeapPtrObject, js::MovableCellHasher<js::HeapPtrObject>,
                     js::SystemAllocPolicy>;
 
   js::ZoneData<JS::WeakCache<RttValueObjectSet>> rttValueObjects_;
