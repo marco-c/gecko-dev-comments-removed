@@ -2798,21 +2798,19 @@ FrameMetrics nsLayoutUtils::CalculateBasicFrameMetrics(
     
     resolution = presShell->GetResolution();
   }
-  
-  
-  
-  
-  
-  
   LayoutDeviceToLayerScale2D cumulativeResolution(
-      presShell->GetCumulativeResolution() *
-      nsLayoutUtils::GetTransformToAncestorScale(frame));
+      LayoutDeviceToLayerScale(presShell->GetCumulativeResolution()));
 
   LayerToParentLayerScale layerToParentLayerScale(1.0f);
   metrics.SetDevPixelsPerCSSPixel(deviceScale);
   metrics.SetPresShellResolution(resolution);
   metrics.SetCumulativeResolution(cumulativeResolution);
   metrics.SetZoom(deviceScale * cumulativeResolution * layerToParentLayerScale);
+  LayoutDeviceToScreenScale2D resolutionToScreen(
+      presShell->GetCumulativeResolution() *
+      nsLayoutUtils::GetTransformToAncestorScale(frame));
+  metrics.SetExtraResolution(metrics.GetCumulativeResolution() /
+                             resolutionToScreen);
 
   
   
