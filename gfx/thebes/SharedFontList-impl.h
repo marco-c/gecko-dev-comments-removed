@@ -287,7 +287,12 @@ class FontList {
   
   
   static constexpr uint32_t SHM_BLOCK_SIZE = 64 * 1024;
+#elif XP_LINUX
+  
+  
+  static constexpr uint32_t SHM_BLOCK_SIZE = 1024 * 1024;
 #else
+  
   static constexpr uint32_t SHM_BLOCK_SIZE = 256 * 1024;
 #endif
   static_assert(SHM_BLOCK_SIZE <= (1 << Pointer::kBlockShift),
