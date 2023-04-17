@@ -389,10 +389,8 @@ def show_taskgraph(options):
         assert repo is not None
 
         
-        
-        
         for mod in sys.modules.copy():
-            if mod != __name__ and mod.startswith("taskgraph"):
+            if mod != __name__ and mod.split(".", 1)[0].endswith("taskgraph"):
                 del sys.modules[mod]
 
         if options["diff"] == "default":
