@@ -78,7 +78,7 @@ class IOThreadAutoTimer {
       IOInterposeObserver::Operation aOp = IOInterposeObserver::OpNone)
       : start(TimeStamp::Now()),
         id(aId)
-#if defined(MOZ_GECKO_PROFILER) && !defined(XP_WIN)
+#if !defined(XP_WIN)
         ,
         op(aOp)
 #endif
@@ -94,7 +94,7 @@ class IOThreadAutoTimer {
   explicit IOThreadAutoTimer(IOInterposeObserver::Operation aOp)
       : start(TimeStamp::Now()),
         id(Telemetry::HistogramCount)
-#if defined(MOZ_GECKO_PROFILER) && !defined(XP_WIN)
+#if !defined(XP_WIN)
         ,
         op(aOp)
 #endif
@@ -111,7 +111,7 @@ class IOThreadAutoTimer {
     
     
     
-#if defined(MOZ_GECKO_PROFILER) && !defined(XP_WIN)
+#if !defined(XP_WIN)
     if (IOInterposer::IsObservedOperation(op)) {
       const char* main_ref = "sqlite-mainthread";
       const char* other_ref = "sqlite-otherthread";
@@ -128,7 +128,7 @@ class IOThreadAutoTimer {
  private:
   const TimeStamp start;
   const Telemetry::HistogramID id;
-#if defined(MOZ_GECKO_PROFILER) && !defined(XP_WIN)
+#if !defined(XP_WIN)
   IOInterposeObserver::Operation op;
 #endif
 };

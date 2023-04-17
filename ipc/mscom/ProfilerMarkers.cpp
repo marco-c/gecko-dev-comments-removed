@@ -23,10 +23,6 @@
 #include <objbase.h>
 #include <objidlbase.h>
 
-#ifdef MOZ_GECKO_PROFILER
-#  include "mozilla/ProfilerMarkerTypes.h"
-#endif
-
 
 static const GUID GUID_MozProfilerMarkerExtension = {
     0x9dbe6b28, 0xe5e7, 0x4fde, {0xaf, 0x0, 0x94, 0x4, 0x60, 0x4e, 0x74, 0xdc}};

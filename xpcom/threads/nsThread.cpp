@@ -374,7 +374,6 @@ void nsThread::ThreadFunc(void* aArg) {
 
   mozilla::IOInterposer::RegisterCurrentThread();
 
-#ifdef MOZ_GECKO_PROFILER
   
   
   
@@ -382,7 +381,6 @@ void nsThread::ThreadFunc(void* aArg) {
   if (registerWithProfiler) {
     PROFILER_REGISTER_THREAD(initData->name.BeginReading());
   }
-#endif  
 
   {
     
@@ -418,12 +416,10 @@ void nsThread::ThreadFunc(void* aArg) {
   
   nsThreadManager::get().UnregisterCurrentThread(*self);
 
-#ifdef MOZ_GECKO_PROFILER
   
   if (registerWithProfiler) {
     PROFILER_UNREGISTER_THREAD();
   }
-#endif  
 
   
   NotNull<nsThreadShutdownContext*> context =
