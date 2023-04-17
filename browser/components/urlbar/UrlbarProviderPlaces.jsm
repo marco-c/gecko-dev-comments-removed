@@ -23,18 +23,6 @@ const QUERYTYPE_FILTERED = 0;
 const FRECENCY_DEFAULT = 1000;
 
 
-const REGEXP_USER_CONTEXT_ID = /(?:^| )user-context-id:(\d+)/;
-
-
-const REGEXP_MAX_RESULTS = /(?:^| )max-results:(\d+)/;
-
-
-const REGEXP_SPACES = /\s+/;
-
-
-const REGEXP_STRIP_PREFIX = /^[a-z]+:(?:\/){0,2}/i;
-
-
 const NOTIFYRESULT_DELAY_MS = 16;
 
 
@@ -137,26 +125,6 @@ function setTimeout(callback, ms) {
   return timer;
 }
 
-const kProtocolsWithIcons = [
-  "chrome:",
-  "moz-extension:",
-  "about:",
-  "http:",
-  "https:",
-  "ftp:",
-];
-function iconHelper(url) {
-  if (typeof url == "string") {
-    return kProtocolsWithIcons.some(p => url.startsWith(p))
-      ? "page-icon:" + url
-      : PlacesUtils.favicons.defaultFavicon.spec;
-  }
-  if (url && url instanceof URL && kProtocolsWithIcons.includes(url.protocol)) {
-    return "page-icon:" + url.href;
-  }
-  return PlacesUtils.favicons.defaultFavicon.spec;
-}
-
 
 XPCOMUtils.defineLazyGetter(this, "typeToBehaviorMap", () => {
   return new Map([
@@ -192,101 +160,12 @@ XPCOMUtils.defineLazyGetter(this, "sourceToBehaviorMap", () => {
 
 
 
-function stripAnyPrefix(str) {
-  let match = REGEXP_STRIP_PREFIX.exec(str);
-  if (!match) {
-    return ["", str];
-  }
-  let prefix = match[0];
-  if (prefix.length < str.length && str[prefix.length] == " ") {
-    return ["", str];
-  }
-  return [prefix, str.substr(prefix.length)];
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function stripPrefixAndTrim(spec, options = {}) {
-  let prefix = "";
-  let suffix = "";
-  if (options.stripHttp && spec.startsWith("http://")) {
-    spec = spec.slice(7);
-    prefix = "http://";
-  } else if (options.stripHttps && spec.startsWith("https://")) {
-    spec = spec.slice(8);
-    prefix = "https://";
-  }
-  if (options.stripWww && spec.startsWith("www.")) {
-    spec = spec.slice(4);
-    prefix += "www.";
-  }
-  if (options.trimEmptyHash && spec.endsWith("#")) {
-    spec = spec.slice(0, -1);
-    suffix = "#" + suffix;
-  }
-  if (options.trimEmptyQuery && spec.endsWith("?")) {
-    spec = spec.slice(0, -1);
-    suffix = "?" + suffix;
-  }
-  if (options.trimSlash && spec.endsWith("/")) {
-    spec = spec.slice(0, -1);
-    suffix = "/" + suffix;
-  }
-  return [spec, prefix, suffix];
-}
-
-
-
-
-
-
-
-
-
-
-
-
 
 function makeKeyForMatch(match) {
-  
-  
   let key, prefix;
-  if (match.style && match.style.includes("autofill")) {
-    [key, prefix] = stripPrefixAndTrim(match.finalCompleteValue, {
-      stripHttp: true,
-      stripHttps: true,
-      stripWww: true,
-      trimEmptyQuery: true,
-      trimSlash: true,
-    });
-
-    return [key, prefix, null];
-  }
-
   let action = PlacesUtils.parseActionUrl(match.value);
   if (!action) {
-    [key, prefix] = stripPrefixAndTrim(match.value, {
+    [key, prefix] = UrlbarUtils.stripPrefixAndTrim(match.value, {
       stripHttp: true,
       stripHttps: true,
       stripWww: true,
@@ -311,13 +190,16 @@ function makeKeyForMatch(match) {
       ];
       break;
     default:
-      [key, prefix] = stripPrefixAndTrim(action.params.url || match.value, {
-        stripHttp: true,
-        stripHttps: true,
-        stripWww: true,
-        trimEmptyQuery: true,
-        trimSlash: true,
-      });
+      [key, prefix] = UrlbarUtils.stripPrefixAndTrim(
+        action.params.url || match.value,
+        {
+          stripHttp: true,
+          stripHttps: true,
+          stripWww: true,
+          trimEmptyQuery: true,
+          trimSlash: true,
+        }
+      );
       break;
   }
 
@@ -533,31 +415,14 @@ const MATCH_TYPE = {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-function Search(
-  searchString,
-  searchParam,
-  autocompleteListener,
-  autocompleteSearch,
-  queryContext
-) {
+function Search(queryContext, autocompleteListener, autocompleteSearch) {
   
-  this._originalSearchString = searchString;
-  this._trimmedOriginalSearchString = searchString.trim();
+  this._originalSearchString = queryContext.searchString;
+  this._trimmedOriginalSearchString = queryContext.trimmedSearchString;
   let unescapedSearchString = Services.textToSubURI.unEscapeURIForUI(
     this._trimmedOriginalSearchString
   );
-  let [prefix, suffix] = stripAnyPrefix(unescapedSearchString);
+  let [prefix, suffix] = UrlbarUtils.stripURLPrefix(unescapedSearchString);
   this._searchString = suffix;
   this._strippedPrefix = prefix.toLowerCase();
 
@@ -567,35 +432,17 @@ function Search(
     ? UrlbarPrefs.get("defaultBehavior")
     : this._emptySearchDefaultBehavior;
 
-  if (queryContext) {
-    this._enableActions = true;
-    this._inPrivateWindow = queryContext.isPrivate;
-    this._prohibitAutoFill = !queryContext.allowAutofill;
-    this._maxResults = queryContext.maxResults;
-    this._userContextId = queryContext.userContextId;
-    this._currentPage = queryContext.currentPage;
-    this._searchModeEngine = queryContext.searchMode?.engineName;
-    this._searchMode = queryContext.searchMode;
-    if (this._searchModeEngine) {
-      
-      let engine = Services.search.getEngineByName(this._searchModeEngine);
-      this._filterOnHost = engine.getResultDomain();
-    }
-  } else {
-    let params = new Set(searchParam.split(" "));
-    this._enableActions = params.has("enable-actions");
-    this._inPrivateWindow = params.has("private-window");
-    this._prohibitAutoFill = params.has("prohibit-autofill");
+  this._inPrivateWindow = queryContext.isPrivate;
+  this._prohibitAutoFill = !queryContext.allowAutofill;
+  this._maxResults = queryContext.maxResults;
+  this._userContextId = queryContext.userContextId;
+  this._currentPage = queryContext.currentPage;
+  this._searchModeEngine = queryContext.searchMode?.engineName;
+  this._searchMode = queryContext.searchMode;
+  if (this._searchModeEngine) {
     
-    let maxResults = searchParam.match(REGEXP_MAX_RESULTS);
-    this._maxResults = maxResults
-      ? parseInt(maxResults[1])
-      : UrlbarPrefs.get("maxRichResults");
-    
-    let userContextId = searchParam.match(REGEXP_USER_CONTEXT_ID);
-    this._userContextId = userContextId
-      ? parseInt(userContextId[1], 10)
-      : Ci.nsIScriptSecurityManager.DEFAULT_USER_CONTEXT_ID;
+    let engine = Services.search.getEngineByName(this._searchModeEngine);
+    this._filterOnHost = engine.getResultDomain();
   }
 
   this._userContextId = UrlbarProviderOpenTabs.getUserContextIdForOpenPagesTable(
@@ -679,7 +526,7 @@ function Search(
   let result = Cc["@mozilla.org/autocomplete/simple-result;1"].createInstance(
     Ci.nsIAutoCompleteSimpleResult
   );
-  result.setSearchString(searchString);
+  result.setSearchString(queryContext.searchString);
   
   result.setDefaultIndex(-1);
   this._result = result;
@@ -742,21 +589,17 @@ Search.prototype = {
       }
       
       
-      if (behavior != "openpage" || this._enableActions) {
+      if (!foundToken) {
+        foundToken = true;
         
-        
-        if (!foundToken) {
-          foundToken = true;
-          
-          this._behavior = 0;
-          this.setBehavior("restrict");
-        }
-        this.setBehavior(behavior);
-        
-        
-        if (behavior == "tag") {
-          this.setBehavior("bookmark");
-        }
+        this._behavior = 0;
+        this.setBehavior("restrict");
+      }
+      this.setBehavior(behavior);
+      
+      
+      if (behavior == "tag") {
+        this.setBehavior("bookmark");
       }
     }
     return filtered;
@@ -879,7 +722,7 @@ Search.prototype = {
   },
 
   async _checkIfFirstTokenIsKeyword() {
-    if (!this._enableActions || !this._heuristicToken) {
+    if (!this._heuristicToken) {
       return false;
     }
 
@@ -1295,33 +1138,6 @@ Search.prototype = {
     }
   },
 
-  _addAutofillMatch(
-    autofilledValue,
-    finalCompleteValue,
-    frecency = Infinity,
-    extraStyles = []
-  ) {
-    
-    
-    
-    
-    
-    let [comment] = stripPrefixAndTrim(finalCompleteValue, {
-      stripHttp: true,
-      trimEmptyQuery: true,
-      trimSlash: !this._searchString.includes("/"),
-    });
-
-    this._addMatch({
-      value: this._strippedPrefix + autofilledValue,
-      finalCompleteValue,
-      comment,
-      frecency,
-      style: ["autofill"].concat(extraStyles).join(" "),
-      icon: iconHelper(finalCompleteValue),
-    });
-  },
-
   _addFilteredQueryMatch(row) {
     let placeId = row.getResultByIndex(QUERYINDEX_PLACEID);
     let url = row.getResultByIndex(QUERYINDEX_URL);
@@ -1338,15 +1154,11 @@ Search.prototype = {
       placeId,
       value: url,
       comment: bookmarkTitle || historyTitle,
-      icon: iconHelper(url),
+      icon: UrlbarUtils.getIconForUrl(url),
       frecency: frecency || FRECENCY_DEFAULT,
     };
 
-    if (
-      this._enableActions &&
-      openPageCount > 0 &&
-      this.hasBehavior("openpage")
-    ) {
+    if (openPageCount > 0 && this.hasBehavior("openpage")) {
       if (this._currentPage == match.value) {
         
         return;
@@ -1529,48 +1341,6 @@ Search.prototype = {
         maxResults: this._maxResults,
       },
     ];
-  },
-
-  
-
-
-  get _shouldAutofill() {
-    
-    if (!UrlbarPrefs.get("autoFill")) {
-      return false;
-    }
-
-    if (this._searchTokens.length != 1) {
-      return false;
-    }
-
-    
-    if (!this.hasBehavior("history") && !this.hasBehavior("bookmark")) {
-      return false;
-    }
-
-    
-    if (this.hasBehavior("title") || this.hasBehavior("tag")) {
-      return false;
-    }
-
-    
-    
-    
-    
-    if (REGEXP_SPACES.test(this._originalSearchString)) {
-      return false;
-    }
-
-    if (!this._searchString.length) {
-      return false;
-    }
-
-    if (this._prohibitAutoFill) {
-      return false;
-    }
-
-    return true;
   },
 
   
@@ -1794,11 +1564,9 @@ class ProviderPlaces extends UrlbarProvider {
     }
 
     let search = (this._currentSearch = new Search(
-      searchString,
-      "",
+      queryContext,
       listener,
-      this,
-      queryContext
+      this
     ));
     this.getDatabaseHandle()
       .then(conn => search.execute(conn))

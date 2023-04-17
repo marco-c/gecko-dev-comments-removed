@@ -219,6 +219,7 @@ var UrlbarUtils = {
     "about:",
     "http:",
     "https:",
+    "ftp:",
   ],
 
   
