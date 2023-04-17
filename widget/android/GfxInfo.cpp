@@ -612,6 +612,9 @@ nsresult GfxInfo::GetFeatureStatusImpl(
                      
                      gpu.Find("Mali-G31",  true) == kNotFound;
 
+      
+      isUnblocked |= gpu.Find("PowerVR Rogue",  true) >= 0;
+
       if (!isUnblocked) {
         *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
         aFailureId = "FEATURE_FAILURE_WEBRENDER_BLOCKED_DEVICE";
