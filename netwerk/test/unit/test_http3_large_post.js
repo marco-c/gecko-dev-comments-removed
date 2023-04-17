@@ -15,6 +15,28 @@ let Http3Listener = function() {};
 Http3Listener.prototype = {
   expectedStatus: Cr.NS_OK,
   amount: 0,
+  onProgressMaxNotificationCount: 0,
+  onProgressNotificationCount: 0,
+
+  QueryInterface: ChromeUtils.generateQI(["nsIProgressEventSink"]),
+
+  getInterface(iid) {
+    if (iid.equals(Ci.nsIProgressEventSink)) {
+      return this;
+    }
+    throw Components.Exception("", Cr.NS_ERROR_NO_INTERFACE);
+  },
+
+  onProgress(request, progress, progressMax) {
+    
+    if (progress === progressMax) {
+      this.onProgressMaxNotificationCount += 1;
+    }
+    
+    this.onProgressNotificationCount += 1;
+  },
+
+  onStatus(request, status, statusArg) {},
 
   onStartRequest: function testOnStartRequest(request) {
     Assert.equal(request.status, this.expectedStatus);
@@ -37,7 +59,13 @@ Http3Listener.prototype = {
       httpVersion = request.protocolVersion;
     } catch (e) {}
     Assert.equal(httpVersion, "h3-27");
-
+    
+    Assert.equal(this.onProgressMaxNotificationCount, 2);
+    if (this.amount > 500000) {
+      
+      
+      Assert.ok(this.onProgressNotificationCount > 10);
+    }
     this.finish();
   },
 };
@@ -86,6 +114,7 @@ add_task(async function test_large_post() {
   let listener = new Http3Listener();
   listener.amount = amount;
   let chan = makeChan("https://foo.example.com/post", amount);
+  chan.notificationCallbacks = listener;
   await chanPromise(chan, listener);
 });
 
@@ -97,5 +126,6 @@ add_task(async function test_large_post2() {
   let listener = new Http3Listener();
   listener.amount = amount;
   let chan = makeChan("https://foo.example.com/post", amount);
+  chan.notificationCallbacks = listener;
   await chanPromise(chan, listener);
 });
