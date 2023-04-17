@@ -42,38 +42,27 @@ enum class ElementCallbackType {
 };
 
 struct LifecycleCallbackArgs {
-  nsString name;
-  nsString oldValue;
-  nsString newValue;
-  nsString namespaceURI;
+  
+  nsString mName;
+  nsString mOldValue;
+  nsString mNewValue;
+  nsString mNamespaceURI;
 
-  size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const;
-};
-
-struct LifecycleAdoptedCallbackArgs {
+  
   RefPtr<Document> mOldDocument;
   RefPtr<Document> mNewDocument;
+
+  size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const;
 };
 
 class CustomElementCallback {
  public:
   CustomElementCallback(Element* aThisObject, ElementCallbackType aCallbackType,
-                        CallbackFunction* aCallback);
+                        CallbackFunction* aCallback,
+                        const LifecycleCallbackArgs& aArgs);
   void Traverse(nsCycleCollectionTraversalCallback& aCb) const;
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const;
   void Call();
-  void SetArgs(LifecycleCallbackArgs& aArgs) {
-    MOZ_ASSERT(mType == ElementCallbackType::eAttributeChanged,
-               "Arguments are only used by attribute changed callback.");
-    mArgs = aArgs;
-  }
-
-  void SetAdoptedCallbackArgs(
-      LifecycleAdoptedCallbackArgs& aAdoptedCallbackArgs) {
-    MOZ_ASSERT(mType == ElementCallbackType::eAdopted,
-               "Arguments are only used by adopted callback.");
-    mAdoptedCallbackArgs = aAdoptedCallbackArgs;
-  }
 
  private:
   
@@ -82,9 +71,7 @@ class CustomElementCallback {
   
   ElementCallbackType mType;
   
-  
   LifecycleCallbackArgs mArgs;
-  LifecycleAdoptedCallbackArgs mAdoptedCallbackArgs;
 };
 
 
@@ -423,11 +410,10 @@ class CustomElementRegistry final : public nsISupports, public nsWrapperCache {
   CustomElementDefinition* LookupCustomElementDefinition(
       JSContext* aCx, JSObject* aConstructor) const;
 
-  static void EnqueueLifecycleCallback(
-      ElementCallbackType aType, Element* aCustomElement,
-      LifecycleCallbackArgs* aArgs,
-      LifecycleAdoptedCallbackArgs* aAdoptedCallbackArgs,
-      CustomElementDefinition* aDefinition);
+  static void EnqueueLifecycleCallback(ElementCallbackType aType,
+                                       Element* aCustomElement,
+                                       const LifecycleCallbackArgs& aArgs,
+                                       CustomElementDefinition* aDefinition);
 
   
 
@@ -507,9 +493,7 @@ class CustomElementRegistry final : public nsISupports, public nsWrapperCache {
 
   static UniquePtr<CustomElementCallback> CreateCustomElementCallback(
       ElementCallbackType aType, Element* aCustomElement,
-      LifecycleCallbackArgs* aArgs,
-      LifecycleAdoptedCallbackArgs* aAdoptedCallbackArgs,
-      CustomElementDefinition* aDefinition);
+      const LifecycleCallbackArgs& aArgs, CustomElementDefinition* aDefinition);
 
   void UpgradeCandidates(nsAtom* aKey, CustomElementDefinition* aDefinition,
                          ErrorResult& aRv);
