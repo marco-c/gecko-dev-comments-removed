@@ -19,6 +19,15 @@ parser.add_argument("extra", nargs="?", default="unnecessary.txt")
 parser.add_argument("refs", nargs="?", default="refs.txt")
 args = parser.parse_args()
 
+
+
+def splitfunc(full):
+    idx = full.find("$")
+    if idx == -1:
+        return (full, full)
+    return (full[0:idx], full[idx + 1 :])
+
+
 num_hazards = 0
 num_refs = 0
 num_missing = 0
@@ -65,8 +74,12 @@ try:
                 line,
             )  
             if m:
+                
                 current_gcFunction = m.group(1)
-                hazardousGCFunctions[current_gcFunction].append(line)
+                _, readable = splitfunc(current_gcFunction)
+                hazardousGCFunctions[current_gcFunction].append(
+                    line.replace(current_gcFunction, readable)
+                )
                 hazardOrder.append(
                     (
                         current_gcFunction,
@@ -90,6 +103,7 @@ try:
                 else:
                     hazardousGCFunctions[current_gcFunction][-1] += line
 
+        mangled2full = {}
         with open(args.gcFunctions) as gcFunctions:
             gcExplanations = {}  
 
@@ -100,10 +114,10 @@ try:
                 if m:
                     if current_func:
                         gcExplanations[current_func] = explanation
-                    current_func = None
-                    if m.group(1) in hazardousGCFunctions:
-                        current_func = m.group(1)
-                        explanation = line
+                    current_func = m.group(1)
+                    mangled, _ = splitfunc(current_func)
+                    mangled2full[mangled] = current_func
+                    explanation = line
                 elif current_func:
                     explanation += line
             if current_func:
@@ -113,7 +127,25 @@ try:
             gcHazards = hazardousGCFunctions[gcFunction]
 
             if gcFunction in gcExplanations:
-                print(gcHazards[index] + gcExplanations[gcFunction], file=hazards)
+                key = gcFunction
+            else:
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                mangled, _ = splitfunc(gcFunction)
+                key = mangled2full[mangled]
+
+            if key in gcExplanations:
+                print(gcHazards[index] + gcExplanations[key], file=hazards)
             else:
                 print(gcHazards[index], file=hazards)
 
