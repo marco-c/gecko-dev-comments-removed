@@ -48,10 +48,6 @@ let HOST_BLOCKLIST = {
     
     "^(https?:\\/\\/)?(www\\.)?duckduckgo\\.com\\/.*(\\?|&)q=.*",
   ],
-  example: [
-    
-    "^(https?:\\/\\/)?example\\.com\\/browser",
-  ],
   google: [
     
     "^(https?:\\/\\/)?(www\\.)?google\\.(\\w|\\.){2,}\\/search.*(\\?|&)q=.*",
@@ -93,6 +89,27 @@ HOST_BLOCKLIST = new Proxy(HOST_BLOCKLIST, {
 
 
 class _InteractionsBlocklist {
+  constructor() {
+    
+    try {
+      let customBlocklist = JSON.parse(
+        Services.prefs.getStringPref(
+          "places.interactions.customBlocklist",
+          "[]"
+        )
+      );
+      if (!Array.isArray(customBlocklist)) {
+        throw new Error();
+      }
+      let parsedBlocklist = customBlocklist.map(
+        regexStr => new RegExp(regexStr)
+      );
+      HOST_BLOCKLIST["*"] = parsedBlocklist;
+    } catch (ex) {
+      logConsole.warn("places.interactions.customBlocklist is corrupted.");
+    }
+  }
+
   
 
 
@@ -130,12 +147,72 @@ class _InteractionsBlocklist {
     );
     
     
-    let regexes = HOST_BLOCKLIST[baseHost.toLocaleLowerCase()];
+    let regexes = HOST_BLOCKLIST[baseHost.toLocaleLowerCase()] || [];
+    regexes.push(...(HOST_BLOCKLIST["*"] || []));
     if (!regexes) {
       return false;
     }
 
     return regexes.some(r => r.test(url.href));
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  addRegexToBlocklist(regexToAdd) {
+    let regex;
+    try {
+      regex = new RegExp(regexToAdd, "i");
+    } catch (ex) {
+      this.logConsole.warn("Invalid regex passed to addRegexToBlocklist.");
+      return;
+    }
+
+    if (!HOST_BLOCKLIST["*"]) {
+      HOST_BLOCKLIST["*"] = [];
+    }
+    HOST_BLOCKLIST["*"].push(regex);
+    Services.prefs.setStringPref(
+      "places.interactions.customBlocklist",
+      JSON.stringify(HOST_BLOCKLIST["*"].map(reg => reg.toString()))
+    );
+  }
+
+  
+
+
+
+
+
+
+
+
+  removeRegexFromBlocklist(regexToRemove) {
+    let regex;
+    try {
+      regex = new RegExp(regexToRemove, "i");
+    } catch (ex) {
+      this.logConsole.warn("Invalid regex passed to addRegexToBlocklist.");
+      return;
+    }
+
+    if (!HOST_BLOCKLIST["*"] || !Array.isArray(HOST_BLOCKLIST["*"])) {
+      return;
+    }
+    HOST_BLOCKLIST["*"] = HOST_BLOCKLIST["*"].filter(
+      curr => curr.source != regex.source
+    );
+    Services.prefs.setStringPref(
+      "places.interactions.customBlocklist",
+      JSON.stringify(HOST_BLOCKLIST["*"].map(reg => reg.toString()))
+    );
   }
 }
 
