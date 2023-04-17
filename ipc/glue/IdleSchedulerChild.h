@@ -42,6 +42,8 @@ class IdleSchedulerChild final : public PIdleSchedulerChild {
   
   RefPtr<MayGCPromise> MayGCNow();
 
+  
+  void StartedGC();
   void DoneGC();
 
   

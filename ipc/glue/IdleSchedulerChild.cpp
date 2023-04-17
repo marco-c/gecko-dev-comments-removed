@@ -85,19 +85,37 @@ RefPtr<IdleSchedulerChild::MayGCPromise> IdleSchedulerChild::MayGCNow() {
   return SendRequestGC()->Then(
       GetMainThreadSerialEventTarget(), __func__,
       [self = RefPtr(this), wait_since](bool aIgnored) {
-        MOZ_ASSERT(self->mIsRequestingGC && !self->mIsDoingGC);
         
+        MOZ_ASSERT(!(self->mIsRequestingGC && self->mIsDoingGC));
 
-        Telemetry::AccumulateTimeDelta(Telemetry::GC_WAIT_FOR_IDLE_MS,
-                                       wait_since);
-        self->mIsRequestingGC = false;
-        self->mIsDoingGC = true;
-        return MayGCPromise::CreateAndResolve(true, __func__);
+        
+        if (self->mIsRequestingGC) {
+          Telemetry::AccumulateTimeDelta(Telemetry::GC_WAIT_FOR_IDLE_MS,
+                                         wait_since);
+          self->mIsRequestingGC = false;
+          self->mIsDoingGC = true;
+          return MayGCPromise::CreateAndResolve(true, __func__);
+        }
+        return MayGCPromise::CreateAndResolve(false, __func__);
       },
       [self = RefPtr(this)](ResponseRejectReason reason) {
         self->mIsRequestingGC = false;
         return MayGCPromise::CreateAndReject(reason, __func__);
       });
+}
+
+void IdleSchedulerChild::StartedGC() {
+  
+  MOZ_ASSERT(!(mIsRequestingGC && mIsDoingGC));
+
+  
+  
+  mIsRequestingGC = false;
+
+  if (!mIsDoingGC) {
+    SendStartedGC();
+    mIsDoingGC = true;
+  }
 }
 
 void IdleSchedulerChild::DoneGC() {

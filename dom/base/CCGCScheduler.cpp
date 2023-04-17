@@ -15,6 +15,14 @@ void CCGCScheduler::NoteGCBegin() {
   
   mInIncrementalGC = true;
   mReadyForMajorGC = false;
+
+  
+  
+  using mozilla::ipc::IdleSchedulerChild;
+  IdleSchedulerChild* child = IdleSchedulerChild::GetMainThreadIdleScheduler();
+  if (child) {
+    child->StartedGC();
+  }
 }
 
 void CCGCScheduler::NoteGCEnd() {
@@ -32,6 +40,12 @@ void CCGCScheduler::NoteGCEnd() {
   mCCollectedWaitingForGC = 0;
   mCCollectedZonesWaitingForGC = 0;
   mLikelyShortLivingObjectsNeedingGC = 0;
+
+  using mozilla::ipc::IdleSchedulerChild;
+  IdleSchedulerChild* child = IdleSchedulerChild::GetMainThreadIdleScheduler();
+  if (child) {
+    child->DoneGC();
+  }
 }
 
 void CCGCScheduler::NoteWontGC() {
@@ -56,30 +70,6 @@ bool CCGCScheduler::GCRunnerFired(TimeStamp aDeadline) {
       if (!mbPromise) {
         
         break;
-      }
-
-      if (mbPromise->IsResolved()) {
-        
-        
-        mbPromise->Then(
-            GetMainThreadSerialEventTarget(), __func__,
-            [this, aDeadline, step](bool aMayGC) {
-              MOZ_ASSERT(!InIncrementalGC());
-              if (aMayGC) {
-                MOZ_ALWAYS_TRUE(NoteReadyForMajorGC());
-                GCRunnerFiredDoGC(aDeadline, step);
-              } else {
-                KillGCRunner();
-                NoteWontGC();
-              }
-            },
-            [this](mozilla::ipc::ResponseRejectReason r) {
-              if (!InIncrementalGC()) {
-                KillGCRunner();
-                NoteWontGC();
-              }
-            });
-        return true;
       }
 
       KillGCRunner();
@@ -137,6 +127,7 @@ bool CCGCScheduler::GCRunnerFiredDoGC(TimeStamp aDeadline,
         child->DoneGC();
       }
       NoteWontGC();
+      KillGCRunner();
       return true;
     }
   }

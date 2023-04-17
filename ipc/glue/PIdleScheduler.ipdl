@@ -55,6 +55,10 @@ parent:
   
   async RequestGC() returns (bool may_gc);
 
+  
+  async StartedGC();
+
+  
   async DoneGC();
 
   
