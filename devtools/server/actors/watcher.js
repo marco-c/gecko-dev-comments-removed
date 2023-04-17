@@ -173,6 +173,8 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
         saveRequestAndResponseBodies: true,
         
         "network-persist": true,
+        
+        "event-breakpoints": true,
       },
     };
   },

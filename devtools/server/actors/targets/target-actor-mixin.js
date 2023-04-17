@@ -17,6 +17,7 @@ const {
   TARGET_CONFIGURATION,
   THREAD_CONFIGURATION,
   XHR_BREAKPOINTS,
+  EVENT_BREAKPOINTS,
 } = WatchedDataHelpers.SUPPORTED_DATA;
 
 loader.lazyRequireGetter(
@@ -45,6 +46,7 @@ module.exports = function(targetType, targetActorSpec, implementation) {
 
 
 
+    
     async addWatcherDataEntry(type, entries, isDocumentCreation = false) {
       if (type == RESOURCES) {
         await this._watchTargetResources(entries);
@@ -126,6 +128,20 @@ module.exports = function(targetType, targetActorSpec, implementation) {
             this.threadActor.setXHRBreakpoint(path, method)
           )
         );
+      } else if (type == EVENT_BREAKPOINTS) {
+        
+        if (typeof this.attach == "function") {
+          this.attach();
+        }
+
+        
+        if (
+          this.threadActor.state == THREAD_STATES.DETACHED &&
+          !this.targetType.endsWith("worker")
+        ) {
+          this.threadActor.attach();
+        }
+        await this.threadActor.setActiveEventBreakpoints(entries);
       }
     },
 

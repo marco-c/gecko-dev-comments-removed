@@ -334,9 +334,17 @@ async function setSkipPausing(shouldSkip) {
 }
 
 async function setEventListenerBreakpoints(ids) {
-  return forEachThread(thread => thread.setActiveEventBreakpoints(ids));
+  
+  
+  const hasWatcherSupport = commands.targetCommand.hasTargetWatcherSupport(
+    "event-breakpoints"
+  );
+  if (!hasWatcherSupport) {
+    return forEachThread(thread => thread.setActiveEventBreakpoints(ids));
+  }
+  const breakpointListFront = await commands.targetCommand.watcherFront.getBreakpointListActor();
+  await breakpointListFront.setActiveEventBreakpoints(ids);
 }
-
 
 async function getEventListenerBreakpointTypes() {
   let categories;
