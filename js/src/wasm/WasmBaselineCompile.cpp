@@ -3794,6 +3794,14 @@ class BaseCompiler final : public BaseCompilerInterface {
   
   StkVector stk_;
 
+  
+  
+  
+  
+  
+  
+  
+
   static constexpr size_t MaxPushesPerOpcode = 10;
 
   
@@ -5245,6 +5253,12 @@ class BaseCompiler final : public BaseCompilerInterface {
     }
 
     if (type.length() > 1) {
+      
+      
+      
+      
+      
+      
       if (!stk_.reserve(stk_.length() + type.length() + MaxPushesPerOpcode)) {
         return false;
       }
@@ -16112,6 +16126,8 @@ bool BaseCompiler::emitBody() {
     continue;             \
   }
 
+    
+    
     CHECK(stk_.reserve(stk_.length() + MaxPushesPerOpcode));
 
     OpBytes op;
