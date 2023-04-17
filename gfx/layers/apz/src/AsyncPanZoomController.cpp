@@ -3119,6 +3119,10 @@ bool AsyncPanZoomController::IsOverscrolled() const {
   return mX.IsOverscrolled() || mY.IsOverscrolled();
 }
 
+bool AsyncPanZoomController::IsInInvalidOverscroll() const {
+  return mX.IsInInvalidOverscroll() || mY.IsInInvalidOverscroll();
+}
+
 ParentLayerPoint AsyncPanZoomController::PanStart() const {
   return ParentLayerPoint(mX.PanStart(), mY.PanStart());
 }
@@ -5336,14 +5340,13 @@ void AsyncPanZoomController::NotifyLayersUpdated(
   
   
   
-  
-  
-  
   if (needToReclampScroll) {
-    if (mState == OVERSCROLL_ANIMATION) {
-      CancelAnimation();
-    } else if (IsOverscrolled()) {
-      ClearOverscroll();
+    if (IsInInvalidOverscroll()) {
+      if (mState == OVERSCROLL_ANIMATION) {
+        CancelAnimation();
+      } else if (IsOverscrolled()) {
+        ClearOverscroll();
+      }
     }
   }
 

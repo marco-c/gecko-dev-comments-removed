@@ -172,6 +172,14 @@ class Axis {
   
 
 
+
+
+
+  bool IsInInvalidOverscroll() const;
+
+  
+
+
   void ClearOverscroll();
 
   
@@ -288,6 +296,9 @@ class Axis {
   ParentLayerCoord GetCompositionEnd() const;
   ParentLayerCoord GetPageEnd() const;
   ParentLayerCoord GetScrollRangeEnd() const;
+
+  bool IsScrolledToStart() const;
+  bool IsScrolledToEnd() const;
 
   ParentLayerCoord GetPos() const { return mPos; }
 

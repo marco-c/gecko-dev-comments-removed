@@ -1416,7 +1416,7 @@ TEST_F(APZCOverscrollTester, DynamicallyLoadingContent) {
   
   ScreenIntPoint panPoint(50, 50);
   PanGesture(PanGestureInput::PANGESTURE_START, apzc, panPoint,
-             ScreenPoint(0, -1), mcc->Time());
+             ScreenPoint(0, 1), mcc->Time());
   for (int i = 0; i < 12; ++i) {
     mcc->AdvanceByMillis(10);
     PanGesture(PanGestureInput::PANGESTURE_PAN, apzc, panPoint,
@@ -1434,6 +1434,30 @@ TEST_F(APZCOverscrollTester, DynamicallyLoadingContent) {
 
   
   EXPECT_FALSE(apzc->IsOverscrolled());
+
+  
+  PanGesture(PanGestureInput::PANGESTURE_START, apzc, panPoint,
+             ScreenPoint(0, -1), mcc->Time());
+  for (int i = 0; i < 12; ++i) {
+    mcc->AdvanceByMillis(10);
+    PanGesture(PanGestureInput::PANGESTURE_PAN, apzc, panPoint,
+               ScreenPoint(0, -100), mcc->Time());
+  }
+  EXPECT_TRUE(apzc->IsOverscrolled());
+  ParentLayerPoint overscrollAmount = apzc->GetOverscrollAmount();
+  EXPECT_TRUE(overscrollAmount.y < 0);  
+
+  
+  scrollableRect = metrics.GetScrollableRect();
+  scrollableRect.height += 500;
+  metrics.SetScrollableRect(scrollableRect);
+  apzc->NotifyLayersUpdated(metadata, false, true);
+
+  
+  
+  EXPECT_TRUE(apzc->IsOverscrolled());
+  EXPECT_EQ(overscrollAmount,
+            apzc->GetOverscrollAmount());  
 }
 #endif
 
