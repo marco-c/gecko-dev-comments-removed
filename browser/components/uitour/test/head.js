@@ -302,7 +302,7 @@ function isTourBrowser(aBrowser) {
   );
 }
 
-function loadUITourTestPage(callback, host = "https://example.org/") {
+async function loadUITourTestPage(callback, host = "https://example.org/") {
   if (gTestTab) {
     gProxyCallbackMap.clear();
     gBrowser.removeTab(gTestTab);
@@ -315,119 +315,86 @@ function loadUITourTestPage(callback, host = "https://example.org/") {
   let url = getRootDirectory(gTestPath) + "uitour.html";
   url = url.replace("chrome://mochitests/content/", host);
 
-  gTestTab = BrowserTestUtils.addTab(gBrowser, url);
-  gBrowser.selectedTab = gTestTab;
-
-  BrowserTestUtils.browserLoaded(gTestTab.linkedBrowser).then(() => {
-    if (gMultiProcessBrowser) {
-      
-      
-      
-      let contentWinHandler = {
-        get(target, prop, receiver) {
-          return (...args) => {
-            let taskArgs = {
-              methodName: prop,
-              args,
-            };
-            return SpecialPowers.spawn(
-              gTestTab.linkedBrowser,
-              [taskArgs],
-              contentArgs => {
-                let contentWin = Cu.waiveXrays(content);
-                return contentWin[contentArgs.methodName].apply(
-                  contentWin,
-                  contentArgs.args
-                );
-              }
-            );
-          };
-        },
-      };
-      gContentWindow = new Proxy({}, contentWinHandler);
-
-      let UITourHandler = {
-        get(target, prop, receiver) {
-          return (...args) => {
-            let browser = gTestTab.linkedBrowser;
-            
-            let fnIndices = [];
-            args = args.map((arg, index) => {
-              
-              
-              
-              
-              
-              if (typeof arg == "function") {
-                gProxyCallbackMap.set(index, arg);
-                fnIndices.push(index);
-                return "";
+  gTestTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
+  
+  
+  
+  let UITourHandler = {
+    get(target, prop, receiver) {
+      return (...args) => {
+        let browser = gTestTab.linkedBrowser;
+        
+        let fnIndices = [];
+        args = args.map((arg, index) => {
+          
+          
+          
+          
+          
+          if (typeof arg == "function") {
+            gProxyCallbackMap.set(index, arg);
+            fnIndices.push(index);
+            return "";
+          }
+          return arg;
+        });
+        let taskArgs = {
+          methodName: prop,
+          args,
+          fnIndices,
+        };
+        return SpecialPowers.spawn(browser, [taskArgs], async function(
+          contentArgs
+        ) {
+          let contentWin = Cu.waiveXrays(content);
+          let callbacksCalled = 0;
+          let resolveCallbackPromise;
+          let allCallbacksCalledPromise = new Promise(
+            resolve => (resolveCallbackPromise = resolve)
+          );
+          let argumentsWithFunctions = Cu.cloneInto(
+            contentArgs.args.map((arg, index) => {
+              if (arg === "" && contentArgs.fnIndices.includes(index)) {
+                return function() {
+                  callbacksCalled++;
+                  SpecialPowers.spawnChrome(
+                    [index, Array.from(arguments)],
+                    (indexParent, argumentsParent) => {
+                      
+                      
+                      
+                      let window = this.browsingContext.topChromeWindow;
+                      let cb = window.gProxyCallbackMap.get(indexParent);
+                      window.gProxyCallbackMap.delete(indexParent);
+                      cb.apply(null, argumentsParent);
+                    }
+                  );
+                  if (callbacksCalled >= contentArgs.fnIndices.length) {
+                    resolveCallbackPromise();
+                  }
+                };
               }
               return arg;
-            });
-            let taskArgs = {
-              methodName: prop,
-              args,
-              fnIndices,
-            };
-            return SpecialPowers.spawn(browser, [taskArgs], async function(
-              contentArgs
-            ) {
-              let contentWin = Cu.waiveXrays(content);
-              let callbacksCalled = 0;
-              let resolveCallbackPromise;
-              let allCallbacksCalledPromise = new Promise(
-                resolve => (resolveCallbackPromise = resolve)
-              );
-              let argumentsWithFunctions = Cu.cloneInto(
-                contentArgs.args.map((arg, index) => {
-                  if (arg === "" && contentArgs.fnIndices.includes(index)) {
-                    return function() {
-                      callbacksCalled++;
-                      SpecialPowers.spawnChrome(
-                        [index, Array.from(arguments)],
-                        (indexParent, argumentsParent) => {
-                          
-                          
-                          
-                          let window = this.browsingContext.topChromeWindow;
-                          let cb = window.gProxyCallbackMap.get(indexParent);
-                          window.gProxyCallbackMap.delete(indexParent);
-                          cb.apply(null, argumentsParent);
-                        }
-                      );
-                      if (callbacksCalled >= contentArgs.fnIndices.length) {
-                        resolveCallbackPromise();
-                      }
-                    };
-                  }
-                  return arg;
-                }),
-                content,
-                { cloneFunctions: true }
-              );
-              let rv = contentWin.Mozilla.UITour[contentArgs.methodName].apply(
-                contentWin.Mozilla.UITour,
-                argumentsWithFunctions
-              );
-              if (contentArgs.fnIndices.length) {
-                await allCallbacksCalledPromise;
-              }
-              return rv;
-            });
-          };
-        },
+            }),
+            content,
+            { cloneFunctions: true }
+          );
+          let rv = contentWin.Mozilla.UITour[contentArgs.methodName].apply(
+            contentWin.Mozilla.UITour,
+            argumentsWithFunctions
+          );
+          if (contentArgs.fnIndices.length) {
+            await allCallbacksCalledPromise;
+          }
+          return rv;
+        });
       };
-      gContentAPI = new Proxy({}, UITourHandler);
-    } else {
-      gContentWindow = Cu.waiveXrays(
-        gTestTab.linkedBrowser.contentDocument.defaultView
-      );
-      gContentAPI = gContentWindow.Mozilla.UITour;
-    }
+    },
+  };
+  gContentAPI = new Proxy({}, UITourHandler);
 
-    waitForFocus(callback, gTestTab.linkedBrowser);
-  });
+  await SimpleTest.promiseFocus(gTestTab.linkedBrowser);
+  callback();
 }
 
 
@@ -461,7 +428,6 @@ function UITourTest(usingAddTask = false) {
   }
 
   registerCleanupFunction(function() {
-    delete window.gContentWindow;
     delete window.gContentAPI;
     if (gTestTab) {
       gBrowser.removeTab(gTestTab);

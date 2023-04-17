@@ -4,7 +4,6 @@
 
 var gTestTab;
 var gContentAPI;
-var gContentWindow;
 var handleDialog;
 
 
