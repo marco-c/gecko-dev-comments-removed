@@ -12,6 +12,7 @@
 
 
 
+const { Ci } = require("chrome");
 const Services = require("Services");
 const {
   connectToFrame,
@@ -62,6 +63,7 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
       traits: {
         
         watcher: true,
+        supportsReloadBrowsingContext: true,
       },
       url: this._getUrl(),
     };
@@ -212,6 +214,18 @@ const TabDescriptorActor = ActorClassWithSpec(tabDescriptorSpec, {
     const tabbrowser = this._tabbrowser;
     const tab = tabbrowser ? tabbrowser.getTabForBrowser(this._browser) : null;
     return tab?.hasAttribute && tab.hasAttribute("pending");
+  },
+
+  reloadBrowsingContext({ bypassCache }) {
+    if (!this._browser || !this._browser.browsingContext) {
+      return;
+    }
+
+    this._browser.browsingContext.reload(
+      bypassCache
+        ? Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE
+        : Ci.nsIWebNavigation.LOAD_FLAGS_NONE
+    );
   },
 
   destroy() {

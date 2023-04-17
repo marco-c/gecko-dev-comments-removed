@@ -3,7 +3,11 @@
 
 "use strict";
 
-const { RetVal, generateActorSpec } = require("devtools/shared/protocol");
+const {
+  RetVal,
+  generateActorSpec,
+  Option,
+} = require("devtools/shared/protocol");
 
 const webExtensionDescriptorSpec = generateActorSpec({
   typeName: "webExtensionDescriptor",
@@ -23,6 +27,13 @@ const webExtensionDescriptorSpec = generateActorSpec({
     getTarget: {
       request: {},
       response: { form: RetVal("json") },
+    },
+
+    reloadBrowsingContext: {
+      request: {
+        bypassCache: Option(0, "boolean"),
+      },
+      response: {},
     },
   },
 

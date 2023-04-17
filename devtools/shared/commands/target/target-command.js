@@ -758,9 +758,14 @@ class TargetCommand extends EventEmitter {
 
 
   async reloadTopLevelTarget(bypassCache = false) {
+    
+    
+    
+    
+    
     if (!this.targetFront.isBrowsingContext) {
       throw new Error(
-        "The top level target isn't a BrowsingContext and don't support being reloaded"
+        "The top level target isn't a BrowsingContext and doesn't support being reloaded"
       );
     }
 
@@ -780,12 +785,24 @@ class TargetCommand extends EventEmitter {
       }
     );
 
+    
+    
+    if (this.descriptorFront.traits.supportsReloadBrowsingContext) {
+      await this.descriptorFront.reloadBrowsingContext({ bypassCache });
+    } else {
+      await this._legacyTargetActorReload(bypassCache);
+    }
+
+    await onReloaded;
+  }
+
+  async _legacyTargetActorReload(force) {
     const { targetFront } = this;
     try {
       
       
       
-      await targetFront.reload({ options: { force: bypassCache } });
+      await targetFront.reload({ options: { force } });
     } catch (e) {
       
       
@@ -793,8 +810,6 @@ class TargetCommand extends EventEmitter {
         throw e;
       }
     }
-
-    await onReloaded;
   }
 
   

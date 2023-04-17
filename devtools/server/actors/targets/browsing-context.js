@@ -1156,6 +1156,10 @@ const browsingContextTargetPrototype = {
   
 
 
+
+
+
+
   reload(request) {
     const force = request?.options?.force;
     
@@ -1291,7 +1295,7 @@ const browsingContextTargetPrototype = {
     }
 
     if (reload) {
-      this.reload();
+      this.webNavigation.reload(Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
     }
   },
 

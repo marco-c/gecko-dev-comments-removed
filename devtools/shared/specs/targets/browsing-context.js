@@ -37,6 +37,12 @@ types.addDictType("browsingContextTarget.workers", {
   workers: "array:workerDescriptor",
 });
 
+
+
+
+
+
+
 types.addDictType("browsingContextTarget.reload", {
   force: "boolean",
 });
@@ -79,6 +85,13 @@ const browsingContextTargetSpecPrototype = {
       request: {},
       response: {},
     },
+    
+    
+    
+    
+    
+    
+
     reload: {
       request: {
         options: Option(0, "browsingContextTarget.reload"),
