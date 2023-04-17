@@ -117,8 +117,8 @@ TestWRScrollData TestWRScrollData::Create(const char* aTreeShape,
 
   
   
-  for (auto it = finishedLayers.crbegin(); it != finishedLayers.crend(); ++it) {
-    result.AddLayerData(*it);
+  for (auto it = finishedLayers.rbegin(); it != finishedLayers.rend(); ++it) {
+    result.AddLayerData(std::move(*it));
   }
   
   for (auto& [layerIndex, storedIndex] : result.mIndexMap) {

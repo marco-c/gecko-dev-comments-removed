@@ -44,6 +44,7 @@ class WebRenderScrollData;
 class WebRenderLayerScrollData final {
  public:
   WebRenderLayerScrollData();  
+  WebRenderLayerScrollData(WebRenderLayerScrollData&& aOther) = default;
   ~WebRenderLayerScrollData();
 
   using ViewID = ScrollableLayerGuid::ViewID;
@@ -245,7 +246,7 @@ class WebRenderScrollData {
   size_t AddMetadata(const ScrollMetadata& aMetadata);
   
   
-  size_t AddLayerData(const WebRenderLayerScrollData& aData);
+  size_t AddLayerData(WebRenderLayerScrollData&& aData);
 
   size_t GetLayerCount() const;
 
