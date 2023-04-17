@@ -2364,8 +2364,6 @@ function openJsonInFirefoxJsonViewer(json) {
 
 function onLoad() {
   window.removeEventListener("load", onLoad);
-  Telemetry.scalarAdd("telemetry.about_telemetry_pageload", 1);
-
   
   setupServerOwnerBranding();
 
