@@ -104,6 +104,53 @@ function getIdentifierByFileName(fileName) {
 
 
 
+
+
+
+
+function convertStorageErrorResult(result) {
+  switch (result) {
+    case Ci.mozIStorageError.PERM:
+    case Ci.mozIStorageError.AUTH:
+    case Ci.mozIStorageError.CANTOPEN:
+      return Cr.NS_ERROR_FILE_ACCESS_DENIED;
+    case Ci.mozIStorageError.LOCKED:
+      return Cr.NS_ERROR_FILE_IS_LOCKED;
+    case Ci.mozIStorageError.READONLY:
+      return Cr.NS_ERROR_FILE_READ_ONLY;
+    case Ci.mozIStorageError.ABORT:
+    case Ci.mozIStorageError.INTERRUPT:
+      return Cr.NS_ERROR_ABORT;
+    case Ci.mozIStorageError.TOOBIG:
+    case Ci.mozIStorageError.FULL:
+      return Cr.NS_ERROR_FILE_NO_DEVICE_SPACE;
+    case Ci.mozIStorageError.NOMEM:
+      return Cr.NS_ERROR_OUT_OF_MEMORY;
+    case Ci.mozIStorageError.BUSY:
+      return Cr.NS_ERROR_STORAGE_BUSY;
+    case Ci.mozIStorageError.CONSTRAINT:
+      return Cr.NS_ERROR_STORAGE_CONSTRAINT;
+    case Ci.mozIStorageError.NOLFS:
+    case Ci.mozIStorageError.IOERR:
+      return Cr.NS_ERROR_STORAGE_IOERR;
+    case Ci.mozIStorageError.SCHEMA:
+    case Ci.mozIStorageError.MISMATCH:
+    case Ci.mozIStorageError.MISUSE:
+    case Ci.mozIStorageError.RANGE:
+      return Ci.NS_ERROR_UNEXPECTED;
+    case Ci.mozIStorageError.CORRUPT:
+    case Ci.mozIStorageError.EMPTY:
+    case Ci.mozIStorageError.FORMAT:
+    case Ci.mozIStorageError.NOTADB:
+      return Cr.NS_ERROR_FILE_CORRUPTED;
+    default:
+      return Cr.NS_ERROR_FAILURE;
+  }
+}
+
+
+
+
 XPCOMUtils.defineLazyGetter(this, "Barriers", () => {
   let Barriers = {
     
@@ -921,12 +968,11 @@ ConnectionData.prototype = Object.freeze({
 
             
             
-            if (errors.length == 1 && errors[0].result) {
-              error.result = errors[0].result;
-            } else if (
-              errors.some(e => e.result == Cr.NS_ERROR_FILE_CORRUPTED)
-            ) {
+            if (errors.some(e => e.result == Ci.mozIStorageError.CORRUPT)) {
               error.result = Cr.NS_ERROR_FILE_CORRUPTED;
+            } else {
+              
+              error.result = convertStorageErrorResult(errors[0]?.result);
             }
 
             deferred.reject(error);
