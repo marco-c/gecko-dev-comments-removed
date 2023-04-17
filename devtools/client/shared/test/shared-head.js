@@ -58,6 +58,12 @@ const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 
 const KeyShortcuts = require("devtools/client/shared/key-shortcuts");
 
+loader.lazyRequireGetter(
+  this,
+  "ResponsiveUIManager",
+  "devtools/client/responsive/manager"
+);
+
 const TEST_DIR = gTestPath.substr(0, gTestPath.lastIndexOf("/"));
 const CHROME_URL_ROOT = TEST_DIR + "/";
 const URL_ROOT = CHROME_URL_ROOT.replace(
@@ -470,50 +476,15 @@ var refreshTab = async function(tab = gBrowser.selectedTab) {
 
 
 async function navigateTo(uri, { isErrorPage = false } = {}) {
-  const toolbox = await gDevTools.getToolboxForTab(gBrowser.selectedTab);
-  const target = toolbox.target;
+  const browser = gBrowser.selectedBrowser;
 
-  
-  
-  
-  
-  
-  const onTargetSwitched = toolbox.commands.targetCommand.once(
-    "switched-target"
-  );
-  
-  
-  
-  const documentEventName = isErrorPage ? "dom-loading" : "dom-complete";
-  const {
-    onResource: onTopLevelDomEvent,
-  } = await toolbox.commands.resourceCommand.waitForNextResource(
-    toolbox.commands.resourceCommand.TYPES.DOCUMENT_EVENT,
-    {
-      ignoreExistingResources: true,
-      predicate: resource =>
-        resource.targetFront.isTopLevel && resource.name === documentEventName,
-    }
-  );
-
-  
-  
-  const targetFollowsWindowLifecycle =
-    target.targetForm.followWindowGlobalLifeCycle;
-
-  
-  
-  const onPanelReloaded = waitForPanelReload(
-    toolbox.currentToolId,
-    toolbox.target,
-    toolbox.getCurrentPanel()
-  );
+  const waitForDevToolsReload = await watchForDevToolsReload(browser, {
+    isErrorPage,
+  });
 
   uri = uri.replaceAll("\n", "");
   info(`Navigating to "${uri}"`);
-  const browser = gBrowser.selectedBrowser;
-  const currentPID = browser.browsingContext.currentWindowGlobal.osPid;
-  const currentBrowsingContextID = browser.browsingContext.id;
+
   const onBrowserLoaded = BrowserTestUtils.browserLoaded(
     browser,
     
@@ -538,37 +509,252 @@ async function navigateTo(uri, { isErrorPage = false } = {}) {
   await onBrowserLoaded;
   info(`→ page loaded`);
 
-  
-  
-  const switchedToAnotherProcess =
-    currentPID !== browser.browsingContext.currentWindowGlobal.osPid;
-  const switchedToAnotherBrowsingContext =
-    currentBrowsingContextID !== browser.browsingContext.id;
+  await waitForDevToolsReload();
+}
 
-  if (onPanelReloaded) {
-    info(`Waiting for ${toolbox.currentToolId} to be reloaded…`);
-    await onPanelReloaded();
-    info(`→ panel reloaded`);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function watchForDevToolsReload(browser, { isErrorPage = false } = {}) {
+  const waitForToolboxReload = await watchForToolboxReload(browser, {
+    isErrorPage,
+  });
+  const waitForResponsiveReload = await watchForResponsiveReload(browser, {
+    isErrorPage,
+  });
+
+  return async function() {
+    info("Wait for the toolbox to reload");
+    await waitForToolboxReload();
+
+    info("Wait for Responsive UI to reload");
+    await waitForResponsiveReload();
+  };
+}
+
+
+
+
+
+
+async function watchForToolboxReload(browser, { isErrorPage } = {}) {
+  const tab = gBrowser.getTabForBrowser(browser);
+  const toolbox = await gDevTools.getToolboxForTab(tab);
+  if (!toolbox) {
+    
+    return function() {};
+  }
+  const currentToolId = toolbox.currentToolId;
+  const panel = toolbox.getCurrentPanel();
+
+  const waitForCurrentPanelReload = watchForPanelReload(currentToolId, panel);
+  const waitForToolboxCommandsReload = await watchForCommandsReload(
+    toolbox.commands,
+    { isErrorPage }
+  );
+  const checkTargetSwitching = await watchForTargetSwitching(
+    toolbox.commands,
+    browser
+  );
+
+  return async function() {
+    const isTargetSwitching = checkTargetSwitching();
+
+    info(`Waiting for toolbox commands to be reloaded…`);
+    await waitForToolboxCommandsReload(isTargetSwitching);
+
+    
+    
+    if (waitForCurrentPanelReload) {
+      info(`Waiting for ${toolbox.currentToolId} to be reloaded…`);
+      await waitForCurrentPanelReload();
+      info(`→ panel reloaded`);
+    }
+  };
+}
+
+
+
+
+
+
+async function watchForResponsiveReload(browser, { isErrorPage } = {}) {
+  const tab = gBrowser.getTabForBrowser(browser);
+  const ui = ResponsiveUIManager.getResponsiveUIForTab(tab);
+
+  if (!ui) {
+    
+    return function() {};
   }
 
-  
-  
-  
-  
-  
-  if (
-    switchedToAnotherProcess ||
-    targetFollowsWindowLifecycle ||
-    switchedToAnotherBrowsingContext
-  ) {
-    info(`Waiting for target switch…`);
-    await onTargetSwitched;
-    info(`→ switched-target emitted`);
-  } else {
-    info(`Waiting for '${documentEventName}' resource…`);
-    await onTopLevelDomEvent;
-    info(`→ 'dom-complete' resource emitted`);
+  const onResponsiveTargetSwitch = ui.once("responsive-ui-target-switch-done");
+  const waitForResponsiveCommandsReload = await watchForCommandsReload(
+    ui.commands,
+    { isErrorPage }
+  );
+  const checkTargetSwitching = await watchForTargetSwitching(
+    ui.commands,
+    browser
+  );
+
+  return async function() {
+    const isTargetSwitching = checkTargetSwitching();
+
+    info(`Waiting for responsive ui commands to be reloaded…`);
+    await waitForResponsiveCommandsReload(isTargetSwitching);
+
+    if (isTargetSwitching) {
+      await onResponsiveTargetSwitch;
+    }
+  };
+}
+
+function watchForPanelReload(toolId, panel) {
+  if (toolId == "inspector") {
+    const markuploaded = panel.once("markuploaded");
+    const onNewRoot = panel.once("new-root");
+    const onUpdated = panel.once("inspector-updated");
+    const onReloaded = panel.once("reloaded");
+
+    return async function() {
+      info("Waiting for markup view to load after navigation.");
+      await markuploaded;
+
+      info("Waiting for new root.");
+      await onNewRoot;
+
+      info("Waiting for inspector to update after new-root event.");
+      await onUpdated;
+
+      info("Waiting for inspector updates after page reload");
+      await onReloaded;
+    };
+  } else if (toolId == "netmonitor") {
+    const onReloaded = panel.once("reloaded");
+    return async function() {
+      info("Waiting for netmonitor updates after page reload");
+      await onReloaded;
+    };
+  } else if (toolId == "accessibility") {
+    const onReloaded = panel.once("reloaded");
+    return async function() {
+      info("Waiting for accessibility updates after page reload");
+      await onReloaded;
+    };
   }
+  return null;
+}
+
+
+
+
+
+
+
+
+
+
+
+async function watchForCommandsReload(commands, { isErrorPage = false } = {}) {
+  
+  
+  
+  
+  
+  const onTargetSwitched = commands.targetCommand.once("switched-target");
+
+  
+  
+  
+  const documentEventName = isErrorPage ? "dom-loading" : "dom-complete";
+  const {
+    onResource: onTopLevelDomEvent,
+  } = await commands.resourceCommand.waitForNextResource(
+    commands.resourceCommand.TYPES.DOCUMENT_EVENT,
+    {
+      ignoreExistingResources: true,
+      predicate: resource =>
+        resource.targetFront.isTopLevel && resource.name === documentEventName,
+    }
+  );
+
+  return async function(isTargetSwitching) {
+    if (typeof isTargetSwitching === "undefined") {
+      throw new Error("isTargetSwitching was not provided to the wait method");
+    }
+
+    if (isTargetSwitching) {
+      info(`Waiting for target switch…`);
+      await onTargetSwitched;
+      info(`→ switched-target emitted`);
+    } else {
+      info(`Waiting for '${documentEventName}' resource…`);
+      await onTopLevelDomEvent;
+      info(`→ 'dom-complete' resource emitted`);
+    }
+
+    return isTargetSwitching;
+  };
+}
+
+
+
+
+
+
+
+
+
+async function watchForTargetSwitching(commands, browser) {
+  browser = browser || gBrowser.selectedBrowser;
+  const currentPID = browser.browsingContext.currentWindowGlobal.osPid;
+  const currentBrowsingContextID = browser.browsingContext.id;
+
+  
+  
+  const targetFollowsWindowLifecycle =
+    commands.targetCommand.targetFront.targetForm.followWindowGlobalLifeCycle;
+
+  return function() {
+    
+    
+    const switchedProcess =
+      currentPID !== browser.browsingContext.currentWindowGlobal.osPid;
+    const switchedBrowsingContext =
+      currentBrowsingContextID !== browser.browsingContext.id;
+
+    return (
+      targetFollowsWindowLifecycle || switchedProcess || switchedBrowsingContext
+    );
+  };
 }
 
 
@@ -593,48 +779,6 @@ async function createAndAttachTargetForTab(tab) {
   const target = commands.targetCommand.targetFront;
   await target.attach();
   return target;
-}
-
-
-
-
-
-function waitForPanelReload(currentToolId, target, panel) {
-  if (currentToolId == "inspector") {
-    const inspector = panel;
-    const markuploaded = inspector.once("markuploaded");
-    const onNewRoot = inspector.once("new-root");
-    const onUpdated = inspector.once("inspector-updated");
-    const onReloaded = inspector.once("reloaded");
-
-    return async function() {
-      info("Waiting for markup view to load after navigation.");
-      await markuploaded;
-
-      info("Waiting for new root.");
-      await onNewRoot;
-
-      info("Waiting for inspector to update after new-root event.");
-      await onUpdated;
-
-      info("Waiting for inspector updates after page reload");
-      await onReloaded;
-    };
-  } else if (currentToolId == "netmonitor") {
-    const monitor = panel;
-    const onReloaded = monitor.once("reloaded");
-    return async function() {
-      info("Waiting for netmonitor updates after page reload");
-      await onReloaded;
-    };
-  } else if (currentToolId == "accessibility") {
-    const onReloaded = panel.once("reloaded");
-    return async function() {
-      info("Waiting for accessibility updates after page reload");
-      await onReloaded;
-    };
-  }
-  return null;
 }
 
 function isFissionEnabled() {
