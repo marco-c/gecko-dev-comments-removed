@@ -10552,6 +10552,10 @@ nsresult CreateOrUpgradeDirectoryMetadataHelper::MaybeUpgradeOriginDirectory(
     QM_TRY_INSPECT(const auto& idbDirectory,
                    CloneFileAndAppend(*aDirectory, idbDirectoryName));
 
+    
+    
+    
+    
     QM_TRY(QM_OR_ELSE_WARN(
         ToResult(idbDirectory->Create(nsIFile::DIRECTORY_TYPE, 0755)),
         ([&idbDirectory](const nsresult rv) -> Result<Ok, nsresult> {
