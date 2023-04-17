@@ -1150,9 +1150,6 @@ pref("javascript.options.mem.gc_per_zone", true);
 pref("javascript.options.mem.gc_incremental", true);
 
 
-pref("javascript.options.mem.incremental_weakmap", true);
-
-
 
 pref("javascript.options.mem.gc_incremental_slice_ms", 5);
 
