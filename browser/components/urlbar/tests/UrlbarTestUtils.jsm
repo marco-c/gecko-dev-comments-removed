@@ -29,13 +29,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
 
-XPCOMUtils.defineLazyServiceGetter(
-  this,
-  "uuidGenerator",
-  "@mozilla.org/uuid-generator;1",
-  "nsIUUIDGenerator"
-);
-
 
 
 
@@ -965,7 +958,7 @@ class TestProvider extends UrlbarProvider {
 
   constructor({
     results,
-    name = "TestProvider" + uuidGenerator.generateUUID(),
+    name = "TestProvider" + Services.uuid.generateUUID(),
     type = UrlbarUtils.PROVIDER_TYPE.PROFILE,
     priority = 0,
     addTimeout = 0,

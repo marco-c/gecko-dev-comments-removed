@@ -15,9 +15,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   TelemetrySession: "resource://gre/modules/TelemetrySession.jsm",
   AttributionCode: "resource:///modules/AttributionCode.jsm",
 });
-XPCOMUtils.defineLazyServiceGetters(this, {
-  gUUIDGenerator: ["@mozilla.org/uuid-generator;1", "nsIUUIDGenerator"],
-});
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
   "structuredIngestionEndpointBase",
@@ -58,7 +55,7 @@ class AboutWelcomeTelemetry {
   }
 
   _generateStructuredIngestionEndpoint() {
-    const uuid = gUUIDGenerator.generateUUID().toString();
+    const uuid = Services.uuid.generateUUID().toString();
     
     
     const docID = uuid.slice(1, -1);
