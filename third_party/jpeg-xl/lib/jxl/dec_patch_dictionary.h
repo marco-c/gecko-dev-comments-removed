@@ -170,6 +170,10 @@ class PatchDictionary {
   Status AddTo(Image3F* opsin, const Rect& opsin_rect,
                float* const* extra_channels, const Rect& image_rect) const;
 
+  
+  
+  int GetReferences() const;
+
  private:
   friend class PatchDictionaryEncoder;
 

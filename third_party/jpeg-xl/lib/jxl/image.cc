@@ -15,6 +15,7 @@
 #include "lib/jxl/base/profiler.h"
 #include "lib/jxl/common.h"
 #include "lib/jxl/image_ops.h"
+#include "lib/jxl/sanitizers.h"
 
 HWY_BEFORE_NAMESPACE();
 namespace jxl {
@@ -114,9 +115,10 @@ void PlaneBase::InitializePadding(const size_t sizeof_t, Padding padding) {
     
     
     
-    memset(row, 0, initialize_size);
+    std::fill(row, msan::kSanitizerSentinelByte, initialize_size);
 #else
-    memset(row + valid_size, 0, initialize_size - valid_size);
+    memset(row + valid_size, msan::kSanitizerSentinelByte,
+           initialize_size - valid_size);
 #endif  
   }
 #endif  

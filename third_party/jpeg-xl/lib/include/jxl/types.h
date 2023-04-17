@@ -8,6 +8,8 @@
 
 
 
+
+
 #ifndef JXL_TYPES_H_
 #define JXL_TYPES_H_
 
@@ -109,8 +111,14 @@ typedef struct {
   size_t align;
 } JxlPixelFormat;
 
+
+
+typedef char JxlBoxType[4];
+
 #if defined(__cplusplus) || defined(c_plusplus)
 }
 #endif
 
 #endif 
+
+

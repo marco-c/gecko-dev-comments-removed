@@ -213,6 +213,7 @@ Status DecodeANSCodes(const size_t num_histograms,
         }
       } else {
         
+        result->huffman_data[c].table_.clear();
         result->huffman_data[c].table_.resize(1u << kHuffmanTableBits);
       }
       for (const auto& h : result->huffman_data[c].table_) {

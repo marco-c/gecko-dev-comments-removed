@@ -47,8 +47,7 @@ class ColorSpaceTransform {
   struct SkcmsICC;
   std::unique_ptr<SkcmsICC> skcms_icc_;
 #else
-  
-  std::vector<void*> transforms_;
+  void* lcms_transform_;
 #endif
 
   ImageF buf_src_;

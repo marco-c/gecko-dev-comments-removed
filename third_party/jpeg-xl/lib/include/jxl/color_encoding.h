@@ -9,6 +9,8 @@
 
 
 
+
+
 #ifndef JXL_COLOR_ENCODING_H_
 #define JXL_COLOR_ENCODING_H_
 
@@ -138,27 +140,10 @@ typedef struct {
   JxlRenderingIntent rendering_intent;
 } JxlColorEncoding;
 
-
-
-
-typedef struct {
-  
-
-  float opsin_inv_matrix[3][3];
-
-  
-
-
-  float opsin_biases[3];
-
-  
-
-
-  float quant_biases[3];
-} JxlInverseOpsinMatrix;
-
 #if defined(__cplusplus) || defined(c_plusplus)
 }
 #endif
 
 #endif 
+
+

@@ -31,6 +31,9 @@
 
 
 
+
+
+
 #ifndef JXL_PARALLEL_RUNNER_H_
 #define JXL_PARALLEL_RUNNER_H_
 
@@ -149,3 +152,5 @@ typedef JxlParallelRetCode (*JxlParallelRunner)(
 #endif
 
 #endif 
+
+

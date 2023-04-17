@@ -181,8 +181,20 @@ class BitReader {
 
     
     const size_t whole_bytes = skip / kBitsPerByte;
-    next_byte_ += whole_bytes;
     skip %= kBitsPerByte;
+    if (JXL_UNLIKELY(whole_bytes >
+                     static_cast<size_t>(end_minus_8_ + 8 - next_byte_))) {
+      
+      
+      
+      
+      
+      
+      next_byte_ = end_minus_8_ + 8;
+      skip += kBitsPerByte;
+    } else {
+      next_byte_ += whole_bytes;
+    }
 
     Refill();
     Consume(skip);
@@ -320,8 +332,15 @@ class BitReaderScopedCloser {
     JXL_DASSERT(status_ != nullptr);
   }
   ~BitReaderScopedCloser() {
-    Status close_ret = reader_->Close();
-    if (!close_ret) *status_ = close_ret;
+    if (reader_ != nullptr) {
+      Status close_ret = reader_->Close();
+      if (!close_ret) *status_ = close_ret;
+    }
+  }
+  void CloseAndSuppressError() {
+    JXL_ASSERT(reader_ != nullptr);
+    (void)reader_->Close();
+    reader_ = nullptr;
   }
   BitReaderScopedCloser(const BitReaderScopedCloser&) = delete;
 

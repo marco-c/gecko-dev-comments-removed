@@ -58,8 +58,6 @@ PassDefinition progressive_passes_dc_lf_salient_ac_other_ac[] = {
      0}};
 
 PassDefinition progressive_passes_dc_quant_ac_full_ac[] = {
-    {8, 2, false,
-     4},
     {8, 1, false,
      2},
     {8, 0, false,
@@ -187,11 +185,32 @@ Status WriteHeaders(CodecMetadata* metadata, BitWriter* writer,
   return true;
 }
 
-Status EncodeFile(const CompressParams& cparams, const CodecInOut* io,
+Status EncodeFile(const CompressParams& cparams_orig, const CodecInOut* io,
                   PassesEncoderState* passes_enc_state, PaddedBytes* compressed,
                   AuxOut* aux_out, ThreadPool* pool) {
   io->CheckMetadata();
   BitWriter writer;
+
+  CompressParams cparams = cparams_orig;
+  if (io->Main().color_transform != ColorTransform::kNone) {
+    
+    cparams.color_transform = io->Main().color_transform;
+  }
+
+  
+  
+  
+  if (cparams.resampling == 0) {
+    cparams.resampling = 1;
+    
+    
+    
+    if (!cparams.already_downsampled && cparams.butteraugli_distance >= 20) {
+      cparams.resampling = 2;
+      cparams.butteraugli_distance =
+          6 + ((cparams.butteraugli_distance - 20) * 0.25);
+    }
+  }
 
   std::unique_ptr<CodecMetadata> metadata = jxl::make_unique<CodecMetadata>();
   JXL_RETURN_IF_ERROR(PrepareCodecMetadataFromIO(cparams, io, metadata.get()));

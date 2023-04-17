@@ -168,13 +168,19 @@ struct TestFirstN {
 
     
     
-    const T off = 1;
+    
+    
+    
+    T on;
+    memset(&on, 0xFF, sizeof(on));
+    const T off = 0;
 
     for (size_t len = 0; len <= N; ++len) {
       for (size_t i = 0; i < N; ++i) {
-        mask_lanes[i] = i < len ? T(0) : off;
+        mask_lanes[i] = i < len ? on : off;
       }
-      const auto mask = Eq(Load(d, mask_lanes.get()), Zero(d));
+      const auto mask_vals = Load(d, mask_lanes.get());
+      const auto mask = MaskFromVec(mask_vals);
       HWY_ASSERT_MASK_EQ(d, mask, FirstN(d, len));
     }
   }

@@ -37,11 +37,24 @@ enum class SpeedTier {
   
   kCheetah = 6,
   
+  
   kFalcon = 7,
+  
+  
+  kThunder = 8,
+  
+  
+  kLightning = 9
 };
 
 inline bool ParseSpeedTier(const std::string& s, SpeedTier* out) {
-  if (s == "falcon") {
+  if (s == "lightning") {
+    *out = SpeedTier::kLightning;
+    return true;
+  } else if (s == "thunder") {
+    *out = SpeedTier::kThunder;
+    return true;
+  } else if (s == "falcon") {
     *out = SpeedTier::kFalcon;
     return true;
   } else if (s == "cheetah") {
@@ -64,7 +77,7 @@ inline bool ParseSpeedTier(const std::string& s, SpeedTier* out) {
     return true;
   }
   size_t st = 10 - static_cast<size_t>(strtoull(s.c_str(), nullptr, 0));
-  if (st <= static_cast<size_t>(SpeedTier::kFalcon) &&
+  if (st <= static_cast<size_t>(SpeedTier::kLightning) &&
       st >= static_cast<size_t>(SpeedTier::kTortoise)) {
     *out = SpeedTier(st);
     return true;
@@ -74,6 +87,10 @@ inline bool ParseSpeedTier(const std::string& s, SpeedTier* out) {
 
 inline const char* SpeedTierName(SpeedTier speed_tier) {
   switch (speed_tier) {
+    case SpeedTier::kLightning:
+      return "lightning";
+    case SpeedTier::kThunder:
+      return "thunder";
     case SpeedTier::kFalcon:
       return "falcon";
     case SpeedTier::kCheetah:
@@ -137,22 +154,23 @@ struct CompressParams {
   int epf = -1;
 
   
-  
-  Override gradient = Override::kOff;
-
-  
   bool progressive_mode = false;
 
   
   bool qprogressive_mode = false;
 
   
-  bool middleout = false;
+  bool centerfirst = false;
+
+  
+  size_t center_x = static_cast<size_t>(-1);
+  size_t center_y = static_cast<size_t>(-1);
 
   int progressive_dc = -1;
 
   
-  bool keep_invisible = false;
+  
+  Override keep_invisible = Override::kDefault;
 
   
   
@@ -191,6 +209,10 @@ struct CompressParams {
   bool force_cfl_jpeg_recompression = true;
 
   
+  
+  float photon_noise_iso = 0;
+
+  
   ModularOptions options;
   int responsive = -1;
   
@@ -200,7 +222,6 @@ struct CompressParams {
   float channel_colors_pre_transform_percent = 95.f;
   
   float channel_colors_percent = 80.f;
-  int near_lossless = 0;
   int palette_colors = 1 << 10;  
   bool lossy_palette = false;
 
@@ -221,6 +242,10 @@ struct CompressParams {
 
   bool use_new_heuristics = false;
 
+  
+  
+  
+  
   
   size_t resampling = 1;
   size_t ec_resampling = 1;

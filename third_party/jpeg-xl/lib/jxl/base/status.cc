@@ -11,8 +11,9 @@
 
 #include <string>
 
-#if defined(ADDRESS_SANITIZER) || defined(MEMORY_SANITIZER) || \
-    defined(THREAD_SANITIZER)
+#include "lib/jxl/sanitizers.h"
+
+#if JXL_ADDRESS_SANITIZER || JXL_MEMORY_SANITIZER || JXL_THREAD_SANITIZER
 #include "sanitizer/common_interface_defs.h"  
 #endif                                        
 
@@ -27,8 +28,7 @@ bool Debug(const char* format, ...) {
 }
 
 bool Abort() {
-#if defined(ADDRESS_SANITIZER) || defined(MEMORY_SANITIZER) || \
-    defined(THREAD_SANITIZER)
+#if JXL_ADDRESS_SANITIZER || JXL_MEMORY_SANITIZER || JXL_THREAD_SANITIZER
   
   
   

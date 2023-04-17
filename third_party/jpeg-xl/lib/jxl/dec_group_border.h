@@ -40,7 +40,9 @@ class GroupBorderAssigner {
 #endif
 
   
-  size_t PaddingX(size_t padding) { return RoundUpTo(padding, kPaddingXRound); }
+  static size_t PaddingX(size_t padding) {
+    return RoundUpTo(padding, kPaddingXRound);
+  }
 
  private:
   FrameDimensions frame_dim_;

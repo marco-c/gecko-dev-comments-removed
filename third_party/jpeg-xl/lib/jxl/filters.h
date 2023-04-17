@@ -13,12 +13,14 @@
 #include "lib/jxl/filters_internal.h"
 #include "lib/jxl/image.h"
 #include "lib/jxl/loop_filter.h"
+#include "lib/jxl/sanitizers.h"
 
 namespace jxl {
 
 struct FilterWeights {
   
-  void Init(const LoopFilter& lf, const FrameDimensions& frame_dim);
+  
+  Status Init(const LoopFilter& lf, const FrameDimensions& frame_dim);
 
   
   
@@ -29,7 +31,7 @@ struct FilterWeights {
   ImageF sigma;
 
  private:
-  void GaborishWeights(const LoopFilter& lf);
+  Status GaborishWeights(const LoopFilter& lf);
 };
 
 static constexpr size_t kMaxFinalizeRectPadding = 9;
@@ -106,7 +108,7 @@ struct FilterRows {
   
   
   void SetSigma(const ImageF& sigma, size_t y0, size_t x0) {
-    JXL_DASSERT(x0 % GroupBorderAssigner::kPaddingXRound == 0);
+    JXL_DASSERT(x0 % kBlockDim == 0);
     row_sigma_ = sigma.ConstRow(y0 / kBlockDim) + x0 / kBlockDim;
   }
 
@@ -138,7 +140,7 @@ struct FilterDefinition {
   
   void (*apply)(const FilterRows& rows, const LoopFilter& lf,
                 const FilterWeights& filter_weights, size_t x0, size_t x1,
-                size_t image_y_mod_8, size_t image_x_mod_8);
+                size_t sigma_x_offset, size_t image_y_mod_8);
 
   
   
@@ -152,7 +154,9 @@ class FilterPipeline {
  public:
   FilterPipeline() : FilterPipeline(kApplyImageFeaturesTileDim) {}
   explicit FilterPipeline(size_t max_rect_xsize)
-      : storage{max_rect_xsize + 2 * kMaxFilterPadding, kTotalStorageRows} {
+      : storage{max_rect_xsize + 2 * kMaxFilterPadding +
+                    GroupBorderAssigner::kPaddingXRound,
+                kTotalStorageRows} {
 #if MEMORY_SANITIZER
     
     
@@ -168,9 +172,9 @@ class FilterPipeline {
     for (size_t c = 0; c < 3; c++) {
       for (size_t y = 0; y < storage.ysize(); y++) {
         float* row = storage.PlaneRow(c, y);
-        memset(row, 0x77, sizeof(float) * kMaxFilterPadding);
-        memset(row + storage.xsize() - kMaxFilterPadding, 0x77,
-               sizeof(float) * kMaxFilterPadding);
+        std::fill(row, row + kMaxFilterPadding, msan::kSanitizerSentinel);
+        std::fill(row + storage.xsize() - kMaxFilterPadding,
+                  row + storage.xsize(), msan::kSanitizerSentinel);
       }
     }
 #endif  
@@ -182,11 +186,19 @@ class FilterPipeline {
   
   
   
+  
   void ApplyFiltersRow(const LoopFilter& lf,
-                       const FilterWeights& filter_weights, const Rect& rect,
-                       ssize_t y);
+                       const FilterWeights& filter_weights, ssize_t y);
 
   struct FilterStep {
+    
+    
+    
+    static size_t MaxLeftPadding(size_t image_rect_x0) {
+      return kMaxFilterPadding +
+             image_rect_x0 % GroupBorderAssigner::kPaddingXRound;
+    }
+
     
     void SetInput(const Image3F* im_input, const Rect& input_rect,
                   const Rect& image_rect, size_t image_ysize) {
@@ -204,9 +216,14 @@ class FilterPipeline {
                                      self.input_rect.y0() + y0,
                                      self.input_rect.x0() - kMaxFilterPadding,
                                      full_image_y_offset, self.image_ysize);
+        rows->SetInput<RowMapMirror>(
+            *(self.input), 0, self.input_rect.y0() + y0,
+            self.input_rect.x0() - MaxLeftPadding(self.input_rect.x0()),
+            full_image_y_offset, self.image_ysize);
       };
     }
 
+    
     
     
     
@@ -221,6 +238,7 @@ class FilterPipeline {
       };
     }
 
+    
     
     
     
@@ -242,9 +260,9 @@ class FilterPipeline {
       this->output_rect = output_rect;
       set_output_rows = [](const FilterStep& self, FilterRows* rows,
                            ssize_t y0) {
-        rows->SetOutput<RowMapId>(
-            self.output, 0, self.output_rect.y0() + y0,
-            static_cast<ssize_t>(self.output_rect.x0()) - kMaxFilterPadding);
+        rows->SetOutput<RowMapId>(self.output, 0, self.output_rect.y0() + y0,
+                                  static_cast<ssize_t>(self.output_rect.x0()) -
+                                      MaxLeftPadding(self.output_rect.x0()));
       };
     }
 
@@ -271,6 +289,12 @@ class FilterPipeline {
 
     
     FilterDefinition filter_def;
+
+    
+    
+    
+    
+    size_t filter_x0, filter_x1;
 
     
     
@@ -310,6 +334,10 @@ class FilterPipeline {
 
   
   bool compute_sigma = false;
+
+  
+  
+  Rect image_rect;
 
   
   size_t total_border = 0;

@@ -9,6 +9,9 @@
 
 
 
+
+
+
 #ifndef JXL_BUTTERAUGLI_CXX_H_
 #define JXL_BUTTERAUGLI_CXX_H_
 
@@ -53,3 +56,5 @@ typedef std::unique_ptr<JxlButteraugliResult, JxlButteraugliResultDestroyStruct>
     JxlButteraugliResultPtr;
 
 #endif  
+
+
