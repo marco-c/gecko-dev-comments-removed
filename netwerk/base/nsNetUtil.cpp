@@ -340,13 +340,21 @@ void AssertLoadingPrincipalAndClientInfoMatch(
       return;
     }
     
-    nsAutoCString loadingOrigin;
-    MOZ_ALWAYS_SUCCEEDS(aLoadingPrincipal->GetOrigin(loadingOrigin));
+    nsAutoCString loadingOriginNoSuffix;
+    MOZ_ALWAYS_SUCCEEDS(
+        aLoadingPrincipal->GetOriginNoSuffix(loadingOriginNoSuffix));
 
-    nsAutoCString clientOrigin;
-    MOZ_ALWAYS_SUCCEEDS(clientPrincipal->GetOrigin(clientOrigin));
+    nsAutoCString clientOriginNoSuffix;
+    MOZ_ALWAYS_SUCCEEDS(
+        clientPrincipal->GetOriginNoSuffix(clientOriginNoSuffix));
 
-    MOZ_DIAGNOSTIC_ASSERT(loadingOrigin == clientOrigin);
+    
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT(loadingOriginNoSuffix == clientOriginNoSuffix);
+    MOZ_DIAGNOSTIC_ASSERT(
+        aLoadingPrincipal->OriginAttributesRef().EqualsIgnoringPartitionKey(
+            clientPrincipal->OriginAttributesRef()));
   }
 #endif
 }
@@ -2528,37 +2536,6 @@ bool NS_RelaxStrictFileOriginPolicy(nsIURI* aTargetURI, nsIURI* aSourceURI,
       (!aAllowDirectoryTarget &&
        (NS_FAILED(targetFile->IsDirectory(&targetIsDir)) || targetIsDir))) {
     return false;
-  }
-
-  if (!StaticPrefs::privacy_file_unique_origin()) {
-    
-    
-    
-    
-    
-    bool sourceIsDir;
-    bool allowed = false;
-    nsresult rv = sourceFile->IsDirectory(&sourceIsDir);
-    if (NS_SUCCEEDED(rv) && sourceIsDir) {
-      rv = sourceFile->Contains(targetFile, &allowed);
-    } else {
-      nsCOMPtr<nsIFile> sourceParent;
-      rv = sourceFile->GetParent(getter_AddRefs(sourceParent));
-      if (NS_SUCCEEDED(rv) && sourceParent) {
-        rv = sourceParent->Equals(targetFile, &allowed);
-        if (NS_FAILED(rv) || !allowed) {
-          rv = sourceParent->Contains(targetFile, &allowed);
-        } else {
-          MOZ_ASSERT(aAllowDirectoryTarget,
-                     "sourceFile->Parent == targetFile, but targetFile "
-                     "should've been disallowed if it is a directory");
-        }
-      }
-    }
-
-    if (NS_SUCCEEDED(rv) && allowed) {
-      return true;
-    }
   }
 
   return false;
