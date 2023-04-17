@@ -1217,6 +1217,11 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
         cachedIsInferredUsernameField: new WeakMap(),
         cachedIsInferredEmailField: new WeakMap(),
         cachedIsInferredLoginForm: new WeakMap(),
+
+        
+
+
+        mockUsernameOnlyField: null,
       };
       this._loginFormStateByDocument.set(document, loginFormState);
     }
@@ -1885,6 +1890,23 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
   _onFormSubmit(form, reason) {
     log("_onFormSubmit", form);
 
+    
+    
+    let usernameField = this.getUsernameFieldFromUsernameOnlyForm(
+      form.rootElement
+    );
+    if (usernameField) {
+      log(
+        "_onFormSubmit: username-only form. Record the username field but not sending prompt"
+      );
+      let docState = this.stateForDocument(form.ownerDocument);
+      docState.mockUsernameOnlyField = {
+        name: usernameField.name,
+        value: usernameField.value,
+      };
+      return;
+    }
+
     this._maybeSendFormInteractionMessage(
       form,
       "PasswordManager:onFormSubmit",
@@ -1985,6 +2007,18 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
         return;
       }
 
+      let docState = this.stateForDocument(doc);
+      
+      
+      
+      
+      
+      
+      if (!usernameField) {
+        if (docState.mockUsernameOnlyField) {
+          usernameField = docState.mockUsernameOnlyField;
+        }
+      }
       if (usernameField && usernameField.value.match(/\.{3,}|\*{3,}|•{3,}/)) {
         log(
           `usernameField.value "${usernameField.value}" looks munged, setting to null`
@@ -2035,7 +2069,6 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
         dismissedPrompt = true;
       }
 
-      let docState = this.stateForDocument(doc);
       let fieldsModified = this._formHasModifiedFields(form);
       if (!fieldsModified && LoginHelper.userInputRequiredToCapture) {
         if (targetField) {
