@@ -1078,6 +1078,8 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
   
   mozilla::IOInterposerInit ioInterposerGuard;
 
+  XRE_InitCommandLine(argc, argv);
+
   char aLocal;
   profiler_init(&aLocal);
 
@@ -1443,6 +1445,8 @@ int XRE_XPCShellMain(int argc, char** argv, char** envp,
   profiler_shutdown();
 
   NS_LogTerm();
+
+  XRE_DeinitCommandLine();
 
   return result;
 }
