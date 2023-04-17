@@ -12,11 +12,13 @@
 #include "mozilla/EnumSet.h"     
 #include "mozilla/Maybe.h"       
 
+#include <stddef.h>  
 #include <stdint.h>  
 
 #include "jstypes.h"  
 
 #include "js/Class.h"       
+#include "js/Id.h"          
 #include "js/RootingAPI.h"  
 #include "js/Value.h"       
 
@@ -433,6 +435,49 @@ class MutableWrappedPtrOperations<JS::PropertyDescriptor, Wrapper>
 };
 
 }  
+
+
+
+
+
+
+
+extern JS_PUBLIC_API bool JS_GetOwnPropertyDescriptorById(
+    JSContext* cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id,
+    JS::MutableHandle<mozilla::Maybe<JS::PropertyDescriptor>> desc);
+
+extern JS_PUBLIC_API bool JS_GetOwnPropertyDescriptor(
+    JSContext* cx, JS::Handle<JSObject*> obj, const char* name,
+    JS::MutableHandle<mozilla::Maybe<JS::PropertyDescriptor>> desc);
+
+extern JS_PUBLIC_API bool JS_GetOwnUCPropertyDescriptor(
+    JSContext* cx, JS::Handle<JSObject*> obj, const char16_t* name,
+    size_t namelen,
+    JS::MutableHandle<mozilla::Maybe<JS::PropertyDescriptor>> desc);
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API bool JS_GetPropertyDescriptorById(
+    JSContext* cx, JS::Handle<JSObject*> obj, JS::Handle<jsid> id,
+    JS::MutableHandle<mozilla::Maybe<JS::PropertyDescriptor>> desc,
+    JS::MutableHandle<JSObject*> holder);
+
+extern JS_PUBLIC_API bool JS_GetPropertyDescriptor(
+    JSContext* cx, JS::Handle<JSObject*> obj, const char* name,
+    JS::MutableHandle<mozilla::Maybe<JS::PropertyDescriptor>> desc,
+    JS::MutableHandle<JSObject*> holder);
+
+extern JS_PUBLIC_API bool JS_GetUCPropertyDescriptor(
+    JSContext* cx, JS::Handle<JSObject*> obj, const char16_t* name,
+    size_t namelen,
+    JS::MutableHandle<mozilla::Maybe<JS::PropertyDescriptor>> desc,
+    JS::MutableHandle<JSObject*> holder);
 
 namespace JS {
 

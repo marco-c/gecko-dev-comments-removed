@@ -8,6 +8,7 @@
 
 #include "js/CharacterEncoding.h"
 #include "js/Object.h"  
+#include "js/PropertyDescriptor.h"  
 #include "js/SavedFrameAPI.h"
 #include "jsfriendapi.h"
 #include "WrapperFactory.h"

@@ -18139,6 +18139,9 @@ class CGBindingRoot(CGThing):
         
         bindingHeaders["js/Object.h"] = True
 
+        
+        bindingHeaders["js/PropertyDescriptor.h"] = True
+
         def descriptorDeprecated(desc):
             iface = desc.interface
             return any(

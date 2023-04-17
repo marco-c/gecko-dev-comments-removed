@@ -5,6 +5,7 @@
 
 
 
+#include "js/PropertyDescriptor.h"  
 #include "jsapi-tests/tests.h"
 
 static bool NativeGetterSetter(JSContext* cx, unsigned argc, JS::Value* vp) {

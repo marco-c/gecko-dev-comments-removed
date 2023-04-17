@@ -23,6 +23,7 @@
 #include "js/friend/WindowProxy.h"      
 #include "js/friend/XrayJitInfo.h"      
 #include "js/Object.h"  
+#include "js/PropertyDescriptor.h"  
 #include "js/PropertySpec.h"
 #include "nsJSUtils.h"
 #include "nsPrintfCString.h"
