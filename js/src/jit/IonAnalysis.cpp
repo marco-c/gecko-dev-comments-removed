@@ -1432,6 +1432,10 @@ bool TypeAnalyzer::shouldSpecializeOsrPhis() const {
   
   
   
+  if (!mir->graph().osrBlock()) {
+    return false;
+  }
+
   return !mir->outerInfo().hadSpeculativePhiBailout();
 }
 
@@ -1654,7 +1658,7 @@ bool TypeAnalyzer::specializePhis() {
     return false;
   }
 
-  if (shouldSpecializeOsrPhis() && graph.osrBlock()) {
+  if (shouldSpecializeOsrPhis()) {
     
     
     MBasicBlock* preHeader = graph.osrPreHeaderBlock();
@@ -1849,16 +1853,14 @@ void TypeAnalyzer::replaceRedundantPhi(MPhi* phi) {
   if (shouldSpecializeOsrPhis()) {
     
     
-    MBasicBlock* osrBlock = graph.osrBlock();
     for (uint32_t i = 0; i < phi->numOperands(); i++) {
       MDefinition* def = phi->getOperand(i);
-      if (def->isOsrValue()) {
-        MOZ_ASSERT(def->block() == osrBlock);
+      if (def->type() != phi->type()) {
+        MOZ_ASSERT(def->isOsrValue() || def->isPhi());
+        MOZ_ASSERT(def->type() == MIRType::Value);
         MGuardValue* guard = MGuardValue::New(alloc(), def, v);
         guard->setBailoutKind(BailoutKind::SpeculativePhi);
-        osrBlock->insertBefore(osrBlock->lastIns(), guard);
-      } else {
-        MOZ_ASSERT(def->type() == phi->type());
+        def->block()->insertBefore(def->block()->lastIns(), guard);
       }
     }
   }
