@@ -117,16 +117,9 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(DiagnosticTypes)
 
 
 enum class EffectTypes : uint8_t {
-  MASK,
-  BLEND_MODE,
-  COLOR_MATRIX,
-  MAX_SECONDARY,  
   RGB,
   YCBCR,
   NV12,
-  COMPONENT_ALPHA,
-  SOLID_COLOR,
-  RENDER_TARGET,
   MAX  
 };
 

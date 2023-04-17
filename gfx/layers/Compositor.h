@@ -364,26 +364,6 @@ class Compositor : public TextureSourceProvider {
 
 
 
-  gfx::IntRect ComputeBackdropCopyRect(const gfx::Rect& aRect,
-                                       const gfx::IntRect& aClipRect,
-                                       const gfx::Matrix4x4& aTransform,
-                                       gfx::Matrix4x4* aOutTransform,
-                                       gfx::Rect* aOutLayerQuad = nullptr);
-
-  gfx::IntRect ComputeBackdropCopyRect(const gfx::Triangle& aTriangle,
-                                       const gfx::IntRect& aClipRect,
-                                       const gfx::Matrix4x4& aTransform,
-                                       gfx::Matrix4x4* aOutTransform,
-                                       gfx::Rect* aOutLayerQuad = nullptr);
-
-  
-
-
-
-
-
-
-
 
 
   bool ShouldRecordFrames() const;

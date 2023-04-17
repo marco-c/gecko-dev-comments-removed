@@ -131,14 +131,6 @@ class CompositableHost {
 
   const TextureInfo& GetTextureInfo() const { return mTextureInfo; }
 
-  
-
-
-
-  bool AddMaskEffect(EffectChain& aEffects, const gfx::Matrix4x4& aTransform);
-
-  void RemoveMaskEffect();
-
   TextureSourceProvider* GetTextureSourceProvider() const;
 
   Layer* GetLayer() const { return mLayer; }
