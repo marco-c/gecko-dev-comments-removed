@@ -409,6 +409,13 @@ class nsIWidget : public nsISupports {
   typedef mozilla::CSSPoint CSSPoint;
   typedef mozilla::CSSRect CSSRect;
 
+  enum class WindowButtonType {
+    Minimize,
+    Maximize,
+    Close,
+    Count,
+  };
+
   
   struct ThemeGeometry {
     
@@ -2179,7 +2186,8 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual void SetMaximizeButtonRect(const LayoutDeviceIntRect& aClientRect) {}
+  virtual void SetWindowButtonRect(WindowButtonType aButtonType,
+                                   const LayoutDeviceIntRect& aClientRect) {}
 
  protected:
   
