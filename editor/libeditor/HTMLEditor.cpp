@@ -2238,22 +2238,27 @@ nsresult HTMLEditor::GetCSSBackgroundColorState(bool* aMixed,
   if (aBlockLevel) {
     
     
-    Element* blockParent =
-        HTMLEditUtils::GetInclusiveAncestorBlockElement(*contentToExamine);
-    if (NS_WARN_IF(!blockParent)) {
+    
+    
+    Element* const closestBlockElement =
+        HTMLEditUtils::GetInclusiveAncestorElement(
+            *contentToExamine, HTMLEditUtils::ClosestBlockElement);
+    if (NS_WARN_IF(!closestBlockElement)) {
       return NS_OK;
     }
 
-    for (RefPtr<Element> element = blockParent; element;
-         element = element->GetParentElement()) {
-      nsCOMPtr<nsINode> parentNode = element->GetParentNode();
-      
+    for (RefPtr<Element> blockElement = closestBlockElement; blockElement;) {
+      RefPtr<Element> nextBlockElement = HTMLEditUtils::GetAncestorElement(
+          *blockElement, HTMLEditUtils::ClosestBlockElement);
       DebugOnly<nsresult> rvIgnored = CSSEditUtils::GetComputedProperty(
-          *element, *nsGkAtoms::backgroundColor, aOutColor);
+          *blockElement, *nsGkAtoms::backgroundColor, aOutColor);
       if (NS_WARN_IF(Destroyed())) {
         return NS_ERROR_EDITOR_DESTROYED;
       }
-      if (NS_WARN_IF(parentNode != element->GetParentNode())) {
+      if (MayHaveMutationEventListeners() &&
+          NS_WARN_IF(nextBlockElement !=
+                     HTMLEditUtils::GetAncestorElement(
+                         *blockElement, HTMLEditUtils::ClosestBlockElement))) {
         return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
       }
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
@@ -2261,12 +2266,15 @@ nsresult HTMLEditor::GetCSSBackgroundColorState(bool* aMixed,
                            "backgroundColor) failed, but ignored");
       
       
-      if (!aOutColor.EqualsLiteral("transparent")) {
+      if (!aOutColor.EqualsLiteral("transparent") &&
+          !aOutColor.EqualsLiteral("rgba(0, 0, 0, 0)")) {
         break;
       }
+      blockElement = std::move(nextBlockElement);
     }
 
-    if (aOutColor.EqualsLiteral("transparent")) {
+    if (aOutColor.EqualsLiteral("transparent") ||
+        aOutColor.EqualsLiteral("rgba(0, 0, 0, 0)")) {
       
       
       
