@@ -10,7 +10,6 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/MediaControlKeySource.h"
 #include "mozilla/dom/BrowsingContextWebProgress.h"
-#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/SessionStoreRestoreData.h"
 #include "mozilla/dom/SessionStoreUtils.h"
 #include "mozilla/dom/ipc/IdType.h"
@@ -287,10 +286,8 @@ class CanonicalBrowsingContext final : public BrowsingContext {
     return mContainerFeaturePolicy;
   }
 
-  void SetRestoreData(SessionStoreRestoreData* aData, ErrorResult& aError);
-  void ClearRestoreState();
+  void SetRestoreData(SessionStoreRestoreData* aData);
   void RequestRestoreTabContent(WindowGlobalParent* aWindow);
-  already_AddRefed<Promise> GetRestorePromise();
 
   
   
@@ -352,20 +349,6 @@ class CanonicalBrowsingContext final : public BrowsingContext {
     RemotenessChangeOptions mOptions;
   };
 
-  struct RestoreState {
-    NS_INLINE_DECL_REFCOUNTING(RestoreState)
-
-    void ClearData() { mData = nullptr; }
-
-    RefPtr<SessionStoreRestoreData> mData;
-    RefPtr<Promise> mPromise;
-    uint32_t mRequests = 0;
-    uint32_t mResolves = 0;
-
-   private:
-    ~RestoreState() = default;
-  };
-
   friend class net::DocumentLoadListener;
   
   
@@ -392,8 +375,6 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   
   void ShowSubframeCrashedUI(BrowserBridgeParent* aBridge);
-
-  void ResolveAndClearRestoreState(RestoreState* aState);
 
   
   
@@ -443,7 +424,9 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   RefPtr<FeaturePolicy> mContainerFeaturePolicy;
 
-  RefPtr<RestoreState> mRestoreState;
+  RefPtr<SessionStoreRestoreData> mRestoreData;
+  uint32_t mRequestedContentRestores = 0;
+  uint32_t mCompletedContentRestores = 0;
 };
 
 }  

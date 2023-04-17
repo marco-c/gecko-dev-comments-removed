@@ -504,6 +504,7 @@ class MessageQueue extends Handler {
 
 const MESSAGES = [
   "SessionStore:restoreHistory",
+  "SessionStore:restoreDocShellState",
   "SessionStore:restoreTabContent",
   "SessionStore:resetRestore",
   "SessionStore:flush",
@@ -557,6 +558,9 @@ class ContentSessionStore {
     switch (name) {
       case "SessionStore:restoreHistory":
         this.restoreHistory(data);
+        break;
+      case "SessionStore:restoreDocShellState":
+        this.restoreDocShellState(data);
         break;
       case "SessionStore:restoreTabContent":
         this.restoreTabContent(data);
@@ -637,6 +641,31 @@ class ContentSessionStore {
         isRemotenessUpdate,
       });
     }
+  }
+
+  
+  restoreDocShellState(data) {
+    let { epoch, tabData } = data;
+
+    if (!Services.appinfo.sessionHistoryInParent) {
+      throw new Error("This function should only be used with SHIP");
+    }
+    let { docShell } = this.mm;
+
+    if (tabData.uri) {
+      docShell.setCurrentURI(Services.io.newURI(tabData.uri));
+    }
+
+    if (tabData.disallow) {
+      SessionStoreUtils.restoreDocShellCapabilities(docShell, tabData.disallow);
+    }
+
+    if (tabData.storage) {
+      SessionStoreUtils.restoreSessionStorage(docShell, tabData.storage);
+    }
+    
+    
+    this.mm.sendAsyncMessage("SessionStore:restoreHistoryComplete", { epoch });
   }
 
   restoreTabContent({ loadArguments, isRemotenessUpdate, reason }) {

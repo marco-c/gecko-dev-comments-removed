@@ -182,6 +182,14 @@ void CanonicalBrowsingContext::ReplacedBy(
   }
   aNewContext->mWebProgress = std::move(mWebProgress);
 
+  bool hasRestoreData = !!mRestoreData && !mRestoreData->IsEmpty();
+  aNewContext->mRestoreData = std::move(mRestoreData);
+  aNewContext->mRequestedContentRestores = mRequestedContentRestores;
+  aNewContext->mCompletedContentRestores = mCompletedContentRestores;
+  SetRestoreData(nullptr);
+  mRequestedContentRestores = 0;
+  mCompletedContentRestores = 0;
+
   
   
   
@@ -189,15 +197,12 @@ void CanonicalBrowsingContext::ReplacedBy(
   txn.SetBrowserId(GetBrowserId());
   txn.SetHistoryID(GetHistoryID());
   txn.SetExplicitActive(GetExplicitActive());
-  txn.SetHasRestoreData(GetHasRestoreData());
+  txn.SetHasRestoreData(hasRestoreData);
   if (aNewContext->EverAttached()) {
     MOZ_ALWAYS_SUCCEEDS(txn.Commit(aNewContext));
   } else {
     txn.CommitWithoutSyncing(aNewContext);
   }
-
-  aNewContext->mRestoreState = mRestoreState.forget();
-  MOZ_ALWAYS_SUCCEEDS(SetHasRestoreData(false));
 
   
   
@@ -1908,103 +1913,49 @@ void CanonicalBrowsingContext::ResetScalingZoom() {
   }
 }
 
-void CanonicalBrowsingContext::SetRestoreData(SessionStoreRestoreData* aData,
-                                              ErrorResult& aError) {
-  MOZ_DIAGNOSTIC_ASSERT(aData);
-
-  nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(GetParentObject());
-  RefPtr<Promise> promise = Promise::Create(global, aError);
-  if (aError.Failed()) {
-    return;
-  }
-
-  if (NS_WARN_IF(NS_FAILED(SetHasRestoreData(true)))) {
-    aError.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-    return;
-  }
-
-  mRestoreState = new RestoreState();
-  mRestoreState->mData = aData;
-  mRestoreState->mPromise = promise;
-}
-
-already_AddRefed<Promise> CanonicalBrowsingContext::GetRestorePromise() {
-  if (mRestoreState) {
-    return do_AddRef(mRestoreState->mPromise);
-  }
-  return nullptr;
-}
-
-void CanonicalBrowsingContext::ClearRestoreState() {
-  if (!mRestoreState) {
-    MOZ_DIAGNOSTIC_ASSERT(!GetHasRestoreData());
-    return;
-  }
-  if (mRestoreState->mPromise) {
-    mRestoreState->mPromise->MaybeRejectWithUndefined();
-    mRestoreState->mPromise = nullptr;
-  }
-  mRestoreState = nullptr;
-  MOZ_ALWAYS_SUCCEEDS(SetHasRestoreData(false));
-}
-
-void CanonicalBrowsingContext::ResolveAndClearRestoreState(
-    RestoreState* aState) {
-  MOZ_DIAGNOSTIC_ASSERT(aState->mPromise);
-  aState->mPromise->MaybeResolveWithUndefined();
-  aState->mPromise = nullptr;
-  
-  
-  if (aState == mRestoreState) {
-    ClearRestoreState();
-  }
+void CanonicalBrowsingContext::SetRestoreData(SessionStoreRestoreData* aData) {
+  MOZ_DIAGNOSTIC_ASSERT(!mRestoreData || !aData,
+                        "must either be clearing or initializing");
+  MOZ_DIAGNOSTIC_ASSERT(
+      !aData || mCompletedContentRestores == mRequestedContentRestores,
+      "must not start restore in an unstable state");
+  mRestoreData = aData;
+  MOZ_ALWAYS_SUCCEEDS(SetHasRestoreData(mRestoreData));
 }
 
 void CanonicalBrowsingContext::RequestRestoreTabContent(
     WindowGlobalParent* aWindow) {
   MOZ_DIAGNOSTIC_ASSERT(IsTop());
 
-  if (IsDiscarded() || !mRestoreState || !mRestoreState->mData) {
+  if (IsDiscarded() || !mRestoreData || mRestoreData->IsEmpty()) {
     return;
   }
 
   CanonicalBrowsingContext* context = aWindow->GetBrowsingContext();
   MOZ_DIAGNOSTIC_ASSERT(!context->IsDiscarded());
 
-  RefPtr<SessionStoreRestoreData> data =
-      mRestoreState->mData->FindDataForChild(context);
+  RefPtr<SessionStoreRestoreData> data = mRestoreData->FindChild(context);
 
+  
+  
+  
   if (context->IsTop()) {
     MOZ_DIAGNOSTIC_ASSERT(context == this);
-
-    
-    
-    
-    if (mRestoreState->mData->IsEmpty()) {
-      MOZ_DIAGNOSTIC_ASSERT(!data || data->IsEmpty());
-      ResolveAndClearRestoreState(mRestoreState);
-      return;
-    }
-
-    
-    
-    
-    
-    
-    mRestoreState->ClearData();
-    MOZ_ALWAYS_SUCCEEDS(SetHasRestoreData(false));
+    SetRestoreData(nullptr);
   }
 
   if (data && !data->IsEmpty()) {
-    auto onTabRestoreComplete = [self = RefPtr{this},
-                                 state = RefPtr{mRestoreState}](auto) {
-      state->mResolves++;
-      if (!state->mData && state->mRequests == state->mResolves) {
-        self->ResolveAndClearRestoreState(state);
+    auto onTabRestoreComplete = [self = RefPtr{this}](auto) {
+      self->mCompletedContentRestores++;
+      if (!self->mRestoreData &&
+          self->mCompletedContentRestores == self->mRequestedContentRestores) {
+        if (Element* browser = self->GetEmbedderElement()) {
+          SessionStoreUtils::CallRestoreTabContentComplete(browser);
+        }
       }
     };
 
-    mRestoreState->mRequests++;
+    mRequestedContentRestores++;
 
     if (data->CanRestoreInto(aWindow->GetDocumentURI())) {
       if (!aWindow->IsInProcess()) {

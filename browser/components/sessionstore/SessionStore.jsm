@@ -454,10 +454,6 @@ var SessionStore = {
     }
   },
 
-  getCurrentEpoch(browser) {
-    return SessionStoreInternal.getCurrentEpoch(browser);
-  },
-
   
 
 
@@ -522,6 +518,10 @@ var SessionStore = {
 
   finishTabRemotenessChange(aTab, aSwitchId) {
     SessionStoreInternal.finishTabRemotenessChange(aTab, aSwitchId);
+  },
+
+  restoreTabContentComplete(aBrowser, aData) {
+    SessionStoreInternal._restoreTabContentComplete(aBrowser, aData);
   },
 };
 
@@ -3433,18 +3433,13 @@ var SessionStoreInternal = {
     let activePageData = tabData.entries[tabData.index - 1] || null;
 
     
-    if (!tab._labelIsContentTitle) {
-      if (activePageData) {
-        if (
-          activePageData.title &&
-          activePageData.title != activePageData.url
-        ) {
-          win.gBrowser.setInitialTabTitle(tab, activePageData.title, {
-            isContentTitle: true,
-          });
-        } else {
-          win.gBrowser.setInitialTabTitle(tab, activePageData.url);
-        }
+    if (activePageData) {
+      if (activePageData.title && activePageData.title != activePageData.url) {
+        win.gBrowser.setInitialTabTitle(tab, activePageData.title, {
+          isContentTitle: true,
+        });
+      } else {
+        win.gBrowser.setInitialTabTitle(tab, activePageData.url);
       }
     }
 
@@ -5625,7 +5620,7 @@ var SessionStoreInternal = {
           .get(browser.permanentKey)
           .uninstall();
       }
-      browser.browsingContext.clearRestoreState();
+      SessionStoreUtils.setRestoreData(browser.browsingContext, null);
     }
 
     
@@ -5837,7 +5832,7 @@ var SessionStoreInternal = {
 
 
 
-  _restoreHistory(browser, data) {
+  async _restoreTabState(browser, data) {
     if (!Services.appinfo.sessionHistoryInParent) {
       throw new Error("This function should only be used with SHIP");
     }
@@ -5845,36 +5840,33 @@ var SessionStoreInternal = {
     
     browser.stop();
 
-    let uri = data.tabData?.entries[data.tabData.index - 1]?.url;
-    let disallow = data.tabData?.disallow;
-    let storage = data.tabData?.storage || {};
-    delete data.tabData?.storage;
+    let win = browser.ownerGlobal;
+    let tab = win?.gBrowser.getTabForBrowser(browser);
 
-    
-    
-    
-    data.historyPromise = SessionStoreUtils.restoreDocShellState(
-      browser.browsingContext,
-      uri,
-      disallow,
-      storage
-    );
-
-    data.historyPromise.finally(() => {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (TAB_STATE_FOR_BROWSER.get(browser) === TAB_STATE_NEEDS_RESTORE) {
-        delete data.historyPromise;
-        this._restoreHistoryComplete(browser, data);
+    browser.messageManager.sendAsyncMessage(
+      "SessionStore:restoreDocShellState",
+      {
+        epoch: data.epoch,
+        tabData: {
+          uri: data.tabData?.entries[data.tabData.index - 1]?.url ?? null,
+          disallow: data.tabData?.disallow,
+          storage: data.tabData?.storage,
+        },
       }
-    });
+    );
+    
+    
+    
+    if (tab.linkedBrowser.docShell) {
+      SessionStoreUtils.restoreDocShellCapabilities(
+        tab.linkedBrowser.docShell,
+        data.tabData.disallow
+      );
+    }
+
+    if (data.tabData?.storage) {
+      delete data.tabData.storage;
+    }
 
     this._shistoryToRestore.set(browser.permanentKey, data);
 
@@ -5918,66 +5910,58 @@ var SessionStoreInternal = {
 
     this._restoreTabContentStarted(browser, restoreData);
 
-    let tabData = restoreData.tabData || {};
-    let promises = [restoreData.historyPromise];
-
+    let { tabData } = restoreData;
     let uri = null;
     let loadFlags = null;
 
-    if (tabData.userTypedValue && tabData.userTypedClear) {
+    if (tabData?.userTypedValue && tabData?.userTypedClear) {
       uri = tabData.userTypedValue;
       loadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP;
-    } else if (tabData.entries.length) {
-      promises.push(
-        SessionStoreUtils.initializeRestore(
-          browser.browsingContext,
-          this.buildRestoreData(tabData.formdata, tabData.scroll)
-        )
+    } else if (tabData?.entries.length) {
+      uri = tabData.entries[tabData.index - 1].url;
+      let willRestoreContent = SessionStoreUtils.setRestoreData(
+        browser.browsingContext,
+        this.buildRestoreData(tabData.formdata, tabData.scroll)
       );
+      
+      
+      
+      if (willRestoreContent) {
+        return;
+      }
     } else {
       uri = "about:blank";
       loadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_HISTORY;
     }
 
-    if (uri && loadFlags) {
-      let deferred = PromiseUtils.defer();
-      promises.push(deferred.promise);
-
+    if (uri) {
       this.addProgressListenerForRestore(browser, {
         onStopRequest: (request, listener) => {
           let requestURI = request.QueryInterface(Ci.nsIChannel)?.originalURI;
           
           
           
+          
+          
+          
+          
+          
           if (requestURI?.spec !== "about:blank" || uri === "about:blank") {
             listener.uninstall();
-            deferred.resolve();
+            this._restoreTabContentComplete(browser, restoreData);
           }
         },
       });
 
-      browser.browsingContext.loadURI(uri, {
-        loadFlags,
-        triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
-      });
-    }
-
-    Promise.allSettled(promises).then(() => {
-      
-      
-      
-      
-      if (TAB_STATE_FOR_BROWSER.get(browser) === TAB_STATE_RESTORING) {
-        
-        
-        
-        
-        if (restoreData.historyPromise) {
-          this._restoreHistoryComplete(browser, restoreData);
-        }
-        this._restoreTabContentComplete(browser, restoreData);
+      if (loadFlags) {
+        browser.browsingContext.loadURI(uri, {
+          loadFlags,
+          triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+        });
+      } else {
+        browser.browsingContext.sessionHistory.reloadCurrentEntry();
       }
-    });
+    }
   },
 
   _sendRestoreTabContent(browser, options) {
@@ -6170,7 +6154,7 @@ var SessionStoreInternal = {
     }
 
     if (Services.appinfo.sessionHistoryInParent) {
-      this._restoreHistory(browser, options);
+      this._restoreTabState(browser, options);
     } else {
       browser.messageManager.sendAsyncMessage(
         "SessionStore:restoreHistory",
