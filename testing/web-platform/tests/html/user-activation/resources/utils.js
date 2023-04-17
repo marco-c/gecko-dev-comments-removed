@@ -7,3 +7,27 @@ function delayByFrames(f, num_frames) {
   }
   recurse(num_frames);
 }
+
+
+
+function getEvent(eventType) {
+  return new Promise(resolve => {
+    document.body.addEventListener(eventType, e => resolve(e), {once: true});
+  });
+}
+
+
+
+
+
+
+
+async function consumeTransientActivation() {
+  try {
+    await document.body.requestFullscreen();
+    await document.exitFullscreen();
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
