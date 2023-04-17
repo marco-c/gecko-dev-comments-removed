@@ -28,7 +28,7 @@ struct Function {
   shadow::Object base;
   JS::Value flagsAndArgCount;
   
-  JSNative native;
+  JS::Value native;
   const JSJitInfo* jitinfo;
   void* _1;
 };
