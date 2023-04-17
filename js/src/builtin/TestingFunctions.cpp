@@ -5721,11 +5721,6 @@ static bool EvalReturningScope(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  RootedScript script(cx, JS::Compile(cx, options, srcBuf));
-  if (!script) {
-    return false;
-  }
-
   if (global) {
     global = CheckedUnwrapDynamic(global, cx,  false);
     if (!global) {
@@ -5747,6 +5742,12 @@ static bool EvalReturningScope(JSContext* cx, unsigned argc, Value* vp) {
     
     
     AutoRealm ar(cx, global);
+
+    RootedScript script(cx, JS::Compile(cx, options, srcBuf));
+    if (!script) {
+      return false;
+    }
+
     JS::RootedObject obj(cx, JS_NewPlainObject(cx));
     if (!obj) {
       return false;
