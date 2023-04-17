@@ -213,6 +213,31 @@ function Intl_PluralRules_select(value) {
 
 
 
+function Intl_PluralRules_selectRange(start, end) {
+    
+    var pluralRules = this;
+
+    
+    if (!IsObject(pluralRules) || (pluralRules = intl_GuardToPluralRules(pluralRules)) === null) {
+        return callFunction(intl_CallPluralRulesMethodIfWrapped, this, start, end,
+                            "Intl_PluralRules_selectRange");
+    }
+
+    
+    var x = ToNumber(start);
+
+    
+    var y = ToNumber(end);
+
+    
+    return intl_SelectPluralRuleRange(pluralRules, x, y);
+}
+
+
+
+
+
+
 function Intl_PluralRules_resolvedOptions() {
     
     var pluralRules = this;

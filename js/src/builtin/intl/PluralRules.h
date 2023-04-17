@@ -77,6 +77,19 @@ class PluralRulesObject : public NativeObject {
 
 
 
+[[nodiscard]] extern bool intl_SelectPluralRuleRange(JSContext* cx,
+                                                     unsigned argc,
+                                                     JS::Value* vp);
+
+
+
+
+
+
+
+
+
+
 
 [[nodiscard]] extern bool intl_GetPluralCategories(JSContext* cx, unsigned argc,
                                                    JS::Value* vp);
