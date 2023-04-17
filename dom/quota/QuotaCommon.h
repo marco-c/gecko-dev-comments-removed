@@ -27,7 +27,6 @@
 #  include "mozilla/Variant.h"
 #endif
 #include "mozilla/dom/QMResult.h"
-#include "mozilla/dom/quota/FirstInitializationAttemptsImpl.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "nsCOMPtr.h"
 #include "nsDebug.h"
@@ -1536,54 +1535,6 @@ auto CallWithDelayedRetriesIfAccessDenied(Func&& aFunc, uint32_t aMaxRetries,
 
     PR_Sleep(PR_MillisecondsToInterval(aDelayMs));
   }
-}
-
-namespace detail {
-
-template <bool flag = false>
-void UnsupportedReturnType() {
-  static_assert(flag, "Unsupported return type!");
-}
-
-}  
-
-template <typename Initialization, typename StringGenerator, typename Func>
-auto ExecuteInitialization(
-    FirstInitializationAttempts<Initialization, StringGenerator>&
-        aFirstInitializationAttempts,
-    const Initialization aInitialization, Func&& aFunc)
-    -> std::invoke_result_t<Func> {
-  using RetType = std::invoke_result_t<Func>;
-
-  auto res = std::forward<Func>(aFunc)();
-
-  const auto rv = [&res]() -> nsresult {
-    if constexpr (std::is_same_v<RetType, nsresult>) {
-      return res;
-    } else if constexpr (mozilla::detail::IsResult<RetType>::value &&
-                         std::is_same_v<typename RetType::err_type, nsresult>) {
-      return res.isOk() ? NS_OK : res.inspectErr();
-    } else {
-      detail::UnsupportedReturnType();
-    }
-  }();
-
-  
-  
-  
-  
-  
-  if (rv == NS_ERROR_ABORT) {
-    return res;
-  }
-
-  if (!aFirstInitializationAttempts.FirstInitializationAttemptRecorded(
-          aInitialization)) {
-    aFirstInitializationAttempts.RecordFirstInitializationAttempt(
-        aInitialization, rv);
-  }
-
-  return res;
 }
 
 }  
