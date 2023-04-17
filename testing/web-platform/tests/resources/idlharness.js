@@ -1580,10 +1580,16 @@ IdlInterface.prototype.test = function()
         return;
     }
 
-    if (!this.exposed) {
-        subsetTestByKey(this.name, test, function() {
-            assert_false(this.name in self);
-        }.bind(this), this.name + " interface: existence and properties of interface object");
+    
+    
+    if (!this.exposed)
+    {
+        if (!this.untested)
+        {
+            subsetTestByKey(this.name, test, function() {
+                assert_false(this.name in self);
+            }.bind(this), this.name + " interface: existence and properties of interface object");
+        }
         return;
     }
 
