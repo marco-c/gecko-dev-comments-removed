@@ -1336,14 +1336,12 @@
 
       
       
-      var left, widthdiff;
-      if (style.direction == "rtl") {
-        left = cellRect.x;
-        widthdiff = cellRect.x - textRect.x;
-      } else {
-        left = textRect.x;
-        widthdiff = textRect.x - cellRect.x;
-      }
+      let left = style.direction == "rtl" ? cellRect.x : textRect.x;
+      
+      
+      
+      
+      let widthdiff = Math.abs(textRect.x - cellRect.x);
 
       input.style.left = `${left}px`;
       input.style.height = `${textRect.height +
