@@ -373,7 +373,6 @@ impl CssRule {
             CssRule::Import(..) => State::Imports,
             CssRule::Namespace(..) => State::Namespaces,
             
-            
             _ => State::Body,
         }
     }

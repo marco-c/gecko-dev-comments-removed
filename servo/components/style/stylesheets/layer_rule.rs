@@ -90,7 +90,7 @@ pub enum LayerRuleKind {
     
     Statement {
         
-        names: SmallVec<[LayerName; 3]>,
+        names: Vec<LayerName>,
     },
 }
 
