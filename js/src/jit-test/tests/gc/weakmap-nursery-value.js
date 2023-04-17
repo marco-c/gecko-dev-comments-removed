@@ -1,5 +1,9 @@
 
 
+
+
+if (!this.enqueueMark) quit(0);
+
 var wm = new WeakMap();
 
 
