@@ -17,13 +17,11 @@ add_task(async function doorhanger_bc_downloadAutoFailures() {
       notificationId: "update-available",
       button: "button",
       checkActiveUpdate: null,
-      pageURLs: { whatsNew: gDefaultWhatsNewURL },
     },
     {
       notificationId: "update-available",
       button: "button",
       checkActiveUpdate: null,
-      pageURLs: { whatsNew: gDefaultWhatsNewURL },
     },
     {
       
@@ -31,7 +29,7 @@ add_task(async function doorhanger_bc_downloadAutoFailures() {
       notificationId: "update-manual",
       button: "button",
       checkActiveUpdate: null,
-      pageURLs: { whatsNew: gDefaultWhatsNewURL, manual: URL_MANUAL_UPDATE },
+      pageURLs: { manual: URL_MANUAL_UPDATE },
     },
   ]);
 });

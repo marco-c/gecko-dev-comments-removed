@@ -53,7 +53,6 @@ let gOriginalUpdateAutoValue = null;
 
 
 const gDetailsURL = URL_HOST + "/";
-const gDefaultWhatsNewURL = URL_HTTP_UPDATE_SJS + "?uiURL=DETAILS";
 
 
 
@@ -290,23 +289,6 @@ function getNotificationButton(win, notificationId, button) {
   );
   ok(!notification.hidden, `${notificationId} notification is showing`);
   return notification[button];
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function checkWhatsNewLink(win, id, url) {
-  let whatsNewLink = win.document.getElementById(id);
-  ok(!whatsNewLink.hidden, "What's new link is not hidden.");
-  is(whatsNewLink.href, url, `What's new link href should equal ${url}`);
 }
 
 
@@ -594,14 +576,6 @@ function runDoorhangerUpdateTest(params, steps) {
           "There should not be a downloading update"
         );
         ok(!gUpdateManager.readyUpdate, "There should not be a ready update");
-      }
-
-      if (pageURLs && pageURLs.whatsNew !== undefined) {
-        checkWhatsNewLink(
-          window,
-          `${notificationId}-whats-new`,
-          pageURLs.whatsNew
-        );
       }
 
       let buttonEl = getNotificationButton(window, notificationId, button);
