@@ -254,11 +254,16 @@ const WebConsoleActor = ActorClassWithSpec(webconsoleSpec, {
 
 
 
+
+
+
   _getWindowForBrowserConsole: function() {
     
     let window = this._lastChromeWindow && this._lastChromeWindow.get();
     
-    if (!window || window.closed) {
+    
+    
+    if (!window || Cu.isDeadWrapper(window) || window.closed) {
       window = this.parentActor.window;
       if (!window) {
         
