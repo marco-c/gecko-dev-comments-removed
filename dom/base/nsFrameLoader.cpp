@@ -187,6 +187,7 @@ nsFrameLoader::nsFrameLoader(Element* aOwner, BrowsingContext* aBrowsingContext,
       mPendingSwitchID(0),
       mChildID(0),
       mRemoteType(NOT_REMOTE_TYPE),
+      mInitialized(false),
       mDepthTooGreat(false),
       mIsTopLevelContent(false),
       mDestroyCalled(false),
@@ -2195,6 +2196,12 @@ nsresult nsFrameLoader::MaybeCreateDocShell() {
   MOZ_RELEASE_ASSERT(!doc->IsResourceDoc(), "We shouldn't even exist");
 
   
+  if (mInitialized) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  mInitialized = true;
+
+  
   
   
   if (!doc->IsStaticDocument() &&
@@ -2583,6 +2590,12 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
   if (mRemoteBrowser) {
     return true;
   }
+
+  
+  if (mInitialized) {
+    return false;
+  }
+  mInitialized = true;
 
   
   if (!mOwnerContent || mOwnerContent->OwnerDoc() != doc ||
