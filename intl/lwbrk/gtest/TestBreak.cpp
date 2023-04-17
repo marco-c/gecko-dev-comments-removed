@@ -125,9 +125,6 @@ bool TestASCIILB(mozilla::intl::LineBreaker* lb, const char* in,
   while (true) {
     curr = lb->Next(input.get(), input.Length(), curr);
     if (curr == NS_LINEBREAKER_NEED_MORE_TEXT) {
-      
-      
-      result.AppendElement(input.Length());
       break;
     }
     result.AppendElement(curr);
