@@ -311,19 +311,17 @@ nsresult TextServicesDocument::ExpandRangeToWordBoundaries(
     return result.unwrapErr();
   }
 
-  nsCOMPtr<nsINode> wordStartNode, wordEndNode;
-  uint32_t wordStartOffset, wordEndOffset;
-
-  rv = FindWordBounds(&offsetTable, &blockStr, rngStartNode, rngStartOffset,
-                      getter_AddRefs(wordStartNode), &wordStartOffset,
-                      getter_AddRefs(wordEndNode), &wordEndOffset);
+  Result<EditorDOMRangeInTexts, nsresult> maybeWordRange =
+      offsetTable.FindWordRange(
+          blockStr, EditorRawDOMPoint(rngStartNode, rngStartOffset));
   offsetTable.Clear();
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  if (maybeWordRange.isErr()) {
+    NS_WARNING(
+        "TextServicesDocument::OffsetEntryArray::FindWordRange() failed");
+    return maybeWordRange.unwrapErr();
   }
-
-  rngStartNode = wordStartNode;
-  rngStartOffset = wordStartOffset;
+  rngStartNode = maybeWordRange.inspect().StartRef().GetContainerAsText();
+  rngStartOffset = maybeWordRange.inspect().StartRef().Offset();
 
   
   
@@ -339,22 +337,24 @@ nsresult TextServicesDocument::ExpandRangeToWordBoundaries(
     return result.unwrapErr();
   }
 
-  rv = FindWordBounds(&offsetTable, &blockStr, rngEndNode, rngEndOffset,
-                      getter_AddRefs(wordStartNode), &wordStartOffset,
-                      getter_AddRefs(wordEndNode), &wordEndOffset);
+  maybeWordRange = offsetTable.FindWordRange(
+      blockStr, EditorRawDOMPoint(rngEndNode, rngEndOffset));
   offsetTable.Clear();
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  if (maybeWordRange.isErr()) {
+    NS_WARNING(
+        "TextServicesDocument::OffsetEntryArray::FindWordRange() failed");
+    return maybeWordRange.unwrapErr();
   }
 
   
   
   
 
-  if (rngEndNode != wordStartNode || rngEndOffset != wordStartOffset ||
+  if (rngEndNode != maybeWordRange.inspect().StartRef().GetContainerAsText() ||
+      rngEndOffset != maybeWordRange.inspect().StartRef().Offset() ||
       (rngEndNode == rngStartNode && rngEndOffset == rngStartOffset)) {
-    rngEndNode = wordEndNode;
-    rngEndOffset = wordEndOffset;
+    rngEndNode = maybeWordRange.inspect().EndRef().GetContainerAsText();
+    rngEndOffset = maybeWordRange.inspect().EndRef().Offset();
   }
 
   
@@ -2629,59 +2629,50 @@ nsresult TextServicesDocument::NodeHasOffsetEntry(
 
 #define IS_NBSP_CHAR(c) (((unsigned char)0xa0) == (c))
 
-
-nsresult TextServicesDocument::FindWordBounds(
-    nsTArray<UniquePtr<OffsetEntry>>* aOffsetTable, nsString* aBlockStr,
-    nsINode* aNode, uint32_t aNodeOffset, nsINode** aWordStartNode,
-    uint32_t* aWordStartOffset, nsINode** aWordEndNode,
-    uint32_t* aWordEndOffset) {
-  
-
-  if (aWordStartNode) {
-    *aWordStartNode = nullptr;
-  }
-  if (aWordStartOffset) {
-    *aWordStartOffset = 0;
-  }
-  if (aWordEndNode) {
-    *aWordEndNode = nullptr;
-  }
-  if (aWordEndOffset) {
-    *aWordEndOffset = 0;
-  }
-
+Result<EditorDOMRangeInTexts, nsresult>
+TextServicesDocument::OffsetEntryArray::FindWordRange(
+    nsAString& aAllTextInBlock, const EditorRawDOMPoint& aStartPointToScan) {
+  MOZ_ASSERT(aStartPointToScan.IsInTextNode());
   
   
   
   size_t entryIndex = 0;
   bool hasEntry = false;
-  nsresult rv = NodeHasOffsetEntry(aOffsetTable, aNode, &hasEntry, &entryIndex);
-  NS_ENSURE_SUCCESS(rv, rv);
-  NS_ENSURE_TRUE(hasEntry, NS_ERROR_FAILURE);
+  nsresult rv = TextServicesDocument::NodeHasOffsetEntry(
+      this, aStartPointToScan.GetContainer(), &hasEntry, &entryIndex);
+  if (NS_FAILED(rv)) {
+    NS_WARNING("TextServicesDocument::NodeHasOffsetEntry() failed");
+    return Err(rv);
+  }
+  if (NS_WARN_IF(!hasEntry)) {
+    NS_WARNING(
+        "TextServicesDocument::NodeHasOffsetEntry() didn't fine entries");
+    return Err(NS_ERROR_FAILURE);
+  }
 
   
 
-  const UniquePtr<OffsetEntry>& entry = (*aOffsetTable)[entryIndex];
-  uint32_t strOffset =
-      entry->mOffsetInTextInBlock + aNodeOffset - entry->mOffsetInTextNode;
+  const UniquePtr<OffsetEntry>& entry = ElementAt(entryIndex);
+  uint32_t strOffset = entry->mOffsetInTextInBlock +
+                       aStartPointToScan.Offset() - entry->mOffsetInTextNode;
 
   
   
 
-  const char16_t* str = aBlockStr->get();
-  uint32_t strLen = aBlockStr->Length();
+  const char16_t* str = aAllTextInBlock.BeginReading();
+  uint32_t strLen = aAllTextInBlock.Length();
 
-  mozilla::intl::WordBreaker* wordBreaker = nsContentUtils::WordBreaker();
-  mozilla::intl::WordRange res = wordBreaker->FindWord(str, strLen, strOffset);
+  intl::WordBreaker* wordBreaker = nsContentUtils::WordBreaker();
+  intl::WordRange res = wordBreaker->FindWord(str, strLen, strOffset);
   if (res.mBegin > strLen) {
-    return str ? NS_ERROR_ILLEGAL_VALUE : NS_ERROR_NULL_POINTER;
+    return Err(str ? NS_ERROR_ILLEGAL_VALUE : NS_ERROR_NULL_POINTER);
   }
 
   
   while (res.mBegin <= res.mEnd && IS_NBSP_CHAR(str[res.mBegin])) {
     res.mBegin++;
   }
-  if (str[res.mEnd] == (unsigned char)0x20) {
+  if (str[res.mEnd] == static_cast<char16_t>(0x20)) {
     uint32_t realEndWord = res.mEnd - 1;
     while (realEndWord > res.mBegin && IS_NBSP_CHAR(str[realEndWord])) {
       realEndWord--;
@@ -2695,31 +2686,19 @@ nsresult TextServicesDocument::FindWordBounds(
   
   
 
-  size_t lastIndex = aOffsetTable->Length() - 1;
+  EditorDOMPointInText wordStart, wordEnd;
+  size_t lastIndex = Length() - 1;
   for (size_t i = 0; i <= lastIndex; i++) {
     
     
     
     
-    const UniquePtr<OffsetEntry>& entry = (*aOffsetTable)[i];
+    const UniquePtr<OffsetEntry>& entry = ElementAt(i);
     if (entry->mOffsetInTextInBlock <= res.mBegin &&
         (res.mBegin < entry->EndOffsetInTextInBlock() ||
          (res.mBegin == entry->EndOffsetInTextInBlock() && i == lastIndex))) {
-      if (aWordStartNode) {
-        *aWordStartNode = entry->mTextNode;
-        NS_IF_ADDREF(*aWordStartNode);
-      }
-
-      if (aWordStartOffset) {
-        *aWordStartOffset =
-            entry->mOffsetInTextNode + res.mBegin - entry->mOffsetInTextInBlock;
-      }
-
-      if (!aWordEndNode && !aWordEndOffset) {
-        
-        
-        break;
-      }
+      wordStart.Set(entry->mTextNode, entry->mOffsetInTextNode + res.mBegin -
+                                          entry->mOffsetInTextInBlock);
     }
 
     
@@ -2733,20 +2712,13 @@ nsresult TextServicesDocument::FindWordBounds(
         continue;
       }
 
-      if (aWordEndNode) {
-        *aWordEndNode = entry->mTextNode;
-        NS_IF_ADDREF(*aWordEndNode);
-      }
-
-      if (aWordEndOffset) {
-        *aWordEndOffset =
-            entry->mOffsetInTextNode + res.mEnd - entry->mOffsetInTextInBlock;
-      }
+      wordEnd.Set(entry->mTextNode, entry->mOffsetInTextNode + res.mEnd -
+                                        entry->mOffsetInTextInBlock);
       break;
     }
   }
 
-  return NS_OK;
+  return EditorDOMRangeInTexts(wordStart, wordEnd);
 }
 
 
