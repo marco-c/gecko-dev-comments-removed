@@ -2535,6 +2535,11 @@ already_AddRefed<SharedCertVerifier> GetDefaultCertVerifier() {
 
 
 UniqueCERTCertList FindClientCertificatesWithPrivateKeys() {
+  TimeStamp begin(TimeStamp::Now());
+  auto exitTelemetry = MakeScopeExit([&] {
+    Telemetry::AccumulateTimeDelta(Telemetry::CLIENT_CERTIFICATE_SCAN_TIME,
+                                   begin, TimeStamp::Now());
+  });
   MOZ_LOG(gPIPNSSLog, LogLevel::Debug,
           ("FindClientCertificatesWithPrivateKeys"));
   UniqueCERTCertList certsWithPrivateKeys(CERT_NewCertList());
