@@ -126,18 +126,26 @@ class AlternateServerPlayback:
                     "Recorded response is a WebSocketFlow. Removing from recording list as"
                     "  WebSockets are disabled"
                 )
-            elif i.response and self.mitm_version in (
-                "4.0.2",
-                "4.0.4",
-                "5.1.1",
-                "6.0.2",
-            ):
-                
-                f = self.flowmap.setdefault(
-                    self._hash(i), {"flow": None, "reply_count": 0}
-                )
+            elif i.response:
+                hash = self._hash(i)
+                if i.response.content is None and self.flowmap.get(hash, False):
+                    
+                    
+                    
+                    
+
+                    if not self.flowmap.get(hash)["flow"].response.content is None:
+                        ctx.log.info(
+                            "Duplicate recorded request found with content missing. "
+                            "Removing current request as it has no data. %s"
+                            % i.request.url
+                        )
+                        continue
+
+                f = self.flowmap.setdefault(hash, {"flow": None, "reply_count": 0})
                 
                 f["flow"] = i
+
             else:
                 ctx.log.info(
                     "Recorded request %s has no response. Removing from recording list"
