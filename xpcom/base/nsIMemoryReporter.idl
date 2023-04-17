@@ -404,8 +404,6 @@ interface nsIMemoryReporterManager : nsISupports
 
   [must_use] readonly attribute int64_t storageSQLite;
 
-  [must_use] readonly attribute int64_t lowMemoryEventsVirtual;
-  [must_use] readonly attribute int64_t lowMemoryEventsCommitSpace;
   [must_use] readonly attribute int64_t lowMemoryEventsPhysical;
 
   [must_use] readonly attribute int64_t ghostWindows;
@@ -506,8 +504,6 @@ DECL_UNREGISTER_DISTINGUISHED_AMOUNT(ImagesContentUsedUncompressed)
 DECL_REGISTER_DISTINGUISHED_AMOUNT(Infallible, StorageSQLite)
 DECL_UNREGISTER_DISTINGUISHED_AMOUNT(StorageSQLite)
 
-DECL_REGISTER_DISTINGUISHED_AMOUNT(Infallible, LowMemoryEventsVirtual)
-DECL_REGISTER_DISTINGUISHED_AMOUNT(Infallible, LowMemoryEventsCommitSpace)
 DECL_REGISTER_DISTINGUISHED_AMOUNT(Infallible, LowMemoryEventsPhysical)
 
 DECL_REGISTER_DISTINGUISHED_AMOUNT(Infallible, GhostWindows)
