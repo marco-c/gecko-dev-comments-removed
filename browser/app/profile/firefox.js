@@ -2041,6 +2041,9 @@ pref("browser.suppress_first_window_animation", true);
 pref("extensions.screenshots.disabled", false);
 
 
+pref("screenshots.browser.component.enabled", false);
+
+
 
 pref("doh-rollout.trr-selection.enabled", false);
 
