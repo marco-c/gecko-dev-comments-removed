@@ -1429,21 +1429,45 @@ const updatedAddonFluentIds = new Map([
   defineAddonWrapperProperty(aProp, function() {
     let addon = addonFor(this);
 
+    let formattedMessage;
     
     
     if (
       (aProp === "name" || aProp === "description") &&
       addon.location.name === KEY_APP_BUILTINS &&
-      
-      !addon.id.endsWith("colorway@mozilla.org") &&
       addon.type === "theme"
     ) {
       
       let addonIdPrefix = addon.id.replace("@mozilla.org", "");
-      let defaultFluentId = `extension-${addonIdPrefix}-${aProp}`;
-      let fluentId =
-        updatedAddonFluentIds.get(defaultFluentId) || defaultFluentId;
-      let [formattedMessage] = l10n.formatMessagesSync([{ id: fluentId }]);
+      if (addonIdPrefix.endsWith("colorway")) {
+        
+        
+        
+        if (aProp == "description") {
+          
+          return null;
+        }
+        let [colorName, variantName] = addonIdPrefix.split("-", 2);
+        
+        
+        colorName = colorName[0].toUpperCase() + colorName.slice(1);
+        let defaultFluentId = `extension-colorways-${variantName}-name`;
+        let fluentId =
+          updatedAddonFluentIds.get(defaultFluentId) || defaultFluentId;
+        [formattedMessage] = l10n.formatMessagesSync([
+          {
+            id: fluentId,
+            args: {
+              "colorway-name": colorName,
+            },
+          },
+        ]);
+      } else {
+        let defaultFluentId = `extension-${addonIdPrefix}-${aProp}`;
+        let fluentId =
+          updatedAddonFluentIds.get(defaultFluentId) || defaultFluentId;
+        [formattedMessage] = l10n.formatMessagesSync([{ id: fluentId }]);
+      }
 
       return formattedMessage.value;
     }
