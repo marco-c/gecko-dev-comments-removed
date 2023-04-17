@@ -82,7 +82,7 @@ extern JS_PUBLIC_API void JS_SetAccumulateTelemetryCallback(
 
 
 
-enum class JSUseCounter { ASMJS, WASM, WASM_DUPLICATE_IMPORTS };
+enum class JSUseCounter { ASMJS, WASM };
 
 using JSSetUseCounterCallback = void (*)(JSObject*, JSUseCounter);
 

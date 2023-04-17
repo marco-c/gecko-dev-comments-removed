@@ -66,7 +66,6 @@ struct ModuleEnvironment {
   Maybe<uint32_t> startFuncIndex;
   ElemSegmentVector elemSegments;
   MaybeSectionRange codeSection;
-  bool usesDuplicateImports;
 
   
   DataSegmentEnvVector dataSegments;
@@ -80,8 +79,7 @@ struct ModuleEnvironment {
       : kind(kind),
         features(features),
         memory(Nothing()),
-        types(features, TypeDefVector()),
-        usesDuplicateImports(false) {}
+        types(features, TypeDefVector()) {}
 
   size_t numTables() const { return tables.length(); }
   size_t numTypes() const { return types.length(); }
