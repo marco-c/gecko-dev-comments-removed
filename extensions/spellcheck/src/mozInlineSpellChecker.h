@@ -138,7 +138,6 @@ class mozInlineSpellChecker final : public nsIInlineSpellChecker,
   friend class InitEditorSpellCheckCallback;
   friend class UpdateCurrentDictionaryCallback;
   friend class AutoChangeNumPendingSpellChecks;
-  friend class mozInlineSpellResume;
 
   
   enum SpellCheckingState {
@@ -199,6 +198,9 @@ class mozInlineSpellChecker final : public nsIInlineSpellChecker,
                                            nsIDOMEventListener)
 
   mozilla::EditorSpellCheck* GetEditorSpellCheck();
+
+  
+  uint32_t GetDisabledAsyncToken() const { return mDisabledAsyncToken; }
 
   
   static bool CanEnableInlineSpellChecking();
