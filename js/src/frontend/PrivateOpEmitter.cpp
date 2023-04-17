@@ -52,18 +52,6 @@ bool PrivateOpEmitter::emitLoadPrivateBrand() {
 bool PrivateOpEmitter::emitBrandCheck() {
   MOZ_ASSERT(state_ == State::Reference);
 
-  if (isBrandCheck()) {
-    
-    
-    if (!bce_->emitCheckPrivateField(ThrowCondition::OnlyCheckRhs,
-                                     ThrowMsgKind::PrivateDoubleInit)) {
-      
-      return false;
-    }
-
-    return true;
-  }
-
   
   if (isFieldInit()) {
     if (!bce_->emitCheckPrivateField(ThrowCondition::ThrowHas,

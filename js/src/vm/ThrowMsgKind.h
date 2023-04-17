@@ -27,7 +27,7 @@ enum class ThrowMsgKind : uint8_t {
 JSErrNum ThrowMsgKindToErrNum(ThrowMsgKind kind);
 
 
-enum class ThrowCondition : uint8_t { ThrowHas, ThrowHasNot, OnlyCheckRhs };
+enum class ThrowCondition : uint8_t { ThrowHas, ThrowHasNot, NoThrow };
 
 }  
 

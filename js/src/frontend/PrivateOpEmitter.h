@@ -83,19 +83,7 @@ struct BytecodeEmitter;
 
 class MOZ_STACK_CLASS PrivateOpEmitter {
  public:
-  enum class Kind {
-    Get,
-    Call,
-    Delete,
-    PostIncrement,
-    PreIncrement,
-    PostDecrement,
-    PreDecrement,
-    SimpleAssignment,
-    PropInit,
-    CompoundAssignment,
-    ErgonomicBrandCheck,
-  };
+  using Kind = ElemOpEmitter::Kind;
 
  private:
   BytecodeEmitter* bce_;
@@ -173,10 +161,6 @@ class MOZ_STACK_CLASS PrivateOpEmitter {
 
   [[nodiscard]] bool isFieldInit() const { return kind_ == Kind::PropInit; }
 
-  [[nodiscard]] bool isBrandCheck() const {
-    return kind_ == Kind::ErgonomicBrandCheck;
-  }
-
   [[nodiscard]] bool isCompoundAssignment() const {
     return kind_ == Kind::CompoundAssignment;
   }
@@ -205,9 +189,6 @@ class MOZ_STACK_CLASS PrivateOpEmitter {
 
   [[nodiscard]] bool emitLoadPrivateBrand();
 
- public:
-  
-  
   
   
   
@@ -220,6 +201,7 @@ class MOZ_STACK_CLASS PrivateOpEmitter {
   
   [[nodiscard]] bool emitBrandCheck();
 
+ public:
   [[nodiscard]] bool emitReference();
   [[nodiscard]] bool skipReference();
   [[nodiscard]] bool emitGet();
