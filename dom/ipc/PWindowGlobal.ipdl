@@ -118,7 +118,8 @@ parent:
   
   
   
-  async UpdateDocumentPrincipal(nsIPrincipal aPrincipal);
+  async UpdateDocumentPrincipal(nsIPrincipal aPrincipal,
+                                nsIPrincipal aStoragePrincipal);
 
   
   async UpdateDocumentHasLoaded(bool aDocumentHasLoaded);
