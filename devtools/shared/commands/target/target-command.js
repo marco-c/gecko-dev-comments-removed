@@ -712,6 +712,11 @@ class TargetCommand extends EventEmitter {
     const fronts = [];
     const targets = this.getAllTargets(targetTypes);
     for (const target of targets) {
+      
+      
+      if (frontType == "thread" && !target.targetForm.threadFront) {
+        continue;
+      }
       const front = await target.getFront(frontType);
       fronts.push(front);
     }
