@@ -6,7 +6,7 @@
 "use strict";
 
 
-const { Ci, Cu, Cc } = require("chrome");
+const { Ci, Cc } = require("chrome");
 const Services = require("Services");
 const {
   getRect,
@@ -213,14 +213,6 @@ var testSpec = protocol.generateActorSpec({
         selector: Arg(0, "string"),
       },
       response: {},
-    },
-    eval: {
-      request: {
-        js: Arg(0, "string"),
-      },
-      response: {
-        value: RetVal("nullable:json"),
-      },
     },
     scrollWindow: {
       request: {
@@ -677,25 +669,6 @@ var TestActor = protocol.ActorClassWithSpec(testSpec, {
 
       node.contentWindow.location.reload();
     });
-  },
-
-  
-
-
-
-
-  eval: function(js) {
-    
-    const sb = Cu.Sandbox(this.content, { sandboxPrototype: this.content });
-    const result = Cu.evalInSandbox(js, sb);
-
-    
-    if (typeof result == "function") {
-      return null;
-    } else if (typeof result == "object") {
-      return JSON.parse(JSON.stringify(result));
-    }
-    return result;
   },
 
   
