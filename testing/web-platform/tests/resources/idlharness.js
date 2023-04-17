@@ -101,6 +101,16 @@ function globalOf(func)
     return self;
 }
 
+
+function isConstructor(o) {
+    try {
+        new (new Proxy(o, {construct: () => ({})}));
+        return true;
+    } catch(e) {
+        return false;
+    }
+}
+
 function throwOrReject(a_test, operation, fn, obj, args, message, cb)
 {
     if (operation.idlType.generic !== "Promise") {
@@ -1430,8 +1440,6 @@ IdlInterface.prototype.test_self = function()
 {
     subsetTestByKey(this.name, test, function()
     {
-        
-
         if (!this.should_have_interface_object()) {
             return;
         }
@@ -1473,8 +1481,6 @@ IdlInterface.prototype.test_self = function()
 
         
         
-        
-        
 
         
         
@@ -1506,6 +1512,10 @@ IdlInterface.prototype.test_self = function()
             assert_equals(prototype, Function.prototype,
                           "prototype of self's property " + format_value(this.name) + " is not Function.prototype");
         }
+
+        
+        
+        assert_true(isConstructor(this.get_interface_object()), "interface object must pass IsConstructor check");
 
         if (!this.constructors().length) {
             
