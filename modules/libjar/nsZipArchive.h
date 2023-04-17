@@ -24,9 +24,6 @@
 
 class nsZipFind;
 struct PRFileDesc;
-#ifdef MOZ_JAR_BROTLI
-struct BrotliDecoderStateStruct;
-#endif
 
 
 
@@ -301,9 +298,6 @@ class nsZipCursor final {
   uint8_t* mBuf;
   uint32_t mBufSize;
   z_stream mZs;
-#ifdef MOZ_JAR_BROTLI
-  BrotliDecoderStateStruct* mBrotliState;
-#endif
   uint32_t mCRC;
   bool mDoCRC;
 };

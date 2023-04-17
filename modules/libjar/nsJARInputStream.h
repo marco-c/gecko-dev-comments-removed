@@ -12,10 +12,6 @@
 #include "nsTArray.h"
 #include "mozilla/Attributes.h"
 
-#ifdef MOZ_JAR_BROTLI
-struct BrotliDecoderStateStruct;
-#endif
-
 
 
 
@@ -26,12 +22,7 @@ class nsJARInputStream final : public nsIInputStream {
   nsJARInputStream()
       : mOutSize(0),
         mInCrc(0),
-        mOutCrc(0)
-#ifdef MOZ_JAR_BROTLI
-        ,
-        mBrotliState(nullptr)
-#endif
-        ,
+        mOutCrc(0),
         mNameLen(0),
         mCurPos(0),
         mArrPos(0),
@@ -56,9 +47,6 @@ class nsJARInputStream final : public nsIInputStream {
   uint32_t mInCrc;          
   uint32_t mOutCrc;         
   z_stream mZs;             
-#ifdef MOZ_JAR_BROTLI
-  BrotliDecoderStateStruct* mBrotliState;  
-#endif
 
   
   RefPtr<nsJAR> mJar;          
@@ -73,9 +61,6 @@ class nsJARInputStream final : public nsIInputStream {
     MODE_CLOSED,
     MODE_DIRECTORY,
     MODE_INFLATE,
-#ifdef MOZ_JAR_BROTLI
-    MODE_BROTLI,
-#endif
     MODE_COPY
   } JISMode;
 
