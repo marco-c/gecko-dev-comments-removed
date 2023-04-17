@@ -672,11 +672,12 @@ struct PlanarYCbCrData {
 
 
 
-struct PlanarAlphaData {
-  uint8_t* mChannel = nullptr;
-  gfx::IntSize mSize = gfx::IntSize(0, 0);
-  gfx::ColorDepth mDepth = gfx::ColorDepth::COLOR_8;
-  bool mPremultiplied = false;
+struct PlanarYCbCrAData : PlanarYCbCrData {
+  uint8_t* mAlphaChannel = nullptr;
+  gfx::IntSize mAlphaSize = gfx::IntSize(0, 0);
+  bool mPremultipliedAlpha = false;
+
+  bool hasAlpha() { return mAlphaChannel; }
 };
 
 
