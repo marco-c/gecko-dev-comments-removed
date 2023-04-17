@@ -56,7 +56,11 @@ function checkPlacesContextMenu(aItemWithContextMenu) {
     );
 
     info("Closing context menu");
-    await closePopup(contextMenu);
+    let hiddenPromise = popupHidden(contextMenu);
+    
+    
+    contextMenu.hidePopup();
+    await hiddenPromise;
   })();
 }
 
