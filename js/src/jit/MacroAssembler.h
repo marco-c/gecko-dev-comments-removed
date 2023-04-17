@@ -1070,7 +1070,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
   inline void subDouble(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
 
   inline void mul32(Register rhs, Register srcDest) PER_SHARED_ARCH;
-  inline void mul32(Imm32 imm, Register srcDest) PER_SHARED_ARCH;
 
   inline void mul32(Register src1, Register src2, Register dest, Label* onOver)
       DEFINED_ON(arm64);
@@ -1403,8 +1402,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   inline void branch64(Condition cond, const Address& lhs, Imm64 val,
-                       Label* label) PER_ARCH;
-  inline void branch64(Condition cond, const Address& lhs, Register64 rhs,
                        Label* label) PER_ARCH;
 
   
@@ -4416,21 +4413,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
                              Register scratch1, Register scratch2,
                              Label* ifTrue, Label* ifFalse);
 
-  
-
-
-
-
-
-
-
-
-
-  void equalBigInts(Register left, Register right, Register temp1,
-                    Register temp2, Register temp3, Register temp4,
-                    Label* notSameSign, Label* notSameLength,
-                    Label* notSameDigit);
-
   void loadJSContext(Register dest);
 
   void switchToRealm(Register realm);
@@ -4666,113 +4648,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void iteratorMore(Register obj, ValueOperand output, Register temp);
   void iteratorClose(Register obj, Register temp1, Register temp2,
                      Register temp3);
-
-  void toHashableNonGCThing(ValueOperand value, ValueOperand result,
-                            FloatRegister tempFloat);
-
-  void toHashableValue(ValueOperand value, ValueOperand result,
-                       FloatRegister tempFloat, Label* atomizeString,
-                       Label* tagString);
-
- private:
-  void scrambleHashCode(Register result);
-
- public:
-  void prepareHashNonGCThing(ValueOperand value, Register result,
-                             Register temp);
-  void prepareHashString(Register str, Register result, Register temp);
-  void prepareHashSymbol(Register sym, Register result);
-  void prepareHashBigInt(Register bigInt, Register result, Register temp1,
-                         Register temp2, Register temp3);
-  void prepareHashObject(Register setObj, ValueOperand value, Register result,
-                         Register temp1, Register temp2, Register temp3,
-                         Register temp4);
-  void prepareHashValue(Register setObj, ValueOperand value, Register result,
-                        Register temp1, Register temp2, Register temp3,
-                        Register temp4);
-
- private:
-  enum class IsBigInt { No, Yes, Maybe };
-
-  
-
-
-
-
-  template <typename OrderedHashTable>
-  void orderedHashTableLookup(Register setOrMapObj, ValueOperand value,
-                              Register hash, Register entryTemp, Register temp1,
-                              Register temp3, Register temp4, Register temp5,
-                              Label* found, IsBigInt isBigInt);
-
-  void setObjectHas(Register setObj, ValueOperand value, Register hash,
-                    Register result, Register temp1, Register temp2,
-                    Register temp3, Register temp4, IsBigInt isBigInt);
-
-  void mapObjectHas(Register mapObj, ValueOperand value, Register hash,
-                    Register result, Register temp1, Register temp2,
-                    Register temp3, Register temp4, IsBigInt isBigInt);
-
-  void mapObjectGet(Register mapObj, ValueOperand value, Register hash,
-                    ValueOperand result, Register temp1, Register temp2,
-                    Register temp3, Register temp4, Register temp5,
-                    IsBigInt isBigInt);
-
- public:
-  void setObjectHasNonBigInt(Register setObj, ValueOperand value, Register hash,
-                             Register result, Register temp1, Register temp2) {
-    return setObjectHas(setObj, value, hash, result, temp1, temp2, InvalidReg,
-                        InvalidReg, IsBigInt::No);
-  }
-  void setObjectHasBigInt(Register setObj, ValueOperand value, Register hash,
-                          Register result, Register temp1, Register temp2,
-                          Register temp3, Register temp4) {
-    return setObjectHas(setObj, value, hash, result, temp1, temp2, temp3, temp4,
-                        IsBigInt::Yes);
-  }
-  void setObjectHasValue(Register setObj, ValueOperand value, Register hash,
-                         Register result, Register temp1, Register temp2,
-                         Register temp3, Register temp4) {
-    return setObjectHas(setObj, value, hash, result, temp1, temp2, temp3, temp4,
-                        IsBigInt::Maybe);
-  }
-
-  void mapObjectHasNonBigInt(Register mapObj, ValueOperand value, Register hash,
-                             Register result, Register temp1, Register temp2) {
-    return mapObjectHas(mapObj, value, hash, result, temp1, temp2, InvalidReg,
-                        InvalidReg, IsBigInt::No);
-  }
-  void mapObjectHasBigInt(Register mapObj, ValueOperand value, Register hash,
-                          Register result, Register temp1, Register temp2,
-                          Register temp3, Register temp4) {
-    return mapObjectHas(mapObj, value, hash, result, temp1, temp2, temp3, temp4,
-                        IsBigInt::Yes);
-  }
-  void mapObjectHasValue(Register mapObj, ValueOperand value, Register hash,
-                         Register result, Register temp1, Register temp2,
-                         Register temp3, Register temp4) {
-    return mapObjectHas(mapObj, value, hash, result, temp1, temp2, temp3, temp4,
-                        IsBigInt::Maybe);
-  }
-
-  void mapObjectGetNonBigInt(Register mapObj, ValueOperand value, Register hash,
-                             ValueOperand result, Register temp1,
-                             Register temp2, Register temp3) {
-    return mapObjectGet(mapObj, value, hash, result, temp1, temp2, temp3,
-                        InvalidReg, InvalidReg, IsBigInt::No);
-  }
-  void mapObjectGetBigInt(Register mapObj, ValueOperand value, Register hash,
-                          ValueOperand result, Register temp1, Register temp2,
-                          Register temp3, Register temp4, Register temp5) {
-    return mapObjectGet(mapObj, value, hash, result, temp1, temp2, temp3, temp4,
-                        temp5, IsBigInt::Yes);
-  }
-  void mapObjectGetValue(Register mapObj, ValueOperand value, Register hash,
-                         ValueOperand result, Register temp1, Register temp2,
-                         Register temp3, Register temp4, Register temp5) {
-    return mapObjectGet(mapObj, value, hash, result, temp1, temp2, temp3, temp4,
-                        temp5, IsBigInt::Maybe);
-  }
 
   
   

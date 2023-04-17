@@ -104,8 +104,6 @@ class Symbol
   void dump();  
   void dump(js::GenericPrinter& out);
 #endif
-
-  static constexpr size_t offsetOfHash() { return offsetof(Symbol, hash_); }
 };
 
 } 

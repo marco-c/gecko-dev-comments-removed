@@ -80,6 +80,8 @@ static const HashNumber kGoldenRatioU32 = 0x9E3779B9U;
 
 
 
+
+
 constexpr HashNumber ScrambleHashCode(HashNumber h) {
   
 
@@ -359,14 +361,6 @@ class HashCodeScrambler {
   HashNumber scramble(HashNumber aHashCode) const {
     SipHasher hasher(mK0, mK1);
     return HashNumber(hasher.sipHash(aHashCode));
-  }
-
-  static constexpr size_t offsetOfMK0() {
-    return offsetof(HashCodeScrambler, mK0);
-  }
-
-  static constexpr size_t offsetOfMK1() {
-    return offsetof(HashCodeScrambler, mK1);
   }
 
  private:
