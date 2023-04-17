@@ -133,6 +133,18 @@ deprecated_inclnames = {
 
 
 
+deprecated_inclnames_in_header = {
+    "jsapi.h": "Prefer including headers from js/public.",
+}
+
+
+deprecated_inclnames_in_header_excludes = {
+    "js/src/vm/Compartment-inl.h",  
+    "js/src/jsapi-tests/tests.h",  
+}
+
+
+
 oddly_ordered_inclnames = set(
     [
         "ctypes/typedefs.h",  
@@ -186,6 +198,9 @@ js/src/tests/style/BadIncludesOrder-inl.h:6:7: error:
 js/src/tests/style/BadIncludesOrder-inl.h:7:8: error:
     "js/Value.h" should be included after "ds/LifoAlloc.h"
 
+js/src/tests/style/BadIncludesOrder-inl.h:9: error:
+    "jsapi.h" is deprecated: Prefer including headers from js/public.
+
 js/src/tests/style/BadIncludesOrder-inl.h:8:9: error:
     "ds/LifoAlloc.h" should be included after "jsapi.h"
 
@@ -194,6 +209,9 @@ js/src/tests/style/BadIncludesOrder-inl.h:9:10: error:
 
 js/src/tests/style/BadIncludesOrder-inl.h:10:11: error:
     <stdio.h> should be included after "mozilla/HashFunctions.h"
+
+js/src/tests/style/BadIncludesOrder-inl.h:20: error:
+    "jsapi.h" is deprecated: Prefer including headers from js/public.
 
 js/src/tests/style/BadIncludesOrder-inl.h:28:29: error:
     "vm/JSScript.h" should be included after "vm/JSFunction.h"
@@ -710,6 +728,15 @@ def check_file(
                     include.linenum,
                     include.quote() + " is deprecated: " + msg,
                 )
+
+            if file_kind == FileKind.H or file_kind == FileKind.INL_H:
+                msg = deprecated_inclnames_in_header.get(include.inclname)
+                if msg and filename not in deprecated_inclnames_in_header_excludes:
+                    error(
+                        filename,
+                        include.linenum,
+                        include.quote() + " is deprecated: " + msg,
+                    )
 
             if include.inclname not in included_inclnames_to_ignore:
                 included_kind = FileKind.get(include.inclname)
