@@ -93,6 +93,7 @@ class JSHolderMap {
   class Iter;
 
   JSHolderMap();
+  ~JSHolderMap() { MOZ_RELEASE_ASSERT(!mHasIterator); }
 
   bool Has(void* aHolder) const;
   nsScriptObjectTracer* Get(void* aHolder) const;
@@ -139,6 +140,10 @@ class JSHolderMap {
   
   
   EntryVectorMap mPerZoneJSHolders;
+
+  
+  
+  bool mHasIterator = false;
 };
 
 
@@ -173,6 +178,11 @@ class JSHolderMap::EntryVectorIter {
 class JSHolderMap::Iter {
  public:
   explicit Iter(JSHolderMap& aMap, WhichHolders aWhich = AllHolders);
+
+  ~Iter() {
+    MOZ_RELEASE_ASSERT(mHolderMap.mHasIterator);
+    mHolderMap.mHasIterator = false;
+  }
 
   bool Done() const { return mIter.Done(); }
   const Entry& Get() const { return mIter.Get(); }
