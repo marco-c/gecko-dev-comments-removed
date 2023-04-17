@@ -1726,49 +1726,11 @@ class EditorBase : public nsIEditor,
   
 
 
-  nsIContent* GetPreviousNodeInBlock(const EditorRawDOMPoint& aPoint) const {
-    return GetPreviousContent(aPoint, {WalkTreeOption::StopAtBlockBoundary});
-  }
-  nsIContent* GetPreviousNodeInBlock(const nsINode& aNode) const {
-    return GetPreviousContent(aNode, {WalkTreeOption::StopAtBlockBoundary});
-  }
-
-  
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  template <typename PT, typename CT>
-  nsIContent* GetNextNodeInBlock(
-      const EditorDOMPointBase<PT, CT>& aPoint) const {
-    return GetNextContent(aPoint, {WalkTreeOption::StopAtBlockBoundary});
-  }
-  nsIContent* GetNextNodeInBlock(const nsINode& aNode) const {
-    return GetNextContent(aNode, {WalkTreeOption::StopAtBlockBoundary});
-  }
 
   
 
@@ -1799,6 +1761,26 @@ class EditorBase : public nsIEditor,
                              const WalkTreeOptions& aOptions) const;
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   nsIContent* GetNextContent(const EditorRawDOMPoint& aPoint,
