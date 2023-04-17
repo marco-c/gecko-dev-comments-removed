@@ -780,8 +780,6 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   bool IsBackground() { return mIsBackground; }
 
   
-  SuspendTypes GetMediaSuspend() const;
-
   bool GetAudioMuted() const;
 
   
