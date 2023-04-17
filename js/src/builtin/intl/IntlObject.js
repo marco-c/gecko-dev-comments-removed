@@ -15,6 +15,17 @@ function Intl_getCanonicalLocales(locales) {
 
 
 
+function Intl_supportedValuesOf(key) {
+    
+    key = ToString(key);
+
+    
+    return intl_SupportedValuesOf(key);
+}
+
+
+
+
 
 
 
