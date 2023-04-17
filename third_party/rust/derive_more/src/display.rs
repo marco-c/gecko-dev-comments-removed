@@ -1,19 +1,13 @@
-use std::{
-    collections::{HashMap, HashSet},
-    fmt::Display,
-    iter::FromIterator as _,
-    ops::Deref as _,
-    str::FromStr as _,
-};
+use std::{fmt::Display, iter::FromIterator as _, str::FromStr as _};
 
-use crate::utils::add_extra_where_clauses;
 use proc_macro2::{Ident, Span, TokenStream};
 use quote::{quote, quote_spanned};
 use syn::{
-    parse::{Error, Parser as _, Result},
-    punctuated::Punctuated,
-    spanned::Spanned as _,
+    parse::Parser as _, punctuated::Punctuated, spanned::Spanned as _, Error, Result,
 };
+
+use crate::utils;
+use utils::{HashMap, HashSet};
 
 
 pub fn expand(input: &syn::DeriveInput, trait_name: &str) -> Result<TokenStream> {
@@ -51,7 +45,7 @@ pub fn expand(input: &syn::DeriveInput, trait_name: &str) -> Result<TokenStream>
             })
             .collect();
         let where_clause = quote_spanned!(input.span()=> where #(#bounds),*);
-        add_extra_where_clauses(&input.generics, where_clause)
+        utils::add_extra_where_clauses(&input.generics, where_clause)
     } else {
         input.generics.clone()
     };
@@ -126,26 +120,26 @@ fn trait_name_to_trait_bound(trait_name: &str) -> syn::TraitBound {
     }
 }
 
-/// Create a helper struct that is required by some `Display` impls.
-///
-/// The struct is necessary in cases where `Display` is derived for an enum
-/// with an outer `#[display(fmt = "...")]` attribute and if that outer
-/// format-string contains a single placeholder. In that case, we have to
-/// format twice:
-///
-/// - we need to format each variant according to its own, optional
-///   format-string,
-/// - we then need to insert this formatted variant into the outer
-///   format-string.
-///
-/// This helper struct solves this as follows:
-/// - formatting the whole object inserts the helper struct into the outer
-///   format string,
-/// - upon being formatted, the helper struct calls an inner closure to produce
-///   its formatted result,
-/// - the closure in turn uses the inner, optional format-string to produce its
-///   result. If there is no inner format-string, it falls back to plain
-///   `$trait::fmt()`.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 fn display_as_helper_struct() -> TokenStream {
     quote! {
         struct _derive_more_DisplayAs<F>(F)
@@ -165,14 +159,14 @@ fn display_as_helper_struct() -> TokenStream {
     }
 }
 
-/// Result type of `State::get_match_arms_and_extra_bounds()`.
+
 #[derive(Default)]
 struct ParseResult {
-    /// The match arms destructuring `self`.
+    
     arms: TokenStream,
-    /// Any trait bounds that may be required.
+    
     bounds: HashMap<syn::Type, HashSet<syn::TraitBound>>,
-    /// `true` if the Display impl requires the `DisplayAs` helper struct.
+    
     requires_helper: bool,
 }
 
@@ -278,7 +272,7 @@ impl<'a, 'b> State<'a, 'b> {
             return Err(Error::new(span, "No bounds specified"));
         }
 
-        let mut bounds = HashMap::new();
+        let mut bounds = HashMap::default();
 
         for generic_param in generic_params {
             let type_param = match generic_param {
@@ -303,7 +297,7 @@ impl<'a, 'b> State<'a, 'b> {
                 qself: None,
                 path: type_param.ident.into(),
             });
-            let bounds = bounds.entry(ty).or_insert_with(HashSet::new);
+            let bounds = bounds.entry(ty).or_insert_with(HashSet::default);
 
             for bound in type_param.bounds {
                 let bound = match bound {
@@ -352,14 +346,15 @@ impl<'a, 'b> State<'a, 'b> {
                 op if op.segments.first().expect("path shouldn't be empty").ident
                     == "fmt" =>
                 {
+                    let expected_affix_usage = "outer `enum` `fmt` is an affix spec that expects no args and at most 1 placeholder for inner variant display";
                     if outer_enum {
                         if list.nested.iter().skip(1).count() != 0 {
                             return Err(Error::new(
                                 list.nested[1].span(),
-                                "`fmt` formatting requires a single `fmt` argument",
+                                expected_affix_usage,
                             ));
                         }
-                        // TODO: Check for a single `Display` group?
+                        
                         let fmt_string = match &list.nested[0] {
                             syn::NestedMeta::Meta(syn::Meta::NameValue(
                                 syn::MetaNameValue {
@@ -376,7 +371,7 @@ impl<'a, 'b> State<'a, 'b> {
                             {
                                 s.value()
                             }
-                            // This one has been checked already in get_meta_fmt() method.
+                            
                             _ => unreachable!(),
                         };
 
@@ -385,7 +380,7 @@ impl<'a, 'b> State<'a, 'b> {
                         if num_placeholders > 1 {
                             return Err(Error::new(
                                 list.nested[1].span(),
-                                "fmt string for enum should have at at most 1 placeholder",
+                                expected_affix_usage,
                             ));
                         }
                         if num_placeholders == 1 {
@@ -395,7 +390,7 @@ impl<'a, 'b> State<'a, 'b> {
                     let args = list
                         .nested
                         .iter()
-                        .skip(1) // skip fmt = "..."
+                        .skip(1) 
                         .try_fold(TokenStream::new(), |args, arg| {
                             let arg = match arg {
                                 syn::NestedMeta::Lit(syn::Lit::Str(s)) => s,
@@ -447,7 +442,7 @@ impl<'a, 'b> State<'a, 'b> {
         } else if fields.len() > 1 {
             return Err(Error::new(
                 fields.span(),
-                "Can not automatically infer format for types with more than 1 field",
+                "Cannot automatically infer format for types with more than 1 field",
             ));
         }
 
@@ -465,7 +460,7 @@ impl<'a, 'b> State<'a, 'b> {
                     .find_meta(&self.input.attrs, "fmt")
                     .and_then(|m| m.map(|m| self.parse_meta_fmt(&m, true)).transpose())?
                 {
-                    // #[display(fmt = "no placeholder")] on whole enum.
+                    
                     Some((fmt, false)) => {
                         e.variants.iter().try_for_each(|v| {
                             if let Some(meta) = self.find_meta(&v.attrs, "fmt")? {
@@ -480,11 +475,11 @@ impl<'a, 'b> State<'a, 'b> {
 
                         Ok(ParseResult {
                             arms: quote_spanned!(self.input.span()=> _ => #fmt,),
-                            bounds: HashMap::new(),
+                            bounds: HashMap::default(),
                             requires_helper: false,
                         })
                     }
-                    // #[display(fmt = "one placeholder: {}")] on whole enum.
+                    
                     Some((outer_fmt, true)) => {
                         let fmt: Result<TokenStream> = e.variants.iter().try_fold(TokenStream::new(), |arms, v| {
                             let matcher = self.get_matcher(&v.fields);
@@ -504,11 +499,11 @@ impl<'a, 'b> State<'a, 'b> {
                         let fmt = fmt?;
                         Ok(ParseResult {
                             arms: quote_spanned!(self.input.span()=> #fmt),
-                            bounds: HashMap::new(),
+                            bounds: HashMap::default(),
                             requires_helper: true,
                         })
                     }
-                    // No format attribute on whole enum.
+                    
                     None => e.variants.iter().try_fold(ParseResult::default(), |result, v| {
                         let ParseResult{ arms, mut bounds, requires_helper } = result;
                         let matcher = self.get_matcher(&v.fields);
@@ -558,14 +553,14 @@ impl<'a, 'b> State<'a, 'b> {
                     self.find_meta(&self.input.attrs, "fmt")?.ok_or_else(|| {
                         Error::new(
                             self.input.span(),
-                            "Can not automatically infer format for unions",
+                            "Cannot automatically infer format for unions",
                         )
                     })?;
                 let fmt = self.parse_meta_fmt(&meta, false)?.0;
 
                 Ok(ParseResult {
                     arms: quote_spanned!(self.input.span()=> _ => #fmt,),
-                    bounds: HashMap::new(),
+                    bounds: HashMap::default(),
                     requires_helper: false,
                 })
             }
@@ -613,52 +608,53 @@ impl<'a, 'b> State<'a, 'b> {
         meta: &syn::Meta,
     ) -> HashMap<syn::Type, HashSet<syn::TraitBound>> {
         if self.type_params.is_empty() {
-            return HashMap::new();
+            return HashMap::default();
         }
 
         let fields_type_params: HashMap<syn::Path, _> = fields
             .iter()
             .enumerate()
             .filter_map(|(i, field)| {
-                self.get_type_param(&field.ty).map(|ty| {
-                    (
-                        field
-                            .ident
-                            .clone()
-                            .unwrap_or_else(|| {
-                                Ident::new(&format!("_{}", i), Span::call_site())
-                            })
-                            .into(),
-                        ty,
-                    )
-                })
+                utils::get_if_type_parameter_used_in_type(&self.type_params, &field.ty)
+                    .map(|ty| {
+                        (
+                            field
+                                .ident
+                                .clone()
+                                .unwrap_or_else(|| {
+                                    Ident::new(&format!("_{}", i), Span::call_site())
+                                })
+                                .into(),
+                            ty,
+                        )
+                    })
             })
             .collect();
         if fields_type_params.is_empty() {
-            return HashMap::new();
+            return HashMap::default();
         }
 
         let list = match meta {
             syn::Meta::List(list) => list,
-            // This one has been checked already in get_meta_fmt() method.
+            
             _ => unreachable!(),
         };
         let fmt_args: HashMap<_, _> = list
             .nested
             .iter()
-            .skip(1) // skip fmt = "..."
+            .skip(1) 
             .enumerate()
             .filter_map(|(i, arg)| match arg {
                 syn::NestedMeta::Lit(syn::Lit::Str(ref s)) => {
                     syn::parse_str(&s.value()).ok().map(|id| (i, id))
                 }
                 syn::NestedMeta::Meta(syn::Meta::Path(ref id)) => Some((i, id.clone())),
-                // This one has been checked already in get_meta_fmt() method.
+                
                 _ => unreachable!(),
             })
             .collect();
         if fmt_args.is_empty() {
-            return HashMap::new();
+            return HashMap::default();
         }
         let fmt_string = match &list.nested[0] {
             syn::NestedMeta::Meta(syn::Meta::NameValue(syn::MetaNameValue {
@@ -674,18 +670,18 @@ impl<'a, 'b> State<'a, 'b> {
             {
                 s.value()
             }
-            // This one has been checked already in get_meta_fmt() method.
+            
             _ => unreachable!(),
         };
 
         Placeholder::parse_fmt_string(&fmt_string).into_iter().fold(
-            HashMap::new(),
+            HashMap::default(),
             |mut bounds, pl| {
                 if let Some(arg) = fmt_args.get(&pl.position) {
                     if fields_type_params.contains_key(arg) {
                         bounds
                             .entry(fields_type_params[arg].clone())
-                            .or_insert_with(HashSet::new)
+                            .or_insert_with(HashSet::default)
                             .insert(trait_name_to_trait_bound(pl.trait_name));
                     }
                 }
@@ -698,94 +694,44 @@ impl<'a, 'b> State<'a, 'b> {
         fields: &syn::Fields,
     ) -> HashMap<syn::Type, HashSet<syn::TraitBound>> {
         if self.type_params.is_empty() {
-            return HashMap::new();
+            return HashMap::default();
         }
         if let syn::Fields::Unit = fields {
-            return HashMap::new();
+            return HashMap::default();
         }
-        // infer_fmt() uses only first field.
+        
         fields
             .iter()
             .take(1)
             .filter_map(|field| {
-                self.get_type_param(&field.ty).map(|ty| {
-                    (
-                        ty,
-                        [trait_name_to_trait_bound(attribute_name_to_trait_name(
-                            self.trait_attr,
-                        ))]
-                        .iter()
-                        .cloned()
-                        .collect(),
-                    )
-                })
+                utils::get_if_type_parameter_used_in_type(&self.type_params, &field.ty)
+                    .map(|ty| {
+                        (
+                            ty,
+                            [trait_name_to_trait_bound(attribute_name_to_trait_name(
+                                self.trait_attr,
+                            ))]
+                            .iter()
+                            .cloned()
+                            .collect(),
+                        )
+                    })
             })
             .collect()
     }
-    fn get_type_param(&self, ty: &syn::Type) -> Option<syn::Type> {
-        if self.has_type_param_in(ty) {
-            match ty {
-                syn::Type::Reference(syn::TypeReference { elem: ty, .. }) => {
-                    Some(ty.deref().clone())
-                }
-                ty => Some(ty.clone()),
-            }
-        } else {
-            None
-        }
-    }
-    fn has_type_param_in(&self, ty: &syn::Type) -> bool {
-        match ty {
-            syn::Type::Path(ty) => {
-                if let Some(qself) = &ty.qself {
-                    if self.has_type_param_in(&qself.ty) {
-                        return true;
-                    }
-                }
-
-                if let Some(segment) = ty.path.segments.first() {
-                    if self.type_params.contains(&segment.ident) {
-                        return true;
-                    }
-                }
-
-                ty.path.segments.iter().any(|segment| {
-                    if let syn::PathArguments::AngleBracketed(arguments) =
-                        &segment.arguments
-                    {
-                        arguments.args.iter().any(|argument| match argument {
-                            syn::GenericArgument::Type(ty) => {
-                                self.has_type_param_in(ty)
-                            }
-                            syn::GenericArgument::Constraint(constraint) => {
-                                self.type_params.contains(&constraint.ident)
-                            }
-                            _ => false,
-                        })
-                    } else {
-                        false
-                    }
-                })
-            }
-
-            syn::Type::Reference(ty) => self.has_type_param_in(&ty.elem),
-
-            _ => false,
-        }
-    }
 }
 
-/// Representation of formatting placeholder.
+
 #[derive(Debug, PartialEq)]
 struct Placeholder {
-    /// Position of formatting argument to be used for this placeholder.
+    
     position: usize,
-    /// Name of [`std::fmt`] trait to be used for rendering this placeholder.
+    
     trait_name: &'static str,
 }
 
 impl Placeholder {
-    /// Parses [`Placeholder`]s from a given formatting string.
+    
     fn parse_fmt_string(s: &str) -> Vec<Placeholder> {
         let mut n = 0;
         crate::parsing::all_placeholders(s)
@@ -794,8 +740,8 @@ impl Placeholder {
             .map(|m| {
                 let (maybe_arg, maybe_typ) = crate::parsing::format(m).unwrap();
                 let position = maybe_arg.unwrap_or_else(|| {
-                    // Assign "the next argument".
-                    // https://doc.rust-lang.org/stable/std/fmt/index.html#positional-parameters
+                    
+                    
                     n += 1;
                     n - 1
                 });

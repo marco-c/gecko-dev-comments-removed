@@ -173,11 +173,19 @@
 
 
 
+
+
+
+
+
+
+
+
+
+#![cfg_attr(nightly, allow(clippy::match_like_matches_macro))]
 #![recursion_limit = "128"]
 
 extern crate proc_macro;
-use proc_macro2;
-use syn;
 
 use proc_macro::TokenStream;
 use syn::parse::Error as ParseError;
@@ -207,6 +215,8 @@ mod deref;
 mod deref_mut;
 #[cfg(feature = "display")]
 mod display;
+#[cfg(feature = "error")]
+mod error;
 #[cfg(feature = "from")]
 mod from;
 #[cfg(feature = "from_str")]
@@ -351,6 +361,8 @@ create_derive!(
 
 create_derive!("sum", sum_like, Sum, sum_derive);
 create_derive!("sum", sum_like, Product, product_derive);
+
+create_derive!("error", error, Error, error_derive, error);
 
 create_derive!("from_str", from_str, FromStr, from_str_derive);
 
