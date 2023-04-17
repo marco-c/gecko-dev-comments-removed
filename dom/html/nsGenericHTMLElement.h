@@ -1008,17 +1008,6 @@ class nsGenericHTMLFormElement : public nsGenericHTMLElement,
 
 
 
-  virtual bool RestoreState(mozilla::PresState* aState) { return false; }
-
-  
-
-
-
-
-
-
-
-
   virtual void FieldSetDisabledChanged(bool aNotify);
 
   
@@ -1163,6 +1152,16 @@ class nsGenericHTMLFormElementWithState : public nsGenericHTMLFormElement {
  protected:
   
 
+
+
+
+
+
+
+
+  virtual bool RestoreState(mozilla::PresState* aState) { return false; }
+
+  
 
 
 
