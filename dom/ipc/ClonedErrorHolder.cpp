@@ -229,9 +229,10 @@ JSObject* ClonedErrorHolder::ReadStructuredClone(
   return &errorVal.toObject();
 }
 
-static JS::UniqueTwoByteChars ToJSStringBuffer(JSContext* aCx,
-                                               const nsString& aStr) {
-  size_t nbytes = aStr.Length() * sizeof(char16_t);
+static JS::UniqueTwoByteChars ToNullTerminatedJSStringBuffer(
+    JSContext* aCx, const nsString& aStr) {
+  
+  size_t nbytes = (aStr.Length() + 1) * sizeof(char16_t);
   JS::UniqueTwoByteChars buffer(static_cast<char16_t*>(JS_malloc(aCx, nbytes)));
   if (buffer) {
     memcpy(buffer.get(), aStr.get(), nbytes);
@@ -301,7 +302,13 @@ bool ClonedErrorHolder::ToErrorValue(JSContext* aCx,
       JS::Rooted<JSObject*> errObj(aCx, &aResult.toObject());
       if (JSErrorReport* err = JS_ErrorFromException(aCx, errObj)) {
         NS_ConvertUTF8toUTF16 sourceLine(mSourceLine);
-        if (JS::UniqueTwoByteChars buffer = ToJSStringBuffer(aCx, sourceLine)) {
+        
+        
+        
+        
+        
+        if (JS::UniqueTwoByteChars buffer =
+                ToNullTerminatedJSStringBuffer(aCx, sourceLine)) {
           err->initOwnedLinebuf(buffer.release(), sourceLine.Length(),
                                 mTokenOffset);
         } else {
