@@ -228,6 +228,8 @@ module.exports = {
     
     "handle-callback-err": "off",
     
+    "id-denylist": ["error", "componentDidUnmount"],
+    
     "max-nested-callbacks": ["error", 3],
     
     "max-params": "off",
