@@ -458,7 +458,16 @@ function promiseNativeWheelAndWaitForScrollEvent(
   });
 }
 
-function synthesizeTouchpadPinch(scales, focusX, focusY) {
+async function synthesizeTouchpadPinch(scales, focusX, focusY, options) {
+  
+  let waitForTransformEnd =
+    options.waitForTransformEnd !== undefined
+      ? options.waitForTransformEnd
+      : true;
+
+  
+  let transformEndPromise = promiseTransformEnd();
+
   var modifierFlags = 0;
   var pt = coordinatesRelativeToScreen({
     offsetX: focusX,
@@ -476,6 +485,11 @@ function synthesizeTouchpadPinch(scales, focusX, focusY) {
       phase = SpecialPowers.DOMWindowUtils.PHASE_UPDATE;
     }
     utils.sendNativeTouchpadPinch(phase, scales[i], pt.x, pt.y, modifierFlags);
+  }
+
+  
+  if (waitForTransformEnd) {
+    await transformEndPromise;
   }
 }
 
@@ -1181,10 +1195,7 @@ async function pinchZoomInWithTouch(focusX, focusY) {
 
 
 
-async function pinchZoomInWithTouchpad(focusX, focusY) {
-  
-  let transformEndPromise = promiseTopic("APZ:TransformEnd");
-
+async function pinchZoomInWithTouchpad(focusX, focusY, options = {}) {
   var zoomIn = [
     1.0,
     1.019531,
@@ -1215,14 +1226,10 @@ async function pinchZoomInWithTouchpad(focusX, focusY) {
     1.421875,
     1.0,
   ];
-  synthesizeTouchpadPinch(zoomIn, focusX, focusY);
-  
-  await transformEndPromise;
+  await synthesizeTouchpadPinch(zoomIn, focusX, focusY, options);
 }
 
-async function pinchZoomOutWithTouchpad(focusX, focusY) {
-  
-  let transformEndPromise = promiseTopic("APZ:TransformEnd");
+async function pinchZoomOutWithTouchpad(focusX, focusY, options = {}) {
   
   var zoomOut = [
     1.0,
@@ -1250,14 +1257,10 @@ async function pinchZoomOutWithTouchpad(focusX, focusY) {
     0.933594,
     1.0,
   ];
-  synthesizeTouchpadPinch(zoomOut, focusX, focusY);
-  
-  await transformEndPromise;
+  await synthesizeTouchpadPinch(zoomOut, focusX, focusY, options);
 }
 
-async function pinchZoomInOutWithTouchpad(focusX, focusY) {
-  
-  let transformEndPromise = promiseTopic("APZ:TransformEnd");
+async function pinchZoomInOutWithTouchpad(focusX, focusY, options = {}) {
   
   var zoomInOut = [
     1.0,
@@ -1278,9 +1281,7 @@ async function pinchZoomInOutWithTouchpad(focusX, focusY) {
     1.0,
     1.0,
   ];
-  synthesizeTouchpadPinch(zoomInOut, focusX, focusY);
-  
-  await transformEndPromise;
+  await synthesizeTouchpadPinch(zoomInOut, focusX, focusY, options);
 }
 
 
