@@ -153,33 +153,24 @@ void nsCounterList::SetScope(nsCounterNode* aNode) {
   
   if (aNode->mType != nsCounterNode::USE &&
       StaticPrefs::layout_css_counter_ancestor_scope_enabled()) {
-    for (auto* p = aNode->mPseudoFrame; p; p = p->GetParent()) {
-      
-      
-      auto* counter = GetFirstNodeFor(p);
-      if (!counter || counter->mType != nsCounterNode::RESET) {
-        continue;
-      }
-      if (p == aNode->mPseudoFrame) {
-        break;
-      }
-      aNode->mScopeStart = counter;
-      aNode->mScopePrev = counter;
-      for (nsCounterNode* prev = Prev(aNode); prev;
-           prev = prev->mScopePrev) {
-        if (prev->mScopeStart == counter) {
-          aNode->mScopePrev =
-              prev->mType == nsCounterNode::RESET ? prev->mScopePrev : prev;
+    nsIContent* const counterNode = aNode->mPseudoFrame->GetContent();
+    nsCounterNode* lastPrev = nullptr;
+    for (nsCounterNode* prev = Prev(aNode); prev; prev = prev->mScopePrev) {
+      if (prev->mType == nsCounterNode::RESET) {
+        if (aNode->mPseudoFrame == prev->mPseudoFrame) {
           break;
         }
-        if (prev->mType != nsCounterNode::RESET) {
-          prev = prev->mScopeStart;
-          if (!prev) {
-            break;
-          }
+        
+        nsIContent* resetNode = prev->mPseudoFrame->GetContent();
+        if (counterNode->IsInclusiveDescendantOf(resetNode)) {
+          aNode->mScopeStart = prev;
+          aNode->mScopePrev = lastPrev ? lastPrev : prev;
+          return;
         }
+        lastPrev = prev->mScopePrev;
+      } else if (!lastPrev) {
+        lastPrev = prev;
       }
-      return;
     }
   }
 
