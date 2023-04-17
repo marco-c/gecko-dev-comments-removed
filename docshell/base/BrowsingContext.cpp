@@ -2626,18 +2626,14 @@ void BrowsingContext::DidSet(FieldIndex<IDX_ExplicitActive>,
   });
 }
 
-auto BrowsingContext::CanSet(FieldIndex<IDX_HasMainMediaController>,
-                             bool aNewValue, ContentParent* aSource)
-    -> CanSetResult {
-  if (!IsTop()) {
-    return CanSetResult::Deny;
-  }
-  return LegacyRevertIfNotOwningOrParentProcess(aSource);
+bool BrowsingContext::CanSet(FieldIndex<IDX_PageAwakeRequestCount>,
+                             uint32_t aNewValue, ContentParent* aSource) {
+  return IsTop() && XRE_IsParentProcess() && !aSource;
 }
 
-void BrowsingContext::DidSet(FieldIndex<IDX_HasMainMediaController>,
-                             bool aOldValue) {
-  if (!IsTop() || aOldValue == GetHasMainMediaController()) {
+void BrowsingContext::DidSet(FieldIndex<IDX_PageAwakeRequestCount>,
+                             uint32_t aOldValue) {
+  if (!IsTop() || aOldValue == GetPageAwakeRequestCount()) {
     return;
   }
   Group()->UpdateToplevelsSuspendedIfNeeded();
@@ -2688,7 +2684,7 @@ bool BrowsingContext::InactiveForSuspend() const {
   
   
   
-  return !IsActive() && !GetHasMainMediaController();
+  return !IsActive() && GetPageAwakeRequestCount() == 0;
 }
 
 bool BrowsingContext::CanSet(FieldIndex<IDX_TouchEventsOverrideInternal>,
