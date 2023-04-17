@@ -10,8 +10,6 @@
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PodOperations.h"
-#include "mozilla/Result.h"
-#include "mozilla/ResultVariant.h"
 #include "mozilla/Utf8.h"
 #include "mozilla/Vector.h"
 
@@ -42,13 +40,13 @@ struct MOZ_STACK_CLASS NumberFormatOptions {
 
 
 
-  enum class CurrencyDisplay {
+  enum class CurrencyDisplayStyle {
     Symbol,
     Code,
     Name,
     NarrowSymbol,
   };
-  Maybe<std::pair<std::string_view, CurrencyDisplay>> mCurrency;
+  Maybe<std::pair<std::string_view, CurrencyDisplayStyle>> mCurrency;
 
   
 
@@ -135,38 +133,6 @@ struct MOZ_STACK_CLASS NumberFormatOptions {
   bool mRoundingModeHalfUp = true;
 };
 
-enum class NumberPartType {
-  Compact,
-  Currency,
-  Decimal,
-  ExponentInteger,
-  ExponentMinusSign,
-  ExponentSeparator,
-  Fraction,
-  Group,
-  Infinity,
-  Integer,
-  Literal,
-  MinusSign,
-  Nan,
-  Percent,
-  PlusSign,
-  Unit,
-};
-
-
-
-
-using NumberPart = std::pair<NumberPartType, size_t>;
-
-using NumberPartVector = mozilla::Vector<NumberPart, 8 * sizeof(NumberPart)>;
-
-
-
-
-
-
-
 
 
 
@@ -174,166 +140,57 @@ using NumberPartVector = mozilla::Vector<NumberPart, 8 * sizeof(NumberPart)>;
 
 class NumberFormat final {
  public:
-  enum class FormatError {
-    InternalError,
-    OutOfMemory,
-  };
+  explicit NumberFormat(std::string_view aLocale,
+                        const NumberFormatOptions& aOptions = {});
 
-  
-
-
-
-
-
-  static Result<UniquePtr<NumberFormat>, NumberFormat::FormatError> TryCreate(
-      std::string_view aLocale, const NumberFormatOptions& aOptions);
-
-  NumberFormat() = default;
-  NumberFormat(const NumberFormat&) = delete;
-  NumberFormat& operator=(const NumberFormat&) = delete;
   ~NumberFormat();
 
-  
-
-
-
-
-
-
-  Result<std::u16string_view, NumberFormat::FormatError> format(
-      double number) const {
-    if (!formatInternal(number)) {
-      return Err(FormatError::InternalError);
+  const char16_t* format(double number) const {
+    if (!mIsInitialized || !formatInternal(number)) {
+      return nullptr;
     }
 
-    return formatResult();
+    return formatResult().data();
   }
-
-  
-
-
-
-
-
-
-  Result<std::u16string_view, NumberFormat::FormatError> formatToParts(
-      double number, NumberPartVector& parts) const {
-    if (!formatInternal(number)) {
-      return Err(FormatError::InternalError);
-    }
-
-    bool isNegative = !IsNaN(number) && IsNegative(number);
-
-    return formatResultToParts(Some(number), isNegative, parts);
-  }
-
-  
-
-
-
 
   template <typename B>
-  Result<Ok, NumberFormat::FormatError> format(double number, B& buffer) const {
-    if (!formatInternal(number)) {
-      return Err(FormatError::InternalError);
+  bool format(double number, B& buffer) const {
+    if (!mIsInitialized || !formatInternal(number)) {
+      return false;
     }
 
     return formatResult<typename B::CharType, B>(buffer);
   }
 
-  
-
-
-
-
-
-
-  Result<std::u16string_view, NumberFormat::FormatError> format(
-      int64_t number) const {
-    if (!formatInternal(number)) {
-      return Err(FormatError::InternalError);
+  const char16_t* format(int64_t number) const {
+    if (!mIsInitialized || !formatInternal(number)) {
+      return nullptr;
     }
 
-    return formatResult();
+    return formatResult().data();
   }
-
-  
-
-
-
-
-
-
-  Result<std::u16string_view, NumberFormat::FormatError> formatToParts(
-      int64_t number, NumberPartVector& parts) const {
-    if (!formatInternal(number)) {
-      return Err(FormatError::InternalError);
-    }
-
-    return formatResultToParts(Nothing(), number < 0, parts);
-  }
-
-  
-
-
-
 
   template <typename B>
-  Result<Ok, NumberFormat::FormatError> format(int64_t number,
-                                               B& buffer) const {
-    if (!formatInternal(number)) {
-      return Err(FormatError::InternalError);
+  bool format(int64_t number, B& buffer) const {
+    if (!mIsInitialized || !formatInternal(number)) {
+      return false;
     }
 
     return formatResult<typename B::CharType, B>(buffer);
   }
 
-  
-
-
-
-
-
-
-  Result<std::u16string_view, NumberFormat::FormatError> format(
-      std::string_view number) const {
-    if (!formatInternal(number)) {
-      return Err(FormatError::InternalError);
+  const char16_t* format(std::string_view number) const {
+    if (!mIsInitialized || !formatInternal(number)) {
+      return nullptr;
     }
 
-    return formatResult();
+    return formatResult().data();
   }
-
-  
-
-
-
-
-
-
-
-  Result<std::u16string_view, NumberFormat::FormatError> formatToParts(
-      std::string_view number, NumberPartVector& parts) const {
-    if (!formatInternal(number)) {
-      return Err(FormatError::InternalError);
-    }
-
-    bool isNegative = !number.empty() && number[0] == '-';
-
-    return formatResultToParts(Nothing(), isNegative, parts);
-  }
-
-  
-
-
-
-
 
   template <typename B>
-  Result<Ok, NumberFormat::FormatError> format(std::string_view number,
-                                               B& buffer) const {
-    if (!formatInternal(number)) {
-      return Err(FormatError::InternalError);
+  bool format(std::string_view number, B& buffer) const {
+    if (!mIsInitialized || !formatInternal(number)) {
+      return false;
     }
 
     return formatResult<typename B::CharType, B>(buffer);
@@ -342,55 +199,43 @@ class NumberFormat final {
  private:
   UNumberFormatter* mNumberFormatter = nullptr;
   UFormattedNumber* mFormattedNumber = nullptr;
-  bool mFormatForUnit = false;
+  bool mIsInitialized = false;
 
-  Result<Ok, NumberFormat::FormatError> initialize(
-      std::string_view aLocale, const NumberFormatOptions& aOptions);
-
-  [[nodiscard]] bool formatInternal(double number) const;
-  [[nodiscard]] bool formatInternal(int64_t number) const;
-  [[nodiscard]] bool formatInternal(std::string_view number) const;
-
-  Maybe<NumberPartType> GetPartTypeForNumberField(UNumberFormatFields fieldName,
-                                                  Maybe<double> number,
-                                                  bool isNegative) const;
-
-  Result<std::u16string_view, NumberFormat::FormatError> formatResult() const;
-  Result<std::u16string_view, NumberFormat::FormatError> formatResultToParts(
-      const Maybe<double> number, bool isNegative,
-      NumberPartVector& parts) const;
+  bool formatInternal(double number) const;
+  bool formatInternal(int64_t number) const;
+  bool formatInternal(std::string_view number) const;
+  std::u16string_view formatResult() const;
 
   template <typename C, typename B>
-  Result<Ok, NumberFormat::FormatError> formatResult(B& buffer) const {
-    
-    static_assert(std::is_same<C, uint8_t>::value ||
-                  std::is_same<C, char16_t>::value);
+  bool formatResult(B& buffer) const {
+    std::u16string_view result = formatResult();
 
-    return formatResult().andThen([&buffer](std::u16string_view result)
-                                      -> Result<Ok, NumberFormat::FormatError> {
-      if constexpr (std::is_same<C, uint8_t>::value) {
-        
-        
-        if (!buffer.allocate(3 * result.size())) {
-          return Err(FormatError::OutOfMemory);
-        }
-        size_t amount = ConvertUtf16toUtf8(
-            Span(result.data(), result.size()),
-            Span(static_cast<char*>(std::data(buffer)), std::size(buffer)));
-        buffer.written(amount);
-      } else {
-        
-        
-        if (!buffer.allocate(result.size())) {
-          return Err(FormatError::OutOfMemory);
-        }
-        PodCopy(static_cast<char16_t*>(buffer.data()), result.data(),
-                result.size());
-        buffer.written(result.size());
+    if (result.empty()) {
+      return false;
+    }
+
+    if constexpr (std::is_same<C, uint8_t>::value) {
+      
+      
+      if (!buffer.allocate(3 * result.size())) {
+        return false;
       }
+      size_t amount = ConvertUtf16toUtf8(
+          Span(result.data(), result.size()),
+          Span(static_cast<char*>(std::data(buffer)), std::size(buffer)));
+      buffer.written(amount);
+    } else {
+      
+      
+      if (!buffer.allocate(result.size())) {
+        return false;
+      }
+      PodCopy(static_cast<char16_t*>(buffer.data()), result.data(),
+              result.size());
+      buffer.written(result.size());
+    }
 
-      return Ok();
-    });
+    return true;
   }
 };
 

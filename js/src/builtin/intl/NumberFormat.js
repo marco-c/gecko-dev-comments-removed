@@ -620,7 +620,7 @@ function createNumberFormatFormat(nf) {
         var x = ToNumeric(value);
 
         
-        return intl_FormatNumber(nf, x,  false);
+        return intl_FormatNumber(nf, x,  false,  false);
     };
 }
 
@@ -671,8 +671,11 @@ function Intl_NumberFormat_formatToParts(value) {
     
     var x = ToNumeric(value);
 
+    var internals = getNumberFormatInternals(nf);
+    var unitStyle = internals.style === "unit";
+
     
-    return intl_FormatNumber(nf, x,  true);
+    return intl_FormatNumber(nf, x,  true, unitStyle);
 }
 
 

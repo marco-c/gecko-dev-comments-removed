@@ -160,10 +160,6 @@ def main():
         if filename == "Decimal.o":
             continue
 
-        
-        if "intl_components" in filename:
-            continue
-
         fn = m.group(2)
         if filename == "Utility.o":
             util_Utility_cpp.add(fn)

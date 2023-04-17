@@ -15,9 +15,8 @@
 #include "js/Class.h"
 #include "vm/NativeObject.h"
 
-namespace mozilla::intl {
-class NumberFormat;
-}
+struct UFormattedNumber;
+struct UNumberFormatter;
 
 namespace js {
 
@@ -28,7 +27,8 @@ class NumberFormatObject : public NativeObject {
 
   static constexpr uint32_t INTERNALS_SLOT = 0;
   static constexpr uint32_t UNUMBER_FORMATTER_SLOT = 1;
-  static constexpr uint32_t SLOT_COUNT = 2;
+  static constexpr uint32_t UFORMATTED_NUMBER_SLOT = 2;
+  static constexpr uint32_t SLOT_COUNT = 3;
 
   static_assert(INTERNALS_SLOT == INTL_INTERNALS_OBJECT_SLOT,
                 "INTERNALS_SLOT must match self-hosting define for internals "
@@ -38,16 +38,28 @@ class NumberFormatObject : public NativeObject {
   
   static constexpr size_t EstimatedMemoryUse = 750;
 
-  mozilla::intl::NumberFormat* getNumberFormatter() const {
+  UNumberFormatter* getNumberFormatter() const {
     const auto& slot = getFixedSlot(UNUMBER_FORMATTER_SLOT);
     if (slot.isUndefined()) {
       return nullptr;
     }
-    return static_cast<mozilla::intl::NumberFormat*>(slot.toPrivate());
+    return static_cast<UNumberFormatter*>(slot.toPrivate());
   }
 
-  void setNumberFormatter(mozilla::intl::NumberFormat* formatter) {
+  void setNumberFormatter(UNumberFormatter* formatter) {
     setFixedSlot(UNUMBER_FORMATTER_SLOT, PrivateValue(formatter));
+  }
+
+  UFormattedNumber* getFormattedNumber() const {
+    const auto& slot = getFixedSlot(UFORMATTED_NUMBER_SLOT);
+    if (slot.isUndefined()) {
+      return nullptr;
+    }
+    return static_cast<UFormattedNumber*>(slot.toPrivate());
+  }
+
+  void setFormattedNumber(UFormattedNumber* formatted) {
+    setFixedSlot(UFORMATTED_NUMBER_SLOT, PrivateValue(formatted));
   }
 
  private:
@@ -85,6 +97,7 @@ class NumberFormatObject : public NativeObject {
 
 
 
+
 [[nodiscard]] extern bool intl_FormatNumber(JSContext* cx, unsigned argc,
                                             Value* vp);
 
@@ -99,6 +112,167 @@ class NumberFormatObject : public NativeObject {
                                                          Value* vp);
 #endif
 
+namespace intl {
+
+
+
+
+
+
+
+class MOZ_STACK_CLASS NumberFormatterSkeleton final {
+  static constexpr size_t DefaultVectorSize = 128;
+  using SkeletonVector = Vector<char16_t, DefaultVectorSize>;
+
+  SkeletonVector vector_;
+
+  bool append(char16_t c) { return vector_.append(c); }
+
+  bool appendN(char16_t c, size_t times) { return vector_.appendN(c, times); }
+
+  template <size_t N>
+  bool append(const char16_t (&chars)[N]) {
+    static_assert(N > 0,
+                  "should only be used with string literals or properly "
+                  "null-terminated arrays");
+    MOZ_ASSERT(chars[N - 1] == '\0',
+               "should only be used with string literals or properly "
+               "null-terminated arrays");
+    return vector_.append(chars, N - 1);  
+  }
+
+  template <size_t N>
+  bool appendToken(const char16_t (&token)[N]) {
+    return append(token) && append(' ');
+  }
+
+  bool append(const char* chars, size_t length) {
+    return vector_.append(chars, length);
+  }
+
+ public:
+  explicit NumberFormatterSkeleton(JSContext* cx) : vector_(cx) {}
+
+  
+
+
+  UNumberFormatter* toFormatter(JSContext* cx, const char* locale);
+
+  
+
+
+
+
+
+  [[nodiscard]] bool currency(JSLinearString* currency);
+
+  enum class CurrencyDisplay { Code, Name, Symbol, NarrowSymbol };
+
+  
+
+
+
+
+  [[nodiscard]] bool currencyDisplay(CurrencyDisplay display);
+
+  
+
+
+
+
+
+
+  [[nodiscard]] bool unit(JSLinearString* unit);
+
+  enum class UnitDisplay { Short, Narrow, Long };
+
+  
+
+
+
+
+  [[nodiscard]] bool unitDisplay(UnitDisplay display);
+
+  
+
+
+
+
+
+  [[nodiscard]] bool percent();
+
+  
+
+
+
+
+
+  [[nodiscard]] bool fractionDigits(uint32_t min, uint32_t max);
+
+  
+
+
+
+
+
+  [[nodiscard]] bool integerWidth(uint32_t min);
+
+  
+
+
+
+
+
+  [[nodiscard]] bool significantDigits(uint32_t min, uint32_t max);
+
+  
+
+
+
+
+  [[nodiscard]] bool useGrouping(bool on);
+
+  enum class Notation {
+    Standard,
+    Scientific,
+    Engineering,
+    CompactShort,
+    CompactLong
+  };
+
+  
+
+
+
+
+  [[nodiscard]] bool notation(Notation style);
+
+  enum class SignDisplay {
+    Auto,
+    Never,
+    Always,
+    ExceptZero,
+    Accounting,
+    AccountingAlways,
+    AccountingExceptZero
+  };
+
+  
+
+
+
+
+  [[nodiscard]] bool signDisplay(SignDisplay display);
+
+  
+
+
+
+
+  [[nodiscard]] bool roundingModeHalfUp();
+};
+
+}  
 }  
 
 #endif 
