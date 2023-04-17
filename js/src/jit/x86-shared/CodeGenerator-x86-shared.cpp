@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "jit/x86-shared/CodeGenerator-x86-shared.h"
 
@@ -13,7 +13,7 @@
 #include "jit/InlineScriptTree.h"
 #include "jit/JitRuntime.h"
 #include "jit/RangeAnalysis.h"
-#include "js/ScalarType.h"  // js::Scalar::Type
+#include "js/ScalarType.h"  
 #include "util/DifferentialTesting.h"
 
 #include "jit/MacroAssembler-inl.h"
@@ -90,16 +90,16 @@ void CodeGenerator::visitTestIAndBranch(LTestIAndBranch* test) {
 void CodeGenerator::visitTestDAndBranch(LTestDAndBranch* test) {
   const LAllocation* opd = test->input();
 
-  // vucomisd flags:
-  //             Z  P  C
-  //            ---------
-  //      NaN    1  1  1
-  //        >    0  0  0
-  //        <    0  0  1
-  //        =    1  0  0
-  //
-  // NaN is falsey, so comparing against 0 and then using the Z flag is
-  // enough to determine which branch to take.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   ScratchDoubleScope scratch(masm);
   masm.zeroDouble(scratch);
   masm.vucomisd(scratch, ToFloatRegister(opd));
@@ -108,7 +108,7 @@ void CodeGenerator::visitTestDAndBranch(LTestDAndBranch* test) {
 
 void CodeGenerator::visitTestFAndBranch(LTestFAndBranch* test) {
   const LAllocation* opd = test->input();
-  // vucomiss flags are the same as doubles; see comment above
+  
   {
     ScratchFloat32Scope scratch(masm);
     masm.zeroFloat32(scratch);
@@ -203,8 +203,8 @@ void CodeGenerator::visitNotI(LNotI* ins) {
 void CodeGenerator::visitNotD(LNotD* ins) {
   FloatRegister opd = ToFloatRegister(ins->input());
 
-  // Not returns true if the input is a NaN. We don't have to worry about
-  // it if we know the input is never NaN though.
+  
+  
   Assembler::NaNCond nanCond = Assembler::NaN_IsTrue;
   if (ins->mir()->operandIsNeverNaN()) {
     nanCond = Assembler::NaN_HandledByCond;
@@ -219,8 +219,8 @@ void CodeGenerator::visitNotD(LNotD* ins) {
 void CodeGenerator::visitNotF(LNotF* ins) {
   FloatRegister opd = ToFloatRegister(ins->input());
 
-  // Not returns true if the input is a NaN. We don't have to worry about
-  // it if we know the input is never NaN though.
+  
+  
   Assembler::NaNCond nanCond = Assembler::NaN_IsTrue;
   if (ins->mir()->operandIsNeverNaN()) {
     nanCond = Assembler::NaN_HandledByCond;
@@ -529,10 +529,10 @@ bool CodeGeneratorX86Shared::generateOutOfLineCode() {
   }
 
   if (deoptLabel_.used()) {
-    // All non-table-based bailouts will go here.
+    
     masm.bind(&deoptLabel_);
 
-    // Push the frame size, so the handler can recover the IonScript.
+    
     masm.push(Imm32(frameSize()));
 
     TrampolinePtr handler = gen->jitRuntime()->getGenericBailoutHandler();
@@ -576,16 +576,16 @@ template <typename T>
 void CodeGeneratorX86Shared::bailout(const T& binder, LSnapshot* snapshot) {
   encode(snapshot);
 
-  // Though the assembler doesn't track all frame pushes, at least make sure
-  // the known value makes sense. We can't use bailout tables if the stack
-  // isn't properly aligned to the static frame size.
+  
+  
+  
   MOZ_ASSERT_IF(frameClass_ != FrameSizeClass::None() && deoptTable_,
                 frameClass_.frameSize() == masm.framePushed());
 
 #ifdef JS_CODEGEN_X86
-  // On x64, bailout tables are pointless, because 16 extra bytes are
-  // reserved per external jump, whereas it takes only 10 bytes to encode a
-  // a non-table based bailout.
+  
+  
+  
   if (assignBailoutId(snapshot)) {
     binder(masm, deoptTable_->value +
                      snapshot->bailoutId() * BAILOUT_TABLE_ENTRY_SIZE);
@@ -593,12 +593,12 @@ void CodeGeneratorX86Shared::bailout(const T& binder, LSnapshot* snapshot) {
   }
 #endif
 
-  // We could not use a jump table, either because all bailout IDs were
-  // reserved, or a jump table is not optimal for this frame size or
-  // platform. Whatever, we will generate a lazy bailout.
-  //
-  // All bailout code is associated with the bytecodeSite of the block we are
-  // bailing out from.
+  
+  
+  
+  
+  
+  
   InlineScriptTree* tree = snapshot->mir()->block()->trackedTree();
   OutOfLineBailout* ool = new (alloc()) OutOfLineBailout(snapshot);
   addOutOfLineCode(ool,
@@ -703,7 +703,7 @@ void CodeGenerator::visitPowHalfD(LPowHalfD* ins) {
   Label done, sqrt;
 
   if (!ins->mir()->operandIsNeverNegativeInfinity()) {
-    // Branch if not -Infinity.
+    
     masm.loadConstantDouble(NegativeInfinity<double>(), scratch);
 
     Assembler::DoubleCondition cond = Assembler::DoubleNotEqualOrUnordered;
@@ -712,7 +712,7 @@ void CodeGenerator::visitPowHalfD(LPowHalfD* ins) {
     }
     masm.branchDouble(cond, input, scratch, &sqrt);
 
-    // Math.pow(-Infinity, 0.5) == Infinity.
+    
     masm.zeroDouble(output);
     masm.subDouble(scratch, output);
     masm.jump(&done);
@@ -721,8 +721,8 @@ void CodeGenerator::visitPowHalfD(LPowHalfD* ins) {
   }
 
   if (!ins->mir()->operandIsNeverNegativeZero()) {
-    // Math.pow(-0, 0.5) == 0 == Math.pow(0, 0.5).
-    // Adding 0 converts any -0 to 0.
+    
+    
     masm.zeroDouble(scratch);
     masm.addDouble(input, scratch);
     masm.vsqrtsd(scratch, output, output);
@@ -823,11 +823,11 @@ void CodeGeneratorX86Shared::visitOutOfLineUndoALUOperation(
   MOZ_ASSERT(reg == ToRegister(lhs));
   MOZ_ASSERT_IF(rhs->isGeneralReg(), reg != ToRegister(rhs));
 
-  // Undo the effect of the ALU operation, which was performed on the output
-  // register and overflowed. Writing to the output register clobbered an
-  // input reg, and the original value of the input needs to be recovered
-  // to satisfy the constraint imposed by any RECOVERED_INPUT operands to
-  // the bailout snapshot.
+  
+  
+  
+  
+  
 
   if (rhs->isConstant()) {
     Imm32 constant(ToInt32(rhs));
@@ -867,7 +867,7 @@ void CodeGenerator::visitMulI(LMulI* ins) {
                 !mul->canBeNegativeZero() && !mul->canOverflow());
 
   if (rhs->isConstant()) {
-    // Bailout on -0.0
+    
     int32_t constant = ToInt32(rhs);
     if (mul->canBeNegativeZero() && constant <= 0) {
       Assembler::Condition bailoutCond =
@@ -882,16 +882,16 @@ void CodeGenerator::visitMulI(LMulI* ins) {
         break;
       case 0:
         masm.xorl(ToOperand(lhs), ToRegister(lhs));
-        return;  // escape overflow check;
+        return;  
       case 1:
-        // nop
-        return;  // escape overflow check;
+        
+        return;  
       case 2:
         masm.addl(ToOperand(lhs), ToRegister(lhs));
         break;
       default:
         if (!mul->canOverflow() && constant > 0) {
-          // Use shift if cannot overflow and constant is power of 2
+          
           int32_t shift = FloorLog2(constant);
           if ((1 << shift) == constant) {
             masm.shll(Imm32(shift), ToRegister(lhs));
@@ -901,20 +901,20 @@ void CodeGenerator::visitMulI(LMulI* ins) {
         masm.imull(Imm32(ToInt32(rhs)), ToRegister(lhs));
     }
 
-    // Bailout on overflow
+    
     if (mul->canOverflow()) {
       bailoutIf(Assembler::Overflow, ins->snapshot());
     }
   } else {
     masm.imull(ToOperand(rhs), ToRegister(lhs));
 
-    // Bailout on overflow
+    
     if (mul->canOverflow()) {
       bailoutIf(Assembler::Overflow, ins->snapshot());
     }
 
     if (mul->canBeNegativeZero()) {
-      // Jump to an OOL path if the result is 0.
+      
       MulNegativeZeroCheck* ool = new (alloc()) MulNegativeZeroCheck(ins);
       addOutOfLineCode(ool, mul);
 
@@ -941,14 +941,14 @@ void CodeGenerator::visitMulI64(LMulI64* lir) {
         masm.xor64(ToRegister64(lhs), ToRegister64(lhs));
         return;
       case 1:
-        // nop
+        
         return;
       case 2:
         masm.add64(ToRegister64(lhs), ToRegister64(lhs));
         return;
       default:
         if (constant > 0) {
-          // Use shift if constant is power of 2.
+          
           int32_t shift = mozilla::FloorLog2(constant);
           if (int64_t(1) << shift == constant) {
             masm.lshift64(Imm32(shift), ToRegister64(lhs));
@@ -992,12 +992,12 @@ void CodeGenerator::visitUDivOrMod(LUDivOrMod* ins) {
 
   ReturnZero* ool = nullptr;
 
-  // Put the lhs in eax.
+  
   if (lhs != eax) {
     masm.mov(lhs, eax);
   }
 
-  // Prevent divide by zero.
+  
   if (ins->canBeDivideByZero()) {
     masm.test32(rhs, rhs);
     if (ins->mir()->isTruncated()) {
@@ -1015,19 +1015,19 @@ void CodeGenerator::visitUDivOrMod(LUDivOrMod* ins) {
     }
   }
 
-  // Zero extend the lhs into edx to make (edx:eax), since udiv is 64-bit.
+  
   masm.mov(ImmWord(0), edx);
   masm.udiv(rhs);
 
-  // If the remainder is > 0, bailout since this must be a double.
+  
   if (ins->mir()->isDiv() && !ins->mir()->toDiv()->canTruncateRemainder()) {
     Register remainder = ToRegister(ins->remainder());
     masm.test32(remainder, remainder);
     bailoutIf(Assembler::NonZero, ins->snapshot());
   }
 
-  // Unsigned div or mod can return a value that's not a signed int32.
-  // If our users aren't expecting that, bail.
+  
+  
   if (!ins->mir()->isTruncated()) {
     masm.test32(output, output);
     bailoutIf(Assembler::Signed, ins->snapshot());
@@ -1044,7 +1044,7 @@ void CodeGenerator::visitUDivOrModConstant(LUDivOrModConstant* ins) {
   Register output = ToRegister(ins->output());
   uint32_t d = ins->denominator();
 
-  // This emits the division answer into edx or the modulus answer into eax.
+  
   MOZ_ASSERT(output == eax || output == edx);
   MOZ_ASSERT(lhs != eax && lhs != edx);
   bool isDiv = (output == edx);
@@ -1062,53 +1062,53 @@ void CodeGenerator::visitUDivOrModConstant(LUDivOrModConstant* ins) {
     return;
   }
 
-  // The denominator isn't a power of 2 (see LDivPowTwoI and LModPowTwoI).
+  
   MOZ_ASSERT((d & (d - 1)) != 0);
 
-  ReciprocalMulConstants rmc = computeDivisionConstants(d, /* maxLog = */ 32);
+  ReciprocalMulConstants rmc = computeDivisionConstants(d,  32);
 
-  // We first compute (M * n) >> 32, where M = rmc.multiplier.
+  
   masm.movl(Imm32(rmc.multiplier), eax);
   masm.umull(lhs);
   if (rmc.multiplier > UINT32_MAX) {
-    // M >= 2^32 and shift == 0 is impossible, as d >= 2 implies that
-    // ((M * n) >> (32 + shift)) >= n > floor(n/d) whenever n >= d,
-    // contradicting the proof of correctness in computeDivisionConstants.
+    
+    
+    
     MOZ_ASSERT(rmc.shiftAmount > 0);
     MOZ_ASSERT(rmc.multiplier < (int64_t(1) << 33));
 
-    // We actually computed edx = ((uint32_t(M) * n) >> 32) instead. Since
-    // (M * n) >> (32 + shift) is the same as (edx + n) >> shift, we can
-    // correct for the overflow. This case is a bit trickier than the signed
-    // case, though, as the (edx + n) addition itself can overflow; however,
-    // note that (edx + n) >> shift == (((n - edx) >> 1) + edx) >> (shift - 1),
-    // which is overflow-free. See Hacker's Delight, section 10-8 for details.
+    
+    
+    
+    
+    
+    
 
-    // Compute (n - edx) >> 1 into eax.
+    
     masm.movl(lhs, eax);
     masm.subl(edx, eax);
     masm.shrl(Imm32(1), eax);
 
-    // Finish the computation.
+    
     masm.addl(eax, edx);
     masm.shrl(Imm32(rmc.shiftAmount - 1), edx);
   } else {
     masm.shrl(Imm32(rmc.shiftAmount), edx);
   }
 
-  // We now have the truncated division value in edx. If we're
-  // computing a modulus or checking whether the division resulted
-  // in an integer, we need to multiply the obtained value by d and
-  // finish the computation/check.
+  
+  
+  
+  
   if (!isDiv) {
     masm.imull(Imm32(d), edx, edx);
     masm.movl(lhs, eax);
     masm.subl(edx, eax);
 
-    // The final result of the modulus op, just computed above by the
-    // sub instruction, can be a number in the range [2^31, 2^32). If
-    // this is the case and the modulus is not truncated, we must bail
-    // out.
+    
+    
+    
+    
     if (!ins->mir()->isTruncated()) {
       bailoutIf(Assembler::Signed, ins->snapshot());
     }
@@ -1127,7 +1127,7 @@ void CodeGeneratorX86Shared::visitMulNegativeZeroCheck(
   Operand rhs = ToOperand(ins->rhs());
   MOZ_ASSERT_IF(lhsCopy.kind() == Operand::REG, lhsCopy.reg() != result.code());
 
-  // Result is -0 if lhs or rhs is negative.
+  
   masm.movl(lhsCopy, result);
   masm.orl(rhs, result);
   bailoutIf(Assembler::Signed, ins->snapshot());
@@ -1144,19 +1144,19 @@ void CodeGenerator::visitDivPowTwoI(LDivPowTwoI* ins) {
   bool negativeDivisor = ins->negativeDivisor();
   MDiv* mir = ins->mir();
 
-  // We use defineReuseInput so these should always be the same, which is
-  // convenient since all of our instructions here are two-address.
+  
+  
   MOZ_ASSERT(lhs == output);
 
   if (!mir->isTruncated() && negativeDivisor) {
-    // 0 divided by a negative number must return a double.
+    
     masm.test32(lhs, lhs);
     bailoutIf(Assembler::Zero, ins->snapshot());
   }
 
   if (shift) {
     if (!mir->isTruncated()) {
-      // If the remainder is != 0, bailout since this must be a double.
+      
       masm.test32(lhs, Imm32(UINT32_MAX >> (32 - shift)));
       bailoutIf(Assembler::NonZero, ins->snapshot());
     }
@@ -1164,26 +1164,26 @@ void CodeGenerator::visitDivPowTwoI(LDivPowTwoI* ins) {
     if (mir->isUnsigned()) {
       masm.shrl(Imm32(shift), lhs);
     } else {
-      // Adjust the value so that shifting produces a correctly
-      // rounded result when the numerator is negative. See 10-1
-      // "Signed Division by a Known Power of 2" in Henry
-      // S. Warren, Jr.'s Hacker's Delight.
+      
+      
+      
+      
       if (mir->canBeNegativeDividend() && mir->isTruncated()) {
-        // Note: There is no need to execute this code, which handles how to
-        // round the signed integer division towards 0, if we previously bailed
-        // due to a non-zero remainder.
+        
+        
+        
         Register lhsCopy = ToRegister(ins->numeratorCopy());
         MOZ_ASSERT(lhsCopy != lhs);
         if (shift > 1) {
-          // Copy the sign bit of the numerator. (= (2^32 - 1) or 0)
+          
           masm.sarl(Imm32(31), lhs);
         }
-        // Divide by 2^(32 - shift)
-        // i.e. (= (2^32 - 1) / 2^(32 - shift) or 0)
-        // i.e. (= (2^shift - 1) or 0)
+        
+        
+        
         masm.shrl(Imm32(32 - shift), lhs);
-        // If signed, make any 1 bit below the shifted bits to bubble up, such
-        // that once shifted the value would be rounded towards 0.
+        
+        
         masm.addl(lhsCopy, lhs);
       }
       masm.sarl(Imm32(shift), lhs);
@@ -1196,7 +1196,7 @@ void CodeGenerator::visitDivPowTwoI(LDivPowTwoI* ins) {
   }
 
   if (negativeDivisor) {
-    // INT32_MIN / -1 overflows.
+    
     masm.negl(lhs);
     if (!mir->isTruncated()) {
       bailoutIf(Assembler::Overflow, ins->snapshot());
@@ -1207,8 +1207,8 @@ void CodeGenerator::visitDivPowTwoI(LDivPowTwoI* ins) {
       masm.bind(&ok);
     }
   } else if (mir->isUnsigned() && !mir->isTruncated()) {
-    // Unsigned division by 1 can overflow if output is not
-    // truncated.
+    
+    
     masm.test32(lhs, lhs);
     bailoutIf(Assembler::Signed, ins->snapshot());
   }
@@ -1219,46 +1219,46 @@ void CodeGenerator::visitDivOrModConstantI(LDivOrModConstantI* ins) {
   Register output = ToRegister(ins->output());
   int32_t d = ins->denominator();
 
-  // This emits the division answer into edx or the modulus answer into eax.
+  
   MOZ_ASSERT(output == eax || output == edx);
   MOZ_ASSERT(lhs != eax && lhs != edx);
   bool isDiv = (output == edx);
 
-  // The absolute value of the denominator isn't a power of 2 (see LDivPowTwoI
-  // and LModPowTwoI).
+  
+  
   MOZ_ASSERT((Abs(d) & (Abs(d) - 1)) != 0);
 
-  // We will first divide by Abs(d), and negate the answer if d is negative.
-  // If desired, this can be avoided by generalizing computeDivisionConstants.
+  
+  
   ReciprocalMulConstants rmc =
-      computeDivisionConstants(Abs(d), /* maxLog = */ 31);
+      computeDivisionConstants(Abs(d),  31);
 
-  // We first compute (M * n) >> 32, where M = rmc.multiplier.
+  
   masm.movl(Imm32(rmc.multiplier), eax);
   masm.imull(lhs);
   if (rmc.multiplier > INT32_MAX) {
     MOZ_ASSERT(rmc.multiplier < (int64_t(1) << 32));
 
-    // We actually computed edx = ((int32_t(M) * n) >> 32) instead. Since
-    // (M * n) >> 32 is the same as (edx + n), we can correct for the overflow.
-    // (edx + n) can't overflow, as n and edx have opposite signs because
-    // int32_t(M) is negative.
+    
+    
+    
+    
     masm.addl(lhs, edx);
   }
-  // (M * n) >> (32 + shift) is the truncated division answer if n is
-  // non-negative, as proved in the comments of computeDivisionConstants. We
-  // must add 1 later if n is negative to get the right answer in all cases.
+  
+  
+  
   masm.sarl(Imm32(rmc.shiftAmount), edx);
 
-  // We'll subtract -1 instead of adding 1, because (n < 0 ? -1 : 0) can be
-  // computed with just a sign-extending shift of 31 bits.
+  
+  
   if (ins->canBeNegativeDividend()) {
     masm.movl(lhs, eax);
     masm.sarl(Imm32(31), eax);
     masm.subl(eax, edx);
   }
 
-  // After this, edx contains the correct truncated division result.
+  
   if (d < 0) {
     masm.negl(edx);
   }
@@ -1270,21 +1270,21 @@ void CodeGenerator::visitDivOrModConstantI(LDivOrModConstantI* ins) {
 
   if (!ins->mir()->isTruncated()) {
     if (isDiv) {
-      // This is a division op. Multiply the obtained value by d to check if
-      // the correct answer is an integer. This cannot overflow, since |d| > 1.
+      
+      
       masm.imull(Imm32(d), edx, eax);
       masm.cmp32(lhs, eax);
       bailoutIf(Assembler::NotEqual, ins->snapshot());
 
-      // If lhs is zero and the divisor is negative, the answer should have
-      // been -0.
+      
+      
       if (d < 0) {
         masm.test32(lhs, lhs);
         bailoutIf(Assembler::Zero, ins->snapshot());
       }
     } else if (ins->canBeNegativeDividend()) {
-      // This is a mod op. If the computed value is zero and lhs
-      // is negative, the answer should have been -0.
+      
+      
       Label done;
 
       masm.cmp32(lhs, Imm32(0));
@@ -1314,13 +1314,13 @@ void CodeGenerator::visitDivI(LDivI* ins) {
   Label done;
   ReturnZero* ool = nullptr;
 
-  // Put the lhs in eax, for either the negative overflow case or the regular
-  // divide case.
+  
+  
   if (lhs != eax) {
     masm.mov(lhs, eax);
   }
 
-  // Handle divide by zero.
+  
   if (mir->canBeDivideByZero()) {
     masm.test32(rhs, rhs);
     if (mir->trapOnError()) {
@@ -1329,7 +1329,7 @@ void CodeGenerator::visitDivI(LDivI* ins) {
       masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->bytecodeOffset());
       masm.bind(&nonZero);
     } else if (mir->canTruncateInfinities()) {
-      // Truncated division by zero is zero (Infinity|0 == 0)
+      
       if (!ool) {
         ool = new (alloc()) ReturnZero(output);
       }
@@ -1340,7 +1340,7 @@ void CodeGenerator::visitDivI(LDivI* ins) {
     }
   }
 
-  // Handle an integer overflow exception from -2147483648 / -1.
+  
   if (mir->canBeNegativeOverflow()) {
     Label notOverflow;
     masm.cmp32(lhs, Imm32(INT32_MIN));
@@ -1350,8 +1350,8 @@ void CodeGenerator::visitDivI(LDivI* ins) {
       masm.j(Assembler::NotEqual, &notOverflow);
       masm.wasmTrap(wasm::Trap::IntegerOverflow, mir->bytecodeOffset());
     } else if (mir->canTruncateOverflow()) {
-      // (-INT32_MIN)|0 == INT32_MIN and INT32_MIN is already in the
-      // output register (lhs == eax).
+      
+      
       masm.j(Assembler::Equal, &done);
     } else {
       MOZ_ASSERT(mir->fallible());
@@ -1360,7 +1360,7 @@ void CodeGenerator::visitDivI(LDivI* ins) {
     masm.bind(&notOverflow);
   }
 
-  // Handle negative 0.
+  
   if (!mir->canTruncateNegativeZero() && mir->canBeNegativeZero()) {
     Label nonzero;
     masm.test32(lhs, lhs);
@@ -1370,7 +1370,7 @@ void CodeGenerator::visitDivI(LDivI* ins) {
     masm.bind(&nonzero);
   }
 
-  // Sign extend the lhs into edx to make (edx:eax), since idiv is 64-bit.
+  
   if (lhs != eax) {
     masm.mov(lhs, eax);
   }
@@ -1378,7 +1378,7 @@ void CodeGenerator::visitDivI(LDivI* ins) {
   masm.idiv(rhs);
 
   if (!mir->canTruncateRemainder()) {
-    // If the remainder is > 0, bailout since this must be a double.
+    
     masm.test32(remainder, remainder);
     bailoutIf(Assembler::NonZero, ins->snapshot());
   }
@@ -1398,8 +1398,8 @@ void CodeGenerator::visitModPowTwoI(LModPowTwoI* ins) {
   Label negative;
 
   if (!ins->mir()->isUnsigned() && ins->mir()->canBeNegativeDividend()) {
-    // Switch based on sign of the lhs.
-    // Positive numbers are just a bitmask
+    
+    
     masm.branchTest32(Assembler::Signed, lhs, lhs, &negative);
   }
 
@@ -1409,21 +1409,21 @@ void CodeGenerator::visitModPowTwoI(LModPowTwoI* ins) {
     Label done;
     masm.jump(&done);
 
-    // Negative numbers need a negate, bitmask, negate
+    
     masm.bind(&negative);
 
-    // Unlike in the visitModI case, we are not computing the mod by means of a
-    // division. Therefore, the divisor = -1 case isn't problematic (the andl
-    // always returns 0, which is what we expect).
-    //
-    // The negl instruction overflows if lhs == INT32_MIN, but this is also not
-    // a problem: shift is at most 31, and so the andl also always returns 0.
+    
+    
+    
+    
+    
+    
     masm.negl(lhs);
     masm.andl(Imm32((uint32_t(1) << shift) - 1), lhs);
     masm.negl(lhs);
 
-    // Since a%b has the same sign as b, and a is negative in this branch,
-    // an answer of 0 means the correct result is actually -0. Bail out.
+    
+    
     if (!ins->mir()->isTruncated()) {
       bailoutIf(Assembler::Zero, ins->snapshot());
     }
@@ -1464,7 +1464,7 @@ void CodeGenerator::visitModI(LModI* ins) {
   Register lhs = ToRegister(ins->lhs());
   Register rhs = ToRegister(ins->rhs());
 
-  // Required to use idiv.
+  
   MOZ_ASSERT_IF(lhs != rhs, rhs != eax);
   MOZ_ASSERT(rhs != edx);
   MOZ_ASSERT(remainder == edx);
@@ -1474,14 +1474,14 @@ void CodeGenerator::visitModI(LModI* ins) {
   ReturnZero* ool = nullptr;
   ModOverflowCheck* overflow = nullptr;
 
-  // Set up eax in preparation for doing a div.
+  
   if (lhs != eax) {
     masm.mov(lhs, eax);
   }
 
   MMod* mir = ins->mir();
 
-  // Prevent divide by zero.
+  
   if (mir->canBeDivideByZero()) {
     masm.test32(rhs, rhs);
     if (mir->isTruncated()) {
@@ -1503,23 +1503,23 @@ void CodeGenerator::visitModI(LModI* ins) {
 
   Label negative;
 
-  // Switch based on sign of the lhs.
+  
   if (mir->canBeNegativeDividend()) {
     masm.branchTest32(Assembler::Signed, lhs, lhs, &negative);
   }
 
-  // If lhs >= 0 then remainder = lhs % rhs. The remainder must be positive.
+  
   {
-    // Check if rhs is a power-of-two.
+    
     if (mir->canBePowerOfTwoDivisor()) {
       MOZ_ASSERT(rhs != remainder);
 
-      // Rhs y is a power-of-two if (y & (y-1)) == 0. Note that if
-      // y is any negative number other than INT32_MIN, both y and
-      // y-1 will have the sign bit set so these are never optimized
-      // as powers-of-two. If y is INT32_MIN, y-1 will be INT32_MAX
-      // and because lhs >= 0 at this point, lhs & INT32_MAX returns
-      // the correct value.
+      
+      
+      
+      
+      
+      
       Label notPowerOfTwo;
       masm.mov(rhs, remainder);
       masm.subl(Imm32(1), remainder);
@@ -1531,18 +1531,18 @@ void CodeGenerator::visitModI(LModI* ins) {
       masm.bind(&notPowerOfTwo);
     }
 
-    // Since lhs >= 0, the sign-extension will be 0
+    
     masm.mov(ImmWord(0), edx);
     masm.idiv(rhs);
   }
 
-  // Otherwise, we have to beware of two special cases:
+  
   if (mir->canBeNegativeDividend()) {
     masm.jump(&done);
 
     masm.bind(&negative);
 
-    // Prevent an integer overflow exception from -2147483648 % -1
+    
     Label notmin;
     masm.cmp32(lhs, Imm32(INT32_MIN));
     overflow = new (alloc()) ModOverflowCheck(ins, rhs);
@@ -1552,7 +1552,7 @@ void CodeGenerator::visitModI(LModI* ins) {
     masm.idiv(rhs);
 
     if (!mir->isTruncated()) {
-      // A remainder of 0 means that the rval must be -0, which is a double.
+      
       masm.test32(remainder, remainder);
       bailoutIf(Assembler::Zero, ins->snapshot());
     }
@@ -1663,7 +1663,7 @@ void CodeGenerator::visitShiftI(LShiftI* ins) {
         if (shift) {
           masm.rshift32(Imm32(shift), lhs);
         } else if (ins->mir()->toUrsh()->fallible()) {
-          // x >>> 0 can overflow.
+          
           masm.test32(lhs, lhs);
           bailoutIf(Assembler::Signed, ins->snapshot());
         }
@@ -1683,7 +1683,7 @@ void CodeGenerator::visitShiftI(LShiftI* ins) {
       case JSOp::Ursh:
         masm.rshift32(shift, lhs);
         if (ins->mir()->toUrsh()->fallible()) {
-          // x >>> 0 can overflow.
+          
           masm.test32(lhs, lhs);
           bailoutIf(Assembler::Signed, ins->snapshot());
         }
@@ -1822,8 +1822,8 @@ void CodeGeneratorX86Shared::visitOutOfLineTableSwitch(
     Label* caseheader = caseblock->label();
     uint32_t caseoffset = caseheader->offset();
 
-    // The entries of the jump table need to be absolute addresses and thus
-    // must be patched after codegen is finished.
+    
+    
     CodeLabel cl;
     masm.writeCodePointer(&cl);
     cl.target()->bind(caseoffset);
@@ -1836,27 +1836,27 @@ void CodeGeneratorX86Shared::emitTableSwitchDispatch(MTableSwitch* mir,
                                                      Register base) {
   Label* defaultcase = skipTrivialBlocks(mir->getDefault())->lir()->label();
 
-  // Lower value with low value
+  
   if (mir->low() != 0) {
     masm.subl(Imm32(mir->low()), index);
   }
 
-  // Jump to default case if input is out of range
+  
   int32_t cases = mir->numCases();
   masm.cmp32(index, Imm32(cases));
   masm.j(AssemblerX86Shared::AboveOrEqual, defaultcase);
 
-  // To fill in the CodeLabels for the case entries, we need to first
-  // generate the case entries (we don't yet know their offsets in the
-  // instruction stream).
+  
+  
+  
   OutOfLineTableSwitch* ool = new (alloc()) OutOfLineTableSwitch(mir);
   addOutOfLineCode(ool, mir);
 
-  // Compute the position where a pointer to the right case stands.
+  
   masm.mov(ool->jumpLabel(), base);
   BaseIndex pointer(base, index, ScalePointer);
 
-  // Jump to the right case
+  
   masm.branchToComputedAddress(pointer);
 }
 
@@ -1931,20 +1931,20 @@ void CodeGenerator::visitEffectiveAddress(LEffectiveAddress* ins) {
 }
 
 void CodeGeneratorX86Shared::generateInvalidateEpilogue() {
-  // Ensure that there is enough space in the buffer for the OsiPoint
-  // patching to occur. Otherwise, we could overwrite the invalidation
-  // epilogue.
+  
+  
+  
   for (size_t i = 0; i < sizeof(void*); i += Assembler::NopSize()) {
     masm.nop();
   }
 
   masm.bind(&invalidate_);
 
-  // Push the Ion script onto the stack (when we determine what that pointer
-  // is).
+  
+  
   invalidateEpilogueData_ = masm.pushWithPatch(ImmWord(uintptr_t(-1)));
 
-  // Jump to the invalidator which will replace the current frame.
+  
   TrampolinePtr thunk = gen->jitRuntime()->getInvalidationThunk();
   masm.jump(thunk);
 }
@@ -2155,11 +2155,11 @@ void CodeGeneratorX86Shared::canonicalizeIfDeterministic(
       break;
     }
     default: {
-      // Other types don't need canonicalization.
+      
       break;
     }
   }
-#endif  // DEBUG
+#endif  
 }
 
 template <typename T>
@@ -2259,36 +2259,13 @@ void CodeGenerator::visitSimd128(LSimd128* ins) {
 #endif
 }
 
-void CodeGenerator::visitWasmTernarySimd128(LWasmTernarySimd128* ins) {
+void CodeGenerator::visitWasmBitselectSimd128(LWasmBitselectSimd128* ins) {
 #ifdef ENABLE_WASM_SIMD
-  switch (ins->simdOp()) {
-    case wasm::SimdOp::V128Bitselect: {
-      FloatRegister lhsDest = ToFloatRegister(ins->v0());
-      FloatRegister rhs = ToFloatRegister(ins->v1());
-      FloatRegister control = ToFloatRegister(ins->v2());
-      FloatRegister temp = ToFloatRegister(ins->temp());
-      masm.bitwiseSelectSimd128(control, lhsDest, rhs, lhsDest, temp);
-      break;
-    }
-    case wasm::SimdOp::F32x4RelaxedFma:
-      masm.fmaFloat32x4(ToFloatRegister(ins->v1()), ToFloatRegister(ins->v2()),
-                        ToFloatRegister(ins->v0()));
-      break;
-    case wasm::SimdOp::F32x4RelaxedFms:
-      masm.fmsFloat32x4(ToFloatRegister(ins->v1()), ToFloatRegister(ins->v2()),
-                        ToFloatRegister(ins->v0()));
-      break;
-    case wasm::SimdOp::F64x2RelaxedFma:
-      masm.fmaFloat64x2(ToFloatRegister(ins->v1()), ToFloatRegister(ins->v2()),
-                        ToFloatRegister(ins->v0()));
-      break;
-    case wasm::SimdOp::F64x2RelaxedFms:
-      masm.fmsFloat64x2(ToFloatRegister(ins->v1()), ToFloatRegister(ins->v2()),
-                        ToFloatRegister(ins->v0()));
-      break;
-    default:
-      MOZ_CRASH("NYI");
-  }
+  FloatRegister lhsDest = ToFloatRegister(ins->lhsDest());
+  FloatRegister rhs = ToFloatRegister(ins->rhs());
+  FloatRegister control = ToFloatRegister(ins->control());
+  FloatRegister temp = ToFloatRegister(ins->temp());
+  masm.bitwiseSelectSimd128(control, lhsDest, rhs, lhsDest, temp);
 #else
   MOZ_CRASH("No SIMD");
 #endif
@@ -2314,8 +2291,8 @@ void CodeGenerator::visitWasmBinarySimd128(LWasmBinarySimd128* ins) {
       masm.bitwiseXorSimd128(rhs, lhsDest);
       break;
     case wasm::SimdOp::V128AndNot:
-      // x86/x64 specific: The CPU provides ~A & B.  The operands were swapped
-      // during lowering, and we'll compute A & ~B here as desired.
+      
+      
       masm.bitwiseNotAndSimd128(rhs, lhsDest);
       break;
     case wasm::SimdOp::I8x16AvgrU:
@@ -2605,19 +2582,19 @@ void CodeGenerator::visitWasmBinarySimd128(LWasmBinarySimd128* ins) {
       masm.compareFloat64x2(Assembler::LessThanOrEqual, rhs, lhsDest);
       break;
     case wasm::SimdOp::F32x4PMax:
-      // `lhsDest` is actually rhsDest, and `rhs` is actually lhs
+      
       masm.pseudoMaxFloat32x4(lhsDest, rhs);
       break;
     case wasm::SimdOp::F32x4PMin:
-      // `lhsDest` is actually rhsDest, and `rhs` is actually lhs
+      
       masm.pseudoMinFloat32x4(lhsDest, rhs);
       break;
     case wasm::SimdOp::F64x2PMax:
-      // `lhsDest` is actually rhsDest, and `rhs` is actually lhs
+      
       masm.pseudoMaxFloat64x2(lhsDest, rhs);
       break;
     case wasm::SimdOp::F64x2PMin:
-      // `lhsDest` is actually rhsDest, and `rhs` is actually lhs
+      
       masm.pseudoMinFloat64x2(lhsDest, rhs);
       break;
     case wasm::SimdOp::I32x4DotSI16x8:
@@ -3119,13 +3096,13 @@ void CodeGenerator::visitWasmShuffleSimd128(LWasmShuffleSimd128* ins) {
 
 enum PermuteX64I16x8Action : uint16_t {
   UNAVAILABLE = 0,
-  SWAP_QWORDS = 1,  // Swap qwords first
-  PERM_LOW = 2,     // Permute low qword by control_[0..3]
-  PERM_HIGH = 4     // Permute high qword by control_[4..7]
+  SWAP_QWORDS = 1,  
+  PERM_LOW = 2,     
+  PERM_HIGH = 4     
 };
 
-// Skip lanes that equal v starting at i, returning the index just beyond the
-// last of those.  There is no requirement that the initial lanes[i] == v.
+
+
 template <typename T>
 static int ScanConstant(const T* lanes, int v, int i) {
   int len = int(16 / sizeof(T));
@@ -3136,7 +3113,7 @@ static int ScanConstant(const T* lanes, int v, int i) {
   return i;
 }
 
-// Apply a transformation to each lane value.
+
 template <typename T>
 static void MapLanes(T* result, const T* input, int (*f)(int)) {
   int len = int(16 / sizeof(T));
@@ -3145,8 +3122,8 @@ static void MapLanes(T* result, const T* input, int (*f)(int)) {
   }
 }
 
-// Recognize part of an identity permutation starting at start, with
-// the first value of the permutation expected to be bias.
+
+
 template <typename T>
 static bool IsIdentity(const T* lanes, int start, int len, int bias) {
   if (lanes[start] != bias) {
@@ -3160,9 +3137,9 @@ static bool IsIdentity(const T* lanes, int start, int len, int bias) {
   return true;
 }
 
-// We can permute by words if the mask is reducible to a word mask, but the x64
-// lowering is only efficient if we can permute the high and low quadwords
-// separately, possibly after swapping quadwords.
+
+
+
 static PermuteX64I16x8Action CalculateX64Permute16x8(SimdConstant* control) {
   const SimdConstant::I16x8& lanes = control->asInt16x8();
   SimdConstant::I16x8 mapped;
@@ -3175,7 +3152,7 @@ static PermuteX64I16x8Action CalculateX64Permute16x8(SimdConstant* control) {
   if (i != 8) {
     return PermuteX64I16x8Action::UNAVAILABLE;
   }
-  // Now compute the operation bits.  `mapped` holds the adjusted lane mask.
+  
   memcpy(mapped, lanes, sizeof(mapped));
   uint16_t op = 0;
   if (mapped[0] > mapped[4]) {
@@ -3203,7 +3180,7 @@ void CodeGenerator::visitWasmPermuteSimd128(LWasmPermuteSimd128* ins) {
   FloatRegister dest = ToFloatRegister(ins->output());
   SimdConstant control = ins->control();
   switch (ins->op()) {
-    // For broadcast, would MOVDDUP be better than PSHUFD for the last step?
+    
     case LWasmPermuteSimd128::BROADCAST_8x16: {
       const SimdConstant::I8x16& mask = control.asInt8x16();
       int8_t source = mask[0];
@@ -3684,7 +3661,7 @@ void CodeGenerator::visitWasmReduceAndBranchSimd128(
 
   switch (ins->simdOp()) {
     case wasm::SimdOp::V128AnyTrue:
-      // Set the zero flag if all of the lanes are zero, and branch on that.
+      
       masm.vptest(src, src);
       emitBranch(Assembler::NotEqual, ins->ifTrue(), ins->ifFalse());
       break;
@@ -3692,8 +3669,8 @@ void CodeGenerator::visitWasmReduceAndBranchSimd128(
     case wasm::SimdOp::I16x8AllTrue:
     case wasm::SimdOp::I32x4AllTrue:
     case wasm::SimdOp::I64x2AllTrue: {
-      // Compare all lanes to zero, set the zero flag if none of the lanes are
-      // zero, and branch on that.
+      
+      
       ScratchSimd128Scope tmp(masm);
       masm.vpxor(tmp, tmp, tmp);
       switch (ins->simdOp()) {
@@ -3838,5 +3815,5 @@ void CodeGenerator::visitWasmStoreLaneSimd128(LWasmStoreLaneSimd128* ins) {
 #endif
 }
 
-}  // namespace jit
-}  // namespace js
+}  
+}  

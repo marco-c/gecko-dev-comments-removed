@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "jit/x86-shared/Lowering-x86-shared.h"
 
@@ -46,8 +46,8 @@ void LIRGeneratorX86Shared::lowerForShift(LInstructionHelper<1, 2, 0>* ins,
                                           MDefinition* rhs) {
   ins->setOperand(0, useRegisterAtStart(lhs));
 
-  // Shift operand should be constant or, unless BMI2 is available, in register
-  // ecx. x86 can't shift a non-ecx register.
+  
+  
   if (rhs->isConstant()) {
     ins->setOperand(1, useOrConstantAtStart(rhs));
   } else if (Assembler::HasBMI2() && !mir->isRotate()) {
@@ -79,8 +79,8 @@ void LIRGeneratorX86Shared::lowerForShiftInt64(
   static_assert(LRotateI64::Count == INT64_PIECES,
                 "Assume Count is located at INT64_PIECES.");
 
-  // Shift operand should be constant or, unless BMI2 is available, in register
-  // ecx. x86 can't shift a non-ecx register.
+  
+  
   if (rhs->isConstant()) {
     ins->setOperand(INT64_PIECES, useOrConstantAtStart(rhs));
 #ifdef JS_CODEGEN_X64
@@ -88,9 +88,9 @@ void LIRGeneratorX86Shared::lowerForShiftInt64(
     ins->setOperand(INT64_PIECES, useRegister(rhs));
 #endif
   } else {
-    // The operands are int64, but we only care about the lower 32 bits of
-    // the RHS. On 32-bit, the code below will load that part in ecx and
-    // will discard the upper half.
+    
+    
+    
     ensureDefined(rhs);
     LUse use(ecx);
     use.setVirtualRegister(rhs->virtualRegister());
@@ -136,8 +136,8 @@ template <size_t Temps>
 void LIRGeneratorX86Shared::lowerForFPU(LInstructionHelper<1, 2, Temps>* ins,
                                         MDefinition* mir, MDefinition* lhs,
                                         MDefinition* rhs) {
-  // Without AVX, we'll need to use the x86 encodings where one of the
-  // inputs must be the same location as the output.
+  
+  
   if (!Assembler::HasAVX()) {
     ins->setOperand(0, useRegisterAtStart(lhs));
     ins->setOperand(
@@ -181,7 +181,7 @@ void LIRGenerator::visitAbs(MAbs* ins) {
 
 void LIRGeneratorX86Shared::lowerMulI(MMul* mul, MDefinition* lhs,
                                       MDefinition* rhs) {
-  // Note: If we need a negative zero check, lhs is used twice.
+  
   LAllocation lhsCopy = mul->canBeNegativeZero() ? use(lhs) : LAllocation();
   LMulI* lir = new (alloc())
       LMulI(useRegisterAtStart(lhs),
@@ -200,27 +200,27 @@ void LIRGeneratorX86Shared::lowerDivI(MDiv* div) {
     return;
   }
 
-  // Division instructions are slow. Division by constant denominators can be
-  // rewritten to use other instructions.
+  
+  
   if (div->rhs()->isConstant()) {
     int32_t rhs = div->rhs()->toConstant()->toInt32();
 
-    // Division by powers of two can be done by shifting, and division by
-    // other numbers can be done by a reciprocal multiplication technique.
+    
+    
     int32_t shift = FloorLog2(Abs(rhs));
     if (rhs != 0 && uint32_t(1) << shift == Abs(rhs)) {
       LAllocation lhs = useRegisterAtStart(div->lhs());
       LDivPowTwoI* lir;
-      // When truncated with maybe a non-zero remainder, we have to round the
-      // result toward 0. This requires an extra register to round up/down
-      // whether the left-hand-side is signed.
+      
+      
+      
       bool needRoundNeg = div->canBeNegativeDividend() && div->isTruncated();
       if (!needRoundNeg) {
-        // Numerator is unsigned, so does not need adjusting.
+        
         lir = new (alloc()) LDivPowTwoI(lhs, lhs, shift, rhs < 0);
       } else {
-        // Numerator might be signed, and needs adjusting, and an extra lhs copy
-        // is needed to round the result of the integer division towards zero.
+        
+        
         lir = new (alloc())
             LDivPowTwoI(lhs, useRegister(div->lhs()), shift, rhs < 0);
       }
@@ -329,10 +329,10 @@ void LIRGenerator::visitAsmJSLoadHeap(MAsmJSLoadHeap* ins) {
   MOZ_ASSERT_IF(ins->needsBoundsCheck(),
                 boundsCheckLimit->type() == MIRType::Int32);
 
-  // For simplicity, require a register if we're going to emit a bounds-check
-  // branch, so that we don't have special cases for constants. This should
-  // only happen in rare constant-folding cases since asm.js sets the minimum
-  // heap size based when accessed via constant.
+  
+  
+  
+  
   LAllocation baseAlloc = ins->needsBoundsCheck()
                               ? useRegisterAtStart(base)
                               : useRegisterOrZeroAtStart(base);
@@ -357,10 +357,10 @@ void LIRGenerator::visitAsmJSStoreHeap(MAsmJSStoreHeap* ins) {
   MOZ_ASSERT_IF(ins->needsBoundsCheck(),
                 boundsCheckLimit->type() == MIRType::Int32);
 
-  // For simplicity, require a register if we're going to emit a bounds-check
-  // branch, so that we don't have special cases for constants. This should
-  // only happen in rare constant-folding cases since asm.js sets the minimum
-  // heap size based when accessed via constant.
+  
+  
+  
+  
   LAllocation baseAlloc = ins->needsBoundsCheck()
                               ? useRegisterAtStart(base)
                               : useRegisterOrZeroAtStart(base);
@@ -377,7 +377,7 @@ void LIRGenerator::visitAsmJSStoreHeap(MAsmJSStoreHeap* ins) {
     case Scalar::Int8:
     case Scalar::Uint8:
 #ifdef JS_CODEGEN_X86
-      // See comment for LIRGeneratorX86::useByteOpRegister.
+      
       lir = new (alloc()) LAsmJSStoreHeap(
           baseAlloc, useFixed(ins->value(), eax), limitAlloc, memoryBaseAlloc);
       break;
@@ -388,8 +388,8 @@ void LIRGenerator::visitAsmJSStoreHeap(MAsmJSStoreHeap* ins) {
     case Scalar::Uint32:
     case Scalar::Float32:
     case Scalar::Float64:
-      // For now, don't allow constant values. The immediate operand affects
-      // instruction layout which affects patching.
+      
+      
       lir = new (alloc())
           LAsmJSStoreHeap(baseAlloc, useRegisterAtStart(ins->value()),
                           limitAlloc, memoryBaseAlloc);
@@ -480,7 +480,7 @@ void LIRGeneratorX86Shared::lowerUrshD(MUrsh* mir) {
   static_assert(ecx == rcx);
 #endif
 
-  // Without BMI2, x86 can only shift by ecx.
+  
   LUse lhsUse = useRegisterAtStart(lhs);
   LAllocation rhsAlloc;
   if (rhs->isConstant()) {
@@ -499,8 +499,8 @@ void LIRGeneratorX86Shared::lowerPowOfTwoI(MPow* mir) {
   int32_t base = mir->input()->toConstant()->toInt32();
   MDefinition* power = mir->power();
 
-  // Shift operand should be in register ecx, unless BMI2 is available.
-  // x86 can't shift a non-ecx register.
+  
+  
   LAllocation powerAlloc =
       Assembler::HasBMI2() ? useRegister(power) : useFixed(power, ecx);
   auto* lir = new (alloc()) LPowOfTwoI(powerAlloc, base);
@@ -509,8 +509,8 @@ void LIRGeneratorX86Shared::lowerPowOfTwoI(MPow* mir) {
 }
 
 void LIRGeneratorX86Shared::lowerBigIntLsh(MBigIntLsh* ins) {
-  // Shift operand should be in register ecx, unless BMI2 is available.
-  // x86 can't shift a non-ecx register.
+  
+  
   LDefinition shiftAlloc = Assembler::HasBMI2() ? temp() : tempFixed(ecx);
   auto* lir =
       new (alloc()) LBigIntLsh(useRegister(ins->lhs()), useRegister(ins->rhs()),
@@ -520,8 +520,8 @@ void LIRGeneratorX86Shared::lowerBigIntLsh(MBigIntLsh* ins) {
 }
 
 void LIRGeneratorX86Shared::lowerBigIntRsh(MBigIntRsh* ins) {
-  // Shift operand should be in register ecx, unless BMI2 is available.
-  // x86 can't shift a non-ecx register.
+  
+  
   LDefinition shiftAlloc = Assembler::HasBMI2() ? temp() : tempFixed(ecx);
   auto* lir =
       new (alloc()) LBigIntRsh(useRegister(ins->lhs()), useRegister(ins->rhs()),
@@ -579,20 +579,20 @@ void LIRGeneratorX86Shared::lowerCompareExchangeTypedArrayElement(
   const LAllocation index =
       useRegisterOrIndexConstant(ins->index(), ins->arrayType());
 
-  // If the target is a floating register then we need a temp at the
-  // lower level; that temp must be eax.
-  //
-  // Otherwise the target (if used) is an integer register, which
-  // must be eax.  If the target is not used the machine code will
-  // still clobber eax, so just pretend it's used.
-  //
-  // oldval must be in a register.
-  //
-  // newval must be in a register.  If the source is a byte array
-  // then newval must be a register that has a byte size: on x86
-  // this must be ebx, ecx, or edx (eax is taken for the output).
-  //
-  // Bug #1077036 describes some further optimization opportunities.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   bool fixedOutput = false;
   LDefinition tempDef = LDefinition::BogusTemp();
@@ -634,15 +634,15 @@ void LIRGeneratorX86Shared::lowerAtomicExchangeTypedArrayElement(
       useRegisterOrIndexConstant(ins->index(), ins->arrayType());
   const LAllocation value = useRegister(ins->value());
 
-  // The underlying instruction is XCHG, which can operate on any
-  // register.
-  //
-  // If the target is a floating register (for Uint32) then we need
-  // a temp into which to exchange.
-  //
-  // If the source is a byte array then we need a register that has
-  // a byte size; in this case -- on x86 only -- pin the output to
-  // an appropriate register and use that as a temp in the back-end.
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   LDefinition tempDef = LDefinition::BogusTemp();
   if (ins->arrayType() == Scalar::Uint32) {
@@ -673,10 +673,10 @@ void LIRGeneratorX86Shared::lowerAtomicTypedArrayElementBinop(
   const LAllocation index =
       useRegisterOrIndexConstant(ins->index(), ins->arrayType());
 
-  // Case 1: the result of the operation is not used.
-  //
-  // We'll emit a single instruction: LOCK ADD, LOCK SUB, LOCK AND,
-  // LOCK OR, or LOCK XOR.  We can do this even for the Uint32 case.
+  
+  
+  
+  
 
   if (ins->isForEffect()) {
     LAllocation value;
@@ -694,39 +694,39 @@ void LIRGeneratorX86Shared::lowerAtomicTypedArrayElementBinop(
     return;
   }
 
-  // Case 2: the result of the operation is used.
-  //
-  // For ADD and SUB we'll use XADD:
-  //
-  //    movl       src, output
-  //    lock xaddl output, mem
-  //
-  // For the 8-bit variants XADD needs a byte register for the output.
-  //
-  // For AND/OR/XOR we need to use a CMPXCHG loop:
-  //
-  //    movl          *mem, eax
-  // L: mov           eax, temp
-  //    andl          src, temp
-  //    lock cmpxchg  temp, mem  ; reads eax also
-  //    jnz           L
-  //    ; result in eax
-  //
-  // Note the placement of L, cmpxchg will update eax with *mem if
-  // *mem does not have the expected value, so reloading it at the
-  // top of the loop would be redundant.
-  //
-  // If the array is not a uint32 array then:
-  //  - eax should be the output (one result of the cmpxchg)
-  //  - there is a temp, which must have a byte register if
-  //    the array has 1-byte elements elements
-  //
-  // If the array is a uint32 array then:
-  //  - eax is the first temp
-  //  - we also need a second temp
-  //
-  // There are optimization opportunities:
-  //  - better register allocation in the x86 8-bit case, Bug #1077036.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   bool bitOp = !(ins->operation() == AtomicFetchAddOp ||
                  ins->operation() == AtomicFetchSubOp);
@@ -793,7 +793,7 @@ void LIRGenerator::visitCopySign(MCopySign* ins) {
     lir = new (alloc()) LCopySignF();
   }
 
-  // As lowerForFPU, but we want rhs to be in a FP register too.
+  
   lir->setOperand(0, useRegisterAtStart(lhs));
   if (!Assembler::HasAVX()) {
     lir->setOperand(1, willHaveDifferentLIRNodes(lhs, rhs)
@@ -806,45 +806,29 @@ void LIRGenerator::visitCopySign(MCopySign* ins) {
   }
 }
 
-// These lowerings are really x86-shared but some Masm APIs are not yet
-// available on x86.
 
-// Ternary and binary operators require the dest register to be the same as
-// their first input register, leading to a pattern of useRegisterAtStart +
-// defineReuseInput.
 
-void LIRGenerator::visitWasmTernarySimd128(MWasmTernarySimd128* ins) {
+
+
+
+
+
+void LIRGenerator::visitWasmBitselectSimd128(MWasmBitselectSimd128* ins) {
 #ifdef ENABLE_WASM_SIMD
-  MOZ_ASSERT(ins->v0()->type() == MIRType::Simd128);
-  MOZ_ASSERT(ins->v1()->type() == MIRType::Simd128);
-  MOZ_ASSERT(ins->v2()->type() == MIRType::Simd128);
+  MOZ_ASSERT(ins->lhs()->type() == MIRType::Simd128);
+  MOZ_ASSERT(ins->rhs()->type() == MIRType::Simd128);
+  MOZ_ASSERT(ins->control()->type() == MIRType::Simd128);
   MOZ_ASSERT(ins->type() == MIRType::Simd128);
 
-  switch (ins->simdOp()) {
-    case wasm::SimdOp::V128Bitselect: {
-      // Enforcing lhs == output avoids one setup move.  We would like to also
-      // enforce merging the control with the temp (with
-      // usRegisterAtStart(control) and tempCopy()), but the register allocator
-      // ignores those constraints at present.
-      auto* lir = new (alloc()) LWasmTernarySimd128(
-          ins->simdOp(), useRegisterAtStart(ins->v0()), useRegister(ins->v1()),
-          useRegister(ins->v2()), tempSimd128());
-      defineReuseInput(lir, ins, LWasmTernarySimd128::V0);
-      break;
-    }
-    case wasm::SimdOp::F32x4RelaxedFma:
-    case wasm::SimdOp::F32x4RelaxedFms:
-    case wasm::SimdOp::F64x2RelaxedFma:
-    case wasm::SimdOp::F64x2RelaxedFms: {
-      auto* lir = new (alloc())
-          LWasmTernarySimd128(ins->simdOp(), useRegisterAtStart(ins->v0()),
-                              useRegister(ins->v1()), useRegister(ins->v2()));
-      defineReuseInput(lir, ins, LWasmTernarySimd128::V0);
-      break;
-    }
-    default:
-      MOZ_CRASH("NYI");
-  }
+  
+  
+  
+  
+
+  auto* lir = new (alloc()) LWasmBitselectSimd128(
+      useRegisterAtStart(ins->lhs()), useRegister(ins->rhs()),
+      useRegister(ins->control()), tempSimd128());
+  defineReuseInput(lir, ins, LWasmBitselectSimd128::LhsDest);
 #else
   MOZ_CRASH("No SIMD");
 #endif
@@ -860,20 +844,20 @@ void LIRGenerator::visitWasmBinarySimd128(MWasmBinarySimd128* ins) {
   MOZ_ASSERT(rhs->type() == MIRType::Simd128);
   MOZ_ASSERT(ins->type() == MIRType::Simd128);
 
-  // Note MWasmBinarySimd128::foldsTo has already specialized operations that
-  // have a constant operand, so this takes care of more general cases of
-  // reordering, see ReorderCommutative.
+  
+  
+  
   if (ins->isCommutative()) {
     ReorderCommutative(&lhs, &rhs, ins);
   }
 
-  // Swap operands and change operation if necessary, these are all x86/x64
-  // dependent transformations.  Except where noted, this is about avoiding
-  // unnecessary moves and fixups in the code generator macros.
+  
+  
+  
   bool swap = false;
   switch (op) {
     case wasm::SimdOp::V128AndNot: {
-      // Code generation requires the operands to be reversed.
+      
       swap = true;
       break;
     }
@@ -931,8 +915,8 @@ void LIRGenerator::visitWasmBinarySimd128(MWasmBinarySimd128* ins) {
     case wasm::SimdOp::F32x4PMax:
     case wasm::SimdOp::F64x2PMin:
     case wasm::SimdOp::F64x2PMax: {
-      // Code generation requires the operations to be reversed (the rhs is the
-      // output register).
+      
+      
       swap = true;
       break;
     }
@@ -945,7 +929,7 @@ void LIRGenerator::visitWasmBinarySimd128(MWasmBinarySimd128* ins) {
     rhs = tmp;
   }
 
-  // Allocate temp registers
+  
   LDefinition tempReg0 = LDefinition::BogusTemp();
   LDefinition tempReg1 = LDefinition::BogusTemp();
   switch (op) {
@@ -967,12 +951,12 @@ void LIRGenerator::visitWasmBinarySimd128(MWasmBinarySimd128* ins) {
       break;
   }
 
-  // For binary ops, the Masm API always is usually (rhs, lhsDest) and requires
-  // AtStart+ReuseInput for the lhs.
-  //
-  // For a few ops, the API is actually (rhsDest, lhs) and the rules are the
-  // same but the reversed.  We swapped operands above; they will be swapped
-  // again in the code generator to emit the right code.
+  
+  
+  
+  
+  
+  
 
   LAllocation lhsDestAlloc = useRegisterAtStart(lhs);
   LAllocation rhsAlloc = willHaveDifferentLIRNodes(lhs, rhs)
@@ -987,16 +971,13 @@ void LIRGenerator::visitWasmBinarySimd128(MWasmBinarySimd128* ins) {
 }
 
 #ifdef ENABLE_WASM_SIMD
-bool MWasmTernarySimd128::specializeBitselectConstantMaskAsShuffle(
+bool MWasmBitselectSimd128::specializeConstantMaskAsShuffle(
     int8_t shuffle[16]) {
-  if (simdOp() != wasm::SimdOp::V128Bitselect) {
-    return false;
-  }
-
-  // Optimization when control vector is a mask with all 0 or all 1 per lane.
-  // On x86, there is no bitselect, blend operations will be a win,
-  // e.g. via PBLENDVB or PBLENDW.
-  SimdConstant constant = static_cast<MWasmFloatConstant*>(v2())->toSimd128();
+  
+  
+  
+  SimdConstant constant =
+      static_cast<MWasmFloatConstant*>(control())->toSimd128();
   const SimdConstant::I8x16& bytes = constant.asInt8x16();
   for (int8_t i = 0; i < 16; i++) {
     if (bytes[i] == -1) {
@@ -1012,22 +993,22 @@ bool MWasmTernarySimd128::specializeBitselectConstantMaskAsShuffle(
 #endif
 
 bool MWasmBinarySimd128::specializeForConstantRhs() {
-  // The order follows MacroAssembler.h, generally
+  
   switch (simdOp()) {
-    // Operations implemented by a single native instruction where it is
-    // plausible that the rhs (after commutation if available) could be a
-    // constant.
-    //
-    // Swizzle is not here because it was handled earlier in the pipeline.
-    //
-    // Integer compares >= and < are not here because they are not supported in
-    // the hardware.
-    //
-    // Floating compares are not here because our patching machinery can't
-    // handle them yet.
-    //
-    // Floating-point min and max (including pmin and pmax) are not here because
-    // they are not straightforward to implement.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     case wasm::SimdOp::I8x16Add:
     case wasm::SimdOp::I16x8Add:
     case wasm::SimdOp::I32x4Add:
@@ -1108,8 +1089,8 @@ void LIRGenerator::visitWasmBinarySimd128WithConstant(
   MOZ_ASSERT(lhs->type() == MIRType::Simd128);
   MOZ_ASSERT(ins->type() == MIRType::Simd128);
 
-  // Always beneficial to reuse the lhs register here, see discussion in
-  // visitWasmBinarySimd128() and also code in specializeForConstantRhs().
+  
+  
 
   LAllocation lhsDestAlloc = useRegisterAtStart(lhs);
   auto* lir =
@@ -1158,8 +1139,8 @@ void LIRGenerator::visitWasmShiftSimd128(MWasmShiftSimd128* ins) {
 
     int32_t shiftCount = rhs->toConstant()->toInt32() & shiftCountMask;
     if (shiftCount == shiftCountMask) {
-      // Check if possible to apply sign replication optimization.
-      // For some ops the input shall be reused.
+      
+      
       switch (ins->simdOp()) {
         case wasm::SimdOp::I8x16ShrS: {
           auto* lir =
@@ -1183,8 +1164,8 @@ void LIRGenerator::visitWasmShiftSimd128(MWasmShiftSimd128* ins) {
 #  ifdef DEBUG
     js::wasm::ReportSimdAnalysis("shift -> constant shift");
 #  endif
-    // Almost always beneficial, and never detrimental, to reuse the input if
-    // possible.
+    
+    
     auto* lir = new (alloc())
         LWasmConstantShiftSimd128(useRegisterAtStart(lhs), shiftCount);
     defineReuseInput(lir, ins, LWasmConstantShiftSimd128::Src);
@@ -1210,7 +1191,7 @@ void LIRGenerator::visitWasmShiftSimd128(MWasmShiftSimd128* ins) {
       break;
   }
 
-  // Reusing the input if possible is never detrimental.
+  
   LAllocation lhsDestAlloc = useRegisterAtStart(lhs);
   LAllocation rhsAlloc = useRegisterAtStart(rhs);
   auto* lir = new (alloc())
@@ -1235,10 +1216,10 @@ void LIRGenerator::visitWasmShuffleSimd128(MWasmShuffleSimd128* ins) {
     case Shuffle::Operand::LEFT:
     case Shuffle::Operand::RIGHT: {
       LAllocation src;
-      // All permute operators currently favor reusing the input register so
-      // we're not currently exercising code paths below that do not reuse.
-      // Those paths have been exercised in the past however and are believed
-      // to be correct.
+      
+      
+      
+      
       bool useAtStartAndReuse = false;
       switch (*s.permuteOp) {
         case LWasmPermuteSimd128::MOVE:
@@ -1312,9 +1293,9 @@ void LIRGenerator::visitWasmReplaceLaneSimd128(MWasmReplaceLaneSimd128* ins) {
   MOZ_ASSERT(ins->lhs()->type() == MIRType::Simd128);
   MOZ_ASSERT(ins->type() == MIRType::Simd128);
 
-  // The Masm API is (rhs, lhsDest) and requires AtStart+ReuseInput for the lhs.
-  // For type reasons, the rhs will never be the same as the lhs and is
-  // therefore a plain Use.
+  
+  
+  
 
   if (ins->rhs()->type() == MIRType::Int64) {
     auto* lir = new (alloc()) LWasmReplaceInt64LaneSimd128(
@@ -1336,8 +1317,8 @@ void LIRGenerator::visitWasmScalarToSimd128(MWasmScalarToSimd128* ins) {
 
   switch (ins->input()->type()) {
     case MIRType::Int64: {
-      // 64-bit integer splats.
-      // Load-and-(sign|zero)extend.
+      
+      
       auto* lir = new (alloc())
           LWasmInt64ToSimd128(useInt64RegisterAtStart(ins->input()));
       define(lir, ins);
@@ -1345,16 +1326,16 @@ void LIRGenerator::visitWasmScalarToSimd128(MWasmScalarToSimd128* ins) {
     }
     case MIRType::Float32:
     case MIRType::Double: {
-      // Floating-point splats.
-      // Ideally we save a move on SSE systems by reusing the input register,
-      // but since the input and output register types differ, we can't.
+      
+      
+      
       auto* lir =
           new (alloc()) LWasmScalarToSimd128(useRegisterAtStart(ins->input()));
       define(lir, ins);
       break;
     }
     default: {
-      // 32-bit integer splats.
+      
       auto* lir =
           new (alloc()) LWasmScalarToSimd128(useRegisterAtStart(ins->input()));
       define(lir, ins);
@@ -1379,7 +1360,7 @@ void LIRGenerator::visitWasmUnarySimd128(MWasmUnarySimd128* ins) {
     case wasm::SimdOp::I16x8Neg:
     case wasm::SimdOp::I32x4Neg:
     case wasm::SimdOp::I64x2Neg:
-      // Prefer src != dest to avoid an unconditional src->temp move.
+      
       MOZ_ASSERT(!useAtStart && !reuseInput);
       break;
     case wasm::SimdOp::F32x4Neg:
@@ -1399,7 +1380,7 @@ void LIRGenerator::visitWasmUnarySimd128(MWasmUnarySimd128* ins) {
     case wasm::SimdOp::I16x8ExtAddPairwiseI8x16U:
     case wasm::SimdOp::I32x4ExtAddPairwiseI16x8S:
     case wasm::SimdOp::I32x4ExtAddPairwiseI16x8U:
-      // Prefer src == dest to avoid an unconditional src->dest move.
+      
       useAtStart = true;
       reuseInput = true;
       break;
@@ -1408,7 +1389,7 @@ void LIRGenerator::visitWasmUnarySimd128(MWasmUnarySimd128* ins) {
     case wasm::SimdOp::I32x4TruncSatF64x2UZero:
     case wasm::SimdOp::I8x16Popcnt:
       tempReg = tempSimd128();
-      // Prefer src == dest to avoid an unconditional src->dest move.
+      
       useAtStart = true;
       reuseInput = true;
       break;
@@ -1437,8 +1418,8 @@ void LIRGenerator::visitWasmUnarySimd128(MWasmUnarySimd128* ins) {
     case wasm::SimdOp::F64x2PromoteLowF32x4:
     case wasm::SimdOp::F64x2ConvertLowI32x4S:
     case wasm::SimdOp::F64x2ConvertLowI32x4U:
-      // Prefer src == dest to exert the lowest register pressure on the
-      // surrounding code.
+      
+      
       useAtStart = true;
       MOZ_ASSERT(!reuseInput);
       break;
@@ -1510,29 +1491,29 @@ bool LIRGeneratorX86Shared::canEmitWasmReduceSimd128AtUses(
   if (!ins->canEmitAtUses()) {
     return false;
   }
-  // Only specific ops generating int32.
+  
   if (ins->type() != MIRType::Int32) {
     return false;
   }
   if (!canFoldReduceSimd128AndBranch(ins->simdOp())) {
     return false;
   }
-  // If never used then defer (it will be removed).
+  
   MUseIterator iter(ins->usesBegin());
   if (iter == ins->usesEnd()) {
     return true;
   }
-  // We require an MTest consumer.
+  
   MNode* node = iter->consumer();
   if (!node->isDefinition() || !node->toDefinition()->isTest()) {
     return false;
   }
-  // Defer only if there's only one use.
+  
   iter++;
   return iter == ins->usesEnd();
 }
 
-#endif  // ENABLE_WASM_SIMD
+#endif  
 
 void LIRGenerator::visitWasmReduceSimd128(MWasmReduceSimd128* ins) {
 #ifdef ENABLE_WASM_SIMD
@@ -1541,27 +1522,27 @@ void LIRGenerator::visitWasmReduceSimd128(MWasmReduceSimd128* ins) {
     return;
   }
 
-  // Reductions (any_true, all_true, bitmask, extract_lane) uniformly prefer
-  // useRegisterAtStart:
-  //
-  // - In most cases, the input type differs from the output type, so there's no
-  //   conflict and it doesn't really matter.
-  //
-  // - For extract_lane(0) on F32x4 and F64x2, input == output results in zero
-  //   code being generated.
-  //
-  // - For extract_lane(k > 0) on F32x4 and F64x2, allowing the input register
-  //   to be targeted lowers register pressure if it's the last use of the
-  //   input.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   if (ins->type() == MIRType::Int64) {
     auto* lir = new (alloc())
         LWasmReduceSimd128ToInt64(useRegisterAtStart(ins->input()));
     defineInt64(lir, ins);
   } else {
-    // Ideally we would reuse the input register for floating extract_lane if
-    // the lane is zero, but constraints in the register allocator require the
-    // input and output register types to be the same.
+    
+    
+    
     auto* lir = new (alloc()) LWasmReduceSimd128(
         useRegisterAtStart(ins->input()), LDefinition::BogusTemp());
     define(lir, ins);

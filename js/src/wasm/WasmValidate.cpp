@@ -1,20 +1,20 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- *
- * Copyright 2016 Mozilla Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "wasm/WasmValidate.h"
 
@@ -23,7 +23,7 @@
 
 #include "jit/JitOptions.h"
 #include "js/Printf.h"
-#include "js/String.h"  // JS::MaxStringLength
+#include "js/String.h"  
 #include "vm/JSContext.h"
 #include "vm/Realm.h"
 #include "wasm/WasmOpIter.h"
@@ -38,7 +38,7 @@ using mozilla::CheckedInt32;
 using mozilla::IsUtf8;
 using mozilla::Span;
 
-// Misc helpers.
+
 
 bool wasm::EncodeLocalEntries(Encoder& e, const ValTypeVector& locals) {
   if (locals.length() > MaxLocals) {
@@ -170,7 +170,7 @@ bool wasm::CheckIsSubtypeOf(Decoder& d, const ModuleEnvironment& env,
   }
 }
 
-// Function body validation.
+
 
 static bool DecodeFunctionBodyExprs(const ModuleEnvironment& env,
                                     uint32_t funcIndex,
@@ -269,12 +269,12 @@ static bool DecodeFunctionBodyExprs(const ModuleEnvironment& env,
       }
       case uint16_t(Op::SelectNumeric): {
         StackType unused;
-        CHECK(iter.readSelect(/*typed*/ false, &unused, &nothing, &nothing,
+        CHECK(iter.readSelect( false, &unused, &nothing, &nothing,
                               &nothing));
       }
       case uint16_t(Op::SelectTyped): {
         StackType unused;
-        CHECK(iter.readSelect(/*typed*/ true, &unused, &nothing, &nothing,
+        CHECK(iter.readSelect( true, &unused, &nothing, &nothing,
                               &nothing));
       }
       case uint16_t(Op::Block):
@@ -896,8 +896,7 @@ static bool DecodeFunctionBodyExprs(const ModuleEnvironment& env,
             CHECK(iter.readVectorShift(&nothing, &nothing));
 
           case uint32_t(SimdOp::V128Bitselect):
-            CHECK(
-                iter.readTernary(ValType::V128, &nothing, &nothing, &nothing));
+            CHECK(iter.readVectorSelect(&nothing, &nothing, &nothing));
 
           case uint32_t(SimdOp::V8x16Shuffle): {
             V128 mask;
@@ -1007,25 +1006,12 @@ static bool DecodeFunctionBodyExprs(const ModuleEnvironment& env,
             CHECK(iter.readStoreLane(8, &addr, &noIndex, &nothing));
           }
 
-#  ifdef ENABLE_WASM_RELAXED_SIMD
-          case uint32_t(SimdOp::F32x4RelaxedFma):
-          case uint32_t(SimdOp::F32x4RelaxedFms):
-          case uint32_t(SimdOp::F64x2RelaxedFma):
-          case uint32_t(SimdOp::F64x2RelaxedFms): {
-            if (!env.v128RelaxedEnabled()) {
-              return iter.unrecognizedOpcode(&op);
-            }
-            CHECK(
-                iter.readTernary(ValType::V128, &nothing, &nothing, &nothing));
-          }
-#  endif
-
           default:
             return iter.unrecognizedOpcode(&op);
         }
         break;
       }
-#endif  // ENABLE_WASM_SIMD
+#endif  
 
       case uint16_t(Op::MiscPrefix): {
         switch (op.b1) {
@@ -1044,20 +1030,20 @@ static bool DecodeFunctionBodyExprs(const ModuleEnvironment& env,
           case uint32_t(MiscOp::MemCopy): {
             uint32_t unusedDestMemIndex;
             uint32_t unusedSrcMemIndex;
-            CHECK(iter.readMemOrTableCopy(/*isMem=*/true, &unusedDestMemIndex,
+            CHECK(iter.readMemOrTableCopy(true, &unusedDestMemIndex,
                                           &nothing, &unusedSrcMemIndex,
                                           &nothing, &nothing));
           }
           case uint32_t(MiscOp::DataDrop): {
             uint32_t unusedSegIndex;
-            CHECK(iter.readDataOrElemDrop(/*isData=*/true, &unusedSegIndex));
+            CHECK(iter.readDataOrElemDrop(true, &unusedSegIndex));
           }
           case uint32_t(MiscOp::MemFill):
             CHECK(iter.readMemFill(&nothing, &nothing, &nothing));
           case uint32_t(MiscOp::MemInit): {
             uint32_t unusedSegIndex;
             uint32_t unusedTableIndex;
-            CHECK(iter.readMemOrTableInit(/*isMem=*/true, &unusedSegIndex,
+            CHECK(iter.readMemOrTableInit(true, &unusedSegIndex,
                                           &unusedTableIndex, &nothing, &nothing,
                                           &nothing));
           }
@@ -1065,17 +1051,17 @@ static bool DecodeFunctionBodyExprs(const ModuleEnvironment& env,
             uint32_t unusedDestTableIndex;
             uint32_t unusedSrcTableIndex;
             CHECK(iter.readMemOrTableCopy(
-                /*isMem=*/false, &unusedDestTableIndex, &nothing,
+                false, &unusedDestTableIndex, &nothing,
                 &unusedSrcTableIndex, &nothing, &nothing));
           }
           case uint32_t(MiscOp::ElemDrop): {
             uint32_t unusedSegIndex;
-            CHECK(iter.readDataOrElemDrop(/*isData=*/false, &unusedSegIndex));
+            CHECK(iter.readDataOrElemDrop(false, &unusedSegIndex));
           }
           case uint32_t(MiscOp::TableInit): {
             uint32_t unusedSegIndex;
             uint32_t unusedTableIndex;
-            CHECK(iter.readMemOrTableInit(/*isMem=*/false, &unusedSegIndex,
+            CHECK(iter.readMemOrTableInit(false, &unusedSegIndex,
                                           &unusedTableIndex, &nothing, &nothing,
                                           &nothing));
           }
@@ -1183,9 +1169,9 @@ static bool DecodeFunctionBodyExprs(const ModuleEnvironment& env,
       }
 #endif
       case uint16_t(Op::ThreadPrefix): {
-        // Though thread ops can be used on nonshared memories, we make them
-        // unavailable if shared memory has been disabled in the prefs, for
-        // maximum predictability and safety and consistency with JS.
+        
+        
+        
         if (env.sharedMemoryEnabled() == Shareable::False) {
           return iter.unrecognizedOpcode(&op);
         }
@@ -1398,7 +1384,7 @@ bool wasm::ValidateFunctionBody(const ModuleEnvironment& env,
   return true;
 }
 
-// Section macros.
+
 
 static bool DecodePreamble(Decoder& d) {
   if (d.bytesRemain() > MaxModuleBytes) {
@@ -1744,7 +1730,7 @@ static bool DecodeLimits(Decoder& d, LimitsKind kind, Limits* limits) {
   limits->shared = Shareable::False;
   limits->indexType = IndexType::I32;
 
-  // Memory limits may be shared or specify an alternate index type
+  
   if (kind == LimitsKind::Memory) {
     if ((flags & uint8_t(LimitsFlags::IsShared)) &&
         !(flags & uint8_t(LimitsFlags::HasMaximum))) {
@@ -1784,12 +1770,12 @@ static bool DecodeTableTypeAndLimits(Decoder& d, const FeatureArgs& features,
     return false;
   }
 
-  // Decoding limits for a table only supports i32
+  
   MOZ_ASSERT(limits.indexType == IndexType::I32);
 
-  // If there's a maximum, check it is in range.  The check to exclude
-  // initial > maximum is carried out by the DecodeLimits call above, so
-  // we don't repeat it here.
+  
+  
+  
   if (limits.initial > MaxTableLimitField ||
       ((limits.maximum.isSome() &&
         limits.maximum.value() > MaxTableLimitField))) {
@@ -1800,7 +1786,7 @@ static bool DecodeTableTypeAndLimits(Decoder& d, const FeatureArgs& features,
     return d.fail("too many tables");
   }
 
-  // The rest of the runtime expects table limits to be within a 32-bit range.
+  
   static_assert(MaxTableLimitField <= UINT32_MAX, "invariant");
   uint32_t initialLength = uint32_t(limits.initial);
   Maybe<uint32_t> maximumLength;
@@ -1809,7 +1795,7 @@ static bool DecodeTableTypeAndLimits(Decoder& d, const FeatureArgs& features,
   }
 
   return tables->emplaceBack(tableElemType, initialLength, maximumLength,
-                             /* isAsmJS */ false);
+                              false);
 }
 
 static bool GlobalIsJSCompatible(Decoder& d, ValType type) {
@@ -2072,7 +2058,7 @@ static bool DecodeImportSection(Decoder& d, ModuleEnvironment* env) {
     return false;
   }
 
-  // The global data offsets will be filled in by ModuleGenerator::init.
+  
   if (!env->funcImportGlobalDataOffsets.resize(env->funcs.length())) {
     return false;
   }
@@ -2308,8 +2294,8 @@ static bool DecodeExport(Decoder& d, ModuleEnvironment* env,
       }
 #endif
 
-      env->declareFuncExported(funcIndex, /* eager */ true,
-                               /* canRefFunc */ true);
+      env->declareFuncExported(funcIndex,  true,
+                                true);
       return env->exports.emplaceBack(std::move(fieldName), funcIndex,
                                       DefinitionKind::Function);
     }
@@ -2442,7 +2428,7 @@ static bool DecodeStartSection(Decoder& d, ModuleEnvironment* env) {
     return d.fail("start function must be nullary");
   }
 
-  env->declareFuncExported(funcIndex, /* eager */ true, /* canFuncRef */ false);
+  env->declareFuncExported(funcIndex,  true,  false);
   env->startFuncIndex = Some(funcIndex);
 
   return d.finishSection(*range, "start");
@@ -2528,9 +2514,9 @@ static bool DecodeElemSection(Decoder& d, ModuleEnvironment* env) {
       }
       seg->offsetIfActive.emplace(std::move(offset));
     } else {
-      // Too many bugs result from keeping this value zero.  For passive
-      // or declared segments, there really is no table index, and we should
-      // never touch the field.
+      
+      
+      
       MOZ_ASSERT(kind == ElemSegmentKind::Passive ||
                  kind == ElemSegmentKind::Declared);
       seg->tableIndex = (uint32_t)-1;
@@ -2539,9 +2525,9 @@ static bool DecodeElemSection(Decoder& d, ModuleEnvironment* env) {
     ElemSegmentPayload payload = flags->payload();
     RefType elemType;
 
-    // `ActiveWithTableIndex`, `Declared`, and `Passive` element segments encode
-    // the type or definition kind of the payload. `Active` element segments are
-    // restricted to MVP behavior, which assumes only function indices.
+    
+    
+    
     if (kind == ElemSegmentKind::Active) {
       elemType = RefType::func();
     } else {
@@ -2568,7 +2554,7 @@ static bool DecodeElemSection(Decoder& d, ModuleEnvironment* env) {
       }
     }
 
-    // Check constraints on the element type.
+    
     switch (kind) {
       case ElemSegmentKind::Active:
       case ElemSegmentKind::ActiveWithTableIndex: {
@@ -2582,8 +2568,8 @@ static bool DecodeElemSection(Decoder& d, ModuleEnvironment* env) {
       }
       case ElemSegmentKind::Declared:
       case ElemSegmentKind::Passive: {
-        // Passive segment element types are checked when used with a
-        // `table.init` instruction.
+        
+        
         break;
       }
     }
@@ -2603,19 +2589,19 @@ static bool DecodeElemSection(Decoder& d, ModuleEnvironment* env) {
     }
 
 #ifdef WASM_PRIVATE_REFTYPES
-    // We assume that passive or declared segments may be applied to external
-    // tables. We can do slightly better: if there are no external tables in
-    // the module then we don't need to worry about passive or declared
-    // segments either. But this is a temporary restriction.
+    
+    
+    
+    
     bool exportedTable = kind == ElemSegmentKind::Passive ||
                          kind == ElemSegmentKind::Declared ||
                          env->tables[seg->tableIndex].importedOrExported;
 #endif
     bool isAsmJS = seg->active() && env->tables[seg->tableIndex].isAsmJS;
 
-    // For passive segments we should use InitExpr but we don't really want to
-    // generalize the ElemSection data structure yet, so instead read the
-    // required Ref.Func and End here.
+    
+    
+    
 
     TypeCache cache;
     for (uint32_t i = 0; i < numElems; i++) {
@@ -2672,8 +2658,8 @@ static bool DecodeElemSection(Decoder& d, ModuleEnvironment* env) {
 
       seg->elemFuncIndices.infallibleAppend(funcIndex);
       if (funcIndex != NullFuncIndex && !isAsmJS) {
-        env->declareFuncExported(funcIndex, /* eager */ false,
-                                 /* canRefFunc */ true);
+        env->declareFuncExported(funcIndex,  false,
+                                  true);
       }
     }
 
@@ -2955,7 +2941,7 @@ static bool DecodeModuleNameSubsection(Decoder& d,
     return false;
   }
 
-  // Only save the module name if the whole subsection validates.
+  
   env->moduleName.emplace(moduleName);
   return true;
 }
@@ -2984,7 +2970,7 @@ static bool DecodeFunctionNameSubsection(Decoder& d,
       return d.fail("unable to read function index");
     }
 
-    // Names must refer to real functions and be given in ascending order.
+    
     if (funcIndex >= env->numFuncs() || funcIndex < funcNames.length()) {
       return d.fail("invalid function index");
     }
@@ -3018,8 +3004,8 @@ static bool DecodeFunctionNameSubsection(Decoder& d,
     return false;
   }
 
-  // To encourage fully valid function names subsections; only save names if
-  // the entire subsection decoded correctly.
+  
+  
   env->funcNames = std::move(funcNames);
   return true;
 }
@@ -3036,7 +3022,7 @@ static bool DecodeNameSection(Decoder& d, ModuleEnvironment* env) {
   env->nameCustomSectionIndex = Some(env->customSections.length() - 1);
   const CustomSectionEnv& nameSection = env->customSections.back();
 
-  // Once started, custom sections do not report validation errors.
+  
 
   if (!DecodeModuleNameSubsection(d, nameSection, env)) {
     goto finish;
@@ -3079,7 +3065,7 @@ bool wasm::DecodeModuleTail(Decoder& d, ModuleEnvironment* env) {
   return true;
 }
 
-// Validate algorithm.
+
 
 bool wasm::Validate(JSContext* cx, const ShareableBytes& bytecode,
                     const FeatureOptions& options, UniqueChars* error) {
