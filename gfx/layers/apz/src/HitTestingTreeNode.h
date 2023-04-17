@@ -56,6 +56,7 @@ class AsyncPanZoomController;
 
 
 
+
 class HitTestingTreeNode {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(HitTestingTreeNode);
 

@@ -57,7 +57,6 @@ class InputQueue;
 class GeckoContentController;
 class HitTestingTreeNode;
 class HitTestingTreeNodeAutoLock;
-class LayerMetricsWrapper;
 class SampleTime;
 class WebRenderScrollDataWrapper;
 struct AncestorTransform;
@@ -175,17 +174,9 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-  void UpdateHitTestingTree(Layer* aRoot, bool aIsFirstPaint,
-                            LayersId aOriginatingLayersId,
-                            uint32_t aPaintSequenceNumber);
-
-  
 
 
-
-
-
-  void UpdateHitTestingTree(const WebRenderScrollDataWrapper& aScrollWrapper,
+  void UpdateHitTestingTree(const WebRenderScrollDataWrapper& aRoot,
                             bool aIsFirstPaint, LayersId aOriginatingLayersId,
                             uint32_t aPaintSequenceNumber);
 
