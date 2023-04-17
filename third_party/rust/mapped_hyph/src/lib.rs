@@ -9,7 +9,7 @@
 
 #[macro_use]
 extern crate arrayref;
-extern crate memmap;
+extern crate memmap2;
 #[macro_use]
 extern crate log;
 
@@ -19,7 +19,7 @@ use std::cmp::max;
 use std::fs::File;
 use std::mem;
 
-use memmap::Mmap;
+use memmap2::Mmap;
 
 
 pub mod builder;
