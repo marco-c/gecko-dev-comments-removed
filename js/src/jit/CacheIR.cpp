@@ -621,24 +621,6 @@ static void TestMatchingProxyReceiver(CacheIRWriter& writer, ProxyObject* obj,
   writer.guardShapeForClass(objId, obj->shape());
 }
 
-static bool ProtoChainSupportsTeleporting(JSObject* obj, NativeObject* holder) {
-  
-  
-  MOZ_ASSERT(obj->isUsedAsPrototype());
-
-  
-  
-  for (JSObject* tmp = obj; tmp != holder; tmp = tmp->staticPrototype()) {
-    if (tmp->hasUncacheableProto()) {
-      return false;
-    }
-  }
-
-  
-  
-  return !holder->hasUncacheableProto();
-}
-
 static void GeneratePrototypeGuards(CacheIRWriter& writer, JSObject* obj,
                                     NativeObject* holder, ObjOperandId objId) {
   
@@ -696,7 +678,7 @@ static void GeneratePrototypeGuards(CacheIRWriter& writer, JSObject* obj,
   MOZ_ASSERT(pobj->isUsedAsPrototype());
 
   
-  if (ProtoChainSupportsTeleporting(pobj, holder)) {
+  if (!holder->hasUncacheableProto()) {
     return;
   }
 
