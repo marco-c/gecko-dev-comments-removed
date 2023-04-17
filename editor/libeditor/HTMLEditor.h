@@ -1619,10 +1619,9 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  template <typename PT, typename CT>
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult SplitParagraph(
-      Element& aParentDivOrP,
-      const EditorDOMPointBase<PT, CT>& aStartOfRightNode, nsIContent* aBRNode);
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  SplitParagraph(Element& aParentDivOrP,
+                 const EditorDOMPoint& aStartOfRightNode, nsIContent* aBRNode);
 
   
 
@@ -1648,12 +1647,9 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
-
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  HandleInsertParagraphInHeadingElement(Element& aHeader, nsINode& aNode,
-                                        uint32_t aOffset);
+  HandleInsertParagraphInHeadingElement(Element& aHeader,
+                                        const EditorDOMPoint& aPointToSplit);
 
   
 
@@ -1662,12 +1658,9 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
-
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  HandleInsertParagraphInListItemElement(Element& aListItem, nsINode& aNode,
-                                         uint32_t aOffset);
+  HandleInsertParagraphInListItemElement(Element& aListItem,
+                                         const EditorDOMPoint& aPointToSplit);
 
   
 
