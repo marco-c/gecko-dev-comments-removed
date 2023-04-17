@@ -40,21 +40,8 @@ extern int gettimeofday(struct timeval* tv);
 
 using mozilla::DebugOnly;
 
-
-static int64_t PRMJ_NowImpl();
-
-int64_t PRMJ_Now() {
-  if (mozilla::TimeStamp::GetFuzzyfoxEnabled()) {
-    return mozilla::TimeStamp::NowFuzzyTime();
-  }
-
-  
-  
-  return std::max(PRMJ_NowImpl(), mozilla::TimeStamp::NowFuzzyTime());
-}
-
 #if defined(XP_UNIX)
-static int64_t PRMJ_NowImpl() {
+int64_t PRMJ_Now() {
   struct timeval tv;
 
 #  ifdef _SVID_GETTOD 
@@ -149,7 +136,7 @@ void PRMJ_NowShutdown() { DeleteCriticalSection(&calibration.data_lock); }
 #  define MUTEX_SETSPINCOUNT(m, c) SetCriticalSectionSpinCount((m), (c))
 
 
-static int64_t PRMJ_NowImpl() {
+static int64_t PRMJ_Now() {
   if (pGetSystemTimePreciseAsFileTime) {
     
     FILETIME ft;
