@@ -220,9 +220,7 @@ var Heartbeat = class {
         this.ratingContainer.appendChild(ratingElement);
       }
 
-      if (
-        Services.prefs.getBoolPref("browser.proton.infobars.enabled", false)
-      ) {
+      if (Services.prefs.getBoolPref("browser.proton.enabled")) {
         
         this.notice.buttonContainer.append(this.ratingContainer);
       } else {
