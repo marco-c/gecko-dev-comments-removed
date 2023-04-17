@@ -6,7 +6,7 @@
 
 
 
-const TEST_URL = URL_ROOT + "doc_inspector_highlighter_dom.html";
+const TEST_URL = URL_ROOT_SSL + "doc_inspector_highlighter_dom.html";
 
 add_task(async function() {
   const { inspector, toolbox } = await openInspectorForURL(TEST_URL);

@@ -12,6 +12,10 @@ const TEST_ORG_URI =
   ORG_URL_ROOT + "doc_inspector_fission_frame_navigation.html";
 
 add_task(async function() {
+  
+  
+  await pushPref("dom.security.https_first", false);
+
   const { inspector } = await openInspectorForURL(TEST_ORG_URI);
   const tree = `
     id="root"

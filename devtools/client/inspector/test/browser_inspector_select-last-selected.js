@@ -7,8 +7,8 @@ requestLongerTimeout(2);
 
 
 
-var PAGE_1 = URL_ROOT + "doc_inspector_select-last-selected-01.html";
-var PAGE_2 = URL_ROOT + "doc_inspector_select-last-selected-02.html";
+var PAGE_1 = URL_ROOT_SSL + "doc_inspector_select-last-selected-01.html";
+var PAGE_2 = URL_ROOT_SSL + "doc_inspector_select-last-selected-02.html";
 
 
 

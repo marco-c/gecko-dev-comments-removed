@@ -5,8 +5,8 @@
 
 
 
-const INITIAL_URL = URL_ROOT + "doc_markup_void_elements.html";
-const TEST_URL = URL_ROOT + "doc_markup_events-source_map.html";
+const INITIAL_URL = URL_ROOT_SSL + "doc_markup_void_elements.html";
+const TEST_URL = URL_ROOT_SSL + "doc_markup_events-source_map.html";
 
 
 loadHelperScript("helper_events_test_runner.js");
