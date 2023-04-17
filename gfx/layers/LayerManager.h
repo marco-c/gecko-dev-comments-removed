@@ -243,19 +243,6 @@ class LayerManager : public WindowRenderer {
 
 
 
-  static bool LayersComponentAlphaEnabled();
-
-  
-
-
-
-
-  virtual bool AreComponentAlphaLayersEnabled();
-
-  
-
-
-
   virtual bool BlendingRequiresIntermediateSurface() { return false; }
 
   

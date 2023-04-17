@@ -96,21 +96,6 @@ already_AddRefed<ImageContainer> LayerManager::CreateImageContainer(
   return container.forget();
 }
 
-bool LayerManager::LayersComponentAlphaEnabled() {
-  
-  
-#ifdef MOZ_GFX_OPTIMIZE_MOBILE
-  return false;
-#else
-  return StaticPrefs::
-      layers_componentalpha_enabled_AtStartup_DoNotUseDirectly();
-#endif
-}
-
-bool LayerManager::AreComponentAlphaLayersEnabled() {
-  return LayerManager::LayersComponentAlphaEnabled();
-}
-
 
 void LayerManager::LayerUserDataDestroy(void* data) {
   delete static_cast<LayerUserData*>(data);

@@ -155,12 +155,6 @@ class Layer {
 
 
 
-    CONTENT_COMPONENT_ALPHA_DESCENDANT = 0x04,
-
-    
-
-
-
     CONTENT_EXTEND_3D_CONTEXT = 0x08,
     
 
@@ -1482,20 +1476,6 @@ class ContainerLayer : public Layer {
 
   bool HasMultipleChildren();
 
-  
-
-
-
-  bool SupportsComponentAlphaChildren() {
-    return mSupportsComponentAlphaChildren;
-  }
-
-  
-
-
-
-  static bool HasOpaqueAncestorLayer(Layer* aLayer);
-
   void SetChildrenChanged(bool aVal) { mChildrenChanged = aVal; }
 
   
@@ -1550,17 +1530,6 @@ class ContainerLayer : public Layer {
   
 
 
-
-
-
-
-
-  void DefaultComputeSupportsComponentAlphaChildren(
-      bool* aNeedsSurfaceCopy = nullptr);
-
-  
-
-
   void ComputeEffectiveTransformsForChildren(
       const gfx::Matrix4x4& aTransformToSurface);
 
@@ -1585,7 +1554,6 @@ class ContainerLayer : public Layer {
   
   float mPresShellResolution;
   bool mUseIntermediateSurface;
-  bool mSupportsComponentAlphaChildren;
   bool mMayHaveReadbackChild;
   
   
