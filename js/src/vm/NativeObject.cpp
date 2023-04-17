@@ -2030,64 +2030,33 @@ bool js::NativeHasProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
 
 bool js::NativeGetOwnPropertyDescriptor(
     JSContext* cx, HandleNativeObject obj, HandleId id,
-    MutableHandle<mozilla::Maybe<PropertyDescriptor>> desc_) {
+    MutableHandle<mozilla::Maybe<PropertyDescriptor>> desc) {
   PropertyResult prop;
   if (!NativeLookupOwnProperty<CanGC>(cx, obj, id, &prop)) {
     return false;
   }
   if (prop.isNotFound()) {
-    desc_.reset();
+    desc.reset();
     return true;
   }
 
-  Rooted<PropertyDescriptor> desc(cx);
-  desc.setAttributes(GetPropertyAttributes(obj, prop));
-  if (desc.isAccessorDescriptor()) {
-    
-    
-    
-    
-    
-    
-    
-    
+  if (prop.isNativeProperty() && prop.shapeProperty().isAccessorProperty()) {
     ShapeProperty shapeProp = prop.shapeProperty();
-    if (desc.hasGetterObject()) {
-      desc.setGetterObject(obj->getGetter(shapeProp));
-    } else {
-      desc.setGetterObject(nullptr);
-    }
-    if (desc.hasSetterObject()) {
-      desc.setSetterObject(obj->getSetter(shapeProp));
-    } else {
-      desc.setSetterObject(nullptr);
-    }
-
-    desc.value().setUndefined();
-  } else {
-    if (prop.isDenseElement()) {
-      desc.value().set(obj->getDenseElement(prop.denseElementIndex()));
-    } else if (prop.isTypedArrayElement()) {
-      size_t idx = prop.typedArrayElementIndex();
-      if (!obj->as<TypedArrayObject>().getElement<CanGC>(cx, idx,
-                                                         desc.value())) {
-        return false;
-      }
-    } else {
-      
-      
-      
-      desc.setAttributes(desc.attributes() & ~JSPROP_CUSTOM_DATA_PROP);
-
-      if (!NativeGetExistingProperty(cx, obj, obj, id, prop.shapeProperty(),
-                                     desc.value())) {
-        return false;
-      }
-    }
+    desc.set(mozilla::Some(PropertyDescriptor::Accessor(
+        obj->getGetter(shapeProp), obj->getSetter(shapeProp),
+        shapeProp.propAttributes())));
+    return true;
   }
 
-  desc.assertComplete();
-  desc_.set(mozilla::Some(desc.get()));
+  RootedValue value(cx);
+  if (!GetExistingPropertyValue(cx, obj, id, prop, &value)) {
+    return false;
+  }
+  
+  
+  
+  uint8_t attrs = GetPropertyAttributes(obj, prop) & ~JSPROP_CUSTOM_DATA_PROP;
+  desc.set(mozilla::Some(PropertyDescriptor::Data(value, attrs)));
   return true;
 }
 
