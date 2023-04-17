@@ -36,6 +36,10 @@ class nsITimer;
 namespace mozilla {
 enum class CallState;
 
+namespace embedding {
+class PrintData;
+}
+
 namespace net {
 class DocumentLoadListener;
 }
@@ -331,6 +335,16 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   void ClearPermanentKey() { mPermanentKey.setNull(); }
   void MaybeSetPermanentKey(Element* aEmbedder);
 
+  void CloneDocumentTreeInto(CanonicalBrowsingContext* aSource,
+                             const nsACString& aRemoteType,
+                             embedding::PrintData&& aPrintData);
+
+  
+  
+  RefPtr<GenericNonExclusivePromise> GetClonePromise() const {
+    return mClonePromise;
+  }
+
  protected:
   
   void CanonicalDiscard();
@@ -493,6 +507,9 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   nsCOMPtr<nsITimer> mSessionStoreSessionStorageUpdateTimer;
 
   bool mIsReplaced = false;
+
+  
+  RefPtr<GenericNonExclusivePromise> mClonePromise;
 
   JS::Heap<JS::Value> mPermanentKey;
 };

@@ -6,6 +6,7 @@
 
 #include "CrossProcessPaint.h"
 
+#include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/ContentProcessManager.h"
 #include "mozilla/dom/ImageBitmap.h"
 #include "mozilla/dom/BrowserParent.h"
@@ -370,17 +371,11 @@ void CrossProcessPaint::QueueDependencies(
               (uint64_t)dependency);
       continue;
     }
-    RefPtr<dom::WindowGlobalParent> wgp =
-        browser->GetBrowsingContext()->GetCurrentWindowGlobal();
-
-    if (!wgp) {
-      CPP_LOG("Skipping dependency %" PRIu64 " with no current WGP.\n",
-              (uint64_t)dependency);
-      continue;
-    }
 
     
-    QueuePaint(wgp, Nothing());
+    
+    
+    QueuePaint(browser->GetBrowsingContext());
   }
 }
 
@@ -390,11 +385,47 @@ void CrossProcessPaint::QueuePaint(dom::WindowGlobalParent* aWGP,
                                    CrossProcessPaintFlags aFlags) {
   MOZ_ASSERT(!mReceivedFragments.Contains(GetTabId(aWGP)));
 
-  CPP_LOG("Queueing paint for %p.\n", aWGP);
+  CPP_LOG("Queueing paint for WindowGlobalParent(%p).\n", aWGP);
 
   aWGP->DrawSnapshotInternal(this, aRect, mScale, aBackgroundColor,
                              (uint32_t)aFlags);
   mPendingFragments += 1;
+}
+
+void CrossProcessPaint::QueuePaint(dom::CanonicalBrowsingContext* aBc) {
+  RefPtr<GenericNonExclusivePromise> clonePromise = aBc->GetClonePromise();
+
+  if (!clonePromise) {
+    RefPtr<dom::WindowGlobalParent> wgp = aBc->GetCurrentWindowGlobal();
+    
+    QueuePaint(wgp, Nothing(), NS_RGBA(0, 0, 0, 0),
+               CrossProcessPaintFlags::DrawView);
+    return;
+  }
+
+  CPP_LOG("Queueing paint for BrowsingContext(%p).\n", aBc);
+  
+  
+  mPendingFragments += 1;
+  clonePromise->Then(
+      GetMainThreadSerialEventTarget(), __func__,
+      [self = RefPtr{this}, bc = RefPtr{aBc}]() {
+        RefPtr<dom::WindowGlobalParent> wgp = bc->GetCurrentWindowGlobal();
+        MOZ_ASSERT(!self->mReceivedFragments.Contains(GetTabId(wgp)));
+
+        
+        
+        wgp->DrawSnapshotInternal(self, Nothing(), self->mScale,
+                                  NS_RGBA(0, 0, 0, 0),
+                                  (uint32_t)CrossProcessPaintFlags::DrawView);
+      },
+      [self = RefPtr{this}]() {
+        CPP_LOG(
+            "Abort painting for BrowsingContext(%p) because cloning remote "
+            "document failed.\n",
+            self.get());
+        self->Clear(NS_ERROR_FAILURE);
+      });
 }
 
 void CrossProcessPaint::Clear(nsresult aStatus) {
