@@ -166,7 +166,7 @@ async function testObjectInspectorPropertiesAreSet(objInspector) {
 
 const seenWorkerTargets = new Set();
 function waitForSourceMapWorker(hud) {
-  const { targetList } = hud;
+  const { targetCommand } = hud.commands;
   
   
   
@@ -187,10 +187,10 @@ function waitForSourceMapWorker(hud) {
         !seenWorkerTargets.has(targetFront)
       ) {
         seenWorkerTargets.add(targetFront);
-        targetList.unwatchTargets([targetList.TYPES.WORKER], onAvailable);
+        targetCommand.unwatchTargets([targetCommand.TYPES.WORKER], onAvailable);
         resolve();
       }
     };
-    targetList.watchTargets([targetList.TYPES.WORKER], onAvailable);
+    targetCommand.watchTargets([targetCommand.TYPES.WORKER], onAvailable);
   });
 }

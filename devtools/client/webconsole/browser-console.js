@@ -44,7 +44,8 @@ class BrowserConsole extends WebConsole {
   constructor(commands, iframeWindow, chromeWindow) {
     super(null, commands, iframeWindow, chromeWindow, true);
 
-    this._resourceWatcher = new ResourceWatcher(this.targetList);
+    
+    this._resourceWatcher = new ResourceWatcher(this.commands.targetCommand);
     this._telemetry = new Telemetry();
     this._bcInitializer = null;
     this._bcDestroyer = null;
@@ -99,7 +100,7 @@ class BrowserConsole extends WebConsole {
       
       this._telemetry.toolClosed("browserconsole", -1, this);
 
-      this.targetList.destroy();
+      this.commands.targetCommand.destroy();
       
       await Promise.all(
         this.ui.getAllProxies().map(proxy => proxy.getConnectionPromise())

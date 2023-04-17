@@ -352,11 +352,9 @@ async function safeCloseBrowserConsole({ clearOutput = false } = {}) {
   
   
   await Promise.race([
-    waitForAllTargetsToBeAttached(hud.targetList),
+    waitForAllTargetsToBeAttached(hud.commands.targetCommand),
     wait(1000),
   ]);
-
-  hud.targetList.destroy();
 
   info("Close the Browser Console");
   await BrowserConsoleManager.closeBrowserConsole();

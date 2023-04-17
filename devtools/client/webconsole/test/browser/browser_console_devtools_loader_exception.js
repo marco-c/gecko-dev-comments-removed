@@ -62,7 +62,7 @@ add_task(async function() {
     false
   );
 
-  const { targetList } = bcHud;
+  const { targetCommand } = bcHud.commands;
   
   
   
@@ -71,11 +71,14 @@ add_task(async function() {
     : new Promise(resolve => {
         const onAvailable = ({ targetFront }) => {
           if (targetFront.url.includes("view-source:")) {
-            targetList.unwatchTargets([targetList.TYPES.FRAME], onAvailable);
+            targetCommand.unwatchTargets(
+              [targetCommand.TYPES.FRAME],
+              onAvailable
+            );
             resolve();
           }
         };
-        targetList.watchTargets([targetList.TYPES.FRAME], onAvailable);
+        targetCommand.watchTargets([targetCommand.TYPES.FRAME], onAvailable);
       });
 
   const onTabOpen = BrowserTestUtils.waitForNewTab(

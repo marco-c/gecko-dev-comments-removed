@@ -196,9 +196,8 @@ class WebConsoleUI {
     }
 
     
-    const { targetList } = this.hud;
-    targetList.unwatchTargets(
-      targetList.ALL_TYPES,
+    this.hud.commands.targetCommand.unwatchTargets(
+      this.hud.commands.targetCommand.ALL_TYPES,
       this._onTargetAvailable,
       this._onTargetDestroy
     );
@@ -341,7 +340,7 @@ class WebConsoleUI {
       
       
       
-      await this.hud.targetList.startListening();
+      await this.hud.commands.targetCommand.startListening();
     }
 
     
@@ -350,8 +349,8 @@ class WebConsoleUI {
     
     
     
-    await this.hud.targetList.watchTargets(
-      this.hud.targetList.ALL_TYPES,
+    await this.hud.commands.targetCommand.watchTargets(
+      this.hud.commands.targetCommand.ALL_TYPES,
       this._onTargetAvailable,
       this._onTargetDestroy
     );
@@ -468,9 +467,9 @@ class WebConsoleUI {
 
     
     
-    const listenForFrames = this.hud.targetList.descriptorFront.isLocalTab;
+    const listenForFrames = this.hud.commands.descriptorFront.isLocalTab;
 
-    const { TYPES } = this.hud.targetList;
+    const { TYPES } = this.hud.commands.targetCommand;
     const isWorkerTarget =
       targetFront.targetType == TYPES.WORKER ||
       targetFront.targetType == TYPES.SHARED_WORKER ||
@@ -484,7 +483,7 @@ class WebConsoleUI {
       
       
       (isWorkerTarget &&
-        !this.hud.targetList.rootFront.traits
+        !this.hud.commands.targetCommand.rootFront.traits
           .workerConsoleApiMessagesDispatchedToMainThread);
 
     if (!acceptTarget) {
