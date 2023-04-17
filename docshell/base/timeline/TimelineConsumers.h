@@ -39,10 +39,10 @@ class TimelineConsumers : public nsIObserver {
   void operator=(const TimelineConsumers& aOther) = delete;
   virtual ~TimelineConsumers() = default;
 
-  bool Init();
   bool RemoveObservers();
 
  public:
+  static void Init();
   static already_AddRefed<TimelineConsumers> Get();
 
   
@@ -115,7 +115,7 @@ class TimelineConsumers : public nsIObserver {
 
  private:
   static StaticRefPtr<TimelineConsumers> sInstance;
-  static bool sInShutdown;
+  static Atomic<bool> sInShutdown;
 
   
   

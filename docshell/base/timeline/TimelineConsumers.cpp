@@ -32,7 +32,7 @@ StaticRefPtr<TimelineConsumers> TimelineConsumers::sInstance;
 
 
 
-bool TimelineConsumers::sInShutdown = false;
+Atomic<bool> TimelineConsumers::sInShutdown{false};
 
 already_AddRefed<TimelineConsumers> TimelineConsumers::Get() {
   
@@ -49,42 +49,26 @@ already_AddRefed<TimelineConsumers> TimelineConsumers::Get() {
     return nullptr;
   }
 
-  
-  
-  
-  
-  
-  static bool firstTime = true;
-  if (firstTime) {
-    firstTime = false;
-
-    StaticMutexAutoLock lock(sMutex);
-    sInstance = new TimelineConsumers();
-
-    
-    
-    if (sInstance->Init()) {
-      ClearOnShutdown(&sInstance);
-    } else {
-      sInstance->RemoveObservers();
-      sInstance = nullptr;
-    }
-  }
-
   RefPtr<TimelineConsumers> copy = sInstance.get();
   return copy.forget();
 }
 
-bool TimelineConsumers::Init() {
+
+void TimelineConsumers::Init() {
+  MOZ_ASSERT(!sInstance);
+  RefPtr<TimelineConsumers> instance = new TimelineConsumers();
+
   nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
   if (!obs) {
-    return false;
+    return;
   }
   if (NS_WARN_IF(NS_FAILED(
-          obs->AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID, false)))) {
-    return false;
+          obs->AddObserver(instance, NS_XPCOM_SHUTDOWN_OBSERVER_ID, false)))) {
+    return;
   }
-  return true;
+
+  sInstance = instance;
+  ClearOnShutdown(&sInstance);
 }
 
 bool TimelineConsumers::RemoveObservers() {
