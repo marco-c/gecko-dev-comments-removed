@@ -41,49 +41,36 @@ impl crate::Module {
             ty: Handle<Type>,
             types: &mut Arena<Type>,
         ) {
-            let inner = &mut types.get_mut(ty).inner;
-            if let TypeInner::Struct {
-                members: ref mut m, ..
-            } = *inner
-            {
+            match types.get_mut(ty).inner {
                 
+                TypeInner::Struct {
+                    members: ref mut m, ..
+                } => {
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    use std::mem::replace;
+                    let mut members = replace(m, vec![]);
 
-                
-                
-                
-                
-                
-                
-                
-                use std::mem;
-                let mut members = mem::take(m);
+                    for member in &mut members {
+                        default_binding_or_struct(&mut member.binding, member.ty, types);
+                    }
 
-                for member in &mut members {
-                    default_binding_or_struct(&mut member.binding, member.ty, types);
+                    
+                    
+                    
+                    match types.get_mut(ty).inner {
+                        TypeInner::Struct {
+                            members: ref mut m, ..
+                        } => replace(m, members),
+                        _ => unreachable!("ty must be a struct"),
+                    };
                 }
 
-                
-                
-                
-                match types.get_mut(ty).inner {
-                    TypeInner::Struct {
-                        members: ref mut m, ..
-                    } => mem::replace(m, members),
-                    _ => unreachable!("ty must be a struct"),
-                };
-
-                return;
-            }
-
-            
-            
-            
-            let binding = match binding.as_mut() {
-                None => return,
-                Some(binding) => binding,
-            };
-
-            match *inner {
                 
                 
                 
@@ -98,6 +85,9 @@ impl crate::Module {
                     width: 4,
                     ..
                 } => {
+                    
+                    
+                    let binding = binding.as_mut().unwrap();
                     if let Binding::Location {
                         ref mut interpolation,
                         ref mut sampling,
@@ -116,6 +106,9 @@ impl crate::Module {
 
                 
                 _ => {
+                    
+                    
+                    let binding = binding.as_mut().unwrap();
                     if let Binding::Location {
                         ref mut interpolation,
                         ref mut sampling,

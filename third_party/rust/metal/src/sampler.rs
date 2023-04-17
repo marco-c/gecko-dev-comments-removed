@@ -5,7 +5,10 @@
 
 
 
-use super::{depthstencil::MTLCompareFunction, DeviceRef, NSUInteger};
+use cocoa_foundation::foundation::NSUInteger;
+
+use crate::depthstencil::MTLCompareFunction;
+use crate::DeviceRef;
 
 #[repr(u64)]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
