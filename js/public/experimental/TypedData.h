@@ -298,14 +298,14 @@ using ExternalTypeOf_t = typename ExternalTypeOf<ArrayType>::Type;
 
 
 
-class JS_PUBLIC_API ArrayBufferOrView {
+class MOZ_STACK_CLASS JS_PUBLIC_API ArrayBufferOrView {
  public:
   
   
   using DataType = uint8_t;
 
  protected:
-  Heap<JSObject*> obj;
+  JSObject* obj;
 
   explicit ArrayBufferOrView(JSObject* unwrapped) : obj(unwrapped) {}
 
@@ -327,7 +327,7 @@ class JS_PUBLIC_API ArrayBufferOrView {
 
   
   void trace(JSTracer* trc) {
-    TraceEdge(trc, &obj, "ArrayBufferOrView object");
+    UnsafeTraceRoot(trc, &obj, "ArrayBufferOrView object");
   }
 
   void reset() { obj = nullptr; }
