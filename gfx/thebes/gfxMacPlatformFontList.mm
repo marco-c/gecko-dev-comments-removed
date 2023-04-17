@@ -825,8 +825,7 @@ gfxMacPlatformFontList::gfxMacPlatformFontList()
   
   
   
-  
-  if (XRE_IsParentProcess()) {
+  if (XRE_IsParentProcess() || !nsCocoaFeatures::OnCatalinaOrLater()) {
 #ifdef MOZ_BUNDLED_FONTS
     
     
@@ -849,7 +848,11 @@ gfxMacPlatformFontList::gfxMacPlatformFontList()
         }
       }
     }
+  }
 
+  
+  
+  if (XRE_IsParentProcess()) {
     ::CFNotificationCenterAddObserver(::CFNotificationCenterGetLocalCenter(), this,
                                       RegisteredFontsChangedNotificationCallback,
                                       kCTFontManagerRegisteredFontsChangedNotification, 0,
