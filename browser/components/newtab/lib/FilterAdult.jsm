@@ -3,10 +3,21 @@
 
 "use strict";
 
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+
 ChromeUtils.defineModuleGetter(
   this,
   "Services",
   "resource://gre/modules/Services.jsm"
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "gFilterAdultEnabled",
+  "browser.newtabpage.activity-stream.filterAdult",
+  true
 );
 
 
@@ -38,21 +49,70 @@ function md5Hash(text) {
   return gCryptoHash.finish(true);
 }
 
+const FilterAdult = {
+  
 
 
 
-function filterAdult(links) {
-  return links.filter(({ url }) => {
+
+
+
+
+  filter(links) {
+    if (!gFilterAdultEnabled) {
+      return links;
+    }
+
+    return links.filter(({ url }) => {
+      try {
+        const uri = Services.io.newURI(url);
+        return !gAdultSet.has(md5Hash(Services.eTLD.getBaseDomain(uri)));
+      } catch (ex) {
+        return true;
+      }
+    });
+  },
+
+  
+
+
+
+
+
+
+
+  isAdultUrl(url) {
+    if (!gFilterAdultEnabled) {
+      return false;
+    }
     try {
       const uri = Services.io.newURI(url);
-      return !gAdultSet.has(md5Hash(Services.eTLD.getBaseDomain(uri)));
+      return gAdultSet.has(md5Hash(Services.eTLD.getBaseDomain(uri)));
     } catch (ex) {
-      return true;
+      return false;
     }
-  });
-}
+  },
 
-const EXPORTED_SYMBOLS = ["filterAdult"];
+  
+
+
+  addDomainToList(url) {
+    gAdultSet.add(
+      md5Hash(Services.eTLD.getBaseDomain(Services.io.newURI(url)))
+    );
+  },
+
+  
+
+
+  removeDomainFromList(url) {
+    gAdultSet.delete(
+      md5Hash(Services.eTLD.getBaseDomain(Services.io.newURI(url)))
+    );
+  },
+};
+
+const EXPORTED_SYMBOLS = ["FilterAdult"];
 
 
 

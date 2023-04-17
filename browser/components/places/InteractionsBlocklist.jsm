@@ -11,6 +11,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  FilterAdult: "resource://activity-stream/lib/FilterAdult.jsm",
   Services: "resource://gre/modules/Services.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
@@ -120,6 +121,10 @@ class _InteractionsBlocklist {
 
 
   isUrlBlocklisted(urlToCheck) {
+    if (FilterAdult.isAdultUrl(urlToCheck)) {
+      return true;
+    }
+
     
     
     let url;
