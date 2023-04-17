@@ -73,18 +73,6 @@ typedef uint8_t* Address;
 
 
 
-class PlatformData;
-
-
-
-struct PlatformDataDestructor {
-  void operator()(PlatformData*);
-};
-
-typedef mozilla::UniquePtr<PlatformData, PlatformDataDestructor>
-    UniquePlatformData;
-UniquePlatformData AllocPlatformData(ProfilerThreadId aThreadId);
-
 namespace mozilla {
 class JSONWriter;
 }

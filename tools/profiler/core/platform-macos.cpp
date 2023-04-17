@@ -34,29 +34,6 @@
 
 
 
-class PlatformData {
- public:
-  explicit PlatformData(ProfilerThreadId aThreadId)
-      : mProfiledThread(mach_thread_self()) {
-    MOZ_COUNT_CTOR(PlatformData);
-  }
-
-  ~PlatformData() {
-    
-    mach_port_deallocate(mach_task_self(), mProfiledThread);
-
-    MOZ_COUNT_DTOR(PlatformData);
-  }
-
-  thread_act_t ProfiledThread() const { return mProfiledThread; }
-
- private:
-  
-  
-  
-  thread_act_t mProfiledThread;
-};
-
 mozilla::profiler::PlatformData::PlatformData(ProfilerThreadId aThreadId)
     : mProfiledThread(mach_thread_self()) {}
 

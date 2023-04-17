@@ -73,31 +73,6 @@ static HANDLE GetRealCurrentThreadHandleForProfiling() {
   return realCurrentThreadHandle;
 }
 
-class PlatformData {
- public:
-  
-  
-  
-  explicit PlatformData(ProfilerThreadId aThreadId)
-      : mProfiledThread(GetRealCurrentThreadHandleForProfiling()) {
-    MOZ_ASSERT(aThreadId == profiler_current_thread_id());
-    MOZ_COUNT_CTOR(PlatformData);
-  }
-
-  ~PlatformData() {
-    if (mProfiledThread != nullptr) {
-      CloseHandle(mProfiledThread);
-      mProfiledThread = nullptr;
-    }
-    MOZ_COUNT_DTOR(PlatformData);
-  }
-
-  HANDLE ProfiledThread() { return mProfiledThread; }
-
- private:
-  HANDLE mProfiledThread;
-};
-
 static_assert(
     std::is_same_v<mozilla::profiler::PlatformData::WindowsHandle, HANDLE>);
 
