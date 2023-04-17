@@ -33,6 +33,9 @@
 
 
 
+
+
+
 "use strict";
 
 const { PureComponent } = require("devtools/client/shared/vendor/react");
@@ -49,7 +52,15 @@ const selectors = require("devtools/client/performance-new/store/selectors");
 
 class ProfilerEventHandling extends PureComponent {
   componentDidMount() {
-    const { perfFront, isSupportedPlatform, reportProfilerReady } = this.props;
+    const {
+      perfFront,
+      isSupportedPlatform,
+      reportProfilerReady,
+      reportProfilerStarted,
+      reportProfilerStopped,
+      reportPrivateBrowsingStarted,
+      reportPrivateBrowsingStopped,
+    } = this.props;
 
     if (!isSupportedPlatform) {
       return;
@@ -64,15 +75,15 @@ class ProfilerEventHandling extends PureComponent {
     });
 
     
-    this.props.perfFront.on("profiler-started", this.handleProfilerStarting);
-    this.props.perfFront.on("profiler-stopped", this.handleProfilerStopping);
+    this.props.perfFront.on("profiler-started", reportProfilerStarted);
+    this.props.perfFront.on("profiler-stopped", reportProfilerStopped);
     this.props.perfFront.on(
       "profile-locked-by-private-browsing",
-      this.handlePrivateBrowsingStarting
+      reportPrivateBrowsingStarted
     );
     this.props.perfFront.on(
       "profile-unlocked-from-private-browsing",
-      this.handlePrivateBrowsingEnding
+      reportPrivateBrowsingStopped
     );
   }
 
@@ -96,105 +107,6 @@ class ProfilerEventHandling extends PureComponent {
     }
   }
 
-  handleProfilerStarting = () => {
-    const { changeRecordingState, recordingState } = this.props;
-    switch (recordingState) {
-      case "not-yet-known":
-      
-      
-      case "available-to-record":
-      
-      case "request-to-stop-profiler":
-      
-      
-      case "request-to-get-profile-and-stop-profiler":
-        changeRecordingState("recording");
-        break;
-
-      case "request-to-start-recording":
-        
-        changeRecordingState("recording");
-        break;
-
-      case "locked-by-private-browsing":
-      case "recording":
-        
-        
-        throw new Error(
-          "The profiler started recording, when it shouldn't have " +
-            `been able to. Current state: "${recordingState}"`
-        );
-      default:
-        throw new Error("Unhandled recording state");
-    }
-  };
-
-  handleProfilerStopping = () => {
-    const { changeRecordingState, recordingState } = this.props;
-    switch (recordingState) {
-      case "not-yet-known":
-      case "request-to-get-profile-and-stop-profiler":
-      case "request-to-stop-profiler":
-        changeRecordingState("available-to-record");
-        break;
-
-      case "request-to-start-recording":
-      
-      
-      case "locked-by-private-browsing":
-        
-        break;
-
-      case "recording":
-        changeRecordingState("available-to-record", {
-          recordingUnexpectedlyStopped: true,
-        });
-        break;
-
-      case "available-to-record":
-        throw new Error(
-          "The profiler stopped recording, when it shouldn't have been able to."
-        );
-      default:
-        throw new Error("Unhandled recording state");
-    }
-  };
-
-  handlePrivateBrowsingStarting = () => {
-    const { recordingState, changeRecordingState } = this.props;
-
-    switch (recordingState) {
-      case "request-to-get-profile-and-stop-profiler":
-      
-      
-      case "request-to-stop-profiler":
-      case "available-to-record":
-      case "not-yet-known":
-        changeRecordingState("locked-by-private-browsing");
-        break;
-
-      case "request-to-start-recording":
-      case "recording":
-        changeRecordingState("locked-by-private-browsing", {
-          recordingUnexpectedlyStopped: false,
-        });
-        break;
-
-      case "locked-by-private-browsing":
-        
-        break;
-
-      default:
-        throw new Error("Unhandled recording state");
-    }
-  };
-
-  handlePrivateBrowsingEnding = () => {
-    
-    
-    this.props.changeRecordingState("available-to-record");
-  };
-
   render() {
     return null;
   }
@@ -214,8 +126,11 @@ function mapStateToProps(state) {
 
 
 const mapDispatchToProps = {
-  changeRecordingState: actions.changeRecordingState,
   reportProfilerReady: actions.reportProfilerReady,
+  reportProfilerStarted: actions.reportProfilerStarted,
+  reportProfilerStopped: actions.reportProfilerStopped,
+  reportPrivateBrowsingStarted: actions.reportPrivateBrowsingStarted,
+  reportPrivateBrowsingStopped: actions.reportPrivateBrowsingStopped,
 };
 
 module.exports = connect(

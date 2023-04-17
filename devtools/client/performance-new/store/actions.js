@@ -31,26 +31,43 @@ const {
 
 
 
-const changeRecordingState = (exports.changeRecordingState = (
-  state,
-  options = { recordingUnexpectedlyStopped: false }
-) => ({
-  type: "CHANGE_RECORDING_STATE",
-  state,
-  recordingUnexpectedlyStopped: options.recordingUnexpectedlyStopped,
-}));
-
-
-
-
-
-
-
 
 exports.reportProfilerReady = (isActive, isLockedForPrivateBrowsing) => ({
   type: "REPORT_PROFILER_READY",
   isActive,
   isLockedForPrivateBrowsing,
+});
+
+
+
+
+
+exports.reportProfilerStarted = () => ({
+  type: "REPORT_PROFILER_STARTED",
+});
+
+
+
+
+
+exports.reportProfilerStopped = () => ({
+  type: "REPORT_PROFILER_STOPPED",
+});
+
+
+
+
+
+exports.reportPrivateBrowsingStarted = () => ({
+  type: "REPORT_PRIVATE_BROWSING_STARTED",
+});
+
+
+
+
+
+exports.reportPrivateBrowsingStopped = () => ({
+  type: "REPORT_PRIVATE_BROWSING_STOPPED",
 });
 
 
@@ -190,7 +207,7 @@ exports.startRecording = () => {
     
     
     
-    dispatch(changeRecordingState("request-to-start-recording"));
+    dispatch({ type: "REQUESTING_TO_START_RECORDING" });
     perfFront.startProfiler(recordingSettings);
   };
 };
@@ -202,9 +219,9 @@ exports.startRecording = () => {
 exports.getProfileAndStopProfiler = () => {
   return async ({ dispatch, getState }) => {
     const perfFront = selectors.getPerfFront(getState());
-    dispatch(changeRecordingState("request-to-get-profile-and-stop-profiler"));
+    dispatch({ type: "REQUESTING_PROFILE" });
     const profile = await perfFront.getProfileAndStopProfiler();
-    dispatch(changeRecordingState("available-to-record"));
+    dispatch({ type: "OBTAINED_PROFILE" });
     return profile;
   };
 };
@@ -216,7 +233,7 @@ exports.getProfileAndStopProfiler = () => {
 exports.stopProfilerAndDiscardProfile = () => {
   return async ({ dispatch, getState }) => {
     const perfFront = selectors.getPerfFront(getState());
-    dispatch(changeRecordingState("request-to-stop-profiler"));
+    dispatch({ type: "REQUESTING_TO_STOP_RECORDING" });
 
     try {
       await perfFront.stopProfilerAndDiscardProfile();

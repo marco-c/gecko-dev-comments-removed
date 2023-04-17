@@ -20,10 +20,9 @@
 
 
 
+
 function recordingState(state = "not-yet-known", action) {
   switch (action.type) {
-    case "CHANGE_RECORDING_STATE":
-      return action.state;
     case "REPORT_PROFILER_READY": {
       
       
@@ -40,6 +39,100 @@ function recordingState(state = "not-yet-known", action) {
       }
       return "available-to-record";
     }
+
+    case "REPORT_PROFILER_STARTED":
+      switch (state) {
+        case "not-yet-known":
+        
+        
+        case "available-to-record":
+        
+        case "request-to-stop-profiler":
+        
+        
+        case "request-to-get-profile-and-stop-profiler":
+          return "recording";
+
+        case "request-to-start-recording":
+          
+          return "recording";
+
+        case "locked-by-private-browsing":
+        case "recording":
+          
+          
+          throw new Error(
+            "The profiler started recording, when it shouldn't have " +
+              `been able to. Current state: "${state}"`
+          );
+        default:
+          throw new Error("Unhandled recording state");
+      }
+
+    case "REPORT_PROFILER_STOPPED":
+      switch (state) {
+        case "not-yet-known":
+        case "request-to-get-profile-and-stop-profiler":
+        case "request-to-stop-profiler":
+          return "available-to-record";
+
+        case "request-to-start-recording":
+        
+        
+        case "locked-by-private-browsing":
+          
+          return state;
+
+        case "recording":
+          return "available-to-record";
+
+        case "available-to-record":
+          throw new Error(
+            "The profiler stopped recording, when it shouldn't have been able to."
+          );
+        default:
+          throw new Error("Unhandled recording state");
+      }
+
+    case "REPORT_PRIVATE_BROWSING_STARTED":
+      switch (state) {
+        case "request-to-get-profile-and-stop-profiler":
+        
+        
+        case "request-to-stop-profiler":
+        case "available-to-record":
+        case "not-yet-known":
+          return "locked-by-private-browsing";
+
+        case "request-to-start-recording":
+        case "recording":
+          return "locked-by-private-browsing";
+
+        case "locked-by-private-browsing":
+          
+          return state;
+
+        default:
+          throw new Error("Unhandled recording state");
+      }
+
+    case "REPORT_PRIVATE_BROWSING_STOPPED":
+      
+      
+      return "available-to-record";
+
+    case "REQUESTING_TO_START_RECORDING":
+      return "request-to-start-recording";
+
+    case "REQUESTING_TO_STOP_RECORDING":
+      return "request-to-stop-profiler";
+
+    case "REQUESTING_PROFILE":
+      return "request-to-get-profile-and-stop-profiler";
+
+    case "OBTAINED_PROFILE":
+      return "available-to-record";
+
     default:
       return state;
   }
@@ -50,10 +143,22 @@ function recordingState(state = "not-yet-known", action) {
 
 
 
-function recordingUnexpectedlyStopped(state = false, action) {
+
+
+
+function recordingUnexpectedlyStopped(recState, state = false, action) {
   switch (action.type) {
-    case "CHANGE_RECORDING_STATE":
-      return action.recordingUnexpectedlyStopped;
+    case "REPORT_PROFILER_STOPPED":
+    case "REPORT_PRIVATE_BROWSING_STARTED":
+      if (
+        recState === "recording" ||
+        recState == "request-to-start-recording"
+      ) {
+        return true;
+      }
+      return state;
+    case "REPORT_PROFILER_STARTED":
+      return false;
     default:
       return state;
   }
@@ -224,10 +329,14 @@ function promptEnvRestart(state = null, action) {
 module.exports = (state = undefined, action) => {
   return {
     recordingState: recordingState(state?.recordingState, action),
+
+    
     recordingUnexpectedlyStopped: recordingUnexpectedlyStopped(
+      state?.recordingState,
       state?.recordingUnexpectedlyStopped,
       action
     ),
+
     isSupportedPlatform: isSupportedPlatform(
       state?.isSupportedPlatform,
       action
