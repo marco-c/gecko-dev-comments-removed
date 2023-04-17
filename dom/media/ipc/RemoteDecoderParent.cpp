@@ -127,11 +127,6 @@ mozilla::ipc::IPCResult RemoteDecoderParent::RecvDecode(
   
   
   
-  
-
-  
-  
-  
   ReleaseAllBuffers();
   MediaDataDecoder::DecodedData output;
   DecodeNextSample(aData, 0, std::move(output), std::move(aResolver));
