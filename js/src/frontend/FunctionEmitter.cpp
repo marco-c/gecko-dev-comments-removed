@@ -7,7 +7,6 @@
 #include "frontend/FunctionEmitter.h"
 
 #include "mozilla/Assertions.h"  
-#include "mozilla/Unused.h"
 
 #include "builtin/ModuleObject.h"          
 #include "frontend/AsyncEmitter.h"         
@@ -312,7 +311,7 @@ bool FunctionEmitter::emitTopLevelFunction(GCThingIndex index) {
   
   
   
-  mozilla::Unused << index;
+  (void)index;
 
   return true;
 }

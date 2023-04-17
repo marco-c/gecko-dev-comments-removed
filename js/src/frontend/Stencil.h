@@ -12,7 +12,6 @@
 #include "mozilla/MemoryReporting.h"  
 #include "mozilla/Range.h"            
 #include "mozilla/Span.h"             
-#include "mozilla/Unused.h"           
 #include "mozilla/Variant.h"          
 
 #include <stddef.h>  
@@ -284,7 +283,7 @@ class ScopeStencil {
                (isArrow ? IsArrow : 0)) {
     MOZ_ASSERT((kind == ScopeKind::Function) == functionIndex.isSome());
     
-    mozilla::Unused << padding_;
+    (void)padding_;
   }
 
  private:

@@ -18,7 +18,6 @@
 #include "mozilla/Sprintf.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtrExtensions.h"  
-#include "mozilla/Unused.h"
 #include "mozilla/Utf8.h"
 #include "mozilla/Variant.h"
 
@@ -1125,8 +1124,8 @@ static bool MaybeRunFinalizationRegistryCleanupTasks(JSContext* cx) {
     {
       AutoReportException are(cx);
       RootedValue unused(cx);
-      mozilla::Unused << JS_CallFunction(cx, nullptr, callback,
-                                         HandleValueArray::empty(), &unused);
+      (void)JS_CallFunction(cx, nullptr, callback, HandleValueArray::empty(),
+                            &unused);
     }
 
     ranTasks = true;
@@ -1587,8 +1586,8 @@ static bool AddIntlExtras(JSContext* cx, unsigned argc, Value* vp) {
     {
       
       AutoReportException are(cx);
-      mozilla::Unused << EvalUtf8AndPrint(cx, buffer.begin(), buffer.length(),
-                                          startline, compileOnly);
+      (void)EvalUtf8AndPrint(cx, buffer.begin(), buffer.length(), startline,
+                             compileOnly);
     }
 
     
@@ -6555,7 +6554,7 @@ class AutoCStringVector {
     }
 
     
-    mozilla::Unused << arg.release();
+    (void)arg.release();
     return true;
   }
   char* const* get() const { return argv_.begin(); }

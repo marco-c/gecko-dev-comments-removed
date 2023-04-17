@@ -17,7 +17,6 @@
 #include "mozilla/Maybe.h"          
 #include "mozilla/PodOperations.h"  
 #include "mozilla/Sprintf.h"        
-#include "mozilla/Unused.h"         
 #include "mozilla/Variant.h"        
 
 #include <algorithm>
@@ -93,7 +92,6 @@ using mozilla::NumberEqualsInt32;
 using mozilla::NumberIsInt32;
 using mozilla::PodCopy;
 using mozilla::Some;
-using mozilla::Unused;
 
 static bool ParseNodeRequiresSpecialLineNumberNotes(ParseNode* pn) {
   
