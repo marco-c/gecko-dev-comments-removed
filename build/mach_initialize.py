@@ -260,11 +260,7 @@ def _activate_python_environment(topsrcdir, state_dir):
             
             _scrub_system_site_packages()
 
-        sys.path[0:0] = [
-            os.path.join(topsrcdir, pth.path)
-            for pth in requirements.pth_requirements
-            + requirements.vendored_requirements
-        ]
+        sys.path[0:0] = requirements.pths_as_absolute(topsrcdir)
     elif is_mach_virtualenv:
         
         
@@ -284,11 +280,7 @@ def _activate_python_environment(topsrcdir, state_dir):
         
         _scrub_system_site_packages()
 
-        sys.path[0:0] = [
-            os.path.join(topsrcdir, pth.path)
-            for pth in requirements.pth_requirements
-            + requirements.vendored_requirements
-        ]
+        sys.path[0:0] = requirements.pths_as_absolute(topsrcdir)
 
 
 def initialize(topsrcdir):
