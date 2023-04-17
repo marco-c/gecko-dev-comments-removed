@@ -1,5 +1,5 @@
-
-
+<!-- Any copyright is dedicated to the Public Domain.
+     http://creativecommons.org/publicdomain/zero/1.0/ -->
 <!doctype html>
 
 <html>
@@ -18,22 +18,22 @@
       /* exported performRequests */
       "use strict";
 
-      function get(address, callback) {
-        const xhr = new XMLHttpRequest();
-        xhr.open("GET", address, true);
+      function get(address) {
+        return new Promise(resolve => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("GET", address, true);
 
-        xhr.onreadystatechange = function() {
-          if (this.readyState == this.DONE) {
-            callback();
-          }
-        };
-        xhr.send(null);
+          xhr.onreadystatechange = function() {
+            if (this.readyState == this.DONE) {
+              resolve();
+            }
+          };
+          xhr.send(null);
+        });
       }
 
-      function performRequests() {
-        get("sjs_content-type-test-server.sjs?fmt=json-long", function() {
-          // Done.
-        });
+      async function performRequests() {
+        await get("sjs_content-type-test-server.sjs?fmt=json-long");
       }
     </script>
   </body>
