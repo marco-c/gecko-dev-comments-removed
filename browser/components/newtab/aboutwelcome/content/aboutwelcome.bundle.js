@@ -339,6 +339,11 @@ const MultiStageAboutWelcome = props => {
 
   const handleTransition = () => {
     
+    if (transition === "out") {
+      return;
+    } 
+
+
     setTransition(props.transitions ? "out" : ""); 
 
     setTimeout(() => {

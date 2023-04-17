@@ -531,7 +531,10 @@ add_task(async function test_multistage_aboutwelcome_transitions() {
     ["div.proton.transition-out"]
   );
 
+  
   await onButtonClick(browser, "button.primary");
+  await onButtonClick(browser, "button.primary");
+
   await test_screen_content(
     browser,
     "multistage proton step 1 transition to 2",
