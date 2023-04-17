@@ -10,7 +10,7 @@ SOURCES += [
     "mozgtk.c",
 ]
 
-CFLAGS += CONFIG["XCFLAGS"]
+CFLAGS += CONFIG["MOZ_X11_CFLAGS"]
 
 
 
