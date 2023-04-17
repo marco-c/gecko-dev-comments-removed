@@ -163,6 +163,12 @@ class SVGPathData {
   
 
 
+  static bool GetDistancesFromOriginToEndsOfVisibleSegments(
+      Span<const StylePathCommand> aPath, FallibleTArray<double>* aOutput);
+
+  
+
+
 
 
   already_AddRefed<Path> BuildPathForMeasuring() const;
