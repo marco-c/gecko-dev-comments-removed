@@ -5600,6 +5600,7 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
     }
 
     FrameMetrics endZoomToMetrics = Metrics();
+    CSSSize sizeBeforeZoom = Metrics().CalculateCompositedSizeInCssPixels();
     if (zoomOut) {
       
       
@@ -5609,8 +5610,6 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
 
       CSSSize sizeAfterZoom =
           endZoomToMetrics.CalculateCompositedSizeInCssPixels();
-
-      CSSSize sizeBeforeZoom = Metrics().CalculateCompositedSizeInCssPixels();
 
       rect = CSSRect(
           scrollOffset.x + (sizeBeforeZoom.width - sizeAfterZoom.width) / 2,
@@ -5667,6 +5666,30 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
       if (rect.X() < 0.0f) {
         rect.MoveToX(0.0f);
       }
+    }
+
+    bool intersectRectAgain = false;
+    
+    
+    
+    
+    if (!zoomOut && (sizeAfterZoom.height < rect.Height())) {
+      rect.y =
+          scrollOffset.y + (sizeBeforeZoom.height - sizeAfterZoom.height) / 2;
+      rect.height = sizeAfterZoom.Height();
+
+      intersectRectAgain = true;
+    }
+
+    if (!zoomOut && (sizeAfterZoom.width < rect.Width())) {
+      rect.x =
+          scrollOffset.x + (sizeBeforeZoom.width - sizeAfterZoom.width) / 2;
+      rect.width = sizeAfterZoom.Width();
+
+      intersectRectAgain = true;
+    }
+    if (intersectRectAgain) {
+      rect = rect.Intersect(cssPageRect);
     }
 
     
