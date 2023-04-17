@@ -602,8 +602,16 @@ nsresult GfxInfo::GetFeatureStatusImpl(
       
       isUnblocked |= gpu.Find("Adreno (TM) 3",  true) >= 0 ||
                      gpu.Find("Adreno (TM) 4",  true) >= 0 ||
-                     gpu.Find("Adreno (TM) 5",  true) >= 0 ||
                      gpu.Find("Adreno (TM) 6",  true) >= 0;
+
+      
+      isUnblocked |=
+          gpu.Find("Adreno (TM) 5",  true) >= 0 &&
+          
+          
+          !((gpu.Find("Adreno (TM) 505",  true) >= 0 ||
+             gpu.Find("Adreno (TM) 506",  true) >= 0) &&
+            mSDKVersion == 28);
 
       
       isUnblocked |= gpu.Find("Mali-T",  true) >= 0;
