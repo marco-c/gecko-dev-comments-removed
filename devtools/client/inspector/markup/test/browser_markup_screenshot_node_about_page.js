@@ -7,11 +7,28 @@ const TEST_URL = `about:preferences`;
 
 
 
+function hexToCSS(hex) {
+  if (!hex) {
+    return null;
+  }
+  const rgba = InspectorUtils.colorToRGBA(hex);
+  info(`rgba: '${JSON.stringify(rgba)}'`);
+  
+  return `rgb(${rgba.r}, ${rgba.g}, ${rgba.b})`;
+}
+
 add_task(async function() {
   const { inspector, toolbox } = await openInspectorForURL(TEST_URL);
 
   info("Select the main content node");
   await selectNode(".main-content", inspector);
+
+  let inContentPageBackgroundColor = await getComputedStyleProperty(
+    ":root",
+    null,
+    "--in-content-page-background"
+  );
+  inContentPageBackgroundColor = inContentPageBackgroundColor.trim();
 
   info("Take a screenshot of the element and verify it looks as expected");
   const image = await takeNodeScreenshot(inspector);
@@ -21,7 +38,7 @@ add_task(async function() {
     image,
     x: 0,
     y: 0,
-    expectedColor: `rgb(249, 249, 250)`,
+    expectedColor: hexToCSS(inContentPageBackgroundColor),
     label: "The screenshot was taken",
   });
 
