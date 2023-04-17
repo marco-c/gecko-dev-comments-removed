@@ -843,9 +843,25 @@ ScriptSourceObject* ModuleObject::scriptSourceObject() const {
 bool ModuleObject::initAsyncSlots(JSContext* cx, bool isAsync,
                                   HandleObject asyncParentModulesList) {
   initReservedSlot(AsyncSlot, BooleanValue(isAsync));
-  initReservedSlot(AsyncEvaluatingSlot, BooleanValue(false));
   initReservedSlot(AsyncParentModulesSlot,
                    ObjectValue(*asyncParentModulesList));
+  return true;
+}
+
+constexpr uint32_t ASYNC_EVALUATING_POST_ORDER_FALSE = 0;
+constexpr uint32_t ASYNC_EVALUATING_POST_ORDER_INIT = 1;
+uint32_t AsyncPostOrder = ASYNC_EVALUATING_POST_ORDER_INIT;
+
+uint32_t nextPostOrder() {
+  uint32_t ordinal = AsyncPostOrder;
+  MOZ_ASSERT(AsyncPostOrder < MAX_UINT32);
+  AsyncPostOrder++;
+  return ordinal;
+}
+
+bool ModuleObject::initAsyncEvaluatingSlot() {
+  initReservedSlot(AsyncEvaluatingPostOrderSlot,
+                   PrivateUint32Value(nextPostOrder()));
   return true;
 }
 
@@ -978,11 +994,22 @@ bool ModuleObject::isAsync() const {
 }
 
 bool ModuleObject::isAsyncEvaluating() const {
-  return getReservedSlot(AsyncEvaluatingSlot).toBoolean();
+  if (getReservedSlot(AsyncEvaluatingPostOrderSlot).isUndefined()) {
+    return false;
+  }
+  return getReservedSlot(AsyncEvaluatingPostOrderSlot).toPrivateUint32() !=
+         ASYNC_EVALUATING_POST_ORDER_FALSE;
 }
 
-void ModuleObject::setAsyncEvaluating(bool isEvaluating) {
-  return setReservedSlot(AsyncEvaluatingSlot, BooleanValue(isEvaluating));
+void ModuleObject::setAsyncEvaluatingFalse() {
+  if (AsyncPostOrder == getAsyncEvaluatingPostOrder()) {
+    
+    
+    
+    AsyncPostOrder = ASYNC_EVALUATING_POST_ORDER_INIT;
+  }
+  return setReservedSlot(AsyncEvaluatingPostOrderSlot,
+                         PrivateUint32Value(ASYNC_EVALUATING_POST_ORDER_FALSE));
 }
 
 uint32_t ModuleObject::dfsIndex() const {
@@ -1027,6 +1054,11 @@ bool ModuleObject::appendAsyncParentModule(JSContext* cx,
 
 uint32_t ModuleObject::pendingAsyncDependencies() const {
   return getReservedSlot(PendingAsyncDependenciesSlot).toInt32();
+}
+
+uint32_t ModuleObject::getAsyncEvaluatingPostOrder() const {
+  MOZ_ASSERT(isAsyncEvaluating());
+  return getReservedSlot(AsyncEvaluatingPostOrderSlot).toPrivateUint32();
 }
 
 void ModuleObject::setPendingAsyncDependencies(uint32_t newValue) {
@@ -1250,7 +1282,8 @@ DEFINE_GETTER_FUNCTIONS(ModuleObject, dfsAncestorIndex, DFSAncestorIndexSlot)
 DEFINE_GETTER_FUNCTIONS(ModuleObject, async, AsyncSlot)
 DEFINE_GETTER_FUNCTIONS(ModuleObject, topLevelCapability,
                         TopLevelCapabilitySlot)
-DEFINE_GETTER_FUNCTIONS(ModuleObject, asyncEvaluating, AsyncEvaluatingSlot)
+DEFINE_GETTER_FUNCTIONS(ModuleObject, asyncEvaluatingPostOrder,
+                        AsyncEvaluatingPostOrderSlot)
 DEFINE_GETTER_FUNCTIONS(ModuleObject, asyncParentModules,
                         AsyncParentModulesSlot)
 DEFINE_GETTER_FUNCTIONS(ModuleObject, pendingAsyncDependencies,
@@ -1273,7 +1306,8 @@ bool GlobalObject::initModuleProto(JSContext* cx,
       JS_PSG("dfsAncestorIndex", ModuleObject_dfsAncestorIndexGetter, 0),
       JS_PSG("async", ModuleObject_asyncGetter, 0),
       JS_PSG("topLevelCapability", ModuleObject_topLevelCapabilityGetter, 0),
-      JS_PSG("asyncEvaluating", ModuleObject_asyncEvaluatingGetter, 0),
+      JS_PSG("asyncEvaluatingPostOrder",
+             ModuleObject_asyncEvaluatingPostOrderGetter, 0),
       JS_PSG("asyncParentModules", ModuleObject_asyncParentModulesGetter, 0),
       JS_PSG("pendingAsyncDependencies",
              ModuleObject_pendingAsyncDependenciesGetter, 0),
@@ -1283,7 +1317,10 @@ bool GlobalObject::initModuleProto(JSContext* cx,
       JS_SELF_HOSTED_FN("getExportedNames", "ModuleGetExportedNames", 1, 0),
       JS_SELF_HOSTED_FN("resolveExport", "ModuleResolveExport", 2, 0),
       JS_SELF_HOSTED_FN("declarationInstantiation", "ModuleInstantiate", 0, 0),
-      JS_SELF_HOSTED_FN("evaluation", "ModuleEvaluate", 0, 0), JS_FS_END};
+      JS_SELF_HOSTED_FN("evaluation", "ModuleEvaluate", 0, 0),
+      JS_SELF_HOSTED_FN("gatherAsyncParentCompletions",
+                        "GatherAsyncParentCompletions", 2, 0),
+      JS_FS_END};
 
   RootedObject proto(
       cx, GlobalObject::createBlankPrototype<PlainObject>(cx, global));
@@ -2001,65 +2038,94 @@ bool js::AsyncModuleExecutionRejectedHandler(JSContext* cx, unsigned argc,
 
 
 
+bool ModuleObject::GatherAsyncParentCompletions(
+    JSContext* cx, HandleModuleObject module,
+    MutableHandleArrayObject execList) {
+  FixedInvokeArgs<1> args(cx);
+  args[0].setObject(*module);
+
+  RootedValue rval(cx);
+  if (!CallSelfHostedFunction(cx, cx->names().GatherAsyncParentCompletions,
+                              UndefinedHandleValue, args, &rval)) {
+    
+    
+    
+    return false;
+  }
+  execList.set(&rval.toObject().as<ArrayObject>());
+  return true;
+}
+
+
+
 void js::AsyncModuleExecutionFulfilled(JSContext* cx,
                                        HandleModuleObject module) {
   
   MOZ_ASSERT(module->status() == MODULE_STATUS_EVALUATED);
 
   
-  if (!module->isAsyncEvaluating()) {
-    MOZ_ASSERT(module->hadEvaluationError());
-    return;
+  MOZ_ASSERT(module->isAsyncEvaluating());
+
+  if (module->hasTopLevelCapability()) {
+    MOZ_ASSERT(module->getCycleRoot() == module);
+    ModuleObject::topLevelCapabilityResolve(cx, module);
+  }
+
+  RootedArrayObject sortedList(cx);
+  if (!ModuleObject::GatherAsyncParentCompletions(cx, module, &sortedList)) {
+    
+    
+    MOZ_ASSERT(cx->isExceptionPending());
+    RootedValue exception(cx);
+    if (!cx->getPendingException(&exception)) {
+      return;
+    }
+    cx->clearPendingException();
+    AsyncModuleExecutionRejected(cx, module, exception);
   }
 
   
-  MOZ_ASSERT(!module->hadEvaluationError());
+  module->setAsyncEvaluatingFalse();
 
-  
-  module->setAsyncEvaluating(false);
-
-  
-  uint32_t length = module->asyncParentModules()->length();
+  RootedValue ignored(cx);
   Rooted<ModuleObject*> m(cx);
-  Rooted<ModuleObject*> cycleRoot(cx);
-  RootedValue result(cx);
+
+  uint32_t length = sortedList->length();
   for (uint32_t i = 0; i < length; i++) {
-    m = &module->asyncParentModules()->get(i).toObject().as<ModuleObject>();
+    m = &sortedList->getDenseElement(i).toObject().as<ModuleObject>();
+    
+    if (!m->isAsyncEvaluating()) {
+      MOZ_ASSERT(m->hadEvaluationError());
+      return;
+    }
 
-    m->setPendingAsyncDependencies(m->pendingAsyncDependencies() - 1);
-
-    if (m->pendingAsyncDependencies() == 0 && !m->hadEvaluationError()) {
+    if (m->isAsync()) {
+      
+      MOZ_ASSERT(m->status() == MODULE_STATUS_EVALUATING ||
+                 m->status() == MODULE_STATUS_EVALUATED);
+      MOZ_ASSERT(m->isAsync());
       MOZ_ASSERT(m->isAsyncEvaluating());
-
-      cycleRoot = m->getCycleRoot();
-
-      if (cycleRoot->hadEvaluationError()) {
-        return;
-      }
-
-      if (m->isAsync()) {
-        
-        MOZ_ASSERT(m->status() == MODULE_STATUS_EVALUATING ||
-                   m->status() == MODULE_STATUS_EVALUATED);
-        MOZ_ASSERT(m->isAsync());
-        MOZ_ASSERT(m->isAsyncEvaluating());
-        ModuleObject::execute(cx, m, &result);
+      ModuleObject::execute(cx, m, &ignored);
+    } else {
+      if (!ModuleObject::execute(cx, m, &ignored)) {
+        MOZ_ASSERT(cx->isExceptionPending());
+        RootedValue exception(cx);
+        if (!cx->getPendingException(&exception)) {
+          return;
+        }
+        cx->clearPendingException();
+        AsyncModuleExecutionRejected(cx, m, exception);
       } else {
-        if (ModuleObject::execute(cx, m, &result)) {
-          AsyncModuleExecutionFulfilled(cx, m);
-        } else {
-          AsyncModuleExecutionRejected(cx, m, result);
+        m->setAsyncEvaluatingFalse();
+        if (m->hasTopLevelCapability()) {
+          MOZ_ASSERT(m->getCycleRoot() == m);
+          ModuleObject::topLevelCapabilityResolve(cx, m);
         }
       }
     }
   }
 
   
-  if (module->hasTopLevelCapability()) {
-    MOZ_ASSERT(module->getCycleRoot() == module);
-    ModuleObject::topLevelCapabilityResolve(cx, module);
-  }
-
   
 }
 
@@ -2083,7 +2149,7 @@ void js::AsyncModuleExecutionRejected(JSContext* cx, HandleModuleObject module,
   module->setEvaluationError(error);
 
   
-  module->setAsyncEvaluating(false);
+  module->setAsyncEvaluatingFalse();
 
   
   uint32_t length = module->asyncParentModules()->length();
