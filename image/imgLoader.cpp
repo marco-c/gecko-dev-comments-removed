@@ -1881,9 +1881,9 @@ bool imgLoader::ValidateEntry(
 
   
   
-  
   uint32_t expiryTime = aEntry->GetExpiryTime();
-  bool hasExpired = expiryTime && expiryTime <= SecondsFromPRTime(PR_Now());
+  bool hasExpired =
+      expiryTime != 0 && expiryTime <= SecondsFromPRTime(PR_Now());
 
   nsresult rv;
 

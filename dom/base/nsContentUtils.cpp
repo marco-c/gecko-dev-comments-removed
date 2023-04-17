@@ -10494,8 +10494,7 @@ ScreenIntMargin nsContentUtils::GetWindowSafeAreaInsets(
 
 
 nsContentUtils::SubresourceCacheValidationInfo
-nsContentUtils::GetSubresourceCacheValidationInfo(nsIRequest* aRequest,
-                                                  nsIURI* aURI) {
+nsContentUtils::GetSubresourceCacheValidationInfo(nsIRequest* aRequest) {
   SubresourceCacheValidationInfo info;
   if (nsCOMPtr<nsICacheInfoChannel> cache = do_QueryInterface(aRequest)) {
     uint32_t value = 0;
@@ -10512,18 +10511,6 @@ nsContentUtils::GetSubresourceCacheValidationInfo(nsIRequest* aRequest,
     if (!info.mMustRevalidate) {
       Unused << httpChannel->IsNoCacheResponse(&info.mMustRevalidate);
     }
-  }
-
-  
-  
-  
-  
-  
-  
-  if (aURI && (aURI->SchemeIs("data") || dom::IsChromeURI(aURI))) {
-    MOZ_ASSERT(!info.mExpirationTime);
-    MOZ_ASSERT(!info.mMustRevalidate);
-    info.mExpirationTime = Some(0);  
   }
 
   return info;

@@ -63,6 +63,18 @@ class nsXULPrototypeCache : public nsIObserver {
 
 
 
+  mozilla::StyleSheet* GetStyleSheet(nsIURI* aURI);
+
+  
+
+
+
+  nsresult PutStyleSheet(RefPtr<mozilla::StyleSheet>&& aStyleSheet);
+
+  
+
+
+
   nsresult WritePrototype(nsXULPrototypeDocument* aPrototypeDocument);
 
   
@@ -96,8 +108,11 @@ class nsXULPrototypeCache : public nsIObserver {
 
   static nsXULPrototypeCache* sInstance;
 
+  using StyleSheetTable = nsRefPtrHashtable<nsURIHashKey, mozilla::StyleSheet>;
+
   nsRefPtrHashtable<nsURIHashKey, nsXULPrototypeDocument>
       mPrototypeTable;  
+  StyleSheetTable mStyleSheetTable;
 
   class ScriptHashKey : public nsURIHashKey {
    public:
