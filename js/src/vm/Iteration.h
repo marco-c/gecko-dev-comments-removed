@@ -270,7 +270,21 @@ struct NativeIterator {
     setFlags(Flags::Initialized);
   }
 
+  bool isUnlinked() const { return !prev_ && !next_; }
+
  public:
+  
+  
+  bool isEmptyIteratorSingleton() const {
+    
+    bool res = objectBeingIterated() == nullptr;
+    MOZ_ASSERT_IF(res, flags() == Flags::Initialized);
+    MOZ_ASSERT_IF(res, initialPropertyCount() == 0);
+    MOZ_ASSERT_IF(res, shapeCount() == 0);
+    MOZ_ASSERT_IF(res, isUnlinked());
+    return res;
+  }
+
   bool isActive() const {
     MOZ_ASSERT(isInitialized());
 
@@ -279,12 +293,14 @@ struct NativeIterator {
 
   void markActive() {
     MOZ_ASSERT(isInitialized());
+    MOZ_ASSERT(!isEmptyIteratorSingleton());
 
     flagsAndCount_ |= Flags::Active;
   }
 
   void markInactive() {
     MOZ_ASSERT(isInitialized());
+    MOZ_ASSERT(!isEmptyIteratorSingleton());
 
     flagsAndCount_ &= ~Flags::Active;
   }
@@ -302,6 +318,7 @@ struct NativeIterator {
 
   void markHasUnvisitedPropertyDeletion() {
     MOZ_ASSERT(isInitialized());
+    MOZ_ASSERT(!isEmptyIteratorSingleton());
 
     flagsAndCount_ |= Flags::HasUnvisitedPropertyDeletion;
   }
@@ -313,7 +330,11 @@ struct NativeIterator {
     MOZ_ASSERT(isInitialized());
 
     
-    MOZ_ASSERT(!next_ && !prev_);
+    
+    MOZ_ASSERT(!isEmptyIteratorSingleton());
+
+    
+    MOZ_ASSERT(isUnlinked());
 
     this->next_ = other;
     this->prev_ = other->prev_;
@@ -322,6 +343,7 @@ struct NativeIterator {
   }
   void unlink() {
     MOZ_ASSERT(isInitialized());
+    MOZ_ASSERT(!isEmptyIteratorSingleton());
 
     next_->prev_ = prev_;
     prev_->next_ = next_;

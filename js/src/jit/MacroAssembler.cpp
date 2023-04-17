@@ -4581,6 +4581,13 @@ void MacroAssembler::iteratorClose(Register obj, Register temp1, Register temp2,
   LoadNativeIterator(*this, obj, temp1);
 
   
+  
+  Label done;
+  branchPtr(Assembler::Equal,
+            Address(temp1, NativeIterator::offsetOfObjectBeingIterated()),
+            ImmPtr(nullptr), &done);
+
+  
   and32(Imm32(~NativeIterator::Flags::Active),
         Address(temp1, NativeIterator::offsetOfFlagsAndCount()));
 
@@ -4599,6 +4606,8 @@ void MacroAssembler::iteratorClose(Register obj, Register temp1, Register temp2,
   storePtr(ImmPtr(nullptr), Address(temp1, NativeIterator::offsetOfNext()));
   storePtr(ImmPtr(nullptr), Address(temp1, NativeIterator::offsetOfPrev()));
 #endif
+
+  bind(&done);
 }
 
 void MacroAssembler::toHashableNonGCThing(ValueOperand value,
