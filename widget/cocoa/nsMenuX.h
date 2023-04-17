@@ -29,8 +29,10 @@ class nsIWidget;
 
 @interface MenuDelegate : NSObject <NSMenuDelegate> {
   nsMenuX* mGeckoMenu;  
+  NSMutableArray* mBlocksToRunWhenOpen;
 }
 - (id)initWithGeckoMenu:(nsMenuX*)geckoMenu;
+- (void)runBlockWhenOpen:(void (^)())block;
 @property BOOL menuIsInMenubar;
 @end
 

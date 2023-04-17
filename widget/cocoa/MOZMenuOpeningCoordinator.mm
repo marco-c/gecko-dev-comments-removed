@@ -11,10 +11,12 @@
 #include "MOZMenuOpeningCoordinator.h"
 
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/StaticPrefs_widget.h"
 
 #include "nsCocoaFeatures.h"
 #include "nsCocoaUtils.h"
 #include "nsDeque.h"
+#include "nsMenuX.h"
 #include "nsObjCExceptions.h"
 #include "nsThreadUtils.h"
 #include "SDKDeclarations.h"
@@ -159,25 +161,50 @@
   
   
 
-  if (@available(macOS 10.14, *)) {
-#if !defined(MAC_OS_VERSION_11_0) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_VERSION_11_0
-    if (nsCocoaFeatures::OnBigSurOrLater()) {
-#else
-    if (@available(macOS 11.0, *)) {
-#endif
-      
-      [aMenu setAppearance:NSApp.effectiveAppearance];
-    }
-  }
-
   if (aView) {
+    NSWindow* window = aView.window;
+
+    if (@available(macOS 10.14, *)) {
+      if (window.effectiveAppearance != NSApp.effectiveAppearance) {
+        
+        
+        
+#if !defined(MAC_OS_VERSION_11_0) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_VERSION_11_0
+        if (nsCocoaFeatures::OnBigSurOrLater()) {
+#else
+        if (@available(macOS 11.0, *)) {
+#endif
+          
+          [aMenu setAppearance:NSApp.effectiveAppearance];
+        } else if (mozilla::StaticPrefs::
+                       widget_macos_enable_pre_bigsur_workaround_for_dark_mode_context_menus()) {
+          
+          
+          
+          
+          
+          if ([aMenu.delegate isKindOfClass:[MenuDelegate class]]) {
+            MenuDelegate* delegate = (MenuDelegate*)aMenu.delegate;
+
+            
+            
+            NSAppearance* oldAppearance = window.appearance;
+            window.appearance = NSApp.effectiveAppearance;
+            [(MenuDelegate*)delegate runBlockWhenOpen:^() {
+              window.appearance = oldAppearance;
+            }];
+          }
+        }
+      }
+    }
+
     
-    NSPoint locationInWindow = nsCocoaUtils::ConvertPointFromScreen(aView.window, aPosition);
+    NSPoint locationInWindow = nsCocoaUtils::ConvertPointFromScreen(window, aPosition);
     NSEvent* event = [NSEvent mouseEventWithType:NSEventTypeRightMouseDown
                                         location:locationInWindow
                                    modifierFlags:0
                                        timestamp:NSProcessInfo.processInfo.systemUptime
-                                    windowNumber:aView.window.windowNumber
+                                    windowNumber:window.windowNumber
                                          context:nil
                                      eventNumber:0
                                       clickCount:1
