@@ -90,6 +90,8 @@ class AccAttributes {
 
   uint32_t Count() const { return mData.Count(); }
 
+  void Update(AccAttributes* aOther);
+
   
   class Entry {
    public:
@@ -127,6 +129,8 @@ class AccAttributes {
    private:
     nsAtom* mName;
     const AttrValueType* mValue;
+
+    friend class AccAttributes;
   };
 
   class Iterator {

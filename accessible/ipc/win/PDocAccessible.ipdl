@@ -7,6 +7,8 @@
 include protocol PFileDescriptorSet;
 include protocol PBrowser;
 
+include DocAccessibleTypes;
+
 include "mozilla/GfxMessageUtils.h";
 
 using mozilla::a11y::role from "mozilla/a11y/IPCTypes.h";
@@ -79,6 +81,15 @@ parent:
 
 
   async BindChildDoc(PDocAccessible aChildDoc, uint64_t aID);
+
+  
+
+
+
+
+
+
+  async Cache(uint8_t aUpdateType, CacheData[] aData, bool aFinal);
 
 child:
   

@@ -8,6 +8,8 @@ include protocol PFileDescriptorSet;
 include protocol PBrowser;
 include protocol PDocAccessiblePlatformExt;
 
+include DocAccessibleTypes;
+
 include "mozilla/GfxMessageUtils.h";
 
 using nsIntRect from "nsRect.h";
@@ -121,6 +123,15 @@ parent:
 
   
   async Batch(uint64_t aBatchType, BatchData[] aData);
+
+  
+
+
+
+
+
+
+  async Cache(uint8_t aUpdateType, CacheData[] aData, bool aFinal);
 
 child:
   
