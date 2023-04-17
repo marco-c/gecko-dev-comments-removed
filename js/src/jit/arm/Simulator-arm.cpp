@@ -1062,11 +1062,10 @@ void SimulatorProcess::checkICacheLocked(SimInstruction* instr) {
 
   if (cache_hit) {
     
-    int cmpret =
+    mozilla::DebugOnly<int> cmpret =
         memcmp(reinterpret_cast<void*>(instr), cache_page->cachedData(offset),
                SimInstruction::kInstrSize);
     MOZ_ASSERT(cmpret == 0);
-    (void)cmpret;
   } else {
     
     memcpy(cached_line, line, CachePage::kLineLength);
