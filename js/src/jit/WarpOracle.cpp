@@ -72,9 +72,9 @@ class MOZ_STACK_CLASS WarpScriptOracle {
                                                   BytecodeLocation loc,
                                                   ICCacheIRStub* firstStub,
                                                   ICFallbackStub* fallbackStub);
-  [[nodiscard]] bool replaceNurseryPointers(ICCacheIRStub* stub,
-                                            const CacheIRStubInfo* stubInfo,
-                                            uint8_t* stubDataCopy);
+  [[nodiscard]] bool replaceNurseryAndAllocSitePointers(
+      ICCacheIRStub* stub, const CacheIRStubInfo* stubInfo,
+      uint8_t* stubDataCopy);
 
  public:
   WarpScriptOracle(JSContext* cx, WarpOracle* oracle, HandleScript script,
@@ -862,7 +862,7 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
     
     std::copy_n(stubData, bytesNeeded, stubDataCopy);
 
-    if (!replaceNurseryPointers(stub, stubInfo, stubDataCopy)) {
+    if (!replaceNurseryAndAllocSitePointers(stub, stubInfo, stubDataCopy)) {
       return abort(AbortReason::Alloc);
     }
   }
@@ -1030,9 +1030,13 @@ AbortReasonOr<bool> WarpScriptOracle::maybeInlinePolymorphicTypes(
   return true;
 }
 
-bool WarpScriptOracle::replaceNurseryPointers(ICCacheIRStub* stub,
-                                              const CacheIRStubInfo* stubInfo,
-                                              uint8_t* stubDataCopy) {
+bool WarpScriptOracle::replaceNurseryAndAllocSitePointers(
+    ICCacheIRStub* stub, const CacheIRStubInfo* stubInfo,
+    uint8_t* stubDataCopy) {
+  
+  
+  
+  
   
   
   
@@ -1046,8 +1050,6 @@ bool WarpScriptOracle::replaceNurseryPointers(ICCacheIRStub* stub,
       case StubField::Type::RawInt32:
       case StubField::Type::RawPointer:
       case StubField::Type::RawInt64:
-      case StubField::Type::AllocSite:
-        break;
       case StubField::Type::Shape:
         static_assert(std::is_convertible_v<Shape*, gc::TenuredCell*>,
                       "Code assumes shapes are tenured");
@@ -1102,6 +1104,14 @@ bool WarpScriptOracle::replaceNurseryPointers(ICCacheIRStub* stub,
             stubInfo->getStubField<ICCacheIRStub, JS::Value>(stub, offset);
         MOZ_ASSERT_IF(v.isGCThing(), !IsInsideNursery(v.toGCThing()));
 #endif
+        break;
+      }
+      case StubField::Type::AllocSite: {
+        uintptr_t oldWord = stubInfo->getStubRawWord(stub, offset);
+        auto* site = reinterpret_cast<gc::AllocSite*>(oldWord);
+        gc::InitialHeap initialHeap = site->initialHeap();
+        uintptr_t newWord = uintptr_t(initialHeap);
+        stubInfo->replaceStubRawWord(stubDataCopy, offset, oldWord, newWord);
         break;
       }
       case StubField::Type::Limit:

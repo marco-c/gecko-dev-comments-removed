@@ -62,8 +62,7 @@ class AllocSite {
   
   uint32_t nurseryTenuredCount = 0;
 
-  
-  mozilla::Atomic<State, mozilla::ReleaseAcquire> state_{State::Unknown};
+  State state_ = State::Unknown;
 
   
   uint32_t invalidationCount = 0;
