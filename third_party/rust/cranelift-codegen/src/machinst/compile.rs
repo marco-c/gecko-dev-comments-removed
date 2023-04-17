@@ -1,11 +1,12 @@
 
 
 use crate::ir::Function;
+use crate::log::DeferredDisplay;
 use crate::machinst::*;
 use crate::settings;
 use crate::timing;
 
-use log::{debug, log_enabled, Level};
+use log::debug;
 use regalloc::{allocate_registers_with_opts, Algorithm, Options, PrettyPrint};
 
 
@@ -31,13 +32,10 @@ where
 
     
     
-    
-    if log_enabled!(Level::Debug) {
-        debug!(
-            "vcode from lowering: \n{}",
-            vcode.show_rru(Some(b.reg_universe()))
-        );
-    }
+    debug!(
+        "vcode from lowering: \n{}",
+        DeferredDisplay::new(|| vcode.show_rru(Some(b.reg_universe())))
+    );
 
     
     let (run_checker, algorithm) = match vcode.flags().regalloc() {
@@ -106,12 +104,10 @@ where
         vcode.replace_insns_from_regalloc(result);
     }
 
-    if log_enabled!(Level::Debug) {
-        debug!(
-            "vcode after regalloc: final version:\n{}",
-            vcode.show_rru(Some(b.reg_universe()))
-        );
-    }
+    debug!(
+        "vcode after regalloc: final version:\n{}",
+        DeferredDisplay::new(|| vcode.show_rru(Some(b.reg_universe())))
+    );
 
     Ok(vcode)
 }

@@ -31,6 +31,12 @@ pub trait ABICallee {
     fn signature(&self) -> &Signature;
 
     
+    
+    
+    
+    fn accumulate_outgoing_args_size(&mut self, size: u32);
+
+    
     fn flags(&self) -> &settings::Flags;
 
     
@@ -189,9 +195,6 @@ pub trait ABICallee {
         from_slot: SpillSlot,
         ty: Option<Type>,
     ) -> Self::I;
-
-    
-    fn unwind_info_kind(&self) -> UnwindInfoKind;
 }
 
 
@@ -244,6 +247,13 @@ pub trait ABICaller {
 
     
     fn emit_stack_post_adjust<C: LowerCtx<I = Self::I>>(&self, ctx: &mut C);
+
+    
+    
+    
+    
+    
+    fn accumulate_outgoing_args_size<C: LowerCtx<I = Self::I>>(&self, ctx: &mut C);
 
     
     

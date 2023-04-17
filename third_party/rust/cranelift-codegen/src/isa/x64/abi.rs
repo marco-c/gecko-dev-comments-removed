@@ -239,8 +239,18 @@ impl ABIMachineSpec for X64ABIMachineSpec {
                 } else {
                     
                     
+                    
+                    
+                    
+                    
+                    
+                    
                     let size = (reg_ty.bits() / 8) as u64;
-                    let size = std::cmp::max(size, 8);
+                    let size = if args_or_rets == ArgsOrRets::Rets && call_conv.extends_wasmtime() {
+                        size
+                    } else {
+                        std::cmp::max(size, 8)
+                    };
                     
                     debug_assert!(size.is_power_of_two());
                     next_stack = align_to(next_stack, size);
@@ -307,19 +317,19 @@ impl ABIMachineSpec for X64ABIMachineSpec {
     }
 
     fn gen_load_stack(mem: StackAMode, into_reg: Writable<Reg>, ty: Type) -> Self::I {
-        let ext_kind = match ty {
+        
+        
+        let ty = match ty {
             types::B1
             | types::B8
             | types::I8
             | types::B16
             | types::I16
             | types::B32
-            | types::I32 => ExtKind::SignExtend,
-            types::B64 | types::I64 | types::R64 | types::F32 | types::F64 => ExtKind::None,
-            _ if ty.bytes() == 16 => ExtKind::None,
-            _ => panic!("load_stack({})", ty),
+            | types::I32 => types::I64,
+            _ => ty,
         };
-        Inst::load(ty, mem, into_reg, ext_kind)
+        Inst::load(ty, mem, into_reg, ExtKind::None)
     }
 
     fn gen_store_stack(mem: StackAMode, from_reg: Reg, ty: Type) -> Self::I {
@@ -490,6 +500,7 @@ impl ABIMachineSpec for X64ABIMachineSpec {
         flags: &settings::Flags,
         clobbers: &Set<Writable<RealReg>>,
         fixed_frame_storage_size: u32,
+        _outgoing_args_size: u32,
     ) -> (u64, SmallVec<[Self::I; 16]>) {
         let mut insts = SmallVec::new();
         
@@ -564,6 +575,7 @@ impl ABIMachineSpec for X64ABIMachineSpec {
         flags: &settings::Flags,
         clobbers: &Set<Writable<RealReg>>,
         fixed_frame_storage_size: u32,
+        _outgoing_args_size: u32,
     ) -> SmallVec<[Self::I; 16]> {
         let mut insts = SmallVec::new();
 
@@ -824,15 +836,7 @@ impl From<StackAMode> for SyntheticAmode {
 }
 
 fn get_intreg_for_arg(call_conv: &CallConv, idx: usize, arg_idx: usize) -> Option<Reg> {
-    let is_fastcall = match call_conv {
-        CallConv::Fast
-        | CallConv::Cold
-        | CallConv::SystemV
-        | CallConv::BaldrdashSystemV
-        | CallConv::Baldrdash2020 => false,
-        CallConv::WindowsFastcall => true,
-        _ => panic!("int args only supported for SysV or Fastcall calling convention"),
-    };
+    let is_fastcall = call_conv.extends_windows_fastcall();
 
     
     
@@ -853,15 +857,7 @@ fn get_intreg_for_arg(call_conv: &CallConv, idx: usize, arg_idx: usize) -> Optio
 }
 
 fn get_fltreg_for_arg(call_conv: &CallConv, idx: usize, arg_idx: usize) -> Option<Reg> {
-    let is_fastcall = match call_conv {
-        CallConv::Fast
-        | CallConv::Cold
-        | CallConv::SystemV
-        | CallConv::BaldrdashSystemV
-        | CallConv::Baldrdash2020 => false,
-        CallConv::WindowsFastcall => true,
-        _ => panic!("float args only supported for SysV or Fastcall calling convention"),
-    };
+    let is_fastcall = call_conv.extends_windows_fastcall();
 
     
     
@@ -894,7 +890,10 @@ fn get_intreg_for_retval(
             1 => Some(regs::rdx()),
             _ => None,
         },
-        CallConv::BaldrdashSystemV | CallConv::Baldrdash2020 => {
+        CallConv::BaldrdashSystemV
+        | CallConv::Baldrdash2020
+        | CallConv::WasmtimeSystemV
+        | CallConv::WasmtimeFastcall => {
             if intreg_idx == 0 && retval_idx == 0 {
                 Some(regs::rax())
             } else {
@@ -922,7 +921,10 @@ fn get_fltreg_for_retval(
             1 => Some(regs::xmm1()),
             _ => None,
         },
-        CallConv::BaldrdashSystemV | CallConv::Baldrdash2020 => {
+        CallConv::BaldrdashSystemV
+        | CallConv::Baldrdash2020
+        | CallConv::WasmtimeFastcall
+        | CallConv::WasmtimeSystemV => {
             if fltreg_idx == 0 && retval_idx == 0 {
                 Some(regs::xmm0())
             } else {
@@ -992,12 +994,12 @@ fn get_callee_saves(call_conv: &CallConv, regs: &Set<Writable<RealReg>>) -> Vec<
         CallConv::BaldrdashWindows => {
             todo!("baldrdash windows");
         }
-        CallConv::Fast | CallConv::Cold | CallConv::SystemV => regs
+        CallConv::Fast | CallConv::Cold | CallConv::SystemV | CallConv::WasmtimeSystemV => regs
             .iter()
             .cloned()
             .filter(|r| is_callee_save_systemv(r.to_reg()))
             .collect(),
-        CallConv::WindowsFastcall => regs
+        CallConv::WindowsFastcall | CallConv::WasmtimeFastcall => regs
             .iter()
             .cloned()
             .filter(|r| is_callee_save_fastcall(r.to_reg()))

@@ -5,7 +5,6 @@ use crate::ir::{types, ConstantData, Type};
 use core::convert::TryInto;
 use core::fmt::{self, Display, Formatter};
 use core::ptr;
-use thiserror::Error;
 
 
 
@@ -97,13 +96,36 @@ impl DataValue {
 }
 
 
-#[derive(Error, Debug, PartialEq)]
+#[derive(Debug, PartialEq)]
 #[allow(missing_docs)]
 pub enum DataValueCastFailure {
-    #[error("unable to cast data value of type {0} to type {1}")]
     TryInto(Type, Type),
-    #[error("unable to cast i64({0}) to a data value of type {1}")]
     FromInteger(i64, Type),
+}
+
+
+
+impl std::error::Error for DataValueCastFailure {}
+
+impl Display for DataValueCastFailure {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self {
+            DataValueCastFailure::TryInto(from, to) => {
+                write!(
+                    f,
+                    "unable to cast data value of type {} to type {}",
+                    from, to
+                )
+            }
+            DataValueCastFailure::FromInteger(val, to) => {
+                write!(
+                    f,
+                    "unable to cast i64({}) to a data value of type {}",
+                    val, to
+                )
+            }
+        }
+    }
 }
 
 

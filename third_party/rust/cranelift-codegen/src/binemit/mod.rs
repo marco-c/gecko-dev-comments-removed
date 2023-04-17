@@ -60,6 +60,8 @@ pub enum Reloc {
     Arm64Call,
     
     RiscvCall,
+    
+    S390xPCRel32Dbl,
 
     
     ElfX86_64TlsGd,
@@ -75,6 +77,7 @@ impl fmt::Display for Reloc {
         match *self {
             Self::Abs4 => write!(f, "Abs4"),
             Self::Abs8 => write!(f, "Abs8"),
+            Self::S390xPCRel32Dbl => write!(f, "PCRel32Dbl"),
             Self::X86PCRel4 => write!(f, "PCRel4"),
             Self::X86PCRelRodata4 => write!(f, "PCRelRodata4"),
             Self::X86CallPCRel4 => write!(f, "CallPCRel4"),

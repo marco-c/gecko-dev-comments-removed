@@ -2,19 +2,17 @@
 
 use crate::verifier::VerifierErrors;
 use std::string::String;
-use thiserror::Error;
 
 
 
 
-#[derive(Error, Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum CodegenError {
     
     
     
     
-    #[error("Verifier errors")]
-    Verifier(#[from] VerifierErrors),
+    Verifier(VerifierErrors),
 
     
     
@@ -22,27 +20,57 @@ pub enum CodegenError {
     
     
     
-    #[error("Implementation limit exceeded")]
     ImplLimitExceeded,
 
     
     
     
     
-    #[error("Code for function is too large")]
     CodeTooLarge,
 
     
     
     
-    #[error("Unsupported feature: {0}")]
     Unsupported(String),
 
     
     #[cfg(feature = "unwind")]
-    #[error("Register mapping error")]
     RegisterMappingError(crate::isa::unwind::systemv::RegisterMappingError),
 }
 
 
 pub type CodegenResult<T> = Result<T, CodegenError>;
+
+
+
+impl std::error::Error for CodegenError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            CodegenError::Verifier(source) => Some(source),
+            CodegenError::ImplLimitExceeded { .. }
+            | CodegenError::CodeTooLarge { .. }
+            | CodegenError::Unsupported { .. } => None,
+            #[cfg(feature = "unwind")]
+            CodegenError::RegisterMappingError { .. } => None,
+        }
+    }
+}
+
+impl std::fmt::Display for CodegenError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            CodegenError::Verifier(_) => write!(f, "Verifier errors"),
+            CodegenError::ImplLimitExceeded => write!(f, "Implementation limit exceeded"),
+            CodegenError::CodeTooLarge => write!(f, "Code for function is too large"),
+            CodegenError::Unsupported(feature) => write!(f, "Unsupported feature: {}", feature),
+            #[cfg(feature = "unwind")]
+            CodegenError::RegisterMappingError(_0) => write!(f, "Register mapping error"),
+        }
+    }
+}
+
+impl From<VerifierErrors> for CodegenError {
+    fn from(source: VerifierErrors) -> Self {
+        CodegenError::Verifier { 0: source }
+    }
+}

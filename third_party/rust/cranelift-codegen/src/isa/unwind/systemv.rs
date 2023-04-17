@@ -6,7 +6,6 @@ use crate::isa::unwind::UnwindInst;
 use crate::result::{CodegenError, CodegenResult};
 use alloc::vec::Vec;
 use gimli::write::{Address, FrameDescriptionEntry};
-use thiserror::Error;
 
 #[cfg(feature = "enable-serde")]
 use serde::{Deserialize, Serialize};
@@ -15,14 +14,30 @@ type Register = u16;
 
 
 #[allow(missing_docs)]
-#[derive(Error, Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum RegisterMappingError {
-    #[error("unable to find bank for register info")]
     MissingBank,
-    #[error("register mapping is currently only implemented for x86_64")]
     UnsupportedArchitecture,
-    #[error("unsupported register bank: {0}")]
     UnsupportedRegisterBank(&'static str),
+}
+
+
+
+impl std::error::Error for RegisterMappingError {}
+
+impl std::fmt::Display for RegisterMappingError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            RegisterMappingError::MissingBank => write!(f, "unable to find bank for register info"),
+            RegisterMappingError::UnsupportedArchitecture => write!(
+                f,
+                "register mapping is currently only implemented for x86_64"
+            ),
+            RegisterMappingError::UnsupportedRegisterBank(bank) => {
+                write!(f, "unsupported register bank: {}", bank)
+            }
+        }
+    }
 }
 
 
@@ -123,7 +138,9 @@ pub(crate) trait RegisterMapper<Reg> {
     
     fn sp(&self) -> Register;
     
-    fn fp(&self) -> Register;
+    fn fp(&self) -> Option<Register> {
+        None
+    }
     
     fn lr(&self) -> Option<Register> {
         None
@@ -151,6 +168,7 @@ pub(crate) fn create_unwind_info_from_insts<MR: RegisterMapper<regalloc::Reg>>(
 ) -> CodegenResult<UnwindInfo> {
     let mut instructions = vec![];
 
+    let mut cfa_offset = 0;
     let mut clobber_offset_to_cfa = 0;
     for &(instruction_offset, ref inst) in insts {
         match inst {
@@ -164,9 +182,13 @@ pub(crate) fn create_unwind_info_from_insts<MR: RegisterMapper<regalloc::Reg>>(
                     CallFrameInstruction::CfaOffset(offset_upward_to_caller_sp as i32),
                 ));
                 
+                
                 instructions.push((
                     instruction_offset,
-                    CallFrameInstruction::Offset(mr.fp(), -(offset_upward_to_caller_sp as i32)),
+                    CallFrameInstruction::Offset(
+                        mr.fp().unwrap(),
+                        -(offset_upward_to_caller_sp as i32),
+                    ),
                 ));
                 
                 
@@ -189,13 +211,27 @@ pub(crate) fn create_unwind_info_from_insts<MR: RegisterMapper<regalloc::Reg>>(
                 
                 
                 
-                instructions.push((
-                    instruction_offset,
-                    CallFrameInstruction::CfaRegister(mr.fp()),
-                ));
+                
+                if let Some(fp) = mr.fp() {
+                    instructions.push((instruction_offset, CallFrameInstruction::CfaRegister(fp)));
+                }
+                
+                
+                cfa_offset = offset_upward_to_caller_sp;
                 
                 
                 clobber_offset_to_cfa = offset_upward_to_caller_sp + offset_downward_to_clobbers;
+            }
+            &UnwindInst::StackAlloc { size } => {
+                
+                
+                if mr.fp().is_none() {
+                    cfa_offset += size;
+                    instructions.push((
+                        instruction_offset,
+                        CallFrameInstruction::CfaOffset(cfa_offset as i32),
+                    ));
+                }
             }
             &UnwindInst::SaveReg {
                 clobber_offset,

@@ -26,7 +26,6 @@ use alloc::boxed::Box;
 use alloc::string::{String, ToString};
 use core::fmt;
 use core::str;
-use thiserror::Error;
 
 
 
@@ -261,19 +260,32 @@ impl Configurable for Builder {
 }
 
 
-#[derive(Error, Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum SetError {
     
-    #[error("No existing setting named '{0}'")]
     BadName(String),
 
     
-    #[error("Trying to set a setting with the wrong type")]
     BadType,
 
     
-    #[error("Unexpected value for a setting, expected {0}")]
     BadValue(String),
+}
+
+impl std::error::Error for SetError {}
+
+impl fmt::Display for SetError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            SetError::BadName(name) => write!(f, "No existing setting named '{}'", name),
+            SetError::BadType => {
+                write!(f, "Trying to set a setting with the wrong type")
+            }
+            SetError::BadValue(value) => {
+                write!(f, "Unexpected value for a setting, expected {}", value)
+            }
+        }
+    }
 }
 
 

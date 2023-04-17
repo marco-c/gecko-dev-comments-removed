@@ -148,6 +148,28 @@ where
     pub fn into_boxed_slice(self) -> BoxedSlice<K, V> {
         unsafe { BoxedSlice::<K, V>::from_raw(Box::<[V]>::into_raw(self.elems.into_boxed_slice())) }
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn binary_search_values_by_key<'a, B, F>(&'a self, b: &B, f: F) -> Result<K, K>
+    where
+        F: FnMut(&'a V) -> B,
+        B: Ord,
+    {
+        self.elems
+            .binary_search_by_key(b, f)
+            .map(|i| K::new(i))
+            .map_err(|i| K::new(i))
+    }
 }
 
 impl<K, V> Default for PrimaryMap<K, V>

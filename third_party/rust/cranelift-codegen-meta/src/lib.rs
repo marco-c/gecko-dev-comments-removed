@@ -116,6 +116,9 @@ pub fn generate(
             isa::Isa::Arm64 => {
                 
             }
+            isa::Isa::S390x => {
+                
+            }
             isa::Isa::Arm32 | isa::Isa::Riscv => todo!(),
         }
     }

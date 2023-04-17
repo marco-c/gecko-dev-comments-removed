@@ -226,6 +226,11 @@ pub enum UnwindInst {
         offset_downward_to_clobbers: u32,
     },
     
+    StackAlloc {
+        
+        size: u32,
+    },
+    
     
     
     

@@ -57,7 +57,7 @@ use crate::flowgraph;
 use crate::ir;
 #[cfg(feature = "unwind")]
 use crate::isa::unwind::systemv::RegisterMappingError;
-use crate::machinst::MachBackend;
+use crate::machinst::{MachBackend, UnwindInfoKind};
 use crate::regalloc;
 use crate::result::CodegenResult;
 use crate::settings;
@@ -68,8 +68,7 @@ use core::any::Any;
 use core::fmt;
 use core::fmt::{Debug, Formatter};
 use core::hash::Hasher;
-use target_lexicon::{triple, Architecture, PointerWidth, Triple};
-use thiserror::Error;
+use target_lexicon::{triple, Architecture, OperatingSystem, PointerWidth, Triple};
 
 #[cfg(feature = "riscv")]
 mod riscv;
@@ -82,14 +81,19 @@ mod riscv;
 #[cfg(feature = "x86")]
 mod x86;
 
+
+
 #[cfg(feature = "x86")]
-mod x64;
+pub mod x64;
 
 #[cfg(feature = "arm32")]
 mod arm32;
 
 #[cfg(feature = "arm64")]
 pub(crate) mod aarch64;
+
+#[cfg(feature = "s390x")]
+mod s390x;
 
 pub mod unwind;
 
@@ -160,6 +164,7 @@ pub fn lookup_variant(triple: Triple, variant: BackendVariant) -> Result<Builder
         }
         (Architecture::Arm { .. }, _) => isa_builder!(arm32, (feature = "arm32"), triple),
         (Architecture::Aarch64 { .. }, _) => isa_builder!(aarch64, (feature = "arm64"), triple),
+        (Architecture::S390x { .. }, _) => isa_builder!(s390x, (feature = "s390x"), triple),
         _ => Err(LookupError::Unsupported),
     }
 }
@@ -178,15 +183,28 @@ pub fn lookup_by_name(name: &str) -> Result<Builder, LookupError> {
 }
 
 
-#[derive(Error, PartialEq, Eq, Copy, Clone, Debug)]
+#[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub enum LookupError {
     
-    #[error("Support for this target is disabled")]
     SupportDisabled,
 
     
-    #[error("Support for this target has not been implemented yet")]
     Unsupported,
+}
+
+
+
+impl std::error::Error for LookupError {}
+
+impl fmt::Display for LookupError {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self {
+            LookupError::SupportDisabled => write!(f, "Support for this target is disabled"),
+            LookupError::Unsupported => {
+                write!(f, "Support for this target has not been implemented yet")
+            }
+        }
+    }
 }
 
 
@@ -475,6 +493,18 @@ pub trait TargetIsa: fmt::Display + Send + Sync {
 
     
     fn unsigned_sub_overflow_condition(&self) -> ir::condcodes::IntCC;
+
+    
+    fn unwind_info_kind(&self) -> UnwindInfoKind {
+        match self.triple().operating_system {
+            #[cfg(feature = "unwind")]
+            OperatingSystem::Windows => UnwindInfoKind::Windows,
+            #[cfg(feature = "unwind")]
+            _ => UnwindInfoKind::SystemV,
+            #[cfg(not(feature = "unwind"))]
+            _ => UnwindInfoKind::None,
+        }
+    }
 
     
     

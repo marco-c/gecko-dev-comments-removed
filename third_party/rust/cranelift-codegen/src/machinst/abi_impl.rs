@@ -444,6 +444,7 @@ pub trait ABIMachineSpec {
         flags: &settings::Flags,
         clobbers: &Set<Writable<RealReg>>,
         fixed_frame_storage_size: u32,
+        outgoing_args_size: u32,
     ) -> (u64, SmallVec<[Self::I; 16]>);
 
     
@@ -455,6 +456,7 @@ pub trait ABIMachineSpec {
         flags: &settings::Flags,
         clobbers: &Set<Writable<RealReg>>,
         fixed_frame_storage_size: u32,
+        outgoing_args_size: u32,
     ) -> SmallVec<[Self::I; 16]>;
 
     
@@ -577,6 +579,8 @@ pub struct ABICalleeImpl<M: ABIMachineSpec> {
     
     stackslots_size: u32,
     
+    outgoing_args_size: u32,
+    
     clobbered: Set<Writable<RealReg>>,
     
     spillslots: Option<usize>,
@@ -647,7 +651,8 @@ impl<M: ABIMachineSpec> ABICalleeImpl<M> {
                 || call_conv == isa::CallConv::Cold
                 || call_conv.extends_baldrdash()
                 || call_conv.extends_windows_fastcall()
-                || call_conv == isa::CallConv::AppleAarch64,
+                || call_conv == isa::CallConv::AppleAarch64
+                || call_conv == isa::CallConv::WasmtimeSystemV,
             "Unsupported calling convention: {:?}",
             call_conv
         );
@@ -690,6 +695,7 @@ impl<M: ABIMachineSpec> ABICalleeImpl<M> {
             sig,
             stackslots,
             stackslots_size: stack_offset,
+            outgoing_args_size: 0,
             clobbered: Set::empty(),
             spillslots: None,
             fixed_frame_storage_size: 0,
@@ -913,6 +919,12 @@ impl<M: ABIMachineSpec> ABICallee for ABICalleeImpl<M> {
         if self.sig.stack_ret_arg.is_some() {
             assert!(maybe_tmp.is_some());
             self.ret_area_ptr = maybe_tmp;
+        }
+    }
+
+    fn accumulate_outgoing_args_size(&mut self, size: u32) {
+        if size > self.outgoing_args_size {
+            self.outgoing_args_size = size;
         }
     }
 
@@ -1197,6 +1209,15 @@ impl<M: ABIMachineSpec> ABICallee for ABICalleeImpl<M> {
         let spill_off = islot * M::word_bytes() as i64;
         let sp_off = self.stackslots_size as i64 + spill_off;
         trace!("load_spillslot: slot {:?} -> sp_off {}", slot, sp_off);
+
+        
+        
+        let ty = if ty.is_int() && ty.bytes() < M::word_bytes() {
+            M::word_type()
+        } else {
+            ty
+        };
+
         gen_load_stack_multi::<M>(StackAMode::NominalSPOffset(sp_off, ty), into_regs, ty)
     }
 
@@ -1212,6 +1233,19 @@ impl<M: ABIMachineSpec> ABICallee for ABICalleeImpl<M> {
         let spill_off = islot * M::word_bytes() as i64;
         let sp_off = self.stackslots_size as i64 + spill_off;
         trace!("store_spillslot: slot {:?} -> sp_off {}", slot, sp_off);
+
+        
+        
+        
+        
+        
+        
+        let ty = if ty.is_int() && ty.bytes() < M::word_bytes() {
+            M::word_type()
+        } else {
+            ty
+        };
+
         gen_store_stack_multi::<M>(StackAMode::NominalSPOffset(sp_off, ty), from_regs, ty)
     }
 
@@ -1284,11 +1318,12 @@ impl<M: ABIMachineSpec> ABICallee for ABICalleeImpl<M> {
         }
 
         
-        let (_, clobber_insts) = M::gen_clobber_save(
+        let (clobber_size, clobber_insts) = M::gen_clobber_save(
             self.call_conv,
             &self.flags,
             &self.clobbered,
             self.fixed_frame_storage_size,
+            self.outgoing_args_size,
         );
         insts.extend(clobber_insts);
 
@@ -1303,7 +1338,7 @@ impl<M: ABIMachineSpec> ABICallee for ABICalleeImpl<M> {
         
         
 
-        self.total_frame_size = Some(total_stacksize);
+        self.total_frame_size = Some(total_stacksize + clobber_size as u32);
         insts
     }
 
@@ -1316,6 +1351,7 @@ impl<M: ABIMachineSpec> ABICallee for ABICalleeImpl<M> {
             &self.flags,
             &self.clobbered,
             self.fixed_frame_storage_size,
+            self.outgoing_args_size,
         ));
 
         
@@ -1369,18 +1405,6 @@ impl<M: ABIMachineSpec> ABICallee for ABICalleeImpl<M> {
         .into_iter()
         .next()
         .unwrap()
-    }
-
-    fn unwind_info_kind(&self) -> UnwindInfoKind {
-        match self.sig.call_conv {
-            #[cfg(feature = "unwind")]
-            isa::CallConv::Fast | isa::CallConv::Cold | isa::CallConv::SystemV => {
-                UnwindInfoKind::SystemV
-            }
-            #[cfg(feature = "unwind")]
-            isa::CallConv::WindowsFastcall => UnwindInfoKind::Windows,
-            _ => UnwindInfoKind::None,
-        }
     }
 }
 
@@ -1528,6 +1552,11 @@ impl<M: ABIMachineSpec> ABICaller for ABICallerImpl<M> {
         } else {
             self.sig.args.len()
         }
+    }
+
+    fn accumulate_outgoing_args_size<C: LowerCtx<I = Self::I>>(&self, ctx: &mut C) {
+        let off = self.sig.stack_arg_space + self.sig.stack_ret_space;
+        ctx.abi().accumulate_outgoing_args_size(off as u32);
     }
 
     fn emit_stack_pre_adjust<C: LowerCtx<I = Self::I>>(&self, ctx: &mut C) {

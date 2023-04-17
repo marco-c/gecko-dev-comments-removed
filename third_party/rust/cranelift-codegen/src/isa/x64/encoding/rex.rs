@@ -28,8 +28,9 @@ pub(crate) fn low8_will_sign_extend_to_32(x: u32) -> bool {
     xs == ((xs << 24) >> 24)
 }
 
+
 #[inline(always)]
-pub(crate) fn encode_modrm(m0d: u8, enc_reg_g: u8, rm_e: u8) -> u8 {
+pub fn encode_modrm(m0d: u8, enc_reg_g: u8, rm_e: u8) -> u8 {
     debug_assert!(m0d < 4);
     debug_assert!(enc_reg_g < 8);
     debug_assert!(rm_e < 8);
@@ -155,7 +156,36 @@ impl From<(OperandSize, Reg)> for RexFlags {
 
 
 
-pub(crate) enum LegacyPrefixes {
+#[allow(missing_docs)]
+pub enum OpcodeMap {
+    None,
+    _0F,
+    _0F38,
+    _0F3A,
+}
+
+impl OpcodeMap {
+    
+    
+    pub(crate) fn bits(&self) -> u8 {
+        match self {
+            OpcodeMap::None => 0b00,
+            OpcodeMap::_0F => 0b01,
+            OpcodeMap::_0F38 => 0b10,
+            OpcodeMap::_0F3A => 0b11,
+        }
+    }
+}
+
+impl Default for OpcodeMap {
+    fn default() -> Self {
+        Self::None
+    }
+}
+
+
+
+pub enum LegacyPrefixes {
     
     None,
     
@@ -173,25 +203,46 @@ pub(crate) enum LegacyPrefixes {
 }
 
 impl LegacyPrefixes {
+    
     #[inline(always)]
     pub(crate) fn emit(&self, sink: &mut MachBuffer<Inst>) {
         match self {
-            LegacyPrefixes::_66 => sink.put1(0x66),
-            LegacyPrefixes::_F0 => sink.put1(0xF0),
-            LegacyPrefixes::_66F0 => {
+            Self::_66 => sink.put1(0x66),
+            Self::_F0 => sink.put1(0xF0),
+            Self::_66F0 => {
                 
                 
                 sink.put1(0x66);
                 sink.put1(0xF0);
             }
-            LegacyPrefixes::_F2 => sink.put1(0xF2),
-            LegacyPrefixes::_F3 => sink.put1(0xF3),
-            LegacyPrefixes::_66F3 => {
+            Self::_F2 => sink.put1(0xF2),
+            Self::_F3 => sink.put1(0xF3),
+            Self::_66F3 => {
                 sink.put1(0x66);
                 sink.put1(0xF3);
             }
-            LegacyPrefixes::None => (),
+            Self::None => (),
         }
+    }
+
+    
+    #[inline(always)]
+    pub(crate) fn bits(&self) -> u8 {
+        match self {
+            Self::None => 0b00,
+            Self::_66 => 0b01,
+            Self::_F3 => 0b10,
+            Self::_F2 => 0b11,
+            _ => panic!(
+                "VEX and EVEX bits can only be extracted from single prefixes: None, 66, F3, F2"
+            ),
+        }
+    }
+}
+
+impl Default for LegacyPrefixes {
+    fn default() -> Self {
+        Self::None
     }
 }
 
