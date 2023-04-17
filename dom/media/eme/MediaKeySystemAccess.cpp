@@ -253,7 +253,7 @@ static nsTArray<KeySystemConfig> GetSupportedKeySystems() {
       clearkey.mDistinctiveIdentifier = KeySystemFeatureSupport::Prohibited;
       clearkey.mSessionTypes.AppendElement(MediaKeySessionType::Temporary);
       clearkey.mEncryptionSchemes.AppendElement(u"cenc"_ns);
-      
+      clearkey.mEncryptionSchemes.AppendElement(u"cbcs"_ns);
       if (StaticPrefs::media_clearkey_persistent_license_enabled()) {
         clearkey.mSessionTypes.AppendElement(
             MediaKeySessionType::Persistent_license);
