@@ -121,8 +121,7 @@ already_AddRefed<Promise> MediaDevices::GetUserMedia(
   return p.forget();
 }
 
-already_AddRefed<Promise> MediaDevices::EnumerateDevices(CallerType aCallerType,
-                                                         ErrorResult& aRv) {
+already_AddRefed<Promise> MediaDevices::EnumerateDevices(ErrorResult& aRv) {
   MOZ_ASSERT(NS_IsMainThread());
   nsCOMPtr<nsIGlobalObject> global = xpc::NativeGlobal(GetWrapper());
   nsCOMPtr<nsPIDOMWindowInner> owner = do_QueryInterface(global);
@@ -141,68 +140,64 @@ already_AddRefed<Promise> MediaDevices::EnumerateDevices(CallerType aCallerType,
     return nullptr;
   }
   RefPtr<MediaDevices> self(this);
-  MediaManager::Get()
-      ->EnumerateDevices(owner, aCallerType)
-      ->Then(
-          GetCurrentSerialEventTarget(), __func__,
-          [this, self,
-           p](RefPtr<MediaManager::MediaDeviceSetRefCnt>&& aDevices) {
-            nsPIDOMWindowInner* window = GetWindowIfCurrent();
-            if (!window) {
-              return;  
-            }
-            auto windowId = window->WindowID();
-            nsTArray<RefPtr<MediaDeviceInfo>> infos;
-            bool allowLabel =
-                aDevices->Length() == 0 ||
-                MediaManager::Get()->IsActivelyCapturingOrHasAPermission(
-                    windowId);
-            nsTHashSet<nsString> exposedMicrophoneGroupIds;
-            for (auto& device : *aDevices) {
-              nsString label;
-              MOZ_ASSERT(device->mKind < MediaDeviceKind::EndGuard_);
-              switch (device->mKind) {
-                case MediaDeviceKind::Audioinput:
-                  if (mCanExposeMicrophoneInfo) {
-                    exposedMicrophoneGroupIds.Insert(device->mGroupID);
-                  }
-                  [[fallthrough]];
-                case MediaDeviceKind::Videoinput:
-                  
-                  
-                  
-                  
-                  if (allowLabel ||
-                      Preferences::GetBool(
-                          "media.navigator.permission.disabled", false)) {
-                    label = device->mName;
-                  }
-                  break;
-                case MediaDeviceKind::Audiooutput:
-                  if (!mExplicitlyGrantedAudioOutputIds.Contains(device->mID) &&
-                      
-                      !exposedMicrophoneGroupIds.Contains(device->mGroupID)) {
-                    continue;
-                  }
-                  label = device->mName;
-                  break;
-                case MediaDeviceKind::EndGuard_:
-                  break;
-                  
-                  
+  MediaManager::Get()->EnumerateDevices(owner)->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [this, self, p](RefPtr<MediaManager::MediaDeviceSetRefCnt>&& aDevices) {
+        nsPIDOMWindowInner* window = GetWindowIfCurrent();
+        if (!window) {
+          return;  
+        }
+        auto windowId = window->WindowID();
+        nsTArray<RefPtr<MediaDeviceInfo>> infos;
+        bool allowLabel =
+            aDevices->Length() == 0 ||
+            MediaManager::Get()->IsActivelyCapturingOrHasAPermission(windowId);
+        nsTHashSet<nsString> exposedMicrophoneGroupIds;
+        for (auto& device : *aDevices) {
+          nsString label;
+          MOZ_ASSERT(device->mKind < MediaDeviceKind::EndGuard_);
+          switch (device->mKind) {
+            case MediaDeviceKind::Audioinput:
+              if (mCanExposeMicrophoneInfo) {
+                exposedMicrophoneGroupIds.Insert(device->mGroupID);
               }
-              infos.AppendElement(MakeRefPtr<MediaDeviceInfo>(
-                  device->mID, device->mKind, label, device->mGroupID));
-            }
-            p->MaybeResolve(std::move(infos));
-          },
-          [this, self, p](const RefPtr<MediaMgrError>& error) {
-            nsPIDOMWindowInner* window = GetWindowIfCurrent();
-            if (!window) {
-              return;  
-            }
-            error->Reject(p);
-          });
+              [[fallthrough]];
+            case MediaDeviceKind::Videoinput:
+              
+              
+              
+              
+              if (allowLabel ||
+                  Preferences::GetBool("media.navigator.permission.disabled",
+                                       false)) {
+                label = device->mName;
+              }
+              break;
+            case MediaDeviceKind::Audiooutput:
+              if (!mExplicitlyGrantedAudioOutputIds.Contains(device->mID) &&
+                  
+                  !exposedMicrophoneGroupIds.Contains(device->mGroupID)) {
+                continue;
+              }
+              label = device->mName;
+              break;
+            case MediaDeviceKind::EndGuard_:
+              break;
+              
+              
+          }
+          infos.AppendElement(MakeRefPtr<MediaDeviceInfo>(
+              device->mID, device->mKind, label, device->mGroupID));
+        }
+        p->MaybeResolve(std::move(infos));
+      },
+      [this, self, p](const RefPtr<MediaMgrError>& error) {
+        nsPIDOMWindowInner* window = GetWindowIfCurrent();
+        if (!window) {
+          return;  
+        }
+        error->Reject(p);
+      });
   return p.forget();
 }
 
