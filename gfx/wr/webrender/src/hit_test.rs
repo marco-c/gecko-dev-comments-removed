@@ -12,7 +12,7 @@ use crate::spatial_tree::{SpatialNodeIndex, SpatialTree};
 use crate::internal_types::{FastHashMap, LayoutPrimitiveInfo};
 use std::ops;
 use std::sync::{Arc, Mutex};
-use crate::util::LayoutToWorldFastTransform;
+use crate::util::{LayoutToWorldFastTransform, VecHelper};
 
 pub struct SharedHitTester {
     
@@ -489,12 +489,12 @@ fn add_clips(
     let template = &clip_store.templates[&clip_id];
 
     for clip in &template.clips {
-        let hit_test_clip_node = HitTestClipNode::new(
-            clip.key.into(),
-            clip.clip.spatial_node_index,
+        clip_nodes.alloc().init(
+            HitTestClipNode::new(
+                clip.key.into(),
+                clip.clip.spatial_node_index,
+            )
         );
-
-        clip_nodes.push(hit_test_clip_node);
     }
 
     
