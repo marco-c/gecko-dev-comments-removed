@@ -946,7 +946,9 @@ static bool ShouldRespectGlobalToolbarThemeAppearanceForChromeDoc() {
   
   
   
-  return mozilla::StaticPrefs::widget_macos_support_dark_appearance();
+  return StaticPrefs::widget_macos_support_dark_appearance();
+#elif defined(MOZ_WIDGET_GTK)
+  return StaticPrefs::widget_gtk_follow_firefox_theme();
 #else
   return false;
 #endif
@@ -955,9 +957,6 @@ static bool ShouldRespectGlobalToolbarThemeAppearanceForChromeDoc() {
 LookAndFeel::ColorScheme LookAndFeel::ColorSchemeForDocument(
     const dom::Document& aDoc) {
   if (nsContentUtils::IsChromeDoc(&aDoc)) {
-    if (ShouldRespectSystemColorSchemeForChromeDoc()) {
-      return SystemColorScheme();
-    }
     if (ShouldRespectGlobalToolbarThemeAppearanceForChromeDoc()) {
       switch (StaticPrefs::browser_theme_toolbar_theme()) {
         case 0:  
@@ -969,6 +968,9 @@ LookAndFeel::ColorScheme LookAndFeel::ColorSchemeForDocument(
         default:
           break;
       }
+    }
+    if (ShouldRespectSystemColorSchemeForChromeDoc()) {
+      return SystemColorScheme();
     }
   }
   return LookAndFeel::ColorScheme::Light;
