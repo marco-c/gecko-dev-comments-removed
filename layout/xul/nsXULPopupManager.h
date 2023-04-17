@@ -763,6 +763,13 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   
 
 
+  nsEventStatus FirePopupShowingEvent(nsIContent* aPopup,
+                                      nsPresContext* aPresContext,
+                                      mozilla::dom::Event* aTriggerEvent);
+
+  
+
+
 
 
   void SetCaptureState(nsIContent* aOldPopup);
