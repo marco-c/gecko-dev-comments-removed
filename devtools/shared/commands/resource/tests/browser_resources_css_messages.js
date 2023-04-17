@@ -89,10 +89,7 @@ async function testWatchingCachedCssMessages() {
   
   
   
-  const loaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-  tab.linkedBrowser.reload();
-  
-  await loaded;
+  await reloadBrowser();
   
   await triggerCSSWarning(tab);
 

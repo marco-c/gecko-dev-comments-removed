@@ -54,9 +54,7 @@ add_task(async function() {
   );
 
   
-  const loaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-  tab.linkedBrowser.reload();
-  await loaded;
+  await reloadBrowser();
 
   
   await SpecialPowers.spawn(

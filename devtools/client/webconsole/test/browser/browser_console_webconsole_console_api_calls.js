@@ -50,7 +50,7 @@ add_task(async function() {
 
 async function checkContentConsoleApiMessages(nonPrimitiveVariablesDisplayed) {
   
-  const tab = await addTab(TEST_URI);
+  await addTab(TEST_URI);
 
   
   const hud = await BrowserConsoleManager.toggleBrowserConsole();
@@ -59,9 +59,7 @@ async function checkContentConsoleApiMessages(nonPrimitiveVariablesDisplayed) {
   
   
   if (!nonPrimitiveVariablesDisplayed) {
-    const loaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-    tab.linkedBrowser.reload();
-    await loaded;
+    await reloadBrowser();
   }
 
   const suffix = nonPrimitiveVariablesDisplayed
