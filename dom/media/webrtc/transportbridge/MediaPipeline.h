@@ -17,10 +17,10 @@
 #include "mozilla/ReentrantMonitor.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/StateMirroring.h"
-#include "transport/SrtpFlow.h"  
 #include "transport/mediapacket.h"
 #include "transport/runnable_utils.h"
 #include "AudioPacketizer.h"
+#include "MediaEventSource.h"
 #include "MediaPipelineFilter.h"
 #include "MediaSegment.h"
 #include "jsapi/PacketDumper.h"
@@ -159,31 +159,8 @@ class MediaPipeline : public sigslot::has_slots<> {
   
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaPipeline)
 
-  
-  class PipelineTransport : public TransportInterface {
-   public:
-    
-    explicit PipelineTransport(RefPtr<nsISerialEventTarget> aStsThread)
-        : mPipeline(nullptr), mStsThread(std::move(aStsThread)) {}
-
-    void Attach(MediaPipeline* pipeline) { mPipeline = pipeline; }
-    void Detach() { mPipeline = nullptr; }
-    MediaPipeline* Pipeline() const { return mPipeline; }
-
-    virtual nsresult SendRtpPacket(const uint8_t* aData, size_t aLen) override;
-    virtual nsresult SendRtcpPacket(const uint8_t* aData, size_t aLen) override;
-
-   private:
-    void SendRtpRtcpPacket_s(MediaPacket&& aPacket);
-
-    
-    RefPtr<MediaPipeline> mPipeline;
-    const RefPtr<nsISerialEventTarget> mStsThread;
-  };
-
  protected:
   virtual ~MediaPipeline();
-  friend class PipelineTransport;
 
   
   virtual void TransportReady_s() {}
@@ -239,9 +216,6 @@ class MediaPipeline : public sigslot::has_slots<> {
   bool mSignalsConnected = false;
 
   
-  const RefPtr<PipelineTransport> mTransport;
-
-  
   int32_t mRtpPacketsSent;
   int32_t mRtcpPacketsSent;
   int32_t mRtpPacketsReceived;
@@ -265,6 +239,14 @@ class MediaPipeline : public sigslot::has_slots<> {
   const UniquePtr<webrtc::RtpHeaderParser> mRtpParser;
 
   UniquePtr<PacketDumper> mPacketDumper;
+
+  MediaEventProducerExc<MediaPacket, webrtc::RTPHeader> mRtpReceiveEvent;
+  MediaEventProducerExc<MediaPacket> mSenderRtcpReceiveEvent;
+  MediaEventProducerExc<MediaPacket> mReceiverRtcpReceiveEvent;
+
+  MediaEventListener mRtpSendEventListener;
+  MediaEventListener mSenderRtcpSendEventListener;
+  MediaEventListener mReceiverRtcpSendEventListener;
 
  private:
   bool IsRtp(const unsigned char* aData, size_t aLen) const;

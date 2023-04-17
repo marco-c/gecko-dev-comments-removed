@@ -9,6 +9,7 @@
 #include "mozilla/media/MediaUtils.h"
 #include "mozilla/Telemetry.h"
 #include "transport/runnable_utils.h"
+#include "transport/SrtpFlow.h"  
 #include "WebrtcCallWrapper.h"
 
 
@@ -96,17 +97,13 @@ void WebrtcAudioConduit::Shutdown() {
 
 WebrtcAudioConduit::WebrtcAudioConduit(
     RefPtr<WebrtcCallWrapper> aCall, nsCOMPtr<nsISerialEventTarget> aStsThread)
-    : mTransportMonitor("WebrtcAudioConduit"),
-      mTransmitterTransport(nullptr),
-      mReceiverTransport(nullptr),
-      mCall(std::move(aCall)),
+    : mCall(std::move(aCall)),
+      mSendTransport(this),
+      mRecvTransport(this),
       mRecvStreamConfig(),
       mRecvStream(nullptr),
-      mSendStreamConfig(
-          this)  
-      ,
+      mSendStreamConfig(&mSendTransport),
       mSendStream(nullptr),
-      mRecvSSRC(0),
       mSendStreamRunning(false),
       mRecvStreamRunning(false),
       mDtmfEnabled(false),
@@ -114,7 +111,10 @@ WebrtcAudioConduit::WebrtcAudioConduit(
       mCallThread(std::move(mCall->mCallThread)),
       mStsThread(std::move(aStsThread)),
       mControl(mCall->mCallThread),
-      mWatchManager(this, mCall->mCallThread) {}
+      mWatchManager(this, mCall->mCallThread) {
+  mRecvStreamConfig.rtcp_send_transport = &mRecvTransport;
+  mRecvStreamConfig.rtp.rtcp_event_observer = this;
+}
 
 
 
@@ -197,8 +197,8 @@ void WebrtcAudioConduit::OnControlConfigChange() {
   }
 
   if (mControl.mRemoteSsrc.Ref() != mControl.mConfiguredRemoteSsrc) {
-    mRecvSSRC = mRecvStreamConfig.rtp.remote_ssrc =
-        mControl.mConfiguredRemoteSsrc = mControl.mRemoteSsrc.Ref();
+    mRecvStreamConfig.rtp.remote_ssrc = mControl.mConfiguredRemoteSsrc =
+        mControl.mRemoteSsrc.Ref();
     recvStreamRecreationNeeded = true;
   }
 
@@ -318,7 +318,7 @@ bool WebrtcAudioConduit::OverrideRemoteSSRC(uint32_t ssrc) {
   if (mRecvStreamConfig.rtp.remote_ssrc == ssrc) {
     return true;
   }
-  mRecvSSRC = mRecvStreamConfig.rtp.remote_ssrc = ssrc;
+  mRecvStreamConfig.rtp.remote_ssrc = ssrc;
 
   AutoWriteLock lock(mLock);
   bool wasReceiving = mRecvStreamRunning;
@@ -373,26 +373,6 @@ void WebrtcAudioConduit::OnRtcpBye() { mRtcpByeEvent.Notify(); }
 
 void WebrtcAudioConduit::OnRtcpTimeout() { mRtcpTimeoutEvent.Notify(); }
 
-
-MediaConduitErrorCode WebrtcAudioConduit::SetTransmitterTransport(
-    RefPtr<TransportInterface> aTransport) {
-  CSFLogDebug(LOGTAG, "%s ", __FUNCTION__);
-
-  ReentrantMonitorAutoEnter enter(mTransportMonitor);
-  
-  mTransmitterTransport = aTransport;
-  return kMediaConduitNoError;
-}
-
-MediaConduitErrorCode WebrtcAudioConduit::SetReceiverTransport(
-    RefPtr<TransportInterface> aTransport) {
-  CSFLogDebug(LOGTAG, "%s ", __FUNCTION__);
-
-  ReentrantMonitorAutoEnter enter(mTransportMonitor);
-  
-  mReceiverTransport = aTransport;
-  return kMediaConduitNoError;
-}
 
 MediaConduitErrorCode WebrtcAudioConduit::SendAudioFrame(
     std::unique_ptr<webrtc::AudioFrame> frame) {
@@ -474,70 +454,31 @@ MediaConduitErrorCode WebrtcAudioConduit::GetAudioFrame(
 }
 
 
-void WebrtcAudioConduit::ReceivedRTPPacket(const uint8_t* data, int len,
-                                           webrtc::RTPHeader& header) {
-  ASSERT_ON_THREAD(mStsThread);
+void WebrtcAudioConduit::OnRtpReceived(MediaPacket&& aPacket,
+                                       webrtc::RTPHeader&& aHeader) {
+  MOZ_ASSERT(mCallThread->IsOnCurrentThread());
 
-  
-  
-  
-  
-
-  
-  
-  
-  
-  if (mRtpPacketQueue.IsQueueActive()) {
-    mRtpPacketQueue.Enqueue(rtc::CopyOnWriteBuffer(data, len));
-    return;
-  }
-
-  if (mRecvSSRC != header.ssrc) {
-    
-    
-    
-    mRtpPacketQueue.Clear();
-    mRtpPacketQueue.Enqueue(rtc::CopyOnWriteBuffer(data, len));
-
+  if (mRecvStreamConfig.rtp.remote_ssrc != aHeader.ssrc) {
     CSFLogDebug(LOGTAG, "%s: switching from SSRC %u to %u", __FUNCTION__,
-                static_cast<uint32_t>(mRecvSSRC), header.ssrc);
-
-    
-    mRecvSSRC = header.ssrc;
-
-    InvokeAsync(mCallThread, __func__,
-                [this, self = RefPtr<WebrtcAudioConduit>(this),
-                 ssrc = header.ssrc]() mutable {
-                  OverrideRemoteSSRC(ssrc);
-                  return GenericPromise::CreateAndResolve(true, __func__);
-                })
-        ->Then(mStsThread, __func__,
-               [this, self = RefPtr<WebrtcAudioConduit>(this),
-                ssrc = header.ssrc]() mutable {
-                 
-                 if (ssrc != mRecvSSRC) {
-                   
-                   return;
-                 }
-                 
-                 mRtpPacketQueue.DequeueAll(this);
-               });
-    return;
+                mRecvStreamConfig.rtp.remote_ssrc, aHeader.ssrc);
+    OverrideRemoteSSRC(aHeader.ssrc);
   }
 
-  CSFLogVerbose(LOGTAG, "%s: seq# %u, Len %d, SSRC %u (0x%x) ", __FUNCTION__,
-                (uint16_t)ntohs(((uint16_t*)data)[1]), len,
-                (uint32_t)ntohl(((uint32_t*)data)[2]),
-                (uint32_t)ntohl(((uint32_t*)data)[2]));
+  CSFLogVerbose(LOGTAG, "%s: seq# %u, Len %zu, SSRC %u (0x%x) ", __FUNCTION__,
+                (uint16_t)ntohs(((uint16_t*)aPacket.data())[1]), aPacket.len(),
+                (uint32_t)ntohl(((uint32_t*)aPacket.data())[2]),
+                (uint32_t)ntohl(((uint32_t*)aPacket.data())[2]));
 
-  DeliverPacket(rtc::CopyOnWriteBuffer(data, len), PacketType::RTP);
+  DeliverPacket(rtc::CopyOnWriteBuffer(aPacket.data(), aPacket.len()),
+                PacketType::RTP);
 }
 
-void WebrtcAudioConduit::ReceivedRTCPPacket(const uint8_t* data, int len) {
+void WebrtcAudioConduit::OnRtcpReceived(MediaPacket&& aPacket) {
   CSFLogDebug(LOGTAG, "%s", __FUNCTION__);
-  ASSERT_ON_THREAD(mStsThread);
+  MOZ_ASSERT(mCallThread->IsOnCurrentThread());
 
-  DeliverPacket(rtc::CopyOnWriteBuffer(data, len), PacketType::RTCP);
+  DeliverPacket(rtc::CopyOnWriteBuffer(aPacket.data(), aPacket.len()),
+                PacketType::RTCP);
 
   
   
@@ -547,7 +488,7 @@ void WebrtcAudioConduit::ReceivedRTCPPacket(const uint8_t* data, int len) {
 
 
 Maybe<DOMHighResTimeStamp> WebrtcAudioConduit::LastRtcpReceived() const {
-  ASSERT_ON_THREAD(mStsThread);
+  MOZ_ASSERT(mCallThread->IsOnCurrentThread());
   return mLastRtcpReceived;
 }
 
@@ -623,53 +564,74 @@ MediaConduitErrorCode WebrtcAudioConduit::StartReceivingLocked() {
   return kMediaConduitNoError;
 }
 
+bool WebrtcAudioConduit::SendRtp(const uint8_t* aData, size_t aLength,
+                                 const webrtc::PacketOptions& aOptions) {
+  CSFLogVerbose(
+      LOGTAG,
+      "AudioConduit %p: Sending RTP Packet seq# %u, len %zu, SSRC %u (0x%x)",
+      this, (uint16_t)ntohs(*((uint16_t*)&aData[2])), aLength,
+      (uint32_t)ntohl(*((uint32_t*)&aData[8])),
+      (uint32_t)ntohl(*((uint32_t*)&aData[8])));
 
-
-bool WebrtcAudioConduit::SendRtp(const uint8_t* data, size_t len,
-                                 const webrtc::PacketOptions& options) {
-  CSFLogDebug(LOGTAG, "%s: len %lu", __FUNCTION__, (unsigned long)len);
-
-  ReentrantMonitorAutoEnter enter(mTransportMonitor);
-  if (mTransmitterTransport &&
-      (mTransmitterTransport->SendRtpPacket(data, len) == NS_OK)) {
-    CSFLogDebug(LOGTAG, "%s Sent RTP Packet ", __FUNCTION__);
-    if (options.packet_id >= 0) {
-      int64_t now_ms = PR_Now() / 1000;
-      MOZ_ALWAYS_SUCCEEDS(mCallThread->Dispatch(NS_NewRunnableFunction(
-          __func__, [call = mCall, packet_id = options.packet_id, now_ms] {
-            if (call->Call()) {
-              call->Call()->OnSentPacket({packet_id, now_ms});
-            }
-          })));
-    }
-    return true;
+  if (!mTransportActive) {
+    CSFLogError(LOGTAG, "AudioConduit %p: RTP Packet Send Failed ", this);
+    return false;
   }
-  CSFLogError(LOGTAG, "%s RTP Packet Send Failed ", __FUNCTION__);
-  return false;
+
+  MediaPacket packet;
+  packet.Copy(aData, aLength, aLength + SRTP_MAX_EXPANSION);
+  packet.SetType(MediaPacket::RTP);
+  mSenderRtpSendEvent.Notify(std::move(packet));
+
+  if (aOptions.packet_id >= 0) {
+    int64_t now_ms = PR_Now() / 1000;
+    MOZ_ALWAYS_SUCCEEDS(mCallThread->Dispatch(NS_NewRunnableFunction(
+        __func__, [call = mCall, packet_id = aOptions.packet_id, now_ms] {
+          if (call->Call()) {
+            call->Call()->OnSentPacket({packet_id, now_ms});
+          }
+        })));
+  }
+  return true;
 }
 
+bool WebrtcAudioConduit::SendSenderRtcp(const uint8_t* aData, size_t aLength) {
+  CSFLogVerbose(
+      LOGTAG,
+      "AudioConduit %p: Sending RTCP SR Packet, len %zu, SSRC %u (0x%x)", this,
+      aLength, (uint32_t)ntohl(*((uint32_t*)&aData[4])),
+      (uint32_t)ntohl(*((uint32_t*)&aData[4])));
 
-bool WebrtcAudioConduit::SendRtcp(const uint8_t* data, size_t len) {
-  CSFLogDebug(LOGTAG, "%s : len %lu, first rtcp = %u ", __FUNCTION__,
-              (unsigned long)len, static_cast<unsigned>(data[1]));
+  if (!mTransportActive) {
+    CSFLogError(LOGTAG, "%s RTCP SR Packet Send Failed ", __FUNCTION__);
+    return false;
+  }
 
-  
-  
-  
-  ReentrantMonitorAutoEnter enter(mTransportMonitor);
-  if (mReceiverTransport &&
-      mReceiverTransport->SendRtcpPacket(data, len) == NS_OK) {
-    
-    CSFLogDebug(LOGTAG, "%s Sent RTCP Packet ", __FUNCTION__);
-    return true;
+  MediaPacket packet;
+  packet.Copy(aData, aLength, aLength + SRTP_MAX_EXPANSION);
+  packet.SetType(MediaPacket::RTCP);
+  mSenderRtcpSendEvent.Notify(std::move(packet));
+  return true;
+}
+
+bool WebrtcAudioConduit::SendReceiverRtcp(const uint8_t* aData,
+                                          size_t aLength) {
+  CSFLogVerbose(
+      LOGTAG,
+      "AudioConduit %p: Sending RTCP RR Packet, len %zu, SSRC %u (0x%x)", this,
+      aLength, (uint32_t)ntohl(*((uint32_t*)&aData[4])),
+      (uint32_t)ntohl(*((uint32_t*)&aData[4])));
+
+  if (!mTransportActive) {
+    CSFLogError(LOGTAG, "AudioConduit %p: RTCP RR Packet Send Failed", this);
+    return false;
   }
-  if (mTransmitterTransport &&
-      (mTransmitterTransport->SendRtcpPacket(data, len) == NS_OK)) {
-    CSFLogDebug(LOGTAG, "%s Sent RTCP Packet (sender report) ", __FUNCTION__);
-    return true;
-  }
-  CSFLogError(LOGTAG, "%s RTCP Packet Send Failed ", __FUNCTION__);
-  return false;
+
+  MediaPacket packet;
+  packet.Copy(aData, aLength, aLength + SRTP_MAX_EXPANSION);
+  packet.SetType(MediaPacket::RTCP);
+  mReceiverRtcpSendEvent.Notify(std::move(packet));
+  return true;
 }
 
 
@@ -855,8 +817,6 @@ MediaConduitErrorCode WebrtcAudioConduit::CreateRecvStream() {
   MOZ_ASSERT(mCallThread->IsOnCurrentThread());
   MOZ_ASSERT(mLock.LockedForWritingByCurrentThread());
 
-  mRecvStreamConfig.rtcp_send_transport = this;
-  mRecvStreamConfig.rtp.rtcp_event_observer = this;
   mRecvStream = mCall->Call()->CreateAudioReceiveStream(mRecvStreamConfig);
   if (!mRecvStream) {
     return kMediaConduitUnknownError;
@@ -867,26 +827,21 @@ MediaConduitErrorCode WebrtcAudioConduit::CreateRecvStream() {
 
 void WebrtcAudioConduit::DeliverPacket(rtc::CopyOnWriteBuffer packet,
                                        PacketType type) {
-  ASSERT_ON_THREAD(mStsThread);
+  MOZ_ASSERT(mCallThread->IsOnCurrentThread());
 
-  MOZ_ALWAYS_SUCCEEDS(mCallThread->Dispatch(NS_NewRunnableFunction(
-      __func__, [this, self = RefPtr<WebrtcAudioConduit>(this),
-                 packet = std::move(packet), type] {
-        if (!mCall->Call()) {
-          return;
-        }
+  if (!mCall->Call()) {
+    return;
+  }
 
-        
-        webrtc::PacketReceiver::DeliveryStatus status =
-            mCall->Call()->Receiver()->DeliverPacket(webrtc::MediaType::AUDIO,
-                                                     std::move(packet), -1);
+  
+  webrtc::PacketReceiver::DeliveryStatus status =
+      mCall->Call()->Receiver()->DeliverPacket(webrtc::MediaType::AUDIO,
+                                               std::move(packet), -1);
 
-        if (status != webrtc::PacketReceiver::DELIVERY_OK) {
-          CSFLogError(LOGTAG, "%s DeliverPacket Failed for %s packet, %d",
-                      __FUNCTION__, type == PacketType::RTP ? "RTP" : "RTCP",
-                      status);
-        }
-      })));
+  if (status != webrtc::PacketReceiver::DELIVERY_OK) {
+    CSFLogError(LOGTAG, "%s DeliverPacket Failed for %s packet, %d",
+                __FUNCTION__, type == PacketType::RTP ? "RTP" : "RTCP", status);
+  }
 }
 
 }  

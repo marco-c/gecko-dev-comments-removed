@@ -220,119 +220,110 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal() {
         }));
   }
 
-  using TimeStampPromise = MozPromise<Maybe<DOMHighResTimeStamp>, bool, true>;
   promises.AppendElement(
-      InvokeAsync(mStsThread, __func__,
-                  [conduit = mPipeline->mConduit] {
-                    return TimeStampPromise::CreateAndResolve(
-                        conduit->LastRtcpReceived(), __func__);
-                  })
-          ->Then(
-              mCallThread, __func__,
-              [pipeline = mPipeline,
-               recvTrackId](TimeStampPromise::ResolveOrRejectValue&& aValue) {
-                MOZ_ASSERT(aValue.IsResolve());
-                Maybe<DOMHighResTimeStamp> lastRtcpReceivedTimestamp =
-                    aValue.ResolveValue();
+      InvokeAsync(
+          mCallThread, __func__,
+          [pipeline = mPipeline, recvTrackId] {
+            auto report = MakeUnique<dom::RTCStatsCollection>();
+            auto asAudio = pipeline->mConduit->AsAudioSessionConduit();
+            auto asVideo = pipeline->mConduit->AsVideoSessionConduit();
 
-                auto report = MakeUnique<dom::RTCStatsCollection>();
-                auto asAudio = pipeline->mConduit->AsAudioSessionConduit();
-                auto asVideo = pipeline->mConduit->AsVideoSessionConduit();
+            nsString kind = asVideo.isNothing() ? u"audio"_ns : u"video"_ns;
+            nsString idstr = kind + u"_"_ns;
+            idstr.AppendInt(static_cast<uint32_t>(pipeline->Level()));
 
-                nsString kind = asVideo.isNothing() ? u"audio"_ns : u"video"_ns;
-                nsString idstr = kind + u"_"_ns;
-                idstr.AppendInt(static_cast<uint32_t>(pipeline->Level()));
+            Maybe<uint32_t> ssrc;
+            unsigned int ssrcval;
+            if (pipeline->mConduit->GetRemoteSSRC(&ssrcval)) {
+              ssrc = Some(ssrcval);
+            }
 
-                Maybe<uint32_t> ssrc;
-                unsigned int ssrcval;
-                if (pipeline->mConduit->GetRemoteSSRC(&ssrcval)) {
-                  ssrc = Some(ssrcval);
+            
+            asVideo.apply([&](const auto& conduit) {
+              if (conduit->AddFrameHistory(&report->mVideoFrameHistories)) {
+                auto& history = report->mVideoFrameHistories.LastElement();
+                history.mTrackIdentifier = recvTrackId;
+              }
+            });
+
+            
+            
+            
+            
+            nsString localId = u"inbound_rtp_"_ns + idstr;
+            nsString remoteId;
+
+            auto constructCommonRemoteOutboundRtpStats =
+                [&](RTCRemoteOutboundRtpStreamStats& aRemote,
+                    const DOMHighResTimeStamp& aTimestamp) {
+                  remoteId = u"inbound_rtcp_"_ns + idstr;
+                  aRemote.mTimestamp.Construct(aTimestamp);
+                  aRemote.mId.Construct(remoteId);
+                  aRemote.mType.Construct(RTCStatsType::Remote_outbound_rtp);
+                  ssrc.apply(
+                      [&](uint32_t aSsrc) { aRemote.mSsrc.Construct(aSsrc); });
+                  aRemote.mMediaType.Construct(
+                      kind);  
+                  aRemote.mKind.Construct(kind);
+                  aRemote.mLocalId.Construct(localId);
+                };
+
+            auto constructCommonInboundRtpStats =
+                [&](RTCInboundRtpStreamStats& aLocal) {
+                  
+                  
+                  
+                  aLocal.mTimestamp.Construct(pipeline->GetNow());
+                  aLocal.mId.Construct(localId);
+                  aLocal.mType.Construct(RTCStatsType::Inbound_rtp);
+                  ssrc.apply(
+                      [&](uint32_t aSsrc) { aLocal.mSsrc.Construct(aSsrc); });
+                  aLocal.mMediaType.Construct(
+                      kind);  
+                  aLocal.mKind.Construct(kind);
+                  if (remoteId.Length()) {
+                    aLocal.mRemoteId.Construct(remoteId);
+                  }
+                };
+
+            asAudio.apply([&](auto& aConduit) {
+              Maybe<webrtc::AudioReceiveStream::Stats> audioStats =
+                  aConduit->GetReceiverStats();
+              if (audioStats.isNothing()) {
+                return;
+              }
+
+              
+              aConduit->LastRtcpReceived().apply([&](auto& aTimestamp) {
+                RTCRemoteOutboundRtpStreamStats remote;
+                constructCommonRemoteOutboundRtpStats(remote, aTimestamp);
+                remote.mPacketsSent.Construct(
+                    audioStats->rtcp_sender_packets_sent);
+                remote.mBytesSent.Construct(
+                    audioStats->rtcp_sender_octets_sent);
+                remote.mRemoteTimestamp.Construct(
+                    audioStats->rtcp_sender_ntp_timestamp_ms);
+                if (!report->mRemoteOutboundRtpStreamStats.AppendElement(
+                        std::move(remote), fallible)) {
+                  mozalloc_handle_oom(0);
                 }
+              });
 
-                
-                asVideo.apply([&](const auto& conduit) {
-                  if (conduit->AddFrameHistory(&report->mVideoFrameHistories)) {
-                    auto& history = report->mVideoFrameHistories.LastElement();
-                    history.mTrackIdentifier = recvTrackId;
-                  }
-                });
+              
+              
+              RTCInboundRtpStreamStats local;
+              constructCommonInboundRtpStats(local);
+              local.mJitter.Construct(audioStats->jitter_ms / 1000.0);
+              local.mPacketsLost.Construct(audioStats->packets_lost);
+              local.mPacketsReceived.Construct(audioStats->packets_rcvd);
+              local.mBytesReceived.Construct(audioStats->payload_bytes_rcvd);
+              
 
-                
-                
-                
-                nsString localId = u"inbound_rtp_"_ns + idstr;
-                nsString remoteId;
 
-                auto constructCommonRemoteOutboundRtpStats =
-                    [&](RTCRemoteOutboundRtpStreamStats& aRemote,
-                        const DOMHighResTimeStamp& aTimestamp) {
-                      remoteId = u"inbound_rtcp_"_ns + idstr;
-                      aRemote.mTimestamp.Construct(aTimestamp);
-                      aRemote.mId.Construct(remoteId);
-                      aRemote.mType.Construct(
-                          RTCStatsType::Remote_outbound_rtp);
-                      ssrc.apply([&](uint32_t aSsrc) {
-                        aRemote.mSsrc.Construct(aSsrc);
-                      });
-                      aRemote.mMediaType.Construct(
-                          kind);  
-                      aRemote.mKind.Construct(kind);
-                      aRemote.mLocalId.Construct(localId);
-                    };
 
-                auto constructCommonInboundRtpStats =
-                    [&](RTCInboundRtpStreamStats& aLocal) {
-                      
-                      
-                      
-                      aLocal.mTimestamp.Construct(pipeline->GetNow());
-                      aLocal.mId.Construct(localId);
-                      aLocal.mType.Construct(RTCStatsType::Inbound_rtp);
-                      ssrc.apply([&](uint32_t aSsrc) {
-                        aLocal.mSsrc.Construct(aSsrc);
-                      });
-                      aLocal.mMediaType.Construct(
-                          kind);  
-                      aLocal.mKind.Construct(kind);
-                      if (remoteId.Length()) {
-                        aLocal.mRemoteId.Construct(remoteId);
-                      }
-                    };
 
-                asAudio.apply([&](auto& aConduit) {
-                  Maybe<webrtc::AudioReceiveStream::Stats> audioStats =
-                      aConduit->GetReceiverStats();
-                  if (audioStats.isNothing()) {
-                    return;
-                  }
 
-                  
-                  
-                  lastRtcpReceivedTimestamp.apply([&](auto& aTimestamp) {
-                    RTCRemoteOutboundRtpStreamStats remote;
-                    constructCommonRemoteOutboundRtpStats(remote, aTimestamp);
-                    remote.mPacketsSent.Construct(
-                        audioStats->rtcp_sender_packets_sent);
-                    remote.mBytesSent.Construct(
-                        audioStats->rtcp_sender_octets_sent);
-                    remote.mRemoteTimestamp.Construct(
-                        audioStats->rtcp_sender_ntp_timestamp_ms);
-                    if (!report->mRemoteOutboundRtpStreamStats.AppendElement(
-                            std::move(remote), fallible)) {
-                      mozalloc_handle_oom(0);
-                    }
-                  });
 
-                  
-                  
-                  RTCInboundRtpStreamStats local;
-                  constructCommonInboundRtpStats(local);
-                  local.mJitter.Construct(audioStats->jitter_ms / 1000.0);
-                  local.mPacketsLost.Construct(audioStats->packets_lost);
-                  local.mPacketsReceived.Construct(audioStats->packets_rcvd);
-                  local.mBytesReceived.Construct(
-                      audioStats->payload_bytes_rcvd);
-                  
 
 
 
@@ -364,64 +355,62 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal() {
 
 
 
-                  if (!report->mInboundRtpStreamStats.AppendElement(
-                          std::move(local), fallible)) {
-                    mozalloc_handle_oom(0);
-                  }
-                });
 
-                asVideo.apply([&](auto& aConduit) {
-                  Maybe<webrtc::VideoReceiveStream::Stats> videoStats =
-                      aConduit->GetReceiverStats();
-                  if (videoStats.isNothing()) {
-                    return;
-                  }
 
-                  
-                  
-                  lastRtcpReceivedTimestamp.apply([&](auto& aTimestamp) {
-                    RTCRemoteOutboundRtpStreamStats remote;
-                    constructCommonRemoteOutboundRtpStats(remote, aTimestamp);
-                    remote.mPacketsSent.Construct(
-                        videoStats->rtcp_sender_packets_sent);
-                    remote.mBytesSent.Construct(
-                        videoStats->rtcp_sender_octets_sent);
-                    remote.mRemoteTimestamp.Construct(
-                        videoStats->rtcp_sender_ntp_timestamp_ms);
-                    if (!report->mRemoteOutboundRtpStreamStats.AppendElement(
-                            std::move(remote), fallible)) {
-                      mozalloc_handle_oom(0);
-                    }
-                  });
+              if (!report->mInboundRtpStreamStats.AppendElement(
+                      std::move(local), fallible)) {
+                mozalloc_handle_oom(0);
+              }
+            });
 
-                  
-                  
-                  RTCInboundRtpStreamStats local;
-                  constructCommonInboundRtpStats(local);
-                  local.mJitter.Construct(
-                      static_cast<double>(videoStats->rtp_stats.jitter) /
-                      webrtc::kVideoPayloadTypeFrequency);
-                  local.mPacketsLost.Construct(
-                      videoStats->rtp_stats.packets_lost);
-                  local.mPacketsReceived.Construct(
-                      videoStats->rtp_stats.packet_counter.packets);
-                  local.mBytesReceived.Construct(
-                      videoStats->rtp_stats.packet_counter.payload_bytes);
+            asVideo.apply([&](auto& aConduit) {
+              Maybe<webrtc::VideoReceiveStream::Stats> videoStats =
+                  aConduit->GetReceiverStats();
+              if (videoStats.isNothing()) {
+                return;
+              }
 
-                  
-                  local.mNackCount.Construct(
-                      videoStats->rtcp_packet_type_counts.nack_packets);
-                  local.mFirCount.Construct(
-                      videoStats->rtcp_packet_type_counts.fir_packets);
-                  local.mPliCount.Construct(
-                      videoStats->rtcp_packet_type_counts.pli_packets);
+              
+              aConduit->LastRtcpReceived().apply([&](auto& aTimestamp) {
+                RTCRemoteOutboundRtpStreamStats remote;
+                constructCommonRemoteOutboundRtpStats(remote, aTimestamp);
+                remote.mPacketsSent.Construct(
+                    videoStats->rtcp_sender_packets_sent);
+                remote.mBytesSent.Construct(
+                    videoStats->rtcp_sender_octets_sent);
+                remote.mRemoteTimestamp.Construct(
+                    videoStats->rtcp_sender_ntp_timestamp_ms);
+                if (!report->mRemoteOutboundRtpStreamStats.AppendElement(
+                        std::move(remote), fallible)) {
+                  mozalloc_handle_oom(0);
+                }
+              });
 
-                  
-                  local.mFramesDecoded.Construct(videoStats->frames_decoded);
+              
+              
+              RTCInboundRtpStreamStats local;
+              constructCommonInboundRtpStats(local);
+              local.mJitter.Construct(
+                  static_cast<double>(videoStats->rtp_stats.jitter) /
+                  webrtc::kVideoPayloadTypeFrequency);
+              local.mPacketsLost.Construct(videoStats->rtp_stats.packets_lost);
+              local.mPacketsReceived.Construct(
+                  videoStats->rtp_stats.packet_counter.packets);
+              local.mBytesReceived.Construct(
+                  videoStats->rtp_stats.packet_counter.payload_bytes);
 
-                  
+              
+              local.mNackCount.Construct(
+                  videoStats->rtcp_packet_type_counts.nack_packets);
+              local.mFirCount.Construct(
+                  videoStats->rtcp_packet_type_counts.fir_packets);
+              local.mPliCount.Construct(
+                  videoStats->rtcp_packet_type_counts.pli_packets);
 
+              
+              local.mFramesDecoded.Construct(videoStats->frames_decoded);
 
+              
 
 
 
@@ -453,14 +442,18 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal() {
 
 
 
-                  if (!report->mInboundRtpStreamStats.AppendElement(
-                          std::move(local), fallible)) {
-                    mozalloc_handle_oom(0);
-                  }
-                });
-                return RTCStatsPromise::CreateAndResolve(std::move(report),
-                                                         __func__);
-              })
+
+
+
+
+              if (!report->mInboundRtpStreamStats.AppendElement(
+                      std::move(local), fallible)) {
+                mozalloc_handle_oom(0);
+              }
+            });
+            return RTCStatsPromise::CreateAndResolve(std::move(report),
+                                                     __func__);
+          })
           ->Then(
               mStsThread, __func__,
               [pipeline = mPipeline](UniquePtr<RTCStatsCollection> aReport) {
@@ -608,7 +601,7 @@ nsresult RTCRtpReceiver::UpdateVideoConduit() {
       (!mJsepTransceiver->mRecvTrack.GetNegotiatedDetails() ||
        !mJsepTransceiver->mRecvTrack.GetNegotiatedDetails()->GetExt(
            webrtc::RtpExtension::kMidUri))) {
-    mStsThread->Dispatch(
+    mCallThread->Dispatch(
         NewRunnableMethod("VideoSessionConduit::DisableSsrcChanges", conduit,
                           &VideoSessionConduit::DisableSsrcChanges));
   }

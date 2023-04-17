@@ -22,6 +22,7 @@
 #include "nsIPrefService.h"
 #include "nsServiceManagerUtils.h"
 #include "RtpRtcpConfig.h"
+#include "transport/SrtpFlow.h"  
 #include "VideoStreamFactory.h"
 #include "WebrtcCallWrapper.h"
 #include "WebrtcGmpVideoCodec.h"
@@ -373,7 +374,7 @@ WebrtcVideoConduit::Control::Control(const RefPtr<AbstractThread>& aCallThread)
 WebrtcVideoConduit::WebrtcVideoConduit(
     RefPtr<WebrtcCallWrapper> aCall, nsCOMPtr<nsISerialEventTarget> aStsThread,
     Options aOptions, std::string aPCHandle)
-    : mTransportMonitor("WebrtcVideoConduit"),
+    : mRendererMonitor("WebrtcVideoConduit::mRendererMonitor"),
       mCallThread(aCall->mCallThread),
       mStsThread(std::move(aStsThread)),
       mControl(aCall->mCallThread),
@@ -398,14 +399,12 @@ WebrtcVideoConduit::WebrtcVideoConduit(
       mSpatialLayers(aOptions.mSpatialLayers),
       mTemporalLayers(aOptions.mTemporalLayers),
       mCall(std::move(aCall)),
-      mSendStreamConfig(
-          this)  
-      ,
-      mRecvStreamConfig(
-          this)  
-      ,
-      mRecvSSRC(0),
-      mRemoteSSRC(0) {}
+      mSendTransport(this),
+      mRecvTransport(this),
+      mSendStreamConfig(&mSendTransport),
+      mRecvStreamConfig(&mRecvTransport) {
+  mRecvStreamConfig.rtp.rtcp_event_observer = this;
+}
 
 WebrtcVideoConduit::~WebrtcVideoConduit() {
   CSFLogDebug(LOGTAG, "%s ", __FUNCTION__);
@@ -452,12 +451,10 @@ void WebrtcVideoConduit::OnControlConfigChange() {
 
   bool encoderReconfigureNeeded = false;
   bool remoteSsrcUpdateNeeded = false;
-  bool isInitialRemoteSsrcUpdate = false;
   bool recvStreamRecreationNeeded = false;
   bool sendStreamRecreationNeeded = false;
 
   if (mControl.mRemoteSsrc.Ref() != mControl.mConfiguredRemoteSsrc) {
-    isInitialRemoteSsrcUpdate = mControl.mConfiguredRemoteSsrc == 0;
     mControl.mConfiguredRemoteSsrc = mControl.mRemoteSsrc;
     recvStreamRecreationNeeded = true;
     remoteSsrcUpdateNeeded = true;
@@ -842,13 +839,6 @@ void WebrtcVideoConduit::OnControlConfigChange() {
     SetRemoteSSRCLocked(mControl.mConfiguredRemoteSsrc,
                         mControl.mConfiguredRemoteRtxSsrc);
   }
-  if (isInitialRemoteSsrcUpdate) {
-    mStsThread->Dispatch(NS_NewRunnableFunction(
-        "WebrtcVideoConduit::WaitingForSignaledSsrcNoMore",
-        [this, self = RefPtr<WebrtcVideoConduit>(this)]() mutable {
-          mWaitingForSignaledSsrc = false;
-        }));
-  }
   {
     
     
@@ -954,7 +944,6 @@ MediaConduitErrorCode WebrtcVideoConduit::CreateRecvStream() {
   }
 
   mRecvStreamConfig.decoder_factory = mDecoderFactory.get();
-  mRecvStreamConfig.rtp.rtcp_event_observer = this;
 
   mRecvStream =
       mCall->Call()->CreateVideoReceiveStream(mRecvStreamConfig.Copy());
@@ -1063,8 +1052,6 @@ void WebrtcVideoConduit::UnsetRemoteSSRC(uint32_t ssrc) {
     return;
   }
 
-  mRecvStreamConfig.rtp.rtx_ssrc = 0;
-
   const auto& ssrcs = mSendStreamConfig.rtp.ssrcs;
   uint32_t our_ssrc = 0;
   do {
@@ -1081,14 +1068,13 @@ void WebrtcVideoConduit::UnsetRemoteSSRC(uint32_t ssrc) {
   SetRemoteSSRCLocked(our_ssrc, 0);
 }
 
-bool WebrtcVideoConduit::GetRemoteSSRC(uint32_t* ssrc) const {
-  if (mCallThread->IsOnCurrentThread()) {
-    if (!mRecvStream) {
-      return false;
-    }
+bool WebrtcVideoConduit::GetRemoteSSRC(uint32_t* aSsrc) const {
+  MOZ_ASSERT(mCallThread->IsOnCurrentThread());
+  if (!mRecvStream) {
+    return false;
   }
   
-  *ssrc = mRemoteSSRC;
+  *aSsrc = mRecvStreamConfig.rtp.remote_ssrc;
   return true;
 }
 
@@ -1243,7 +1229,7 @@ MediaConduitErrorCode WebrtcVideoConduit::AttachRenderer(
   
   
   {
-    ReentrantMonitorAutoEnter enter(mTransportMonitor);
+    ReentrantMonitorAutoEnter enter(mRendererMonitor);
     mRenderer = aVideoRenderer;
     
     mRenderer->FrameSizeChange(mReceivingWidth, mReceivingHeight);
@@ -1255,34 +1241,10 @@ MediaConduitErrorCode WebrtcVideoConduit::AttachRenderer(
 void WebrtcVideoConduit::DetachRenderer() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  ReentrantMonitorAutoEnter enter(mTransportMonitor);
+  ReentrantMonitorAutoEnter enter(mRendererMonitor);
   if (mRenderer) {
     mRenderer = nullptr;
   }
-}
-
-MediaConduitErrorCode WebrtcVideoConduit::SetTransmitterTransport(
-    RefPtr<TransportInterface> aTransport) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  CSFLogDebug(LOGTAG, "%s ", __FUNCTION__);
-
-  ReentrantMonitorAutoEnter enter(mTransportMonitor);
-  
-  mTransmitterTransport = aTransport;
-  return kMediaConduitNoError;
-}
-
-MediaConduitErrorCode WebrtcVideoConduit::SetReceiverTransport(
-    RefPtr<TransportInterface> aTransport) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  CSFLogDebug(LOGTAG, "%s ", __FUNCTION__);
-
-  ReentrantMonitorAutoEnter enter(mTransportMonitor);
-  
-  mReceiverTransport = aTransport;
-  return kMediaConduitNoError;
 }
 
 
@@ -1445,108 +1407,71 @@ MediaConduitErrorCode WebrtcVideoConduit::SendVideoFrame(
 
 void WebrtcVideoConduit::DeliverPacket(rtc::CopyOnWriteBuffer packet,
                                        PacketType type) {
-  ASSERT_ON_THREAD(mStsThread);
+  MOZ_ASSERT(mCallThread->IsOnCurrentThread());
 
-  MOZ_ALWAYS_SUCCEEDS(mCallThread->Dispatch(NS_NewRunnableFunction(
-      __func__, [this, self = RefPtr<WebrtcVideoConduit>(this),
-                 packet = std::move(packet), type] {
-        if (!mCall->Call()) {
-          return;
-        }
+  if (!mCall->Call()) {
+    return;
+  }
 
-        
-        webrtc::PacketReceiver::DeliveryStatus status =
-            mCall->Call()->Receiver()->DeliverPacket(webrtc::MediaType::VIDEO,
-                                                     std::move(packet), -1);
+  
+  webrtc::PacketReceiver::DeliveryStatus status =
+      mCall->Call()->Receiver()->DeliverPacket(webrtc::MediaType::VIDEO,
+                                               std::move(packet), -1);
 
-        if (status != webrtc::PacketReceiver::DELIVERY_OK) {
-          CSFLogError(LOGTAG, "%s DeliverPacket Failed for %s packet, %d",
-                      __FUNCTION__, type == PacketType::RTP ? "RTP" : "RTCP",
-                      status);
-        }
-      })));
+  if (status != webrtc::PacketReceiver::DELIVERY_OK) {
+    CSFLogError(LOGTAG, "%s DeliverPacket Failed for %s packet, %d",
+                __FUNCTION__, type == PacketType::RTP ? "RTP" : "RTCP", status);
+  }
 }
 
-void WebrtcVideoConduit::ReceivedRTPPacket(const uint8_t* data, int len,
-                                           webrtc::RTPHeader& header) {
-  ASSERT_ON_THREAD(mStsThread);
+void WebrtcVideoConduit::OnRtpReceived(MediaPacket&& aPacket,
+                                       webrtc::RTPHeader&& aHeader) {
+  MOZ_ASSERT(mCallThread->IsOnCurrentThread());
 
-  if (mAllowSsrcChange || mWaitingForSignaledSsrc) {
-    
-    
-    
-    
-    if (mRtpPacketQueue.IsQueueActive()) {
-      mRtpPacketQueue.Enqueue(rtc::CopyOnWriteBuffer(data, len));
-      return;
-    }
+  mRemoteSendSSRC = aHeader.ssrc;
 
-    bool switchRequired = mRecvSSRC != header.ssrc;
+  if (mAllowSsrcChange || mRecvStreamConfig.rtp.remote_ssrc == 0) {
+    bool switchRequired = mRecvStreamConfig.rtp.remote_ssrc != aHeader.ssrc;
     if (switchRequired) {
       
+
       
       
-      MutexAutoLock lock(mMutex);
+      
       const webrtc::VideoReceiveStream::Config::Rtp& rtp =
           mRecvStreamConfig.rtp;
       switchRequired =
-          rtp.rtx_associated_payload_types.find(header.payloadType) ==
+          rtp.rtx_associated_payload_types.find(aHeader.payloadType) ==
               rtp.rtx_associated_payload_types.end() &&
-          rtp.ulpfec_payload_type != header.payloadType;
+          rtp.ulpfec_payload_type != aHeader.payloadType;
     }
 
     if (switchRequired) {
-      
-      
-      
-      mRtpPacketQueue.Clear();
-      mRtpPacketQueue.Enqueue(rtc::CopyOnWriteBuffer(data, len));
-
-      CSFLogDebug(LOGTAG, "%s: switching from SSRC %u to %u", __FUNCTION__,
-                  static_cast<uint32_t>(mRecvSSRC), header.ssrc);
-      
-      mRecvSSRC = mRemoteSSRC = header.ssrc;
-
-      InvokeAsync(mCallThread, __func__,
-                  [this, self = RefPtr<WebrtcVideoConduit>(this),
-                   ssrc = header.ssrc]() mutable {
-                    
-                    
-                    
-                    
-                    MutexAutoLock lock(mMutex);
-                    SetRemoteSSRCLocked(ssrc, 0);
-                    return GenericPromise::CreateAndResolve(true, __func__);
-                  })
-          ->Then(mStsThread, __func__,
-                 [this, self = RefPtr<WebrtcVideoConduit>(this),
-                  ssrc = header.ssrc]() mutable {
-                   
-                   
-                   if (ssrc != mRecvSSRC) {
-                     
-                     return;
-                   }
-                   mRtpPacketQueue.DequeueAll(this);
-                 });
-      return;
+      CSFLogInfo(LOGTAG, "VideoConduit %p: Switching remote SSRC from %u to %u",
+                 this, mRecvStreamConfig.rtp.remote_ssrc, aHeader.ssrc);
+      SetRemoteSSRCLocked(aHeader.ssrc, 0);
     }
   }
 
-  CSFLogVerbose(LOGTAG, "%s: seq# %u, Len %d, SSRC %u (0x%x) ", __FUNCTION__,
-                (uint16_t)ntohs(((uint16_t*)data)[1]), len,
-                (uint32_t)ntohl(((uint32_t*)data)[2]),
-                (uint32_t)ntohl(((uint32_t*)data)[2]));
+  CSFLogVerbose(
+      LOGTAG,
+      "VideoConduit %p: Received RTP packet, seq# %u, len %zu, SSRC %u (0x%x) ",
+      this, (uint16_t)ntohs(((uint16_t*)aPacket.data())[1]), aPacket.len(),
+      (uint32_t)ntohl(((uint32_t*)aPacket.data())[2]),
+      (uint32_t)ntohl(((uint32_t*)aPacket.data())[2]));
 
-  DeliverPacket(rtc::CopyOnWriteBuffer(data, len), PacketType::RTP);
+  DeliverPacket(rtc::CopyOnWriteBuffer(aPacket.data(), aPacket.len()),
+                PacketType::RTP);
 }
 
-void WebrtcVideoConduit::ReceivedRTCPPacket(const uint8_t* data, int len) {
-  ASSERT_ON_THREAD(mStsThread);
+void WebrtcVideoConduit::OnRtcpReceived(MediaPacket&& aPacket) {
+  MOZ_ASSERT(mCallThread->IsOnCurrentThread());
 
-  CSFLogVerbose(LOGTAG, " %s Len %d ", __FUNCTION__, len);
+  CSFLogVerbose(LOGTAG, "VideoConduit %p: Received RTCP Packet, len %zu ", this,
+                aPacket.len());
 
-  DeliverPacket(rtc::CopyOnWriteBuffer(data, len), PacketType::RTCP);
+  DeliverPacket(rtc::CopyOnWriteBuffer(aPacket.data(), aPacket.len()),
+                PacketType::RTCP);
 
   
   
@@ -1556,7 +1481,7 @@ void WebrtcVideoConduit::ReceivedRTCPPacket(const uint8_t* data, int len) {
 
 
 Maybe<DOMHighResTimeStamp> WebrtcVideoConduit::LastRtcpReceived() const {
-  ASSERT_ON_THREAD(mStsThread);
+  MOZ_ASSERT(mCallThread->IsOnCurrentThread());
   return mLastRtcpReceived;
 }
 
@@ -1653,26 +1578,29 @@ MediaConduitErrorCode WebrtcVideoConduit::StartReceivingLocked() {
   return kMediaConduitNoError;
 }
 
+bool WebrtcVideoConduit::SendRtp(const uint8_t* aData, size_t aLength,
+                                 const webrtc::PacketOptions& aOptions) {
+  CSFLogVerbose(
+      LOGTAG,
+      "VideoConduit %p: Sending RTP Packet seq# %u, len %zu, SSRC %u (0x%x)",
+      this, (uint16_t)ntohs(*((uint16_t*)&aData[2])), aLength,
+      (uint32_t)ntohl(*((uint32_t*)&aData[8])),
+      (uint32_t)ntohl(*((uint32_t*)&aData[8])));
 
-
-bool WebrtcVideoConduit::SendRtp(const uint8_t* packet, size_t length,
-                                 const webrtc::PacketOptions& options) {
-  CSFLogVerbose(LOGTAG, "%s Sent RTP Packet seq %d, len %lu, SSRC %u (0x%x)",
-                __FUNCTION__, (uint16_t)ntohs(*((uint16_t*)&packet[2])),
-                (unsigned long)length,
-                (uint32_t)ntohl(*((uint32_t*)&packet[8])),
-                (uint32_t)ntohl(*((uint32_t*)&packet[8])));
-
-  ReentrantMonitorAutoEnter enter(mTransportMonitor);
-  if (!mTransmitterTransport ||
-      NS_FAILED(mTransmitterTransport->SendRtpPacket(packet, length))) {
-    CSFLogError(LOGTAG, "%s RTP Packet Send Failed ", __FUNCTION__);
+  if (!mTransportActive) {
+    CSFLogError(LOGTAG, "VideoConduit %p: RTP Packet Send Failed", this);
     return false;
   }
-  if (options.packet_id >= 0) {
+
+  MediaPacket packet;
+  packet.Copy(aData, aLength, aLength + SRTP_MAX_EXPANSION);
+  packet.SetType(MediaPacket::RTP);
+  mSenderRtpSendEvent.Notify(std::move(packet));
+
+  if (aOptions.packet_id >= 0) {
     int64_t now_ms = PR_Now() / 1000;
     MOZ_ALWAYS_SUCCEEDS(mCallThread->Dispatch(NS_NewRunnableFunction(
-        __func__, [call = mCall, packet_id = options.packet_id, now_ms] {
+        __func__, [call = mCall, packet_id = aOptions.packet_id, now_ms] {
           if (call->Call()) {
             call->Call()->OnSentPacket({packet_id, now_ms});
           }
@@ -1681,41 +1609,64 @@ bool WebrtcVideoConduit::SendRtp(const uint8_t* packet, size_t length,
   return true;
 }
 
+bool WebrtcVideoConduit::SendSenderRtcp(const uint8_t* aData, size_t aLength) {
+  CSFLogVerbose(
+      LOGTAG,
+      "VideoConduit %p: Sending RTCP SR Packet, len %zu, SSRC %u (0x%x)", this,
+      aLength, (uint32_t)ntohl(*((uint32_t*)&aData[4])),
+      (uint32_t)ntohl(*((uint32_t*)&aData[4])));
 
-bool WebrtcVideoConduit::SendRtcp(const uint8_t* packet, size_t length) {
-  CSFLogVerbose(LOGTAG, "%s : len %lu ", __FUNCTION__, (unsigned long)length);
-  
-  
-  
-  ReentrantMonitorAutoEnter enter(mTransportMonitor);
-  if (mReceiverTransport &&
-      NS_SUCCEEDED(mReceiverTransport->SendRtcpPacket(packet, length))) {
-    
-    CSFLogDebug(LOGTAG, "%s Sent RTCP Packet ", __FUNCTION__);
-    return true;
-  }
-  if (mTransmitterTransport &&
-      NS_SUCCEEDED(mTransmitterTransport->SendRtcpPacket(packet, length))) {
-    return true;
+  if (!mTransportActive) {
+    CSFLogError(LOGTAG, "VideoConduit %p: RTCP SR Packet Send Failed", this);
+    return false;
   }
 
-  CSFLogError(LOGTAG, "%s RTCP Packet Send Failed ", __FUNCTION__);
-  return false;
+  MediaPacket packet;
+  packet.Copy(aData, aLength, aLength + SRTP_MAX_EXPANSION);
+  packet.SetType(MediaPacket::RTCP);
+  mSenderRtcpSendEvent.Notify(std::move(packet));
+  return true;
+}
+
+bool WebrtcVideoConduit::SendReceiverRtcp(const uint8_t* aData,
+                                          size_t aLength) {
+  CSFLogVerbose(
+      LOGTAG,
+      "VideoConduit %p: Sending RTCP RR Packet, len %zu, SSRC %u (0x%x)", this,
+      aLength, (uint32_t)ntohl(*((uint32_t*)&aData[4])),
+      (uint32_t)ntohl(*((uint32_t*)&aData[4])));
+
+  if (!mTransportActive) {
+    CSFLogError(LOGTAG, "VideoConduit %p: RTCP RR Packet Send Failed", this);
+    return false;
+  }
+
+  MediaPacket packet;
+  packet.Copy(aData, aLength, aLength + SRTP_MAX_EXPANSION);
+  packet.SetType(MediaPacket::RTCP);
+  mReceiverRtcpSendEvent.Notify(std::move(packet));
+  return true;
 }
 
 void WebrtcVideoConduit::OnFrame(const webrtc::VideoFrame& video_frame) {
-  CSFLogVerbose(LOGTAG, "%s: recv SSRC %u (0x%x), size %ux%u", __FUNCTION__,
-                static_cast<uint32_t>(mRecvSSRC),
-                static_cast<uint32_t>(mRecvSSRC), video_frame.width(),
-                video_frame.height());
-  ReentrantMonitorAutoEnter enter(mTransportMonitor);
+  const uint32_t localRecvSsrc = mRecvSSRC;
+  const uint32_t remoteSendSsrc = mRemoteSendSSRC;
+
+  CSFLogVerbose(
+      LOGTAG,
+      "VideoConduit %p: Rendering frame, Remote SSRC %u (0x%x), size %ux%u",
+      this, static_cast<uint32_t>(remoteSendSsrc),
+      static_cast<uint32_t>(remoteSendSsrc), video_frame.width(),
+      video_frame.height());
+  ReentrantMonitorAutoEnter enter(mRendererMonitor);
 
   if (!mRenderer) {
-    CSFLogError(LOGTAG, "%s Renderer is NULL  ", __FUNCTION__);
+    CSFLogError(LOGTAG, "VideoConduit %p: Cannot render frame, no renderer",
+                this);
     return;
   }
 
-  bool needsNewHistoryElement = !mReceivedFrameHistory.mEntries.Length();
+  bool needsNewHistoryElement = mReceivedFrameHistory.mEntries.IsEmpty();
 
   if (mReceivingWidth != video_frame.width() ||
       mReceivingHeight != video_frame.height()) {
@@ -1725,19 +1676,13 @@ void WebrtcVideoConduit::OnFrame(const webrtc::VideoFrame& video_frame) {
     needsNewHistoryElement = true;
   }
 
-  uint32_t remoteSsrc;
-  if (!GetRemoteSSRC(&remoteSsrc) && needsNewHistoryElement) {
-    
-    return;
-  }
-
   if (!needsNewHistoryElement) {
     auto& currentEntry = mReceivedFrameHistory.mEntries.LastElement();
     needsNewHistoryElement =
         currentEntry.mRotationAngle !=
             static_cast<unsigned long>(video_frame.rotation()) ||
-        currentEntry.mLocalSsrc != mRecvSSRC ||
-        currentEntry.mRemoteSsrc != remoteSsrc;
+        currentEntry.mLocalSsrc != localRecvSsrc ||
+        currentEntry.mRemoteSsrc != remoteSendSsrc;
   }
 
   
@@ -1750,8 +1695,8 @@ void WebrtcVideoConduit::OnFrame(const webrtc::VideoFrame& video_frame) {
     frameHistoryElement.mRotationAngle =
         static_cast<unsigned long>(video_frame.rotation());
     frameHistoryElement.mFirstFrameTimestamp = historyNow;
-    frameHistoryElement.mLocalSsrc = mRecvSSRC;
-    frameHistoryElement.mRemoteSsrc = remoteSsrc;
+    frameHistoryElement.mLocalSsrc = localRecvSsrc;
+    frameHistoryElement.mRemoteSsrc = remoteSendSsrc;
     if (!mReceivedFrameHistory.mEntries.AppendElement(frameHistoryElement,
                                                       fallible)) {
       mozalloc_handle_oom(0);
@@ -1782,7 +1727,7 @@ void WebrtcVideoConduit::OnFrame(const webrtc::VideoFrame& video_frame) {
 
 bool WebrtcVideoConduit::AddFrameHistory(
     dom::Sequence<dom::RTCVideoFrameHistoryInternal>* outHistories) const {
-  ReentrantMonitorAutoEnter enter(mTransportMonitor);
+  ReentrantMonitorAutoEnter enter(mRendererMonitor);
   if (!outHistories->AppendElement(mReceivedFrameHistory, fallible)) {
     mozalloc_handle_oom(0);
     return false;
@@ -1804,14 +1749,14 @@ void WebrtcVideoConduit::DumpCodecDB() const {
 }
 
 void WebrtcVideoConduit::VideoLatencyUpdate(uint64_t newSample) {
-  mTransportMonitor.AssertCurrentThreadIn();
+  mRendererMonitor.AssertCurrentThreadIn();
 
   mVideoLatencyAvg =
       (sRoundingPadding * newSample + sAlphaNum * mVideoLatencyAvg) / sAlphaDen;
 }
 
 uint64_t WebrtcVideoConduit::MozVideoLatencyAvg() {
-  mTransportMonitor.AssertCurrentThreadIn();
+  mRendererMonitor.AssertCurrentThreadIn();
 
   return mVideoLatencyAvg / sRoundingPadding;
 }

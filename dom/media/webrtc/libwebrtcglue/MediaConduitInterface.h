@@ -18,6 +18,7 @@
 #include "WebrtcVideoCodecFactory.h"
 #include "nsTArray.h"
 #include "mozilla/dom/RTCRtpSourcesBinding.h"
+#include "transport/mediapacket.h"
 
 
 #include "api/video/video_frame_buffer.h"
@@ -47,36 +48,6 @@ class WebrtcCallWrapper;
 using RtpExtList = std::vector<webrtc::RtpExtension>;
 using Ssrc = uint32_t;
 using Ssrcs = std::vector<uint32_t>;
-
-
-
-
-
-
-class TransportInterface {
- protected:
-  virtual ~TransportInterface() {}
-
- public:
-  
-
-
-
-
-
-
-  virtual nsresult SendRtpPacket(const uint8_t* data, size_t len) = 0;
-
-  
-
-
-
-
-
-
-  virtual nsresult SendRtcpPacket(const uint8_t* data, size_t len) = 0;
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TransportInterface)
-};
 
 
 
@@ -126,6 +97,7 @@ class VideoRenderer {
 
 
 
+
 class MediaSessionConduit {
  protected:
   virtual ~MediaSessionConduit() {}
@@ -143,53 +115,26 @@ class MediaSessionConduit {
   virtual Type type() const = 0;
 
   
-
-
-
-
-
-
-
-  virtual void ReceivedRTPPacket(const uint8_t* data, int len,
-                                 webrtc::RTPHeader& header) = 0;
+  virtual void SetTransportActive(bool aActive) = 0;
 
   
+  virtual MediaEventSourceExc<MediaPacket>& SenderRtpSendEvent() = 0;
+  virtual MediaEventSourceExc<MediaPacket>& SenderRtcpSendEvent() = 0;
+  virtual MediaEventSourceExc<MediaPacket>& ReceiverRtcpSendEvent() = 0;
 
-
-
-
-
-
-
-  virtual void ReceivedRTCPPacket(const uint8_t* data, int len) = 0;
+  
+  
+  virtual void ConnectReceiverRtpEvent(
+      MediaEventSourceExc<MediaPacket, webrtc::RTPHeader>& aEvent) = 0;
+  
+  virtual void ConnectReceiverRtcpEvent(
+      MediaEventSourceExc<MediaPacket>& aEvent) = 0;
+  
+  virtual void ConnectSenderRtcpEvent(
+      MediaEventSourceExc<MediaPacket>& aEvent) = 0;
 
   virtual Maybe<DOMHighResTimeStamp> LastRtcpReceived() const = 0;
   virtual DOMHighResTimeStamp GetNow() const = 0;
-
-  
-
-
-
-
-
-
-
-
-
-  virtual MediaConduitErrorCode SetTransmitterTransport(
-      RefPtr<TransportInterface> aTransport) = 0;
-
-  
-
-
-
-
-
-
-
-
-  virtual MediaConduitErrorCode SetReceiverTransport(
-      RefPtr<TransportInterface> aTransport) = 0;
 
   virtual Ssrcs GetLocalSSRCs() const = 0;
 
@@ -200,6 +145,11 @@ class MediaSessionConduit {
 
   virtual MediaEventSource<void>& RtcpByeEvent() = 0;
   virtual MediaEventSource<void>& RtcpTimeoutEvent() = 0;
+
+  virtual bool SendRtp(const uint8_t* aData, size_t aLength,
+                       const webrtc::PacketOptions& aOptions) = 0;
+  virtual bool SendSenderRtcp(const uint8_t* aData, size_t aLength) = 0;
+  virtual bool SendReceiverRtcp(const uint8_t* aData, size_t aLength) = 0;
 
   virtual void DeliverPacket(rtc::CopyOnWriteBuffer packet,
                              PacketType type) = 0;
@@ -271,6 +221,38 @@ class MediaSessionConduit {
   
   
   mutable bool mSourcesUpdateNeeded = true;
+};
+
+class WebrtcSendTransport : public webrtc::Transport {
+  
+  MediaSessionConduit* mConduit;
+
+ public:
+  explicit WebrtcSendTransport(MediaSessionConduit* aConduit)
+      : mConduit(aConduit) {}
+  bool SendRtp(const uint8_t* aPacket, size_t aLength,
+               const webrtc::PacketOptions& aOptions) override {
+    return mConduit->SendRtp(aPacket, aLength, aOptions);
+  }
+  bool SendRtcp(const uint8_t* aPacket, size_t aLength) override {
+    return mConduit->SendSenderRtcp(aPacket, aLength);
+  }
+};
+
+class WebrtcReceiveTransport : public webrtc::Transport {
+  
+  MediaSessionConduit* mConduit;
+
+ public:
+  explicit WebrtcReceiveTransport(MediaSessionConduit* aConduit)
+      : mConduit(aConduit) {}
+  bool SendRtp(const uint8_t* aPacket, size_t aLength,
+               const webrtc::PacketOptions& aOptions) override {
+    MOZ_CRASH("Unexpected RTP packet");
+  }
+  bool SendRtcp(const uint8_t* aPacket, size_t aLength) override {
+    return mConduit->SendReceiverRtcp(aPacket, aLength);
+  }
 };
 
 
