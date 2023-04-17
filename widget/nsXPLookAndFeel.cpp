@@ -629,19 +629,20 @@ Maybe<nscolor> nsXPLookAndFeel::GenericDarkColor(ColorID aID) {
       break;
     case ColorID::Selecteditem:  
                                  
-    case ColorID::Highlight:
-      
-      
       color = NS_RGB(0, 221, 255);
       break;
     case ColorID::Field:
     case ColorID::Buttonface:        
     case ColorID::Selecteditemtext:  
                                      
-    case ColorID::Highlighttext:
       color = NS_RGB(43, 42, 51);
       break;
-
+    case ColorID::Highlight:
+      color = NS_RGBA(0, 221, 255, 153);
+      break;
+    case ColorID::Highlighttext:
+      color = NS_SAME_AS_FOREGROUND_COLOR;
+      break;
     default:
       return Nothing();
   }
