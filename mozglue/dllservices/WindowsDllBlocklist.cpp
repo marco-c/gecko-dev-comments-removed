@@ -760,6 +760,11 @@ namespace mozilla {
 Authenticode* GetAuthenticode();
 }  
 
+
+
+
+
+
 MFBT_API void DllBlocklist_SetFullDllServices(
     mozilla::glue::detail::DllServicesBase* aSvc) {
   glue::AutoExclusiveLock lock(gDllServicesLock);
