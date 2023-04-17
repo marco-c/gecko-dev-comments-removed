@@ -11423,42 +11423,58 @@ bool PresShell::DetermineFontSizeInflationState() {
     }
   }
 
+  Maybe<LayoutDeviceIntSize> displaySize;
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-  nsresult rv;
-  nsCOMPtr<nsIScreenManager> screenMgr =
-      do_GetService("@mozilla.org/gfx/screenmanager;1", &rv);
-  if (!NS_SUCCEEDED(rv)) {
-    return false;
+  if (mPresContext->IsRootContentDocumentCrossProcess()) {
+    if (mMobileViewportManager) {
+      displaySize = Some(mMobileViewportManager->DisplaySize());
+    }
+  } else if (PresShell* rootPresShell = GetRootPresShell()) {
+    
+    
+    if (auto mvm = rootPresShell->GetMobileViewportManager()) {
+      displaySize = Some(mvm->DisplaySize());
+    }
   }
 
-  nsCOMPtr<nsIScreen> screen;
-  screenMgr->GetPrimaryScreen(getter_AddRefs(screen));
-  if (screen) {
-    int32_t screenLeft, screenTop, screenWidth, screenHeight;
-    screen->GetRect(&screenLeft, &screenTop, &screenWidth, &screenHeight);
+  if (!displaySize) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
-    nsViewportInfo vInf = GetDocument()->GetViewportInfo(
-        ScreenIntSize(screenWidth, screenHeight));
+    
+    
 
-    if (vInf.GetDefaultZoom() >= CSSToScreenScale(1.0f) ||
-        vInf.IsAutoSizeEnabled()) {
+    
+    
+    nsPresContext* topContext =
+        mPresContext->GetInProcessRootContentDocumentPresContext();
+    LayoutDeviceIntSize result;
+    if (!nsLayoutUtils::GetContentViewerSize(topContext, result)) {
       return false;
     }
+    displaySize = Some(result);
+  }
+
+  ScreenIntSize screenSize = ViewAs<ScreenPixel>(
+      displaySize.value(),
+      PixelCastJustification::LayoutDeviceIsScreenForBounds);
+  nsViewportInfo vInf = GetDocument()->GetViewportInfo(screenSize);
+
+  if (vInf.GetDefaultZoom() >= CSSToScreenScale(1.0f) ||
+      vInf.IsAutoSizeEnabled()) {
+    return false;
   }
 
   return true;
