@@ -379,10 +379,11 @@ bool ModuleGenerator::init(Metadata* maybeAsmJSMetadata) {
   
   
 
-  MOZ_ASSERT(GetHelperThreadCount() > 1);
+  MOZ_ASSERT(GetHelperThreadCount() >= 1);
 
   uint32_t numTasks;
-  if (CanUseExtraThreads() && GetHelperThreadCPUCount() > 1) {
+  if (CanUseExtraThreads() && GetHelperThreadCPUCount() > 1 &&
+      GetHelperThreadCount() > 1) {
     parallel_ = true;
     numTasks = 2 * GetMaxWasmCompilationThreads();
   } else {
