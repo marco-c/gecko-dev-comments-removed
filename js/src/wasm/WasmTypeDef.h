@@ -638,6 +638,14 @@ class TypeContext {
 #ifdef ENABLE_WASM_GC
     
     if (one.isRtt() && two.isRtt()) {
+      
+      if (one.hasRttDepth() != two.hasRttDepth()) {
+        return TypeResult::False;
+      }
+      
+      if (two.hasRttDepth() && one.rttDepth() != two.rttDepth()) {
+        return TypeResult::False;
+      }
       return isTypeIndexEquivalent(one.typeIndex(), two.typeIndex(), cache);
     }
 #endif
@@ -680,6 +688,14 @@ class TypeContext {
     
 #ifdef ENABLE_WASM_GC
     if (one.isRtt() && two.isRtt()) {
+      
+      if (!one.hasRttDepth() && two.hasRttDepth()) {
+        return TypeResult::False;
+      }
+      
+      if (two.hasRttDepth() && one.rttDepth() != two.rttDepth()) {
+        return TypeResult::False;
+      }
       return isTypeIndexEquivalent(one.typeIndex(), two.typeIndex(), cache);
     }
 #endif

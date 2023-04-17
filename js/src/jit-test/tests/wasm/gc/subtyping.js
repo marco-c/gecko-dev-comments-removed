@@ -3,7 +3,7 @@
 function assertSubtype(a, b, types) {
   types = types || [];
   wasmEvalText(`(module
-    ${types.map((x) => `(type ${x})`).join('\n')}
+    ${types.map((x, i) => `(type \$${i} ${x})`).join('\n')}
     (func
       unreachable
       (block (param ${b})
@@ -223,3 +223,33 @@ assertNotSubtype(
   '(rtt 0 1)',
   ['(struct)',
    '(struct (field i32))']);
+
+
+assertSubtype(
+  '(rtt $0)',
+  '(rtt 0 $0)',
+  ['(struct)']);
+
+
+assertNotSubtype(
+  '(rtt 0 $0)',
+  '(rtt $0)',
+  ['(struct)']);
+
+
+assertSubtype(
+  '(rtt 0 $0)',
+  '(rtt 0 $0)',
+  ['(struct)']);
+assertSubtype(
+  '(rtt 1 $0)',
+  '(rtt 1 $0)',
+  ['(struct)']);
+assertNotSubtype(
+  '(rtt 1 $0)',
+  '(rtt 0 $0)',
+  ['(struct)']);
+assertNotSubtype(
+  '(rtt 2 $0)',
+  '(rtt 1 $0)',
+  ['(struct)']);

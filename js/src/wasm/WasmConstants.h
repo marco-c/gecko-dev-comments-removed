@@ -82,7 +82,8 @@ enum class TypeCode {
   Ref = 0x6b,  
 
   
-  Rtt = 0x69,  
+  RttWithDepth = 0x69,  
+  Rtt = 0x68,           
 
   
   Func = 0x60,  
@@ -114,6 +115,11 @@ static constexpr TypeCode AbstractReferenceTypeCode = TypeCode::ExternRef;
 
 
 static constexpr TypeCode AbstractReferenceTypeIndexCode = TypeCode::Ref;
+
+
+
+
+static constexpr TypeCode AbstractRttCode = TypeCode::Rtt;
 
 enum class TypeIdDescKind { None, Immediate, Global };
 
@@ -1000,19 +1006,11 @@ static const unsigned PageMask = ((1u << PageBits) - 1);
 
 
 static const unsigned MaxTypes = 1000000;
-#ifdef JS_64BIT
-static const unsigned MaxTypeIndex = 1000000;
-#else
-static const unsigned MaxTypeIndex = 15000;
-#endif
-static const unsigned MaxRttDepth = 127;
 static const unsigned MaxFuncs = 1000000;
 static const unsigned MaxTables = 100000;
 static const unsigned MaxImports = 100000;
 static const unsigned MaxExports = 100000;
 static const unsigned MaxGlobals = 1000000;
-static const unsigned MaxEvents =
-    1000000;  
 static const unsigned MaxDataSegments = 100000;
 static const unsigned MaxDataSegmentLengthPages = 16384;
 static const unsigned MaxElemSegments = 10000000;
@@ -1030,6 +1028,21 @@ static const unsigned MaxFunctionBytes = 7654321;
 
 
 
+
+
+
+#ifdef JS_64BIT
+static const unsigned MaxTypeIndex = 1000000;
+static const unsigned MaxRttDepth = 1000;
+#else
+static const unsigned MaxTypeIndex = 15000;
+static const unsigned MaxRttDepth = 100;
+#endif
+
+static const unsigned MaxEvents = 1000000;
+
+
+
 static const unsigned MaxBrTableElems = 1000000;
 static const unsigned MaxCodeSectionBytes = MaxModuleBytes;
 static const unsigned MaxArgsForJitInlineCall = 8;
@@ -1043,6 +1056,10 @@ static const unsigned MaxRegisterResults = 1;
 
 
 static const uint64_t MaxAsmJSHeapLength = 0x7f000000;
+
+
+
+static const uint32_t RttDepthNone = MaxRttDepth + 1;
 
 
 
