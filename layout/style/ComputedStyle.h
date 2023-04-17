@@ -222,6 +222,9 @@ class ComputedStyle {
 #include "nsStyleStructList.h"
 #undef STYLE_STRUCT
 
+  inline mozilla::StylePointerEvents PointerEvents() const;
+  inline mozilla::StyleUserSelect UserSelect() const;
+
   
 
 

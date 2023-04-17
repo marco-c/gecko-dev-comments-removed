@@ -510,7 +510,7 @@ nsIFrame* nsCaret::GetPaintGeometry(nsRect* aCaretRect, nsRect* aHookRect,
   
   
   const nsStyleUI* ui = unadjustedFrame->StyleUI();
-  if ((!mIgnoreUserModify && ui->mUserModify == StyleUserModify::ReadOnly) ||
+  if ((!mIgnoreUserModify && ui->UserModify() == StyleUserModify::ReadOnly) ||
       unadjustedFrame->IsContentDisabled()) {
     return nullptr;
   }

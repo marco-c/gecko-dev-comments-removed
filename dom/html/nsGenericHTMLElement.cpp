@@ -1948,7 +1948,7 @@ bool nsGenericHTMLFormElement::IsElementDisabledForEvents(WidgetEvent* aEvent,
 
   
   
-  if (aFrame && aFrame->StyleUI()->mUserInput == StyleUserInput::None) {
+  if (aFrame && aFrame->StyleUI()->UserInput() == StyleUserInput::None) {
     return true;
   }
 

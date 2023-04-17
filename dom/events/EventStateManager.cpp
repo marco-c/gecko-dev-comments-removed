@@ -3367,7 +3367,6 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
         bool suppressBlur = false;
         if (mCurrentTarget) {
           mCurrentTarget->GetContentForEvent(aEvent, getter_AddRefs(newFocus));
-          const nsStyleUI* ui = mCurrentTarget->StyleUI();
           activeContent = mCurrentTarget->GetContent();
 
           
@@ -3381,7 +3380,8 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
           
           
           
-          suppressBlur = (ui->mUserFocus == StyleUserFocus::Ignore);
+          suppressBlur =
+              mCurrentTarget->StyleUI()->UserFocus() == StyleUserFocus::Ignore;
 
           nsCOMPtr<Element> element = do_QueryInterface(aEvent->mTarget);
           if (!suppressBlur && element) {
@@ -4067,7 +4067,7 @@ static CursorImage ComputeCustomCursor(nsPresContext* aPresContext,
   
   
   bool loading = false;
-  for (const auto& image : style.StyleUI()->mCursor.images.AsSpan()) {
+  for (const auto& image : style.StyleUI()->Cursor().images.AsSpan()) {
     MOZ_ASSERT(image.image.IsImageRequestType(),
                "Cursor image should only parse url() types");
     uint32_t status;
@@ -5602,11 +5602,9 @@ bool EventStateManager::SetContentState(nsIContent* aContent,
 
     
     
-    if (mCurrentTarget) {
-      const nsStyleUI* ui = mCurrentTarget->StyleUI();
-      if (ui->mUserInput == StyleUserInput::None) {
-        return false;
-      }
+    if (mCurrentTarget &&
+        mCurrentTarget->StyleUI()->UserInput() == StyleUserInput::None) {
+      return false;
     }
 
     if (aState == NS_EVENT_STATE_ACTIVE) {
