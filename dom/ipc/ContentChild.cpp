@@ -117,6 +117,7 @@
 #include "nsBaseDragService.h"
 #include "nsDocShellLoadTypes.h"
 #include "nsFocusManager.h"
+#include "nsHttpHandler.h"
 #include "nsIConsoleService.h"
 #include "nsIInputStreamChannel.h"
 #include "nsILoadGroup.h"
@@ -2588,7 +2589,11 @@ mozilla::ipc::IPCResult ContentChild::RecvRemoteType(
 }
 
 
-void ContentChild::PreallocInit() {}
+void ContentChild::PreallocInit() {
+  
+  
+  nsHttpHandler::PresetAcceptLanguages();
+}
 
 
 
