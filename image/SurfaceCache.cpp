@@ -176,6 +176,8 @@ class CachedSurface {
     return aMallocSizeOf(this) + aMallocSizeOf(mProvider.get());
   }
 
+  void InvalidateRecording() { mProvider->InvalidateRecording(); }
+
   
   struct MOZ_STACK_CLASS SurfaceMemoryReport {
     SurfaceMemoryReport(nsTArray<SurfaceMemoryCounter>& aCounters,
@@ -276,8 +278,14 @@ class ImageSurfaceCache {
   [[nodiscard]] bool Insert(NotNull<CachedSurface*> aSurface) {
     MOZ_ASSERT(!mLocked || aSurface->IsPlaceholder() || aSurface->IsLocked(),
                "Inserting an unlocked surface for a locked image");
-    return mSurfaces.InsertOrUpdate(aSurface->GetSurfaceKey(),
-                                    RefPtr<CachedSurface>{aSurface}, fallible);
+    const auto& surfaceKey = aSurface->GetSurfaceKey();
+    if (surfaceKey.Region()) {
+      
+      
+      aSurface->SetCannotSubstitute();
+    }
+    return mSurfaces.InsertOrUpdate(surfaceKey, RefPtr<CachedSurface>{aSurface},
+                                    fallible);
   }
 
   already_AddRefed<CachedSurface> Remove(NotNull<CachedSurface*> aSurface) {
@@ -326,6 +334,10 @@ class ImageSurfaceCache {
       if (exactMatch->IsDecoded()) {
         return MakeTuple(exactMatch.forget(), MatchType::EXACT, IntSize());
       }
+    } else if (aIdealKey.Region()) {
+      
+      
+      return MakeTuple(exactMatch.forget(), MatchType::NOT_FOUND, IntSize());
     } else if (!mFactor2Mode) {
       
       
@@ -354,7 +366,7 @@ class ImageSurfaceCache {
       const SurfaceKey& currentKey = current->GetSurfaceKey();
 
       
-      if (current->IsPlaceholder()) {
+      if (current->IsPlaceholder() || currentKey.Region()) {
         continue;
       }
       
@@ -528,6 +540,28 @@ class ImageSurfaceCache {
     
     
     AfterMaybeRemove();
+  }
+
+  template <typename Function>
+  bool Invalidate(Function&& aRemoveCallback) {
+    
+    
+    bool foundRecording = false;
+    for (auto iter = mSurfaces.Iter(); !iter.Done(); iter.Next()) {
+      NotNull<CachedSurface*> current = WrapNotNull(iter.UserData());
+
+      if (current->GetSurfaceKey().Flags() & SurfaceFlags::RECORD_BLOB) {
+        foundRecording = true;
+        current->InvalidateRecording();
+        continue;
+      }
+
+      aRemoveCallback(current);
+      iter.Remove();
+    }
+
+    AfterMaybeRemove();
+    return foundRecording;
   }
 
   IntSize SuggestedSize(const IntSize& aSize) const {
@@ -1016,7 +1050,8 @@ class SurfaceCacheImpl final : public nsIMemoryReporter {
     MOZ_ASSERT_IF(
         matchType == MatchType::SUBSTITUTE_BECAUSE_NOT_FOUND ||
             matchType == MatchType::SUBSTITUTE_BECAUSE_PENDING,
-        surface->GetSurfaceKey().SVGContext() == aSurfaceKey.SVGContext() &&
+        surface->GetSurfaceKey().Region() == aSurfaceKey.Region() &&
+            surface->GetSurfaceKey().SVGContext() == aSurfaceKey.SVGContext() &&
             surface->GetSurfaceKey().Playback() == aSurfaceKey.Playback() &&
             surface->GetSurfaceKey().Flags() == aSurfaceKey.Flags());
 
@@ -1130,6 +1165,24 @@ class SurfaceCacheImpl final : public nsIMemoryReporter {
     });
 
     MaybeRemoveEmptyCache(aImageKey, cache);
+  }
+
+  bool InvalidateImage(const ImageKey aImageKey,
+                       const StaticMutexAutoLock& aAutoLock) {
+    RefPtr<ImageSurfaceCache> cache = GetImageCache(aImageKey);
+    if (!cache) {
+      return false;  
+    }
+
+    bool rv = cache->Invalidate(
+        [this, &aAutoLock](NotNull<CachedSurface*> aSurface) -> void {
+          StopTracking(aSurface,  true, aAutoLock);
+          
+          mCachedSurfacesDiscard.AppendElement(aSurface);
+        });
+
+    MaybeRemoveEmptyCache(aImageKey, cache);
+    return rv;
   }
 
   void DiscardAll(const StaticMutexAutoLock& aAutoLock) {
@@ -1715,6 +1768,20 @@ void SurfaceCache::PruneImage(const ImageKey aImageKey) {
       sInstance->TakeDiscard(discard, lock);
     }
   }
+}
+
+
+bool SurfaceCache::InvalidateImage(const ImageKey aImageKey) {
+  nsTArray<RefPtr<CachedSurface>> discard;
+  bool rv = false;
+  {
+    StaticMutexAutoLock lock(sInstanceMutex);
+    if (sInstance) {
+      rv = sInstance->InvalidateImage(aImageKey, lock);
+      sInstance->TakeDiscard(discard, lock);
+    }
+  }
+  return rv;
 }
 
 
