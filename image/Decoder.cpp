@@ -113,6 +113,10 @@ qcms_transform* Decoder::GetCMSsRGBTransform(SurfaceFormat aFormat) const {
     
     return nullptr;
   }
+  if (qcms_profile_is_sRGB(gfxPlatform::GetCMSOutputProfile())) {
+    
+    return nullptr;
+  }
 
   switch (aFormat) {
     case SurfaceFormat::B8G8R8A8:
