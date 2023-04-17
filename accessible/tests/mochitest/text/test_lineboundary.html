@@ -13,8 +13,14 @@
     function doTest() {
       testTextAtOffset("line_test_1", BOUNDARY_LINE_START,
                        [[0, 6, "Line 1 ", 0, 7],
-                        [7, 7, "", 7, 7],
+                        // See the todo test below.
+                        // [7, 7, kEmbedChar, 7, 8],
                         [8, 15, "Line 3 ", 8, 15]]);
+      testTextAtOffset(/* aOffset */ 7, BOUNDARY_LINE_START,
+        kEmbedChar, /* aStartOffset */ 7, /* aEndOffset */ 8,
+        "line_test_1",
+        /* returned text */ kTodo,
+        /* returned start offset */ kOk, /* returned end offset */ kTodo);
 
       // ////////////////////////////////////////////////////////////////////////
       // __h__e__l__l__o__ __m__y__ __f__r__i__e__n__d__
@@ -328,7 +334,7 @@ two words
   <div id="noBrInEmbedButOneAfter">a <a href="https://mozilla.org/">b</a><br>c</div>
   <div id="twoEmbedsWithBRs">a <a href="https://mozilla.org">b<br>c</a><a href="https://mozilla.org">d<br>e</a> f</div>
   <span id="inlineBlockWithSpansAndBrs" style="display: inline-block;"><span>a<br>b<br><span></span></span>c</span>
-  <div id="spansWithWhitespaces">				
+  <div id="spansWithWhitespaces">				<!-- Don't indent the following block -->
 <span>Line 1<br/>
 </span>
 <span>Line 2<br/>
@@ -336,6 +342,6 @@ two words
 <span>Line 3<br/>
 </span>
 <span>Line 4<br/>
-</span></div>
+</span></div><!-- OK to indent again -->
 </body>
 </html>
