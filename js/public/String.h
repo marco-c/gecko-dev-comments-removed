@@ -14,10 +14,10 @@
 #include "mozilla/Assertions.h"  
 #include "mozilla/Attributes.h"  
 #include "mozilla/Likely.h"      
-#include "mozilla/Maybe.h"
-#include "mozilla/Range.h"
-#include "mozilla/Span.h"
-#include "mozilla/Tuple.h"
+#include "mozilla/Maybe.h"       
+#include "mozilla/Range.h"       
+#include "mozilla/Span.h"        
+#include "mozilla/Tuple.h"       
 
 #include <algorithm>  
 #include <stddef.h>   
@@ -25,11 +25,24 @@
 
 #include "jstypes.h"  
 
-#include "js/TypeDecls.h"  
+#include "js/CharacterEncoding.h"  
+#include "js/Id.h"                 
+#include "js/RootingAPI.h"         
+#include "js/TypeDecls.h"          
+#include "js/UniquePtr.h"          
+#include "js/Utility.h"            
+#include "js/Value.h"              
 
+struct JS_PUBLIC_API JSContext;
 class JS_PUBLIC_API JSAtom;
 class JSLinearString;
 class JS_PUBLIC_API JSString;
+
+namespace JS {
+
+class JS_PUBLIC_API AutoRequireNoGC;
+
+}  
 
 extern JS_PUBLIC_API JSString* JS_GetEmptyString(JSContext* cx);
 
@@ -233,7 +246,7 @@ extern JS_PUBLIC_API size_t JS_PutEscapedLinearString(char* buffer, size_t size,
 
 
 extern JS_PUBLIC_API JSString* JS_NewDependentString(JSContext* cx,
-                                                     JS::HandleString str,
+                                                     JS::Handle<JSString*> str,
                                                      size_t start,
                                                      size_t length);
 
@@ -242,8 +255,8 @@ extern JS_PUBLIC_API JSString* JS_NewDependentString(JSContext* cx,
 
 
 extern JS_PUBLIC_API JSString* JS_ConcatStrings(JSContext* cx,
-                                                JS::HandleString left,
-                                                JS::HandleString right);
+                                                JS::Handle<JSString*> left,
+                                                JS::Handle<JSString*> right);
 
 
 
@@ -310,8 +323,6 @@ JS_EncodeStringToUTF8BufferPartial(JSContext* cx, JSString* str,
                                    mozilla::Span<char> buffer);
 
 namespace JS {
-
-class JS_PUBLIC_API AutoRequireNoGC;
 
 
 
