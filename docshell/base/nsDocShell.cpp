@@ -9325,6 +9325,23 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
   
   
   
+  if (mozilla::SessionHistoryInParent()) {
+    Document* document = GetDocument();
+    uint16_t flags = 0;
+    if (document && !document->CanSavePresentation(nullptr, flags, true)) {
+      
+      
+      
+      
+      
+      
+      document->DisallowBFCaching(flags);
+    }
+  }
+
+  
+  
+  
   
   
   if (!isJavaScript && isNotDownload) {

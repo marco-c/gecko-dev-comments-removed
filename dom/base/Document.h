@@ -1197,7 +1197,7 @@ class Document : public nsINode,
 
   
   
-  void DisallowBFCaching();
+  void DisallowBFCaching(uint16_t aStatus = BFCacheStatus::NOT_ALLOWED);
 
   bool IsBFCachingAllowed() const { return !mBFCacheDisallowed; }
 
