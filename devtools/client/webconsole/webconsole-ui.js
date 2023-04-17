@@ -377,6 +377,29 @@ class WebConsoleUI {
     );
   }
 
+  
+
+
+
+
+
+
+  async handleNavigated({ hasNativeConsoleAPI }) {
+    
+    
+    await this.wrapper.waitAsyncDispatches();
+
+    if (!hasNativeConsoleAPI) {
+      this.logWarningAboutReplacedAPI();
+    }
+
+    this.emit("reloaded");
+  }
+
+  handleWillNavigate({ timeStamp, url }) {
+    this.wrapper.dispatchTabWillNavigate({ timeStamp, url });
+  }
+
   async watchCssMessages() {
     const { resourceCommand } = this.hud;
     await resourceCommand.watchResources([resourceCommand.TYPES.CSS_MESSAGE], {
@@ -396,6 +419,11 @@ class WebConsoleUI {
           this.handleWillNavigate({
             timeStamp: resource.time,
             url: resource.newURI,
+          });
+        }
+        if (resource.name == "dom-complete") {
+          this.handleNavigated({
+            hasNativeConsoleAPI: resource.hasNativeConsoleAPI,
           });
         }
         
@@ -672,30 +700,6 @@ class WebConsoleUI {
 
   _onChangeSplitConsoleState() {
     this.wrapper.dispatchSplitConsoleCloseButtonToggle();
-  }
-
-  
-
-
-
-
-
-
-
-  async handleTabNavigated(packet) {
-    
-    
-    await this.wrapper.waitAsyncDispatches();
-
-    if (!packet.nativeConsoleAPI) {
-      this.logWarningAboutReplacedAPI();
-    }
-
-    this.emit("reloaded");
-  }
-
-  handleWillNavigate({ timeStamp, url }) {
-    this.wrapper.dispatchTabWillNavigate({ timeStamp, url });
   }
 
   getInputCursor() {

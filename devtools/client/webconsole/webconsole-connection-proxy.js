@@ -28,7 +28,6 @@ class WebConsoleConnectionProxy {
     this.target = target;
     this._connecter = null;
 
-    this._onTabNavigated = this._onTabNavigated.bind(this);
     this._onLastPrivateContextExited = this._onLastPrivateContextExited.bind(
       this
     );
@@ -50,8 +49,6 @@ class WebConsoleConnectionProxy {
       return Promise.reject("target was destroyed");
     }
 
-    this.target.on("navigate", this._onTabNavigated);
-
     const connection = (async () => {
       this.webConsoleFront = await this.target.getFront("console");
 
@@ -65,10 +62,6 @@ class WebConsoleConnectionProxy {
       await this.webConsoleUI.setSaveRequestAndResponseBodies(saveBodies);
 
       this._addWebConsoleFrontEventListeners();
-
-      if (this.webConsoleFront && !this.webConsoleFront.hasNativeConsoleAPI) {
-        await this.webConsoleUI.logWarningAboutReplacedAPI();
-      }
     })();
 
     let timeoutId;
@@ -146,27 +139,12 @@ class WebConsoleConnectionProxy {
 
 
 
-
-  _onTabNavigated(packet) {
-    
-    if (!this.webConsoleUI) {
-      return;
-    }
-    this.webConsoleUI.handleTabNavigated(packet);
-  }
-  
-
-
-
-
-
   disconnect() {
     if (!this.webConsoleFront) {
       return;
     }
 
     this._removeWebConsoleFrontEventListeners();
-    this.target.off("navigate", this._onTabNavigated);
 
     this.webConsoleFront = null;
   }

@@ -1,0 +1,18 @@
+
+
+
+
+"use strict";
+
+module.exports = function({ resource, targetFront }) {
+  
+  
+  if (resource.name == "dom-complete" && !("hasNativeConsoleAPI" in resource)) {
+    
+    
+    
+    const consoleFront = targetFront.getCachedFront("console");
+    resource.hasNativeConsoleAPI = consoleFront.hasNativeConsoleAPI;
+  }
+  return resource;
+};
