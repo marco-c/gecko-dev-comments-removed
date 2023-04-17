@@ -30,6 +30,52 @@ const dropBracketIfIPv6 = host =>
     ? host.slice(1, -1)
     : host;
 
+
+
+function fromExtPartitionKey(extPartitionKey) {
+  if (!extPartitionKey) {
+    
+    return "";
+  }
+  const { topLevelSite } = extPartitionKey;
+  
+  
+  if (topLevelSite) {
+    
+    try {
+      return ChromeUtils.getPartitionKeyFromURL(topLevelSite);
+    } catch (e) {
+      throw new ExtensionError("Invalid value for 'partitionKey' attribute");
+    }
+  }
+  
+  return "";
+}
+
+
+function toExtPartitionKey(partitionKey) {
+  if (!partitionKey) {
+    
+    
+    return null;
+  }
+  
+  
+  
+  
+  if (!partitionKey.startsWith("(")) {
+    
+    return { topLevelSite: `https://${partitionKey}` };
+  }
+  
+  let [scheme, domain, port] = partitionKey.slice(1, -1).split(",");
+  let topLevelSite = `${scheme}://${domain}`;
+  if (port) {
+    topLevelSite += `:${port}`;
+  }
+  return { topLevelSite };
+}
+
 const convertCookie = ({ cookie, isPrivate }) => {
   let result = {
     name: cookie.name,
@@ -42,6 +88,7 @@ const convertCookie = ({ cookie, isPrivate }) => {
     sameSite: SAME_SITE_STATUSES[cookie.sameSite],
     session: cookie.isSession,
     firstPartyDomain: cookie.originAttributes.firstPartyDomain || "",
+    partitionKey: toExtPartitionKey(cookie.originAttributes.partitionKey),
   };
 
   if (!cookie.isSession) {
@@ -172,7 +219,65 @@ const checkSetCookiePermissions = (extension, uri, cookie) => {
 
 
 
-const query = function*(detailsIn, props, context) {
+
+
+
+
+
+
+
+
+
+
+
+const oaFromDetails = (details, allowPattern) => {
+  
+  let originAttributes = {
+    userContextId: 0, 
+    privateBrowsingId: 0, 
+    
+    firstPartyDomain: details.firstPartyDomain ?? "",
+    partitionKey: fromExtPartitionKey(details.partitionKey),
+  };
+  
+  let isPattern = false;
+  if (allowPattern) {
+    
+    
+    
+    
+    
+    
+    if ("firstPartyDomain" in details && details.firstPartyDomain == null) {
+      delete originAttributes.firstPartyDomain;
+      isPattern = true;
+    }
+
+    
+    
+    
+    
+    
+    if (details.partitionKey && details.partitionKey.topLevelSite == null) {
+      delete originAttributes.partitionKey;
+      isPattern = true;
+    }
+  }
+  return { originAttributes, isPattern };
+};
+
+
+
+
+
+
+
+
+
+
+
+
+const query = function*(detailsIn, props, context, allowPattern) {
   let details = {};
   props.forEach(property => {
     if (detailsIn[property] !== null) {
@@ -180,12 +285,13 @@ const query = function*(detailsIn, props, context) {
     }
   });
 
+  let { originAttributes, isPattern } = oaFromDetails(detailsIn, allowPattern);
+
   if ("domain" in details) {
     details.domain = details.domain.toLowerCase().replace(/^\./, "");
     details.domain = dropBracketIfIPv6(details.domain);
   }
 
-  let userContextId = 0;
   let isPrivate = context.incognito;
   if (details.storeId) {
     if (!isValidCookieStoreId(details.storeId)) {
@@ -198,16 +304,18 @@ const query = function*(detailsIn, props, context) {
       isPrivate = true;
     } else if (isContainerCookieStoreId(details.storeId)) {
       isPrivate = false;
-      userContextId = getContainerForCookieStoreId(details.storeId);
+      let userContextId = getContainerForCookieStoreId(details.storeId);
       if (!userContextId) {
         return;
       }
+      originAttributes.userContextId = userContextId;
     }
   }
 
   let storeId = DEFAULT_STORE;
   if (isPrivate) {
     storeId = PRIVATE_STORE;
+    originAttributes.privateBrowsingId = 1;
   } else if ("storeId" in details) {
     storeId = details.storeId;
   }
@@ -221,13 +329,6 @@ const query = function*(detailsIn, props, context) {
   let cookies;
   let host;
   let url;
-  let originAttributes = {
-    userContextId,
-    privateBrowsingId: isPrivate ? 1 : 0,
-  };
-  if ("firstPartyDomain" in details) {
-    originAttributes.firstPartyDomain = details.firstPartyDomain;
-  }
   if ("url" in details) {
     try {
       url = new URL(details.url);
@@ -240,7 +341,7 @@ const query = function*(detailsIn, props, context) {
     host = details.domain;
   }
 
-  if (host && "firstPartyDomain" in originAttributes) {
+  if (host && !isPattern) {
     
     
     cookies = Services.cookies.getCookiesFromHost(host, originAttributes);
@@ -329,7 +430,7 @@ const query = function*(detailsIn, props, context) {
   }
 };
 
-const normalizeFirstPartyDomain = details => {
+const validateFirstPartyDomain = details => {
   if (details.firstPartyDomain != null) {
     return;
   }
@@ -338,10 +439,6 @@ const normalizeFirstPartyDomain = details => {
       "First-Party Isolation is enabled, but the required 'firstPartyDomain' attribute was not set."
     );
   }
-
-  
-  
-  details.firstPartyDomain = "";
 };
 
 this.cookies = class extends ExtensionAPI {
@@ -350,10 +447,10 @@ this.cookies = class extends ExtensionAPI {
     let self = {
       cookies: {
         get: function(details) {
-          normalizeFirstPartyDomain(details);
+          validateFirstPartyDomain(details);
 
           
-          let allowed = ["url", "name", "storeId", "firstPartyDomain"];
+          let allowed = ["url", "name", "storeId"];
           for (let cookie of query(details, allowed, context)) {
             return Promise.resolve(convertCookie(cookie));
           }
@@ -364,7 +461,8 @@ this.cookies = class extends ExtensionAPI {
 
         getAll: function(details) {
           if (!("firstPartyDomain" in details)) {
-            normalizeFirstPartyDomain(details);
+            
+            validateFirstPartyDomain(details);
           }
 
           let allowed = [
@@ -377,13 +475,8 @@ this.cookies = class extends ExtensionAPI {
             "storeId",
           ];
 
-          
-          if (details.firstPartyDomain != null) {
-            allowed.push("firstPartyDomain");
-          }
-
           let result = Array.from(
-            query(details, allowed, context),
+            query(details, allowed, context,  true),
             convertCookie
           );
 
@@ -391,7 +484,14 @@ this.cookies = class extends ExtensionAPI {
         },
 
         set: function(details) {
-          normalizeFirstPartyDomain(details);
+          validateFirstPartyDomain(details);
+          if (details.firstPartyDomain && details.partitionKey) {
+            
+            
+            throw new ExtensionError(
+              "Partitioned cookies cannot have a 'firstPartyDomain' attribute."
+            );
+          }
 
           let uri = Services.io.newURI(details.url);
 
@@ -455,7 +555,8 @@ this.cookies = class extends ExtensionAPI {
           let originAttributes = {
             userContextId,
             privateBrowsingId: isPrivate ? 1 : 0,
-            firstPartyDomain: details.firstPartyDomain,
+            firstPartyDomain: details.firstPartyDomain ?? "",
+            partitionKey: fromExtPartitionKey(details.partitionKey),
           };
 
           let sameSite = SAME_SITE_STATUSES.indexOf(details.sameSite);
@@ -489,9 +590,9 @@ this.cookies = class extends ExtensionAPI {
         },
 
         remove: function(details) {
-          normalizeFirstPartyDomain(details);
+          validateFirstPartyDomain(details);
 
-          let allowed = ["url", "name", "storeId", "firstPartyDomain"];
+          let allowed = ["url", "name", "storeId"];
           for (let { cookie, storeId } of query(details, allowed, context)) {
             if (
               isPrivateCookieStoreId(details.storeId) &&
@@ -511,7 +612,10 @@ this.cookies = class extends ExtensionAPI {
               url: details.url,
               name: details.name,
               storeId,
-              firstPartyDomain: details.firstPartyDomain,
+              firstPartyDomain: cookie.originAttributes.firstPartyDomain,
+              partitionKey: toExtPartitionKey(
+                cookie.originAttributes.partitionKey
+              ),
             });
           }
 
