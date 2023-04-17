@@ -2380,23 +2380,6 @@ class nsContentUtils {
 
 
 
-
-
-
-
-
-
-
-
-  static already_AddRefed<mozilla::layers::LayerManager>
-  PersistentLayerManagerForDocument(Document* aDoc);
-
-  
-
-
-
-
-
   static bool IsFocusedContent(const nsIContent* aContent);
 
   

@@ -1505,9 +1505,7 @@ bool nsBaseWidget::ShouldUseOffMainThreadCompositing() {
   return gfxPlatform::UsesOffMainThreadCompositing();
 }
 
-LayerManager* nsBaseWidget::GetLayerManager(
-    PLayerTransactionChild* aShadowManager, LayersBackend aBackendHint,
-    LayerManagerPersistence aPersistence) {
+LayerManager* nsBaseWidget::GetLayerManager() {
   if (!mLayerManager) {
     if (!mShutdownObserver) {
       
@@ -1515,11 +1513,6 @@ LayerManager* nsBaseWidget::GetLayerManager(
     }
     
     if (ShouldUseOffMainThreadCompositing()) {
-      
-      
-      
-      NS_ASSERTION(aShadowManager == nullptr,
-                   "Async Compositor not supported with e10s");
       CreateCompositor();
     }
 

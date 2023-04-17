@@ -1294,24 +1294,7 @@ class nsIWidget : public nsISupports {
 
 
 
-  inline LayerManager* GetLayerManager() {
-    return GetLayerManager(nullptr, mozilla::layers::LayersBackend::LAYERS_NONE,
-                           LAYER_MANAGER_CURRENT);
-  }
-
-  inline LayerManager* GetLayerManager(LayerManagerPersistence aPersistence) {
-    return GetLayerManager(nullptr, mozilla::layers::LayersBackend::LAYERS_NONE,
-                           aPersistence);
-  }
-
-  
-
-
-
-
-  virtual LayerManager* GetLayerManager(
-      PLayerTransactionChild* aShadowManager, LayersBackend aBackendHint,
-      LayerManagerPersistence aPersistence = LAYER_MANAGER_CURRENT) = 0;
+  virtual LayerManager* GetLayerManager() = 0;
 
   
 

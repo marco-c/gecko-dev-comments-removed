@@ -4080,9 +4080,7 @@ bool nsWindow::HasPendingInputEvent() {
 
 
 
-LayerManager* nsWindow::GetLayerManager(PLayerTransactionChild* aShadowManager,
-                                        LayersBackend aBackendHint,
-                                        LayerManagerPersistence aPersistence) {
+LayerManager* nsWindow::GetLayerManager() {
   if (mLayerManager) {
     return mLayerManager;
   }
@@ -4097,12 +4095,6 @@ LayerManager* nsWindow::GetLayerManager(PLayerTransactionChild* aShadowManager,
   
   if (!mLayerManager && ShouldUseOffMainThreadCompositing()) {
     gfxWindowsPlatform::GetPlatform()->UpdateRenderMode();
-
-    
-    
-    
-    NS_ASSERTION(aShadowManager == nullptr,
-                 "Async Compositor not supported with e10s");
     CreateCompositor();
   }
 

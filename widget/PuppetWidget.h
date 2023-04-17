@@ -171,10 +171,7 @@ class PuppetWidget : public nsBaseWidget,
     return eTransparencyTransparent;
   }
 
-  virtual LayerManager* GetLayerManager(
-      PLayerTransactionChild* aShadowManager = nullptr,
-      LayersBackend aBackendHint = mozilla::layers::LayersBackend::LAYERS_NONE,
-      LayerManagerPersistence aPersistence = LAYER_MANAGER_CURRENT) override;
+  virtual LayerManager* GetLayerManager() override;
 
   
   
