@@ -2181,10 +2181,17 @@ bool AsyncPanZoomController::CanScroll(const InputData& aEvent) const {
 ScrollDirections AsyncPanZoomController::GetAllowedHandoffDirections() const {
   ScrollDirections result;
   RecursiveMutexAutoLock lock(mRecursiveMutex);
-  if (mX.OverscrollBehaviorAllowsHandoff()) {
+
+  
+  
+  
+  
+  const bool isScrollable = mX.CanScroll() || mY.CanScroll();
+  const bool isRoot = IsRootContent();
+  if ((!isScrollable && !isRoot) || mX.OverscrollBehaviorAllowsHandoff()) {
     result += ScrollDirection::eHorizontal;
   }
-  if (mY.OverscrollBehaviorAllowsHandoff()) {
+  if ((!isScrollable && !isRoot) || mY.OverscrollBehaviorAllowsHandoff()) {
     result += ScrollDirection::eVertical;
   }
   return result;
@@ -3653,13 +3660,14 @@ Maybe<CSSPoint> AsyncPanZoomController::GetCurrentAnimationDestination(
 ParentLayerPoint
 AsyncPanZoomController::AdjustHandoffVelocityForOverscrollBehavior(
     ParentLayerPoint& aHandoffVelocity) const {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
+
   ParentLayerPoint residualVelocity;
-  if (!mX.OverscrollBehaviorAllowsHandoff()) {
+  ScrollDirections handoffDirections = GetAllowedHandoffDirections();
+  if (!handoffDirections.contains(ScrollDirection::eHorizontal)) {
     residualVelocity.x = aHandoffVelocity.x;
     aHandoffVelocity.x = 0;
   }
-  if (!mY.OverscrollBehaviorAllowsHandoff()) {
+  if (!handoffDirections.contains(ScrollDirection::eVertical)) {
     residualVelocity.y = aHandoffVelocity.y;
     aHandoffVelocity.y = 0;
   }
@@ -3667,9 +3675,8 @@ AsyncPanZoomController::AdjustHandoffVelocityForOverscrollBehavior(
 }
 
 bool AsyncPanZoomController::OverscrollBehaviorAllowsSwipe() const {
-  RecursiveMutexAutoLock lock(mRecursiveMutex);
   
-  return mX.OverscrollBehaviorAllowsHandoff();
+  return GetAllowedHandoffDirections().contains(ScrollDirection::eHorizontal);
 }
 
 void AsyncPanZoomController::HandleFlingOverscroll(
@@ -3793,11 +3800,11 @@ bool AsyncPanZoomController::CallDispatchScroll(
   
   ParentLayerPoint endPoint = aEndPoint;
   if (aOverscrollHandoffState.mChainIndex > 0) {
-    RecursiveMutexAutoLock lock(mRecursiveMutex);
-    if (!mX.OverscrollBehaviorAllowsHandoff()) {
+    ScrollDirections handoffDirections = GetAllowedHandoffDirections();
+    if (!handoffDirections.contains(ScrollDirection::eHorizontal)) {
       endPoint.x = aStartPoint.x;
     }
-    if (!mY.OverscrollBehaviorAllowsHandoff()) {
+    if (!handoffDirections.contains(ScrollDirection::eVertical)) {
       endPoint.y = aStartPoint.y;
     }
     if (aStartPoint == endPoint) {
