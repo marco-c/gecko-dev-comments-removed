@@ -230,7 +230,6 @@ class BigIntStencil {
 
 class ScopeStencil {
   friend class StencilXDR;
-  friend struct CompilationStencil;
   friend struct CompilationStencilMerger;
 
   
@@ -251,9 +250,6 @@ class ScopeStencil {
   
   ScopeKind kind_{UINT8_MAX};
 
-  
-  
-  
   
   static constexpr uint8_t HasEnclosing = 1 << 0;
 

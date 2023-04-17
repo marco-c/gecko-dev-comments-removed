@@ -386,13 +386,9 @@ AbortReasonOr<WarpScriptSnapshot*> WarpScriptOracle::createScriptSnapshot() {
 
       case JSOp::GetIntrinsic: {
         
-        
-        
-        
         PropertyName* name = loc.getPropertyName(script_);
         Value val;
-        if (cx_->global()->maybeExistingIntrinsicValue(name, &val) &&
-            JS::GCPolicy<Value>::isTenured(val)) {
+        if (cx_->global()->maybeExistingIntrinsicValue(name, &val)) {
           if (!AddOpSnapshot<WarpGetIntrinsic>(alloc_, opSnapshots, offset,
                                                val)) {
             return abort(AbortReason::Alloc);

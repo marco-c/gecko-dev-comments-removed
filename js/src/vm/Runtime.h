@@ -29,7 +29,6 @@
 #  include "builtin/intl/SharedIntlData.h"
 #endif
 #include "frontend/NameCollections.h"
-#include "frontend/ScriptIndex.h"
 #include "gc/GCRuntime.h"
 #include "gc/Tracer.h"
 #include "js/AllocationRecording.h"
@@ -116,9 +115,6 @@ class Simulator;
 }  
 
 namespace frontend {
-struct CompilationGCOutput;
-struct CompilationInput;
-struct CompilationStencil;
 class WellKnownParserAtoms;
 }  
 
@@ -397,32 +393,6 @@ struct JSRuntime {
 
  private:
   
-  
-  js::WriteOnceData<js::frontend::CompilationInput*> selfHostStencilInput_;
-  js::WriteOnceData<js::frontend::CompilationStencil*> selfHostStencil_;
-
- public:
-  
-  
-  js::frontend::CompilationInput& selfHostStencilInput() {
-    MOZ_ASSERT(hasSelfHostStencil());
-    return *selfHostStencilInput_.ref();
-  }
-  js::frontend::CompilationStencil& selfHostStencil() {
-    MOZ_ASSERT(hasSelfHostStencil());
-    return *selfHostStencil_.ref();
-  }
-  bool hasSelfHostStencil() const { return bool(selfHostStencil_.ref()); }
-
-  
-  
-  js::MainThreadData<
-      JS::GCHashMap<js::PreBarriered<JSAtom*>, js::frontend::ScriptIndexRange,
-                    js::DefaultHasher<JSAtom*>, js::SystemAllocPolicy>>
-      selfHostScriptMap;
-
- private:
-  
   js::UnprotectedData<js::GeckoProfilerRuntime> geckoProfiler_;
 
  public:
@@ -658,9 +628,17 @@ struct JSRuntime {
  private:
   js::UnprotectedData<js::jit::JitRuntime*> jitRuntime_;
 
+  
+
+
+
+  js::WriteOnceData<js::NativeObject*> selfHostingGlobal_;
+
+  static js::GlobalObject* createSelfHostingGlobal(JSContext* cx);
+
  public:
-  mozilla::Maybe<js::frontend::ScriptIndexRange> getSelfHostedScriptIndexRange(
-      js::PropertyName* name);
+  void getUnclonedSelfHostedValue(js::PropertyName* name, JS::Value* vp);
+  JSFunction* getUnclonedSelfHostedFunction(js::PropertyName* name);
 
   [[nodiscard]] bool createJitRuntime(JSContext* cx);
   js::jit::JitRuntime* jitRuntime() const { return jitRuntime_.ref(); }
@@ -685,19 +663,33 @@ struct JSRuntime {
   
   
 
-  bool hasInitializedSelfHosting() const { return hasSelfHostStencil(); }
+  bool hasInitializedSelfHosting() const { return selfHostingGlobal_; }
 
   bool initSelfHosting(JSContext* cx, JS::SelfHostedCache xdrCache = nullptr,
                        JS::SelfHostedWriter xdrWriter = nullptr);
   void finishSelfHosting();
-  void traceSelfHostingStencil(JSTracer* trc);
-  js::GeneratorKind getSelfHostedFunctionGeneratorKind(js::PropertyName* name);
-  bool delazifySelfHostedFunction(JSContext* cx,
-                                  js::Handle<js::PropertyName*> name,
-                                  js::Handle<JSFunction*> targetFun);
-  bool getSelfHostedValue(JSContext* cx, js::Handle<js::PropertyName*> name,
-                          js::MutableHandleValue vp);
-  void assertSelfHostedFunctionHasCanonicalName(js::HandlePropertyName name);
+  void traceSelfHostingGlobal(JSTracer* trc);
+  bool isSelfHostingGlobal(JSObject* global) {
+    return global == selfHostingGlobal_;
+  }
+  js::GeneratorKind getSelfHostedFunctionGeneratorKind(JSAtom* name);
+  bool createLazySelfHostedFunctionClone(JSContext* cx,
+                                         js::HandlePropertyName selfHostedName,
+                                         js::HandleAtom name, unsigned nargs,
+                                         js::NewObjectKind newKind,
+                                         js::MutableHandleFunction fun);
+  bool cloneSelfHostedFunctionScript(JSContext* cx,
+                                     js::Handle<js::PropertyName*> name,
+                                     js::Handle<JSFunction*> targetFun);
+  bool cloneSelfHostedValue(JSContext* cx, js::Handle<js::PropertyName*> name,
+                            js::MutableHandleValue vp);
+  void assertSelfHostedFunctionHasCanonicalName(JSContext* cx,
+                                                js::HandlePropertyName name);
+#if DEBUG
+  bool isSelfHostingZone(const JS::Zone* zone) const {
+    return selfHostingGlobal_ && selfHostingGlobal_->zone() == zone;
+  }
+#endif
 
   
   

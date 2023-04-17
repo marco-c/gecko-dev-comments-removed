@@ -212,6 +212,13 @@ bool Compartment::getNonWrapperObjectForCurrentCompartment(
   
   
   
+  
+  MOZ_ASSERT(!cx->zone()->isSelfHostingZone());
+  MOZ_ASSERT(!obj->zone()->isSelfHostingZone());
+
+  
+  
+  
   if (obj->compartment() == this) {
     obj.set(ToWindowProxyIfWindow(obj));
     return true;

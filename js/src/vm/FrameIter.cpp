@@ -834,6 +834,7 @@ bool FrameIter::matchCallee(JSContext* cx, JS::Handle<JSFunction*> fun) const {
   
   
   
+  
   if (currentCallee->hasBaseScript()) {
     if (currentCallee->baseScript() != fun->baseScript()) {
       return false;

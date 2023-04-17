@@ -6,7 +6,6 @@
 
 #include "vm/SelfHosting.h"
 
-#include "mozilla/BinarySearch.h"
 #include "mozilla/Casting.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Maybe.h"
@@ -42,7 +41,6 @@
 #include "builtin/RegExp.h"
 #include "builtin/SelfHostingDefines.h"
 #include "builtin/String.h"
-#include "builtin/Symbol.h"
 #include "builtin/WeakMapObject.h"
 #include "frontend/BytecodeCompilation.h"  
 #include "frontend/CompilationStencil.h"   
@@ -894,6 +892,17 @@ bool js::intrinsic_NewRegExpStringIterator(JSContext* cx, unsigned argc,
   return true;
 }
 
+static js::PropertyName* GetUnclonedSelfHostedCanonicalName(JSFunction* fun) {
+  if (!fun->isExtended()) {
+    return nullptr;
+  }
+  Value name = fun->getExtendedSlot(CANONICAL_FUNCTION_NAME_SLOT);
+  if (!name.isString()) {
+    return nullptr;
+  }
+  return name.toString()->asAtom().asPropertyName();
+}
+
 js::PropertyName* js::GetClonedSelfHostedFunctionName(const JSFunction* fun) {
   if (!fun->isExtended()) {
     return nullptr;
@@ -922,8 +931,11 @@ bool js::IsExtendedUnclonedSelfHostedFunctionName(JSAtom* name) {
          ExtendedUnclonedSelfHostedFunctionNamePrefix;
 }
 
-void js::SetClonedSelfHostedFunctionName(JSFunction* fun,
-                                         js::PropertyName* name) {
+void js::SetUnclonedSelfHostedCanonicalName(JSFunction* fun, JSAtom* name) {
+  fun->setExtendedSlot(CANONICAL_FUNCTION_NAME_SLOT, StringValue(name));
+}
+
+static void SetClonedSelfHostedFunctionName(JSFunction* fun, JSAtom* name) {
   fun->setExtendedSlot(LAZY_FUNCTION_NAME_SLOT, StringValue(name));
 }
 
@@ -2503,59 +2515,6 @@ static const JSFunctionSpec intrinsic_functions[] = {
 
     JS_FS_END};
 
-#ifdef DEBUG
-static void CheckSelfHostedIntrinsics() {
-  
-  
-  const char* prev = "";
-  for (JSFunctionSpec spec : intrinsic_functions) {
-    if (spec.name.string()) {
-      MOZ_ASSERT(strcmp(prev, spec.name.string()) < 0,
-                 "Self-hosted intrinsics must be sorted");
-      prev = spec.name.string();
-    }
-  }
-}
-#endif
-
-const JSFunctionSpec* js::FindIntrinsicSpec(js::PropertyName* name) {
-  size_t limit = std::size(intrinsic_functions) - 1;
-  MOZ_ASSERT(!intrinsic_functions[limit].name);
-
-  MOZ_ASSERT(name->hasLatin1Chars());
-
-  JS::AutoCheckCannotGC nogc;
-  const char* chars = reinterpret_cast<const char*>(name->latin1Chars(nogc));
-  size_t len = name->length();
-
-  
-  
-
-  size_t loc = 0;
-  bool match = mozilla::BinarySearchIf(
-      intrinsic_functions, 0, limit,
-      [chars, len](const JSFunctionSpec& spec) {
-        
-        
-        
-        
-        
-        
-        const char* spec_chars = spec.name.string();
-        for (size_t i = 0; i < len; ++i) {
-          if (auto cmp_result = int(chars[i]) - int(spec_chars[i])) {
-            return cmp_result;
-          }
-        }
-        return int('\0') - int(spec_chars[len]);
-      },
-      &loc);
-  if (match) {
-    return &intrinsic_functions[loc];
-  }
-  return nullptr;
-}
-
 void js::FillSelfHostingCompileOptions(CompileOptions& options) {
   
 
@@ -2582,6 +2541,57 @@ void js::FillSelfHostingCompileOptions(CompileOptions& options) {
   options.setNoScriptRval(true);
 }
 
+GlobalObject* JSRuntime::createSelfHostingGlobal(JSContext* cx) {
+  MOZ_ASSERT(!cx->isExceptionPending());
+  MOZ_ASSERT(!cx->realm());
+
+  JS::RealmOptions options;
+  options.creationOptions().setNewCompartmentInSelfHostingZone();
+  
+  
+  options.creationOptions().setInvisibleToDebugger(true);
+
+  Realm* realm = NewRealm(cx, nullptr, options);
+  if (!realm) {
+    return nullptr;
+  }
+
+  static const JSClassOps shgClassOps = {
+      nullptr,                   
+      nullptr,                   
+      nullptr,                   
+      nullptr,                   
+      nullptr,                   
+      nullptr,                   
+      nullptr,                   
+      nullptr,                   
+      nullptr,                   
+      nullptr,                   
+      JS_GlobalObjectTraceHook,  
+  };
+
+  static const JSClass shgClass = {"self-hosting-global", JSCLASS_GLOBAL_FLAGS,
+                                   &shgClassOps};
+
+  AutoRealmUnchecked ar(cx, realm);
+  Rooted<GlobalObject*> shg(cx, GlobalObject::createInternal(cx, &shgClass));
+  if (!shg) {
+    return nullptr;
+  }
+
+  cx->runtime()->selfHostingGlobal_ = shg;
+  MOZ_ASSERT(realm->zone()->isSelfHostingZone());
+  realm->setIsSelfHostingRealm();
+
+  if (!GlobalObject::initSelfHostingBuiltins(cx, shg, intrinsic_functions)) {
+    return nullptr;
+  }
+
+  JS_FireOnNewGlobalObject(cx, shg);
+
+  return shg;
+}
+
 class MOZ_STACK_CLASS AutoSelfHostingErrorReporter {
   JSContext* cx_;
   JS::WarningReporter oldReporter_;
@@ -2602,87 +2612,101 @@ class MOZ_STACK_CLASS AutoSelfHostingErrorReporter {
   }
 };
 
-[[nodiscard]] static bool InitSelfHostingFromStencil(
-    JSContext* cx, frontend::CompilationAtomCache& atomCache,
+static bool VerifyGlobalNames(JSContext* cx, Handle<GlobalObject*> shg) {
+#ifdef DEBUG
+  
+  
+  const char* prev = "";
+  for (JSFunctionSpec spec : intrinsic_functions) {
+    if (spec.name.string()) {
+      MOZ_ASSERT(strcmp(prev, spec.name.string()) < 0,
+                 "Self-hosted intrinsics must be sorted");
+      prev = spec.name.string();
+    }
+  }
+
+  RootedId id(cx);
+  bool nameMissing = false;
+
+  for (auto base = cx->zone()->cellIter<BaseScript>();
+       !base.done() && !nameMissing; base.next()) {
+    if (!base->hasBytecode()) {
+      continue;
+    }
+    JSScript* script = base->asJSScript();
+
+    for (BytecodeLocation loc : AllBytecodesIterable(script)) {
+      JSOp op = loc.getOp();
+
+      if (op == JSOp::GetIntrinsic) {
+        PropertyName* name = loc.getPropertyName(script);
+        id = NameToId(name);
+
+        if (shg->lookupPure(id).isNothing()) {
+          
+          
+          nameMissing = true;
+          break;
+        }
+      }
+    }
+  }
+
+  if (nameMissing) {
+    return Throw(cx, id, JSMSG_NO_SUCH_SELF_HOSTED_PROP);
+  }
+#endif  
+
+  return true;
+}
+
+[[nodiscard]] bool InitSelfHostingFromStencil(
+    JSContext* cx, Handle<GlobalObject*> shg, frontend::CompilationInput& input,
     const frontend::CompilationStencil& stencil) {
   
   
-  if (!stencil.instantiateSelfHostedForRuntime(cx, atomCache)) {
+  
+  {
+    Rooted<frontend::CompilationGCOutput> output(cx);
+    if (!frontend::CompilationStencil::instantiateStencils(cx, input, stencil,
+                                                           output.get())) {
+      return false;
+    }
+
+    
+    RootedScript script(cx, output.get().script);
+    RootedValue rval(cx);
+    if (!JS_ExecuteScript(cx, script, &rval)) {
+      return false;
+    }
+  }
+
+  if (!VerifyGlobalNames(cx, shg)) {
     return false;
   }
 
   
-  {
-    auto& scriptMap = cx->runtime()->selfHostScriptMap.ref();
-
-    
-    
-    
-    size_t numSelfHostedScripts = stencil.scriptData.size();
-    if (!scriptMap.reserve(numSelfHostedScripts)) {
-      ReportOutOfMemory(cx);
-      return false;
-    }
-
-    auto topLevelThings =
-        stencil.scriptData[frontend::CompilationStencil::TopLevelIndex]
-            .gcthings(stencil);
-
-    
-    
-    
-    
-    RootedAtom prevAtom(cx);
-    frontend::ScriptIndex prevIndex;
-    for (frontend::TaggedScriptThingIndex thing : topLevelThings) {
-      if (!thing.isFunction()) {
-        continue;
-      }
-
-      frontend::ScriptIndex index = thing.toFunction();
-      const auto& script = stencil.scriptData[index];
-
-      if (prevAtom) {
-        frontend::ScriptIndexRange range{prevIndex, index};
-        scriptMap.putNewInfallible(prevAtom, range);
-      }
-
-      prevAtom = script.functionAtom
-                     ? atomCache.getExistingAtomAt(cx, script.functionAtom)
-                     : nullptr;
-      prevIndex = index;
-    }
-    if (prevAtom) {
-      frontend::ScriptIndexRange range{
-          prevIndex, frontend::ScriptIndex(stencil.scriptData.size())};
-      scriptMap.putNewInfallible(prevAtom, range);
-    }
-
-    
-    
-    
-    MOZ_ASSERT(numSelfHostedScripts < (scriptMap.count() * 1.15));
-  }
-
-#ifdef DEBUG
   
-  CheckSelfHostedIntrinsics();
-#endif
+  cx->runtime()->gc.freezeSelfHostingZone();
 
   return true;
 }
 
 bool JSRuntime::initSelfHosting(JSContext* cx, JS::SelfHostedCache xdrCache,
                                 JS::SelfHostedWriter xdrWriter) {
-  if (parentRuntime) {
-    MOZ_RELEASE_ASSERT(
-        parentRuntime->hasInitializedSelfHosting(),
-        "Parent runtime must initialize self-hosting before workers");
+  MOZ_ASSERT(!selfHostingGlobal_);
 
-    selfHostStencilInput_ = parentRuntime->selfHostStencilInput_;
-    selfHostStencil_ = parentRuntime->selfHostStencil_;
+  if (cx->runtime()->parentRuntime) {
+    selfHostingGlobal_ = cx->runtime()->parentRuntime->selfHostingGlobal_;
     return true;
   }
+
+  Rooted<GlobalObject*> shg(cx, JSRuntime::createSelfHostingGlobal(cx));
+  if (!shg) {
+    return false;
+  }
+
+  JSAutoRealm ar(cx, shg);
 
   
 
@@ -2706,34 +2730,19 @@ bool JSRuntime::initSelfHosting(JSContext* cx, JS::SelfHostedCache xdrCache,
     
     options.usePinnedBytecode = true;
 
-    Rooted<UniquePtr<frontend::CompilationInput>> input(
-        cx, cx->new_<frontend::CompilationInput>(options));
-    if (!input) {
-      return false;
-    }
-    if (!input->initForSelfHostingGlobal(cx)) {
+    Rooted<frontend::CompilationInput> input(
+        cx, frontend::CompilationInput(options));
+    if (!input.get().initForSelfHostingGlobal(cx)) {
       return false;
     }
 
-    UniquePtr<frontend::CompilationStencil> stencil(
-        cx->new_<frontend::CompilationStencil>(input->source));
-    if (!stencil) {
-      return false;
-    }
-    if (!stencil->deserializeStencils(cx, *input, xdrCache, &decodeOk)) {
+    frontend::CompilationStencil stencil(input.get().source);
+    if (!stencil.deserializeStencils(cx, input.get(), xdrCache, &decodeOk)) {
       return false;
     }
 
     if (decodeOk) {
-      if (!InitSelfHostingFromStencil(cx, input->atomCache, *stencil)) {
-        return false;
-      }
-
-      
-      cx->runtime()->selfHostStencilInput_ = input.release();
-      cx->runtime()->selfHostStencil_ = stencil.release();
-
-      return true;
+      return InitSelfHostingFromStencil(cx, shg, input.get(), stencil);
     }
   }
 
@@ -2756,12 +2765,9 @@ bool JSRuntime::initSelfHosting(JSContext* cx, JS::SelfHostedCache xdrCache,
     return false;
   }
 
-  Rooted<UniquePtr<frontend::CompilationInput>> input(
-      cx, cx->new_<frontend::CompilationInput>(options));
-  if (!input) {
-    return false;
-  }
-  auto stencil = frontend::CompileGlobalScriptToStencil(cx, *input, srcBuf,
+  Rooted<frontend::CompilationInput> input(cx,
+                                           frontend::CompilationInput(options));
+  auto stencil = frontend::CompileGlobalScriptToStencil(cx, input.get(), srcBuf,
                                                         ScopeKind::Global);
   if (!stencil) {
     return false;
@@ -2770,7 +2776,7 @@ bool JSRuntime::initSelfHosting(JSContext* cx, JS::SelfHostedCache xdrCache,
   
   if (xdrWriter) {
     JS::TranscodeBuffer xdrBuffer;
-    if (!stencil->serializeStencils(cx, *input, xdrBuffer)) {
+    if (!stencil->serializeStencils(cx, input.get(), xdrBuffer)) {
       return false;
     }
 
@@ -2779,50 +2785,144 @@ bool JSRuntime::initSelfHosting(JSContext* cx, JS::SelfHostedCache xdrCache,
     }
   }
 
-  if (!InitSelfHostingFromStencil(cx, input->atomCache, *stencil)) {
-    return false;
+  return InitSelfHostingFromStencil(cx, shg, input.get(), *stencil);
+}
+
+void JSRuntime::finishSelfHosting() { selfHostingGlobal_ = nullptr; }
+
+void JSRuntime::traceSelfHostingGlobal(JSTracer* trc) {
+  if (selfHostingGlobal_ && !parentRuntime) {
+    TraceRoot(trc, const_cast<NativeObject**>(&selfHostingGlobal_.ref()),
+              "self-hosting global");
+  }
+}
+
+GeneratorKind JSRuntime::getSelfHostedFunctionGeneratorKind(JSAtom* name) {
+  JSFunction* fun = getUnclonedSelfHostedFunction(name->asPropertyName());
+  return fun->generatorKind();
+}
+
+static bool CloneValue(JSContext* cx, HandleValue selfHostedValue,
+                       MutableHandleValue vp);
+
+static void GetUnclonedValue(NativeObject* selfHostedObject,
+                             const PropertyKey& id, Value* vp) {
+  if (JSID_IS_INT(id)) {
+    size_t index = JSID_TO_INT(id);
+    if (index < selfHostedObject->getDenseInitializedLength() &&
+        !selfHostedObject->getDenseElement(index).isMagic(JS_ELEMENTS_HOLE)) {
+      *vp = selfHostedObject->getDenseElement(JSID_TO_INT(id));
+      return;
+    }
   }
 
-  MOZ_ASSERT(!hasSelfHostStencil());
+  
+  
+  
+  
+  
+  MOZ_ASSERT_IF(JSID_IS_STRING(id), JSID_TO_STRING(id)->isPermanentAtom());
+
+  mozilla::Maybe<PropertyInfo> prop = selfHostedObject->lookupPure(id);
+  MOZ_ASSERT(prop.isSome());
+  MOZ_ASSERT(prop->isDataProperty());
+  *vp = selfHostedObject->getSlot(prop->slot());
+}
+
+static bool CloneProperties(JSContext* cx, HandleNativeObject selfHostedObject,
+                            HandleObject clone) {
+  RootedIdVector ids(cx);
+  Vector<uint8_t, 16> attrs(cx);
+
+  for (size_t i = 0; i < selfHostedObject->getDenseInitializedLength(); i++) {
+    if (!selfHostedObject->getDenseElement(i).isMagic(JS_ELEMENTS_HOLE)) {
+      if (!ids.append(INT_TO_JSID(i))) {
+        return false;
+      }
+      if (!attrs.append(JSPROP_ENUMERATE)) {
+        return false;
+      }
+    }
+  }
+
+  Rooted<PropertyInfoWithKeyVector> props(cx, PropertyInfoWithKeyVector(cx));
+  for (ShapePropertyIter<NoGC> iter(selfHostedObject->shape()); !iter.done();
+       iter++) {
+    if (iter->enumerable() && !props.append(*iter)) {
+      return false;
+    }
+  }
 
   
-  cx->runtime()->selfHostStencilInput_ = input.release();
-  cx->runtime()->selfHostStencil_ = stencil.release();
+  std::reverse(props.begin(), props.end());
+  for (size_t i = 0; i < props.length(); ++i) {
+    MOZ_ASSERT(props[i].isDataProperty(),
+               "Can't handle cloning accessors here yet.");
+    if (!ids.append(props[i].key())) {
+      return false;
+    }
+    PropertyInfo prop = props[i];
+    uint8_t propAttrs = 0;
+    if (prop.enumerable()) {
+      propAttrs |= JSPROP_ENUMERATE;
+    }
+    if (!prop.configurable()) {
+      propAttrs |= JSPROP_PERMANENT;
+    }
+    if (!prop.writable()) {
+      propAttrs |= JSPROP_READONLY;
+    }
+    if (!attrs.append(propAttrs)) {
+      return false;
+    }
+  }
+
+  RootedId id(cx);
+  RootedValue val(cx);
+  RootedValue selfHostedValue(cx);
+  for (uint32_t i = 0; i < ids.length(); i++) {
+    id = ids[i];
+    GetUnclonedValue(selfHostedObject, id, selfHostedValue.address());
+    if (!CloneValue(cx, selfHostedValue, &val) ||
+        !JS_DefinePropertyById(cx, clone, id, val, attrs[i])) {
+      return false;
+    }
+  }
 
   return true;
 }
 
-void JSRuntime::finishSelfHosting() {
-  if (!parentRuntime) {
-    js_delete(selfHostStencilInput_.ref());
-    js_delete(selfHostStencil_.ref());
+static JSString* CloneString(JSContext* cx, JSLinearString* selfHostedString) {
+  size_t len = selfHostedString->length();
+  {
+    JS::AutoCheckCannotGC nogc;
+    JSString* clone;
+    if (selfHostedString->hasLatin1Chars()) {
+      clone =
+          NewStringCopyN<NoGC>(cx, selfHostedString->latin1Chars(nogc), len);
+    } else {
+      clone = NewStringCopyNDontDeflate<NoGC>(
+          cx, selfHostedString->twoByteChars(nogc), len);
+    }
+    if (clone) {
+      return clone;
+    }
   }
 
-  selfHostStencilInput_ = nullptr;
-  selfHostStencil_ = nullptr;
-
-  selfHostScriptMap.ref().clear();
-}
-
-void JSRuntime::traceSelfHostingStencil(JSTracer* trc) {
-  if (selfHostStencilInput_.ref()) {
-    selfHostStencilInput_->trace(trc);
+  AutoStableStringChars chars(cx);
+  if (!chars.init(cx, selfHostedString)) {
+    return nullptr;
   }
-  selfHostScriptMap.ref().trace(trc);
-}
 
-GeneratorKind JSRuntime::getSelfHostedFunctionGeneratorKind(
-    js::PropertyName* name) {
-  frontend::ScriptIndex index = getSelfHostedScriptIndexRange(name)->start;
-  auto flags = selfHostStencil().scriptExtra[index].immutableFlags;
-  return flags.hasFlag(js::ImmutableScriptFlagsEnum::IsGenerator)
-             ? GeneratorKind::Generator
-             : GeneratorKind::NotGenerator;
+  return chars.isLatin1()
+             ? NewStringCopyN<CanGC>(cx, chars.latin1Range().begin().get(), len)
+             : NewStringCopyNDontDeflate<CanGC>(
+                   cx, chars.twoByteRange().begin().get(), len);
 }
 
 
 
-ScriptSourceObject* js::SelfHostingScriptSourceObject(JSContext* cx) {
+static ScriptSourceObject* SelfHostingScriptSourceObject(JSContext* cx) {
   if (ScriptSourceObject* sso = cx->realm()->selfHostingScriptSource) {
     return sso;
   }
@@ -2853,18 +2953,197 @@ ScriptSourceObject* js::SelfHostingScriptSourceObject(JSContext* cx) {
   return sourceObject;
 }
 
-bool JSRuntime::delazifySelfHostedFunction(JSContext* cx,
-                                           HandlePropertyName name,
-                                           HandleFunction targetFun) {
+static JSObject* CloneObject(JSContext* cx,
+                             HandleNativeObject selfHostedObject) {
+#ifdef DEBUG
+  
+  
+  
+  
+  mozilla::Maybe<AutoCycleDetector> detect;
+  if (js::CurrentThreadCanAccessZone(selfHostedObject->zoneFromAnyThread())) {
+    detect.emplace(cx, selfHostedObject);
+    if (!detect->init()) {
+      return nullptr;
+    }
+    if (detect->foundCycle()) {
+      MOZ_CRASH("SelfHosted cloning cannot handle cyclic object graphs.");
+    }
+  }
+#endif
+
+  RootedObject clone(cx);
+  if (selfHostedObject->is<JSFunction>()) {
+    RootedFunction selfHostedFunction(cx, &selfHostedObject->as<JSFunction>());
+    if (selfHostedFunction->isInterpreted()) {
+      
+      
+      
+      MOZ_ASSERT(selfHostedFunction->kind() == FunctionFlags::NormalFunction);
+      MOZ_ASSERT(selfHostedFunction->isLambda() == false);
+
+      Handle<GlobalObject*> global = cx->global();
+      Rooted<GlobalLexicalEnvironmentObject*> globalLexical(
+          cx, &global->lexicalEnvironment());
+      RootedScope emptyGlobalScope(cx, &global->emptyGlobalScope());
+      Rooted<ScriptSourceObject*> sourceObject(
+          cx, SelfHostingScriptSourceObject(cx));
+      if (!sourceObject) {
+        return nullptr;
+      }
+      MOZ_ASSERT(
+          !CanReuseScriptForClone(cx->realm(), selfHostedFunction, global));
+      clone = CloneFunctionAndScript(cx, selfHostedFunction, globalLexical,
+                                     emptyGlobalScope, sourceObject,
+                                     gc::AllocKind::FUNCTION_EXTENDED);
+      if (!clone) {
+        return nullptr;
+      }
+
+      
+      
+      SetClonedSelfHostedFunctionName(&clone->as<JSFunction>(),
+                                      selfHostedFunction->explicitName());
+
+      
+      
+      if (JSAtom* name =
+              GetUnclonedSelfHostedCanonicalName(selfHostedFunction)) {
+        clone->as<JSFunction>().setAtom(name);
+      }
+    } else {
+      clone = CloneSelfHostingIntrinsic(cx, selfHostedFunction);
+    }
+  } else if (selfHostedObject->is<RegExpObject>()) {
+    RegExpObject& reobj = selfHostedObject->as<RegExpObject>();
+    RootedAtom source(cx, reobj.getSource());
+    MOZ_ASSERT(source->isPermanentAtom());
+    clone = RegExpObject::create(cx, source, reobj.getFlags(), TenuredObject);
+  } else if (selfHostedObject->is<DateObject>()) {
+    clone =
+        JS::NewDateObject(cx, selfHostedObject->as<DateObject>().clippedTime());
+  } else if (selfHostedObject->is<BooleanObject>()) {
+    clone = BooleanObject::create(
+        cx, selfHostedObject->as<BooleanObject>().unbox());
+  } else if (selfHostedObject->is<NumberObject>()) {
+    clone =
+        NumberObject::create(cx, selfHostedObject->as<NumberObject>().unbox());
+  } else if (selfHostedObject->is<StringObject>()) {
+    JSString* selfHostedString = selfHostedObject->as<StringObject>().unbox();
+    if (!selfHostedString->isLinear()) {
+      MOZ_CRASH();
+    }
+    RootedString str(cx, CloneString(cx, &selfHostedString->asLinear()));
+    if (!str) {
+      return nullptr;
+    }
+    clone = StringObject::create(cx, str);
+  } else if (selfHostedObject->is<ArrayObject>()) {
+    clone = NewTenuredDenseEmptyArray(cx, nullptr);
+  } else {
+    MOZ_ASSERT(selfHostedObject->is<NativeObject>());
+    clone = NewObjectWithGivenProto(
+        cx, selfHostedObject->getClass(), nullptr,
+        selfHostedObject->asTenured().getAllocKind(), TenuredObject);
+  }
+  if (!clone) {
+    return nullptr;
+  }
+
+  if (!CloneProperties(cx, selfHostedObject, clone)) {
+    return nullptr;
+  }
+  return clone;
+}
+
+static bool CloneValue(JSContext* cx, HandleValue selfHostedValue,
+                       MutableHandleValue vp) {
+  if (selfHostedValue.isObject()) {
+    RootedNativeObject selfHostedObject(
+        cx, &selfHostedValue.toObject().as<NativeObject>());
+    JSObject* clone = CloneObject(cx, selfHostedObject);
+    if (!clone) {
+      return false;
+    }
+    vp.setObject(*clone);
+  } else if (selfHostedValue.isBoolean() || selfHostedValue.isNumber() ||
+             selfHostedValue.isNullOrUndefined()) {
+    
+    vp.set(selfHostedValue);
+  } else if (selfHostedValue.isString()) {
+    if (!selfHostedValue.toString()->isLinear()) {
+      MOZ_CRASH();
+    }
+    JSLinearString* selfHostedString = &selfHostedValue.toString()->asLinear();
+    JSString* clone = CloneString(cx, selfHostedString);
+    if (!clone) {
+      return false;
+    }
+    vp.setString(clone);
+  } else if (selfHostedValue.isSymbol()) {
+    
+    mozilla::DebugOnly<JS::Symbol*> sym = selfHostedValue.toSymbol();
+    MOZ_ASSERT(sym->isWellKnownSymbol());
+    MOZ_ASSERT(cx->wellKnownSymbols().get(sym->code()) == sym);
+    vp.set(selfHostedValue);
+  } else {
+    MOZ_CRASH("Self-hosting CloneValue can't clone given value.");
+  }
+  return true;
+}
+
+bool JSRuntime::createLazySelfHostedFunctionClone(
+    JSContext* cx, HandlePropertyName selfHostedName, HandleAtom name,
+    unsigned nargs, NewObjectKind newKind, MutableHandleFunction fun) {
+  MOZ_ASSERT(newKind != GenericObject);
+
+  RootedAtom funName(cx, name);
+  JSFunction* selfHostedFun = getUnclonedSelfHostedFunction(selfHostedName);
+  if (!selfHostedFun) {
+    return false;
+  }
+
+  
+  if (JSAtom* name = GetUnclonedSelfHostedCanonicalName(selfHostedFun)) {
+    funName = name;
+  }
+
+  RootedObject proto(cx);
+  if (!GetFunctionPrototype(cx, selfHostedFun->generatorKind(),
+                            selfHostedFun->asyncKind(), &proto)) {
+    return false;
+  }
+
+  fun.set(NewScriptedFunction(cx, nargs, FunctionFlags::BASESCRIPT, funName,
+                              proto, gc::AllocKind::FUNCTION_EXTENDED,
+                              newKind));
+  if (!fun) {
+    return false;
+  }
+  fun->setIsSelfHostedBuiltin();
+  fun->initSelfHostedLazyScript(&cx->runtime()->selfHostedLazyScript.ref());
+  SetClonedSelfHostedFunctionName(fun, selfHostedName);
+  return true;
+}
+
+bool JSRuntime::cloneSelfHostedFunctionScript(JSContext* cx,
+                                              HandlePropertyName name,
+                                              HandleFunction targetFun) {
+  RootedFunction sourceFun(cx, getUnclonedSelfHostedFunction(name));
+  if (!sourceFun) {
+    return false;
+  }
   MOZ_ASSERT(targetFun->isExtended());
   MOZ_ASSERT(targetFun->hasSelfHostedLazyScript());
 
-  auto indexRange = *getSelfHostedScriptIndexRange(name);
-  auto& stencil = cx->runtime()->selfHostStencil();
+  RootedScript sourceScript(cx, JSFunction::getOrCreateScript(cx, sourceFun));
+  if (!sourceScript) {
+    return false;
+  }
 
-  if (!stencil.delazifySelfHostedFunction(
-          cx, cx->runtime()->selfHostStencilInput().atomCache, indexRange,
-          targetFun)) {
+  Rooted<ScriptSourceObject*> sourceObject(cx,
+                                           SelfHostingScriptSourceObject(cx));
+  if (!sourceObject) {
     return false;
   }
 
@@ -2872,80 +3151,71 @@ bool JSRuntime::delazifySelfHostedFunction(JSContext* cx,
   
   
   
-  BaseScript* targetScript = targetFun->baseScript();
+  
+  MOZ_ASSERT(sourceScript->outermostScope()->enclosing()->kind() ==
+             ScopeKind::Global);
+  RootedScope emptyGlobalScope(cx, &cx->global()->emptyGlobalScope());
+  if (!CloneScriptIntoFunction(cx, emptyGlobalScope, targetFun, sourceScript,
+                               sourceObject)) {
+    return false;
+  }
+
+  MOZ_ASSERT(targetFun->hasBytecode());
+  RootedScript targetScript(cx, targetFun->nonLazyScript());
+
+  
+  
+  
+  
+  
   if (targetScript->isRelazifiable()) {
     targetScript->setAllowRelazify();
   }
 
+  MOZ_ASSERT(sourceFun->nargs() == targetFun->nargs());
+  MOZ_ASSERT(sourceScript->hasRest() == targetScript->hasRest());
+  MOZ_ASSERT(targetFun->strict(), "Self-hosted builtins must be strict");
+
+  
+  targetFun->setFlags(targetFun->flags().toRaw() | sourceFun->flags().toRaw());
   return true;
 }
 
-mozilla::Maybe<frontend::ScriptIndexRange>
-JSRuntime::getSelfHostedScriptIndexRange(js::PropertyName* name) {
-  if (parentRuntime) {
-    return parentRuntime->getSelfHostedScriptIndexRange(name);
-  }
-  MOZ_ASSERT(name->isPermanentAndMayBeShared());
-  if (auto ptr = selfHostScriptMap.ref().readonlyThreadsafeLookup(name)) {
-    return mozilla::Some(ptr->value());
-  }
-  return mozilla::Nothing();
+void JSRuntime::getUnclonedSelfHostedValue(PropertyName* name, Value* vp) {
+  PropertyKey id = NameToId(name);
+  GetUnclonedValue(selfHostingGlobal_, id, vp);
 }
 
-static bool GetComputedIntrinsic(JSContext* cx, HandlePropertyName name,
-                                 MutableHandleValue vp) {
-  
-  
-
-  RootedScript script(
-      cx,
-      cx->runtime()->selfHostStencil().instantiateSelfHostedTopLevelForRealm(
-          cx, cx->runtime()->selfHostStencilInput()));
-  if (!script) {
-    return false;
-  }
-
-  if (!JS_ExecuteScript(cx, script)) {
-    return false;
-  }
-
-  bool exists = false;
-  if (!GlobalObject::maybeGetIntrinsicValue(cx, cx->global(), name, vp,
-                                            &exists)) {
-    return false;
-  }
-  if (!exists) {
-    MOZ_CRASH("SelfHosted Intrinsic not found");
-  }
-
-  return true;
+JSFunction* JSRuntime::getUnclonedSelfHostedFunction(PropertyName* name) {
+  Value selfHostedValue;
+  getUnclonedSelfHostedValue(name, &selfHostedValue);
+  return &selfHostedValue.toObject().as<JSFunction>();
 }
 
-bool JSRuntime::getSelfHostedValue(JSContext* cx, HandlePropertyName name,
-                                   MutableHandleValue vp) {
+bool JSRuntime::cloneSelfHostedValue(JSContext* cx, HandlePropertyName name,
+                                     MutableHandleValue vp) {
+  RootedValue selfHostedValue(cx);
+  getUnclonedSelfHostedValue(name, selfHostedValue.address());
+
   
-  
-  
-  if (auto index = getSelfHostedScriptIndexRange(name)) {
-    JSFunction* fun =
-        cx->runtime()->selfHostStencil().instantiateSelfHostedLazyFunction(
-            cx, cx->runtime()->selfHostStencilInput().atomCache, index->start,
-            name);
-    if (!fun) {
-      return false;
-    }
-    vp.setObject(*fun);
+
+
+
+
+  if (cx->global() == selfHostingGlobal_) {
+    vp.set(selfHostedValue);
     return true;
   }
 
-  return GetComputedIntrinsic(cx, name, vp);
+  return CloneValue(cx, selfHostedValue, vp);
 }
 
 void JSRuntime::assertSelfHostedFunctionHasCanonicalName(
-    HandlePropertyName name) {
+    JSContext* cx, HandlePropertyName name) {
 #ifdef DEBUG
-  frontend::ScriptIndex index = getSelfHostedScriptIndexRange(name)->start;
-  MOZ_ASSERT(selfHostStencil().scriptData[index].hasSelfHostedCanonicalName());
+  JSFunction* selfHostedFun = getUnclonedSelfHostedFunction(name);
+  MOZ_ASSERT(selfHostedFun);
+  MOZ_ASSERT(GetUnclonedSelfHostedCanonicalName(selfHostedFun));
 #endif
 }
 

@@ -344,7 +344,7 @@ void js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc,
   TracePersistentRooted(rt, trc);
 
   
-  rt->traceSelfHostingStencil(trc);
+  rt->traceSelfHostingGlobal(trc);
 
 #ifdef JS_HAS_INTL_API
   
@@ -444,6 +444,7 @@ void js::gc::GCRuntime::finishRoots() {
   rt->finishPersistentRoots();
 
   rt->finishSelfHosting();
+  selfHostingZoneFrozen = false;
 
   for (ZonesIter zone(rt, WithAtoms); !zone.done(); zone.next()) {
     zone->finishRoots();

@@ -243,6 +243,8 @@ struct CompilationInput {
   
   
   
+  
+  
   Scope* enclosingScope = nullptr;
 
   explicit CompilationInput(const JS::ReadOnlyCompileOptions& options)
@@ -259,7 +261,18 @@ struct CompilationInput {
 
   bool initForSelfHostingGlobal(JSContext* cx) {
     target = CompilationTarget::SelfHosting;
-    return initScriptSource(cx);
+    if (!initScriptSource(cx)) {
+      return false;
+    }
+
+    
+    
+    
+    
+    
+    
+    enclosingScope = &cx->global()->emptyGlobalScope();
+    return true;
   }
 
   bool initForStandaloneFunction(JSContext* cx) {
@@ -636,19 +649,6 @@ struct CompilationStencil {
       JSContext* cx, CompilationInput& input, const CompilationStencil& stencil,
       CompilationGCOutput& gcOutput);
 
-  
-  [[nodiscard]] bool instantiateSelfHostedForRuntime(
-      JSContext* cx, CompilationAtomCache& atomCache) const;
-  [[nodiscard]] JSScript* instantiateSelfHostedTopLevelForRealm(
-      JSContext* cx, CompilationInput& input);
-  [[nodiscard]] JSFunction* instantiateSelfHostedLazyFunction(
-      JSContext* cx, CompilationAtomCache& atomCache, ScriptIndex index,
-      HandleAtom name);
-  [[nodiscard]] bool delazifySelfHostedFunction(JSContext* cx,
-                                                CompilationAtomCache& atomCache,
-                                                ScriptIndexRange range,
-                                                HandleFunction fun);
-
   [[nodiscard]] bool serializeStencils(JSContext* cx, CompilationInput& input,
                                        JS::TranscodeBuffer& buf,
                                        bool* succeededOut = nullptr) const;
@@ -938,44 +938,7 @@ struct CompilationGCOutput {
   
   ScriptSourceObject* sourceObject = nullptr;
 
- private:
-  
-  
-  
-  
-  
-  
-  
-  ScriptIndex functionsBaseIndex{};
-  ScopeIndex scopesBaseIndex{};
-
-  
-
- public:
   CompilationGCOutput() = default;
-
-  
-  
-  JSFunction*& getFunction(ScriptIndex index) {
-    return functions[index - functionsBaseIndex];
-  }
-  JSFunction*& getFunctionNoBaseIndex(ScriptIndex index) {
-    MOZ_ASSERT(!functionsBaseIndex);
-    return functions[index];
-  }
-
-  
-  js::Scope*& getScope(ScopeIndex index) {
-    return scopes[index - scopesBaseIndex];
-  }
-  js::Scope*& getScopeNoBaseIndex(ScopeIndex index) {
-    MOZ_ASSERT(!scopesBaseIndex);
-    return scopes[index];
-  }
-  js::Scope* getScopeNoBaseIndex(ScopeIndex index) const {
-    MOZ_ASSERT(!scopesBaseIndex);
-    return scopes[index];
-  }
 
   
   
@@ -991,22 +954,6 @@ struct CompilationGCOutput {
       return false;
     }
     return true;
-  }
-
-  
-  
-  
-  
-  [[nodiscard]] bool ensureReservedWithBaseIndex(JSContext* cx,
-                                                 ScriptIndex scriptStart,
-                                                 ScriptIndex scriptLimit,
-                                                 ScopeIndex scopeStart,
-                                                 ScopeIndex scopeLimit) {
-    this->functionsBaseIndex = scriptStart;
-    this->scopesBaseIndex = scopeStart;
-
-    return ensureReserved(cx, scriptLimit - scriptStart,
-                          scopeLimit - scopeStart);
   }
 
   
@@ -1096,8 +1043,8 @@ class ScriptStencilIterable {
       if (stencil_.isInitialStencil()) {
         scriptExtra = &stencil_.scriptExtra[index];
       }
-      return ScriptAndFunction(script, scriptExtra,
-                               gcOutput_.getFunctionNoBaseIndex(index), index);
+      return ScriptAndFunction(script, scriptExtra, gcOutput_.functions[index],
+                               index);
     }
 
     static Iterator end(const CompilationStencil& stencil,

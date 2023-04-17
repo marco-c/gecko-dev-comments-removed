@@ -2529,13 +2529,8 @@ bool BytecodeEmitter::emitDeclarationInstantiation(ParseNode* body) {
 #endif
 
   
-  
-  
-  
-  if (emitterMode == BytecodeEmitter::EmitterMode::Normal) {
-    if (!emitGCIndexOp(JSOp::GlobalOrEvalDeclInstantiation, lastFun)) {
-      return false;
-    }
+  if (!emitGCIndexOp(JSOp::GlobalOrEvalDeclInstantiation, lastFun)) {
+    return false;
   }
 
   return true;
