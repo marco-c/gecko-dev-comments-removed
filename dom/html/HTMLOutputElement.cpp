@@ -77,6 +77,8 @@ bool HTMLOutputElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
 
 void HTMLOutputElement::DoneAddingChildren(bool aHaveNotified) {
   mIsDoneAddingChildren = true;
+  
+  DescendantsChanged();
 }
 
 EventStates HTMLOutputElement::IntrinsicState() const {

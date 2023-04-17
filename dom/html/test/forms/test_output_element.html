@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=346485
+-->
 <head>
   <title>Test for Bug 346485</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -46,7 +46,7 @@ function checkValueAndDefaultValueIDLAttribute(element)
   element.value = "foo";
   is(element.value, "foo", "Value should be 'foo'");
 
-  is(element.defaultValue, "", "Default defaultValue is ''");
+  is(element.defaultValue, "tulip", "Default defaultValue is 'tulip'");
 
   element.defaultValue = "bar";
   is(element.defaultValue, "bar", "defaultValue should be 'bar'");
