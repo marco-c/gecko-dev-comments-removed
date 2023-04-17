@@ -183,6 +183,18 @@ public class ContentBlocking {
 
 
 
+            public @NonNull Builder cookieBehaviorPrivateMode(final @CBCookieBehavior int behavior) {
+                getSettings().setCookieBehaviorPrivateMode(behavior);
+                return this;
+            }
+
+            
+
+
+
+
+
+
             public @NonNull Builder cookieLifetime(final @CBCookieLifetime int lifetime) {
                 getSettings().setCookieLifetime(lifetime);
                 return this;
@@ -260,6 +272,8 @@ public class ContentBlocking {
             "browser.safebrowsing.phishing.enabled", true);
          final Pref<Integer> mCookieBehavior = new Pref<Integer>(
             "network.cookie.cookieBehavior", CookieBehavior.ACCEPT_NON_TRACKERS);
+         final Pref<Integer> mCookieBehaviorPrivateMode = new Pref<Integer>(
+            "network.cookie.cookieBehavior.pbmode", CookieBehavior.ACCEPT_NON_TRACKERS);
          final Pref<Integer> mCookieLifetime = new Pref<Integer>(
             "network.cookie.lifetimePolicy", CookieLifetime.NORMAL);
          final Pref<Boolean> mCookiePurging = new Pref<Boolean>(
@@ -543,6 +557,28 @@ public class ContentBlocking {
         public @NonNull Settings setCookieBehavior(
                 final @CBCookieBehavior int behavior) {
             mCookieBehavior.commit(behavior);
+            return this;
+        }
+
+        
+
+
+
+
+        public @CBCookieBehavior int getCookieBehaviorPrivateMode() {
+            return mCookieBehaviorPrivateMode.get();
+        }
+
+        
+
+
+
+
+
+
+        public @NonNull Settings setCookieBehaviorPrivateMode(
+                final @CBCookieBehavior int behavior) {
+            mCookieBehaviorPrivateMode.commit(behavior);
             return this;
         }
 
