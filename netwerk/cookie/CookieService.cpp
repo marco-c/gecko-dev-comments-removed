@@ -50,6 +50,26 @@ uint32_t MakeCookieBehavior(uint32_t aCookieBehavior) {
 
 uint32_t nsICookieManager::GetCookieBehavior(bool aIsPrivate) {
   if (aIsPrivate) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (mozilla::Preferences::HasUserValue(
+            "network.cookie.cookieBehavior.pbmode")) {
+      return MakeCookieBehavior(
+          mozilla::StaticPrefs::network_cookie_cookieBehavior_pbmode());
+    }
+
+    if (mozilla::Preferences::HasUserValue("network.cookie.cookieBehavior")) {
+      return MakeCookieBehavior(
+          mozilla::StaticPrefs::network_cookie_cookieBehavior());
+    }
+
     return MakeCookieBehavior(
         mozilla::StaticPrefs::network_cookie_cookieBehavior_pbmode());
   }
