@@ -28,11 +28,12 @@ void CoalescedTouchData::Coalesce(const WidgetTouchEvent& aEvent,
     MOZ_ASSERT(mCoalescedInputEvent->mInputSource == aEvent.mInputSource);
 
     for (const RefPtr<Touch>& touch : aEvent.mTouches) {
-      if (touch->mChanged) {
-        
-        RefPtr<Touch> sameTouch = GetTouch(touch->Identifier());
-        sameTouch->SetSameAs(touch);
-      }
+      
+      RefPtr<Touch> sameTouch = GetTouch(touch->Identifier());
+      
+      
+      MOZ_ASSERT(sameTouch);
+      sameTouch->SetSameAs(touch);
     }
 
     mCoalescedInputEvent->mTimeStamp = aEvent.mTimeStamp;
