@@ -5,7 +5,6 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import os
-import platform
 import subprocess
 import sys
 import tempfile
@@ -99,22 +98,6 @@ class OSXBootstrapperLight(BaseBootstrapper):
 
     def install_system_packages(self):
         ensure_command_line_tools()
-
-        if platform.machine() == "arm64":
-            
-            
-            
-            
-            
-            proc = subprocess.run(
-                ["arch", "-x86_64", "cat"],
-                stdin=subprocess.DEVNULL,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-            if proc.returncode != 0:
-                print("Installing Rosetta")
-                subprocess.check_call(["softwareupdate", "--install-rosetta"])
 
     
     
