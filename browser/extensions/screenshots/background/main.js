@@ -8,7 +8,6 @@
 
 this.main = (function() {
   const exports = {};
-  const pngToJpegCutoff = 2500000;
 
   const { sendEvent, incrementCount } = analytics;
 
@@ -167,25 +166,6 @@ this.main = (function() {
       });
     }
     return null;
-  });
-
-  
-  
-  
-  communication.register("canvasToDataURL", (sender, imageData) => {
-    const canvas = document.createElement("canvas");
-    canvas.width = imageData.width;
-    canvas.height = imageData.height;
-    canvas.getContext("2d").putImageData(imageData, 0, 0);
-    let dataUrl = canvas.toDataURL();
-    if (dataUrl.length > pngToJpegCutoff) {
-      const jpegDataUrl = canvas.toDataURL("image/jpeg");
-      if (jpegDataUrl.length < dataUrl.length) {
-        
-        dataUrl = jpegDataUrl;
-      }
-    }
-    return dataUrl;
   });
 
   communication.register("copyShotToClipboard", async (sender, blob) => {
