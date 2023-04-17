@@ -1443,6 +1443,7 @@ class Registers {
   
   
   ucontext_t* mContext;  
+  ucontext_t mContextSyncStorage;  
 #endif
 };
 
@@ -1852,17 +1853,20 @@ static void StackWalkCallback(uint32_t aFrameNumber, void* aPC, void* aSP,
 static void DoFramePointerBacktrace(
     PSLockRef aLock,
     const ThreadRegistration::UnlockedReaderAndAtomicRWOnThread& aThreadData,
-    Registers aRegs, NativeStack& aNativeStack,
+    const Registers& aRegs, NativeStack& aNativeStack,
     StackWalkControl* aStackWalkControlIfSupported) {
   
   
   
 
   
+  Registers regs = aRegs;
+
   
   
   
-  StackWalkCallback( 0, aRegs.mPC, aRegs.mSP, &aNativeStack);
+  
+  StackWalkCallback( 0, regs.mPC, regs.mSP, &aNativeStack);
 
   const void* const stackEnd = aThreadData.StackTop();
 
@@ -1870,12 +1874,12 @@ static void DoFramePointerBacktrace(
   void* previousResumeSp = nullptr;
 
   for (;;) {
-    if (!(aRegs.mSP && aRegs.mSP <= aRegs.mFP && aRegs.mFP <= stackEnd)) {
+    if (!(regs.mSP && regs.mSP <= regs.mFP && regs.mFP <= stackEnd)) {
       break;
     }
     FramePointerStackWalk(StackWalkCallback,
                           uint32_t(MAX_NATIVE_FRAMES - aNativeStack.mCount),
-                          &aNativeStack, reinterpret_cast<void**>(aRegs.mFP),
+                          &aNativeStack, reinterpret_cast<void**>(regs.mFP),
                           const_cast<void*>(stackEnd));
 
     if constexpr (!StackWalkControl::scIsSupported) {
@@ -1914,9 +1918,9 @@ static void DoFramePointerBacktrace(
         break;
       }
       
-      aRegs.mPC = (Address)pc;
-      aRegs.mSP = (Address)sp;
-      aRegs.mFP = (Address)resumePoint->resumeBp;
+      regs.mPC = (Address)pc;
+      regs.mSP = (Address)sp;
+      regs.mFP = (Address)resumePoint->resumeBp;
 
       previousResumeSp = sp;
     }
