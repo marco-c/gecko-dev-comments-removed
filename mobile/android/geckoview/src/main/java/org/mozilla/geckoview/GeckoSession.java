@@ -5543,6 +5543,12 @@ public class GeckoSession {
 
 
 
+        int PERMISSION_STORAGE_ACCESS = 8;
+
+        
+
+
+
 
         class ContentPermission {
             @Retention(RetentionPolicy.SOURCE)
@@ -5573,6 +5579,12 @@ public class GeckoSession {
 
 
 
+            final public @Nullable String thirdPartyOrigin;
+
+            
+
+
+
             final public boolean privateMode;
 
             
@@ -5595,6 +5607,7 @@ public class GeckoSession {
 
             protected ContentPermission() {
                 this.uri = "";
+                this.thirdPartyOrigin = null;
                 this.privateMode = false;
                 this.permission = PERMISSION_GEOLOCATION;
                 this.value = VALUE_ALLOW;
@@ -5609,6 +5622,13 @@ public class GeckoSession {
 
                 final String permission = bundle.getString("perm");
                 this.permission = convertType(permission);
+                if (permission.startsWith("3rdPartyStorage^")) {
+                    
+                    
+                    this.thirdPartyOrigin = permission.substring(16);
+                } else {
+                    this.thirdPartyOrigin = bundle.getString("thirdPartyOrigin");
+                }
 
                 this.value = bundle.getInt("value");
                 this.contextId = StorageController.retrieveUnsafeSessionContextId(bundle.getString("contextId"));
@@ -5665,6 +5685,8 @@ public class GeckoSession {
                     return PERMISSION_MEDIA_KEY_SYSTEM_ACCESS;
                 } else if ("trackingprotection".equals(type) || "trackingprotection-pb".equals(type)) {
                     return PERMISSION_TRACKING;
+                } else if ("storage-access".equals(type) || type.startsWith("3rdPartyStorage^")) {
+                    return PERMISSION_STORAGE_ACCESS;
                 } else {
                     return -1;
                 }
@@ -5689,6 +5711,8 @@ public class GeckoSession {
                         return "media-key-system-access";
                     case PERMISSION_TRACKING:
                         return privateMode ? "trackingprotection-pb" : "trackingprotection";
+                    case PERMISSION_STORAGE_ACCESS:
+                        return "storage-access";
                     default:
                         return "";
                 }
@@ -5711,8 +5735,9 @@ public class GeckoSession {
             }
 
              @NonNull GeckoBundle toGeckoBundle() {
-                final GeckoBundle res = new GeckoBundle(5);
+                final GeckoBundle res = new GeckoBundle(7);
                 res.putString("uri", uri);
+                res.putString("thirdPartyOrigin", thirdPartyOrigin);
                 res.putString("principal", mPrincipal);
                 res.putBoolean("privateMode", privateMode);
                 res.putString("perm", convertType(permission, privateMode));
@@ -5972,7 +5997,9 @@ public class GeckoSession {
             PermissionDelegate.PERMISSION_XR,
             PermissionDelegate.PERMISSION_AUTOPLAY_INAUDIBLE,
             PermissionDelegate.PERMISSION_AUTOPLAY_AUDIBLE,
-            PermissionDelegate.PERMISSION_MEDIA_KEY_SYSTEM_ACCESS})
+            PermissionDelegate.PERMISSION_MEDIA_KEY_SYSTEM_ACCESS,
+            PermissionDelegate.PERMISSION_TRACKING,
+            PermissionDelegate.PERMISSION_STORAGE_ACCESS})
      @interface Permission {}
 
     
