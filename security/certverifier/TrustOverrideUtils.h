@@ -55,19 +55,13 @@ static bool CertDNIsInList(const nsTArray<uint8_t>& aCert,
 }
 
 template <size_t T>
-static bool CertSPKIIsInList(const nsTArray<uint8_t>& aCert,
+static bool CertSPKIIsInList(Input aCertInput,
                              const DataAndLength (&aSpkiList)[T]) {
-  Input certInput;
-  mozilla::pkix::Result rv = certInput.Init(aCert.Elements(), aCert.Length());
-  if (rv != Success) {
-    return false;
-  }
-
   
   
   EndEntityOrCA notUsedForPaths = EndEntityOrCA::MustBeEndEntity;
-  BackCert cert(certInput, notUsedForPaths, nullptr);
-  rv = cert.Init();
+  BackCert cert(aCertInput, notUsedForPaths, nullptr);
+  mozilla::pkix::Result rv = cert.Init();
   if (rv != Success) {
     return false;
   }
@@ -135,10 +129,9 @@ static bool CertMatchesStaticData(const nsTArray<uint8_t>& aCert,
 
 
 template <size_t T>
-static nsresult CheckForSymantecDistrust(
-    const nsTArray<nsTArray<uint8_t>>& intCerts,
-    const DataAndLength (&allowlist)[T],
-     bool& isDistrusted) {
+static nsresult CheckForSymantecDistrust(const nsTArray<Input>& intCerts,
+                                         const DataAndLength (&allowlist)[T],
+                                          bool& isDistrusted) {
   
   
 

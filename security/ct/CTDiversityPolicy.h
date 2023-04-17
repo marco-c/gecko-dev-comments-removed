@@ -10,6 +10,7 @@
 #include "CTLog.h"
 #include "CTVerifyResult.h"
 #include "certt.h"
+#include "nsTArray.h"
 #include "mozpkix/Result.h"
 
 namespace mozilla {
@@ -30,9 +31,10 @@ class CTDiversityPolicy {
   
   
   
-  pkix::Result GetDependentOperators(const CERTCertList* builtChain,
-                                     const CTLogOperatorList& operators,
-                                     CTLogOperatorList& dependentOperators);
+  pkix::Result GetDependentOperators(
+      const nsTArray<nsTArray<uint8_t>>& builtChain,
+      const CTLogOperatorList& operators,
+      CTLogOperatorList& dependentOperators);
 };
 
 }  
