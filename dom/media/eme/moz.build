@@ -5,7 +5,6 @@
 
 
 EXPORTS.mozilla.dom += [
-    "KeySystemNames.h",
     "MediaEncryptedEvent.h",
     "MediaKeyError.h",
     "MediaKeyMessageEvent.h",

@@ -17,24 +17,21 @@
 #ifndef __ClearKeyDecryptor_h__
 #define __ClearKeyDecryptor_h__
 
-
-
-#include <stddef.h>
-
-#include <functional>
-#include <map>
-#include <optional>
-#include <queue>
-#include <set>
-#include <string>
-
 #include "ClearKeyDecryptionManager.h"
 #include "ClearKeyPersistence.h"
 #include "ClearKeySession.h"
 #include "ClearKeyUtils.h"
-#include "RefCounted.h"
+
+
+#include "stddef.h"
 #include "content_decryption_module.h"
-#include "mozilla/TimeStamp.h"
+#include "RefCounted.h"
+
+#include <functional>
+#include <map>
+#include <queue>
+#include <set>
+#include <string>
 
 class ClearKeySessionManager final : public RefCounted {
  public:
@@ -72,23 +69,6 @@ class ClearKeySessionManager final : public RefCounted {
                                    const uint8_t* aKeyData,
                                    uint32_t aKeyDataSize);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  void OnQueryOutputProtectionStatus(cdm::QueryResult aResult,
-                                     uint32_t aLinkMask,
-                                     uint32_t aOutputProtectionMask);
-
-  
-  
-  
-  void QueryOutputProtectionStatusIfNeeded();
-
  private:
   ~ClearKeySessionManager();
 
@@ -96,21 +76,6 @@ class ClearKeySessionManager final : public RefCounted {
   bool MaybeDeferTillInitialized(std::function<void()>&& aMaybeDefer);
   void Serialize(const ClearKeySession* aSession,
                  std::vector<uint8_t>& aOutKeyData);
-
-  
-  void QueryOutputProtectionStatusFromHost();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  void NotifyOutputProtectionStatus(cdm::KeyStatus aStatus);
 
   RefPtr<ClearKeyDecryptionManager> mDecryptionManager;
   RefPtr<ClearKeyPersistence> mPersistence;
@@ -120,18 +85,7 @@ class ClearKeySessionManager final : public RefCounted {
   std::set<KeyId> mKeyIds;
   std::map<std::string, ClearKeySession*> mSessions;
 
-  
-  
-  std::optional<std::string> mLastSessionId;
-
   std::queue<std::function<void()>> mDeferredInitialize;
-
-  
-  
-  
-  bool mHasOutstandingOutputProtectionQuery = false;
-  
-  mozilla::TimeStamp mLastOutputProtectionQueryTime;
 };
 
 #endif  
