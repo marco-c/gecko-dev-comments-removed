@@ -1193,7 +1193,6 @@ var SessionStoreInternal = {
 
   onFinalTabStateUpdateComplete(browser) {
     let permanentKey = browser.permanentKey;
-
     if (
       this._closedTabs.has(permanentKey) &&
       !this._crashedBrowsers.has(permanentKey)
@@ -1818,6 +1817,7 @@ var SessionStoreInternal = {
         this._closedWindowTabs.set(permanentKey, tabData);
         if (aWindow._dontSaveTabs && !tabData.isPrivate) {
           
+          tab._closedInGroup = true;
           this.maybeSaveClosedTab(aWindow, tab, tabData);
         }
       }
@@ -4184,6 +4184,7 @@ var SessionStoreInternal = {
     }
 
     let newClosedTabsData = winData._closedTabs || [];
+    let newLastClosedTabGroupCount = winData._lastClosedTabGroupCount || -1;
 
     if (overwriteTabs || firstWindow) {
       
@@ -4204,6 +4205,11 @@ var SessionStoreInternal = {
         this._max_tabs_undo
       );
     }
+    
+    
+    this._windows[
+      aWindow.__SSi
+    ]._lastClosedTabGroupCount = newLastClosedTabGroupCount;
 
     
     if (winData.tabs.length) {
