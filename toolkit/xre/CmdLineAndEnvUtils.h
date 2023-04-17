@@ -445,6 +445,9 @@ inline bool SetArgv0ToFullBinaryPath(wchar_t* aArgv[]) {
 
 
 
+
+
+
 template <typename T>
 class CommandLineParserWin final {
   int mArgc;
@@ -472,37 +475,44 @@ class CommandLineParserWin final {
   int Argc() const { return mArgc; }
   const T* const* Argv() const { return mArgv; }
 
-  void HandleCommandLine(const T* aCmdLineString) {
+  
+  int HandleCommandLine(const nsTSubstring<T>& aCmdLineString) {
     Release();
+
+    if (aCmdLineString.IsEmpty()) {
+      return 0;
+    }
 
     int justCounting = 1;
     
     int init = 1;
     int between, quoted, bSlashCount;
     const T* p;
+    const T* const pEnd = aCmdLineString.EndReading();
     nsTAutoString<T> arg;
 
-    
-    
-    
     
     while (1) {
       
       if (init) {
-        p = aCmdLineString;
+        p = aCmdLineString.BeginReading();
         between = 1;
         mArgc = quoted = bSlashCount = 0;
 
         init = 0;
       }
+
+      const T charCurr = (p < pEnd) ? *p : 0;
+      const T charNext = (p + 1 < pEnd) ? *(p + 1) : 0;
+
       if (between) {
         
         
-        if (*p != 0 && !wcschr(kCommandLineDelimiter, *p)) {
+        if (charCurr != 0 && !wcschr(kCommandLineDelimiter, charCurr)) {
           
           between = 0;
           arg.Truncate();
-          switch (*p) {
+          switch (charCurr) {
             case '\\':
               
               bSlashCount = 1;
@@ -513,7 +523,7 @@ class CommandLineParserWin final {
               break;
             default:
               
-              arg += *p;
+              arg += charCurr;
               break;
           }
         } else {
@@ -522,7 +532,8 @@ class CommandLineParserWin final {
       } else {
         
         
-        if (*p == 0 || (!quoted && wcschr(kCommandLineDelimiter, *p))) {
+        if (charCurr == 0 ||
+            (!quoted && wcschr(kCommandLineDelimiter, charCurr))) {
           
           
           while (bSlashCount) {
@@ -539,7 +550,7 @@ class CommandLineParserWin final {
           between = 1;
         } else {
           
-          switch (*p) {
+          switch (charCurr) {
             case '"':
               
               while (bSlashCount > 1) {
@@ -556,7 +567,7 @@ class CommandLineParserWin final {
                 if (quoted) {
                   
                   
-                  if (*(p + 1) == '"') {
+                  if (charNext == '"') {
                     
                     
                     
@@ -580,13 +591,14 @@ class CommandLineParserWin final {
                 bSlashCount--;
               }
               
-              arg += *p;
+              arg += charCurr;
               break;
           }
         }
       }
+
       
-      if (*p) {
+      if (charCurr) {
         
         p++;
       } else {
@@ -604,6 +616,8 @@ class CommandLineParserWin final {
         }
       }
     }
+
+    return p - aCmdLineString.BeginReading();
   }
 };
 #  endif  
