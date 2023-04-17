@@ -169,97 +169,6 @@ enum class DisplayListArenaObjectId {
 
 
 
-
-
-
-
-
-
-struct AnimatedGeometryRoot {
-  static already_AddRefed<AnimatedGeometryRoot> CreateAGRForFrame(
-      nsIFrame* aFrame, AnimatedGeometryRoot* aParent, bool aIsAsync,
-      bool aIsRetained) {
-    RefPtr<AnimatedGeometryRoot> result;
-    if (aIsRetained) {
-      result = aFrame->GetProperty(AnimatedGeometryRootCache());
-    }
-
-    if (result) {
-      result->mParentAGR = aParent;
-      result->mIsAsync = aIsAsync;
-    } else {
-      result = new AnimatedGeometryRoot(aFrame, aParent, aIsAsync, aIsRetained);
-    }
-    return result.forget();
-  }
-
-  operator nsIFrame*() { return mFrame; }
-
-  nsIFrame* operator->() const { return mFrame; }
-
-  AnimatedGeometryRoot* GetAsyncAGR() {
-    AnimatedGeometryRoot* agr = this;
-    while (!agr->mIsAsync && agr->mParentAGR) {
-      agr = agr->mParentAGR;
-    }
-    return agr;
-  }
-
-  NS_INLINE_DECL_REFCOUNTING(AnimatedGeometryRoot)
-
-  nsIFrame* mFrame;
-  RefPtr<AnimatedGeometryRoot> mParentAGR;
-  bool mIsAsync;
-  bool mIsRetained;
-
- protected:
-  static void DetachAGR(AnimatedGeometryRoot* aAGR) {
-    aAGR->mFrame = nullptr;
-    aAGR->mParentAGR = nullptr;
-    NS_RELEASE(aAGR);
-  }
-
-  NS_DECLARE_FRAME_PROPERTY_WITH_DTOR(AnimatedGeometryRootCache,
-                                      AnimatedGeometryRoot, DetachAGR)
-
-  AnimatedGeometryRoot(nsIFrame* aFrame, AnimatedGeometryRoot* aParent,
-                       bool aIsAsync, bool aIsRetained)
-      : mFrame(aFrame),
-        mParentAGR(aParent),
-        mIsAsync(aIsAsync),
-        mIsRetained(aIsRetained) {
-    MOZ_ASSERT(mParentAGR || mIsAsync,
-               "The root AGR should always be treated as an async AGR.");
-    if (mIsRetained) {
-      NS_ADDREF(this);
-      aFrame->SetProperty(AnimatedGeometryRootCache(), this);
-    }
-  }
-
-  ~AnimatedGeometryRoot() {
-    if (mFrame && mIsRetained) {
-      mFrame->RemoveProperty(AnimatedGeometryRootCache());
-    }
-  }
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 struct ActiveScrolledRoot {
   static already_AddRefed<ActiveScrolledRoot> CreateASRForFrame(
       const ActiveScrolledRoot* aParent, nsIScrollableFrame* aScrollableFrame,
@@ -394,13 +303,6 @@ class nsDisplayListBuilder {
     
     bool mAllowAsyncAnimation;
   };
-
-  
-
-
-
-
-  enum AGRState { AGR_NO, AGR_YES };
 
  public:
   using ViewID = layers::ScrollableLayerGuid::ViewID;
@@ -654,11 +556,6 @@ class nsDisplayListBuilder {
   const nsPoint& GetCurrentFrameOffsetToReferenceFrame() const {
     return mCurrentOffsetToReferenceFrame;
   }
-
-  AnimatedGeometryRoot* GetCurrentAnimatedGeometryRoot() { return mCurrentAGR; }
-  AnimatedGeometryRoot* GetRootAnimatedGeometryRoot() { return mRootAGR; }
-
-  void RecomputeCurrentAnimatedGeometryRoot();
 
   void Check() { mPool.Check(); }
 
@@ -1078,8 +975,6 @@ class nsDisplayListBuilder {
       mBuilder->mCurrentOffsetToReferenceFrame += aOffset;
     }
 
-    bool IsAnimatedGeometryRoot() const { return mCurrentAGRState == AGR_YES; }
-
     void RestoreBuildingInvisibleItemsValue() {
       mBuilder->mBuildingInvisibleItems = mPrevBuildingInvisibleItems;
     }
@@ -1090,7 +985,6 @@ class nsDisplayListBuilder {
       mBuilder->mCurrentOffsetToReferenceFrame = mPrevOffset;
       mBuilder->mVisibleRect = mPrevVisibleRect;
       mBuilder->mDirtyRect = mPrevDirtyRect;
-      mBuilder->mCurrentAGR = mPrevAGR;
       mBuilder->mAncestorHasApzAwareEventHandler =
           mPrevAncestorHasApzAwareEventHandler;
       mBuilder->mBuildingInvisibleItems = mPrevBuildingInvisibleItems;
@@ -1101,14 +995,12 @@ class nsDisplayListBuilder {
 
    private:
     nsDisplayListBuilder* mBuilder;
-    AGRState mCurrentAGRState;
     const nsIFrame* mPrevFrame;
     const nsIFrame* mPrevReferenceFrame;
     nsPoint mPrevOffset;
     Maybe<nsPoint> mPrevAdditionalOffset;
     nsRect mPrevVisibleRect;
     nsRect mPrevDirtyRect;
-    RefPtr<AnimatedGeometryRoot> mPrevAGR;
     gfx::CompositorHitTestInfo mPrevCompositorHitTestInfo;
     bool mPrevAncestorHasApzAwareEventHandler;
     bool mPrevBuildingInvisibleItems;
@@ -1685,13 +1577,6 @@ class nsDisplayListBuilder {
     return mBuildingExtraPagesForPageNum;
   }
 
-  
-
-
-
-  AnimatedGeometryRoot* AnimatedGeometryRootForASR(
-      const ActiveScrolledRoot* aASR);
-
   bool HitTestIsForVisibility() const { return mVisibleThreshold.isSome(); }
 
   float VisibilityThreshold() const {
@@ -1790,48 +1675,25 @@ class nsDisplayListBuilder {
     nsDisplayList* mList;
   };
 
+  
+
+
+
+  nsIFrame* FindAnimatedGeometryRootFrameFor(nsIFrame* aFrame);
+
  private:
   bool MarkOutOfFlowFrameForDisplay(nsIFrame* aDirtyFrame, nsIFrame* aFrame,
                                     const nsRect& aVisibleRect,
                                     const nsRect& aDirtyRect);
 
-  
-
-
-
-  AGRState IsAnimatedGeometryRoot(nsIFrame* aFrame, bool& aIsAsync,
-                                  nsIFrame** aParent = nullptr);
-
-  
-
-
-
-  nsIFrame* FindAnimatedGeometryRootFrameFor(nsIFrame* aFrame, bool& aIsAsync);
-
-  friend class nsDisplayCanvasBackgroundImage;
   friend class nsDisplayBackgroundImage;
-  friend class nsDisplayFixedPosition;
-  friend class nsDisplayPerspective;
-  AnimatedGeometryRoot* FindAnimatedGeometryRootFor(nsDisplayItem* aItem);
-
-  friend class nsDisplayItem;
-  friend class nsDisplayOwnLayer;
   friend struct RetainedDisplayListBuilder;
-  AnimatedGeometryRoot* FindAnimatedGeometryRootFor(nsIFrame* aFrame);
-
-  AnimatedGeometryRoot* WrapAGRForFrame(
-      nsIFrame* aAnimatedGeometryRoot, bool aIsAsync,
-      AnimatedGeometryRoot* aParent = nullptr);
-
-  nsTHashMap<nsIFrame*, RefPtr<AnimatedGeometryRoot>>
-      mFrameToAnimatedGeometryRootMap;
 
   
 
 
 
-
-  bool AddToAGRBudget(nsIFrame* aFrame);
+  bool IsAnimatedGeometryRoot(nsIFrame* aFrame, nsIFrame** aParent = nullptr);
 
   struct PresShellState {
     PresShell* mPresShell;
@@ -1895,9 +1757,6 @@ class nsDisplayListBuilder {
 
   Maybe<nsPoint> mAdditionalOffset;
 
-  RefPtr<AnimatedGeometryRoot> mRootAGR;
-  RefPtr<AnimatedGeometryRoot> mCurrentAGR;
-
   
   typedef uint32_t DocumentWillChangeBudget;
   nsTHashMap<nsPtrHashKey<const nsPresContext>, DocumentWillChangeBudget>
@@ -1909,11 +1768,6 @@ class nsDisplayListBuilder {
       mFrameWillChangeBudgets;
 
   uint8_t mBuildingExtraPagesForPageNum;
-
-  
-  uint32_t mUsedAGRBudget;
-  
-  nsTHashSet<nsIFrame*> mAGRBudgetSet;
 
   nsTHashMap<nsPtrHashKey<dom::RemoteBrowser>, dom::EffectsInfo>
       mEffectsUpdates;
@@ -2383,7 +2237,6 @@ class nsDisplayItem : public nsDisplayItemLink {
         mPerFrameIndex(aOther.mPerFrameIndex),
         mBuildingRect(aOther.mBuildingRect),
         mToReferenceFrame(aOther.mToReferenceFrame),
-        mAnimatedGeometryRoot(aOther.mAnimatedGeometryRoot),
         mActiveScrolledRoot(aOther.mActiveScrolledRoot),
         mClipChain(aOther.mClipChain) {
     MOZ_COUNT_CTOR(nsDisplayItem);
@@ -2801,17 +2654,6 @@ class nsDisplayItem : public nsDisplayItemLink {
 
   virtual const nsIFrame* ReferenceFrameForChildren() const { return nullptr; }
 
-  AnimatedGeometryRoot* GetAnimatedGeometryRoot() const {
-    MOZ_ASSERT(mAnimatedGeometryRoot,
-               "Must have cached AGR before accessing it!");
-    return mAnimatedGeometryRoot;
-  }
-
-  virtual struct AnimatedGeometryRoot* AnimatedGeometryRootForScrollMetadata()
-      const {
-    return GetAnimatedGeometryRoot();
-  }
-
   
 
 
@@ -2946,7 +2788,6 @@ class nsDisplayItem : public nsDisplayItemLink {
   
   nsPoint mToReferenceFrame;
 
-  RefPtr<AnimatedGeometryRoot> mAnimatedGeometryRoot;
   RefPtr<const ActiveScrolledRoot> mActiveScrolledRoot;
   RefPtr<const DisplayItemClipChain> mClipChain;
 
@@ -5653,8 +5494,6 @@ class nsDisplayFixedPosition : public nsDisplayOwnLayer {
   nsDisplayFixedPosition(nsDisplayListBuilder* aBuilder,
                          const nsDisplayFixedPosition& aOther)
       : nsDisplayOwnLayer(aBuilder, aOther),
-        mAnimatedGeometryRootForScrollMetadata(
-            aOther.mAnimatedGeometryRootForScrollMetadata),
         mContainerASR(aOther.mContainerASR),
         mIsFixedBackground(aOther.mIsFixedBackground) {
     MOZ_COUNT_CTOR(nsDisplayFixedPosition);
@@ -5678,10 +5517,6 @@ class nsDisplayFixedPosition : public nsDisplayOwnLayer {
     return mIsFixedBackground;
   }
 
-  AnimatedGeometryRoot* AnimatedGeometryRootForScrollMetadata() const override {
-    return mAnimatedGeometryRootForScrollMetadata;
-  }
-
   bool CreateWebRenderCommands(
       wr::DisplayListBuilder& aBuilder, wr::IpcResourceUpdateQueue& aResources,
       const StackingContextHelper& aSc,
@@ -5695,10 +5530,8 @@ class nsDisplayFixedPosition : public nsDisplayOwnLayer {
   
   nsDisplayFixedPosition(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                          nsDisplayList* aList);
-  void Init(nsDisplayListBuilder* aBuilder);
   ViewID GetScrollTargetId();
 
-  RefPtr<AnimatedGeometryRoot> mAnimatedGeometryRootForScrollMetadata;
   RefPtr<const ActiveScrolledRoot> mContainerASR;
   bool mIsFixedBackground;
 
@@ -6261,10 +6094,6 @@ class nsDisplayTransform : public nsPaintedDisplayItem {
     return nsPaintedDisplayItem::ReferenceFrameForChildren();
   }
 
-  AnimatedGeometryRoot* AnimatedGeometryRootForScrollMetadata() const override {
-    return mAnimatedGeometryRootForScrollMetadata;
-  }
-
   const nsRect& GetBuildingRectForChildren() const override {
     return mChildrenBuildingRect;
   }
@@ -6503,8 +6332,6 @@ class nsDisplayTransform : public nsPaintedDisplayItem {
   mutable Maybe<Matrix4x4Flagged> mInverseTransform;
   
   UniquePtr<Matrix4x4> mTransformPreserves3D;
-  RefPtr<AnimatedGeometryRoot> mAnimatedGeometryRootForChildren;
-  RefPtr<AnimatedGeometryRoot> mAnimatedGeometryRootForScrollMetadata;
   nsRect mChildrenBuildingRect;
   mutable RetainedDisplayList mChildren;
 
