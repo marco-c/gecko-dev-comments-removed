@@ -2570,7 +2570,7 @@ void nsPresContext::SetVisibleArea(const nsRect& r) {
       AdjustSizeForViewportUnits();
     }
     
-    if (!IsPaginated()) {
+    if (!IsRootPaginatedDocument()) {
       MediaFeatureValuesChanged(
           {mozilla::MediaFeatureChangeReason::ViewportChange},
           MediaFeatureChangePropagation::JustThisDocument);
