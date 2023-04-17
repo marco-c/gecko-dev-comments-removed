@@ -161,7 +161,11 @@ interface nsIEditor  : nsISupports
   readonly attribute boolean documentModified;
 
   
-  [can_run_script]  
+
+
+
+
+  [setter_can_run_script]
   attribute ACString documentCharacterSet;
 
   

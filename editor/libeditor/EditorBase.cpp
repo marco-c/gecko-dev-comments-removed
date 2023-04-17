@@ -6,7 +6,6 @@
 #include "EditorBase.h"
 
 #include "mozilla/DebugOnly.h"  
-#include "mozilla/Encoding.h"   
 
 #include <stdio.h>   
 #include <string.h>  
@@ -37,12 +36,13 @@
 #include "mozilla/EditorSpellCheck.h"         
 #include "mozilla/EditorUtils.h"              
 #include "mozilla/EditTransactionBase.h"      
-#include "mozilla/EventDispatcher.h"          
-#include "mozilla/FlushType.h"                
-#include "mozilla/HTMLEditor.h"               
-#include "mozilla/IMEContentObserver.h"       
-#include "mozilla/IMEStateManager.h"          
-#include "mozilla/InputEventOptions.h"        
+#include "mozilla/Encoding.h"  
+#include "mozilla/EventDispatcher.h"     
+#include "mozilla/FlushType.h"           
+#include "mozilla/HTMLEditor.h"          
+#include "mozilla/IMEContentObserver.h"  
+#include "mozilla/IMEStateManager.h"     
+#include "mozilla/InputEventOptions.h"   
 #include "mozilla/InternalMutationEvent.h"  
 #include "mozilla/mozalloc.h"               
 #include "mozilla/mozInlineSpellChecker.h"  
@@ -1390,37 +1390,22 @@ NS_IMETHODIMP EditorBase::GetDocumentModified(bool* aOutDocModified) {
   return NS_OK;
 }
 
-NS_IMETHODIMP EditorBase::GetDocumentCharacterSet(nsACString& aCharset) {
-  nsresult rv = GetDocumentCharsetInternal(aCharset);
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "EditorBase::GetDocumentCharsetInternal() failed");
-  return rv;
+NS_IMETHODIMP EditorBase::GetDocumentCharacterSet(nsACString& aCharacterSet) {
+  return NS_ERROR_NOT_AVAILABLE;
 }
 
 nsresult EditorBase::GetDocumentCharsetInternal(nsACString& aCharset) const {
-  RefPtr<Document> document = GetDocument();
+  Document* document = GetDocument();
   if (NS_WARN_IF(!document)) {
-    return NS_ERROR_UNEXPECTED;
+    return NS_ERROR_NOT_INITIALIZED;
   }
   document->GetDocumentCharacterSet()->Name(aCharset);
   return NS_OK;
 }
 
 NS_IMETHODIMP EditorBase::SetDocumentCharacterSet(
-    const nsACString& characterSet) {
-  RefPtr<Document> document = GetDocument();
-  if (NS_WARN_IF(!document)) {
-    return NS_ERROR_UNEXPECTED;
-  }
-  
-  
-  auto encoding = Encoding::ForLabelNoReplacement(characterSet);
-  if (!encoding) {
-    NS_WARNING("Encoding::ForLabelNoReplacement() failed");
-    return NS_ERROR_INVALID_ARG;
-  }
-  document->SetDocumentCharacterSet(WrapNotNull(encoding));
-  return NS_OK;
+    const nsACString& aCharacterSet) {
+  return NS_ERROR_NOT_AVAILABLE;
 }
 
 bool EditorBase::AreClipboardCommandsUnconditionallyEnabled() const {
