@@ -1,70 +1,73 @@
 
 
 
-const testData = {
-  src: 'sfx-aac.mp4',
-  config: {
-    codec: 'mp4a.40.2',
-    sampleRate: 48000,
-    numberOfChannels: 1,
-    description: {offset: 2552, size: 5},
-  }
-};
+const invalidConfigs = [
+  {
+    comment: 'Empty codec',
+    config: {codec: ''},
+  },
+  {
+    comment: 'Unrecognized codec',
+    config: {codec: 'bogus'},
+  },
+  {
+    comment: 'Video codec',
+    config: {codec: 'vp8'},
+  },
+  {
+    comment: 'Ambiguous codec',
+    config: {codec: 'vp9'},
+  },
+  {
+    comment: 'Codec with MIME type',
+    config: {codec: 'audio/webm; codecs="opus"'},
+  },
+];
 
+invalidConfigs.forEach(entry => {
+  promise_test(
+      t => {
+        return promise_rejects_js(
+            t, TypeError, AudioDecoder.isConfigSupported(entry.config));
+      },
+      'Test that AudioDecoder.isConfigSupported() rejects invalid config:' +
+          entry.comment);
+});
 
-function view(buffer, {offset, size}) {
-  return new Uint8Array(buffer, offset, size);
+invalidConfigs.forEach(entry => {
+  async_test(
+      t => {
+        let codec = new AudioDecoder(getDefaultCodecInit(t));
+        assert_throws_js(TypeError, () => {
+          codec.configure(entry.config);
+        });
+        t.done();
+      },
+      'Test that AudioDecoder.configure() rejects invalid config:' +
+          entry.comment);
+});
+
+function getFakeChunk() {
+  return new EncodedAudioChunk(
+      {type: 'key', timestamp: 0, data: Uint8Array.of(0)});
 }
 
-function testSharedArrayBufferDescription(t, useView) {
-  const data = testData;
+promise_test(t => {
+  
+  assert_throws_js(TypeError, () => {
+    new AudioDecoder({});
+  });
 
   
-  let supported = false;
-  return AudioDecoder
-      .isConfigSupported({
-        codec: data.config.codec,
-        sampleRate: data.config.sampleRate,
-        numberOfChannels: data.config.numberOfChannels
-      })
-      .catch(_ => {
-        assert_implements_optional(false, data.config.codec + ' unsupported');
-      })
-      .then(support => {
-        supported = support.supported;
-        assert_implements_optional(
-            supported, data.config.codec + ' unsupported');
-        return fetch(data.src);
-      })
-      .then(response => {
-        return response.arrayBuffer();
-      })
-      .then(buf => {
-        config = {...data.config};
-        if (data.config.description) {
-          let desc = new SharedArrayBuffer(data.config.description.size);
-          let descView = new Uint8Array(desc);
-          descView.set(view(buf, data.config.description));
-          config.description = useView ? descView : desc;
-        }
+  let decoder = new AudioDecoder(getDefaultCodecInit(t));
 
-        
-        
-        return AudioDecoder.isConfigSupported(config);
-      })
-      .then(support => {
-        assert_true(support.supported);
+  assert_equals(decoder.state, 'unconfigured');
+  decoder.close();
 
-        const decoder = new AudioDecoder(getDefaultCodecInit(t));
-        decoder.configure(config);
-        assert_equals(decoder.state, 'configured', 'state');
-      });
-}
+  return endAfterEventLoopTurn();
+}, 'Test AudioDecoder construction');
 
 promise_test(t => {
-  return testSharedArrayBufferDescription(t,  false);
-}, 'Test isConfigSupported() and configure() using a SharedArrayBuffer');
-
-promise_test(t => {
-  return testSharedArrayBufferDescription(t,  true);
-}, 'Test isConfigSupported() and configure() using a Uint8Array(SharedArrayBuffer)');
+  let decoder = new AudioDecoder(getDefaultCodecInit(t));
+  return testUnconfiguredCodec(t, decoder, getFakeChunk());
+}, 'Verify unconfigured AudioDecoder operations');
