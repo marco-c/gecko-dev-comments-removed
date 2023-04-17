@@ -1,13 +1,15 @@
+
+#![allow(dead_code)]
 use super::Error;
 use crate::{
     back::{binary_operation_str, vector_size_str, wgsl::keywords::RESERVED},
     proc::{EntryPointIndex, NameKey, Namer, TypeResolution},
     valid::{FunctionInfo, ModuleInfo},
-    Arena, ArraySize, Binding, Constant, ConstantInner, Expression, FastHashMap, Function,
-    GlobalVariable, Handle, ImageClass, ImageDimension, Interpolation, LocalVariable, Module,
-    SampleLevel, Sampling, ScalarKind, ScalarValue, ShaderStage, Statement, StorageClass,
-    StorageFormat, StructMember, Type, TypeInner,
+    Arena, ArraySize, Binding, Constant, Expression, FastHashMap, Function, GlobalVariable, Handle,
+    ImageClass, ImageDimension, Interpolation, Module, Sampling, ScalarKind, ScalarValue,
+    ShaderStage, Statement, StorageFormat, StructLevel, StructMember, Type, TypeInner,
 };
+use bit_set::BitSet;
 use std::fmt::Write;
 
 const INDENT: &str = "    ";
@@ -52,26 +54,13 @@ struct FunctionCtx<'a> {
     info: &'a FunctionInfo,
     
     expressions: &'a Arena<Expression>,
-    
-    named_expressions: &'a crate::NamedExpressions,
-}
-
-impl<'a> FunctionCtx<'_> {
-    
-    fn name_key(&self, local: Handle<LocalVariable>) -> NameKey {
-        match self.ty {
-            FunctionType::Function(handle) => NameKey::FunctionLocal(handle, local),
-            FunctionType::EntryPoint(idx) => NameKey::EntryPointLocal(idx, local),
-        }
-    }
 }
 
 pub struct Writer<W> {
     out: W,
     names: FastHashMap<NameKey, String>,
     namer: Namer,
-    named_expressions: crate::NamedExpressions,
-    ep_results: Vec<(ShaderStage, Handle<Type>)>,
+    named_expressions: BitSet,
 }
 
 impl<W: Write> Writer<W> {
@@ -80,8 +69,7 @@ impl<W: Write> Writer<W> {
             out,
             names: FastHashMap::default(),
             namer: Namer::default(),
-            named_expressions: crate::NamedExpressions::default(),
-            ep_results: vec![],
+            named_expressions: BitSet::new(),
         }
     }
 
@@ -89,28 +77,19 @@ impl<W: Write> Writer<W> {
         self.names.clear();
         self.namer.reset(module, RESERVED, &[], &mut self.names);
         self.named_expressions.clear();
-        self.ep_results.clear();
     }
 
     pub fn write(&mut self, module: &Module, info: &ModuleInfo) -> BackendResult {
         self.reset(module);
 
         
-        for (_, ep) in module.entry_points.iter().enumerate() {
-            if let Some(ref result) = ep.function.result {
-                self.ep_results.push((ep.stage, result.ty));
-            }
-        }
-
-        
         for (handle, ty) in module.types.iter() {
             if let TypeInner::Struct {
-                top_level,
-                ref members,
-                ..
+                level, ref members, ..
             } = ty.inner
             {
-                self.write_struct(module, handle, top_level, members)?;
+                let block = level == StructLevel::Root;
+                self.write_struct(module, handle, block, members)?;
                 writeln!(self.out)?;
             }
         }
@@ -118,13 +97,13 @@ impl<W: Write> Writer<W> {
         
         for (handle, constant) in module.constants.iter() {
             if constant.name.is_some() {
-                self.write_global_constant(module, &constant.inner, handle)?;
+                self.write_global_constant(&constant, handle)?;
             }
         }
 
         
         for (ty, global) in module.global_variables.iter() {
-            self.write_global(module, global, ty)?;
+            self.write_global(&module, &global, ty)?;
         }
 
         if !module.global_variables.is_empty() {
@@ -140,11 +119,10 @@ impl<W: Write> Writer<W> {
                 ty: FunctionType::Function(handle),
                 info: fun_info,
                 expressions: &function.expressions,
-                named_expressions: &function.named_expressions,
             };
 
             
-            self.write_function(module, function, &func_ctx)?;
+            self.write_function(&module, &function, &func_ctx)?;
 
             writeln!(self.out)?;
         }
@@ -165,11 +143,10 @@ impl<W: Write> Writer<W> {
 
             let func_ctx = FunctionCtx {
                 ty: FunctionType::EntryPoint(index as u16),
-                info: info.get_entry_point(index),
+                info: &info.get_entry_point(index),
                 expressions: &ep.function.expressions,
-                named_expressions: &ep.function.named_expressions,
             };
-            self.write_function(module, &ep.function, &func_ctx)?;
+            self.write_function(&module, &ep.function, &func_ctx)?;
 
             if index < module.entry_points.len() - 1 {
                 writeln!(self.out)?;
@@ -186,35 +163,12 @@ impl<W: Write> Writer<W> {
     fn write_scalar_value(&mut self, value: ScalarValue) -> BackendResult {
         match value {
             ScalarValue::Sint(value) => write!(self.out, "{}", value)?,
-            ScalarValue::Uint(value) => write!(self.out, "{}u", value)?,
+            ScalarValue::Uint(value) => write!(self.out, "{}", value)?,
             
             
             ScalarValue::Float(value) => write!(self.out, "{:?}", value)?,
             ScalarValue::Bool(value) => write!(self.out, "{}", value)?,
         }
-
-        Ok(())
-    }
-
-    
-    
-    
-    
-    fn write_struct_name(&mut self, module: &Module, handle: Handle<Type>) -> BackendResult {
-        if module.types[handle].name.is_none() {
-            if let Some(&(stage, _)) = self.ep_results.iter().find(|&&(_, ty)| ty == handle) {
-                let name = match stage {
-                    ShaderStage::Compute => "ComputeOutput",
-                    ShaderStage::Fragment => "FragmentOutput",
-                    ShaderStage::Vertex => "VertexOutput",
-                };
-
-                write!(self.out, "{}", name)?;
-                return Ok(());
-            }
-        }
-
-        write!(self.out, "{}", self.names[&NameKey::Type(handle)])?;
 
         Ok(())
     }
@@ -268,11 +222,14 @@ impl<W: Write> Writer<W> {
 
         
         if let Some(ref result) = func.result {
-            write!(self.out, " -> ")?;
             if let Some(ref binding) = result.binding {
+                write!(self.out, " -> ")?;
                 self.write_attributes(&map_binding_to_attribute(binding), true)?;
+                self.write_type(module, result.ty)?;
+            } else {
+                let struct_name = &self.names[&NameKey::Type(result.ty)].clone();
+                write!(self.out, " -> {}", struct_name)?;
             }
-            self.write_type(module, result.ty)?;
         }
 
         write!(self.out, " {{")?;
@@ -285,10 +242,14 @@ impl<W: Write> Writer<W> {
 
             
             
-            write!(self.out, "var {}: ", self.names[&func_ctx.name_key(handle)])?;
+            let name_key = match func_ctx.ty {
+                FunctionType::Function(func_handle) => NameKey::FunctionLocal(func_handle, handle),
+                FunctionType::EntryPoint(idx) => NameKey::EntryPointLocal(idx, handle),
+            };
+            write!(self.out, "var {}: ", self.names[&name_key])?;
 
             
-            self.write_type(module, local.ty)?;
+            self.write_type(&module, local.ty)?;
 
             
             if let Some(init) = local.init {
@@ -312,7 +273,7 @@ impl<W: Write> Writer<W> {
         
         for sta in func.body.iter() {
             
-            self.write_stmt(module, sta, func_ctx, 1)?;
+            self.write_stmt(&module, sta, &func_ctx, 1)?;
         }
 
         writeln!(self.out, "}}")?;
@@ -422,10 +383,8 @@ impl<W: Write> Writer<W> {
             self.write_attributes(&[Attribute::Block], false)?;
             writeln!(self.out)?;
         }
-
-        write!(self.out, "struct ")?;
-        self.write_struct_name(module, handle)?;
-        write!(self.out, " {{")?;
+        let name = &self.names[&NameKey::Type(handle)].clone();
+        write!(self.out, "struct {} {{", name)?;
         writeln!(self.out)?;
         for (index, member) in members.iter().enumerate() {
             
@@ -472,7 +431,12 @@ impl<W: Write> Writer<W> {
     fn write_type(&mut self, module: &Module, ty: Handle<Type>) -> BackendResult {
         let inner = &module.types[ty].inner;
         match *inner {
-            TypeInner::Struct { .. } => self.write_struct_name(module, ty)?,
+            TypeInner::Struct { .. } => {
+                
+                let name = &self.names[&NameKey::Type(ty)];
+                write!(self.out, "{}", name)?;
+                return Ok(());
+            }
             ref other => self.write_value_type(module, other)?,
         }
 
@@ -507,10 +471,10 @@ impl<W: Write> Writer<W> {
                 let (class_str, multisampled_str, scalar_str) = match class {
                     ImageClass::Sampled { kind, multi } => (
                         "",
-                        if multi { "multisampled_" } else { "" },
+                        if multi { "multisampled" } else { "" },
                         format!("<{}>", scalar_kind_str(kind)),
                     ),
-                    ImageClass::Depth => ("depth_", "", String::from("")),
+                    ImageClass::Depth => ("depth", "", String::from("")),
                     ImageClass::Storage(storage_format) => (
                         "storage_",
                         "",
@@ -580,52 +544,13 @@ impl<W: Write> Writer<W> {
         match *stmt {
             Statement::Emit(ref range) => {
                 for handle in range.clone() {
-                    let expr_name = if let Some(name) = func_ctx.named_expressions.get(&handle) {
-                        
-                        
-                        
-                        
-                        Some(self.namer.call_unique(name))
-                    } else {
-                        let expr = &func_ctx.expressions[handle];
-                        let min_ref_count = expr.bake_ref_count();
-                        
-                        let required_baking_expr = match *expr {
-                            Expression::ImageLoad { .. }
-                            | Expression::ImageQuery { .. }
-                            | Expression::ImageSample { .. } => true,
-                            _ => false,
-                        };
-                        if min_ref_count <= func_ctx.info[handle].ref_count || required_baking_expr
-                        {
-                            
-                            if let Expression::Load { pointer } = func_ctx.expressions[handle] {
-                                if let Expression::AccessIndex { base, index } =
-                                    func_ctx.expressions[pointer]
-                                {
-                                    if access_to_unsupported_builtin(
-                                        base,
-                                        index,
-                                        module,
-                                        func_ctx.info,
-                                    ) {
-                                        return Ok(());
-                                    }
-                                }
-                            }
-
-                            Some(format!("{}{}", BAKE_PREFIX, handle.index()))
-                        } else {
-                            None
-                        }
-                    };
-
-                    if let Some(name) = expr_name {
+                    let min_ref_count = func_ctx.expressions[handle].bake_ref_count();
+                    if min_ref_count <= func_ctx.info[handle].ref_count {
                         write!(self.out, "{}", INDENT.repeat(indent))?;
-                        self.start_named_expr(module, handle, func_ctx, &name)?;
-                        self.write_expr(module, handle, func_ctx)?;
-                        self.named_expressions.insert(handle, name);
+                        self.start_baking_expr(module, handle, &func_ctx)?;
+                        self.write_expr(module, handle, &func_ctx)?;
                         writeln!(self.out, ";")?;
+                        self.named_expressions.insert(handle.index());
                     }
                 }
             }
@@ -664,7 +589,7 @@ impl<W: Write> Writer<W> {
                 if let Some(return_value) = value {
                     
                     write!(self.out, " ")?;
-                    self.write_expr(module, return_value, func_ctx)?;
+                    self.write_expr(module, return_value, &func_ctx)?;
                 }
                 writeln!(self.out, ";")?;
             }
@@ -673,32 +598,23 @@ impl<W: Write> Writer<W> {
                 write!(self.out, "{}", INDENT.repeat(indent))?;
                 writeln!(self.out, "discard;")?
             }
+            
             Statement::Store { pointer, value } => {
-                
-                
-                
-                if let Expression::AccessIndex { base, index } = func_ctx.expressions[pointer] {
-                    if access_to_unsupported_builtin(base, index, module, func_ctx.info) {
-                        return Ok(());
-                    }
-                }
                 write!(self.out, "{}", INDENT.repeat(indent))?;
                 self.write_expr(module, pointer, func_ctx)?;
                 write!(self.out, " = ")?;
                 self.write_expr(module, value, func_ctx)?;
                 writeln!(self.out, ";")?
             }
-            Statement::Call {
+            crate::Statement::Call {
                 function,
                 ref arguments,
                 result,
             } => {
                 write!(self.out, "{}", INDENT.repeat(indent))?;
                 if let Some(expr) = result {
-                    let name = format!("{}{}", BAKE_PREFIX, expr.index());
-                    self.start_named_expr(module, expr, func_ctx, &name)?;
-                    self.write_expr(module, expr, func_ctx)?;
-                    self.named_expressions.insert(expr, name);
+                    self.start_baking_expr(module, expr, &func_ctx)?;
+                    self.named_expressions.insert(expr.index());
                 }
                 let func_name = &self.names[&NameKey::Function(function)];
                 write!(self.out, "{}(", func_name)?;
@@ -712,147 +628,41 @@ impl<W: Write> Writer<W> {
                 }
                 writeln!(self.out, ");")?
             }
-            Statement::ImageStore {
-                image,
-                coordinate,
-                array_index,
-                value,
-            } => {
-                write!(self.out, "{}", INDENT.repeat(indent))?;
-                write!(self.out, "textureStore(")?;
-                self.write_expr(module, image, func_ctx)?;
-                write!(self.out, ", ")?;
-                self.write_expr(module, coordinate, func_ctx)?;
-                if let Some(array_index_expr) = array_index {
-                    write!(self.out, ", ")?;
-                    self.write_expr(module, array_index_expr, func_ctx)?;
-                }
-                write!(self.out, ", ")?;
-                self.write_expr(module, value, func_ctx)?;
-                writeln!(self.out, ");")?;
-            }
-            
-            Statement::Block(ref block) => {
-                write!(self.out, "{}", INDENT.repeat(indent))?;
-                writeln!(self.out, "{{")?;
-                for sta in block.iter() {
-                    
-                    self.write_stmt(module, sta, func_ctx, indent + 1)?
-                }
-                writeln!(self.out, "{}}}", INDENT.repeat(indent))?
-            }
-            Statement::Switch {
-                selector,
-                ref cases,
-                ref default,
-            } => {
-                
-                write!(self.out, "{}", INDENT.repeat(indent))?;
-                write!(self.out, "switch(")?;
-                self.write_expr(module, selector, func_ctx)?;
-                writeln!(self.out, ") {{")?;
-
-                
-                let mut write_case = true;
-                let all_fall_through = cases
-                    .iter()
-                    .all(|case| case.fall_through && case.body.is_empty());
-                if !cases.is_empty() {
-                    for case in cases {
-                        if write_case {
-                            write!(self.out, "{}case ", INDENT.repeat(indent + 1))?;
-                        }
-                        if !all_fall_through && case.fall_through && case.body.is_empty() {
-                            write_case = false;
-                            write!(self.out, "{}, ", case.value)?;
-                            continue;
-                        } else {
-                            write_case = true;
-                            writeln!(self.out, "{}: {{", case.value)?;
-                        }
-
-                        for sta in case.body.iter() {
-                            self.write_stmt(module, sta, func_ctx, indent + 2)?;
-                        }
-
-                        if case.fall_through {
-                            writeln!(self.out, "{}fallthrough;", INDENT.repeat(indent + 2))?;
-                        }
-                    }
-
-                    writeln!(self.out, "{}}}", INDENT.repeat(indent + 1))?;
-                }
-
-                if !default.is_empty() {
-                    writeln!(self.out, "{}default: {{", INDENT.repeat(indent + 1))?;
-
-                    for sta in default {
-                        self.write_stmt(module, sta, func_ctx, indent + 2)?;
-                    }
-
-                    writeln!(self.out, "{}}}", INDENT.repeat(indent + 1))?
-                }
-
-                writeln!(self.out, "{}}}", INDENT.repeat(indent))?
-            }
-            Statement::Loop {
-                ref body,
-                ref continuing,
-            } => {
-                write!(self.out, "{}", INDENT.repeat(indent))?;
-                writeln!(self.out, "loop {{")?;
-
-                for sta in body.iter() {
-                    self.write_stmt(module, sta, func_ctx, indent + 1)?;
-                }
-
-                if !continuing.is_empty() {
-                    writeln!(self.out, "{}continuing {{", INDENT.repeat(indent + 1))?;
-                    for sta in continuing.iter() {
-                        self.write_stmt(module, sta, func_ctx, indent + 2)?;
-                    }
-                    writeln!(self.out, "{}}}", INDENT.repeat(indent + 1))?;
-                }
-
-                writeln!(self.out, "{}}}", INDENT.repeat(indent))?
-            }
-            Statement::Break => {
-                writeln!(self.out, "{}break;", INDENT.repeat(indent))?;
-            }
-            Statement::Continue => {
-                writeln!(self.out, "{}continue;", INDENT.repeat(indent))?;
-            }
-            Statement::Barrier(barrier) => {
-                if barrier.contains(crate::Barrier::STORAGE) {
-                    writeln!(self.out, "{}storageBarrier();", INDENT.repeat(indent))?;
-                }
-
-                if barrier.contains(crate::Barrier::WORK_GROUP) {
-                    writeln!(self.out, "{}workgroupBarrier();", INDENT.repeat(indent))?;
-                }
+            _ => {
+                return Err(Error::Unimplemented(format!("write_stmt {:?}", stmt)));
             }
         }
 
         Ok(())
     }
 
-    fn start_named_expr(
+    fn start_baking_expr(
         &mut self,
         module: &Module,
         handle: Handle<Expression>,
-        func_ctx: &FunctionCtx,
-        name: &str,
+        context: &FunctionCtx,
     ) -> BackendResult {
         
-        write!(self.out, "let {}: ", name)?;
-        let ty = &func_ctx.info[handle].ty;
+        write!(self.out, "let {}{}: ", BAKE_PREFIX, handle.index())?;
+        let ty = &context.info[handle].ty;
         
         match *ty {
-            TypeResolution::Handle(handle) => {
-                self.write_type(module, handle)?;
+            TypeResolution::Handle(ty_handle) => {
+                self.write_type(module, ty_handle)?;
             }
-            TypeResolution::Value(ref inner) => {
-                self.write_value_type(module, inner)?;
+            TypeResolution::Value(crate::TypeInner::Scalar { kind, .. }) => {
+                write!(self.out, "{}", scalar_kind_str(kind))?;
+            }
+            TypeResolution::Value(crate::TypeInner::Vector { size, kind, .. }) => {
+                write!(
+                    self.out,
+                    "vec{}<{}>",
+                    vector_size_str(size),
+                    scalar_kind_str(kind),
+                )?;
+            }
+            _ => {
+                return Err(Error::Unimplemented(format!("start_baking_expr {:?}", ty)));
             }
         }
 
@@ -870,17 +680,17 @@ impl<W: Write> Writer<W> {
         expr: Handle<Expression>,
         func_ctx: &FunctionCtx<'_>,
     ) -> BackendResult {
-        if let Some(name) = self.named_expressions.get(&expr) {
-            write!(self.out, "{}", name)?;
+        let expression = &func_ctx.expressions[expr];
+
+        if self.named_expressions.contains(expr.index()) {
+            write!(self.out, "{}{}", BAKE_PREFIX, expr.index())?;
             return Ok(());
         }
-
-        let expression = &func_ctx.expressions[expr];
 
         match *expression {
             Expression::Constant(constant) => self.write_constant(module, constant)?,
             Expression::Compose { ty, ref components } => {
-                self.write_type(module, ty)?;
+                self.write_type(&module, ty)?;
                 write!(self.out, "(")?;
                 
                 
@@ -897,11 +707,35 @@ impl<W: Write> Writer<W> {
                 for component in components {
                     let mut skip_component = false;
                     if let Expression::Load { pointer } = func_ctx.expressions[*component] {
-                        if let Expression::AccessIndex { base, index } =
-                            func_ctx.expressions[pointer]
+                        if let Expression::AccessIndex {
+                            base,
+                            index: access_index,
+                        } = func_ctx.expressions[pointer]
                         {
-                            if access_to_unsupported_builtin(base, index, module, func_ctx.info) {
-                                skip_component = true;
+                            let base_ty_res = &func_ctx.info[base].ty;
+                            let resolved = base_ty_res.inner_with(&module.types);
+                            if let TypeInner::Pointer {
+                                base: pointer_base_handle,
+                                ..
+                            } = *resolved
+                            {
+                                
+                                if let TypeInner::Struct { ref members, .. } =
+                                    module.types[pointer_base_handle].inner
+                                {
+                                    if let Some(Binding::BuiltIn(builtin)) =
+                                        members[access_index as usize].binding
+                                    {
+                                        if builtin_str(builtin).is_none() {
+                                            
+                                            log::warn!(
+                                                "Skip component with unsupported builtin {:?}",
+                                                builtin
+                                            );
+                                            skip_component = true;
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -915,7 +749,7 @@ impl<W: Write> Writer<W> {
                 
                 
                 for (index, component) in components_to_write.iter().enumerate() {
-                    self.write_expr(module, *component, func_ctx)?;
+                    self.write_expr(module, *component, &func_ctx)?;
                     
                     if index != components_to_write.len().saturating_sub(1) {
                         
@@ -935,11 +769,11 @@ impl<W: Write> Writer<W> {
                 write!(self.out, "{}", name)?;
             }
             Expression::Binary { op, left, right } => {
-                write!(self.out, "(")?;
                 self.write_expr(module, left, func_ctx)?;
-                write!(self.out, " {} ", binary_operation_str(op))?;
+
+                write!(self.out, " {} ", binary_operation_str(op),)?;
+
                 self.write_expr(module, right, func_ctx)?;
-                write!(self.out, ")")?;
             }
             
             Expression::Access { base, index } => {
@@ -963,11 +797,8 @@ impl<W: Write> Writer<W> {
                 };
 
                 match *resolved {
-                    TypeInner::Vector { .. } => {
-                        
-                        write!(self.out, ".{}", COMPONENTS[index as usize])?
-                    }
-                    TypeInner::Matrix { .. }
+                    TypeInner::Vector { .. }
+                    | TypeInner::Matrix { .. }
                     | TypeInner::Array { .. }
                     | TypeInner::ValuePointer { .. } => write!(self.out, "[{}]", index)?,
                     TypeInner::Struct { .. } => {
@@ -988,130 +819,47 @@ impl<W: Write> Writer<W> {
                 image,
                 sampler,
                 coordinate,
-                array_index,
-                offset,
+                array_index: _,
+                offset: _,
                 level,
-                depth_ref,
+                depth_ref: _,
             } => {
-                let suffix_cmp = match depth_ref {
-                    Some(_) => "Compare",
-                    None => "",
+                
+                
+                let fun_name = match level {
+                    crate::SampleLevel::Auto => "textureSample",
+                    _ => {
+                        return Err(Error::Unimplemented(format!(
+                            "expression_imagesample_level {:?}",
+                            level
+                        )));
+                    }
                 };
-                let suffix_level = match level {
-                    SampleLevel::Auto => "",
-                    SampleLevel::Zero | SampleLevel::Exact(_) => "Level",
-                    SampleLevel::Bias(_) => "Bias",
-                    SampleLevel::Gradient { .. } => "Grad",
-                };
-
-                write!(self.out, "textureSample{}{}(", suffix_cmp, suffix_level)?;
+                write!(self.out, "{}(", fun_name)?;
                 self.write_expr(module, image, func_ctx)?;
                 write!(self.out, ", ")?;
                 self.write_expr(module, sampler, func_ctx)?;
                 write!(self.out, ", ")?;
                 self.write_expr(module, coordinate, func_ctx)?;
-
-                if let Some(array_index) = array_index {
-                    write!(self.out, ", ")?;
-                    self.write_expr(module, array_index, func_ctx)?;
-                }
-
-                if let Some(depth_ref) = depth_ref {
-                    write!(self.out, ", ")?;
-                    self.write_expr(module, depth_ref, func_ctx)?;
-                }
-
-                match level {
-                    SampleLevel::Auto => {}
-                    SampleLevel::Zero => {
-                        
-                        if depth_ref.is_none() {
-                            write!(self.out, ", 0.0")?;
-                        }
-                    }
-                    SampleLevel::Exact(expr) => {
-                        write!(self.out, ", ")?;
-                        self.write_expr(module, expr, func_ctx)?;
-                    }
-                    SampleLevel::Bias(expr) => {
-                        write!(self.out, ", ")?;
-                        self.write_expr(module, expr, func_ctx)?;
-                    }
-                    SampleLevel::Gradient { x, y } => {
-                        write!(self.out, ", ")?;
-                        self.write_expr(module, x, func_ctx)?;
-                        write!(self.out, ", ")?;
-                        self.write_expr(module, y, func_ctx)?;
-                    }
-                }
-
-                if let Some(offset) = offset {
-                    write!(self.out, ", ")?;
-                    self.write_constant(module, offset)?;
-                }
-
                 write!(self.out, ")")?;
             }
-            Expression::ImageQuery { image, query } => {
-                let texture_function = match query {
-                    crate::ImageQuery::Size { .. } => "textureDimensions",
-                    crate::ImageQuery::NumLevels => "textureNumLevels",
-                    crate::ImageQuery::NumLayers => "textureNumLayers",
-                    crate::ImageQuery::NumSamples => "textureNumSamples",
-                };
-
-                write!(self.out, "{}(", texture_function)?;
-                self.write_expr(module, image, func_ctx)?;
-                if let crate::ImageQuery::Size { level: Some(level) } = query {
-                    write!(self.out, ", ")?;
-                    self.write_expr(module, level, func_ctx)?;
-                };
-                write!(self.out, ")")?;
-            }
-            Expression::ImageLoad {
-                image,
-                coordinate,
-                array_index,
-                index,
-            } => {
-                write!(self.out, "textureLoad(")?;
-                self.write_expr(module, image, func_ctx)?;
-                write!(self.out, ", ")?;
-                self.write_expr(module, coordinate, func_ctx)?;
-                if let Some(array_index) = array_index {
-                    write!(self.out, ", ")?;
-                    self.write_expr(module, array_index, func_ctx)?;
-                }
-                if let Some(index) = index {
-                    write!(self.out, ", ")?;
-                    self.write_expr(module, index, func_ctx)?;
-                }
-                write!(self.out, ")")?;
-            }
+            
             Expression::GlobalVariable(handle) => {
                 let name = &self.names[&NameKey::GlobalVariable(handle)];
                 write!(self.out, "{}", name)?;
             }
-            Expression::As { expr, kind, .. } => {
+            Expression::As {
+                expr,
+                kind,
+                convert: _, 
+            } => {
                 let inner = func_ctx.info[expr].ty.inner_with(&module.types);
-                match *inner {
+                let op = match *inner {
                     TypeInner::Matrix { columns, rows, .. } => {
-                        write!(
-                            self.out,
-                            "mat{}x{}<f32>",
-                            vector_size_str(columns),
-                            vector_size_str(rows)
-                        )?;
+                        format!("mat{}x{}", vector_size_str(columns), vector_size_str(rows))
                     }
-                    TypeInner::Vector { size, .. } => {
-                        write!(
-                            self.out,
-                            "vec{}<{}>",
-                            vector_size_str(size),
-                            scalar_kind_str(kind)
-                        )?;
-                    }
-                    TypeInner::Scalar { .. } => write!(self.out, "{}", scalar_kind_str(kind))?,
+                    TypeInner::Vector { size, .. } => format!("vec{}", vector_size_str(size)),
+                    TypeInner::Scalar { kind, .. } => String::from(scalar_kind_str(kind)),
                     _ => {
                         return Err(Error::Unimplemented(format!(
                             "write_expr expression::as {:?}",
@@ -1119,7 +867,8 @@ impl<W: Write> Writer<W> {
                         )));
                     }
                 };
-                write!(self.out, "(")?;
+                let scalar = scalar_kind_str(kind);
+                write!(self.out, "{}<{}>(", op, scalar)?;
                 self.write_expr(module, expr, func_ctx)?;
                 write!(self.out, ")")?;
             }
@@ -1141,15 +890,19 @@ impl<W: Write> Writer<W> {
                 self.write_expr(module, value, func_ctx)?;
                 write!(self.out, ")")?;
             }
+            
             Expression::Load { pointer } => self.write_expr(module, pointer, func_ctx)?,
             Expression::LocalVariable(handle) => {
-                write!(self.out, "{}", self.names[&func_ctx.name_key(handle)])?
+                let name_key = match func_ctx.ty {
+                    FunctionType::Function(func_handle) => {
+                        NameKey::FunctionLocal(func_handle, handle)
+                    }
+                    FunctionType::EntryPoint(idx) => NameKey::EntryPointLocal(idx, handle),
+                };
+                write!(self.out, "{}", self.names[&name_key])?
             }
             Expression::ArrayLength(expr) => {
                 write!(self.out, "arrayLength(")?;
-                if is_deref_required(expr, module, func_ctx.info) {
-                    write!(self.out, "&")?;
-                };
                 self.write_expr(module, expr, func_ctx)?;
                 write!(self.out, ")")?;
             }
@@ -1162,60 +915,13 @@ impl<W: Write> Writer<W> {
                 use crate::MathFunction as Mf;
 
                 let fun_name = match fun {
-                    Mf::Abs => "abs",
-                    Mf::Min => "min",
-                    Mf::Max => "max",
-                    Mf::Clamp => "clamp",
-                    
-                    Mf::Cos => "cos",
-                    Mf::Cosh => "cosh",
-                    Mf::Sin => "sin",
-                    Mf::Sinh => "sinh",
-                    Mf::Tan => "tan",
-                    Mf::Tanh => "tanh",
-                    Mf::Acos => "acos",
-                    Mf::Asin => "asin",
-                    Mf::Atan => "atan",
-                    Mf::Atan2 => "atan2",
-                    
-                    Mf::Ceil => "ceil",
-                    Mf::Floor => "floor",
-                    Mf::Round => "round",
-                    Mf::Fract => "fract",
-                    Mf::Trunc => "trunc",
-                    Mf::Modf => "modf",
-                    Mf::Frexp => "frexp",
-                    Mf::Ldexp => "ldexp",
-                    
-                    Mf::Exp => "exp",
-                    Mf::Exp2 => "exp2",
-                    Mf::Log => "log",
-                    Mf::Log2 => "log2",
-                    Mf::Pow => "pow",
-                    
-                    Mf::Dot => "dot",
-                    Mf::Outer => "outerProduct",
-                    Mf::Cross => "cross",
-                    Mf::Distance => "distance",
                     Mf::Length => "length",
-                    Mf::Normalize => "normalize",
-                    Mf::FaceForward => "faceForward",
-                    Mf::Reflect => "reflect",
-                    
-                    Mf::Sign => "sign",
-                    Mf::Fma => "fma",
                     Mf::Mix => "mix",
-                    Mf::Step => "step",
-                    Mf::SmoothStep => "smoothStep",
-                    Mf::Sqrt => "sqrt",
-                    Mf::InverseSqrt => "inverseSqrt",
-                    Mf::Transpose => "transpose",
-                    Mf::Determinant => "determinant",
-                    
-                    Mf::CountOneBits => "countOneBits",
-                    Mf::ReverseBits => "reverseBits",
                     _ => {
-                        return Err(Error::UnsupportedMathFunction(fun));
+                        return Err(Error::Unimplemented(format!(
+                            "write_expr Math func {:?}",
+                            fun
+                        )));
                     }
                 };
 
@@ -1242,66 +948,9 @@ impl<W: Write> Writer<W> {
                     self.out.write_char(COMPONENTS[sc as usize])?;
                 }
             }
-            Expression::Unary { op, expr } => {
-                let unary = match op {
-                    crate::UnaryOperator::Negate => "-",
-                    crate::UnaryOperator::Not => {
-                        match *func_ctx.info[expr].ty.inner_with(&module.types) {
-                            TypeInner::Scalar {
-                                kind: ScalarKind::Bool,
-                                ..
-                            }
-                            | TypeInner::Vector { .. } => "!",
-                            _ => "~",
-                        }
-                    }
-                };
-
-                write!(self.out, "{}(", unary)?;
-                self.write_expr(module, expr, func_ctx)?;
-
-                write!(self.out, ")")?
+            _ => {
+                return Err(Error::Unimplemented(format!("write_expr {:?}", expression)));
             }
-            Expression::Select {
-                condition,
-                accept,
-                reject,
-            } => {
-                write!(self.out, "select(")?;
-                self.write_expr(module, accept, func_ctx)?;
-                write!(self.out, ", ")?;
-                self.write_expr(module, reject, func_ctx)?;
-                write!(self.out, ", ")?;
-                self.write_expr(module, condition, func_ctx)?;
-                write!(self.out, ")")?
-            }
-            Expression::Derivative { axis, expr } => {
-                let op = match axis {
-                    crate::DerivativeAxis::X => "dpdx",
-                    crate::DerivativeAxis::Y => "dpdy",
-                    crate::DerivativeAxis::Width => "fwidth",
-                };
-                write!(self.out, "{}(", op)?;
-                self.write_expr(module, expr, func_ctx)?;
-                write!(self.out, ")")?
-            }
-            Expression::Relational { fun, argument } => {
-                let fun_name = match fun {
-                    crate::RelationalFunction::IsFinite => "isFinite",
-                    crate::RelationalFunction::IsInf => "isInf",
-                    crate::RelationalFunction::IsNan => "isNan",
-                    crate::RelationalFunction::IsNormal => "isNormal",
-                    crate::RelationalFunction::All => "all",
-                    crate::RelationalFunction::Any => "any",
-                };
-                write!(self.out, "{}(", fun_name)?;
-
-                self.write_expr(module, argument, func_ctx)?;
-
-                write!(self.out, ")")?
-            }
-            
-            Expression::Call(_) => {}
         }
 
         Ok(())
@@ -1330,24 +979,13 @@ impl<W: Write> Writer<W> {
         }
 
         
-        write!(self.out, "var")?;
-        if let Some(storage_class) = storage_class_str(global.class) {
-            write!(self.out, "<{}>", storage_class)?;
-        }
-        write!(self.out, " {}: ", name)?;
+        write!(self.out, "var {}: ", name)?;
         
         if !global.storage_access.is_empty() {
             self.write_attributes(&[Attribute::Access(global.storage_access)], true)?;
         }
         
         self.write_type(module, global.ty)?;
-
-        
-        if let Some(init) = global.init {
-            write!(self.out, " = ")?;
-            self.write_constant(module, init)?;
-        }
-
         
         writeln!(self.out, ";")?;
 
@@ -1365,8 +1003,8 @@ impl<W: Write> Writer<W> {
                 width: _,
                 ref value,
             } => {
-                if constant.name.is_some() {
-                    write!(self.out, "{}", self.names[&NameKey::Constant(handle)])?;
+                if let Some(ref name) = constant.name {
+                    write!(self.out, "{}", name)?;
                 } else {
                     self.write_scalar_value(*value)?;
                 }
@@ -1375,25 +1013,8 @@ impl<W: Write> Writer<W> {
                 self.write_type(module, ty)?;
                 write!(self.out, "(")?;
 
-                let members = match module.types[ty].inner {
-                    TypeInner::Struct { ref members, .. } => Some(members),
-                    _ => None,
-                };
-
                 
                 for (index, constant) in components.iter().enumerate() {
-                    if let Some(&Binding::BuiltIn(builtin)) =
-                        members.and_then(|members| members.get(index)?.binding.as_ref())
-                    {
-                        if builtin_str(builtin).is_none() {
-                            log::warn!(
-                                "Skip constant for struct member with unsupported builtin {:?}",
-                                builtin
-                            );
-                            continue;
-                        }
-                    }
-
                     self.write_constant(module, *constant)?;
                     
                     if index != components.len().saturating_sub(1) {
@@ -1414,11 +1035,10 @@ impl<W: Write> Writer<W> {
     
     fn write_global_constant(
         &mut self,
-        module: &Module,
-        inner: &ConstantInner,
+        constant: &Constant,
         handle: Handle<Constant>,
     ) -> BackendResult {
-        match *inner {
+        match constant.inner {
             crate::ConstantInner::Scalar {
                 width: _,
                 ref value,
@@ -1432,7 +1052,7 @@ impl<W: Write> Writer<W> {
                         write!(self.out, "i32 = {}", value)?;
                     }
                     crate::ScalarValue::Uint(value) => {
-                        write!(self.out, "u32 = {}u", value)?;
+                        write!(self.out, "u32 = {}", value)?;
                     }
                     crate::ScalarValue::Float(value) => {
                         
@@ -1445,31 +1065,16 @@ impl<W: Write> Writer<W> {
                 };
                 
                 writeln!(self.out, ";")?;
+                writeln!(self.out)?;
             }
-            ConstantInner::Composite { ty, ref components } => {
-                let name = self.names[&NameKey::Constant(handle)].clone();
-                
-                write!(self.out, "let {}: ", name)?;
-                
-                self.write_type(module, ty)?;
-
-                write!(self.out, " = ")?;
-                self.write_type(module, ty)?;
-
-                write!(self.out, "(")?;
-                for (index, constant) in components.iter().enumerate() {
-                    self.write_constant(module, *constant)?;
-                    
-                    if index != components.len().saturating_sub(1) {
-                        
-                        write!(self.out, ", ")?;
-                    }
-                }
-                write!(self.out, ");")?;
+            _ => {
+                return Err(Error::Unimplemented(format!(
+                    "write_global_constant {:?}",
+                    constant.inner
+                )));
             }
         }
-        
-        writeln!(self.out)?;
+
         Ok(())
     }
 
@@ -1570,17 +1175,6 @@ fn sampling_str(sampling: Sampling) -> &'static str {
     }
 }
 
-fn storage_class_str(storage_class: StorageClass) -> Option<&'static str> {
-    match storage_class {
-        StorageClass::Private => Some("private"),
-        StorageClass::Uniform => Some("uniform"),
-        StorageClass::Storage => Some("storage"),
-        StorageClass::PushConstant => Some("push_constant"),
-        StorageClass::WorkGroup => Some("workgroup"),
-        StorageClass::Function | StorageClass::Handle => None,
-    }
-}
-
 fn map_binding_to_attribute(binding: &Binding) -> Vec<Attribute> {
     match *binding {
         Binding::BuiltIn(built_in) => vec![Attribute::BuiltIn(built_in)],
@@ -1593,45 +1187,4 @@ fn map_binding_to_attribute(binding: &Binding) -> Vec<Attribute> {
             Attribute::Interpolate(interpolation, sampling),
         ],
     }
-}
-
-fn is_deref_required(expr: Handle<Expression>, module: &Module, info: &FunctionInfo) -> bool {
-    let base_ty_res = &info[expr].ty;
-    let resolved = base_ty_res.inner_with(&module.types);
-    match *resolved {
-        TypeInner::Pointer { base, class: _ } => match module.types[base].inner {
-            TypeInner::Scalar { .. } | TypeInner::Vector { .. } | TypeInner::Array { .. } => true,
-            _ => false,
-        },
-        TypeInner::ValuePointer { .. } => true,
-        _ => false,
-    }
-}
-
-
-fn access_to_unsupported_builtin(
-    expr: Handle<Expression>,
-    index: u32,
-    module: &Module,
-    info: &FunctionInfo,
-) -> bool {
-    let base_ty_res = &info[expr].ty;
-    let resolved = base_ty_res.inner_with(&module.types);
-    if let TypeInner::Pointer {
-        base: pointer_base_handle,
-        ..
-    } = *resolved
-    {
-        
-        if let TypeInner::Struct { ref members, .. } = module.types[pointer_base_handle].inner {
-            if let Some(Binding::BuiltIn(builtin)) = members[index as usize].binding {
-                if builtin_str(builtin).is_none() {
-                    log::warn!("Skip component with unsupported builtin {:?}", builtin);
-                    return true;
-                }
-            }
-        }
-    }
-
-    false
 }

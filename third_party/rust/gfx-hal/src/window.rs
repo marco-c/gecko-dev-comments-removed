@@ -118,21 +118,6 @@ impl From<image::Extent> for Extent2D {
     }
 }
 
-impl From<(image::Size, image::Size)> for Extent2D {
-    fn from(tuple: (image::Size, image::Size)) -> Self {
-        Extent2D {
-            width: tuple.0,
-            height: tuple.1,
-        }
-    }
-}
-
-impl From<Extent2D> for (image::Size, image::Size) {
-    fn from(extent: Extent2D) -> Self {
-        (extent.width, extent.height)
-    }
-}
-
 impl Extent2D {
     
     pub fn to_extent(&self) -> image::Extent {
@@ -140,26 +125,6 @@ impl Extent2D {
             width: self.width,
             height: self.height,
             depth: 1,
-        }
-    }
-}
-
-
-
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct Offset2D {
-    
-    pub x: image::TexelCoordinate,
-    
-    pub y: image::TexelCoordinate,
-}
-
-impl From<(image::TexelCoordinate, image::TexelCoordinate)> for Offset2D {
-    fn from(tuple: (image::TexelCoordinate, image::TexelCoordinate)) -> Self {
-        Offset2D {
-            x: tuple.0,
-            y: tuple.1,
         }
     }
 }

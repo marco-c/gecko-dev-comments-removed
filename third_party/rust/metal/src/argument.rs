@@ -5,7 +5,9 @@
 
 
 
-use super::{Array, MTLTextureType, NSUInteger};
+use crate::{Array, MTLTextureType};
+
+use cocoa_foundation::foundation::NSUInteger;
 use objc::runtime::{NO, YES};
 
 #[repr(u64)]

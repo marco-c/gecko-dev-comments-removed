@@ -30,8 +30,6 @@ bitflags::bitflags! {
         const SAMPLE_QUALIFIER = 1 << 12;
         const CLIP_DISTANCE = 1 << 13;
         const CULL_DISTANCE = 1 << 14;
-        // Sample ID
-        const SAMPLE_VARIABLES = 1 << 15;
     }
 }
 
@@ -97,7 +95,6 @@ impl FeaturesManager {
         
         check_feature!(CLIP_DISTANCE, 130, 300);
         check_feature!(CULL_DISTANCE, 450, 300);
-        check_feature!(SAMPLE_VARIABLES, 400, 300);
 
         
         if missing.is_empty() {
@@ -184,11 +181,6 @@ impl FeaturesManager {
             
             
             
-        }
-
-        if self.0.contains(Features::SAMPLE_VARIABLES) && version.is_es() {
-            
-            writeln!(out, "#extension GL_OES_sample_variables : require")?;
         }
 
         Ok(())
@@ -317,9 +309,6 @@ impl<'a, W> Writer<'a, W> {
                             }
                             crate::BuiltIn::CullDistance => {
                                 self.features.request(Features::CULL_DISTANCE)
-                            }
-                            crate::BuiltIn::SampleIndex => {
-                                self.features.request(Features::SAMPLE_VARIABLES)
                             }
                             _ => {}
                         },

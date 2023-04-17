@@ -5,7 +5,8 @@
 
 
 
-use super::{DeviceRef, HeapRef, NSUInteger};
+use super::{DeviceRef, HeapRef};
+use cocoa_foundation::foundation::NSUInteger;
 use objc::runtime::{NO, YES};
 
 #[repr(u64)]

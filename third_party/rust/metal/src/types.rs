@@ -5,7 +5,7 @@
 
 
 
-use super::NSUInteger;
+use cocoa_foundation::foundation::NSUInteger;
 use std::default::Default;
 
 #[repr(C)]
