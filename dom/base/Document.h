@@ -4008,10 +4008,6 @@ class Document : public nsINode,
   enum class IgnoreRFP { No, Yes };
   StylePrefersColorScheme PrefersColorScheme(IgnoreRFP = IgnoreRFP::No) const;
 
-  
-  
-  static bool UseOverlayScrollbars(const Document* aDocument);
-
   static bool HasRecentlyStartedForegroundLoads();
 
   static bool AutomaticStorageAccessPermissionCanBeGranted(

@@ -199,6 +199,8 @@ UNIFIED_SOURCES += [
     "nsHTMLFormatConverter.cpp",
     "nsIWidgetListener.cpp",
     "nsNativeBasicTheme.cpp",
+    
+    "nsNativeBasicThemeAndroid.cpp",
     "nsPrimitiveHelpers.cpp",
     "nsPrintSettingsImpl.cpp",
     "nsSoundProxy.cpp",

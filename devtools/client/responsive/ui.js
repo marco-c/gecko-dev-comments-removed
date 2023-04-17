@@ -266,7 +266,6 @@ class ResponsiveUI {
       await Promise.all([
         this.updateScreenOrientation("landscape-primary", 0),
         this.updateMaxTouchPointsEnabled(false),
-        this.responsiveFront.setFloatingScrollbars(false),
       ]);
 
       
@@ -755,9 +754,6 @@ class ResponsiveUI {
     
     
     this.tab.linkedBrowser.enterResponsiveMode();
-
-    
-    await this.responsiveFront.setFloatingScrollbars(true);
 
     
     await this.currentTarget.attach();

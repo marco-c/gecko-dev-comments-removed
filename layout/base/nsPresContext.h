@@ -817,6 +817,10 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
     return EnsureTheme();
   }
 
+  void RecomputeTheme();
+
+  bool UseOverlayScrollbars() const;
+
   
 
 
