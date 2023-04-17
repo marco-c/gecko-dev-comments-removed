@@ -617,6 +617,9 @@ nsresult GfxInfo::GetFeatureStatusImpl(
       isUnblocked |= gpu.Find("PowerVR Rogue",  true) >= 0;
 
       
+      isUnblocked |= gpu.Find("NVIDIA Tegra",  true) >= 0;
+
+      
       isUnblocked |= gpu.Find("Mesa DRI Intel",  true) >= 0;
 
       if (!isUnblocked) {
