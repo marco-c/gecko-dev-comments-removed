@@ -26,6 +26,7 @@
 #include "jit/JitCode.h"
 #include "jit/shared/Assembler-shared.h"
 #include "js/AllocPolicy.h"
+#include "js/ProfilingFrameIterator.h"
 #include "js/TypeDecls.h"
 #include "js/UniquePtr.h"
 #include "js/Vector.h"
@@ -367,6 +368,13 @@ class JitRuntime {
     return JS_DATA_TO_FUNC_PTR(EnterJitCode,
                                trampolineCode(enterJITOffset_).value);
   }
+
+  
+  
+  
+  
+  static mozilla::Maybe<::JS::ProfilingFrameIterator::RegisterState>
+  getCppEntryRegisters(JitFrameLayout* frameStackAddress);
 
   TrampolinePtr preBarrier(MIRType type) const {
     switch (type) {

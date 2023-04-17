@@ -142,6 +142,11 @@ class MOZ_NON_PARAM JS_PUBLIC_API ProfilingFrameIterator {
 
   mozilla::Maybe<Frame> getPhysicalFrameWithoutLabel() const;
 
+  
+  
+  
+  mozilla::Maybe<RegisterState> getCppEntryRegisters() const;
+
  private:
   mozilla::Maybe<Frame> getPhysicalFrameAndEntry(
       js::jit::JitcodeGlobalEntry* entry) const;
@@ -239,4 +244,4 @@ JS_PUBLIC_API ProfiledFrameRange GetProfiledFrames(JSContext* cx, void* addr);
 
 }  
 
-#endif
+#endif 

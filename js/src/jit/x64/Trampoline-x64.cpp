@@ -333,6 +333,15 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
 }
 
 
+mozilla::Maybe<::JS::ProfilingFrameIterator::RegisterState>
+JitRuntime::getCppEntryRegisters(JitFrameLayout* frameStackAddress) {
+  
+  
+  
+  return mozilla::Nothing{};
+}
+
+
 
 static void DumpAllRegs(MacroAssembler& masm) {
 #ifdef ENABLE_WASM_SIMD

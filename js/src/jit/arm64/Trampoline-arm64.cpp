@@ -317,6 +317,15 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   masm.SetStackPointer64(PseudoStackPointer64);
 }
 
+
+mozilla::Maybe<::JS::ProfilingFrameIterator::RegisterState>
+JitRuntime::getCppEntryRegisters(JitFrameLayout* frameStackAddress) {
+  
+  
+  
+  return mozilla::Nothing{};
+}
+
 static void PushRegisterDump(MacroAssembler& masm) {
   const LiveRegisterSet First28GeneralRegisters = LiveRegisterSet(
       GeneralRegisterSet(Registers::AllMask &
