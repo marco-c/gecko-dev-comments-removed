@@ -27,6 +27,7 @@ XPCOMUtils.defineLazyGlobalGetters(this, ["AbortController", "fetch"]);
 
 const MERINO_ENDPOINT_PARAM_QUERY = "q";
 
+const TELEMETRY_MERINO_LATENCY = "FX_URLBAR_MERINO_LATENCY_MS";
 const TELEMETRY_SCALAR_IMPRESSION =
   "contextual.services.quicksuggest.impression";
 const TELEMETRY_SCALAR_CLICK = "contextual.services.quicksuggest.click";
@@ -124,7 +125,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
       promises.push(UrlbarQuickSuggest.query(searchString));
     }
     if (UrlbarPrefs.get("merinoEnabled") && queryContext.allowRemoteResults()) {
-      promises.push(this._fetchMerinoSuggestions(searchString));
+      promises.push(this._fetchMerinoSuggestions(queryContext, searchString));
     }
 
     let allSuggestions = await Promise.all(promises);
@@ -337,7 +338,8 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
 
 
-  async _fetchMerinoSuggestions(searchString) {
+
+  async _fetchMerinoSuggestions(queryContext, searchString) {
     let instance = this.queryInstance;
 
     
@@ -348,13 +350,16 @@ class ProviderQuickSuggest extends UrlbarProvider {
       url.searchParams.set(MERINO_ENDPOINT_PARAM_QUERY, searchString);
 
       controller = this._merinoFetchController = new AbortController();
+      TelemetryStopwatch.start(TELEMETRY_MERINO_LATENCY, queryContext);
       response = await fetch(url, {
         signal: controller.signal,
       });
+      TelemetryStopwatch.finish(TELEMETRY_MERINO_LATENCY, queryContext);
       if (instance != this.queryInstance) {
         return null;
       }
     } catch (error) {
+      TelemetryStopwatch.cancel(TELEMETRY_MERINO_LATENCY, queryContext);
       if (error.name != "AbortError") {
         Cu.reportError(error);
       }
