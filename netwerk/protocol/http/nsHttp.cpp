@@ -1,10 +1,10 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set ts=4 sw=2 sts=2 et cin: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// HttpLog.h should generally be included first
+
+
+
+
+
+
 #include "HttpLog.h"
 
 #include "nsHttp.h"
@@ -22,6 +22,7 @@
 #include "nsICacheEntry.h"
 #include "nsIRequest.h"
 #include "nsJSUtils.h"
+#include "sslerr.h"
 #include <errno.h>
 #include <functional>
 #include "nsLiteralString.h"
@@ -34,14 +35,14 @@ const uint32_t kHttp3VersionCount = 5;
 const nsCString kHttp3Versions[] = {"h3-29"_ns, "h3-30"_ns, "h3-31"_ns,
                                     "h3-32"_ns, "h3"_ns};
 
-// define storage for all atoms
+
 namespace nsHttp {
 #define HTTP_ATOM(_name, _value) nsHttpAtom _name(nsLiteralCString{_value});
 #include "nsHttpAtomList.h"
 #undef HTTP_ATOM
-}  // namespace nsHttp
+}  
 
-// find out how many atoms we have
+
 #define HTTP_ATOM(_name, _value) Unused_##_name,
 enum {
 #include "nsHttpAtomList.h"
@@ -52,11 +53,11 @@ enum {
 static StaticDataMutex<nsTHashtable<nsCStringASCIICaseInsensitiveHashKey>>
     sAtomTable("nsHttp::sAtomTable");
 
-// This is set to true in DestroyAtomTable so we don't try to repopulate the
-// table if ResolveAtom gets called during shutdown for some reason.
+
+
 static Atomic<bool> sTableDestroyed{false};
 
-// We put the atoms in a hash table for speedy lookup.. see ResolveAtom.
+
 namespace nsHttp {
 
 nsresult CreateAtomTable(
@@ -64,7 +65,7 @@ nsresult CreateAtomTable(
   if (sTableDestroyed) {
     return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
   }
-  // fill the table with our known atoms
+  
   const nsHttpAtom* atoms[] = {
 #define HTTP_ATOM(_name, _value) &(_name),
 #include "nsHttpAtomList.h"
@@ -95,7 +96,7 @@ void DestroyAtomTable() {
   atomTable.ref().Clear();
 }
 
-// this function may be called from multiple threads
+
 nsHttpAtom ResolveAtom(const nsACString& str) {
   nsHttpAtom atom;
   if (str.IsEmpty()) {
@@ -116,7 +117,7 @@ nsHttpAtom ResolveAtom(const nsACString& str) {
     }
   }
 
-  // Check if we already have an entry in the table
+  
   auto* entry = atomTable.ref().GetEntry(str);
   if (entry) {
     atom._val = entry->GetKey();
@@ -124,7 +125,7 @@ nsHttpAtom ResolveAtom(const nsACString& str) {
   }
 
   LOG(("Putting %s header into atom table", nsPromiseFlatCString(str).get()));
-  // Put the string in the table. If it works create the atom.
+  
   entry = atomTable.ref().PutEntry(str, fallible);
   if (entry) {
     atom._val = entry->GetKey();
@@ -132,40 +133,40 @@ nsHttpAtom ResolveAtom(const nsACString& str) {
   return atom;
 }
 
-//
-// From section 2.2 of RFC 2616, a token is defined as:
-//
-//   token          = 1*<any CHAR except CTLs or separators>
-//   CHAR           = <any US-ASCII character (octets 0 - 127)>
-//   separators     = "(" | ")" | "<" | ">" | "@"
-//                  | "," | ";" | ":" | "\" | <">
-//                  | "/" | "[" | "]" | "?" | "="
-//                  | "{" | "}" | SP | HT
-//   CTL            = <any US-ASCII control character
-//                    (octets 0 - 31) and DEL (127)>
-//   SP             = <US-ASCII SP, space (32)>
-//   HT             = <US-ASCII HT, horizontal-tab (9)>
-//
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static const char kValidTokenMap[128] = {
-    0, 0, 0, 0, 0, 0, 0, 0,  //   0
-    0, 0, 0, 0, 0, 0, 0, 0,  //   8
-    0, 0, 0, 0, 0, 0, 0, 0,  //  16
-    0, 0, 0, 0, 0, 0, 0, 0,  //  24
+    0, 0, 0, 0, 0, 0, 0, 0,  
+    0, 0, 0, 0, 0, 0, 0, 0,  
+    0, 0, 0, 0, 0, 0, 0, 0,  
+    0, 0, 0, 0, 0, 0, 0, 0,  
 
-    0, 1, 0, 1, 1, 1, 1, 1,  //  32
-    0, 0, 1, 1, 0, 1, 1, 0,  //  40
-    1, 1, 1, 1, 1, 1, 1, 1,  //  48
-    1, 1, 0, 0, 0, 0, 0, 0,  //  56
+    0, 1, 0, 1, 1, 1, 1, 1,  
+    0, 0, 1, 1, 0, 1, 1, 0,  
+    1, 1, 1, 1, 1, 1, 1, 1,  
+    1, 1, 0, 0, 0, 0, 0, 0,  
 
-    0, 1, 1, 1, 1, 1, 1, 1,  //  64
-    1, 1, 1, 1, 1, 1, 1, 1,  //  72
-    1, 1, 1, 1, 1, 1, 1, 1,  //  80
-    1, 1, 1, 0, 0, 0, 1, 1,  //  88
+    0, 1, 1, 1, 1, 1, 1, 1,  
+    1, 1, 1, 1, 1, 1, 1, 1,  
+    1, 1, 1, 1, 1, 1, 1, 1,  
+    1, 1, 1, 0, 0, 0, 1, 1,  
 
-    1, 1, 1, 1, 1, 1, 1, 1,  //  96
-    1, 1, 1, 1, 1, 1, 1, 1,  // 104
-    1, 1, 1, 1, 1, 1, 1, 1,  // 112
-    1, 1, 1, 0, 1, 0, 1, 0   // 120
+    1, 1, 1, 1, 1, 1, 1, 1,  
+    1, 1, 1, 1, 1, 1, 1, 1,  
+    1, 1, 1, 1, 1, 1, 1, 1,  
+    1, 1, 1, 0, 1, 0, 1, 0   
 };
 bool IsValidToken(const char* start, const char* end) {
   if (start == end) return false;
@@ -197,23 +198,23 @@ const char* GetProtocolVersion(HttpVersion pv) {
   }
 }
 
-// static
+
 void TrimHTTPWhitespace(const nsACString& aSource, nsACString& aDest) {
   nsAutoCString str(aSource);
 
-  // HTTP whitespace 0x09: '\t', 0x0A: '\n', 0x0D: '\r', 0x20: ' '
+  
   static const char kHTTPWhitespace[] = "\t\n\r ";
   str.Trim(kHTTPWhitespace);
   aDest.Assign(str);
 }
 
-// static
+
 bool IsReasonableHeaderValue(const nsACString& s) {
-  // Header values MUST NOT contain line-breaks.  RFC 2616 technically
-  // permits CTL characters, including CR and LF, in header values provided
-  // they are quoted.  However, this can lead to problems if servers do not
-  // interpret quoted strings properly.  Disallowing CR and LF here seems
-  // reasonable and keeps things simple.  We also disallow a null byte.
+  
+  
+  
+  
+  
   const nsACString::char_type* end = s.EndReading();
   for (const nsACString::char_type* i = s.BeginReading(); i != end; ++i) {
     if (*i == '\r' || *i == '\n' || *i == '\0') {
@@ -249,12 +250,12 @@ bool ParseInt64(const char* input, const char** next, int64_t* r) {
   MOZ_ASSERT(r);
 
   char* end = nullptr;
-  errno = 0;  // Clear errno to make sure its value is set by strtoll
-  int64_t value = strtoll(input, &end, /* base */ 10);
+  errno = 0;  
+  int64_t value = strtoll(input, &end,  10);
 
-  // Fail if: - the parsed number overflows.
-  //          - the end points to the start of the input string.
-  //          - we parsed a negative value. Consumers don't expect that.
+  
+  
+  
   if (errno != 0 || end == input || value < 0) {
     LOG(("nsHttp::ParseInt64 value=%" PRId64 " errno=%d", value, errno));
     return false;
@@ -283,34 +284,34 @@ bool ValidationRequired(bool isForcedValid,
     *performBackgroundRevalidation = false;
   }
 
-  // Check isForcedValid to see if it is possible to skip validation.
-  // Don't skip validation if we have serious reason to believe that this
-  // content is invalid (it's expired).
-  // See netwerk/cache2/nsICacheEntry.idl for details
+  
+  
+  
+  
   if (isForcedValid && (!cachedResponseHead->ExpiresInPast() ||
                         !cachedResponseHead->MustValidateIfExpired())) {
     LOG(("NOT validating based on isForcedValid being true.\n"));
     return false;
   }
 
-  // If the LOAD_FROM_CACHE flag is set, any cached data can simply be used
+  
   if (loadFlags & nsIRequest::LOAD_FROM_CACHE || allowStaleCacheContent) {
     LOG(("NOT validating based on LOAD_FROM_CACHE load flag\n"));
     return false;
   }
 
-  // If the VALIDATE_ALWAYS flag is set, any cached data won't be used until
-  // it's revalidated with the server.
+  
+  
   if ((loadFlags & nsIRequest::VALIDATE_ALWAYS) && !isImmutable) {
     LOG(("Validating based on VALIDATE_ALWAYS load flag\n"));
     return true;
   }
 
-  // Even if the VALIDATE_NEVER flag is set, there are still some cases in
-  // which we must validate the cached response with the server.
+  
+  
   if (loadFlags & nsIRequest::VALIDATE_NEVER) {
     LOG(("VALIDATE_NEVER set\n"));
-    // if no-store validate cached response (see bug 112564)
+    
     if (cachedResponseHead->NoStore()) {
       LOG(("Validating based on no-store logic\n"));
       return true;
@@ -319,24 +320,24 @@ bool ValidationRequired(bool isForcedValid,
     return false;
   }
 
-  // check if validation is strictly required...
+  
   if (cachedResponseHead->MustValidate()) {
     LOG(("Validating based on MustValidate() returning TRUE\n"));
     return true;
   }
 
-  // possibly serve from cache for a custom If-Match/If-Unmodified-Since
-  // conditional request
+  
+  
   if (customConditionalRequest && !requestHead.HasHeader(nsHttp::If_Match) &&
       !requestHead.HasHeader(nsHttp::If_Unmodified_Since)) {
     LOG(("Validating based on a custom conditional request\n"));
     return true;
   }
 
-  // previously we also checked for a query-url w/out expiration
-  // and didn't do heuristic on it. but defacto that is allowed now.
-  //
-  // Check if the cache entry has expired...
+  
+  
+  
+  
 
   bool doValidation = true;
   uint32_t now = NowInSeconds();
@@ -373,11 +374,11 @@ bool ValidationRequired(bool isForcedValid,
     LOG(("  validating=%d, max-stale=%u requested", doValidation,
          maxStaleRequest));
   } else if (cacheControlRequest.MaxAge(&maxAgeRequest)) {
-    // The input information for age and freshness calculation are in seconds.
-    // Hence, the internal logic can't have better resolution than seconds too.
-    // To make max-age=0 case work even for requests made in less than a second
-    // after the last response has been received, we use >= for compare.  This
-    // is correct because of the rounding down of the age calculated value.
+    
+    
+    
+    
+    
     doValidation = age >= maxAgeRequest;
     LOG(("  validating=%d, max-age=%u requested", doValidation, maxAgeRequest));
   } else if (cacheControlRequest.MinFresh(&minFreshRequest)) {
@@ -398,11 +399,11 @@ bool ValidationRequired(bool isForcedValid,
       *performBackgroundRevalidation = true;
     }
   } else if (loadFlags & nsIRequest::VALIDATE_ONCE_PER_SESSION) {
-    // If the cached response does not include expiration infor-
-    // mation, then we must validate the response, despite whether
-    // or not this is the first access this session.  This behavior
-    // is consistent with existing browsers and is generally expected
-    // by web authors.
+    
+    
+    
+    
+    
     if (freshness == 0) {
       doValidation = true;
     } else {
@@ -419,10 +420,10 @@ bool ValidationRequired(bool isForcedValid,
 nsresult GetHttpResponseHeadFromCacheEntry(
     nsICacheEntry* entry, nsHttpResponseHead* cachedResponseHead) {
   nsCString buf;
-  // A "original-response-headers" metadata element holds network original
-  // headers, i.e. the headers in the form as they arrieved from the network. We
-  // need to get the network original headers first, because we need to keep
-  // them in order.
+  
+  
+  
+  
   nsresult rv = entry->GetMetaDataElement("original-response-headers",
                                           getter_Copies(buf));
   if (NS_SUCCEEDED(rv)) {
@@ -433,15 +434,15 @@ nsresult GetHttpResponseHeadFromCacheEntry(
   }
 
   buf.Adopt(nullptr);
-  // A "response-head" metadata element holds response head, e.g. response
-  // status line and headers in the form Firefox uses them internally (no
-  // dupicate headers, etc.).
+  
+  
+  
   rv = entry->GetMetaDataElement("response-head", getter_Copies(buf));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // Parse string stored in a "response-head" metadata element.
-  // These response headers will be merged with the orignal headers (i.e. the
-  // headers stored in a "original-response-headers" metadata element).
+  
+  
+  
   rv = cachedResponseHead->ParseCachedHead(buf.get());
   NS_ENSURE_SUCCESS(rv, rv);
   buf.Adopt(nullptr);
@@ -479,8 +480,8 @@ void DetermineFramingAndImmutability(nsICacheEntry* entry,
   nsCString framedBuf;
   nsresult rv =
       entry->GetMetaDataElement("strongly-framed", getter_Copies(framedBuf));
-  // describe this in terms of explicitly weakly framed so as to be backwards
-  // compatible with old cache contents which dont have strongly-framed makers
+  
+  
   *weaklyFramed = NS_SUCCEEDED(rv) && framedBuf.EqualsLiteral("0");
   *isImmutable = !*weaklyFramed && isHttps && responseHead->Immutable();
 }
@@ -494,18 +495,18 @@ nsCString ConvertRequestHeadToString(nsHttpRequestHead& aRequestHead,
                                      bool aHasRequestBody,
                                      bool aRequestBodyHasHeaders,
                                      bool aUsingConnect) {
-  // Make sure that there is "Content-Length: 0" header in the requestHead
-  // in case of POST and PUT methods when there is no requestBody and
-  // requestHead doesn't contain "Transfer-Encoding" header.
-  //
-  // RFC1945 section 7.2.2:
-  //   HTTP/1.0 requests containing an entity body must include a valid
-  //   Content-Length header field.
-  //
-  // RFC2616 section 4.4:
-  //   For compatibility with HTTP/1.0 applications, HTTP/1.1 requests
-  //   containing a message-body MUST include a valid Content-Length header
-  //   field unless the server is known to be HTTP/1.1 compliant.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if ((aRequestHead.IsPost() || aRequestHead.IsPut()) && !aHasRequestBody &&
       !aRequestHead.HasHeader(nsHttp::Transfer_Encoding)) {
     DebugOnly<nsresult> rv =
@@ -516,8 +517,8 @@ nsCString ConvertRequestHeadToString(nsHttpRequestHead& aRequestHead,
   nsCString reqHeaderBuf;
   reqHeaderBuf.Truncate();
 
-  // make sure we eliminate any proxy specific headers from
-  // the request if we are using CONNECT
+  
+  
   aRequestHead.Flatten(reqHeaderBuf, aUsingConnect);
 
   if (!aRequestBodyHasHeaders || !aHasRequestBody) {
@@ -544,16 +545,16 @@ void SetLastActiveTabLoadOptimizationHit(TimeStamp const& when) {
   }
 }
 
-}  // namespace nsHttp
+}  
 
 template <typename T>
 void localEnsureBuffer(UniquePtr<T[]>& buf, uint32_t newSize, uint32_t preserve,
                        uint32_t& objSize) {
   if (objSize >= newSize) return;
 
-  // Leave a little slop on the new allocation - add 2KB to
-  // what we need and then round the result up to a 4KB (page)
-  // boundary.
+  
+  
+  
 
   objSize = (newSize + 2048 + 4095) & ~4095;
 
@@ -624,13 +625,13 @@ static void Tokenize(
       return;
     }
 
-    // Trim leading space
+    
     while (nsCRT::IsAsciiSpace(**out)) {
       (*out)++;
       --(*outLen);
     }
 
-    // Trim tailing space
+    
     for (const char* i = *out + *outLen - 1; i >= *out; --i) {
       if (!nsCRT::IsAsciiSpace(*i)) {
         break;
@@ -701,7 +702,7 @@ void ParsedHeaderValueList::ParseNameAndValue(const char* input,
     return;
   }
 
-  // Check whether param name is a valid token.
+  
   for (const char* c = nameStart; c < nameEnd; c++) {
     if (!IsTokenSymbol(*c)) {
       nameEnd = c;
@@ -728,7 +729,7 @@ void ParsedHeaderValueList::ParseNameAndValue(const char* input,
   }
 
   if (*input != '"') {
-    // The value is a token, not a quoted string.
+    
     valueStart = input;
     for (valueEnd = input; *valueEnd && !nsCRT::IsAsciiSpace(*valueEnd) &&
                            *valueEnd != ';' && *valueEnd != ',';
@@ -762,7 +763,7 @@ void ParsedHeaderValueList::ParseNameAndValue(const char* input,
     }
 
     input = valueEnd;
-    // *valueEnd != null means that *valueEnd is quote character.
+    
     if (*valueEnd) {
       input++;
     }
@@ -829,9 +830,9 @@ void LogHeaders(const char* lineStart) {
 }
 
 nsresult HttpProxyResponseToErrorCode(uint32_t aStatusCode) {
-  // In proxy CONNECT case, we treat every response code except 200 as an error.
-  // Even if the proxy server returns other 2xx codes (i.e. 206), this function
-  // still returns an error code.
+  
+  
+  
   MOZ_ASSERT(aStatusCode != 200);
 
   nsresult rv;
@@ -842,19 +843,19 @@ nsresult HttpProxyResponseToErrorCode(uint32_t aStatusCode) {
     case 303:
     case 307:
     case 308:
-      // Bad redirect: not top-level, or it's a POST, bad/missing Location,
-      // or ProcessRedirect() failed for some other reason.  Legal
-      // redirects that fail because site not available, etc., are handled
-      // elsewhere, in the regular codepath.
+      
+      
+      
+      
       rv = NS_ERROR_CONNECTION_REFUSED;
       break;
-    // Squid sends 404 if DNS fails (regular 404 from target is tunneled)
-    case 404:  // HTTP/1.1: "Not Found"
-               // RFC 2616: "some deployed proxies are known to return 400 or
-               // 500 when DNS lookups time out."  (Squid uses 500 if it runs
-               // out of sockets: so we have a conflict here).
-    case 400:  // HTTP/1.1 "Bad Request"
-    case 500:  // HTTP/1.1: "Internal Server Error"
+    
+    case 404:  
+               
+               
+               
+    case 400:  
+    case 500:  
       rv = NS_ERROR_UNKNOWN_HOST;
       break;
     case 401:
@@ -872,7 +873,7 @@ nsresult HttpProxyResponseToErrorCode(uint32_t aStatusCode) {
     case 406:
       rv = NS_ERROR_PROXY_NOT_ACCEPTABLE;
       break;
-    case 407:  // ProcessAuthentication() failed (e.g. no header)
+    case 407:  
       rv = NS_ERROR_PROXY_AUTHENTICATION_FAILED;
       break;
     case 408:
@@ -933,16 +934,16 @@ nsresult HttpProxyResponseToErrorCode(uint32_t aStatusCode) {
       rv = NS_ERROR_PROXY_BAD_GATEWAY;
       break;
     case 503:
-      // Squid returns 503 if target request fails for anything but DNS.
-      /* User sees: "Failed to Connect:
-       *  Firefox can't establish a connection to the server at
-       *  www.foo.com.  Though the site seems valid, the browser
-       *  was unable to establish a connection."
-       */
+      
+      
+
+
+
+
       rv = NS_ERROR_CONNECTION_REFUSED;
       break;
-    // RFC 2616 uses 504 for both DNS and target timeout, so not clear what to
-    // do here: picking target timeout, as DNS covered by 400/404/500
+    
+    
     case 504:
       rv = NS_ERROR_PROXY_GATEWAY_TIMEOUT;
       break;
@@ -988,5 +989,11 @@ SupportedAlpnType IsAlpnSupported(const nsACString& aAlpn) {
   return SupportedAlpnType::NOT_SUPPORTED;
 }
 
-}  // namespace net
-}  // namespace mozilla
+bool SecurityErrorToBeHandledByTransaction(nsresult aReason) {
+  return (aReason ==
+          psm::GetXPCOMFromNSSError(SSL_ERROR_PROTOCOL_VERSION_ALERT)) ||
+         (aReason == psm::GetXPCOMFromNSSError(SSL_ERROR_BAD_MAC_ALERT));
+}
+
+}  
+}  
