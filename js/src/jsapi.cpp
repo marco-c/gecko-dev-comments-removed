@@ -1505,21 +1505,28 @@ JS_GetExternalStringCallbacks(JSString* str) {
 
 static void SetNativeStackLimit(JSContext* cx, JS::StackKind kind,
                                 size_t stackSize) {
-#if JS_STACK_GROWTH_DIRECTION > 0
+#ifdef __wasi__
+  
+  
+  
+  cx->nativeStackLimit[kind] = 1024;
+#else  
+#  if JS_STACK_GROWTH_DIRECTION > 0
   if (stackSize == 0) {
     cx->nativeStackLimit[kind] = UINTPTR_MAX;
   } else {
     MOZ_ASSERT(cx->nativeStackBase() <= size_t(-1) - stackSize);
     cx->nativeStackLimit[kind] = cx->nativeStackBase() + stackSize - 1;
   }
-#else
+#  else   
   if (stackSize == 0) {
     cx->nativeStackLimit[kind] = 0;
   } else {
     MOZ_ASSERT(cx->nativeStackBase() >= stackSize);
     cx->nativeStackLimit[kind] = cx->nativeStackBase() - (stackSize - 1);
   }
-#endif
+#  endif  
+#endif    
 }
 
 JS_PUBLIC_API void JS_SetNativeStackQuota(JSContext* cx,
