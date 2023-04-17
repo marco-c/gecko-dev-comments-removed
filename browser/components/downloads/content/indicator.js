@@ -139,6 +139,7 @@ const DownloadsButton = {
 
   unhide(includePalette = false) {
     let button = this._placeholder;
+    let wasHidden = false;
     if (!button && includePalette) {
       button = gNavToolbox.palette.querySelector("#downloads-button");
     }
@@ -147,7 +148,9 @@ const DownloadsButton = {
       if (this._navBar.contains(button)) {
         this._navBar.setAttribute("downloadsbuttonshown", "true");
       }
+      wasHidden = true;
     }
+    return wasHidden;
   },
 
   hide() {
@@ -393,8 +396,13 @@ const DownloadsIndicatorView = {
       
       return;
     }
+
     anchor.setAttribute("notification", aType);
     anchor.setAttribute("animate", "");
+
+    
+    anchor.toggleAttribute("washidden", !!this._wasHidden);
+    delete this._wasHidden;
 
     this._currentNotificationType = aType;
 
@@ -434,7 +442,7 @@ const DownloadsIndicatorView = {
       
       
       if (aValue) {
-        DownloadsButton.unhide();
+        this._wasHidden = DownloadsButton.unhide();
         this._ensureOperational();
       } else {
         DownloadsButton.checkForAutoHide();
