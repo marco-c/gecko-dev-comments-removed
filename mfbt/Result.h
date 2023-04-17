@@ -439,7 +439,7 @@ constexpr auto ToResult(Result<V, E>&& aValue)
 
 
 template <typename V, typename E>
-class MOZ_MUST_USE_TYPE Result final {
+class [[nodiscard]] Result final {
   
   static_assert(!std::is_const_v<V>);
   static_assert(!std::is_const_v<E>);
@@ -745,7 +745,7 @@ class MOZ_MUST_USE_TYPE Result final {
 
 
 template <typename E>
-class MOZ_MUST_USE_TYPE GenericErrorResult {
+class [[nodiscard]] GenericErrorResult {
   E mErrorValue;
 
   template <typename V, typename E2>

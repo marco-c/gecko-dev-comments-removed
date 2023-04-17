@@ -21,7 +21,7 @@ struct ErrorPropagationTag;
 
 
 template <>
-class MOZ_MUST_USE_TYPE GenericErrorResult<nsresult> {
+class [[nodiscard]] GenericErrorResult<nsresult> {
   nsresult mErrorValue;
 
   template <typename V, typename E2>
