@@ -638,6 +638,16 @@ static bool get_egl_status(EGLNativeDisplayType native_dpy, bool gles_test,
 
 #ifdef MOZ_X11
 static void get_xrandr_info(Display* dpy) {
+  
+  
+  
+  int eventBase, errorBase, major, minor;
+  if (!XRRQueryExtension(dpy, &eventBase, &errorBase) ||
+      !XRRQueryVersion(dpy, &major, &minor) ||
+      !(major > 1 || (major == 1 && minor >= 4))) {
+    return;
+  }
+
   Window root = RootWindow(dpy, DefaultScreen(dpy));
   XRRProviderResources* pr = XRRGetProviderResources(dpy, root);
   XRRScreenResources* res = XRRGetScreenResourcesCurrent(dpy, root);

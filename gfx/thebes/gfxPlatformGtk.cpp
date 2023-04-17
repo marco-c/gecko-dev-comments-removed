@@ -841,42 +841,51 @@ class XrandrSoftwareVsyncSource final : public SoftwareVsyncSource {
     }
 
    private:
+    
+    
+    
     void UpdateVsyncRate() {
-      
-      
-      
-
       struct _XDisplay* dpy = gdk_x11_get_default_xdisplay();
-      Window root = gdk_x11_get_default_root_xwindow();
-      XRRScreenResources* res = XRRGetScreenResourcesCurrent(dpy, root);
 
       
       
       
       double highestRefreshRate = gfxPlatform::GetSoftwareVsyncRate();
 
-      for (int i = 0; i < res->noutput; i++) {
-        XRROutputInfo* outputInfo = XRRGetOutputInfo(dpy, res, res->outputs[i]);
-        if (!outputInfo->crtc) {
-          XRRFreeOutputInfo(outputInfo);
-          continue;
-        }
+      
+      
+      
+      int eventBase, errorBase, major, minor;
+      if (XRRQueryExtension(dpy, &eventBase, &errorBase) &&
+          XRRQueryVersion(dpy, &major, &minor) &&
+          (major > 1 || (major == 1 && minor >= 3))) {
+        Window root = gdk_x11_get_default_root_xwindow();
+        XRRScreenResources* res = XRRGetScreenResourcesCurrent(dpy, root);
 
-        XRRCrtcInfo* crtcInfo = XRRGetCrtcInfo(dpy, res, outputInfo->crtc);
-        for (int j = 0; j < res->nmode; j++) {
-          if (res->modes[j].id == crtcInfo->mode) {
-            double refreshRate = mode_refresh(&res->modes[j]);
-            if (refreshRate > highestRefreshRate) {
-              highestRefreshRate = refreshRate;
-            }
-            break;
+        for (int i = 0; i < res->noutput; i++) {
+          XRROutputInfo* outputInfo =
+              XRRGetOutputInfo(dpy, res, res->outputs[i]);
+          if (!outputInfo->crtc) {
+            XRRFreeOutputInfo(outputInfo);
+            continue;
           }
-        }
 
-        XRRFreeCrtcInfo(crtcInfo);
-        XRRFreeOutputInfo(outputInfo);
+          XRRCrtcInfo* crtcInfo = XRRGetCrtcInfo(dpy, res, outputInfo->crtc);
+          for (int j = 0; j < res->nmode; j++) {
+            if (res->modes[j].id == crtcInfo->mode) {
+              double refreshRate = mode_refresh(&res->modes[j]);
+              if (refreshRate > highestRefreshRate) {
+                highestRefreshRate = refreshRate;
+              }
+              break;
+            }
+          }
+
+          XRRFreeCrtcInfo(crtcInfo);
+          XRRFreeOutputInfo(outputInfo);
+        }
+        XRRFreeScreenResources(res);
       }
-      XRRFreeScreenResources(res);
 
       const double rate = 1000.0 / highestRefreshRate;
       mVsyncRate = mozilla::TimeDuration::FromMilliseconds(rate);
