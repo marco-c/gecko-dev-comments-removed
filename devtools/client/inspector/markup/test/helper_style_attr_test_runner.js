@@ -43,6 +43,11 @@ async function runStyleAttributeAutocompleteTests(inspector, testData) {
     const data = testData[i];
 
     
+    if (data.length == 0) {
+      continue;
+    }
+
+    
     
     const onMutation =
       i === testData.length - 1 ? inspector.once("markupmutation") : null;
