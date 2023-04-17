@@ -217,12 +217,6 @@ already_AddRefed<ClientManager> ClientManager::GetOrCreateForCurrentThread() {
   }
 
   MOZ_DIAGNOSTIC_ASSERT(cm);
-  
-  
-  
-  
-  
-  MOZ_DIAGNOSTIC_ASSERT(!cm->IsShutdown());
   return cm.forget();
 }
 
