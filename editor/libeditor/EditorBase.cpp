@@ -83,7 +83,6 @@
 #include "nsCaret.h"                  
 #include "nsCaseTreatment.h"
 #include "nsCharTraits.h"              
-#include "nsComponentManagerUtils.h"   
 #include "nsContentUtils.h"            
 #include "nsCopySupport.h"             
 #include "nsDOMString.h"               

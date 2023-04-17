@@ -3726,11 +3726,6 @@ class HTMLEditor final : public TextEditor,
                                            const EditorDOMPoint& aPointToInsert,
                                            bool aDoDeleteSelection);
 
-  
-  
-  virtual nsresult PrepareTransferable(
-      nsITransferable** aTransferable) override;
-
   class HTMLTransferablePreparer;
   nsresult PrepareHTMLTransferable(nsITransferable** aTransferable) const;
 
