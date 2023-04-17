@@ -356,6 +356,10 @@ RefPtr<nsMenuX> NativeMenuMac::GetOpenMenuContainingElement(dom::Element* aEleme
     menu = menuChild->as<RefPtr<nsMenuX>>();
   }
 
+  if (!menu->IsOpenForGecko()) {
+    
+    return nullptr;
+  }
   return menu;
 }
 
