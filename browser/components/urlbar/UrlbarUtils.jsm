@@ -187,7 +187,6 @@ var UrlbarUtils = {
   
   
   
-  
   TITLE_TAGS_SEPARATOR: "\x1F",
 
   

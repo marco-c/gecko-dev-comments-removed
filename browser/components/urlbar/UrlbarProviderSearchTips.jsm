@@ -119,7 +119,6 @@ class ProviderSearchTips extends UrlbarProvider {
 
   get PRIORITY() {
     
-    
     return UrlbarProviderTopSites.PRIORITY + 1;
   }
 

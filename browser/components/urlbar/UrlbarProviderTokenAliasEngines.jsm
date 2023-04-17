@@ -178,7 +178,6 @@ class ProviderTokenAliasEngines extends UrlbarProvider {
 
           
           
-          
           if (
             lowerCaseSearchString.startsWith(alias) &&
             UrlbarTokenizer.REGEXP_SPACES_START.test(

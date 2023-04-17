@@ -909,6 +909,7 @@ add_task(async function test_heuristicNonRestricting() {
   await controller.startQuery(context);
 
   
+  
   let firstResult = context.results[0];
   Assert.ok(firstResult.heuristic);
   Assert.equal(firstResult.type, UrlbarUtils.RESULT_TYPE.SEARCH);

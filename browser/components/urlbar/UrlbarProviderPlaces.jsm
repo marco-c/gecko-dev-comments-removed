@@ -1427,7 +1427,7 @@ class ProviderPlaces extends UrlbarProvider {
         let conn = await PlacesUtils.promiseLargeCacheDBConnection();
 
         
-        Sqlite.shutdown.addBlocker("Places UnifiedComplete.js closing", () => {
+        Sqlite.shutdown.addBlocker("UrlbarProviderPlaces closing", () => {
           
           
           

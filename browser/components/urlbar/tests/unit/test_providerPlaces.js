@@ -10,7 +10,7 @@
 const SUGGEST_PREF = "browser.urlbar.suggest.searches";
 const SUGGEST_ENABLED_PREF = "browser.search.suggest.enabled";
 
-add_task(async function test_unifiedComplete() {
+add_task(async function test_places() {
   Services.prefs.setBoolPref(SUGGEST_PREF, true);
   Services.prefs.setBoolPref(SUGGEST_ENABLED_PREF, true);
   let engine = await addTestSuggestionsEngine();
