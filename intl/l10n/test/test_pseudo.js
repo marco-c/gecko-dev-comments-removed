@@ -37,7 +37,7 @@ function getAttributeByName(attributes, name) {
 
 
 
-add_task(async function test_accented_works() {
+add_task(async function test_pseudo_works() {
   Services.prefs.setStringPref("intl.l10n.pseudo", "");
 
   let generateBundles = addMockFileSource();
@@ -64,9 +64,9 @@ add_task(async function test_accented_works() {
     Services.prefs.setStringPref("intl.l10n.pseudo", "accented");
     let message = (await l10n.formatMessages([{id: "key"}]))[0];
 
-    ok(message.value.includes("Ŧħiş iş aa şiƞɠŀee ḿeeşşaaɠee"));
+    ok(message.value.includes("[Ŧħiş iş aa şiƞɠŀee ḿeeşşaaɠee]"));
     let attr0 = getAttributeByName(message.attributes, "tooltip");
-    ok(attr0.value.includes("Ŧħiş iş aa ŧooooŀŧiƥ"));
+    ok(attr0.value.includes("[Ŧħiş iş aa ŧooooŀŧiƥ]"));
     let attr1 = getAttributeByName(message.attributes, "accesskey");
     equal(attr1.value, "f");
   }
