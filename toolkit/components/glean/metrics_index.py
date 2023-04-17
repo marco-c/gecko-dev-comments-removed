@@ -11,7 +11,6 @@ metrics_yamls = [
     "toolkit/components/glean/tests/test_metrics.yaml",
     "toolkit/mozapps/update/metrics.yaml",
     "browser/base/content/metrics.yaml",
-    "gfx/metrics.yaml",
 ]
 
 
