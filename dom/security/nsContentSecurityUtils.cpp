@@ -206,66 +206,6 @@ nsresult RegexEval(const nsAString& aPattern, const nsAString& aString,
 
 
 
-
-
-
-
-
-
-char* nsContentSecurityUtils::SmartFormatCrashString(const char* str) {
-  return nsContentSecurityUtils::SmartFormatCrashString(strdup(str));
-}
-
-char* nsContentSecurityUtils::SmartFormatCrashString(char* str) {
-  auto str_len = strlen(str);
-
-  if (str_len > sPrintfCrashReasonSize) {
-    str[sPrintfCrashReasonSize - 1] = '\0';
-    str_len = strlen(str);
-  }
-  MOZ_RELEASE_ASSERT(sPrintfCrashReasonSize > str_len);
-
-  return str;
-}
-
-
-
-
-
-
-
-nsCString nsContentSecurityUtils::SmartFormatCrashString(
-    const char* part1, const char* part2, const char* format_string) {
-  return SmartFormatCrashString(strdup(part1), strdup(part2), format_string);
-}
-
-nsCString nsContentSecurityUtils::SmartFormatCrashString(
-    char* part1, char* part2, const char* format_string) {
-  auto part1_len = strlen(part1);
-  auto part2_len = strlen(part2);
-
-  auto constant_len = strlen(format_string) - 4;
-
-  if (part1_len + part2_len + constant_len > sPrintfCrashReasonSize) {
-    if (part2_len > 25) {
-      part2 += (part2_len - 25);
-    }
-    part2_len = strlen(part2);
-
-    part1[sPrintfCrashReasonSize - (constant_len + part2_len + 1)] = '\0';
-    part1_len = strlen(part1);
-  }
-  MOZ_RELEASE_ASSERT(sPrintfCrashReasonSize >
-                     constant_len + part1_len + part2_len);
-
-  auto parts = nsPrintfCString(format_string, part1, part2);
-  return std::move(parts);
-}
-
-
-
-
-
 nsString OptimizeFileName(const nsAString& aFileName) {
   nsString optimizedName(aFileName);
 
@@ -465,62 +405,6 @@ FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
   return FilenameTypeAndDetails(kOther, Nothing());
 }
 
-#ifdef NIGHTLY_BUILD
-
-
-void PossiblyCrash(const char* aPrefSuffix, const char* aUnsafeCrashString,
-                   const nsCString& aSafeCrashString) {
-  if (MOZ_UNLIKELY(!XRE_IsParentProcess())) {
-    
-    
-    
-    return;
-  }
-
-  nsCString previous_crashes("security.crash_tracking.");
-  previous_crashes.Append(aPrefSuffix);
-  previous_crashes.Append(".prevCrashes");
-
-  nsCString max_crashes("security.crash_tracking.");
-  max_crashes.Append(aPrefSuffix);
-  max_crashes.Append(".maxCrashes");
-
-  int32_t numberOfPreviousCrashes = 0;
-  numberOfPreviousCrashes = Preferences::GetInt(previous_crashes.get(), 0);
-
-  int32_t maxAllowableCrashes = 0;
-  maxAllowableCrashes = Preferences::GetInt(max_crashes.get(), 0);
-
-  if (numberOfPreviousCrashes >= maxAllowableCrashes) {
-    return;
-  }
-
-  nsresult rv =
-      Preferences::SetInt(previous_crashes.get(), ++numberOfPreviousCrashes);
-  if (NS_FAILED(rv)) {
-    return;
-  }
-
-  nsCOMPtr<nsIPrefService> prefsCom = Preferences::GetService();
-  Preferences* prefs = static_cast<Preferences*>(prefsCom.get());
-
-  if (!prefs->AllowOffMainThreadSave()) {
-    
-    return;
-  }
-
-  rv = prefs->SavePrefFileBlocking();
-  if (!NS_FAILED(rv)) {
-    
-    
-    
-    
-    MOZ_CRASH_UNSAFE_PRINTF(
-        "%s", nsContentSecurityUtils::SmartFormatCrashString(aSafeCrashString.get()));
-  }
-}
-#endif
-
 class EvalUsageNotificationRunnable final : public Runnable {
  public:
   EvalUsageNotificationRunnable(bool aIsSystemPrincipal,
@@ -679,20 +563,29 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
   }
 
   
-  MOZ_LOG(sCSMLog, LogLevel::Error,
+  MOZ_LOG(sCSMLog, LogLevel::Warning,
           ("Blocking eval() %s from file %s and script "
            "provided %s",
            (aIsSystemPrincipal ? "with System Principal" : "in parent process"),
            fileName.get(), NS_ConvertUTF16toUTF8(aScript).get()));
 
   
-#if defined(DEBUG) || defined(FUZZING)
-  auto crashString = nsContentSecurityUtils::SmartFormatCrashString(
-      NS_ConvertUTF16toUTF8(aScript).get(), fileName.get(),
-      (aIsSystemPrincipal
-           ? "Blocking eval() with System Principal with script %s from file %s"
-           : "Blocking eval() in parent process with script %s from file %s"));
-  MOZ_CRASH_UNSAFE_PRINTF("%s", crashString.get());
+#ifdef DEBUG
+  
+  
+  
+  if (fileName.Length() > 475) {
+    fileName.SetLength(475);
+  }
+  nsAutoCString trimmedScript = NS_ConvertUTF16toUTF8(aScript);
+  if (trimmedScript.Length() > 475) {
+    trimmedScript.SetLength(475);
+  }
+  MOZ_CRASH_UNSAFE_PRINTF(
+      "Blocking eval() %s from file %s and script provided "
+      "%s",
+      (aIsSystemPrincipal ? "with System Principal" : "in parent process"),
+      fileName.get(), trimmedScript.get());
 #endif
 
   return false;
@@ -1138,16 +1031,6 @@ bool nsContentSecurityUtils::ValidateScriptFilename(const char* aFilename,
     return true;
   }
 
-  
-  
-  NS_ConvertUTF8toUTF16 filenameU(aFilename);
-  if (StaticPrefs::security_allow_eval_with_system_principal() ||
-      StaticPrefs::security_allow_eval_in_parent_process()) {
-    if (StringEndsWith(filenameU, u"> eval"_ns)) {
-      return true;
-    }
-  }
-
   DetectJsHacks();
 
   if (MOZ_UNLIKELY(sJSHacksPresent)) {
@@ -1167,6 +1050,7 @@ bool nsContentSecurityUtils::ValidateScriptFilename(const char* aFilename,
     return true;
   }
 
+  NS_ConvertUTF8toUTF16 filenameU(aFilename);
   if (StringBeginsWith(filenameU, u"chrome://"_ns)) {
     
     return true;
@@ -1225,25 +1109,6 @@ bool nsContentSecurityUtils::ValidateScriptFilename(const char* aFilename,
   }
   Telemetry::RecordEvent(eventType, mozilla::Some(fileNameTypeAndDetails.first),
                          extra);
-
-#ifdef NIGHTLY_BUILD
-  
-  
-  
-  
-  if (fileNameTypeAndDetails.second.isSome()) {
-    PossiblyCrash("js_load_1", aFilename,
-                  NS_ConvertUTF16toUTF8(fileNameTypeAndDetails.second.value()));
-  } else {
-    PossiblyCrash("js_load_1", aFilename, "(None)"_ns);
-  }
-#elif defined(FUZZING)
-  auto crashString = nsContentSecurityUtils::SmartFormatCrashString(
-      aFilename,
-      NS_ConvertUTF16toUTF8(fileNameTypeAndDetails.second.value().get()),
-      "Blocking a script load %s from file %s");
-  MOZ_CRASH_UNSAFE_PRINTF("%s", crashString.get());
-#endif
 
   
   

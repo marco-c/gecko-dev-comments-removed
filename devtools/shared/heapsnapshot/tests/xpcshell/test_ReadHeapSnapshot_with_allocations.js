@@ -13,14 +13,6 @@ if (typeof Debugger != "function") {
 }
 
 function run_test() {
-  Services.prefs.setBoolPref(
-    "security.allow_parent_unrestricted_js_loads",
-    true
-  );
-  registerCleanupFunction(() => {
-    Services.prefs.clearUserPref("security.allow_parent_unrestricted_js_loads");
-  });
-
   
   const debuggee = new Cu.Sandbox(null);
   const dbg = new Debugger(debuggee);

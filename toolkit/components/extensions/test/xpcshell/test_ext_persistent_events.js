@@ -172,16 +172,6 @@ add_task(async function setup() {
 });
 
 add_task(async function test_persistent_events() {
-  
-  
-  Services.prefs.setBoolPref(
-    "security.allow_parent_unrestricted_js_loads",
-    true
-  );
-  registerCleanupFunction(() => {
-    Services.prefs.clearUserPref("security.allow_parent_unrestricted_js_loads");
-  });
-
   await AddonTestUtils.promiseStartupManager();
 
   let extension = ExtensionTestUtils.loadExtension({
