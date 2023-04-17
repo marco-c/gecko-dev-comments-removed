@@ -7,7 +7,7 @@
 
 idl_test(
   ['mediastream-recording'],
-  ['mediacapture-streams', 'FileAPI', 'html', 'dom', 'WebIDL'],
+  ['mediacapture-streams', 'FileAPI', 'html', 'dom', 'webidl'],
   idl_array => {
     
     let recorder, blob, error;
