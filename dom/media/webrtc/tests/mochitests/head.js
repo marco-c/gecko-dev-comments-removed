@@ -454,19 +454,15 @@ function setupEnvironment() {
       ["media.navigator.video.max_fr", 10],
       ["media.autoplay.default", Ci.nsIAutoplay.ALLOWED]
     );
+  } else {
+    
+    
+    
+    defaultMochitestPrefs.set.push([
+      "media.navigator.mediadatadecoder_h264_enabled",
+      false,
+    ]);
   }
-
-  
-  
-  
-  
-  const alwaysHasHW264 =
-    !!navigator.userAgent.includes("Android") ||
-    !!navigator.userAgent.includes("Mac OS X");
-  defaultMochitestPrefs.set.push([
-    "media.navigator.mediadatadecoder_h264_enabled",
-    alwaysHasHW264,
-  ]);
 
   
   SimpleTest.requestFlakyTimeout("WebRTC inherently depends on timeouts");
