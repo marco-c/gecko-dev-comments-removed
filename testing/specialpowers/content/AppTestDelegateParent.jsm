@@ -6,10 +6,14 @@
 
 const EXPORTED_SYMBOLS = ["AppTestDelegateParent"];
 
-
-const { AppUiTestDelegate } = ChromeUtils.import(
-  "resource://testing-common/AppUiTestDelegate.jsm"
+var { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
 );
+
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  AppUiTestDelegate: "resource://testing-common/AppUiTestDelegate.jsm",
+});
 
 const UUIDGen = Cc["@mozilla.org/uuid-generator;1"].getService(
   Ci.nsIUUIDGenerator
