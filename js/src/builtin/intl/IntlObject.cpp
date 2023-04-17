@@ -662,7 +662,7 @@ static ArrayObject* AvailableCalendars(JSContext* cx) {
     
     auto keywords = mozilla::intl::Calendar::GetBcp47KeywordValuesForLocale("");
     if (keywords.isErr()) {
-      intl::ReportInternalError(cx);
+      intl::ReportInternalError(cx, keywords.unwrapErr());
       return nullptr;
     }
 

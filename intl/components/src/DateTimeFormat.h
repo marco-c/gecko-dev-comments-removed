@@ -435,8 +435,7 @@ class DateTimeFormat final {
 
 
 
-  Result<UniquePtr<Calendar>, InternalError> CloneCalendar(
-      double aUnixEpoch) const;
+  Result<UniquePtr<Calendar>, ICUError> CloneCalendar(double aUnixEpoch) const;
 
   
 

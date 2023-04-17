@@ -106,7 +106,7 @@ class Calendar final {
 
 
 
-  static Result<SpanEnumeration<char>, InternalError>
+  static Result<SpanEnumeration<char>, ICUError>
   GetLegacyKeywordValuesForLocale(const char* aLocale);
 
  private:
@@ -123,7 +123,7 @@ class Calendar final {
   
 
 
-  static Result<Bcp47IdentifierEnumeration, InternalError>
+  static Result<Bcp47IdentifierEnumeration, ICUError>
   GetBcp47KeywordValuesForLocale(const char* aLocale);
 
   ~Calendar();
