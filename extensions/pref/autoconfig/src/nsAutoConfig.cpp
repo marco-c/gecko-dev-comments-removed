@@ -277,7 +277,8 @@ nsresult nsAutoConfig::downloadAutoConfig() {
 
 
 
-    if (!mozilla::SpinEventLoopUntil([&]() { return mLoaded; })) {
+    if (!mozilla::SpinEventLoopUntil("nsAutoConfig::downloadAutoConfig"_ns,
+                                     [&]() { return mLoaded; })) {
       return NS_ERROR_FAILURE;
     }
 
