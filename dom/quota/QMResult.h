@@ -11,6 +11,10 @@
 
 namespace mozilla {
 
+struct Ok;
+template <typename V, typename E>
+class Result;
+
 
 
 
@@ -50,6 +54,10 @@ class QMResult {
 };
 
 inline QMResult ToQMResult(nsresult aValue) { return QMResult(aValue); }
+
+inline Result<Ok, QMResult> ToResult(const QMResult& aValue);
+
+inline Result<Ok, QMResult> ToResult(QMResult&& aValue);
 
 }  
 
