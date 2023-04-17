@@ -41,8 +41,7 @@ class MediaEngine {
 
 
 
-  virtual void EnumerateDevices(uint64_t aWindowId, dom::MediaSourceEnum,
-                                MediaSinkEnum,
+  virtual void EnumerateDevices(dom::MediaSourceEnum, MediaSinkEnum,
                                 nsTArray<RefPtr<MediaDevice>>*) = 0;
 
   virtual void Shutdown() = 0;
