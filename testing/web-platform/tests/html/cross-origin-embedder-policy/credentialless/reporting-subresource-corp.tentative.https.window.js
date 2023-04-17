@@ -1,13 +1,7 @@
-<!doctype html>
-<html>
-<meta name="timeout" content="long">
-<body>
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script src="/common/utils.js"></script>
-<script src="/common/get-host-info.sub.js"></script>
-<script src="/service-workers/service-worker/resources/test-helpers.sub.js"></script>
-<script>
+
+
+
+
 const {ORIGIN, REMOTE_ORIGIN} = get_host_info();
 const BASE = "/html/cross-origin-embedder-policy/resources";
 const REPORTING_FRAME_URL = `${ORIGIN}${BASE}/reporting-empty-frame.html` +
@@ -32,7 +26,7 @@ async function observeReports(global, expected_count) {
   });
 
   await receivedEveryReports;
-  // Wait 1000ms more to catch additionnal unexpected reports.
+  
   await new Promise(r => step_timeout(r, 1000));
   return reports;
 }
@@ -57,12 +51,12 @@ function checkReport(report, contextUrl, blockedUrl, disposition, destination) {
   assert_equals(report.body.destination, destination);
 }
 
-// A redirection is used, so that the initial request is same-origin and is
-// proxyied through the service worker. The ServiceWorker is COEP:unsafe-none,
-// so it will make the cross-origin request with credentials. The fetch will
-// succeed, but the response will be blocked by CORP when entering the
-// COEP:credentialless document.
-// https://github.com/w3c/ServiceWorker/issues/1592
+
+
+
+
+
+
 promise_test(async (t) => {
   const url = `${ORIGIN}/common/redirect.py?location=` +
        encodeURIComponent(`${REMOTE_ORIGIN}/common/text-plain.txt`);
@@ -78,5 +72,3 @@ promise_test(async (t) => {
   assert_equals(reports.length, 1);
   checkReport(reports[0], REPORTING_FRAME_URL, url, 'enforce', '');
 });
-
-</script>

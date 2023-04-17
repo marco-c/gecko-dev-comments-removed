@@ -1,18 +1,15 @@
-<meta name="timeout" content="long">
-<meta name="variant" content="?document">
-<meta name="variant" content="?dedicated_worker">
-<meta name="variant" content="?shared_worker">
-<meta name="variant" content="?service_worker">
-<script src=/resources/testharness.js></script>
-<script src=/resources/testharnessreport.js></script>
-<script src="/common/get-host-info.sub.js"></script>
-<script src="/common/utils.js"></script>
-<script src="/common/dispatcher/dispatcher.js"></script>
-<script src="./resources/common.js"></script>
-<script>
 
-// Fetch a resource and store it into CacheStorage from |storer| context. Then
-// check if it can be retrieved via CacheStorage.match from |retriever| context.
+
+
+
+
+
+
+
+
+
+
+
 const cacheStorageTest = (
   description,
   storer,
@@ -27,8 +24,8 @@ const cacheStorageTest = (
       `&${token()}`;
     const this_token = token();
 
-    // Fetch a request from |stored|. Store the opaque response into
-    // CacheStorage.
+    
+    
     send(storer, `
       const cache = await caches.open("v1");
       const fetch_request = new Request("${url}", {
@@ -41,7 +38,7 @@ const cacheStorageTest = (
     `);
     assert_equals(await receive(this_token), "stored");
 
-    // Retrieved it from |retriever|.
+    
     send(retriever, `
       const cache = await caches.open("v1");
       try {
@@ -55,9 +52,9 @@ const cacheStorageTest = (
   }, description);
 };
 
-// Execute the same set of tests for every type of execution contexts:
-// Documents, DedicatedWorkers, SharedWorkers, and ServiceWorkers. The results
-// should be independent of the context.
+
+
+
 const environment = location.search.substr(1);
 const constructor = environments[environment];
 
@@ -151,5 +148,3 @@ cacheStorageTest(`[${environment}] require_corp => require-corp`,
   corp_cross_origin,
   "include",
   "retrieved");
-
-</script>

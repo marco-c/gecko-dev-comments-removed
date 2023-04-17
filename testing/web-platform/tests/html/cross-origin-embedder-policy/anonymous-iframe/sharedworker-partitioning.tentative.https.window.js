@@ -1,20 +1,16 @@
-<!doctype html>
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script src="/common/utils.js"></script>
-<body>
-<script>
+
+
 const sw_url = location.pathname.replace(/[^/]*$/, '') +
       "./resources/sharedworker-partitioning-helper.js";
 
 promise_test(async t => {
-  // Create 4 iframes (two normal and two anonymous ones) and create
-  // a shared worker with the same url in all of them.
-  //
-  // Creating the same shared worker again with the same url is a
-  // no-op. However, anonymous iframes get partitioned shared workers,
-  // so we should have a total of 2 shared workers at the end (one for
-  // the normal iframes and one for the anonymous ones).
+  
+  
+  
+  
+  
+  
+  
   let iframes = await Promise.all([
     { name: "normal", anonymous: false},
     { name: "normal_control", anonymous: false},
@@ -34,7 +30,7 @@ promise_test(async t => {
     return { iframe: iframe, name: name, sw: sw };
   }));
 
-  // Ping each worker telling him which iframe it belongs to.
+  
   await Promise.all(iframes.map(iframe => {
     iframe.sw.port.postMessage({ action: 'record', from: iframe.name});
     return new Promise(resolve => {
@@ -44,7 +40,7 @@ promise_test(async t => {
     });
   }));
 
-  // Ping each (iframe, sharedworker) asking for which messages it got.
+  
   let msgs = await Promise.all(iframes.map(iframe => {
     iframe.sw.port.postMessage({ action: 'retrieve', from: iframe.name });
     return new Promise(resolve => {
@@ -54,8 +50,8 @@ promise_test(async t => {
     });
   }));
 
-  // The "normal" iframe sharedworker belongs to the "normal" and the
-  // "normal_control" iframes.
+  
+  
   assert_true(!!msgs[0]["normal"] &&
               !!msgs[0]["normal_control"] &&
               !msgs[0]["anonymous"] &&
@@ -64,8 +60,8 @@ promise_test(async t => {
               '{"normal": true, "normal_control": true}, ' +
               'but instead returned ' + JSON.stringify(msgs[0]));
 
-  // The "normal_control" iframe shares the same sharedworker as the "normal"
-  // iframe.
+  
+  
   assert_true(!!msgs[1]["normal"] &&
               !!msgs[1]["normal_control"] &&
               !msgs[1]["anonymous"] &&
@@ -74,8 +70,8 @@ promise_test(async t => {
               '{"normal": true, "normal_control": true}, ' +
               'but instead returned ' + JSON.stringify(msgs[1]));
 
-  // The "anonymous" iframe sharedworker belongs to the "anonymous" and the
-  // "anonymous_control" iframes.
+  
+  
   assert_true(!msgs[2]["normal"] &&
               !msgs[2]["normal_control"] &&
               !!msgs[2]["anonymous"] &&
@@ -84,8 +80,8 @@ promise_test(async t => {
               '{"anonymous": true, "anonymous_control": true}, ' +
               'but instead returned ' + JSON.stringify(msgs[2]));
 
-  // The "anonymous_control" iframe shares the same sharedworker as
-  // the "anonymous" iframe.
+  
+  
   assert_true(!msgs[3]["normal"] &&
               !msgs[3]["normal_control"] &&
               !!msgs[3]["anonymous"] &&
@@ -95,6 +91,3 @@ promise_test(async t => {
               'but instead returned ' + JSON.stringify(msgs[3]));
 
 }, "Anonymous iframes get partitioned shared workers.");
-
-</script>
-</body>

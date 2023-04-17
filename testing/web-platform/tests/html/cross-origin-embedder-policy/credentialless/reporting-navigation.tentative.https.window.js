@@ -1,12 +1,6 @@
-<!doctype html>
-<html>
-<meta name="timeout" content="long">
-<body>
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script src="/common/get-host-info.sub.js"></script>
-<script src="./resources/common.js"></script>
-<script>
+
+
+
 const {ORIGIN, REMOTE_ORIGIN} = get_host_info();
 const COEP = '|header(cross-origin-embedder-policy,credentialless)';
 const COEP_RO =
@@ -43,13 +37,13 @@ function loadFrame(document, url) {
   });
 }
 
-// |parentSuffix| is a suffix for the parent frame URL.
-// |targetUrl| is a URL for the target frame.
+
+
 async function loadFrames(test, parentSuffix, targetUrl) {
   const frame = await loadFrame(document, FRAME_URL + parentSuffix);
   test.add_cleanup(() => frame.remove());
-  // Here we don't need "await". This loading may or may not succeed, and
-  // we're not interested in the result.
+  
+  
   loadFrame(frame.contentDocument, targetUrl);
 
   return frame;
@@ -72,7 +66,7 @@ async function observeReports(global, expected_count) {
 
   });
 
-  // Wait 500ms more to catch additionnal unexpected reports.
+  
   await receivedEveryReports;
   await new Promise(r => step_timeout(r, 500));
   return reports;
@@ -82,18 +76,18 @@ function desc(headers) {
   return headers === '' ? '(none)' : headers;
 }
 
-// CASES is a list of test case. Each test case consists of:
-//   parent_headers: the suffix of the URL of the parent frame.
-//   target_headers: the suffix of the URL of the target frame.
-//   expected_reports: one of:
-//     'CORP':    CORP violation
-//     'CORP-RO': CORP violation (report only)
-//     'NAV':     COEP mismatch between the frames.
-//     'NAV-RO':  COEP mismatch between the frames (report only).
+
+
+
+
+
+
+
+
 const reportingTest = function(
   parent_headers, target_headers, expected_reports) {
-  // These tests are very slow, so they must be run in parallel using
-  // async_test.
+  
+  
   promise_test_parallel(async t => {
     const targetUrl = REMOTE_FRAME_URL + target_headers;
     const parent = await loadFrames(t, parent_headers, targetUrl);
@@ -143,6 +137,3 @@ reportingTest(COEP_RO, CORP_CROSS_ORIGIN, ['NAV-RO']);
 reportingTest(COEP_RO, COEP + CORP_CROSS_ORIGIN, []);
 
 reportingTest(COEP, COEP_RO + CORP_CROSS_ORIGIN, ['NAV']);
-
-</script>
-</body></html>

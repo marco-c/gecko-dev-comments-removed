@@ -1,10 +1,7 @@
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script src="/common/get-host-info.sub.js"></script>
-<script src="/common/utils.js"></script>
-<script src="/common/dispatcher/dispatcher.js"></script>
-<script src="./resources/common.js"></script>
-<script>
+
+
+
+
 
 promise_test(async test => {
   const same_origin = get_host_info().HTTPS_ORIGIN;
@@ -20,14 +17,14 @@ promise_test(async test => {
       cookie_same_site_none),
   ]);
 
-  // One window with COEP:none. (control)
+  
   const w_control_token = token();
   const w_control_url = same_origin + executor_path +
     coep_none + `&uuid=${w_control_token}`
   const w_control = window.open(w_control_url);
   add_completion_callback(() => w_control.close());
 
-  // One window with COEP:credentialless. (experiment)
+  
   const w_credentialless_token = token();
   const w_credentialless_url = same_origin + executor_path +
     coep_credentialless + `&uuid=${w_credentialless_token}`;
@@ -68,7 +65,7 @@ promise_test(async test => {
     }, `fetch ${description}`)
   };
 
-  // Cookies are never sent with credentials='omit'
+  
   fetchTest("same-origin + no-cors + credentials:omit",
     same_origin, 'no-cors', 'omit',
     undefined,
@@ -86,7 +83,7 @@ promise_test(async test => {
     undefined,
     undefined);
 
-  // Same-origin request contains Cookies.
+  
   fetchTest("same-origin + no-cors + credentials:include",
     same_origin, 'no-cors', 'include',
     cookie_same_origin,
@@ -104,8 +101,8 @@ promise_test(async test => {
     cookie_same_origin,
     cookie_same_origin);
 
-  // Cross-origin CORS requests contains Cookies, if credentials mode is set to
-  // 'include'. This does not depends on COEP.
+  
+  
   fetchTest("cross-origin + cors + credentials:include",
     cross_origin, 'cors', 'include',
     cookie_cross_origin,
@@ -115,9 +112,9 @@ promise_test(async test => {
     undefined,
     undefined);
 
-  // Cross-origin no-CORS requests includes Cookies when:
-  // 1. credentials mode is 'include'
-  // 2. COEP: is not credentialless.
+  
+  
+  
   fetchTest("cross-origin + no-cors + credentials:include",
     cross_origin, 'no-cors', 'include',
     cookie_cross_origin,
@@ -128,5 +125,3 @@ promise_test(async test => {
     undefined,
     undefined);
 }, "");
-
-</script>

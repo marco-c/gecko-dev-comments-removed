@@ -1,11 +1,8 @@
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script src="/common/get-host-info.sub.js"></script>
-<script src="/common/utils.js"></script>
-<script src="/common/dispatcher/dispatcher.js"></script>
-<script src="../credentialless/resources/common.js"></script>
-<script src="./resources/common.js"></script>
-<script>
+
+
+
+
+
 
 const same_origin = get_host_info().HTTPS_ORIGIN;
 const cross_origin = get_host_info().HTTPS_REMOTE_ORIGIN;
@@ -14,10 +11,10 @@ const local_storage_same_origin = "same_origin";
 const local_storage_cross_origin = "cross_origin";
 
 promise_test_parallel(async test => {
-  // Add an item in the localStorage on same_origin.
+  
   localStorage.setItem(local_storage_key, local_storage_same_origin);
 
-  // Add an item in the localStorage on cross_origin.
+  
   {
     const w_token = token();
     const w_url = cross_origin + executor_path + `&uuid=${w_token}`;
@@ -53,5 +50,3 @@ promise_test_parallel(async test => {
   }, "cross_origin anonymous iframe can't access the localStorage");
 
 }, "Setup")
-
-</script>

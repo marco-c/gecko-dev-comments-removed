@@ -1,13 +1,9 @@
-<!doctype html>
-<meta name="timeout" content="long">
-<script src="/resources/testharness.js"></script>
-<script src="/resources/testharnessreport.js"></script>
-<script src="/common/get-host-info.sub.js"></script>
-<script src="/common/utils.js"></script>
-<script src="/common/dispatcher/dispatcher.js"></script>
-<script src="../credentialless/resources/common.js"></script>
-<body>
-<script>
+
+
+
+
+
+
 const {ORIGIN, REMOTE_ORIGIN} = get_host_info();
 const control_iframe = document.createElement('iframe');
 const anonymous_iframe = document.createElement('iframe');
@@ -29,8 +25,8 @@ promise_setup(async t => {
   await Promise.all([createControlIframe, createAnonymousIframe]);
 });
 
-// Create cross-origin popup from iframes. The opener should be blocked for
-// anonymous iframe and work for normal iframe.
+
+
 promise_test(async t => {
   const control_token = token();
   const control_src = REMOTE_ORIGIN + executor_path + `&uuid=${control_token}`;
@@ -49,8 +45,8 @@ promise_test(async t => {
     anonymous_popup, null, "Opener from anonymous iframe should be blocked.");
 }, 'Cross-origin popup from normal/anonymous iframes.');
 
-// Create a same-origin popup from iframes. The opener should be blocked for
-// anonymous iframe and work for normal iframe.
+
+
 promise_test(async t => {
   const control_token = token();
   const control_src = ORIGIN + executor_path + `&uuid=${control_token}`;
@@ -68,5 +64,3 @@ promise_test(async t => {
   assert_equals(
     anonymous_popup, null, "Opener from anonymous iframe should be blocked.");
 }, 'Same-origin popup from normal/anonymous iframes.');
-</script>
-</body>
