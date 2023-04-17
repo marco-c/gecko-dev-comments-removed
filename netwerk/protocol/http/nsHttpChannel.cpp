@@ -134,6 +134,9 @@
 #include "mozilla/dom/SecFetch.h"
 #include "mozilla/net/TRRService.h"
 #include "mozilla/URLQueryStringStripper.h"
+#ifdef XP_WIN
+#  include "HttpWinUtils.h"
+#endif
 
 #ifdef MOZ_TASK_TRACER
 #  include "GeckoTaskTracer.h"
@@ -388,6 +391,19 @@ nsresult nsHttpChannel::PrepareToConnect() {
   LOG(("nsHttpChannel::PrepareToConnect [this=%p]\n", this));
 
   AddCookiesToRequest();
+
+#ifdef XP_WIN
+  
+  
+  
+  if (StaticPrefs::network_http_windows10_sso_enabled() &&
+      mURI->SchemeIs("https") &&
+      mLoadInfo->GetExternalContentPolicyType() ==
+          ExtContentPolicy::TYPE_DOCUMENT &&
+      !(mLoadFlags & LOAD_ANONYMOUS) && !mPrivateBrowsing) {
+    AddWindowsSSO(this);
+  }
+#endif
 
   
   CallOnModifyRequestObservers();
