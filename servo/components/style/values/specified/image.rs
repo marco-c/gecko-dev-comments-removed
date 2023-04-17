@@ -1233,8 +1233,11 @@ impl MozImageRect {
 #[repr(u8)]
 pub enum ImageRendering {
     Auto,
+    Smooth,
     #[parse(aliases = "-moz-crisp-edges")]
     CrispEdges,
+    Pixelated,
+    
     
     
     
@@ -1244,6 +1247,4 @@ pub enum ImageRendering {
     
     Optimizespeed,
     Optimizequality,
-    #[cfg(feature = "servo")]
-    Pixelated,
 }
