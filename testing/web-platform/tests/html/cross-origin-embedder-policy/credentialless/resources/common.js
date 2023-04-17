@@ -11,6 +11,10 @@ const coep_require_corp =
     '|header(Cross-Origin-Embedder-Policy,require-corp)';
 
 
+const coep_report_only_credentialless =
+    '|header(Cross-Origin-Embedder-Policy-Report-Only,cors-or-credentialless)';
+
+
 const coop_same_origin =
     '|header(Cross-Origin-Opener-Policy,same-origin)';
 
