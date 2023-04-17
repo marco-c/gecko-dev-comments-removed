@@ -115,8 +115,9 @@ void CacheRegisterAllocator::saveIonLiveRegisters(MacroAssembler& masm,
   freeDeadOperandLocations(masm);
 
   
-  size_t sizeOfLiveRegsInBytes = liveRegs.gprs().size() * sizeof(intptr_t) +
-                                 liveRegs.fpus().getPushSizeInBytes();
+  
+  
+  size_t sizeOfLiveRegsInBytes = masm.PushRegsInMaskSizeInBytes(liveRegs);
 
   MOZ_ASSERT(sizeOfLiveRegsInBytes > 0);
 

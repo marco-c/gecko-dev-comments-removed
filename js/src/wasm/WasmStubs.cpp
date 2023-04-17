@@ -586,18 +586,6 @@ static const LiveRegisterSet NonVolatileRegs =
                     FloatRegisterSet(FloatRegisters::NonVolatileMask));
 #endif
 
-#if defined(JS_CODEGEN_NONE)
-static const unsigned NonVolatileRegsPushSize = 0;
-#elif defined(ENABLE_WASM_SIMD) && defined(JS_CODEGEN_ARM64)
-static const unsigned NonVolatileRegsPushSize =
-    NonVolatileRegs.gprs().size() * sizeof(intptr_t) +
-    FloatRegister::GetPushSizeInBytesForWasmStubs(NonVolatileRegs.fpus());
-#else
-static const unsigned NonVolatileRegsPushSize =
-    NonVolatileRegs.gprs().size() * sizeof(intptr_t) +
-    NonVolatileRegs.fpus().getPushSizeInBytes();
-#endif
-
 static const unsigned NumExtraPushed = 2;  
 
 #ifdef JS_CODEGEN_ARM64
@@ -605,9 +593,6 @@ static const unsigned WasmPushSize = 16;
 #else
 static const unsigned WasmPushSize = sizeof(void*);
 #endif
-
-static const unsigned FramePushedBeforeAlign =
-    NonVolatileRegsPushSize + NumExtraPushed * WasmPushSize;
 
 static void AssertExpectedSP(MacroAssembler& masm) {
 #ifdef JS_CODEGEN_ARM64
@@ -790,7 +775,16 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   
   masm.setFramePushed(0);
   PushRegsInMask(masm, NonVolatileRegs);
-  MOZ_ASSERT(masm.framePushed() == NonVolatileRegsPushSize);
+
+  const unsigned nonVolatileRegsPushSize =
+#if defined(ENABLE_WASM_SIMD) && defined(JS_CODEGEN_ARM64)
+      NonVolatileRegs.gprs().size() * sizeof(intptr_t) +
+      FloatRegister::GetPushSizeInBytesForWasmStubs(NonVolatileRegs.fpus());
+#else
+      masm.PushRegsInMaskSizeInBytes(NonVolatileRegs);
+#endif
+
+  MOZ_ASSERT(masm.framePushed() == nonVolatileRegsPushSize);
 
   
   
@@ -831,7 +825,10 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
 
   
   
-  MOZ_ASSERT(masm.framePushed() == FramePushedBeforeAlign);
+  const unsigned framePushedBeforeAlign =
+      nonVolatileRegsPushSize + NumExtraPushed * WasmPushSize;
+
+  MOZ_ASSERT(masm.framePushed() == framePushedBeforeAlign);
   masm.setFramePushed(0);
 
   
@@ -877,7 +874,7 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   masm.PopStackPtr();
 #endif
   MOZ_ASSERT(masm.framePushed() == 0);
-  masm.setFramePushed(FramePushedBeforeAlign);
+  masm.setFramePushed(framePushedBeforeAlign);
 
   
   WasmPop(masm, argv);

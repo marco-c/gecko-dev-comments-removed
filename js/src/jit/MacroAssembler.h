@@ -411,13 +411,42 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  size_t PushRegsInMaskSizeInBytes(LiveRegisterSet set)
+      DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
+
   void PushRegsInMask(LiveRegisterSet set)
       DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
   void PushRegsInMask(LiveGeneralRegisterSet set);
 
-  
-  
-  
   
   
   
@@ -428,6 +457,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void PopRegsInMask(LiveGeneralRegisterSet set);
   void PopRegsInMaskIgnore(LiveRegisterSet set, LiveRegisterSet ignore)
       DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
+
+  
+  
 
   void Push(const Operand op) DEFINED_ON(x86_shared);
   void Push(Register reg) PER_SHARED_ARCH;
