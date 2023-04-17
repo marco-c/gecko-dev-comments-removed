@@ -97,7 +97,12 @@ class ProviderInputHistory extends UrlbarProvider {
 
 
   isActive(queryContext) {
-    return UrlbarPrefs.get("suggest.history") && !queryContext.searchMode;
+    return (
+      (UrlbarPrefs.get("suggest.history") ||
+        UrlbarPrefs.get("suggest.bookmark") ||
+        UrlbarPrefs.get("suggest.openpage")) &&
+      !queryContext.searchMode
+    );
   }
 
   
@@ -151,10 +156,14 @@ class ProviderInputHistory extends UrlbarProvider {
         continue;
       }
 
-      let resultSource = UrlbarUtils.RESULT_SOURCE.HISTORY;
+      let resultSource;
       if (bookmarked && UrlbarPrefs.get("suggest.bookmark")) {
         resultSource = UrlbarUtils.RESULT_SOURCE.BOOKMARKS;
         resultTitle = bookmarkTitle || historyTitle;
+      } else if (UrlbarPrefs.get("suggest.history")) {
+        resultSource = UrlbarUtils.RESULT_SOURCE.HISTORY;
+      } else {
+        continue;
       }
 
       let resultTags = tags
