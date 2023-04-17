@@ -238,7 +238,8 @@ var BackgroundUpdate = {
     let binary = Services.dirsvc.get("XREExeF", Ci.nsIFile);
     let args = [
       "--MOZ_LOG",
-      "prependheader,timestamp,append,maxsize:1,Dump:5",
+      
+      "sync,prependheader,timestamp,append,maxsize:1,Dump:5",
       "--MOZ_LOG_FILE",
       
       
