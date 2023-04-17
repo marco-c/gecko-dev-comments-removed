@@ -19,9 +19,9 @@ namespace image {
 class MOZ_STACK_CLASS AutoRestoreSVGState final {
  public:
   AutoRestoreSVGState(const SVGDrawingParameters& aParams,
-                      SVGDocumentWrapper* aSVGDocumentWrapper, bool& aIsDrawing,
+                      SVGDocumentWrapper* aSVGDocumentWrapper,
                       bool aContextPaint)
-      : mIsDrawing(aIsDrawing)
+      : mIsDrawing(aSVGDocumentWrapper->mIsDrawing)
         
         
         ,
@@ -29,10 +29,10 @@ class MOZ_STACK_CLASS AutoRestoreSVGState final {
         
         ,
         mTime(aSVGDocumentWrapper->GetRootSVGElem(), aParams.animationTime) {
-    MOZ_ASSERT(!aIsDrawing);
+    MOZ_ASSERT(!mIsDrawing.SavedValue());
     MOZ_ASSERT(aSVGDocumentWrapper->GetDocument());
 
-    aIsDrawing = true;
+    aSVGDocumentWrapper->mIsDrawing = true;
 
     
     if (aContextPaint) {

@@ -150,7 +150,6 @@ class VectorImage final : public ImageResource, public nsIStreamListener {
   bool mDiscardable;             
   bool mIsFullyLoaded;           
                                  
-  bool mIsDrawing;               
   bool mHaveAnimations;          
                                  
   bool mHasPendingInvalidation;  

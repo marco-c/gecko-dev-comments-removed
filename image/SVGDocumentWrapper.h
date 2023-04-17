@@ -31,10 +31,11 @@ class SVGDocument;
 }  
 
 namespace image {
+class AutoRestoreSVGState;
 
 class SVGDocumentWrapper final : public nsIStreamListener,
                                  public nsIObserver,
-                                 nsSupportsWeakReference {
+                                 public nsSupportsWeakReference {
  public:
   SVGDocumentWrapper();
 
@@ -104,6 +105,13 @@ class SVGDocumentWrapper final : public nsIStreamListener,
   
 
 
+
+
+  bool IsDrawing() const { return mIsDrawing; }
+
+  
+
+
   void StartAnimation();
   void StopAnimation();
   void ResetAnimation();
@@ -117,6 +125,8 @@ class SVGDocumentWrapper final : public nsIStreamListener,
   void FlushLayout();
 
  private:
+  friend class AutoRestoreSVGState;
+
   ~SVGDocumentWrapper();
 
   nsresult SetupViewer(nsIRequest* aRequest, nsIContentViewer** aViewer,
@@ -130,9 +140,18 @@ class SVGDocumentWrapper final : public nsIStreamListener,
   nsCOMPtr<nsIStreamListener> mListener;
   bool mIgnoreInvalidation;
   bool mRegisteredForXPCOMShutdown;
+  bool mIsDrawing;
 };
 
 }  
 }  
+
+
+
+
+
+inline nsISupports* ToSupports(mozilla::image::SVGDocumentWrapper* p) {
+  return NS_ISUPPORTS_CAST(nsSupportsWeakReference*, p);
+}
 
 #endif  
