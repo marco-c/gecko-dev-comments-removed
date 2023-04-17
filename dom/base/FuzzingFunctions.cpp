@@ -50,7 +50,7 @@ void FuzzingFunctions::Crash(const GlobalObject& aGlobalObject,
 
 
 void FuzzingFunctions::CycleCollect(const GlobalObject&) {
-  nsJSContext::CycleCollectNow(CCReason::API);
+  nsJSContext::CycleCollectNow();
 }
 
 void FuzzingFunctions::MemoryPressure(const GlobalObject&) {

@@ -240,7 +240,7 @@ static int FuzzingRunNetworkHttp(const uint8_t* data, size_t size) {
   
   SpinEventLoopUntil(
       "FuzzingRunNetworkHttp(channel == nullptr)"_ns, [&]() -> bool {
-        nsCycleCollector_collect(CCReason::API, nullptr);
+        nsCycleCollector_collect(nullptr);
         nsCOMPtr<nsIHttpChannel> channel = do_QueryReferent(channelRef);
         return channel == nullptr;
       });
