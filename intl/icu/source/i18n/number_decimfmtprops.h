@@ -52,8 +52,7 @@ public:
     }
 
     CurrencyPluralInfoWrapper& operator=(const CurrencyPluralInfoWrapper& other) {
-        if (this != &other &&  
-                !other.fPtr.isNull()) {
+        if (!other.fPtr.isNull()) {
             fPtr.adoptInstead(new CurrencyPluralInfo(*other.fPtr));
         }
         return *this;

@@ -115,6 +115,17 @@ static Vector<const char> TrimLeadingZeros(Vector<const char> buffer) {
   return Vector<const char>(buffer.start(), 0);
 }
 
+
+static Vector<const char> TrimTrailingZeros(Vector<const char> buffer) {
+  for (int i = buffer.length() - 1; i >= 0; --i) {
+    if (buffer[i] != '0') {
+      return buffer.SubVector(0, i + 1);
+    }
+  }
+  return Vector<const char>(buffer.start(), 0);
+}
+
+
 static void CutToMaxSignificantDigits(Vector<const char> buffer,
                                        int exponent,
                                        char* significant_buffer,
@@ -206,9 +217,7 @@ static bool DoubleStrtod(Vector<const char> trimmed,
                          double* result) {
 #if !defined(DOUBLE_CONVERSION_CORRECT_DOUBLE_OPERATIONS)
   
-  (void) trimmed;
-  (void) exponent;
-  (void) result;
+  
   
   
   
@@ -464,11 +473,6 @@ static bool IsNonZeroDigit(const char d) {
   return ('1' <= d) && (d <= '9');
 }
 
-#ifdef __has_cpp_attribute
-#if __has_cpp_attribute(maybe_unused)
-[[maybe_unused]]
-#endif
-#endif
 static bool AssertTrimmedDigits(const Vector<const char>& buffer) {
   for(int i = 0; i < buffer.length(); ++i) {
     if(!IsDigit(buffer[i])) {
@@ -541,12 +545,6 @@ float Strtof(Vector<const char> buffer, int exponent) {
   TrimAndCut(buffer, exponent, copy_buffer, kMaxSignificantDecimalDigits,
              &trimmed, &updated_exponent);
   exponent = updated_exponent;
-  return StrtofTrimmed(trimmed, exponent);
-}
-
-float StrtofTrimmed(Vector<const char> trimmed, int exponent) {
-  DOUBLE_CONVERSION_ASSERT(trimmed.length() <= kMaxSignificantDecimalDigits);
-  DOUBLE_CONVERSION_ASSERT(AssertTrimmedDigits(trimmed));
 
   double double_guess;
   bool is_correct = ComputeGuess(trimmed, exponent, &double_guess);

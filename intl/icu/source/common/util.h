@@ -13,10 +13,10 @@
 #ifndef ICU_UTIL_H
 #define ICU_UTIL_H
 
-#include "charstr.h"
-#include "unicode/unistr.h"
-#include "unicode/uobject.h"
 #include "unicode/utypes.h"
+#include "unicode/uobject.h"
+#include "unicode/unistr.h"
+
 
 
 

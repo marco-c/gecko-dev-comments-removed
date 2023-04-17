@@ -321,7 +321,6 @@ LSR XLikelySubtags::makeMaximizedLsrFrom(const Locale &locale, UErrorCode &error
     const char *name = locale.getName();
     if (uprv_isAtSign(name[0]) && name[1] == 'x' && name[2] == '=') {  
         
-        
         return LSR(name, "", "", LSR::EXPLICIT_LSR);
     }
     return makeMaximizedLsr(locale.getLanguage(), locale.getScript(), locale.getCountry(),

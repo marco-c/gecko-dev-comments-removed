@@ -36,7 +36,8 @@ class IntMeasures : public MaybeStackArray<int64_t, 2> {
 
 
 
-    IntMeasures() : MaybeStackArray<int64_t, 2>() {}
+    IntMeasures() : MaybeStackArray<int64_t, 2>() {
+    }
 
     
 
@@ -84,11 +85,6 @@ struct MicroProps : public MicroPropsGenerator {
     char nsName[9];
 
     
-    
-    
-    const char *gender;
-
-    
     const DecimalFormatSymbols* symbols;
 
     
@@ -128,12 +124,7 @@ struct MicroProps : public MicroPropsGenerator {
 
     
     
-    
     IntMeasures mixedMeasures;
-
-    
-    int32_t indexOfQuantity = -1;
-
     
     int32_t mixedMeasuresCount = 0;
 

@@ -856,10 +856,6 @@ UChar32  RBBIRuleScanner::nextCharLL() {
         return (UChar32)-1;
     }
     ch         = fRB->fRules.char32At(fNextIndex);
-    if (U_IS_SURROGATE(ch)) {
-        error(U_ILLEGAL_CHAR_FOUND);
-        return U_SENTINEL;
-    }
     fNextIndex = fRB->fRules.moveIndex32(fNextIndex, 1);
 
     if (ch == chCR ||

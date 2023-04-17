@@ -571,6 +571,7 @@ public:
 
     void minimizeSubtags(UErrorCode& status);
 
+#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -578,6 +579,7 @@ public:
 
 
     void canonicalize(UErrorCode& status);
+#endif  
 
     
 

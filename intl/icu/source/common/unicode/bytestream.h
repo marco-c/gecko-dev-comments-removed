@@ -71,6 +71,7 @@ public:
 
   virtual void Append(const char* bytes, int32_t n) = 0;
 
+#ifndef U_HIDE_DRAFT_API
   
 
 
@@ -102,8 +103,9 @@ public:
     Append(reinterpret_cast<const char*>(bytes), n);
   }
 #endif
+#endif
 
-  
+
 
 
 

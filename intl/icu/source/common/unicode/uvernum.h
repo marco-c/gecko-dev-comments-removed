@@ -60,13 +60,13 @@
 
 
 
-#define U_ICU_VERSION_MAJOR_NUM 69
+#define U_ICU_VERSION_MAJOR_NUM 68
 
 
 
 
 
-#define U_ICU_VERSION_MINOR_NUM 1
+#define U_ICU_VERSION_MINOR_NUM 2
 
 
 
@@ -86,7 +86,7 @@
 
 
 
-#define U_ICU_VERSION_SUFFIX _69
+#define U_ICU_VERSION_SUFFIX _68
 
 
 
@@ -139,7 +139,7 @@
 
 
 
-#define U_ICU_VERSION "69.1"
+#define U_ICU_VERSION "68.2"
 
 
 
@@ -152,13 +152,13 @@
 
 
 
-#define U_ICU_VERSION_SHORT "69"
+#define U_ICU_VERSION_SHORT "68"
 
 #ifndef U_HIDE_INTERNAL_API
 
 
 
-#define U_ICU_DATA_VERSION "69.1"
+#define U_ICU_DATA_VERSION "68.2"
 #endif  
 
 
