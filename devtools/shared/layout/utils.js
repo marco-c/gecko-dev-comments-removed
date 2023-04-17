@@ -827,6 +827,10 @@ function getAbsoluteScrollOffsetsForNode(node) {
 }
 exports.getAbsoluteScrollOffsetsForNode = getAbsoluteScrollOffsetsForNode;
 
+function isIframe(node) {
+  return ChromeUtils.getClassName(node) == "HTMLIFrameElement";
+}
+
 
 
 
@@ -854,7 +858,7 @@ exports.isRemoteBrowserElement = isRemoteBrowserElement;
 
 
 function isRemoteFrame(node) {
-  if (ChromeUtils.getClassName(node) == "HTMLIFrameElement") {
+  if (isIframe(node)) {
     return node.frameLoader?.isRemoteFrame;
   }
 
@@ -865,3 +869,15 @@ function isRemoteFrame(node) {
   return false;
 }
 exports.isRemoteFrame = isRemoteFrame;
+
+
+
+
+
+
+
+
+function isFrameWithChildTarget(targetActor, node) {
+  return isRemoteFrame(node) || (isIframe(node) && targetActor.ignoreSubFrames);
+}
+exports.isFrameWithChildTarget = isFrameWithChildTarget;
