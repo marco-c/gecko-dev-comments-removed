@@ -35,7 +35,6 @@
 
 #include "gc/Marking-inl.h"
 #include "gc/Zone-inl.h"
-#include "vm/GeckoProfiler-inl.h"
 #include "vm/NativeObject-inl.h"
 
 using namespace js;
@@ -1218,7 +1217,41 @@ js::Nursery::CollectionResult js::Nursery::doCollection(JS::GCReason reason) {
   TenuringTracer mover(rt, this);
 
   
-  traceRoots(session, mover);
+  StoreBuffer& sb = gc->storeBuffer();
+
+  
+  
+  
+  startProfile(ProfileKey::TraceWholeCells);
+  sb.traceWholeCells(mover);
+  endProfile(ProfileKey::TraceWholeCells);
+
+  startProfile(ProfileKey::TraceValues);
+  sb.traceValues(mover);
+  endProfile(ProfileKey::TraceValues);
+
+  startProfile(ProfileKey::TraceCells);
+  sb.traceCells(mover);
+  endProfile(ProfileKey::TraceCells);
+
+  startProfile(ProfileKey::TraceSlots);
+  sb.traceSlots(mover);
+  endProfile(ProfileKey::TraceSlots);
+
+  startProfile(ProfileKey::TraceGenericEntries);
+  sb.traceGenericEntries(&mover);
+  endProfile(ProfileKey::TraceGenericEntries);
+
+  startProfile(ProfileKey::MarkRuntime);
+  gc->traceRuntimeForMinorGC(&mover, session);
+  endProfile(ProfileKey::MarkRuntime);
+
+  startProfile(ProfileKey::MarkDebugger);
+  {
+    gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::MARK_ROOTS);
+    DebugAPI::traceAllForMovingGC(&mover);
+  }
+  endProfile(ProfileKey::MarkDebugger);
 
   startProfile(ProfileKey::SweepCaches);
   gc->purgeRuntimeForMinorGC();
@@ -1282,49 +1315,6 @@ js::Nursery::CollectionResult js::Nursery::doCollection(JS::GCReason reason) {
   endProfile(ProfileKey::CheckHashTables);
 
   return {mover.tenuredSize, mover.tenuredCells};
-}
-
-void js::Nursery::traceRoots(AutoGCSession& session, TenuringTracer& mover) {
-  
-  AutoSuppressProfilerSampling suppressProfiler(
-      runtime()->mainContextFromOwnThread());
-
-  
-  StoreBuffer& sb = gc->storeBuffer();
-
-  
-  
-  
-  startProfile(ProfileKey::TraceWholeCells);
-  sb.traceWholeCells(mover);
-  endProfile(ProfileKey::TraceWholeCells);
-
-  startProfile(ProfileKey::TraceValues);
-  sb.traceValues(mover);
-  endProfile(ProfileKey::TraceValues);
-
-  startProfile(ProfileKey::TraceCells);
-  sb.traceCells(mover);
-  endProfile(ProfileKey::TraceCells);
-
-  startProfile(ProfileKey::TraceSlots);
-  sb.traceSlots(mover);
-  endProfile(ProfileKey::TraceSlots);
-
-  startProfile(ProfileKey::TraceGenericEntries);
-  sb.traceGenericEntries(&mover);
-  endProfile(ProfileKey::TraceGenericEntries);
-
-  startProfile(ProfileKey::MarkRuntime);
-  gc->traceRuntimeForMinorGC(&mover, session);
-  endProfile(ProfileKey::MarkRuntime);
-
-  startProfile(ProfileKey::MarkDebugger);
-  {
-    gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::MARK_ROOTS);
-    DebugAPI::traceAllForMovingGC(&mover);
-  }
-  endProfile(ProfileKey::MarkDebugger);
 }
 
 size_t js::Nursery::doPretenuring(JSRuntime* rt, JS::GCReason reason,

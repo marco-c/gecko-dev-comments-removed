@@ -15,7 +15,6 @@
 
 #include "jit/CompileWrappers.h"  
 #include "jit/JitFrames.h"        
-#include "jit/shared/Assembler-shared.h"
 #include "js/TypeDecls.h"         
 #include "vm/BindingKind.h"       
 #include "vm/BytecodeUtil.h"      
@@ -54,13 +53,6 @@ inline unsigned CountArgSlots(JSScript* script, JSFunction* fun) {
   
   
   return StartArgSlot(script) + (fun ? fun->nargs() + 1 : 0);
-}
-
-inline unsigned CountArgSlots(JSScript* script, bool hasFun,
-                              uint32_t funArgCount) {
-  
-  
-  return StartArgSlot(script) + (hasFun ? funArgCount + 1 : 0);
 }
 
 
@@ -158,13 +150,10 @@ class CompileInfo {
 
   JSScript* script() const { return script_; }
   bool compilingWasm() const { return script() == nullptr; }
+  JSFunction* funMaybeLazy() const { return fun_; }
   ModuleObject* module() const { return script_->module(); }
   jsbytecode* osrPc() const { return osrPc_; }
   InlineScriptTree* inlineScriptTree() const { return inlineScriptTree_; }
-
-  
-  bool hasFunMaybeLazy() const { return fun_; }
-  ImmGCPtr funMaybeLazy() const { return ImmGCPtr(fun_); }
 
   const char* filename() const { return script_->filename(); }
 
@@ -196,7 +185,7 @@ class CompileInfo {
     return 2;
   }
   uint32_t thisSlot() const {
-    MOZ_ASSERT(hasFunMaybeLazy());
+    MOZ_ASSERT(funMaybeLazy());
     MOZ_ASSERT(nimplicit_ > 0);
     return nimplicit_ - 1;
   }
@@ -220,7 +209,7 @@ class CompileInfo {
   uint32_t stackSlot(uint32_t i) const { return firstStackSlot() + i; }
 
   uint32_t totalSlots() const {
-    MOZ_ASSERT(script() && hasFunMaybeLazy());
+    MOZ_ASSERT(script() && funMaybeLazy());
     return nimplicit() + nargs() + nlocals();
   }
 
@@ -264,7 +253,7 @@ class CompileInfo {
 
     
     if (slot >= firstArgSlot()) {
-      MOZ_ASSERT(hasFunMaybeLazy());
+      MOZ_ASSERT(funMaybeLazy());
       MOZ_ASSERT(slot - firstArgSlot() < nargs());
 
       
@@ -277,7 +266,7 @@ class CompileInfo {
     }
 
     
-    if (hasFunMaybeLazy() && slot == thisSlot()) {
+    if (funMaybeLazy() && slot == thisSlot()) {
       return SlotObservableKind::ObservableRecoverable;
     }
 
@@ -300,7 +289,7 @@ class CompileInfo {
     
     
     if (needsArgsObj() && slot == argsObjSlot()) {
-      MOZ_ASSERT(hasFunMaybeLazy());
+      MOZ_ASSERT(funMaybeLazy());
       return SlotObservableKind::ObservableRecoverable;
     }
 

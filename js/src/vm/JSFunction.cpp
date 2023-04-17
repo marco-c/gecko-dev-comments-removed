@@ -761,19 +761,32 @@ bool JS::OrdinaryHasInstance(JSContext* cx, HandleObject objArg, HandleValue v,
 }
 
 inline void JSFunction::trace(JSTracer* trc) {
-  
-  
-  
-  MOZ_ASSERT(!getFixedSlot(NativeJitInfoOrInterpretedScriptSlot).isGCThing());
-  if (isInterpreted() && hasBaseScript()) {
-    if (BaseScript* script = baseScript()) {
+  if (isExtended()) {
+    TraceRange(trc, std::size(toExtended()->extendedSlots),
+               (GCPtrValue*)toExtended()->extendedSlots, "nativeReserved");
+  }
+
+  TraceNullableEdge(trc, &atom_, "atom");
+
+  if (isInterpreted()) {
+    
+    
+    
+    if (isIncomplete()) {
+      MOZ_ASSERT(u.scripted.s.script_ == nullptr);
+    } else if (hasBaseScript()) {
+      BaseScript* script = u.scripted.s.script_;
       TraceManuallyBarrieredEdge(trc, &script, "script");
       
       
-      if (baseScript() != script) {
-        setFixedSlot(NativeJitInfoOrInterpretedScriptSlot,
-                     JS::PrivateValue(script));
+      if (u.scripted.s.script_ != script) {
+        u.scripted.s.script_ = script;
       }
+    }
+    
+
+    if (u.scripted.env_) {
+      TraceManuallyBarrieredEdge(trc, &u.scripted.env_, "fun_environment");
     }
   }
 }
@@ -1063,7 +1076,7 @@ bool js::fun_call(JSContext* cx, unsigned argc, Value* vp) {
   
   
   if (!IsCallable(func)) {
-    ReportIncompatibleMethod(cx, args, &FunctionClass);
+    ReportIncompatibleMethod(cx, args, &JSFunction::class_);
     return false;
   }
 
@@ -1095,7 +1108,7 @@ bool js::fun_apply(JSContext* cx, unsigned argc, Value* vp) {
   
   HandleValue fval = args.thisv();
   if (!IsCallable(fval)) {
-    ReportIncompatibleMethod(cx, args, &FunctionClass);
+    ReportIncompatibleMethod(cx, args, &JSFunction::class_);
     return false;
   }
 
@@ -1164,20 +1177,11 @@ static const ClassSpec JSFunctionClassSpec = {
     CreateFunctionConstructor, CreateFunctionPrototype, nullptr, nullptr,
     function_methods,          function_properties};
 
-const JSClass js::FunctionClass = {
-    js_Function_str,
-    JSCLASS_HAS_CACHED_PROTO(JSProto_Function) |
-        JSCLASS_HAS_RESERVED_SLOTS(JSFunction::SlotCount),
-    &JSFunctionClassOps, &JSFunctionClassSpec};
+const JSClass JSFunction::class_ = {js_Function_str,
+                                    JSCLASS_HAS_CACHED_PROTO(JSProto_Function),
+                                    &JSFunctionClassOps, &JSFunctionClassSpec};
 
-const JSClass js::ExtendedFunctionClass = {
-    js_Function_str,
-    JSCLASS_HAS_CACHED_PROTO(JSProto_Function) |
-        JSCLASS_HAS_RESERVED_SLOTS(FunctionExtended::SlotCount),
-    &JSFunctionClassOps, &JSFunctionClassSpec};
-
-const JSClass* const js::FunctionClassPtr = &FunctionClass;
-const JSClass* const js::FunctionExtendedClassPtr = &ExtendedFunctionClass;
+const JSClass* const js::FunctionClassPtr = &JSFunction::class_;
 
 bool JSFunction::isDerivedClassConstructor() const {
   bool derived = hasBaseScript() && baseScript()->isDerivedClassConstructor();
@@ -1906,12 +1910,6 @@ static bool NewFunctionEnvironmentIsWellFormed(JSContext* cx,
 }
 #endif
 
-static inline const JSClass* FunctionClassForAllocKind(
-    gc::AllocKind allocKind) {
-  return (allocKind == gc::AllocKind::FUNCTION) ? FunctionClassPtr
-                                                : FunctionExtendedClassPtr;
-}
-
 JSFunction* js::NewFunctionWithProto(
     JSContext* cx, Native native, unsigned nargs, FunctionFlags flags,
     HandleObject enclosingEnv, HandleAtom atom, HandleObject proto,
@@ -1924,10 +1922,8 @@ JSFunction* js::NewFunctionWithProto(
 
   
 
-  const JSClass* clasp = FunctionClassForAllocKind(allocKind);
-
-  JSFunction* fun = static_cast<JSFunction*>(
-      NewObjectWithClassProto(cx, clasp, proto, allocKind, newKind));
+  JSFunction* fun =
+      NewObjectWithClassProto<JSFunction>(cx, proto, allocKind, newKind);
   if (!fun) {
     return nullptr;
   }
@@ -1949,6 +1945,9 @@ JSFunction* js::NewFunctionWithProto(
   } else {
     MOZ_ASSERT(fun->isNativeFun());
     fun->initNative(native, nullptr);
+  }
+  if (allocKind == gc::AllocKind::FUNCTION_EXTENDED) {
+    fun->initializeExtended();
   }
   fun->initAtom(atom);
 
@@ -2018,11 +2017,9 @@ static inline JSFunction* NewFunctionClone(JSContext* cx, HandleFunction fun,
     }
   }
 
-  const JSClass* clasp = FunctionClassForAllocKind(allocKind);
-
   RootedFunction clone(cx);
-  clone = static_cast<JSFunction*>(
-      NewObjectWithClassProto(cx, clasp, cloneProto, allocKind, newKind));
+  clone =
+      NewObjectWithClassProto<JSFunction>(cx, cloneProto, allocKind, newKind);
   if (!clone) {
     return nullptr;
   }
@@ -2052,6 +2049,8 @@ static inline JSFunction* NewFunctionClone(JSContext* cx, HandleFunction fun,
       for (unsigned i = 0; i < FunctionExtended::NUM_EXTENDED_SLOTS; i++) {
         clone->initExtendedSlot(i, fun->getExtendedSlot(i));
       }
+    } else {
+      clone->initializeExtended();
     }
   }
 
