@@ -103,6 +103,14 @@ nscolor nsLookAndFeel::ProcessSelectionBackground(nscolor aColor, ColorScheme aS
 nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme, nscolor& aColor) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK
 
+  if (@available(macOS 10.14, *)) {
+    
+    
+  } else {
+    
+    aScheme = ColorScheme::Light;
+  }
+
   NSAppearance.currentAppearance = NSAppearanceForColorScheme(aScheme);
 
   nscolor color = 0;
