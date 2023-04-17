@@ -964,7 +964,7 @@ PlacesToolbar.prototype = {
   _cbEvents: [
     "dragstart",
     "dragover",
-    "dragexit",
+    "dragleave",
     "dragend",
     "drop",
     "mousemove",
@@ -1246,8 +1246,8 @@ PlacesToolbar.prototype = {
       case "dragover":
         this._onDragOver(aEvent);
         break;
-      case "dragexit":
-        this._onDragExit(aEvent);
+      case "dragleave":
+        this._onDragLeave(aEvent);
         break;
       case "dragend":
         this._onDragEnd(aEvent);
@@ -1706,10 +1706,6 @@ PlacesToolbar.prototype = {
     if (aTimer == this._updateNodesVisibilityTimer) {
       this._updateNodesVisibilityTimer = null;
       this._updateNodesVisibilityTimerCallback();
-    } else if (aTimer == this._ibTimer) {
-      
-      this._dropIndicator.collapsed = true;
-      this._ibTimer = null;
     } else if (aTimer == this._overFolder.openTimer) {
       
       
@@ -1777,10 +1773,6 @@ PlacesToolbar.prototype = {
     
     PlacesControllerDragHelper.currentDropTarget = null;
     this._draggedElt = null;
-    if (this._ibTimer) {
-      this._ibTimer.cancel();
-    }
-
     this._dropIndicator.collapsed = true;
   },
 
@@ -1836,11 +1828,6 @@ PlacesToolbar.prototype = {
       this._dropIndicator.collapsed = true;
       aEvent.stopPropagation();
       return;
-    }
-
-    if (this._ibTimer) {
-      this._ibTimer.cancel();
-      this._ibTimer = null;
     }
 
     if (dropPoint.folderElt || aEvent.originalTarget == this._chevron) {
@@ -1920,16 +1907,10 @@ PlacesToolbar.prototype = {
     aEvent.stopPropagation();
   },
 
-  _onDragExit: function PT__onDragExit(aEvent) {
+  _onDragLeave(aEvent) {
     PlacesControllerDragHelper.currentDropTarget = null;
 
-    
-    
-    
-    if (this._ibTimer) {
-      this._ibTimer.cancel();
-    }
-    this._ibTimer = this._setTimer(10);
+    this._dropIndicator.collapsed = true;
 
     
     if (this._overFolder.elt) {
