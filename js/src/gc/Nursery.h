@@ -504,7 +504,9 @@ class Nursery {
   bool reportDeduplications_;
 
   
+  
   bool reportPretenuring_;
+  size_t reportPretenuringThreshold_;
 
   
   
