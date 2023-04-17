@@ -152,6 +152,15 @@ class AccAttributes {
   bool Equal(const AccAttributes* aOther) const;
 
   
+
+
+
+
+
+
+  void CopyTo(AccAttributes* aDest) const;
+
+  
   class Entry {
    public:
     Entry(nsAtom* aAttrName, const AttrValueType* aAttrValue)
