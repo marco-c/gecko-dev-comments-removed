@@ -157,12 +157,16 @@ promise_test(async t => {
   const HTTP_CODE = webtransport_code_to_http_code(WT_CODE);
 
   
+  const chunk = new Uint8Array(64 * 1024);
+  const e = new WebTransportError({streamErrorCode: WT_CODE});
   
-  writer.write(new Uint8Array([32]));
-  writer.close();
-  await writer.abort(
-      new WebTransportError({streamErrorCode: WT_CODE}));
+  
+  await writer.write(chunk);
+  const close_promise = writer.close();
+  await writer.abort(e);
 
+  await promise_rejects_exactly(t, e, close_promise, 'close_promise');
+  await promise_rejects_exactly(t, e, writer.closed, '.closed');
   writer.releaseLock();
 
   await wait(10);
