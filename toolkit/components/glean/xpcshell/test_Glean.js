@@ -316,3 +316,8 @@ add_task(async function test_fog_labeled_string_works() {
   );
   
 });
+
+add_task(function test_fog_quantity_works() {
+  Glean.testOnly.meaningOfLife.set(42);
+  Assert.equal(42, Glean.testOnly.meaningOfLife.testGetValue());
+});
