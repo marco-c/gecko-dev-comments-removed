@@ -36,9 +36,6 @@ var Startup = Cc["@mozilla.org/devtools/startup-clh;1"].getService(
   Ci.nsISupports
 ).wrappedJSObject;
 
-const {
-  ResourceWatcher,
-} = require("devtools/shared/resources/resource-watcher");
 const { createCommandsDictionary } = require("devtools/shared/commands/index");
 
 const { BrowserLoader } = ChromeUtils.import(
@@ -787,7 +784,8 @@ Toolbox.prototype = {
         this._onTargetThreadFrontResumeWrongOrder.bind(this)
       );
 
-      this.resourceWatcher = new ResourceWatcher(this.commands.targetCommand);
+      
+      this.resourceWatcher = this.commands.resourceCommand;
 
       
       

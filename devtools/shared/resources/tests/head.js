@@ -19,10 +19,6 @@ async function _initResourceWatcherFromCommands(
   commands,
   { listenForWorkers = false } = {}
 ) {
-  const {
-    ResourceWatcher,
-  } = require("devtools/shared/resources/resource-watcher");
-
   const targetCommand = commands.targetCommand;
   if (listenForWorkers) {
     targetCommand.listenForWorkers = true;
@@ -30,9 +26,13 @@ async function _initResourceWatcherFromCommands(
   await targetCommand.startListening();
 
   
-  const resourceWatcher = new ResourceWatcher(targetCommand);
-
-  return { client: commands.client, commands, resourceWatcher, targetCommand };
+  
+  return {
+    client: commands.client,
+    commands,
+    resourceWatcher: commands.resourceCommand,
+    targetCommand,
+  };
 }
 
 

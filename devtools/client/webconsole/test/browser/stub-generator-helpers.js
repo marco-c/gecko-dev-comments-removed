@@ -30,14 +30,10 @@ async function createCommandsForMainProcess() {
   return commands;
 }
 
-async function createResourceWatcherForCommands(commands) {
-  
-  const {
-    ResourceWatcher,
-  } = require("devtools/shared/resources/resource-watcher");
 
+async function createResourceWatcherForCommands(commands) {
   await commands.targetCommand.startListening();
-  return new ResourceWatcher(commands.targetCommand);
+  return commands.resourceCommand;
 }
 
 

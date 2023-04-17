@@ -9,7 +9,7 @@ const { throttle } = require("devtools/shared/throttle");
 
 const BROWSERTOOLBOX_FISSION_ENABLED = "devtools.browsertoolbox.fission";
 
-class ResourceWatcher {
+class ResourceCommand {
   
 
 
@@ -21,10 +21,8 @@ class ResourceWatcher {
 
 
 
-
-
-  constructor(targetCommand) {
-    this.targetCommand = targetCommand;
+  constructor({ commands }) {
+    this.targetCommand = commands.targetCommand;
 
     this._onTargetAvailable = this._onTargetAvailable.bind(this);
     this._onTargetDestroyed = this._onTargetDestroyed.bind(this);
@@ -117,7 +115,7 @@ class ResourceWatcher {
 
     if (typeof onAvailable !== "function") {
       throw new Error(
-        "ResourceWatcher.watchResources expects an onAvailable function as argument"
+        "ResourceCommand.watchResources expects an onAvailable function as argument"
       );
     }
 
@@ -217,7 +215,7 @@ class ResourceWatcher {
 
     if (typeof onAvailable !== "function") {
       throw new Error(
-        "ResourceWatcher.unwatchResources expects an onAvailable function as argument"
+        "ResourceCommand.unwatchResources expects an onAvailable function as argument"
       );
     }
 
@@ -317,7 +315,7 @@ class ResourceWatcher {
       
       
       
-      for (const resourceType of Object.values(ResourceWatcher.TYPES)) {
+      for (const resourceType of Object.values(ResourceCommand.TYPES)) {
         
         if (!this._listenerCount.get(resourceType)) {
           continue;
@@ -342,7 +340,7 @@ class ResourceWatcher {
     
     if (!isTargetSwitching) {
       
-      for (const resourceType of Object.values(ResourceWatcher.TYPES)) {
+      for (const resourceType of Object.values(ResourceCommand.TYPES)) {
         
         if (!this._listenerCount.get(resourceType)) {
           continue;
@@ -391,7 +389,7 @@ class ResourceWatcher {
 
     
     
-    return !this.hasResourceWatcherSupport(resourceType);
+    return !this.hasResourceCommandSupport(resourceType);
   }
 
   
@@ -637,7 +635,7 @@ class ResourceWatcher {
           }
         } catch (e) {
           console.error(
-            "Exception while calling a ResourceWatcher",
+            "Exception while calling a ResourceCommand",
             callbackType,
             "callback",
             ":",
@@ -690,7 +688,7 @@ class ResourceWatcher {
 
 
 
-  hasResourceWatcherSupport(resourceType) {
+  hasResourceCommandSupport(resourceType) {
     
     
     
@@ -711,14 +709,14 @@ class ResourceWatcher {
 
 
 
-  _hasResourceWatcherSupportForTarget(resourceType, targetFront) {
+  _hasResourceCommandSupportForTarget(resourceType, targetFront) {
     
     
     if (!this.targetCommand.hasTargetWatcherSupport(targetFront.targetType)) {
       return false;
     }
 
-    return this.hasResourceWatcherSupport(resourceType);
+    return this.hasResourceCommandSupport(resourceType);
   }
 
   
@@ -750,7 +748,7 @@ class ResourceWatcher {
 
     
     
-    if (this.hasResourceWatcherSupport(resourceType)) {
+    if (this.hasResourceCommandSupport(resourceType)) {
       await this.watcherFront.watchResources([resourceType]);
 
       const shouldRunLegacyListeners = this._shouldRunLegacyListenerEvenWithWatcherSupport(
@@ -793,8 +791,8 @@ class ResourceWatcher {
 
   _shouldRunLegacyListenerEvenWithWatcherSupport(resourceType) {
     return (
-      resourceType == ResourceWatcher.TYPES.SOURCE ||
-      resourceType == ResourceWatcher.TYPES.THREAD_STATE
+      resourceType == ResourceCommand.TYPES.SOURCE ||
+      resourceType == ResourceCommand.TYPES.THREAD_STATE
     );
   }
 
@@ -812,7 +810,7 @@ class ResourceWatcher {
 
 
   async _watchResourcesForTarget(targetFront, resourceType) {
-    if (this._hasResourceWatcherSupportForTarget(resourceType, targetFront)) {
+    if (this._hasResourceCommandSupportForTarget(resourceType, targetFront)) {
       
       
       return;
@@ -892,7 +890,7 @@ class ResourceWatcher {
 
     
     
-    if (this.hasResourceWatcherSupport(resourceType)) {
+    if (this.hasResourceCommandSupport(resourceType)) {
       if (!this.watcherFront.isDestroyed()) {
         this.watcherFront.unwatchResources([resourceType]);
       }
@@ -920,7 +918,7 @@ class ResourceWatcher {
 
 
   _unwatchResourcesForTarget(targetFront, resourceType) {
-    if (this._hasResourceWatcherSupportForTarget(resourceType, targetFront)) {
+    if (this._hasResourceCommandSupportForTarget(resourceType, targetFront)) {
       
       
     }
@@ -946,7 +944,7 @@ class ResourceWatcher {
   }
 }
 
-ResourceWatcher.TYPES = ResourceWatcher.prototype.TYPES = {
+ResourceCommand.TYPES = ResourceCommand.prototype.TYPES = {
   CONSOLE_MESSAGE: "console-message",
   CSS_CHANGE: "css-change",
   CSS_MESSAGE: "css-message",
@@ -970,25 +968,25 @@ ResourceWatcher.TYPES = ResourceWatcher.prototype.TYPES = {
   THREAD_STATE: "thread-state",
   SERVER_SENT_EVENT: "server-sent-event",
 };
-module.exports = { ResourceWatcher, TYPES: ResourceWatcher.TYPES };
+module.exports = ResourceCommand;
 
 
 
 
 const LegacyListeners = {
-  [ResourceWatcher.TYPES
-    .CONSOLE_MESSAGE]: require("devtools/shared/resources/legacy-listeners/console-messages"),
-  [ResourceWatcher.TYPES
-    .CSS_CHANGE]: require("devtools/shared/resources/legacy-listeners/css-changes"),
-  [ResourceWatcher.TYPES
-    .CSS_MESSAGE]: require("devtools/shared/resources/legacy-listeners/css-messages"),
-  [ResourceWatcher.TYPES
-    .ERROR_MESSAGE]: require("devtools/shared/resources/legacy-listeners/error-messages"),
-  [ResourceWatcher.TYPES
-    .PLATFORM_MESSAGE]: require("devtools/shared/resources/legacy-listeners/platform-messages"),
-  [ResourceWatcher.TYPES
-    .CLONED_CONTENT_PROCESS_MESSAGE]: require("devtools/shared/resources/legacy-listeners/cloned-content-process-messages"),
-  async [ResourceWatcher.TYPES.DOCUMENT_EVENT]({
+  [ResourceCommand.TYPES
+    .CONSOLE_MESSAGE]: require("devtools/shared/commands/resource/legacy-listeners/console-messages"),
+  [ResourceCommand.TYPES
+    .CSS_CHANGE]: require("devtools/shared/commands/resource/legacy-listeners/css-changes"),
+  [ResourceCommand.TYPES
+    .CSS_MESSAGE]: require("devtools/shared/commands/resource/legacy-listeners/css-messages"),
+  [ResourceCommand.TYPES
+    .ERROR_MESSAGE]: require("devtools/shared/commands/resource/legacy-listeners/error-messages"),
+  [ResourceCommand.TYPES
+    .PLATFORM_MESSAGE]: require("devtools/shared/commands/resource/legacy-listeners/platform-messages"),
+  [ResourceCommand.TYPES
+    .CLONED_CONTENT_PROCESS_MESSAGE]: require("devtools/shared/commands/resource/legacy-listeners/cloned-content-process-messages"),
+  async [ResourceCommand.TYPES.DOCUMENT_EVENT]({
     targetCommand,
     targetFront,
     onAvailable,
@@ -1000,39 +998,39 @@ const LegacyListeners = {
 
     const webConsoleFront = await targetFront.getFront("console");
     webConsoleFront.on("documentEvent", event => {
-      event.resourceType = ResourceWatcher.TYPES.DOCUMENT_EVENT;
+      event.resourceType = ResourceCommand.TYPES.DOCUMENT_EVENT;
       onAvailable([event]);
     });
     await webConsoleFront.startListeners(["DocumentEvents"]);
   },
-  [ResourceWatcher.TYPES
-    .ROOT_NODE]: require("devtools/shared/resources/legacy-listeners/root-node"),
-  [ResourceWatcher.TYPES
-    .STYLESHEET]: require("devtools/shared/resources/legacy-listeners/stylesheet"),
-  [ResourceWatcher.TYPES
-    .NETWORK_EVENT]: require("devtools/shared/resources/legacy-listeners/network-events"),
-  [ResourceWatcher.TYPES
-    .WEBSOCKET]: require("devtools/shared/resources/legacy-listeners/websocket"),
-  [ResourceWatcher.TYPES
-    .COOKIE]: require("devtools/shared/resources/legacy-listeners/cookie"),
-  [ResourceWatcher.TYPES
-    .CACHE_STORAGE]: require("devtools/shared/resources/legacy-listeners/cache-storage"),
-  [ResourceWatcher.TYPES
-    .LOCAL_STORAGE]: require("devtools/shared/resources/legacy-listeners/local-storage"),
-  [ResourceWatcher.TYPES
-    .SESSION_STORAGE]: require("devtools/shared/resources/legacy-listeners/session-storage"),
-  [ResourceWatcher.TYPES
-    .EXTENSION_STORAGE]: require("devtools/shared/resources/legacy-listeners/extension-storage"),
-  [ResourceWatcher.TYPES
-    .INDEXED_DB]: require("devtools/shared/resources/legacy-listeners/indexed-db"),
-  [ResourceWatcher.TYPES
-    .NETWORK_EVENT_STACKTRACE]: require("devtools/shared/resources/legacy-listeners/network-event-stacktraces"),
-  [ResourceWatcher.TYPES
-    .SOURCE]: require("devtools/shared/resources/legacy-listeners/source"),
-  [ResourceWatcher.TYPES
-    .THREAD_STATE]: require("devtools/shared/resources/legacy-listeners/thread-states"),
-  [ResourceWatcher.TYPES
-    .SERVER_SENT_EVENT]: require("devtools/shared/resources/legacy-listeners/server-sent-events"),
+  [ResourceCommand.TYPES
+    .ROOT_NODE]: require("devtools/shared/commands/resource/legacy-listeners/root-node"),
+  [ResourceCommand.TYPES
+    .STYLESHEET]: require("devtools/shared/commands/resource/legacy-listeners/stylesheet"),
+  [ResourceCommand.TYPES
+    .NETWORK_EVENT]: require("devtools/shared/commands/resource/legacy-listeners/network-events"),
+  [ResourceCommand.TYPES
+    .WEBSOCKET]: require("devtools/shared/commands/resource/legacy-listeners/websocket"),
+  [ResourceCommand.TYPES
+    .COOKIE]: require("devtools/shared/commands/resource/legacy-listeners/cookie"),
+  [ResourceCommand.TYPES
+    .CACHE_STORAGE]: require("devtools/shared/commands/resource/legacy-listeners/cache-storage"),
+  [ResourceCommand.TYPES
+    .LOCAL_STORAGE]: require("devtools/shared/commands/resource/legacy-listeners/local-storage"),
+  [ResourceCommand.TYPES
+    .SESSION_STORAGE]: require("devtools/shared/commands/resource/legacy-listeners/session-storage"),
+  [ResourceCommand.TYPES
+    .EXTENSION_STORAGE]: require("devtools/shared/commands/resource/legacy-listeners/extension-storage"),
+  [ResourceCommand.TYPES
+    .INDEXED_DB]: require("devtools/shared/commands/resource/legacy-listeners/indexed-db"),
+  [ResourceCommand.TYPES
+    .NETWORK_EVENT_STACKTRACE]: require("devtools/shared/commands/resource/legacy-listeners/network-event-stacktraces"),
+  [ResourceCommand.TYPES
+    .SOURCE]: require("devtools/shared/commands/resource/legacy-listeners/source"),
+  [ResourceCommand.TYPES
+    .THREAD_STATE]: require("devtools/shared/commands/resource/legacy-listeners/thread-states"),
+  [ResourceCommand.TYPES
+    .SERVER_SENT_EVENT]: require("devtools/shared/commands/resource/legacy-listeners/server-sent-events"),
 };
 
 
@@ -1040,22 +1038,22 @@ const LegacyListeners = {
 
 
 const ResourceTransformers = {
-  [ResourceWatcher.TYPES
-    .CONSOLE_MESSAGE]: require("devtools/shared/resources/transformers/console-messages"),
-  [ResourceWatcher.TYPES
-    .ERROR_MESSAGE]: require("devtools/shared/resources/transformers/error-messages"),
-  [ResourceWatcher.TYPES
-    .CACHE_STORAGE]: require("devtools/shared/resources/transformers/storage-cache.js"),
-  [ResourceWatcher.TYPES
-    .COOKIE]: require("devtools/shared/resources/transformers/storage-cookie.js"),
-  [ResourceWatcher.TYPES
-    .INDEXED_DB]: require("devtools/shared/resources/transformers/storage-indexed-db.js"),
-  [ResourceWatcher.TYPES
-    .LOCAL_STORAGE]: require("devtools/shared/resources/transformers/storage-local-storage.js"),
-  [ResourceWatcher.TYPES
-    .SESSION_STORAGE]: require("devtools/shared/resources/transformers/storage-session-storage.js"),
-  [ResourceWatcher.TYPES
-    .NETWORK_EVENT]: require("devtools/shared/resources/transformers/network-events"),
-  [ResourceWatcher.TYPES
-    .THREAD_STATE]: require("devtools/shared/resources/transformers/thread-states"),
+  [ResourceCommand.TYPES
+    .CONSOLE_MESSAGE]: require("devtools/shared/commands/resource/transformers/console-messages"),
+  [ResourceCommand.TYPES
+    .ERROR_MESSAGE]: require("devtools/shared/commands/resource/transformers/error-messages"),
+  [ResourceCommand.TYPES
+    .CACHE_STORAGE]: require("devtools/shared/commands/resource/transformers/storage-cache.js"),
+  [ResourceCommand.TYPES
+    .COOKIE]: require("devtools/shared/commands/resource/transformers/storage-cookie.js"),
+  [ResourceCommand.TYPES
+    .INDEXED_DB]: require("devtools/shared/commands/resource/transformers/storage-indexed-db.js"),
+  [ResourceCommand.TYPES
+    .LOCAL_STORAGE]: require("devtools/shared/commands/resource/transformers/storage-local-storage.js"),
+  [ResourceCommand.TYPES
+    .SESSION_STORAGE]: require("devtools/shared/commands/resource/transformers/storage-session-storage.js"),
+  [ResourceCommand.TYPES
+    .NETWORK_EVENT]: require("devtools/shared/commands/resource/transformers/network-events"),
+  [ResourceCommand.TYPES
+    .THREAD_STATE]: require("devtools/shared/commands/resource/transformers/thread-states"),
 };
