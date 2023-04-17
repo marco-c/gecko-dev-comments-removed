@@ -2,11 +2,20 @@ mod scenarios;
 
 pub use scenarios::get_scenarios;
 
+
 pub struct Scenario {
+    
     pub name: String,
+    
     pub width: usize,
+    
     pub depth: usize,
+    
+    
     pub values: Vec<Vec<bool>>,
+    
+    
+    
     pub solutions: Vec<Vec<usize>>,
 }
 
