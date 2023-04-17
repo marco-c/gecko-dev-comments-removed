@@ -465,6 +465,9 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
       const lastCardMessageEnabled = this.store.getState().Prefs.values
         ?.pocketConfig?.lastCardMessageEnabled;
 
+      const saveToPocketCard = this.store.getState().Prefs.values?.pocketConfig
+        ?.saveToPocketCard;
+
       const sponsoredCollectionsEnabled = this.store.getState().Prefs.values[
         PREF_COLLECTIONS_ENABLED
       ];
@@ -489,6 +492,7 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
         loadMoreEnabled,
         lastCardMessageEnabled,
         newFooterSection,
+        saveToPocketCard,
       });
     }
 
@@ -1867,6 +1871,7 @@ this.DiscoveryStreamFeed = class DiscoveryStreamFeed {
 
 
 
+
 getHardcodedLayout = ({
   items = 21,
   spocPositions = [2, 4, 11, 20],
@@ -1875,6 +1880,7 @@ getHardcodedLayout = ({
   loadMoreEnabled = false,
   lastCardMessageEnabled = false,
   newFooterSection = false,
+  saveToPocketCard = false,
 }) => ({
   lastUpdate: Date.now(),
   spocs: {
@@ -1952,6 +1958,7 @@ getHardcodedLayout = ({
           },
           loadMoreEnabled,
           lastCardMessageEnabled,
+          saveToPocketCard,
           cta_variant: "link",
           header: {
             title: "",
