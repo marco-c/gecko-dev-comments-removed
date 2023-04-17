@@ -164,22 +164,27 @@ Result<nsCOMPtr<nsIFile>, nsresult> CloneFileAndAppend(
 }
 
 Result<nsIFileKind, nsresult> GetDirEntryKind(nsIFile& aFile) {
-  QM_TRY_RETURN(QM_OR_ELSE_WARN(
-      MOZ_TO_RESULT_INVOKE(aFile, IsDirectory).map([](const bool isDirectory) {
-        return isDirectory ? nsIFileKind::ExistsAsDirectory
-                           : nsIFileKind::ExistsAsFile;
-      }),
-      ([](const nsresult rv) -> Result<nsIFileKind, nsresult> {
-        if (rv == NS_ERROR_FILE_NOT_FOUND ||
-            rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST ||
-            
-            
-            rv == NS_ERROR_FILE_FS_CORRUPTED) {
-          return nsIFileKind::DoesNotExist;
-        }
+  
+  
+  
+  
+  QM_TRY_RETURN(
+      MOZ_TO_RESULT_INVOKE(aFile, IsDirectory)
+          .map([](const bool isDirectory) {
+            return isDirectory ? nsIFileKind::ExistsAsDirectory
+                               : nsIFileKind::ExistsAsFile;
+          })
+          .orElse([](const nsresult rv) -> Result<nsIFileKind, nsresult> {
+            if (rv == NS_ERROR_FILE_NOT_FOUND ||
+                rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST ||
+                
+                
+                rv == NS_ERROR_FILE_FS_CORRUPTED) {
+              return nsIFileKind::DoesNotExist;
+            }
 
-        return Err(rv);
-      })));
+            return Err(rv);
+          }));
 }
 
 Result<nsCOMPtr<mozIStorageStatement>, nsresult> CreateStatement(
