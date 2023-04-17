@@ -33,6 +33,13 @@ XPCOMUtils.defineLazyServiceGetter(
   "nsIHandlerService"
 );
 
+XPCOMUtils.defineLazyServiceGetter(
+  this,
+  "gReputationService",
+  "@mozilla.org/reputationservice/application-reputation-service;1",
+  Ci.nsIApplicationReputationService
+);
+
 const { Integration } = ChromeUtils.import(
   "resource://gre/modules/Integration.jsm"
 );
@@ -196,6 +203,10 @@ var DownloadsViewUI = {
       contextMenu.querySelector(".downloadUnblockMenuItem").hidden &&
       contextMenu.querySelector(".downloadShowMenuItem").hidden;
 
+    let download = element._shell.download;
+    let mimeInfo = DownloadsCommon.getMimeInfo(download);
+    let { preferredAction, useSystemDefault } = mimeInfo ? mimeInfo : {};
+
     
     
     let useSystemViewerItem = contextMenu.querySelector(
@@ -211,16 +222,41 @@ var DownloadsViewUI = {
     alwaysUseSystemViewerItem.hidden =
       !DownloadsCommon.alwaysOpenInSystemViewerItemEnabled ||
       !canViewInternally;
-    if (!alwaysUseSystemViewerItem.hidden) {
-      let download = element._shell.download;
-      let mimeInfo = DownloadsCommon.getMimeInfo(download);
-      let { preferredAction, useSystemDefault } = mimeInfo ? mimeInfo : {};
 
-      if (preferredAction === useSystemDefault) {
-        alwaysUseSystemViewerItem.setAttribute("checked", "true");
-      } else {
-        alwaysUseSystemViewerItem.removeAttribute("checked");
-      }
+    
+    
+    
+    
+    let improvementsOn = Services.prefs.getBoolPref(
+      "browser.download.improvements_to_download_panel"
+    );
+    let alwaysOpenSimilarFilesItem = contextMenu.querySelector(
+      ".downloadAlwaysOpenSimilarFilesMenuItem"
+    );
+
+    
+    
+    
+    let shouldNotRememberChoice =
+      download.contentType === "application/octet-stream" ||
+      download.contentType === "application/x-msdownload" ||
+      (download.contentType === "text/plain" &&
+        gReputationService.isBinary(download.target.path));
+
+    if (improvementsOn && !canViewInternally) {
+      alwaysOpenSimilarFilesItem.hidden =
+        state !== DOWNLOAD_FINISHED || shouldNotRememberChoice;
+    } else {
+      alwaysOpenSimilarFilesItem.hidden = true;
+    }
+
+    
+    if (preferredAction === useSystemDefault) {
+      alwaysUseSystemViewerItem.setAttribute("checked", "true");
+      alwaysOpenSimilarFilesItem.setAttribute("checked", "true");
+    } else {
+      alwaysUseSystemViewerItem.removeAttribute("checked");
+      alwaysOpenSimilarFilesItem.removeAttribute("checked");
     }
   },
 };
@@ -866,6 +902,7 @@ DownloadsViewUI.DownloadElementShell.prototype = {
       case "downloadsCmd_open:tab":
       case "downloadsCmd_open:tabshifted":
       case "downloadsCmd_open:window":
+      case "downloadsCmd_alwaysOpenSimilarFiles":
         
         return this.download.target.exists;
       case "downloadsCmd_show":
@@ -998,5 +1035,26 @@ DownloadsViewUI.DownloadElementShell.prototype = {
     }
     handlerSvc.store(mimeInfo);
     DownloadsCommon.openDownload(this.download).catch(Cu.reportError);
+  },
+
+  downloadsCmd_alwaysOpenSimilarFiles() {
+    const mimeInfo = DownloadsCommon.getMimeInfo(this.download);
+    if (!mimeInfo) {
+      throw new Error("Can't open download with unknown mime-type");
+    }
+
+    
+    
+    
+    if (mimeInfo.preferredAction !== mimeInfo.useSystemDefault) {
+      mimeInfo.preferredAction = mimeInfo.useSystemDefault;
+      handlerSvc.store(mimeInfo);
+      DownloadsCommon.openDownload(this.download).catch(Cu.reportError);
+    } else {
+      
+      
+      mimeInfo.preferredAction = mimeInfo.saveToDisk;
+      handlerSvc.store(mimeInfo);
+    }
   },
 };

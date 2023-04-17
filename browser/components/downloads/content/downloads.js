@@ -1028,7 +1028,8 @@ class DownloadsViewItem extends DownloadsViewUI.DownloadElementShell {
       case "downloadsCmd_open:current":
       case "downloadsCmd_open:tab":
       case "downloadsCmd_open:tabshifted":
-      case "downloadsCmd_open:window": {
+      case "downloadsCmd_open:window":
+      case "downloadsCmd_alwaysOpenSimilarFiles": {
         if (!this.download.succeeded) {
           return false;
         }
@@ -1113,6 +1114,14 @@ class DownloadsViewItem extends DownloadsViewUI.DownloadElementShell {
 
   downloadsCmd_alwaysOpenInSystemViewer() {
     super.downloadsCmd_alwaysOpenInSystemViewer();
+
+    
+    
+    DownloadsPanel.hidePanel();
+  }
+
+  downloadsCmd_alwaysOpenSimilarFiles() {
+    super.downloadsCmd_alwaysOpenSimilarFiles();
 
     
     
