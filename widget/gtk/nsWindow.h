@@ -375,8 +375,8 @@ class nsWindow final : public nsBaseWidget {
   static bool GetTopLevelWindowActiveState(nsIFrame* aFrame);
   static bool TitlebarUseShapeMask();
   bool IsRemoteContent() { return HasRemoteContent(); }
-  void NativeMoveResizeWaylandPopupCB(const GdkRectangle* aFinalSize,
-                                      bool aFlippedX, bool aFlippedY);
+  void NativeMoveResizeWaylandPopupCallback(const GdkRectangle* aFinalSize,
+                                            bool aFlippedX, bool aFlippedY);
   static bool IsToplevelWindowTransparent();
 
 #ifdef MOZ_WAYLAND
@@ -615,10 +615,13 @@ class nsWindow final : public nsBaseWidget {
 
   void ApplySizeConstraints(void);
 
+  void GetParentPosition(int* aX, int* aY);
+
   
   bool WaylandPopupNeedsTrackInHierarchy();
   bool WaylandPopupIsAnchored();
   bool WaylandPopupIsMenu();
+  bool WaylandPopupIsContextMenu();
   bool WaylandPopupIsPermanent();
   bool IsWidgetOverflowWindow();
   void RemovePopupFromHierarchyList();
@@ -699,7 +702,15 @@ class nsWindow final : public nsBaseWidget {
 
   
 
-  GdkPoint mTranslatedPopupPosition;
+  bool mPopupContextMenu;
+
+  
+
+  GdkPoint mRelativePopupPosition;
+
+  
+
+  GdkPoint mRelativePopupOffset;
 
   
 
@@ -740,8 +751,9 @@ class nsWindow final : public nsBaseWidget {
 
 
 
-  bool mWaitingForMoveToRectCB;
-  LayoutDeviceIntRect mPendingSizeRect;
+
+  bool mWaitingForMoveToRectCallback;
+  LayoutDeviceIntRect mNewSizeAfterMoveToRect;
 
   
 
