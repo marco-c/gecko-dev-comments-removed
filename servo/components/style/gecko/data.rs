@@ -64,10 +64,7 @@ impl GeckoStyleSheet {
     
     #[inline]
     pub fn hack_is_null(&self) -> bool {
-        debug_assert!(!self.0.is_null());
-        debug_assert!(!self.raw().mInner.is_null());
-        debug_assert!(!self.inner().mContents.mRawPtr.is_null());
-        self.0.is_null() || self.raw().mInner.is_null() || self.inner().mContents.mRawPtr.is_null()
+        self.0.is_null()
     }
 
     
