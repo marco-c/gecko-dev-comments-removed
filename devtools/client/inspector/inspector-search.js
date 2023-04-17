@@ -55,10 +55,6 @@ function InspectorSearch(inspector, input, clearBtn) {
 exports.InspectorSearch = InspectorSearch;
 
 InspectorSearch.prototype = {
-  get walker() {
-    return this.inspector.walker;
-  },
-
   destroy: function() {
     this.searchBox.removeEventListener("keydown", this._onKeyDown, true);
     this.searchBox.removeEventListener("input", this._onInput, true);
@@ -86,7 +82,12 @@ InspectorSearch.prototype = {
       return;
     }
 
-    const res = await this.walker.search(query, { reverse });
+    const res = await this.inspector.commands.inspectorCommand.findNextNode(
+      query,
+      {
+        reverse,
+      }
+    );
 
     
     if (query !== this.searchBox.value) {
@@ -98,7 +99,6 @@ InspectorSearch.prototype = {
         reason: "inspectorsearch",
       });
       searchContainer.classList.remove("devtools-searchbox-no-match");
-
       res.query = query;
       this.emit("search-result", res);
     } else {
