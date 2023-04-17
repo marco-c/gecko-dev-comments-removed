@@ -729,15 +729,6 @@ inline JSFunction* NewNativeConstructor(
 
 
 
-extern JSFunction* NewScriptedFunction(
-    JSContext* cx, unsigned nargs, FunctionFlags flags, HandleAtom atom,
-    HandleObject proto = nullptr,
-    gc::AllocKind allocKind = gc::AllocKind::FUNCTION,
-    NewObjectKind newKind = GenericObject, HandleObject enclosingEnv = nullptr);
-
-
-
-
 
 
 
