@@ -117,7 +117,9 @@ namespace js {
 template <typename T>
 struct BarrierMethods {};
 
-template <typename Element, typename Wrapper>
+
+
+template <typename Element, typename Wrapper, typename Enable = void>
 class WrappedPtrOperations {};
 
 template <typename Element, typename Wrapper>
