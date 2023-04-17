@@ -484,6 +484,22 @@ class HTMLEditUtils final {
     return nullptr;
   }
 
+  static nsIContent* GetNextSibling(const nsIContent& aContent,
+                                    const WalkTreeOptions& aOptions) {
+    for (nsIContent* sibling = aContent.GetNextSibling(); sibling;
+         sibling = sibling->GetNextSibling()) {
+      if (HTMLEditUtils::IsContentIgnored(*sibling, aOptions)) {
+        continue;
+      }
+      if (aOptions.contains(WalkTreeOption::StopAtBlockBoundary) &&
+          HTMLEditUtils::IsBlockElement(*sibling)) {
+        return nullptr;
+      }
+      return sibling;
+    }
+    return nullptr;
+  }
+
   
 
 

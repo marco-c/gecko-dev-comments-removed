@@ -3354,8 +3354,9 @@ nsresult HTMLEditor::IndentListChild(RefPtr<Element>* aCurList,
   
   
   
-  if (nsIContent* nextEditableSibling =
-          GetNextHTMLSibling(&aContent, SkipWhiteSpace::Yes)) {
+  if (nsIContent* nextEditableSibling = HTMLEditUtils::GetNextSibling(
+          aContent, {WalkTreeOption::IgnoreWhiteSpaceOnlyText,
+                     WalkTreeOption::IgnoreNonEditableNode})) {
     if (HTMLEditUtils::IsAnyListElement(nextEditableSibling) &&
         aCurPoint.GetContainer()->NodeInfo()->NameAtom() ==
             nextEditableSibling->NodeInfo()->NameAtom() &&
@@ -4993,8 +4994,9 @@ EditActionResult HTMLEditor::AlignContentsAtSelectionWithEmptyDivElement(
         
         
         
-        if (nsIContent* nextEditableSibling =
-                GetNextHTMLSibling(pointToInsertDiv.GetChild())) {
+        if (nsIContent* nextEditableSibling = HTMLEditUtils::GetNextSibling(
+                *pointToInsertDiv.GetChild(),
+                {WalkTreeOption::IgnoreNonEditableNode})) {
           if (!HTMLEditUtils::IsBlockElement(*nextEditableSibling)) {
             AutoEditorDOMPointChildInvalidator lockOffset(pointToInsertDiv);
             nsresult rv = DeleteNodeWithTransaction(*maybeBRContent);
@@ -6545,7 +6547,8 @@ nsresult HTMLEditor::HandleInsertParagraphInHeadingElement(Element& aHeader,
     
     nsCOMPtr<nsIContent> sibling;
     if (aHeader.GetNextSibling()) {
-      sibling = GetNextHTMLSibling(aHeader.GetNextSibling());
+      sibling = HTMLEditUtils::GetNextSibling(
+          *aHeader.GetNextSibling(), {WalkTreeOption::IgnoreNonEditableNode});
     }
     if (!sibling || !sibling->IsHTMLElement(nsGkAtoms::br)) {
       TopLevelEditSubActionDataRef().mCachedInlineStyles->Clear();
@@ -6710,7 +6713,11 @@ EditActionResult HTMLEditor::HandleInsertParagraphInParagraph(
     } else if (atStartOfSelection.IsEndOfContainer()) {
       
       
-      brContent = GetNextHTMLSibling(atStartOfSelection.GetContainer());
+      brContent = atStartOfSelection.IsInContentNode()
+                      ? HTMLEditUtils::GetNextSibling(
+                            *atStartOfSelection.ContainerAsContent(),
+                            {WalkTreeOption::IgnoreNonEditableNode})
+                      : nullptr;
       if (!brContent || !HTMLEditUtils::IsVisibleBRElement(*brContent) ||
           EditorUtils::IsPaddingBRElementForEmptyLastLine(*brContent)) {
         pointToInsertBR.SetAfter(atStartOfSelection.GetContainer());
@@ -8124,7 +8131,8 @@ void HTMLEditor::SetSelectionInterlinePosition() {
   
   
   if (nsIContent* nextEditableContentInBlockAtCaret =
-          GetNextHTMLSibling(atCaret.GetChild())) {
+          HTMLEditUtils::GetNextSibling(
+              *atCaret.GetChild(), {WalkTreeOption::IgnoreNonEditableNode})) {
     if (HTMLEditUtils::IsBlockElement(*nextEditableContentInBlockAtCaret)) {
       IgnoredErrorResult ignoredError;
       SelectionRef().SetInterlinePosition(false, ignoredError);
