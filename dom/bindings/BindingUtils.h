@@ -666,7 +666,7 @@ struct JSNativeHolder {
   const NativePropertyHooks* mPropertyHooks;
 };
 
-struct NamedConstructor {
+struct LegacyFactoryFunction {
   const char* mName;
   const JSNativeHolder mHolder;
   unsigned mNargs;
@@ -731,7 +731,7 @@ void CreateInterfaceObjects(
     JS::Handle<JSObject*> protoProto, const JSClass* protoClass,
     JS::Heap<JSObject*>* protoCache, JS::Handle<JSObject*> constructorProto,
     const JSClass* constructorClass, unsigned ctorNargs,
-    const NamedConstructor* namedConstructors,
+    const LegacyFactoryFunction* namedConstructors,
     JS::Heap<JSObject*>* constructorCache, const NativeProperties* properties,
     const NativeProperties* chromeOnlyProperties, const char* name,
     bool defineOnGlobal, const char* const* unscopableNames, bool isGlobal,

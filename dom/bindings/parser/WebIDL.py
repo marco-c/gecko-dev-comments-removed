@@ -632,7 +632,7 @@ class IDLPartialInterfaceOrNamespace(IDLObject):
         for attr in attrs:
             identifier = attr.identifier()
 
-            if identifier == "NamedConstructor":
+            if identifier == "LegacyFactoryFunction":
                 self.propagatedExtendedAttrs.append(attr)
             elif identifier == "SecureContext":
                 self._haveSecureContextExtendedAttribute = True
@@ -947,7 +947,7 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
         
         
         
-        self.namedConstructors = list()
+        self.legacyFactoryFunctions = list()
         self.legacyWindowAliases = []
         self.includedMixins = set()
         
@@ -1177,10 +1177,10 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
             
             self.members.remove(ctor)
 
-        for ctor in self.namedConstructors:
+        for ctor in self.legacyFactoryFunctions:
             if self.globalNames:
                 raise WebIDLError(
-                    "Can't have both a named constructor and [Global]",
+                    "Can't have both a legacy factory function and [Global]",
                     [self.location, ctor.location],
                 )
             assert len(ctor._exposureGlobalNames) == 0
@@ -1477,7 +1477,7 @@ class IDLInterfaceOrNamespace(IDLInterfaceOrInterfaceMixinOrNamespace):
         ctor = self.ctor()
         if ctor is not None:
             ctor.validate()
-        for namedCtor in self.namedConstructors:
+        for namedCtor in self.legacyFactoryFunctions:
             namedCtor.validate()
 
         indexedGetter = None
@@ -1829,10 +1829,10 @@ class IDLInterface(IDLInterfaceOrNamespace):
                     )
 
                 self._noInterfaceObject = True
-            elif identifier == "NamedConstructor":
+            elif identifier == "LegacyFactoryFunction":
                 if not attr.hasValue():
                     raise WebIDLError(
-                        "NamedConstructor must either take an identifier or take a named argument list",
+                        "LegacyFactoryFunction must either take an identifier or take a named argument list",
                         [attr.location],
                     )
 
@@ -1865,11 +1865,11 @@ class IDLInterface(IDLInterfaceOrNamespace):
                 
                 newMethod = self.parentScope.lookupIdentifier(method.identifier)
                 if newMethod == method:
-                    self.namedConstructors.append(method)
-                elif newMethod not in self.namedConstructors:
+                    self.legacyFactoryFunctions.append(method)
+                elif newMethod not in self.legacyFactoryFunctions:
                     raise WebIDLError(
-                        "NamedConstructor conflicts with a "
-                        "NamedConstructor of a different interface",
+                        "LegacyFactoryFunction conflicts with a "
+                        "LegacyFactoryFunction of a different interface",
                         [method.location, newMethod.location],
                     )
             elif identifier == "ExceptionClass":
