@@ -123,18 +123,6 @@ void UnderlyingSourceStartCallbackHelper::StartCallback(
 already_AddRefed<Promise> IDLUnderlyingSourcePullCallbackHelper::PullCallback(
     JSContext* aCx, ReadableStreamDefaultController& aController,
     ErrorResult& aRv) {
-  
-  
-
-  
-  
-  
-  nsIGlobalObject* global = GetIncumbentGlobal();
-  RefPtr<Promise> maybeRejectPromise = Promise::Create(global, aRv);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
-
   JS::RootedObject thisObj(aCx, mThisObj);
 
   
@@ -143,16 +131,6 @@ already_AddRefed<Promise> IDLUnderlyingSourcePullCallbackHelper::PullCallback(
       callback->Call(thisObj, aController, aRv, "UnderlyingSource.pull",
                      CallbackFunction::eRethrowExceptions);
 
-  
-  aRv.WouldReportJSException();
-  if (aRv.Failed()) {
-    MOZ_ASSERT(!promise);
-
-    
-    maybeRejectPromise->MaybeReject(std::move(aRv));
-    return maybeRejectPromise.forget();
-  }
-
   return promise.forget();
 }
 
@@ -160,18 +138,6 @@ already_AddRefed<Promise>
 IDLUnderlyingSourceCancelCallbackHelper::CancelCallback(
     JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
     ErrorResult& aRv) {
-  
-  
-
-  
-  
-  
-  nsIGlobalObject* global = GetIncumbentGlobal();
-  RefPtr<Promise> maybeRejectPromise = Promise::Create(global, aRv);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
-
   JS::RootedObject thisObj(aCx, mThisObj);
 
   
@@ -179,16 +145,6 @@ IDLUnderlyingSourceCancelCallbackHelper::CancelCallback(
   RefPtr<Promise> promise =
       callback->Call(thisObj, aReason, aRv, "UnderlyingSource.cancel",
                      CallbackFunction::eRethrowExceptions);
-
-  
-  aRv.WouldReportJSException();
-  if (aRv.Failed()) {
-    MOZ_ASSERT(!promise);
-
-    
-    maybeRejectPromise->MaybeReject(std::move(aRv));
-    return maybeRejectPromise.forget();
-  }
 
   return promise.forget();
 }
