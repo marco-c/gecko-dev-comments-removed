@@ -43,6 +43,14 @@ class SVGAnimatedLengthList {
  public:
   SVGAnimatedLengthList() = default;
 
+  SVGAnimatedLengthList& operator=(const SVGAnimatedLengthList& aOther) {
+    mBaseVal = aOther.mBaseVal;
+    if (aOther.mAnimVal) {
+      mAnimVal = MakeUnique<SVGLengthList>(*aOther.mAnimVal);
+    }
+    return *this;
+  }
+
   
 
 

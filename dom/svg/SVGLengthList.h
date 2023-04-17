@@ -42,6 +42,15 @@ class SVGLengthList {
   SVGLengthList() = default;
   ~SVGLengthList() = default;
 
+  SVGLengthList& operator=(const SVGLengthList& aOther) {
+    mLengths.ClearAndRetainStorage();
+    
+    Unused << mLengths.AppendElements(aOther.mLengths, fallible);
+    return *this;
+  }
+
+  SVGLengthList(const SVGLengthList& aOther) { *this = aOther; }
+
   
   
 

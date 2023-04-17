@@ -40,6 +40,17 @@ class SVGNumberList {
   SVGNumberList() = default;
   ~SVGNumberList() = default;
 
+  SVGNumberList& operator=(const SVGNumberList& aOther) {
+    mNumbers.ClearAndRetainStorage();
+    
+    Unused << mNumbers.AppendElements(aOther.mNumbers, fallible);
+    return *this;
+  }
+
+  SVGNumberList(const SVGNumberList& aOther) {
+    *this = aOther;
+  }
+
   
   
 

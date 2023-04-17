@@ -399,6 +399,7 @@ class SVGElement : public SVGElementBase
     AttributesInfo(Value* aValues, const InfoValue* aInfos, uint32_t aCount)
         : mValues(aValues), mInfos(aInfos), mCount(aCount) {}
 
+    void CopyAllFrom(const AttributesInfo&);
     void ResetAll();
     void Reset(uint8_t aEnum);
   };
