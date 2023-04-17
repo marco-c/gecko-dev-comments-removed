@@ -15,6 +15,24 @@ const char16_t kEmbeddedObjectChar = 0xfffc;
 const char16_t kImaginaryEmbeddedObjectChar = ' ';
 const char16_t kForcedNewLineChar = '\n';
 
+
+
+
+class index_t {
+ public:
+  MOZ_IMPLICIT index_t(int32_t aVal) : mVal(aVal) {}
+
+  operator uint32_t() const {
+    MOZ_ASSERT(mVal >= 0, "Attempt to use wrong index!");
+    return mVal;
+  }
+
+  bool IsValid() const { return mVal >= 0; }
+
+ private:
+  int32_t mVal;
+};
+
 class HyperTextAccessibleBase {
  public:
   
@@ -57,6 +75,11 @@ class HyperTextAccessibleBase {
 
 
   virtual int32_t CaretOffset() const = 0;
+
+  
+
+
+  index_t ConvertMagicOffset(int32_t aOffset) const;
 
  protected:
   virtual const Accessible* Acc() const = 0;

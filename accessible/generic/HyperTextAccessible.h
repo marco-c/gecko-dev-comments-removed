@@ -394,11 +394,6 @@ class HyperTextAccessible : public AccessibleWrap,
   
 
 
-  index_t ConvertMagicOffset(int32_t aOffset) const;
-
-  
-
-
   uint32_t AdjustCaretOffset(uint32_t aOffset) const;
 
   
