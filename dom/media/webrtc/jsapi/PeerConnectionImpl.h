@@ -412,7 +412,7 @@ class PeerConnectionImpl final
   RefPtr<dom::RTCStatsReportPromise> GetStats(dom::MediaStreamTrack* aSelector,
                                               bool aInternalStats);
 
-  void RecordConduitTelemetry();
+  void CollectConduitTelemetryData();
 
   
   

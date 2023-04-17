@@ -267,7 +267,7 @@ class WebrtcVideoConduit
     mAllowSsrcChange = false;
   }
 
-  void RecordTelemetry() override;
+  void CollectTelemetryData() override;
 
   void SetRtcpEventObserver(mozilla::RtcpEventObserver* observer) override;
 
