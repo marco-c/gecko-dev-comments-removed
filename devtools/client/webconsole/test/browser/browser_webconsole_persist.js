@@ -40,7 +40,7 @@ add_task(async function() {
   await logAndAssertInitialMessages(hud);
 
   const onReloaded = hud.ui.once("reloaded");
-  await refreshTab();
+  await reloadBrowser();
   await onReloaded;
 
   info("Wait for messages to be cleared");
@@ -162,7 +162,7 @@ add_task(async function() {
   
   
   let timeBeforeNavigation = Date.now() - WILL_NAVIGATE_TIME_SHIFT;
-  refreshTab();
+  reloadBrowser();
   await onNavigatedMessage;
   await onReloaded;
 

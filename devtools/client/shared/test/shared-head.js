@@ -446,21 +446,12 @@ var removeTab = async function(tab) {
 
 
 
-
-var refreshTab = async function(tab = gBrowser.selectedTab) {
-  info("Refreshing tab.");
-  
-  
-  const isKnownTab = TabDescriptorFactory.isKnownTab(tab);
-  if (isKnownTab) {
-    await navigateTo(tab.linkedBrowser.currentURI.spec);
-  } else {
-    const finished = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-    gBrowser.reloadTab(tab);
-    await finished;
-  }
-  info("Tab finished refreshing.");
-};
+async function reloadBrowser({
+  browser = gBrowser.selectedBrowser,
+  isErrorPage = false,
+} = {}) {
+  return navigateTo(browser.currentURI.spec, { browser, isErrorPage });
+}
 
 
 

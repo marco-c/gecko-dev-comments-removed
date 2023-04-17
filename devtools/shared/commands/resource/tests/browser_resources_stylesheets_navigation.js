@@ -113,7 +113,7 @@ add_task(async function() {
   availableResources = [];
 
   info("Check that styleSheetChangeEventsEnabled persist after reloading");
-  await refreshTab();
+  await reloadBrowser();
 
   
   

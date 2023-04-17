@@ -35,7 +35,7 @@ add_task(async function() {
   
   
   sourceSeen = waitForSourceLoad(toolbox, JS_URL);
-  await refreshTab();
+  await reloadBrowser();
   await sourceSeen;
 
   info(

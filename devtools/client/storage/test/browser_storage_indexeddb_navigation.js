@@ -64,7 +64,7 @@ async function testNavigation(shallCleanup = false) {
   
 
   
-  await refreshTab();
+  await reloadBrowser();
   
   info("Checking storage tree…");
   await waitUntil(() => isInTree(doc, ["indexedDB", "http://example.net"]));
