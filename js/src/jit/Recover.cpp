@@ -60,7 +60,8 @@ bool MResumePoint::writeRecoverData(CompactBufferWriter& writer) const {
   writer.writeUnsigned(uint32_t(RInstruction::Recover_ResumePoint));
 
   MBasicBlock* bb = block();
-  JSFunction* fun = bb->info().funMaybeLazy();
+  bool hasFun = bb->info().hasFunMaybeLazy();
+  uint32_t nargs = bb->info().nargs();
   JSScript* script = bb->info().script();
   uint32_t exprStack = stackDepth() - bb->info().ninvoke();
 
@@ -101,16 +102,17 @@ bool MResumePoint::writeRecoverData(CompactBufferWriter& writer) const {
   }
 #endif
 
+  uint32_t formalArgs = CountArgSlots(script, hasFun, nargs);
+
   
   
   
   
-  MOZ_ASSERT(CountArgSlots(script, fun) < SNAPSHOT_MAX_NARGS + 4);
+  MOZ_ASSERT(formalArgs < SNAPSHOT_MAX_NARGS + 4);
 
 #ifdef JS_JITSPEW
   uint32_t implicit = StartArgSlot(script);
 #endif
-  uint32_t formalArgs = CountArgSlots(script, fun);
   uint32_t nallocs = formalArgs + script->nfixed() + exprStack;
 
   JitSpew(JitSpew_IonSnapshots,
