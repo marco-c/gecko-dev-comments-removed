@@ -269,7 +269,10 @@ pub extern "C" fn l10nfilesource_fetch_file_sync(
     };
 
     *status = L10nFileSourceStatus::None;
-    if let Some(res) = source.fetch_file_sync(&locale, &path.to_utf8(), false) {
+    
+    
+    
+    if let Some(res) = source.fetch_file_sync(&locale, &path.to_utf8(),  true) {
         Rc::into_raw(res)
     } else {
         std::ptr::null()
