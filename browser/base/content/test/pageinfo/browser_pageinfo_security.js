@@ -308,9 +308,21 @@ add_task(async function test_SiteData() {
 
 add_task(async function test_Cookies() {
   
-  SiteDataTestUtils.addToCookies(TEST_ORIGIN, "test1", "1");
-  SiteDataTestUtils.addToCookies(TEST_ORIGIN, "test2", "2");
-  SiteDataTestUtils.addToCookies(TEST_SUB_ORIGIN, "test1", "1");
+  SiteDataTestUtils.addToCookies({
+    origin: TEST_ORIGIN,
+    name: "test1",
+    value: "1",
+  });
+  SiteDataTestUtils.addToCookies({
+    origin: TEST_ORIGIN,
+    name: "test2",
+    value: "2",
+  });
+  SiteDataTestUtils.addToCookies({
+    origin: TEST_SUB_ORIGIN,
+    name: "test1",
+    value: "1",
+  });
 
   await BrowserTestUtils.withNewTab(TEST_ORIGIN, async function(browser) {
     let pageInfo = BrowserPageInfo(TEST_ORIGIN, "securityTab");

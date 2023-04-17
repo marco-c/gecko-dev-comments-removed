@@ -86,20 +86,38 @@ var SiteDataTestUtils = {
 
 
 
-  addToCookies(origin, name = "foo", value = "bar") {
-    let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-      origin
-    );
+
+
+
+
+
+  addToCookies({
+    origin,
+    host,
+    path = "path",
+    originAttributes = {},
+    name = "foo",
+    value = "bar",
+  }) {
+    if (origin) {
+      let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
+        origin
+      );
+      host = principal.host;
+      path = principal.URI.pathQueryRef;
+      originAttributes = principal.originAttributes;
+    }
+
     Services.cookies.add(
-      principal.host,
-      principal.URI.pathQueryRef,
+      host,
+      path,
       name,
       value,
       false,
       false,
       false,
-      Date.now() + 24000 * 60 * 60,
-      principal.originAttributes,
+      Math.floor(Date.now() / 1000) + 24 * 60 * 60,
+      originAttributes,
       Ci.nsICookie.SAMESITE_NONE,
       Ci.nsICookie.SCHEME_UNSET
     );

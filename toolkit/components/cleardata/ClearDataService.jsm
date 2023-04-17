@@ -31,6 +31,53 @@ XPCOMUtils.defineLazyServiceGetter(
   "@mozilla.org/tracking-db-service;1",
   "nsITrackingDBService"
 );
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "gFirstPartyIsolateUseSite",
+  "privacy.firstparty.isolate.use_site",
+  false
+);
+
+function getBaseDomainFromPartitionKey(partitionKey) {
+  if (!partitionKey?.length) {
+    return undefined;
+  }
+  if (gFirstPartyIsolateUseSite) {
+    return partitionKey;
+  }
+  let entries = partitionKey.substr(1, partitionKey.length - 2).split(",");
+  if (entries.length < 2) {
+    return undefined;
+  }
+  return entries[1];
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function hasBaseDomain({ host, originAttributes = null }, aBaseDomain) {
+  if (Services.eTLD.hasRootDomain(host, aBaseDomain)) {
+    return true;
+  }
+
+  if (!originAttributes) {
+    return false;
+  }
+
+  let partitionKeyBaseDomain = getBaseDomainFromPartitionKey(
+    originAttributes.partitionKey
+  );
+  return partitionKeyBaseDomain && partitionKeyBaseDomain == aBaseDomain;
+}
 
 
 
@@ -82,9 +129,17 @@ const CookieCleaner = {
     return this.deleteByHost(aPrincipal.host, aPrincipal.originAttributes);
   },
 
-  deleteByBaseDomain(aBaseDomain) {
-    
-    return this.deleteByHost(aBaseDomain, {});
+  async deleteByBaseDomain(aDomain) {
+    Services.cookies.cookies
+      .filter(({ rawHost, originAttributes }) =>
+        hasBaseDomain({ host: rawHost, originAttributes }, aDomain)
+      )
+      .forEach(cookie => {
+        Services.cookies.removeCookiesFromExactHost(
+          cookie.rawHost,
+          JSON.stringify(cookie.originAttributes)
+        );
+      });
   },
 
   deleteByRange(aFrom, aTo) {

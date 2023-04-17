@@ -26,7 +26,7 @@ add_task(async function test_singleDomain() {
   
   await SiteDataTestUtils.clear();
 
-  SiteDataTestUtils.addToCookies("https://example.com");
+  SiteDataTestUtils.addToCookies({ origin: "https://example.com" });
 
   
   await ForgetAboutSite.removeDataFromDomain("example.com");
@@ -44,12 +44,12 @@ add_task(async function test_subDomain() {
   
   await SiteDataTestUtils.clear();
 
-  SiteDataTestUtils.addToCookies("https://example.com");
-  SiteDataTestUtils.addToCookies("https://sub.example.com");
-  SiteDataTestUtils.addToCookies("https://sub2.example.com");
-  SiteDataTestUtils.addToCookies("https://sub2.example.com");
+  SiteDataTestUtils.addToCookies({ origin: "https://example.com" });
+  SiteDataTestUtils.addToCookies({ origin: "https://sub.example.com" });
+  SiteDataTestUtils.addToCookies({ origin: "https://sub2.example.com" });
+  SiteDataTestUtils.addToCookies({ origin: "https://sub2.example.com" });
 
-  SiteDataTestUtils.addToCookies("https://example.org");
+  SiteDataTestUtils.addToCookies({ origin: "https://example.org" });
 
   
   await ForgetAboutSite.removeDataFromDomain("sub.example.com");
