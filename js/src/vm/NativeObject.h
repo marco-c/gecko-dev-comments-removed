@@ -975,11 +975,6 @@ class NativeObject : public JSObject {
                                     HandleObject setter, unsigned attrs);
 
   
-  static Shape* changeProperty(JSContext* cx, HandleNativeObject obj,
-                               HandleShape shape, unsigned attrs,
-                               HandleObject getter, HandleObject setter);
-
-  
   static bool removeProperty(JSContext* cx, HandleNativeObject obj, jsid id);
 
  protected:

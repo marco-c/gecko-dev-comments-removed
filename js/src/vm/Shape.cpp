@@ -1158,31 +1158,6 @@ Shape* NativeObject::putAccessorProperty(JSContext* cx, HandleNativeObject obj,
 }
 
 
-Shape* NativeObject::changeProperty(JSContext* cx, HandleNativeObject obj,
-                                    HandleShape shape, unsigned attrs,
-                                    HandleObject getter, HandleObject setter) {
-  MOZ_ASSERT(obj->containsPure(shape));
-
-  AutoCheckShapeConsistency check(obj);
-
-  
-#ifdef DEBUG
-  bool needSlot = Shape::isDataProperty(attrs);
-  MOZ_ASSERT_IF(shape->isDataProperty() != needSlot, needSlot);
-#endif
-
-  AssertCanChangeAttrs(shape, attrs);
-
-  if (shape->attrs == attrs && shape->maybeGetterObject() == getter &&
-      shape->maybeSetterObject() == setter) {
-    return shape;
-  }
-
-  RootedId propid(cx, shape->propid());
-  return putAccessorProperty(cx, obj, propid, getter, setter, attrs);
-}
-
-
 bool NativeObject::removeProperty(JSContext* cx, HandleNativeObject obj,
                                   jsid id_) {
   RootedId id(cx, id_);
