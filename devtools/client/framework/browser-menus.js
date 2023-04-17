@@ -60,18 +60,7 @@ function l10n(key) {
 
 
 
-
-
-
-
-function createMenuItem({
-  doc,
-  id,
-  label,
-  accesskey,
-  isCheckbox,
-  appMenuL10nId,
-}) {
+function createMenuItem({ doc, id, label, accesskey, isCheckbox }) {
   const menuitem = doc.createXULElement("menuitem");
   menuitem.id = id;
   menuitem.setAttribute("label", label);
@@ -81,9 +70,6 @@ function createMenuItem({
   if (isCheckbox) {
     menuitem.setAttribute("type", "checkbox");
     menuitem.setAttribute("autocheck", "false");
-  }
-  if (appMenuL10nId) {
-    menuitem.setAttribute("appmenu-data-l10n-id", appMenuL10nId);
   }
   return menuitem;
 }
@@ -120,7 +106,6 @@ function createToolMenuElements(toolDefinition, doc) {
     id: "menuitem_" + id,
     label: toolDefinition.menuLabel || toolDefinition.label,
     accesskey: toolDefinition.accesskey,
-    appMenuL10nId: toolDefinition.appMenuL10nId,
   });
   
   
@@ -262,7 +247,6 @@ function addTopLevelItems(doc) {
         label: l10n(l10nKey + ".label"),
         accesskey: l10n(l10nKey + ".accesskey"),
         isCheckbox: item.checkbox,
-        appMenuL10nId: item.appMenuL10nId,
       });
       menuitem.addEventListener("command", item.oncommand);
       menuItems.appendChild(menuitem);

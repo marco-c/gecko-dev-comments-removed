@@ -4634,16 +4634,6 @@ var CustomizableUI = {
       if (menuChild.localName == "menuitem") {
         subviewItem.classList.add("subviewbutton");
       }
-
-      
-      
-      
-      
-      let l10nId = menuChild.getAttribute("appmenu-data-l10n-id");
-      if (l10nId) {
-        subviewItem.setAttribute("data-l10n-id", l10nId);
-      }
-
       fragment.appendChild(subviewItem);
     }
     aSubview.appendChild(fragment);
