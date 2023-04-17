@@ -2183,8 +2183,10 @@ already_AddRefed<CanvasPattern> CanvasRenderingContext2D::CreatePattern(
 
   
   
-  SurfaceFromElementResult res = nsLayoutUtils::SurfaceFromElement(
-      element, nsLayoutUtils::SFE_WANT_FIRST_FRAME_IF_IMAGE, mTarget);
+  auto flags = nsLayoutUtils::SFE_WANT_FIRST_FRAME_IF_IMAGE |
+               nsLayoutUtils::SFE_TO_SRGB_COLORSPACE;
+  SurfaceFromElementResult res =
+      nsLayoutUtils::SurfaceFromElement(element, flags, mTarget);
 
   
   
@@ -4524,7 +4526,8 @@ void CanvasRenderingContext2D::DrawImage(const CanvasImageSource& aImage,
     
     
     uint32_t sfeFlags = nsLayoutUtils::SFE_WANT_FIRST_FRAME_IF_IMAGE |
-                        nsLayoutUtils::SFE_NO_RASTERIZING_VECTORS;
+                        nsLayoutUtils::SFE_NO_RASTERIZING_VECTORS |
+                        nsLayoutUtils::SFE_TO_SRGB_COLORSPACE;
 
     SurfaceFromElementResult res =
         CanvasRenderingContext2D::CachedSurfaceFromElement(element);

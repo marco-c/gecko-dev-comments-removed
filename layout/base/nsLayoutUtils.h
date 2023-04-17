@@ -2142,7 +2142,10 @@ class nsLayoutUtils {
     SFE_NO_RASTERIZING_VECTORS = 1 << 4,
     
 
-    SFE_USE_ELEMENT_SIZE_IF_VECTOR = 1 << 5
+    SFE_USE_ELEMENT_SIZE_IF_VECTOR = 1 << 5,
+    
+
+    SFE_TO_SRGB_COLORSPACE = 1 << 6
   };
 
   
