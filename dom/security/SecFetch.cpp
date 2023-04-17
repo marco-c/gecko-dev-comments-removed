@@ -218,6 +218,11 @@ bool IsUserTriggeredForSecFetchSite(nsIHttpChannel* aHTTPChannel) {
   }
 
   
+  if (!loadInfo->GetHasValidUserGestureActivation()) {
+    return false;
+  }
+
+  
   
   if (loadInfo->GetIsMetaRefresh()) {
     return false;
