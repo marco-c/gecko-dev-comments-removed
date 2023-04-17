@@ -22,12 +22,6 @@ add_task(async function setup() {
 
   addedEngine = await Services.search.getEngineByName(TEST_ENGINE_NAME);
 
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.suggest.searches", true]],
-  });
-
   registerCleanupFunction(async () => {
     await Services.search.setDefault(defaultEngine);
   });
@@ -102,16 +96,6 @@ async function runNewTabTest(isHandoff) {
     await ensurePlaceholder(tab, "newtab-search-box-handoff-input-no-engine");
   }
 
-  
-  
-  if (isHandoff) {
-    await SpecialPowers.pushPrefEnv({
-      set: [["browser.urlbar.suggest.searches", false]],
-    });
-    await ensurePlaceholder(tab, "newtab-search-box-input");
-    await SpecialPowers.popPrefEnv();
-  }
-
   await Services.search.setDefault(defaultEngine);
 
   BrowserTestUtils.removeTab(tab);
@@ -155,15 +139,6 @@ add_task(async function test_content_search_attributes_in_private_window() {
   
   await ensureIcon(tab, "chrome://global/skin/icons/search-glass.svg");
   await ensurePlaceholder(tab, "about-private-browsing-handoff-no-engine");
-
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.suggest.searches", false]],
-  });
-  await ensurePlaceholder(tab, "about-private-browsing-search-btn");
-  await SpecialPowers.popPrefEnv(
-    tab,
-    "about-private-browsing-search-placeholder"
-  );
 
   await Services.search.setDefault(defaultEngine);
 
