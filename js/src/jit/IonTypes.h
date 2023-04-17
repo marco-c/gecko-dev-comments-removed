@@ -14,7 +14,6 @@
 #include <stdint.h>
 
 #include "jstypes.h"
-#include "NamespaceImports.h"
 
 #include "js/ScalarType.h"  
 #include "js/Value.h"
