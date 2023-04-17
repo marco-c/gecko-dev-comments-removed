@@ -501,123 +501,92 @@ struct YUVMatrix {
   
   
   
+  V8<int16_t> rbCoeffs;
+  V8<int16_t> gCoeffs;
+  V8<uint16_t> yScale;
+  V8<int16_t> yBias;
+  V8<int16_t> uvBias;
+  V8<int16_t> brMask;
 
-  V8<int16_t> br_uvCoeffs;  
-  V8<int16_t> gg_uvCoeffs;  
-  V8<uint16_t> yCoeffs;     
-  V8<int16_t> yBias;        
-  V8<int16_t> uvBias;       
-  V8<int16_t> br_yMask;
-
-  
-  
-  
   
   
   
   
-  
-  static YUVMatrix From(const vec3_scalar& ycbcr_bias,
-                        const mat3_scalar& rgb_from_debiased_ycbcr) {
-    assert(ycbcr_bias.z == ycbcr_bias.y);
-
-    const auto rgb_from_y = rgb_from_debiased_ycbcr[0].y;
-    assert(rgb_from_debiased_ycbcr[0].x == rgb_from_debiased_ycbcr[0].z);
-
-    int16_t br_from_y_mask = -1;
-    if (rgb_from_debiased_ycbcr[0].x == 0.0) {
-      
-      assert(rgb_from_debiased_ycbcr[0].x == 0);
-      assert(rgb_from_debiased_ycbcr[0].y == 1);
-      assert(rgb_from_debiased_ycbcr[0].z == 0);
-
-      assert(rgb_from_debiased_ycbcr[1].x == 0);
-      assert(rgb_from_debiased_ycbcr[1].y == 0);
-      assert(rgb_from_debiased_ycbcr[1].z == 1);
-
-      assert(rgb_from_debiased_ycbcr[2].x == 1);
-      assert(rgb_from_debiased_ycbcr[2].y == 0);
-      assert(rgb_from_debiased_ycbcr[2].z == 0);
-
-      assert(ycbcr_bias.x == 0);
-      assert(ycbcr_bias.y == 0);
-      assert(ycbcr_bias.z == 0);
-
-      br_from_y_mask = 0;
-    } else {
-      assert(rgb_from_debiased_ycbcr[0].x == rgb_from_y);
-    }
-
-    assert(rgb_from_debiased_ycbcr[1].x == 0.0);
-    const auto g_from_u = rgb_from_debiased_ycbcr[1].y;
-    const auto b_from_u = rgb_from_debiased_ycbcr[1].z;
-
-    const auto r_from_v = rgb_from_debiased_ycbcr[2].x;
-    const auto g_from_v = rgb_from_debiased_ycbcr[2].y;
-    assert(rgb_from_debiased_ycbcr[2].z == 0.0);
-
-    return YUVMatrix({ycbcr_bias.x, ycbcr_bias.y}, rgb_from_y, br_from_y_mask,
-                     r_from_v, g_from_u, g_from_v, b_from_u);
-  }
+  YUVMatrix()
+      : rbCoeffs(1 << 6),
+        gCoeffs(0),
+        yScale(1 << (6 + 1)),
+        yBias(0),
+        uvBias(0),
+        brMask(0) {}
 
   
-  YUVMatrix(vec2_scalar yuv_bias, double yCoeff, int16_t br_yMask_, double rv,
-            double gu, double gv, double bu)
-      : br_uvCoeffs(zip(I16(int16_t(bu * (1 << 6) + 0.5)),
-                        I16(int16_t(rv * (1 << 6) + 0.5)))),
-        gg_uvCoeffs(zip(I16(-int16_t(-gu * (1 << 6) +
-                                     0.5)),  
-                                             
-                        I16(-int16_t(-gv * (1 << 6) + 0.5)))),
-        yCoeffs(uint16_t(yCoeff * (1 << (6 + 1)) + 0.5)),
-        
-        
-        
-        yBias(int16_t( ((yuv_bias.x * 255 * yCoeff) - 0.5 ) * (1<<6) )),
-        uvBias(int16_t(yuv_bias.y * 255 + 0.5)),
-        br_yMask(br_yMask_) {
-    assert(yuv_bias.x >= 0);
-    assert(yuv_bias.y >= 0);
-    assert(yCoeff > 0);
-    assert(br_yMask_ == 0 || br_yMask_ == -1);
-    assert(bu > 0);
-    assert(rv > 0);
-    assert(gu <= 0);
-    assert(gv <= 0);
-  }
+  YUVMatrix(double rv, double gu, double gv, double bu)
+      : rbCoeffs(
+            zip(I16(int16_t(bu * 64.0 + 0.5)), I16(int16_t(rv * 64.0 + 0.5)))),
+        gCoeffs(zip(I16(-int16_t(gu * -64.0 + 0.5)),
+                    I16(-int16_t(gv * -64.0 + 0.5)))),
+        yScale(2 * 74 + 1),
+        yBias(int16_t(-16 * 74.5) + (1 << 5)),
+        uvBias(-128),
+        brMask(-1) {}
 
   ALWAYS_INLINE PackedRGBA8 convert(V8<int16_t> yy, V8<int16_t> uv) const {
     
     
     
     
+    yy = bit_cast<V8<int16_t>>((bit_cast<V8<uint16_t>>(yy) * yScale) >> 1) +
+         yBias;
 
     
-    
-    yy = bit_cast<V8<int16_t>>((bit_cast<V8<uint16_t>>(yy) * yCoeffs) >> 1);
-    yy -= yBias;
+    uv += uvBias;
 
     
-    
-    uv -= uvBias;
-    auto br = br_uvCoeffs * uv;
-    br = addsat(yy & br_yMask, br);
+    auto br = rbCoeffs * uv;
+    br = addsat(yy & brMask, br);
     br >>= 6;
 
     
-    
-    auto gg = gg_uvCoeffs * uv;
-    
-    gg = addsat(gg, bit_cast<V8<int16_t>>(bit_cast<V4<uint32_t>>(gg) >> 16));
-    
-    gg = addsat(yy, gg);  
-                          
-                          
+    auto gg = gCoeffs * uv;
+    gg = addsat(
+        yy,
+        addsat(gg, bit_cast<V8<int16_t>>(bit_cast<V4<uint32_t>>(gg) >> 16)));
     gg >>= 6;
 
     
     return packYUV(gg, br);
   }
+};
+
+enum YUVColorSpace { REC_601 = 0, REC_709, REC_2020, IDENTITY };
+
+static const YUVMatrix yuvMatrix[IDENTITY + 1] = {
+    
+
+
+
+
+  {1.5960267857142858, -0.3917622900949137, -0.8129676472377708, 2.017232142857143},
+
+
+
+
+
+  {1.7927410714285714, -0.21324861427372963, -0.532909328559444, 2.1124017857142854},
+
+
+
+
+
+  {1.678674107142860, -0.187326104219343, -0.650424318505057, 2.14177232142857},
+
+
+
+
+
+  {},
+    
 };
 
 
@@ -994,7 +963,7 @@ static void linear_row_yuv(uint32_t* dest, int span, sampler2DRect samplerY,
 }
 
 static void linear_convert_yuv(Texture& ytex, Texture& utex, Texture& vtex,
-                               const YUVMatrix& rgbFromYcbcr, int colorDepth,
+                               YUVColorSpace colorSpace, int colorDepth,
                                const IntRect& srcReq, Texture& dsttex,
                                const IntRect& dstReq, bool invertY,
                                const IntRect& clipRect) {
@@ -1042,135 +1011,12 @@ static void linear_convert_yuv(Texture& ytex, Texture& utex, Texture& vtex,
   for (int rows = dstBounds.height(); rows > 0; rows--) {
     linear_row_yuv((uint32_t*)dest, span, &sampler[0], srcUV, srcDUV.x,
                    &sampler[1], &sampler[2], chromaUV, chromaDUV.x, colorDepth,
-                   rgbFromYcbcr);
+                   yuvMatrix[colorSpace]);
     dest += destStride;
     srcUV.y += srcDUV.y;
     chromaUV.y += chromaDUV.y;
   }
 }
-
-
-
-
-enum class YUVRangedColorSpace : uint8_t {
-  BT601_Narrow = 0,
-  BT601_Full,
-  BT709_Narrow,
-  BT709_Full,
-  BT2020_Narrow,
-  BT2020_Full,
-  GbrIdentity,
-};
-
-
-
-
-vec4_scalar get_ycbcr_zeros_ones(const YUVRangedColorSpace color_space,
-                                 const GLuint color_depth) {
-  
-  
-  
-  
-  
-  
-  
-  switch (color_space) {
-    case YUVRangedColorSpace::BT601_Narrow:
-    case YUVRangedColorSpace::BT709_Narrow:
-    case YUVRangedColorSpace::BT2020_Narrow: {
-      auto extra_bit_count = color_depth - 8;
-      vec4_scalar zo = {
-          float(16 << extra_bit_count),
-          float(128 << extra_bit_count),
-          float(235 << extra_bit_count),
-          float(240 << extra_bit_count),
-      };
-      float all_bits = (1 << color_depth) - 1;
-      zo /= all_bits;
-      return zo;
-    }
-
-    case YUVRangedColorSpace::BT601_Full:
-    case YUVRangedColorSpace::BT709_Full:
-    case YUVRangedColorSpace::BT2020_Full: {
-      const auto narrow =
-          get_ycbcr_zeros_ones(YUVRangedColorSpace::BT601_Narrow, color_depth);
-      return {0.0, narrow.y, 1.0, 1.0};
-    }
-
-    case YUVRangedColorSpace::GbrIdentity:
-      break;
-  }
-  return {0.0, 0.0, 1.0, 1.0};
-}
-
-constexpr mat3_scalar RgbFromYuv_Rec601 = {
-    {1.00000, 1.00000, 1.00000},
-    {0.00000, -0.17207, 0.88600},
-    {0.70100, -0.35707, 0.00000},
-};
-constexpr mat3_scalar RgbFromYuv_Rec709 = {
-    {1.00000, 1.00000, 1.00000},
-    {0.00000, -0.09366, 0.92780},
-    {0.78740, -0.23406, 0.00000},
-};
-constexpr mat3_scalar RgbFromYuv_Rec2020 = {
-    {1.00000, 1.00000, 1.00000},
-    {0.00000, -0.08228, 0.94070},
-    {0.73730, -0.28568, 0.00000},
-};
-constexpr mat3_scalar RgbFromYuv_GbrIdentity = {
-    {0, 1, 0},
-    {0, 0, 1},
-    {1, 0, 0},
-};
-
-inline mat3_scalar get_rgb_from_yuv(const YUVRangedColorSpace color_space) {
-  switch (color_space) {
-    case YUVRangedColorSpace::BT601_Narrow:
-    case YUVRangedColorSpace::BT601_Full:
-      return RgbFromYuv_Rec601;
-    case YUVRangedColorSpace::BT709_Narrow:
-    case YUVRangedColorSpace::BT709_Full:
-      return RgbFromYuv_Rec709;
-    case YUVRangedColorSpace::BT2020_Narrow:
-    case YUVRangedColorSpace::BT2020_Full:
-      return RgbFromYuv_Rec2020;
-    case YUVRangedColorSpace::GbrIdentity:
-      break;
-  }
-  return RgbFromYuv_GbrIdentity;
-}
-
-struct YcbcrInfo final {
-  vec3_scalar ycbcr_bias;
-  mat3_scalar rgb_from_debiased_ycbcr;
-};
-
-inline YcbcrInfo get_ycbcr_info(const YUVRangedColorSpace color_space,
-                                GLuint color_depth) {
-  
-  color_depth = 8;
-
-  const auto zeros_ones = get_ycbcr_zeros_ones(color_space, color_depth);
-  const auto zeros = vec2_scalar{zeros_ones.x, zeros_ones.y};
-  const auto ones = vec2_scalar{zeros_ones.z, zeros_ones.w};
-  const auto scale = 1.0f / (ones - zeros);
-
-  const auto rgb_from_yuv = get_rgb_from_yuv(color_space);
-  const mat3_scalar yuv_from_debiased_ycbcr = {
-      {scale.x, 0, 0},
-      {0, scale.y, 0},
-      {0, 0, scale.y},
-  };
-
-  YcbcrInfo ret;
-  ret.ycbcr_bias = {zeros.x, zeros.y, zeros.y};
-  ret.rgb_from_debiased_ycbcr = rgb_from_yuv * yuv_from_debiased_ycbcr;
-  return ret;
-}
-
-
 
 extern "C" {
 
@@ -1179,7 +1025,7 @@ extern "C" {
 
 void CompositeYUV(LockedTexture* lockedDst, LockedTexture* lockedY,
                   LockedTexture* lockedU, LockedTexture* lockedV,
-                  YUVRangedColorSpace colorSpace, GLuint colorDepth, GLint srcX,
+                  YUVColorSpace colorSpace, GLuint colorDepth, GLint srcX,
                   GLint srcY, GLsizei srcWidth, GLsizei srcHeight, GLint dstX,
                   GLint dstY, GLsizei dstWidth, GLsizei dstHeight,
                   GLboolean flip, GLint clipX, GLint clipY, GLsizei clipWidth,
@@ -1187,14 +1033,10 @@ void CompositeYUV(LockedTexture* lockedDst, LockedTexture* lockedY,
   if (!lockedDst || !lockedY || !lockedU || !lockedV) {
     return;
   }
-  if (colorSpace > YUVRangedColorSpace::GbrIdentity) {
+  if (colorSpace > IDENTITY) {
     assert(false);
     return;
   }
-  const auto ycbcrInfo = get_ycbcr_info(colorSpace, colorDepth);
-  const auto rgbFromYcbcr =
-      YUVMatrix::From(ycbcrInfo.ycbcr_bias, ycbcrInfo.rgb_from_debiased_ycbcr);
-
   Texture& ytex = *lockedY;
   Texture& utex = *lockedU;
   Texture& vtex = *lockedV;
@@ -1220,7 +1062,7 @@ void CompositeYUV(LockedTexture* lockedDst, LockedTexture* lockedY,
   
   
   
-  linear_convert_yuv(ytex, utex, vtex, rgbFromYcbcr, colorDepth, srcReq, dsttex,
+  linear_convert_yuv(ytex, utex, vtex, colorSpace, colorDepth, srcReq, dsttex,
                      dstReq, flip, clipRect);
 }
 

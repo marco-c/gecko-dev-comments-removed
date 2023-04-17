@@ -111,10 +111,6 @@ class MacIOSurface final
   bool IsFullRange() const {
     return GetPixelFormat() == kCVPixelFormatType_420YpCbCr8BiPlanarFullRange;
   }
-  mozilla::gfx::ColorRange GetColorRange() const {
-    if (IsFullRange()) return mozilla::gfx::ColorRange::FULL;
-    return mozilla::gfx::ColorRange::LIMITED;
-  }
 
   
   
