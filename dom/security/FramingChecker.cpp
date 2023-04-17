@@ -207,7 +207,9 @@ bool FramingChecker::CheckFrameOptions(nsIChannel* aChannel,
   
   uint32_t responseStatus;
   rv = httpChannel->GetResponseStatus(&responseStatus);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
+  
+  
+  if (NS_FAILED(rv)) {
     return true;
   }
   if (mozilla::net::nsHttpChannel::IsRedirectStatus(responseStatus)) {
