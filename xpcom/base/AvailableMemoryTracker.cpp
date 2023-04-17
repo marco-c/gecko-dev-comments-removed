@@ -7,6 +7,7 @@
 #include "mozilla/AvailableMemoryTracker.h"
 
 #if defined(XP_WIN)
+#  include "mozilla/StaticPrefs_browser.h"
 #  include "mozilla/WindowsVersion.h"
 #  include "nsExceptionHandler.h"
 #  include "nsIMemoryReporter.h"
@@ -89,6 +90,7 @@ class nsAvailableMemoryWatcher final : public nsIObserver,
   void OnLowMemory(const MutexAutoLock&);
   void OnHighMemory(const MutexAutoLock&);
   bool IsMemoryLow() const;
+  bool IsCommitSpaceLow() const;
   void StartPollingIfUserInteracting();
   void StopPolling();
   void StopPollingIfUserIdle(const MutexAutoLock&);
@@ -216,8 +218,18 @@ void nsAvailableMemoryWatcher::OnLowMemory(const MutexAutoLock&) {
   mUnderMemoryPressure = true;
   ::UnregisterWait(mWaitHandle);
   mWaitHandle = nullptr;
-  RecordLowMemoryEvent();
-  NS_DispatchEventualMemoryPressure(MemPressure_New);
+
+  
+  
+  
+  
+  
+  
+  if (IsCommitSpaceLow()) {
+    RecordLowMemoryEvent();
+    NS_DispatchEventualMemoryPressure(MemPressure_New);
+  }
+
   StartPollingIfUserInteracting();
 }
 
@@ -234,6 +246,24 @@ bool nsAvailableMemoryWatcher::IsMemoryLow() const {
     return lowMemory;
   }
   return false;
+}
+
+bool nsAvailableMemoryWatcher::IsCommitSpaceLow() const {
+  
+  
+  
+  
+  
+  
+  
+  MEMORYSTATUSEX memStatus = {sizeof(memStatus)};
+  if (!::GlobalMemoryStatusEx(&memStatus)) {
+    return false;
+  }
+
+  constexpr size_t kBytesPerMB = 1024 * 1024;
+  return (memStatus.ullAvailPageFile / kBytesPerMB) <
+         StaticPrefs::browser_low_commit_space_threshold_mb();
 }
 
 void nsAvailableMemoryWatcher::StartPollingIfUserInteracting() {
@@ -276,10 +306,13 @@ nsAvailableMemoryWatcher::Notify(nsITimer* aTimer) {
   MutexAutoLock lock(mMutex);
   StopPollingIfUserIdle(lock);
 
-  if (IsMemoryLow()) {
-    NS_DispatchEventualMemoryPressure(MemPressure_Ongoing);
-  } else {
+  if (!IsMemoryLow()) {
     OnHighMemory(lock);
+    return NS_OK;
+  }
+
+  if (IsCommitSpaceLow()) {
+    NS_DispatchEventualMemoryPressure(MemPressure_Ongoing);
   }
 
   return NS_OK;
