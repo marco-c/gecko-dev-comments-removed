@@ -1046,6 +1046,17 @@ TEST(BaseProfiler, BlocksRingBuffer)
 
 
 
+#  define GET_JSON_VALUE(VARIABLE, GETTER, TYPE) \
+    ASSERT_HAS_JSON(GETTER, TYPE);               \
+    const auto VARIABLE = (GETTER).as##TYPE()
+
+
+#  define GET_JSON_MUTABLE_VALUE(VARIABLE, GETTER, TYPE) \
+    ASSERT_HAS_JSON(GETTER, TYPE);                       \
+    auto VARIABLE = (GETTER).as##TYPE()
+
+
+
 #  define EXPECT_EQ_JSON(GETTER, TYPE, VALUE)        \
     do {                                             \
       if ((GETTER).isNull()) {                       \
@@ -1122,13 +1133,60 @@ static void JSONRootCheck(const Json::Value& aRoot,
     EXPECT_HAS_JSON(thread["processType"], String);
     EXPECT_HAS_JSON(thread["name"], String);
     EXPECT_HAS_JSON(thread["registerTime"], Double);
-    EXPECT_HAS_JSON(thread["samples"], Object);
+    GET_JSON(samples, thread["samples"], Object);
     EXPECT_HAS_JSON(thread["markers"], Object);
     EXPECT_HAS_JSON(thread["pid"], Int64);
     EXPECT_HAS_JSON(thread["tid"], Int64);
-    EXPECT_HAS_JSON(thread["stackTable"], Object);
-    EXPECT_HAS_JSON(thread["frameTable"], Object);
-    EXPECT_HAS_JSON(thread["stringTable"], Array);
+    GET_JSON(stackTable, thread["stackTable"], Object);
+    GET_JSON(frameTable, thread["frameTable"], Object);
+    GET_JSON(stringTable, thread["stringTable"], Array);
+
+    GET_JSON(stackTableSchema, stackTable["schema"], Object);
+    EXPECT_GE(stackTableSchema.size(), 2u);
+    GET_JSON_VALUE(stackTablePrefix, stackTableSchema["prefix"], UInt);
+    GET_JSON_VALUE(stackTableFrame, stackTableSchema["frame"], UInt);
+    GET_JSON(stackTableData, stackTable["data"], Array);
+
+    GET_JSON(frameTableSchema, frameTable["schema"], Object);
+    EXPECT_GE(frameTableSchema.size(), 1u);
+    GET_JSON_VALUE(frameTableLocation, frameTableSchema["location"], UInt);
+    GET_JSON(frameTableData, frameTable["data"], Array);
+
+    GET_JSON(samplesSchema, samples["schema"], Object);
+    GET_JSON_VALUE(sampleStackIndex, samplesSchema["stack"], UInt);
+    GET_JSON(samplesData, samples["data"], Array);
+    for (const Json::Value& sample : samplesData) {
+      ASSERT_TRUE(sample.isArray());
+      if (sample.isValidIndex(sampleStackIndex)) {
+        if (!sample[sampleStackIndex].isNull()) {
+          GET_JSON_MUTABLE_VALUE(stack, sample[sampleStackIndex], UInt);
+          EXPECT_TRUE(stackTableData.isValidIndex(stack));
+          for (;;) {
+            
+            
+            GET_JSON(stackTableEntry, stackTableData[stack], Array);
+            GET_JSON_VALUE(frame, stackTableEntry[stackTableFrame], UInt);
+
+            
+            EXPECT_TRUE(frameTableData.isValidIndex(frame));
+            GET_JSON(frameTableEntry, frameTableData[frame], Array);
+            GET_JSON_VALUE(location, frameTableEntry[frameTableLocation], UInt);
+
+            
+            EXPECT_TRUE(stringTable.isValidIndex(location));
+
+            
+            if (stackTableEntry[stackTablePrefix].isNull()) {
+              break;
+            }
+            
+            GET_JSON_VALUE(prefix, stackTableEntry[stackTablePrefix], UInt);
+            EXPECT_TRUE(stackTableData.isValidIndex(prefix));
+            stack = prefix;
+          }
+        }
+      }
+    }
   }
 
   if (aWithMainThread) {
