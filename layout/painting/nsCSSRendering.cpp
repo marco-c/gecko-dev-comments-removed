@@ -20,6 +20,7 @@
 #include "mozilla/HashFunctions.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/SVGImageContext.h"
 #include "gfxFont.h"
 #include "ScaledFontBase.h"
@@ -426,7 +427,7 @@ struct InlineBackgroundData {
   }
 };
 
-static InlineBackgroundData* gInlineBGData = nullptr;
+static StaticAutoPtr<InlineBackgroundData> gInlineBGData;
 
 
 void nsCSSRendering::Init() {
@@ -435,10 +436,7 @@ void nsCSSRendering::Init() {
 }
 
 
-void nsCSSRendering::Shutdown() {
-  delete gInlineBGData;
-  gInlineBGData = nullptr;
-}
+void nsCSSRendering::Shutdown() { gInlineBGData = nullptr; }
 
 
 
