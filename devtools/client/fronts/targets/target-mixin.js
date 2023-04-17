@@ -274,12 +274,6 @@ function TargetMixin(parentClass) {
     getTrait(traitName) {
       
       
-      if (this.traits && this.traits[traitName]) {
-        return this.traits[traitName];
-      }
-
-      
-      
       if (this.targetForm.traits && traitName in this.targetForm.traits) {
         return this.targetForm.traits[traitName];
       }
