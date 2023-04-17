@@ -60,6 +60,7 @@ class AbstractThread : public nsISerialEventTarget {
   
   
   
+  using nsISerialEventTarget::IsOnCurrentThread;
   NS_IMETHOD_(bool) IsOnCurrentThreadInfallible(void) override;
   NS_IMETHOD IsOnCurrentThread(bool* _retval) override;
   NS_IMETHOD Dispatch(already_AddRefed<nsIRunnable> event,
