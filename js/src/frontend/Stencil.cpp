@@ -685,7 +685,7 @@ AbstractScopePtr ScopeStencil::enclosing(
 Scope* ScopeStencil::enclosingExistingScope(
     const CompilationInput& input, const CompilationGCOutput& gcOutput) const {
   if (hasEnclosing()) {
-    Scope* result = gcOutput.scopes[enclosing()];
+    Scope* result = gcOutput.getScopeNoBaseIndex(enclosing());
     MOZ_ASSERT(result, "Scope must already exist to use this method");
     return result;
   }
@@ -1030,7 +1030,7 @@ static bool InstantiateFunctions(JSContext* cx, CompilationAtomCache& atomCache,
       SetUnclonedSelfHostedCanonicalName(fun, canonicalName);
     }
 
-    gcOutput.functions[index] = fun;
+    gcOutput.getFunctionNoBaseIndex(index) = fun;
   }
 
   return true;
@@ -1220,7 +1220,7 @@ static void UpdateEmittedInnerFunctions(JSContext* cx,
       BaseScript* script = fun->baseScript();
 
       ScopeIndex index = scriptStencil.lazyFunctionEnclosingScopeIndex();
-      Scope* scope = gcOutput.scopes[index];
+      Scope* scope = gcOutput.getScopeNoBaseIndex(index);
       script->setEnclosingScope(scope);
 
       
@@ -1491,6 +1491,89 @@ JSFunction* CompilationStencil::instantiateSelfHostedLazyFunction(
   SetClonedSelfHostedFunctionName(fun, selfHostedName->asPropertyName());
 
   return fun;
+}
+
+bool CompilationStencil::delazifySelfHostedFunction(
+    JSContext* cx, CompilationAtomCache& atomCache, ScriptIndexRange range,
+    HandleFunction fun) {
+  
+  
+  
+  auto getOutermostScope = [this](ScriptIndex scriptIndex) -> ScopeIndex {
+    MOZ_ASSERT(scriptData[scriptIndex].hasSharedData());
+    auto gcthings = scriptData[scriptIndex].gcthings(*this);
+    return gcthings[GCThingIndex::outermostScopeIndex()].toScope();
+  };
+  ScopeIndex scopeIndex = getOutermostScope(range.start);
+  ScopeIndex scopeLimit = (range.limit < scriptData.size())
+                              ? getOutermostScope(range.limit)
+                              : ScopeIndex(scopeData.size());
+
+  
+  
+  Rooted<CompilationGCOutput> gcOutput(cx);
+  if (!gcOutput.get().ensureReservedWithBaseIndex(cx, range.start, range.limit,
+                                                  scopeIndex, scopeLimit)) {
+    return false;
+  }
+
+  
+  
+  
+
+  
+
+  
+  gcOutput.get().sourceObject = SelfHostingScriptSourceObject(cx);
+  if (!gcOutput.get().sourceObject) {
+    return false;
+  }
+
+  
+  gcOutput.get().functions.infallibleAppend(fun);
+
+  
+  
+  for (size_t i = range.start + 1; i < range.limit; i++) {
+    JSFunction* innerFun = CreateFunction(cx, atomCache, *this, scriptData[i],
+                                          scriptExtra[i], ScriptIndex(i));
+    if (!innerFun) {
+      return false;
+    }
+    gcOutput.get().functions.infallibleAppend(innerFun);
+  }
+
+  
+  
+  
+  
+  
+  for (size_t i = scopeIndex; i < scopeLimit; i++) {
+    ScopeStencil& data = scopeData[i];
+    RootedScope enclosingScope(
+        cx, data.hasEnclosing() ? gcOutput.get().getScope(data.enclosing())
+                                : &cx->global()->emptyGlobalScope());
+
+    js::Scope* scope =
+        data.createScope(cx, atomCache, enclosingScope, scopeNames[i]);
+    if (!scope) {
+      return false;
+    }
+    gcOutput.get().scopes.infallibleAppend(scope);
+  }
+
+  
+  for (size_t i = range.start; i < range.limit; i++) {
+    if (!JSScript::fromStencil(cx, atomCache, *this, gcOutput.get(),
+                               ScriptIndex(i))) {
+      return false;
+    }
+  }
+
+  
+  
+
+  return true;
 }
 
 
