@@ -189,6 +189,6 @@ impl<'a> Speculative for ParseBuffer<'a> {
 
         
         self.cell
-            .set(unsafe { mem::transmute::<Cursor, Cursor<'static>>(fork.cursor()) })
+            .set(unsafe { mem::transmute::<Cursor, Cursor<'static>>(fork.cursor()) });
     }
 }

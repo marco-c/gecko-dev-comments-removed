@@ -2,14 +2,12 @@
 
 
 
-use proc_macro2::Ident;
-
-use crate::parse::{ParseStream, Result};
-
 use crate::buffer::Cursor;
 use crate::parse::Peek;
+use crate::parse::{ParseStream, Result};
 use crate::sealed::lookahead;
 use crate::token::CustomToken;
+use proc_macro2::Ident;
 
 
 
