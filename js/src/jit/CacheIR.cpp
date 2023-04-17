@@ -7610,8 +7610,10 @@ AttachDecision CallIRGenerator::tryAttachObjectIs(HandleFunction callee) {
     return AttachDecision::NoAction;
   }
 
-  
-  
+  if (!isFirstStub_) {
+    
+    return AttachDecision::NoAction;
+  }
 
   
   Int32OperandId argcId(writer.setInputOperandId(0));
@@ -8228,8 +8230,10 @@ AttachDecision CallIRGenerator::tryAttachArrayIteratorPrototypeOptimizable(
   
   MOZ_ASSERT(argc_ == 0);
 
-  
-  
+  if (!isFirstStub_) {
+    
+    return AttachDecision::NoAction;
+  }
 
   NativeObject* arrayIteratorProto;
   uint32_t slot;
@@ -8264,8 +8268,10 @@ AttachDecision CallIRGenerator::tryAttachObjectCreate(HandleFunction callee) {
     return AttachDecision::NoAction;
   }
 
-  
-  
+  if (!isFirstStub_) {
+    
+    return AttachDecision::NoAction;
+  }
 
   RootedObject proto(cx_, args_[0].toObjectOrNull());
   JSObject* templateObj = ObjectCreateImpl(cx_, proto, TenuredObject);
@@ -8359,8 +8365,10 @@ AttachDecision CallIRGenerator::tryAttachTypedArrayConstructor(
     return AttachDecision::NoAction;
   }
 
-  
-  
+  if (!isFirstStub_) {
+    
+    return AttachDecision::NoAction;
+  }
 
   
   if (!args_[0].isInt32() && !args_[0].isObject()) {
