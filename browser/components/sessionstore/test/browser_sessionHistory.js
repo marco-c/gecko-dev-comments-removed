@@ -62,7 +62,9 @@ add_task(async function test_hashchange() {
     true
   );
   await BrowserTestUtils.synthesizeMouseAtCenter("#a", {}, browser);
+  info("About to watch for a hash change event");
   await eventPromise;
+  info("Got a hash change event");
 
   
   await TabStateFlusher.flush(browser);
