@@ -3131,6 +3131,10 @@ nsresult nsLayoutUtils::PaintFrame(gfxContext* aRenderingContext,
   TimeStamp startBuildDisplayList = TimeStamp::Now();
 
   const bool buildCaret = !(aFlags & PaintFrameFlags::HideCaret);
+
+  
+  
+  
   const bool isForPainting = (aFlags & PaintFrameFlags::WidgetLayers) &&
                              aBuilderMode == nsDisplayListBuilderMode::Painting;
 

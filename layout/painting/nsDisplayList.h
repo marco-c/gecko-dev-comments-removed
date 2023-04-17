@@ -341,6 +341,7 @@ struct ActiveScrolledRoot {
 
 enum class nsDisplayListBuilderMode : uint8_t {
   Painting,
+  PaintForPrinting,
   EventDelivery,
   FrameVisibility,
   TransformComputation,
@@ -465,8 +466,18 @@ class nsDisplayListBuilder {
   
 
 
+
+
   bool IsForPainting() const {
-    return mMode == nsDisplayListBuilderMode::Painting;
+    return mMode == nsDisplayListBuilderMode::Painting ||
+           mMode == nsDisplayListBuilderMode::PaintForPrinting;
+  }
+
+  
+
+
+  bool IsForPrinting() const {
+    return mMode == nsDisplayListBuilderMode::PaintForPrinting;
   }
 
   
