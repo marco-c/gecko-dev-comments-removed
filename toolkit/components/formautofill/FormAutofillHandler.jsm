@@ -373,9 +373,11 @@ class FormAutofillSection {
         
         
         
+        
         if (
           element == focusedInput ||
-          (element != focusedInput && !element.value) ||
+          (element != focusedInput &&
+            (!element.value || element.value == element.defaultValue)) ||
           fieldDetail.state == FIELD_STATES.AUTO_FILLED
         ) {
           element.focus({ preventScroll: true });
@@ -440,7 +442,7 @@ class FormAutofillSection {
             value = "";
           }
         }
-      } else if (element.value) {
+      } else if (element.value && element.value != element.defaultValue) {
         
         continue;
       }
@@ -1237,7 +1239,6 @@ class FormAutofillCreditCardSection extends FormAutofillSection {
     for (let fieldDetail of this.fieldDetails) {
       let element = fieldDetail.elementWeakRef.get();
       let state = profile[fieldDetail.fieldName] ? "filled" : "not_filled";
-
       if (
         fieldDetail.state == FIELD_STATES.NORMAL &&
         (ChromeUtils.getClassName(element) == "HTMLSelectElement" ||
