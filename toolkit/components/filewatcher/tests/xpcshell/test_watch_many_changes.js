@@ -40,7 +40,7 @@ add_task(async function test_fill_notification_buffer() {
 
   
   let watcher = makeWatcher();
-  let deferred = Promise.defer();
+  let deferred = PromiseUtils.defer();
 
   
   let changeCallback = function(changed) {

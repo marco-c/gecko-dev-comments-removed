@@ -29,7 +29,7 @@ add_task(async function test_watch_single_path_file_modification() {
 
   
   let watcher = makeWatcher();
-  let deferred = Promise.defer();
+  let deferred = PromiseUtils.defer();
 
   
   

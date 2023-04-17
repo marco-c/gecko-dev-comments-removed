@@ -420,7 +420,6 @@ add_task(async function format_errors() {
     Assert.ok(str.includes(":1:11)"));
     
     
-    Assert.ok(!str.includes("Promise.jsm"));
     Assert.ok(!str.includes("Task.jsm"));
     Assert.ok(str.includes("format_errors"));
   }

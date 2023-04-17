@@ -13,10 +13,6 @@ var EXPORTED_SYMBOLS = ["PromiseTestUtils"];
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { Assert } = ChromeUtils.import("resource://testing-common/Assert.jsm");
 
-
-let JSMPromise = ChromeUtils.import("resource://gre/modules/Promise.jsm", {})
-  .Promise;
-
 var PromiseTestUtils = {
   
 
@@ -65,12 +61,6 @@ var PromiseTestUtils = {
 
     PromiseDebugging.addUncaughtRejectionObserver(this);
 
-    
-    
-    JSMPromise.Debugging.addUncaughtErrorObserver(rejection =>
-      this._rejections.push(rejection)
-    );
-
     this._initialized = true;
   },
   _initialized: false,
@@ -84,7 +74,6 @@ var PromiseTestUtils = {
     }
 
     PromiseDebugging.removeUncaughtRejectionObserver(this);
-    JSMPromise.Debugging.clearUncaughtErrorObservers();
 
     this._initialized = false;
   },
@@ -256,9 +245,6 @@ var PromiseTestUtils = {
 
 
   assertNoUncaughtRejections() {
-    
-    JSMPromise.Debugging.flushUncaughtErrors();
-
     
     while (this._rejections.length) {
       let rejection = this._rejections.shift();

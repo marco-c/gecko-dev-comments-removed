@@ -5,7 +5,9 @@
 var testnum = 0;
 var dbConnection; 
 
-const { Promise } = ChromeUtils.import("resource://gre/modules/Promise.jsm");
+const { PromiseUtils } = ChromeUtils.import(
+  "resource://gre/modules/PromiseUtils.jsm"
+);
 
 function countDeletedEntries(expected) {
   return new Promise((resolve, reject) => {
@@ -108,7 +110,7 @@ add_task(async function() {
     dbFile.append("formhistory.sqlite");
     dbConnection = Services.storage.openUnsharedDatabase(dbFile);
 
-    let deferred = Promise.defer();
+    let deferred = PromiseUtils.defer();
 
     let stmt = dbConnection.createAsyncStatement(
       "DELETE FROM moz_deleted_formhistory"
@@ -140,7 +142,7 @@ add_task(async function() {
     
     
     
-    deferred = Promise.defer();
+    deferred = PromiseUtils.defer();
     await FormHistory.count(
       { fieldname: null, value: null },
       {

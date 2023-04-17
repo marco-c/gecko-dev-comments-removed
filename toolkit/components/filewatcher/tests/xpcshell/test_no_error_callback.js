@@ -48,7 +48,7 @@ add_task(async function test_watch_single_path_file_creation_no_error_cb() {
 
   
   let watcher = makeWatcher();
-  let deferred = Promise.defer();
+  let deferred = PromiseUtils.defer();
 
   
   await promiseAddPath(watcher, watchedDir, deferred.resolve);

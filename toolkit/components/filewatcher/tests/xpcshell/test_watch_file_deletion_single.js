@@ -28,7 +28,7 @@ add_task(async function test_watch_single_path_file_deletion() {
 
   
   let watcher = makeWatcher();
-  let deferred = Promise.defer();
+  let deferred = PromiseUtils.defer();
 
   
   

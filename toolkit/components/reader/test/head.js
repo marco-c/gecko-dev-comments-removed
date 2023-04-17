@@ -1,7 +1,7 @@
 ChromeUtils.defineModuleGetter(
   this,
-  "Promise",
-  "resource://gre/modules/Promise.jsm"
+  "PromiseUtils",
+  "resource://gre/modules/PromiseUtils.jsm"
 );
 
 
@@ -19,7 +19,7 @@ ChromeUtils.defineModuleGetter(
 
 
 function promiseTabLoadEvent(tab, url) {
-  let deferred = Promise.defer();
+  let deferred = PromiseUtils.defer();
   info("Wait tab event: load");
 
   function handle(loadedUrl) {

@@ -208,8 +208,6 @@ var whitelist = [
   
   { file: "chrome://global/content/test-ipc.xhtml" },
   
-  { file: "resource://gre/modules/Promise.jsm" },
-  
   
   
   {

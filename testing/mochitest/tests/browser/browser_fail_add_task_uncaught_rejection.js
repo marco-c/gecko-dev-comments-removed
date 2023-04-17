@@ -3,17 +3,12 @@
 
 "use strict";
 
-setExpectedFailuresForSelfTest(8);
-
-
-let JSMPromise = ChromeUtils.import("resource://gre/modules/Promise.jsm", {})
-  .Promise;
+setExpectedFailuresForSelfTest(4);
 
 async function rejectOnNextTick(error) {
   await Promise.resolve();
 
   Promise.reject(error);
-  JSMPromise.reject(error);
 }
 
 add_task(async function failWithoutError() {

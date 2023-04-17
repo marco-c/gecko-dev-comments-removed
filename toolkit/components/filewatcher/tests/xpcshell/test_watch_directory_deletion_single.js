@@ -23,7 +23,7 @@ add_task(async function test_watch_single_path_directory_deletion() {
 
   
   let watcher = makeWatcher();
-  let deferred = Promise.defer();
+  let deferred = PromiseUtils.defer();
 
   
   await OS.File.makeDir(tmpDirPath);
