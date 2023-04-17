@@ -1005,7 +1005,7 @@ nsresult mozInlineSpellChecker::MakeSpellCheckRange(nsINode* aStartNode,
                                                     int32_t aStartOffset,
                                                     nsINode* aEndNode,
                                                     int32_t aEndOffset,
-                                                    nsRange** aRange) {
+                                                    nsRange** aRange) const {
   nsresult rv;
   *aRange = nullptr;
 
@@ -1085,7 +1085,7 @@ nsresult mozInlineSpellChecker::SpellCheckBetweenNodes(nsINode* aStartNode,
 
 
 bool mozInlineSpellChecker::ShouldSpellCheckNode(TextEditor* aTextEditor,
-                                                 nsINode* aNode) {
+                                                 nsINode* aNode) const {
   MOZ_ASSERT(aNode);
   if (!aNode->IsContent()) return false;
 
@@ -1597,6 +1597,7 @@ nsresult mozInlineSpellChecker::ResumeCheck(
   if (!doneChecking) rv = ScheduleSpellCheck(std::move(aStatus));
   return rv;
 }
+
 
 
 

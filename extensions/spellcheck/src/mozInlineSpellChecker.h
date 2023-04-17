@@ -220,7 +220,8 @@ class mozInlineSpellChecker final : public nsIInlineSpellChecker,
   
   
   
-  bool ShouldSpellCheckNode(mozilla::TextEditor* aTextEditor, nsINode* aNode);
+  bool ShouldSpellCheckNode(mozilla::TextEditor* aTextEditor,
+                            nsINode* aNode) const;
 
   
   
@@ -237,7 +238,7 @@ class mozInlineSpellChecker final : public nsIInlineSpellChecker,
 
   
   
-  nsresult IsPointInSelection(mozilla::dom::Selection& aSelection,
+  static nsresult IsPointInSelection(mozilla::dom::Selection& aSelection,
                               nsINode* aNode, int32_t aOffset,
                               nsRange** aRange);
 
@@ -258,7 +259,7 @@ class mozInlineSpellChecker final : public nsIInlineSpellChecker,
 
   nsresult MakeSpellCheckRange(nsINode* aStartNode, int32_t aStartOffset,
                                nsINode* aEndNode, int32_t aEndOffset,
-                               nsRange** aRange);
+                               nsRange** aRange) const;
 
   
   nsresult RegisterEventListeners();
