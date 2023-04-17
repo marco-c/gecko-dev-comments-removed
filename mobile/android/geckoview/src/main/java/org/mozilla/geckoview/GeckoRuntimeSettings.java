@@ -226,6 +226,20 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
+        public @NonNull Builder enterpiseRootsEnabled(final boolean enabled) {
+            getSettings().setEnterpriseRootsEnabled(enabled);
+            return this;
+        }
+
+        
+
+
+
+
+
+
+
+
 
 
 
@@ -484,6 +498,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
         "geckoview.console.enabled", false);
      final Pref<Integer> mFontSizeFactor = new Pref<>(
         "font.size.systemFontScale", 100);
+     final Pref<Boolean> mEnterpriseRootsEnabled = new Pref<>(
+            "security.enterprise_roots.enabled", false);
      final Pref<Integer> mFontInflationMinTwips = new Pref<>(
         "font.size.inflation.minTwips", 0);
      final Pref<Boolean> mInputAutoZoom = new Pref<>(
@@ -917,6 +933,29 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
             throw new IllegalStateException("Not allowed when automatic font size adjustment is enabled");
         }
         return setFontSizeFactorInternal(fontSizeFactor);
+    }
+
+    
+
+
+
+
+
+
+
+
+    public @NonNull GeckoRuntimeSettings setEnterpriseRootsEnabled(final boolean enabled) {
+        mEnterpriseRootsEnabled.commit(enabled);
+        return this;
+    }
+
+    
+
+
+
+
+    public boolean getEnterpriseRootsEnabled() {
+        return mEnterpriseRootsEnabled.get();
     }
 
     private final static float DEFAULT_FONT_SIZE_FACTOR = 1f;
