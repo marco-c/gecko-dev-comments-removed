@@ -355,7 +355,6 @@ class SurfacePattern : public Pattern {
 };
 
 class StoredPattern;
-class DrawTargetCaptureImpl;
 
 static const int32_t kReasonableSurfaceSize = 8192;
 
@@ -485,14 +484,7 @@ class SourceSurface : public external::AtomicRefCounted<SourceSurface> {
   void RemoveUserData(UserDataKey* key) { mUserData.RemoveAndDestroy(key); }
 
  protected:
-  friend class DrawTargetCaptureImpl;
   friend class StoredPattern;
-
-  
-  
-  
-  
-  virtual void GuaranteePersistance() {}
 
   UserData mUserData;
 };
@@ -1053,8 +1045,6 @@ class NativeFontResource
   size_t mDataLength;
 };
 
-class DrawTargetCapture;
-
 
 
 
@@ -1075,7 +1065,6 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
   virtual BackendType GetBackendType() const = 0;
 
   virtual bool IsRecording() const { return false; }
-  virtual bool IsCaptureDT() const { return false; }
 
   
 
@@ -1123,15 +1112,6 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
 
 
   virtual void Flush() = 0;
-
-  
-
-
-
-
-
-  virtual void DrawCapturedDT(DrawTargetCapture* aCaptureDT,
-                              const Matrix& aTransform);
 
   
 
@@ -1683,14 +1663,6 @@ class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
   SurfaceFormat mFormat;
 };
 
-class DrawTargetCapture : public DrawTarget {
- public:
-  bool IsCaptureDT() const override { return true; }
-
-  virtual bool IsEmpty() const = 0;
-  virtual void Dump() = 0;
-};
-
 class DrawEventRecorder : public RefCounted<DrawEventRecorder> {
  public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(DrawEventRecorder)
@@ -1776,31 +1748,6 @@ class GFX2D_API Factory {
 
 
   static already_AddRefed<PathBuilder> CreateSimplePathBuilder();
-
-  
-
-
-
-
-
-
-
-
-  static already_AddRefed<DrawTargetCapture> CreateCaptureDrawTargetForTarget(
-      gfx::DrawTarget* aTarget, size_t aFlushBytes = 0);
-
-  
-
-
-
-
-
-  static already_AddRefed<DrawTargetCapture> CreateCaptureDrawTarget(
-      BackendType aBackend, const IntSize& aSize, SurfaceFormat aFormat);
-
-  static already_AddRefed<DrawTargetCapture> CreateCaptureDrawTargetForData(
-      BackendType aBackend, const IntSize& aSize, SurfaceFormat aFormat,
-      int32_t aStride, size_t aSurfaceAllocationSize);
 
   static already_AddRefed<DrawTarget> CreateRecordingDrawTarget(
       DrawEventRecorder* aRecorder, DrawTarget* aDT, IntRect aRect);

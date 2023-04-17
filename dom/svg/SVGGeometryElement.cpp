@@ -96,9 +96,8 @@ already_AddRefed<Path> SVGGeometryElement::GetOrBuildPath(
   
   
   
-  bool cacheable = (aDrawTarget->GetBackendType() ==
-                    gfxPlatform::GetPlatform()->GetDefaultContentBackend()) &&
-                   !aDrawTarget->IsCaptureDT();
+  bool cacheable = aDrawTarget->GetBackendType() ==
+                   gfxPlatform::GetPlatform()->GetDefaultContentBackend();
 
   if (cacheable && mCachedPath && mCachedPath->GetFillRule() == aFillRule &&
       aDrawTarget->GetBackendType() == mCachedPath->GetBackendType()) {

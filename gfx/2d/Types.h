@@ -38,7 +38,6 @@ enum class SurfaceType : int8_t {
   WRAP_AND_RECORD,        
   TILED,                  
   DATA_SHARED,            
-  CAPTURE,                
   DATA_RECYCLING_SHARED,  
   OFFSET,                 
   DATA_ALIGNED,           
@@ -554,7 +553,6 @@ enum class BackendType : int8_t {
   RECORDING,
   DIRECT2D1_1,
   WEBRENDER_TEXT,
-  CAPTURE,  
 
   
   BACKEND_LAST

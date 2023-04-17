@@ -160,10 +160,6 @@ bool SourceSurfaceSharedData::Init(const IntSize& aSize, int32_t aStride,
   return true;
 }
 
-void SourceSurfaceSharedData::GuaranteePersistance() {
-  
-}
-
 void SourceSurfaceSharedData::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf,
                                                   SizeOfInfo& aInfo) const {
   MutexAutoLock lock(mMutex);

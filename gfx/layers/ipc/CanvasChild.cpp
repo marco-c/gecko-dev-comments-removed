@@ -72,9 +72,6 @@ class SourceSurfaceCanvasRecording final : public gfx::SourceSurface {
     return do_AddRef(mDataSourceSurface);
   }
 
- protected:
-  void GuaranteePersistance() final { EnsureDataSurfaceOnMainThread(); }
-
  private:
   void EnsureDataSurfaceOnMainThread() {
     
