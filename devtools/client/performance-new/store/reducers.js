@@ -21,6 +21,7 @@
 
 
 
+
 function recordingState(state = "not-yet-known", action) {
   switch (action.type) {
     case "REPORT_PROFILER_READY": {
@@ -183,103 +184,76 @@ function isSupportedPlatform(state = null, action) {
 
 
 
-
-
-function interval(state = 1, action) {
-  switch (action.type) {
-    case "CHANGE_INTERVAL":
-      return action.interval;
-    case "CHANGE_PRESET":
-      return action.preset ? action.preset.interval : state;
-    case "INITIALIZE_STORE":
-      return action.recordingSettingsFromPreferences.interval;
-    default:
-      return state;
-  }
-}
-
-
-
-
-
-function entries(state = 0, action) {
-  switch (action.type) {
-    case "CHANGE_ENTRIES":
-      return action.entries;
-    case "CHANGE_PRESET":
-      return action.preset ? action.preset.entries : state;
-    case "INITIALIZE_STORE":
-      return action.recordingSettingsFromPreferences.entries;
-    default:
-      return state;
-  }
-}
+const DEFAULT_RECORDING_SETTINGS = {
+  
+  presetName: "",
+  
+  interval: 1,
+  
+  entries: 0,
+  
+  features: [],
+  
+  threads: [],
+  
+  objdirs: [],
+  
+  duration: 0,
+};
 
 
 
 
 
-function features(state = [], action) {
-  switch (action.type) {
-    case "CHANGE_FEATURES":
-      return action.features;
-    case "CHANGE_PRESET":
-      return action.preset ? action.preset.features : state;
-    case "INITIALIZE_STORE":
-      return action.recordingSettingsFromPreferences.features;
-    default:
-      return state;
-  }
-}
+function recordingSettings(state = DEFAULT_RECORDING_SETTINGS, action) {
+  
 
 
 
 
 
-function threads(state = [], action) {
-  switch (action.type) {
-    case "CHANGE_THREADS":
-      return action.threads;
-    case "CHANGE_PRESET":
-      return action.preset ? action.preset.threads : state;
-    case "INITIALIZE_STORE":
-      return action.recordingSettingsFromPreferences.threads;
-    default:
-      return state;
-  }
-}
-
-
-
-
-
-function objdirs(state = [], action) {
-  switch (action.type) {
-    case "CHANGE_OBJDIRS":
-      return action.objdirs;
-    case "INITIALIZE_STORE":
-      return action.recordingSettingsFromPreferences.objdirs;
-    default:
-      return state;
-  }
-}
-
-
-
-
-
-function presetName(state = "", action) {
-  switch (action.type) {
-    case "INITIALIZE_STORE":
-      return action.recordingSettingsFromPreferences.presetName;
-    case "CHANGE_PRESET":
-      return action.presetName;
-    case "CHANGE_INTERVAL":
-    case "CHANGE_ENTRIES":
-    case "CHANGE_FEATURES":
-    case "CHANGE_THREADS":
+  function changeOneSetting(settingName, settingValue) {
+    if (state[settingName] === settingValue) {
       
-      return "custom";
+      return state;
+    }
+
+    return {
+      ...state,
+      [settingName]: settingValue,
+      presetName: "custom",
+    };
+  }
+
+  switch (action.type) {
+    case "CHANGE_INTERVAL":
+      return changeOneSetting("interval", action.interval);
+    case "CHANGE_ENTRIES":
+      return changeOneSetting("entries", action.entries);
+    case "CHANGE_FEATURES":
+      return changeOneSetting("features", action.features);
+    case "CHANGE_THREADS":
+      return changeOneSetting("threads", action.threads);
+    case "CHANGE_OBJDIRS":
+      return changeOneSetting("objdirs", action.objdirs);
+    case "CHANGE_PRESET":
+      return action.preset
+        ? {
+            ...state,
+            presetName: action.presetName,
+            interval: action.preset.interval,
+            entries: action.preset.entries,
+            features: action.preset.features,
+            threads: action.preset.threads,
+            
+            duration: action.preset.duration,
+          }
+        : {
+            ...state,
+            presetName: action.presetName, 
+          };
+    case "INITIALIZE_STORE":
+      return { ...action.recordingSettingsFromPreferences };
     default:
       return state;
   }
@@ -340,12 +314,7 @@ module.exports = (state = undefined, action) => {
       state?.isSupportedPlatform,
       action
     ),
-    interval: interval(state?.interval, action),
-    entries: entries(state?.entries, action),
-    features: features(state?.features, action),
-    threads: threads(state?.threads, action),
-    objdirs: objdirs(state?.objdirs, action),
-    presetName: presetName(state?.presetName, action),
+    recordingSettings: recordingSettings(state?.recordingSettings, action),
     initializedValues: initializedValues(state?.initializedValues, action),
     promptEnvRestart: promptEnvRestart(state?.promptEnvRestart, action),
 

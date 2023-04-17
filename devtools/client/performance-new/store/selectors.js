@@ -33,28 +33,31 @@ const getRecordingUnexpectedlyStopped = state =>
 const getIsSupportedPlatform = state => state.isSupportedPlatform;
 
 
-const getInterval = state => state.interval;
+const getRecordingSettings = state => state.recordingSettings;
 
 
-const getEntries = state => state.entries;
+const getInterval = state => getRecordingSettings(state).interval;
 
 
-const getFeatures = state => state.features;
+const getEntries = state => getRecordingSettings(state).entries;
 
 
-const getThreads = state => state.threads;
+const getFeatures = state => getRecordingSettings(state).features;
+
+
+const getThreads = state => getRecordingSettings(state).threads;
 
 
 const getThreadsString = state => getThreads(state).join(",");
 
 
-const getObjdirs = state => state.objdirs;
+const getObjdirs = state => getRecordingSettings(state).objdirs;
 
 
 const getPresets = state => getInitializedValues(state).presets;
 
 
-const getPresetName = state => state.presetName;
+const getPresetName = state => state.recordingSettings.presetName;
 
 
 const getProfilerViewMode = state => state.profilerViewMode;
@@ -66,43 +69,6 @@ const getProfilerViewMode = state => state.profilerViewMode;
 
 const getOpenRemoteDevTools = state =>
   getInitializedValues(state).openRemoteDevTools;
-
-
-
-
-
-
-
-const getRecordingSettings = state => {
-  const presets = getPresets(state);
-  const presetName = getPresetName(state);
-  const preset = presets[presetName];
-  if (preset) {
-    
-    return {
-      presetName: presetName,
-      entries: preset.entries,
-      interval: preset.interval,
-      features: preset.features,
-      threads: preset.threads,
-      objdirs: getObjdirs(state),
-      
-      duration: preset.duration,
-    };
-  }
-
-  
-  return {
-    presetName: "custom",
-    entries: getEntries(state),
-    interval: getInterval(state),
-    features: getFeatures(state),
-    threads: getThreads(state),
-    objdirs: getObjdirs(state),
-    
-    duration: 0,
-  };
-};
 
 
 const getInitializedValues = state => {
