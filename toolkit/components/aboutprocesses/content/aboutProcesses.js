@@ -398,32 +398,56 @@ var State = {
 };
 
 var View = {
-  _fragment: document.createDocumentFragment(),
   
   
   _killedRecently: [],
-  async commit() {
+  commit() {
     this._killedRecently.length = 0;
     let tbody = document.getElementById("process-tbody");
 
-    
-    
-    await document.l10n.translateFragment(this._fragment);
-
-    
-    
-    document.l10n.pauseObserving();
-    while (tbody.firstChild) {
-      tbody.firstChild.remove();
+    let insertPoint = tbody.firstChild;
+    let nextRow;
+    while ((nextRow = this._orderedRows.shift())) {
+      if (insertPoint && insertPoint === nextRow) {
+        insertPoint = insertPoint.nextSibling;
+      } else {
+        tbody.insertBefore(nextRow, insertPoint);
+      }
     }
-    tbody.appendChild(this._fragment);
-    document.l10n.resumeObserving();
 
-    this._fragment = document.createDocumentFragment();
+    if (insertPoint) {
+      while ((nextRow = insertPoint.nextSibling)) {
+        this._removeRow(nextRow);
+      }
+      this._removeRow(insertPoint);
+    }
   },
   insertAfterRow(row) {
-    row.parentNode.insertBefore(this._fragment, row.nextSibling);
-    this._fragment = document.createDocumentFragment();
+    let tbody = row.parentNode;
+    let nextRow;
+    while ((nextRow = this._orderedRows.shift())) {
+      tbody.insertBefore(nextRow, row.nextSibling);
+    }
+  },
+
+  _rowsById: new Map(),
+  _removeRow(row) {
+    this._rowsById.delete(row.rowId);
+
+    row.remove();
+  },
+  _getOrCreateRow(rowId, cellCount) {
+    let row = this._rowsById.get(rowId);
+    if (!row) {
+      row = document.createElement("tr");
+      while (cellCount--) {
+        row.appendChild(document.createElement("td"));
+      }
+      row.rowId = rowId;
+      this._rowsById.set(rowId, row);
+    }
+    this._orderedRows.push(row);
+    return row;
   },
 
   
@@ -432,15 +456,21 @@ var View = {
 
 
 
-  appendProcessRow(data, units) {
-    let row = document.createElement("tr");
-    row.classList.add("process");
-
-    if (data.isHung) {
-      row.classList.add("hung");
+  displayProcessRow(data, units) {
+    const cellCount = 4;
+    let rowId = "p:" + data.pid;
+    let row = this._getOrCreateRow(rowId, cellCount);
+    row.process = data;
+    {
+      let classNames = "process";
+      if (data.isHung) {
+        classNames += " hung";
+      }
+      row.className = classNames;
     }
 
     
+    let nameCell = row.firstChild;
     {
       let fluentName;
       let classNames = [];
@@ -505,7 +535,7 @@ var View = {
           fluentName = "about-processes-unknown-process-name";
           break;
       }
-      let elt = this._addCell(row, {
+      this._fillCell(nameCell, {
         fluentName,
         fluentArgs: {
           pid: "" + data.pid, 
@@ -551,15 +581,16 @@ var View = {
             image = "chrome://browser/skin/link.svg";
           }
       }
-      elt.style.backgroundImage = `url('${image}')`;
+      nameCell.style.backgroundImage = `url('${image}')`;
     }
 
     
+    let memoryCell = nameCell.nextSibling;
     {
       let formattedTotal = this._formatMemory(data.totalRamSize);
       if (data.deltaRamSize) {
         let formattedDelta = this._formatMemory(data.deltaRamSize);
-        this._addCell(row, {
+        this._fillCell(memoryCell, {
           fluentName: "about-processes-total-memory-size",
           fluentArgs: {
             total: formattedTotal.amount,
@@ -571,7 +602,7 @@ var View = {
           classes: ["memory"],
         });
       } else {
-        this._addCell(row, {
+        this._fillCell(memoryCell, {
           fluentName: "about-processes-total-memory-size-no-change",
           fluentArgs: {
             total: formattedTotal.amount,
@@ -583,8 +614,9 @@ var View = {
     }
 
     
+    let cpuCell = memoryCell.nextSibling;
     if (data.slopeCpu == null) {
-      this._addCell(row, {
+      this._fillCell(cpuCell, {
         fluentName: "about-processes-cpu-user-and-kernel-not-ready",
         classes: ["cpu"],
       });
@@ -592,7 +624,7 @@ var View = {
       let { duration, unit } = this._getDuration(data.totalCpu);
       let localizedUnit = units.duration[unit];
       if (data.slopeCpu == 0) {
-        this._addCell(row, {
+        this._fillCell(cpuCell, {
           fluentName: "about-processes-cpu-user-and-kernel-idle",
           fluentArgs: {
             total: duration,
@@ -601,7 +633,7 @@ var View = {
           classes: ["cpu"],
         });
       } else {
-        this._addCell(row, {
+        this._fillCell(cpuCell, {
           fluentName: "about-processes-cpu-user-and-kernel",
           fluentArgs: {
             percent: data.slopeCpu,
@@ -614,10 +646,8 @@ var View = {
     }
 
     
-    let killButton = this._addCell(row, {
-      content: "",
-      classes: ["action-icon"],
-    });
+    let killButton = cpuCell.nextSibling;
+    killButton.className = "action-icon";
 
     if (["web", "webIsolated", "webLargeAllocation"].includes(data.type)) {
       
@@ -641,44 +671,55 @@ var View = {
       }
     }
 
-    this._fragment.appendChild(row);
     return row;
   },
 
-  appendThreadSummaryRow(data, isOpen) {
-    let row = document.createElement("tr");
-    row.classList.add("thread-summary");
+  displayThreadSummaryRow(data, isOpen) {
+    const cellCount = 2;
+    let rowId = "ts:" + data.pid;
+    let row = this._getOrCreateRow(rowId, cellCount);
+    row.process = data;
+    row.className = "thread-summary";
 
     
-    let elt = this._addCell(row, {
-      fluentName: "about-processes-thread-summary",
-      fluentArgs: { number: data.threads.length },
-      classes: ["name", "indent"],
-    });
-    if (data.threads.length) {
-      let img = document.createElement("span");
-      img.classList.add("twisty");
-      if (data.isOpen) {
-        img.classList.add("open");
+    let nameCell = row.firstChild;
+    let fluentName = "about-processes-thread-summary";
+    let fluentArgs = { number: data.threads.length };
+    if (!nameCell.firstChild) {
+      
+      this._fillCell(nameCell, {
+        fluentName,
+        fluentArgs,
+        classes: ["name", "indent"],
+      });
+      if (data.threads.length) {
+        let img = document.createElement("span");
+        img.classList.add("twisty");
+        if (data.isOpen) {
+          img.classList.add("open");
+        }
+        nameCell.insertBefore(img, nameCell.firstChild);
       }
-      elt.insertBefore(img, elt.firstChild);
+    } else {
+      
+      let span = nameCell.firstChild.nextSibling;
+      document.l10n.setAttributes(span, fluentName, fluentArgs);
     }
 
     
-    this._addCell(row, {
-      content: "",
-      classes: ["action-icon"],
-    });
-
-    this._fragment.appendChild(row);
-    return row;
+    let actionCell = nameCell.nextSibling;
+    actionCell.className = "action-icon";
   },
 
-  appendDOMWindowRow(data, parent) {
-    let row = document.createElement("tr");
-    row.classList.add("window");
+  displayDOMWindowRow(data, parent) {
+    const cellCount = 2;
+    let rowId = "w:" + data.outerWindowId;
+    let row = this._getOrCreateRow(rowId, cellCount);
+    row.win = data;
+    row.className = "window";
 
     
+    let nameCell = row.firstChild;
     let tab = tabFinder.get(data.outerWindowId);
     let fluentName;
     let name;
@@ -710,7 +751,7 @@ var View = {
       name = data.prePath;
       className = "frame-many";
     }
-    let elt = this._addCell(row, {
+    this._fillCell(nameCell, {
       fluentName,
       fluentArgs: {
         name,
@@ -725,14 +766,12 @@ var View = {
     });
     let image = tab?.tab.getAttribute("image");
     if (image) {
-      elt.style.backgroundImage = `url('${image}')`;
+      nameCell.style.backgroundImage = `url('${image}')`;
     }
 
     
-    let killButton = this._addCell(row, {
-      content: "",
-      classes: ["action-icon"],
-    });
+    let killButton = nameCell.nextSibling;
+    killButton.className = "action-icon";
 
     if (data.tab && data.tab.tabbrowser) {
       
@@ -756,8 +795,6 @@ var View = {
         document.l10n.setAttributes(killButton, "about-processes-shutdown-tab");
       }
     }
-    this._fragment.appendChild(row);
-    return row;
   },
 
   
@@ -765,13 +802,16 @@ var View = {
 
 
 
-
-  appendThreadRow(data, units) {
-    let row = document.createElement("tr");
-    row.classList.add("thread");
+  displayThreadRow(data, units) {
+    const cellCount = 3;
+    let rowId = "t:" + data.tid;
+    let row = this._getOrCreateRow(rowId, cellCount);
+    row.thread = data;
+    row.className = "thread";
 
     
-    this._addCell(row, {
+    let nameCell = row.firstChild;
+    this._fillCell(nameCell, {
       fluentName: "about-processes-thread-name",
       fluentArgs: {
         name: data.name,
@@ -781,8 +821,9 @@ var View = {
     });
 
     
+    let cpuCell = nameCell.nextSibling;
     if (data.slopeCpu == null) {
-      this._addCell(row, {
+      this._fillCell(cpuCell, {
         fluentName: "about-processes-cpu-user-and-kernel-not-ready",
         classes: ["cpu"],
       });
@@ -790,7 +831,7 @@ var View = {
       let { duration, unit } = this._getDuration(data.totalCpu);
       let localizedUnit = units.duration[unit];
       if (data.slopeCpu == 0) {
-        this._addCell(row, {
+        this._fillCell(cpuCell, {
           fluentName: "about-processes-cpu-user-and-kernel-idle",
           fluentArgs: {
             total: duration,
@@ -799,7 +840,7 @@ var View = {
           classes: ["cpu"],
         });
       } else {
-        this._addCell(row, {
+        this._fillCell(cpuCell, {
           fluentName: "about-processes-cpu-user-and-kernel",
           fluentArgs: {
             percent: data.slopeCpu,
@@ -812,28 +853,17 @@ var View = {
     }
 
     
-    this._addCell(row, {
-      content: "",
-      classes: [],
-    });
-
-    this._fragment.appendChild(row);
-    return row;
   },
 
-  _addCell(row, { content, classes, fluentName, fluentArgs }) {
-    let elt = document.createElement("td");
-    if (fluentName) {
-      let span = document.createElement("span");
-      document.l10n.setAttributes(span, fluentName, fluentArgs);
+  _orderedRows: [],
+  _fillCell(elt, { classes, fluentName, fluentArgs }) {
+    let span = elt.firstChild;
+    if (!span) {
+      span = document.createElement("span");
       elt.appendChild(span);
-    } else {
-      elt.textContent = content;
-      elt.setAttribute("title", content);
     }
-    elt.classList.add(...classes);
-    row.appendChild(elt);
-    return elt;
+    document.l10n.setAttributes(span, fluentName, fluentArgs);
+    elt.className = classes.join(" ");
   },
 
   _getDuration(rawDurationNS) {
@@ -914,7 +944,7 @@ var Control = {
     while (sibling && !sibling.classList.contains("process")) {
       let next = sibling.nextSibling;
       if (sibling.classList.contains("thread")) {
-        sibling.remove();
+        View._removeRow(sibling);
       }
       sibling = next;
     }
@@ -1112,13 +1142,6 @@ var Control = {
 
     await this._updateDisplay(force);
   },
-  _setRowId(row, id, selectedId) {
-    row.rowId = id;
-    if (id == selectedId) {
-      row.setAttribute("selected", "true");
-      this.selectedRow = row;
-    }
-  },
 
   
   
@@ -1135,11 +1158,6 @@ var Control = {
 
     
     
-    let selectedRowId;
-    if (this.selectedRow) {
-      selectedRowId = this.selectedRow.rowId;
-      this.selectedRow = null;
-    }
     let openItems = this._openItems;
     this._openItems = new Set();
 
@@ -1161,30 +1179,22 @@ var Control = {
       let isHung = process.childID && hungItems.has(process.childID);
       process.isHung = isHung;
 
-      let processRow = View.appendProcessRow(process, units);
-      this._setRowId(processRow, "p:" + process.pid, selectedRowId);
-      processRow.process = process;
+      let processRow = View.displayProcessRow(process, units);
 
       if (process.type != "extension") {
         
-        let winRow;
         for (let win of process.windows) {
           if (SHOW_ALL_SUBFRAMES || win.tab || win.isProcessRoot) {
-            winRow = View.appendDOMWindowRow(win, process);
-            this._setRowId(winRow, "w:" + win.outerWindowId, selectedRowId);
-            winRow.win = win;
+            View.displayDOMWindowRow(win, process);
           }
         }
       }
 
       if (SHOW_THREADS) {
-        let threadSummaryRow = View.appendThreadSummaryRow(process, isOpen);
-        this._setRowId(threadSummaryRow, "ts:" + process.pid, selectedRowId);
-        threadSummaryRow.process = process;
-
+        View.displayThreadSummaryRow(process, isOpen);
         if (isOpen) {
           this._openItems.add(process.pid);
-          this._showThreads(processRow, units, selectedRowId);
+          this._showThreads(processRow, units);
         }
       }
       if (
@@ -1198,19 +1208,20 @@ var Control = {
       previousProcess = process;
     }
 
-    await View.commit();
+    View.commit();
+
+    
+    
+    if (this.selectedRow && !this.selectedRow.parentNode) {
+      this.selectedRow = null;
+    }
   },
-  _showThreads(row, units, selectedRowId) {
+  _showThreads(row, units) {
     let process = row.process;
     this._sortThreads(process.threads);
-    let elt = row;
     for (let thread of process.threads) {
-      elt = View.appendThreadRow(thread, units);
-      this._setRowId(elt, "t:" + thread.tid, selectedRowId);
-      
-      elt.thread = thread;
+      View.displayThreadRow(thread, units);
     }
-    return elt;
   },
   _sortThreads(threads) {
     return threads.sort((a, b) => {

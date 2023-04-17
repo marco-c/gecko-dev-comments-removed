@@ -51,13 +51,17 @@ async function promiseAboutProcessesUpdated({
       observer.disconnect();
       resolve();
     });
-    observer.observe(tbody, { childList: true });
+    observer.observe(tbody, {
+      childList: true,
+      attributes: true,
+      subtree: true,
+    });
   });
 
   if (force) {
     await SpecialPowers.spawn(tabAboutProcesses.linkedBrowser, [], async () => {
       info("Forcing about:processes refresh");
-      content.Control.update( true);
+      await content.Control.update( true);
     });
   }
 
