@@ -64,6 +64,10 @@ class MFTManager {
     }
   }
 
+  virtual bool HasSeekThreshold() const {
+    return mSeekTargetThreshold.isSome();
+  }
+
   virtual MediaDataDecoder::ConversionRequired NeedsConversion() const {
     return MediaDataDecoder::ConversionRequired::kNeedNone;
   }
@@ -140,6 +144,9 @@ class WMFMediaDataDecoder
   int64_t mLastStreamOffset;
   Maybe<media::TimeUnit> mLastTime;
   media::TimeUnit mLastDuration;
+  
+  
+  bool mHasGuardedAgainstIncorrectFirstSample = false;
   int64_t mSamplesCount = 0;
 
   bool mIsShutDown = false;
