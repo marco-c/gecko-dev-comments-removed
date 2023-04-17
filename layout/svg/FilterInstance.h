@@ -170,6 +170,11 @@ class FilterInstance {
       const nsRect* aPreFilterInkOverflowRectOverride = nullptr,
       const gfxRect* aOverrideBBox = nullptr);
 
+  static bool BuildWebRenderFiltersImpl(
+      nsIFrame* aFilteredFrame,
+      mozilla::Span<const mozilla::StyleFilter> aFilters,
+      WrFiltersHolder& aWrFilters, mozilla::Maybe<nsRect>& aPostFilterClip);
+
   
 
 
