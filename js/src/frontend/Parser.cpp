@@ -3481,8 +3481,34 @@ FunctionNode* Parser<FullParseHandler, Unit>::standaloneLazyFunction(
 }
 
 void ParserBase::setFunctionEndFromCurrentToken(FunctionBox* funbox) const {
-  MOZ_ASSERT(anyChars.currentToken().type != TokenKind::Eof);
-  funbox->setEnd(anyChars.currentToken().pos.end);
+  if (compilationState_.isInitialStencil()) {
+    MOZ_ASSERT(anyChars.currentToken().type != TokenKind::Eof);
+    MOZ_ASSERT(anyChars.currentToken().type < TokenKind::Limit);
+    funbox->setEnd(anyChars.currentToken().pos.end);
+  } else {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+#if !defined(MOZ_ASAN) && !defined(MOZ_MSAN) && !defined(MOZ_VALGRIND)
+    MOZ_ASSERT(anyChars.currentToken().type != TokenKind::Eof);
+#endif
+    MOZ_ASSERT(funbox->extent().sourceEnd == anyChars.currentToken().pos.end);
+  }
 }
 
 template <class ParseHandler, typename Unit>
