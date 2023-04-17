@@ -7,6 +7,7 @@
 #include "FFVPXRuntimeLinker.h"
 #include "FFmpegLibWrapper.h"
 #include "FFmpegLog.h"
+#include "BinaryPath.h"
 #include "mozilla/FileUtils.h"
 #include "nsLocalFile.h"
 #include "prmem.h"
@@ -14,12 +15,6 @@
 #ifdef XP_WIN
 #  include <windows.h>
 #endif
-
-
-
-
-#define ST_NO_EXCEPTION_HANDLING 1
-#include "soundtouch/SoundTouch.h"
 
 namespace mozilla {
 
@@ -68,45 +63,22 @@ bool FFVPXRuntimeLinker::Init() {
   sFFVPXLib.LinkVAAPILibs();
 #endif
 
-  
-  
-  PathString lgpllibsname = GetLibraryName(nullptr, "lgpllibs");
-  if (lgpllibsname.IsEmpty()) {
-    return false;
-  }
-  PathString path = GetLibraryFilePathname(
-      lgpllibsname.get(), (PRFuncPtr)&soundtouch::SoundTouch::getVersionId);
-  if (path.IsEmpty()) {
-    return false;
-  }
-  RefPtr<nsLocalFile> xulFile = new nsLocalFile(path);
-  if (xulFile->NativePath().IsEmpty()) {
+  nsCOMPtr<nsIFile> libFile;
+  if (NS_FAILED(mozilla::BinaryPath::GetFile(getter_AddRefs(libFile)))) {
     return false;
   }
 
-  nsCOMPtr<nsIFile> rootDir;
-  if (NS_FAILED(xulFile->GetParent(getter_AddRefs(rootDir))) || !rootDir) {
-    return false;
-  }
-  PathString rootPath = rootDir->NativePath();
-
-  
-  PathString libname = GetLibraryName(rootPath.get(), "mozavutil");
-  if (libname.IsEmpty()) {
-    return false;
-  }
-  RefPtr<nsLocalFile> libFile = new nsLocalFile(libname);
-  if (libFile->NativePath().IsEmpty()) {
+  if (NS_FAILED(libFile->SetNativeLeafName(MOZ_DLL_PREFIX
+                                           "mozavutil" MOZ_DLL_SUFFIX ""_ns))) {
     return false;
   }
   sFFVPXLib.mAVUtilLib = MozAVLink(libFile);
-  libname = GetLibraryName(rootPath.get(), "mozavcodec");
-  if (!libname.IsEmpty()) {
-    libFile = new nsLocalFile(libname);
-    if (!libFile->NativePath().IsEmpty()) {
-      sFFVPXLib.mAVCodecLib = MozAVLink(libFile);
-    }
+
+  if (NS_FAILED(libFile->SetNativeLeafName(
+          MOZ_DLL_PREFIX "mozavcodec" MOZ_DLL_SUFFIX ""_ns))) {
+    return false;
   }
+  sFFVPXLib.mAVCodecLib = MozAVLink(libFile);
   if (sFFVPXLib.Link() == FFmpegLibWrapper::LinkResult::Success) {
     sLinkStatus = LinkStatus_SUCCEEDED;
     return true;
