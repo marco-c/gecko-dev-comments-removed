@@ -30,16 +30,40 @@ class TaskQueueWrapper : public webrtc::TaskQueueBase {
   ~TaskQueueWrapper() = default;
 
   void Delete() override {
-    MOZ_ASSERT(!mTaskQueue->IsOnCurrentThread(),
-               "TaskQueue::AwaitIdle must not be called on itself");
-    
-    {
-      auto hasShutdown = mHasShutdown.Lock();
-      *hasShutdown = true;
-      mTaskQueue->BeginShutdown();
+    RefPtr<Runnable> deleteRunnable = NS_NewRunnableFunction(__func__, [this] {
+      MOZ_RELEASE_ASSERT(!mTaskQueue->IsOnCurrentThread(),
+                         "Cannot AwaitIdle() on ourselves. Will deadlock.");
+      
+      {
+        auto hasShutdown = mHasShutdown.Lock();
+        *hasShutdown = true;
+        mTaskQueue->BeginShutdown();
+      }
+      mTaskQueue->AwaitIdle();
+      delete this;
+    });
+
+    if (mTaskQueue->IsOnCurrentThread() || NS_IsMainThread()) {
+      
+      
+      
+      if (NS_SUCCEEDED(NS_DispatchBackgroundTask(
+              deleteRunnable, NS_DISPATCH_EVENT_MAY_BLOCK))) {
+        return;
+      }
     }
-    mTaskQueue->AwaitIdle();
-    delete this;
+
+    if (mTaskQueue->IsOnCurrentThread()) {
+      
+      
+      
+      if (NS_SUCCEEDED(NS_DispatchToMainThread(deleteRunnable))) {
+        return;
+      }
+    }
+
+    
+    deleteRunnable->Run();
   }
 
   already_AddRefed<Runnable> CreateTaskRunner(
