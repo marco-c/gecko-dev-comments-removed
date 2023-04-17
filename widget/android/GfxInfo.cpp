@@ -663,10 +663,9 @@ nsresult GfxInfo::GetFeatureStatusImpl(
       
       
       
-      
-      const bool isMaliT6xx =
-          mGLStrings->Renderer().Find("Mali-T6",  true) >= 0;
-      if (isMaliT6xx) {
+      const bool isMaliT =
+          mGLStrings->Renderer().Find("Mali-T",  true) >= 0;
+      if (isMaliT && mSDKVersion <= 22) {
         *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
         aFailureId = "FEATURE_FAILURE_BUG_1689064";
       } else {
