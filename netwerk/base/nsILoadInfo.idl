@@ -541,11 +541,18 @@ interface nsILoadInfo : nsISupports
 
   attribute nsICookieJarSettings cookieJarSettings;
 
+  cenum StoragePermissionState : 8 {
+    NoStoragePermission = 0,
+    HasStoragePermission = 1,
+    StoragePermissionAllowListed = 2,
+  };
+
   
 
 
 
-  [infallible] attribute boolean hasStoragePermission;
+  [infallible] attribute nsILoadInfo_StoragePermissionState
+        storagePermission;
 
   
 

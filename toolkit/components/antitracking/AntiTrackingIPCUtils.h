@@ -12,6 +12,8 @@
 #include "mozilla/ContentBlockingNotifier.h"
 #include "mozilla/ContentBlocking.h"
 
+#include "nsILoadInfo.h"
+
 namespace IPC {
 
 
@@ -43,6 +45,14 @@ struct ParamTraits<mozilla::ContentBlocking::StorageAccessPromptChoices>
           mozilla::ContentBlocking::StorageAccessPromptChoices::eAllow,
           mozilla::ContentBlocking::StorageAccessPromptChoices::
               eAllowAutoGrant> {};
+
+
+template <>
+struct ParamTraits<nsILoadInfo::StoragePermissionState>
+    : public ContiguousEnumSerializerInclusive<
+          nsILoadInfo::StoragePermissionState,
+          nsILoadInfo::StoragePermissionState::NoStoragePermission,
+          nsILoadInfo::StoragePermissionState::StoragePermissionAllowListed> {};
 }  
 
 #endif  
