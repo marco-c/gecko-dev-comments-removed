@@ -133,9 +133,9 @@ HarImporter.prototype = {
       this.actions.updateRequest(requestId, data, false);
 
       
-      const pageTimings = pages.get(entry.pageref).pageTimings;
-      let onContentLoad = pageTimings.onContentLoad || 0;
-      let onLoad = pageTimings.onLoad || 0;
+      const pageTimings = pages.get(entry.pageref)?.pageTimings;
+      let onContentLoad = (pageTimings && pageTimings.onContentLoad) || 0;
+      let onLoad = (pageTimings && pageTimings.onLoad) || 0;
 
       
       onContentLoad = onContentLoad != -1 ? onContentLoad : 0;
