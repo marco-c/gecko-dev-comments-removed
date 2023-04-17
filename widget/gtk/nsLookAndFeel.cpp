@@ -1331,6 +1331,12 @@ void nsLookAndFeel::EnsureInit() {
          !AnyColorChannelIsDifferent(mAccentColor))) {
       std::swap(mAccentColor, mAccentColorForeground);
     }
+
+    
+    
+    mAccentColorForeground =
+        NS_ComposeColors(NS_RGB(0xff, 0xff, 0xff), mAccentColorForeground);
+    mAccentColor = NS_ComposeColors(NS_RGB(0xff, 0xff, 0xff), mAccentColor);
   }
 
   
