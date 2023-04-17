@@ -5,7 +5,7 @@
 
 
 
-use cocoa_foundation::foundation::NSUInteger;
+use super::NSUInteger;
 
 pub enum MTLDrawable {}
 

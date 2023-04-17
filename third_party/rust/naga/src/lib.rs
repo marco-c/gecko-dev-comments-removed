@@ -21,6 +21,92 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![allow(
     renamed_and_removed_lints,
     unknown_lints, 
@@ -50,7 +136,6 @@ pub use crate::arena::{Arena, Handle, Range};
 use std::{
     collections::{HashMap, HashSet},
     hash::BuildHasherDefault,
-    num::NonZeroU32,
 };
 
 #[cfg(feature = "deserialize")]
@@ -65,6 +150,9 @@ pub const BOOL_WIDTH: Bytes = 1;
 pub type FastHashMap<K, T> = HashMap<K, T, BuildHasherDefault<fxhash::FxHasher>>;
 
 pub type FastHashSet<K> = HashSet<K, BuildHasherDefault<fxhash::FxHasher>>;
+
+
+pub(crate) type NamedExpressions = FastHashMap<Handle<Expression>, String>;
 
 
 
@@ -169,7 +257,6 @@ pub enum BuiltIn {
 
 
 pub type Bytes = u8;
-pub type Alignment = NonZeroU32;
 
 
 #[repr(u8)]
@@ -359,18 +446,6 @@ pub enum ImageClass {
 }
 
 
-#[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "serialize", derive(Serialize))]
-#[cfg_attr(feature = "deserialize", derive(Deserialize))]
-pub enum StructLevel {
-    
-    
-    Root,
-    
-    Normal { alignment: Alignment },
-}
-
-
 #[derive(Debug, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
@@ -420,8 +495,9 @@ pub enum TypeInner {
     },
     
     Struct {
-        level: StructLevel,
+        top_level: bool,
         members: Vec<StructMember>,
+        
         span: u32,
     },
     
@@ -486,7 +562,7 @@ pub enum Binding {
 }
 
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Hash, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub struct ResourceBinding {
@@ -719,9 +795,58 @@ bitflags::bitflags! {
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum Expression {
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     Access {
         base: Handle<Expression>,
-        index: Handle<Expression>, 
+        index: Handle<Expression>,
     },
     
     AccessIndex {
@@ -790,6 +915,9 @@ pub enum Expression {
         left: Handle<Expression>,
         right: Handle<Expression>,
     },
+    
+    
+    
     
     Select {
         
@@ -860,6 +988,10 @@ pub struct SwitchCase {
 #[cfg_attr(feature = "serialize", derive(Serialize))]
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 pub enum Statement {
+    
+    
+    
+    
     
     Emit(Range<Expression>),
     
@@ -963,6 +1095,8 @@ pub struct Function {
     pub local_variables: Arena<LocalVariable>,
     
     pub expressions: Arena<Expression>,
+    
+    pub named_expressions: NamedExpressions,
     
     pub body: Block,
 }
