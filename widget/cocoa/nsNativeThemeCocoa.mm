@@ -2819,7 +2819,7 @@ void nsNativeThemeCocoa::RenderWidget(const WidgetInfo& aWidgetInfo,
         }
         case Widget::eListBox: {
           
-          CGContextSetFillColorWithColor(cgContext, [NSColor.controlColor CGColor]);
+          CGContextSetFillColorWithColor(cgContext, [NSColor.controlBackgroundColor CGColor]);
           CGContextFillRect(cgContext, macRect);
           
           
