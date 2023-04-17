@@ -179,10 +179,6 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["quicksuggest.seenRestarts", 0],
 
   
-  
-  ["quicksuggest.suggestedIndex", -1],
-
-  
   ["quicksuggest.log", false],
 
   

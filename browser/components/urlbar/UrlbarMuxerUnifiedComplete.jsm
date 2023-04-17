@@ -72,6 +72,15 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
 
     
     for (let result of context.results) {
+      if (result.providerName == "UrlbarProviderQuickSuggest") {
+        
+        
+        
+        state.quickSuggestResult = result;
+        this._updateStatePreAdd(result, state);
+        continue;
+      }
+
       
       
       let group = UrlbarUtils.getResultGroup(result);
@@ -273,6 +282,14 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
       maxResultCount = 0;
     }
 
+    let addQuickSuggest =
+      state.quickSuggestResult &&
+      group == UrlbarUtils.RESULT_GROUP.GENERAL &&
+      this._canAddResult(state.quickSuggestResult, state);
+    if (addQuickSuggest) {
+      maxResultCount--;
+    }
+
     let addedResults = [];
     let groupResults = state.resultsByGroup.get(group);
     while (
@@ -291,6 +308,15 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
         this._updateStatePostAdd(result, state);
       }
     }
+
+    if (addQuickSuggest) {
+      let { quickSuggestResult } = state;
+      state.quickSuggestResult = null;
+      addedResults.push(quickSuggestResult);
+      state.totalResultCount++;
+      this._updateStatePostAdd(quickSuggestResult, state);
+    }
+
     return addedResults;
   }
 
