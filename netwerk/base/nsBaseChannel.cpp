@@ -646,8 +646,9 @@ nsBaseChannel::Open(nsIInputStream** aStream) {
     rv = Redirect(chan, nsIChannelEventSink::REDIRECT_INTERNAL, false);
     if (NS_FAILED(rv)) return rv;
     rv = chan->Open(aStream);
-  } else if (rv == NS_ERROR_NOT_IMPLEMENTED)
+  } else if (rv == NS_ERROR_NOT_IMPLEMENTED) {
     return NS_ImplementChannelOpen(this, aStream);
+  }
 
   if (NS_SUCCEEDED(rv)) {
     mWasOpened = true;
@@ -823,14 +824,16 @@ nsBaseChannel::OnStartRequest(nsIRequest* request) {
     }
 
     
-    if (mLoadFlags & LOAD_CALL_CONTENT_SNIFFERS)
+    if (mLoadFlags & LOAD_CALL_CONTENT_SNIFFERS) {
       mPump->PeekStream(CallTypeSniffers, static_cast<nsIChannel*>(this));
+    }
   }
 
   SUSPEND_PUMP_FOR_SCOPE();
 
-  if (mListener)  
+  if (mListener) {  
     return mListener->OnStartRequest(this);
+  }
   return NS_OK;
 }
 
@@ -845,8 +848,9 @@ nsBaseChannel::OnStopRequest(nsIRequest* request, nsresult status) {
   mRequest = nullptr;
   mPumpingData = false;
 
-  if (mListener)  
+  if (mListener) {  
     mListener->OnStopRequest(this, mStatus);
+  }
   ChannelDone();
 
   

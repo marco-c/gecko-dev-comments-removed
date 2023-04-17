@@ -34,7 +34,7 @@ class nsDirectoryIndexStream final : public nsIInputStream {
   
 
 
-  static nsresult Create(nsIFile* aDir, nsIInputStream** aStreamResult);
+  static nsresult Create(nsIFile* aDir, nsIInputStream** aResult);
 
   
   NS_DECL_THREADSAFE_ISUPPORTS

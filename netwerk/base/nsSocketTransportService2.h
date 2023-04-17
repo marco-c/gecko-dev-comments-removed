@@ -251,7 +251,7 @@ class nsSocketTransportService final : public nsPISocketTransportService,
       PRIntervalTime now);  
   nsresult DoPollIteration(TimeDuration* pollDuration);
   
-  int32_t Poll(TimeDuration* pollDuration, PRIntervalTime now);
+  int32_t Poll(TimeDuration* pollDuration, PRIntervalTime ts);
   
   
   
@@ -303,7 +303,7 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   
   
   
-  typedef CopyableTArray<Tuple<uint16_t, uint16_t, uint16_t>> TPortRemapping;
+  using TPortRemapping = CopyableTArray<Tuple<uint16_t, uint16_t, uint16_t>>;
   Maybe<TPortRemapping> mPortRemapping;
 
   

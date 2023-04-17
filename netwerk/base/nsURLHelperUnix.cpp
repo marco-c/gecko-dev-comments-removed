@@ -26,19 +26,21 @@ nsresult net_GetURLSpecFromActualFile(nsIFile* aFile, nsACString& result) {
   NS_CopyUnicodeToNative(path, ePath);
 
   
-  if (nativePath == ePath)
+  if (nativePath == ePath) {
     CopyUTF16toUTF8(path, ePath);
-  else
+  } else {
     ePath = nativePath;
+  }
 
   nsAutoCString escPath;
   constexpr auto prefix = "file://"_ns;
 
   
-  if (NS_EscapeURL(ePath.get(), -1, esc_Directory + esc_Forced, escPath))
+  if (NS_EscapeURL(ePath.get(), -1, esc_Directory + esc_Forced, escPath)) {
     escPath.Insert(prefix, 0);
-  else
+  } else {
     escPath.Assign(prefix + ePath);
+  }
 
   
   
@@ -86,17 +88,19 @@ nsresult net_GetFileFromURLSpec(const nsACString& aURL, nsIFile** result) {
   if (IsUtf8(path)) {
     
     
-    if (NS_IsNativeUTF8())
+    if (NS_IsNativeUTF8()) {
       rv = localFile->InitWithNativePath(path);
-    else
+    } else {
       rv = localFile->InitWithPath(NS_ConvertUTF8toUTF16(path));
+    }
     
     
     
     
-  } else
+  } else {
     
     rv = localFile->InitWithNativePath(path);
+  }
 
   if (NS_FAILED(rv)) return rv;
 

@@ -316,15 +316,17 @@ nsViewSourceChannel::AsyncOpen(nsIStreamListener* aListener) {
 
   nsCOMPtr<nsILoadGroup> loadGroup;
   mChannel->GetLoadGroup(getter_AddRefs(loadGroup));
-  if (loadGroup)
+  if (loadGroup) {
     loadGroup->AddRequest(static_cast<nsIViewSourceChannel*>(this), nullptr);
+  }
 
   nsresult rv = NS_OK;
   rv = mChannel->AsyncOpen(this);
 
-  if (NS_FAILED(rv) && loadGroup)
+  if (NS_FAILED(rv) && loadGroup) {
     loadGroup->RemoveRequest(static_cast<nsIViewSourceChannel*>(this), nullptr,
                              rv);
+  }
 
   if (NS_SUCCEEDED(rv)) {
     
@@ -384,7 +386,7 @@ nsViewSourceChannel::SetLoadFlags(uint32_t aLoadFlags) {
   
   
   
-  mIsDocument = (aLoadFlags & ::nsIChannel::LOAD_DOCUMENT_URI) ? true : false;
+  mIsDocument = (aLoadFlags & ::nsIChannel::LOAD_DOCUMENT_URI) != 0;
 
   nsresult rv =
       mChannel->SetLoadFlags((aLoadFlags | ::nsIRequest::LOAD_FROM_CACHE) &

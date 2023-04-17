@@ -19,7 +19,7 @@
 
 namespace mozilla::net {
 
-static nsresult ListInterfaceAddresses(int aFd, const char* aIface,
+static nsresult ListInterfaceAddresses(int aFd, const char* aInterface,
                                        AddrMapType& aAddrMap);
 
 nsresult DoListAddresses(AddrMapType& aAddrMap) {
@@ -30,7 +30,7 @@ nsresult DoListAddresses(AddrMapType& aAddrMap) {
 
   auto autoCloseSocket = MakeScopeExit([&] { close(fd); });
 
-  struct ifconf ifconf;
+  struct ifconf ifconf {};
   
 
 
@@ -61,7 +61,7 @@ nsresult DoListAddresses(AddrMapType& aAddrMap) {
 
 static nsresult ListInterfaceAddresses(int aFd, const char* aInterface,
                                        AddrMapType& aAddrMap) {
-  struct ifreq ifreq;
+  struct ifreq ifreq {};
   memset(&ifreq, 0, sizeof(struct ifreq));
   strncpy(ifreq.ifr_name, aInterface, IFNAMSIZ - 1);
   if (ioctl(aFd, SIOCGIFADDR, &ifreq) != 0) {

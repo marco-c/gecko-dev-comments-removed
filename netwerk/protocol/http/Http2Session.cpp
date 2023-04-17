@@ -284,7 +284,7 @@ void Http2Session::LogIO(Http2Session* self, Http2Stream* stream,
   }
 }
 
-typedef nsresult (*Http2ControlFx)(Http2Session* self);
+using Http2ControlFx = nsresult (*)(Http2Session*);
 static Http2ControlFx sControlFunctions[] = {
     nullptr,  
     Http2Session::RecvHeaders,
@@ -307,8 +307,9 @@ bool Http2Session::RoomForMoreConcurrent() {
 }
 
 bool Http2Session::RoomForMoreStreams() {
-  if (mNextStreamID + mStreamTransactionHash.Count() * 2 > kMaxStreamID)
+  if (mNextStreamID + mStreamTransactionHash.Count() * 2 > kMaxStreamID) {
     return false;
+  }
 
   return !mShouldGoAway;
 }
@@ -372,8 +373,9 @@ uint32_t Http2Session::ReadTimeoutTick(PRIntervalTime now) {
     for (uint32_t index = mPushedStreams.Length(); index > 0; --index) {
       Http2PushedStream* pushedStream = mPushedStreams[index - 1];
 
-      if (timestampNow.IsNull())
+      if (timestampNow.IsNull()) {
         timestampNow = TimeStamp::Now();  
+      }
 
       
       
@@ -1354,10 +1356,11 @@ nsresult Http2Session::RecvHeaders(Http2Session* self) {
   
   bool endHeadersFlag = self->mInputFrameFlags & kFlag_END_HEADERS;
 
-  if (endHeadersFlag)
+  if (endHeadersFlag) {
     self->mExpectedHeaderID = 0;
-  else
+  } else {
     self->mExpectedHeaderID = self->mInputFrameID;
+  }
 
   uint32_t priorityLen = 0;
   if (self->mInputFrameFlags & kFlag_PRIORITY) {
@@ -1404,8 +1407,9 @@ nsresult Http2Session::RecvHeaders(Http2Session* self) {
          "0x%X failed. NextStreamID = 0x%X\n",
          self, self->mInputFrameID, self->mNextStreamID));
 
-    if (self->mInputFrameID >= self->mNextStreamID)
+    if (self->mInputFrameID >= self->mNextStreamID) {
       self->GenerateRstStream(PROTOCOL_ERROR, self->mInputFrameID);
+    }
 
     self->mDecompressBuffer.Append(
         &self->mInputFrameBuffer[kFrameHeaderBytes + paddingControlBytes +
@@ -1541,7 +1545,8 @@ nsresult Http2Session::ResponseHeadersComplete() {
     CleanupStream(mInputFrameDataStream, NS_ERROR_NET_RESET, CANCEL_ERROR);
     ResetDownstreamState();
     return NS_OK;
-  } else if (NS_FAILED(rv)) {
+  }
+  if (NS_FAILED(rv)) {
     return rv;
   }
 
@@ -1940,7 +1945,8 @@ nsresult Http2Session::RecvPushPromise(Http2Session* self) {
     self->GenerateRstStream(PROTOCOL_ERROR, promisedID);
     self->ResetDownstreamState();
     return NS_OK;
-  } else if (NS_FAILED(rv)) {
+  }
+  if (NS_FAILED(rv)) {
     
     self->mGoAwayReason = COMPRESSION_ERROR;
     return rv;
@@ -1962,8 +1968,9 @@ nsresult Http2Session::RecvPushPromise(Http2Session* self) {
     return NS_ERROR_FAILURE;
   }
 
-  if (promisedID > self->mOutgoingGoAwayID)
+  if (promisedID > self->mOutgoingGoAwayID) {
     self->mOutgoingGoAwayID = promisedID;
+  }
 
   
   
@@ -2169,8 +2176,9 @@ nsresult Http2Session::RecvGoAway(Http2Session* self) {
       stream->Transaction()->DisableSpdy();
     }
     self->CloseStream(stream, NS_ERROR_NET_RESET);
-    if (stream->HasRegisteredID())
+    if (stream->HasRegisteredID()) {
       self->mStreamIDHash.Remove(stream->StreamID());
+    }
     self->mStreamTransactionHash.Remove(stream->Transaction());
   }
 
@@ -2223,8 +2231,9 @@ nsresult Http2Session::RecvWindowUpdate(Http2Session* self) {
       LOG3(("Http2Session::RecvWindowUpdate %p lookup streamID 0x%X failed.\n",
             self, self->mInputFrameID));
       
-      if (self->mInputFrameID >= self->mNextStreamID)
+      if (self->mInputFrameID >= self->mNextStreamID) {
         self->GenerateRstStream(PROTOCOL_ERROR, self->mInputFrameID);
+      }
       self->ResetDownstreamState();
       return NS_OK;
     }
@@ -2932,8 +2941,9 @@ nsresult Http2Session::ReadyToProcessDataFrame(
         ("Http2Session::ReadyToProcessDataFrame %p lookup streamID 0x%X "
          "failed. Next = 0x%X",
          this, mInputFrameID, mNextStreamID));
-    if (mInputFrameID >= mNextStreamID)
+    if (mInputFrameID >= mNextStreamID) {
       GenerateRstStream(PROTOCOL_ERROR, mInputFrameID);
+    }
     ChangeDownstreamState(DISCARDING_DATA_FRAME);
   } else if (mInputFrameDataStream->RecvdFin() ||
              mInputFrameDataStream->RecvdReset() ||
@@ -2943,8 +2953,9 @@ nsresult Http2Session::ReadyToProcessDataFrame(
          "Data arrived for already server closed stream.\n",
          this, mInputFrameID));
     if (mInputFrameDataStream->RecvdFin() ||
-        mInputFrameDataStream->RecvdReset())
+        mInputFrameDataStream->RecvdReset()) {
       GenerateRstStream(STREAM_CLOSED_ERROR, mInputFrameID);
+    }
     ChangeDownstreamState(DISCARDING_DATA_FRAME);
   } else if (mInputFrameDataSize == 0 && !mInputFrameFinal) {
     
@@ -3205,7 +3216,8 @@ nsresult Http2Session::WriteSegmentsAgain(nsAHttpSegmentWriter* writer,
            "frame",
            this, mInputFrameID));
       return SessionError(PROTOCOL_ERROR);
-    } else if (1U + mPaddingLength == mInputFrameDataSize) {
+    }
+    if (1U + mPaddingLength == mInputFrameDataSize) {
       
       LOG3(
           ("Http2Session::WriteSegments %p stream 0x%X frame with only padding",
@@ -3373,7 +3385,7 @@ nsresult Http2Session::WriteSegmentsAgain(nsAHttpSegmentWriter* writer,
           Http2Stream* pushSink = streamToCleanup->GetConsumerStream();
           if (pushSink) {
             bool enqueueSink = true;
-            for (auto s : mPushesReadyForRead) {
+            for (const auto& s : mPushesReadyForRead) {
               if (s == pushSink) {
                 enqueueSink = false;
                 break;
@@ -3569,8 +3581,10 @@ nsresult Http2Session::ProcessSlowConsumer(Http2Stream* slowConsumer,
 
 void Http2Session::UpdateLocalStreamWindow(Http2Stream* stream,
                                            uint32_t bytes) {
-  if (!stream)  
+  if (!stream) {  
+                  
     return;
+  }
 
   
   
@@ -3593,8 +3607,9 @@ void Http2Session::UpdateLocalStreamWindow(Http2Stream* stream,
 
   if (!unacked) return;
 
-  if ((unacked < kMinimumToAck) && (localWindow > kEmergencyWindowThreshold))
+  if ((unacked < kMinimumToAck) && (localWindow > kEmergencyWindowThreshold)) {
     return;
+  }
 
   if (!stream->HasSink()) {
     LOG3(
@@ -3643,8 +3658,9 @@ void Http2Session::UpdateLocalSessionWindow(uint32_t bytes) {
   
   
   if ((mLocalSessionWindow > (mInitialRwin - kMinimumToAck)) &&
-      (mLocalSessionWindow > kEmergencyWindowThreshold))
+      (mLocalSessionWindow > kEmergencyWindowThreshold)) {
     return;
+  }
 
   
   uint64_t toack64 = mInitialRwin - mLocalSessionWindow;
@@ -3828,8 +3844,9 @@ nsresult Http2Session::OnReadSegment(const char* buf, uint32_t count,
   
   
 
-  if ((mOutputQueueUsed + count) > (mOutputQueueSize - kQueueReserved))
+  if ((mOutputQueueUsed + count) > (mOutputQueueSize - kQueueReserved)) {
     return NS_BASE_STREAM_WOULD_BLOCK;
+  }
 
   memcpy(mOutputQueueBuffer.get() + mOutputQueueUsed, buf, count);
   mOutputQueueUsed += count;
@@ -3845,8 +3862,9 @@ nsresult Http2Session::CommitToSegmentSize(uint32_t count,
   if (mOutputQueueUsed && !mAttemptingEarlyData) FlushOutputQueue();
 
   
-  if ((mOutputQueueUsed + count) <= (mOutputQueueSize - kQueueReserved))
+  if ((mOutputQueueUsed + count) <= (mOutputQueueSize - kQueueReserved)) {
     return NS_OK;
+  }
 
   
   
@@ -3858,8 +3876,9 @@ nsresult Http2Session::CommitToSegmentSize(uint32_t count,
     RealignOutputQueue();
 
     
-    if ((mOutputQueueUsed + count) <= (mOutputQueueSize - kQueueReserved))
+    if ((mOutputQueueUsed + count) <= (mOutputQueueSize - kQueueReserved)) {
       return NS_OK;
+    }
   }
 
   
@@ -3933,8 +3952,9 @@ nsresult Http2Session::OnWriteSegment(char* buf, uint32_t count,
     }
 
     mInputFrameDataStream->UpdateTransportReadEvents(*countWritten);
-    if ((mInputFrameDataRead == mInputFrameDataSize) && !mInputFrameFinal)
+    if ((mInputFrameDataRead == mInputFrameDataSize) && !mInputFrameFinal) {
       ResetDownstreamState();
+    }
 
     return rv;
   }
@@ -4206,7 +4226,8 @@ nsresult Http2Session::ConfirmTLSProfile() {
     LOG3(("Http2Session::ConfirmTLSProfile %p FAILED due to DH %d < 2048\n",
           this, keybits));
     return SessionError(INADEQUATE_SECURITY);
-  } else if (kea == ssl_kea_ecdh && keybits < 224) {  
+  }
+  if (kea == ssl_kea_ecdh && keybits < 224) {  
     LOG3(("Http2Session::ConfirmTLSProfile %p FAILED due to ECDH %d < 224\n",
           this, keybits));
     return SessionError(INADEQUATE_SECURITY);
@@ -4627,12 +4648,8 @@ bool Http2Session::CanAcceptWebsocket() {
   LOG3(("Http2Session::CanAcceptWebsocket %p enable=%d allow=%d processed=%d",
         this, mEnableWebsockets, mPeerAllowsWebsockets,
         mProcessedWaitingWebsockets));
-  if (mEnableWebsockets &&
-      (mPeerAllowsWebsockets || !mProcessedWaitingWebsockets)) {
-    return true;
-  }
-
-  return false;
+  return mEnableWebsockets &&
+         (mPeerAllowsWebsockets || !mProcessedWaitingWebsockets);
 }
 
 }  

@@ -135,7 +135,7 @@ class nsSocketTransport final : public nsASocketHandler,
 
   
   
-  nsresult InitWithConnectedSocket(PRFileDesc* aSocketFD, const NetAddr* aAddr,
+  nsresult InitWithConnectedSocket(PRFileDesc* aFD, const NetAddr* aAddr,
                                    nsISupports* aSecInfo);
 
 #ifdef XP_UNIX
@@ -344,12 +344,14 @@ class nsSocketTransport final : public nsASocketHandler,
   bool RecoverFromError();
 
   void OnMsgInputPending() {
-    if (mState == STATE_TRANSFERRING)
+    if (mState == STATE_TRANSFERRING) {
       mPollFlags |= (PR_POLL_READ | PR_POLL_EXCEPT);
+    }
   }
   void OnMsgOutputPending() {
-    if (mState == STATE_TRANSFERRING)
+    if (mState == STATE_TRANSFERRING) {
       mPollFlags |= (PR_POLL_WRITE | PR_POLL_EXCEPT);
+    }
   }
   void OnMsgInputClosed(nsresult reason);
   void OnMsgOutputClosed(nsresult reason);
@@ -382,7 +384,7 @@ class nsSocketTransport final : public nsASocketHandler,
   friend class nsSocketOutputStream;
 
   
-  uint16_t mTimeouts[2];
+  uint16_t mTimeouts[2]{};
 
   
   bool mLingerPolarity;
@@ -402,31 +404,35 @@ class nsSocketTransport final : public nsASocketHandler,
   
   void OnInputClosed(nsresult reason) {
     
-    if (OnSocketThread())
+    if (OnSocketThread()) {
       OnMsgInputClosed(reason);
-    else
+    } else {
       PostEvent(MSG_INPUT_CLOSED, reason);
+    }
   }
   void OnInputPending() {
     
-    if (OnSocketThread())
+    if (OnSocketThread()) {
       OnMsgInputPending();
-    else
+    } else {
       PostEvent(MSG_INPUT_PENDING);
+    }
   }
   void OnOutputClosed(nsresult reason) {
     
-    if (OnSocketThread())
+    if (OnSocketThread()) {
       OnMsgOutputClosed(reason);  
-    else
+    } else {
       PostEvent(MSG_OUTPUT_CLOSED, reason);
+    }
   }
   void OnOutputPending() {
     
-    if (OnSocketThread())
+    if (OnSocketThread()) {
       OnMsgOutputPending();
-    else
+    } else {
       PostEvent(MSG_OUTPUT_PENDING);
+    }
   }
 
 #ifdef ENABLE_SOCKET_TRACING

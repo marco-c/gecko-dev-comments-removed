@@ -219,10 +219,10 @@ class nsHttpConnection final : public HttpConnectionBase,
   void SetupSSL();
 
   
-  void StartSpdy(nsISSLSocketControl* ssl, SpdyVersion versionLevel);
+  void StartSpdy(nsISSLSocketControl* ssl, SpdyVersion spdyVersion);
   
   
-  void Start0RTTSpdy(SpdyVersion versionLevel);
+  void Start0RTTSpdy(SpdyVersion spdyVersion);
 
   
   nsresult TryTakeSubTransactions(nsTArray<RefPtr<nsAHttpTransaction> >& list);

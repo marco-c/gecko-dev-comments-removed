@@ -187,13 +187,16 @@ nsresult net_ParseFileURL(const nsACString& inURL, nsACString& outDirectory,
                              &extensionPos, &extensionLen);
   if (NS_FAILED(rv)) return rv;
 
-  if (directoryLen > 0)
+  if (directoryLen > 0) {
     outDirectory = Substring(inURL, filepathPos + directoryPos, directoryLen);
-  if (basenameLen > 0)
+  }
+  if (basenameLen > 0) {
     outFileBaseName = Substring(inURL, filepathPos + basenamePos, basenameLen);
-  if (extensionLen > 0)
+  }
+  if (extensionLen > 0) {
     outFileExtension =
         Substring(inURL, filepathPos + extensionPos, extensionLen);
+  }
   
   
 
@@ -225,10 +228,11 @@ void net_CoalesceDirs(netCoalesceFlags flags, char* path) {
 
 
 
-    if (nsCRT::strncasecmp(path, "/%2F", 4) == 0)
+    if (nsCRT::strncasecmp(path, "/%2F", 4) == 0) {
       special_ftp_len = 4;
-    else if (strncmp(path, "//", 2) == 0)
+    } else if (strncmp(path, "//", 2) == 0) {
       special_ftp_len = 2;
+    }
   }
 
   
@@ -286,8 +290,9 @@ void net_CoalesceDirs(netCoalesceFlags flags, char* path) {
       
       if (traversal > 0 || !(flags & NET_COALESCE_ALLOW_RELATIVE_ROOT)) {
         if (urlPtr != path) urlPtr--;  
-        for (; *urlPtr != '/' && urlPtr != path; urlPtr--)
-          ;           
+        for (; *urlPtr != '/' && urlPtr != path; urlPtr--) {
+          ;  
+        }
         --traversal;  
         
         fwdPtr += 2;
@@ -312,10 +317,11 @@ void net_CoalesceDirs(netCoalesceFlags flags, char* path) {
         
         
         
-        if (special_ftp_len > 3 && urlPtr == path + special_ftp_len - 1)
+        if (special_ftp_len > 3 && urlPtr == path + special_ftp_len - 1) {
           ++urlPtr;
-        else
+        } else {
           *urlPtr++ = *fwdPtr;
+        }
         ++fwdPtr;
         *urlPtr++ = *fwdPtr;
         ++fwdPtr;
@@ -325,8 +331,9 @@ void net_CoalesceDirs(netCoalesceFlags flags, char* path) {
       
       
       if (*fwdPtr == '/' && *(fwdPtr + 1) != '.' &&
-          (special_ftp_len != 2 || *(fwdPtr + 1) != '/'))
+          (special_ftp_len != 2 || *(fwdPtr + 1) != '/')) {
         traversal++;
+      }
       
       *urlPtr++ = *fwdPtr;
     }
@@ -337,8 +344,10 @@ void net_CoalesceDirs(netCoalesceFlags flags, char* path) {
 
 
 
-  if ((urlPtr > (path + 1)) && (*(urlPtr - 1) == '.') && (*(urlPtr - 2) == '/'))
+  if ((urlPtr > (path + 1)) && (*(urlPtr - 1) == '.') &&
+      (*(urlPtr - 2) == '/')) {
     urlPtr--;
+  }
 
   
   for (; *fwdPtr != '\0'; ++fwdPtr) {
@@ -437,13 +446,13 @@ bool net_IsAbsoluteURL(const nsACString& uri) {
 void net_FilterURIString(const nsACString& input, nsACString& result) {
   result.Truncate();
 
-  auto start = input.BeginReading();
-  auto end = input.EndReading();
+  const auto* start = input.BeginReading();
+  const auto* end = input.EndReading();
 
   
   auto charFilter = [](char c) { return static_cast<uint8_t>(c) > 0x20; };
-  auto newStart = std::find_if(start, end, charFilter);
-  auto newEnd =
+  const auto* newStart = std::find_if(start, end, charFilter);
+  const auto* newEnd =
       std::find_if(std::reverse_iterator<decltype(end)>(end),
                    std::reverse_iterator<decltype(newStart)>(newStart),
                    charFilter)
@@ -452,7 +461,7 @@ void net_FilterURIString(const nsACString& input, nsACString& result) {
   
   bool needsStrip = false;
   const ASCIIMaskArray& mask = ASCIIMask::MaskCRLFTab();
-  for (auto itr = start; itr != end; ++itr) {
+  for (const auto* itr = start; itr != end; ++itr) {
     if (ASCIIMask::IsMasked(mask, *itr)) {
       needsStrip = true;
       break;
@@ -477,13 +486,13 @@ nsresult net_FilterAndEscapeURI(const nsACString& aInput, uint32_t aFlags,
                                 nsACString& aResult) {
   aResult.Truncate();
 
-  auto start = aInput.BeginReading();
-  auto end = aInput.EndReading();
+  const auto* start = aInput.BeginReading();
+  const auto* end = aInput.EndReading();
 
   
   auto charFilter = [](char c) { return static_cast<uint8_t>(c) > 0x20; };
-  auto newStart = std::find_if(start, end, charFilter);
-  auto newEnd =
+  const auto* newStart = std::find_if(start, end, charFilter);
+  const auto* newEnd =
       std::find_if(std::reverse_iterator<decltype(end)>(end),
                    std::reverse_iterator<decltype(newStart)>(newStart),
                    charFilter)
@@ -886,8 +895,9 @@ bool net_IsValidHostName(const nsACString& host) {
   if (net_FindCharNotInSet(host.BeginReading(), end,
                            "abcdefghijklmnopqrstuvwxyz"
                            ".-0123456789"
-                           "ABCDEFGHIJKLMNOPQRSTUVWXYZ$+_") == end)
+                           "ABCDEFGHIJKLMNOPQRSTUVWXYZ$+_") == end) {
     return true;
+  }
 
   
   return mozilla::net::HostIsIPLiteral(host);

@@ -212,7 +212,7 @@ class nsBaseChannel
   
   nsresult PushStreamConverter(const char* fromType, const char* toType,
                                bool invalidatesContentLength = true,
-                               nsIStreamListener** converter = nullptr);
+                               nsIStreamListener** result = nullptr);
 
  protected:
   void DisallowThreadRetargeting() { mAllowThreadRetargeting = false; }

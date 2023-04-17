@@ -47,7 +47,7 @@ class nsDeleteDir {
   
 
 
-  static nsresult GetTrashDir(nsIFile* dir, nsCOMPtr<nsIFile>* result);
+  static nsresult GetTrashDir(nsIFile* target, nsCOMPtr<nsIFile>* result);
 
   
 

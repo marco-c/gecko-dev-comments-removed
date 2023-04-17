@@ -6,8 +6,9 @@
 #define CacheFileContextEvictor__h__
 
 #include "mozilla/UniquePtr.h"
-#include "nsTArray.h"
 #include "nsCOMPtr.h"
+#include "nsString.h"
+#include "nsTArray.h"
 
 class nsIFile;
 class nsILoadContextInfo;
@@ -19,9 +20,9 @@ class CacheIndexIterator;
 
 struct CacheFileContextEvictorEntry {
   nsCOMPtr<nsILoadContextInfo> mInfo;
-  bool mPinned;
-  nsString mOrigin;   
-  PRTime mTimeStamp;  
+  bool mPinned = false;
+  nsString mOrigin;       
+  PRTime mTimeStamp = 0;  
   RefPtr<CacheIndexIterator> mIterator;
 };
 

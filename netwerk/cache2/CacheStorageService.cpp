@@ -33,8 +33,7 @@
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Telemetry.h"
 
-namespace mozilla {
-namespace net {
+namespace mozilla::net {
 
 namespace {
 
@@ -50,7 +49,7 @@ void AppendMemoryStorageTag(nsAutoCString& key) {
 
 
 
-typedef nsClassHashtable<nsCStringHashKey, CacheEntryTable> GlobalEntryTables;
+using GlobalEntryTables = nsClassHashtable<nsCStringHashKey, CacheEntryTable>;
 
 
 
@@ -316,8 +315,9 @@ class WalkMemoryCacheRunnable : public WalkCacheRunnable {
   }
 
   virtual ~WalkMemoryCacheRunnable() {
-    if (mCallback)
+    if (mCallback) {
       ProxyReleaseMainThread("WalkMemoryCacheRunnable::mCallback", mCallback);
+    }
   }
 
   virtual void OnEntryInfo(const nsACString& aURISpec,
@@ -1097,14 +1097,16 @@ bool CacheStorageService::RemoveEntry(CacheEntry* aEntry,
   }
 
   CacheEntryTable* entries;
-  if (sGlobalEntryTables->Get(aEntry->GetStorageID(), &entries))
+  if (sGlobalEntryTables->Get(aEntry->GetStorageID(), &entries)) {
     RemoveExactEntry(entries, entryKey, aEntry, false );
+  }
 
   nsAutoCString memoryStorageID(aEntry->GetStorageID());
   AppendMemoryStorageTag(memoryStorageID);
 
-  if (sGlobalEntryTables->Get(memoryStorageID, &entries))
+  if (sGlobalEntryTables->Get(memoryStorageID, &entries)) {
     RemoveExactEntry(entries, entryKey, aEntry, false );
+  }
 
   return true;
 }
@@ -1719,8 +1721,9 @@ class CacheEntryDoomByKeyCallback : public CacheFileIOListener,
 };
 
 CacheEntryDoomByKeyCallback::~CacheEntryDoomByKeyCallback() {
-  if (mCallback)
+  if (mCallback) {
     ProxyReleaseMainThread("CacheEntryDoomByKeyCallback::mCallback", mCallback);
+  }
 }
 
 NS_IMETHODIMP CacheEntryDoomByKeyCallback::OnFileDoomed(
@@ -1908,7 +1911,7 @@ nsresult CacheStorageService::DoomStorageEntries(
     CacheEntryTable* diskEntries;
     if (memoryEntries && sGlobalEntryTables->Get(aContextKey, &diskEntries)) {
       for (const auto& memoryEntry : *memoryEntries) {
-        auto entry = memoryEntry.GetData();
+        const auto& entry = memoryEntry.GetData();
         RemoveExactEntry(diskEntries, memoryEntry.GetKey(), entry, false);
       }
     }
@@ -2335,5 +2338,4 @@ CacheStorageService::Flush(nsIObserver* aObserver) {
   return thread->Dispatch(r, CacheIOThread::WRITE);
 }
 
-}  
 }  
