@@ -236,14 +236,18 @@ bool nsHTTPSOnlyUtils::IsUpgradeDowngradeEndlessLoop(
       IsHttpsFirstModeEnabled(isPrivateWin) &&
       aOptions.contains(
           UpgradeDowngradeEndlessLoopOptions::EnforceForHTTPSFirstMode);
-  if (!enforceForHTTPSOnlyMode && !enforceForHTTPSFirstMode) {
+  bool enforceForHTTPSRR =
+      aOptions.contains(UpgradeDowngradeEndlessLoopOptions::EnforceForHTTPSRR);
+  if (!enforceForHTTPSOnlyMode && !enforceForHTTPSFirstMode &&
+      !enforceForHTTPSRR) {
     return false;
   }
 
   
   
   if (!mozilla::StaticPrefs::
-          dom_security_https_only_mode_break_upgrade_downgrade_endless_loop()) {
+          dom_security_https_only_mode_break_upgrade_downgrade_endless_loop() &&
+      !enforceForHTTPSRR) {
     return false;
   }
 
@@ -255,7 +259,8 @@ bool nsHTTPSOnlyUtils::IsUpgradeDowngradeEndlessLoop(
 
   
   uint32_t httpsOnlyStatus = aLoadInfo->GetHttpsOnlyStatus();
-  if (httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_EXEMPT) {
+  if ((httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_EXEMPT) &&
+      !enforceForHTTPSRR) {
     return false;
   }
 

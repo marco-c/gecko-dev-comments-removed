@@ -123,6 +123,7 @@
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ServiceWorkerUtils.h"
 #include "mozilla/dom/nsHTTPSOnlyStreamListener.h"
+#include "mozilla/dom/nsHTTPSOnlyUtils.h"
 #include "mozilla/net/AsyncUrlChannelClassifier.h"
 #include "mozilla/net/CookieJarSettings.h"
 #include "mozilla/net/NeckoChannelParams.h"
@@ -556,32 +557,27 @@ nsresult nsHttpChannel::MaybeUseHTTPSRRForUpgrade(bool aShouldUpgrade,
       return true;
     }
 
-    nsCOMPtr<nsIPrincipal> triggeringPrincipal =
-        mLoadInfo->TriggeringPrincipal();
-    
-    
-    if (!triggeringPrincipal->SchemeIs("https")) {
-      return false;
+    if (nsHTTPSOnlyUtils::IsUpgradeDowngradeEndlessLoop(
+            mURI, mLoadInfo,
+            {nsHTTPSOnlyUtils::UpgradeDowngradeEndlessLoopOptions::
+                 EnforceForHTTPSRR})) {
+      
+      
+      
+      gHttpHandler->ExcludeHTTPSRRHost(uriHost);
+      LOG(("[%p] skip HTTPS upgrade for host [%s]", this, uriHost.get()));
+      return true;
     }
 
-    nsAutoCString triggeringHost;
-    triggeringPrincipal->GetAsciiHost(triggeringHost);
-
-    
-    
-    if (!triggeringHost.Equals(uriHost)) {
-      return false;
-    }
-
-    
-    
-    
-    gHttpHandler->ExcludeHTTPSRRHost(uriHost);
-    return true;
+    return false;
   };
 
   if (shouldSkipUpgradeWithHTTPSRR()) {
     StoreUseHTTPSSVC(false);
+    
+    
+    
+    mCaps |= NS_HTTP_DISALLOW_HTTPS_RR;
     return ContinueOnBeforeConnect(aShouldUpgrade, aStatus);
   }
 

@@ -69,9 +69,12 @@ class nsHTTPSOnlyUtils {
 
 
 
+
+
   enum class UpgradeDowngradeEndlessLoopOptions {
     EnforceForHTTPSOnlyMode,
     EnforceForHTTPSFirstMode,
+    EnforceForHTTPSRR,
   };
   static bool IsUpgradeDowngradeEndlessLoop(
       nsIURI* aURI, nsILoadInfo* aLoadInfo,
