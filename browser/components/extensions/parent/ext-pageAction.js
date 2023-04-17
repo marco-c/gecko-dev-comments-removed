@@ -252,26 +252,11 @@ this.pageAction = class extends ExtensionAPI {
       case "popupshowing":
         const menu = event.target;
         const trigger = menu.triggerNode;
-        let actionId = trigger?.getAttribute("actionid");
-        if (trigger && !actionId) {
-          
-          
-          
-          
-          
-          for (let n = trigger.parentNode; n && !actionId; n = n.parentNode) {
-            if (n.id == "page-action-buttons" || n.localName == "panelview") {
-              
-              
-              break;
-            }
-            actionId = n.getAttribute("actionid");
-          }
-        }
+
         if (
           menu.id === "pageActionContextMenu" &&
           trigger &&
-          actionId === this.browserPageAction.id &&
+          trigger.getAttribute("actionid") === this.browserPageAction.id &&
           !this.browserPageAction.getDisabled(trigger.ownerGlobal)
         ) {
           global.actionContextMenu({
