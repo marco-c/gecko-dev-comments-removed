@@ -26,7 +26,7 @@ var gTests = [
       checkDeviceSelectors(true, true);
 
       
-      if (!gProton) {
+      if (!gProtonDoorhangers) {
         let iconclass = PopupNotifications.panel.firstElementChild.getAttribute(
           "iconclass"
         );
@@ -75,7 +75,7 @@ var gTests = [
       checkDeviceSelectors(true);
 
       
-      if (!gProton) {
+      if (!gProtonDoorhangers) {
         let iconclass = PopupNotifications.panel.firstElementChild.getAttribute(
           "iconclass"
         );
@@ -126,7 +126,7 @@ var gTests = [
       checkDeviceSelectors(false, true);
 
       
-      if (!gProton) {
+      if (!gProtonDoorhangers) {
         let iconclass = PopupNotifications.panel.firstElementChild.getAttribute(
           "iconclass"
         );

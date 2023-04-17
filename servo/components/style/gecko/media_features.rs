@@ -663,7 +663,7 @@ macro_rules! bool_pref_feature {
 
 
 
-pub static MEDIA_FEATURES: [MediaFeatureDescription; 61] = [
+pub static MEDIA_FEATURES: [MediaFeatureDescription; 62] = [
     feature!(
         atom!("width"),
         AllowsRanges::Yes,
@@ -907,5 +907,6 @@ pub static MEDIA_FEATURES: [MediaFeatureDescription; 61] = [
     bool_pref_feature!(atom!("-moz-proton"), "browser.proton.enabled"),
     bool_pref_feature!(atom!("-moz-proton-modals"), "browser.proton.modals.enabled"),
     bool_pref_feature!(atom!("-moz-proton-contextmenus"), "browser.proton.contextmenus.enabled"),
+    bool_pref_feature!(atom!("-moz-proton-doorhangers"), "browser.proton.doorhangers.enabled"),
     bool_pref_feature!(atom!("-moz-proton-places-tooltip"), "browser.proton.places-tooltip.enabled"),
 ];
