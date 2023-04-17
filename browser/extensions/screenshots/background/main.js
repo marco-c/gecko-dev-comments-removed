@@ -8,6 +8,7 @@
 
 this.main = (function() {
   const exports = {};
+  const pngToJpegCutoff = 2500000;
 
   const { sendEvent, incrementCount } = analytics;
 
@@ -182,8 +183,7 @@ this.main = (function() {
     canvas.getContext("2d").putImageData(imageData, 0, 0);
     let dataUrl = canvas.toDataURL();
     if (
-      buildSettings.pngToJpegCutoff &&
-      dataUrl.length > buildSettings.pngToJpegCutoff
+      dataUrl.length > pngToJpegCutoff
     ) {
       const jpegDataUrl = canvas.toDataURL("image/jpeg");
       if (jpegDataUrl.length < dataUrl.length) {

@@ -15,7 +15,6 @@ this.selectorLoader = (function() {
   
   
   const standardScripts = [
-    "build/buildSettings.js",
     "log.js",
     "catcher.js",
     "assertIsTrusted.js",

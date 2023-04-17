@@ -177,7 +177,7 @@ this.auth = (function() {
   };
 
   exports.getSentryPublicDSN = function() {
-    return sentryPublicDSN || buildSettings.defaultSentryDsn;
+    return sentryPublicDSN;
   };
 
   exports.getAbTests = function() {

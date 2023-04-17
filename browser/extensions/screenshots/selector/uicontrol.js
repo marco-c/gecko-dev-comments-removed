@@ -49,8 +49,8 @@ this.uicontrol = (function() {
 
   const { watchFunction, watchPromise } = catcher;
 
-  const MAX_PAGE_HEIGHT = buildSettings.maxImageHeight;
-  const MAX_PAGE_WIDTH = buildSettings.maxImageWidth;
+  const MAX_PAGE_HEIGHT = 10000;
+  const MAX_PAGE_WIDTH = 10000;
   
   const MIN_DETECT_ABSOLUTE_HEIGHT = 10;
   const MIN_DETECT_ABSOLUTE_WIDTH = 30;
