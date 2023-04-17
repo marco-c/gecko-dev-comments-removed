@@ -18,10 +18,8 @@
 using namespace mozilla;
 
 namespace mozilla {
-namespace layout {
 namespace detail {
 const AlignedFrameListBytes gEmptyFrameListBytes = {0};
-}  
 }  
 }  
 

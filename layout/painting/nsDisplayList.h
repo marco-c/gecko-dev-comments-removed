@@ -69,15 +69,9 @@
 
 class gfxContext;
 class nsIContent;
-class nsDisplayList;
-class nsDisplayTableItem;
 class nsIScrollableFrame;
 class nsSubDocumentFrame;
-class nsDisplayCompositorHitTestInfo;
-class nsDisplayScrollInfoLayer;
-class nsDisplayTableBackgroundSet;
 class nsCaret;
-enum class nsDisplayOwnLayerFlags;
 struct WrFiltersHolder;
 
 namespace nsStyleTransformMatrix {
@@ -85,9 +79,14 @@ class TransformReferenceBox;
 }
 
 namespace mozilla {
+
+enum class nsDisplayOwnLayerFlags;
+class nsDisplayCompositorHitTestInfo;
+class nsDisplayScrollInfoLayer;
 class FrameLayerBuilder;
 class PresShell;
 class StickyScrollContainer;
+
 namespace layers {
 struct FrameMetrics;
 class RenderRootStateManager;
@@ -99,9 +98,11 @@ class WebRenderCommand;
 class WebRenderScrollData;
 class WebRenderLayerScrollData;
 }  
+
 namespace wr {
 class DisplayListBuilder;
 }  
+
 namespace dom {
 class Selection;
 }  
@@ -112,8 +113,6 @@ enum class DisplayListArenaObjectId {
 #undef DISPLAY_LIST_ARENA_OBJECT
   COUNT
 };
-
-}  
 
 
 
@@ -249,8 +248,6 @@ struct AnimatedGeometryRoot {
   }
 };
 
-namespace mozilla {
-
 
 
 
@@ -338,7 +335,6 @@ struct ActiveScrolledRoot {
   uint32_t mDepth;
   bool mRetained;
 };
-}  
 
 enum class nsDisplayListBuilderMode : uint8_t {
   Painting,
@@ -349,7 +345,10 @@ enum class nsDisplayListBuilderMode : uint8_t {
   GenerateGlyph,
 };
 
+class nsDisplayList;
 class nsDisplayWrapList;
+class nsDisplayTableBackgroundSet;
+class nsDisplayTableItem;
 
 
 
@@ -2082,15 +2081,16 @@ class RetainedDisplayList;
   }                                                                          \
                                                                              \
   template <typename T, typename F, typename... Args>                        \
-  friend T* ::MakeDisplayItemWithIndex(nsDisplayListBuilder* aBuilder,       \
-                                       F* aFrame, const uint16_t aIndex,     \
-                                       Args&&... aArgs);                     \
+  friend T* mozilla::MakeDisplayItemWithIndex(                               \
+      nsDisplayListBuilder* aBuilder, F* aFrame, const uint16_t aIndex,      \
+      Args&&... aArgs);                                                      \
                                                                              \
  public:
 
 #define NS_DISPLAY_ALLOW_CLONING()                                          \
   template <typename T>                                                     \
-  friend T* MakeClone(nsDisplayListBuilder* aBuilder, const T* aItem);      \
+  friend T* mozilla::MakeClone(nsDisplayListBuilder* aBuilder,              \
+                               const T* aItem);                             \
                                                                             \
   nsDisplayWrapList* Clone(nsDisplayListBuilder* aBuilder) const override { \
     return MakeClone(aBuilder, this);                                       \
@@ -4096,9 +4096,8 @@ class nsDisplayGeneric : public nsPaintedDisplayItem {
   }
 
   template <typename T, typename F, typename... Args>
-  friend T* ::MakeDisplayItemWithIndex(nsDisplayListBuilder* aBuilder,
-                                       F* aFrame, const uint16_t aIndex,
-                                       Args&&... aArgs);
+  friend T* MakeDisplayItemWithIndex(nsDisplayListBuilder* aBuilder, F* aFrame,
+                                     const uint16_t aIndex, Args&&... aArgs);
 
   PaintCallback mPaint;
   OldPaintCallback mOldPaint;  
@@ -7217,6 +7216,8 @@ class nsDisplayPerspective : public nsPaintedDisplayItem {
   mutable RetainedDisplayList mList;
 };
 
+class nsDisplayTextGeometry;
+
 
 
 
@@ -7541,8 +7542,6 @@ class FlattenedDisplayListIterator {
   AutoTArray<nsDisplayItem*, 16> mStack;
 };
 
-namespace mozilla {
-
 class PaintTelemetry {
  public:
   class AutoRecordPaint {
@@ -7560,4 +7559,4 @@ class PaintTelemetry {
 
 }  
 
-#endif
+#endif 

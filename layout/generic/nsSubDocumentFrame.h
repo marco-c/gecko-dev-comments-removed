@@ -176,6 +176,8 @@ class nsSubDocumentFrame final : public nsAtomicContainerFrame,
   bool mCallingShow;
 };
 
+namespace mozilla {
+
 
 
 
@@ -227,5 +229,7 @@ class nsDisplayRemote final : public nsPaintedDisplayItem {
   LayoutDevicePoint mOffset;
   EventRegionsOverride mEventRegionsOverride;
 };
+
+}  
 
 #endif 
