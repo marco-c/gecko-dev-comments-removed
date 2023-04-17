@@ -5921,6 +5921,12 @@ void nsWindow::NativeMoveResize(bool aMoved, bool aResized) {
     }
     if (aResized) {
       gtk_window_resize(GTK_WINDOW(mShell), size.width, size.height);
+      if (mIsDragPopup) {
+        
+        
+        gtk_widget_set_size_request(GTK_WIDGET(mShell), size.width,
+                                    size.height);
+      }
     }
   }
 
