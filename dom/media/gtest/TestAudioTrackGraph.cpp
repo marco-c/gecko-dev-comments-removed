@@ -752,7 +752,7 @@ TEST(TestAudioTrackGraph, SwitchingDriverIfMaxChannelCountChanged)
     EXPECT_TRUE(stream->mHasInput);
     Unused << WaitFor(started);
   }
-  
+  EXPECT_EQ(stream->InputChannels(), 2U);
 
   
   
@@ -818,7 +818,7 @@ TEST(TestAudioTrackGraph, SwitchingDriverIfMaxChannelCountChanged)
     stream = newStream;
   }
 
-  
+  EXPECT_EQ(stream->InputChannels(), 1U);
 
   
   DispatchFunction([&] { set2.Uninit(); });
