@@ -5,7 +5,7 @@
 
 
 UNIFIED_SOURCES += [
-    "TestLineBreak.cpp",
+    "TestBreak.cpp",
 ]
 
 FINAL_LIBRARY = "xul-gtest"
