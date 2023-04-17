@@ -1219,7 +1219,7 @@ class EditorUtils final {
 
 
   static bool IsPointInSelection(const Selection& aSelection,
-                                 const nsINode& aParentNode, int32_t aOffset);
+                                 const nsINode& aParentNode, uint32_t aOffset);
 
   
 

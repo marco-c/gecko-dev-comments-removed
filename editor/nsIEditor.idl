@@ -434,7 +434,7 @@ interface nsIEditor  : nsISupports
   [can_run_script]
   void insertNode(in Node node,
                   in Node parent,
-                  in long aPosition);
+                  in unsigned long aPosition);
 
 
   
@@ -544,8 +544,7 @@ interface nsIEditor  : nsISupports
   
 
 
-
-  readonly attribute long textLength;
+  readonly attribute unsigned long textLength;
 
   
 

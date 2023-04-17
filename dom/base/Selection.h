@@ -193,7 +193,7 @@ class Selection final : public nsSupportsWeakReference,
   nsresult RemoveCollapsedRanges();
   void Clear(nsPresContext* aPresContext);
   MOZ_CAN_RUN_SCRIPT nsresult CollapseInLimiter(nsINode* aContainer,
-                                                int32_t aOffset) {
+                                                uint32_t aOffset) {
     if (!aContainer) {
       return NS_ERROR_INVALID_ARG;
     }

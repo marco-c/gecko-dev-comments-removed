@@ -175,20 +175,21 @@ nsresult DeleteRangeTransaction::CreateTxnsToDeleteBetween(
   
   if (Text* textNode = Text::FromNode(aStart.Container())) {
     
-    int32_t numToDel;
+    uint32_t textLengthToDelete;
     if (aStart == aEnd) {
-      numToDel = 1;
+      textLengthToDelete = 1;
     } else {
-      numToDel = *aEnd.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets) -
-                 *aStart.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets);
-      MOZ_DIAGNOSTIC_ASSERT(numToDel > 0);
+      textLengthToDelete =
+          *aEnd.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets) -
+          *aStart.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets);
+      MOZ_DIAGNOSTIC_ASSERT(textLengthToDelete > 0);
     }
 
     RefPtr<DeleteTextTransaction> deleteTextTransaction =
         DeleteTextTransaction::MaybeCreate(
             *mEditorBase, *textNode,
             *aStart.Offset(RawRangeBoundary::OffsetFilter::kValidOffsets),
-            numToDel);
+            textLengthToDelete);
     
     
     if (!deleteTextTransaction) {

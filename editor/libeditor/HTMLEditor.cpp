@@ -91,8 +91,8 @@ struct MOZ_STACK_CLASS SavedRange final {
   RefPtr<Selection> mSelection;
   nsCOMPtr<nsINode> mStartContainer;
   nsCOMPtr<nsINode> mEndContainer;
-  int32_t mStartOffset = 0;
-  int32_t mEndOffset = 0;
+  uint32_t mStartOffset = 0;
+  uint32_t mEndOffset = 0;
 };
 
 HTMLEditor::HTMLEditor()
@@ -4401,20 +4401,26 @@ void HTMLEditor::DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
 
     
     if (range.mStartContainer == aStartOfRightNode.GetContainer()) {
-      if (static_cast<uint32_t>(range.mStartOffset) <
-          aStartOfRightNode.Offset()) {
+      if (range.mStartOffset < aStartOfRightNode.Offset()) {
         range.mStartContainer = &aNewLeftNode;
-      } else {
+      } else if (range.mStartOffset >= aStartOfRightNode.Offset()) {
         range.mStartOffset -= aStartOfRightNode.Offset();
+      } else {
+        NS_WARNING(
+            "The stored start offset was smaller than the right node offset");
+        range.mStartOffset = 0;
       }
     }
 
     if (range.mEndContainer == aStartOfRightNode.GetContainer()) {
-      if (static_cast<uint32_t>(range.mEndOffset) <
-          aStartOfRightNode.Offset()) {
+      if (range.mEndOffset < aStartOfRightNode.Offset()) {
         range.mEndContainer = &aNewLeftNode;
-      } else {
+      } else if (range.mEndOffset >= aStartOfRightNode.Offset()) {
         range.mEndOffset -= aStartOfRightNode.Offset();
+      } else {
+        NS_WARNING(
+            "The stored end offset was smaller than the right node offset");
+        range.mEndOffset = 0;
       }
     }
 
@@ -4479,6 +4485,9 @@ nsresult HTMLEditor::JoinNodesWithTransaction(nsINode& aLeftNode,
   
   
   int32_t offset = parent->ComputeIndexOf(&aRightNode);
+  if (NS_WARN_IF(offset < 0)) {
+    return NS_ERROR_FAILURE;
+  }
   
   uint32_t oldLeftNodeLen = aLeftNode.Length();
 
@@ -4499,9 +4508,9 @@ nsresult HTMLEditor::JoinNodesWithTransaction(nsINode& aLeftNode,
 
   
   
-  DebugOnly<nsresult> rvIgnored =
-      RangeUpdaterRef().SelAdjJoinNodes(aLeftNode, aRightNode, *parent, offset,
-                                        static_cast<int32_t>(oldLeftNodeLen));
+  DebugOnly<nsresult> rvIgnored = RangeUpdaterRef().SelAdjJoinNodes(
+      aLeftNode, aRightNode, *parent, AssertedCast<uint32_t>(offset),
+      oldLeftNodeLen);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                        "RangeUpdater::SelAdjJoinNodes() failed, but ignored");
 
@@ -4572,15 +4581,14 @@ nsresult HTMLEditor::DoJoinNodes(nsIContent& aContentToKeep,
       
       if (range.mStartContainer) {
         if (range.mStartContainer == atNodeToKeep.GetContainer() &&
-            atNodeToJoin.Offset() < static_cast<uint32_t>(range.mStartOffset) &&
-            static_cast<uint32_t>(range.mStartOffset) <=
-                atNodeToKeep.Offset()) {
+            atNodeToJoin.Offset() < range.mStartOffset &&
+            range.mStartOffset <= atNodeToKeep.Offset()) {
           range.mStartContainer = &aContentToJoin;
           range.mStartOffset = firstNodeLength;
         }
         if (range.mEndContainer == atNodeToKeep.GetContainer() &&
-            atNodeToJoin.Offset() < static_cast<uint32_t>(range.mEndOffset) &&
-            static_cast<uint32_t>(range.mEndOffset) <= atNodeToKeep.Offset()) {
+            atNodeToJoin.Offset() < range.mEndOffset &&
+            range.mEndOffset <= atNodeToKeep.Offset()) {
           range.mEndContainer = &aContentToJoin;
           range.mEndOffset = firstNodeLength;
         }
@@ -4711,8 +4719,8 @@ nsresult HTMLEditor::DoJoinNodes(nsIContent& aContentToKeep,
 
   if (allowedTransactionsToChangeSelection) {
     
-    DebugOnly<nsresult> rvIgnored = SelectionRef().CollapseInLimiter(
-        &aContentToKeep, AssertedCast<int32_t>(firstNodeLength));
+    DebugOnly<nsresult> rvIgnored =
+        SelectionRef().CollapseInLimiter(&aContentToKeep, firstNodeLength);
     if (NS_WARN_IF(Destroyed())) {
       return NS_ERROR_EDITOR_DESTROYED;
     }
