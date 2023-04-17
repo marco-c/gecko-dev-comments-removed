@@ -835,11 +835,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   virtual bool AccelerateLayersByDefault();
 
   
-  
-  virtual void GetAcceleratedCompositorBackends(
-      nsTArray<mozilla::layers::LayersBackend>& aBackends);
-
-  
   virtual BackendPrefsData GetBackendPrefs() const;
 
   
