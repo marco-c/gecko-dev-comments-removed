@@ -88,11 +88,6 @@ class gfxXlibSurface final : public gfxASurface {
   
   bool GetColormapAndVisual(Colormap* colormap, Visual** visual);
 
-  GLXPixmap GetGLXPixmap();
-  
-  
-  void BindGLXPixmap(GLXPixmap aPixmap);
-
   
   
   
@@ -113,8 +108,6 @@ class gfxXlibSurface final : public gfxASurface {
   Drawable mDrawable;
 
   const mozilla::gfx::IntSize DoSizeQuery();
-
-  GLXPixmap mGLXPixmap;
 };
 
 #endif 
