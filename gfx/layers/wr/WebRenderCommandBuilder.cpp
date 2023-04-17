@@ -1232,7 +1232,8 @@ void Grouper::ConstructGroups(nsDisplayListBuilder* aDisplayListBuilder,
                              item);
 
       {
-        auto spaceAndClipChain = mClipManager.SwitchItem(item);
+        auto spaceAndClipChain =
+            mClipManager.SwitchItem(aDisplayListBuilder, item);
         wr::SpaceAndClipChainHelper saccHelper(aBuilder, spaceAndClipChain);
         mHitTestInfoManager.ProcessItem(item, aBuilder, aDisplayListBuilder);
 
@@ -1748,13 +1749,17 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
         
         
         float oldOpacity = aBuilder.GetInheritedOpacity();
+        const DisplayItemClipChain* oldClip = aBuilder.GetInheritedClipChain();
         aBuilder.SetInheritedOpacity(oldOpacity * opacity->GetOpacity());
+        aBuilder.PushInheritedClipChain(aDisplayListBuilder,
+                                        opacity->GetClipChain());
 
         CreateWebRenderCommandsFromDisplayList(opacity->GetChildren(), item,
                                                aDisplayListBuilder, aSc,
                                                aBuilder, aResources, false);
 
         aBuilder.SetInheritedOpacity(oldOpacity);
+        aBuilder.SetInheritedClipChain(oldClip);
         continue;
       }
     }
@@ -1818,7 +1823,7 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
 
     
     
-    auto spaceAndClipChain = mClipManager.SwitchItem(item);
+    auto spaceAndClipChain = mClipManager.SwitchItem(aDisplayListBuilder, item);
     wr::SpaceAndClipChainHelper saccHelper(aBuilder, spaceAndClipChain);
 
     {  
