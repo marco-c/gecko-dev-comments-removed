@@ -8,6 +8,7 @@ pub use crate::resolve::Names;
 
 
 
+#[derive(Debug)]
 pub struct Wat<'a> {
     #[allow(missing_docs)]
     pub module: Module<'a>,
@@ -36,6 +37,7 @@ impl<'a> Parse<'a> for Wat<'a> {
 }
 
 
+#[derive(Debug)]
 pub struct Module<'a> {
     
     pub span: ast::Span,
@@ -48,6 +50,7 @@ pub struct Module<'a> {
 }
 
 
+#[derive(Debug)]
 pub enum ModuleKind<'a> {
     
     Text(Vec<ModuleField<'a>>),

@@ -85,7 +85,7 @@ enum Try<'a> {
     
     Do(Instruction<'a>),
     
-    CatchUnwindOrDelegate,
+    CatchOrDelegate,
     
     Catch,
     
@@ -198,11 +198,6 @@ impl<'a> ExpressionParser<'a> {
                     
                     Level::Try(Try::Do(_)) => {
                         return Err(parser.error("previous `try` had no `do`"));
-                    }
-                    Level::Try(Try::CatchUnwindOrDelegate) => {
-                        return Err(parser.error(
-                            "previous `try` had no `catch`, `catch_all`, `unwind`, or `delegate`",
-                        ));
                     }
                     Level::Try(Try::Delegate) => {}
                     Level::Try(_) => {
@@ -335,7 +330,7 @@ impl<'a> ExpressionParser<'a> {
             if parser.parse::<Option<kw::r#do>>()?.is_some() {
                 
                 
-                *i = Try::CatchUnwindOrDelegate;
+                *i = Try::CatchOrDelegate;
                 self.stack.push(Level::TryArm);
                 return Ok(true);
             }
@@ -346,7 +341,7 @@ impl<'a> ExpressionParser<'a> {
         }
 
         
-        if let Try::CatchUnwindOrDelegate = i {
+        if let Try::CatchOrDelegate = i {
             
             if parser.parse::<Option<kw::catch>>()?.is_some() {
                 let evt = parser.parse::<ast::Index<'a>>()?;
@@ -363,13 +358,6 @@ impl<'a> ExpressionParser<'a> {
                 return Ok(true);
             }
             
-            if parser.parse::<Option<kw::unwind>>()?.is_some() {
-                self.instrs.push(Instruction::Unwind);
-                *i = Try::End;
-                self.stack.push(Level::TryArm);
-                return Ok(true);
-            }
-            
             if parser.parse::<Option<kw::delegate>>()?.is_some() {
                 let depth = parser.parse::<ast::Index<'a>>()?;
                 self.instrs.push(Instruction::Delegate(depth));
@@ -379,7 +367,7 @@ impl<'a> ExpressionParser<'a> {
                     Paren::Right => return Ok(true),
                 }
             }
-            return Ok(false);
+            return Err(parser.error("expected a `catch`, `catch_all`, or `delegate`"));
         }
 
         if let Try::Catch = i {
@@ -1132,7 +1120,6 @@ instructions! {
         Catch(ast::Index<'a>) : [0x07] : "catch",
         Throw(ast::Index<'a>) : [0x08] : "throw",
         Rethrow(ast::Index<'a>) : [0x09] : "rethrow",
-        Unwind : [0x0a] : "unwind",
         Delegate(ast::Index<'a>) : [0x18] : "delegate",
         CatchAll : [0x19] : "catch_all",
     }
@@ -1311,6 +1298,8 @@ fn idx_zero<T>(span: ast::Span, mk_kind: fn(ast::Span) -> T) -> ast::ItemRef<'st
         kind: mk_kind(span),
         idx: ast::Index::Num(0, span),
         exports: Vec::new(),
+        #[cfg(wast_check_exhaustive)]
+        visited: false,
     }
 }
 

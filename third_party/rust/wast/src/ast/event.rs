@@ -12,6 +12,8 @@ pub struct Event<'a> {
     pub exports: ast::InlineExport<'a>,
     
     pub ty: EventType<'a>,
+    
+    pub kind: EventKind<'a>,
 }
 
 
@@ -22,17 +24,36 @@ pub enum EventType<'a> {
     Exception(ast::TypeUse<'a, ast::FunctionType<'a>>),
 }
 
+
+#[derive(Debug)]
+pub enum EventKind<'a> {
+    
+    
+    
+    
+    
+    Import(ast::InlineImport<'a>),
+
+    
+    Inline(),
+}
+
 impl<'a> Parse<'a> for Event<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
         let span = parser.parse::<kw::event>()?.0;
         let id = parser.parse()?;
         let exports = parser.parse()?;
-        let ty = parser.parse()?;
+        let (ty, kind) = if let Some(import) = parser.parse()? {
+            (parser.parse()?, EventKind::Import(import))
+        } else {
+            (parser.parse()?, EventKind::Inline())
+        };
         Ok(Event {
             span,
             id,
             exports,
             ty,
+            kind,
         })
     }
 }
