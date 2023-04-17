@@ -929,19 +929,19 @@ const DB_FILENAME = "places.sqlite";
 
 
 async function setupPlacesDatabase(aFileName, aDestFileName = DB_FILENAME) {
-  let currentDir = await OS.File.getCurrentDirectory();
+  let currentDir = do_get_cwd().path;
 
   let src = OS.Path.join(currentDir, aFileName);
-  Assert.ok(await OS.File.exists(src), "Database file found");
+  Assert.ok(await IOUtils.exists(src), "Database file found");
 
   
   let dest = OS.Path.join(OS.Constants.Path.profileDir, aDestFileName);
   Assert.ok(
-    !(await OS.File.exists(dest)),
+    !(await IOUtils.exists(dest)),
     "Database file should not exist yet"
   );
 
-  await OS.File.copy(src, dest);
+  await IOUtils.copy(src, dest);
   return dest;
 }
 

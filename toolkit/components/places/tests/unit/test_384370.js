@@ -31,9 +31,7 @@ add_task(async function() {
     OS.Constants.Path.profileDir,
     "bookmarks.exported.json"
   );
-  if (await OS.File.exists(jsonFile)) {
-    await OS.File.remove(jsonFile);
-  }
+  await IOUtils.remove(jsonFile, { ignoreAbsent: true });
 
   
   
