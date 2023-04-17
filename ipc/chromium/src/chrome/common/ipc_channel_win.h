@@ -10,6 +10,7 @@
 #include "chrome/common/ipc_channel.h"
 #include "chrome/common/ipc_message.h"
 
+#include <atomic>
 #include <string>
 
 #include "base/message_loop.h"
@@ -112,7 +113,7 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
   bool processing_incoming_;
 
   
-  bool closed_;
+  std::atomic<bool> closed_;
 
   
   
@@ -122,7 +123,7 @@ class Channel::ChannelImpl : public MessageLoopForIO::IOHandler {
   
   
   
-  size_t output_queue_length_;
+  std::atomic<size_t> output_queue_length_;
 
   ScopedRunnableMethodFactory<ChannelImpl> factory_;
 

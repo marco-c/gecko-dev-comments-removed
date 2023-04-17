@@ -11,6 +11,7 @@
 
 #include <sys/socket.h>  
 
+#include <atomic>
 #include <string>
 #include <vector>
 #include <list>
@@ -139,7 +140,7 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
   bool processing_incoming_;
 
   
-  bool closed_;
+  std::atomic<bool> closed_;
 
   
   
@@ -165,7 +166,7 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
   
   
   
-  size_t output_queue_length_;
+  std::atomic<size_t> output_queue_length_;
 
   ScopedRunnableMethodFactory<ChannelImpl> factory_;
 
