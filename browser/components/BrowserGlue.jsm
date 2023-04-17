@@ -3641,10 +3641,9 @@ BrowserGlue.prototype = {
         
         
         
-        Services.prefs.setIntPref(
-          "general.smoothScroll.mouseWheel.migrationPercent",
-          0
-        );
+        
+        
+        
       } else if (userCustomizedWheelMin && !userCustomizedWheelMax) {
         
         
