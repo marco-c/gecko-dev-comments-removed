@@ -1137,7 +1137,8 @@ gfxFont* gfxPlatformFontList::GlobalFontFallback(
           continue;
         }
         if (!family.IsFullyInitialized() &&
-            StaticPrefs::gfx_font_rendering_fallback_async()) {
+            StaticPrefs::gfx_font_rendering_fallback_async() &&
+            !XRE_IsParentProcess()) {
           
           
           StartCmapLoadingFromFamily(i);
