@@ -457,10 +457,68 @@ struct SortComparatorIds {
 
 #endif 
 
+static void AssertNoEnumerableProperties(NativeObject* obj) {
+#ifdef DEBUG
+  
+  
+
+  MOZ_ASSERT(!obj->hasEnumerableProperty());
+
+  static constexpr size_t MaxPropsToCheck = 5;
+
+  size_t count = 0;
+  for (ShapePropertyIter<NoGC> iter(obj->shape()); !iter.done(); iter++) {
+    MOZ_ASSERT(!iter->enumerable());
+    if (++count > MaxPropsToCheck) {
+      break;
+    }
+  }
+#endif  
+}
+
+
+
+static bool ClassCanHaveExtraEnumeratedProperties(const JSClass* clasp) {
+  return IsTypedArrayClass(clasp) || clasp->getNewEnumerate() ||
+         clasp->getEnumerate();
+}
+
+static bool ProtoMayHaveEnumerableProperties(JSObject* obj) {
+  if (!obj->is<NativeObject>()) {
+    return true;
+  }
+
+  JSObject* proto = obj->as<NativeObject>().staticPrototype();
+  while (proto) {
+    if (!proto->is<NativeObject>()) {
+      return true;
+    }
+    NativeObject* nproto = &proto->as<NativeObject>();
+    if (nproto->hasEnumerableProperty() ||
+        nproto->getDenseInitializedLength() > 0 ||
+        ClassCanHaveExtraEnumeratedProperties(nproto->getClass())) {
+      return true;
+    }
+    AssertNoEnumerableProperties(nproto);
+    proto = nproto->staticPrototype();
+  }
+
+  return false;
+}
+
 static bool Snapshot(JSContext* cx, HandleObject pobj_, unsigned flags,
                      MutableHandleIdVector props) {
   Rooted<PropertyKeySet> visited(cx, PropertyKeySet(cx));
   RootedObject pobj(cx, pobj_);
+
+  
+  
+  
+  
+  if (!(flags & JSITER_HIDDEN) && !(flags & JSITER_OWNONLY) &&
+      !ProtoMayHaveEnumerableProperties(pobj)) {
+    flags |= JSITER_OWNONLY;
+  }
 
   
   
@@ -847,11 +905,7 @@ static bool CanStoreInIteratorCache(JSObject* obj) {
 
     
     
-    const JSClass* clasp = obj->getClass();
-    if (MOZ_UNLIKELY(IsTypedArrayClass(clasp))) {
-      return false;
-    }
-    if (MOZ_UNLIKELY(clasp->getNewEnumerate() || clasp->getEnumerate())) {
+    if (MOZ_UNLIKELY(ClassCanHaveExtraEnumeratedProperties(obj->getClass()))) {
       return false;
     }
 
