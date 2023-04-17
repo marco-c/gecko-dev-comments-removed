@@ -1444,12 +1444,11 @@ static bool TryAppendNativeProperties(JSContext* cx, HandleObject obj,
   size_t count = 0;
   
   
-  RootedShape shape(cx, nobj->lastProperty());
-  for (Shape::Range<NoGC> r(shape); !r.empty(); r.popFront()) {
-    jsid id = r.front().propidRaw();
+  for (ShapePropertyIter<NoGC> iter(nobj->shape()); !iter.done(); iter++) {
+    jsid id = iter->key();
 
     
-    if (!r.front().enumerable() || JSID_IS_SYMBOL(id)) {
+    if (!iter->enumerable() || id.isSymbol()) {
       continue;
     }
 

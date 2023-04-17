@@ -171,6 +171,15 @@ class ShapeProperty {
   }
 };
 
+class ShapePropertyWithKey : public ShapeProperty {
+  JS::PropertyKey key_;
+
+ public:
+  explicit ShapePropertyWithKey(Shape* shape);
+
+  JS::PropertyKey key() const { return key_; }
+};
+
 struct ShapeHasher : public DefaultHasher<Shape*> {
   using Key = Shape*;
   using Lookup = StackShape;
@@ -1635,6 +1644,54 @@ MOZ_ALWAYS_INLINE bool ShapeIC::search(jsid id, Shape** foundShape) {
 
 inline ShapeProperty::ShapeProperty(Shape* shape)
     : slot_(shape->maybeSlot()), attrs_(shape->attributes()) {}
+
+inline ShapePropertyWithKey::ShapePropertyWithKey(Shape* shape)
+    : ShapeProperty(shape), key_(shape->propid()) {}
+
+
+
+
+
+
+
+template <AllowGC allowGC>
+class MOZ_RAII ShapePropertyIter {
+ protected:
+  friend class Shape;
+
+  typename MaybeRooted<Shape*, allowGC>::RootType cursor_;
+
+ public:
+  ShapePropertyIter(JSContext* cx, Shape* shape) : cursor_(cx, shape) {
+    static_assert(allowGC == CanGC);
+  }
+
+  explicit ShapePropertyIter(Shape* shape) : cursor_(nullptr, shape) {
+    static_assert(allowGC == NoGC);
+  }
+
+  bool done() const { return cursor_->isEmptyShape(); }
+
+  void operator++(int) {
+    MOZ_ASSERT(!done());
+    cursor_ = cursor_->previous();
+  }
+
+  ShapePropertyWithKey get() const {
+    MOZ_ASSERT(!done());
+    return ShapePropertyWithKey(cursor_);
+  }
+
+  ShapePropertyWithKey operator*() const { return get(); }
+
+  
+  
+  struct FakePtr {
+    ShapePropertyWithKey val_;
+    const ShapePropertyWithKey* operator->() const { return &val_; }
+  };
+  FakePtr operator->() const { return {get()}; }
+};
 
 }  
 
