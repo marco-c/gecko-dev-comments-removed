@@ -1021,7 +1021,7 @@ nsresult TextEditor::UndoAsAction(uint32_t aCount, nsIPrincipal* aPrincipal) {
       
       
       
-      nsIContent* firstLeafChild = HTMLEditUtils::GetFirstLeafChild(
+      nsIContent* firstLeafChild = HTMLEditUtils::GetFirstLeafContent(
           *mRootElement, {LeafNodeType::OnlyLeafNode});
       if (firstLeafChild &&
           EditorUtils::IsPaddingBRElementForEmptyEditor(*firstLeafChild)) {

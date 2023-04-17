@@ -5418,7 +5418,7 @@ nsresult HTMLEditor::MaybeExtendSelectionToHardLineEdgesForBlockEditAction() {
     
     if (wsScannerAtEnd.StartsFromOtherBlockElement()) {
       
-      nsIContent* child = HTMLEditUtils::GetLastLeafChild(
+      nsIContent* child = HTMLEditUtils::GetLastLeafContent(
           *wsScannerAtEnd.StartReasonOtherBlockElementPtr(),
           {LeafNodeType::LeafNodeOrChildBlock});
       if (child) {
@@ -5455,7 +5455,7 @@ nsresult HTMLEditor::MaybeExtendSelectionToHardLineEdgesForBlockEditAction() {
     
     if (wsScannerAtStart.EndsByOtherBlockElement()) {
       
-      nsINode* child = HTMLEditUtils::GetFirstLeafChild(
+      nsINode* child = HTMLEditUtils::GetFirstLeafContent(
           *wsScannerAtStart.EndReasonOtherBlockElementPtr(),
           {LeafNodeType::LeafNodeOrChildBlock});
       if (child) {
@@ -6901,7 +6901,7 @@ nsresult HTMLEditor::SplitParagraph(
 
   
   
-  nsCOMPtr<nsIContent> child = HTMLEditUtils::GetFirstLeafChild(
+  nsCOMPtr<nsIContent> child = HTMLEditUtils::GetFirstLeafContent(
       aParentDivOrP, {LeafNodeType::LeafNodeOrChildBlock});
   if (child && (child->IsText() || HTMLEditUtils::IsContainerNode(*child))) {
     nsresult rv = CollapseSelectionToStartOf(*child);

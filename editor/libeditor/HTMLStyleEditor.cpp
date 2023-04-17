@@ -1008,7 +1008,7 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
   
   
   
-  nsIContent* firstLeafChildOfNextNode = HTMLEditUtils::GetFirstLeafChild(
+  nsIContent* firstLeafChildOfNextNode = HTMLEditUtils::GetFirstLeafContent(
       *splitResult.GetNextNode(), {LeafNodeType::OnlyLeafNode});
   EditorDOMPoint atStartOfNextNode(firstLeafChildOfNextNode
                                        ? firstLeafChildOfNextNode
@@ -1070,7 +1070,7 @@ EditResult HTMLEditor::ClearStyleAt(const EditorDOMPoint& aPoint,
   
   
   
-  nsIContent* firstLeafChildOfPreviousNode = HTMLEditUtils::GetFirstLeafChild(
+  nsIContent* firstLeafChildOfPreviousNode = HTMLEditUtils::GetFirstLeafContent(
       *splitResultAtStartOfNextNode.GetPreviousNode(),
       {LeafNodeType::OnlyLeafNode});
   EditorDOMPoint pointToPutCaret(
