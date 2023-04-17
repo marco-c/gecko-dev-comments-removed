@@ -1943,7 +1943,7 @@
       
       
       
-      aBrowser.docShellIsActive = this.shouldActivateDocShell(aBrowser);
+      aBrowser.docShellIsActive = aBrowser.docShellIsActive;
 
       
       
