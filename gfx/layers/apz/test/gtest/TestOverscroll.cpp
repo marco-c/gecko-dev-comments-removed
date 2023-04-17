@@ -6,6 +6,7 @@
 
 #include "APZCBasicTester.h"
 #include "APZTestCommon.h"
+#include "mozilla/layers/WebRenderScrollDataWrapper.h"
 
 #include "InputUtils.h"
 
@@ -17,6 +18,8 @@ class APZCOverscrollTester : public APZCBasicTester {
       : APZCBasicTester(aGestureBehavior) {}
 
  protected:
+  UniquePtr<ScopedLayerTreeRegistration> registration;
+
   void TestOverscroll() {
     
     PanIntoOverscroll();
@@ -60,6 +63,35 @@ class APZCOverscrollTester : public APZCBasicTester {
     }
     EXPECT_TRUE(recoveredFromOverscroll);
     apzc->AssertStateIsReset();
+  }
+
+  ScrollableLayerGuid CreateSimpleRootScrollableForWebRender() {
+    ScrollableLayerGuid guid;
+    if (!gfx::gfxVars::UseWebRender()) {
+      return guid;
+    }
+
+    guid.mScrollId = ScrollableLayerGuid::START_SCROLL_ID;
+    guid.mLayersId = LayersId{0};
+
+    ScrollMetadata metadata;
+    FrameMetrics& metrics = metadata.GetMetrics();
+    metrics.SetCompositionBounds(ParentLayerRect(0, 0, 100, 100));
+    metrics.SetScrollableRect(CSSRect(0, 0, 100, 1000));
+    metrics.SetScrollId(guid.mScrollId);
+    metadata.SetIsLayersIdRoot(true);
+
+    WebRenderLayerScrollData rootLayerScrollData;
+    rootLayerScrollData.InitializeRoot(0);
+    WebRenderScrollData scrollData;
+    rootLayerScrollData.AppendScrollMetadata(scrollData, metadata);
+    scrollData.AddLayerData(rootLayerScrollData);
+
+    registration =
+        MakeUnique<ScopedLayerTreeRegistration>(guid.mLayersId, mcc);
+    tm->UpdateHitTestingTree(WebRenderScrollDataWrapper(*updater, &scrollData),
+                             false, guid.mLayersId, 0);
+    return guid;
   }
 };
 
@@ -1233,5 +1265,56 @@ TEST_F(
   
   ParentLayerPoint expectedScrollOffset(0, 0);
   SampleAnimationUntilRecoveredFromOverscroll(expectedScrollOffset);
+}
+#endif
+
+#ifndef MOZ_WIDGET_ANDROID  
+TEST_F(APZCOverscrollTester, OverscrollByPanGesturesInterruptedByReflowZoom) {
+  if (!gfx::gfxVars::UseWebRender()) {
+    
+    return;
+  }
+
+  SCOPED_GFX_PREF_BOOL("apz.overscroll.enabled", true);
+  SCOPED_GFX_PREF_INT("mousewheel.with_control.action", 3);  
+
+  
+  
+  PanGestureInput panInput(
+      PanGestureInput::PANGESTURE_START, MillisecondsSinceStartup(mcc->Time()),
+      mcc->Time(), ScreenIntPoint(5, 5), ScreenPoint(0, -2), MODIFIER_CONTROL);
+  WidgetWheelEvent wheelEvent = panInput.ToWidgetEvent(nullptr);
+  EXPECT_FALSE(APZInputBridge::ActionForWheelEvent(&wheelEvent).isSome());
+
+  ScrollableLayerGuid rootGuid = CreateSimpleRootScrollableForWebRender();
+  RefPtr<AsyncPanZoomController> apzc =
+      tm->GetTargetAPZC(rootGuid.mLayersId, rootGuid.mScrollId);
+
+  PanGesture(PanGestureInput::PANGESTURE_START, tm, ScreenIntPoint(50, 80),
+             ScreenPoint(0, -2), mcc->Time());
+  mcc->AdvanceByMillis(5);
+  apzc->AdvanceAnimations(mcc->GetSampleTime());
+  PanGesture(PanGestureInput::PANGESTURE_PAN, tm, ScreenIntPoint(50, 80),
+             ScreenPoint(0, -10), mcc->Time());
+  mcc->AdvanceByMillis(5);
+  apzc->AdvanceAnimations(mcc->GetSampleTime());
+
+  
+  EXPECT_TRUE(apzc->IsOverscrolled());
+
+  
+  PanGestureWithModifiers(PanGestureInput::PANGESTURE_PAN, MODIFIER_CONTROL, tm,
+                          ScreenIntPoint(50, 80), ScreenPoint(0, -2),
+                          mcc->Time());
+  mcc->AdvanceByMillis(5);
+  apzc->AdvanceAnimations(mcc->GetSampleTime());
+  
+  EXPECT_TRUE(apzc->IsOverscrolled());
+
+  PanGestureWithModifiers(PanGestureInput::PANGESTURE_END, MODIFIER_CONTROL, tm,
+                          ScreenIntPoint(50, 80), ScreenPoint(0, 0),
+                          mcc->Time());
+  
+  EXPECT_TRUE(!apzc->IsOverscrolled());
 }
 #endif

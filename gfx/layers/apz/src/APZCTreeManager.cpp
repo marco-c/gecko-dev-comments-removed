@@ -1659,6 +1659,26 @@ APZEventResult APZCTreeManager::ReceiveInputEvent(InputData& aEvent) {
 
       panInput.mHandledByAPZ = WillHandleInput(panInput);
       if (!panInput.mHandledByAPZ) {
+        if (InputBlockState* block = mInputQueue->GetCurrentPanGestureBlock()) {
+          if (block &&
+              (panInput.mType == PanGestureInput::PANGESTURE_END ||
+               panInput.mType == PanGestureInput::PANGESTURE_CANCELLED)) {
+            
+            
+            
+            
+            
+            
+            
+            PanGestureInput panInterrupted(
+                PanGestureInput::PANGESTURE_INTERRUPTED, panInput.mTime,
+                panInput.mTimeStamp, panInput.mPanStartPoint,
+                panInput.mPanDisplacement, panInput.modifiers);
+            Unused << mInputQueue->ReceiveInputEvent(
+                state.mHit.mTargetApzc,
+                TargetConfirmationFlags{state.mHit.mHitResult}, panInterrupted);
+          }
+        }
         return state.Finish();
       }
 

@@ -362,7 +362,12 @@ class PanGestureInput : public InputData {
       
       
       
-      PANGESTURE_MOMENTUMEND
+      PANGESTURE_MOMENTUMEND,
+
+      
+      
+      
+      PANGESTURE_INTERRUPTED
   ));
 
   MOZ_DEFINE_ENUM_AT_CLASS_SCOPE(
