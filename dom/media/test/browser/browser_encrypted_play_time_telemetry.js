@@ -20,7 +20,7 @@ async function clearTelemetry() {
   await new Promise(resolve => setTimeout(resolve, 2000));
 
   Services.telemetry.clearEvents();
-  await TestUtils.waitForCondition(() => {
+  return TestUtils.waitForCondition(() => {
     let events = Services.telemetry.snapshotEvents(
       Ci.nsITelemetry.DATASET_ALL_CHANNELS,
       true
@@ -31,18 +31,19 @@ async function clearTelemetry() {
 
 
 
-async function playEmeMedia() {
-  
+async function openTab() {
   const emptyPageUri =
     "https://example.com/browser/dom/media/test/browser/file_empty_page.html";
-  const tab = await BrowserTestUtils.openNewForegroundTab(
-    window.gBrowser,
-    emptyPageUri
-  );
+  return BrowserTestUtils.openNewForegroundTab(window.gBrowser, emptyPageUri);
+}
 
+
+
+
+async function loadEmeVideo(tab) {
   const emeHelperUri =
     gTestPath.substr(0, gTestPath.lastIndexOf("/")) + "/eme_standalone.js";
-  await SpecialPowers.spawn(
+  return SpecialPowers.spawn(
     tab.linkedBrowser,
     [emeHelperUri],
     async _emeHelperUri => {
@@ -63,6 +64,7 @@ async function playEmeMedia() {
       Services.scriptloader.loadSubScript(_emeHelperUri, content);
       
       let video = content.document.createElement("video");
+      video.id = "media";
       content.document.body.appendChild(video);
       let emeHelper = new content.wrappedJSObject.EmeHelper();
       emeHelper.SetKeySystem(
@@ -93,26 +95,65 @@ async function playEmeMedia() {
       await once(sb, "updateend");
       ms.endOfStream();
       await once(ms, "sourceended");
-      let endedPromise = once(video, "ended");
-      
-
-      
-      await video.play();
-      await endedPromise;
     }
   );
-
-  BrowserTestUtils.removeTab(tab);
 }
 
 
-async function verifyTelemetry() {
+
+async function playMediaThrough(tab) {
+  return SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    let video = content.document.getElementById("media");
+    await Promise.all([new Promise(r => (video.onended = r)), video.play()]);
+  });
+}
+
+
+
+async function playMediaToTimeUpdate(tab) {
+  return SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    let video = content.document.getElementById("media");
+    await Promise.all([
+      new Promise(r => (video.ontimeupdate = r)),
+      video.play(),
+    ]);
+  });
+}
+
+
+
+async function replaceMediaWithUnencrypted(tab) {
+  return SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    let video = content.document.getElementById("media");
+    video.src = "gizmo.mp4";
+    video.load();
+  });
+}
+
+
+async function clearMediaKeys(tab) {
+  return SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    let video = content.document.getElementById("media");
+    await video.setMediaKeys(null);
+  });
+}
+
+
+
+
+
+
+
+
+
+async function getTelemetrySums() {
   
   
   
-  let playTimeSums = await TestUtils.waitForCondition(() => {
+  return TestUtils.waitForCondition(() => {
     let histograms = Services.telemetry.getSnapshotForHistograms("main", true)
       .content;
+    
     
     
     if (histograms.VIDEO_PLAY_TIME_MS) {
@@ -120,34 +161,104 @@ async function verifyTelemetry() {
       
       return {
         VIDEO_PLAY_TIME_MS: histograms.VIDEO_PLAY_TIME_MS.sum,
-        VIDEO_ENCRYPTED_PLAY_TIME_MS:
-          histograms.VIDEO_ENCRYPTED_PLAY_TIME_MS.sum,
-        VIDEO_CLEARKEY_PLAY_TIME_MS: histograms.VIDEO_CLEARKEY_PLAY_TIME_MS.sum,
+        VIDEO_ENCRYPTED_PLAY_TIME_MS: histograms.VIDEO_ENCRYPTED_PLAY_TIME_MS
+          ? histograms.VIDEO_ENCRYPTED_PLAY_TIME_MS.sum
+          : 0,
+        VIDEO_CLEARKEY_PLAY_TIME_MS: histograms.VIDEO_CLEARKEY_PLAY_TIME_MS
+          ? histograms.VIDEO_CLEARKEY_PLAY_TIME_MS.sum
+          : 0,
       };
     }
     return null;
   }, "recorded telemetry from playing media");
+}
 
-  
-  ok(playTimeSums, "Should get play time telemetry");
+
+
+add_task(clearTelemetry);
+
+add_task(async function testEncryptedMediaPlayback() {
+  let testTab = await openTab();
+
+  await loadEmeVideo(testTab);
+  await playMediaThrough(testTab);
+
+  BrowserTestUtils.removeTab(testTab);
+
+  let telemetrySums = await getTelemetrySums();
+
+  ok(telemetrySums, "Should get play time telemetry");
   is(
-    playTimeSums.VIDEO_PLAY_TIME_MS,
-    playTimeSums.VIDEO_ENCRYPTED_PLAY_TIME_MS,
+    telemetrySums.VIDEO_PLAY_TIME_MS,
+    telemetrySums.VIDEO_ENCRYPTED_PLAY_TIME_MS,
     "Play time should be the same as encrypted play time"
   );
   is(
-    playTimeSums.VIDEO_PLAY_TIME_MS,
-    playTimeSums.VIDEO_CLEARKEY_PLAY_TIME_MS,
+    telemetrySums.VIDEO_PLAY_TIME_MS,
+    telemetrySums.VIDEO_CLEARKEY_PLAY_TIME_MS,
     "Play time should be the same as clearkey play time"
   );
   ok(
-    playTimeSums.VIDEO_PLAY_TIME_MS > 0,
+    telemetrySums.VIDEO_PLAY_TIME_MS > 0,
     "Should have a play time greater than zero"
   );
-}
-
-add_task(async function testEncryptedMediaTelemetryProbes() {
-  await clearTelemetry();
-  await playEmeMedia();
-  await verifyTelemetry();
 });
+
+add_task(async function testChangingFromEncryptedToUnencrypted() {
+  let testTab = await openTab();
+
+  await loadEmeVideo(testTab);
+  await replaceMediaWithUnencrypted(testTab);
+  await playMediaToTimeUpdate(testTab);
+
+  BrowserTestUtils.removeTab(testTab);
+
+  let telemetrySums = await getTelemetrySums();
+
+  ok(telemetrySums, "Should get play time telemetry");
+  is(
+    telemetrySums.VIDEO_ENCRYPTED_PLAY_TIME_MS,
+    0,
+    "Encrypted play time should be 0"
+  );
+  is(
+    telemetrySums.VIDEO_PLAY_TIME_MS,
+    telemetrySums.VIDEO_CLEARKEY_PLAY_TIME_MS,
+    "Play time should be the same as clearkey play time because the media element still has a media keys attached"
+  );
+  ok(
+    telemetrySums.VIDEO_PLAY_TIME_MS > 0,
+    "Should have a play time greater than zero"
+  );
+});
+
+add_task(
+  async function testChangingFromEncryptedToUnencryptedAndClearingMediaKeys() {
+    let testTab = await openTab();
+
+    await loadEmeVideo(testTab);
+    await replaceMediaWithUnencrypted(testTab);
+    await clearMediaKeys(testTab);
+    await playMediaToTimeUpdate(testTab);
+
+    BrowserTestUtils.removeTab(testTab);
+
+    let telemetrySums = await getTelemetrySums();
+
+    ok(telemetrySums, "Should get play time telemetry");
+    is(
+      telemetrySums.VIDEO_ENCRYPTED_PLAY_TIME_MS,
+      0,
+      "Encrypted play time should be 0"
+    );
+    is(
+      telemetrySums.VIDEO_CLEARKEY_PLAY_TIME_MS,
+      0,
+      "Clearkey play time should be 0"
+    );
+    ok(
+      telemetrySums.VIDEO_PLAY_TIME_MS > 0,
+      "Should have a play time greater than zero"
+    );
+  }
+);
