@@ -6,13 +6,14 @@
 #ifndef _mozilla_dom_ClientManagerService_h
 #define _mozilla_dom_ClientManagerService_h
 
-#include "mozilla/dom/ClientIPCTypes.h"
-#include "mozilla/dom/ipc/IdType.h"
+#include "ClientHandleParent.h"
 #include "ClientOpPromise.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/Variant.h"
 #include "mozilla/dom/ClientIPCTypes.h"
 #include "mozilla/dom/ipc/IdType.h"
 #include "nsTHashMap.h"
@@ -40,6 +41,47 @@ class ClientHandleParent;
 
 
 class ClientManagerService final {
+  
+  
+  
+  
+  
+  
+  class FutureClientSourceParent {
+   public:
+    explicit FutureClientSourceParent(const IPCClientInfo& aClientInfo);
+
+    const mozilla::ipc::PrincipalInfo& PrincipalInfo() const {
+      return mPrincipalInfo;
+    }
+
+    already_AddRefed<SourcePromise> Promise() {
+      return mPromiseHolder.Ensure(__func__);
+    }
+
+    void ResolvePromiseIfExists(ClientSourceParent* aSource) {
+      MOZ_ASSERT(aSource);
+      mPromiseHolder.ResolveIfExists(aSource, __func__);
+    }
+
+    void RejectPromiseIfExists(const CopyableErrorResult& aRv) {
+      MOZ_ASSERT(aRv.Failed());
+      mPromiseHolder.RejectIfExists(aRv, __func__);
+    }
+
+    void SetAsAssociated() { mAssociated = true; }
+
+    bool IsAssociated() const { return mAssociated; }
+
+   private:
+    const mozilla::ipc::PrincipalInfo mPrincipalInfo;
+    MozPromiseHolder<SourcePromise> mPromiseHolder;
+    bool mAssociated;
+  };
+
+  using SourceTableEntry =
+      Variant<FutureClientSourceParent, ClientSourceParent*>;
+
   
   
   nsTHashMap<nsIDHashKey, ClientSourceParent*> mSourceTable;
