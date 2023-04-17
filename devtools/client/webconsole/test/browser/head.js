@@ -360,6 +360,35 @@ function findMessages(hud, text, selector = ".message") {
 
 
 
+async function checkUniqueMessageExists(hud, msg, selector) {
+  info(`Checking "${msg}" was logged`);
+  let messages;
+  try {
+    messages = await waitFor(() => {
+      const msgs = findMessages(hud, msg, selector);
+      return msgs.length > 0 ? msgs : null;
+    });
+  } catch (e) {
+    ok(false, `Message "${msg}" wasn't logged\n`);
+    return;
+  }
+
+  is(messages.length, 1, `"${msg}" was logged once`);
+  const [messageEl] = messages;
+  const repeatNode = messageEl.querySelector(".message-repeats");
+  is(repeatNode, null, `"${msg}" wasn't repeated`);
+}
+
+
+
+
+
+
+
+
+
+
+
 async function openContextMenu(hud, element) {
   const onConsoleMenuOpened = hud.ui.wrapper.once("menu-open");
   synthesizeContextMenuEvent(element);
