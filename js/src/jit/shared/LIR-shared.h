@@ -3614,40 +3614,8 @@ class LWasmSignReplicationSimd128 : public LInstructionHelper<1, 1, 0> {
 
 
 class LWasmShuffleSimd128 : public LInstructionHelper<1, 2, 1> {
- public:
-  
-  
-  enum Op {
-    
-    
-    BLEND_8x16,
-
-    
-    
-    BLEND_16x8,
-
-    
-    
-    CONCAT_RIGHT_SHIFT_8x16,
-
-    
-    
-    
-    INTERLEAVE_HIGH_8x16,
-    INTERLEAVE_HIGH_16x8,
-    INTERLEAVE_HIGH_32x4,
-    INTERLEAVE_HIGH_64x2,
-    INTERLEAVE_LOW_8x16,
-    INTERLEAVE_LOW_16x8,
-    INTERLEAVE_LOW_32x4,
-    INTERLEAVE_LOW_64x2,
-
-    
-    SHUFFLE_BLEND_8x16,
-  };
-
  private:
-  Op op_;
+  SimdShuffleOp op_;
   SimdConstant control_;
 
  public:
@@ -3658,7 +3626,8 @@ class LWasmShuffleSimd128 : public LInstructionHelper<1, 2, 1> {
   static constexpr uint32_t Rhs = 1;
 
   LWasmShuffleSimd128(const LAllocation& lhs, const LAllocation& rhs,
-                      const LDefinition& temp, Op op, SimdConstant control)
+                      const LDefinition& temp, SimdShuffleOp op,
+                      SimdConstant control)
       : LInstructionHelper(classOpcode), op_(op), control_(control) {
     setOperand(Lhs, lhs);
     setOperand(Rhs, rhs);
@@ -3669,58 +3638,14 @@ class LWasmShuffleSimd128 : public LInstructionHelper<1, 2, 1> {
   const LAllocation* lhsDest() { return getOperand(LhsDest); }
   const LAllocation* rhs() { return getOperand(Rhs); }
   const LDefinition* temp() { return getTemp(0); }
-  Op op() { return op_; }
+  SimdShuffleOp op() { return op_; }
   SimdConstant control() { return control_; }
 };
 
 
 class LWasmPermuteSimd128 : public LInstructionHelper<1, 1, 0> {
- public:
-  
-  
-  
-  
-  
-  
-  
-  enum Op {
-    
-    
-    BROADCAST_8x16,
-
-    
-    
-    BROADCAST_16x8,
-
-    
-    MOVE,
-
-    
-    
-    PERMUTE_8x16,
-
-    
-    
-    
-    PERMUTE_16x8,
-
-    
-    PERMUTE_32x4,
-
-    
-    ROTATE_RIGHT_8x16,
-
-    
-    
-    SHIFT_RIGHT_8x16,
-
-    
-    
-    SHIFT_LEFT_8x16,
-  };
-
  private:
-  Op op_;
+  SimdPermuteOp op_;
   SimdConstant control_;
 
  public:
@@ -3728,13 +3653,14 @@ class LWasmPermuteSimd128 : public LInstructionHelper<1, 1, 0> {
 
   static constexpr uint32_t Src = 0;
 
-  LWasmPermuteSimd128(const LAllocation& src, Op op, SimdConstant control)
+  LWasmPermuteSimd128(const LAllocation& src, SimdPermuteOp op,
+                      SimdConstant control)
       : LInstructionHelper(classOpcode), op_(op), control_(control) {
     setOperand(Src, src);
   }
 
   const LAllocation* src() { return getOperand(Src); }
-  Op op() { return op_; }
+  SimdPermuteOp op() { return op_; }
   SimdConstant control() { return control_; }
 };
 
