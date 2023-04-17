@@ -1,0 +1,27 @@
+
+
+
+
+"use strict";
+
+const EXPORTED_SYMBOLS = ["ContentMetaParent"];
+
+class ContentMetaParent extends JSWindowActorParent {
+  receiveMessage(message) {
+    if (message.name == "Meta:SetPageInfo") {
+      let browser = this.manager.browsingContext.top.embedderElement;
+      if (browser) {
+        let event = new browser.ownerGlobal.CustomEvent("pageinfo", {
+          bubbles: true,
+          cancelable: false,
+          detail: {
+            url: message.url,
+            description: message.description,
+            previewImageURL: message.data.previewImageURL,
+          },
+        });
+        browser.dispatchEvent(event);
+      }
+    }
+  }
+}
