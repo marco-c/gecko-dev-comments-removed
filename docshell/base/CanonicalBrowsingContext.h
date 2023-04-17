@@ -39,6 +39,7 @@ class DocumentLoadListener;
 namespace dom {
 
 class BrowserParent;
+class BrowserBridgeParent;
 class FeaturePolicy;
 struct LoadURIOptions;
 class MediaController;
@@ -83,10 +84,6 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   void GetCurrentRemoteType(nsACString& aRemoteType, ErrorResult& aRv) const;
 
   void SetOwnerProcessId(uint64_t aProcessId);
-
-  void SetInFlightProcessId(uint64_t aProcessId);
-  void ClearInFlightProcessId(uint64_t aProcessId);
-  uint64_t GetInFlightProcessId() const { return mInFlightProcessId; }
 
   
   
@@ -215,6 +212,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   void SetCurrentRemoteURI(nsIURI* aCurrentRemoteURI);
 
   BrowserParent* GetBrowserParent() const;
+  void SetCurrentBrowserParent(BrowserParent* aBrowserParent);
 
   
   
@@ -287,6 +285,14 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   void SetRestoreData(SessionStoreRestoreData* aData);
   void RequestRestoreTabContent(WindowGlobalParent* aWindow);
 
+  
+  
+  void BrowserParentDestroyed(BrowserParent* aBrowserParent,
+                              bool aAbnormalShutdown);
+
+  void StartUnloadingHost(uint64_t aChildID);
+  void ClearUnloadingHost(uint64_t aChildID);
+
  protected:
   
   void CanonicalDiscard();
@@ -319,9 +325,13 @@ class CanonicalBrowsingContext final : public BrowsingContext {
     friend class CanonicalBrowsingContext;
 
     ~PendingRemotenessChange();
+    void ProcessLaunched();
     void ProcessReady();
     void Finish();
     void Clear();
+
+    nsresult FinishTopContent();
+    nsresult FinishSubframe();
 
     RefPtr<CanonicalBrowsingContext> mTarget;
     RefPtr<RemotenessPromise::Private> mPromise;
@@ -350,16 +360,22 @@ class CanonicalBrowsingContext final : public BrowsingContext {
       const nsID& aChangeID,
       const CallerWillNotifyHistoryIndexAndLengthChanges& aProofOfCaller);
 
+  struct UnloadingHost {
+    uint64_t mChildID;
+    nsTArray<std::function<void()>> mCallbacks;
+  };
+  nsTArray<UnloadingHost>::iterator FindUnloadingHost(uint64_t aChildID);
+
+  
+  
+  void ShowSubframeCrashedUI(BrowserBridgeParent* aBridge);
+
   
   
   uint64_t mProcessId;
 
   
   uint64_t mEmbedderProcessId;
-
-  
-  
-  uint64_t mInFlightProcessId = 0;
 
   uint64_t mCrossGroupOpenerId = 0;
 
@@ -368,6 +384,10 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   
   void ResetSHEntryHasUserInteractionCache();
+
+  RefPtr<BrowserParent> mCurrentBrowserParent;
+
+  nsTArray<UnloadingHost> mUnloadingHosts;
 
   
   
