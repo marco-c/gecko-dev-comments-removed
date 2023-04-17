@@ -11,8 +11,8 @@
 
 
 
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
+
+
 
 
 
@@ -131,7 +131,6 @@ __FBSDID("$FreeBSD$");
 
 #include <float.h>
 
-#include "math.h"
 #include "math_private.h"
 
 static const int init_jk[] = {3,4,4,6}; 

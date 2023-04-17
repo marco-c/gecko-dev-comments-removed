@@ -11,8 +11,6 @@
 
 
 
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
 
 
 
@@ -49,7 +47,8 @@ __FBSDID("$FreeBSD$");
 
 
 
-#include "math.h"
+
+
 #include "math_private.h"
 static const double xxx[] = {
 		 3.33333333333334091986e-01,	
