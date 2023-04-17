@@ -30,13 +30,7 @@ extern const XREAppData* gAppData;
 static const char kProfileProperties[] =
     "chrome://mozapps/locale/profile/profileSelection.properties";
 
-
-
-
-
-
-nsresult ProfileResetCleanup(nsToolkitProfileService* aService,
-                             nsIToolkitProfile* aOldProfile) {
+static nsresult ProfileResetCreateBackup(nsIToolkitProfile* aOldProfile) {
   nsresult rv;
   nsCOMPtr<nsIFile> profileDir;
   rv = aOldProfile->GetRootDir(getter_AddRefs(profileDir));
@@ -143,5 +137,22 @@ nsresult ProfileResetCleanup(nsToolkitProfileService* aService,
   auto* piWindow = nsPIDOMWindowOuter::From(progressWindow);
   piWindow->Close();
 
-  return aService->ApplyResetProfile(aOldProfile);
+  return rv;
+}
+
+
+
+
+
+
+nsresult ProfileResetCleanup(nsToolkitProfileService* aService,
+                             nsIToolkitProfile* aOldProfile,
+                             bool aDeleteOldProfile) {
+  
+  if (aDeleteOldProfile) {
+    nsresult rv = ProfileResetCreateBackup(aOldProfile);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  return aService->ApplyResetProfile(aOldProfile, aDeleteOldProfile);
 }
