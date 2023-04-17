@@ -1,6 +1,5 @@
-from .base import NullBrowser  
 from .base import require_arg
-from .base import get_timeout_multiplier  
+from .base import get_timeout_multiplier   
 from .chrome import executor_kwargs as chrome_executor_kwargs
 from .chrome_android import ChromeAndroidBrowserBase
 from ..executors.executorwebdriver import (WebDriverTestharnessExecutor,  
@@ -10,8 +9,7 @@ from ..executors.executorchrome import ChromeDriverWdspecExecutor
 
 __wptrunner__ = {"product": "android_weblayer",
                  "check_args": "check_args",
-                 "browser": {None: "WeblayerShell",
-                             "wdspec": "NullBrowser"},
+                 "browser": "WeblayerShell",
                  "executor": {"testharness": "WebDriverTestharnessExecutor",
                               "reftest": "WebDriverRefTestExecutor",
                               "wdspec": "ChromeDriverWdspecExecutor"},
@@ -37,15 +35,16 @@ def browser_kwargs(logger, test_type, run_info_data, config, **kwargs):
             "symbols_path": kwargs.get("symbols_path")}
 
 
-def executor_kwargs(logger, test_type, test_environment, run_info_data,
+def executor_kwargs(logger, test_type, server_config, cache_manager, run_info_data,
                     **kwargs):
     
     _wptserve_ports.update(set(
-        test_environment.config['ports']['http'] + test_environment.config['ports']['https'] +
-        test_environment.config['ports']['ws'] + test_environment.config['ports']['wss']
+        server_config['ports']['http'] + server_config['ports']['https'] +
+        server_config['ports']['ws'] + server_config['ports']['wss']
     ))
 
-    executor_kwargs = chrome_executor_kwargs(logger, test_type, test_environment, run_info_data,
+    executor_kwargs = chrome_executor_kwargs(logger, test_type, server_config,
+                                             cache_manager, run_info_data,
                                              **kwargs)
     del executor_kwargs["capabilities"]["goog:chromeOptions"]["prefs"]
     capabilities = executor_kwargs["capabilities"]
