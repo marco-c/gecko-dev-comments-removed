@@ -7,6 +7,7 @@
 #include "SharedStyleSheetCache.h"
 
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/StoragePrincipalHelper.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/css/SheetLoadData.h"
 #include "mozilla/dom/ContentParent.h"
@@ -28,13 +29,16 @@ using IsAlternate = css::Loader::IsAlternate;
 
 SharedStyleSheetCache* SharedStyleSheetCache::sInstance;
 
-void SharedStyleSheetCache::Clear(nsIPrincipal* aForPrincipal) {
+void SharedStyleSheetCache::Clear(nsIPrincipal* aForPrincipal,
+                                  const nsACString* aBaseDomain) {
   using ContentParent = dom::ContentParent;
 
   if (XRE_IsParentProcess()) {
     auto forPrincipal = aForPrincipal ? Some(RefPtr(aForPrincipal)) : Nothing();
+    auto baseDomain = aBaseDomain ? Some(nsCString(*aBaseDomain)) : Nothing();
+
     for (auto* cp : ContentParent::AllProcesses(ContentParent::eLive)) {
-      Unused << cp->SendClearStyleSheetCache(forPrincipal);
+      Unused << cp->SendClearStyleSheetCache(forPrincipal, baseDomain);
     }
   }
 
@@ -42,14 +46,43 @@ void SharedStyleSheetCache::Clear(nsIPrincipal* aForPrincipal) {
     return;
   }
 
-  if (!aForPrincipal) {
+  
+  if (!aForPrincipal && !aBaseDomain) {
     sInstance->mCompleteSheets.Clear();
     return;
   }
 
   for (auto iter = sInstance->mCompleteSheets.Iter(); !iter.Done();
        iter.Next()) {
-    if (iter.Key().Principal()->Equals(aForPrincipal)) {
+    const bool shouldRemove = [&] {
+      if (aForPrincipal && iter.Key().Principal()->Equals(aForPrincipal)) {
+        return true;
+      }
+      if (!aBaseDomain) {
+        return false;
+      }
+      
+      nsIPrincipal* partitionPrincipal = iter.Key().PartitionPrincipal();
+
+      
+      
+      
+      nsAutoCString principalBaseDomain;
+      nsresult rv = partitionPrincipal->GetBaseDomain(principalBaseDomain);
+      if (NS_SUCCEEDED(rv) && principalBaseDomain.Equals(*aBaseDomain)) {
+        return true;
+      }
+
+      
+      nsAutoString partitionKeyBaseDomain;
+      bool ok = StoragePrincipalHelper::GetBaseDomainFromPartitionKey(
+          partitionPrincipal->OriginAttributesRef().mPartitionKey,
+          partitionKeyBaseDomain);
+      return ok &&
+             NS_ConvertUTF16toUTF8(partitionKeyBaseDomain).Equals(*aBaseDomain);
+    }();
+
+    if (shouldRemove) {
       iter.Remove();
     }
   }
