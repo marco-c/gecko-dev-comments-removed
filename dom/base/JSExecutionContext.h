@@ -42,9 +42,6 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   JS::Rooted<JS::Value> mRetValue;
 
   
-  JS::RootedVector<JSObject*> mScopeChain;
-
-  
   JS::Rooted<JSScript*> mScript;
 
   
@@ -64,8 +61,6 @@ class MOZ_STACK_CLASS JSExecutionContext final {
 #ifdef DEBUG
   
   bool mWantsReturnValue;
-
-  bool mExpectScopeChain;
 
   bool mScriptUsed;
 #endif
@@ -108,9 +103,6 @@ class MOZ_STACK_CLASS JSExecutionContext final {
     mEncodeBytecode = aEncodeBytecode;
     return *this;
   }
-
-  
-  void SetScopeChain(JS::HandleVector<JSObject*> aScopeChain);
 
   
   
