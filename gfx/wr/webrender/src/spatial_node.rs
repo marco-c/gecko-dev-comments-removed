@@ -84,7 +84,21 @@ impl SpatialNodeUid {
     }
 }
 
-#[derive(Clone)]
+
+
+
+#[derive(Clone, PartialEq)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub struct SpatialNodeDescriptor {
+    
+    pub node_type: SpatialNodeType,
+
+    
+    pub pipeline_id: PipelineId,
+}
+
+#[derive(Clone, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum SpatialNodeType {
@@ -113,10 +127,6 @@ pub struct SpatialNodeInfo<'a> {
 
     
     
-    pub is_root_coord_system: bool,
-
-    
-    
     pub snapping_transform: Option<ScaleOffset>,
 }
 
@@ -126,9 +136,6 @@ pub struct SpatialNodeInfo<'a> {
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct SceneSpatialNode {
     
-    children: Vec<SpatialNodeIndex>,
-
-    
     
     pub snapping_transform: Option<ScaleOffset>,
 
@@ -136,10 +143,7 @@ pub struct SceneSpatialNode {
     pub parent: Option<SpatialNodeIndex>,
 
     
-    pub node_type: SpatialNodeType,
-
-    
-    pipeline_id: PipelineId,
+    pub descriptor: SpatialNodeDescriptor,
 
     
     
@@ -155,12 +159,14 @@ impl SceneSpatialNode {
         origin_in_parent_reference_frame: LayoutVector2D,
         pipeline_id: PipelineId,
         is_root_coord_system: bool,
+        is_pipeline_root: bool,
     ) -> Self {
         let info = ReferenceFrameInfo {
             transform_style,
             source_transform,
             kind,
             origin_in_parent_reference_frame,
+            is_pipeline_root,
         };
         Self::new(
             pipeline_id,
@@ -214,62 +220,6 @@ impl SceneSpatialNode {
         )
     }
 
-    pub fn add_child(&mut self, child: SpatialNodeIndex) {
-        self.children.push(child);
-    }
-
-    pub fn update_snapping(
-        &mut self,
-        parent: Option<&SceneSpatialNode>,
-    ) {
-        
-        self.snapping_transform = None;
-
-        
-        
-        
-        
-        let parent_scale_offset = match parent {
-            Some(parent) => {
-                match parent.snapping_transform {
-                    Some(scale_offset) => scale_offset,
-                    None => return,
-                }
-            },
-            _ => ScaleOffset::identity(),
-        };
-
-        let scale_offset = match self.node_type {
-            SpatialNodeType::ReferenceFrame(ref info) => {
-                match info.source_transform {
-                    PropertyBinding::Value(ref value) => {
-                        
-                        
-                        match ScaleOffset::from_transform(value) {
-                            Some(scale_offset) => {
-                                let origin_offset = info.origin_in_parent_reference_frame;
-                                ScaleOffset::from_offset(origin_offset.to_untyped())
-                                    .accumulate(&scale_offset)
-                            }
-                            None => return,
-                        }
-                    }
-
-                    
-                    
-                    
-                    PropertyBinding::Binding(..) => {
-                        let origin_offset = info.origin_in_parent_reference_frame;
-                        ScaleOffset::from_offset(origin_offset.to_untyped())
-                    }
-                }
-            }
-            _ => ScaleOffset::identity(),
-        };
-
-        self.snapping_transform = Some(parent_scale_offset.accumulate(&scale_offset));
-    }
-
     fn new(
         pipeline_id: PipelineId,
         parent_index: Option<SpatialNodeIndex>,
@@ -278,11 +228,12 @@ impl SceneSpatialNode {
     ) -> Self {
         SceneSpatialNode {
             parent: parent_index,
-            children: Vec::new(),
-            node_type,
+            descriptor: SpatialNodeDescriptor {
+                pipeline_id,
+                node_type,
+            },
             snapping_transform: None,
             is_root_coord_system,
-            pipeline_id,
         }
     }
 }
@@ -334,32 +285,6 @@ pub struct SpatialNode {
     
     
     pub is_ancestor_or_self_zooming: bool,
-
-    
-    
-    pub is_root_coord_system: bool,
-}
-
-impl From<&SceneSpatialNode> for SpatialNode {
-    
-    
-    fn from(node: &SceneSpatialNode) -> Self {
-        SpatialNode {
-            viewport_transform: ScaleOffset::identity(),
-            content_transform: ScaleOffset::identity(),
-            snapping_transform: node.snapping_transform,
-            coordinate_system_id: CoordinateSystemId(0),
-            transform_kind: TransformedRectKind::AxisAligned,
-            parent: node.parent,
-            children: node.children.clone(),
-            pipeline_id: node.pipeline_id,
-            node_type: node.node_type.clone(),
-            invertible: true,
-            is_async_zooming: false,
-            is_ancestor_or_self_zooming: false,
-            is_root_coord_system: node.is_root_coord_system,
-        }
-    }
 }
 
 
@@ -381,6 +306,10 @@ fn snap_offset<OffsetUnits, ScaleUnits>(
 }
 
 impl SpatialNode {
+    pub fn add_child(&mut self, child: SpatialNodeIndex) {
+        self.children.push(child);
+    }
+
     pub fn set_scroll_origin(&mut self, origin: &LayoutPoint, clamp: ScrollClamping) -> bool {
         let scrolling = match self.node_type {
             SpatialNodeType::ScrollFrame(ref mut scrolling) => scrolling,
@@ -871,7 +800,7 @@ impl SpatialNode {
 
 
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum ScrollFrameKind {
@@ -881,7 +810,7 @@ pub enum ScrollFrameKind {
     Explicit,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct ScrollFrameInfo {
@@ -942,7 +871,7 @@ impl ScrollFrameInfo {
 }
 
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct ReferenceFrameInfo {
@@ -958,9 +887,13 @@ pub struct ReferenceFrameInfo {
     
     
     pub origin_in_parent_reference_frame: LayoutVector2D,
+
+    
+    
+    pub is_pipeline_root: bool,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct StickyFrameInfo {
