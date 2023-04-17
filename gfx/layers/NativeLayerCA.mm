@@ -283,6 +283,14 @@ NativeLayerRootCA::Representation::~Representation() {
 
 void NativeLayerRootCA::Representation::Commit(WhichRepresentation aRepresentation,
                                                const nsTArray<RefPtr<NativeLayerCA>>& aSublayers) {
+  if (!mMutated &&
+      std::none_of(aSublayers.begin(), aSublayers.end(), [=](const RefPtr<NativeLayerCA>& layer) {
+        return layer->HasUpdate(aRepresentation);
+      })) {
+    
+    return;
+  }
+
   AutoCATransaction transaction;
 
   
@@ -636,7 +644,6 @@ bool NativeLayerCA::NextSurface(const MutexAutoLock& aLock) {
     surf = Some(SurfaceWithInvalidRegion{newSurf, IntRect({}, mSize)});
   }
 
-  MOZ_RELEASE_ASSERT(surf);
   mInProgressSurface = std::move(surf);
   IOSurfaceIncrementUseCount(mInProgressSurface->mSurface.get());
   return true;
@@ -805,6 +812,11 @@ void NativeLayerCA::ApplyChanges(WhichRepresentation aRepresentation) {
                     mSurfaceIsFlipped, mSamplingFilter, surface);
 }
 
+bool NativeLayerCA::HasUpdate(WhichRepresentation aRepresentation) {
+  MutexAutoLock lock(mMutex);
+  return GetRepresentation(aRepresentation).HasUpdate();
+}
+
 CALayer* NativeLayerCA::UnderlyingCALayer(WhichRepresentation aRepresentation) {
   MutexAutoLock lock(mMutex);
   return GetRepresentation(aRepresentation).UnderlyingCALayer();
@@ -959,6 +971,16 @@ void NativeLayerCA::Representation::ApplyChanges(
   mMutatedClipRect = false;
   mMutatedFrontSurface = false;
   mMutatedSamplingFilter = false;
+}
+
+bool NativeLayerCA::Representation::HasUpdate() {
+  if (!mWrappingCALayer) {
+    return true;
+  }
+
+  return mMutatedPosition || mMutatedTransform || mMutatedDisplayRect || mMutatedClipRect ||
+         mMutatedBackingScale || mMutatedSize || mMutatedSurfaceIsFlipped || mMutatedFrontSurface ||
+         mMutatedSamplingFilter;
 }
 
 
