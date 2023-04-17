@@ -97,6 +97,10 @@ fn generate_bindings() {
         
         
         .opaque_type("std::string")
+        
+        
+        
+        .opaque_type("std::vector")
         .raw_line("pub use self::root::*;")
         
         
