@@ -24,6 +24,8 @@ use std::f32::consts::PI;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
 
+pub use specified::ImageRendering;
+
 
 
 pub type Image =
