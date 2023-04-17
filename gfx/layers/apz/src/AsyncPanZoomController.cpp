@@ -3494,22 +3494,24 @@ bool AsyncPanZoomController::AttemptScroll(
   
   
   
-  APZC_LOG("%p taking overscroll during panning\n", this);
+  if (ScrollSourceAllowsOverscroll(aOverscrollHandoffState.mScrollSource)) {
+    APZC_LOG("%p taking overscroll during panning\n", this);
 
-  ParentLayerPoint prevVisualOverscroll = GetOverscrollAmount();
+    ParentLayerPoint prevVisualOverscroll = GetOverscrollAmount();
 
-  OverscrollForPanning(overscroll, aOverscrollHandoffState.mPanDistance);
+    OverscrollForPanning(overscroll, aOverscrollHandoffState.mPanDistance);
 
-  
-  
-  
-  
-  
-  ParentLayerPoint visualOverscrollChange =
-      GetOverscrollAmount() - prevVisualOverscroll;
-  if (!IsZero(visualOverscrollChange)) {
-    aOverscrollHandoffState.mTotalMovement +=
-        ToScreenCoordinates(visualOverscrollChange, aEndPoint);
+    
+    
+    
+    
+    
+    ParentLayerPoint visualOverscrollChange =
+        GetOverscrollAmount() - prevVisualOverscroll;
+    if (!IsZero(visualOverscrollChange)) {
+      aOverscrollHandoffState.mTotalMovement +=
+          ToScreenCoordinates(visualOverscrollChange, aEndPoint);
+    }
   }
 
   aStartPoint = aEndPoint + overscroll;

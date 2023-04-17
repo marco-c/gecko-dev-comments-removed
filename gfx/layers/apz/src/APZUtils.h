@@ -66,6 +66,11 @@ inline bool ScrollSourceRespectsDisregardedDirections(ScrollSource aSource) {
   return aSource == ScrollSource::Wheel || aSource == ScrollSource::Touchpad;
 }
 
+inline bool ScrollSourceAllowsOverscroll(ScrollSource aSource) {
+  return aSource == ScrollSource::Touchpad ||
+         aSource == ScrollSource::Touchscreen;
+}
+
 
 
 
