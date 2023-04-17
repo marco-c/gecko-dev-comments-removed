@@ -56,7 +56,9 @@ add_task(async function test_popup_styling(browser, accDoc) {
       
       await openIdentityPopup();
 
-      let arrowContent = gIdentityHandler._identityPopup.panelContent;
+      let arrowContent = gIdentityHandler._identityPopup.shadowRoot.querySelector(
+        ".panel-arrowcontent"
+      );
       let arrowContentComputedStyle = window.getComputedStyle(arrowContent);
       
       Assert.equal(

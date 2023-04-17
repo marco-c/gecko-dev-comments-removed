@@ -158,9 +158,6 @@ var SelectParentHelper = {
           
           property = "--content-select-scrollbar-width";
         }
-        if (property == "color") {
-          property = "--panel-color";
-        }
         sheet.cssRules[0].style.setProperty(property, value);
       }
       
@@ -180,7 +177,7 @@ var SelectParentHelper = {
         sheet.cssRules[0].style["background-color"] = "";
         
         
-        sheet.cssRules[0].style.setProperty("--panel-color", selectStyle.color);
+        sheet.cssRules[0].style.color = selectStyle.color;
       }
       if (addedRule) {
         sheet.insertRule(
