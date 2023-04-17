@@ -311,12 +311,20 @@ function onLoad(ready) {
   }
 
   
+  let busy = false;
   let current = -1;
   (async function advance({ target } = {}) {
     
     if (target) {
-      recordEvent("button", target.dataset.l10nId);
+      recordEvent("button", (busy ? "busy:" : "") + target.dataset.l10nId);
     }
+
+    
+    
+    if (busy) {
+      return;
+    }
+    busy = true;
 
     
     let toFocus = primary;
@@ -406,6 +414,8 @@ function onLoad(ready) {
 
     
     recordEvent("show", primary.dataset.l10nId);
+
+    busy = false;
   })();
 }
 
