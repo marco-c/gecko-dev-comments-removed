@@ -51,9 +51,11 @@ function testMemoryFailConstruct(initial, maximum, shared, pattern) {
   }), RangeError, pattern);
 }
 
+
 testMemoryFailConstruct(MemoryMaxValid + 1, undefined, false, /bad Memory initial size/);
+testMemoryFailConstruct(MemoryMaxValid + 1, MemoryMaxValid + 1, true, /bad Memory initial size/);
+
 testMemoryFailConstruct(0, MemoryMaxValid + 1, false, /bad Memory maximum size/);
-testMemoryFailConstruct(MemoryMaxValid + 1, undefined, true, /bad Memory initial size/);
 testMemoryFailConstruct(0, MemoryMaxValid + 1, true, /bad Memory maximum size/);
 
 

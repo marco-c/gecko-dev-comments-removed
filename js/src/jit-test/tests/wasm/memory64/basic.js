@@ -1,5 +1,6 @@
 
 
+const MaxMemory64Field = 0x1000000000000;
 const MaxUint32 = 0xFFFF_FFFF;
 
 
@@ -44,6 +45,12 @@ invalidMemoryType(false, 2, 1, /minimum must not be greater than maximum/, /bad 
 validMemoryType(true, 1, 2);
 
 invalidMemoryType(true, 1, undefined, /maximum length required for shared memory/, /maximum is not specified/);
+
+
+validMemoryType(false, 0, MaxMemory64Field);
+invalidMemoryType(false, 0, MaxMemory64Field + 1, /maximum memory size too big/, /bad Memory maximum/);
+validMemoryType(true, 0, MaxMemory64Field);
+invalidMemoryType(true, 0, MaxMemory64Field + 1, /maximum memory size too big/, /bad Memory maximum/);
 
 
 function testLink(importedIndexType, importIndexType) {
