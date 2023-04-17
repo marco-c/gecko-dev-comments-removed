@@ -1337,6 +1337,26 @@ this.LoginHelper = {
 
 
 
+  isInferredLoginForm(formElement) {
+    
+    const loginExpr = /login|log in|log on|log-on|sign in|sigin|sign\/in|sign-in|sign on|sign-on/i;
+
+    if (this._elementAttrsMatchRegex(formElement, loginExpr)) {
+      return true;
+    }
+
+    return false;
+  },
+
+  
+
+
+
+
+
+
+
+
   isInferredUsernameField(element) {
     const expr = /username/i;
 
