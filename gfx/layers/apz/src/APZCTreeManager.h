@@ -199,13 +199,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-
-  bool AdvanceAnimations(const SampleTime& aSampleTime);
-
-  
-
-
-
   APZEventResult ReceiveInputEvent(InputData& aEvent) override;
 
   
