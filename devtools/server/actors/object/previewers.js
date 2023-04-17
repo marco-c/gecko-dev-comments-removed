@@ -599,8 +599,10 @@ previewers.Object = [
       case "DebuggeeWouldRun":
       case "LinkError":
       case "RuntimeError":
-        const name = DevToolsUtils.getProperty(obj, "name");
-        const msg = DevToolsUtils.getProperty(obj, "message");
+        
+        
+        const name = DevToolsUtils.getProperty(obj, "name", true);
+        const msg = DevToolsUtils.getProperty(obj, "message", true);
         const stack = DevToolsUtils.getProperty(obj, "stack");
         const fileName = DevToolsUtils.getProperty(obj, "fileName");
         const lineNumber = DevToolsUtils.getProperty(obj, "lineNumber");
