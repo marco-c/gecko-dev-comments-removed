@@ -134,6 +134,6 @@ void AudioCaptureTrack::MixerCallback(AudioDataValue* aMixedBuffer,
   }
 
   
-  GetData<AudioSegment>()->AppendAndConsumeChunk(&chunk);
+  GetData<AudioSegment>()->AppendAndConsumeChunk(std::move(chunk));
 }
 }  
