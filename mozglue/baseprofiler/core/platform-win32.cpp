@@ -212,33 +212,22 @@ static unsigned int __stdcall ThreadEntry(void* aArg) {
   return 0;
 }
 
-static bool ShouldAdjustTimerResolution() {
-  
-  
-  
-  
-  static bool shouldAdjustTimerResolution =
-      static_cast<bool>(getenv("PROFILER_ADJUST_TIMER_RESOLUTION"));
-  return shouldAdjustTimerResolution;
-}
-
 SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
                              double aIntervalMilliseconds,
-                             bool aStackWalkEnabled)
+                             bool aStackWalkEnabled,
+                             bool aNoTimerResolutionChange)
     : mSampler(aLock),
       mActivityGeneration(aActivityGeneration),
       mIntervalMicroseconds(
-          std::max(1, int(floor(aIntervalMilliseconds * 1000 + 0.5)))) {
-  if (ShouldAdjustTimerResolution()) {
+          std::max(1, int(floor(aIntervalMilliseconds * 1000 + 0.5)))),
+      mNoTimerResolutionChange(aNoTimerResolutionChange) {
+  if ((!aNoTimerResolutionChange) && (mIntervalMicroseconds < 10 * 1000)) {
     
     
     
     
     
-    
-    if (mIntervalMicroseconds < 10 * 1000) {
-      ::timeBeginPeriod(mIntervalMicroseconds / 1000);
-    }
+    ::timeBeginPeriod(mIntervalMicroseconds / 1000);
   }
 
   
@@ -285,7 +274,7 @@ void SamplerThread::SleepMicro(uint32_t aMicroseconds) {
 }
 
 void SamplerThread::Stop(PSLockRef aLock) {
-  if (ShouldAdjustTimerResolution()) {
+  if ((!mNoTimerResolutionChange) && (mIntervalMicroseconds < 10 * 1000)) {
     
     
     
@@ -294,9 +283,7 @@ void SamplerThread::Stop(PSLockRef aLock) {
     
     
     
-    if (mIntervalMicroseconds < 10 * 1000) {
-      ::timeEndPeriod(mIntervalMicroseconds / 1000);
-    }
+    ::timeEndPeriod(mIntervalMicroseconds / 1000);
   }
 
   mSampler.Disable(aLock);
