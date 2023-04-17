@@ -22,6 +22,7 @@
 #include "nsPIDOMWindow.h"
 #include "nsIGIOService.h"
 #include "WidgetUtils.h"
+#include "WidgetUtilsGtk.h"
 #include "nsIObserverService.h"
 
 
