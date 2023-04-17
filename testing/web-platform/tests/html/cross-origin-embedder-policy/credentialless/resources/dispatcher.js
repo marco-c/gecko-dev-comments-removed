@@ -13,33 +13,57 @@ const concurrencyLimiter = (max_concurrency) => {
     pending++;
     if (pending > max_concurrency)
       await new Promise(resolve => waiting.push(resolve));
-    await task();
+    let result = await task();
     pending--;
     waiting.shift()?.();
+    return result;
   };
+}
+
+
+const randomDelay = () => {
+  return new Promise(resolve => setTimeout(resolve, 50 + 100*Math.random()));
 }
 
 
 
 
-const sendLimiter = concurrencyLimiter(1);
+const limiter = concurrencyLimiter(1);
 
 const send = async function(uuid, message) {
-  await sendLimiter(async () => {
-    await fetch(dispatcher_url + `?uuid=${uuid}`, {
-      method: 'POST',
-      body: message
-    });
+  await limiter(async () => {
+    
+    
+    while(1) {
+      try {
+        let response = await fetch(dispatcher_url + `?uuid=${uuid}`, {
+          method: 'POST',
+          body: message
+        })
+        if (await response.text() == "done")
+          return;
+      } catch (fetch_error) {}
+      await randomDelay();
+    };
   });
 }
 
 const receive = async function(uuid) {
   while(1) {
-    let response = await fetch(dispatcher_url + `?uuid=${uuid}`);
-    let data = await response.text();
-    if (data != 'not ready')
-      return data;
-    await new Promise(r => setTimeout(r, 10 + 100*Math.random()));
+    let data = "not ready";
+    try {
+      data = await limiter(async () => {
+        let response = await fetch(dispatcher_url + `?uuid=${uuid}`);
+        return await response.text();
+      });
+    } catch (fetch_error) {}
+
+    if (data == "not ready") {
+      await randomDelay();
+      continue;
+    }
+
+    return data;
   }
 }
 
