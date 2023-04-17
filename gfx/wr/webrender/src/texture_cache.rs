@@ -493,6 +493,18 @@ impl SharedTextures {
     fn bytes_per_shared_texture(&self, budget_type: BudgetType) -> usize {
         self.bytes_per_texture_of_type[budget_type as usize] as usize
     }
+
+    fn has_multiple_textures(&self, budget_type: BudgetType) -> bool {
+        match budget_type {
+            BudgetType::SharedColor8Linear => self.color8_linear.allocated_textures() > 1,
+            BudgetType::SharedColor8Nearest => self.color8_nearest.allocated_textures() > 1,
+            BudgetType::SharedColor8Glyphs => self.color8_glyphs.allocated_textures() > 1,
+            BudgetType::SharedAlpha8 => self.alpha8_linear.allocated_textures() > 1,
+            BudgetType::SharedAlpha8Glyphs => self.alpha8_glyphs.allocated_textures() > 1,
+            BudgetType::SharedAlpha16 => self.alpha16_linear.allocated_textures() > 1,
+            BudgetType::Standalone => false,
+        }
+    }
 }
 
 
@@ -1087,7 +1099,7 @@ impl TextureCache {
             
             
             
-            return 16 * 1024 * 1024;
+            return 8 * 1024 * 1024;
         }
 
         
@@ -1096,40 +1108,95 @@ impl TextureCache {
         
         
         
-        let expected_texture_count = match budget_type {
-            BudgetType::SharedColor8Nearest | BudgetType::SharedAlpha16 => {
-                
-                
-                1
-            },
+        
 
+        let bytes_per_texture = self.shared_textures.bytes_per_shared_texture(budget_type);
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let ideal_utilization = match budget_type {
+            BudgetType::SharedAlpha8Glyphs | BudgetType::SharedColor8Glyphs => {
+                
+                
+                bytes_per_texture * 2 / 3
+            }
             _ => {
                 
-                2
-            },
+                
+                
+                bytes_per_texture / 3
+            }
+        };
+
+        ideal_utilization
+    }
+
+    
+    
+    
+    
+    
+    fn should_continue_evicting(
+        &self,
+        budget_type: BudgetType,
+        eviction_count: usize,
+    ) -> Option<usize> {
+
+        let threshold = self.get_eviction_threshold(budget_type);
+        let bytes_allocated = self.bytes_allocated[budget_type as usize];
+
+        let uses_multiple_atlases = self.shared_textures.has_multiple_textures(budget_type);
+
+        
+        
+        
+        
+        if bytes_allocated < threshold && !uses_multiple_atlases {
+            return None;
+        }
+
+        
+        
+        let age_theshold = match bytes_allocated / threshold {
+            0 => 400,
+            1 => 200,
+            2 => 100,
+            3 => 50,
+            4 => 25,
+            5 => 10,
+            6 => 5,
+            _ => 1,
         };
 
         
-        
-        
-        
-        
-        
-        
-        
-        
-        let average_used_bytes_per_texture_when_full =
-            self.shared_textures.bytes_per_shared_texture(budget_type) / 2;
+        if bytes_allocated > 4 * threshold {
+            return Some(age_theshold);
+        }
 
         
         
-        
-        
-        
-        
-        
-        expected_texture_count * average_used_bytes_per_texture_when_full
+        if eviction_count < Self::MAX_EVICTIONS_PER_FRAME {
+            return Some(age_theshold)
+        }
+
+        None
     }
+
 
     
     
@@ -1139,17 +1206,15 @@ impl TextureCache {
         let mut youngest_evicted = FrameId::first();
 
         for budget in BudgetType::iter() {
-            let threshold = self.get_eviction_threshold(budget);
-            while self.should_continue_evicting(
-                self.bytes_allocated[budget as usize],
-                threshold,
+            while let Some(age_threshold) = self.should_continue_evicting(
+                budget,
                 eviction_count,
             ) {
                 if let Some(entry) = self.lru_cache.peek_oldest(budget as u8) {
                     
                     
                     
-                    if entry.last_access.frame_id() >= previous_frame_id {
+                    if entry.last_access.frame_id() + age_threshold > previous_frame_id {
                         
                         
                         break;
@@ -1178,28 +1243,6 @@ impl TextureCache {
                 self.now.frame_id().as_usize() - youngest_evicted.as_usize()
             );
         }
-    }
-
-    
-    fn should_continue_evicting(
-        &self,
-        bytes_allocated: usize,
-        threshold: usize,
-        eviction_count: usize,
-    ) -> bool {
-        
-        if bytes_allocated < threshold {
-            return false;
-        }
-
-        
-        if bytes_allocated > 4 * threshold {
-            return true;
-        }
-
-        
-        
-        eviction_count < Self::MAX_EVICTIONS_PER_FRAME
     }
 
     
