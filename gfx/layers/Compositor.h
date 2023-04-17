@@ -185,34 +185,13 @@ class Compositor : public TextureSourceProvider {
   virtual ~Compositor();
 
  public:
-  explicit Compositor(widget::CompositorWidget* aWidget,
-                      CompositorBridgeParent* aParent = nullptr);
+  explicit Compositor(widget::CompositorWidget* aWidget);
+
+  bool IsValid() const override { return true; }
 
   virtual bool Initialize(nsCString* const out_failureReason) = 0;
   void Destroy() override;
   bool IsDestroyed() const { return mIsDestroyed; }
-
-  
-
-
-
-
-  virtual TextureFactoryIdentifier GetTextureFactoryIdentifier() = 0;
-
-  typedef uint32_t MakeCurrentFlags;
-  static const MakeCurrentFlags ForceMakeCurrent = 0x1;
-  
-
-
-
-
-
-
-
-
-
-
-  virtual void MakeCurrent(MakeCurrentFlags aFlags = 0) = 0;
 
   
 
@@ -228,30 +207,14 @@ class Compositor : public TextureSourceProvider {
 
 
 
-  virtual already_AddRefed<CompositingRenderTarget>
-  CreateRenderTargetFromSource(const gfx::IntRect& aRect,
-                               const CompositingRenderTarget* aSource,
-                               const gfx::IntPoint& aSourcePoint) = 0;
-
-  
-
-
-
-
-
-
   virtual bool ReadbackRenderTarget(CompositingRenderTarget* aSource,
-                                    AsyncReadbackBuffer* aDest) {
-    return false;
-  }
+                                    AsyncReadbackBuffer* aDest) = 0;
 
   
 
 
   virtual already_AddRefed<AsyncReadbackBuffer> CreateAsyncReadbackBuffer(
-      const gfx::IntSize& aSize) {
-    return nullptr;
-  }
+      const gfx::IntSize& aSize) = 0;
 
   
 
@@ -260,9 +223,7 @@ class Compositor : public TextureSourceProvider {
 
   virtual bool BlitRenderTarget(CompositingRenderTarget* aSource,
                                 const gfx::IntSize& aSourceSize,
-                                const gfx::IntSize& aDestSize) {
-    return false;
-  }
+                                const gfx::IntSize& aDestSize) = 0;
 
   
 
@@ -284,29 +245,13 @@ class Compositor : public TextureSourceProvider {
 
 
   virtual already_AddRefed<CompositingRenderTarget> GetWindowRenderTarget()
-      const {
-    return nullptr;
-  }
+      const = 0;
 
   
 
 
 
   virtual void SetDestinationSurfaceSize(const gfx::IntSize& aSize) = 0;
-
-  void DrawGeometry(const gfx::Rect& aRect, const gfx::IntRect& aClipRect,
-                    const EffectChain& aEffectChain, gfx::Float aOpacity,
-                    const gfx::Matrix4x4& aTransform,
-                    const gfx::Rect& aVisibleRect,
-                    const Maybe<gfx::Polygon>& aGeometry);
-
-  void DrawGeometry(const gfx::Rect& aRect, const gfx::IntRect& aClipRect,
-                    const EffectChain& aEffectChain, gfx::Float aOpacity,
-                    const gfx::Matrix4x4& aTransform,
-                    const Maybe<gfx::Polygon>& aGeometry) {
-    DrawGeometry(aRect, aClipRect, aEffectChain, aOpacity, aTransform, aRect,
-                 aGeometry);
-  }
 
   
 
@@ -332,46 +277,7 @@ class Compositor : public TextureSourceProvider {
     DrawQuad(aRect, aClipRect, aEffectChain, aOpacity, aTransform, aRect);
   }
 
-  virtual void DrawTriangle(const gfx::TexturedTriangle& aTriangle,
-                            const gfx::IntRect& aClipRect,
-                            const EffectChain& aEffectChain,
-                            gfx::Float aOpacity,
-                            const gfx::Matrix4x4& aTransform,
-                            const gfx::Rect& aVisibleRect) {
-    MOZ_CRASH(
-        "Compositor::DrawTriangle is not implemented for the current "
-        "platform!");
-  }
-
-  virtual bool SupportsLayerGeometry() const { return false; }
-
-  
-
-
-  void SlowDrawRect(const gfx::Rect& aRect, const gfx::DeviceColor& color,
-                    const gfx::IntRect& aClipRect = gfx::IntRect(),
-                    const gfx::Matrix4x4& aTransform = gfx::Matrix4x4(),
-                    int aStrokeWidth = 1);
-
-  
-
-
-  void FillRect(const gfx::Rect& aRect, const gfx::DeviceColor& color,
-                const gfx::IntRect& aClipRect = gfx::IntRect(),
-                const gfx::Matrix4x4& aTransform = gfx::Matrix4x4());
-
   void SetClearColor(const gfx::DeviceColor& aColor) { mClearColor = aColor; }
-
-  void SetDefaultClearColor(const gfx::DeviceColor& aColor) {
-    mDefaultClearColor = aColor;
-  }
-
-  void SetClearColorToDefault() { mClearColor = mDefaultClearColor; }
-
-  
-
-
-  virtual void ClearRect(const gfx::Rect& aRect) = 0;
 
   
 
@@ -396,117 +302,9 @@ class Compositor : public TextureSourceProvider {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  virtual Maybe<gfx::IntRect> BeginFrameForTarget(
-      const nsIntRegion& aInvalidRegion, const Maybe<gfx::IntRect>& aClipRect,
-      const gfx::IntRect& aRenderBounds, const nsIntRegion& aOpaqueRegion,
-      gfx::DrawTarget* aTarget, const gfx::IntRect& aTargetBounds) = 0;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  virtual void BeginFrameForNativeLayers() = 0;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  virtual Maybe<gfx::IntRect> BeginRenderingToNativeLayer(
-      const nsIntRegion& aInvalidRegion, const Maybe<gfx::IntRect>& aClipRect,
-      const nsIntRegion& aOpaqueRegion, NativeLayer* aNativeLayer) = 0;
-
-  
-
-
-
-
-
-  virtual void EndRenderingToNativeLayer() = 0;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  virtual void NormalDrawingDone() {}
-
-  
-
-
-
-
   virtual void EndFrame();
 
   virtual void CancelFrame(bool aNeedFlush = true) { ReadUnlockTextures(); }
-
-  virtual void WaitForGPU() {}
-
-  virtual RefPtr<SurfacePoolHandle> GetSurfacePoolHandle() { return nullptr; }
-
-  
-
-
-  virtual bool SupportsPartialTextureUpdate() = 0;
 
 #ifdef MOZ_DUMP_PAINTING
   virtual const char* Name() const = 0;
@@ -538,33 +336,7 @@ class Compositor : public TextureSourceProvider {
 
   virtual bool Resume() { return true; }
 
-  
-
-
-
-  virtual bool Ready() { return true; }
-
-  virtual void ForcePresent() {}
-
-  virtual bool IsPendingComposite() { return false; }
-
-  virtual void FinishPendingComposite() {}
-
   widget::CompositorWidget* GetWidget() const { return mWidget; }
-
-  
-  virtual void GetFrameStats(GPUStats* aStats);
-
-  ScreenRotation GetScreenRotation() const { return mScreenRotation; }
-  void SetScreenRotation(ScreenRotation aRotation) {
-    mScreenRotation = aRotation;
-  }
-
-  
-  
-  void SetInvalid();
-  bool IsValid() const override;
-  CompositorBridgeParent* GetCompositorBridgeParent() const { return mParent; }
 
   
 
@@ -604,20 +376,6 @@ class Compositor : public TextureSourceProvider {
                                        gfx::Matrix4x4* aOutTransform,
                                        gfx::Rect* aOutLayerQuad = nullptr);
 
-  virtual void DrawTriangles(const nsTArray<gfx::TexturedTriangle>& aTriangles,
-                             const gfx::Rect& aRect,
-                             const gfx::IntRect& aClipRect,
-                             const EffectChain& aEffectChain,
-                             gfx::Float aOpacity,
-                             const gfx::Matrix4x4& aTransform,
-                             const gfx::Rect& aVisibleRect);
-
-  virtual void DrawPolygon(const gfx::Polygon& aPolygon, const gfx::Rect& aRect,
-                           const gfx::IntRect& aClipRect,
-                           const EffectChain& aEffectChain, gfx::Float aOpacity,
-                           const gfx::Matrix4x4& aTransform,
-                           const gfx::Rect& aVisibleRect);
-
   
 
 
@@ -635,24 +393,11 @@ class Compositor : public TextureSourceProvider {
 
   TimeStamp mLastCompositionEndTime;
 
-  CompositorBridgeParent* mParent;
-
-  
-
-
-
-
-  size_t mPixelsPerFrame;
-  size_t mPixelsFilled;
-
-  ScreenRotation mScreenRotation;
-
   widget::CompositorWidget* mWidget;
 
   bool mIsDestroyed;
 
   gfx::DeviceColor mClearColor;
-  gfx::DeviceColor mDefaultClearColor;
 
   bool mRecordFrames = false;
 
