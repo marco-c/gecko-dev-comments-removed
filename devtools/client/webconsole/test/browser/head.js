@@ -1736,13 +1736,13 @@ function toggleLayout(hud) {
 
 
 async function waitForLazyRequests(toolbox) {
-  const { wrapper } = toolbox.getCurrentPanel().hud.ui;
+  const ui = toolbox.getCurrentPanel().hud.ui;
   return waitUntil(() => {
     return (
-      !wrapper.networkDataProvider.lazyRequestData.size &&
+      !ui.networkDataProvider.lazyRequestData.size &&
       
       
-      !wrapper.queuedRequestUpdates.length
+      !ui.wrapper.queuedRequestUpdates.length
     );
   });
 }
