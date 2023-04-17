@@ -7494,9 +7494,10 @@ void nsIFrame::MovePositionBy(const nsPoint& aTranslation) {
 nsRect nsIFrame::GetNormalRect() const {
   
   
-  nsPoint* normalPosition = GetProperty(NormalPositionProperty());
-  if (normalPosition) {
-    return nsRect(*normalPosition, GetSize());
+  bool hasProperty;
+  nsPoint normalPosition = GetProperty(NormalPositionProperty(), &hasProperty);
+  if (hasProperty) {
+    return nsRect(normalPosition, GetSize());
   }
   return GetRect();
 }
