@@ -514,6 +514,7 @@ bool ExtensionListenerCallWorkerRunnable::WorkerRun(
       
       
       
+      
       mIsCallResultCancelled = true;
       retPromise->MaybeResolveWithUndefined();
 
@@ -521,8 +522,8 @@ bool ExtensionListenerCallWorkerRunnable::WorkerRun(
       
       
       js::SetFunctionNativeReserved(sendResponseObj,
-          SLOT_SEND_RESPONSE_CALLBACK_INSTANCE,
-          JS::PrivateValue(nullptr));
+                                    SLOT_SEND_RESPONSE_CALLBACK_INSTANCE,
+                                    JS::PrivateValue(nullptr));
 
       return true;
     }

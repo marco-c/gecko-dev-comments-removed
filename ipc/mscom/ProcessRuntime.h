@@ -15,7 +15,7 @@
 #include "nsWindowsHelpers.h"
 #if defined(MOZILLA_INTERNAL_API)
 #  include "nsXULAppAPI.h"
-#endif    
+#endif  
 
 namespace mozilla {
 namespace mscom {

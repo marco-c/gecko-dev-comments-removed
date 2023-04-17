@@ -1109,8 +1109,7 @@ static void RebuildVerifiedCertificateInformation(PRFileDesc* fd,
       nullptr,  
       nullptr,  
       nullptr,  
-      &certificateTransparencyInfo,
-      &isBuiltCertChainRootBuiltInRoot);
+      &certificateTransparencyInfo, &isBuiltCertChainRootBuiltInRoot);
 
   if (rv != Success) {
     MOZ_LOG(gPIPNSSLog, LogLevel::Debug,

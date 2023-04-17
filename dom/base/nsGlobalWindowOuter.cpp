@@ -2333,7 +2333,8 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
 
     
     WindowContext* wc = mInnerWindow->GetWindowContext();
-    bool allow = wc ? wc->CanExecuteScripts() : mBrowsingContext->CanExecuteScripts();
+    bool allow =
+        wc ? wc->CanExecuteScripts() : mBrowsingContext->CanExecuteScripts();
     xpc::Scriptability::Get(GetWrapperPreserveColor())
         .SetWindowAllowsScript(allow);
 
