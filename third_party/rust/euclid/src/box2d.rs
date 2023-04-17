@@ -17,7 +17,7 @@ use crate::side_offsets::SideOffsets2D;
 use crate::size::Size2D;
 use crate::vector::{vec2, Vector2D};
 
-use num_traits::{NumCast, Float};
+use num_traits::NumCast;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -25,7 +25,7 @@ use core::borrow::Borrow;
 use core::cmp::PartialOrd;
 use core::fmt;
 use core::hash::{Hash, Hasher};
-use core::ops::{Add, Div, DivAssign, Mul, MulAssign, Sub, Range};
+use core::ops::{Add, Div, DivAssign, Mul, MulAssign, Sub};
 
 
 
@@ -104,24 +104,6 @@ impl<T, U> Box2D<T, U> {
     #[inline]
     pub const fn new(min: Point2D<T, U>, max: Point2D<T, U>) -> Self {
         Box2D { min, max }
-    }
-
-    
-    #[inline]
-    pub fn from_origin_and_size(origin: Point2D<T, U>, size: Size2D<T, U>) -> Self {
-        Box2D {
-            min: origin,
-            max: point2(size.width, size.height),
-        }
-    }
-
-    
-    #[inline]
-    pub fn from_size(size: Size2D<T, U>) -> Self where T: Zero {
-        Box2D {
-            min: Point2D::zero(),
-            max: point2(size.width, size.height),
-        }
     }
 }
 
@@ -213,18 +195,8 @@ where
         }
     }
 
-    
-    
-    
     #[inline]
     pub fn union(&self, other: &Self) -> Self {
-        if other.is_empty() {
-            return *self;
-        }
-        if self.is_empty() {
-            return *other;
-        }
-
         Box2D {
             min: point2(min(self.min.x, other.min.x), min(self.min.y, other.min.y)),
             max: point2(max(self.max.x, other.max.x), max(self.max.y, other.max.y)),
@@ -314,6 +286,14 @@ impl<T, U> Box2D<T, U>
 where
     T: Copy + Zero + PartialOrd,
 {
+    
+    #[inline]
+    pub fn from_size(size: Size2D<T, U>) -> Self {
+        let zero = Point2D::zero();
+        let point = size.to_vector().to_point();
+        Box2D::from_points(&[zero, point])
+    }
+
     
     pub fn from_points<I>(points: I) -> Self
     where
@@ -463,16 +443,6 @@ impl<T, U> Box2D<T, U>
 where
     T: Copy,
 {
-    #[inline]
-    pub fn x_range(&self) -> Range<T> {
-        self.min.x..self.max.x
-    }
-
-    #[inline]
-    pub fn y_range(&self) -> Range<T> {
-        self.min.y..self.max.y
-    }
-
     
     #[inline]
     pub fn to_untyped(&self) -> Box2D<T, UnknownUnit> {
@@ -581,14 +551,6 @@ impl<T: NumCast + Copy, U> Box2D<T, U> {
     }
 }
 
-impl<T: Float, U> Box2D<T, U> {
-    
-    #[inline]
-    pub fn is_finite(self) -> bool {
-        self.min.is_finite() && self.max.is_finite()
-    }
-}
-
 impl<T, U> Box2D<T, U>
 where
     T: Round,
@@ -637,15 +599,6 @@ where
 {
     fn from(b: Size2D<T, U>) -> Self {
         Self::from_size(b)
-    }
-}
-
-impl<T: Default, U> Default for Box2D<T, U> {
-    fn default() -> Self {
-        Box2D {
-            min: Default::default(),
-            max: Default::default(),
-        }
     }
 }
 
