@@ -6603,17 +6603,9 @@ void HTMLMediaElement::FireTimeUpdate(TimeupdateType aType) {
 MediaError* HTMLMediaElement::GetError() const { return mErrorSink->mError; }
 
 void HTMLMediaElement::GetCurrentSpec(nsCString& aString) {
-  
   if (mLoadingSrc) {
     mLoadingSrc->GetSpec(aString);
-  } else if (mSrcMediaSource) {
-    
-    
-    nsAutoString src;
-    GetSrc(src);
-    CopyUTF16toUTF8(src, aString);
   } else {
-    
     aString.Truncate();
   }
 }
