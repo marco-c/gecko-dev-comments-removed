@@ -261,12 +261,6 @@ bool nsHTTPSOnlyUtils::IsUpgradeDowngradeEndlessLoop(
 
   
   
-  if (aLoadInfo->GetHasValidUserGestureActivation()) {
-    return false;
-  }
-
-  
-  
   if (!aURI->SchemeIs("http")) {
     return false;
   }
