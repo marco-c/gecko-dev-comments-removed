@@ -60,6 +60,8 @@ bool ReportIncompatibleSelfHostedMethod(JSContext* cx, const CallArgs& args);
 
 void FillSelfHostingCompileOptions(JS::CompileOptions& options);
 
+const JSFunctionSpec* FindIntrinsicSpec(PropertyName* name);
+
 #ifdef DEBUG
 
 
