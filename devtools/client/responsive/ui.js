@@ -313,7 +313,7 @@ class ResponsiveUI {
     
     if (!isTabContentDestroying) {
       let reloadNeeded = false;
-      await this.updateDPPX();
+      await this.updateDPPX(null);
       reloadNeeded |=
         (await this.updateUserAgent()) && this.reloadOnChange("userAgent");
       reloadNeeded |=
@@ -554,7 +554,7 @@ class ResponsiveUI {
 
   async onRemoveDeviceAssociation() {
     let reloadNeeded = false;
-    await this.updateDPPX();
+    await this.updateDPPX(null);
     reloadNeeded |=
       (await this.updateUserAgent()) && this.reloadOnChange("userAgent");
     reloadNeeded |=
@@ -817,14 +817,10 @@ class ResponsiveUI {
 
 
 
-
-  async updateDPPX(dppx) {
-    if (!dppx) {
-      await this.responsiveFront.clearDPPXOverride();
-      return false;
-    }
-    await this.responsiveFront.setDPPXOverride(dppx);
-    return false;
+  async updateDPPX(dppx = null) {
+    await this.commands.targetConfigurationCommand.updateConfiguration({
+      overrideDPPX: dppx,
+    });
   }
 
   

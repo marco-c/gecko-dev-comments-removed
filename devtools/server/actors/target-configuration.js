@@ -16,6 +16,7 @@ const { TARGET_CONFIGURATION } = SUPPORTED_DATA;
 const Services = require("Services");
 
 
+
 const SUPPORTED_OPTIONS = {
   
   cacheDisabled: true,
@@ -23,6 +24,8 @@ const SUPPORTED_OPTIONS = {
   colorSchemeSimulation: true,
   
   javascriptEnabled: true,
+  
+  overrideDPPX: true,
   
   paintFlashing: true,
   
@@ -32,6 +35,7 @@ const SUPPORTED_OPTIONS = {
   
   serviceWorkersTestingEnabled: true,
 };
+
 
 
 
@@ -158,6 +162,9 @@ const TargetConfigurationActor = ActorClassWithSpec(targetConfigurationSpec, {
         case "serviceWorkersTestingEnabled":
           this._setServiceWorkersTestingEnabled(value);
           break;
+        case "overrideDPPX":
+          this._setDPPXOverride(value);
+          break;
       }
     }
   },
@@ -177,6 +184,12 @@ const TargetConfigurationActor = ActorClassWithSpec(targetConfigurationSpec, {
     
     if (this._resetColorSchemeSimulationOnDestroy) {
       this._setColorSchemeSimulation(null);
+    }
+
+    
+    
+    if (this._initialDPPXOverride !== undefined) {
+      this._setDPPXOverride(this._initialDPPXOverride);
     }
   },
 
@@ -207,6 +220,23 @@ const TargetConfigurationActor = ActorClassWithSpec(targetConfigurationSpec, {
     if (this._browsingContext.prefersColorSchemeOverride != value) {
       this._browsingContext.prefersColorSchemeOverride = value;
       this._resetColorSchemeSimulationOnDestroy = true;
+    }
+  },
+
+  
+  _setDPPXOverride(dppx) {
+    if (this._browsingContext.overrideDPPX === dppx) {
+      return;
+    }
+
+    if (!dppx && this._initialDPPXOverride) {
+      dppx = this._initialDPPXOverride;
+    } else if (dppx !== undefined && this._initialDPPXOverride === undefined) {
+      this._initialDPPXOverride = this._browsingContext.overrideDPPX;
+    }
+
+    if (dppx !== undefined) {
+      this._browsingContext.overrideDPPX = dppx;
     }
   },
 
