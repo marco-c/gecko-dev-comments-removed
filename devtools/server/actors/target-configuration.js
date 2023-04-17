@@ -13,6 +13,7 @@ const {
 } = require("devtools/server/actors/watcher/WatchedDataHelpers.jsm");
 const { SUPPORTED_DATA } = WatchedDataHelpers;
 const { TARGET_CONFIGURATION } = SUPPORTED_DATA;
+const Services = require("Services");
 
 
 const SUPPORTED_OPTIONS = {
@@ -43,10 +44,27 @@ const SUPPORTED_OPTIONS = {
 
 
 
+
+
+
 const TargetConfigurationActor = ActorClassWithSpec(targetConfigurationSpec, {
   initialize(watcherActor) {
     this.watcherActor = watcherActor;
     Actor.prototype.initialize.call(this, this.watcherActor.conn);
+
+    this._onBrowsingContextAttached = this._onBrowsingContextAttached.bind(
+      this
+    );
+    
+    
+    
+    
+    Services.obs.addObserver(
+      this._onBrowsingContextAttached,
+      "browsing-context-attached"
+    );
+
+    this._browsingContext = this.watcherActor.browserElement?.browsingContext;
   },
 
   form() {
@@ -55,6 +73,33 @@ const TargetConfigurationActor = ActorClassWithSpec(targetConfigurationSpec, {
       configuration: this._getConfiguration(),
       traits: { supportedOptions: SUPPORTED_OPTIONS },
     };
+  },
+
+  
+
+
+
+
+  _onBrowsingContextAttached(browsingContext) {
+    
+    
+    if (browsingContext.parent) {
+      return;
+    }
+
+    
+    
+    if (
+      this.watcherActor.browserId &&
+      browsingContext.browserId != this.watcherActor.browserId
+    ) {
+      return;
+    }
+
+    
+    
+    this._browsingContext = browsingContext;
+    this._updateParentProcessConfiguration(this._getConfiguration());
   },
 
   _getConfiguration() {
@@ -72,6 +117,11 @@ const TargetConfigurationActor = ActorClassWithSpec(targetConfigurationSpec, {
     return cfgMap;
   },
 
+  
+
+
+
+
   async updateConfiguration(configuration) {
     const cfgArray = Object.keys(configuration)
       .filter(key => {
@@ -83,8 +133,90 @@ const TargetConfigurationActor = ActorClassWithSpec(targetConfigurationSpec, {
       })
       .map(key => ({ key, value: configuration[key] }));
 
+    this._updateParentProcessConfiguration(configuration);
     await this.watcherActor.addDataEntry(TARGET_CONFIGURATION, cfgArray);
     return this._getConfiguration();
+  },
+
+  
+
+
+
+  _updateParentProcessConfiguration(configuration) {
+    if (!this._browsingContext) {
+      return;
+    }
+
+    for (const [key, value] of Object.entries(configuration)) {
+      switch (key) {
+        case "printSimulationEnabled":
+          this._setPrintSimulationEnabled(value);
+          break;
+        case "colorSchemeSimulation":
+          this._setColorSchemeSimulation(value);
+          break;
+        case "serviceWorkersTestingEnabled":
+          this._setServiceWorkersTestingEnabled(value);
+          break;
+      }
+    }
+  },
+
+  _restoreParentProcessConfiguration() {
+    if (!this._browsingContext) {
+      return;
+    }
+
+    this._setServiceWorkersTestingEnabled(false);
+    this._setPrintSimulationEnabled(false);
+
+    
+    
+    
+    
+    
+    if (this._resetColorSchemeSimulationOnDestroy) {
+      this._setColorSchemeSimulation(null);
+    }
+  },
+
+  
+
+
+  _setServiceWorkersTestingEnabled(enabled) {
+    if (this._browsingContext.serviceWorkersTestingEnabled != enabled) {
+      this._browsingContext.serviceWorkersTestingEnabled = enabled;
+    }
+  },
+
+  
+
+
+  _setPrintSimulationEnabled(enabled) {
+    const value = enabled ? "print" : "";
+    if (this._browsingContext.mediumOverride != value) {
+      this._browsingContext.mediumOverride = value;
+    }
+  },
+
+  
+
+
+  _setColorSchemeSimulation(override) {
+    const value = override || "none";
+    if (this._browsingContext.prefersColorSchemeOverride != value) {
+      this._browsingContext.prefersColorSchemeOverride = value;
+      this._resetColorSchemeSimulationOnDestroy = true;
+    }
+  },
+
+  destroy() {
+    Services.obs.removeObserver(
+      this._onBrowsingContextAttached,
+      "browsing-context-attached"
+    );
+    this._restoreParentProcessConfiguration();
+    Actor.prototype.destroy.call(this);
   },
 });
 

@@ -1275,17 +1275,6 @@ const browsingContextTargetPrototype = {
     ) {
       this._setPaintFlashingEnabled(options.paintFlashing);
     }
-    if (typeof options.colorSchemeSimulation !== "undefined") {
-      this._setColorSchemeSimulation(options.colorSchemeSimulation);
-    }
-    if (typeof options.printSimulationEnabled !== "undefined") {
-      this._setPrintSimulationEnabled(options.printSimulationEnabled);
-    }
-    if (typeof options.serviceWorkersTestingEnabled !== "undefined") {
-      this._setServiceWorkersTestingEnabled(
-        options.serviceWorkersTestingEnabled
-      );
-    }
     if (typeof options.restoreFocus == "boolean") {
       this._restoreFocus = options.restoreFocus;
     }
@@ -1302,18 +1291,7 @@ const browsingContextTargetPrototype = {
   _restoreTargetConfiguration() {
     this._restoreJavascript();
     this._setCacheDisabled(false);
-    this._setServiceWorkersTestingEnabled(false);
     this._setPaintFlashingEnabled(false);
-    this._setPrintSimulationEnabled(false);
-
-    if (this._resetColorSchemeSimulationOnDestroy) {
-      
-      
-      
-      
-      
-      this._setColorSchemeSimulation(null);
-    }
 
     if (this._restoreFocus && this.browsingContext?.isActive) {
       this.window.focus();
@@ -1361,36 +1339,6 @@ const browsingContextTargetPrototype = {
     }
 
     return this.docShell.allowJavascript;
-  },
-
-  
-
-
-  _setServiceWorkersTestingEnabled(enabled) {
-    if (this.browsingContext.serviceWorkersTestingEnabled != enabled) {
-      this.browsingContext.serviceWorkersTestingEnabled = enabled;
-    }
-  },
-
-  
-
-
-  _setPrintSimulationEnabled(enabled) {
-    const value = enabled ? "print" : "";
-    if (this.browsingContext.mediumOverride != value) {
-      this.browsingContext.mediumOverride = value;
-    }
-  },
-
-  
-
-
-  _setColorSchemeSimulation(override) {
-    const value = override || "none";
-    if (this.browsingContext.prefersColorSchemeOverride != value) {
-      this.browsingContext.prefersColorSchemeOverride = value;
-      this._resetColorSchemeSimulationOnDestroy = true;
-    }
   },
 
   
