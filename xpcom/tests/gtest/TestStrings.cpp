@@ -2018,12 +2018,6 @@ TEST_F(Strings, ConvertToSpan) {
   
   {
     auto span = Span{string};
-    static_assert(std::is_same_v<decltype(span), Span<const char16_t>>);
-  }
-
-  
-  {
-    auto span = string.GetMutableData();
     static_assert(std::is_same_v<decltype(span), Span<char16_t>>);
   }
 
@@ -2040,12 +2034,6 @@ TEST_F(Strings, ConvertToSpan) {
   
   {
     auto span = Span{cstring};
-    static_assert(std::is_same_v<decltype(span), Span<const char>>);
-  }
-
-  
-  {
-    auto span = cstring.GetMutableData();
     static_assert(std::is_same_v<decltype(span), Span<char>>);
   }
 }
