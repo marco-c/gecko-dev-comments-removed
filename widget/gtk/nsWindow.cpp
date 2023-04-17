@@ -1700,7 +1700,11 @@ void nsWindow::NativeMoveResizeWaylandPopup(GdkPoint* aPosition,
   }
   LOG((" parentRect gravity: %d anchor gravity: %d\n", rectAnchor, menuAnchor));
 
-  GdkAnchorHints hints = GdkAnchorHints(GDK_ANCHOR_RESIZE);
+  
+  
+  
+  GdkAnchorHints hints =
+      GdkAnchorHints(GDK_ANCHOR_FLIP | GDK_ANCHOR_SLIDE_X | GDK_ANCHOR_RESIZE);
 
   
   if (position >= POPUPPOSITION_BEFORESTART &&
