@@ -53,7 +53,7 @@ class RTC_EXPORT Clock {
   }
 
   
-  static Clock* GetRealTimeClock();
+  static Clock* GetRealTimeClockRaw();
 };
 
 class SimulatedClock : public Clock {
