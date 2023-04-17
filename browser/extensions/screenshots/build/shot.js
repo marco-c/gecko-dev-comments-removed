@@ -350,8 +350,10 @@ class AbstractShot {
     
     filenameTitle = filenameTitle.replace(/[:\\<>/!@&?"*.|\x00-\x1F]/g, " ");
     filenameTitle = filenameTitle.replace(/\s{1,4000}/g, " ");
-    const filenameDate = new Date(date.getTime() - date.getTimezoneOffset() * 60 * 1000).toISOString().substring(0, 10);
-    let clipFilename = `Screenshot_${filenameDate} ${filenameTitle}`;
+    const currentDateTime = new Date(date.getTime() - date.getTimezoneOffset() * 60 * 1000).toISOString();
+    const filenameDate = currentDateTime.substring(0, 10);
+    const filenameTime = currentDateTime.substring(11, 19).replace(/:/g, '-');
+    let clipFilename = `Screenshot ${filenameDate} at ${filenameTime} ${filenameTitle}`;
     const clipFilenameBytesSize = clipFilename.length * 2; 
     if (clipFilenameBytesSize > 251) { 
       const excedingchars = (clipFilenameBytesSize - 246) / 2; 
