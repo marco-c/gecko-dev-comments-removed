@@ -74,7 +74,7 @@ add_task(async function contextMenu_removeExtension_panel() {
     },
     win
   );
-  await contextMenuPromise;
+  let contextMenu = await contextMenuPromise;
 
   let removeExtensionItem = getRemoveExtensionItem(win);
   Assert.ok(removeExtensionItem, "'Remove' item exists");
@@ -87,7 +87,7 @@ add_task(async function contextMenu_removeExtension_panel() {
   contextMenuPromise = promisePanelHidden("pageActionContextMenu", win);
   let addonUninstalledPromise = promiseAddonUninstalled(extension.id);
   mockPromptService();
-  EventUtils.synthesizeMouseAtCenter(removeExtensionItem, {}, win);
+  contextMenu.activateItem(removeExtensionItem);
   await Promise.all([contextMenuPromise, addonUninstalledPromise]);
 
   
@@ -137,7 +137,7 @@ add_task(async function contextMenu_removeExtension_urlbar() {
     type: "contextmenu",
     button: 2,
   });
-  await contextMenuPromise;
+  let contextMenu = await contextMenuPromise;
 
   let menuItems = collectContextMenuItems();
   Assert.equal(menuItems.length, 2, "Context menu has two children");
@@ -158,7 +158,7 @@ add_task(async function contextMenu_removeExtension_urlbar() {
   let promptCancelledPromise = new Promise(resolve => {
     promptService.confirmEx = () => resolve();
   });
-  EventUtils.synthesizeMouseAtCenter(removeExtensionItem, {});
+  contextMenu.activateItem(removeExtensionItem);
   await Promise.all([contextMenuPromise, promptCancelledPromise]);
 
   
@@ -217,7 +217,7 @@ add_task(async function contextMenu_removeExtension_disabled_in_urlbar() {
     type: "contextmenu",
     button: 2,
   });
-  await contextMenuPromise;
+  let contextMenu = await contextMenuPromise;
 
   let menuItems = collectContextMenuItems();
   Assert.equal(menuItems.length, 2, "Context menu has two children");
@@ -232,7 +232,7 @@ add_task(async function contextMenu_removeExtension_disabled_in_urlbar() {
 
   
   contextMenuPromise = promisePanelHidden("pageActionContextMenu");
-  EventUtils.synthesizeKey("KEY_Escape");
+  contextMenu.hidePopup();
   await contextMenuPromise;
 
   
@@ -302,7 +302,7 @@ add_task(async function contextMenu_removeExtension_disabled_in_panel() {
     },
     win
   );
-  await contextMenuPromise;
+  let contextMenu = await contextMenuPromise;
 
   let removeExtensionItem = getRemoveExtensionItem(win);
   Assert.ok(removeExtensionItem, "'Remove' item exists");
@@ -311,7 +311,7 @@ add_task(async function contextMenu_removeExtension_disabled_in_panel() {
 
   
   contextMenuPromise = promisePanelHidden("pageActionContextMenu", win);
-  EventUtils.synthesizeKey("KEY_Escape", {}, win);
+  contextMenu.hidePopup();
   await contextMenuPromise;
 
   
