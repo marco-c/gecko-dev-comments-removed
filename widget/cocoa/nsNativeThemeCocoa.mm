@@ -773,26 +773,17 @@ static void DrawCellWithSnapping(NSCell* cell, CGContextRef cgContext, const HIR
 + (CUIRendererRef)coreUIRenderer;
 @end
 
-static id GetAppAppearance() {
-  
-  
-  
-  
-  return MOZGlobalAppearance.sharedInstance.effectiveAppearance;
-}
-
 @interface NSObject (NSAppearanceCoreUIRendering)
 - (void)_drawInRect:(CGRect)rect context:(CGContextRef)cgContext options:(id)options;
 @end
 
 static void RenderWithCoreUI(CGRect aRect, CGContextRef cgContext, NSDictionary* aOptions,
                              bool aSkipAreaCheck = false) {
-  NSAppearance* appearance = GetAppAppearance();
-
   if (!aSkipAreaCheck && aRect.size.width * aRect.size.height > BITMAP_MAX_AREA) {
     return;
   }
 
+  NSAppearance* appearance = NSAppearance.currentAppearance;
   if (appearance && [appearance respondsToSelector:@selector(_drawInRect:context:options:)]) {
     
     
@@ -2669,17 +2660,14 @@ nsNativeThemeCocoa::DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
 void nsNativeThemeCocoa::RenderWidget(const WidgetInfo& aWidgetInfo, DrawTarget& aDrawTarget,
                                       const gfx::Rect& aWidgetRect, const gfx::Rect& aDirtyRect,
                                       float aScale) {
-  if (@available(macOS 10.14, *)) {
-    
-    
-    
-    NSAppearance.currentAppearance = GetAppAppearance();
+  
+  
+  NSAppearance.currentAppearance = MOZGlobalAppearance.sharedInstance.effectiveAppearance;
 
-    
-    
-    if (mCellDrawWindow) {
-      mCellDrawWindow.appearance = NSAppearance.currentAppearance;
-    }
+  
+  
+  if (mCellDrawWindow) {
+    mCellDrawWindow.appearance = NSAppearance.currentAppearance;
   }
 
   const Widget widget = aWidgetInfo.Widget();
@@ -2879,7 +2867,6 @@ void nsNativeThemeCocoa::RenderWidget(const WidgetInfo& aWidgetInfo, DrawTarget&
         }
         case Widget::eListBox: {
           
-          NSAppearance.currentAppearance = GetAppAppearance();
           CGContextSetFillColorWithColor(cgContext, [NSColor.controlColor CGColor]);
           CGContextFillRect(cgContext, macRect);
           
