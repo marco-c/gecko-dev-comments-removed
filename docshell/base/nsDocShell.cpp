@@ -8826,17 +8826,15 @@ bool nsDocShell::IsSameDocumentNavigation(nsDocShellLoadState* aLoadState,
       
       
       
-      if (!aState.mSameExceptHashes) {
-        nsCOMPtr<nsIChannel> docChannel = GetCurrentDocChannel();
-        if (docChannel) {
-          nsCOMPtr<nsILoadInfo> docLoadInfo = docChannel->LoadInfo();
-          if (!docLoadInfo->GetLoadErrorPage()) {
-            if (nsHTTPSOnlyUtils::IsEqualURIExceptSchemeAndRef(
-                    currentExposableURI, aLoadState->URI(), docLoadInfo)) {
-              aState.mSameExceptHashes = true;
-            }
-          }
-        }
+      nsCOMPtr<nsIChannel> docChannel = GetCurrentDocChannel();
+      nsCOMPtr<nsILoadInfo> loadInfo;
+      if (docChannel) {
+        loadInfo = docChannel->LoadInfo();
+      }
+      if (!aState.mSameExceptHashes &&
+          nsHTTPSOnlyUtils::IsEqualURIExceptSchemeAndRef(
+              currentExposableURI, aLoadState->URI(), loadInfo)) {
+        aState.mSameExceptHashes = true;
       }
     }
   }
