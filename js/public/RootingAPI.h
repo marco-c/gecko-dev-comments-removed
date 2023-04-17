@@ -941,6 +941,13 @@ struct MapTypeToRootKind<detail::RootListEntry*> {
   static const RootKind kind = RootKind::Traceable;
 };
 
+
+
+
+template <>
+struct GCPolicy<detail::RootListEntry*>
+    : public IgnoreGCPolicy<detail::RootListEntry*> {};
+
 using RootedListHeads =
     mozilla::EnumeratedArray<RootKind, RootKind::Limit,
                              Rooted<detail::RootListEntry*>*>;
