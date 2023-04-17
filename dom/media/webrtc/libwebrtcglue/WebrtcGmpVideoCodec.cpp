@@ -95,6 +95,23 @@ static int GmpFrameTypeToWebrtcFrameType(GMPVideoFrameType aIn,
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
+static int SizeNumBytes(GMPBufferType aBufferType) {
+  switch (aBufferType) {
+    case GMP_BufferSingle:
+      return 0;
+    case GMP_BufferLength8:
+      return 1;
+    case GMP_BufferLength16:
+      return 2;
+    case GMP_BufferLength24:
+      return 3;
+    case GMP_BufferLength32:
+      return 4;
+    default:
+      MOZ_CRASH("Unexpected buffer type");
+  }
+}
+
 int32_t WebrtcGmpVideoEncoder::InitEncode(
     const webrtc::VideoCodec* aCodecSettings,
     const webrtc::VideoEncoder::Settings& aSettings) {
@@ -471,158 +488,114 @@ void WebrtcGmpVideoEncoder::Encoded(
     GMPVideoEncodedFrame* aEncodedFrame,
     const nsTArray<uint8_t>& aCodecSpecificInfo) {
   MutexAutoLock lock(mCallbackMutex);
-  if (mCallback) {
-    webrtc::VideoFrameType ft;
-    GmpFrameTypeToWebrtcFrameType(aEncodedFrame->FrameType(), &ft);
-    uint32_t timestamp = (aEncodedFrame->TimeStamp() * 90ll + 999) / 1000;
+  if (!mCallback) {
+    return;
+  }
 
-    GMP_LOG_DEBUG("GMP Encoded: %" PRIu64 ", type %d, len %d",
-                  aEncodedFrame->TimeStamp(), aEncodedFrame->BufferType(),
-                  aEncodedFrame->Size());
+  webrtc::VideoFrameType ft;
+  GmpFrameTypeToWebrtcFrameType(aEncodedFrame->FrameType(), &ft);
+  uint32_t timestamp = (aEncodedFrame->TimeStamp() * 90ll + 999) / 1000;
 
-    
-    
-    
-    
-    uint8_t* buffer = aEncodedFrame->Buffer();
+  GMP_LOG_DEBUG("GMP Encoded: %" PRIu64 ", type %d, len %d",
+                aEncodedFrame->TimeStamp(), aEncodedFrame->BufferType(),
+                aEncodedFrame->Size());
 
-    if (!buffer) {
-      GMP_LOG_ERROR("GMP plugin returned null buffer");
+  if (!aEncodedFrame->Buffer()) {
+    GMP_LOG_ERROR("GMP plugin returned null buffer");
+    return;
+  }
+
+  
+  
+  
+
+  const int sizeNumBytes = SizeNumBytes(aEncodedFrame->BufferType());
+  uint32_t unitOffset = 0;
+  uint32_t unitSize = 0;
+  
+  while (unitOffset + sizeNumBytes < aEncodedFrame->Size()) {
+    uint8_t* unitBuffer = aEncodedFrame->Buffer() + unitOffset;
+    switch (aEncodedFrame->BufferType()) {
+      case GMP_BufferLength24: {
+#if MOZ_LITTLE_ENDIAN()
+        unitSize = (static_cast<uint32_t>(*unitBuffer)) |
+                   (static_cast<uint32_t>(*(unitBuffer + 1)) << 8) |
+                   (static_cast<uint32_t>(*(unitBuffer + 2)) << 16);
+#else
+        unitSize = (static_cast<uint32_t>(*unitBuffer) << 16) |
+                   (static_cast<uint32_t>(*(unitBuffer + 1)) << 8) |
+                   (static_cast<uint32_t>(*(unitBuffer + 2)));
+#endif
+        const uint8_t startSequence[] = {0, 0, 1};
+        if (memcmp(unitBuffer, startSequence, 3) == 0) {
+          
+          
+          
+          
+          unitSize = aEncodedFrame->Size() - 3;
+          break;
+        }
+        memcpy(unitBuffer, startSequence, 3);
+        break;
+      }
+      case GMP_BufferLength32: {
+#if MOZ_LITTLE_ENDIAN()
+        unitSize = LittleEndian::readUint32(unitBuffer);
+#else
+        unitSize = BigEndian::readUint32(unitBuffer);
+#endif
+        const uint8_t startSequence[] = {0, 0, 0, 1};
+        if (memcmp(unitBuffer, startSequence, 4) == 0) {
+          
+          
+          
+          
+          unitSize = aEncodedFrame->Size() - 4;
+          break;
+        }
+        memcpy(unitBuffer, startSequence, 4);
+        break;
+      }
+      default:
+        GMP_LOG_ERROR("GMP plugin returned type we cannot handle (%d)",
+                      aEncodedFrame->BufferType());
+        return;
+    }
+
+    MOZ_ASSERT(unitSize != 0);
+    MOZ_ASSERT(unitOffset + sizeNumBytes + unitSize <= aEncodedFrame->Size());
+    if (unitSize == 0 ||
+        unitOffset + sizeNumBytes + unitSize > aEncodedFrame->Size()) {
+      
+      GMP_LOG_ERROR(
+          "GMP plugin returned badly formatted encoded data: "
+          "unitOffset=%u, sizeNumBytes=%d, unitSize=%u, size=%u",
+          unitOffset, sizeNumBytes, unitSize, aEncodedFrame->Size());
       return;
     }
 
-    uint8_t* end = aEncodedFrame->Buffer() + aEncodedFrame->Size();
-    size_t size_bytes;
-    switch (aEncodedFrame->BufferType()) {
-      case GMP_BufferSingle:
-        size_bytes = 0;
-        break;
-      case GMP_BufferLength8:
-        size_bytes = 1;
-        break;
-      case GMP_BufferLength16:
-        size_bytes = 2;
-        break;
-      case GMP_BufferLength24:
-        size_bytes = 3;
-        break;
-      case GMP_BufferLength32:
-        size_bytes = 4;
-        break;
-      default:
-        
-        GMP_LOG_ERROR("GMP plugin returned incorrect type (%d)",
-                      aEncodedFrame->BufferType());
-        
-        
-        return;
-    }
-
-    struct nal_entry {
-      uint32_t offset;
-      uint32_t size;
-    };
-    AutoTArray<nal_entry, 1> nals;
-    uint32_t size = 0;
-    
-    while (buffer + size_bytes < end) {
-      switch (aEncodedFrame->BufferType()) {
-        case GMP_BufferSingle:
-          size = aEncodedFrame->Size();
-          break;
-        case GMP_BufferLength8:
-          size = *buffer++;
-          break;
-        case GMP_BufferLength16:
-
-#if MOZ_LITTLE_ENDIAN()
-          size = LittleEndian::readUint16(buffer);
-#else
-          size = BigEndian::readUint16(buffer);
-#endif
-          buffer += 2;
-          break;
-        case GMP_BufferLength24:
-          
-          
-          
-          size = ((uint32_t)*buffer) | (((uint32_t) * (buffer + 1)) << 8) |
-                 (((uint32_t) * (buffer + 2)) << 16);
-          buffer += 3;
-          break;
-        case GMP_BufferLength32:
-
-#if MOZ_LITTLE_ENDIAN()
-          size = LittleEndian::readUint32(buffer);
-#else
-          size = BigEndian::readUint32(buffer);
-#endif
-          buffer += 4;
-          break;
-        default:
-          MOZ_CRASH("GMP_BufferType already handled in switch above");
-      }
-
-      
-      
-      
-      
-      
-      if (size == 0x01000000) {
-        return;
-      }
-
-      MOZ_ASSERT(size != 0 &&
-                 buffer + size <=
-                     end);  
-      if (size == 0 || buffer + size > end) {
-        
-        
-        GMP_LOG_ERROR(
-            "GMP plugin returned badly formatted encoded "
-            "data: buffer=%p, size=%d, end=%p",
-            buffer, size, end);
-        return;
-      }
-      
-      nal_entry nal = {((uint32_t)(buffer - aEncodedFrame->Buffer())),
-                       (uint32_t)size};
-      nals.AppendElement(nal);
-      buffer += size;
-      
-    }
-    if (buffer != end) {
-      
-      GMP_LOG_DEBUG("GMP plugin returned %td extra bytes", end - buffer);
-    }
-
-    size_t num_nals = nals.Length();
-    if (num_nals > 0) {
-      
-
-
-
-
-
-
-
-
-
-
-      webrtc::EncodedImage unit(aEncodedFrame->Buffer(), size, size);
-      unit._frameType = ft;
-      unit.SetTimestamp(timestamp);
-      
-      unit.capture_time_ms_ = -1;
-      unit._completeFrame = true;
-
-      
-      
-      
-      
-      mCallback->OnEncodedImage(unit, &mCodecSpecificInfo);
-    }
+    unitOffset += sizeNumBytes + unitSize;
   }
+
+  if (unitOffset != aEncodedFrame->Size()) {
+    
+    GMP_LOG_DEBUG("GMP plugin returned %u extra bytes",
+                  aEncodedFrame->Size() - unitOffset);
+  }
+
+  webrtc::EncodedImage unit(aEncodedFrame->Buffer(), aEncodedFrame->Size(),
+                            aEncodedFrame->Size());
+  unit._frameType = ft;
+  unit.SetTimestamp(timestamp);
+  
+  unit.capture_time_ms_ = -1;
+  unit._completeFrame = true;
+
+  
+  
+  
+  
+  mCallback->OnEncodedImage(unit, &mCodecSpecificInfo);
 }
 
 
