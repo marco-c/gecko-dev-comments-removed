@@ -114,10 +114,6 @@ class CCGCScheduler {
 
   
   
-  static inline TimeStamp Now();
-
-  
-  
   
   static inline uint32_t SuspectedCCObjects();
 
@@ -151,7 +147,7 @@ class CCGCScheduler {
   void PokeGC(JS::GCReason aReason, JSObject* aObj, uint32_t aDelay = 0);
   void PokeShrinkingGC();
   void PokeFullGC();
-  void MaybePokeCC();
+  void MaybePokeCC(TimeStamp aNow);
 
   void UserIsInactive();
   void UserIsActive();
@@ -299,8 +295,8 @@ class CCGCScheduler {
 
   
   
-  void NoteForgetSkippableOnlyCycle() {
-    mLastForgetSkippableCycleEndTime = Now();
+  void NoteForgetSkippableOnlyCycle(TimeStamp aNow) {
+    mLastForgetSkippableCycleEndTime = aNow;
   }
 
   void Shutdown() {
@@ -316,6 +312,7 @@ class CCGCScheduler {
   inline js::SliceBudget ComputeCCSliceBudget(TimeStamp aDeadline,
                                               TimeStamp aCCBeginTime,
                                               TimeStamp aPrevSliceEndTime,
+                                              TimeStamp aNow,
                                               bool* aPreferShorterSlices) const;
 
   inline TimeDuration ComputeInterSliceGCBudget(TimeStamp aDeadline,
@@ -332,7 +329,7 @@ class CCGCScheduler {
   
   
   
-  bool IsCCNeeded(TimeStamp aNow = Now()) const {
+  bool IsCCNeeded(TimeStamp aNow) const {
     if (mNeedsFullCC) {
       return true;
     }
@@ -342,7 +339,7 @@ class CCGCScheduler {
             aNow - mLastCCEndTime > kCCForced);
   }
 
-  inline bool ShouldScheduleCC() const;
+  inline bool ShouldScheduleCC(TimeStamp aNow) const;
 
   
   
@@ -397,7 +394,7 @@ class CCGCScheduler {
 
   inline GCRunnerStep GetNextGCRunnerAction(TimeStamp aDeadline);
 
-  inline CCRunnerStep AdvanceCCRunner(TimeStamp aDeadline);
+  inline CCRunnerStep AdvanceCCRunner(TimeStamp aDeadline, TimeStamp aNow);
 
   
   
@@ -465,14 +462,12 @@ class CCGCScheduler {
 
 js::SliceBudget CCGCScheduler::ComputeCCSliceBudget(
     TimeStamp aDeadline, TimeStamp aCCBeginTime, TimeStamp aPrevSliceEndTime,
-    bool* aPreferShorterSlices) const {
-  TimeStamp now = Now();
-
+    TimeStamp aNow, bool* aPreferShorterSlices) const {
   *aPreferShorterSlices =
-      aDeadline.IsNull() || (aDeadline - now) < kICCSliceBudget;
+      aDeadline.IsNull() || (aDeadline - aNow) < kICCSliceBudget;
 
   TimeDuration baseBudget =
-      aDeadline.IsNull() ? kICCSliceBudget : aDeadline - now;
+      aDeadline.IsNull() ? kICCSliceBudget : aDeadline - aNow;
 
   if (aCCBeginTime.IsNull()) {
     
@@ -481,8 +476,8 @@ js::SliceBudget CCGCScheduler::ComputeCCSliceBudget(
   }
 
   
-  MOZ_ASSERT(now >= aCCBeginTime);
-  TimeDuration runningTime = now - aCCBeginTime;
+  MOZ_ASSERT(aNow >= aCCBeginTime);
+  TimeDuration runningTime = aNow - aCCBeginTime;
   if (runningTime >= kMaxICCDuration) {
     return js::SliceBudget::unlimited();
   }
@@ -491,8 +486,9 @@ js::SliceBudget CCGCScheduler::ComputeCCSliceBudget(
       TimeDuration::FromMilliseconds(MainThreadIdlePeriod::GetLongIdlePeriod());
 
   
-  MOZ_ASSERT(now >= aPrevSliceEndTime);
-  double sliceDelayMultiplier = (now - aPrevSliceEndTime) / kICCIntersliceDelay;
+  MOZ_ASSERT(aNow >= aPrevSliceEndTime);
+  double sliceDelayMultiplier =
+      (aNow - aPrevSliceEndTime) / kICCIntersliceDelay;
   TimeDuration delaySliceBudget =
       std::min(baseBudget.MultDouble(sliceDelayMultiplier), maxSlice);
 
@@ -529,16 +525,14 @@ inline TimeDuration CCGCScheduler::ComputeInterSliceGCBudget(
   return std::max(budget, maxSliceGCBudget.MultDouble(percentOfBlockedTime));
 }
 
-bool CCGCScheduler::ShouldScheduleCC() const {
+bool CCGCScheduler::ShouldScheduleCC(TimeStamp aNow) const {
   if (!mHasRunGC) {
     return false;
   }
 
-  TimeStamp now = Now();
-
   
   if (mCleanupsSinceLastGC && !mLastCCEndTime.IsNull()) {
-    if (now - mLastCCEndTime < kCCDelay) {
+    if (aNow - mLastCCEndTime < kCCDelay) {
       return false;
     }
   }
@@ -547,16 +541,17 @@ bool CCGCScheduler::ShouldScheduleCC() const {
   
   if ((mCleanupsSinceLastGC > kMajorForgetSkippableCalls) &&
       !mLastForgetSkippableCycleEndTime.IsNull()) {
-    if (now - mLastForgetSkippableCycleEndTime <
+    if (aNow - mLastForgetSkippableCycleEndTime <
         kTimeBetweenForgetSkippableCycles) {
       return false;
     }
   }
 
-  return IsCCNeeded(now);
+  return IsCCNeeded(aNow);
 }
 
-CCRunnerStep CCGCScheduler::AdvanceCCRunner(TimeStamp aDeadline) {
+CCRunnerStep CCGCScheduler::AdvanceCCRunner(TimeStamp aDeadline,
+                                            TimeStamp aNow) {
   struct StateDescriptor {
     
     
@@ -596,11 +591,9 @@ CCRunnerStep CCGCScheduler::AdvanceCCRunner(TimeStamp aDeadline) {
     return {CCRunnerAction::StopRunning, Yield};
   }
 
-  TimeStamp now = Now();
-
   if (InIncrementalGC()) {
     if (mCCBlockStart.IsNull()) {
-      BlockCC(now);
+      BlockCC(aNow);
 
       
       
@@ -621,7 +614,7 @@ CCRunnerStep CCGCScheduler::AdvanceCCRunner(TimeStamp aDeadline) {
       return {CCRunnerAction::None, Yield};
     }
 
-    if (GetCCBlockedTime(now) < kMaxCCLockedoutTime) {
+    if (GetCCBlockedTime(aNow) < kMaxCCLockedoutTime) {
       return {CCRunnerAction::None, Yield};
     }
 
@@ -632,11 +625,11 @@ CCRunnerStep CCGCScheduler::AdvanceCCRunner(TimeStamp aDeadline) {
   
   
   
-  if (desc.mCanAbortCC && !IsCCNeeded(now)) {
+  if (desc.mCanAbortCC && !IsCCNeeded(aNow)) {
     
     
     mCCRunnerState = CCRunnerState::Canceled;
-    NoteForgetSkippableOnlyCycle();
+    NoteForgetSkippableOnlyCycle(aNow);
 
     
     
@@ -699,7 +692,7 @@ CCRunnerStep CCGCScheduler::AdvanceCCRunner(TimeStamp aDeadline) {
       
 
       
-      if (now >= aDeadline) {
+      if (aNow >= aDeadline) {
         mCCRunnerState = CCRunnerState::StartCycleCollection;
         return {CCRunnerAction::None, Yield};
       }
@@ -715,7 +708,7 @@ CCRunnerStep CCGCScheduler::AdvanceCCRunner(TimeStamp aDeadline) {
       
       
       mCCRunnerState = CCRunnerState::StartCycleCollection;
-      if (now >= aDeadline) {
+      if (aNow >= aDeadline) {
         
         return {CCRunnerAction::None, Yield};
       }

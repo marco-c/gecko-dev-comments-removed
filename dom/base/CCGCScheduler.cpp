@@ -11,8 +11,6 @@
 namespace mozilla {
 
 
-TimeStamp CCGCScheduler::Now() { return TimeStamp::Now(); }
-
 uint32_t CCGCScheduler::SuspectedCCObjects() {
   return nsCycleCollector_suspectedCount();
 }
@@ -332,12 +330,12 @@ void CCGCScheduler::EnsureCCRunner(TimeDuration aDelay, TimeDuration aBudget) {
   }
 }
 
-void CCGCScheduler::MaybePokeCC() {
+void CCGCScheduler::MaybePokeCC(TimeStamp aNow) {
   if (mCCRunner || mDidShutdown) {
     return;
   }
 
-  if (ShouldScheduleCC()) {
+  if (ShouldScheduleCC(aNow)) {
     
     nsCycleCollector_dispatchDeferredDeletion();
 
