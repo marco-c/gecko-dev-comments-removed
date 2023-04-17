@@ -4,14 +4,22 @@
 
 
 
+
+
 const INT32_MAX = 2**31 - 1;
-const tooLarge = INT32_MAX + 1;
+const EIGHTGB = 8 * 1024 * 1024 * 1024;
+
+function tooLarge(elementSize) {
+    if (largeArrayBufferEnabled()) {
+        return (EIGHTGB / elementSize) + 1;
+    }
+    return (INT32_MAX + 1) / elementSize;
+}
 
 
 for (let TA of typedArrayConstructors) {
-    assertThrowsInstanceOf(() => new TA(tooLarge), RangeError);
-    assertEq(tooLarge % TA.BYTES_PER_ELEMENT, 0);
-    assertThrowsInstanceOf(() => new TA(tooLarge / TA.BYTES_PER_ELEMENT), RangeError);
+    assertThrowsInstanceOf(() => new TA(tooLarge(1)), RangeError);
+    assertThrowsInstanceOf(() => new TA(tooLarge(TA.BYTES_PER_ELEMENT)), RangeError);
 }
 
 
@@ -24,8 +32,8 @@ for (let TA of typedArrayConstructors) {
 
 
 for (let TA of typedArrayConstructors) {
-    assertThrowsInstanceOf(() => new TA({length: tooLarge}), RangeError);
-    assertThrowsInstanceOf(() => new TA({length: tooLarge / TA.BYTES_PER_ELEMENT}), RangeError);
+    assertThrowsInstanceOf(() => new TA({length: tooLarge(1)}), RangeError);
+    assertThrowsInstanceOf(() => new TA({length: tooLarge(TA.BYTES_PER_ELEMENT)}), RangeError);
 }
 
 if (typeof reportCompare === "function")
