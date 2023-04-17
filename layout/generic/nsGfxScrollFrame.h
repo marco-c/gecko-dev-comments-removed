@@ -68,6 +68,18 @@ class ScrollFrameHelper : public nsIReflowCallback {
 
   bool IsForTextControlWithNoScrollbars() const;
 
+  enum class AnonymousContentType {
+    VerticalScrollbar,
+    HorizontalScrollbar,
+    Resizer,
+  };
+  EnumSet<AnonymousContentType> GetNeededAnonymousContent() const;
+  EnumSet<AnonymousContentType> GetCurrentAnonymousContent() const;
+
+  bool HasAllNeededScrollbars() const {
+    return GetCurrentAnonymousContent().contains(GetNeededAnonymousContent());
+  }
+
   
   
   
@@ -625,8 +637,6 @@ class ScrollFrameHelper : public nsIReflowCallback {
 
   bool mAllowScrollOriginDowngrade : 1;
   bool mHadDisplayPortAtLastFrameUpdate : 1;
-  bool mNeverHasVerticalScrollbar : 1;
-  bool mNeverHasHorizontalScrollbar : 1;
   bool mHasVerticalScrollbar : 1;
   bool mHasHorizontalScrollbar : 1;
   
@@ -903,6 +913,9 @@ class nsHTMLScrollFrame : public nsContainerFrame,
   }
   bool IsForTextControlWithNoScrollbars() const final {
     return mHelper.IsForTextControlWithNoScrollbars();
+  }
+  bool HasAllNeededScrollbars() const final {
+    return mHelper.HasAllNeededScrollbars();
   }
   mozilla::layers::OverscrollBehaviorInfo GetOverscrollBehaviorInfo()
       const final {
@@ -1384,6 +1397,9 @@ class nsXULScrollFrame final : public nsBoxFrame,
   }
   bool IsForTextControlWithNoScrollbars() const final {
     return mHelper.IsForTextControlWithNoScrollbars();
+  }
+  bool HasAllNeededScrollbars() const final {
+    return mHelper.HasAllNeededScrollbars();
   }
   mozilla::layers::OverscrollBehaviorInfo GetOverscrollBehaviorInfo()
       const final {
