@@ -209,7 +209,7 @@ class MOZ_STACK_CLASS mozInlineSpellWordUtil {
                                  bool aSearchForward) const;
 
   
-  void BuildSoftText();
+  void AdjustSoftBeginAndBuildSoftText();
 
   mozilla::Result<RealWords, nsresult> BuildRealWords() const;
 
