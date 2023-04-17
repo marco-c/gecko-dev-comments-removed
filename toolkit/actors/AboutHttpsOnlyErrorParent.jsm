@@ -22,6 +22,9 @@ class AboutHttpsOnlyErrorParent extends JSWindowActorParent {
       case "goBack":
         this.goBackFromErrorPage(this.browser);
         break;
+      case "openInsecure":
+        this.openWebsiteInsecure(this.browser, aMessage.data.inFrame);
+        break;
     }
   }
 
@@ -35,6 +38,68 @@ class AboutHttpsOnlyErrorParent extends JSWindowActorParent {
     } else {
       aBrowser.goBack();
     }
+  }
+
+  openWebsiteInsecure(aBrowser, aIsIFrame) {
+    
+    
+    const currentURI = aBrowser.currentURI;
+    const isViewSource = currentURI.schemeIs("view-source");
+
+    let innerURI = isViewSource
+      ? currentURI.QueryInterface(Ci.nsINestedURI).innerURI
+      : currentURI;
+
+    if (!innerURI.schemeIs("https") && !innerURI.schemeIs("http")) {
+      
+      throw new Error(
+        "Exceptions can only be created for http or https sites."
+      );
+    }
+
+    
+    
+    
+    
+    
+    let newURI = aIsIFrame
+      ? innerURI
+      : innerURI
+          .mutate()
+          .setScheme("http")
+          .finalize();
+
+    const oldOriginAttributes = aBrowser.contentPrincipal.originAttributes;
+    const hasFpiAttribute = !!oldOriginAttributes.firstPartyDomain.length;
+
+    
+    
+    
+    let principal = Services.scriptSecurityManager.createContentPrincipal(
+      newURI,
+      {
+        ...oldOriginAttributes,
+        firstPartyDomain: hasFpiAttribute
+          ? Services.eTLD.getBaseDomain(newURI)
+          : "",
+      }
+    );
+
+    
+    Services.perms.addFromPrincipal(
+      principal,
+      "https-only-load-insecure",
+      Ci.nsIHttpsOnlyModePermission.LOAD_INSECURE_ALLOW_SESSION,
+      Ci.nsIPermissionManager.EXPIRE_SESSION
+    );
+
+    const insecureSpec = isViewSource
+      ? `view-source:${newURI.spec}`
+      : newURI.spec;
+    aBrowser.loadURI(insecureSpec, {
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+      loadFlags: Ci.nsIWebNavigation.LOAD_FLAGS_REPLACE_HISTORY,
+    });
   }
 
   getDefaultHomePage(win) {

@@ -2246,13 +2246,6 @@ class Document : public nsINode,
 
 
 
-  static bool CallerIsTrustedAboutHttpsOnlyError(JSContext* aCx,
-                                                 JSObject* aObject);
-
-  
-
-
-
   void GetNetErrorInfo(mozilla::dom::NetErrorInfo& aInfo, ErrorResult& aRv);
 
   
@@ -4004,8 +3997,6 @@ class Document : public nsINode,
       nsIPrincipal* aPrincipal);
 
   already_AddRefed<Promise> AddCertException(bool aIsTemporary);
-
-  void ReloadWithHttpsOnlyException();
 
   
   

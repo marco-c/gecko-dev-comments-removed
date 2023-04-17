@@ -46,7 +46,7 @@ public class WebRequestError extends Exception {
             ERROR_PROXY_CONNECTION_REFUSED, ERROR_FILE_NOT_FOUND,
             ERROR_FILE_ACCESS_DENIED, ERROR_INVALID_CONTENT_ENCODING,
             ERROR_UNSAFE_CONTENT_TYPE, ERROR_CORRUPTED_CONTENT,
-            ERROR_DATA_URI_TOO_LONG, ERROR_HTTPS_ONLY})
+            ERROR_DATA_URI_TOO_LONG})
      @interface Error {}
 
     
@@ -133,15 +133,6 @@ public class WebRequestError extends Exception {
 
 
     public static final int ERROR_NET_RESET = 0x93;
-
-    
-
-
-
-
-
-
-    public static final int ERROR_HTTPS_ONLY = 0xA3;
 
     
     
@@ -362,9 +353,6 @@ public class WebRequestError extends Exception {
         }
         if (geckoError == 0x804B001FL) {
             return ERROR_REDIRECT_LOOP;
-        }
-        if (geckoError == 0x804B0056L) {
-            return ERROR_HTTPS_ONLY;
         }
         if (geckoError == 0x804B0010L) {
             return ERROR_OFFLINE;
