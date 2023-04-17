@@ -52,9 +52,6 @@ pref("dom.storageManager.enabled", true);
 pref("dom.storage.next_gen", true);
 
 
-pref("dom.visualviewport.enabled", true);
-
-
 pref("intl.locale.requested", "");
 
 

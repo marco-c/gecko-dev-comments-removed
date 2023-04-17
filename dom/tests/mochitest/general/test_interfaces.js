@@ -1260,7 +1260,7 @@ var interfaceNamesInGlobalScope = [
   
   { name: "VideoPlaybackQuality", insecureContext: true },
   
-  { name: "VisualViewport", insecureContext: true, android: true },
+  { name: "VisualViewport", insecureContext: true },
   
   { name: "VRDisplay", releaseNonWindowsAndMac: false },
   
