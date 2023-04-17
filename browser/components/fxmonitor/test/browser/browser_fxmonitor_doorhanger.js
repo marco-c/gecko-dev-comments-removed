@@ -76,7 +76,7 @@ add_task(async function setup() {
   
   
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.proton.enabled", false]],
+    set: [["browser.proton.doorhangers.enabled", false]],
   });
 });
 
@@ -310,7 +310,7 @@ add_task(async function test_proton_disabled() {
 
   
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.proton.enabled", true]],
+    set: [["browser.proton.doorhangers.enabled", true]],
   });
 
   

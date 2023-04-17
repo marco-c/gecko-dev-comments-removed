@@ -211,7 +211,7 @@ function checkPopup(popup, notifyObj) {
   
   
   if (
-    !gProton ||
+    !gProtonDoorhangers ||
     notifyObj.options.popupIconURL ||
     notifyObj.options.popupIconClass
   ) {

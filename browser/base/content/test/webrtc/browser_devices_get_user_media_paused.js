@@ -333,7 +333,7 @@ var gTests = [
       let notification = PopupNotifications.panel.firstElementChild;
 
       
-      if (!gProton) {
+      if (!gProtonDoorhangers) {
         let iconclass = notification.getAttribute("iconclass");
         ok(iconclass.includes("screen-icon"), "panel using screen icon");
       }
