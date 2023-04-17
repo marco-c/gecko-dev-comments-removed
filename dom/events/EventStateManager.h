@@ -536,11 +536,11 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   
 
 
-  typedef enum {
+  enum ProcessingAccessKeyState {
     eAccessKeyProcessingNormal = 0,
     eAccessKeyProcessingUp,
     eAccessKeyProcessingDown
-  } ProcessingAccessKeyState;
+  };
 
   
 

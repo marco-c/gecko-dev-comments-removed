@@ -37,8 +37,8 @@ class EventTarget;
 class Element;
 }  
 
-typedef dom::CallbackObjectHolder<dom::EventListener, nsIDOMEventListener>
-    EventListenerHolder;
+using EventListenerHolder =
+    dom::CallbackObjectHolder<dom::EventListener, nsIDOMEventListener>;
 
 struct EventListenerFlags {
   friend class EventListenerManager;
