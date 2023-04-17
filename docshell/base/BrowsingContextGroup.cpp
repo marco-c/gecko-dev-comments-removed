@@ -38,6 +38,14 @@ already_AddRefed<BrowsingContextGroup> BrowsingContextGroup::GetOrCreate(
       aId, [&aId] { return do_AddRef(new BrowsingContextGroup(aId)); }));
 }
 
+already_AddRefed<BrowsingContextGroup> BrowsingContextGroup::GetExisting(
+    uint64_t aId) {
+  if (sBrowsingContextGroups) {
+    return do_AddRef(sBrowsingContextGroups->Get(aId));
+  }
+  return nullptr;
+}
+
 already_AddRefed<BrowsingContextGroup> BrowsingContextGroup::Create() {
   return GetOrCreate(nsContentUtils::GenerateBrowsingContextId());
 }
@@ -109,7 +117,7 @@ static void CollectContextInitializers(
   
   for (auto& context : aContexts) {
     aInits.AppendElement(context->GetIPCInitializer());
-    for (auto& window : context->GetWindowContexts()) {
+    for (const auto& window : context->GetWindowContexts()) {
       aInits.AppendElement(window->GetIPCInitializer());
       CollectContextInitializers(window->Children(), aInits);
     }
@@ -235,7 +243,7 @@ void BrowsingContextGroup::Destroy() {
   
   
   
-  for (auto& entry : mHosts.Values()) {
+  for (const auto& entry : mHosts.Values()) {
     entry->RemoveBrowsingContextGroup(this);
   }
   for (const auto& key : mSubscribers) {
@@ -251,27 +259,37 @@ void BrowsingContextGroup::Destroy() {
 
 void BrowsingContextGroup::AddKeepAlive() {
   MOZ_DIAGNOSTIC_ASSERT(!mDestroyed);
+  MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess());
   mKeepAliveCount++;
 }
 
 void BrowsingContextGroup::RemoveKeepAlive() {
   MOZ_DIAGNOSTIC_ASSERT(!mDestroyed);
   MOZ_DIAGNOSTIC_ASSERT(mKeepAliveCount > 0);
+  MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess());
   mKeepAliveCount--;
 
   MaybeDestroy();
 }
 
 void BrowsingContextGroup::MaybeDestroy() {
-  if (mContexts.IsEmpty() && mKeepAliveCount == 0 && this != sChromeGroup) {
-    
-    
+  
+  
+  
+  if (XRE_IsParentProcess() && mContexts.IsEmpty() && mKeepAliveCount == 0 &&
+      this != sChromeGroup) {
     Destroy();
 
     
     
-    
   }
+}
+
+void BrowsingContextGroup::ChildDestroy() {
+  MOZ_DIAGNOSTIC_ASSERT(XRE_IsContentProcess());
+  MOZ_DIAGNOSTIC_ASSERT(!mDestroyed);
+  MOZ_DIAGNOSTIC_ASSERT(mContexts.IsEmpty());
+  Destroy();
 }
 
 nsISupports* BrowsingContextGroup::GetParentObject() const {
