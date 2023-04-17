@@ -526,12 +526,6 @@ class InnerViewTable {
   friend class ArrayBufferObject;
 
  private:
-  struct MapGCPolicy {
-    static bool needsSweep(JSObject** key, ViewVector* value) {
-      return InnerViewTable::sweepEntry(key, *value);
-    }
-  };
-
   
   
   
@@ -540,8 +534,8 @@ class InnerViewTable {
   
   
   
-  using Map = GCHashMap<JSObject*, ViewVector, MovableCellHasher<JSObject*>,
-                        ZoneAllocPolicy, MapGCPolicy>;
+  using Map = GCHashMap<UnsafeBarePtr<JSObject*>, ViewVector,
+                        MovableCellHasher<JSObject*>, ZoneAllocPolicy>;
 
   
   
@@ -556,9 +550,6 @@ class InnerViewTable {
 
   
   bool nurseryKeysValid;
-
-  
-  static bool sweepEntry(JSObject** pkey, ViewVector& views);
 
   bool addView(JSContext* cx, ArrayBufferObject* buffer, JSObject* view);
   ViewVector* maybeViewsUnbarriered(ArrayBufferObject* obj);
