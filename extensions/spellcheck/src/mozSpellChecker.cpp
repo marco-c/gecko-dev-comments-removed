@@ -502,7 +502,12 @@ nsresult mozSpellChecker::SetupDoc(int32_t* outBlockOffset) {
         
         case TextServicesDocument::BlockSelectionStatus::eBlockPartial:
           
-          MOZ_ASSERT(selOffset != UINT32_MAX || selLength != UINT32_MAX);
+          if (NS_WARN_IF(selOffset == UINT32_MAX) ||
+              NS_WARN_IF(selLength == UINT32_MAX)) {
+            rv = mTextServicesDocument->FirstBlock();
+            *outBlockOffset = 0;
+            break;
+          }
           *outBlockOffset = AssertedCast<int32_t>(selOffset + selLength);
           break;
 
@@ -515,7 +520,12 @@ nsresult mozSpellChecker::SetupDoc(int32_t* outBlockOffset) {
 
         
         case TextServicesDocument::BlockSelectionStatus::eBlockContains:
-          MOZ_ASSERT(selOffset != UINT32_MAX || selLength != UINT32_MAX);
+          if (NS_WARN_IF(selOffset == UINT32_MAX) ||
+              NS_WARN_IF(selLength == UINT32_MAX)) {
+            rv = mTextServicesDocument->FirstBlock();
+            *outBlockOffset = 0;
+            break;
+          }
           *outBlockOffset = AssertedCast<int32_t>(selOffset + selLength);
           break;
 
