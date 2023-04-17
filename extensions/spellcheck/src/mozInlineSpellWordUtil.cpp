@@ -898,7 +898,7 @@ nsresult mozInlineSpellWordUtil::BuildRealWords() {
   for (int32_t i = 0; i < int32_t(mSoftText.Length()); ++i) {
     if (IsDOMWordSeparator(mSoftText.CharAt(i))) {
       if (wordStart >= 0) {
-        nsresult rv = SplitDOMWord(wordStart, i);
+        nsresult rv = SplitDOMWordAndAppendTo(wordStart, i, mRealWords);
         if (NS_FAILED(rv)) {
           return rv;
         }
@@ -911,7 +911,8 @@ nsresult mozInlineSpellWordUtil::BuildRealWords() {
     }
   }
   if (wordStart >= 0) {
-    nsresult rv = SplitDOMWord(wordStart, mSoftText.Length());
+    nsresult rv =
+        SplitDOMWordAndAppendTo(wordStart, mSoftText.Length(), mRealWords);
     if (NS_FAILED(rv)) {
       return rv;
     }
@@ -1088,7 +1089,8 @@ int32_t mozInlineSpellWordUtil::FindRealWordContaining(
 
 
 
-nsresult mozInlineSpellWordUtil::SplitDOMWord(int32_t aStart, int32_t aEnd) {
+nsresult mozInlineSpellWordUtil::SplitDOMWordAndAppendTo(
+    int32_t aStart, int32_t aEnd, nsTArray<RealWord>& aRealWords) const {
   nsDependentSubstring targetText(mSoftText, aStart, aEnd - aStart);
   WordSplitState<nsDependentSubstring> state(targetText);
   state.mCurCharClass = state.ClassifyCharacter(0, true);
@@ -1097,7 +1099,7 @@ nsresult mozInlineSpellWordUtil::SplitDOMWord(int32_t aStart, int32_t aEnd) {
   if (state.mCurCharClass != CHAR_CLASS_END_OF_INPUT && state.IsSpecialWord()) {
     int32_t specialWordLength =
         state.mDOMWordText.Length() - state.mDOMWordOffset;
-    if (!mRealWords.AppendElement(
+    if (!aRealWords.AppendElement(
             RealWord(aStart + state.mDOMWordOffset, specialWordLength, false),
             fallible)) {
       return NS_ERROR_OUT_OF_MEMORY;
@@ -1116,7 +1118,7 @@ nsresult mozInlineSpellWordUtil::SplitDOMWord(int32_t aStart, int32_t aEnd) {
     
     state.AdvanceThroughWord();
     int32_t wordLen = state.mDOMWordOffset - wordOffset;
-    if (!mRealWords.AppendElement(
+    if (!aRealWords.AppendElement(
             RealWord(aStart + wordOffset, wordLen,
                      !state.ShouldSkipWord(wordOffset, wordLen)),
             fallible)) {
