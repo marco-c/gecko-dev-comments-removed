@@ -1536,11 +1536,13 @@ var SessionStoreInternal = {
     });
 
     
-    mm.loadFrameScript(
-      "chrome://browser/content/content-sessionStore.js",
-      true,
-      true
-    );
+    if (!Services.appinfo.sessionHistoryInParent) {
+      mm.loadFrameScript(
+        "chrome://browser/content/content-sessionStore.js",
+        true,
+        true
+      );
+    }
 
     
     this._windows[aWindow.__SSi] = {

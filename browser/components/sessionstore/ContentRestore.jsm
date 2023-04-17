@@ -107,10 +107,6 @@ ContentRestoreInternal.prototype = {
 
 
   restoreHistory(tabData, loadArguments, callbacks) {
-    if (Services.appinfo.sessionHistoryInParent) {
-      throw new Error("This function should be unused with SHIP");
-    }
-
     this._tabData = tabData;
 
     
@@ -174,10 +170,6 @@ ContentRestoreInternal.prototype = {
 
 
   restoreTabContent(loadArguments, isRemotenessUpdate, finishCallback) {
-    if (Services.appinfo.sessionHistoryInParent) {
-      throw new Error("This function should be unused with SHIP");
-    }
-
     let tabData = this._tabData;
     this._tabData = null;
 
@@ -251,10 +243,6 @@ ContentRestoreInternal.prototype = {
 
 
   restoreTabContentStarted(finishCallback) {
-    if (Services.appinfo.sessionHistoryInParent) {
-      throw new Error("This function should be unused with SHIP");
-    }
-
     
     this._historyListener.uninstall();
     this._historyListener = null;

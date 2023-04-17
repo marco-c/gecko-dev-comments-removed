@@ -507,12 +507,15 @@ const MESSAGES = [
   "SessionStore:restoreTabContent",
   "SessionStore:resetRestore",
   "SessionStore:flush",
-  "SessionStore:becomeActiveProcess",
   "SessionStore:prepareForProcessChange",
 ];
 
 class ContentSessionStore {
   constructor(mm) {
+    if (Services.appinfo.sessionHistoryInParent) {
+      throw new Error("This frame script should not be loaded for SHIP");
+    }
+
     this.mm = mm;
     this.messageQueue = new MessageQueue(this);
 
@@ -520,16 +523,16 @@ class ContentSessionStore {
 
     this.contentRestoreInitialized = false;
 
-    this.handlers = [this.messageQueue];
-    if (!Services.appinfo.sessionHistoryInParent) {
-      this.handlers.push(new EventListener(this));
-      this.handlers.push(new SessionHistoryListener(this));
+    this.handlers = [
+      this.messageQueue,
+      new EventListener(this),
+      new SessionHistoryListener(this),
+    ];
 
-      XPCOMUtils.defineLazyGetter(this, "contentRestore", () => {
-        this.contentRestoreInitialized = true;
-        return new ContentRestore(mm);
-      });
-    }
+    XPCOMUtils.defineLazyGetter(this, "contentRestore", () => {
+      this.contentRestoreInitialized = true;
+      return new ContentRestore(mm);
+    });
 
     MESSAGES.forEach(m => mm.addMessageListener(m, this));
 
@@ -564,11 +567,6 @@ class ContentSessionStore {
       case "SessionStore:flush":
         this.flush(data);
         break;
-      case "SessionStore:becomeActiveProcess":
-        if (!Services.appinfo.sessionHistoryInParent) {
-          SessionHistoryListener.collect();
-        }
-        break;
       case "SessionStore:prepareForProcessChange":
         
         
@@ -588,9 +586,6 @@ class ContentSessionStore {
   restoreHistory(data) {
     let { epoch, tabData, loadArguments, isRemotenessUpdate } = data;
 
-    if (Services.appinfo.sessionHistoryInParent) {
-      throw new Error("This function should be unused with SHIP");
-    }
     this.contentRestore.restoreHistory(tabData, loadArguments, {
       
       
@@ -637,9 +632,6 @@ class ContentSessionStore {
   }
 
   restoreTabContent({ loadArguments, isRemotenessUpdate, reason }) {
-    if (Services.appinfo.sessionHistoryInParent) {
-      throw new Error("This function should be unused with SHIP");
-    }
     let epoch = this.epoch;
 
     
