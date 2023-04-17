@@ -2229,7 +2229,8 @@ class nsContentUtils {
       bool aAlt = false, bool aShift = false, bool aMeta = false,
       
       
-      uint16_t inputSource = 0 );
+      uint16_t inputSource = 0 ,
+      int16_t aButton = 0);
 
   static bool CheckMayLoad(nsIPrincipal* aPrincipal, nsIChannel* aChannel,
                            bool aAllowIfInheritsPrincipal);
