@@ -4,8 +4,6 @@
 
 
 
-
-
 const JITTER_ALLOWANCE_MS = 200;
 const LARGE_MESSAGE_COUNT = 16;
 
