@@ -12,7 +12,6 @@
 #include <utility>   
 
 #include "apz/src/APZCTreeManager.h"  
-#include "RenderTrace.h"              
 #include "base/process.h"             
 #include "gfxContext.h"               
 #include "gfxPlatform.h"              

@@ -9,7 +9,6 @@
 #include "CompositorBridgeParent.h"  
 #include "GLContext.h"               
 #include "Layers.h"                  
-#include "RenderTrace.h"             
 #include "mozilla/Assertions.h"      
 #include "mozilla/RefPtr.h"          
 #include "mozilla/layers/CompositorTypes.h"
