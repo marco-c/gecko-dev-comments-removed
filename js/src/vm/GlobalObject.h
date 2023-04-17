@@ -85,6 +85,9 @@ class GlobalObjectData {
   HeapPtr<PlainObject*> realmKeyObject;
 
   
+  HeapPtr<JSFunction*> throwTypeError;
+
+  
   HeapPtr<Shape*> arrayShape;
 
   
@@ -133,7 +136,6 @@ class GlobalObject : public NativeObject {
   enum : unsigned {
     
     EVAL = APPLICATION_SLOTS + STANDARD_CLASS_SLOTS,
-    THROWTYPEERROR,
 
     
     GLOBAL_DATA_SLOT,
