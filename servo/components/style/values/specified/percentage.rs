@@ -186,3 +186,11 @@ impl Parse for NonNegativePercentage {
         Ok(NonNegative(Percentage::parse_non_negative(context, input)?))
     }
 }
+
+impl NonNegativePercentage {
+    
+    #[inline]
+    pub fn compute(&self) -> ComputedPercentage {
+        ComputedPercentage(self.0.get())
+    }
+}
