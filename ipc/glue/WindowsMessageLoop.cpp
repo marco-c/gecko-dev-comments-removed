@@ -1101,7 +1101,7 @@ bool MessageChannel::WaitForInterruptNotify() {
     return WaitForSyncNotify(true);
   }
 
-  if (!InterruptStackDepth() && !AwaitingIncomingMessage()) {
+  if (!InterruptStackDepth()) {
     
     MOZ_CRASH("StackDepth() is 0 in call to MessageChannel::WaitForNotify!");
   }

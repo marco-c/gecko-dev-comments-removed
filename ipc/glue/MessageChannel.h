@@ -257,9 +257,6 @@ class MessageChannel : HasResultCodes {
   
   bool Call(UniquePtr<Message> aMsg, Message* aReply);
 
-  
-  bool WaitForIncomingMessage();
-
   bool CanSend() const;
 
   
@@ -482,25 +479,6 @@ class MessageChannel : HasResultCodes {
     mMonitor->AssertCurrentThreadOwns();
     return !mInterruptStack.empty();
   }
-  bool AwaitingIncomingMessage() const {
-    mMonitor->AssertCurrentThreadOwns();
-    return mIsWaitingForIncoming;
-  }
-
-  class MOZ_STACK_CLASS AutoEnterWaitForIncoming {
-   public:
-    explicit AutoEnterWaitForIncoming(MessageChannel& aChannel)
-        : mChannel(aChannel) {
-      aChannel.mMonitor->AssertCurrentThreadOwns();
-      aChannel.mIsWaitingForIncoming = true;
-    }
-
-    ~AutoEnterWaitForIncoming() { mChannel.mIsWaitingForIncoming = false; }
-
-   private:
-    MessageChannel& mChannel;
-  };
-  friend class AutoEnterWaitForIncoming;
 
   
   bool DispatchingAsyncMessage() const {
@@ -797,11 +775,6 @@ class MessageChannel : HasResultCodes {
   
   
   bool mSawInterruptOutMsg = false;
-
-  
-  
-  
-  bool mIsWaitingForIncoming = false;
 
   
   
