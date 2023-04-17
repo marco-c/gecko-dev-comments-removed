@@ -356,6 +356,7 @@ nsresult nsMenuPopupFrame::CreateWidgetForView(nsView* aView) {
   widget->SetWindowShadowStyle(GetShadowStyle());
   widget->SetWindowOpacity(StyleUIReset()->mWindowOpacity);
   widget->SetWindowTransform(ComputeWidgetTransform());
+  widget->SetColorScheme(LookAndFeel::ColorSchemeForFrame(this));
 
   
   
@@ -493,6 +494,12 @@ void nsMenuPopupFrame::DidSetComputedStyle(ComputedStyle* aOldStyle) {
   if (newUI.mMozWindowTransform != oldUI.mMozWindowTransform) {
     if (nsIWidget* widget = GetWidget()) {
       widget->SetWindowTransform(ComputeWidgetTransform());
+    }
+  }
+
+  if (StyleUI()->mColorScheme != aOldStyle->StyleUI()->mColorScheme) {
+    if (nsIWidget* widget = GetWidget()) {
+      widget->SetColorScheme(LookAndFeel::ColorSchemeForFrame(this));
     }
   }
 

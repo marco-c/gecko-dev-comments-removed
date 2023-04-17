@@ -63,6 +63,7 @@ class WidgetKeyboardEvent;
 struct FontRange;
 
 enum class StyleWindowShadow : uint8_t;
+enum class ColorScheme : uint8_t;
 
 #if defined(MOZ_WIDGET_ANDROID)
 namespace ipc {
@@ -1168,6 +1169,12 @@ class nsIWidget : public nsISupports {
 
 
   virtual void SetWindowTransform(const mozilla::gfx::Matrix& aTransform) {}
+
+  
+
+
+
+  virtual void SetColorScheme(mozilla::ColorScheme) {}
 
   
 

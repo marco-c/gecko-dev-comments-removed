@@ -25,6 +25,9 @@ namespace mozilla {
 
 struct StyleColorSchemeFlags;
 
+
+enum class ColorScheme : uint8_t { Light, Dark };
+
 namespace dom {
 class Document;
 }
@@ -40,6 +43,7 @@ enum class StyleSystemFont : uint8_t;
 class LookAndFeel {
  public:
   using ColorID = StyleSystemColor;
+  using ColorScheme = mozilla::ColorScheme;
 
   
   
@@ -423,9 +427,6 @@ class LookAndFeel {
   };
 
   using FontID = mozilla::StyleSystemFont;
-
-  
-  enum class ColorScheme : uint8_t { Light, Dark };
 
   static ColorScheme SystemColorScheme() {
     return GetInt(IntID::SystemUsesDarkTheme) ? ColorScheme::Dark
