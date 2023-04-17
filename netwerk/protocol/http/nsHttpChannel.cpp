@@ -6352,12 +6352,11 @@ nsHttpChannel::AsyncOpen(nsIStreamListener* aListener) {
     return rv;
   }
 
-  if (!mLoadGroup && !mCallbacks) {
-    
-    
-    
-    UpdatePrivateBrowsing();
-  }
+  
+  
+  
+  
+  UpdatePrivateBrowsing();
 
   AntiTrackingUtils::UpdateAntiTrackingInfoForChannel(this);
 
