@@ -51,6 +51,8 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
   int GetFileDescriptor() const { return pipe_; }
   void CloseClientFileDescriptor();
 
+  int32_t OtherPid() const { return other_pid_; }
+
   
   
   bool Unsound_IsClosed() const;
