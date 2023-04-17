@@ -86,12 +86,13 @@ class mozInlineSpellStatus {
   
   
   
+  
   explicit mozInlineSpellStatus(mozInlineSpellChecker* aSpellChecker,
-                                bool aForceNavigationWordCheck,
+                                Operation aOp, bool aForceNavigationWordCheck,
                                 int32_t aNewNavigationPositionOffset);
 
   
-  Operation mOp;
+  const Operation mOp;
 
   
   
