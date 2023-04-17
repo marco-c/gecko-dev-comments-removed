@@ -342,10 +342,6 @@ pub enum SystemColor {
     MozMacTooltip,
 
     
-    
-    WebkitFocusRingColor,
-
-    
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozAccentColor,
 
