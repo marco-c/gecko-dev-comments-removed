@@ -1708,9 +1708,6 @@ nsresult TextControlState::PrepareEditor(const nsAString* aValue) {
   }
 
   
-  editorFlags |= nsIEditor::eEditorWidgetMask;
-
-  
   
   editorFlags |= nsIEditor::eEditorSkipSpellCheck;
 

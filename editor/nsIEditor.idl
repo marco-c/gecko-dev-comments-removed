@@ -72,8 +72,6 @@ interface nsIEditor  : nsISupports
   
   const long eEditorEnableWrapHackMask  = 0x0040;
   
-  const long eEditorWidgetMask          = 0x0080;
-  
   
   const long eEditorNoCSSMask           = 0x0100;
   
