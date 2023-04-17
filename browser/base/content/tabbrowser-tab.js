@@ -261,6 +261,7 @@
     }
 
     get _overPlayingIcon() {
+      
       let iconVisible =
         this.soundPlaying || this.muted || this.activeMediaBlocked;
 
@@ -273,7 +274,9 @@
     }
 
     get soundPlayingIcon() {
-      return gProton ? null : this.querySelector(".tab-icon-sound");
+      return gProton
+        ? this.querySelector(".tab-icon-overlay")
+        : this.querySelector(".tab-icon-sound");
     }
 
     get overlayIcon() {
