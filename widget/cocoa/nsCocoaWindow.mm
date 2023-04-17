@@ -148,7 +148,6 @@ nsCocoaWindow::nsCocoaWindow()
       mAspectRatioLocked(false),
       mNumModalDescendents(0),
       mWindowAnimationBehavior(NSWindowAnimationBehaviorDefault),
-      mWindowAppearance(nsIWidget::WindowAppearance::eSystem),
       mWasShown(false) {
   
   
@@ -551,7 +550,6 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect& aRect, nsBorderStyle aB
     
     mWindow.appearanceSource = MOZGlobalAppearance.sharedInstance;
   }
-  [mWindow setWindowAppearance:mWindowAppearance];
 
   return NS_OK;
 
@@ -2447,15 +2445,6 @@ void nsCocoaWindow::SetDrawsTitle(bool aDrawTitle) {
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
- void nsCocoaWindow::SetWindowAppearance(nsIWidget::WindowAppearance aAppearance) {
-  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
-
-  mWindowAppearance = aAppearance;
-  [mWindow setWindowAppearance:mWindowAppearance];
-
-  NS_OBJC_END_TRY_IGNORE_BLOCK;
-}
-
 nsresult nsCocoaWindow::SetNonClientMargins(LayoutDeviceIntMargin& margins) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
@@ -3249,29 +3238,6 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
 
 - (BOOL)wantsTitleDrawn {
   return mDrawTitle;
-}
-
-- (void)setWindowAppearance:(nsIWidget::WindowAppearance)aAppearance {
-  if (@available(macOS 10.14, *)) {
-    switch (aAppearance) {
-      case nsIWidget::WindowAppearance::eLight:
-        self.appearance = [NSAppearance appearanceNamed:NSAppearanceNameAqua];
-        break;
-      
-      
-      
-      
-      
-      
-      
-
-
-      default:
-        
-        self.appearance = nil;
-        break;
-    }
-  }
 }
 
 - (NSView*)trackingAreaView {
