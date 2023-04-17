@@ -772,7 +772,7 @@ ServerSocketConnection.prototype = {
     
     
     this._transport.hooks = {
-      onClosed: reason => {
+      onTransportClosed: reason => {
         this.deny(reason);
       },
     };

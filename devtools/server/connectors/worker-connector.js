@@ -142,7 +142,7 @@ function connectToWorker(connection, dbg, forwardingPrefix, options) {
         );
         transport.ready();
         transport.hooks = {
-          onClosed: () => {
+          onTransportClosed: () => {
             if (DevToolsUtils.isWorkerDebuggerAlive(dbg)) {
               
               

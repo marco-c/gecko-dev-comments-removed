@@ -588,7 +588,7 @@ DevToolsClient.prototype = {
 
 
 
-  onClosed() {
+  onTransportClosed() {
     if (this._closed) {
       return;
     }

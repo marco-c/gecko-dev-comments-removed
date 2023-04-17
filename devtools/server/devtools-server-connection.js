@@ -472,7 +472,7 @@ DevToolsServerConnection.prototype = {
 
 
 
-  onClosed(status) {
+  onTransportClosed(status) {
     dumpn("Cleaning up connection.");
     if (!this._actorPool) {
       

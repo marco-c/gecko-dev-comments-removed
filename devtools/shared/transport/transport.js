@@ -183,7 +183,7 @@ DebuggerTransport.prototype = {
     this._destroyIncoming();
     this._destroyAllOutgoing();
     if (this.hooks) {
-      this.hooks.onClosed(reason);
+      this.hooks.onTransportClosed(reason);
       this.hooks = null;
     }
     if (reason) {
