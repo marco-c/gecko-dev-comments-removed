@@ -33,67 +33,77 @@ mod mac
 
     
     
-    
-    
 
-    static mut CONVERSION_FACTOR : f64 = 0.0;
     static INIT : Once = Once::new();
 
-    unsafe fn get_cached_conversion_factor() -> f64 {
-        unsafe {
-            INIT.call_once(|| {
+    
+    static mut TIMEBASE_NUMER : u64 = 0;
+    static mut TIMEBASE_DENOM : u64 = 0;
+    
+    static mut INITTIME_SEC : u64 = 0;
+    static mut INITTIME_NANOSEC : u64 = 0;
+    
+    static mut INITCLOCK : u64 = 0;
+    static mut INITSUCCESS: bool = false;
+
+    unsafe fn compute_time_cached_values() -> bool {
+        INIT.call_once(|| {
+            {
                 let mut timebase = MaybeUninit::<mach_timebase_info_data_t>::uninit();
-                mach_timebase_info(timebase.as_mut_ptr());
+                let ret = mach_timebase_info(timebase.as_mut_ptr());
+                if ret != mach::kern_return::KERN_SUCCESS {
+                    return;
+                }
                 let timebase = unsafe { timebase.assume_init() };
-            
-                let numer_d : f64 = timebase.numer as f64;
-                let denom_d : f64 = timebase.denom as f64;
-            
-                CONVERSION_FACTOR = numer_d / denom_d;
-            });
-        }
-        CONVERSION_FACTOR
+
+                TIMEBASE_NUMER = timebase.numer as u64;
+                TIMEBASE_DENOM = timebase.denom as u64;
+            }
+
+            {
+                let mut micro = MaybeUninit::<libc::timeval>::uninit();
+                let ret = libc::gettimeofday(micro.as_mut_ptr(), core::ptr::null_mut());
+                if ret != 0 {
+                    return;
+                }
+                let micro = unsafe { micro.assume_init() };
+                INITTIME_SEC = micro.tv_sec as u64;
+                INITTIME_NANOSEC = micro.tv_usec as u64 * 1000;
+            }
+
+            {
+                INITCLOCK = mach_absolute_time();
+            }
+
+            INITSUCCESS = true;
+        });
+        return INITSUCCESS;
     }
 
-    pub unsafe fn clock_gettime_helper(clock_id: libc::clockid_t, tp: *mut libc::timespec) -> c_int {
-        if !(clock_id == libc::CLOCK_REALTIME || clock_id == libc::CLOCK_MONOTONIC) {
-            (*libc::__error()) = libc::EINVAL;
+    pub unsafe fn clock_gettime_helper(_clock_id: libc::clockid_t, tp: *mut libc::timespec) -> c_int {
+        if !compute_time_cached_values() {
             return -1;
         }
 
-        if clock_id == libc::CLOCK_REALTIME {
-            let mut micro = MaybeUninit::<libc::timeval>::uninit();
-            libc::gettimeofday(micro.as_mut_ptr(), core::ptr::null_mut());
-            let micro = unsafe { micro.assume_init() };
-      
-            (*tp).tv_sec = micro.tv_sec;
-            (*tp).tv_nsec = i64::from(micro.tv_usec) * 1000;
-            return 0;
-        } else {
-            let time : u64 = mach_absolute_time();
-            let time_d : f64 = time as f64;
-            let conv : f64 = get_cached_conversion_factor();
-            let nseconds : f64 = time_d * conv;
-            let seconds : f64 = nseconds / 1e9;
-            (*tp).tv_sec = seconds as i64;
-            (*tp).tv_nsec = nseconds as i64;
-            return 0;
-        }
+        let clock: u64 = mach_absolute_time() - INITCLOCK;
+        let nano: u64 = clock * TIMEBASE_NUMER / TIMEBASE_DENOM;
+
+        let billion: u64 = 1000000000;
+
+        let mut out_sec: u64 = INITTIME_SEC + (nano / billion);
+        let mut out_nsec: u64 = INITTIME_NANOSEC + (nano % billion);
+
+        out_sec += out_nsec / billion;
+        out_nsec = out_nsec % billion;
+
+        (*tp).tv_sec = out_sec as i64;
+        (*tp).tv_nsec = out_nsec as i64;
+        return 0;
     }
 
-    pub unsafe fn clock_getres_helper(clock_id: libc::clockid_t, res: *mut libc::timespec) -> c_int {
-        if !(clock_id == libc::CLOCK_REALTIME || clock_id == libc::CLOCK_MONOTONIC) {
-            (*libc::__error()) = libc::EINVAL;
-            return -1;
-        }
-
+    pub unsafe fn clock_getres_helper(_clock_id: libc::clockid_t, res: *mut libc::timespec) -> c_int {
         (*res).tv_sec = 0 as i64;
-        (*res).tv_nsec = 
-            if clock_id == libc::CLOCK_REALTIME {
-                1000 as i64
-            } else {
-                1 as i64
-            };
+        (*res).tv_nsec = 1 as i64;
         return 0;
     }
 
