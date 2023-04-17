@@ -150,7 +150,11 @@ scheme host and port.""")
     
     test_selection_group.add_argument("--enable-quic", action="store_true", default=False,
                                       help="Enable tests that require QUIC server (default: false)")
-
+    
+    test_selection_group.add_argument("--enable-webtransport-h3",
+                                      action="store_true",
+                                      default=False,
+                                      help="Enable tests that require WebTransport over HTTP/3 server (default: false)")
     test_selection_group.add_argument("--tag", action="append", dest="tags",
                                       help="Labels applied to tests to include in the run. "
                                            "Labels starting dir: are equivalent to top-level directories.")
