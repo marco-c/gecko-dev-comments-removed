@@ -8,11 +8,17 @@
   const { require } = ChromeUtils.import(
     "resource://devtools/shared/Loader.jsm"
   );
-  const Services = require("Services");
   const { gDevTools } = require("devtools/client/framework/devtools");
   const {
     appendStyleSheet,
   } = require("devtools/client/shared/stylesheet-utils");
+
+  const {
+    getTheme,
+    getAutoTheme,
+    addThemeObserver,
+    removeThemeObserver,
+  } = require("devtools/client/shared/theme");
 
   const documentElement = document.documentElement;
 
@@ -61,7 +67,7 @@
     
     
     if (!newThemeDef) {
-      newThemeDef = gDevTools.getThemeDefinition("light");
+      newThemeDef = gDevTools.getThemeDefinition(getAutoTheme());
     }
 
     
@@ -108,20 +114,20 @@
     }, console.error);
   }
 
-  function handlePrefChange() {
-    switchTheme(Services.prefs.getCharPref("devtools.theme"));
+  function handleThemeChange() {
+    switchTheme(getTheme());
   }
 
   if (documentElement.hasAttribute("force-theme")) {
     switchTheme(documentElement.getAttribute("force-theme"));
   } else {
-    switchTheme(Services.prefs.getCharPref("devtools.theme"));
+    switchTheme(getTheme());
 
-    Services.prefs.addObserver("devtools.theme", handlePrefChange);
+    addThemeObserver(handleThemeChange);
     window.addEventListener(
       "unload",
       function() {
-        Services.prefs.removeObserver("devtools.theme", handlePrefChange);
+        removeThemeObserver(handleThemeChange);
       },
       { once: true }
     );
