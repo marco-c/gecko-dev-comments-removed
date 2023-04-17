@@ -213,10 +213,7 @@ static bool GetBorderColors(GtkStyleContext* aContext, nscolor* aLightColor,
 
 
 nsresult nsLookAndFeel::InitCellHighlightColors() {
-  
-  
-  
-  int32_t minLuminosityDifference = NS_SUFFICIENT_LUMINOSITY_DIFFERENCE / 5;
+  int32_t minLuminosityDifference = NS_SUFFICIENT_LUMINOSITY_DIFFERENCE_BG;
   int32_t backLuminosityDifference =
       NS_LUMINOSITY_DIFFERENCE(mMozWindowBackground, mFieldBackground);
   if (backLuminosityDifference >= minLuminosityDifference) {

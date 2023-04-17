@@ -3838,9 +3838,17 @@ bool nsTextPaintStyle::EnsureSufficientContrast(nscolor* aForeColor,
 
   
   
-  int32_t backLuminosityDifference =
+  
+  
+  
+  
+  
+  const int32_t minLuminosityDifferenceForBackground = mSufficientContrast / 5;
+  const int32_t backLuminosityDifference =
       NS_LUMINOSITY_DIFFERENCE(*aBackColor, mFrameBackgroundColor);
-  if (backLuminosityDifference >= mSufficientContrast) return false;
+  if (backLuminosityDifference >= minLuminosityDifferenceForBackground) {
+    return false;
+  }
 
   
   
@@ -4023,7 +4031,9 @@ bool nsTextPaintStyle::GetSelectionUnderlineForPaint(int32_t aIndex,
 }
 
 void nsTextPaintStyle::InitCommonColors() {
-  if (mInitCommonColors) return;
+  if (mInitCommonColors) {
+    return;
+  }
 
   nsIFrame* bgFrame = nsCSSRendering::FindNonTransparentBackgroundFrame(mFrame);
   NS_ASSERTION(bgFrame, "Cannot find NonTransparentBackgroundFrame.");

@@ -15,6 +15,12 @@
 
 
 #define NS_SUFFICIENT_LUMINOSITY_DIFFERENCE 125000
+
+
+
+#define NS_SUFFICIENT_LUMINOSITY_DIFFERENCE_BG \
+  (NS_SUFFICIENT_LUMINOSITY_DIFFERENCE / 5)
+
 #define NS_LUMINOSITY_DIFFERENCE(a, b)                    \
   int32_t(mozilla::Abs(NS_GetLuminosity(a | 0xff000000) - \
                        NS_GetLuminosity(b | 0xff000000)))
