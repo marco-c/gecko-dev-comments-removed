@@ -3,12 +3,15 @@
 
 
 
+#include "gfxGradientCache.h"
+
+#include "MainThreadUtils.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/DataMutex.h"
 #include "nsTArray.h"
 #include "PLDHashTable.h"
 #include "nsExpirationTracker.h"
 #include "nsClassHashtable.h"
-#include "gfxGradientCache.h"
 #include <time.h>
 
 namespace mozilla {
@@ -99,79 +102,166 @@ struct GradientCacheData {
 
 
 
+class GradientCache;
+using GradientCacheMutex = StaticDataMutex<UniquePtr<GradientCache>>;
+class MOZ_RAII LockedInstance {
+ public:
+  explicit LockedInstance(GradientCacheMutex& aDataMutex)
+      : mAutoLock(aDataMutex.Lock()) {}
+  UniquePtr<GradientCache>& operator->() const& { return mAutoLock.ref(); }
+  UniquePtr<GradientCache>& operator->() const&& = delete;
+  UniquePtr<GradientCache>& operator*() const& { return mAutoLock.ref(); }
+  UniquePtr<GradientCache>& operator*() const&& = delete;
+  explicit operator bool() const { return !!mAutoLock.ref(); }
 
+ private:
+  GradientCacheMutex::AutoLock mAutoLock;
+};
 
-
-
-
-
-
-class GradientCache final : public nsExpirationTracker<GradientCacheData, 4> {
+class GradientCache final
+    : public ExpirationTrackerImpl<GradientCacheData, 4, GradientCacheMutex,
+                                   LockedInstance> {
  public:
   GradientCache()
-      : nsExpirationTracker<GradientCacheData, 4>(MAX_GENERATION_MS,
-                                                  "GradientCache") {
-    srand(time(nullptr));
+      : ExpirationTrackerImpl<GradientCacheData, 4, GradientCacheMutex,
+                              LockedInstance>(MAX_GENERATION_MS,
+                                              "GradientCache") {}
+  static bool EnsureInstance() {
+    LockedInstance lockedInstance(sInstanceMutex);
+    return EnsureInstanceLocked(lockedInstance);
   }
 
-  virtual void NotifyExpired(GradientCacheData* aObject) override {
-    
-    RemoveObject(aObject);
-    mHashEntries.Remove(aObject->mKey);
-  }
-
-  GradientCacheData* Lookup(const nsTArray<GradientStop>& aStops,
-                            ExtendMode aExtend, BackendType aBackendType) {
-    GradientCacheData* gradient =
-        mHashEntries.Get(GradientCacheKey(aStops, aExtend, aBackendType));
-
-    if (gradient) {
-      MarkUsed(gradient);
+  static void DestroyInstance() {
+    LockedInstance lockedInstance(sInstanceMutex);
+    if (lockedInstance) {
+      *lockedInstance = nullptr;
     }
-
-    return gradient;
   }
 
-  void RegisterEntry(UniquePtr<GradientCacheData> aValue) {
-    nsresult rv = AddObject(aValue.get());
-    if (NS_FAILED(rv)) {
-      
-      
-      
-      
-      
+  static void AgeAllGenerations() {
+    LockedInstance lockedInstance(sInstanceMutex);
+    if (!lockedInstance) {
       return;
     }
-    mHashEntries.InsertOrUpdate(aValue->mKey, std::move(aValue));
+    lockedInstance->AgeAllGenerationsLocked(lockedInstance);
+    lockedInstance->NotifyHandlerEndLocked(lockedInstance);
   }
 
- protected:
+  static GradientCacheData* Lookup(const nsTArray<GradientStop>& aStops,
+                                   ExtendMode aExtend,
+                                   BackendType aBackendType) {
+    LockedInstance lockedInstance(sInstanceMutex);
+    if (!EnsureInstanceLocked(lockedInstance)) {
+      return nullptr;
+    }
+
+    GradientCacheData* gradientData = lockedInstance->mHashEntries.Get(
+        GradientCacheKey(aStops, aExtend, aBackendType));
+    if (!gradientData) {
+      return nullptr;
+    }
+
+    if (!gradientData->mStops || !gradientData->mStops->IsValid()) {
+      lockedInstance->NotifyExpiredLocked(gradientData, lockedInstance);
+      return nullptr;
+    }
+
+    lockedInstance->MarkUsedLocked(gradientData, lockedInstance);
+    return gradientData;
+  }
+
+  static void RegisterEntry(UniquePtr<GradientCacheData> aValue) {
+    uint32_t numberOfEntries;
+    {
+      LockedInstance lockedInstance(sInstanceMutex);
+      if (!EnsureInstanceLocked(lockedInstance)) {
+        return;
+      }
+
+      nsresult rv =
+          lockedInstance->AddObjectLocked(aValue.get(), lockedInstance);
+      if (NS_FAILED(rv)) {
+        
+        
+        
+        
+        
+        return;
+      }
+      lockedInstance->mHashEntries.InsertOrUpdate(aValue->mKey,
+                                                  std::move(aValue));
+      numberOfEntries = lockedInstance->mHashEntries.Count();
+    }
+    if (numberOfEntries > MAX_ENTRIES) {
+      
+      NS_DispatchToMainThread(
+          NS_NewRunnableFunction("GradientCache::OnMaxEntriesBreached", [] {
+            LockedInstance lockedInstance(sInstanceMutex);
+            if (!lockedInstance) {
+              return;
+            }
+            lockedInstance->AgeOneGenerationLocked(lockedInstance);
+            lockedInstance->NotifyHandlerEndLocked(lockedInstance);
+          }));
+    }
+  }
+
+  GradientCacheMutex& GetMutex() final { return sInstanceMutex; }
+
+  void NotifyExpiredLocked(GradientCacheData* aObject,
+                           const LockedInstance& aLockedInstance) final {
+    
+    RemoveObjectLocked(aObject, aLockedInstance);
+
+    
+    
+    Maybe<UniquePtr<GradientCacheData>> gradientData =
+        mHashEntries.Extract(aObject->mKey);
+    if (gradientData.isSome()) {
+      mRemovedGradientData.AppendElement(std::move(*gradientData));
+    }
+  }
+
+  void NotifyHandlerEndLocked(const LockedInstance&) final {
+    NS_DispatchToCurrentThread(
+        NS_NewRunnableFunction("GradientCache::DestroyRemovedGradientStops",
+                               [stops = std::move(mRemovedGradientData)] {}));
+  }
+
+ private:
   static const uint32_t MAX_GENERATION_MS = 10000;
+
+  
+  
+  static const uint32_t MAX_ENTRIES = 4000;
+  static GradientCacheMutex sInstanceMutex;
+
+  [[nodiscard]] static bool EnsureInstanceLocked(
+      LockedInstance& aLockedInstance) {
+    if (!aLockedInstance) {
+      
+      if (!NS_IsMainThread()) {
+        
+        return false;
+      }
+      *aLockedInstance = MakeUnique<GradientCache>();
+    }
+    return true;
+  }
+
   
 
 
 
   nsClassHashtable<GradientCacheKey, GradientCacheData> mHashEntries;
+  nsTArray<UniquePtr<GradientCacheData>> mRemovedGradientData;
 };
 
-static GradientCache* gGradientCache = nullptr;
+GradientCacheMutex GradientCache::sInstanceMutex("GradientCache");
 
-GradientStops* gfxGradientCache::GetGradientStops(
-    const DrawTarget* aDT, nsTArray<GradientStop>& aStops, ExtendMode aExtend) {
-  if (!gGradientCache) {
-    gGradientCache = new GradientCache();
-  }
-  GradientCacheData* cached =
-      gGradientCache->Lookup(aStops, aExtend, aDT->GetBackendType());
-  if (cached && cached->mStops) {
-    if (!cached->mStops->IsValid()) {
-      gGradientCache->NotifyExpired(cached);
-    } else {
-      return cached->mStops;
-    }
-  }
-
-  return nullptr;
+void gfxGradientCache::Init() {
+  MOZ_RELEASE_ASSERT(GradientCache::EnsureInstance(),
+                     "First call must be on main thread.");
 }
 
 already_AddRefed<GradientStops> gfxGradientCache::GetOrCreateGradientStops(
@@ -181,28 +271,25 @@ already_AddRefed<GradientStops> gfxGradientCache::GetOrCreateGradientStops(
                                     aExtend);
   }
 
-  RefPtr<GradientStops> gs = GetGradientStops(aDT, aStops, aExtend);
-  if (!gs) {
-    gs = aDT->CreateGradientStops(aStops.Elements(), aStops.Length(), aExtend);
-    if (!gs) {
-      return nullptr;
-    }
-    gGradientCache->RegisterEntry(MakeUnique<GradientCacheData>(
-        gs, GradientCacheKey(aStops, aExtend, aDT->GetBackendType())));
+  GradientCacheData* cached =
+      GradientCache::Lookup(aStops, aExtend, aDT->GetBackendType());
+  if (cached) {
+    return do_AddRef(cached->mStops);
   }
+
+  RefPtr<GradientStops> gs =
+      aDT->CreateGradientStops(aStops.Elements(), aStops.Length(), aExtend);
+  if (!gs) {
+    return nullptr;
+  }
+  GradientCache::RegisterEntry(MakeUnique<GradientCacheData>(
+      gs, GradientCacheKey(aStops, aExtend, aDT->GetBackendType())));
   return gs.forget();
 }
 
-void gfxGradientCache::PurgeAllCaches() {
-  if (gGradientCache) {
-    gGradientCache->AgeAllGenerations();
-  }
-}
+void gfxGradientCache::PurgeAllCaches() { GradientCache::AgeAllGenerations(); }
 
-void gfxGradientCache::Shutdown() {
-  delete gGradientCache;
-  gGradientCache = nullptr;
-}
+void gfxGradientCache::Shutdown() { GradientCache::DestroyInstance(); }
 
 }  
 }  
