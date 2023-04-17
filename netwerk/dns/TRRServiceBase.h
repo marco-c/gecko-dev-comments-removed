@@ -41,7 +41,6 @@ class TRRServiceBase {
 
   nsCString mPrivateURI;
   
-  bool mURIPrefHasUserValue = false;
   nsCString mURIPref;
   nsCString mRolloutURIPref;
   nsCString mDefaultURIPref;

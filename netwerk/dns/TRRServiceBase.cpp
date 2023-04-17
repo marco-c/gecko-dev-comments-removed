@@ -74,7 +74,7 @@ void TRRServiceBase::CheckURIPrefs() {
   mURISetByDetection = false;
 
   
-  if (mURIPrefHasUserValue) {
+  if (!mURIPref.IsEmpty()) {
     MaybeSetPrivateURI(mURIPref);
     return;
   }
@@ -142,7 +142,6 @@ void TRRServiceBase::OnTRRModeChange() {
 }
 
 void TRRServiceBase::OnTRRURIChange() {
-  mURIPrefHasUserValue = Preferences::HasUserValue("network.trr.uri");
   Preferences::GetCString("network.trr.uri", mURIPref);
   Preferences::GetCString(kRolloutURIPref, mRolloutURIPref);
   Preferences::GetCString("network.trr.default_provider_uri", mDefaultURIPref);

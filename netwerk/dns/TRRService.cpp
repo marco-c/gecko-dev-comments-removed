@@ -233,7 +233,7 @@ void TRRService::SetDetectedTrrURI(const nsACString& aURI) {
   
   
   
-  if (mURIPrefHasUserValue) {
+  if (!mURIPref.IsEmpty()) {
     LOG(("Already has user value. Not setting URI"));
     return;
   }
