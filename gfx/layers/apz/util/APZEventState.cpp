@@ -198,11 +198,10 @@ void APZEventState::ProcessSingleTap(const CSSPoint& aPoint,
   }
 }
 
-bool APZEventState::FireContextmenuEvents(PresShell* aPresShell,
-                                          const CSSPoint& aPoint,
-                                          const CSSToLayoutDeviceScale& aScale,
-                                          Modifiers aModifiers,
-                                          const nsCOMPtr<nsIWidget>& aWidget) {
+PreventDefaultResult APZEventState::FireContextmenuEvents(
+    PresShell* aPresShell, const CSSPoint& aPoint,
+    const CSSToLayoutDeviceScale& aScale, Modifiers aModifiers,
+    const nsCOMPtr<nsIWidget>& aWidget) {
   
   EventRetargetSuppression suppression;
 
@@ -223,14 +222,15 @@ bool APZEventState::FireContextmenuEvents(PresShell* aPresShell,
   
   CSSPoint point = CSSPoint::FromAppUnits(
       ViewportUtils::VisualToLayout(CSSPoint::ToAppUnits(aPoint), aPresShell));
-  bool eventHandled = APZCCallbackHelper::DispatchMouseEvent(
-      aPresShell, u"contextmenu"_ns, point, 2, 1,
-      WidgetModifiersToDOMModifiers(aModifiers),
-      dom::MouseEvent_Binding::MOZ_SOURCE_TOUCH,
-      0 );
+  PreventDefaultResult preventDefaultResult =
+      APZCCallbackHelper::DispatchMouseEvent(
+          aPresShell, u"contextmenu"_ns, point, 2, 1,
+          WidgetModifiersToDOMModifiers(aModifiers),
+          dom::MouseEvent_Binding::MOZ_SOURCE_TOUCH,
+          0 );
 
-  APZES_LOG("Contextmenu event handled: %d\n", eventHandled);
-  if (eventHandled) {
+  APZES_LOG("Contextmenu event %s\n", ToString(preventDefaultResult).c_str());
+  if (preventDefaultResult != PreventDefaultResult::No) {
     
     
     mActiveElementManager->ClearActivation();
@@ -240,12 +240,18 @@ bool APZEventState::FireContextmenuEvents(PresShell* aPresShell,
     nsEventStatus status = APZCCallbackHelper::DispatchSynthesizedMouseEvent(
         eMouseLongTap,  0, aPoint * aScale, aModifiers,
          1, aWidget);
-    eventHandled = (status == nsEventStatus_eConsumeNoDefault);
-    APZES_LOG("eMouseLongTap event handled: %d\n", eventHandled);
+    if (status == nsEventStatus_eConsumeNoDefault) {
+      
+      preventDefaultResult = PreventDefaultResult::ByContent;
+    } else {
+      preventDefaultResult = PreventDefaultResult::No;
+    }
+    APZES_LOG("eMouseLongTap event %s\n",
+              ToString(preventDefaultResult).c_str());
 #endif
   }
 
-  return eventHandled;
+  return preventDefaultResult;
 }
 
 void APZEventState::ProcessLongTap(PresShell* aPresShell,
@@ -272,14 +278,37 @@ void APZEventState::ProcessLongTap(PresShell* aPresShell,
       eMouseLongTap,  0, aPoint * aScale, aModifiers,  1,
       widget);
 
-  bool eventHandled = (status == nsEventStatus_eConsumeNoDefault);
+  PreventDefaultResult preventDefaultResult =
+      (status == nsEventStatus_eConsumeNoDefault)
+          ? PreventDefaultResult::ByContent
+          : PreventDefaultResult::No;
 #else
-  bool eventHandled =
+  PreventDefaultResult preventDefaultResult =
       FireContextmenuEvents(aPresShell, aPoint, aScale, aModifiers, widget);
 #endif
-  mContentReceivedInputBlockCallback(aInputBlockId, eventHandled);
+  mContentReceivedInputBlockCallback(
+      aInputBlockId, preventDefaultResult != PreventDefaultResult::No);
 
+  const bool eventHandled =
+#ifdef MOZ_WIDGET_ANDROID
+      
+      
+      
+      
+      preventDefaultResult == PreventDefaultResult::ByChrome;
+#else
+
+
+
+
+
+      preventDefaultResult == PreventDefaultResult::ByContent;
+#endif
   if (eventHandled) {
+    
+    
+    
+    
     
     
     WidgetTouchEvent cancelTouchEvent(true, eTouchCancel, widget.get());
