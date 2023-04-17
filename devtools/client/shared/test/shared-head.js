@@ -491,8 +491,10 @@ async function navigateTo(uri, { isErrorPage = false } = {}) {
   const currentBrowsingContextID = browser.browsingContext.id;
   const onBrowserLoaded = BrowserTestUtils.browserLoaded(
     browser,
+    
     false,
-    null,
+    
+    uri,
     isErrorPage
   );
   BrowserTestUtils.loadURI(browser, uri);
