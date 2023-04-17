@@ -112,13 +112,9 @@ void GtkCompositorWidget::SetEGLNativeWindowSize(
 #endif
 
 LayoutDeviceIntRegion GtkCompositorWidget::GetTransparentRegion() {
-  if (!mWidget) {
-    return LayoutDeviceIntRect();
-  }
-
   
   
-  if (mWidget->IsPopup()) {
+  if (!mWidget || mWidget->IsPopup()) {
     return LayoutDeviceIntRect(LayoutDeviceIntPoint(0, 0), GetClientSize());
   }
 
