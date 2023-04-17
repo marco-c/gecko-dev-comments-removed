@@ -51,15 +51,22 @@ interface nsIEditor  : nsISupports
   const short eNoStrip = 1;
 
   
+  
   const long eEditorPlaintextMask       = 0x0001;
+  
   
   const long eEditorSingleLineMask      = 0x0002;
   
+  
   const long eEditorPasswordMask        = 0x0004;
+  
+  
+  
   
   const long eEditorReadonlyMask        = 0x0008;
   
   const long eEditorFilterInputMask     = 0x0010;
+  
   
   const long eEditorMailMask            = 0x0020;
   
@@ -67,11 +74,15 @@ interface nsIEditor  : nsISupports
   
   const long eEditorWidgetMask          = 0x0080;
   
+  
   const long eEditorNoCSSMask           = 0x0100;
   
   
   
   const long eEditorAllowInteraction    = 0x0200;
+  
+  
+  
   
   
   const long eEditorDontEchoPassword    = 0x0400;
