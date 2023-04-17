@@ -1170,6 +1170,19 @@ class EditorUtils final {
 
 
 
+  static bool IsNewLinePreformatted(const nsIContent& aContent);
+
+  
+
+
+
+
+  static bool IsOnlyNewLinePreformatted(const nsIContent& aContent);
+
+  
+
+
+
 
 
 
