@@ -129,6 +129,7 @@ class Navigator final : public nsISupports, public nsWrapperCache {
   nsPluginArray* GetPlugins(ErrorResult& aRv);
   Permissions* GetPermissions(ErrorResult& aRv);
   void GetDoNotTrack(nsAString& aResult);
+  bool GlobalPrivacyControl();
   Geolocation* GetGeolocation(ErrorResult& aRv);
   Promise* GetBattery(ErrorResult& aRv);
 
