@@ -1,5 +1,6 @@
 from . import chrome_spki_certs
 from .base import Browser, ExecutorBrowser, require_arg
+from .base import NullBrowser  
 from .base import get_timeout_multiplier   
 from ..webdriver_server import ChromeDriverServer
 from ..executors import executor_kwargs as base_executor_kwargs
@@ -12,7 +13,8 @@ from ..executors.executorchrome import (ChromeDriverWdspecExecutor,
 
 __wptrunner__ = {"product": "chrome",
                  "check_args": "check_args",
-                 "browser": "ChromeBrowser",
+                 "browser": {None: "ChromeBrowser",
+                             "wdspec": "NullBrowser"},
                  "executor": {"testharness": "WebDriverTestharnessExecutor",
                               "reftest": "WebDriverRefTestExecutor",
                               "print-reftest": "ChromeDriverPrintRefTestExecutor",
