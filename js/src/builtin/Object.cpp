@@ -316,7 +316,7 @@ JSString* js::ObjectToSource(JSContext* cx, HandleObject obj) {
 
 
 
-      if (id.isAtom() ? !IsIdentifier(JSID_TO_ATOM(id)) : JSID_TO_INT(id) < 0) {
+      if (id.isAtom() ? !IsIdentifier(id.toAtom()) : JSID_TO_INT(id) < 0) {
         UniqueChars quotedId = QuoteString(cx, idstr, '\'');
         if (!quotedId) {
           return false;
