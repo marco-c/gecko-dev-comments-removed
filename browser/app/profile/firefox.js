@@ -326,6 +326,13 @@ pref("browser.chrome.site_icons", true);
 pref("browser.warnOnQuit", true);
 
 
+#if defined(XP_WIN)
+  pref("browser.warnOnQuitShortcut", false);
+#else
+  pref("browser.warnOnQuitShortcut", true);
+#endif
+
+
 #ifdef XP_MACOSX
   pref("browser.fullscreen.autohide", false);
 #else
