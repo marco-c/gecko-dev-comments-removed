@@ -21,7 +21,6 @@
 
 #undef FF
 
-#include "api/video_codecs/video_encoder_factory.h"
 #include "api/video_codecs/video_decoder.h"
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/sdp_video_format.h"
@@ -65,7 +64,6 @@ class WebrtcVideoDecoder : public VideoDecoder, public webrtc::VideoDecoder {};
 class WebrtcVideoConduit
     : public VideoSessionConduit,
       public webrtc::Transport,
-      public webrtc::VideoEncoderFactory,
       public rtc::VideoSinkInterface<webrtc::VideoFrame>,
       public rtc::VideoSourceInterface<webrtc::VideoFrame> {
  public:
@@ -202,14 +200,7 @@ class WebrtcVideoConduit
 
   void AddOrUpdateSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
                        const rtc::VideoSinkWants& wants) override;
-  void AddOrUpdateSinkNotLocked(
-      rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
-      const rtc::VideoSinkWants& wants);
-
   void RemoveSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) override;
-  void RemoveSinkNotLocked(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink);
-
-  void OnSinkWantsChanged(const rtc::VideoSinkWants& wants);
 
   bool HasCodecPluginID(uint64_t aPluginID) override;
 
@@ -285,20 +276,6 @@ class WebrtcVideoConduit
   MediaConduitErrorCode CreateRecvStream();
   void DeleteRecvStream();
 
-  std::unique_ptr<webrtc::VideoDecoder> CreateDecoder(
-      webrtc::VideoCodecType aType);
-  std::unique_ptr<webrtc::VideoEncoder> CreateEncoder(
-      webrtc::VideoCodecType aType);
-
-  
-  std::vector<webrtc::SdpVideoFormat> GetSupportedFormats() const override;
-
-  CodecInfo QueryVideoEncoder(
-      const webrtc::SdpVideoFormat& format) const override;
-
-  std::unique_ptr<webrtc::VideoEncoder> CreateVideoEncoder(
-      const webrtc::SdpVideoFormat& format) override;
-
   MediaConduitErrorCode DeliverPacket(const void* data, int len) override;
 
   bool RequiresNewSendStream(const VideoCodecConfig& newConfig) const;
@@ -328,6 +305,16 @@ class WebrtcVideoConduit
 
   
   
+  
+  const UniquePtr<WebrtcVideoDecoderFactory> mDecoderFactory;
+
+  
+  
+  
+  const UniquePtr<WebrtcVideoEncoderFactory> mEncoderFactory;
+
+  
+  
   UniquePtr<cricket::VideoAdapter> mVideoAdapter;
 
   
@@ -336,8 +323,11 @@ class WebrtcVideoConduit
 
   
   
-  
   rtc::VideoBroadcaster mVideoBroadcaster;
+
+  
+  
+  Atomic<bool> mUpdateSendResolution{false};
 
   
   
@@ -355,9 +345,6 @@ class WebrtcVideoConduit
 
   
   UniquePtr<VideoCodecConfig> mCurSendCodecConfig;
-
-  bool mUpdateResolution = false;
-  int mSinkWantsPixelCount = std::numeric_limits<int>::max();
 
   
   RunningStat mSendFramerate;
@@ -460,14 +447,14 @@ class WebrtcVideoConduit
   RtpPacketQueue mRtpPacketQueue;
 
   
-  
-  
-  std::unique_ptr<webrtc::VideoEncoder> mEncoder;  
-  std::vector<std::unique_ptr<webrtc::VideoDecoder>> mDecoders;
-  
   nsTArray<uint64_t> mSendCodecPluginIDs;
   
   nsTArray<uint64_t> mRecvCodecPluginIDs;
+
+  MediaEventListener mSendPluginCreated;
+  MediaEventListener mSendPluginReleased;
+  MediaEventListener mRecvPluginCreated;
+  MediaEventListener mRecvPluginReleased;
 
   
   std::string mPCHandle;
