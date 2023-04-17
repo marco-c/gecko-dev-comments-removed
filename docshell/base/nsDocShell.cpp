@@ -865,12 +865,14 @@ nsresult nsDocShell::LoadURI(nsDocShellLoadState* aLoadState,
             ("nsDocShell[%p]: loading from session history", this));
 
     if (!mozilla::SessionHistoryInParent()) {
-      return LoadHistoryEntry(aLoadState->SHEntry(), aLoadState->LoadType());
+      return LoadHistoryEntry(aLoadState->SHEntry(), aLoadState->LoadType(),
+                              aLoadState->HasValidUserGestureActivation());
     }
 
     
     return LoadHistoryEntry(*aLoadState->GetLoadingSessionHistoryInfo(),
-                            aLoadState->LoadType());
+                            aLoadState->LoadType(),
+                            aLoadState->HasValidUserGestureActivation());
   }
 
   
@@ -3432,7 +3434,7 @@ nsDocShell::GetCanGoForward(bool* aCanGoForward) {
 }
 
 NS_IMETHODIMP
-nsDocShell::GoBack(bool aRequireUserInteraction) {
+nsDocShell::GoBack(bool aRequireUserInteraction, bool aUserActivation) {
   if (!IsNavigationAllowed()) {
     return NS_OK;  
   }
@@ -3443,12 +3445,12 @@ nsDocShell::GoBack(bool aRequireUserInteraction) {
   RefPtr<ChildSHistory> rootSH = GetRootSessionHistory();
   NS_ENSURE_TRUE(rootSH, NS_ERROR_FAILURE);
   ErrorResult rv;
-  rootSH->Go(-1, aRequireUserInteraction, rv);
+  rootSH->Go(-1, aRequireUserInteraction, aUserActivation, rv);
   return rv.StealNSResult();
 }
 
 NS_IMETHODIMP
-nsDocShell::GoForward(bool aRequireUserInteraction) {
+nsDocShell::GoForward(bool aRequireUserInteraction, bool aUserActivation) {
   if (!IsNavigationAllowed()) {
     return NS_OK;  
   }
@@ -3459,14 +3461,14 @@ nsDocShell::GoForward(bool aRequireUserInteraction) {
   RefPtr<ChildSHistory> rootSH = GetRootSessionHistory();
   NS_ENSURE_TRUE(rootSH, NS_ERROR_FAILURE);
   ErrorResult rv;
-  rootSH->Go(1, aRequireUserInteraction, rv);
+  rootSH->Go(1, aRequireUserInteraction, aUserActivation, rv);
   return rv.StealNSResult();
 }
 
 
 
 NS_IMETHODIMP
-nsDocShell::GotoIndex(int32_t aIndex) {
+nsDocShell::GotoIndex(int32_t aIndex, bool aUserActivation) {
   if (!IsNavigationAllowed()) {
     return NS_OK;  
   }
@@ -3478,7 +3480,8 @@ nsDocShell::GotoIndex(int32_t aIndex) {
   NS_ENSURE_TRUE(rootSH, NS_ERROR_FAILURE);
 
   ErrorResult rv;
-  rootSH->GotoIndex(aIndex, aIndex - rootSH->Index(), false, rv);
+  rootSH->GotoIndex(aIndex, aIndex - rootSH->Index(), false, aUserActivation,
+                    rv);
   return rv.StealNSResult();
 }
 
@@ -4249,11 +4252,15 @@ nsDocShell::Reload(uint32_t aReloadFlags) {
 
   
   if (mOSHE) {
-    return LoadHistoryEntry(mOSHE, loadType);
+    return LoadHistoryEntry(
+        mOSHE, loadType,
+        aReloadFlags & nsIWebNavigation::LOAD_FLAGS_USER_ACTIVATION);
   }
 
   if (mLSHE) {  
-    return LoadHistoryEntry(mLSHE, loadType);
+    return LoadHistoryEntry(
+        mLSHE, loadType,
+        aReloadFlags & nsIWebNavigation::LOAD_FLAGS_USER_ACTIVATION);
   }
 
   return ReloadDocument(this, GetDocument(), loadType, mBrowsingContext,
@@ -11912,7 +11919,8 @@ void nsDocShell::UpdateActiveEntry(
   }
 }
 
-nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType) {
+nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType,
+                                      bool aUserActivation) {
   NS_ENSURE_TRUE(aEntry, NS_ERROR_FAILURE);
 
   nsresult rv;
@@ -11926,12 +11934,17 @@ nsresult nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType) {
   
   nsCOMPtr<nsISHEntry> kungFuDeathGrip(aEntry);
 
+  loadState->SetHasValidUserGestureActivation(aUserActivation);
+
   return LoadHistoryEntry(loadState, aLoadType, aEntry == mOSHE);
 }
 
 nsresult nsDocShell::LoadHistoryEntry(const LoadingSessionHistoryInfo& aEntry,
-                                      uint32_t aLoadType) {
+                                      uint32_t aLoadType,
+                                      bool aUserActivation) {
   RefPtr<nsDocShellLoadState> loadState = aEntry.CreateLoadInfo();
+  loadState->SetHasValidUserGestureActivation(aUserActivation);
+
   return LoadHistoryEntry(loadState, aLoadType,
                           aEntry.mLoadingCurrentActiveEntry);
 }

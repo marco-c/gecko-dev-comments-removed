@@ -2362,11 +2362,11 @@ void EventStateManager::DoScrollHistory(int32_t direction) {
       
       
       if (direction > 0)
-        webNav->GoBack(
-            StaticPrefs::browser_navigation_requireUserInteraction());
+        webNav->GoBack(StaticPrefs::browser_navigation_requireUserInteraction(),
+                       true);
       else
         webNav->GoForward(
-            StaticPrefs::browser_navigation_requireUserInteraction());
+            StaticPrefs::browser_navigation_requireUserInteraction(), true);
     }
   }
 }

@@ -1355,7 +1355,9 @@ nsresult nsSHistory::Reload(uint32_t aReloadFlags,
     return NS_OK;
   }
 
-  nsresult rv = LoadEntry(mIndex, loadType, HIST_CMD_RELOAD, aLoadResults);
+  nsresult rv = LoadEntry(
+      mIndex, loadType, HIST_CMD_RELOAD, aLoadResults,  false,
+      aReloadFlags & nsIWebNavigation::LOAD_FLAGS_USER_ACTIVATION);
   if (NS_FAILED(rv)) {
     aLoadResults.Clear();
     return rv;
@@ -1912,9 +1914,10 @@ nsSHistory::UpdateIndex() {
 }
 
 NS_IMETHODIMP
-nsSHistory::GotoIndex(int32_t aIndex) {
+nsSHistory::GotoIndex(int32_t aIndex, bool aUserActivation) {
   nsTArray<LoadEntryResult> loadResults;
-  nsresult rv = GotoIndex(aIndex, loadResults);
+  nsresult rv =
+      GotoIndex(aIndex, loadResults,  false, aUserActivation);
   NS_ENSURE_SUCCESS(rv, rv);
 
   LoadURIs(loadResults);
@@ -1931,9 +1934,9 @@ nsSHistory::EnsureCorrectEntryAtCurrIndex(nsISHEntry* aEntry) {
 
 nsresult nsSHistory::GotoIndex(int32_t aIndex,
                                nsTArray<LoadEntryResult>& aLoadResults,
-                               bool aSameEpoch) {
+                               bool aSameEpoch, bool aUserActivation) {
   return LoadEntry(aIndex, LOAD_HISTORY, HIST_CMD_GOTOINDEX, aLoadResults,
-                   aSameEpoch);
+                   aSameEpoch, aUserActivation);
 }
 
 NS_IMETHODIMP_(bool)
@@ -1948,13 +1951,15 @@ nsSHistory::HasUserInteractionAtIndex(int32_t aIndex) {
 
 nsresult nsSHistory::LoadNextPossibleEntry(
     int32_t aNewIndex, long aLoadType, uint32_t aHistCmd,
-    nsTArray<LoadEntryResult>& aLoadResults) {
+    nsTArray<LoadEntryResult>& aLoadResults, bool aUserActivation) {
   mRequestedIndex = -1;
   if (aNewIndex < mIndex) {
-    return LoadEntry(aNewIndex - 1, aLoadType, aHistCmd, aLoadResults);
+    return LoadEntry(aNewIndex - 1, aLoadType, aHistCmd, aLoadResults,
+                      false, aUserActivation);
   }
   if (aNewIndex > mIndex) {
-    return LoadEntry(aNewIndex + 1, aLoadType, aHistCmd, aLoadResults);
+    return LoadEntry(aNewIndex + 1, aLoadType, aHistCmd, aLoadResults,
+                      false, aUserActivation);
   }
   return NS_ERROR_FAILURE;
 }
@@ -1962,7 +1967,7 @@ nsresult nsSHistory::LoadNextPossibleEntry(
 nsresult nsSHistory::LoadEntry(int32_t aIndex, long aLoadType,
                                uint32_t aHistCmd,
                                nsTArray<LoadEntryResult>& aLoadResults,
-                               bool aSameEpoch) {
+                               bool aSameEpoch, bool aUserActivation) {
   MOZ_LOG(gSHistoryLog, LogLevel::Debug,
           ("LoadEntry(%d, 0x%lx, %u)", aIndex, aLoadType, aHistCmd));
   if (!mRootBC) {
@@ -2032,16 +2037,17 @@ nsresult nsSHistory::LoadEntry(int32_t aIndex, long aLoadType,
 
   if (mRequestedIndex == mIndex) {
     
-    InitiateLoad(nextEntry, mRootBC, aLoadType, aLoadResults);
+    InitiateLoad(nextEntry, mRootBC, aLoadType, aLoadResults, aUserActivation);
     return NS_OK;
   }
 
   
-  bool differenceFound = LoadDifferingEntries(prevEntry, nextEntry, mRootBC,
-                                              aLoadType, aLoadResults);
+  bool differenceFound = LoadDifferingEntries(
+      prevEntry, nextEntry, mRootBC, aLoadType, aLoadResults, aUserActivation);
   if (!differenceFound) {
     
-    return LoadNextPossibleEntry(aIndex, aLoadType, aHistCmd, aLoadResults);
+    return LoadNextPossibleEntry(aIndex, aLoadType, aHistCmd, aLoadResults,
+                                 aUserActivation);
   }
 
   return NS_OK;
@@ -2050,7 +2056,8 @@ nsresult nsSHistory::LoadEntry(int32_t aIndex, long aLoadType,
 bool nsSHistory::LoadDifferingEntries(nsISHEntry* aPrevEntry,
                                       nsISHEntry* aNextEntry,
                                       BrowsingContext* aParent, long aLoadType,
-                                      nsTArray<LoadEntryResult>& aLoadResults) {
+                                      nsTArray<LoadEntryResult>& aLoadResults,
+                                      bool aUserActivation) {
   MOZ_ASSERT(aPrevEntry && aNextEntry && aParent);
 
   uint32_t prevID = aPrevEntry->GetID();
@@ -2060,7 +2067,7 @@ bool nsSHistory::LoadDifferingEntries(nsISHEntry* aPrevEntry,
   if (prevID != nextID) {
     
     aNextEntry->SetIsSubFrame(aParent != mRootBC);
-    InitiateLoad(aNextEntry, aParent, aLoadType, aLoadResults);
+    InitiateLoad(aNextEntry, aParent, aLoadType, aLoadResults, aUserActivation);
     return true;
   }
 
@@ -2118,8 +2125,8 @@ bool nsSHistory::LoadDifferingEntries(nsISHEntry* aPrevEntry,
     
     
     
-    if (LoadDifferingEntries(pChild, nChild, bcChild, aLoadType,
-                             aLoadResults)) {
+    if (LoadDifferingEntries(pChild, nChild, bcChild, aLoadType, aLoadResults,
+                             aUserActivation)) {
       differenceFound = true;
     }
   }
@@ -2128,7 +2135,8 @@ bool nsSHistory::LoadDifferingEntries(nsISHEntry* aPrevEntry,
 
 void nsSHistory::InitiateLoad(nsISHEntry* aFrameEntry,
                               BrowsingContext* aFrameBC, long aLoadType,
-                              nsTArray<LoadEntryResult>& aLoadResults) {
+                              nsTArray<LoadEntryResult>& aLoadResults,
+                              bool aUserActivation) {
   MOZ_ASSERT(aFrameBC && aFrameEntry);
 
   LoadEntryResult* loadResult = aLoadResults.AppendElement();
@@ -2136,6 +2144,8 @@ void nsSHistory::InitiateLoad(nsISHEntry* aFrameEntry,
 
   nsCOMPtr<nsIURI> newURI = aFrameEntry->GetURI();
   RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(newURI);
+
+  loadState->SetHasValidUserGestureActivation(aUserActivation);
 
   
 
