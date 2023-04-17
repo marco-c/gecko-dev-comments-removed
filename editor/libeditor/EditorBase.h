@@ -2486,6 +2486,24 @@ class EditorBase : public nsIEditor,
 
 
 
+
+
+
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT virtual nsresult
+  InsertDroppedDataTransferAsAction(AutoEditActionDataSetter& aEditActionData,
+                                    dom::DataTransfer& aDataTransfer,
+                                    const EditorDOMPoint& aDroppedAt,
+                                    dom::Document* aSrcDocument) = 0;
+
+  
+
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   DeleteSelectionByDragAsAction(bool aDispatchInputEvent);
 

@@ -347,70 +347,81 @@ nsresult TextEditor::OnDrop(DragEvent* aDropEvent) {
     }
   }
 
-  if (IsTextEditor()) {
-    AutoTArray<nsString, 5> textArray;
-    textArray.SetCapacity(numItems);
-    uint32_t textLength = 0;
-    for (uint32_t i = 0; i < numItems; ++i) {
-      nsCOMPtr<nsIVariant> data;
-      dataTransfer->GetDataAtNoSecurityCheck(u"text/plain"_ns, i,
-                                             getter_AddRefs(data));
-      if (!data) {
-        continue;
-      }
-      
-      nsString insertText;
-      data->GetAsAString(insertText);
-      if (insertText.IsEmpty()) {
-        continue;
-      }
-      textArray.AppendElement(insertText);
-      textLength += insertText.Length();
-    }
-    
-    nsString data;
-    data.SetCapacity(textLength);
-    
-    
-    
-    for (nsString& text : Reversed(textArray)) {
-      data.Append(text);
-    }
-    
-    
-    
-    editActionData.SetData(data);
-
-    nsresult rv = editActionData.MaybeDispatchBeforeInputEvent();
-    if (NS_FAILED(rv)) {
-      NS_WARNING_ASSERTION(rv == NS_ERROR_EDITOR_ACTION_CANCELED,
-                           "MaybeDispatchBeforeInputEvent() failed");
-      return EditorBase::ToGenericNSResult(rv);
-    }
-
-    
-    
-    
-    nsContentUtils::PlatformToDOMLineBreaks(data);
-    DebugOnly<nsresult> rvIgnored = InsertTextAt(data, droppedAt, false);
-    if (NS_WARN_IF(Destroyed())) {
-      return NS_OK;
-    }
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-                         "EditorBase::InsertTextAt() failed, but ignored");
-  } else {
-    nsresult rv = MOZ_KnownLive(AsHTMLEditor())
-                      ->InsertDroppedDataTransferAsAction(
-                          editActionData, *dataTransfer, droppedAt, srcdoc);
-    if (rv == NS_ERROR_EDITOR_DESTROYED ||
-        rv == NS_ERROR_EDITOR_ACTION_CANCELED) {
-      return EditorBase::ToGenericNSResult(rv);
-    }
+  nsresult rv = InsertDroppedDataTransferAsAction(editActionData, *dataTransfer,
+                                                  droppedAt, srcdoc);
+  if (rv == NS_ERROR_EDITOR_DESTROYED ||
+      rv == NS_ERROR_EDITOR_ACTION_CANCELED) {
+    return EditorBase::ToGenericNSResult(rv);
   }
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rv),
+      "EditorBase::InsertDroppedDataTransferAsAction() failed, but ignored");
 
-  nsresult rv = ScrollSelectionFocusIntoView();
+  rv = ScrollSelectionFocusIntoView();
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::ScrollSelectionFocusIntoView() failed");
+  return rv;
+}
+
+nsresult TextEditor::InsertDroppedDataTransferAsAction(
+    AutoEditActionDataSetter& aEditActionData, DataTransfer& aDataTransfer,
+    const EditorDOMPoint& aDroppedAt, Document* aSrcDocument) {
+  MOZ_ASSERT(aEditActionData.GetEditAction() == EditAction::eDrop);
+  MOZ_ASSERT(GetEditAction() == EditAction::eDrop);
+  MOZ_ASSERT(aDroppedAt.IsSet());
+  MOZ_ASSERT(aDataTransfer.MozItemCount() > 0);
+
+  uint32_t numItems = aDataTransfer.MozItemCount();
+  AutoTArray<nsString, 5> textArray;
+  textArray.SetCapacity(numItems);
+  uint32_t textLength = 0;
+  for (uint32_t i = 0; i < numItems; ++i) {
+    nsCOMPtr<nsIVariant> data;
+    aDataTransfer.GetDataAtNoSecurityCheck(u"text/plain"_ns, i,
+                                           getter_AddRefs(data));
+    if (!data) {
+      continue;
+    }
+    
+    nsString insertText;
+    data->GetAsAString(insertText);
+    if (insertText.IsEmpty()) {
+      continue;
+    }
+    textArray.AppendElement(insertText);
+    textLength += insertText.Length();
+  }
+  
+  nsString data;
+  data.SetCapacity(textLength);
+  
+  
+  
+  for (nsString& text : Reversed(textArray)) {
+    data.Append(text);
+  }
+  
+  
+  
+  aEditActionData.SetData(data);
+
+  nsresult rv = aEditActionData.MaybeDispatchBeforeInputEvent();
+  if (NS_FAILED(rv)) {
+    NS_WARNING_ASSERTION(rv == NS_ERROR_EDITOR_ACTION_CANCELED,
+                         "MaybeDispatchBeforeInputEvent() failed");
+    return rv;
+  }
+
+  
+  
+  
+  nsContentUtils::PlatformToDOMLineBreaks(data);
+  rv = InsertTextAt(data, aDroppedAt, false);
+  if (NS_WARN_IF(Destroyed())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "EditorBase::InsertTextAt() failed, but ignored");
   return rv;
 }
 
