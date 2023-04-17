@@ -519,10 +519,6 @@ var SessionStore = {
   finishTabRemotenessChange(aTab, aSwitchId) {
     SessionStoreInternal.finishTabRemotenessChange(aTab, aSwitchId);
   },
-
-  restoreTabContentComplete(aBrowser, aData) {
-    SessionStoreInternal._restoreTabContentComplete(aBrowser, aData);
-  },
 };
 
 
@@ -5620,7 +5616,7 @@ var SessionStoreInternal = {
           .get(browser.permanentKey)
           .uninstall();
       }
-      SessionStoreUtils.setRestoreData(browser.browsingContext, null);
+      browser.browsingContext.clearRestoreState();
     }
 
     
@@ -5887,7 +5883,7 @@ var SessionStoreInternal = {
 
 
 
-  _restoreTabContent(browser, options) {
+  _restoreTabContent(browser, options = {}) {
     if (!Services.appinfo.sessionHistoryInParent) {
       throw new Error("This function should only be used with SHIP");
     }
@@ -5902,66 +5898,51 @@ var SessionStoreInternal = {
       }
     }
 
-    let restoreData = {
-      ...this._shistoryToRestore.get(browser.permanentKey),
+    let data = {
       ...options,
+      ...this._shistoryToRestore.get(browser.permanentKey),
     };
     this._shistoryToRestore.delete(browser.permanentKey);
 
-    this._restoreTabContentStarted(browser, restoreData);
+    this._restoreTabContentStarted(browser, data);
 
-    let { tabData } = restoreData;
-    let uri = null;
-    let loadFlags = null;
+    let tabData = data.tabData || {};
+    let uri = "about:blank";
+    let loadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_HISTORY;
 
     if (tabData?.userTypedValue && tabData?.userTypedClear) {
       uri = tabData.userTypedValue;
       loadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_ALLOW_THIRD_PARTY_FIXUP;
     } else if (tabData?.entries.length) {
-      uri = tabData.entries[tabData.index - 1].url;
-      let willRestoreContent = SessionStoreUtils.setRestoreData(
+      let promise = SessionStoreUtils.initializeRestore(
         browser.browsingContext,
         this.buildRestoreData(tabData.formdata, tabData.scroll)
       );
-      
-      
-      
-      if (willRestoreContent) {
-        return;
-      }
-    } else {
-      uri = "about:blank";
-      loadFlags = Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_HISTORY;
-    }
-
-    if (uri) {
-      this.addProgressListenerForRestore(browser, {
-        onStopRequest: (request, listener) => {
-          let requestURI = request.QueryInterface(Ci.nsIChannel)?.originalURI;
-          
-          
-          
-          
-          
-          
-          
-          
-          if (requestURI?.spec !== "about:blank" || uri === "about:blank") {
-            listener.uninstall();
-            this._restoreTabContentComplete(browser, restoreData);
-          }
-        },
+      promise.then(() => {
+        if (TAB_STATE_FOR_BROWSER.get(browser) === TAB_STATE_RESTORING) {
+          this._restoreTabContentComplete(browser, data);
+        }
       });
-
-      if (loadFlags) {
-        browser.browsingContext.loadURI(uri, {
-          loadFlags,
-          triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
-        });
-      } else {
-        browser.browsingContext.sessionHistory.reloadCurrentEntry();
-      }
+      return;
     }
+
+    this.addProgressListenerForRestore(browser, {
+      onStopRequest: (request, listener) => {
+        let requestURI = request.QueryInterface(Ci.nsIChannel)?.originalURI;
+        
+        
+        
+        if (requestURI?.spec !== "about:blank" || uri === "about:blank") {
+          listener.uninstall();
+          this._restoreTabContentComplete(browser, data);
+        }
+      },
+    });
+
+    browser.browsingContext.loadURI(uri, {
+      loadFlags,
+      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+    });
   },
 
   _sendRestoreTabContent(browser, options) {

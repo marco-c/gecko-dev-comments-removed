@@ -80,9 +80,7 @@ RestoreTabContentObserver::Observe(nsISupports* aSubject, const char* aTopic,
   }
 
   nsCOMPtr<nsIURI> uri = inner->GetDocumentURI();
-  
-  
-  if (!uri || NS_IsAboutBlank(uri)) {
+  if (!uri) {
     return NS_OK;
   }
 
