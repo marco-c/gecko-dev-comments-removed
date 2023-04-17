@@ -10,19 +10,62 @@
 
 #include "AvailableMemoryWatcher.h"
 #include "Logging.h"
-#include "nsExceptionHandler.h"
+#include "mozilla/Preferences.h"
 #include "nsICrashReporter.h"
 #include "nsISupports.h"
+#include "nsITimer.h"
 #include "nsMemoryPressure.h"
+#include "nsPrintfCString.h"
 
 #define MP_LOG(...) MOZ_LOG(gMPLog, mozilla::LogLevel::Debug, (__VA_ARGS__))
 static mozilla::LazyLogModule gMPLog("MemoryPressure");
 
 namespace mozilla {
 
-class nsAvailableMemoryWatcher final : public nsAvailableMemoryWatcherBase {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class nsAvailableMemoryWatcher final : public nsITimerCallback,
+                                       public nsINamed,
+                                       public nsAvailableMemoryWatcherBase {
  public:
   NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_NSIOBSERVER
+  NS_DECL_NSITIMERCALLBACK
+  NS_DECL_NSINAMED
 
   nsAvailableMemoryWatcher();
   nsresult Init() override;
@@ -37,6 +80,16 @@ class nsAvailableMemoryWatcher final : public nsAvailableMemoryWatcherBase {
   void OnMemoryPressureChangedInternal(MacMemoryPressureLevel aNewLevel,
                                        bool aIsInitialLevel);
 
+  
+  
+  
+  
+  
+  nsresult OnUnloadAttemptCompleted(nsresult aResult) override;
+
+  void OnShutdown();
+  void OnPrefChange();
+
   void InitParentAnnotations();
   void UpdateParentAnnotations();
 
@@ -49,13 +102,50 @@ class nsAvailableMemoryWatcher final : public nsAvailableMemoryWatcherBase {
     CrashReporter::AnnotateCrashReport(aAnnotation, aData);
   }
 
+  void LowMemoryResponse();
+  void StartPolling();
+  void StopPolling();
+  void RestartPolling();
+  inline bool IsPolling() { return mTimer; }
+
   void ReadSysctls();
+
+  
+  
+  
+  
+  
+  enum ResponseMask {
+    eNone = 0x0,
+    eTabUnload = 0x1,
+    eInternalMemoryPressure = 0x2,
+    eAll = 0x3,
+  };
+  static constexpr char kResponseMask[] = "browser.lowMemoryResponseMask";
+  static const uint32_t kResponseMaskDefault;
+  static const uint32_t kResponseMaskMax;
+
+  
+  
+  
+  
+  static constexpr char kPollingIntervalMS[] =
+      "browser.lowMemoryPollingIntervalMS";
+  static const uint32_t kPollingIntervalMaxMS;
+  static const uint32_t kPollingIntervalMinMS;
+  static const uint32_t kPollingIntervalDefaultMS;
+
+  static constexpr char kResponseOnWarn[] = "browser.lowMemoryResponseOnWarn";
+  static const bool kResponseLevelOnWarnDefault = false;
 
   
   bool mInitialized;
 
   
   MacMemoryPressureLevel mLevel;
+
+  
+  MacMemoryPressureLevel mResponseLevel;
 
   
   
@@ -83,21 +173,48 @@ class nsAvailableMemoryWatcher final : public nsAvailableMemoryWatcherBase {
   nsAutoCString mNormalTimeStr;
   nsAutoCString mWarningTimeStr;
   nsAutoCString mCriticalTimeStr;
+
+  nsCOMPtr<nsITimer> mTimer;  
+
+  
+  uint32_t mPollingInterval;
+  uint32_t mResponseMask;
 };
 
-NS_IMPL_ISUPPORTS(nsAvailableMemoryWatcher, nsIAvailableMemoryWatcherBase);
+const uint32_t nsAvailableMemoryWatcher::kResponseMaskDefault =
+    ResponseMask::eAll;
+const uint32_t nsAvailableMemoryWatcher::kResponseMaskMax = ResponseMask::eAll;
+
+
+const uint32_t nsAvailableMemoryWatcher::kPollingIntervalDefaultMS = 10'000;
+
+const uint32_t nsAvailableMemoryWatcher::kPollingIntervalMaxMS = 600'000;
+
+const uint32_t nsAvailableMemoryWatcher::kPollingIntervalMinMS = 100;
+
+NS_IMPL_ISUPPORTS_INHERITED(nsAvailableMemoryWatcher,
+                            nsAvailableMemoryWatcherBase, nsIObserver,
+                            nsITimerCallback, nsINamed)
 
 nsAvailableMemoryWatcher::nsAvailableMemoryWatcher()
     : mInitialized(false),
       mLevel(MacMemoryPressureLevel::Value::eUnset),
+      mResponseLevel(MacMemoryPressureLevel::Value::eCritical),
       mLevelSysctl(0xFFFFFFFF),
       mAvailMemSysctl(-1),
       mLevelStr("Unset"),
       mNormalTimeStr("Unset"),
       mWarningTimeStr("Unset"),
-      mCriticalTimeStr("Unset") {}
+      mCriticalTimeStr("Unset"),
+      mPollingInterval(0),
+      mResponseMask(ResponseMask::eAll) {}
 
 nsresult nsAvailableMemoryWatcher::Init() {
+  nsresult rv = nsAvailableMemoryWatcherBase::Init();
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
   
   
   MOZ_ASSERT(!mInitialized);
@@ -105,9 +222,26 @@ nsresult nsAvailableMemoryWatcher::Init() {
     return NS_ERROR_ALREADY_INITIALIZED;
   }
 
-  nsresult rv = nsAvailableMemoryWatcherBase::Init();
-  if (NS_FAILED(rv)) {
-    return rv;
+  
+  mPollingInterval =
+      Preferences::GetUint(kPollingIntervalMS, kPollingIntervalDefaultMS);
+  mPollingInterval = std::clamp(mPollingInterval, kPollingIntervalMinMS,
+                                kPollingIntervalMaxMS);
+
+  
+  
+  
+  
+  mResponseMask = Preferences::GetUint(kResponseMask, kResponseMaskDefault);
+  if (mResponseMask > kResponseMaskMax) {
+    mResponseMask = kResponseMaskMax;
+  }
+
+  
+  if (Preferences::GetBool(kResponseOnWarn, kResponseLevelOnWarnDefault)) {
+    mResponseLevel = MacMemoryPressureLevel::Value::eWarning;
+  } else {
+    mResponseLevel = MacMemoryPressureLevel::Value::eCritical;
   }
 
   ReadSysctls();
@@ -132,6 +266,24 @@ nsresult nsAvailableMemoryWatcher::Init() {
       CrashReporter::Annotation::MacAvailableMemorySysctl, mAvailMemSysctl);
 
   
+  
+  rv = Preferences::AddStrongObserver(this, kResponseMask);
+  if (NS_FAILED(rv)) {
+    NS_WARNING(
+        nsPrintfCString("Failed to add %s observer", kResponseMask).get());
+  }
+  rv = Preferences::AddStrongObserver(this, kPollingIntervalMS);
+  if (NS_FAILED(rv)) {
+    NS_WARNING(
+        nsPrintfCString("Failed to add %s observer", kPollingIntervalMS).get());
+  }
+  rv = Preferences::AddStrongObserver(this, kResponseOnWarn);
+  if (NS_FAILED(rv)) {
+    NS_WARNING(
+        nsPrintfCString("Failed to add %s observer", kResponseOnWarn).get());
+  }
+
+  
   MacMemoryPressureLevel initialLevel;
   switch (mLevelSysctl) {
     case kSysctlLevelNormal:
@@ -146,8 +298,8 @@ nsresult nsAvailableMemoryWatcher::Init() {
     default:
       initialLevel = MacMemoryPressureLevel::Value::eUnexpected;
   }
-  OnMemoryPressureChangedInternal(initialLevel,  true);
 
+  OnMemoryPressureChangedInternal(initialLevel,  true);
   mInitialized = true;
   return NS_OK;
 }
@@ -196,9 +348,6 @@ void nsAvailableMemoryWatcher::UpdateParentAnnotations() {
       break;
   }
 
-  MP_LOG("Transitioning to %s at time %s", pressureLevelString.get(),
-         timeChangedString.get());
-
   
   AddParentAnnotation(CrashReporter::Annotation::MacMemoryPressure,
                       pressureLevelString);
@@ -244,6 +393,8 @@ void nsAvailableMemoryWatcher::OnMemoryPressureChanged(
 void nsAvailableMemoryWatcher::OnMemoryPressureChangedInternal(
     MacMemoryPressureLevel aNewLevel, bool aIsInitialLevel) {
   MOZ_ASSERT(mInitialized || aIsInitialLevel);
+  MP_LOG("MemoryPressureChange: existing level: %s, new level: %s",
+         mLevel.ToString(), aNewLevel.ToString());
 
   
   
@@ -256,15 +407,20 @@ void nsAvailableMemoryWatcher::OnMemoryPressureChangedInternal(
 
   
   
-  
-  
-  if (mLevel.IsUnsetOrNormal() && aNewLevel.IsWarningOrAbove()) {
+  if ((mLevel < mResponseLevel) && (aNewLevel >= mResponseLevel)) {
     UpdateLowMemoryTimeStamp();
+    LowMemoryResponse();
+    if (mResponseMask) {
+      StartPolling();
+    }
   }
 
   
-  if (mLevel.IsWarningOrAbove() && aNewLevel.IsNormal()) {
+  if ((mLevel >= mResponseLevel) && (aNewLevel < mResponseLevel)) {
     RecordTelemetryEventOnHighMemory();
+    StopPolling();
+    MP_LOG("Issuing MemoryPressureState::NoPressure");
+    NS_NotifyOfMemoryPressure(MemoryPressureState::NoPressure);
   }
 
   mLevel = aNewLevel;
@@ -272,9 +428,9 @@ void nsAvailableMemoryWatcher::OnMemoryPressureChangedInternal(
   if (!aIsInitialLevel) {
     
     ReadSysctls();
+    MP_LOG("level sysctl: %d, available memory: %d percent", mLevelSysctl,
+           mAvailMemSysctl);
   }
-  MP_LOG("level: %s, level sysctl: %d, available memory: %d percent",
-         mLevel.ToString(), mLevelSysctl, mAvailMemSysctl);
   UpdateParentAnnotations();
 }
 
@@ -296,4 +452,174 @@ void nsAvailableMemoryWatcher::AddChildAnnotations(
   aCrashReporter->AddAnnotation(
       CrashReporter::Annotation::MacAvailableMemorySysctl, mAvailMemSysctl);
 }
+
+void nsAvailableMemoryWatcher::LowMemoryResponse() {
+  if (mResponseMask & ResponseMask::eTabUnload) {
+    MP_LOG("Attempting tab unload");
+    mTabUnloader->UnloadTabAsync();
+  } else {
+    
+    
+    OnUnloadAttemptCompleted(NS_ERROR_NOT_AVAILABLE);
+  }
+}
+
+NS_IMETHODIMP
+nsAvailableMemoryWatcher::Notify(nsITimer* aTimer) {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(mLevel >= mResponseLevel);
+  LowMemoryResponse();
+  return NS_OK;
+}
+
+
+
+
+
+
+NS_IMETHODIMP
+nsAvailableMemoryWatcher::OnUnloadAttemptCompleted(nsresult aResult) {
+  switch (aResult) {
+    
+    case NS_OK:
+      MP_LOG("Tab unloaded");
+      ++mNumOfTabUnloading;
+      break;
+
+    
+    
+    
+    
+    case NS_ERROR_NOT_AVAILABLE:
+      if (mResponseMask & ResponseMask::eInternalMemoryPressure) {
+        ++mNumOfMemoryPressure;
+        MP_LOG("Tab not unloaded");
+        MP_LOG("Issuing MemoryPressureState::LowMemory");
+        NS_NotifyOfEventualMemoryPressure(MemoryPressureState::LowMemory);
+      }
+      break;
+
+    
+    case NS_ERROR_ABORT:
+      break;
+
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unexpected aResult");
+      break;
+  }
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsAvailableMemoryWatcher::Observe(nsISupports* aSubject, const char* aTopic,
+                                  const char16_t* aData) {
+  nsresult rv = nsAvailableMemoryWatcherBase::Observe(aSubject, aTopic, aData);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  if (strcmp(aTopic, "xpcom-shutdown") == 0) {
+    OnShutdown();
+  } else if (strcmp(aTopic, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID) == 0) {
+    OnPrefChange();
+  }
+  return NS_OK;
+}
+
+void nsAvailableMemoryWatcher::OnShutdown() {
+  StopPolling();
+  Preferences::RemoveObserver(this, kResponseMask);
+  Preferences::RemoveObserver(this, kPollingIntervalMS);
+}
+
+void nsAvailableMemoryWatcher::OnPrefChange() {
+  MP_LOG("OnPrefChange()");
+  
+  uint32_t pollingInterval = Preferences::GetUint(kPollingIntervalMS);
+  if (pollingInterval != mPollingInterval) {
+    mPollingInterval = std::clamp(pollingInterval, kPollingIntervalMinMS,
+                                  kPollingIntervalMaxMS);
+    RestartPolling();
+  }
+
+  
+  uint32_t responseMask = Preferences::GetUint(kResponseMask);
+  if (mResponseMask != responseMask) {
+    mResponseMask = std::min(responseMask, kResponseMaskMax);
+
+    
+    if (mResponseMask && (mLevel >= mResponseLevel) && !IsPolling()) {
+      StartPolling();
+    }
+
+    
+    if (!mResponseMask && IsPolling()) {
+      StopPolling();
+    }
+  }
+
+  
+  MacMemoryPressureLevel newResponseLevel;
+  if (Preferences::GetBool(kResponseOnWarn, kResponseLevelOnWarnDefault)) {
+    newResponseLevel = MacMemoryPressureLevel::Value::eWarning;
+  } else {
+    newResponseLevel = MacMemoryPressureLevel::Value::eCritical;
+  }
+  if (newResponseLevel == mResponseLevel) {
+    return;
+  }
+
+  
+  if (mResponseMask && (newResponseLevel <= mLevel)) {
+    UpdateLowMemoryTimeStamp();
+    LowMemoryResponse();
+    StartPolling();
+  }
+
+  
+  if (IsPolling() && (newResponseLevel > mLevel)) {
+    RecordTelemetryEventOnHighMemory();
+    StopPolling();
+    MP_LOG("Issuing MemoryPressureState::NoPressure");
+    NS_NotifyOfMemoryPressure(MemoryPressureState::NoPressure);
+  }
+  mResponseLevel = newResponseLevel;
+}
+
+void nsAvailableMemoryWatcher::StartPolling() {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (!mTimer) {
+    MP_LOG("Starting poller");
+    mTimer = NS_NewTimer();
+    if (mTimer) {
+      mTimer->InitWithCallback(this, mPollingInterval,
+                               nsITimer::TYPE_REPEATING_SLACK);
+    }
+  }
+}
+
+void nsAvailableMemoryWatcher::StopPolling() {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (mTimer) {
+    MP_LOG("Pausing poller");
+    mTimer->Cancel();
+    mTimer = nullptr;
+  }
+}
+
+void nsAvailableMemoryWatcher::RestartPolling() {
+  if (IsPolling()) {
+    StopPolling();
+    StartPolling();
+  } else {
+    MOZ_ASSERT(!mTimer);
+  }
+}
+
+NS_IMETHODIMP
+nsAvailableMemoryWatcher::GetName(nsACString& aName) {
+  aName.AssignLiteral("nsAvailableMemoryWatcher");
+  return NS_OK;
+}
+
 }  

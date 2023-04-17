@@ -681,6 +681,40 @@ pref("security.allow_parent_unrestricted_js_loads", false);
 
 pref("browser.tabs.unloadOnLowMemory", true);
 
+#if defined(XP_MACOSX)
+  
+  
+  
+  
+  pref("browser.lowMemoryPollingIntervalMS", 10000);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  #if defined(NIGHTLY_BUILD)
+  pref("browser.lowMemoryResponseMask", 3);
+  #else
+  pref("browser.lowMemoryResponseMask", 0);
+  #endif
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  pref("browser.lowMemoryResponseOnWarn", false);
+#endif
+
 pref("browser.ctrlTab.sortByRecentlyUsed", false);
 
 

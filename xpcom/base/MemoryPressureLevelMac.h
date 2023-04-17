@@ -13,6 +13,8 @@ namespace mozilla {
 
 class MacMemoryPressureLevel {
  public:
+  
+  
   enum class Value {
     eUnset,
     eUnexpected,
@@ -27,6 +29,20 @@ class MacMemoryPressureLevel {
   bool operator==(const Value& aRhsValue) { return mValue == aRhsValue; }
   bool operator==(const MacMemoryPressureLevel& aRhs) {
     return mValue == aRhs.mValue;
+  }
+
+  
+  bool operator<(const MacMemoryPressureLevel& aRhs) const {
+    return mValue < aRhs.mValue;
+  }
+  bool operator>(const MacMemoryPressureLevel& aRhs) const {
+    return aRhs < *this;
+  }
+  bool operator<=(const MacMemoryPressureLevel& aRhs) const {
+    return !(aRhs < *this);
+  }
+  bool operator>=(const MacMemoryPressureLevel& aRhs) const {
+    return !(*this < aRhs);
   }
 
   Value GetValue() { return mValue; }
