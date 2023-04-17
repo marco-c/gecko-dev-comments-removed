@@ -698,7 +698,6 @@ class TargetCommand extends EventEmitter {
       
       await targetFront.reload({ options: { force: bypassCache } });
     } catch (e) {
-      dump(" target reload exception: " + e + " >>> " + e.message + " <<<\n");
       
       
       if (!targetFront.targetForm.followWindowGlobalLifeCycle) {
