@@ -30,7 +30,7 @@ const EventEmitter = require("devtools/shared/event-emitter");
 
 
 
-const WILL_NAVIGATE_TIME_SHIFT = 10;
+const WILL_NAVIGATE_TIME_SHIFT = 20;
 exports.WILL_NAVIGATE_TIME_SHIFT = WILL_NAVIGATE_TIME_SHIFT;
 
 
