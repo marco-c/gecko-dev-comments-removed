@@ -135,15 +135,6 @@ var ProcessHangMonitor = {
 
 
 
-
-  terminatePlugin(win) {
-    this.handleUserInput(win, report => report.terminatePlugin());
-  },
-
-  
-
-
-
   stopIt(win) {
     let report = this.findActiveReport(win.gBrowser.selectedBrowser);
     if (!report) {
@@ -154,9 +145,6 @@ var ProcessHangMonitor = {
       case report.SLOW_SCRIPT:
         this._recordTelemetryForReport(report, "user-aborted");
         this.terminateScript(win);
-        break;
-      case report.PLUGIN_HANG:
-        this.terminatePlugin(win);
         break;
     }
   },
@@ -170,10 +158,6 @@ var ProcessHangMonitor = {
       case report.SLOW_SCRIPT: {
         this._recordTelemetryForReport(report, endReason, backupInfo);
         report.terminateScript();
-        break;
-      }
-      case report.PLUGIN_HANG: {
-        report.terminatePlugin();
         break;
       }
     }
