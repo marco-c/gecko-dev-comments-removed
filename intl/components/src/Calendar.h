@@ -5,6 +5,7 @@
 #define intl_components_Calendar_h_
 
 #include "mozilla/Assertions.h"
+#include "mozilla/EnumSet.h"
 #include "mozilla/intl/ICU4CGlue.h"
 #include "mozilla/intl/ICUError.h"
 #include "mozilla/Maybe.h"
@@ -15,6 +16,19 @@
 using UCalendar = void*;
 
 namespace mozilla::intl {
+
+
+
+
+enum class Weekday : uint8_t {
+  Monday = 1,
+  Tuesday,
+  Wednesday,
+  Thursday,
+  Friday,
+  Saturday,
+  Sunday,
+};
 
 
 
@@ -45,6 +59,21 @@ class Calendar final {
 
 
   Result<const char*, ICUError> GetBcp47Type();
+
+  
+
+
+  Result<EnumSet<Weekday>, ICUError> GetWeekend();
+
+  
+
+
+  Weekday GetFirstDayOfWeek();
+
+  
+
+
+  int32_t GetMinimalDaysInFirstWeek();
 
   
 
