@@ -151,7 +151,21 @@ class DateTimeFormat final {
     }
   };
 
+  
+
+
+
+
+  void SetStartTimeIfGregorian(double aTime);
+
   ~DateTimeFormat();
+
+  
+
+
+
+
+  UDateFormat* UnsafeGetUDateFormat() const { return mDateFormat; }
 
  private:
   explicit DateTimeFormat(UDateFormat* aDateFormat);

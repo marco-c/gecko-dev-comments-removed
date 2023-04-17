@@ -2,6 +2,7 @@
 
 
 
+#include "unicode/ucal.h"
 #include "unicode/udat.h"
 #include "unicode/udatpg.h"
 
@@ -171,6 +172,13 @@ DateTimeFormat::TryCreateFromSkeleton(
 
   return DateTimeFormat::TryCreateFromSkeleton(aLocale, skeletonUtf16Buffer,
                                                timeZone);
+}
+
+void DateTimeFormat::SetStartTimeIfGregorian(double aTime) {
+  UErrorCode status = U_ZERO_ERROR;
+  UCalendar* cal = const_cast<UCalendar*>(udat_getCalendar(mDateFormat));
+  ucal_setGregorianChange(cal, aTime, &status);
+  
 }
 
 }  
