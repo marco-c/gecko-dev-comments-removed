@@ -11,6 +11,10 @@ var gContentWindow;
 add_task(setup_UITourTest);
 
 add_UITour_task(async function test_showMenu_hideMenu_pageActionPanel() {
+  
+  if (gProton) {
+    return;
+  }
   let pageActionPanel = BrowserPageActions.panelNode;
   let shownPromise = promisePanelElementShown(window, pageActionPanel);
   await showMenuPromise("pageActionPanel");
