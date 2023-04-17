@@ -1088,6 +1088,19 @@ void nsChildView::PostHandleKeyEvent(mozilla::WidgetKeyboardEvent* aEvent) {
     return;
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  if ([cocoaEvent keyCode] == kVK_Escape &&
+      [[mView window] styleMask] & NSWindowStyleMaskFullScreen) {
+    [[mView window] toggleFullScreen:nil];
+  }
+
   if (SendEventToNativeMenuSystem(cocoaEvent)) {
     aEvent->PreventDefault();
   }
@@ -3744,7 +3757,8 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
     NSString* info = [NSString
         stringWithFormat:
             @"\nview [%@], window [%@], window is key %i, is fullscreen %i, app is active %i", self,
-            window, [window isKeyWindow], ([window styleMask] & (1 << 14)) != 0, [NSApp isActive]];
+            window, [window isKeyWindow], ([window styleMask] & NSWindowStyleMaskFullScreen) != 0,
+            [NSApp isActive]];
     nsAutoCString additionalInfo([info UTF8String]);
 
     if (mGeckoChild->GetInputContext().IsPasswordEditor() &&
