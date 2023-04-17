@@ -442,8 +442,6 @@ class nsTextPaintStyle {
   
   
   
-  
-  
   bool EnsureSufficientContrast(nscolor* aForeColor, nscolor* aBackColor);
 
   nscolor GetResolvedForeColor(nscolor aColor, nscolor aDefaultForeColor,
@@ -3838,6 +3836,11 @@ bool nsTextPaintStyle::EnsureSufficientContrast(nscolor* aForeColor,
                                                 nscolor* aBackColor) {
   InitCommonColors();
 
+  const bool sameAsForeground = *aForeColor == NS_SAME_AS_FOREGROUND_COLOR;
+  if (sameAsForeground) {
+    *aForeColor = GetTextColor();
+  }
+
   
   
   
@@ -3854,12 +3857,20 @@ bool nsTextPaintStyle::EnsureSufficientContrast(nscolor* aForeColor,
 
   
   
+  
+  
+  
+  if (sameAsForeground && backLuminosityDifference) {
+    return false;
+  }
+
   int32_t foreLuminosityDifference =
       NS_LUMINOSITY_DIFFERENCE(*aForeColor, mFrameBackgroundColor);
   if (backLuminosityDifference < foreLuminosityDifference) {
-    nscolor tmpColor = *aForeColor;
-    *aForeColor = *aBackColor;
-    *aBackColor = tmpColor;
+    std::swap(*aForeColor, *aBackColor);
+    
+    *aForeColor = NS_RGB(NS_GET_R(*aForeColor), NS_GET_G(*aForeColor),
+                         NS_GET_B(*aForeColor));
     return true;
   }
   return false;
@@ -4142,19 +4153,7 @@ bool nsTextPaintStyle::InitSelectionColorsAndShadow() {
       LookAndFeel::Color(LookAndFeel::ColorID::Highlighttext, mFrame);
 
   if (mResolveColors) {
-    
-    
-    if (mSelectionTextColor == NS_SAME_AS_FOREGROUND_COLOR) {
-      nscolor frameColor =
-          SVGUtils::IsInSVGTextSubtree(mFrame)
-              ? mFrame->GetVisitedDependentColor(&nsStyleSVG::mFill)
-              : mFrame->GetVisitedDependentColor(
-                    &nsStyleText::mWebkitTextFillColor);
-      mSelectionTextColor =
-          EnsureDifferentColors(frameColor, mSelectionBGColor);
-    } else {
-      EnsureSufficientContrast(&mSelectionTextColor, &mSelectionBGColor);
-    }
+    EnsureSufficientContrast(&mSelectionTextColor, &mSelectionBGColor);
   }
   return true;
 }
@@ -4226,8 +4225,9 @@ void nsTextPaintStyle::InitSelectionStyle(int32_t aIndex) {
   if (mResolveColors) {
     foreColor = GetResolvedForeColor(foreColor, GetTextColor(), backColor);
 
-    if (NS_GET_A(backColor) > 0)
+    if (NS_GET_A(backColor) > 0) {
       EnsureSufficientContrast(&foreColor, &backColor);
+    }
   }
 
   nscolor lineColor;
@@ -4235,8 +4235,9 @@ void nsTextPaintStyle::InitSelectionStyle(int32_t aIndex) {
   uint8_t lineStyle;
   GetSelectionUnderline(mFrame, aIndex, &lineColor, &relativeSize, &lineStyle);
 
-  if (mResolveColors)
+  if (mResolveColors) {
     lineColor = GetResolvedForeColor(lineColor, foreColor, backColor);
+  }
 
   selectionStyle->mTextColor = foreColor;
   selectionStyle->mBGColor = backColor;
