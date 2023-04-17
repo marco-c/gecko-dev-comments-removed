@@ -209,6 +209,10 @@ add_task(async function test() {
   ok(!pinnedSoundTab.linkedPanel, "unloaded a pinned tab playing sound");
   await compareTabOrder([]); 
 
+  const histogram = TelemetryTestUtils.getAndClearHistogram(
+    "TAB_UNLOAD_TO_RELOAD"
+  );
+
   
   
   const message = await pressureAndObserve("memory-pressure");
@@ -224,6 +228,12 @@ add_task(async function test() {
   await BrowserTestUtils.switchTab(gBrowser, tab1);
   await BrowserTestUtils.switchTab(gBrowser, soundTab);
   await BrowserTestUtils.switchTab(gBrowser, pinnedTab);
+
+  const hist = histogram.snapshot();
+  const numEvents = Object.values(hist.values).reduce((a, b) => a + b);
+  Assert.equal(numEvents, 3, "three tabs have been reloaded.");
+
+  
   await BrowserTestUtils.switchTab(gBrowser, tab0);
 
   
