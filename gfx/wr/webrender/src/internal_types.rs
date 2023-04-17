@@ -315,6 +315,17 @@ pub struct TextureCacheAllocation {
 
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[cfg_attr(feature = "capture", derive(Serialize))]
+#[cfg_attr(feature = "replay", derive(Deserialize))]
+pub enum TextureCacheCategory {
+    Atlas,
+    Standalone,
+    PictureTile,
+    RenderTarget,
+}
+
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct TextureCacheAllocInfo {
     pub width: i32,
     pub height: i32,
@@ -325,6 +336,7 @@ pub struct TextureCacheAllocInfo {
     pub is_shared_cache: bool,
     
     pub has_depth: bool,
+    pub category: TextureCacheCategory
 }
 
 
