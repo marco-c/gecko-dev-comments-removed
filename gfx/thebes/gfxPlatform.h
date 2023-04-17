@@ -37,7 +37,6 @@ class gfxTextRun;
 class nsIURI;
 class nsAtom;
 class nsIObserver;
-class nsPresContext;
 class SRGBOverrideObserver;
 class gfxTextPerfMetrics;
 typedef struct FT_LibraryRec_* FT_Library;
@@ -396,7 +395,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
 
   gfxFontGroup* CreateFontGroup(
-      nsPresContext* aPresContext,
       const mozilla::StyleFontFamilyList& aFontFamilyList,
       const gfxFontStyle* aStyle, nsAtom* aLanguage, bool aExplicitLanguage,
       gfxTextPerfMetrics* aTextPerf, gfxUserFontSet* aUserFontSet,
@@ -408,8 +406,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
 
 
-  gfxFontEntry* LookupLocalFont(nsPresContext* aPresContext,
-                                const nsACString& aFontName,
+  gfxFontEntry* LookupLocalFont(const nsACString& aFontName,
                                 WeightRange aWeightForEntry,
                                 StretchRange aStretchForEntry,
                                 SlantStyleRange aStyleForEntry);

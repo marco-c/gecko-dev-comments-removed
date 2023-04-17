@@ -30,7 +30,6 @@
 #include "nsHashKeys.h"
 #include "nsRect.h"
 #include "nsStringFwd.h"
-#include "nsTHashSet.h"
 #include "nsTHashtable.h"
 #include "nsAtom.h"
 #include "nsIWidgetListener.h"  
@@ -54,7 +53,6 @@ class nsIFrame;
 class nsFrameManager;
 class nsAtom;
 class nsIRunnable;
-class gfxFontFamily;
 class gfxFontFeatureValueSet;
 class gfxUserFontEntry;
 class gfxUserFontSet;
@@ -164,10 +162,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   void InitFontCache();
 
   void UpdateFontCacheUserFonts(gfxUserFontSet* aUserFontSet);
-
-  FontVisibility GetFontVisibility() const { return mFontVisibility; }
-  void ReportBlockedFontFamily(const mozilla::fontlist::Family& aFamily);
-  void ReportBlockedFontFamily(const gfxFontFamily& aFamily);
 
   
 
@@ -1158,13 +1152,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   
   
   
-  bool UpdateFontVisibility();
-  void ReportBlockedFontFamilyName(const nsCString& aFamily,
-                                   FontVisibility aVisibility);
-
-  
-  
-  
 
   
   
@@ -1277,12 +1264,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   nsTArray<RefPtr<mozilla::ManagedPostRefreshObserver>>
       mManagedPostRefreshObservers;
 
-  
-  
-  
-  
-  nsTHashSet<nsCString> mBlockedFonts;
-
   ScrollStyles mViewportScrollStyles;
 
   uint16_t mImageAnimationMode;
@@ -1372,8 +1353,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 #ifdef DEBUG
   unsigned mInitialized : 1;
 #endif
-
-  FontVisibility mFontVisibility = FontVisibility::Unknown;
 
  protected:
   virtual ~nsPresContext();

@@ -902,8 +902,7 @@ class gfxFontGroup final : public gfxTextRunFactory {
   static void
   Shutdown();  
 
-  gfxFontGroup(nsPresContext* aPresContext,
-               const mozilla::StyleFontFamilyList& aFontFamilyList,
+  gfxFontGroup(const mozilla::StyleFontFamilyList& aFontFamilyList,
                const gfxFontStyle* aStyle, nsAtom* aLanguage,
                bool aExplicitLanguage, gfxTextPerfMetrics* aTextPerf,
                gfxUserFontSet* aUserFontSet, gfxFloat aDevToCssSize);
@@ -1339,8 +1338,6 @@ class gfxFontGroup final : public gfxTextRunFactory {
     bool mIsSharedFamily : 1;
     bool mHasFontEntry : 1;
   };
-
-  nsPresContext* mPresContext = nullptr;
 
   
   

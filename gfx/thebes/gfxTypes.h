@@ -130,20 +130,6 @@ FontMatchType& FontMatchType::operator|=(const FontMatchType& aOther) {
   return *this;
 }
 
-
-
-
-
-enum class FontVisibility : uint8_t {
-  Unknown = 0,   
-  Base = 1,      
-  LangPack = 2,  
-  User = 3,      
-  Hidden = 4,    
-  Webfont = 5,   
-  Count = 6,     
-};
-
 struct HwStretchingSupport {
   uint32_t mBoth;
   uint32_t mWindowOnly;
