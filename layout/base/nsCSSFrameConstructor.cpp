@@ -1716,7 +1716,7 @@ void nsCSSFrameConstructor::CreateGeneratedContentItem(
     
     
     content->SetFlags(NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE);
-    container->AppendChildTo(content, false);
+    container->AppendChildTo(content, false, IgnoreErrors());
     if (auto* element = Element::FromNode(content)) {
       
       

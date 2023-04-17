@@ -834,8 +834,8 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  virtual nsresult InsertChildBefore(nsIContent* aKid, nsIContent* aBeforeThis,
-                                     bool aNotify);
+  virtual void InsertChildBefore(nsIContent* aKid, nsIContent* aBeforeThis,
+                                 bool aNotify, mozilla::ErrorResult& aRv);
 
   
 
@@ -853,8 +853,9 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
-  nsresult AppendChildTo(nsIContent* aKid, bool aNotify) {
-    return InsertChildBefore(aKid, nullptr, aNotify);
+  void AppendChildTo(nsIContent* aKid, bool aNotify,
+                     mozilla::ErrorResult& aRv) {
+    InsertChildBefore(aKid, nullptr, aNotify, aRv);
   }
 
   
