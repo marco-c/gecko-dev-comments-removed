@@ -11,6 +11,7 @@
 
 #include <shellapi.h>
 
+#include <functional>
 #include <thread>
 #include <chrono>
 
@@ -375,9 +376,9 @@ static void LogOleSetClipboardResult(const HRESULT aHres) {
   }
 }
 
-template <typename Function, typename LogFunction, typename Arg>
+template <typename Function, typename LogFunction, typename... Args>
 static HRESULT RepeatedlyTry(Function aFunction, LogFunction aLogFunction,
-                             Arg&& aArg) {
+                             Args... aArgs) {
   
   
   
@@ -386,7 +387,7 @@ static HRESULT RepeatedlyTry(Function aFunction, LogFunction aLogFunction,
 
   HRESULT hres;
   for (int i = 0; i < kNumberOfTries; ++i) {
-    hres = aFunction(aArg);
+    hres = aFunction(aArgs...);
     aLogFunction(hres);
 
     if (hres == S_OK) {
@@ -526,6 +527,21 @@ static void LogIDataObjectMethodResult(const HRESULT aHres,
 
 
 
+
+
+
+
+
+static HRESULT RepeatedlyTryGetData(IDataObject& aDataObject, LPFORMATETC pFE,
+                                    LPSTGMEDIUM pSTM) {
+  return RepeatedlyTry(
+      [&aDataObject, &pFE, &pSTM]() { return aDataObject.GetData(pFE, pSTM); },
+      std::bind(LogIDataObjectMethodResult, std::placeholders::_1,
+                "GetData"_ns));
+}
+
+
+
 HRESULT nsClipboard::FillSTGMedium(IDataObject* aDataObject, UINT aFormat,
                                    LPFORMATETC pFE, LPSTGMEDIUM pSTM,
                                    DWORD aTymed) {
@@ -537,8 +553,7 @@ HRESULT nsClipboard::FillSTGMedium(IDataObject* aDataObject, UINT aFormat,
   hres = aDataObject->QueryGetData(pFE);
   LogIDataObjectMethodResult(hres, "QueryGetData"_ns);
   if (S_OK == hres) {
-    hres = aDataObject->GetData(pFE, pSTM);
-    LogIDataObjectMethodResult(hres, "GetData"_ns);
+    hres = RepeatedlyTryGetData(*aDataObject, pFE, pSTM);
   }
   return hres;
 }

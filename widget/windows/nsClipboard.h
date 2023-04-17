@@ -65,6 +65,7 @@ class nsClipboard : public nsBaseClipboard, public nsIObserver {
   static UINT GetCustomClipboardFormat();
 
  protected:
+  
   static HRESULT FillSTGMedium(IDataObject* aDataObject, UINT aFormat,
                                LPFORMATETC pFE, LPSTGMEDIUM pSTM, DWORD aTymed);
 
