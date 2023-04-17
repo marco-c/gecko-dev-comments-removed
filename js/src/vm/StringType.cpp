@@ -2238,7 +2238,7 @@ UniqueChars js::IdToPrintableUTF8(JSContext* cx, HandleId id,
   
   MOZ_ASSERT_IF(
       behavior == IdToPrintableBehavior::IdIsIdentifier,
-      JSID_IS_ATOM(id) && frontend::IsIdentifierNameOrPrivateName(id.toAtom()));
+      id.isAtom() && frontend::IsIdentifierNameOrPrivateName(id.toAtom()));
 
   RootedValue v(cx, IdToValue(id));
   JSString* str;
