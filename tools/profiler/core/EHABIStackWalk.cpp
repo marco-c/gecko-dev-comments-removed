@@ -121,7 +121,15 @@ size_t EHABIStackWalk(const mcontext_t& aContext, void* stackBase, void** aSPs,
 
   while (count < aNumFrames) {
     uint32_t pc = state[R_PC], sp = state[R_SP];
-    aPCs[count] = reinterpret_cast<void*>(pc);
+
+    
+    
+    
+    
+    constexpr uint32_t instrAddrMask = ~1;
+    uint32_t instrAddress = pc & instrAddrMask;
+
+    aPCs[count] = reinterpret_cast<void*>(instrAddress);
     aSPs[count] = reinterpret_cast<void*>(sp);
     count++;
 
