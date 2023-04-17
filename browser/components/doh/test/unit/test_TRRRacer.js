@@ -11,7 +11,7 @@ add_task(async function test_TRRRacer_cleanRun() {
   let racer = new TRRRacer(() => {
     deferred.resolve();
     deferred.resolved = true;
-  });
+  }, trrList);
   racer.run();
 
   await deferred.promise;
@@ -60,7 +60,7 @@ async function test_TRRRacer_networkFlux_helper(captivePortal = false) {
   let racer = new TRRRacer(() => {
     deferred.resolve();
     deferred.resolved = true;
-  });
+  }, trrList);
   racer.run();
 
   if (captivePortal) {
@@ -109,7 +109,7 @@ async function test_TRRRacer_maxRetries_helper(captivePortal = false) {
   let racer = new TRRRacer(() => {
     deferred.resolve();
     deferred.resolved = true;
-  });
+  }, trrList);
   racer.run();
   info("ran new racer");
   
@@ -179,7 +179,7 @@ add_task(async function test_TRRRacer_getFastestTRRFromResults() {
     { trr: "trr5", time: 20 },
     { trr: "trr5", time: 1000 },
   ];
-  let racer = new TRRRacer();
+  let racer = new TRRRacer(undefined, trrList);
   let fastest = racer._getFastestTRRFromResults(results);
   
   
