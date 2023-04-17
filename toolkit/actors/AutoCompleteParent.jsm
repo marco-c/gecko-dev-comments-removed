@@ -252,7 +252,10 @@ class AutoCompleteParent extends JSWindowActorParent {
     this.openedPopup.setAttribute("resultstyles", [...resultStyles].join(" "));
     this.openedPopup.hidden = false;
     
-    this.openedPopup.setAttribute("width", Math.max(100, rect.width));
+    this.openedPopup.style.setProperty(
+      "--panel-width",
+      Math.max(100, rect.width) + "px"
+    );
     this.openedPopup.style.direction = dir;
 
     AutoCompleteResultView.setResults(this, results);

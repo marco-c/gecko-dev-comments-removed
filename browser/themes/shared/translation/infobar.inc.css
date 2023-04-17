@@ -1,7 +1,7 @@
 %if 0
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 %endif
 notification[value="translation"] .messageImage {
   list-style-image: url(chrome://browser/skin/translation-16.png) !important;
@@ -44,7 +44,7 @@ notification[value="translation"] menulist::part(dropmarker-icon) {
 }
 
 notification[value="translation"] menulist > menupopup {
-  margin: 0; 
+  margin: 0; /* override popup.css */
 }
 
 .translation-attribution {
@@ -66,8 +66,8 @@ notification[value="translation"] menulist > menupopup {
   width: 305px;
 }
 
-.translation-welcome-panel::part(arrowcontent) {
-  
+.translation-welcome-panel::part(content) {
+  /* Prevent from stretching logo height */
   -moz-box-align: start;
 }
 
