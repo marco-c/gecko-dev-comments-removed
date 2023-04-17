@@ -27,7 +27,7 @@ add_UITour_task(async function test_highlight_help_and_show_help_subview() {
   is(
     getShowHighlightTargetName(),
     "help",
-    "Should highlight the library button on the app menu"
+    "Should highlight the help button on the app menu"
   );
 
   
