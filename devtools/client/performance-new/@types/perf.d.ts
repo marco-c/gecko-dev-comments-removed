@@ -167,6 +167,7 @@ export type GetSymbolTableCallback = (
 
 export interface SymbolicationService {
   getSymbolTable: GetSymbolTableCallback;
+  querySymbolicationApi: (path: string, requestJson: string) => Promise<string>;
 }
 
 export type ReceiveProfile = (
@@ -511,13 +512,10 @@ export type LibInfoMapValue = {
   debugPath: string;
   breakpadId: string;
   arch: string;
-}
+};
 
 export type SymbolicationWorkerInitialMessage = {
-  
-  debugName: string;
-  
-  breakpadId: string;
+  request: SymbolicationWorkerRequest;
   
   
   
@@ -529,6 +527,22 @@ export type SymbolicationWorkerInitialMessage = {
   
   module: WebAssembly.Module;
 };
+
+export type SymbolicationWorkerRequest =
+  | {
+      type: "GET_SYMBOL_TABLE";
+      
+      debugName: string;
+      
+      breakpadId: string;
+    }
+  | {
+      type: "QUERY_SYMBOLICATION_API";
+      
+      path: string;
+      
+      requestJson: string;
+    };
 
 export type SymbolicationWorkerError = {
   name: string;
