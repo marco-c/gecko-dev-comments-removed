@@ -675,7 +675,7 @@ StorageActors.createActor(
       } else {
         
         
-        originAttributes = this.storageActor.document.effectiveStoragePrincipal
+        originAttributes = this.storageActor.document?.effectiveStoragePrincipal
           .originAttributes;
       }
 

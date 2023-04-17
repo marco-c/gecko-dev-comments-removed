@@ -96,6 +96,13 @@ webExtensionTargetPrototype.initialize = function(
 
   
   
+  
+  
+  this.devtoolsSpawnedBrowsingContextForWebExtension =
+    chromeGlobal.browsingContext;
+
+  
+  
   const extensionWindow = this._searchForExtensionWindow();
 
   parentProcessTargetPrototype.initialize.call(this, conn, {

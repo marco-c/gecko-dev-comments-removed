@@ -30,6 +30,12 @@ loader.lazyImporter(
   "ExtensionParent",
   "resource://gre/modules/ExtensionParent.jsm"
 );
+loader.lazyRequireGetter(
+  this,
+  "WatcherActor",
+  "devtools/server/actors/watcher",
+  true
+);
 
 
 
@@ -84,12 +90,38 @@ const WebExtensionDescriptorActor = protocol.ActorClassWithSpec(
         temporarilyInstalled: this.addon.temporarilyInstalled,
         traits: {
           supportsReloadDescriptor: true,
+          
+          watcher: true,
         },
         url: this.addon.sourceURI ? this.addon.sourceURI.spec : undefined,
         warnings: ExtensionParent.DebugUtils.getExtensionManifestWarnings(
           this.addonId
         ),
       };
+    },
+
+    
+
+
+
+
+    async getWatcher(config = {}) {
+      if (!this.watcher) {
+        
+        await this._extensionFrameConnect();
+        this.watcher = new WatcherActor(
+          this.conn,
+          {
+            type: "webextension",
+            addonId: this.addonId,
+            addonBrowsingContextID: this._form.browsingContextID,
+            addonInnerWindowId: this._form.innerWindowId,
+          },
+          config
+        );
+        this.manage(this.watcher);
+      }
+      return this.watcher;
     },
 
     async getTarget() {
@@ -110,10 +142,8 @@ const WebExtensionDescriptorActor = protocol.ActorClassWithSpec(
     },
 
     async _extensionFrameConnect() {
-      if (this._browser) {
-        throw new Error(
-          "This actor is already connected to the extension process"
-        );
+      if (this._form) {
+        return this._form;
       }
 
       this._browser = await ExtensionParent.DebugUtils.getExtensionProcessBrowser(
@@ -124,7 +154,9 @@ const WebExtensionDescriptorActor = protocol.ActorClassWithSpec(
         this.conn,
         this._browser,
         this.destroy,
-        { addonId: this.addonId }
+        {
+          addonId: this.addonId,
+        }
       );
 
       

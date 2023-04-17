@@ -187,15 +187,41 @@ module.exports = function(targetType, targetActorSpec, implementation) {
 
 
     notifyResourceAvailable(resources) {
+      if (this.devtoolsSpawnedBrowsingContextForWebExtension) {
+        this.overrideResourceBrowsingContextForWebExtension(resources);
+      }
       this._emitResourcesForm("resource-available-form", resources);
     },
 
     notifyResourceDestroyed(resources) {
+      if (this.devtoolsSpawnedBrowsingContextForWebExtension) {
+        this.overrideResourceBrowsingContextForWebExtension(resources);
+      }
       this._emitResourcesForm("resource-destroyed-form", resources);
     },
 
     notifyResourceUpdated(resources) {
+      if (this.devtoolsSpawnedBrowsingContextForWebExtension) {
+        this.overrideResourceBrowsingContextForWebExtension(resources);
+      }
       this._emitResourcesForm("resource-updated-form", resources);
+    },
+
+    
+
+
+
+
+
+
+
+
+    overrideResourceBrowsingContextForWebExtension(resources) {
+      const browsingContextID = this
+        .devtoolsSpawnedBrowsingContextForWebExtension.id;
+      resources.forEach(
+        resource => (resource.browsingContextID = browsingContextID)
+      );
     },
 
     

@@ -65,9 +65,13 @@ class ConsoleMessageWatcher {
     
     
     
+    
+    
+    
     const window =
       targetActor.targetType === Targets.TYPES.FRAME &&
-      targetActor.typeName != "parentProcessTarget"
+      targetActor.typeName != "parentProcessTarget" &&
+      targetActor.typeName != "webExtensionTarget"
         ? targetActor.window
         : null;
 

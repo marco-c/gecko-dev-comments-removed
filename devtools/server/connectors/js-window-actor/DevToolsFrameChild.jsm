@@ -544,15 +544,22 @@ class DevToolsFrameChild extends JSWindowActorChild {
     
     
     const connectionInfo = this._connections.get(watcherActorID);
-    let targetActor = connectionInfo ? connectionInfo.actor : null;
+    const targetActor = connectionInfo ? connectionInfo.actor : null;
+    if (targetActor) {
+      return targetActor;
+    }
 
     
     
     
     
+    const isMatchingBrowserElement =
+      this.manager.browsingContext.browserId == context.browserId;
+    const isMatchingWebExtension =
+      this.document.nodePrincipal.addonId == context.addonId;
     if (
-      !targetActor &&
-      this.manager.browsingContext.browserId == context.browserId
+      (context.type == "browser-element" && isMatchingBrowserElement) ||
+      (context.type == "webextension" && isMatchingWebExtension)
     ) {
       
       
@@ -564,15 +571,13 @@ class DevToolsFrameChild extends JSWindowActorChild {
       );
 
       if (!browsingContextId) {
-        targetActor = targetActors[0] || null;
-      } else {
-        targetActor = targetActors.find(
-          actor => actor.browsingContextID === browsingContextId
-        );
+        return targetActors[0] || null;
       }
+      return targetActors.find(
+        actor => actor.browsingContextID === browsingContextId
+      );
     }
-
-    return targetActor;
+    return null;
   }
 
   _addSessionDataEntry(watcherActorID, context, type, entries) {

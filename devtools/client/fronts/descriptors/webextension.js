@@ -88,6 +88,24 @@ class WebExtensionDescriptorFront extends DescriptorMixin(
     return this._form.warnings;
   }
 
+  isServerTargetSwitchingEnabled() {
+    
+    
+    
+    
+    
+    
+    
+    
+    return false;
+  }
+
+  getWatcher() {
+    return super.getWatcher({
+      isServerTargetSwitchingEnabled: this.isServerTargetSwitchingEnabled(),
+    });
+  }
+
   _createWebExtensionTarget(form) {
     const front = new WindowGlobalTargetFront(this.conn, null, this);
     front.form(form);

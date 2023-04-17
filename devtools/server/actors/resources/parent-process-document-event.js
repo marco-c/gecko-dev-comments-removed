@@ -49,11 +49,7 @@ class ParentProcessDocumentEventWatcher {
     this._onceWillNavigate = new Map();
 
     
-    const allBrowsingContexts = this.watcherActor.browserElement
-      ? [this.watcherActor.browserElement.browsingContext]
-      : getAllRemoteBrowsingContexts();
-    
-    const topLevelBrowsingContexts = allBrowsingContexts.filter(
+    const topLevelBrowsingContexts = this.getAllBrowsingContexts().filter(
       browsingContext => browsingContext.top == browsingContext
     );
 
@@ -76,6 +72,28 @@ class ParentProcessDocumentEventWatcher {
         Ci.nsIWebProgress.NOTIFY_STATE_DOCUMENT
       );
     });
+  }
+
+  getAllBrowsingContexts() {
+    if (this.watcherActor.context.type == "browser-element") {
+      const browsingContext = this.watcherActor.browserElement.browsingContext;
+      return browsingContext.getAllBrowsingContextsInSubtree();
+    }
+
+    if (this.watcherActor.context.type == "all") {
+      return getAllRemoteBrowsingContexts();
+    }
+
+    if (this.watcherActor.context.type == "webextension") {
+      return getAllRemoteBrowsingContexts().filter(
+        bc =>
+          bc.currentWindowGlobal.documentPrincipal.addonId ==
+          this.watcherActor.context.addonId
+      );
+    }
+    throw new Error(
+      "Unsupported context type=" + this.watcherActor.context.type
+    );
   }
 
   

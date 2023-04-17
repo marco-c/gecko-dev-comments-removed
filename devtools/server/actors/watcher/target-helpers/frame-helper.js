@@ -293,13 +293,29 @@ function getWatchingBrowsingContexts(watcher) {
     : [];
   
   
-  if (watcher.context.type == "browser-element") {
-    const topBrowsingContext = browserElement.browsingContext;
+  if (
+    watcher.context.type == "browser-element" ||
+    watcher.context.type == "webextension"
+  ) {
+    let topBrowsingContext;
+    if (watcher.context.type == "browser-element") {
+      topBrowsingContext = watcher.browserElement.browsingContext;
+    } else if (watcher.context.type == "webextension") {
+      topBrowsingContext = BrowsingContext.get(
+        watcher.context.addonBrowsingContextID
+      );
+    }
+
     
     
     
     
-    if (topBrowsingContext.currentWindowGlobal.osPid != -1) {
+    
+    
+    if (
+      topBrowsingContext.currentWindowGlobal &&
+      topBrowsingContext.currentWindowGlobal.osPid != -1
+    ) {
       browsingContexts.push(topBrowsingContext);
     }
   }

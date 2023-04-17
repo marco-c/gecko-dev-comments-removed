@@ -561,10 +561,21 @@ const windowGlobalTargetPrototype = {
     
     
     
-    const browsingContextID = this.originalDocShell.browsingContext.id;
-    const innerWindowId = this._originalWindow
+    
+    
+    
+    
+    
+    const browsingContextID = this.devtoolsSpawnedBrowsingContextForWebExtension
+      ? this.devtoolsSpawnedBrowsingContextForWebExtension.id
+      : this.originalDocShell.browsingContext.id;
+    const originalInnerWindowId = this._originalWindow
       ? getInnerId(this._originalWindow)
       : null;
+    const innerWindowId = this.devtoolsSpawnedBrowsingContextForWebExtension
+      ? this.devtoolsSpawnedBrowsingContextForWebExtension.currentWindowGlobal
+          .innerWindowId
+      : originalInnerWindowId;
 
     const response = {
       actor: this.actorID,
