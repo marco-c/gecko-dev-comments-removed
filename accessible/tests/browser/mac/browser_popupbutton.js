@@ -48,7 +48,14 @@ addAccessibleTask(
     let events = Promise.all([
       waitForMacEvent("AXMenuOpened"),
       waitForMacEvent("AXSelectedChildrenChanged"),
-      waitForMacEvent("AXFocusedUIElementChanged"),
+      waitForMacEvent(
+        "AXFocusedUIElementChanged",
+        e => e.getAttributeValue("AXRole") == "AXPopUpButton"
+      ),
+      waitForMacEvent(
+        "AXFocusedUIElementChanged",
+        e => e.getAttributeValue("AXRole") == "AXMenuItem"
+      ),
     ]);
     select.performAction("AXPress");
     
