@@ -1101,7 +1101,11 @@ class MultiStageProtonScreen extends react__WEBPACK_IMPORTED_MODULE_0___default.
       className: "attrib-text"
     })) : null) : null, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
       className: "section-main"
-    }, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
+    }, content.secondary_button_top ? react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_3__["SecondaryCTA"], {
+      content: content,
+      handleAction: this.props.handleAction,
+      position: "top"
+    }) : null, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
       className: `noodle orange-L`
     }), react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
       className: `noodle purple-C`
