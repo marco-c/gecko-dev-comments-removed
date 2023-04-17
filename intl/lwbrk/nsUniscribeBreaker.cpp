@@ -9,20 +9,24 @@
 
 #include <usp10.h>
 
-#include "mozilla/SandboxSettings.h"
-#include "mozilla/sandboxTarget.h"
-#include "mozilla/WindowsProcessMitigations.h"
 #include "nsUTF8Utils.h"
 #include "nsString.h"
 #include "nsTArray.h"
-#include "nsXULAppAPI.h"
 
-#if defined(ENABLE_TESTS)
-#  include "mozilla/StaticPrefs_intl.h"
+#if defined(MOZ_SANDBOX)
+#  include "mozilla/WindowsProcessMitigations.h"
+#  include "mozilla/SandboxSettings.h"
+#  include "mozilla/sandboxTarget.h"
+#  include "nsXULAppAPI.h"
+
+#  if defined(ENABLE_TESTS)
+#    include "mozilla/StaticPrefs_intl.h"
+#  endif
 #endif
 
 using namespace mozilla;
 
+#if defined(MOZ_SANDBOX)
 static bool UseBrokeredLineBreaking() {
   
   
@@ -35,11 +39,13 @@ static bool UseBrokeredLineBreaking() {
 
   return sUseBrokeredLineBreaking;
 }
+#endif
 
 void NS_GetComplexLineBreaks(const char16_t* aText, uint32_t aLength,
                              uint8_t* aBreakBefore) {
   NS_ASSERTION(aText, "aText shouldn't be null");
 
+#if defined(MOZ_SANDBOX)
   if (UseBrokeredLineBreaking()) {
     
     
@@ -51,6 +57,7 @@ void NS_GetComplexLineBreaks(const char16_t* aText, uint32_t aLength,
 
     return;
   }
+#endif
 
   int outItems = 0;
   HRESULT result;
@@ -93,7 +100,7 @@ void NS_GetComplexLineBreaks(const char16_t* aText, uint32_t aLength,
     }
   }
 
-#if defined(ENABLE_TESTS)
+#if defined(ENABLE_TESTS) && defined(MOZ_SANDBOX)
   
   
   
