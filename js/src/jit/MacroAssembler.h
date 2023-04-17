@@ -1102,17 +1102,23 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
+  inline void quotient32(Register rhs, Register srcDest, bool isUnsigned)
+      DEFINED_ON(mips_shared, arm, arm64);
+
   
-  inline void quotient32(Register rhs, Register srcDest,
-                         bool isUnsigned) PER_SHARED_ARCH;
+  inline void quotient32(Register rhs, Register srcDest, Register tempEdx,
+                         bool isUnsigned) DEFINED_ON(x86_shared);
 
   
   
   
   
+  inline void remainder32(Register rhs, Register srcDest, bool isUnsigned)
+      DEFINED_ON(mips_shared, arm, arm64);
+
   
-  inline void remainder32(Register rhs, Register srcDest,
-                          bool isUnsigned) PER_SHARED_ARCH;
+  inline void remainder32(Register rhs, Register srcDest, Register tempEdx,
+                          bool isUnsigned) DEFINED_ON(x86_shared);
 
   
   
