@@ -173,13 +173,6 @@ add_task(async function handle_database_corruption() {
     );
   }
 
-  let fetchCount = 0;
-  const originalFetchMLBF = ExtensionBlocklistMLBF._fetchMLBF;
-  ExtensionBlocklistMLBF._fetchMLBF = function() {
-    ++fetchCount;
-    return originalFetchMLBF.apply(this, arguments);
-  };
-
   
   
   
@@ -187,46 +180,28 @@ add_task(async function handle_database_corruption() {
   
   
   await AddonTestUtils.loadBlocklistRawData({ extensionsMLBF: [{}] });
-  Assert.equal(fetchCount, 1, "MLBF read once despite bad record");
   
   await checkBlocklistWorks();
-  Assert.equal(fetchCount, 1, "MLBF not read again by blocklist query");
 
   
   await ExtensionBlocklistMLBF._client.db.saveAttachment(
     ExtensionBlocklistMLBF.RS_ATTACHMENT_ID,
     null
   );
-  Assert.equal(fetchCount, 1, "MLBF not read again after attachment deletion");
   
   
   await checkBlocklistWorks();
-  Assert.equal(fetchCount, 1, "MLBF not read again by blocklist query 2");
 
   
   await ExtensionBlocklistMLBF._onUpdate();
-  Assert.equal(fetchCount, 2, "MLBF read again at forced update");
   
   await checkBlocklistWorks();
-  Assert.equal(fetchCount, 2, "MLBF not read again by blocklist query 3");
 
   
   delete ExtensionBlocklistMLBF._mlbfData;
-  delete ExtensionBlocklistMLBF._stashes;
   Assert.equal(
     await Blocklist.getAddonBlocklistState(blockedAddon),
     Ci.nsIBlocklistService.STATE_NOT_BLOCKED,
     "Blocklist can't work if all blocklist data is gone"
   );
-  Assert.equal(fetchCount, 3, "MLBF read again after restart/cleared cache");
-  Assert.equal(
-    await Blocklist.getAddonBlocklistState(blockedAddon),
-    Ci.nsIBlocklistService.STATE_NOT_BLOCKED,
-    "Blocklist can still not work if all blocklist data is gone"
-  );
-  
-  
-  Assert.equal(fetchCount, 3, "MLBF not read again despite absence of MLBF");
-
-  ExtensionBlocklistMLBF._fetchMLBF = originalFetchMLBF;
 });

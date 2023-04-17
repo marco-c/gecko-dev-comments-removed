@@ -4,8 +4,8 @@
 
 
 
-if (!_TEST_NAME.includes("toolkit/mozapps/extensions/test/xpcshell/")) {
-  Assert.ok(
+if (!_TEST_FILE[0].includes("toolkit/mozapps/extensions/test/xpcshell/")) {
+  ok(
     false,
     "head_addons.js may not be loaded by tests outside of " +
       "the add-on manager component."

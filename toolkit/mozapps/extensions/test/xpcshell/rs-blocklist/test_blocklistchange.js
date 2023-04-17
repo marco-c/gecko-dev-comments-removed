@@ -31,30 +31,10 @@ Services.prefs.setBoolPref("extensions.checkUpdateSecurity", false);
 
 Services.prefs.setBoolPref("extensions.webextPermissionPrompts", false);
 
-if (AppConstants.platform == "android") {
-  
-  
-  Assert.ok(
-    _TEST_NAME.includes("test_blocklistchange"),
-    `Expected _TEST_NAME to be test_blocklistchange{,_v2}.js`
-  );
-  if (_TEST_NAME.includes("test_blocklistchange.js")) {
-    Assert.equal(
-      Services.prefs.getBoolPref("extensions.blocklist.useMLBF"),
-      false,
-      "Blocklist v3 disabled by default on Android"
-    );
-    Services.prefs.setBoolPref("extensions.blocklist.useMLBF", true);
-  }
-}
-
-
-
-
 
 const useMLBF = Services.prefs.getBoolPref(
   "extensions.blocklist.useMLBF",
-  true
+  false
 );
 
 var testserver = createHttpServer({ hosts: ["example.com"] });
@@ -253,6 +233,7 @@ const BLOCKLIST_DATA = {
 
 
 if (useMLBF) {
+  Assert.ok(Services.prefs.getBoolPref("extensions.blocklist.useMLBF.stashes"));
   for (let [key, blocks] of Object.entries(BLOCKLIST_DATA)) {
     BLOCKLIST_DATA[key] = [];
     for (let block of blocks) {

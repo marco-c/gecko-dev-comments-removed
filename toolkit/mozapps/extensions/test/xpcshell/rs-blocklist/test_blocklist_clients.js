@@ -32,15 +32,14 @@ add_task(async function setup() {
   BlocklistGlobal.ExtensionBlocklistRS.ensureInitialized();
   BlocklistGlobal.GfxBlocklistRS._ensureInitialized();
 
-  
   gBlocklistClients = [
     {
       client: BlocklistGlobal.ExtensionBlocklistRS._client,
-      expectHasDump: IS_ANDROID,
+      testData: ["i808", "i720", "i539"],
     },
     {
       client: BlocklistGlobal.GfxBlocklistRS._client,
-      expectHasDump: !IS_ANDROID,
+      testData: ["g204", "g200", "g36"],
     },
   ];
 
@@ -49,14 +48,20 @@ add_task(async function setup() {
 
 add_task(
   async function test_initial_dump_is_loaded_as_synced_when_collection_is_empty() {
-    for (let { client, expectHasDump } of gBlocklistClients) {
-      Assert.equal(
+    for (let { client } of gBlocklistClients) {
+      if (
+        IS_ANDROID &&
+        client.collectionName !=
+          BlocklistGlobal.ExtensionBlocklistRS._client.collectionName
+      ) {
+        
+        continue;
+      }
+      Assert.ok(
         await RemoteSettingsUtils.hasLocalDump(
           client.bucketName,
           client.collectionName
-        ),
-        expectHasDump,
-        `Expected initial remote settings dump for ${client.collectionName}`
+        )
       );
     }
   }

@@ -137,6 +137,7 @@ const PREF_BLOCKLIST_ADDONITEM_URL = "extensions.blocklist.addonItemURL";
 const PREF_BLOCKLIST_ENABLED = "extensions.blocklist.enabled";
 const PREF_BLOCKLIST_LEVEL = "extensions.blocklist.level";
 const PREF_BLOCKLIST_USE_MLBF = "extensions.blocklist.useMLBF";
+const PREF_BLOCKLIST_USE_MLBF_STASHES = "extensions.blocklist.useMLBF.stashes";
 const PREF_EM_LOGGING_ENABLED = "extensions.logging.enabled";
 const DEFAULT_SEVERITY = 3;
 const DEFAULT_LEVEL = 2;
@@ -153,8 +154,11 @@ const PREF_BLOCKLIST_ADDONS_CHECKED_SECONDS =
   "services.blocklist.addons.checked";
 const PREF_BLOCKLIST_ADDONS_SIGNER = "services.blocklist.addons.signer";
 
+const PREF_BLOCKLIST_ADDONS3_COLLECTION =
+  "services.blocklist.addons-mlbf.collection";
 const PREF_BLOCKLIST_ADDONS3_CHECKED_SECONDS =
   "services.blocklist.addons-mlbf.checked";
+const PREF_BLOCKLIST_ADDONS3_SIGNER = "services.blocklist.addons-mlbf.signer";
 
 const BlocklistTelemetry = {
   init() {
@@ -949,6 +953,16 @@ this.ExtensionBlocklistRS = {
 
 
 
+
+
+
+
+
+
+
+
+
+
 this.ExtensionBlocklistMLBF = {
   RS_ATTACHMENT_ID: "addons-mlbf.bin",
 
@@ -1008,7 +1022,6 @@ this.ExtensionBlocklistMLBF = {
         this._stashes = null;
         return;
       }
-
       let records = await this._client.get();
       if (isUpdateReplaced()) {
         return;
@@ -1018,26 +1031,36 @@ this.ExtensionBlocklistMLBF = {
         .filter(r => r.attachment)
         
         .sort((a, b) => b.generation_time - a.generation_time);
-      const mlbfRecord = mlbfRecords.find(
-        r => r.attachment_type == "bloomfilter-base"
-      );
-      this._stashes = records
-        .filter(({ stash }) => {
-          return (
-            
-            stash &&
-            
-            Array.isArray(stash.blocked) &&
-            Array.isArray(stash.unblocked)
-          );
-        })
-        
-        .sort((a, b) => b.stash_time - a.stash_time)
-        .map(({ stash, stash_time }) => ({
-          blocked: new Set(stash.blocked),
-          unblocked: new Set(stash.unblocked),
-          stash_time,
-        }));
+      let mlbfRecord;
+      if (this.stashesEnabled) {
+        mlbfRecord = mlbfRecords.find(
+          r => r.attachment_type == "bloomfilter-base"
+        );
+        this._stashes = records
+          .filter(({ stash }) => {
+            return (
+              
+              stash &&
+              
+              Array.isArray(stash.blocked) &&
+              Array.isArray(stash.unblocked)
+            );
+          })
+          
+          .sort((a, b) => b.stash_time - a.stash_time)
+          .map(({ stash, stash_time }) => ({
+            blocked: new Set(stash.blocked),
+            unblocked: new Set(stash.unblocked),
+            stash_time,
+          }));
+      } else {
+        mlbfRecord = mlbfRecords.find(
+          r =>
+            r.attachment_type == "bloomfilter-full" ||
+            r.attachment_type == "bloomfilter-base"
+        );
+        this._stashes = null;
+      }
 
       let mlbf = await this._fetchMLBF(mlbfRecord);
       
@@ -1111,12 +1134,21 @@ this.ExtensionBlocklistMLBF = {
       return;
     }
     this._initialized = true;
-    this._client = RemoteSettings("addons-bloomfilters", {
-      bucketName: "blocklists",
-      lastCheckTimePref: PREF_BLOCKLIST_ADDONS3_CHECKED_SECONDS,
-    });
+    this._client = RemoteSettings(
+      Services.prefs.getCharPref(PREF_BLOCKLIST_ADDONS3_COLLECTION),
+      {
+        bucketNamePref: PREF_BLOCKLIST_BUCKET,
+        lastCheckTimePref: PREF_BLOCKLIST_ADDONS3_CHECKED_SECONDS,
+        signerName: Services.prefs.getCharPref(PREF_BLOCKLIST_ADDONS3_SIGNER),
+      }
+    );
     this._onUpdate = this._onUpdate.bind(this);
     this._client.on("sync", this._onUpdate);
+    this.stashesEnabled = Services.prefs.getBoolPref(
+      PREF_BLOCKLIST_USE_MLBF_STASHES,
+      false
+    );
+    Services.telemetry.scalarSet("blocklist.mlbf_stashes", this.stashesEnabled);
   },
 
   shutdown() {
@@ -1181,18 +1213,13 @@ this.ExtensionBlocklistMLBF = {
   },
 
   async getEntry(addon) {
-    if (!this._stashes) {
+    if (!this._mlbfData) {
       this.ensureInitialized();
       await this._updateMLBF(false);
-    } else if (this._updatePromise) {
-      
-      
-      await this._updatePromise;
     }
 
     let blockKey = addon.id + ":" + addon.version;
 
-    
     if (this._stashes) {
       
       for (let stash of this._stashes) {
@@ -1422,12 +1449,27 @@ let Blocklist = {
           case PREF_BLOCKLIST_USE_MLBF:
             let oldImpl = this.ExtensionBlocklist;
             this._chooseExtensionBlocklistImplementationFromPref();
-            
-            if (oldImpl != this.ExtensionBlocklist && oldImpl._initialized) {
+            if (oldImpl._initialized) {
               oldImpl.shutdown();
               this.ExtensionBlocklist.undoShutdown();
               this.ExtensionBlocklist._onUpdate();
             } 
+            break;
+          case PREF_BLOCKLIST_USE_MLBF_STASHES:
+            ExtensionBlocklistMLBF.stashesEnabled = Services.prefs.getBoolPref(
+              PREF_BLOCKLIST_USE_MLBF_STASHES,
+              false
+            );
+            if (
+              ExtensionBlocklistMLBF._initialized &&
+              !ExtensionBlocklistMLBF._didShutdown
+            ) {
+              Services.telemetry.scalarSet(
+                "blocklist.mlbf_stashes",
+                ExtensionBlocklistMLBF.stashesEnabled
+              );
+              ExtensionBlocklistMLBF._onUpdate();
+            }
             break;
         }
         break;
@@ -1454,20 +1496,13 @@ let Blocklist = {
     BlocklistTelemetry.recordAddonBlockChangeTelemetry(addon, reason);
   },
 
-  
-  
-  allowDeprecatedBlocklistV2: AppConstants.platform === "android",
-
   _chooseExtensionBlocklistImplementationFromPref() {
-    if (
-      this.allowDeprecatedBlocklistV2 &&
-      !Services.prefs.getBoolPref(PREF_BLOCKLIST_USE_MLBF, false)
-    ) {
-      this.ExtensionBlocklist = ExtensionBlocklistRS;
-      Services.telemetry.scalarSet("blocklist.mlbf_enabled", false);
-    } else {
+    if (Services.prefs.getBoolPref(PREF_BLOCKLIST_USE_MLBF, false)) {
       this.ExtensionBlocklist = ExtensionBlocklistMLBF;
       Services.telemetry.scalarSet("blocklist.mlbf_enabled", true);
+    } else {
+      this.ExtensionBlocklist = ExtensionBlocklistRS;
+      Services.telemetry.scalarSet("blocklist.mlbf_enabled", false);
     }
   },
 
