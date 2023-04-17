@@ -2,7 +2,10 @@
 
 
 
+from distutils.version import LooseVersion
+
 import mozunit
+import pytest
 
 from mozversioncontrol import get_repository_object
 
@@ -31,6 +34,9 @@ STEPS = {
 
 def test_branch(repo):
     vcs = get_repository_object(repo.strpath)
+    if vcs.name == "git" and LooseVersion(vcs.tool_version) < LooseVersion("2.22.0"):
+        pytest.xfail("`git branch --show-current` not implemented yet")
+
     if vcs.name == "git":
         assert vcs.branch == "master"
     else:
