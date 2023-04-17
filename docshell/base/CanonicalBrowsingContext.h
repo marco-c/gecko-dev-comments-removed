@@ -302,17 +302,6 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   bool AllowedInBFCache(const Maybe<uint64_t>& aChannelId);
 
-  
-  
-  bool IsPriorityActive() const {
-    MOZ_RELEASE_ASSERT(IsTop());
-    return mPriorityActive;
-  }
-  void SetPriorityActive(bool aIsActive) {
-    MOZ_RELEASE_ASSERT(IsTop());
-    mPriorityActive = aIsActive;
-  }
-
  protected:
   
   void CanonicalDiscard();
@@ -454,10 +443,6 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   RefPtr<FeaturePolicy> mContainerFeaturePolicy;
 
   RefPtr<RestoreState> mRestoreState;
-
-  
-  
-  bool mPriorityActive = false;
 };
 
 }  
