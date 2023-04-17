@@ -33,6 +33,7 @@ class FirefoxDataProvider {
 
   constructor({ webConsoleFront, actions, owner, resourceCommand }) {
     
+    this.client = webConsoleFront._client;
     this.webConsoleFront = webConsoleFront;
     this.actions = actions || {};
     this.actionsEnabled = true;
@@ -518,6 +519,12 @@ class FirefoxDataProvider {
     
     this.emitForTests(EVENTS[updatingEventName], actor);
 
+    
+    
+    const actorID = actor.replace("-clone", "");
+
+    
+    
     let response;
     if (
       clientMethodName == "getStackTrace" &&
@@ -525,36 +532,23 @@ class FirefoxDataProvider {
         this.resourceCommand.TYPES.NETWORK_EVENT_STACKTRACE
       )
     ) {
-      const requestInfo = this.stackTraceRequestInfoByActorID.get(
-        actor.replace("-clone", "")
-      );
+      const requestInfo = this.stackTraceRequestInfoByActorID.get(actorID);
       const { stacktrace } = await this._getStackTraceFromWatcher(requestInfo);
       response = { from: actor, stacktrace };
     } else {
-      response = await new Promise((resolve, reject) => {
-        
-        if (typeof this.webConsoleFront[clientMethodName] === "function") {
-          
-          
-          this.webConsoleFront[clientMethodName](
-            actor.replace("-clone", ""),
-            res => {
-              if (res.error) {
-                reject(
-                  new Error(
-                    `Error while calling method ${clientMethodName}: ${res.message}`
-                  )
-                );
-              }
-              resolve(res);
-            }
-          );
-        } else {
-          reject(
-            new Error(`Error: No such client method '${clientMethodName}'!`)
-          );
-        }
-      });
+      
+      
+      try {
+        const packet = {
+          to: actorID,
+          type: clientMethodName,
+        };
+        response = await this.client.request(packet);
+      } catch (e) {
+        throw new Error(
+          `Error while calling method ${clientMethodName}: ${e.message}`
+        );
+      }
     }
 
     
