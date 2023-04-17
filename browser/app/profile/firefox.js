@@ -368,6 +368,11 @@ pref("browser.urlbar.quicksuggest.shouldShowOnboardingDialog", true);
 pref("browser.urlbar.quicksuggest.showOnboardingDialogAfterNRestarts", 2);
 
 
+
+pref("browser.urlbar.quicksuggest.sponsoredIndex", -1);
+pref("browser.urlbar.quicksuggest.nonSponsoredIndex", -1);
+
+
 #ifdef NIGHTLY_BUILD
 pref("browser.urlbar.unitConversion.enabled", true);
 #else

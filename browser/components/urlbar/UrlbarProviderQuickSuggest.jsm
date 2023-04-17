@@ -148,6 +148,9 @@ class ProviderQuickSuggest extends UrlbarProvider {
     };
 
     if (!suggestion.isSponsored) {
+      
+      
+      
       payload.sponsoredText = NONSPONSORED_ACTION_TEXT;
     }
 
@@ -190,6 +193,7 @@ class ProviderQuickSuggest extends UrlbarProvider {
       return;
     }
 
+    
     
     
     

@@ -313,7 +313,25 @@ class MuxerUnifiedComplete extends UrlbarMuxer {
     if (addQuickSuggest) {
       let { quickSuggestResult } = state;
       state.quickSuggestResult = null;
-      addedResults.push(quickSuggestResult);
+      
+      
+      
+      
+      
+      
+      let index = UrlbarPrefs.get(
+        quickSuggestResult.payload.sponsoredText
+          ? "quickSuggestNonSponsoredIndex"
+          : "quickSuggestSponsoredIndex"
+      );
+      
+      
+      if (index < 0) {
+        index = Math.max(index + addedResults.length + 1, 0);
+      } else {
+        index = Math.min(index, addedResults.length);
+      }
+      addedResults.splice(index, 0, quickSuggestResult);
       state.totalResultCount++;
       this._updateStatePostAdd(quickSuggestResult, state);
     }
