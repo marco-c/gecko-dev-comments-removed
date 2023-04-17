@@ -8,7 +8,7 @@ import {
   createPause,
   prepareSourcePayload,
 } from "./firefox/create";
-import { features, prefs } from "../utils/prefs";
+import { features } from "../utils/prefs";
 
 import { recordEvent } from "../utils/telemetry";
 import sourceQueue from "../utils/source-queue";
@@ -16,15 +16,19 @@ import sourceQueue from "../utils/source-queue";
 let actions;
 let targetCommand;
 let resourceCommand;
+let commands;
 
-export async function onConnect(commands, _resourceCommand, _actions, store) {
+export async function onConnect(_commands, _resourceCommand, _actions, store) {
   actions = _actions;
-  targetCommand = commands.targetCommand;
+  targetCommand = _commands.targetCommand;
   resourceCommand = _resourceCommand;
+  commands = _commands;
 
   setupCommands(commands);
   setupCreate({ store });
+
   sourceQueue.initialize(actions);
+
   const { targetFront } = targetCommand;
   if (targetFront.isBrowsingContext || targetFront.isParentProcess) {
     targetCommand.listenForWorkers = true;
@@ -34,6 +38,14 @@ export async function onConnect(commands, _resourceCommand, _actions, store) {
     }
     await targetCommand.startListening();
   }
+  
+  
+  
+  
+  
+  
+  const options = { pauseWorkersUntilAttach: true };
+  await commands.threadConfigurationCommand.updateConfiguration(options);
 
   
   
@@ -116,13 +128,6 @@ async function onTargetAvailable({ targetFront, isTargetSwitching }) {
     console.error("The thread for", targetFront, "isn't attached.");
     return;
   }
-
-  await threadFront.reconfigure({
-    observeAsmJS: true,
-    pauseWorkersUntilAttach: true,
-    skipBreakpoints: prefs.skipPausing,
-    logEventBreakpoints: prefs.logEventBreakpoints,
-  });
 
   
   actions.getEventListenerBreakpointTypes().catch(e => console.error(e));

@@ -202,6 +202,13 @@ loader.lazyRequireGetter(
   true
 );
 
+loader.lazyRequireGetter(
+  this,
+  "getThreadOptions",
+  "devtools/client/shared/thread-utils",
+  true
+);
+
 const DEVTOOLS_F12_DISABLED_PREF = "devtools.experiment.f12.shortcut_disabled";
 
 
@@ -788,6 +795,15 @@ Toolbox.prototype = {
       
       
       await this.commands.targetCommand.startListening();
+
+      
+      
+      
+      const options = await getThreadOptions();
+      await this.commands.threadConfigurationCommand.updateConfiguration(
+        options
+      );
+
       
       
       

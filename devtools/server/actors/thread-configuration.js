@@ -21,6 +21,21 @@ const SUPPORTED_OPTIONS = {
   pauseOnExceptions: true,
   
   ignoreCaughtExceptions: true,
+  
+  shouldShowOverlay: true,
+  
+  shouldIncludeSavedFrames: true,
+  
+  shouldIncludeAsyncLiveFrames: true,
+  
+  skipBreakpoints: true,
+  
+  logEventBreakpoints: true,
+  
+  
+  observeAsmJS: true,
+  
+  pauseWorkersUntilAttach: true,
 };
 
 

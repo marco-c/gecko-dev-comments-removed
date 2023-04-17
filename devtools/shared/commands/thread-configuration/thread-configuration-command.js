@@ -28,25 +28,49 @@ class ThreadConfigurationCommand {
 
   async updateConfiguration(configuration) {
     if (this._commands.targetCommand.hasTargetWatcherSupport()) {
-      const threadConfigurationFront = await this.getThreadConfigurationFront();
-      const updatedConfiguration = await threadConfigurationFront.updateConfiguration(
-        configuration
-      );
-      this._configuration = updatedConfiguration;
-    } else {
-      const threadFronts = await this._commands.targetCommand.getAllFronts(
-        this._commands.targetCommand.ALL_TYPES,
-        "thread"
-      );
-      await Promise.all(
-        threadFronts.map(threadFront =>
-          threadFront.pauseOnExceptions(
-            configuration.pauseOnExceptions,
-            configuration.ignoreCaughtExceptions
-          )
+      
+      
+      const filteredConfiguration = Object.fromEntries(
+        Object.entries(configuration).filter(
+          ([key, value]) => !["breakpoints", "eventBreakpoints"].includes(key)
         )
       );
+
+      const threadConfigurationFront = await this.getThreadConfigurationFront();
+      const updatedConfiguration = await threadConfigurationFront.updateConfiguration(
+        filteredConfiguration
+      );
+      this._configuration = updatedConfiguration;
     }
+
+    let threadFronts = await this._commands.targetCommand.getAllFronts(
+      this._commands.targetCommand.ALL_TYPES,
+      "thread"
+    );
+
+    
+    
+    
+    if (
+      this._commands.targetCommand.rootFront.traits
+        .supportsThreadConfigurationOptions
+    ) {
+      
+      
+      
+      
+      
+      threadFronts = threadFronts.filter(
+        threadFront =>
+          !this._commands.targetCommand.hasTargetWatcherSupport(
+            threadFront.targetFront.targetType
+          )
+      );
+    }
+
+    await Promise.all(
+      threadFronts.map(threadFront => threadFront.reconfigure(configuration))
+    );
   }
 }
 

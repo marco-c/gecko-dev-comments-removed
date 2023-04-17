@@ -574,7 +574,11 @@ function TargetMixin(parentClass) {
         
         
         
-        await this.threadFront.reconfigure(options);
+
+        
+        if (!this.getTrait("supportsThreadConfigurationOptions")) {
+          await this.threadFront.reconfigure(options);
+        }
         return this.threadFront;
       }
       if (
