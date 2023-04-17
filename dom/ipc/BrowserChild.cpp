@@ -1705,12 +1705,52 @@ BrowserChild::RecvNormalPriorityRealMouseEnterExitWidgetEvent(
   return RecvRealMouseButtonEvent(aEvent, aGuid, aInputBlockId);
 }
 
+
+
+bool BrowserChild::MaybeCoalesceWheelEvent(const WidgetWheelEvent& aEvent,
+                                           const ScrollableLayerGuid& aGuid,
+                                           const uint64_t& aInputBlockId,
+                                           bool* aIsNextWheelEvent) {
+  MOZ_ASSERT(aIsNextWheelEvent);
+  if (aEvent.mMessage == eWheel) {
+    GetIPCChannel()->PeekMessages(
+        [aIsNextWheelEvent](const IPC::Message& aMsg) -> bool {
+          if (aMsg.type() == mozilla::dom::PBrowser::Msg_MouseWheelEvent__ID) {
+            *aIsNextWheelEvent = true;
+          }
+          return false;  
+        });
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!mLastWheelProcessedTimeFromParent.IsNull() && *aIsNextWheelEvent &&
+        aEvent.mTimeStamp < (mLastWheelProcessedTimeFromParent +
+                             mLastWheelProcessingDuration) &&
+        (mCoalescedWheelData.IsEmpty() ||
+         mCoalescedWheelData.CanCoalesce(aEvent, aGuid, aInputBlockId))) {
+      mCoalescedWheelData.Coalesce(aEvent, aGuid, aInputBlockId);
+      return true;
+    }
+  }
+  return false;
+}
+
 nsEventStatus BrowserChild::DispatchWidgetEventViaAPZ(WidgetGUIEvent& aEvent) {
   aEvent.ResetWaitingReplyFromRemoteProcessState();
   return APZCCallbackHelper::DispatchWidgetEvent(aEvent);
 }
 
-void BrowserChild::DispatchCoalescedWheelEvent() {
+void BrowserChild::MaybeDispatchCoalescedWheelEvent() {
+  if (mCoalescedWheelData.IsEmpty()) {
+    return;
+  }
   UniquePtr<WidgetWheelEvent> wheelEvent =
       mCoalescedWheelData.TakeCoalescedEvent();
   MOZ_ASSERT(wheelEvent);
@@ -1755,35 +1795,26 @@ mozilla::ipc::IPCResult BrowserChild::RecvMouseWheelEvent(
     const WidgetWheelEvent& aEvent, const ScrollableLayerGuid& aGuid,
     const uint64_t& aInputBlockId) {
   bool isNextWheelEvent = false;
-  
-  
-  
-  
-  if (aEvent.mMessage == eWheel) {
-    GetIPCChannel()->PeekMessages(
-        [&isNextWheelEvent](const IPC::Message& aMsg) -> bool {
-          if (aMsg.type() == mozilla::dom::PBrowser::Msg_MouseWheelEvent__ID) {
-            isNextWheelEvent = true;
-          }
-          return false;  
-        });
-
-    if (!mCoalescedWheelData.IsEmpty() &&
-        !mCoalescedWheelData.CanCoalesce(aEvent, aGuid, aInputBlockId)) {
-      DispatchCoalescedWheelEvent();
-      MOZ_ASSERT(mCoalescedWheelData.IsEmpty());
-    }
-    mCoalescedWheelData.Coalesce(aEvent, aGuid, aInputBlockId);
-
-    MOZ_ASSERT(!mCoalescedWheelData.IsEmpty());
+  if (MaybeCoalesceWheelEvent(aEvent, aGuid, aInputBlockId,
+                              &isNextWheelEvent)) {
+    return IPC_OK();
+  }
+  if (isNextWheelEvent) {
     
-    if (!isNextWheelEvent) {
-      DispatchCoalescedWheelEvent();
-    }
+    
+    mLastWheelProcessedTimeFromParent = aEvent.mTimeStamp;
+    mozilla::TimeStamp beforeDispatchingTime = TimeStamp::Now();
+    MaybeDispatchCoalescedWheelEvent();
+    DispatchWheelEvent(aEvent, aGuid, aInputBlockId);
+    mLastWheelProcessingDuration = (TimeStamp::Now() - beforeDispatchingTime);
+    mLastWheelProcessedTimeFromParent += mLastWheelProcessingDuration;
   } else {
+    
+    
+    mLastWheelProcessedTimeFromParent = TimeStamp();
+    MaybeDispatchCoalescedWheelEvent();
     DispatchWheelEvent(aEvent, aGuid, aInputBlockId);
   }
-
   return IPC_OK();
 }
 
