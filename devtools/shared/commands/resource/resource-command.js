@@ -595,11 +595,10 @@ class ResourceCommand {
       }
 
       
-      if (
+      const isWillNavigate =
         resourceType == ResourceCommand.TYPES.DOCUMENT_EVENT &&
-        resource.name == "will-navigate" &&
-        resource.targetFront.isTopLevel
-      ) {
+        resource.name == "will-navigate";
+      if (isWillNavigate && resource.targetFront.isTopLevel) {
         includesDocumentEventWillNavigate = true;
         this._onWillNavigate(resource.targetFront);
       }
@@ -614,7 +613,12 @@ class ResourceCommand {
 
       this._queueResourceEvent("available", resourceType, resource);
 
-      this._cache.push(resource);
+      
+      
+      
+      if (!isWillNavigate) {
+        this._cache.push(resource);
+      }
     }
 
     
