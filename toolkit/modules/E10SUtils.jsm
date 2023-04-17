@@ -50,12 +50,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "browser.tabs.remote.useCrossOriginOpenerPolicy",
   false
 );
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "useOriginAttributesInRemoteType",
-  "browser.tabs.remote.useOriginAttributesInRemoteType",
-  false
-);
 XPCOMUtils.defineLazyServiceGetter(
   this,
   "serializationHelper",
@@ -226,19 +220,17 @@ function validatedWebRemoteType(
   
   if (aRemoteSubframes) {
     let originAttributes = {};
-    if (useOriginAttributesInRemoteType) {
-      
-      let {
-        userContextId,
-        privateBrowsingId,
-        geckoViewSessionContextId,
-      } = aOriginAttributes;
-      originAttributes = {
-        userContextId,
-        privateBrowsingId,
-        geckoViewSessionContextId,
-      };
-    }
+    
+    let {
+      userContextId,
+      privateBrowsingId,
+      geckoViewSessionContextId,
+    } = aOriginAttributes;
+    originAttributes = {
+      userContextId,
+      privateBrowsingId,
+      geckoViewSessionContextId,
+    };
 
     
     let targetPrincipal;

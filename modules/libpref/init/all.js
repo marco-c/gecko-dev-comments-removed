@@ -2470,10 +2470,6 @@ pref("browser.tabs.remote.autostart", false);
 
 
 
-pref("browser.tabs.remote.useOriginAttributesInRemoteType", true);
-
-
-
 pref("browser.tabs.remote.dataUriInDefaultWebProcess", false);
 
 

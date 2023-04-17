@@ -40,29 +40,10 @@ add_task(async function setup() {
       
       
       ["browser.newtab.preload", false],
-      
-      ["browser.tabs.remote.useOriginAttributesInRemoteType", false],
     ],
   });
 
   requestLongerTimeout(4);
-
-  add_task(async function testWithOA() {
-    Services.prefs.setBoolPref(
-      "browser.tabs.remote.useOriginAttributesInRemoteType",
-      true
-    );
-    await testNavigate();
-  });
-  if (gFissionBrowser) {
-    add_task(async function testWithoutOA() {
-      Services.prefs.setBoolPref(
-        "browser.tabs.remote.useOriginAttributesInRemoteType",
-        false
-      );
-      await testNavigate();
-    });
-  }
 });
 
 function setupRemoteTypes() {
@@ -76,7 +57,7 @@ function setupRemoteTypes() {
   );
 }
 
-async function testNavigate() {
+add_task(async function testNavigate() {
   setupRemoteTypes();
   
 
@@ -143,7 +124,7 @@ async function testNavigate() {
   });
   BrowserTestUtils.removeTab(regularPage.tab);
   BrowserTestUtils.removeTab(privatePage.tab);
-}
+});
 
 async function loadURIAndCheckRemoteType(
   aBrowser,
