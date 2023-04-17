@@ -562,8 +562,6 @@ const browsingContextTargetPrototype = {
         reconfigureSupportsSimulationFeatures: true,
         
         
-        
-        
         supportsTopLevelTargetFlag: true,
       },
     };
