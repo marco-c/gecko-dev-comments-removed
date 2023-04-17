@@ -16,7 +16,6 @@
 #include "nsIObserverService.h"
 #include "nsIAppStartup.h"
 #include "nsIGeolocationProvider.h"
-#include "nsCacheService.h"
 #include "nsIDOMWakeLockListener.h"
 #include "nsIPowerManagerService.h"
 #include "nsISpeculativeConnect.h"
@@ -163,13 +162,6 @@ class GeckoThreadSupport final
     
     
     
-    if (nsCacheService::GlobalInstance()) {
-      nsCacheService::GlobalInstance()->Shutdown();
-    }
-
-    
-    
-    
     Preferences* prefs = static_cast<Preferences*>(Preferences::GetService());
     if (prefs) {
       
@@ -185,13 +177,6 @@ class GeckoThreadSupport final
     
     if (sPauseCount != 0) {
       return;
-    }
-
-    
-    
-    
-    if (nsCacheService::GlobalInstance()) {
-      nsCacheService::GlobalInstance()->Init();
     }
 
     
