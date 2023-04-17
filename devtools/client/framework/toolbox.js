@@ -2206,7 +2206,16 @@ Toolbox.prototype = {
 
     
     const selectedFrame = this.frameMap.get(this.selectedFrameId) || {};
-    const isVisible = this._commandIsVisible(this.frameButton);
+
+    
+    
+    
+    
+    
+    
+    const isVisible = !this.frameButton.isCurrentlyVisible()
+      ? false
+      : this._commandIsVisible(this.frameButton);
 
     this.frameButton.isVisible = isVisible;
 
@@ -3012,7 +3021,7 @@ Toolbox.prototype = {
   
 
 
-  async _onWillNavigate() {
+  async _onWillNavigate({ isFrameSwitching } = {}) {
     
     
     
@@ -3027,6 +3036,9 @@ Toolbox.prototype = {
 
     
     this.setErrorCount(0);
+    if (!isFrameSwitching) {
+      this._updateFrames({ destroyAll: true });
+    }
     this.updateToolboxButtons();
     const toolId = this.currentToolId;
     
@@ -4373,7 +4385,9 @@ Toolbox.prototype = {
         resource.name === "will-navigate" &&
         resource.targetFront.isTopLevel
       ) {
-        this._onWillNavigate();
+        this._onWillNavigate({
+          isFrameSwitching: resource.isFrameSwitching,
+        });
         
         
         
