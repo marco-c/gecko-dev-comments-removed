@@ -462,7 +462,7 @@ void GCRuntime::sweepZoneAfterCompacting(MovingTracer* trc, Zone* zone) {
   zone->traceWeakMaps(trc);
 
   for (auto* cache : zone->weakCaches()) {
-    cache->sweep(nullptr);
+    cache->traceWeak(trc, nullptr);
   }
 
   if (jit::JitZone* jitZone = zone->jitZone()) {
@@ -655,7 +655,7 @@ void GCRuntime::updateRttValueObjects(MovingTracer* trc, Zone* zone) {
   
   
 
-  zone->rttValueObjects().sweep(nullptr);
+  zone->rttValueObjects().traceWeak(trc, nullptr);
 
   for (auto r = zone->rttValueObjects().all(); !r.empty(); r.popFront()) {
     RttValue* obj = &MaybeForwardedObjectAs<RttValue>(r.front());
@@ -837,7 +837,7 @@ void GCRuntime::updateRuntimePointersToRelocatedCells(AutoGCSession& session) {
   
   jit::JitRuntime::TraceWeakJitcodeGlobalTable(rt, &trc);
   for (JS::detail::WeakCacheBase* cache : rt->weakCaches()) {
-    cache->sweep(nullptr);
+    cache->traceWeak(&trc, nullptr);
   }
 
   
