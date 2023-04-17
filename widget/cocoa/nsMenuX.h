@@ -79,6 +79,8 @@ class nsMenuX final : public nsMenuParentX,
   void OnMenuDidOpen(mozilla::dom::Element* aPopupElement) override;
   void OnMenuClosed(mozilla::dom::Element* aPopupElement) override;
 
+  bool IsVisible() const { return mVisible; }
+
   
   
   

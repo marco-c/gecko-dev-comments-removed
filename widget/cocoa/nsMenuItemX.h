@@ -49,6 +49,8 @@ class nsMenuItemX final : public nsChangeObserver,
   nsMenuItemX(nsMenuX* aParent, const nsString& aLabel, EMenuItemType aItemType,
               nsMenuGroupOwnerX* aMenuGroupOwner, nsIContent* aNode);
 
+  bool IsVisible() const { return mIsVisible; }
+
   
   
   
@@ -96,6 +98,7 @@ class nsMenuItemX final : public nsChangeObserver,
   RefPtr<mozilla::dom::Element> mCommandElement;
   mozilla::UniquePtr<nsMenuItemIconX> mIcon;  
   bool mIsChecked = false;
+  bool mIsVisible = false;
 };
 
 #endif  
