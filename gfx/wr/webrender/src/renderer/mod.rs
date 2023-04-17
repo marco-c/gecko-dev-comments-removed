@@ -3404,13 +3404,12 @@ impl Renderer {
             self.gpu_profiler.finish_sampler(opaque_sampler);
         }
 
-        
-        if !occlusion.alpha_items().is_empty() {
+        if !clear_tiles.is_empty() {
             let transparent_sampler = self.gpu_profiler.start_sampler(GPU_SAMPLER_TAG_TRANSPARENT);
             self.set_blend(true, FramebufferKind::Main);
-            self.set_blend_mode_premultiplied_alpha(FramebufferKind::Main);
+            self.device.set_blend_mode_premultiplied_dest_out();
             self.draw_tile_list(
-                occlusion.alpha_items().iter().rev(),
+                clear_tiles.iter(),
                 &composite_state,
                 &composite_state.external_surfaces,
                 projection,
@@ -3419,12 +3418,13 @@ impl Renderer {
             self.gpu_profiler.finish_sampler(transparent_sampler);
         }
 
-        if !clear_tiles.is_empty() {
+        
+        if !occlusion.alpha_items().is_empty() {
             let transparent_sampler = self.gpu_profiler.start_sampler(GPU_SAMPLER_TAG_TRANSPARENT);
             self.set_blend(true, FramebufferKind::Main);
-            self.device.set_blend_mode_premultiplied_dest_out();
+            self.set_blend_mode_premultiplied_alpha(FramebufferKind::Main);
             self.draw_tile_list(
-                clear_tiles.iter(),
+                occlusion.alpha_items().iter().rev(),
                 &composite_state,
                 &composite_state.external_surfaces,
                 projection,
