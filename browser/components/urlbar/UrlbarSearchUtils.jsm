@@ -19,7 +19,6 @@ const { XPCOMUtils } = ChromeUtils.import(
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
 
@@ -142,21 +141,9 @@ class SearchUtils {
 
 
 
-
-
-
-  async engineForAlias(alias, searchString = null) {
+  async engineForAlias(alias) {
     await Promise.all([this.init(), this._refreshEnginesByAliasPromise]);
-    let engine = this._enginesByAlias.get(alias.toLocaleLowerCase());
-    if (engine && searchString) {
-      let query = UrlbarUtils.substringAfter(searchString, alias);
-      
-      
-      if (!UrlbarTokenizer.REGEXP_SPACES_START.test(query)) {
-        return null;
-      }
-    }
-    return engine || null;
+    return this._enginesByAlias.get(alias.toLocaleLowerCase()) || null;
   }
 
   
