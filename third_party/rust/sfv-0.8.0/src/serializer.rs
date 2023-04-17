@@ -60,10 +60,10 @@ impl Serializer {
         Ok(())
     }
 
-    #[allow(clippy::ptr_arg)]
+    #[deny(clippy::ptr_arg)]
     pub(crate) fn serialize_list(input_list: &List, output: &mut String) -> SFVResult<()> {
         
-        if input_list.is_empty() {
+        if input_list.len() == 0 {
             return Err("serialize_list: serializing empty field is not allowed");
         }
 
@@ -89,7 +89,7 @@ impl Serializer {
 
     pub(crate) fn serialize_dict(input_dict: &Dictionary, output: &mut String) -> SFVResult<()> {
         
-        if input_dict.is_empty() {
+        if input_dict.len() == 0 {
             return Err("serialize_dictionary: serializing empty field is not allowed");
         }
 

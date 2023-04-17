@@ -189,6 +189,12 @@ impl Http3Server {
                                 remove = true;
                             }
                         }
+                        Http3ServerConnEvent::PriorityUpdate {
+                            stream_id,
+                            priority,
+                        } => {
+                            self.events.priority_update(stream_id, priority);
+                        }
                     }
                 }
             }
@@ -254,8 +260,9 @@ fn prepare_data(
 #[cfg(test)]
 mod tests {
     use super::{Http3Server, Http3ServerEvent, Http3State, Rc, RefCell};
-    use crate::{Error, Header};
+    use crate::{Error, HFrame, Header, Priority};
     use neqo_common::event::Provider;
+    use neqo_common::Encoder;
     use neqo_crypto::{AuthenticationStatus, ZeroRttCheckResult, ZeroRttChecker};
     use neqo_qpack::encoder::QPackEncoder;
     use neqo_qpack::QpackSettings;
@@ -566,6 +573,53 @@ mod tests {
         assert_closed(&mut hconn, &Error::HttpFrameUnexpected);
     }
 
+    fn priority_update_check_id(stream_id: u64, valid: bool) {
+        let (mut hconn, mut peer_conn) = connect();
+        
+        let frame = HFrame::PriorityUpdateRequest {
+            element_id: stream_id,
+            priority: Priority::default(),
+        };
+        let mut e = Encoder::default();
+        frame.encode(&mut e);
+        peer_conn.control_send(&e);
+        let out = peer_conn.process(None, now());
+        hconn.process(out.dgram(), now());
+        
+        if valid {
+            assert_not_closed(&mut hconn);
+        } else {
+            assert_closed(&mut hconn, &Error::HttpId);
+        }
+    }
+
+    #[test]
+    fn test_priority_update_valid_id_0() {
+        
+        priority_update_check_id(0, true);
+    }
+    #[test]
+    fn test_priority_update_invalid_id_1() {
+        
+        priority_update_check_id(1, false);
+    }
+    #[test]
+    fn test_priority_update_invalid_id_2() {
+        
+        priority_update_check_id(2, false);
+    }
+    #[test]
+    fn test_priority_update_invalid_id_3() {
+        
+        priority_update_check_id(3, false);
+    }
+
+    #[test]
+    fn test_priority_update_invalid_large_id() {
+        
+        priority_update_check_id(1_000_000_000, false);
+    }
+
     fn test_wrong_frame_on_control_stream(v: &[u8]) {
         let (mut hconn, mut peer_conn) = connect();
 
@@ -731,7 +785,7 @@ mod tests {
     }
 
     
-    fn test_incomplet_frame(res: &[u8]) {
+    fn test_incomplete_frame(res: &[u8]) {
         let (mut hconn, mut peer_conn) = connect_and_receive_settings();
 
         
@@ -768,19 +822,19 @@ mod tests {
 
     
     #[test]
-    fn test_server_incomplet_data_frame() {
-        test_incomplet_frame(&REQUEST_WITH_BODY[..22]);
+    fn test_server_incomplete_data_frame() {
+        test_incomplete_frame(&REQUEST_WITH_BODY[..22]);
     }
 
     
     #[test]
-    fn test_server_incomplet_headers_frame() {
-        test_incomplet_frame(&REQUEST_WITH_BODY[..10]);
+    fn test_server_incomplete_headers_frame() {
+        test_incomplete_frame(&REQUEST_WITH_BODY[..10]);
     }
 
     #[test]
-    fn test_server_incomplet_unknown_frame() {
-        test_incomplet_frame(&[0x21]);
+    fn test_server_incomplete_unknown_frame() {
+        test_incomplete_frame(&[0x21]);
     }
 
     #[test]
@@ -823,6 +877,7 @@ mod tests {
                     data_received += 1;
                 }
                 Http3ServerEvent::StateChange { .. } => {}
+                Http3ServerEvent::PriorityUpdate { .. } => {}
             }
         }
         assert_eq!(headers_frames, 1);
@@ -871,6 +926,7 @@ mod tests {
                     panic!("We should not have a Data event");
                 }
                 Http3ServerEvent::StateChange { .. } => {}
+                Http3ServerEvent::PriorityUpdate { .. } => {}
             }
         }
         let out = hconn.process(None, now());
@@ -893,6 +949,7 @@ mod tests {
                     panic!("We should not have a Data event");
                 }
                 Http3ServerEvent::StateChange { .. } => {}
+                Http3ServerEvent::PriorityUpdate { .. } => {}
             }
         }
         assert_eq!(headers_frames, 1);
@@ -932,6 +989,7 @@ mod tests {
                     panic!("We should not have a Data event");
                 }
                 Http3ServerEvent::StateChange { .. } => {}
+                Http3ServerEvent::PriorityUpdate { .. } => {}
             }
         }
         let out = hconn.process(None, now());
@@ -1156,6 +1214,7 @@ mod tests {
                     assert!(requests.get(&request).is_some());
                 }
                 Http3ServerEvent::StateChange { .. } => {}
+                Http3ServerEvent::PriorityUpdate { .. } => {}
             }
         }
         assert_eq!(requests.len(), 2);
