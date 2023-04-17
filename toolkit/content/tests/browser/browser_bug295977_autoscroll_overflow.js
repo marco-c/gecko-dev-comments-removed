@@ -190,6 +190,14 @@ body > div > div {width: 1000px;height: 1000px;}\
       );
       BrowserTestUtils.loadURI(gBrowser, test.dataUri);
       await loadedPromise;
+      await ContentTask.spawn(gBrowser.selectedBrowser, {}, async () => {
+        
+        await new Promise(resolve =>
+          content.requestAnimationFrame(() =>
+            content.requestAnimationFrame(resolve)
+          )
+        );
+      });
       continue;
     }
 
