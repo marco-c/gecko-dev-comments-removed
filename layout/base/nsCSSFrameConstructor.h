@@ -334,7 +334,8 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
   void AddSizeOfIncludingThis(nsWindowSizes& aSizes) const;
 
-#ifdef ACCESSIBILITY
+#if defined(ACCESSIBILITY) || defined(MOZ_LAYOUT_DEBUGGER)
+  
   
   const nsCounterManager* CounterManager() const { return &mCounterManager; }
 #endif
