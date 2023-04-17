@@ -454,16 +454,16 @@ class XDRStencilDecoder : public XDRState<XDR_DECODE> {
     MOZ_ASSERT(JS::IsTranscodingBytecodeAligned(range.begin().get()));
   }
 
-  XDRResult codeStencil(const JS::ReadOnlyCompileOptions& options,
+  XDRResult codeStencil(const JS::DecodeOptions& options,
                         frontend::CompilationStencil& stencil);
 
-  const JS::ReadOnlyCompileOptions& options() {
+  const JS::DecodeOptions& options() {
     MOZ_ASSERT(options_);
     return *options_;
   }
 
  private:
-  const JS::ReadOnlyCompileOptions* options_ = nullptr;
+  const JS::DecodeOptions* options_ = nullptr;
 };
 
 class XDRIncrementalStencilEncoder;

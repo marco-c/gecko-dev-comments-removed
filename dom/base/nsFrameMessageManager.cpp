@@ -1271,14 +1271,12 @@ nsMessageManagerScriptExecutor::TryCacheLoadAndCompileScript(
   }
   JSContext* cx = jsapi.cx();
 
-  JS::CompileOptions options(cx);
-  FillCompileOptionsForCachedStencil(options);
-  options.setFileAndLine(url.get(), 1);
-
   RefPtr<JS::Stencil> stencil;
   if (useScriptPreloader) {
-    stencil =
-        ScriptPreloader::GetChildSingleton().GetCachedStencil(cx, options, url);
+    JS::DecodeOptions decodeOptions;
+    ScriptPreloader::FillDecodeOptionsForCachedStencil(decodeOptions);
+    stencil = ScriptPreloader::GetChildSingleton().GetCachedStencil(
+        cx, decodeOptions, url);
   }
 
   if (!stencil) {
@@ -1315,6 +1313,10 @@ nsMessageManagerScriptExecutor::TryCacheLoadAndCompileScript(
       return nullptr;
     }
 
+    JS::CompileOptions options(cx);
+    FillCompileOptionsForCachedStencil(options);
+    options.setFileAndLine(url.get(), 1);
+
     
     
     if (!useScriptPreloader || !ScriptPreloader::GetChildSingleton().Active()) {
@@ -1338,6 +1340,12 @@ nsMessageManagerScriptExecutor::TryCacheLoadAndCompileScript(
       auto* holder = new nsMessageManagerScriptHolder(stencil);
       sCachedScripts->InsertOrUpdate(aURL, holder);
     }
+
+#ifdef DEBUG
+    
+    JS::InstantiateOptions instantiateOptions(options);
+    instantiateOptions.assertDefault();
+#endif
   }
 
   MOZ_ASSERT(stencil);

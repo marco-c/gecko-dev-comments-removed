@@ -20,7 +20,7 @@
 #include "jsfriendapi.h"
 #include "xpcprivate.h"                   
 #include "js/CompilationAndEvaluation.h"  
-#include "js/CompileOptions.h"            
+#include "js/CompileOptions.h"  
 #include "js/friend/JSMEnvironment.h"  
 #include "js/SourceText.h"             
 #include "js/Wrapper.h"
@@ -126,14 +126,12 @@ static void ReportError(JSContext* cx, const char* origMsg, nsIURI* uri) {
 static bool EvalStencil(JSContext* cx, HandleObject targetObj,
                         HandleObject loadScope, MutableHandleValue retval,
                         nsIURI* uri, bool storeIntoStartupCache,
-                        bool storeIntoPreloadCache,
-                        const ReadOnlyCompileOptions& options,
-                        JS::Stencil* stencil) {
+                        bool storeIntoPreloadCache, JS::Stencil* stencil) {
   MOZ_ASSERT(!js::IsWrapper(targetObj));
 
-  JS::InstantiateOptions instantiateOptions(options);
-  JS::RootedScript script(
-      cx, JS::InstantiateGlobalStencil(cx, instantiateOptions, stencil));
+  JS::InstantiateOptions options;
+  JS::RootedScript script(cx,
+                          JS::InstantiateGlobalStencil(cx, options, stencil));
   if (!script) {
     return false;
   }
@@ -432,24 +430,18 @@ nsresult mozJSSubScriptLoader::DoLoadSubScriptWithOptions(
   nsAutoCString cachePath;
   SubscriptCachePath(cx, uri, targetObj, cachePath);
 
-  JS::CompileOptions compileOptions(cx);
-  ScriptPreloader::FillCompileOptionsForCachedStencil(compileOptions);
-  compileOptions.setFileAndLine(uriStr.get(), 1);
-  compileOptions.setNonSyntacticScope(!JS_IsGlobalObject(targetObj));
-
-  if (options.wantReturnValue) {
-    compileOptions.setNoScriptRval(false);
-  }
+  JS::DecodeOptions decodeOptions;
+  ScriptPreloader::FillDecodeOptionsForCachedStencil(decodeOptions);
 
   RefPtr<JS::Stencil> stencil;
   if (!options.ignoreCache) {
     if (!options.wantReturnValue) {
       
       stencil = ScriptPreloader::GetSingleton().GetCachedStencil(
-          cx, compileOptions, cachePath);
+          cx, decodeOptions, cachePath);
     }
     if (!stencil && cache) {
-      rv = ReadCachedStencil(cache, cachePath, cx, compileOptions,
+      rv = ReadCachedStencil(cache, cachePath, cx, decodeOptions,
                              getter_AddRefs(stencil));
       if (NS_FAILED(rv) || !stencil) {
         JS_ClearPendingException(cx);
@@ -461,10 +453,26 @@ nsresult mozJSSubScriptLoader::DoLoadSubScriptWithOptions(
   if (!stencil) {
     
     storeIntoStartupCache = cache;
+
+    JS::CompileOptions compileOptions(cx);
+    ScriptPreloader::FillCompileOptionsForCachedStencil(compileOptions);
+    compileOptions.setFileAndLine(uriStr.get(), 1);
+    compileOptions.setNonSyntacticScope(!JS_IsGlobalObject(targetObj));
+
+    if (options.wantReturnValue) {
+      compileOptions.setNoScriptRval(false);
+    }
+
     if (!ReadStencil(getter_AddRefs(stencil), uri, cx, compileOptions, serv,
                      useCompilationScope)) {
       return NS_OK;
     }
+
+#ifdef DEBUG
+    
+    JS::InstantiateOptions instantiateOptions(compileOptions);
+    instantiateOptions.assertDefault();
+#endif
   }
 
   
@@ -472,7 +480,6 @@ nsresult mozJSSubScriptLoader::DoLoadSubScriptWithOptions(
   bool storeIntoPreloadCache = !ignoreCache && !options.wantReturnValue;
 
   Unused << EvalStencil(cx, targetObj, loadScope, retval, uri,
-                        storeIntoStartupCache, storeIntoPreloadCache,
-                        compileOptions, stencil);
+                        storeIntoStartupCache, storeIntoPreloadCache, stencil);
   return NS_OK;
 }

@@ -23,7 +23,7 @@
 
 #include "jstypes.h"  
 
-#include "js/CompileOptions.h"              
+#include "js/CompileOptions.h"  
 #include "js/OffThreadScriptCompilation.h"  
 #include "js/SourceText.h"                  
 #include "js/Transcoding.h"                 
@@ -101,9 +101,10 @@ extern JS_PUBLIC_API TranscodeResult EncodeStencil(JSContext* cx,
                                                    TranscodeBuffer& buffer);
 
 
-extern JS_PUBLIC_API TranscodeResult
-DecodeStencil(JSContext* cx, const ReadOnlyCompileOptions& options,
-              const TranscodeRange& range, Stencil** stencilOut);
+extern JS_PUBLIC_API TranscodeResult DecodeStencil(JSContext* cx,
+                                                   const DecodeOptions& options,
+                                                   const TranscodeRange& range,
+                                                   Stencil** stencilOut);
 
 extern JS_PUBLIC_API size_t SizeOfStencil(Stencil* stencil,
                                           mozilla::MallocSizeOf mallocSizeOf);

@@ -182,6 +182,9 @@ JS_PUBLIC_API bool JS::CanDecodeOffThread(JSContext* cx,
   return CanDoOffThread(cx, options, length, OffThread::Decode);
 }
 
+
+
+
 JS_PUBLIC_API JS::OffThreadToken* JS::DecodeOffThreadScript(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     mozilla::Vector<uint8_t>& buffer , size_t cursor,

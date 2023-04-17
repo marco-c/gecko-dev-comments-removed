@@ -73,6 +73,7 @@ enum class AsmJSOption : uint8_t {
 };
 
 class JS_PUBLIC_API InstantiateOptions;
+class JS_PUBLIC_API DecodeOptions;
 
 
 
@@ -81,6 +82,8 @@ class JS_PUBLIC_API InstantiateOptions;
 
 
 class JS_PUBLIC_API TransitiveCompileOptions {
+  friend class JS_PUBLIC_API DecodeOptions;
+
  protected:
   
 
@@ -483,6 +486,42 @@ class JS_PUBLIC_API InstantiateOptions {
     MOZ_ASSERT(deferDebugMetadata == false);
   }
 #endif
+};
+
+
+
+
+class JS_PUBLIC_API DecodeOptions {
+ public:
+  bool borrowBuffer = false;
+  bool usePinnedBytecode = false;
+
+  const char* introducerFilename = nullptr;
+
+  
+  const char* introductionType = nullptr;
+
+  unsigned introductionLineno = 0;
+  uint32_t introductionOffset = 0;
+
+  DecodeOptions() = default;
+
+  explicit DecodeOptions(const ReadOnlyCompileOptions& options)
+      : borrowBuffer(options.borrowBuffer),
+        usePinnedBytecode(options.usePinnedBytecode),
+        introducerFilename(options.introducerFilename()),
+        introductionType(options.introductionType),
+        introductionLineno(options.introductionLineno),
+        introductionOffset(options.introductionOffset) {}
+
+  void copyTo(CompileOptions& options) const {
+    options.borrowBuffer = borrowBuffer;
+    options.usePinnedBytecode = usePinnedBytecode;
+    options.introducerFilename_ = introducerFilename;
+    options.introductionType = introductionType;
+    options.introductionLineno = introductionLineno;
+    options.introductionOffset = introductionOffset;
+  }
 };
 
 }  

@@ -751,17 +751,16 @@ nsresult mozJSComponentLoader::ObjectForLocation(
   rv = PathifyURI(aInfo.ResolvedURI(), cachePath);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  CompileOptions options(cx);
-  ScriptPreloader::FillCompileOptionsForCachedStencil(options);
-  options.setFileAndLine(nativePath.get(), 1);
-  options.setForceStrictMode();
-  options.setNonSyntacticScope(true);
+  JS::DecodeOptions decodeOptions;
+  ScriptPreloader::FillDecodeOptionsForCachedStencil(decodeOptions);
 
   RefPtr<JS::Stencil> stencil =
-      ScriptPreloader::GetSingleton().GetCachedStencil(cx, options, cachePath);
+      ScriptPreloader::GetSingleton().GetCachedStencil(cx, decodeOptions,
+                                                       cachePath);
 
   if (!stencil && cache) {
-    ReadCachedStencil(cache, cachePath, cx, options, getter_AddRefs(stencil));
+    ReadCachedStencil(cache, cachePath, cx, decodeOptions,
+                      getter_AddRefs(stencil));
     if (!stencil) {
       JS_ClearPendingException(cx);
 
@@ -774,6 +773,12 @@ nsresult mozJSComponentLoader::ObjectForLocation(
   } else {
     
     LOG(("Slow loading %s\n", nativePath.get()));
+
+    CompileOptions options(cx);
+    ScriptPreloader::FillCompileOptionsForCachedStencil(options);
+    options.setFileAndLine(nativePath.get(), 1);
+    options.setForceStrictMode();
+    options.setNonSyntacticScope(true);
 
     
     
@@ -807,6 +812,12 @@ nsresult mozJSComponentLoader::ObjectForLocation(
       }
     }
 
+#ifdef DEBUG
+    
+    JS::InstantiateOptions instantiateOptions(options);
+    instantiateOptions.assertDefault();
+#endif
+
     if (!stencil) {
       
       
@@ -819,7 +830,7 @@ nsresult mozJSComponentLoader::ObjectForLocation(
     }
   }
 
-  JS::InstantiateOptions instantiateOptions(options);
+  JS::InstantiateOptions instantiateOptions;
   RootedScript script(
       cx, JS::InstantiateGlobalStencil(cx, instantiateOptions, stencil));
   if (!script) {
@@ -835,13 +846,11 @@ nsresult mozJSComponentLoader::ObjectForLocation(
 
   
   
-  MOZ_ASSERT_IF(ScriptPreloader::GetSingleton().Active(), options.sourceIsLazy);
   ScriptPreloader::GetSingleton().NoteStencil(nativePath, cachePath, stencil);
 
   
   
   if (storeIntoStartupCache) {
-    MOZ_ASSERT(options.sourceIsLazy);
     MOZ_ASSERT(stencil);
 
     

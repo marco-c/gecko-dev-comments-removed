@@ -1607,7 +1607,7 @@ static nsresult WriteStencil(nsIObjectOutputStream* aStream, JSContext* aCx,
 }
 
 static nsresult ReadStencil(nsIObjectInputStream* aStream, JSContext* aCx,
-                            const JS::ReadOnlyCompileOptions& aOptions,
+                            const JS::DecodeOptions& aOptions,
                             JS::Stencil** aStencilOut) {
   
   
@@ -1750,9 +1750,7 @@ nsresult nsXULPrototypeScript::Deserialize(
   }
   JSContext* cx = jsapi.cx();
 
-  JS::CompileOptions options(cx);
-  FillCompileOptions(options);
-
+  JS::DecodeOptions options;
   RefPtr<JS::Stencil> newStencil;
   rv = ReadStencil(aStream, cx, options, getter_AddRefs(newStencil));
   NS_ENSURE_SUCCESS(rv, rv);

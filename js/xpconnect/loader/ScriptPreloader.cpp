@@ -883,22 +883,18 @@ void ScriptPreloader::FillCompileOptionsForCachedStencil(
   
   
   options.setSourceIsLazy(true);
+}
 
+
+void ScriptPreloader::FillDecodeOptionsForCachedStencil(
+    JS::DecodeOptions& options) {
   
   
   options.borrowBuffer = true;
 }
 
 already_AddRefed<JS::Stencil> ScriptPreloader::GetCachedStencil(
-    JSContext* cx, const JS::ReadOnlyCompileOptions& options,
-    const nsCString& path) {
-  
-  
-  MOZ_ASSERT(options.noScriptRval);
-  MOZ_ASSERT(!options.selfHostingMode);
-  MOZ_ASSERT(!options.isRunOnce);
-  MOZ_ASSERT(options.sourceIsLazy);
-
+    JSContext* cx, const JS::DecodeOptions& options, const nsCString& path) {
   
   
   if (mChildCache) {
@@ -919,8 +915,7 @@ already_AddRefed<JS::Stencil> ScriptPreloader::GetCachedStencil(
 }
 
 already_AddRefed<JS::Stencil> ScriptPreloader::GetCachedStencilInternal(
-    JSContext* cx, const JS::ReadOnlyCompileOptions& options,
-    const nsCString& path) {
+    JSContext* cx, const JS::DecodeOptions& options, const nsCString& path) {
   auto* cachedScript = mScripts.Get(path);
   if (cachedScript) {
     return WaitForCachedStencil(cx, options, cachedScript);
@@ -929,8 +924,7 @@ already_AddRefed<JS::Stencil> ScriptPreloader::GetCachedStencilInternal(
 }
 
 already_AddRefed<JS::Stencil> ScriptPreloader::WaitForCachedStencil(
-    JSContext* cx, const JS::ReadOnlyCompileOptions& options,
-    CachedStencil* script) {
+    JSContext* cx, const JS::DecodeOptions& options, CachedStencil* script) {
   
   
   
@@ -1175,7 +1169,7 @@ bool ScriptPreloader::CachedStencil::XDREncode(JSContext* cx) {
 }
 
 already_AddRefed<JS::Stencil> ScriptPreloader::CachedStencil::GetStencil(
-    JSContext* cx, const JS::ReadOnlyCompileOptions& options) {
+    JSContext* cx, const JS::DecodeOptions& options) {
   MOZ_ASSERT(mReadyToExecute);
   if (mStencil) {
     return do_AddRef(mStencil);
