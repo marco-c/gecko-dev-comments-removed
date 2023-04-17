@@ -366,6 +366,19 @@ class NumberFormat final {
                                             int32_t keywordSize,
                                             UPluralRules* pluralRules) const;
 
+  
+
+
+
+
+
+
+
+  static auto GetAvailableLocales() {
+    return AvailableLocalesEnumeration<unum_countAvailable,
+                                       unum_getAvailable>();
+  }
+
  private:
   UNumberFormatter* mNumberFormatter = nullptr;
   UFormattedNumber* mFormattedNumber = nullptr;

@@ -9,6 +9,8 @@
 #include "mozilla/Span.h"
 #include "TestBuffer.h"
 
+#include <string_view>
+
 namespace mozilla::intl {
 
 
@@ -497,6 +499,32 @@ TEST(IntlDateTimeFormat, GetOriginalSkeleton)
 
   ASSERT_TRUE(resolvedSkeletonResult.isOk());
   ASSERT_TRUE(resolvedSkeleton.verboseMatches(u"Mdd"));
+}
+
+TEST(IntlDateTimeFormat, GetAvailableLocales)
+{
+  using namespace std::literals;
+
+  int32_t english = 0;
+  int32_t german = 0;
+  int32_t chinese = 0;
+
+  
+  
+  for (const char* locale : DateTimeFormat::GetAvailableLocales()) {
+    if (locale == "en"sv) {
+      english++;
+    } else if (locale == "de"sv) {
+      german++;
+    } else if (locale == "zh"sv) {
+      chinese++;
+    }
+  }
+
+  
+  ASSERT_EQ(english, 1);
+  ASSERT_EQ(german, 1);
+  ASSERT_EQ(chinese, 1);
 }
 
 }  

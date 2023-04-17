@@ -456,6 +456,19 @@ class DateTimeFormat final {
   static Result<HourCyclesVector, ICUError> GetAllowedHourCycles(
       Span<const char> aLanguage, Maybe<Span<const char>> aRegion);
 
+  
+
+
+
+
+
+
+
+  static auto GetAvailableLocales() {
+    return AvailableLocalesEnumeration<udat_countAvailable,
+                                       udat_getAvailable>();
+  }
+
  private:
   explicit DateTimeFormat(UDateFormat* aDateFormat);
 
