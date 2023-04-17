@@ -4,8 +4,8 @@
 
 
 
-const TEST_SITE = "http://mochi.test:8888";
-const TEST_CACHE_SITE = "http://www.example.com";
+const TEST_SITE = "https://example.com";
+const TEST_CACHE_SITE = "https://test1.example.com";
 const TEST_DIRECTORY =
   "/browser/browser/components/privatebrowsing/test/browser/";
 
