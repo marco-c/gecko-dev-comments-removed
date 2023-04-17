@@ -65,9 +65,6 @@ parent:
   async OpenOriginalCacheInputStream();
 
   
-  async OpenAltDataCacheInputStream(nsCString aType);
-
-  
   
   async BytesRead(int32_t count);
 
@@ -120,8 +117,6 @@ child:
                             nsString contentType);
 
   async OriginalCacheInputStreamAvailable(IPCStream? stream);
-
-  async AltDataCacheInputStreamAvailable(IPCStream? stream);
 
 
 both:
