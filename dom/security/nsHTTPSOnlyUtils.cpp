@@ -324,7 +324,9 @@ bool nsHTTPSOnlyUtils::IsUpgradeDowngradeEndlessLoop(
   
   
   nsCOMPtr<nsIPrincipal> triggeringPrincipal = aLoadInfo->TriggeringPrincipal();
-  if (!triggeringPrincipal->SchemeIs("https")) {
+  
+  
+  if (!triggeringPrincipal->SchemeIs("https") && !enforceForHTTPSFirstMode) {
     return false;
   }
 
