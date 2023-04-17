@@ -472,9 +472,26 @@ TestRunner.getParameterInfo = function() {
 
 
 
+TestRunner.dumpPrefContext = function() {
+  let prefs = ["fission.autostart"];
+
+  let message = ["Dumping test context:"];
+  prefs.forEach(function formatPref(pref) {
+    let val = SpecialPowers.getBoolPref(pref);
+    message.push(pref + "=" + val);
+  });
+  TestRunner.structuredLogger.info(message.join("\n  "));
+};
+
+
+
+
+
+
 
 TestRunner.runTests = function() {
   TestRunner.structuredLogger.info("SimpleTest START");
+  TestRunner.dumpPrefContext();
   TestRunner.originalTestURL = $("current-test").innerHTML;
 
   SpecialPowers.registerProcessCrashObservers();
