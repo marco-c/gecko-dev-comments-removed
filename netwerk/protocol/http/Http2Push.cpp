@@ -226,7 +226,7 @@ nsresult Http2PushedStream::ReadSegments(nsAHttpSegmentReader* reader, uint32_t,
       
       mSocketTransport->GetOriginAttributes(&originAttributes);
       CreatePushHashKey(mHeaderScheme, mHeaderHost, originAttributes,
-                        mSession->Serial(), mHeaderPath, mOrigin, mHashKey);
+                        Session()->Serial(), mHeaderPath, mOrigin, mHashKey);
 
       LOG3(("Http2PushStream 0x%X hash key %s\n", mStreamID, mHashKey.get()));
 
@@ -267,7 +267,7 @@ void Http2PushedStream::AdjustInitialWindow() {
     Http2Stream::AdjustInitialWindow();
     
     
-    mSession->TransactionHasDataToWrite(this);
+    Session()->TransactionHasDataToWrite(this);
   }
   
   
@@ -289,7 +289,7 @@ bool Http2PushedStream::GetHashKey(nsCString& key) {
 }
 
 void Http2PushedStream::ConnectPushedStream(Http2Stream* stream) {
-  mSession->ConnectPushedStream(stream);
+  Session()->ConnectPushedStream(stream);
 }
 
 bool Http2PushedStream::IsOrphaned(TimeStamp now) {
@@ -339,7 +339,7 @@ void Http2PushedStream::TopBrowsingContextIdChanged(uint64_t id) {
 
   mCurrentTopBrowsingContextId = id;
 
-  if (!mSession->UseH2Deps()) {
+  if (!Session()->UseH2Deps()) {
     return;
   }
 
@@ -352,8 +352,8 @@ void Http2PushedStream::TopBrowsingContextIdChanged(uint64_t id) {
   }
 
   if (mPriorityDependency != oldDependency) {
-    mSession->SendPriorityFrame(mStreamID, mPriorityDependency,
-                                mPriorityWeight);
+    Session()->SendPriorityFrame(mStreamID, mPriorityDependency,
+                                 mPriorityWeight);
   }
 }
 

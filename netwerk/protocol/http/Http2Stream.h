@@ -161,7 +161,7 @@ class Http2Stream : public nsAHttpSegmentReader,
   
   virtual void SetPushComplete(){};
 
-  Http2Session* Session() { return mSession; }
+  Http2Session* Session();
 
   [[nodiscard]] static nsresult MakeOriginURL(const nsACString& origin,
                                               nsCOMPtr<nsIURI>& url);
@@ -199,7 +199,7 @@ class Http2Stream : public nsAHttpSegmentReader,
   uint32_t mStreamID;
 
   
-  Http2Session* mSession;
+  nsWeakPtr mSession;
 
   
   
