@@ -61,8 +61,6 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
   NS_IMETHOD GetTextLength(int32_t* aCount) override;
 
-  NS_IMETHOD Copy() override;
-
   
 
 
