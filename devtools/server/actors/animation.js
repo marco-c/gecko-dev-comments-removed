@@ -329,6 +329,7 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
 
 
   getState: function() {
+    const compositorStatus = this.getPropertiesCompositorStatus();
     
     
     
@@ -351,10 +352,10 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
       animationTimingFunction: this.getAnimationTimingFunction(),
       
       
-      isRunningOnCompositor: this.getPropertiesCompositorStatus().some(
+      isRunningOnCompositor: compositorStatus.some(
         propState => propState.runningOnCompositor
       ),
-      propertyState: this.getPropertiesCompositorStatus(),
+      propertyState: compositorStatus,
       
       
       
@@ -363,6 +364,7 @@ var AnimationPlayerActor = protocol.ActorClassWithSpec(animationPlayerSpec, {
       createdTime: this.createdTime,
       
       currentTimeAtCreated: this.currentTimeAtCreated,
+      properties: this.getProperties(),
     };
   },
 

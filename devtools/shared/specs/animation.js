@@ -39,6 +39,8 @@ const animationPlayerSpec = generateActorSpec({
         data: RetVal("json"),
       },
     },
+    
+    
     getProperties: {
       request: {},
       response: {

@@ -252,7 +252,10 @@ class AnimationInspector {
 
   async getAnimatedPropertyMap(animation) {
     
-    const properties = await animation.getProperties();
+    
+    
+    const properties =
+      animation.state.properties || (await animation.getProperties());
     const animatedPropertyMap = new Map();
 
     for (const { name, values } of properties) {
