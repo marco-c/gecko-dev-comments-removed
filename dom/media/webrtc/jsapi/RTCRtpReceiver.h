@@ -61,9 +61,6 @@ class RTCRtpReceiver : public nsISupports,
   void GetSynchronizationSources(
       nsTArray<dom::RTCRtpSynchronizationSource>& aSources);
   
-  void MozAddRIDExtension(unsigned short aExtensionId);
-  void MozAddRIDFilter(const nsAString& aRid);
-  
   void MozInsertAudioLevelForContributingSource(
       const uint32_t aSource, const DOMHighResTimeStamp aTimestamp,
       const uint32_t aRtpTimestamp, const bool aHasLevel, const uint8_t aLevel);

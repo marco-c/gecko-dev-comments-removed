@@ -103,15 +103,6 @@ class MediaPipeline : public sigslot::has_slots<> {
   void UpdateTransport_s(const std::string& aTransportId,
                          UniquePtr<MediaPipelineFilter>&& aFilter);
 
-  
-  
-  void AddRIDExtension_m(size_t aExtensionId);
-  void AddRIDExtension_s(size_t aExtensionId);
-  
-  
-  void AddRIDFilter_m(const std::string& aRid);
-  void AddRIDFilter_s(const std::string& aRid);
-
   virtual DirectionType Direction() const { return mDirection; }
   size_t Level() const { return mLevel; }
   virtual bool IsVideo() const = 0;
