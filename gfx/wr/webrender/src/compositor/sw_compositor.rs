@@ -477,7 +477,8 @@ impl SwCompositeThread {
             
             
             
-            .stack_size(32 * 1024)
+            
+            .stack_size(40 * 1024)
             .spawn(move || {
                 profiler::register_thread(thread_name);
                 
