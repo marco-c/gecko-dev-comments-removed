@@ -257,8 +257,7 @@ bool ReferrerInfo::IsReferrerSchemeAllowed(nsIURI* aReferrer) {
     return false;
   }
 
-  return scheme.EqualsIgnoreCase("https") || scheme.EqualsIgnoreCase("http") ||
-         scheme.EqualsIgnoreCase("ftp");
+  return scheme.EqualsIgnoreCase("https") || scheme.EqualsIgnoreCase("http");
 }
 
 
