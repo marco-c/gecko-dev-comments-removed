@@ -1334,6 +1334,9 @@ var Control = {
     if (this.selectedRow && !this.selectedRow.parentNode) {
       this.selectedRow = null;
     }
+
+    
+    document.dispatchEvent(new CustomEvent("AboutProcessesUpdated"));
   },
   _showThreads(row) {
     let process = row.process;
