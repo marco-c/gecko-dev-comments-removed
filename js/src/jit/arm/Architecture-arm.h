@@ -28,12 +28,6 @@ namespace jit {
 
 
 
-
-
-static const uint32_t ION_FRAME_SLACK_SIZE = 20;
-
-
-
 static const int32_t NUNBOX32_TYPE_OFFSET = 4;
 static const int32_t NUNBOX32_PAYLOAD_OFFSET = 0;
 

@@ -642,6 +642,9 @@ class BaseRegAlloc {
   
   
   
+  
+  
+  
 
   BaseCompilerInterface* bc;
   AllocatableGeneralRegisterSet availGPR;

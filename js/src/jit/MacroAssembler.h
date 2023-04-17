@@ -422,6 +422,51 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   
   size_t PushRegsInMaskSizeInBytes(LiveRegisterSet set)
@@ -431,6 +476,10 @@ class MacroAssembler : public MacroAssemblerSpecific {
       DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
   void PushRegsInMask(LiveGeneralRegisterSet set);
 
+  
+  
+  
+  
   
   
   

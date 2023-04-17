@@ -6,6 +6,8 @@
 
 #include "jit/arm64/MacroAssembler-arm64.h"
 
+#include "mozilla/Maybe.h"
+
 #include "jsmath.h"
 
 #include "jit/arm64/MoveEmitter-arm64.h"
@@ -796,240 +798,357 @@ void MacroAssembler::flush() { Assembler::flush(); }
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 size_t MacroAssembler::PushRegsInMaskSizeInBytes(LiveRegisterSet set) {
-  return set.gprs().size() * sizeof(intptr_t) + set.fpus().getPushSizeInBytes();
+  size_t numIntRegs = set.gprs().size();
+  return ((numIntRegs + 1) & ~1) * sizeof(intptr_t) +
+         FloatRegister::GetPushSizeInBytes(set.fpus());
 }
 
-void MacroAssembler::PushRegsInMask(LiveRegisterSet set) {
-  mozilla::DebugOnly<size_t> framePushedInitial = framePushed();
 
+
+
+
+
+static void PushOrStoreRegsInMask(MacroAssembler* masm, LiveRegisterSet set,
+                                  mozilla::Maybe<Address> dest) {
+  static_assert(sizeof(FloatRegisters::RegisterContent) == 16);
+
+  
+  if (dest) {
+    mozilla::DebugOnly<size_t> bytesRequired =
+        masm->PushRegsInMaskSizeInBytes(set);
+    MOZ_ASSERT(dest->offset >= 0);
+    MOZ_ASSERT(((size_t)dest->offset) >= bytesRequired);
+  }
+
+  
+  mozilla::DebugOnly<size_t> maxExtentInitial =
+      dest ? dest->offset : masm->framePushed();
+
+  
+  
+  
+  
   for (GeneralRegisterBackwardIterator iter(set.gprs()); iter.more();) {
     vixl::CPURegister src[4] = {vixl::NoCPUReg, vixl::NoCPUReg, vixl::NoCPUReg,
                                 vixl::NoCPUReg};
-
-    for (size_t i = 0; i < 4 && iter.more(); i++) {
+    size_t i;
+    for (i = 0; i < 4 && iter.more(); i++) {
       src[i] = ARMRegister(*iter, 64);
       ++iter;
-      adjustFrame(8);
     }
-    vixl::MacroAssembler::Push(src[0], src[1], src[2], src[3]);
+    MOZ_ASSERT(i > 0);
+
+    if (i == 1 || i == 3) {
+      
+      MOZ_ASSERT(!iter.more());
+      src[i] = vixl::xzr;
+      i++;
+    }
+    MOZ_ASSERT(i == 2 || i == 4);
+
+    if (dest) {
+      for (size_t j = 0; j < i; j++) {
+        Register ireg = Register::FromCode(src[j].IsZero() ? Registers::xzr
+                                                           : src[j].code());
+        dest->offset -= sizeof(intptr_t);
+        masm->storePtr(ireg, *dest);
+      }
+    } else {
+      masm->adjustFrame(i * 8);
+      masm->vixl::MacroAssembler::Push(src[0], src[1], src[2], src[3]);
+    }
   }
 
-  for (FloatRegisterBackwardIterator iter(set.fpus().reduceSetForPush());
-       iter.more();) {
-    vixl::CPURegister src[4] = {vixl::NoCPUReg, vixl::NoCPUReg, vixl::NoCPUReg,
-                                vixl::NoCPUReg};
+  
+  
+  
+  
 
-    MOZ_ASSERT(sizeof(FloatRegisters::RegisterContent) == 8);
-    for (size_t i = 0; i < 4 && iter.more(); i++) {
-      FloatRegister reg = *iter;
-#ifdef ENABLE_WASM_SIMD
-      MOZ_RELEASE_ASSERT(reg.isDouble() || reg.isSingle());
-#endif
-      src[i] = ARMFPRegister(reg, 64);
-      ++iter;
-      adjustFrame(8);
+  FloatRegisterSet fpuSet(set.fpus().reduceSetForPush());
+  vixl::CPURegister allSrcs[FloatRegisters::TotalPhys];
+  size_t numAllSrcs = 0;
+
+  for (FloatRegisterBackwardIterator iter(fpuSet); iter.more(); ++iter) {
+    FloatRegister reg = *iter;
+    if (reg.isDouble()) {
+      MOZ_RELEASE_ASSERT(numAllSrcs < FloatRegisters::TotalPhys);
+      allSrcs[numAllSrcs] = ARMFPRegister(reg, 64);
+      numAllSrcs++;
+    } else {
+      MOZ_ASSERT(reg.isSimd128());
     }
-    vixl::MacroAssembler::Push(src[0], src[1], src[2], src[3]);
   }
+  MOZ_RELEASE_ASSERT(numAllSrcs <= FloatRegisters::TotalPhys);
 
-  MOZ_ASSERT(framePushed() - framePushedInitial ==
-             PushRegsInMaskSizeInBytes(set));
+  if ((numAllSrcs & 1) == 1) {
+    
+    
+    
+    allSrcs[numAllSrcs] = allSrcs[numAllSrcs - 1];
+    numAllSrcs++;
+  }
+  MOZ_RELEASE_ASSERT(numAllSrcs <= FloatRegisters::TotalPhys);
+  MOZ_RELEASE_ASSERT((numAllSrcs & 1) == 0);
+
+  
+  size_t i;
+  if (dest) {
+    for (i = 0; i < numAllSrcs; i++) {
+      FloatRegister freg =
+          FloatRegister(FloatRegisters::FPRegisterID(allSrcs[i].code()),
+                        FloatRegisters::Kind::Double);
+      dest->offset -= sizeof(double);
+      masm->storeDouble(freg, *dest);
+    }
+  } else {
+    i = 0;
+    while (i < numAllSrcs) {
+      vixl::CPURegister src[4] = {vixl::NoCPUReg, vixl::NoCPUReg,
+                                  vixl::NoCPUReg, vixl::NoCPUReg};
+      size_t j;
+      for (j = 0; j < 4 && j + i < numAllSrcs; j++) {
+        src[j] = allSrcs[j + i];
+      }
+      masm->adjustFrame(8 * j);
+      masm->vixl::MacroAssembler::Push(src[0], src[1], src[2], src[3]);
+      i += j;
+    }
+  }
+  MOZ_ASSERT(i == numAllSrcs);
+
+  
+  
+
+  numAllSrcs = 0;
+  for (FloatRegisterBackwardIterator iter(fpuSet); iter.more(); ++iter) {
+    FloatRegister reg = *iter;
+    if (reg.isSimd128()) {
+      MOZ_RELEASE_ASSERT(numAllSrcs < FloatRegisters::TotalPhys);
+      allSrcs[numAllSrcs] = ARMFPRegister(reg, 128);
+      numAllSrcs++;
+    }
+  }
+  MOZ_RELEASE_ASSERT(numAllSrcs <= FloatRegisters::TotalPhys);
+
+  
+  if (dest) {
+    for (i = 0; i < numAllSrcs; i++) {
+      FloatRegister freg =
+          FloatRegister(FloatRegisters::FPRegisterID(allSrcs[i].code()),
+                        FloatRegisters::Kind::Simd128);
+      dest->offset -= FloatRegister::SizeOfSimd128;
+      masm->storeUnalignedSimd128(freg, *dest);
+    }
+  } else {
+    i = 0;
+    while (i < numAllSrcs) {
+      vixl::CPURegister src[4] = {vixl::NoCPUReg, vixl::NoCPUReg,
+                                  vixl::NoCPUReg, vixl::NoCPUReg};
+      size_t j;
+      for (j = 0; j < 4 && j + i < numAllSrcs; j++) {
+        src[j] = allSrcs[j + i];
+      }
+      masm->adjustFrame(16 * j);
+      masm->vixl::MacroAssembler::Push(src[0], src[1], src[2], src[3]);
+      i += j;
+    }
+  }
+  MOZ_ASSERT(i == numAllSrcs);
+
+  
+  if (dest) {
+    MOZ_ASSERT(maxExtentInitial - dest->offset ==
+               masm->PushRegsInMaskSizeInBytes(set));
+  } else {
+    MOZ_ASSERT(masm->framePushed() - maxExtentInitial ==
+               masm->PushRegsInMaskSizeInBytes(set));
+  }
+}
+
+void MacroAssembler::PushRegsInMask(LiveRegisterSet set) {
+  PushOrStoreRegsInMask(this, set, mozilla::Nothing());
 }
 
 void MacroAssembler::storeRegsInMask(LiveRegisterSet set, Address dest,
                                      Register scratch) {
-  mozilla::DebugOnly<size_t> offsetInitial = dest.offset;
+  PushOrStoreRegsInMask(this, set, mozilla::Some(dest));
+}
 
-  FloatRegisterSet fpuSet(set.fpus().reduceSetForPush());
-  unsigned numFpu = fpuSet.size();
-  int32_t diffF = fpuSet.getPushSizeInBytes();
-  int32_t diffG = set.gprs().size() * sizeof(intptr_t);
 
-  MOZ_ASSERT(dest.offset >= diffG + diffF);
 
-  for (GeneralRegisterBackwardIterator iter(set.gprs()); iter.more(); ++iter) {
-    diffG -= sizeof(intptr_t);
-    dest.offset -= sizeof(intptr_t);
-    storePtr(*iter, dest);
-  }
-  MOZ_ASSERT(diffG == 0);
 
-  for (FloatRegisterBackwardIterator iter(fpuSet); iter.more(); ++iter) {
-    FloatRegister reg = *iter;
-#ifdef ENABLE_WASM_SIMD
-    MOZ_RELEASE_ASSERT(reg.isDouble() || reg.isSingle());
-#endif
-    diffF -= sizeof(double);
-    dest.offset -= sizeof(double);
-    numFpu -= 1;
-    storeDouble(reg, dest);
-  }
-  MOZ_ASSERT(numFpu == 0);
+static void GeneratePendingLoadsThenFlush(MacroAssembler* masm,
+                                          vixl::CPURegister* dests,
+                                          uint32_t* offsets,
+                                          uint32_t transactionSize) {
   
-  
-  diffF -= diffF % sizeof(uintptr_t);
-  MOZ_ASSERT(diffF == 0);
+  if (!dests[0].IsNone()) {
+    if (!dests[1].IsNone()) {
+      
+      if (offsets[0] + transactionSize == offsets[1]) {
+        masm->Ldp(dests[0], dests[1],
+                  MemOperand(masm->GetStackPointer64(), offsets[0]));
+      } else {
+        
+        
+        
+        masm->Ldr(dests[0], MemOperand(masm->GetStackPointer64(), offsets[0]));
+        masm->Ldr(dests[1], MemOperand(masm->GetStackPointer64(), offsets[1]));
+      }
+    } else {
+      
+      masm->Ldr(dests[0], MemOperand(masm->GetStackPointer64(), offsets[0]));
+    }
+  } else {
+    if (!dests[1].IsNone()) {
+      
+      MOZ_CRASH("GenerateLoadsThenFlush");
+    } else {
+      
+    }
+  }
 
-  MOZ_ASSERT(offsetInitial - dest.offset == PushRegsInMaskSizeInBytes(set));
+  
+  dests[0] = dests[1] = vixl::NoCPUReg;
+  offsets[0] = offsets[1] = 0;
 }
 
 void MacroAssembler::PopRegsInMaskIgnore(LiveRegisterSet set,
                                          LiveRegisterSet ignore) {
+  mozilla::DebugOnly<size_t> framePushedInitial = framePushed();
+
   
   uint32_t offset = 0;
 
-  for (FloatRegisterIterator iter(set.fpus().reduceSetForPush());
-       iter.more();) {
-    vixl::CPURegister dest[2] = {vixl::NoCPUReg, vixl::NoCPUReg};
-    uint32_t nextOffset = offset;
+  
+  FloatRegisterSet fpuSet(set.fpus().reduceSetForPush());
 
-    for (size_t i = 0; i < 2 && iter.more(); i++) {
-      FloatRegister reg = *iter;
-#ifdef ENABLE_WASM_SIMD
-      MOZ_RELEASE_ASSERT(reg.isDouble() || reg.isSingle());
-#endif
-      if (!ignore.has(reg)) {
-        dest[i] = ARMFPRegister(reg, 64);
-      }
-      ++iter;
-      nextOffset += sizeof(double);
+  
+  
+  
+  FloatRegisterSet ignoreFpusBroadcasted(
+      FloatRegister::BroadcastToAllSizes(ignore.fpus()));
+
+  
+  
+
+  
+  
+  vixl::CPURegister pendingDests[2] = {vixl::NoCPUReg, vixl::NoCPUReg};
+  uint32_t pendingOffsets[2] = {0, 0};
+  size_t nPending = 0;
+
+  for (FloatRegisterIterator iter(fpuSet); iter.more(); ++iter) {
+    FloatRegister reg = *iter;
+    if (reg.isDouble()) {
+      continue;
+    }
+    MOZ_RELEASE_ASSERT(reg.isSimd128());
+
+    uint32_t offsetForReg = offset;
+    offset += FloatRegister::SizeOfSimd128;
+
+    if (ignoreFpusBroadcasted.hasRegisterIndex(reg)) {
+      continue;
     }
 
-    if (!dest[0].IsNone() && !dest[1].IsNone()) {
-      Ldp(dest[0], dest[1], MemOperand(GetStackPointer64(), offset));
-    } else if (!dest[0].IsNone()) {
-      Ldr(dest[0], MemOperand(GetStackPointer64(), offset));
-    } else if (!dest[1].IsNone()) {
-      Ldr(dest[1], MemOperand(GetStackPointer64(), offset + sizeof(double)));
+    MOZ_ASSERT(nPending <= 2);
+    if (nPending == 2) {
+      GeneratePendingLoadsThenFlush(this, pendingDests, pendingOffsets, 16);
+      nPending = 0;
     }
+    pendingDests[nPending] = ARMFPRegister(reg, 128);
+    pendingOffsets[nPending] = offsetForReg;
+    nPending++;
+  }
+  GeneratePendingLoadsThenFlush(this, pendingDests, pendingOffsets, 16);
+  nPending = 0;
 
-    offset = nextOffset;
+  MOZ_ASSERT((offset % 16) == 0);
+
+  
+  
+
+  if ((((fpuSet.bits() & FloatRegisters::AllDoubleMask).size()) & 1) == 1) {
+    offset += sizeof(double);
   }
 
+  for (FloatRegisterIterator iter(fpuSet); iter.more(); ++iter) {
+    FloatRegister reg = *iter;
+    if (reg.isSimd128()) {
+      continue;
+    }
+    
+
+    uint32_t offsetForReg = offset;
+    offset += sizeof(double);
+
+    if (ignoreFpusBroadcasted.hasRegisterIndex(reg)) {
+      continue;
+    }
+
+    MOZ_ASSERT(nPending <= 2);
+    if (nPending == 2) {
+      GeneratePendingLoadsThenFlush(this, pendingDests, pendingOffsets, 8);
+      nPending = 0;
+    }
+    pendingDests[nPending] = ARMFPRegister(reg, 64);
+    pendingOffsets[nPending] = offsetForReg;
+    nPending++;
+  }
+  GeneratePendingLoadsThenFlush(this, pendingDests, pendingOffsets, 8);
+  nPending = 0;
+
+  MOZ_ASSERT((offset % 16) == 0);
   MOZ_ASSERT(offset == set.fpus().getPushSizeInBytes());
 
-  for (GeneralRegisterIterator iter(set.gprs()); iter.more();) {
-    vixl::CPURegister dest[2] = {vixl::NoCPUReg, vixl::NoCPUReg};
-    uint32_t nextOffset = offset;
+  
+  
 
-    for (size_t i = 0; i < 2 && iter.more(); i++) {
-      if (!ignore.has(*iter)) {
-        dest[i] = ARMRegister(*iter, 64);
-      }
-      ++iter;
-      nextOffset += sizeof(uint64_t);
-    }
-
-    if (!dest[0].IsNone() && !dest[1].IsNone()) {
-      Ldp(dest[0], dest[1], MemOperand(GetStackPointer64(), offset));
-    } else if (!dest[0].IsNone()) {
-      Ldr(dest[0], MemOperand(GetStackPointer64(), offset));
-    } else if (!dest[1].IsNone()) {
-      Ldr(dest[1], MemOperand(GetStackPointer64(), offset + sizeof(uint64_t)));
-    }
-
-    offset = nextOffset;
+  if ((set.gprs().size() & 1) == 1) {
+    offset += sizeof(uint64_t);
   }
+
+  for (GeneralRegisterIterator iter(set.gprs()); iter.more(); ++iter) {
+    Register reg = *iter;
+
+    uint32_t offsetForReg = offset;
+    offset += sizeof(uint64_t);
+
+    if (ignore.has(reg)) {
+      continue;
+    }
+
+    MOZ_ASSERT(nPending <= 2);
+    if (nPending == 2) {
+      GeneratePendingLoadsThenFlush(this, pendingDests, pendingOffsets, 8);
+      nPending = 0;
+    }
+    pendingDests[nPending] = ARMRegister(reg, 64);
+    pendingOffsets[nPending] = offsetForReg;
+    nPending++;
+  }
+  GeneratePendingLoadsThenFlush(this, pendingDests, pendingOffsets, 8);
+
+  MOZ_ASSERT((offset % 16) == 0);
 
   size_t bytesPushed = PushRegsInMaskSizeInBytes(set);
   MOZ_ASSERT(offset == bytesPushed);
   freeStack(bytesPushed);
 }
-
-#ifdef ENABLE_WASM_SIMD
-void MacroAssemblerCompat::PushRegsInMaskForWasmStubs(LiveRegisterSet set) {
-  for (GeneralRegisterBackwardIterator iter(set.gprs()); iter.more();) {
-    vixl::CPURegister src[4] = {vixl::NoCPUReg, vixl::NoCPUReg, vixl::NoCPUReg,
-                                vixl::NoCPUReg};
-
-    for (size_t i = 0; i < 4 && iter.more(); i++) {
-      src[i] = ARMRegister(*iter, 64);
-      ++iter;
-      asMasm().adjustFrame(8);
-    }
-    vixl::MacroAssembler::Push(src[0], src[1], src[2], src[3]);
-  }
-
-  
-  
-  for (FloatRegisterBackwardIterator iter(set.fpus().reduceSetForPush());
-       iter.more();) {
-    vixl::CPURegister src[4] = {vixl::NoCPUReg, vixl::NoCPUReg, vixl::NoCPUReg,
-                                vixl::NoCPUReg};
-
-    for (size_t i = 0; i < 4 && iter.more(); i++) {
-      src[i] = ARMFPRegister(*iter, 128);
-      ++iter;
-      asMasm().adjustFrame(FloatRegister::SizeOfSimd128);
-    }
-    vixl::MacroAssembler::Push(src[0], src[1], src[2], src[3]);
-  }
-}
-
-void MacroAssemblerCompat::PopRegsInMaskForWasmStubs(LiveRegisterSet set,
-                                                     LiveRegisterSet ignore) {
-  
-  uint32_t offset = 0;
-
-  
-  for (FloatRegisterIterator iter(set.fpus().reduceSetForPush());
-       iter.more();) {
-    vixl::CPURegister dest[2] = {vixl::NoCPUReg, vixl::NoCPUReg};
-    uint32_t nextOffset = offset;
-
-    for (size_t i = 0; i < 2 && iter.more(); i++) {
-      if (!ignore.has(*iter)) {
-        dest[i] = ARMFPRegister(*iter, 128);
-      }
-      ++iter;
-      nextOffset += FloatRegister::SizeOfSimd128;
-    }
-
-    if (!dest[0].IsNone() && !dest[1].IsNone()) {
-      Ldp(dest[0], dest[1], MemOperand(GetStackPointer64(), offset));
-    } else if (!dest[0].IsNone()) {
-      Ldr(dest[0], MemOperand(GetStackPointer64(), offset));
-    } else if (!dest[1].IsNone()) {
-      Ldr(dest[1], MemOperand(GetStackPointer64(), offset + 16));
-    }
-
-    offset = nextOffset;
-  }
-
-  MOZ_ASSERT(offset ==
-             FloatRegister::GetPushSizeInBytesForWasmStubs(set.fpus()));
-
-  for (GeneralRegisterIterator iter(set.gprs()); iter.more();) {
-    vixl::CPURegister dest[2] = {vixl::NoCPUReg, vixl::NoCPUReg};
-    uint32_t nextOffset = offset;
-
-    for (size_t i = 0; i < 2 && iter.more(); i++) {
-      if (!ignore.has(*iter)) {
-        dest[i] = ARMRegister(*iter, 64);
-      }
-      ++iter;
-      nextOffset += sizeof(uint64_t);
-    }
-
-    if (!dest[0].IsNone() && !dest[1].IsNone()) {
-      Ldp(dest[0], dest[1], MemOperand(GetStackPointer64(), offset));
-    } else if (!dest[0].IsNone()) {
-      Ldr(dest[0], MemOperand(GetStackPointer64(), offset));
-    } else if (!dest[1].IsNone()) {
-      Ldr(dest[1], MemOperand(GetStackPointer64(), offset + sizeof(uint64_t)));
-    }
-
-    offset = nextOffset;
-  }
-
-  size_t bytesPushed =
-      set.gprs().size() * sizeof(uint64_t) +
-      FloatRegister::GetPushSizeInBytesForWasmStubs(set.fpus());
-  MOZ_ASSERT(offset == bytesPushed);
-  asMasm().freeStack(bytesPushed);
-}
-#endif
 
 void MacroAssembler::Push(Register reg) {
   push(reg);

@@ -155,42 +155,6 @@ void ABIResultIter::settlePrev() {
   cur_ = ABIResult(type, nextStackOffset_);
 }
 
-
-
-
-
-
-
-
-
-
-
-static void PushRegsInMask(MacroAssembler& masm, const LiveRegisterSet& set) {
-#if defined(ENABLE_WASM_SIMD) && defined(JS_CODEGEN_ARM64)
-  masm.PushRegsInMaskForWasmStubs(set);
-#else
-  masm.PushRegsInMask(set);
-#endif
-}
-
-static void PopRegsInMask(MacroAssembler& masm, const LiveRegisterSet& set) {
-#if defined(ENABLE_WASM_SIMD) && defined(JS_CODEGEN_ARM64)
-  masm.PopRegsInMaskForWasmStubs(set, LiveRegisterSet());
-#else
-  masm.PopRegsInMask(set);
-#endif
-}
-
-static void PopRegsInMaskIgnore(MacroAssembler& masm,
-                                const LiveRegisterSet& set,
-                                const LiveRegisterSet& ignore) {
-#if defined(ENABLE_WASM_SIMD) && defined(JS_CODEGEN_ARM64)
-  masm.PopRegsInMaskForWasmStubs(set, ignore);
-#else
-  masm.PopRegsInMaskIgnore(set, ignore);
-#endif
-}
-
 #ifdef WASM_CODEGEN_DEBUG
 template <class Closure>
 static void GenPrint(DebugChannel channel, MacroAssembler& masm,
@@ -201,7 +165,7 @@ static void GenPrint(DebugChannel channel, MacroAssembler& masm,
 
   AllocatableRegisterSet regs(RegisterSet::All());
   LiveRegisterSet save(regs.asLiveSet());
-  PushRegsInMask(masm, save);
+  masm.PushRegsInMask(save);
 
   if (taken) {
     regs.take(taken.value());
@@ -215,7 +179,7 @@ static void GenPrint(DebugChannel channel, MacroAssembler& masm,
     passArgAndCall(IsCompilingWasm(), temp);
   }
 
-  PopRegsInMask(masm, save);
+  masm.PopRegsInMask(save);
 }
 
 static void GenPrintf(DebugChannel channel, MacroAssembler& masm,
@@ -774,15 +738,10 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   
   
   masm.setFramePushed(0);
-  PushRegsInMask(masm, NonVolatileRegs);
+  masm.PushRegsInMask(NonVolatileRegs);
 
   const unsigned nonVolatileRegsPushSize =
-#if defined(ENABLE_WASM_SIMD) && defined(JS_CODEGEN_ARM64)
-      NonVolatileRegs.gprs().size() * sizeof(intptr_t) +
-      FloatRegister::GetPushSizeInBytesForWasmStubs(NonVolatileRegs.fpus());
-#else
       masm.PushRegsInMaskSizeInBytes(NonVolatileRegs);
-#endif
 
   MOZ_ASSERT(masm.framePushed() == nonVolatileRegsPushSize);
 
@@ -904,7 +863,7 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   masm.bind(&join);
 
   
-  PopRegsInMask(masm, NonVolatileRegs);
+  masm.PopRegsInMask(NonVolatileRegs);
   MOZ_ASSERT(masm.framePushed() == 0);
 
 #if defined(JS_CODEGEN_ARM64)
@@ -992,7 +951,7 @@ static void GenerateBigIntInitialization(MacroAssembler& masm,
   
   AllocatableRegisterSet regs(RegisterSet::Volatile());
   LiveRegisterSet save(regs.asLiveSet());
-  PushRegsInMask(masm, save);
+  masm.PushRegsInMask(save);
 
   unsigned frameSize = StackDecrementForCall(
       ABIStackAlignment, masm.framePushed() + bytesPushedByPrologue, 0);
@@ -1013,7 +972,7 @@ static void GenerateBigIntInitialization(MacroAssembler& masm,
 
   LiveRegisterSet ignore;
   ignore.add(scratch);
-  PopRegsInMaskIgnore(masm, save, ignore);
+  masm.PopRegsInMaskIgnore(save, ignore);
 
   masm.branchTest32(Assembler::Zero, scratch, scratch, fail);
   masm.initializeBigInt64(Scalar::BigInt64, scratch, input);
@@ -2700,15 +2659,17 @@ static const LiveRegisterSet RegsToPreserve(
 
 
 
-
-
-
-
 static const LiveRegisterSet RegsToPreserve(
     GeneralRegisterSet(Registers::AllMask &
                        ~((Registers::SetType(1) << RealStackPointer.code()) |
                          (Registers::SetType(1) << Registers::lr))),
+#  ifdef ENABLE_WASM_SIMD
+    FloatRegisterSet(FloatRegisters::AllSimd128Mask));
+#  else
+    
+    
     FloatRegisterSet(FloatRegisters::AllDoubleMask));
+#  endif
 #elif defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
 
 
@@ -2762,7 +2723,7 @@ static bool GenerateTrapExit(MacroAssembler& masm, Label* throwLabel,
   
   WasmPush(masm, ImmWord(TrapExitDummyValue));
   unsigned framePushedBeforePreserve = masm.framePushed();
-  PushRegsInMask(masm, RegsToPreserve);
+  masm.PushRegsInMask(RegsToPreserve);
   unsigned offsetOfReturnWord = masm.framePushed() - framePushedBeforePreserve;
 
   
@@ -2786,7 +2747,7 @@ static bool GenerateTrapExit(MacroAssembler& masm, Label* throwLabel,
   
   masm.moveToStackPtr(preAlignStackPointer);
   masm.storePtr(ReturnReg, Address(masm.getStackPointer(), offsetOfReturnWord));
-  PopRegsInMask(masm, RegsToPreserve);
+  masm.PopRegsInMask(RegsToPreserve);
 #ifdef JS_CODEGEN_ARM64
   WasmPop(masm, lr);
   masm.abiret();
@@ -2926,7 +2887,7 @@ static bool GenerateDebugTrapStub(MacroAssembler& masm, Label* throwLabel,
   GenerateExitPrologue(masm, 0, ExitReason::Fixed::DebugTrap, offsets);
 
   
-  PushRegsInMask(masm, AllAllocatableRegs);
+  masm.PushRegsInMask(AllAllocatableRegs);
 
   uint32_t framePushed = masm.framePushed();
 
@@ -2960,7 +2921,7 @@ static bool GenerateDebugTrapStub(MacroAssembler& masm, Label* throwLabel,
 #endif
 
   masm.setFramePushed(framePushed);
-  PopRegsInMask(masm, AllAllocatableRegs);
+  masm.PopRegsInMask(AllAllocatableRegs);
 
   GenerateExitEpilogue(masm, 0, ExitReason::Fixed::DebugTrap, offsets);
 
