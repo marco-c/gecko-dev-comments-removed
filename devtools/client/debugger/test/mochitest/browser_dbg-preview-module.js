@@ -7,7 +7,7 @@
 add_task(async function() {
   const dbg = await initDebugger("doc-scripts.html");
 
-  navigate(dbg, "doc-on-load.html");
+  const onNavigated = navigate(dbg, "doc-on-load.html");
 
   
   await waitForSelectedSource(dbg, "top-level.js");
@@ -23,4 +23,8 @@ add_task(async function() {
   ]);
 
   await assertPreviewTooltip(dbg, 2, 7, { result: "3", expression: "func" });
+
+  info("Resume and wait for full navigation of the tab");
+  await resume(dbg);
+  await onNavigated;
 });
