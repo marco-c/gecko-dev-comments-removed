@@ -510,7 +510,13 @@ this.TopSitesFeed = class TopSitesFeed {
     let notBlockedDefaultSites = [];
     let sponsored = [];
     for (let link of DEFAULT_TOP_SITES) {
-      if (this.shouldFilterSearchTile(link.hostname)) {
+      
+      
+      if (link.sponsored_position && link.hostname === "yandex") {
+        if (link.hostname !== this._currentSearchHostname) {
+          continue;
+        }
+      } else if (this.shouldFilterSearchTile(link.hostname)) {
         continue;
       }
       
