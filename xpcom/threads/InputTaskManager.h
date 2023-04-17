@@ -50,7 +50,8 @@ class InputTaskManager : public TaskManager {
 
   bool IsSuspended(const MutexAutoLock& aProofOfLock) override {
     MOZ_ASSERT(NS_IsMainThread());
-    return mSuspensionLevel > 0;
+    return mInputQueueState == STATE_DISABLED ||
+           mInputQueueState == STATE_SUSPEND || mSuspensionLevel > 0;
   }
 
   bool IsSuspended() {
@@ -81,8 +82,62 @@ class InputTaskManager : public TaskManager {
                InputEventQueueState::STATE_DISABLED;
   }
 
+  void NotifyVsync() {
+    MOZ_ASSERT(StaticPrefs::dom_input_events_strict_input_vsync_alignment());
+    mInputPriorityController.DidVsync();
+  }
+
  private:
   InputTaskManager() : mInputQueueState(STATE_DISABLED) {}
+
+  class InputPriorityController {
+   public:
+    InputPriorityController();
+    
+    
+    bool ShouldUseHighestPriority(InputTaskManager*);
+
+    void DidVsync();
+
+    
+    
+    
+    
+    
+    
+    
+    void DidRunTask();
+
+   private:
+    
+    
+    
+    
+    
+    
+    
+    
+    enum class InputVsyncState {
+      HasPendingVsync,
+      NoPendingVsync,
+      RunVsync,
+    };
+
+    void EnterPendingVsyncState(uint32_t aNumPendingTasks);
+    void LeavePendingVsyncState(bool aRunVsync);
+
+    
+    
+    uint32_t mMaxInputTasksToRun = 0;
+
+    bool mIsInitialized;
+    InputVsyncState mInputVsyncState;
+
+    TimeStamp mRunInputStartTime;
+    TimeDuration mMaxInputHandlingDuration;
+  };
+
+  int32_t GetPriorityModifierForEventLoopTurnForStrictVsyncAlignment();
 
   TimeStamp mInputHandlingStartTime;
   Atomic<InputEventQueueState> mInputQueueState;
@@ -92,6 +147,8 @@ class InputTaskManager : public TaskManager {
 
   
   uint32_t mSuspensionLevel = 0;
+
+  InputPriorityController mInputPriorityController;
 };
 
 }  
