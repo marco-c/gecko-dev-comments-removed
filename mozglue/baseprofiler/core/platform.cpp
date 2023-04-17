@@ -570,7 +570,8 @@ ProfileChunkedBuffer& profiler_get_core_buffer() {
 class SamplerThread;
 
 static SamplerThread* NewSamplerThread(PSLockRef aLock, uint32_t aGeneration,
-                                       double aInterval);
+                                       double aInterval,
+                                       bool aStackWalkEnabled);
 
 struct LiveProfiledThreadData {
   RegisteredThread* mRegisteredThread;
@@ -680,7 +681,9 @@ class ActivePS {
         
         
         
-        mSamplerThread(NewSamplerThread(aLock, mGeneration, aInterval)),
+        mSamplerThread(
+            NewSamplerThread(aLock, mGeneration, aInterval,
+                             ProfilerFeature::HasStackWalk(aFeatures))),
         mIsPaused(false),
         mIsSamplingPaused(false)
 #if defined(GP_OS_linux) || defined(GP_OS_freebsd)
@@ -2211,7 +2214,7 @@ class SamplerThread {
  public:
   
   SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
-                double aIntervalMilliseconds);
+                double aIntervalMilliseconds, bool aStackWalkEnabled);
   ~SamplerThread();
 
   
@@ -2250,8 +2253,9 @@ class SamplerThread {
 
 
 static SamplerThread* NewSamplerThread(PSLockRef aLock, uint32_t aGeneration,
-                                       double aInterval) {
-  return new SamplerThread(aLock, aGeneration, aInterval);
+                                       double aInterval,
+                                       bool aStackWalkEnabled) {
+  return new SamplerThread(aLock, aGeneration, aInterval, aStackWalkEnabled);
 }
 
 
@@ -2415,7 +2419,10 @@ void SamplerThread::Run() {
         
         
         
-        CorePS::Lul(lock)->MaybeShowStats();
+        lul::LUL* lul = CorePS::Lul(lock);
+        if (lul) {
+          lul->MaybeShowStats();
+        }
 #endif
         TimeStamp threadsSampled = TimeStamp::NowUnfuzzed();
 
