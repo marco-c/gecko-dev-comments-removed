@@ -423,6 +423,7 @@ class MediaStreamTrack : public DOMEventTargetHelper, public SupportsWeakPtr {
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(MediaStreamTrack,
                                            DOMEventTargetHelper)
 
+  nsPIDOMWindowInner* GetParentObject() const { return mWindow; }
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
@@ -615,6 +616,9 @@ class MediaStreamTrack : public DOMEventTargetHelper, public SupportsWeakPtr {
       mPrincipalChangeObservers;
 
   nsTArray<WeakPtr<MediaStreamTrackConsumer>> mConsumers;
+
+  
+  nsCOMPtr<nsPIDOMWindowInner> mWindow;
 
   
   
