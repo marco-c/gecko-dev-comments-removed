@@ -15,6 +15,7 @@
 #include "mozilla/OriginAttributes.h"
 #include "mozilla/RefPtr.h"
 #include "nsAtom.h"
+#include "nsIObjectOutputStream.h"
 #include "nsIPrincipal.h"
 #include "nsJSPrincipals.h"
 #include "nsStringFwd.h"
@@ -88,8 +89,6 @@ class BasePrincipal : public nsJSPrincipals {
     eSystemPrincipal,
     eKindMax = eSystemPrincipal
   };
-
-  explicit BasePrincipal(PrincipalKind aKind);
 
   template <typename T>
   bool Is() const {
@@ -288,6 +287,11 @@ class BasePrincipal : public nsJSPrincipals {
   virtual nsresult GetSiteIdentifier(SiteIdentifier& aSite) = 0;
 
  protected:
+  BasePrincipal(PrincipalKind aKind, const nsACString& aOriginNoSuffix,
+                const OriginAttributes& aOriginAttributes);
+  BasePrincipal(BasePrincipal* aOther,
+                const OriginAttributes& aOriginAttributes);
+
   virtual ~BasePrincipal();
 
   
@@ -309,14 +313,6 @@ class BasePrincipal : public nsJSPrincipals {
 
   
   
-  
-  void FinishInit(const nsACString& aOriginNoSuffix,
-                  const OriginAttributes& aOriginAttributes);
-  void FinishInit(BasePrincipal* aOther,
-                  const OriginAttributes& aOriginAttributes);
-
-  
-  
   template <typename SerializedKey>
   struct KeyValT {
     static_assert(sizeof(SerializedKey) == 1,
@@ -324,6 +320,19 @@ class BasePrincipal : public nsJSPrincipals {
     SerializedKey key;
     bool valueWasSerialized;
     nsCString value;
+  };
+
+  
+  
+  
+  class Deserializer : public nsISerializable {
+   public:
+    NS_DECL_ISUPPORTS
+    NS_IMETHOD Write(nsIObjectOutputStream* aStream) override;
+
+   protected:
+    virtual ~Deserializer() = default;
+    RefPtr<BasePrincipal> mPrincipal;
   };
 
  private:
@@ -334,13 +343,12 @@ class BasePrincipal : public nsJSPrincipals {
   bool FastSubsumesIgnoringFPD(nsIPrincipal* aOther,
                                DocumentDomainConsideration aConsideration);
 
-  RefPtr<nsAtom> mOriginNoSuffix;
-  RefPtr<nsAtom> mOriginSuffix;
+  const RefPtr<nsAtom> mOriginNoSuffix;
+  const RefPtr<nsAtom> mOriginSuffix;
 
-  OriginAttributes mOriginAttributes;
-  PrincipalKind mKind;
+  const OriginAttributes mOriginAttributes;
+  const PrincipalKind mKind;
   bool mHasExplicitDomain;
-  bool mInitialized;
 };
 
 inline bool BasePrincipal::FastEquals(nsIPrincipal* aOther) {

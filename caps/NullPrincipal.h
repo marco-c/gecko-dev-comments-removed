@@ -38,14 +38,7 @@ namespace mozilla {
 
 class NullPrincipal final : public BasePrincipal {
  public:
-  
-  
-  
-  NullPrincipal() : BasePrincipal(eNullPrincipal) {}
-
   static PrincipalKind Kind() { return eNullPrincipal; }
-
-  NS_DECL_NSISERIALIZABLE
 
   NS_IMETHOD QueryInterface(REFNSIID aIID, void** aInstancePtr) override;
   uint32_t GetHashValue() override;
@@ -73,9 +66,6 @@ class NullPrincipal final : public BasePrincipal {
 
   static already_AddRefed<NullPrincipal> CreateWithoutOriginAttributes();
 
-  nsresult Init(const OriginAttributes& aOriginAttributes = OriginAttributes(),
-                nsIURI* aURI = nullptr);
-
   virtual nsresult GetScriptLocation(nsACString& aStr) override;
 
   nsresult GetSiteIdentifier(SiteIdentifier& aSite) override {
@@ -92,7 +82,15 @@ class NullPrincipal final : public BasePrincipal {
   static already_AddRefed<BasePrincipal> FromProperties(
       nsTArray<NullPrincipal::KeyVal>& aFields);
 
+  class Deserializer : public BasePrincipal::Deserializer {
+   public:
+    NS_IMETHOD Read(nsIObjectInputStream* aStream) override;
+  };
+
  protected:
+  NullPrincipal(nsIURI* aURI, const nsACString& aOriginNoSuffix,
+                const OriginAttributes& aOriginAttributes);
+
   virtual ~NullPrincipal() = default;
 
   bool SubsumesInternal(nsIPrincipal* aOther,
@@ -103,7 +101,7 @@ class NullPrincipal final : public BasePrincipal {
 
   bool MayLoadInternal(nsIURI* aURI) override;
 
-  nsCOMPtr<nsIURI> mURI;
+  const nsCOMPtr<nsIURI> mURI;
 
  private:
   FRIEND_TEST(OriginAttributes, NullPrincipal);
@@ -113,8 +111,9 @@ class NullPrincipal final : public BasePrincipal {
   
   
   
-  nsresult Init(const OriginAttributes& aOriginAttributes, bool aIsFirstParty,
-                nsIURI* aURI = nullptr);
+  static already_AddRefed<NullPrincipal> CreateInternal(
+      const OriginAttributes& aOriginAttributes, bool aIsFirstParty,
+      nsIURI* aURI = nullptr);
 };
 
 }  

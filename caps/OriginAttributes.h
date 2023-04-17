@@ -86,6 +86,9 @@ class OriginAttributes : public dom::OriginAttributesDictionary {
   void CreateSuffix(nsACString& aStr) const;
 
   
+  already_AddRefed<nsAtom> CreateSuffixAtom() const;
+
+  
   void CreateAnonymizedSuffix(nsACString& aStr) const;
 
   [[nodiscard]] bool PopulateFromSuffix(const nsACString& aStr);
