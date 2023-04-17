@@ -44,7 +44,7 @@ async function checkDownloadWithExtensionState(
   task,
   { type, shouldHaveExtension, expectedName = null }
 ) {
-  const shouldExpectDialog = !SpecialPowers.Services.prefs.getBoolPref(
+  const shouldExpectDialog = !Services.prefs.getBoolPref(
     "browser.download.improvements_to_download_panel",
     false
   );
@@ -53,6 +53,13 @@ async function checkDownloadWithExtensionState(
   if (shouldExpectDialog) {
     winPromise = BrowserTestUtils.domWindowOpenedAndLoaded();
   }
+
+  let publicList = await Downloads.getList(Downloads.PUBLIC);
+  let shouldCheckFilename = shouldHaveExtension || !shouldExpectDialog;
+
+  let downloadFinishedPromise = shouldCheckFilename
+    ? promiseDownloadFinished(publicList)
+    : null;
 
   await task();
 
@@ -78,22 +85,19 @@ async function checkDownloadWithExtensionState(
     }
   }
 
-  if (shouldHaveExtension) {
+  if (shouldExpectDialog && shouldHaveExtension) {
     
-    let publicList = await Downloads.getList(Downloads.PUBLIC);
-    let downloadFinishedPromise = promiseDownloadFinished(publicList);
+    let dialog = win.document.getElementById("unknownContentType");
+    win.document.getElementById("save").click();
+    let button = dialog.getButton("accept");
+    button.disabled = false;
+    dialog.acceptDialog();
+  }
 
+  
+  let download = await downloadFinishedPromise;
+  if (download) {
     
-    if (shouldExpectDialog) {
-      let dialog = win.document.getElementById("unknownContentType");
-      win.document.getElementById("save").click();
-      let button = dialog.getButton("accept");
-      button.disabled = false;
-      dialog.acceptDialog();
-    }
-
-    
-    let download = await downloadFinishedPromise;
     is(
       PathUtils.filename(download.target.path),
       expectedName,
