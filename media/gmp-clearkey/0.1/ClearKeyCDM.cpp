@@ -77,6 +77,12 @@ void ClearKeyCDM::TimerExpired(void* aContext) {
 
 Status ClearKeyCDM::Decrypt(const InputBuffer_2& aEncryptedBuffer,
                             DecryptedBlock* aDecryptedBuffer) {
+  if (mIsProtectionQueryEnabled) {
+    
+    
+    
+    mSessionManager->QueryOutputProtectionStatusIfNeeded();
+  }
   return mSessionManager->Decrypt(aEncryptedBuffer, aDecryptedBuffer);
 }
 
@@ -118,6 +124,12 @@ void ClearKeyCDM::ResetDecoder(StreamType aDecoderType) {
 Status ClearKeyCDM::DecryptAndDecodeFrame(const InputBuffer_2& aEncryptedBuffer,
                                           VideoFrame* aVideoFrame) {
 #ifdef ENABLE_WMF
+  if (mIsProtectionQueryEnabled) {
+    
+    
+    
+    mSessionManager->QueryOutputProtectionStatusIfNeeded();
+  }
   return mVideoDecoder->Decode(aEncryptedBuffer, aVideoFrame);
 #else
   return Status::kDecodeError;
@@ -141,7 +153,15 @@ void ClearKeyCDM::OnPlatformChallengeResponse(
 void ClearKeyCDM::OnQueryOutputProtectionStatus(
     QueryResult aResult, uint32_t aLinkMask, uint32_t aOutputProtectionMask) {
   
-  assert(false);
+  
+  
+  
+  MOZ_ASSERT(mIsProtectionQueryEnabled,
+             "Should only receive a protection status "
+             "mIsProtectionQueryEnabled is true");
+  
+  mSessionManager->OnQueryOutputProtectionStatus(aResult, aLinkMask,
+                                                 aOutputProtectionMask);
 }
 
 void ClearKeyCDM::OnStorageId(uint32_t aVersion, const uint8_t* aStorageId,
