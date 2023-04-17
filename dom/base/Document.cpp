@@ -7179,16 +7179,19 @@ nsIGlobalObject* Document::GetScopeObject() const {
 }
 
 bool Document::CrossOriginIsolated() const {
+  if (auto* bc = GetBrowsingContext()) {
+    return bc->CrossOriginIsolated();
+  }
+
   
   
   if (mLoadedAsData) {
     nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(GetScopeObject());
-
     return window && window->GetBrowsingContext() &&
            window->GetBrowsingContext()->CrossOriginIsolated();
   }
 
-  return GetBrowsingContext() && GetBrowsingContext()->CrossOriginIsolated();
+  return false;
 }
 
 DocGroup* Document::GetDocGroupOrCreate() {

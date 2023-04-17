@@ -8,6 +8,11 @@ const TEST_PATH = getRootDirectory(gTestPath).replace(
   "https://example.com"
 );
 
+const TEST_PATH_SITE = getRootDirectory(gTestPath).replace(
+  "chrome://mochitests/content",
+  "https://test1.example.com"
+);
+
 add_task(async function test_print_blocks() {
   
   
@@ -181,6 +186,30 @@ add_task(async function test_print_another_iframe_and_remove() {
       gBrowser.getTabDialogBox(browser).abortAllDialogs();
     }
   );
+});
+
+add_task(async function test_window_print_coop_site() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["print.tab_modal.enabled", true]],
+  });
+
+  for (const base of [TEST_PATH, TEST_PATH_SITE]) {
+    const url = `${base}file_coop_header2.html`;
+    is(
+      document.querySelector(".printPreviewBrowser"),
+      null,
+      "There shouldn't be any print preview browser"
+    );
+    await BrowserTestUtils.withNewTab(url, async function(browser) {
+      info("Waiting for dialog");
+      await BrowserTestUtils.waitForCondition(
+        () => !!document.querySelector(".printPreviewBrowser")
+      );
+
+      ok(true, "Shouldn't crash");
+      gBrowser.getTabDialogBox(browser).abortAllDialogs();
+    });
+  }
 });
 
 
