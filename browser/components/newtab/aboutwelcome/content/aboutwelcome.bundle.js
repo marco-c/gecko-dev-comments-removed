@@ -192,6 +192,7 @@ class AboutWelcome extends react__WEBPACK_IMPORTED_MODULE_0___default.a.PureComp
       message_id: props.messageId,
       utm_term: props.UTMTerm,
       design: props.design,
+      transitions: props.transitions,
       background_url: props.background_url
     });
   }
@@ -287,7 +288,9 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
+ 
 
+const TRANSITION_OUT_TIME = 1000;
 const MultiStageAboutWelcome = props => {
   const [index, setScreenIndex] = Object(react__WEBPACK_IMPORTED_MODULE_0__["useState"])(0);
   Object(react__WEBPACK_IMPORTED_MODULE_0__["useEffect"])(() => {
@@ -325,14 +328,35 @@ const MultiStageAboutWelcome = props => {
       }
     })();
   }, [metricsFlowUri]); 
+  
 
-  const handleTransition = index < props.screens.length - 1 ? () => setScreenIndex(prevState => prevState + 1) : () => _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__["AboutWelcomeUtils"].handleUserAction({
-    type: "OPEN_ABOUT_PAGE",
-    data: {
-      args: "home",
-      where: "current"
+  const [transition, setTransition] = Object(react__WEBPACK_IMPORTED_MODULE_0__["useState"])(props.transitions ? "in" : "");
+  Object(react__WEBPACK_IMPORTED_MODULE_0__["useEffect"])(() => {
+    if (transition === "in") {
+      requestAnimationFrame(() => requestAnimationFrame(() => setTransition("")));
     }
-  }); 
+  }, [transition]); 
+
+  const handleTransition = () => {
+    
+    setTransition(props.transitions ? "out" : ""); 
+
+    setTimeout(() => {
+      if (index < props.screens.length - 1) {
+        setTransition(props.transitions ? "in" : "");
+        setScreenIndex(prevState => prevState + 1);
+      } else {
+        _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__["AboutWelcomeUtils"].handleUserAction({
+          type: "OPEN_ABOUT_PAGE",
+          data: {
+            args: "home",
+            where: "current"
+          }
+        });
+      }
+    }, props.transitions ? TRANSITION_OUT_TIME : 0);
+  }; 
+
 
   const [region, setRegion] = Object(react__WEBPACK_IMPORTED_MODULE_0__["useState"])(null);
   Object(react__WEBPACK_IMPORTED_MODULE_0__["useEffect"])(() => {
@@ -379,7 +403,7 @@ const MultiStageAboutWelcome = props => {
     })();
   }, [useImportable, region]);
   return react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement(react__WEBPACK_IMPORTED_MODULE_0___default.a.Fragment, null, react__WEBPACK_IMPORTED_MODULE_0___default.a.createElement("div", {
-    className: `outer-wrapper onboardingContainer ${props.design}`,
+    className: `outer-wrapper onboardingContainer ${props.design} transition-${transition}`,
     style: {
       backgroundImage: `url(${props.background_url})`
     }
