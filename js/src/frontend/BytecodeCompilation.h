@@ -7,28 +7,13 @@
 #ifndef frontend_BytecodeCompilation_h
 #define frontend_BytecodeCompilation_h
 
-#include "mozilla/Maybe.h"  
 #include "mozilla/Utf8.h"   
 
-#include <stddef.h>  
-#include <stdint.h>  
-
-#include "jstypes.h"  
-
-#include "frontend/CompilationStencil.h"  
-#include "frontend/ParseContext.h"  
-#include "frontend/SharedContext.h"  
 #include "js/CompileOptions.h"  
-#include "js/RootingAPI.h"      
 #include "js/SourceText.h"      
+#include "js/TypeDecls.h"       
 #include "js/UniquePtr.h"       
-#include "vm/JSScript.h"  
-#include "vm/Scope.h"     
-
-class JS_PUBLIC_API JSFunction;
-class JS_PUBLIC_API JSObject;
-
-class JSObject;
+#include "vm/ScopeKind.h"       
 
 namespace js {
 
@@ -36,17 +21,10 @@ class Scope;
 
 namespace frontend {
 
-struct BytecodeEmitter;
-class EitherParser;
-
-template <typename Unit>
-class SourceAwareCompiler;
-template <typename Unit>
-class ScriptCompiler;
-template <typename Unit>
-class ModuleCompiler;
-template <typename Unit>
-class StandaloneFunctionCompiler;
+struct CompilationInput;
+struct CompilationGCOutput;
+struct CompilationStencil;
+struct ExtensibleCompilationStencil;
 
 extern UniquePtr<CompilationStencil> CompileGlobalScriptToStencil(
     JSContext* cx, CompilationInput& input, JS::SourceText<char16_t>& srcBuf,
@@ -97,7 +75,7 @@ extern JSScript* CompileEvalScript(JSContext* cx,
                                    JS::Handle<JSObject*> enclosingEnv);
 
 extern bool DelazifyCanonicalScriptedFunction(JSContext* cx,
-                                              Handle<JSFunction*> fun);
+                                              JS::Handle<JSFunction*> fun);
 
 
 inline bool CanLazilyParse(const JS::ReadOnlyCompileOptions& options) {

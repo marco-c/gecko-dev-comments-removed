@@ -59,13 +59,7 @@
 
 #include "jstypes.h"  
 
-#include "js/RootingAPI.h"  
-#include "js/Value.h"
-
-struct JS_PUBLIC_API JSContext;
-class JS_PUBLIC_API JSObject;
-class JS_PUBLIC_API JSScript;
-class JS_PUBLIC_API JSString;
+#include "js/TypeDecls.h"  
 
 namespace JS {
 
