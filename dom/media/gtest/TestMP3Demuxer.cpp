@@ -456,6 +456,7 @@ TEST_F(MP3DemuxerTest, FrameParsing) {
     
     
     
+    EXPECT_GE(numSamples, 0);
 
     
     
