@@ -152,6 +152,10 @@ class nsBoxFrame : public nsContainerFrame {
 
   void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) override;
 
+  
+  
+  static nsIFrame* SlowOrdinalGroupAwareSibling(nsIFrame*, bool aNext);
+
  private:
   explicit nsBoxFrame(ComputedStyle* aStyle, nsPresContext* aPresContext)
       : nsBoxFrame(aStyle, aPresContext, kClassID, false, nullptr) {}
