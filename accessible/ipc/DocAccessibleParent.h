@@ -262,6 +262,15 @@ class DocAccessibleParent : public RemoteAccessible,
 
   Tuple<DocAccessibleParent*, uint64_t> GetRemoteEmbedder();
 
+  
+  virtual int32_t IndexInParent() const override {
+    if (IsTopLevel() && OuterDocOfRemoteBrowser()) {
+      
+      return 0;
+    }
+    return RemoteAccessible::IndexInParent();
+  }
+
  private:
   ~DocAccessibleParent() {
     LiveDocs().Remove(mActorID);

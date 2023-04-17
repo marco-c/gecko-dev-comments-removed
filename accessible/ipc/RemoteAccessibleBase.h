@@ -46,6 +46,12 @@ class RemoteAccessibleBase : public Accessible {
     return mChildren.Length() ? mChildren[mChildren.Length() - 1] : nullptr;
   }
   Derived* RemotePrevSibling() const {
+    if (IsDoc()) {
+      
+      
+      
+      return nullptr;
+    }
     int32_t idx = IndexInParent();
     if (idx == -1) {
       return nullptr;  
@@ -53,6 +59,12 @@ class RemoteAccessibleBase : public Accessible {
     return idx > 0 ? RemoteParent()->mChildren[idx - 1] : nullptr;
   }
   Derived* RemoteNextSibling() const {
+    if (IsDoc()) {
+      
+      
+      
+      return nullptr;
+    }
     int32_t idx = IndexInParent();
     if (idx == -1) {
       return nullptr;  
