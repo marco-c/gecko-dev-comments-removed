@@ -604,7 +604,12 @@ bool FunctionScriptEmitter::emitEndBody() {
     }
   }
 
+  
   if (funbox_->isDerivedClassConstructor()) {
+    if (!bce_->emitJumpTargetAndPatch(bce_->endOfDerivedClassConstructorBody)) {
+      return false;
+    }
+
     if (!bce_->emitCheckDerivedClassConstructorReturn()) {
       
       return false;

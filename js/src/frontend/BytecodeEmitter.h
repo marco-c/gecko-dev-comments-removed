@@ -308,6 +308,10 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   mozilla::Maybe<uint32_t> functionBodyEndPos = {};
 
   
+  
+  JumpList endOfDerivedClassConstructorBody = {};
+
+  
 
 
 

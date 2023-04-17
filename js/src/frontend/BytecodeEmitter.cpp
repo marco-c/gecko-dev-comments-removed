@@ -6276,15 +6276,6 @@ bool BytecodeEmitter::emitReturn(UnaryNode* returnNode) {
     return false;
   }
 
-  
-  
-  
-  if (isDerivedClassConstructor) {
-    if (!emitCheckDerivedClassConstructorReturn()) {
-      return false;
-    }
-  }
-
   NonLocalExitControl nle(this, NonLocalExitControl::Return);
 
   if (!nle.prepareForNonLocalJumpToOutermost()) {
@@ -6328,7 +6319,7 @@ bool BytecodeEmitter::emitReturn(UnaryNode* returnNode) {
     }
   } else if (isDerivedClassConstructor) {
     MOZ_ASSERT(JSOp(bytecodeSection().code()[top.value()]) == JSOp::SetRval);
-    if (!emitReturnRval()) {
+    if (!emitJump(JSOp::Goto, &endOfDerivedClassConstructorBody)) {
       return false;
     }
   } else if (top + BytecodeOffsetDiff(JSOpLength_Return) !=
