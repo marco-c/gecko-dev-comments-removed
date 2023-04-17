@@ -135,19 +135,58 @@ impl From<ConicGradientKey> for ConicGradientTemplate {
         stretch_size.width = stretch_size.width.min(common.prim_rect.width());
         stretch_size.height = stretch_size.height.min(common.prim_rect.height());
 
+        fn approx_eq(a: f32, b: f32) -> bool { (a - b).abs() < 0.01 }
+
         
         
         
-        const MAX_SIZE: f32 = 1024.0;
+        
+        
+        let mut has_hard_stops = false;
+        let mut prev_stop = None;
+        let offset_range = item.params.end_offset - item.params.start_offset;
+        for stop in &stops {
+            if offset_range <= 0.0 {
+                break;
+            }
+            if let Some(prev_offset) = prev_stop {
+                
+                if stop.offset < prev_offset + 0.005 / offset_range {
+                    
+                    
+                    
+                    let a = item.params.angle / (2.0 * std::f32::consts::PI)
+                        + item.params.start_offset
+                        + stop.offset / offset_range;
+                    let a = a.rem_euclid(0.25);
+
+                    if !approx_eq(a, 0.0) && !approx_eq(a, 0.25) {
+                        has_hard_stops = true;
+                        break;
+                    }
+                }
+            }
+            prev_stop = Some(stop.offset);
+        }
+
+        let max_size = if has_hard_stops {
+            2048.0
+        } else {
+            1024.0
+        };
+
+        
+        
+        
         let mut task_size: DeviceSize = stretch_size.cast_unit();
         let mut scale = vec2(1.0, 1.0);
-        if task_size.width > MAX_SIZE {
-            scale.x = task_size.width / MAX_SIZE;
-            task_size.width = MAX_SIZE;
+        if task_size.width > max_size {
+            scale.x = task_size.width / max_size;
+            task_size.width = max_size;
         }
-        if task_size.height > MAX_SIZE {
-            scale.y = task_size.height / MAX_SIZE;
-            task_size.height = MAX_SIZE;
+        if task_size.height > max_size {
+            scale.y = task_size.height / max_size;
+            task_size.height = max_size;
         }
 
         ConicGradientTemplate {
