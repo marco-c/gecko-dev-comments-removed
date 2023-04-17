@@ -76,6 +76,13 @@ if (AppConstants.NIGHTLY_BUILD) {
   gExceptionPaths.push("resource://builtin-addons/translations/");
 }
 
+if (AppConstants.NIGHTLY_BUILD) {
+  
+  gExceptionPaths.push(
+    "chrome://browser/content/places/interactionsViewer.html"
+  );
+}
+
 
 
 
