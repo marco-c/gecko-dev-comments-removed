@@ -157,6 +157,7 @@ class FFmpegVideoDecoder<LIBAV_VER>
                           MediaDataDecoder::DecodedData& aResults) const;
 
 #ifdef MOZ_WAYLAND_USE_VAAPI
+  void InitHWDecodingPrefs();
   MediaResult InitVAAPIDecoder();
   bool CreateVAAPIDeviceContext();
   void InitVAAPICodecContext();
@@ -164,6 +165,8 @@ class FFmpegVideoDecoder<LIBAV_VER>
   bool IsHardwareAccelerated(nsACString& aFailureReason) const override;
   bool GetVAAPISurfaceDescriptor(VADRMPRIMESurfaceDescriptor& aVaDesc);
 
+  MediaResult CreateImageVAAPI(int64_t aOffset, int64_t aPts, int64_t aDuration,
+                               MediaDataDecoder::DecodedData& aResults);
   MediaResult CreateImageDMABuf(int64_t aOffset, int64_t aPts,
                                 int64_t aDuration,
                                 MediaDataDecoder::DecodedData& aResults);
@@ -173,18 +176,9 @@ class FFmpegVideoDecoder<LIBAV_VER>
   void ReleaseDMABufSurfaces();
 #endif
 
-  
-
-
-
-
-
-  int AllocateYUV420PVideoBuffer(AVCodecContext* aCodecContext,
-                                 AVFrame* aFrame);
-
 #ifdef MOZ_WAYLAND_USE_VAAPI
   AVBufferRef* mVAAPIDeviceContext;
-  const bool mDisableHardwareDecoding;
+  bool mEnableHardwareDecoding;
   VADisplay mDisplay;
   bool mUseDMABufSurfaces;
   nsTArray<DMABufSurfaceWrapper<LIBAV_VER>> mDMABufSurfaces;
