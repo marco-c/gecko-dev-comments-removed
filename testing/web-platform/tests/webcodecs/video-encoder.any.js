@@ -245,20 +245,9 @@ promise_test(async t => {
   
   assert_equals(encoder.encodeQueueSize, 0);
 
-  
-  
-  
-  
-  assert_true(output_chunks.length == 1 || output_chunks.length == 2);
-
-  if (output_chunks.length == 1) {
-    
-    
-    assert_equals(output_chunks[0].timestamp, frame2.timestamp);
-  } else {
-    assert_equals(output_chunks[0].timestamp, frame1.timestamp);
-    assert_equals(output_chunks[1].timestamp, frame2.timestamp);
-  }
+  assert_true(output_chunks.length == 2);
+  assert_equals(output_chunks[0].timestamp, frame1.timestamp);
+  assert_equals(output_chunks[1].timestamp, frame2.timestamp);
 
   output_chunks = [];
 
