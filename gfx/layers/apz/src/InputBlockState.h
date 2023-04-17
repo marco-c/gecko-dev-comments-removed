@@ -226,7 +226,8 @@ class WheelBlockState : public CancelableBlockState {
 
 
 
-  void OnMouseMove(const ScreenIntPoint& aPoint);
+  void OnMouseMove(const ScreenIntPoint& aPoint,
+                   const Maybe<ScrollableLayerGuid>& aTargetGuid);
 
   
 
