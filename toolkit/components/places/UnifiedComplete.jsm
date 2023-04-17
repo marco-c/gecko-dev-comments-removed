@@ -9,8 +9,6 @@
 
 
 
-const MS_PER_DAY = 86400000; 
-
 
 
 const QUERYTYPE_FILTERED = 0;
@@ -111,13 +109,10 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-XPCOMUtils.defineLazyGlobalGetters(this, ["fetch"]);
-
 XPCOMUtils.defineLazyModuleGetters(this, {
   KeywordUtils: "resource://gre/modules/KeywordUtils.jsm",
   ObjectUtils: "resource://gre/modules/ObjectUtils.jsm",
   PlacesUtils: "resource://gre/modules/PlacesUtils.jsm",
-  ProfileAge: "resource://gre/modules/ProfileAge.jsm",
   PromiseUtils: "resource://gre/modules/PromiseUtils.jsm",
   Sqlite: "resource://gre/modules/Sqlite.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
@@ -153,45 +148,6 @@ function iconHelper(url) {
   }
   return PlacesUtils.favicons.defaultFavicon.spec;
 }
-
-
-
-function PreloadedSite(url, title) {
-  this.uri = Services.io.newURI(url);
-  this.title = title;
-  this._matchTitle = title.toLowerCase();
-  this._hasWWW = this.uri.host.startsWith("www.");
-  this._hostWithoutWWW = this._hasWWW ? this.uri.host.slice(4) : this.uri.host;
-}
-
-
-
-
-
-
-
-XPCOMUtils.defineLazyGetter(this, "PreloadedSiteStorage", () =>
-  Object.seal({
-    sites: [],
-
-    add(url, title) {
-      let site = new PreloadedSite(url, title);
-      this.sites.push(site);
-    },
-
-    populate(sites) {
-      this.sites = [];
-      for (let site of sites) {
-        this.add(site[0], site[1]);
-      }
-    },
-  })
-);
-
-XPCOMUtils.defineLazyGetter(this, "ProfileAgeCreatedPromise", async () => {
-  let times = await ProfileAge();
-  return times.created;
-});
 
 
 XPCOMUtils.defineLazyGetter(this, "typeToBehaviorMap", () => {
@@ -591,27 +547,6 @@ Search.prototype = {
 
 
 
-  _sleepResolve: null,
-  _sleep(aTimeMs) {
-    
-    
-    if (!this._sleepTimer) {
-      this._sleepTimer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
-    }
-    return new Promise(resolve => {
-      this._sleepResolve = resolve;
-      this._sleepTimer.initWithCallback(
-        resolve,
-        aTimeMs,
-        Ci.nsITimer.TYPE_ONE_SHOT
-      );
-    });
-  },
-
-  
-
-
-
 
 
 
@@ -665,13 +600,6 @@ Search.prototype = {
       this._notifyTimer.cancel();
     }
     this._notifyDelaysCount = 0;
-    if (this._sleepTimer) {
-      this._sleepTimer.cancel();
-    }
-    if (this._sleepResolve) {
-      this._sleepResolve();
-      this._sleepResolve = null;
-    }
     if (typeof this.interrupt == "function") {
       this.interrupt();
     }
@@ -705,10 +633,6 @@ Search.prototype = {
     
     
     
-    
-
-    
-    await this._checkPreloadedSitesExpiry();
 
     
     
@@ -720,36 +644,13 @@ Search.prototype = {
 
     
     
-    
-    this._addingHeuristicResult = true;
-    await this._matchFirstHeuristicResult(conn);
-    this._addingHeuristicResult = false;
-    if (!this.pending) {
-      return;
-    }
-
-    
-    
     this._firstTokenIsKeyword =
       this._firstTokenIsKeyword || (await this._checkIfFirstTokenIsKeyword());
     if (!this.pending) {
       return;
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
     if (this._trimmedOriginalSearchString) {
-      await this._sleep(UrlbarPrefs.get("delay"));
-      if (!this.pending) {
-        return;
-      }
-
       
       
       
@@ -785,8 +686,7 @@ Search.prototype = {
 
     
     
-    let count =
-      this._counts[MATCH_TYPE.GENERAL] + this._counts[MATCH_TYPE.HEURISTIC];
+    let count = this._counts[MATCH_TYPE.GENERAL];
     if (count < this._maxResults) {
       this._matchBehavior = Ci.mozIPlacesAutoComplete.MATCH_ANYWHERE;
       let queries = [this._searchQuery];
@@ -800,80 +700,6 @@ Search.prototype = {
         }
       }
     }
-
-    this._matchPreloadedSites();
-  },
-
-  async _checkPreloadedSitesExpiry() {
-    if (!UrlbarPrefs.get("usepreloadedtopurls.enabled")) {
-      return;
-    }
-    let profileCreationDate = await ProfileAgeCreatedPromise;
-    let daysSinceProfileCreation =
-      (Date.now() - profileCreationDate) / MS_PER_DAY;
-    if (
-      daysSinceProfileCreation >
-      UrlbarPrefs.get("usepreloadedtopurls.expire_days")
-    ) {
-      Services.prefs.setBoolPref(
-        "browser.urlbar.usepreloadedtopurls.enabled",
-        false
-      );
-    }
-  },
-
-  _matchPreloadedSites() {
-    if (!UrlbarPrefs.get("usepreloadedtopurls.enabled")) {
-      return;
-    }
-
-    if (!this._searchString) {
-      
-      return;
-    }
-
-    for (let site of PreloadedSiteStorage.sites) {
-      let url = site.uri.spec;
-      if (
-        (!this._strippedPrefix || url.startsWith(this._strippedPrefix)) &&
-        (site.uri.host.includes(this._searchString) ||
-          site._matchTitle.includes(this._searchString))
-      ) {
-        this._addMatch({
-          value: url,
-          comment: site.title,
-          style: "preloaded-top-site",
-          frecency: FRECENCY_DEFAULT - 1,
-        });
-      }
-    }
-  },
-
-  _matchPreloadedSiteForAutofill() {
-    if (!UrlbarPrefs.get("usepreloadedtopurls.enabled")) {
-      return false;
-    }
-
-    let matchedSite = PreloadedSiteStorage.sites.find(site => {
-      return (
-        (!this._strippedPrefix ||
-          site.uri.spec.startsWith(this._strippedPrefix)) &&
-        (site.uri.host.startsWith(this._searchString) ||
-          site.uri.host.startsWith("www." + this._searchString))
-      );
-    });
-    if (!matchedSite) {
-      return false;
-    }
-
-    this._result.setDefaultIndex(0);
-
-    let url = matchedSite.uri.spec;
-    let value = stripAnyPrefix(url)[1];
-    value = value.substr(value.indexOf(this._searchString));
-
-    this._addAutofillMatch(value, url, Infinity, ["preloaded-top-site"]);
-    return true;
   },
 
   async _checkIfFirstTokenIsKeyword() {
@@ -899,27 +725,6 @@ Search.prototype = {
       return true;
     }
 
-    return false;
-  },
-
-  async _matchFirstHeuristicResult(conn) {
-    if (this._searchMode) {
-      
-      return false;
-    }
-
-    
-    
-
-    let shouldAutofill = this._shouldAutofill;
-    if (this.pending && shouldAutofill) {
-      let matched = this._matchPreloadedSiteForAutofill();
-      if (matched) {
-        return true;
-      }
-    }
-
-    
     return false;
   },
 
@@ -981,8 +786,7 @@ Search.prototype = {
     }
     
     
-    let count =
-      this._counts[MATCH_TYPE.GENERAL] + this._counts[MATCH_TYPE.HEURISTIC];
+    let count = this._counts[MATCH_TYPE.GENERAL];
     if (!this.pending || count >= this._maxResults) {
       cancel();
     }
@@ -1061,9 +865,7 @@ Search.prototype = {
       throw new Error("Frecency not provided");
     }
 
-    if (this._addingHeuristicResult) {
-      match.type = MATCH_TYPE.HEURISTIC;
-    } else if (typeof match.type != "string") {
+    if (typeof match.type != "string") {
       match.type = MATCH_TYPE.GENERAL;
     }
 
@@ -1087,10 +889,6 @@ Search.prototype = {
       }
     }
 
-    if (this._addingHeuristicResult) {
-      match.style += " heuristic";
-    }
-
     match.icon = match.icon || "";
     match.finalCompleteValue = match.finalCompleteValue || "";
 
@@ -1112,7 +910,7 @@ Search.prototype = {
     );
     this._counts[match.type]++;
 
-    this.notifyResult(true, match.type == MATCH_TYPE.HEURISTIC);
+    this.notifyResult(true);
   },
 
   
@@ -1142,26 +940,9 @@ Search.prototype = {
         
         
         for (let i = 0; i < this._usedURLs.length; ++i) {
-          let {
-            key: matchKey,
-            action: matchAction,
-            type: matchType,
-          } = this._usedURLs[i];
+          let { key: matchKey, action: matchAction } = this._usedURLs[i];
           if (ObjectUtils.deepEqual(matchKey, urlMapKey)) {
             isDupe = true;
-            
-            
-            if (
-              matchType == MATCH_TYPE.HEURISTIC &&
-              action.type == "switchtab"
-            ) {
-              isDupe = false;
-              
-              
-              
-              
-              continue;
-            }
             if (!matchAction || action.type == "switchtab") {
               this._usedURLs[i] = {
                 key: urlMapKey,
@@ -1181,7 +962,6 @@ Search.prototype = {
         
         
         
-        
         let prefixRank = UrlbarUtils.getPrefixRank(prefix);
         for (let i = 0; i < this._usedURLs.length; ++i) {
           if (!this._usedURLs[i]) {
@@ -1189,11 +969,7 @@ Search.prototype = {
             continue;
           }
 
-          let {
-            key: existingKey,
-            prefix: existingPrefix,
-            type: existingType,
-          } = this._usedURLs[i];
+          let { key: existingKey, prefix: existingPrefix } = this._usedURLs[i];
 
           let existingPrefixRank = UrlbarUtils.getPrefixRank(existingPrefix);
           if (ObjectUtils.deepEqual(existingKey, urlMapKey)) {
@@ -1201,32 +977,14 @@ Search.prototype = {
 
             if (prefix == existingPrefix) {
               
-              
-              if (match.type != MATCH_TYPE.HEURISTIC) {
-                break; 
-              } else {
-                this._usedURLs[i] = {
-                  key: urlMapKey,
-                  action,
-                  type: match.type,
-                  prefix,
-                  comment: match.comment,
-                };
-                return { index: i, replace: true };
-              }
+              break;
             }
 
             if (prefix.endsWith("www.") == existingPrefix.endsWith("www.")) {
               
-
-              if (match.type == MATCH_TYPE.HEURISTIC) {
-                isDupe = false;
-                continue;
-              }
-
               if (prefixRank <= existingPrefixRank) {
                 break; 
-              } else if (existingType != MATCH_TYPE.HEURISTIC) {
+              } else {
                 this._usedURLs[i] = {
                   key: urlMapKey,
                   action,
@@ -1235,9 +993,6 @@ Search.prototype = {
                   comment: match.comment,
                 };
                 return { index: i, replace: true };
-              } else {
-                isDupe = false;
-                continue;
               }
             } else {
               
@@ -1647,10 +1402,8 @@ Search.prototype = {
 
 
 
-
-
   _notifyDelaysCount: 0,
-  notifyResult(searchOngoing, skipDelay = false) {
+  notifyResult(searchOngoing) {
     let notify = () => {
       if (!this.pending) {
         return;
@@ -1678,7 +1431,7 @@ Search.prototype = {
     
     
     
-    if (skipDelay || this._notifyDelaysCount > 3) {
+    if (this._notifyDelaysCount > 3) {
       notify();
     } else {
       this._notifyDelaysCount++;
@@ -1690,19 +1443,7 @@ Search.prototype = {
 
 
 
-function UnifiedComplete() {
-  if (UrlbarPrefs.get("usepreloadedtopurls.enabled")) {
-    
-    
-    
-    ProfileAgeCreatedPromise;
-
-    fetch("chrome://browser/content/urlbar/preloaded-top-urls.json")
-      .then(response => response.json())
-      .then(sites => PreloadedSiteStorage.populate(sites))
-      .catch(ex => Cu.reportError(ex));
-  }
-}
+function UnifiedComplete() {}
 
 UnifiedComplete.prototype = {
   
@@ -1740,12 +1481,6 @@ UnifiedComplete.prototype = {
       });
     }
     return this._promiseDatabase;
-  },
-
-  
-
-  populatePreloadedSiteStorage(json) {
-    PreloadedSiteStorage.populate(json);
   },
 
   

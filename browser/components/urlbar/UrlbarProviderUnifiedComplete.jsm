@@ -51,7 +51,7 @@ class ProviderUnifiedComplete extends UrlbarProvider {
 
 
   get type() {
-    return UrlbarUtils.PROVIDER_TYPE.HEURISTIC;
+    return UrlbarUtils.PROVIDER_TYPE.PROFILE;
   }
 
   
@@ -120,8 +120,6 @@ var UrlbarProviderUnifiedComplete = new ProviderUnifiedComplete();
 
 
 
-
-
 function convertLegacyAutocompleteResult(context, acResult, urls) {
   let results = [];
   for (let i = 0; i < acResult.matchCount; ++i) {
@@ -135,7 +133,6 @@ function convertLegacyAutocompleteResult(context, acResult, urls) {
     }
     urls.add(url);
     let style = acResult.getStyleAt(i);
-    let isHeuristic = i == 0 && style.includes("heuristic");
     let result = makeUrlbarResult(context.tokens, {
       url,
       
@@ -145,34 +142,12 @@ function convertLegacyAutocompleteResult(context, acResult, urls) {
       style,
       comment: acResult.getCommentAt(i),
       firstToken: context.tokens[0],
-      isHeuristic,
     });
     
     if (!result) {
       continue;
     }
-    
-    if (
-      isHeuristic &&
-      style.includes("autofill") &&
-      acResult.defaultIndex == 0
-    ) {
-      let autofillValue = acResult.getValueAt(i);
-      if (
-        autofillValue
-          .toLocaleLowerCase()
-          .startsWith(context.searchString.toLocaleLowerCase())
-      ) {
-        result.autofill = {
-          value:
-            context.searchString +
-            autofillValue.substring(context.searchString.length),
-          selectionStart: context.searchString.length,
-          selectionEnd: autofillValue.length,
-        };
-      }
-    }
-    result.heuristic = isHeuristic;
+
     results.push(result);
   }
   return results;
@@ -250,17 +225,6 @@ function makeUrlbarResult(tokens, info) {
     }
   }
 
-  if (info.style.includes("priority-search")) {
-    return new UrlbarResult(
-      UrlbarUtils.RESULT_TYPE.SEARCH,
-      UrlbarUtils.RESULT_SOURCE.SEARCH,
-      ...UrlbarResult.payloadAndSimpleHighlights(tokens, {
-        engine: [info.comment, UrlbarUtils.HIGHLIGHT.TYPED],
-        icon: info.icon,
-      })
-    );
-  }
-
   
   let source;
   let tags = [];
@@ -271,8 +235,6 @@ function makeUrlbarResult(tokens, info) {
   
   if (info.style.includes("bookmark")) {
     source = UrlbarUtils.RESULT_SOURCE.BOOKMARKS;
-  } else if (info.style.includes("preloaded-top-sites")) {
-    source = UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL;
   } else {
     source = UrlbarUtils.RESULT_SOURCE.HISTORY;
   }
