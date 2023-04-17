@@ -61,8 +61,21 @@ class SnapshotSelector extends EventEmitter {
 
 
   #context = {
-    url: undefined,
+    
+
+
+
     count: undefined,
+    
+
+
+
+    url: undefined,
+    
+
+
+
+    type: undefined,
   };
 
   
@@ -103,7 +116,10 @@ class SnapshotSelector extends EventEmitter {
 
 
   #snapshotsGenerated(snapshots) {
-    logConsole.debug("Generated snapshots", snapshots);
+    logConsole.debug(
+      "Generated snapshots",
+      snapshots.map(s => s.url)
+    );
     this.emit("snapshots-updated", snapshots);
   }
 
@@ -117,7 +133,11 @@ class SnapshotSelector extends EventEmitter {
     logConsole.debug("Building snapshots", context);
 
     
-    let snapshots = await Snapshots.query({ limit: context.count + 1 });
+    let snapshots = await Snapshots.query({
+      limit: context.count + 1,
+      type: context.type,
+    });
+
     snapshots = snapshots
       .filter(snapshot => snapshot.url != context.url)
       .slice(0, context.count);
@@ -136,7 +156,20 @@ class SnapshotSelector extends EventEmitter {
     }
 
     this.#context.url = url;
+    this.rebuild();
+  }
 
+  
+
+
+
+
+  async setType(type) {
+    if (this.#context.type === type) {
+      return;
+    }
+
+    this.#context.type = type;
     this.rebuild();
   }
 }
