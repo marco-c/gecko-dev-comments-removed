@@ -2699,7 +2699,7 @@ bool js::CopyDataPropertiesNative(JSContext* cx, HandlePlainObject target,
       MOZ_ASSERT(!target->containsPure(key),
                  "didn't expect to find an existing property");
 
-      if (!AddDataPropertyNonPrototype(cx, target, key, value)) {
+      if (!AddDataPropertyToPlainObject(cx, target, key, value)) {
         return false;
       }
     } else {
