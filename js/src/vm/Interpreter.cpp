@@ -5027,16 +5027,15 @@ bool js::OptimizeSpreadCall(JSContext* cx, HandleValue arg, bool* optimized) {
 }
 
 JSObject* js::NewObjectOperation(JSContext* cx, HandleScript script,
-                                 jsbytecode* pc,
-                                 NewObjectKind newKind ) {
+                                 jsbytecode* pc) {
   
   if (JSOp(*pc) == JSOp::NewObject) {
     RootedPlainObject baseObject(cx, &script->getObject(pc)->as<PlainObject>());
-    return CopyTemplateObject(cx, baseObject, newKind);
+    return CopyTemplateObject(cx, baseObject, GenericObject);
   }
 
   MOZ_ASSERT(JSOp(*pc) == JSOp::NewInit);
-  return NewBuiltinClassInstanceWithKind<PlainObject>(cx, newKind);
+  return NewBuiltinClassInstanceWithKind<PlainObject>(cx, GenericObject);
 }
 
 JSObject* js::NewObjectOperationWithTemplate(JSContext* cx,
