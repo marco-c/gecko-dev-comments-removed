@@ -694,13 +694,8 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
   
   
-  
-  
-  
   LayerToParentLayerMatrix4x4 ComputeTransformForNode(
-      const HitTestingTreeNode* aNode,
-      const AsyncPanZoomController** aOutSourceOfOverscrollTransform =
-          nullptr) const;
+      const HitTestingTreeNode* aNode) const;
 
   
   static already_AddRefed<GeckoContentController> GetContentController(
