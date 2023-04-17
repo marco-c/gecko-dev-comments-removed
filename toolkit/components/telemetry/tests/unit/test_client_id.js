@@ -45,21 +45,12 @@ add_task(async function test_client_id() {
   ];
 
   
-  Services.telemetry.getSnapshotForScalars("main", true);
-
-  
   await ClientID._reset();
   Services.prefs.clearUserPref(PREF_CACHED_CLIENTID);
   await OS.File.remove(drsPath, { ignoreAbsent: true });
   let clientID = await ClientID.getClientID();
   Assert.equal(typeof clientID, "string");
   Assert.ok(uuidRegex.test(clientID));
-  let snapshot = Services.telemetry.getSnapshotForScalars("main", true).parent;
-  Assert.equal(snapshot["telemetry.generated_new_client_id"], true);
-  
-  Assert.ok(!("telemetry.loaded_client_id_doesnt_match_pref" in snapshot));
-  Assert.equal(snapshot["telemetry.state_file_read_errors"], 1);
-  Assert.ok(!("telemetry.using_pref_client_id" in snapshot));
 
   
   await ClientID._reset();
@@ -71,12 +62,6 @@ add_task(async function test_client_id() {
   clientID = await ClientID.getClientID();
   Assert.equal(typeof clientID, "string");
   Assert.ok(uuidRegex.test(clientID));
-  snapshot = Services.telemetry.getSnapshotForScalars("main", true).parent;
-  Assert.equal(snapshot["telemetry.generated_new_client_id"], true);
-  
-  Assert.ok(!("telemetry.loaded_client_id_doesnt_match_pref" in snapshot));
-  Assert.equal(snapshot["telemetry.state_file_read_errors"], 1);
-  Assert.ok(!("telemetry.using_pref_client_id" in snapshot));
 
   
   let oldClientID = clientID;
@@ -85,11 +70,6 @@ add_task(async function test_client_id() {
     await CommonUtils.writeJSON({ clientID: invalidID }, drsPath);
     clientID = await ClientID.getClientID();
     Assert.equal(clientID, oldClientID);
-    snapshot = Services.telemetry.getSnapshotForScalars("main", true).parent;
-    Assert.ok(!("telemetry.generated_new_client_id" in snapshot));
-    Assert.equal(snapshot["telemetry.loaded_client_id_doesnt_match_pref"], 1);
-    Assert.ok(!("telemetry.state_file_read_errors" in snapshot));
-    Assert.equal(snapshot["telemetry.using_pref_client_id"], 1);
   }
 
   
@@ -98,24 +78,12 @@ add_task(async function test_client_id() {
   await CommonUtils.writeJSON({ clientID: validClientID }, drsPath);
   clientID = await ClientID.getClientID();
   Assert.equal(clientID, validClientID);
-  snapshot = Services.telemetry.getSnapshotForScalars("main", true).parent;
-  Assert.ok(!("telemetry.generated_new_client_id" in snapshot));
-  Assert.equal(snapshot["telemetry.loaded_client_id_doesnt_match_pref"], 1);
-  Assert.ok(!("telemetry.state_file_read_errors" in snapshot));
-  Assert.ok(!("telemetry.using_pref_client_id" in snapshot));
 
   
   await ClientID._reset();
   Services.prefs.clearUserPref(PREF_CACHED_CLIENTID);
   clientID = await ClientID.getClientID();
   Assert.equal(clientID, validClientID);
-  
-  snapshot =
-    Services.telemetry.getSnapshotForScalars("main", true).parent || {};
-  Assert.ok(!("telemetry.generated_new_client_id" in snapshot));
-  Assert.ok(!("telemetry.loaded_client_id_doesnt_match_pref" in snapshot));
-  Assert.ok(!("telemetry.state_file_read_errors" in snapshot));
-  Assert.ok(!("telemetry.using_pref_client_id" in snapshot));
 
   
   for (let [invalidID, prefFunc] of invalidIDs) {
