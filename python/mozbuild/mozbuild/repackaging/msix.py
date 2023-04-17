@@ -13,8 +13,10 @@ r"""Repackage ZIP archives (or directories) into MSIX App Packages.
 from __future__ import absolute_import, print_function
 
 from collections import defaultdict
+import itertools
 import logging
 import os
+import shutil
 import sys
 import subprocess
 import time
@@ -205,6 +207,72 @@ def get_appconstants_jsm_values(finder, *args):
         yield value
 
 
+def unpack_msix(input_msix, output, log=None, verbose=False):
+    r"""Unpack the given MSIX to the given output directory.
+
+    MSIX packages are ZIP files, but they are Zip64/version 4.5 ZIP files, so
+    `mozjar.py` doesn't yet handle.  Unpack using `unzip{.exe}` for simplicity.
+
+    In addition, file names inside the MSIX package are URL quoted.  URL unquote
+    here.
+    """
+
+    log(
+        logging.INFO,
+        "msix",
+        {
+            "input_msix": input_msix,
+            "output": output,
+        },
+        "Unpacking input MSIX '{input_msix}' to directory '{output}'",
+    )
+
+    unzip = find_sdk_tool("unzip.exe", log=log)
+    if not unzip:
+        raise ValueError("unzip is required; set UNZIP or PATH")
+
+    subprocess.check_call(
+        [unzip, input_msix, "-d", output] + (["-q"] if not verbose else []),
+        universal_newlines=True,
+    )
+
+    
+    temp_finder = FileFinder(output)
+    if not temp_finder.contains("AppxManifest.xml"):
+        raise ValueError("MSIX file does not contain 'AppxManifest.xml'?")
+
+    
+    for dirpath, dirs, files in os.walk(output):
+        
+        
+        for i, (p, var) in itertools.chain(
+            enumerate((f, files) for f in files), enumerate((g, dirs) for g in dirs)
+        ):
+            q = urllib.parse.unquote(p)
+            if p != q:
+                log(
+                    logging.DEBUG,
+                    "msix",
+                    {
+                        "dirpath": dirpath,
+                        "p": p,
+                        "q": q,
+                    },
+                    "URL unquoting '{p}' -> '{q}' in {dirpath}",
+                )
+
+                var[i] = q
+                os.rename(os.path.join(dirpath, p), os.path.join(dirpath, q))
+
+    
+    
+    for p, _ in temp_finder.find("**/application.ini"):
+        relpath = os.path.split(p)[0]
+
+    
+    return mozpath.normpath(mozpath.join(output, relpath))
+
+
 def repackage_msix(
     dir_or_package,
     channel=None,
@@ -246,6 +314,35 @@ def repackage_msix(
     if not os.path.exists(dir_or_package):
         raise Exception("{} does not exist".format(dir_or_package))
 
+    if (
+        os.path.isfile(dir_or_package)
+        and os.path.splitext(dir_or_package)[1] == ".msix"
+    ):
+        
+        msix_dir = mozpath.normsep(
+            mozpath.join(
+                get_state_dir(),
+                "cache",
+                "mach-msix",
+                "msix-unpack",
+            )
+        )
+
+        if os.path.exists(msix_dir):
+            shutil.rmtree(msix_dir)
+        ensureParentDir(msix_dir)
+
+        dir_or_package = unpack_msix(dir_or_package, msix_dir, log=log, verbose=verbose)
+
+    log(
+        logging.INFO,
+        "msix",
+        {
+            "input": dir_or_package,
+        },
+        "Adding files from '{input}'",
+    )
+
     if os.path.isdir(dir_or_package):
         finder = FileFinder(dir_or_package)
     else:
@@ -263,7 +360,7 @@ def repackage_msix(
 
     
     
-    unpack_finder = UnpackFinder(finder)
+    unpack_finder = UnpackFinder(finder, unpack_xpi=False)
 
     if not version:
         values = get_appconstants_jsm_values(
@@ -358,8 +455,23 @@ def repackage_msix(
 
     
     for p, f in finder:
-        
-        pp = os.path.relpath(p, "firefox")
+        if not os.path.isdir(dir_or_package):
+            
+            pp = os.path.relpath(p, "firefox")
+        else:
+            
+            pp = p
+
+        if pp.startswith("distribution"):
+            
+            
+            
+            distribution_dir = mozpath.join(dir_or_package, "distribution")
+            if distribution_dir not in distribution_dirs:
+                distribution_dirs.append(distribution_dir)
+
+            continue
+
         copier.add(mozpath.normsep(mozpath.join("VFS", "ProgramFiles", instdir, pp)), f)
 
     
@@ -385,6 +497,7 @@ def repackage_msix(
             locale = None
             if os.path.basename(p) == "target.langpack.xpi":
                 
+                
                 base, locale = os.path.split(os.path.dirname(p))
 
                 
@@ -404,6 +517,14 @@ def repackage_msix(
                     {"path": p, "dest": dest},
                     "Renaming langpack {path} to {dest}",
                 )
+
+            elif os.path.basename(p).startswith("langpack-"):
+                
+                
+                _, _, locale = os.path.basename(p).partition("langpack-")
+                locale, _, _ = locale.partition("@")
+                dest = p
+
             else:
                 dest = p
 
@@ -417,10 +538,27 @@ def repackage_msix(
                     "Distributing locale '{locale}' from {dest}",
                 )
 
+            dest = mozpath.normsep(
+                mozpath.join("VFS", "ProgramFiles", instdir, "distribution", dest)
+            )
+            if copier.contains(dest):
+                log(
+                    logging.INFO,
+                    "msix",
+                    {"dest": dest, "path": mozpath.join(finder.base, p)},
+                    "Skipping duplicate: {dest} from {path}",
+                )
+                continue
+
+            log(
+                logging.DEBUG,
+                "msix",
+                {"dest": dest, "path": mozpath.join(finder.base, p)},
+                "Adding distribution path: {dest} from {path}",
+            )
+
             copier.add(
-                mozpath.normsep(
-                    mozpath.join("VFS", "ProgramFiles", instdir, "distribution", dest)
-                ),
+                dest,
                 f,
             )
 
