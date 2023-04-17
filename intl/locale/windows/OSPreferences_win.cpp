@@ -66,7 +66,7 @@ bool OSPreferences::ReadSystemLocales(nsTArray<nsCString>& aLocaleList) {
                 
                 
                 
-                Locale locale(loc);
+                MozLocale locale(loc);
                 if (locale.Maximize() && !locale.GetRegion().IsEmpty()) {
                   loc.Append('-');
                   loc.Append(locale.GetRegion());

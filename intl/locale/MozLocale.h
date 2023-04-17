@@ -47,11 +47,7 @@ namespace intl {
 
 
 
-
-
-
-
-class Locale {
+class MozLocale {
  public:
   
 
@@ -66,8 +62,9 @@ class Locale {
 
 
 
-  explicit Locale(const nsACString& aLocale);
-  explicit Locale(const char* aLocale) : Locale(nsDependentCString(aLocale)){};
+  explicit MozLocale(const nsACString& aLocale);
+  explicit MozLocale(const char* aLocale)
+      : MozLocale(nsDependentCString(aLocale)){};
 
   const nsDependentCSubstring GetLanguage() const;
   const nsDependentCSubstring GetScript() const;
@@ -102,7 +99,8 @@ class Locale {
 
 
 
-  bool Matches(const Locale& aOther, bool aThisRange, bool aOtherRange) const;
+  bool Matches(const MozLocale& aOther, bool aThisRange,
+               bool aOtherRange) const;
 
   
 
@@ -133,14 +131,14 @@ class Locale {
   
 
 
-  bool operator==(const Locale& aOther) {
+  bool operator==(const MozLocale& aOther) {
     
     
     
     return Matches(aOther, false, false);
   }
 
-  Locale(Locale&& aOther)
+  MozLocale(MozLocale&& aOther)
       : mIsWellFormed(aOther.mIsWellFormed), mRaw(std::move(aOther.mRaw)) {}
 
   ffi::LanguageIdentifier* Raw() { return mRaw.get(); }
@@ -157,6 +155,6 @@ class Locale {
 }  
 }  
 
-MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(mozilla::intl::Locale)
+MOZ_DECLARE_RELOCATE_USING_MOVE_CONSTRUCTOR(mozilla::intl::MozLocale)
 
 #endif 

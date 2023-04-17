@@ -54,7 +54,7 @@ const Quotes* QuotesForLang(const nsAtom* aLang) {
   
   
   
-  Locale loc(langStr);
+  MozLocale loc(langStr);
   if (!loc.IsWellFormed()) {
     return nullptr;
   }
