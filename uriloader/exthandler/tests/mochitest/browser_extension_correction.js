@@ -44,23 +44,39 @@ async function checkDownloadWithExtensionState(
   task,
   { type, shouldHaveExtension, expectedName = null }
 ) {
-  let winPromise = BrowserTestUtils.domWindowOpenedAndLoaded();
+  const shouldExpectDialog = !SpecialPowers.Services.prefs.getBoolPref(
+    "browser.download.improvements_to_download_panel",
+    false
+  );
+
+  let winPromise;
+  if (shouldExpectDialog) {
+    winPromise = BrowserTestUtils.domWindowOpenedAndLoaded();
+  }
 
   await task();
 
-  info("Waiting for dialog.");
-  let win = await winPromise;
-
-  let actualName = win.document.getElementById("location").value;
-  if (shouldHaveExtension) {
-    expectedName ??= "somefile." + getMIMEInfoForType(type).primaryExtension;
-    is(actualName, expectedName, `${type} should get an extension`);
-  } else {
-    expectedName ??= "somefile";
-    is(actualName, expectedName, `${type} should not get an extension`);
+  let win;
+  if (shouldExpectDialog) {
+    info("Waiting for dialog.");
+    win = await winPromise;
   }
 
-  let closedPromise = BrowserTestUtils.windowClosed(win);
+  expectedName ??= shouldHaveExtension
+    ? "somefile." + getMIMEInfoForType(type).primaryExtension
+    : "somefile";
+
+  let closedPromise = true;
+  if (shouldExpectDialog) {
+    let actualName = win.document.getElementById("location").value;
+    closedPromise = BrowserTestUtils.windowClosed(win);
+
+    if (shouldHaveExtension) {
+      is(actualName, expectedName, `${type} should get an extension`);
+    } else {
+      is(actualName, expectedName, `${type} should not get an extension`);
+    }
+  }
 
   if (shouldHaveExtension) {
     
@@ -68,29 +84,32 @@ async function checkDownloadWithExtensionState(
     let downloadFinishedPromise = promiseDownloadFinished(publicList);
 
     
-    let dialog = win.document.getElementById("unknownContentType");
-    win.document.getElementById("save").click();
-    let button = dialog.getButton("accept");
-    button.disabled = false;
-    dialog.acceptDialog();
+    if (shouldExpectDialog) {
+      let dialog = win.document.getElementById("unknownContentType");
+      win.document.getElementById("save").click();
+      let button = dialog.getButton("accept");
+      button.disabled = false;
+      dialog.acceptDialog();
+    }
 
     
     let download = await downloadFinishedPromise;
     is(
       PathUtils.filename(download.target.path),
       expectedName,
-      `Downloaded file should also match ${expectedName}`
+      `Downloaded file should match ${expectedName}`
     );
     gPathsToRemove.push(download.target.path);
     let pathToRemove = download.target.path;
     
     await publicList.removeFinished();
     await IOUtils.remove(pathToRemove);
-  } else {
+  } else if (win) {
     
     
     win.close();
   }
+
   return closedPromise;
 }
 
