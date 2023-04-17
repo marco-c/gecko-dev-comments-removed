@@ -20,7 +20,7 @@
 #include "frontend/AbstractScopePtr.h"  
 #include "frontend/BytecodeOffset.h"    
 #include "frontend/CompilationStencil.h"  
-#include "frontend/JumpList.h"            
+#include "frontend/JumpList.h"         
 #include "frontend/NameCollections.h"  
 #include "frontend/ObjLiteral.h"       
 #include "frontend/ParseNode.h"        
@@ -129,7 +129,7 @@ struct MOZ_STACK_CLASS GCThingList {
 };
 
 [[nodiscard]] bool EmitScriptThingsVector(
-    JSContext* cx, const CompilationInput& input,
+    JSContext* cx, const CompilationAtomCache& atomCache,
     const CompilationStencil& stencil, CompilationGCOutput& gcOutput,
     mozilla::Span<const TaggedScriptThingIndex> things,
     mozilla::Span<JS::GCCellPtr> output);
