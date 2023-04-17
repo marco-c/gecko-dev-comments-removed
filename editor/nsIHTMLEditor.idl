@@ -160,20 +160,6 @@ interface nsIHTMLEditor : nsISupports
 
 
 
-
-
-
-
-
-
-  void setCaretAfterElement(in Element aElement);
-
-  
-
-
-
-
-
   AString getParagraphState(out boolean aMixed);
 
   
