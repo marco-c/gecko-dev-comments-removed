@@ -50,6 +50,10 @@ enum class CSSPropFlags : uint8_t {
 
   
   IsLogical = 1 << 6,
+
+  
+  
+  ShorthandUnconditionallyExposedOnGetCS = 1 << 7,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(CSSPropFlags)
