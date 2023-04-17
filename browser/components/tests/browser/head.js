@@ -8,6 +8,27 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   TelemetryTestUtils: "resource://testing-common/TelemetryTestUtils.jsm",
 });
 
+const BROWSER_GLUE = Cc["@mozilla.org/browser/browserglue;1"].getService()
+  .wrappedJSObject;
+
+
+
+function waitForDialog(callback = win => win.close()) {
+  return BrowserTestUtils.promiseAlertDialog(
+    null,
+    "chrome://browser/content/upgradeDialog.html",
+    { callback, isSubDialog: true }
+  );
+}
+
+function showAndWaitForDialog(callback) {
+  const promise = waitForDialog(callback);
+  BROWSER_GLUE._showUpgradeDialog();
+  return promise;
+}
+
+
+
 let didMockShell = false;
 function mockShell(overrides = {}) {
   if (!didMockShell) {

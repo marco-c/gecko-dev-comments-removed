@@ -10,6 +10,11 @@ const {
   Services,
 } = window.docShell.chromeEventHandler.ownerGlobal;
 
+
+
+
+const COMPACT_MODE_HEIGHT = 679;
+
 const SHELL = getShellService();
 const IS_DEFAULT = SHELL.isDefaultBrowser();
 const NEED_PIN = SHELL.doesAppNeedPin();
@@ -109,6 +114,7 @@ function onLoad(ready) {
   
   const win7Content = AppConstants.isPlatformAndVersionAtMost("win", "6.1");
 
+  const { body, head } = document;
   const title = document.getElementById("title");
   const subtitle = document.getElementById("subtitle");
   const items = document.querySelector(".items");
@@ -133,12 +139,17 @@ function onLoad(ready) {
         secondary.addEventListener("click", advance);
 
         
+        if (gDoc.ownerGlobal.outerHeight < COMPACT_MODE_HEIGHT) {
+          body.classList.add("compact");
+          recordEvent("show", "compact");
+        }
+
+        
         if (win7Content) {
           steps.style.visibility = "hidden";
 
           
           if (IS_DEFAULT) {
-            const { head } = document;
             head.appendChild(
               head.querySelector("[rel=localization]").cloneNode()
             ).href = "browser/newtab/asrouter.ftl";
@@ -230,7 +241,7 @@ function onLoad(ready) {
 
       
       if (current === 0) {
-        document.body.style.minHeight = getComputedStyle(document.body).height;
+        body.style.minHeight = getComputedStyle(body).height;
 
         
         recordEvent("show", primary.dataset.l10nId);
