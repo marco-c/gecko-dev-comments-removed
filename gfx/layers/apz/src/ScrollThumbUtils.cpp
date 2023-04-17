@@ -13,32 +13,39 @@ namespace mozilla {
 namespace layers {
 namespace apz {
 
-LayerToParentLayerMatrix4x4 ComputeTransformForScrollThumb(
-    const LayerToParentLayerMatrix4x4& aCurrentTransform,
-    const gfx::Matrix4x4& aScrollableContentTransform,
-    AsyncPanZoomController* aApzc, const FrameMetrics& aMetrics,
-    const ScrollbarData& aScrollbarData, bool aScrollbarIsDescendant,
-    AsyncTransformComponentMatrix* aOutClipTransform) {
+struct AsyncScrollThumbTransformer {
+  const LayerToParentLayerMatrix4x4& mCurrentTransform;
+  const gfx::Matrix4x4& mScrollableContentTransform;
+  AsyncPanZoomController* mApzc;
+  const FrameMetrics& mMetrics;
+  const ScrollbarData& mScrollbarData;
+  bool mScrollbarIsDescendant;
+  AsyncTransformComponentMatrix* mOutClipTransform;
+
+  LayerToParentLayerMatrix4x4 ComputeTransform();
+};
+
+LayerToParentLayerMatrix4x4 AsyncScrollThumbTransformer::ComputeTransform() {
   
   
   
   
   
-  if (aMetrics.IsScrollInfoLayer()) {
+  if (mMetrics.IsScrollInfoLayer()) {
     return LayerToParentLayerMatrix4x4{};
   }
 
-  MOZ_RELEASE_ASSERT(aApzc);
+  MOZ_RELEASE_ASSERT(mApzc);
 
   AsyncTransformComponentMatrix asyncTransform =
-      aApzc->GetCurrentAsyncTransform(AsyncPanZoomController::eForCompositing);
+      mApzc->GetCurrentAsyncTransform(AsyncPanZoomController::eForCompositing);
 
   
   
   
   
   AsyncTransformComponentMatrix scrollbarTransform;
-  if (*aScrollbarData.mDirection == ScrollDirection::eVertical) {
+  if (*mScrollbarData.mDirection == ScrollDirection::eVertical) {
     ParentLayerCoord asyncScrollY = asyncTransform._42;
     const float asyncZoomY = asyncTransform._22;
 
@@ -48,7 +55,7 @@ LayerToParentLayerMatrix4x4 ComputeTransformForScrollThumb(
     const float yScale = 1.f / asyncZoomY;
 
     
-    const CSSToParentLayerScale effectiveZoom(aMetrics.GetZoom().yScale *
+    const CSSToParentLayerScale effectiveZoom(mMetrics.GetZoom().yScale *
                                               asyncZoomY);
 
     if (gfxPlatform::UseDesktopZoomingScrollbars()) {
@@ -65,8 +72,8 @@ LayerToParentLayerMatrix4x4 ComputeTransformForScrollThumb(
       
       
 
-      asyncScrollY -= ((aMetrics.GetLayoutScrollOffset() -
-                        aMetrics.GetVisualScrollOffset()) *
+      asyncScrollY -= ((mMetrics.GetLayoutScrollOffset() -
+                        mMetrics.GetVisualScrollOffset()) *
                        effectiveZoom)
                           .y;
     }
@@ -74,8 +81,8 @@ LayerToParentLayerMatrix4x4 ComputeTransformForScrollThumb(
     
     
     
-    const float ratio = aScrollbarData.mThumbRatio /
-                        (aMetrics.GetPresShellResolution() * asyncZoomY);
+    const float ratio = mScrollbarData.mThumbRatio /
+                        (mMetrics.GetPresShellResolution() * asyncZoomY);
     
     
     
@@ -92,7 +99,7 @@ LayerToParentLayerMatrix4x4 ComputeTransformForScrollThumb(
     
     
     
-    const CSSCoord thumbOrigin = (aMetrics.GetVisualScrollOffset().y * ratio);
+    const CSSCoord thumbOrigin = (mMetrics.GetVisualScrollOffset().y * ratio);
     const CSSCoord thumbOriginScaled = thumbOrigin * yScale;
     const CSSCoord thumbOriginDelta = thumbOriginScaled - thumbOrigin;
     const ParentLayerCoord thumbOriginDeltaPL =
@@ -102,7 +109,7 @@ LayerToParentLayerMatrix4x4 ComputeTransformForScrollThumb(
     scrollbarTransform.PostScale(1.f, yScale, 1.f);
     scrollbarTransform.PostTranslate(0, yTranslation, 0);
   }
-  if (*aScrollbarData.mDirection == ScrollDirection::eHorizontal) {
+  if (*mScrollbarData.mDirection == ScrollDirection::eHorizontal) {
     
 
     ParentLayerCoord asyncScrollX = asyncTransform._41;
@@ -110,21 +117,21 @@ LayerToParentLayerMatrix4x4 ComputeTransformForScrollThumb(
 
     const float xScale = 1.f / asyncZoomX;
 
-    const CSSToParentLayerScale effectiveZoom(aMetrics.GetZoom().xScale *
+    const CSSToParentLayerScale effectiveZoom(mMetrics.GetZoom().xScale *
                                               asyncZoomX);
 
     if (gfxPlatform::UseDesktopZoomingScrollbars()) {
-      asyncScrollX -= ((aMetrics.GetLayoutScrollOffset() -
-                        aMetrics.GetVisualScrollOffset()) *
+      asyncScrollX -= ((mMetrics.GetLayoutScrollOffset() -
+                        mMetrics.GetVisualScrollOffset()) *
                        effectiveZoom)
                           .x;
     }
 
-    const float ratio = aScrollbarData.mThumbRatio /
-                        (aMetrics.GetPresShellResolution() * asyncZoomX);
+    const float ratio = mScrollbarData.mThumbRatio /
+                        (mMetrics.GetPresShellResolution() * asyncZoomX);
     ParentLayerCoord xTranslation = -asyncScrollX * ratio;
 
-    const CSSCoord thumbOrigin = (aMetrics.GetVisualScrollOffset().x * ratio);
+    const CSSCoord thumbOrigin = (mMetrics.GetVisualScrollOffset().x * ratio);
     const CSSCoord thumbOriginScaled = thumbOrigin * xScale;
     const CSSCoord thumbOriginDelta = thumbOriginScaled - thumbOrigin;
     const ParentLayerCoord thumbOriginDeltaPL =
@@ -136,7 +143,7 @@ LayerToParentLayerMatrix4x4 ComputeTransformForScrollThumb(
   }
 
   LayerToParentLayerMatrix4x4 transform =
-      aCurrentTransform * scrollbarTransform;
+      mCurrentTransform * scrollbarTransform;
 
   AsyncTransformComponentMatrix compensation;
   
@@ -150,12 +157,12 @@ LayerToParentLayerMatrix4x4 ComputeTransformForScrollThumb(
   
   
   
-  if (aScrollbarIsDescendant) {
+  if (mScrollbarIsDescendant) {
     AsyncTransformComponentMatrix overscroll =
-        aApzc->GetOverscrollTransform(AsyncPanZoomController::eForCompositing);
+        mApzc->GetOverscrollTransform(AsyncPanZoomController::eForCompositing);
     gfx::Matrix4x4 asyncUntransform =
         (asyncTransform * overscroll).Inverse().ToUnknownMatrix();
-    const gfx::Matrix4x4& contentTransform = aScrollableContentTransform;
+    const gfx::Matrix4x4& contentTransform = mScrollableContentTransform;
     gfx::Matrix4x4 contentUntransform = contentTransform.Inverse();
 
     compensation *= ViewAs<AsyncTransformComponentMatrix>(
@@ -163,13 +170,29 @@ LayerToParentLayerMatrix4x4 ComputeTransformForScrollThumb(
 
     
     
-    if (aOutClipTransform) {
-      *aOutClipTransform = compensation;
+    if (mOutClipTransform) {
+      *mOutClipTransform = compensation;
     }
   }
   transform = transform * compensation;
 
   return transform;
+}
+
+LayerToParentLayerMatrix4x4 ComputeTransformForScrollThumb(
+    const LayerToParentLayerMatrix4x4& aCurrentTransform,
+    const gfx::Matrix4x4& aScrollableContentTransform,
+    AsyncPanZoomController* aApzc, const FrameMetrics& aMetrics,
+    const ScrollbarData& aScrollbarData, bool aScrollbarIsDescendant,
+    AsyncTransformComponentMatrix* aOutClipTransform) {
+  return AsyncScrollThumbTransformer{aCurrentTransform,
+                                     aScrollableContentTransform,
+                                     aApzc,
+                                     aMetrics,
+                                     aScrollbarData,
+                                     aScrollbarIsDescendant,
+                                     aOutClipTransform}
+      .ComputeTransform();
 }
 
 }  
