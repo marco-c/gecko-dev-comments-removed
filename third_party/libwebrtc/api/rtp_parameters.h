@@ -284,6 +284,11 @@ struct RTC_EXPORT RtpExtension {
 
   
   
+  static constexpr char kCsrcAudioLevelUri[] =
+      "urn:ietf:params:rtp-hdrext:csrc-audio-level";
+
+  
+  
   static constexpr char kTimestampOffsetUri[] =
       "urn:ietf:params:rtp-hdrext:toffset";
 
@@ -348,8 +353,6 @@ struct RTC_EXPORT RtpExtension {
       "urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id";
   static constexpr char kRepairedRidUri[] =
       "urn:ietf:params:rtp-hdrext:sdes:repaired-rtp-stream-id";
-  static constexpr char kCsrcAudioLevelUri[] =
-      "urn:ietf:params:rtp-hdrext:csrc-audio-level";
 
   
   
