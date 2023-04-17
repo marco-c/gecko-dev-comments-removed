@@ -125,7 +125,9 @@ async function testRealRefresh(refreshPage, delay) {
       );
 
       
-      let buttons = notification.querySelectorAll(".notification-button");
+      let buttons = notification.buttonContainer.querySelectorAll(
+        ".notification-button"
+      );
       is(buttons.length, 1, "Should have one button.");
 
       
