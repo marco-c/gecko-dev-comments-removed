@@ -1497,23 +1497,41 @@ bool ReflowInput::IsInlineSizeComputableByBlockSizeAndAspectRatio(
   return aBlockSize != NS_UNCONSTRAINEDSIZE;
 }
 
-LogicalSize ReflowInput::CalculateAbsoluteSizeWithResolvedAutoBlockSize(
-    nscoord aAutoBSize, bool aNeedsComputeInlineSizeByAspectRatio,
-    const LogicalSize& aTentativeComputedSize) {
-  NS_WARNING_ASSERTION(aAutoBSize != NS_UNCONSTRAINEDSIZE,
-                       "Shouldn't give an unresolved block size");
-  NS_WARNING_ASSERTION(
-      !mFrame->IsFrameOfType(nsIFrame::eReplaced),
-      "Replaced element shouldn't have unconstrained block size");
 
+
+LogicalSize ReflowInput::CalculateAbsoluteSizeWithResolvedAutoBlockSize(
+    nscoord aAutoBSize, const LogicalSize& aTentativeComputedSize) {
   LogicalSize resultSize = aTentativeComputedSize;
   WritingMode wm = GetWritingMode();
 
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const bool bSizeBehavesAsInitial =
+      mStylePosition->BSize(wm).BehavesLikeInitialValueOnBlockAxis();
+  const bool bSizeIsStillUnconstrained =
+      bSizeBehavesAsInitial && resultSize.BSize(wm) == NS_UNCONSTRAINEDSIZE;
+  const bool needsComputeInlineSizeByAspectRatio =
+      bSizeBehavesAsInitial &&
+      IsInlineSizeComputableByBlockSizeAndAspectRatio(aAutoBSize);
+  if (!bSizeIsStillUnconstrained && !needsComputeInlineSizeByAspectRatio) {
+    return resultSize;
+  }
+
+  
+  
   resultSize.BSize(wm) = ApplyMinMaxBSize(aAutoBSize);
 
-  if (!aNeedsComputeInlineSizeByAspectRatio) {
+  if (!needsComputeInlineSizeByAspectRatio) {
     return resultSize;
   }
 
@@ -1763,19 +1781,11 @@ void ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
         autoISize = 0;
       }
 
-      
-      
       nscoord autoBSizeInWM = autoISize;
-      bool needsComputeInlineSizeByAspectRatio =
-          IsInlineSizeComputableByBlockSizeAndAspectRatio(autoBSizeInWM);
-      if (computedSize.ISize(cbwm) == NS_UNCONSTRAINEDSIZE ||
-          needsComputeInlineSizeByAspectRatio) {
-        LogicalSize computedSizeInWM =
-            CalculateAbsoluteSizeWithResolvedAutoBlockSize(
-                autoBSizeInWM, needsComputeInlineSizeByAspectRatio,
-                computedSize.ConvertTo(wm, cbwm));
-        computedSize = computedSizeInWM.ConvertTo(cbwm, wm);
-      }
+      LogicalSize computedSizeInWM =
+          CalculateAbsoluteSizeWithResolvedAutoBlockSize(
+              autoBSizeInWM, computedSize.ConvertTo(wm, cbwm));
+      computedSize = computedSizeInWM.ConvertTo(cbwm, wm);
     }
 
     
@@ -1826,26 +1836,12 @@ void ReflowInput::InitAbsoluteConstraints(nsPresContext* aPresContext,
     
     
     
-    
-    
-    
-    
-    bool needsComputeInlineSizeByAspectRatio =
-        !wm.IsOrthogonalTo(cbwm) &&
-        IsInlineSizeComputableByBlockSizeAndAspectRatio(autoBSize);
-    
-    
-    
-    
-    
-    if (computedSize.BSize(cbwm) == NS_UNCONSTRAINEDSIZE ||
-        needsComputeInlineSizeByAspectRatio) {
+    if (!wm.IsOrthogonalTo(cbwm)) {
       
       
       LogicalSize computedSizeInWM =
           CalculateAbsoluteSizeWithResolvedAutoBlockSize(
-              autoBSize, needsComputeInlineSizeByAspectRatio,
-              computedSize.ConvertTo(wm, cbwm));
+              autoBSize, computedSize.ConvertTo(wm, cbwm));
       computedSize = computedSizeInWM.ConvertTo(cbwm, wm);
     }
 
