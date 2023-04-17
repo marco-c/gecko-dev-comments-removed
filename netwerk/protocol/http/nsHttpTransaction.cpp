@@ -610,7 +610,7 @@ void nsHttpTransaction::OnActivated() {
     
     
     
-    Unused << mRequestHead->SetHeader(nsHttp::TE, "Trailers"_ns);
+    Unused << mRequestHead->SetHeader(nsHttp::TE, "trailers"_ns);
   }
 
   mActivated = true;
