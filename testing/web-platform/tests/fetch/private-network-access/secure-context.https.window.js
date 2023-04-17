@@ -6,51 +6,95 @@
 
 
 
-
 setup(() => {
   
   assert_true(window.isSecureContext);
 });
 
-promise_test(async t => {
-  const response = await fetch("/common/blank.html")
-  assert_true(response.ok);
-}, "Local secure context fetches local subresource.");
 
 
 
-promise_test(async t => {
-  const url = "resources/fetcher.html" +
-      "?pipe=header(Content-Security-Policy,treat-as-public-address)";
-  const iframe = await appendIframe(t, document, url);
+promise_test(t => fetchTest(t, {
+  source: { port: kPorts.httpsLocal },
+  target: { port: kPorts.httpsLocal },
+  expected: kFetchTestResult.success,
+}), "Local secure context can fetch local subresource.");
 
-  const reply = futureMessage();
-  iframe.contentWindow.postMessage("/common/blank-with-cors.html", "*");
-  assert_equals(await reply, true);
-}, "Treat-as-public secure context fetches local subresource.");
+promise_test(t => fetchTest(t, {
+  source: { port: kPorts.httpsLocal },
+  target: { port: kPorts.httpsPrivate },
+  expected: kFetchTestResult.success,
+}), "Local secure context can fetch private subresource.");
 
-promise_test(async t => {
-  const url = resolveUrl("resources/fetcher.html", {
-    protocol: "https:",
-    port: kPorts.httpsPrivate,
-  });
-  const iframe = await appendIframe(t, document, url);
+promise_test(t => fetchTest(t, {
+  source: { port: kPorts.httpsLocal },
+  target: { port: kPorts.httpsPublic },
+  expected: kFetchTestResult.success,
+}), "Local secure context can fetch public subresource.");
 
-  const targetUrl = resolveUrl("/common/blank-with-cors.html");
-  const reply = futureMessage();
-  iframe.contentWindow.postMessage(targetUrl.href, "*");
-  assert_equals(await reply, true);
-}, "Private secure context can fetch local subresource.");
+promise_test(t => fetchTest(t, {
+  source: { port: kPorts.httpsPrivate },
+  target: { port: kPorts.httpsLocal },
+  expected: kFetchTestResult.success,
+}), "Private secure context can fetch local subresource.");
 
-promise_test(async t => {
-  const url = resolveUrl("resources/fetcher.html", {
-    protocol: "https:",
-    port: kPorts.httpsPublic,
-  });
-  const iframe = await appendIframe(t, document, url);
+promise_test(t => fetchTest(t, {
+  source: { port: kPorts.httpsPrivate },
+  target: { port: kPorts.httpsPrivate },
+  expected: kFetchTestResult.success,
+}), "Private secure context can fetch private subresource.");
 
-  const targetUrl = resolveUrl("/common/blank-with-cors.html");
-  const reply = futureMessage();
-  iframe.contentWindow.postMessage(targetUrl.href, "*");
-  assert_equals(await reply, true);
-}, "Public secure context can fetch local subresource.");
+promise_test(t => fetchTest(t, {
+  source: { port: kPorts.httpsPrivate },
+  target: { port: kPorts.httpsPublic },
+  expected: kFetchTestResult.success,
+}), "Private secure context can fetch public subresource.");
+
+promise_test(t => fetchTest(t, {
+  source: { port: kPorts.httpsPublic },
+  target: { port: kPorts.httpsLocal },
+  expected: kFetchTestResult.success,
+}), "Public secure context can fetch local subresource.");
+
+promise_test(t => fetchTest(t, {
+  source: { port: kPorts.httpsPublic },
+  target: { port: kPorts.httpsPrivate },
+  expected: kFetchTestResult.success,
+}), "Public secure context can fetch private subresource.");
+
+promise_test(t => fetchTest(t, {
+  source: { port: kPorts.httpsPublic },
+  target: { port: kPorts.httpsPublic },
+  expected: kFetchTestResult.success,
+}), "Public secure context can fetch public subresource.");
+
+
+
+
+
+promise_test(t => fetchTest(t, {
+  source: {
+    port: kPorts.httpsLocal,
+    treatAsPublicAddress: true,
+  },
+  target: { port: kPorts.httpsLocal },
+  expected: kFetchTestResult.success,
+}), "Treat-as-public-address secure context can fetch local subresource.");
+
+promise_test(t => fetchTest(t, {
+  source: {
+    port: kPorts.httpsLocal,
+    treatAsPublicAddress: true,
+  },
+  target: { port: kPorts.httpsPrivate },
+  expected: kFetchTestResult.success,
+}), "Treat-as-public-address secure context can fetch private subresource.");
+
+promise_test(t => fetchTest(t, {
+  source: {
+    port: kPorts.httpsLocal,
+    treatAsPublicAddress: true,
+  },
+  target: { port: kPorts.httpsPublic },
+  expected: kFetchTestResult.success,
+}), "Treat-as-public-address secure context can fetch public subresource.");

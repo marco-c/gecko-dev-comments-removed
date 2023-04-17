@@ -6,81 +6,136 @@
 
 
 
-
 setup(() => {
   
   assert_false(window.isSecureContext);
 });
 
-promise_test(async t => {
-  const response = await fetch("/common/blank-with-cors.html");
-  assert_true(response.ok);
-}, "Local non secure context fetches local subresource.");
+
+
+
+promise_test(t => fetchTest(t, {
+  source: { port: kPorts.httpLocal },
+  target: { port: kPorts.httpLocal },
+  expected: kFetchTestResult.success,
+}), "Local non-secure context can fetch local subresource.");
+
+promise_test(t => fetchTest(t, {
+  source: { port: kPorts.httpLocal },
+  target: { port: kPorts.httpPrivate },
+  expected: kFetchTestResult.success,
+}), "Local non-secure context can fetch private subresource.");
+
+promise_test(t => fetchTest(t, {
+  source: { port: kPorts.httpLocal },
+  target: { port: kPorts.httpPublic },
+  expected: kFetchTestResult.success,
+}), "Local non-secure context can fetch public subresource.");
+
+promise_test(t => fetchTest(t, {
+  source: { port: kPorts.httpPrivate },
+  target: { port: kPorts.httpLocal },
+  expected: kFetchTestResult.failure,
+}), "Private non-secure context cannot fetch local subresource.");
+
+promise_test(t => fetchTest(t, {
+  source: { port: kPorts.httpPrivate },
+  target: { port: kPorts.httpPrivate },
+  expected: kFetchTestResult.success,
+}), "Private non-secure context can fetch private subresource.");
+
+promise_test(t => fetchTest(t, {
+  source: { port: kPorts.httpPrivate },
+  target: { port: kPorts.httpPublic },
+  expected: kFetchTestResult.success,
+}), "Private non-secure context can fetch public subresource.");
+
+promise_test(t => fetchTest(t, {
+  source: { port: kPorts.httpPublic },
+  target: { port: kPorts.httpLocal },
+  expected: kFetchTestResult.failure,
+}), "Public non-secure context cannot fetch local subresource.");
+
+promise_test(t => fetchTest(t, {
+  source: { port: kPorts.httpPublic },
+  target: { port: kPorts.httpPrivate },
+  expected: kFetchTestResult.failure,
+}), "Public non-secure context cannot fetch private subresource.");
+
+promise_test(t => fetchTest(t, {
+  source: { port: kPorts.httpPublic },
+  target: { port: kPorts.httpPublic },
+  expected: kFetchTestResult.success,
+}), "Public non-secure context can fetch public subresource.");
+
+
+
+
+
+promise_test(t => fetchTest(t, {
+  source: {
+    port: kPorts.httpLocal,
+    treatAsPublicAddress: true,
+  },
+  target: { port: kPorts.httpLocal },
+  expected: kFetchTestResult.failure,
+}), "Treat-as-public-address non-secure context cannot fetch local subresource.");
+
+promise_test(t => fetchTest(t, {
+  source: {
+    port: kPorts.httpLocal,
+    treatAsPublicAddress: true,
+  },
+  target: { port: kPorts.httpPrivate },
+  expected: kFetchTestResult.failure,
+}), "Treat-as-public-address non-secure context cannot fetch private subresource.");
+
+promise_test(t => fetchTest(t, {
+  source: {
+    port: kPorts.httpLocal,
+    treatAsPublicAddress: true,
+  },
+  target: { port: kPorts.httpPublic },
+  expected: kFetchTestResult.success,
+}), "Treat-as-public-address non-secure context can fetch public subresource.");
 
 
 
 
 
 
-
-promise_test(async t => {
-  const url = "resources/fetcher.html" +
-      "?pipe=header(Content-Security-Policy,treat-as-public-address)";
-  const iframe = await appendIframe(t, document, url);
-
-  const reply = futureMessage();
-  iframe.contentWindow.postMessage("/common/blank-with-cors.html", "*");
-  assert_equals(await reply, "TypeError: Failed to fetch");
-}, "Treat-as-public non secure context fails to fetch local subresource.");
-
-promise_test(async t => {
-  const url = resolveUrl("resources/fetcher.html", {
-    protocol: "http:",
-    port: kPorts.httpPrivate,
-  });
-  const iframe = await appendIframe(t, document, url);
-
-  const targetUrl = resolveUrl("/common/blank-with-cors.html");
-  const reply = futureMessage();
-  iframe.contentWindow.postMessage(targetUrl.href, "*");
-  assert_equals(await reply, "TypeError: Failed to fetch");
-}, "Private non secure context fails to fetch local subresource.");
-
-promise_test(async t => {
-  const url = resolveUrl("resources/fetcher.html", {
-    protocol: "http:",
-    port: kPorts.httpPublic,
-  });
-  const iframe = await appendIframe(t, document, url);
-
-  const targetUrl = resolveUrl("/common/blank-with-cors.html");
-  const reply = futureMessage();
-  iframe.contentWindow.postMessage(targetUrl.href, "*");
-  assert_equals(await reply, "TypeError: Failed to fetch");
-}, "Public non secure context fails to fetch local subresource.");
-
-promise_test(async t => {
-  const url = resolveUrl("resources/fetcher.html", {
+promise_test(t => fetchTest(t, {
+  source: {
     protocol: "https:",
     port: kPorts.httpsPrivate,
-  });
-  const iframe = await appendIframe(t, document, url);
+  },
+  target: {
+    protocol: "https:",
+    port: kPorts.httpsLocal,
+  },
+  expected: kFetchTestResult.failure,
+}), "Private HTTPS non-secure context cannot fetch local subresource.");
 
-  const targetUrl = resolveUrl("/common/blank-with-cors.html");
-  const reply = futureMessage();
-  iframe.contentWindow.postMessage(targetUrl.href, "*");
-  assert_equals(await reply, "TypeError: Failed to fetch");
-}, "Private HTTPS yet non-secure context fails to fetch local subresource.");
-
-promise_test(async t => {
-  const url = resolveUrl("resources/fetcher.html", {
+promise_test(t => fetchTest(t, {
+  source: {
     protocol: "https:",
     port: kPorts.httpsPublic,
-  });
-  const iframe = await appendIframe(t, document, url);
+  },
+  target: {
+    protocol: "https:",
+    port: kPorts.httpsLocal,
+  },
+  expected: kFetchTestResult.failure,
+}), "Public HTTPS non-secure context cannot fetch local subresource.");
 
-  const targetUrl = resolveUrl("/common/blank-with-cors.html");
-  const reply = futureMessage();
-  iframe.contentWindow.postMessage(targetUrl.href, "*");
-  assert_equals(await reply, "TypeError: Failed to fetch");
-}, "Public HTTPS yet non-secure context fails to fetch local subresource.");
+promise_test(t => fetchTest(t, {
+  source: {
+    protocol: "https:",
+    port: kPorts.httpsPublic,
+  },
+  target: {
+    protocol: "https:",
+    port: kPorts.httpsPrivate,
+  },
+  expected: kFetchTestResult.failure,
+}), "Public HTTPS non-secure context cannot fetch private subresource.");
