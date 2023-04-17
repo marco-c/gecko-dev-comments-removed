@@ -171,22 +171,20 @@ Result<nsIFileKind, nsresult> GetDirEntryKind(nsIFile& aFile) {
   
   
   
-  QM_TRY_RETURN(QM_OR_ELSE_LOG(
+  
+  QM_TRY_RETURN(QM_OR_ELSE_LOG_IF(
       MOZ_TO_RESULT_INVOKE(aFile, IsDirectory).map([](const bool isDirectory) {
         return isDirectory ? nsIFileKind::ExistsAsDirectory
                            : nsIFileKind::ExistsAsFile;
       }),
-      ([](const nsresult rv) -> Result<nsIFileKind, nsresult> {
-        if (rv == NS_ERROR_FILE_NOT_FOUND ||
-            rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST ||
-            
-            
-            rv == NS_ERROR_FILE_FS_CORRUPTED) {
-          return nsIFileKind::DoesNotExist;
-        }
-
-        return Err(rv);
-      })));
+      ([](const nsresult rv) {
+        return rv == NS_ERROR_FILE_NOT_FOUND ||
+               rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST ||
+               
+               
+               rv == NS_ERROR_FILE_FS_CORRUPTED;
+      }),
+      ErrToOk<nsIFileKind::DoesNotExist>));
 }
 
 Result<nsCOMPtr<mozIStorageStatement>, nsresult> CreateStatement(
