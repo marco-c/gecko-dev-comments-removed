@@ -421,6 +421,9 @@ class Preferences final : public nsIPrefService,
   nsresult SavePrefFileBlocking();
   nsresult SavePrefFileAsynchronous();
 
+  
+  bool AllowOffMainThreadSave();
+
  private:
   virtual ~Preferences();
 
@@ -441,9 +444,6 @@ class Preferences final : public nsIPrefService,
   
   nsresult SavePrefFileInternal(nsIFile* aFile, SaveMethod aSaveMethod);
   nsresult WritePrefFile(nsIFile* aFile, SaveMethod aSaveMethod);
-
-  
-  bool AllowOffMainThreadSave();
 
   
   
