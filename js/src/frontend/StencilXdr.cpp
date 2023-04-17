@@ -808,9 +808,25 @@ template <XDRMode mode>
 
     MOZ_TRY(CodeMarker(xdr, SectionMarker::ModuleMetadata));
     MOZ_TRY(codeModuleMetadata(xdr, *stencil.moduleMetadata));
+
+    
+    MOZ_TRY(xdr->align32());
   }
 
   MOZ_TRY(CodeMarker(xdr, SectionMarker::End));
+
+  
+  
+  
+  
+  
+  
+  
+  static_assert(sizeof(ScriptStencil) % 4 == 0,
+                "size of ScriptStencil should be aligned");
+  static_assert(sizeof(ScriptStencilExtra) % 4 == 0,
+                "size of ScriptStencilExtra should be aligned");
+  MOZ_RELEASE_ASSERT(xdr->isAligned32());
 
   return Ok();
 }
