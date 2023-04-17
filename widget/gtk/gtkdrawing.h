@@ -306,8 +306,6 @@ enum WidgetNodeType : int {
   
   MOZ_GTK_WINDOW_CONTAINER,
   
-  MOZ_GTK_INFO_BAR,
-  
   MOZ_GTK_COMBOBOX,
   
   MOZ_GTK_COMBOBOX_BUTTON,
