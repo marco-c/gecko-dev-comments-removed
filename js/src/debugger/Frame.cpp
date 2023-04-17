@@ -73,13 +73,12 @@
 #include "wasm/WasmJS.h"                   
 #include "wasm/WasmTypes.h"                
 
-#include "debugger/Debugger-inl.h"  
-#include "gc/WeakMap-inl.h"         
-#include "vm/Compartment-inl.h"     
-#include "vm/JSContext-inl.h"       
-#include "vm/JSObject-inl.h"        
-#include "vm/JSScript-inl.h"        
-#include "vm/NativeObject-inl.h"    
+#include "debugger/Debugger-inl.h"    
+#include "gc/WeakMap-inl.h"           
+#include "vm/Compartment-inl.h"       
+#include "vm/JSContext-inl.h"         
+#include "vm/JSObject-inl.h"          
+#include "vm/NativeObject-inl.h"      
 #include "vm/ObjectOperations-inl.h"  
 #include "vm/Realm-inl.h"             
 #include "vm/Stack-inl.h"             
@@ -1613,12 +1612,6 @@ static bool DebuggerArguments_getArg(JSContext* cx, unsigned argc, Value* vp) {
   RootedScript script(cx);
   if (unsigned(i) < frame.numActualArgs()) {
     script = frame.script();
-    {
-      AutoRealm ar(cx, script);
-      if (!script->ensureHasAnalyzedArgsUsage(cx)) {
-        return false;
-      }
-    }
     if (unsigned(i) < frame.numFormalArgs()) {
       for (PositionalFormalParameterIter fi(script); fi; fi++) {
         if (fi.argumentSlot() == unsigned(i)) {

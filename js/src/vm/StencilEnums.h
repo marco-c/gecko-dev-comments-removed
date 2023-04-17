@@ -274,7 +274,7 @@ enum class MutableScriptFlagsEnum : uint32_t {
   HasDebugScript = 1 << 11,
 
   
-  NeedsArgsAnalysis = 1 << 12,
+  
   NeedsArgsObj = 1 << 13,
 
   

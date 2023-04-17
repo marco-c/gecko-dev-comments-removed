@@ -1516,15 +1516,8 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
     MOZ_ASSERT(extent_.sourceStart <= extent_.sourceEnd);
     MOZ_ASSERT(extent_.sourceEnd <= extent_.toStringEnd);
 
-    
-    
-    
-    
     if (argumentsHasVarBinding()) {
-      setFlag(MutableFlags::NeedsArgsObj, alwaysNeedsArgsObj());
-      setFlag(MutableFlags::NeedsArgsAnalysis, !alwaysNeedsArgsObj());
-    } else {
-      MOZ_ASSERT(!alwaysNeedsArgsObj());
+      setFlag(MutableFlags::NeedsArgsObj, true);
     }
   }
 
@@ -1657,7 +1650,6 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
   MUTABLE_FLAG_GETTER_SETTER(hasRunOnce, HasRunOnce)
   MUTABLE_FLAG_GETTER_SETTER(hasScriptCounts, HasScriptCounts)
   MUTABLE_FLAG_GETTER_SETTER(hasDebugScript, HasDebugScript)
-  MUTABLE_FLAG_GETTER_SETTER(needsArgsAnalysis, NeedsArgsAnalysis)
   
   MUTABLE_FLAG_GETTER_SETTER(allowRelazify, AllowRelazify)
   MUTABLE_FLAG_GETTER_SETTER(spewEnabled, SpewEnabled)
@@ -2027,22 +2019,7 @@ class JSScript : public js::BaseScript {
     return argumentsHasVarBinding() && hasMappedArgsObj();
   }
 
-  
-
-
-
-
-
-
-
-
-
-  inline bool ensureHasAnalyzedArgsUsage(JSContext* cx);
-  bool needsArgsObj() const {
-    MOZ_ASSERT(!needsArgsAnalysis());
-    return hasFlag(MutableFlags::NeedsArgsObj);
-  }
-  void setNeedsArgsObj(bool needsArgsObj);
+  bool needsArgsObj() const { return hasFlag(MutableFlags::NeedsArgsObj); }
   static void argumentsOptimizationFailed(JSContext* cx,
                                           js::HandleScript script);
 

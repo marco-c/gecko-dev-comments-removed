@@ -66,17 +66,6 @@ bool JSScript::createJitScript(JSContext* cx) {
   gc::AutoSuppressGC suppressGC(cx);
 
   
-  
-  if (!ensureHasAnalyzedArgsUsage(cx)) {
-    return false;
-  }
-
-  
-  if (hasJitScript()) {
-    return true;
-  }
-
-  
   const char* profileString = nullptr;
   if (cx->runtime()->geckoProfiler().enabled()) {
     profileString = cx->runtime()->geckoProfiler().profileString(cx, this);
