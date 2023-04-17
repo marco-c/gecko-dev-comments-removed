@@ -407,6 +407,8 @@ var UrlbarTestUtils = {
       win
     );
     await openPromise;
+    
+    await new Promise(win.requestAnimationFrame);
     try {
       await task(cxmenu);
     } finally {
