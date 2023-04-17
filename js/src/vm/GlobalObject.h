@@ -78,6 +78,9 @@ class GlobalObjectData {
   
   HeapPtr<NativeObject*> forOfPICChain;
 
+  
+  bool globalThisResolved = false;
+
   void trace(JSTracer* trc);
 };
 
@@ -144,7 +147,6 @@ class GlobalObject : public NativeObject {
     REQUESTED_MODULE_PROTO,
     MODULE_REQUEST_PROTO,
     WINDOW_PROXY,
-    GLOBAL_THIS_RESOLVED,
     SOURCE_URLS,
     REALM_KEY_OBJECT,
     ARRAY_SHAPE,
