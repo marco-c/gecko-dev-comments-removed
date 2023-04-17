@@ -81,10 +81,12 @@ static void MarkFramesWithItemsAndImagesModified(nsDisplayList* aList) {
       
       
       
-      
+      DisplayItemData* data = FrameLayerBuilder::GetOldDataFor(i);
       
       bool invalidate = false;
-      if (!(i->GetFlags() & TYPE_RENDERS_NO_IMAGES)) {
+      if (data && data->GetGeometry()) {
+        invalidate = data->GetGeometry()->InvalidateForSyncDecodeImages();
+      } else if (!(i->GetFlags() & TYPE_RENDERS_NO_IMAGES)) {
         invalidate = true;
       }
 

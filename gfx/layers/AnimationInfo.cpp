@@ -155,6 +155,12 @@ Maybe<uint64_t> AnimationInfo::GetGenerationFromFrame(
   MOZ_ASSERT(aFrame->IsPrimaryFrame() ||
              nsLayoutUtils::IsFirstContinuationOrIBSplitSibling(aFrame));
 
+  layers::Layer* layer =
+      FrameLayerBuilder::GetDedicatedLayer(aFrame, aDisplayItemKey);
+  if (layer) {
+    return layer->GetAnimationInfo().GetAnimationGeneration();
+  }
+
   
   
   
@@ -225,6 +231,8 @@ void AnimationInfo::EnumerateGenerationOnFrame(
     }
     return;
   }
+
+  FrameLayerBuilder::EnumerateGenerationForDedicatedLayers(aFrame, aCallback);
 }
 
 static StyleTransformOperation ResolveTranslate(

@@ -75,6 +75,7 @@ enum class PseudoStyleType : uint8_t;
 class EventListenerManager;
 enum class LayoutFrameType : uint8_t;
 struct IntrinsicSize;
+struct ContainerLayerParameters;
 class ReflowOutput;
 class WritingMode;
 class DisplayItemClip;
@@ -145,6 +146,7 @@ class nsLayoutUtils {
   typedef mozilla::dom::DOMRectList DOMRectList;
   typedef mozilla::layers::Layer Layer;
   typedef mozilla::layers::StackingContextHelper StackingContextHelper;
+  typedef mozilla::ContainerLayerParameters ContainerLayerParameters;
   typedef mozilla::IntrinsicSize IntrinsicSize;
   typedef mozilla::RelativeTo RelativeTo;
   typedef mozilla::ScrollOrigin ScrollOrigin;
@@ -549,6 +551,22 @@ class nsLayoutUtils {
   static bool IsAncestorFrameCrossDocInProcess(
       const nsIFrame* aAncestorFrame, const nsIFrame* aFrame,
       const nsIFrame* aCommonAncestor = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
+  static void SetFixedPositionLayerData(
+      Layer* aLayer, const nsIFrame* aViewportFrame, const nsRect& aAnchorRect,
+      const nsIFrame* aFixedPosFrame, nsPresContext* aPresContext,
+      const ContainerLayerParameters& aContainerParameters);
 
   static mozilla::SideBits GetSideBitsAndAdjustAnchorForFixedPositionContent(
       const nsIFrame* aViewportFrame, const nsIFrame* aFixedPosFrame,
@@ -2762,7 +2780,8 @@ class nsLayoutUtils {
       nsIContent* aContent, const nsIFrame* aReferenceFrame,
       mozilla::layers::LayerManager* aLayerManager, ViewID aScrollParentId,
       const nsSize& aScrollPortSize, const mozilla::Maybe<nsRect>& aClipRect,
-      bool aIsRoot);
+      bool aIsRoot,
+      const mozilla::Maybe<ContainerLayerParameters>& aContainerParameters);
 
   
 
@@ -2772,6 +2791,7 @@ class nsLayoutUtils {
   static mozilla::Maybe<ScrollMetadata> GetRootMetadata(
       nsDisplayListBuilder* aBuilder,
       mozilla::layers::LayerManager* aLayerManager,
+      const ContainerLayerParameters& aContainerParameters,
       const std::function<bool(ViewID& aScrollId)>& aCallback);
 
   

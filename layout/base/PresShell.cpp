@@ -69,6 +69,7 @@
 #include "nsNameSpaceManager.h"  
 #include "nsFlexContainerFrame.h"
 #include "nsIFrame.h"
+#include "FrameLayerBuilder.h"
 #include "nsViewManager.h"
 #include "nsView.h"
 #include "nsCRTGlue.h"
@@ -5448,6 +5449,15 @@ void PresShell::SetRestoreResolution(float aResolution,
 }
 
 void PresShell::SetRenderingState(const RenderingState& aState) {
+  if (mRenderingStateFlags != aState.mRenderingStateFlags) {
+    
+    
+    WindowRenderer* renderer = GetWindowRenderer();
+    if (renderer && renderer->AsLayerManager()) {
+      FrameLayerBuilder::InvalidateAllLayers(renderer->AsLayerManager());
+    }
+  }
+
   if (GetResolution() != aState.mResolution.valueOr(1.f)) {
     if (nsIFrame* frame = GetRootFrame()) {
       frame->SchedulePaint();

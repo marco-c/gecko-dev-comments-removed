@@ -80,6 +80,7 @@
 #include "nsNameSpaceManager.h"
 #include "nsIPercentBSizeObserver.h"
 #include "nsStyleStructInlines.h"
+#include "FrameLayerBuilder.h"
 #include "ImageLayers.h"
 
 #include "nsBidiPresUtils.h"
@@ -1045,6 +1046,8 @@ void nsIFrame::RemoveDisplayItemDataForDeletion() {
     }
     delete userDataTable;
   }
+
+  FrameLayerBuilder::RemoveFrameFromLayerManager(this);
 
   for (nsDisplayItem* i : DisplayItems()) {
     if (i->GetDependentFrame() == this && !i->HasDeletedFrame()) {
@@ -7275,20 +7278,11 @@ void nsIFrame::ClearInvalidationStateBits() {
                   NS_FRAME_ALL_DESCENDANTS_NEED_PAINT);
 }
 
-bool HasRetainedDataFor(const nsIFrame* aFrame, uint32_t aDisplayItemKey) {
-  if (RefPtr<WebRenderUserData> data =
-          GetWebRenderUserData<WebRenderFallbackData>(aFrame,
-                                                      aDisplayItemKey)) {
-    return true;
-  }
-
-  return false;
-}
-
 void nsIFrame::InvalidateFrame(uint32_t aDisplayItemKey,
                                bool aRebuildDisplayItems ) {
   bool hasDisplayItem =
-      !aDisplayItemKey || HasRetainedDataFor(this, aDisplayItemKey);
+      !aDisplayItemKey ||
+      FrameLayerBuilder::HasRetainedDataFor(this, aDisplayItemKey);
   InvalidateFrameInternal(this, hasDisplayItem, aRebuildDisplayItems);
 }
 
@@ -7299,7 +7293,8 @@ void nsIFrame::InvalidateFrameWithRect(const nsRect& aRect,
     return;
   }
   bool hasDisplayItem =
-      !aDisplayItemKey || HasRetainedDataFor(this, aDisplayItemKey);
+      !aDisplayItemKey ||
+      FrameLayerBuilder::HasRetainedDataFor(this, aDisplayItemKey);
   bool alreadyInvalid = false;
   if (!HasAnyStateBits(NS_FRAME_NEEDS_PAINT)) {
     InvalidateFrameInternal(this, hasDisplayItem, aRebuildDisplayItems);
@@ -7330,7 +7325,94 @@ void nsIFrame::InvalidateFrameWithRect(const nsRect& aRect,
 
 uint8_t nsIFrame::sLayerIsPrerenderedDataKey;
 
-bool nsIFrame::TryUpdateTransformOnly(Layer** aLayerResult) { return false; }
+static bool DoesLayerHaveOutOfDateFrameMetrics(Layer* aLayer) {
+  for (uint32_t i = 0; i < aLayer->GetScrollMetadataCount(); i++) {
+    const FrameMetrics& metrics = aLayer->GetFrameMetrics(i);
+    if (!metrics.IsScrollable()) {
+      continue;
+    }
+    nsIScrollableFrame* scrollableFrame =
+        nsLayoutUtils::FindScrollableFrameFor(metrics.GetScrollId());
+    if (!scrollableFrame) {
+      
+      
+      return true;
+    }
+    nsPoint scrollPosition = scrollableFrame->GetScrollPosition();
+    if (metrics.GetLayoutScrollOffset() !=
+        CSSPoint::FromAppUnits(scrollPosition)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static bool DoesLayerOrAncestorsHaveOutOfDateFrameMetrics(Layer* aLayer) {
+  for (Layer* layer = aLayer; layer; layer = layer->GetParent()) {
+    if (DoesLayerHaveOutOfDateFrameMetrics(layer)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool nsIFrame::TryUpdateTransformOnly(Layer** aLayerResult) {
+  
+  
+  
+  
+  
+  
+  if (nsLayoutUtils::AreRetainedDisplayListsEnabled()) {
+    return false;
+  }
+
+  Layer* layer = FrameLayerBuilder::GetDedicatedLayer(
+      this, DisplayItemType::TYPE_TRANSFORM);
+  if (!layer || !layer->HasUserData(LayerIsPrerenderedDataKey())) {
+    
+    
+    
+    return false;
+  }
+
+  if (DoesLayerOrAncestorsHaveOutOfDateFrameMetrics(layer)) {
+    
+    
+    
+    
+    return false;
+  }
+
+  gfx::Matrix4x4Flagged transform3d;
+  if (!nsLayoutUtils::GetLayerTransformForFrame(this, &transform3d)) {
+    
+    
+    
+    return false;
+  }
+  gfx::Matrix transform;
+  gfx::Matrix previousTransform;
+  
+  
+  
+  
+  
+  
+  
+  static const gfx::Float kError = 0.0001f;
+  if (!transform3d.Is2D(&transform) ||
+      !layer->GetBaseTransform().Is2D(&previousTransform) ||
+      !gfx::FuzzyEqual(transform._11, previousTransform._11, kError) ||
+      !gfx::FuzzyEqual(transform._22, previousTransform._22, kError) ||
+      !gfx::FuzzyEqual(transform._21, previousTransform._21, kError) ||
+      !gfx::FuzzyEqual(transform._12, previousTransform._12, kError)) {
+    return false;
+  }
+  layer->SetBaseTransformForNextTransaction(transform3d.GetMatrix());
+  *aLayerResult = layer;
+  return true;
+}
 
 bool nsIFrame::IsInvalid(nsRect& aRect) {
   if (!HasAnyStateBits(NS_FRAME_NEEDS_PAINT)) {
@@ -7365,6 +7447,8 @@ Layer* nsIFrame::InvalidateLayer(DisplayItemType aDisplayItemKey,
                                  uint32_t aFlags ) {
   NS_ASSERTION(aDisplayItemKey > DisplayItemType::TYPE_ZERO, "Need a key");
 
+  Layer* layer = FrameLayerBuilder::GetDedicatedLayer(this, aDisplayItemKey);
+
   nsIFrame* displayRoot = nsLayoutUtils::GetDisplayRootFrame(this);
   InvalidateRenderingObservers(displayRoot, this, false);
 
@@ -7375,27 +7459,48 @@ Layer* nsIFrame::InvalidateLayer(DisplayItemType aDisplayItemKey,
     return nullptr;
   }
 
-  if (aFrameDamageRect && aFrameDamageRect->IsEmpty()) {
+  
+  
+  if ((aFlags & UPDATE_IS_ASYNC) && layer && layer->SupportsAsyncUpdate()) {
+    return layer;
+  }
+
+  if (!layer) {
+    if (aFrameDamageRect && aFrameDamageRect->IsEmpty()) {
+      return nullptr;
+    }
+
+    
+    
+    
+    
+    DisplayItemType displayItemKey = aDisplayItemKey;
+    if (aDisplayItemKey == DisplayItemType::TYPE_REMOTE) {
+      displayItemKey = DisplayItemType::TYPE_ZERO;
+    }
+
+    if (aFrameDamageRect) {
+      InvalidateFrameWithRect(*aFrameDamageRect,
+                              static_cast<uint32_t>(displayItemKey));
+    } else {
+      InvalidateFrame(static_cast<uint32_t>(displayItemKey));
+    }
+
     return nullptr;
   }
 
-  
-  
-  
-  
-  DisplayItemType displayItemKey = aDisplayItemKey;
-  if (aDisplayItemKey == DisplayItemType::TYPE_REMOTE) {
-    displayItemKey = DisplayItemType::TYPE_ZERO;
+  if (aDamageRect && aDamageRect->IsEmpty()) {
+    return layer;
   }
 
-  if (aFrameDamageRect) {
-    InvalidateFrameWithRect(*aFrameDamageRect,
-                            static_cast<uint32_t>(displayItemKey));
+  if (aDamageRect) {
+    layer->AddInvalidRect(*aDamageRect);
   } else {
-    InvalidateFrame(static_cast<uint32_t>(displayItemKey));
+    layer->SetInvalidRectToVisibleRegion();
   }
 
-  return nullptr;
+  SchedulePaintInternal(displayRoot, this, PAINT_COMPOSITE_ONLY);
+  return layer;
 }
 
 static nsRect ComputeEffectsRect(nsIFrame* aFrame, const nsRect& aOverflowRect,

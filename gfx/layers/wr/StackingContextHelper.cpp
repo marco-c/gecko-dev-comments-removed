@@ -7,17 +7,12 @@
 #include "mozilla/layers/StackingContextHelper.h"
 
 #include "mozilla/PresShell.h"
-#include "mozilla/gfx/Point.h"
-#include "mozilla/gfx/Matrix.h"
 #include "UnitTransforms.h"
 #include "nsDisplayList.h"
 #include "mozilla/dom/BrowserChild.h"
-#include "nsLayoutUtils.h"
-#include "ActiveLayerTracker.h"
 
 namespace mozilla {
 namespace layers {
-using namespace gfx;
 
 StackingContextHelper::StackingContextHelper()
     : mBuilder(nullptr),
@@ -26,103 +21,6 @@ StackingContextHelper::StackingContextHelper()
       mDeferredTransformItem(nullptr),
       mRasterizeLocally(false) {
   
-}
-
-static nsSize ComputeDesiredDisplaySizeForAnimation(nsIFrame* aContainerFrame) {
-  
-  
-  
-  nsPresContext* presContext = aContainerFrame->PresContext();
-  nsIWidget* widget = aContainerFrame->GetNearestWidget();
-  if (widget) {
-    return LayoutDevicePixel::ToAppUnits(widget->GetClientSize(),
-                                         presContext->AppUnitsPerDevPixel());
-  }
-
-  return presContext->GetVisibleArea().Size();
-}
-
-
-Size ChooseScale(nsIFrame* aContainerFrame, nsDisplayItem* aContainerItem,
-                 const nsRect& aVisibleRect, float aXScale, float aYScale,
-                 const Matrix& aTransform2d, bool aCanDraw2D) {
-  Size scale;
-  
-  if (aCanDraw2D && !aContainerFrame->Combines3DTransformWithAncestors() &&
-      !aContainerFrame->HasPerspective()) {
-    
-    
-    if (aContainerItem &&
-        aContainerItem->GetType() == DisplayItemType::TYPE_TRANSFORM &&
-        
-        
-        
-        EffectCompositor::HasAnimationsForCompositor(
-            aContainerFrame, DisplayItemType::TYPE_TRANSFORM)) {
-      nsSize displaySize =
-          ComputeDesiredDisplaySizeForAnimation(aContainerFrame);
-      
-      
-      nsSize scaledVisibleSize = nsSize(aVisibleRect.Width() * aXScale,
-                                        aVisibleRect.Height() * aYScale);
-      scale = nsLayoutUtils::ComputeSuitableScaleForAnimation(
-          aContainerFrame, scaledVisibleSize, displaySize);
-      
-      
-      float incomingScale = std::max(aXScale, aYScale);
-      scale.width *= incomingScale;
-      scale.height *= incomingScale;
-    } else {
-      
-      
-      scale = aTransform2d.ScaleFactors();
-      
-      
-      
-      
-      
-      
-      Matrix frameTransform;
-      if (ActiveLayerTracker::IsScaleSubjectToAnimation(aContainerFrame)) {
-        scale.width = gfxUtils::ClampToScaleFactor(scale.width);
-        scale.height = gfxUtils::ClampToScaleFactor(scale.height);
-
-        
-        
-        nsSize maxScale(4, 4);
-        if (!aVisibleRect.IsEmpty()) {
-          nsSize displaySize =
-              ComputeDesiredDisplaySizeForAnimation(aContainerFrame);
-          maxScale = Max(maxScale, displaySize / aVisibleRect.Size());
-        }
-        if (scale.width > maxScale.width) {
-          scale.width = gfxUtils::ClampToScaleFactor(maxScale.width, true);
-        }
-        if (scale.height > maxScale.height) {
-          scale.height = gfxUtils::ClampToScaleFactor(maxScale.height, true);
-        }
-      } else {
-        
-      }
-    }
-    
-    
-    if (fabs(scale.width) < 1e-8 || fabs(scale.height) < 1e-8) {
-      scale = Size(1.0, 1.0);
-    }
-  } else {
-    scale = Size(1.0, 1.0);
-  }
-
-  
-  
-  
-  
-  
-  scale =
-      Size(std::min(scale.width, 32768.0f), std::min(scale.height, 32768.0f));
-
-  return scale;
 }
 
 StackingContextHelper::StackingContextHelper(
@@ -151,10 +49,10 @@ StackingContextHelper::StackingContextHelper(
 
       int32_t apd = aContainerFrame->PresContext()->AppUnitsPerDevPixel();
       nsRect r = LayoutDevicePixel::ToAppUnits(aBounds, apd);
-      mScale = ChooseScale(aContainerFrame, aContainerItem, r,
-                           aParentSC.mScale.width, aParentSC.mScale.height,
-                           mInheritedTransform,
-                            true);
+      mScale = FrameLayerBuilder::ChooseScale(
+          aContainerFrame, aContainerItem, r, aParentSC.mScale.width,
+          aParentSC.mScale.height, mInheritedTransform,
+           true);
     } else {
       mScale = gfx::Size(1.0f, 1.0f);
       mInheritedTransform = gfx::Matrix::Scaling(1.f, 1.f);
