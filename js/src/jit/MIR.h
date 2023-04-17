@@ -11393,14 +11393,6 @@ class MIonToWasmCall final : public MVariadicInstruction,
         funcExport_(funcExport) {
     setResultType(resultType);
   }
-#ifdef ENABLE_WASM_SIMD
-  MDefinition* foldsTo(TempAllocator& alloc) override;
-
-  
-  
-  
-  bool specializeConstantMaskAsShuffle(int8_t shuffle[16]);
-#endif
 
  public:
   INSTRUCTION_HEADER(IonToWasmCall);
