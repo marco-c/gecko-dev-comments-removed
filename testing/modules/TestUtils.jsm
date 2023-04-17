@@ -165,6 +165,11 @@ var TestUtils = {
 
 
 
+
+
+
+
+
   waitForCondition(condition, msg, interval = 100, maxTries = 50) {
     let startTime = Cu.now();
     return new Promise((resolve, reject) => {
