@@ -425,23 +425,15 @@ var TabCrashHandler = {
       },
     ];
 
-    
-    
-    let removeTelemetryFn = this.telemetryIfTabSelected(
-      browser,
-      "dom.contentprocess.crash_subframe_ui_presented"
-    );
-
     notification = notificationBox.appendNotification(
       value,
       {
         label: messageFragment,
         image: TABCRASHED_ICON_URI,
         priority: notificationBox.PRIORITY_INFO_MEDIUM,
+        telemetry: "notificationbar.crash_subframe_ui",
         eventCallback: eventName => {
           if (eventName == "disconnected") {
-            removeTelemetryFn();
-
             let existingItem = this.notificationsMap.get(childID);
             if (existingItem) {
               let idx = existingItem.indexOf(notification);
@@ -472,40 +464,6 @@ var TabCrashHandler = {
     } else {
       this.notificationsMap.set(childID, [notification]);
     }
-  },
-
-  
-
-
-
-
-
-
-
-  telemetryIfTabSelected(browser, telemetryKey) {
-    let gBrowser = browser.getTabBrowser();
-    let tab = gBrowser.getTabForBrowser(browser);
-
-    let seenNotification = event => {
-      if (tab == event.target) {
-        tab.removeEventListener("TabSelect", seenNotification, true);
-
-        Services.telemetry.scalarAdd(telemetryKey, 1);
-      }
-    };
-
-    
-    
-    if (gBrowser.selectedTab == tab) {
-      Services.telemetry.scalarAdd(telemetryKey, 1);
-      return () => {};
-    }
-
-    tab.addEventListener("TabSelect", seenNotification, true);
-
-    return () => {
-      tab.removeEventListener("TabSelect", seenNotification, true);
-    };
   },
 
   
