@@ -49,6 +49,23 @@ this.sessionrestore = class extends ExtensionAPI {
   async finishProfiling(msg) {
     await this.ensureTalosParentProfiler();
 
+    
+    
+    
+    
+    
+    
+    if (!BrowserWindowTracker.windowCount) {
+      const BROWSER_WINDOW_READY_TOPIC = "browser-delayed-startup-finished";
+      await new Promise(resolve => {
+        let observe = async () => {
+          Services.obs.removeObserver(observe, BROWSER_WINDOW_READY_TOPIC);
+          resolve();
+        };
+        Services.obs.addObserver(observe, BROWSER_WINDOW_READY_TOPIC);
+      });
+    }
+
     let win = BrowserWindowTracker.getTopWindow();
     let args = win.arguments[0];
     if (args && args instanceof Ci.nsIArray) {
