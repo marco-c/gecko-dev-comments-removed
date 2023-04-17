@@ -391,7 +391,6 @@ pub struct TextDisplayItem {
     pub font_key: font::FontInstanceKey,
     pub color: ColorF,
     pub glyph_options: Option<font::GlyphOptions>,
-    pub reference_frame_relative_offset: LayoutVector2D,
 } 
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, MallocSizeOf, PartialEq, Serialize, PeekPoke)]
@@ -647,9 +646,6 @@ pub struct GradientDisplayItem {
     
     pub tile_spacing: LayoutSize,
     pub gradient: Gradient,
-    
-    
-    pub unsnapped_rect: LayoutRect,
 }
 
 #[repr(C)]
@@ -713,9 +709,6 @@ pub struct RadialGradientDisplayItem {
     pub gradient: RadialGradient,
     pub tile_size: LayoutSize,
     pub tile_spacing: LayoutSize,
-    
-    
-    pub unsnapped_rect: LayoutRect,
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
@@ -728,9 +721,6 @@ pub struct ConicGradientDisplayItem {
     pub gradient: ConicGradient,
     pub tile_size: LayoutSize,
     pub tile_spacing: LayoutSize,
-    
-    
-    pub unsnapped_rect: LayoutRect,
 }
 
 
@@ -1317,9 +1307,6 @@ pub struct RepeatingImageDisplayItem {
     pub alpha_type: AlphaType,
     
     pub color: ColorF,
-    
-    
-    pub unsnapped_rect: LayoutRect,
 }
 
 #[repr(u8)]
