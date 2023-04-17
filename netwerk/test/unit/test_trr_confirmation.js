@@ -266,12 +266,24 @@ add_task(async function test_connectivity_change() {
     "network:captive-portal-connectivity",
     "clear"
   );
+  
+  
+  equal(dns.currentTrrConfirmationState, CONFIRM_OK);
+
+  Services.obs.notifyObservers(
+    null,
+    "network:captive-portal-connectivity",
+    "captive"
+  );
+  
+  
+  equal(dns.currentTrrConfirmationState, CONFIRM_OK);
 
   
-  await waitForConfirmationState(CONFIRM_OK, 1000);
-  equal(
-    await trrServer.requestCount("confirm.example.com", "NS"),
-    confirmationCount + 1
+  Services.obs.notifyObservers(
+    null,
+    "captive-portal-login",
+    "{type: 'captive-portal-login', id: 0, url: 'http://localhost/'}"
   );
 
   await registerNS(500);
@@ -279,6 +291,9 @@ add_task(async function test_connectivity_change() {
   
   await waitForConfirmationState(CONFIRM_TRYING_OK, 3000);
   await failures;
+
+  
+  
   Services.obs.notifyObservers(
     null,
     "network:captive-portal-connectivity",
