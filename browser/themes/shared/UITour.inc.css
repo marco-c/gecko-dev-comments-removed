@@ -1,20 +1,20 @@
 %if 0
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 %endif
 
-
+/* UI Tour */
 
 #UITourHighlightContainer {
   appearance: none;
   -moz-window-shadow: none;
-  border: none;
-  background-color: transparent;
-  
-
-  padding: 4px;
-  
+  --panel-border-color: transparent;
+  --panel-background: transparent;
+  /* This is a buffer to compensate for the movement in the "wobble" effect,
+     and for the box-shadow of #UITourHighlight. */
+  --panel-padding: 4px;
+  /* Compensate the displacement caused by padding. */
   margin: -4px;
 }
 
@@ -58,7 +58,7 @@
   margin-inline: 0;
   font-size: 1.15rem;
   line-height: 1.8rem;
-  margin-bottom: 0; 
+  margin-bottom: 0; /* Override global.css */
 }
 
 #UITourTooltipClose {
@@ -137,7 +137,7 @@
   padding-inline: 10px;
 }
 
-
+/* The primary button gets the same color as the customize button. */
 #UITourTooltipButtons > button.button-primary {
   background-color: rgb(116,191,67);
   color: white;
