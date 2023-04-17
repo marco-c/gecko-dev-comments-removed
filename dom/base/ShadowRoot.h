@@ -69,7 +69,6 @@ class ShadowRoot final : public DocumentFragment,
   void MaybeUnslotHostChild(nsIContent&);
 
   
-  
   Element* GetFirstFocusable(bool aWithMouse) const;
 
   
