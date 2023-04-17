@@ -288,7 +288,7 @@ ImgDrawResult ImageResource::GetImageContainerImpl(
 
   if (!container) {
     
-    container = layers::LayerManager::CreateImageContainer();
+    container = MakeAndAddRef<layers::ImageContainer>();
 
     if (i >= 0) {
       entry->mContainer = container;
