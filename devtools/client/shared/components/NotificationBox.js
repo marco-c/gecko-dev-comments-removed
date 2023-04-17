@@ -4,7 +4,10 @@
 
 "use strict";
 
-const { Component } = require("devtools/client/shared/vendor/react");
+const {
+  Component,
+  createFactory,
+} = require("devtools/client/shared/vendor/react");
 const PropTypes = require("devtools/client/shared/vendor/react-prop-types");
 const dom = require("devtools/client/shared/vendor/react-dom-factories");
 const { LocalizationHelper } = require("devtools/shared/l10n");
@@ -13,6 +16,9 @@ const l10n = new LocalizationHelper(
   "devtools/client/locales/components.properties"
 );
 const { div, span, button } = dom;
+loader.lazyGetter(this, "MDNLink", function() {
+  return createFactory(require("devtools/client/shared/components/MdnLink"));
+});
 
 
 const PriorityLevels = {
@@ -71,6 +77,13 @@ class NotificationBox extends Component {
 
 
 
+
+
+
+
+
+
+
       notifications: PropTypes.instanceOf(Map),
       
       closeButtonTooltip: PropTypes.string,
@@ -80,6 +93,8 @@ class NotificationBox extends Component {
       displayBorderTop: PropTypes.bool,
       
       displayBorderBottom: PropTypes.bool,
+      
+      displayCloseButton: PropTypes.bool,
     };
   }
 
@@ -88,6 +103,7 @@ class NotificationBox extends Component {
       closeButtonTooltip: l10n.getStr("notificationBox.closeTooltip"),
       displayBorderTop: false,
       displayBorderBottom: true,
+      displayCloseButton: true,
     };
   }
 
@@ -191,7 +207,14 @@ class NotificationBox extends Component {
 
 
 
+
   renderButton(props, notification) {
+    if (props.mdnUrl != null) {
+      return MDNLink({
+        url: props.mdnUrl,
+        title: props.label,
+      });
+    }
     const onClick = event => {
       if (props.callback) {
         const result = props.callback(this, props, event.target);
@@ -240,11 +263,13 @@ class NotificationBox extends Component {
         notification.buttons.map(props =>
           this.renderButton(props, notification)
         ),
-        button({
-          className: "messageCloseButton",
-          title: this.props.closeButtonTooltip,
-          onClick: this.close.bind(this, notification),
-        })
+        this.props.displayCloseButton
+          ? button({
+              className: "messageCloseButton",
+              title: this.props.closeButtonTooltip,
+              onClick: this.close.bind(this, notification),
+            })
+          : null
       )
     );
   }
