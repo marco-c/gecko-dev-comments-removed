@@ -15,6 +15,10 @@
 #include "mozilla/StateMirroring.h"
 #include "nsISerialEventTarget.h"
 
+namespace soundtouch {
+class MOZ_EXPORT SoundTouch;
+}
+
 namespace mozilla {
 
 class AudioData;
@@ -130,7 +134,21 @@ class AudioDecoderInputTrack final : public ProcessedMediaTrack {
                                  const PrincipalHandle& aPrincipalHandle);
 
   void HandleSPSCData(SPSCData& aData);
+
+  
+  
   TrackTime AppendBufferedDataToOutput(TrackTime aExpectedDuration);
+  TrackTime FillDataToTimeStretcher(TrackTime aExpectedDuration);
+  TrackTime AppendTimeStretchedDataToSegment(TrackTime aExpectedDuration,
+                                             AudioSegment& aOutput);
+  TrackTime AppendUnstretchedDataToSegment(TrackTime aExpectedDuration,
+                                           AudioSegment& aOutput);
+
+  
+  TrackTime DrainStretchedDataIfNeeded(TrackTime aExpectedDuration,
+                                       AudioSegment& aOutput);
+  TrackTime GetDataFromTimeStretcher(TrackTime aExpectedDuration,
+                                     AudioSegment& aOutput);
   void NotifyInTheEndOfProcessInput(TrackTime aFillDuration);
 
   bool HasSentAllData() const;
@@ -144,6 +162,10 @@ class AudioDecoderInputTrack final : public ProcessedMediaTrack {
   void SetVolumeImpl(float aVolume);
   void SetPlaybackRateImpl(float aPlaybackRate);
   void SetPreservesPitchImpl(bool aPreservesPitch);
+
+  void EnsureTimeStretcher();
+  void SetTempoAndRateForTimeStretcher();
+  uint32_t GetChannelCountForTimeStretcher() const;
 
   inline void AssertOnDecoderThread() const {
     MOZ_ASSERT(mDecoderThread->IsOnCurrentThread());
@@ -203,6 +225,12 @@ class AudioDecoderInputTrack final : public ProcessedMediaTrack {
   
   
   bool mSentAllData = false;
+
+  
+  soundtouch::SoundTouch* mTimeStretcher = nullptr;
+
+  
+  AutoTArray<AudioDataValue, 2> mInterleavedBuffer;
 };
 
 }  
