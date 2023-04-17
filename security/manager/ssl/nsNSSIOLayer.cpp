@@ -321,7 +321,13 @@ nsNSSSocketInfo::DriveHandshake() {
 
   if (rv != SECSuccess) {
     PRErrorCode errorCode = PR_GetError();
-    MOZ_DIAGNOSTIC_ASSERT(errorCode, "handshake failed without error code");
+    MOZ_ASSERT(errorCode, "handshake failed without error code");
+    
+    
+    
+    if (!errorCode) {
+      errorCode = SEC_ERROR_LIBRARY_FAILURE;
+    }
     if (errorCode == PR_WOULD_BLOCK_ERROR) {
       return NS_BASE_STREAM_WOULD_BLOCK;
     }
