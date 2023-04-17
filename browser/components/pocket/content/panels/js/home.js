@@ -9,10 +9,7 @@
 var PKT_PANEL_OVERLAY = function(options) {
   this.inited = false;
   this.active = false;
-  this.translations = {};
   this.pockethost = "getpocket.com";
-  this.dictJSON = {};
-
   this.parseHTML = function(htmlString) {
     const parser = new DOMParser();
     return parser.parseFromString(htmlString, `text/html`).documentElement;
@@ -52,9 +49,6 @@ var PKT_PANEL_OVERLAY = function(options) {
       });
     });
   };
-  this.getTranslations = function() {
-    this.dictJSON = window.pocketStrings;
-  };
 };
 
 PKT_PANEL_OVERLAY.prototype = {
@@ -77,11 +71,10 @@ PKT_PANEL_OVERLAY.prototype = {
     
     
     const enableLocalizedExploreMore = false;
-
-    
-    this.getTranslations();
-    this.dictJSON.pockethost = this.pockethost;
-    this.dictJSON.utmsource = "firefox-button";
+    const templateData = {
+      pockethost: this.pockethost,
+      utmsource: "firefox-button",
+    };
 
     
     if (this.locale) {
@@ -93,16 +86,14 @@ PKT_PANEL_OVERLAY.prototype = {
     
     document
       .querySelector(`body`)
-      .append(this.parseHTML(Handlebars.templates.home_shell(this.dictJSON)));
+      .append(this.parseHTML(Handlebars.templates.home_shell(templateData)));
 
     
     
     if (this.locale.startsWith("en")) {
       const data = {
-        explorepopulartopics: this.dictJSON.explorepopulartopics,
-        discovermore: this.dictJSON.discovermore,
-        pockethost: this.dictJSON.pockethost,
-        utmsource: this.dictJSON.utmsource,
+        pockethost: templateData.pockethost,
+        utmsource: templateData.utmsource,
         topics: [
           { title: "Self Improvement", topic: "self-improvement" },
           { title: "Food", topic: "food" },
@@ -117,9 +108,7 @@ PKT_PANEL_OVERLAY.prototype = {
       
       document
         .querySelector(`.pkt_ext_more`)
-        .append(
-          this.parseHTML(Handlebars.templates.explore_more(this.dictJSON))
-        );
+        .append(this.parseHTML(Handlebars.templates.explore_more()));
     }
 
     

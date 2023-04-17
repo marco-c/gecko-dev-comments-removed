@@ -277,30 +277,26 @@ var pktUI = (function() {
 
     
     if (!isValidURL()) {
-      
-      let error = {
-        message: "Only links can be saved",
-        localizedKey: "onlylinkssaved",
+      let errorData = {
+        localizedKey: "pocket-panel-saved-error-only-links",
       };
       pktUIMessaging.sendErrorMessageToPanel(
         saveLinkMessageId,
         _panelId,
-        error
+        errorData
       );
       return;
     }
 
     
     if (!navigator.onLine) {
-      
-      let error = {
-        message:
-          "You must be connected to the Internet in order to save to Pocket. Please connect to the Internet and try again.",
+      let errorData = {
+        localizedKey: "pocket-panel-saved-error-no-internet",
       };
       pktUIMessaging.sendErrorMessageToPanel(
         saveLinkMessageId,
         _panelId,
-        error
+        errorData
       );
       return;
     }
@@ -372,16 +368,15 @@ var pktUI = (function() {
         }
 
         
-        
-        var errorMessage =
-          error.message || "There was an error when trying to save to Pocket.";
-        var panelError = { message: errorMessage };
+        let errorData = {
+          localizedKey: "pocket-panel-saved-error-generic",
+        };
 
         
         pktUIMessaging.sendErrorMessageToPanel(
           saveLinkMessageId,
           _panelId,
-          panelError
+          errorData
         );
       },
     };
