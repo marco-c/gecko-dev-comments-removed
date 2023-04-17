@@ -1944,8 +1944,8 @@ mozilla::Atomic<bool> gShutdown(false);
 
 TimeStamp gLastOSWake;
 
-typedef nsTArray<CheckedUnsafePtr<NormalOriginOperationBase>>
-    NormalOriginOpArray;
+using NormalOriginOpArray =
+    nsTArray<CheckedUnsafePtr<NormalOriginOperationBase>>;
 StaticAutoPtr<NormalOriginOpArray> gNormalOriginOps;
 
 
