@@ -248,10 +248,21 @@ class BasePopup {
               if (this.destroyed) {
                 return;
               }
-              this.browser.messageManager.sendAsyncMessage(
-                "Extension:GrabFocus",
-                {}
-              );
+              
+              
+              
+              
+              
+              
+              this.browser.ownerGlobal.promiseDocumentFlushed(() => {
+                if (this.destroyed) {
+                  return;
+                }
+                this.browser.messageManager.sendAsyncMessage(
+                  "Extension:GrabFocus",
+                  {}
+                );
+              });
             })
             .catch(() => {
               
