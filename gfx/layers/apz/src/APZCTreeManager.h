@@ -11,6 +11,7 @@
 
 #include "FocusState.h"          
 #include "HitTestingTreeNode.h"  
+#include "IAPZHitTester.h"       
 #include "gfxPoint.h"            
 #include "mozilla/Assertions.h"  
 #include "mozilla/DataMutex.h"   
@@ -56,7 +57,6 @@ struct FlingHandoffState;
 class InputQueue;
 class GeckoContentController;
 class HitTestingTreeNode;
-class HitTestingTreeNodeAutoLock;
 class SampleTime;
 class WebRenderScrollDataWrapper;
 struct AncestorTransform;
@@ -106,6 +106,7 @@ struct ZoomTarget;
 class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   typedef mozilla::layers::AllowedTouchBehavior AllowedTouchBehavior;
   typedef mozilla::layers::AsyncDragMetrics AsyncDragMetrics;
+  using HitTestResult = IAPZHitTester::HitTestResult;
 
   
   
@@ -519,37 +520,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
  public:
   
-  struct HitTestResult {
-    
-    RefPtr<AsyncPanZoomController> mTargetApzc;
-    
-    gfx::CompositorHitTestInfo mHitResult;
-    
-    
-    
-    LayersId mLayersId;
-    
-    
-    
-    HitTestingTreeNodeAutoLock mScrollbarNode;
-    
-    
-    SideBits mFixedPosSides = SideBits::eNone;
-    
-    
-    bool mHitOverscrollGutter = false;
-
-    HitTestResult() = default;
-    
-    HitTestResult(HitTestResult&&) = default;
-    HitTestResult& operator=(HitTestResult&&) = default;
-
-    
-    
-    HitTestResult CopyWithoutScrollbarNode() const;
-  };
-
-  
 
 
 
@@ -600,16 +570,10 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   HitTestingTreeNode* FindTargetNode(HitTestingTreeNode* aNode,
                                      const ScrollableLayerGuid& aGuid,
                                      GuidComparator aComparator);
-  AsyncPanZoomController* GetTargetApzcForNode(HitTestingTreeNode* aNode);
+  AsyncPanZoomController* GetTargetApzcForNode(const HitTestingTreeNode* aNode);
   AsyncPanZoomController* FindHandoffParent(
       const AsyncPanZoomController* aApzc);
-  HitTestResult GetAPZCAtPoint(const ScreenPoint& aHitTestPoint,
-                               const RecursiveMutexAutoLock& aProofOfTreeLock);
-  HitTestResult GetAPZCAtPointWR(
-      const ScreenPoint& aHitTestPoint,
-      const RecursiveMutexAutoLock& aProofOfTreeLock);
   HitTestingTreeNode* FindRootNodeForLayersId(LayersId aLayersId) const;
-  AsyncPanZoomController* FindRootApzcForLayersId(LayersId aLayersId) const;
   AsyncPanZoomController* FindRootContentApzcForLayersId(
       LayersId aLayersId) const;
   already_AddRefed<AsyncPanZoomController> GetZoomableTarget(
@@ -1032,7 +996,8 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
   float mDPI;
 
-  HitTestKind mHitTestKind;
+  friend class IAPZHitTester;
+  UniquePtr<IAPZHitTester> mHitTester;
 
 #if defined(MOZ_WIDGET_ANDROID)
  private:
