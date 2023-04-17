@@ -63,9 +63,14 @@ add_task(async function test_main() {
     { file: "helper_fission_large_subframe.html" },
     
   ];
+  
+  
+  
+  
   if (isWebRender) {
     subtests = subtests.concat([
       { file: "helper_fission_inactivescroller_positionedcontent.html" },
+      { file: "helper_fission_irregular_areas.html" },
       
     ]);
   } else {
