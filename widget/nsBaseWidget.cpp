@@ -385,10 +385,10 @@ void nsBaseWidget::DestroyCompositor() {
 
 
 void nsBaseWidget::RevokeTransactionIdAllocator() {
-  if (!mWindowRenderer || !mWindowRenderer->AsLayerManager()) {
+  if (!mWindowRenderer || !mWindowRenderer->AsWebRender()) {
     return;
   }
-  mWindowRenderer->AsLayerManager()->SetTransactionIdAllocator(nullptr);
+  mWindowRenderer->AsWebRender()->SetTransactionIdAllocator(nullptr);
 }
 
 void nsBaseWidget::ReleaseContentController() {

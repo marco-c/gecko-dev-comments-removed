@@ -170,7 +170,7 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
 
   WindowRenderer* renderer = GetWindowRenderer();
   KnowsCompositor* knowsCompositor = renderer->AsKnowsCompositor();
-  LayerManager* layerManager = renderer->AsLayerManager();
+  WebRenderLayerManager* layerManager = renderer->AsWebRender();
 
   
   
