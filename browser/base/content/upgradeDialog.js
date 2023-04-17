@@ -141,6 +141,8 @@ function onLoad(ready) {
 
     
     const strings = await SCREEN_STRINGS[++current];
+    
+    let toFocus = primary;
     switch (current) {
       
       case 0:
@@ -221,7 +223,8 @@ function onLoad(ready) {
 
         
         const { id, swatch } = await gPrevTheme;
-        themes.children[THEME_IDS.indexOf(id)].checked = true;
+        toFocus = themes.children[THEME_IDS.indexOf(id)];
+        toFocus.checked = true;
         themes.addEventListener("click", ({ target: button }) => {
           
           if (button.parentNode === themes) {
@@ -286,7 +289,7 @@ function onLoad(ready) {
     await document.l10n.translateElements(translatedElements);
     requestAnimationFrame(() => {
       
-      primary.focus({ preventFocusRing: true });
+      toFocus.focus({ preventFocusRing: true });
 
       
       if (current === 0) {
