@@ -17,7 +17,7 @@ let locales = Services.locale.appLocalesAsBCP47;
 
 
 
-let source = new L10nFileSource("test", locales, `${uri}localization/`);
+let source = new L10nFileSource("test", "app", locales, `${uri}localization/`);
 L10nRegistry.getInstance().registerSources([source]);
 
 registerCleanupFunction(() => {
