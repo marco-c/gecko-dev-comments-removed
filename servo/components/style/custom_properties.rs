@@ -88,7 +88,7 @@ pub type Name = Atom;
 
 
 pub fn parse_name(s: &str) -> Result<&str, ()> {
-    if s.starts_with("--") {
+    if s.starts_with("--") && s.len() > 2 {
         Ok(&s[2..])
     } else {
         Err(())
