@@ -189,11 +189,11 @@ macro_rules! try_parse_one {
                     sub_properties="animation-name animation-duration
                                     animation-timing-function animation-delay
                                     animation-iteration-count animation-direction
-                                    animation-fill-mode animation-play-state"
+                                    animation-fill-mode animation-play-state animation-timeline"
                     rule_types_allowed="Style"
                     spec="https://drafts.csswg.org/css-animations/#propdef-animation">
     <%
-        props = "name duration timing_function delay iteration_count \
+        props = "name timeline duration timing_function delay iteration_count \
                  direction fill_mode play_state".split()
     %>
     % for prop in props:
@@ -234,6 +234,9 @@ macro_rules! try_parse_one {
                 try_parse_one!(context, input, fill_mode, animation_fill_mode);
                 try_parse_one!(context, input, play_state, animation_play_state);
                 try_parse_one!(context, input, name, animation_name);
+                if static_prefs::pref!("layout.css.scroll-linked-animations.enabled") {
+                    try_parse_one!(context, input, timeline, animation_timeline);
+                }
 
                 parsed -= 1;
                 break
@@ -280,22 +283,46 @@ macro_rules! try_parse_one {
 
             
             
-            % for name in props[1:]:
+            % for name in props[2:]:
                 if len != self.animation_${name}.0.len() {
                     return Ok(())
                 }
             % endfor
+
+            
+            
+            if self.animation_timeline.map_or(false, |v| len != v.0.len()) {
+                return Ok(());
+            }
 
             for i in 0..len {
                 if i != 0 {
                     dest.write_str(", ")?;
                 }
 
-                % for name in props[1:]:
+                % for name in props[2:]:
                     self.animation_${name}.0[i].to_css(dest)?;
                     dest.write_str(" ")?;
                 % endfor
+
                 self.animation_name.0[i].to_css(dest)?;
+
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                if let Some(ref timeline) = self.animation_timeline {
+                    if !timeline.0[i].is_auto() {
+                        dest.write_char(' ')?;
+                        timeline.0[i].to_css(dest)?;
+                    }
+                }
             }
             Ok(())
         }
