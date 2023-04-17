@@ -118,7 +118,20 @@ class TypingInteraction {
 
 
 
+
+
+
+
+
+
 class _Interactions {
+  DOCUMENT_TYPE = {
+    
+    GENERIC: 0,
+    
+    MEDIA: 1,
+  };
+
   
 
 
@@ -611,6 +624,8 @@ class InteractionsStore {
         params[`url${i}`] = interaction.url;
         params[`created_at${i}`] = interaction.created_at;
         params[`updated_at${i}`] = interaction.updated_at;
+        params[`document_type${i}`] =
+          interaction.documentType ?? Interactions.DOCUMENT_TYPE.GENERIC;
         params[`total_view_time${i}`] =
           Math.round(interaction.totalViewTime) || 0;
         params[`typing_time${i}`] = Math.round(interaction.typingTime) || 0;
@@ -626,6 +641,7 @@ class InteractionsStore {
           (SELECT id FROM moz_places WHERE url_hash = hash(:url${i}) AND url = :url${i}),
           :created_at${i},
           :updated_at${i},
+          :document_type${i},
           :total_view_time${i},
           :typing_time${i},
           :key_presses${i},
@@ -642,11 +658,11 @@ class InteractionsStore {
       async db => {
         await db.executeCached(
           `
-          WITH inserts (id, place_id, created_at, updated_at, total_view_time, typing_time, key_presses, scrolling_time, scrolling_distance) AS (
+          WITH inserts (id, place_id, created_at, updated_at, document_type, total_view_time, typing_time, key_presses, scrolling_time, scrolling_distance) AS (
             VALUES ${SQLInsertFragments.join(", ")}
           )
           INSERT OR REPLACE INTO moz_places_metadata (
-            id, place_id, created_at, updated_at, total_view_time, typing_time, key_presses, scrolling_time, scrolling_distance
+            id, place_id, created_at, updated_at, document_type, total_view_time, typing_time, key_presses, scrolling_time, scrolling_distance
           ) SELECT * FROM inserts WHERE place_id NOT NULL;
         `,
           params
