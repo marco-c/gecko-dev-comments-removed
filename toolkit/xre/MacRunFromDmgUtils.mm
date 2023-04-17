@@ -43,6 +43,81 @@ namespace MacRunFromDmgUtils {
 
 
 
+
+
+static bool AskUserIfWeShouldLaunchExistingInstall() {
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
+
+  
+  nsTArray<nsCString> resIds = {
+      "branding/brand.ftl"_ns,
+      "toolkit/global/run-from-dmg.ftl"_ns,
+  };
+  RefPtr<intl::Localization> l10n = intl::Localization::Create(resIds, true);
+
+  ErrorResult rv;
+  nsAutoCString mozTitle, mozMessage, mozLaunchExisting, mozLaunchFromDMG;
+  l10n->FormatValueSync("prompt-to-launch-existing-app-title"_ns, {}, mozTitle, rv);
+  if (rv.Failed()) {
+    return false;
+  }
+  l10n->FormatValueSync("prompt-to-launch-existing-app-message"_ns, {}, mozMessage, rv);
+  if (rv.Failed()) {
+    return false;
+  }
+  l10n->FormatValueSync("prompt-to-launch-existing-app-yes-button"_ns, {}, mozLaunchExisting, rv);
+  if (rv.Failed()) {
+    return false;
+  }
+  l10n->FormatValueSync("prompt-to-launch-existing-app-no-button"_ns, {}, mozLaunchFromDMG, rv);
+  if (rv.Failed()) {
+    return false;
+  }
+
+  NSString* title = [NSString stringWithUTF8String:reinterpret_cast<const char*>(mozTitle.get())];
+  NSString* message =
+      [NSString stringWithUTF8String:reinterpret_cast<const char*>(mozMessage.get())];
+  NSString* launchExisting =
+      [NSString stringWithUTF8String:reinterpret_cast<const char*>(mozLaunchExisting.get())];
+  NSString* launchFromDMG =
+      [NSString stringWithUTF8String:reinterpret_cast<const char*>(mozLaunchFromDMG.get())];
+
+  NSAlert* alert = [[[NSAlert alloc] init] autorelease];
+
+  
+  [alert setAlertStyle:NSAlertStyleInformational];
+  [alert setMessageText:title];
+  [alert setInformativeText:message];
+  
+  
+  
+  [alert addButtonWithTitle:launchExisting];
+  NSButton* launchFromDMGButton = [alert addButtonWithTitle:launchFromDMG];
+  
+  
+  [launchFromDMGButton setKeyEquivalent:@"\e"];
+
+  __block NSInteger result = -1;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    result = [alert runModal];
+    [NSApp stop:nil];
+  });
+
+  
+  
+  [NSApp run];
+  MOZ_ASSERT(result != -1);
+
+  return result == NSAlertFirstButtonReturn;
+
+  NS_OBJC_END_TRY_BLOCK_RETURN(false);
+}
+
+
+
+
+
+
 static bool AskUserIfWeShouldInstall() {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
@@ -158,7 +233,16 @@ static void ShowInstallFailedDialog() {
   [alert setMessageText:title];
   [alert setInformativeText:message];
 
-  [alert runModal];
+  __block NSInteger result = -1;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    result = [alert runModal];
+    [NSApp stop:nil];
+  });
+
+  
+  
+  [NSApp run];
+  MOZ_ASSERT(result != -1);
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
@@ -392,12 +476,11 @@ bool MaybeInstallFromDmgAndRelaunch() {
     
     
     
-    
-    
-    
-    
-    
     if ([fileManager fileExistsAtPath:destPath]) {
+      if (AskUserIfWeShouldLaunchExistingInstall()) {
+        LaunchInstalledApp(destPath);
+        return true;
+      }
       return false;
     }
 
