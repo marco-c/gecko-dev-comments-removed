@@ -564,8 +564,8 @@ class InnerViewTable {
 
   
   
-  void sweep();
-  void sweepAfterMinorGC();
+  bool traceWeak(JSTracer* trc);
+  void sweepAfterMinorGC(JSTracer* trc);
 
   bool empty() const { return map.empty(); }
 
