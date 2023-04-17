@@ -53,6 +53,8 @@ class SharedArrayRawBuffer {
   mozilla::Atomic<size_t, mozilla::SequentiallyConsistent> length_;
   Mutex growLock_;
   
+  wasm::IndexType wasmIndexType_;
+  
   
   wasm::Pages wasmMaxPages_;
   size_t mappedSize_;  
@@ -69,11 +71,13 @@ class SharedArrayRawBuffer {
   }
 
  protected:
-  SharedArrayRawBuffer(uint8_t* buffer, size_t length, wasm::Pages wasmMaxPages,
+  SharedArrayRawBuffer(wasm::IndexType wasmIndexType, uint8_t* buffer,
+                       size_t length, wasm::Pages wasmMaxPages,
                        size_t mappedSize, bool preparedForWasm)
       : refcount_(1),
         length_(length),
         growLock_(mutexid::SharedArrayGrow),
+        wasmIndexType_(wasmIndexType),
         wasmMaxPages_(wasmMaxPages),
         mappedSize_(mappedSize),
         preparedForWasm_(preparedForWasm),
@@ -85,7 +89,8 @@ class SharedArrayRawBuffer {
   
   
   static SharedArrayRawBuffer* AllocateInternal(
-      size_t length, const mozilla::Maybe<wasm::Pages>& wasmMaxPages,
+      wasm::IndexType wasmIndexType, size_t length,
+      const mozilla::Maybe<wasm::Pages>& wasmMaxPages,
       const mozilla::Maybe<size_t>& wasmMappedSize);
 
  public:
@@ -104,7 +109,8 @@ class SharedArrayRawBuffer {
 
   static SharedArrayRawBuffer* Allocate(size_t length);
   static SharedArrayRawBuffer* AllocateWasm(
-      wasm::Pages initialPages, const mozilla::Maybe<wasm::Pages>& maxPages,
+      wasm::IndexType indexType, wasm::Pages initialPages,
+      const mozilla::Maybe<wasm::Pages>& maxPages,
       const mozilla::Maybe<size_t>& mappedSize);
 
   
@@ -125,6 +131,8 @@ class SharedArrayRawBuffer {
     return reinterpret_cast<const SharedArrayRawBuffer*>(
         dataPtr - sizeof(SharedArrayRawBuffer));
   }
+
+  wasm::IndexType wasmIndexType() const { return wasmIndexType_; }
 
   size_t volatileByteLength() const { return length_; }
 

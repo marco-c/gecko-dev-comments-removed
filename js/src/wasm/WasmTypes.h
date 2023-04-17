@@ -1252,7 +1252,20 @@ WASM_DECLARE_POD_VECTOR(WasmTryNote, WasmTryNoteVector)
 
 
 
+enum class LimitsKind {
+  Memory,
+  Table,
+};
+
+
+
 struct Limits {
+  
+  
+  IndexType indexType;
+
+  
+  
   uint64_t initial;
   Maybe<uint64_t> maximum;
 
@@ -1268,13 +1281,7 @@ struct Limits {
 
 
 
-
-enum class MemoryKind { Memory32, Memory64 };
-
-
-
 struct MemoryDesc {
-  MemoryKind kind;
   Limits limits;
 
   bool isShared() const { return limits.shared == Shareable::True; }
@@ -1290,6 +1297,8 @@ struct MemoryDesc {
            limits.maximum.value() < (0x100000000 / PageSize);
   }
 
+  IndexType indexType() const { return limits.indexType; }
+
   
   Pages initialPages() const { return Pages(limits.initial); }
 
@@ -1300,13 +1309,13 @@ struct MemoryDesc {
 
   
   uint64_t initialLength32() const {
-    MOZ_ASSERT(kind == MemoryKind::Memory32);
+    MOZ_ASSERT(indexType() == IndexType::I32);
     
     return limits.initial * PageSize;
   }
 
   MemoryDesc() = default;
-  explicit MemoryDesc(MemoryKind kind, Limits limits) : kind(kind), limits(limits) {}
+  explicit MemoryDesc(Limits limits) : limits(limits) {}
 };
 
 

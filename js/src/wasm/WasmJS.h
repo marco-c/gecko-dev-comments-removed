@@ -416,6 +416,7 @@ class WasmMemoryObject : public NativeObject {
   
   mozilla::Maybe<wasm::Pages> maxPages() const;
 
+  wasm::IndexType indexType() const;
   bool isShared() const;
   bool isHuge() const;
   bool movingGrowable() const;

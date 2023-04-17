@@ -30,6 +30,16 @@ namespace wasm {
 
 
 
+enum class IndexType : uint8_t { I32, I64 };
+
+extern bool ToIndexType(JSContext* cx, HandleValue value, IndexType* indexType);
+
+extern const char* ToString(IndexType indexType);
+
+
+
+
+
 
 
 
