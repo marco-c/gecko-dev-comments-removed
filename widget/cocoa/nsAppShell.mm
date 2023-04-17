@@ -470,6 +470,30 @@ void nsAppShell::ProcessGeckoEvents(void* aInfo) {
                                            data1:0
                                            data2:0]
              atStart:NO];
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    [NSApp postEvent:[NSEvent otherEventWithType:NSEventTypeApplicationDefined
+                                        location:NSMakePoint(0, 0)
+                                   modifierFlags:0
+                                       timestamp:0
+                                    windowNumber:0
+                                         context:NULL
+                                         subtype:kEventSubtypeNone
+                                           data1:0
+                                           data2:0]
+             atStart:NO];
+
   }
 
   if (self->mSuspendNativeCount <= 0) {
