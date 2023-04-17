@@ -12,6 +12,7 @@ import re
 import os
 import platform
 import posixpath
+import shlex
 import shutil
 import subprocess
 import sys
@@ -19,6 +20,7 @@ import sys
 from collections import Counter, namedtuple
 from logging import info
 from os import environ as env
+from pathlib import Path
 from subprocess import Popen
 from threading import Timer
 
@@ -32,10 +34,21 @@ def directories(pathmodule, cwd, fixup=lambda s: s):
     tooltool = pathmodule.abspath(
         env.get("TOOLTOOL_CHECKOUT", pathmodule.join(source, "..", ".."))
     )
-    fetches = pathmodule.abspath(
-        env.get("MOZ_FETCHES_DIR", pathmodule.join(source, "..", ".."))
+    mozbuild = pathmodule.abspath(
+        
+        env.get("MOZBUILD_STATE_PATH")
+        or pathmodule.join(Path.home(), ".mozbuild")
     )
+    fetches = pathmodule.abspath(env.get("MOZ_FETCHES_DIR", mozbuild))
     return Dirs(scripts, js_src, source, tooltool, fetches)
+
+
+def quote(s):
+    
+    
+    
+    
+    return shlex.quote(s).replace("\\", "/")
 
 
 
@@ -45,7 +58,6 @@ DIR = directories(os.path, os.getcwd())
 PDIR = directories(
     posixpath, os.environ["PWD"], fixup=lambda s: re.sub(r"^(\w):", r"/\1", s)
 )
-env["CPP_UNIT_TESTS_DIR_JS_SRC"] = DIR.js_src
 
 AUTOMATION = env.get("AUTOMATION", False)
 
@@ -86,7 +98,9 @@ parser.add_argument(
     "--objdir",
     type=str,
     metavar="DIR",
-    default=env.get("OBJDIR", os.path.join(DIR.source, "obj-spider")),
+    
+    
+    default=env.get("OBJDIR"),
     help="object directory",
 )
 group = parser.add_mutually_exclusive_group()
@@ -155,9 +169,6 @@ parser.add_argument(
     help="only do a build, do not run any tests",
 )
 parser.add_argument(
-    "--noconf", action="store_true", help="skip running configure when doing a build"
-)
-parser.add_argument(
     "--nobuild",
     action="store_true",
     help="Do not do a build. Rerun tests on existing build.",
@@ -169,47 +180,21 @@ args = parser.parse_args()
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 
-OBJDIR = args.objdir
+env["CPP_UNIT_TESTS_DIR_JS_SRC"] = DIR.js_src
+if AUTOMATION and platform.system() == "Windows":
+    
+    env["TOOLTOOL_DIR"] = DIR.fetches
+
+OBJDIR = args.objdir or os.path.join(DIR.source, "obj-spider")
+OBJDIR = os.path.abspath(OBJDIR)
 OUTDIR = os.path.join(OBJDIR, "out")
-POBJDIR = posixpath.join(PDIR.source, args.objdir)
+POBJDIR = args.objdir or posixpath.join(PDIR.source, "obj-spider")
+POBJDIR = posixpath.abspath(POBJDIR)
 MAKE = env.get("MAKE", "make")
-MAKEFLAGS = env.get("MAKEFLAGS", "-j6" + ("" if AUTOMATION else " -s"))
 PYTHON = sys.executable
 
 for d in ("scripts", "js_src", "source", "tooltool", "fetches"):
     info("DIR.{name} = {dir}".format(name=d, dir=getattr(DIR, d)))
-
-
-def set_vars_from_script(script, vars):
-    """Run a shell script, then dump out chosen environment variables. The build
-    system uses shell scripts to do some configuration that we need to
-    borrow. On Windows, the script itself must output the variable settings
-    (in the form "export FOO=<value>"), since otherwise there will be
-    problems with mismatched Windows/POSIX formats.
-    """
-    script_text = "source %s" % script
-    if platform.system() == "Windows":
-        parse_state = "parsing exports"
-    else:
-        script_text += "; echo VAR SETTINGS:; "
-        script_text += "; ".join("echo $" + var for var in vars)
-        parse_state = "scanning"
-    stdout = subprocess.check_output(["sh", "-x", "-c", script_text]).decode()
-    tograb = vars[:]
-    for line in stdout.splitlines():
-        if parse_state == "scanning":
-            if line == "VAR SETTINGS:":
-                parse_state = "grabbing"
-        elif parse_state == "grabbing":
-            var = tograb.pop(0)
-            env[var] = line
-        elif parse_state == "parsing exports":
-            m = re.match(r"export (\w+)=(.*)", line)
-            if m:
-                var, value = m.groups()
-                if var in tograb:
-                    env[var] = value
-                    info("Setting %s = %s" % (var, value))
 
 
 def ensure_dir_exists(
@@ -259,6 +244,14 @@ if args.variant == "nonunified":
 
 CONFIGURE_ARGS = variant["configure-args"]
 
+compiler = variant.get("compiler")
+if compiler != "gcc" and "clang-plugin" not in CONFIGURE_ARGS:
+    CONFIGURE_ARGS += " --enable-clang-plugin"
+
+if compiler == "gcc":
+    env["CC"] = "gcc"
+    env["CXX"] = "g++"
+
 opt = args.optimize
 if opt is None:
     opt = variant.get("optimize")
@@ -290,13 +283,6 @@ if word_bits is None and args.platform:
 
 if word_bits is None:
     word_bits = 64 if platform.architecture()[0] == "64bit" else 32
-
-if "compiler" in variant:
-    compiler = variant["compiler"]
-elif platform.system() == "Windows":
-    compiler = "clang-cl"
-else:
-    compiler = "clang"
 
 
 if args.platform:
@@ -334,32 +320,23 @@ else:
 
 bindir = os.path.join(OBJDIR, "dist", "bin")
 env["LD_LIBRARY_PATH"] = ":".join(
-    p for p in (bindir, compiler_libdir, env.get("LD_LIBRARY_PATH")) if p
+    filter(
+        None,
+        [
+            
+            bindir,
+            
+            
+            compiler_libdir if AUTOMATION else None,
+            
+            env.get("LD_LIBRARY_PATH"),
+        ],
+    )
 )
 
-for v in ("CC", "CXX", "LD_LIBRARY_PATH"):
-    info("default {name} = {value}".format(name=v, value=env[v]))
-
-rust_dir = os.path.join(DIR.fetches, "rustc")
-if os.path.exists(os.path.join(rust_dir, "bin", "rustc")):
-    env.setdefault("RUSTC", os.path.join(rust_dir, "bin", "rustc"))
-    env.setdefault("CARGO", os.path.join(rust_dir, "bin", "cargo"))
-else:
-    env.setdefault("RUSTC", "rustc")
-    env.setdefault("CARGO", "cargo")
-
-if platform.system() == "Darwin":
-    os.environ["SOURCE"] = DIR.source
-    set_vars_from_script(os.path.join(DIR.scripts, "macbuildenv.sh"), ["CC", "CXX"])
-elif platform.system() == "Windows":
+os.environ["SOURCE"] = DIR.source
+if platform.system() == "Windows":
     MAKE = env.get("MAKE", "mozmake")
-    os.environ["SOURCE"] = DIR.source
-    if word_bits == 64:
-        os.environ["USE_64BIT"] = "1"
-    set_vars_from_script(
-        posixpath.join(PDIR.scripts, "winbuildenv.sh"),
-        ["PATH", "VC_PATH", "DIA_SDK_PATH", "CC", "CXX", "WINDOWSSDKDIR"],
-    )
 
 
 if word_bits == 32:
@@ -383,12 +360,6 @@ else:
 
 if platform.system() == "Linux" and AUTOMATION:
     CONFIGURE_ARGS = "--enable-stdcxx-compat --disable-gold " + CONFIGURE_ARGS
-
-
-CONFIGURE_ARGS = "{} {}".format(
-    variant.get("conditional-configure-args", {}).get(variant_platform, ""),
-    CONFIGURE_ARGS,
-)
 
 
 ACTIVE_PROCESSES = set()
@@ -417,6 +388,20 @@ info("MOZ_UPLOAD_DIR = {}".format(env["MOZ_UPLOAD_DIR"]))
 def run_command(command, check=False, **kwargs):
     kwargs.setdefault("cwd", OBJDIR)
     info("in directory {}, running {}".format(kwargs["cwd"], command))
+    if platform.system() == "Windows":
+        
+        
+        
+        
+        if not isinstance(command, list):
+            if kwargs.get("shell"):
+                command = shlex.split(command)
+            else:
+                command = [command]
+
+        command = " ".join(quote(c) for c in command)
+        command = ["sh", "-c", command]
+        kwargs["shell"] = False
     proc = Popen(command, **kwargs)
     ACTIVE_PROCESSES.add(proc)
     stdout, stderr = None, None
@@ -453,6 +438,16 @@ if AUTOMATION:
 else:
     use_minidump = False
 
+
+def resolve_path(dirs, *components):
+    if None in components:
+        return None
+    for dir in dirs:
+        path = os.path.join(dir, *components)
+        if os.path.exists(path):
+            return path
+
+
 if use_minidump:
     env.setdefault("MINIDUMP_SAVE_PATH", env["MOZ_UPLOAD_DIR"])
 
@@ -478,57 +473,41 @@ if use_minidump:
     info("  MINIDUMP_STACKWALK={}".format(env.get("MINIDUMP_STACKWALK")))
 
 
-def need_updating_configure(configure):
-    if not os.path.exists(configure):
-        return True
+mozconfig = os.path.join(DIR.source, "mozconfig.autospider")
+CONFIGURE_ARGS += " --enable-nspr-build"
+CONFIGURE_ARGS += " --prefix={OBJDIR}/dist".format(OBJDIR=quote(OBJDIR))
 
-    dep_files = [
-        os.path.join(DIR.js_src, "configure.in"),
-        os.path.join(DIR.js_src, "old-configure.in"),
-    ]
-    for file in dep_files:
-        if os.path.getmtime(file) > os.path.getmtime(configure):
-            return True
 
-    return False
+with open(mozconfig, "wt") as fh:
+    if AUTOMATION and platform.system() == "Windows":
+        fh.write('. "$topsrcdir/build/%s/mozconfig.vs-latest"\n' % variant_platform)
+    fh.write("ac_add_options --with-project=js\n")
+    fh.write("ac_add_options " + CONFIGURE_ARGS + "\n")
+    fh.write("mk_add_options MOZ_OBJDIR=" + quote(OBJDIR) + "\n")
 
+env["MOZCONFIG"] = mozconfig
+
+mach = posixpath.join(PDIR.source, "mach")
 
 if not args.nobuild:
-    CONFIGURE_ARGS += " --enable-nspr-build"
-    CONFIGURE_ARGS += " --prefix={OBJDIR}/dist".format(OBJDIR=POBJDIR)
-
     
-    configure = os.path.join(DIR.js_src, "configure")
-    if need_updating_configure(configure):
-        shutil.copyfile(configure + ".in", configure)
-        os.chmod(configure, 0o755)
-
-    
-    if not args.noconf:
-        run_command(
-            [
-                "sh",
-                "-c",
-                posixpath.join(PDIR.js_src, "configure") + " " + CONFIGURE_ARGS,
-            ],
-            check=True,
-        )
-
-    
-    run_command("%s -w %s" % (MAKE, MAKEFLAGS), shell=True, check=True)
+    run_command([mach, "build"], check=True)
 
     if use_minidump:
         
+        cmd_env = env.copy()
+        cmd_env["MOZ_SOURCE_REPO"] = "file://" + DIR.source
+        cmd_env["RUSTC_COMMIT"] = "0"
+        cmd_env["MOZ_CRASHREPORTER"] = "1"
+        cmd_env["MOZ_AUTOMATION_BUILD_SYMBOLS"] = "1"
         run_command(
             [
-                "make",
+                mach,
+                "build",
                 "recurse_syms",
-                "MOZ_SOURCE_REPO=file://" + DIR.source,
-                "RUSTC_COMMIT=0",
-                "MOZ_CRASHREPORTER=1",
-                "MOZ_AUTOMATION_BUILD_SYMBOLS=1",
             ],
             check=True,
+            env=cmd_env,
         )
 
 COMMAND_PREFIX = []
