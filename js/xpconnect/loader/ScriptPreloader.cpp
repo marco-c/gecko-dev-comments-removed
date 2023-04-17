@@ -1127,6 +1127,10 @@ void ScriptPreloader::DecodeNextBatch(size_t chunkSize,
   JS::CompileOptions options(cx);
   FillCompileOptionsForCachedStencil(options);
 
+  
+  
+  options.usePinnedBytecode = true;
+
   if (!JS::CanCompileOffThread(cx, options, size) ||
       !JS::DecodeMultiOffThreadStencils(cx, options, mParsingSources,
                                         OffThreadDecodeCallback,
