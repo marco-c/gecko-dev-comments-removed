@@ -336,12 +336,6 @@ void OffTheBooksMutex::AssertCurrentThreadOwns() const {
 
 
 
-bool RWLock::TryReadLock() {
-  bool locked = this->TryReadLockInternal();
-  MOZ_ASSERT_IF(locked, mOwningThread == nullptr);
-  return locked;
-}
-
 void RWLock::ReadLock() {
   
   
@@ -353,15 +347,6 @@ void RWLock::ReadLock() {
 void RWLock::ReadUnlock() {
   MOZ_ASSERT(mOwningThread == nullptr);
   this->ReadUnlockInternal();
-}
-
-bool RWLock::TryWriteLock() {
-  bool locked = this->TryWriteLockInternal();
-  if (locked) {
-    mOwningThread = PR_GetCurrentThread();
-    Acquire();
-  }
-  return locked;
 }
 
 void RWLock::WriteLock() {
