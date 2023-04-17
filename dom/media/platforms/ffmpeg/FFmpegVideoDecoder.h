@@ -10,91 +10,13 @@
 #include "FFmpegDataDecoder.h"
 #include "FFmpegLibWrapper.h"
 #include "SimpleMap.h"
-#ifdef MOZ_WAYLAND_USE_VAAPI
-#  include "mozilla/LinkedList.h"
-#  include "mozilla/widget/DMABufSurface.h"
-#endif
+
+struct _VADRMPRIMESurfaceDescriptor;
+typedef struct _VADRMPRIMESurfaceDescriptor VADRMPRIMESurfaceDescriptor;
 
 namespace mozilla {
 
-#ifdef MOZ_WAYLAND_USE_VAAPI
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <int V>
-class DMABufSurfaceWrapper {};
-
-template <>
-class DMABufSurfaceWrapper<LIBAV_VER>;
-
-template <>
-class DMABufSurfaceWrapper<LIBAV_VER> final {
- public:
-  DMABufSurfaceWrapper(DMABufSurface* aSurface, FFmpegLibWrapper* aLib);
-  ~DMABufSurfaceWrapper();
-
-  
-  void LockVAAPIData(AVCodecContext* aAVCodecContext, AVFrame* aAVFrame);
-
-  
-  
-  void ReleaseVAAPIData();
-
-  
-  
-  bool IsUsed() const { return mSurface->IsGlobalRefSet(); }
-
-  RefPtr<DMABufSurfaceYUV> GetDMABufSurface() const {
-    return mSurface->GetAsDMABufSurfaceYUV();
-  }
-
-  
-  
-  
-  DMABufSurfaceWrapper(const DMABufSurfaceWrapper&) = delete;
-  const DMABufSurfaceWrapper& operator=(DMABufSurfaceWrapper const&) = delete;
-
- private:
-  const RefPtr<DMABufSurface> mSurface;
-  const FFmpegLibWrapper* mLib;
-  AVBufferRef* mAVHWFramesContext;
-  AVBufferRef* mHWAVBuffer;
-};
-#endif
+class VideoFramePool;
 
 template <int V>
 class FFmpegVideoDecoder : public FFmpegDataDecoder<V> {};
@@ -163,17 +85,13 @@ class FFmpegVideoDecoder<LIBAV_VER>
   void InitVAAPICodecContext();
   AVCodec* FindVAAPICodec();
   bool IsHardwareAccelerated(nsACString& aFailureReason) const override;
-  bool GetVAAPISurfaceDescriptor(VADRMPRIMESurfaceDescriptor& aVaDesc);
+  bool GetVAAPISurfaceDescriptor(VADRMPRIMESurfaceDescriptor* aVaDesc);
 
   MediaResult CreateImageVAAPI(int64_t aOffset, int64_t aPts, int64_t aDuration,
                                MediaDataDecoder::DecodedData& aResults);
   MediaResult CreateImageDMABuf(int64_t aOffset, int64_t aPts,
                                 int64_t aDuration,
                                 MediaDataDecoder::DecodedData& aResults);
-
-  void ReleaseUnusedVAAPIFrames();
-  DMABufSurfaceWrapper<LIBAV_VER>* GetUnusedDMABufSurfaceWrapper();
-  void ReleaseDMABufSurfaces();
 #endif
 
 #ifdef MOZ_WAYLAND_USE_VAAPI
@@ -181,7 +99,7 @@ class FFmpegVideoDecoder<LIBAV_VER>
   bool mEnableHardwareDecoding;
   VADisplay mDisplay;
   bool mUseDMABufSurfaces;
-  nsTArray<DMABufSurfaceWrapper<LIBAV_VER>> mDMABufSurfaces;
+  UniquePtr<VideoFramePool> mVideoFramePool;
 #endif
   RefPtr<KnowsCompositor> mImageAllocator;
   RefPtr<ImageContainer> mImageContainer;
