@@ -30,6 +30,14 @@
 
 
 
+typedef double      __double_t;
+typedef __double_t  double_t;
+
+
+
+
+
+
 
 
 
@@ -591,6 +599,53 @@ CMPLXL(long double x, long double y)
 
 #endif 
  
+
+
+
+
+
+
+
+
+
+
+
+static inline double
+rnint(__double_t x)
+{
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+	return ((double)(x + 0x1.8p52) - 0x1.8p52);
+}
+
+
+
+
+
+
+#if (defined(amd64) || defined(__i386__)) && defined(__GNUCLIKE_ASM)
+#define	irint(x)						\
+    (sizeof(x) == sizeof(float) &&				\
+    sizeof(__float_t) == sizeof(long double) ? irintf(x) :	\
+    sizeof(x) == sizeof(double) &&				\
+    sizeof(__double_t) == sizeof(long double) ? irintd(x) :	\
+    sizeof(x) == sizeof(long double) ? irintl(x) : (int)(x))
+#else
+#define	irint(x)	((int)(x))
+#endif
+
 #ifdef DEBUG
 #if defined(__amd64__) || defined(__i386__)
 #define	breakpoint()	asm("int $3")
