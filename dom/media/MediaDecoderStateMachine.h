@@ -388,6 +388,7 @@ class MediaDecoderStateMachine
   void SetPlaybackRate(double aPlaybackRate);
   void PreservesPitchChanged();
   void LoopingChanged();
+  void StreamNameChanged();
   void UpdateSecondaryVideoContainer();
   void UpdateOutputCaptured();
   void OutputTracksChanged();
@@ -720,6 +721,9 @@ class MediaDecoderStateMachine
   
   
   Mirror<bool> mLooping;
+
+  
+  Mirror<nsAutoString> mStreamName;
 
   
   

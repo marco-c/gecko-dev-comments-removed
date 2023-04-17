@@ -221,6 +221,8 @@ class AudioStream final {
   
   void SetVolume(double aVolume);
 
+  void SetStreamName(const nsAString& aStreamName);
+
   
   
   Result<already_AddRefed<MediaSink::EndedPromise>, nsresult> Start();

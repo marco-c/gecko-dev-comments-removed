@@ -74,6 +74,11 @@ class MediaSink {
 
   
   
+  
+  virtual void SetStreamName(const nsAString& aStreamName) {}
+
+  
+  
   virtual void SetPlaybackRate(double aPlaybackRate) {}
 
   

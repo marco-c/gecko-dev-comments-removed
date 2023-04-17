@@ -834,6 +834,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   class MediaStreamRenderer;
   class MediaStreamTrackListener;
   class ShutdownObserver;
+  class TitleChangeObserver;
   class MediaControlKeyListener;
 
   MediaDecoderOwner::NextFrameStatus NextFrameStatus();
@@ -1462,6 +1463,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   const RefPtr<ShutdownObserver> mShutdownObserver;
 
+  const RefPtr<TitleChangeObserver> mTitleChangeObserver;
+
   
   
   RefPtr<MediaSource> mSrcMediaSource;
@@ -1911,6 +1914,9 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   
   RefPtr<MediaControlKeyListener> mMediaControlKeyListener;
+
+  
+  void UpdateStreamName();
 
   
   bool IsBeingUsedInPictureInPictureMode() const;
