@@ -181,8 +181,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
                                   public nsIScriptObjectPrincipal,
                                   public nsSupportsWeakReference,
                                   public nsIInterfaceRequestor,
-                                  public PRCListStr,
-                                  public nsAPostRefreshObserver {
+                                  public PRCListStr {
  public:
   typedef mozilla::dom::BrowsingContext RemoteProxy;
 
@@ -916,8 +915,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
       mozilla::dom::PromiseDocumentFlushedCallback& aCallback,
       mozilla::ErrorResult& aError);
 
-  void DidRefresh() override;
-
   void GetReturnValueOuter(JSContext* aCx,
                            JS::MutableHandle<JS::Value> aReturnValue,
                            nsIPrincipal& aSubjectPrincipal,
@@ -1218,11 +1215,15 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   
   
   
-  template <bool call>
-  void CallOrCancelDocumentFlushedResolvers();
+  
+  
+  void CallDocumentFlushedResolvers(bool aUntilExhaustion);
 
-  void CallDocumentFlushedResolvers();
-  void CancelDocumentFlushedResolvers();
+  
+  
+  
+  
+  bool MaybeCallDocumentFlushedResolvers(bool aUntilExhaustion);
 
   
   void FireFrameLoadEvent();
@@ -1444,11 +1445,11 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   
   
-  bool mObservingDidRefresh;
-  
-  
-  
+  bool mObservingRefresh;
+
   bool mIteratingDocumentFlushedResolvers;
+
+  bool TryToObserveRefresh();
 
   nsTArray<uint32_t> mEnabledSensors;
 

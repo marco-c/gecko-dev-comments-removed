@@ -223,11 +223,15 @@ void PerformanceMainThread::InsertEventTimingEntry(
   
   
   mHasQueuedRefreshdriverObserver =
-      presContext->RegisterOneShotPostRefreshObserver(
-          new OneShotPostRefreshObserver(
+      presContext->RegisterManagedPostRefreshObserver(
+          new ManagedPostRefreshObserver(
               presShell, [performance = RefPtr<PerformanceMainThread>(this)](
-                             PresShell*, OneShotPostRefreshObserver*) {
-                performance->DispatchPendingEventTimingEntries();
+                             bool aWasCanceled) {
+                if (!aWasCanceled) {
+                  
+                  performance->DispatchPendingEventTimingEntries();
+                }
+                return ManagedPostRefreshObserver::Unregister::Yes;
               }));
 }
 

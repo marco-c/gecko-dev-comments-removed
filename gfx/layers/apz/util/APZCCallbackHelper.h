@@ -35,21 +35,20 @@ typedef std::function<void(uint64_t, const nsTArray<TouchBehaviorFlags>&)>
     SetAllowedTouchBehaviorCallback;
 
 
-class DisplayportSetListener : public OneShotPostRefreshObserver {
+class DisplayportSetListener : public ManagedPostRefreshObserver {
  public:
   DisplayportSetListener(nsIWidget* aWidget, PresShell* aPresShell,
                          const uint64_t& aInputBlockId,
                          nsTArray<ScrollableLayerGuid>&& aTargets);
   virtual ~DisplayportSetListener();
-  bool Register();
+  void TryRegister();
 
  private:
   RefPtr<nsIWidget> mWidget;
   uint64_t mInputBlockId;
   nsTArray<ScrollableLayerGuid> mTargets;
 
-  static void OnPostRefresh(DisplayportSetListener* aListener,
-                            PresShell* aPresShell);
+  void OnPostRefresh();
 };
 
 
@@ -144,7 +143,7 @@ class APZCCallbackHelper {
 
 
 
-  static UniquePtr<DisplayportSetListener> SendSetTargetAPZCNotification(
+  static already_AddRefed<DisplayportSetListener> SendSetTargetAPZCNotification(
       nsIWidget* aWidget, mozilla::dom::Document* aDocument,
       const WidgetGUIEvent& aEvent, const LayersId& aLayersId,
       uint64_t aInputBlockId);

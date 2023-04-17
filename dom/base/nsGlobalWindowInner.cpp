@@ -898,8 +898,6 @@ class PromiseDocumentFlushedResolver final {
     }
   }
 
-  void Cancel() { mPromise->MaybeReject(NS_ERROR_ABORT); }
-
   RefPtr<Promise> mPromise;
   RefPtr<PromiseDocumentFlushedCallback> mCallback;
 };
@@ -939,7 +937,7 @@ nsGlobalWindowInner::nsGlobalWindowInner(nsGlobalWindowOuter* aOuterWindow,
       mIdleRequestExecutor(nullptr),
       mDialogAbuseCount(0),
       mAreDialogsEnabled(true),
-      mObservingDidRefresh(false),
+      mObservingRefresh(false),
       mIteratingDocumentFlushedResolvers(false),
       mCanSkipCCGeneration(0),
       mBeforeUnloadListenerCount(0) {
@@ -1197,13 +1195,6 @@ void nsGlobalWindowInner::FreeInnerObjects() {
     while (mDoc->EventHandlingSuppressed()) {
       mDoc->UnsuppressEventHandlingAndFireEvents(false);
     }
-
-    if (mObservingDidRefresh) {
-      PresShell* presShell = mDoc->GetPresShell();
-      if (presShell) {
-        Unused << presShell->RemovePostRefreshObserver(this);
-      }
-    }
   }
 
   
@@ -1259,8 +1250,7 @@ void nsGlobalWindowInner::FreeInnerObjects() {
 
   
   
-  CallDocumentFlushedResolvers();
-  mObservingDidRefresh = false;
+  CallDocumentFlushedResolvers( true);
 
   DisconnectEventTargetObjects();
 
@@ -6937,12 +6927,7 @@ already_AddRefed<Promise> nsGlobalWindowInner::PromiseDocumentFlushed(
     return nullptr;
   }
 
-  if (mIteratingDocumentFlushedResolvers) {
-    aError.Throw(NS_ERROR_FAILURE);
-    return nullptr;
-  }
-
-  if (!mDoc) {
+  if (!mDoc || mIteratingDocumentFlushedResolvers) {
     aError.Throw(NS_ERROR_FAILURE);
     return nullptr;
   }
@@ -6976,23 +6961,43 @@ already_AddRefed<Promise> nsGlobalWindowInner::PromiseDocumentFlushed(
     return resultPromise.forget();
   }
 
-  if (!mObservingDidRefresh) {
-    bool success = presShell->AddPostRefreshObserver(this);
-    if (!success) {
-      aError.Throw(NS_ERROR_FAILURE);
-      return nullptr;
-    }
-    mObservingDidRefresh = true;
+  if (!TryToObserveRefresh()) {
+    aError.Throw(NS_ERROR_FAILURE);
+    return nullptr;
   }
 
   mDocumentFlushedResolvers.AppendElement(std::move(flushResolver));
   return resultPromise.forget();
 }
 
-template <bool call>
-void nsGlobalWindowInner::CallOrCancelDocumentFlushedResolvers() {
-  MOZ_ASSERT(!mIteratingDocumentFlushedResolvers);
+bool nsGlobalWindowInner::TryToObserveRefresh() {
+  if (mObservingRefresh) {
+    return true;
+  }
 
+  if (!mDoc) {
+    return false;
+  }
+
+  nsPresContext* pc = mDoc->GetPresContext();
+  if (!pc) {
+    return false;
+  }
+
+  auto observer = MakeRefPtr<ManagedPostRefreshObserver>(
+      pc->PresShell(), [win = RefPtr{this}](bool aWasCanceled) {
+        if (win->MaybeCallDocumentFlushedResolvers(
+                 aWasCanceled)) {
+          return ManagedPostRefreshObserver::Unregister::No;
+        }
+        win->mObservingRefresh = false;
+        return ManagedPostRefreshObserver::Unregister::Yes;
+      });
+  mObservingRefresh = pc->RegisterManagedPostRefreshObserver(observer.get());
+  return mObservingRefresh;
+}
+
+void nsGlobalWindowInner::CallDocumentFlushedResolvers(bool aUntilExhaustion) {
   while (true) {
     {
       
@@ -7001,14 +7006,12 @@ void nsGlobalWindowInner::CallOrCancelDocumentFlushedResolvers() {
       nsAutoMicroTask mt;
 
       mIteratingDocumentFlushedResolvers = true;
-      for (const auto& documentFlushedResolver : mDocumentFlushedResolvers) {
-        if (call) {
-          documentFlushedResolver->Call();
-        } else {
-          documentFlushedResolver->Cancel();
-        }
+
+      auto resolvers = std::move(mDocumentFlushedResolvers);
+      for (const auto& resolver : resolvers) {
+        resolver->Call();
       }
-      mDocumentFlushedResolvers.Clear();
+
       mIteratingDocumentFlushedResolvers = false;
     }
 
@@ -7016,68 +7019,38 @@ void nsGlobalWindowInner::CallOrCancelDocumentFlushedResolvers() {
     
 
     
-    if (!mDocumentFlushedResolvers.Length()) {
+    
+    
+    
+    
+    
+    
+    if (!aUntilExhaustion || mDocumentFlushedResolvers.IsEmpty()) {
       break;
     }
-
-    
-    
-    
-    if (mDoc) {
-      PresShell* presShell = mDoc->GetPresShell();
-      if (presShell) {
-        Unused << presShell->AddPostRefreshObserver(this);
-        break;
-      }
-    }
-
-    
-    
-    
-    
-    
   }
 }
 
-void nsGlobalWindowInner::CallDocumentFlushedResolvers() {
-  CallOrCancelDocumentFlushedResolvers<true>();
-}
-
-void nsGlobalWindowInner::CancelDocumentFlushedResolvers() {
-  CallOrCancelDocumentFlushedResolvers<false>();
-}
-
-void nsGlobalWindowInner::DidRefresh() {
-  RefPtr<nsGlobalWindowInner> kungFuDeathGrip(this);
-
-  auto rejectionGuard = MakeScopeExit([&] {
-    CancelDocumentFlushedResolvers();
-    mObservingDidRefresh = false;
-  });
-
+bool nsGlobalWindowInner::MaybeCallDocumentFlushedResolvers(
+    bool aUntilExhaustion) {
   MOZ_ASSERT(mDoc);
 
   PresShell* presShell = mDoc->GetPresShell();
-  MOZ_ASSERT(presShell);
+  if (!presShell || aUntilExhaustion) {
+    CallDocumentFlushedResolvers( true);
+    return false;
+  }
 
   if (presShell->NeedStyleFlush() || presShell->NeedLayoutFlush()) {
     
     
     
     
-    rejectionGuard.release();
-    return;
+    return true;
   }
 
-  bool success = presShell->RemovePostRefreshObserver(this);
-  if (!success) {
-    return;
-  }
-
-  rejectionGuard.release();
-
-  CallDocumentFlushedResolvers();
-  mObservingDidRefresh = false;
+  CallDocumentFlushedResolvers( false);
+  return !mDocumentFlushedResolvers.IsEmpty();
 }
 
 already_AddRefed<nsWindowRoot> nsGlobalWindowInner::GetWindowRoot(

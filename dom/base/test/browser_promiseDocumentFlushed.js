@@ -73,20 +73,25 @@ add_task(async function setup() {
 
 
 add_task(async function test_basic() {
+  info("Dirtying style / layout");
   dirtyStyleAndLayout();
   assertFlushesRequired();
 
+  info("Waiting");
   await window.promiseDocumentFlushed(() => {});
   assertNoFlushesRequired();
 
+  info("Dirtying style");
   dirtyStyle();
   assertFlushesRequired();
 
+  info("Waiting");
   await window.promiseDocumentFlushed(() => {});
   assertNoFlushesRequired();
 
   
   
+  info("Cleaning up");
   await cleanTheDOM();
 });
 

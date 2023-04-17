@@ -73,18 +73,20 @@ namespace mozilla {
 
 
 
-
-class OneShotPostRefreshObserver : public nsAPostRefreshObserver {
+class ManagedPostRefreshObserver : public nsAPostRefreshObserver {
  public:
-  using Action =
-      std::function<void(mozilla::PresShell*, OneShotPostRefreshObserver*)>;
-  NS_INLINE_DECL_REFCOUNTING(OneShotPostRefreshObserver)
-  OneShotPostRefreshObserver(mozilla::PresShell* aPresShell, Action&& aAction);
-  explicit OneShotPostRefreshObserver(mozilla::PresShell* aPresShell);
+  
+  
+  enum class Unregister : bool { No, Yes };
+  using Action = std::function<Unregister(bool aWasCanceled)>;
+  NS_INLINE_DECL_REFCOUNTING(ManagedPostRefreshObserver)
+  ManagedPostRefreshObserver(mozilla::PresShell*, Action&&);
+  explicit ManagedPostRefreshObserver(mozilla::PresShell*);
   void DidRefresh() override;
+  void Cancel();
 
  protected:
-  virtual ~OneShotPostRefreshObserver();
+  virtual ~ManagedPostRefreshObserver();
   RefPtr<mozilla::PresShell> mPresShell;
   Action mAction;
 };
