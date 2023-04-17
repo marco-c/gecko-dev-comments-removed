@@ -3603,7 +3603,7 @@ impl ClipBatcher {
                             sub_rect.translate(actual_rect.origin.to_vector()) / global_device_pixel_scale;
                         let (local_rect, scissor_rect) = match map_local_to_world.unmap(&world_rect) {
                             Some(local_rect)
-                                if prim_transform_id.transform_kind() == TransformedRectKind::AxisAligned => {
+                                if clip_transform_id.transform_kind() == TransformedRectKind::AxisAligned => {
                                 (local_rect.intersection(&rect).unwrap_or_default(), None)
                             }
                             _ => {
