@@ -476,6 +476,17 @@ var ExtensionAPIRequestHandler = {
       return [];
     }
 
+    if (request.apiObjectType) {
+      
+      
+      
+      
+      
+      
+      
+      return request.args;
+    }
+
     const { apiNamespace, apiName, args } = request;
     
     
