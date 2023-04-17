@@ -185,6 +185,7 @@ this.TelemetryFeed = class TelemetryFeed {
       "deletion.request.impression_id",
       this._impressionId
     );
+    Services.telemetry.scalarSet("deletion.request.context_id", contextId);
   }
 
   handleEvent(event) {
