@@ -57,7 +57,7 @@
 #include "jit/BaselineDebugModeOSR.h"  
 #include "jit/BaselineJIT.h"           
 #include "jit/Invalidation.h"         
-#include "jit/JitContext.h"           
+#include "jit/Ion.h"                  
 #include "jit/JitScript.h"            
 #include "jit/JSJitFrameIter.h"       
 #include "jit/RematerializedFrame.h"  

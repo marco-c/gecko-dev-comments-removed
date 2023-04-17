@@ -34,6 +34,7 @@
 #include "ds/IdValuePair.h"  
 #include "frontend/BytecodeCompiler.h"
 #include "gc/Policy.h"
+#include "jit/BaselineJIT.h"
 #include "js/CallAndConstruct.h"  
 #include "js/CharacterEncoding.h"
 #include "js/friend/DumpFunctions.h"  
