@@ -37,6 +37,11 @@ class FormValidationChild extends JSWindowActorChild {
           this._hidePopup();
         }
         break;
+      case "pagehide":
+        
+        
+        this._onBlur();
+        break;
       case "input":
         this._onInput(aEvent);
         break;
@@ -129,10 +134,12 @@ class FormValidationChild extends JSWindowActorChild {
 
 
   _onBlur(aEvent) {
-    aEvent.originalTarget.removeEventListener("input", this);
-    aEvent.originalTarget.removeEventListener("blur", this);
-    this._element = null;
+    if (this._element) {
+      this._element.removeEventListener("input", this);
+      this._element.removeEventListener("blur", this);
+    }
     this._hidePopup();
+    this._element = null;
   }
 
   
@@ -159,10 +166,17 @@ class FormValidationChild extends JSWindowActorChild {
       panelData.position = "after_start";
     }
     this.sendAsyncMessage("FormValidation:ShowPopup", panelData);
+
+    aElement.ownerGlobal.addEventListener("pagehide", this, {
+      mozSystemGroup: true,
+    });
   }
 
   _hidePopup() {
     this.sendAsyncMessage("FormValidation:HidePopup", {});
+    this._element.ownerGlobal.removeEventListener("pagehide", this, {
+      mozSystemGroup: true,
+    });
   }
 
   _isRootDocumentEvent(aEvent) {
