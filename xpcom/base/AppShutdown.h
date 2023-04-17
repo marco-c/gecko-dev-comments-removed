@@ -21,6 +21,7 @@ class AppShutdown {
  public:
   static bool IsShuttingDown();
   static ShutdownPhase GetCurrentShutdownPhase();
+  static bool IsInOrBeyond(ShutdownPhase aPhase);
 
   
 
@@ -92,6 +93,20 @@ class AppShutdown {
 
 
   static const char* GetObserverKey(ShutdownPhase aPhase);
+
+  
+
+
+  static ShutdownPhase GetShutdownPhaseFromTopic(const char* aTopic);
+
+#ifdef DEBUG
+  
+
+
+
+
+  static bool IsNoOrLegalShutdownTopic(const char* aTopic);
+#endif
 };
 
 }  

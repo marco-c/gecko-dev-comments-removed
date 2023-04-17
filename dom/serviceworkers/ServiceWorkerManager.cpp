@@ -24,6 +24,7 @@
 
 #include "jsapi.h"
 
+#include "mozilla/AppShutdown.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ErrorNames.h"
@@ -1374,22 +1375,23 @@ ServiceWorkerManager::GetOrCreateJobQueue(const nsACString& aKey,
 
 
 already_AddRefed<ServiceWorkerManager> ServiceWorkerManager::GetInstance() {
-  
-  
-  static bool firstTime = true;
-  if (firstTime) {
+  if (!gInstance) {
     RefPtr<ServiceWorkerRegistrar> swr;
 
     
-    
     if (XRE_IsParentProcess()) {
+      
+      
+      if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+        return nullptr;
+      }
+      
+      
       swr = ServiceWorkerRegistrar::Get();
       if (!swr) {
         return nullptr;
       }
     }
-
-    firstTime = false;
 
     MOZ_ASSERT(NS_IsMainThread());
 

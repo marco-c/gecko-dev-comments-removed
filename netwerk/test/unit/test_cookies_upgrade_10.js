@@ -46,7 +46,9 @@ add_task(async function() {
 
     
     
-    Services.obs.notifyObservers(null, "profile-before-change");
+    Services.startup.advanceShutdownPhase(
+      Services.startup.SHUTDOWN_PHASE_APPSHUTDOWN
+    );
 
     
     Assert.equal(12, getDBVersion(destFile));

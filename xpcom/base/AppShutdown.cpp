@@ -110,6 +110,10 @@ ShutdownPhase AppShutdown::GetCurrentShutdownPhase() {
   return sCurrentShutdownPhase;
 }
 
+bool AppShutdown::IsInOrBeyond(ShutdownPhase aPhase) {
+  return (sCurrentShutdownPhase >= aPhase);
+}
+
 int AppShutdown::GetExitCode() { return sExitCode; }
 
 void AppShutdown::SaveEnvVarsForPotentialRestart() {
@@ -304,11 +308,33 @@ bool AppShutdown::IsRestarting() {
   return sShutdownMode == AppShutdownMode::Restart;
 }
 
+#ifdef DEBUG
+static bool sNotifyingShutdownObservers = false;
+
+bool AppShutdown::IsNoOrLegalShutdownTopic(const char* aTopic) {
+  if (!XRE_IsParentProcess()) {
+    
+    
+    return true;
+  }
+  ShutdownPhase phase = GetShutdownPhaseFromTopic(aTopic);
+  return phase == ShutdownPhase::NotInShutdown ||
+         (sNotifyingShutdownObservers && phase == sCurrentShutdownPhase);
+}
+#endif
+
 void AdvanceShutdownPhaseInternal(
     ShutdownPhase aPhase, bool doNotify, const char16_t* aNotificationData,
     const nsCOMPtr<nsISupports>& aNotificationSubject) {
-  MOZ_ASSERT(aPhase >= sCurrentShutdownPhase);
-  if (sCurrentShutdownPhase >= aPhase) return;
+  AssertIsOnMainThread();
+
+  
+  
+  
+  
+  if (sCurrentShutdownPhase >= aPhase) {
+    return;
+  }
   sCurrentShutdownPhase = aPhase;
 
 #ifndef ANDROID
@@ -327,6 +353,10 @@ void AdvanceShutdownPhaseInternal(
       nsCOMPtr<nsIObserverService> obsService =
           mozilla::services::GetObserverService();
       if (obsService) {
+#ifdef DEBUG
+        sNotifyingShutdownObservers = true;
+        auto reset = MakeScopeExit([] { sNotifyingShutdownObservers = false; });
+#endif
         obsService->NotifyObservers(aNotificationSubject, aTopic,
                                     aNotificationData);
       }
@@ -348,6 +378,15 @@ void AppShutdown::AdvanceShutdownPhase(
     const nsCOMPtr<nsISupports>& aNotificationSubject) {
   AdvanceShutdownPhaseInternal(aPhase,  true, aNotificationData,
                                aNotificationSubject);
+}
+
+ShutdownPhase AppShutdown::GetShutdownPhaseFromTopic(const char* aTopic) {
+  for (size_t i = 0; i < ArrayLength(sPhaseObserverKeys); ++i) {
+    if (sPhaseObserverKeys[i] && !strcmp(sPhaseObserverKeys[i], aTopic)) {
+      return static_cast<ShutdownPhase>(i);
+    }
+  }
+  return ShutdownPhase::NotInShutdown;
 }
 
 }  
