@@ -6,10 +6,6 @@
 
 
 
-const {
-  ResourceWatcher,
-} = require("devtools/shared/resources/resource-watcher");
-
 add_task(async function() {
   
   
@@ -83,7 +79,7 @@ async function testPlatformMessagesResources() {
   };
 
   await resourceWatcher.watchResources(
-    [ResourceWatcher.TYPES.PLATFORM_MESSAGE],
+    [resourceWatcher.TYPES.PLATFORM_MESSAGE],
     {
       onAvailable,
     }
@@ -120,7 +116,7 @@ async function testPlatformMessagesResourcesWithIgnoreExistingResources() {
 
   const availableResources = [];
   await resourceWatcher.watchResources(
-    [ResourceWatcher.TYPES.PLATFORM_MESSAGE],
+    [resourceWatcher.TYPES.PLATFORM_MESSAGE],
     {
       onAvailable: resources => {
         for (const resource of resources) {

@@ -6,10 +6,6 @@
 
 
 
-const {
-  ResourceWatcher,
-} = require("devtools/shared/resources/resource-watcher");
-
 add_task(async function() {
   const tab = await addTab("data:text/html,Test");
   const { client, resourceWatcher, targetCommand } = await initResourceWatcher(
@@ -19,7 +15,7 @@ add_task(async function() {
   
   
   await resourceWatcher.watchResources(
-    [ResourceWatcher.TYPES.CONSOLE_MESSAGE],
+    [resourceWatcher.TYPES.CONSOLE_MESSAGE],
     {
       onAvailable: () => {},
     }

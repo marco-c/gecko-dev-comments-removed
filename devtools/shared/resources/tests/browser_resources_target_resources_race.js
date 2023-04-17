@@ -3,10 +3,6 @@
 
 "use strict";
 
-const {
-  ResourceWatcher,
-} = require("devtools/shared/resources/resource-watcher");
-
 
 
 
@@ -43,7 +39,7 @@ add_task(async function() {
   
   
   const initialWatchPromise = resourceWatcher.watchResources(
-    [ResourceWatcher.TYPES.CSS_MESSAGE],
+    [resourceWatcher.TYPES.CSS_MESSAGE],
     {
       onAvailable: onCssMessageAvailable,
     }
@@ -52,7 +48,7 @@ add_task(async function() {
   
   const onMessageReceived = waitForNextResource(
     resourceWatcher,
-    ResourceWatcher.TYPES.PLATFORM_MESSAGE,
+    resourceWatcher.TYPES.PLATFORM_MESSAGE,
     {
       ignoreExistingResources: false,
       predicate: r => r.message === expectedPlatformMessage,
@@ -67,7 +63,7 @@ add_task(async function() {
   await initialWatchPromise;
 
   
-  resourceWatcher.unwatchResources([ResourceWatcher.TYPES.CSS_MESSAGE], {
+  resourceWatcher.unwatchResources([resourceWatcher.TYPES.CSS_MESSAGE], {
     onAvailable: onCssMessageAvailable,
   });
 

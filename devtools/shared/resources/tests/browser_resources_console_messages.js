@@ -9,10 +9,6 @@
 
 
 
-const {
-  ResourceWatcher,
-} = require("devtools/shared/resources/resource-watcher");
-
 const FISSION_TEST_URL = URL_ROOT_SSL + "fission_document.html";
 const IFRAME_URL = URL_ROOT_ORG_SSL + "fission_iframe.html";
 
@@ -59,7 +55,7 @@ async function testTabConsoleMessagesResources(executeInIframe) {
 
       is(
         resource.resourceType,
-        ResourceWatcher.TYPES.CONSOLE_MESSAGE,
+        resourceWatcher.TYPES.CONSOLE_MESSAGE,
         "Received a message"
       );
       ok(resource.message, "message is wrapped into a message attribute");
@@ -82,7 +78,7 @@ async function testTabConsoleMessagesResources(executeInIframe) {
   };
 
   await resourceWatcher.watchResources(
-    [ResourceWatcher.TYPES.CONSOLE_MESSAGE],
+    [resourceWatcher.TYPES.CONSOLE_MESSAGE],
     {
       onAvailable,
     }
@@ -134,7 +130,7 @@ async function testTabConsoleMessagesResourcesWithIgnoreExistingResources(
 
   const availableResources = [];
   await resourceWatcher.watchResources(
-    [ResourceWatcher.TYPES.CONSOLE_MESSAGE],
+    [resourceWatcher.TYPES.CONSOLE_MESSAGE],
     {
       onAvailable: resources => availableResources.push(...resources),
       ignoreExistingResources: true,

@@ -5,10 +5,6 @@
 
 
 
-const {
-  ResourceWatcher,
-} = require("devtools/shared/resources/resource-watcher");
-
 add_task(async function() {
   
   const tab = await addTab(
@@ -21,7 +17,7 @@ add_task(async function() {
 
   
   
-  await resourceWatcher.watchResources([ResourceWatcher.TYPES.CSS_CHANGE], {
+  await resourceWatcher.watchResources([resourceWatcher.TYPES.CSS_CHANGE], {
     onAvailable: () => {},
   });
 
@@ -40,7 +36,7 @@ add_task(async function() {
   await setProperty(style.rule, 0, "color", "black");
 
   const availableResources = [];
-  await resourceWatcher.watchResources([ResourceWatcher.TYPES.CSS_CHANGE], {
+  await resourceWatcher.watchResources([resourceWatcher.TYPES.CSS_CHANGE], {
     onAvailable: resources => availableResources.push(...resources),
   });
   assertResource(
@@ -80,7 +76,7 @@ add_task(async function() {
 
   info("Check whether ResourceWatcher sends all resources added in this test");
   const existingResources = [];
-  await resourceWatcher.watchResources([ResourceWatcher.TYPES.CSS_CHANGE], {
+  await resourceWatcher.watchResources([resourceWatcher.TYPES.CSS_CHANGE], {
     onAvailable: resources => existingResources.push(...resources),
   });
   await waitUntil(() => existingResources.length === 4);

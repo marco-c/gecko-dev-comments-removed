@@ -3,10 +3,6 @@
 
 "use strict";
 
-const {
-  ResourceWatcher,
-} = require("devtools/shared/resources/resource-watcher");
-
 
 
 
@@ -27,7 +23,7 @@ add_task(async function() {
     targetCommand,
   } = await initMultiProcessResourceWatcher();
 
-  const { CONSOLE_MESSAGE, ROOT_NODE } = ResourceWatcher.TYPES;
+  const { CONSOLE_MESSAGE, ROOT_NODE } = resourceWatcher.TYPES;
 
   
   

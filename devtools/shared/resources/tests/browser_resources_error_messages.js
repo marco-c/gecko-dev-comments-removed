@@ -6,10 +6,6 @@
 
 
 
-const {
-  ResourceWatcher,
-} = require("devtools/shared/resources/resource-watcher");
-
 
 const httpServer = createTestHTTPServer();
 httpServer.registerPathHandler(`/test_page_errors.html`, (req, res) => {
@@ -86,7 +82,7 @@ async function testErrorMessagesResources() {
     }
   };
 
-  await resourceWatcher.watchResources([ResourceWatcher.TYPES.ERROR_MESSAGE], {
+  await resourceWatcher.watchResources([resourceWatcher.TYPES.ERROR_MESSAGE], {
     onAvailable,
   });
 
@@ -123,7 +119,7 @@ async function testErrorMessagesResourcesWithIgnoreExistingResources() {
   await triggerErrors(tab);
 
   const availableResources = [];
-  await resourceWatcher.watchResources([ResourceWatcher.TYPES.ERROR_MESSAGE], {
+  await resourceWatcher.watchResources([resourceWatcher.TYPES.ERROR_MESSAGE], {
     onAvailable: resources => availableResources.push(...resources),
     ignoreExistingResources: true,
   });
