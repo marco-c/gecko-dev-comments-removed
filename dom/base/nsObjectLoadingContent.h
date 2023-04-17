@@ -64,7 +64,10 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
     
     eType_Image = TYPE_IMAGE,
     
-    eType_Plugin = TYPE_PLUGIN,
+    
+    
+    eType_Fallback = TYPE_FALLBACK,
+    
     
     
     eType_FakePlugin = TYPE_FAKE_PLUGIN,
@@ -73,38 +76,6 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
     
     
     eType_Null = TYPE_NULL
-  };
-
-  enum FallbackType {
-    
-    eFallbackUnsupported = nsIObjectLoadingContent::PLUGIN_UNSUPPORTED,
-    
-    eFallbackAlternate = nsIObjectLoadingContent::PLUGIN_ALTERNATE,
-    
-    eFallbackDisabled = nsIObjectLoadingContent::PLUGIN_DISABLED,
-    
-    eFallbackBlocklisted = nsIObjectLoadingContent::PLUGIN_BLOCKLISTED,
-    
-    eFallbackOutdated = nsIObjectLoadingContent::PLUGIN_OUTDATED,
-    
-    eFallbackCrashed = nsIObjectLoadingContent::PLUGIN_CRASHED,
-    
-    
-    
-    
-    
-    eFallbackClickToPlay = nsIObjectLoadingContent::PLUGIN_CLICK_TO_PLAY,
-    
-    eFallbackVulnerableUpdatable =
-        nsIObjectLoadingContent::PLUGIN_VULNERABLE_UPDATABLE,
-    
-    eFallbackVulnerableNoUpdate =
-        nsIObjectLoadingContent::PLUGIN_VULNERABLE_NO_UPDATE,
-    
-    eFallbackClickToPlayQuiet =
-        nsIObjectLoadingContent::PLUGIN_CLICK_TO_PLAY_QUIET,
-    
-    eFallbackBlockAllPlugins = nsIObjectLoadingContent::PLUGIN_BLOCK_ALL,
   };
 
   nsObjectLoadingContent();
@@ -179,21 +150,10 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
   uint32_t GetContentTypeForMIMEType(const nsAString& aMIMEType) {
     return GetTypeOfContent(NS_ConvertUTF16toUTF8(aMIMEType), false);
   }
-  void PlayPlugin(mozilla::dom::SystemCallerGuarantee,
-                  mozilla::ErrorResult& aRv);
   void Reload(bool aClearActivation, mozilla::ErrorResult& aRv) {
     aRv = Reload(aClearActivation);
   }
-  bool Activated() const { return mActivated; }
   nsIURI* GetSrcURI() const { return mURI; }
-
-  
-
-
-
-  uint32_t DefaultFallbackType();
-
-  uint32_t PluginFallbackType() const { return mFallbackType; }
 
   
   void SkipFakePlugins(mozilla::ErrorResult& aRv) { aRv = SkipFakePlugins(); }
@@ -308,7 +268,10 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
 
   void CreateStaticClone(nsObjectLoadingContent* aDest) const;
 
-  nsresult BindToTree(mozilla::dom::BindContext&, nsINode& aParent);
+  nsresult BindToTree(mozilla::dom::BindContext& aCxt, nsINode& aParent) {
+    nsImageLoadingContent::BindToTree(aCxt, aParent);
+    return NS_OK;
+  }
   void UnbindFromTree(bool aNullParent = true);
 
   
@@ -369,11 +332,7 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
   
 
 
-
-
-
-
-  void LoadFallback(FallbackType aType, bool aNotify);
+  void ConfigureFallback();
 
   
 
@@ -433,33 +392,6 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
 
 
 
-
-  bool ShouldPlay(FallbackType& aReason);
-
-  
-
-
-
-
-
-
-
-
-
-
-  bool FavorFallbackMode(bool aIsPluginClickToPlay);
-
-  
-
-
-  bool HasGoodFallback();
-
-  
-
-
-
-
-
   bool PreferFallback(bool aIsPluginClickToPlay);
 
   
@@ -480,12 +412,6 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
 
 
   bool CheckProcessPolicy(int16_t* aContentPolicy);
-
-  
-
-
-
-  bool MakePluginListener();
 
   void SetupFrameLoader(int32_t aJSPluginId);
 
@@ -515,10 +441,7 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
 
 
 
-
-
   void NotifyStateChanged(ObjectType aOldType, mozilla::EventStates aOldState,
-                          FallbackType aOldFallbackType, bool aSync,
                           bool aNotify);
 
   
@@ -599,8 +522,6 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
 
   
   ObjectType mType : 8;
-  
-  FallbackType mFallbackType : 8;
 
   uint32_t mRunID;
   bool mHasRunID : 1;
@@ -618,10 +539,6 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
   
   
   bool mNetworkCreated : 1;
-
-  
-  
-  bool mActivated : 1;
 
   
   bool mContentBlockingEnabled : 1;
@@ -644,11 +561,6 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
   
   
   bool mRewrittenYoutubeEmbed : 1;
-
-  
-  
-  bool mPreferFallback : 1;
-  bool mPreferFallbackKnown : 1;
 
   nsTArray<mozilla::dom::MozPluginParameter> mCachedAttributes;
   nsTArray<mozilla::dom::MozPluginParameter> mCachedParameters;

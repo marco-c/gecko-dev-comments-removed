@@ -6620,7 +6620,7 @@ nsContentUtils::FindInternalContentViewer(const nsACString& aType,
       if (contractID.EqualsLiteral(CONTENT_DLF_CONTRACTID))
         *aLoaderType = TYPE_CONTENT;
       else if (contractID.EqualsLiteral(PLUGIN_DLF_CONTRACTID))
-        *aLoaderType = TYPE_PLUGIN;
+        *aLoaderType = TYPE_FALLBACK;
       else
         *aLoaderType = TYPE_UNKNOWN;
     }
@@ -9758,7 +9758,7 @@ static bool HtmlObjectContentSupportsDocument(const nsCString& aMimeType,
 
   if (supported != nsIWebNavigationInfo::UNSUPPORTED) {
     
-    return supported != nsIWebNavigationInfo::PLUGIN;
+    return supported != nsIWebNavigationInfo::FALLBACK;
   }
 
   
@@ -9811,11 +9811,10 @@ uint32_t nsContentUtils::HtmlObjectContentTypeForMIMEType(
     return nsIObjectLoadingContent::TYPE_DOCUMENT;
   }
 
-  bool isPlugin = nsPluginHost::GetSpecialType(aMIMEType) !=
-                  nsPluginHost::eSpecialType_None;
-  if (isPlugin) {
-    
-    return nsIObjectLoadingContent::TYPE_PLUGIN;
+  bool isSpecialPlugin = nsPluginHost::GetSpecialType(aMIMEType) !=
+                         nsPluginHost::eSpecialType_None;
+  if (isSpecialPlugin) {
+    return nsIObjectLoadingContent::TYPE_FALLBACK;
   }
 
   return nsIObjectLoadingContent::TYPE_NULL;
