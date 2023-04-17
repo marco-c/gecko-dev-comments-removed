@@ -5,12 +5,12 @@
 
 
 
-function listFormatInternalProperties_localeData() {
+function listFormatLocaleData() {
     
     return {};
 }
 var listFormatInternalProperties = {
-    localeData: listFormatInternalProperties_localeData,
+    localeData: listFormatLocaleData,
     relevantExtensionKeys: []
 };
 

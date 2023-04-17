@@ -5,16 +5,16 @@
 
 
 
-function displayNamesInternalProperties_localeFn() {
+function displayNamesLocaleData() {
     
     return {};
 }
 var displayNamesInternalProperties = {
-    localeData: displayNamesInternalProperties_localeFn,
+    localeData: displayNamesLocaleData,
     relevantExtensionKeys: []
 };
 
-function mozDisplayNamesInternalProperties_localeFn() {
+function mozDisplayNamesLocaleData() {
     return {
         ca: intl_availableCalendars,
         default: {
@@ -23,7 +23,7 @@ function mozDisplayNamesInternalProperties_localeFn() {
     };
 }
 var mozDisplayNamesInternalProperties = {
-    localeData: mozDisplayNamesInternalProperties_localeFn,
+    localeData: mozDisplayNamesLocaleData,
     relevantExtensionKeys: ["ca"]
 };
 
