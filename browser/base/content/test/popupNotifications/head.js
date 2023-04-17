@@ -15,11 +15,11 @@ ChromeUtils.defineModuleGetter(
 async function waitForWindowReadyForPopupNotifications(win) {
   
   
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => win.gBrowser.selectedBrowser.docShellIsActive,
     "The browser should be active"
   );
-  await BrowserTestUtils.waitForCondition(
+  await TestUtils.waitForCondition(
     () => Services.focus.activeWindow == win,
     "The window should be active"
   );
