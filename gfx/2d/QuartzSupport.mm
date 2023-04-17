@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-// vim:set ts=2 sts=2 sw=2 et cin:
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "QuartzSupport.h"
 #include "nsDebug.h"
@@ -45,9 +45,9 @@ static void cgdata_release_callback(void* aCGData, const void* data, size_t size
 void nsCARenderer::Destroy() {
   if (mCARenderer) {
     CARenderer* caRenderer = (CARenderer*)mCARenderer;
-    // Bug 556453:
-    // Explicitly remove the layer from the renderer
-    // otherwise it does not always happen right away.
+    
+    
+    
     caRenderer.layer = nullptr;
     [caRenderer release];
   }
@@ -57,7 +57,7 @@ void nsCARenderer::Destroy() {
   }
   if (mOpenGLContext) {
     if (mFBO || mIOTexture || mFBOTexture) {
-      // Release these resources with the context that allocated them
+      
       CGLContextObj oldContext = ::CGLGetCurrentContext();
       ::CGLSetCurrentContext(mOpenGLContext);
 
@@ -79,7 +79,7 @@ void nsCARenderer::Destroy() {
   if (mCGImage) {
     ::CGImageRelease(mCGImage);
   }
-  // mCGData is deallocated by cgdata_release_callback
+  
 
   mCARenderer = nil;
   mWrapperCALayer = nil;
@@ -151,7 +151,7 @@ nsresult nsCARenderer::SetupRenderer(void* aCALayer, int aWidth, int aHeight,
   size_t intScaleFactor = ceil(mContentsScaleFactor);
   SetBounds(aWidth, aHeight);
 
-  // We target rendering to a CGImage if no shared IOSurface are given.
+  
   if (!mIOSurface) {
     mCGData = malloc(aWidth * intScaleFactor * aHeight * 4 * intScaleFactor);
     if (!mCGData) {
@@ -196,7 +196,7 @@ nsresult nsCARenderer::SetupRenderer(void* aCALayer, int aWidth, int aHeight,
   ::CGLSetCurrentContext(mOpenGLContext);
 
   if (mIOSurface) {
-    // Create the IOSurface mapped texture.
+    
     ::glGenTextures(1, &mIOTexture);
     ::glBindTexture(GL_TEXTURE_RECTANGLE_ARB, mIOTexture);
     ::glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -213,7 +213,7 @@ nsresult nsCARenderer::SetupRenderer(void* aCALayer, int aWidth, int aHeight,
     ::glBindTexture(GL_TEXTURE_RECTANGLE_ARB, 0);
   }
 
-  // Create the fbo
+  
   ::glGenFramebuffersEXT(1, &mFBO);
   ::glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, mFBO);
   if (mIOSurface) {
@@ -224,7 +224,7 @@ nsresult nsCARenderer::SetupRenderer(void* aCALayer, int aWidth, int aHeight,
                                 GL_TEXTURE_RECTANGLE_ARB, mFBOTexture, 0);
   }
 
-  // Make sure that the Framebuffer configuration is supported on the client machine
+  
   GLenum fboStatus;
   fboStatus = ::glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
   if (fboStatus != GL_FRAMEBUFFER_COMPLETE_EXT) {
@@ -259,8 +259,8 @@ void nsCARenderer::SetBounds(int aWidth, int aHeight) {
   NSArray* sublayers = [wrapperLayer sublayers];
   CALayer* pluginLayer = (CALayer*)[sublayers objectAtIndex:0];
 
-  // Create a transaction and disable animations
-  // to make the position update instant.
+  
+  
   [CATransaction begin];
   NSMutableDictionary* newActions = [[NSMutableDictionary alloc]
       initWithObjectsAndKeys:[NSNull null], @"onOrderIn", [NSNull null], @"onOrderOut",
@@ -269,13 +269,13 @@ void nsCARenderer::SetBounds(int aWidth, int aHeight) {
   wrapperLayer.actions = newActions;
   [newActions release];
 
-  // If we're in HiDPI mode, mContentsScaleFactor will (presumably) be 2.0.
-  // For some reason, to make things work properly in HiDPI mode we need to
-  // make caRenderer's 'bounds' and 'layer' different sizes -- to set 'bounds'
-  // to the size of 'layer's backing store.  And to avoid this possibly
-  // confusing the plugin, we need to hide it's effects from the plugin by
-  // making pluginLayer (usually the CALayer* provided by the plugin) a
-  // sublayer of our own wrapperLayer (see bug 829284).
+  
+  
+  
+  
+  
+  
+  
   size_t intScaleFactor = ceil(mContentsScaleFactor);
   [CATransaction setValue:[NSNumber numberWithFloat:0.0f] forKey:kCATransactionAnimationDuration];
   [CATransaction setValue:(id)kCFBooleanTrue forKey:kCATransactionDisableActions];
@@ -292,9 +292,9 @@ void nsCARenderer::SetBounds(int aWidth, int aHeight) {
     affineTransform.ty = ((double)aHeight) / mContentsScaleFactor;
     [wrapperLayer setAffineTransform:affineTransform];
   } else {
-    // These settings are the default values.  But they might have been
-    // changed as above if we were previously running in a HiDPI mode
-    // (i.e. if we just switched from that to a non-HiDPI mode).
+    
+    
+    
     [wrapperLayer setAffineTransform:CGAffineTransformIdentity];
   }
   [CATransaction commit];
@@ -310,7 +310,7 @@ void nsCARenderer::SetViewport(int aWidth, int aHeight) {
   ::glLoadIdentity();
   ::glOrtho(0.0, aWidth, 0.0, aHeight, -1, 1);
 
-  // Render upside down to speed up CGContextDrawImage
+  
   ::glTranslatef(0.0f, aHeight, 0.0);
   ::glScalef(1.0, -1.0, 1.0);
 }
@@ -322,7 +322,7 @@ void nsCARenderer::AttachIOSurface(MacIOSurface* aSurface) {
 
   mIOSurface = aSurface;
 
-  // Update the framebuffer and viewport
+  
   if (mCARenderer) {
     CARenderer* caRenderer = (CARenderer*)mCARenderer;
     size_t intScaleFactor = ceil(mContentsScaleFactor);
@@ -338,7 +338,7 @@ void nsCARenderer::AttachIOSurface(MacIOSurface* aSurface) {
                              mIOSurface->GetIOSurfaceRef().get(), 0);
     ::glBindTexture(GL_TEXTURE_RECTANGLE_ARB, 0);
 
-    // Rebind the FBO to make it live
+    
     ::glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, mFBO);
 
     if (static_cast<int>(mIOSurface->GetWidth()) != width ||
@@ -368,8 +368,8 @@ nsresult nsCARenderer::Render(int aWidth, int aHeight, double aContentsScaleFact
   if (!aOutCGImage && !mIOSurface) {
     NS_ERROR("No target destination for rendering");
   } else if (aOutCGImage) {
-    // We are expected to return a CGImageRef, we will set
-    // it to nullptr in case we fail before the image is ready.
+    
+    
     *aOutCGImage = nullptr;
   }
 
@@ -387,15 +387,15 @@ nsresult nsCARenderer::Render(int aWidth, int aHeight, double aContentsScaleFact
 
   if (renderer_width != aWidth || renderer_height != aHeight ||
       mContentsScaleFactor != aContentsScaleFactor) {
-    // XXX: This should be optimized to not rescale the buffer
-    //      if we are resizing down.
-    // caLayer may be the CALayer* provided by the plugin, so we need to
-    // preserve it across the call to Destroy().
+    
+    
+    
+    
     NSArray* sublayers = [wrapperLayer sublayers];
     CALayer* caLayer = (CALayer*)[sublayers objectAtIndex:0];
-    // mIOSurface is set by AttachIOSurface(), not by SetupRenderer().  So
-    // since it may have been set by a prior call to AttachIOSurface(), we
-    // need to preserve it across the call to Destroy().
+    
+    
+    
     RefPtr<MacIOSurface> ioSurface = mIOSurface;
     Destroy();
     mIOSurface = ioSurface;
@@ -410,8 +410,8 @@ nsresult nsCARenderer::Render(int aWidth, int aHeight, double aContentsScaleFact
   CGLContextObj oldContext = ::CGLGetCurrentContext();
   ::CGLSetCurrentContext(mOpenGLContext);
   if (!mIOSurface) {
-    // If no shared IOSurface is given render to our own
-    // texture for readback.
+    
+    
     ::glGenTextures(1, &mFBOTexture);
   }
 
@@ -433,7 +433,7 @@ nsresult nsCARenderer::Render(int aWidth, int aHeight, double aContentsScaleFact
   [caRenderer render];
   [caRenderer endFrame];
 
-  // Read the data back either to the IOSurface or mCGImage.
+  
   if (mIOSurface) {
     ::glFlush();
   } else {
@@ -463,8 +463,8 @@ nsresult nsCARenderer::DrawSurfaceToCGContext(CGContextRef aContext, MacIOSurfac
   size_t ioWidth = surf->GetWidth();
   size_t ioHeight = surf->GetHeight();
 
-  // We get rendering glitches if we use a width/height that falls
-  // outside of the IOSurface.
+  
+  
   if (aWidth + aX > ioWidth) aWidth = ioWidth - aX;
   if (aHeight + aY > ioHeight) aHeight = ioHeight - aY;
 
@@ -475,28 +475,24 @@ nsresult nsCARenderer::DrawSurfaceToCGContext(CGContextRef aContext, MacIOSurfac
   }
 
   void* ioData = surf->GetBaseAddress();
-  double scaleFactor = surf->GetContentsScaleFactor();
-  size_t intScaleFactor = ceil(surf->GetContentsScaleFactor());
   CGDataProviderRef dataProvider =
-      ::CGDataProviderCreateWithData(ioData, ioData, ioHeight * intScaleFactor * (bytesPerRow)*4,
-                                     nullptr);  // No release callback
+      ::CGDataProviderCreateWithData(ioData, ioData, ioHeight * (bytesPerRow)*4,
+                                     nullptr);  
   if (!dataProvider) {
     surf->Unlock();
     return NS_ERROR_FAILURE;
   }
 
-  CGImageRef cgImage =
-      ::CGImageCreate(ioWidth * intScaleFactor, ioHeight * intScaleFactor, 8, 32, bytesPerRow,
-                      aColorSpace, kCGImageAlphaPremultipliedFirst | kCGBitmapByteOrder32Host,
-                      dataProvider, nullptr, true, kCGRenderingIntentDefault);
+  CGImageRef cgImage = ::CGImageCreate(ioWidth, ioHeight, 8, 32, bytesPerRow, aColorSpace,
+                                       kCGImageAlphaPremultipliedFirst | kCGBitmapByteOrder32Host,
+                                       dataProvider, nullptr, true, kCGRenderingIntentDefault);
   ::CGDataProviderRelease(dataProvider);
   if (!cgImage) {
     surf->Unlock();
     return NS_ERROR_FAILURE;
   }
-  CGImageRef subImage = ::CGImageCreateWithImageInRect(
-      cgImage, ::CGRectMake(aX * scaleFactor, aY * scaleFactor, aWidth * scaleFactor,
-                            aHeight * scaleFactor));
+  CGImageRef subImage =
+      ::CGImageCreateWithImageInRect(cgImage, ::CGRectMake(aX, aY, aWidth, aHeight));
   if (!subImage) {
     ::CGImageRelease(cgImage);
     surf->Unlock();
@@ -504,9 +500,7 @@ nsresult nsCARenderer::DrawSurfaceToCGContext(CGContextRef aContext, MacIOSurfac
   }
 
   ::CGContextScaleCTM(aContext, 1.0f, -1.0f);
-  ::CGContextDrawImage(aContext,
-                       CGRectMake(aX * scaleFactor, (-(CGFloat)aY - (CGFloat)aHeight) * scaleFactor,
-                                  aWidth * scaleFactor, aHeight * scaleFactor),
+  ::CGContextDrawImage(aContext, CGRectMake(aX, -(CGFloat)aY - (CGFloat)aHeight, aWidth, aHeight),
                        subImage);
 
   ::CGImageRelease(subImage);
@@ -541,7 +535,7 @@ void nsCARenderer::SaveToDisk(MacIOSurface* surf) {
   void* ioData = surf->GetBaseAddress();
   CGDataProviderRef dataProvider =
       ::CGDataProviderCreateWithData(ioData, ioData, ioHeight * (bytesPerRow)*4,
-                                     nullptr);  // No release callback
+                                     nullptr);  
   if (!dataProvider) {
     surf->Unlock();
     return;
