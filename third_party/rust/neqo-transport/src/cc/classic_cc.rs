@@ -209,6 +209,7 @@ impl<T: WindowAdjustment> CongestionControl for ClassicCongestionControl<T> {
                 min_rtt,
                 now,
             );
+            debug_assert!(bytes_for_increase > 0);
             
             
             if self.acked_bytes >= bytes_for_increase {
