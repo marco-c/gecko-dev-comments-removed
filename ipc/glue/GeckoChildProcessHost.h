@@ -86,6 +86,10 @@ class GeckoChildProcessHost : public ChildProcessHost,
 
   
   
+  void SetEnv(const char* aKey, const char* aValue);
+
+  
+  
   
   bool AsyncLaunch(StringVector aExtraOpts = StringVector());
 

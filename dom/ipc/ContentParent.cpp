@@ -279,6 +279,7 @@
 
 #ifdef MOZ_WIDGET_GTK
 #  include <gdk/gdk.h>
+#  include "mozilla/WidgetUtilsGtk.h"
 #endif
 
 #include "mozilla/RemoteSpellCheckEngineParent.h"
@@ -2544,6 +2545,15 @@ bool ContentParent::BeginSubprocessLaunch(ProcessPriority aPriority) {
   nsCString parentBuildID(mozilla::PlatformBuildID());
   extraArgs.push_back("-parentBuildID");
   extraArgs.push_back(parentBuildID.get());
+
+#ifdef MOZ_WIDGET_GTK
+  
+  if (StaticPrefs::dom_ipc_avoid_gtk() &&
+      StaticPrefs::widget_non_native_theme_enabled() &&
+      widget::GdkIsX11Display()) {
+    mSubprocess->SetEnv("MOZ_HEADLESS", "1");
+  }
+#endif
 
   
   mSelfRef = this;
