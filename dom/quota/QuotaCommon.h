@@ -7,6 +7,8 @@
 #ifndef mozilla_dom_quota_quotacommon_h__
 #define mozilla_dom_quota_quotacommon_h__
 
+#include "mozilla/dom/quota/Config.h"
+
 
 
 
@@ -28,8 +30,7 @@
 #include "mozilla/Result.h"
 #include "mozilla/ResultExtensions.h"
 #include "mozilla/ThreadLocal.h"
-#if (defined(EARLY_BETA_OR_EARLIER) || defined(DEBUG)) && \
-    defined(QM_ERROR_STACKS_ENABLED)
+#if defined(QM_LOG_ERROR_ENABLED) && defined(QM_ERROR_STACKS_ENABLED)
 #  include "mozilla/Variant.h"
 #endif
 #include "mozilla/ipc/ProtocolUtils.h"
@@ -1323,7 +1324,7 @@ enum class Severity {
   Verbose,
 };
 
-#if defined(EARLY_BETA_OR_EARLIER) || defined(DEBUG)
+#ifdef QM_LOG_ERROR_ENABLED
 #  ifdef QM_ERROR_STACKS_ENABLED
 using ResultType = Variant<QMResult, nsresult, Nothing>;
 
@@ -1411,7 +1412,7 @@ struct MOZ_STACK_CLASS ScopedLogExtraInfo {
 
 
 
-#if defined(EARLY_BETA_OR_EARLIER) || defined(DEBUG)
+#ifdef QM_LOG_ERROR_ENABLED
 template <typename T>
 MOZ_COLD void HandleError(const char* aExpr, const T& aRv,
                           const char* aSourceFilePath, int32_t aSourceFileLine,
