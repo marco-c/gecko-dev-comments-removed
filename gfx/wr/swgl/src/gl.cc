@@ -58,8 +58,22 @@ WINBASEAPI BOOL WINAPI QueryPerformanceFrequency(LARGE_INTEGER* lpFrequency);
 }
 
 #else
-#  define ALWAYS_INLINE __attribute__((always_inline)) inline
+
+
+#  if defined(__clang__) || defined(NDEBUG)
+#    define ALWAYS_INLINE __attribute__((always_inline)) inline
+#  else
+#    define ALWAYS_INLINE inline
+#  endif
 #  define NO_INLINE __attribute__((noinline))
+#endif
+
+
+
+#if defined(__clang__) && defined(NDEBUG)
+#  define PREFER_INLINE ALWAYS_INLINE
+#else
+#  define PREFER_INLINE inline
 #endif
 
 #define UNREACHABLE __builtin_unreachable()
