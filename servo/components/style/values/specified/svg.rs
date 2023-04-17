@@ -10,6 +10,7 @@ use crate::values::specified::color::Color;
 use crate::values::specified::url::SpecifiedUrl;
 use crate::values::specified::AllowQuirks;
 use crate::values::specified::LengthPercentage;
+use crate::values::specified::SVGPathData;
 use crate::values::specified::{NonNegativeLengthPercentage, Opacity};
 use crate::values::CustomIdent;
 use cssparser::{Parser, Token};
@@ -332,5 +333,59 @@ impl Parse for MozContextProperties {
             idents: crate::ArcSlice::from_iter(values.into_iter()),
             bits,
         })
+    }
+}
+
+
+
+
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Debug,
+    Deserialize,
+    MallocSizeOf,
+    PartialEq,
+    Serialize,
+    SpecifiedValueInfo,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(C, u8)]
+pub enum DProperty {
+    
+    #[css(function)]
+    Path(SVGPathData),
+    
+    #[animation(error)]
+    None,
+}
+
+impl DProperty {
+    
+    #[inline]
+    pub fn none() -> Self {
+        DProperty::None
+    }
+}
+
+impl Parse for DProperty {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        
+        if input.try_parse(|i| i.expect_ident_matching("none")).is_ok() {
+            return Ok(DProperty::none());
+        }
+
+        
+        input.expect_function_matching("path")?;
+        let path_data = input.parse_nested_block(|i| SVGPathData::parse(context, i))?;
+        Ok(DProperty::Path(path_data))
     }
 }
