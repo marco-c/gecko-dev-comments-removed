@@ -545,7 +545,7 @@ std::array<sRGBColor, 3> nsNativeBasicTheme::ComputeFocusRectColors(
   return {sAccentColor, sColorWhiteAlpha80, sAccentColorLight};
 }
 
-sRGBColor nsNativeBasicTheme::ComputeScrollbarTrackColor(
+sRGBColor nsNativeBasicTheme::ComputeScrollbarColor(
     nsIFrame* aFrame, const ComputedStyle& aStyle,
     const EventStates& aDocumentState, UseSystemColors aUseSystemColors) {
   const nsStyleUI* ui = aStyle.StyleUI();
@@ -624,8 +624,7 @@ nscolor nsNativeBasicTheme::GetScrollbarButtonColor(nscolor aTrackColor,
 }
 
 
-Maybe<nscolor> nsNativeBasicTheme::GetScrollbarArrowColor(
-    nscolor aButtonColor) {
+nscolor nsNativeBasicTheme::GetScrollbarArrowColor(nscolor aButtonColor) {
   
   
   
@@ -638,14 +637,6 @@ Maybe<nscolor> nsNativeBasicTheme::GetScrollbarArrowColor(
   
   
   
-
-  if (NS_GET_A(aButtonColor) == 0) {
-    
-    
-    
-    
-    return Nothing();
-  }
 
   float luminance = RelativeLuminanceUtils::Compute(aButtonColor);
   
@@ -655,19 +646,15 @@ Maybe<nscolor> nsNativeBasicTheme::GetScrollbarArrowColor(
     
     
     const float GRAY96_LUMINANCE = 0.117f;
-    return Some(RelativeLuminanceUtils::Adjust(aButtonColor, GRAY96_LUMINANCE));
+    return RelativeLuminanceUtils::Adjust(aButtonColor, GRAY96_LUMINANCE);
   }
-  
-  
-  
-  
   
   
   
   if (luminance >= 0.18) {
-    return Some(NS_RGBA(0, 0, 0, NS_GET_A(aButtonColor)));
+    return NS_RGBA(0, 0, 0, NS_GET_A(aButtonColor));
   }
-  return Some(NS_RGBA(255, 255, 255, NS_GET_A(aButtonColor)));
+  return NS_RGBA(255, 255, 255, NS_GET_A(aButtonColor));
 }
 
 bool nsNativeBasicTheme::ShouldUseDarkScrollbar(nsIFrame* aFrame,
@@ -744,18 +731,12 @@ nsNativeBasicTheme::ComputeScrollbarButtonColors(
                            StyleSystemColor::TextForeground);
   }
 
-  auto trackColor = ComputeScrollbarTrackColor(aFrame, aStyle, aDocumentState,
-                                               aUseSystemColors);
+  auto trackColor =
+      ComputeScrollbarColor(aFrame, aStyle, aDocumentState, aUseSystemColors);
   nscolor buttonColor =
       GetScrollbarButtonColor(trackColor.ToABGR(), aElementState);
-  auto arrowColor =
-      GetScrollbarArrowColor(buttonColor)
-          .map(sRGBColor::FromABGR)
-          .valueOrFrom([&] {
-            return ComputeScrollbarThumbColor(aFrame, aStyle, aElementState,
-                                              aDocumentState, aUseSystemColors);
-          });
-  return {sRGBColor::FromABGR(buttonColor), arrowColor};
+  nscolor arrowColor = GetScrollbarArrowColor(buttonColor);
+  return {sRGBColor::FromABGR(buttonColor), sRGBColor::FromABGR(arrowColor)};
 }
 
 static const CSSCoord kInnerFocusOutlineWidth = 2.0f;
@@ -1515,8 +1496,8 @@ bool nsNativeBasicTheme::DoPaintDefaultScrollbar(
                                 NS_EVENT_STATE_HOVER | NS_EVENT_STATE_ACTIVE)) {
     return true;
   }
-  auto scrollbarColor = ComputeScrollbarTrackColor(
-      aFrame, aStyle, aDocumentState, aUseSystemColors);
+  auto scrollbarColor =
+      ComputeScrollbarColor(aFrame, aStyle, aDocumentState, aUseSystemColors);
   FillRect(aPaintData, aRect, scrollbarColor);
   return true;
 }
@@ -1547,8 +1528,8 @@ bool nsNativeBasicTheme::DoPaintDefaultScrollCorner(
     nsIFrame* aFrame, const ComputedStyle& aStyle,
     const EventStates& aDocumentState, UseSystemColors aUseSystemColors,
     DPIRatio aDpiRatio) {
-  auto scrollbarColor = ComputeScrollbarTrackColor(
-      aFrame, aStyle, aDocumentState, aUseSystemColors);
+  auto scrollbarColor =
+      ComputeScrollbarColor(aFrame, aStyle, aDocumentState, aUseSystemColors);
   FillRect(aPaintData, aRect, scrollbarColor);
   return true;
 }
