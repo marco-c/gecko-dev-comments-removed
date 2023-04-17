@@ -4406,8 +4406,8 @@ bool AsyncPanZoomController::UpdateAnimation(
     bool wantsRepaints = mAnimation->WantsRepaints();
     *aOutDeferredTasks = mAnimation->TakeDeferredTasks();
     if (!continueAnimation) {
-      mAnimation = nullptr;
       SetState(NOTHING);
+      mAnimation = nullptr;
     }
     
     
