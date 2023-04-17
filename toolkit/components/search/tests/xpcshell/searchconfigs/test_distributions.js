@@ -1,5 +1,5 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
@@ -10,7 +10,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 const tests = [];
 
-
+// Bing should be default everywhere for Acer
 for (let [locale, region] of [
   ["en-US", "US"],
   ["pl", "PL"],
@@ -68,85 +68,6 @@ for (let canonicalId of ["canonical", "canonical-001", "canonical-002"]) {
       hasParams(engines, "Google", "searchbar", "client=ubuntu") &&
       hasParams(engines, "Google", "searchbar", "channel=fs") &&
       hasTelemetryId(engines, "Google", "google-canonical"),
-  });
-
-  tests.push({
-    distribution: canonicalId,
-    test: engines =>
-      hasParams(engines, "DuckDuckGo", "searchbar", "t=canonical"),
-  });
-
-  tests.push({
-    locale: "en-US",
-    region: "US",
-    distribution: canonicalId,
-    test: engines =>
-      hasParams(engines, "Amazon.com", "searchbar", "tag=wwwcanoniccom-20"),
-  });
-
-  tests.push({
-    locale: "de",
-    region: "DE",
-    distribution: canonicalId,
-    test: engines =>
-      hasParams(engines, "Amazon.de", "searchbar", "tag=wwwcanoniccom-20"),
-  });
-
-  tests.push({
-    locale: "en-GB",
-    region: "GB",
-    distribution: canonicalId,
-    test: engines =>
-      hasParams(engines, "Amazon.co.uk", "searchbar", "tag=wwwcanoniccom-20"),
-  });
-
-  tests.push({
-    locale: "fr",
-    region: "FR",
-    distribution: canonicalId,
-    test: engines =>
-      hasParams(engines, "Amazon.fr", "searchbar", "tag=wwwcanoniccom-20"),
-  });
-
-  tests.push({
-    locale: "it",
-    region: "IT",
-    distribution: canonicalId,
-    test: engines =>
-      hasParams(engines, "Amazon.it", "searchbar", "tag=wwwcanoniccom-20"),
-  });
-
-  tests.push({
-    locale: "ja",
-    region: "JP",
-    distribution: canonicalId,
-    test: engines =>
-      hasParams(engines, "Amazon.co.jp", "searchbar", "tag=wwwcanoniccom-20"),
-  });
-
-  tests.push({
-    locale: "ur",
-    region: "IN",
-    distribution: canonicalId,
-    test: engines =>
-      hasParams(engines, "Amazon.in", "searchbar", "tag=wwwcanoniccom-20"),
-  });
-
-  tests.push({
-    locale: "zh-CN",
-    region: "CN",
-    distribution: canonicalId,
-    test: engines =>
-      hasParams(engines, "亚马逊", "searchbar", "tag=wwwcanoniccom-20"),
-  });
-
-  tests.push({
-    locale: "zh-CN",
-    region: "CN",
-    distribution: canonicalId,
-    test: engines =>
-      hasParams(engines, "百度", "searchbar", "tn=ubuntuu_cb") &&
-      hasParams(engines, "百度", "suggestions", "tn=ubuntuu_cb"),
   });
 }
 
@@ -579,7 +500,7 @@ tests.push({
   distribution: "yandex-drp",
   test: engines =>
     hasParams(engines, "Яндекс", "searchbar", "clid=2039342") &&
-    
+    // Test that fallback works correct as well.
     hasParams(engines, "Яндекс", "contextmenu", "clid=2039342") &&
     hasDefault(engines, "Яндекс") &&
     hasEnginesFirst(engines, ["Яндекс"]),
