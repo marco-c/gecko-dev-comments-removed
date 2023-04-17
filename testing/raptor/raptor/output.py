@@ -396,7 +396,7 @@ class PerftestOutput(object):
             
             return filters.mean(_filter(vals, "first-interactive"))
 
-        if testname.startswith("raptor-youtube-playback"):
+        if "youtube-playback" in testname:
             
             return round(filters.mean(_filter(vals)), 2)
 
