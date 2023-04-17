@@ -14,6 +14,7 @@
 
 
 
+
 "use strict";
 
 var { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
@@ -28,6 +29,10 @@ ChromeUtils.defineModuleGetter(
   "formAutofillParent",
   "resource://formautofill/FormAutofillParent.jsm"
 );
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  NimbusFeatures: "resource://nimbus/ExperimentAPI.jsm",
+});
 
 XPCOMUtils.defineLazyGetter(this, "gSubDialog", function() {
   const { SubDialogManager } = ChromeUtils.import(
@@ -140,6 +145,12 @@ function init_all() {
       false
     );
     register_module("paneExperimental", gExperimentalPane);
+  }
+
+  NimbusFeatures.moreFromMozilla.recordExposureEvent({ once: true });
+  if (NimbusFeatures.moreFromMozilla.getVariable("enabled")) {
+    document.getElementById("category-more-from-mozilla").hidden = false;
+    register_module("paneMoreFromMozilla", gMoreFromMozillaPane);
   }
   
   
