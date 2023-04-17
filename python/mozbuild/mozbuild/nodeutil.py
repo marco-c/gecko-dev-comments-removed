@@ -9,7 +9,7 @@ import subprocess
 import platform
 from distutils.version import StrictVersion
 
-from mozboot.util import get_state_dir
+from mozboot.util import get_tools_dir
 from mozfile import which
 from six import PY3
 
@@ -22,17 +22,12 @@ def find_node_paths():
 
     Returns a list of paths, which includes the build state directory.
     """
-    
-    
-    if "MOZ_FETCHES_DIR" in os.environ:
-        mozbuild_state_dir = os.environ["MOZ_FETCHES_DIR"]
-    else:
-        mozbuild_state_dir = get_state_dir()
+    mozbuild_tools_dir = get_tools_dir()
 
     if platform.system() == "Windows":
-        mozbuild_node_path = os.path.join(mozbuild_state_dir, "node")
+        mozbuild_node_path = os.path.join(mozbuild_tools_dir, "node")
     else:
-        mozbuild_node_path = os.path.join(mozbuild_state_dir, "node", "bin")
+        mozbuild_node_path = os.path.join(mozbuild_tools_dir, "node", "bin")
 
     
     
