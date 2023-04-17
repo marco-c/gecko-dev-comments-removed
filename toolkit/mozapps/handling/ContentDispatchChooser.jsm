@@ -541,7 +541,7 @@ class nsContentDispatchChooser {
           keepOpenSameOriginNav: true,
         },
         aDialogArgs
-      );
+      ).closedPromise;
     }
 
     

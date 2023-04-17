@@ -330,7 +330,7 @@ class PromptParent extends JSWindowActorParent {
             allowFocusCheckbox: args.allowFocusCheckbox,
           },
           bag
-        );
+        ).closedPromise;
       } else {
         
         

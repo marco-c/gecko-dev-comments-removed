@@ -8944,6 +8944,8 @@ class TabDialogBox {
 
 
 
+
+
   open(
     aURL,
     {
@@ -8956,54 +8958,55 @@ class TabDialogBox {
     } = {},
     ...aParams
   ) {
-    return new Promise(resolve => {
-      
-      let dialogManager =
-        modalType === Ci.nsIPrompt.MODAL_TYPE_CONTENT
-          ? this.getContentDialogManager()
-          : this._tabDialogManager;
-      let hasDialogs =
-        this._tabDialogManager.hasDialogs ||
-        this._contentDialogManager?.hasDialogs;
+    let resolveClosed;
+    let closedPromise = new Promise(resolve => (resolveClosed = resolve));
+    
+    let dialogManager =
+      modalType === Ci.nsIPrompt.MODAL_TYPE_CONTENT
+        ? this.getContentDialogManager()
+        : this._tabDialogManager;
+    let hasDialogs =
+      this._tabDialogManager.hasDialogs ||
+      this._contentDialogManager?.hasDialogs;
 
+    if (!hasDialogs) {
+      this._onFirstDialogOpen();
+    }
+
+    let closingCallback = event => {
       if (!hasDialogs) {
-        this._onFirstDialogOpen();
+        this._onLastDialogClose();
       }
 
-      let closingCallback = event => {
-        if (!hasDialogs) {
-          this._onLastDialogClose();
-        }
-
-        if (allowFocusCheckbox && !event.detail?.abort) {
-          this.maybeSetAllowTabSwitchPermission(event.target);
-        }
-      };
-
-      if (modalType == Ci.nsIPrompt.MODAL_TYPE_CONTENT) {
-        sizeTo = "limitheight";
+      if (allowFocusCheckbox && !event.detail?.abort) {
+        this.maybeSetAllowTabSwitchPermission(event.target);
       }
+    };
 
-      
-      let dialog = dialogManager.open(
-        aURL,
-        {
-          features,
-          allowDuplicateDialogs,
-          sizeTo,
-          closingCallback,
-          closedCallback: resolve,
-        },
-        ...aParams
-      );
+    if (modalType == Ci.nsIPrompt.MODAL_TYPE_CONTENT) {
+      sizeTo = "limitheight";
+    }
 
-      
-      
-      
-      if (dialog) {
-        dialog._keepOpenSameOriginNav = keepOpenSameOriginNav;
-      }
-    });
+    
+    let dialog = dialogManager.open(
+      aURL,
+      {
+        features,
+        allowDuplicateDialogs,
+        sizeTo,
+        closingCallback,
+        closedCallback: resolveClosed,
+      },
+      ...aParams
+    );
+
+    
+    
+    
+    if (dialog) {
+      dialog._keepOpenSameOriginNav = keepOpenSameOriginNav;
+    }
+    return { closedPromise, dialog };
   }
 
   _onFirstDialogOpen() {
