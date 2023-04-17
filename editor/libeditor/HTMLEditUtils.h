@@ -374,6 +374,82 @@ class HTMLEditUtils final {
 
 
 
+
+
+
+
+
+
+
+  enum class WalkTreeOption {
+    IgnoreNonEditableNode,     
+    IgnoreDataNodeExceptText,  
+    StopAtBlockBoundary,       
+  };
+  using WalkTreeOptions = EnumSet<WalkTreeOption>;
+  static nsIContent* GetPreviousContent(
+      const nsINode& aNode, const WalkTreeOptions& aOptions,
+      const Element* aAncestorLimiter = nullptr) {
+    if (&aNode == aAncestorLimiter ||
+        (aAncestorLimiter &&
+         !aNode.IsInclusiveDescendantOf(aAncestorLimiter))) {
+      return nullptr;
+    }
+    return HTMLEditUtils::GetAdjacentContent(aNode, WalkTreeDirection::Backward,
+                                             aOptions, aAncestorLimiter);
+  }
+  static nsIContent* GetNextContent(const nsINode& aNode,
+                                    const WalkTreeOptions& aOptions,
+                                    const Element* aAncestorLimiter = nullptr) {
+    if (&aNode == aAncestorLimiter ||
+        (aAncestorLimiter &&
+         !aNode.IsInclusiveDescendantOf(aAncestorLimiter))) {
+      return nullptr;
+    }
+    return HTMLEditUtils::GetAdjacentContent(aNode, WalkTreeDirection::Forward,
+                                             aOptions, aAncestorLimiter);
+  }
+
+  
+
+
+  template <typename PT, typename CT>
+  static nsIContent* GetPreviousContent(
+      const EditorDOMPointBase<PT, CT>& aPoint, const WalkTreeOptions& aOptions,
+      const Element* aAncestorLimiter = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  template <typename PT, typename CT>
+  static nsIContent* GetNextContent(const EditorDOMPointBase<PT, CT>& aPoint,
+                                    const WalkTreeOptions& aOptions,
+                                    const Element* aAncestorLimiter = nullptr);
+
+  
+
+
+
   enum class LeafNodeType {
     
     OnlyLeafNode,
@@ -696,9 +772,8 @@ class HTMLEditUtils final {
         aRootElement, {LeafNodeType::OnlyLeafNode});
     if (leafContent && !EditorUtils::IsEditableContent(
                            *leafContent, EditorBase::EditorType::HTML)) {
-      leafContent = EditorBase::GetNextContent(
-          *leafContent, {EditorBase::WalkTreeOption::IgnoreNonEditableNode},
-          &aRootElement);
+      leafContent = HTMLEditUtils::GetNextContent(
+          *leafContent, {WalkTreeOption::IgnoreNonEditableNode}, &aRootElement);
     }
     MOZ_ASSERT(leafContent != &aRootElement);
     return leafContent;
@@ -1068,6 +1143,19 @@ class HTMLEditUtils final {
          aContent.IsHTMLElement(nsGkAtoms::table));
     return !cannotCrossBoundary;
   }
+
+  
+
+
+  enum class WalkTreeDirection { Forward, Backward };
+  static nsIContent* GetAdjacentLeafContent(
+      const nsINode& aNode, WalkTreeDirection aWalkTreeDirection,
+      const WalkTreeOptions& aOptions,
+      const Element* aAncestorLimiter = nullptr);
+  static nsIContent* GetAdjacentContent(
+      const nsINode& aNode, WalkTreeDirection aWalkTreeDirection,
+      const WalkTreeOptions& aOptions,
+      const Element* aAncestorLimiter = nullptr);
 };
 
 

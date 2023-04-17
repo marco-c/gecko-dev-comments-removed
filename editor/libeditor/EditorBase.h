@@ -9,7 +9,6 @@
 #include "mozilla/Assertions.h"          
 #include "mozilla/EditAction.h"          
 #include "mozilla/EditorDOMPoint.h"      
-#include "mozilla/EnumSet.h"             
 #include "mozilla/EventForwards.h"       
 #include "mozilla/Maybe.h"               
 #include "mozilla/OwningNonNull.h"       
@@ -1726,73 +1725,6 @@ class EditorBase : public nsIEditor,
   
 
 
-
-
-
-
-
-
-  
-
-
-
-
-  enum class WalkTreeOption {
-    IgnoreNonEditableNode,     
-    IgnoreDataNodeExceptText,  
-    StopAtBlockBoundary,       
-  };
-  using WalkTreeOptions = EnumSet<WalkTreeOption>;
-  static nsIContent* GetPreviousContent(
-      const nsINode& aNode, const WalkTreeOptions& aOptions,
-      const Element* aAncestorLimiter = nullptr);
-
-  
-
-
-  static nsIContent* GetPreviousContent(
-      const EditorRawDOMPoint& aPoint, const WalkTreeOptions& aOptions,
-      const Element* aAncestorLimiter = nullptr);
-
-  
-
-
-
-
-  static nsIContent* GetNextContent(const nsINode& aNode,
-                                    const WalkTreeOptions& aOptions,
-                                    const Element* aAncestorLimiter = nullptr);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static nsIContent* GetNextContent(const EditorRawDOMPoint& aPoint,
-                                    const WalkTreeOptions& aOptions,
-                                    const Element* aAncestorLimiter = nullptr);
-
-  
-
-
   bool IsRoot(const nsINode* inNode) const;
   bool IsEditorRoot(const nsINode* aNode) const;
 
@@ -2153,19 +2085,6 @@ class EditorBase : public nsIEditor,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult ScrollSelectionFocusIntoView();
-
-  
-
-
-  enum class WalkTreeDirection { Forward, Backward };
-  static nsIContent* GetAdjacentLeafContent(
-      const nsINode& aNode, WalkTreeDirection aWalkTreeDirection,
-      const WalkTreeOptions& aOptions,
-      const Element* aAncestorLimiter = nullptr);
-  static nsIContent* GetAdjacentContent(
-      const nsINode& aNode, WalkTreeDirection aWalkTreeDirection,
-      const WalkTreeOptions& aOptions,
-      const Element* aAncestorLimiter = nullptr);
 
   virtual nsresult InstallEventListeners();
   virtual void CreateEventListeners();
