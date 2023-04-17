@@ -1241,6 +1241,13 @@ public abstract class TreeBuilder<T> implements TokenHandler,
         }
     }
 
+    
+
+
+    public void zeroOrReplacementCharacter() throws SAXException {
+        zeroOriginatingReplacementCharacter();
+    }
+
     public final void eof() throws SAXException {
         flushCharacters();
         
