@@ -1194,7 +1194,6 @@ pref("javascript.options.dump_stack_on_debuggee_would_run", false);
 pref("javascript.options.dynamicImport", true);
 
 
-pref("advanced.mailftp",                    false);
 pref("image.animation_mode",                "normal");
 
 
@@ -1492,14 +1491,6 @@ pref("network.http.send_window_size", 1024);
 pref("network.http.accept", "");
 
 
-
-
-
-pref("network.ftp.data.qos", 0);
-pref("network.ftp.control.qos", 0);
-pref("network.ftp.enabled", false);
-
-
 pref("network.sts.max_time_for_events_between_two_polls", 100);
 
 
@@ -1763,9 +1754,6 @@ pref("network.dns.offline-localhost", true);
 pref("network.dns.resolver-thread-extra-idle-time-seconds", 60);
 
 
-pref("network.ftp.idleConnectionTimeout", 300);
-
-
 
 pref("network.prefetch-next", true);
 
@@ -1887,8 +1875,6 @@ pref("network.http.tailing.total-max", 45000);
 
 pref("network.http.spdy.bug1563538", true);
 
-pref("network.proxy.ftp",                   "");
-pref("network.proxy.ftp_port",              0);
 pref("network.proxy.http",                  "");
 pref("network.proxy.http_port",             0);
 pref("network.proxy.ssl",                   "");
