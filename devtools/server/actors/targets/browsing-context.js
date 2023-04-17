@@ -559,9 +559,6 @@ const browsingContextTargetPrototype = {
         isBrowsingContext: true,
         
         
-        reconfigureSupportsSimulationFeatures: true,
-        
-        
         supportsTopLevelTargetFlag: true,
       },
     };

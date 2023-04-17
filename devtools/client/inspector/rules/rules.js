@@ -507,12 +507,6 @@ CssRuleView.prototype = {
 
 
   async _initSimulationFeatures() {
-    
-    
-    if (!this.currentTarget.getTrait("reconfigureSupportsSimulationFeatures")) {
-      return;
-    }
-
     if (!this.currentTarget.chrome) {
       this.printSimulationButton.removeAttribute("hidden");
       this.printSimulationButton.addEventListener(
