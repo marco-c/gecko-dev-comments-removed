@@ -17,7 +17,6 @@ from util import generate_metric_ids
 from glean_parser import lint, parser, util
 from mozbuild.util import FileAvoidWrite
 from pathlib import Path
-from typing import Any, Dict
 
 
 GIFFT_TYPES = {
@@ -34,7 +33,6 @@ GIFFT_TYPES = {
         "uuid",
         "datetime",
         "quantity",
-        "rate",
     ],
 }
 
@@ -84,34 +82,7 @@ def parse(args):
         
         sys.exit(1)
 
-    objects = all_objs.value
-
-    
-    counters = {}
-    numerators_by_denominator: Dict[str, Any] = {}
-    for category_val in objects.values():
-        for metric in category_val.values():
-            fqmn = metric.identifier()
-            if getattr(metric, "type", None) == "counter":
-                counters[fqmn] = metric
-            denominator_name = getattr(metric, "denominator_metric", None)
-            if denominator_name:
-                metric.type = "numerator"
-                numerators_by_denominator.setdefault(denominator_name, [])
-                numerators_by_denominator[denominator_name].append(metric)
-
-    for denominator_name, numerators in numerators_by_denominator.items():
-        if denominator_name not in counters:
-            print(
-                f"No `counter` named {denominator_name} found to be used as"
-                "denominator for {numerator_names}",
-                file=sys.stderr,
-            )
-            sys.exit(1)
-        counters[denominator_name].type = "denominator"
-        counters[denominator_name].numerators = numerators
-
-    return objects, options
+    return all_objs.value, options
 
 
 
