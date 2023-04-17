@@ -17,7 +17,13 @@
 #include "nsITimer.h"
 #include "nsTHashSet.h"
 
+class AudioDeviceInfo;
+
 namespace mozilla {
+
+template <typename ResolveValueT, typename RejectValueT, bool IsExclusive>
+class MozPromise;
+
 namespace dom {
 
 class Promise;
@@ -35,6 +41,8 @@ struct AudioOutputOptions;
 
 class MediaDevices final : public DOMEventTargetHelper {
  public:
+  using SinkInfoPromise = MozPromise<RefPtr<AudioDeviceInfo>, nsresult, true>;
+
   explicit MediaDevices(nsPIDOMWindowInner* aWindow);
 
   NS_DECL_ISUPPORTS_INHERITED
@@ -60,6 +68,21 @@ class MediaDevices final : public DOMEventTargetHelper {
   already_AddRefed<Promise> SelectAudioOutput(
       const AudioOutputOptions& aOptions, CallerType aCallerType,
       ErrorResult& aRv);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<SinkInfoPromise> GetSinkDevice(const nsString& aDeviceId);
 
   
   void OnDeviceChange();

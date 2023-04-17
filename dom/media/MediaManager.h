@@ -134,7 +134,6 @@ class MediaDevice : public nsIMediaDevice {
 
 typedef nsRefPtrHashtable<nsUint64HashKey, GetUserMediaWindowListener>
     WindowTable;
-typedef MozPromise<RefPtr<AudioDeviceInfo>, nsresult, true> SinkInfoPromise;
 
 class MediaManager final : public nsIMediaManagerService,
                            public nsIMemoryReporter,
@@ -236,24 +235,22 @@ class MediaManager final : public nsIMediaManagerService,
   RefPtr<DeviceSetPromise> EnumerateDevices(nsPIDOMWindowInner* aWindow,
                                             dom::CallerType aCallerType);
 
+  enum class DeviceEnumerationType : uint8_t {
+    Normal,  
+    Fake,    
+    Loopback 
+
+  };
+  RefPtr<MgrPromise> EnumerateDevicesImpl(
+      nsPIDOMWindowInner* aWindow, dom::MediaSourceEnum aVideoInputType,
+      dom::MediaSourceEnum aAudioInputType, MediaSinkEnum aAudioOutputType,
+      DeviceEnumerationType aVideoInputEnumType,
+      DeviceEnumerationType aAudioInputEnumType, bool aForceNoPermRequest,
+      const RefPtr<MediaDeviceSetRefCnt>& aOutDevices);
+
   RefPtr<DevicePromise> SelectAudioOutput(
       nsPIDOMWindowInner* aWindow, const dom::AudioOutputOptions& aOptions,
       dom::CallerType aCallerType);
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<SinkInfoPromise> GetSinkDevice(nsPIDOMWindowInner* aWindow,
-                                        const nsString& aDeviceId);
 
   void OnNavigation(uint64_t aWindowID);
   void OnCameraMute(bool aMute);
@@ -288,22 +285,8 @@ class MediaManager final : public nsIMediaManagerService,
                                        const MediaDeviceSet& aAudios);
 
  private:
-  enum class DeviceEnumerationType : uint8_t {
-    Normal,  
-    Fake,    
-    Loopback 
-
-  };
-
   RefPtr<MgrPromise> EnumerateRawDevices(
       uint64_t aWindowId, dom::MediaSourceEnum aVideoInputType,
-      dom::MediaSourceEnum aAudioInputType, MediaSinkEnum aAudioOutputType,
-      DeviceEnumerationType aVideoInputEnumType,
-      DeviceEnumerationType aAudioInputEnumType, bool aForceNoPermRequest,
-      const RefPtr<MediaDeviceSetRefCnt>& aOutDevices);
-
-  RefPtr<MgrPromise> EnumerateDevicesImpl(
-      nsPIDOMWindowInner* aWindow, dom::MediaSourceEnum aVideoInputType,
       dom::MediaSourceEnum aAudioInputType, MediaSinkEnum aAudioOutputType,
       DeviceEnumerationType aVideoInputEnumType,
       DeviceEnumerationType aAudioInputEnumType, bool aForceNoPermRequest,
