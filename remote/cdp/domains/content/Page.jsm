@@ -263,10 +263,17 @@ class Page extends ContentProcessDomain {
       stack: null,
     });
 
-    const loaderId = this.frameIdToLoaderId.get(frameId);
-    const timestamp = Date.now() / 1000;
-    this.emit("Page.frameStartedLoading", { frameId: frameId.toString() });
-    this.emitLifecycleEvent(frameId, loaderId, "init", timestamp);
+    
+    
+    
+    
+    if (!window.document.isInitialDocument) {
+      this.emit("Page.frameStartedLoading", { frameId: frameId.toString() });
+
+      const loaderId = this.frameIdToLoaderId.get(frameId);
+      const timestamp = Date.now() / 1000;
+      this.emitLifecycleEvent(frameId, loaderId, "init", timestamp);
+    }
   }
 
   _onFrameDetached(name, { frameId }) {

@@ -183,13 +183,7 @@ async function runPageLifecycleTest(client, expectedEventSets, callback) {
       );
       lastTimestamp = payload.timestamp;
 
-      
-      
-      if (frame.parentId && payload.name === "init") {
-        todo(payload.loaderId, frame.loaderId, `event has expected loaderId`);
-      } else {
-        is(payload.loaderId, frame.loaderId, `event has expected loaderId`);
-      }
+      is(payload.loaderId, frame.loaderId, `event has expected loaderId`);
     });
   }
 }
