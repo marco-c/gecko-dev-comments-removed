@@ -97,41 +97,9 @@ class InspectedWindowCommand {
 
 
 
-  async reload(callerInfo, options = {}) {
-    if (this._pendingReload === true) {
-      return null;
-    }
-
-    this._pendingReload = true;
-
-    try {
-      const onFront = this.getFront();
-
-      
-      
-      if (typeof options.userAgent !== undefined) {
-        await this.commands.targetConfigurationCommand.updateConfiguration({
-          customUserAgent: options.userAgent,
-        });
-      }
-
-      const front = await onFront;
-
-      
-      
-      
-      front.once("reload-ready", () => {
-        this._pendingReload = false;
-      });
-      return front.reload(callerInfo, options);
-    } catch (e) {
-      this._pendingReload = false;
-      Cu.reportError(e);
-      return Promise.reject({
-        message:
-          "An unexpected error occurred when handling browser.devtools.inspectedWindow",
-      });
-    }
+  async reload(callerInfo, options) {
+    const front = await this.getFront();
+    return front.reload(callerInfo, options);
   }
 }
 
