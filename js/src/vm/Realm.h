@@ -308,10 +308,6 @@ class JS::Realm : public JS::shadow::Realm {
   js::WeakHeapPtrGlobalObject global_;
 
   
-  
-  js::WeakHeapPtr<js::GlobalLexicalEnvironmentObject*> lexicalEnv_;
-
-  
   js::ObjectRealm objects_;
   friend js::ObjectRealm& js::ObjectRealm::get(const JSObject*);
 
@@ -516,17 +512,13 @@ class JS::Realm : public JS::shadow::Realm {
     return global_.unbarrieredGet();
   }
 
-  inline js::GlobalLexicalEnvironmentObject* unbarrieredLexicalEnvironment()
-      const;
-
   
   inline bool globalIsAboutToBeFinalized();
 
   
   inline bool hasLiveGlobal() const;
 
-  inline void initGlobal(js::GlobalObject& global,
-                         js::GlobalLexicalEnvironmentObject& lexicalEnv);
+  inline void initGlobal(js::GlobalObject& global);
 
   
 
@@ -787,10 +779,12 @@ class JS::Realm : public JS::shadow::Realm {
   }
   static constexpr uint32_t debugModeIsDebuggeeBit() { return IsDebuggee; }
 
-  static constexpr size_t offsetOfActiveLexicalEnvironment() {
-    static_assert(sizeof(lexicalEnv_) == sizeof(uintptr_t),
+  
+  
+  static constexpr size_t offsetOfActiveGlobal() {
+    static_assert(sizeof(global_) == sizeof(uintptr_t),
                   "JIT code assumes field is pointer-sized");
-    return offsetof(JS::Realm, lexicalEnv_);
+    return offsetof(JS::Realm, global_);
   }
 };
 

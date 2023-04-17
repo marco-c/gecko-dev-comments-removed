@@ -273,8 +273,6 @@ void Realm::traceGlobal(JSTracer* trc) {
   
   
 
-  TraceEdge(trc, &lexicalEnv_, "realm-global-lexical");
-
   savedStacks_.trace(trc);
 
   DebugAPI::traceFromRealm(trc, this);
@@ -367,7 +365,6 @@ void Realm::traceWeakObjects(JSTracer* trc) {
     global_.unbarrieredGet()->releaseData(runtime_->defaultFreeOp());
   }
   TraceWeakEdge(trc, &global_, "Realm::global_");
-  TraceWeakEdge(trc, &lexicalEnv_, "Realm::lexicalEnv_");
 }
 
 void Realm::traceWeakSelfHostingScriptSource(JSTracer* trc) {
@@ -451,7 +448,6 @@ void Realm::purge() {
 void Realm::clearTables() {
   global_.unbarrieredGet()->releaseData(runtime_->defaultFreeOp());
   global_.set(nullptr);
-  lexicalEnv_.set(nullptr);
 
   
   
