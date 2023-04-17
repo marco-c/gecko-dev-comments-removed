@@ -694,7 +694,7 @@ js::intl::SharedIntlData::getDateTimePatternGenerator(JSContext* cx,
   auto result =
       mozilla::intl::DateTimePatternGenerator::TryCreate(IcuLocale(locale));
   if (result.isErr()) {
-    intl::ReportInternalError(cx);
+    intl::ReportInternalError(cx, result.unwrapErr());
     return nullptr;
   }
   
