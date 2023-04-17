@@ -75,12 +75,6 @@ public final class GeckoLoader {
   private static File getTmpDir(final Context context) {
     
     
-    final File oldDir = context.getDir("tmpdir", Context.MODE_PRIVATE);
-    if (oldDir.exists()) {
-      delTree(oldDir);
-    }
-    
-    
     return new File(context.getCacheDir(), "gecko_temp");
   }
 
