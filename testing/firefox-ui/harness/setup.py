@@ -38,7 +38,7 @@ setup(
     
     keywords="mozilla",
     author="Auto-tools",
-    author_email="tools-marionette@lists.mozilla.org",
+    author_email="dev-webdriver@mozilla.org",
     url="https://wiki.mozilla.org/Auto-tools/Projects/Marionette/Harnesses/FirefoxUI",
     license="MPL",
     packages=find_packages(),
