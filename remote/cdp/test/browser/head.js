@@ -39,6 +39,18 @@ const TIMEOUT_EVENTS = 1000 * TIMEOUT_MULTIPLIER;
 
 const add_plain_task = add_task.bind(this);
 
+
+
+
+let remoteAgentStarted = false;
+async function startRemoteAgent() {
+  if (!remoteAgentStarted) {
+    await RemoteAgent.listen(Services.io.newURI("http://localhost:9222"));
+    remoteAgentStarted = true;
+    info("Remote agent started");
+  }
+}
+
 this.add_task = function(taskFn, opts = {}) {
   const {
     createTab = true, 
@@ -47,8 +59,7 @@ this.add_task = function(taskFn, opts = {}) {
   const fn = async function() {
     let client, tab, target;
 
-    await RemoteAgent.listen(Services.io.newURI("http://localhost:9222"));
-    info("CDP server started");
+    await startRemoteAgent();
 
     try {
       const CDP = await getCDP();
@@ -91,9 +102,6 @@ this.add_task = function(taskFn, opts = {}) {
         await client.close();
         info("CDP client closed");
       }
-
-      await RemoteAgent.close();
-      info("CDP server stopped");
 
       
       while (gBrowser.tabs.length > 1) {
