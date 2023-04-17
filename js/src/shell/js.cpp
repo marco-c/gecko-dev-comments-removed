@@ -10405,7 +10405,19 @@ js::shell::AutoReportException::~AutoReportException() {
     JS::PrintError(fp, report, reportWarnings);
     JS_ClearPendingException(cx);
 
-    if (!PrintStackTrace(cx, exnStack.stack())) {
+    
+    
+    
+    
+    RootedObject stack(cx, exnStack.stack());
+    if (exnStack.exception().isObject()) {
+      RootedObject exception(cx, &exnStack.exception().toObject());
+      if (JSObject* exceptionStack = JS::ExceptionStackOrNull(exception)) {
+        stack.set(exceptionStack);
+      }
+    }
+
+    if (!PrintStackTrace(cx, stack)) {
       fputs("(Unable to print stack trace)\n", fp);
       JS_ClearPendingException(cx);
     }
