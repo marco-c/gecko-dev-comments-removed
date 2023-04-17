@@ -5,10 +5,10 @@
 ("use strict");
 
 const EXPORTED_SYMBOLS = [
+  "disableEventsActor",
+  "enableEventsActor",
   "EventDispatcher",
   "MarionetteEventsParent",
-  "registerEventsActor",
-  "unregisterEventsActor",
 ];
 
 const { XPCOMUtils } = ChromeUtils.import(
@@ -16,6 +16,8 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  Services: "resource://gre/modules/Services.jsm",
+
   EventEmitter: "resource://gre/modules/EventEmitter.jsm",
   Log: "chrome://remote/content/shared/Log.jsm",
 });
@@ -48,9 +50,16 @@ class MarionetteEventsParent extends JSWindowActorParent {
 }
 
 
+let eventsActorRegistered = false;
+
+
 
 
 function registerEventsActor() {
+  if (eventsActorRegistered) {
+    return;
+  }
+
   try {
     
     ChromeUtils.registerWindowActor("MarionetteEvents", {
@@ -80,6 +89,8 @@ function registerEventsActor() {
       allFrames: true,
       includeChrome: true,
     });
+
+    eventsActorRegistered = true;
   } catch (e) {
     if (e.name === "NotSupportedError") {
       logger.warn(`MarionetteEvents actor is already registered!`);
@@ -89,6 +100,25 @@ function registerEventsActor() {
   }
 }
 
-function unregisterEventsActor() {
-  ChromeUtils.unregisterWindowActor("MarionetteEvents");
+
+
+
+
+function enableEventsActor() {
+  
+  
+  Services.ppmm.sharedData.set("MARIONETTE_EVENTS_ENABLED", true);
+  
+  Services.ppmm.sharedData.flush();
+
+  registerEventsActor();
+}
+
+
+
+
+
+function disableEventsActor() {
+  Services.ppmm.sharedData.set("MARIONETTE_EVENTS_ENABLED", false);
+  Services.ppmm.sharedData.flush();
 }

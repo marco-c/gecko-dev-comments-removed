@@ -26,7 +26,11 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   Context: "chrome://remote/content/marionette/browser.js",
   cookie: "chrome://remote/content/marionette/cookie.js",
   DebounceCallback: "chrome://remote/content/marionette/sync.js",
+  disableEventsActor:
+    "chrome://remote/content/marionette/actors/MarionetteEventsParent.jsm",
   element: "chrome://remote/content/marionette/element.js",
+  enableEventsActor:
+    "chrome://remote/content/marionette/actors/MarionetteEventsParent.jsm",
   error: "chrome://remote/content/shared/webdriver/Errors.jsm",
   getMarionetteCommandsActorProxy:
     "chrome://remote/content/marionette/actors/MarionetteCommandsParent.jsm",
@@ -43,8 +47,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   reftest: "chrome://remote/content/marionette/reftest.js",
   registerCommandsActor:
     "chrome://remote/content/marionette/actors/MarionetteCommandsParent.jsm",
-  registerEventsActor:
-    "chrome://remote/content/marionette/actors/MarionetteEventsParent.jsm",
   RemoteAgent: "chrome://remote/content/components/RemoteAgent.jsm",
   TimedPromise: "chrome://remote/content/marionette/sync.js",
   Timeouts: "chrome://remote/content/shared/webdriver/Capabilities.jsm",
@@ -52,8 +54,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
     "chrome://remote/content/shared/webdriver/Capabilities.jsm",
   unregisterCommandsActor:
     "chrome://remote/content/marionette/actors/MarionetteCommandsParent.jsm",
-  unregisterEventsActor:
-    "chrome://remote/content/marionette/actors/MarionetteEventsParent.jsm",
   waitForLoadEvent: "chrome://remote/content/marionette/sync.js",
   waitForObserverTopic: "chrome://remote/content/marionette/sync.js",
   WebDriverSession: "chrome://remote/content/shared/webdriver/Session.jsm",
@@ -434,7 +434,7 @@ GeckoDriver.prototype.newSession = async function(cmd) {
     }
 
     registerCommandsActor();
-    registerEventsActor();
+    enableEventsActor();
 
     for (let win of windowManager.windows) {
       const tabBrowser = browser.getTabBrowser(win);
@@ -2108,7 +2108,10 @@ GeckoDriver.prototype.deleteSession = function() {
   
   
   unregisterCommandsActor();
-  unregisterEventsActor();
+  
+  
+  
+  disableEventsActor();
 
   if (RemoteAgent.webDriverBiDi) {
     RemoteAgent.webDriverBiDi.deleteSession();
