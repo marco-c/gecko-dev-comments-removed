@@ -1600,12 +1600,14 @@ void ProfileBuffer::StreamCountersToJSON(SpliceableJSONWriter& aWriter,
           }
 
           aWriter.StartArrayProperty("data");
+          double previousSkippedTime = 0.0;
           uint64_t previousNumber = 0;
           int64_t previousCount = 0;
           for (size_t i = 0; i < size; i++) {
             
             
-            if (i == 0 || samples[i].mNumber != previousNumber ||
+            if (i == 0 || i == size - 1 ||
+                samples[i].mNumber != previousNumber ||
                 samples[i].mCount != previousCount) {
               if (i != 0 && samples[i].mTime >= samples[i - 1].mTime) {
                 MOZ_LOG(sFuzzyfoxLog, mozilla::LogLevel::Error,
@@ -1617,14 +1619,35 @@ void ProfileBuffer::StreamCountersToJSON(SpliceableJSONWriter& aWriter,
               MOZ_ASSERT(samples[i].mNumber - previousNumber <=
                          uint64_t(std::numeric_limits<int64_t>::max()));
 
+              int64_t numberDelta =
+                  static_cast<int64_t>(samples[i].mNumber - previousNumber);
+              int64_t countDelta = samples[i].mCount - previousCount;
+
+              if (previousSkippedTime != 0.0 &&
+                  (numberDelta != 0 || countDelta != 0)) {
+                
+                
+                
+                
+                AutoArraySchemaWriter writer(aWriter);
+                writer.TimeMsElement(TIME, previousSkippedTime);
+                
+                
+                
+                writer.IntElement(NUMBER, 0);
+                writer.IntElement(COUNT, 0);
+              }
+
               AutoArraySchemaWriter writer(aWriter);
               writer.TimeMsElement(TIME, samples[i].mTime);
-              writer.IntElement(
-                  NUMBER,
-                  static_cast<int64_t>(samples[i].mNumber - previousNumber));
-              writer.IntElement(COUNT, samples[i].mCount - previousCount);
+              writer.IntElement(NUMBER, numberDelta);
+              writer.IntElement(COUNT, countDelta);
+
+              previousSkippedTime = 0.0;
               previousNumber = samples[i].mNumber;
               previousCount = samples[i].mCount;
+            } else {
+              previousSkippedTime = samples[i].mTime;
             }
           }
           aWriter.EndArray();   
