@@ -680,7 +680,7 @@ macro_rules! bool_pref_feature {
 
 
 
-pub static MEDIA_FEATURES: [MediaFeatureDescription; 61] = [
+pub static MEDIA_FEATURES: [MediaFeatureDescription; 60] = [
     feature!(
         atom!("width"),
         AllowsRanges::Yes,
