@@ -60,7 +60,7 @@ class AppUpdater {
 
 
   check() {
-    if (!AppConstants.MOZ_UPDATER) {
+    if (!AppConstants.MOZ_UPDATER || this.updateDisabledByPackage) {
       this._setStatus(AppUpdater.STATUS.NO_UPDATER);
       return;
     }
@@ -181,8 +181,22 @@ class AppUpdater {
   }
 
   
+  
+  
+  
+  
+  
+  get updateDisabledByPackage() {
+    return Services.sysinfo.getProperty("hasWinPackageId");
+  }
+
+  
   get updateStagingEnabled() {
-    return !this.updateDisabledByPolicy && this.aus.canStageUpdates;
+    return (
+      !this.updateDisabledByPolicy &&
+      !this.updateDisabledByPackage &&
+      this.aus.canStageUpdates
+    );
   }
 
   
@@ -442,7 +456,7 @@ class AppUpdater {
 
   get status() {
     if (!this._status) {
-      if (!AppConstants.MOZ_UPDATER) {
+      if (!AppConstants.MOZ_UPDATER || this.updateDisabledByPackage) {
         this._status = AppUpdater.STATUS.NO_UPDATER;
       } else if (this.updateDisabledByPolicy) {
         this._status = AppUpdater.STATUS.UPDATE_DISABLED_BY_POLICY;

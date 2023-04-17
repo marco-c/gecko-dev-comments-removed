@@ -3668,10 +3668,17 @@ UpdateService.prototype = {
     );
   },
 
+  
+  
+  
+  
+  
+  
   get disabledByPolicy() {
     return (
       (Services.policies && !Services.policies.isAllowed("appUpdate")) ||
-      this.disabledForTesting
+      this.disabledForTesting ||
+      Services.sysinfo.getProperty("hasWinPackageId")
     );
   },
 

@@ -663,7 +663,20 @@ var gMainPane = {
 
       let updateDisabled =
         Services.policies && !Services.policies.isAllowed("appUpdate");
-      if (
+
+      if (Services.sysinfo.getProperty("hasWinPackageId")) {
+        
+        
+        
+        
+        
+        document
+          .getElementById("updatesCategory")
+          .setAttribute("style", "display: none !important");
+        document
+          .getElementById("updateApp")
+          .setAttribute("style", "display: none !important");
+      } else if (
         updateDisabled ||
         UpdateUtils.appUpdateAutoSettingIsLocked() ||
         gApplicationUpdateService.manualUpdateOnly
@@ -1804,7 +1817,8 @@ var gMainPane = {
   async readUpdateAutoPref() {
     if (
       AppConstants.MOZ_UPDATER &&
-      (!Services.policies || Services.policies.isAllowed("appUpdate"))
+      (!Services.policies || Services.policies.isAllowed("appUpdate")) &&
+      !Services.sysinfo.getProperty("hasWinPackageId")
     ) {
       let radiogroup = document.getElementById("updateRadioGroup");
 
@@ -1823,7 +1837,8 @@ var gMainPane = {
   async writeUpdateAutoPref() {
     if (
       AppConstants.MOZ_UPDATER &&
-      (!Services.policies || Services.policies.isAllowed("appUpdate"))
+      (!Services.policies || Services.policies.isAllowed("appUpdate")) &&
+      !Services.sysinfo.getProperty("hasWinPackageId")
     ) {
       let radiogroup = document.getElementById("updateRadioGroup");
       let updateAutoValue = radiogroup.value == "true";
@@ -1860,6 +1875,7 @@ var gMainPane = {
       
       UpdateUtils.PER_INSTALLATION_PREFS_SUPPORTED &&
       (!Services.policies || Services.policies.isAllowed("appUpdate")) &&
+      !Services.sysinfo.getProperty("hasWinPackageId") &&
       !UpdateUtils.appUpdateSettingIsLocked("app.update.background.enabled")
     );
   },
