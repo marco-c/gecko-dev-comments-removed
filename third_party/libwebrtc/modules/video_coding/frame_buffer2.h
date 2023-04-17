@@ -73,6 +73,10 @@ class FrameBuffer {
 
   
   
+  void Start();
+
+  
+  
   void Stop();
 
   
