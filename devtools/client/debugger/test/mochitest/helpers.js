@@ -992,8 +992,9 @@ function findSourceNodeWithText(dbg, text) {
   });
 }
 
-function expandAllSourceNodes(dbg, treeNode) {
+async function expandAllSourceNodes(dbg, treeNode) {
   rightClickEl(dbg, treeNode);
+  await waitForContextMenu(dbg);
   selectContextMenuItem(dbg, "#node-menu-expand-all");
 }
 
@@ -1561,9 +1562,24 @@ function findContextMenu(dbg, selector) {
   return popup.querySelector(selector);
 }
 
-async function waitForContextMenu(dbg, selector) {
-  await waitFor(() => findContextMenu(dbg, selector));
-  return findContextMenu(dbg, selector);
+
+
+
+
+async function waitForContextMenu(dbg) {
+  
+  const doc = dbg.toolbox.topDoc;
+
+  
+  const popup = await waitFor(() => doc.querySelector('menupopup[menu-api="true"]'));
+
+  if (popup.state == "open") {
+    return;
+  }
+
+  await new Promise(resolve => {
+    popup.addEventListener("popupshown", () => resolve(), {once: true});
+  });
 }
 
 function selectContextMenuItem(dbg, selector) {
@@ -1577,7 +1593,7 @@ function openContextMenuSubmenu(dbg, selector) {
 }
 
 async function assertContextMenuLabel(dbg, selector, label) {
-  const item = await waitForContextMenu(dbg, selector);
+  const item = await waitFor(() => findContextMenu(dbg, selector));
   is(item.label, label, "The label of the context menu item shown to the user");
 }
 
@@ -2093,6 +2109,7 @@ async function toggleDebbuggerSettingsMenuItem(dbg, { className, isChecked }) {
 
 async function setLogPoint(dbg, index, value) {
   rightClickElement(dbg, "gutter", index);
+  await waitForContextMenu(dbg);
   selectContextMenuItem(
     dbg,
     `${selectors.addLogItem},${selectors.editLogItem}`
