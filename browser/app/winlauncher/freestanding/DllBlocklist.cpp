@@ -390,7 +390,13 @@ NTSTATUS NTAPI patched_NtMapViewOfSection(
   }
 
   
-  if (!(mbi.Type & MEM_IMAGE)) {
+  
+  
+  
+  constexpr DWORD kPageExecutable = PAGE_EXECUTE | PAGE_EXECUTE_READ |
+                                    PAGE_EXECUTE_READWRITE |
+                                    PAGE_EXECUTE_WRITECOPY;
+  if (!(mbi.Type & MEM_IMAGE) || !(mbi.AllocationProtect & kPageExecutable)) {
     return stubStatus;
   }
 

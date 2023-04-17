@@ -46,6 +46,10 @@ TEST(TestDllBlocklist, BlockDllByName)
 
   EXPECT_TRUE(!hDll);
   EXPECT_TRUE(!::GetModuleHandleW(kLeafName.get()));
+
+  hDll.own(::LoadLibraryExW(dllPath.get(), nullptr, LOAD_LIBRARY_AS_DATAFILE));
+  
+  EXPECT_TRUE(hDll);
 }
 
 TEST(TestDllBlocklist, BlockDllByVersion)
@@ -57,6 +61,11 @@ TEST(TestDllBlocklist, BlockDllByVersion)
 
   EXPECT_TRUE(!hDll);
   EXPECT_TRUE(!::GetModuleHandleW(kLeafName.get()));
+
+  hDll.own(
+      ::LoadLibraryExW(dllPath.get(), nullptr, LOAD_LIBRARY_AS_IMAGE_RESOURCE));
+  
+  EXPECT_TRUE(hDll);
 }
 
 TEST(TestDllBlocklist, AllowDllByVersion)
