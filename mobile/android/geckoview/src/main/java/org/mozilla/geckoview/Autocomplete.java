@@ -848,6 +848,17 @@ public class Autocomplete {
 
 
 
+    @UiThread
+    default @Nullable GeckoResult<LoginEntry[]> onLoginFetch() {
+      return null;
+    }
+
+    
+
+
+
+
+
 
 
     @UiThread
@@ -1337,7 +1348,8 @@ public class Autocomplete {
 
       if (FETCH_LOGIN_EVENT.equals(event)) {
         final String domain = message.getString("domain");
-        final GeckoResult<Autocomplete.LoginEntry[]> result = mDelegate.onLoginFetch(domain);
+        final GeckoResult<Autocomplete.LoginEntry[]> result =
+            domain != null ? mDelegate.onLoginFetch(domain) : mDelegate.onLoginFetch();
 
         if (result == null) {
           callback.sendSuccess(new GeckoBundle[0]);

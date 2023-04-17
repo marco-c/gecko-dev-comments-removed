@@ -321,8 +321,9 @@ const GeckoViewAutocomplete = {
 
 
 
-  fetchLogins(aDomain) {
-    debug`fetchLogins for ${aDomain}`;
+
+  fetchLogins(aDomain = null) {
+    debug`fetchLogins for ${aDomain ?? "All domains"}`;
 
     return EventDispatcher.instance.sendRequestForResult({
       type: "GeckoView:Autocomplete:Fetch:Login",
