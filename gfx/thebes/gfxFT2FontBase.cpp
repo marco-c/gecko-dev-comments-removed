@@ -37,7 +37,7 @@ gfxFT2FontBase::gfxFT2FontBase(
       mFTLoadFlags(aLoadFlags | FT_LOAD_IGNORE_GLOBAL_ADVANCE_WIDTH |
                    FT_LOAD_COLOR),
       mEmbolden(aEmbolden),
-      mFTSize(0.0) {}
+      mFTSize(1.0) {}
 
 gfxFT2FontBase::~gfxFT2FontBase() { mFTFace->ForgetLockOwner(this); }
 
@@ -217,22 +217,6 @@ void gfxFT2FontBase::InitMetrics() {
     memset(&mMetrics, 0, sizeof(mMetrics));  
     mSpaceGlyph = GetGlyph(' ');
     return;
-  }
-
-  if (GetStyle()->sizeAdjust > 0.0 && mFTSize == 0.0) {
-    
-    
-    
-    
-    
-    mFTSize = FindClosestSize(mFTFace->GetFace(), GetAdjustedSize());
-    InitMetrics();
-    
-    gfxFloat aspect = mMetrics.xHeight / mMetrics.emHeight;
-    mAdjustedSize = GetStyle()->GetAdjustedSize(aspect);
-    
-    
-    mFTFace->ForgetLockOwner(this);
   }
 
   
