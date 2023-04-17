@@ -2049,6 +2049,25 @@ BrowserGlue.prototype = {
     _checkTranslationsPref();
   },
 
+  async _setupSearchDetection() {
+    
+    const ID = "addons-search-detection@mozilla.com";
+
+    let addon = await AddonManager.getAddonByID(ID);
+
+    
+    addon =
+      (await AddonManager.maybeInstallBuiltinAddon(
+        ID,
+        "2.0.0",
+        "resource://builtin-addons/search-detection/"
+      )) || addon;
+
+    if (!addon.isActive) {
+      addon.enable();
+    }
+  },
+
   _monitorHTTPSOnlyPref() {
     const PREF_ENABLED = "dom.security.https_only_mode";
     const PREF_WAS_ENABLED = "dom.security.https_only_mode_ever_enabled";
@@ -2281,6 +2300,8 @@ BrowserGlue.prototype = {
     this._monitorHTTPSOnlyPref();
     this._monitorIonPref();
     this._monitorIonStudies();
+    this._setupSearchDetection();
+
     if (AppConstants.NIGHTLY_BUILD) {
       this._monitorTranslationsPref();
     }
