@@ -231,12 +231,6 @@ class AsyncPanZoomController {
 
 
 
-  ZoomConstraints GetZoomConstraints() const;
-
-  
-
-
-
   void PostDelayedTask(already_AddRefed<Runnable> aTask, int aDelayMs);
 
   
@@ -974,6 +968,13 @@ class AsyncPanZoomController {
   already_AddRefed<GestureEventListener> GetGestureEventListener() const;
 
   PlatformSpecificStateBase* GetPlatformSpecificState();
+
+  
+
+
+
+  bool ZoomConstraintsAllowZoom() const;
+  bool ZoomConstraintsAllowDoubleTapZoom() const;
 
  protected:
   

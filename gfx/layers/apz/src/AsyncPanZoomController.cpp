@@ -893,7 +893,7 @@ bool AsyncPanZoomController::ArePointerEventsConsumable(
     return pannable;
   }
 
-  bool zoomable = mZoomConstraints.mAllowZoom;
+  bool zoomable = ZoomConstraintsAllowZoom();
   zoomable &= (aBlock->TouchActionAllowsPinchZoom());
 
   return pannable || zoomable;
@@ -1465,7 +1465,7 @@ nsEventStatus AsyncPanZoomController::OnScaleBegin(
 
   
   
-  if (!mZoomConstraints.mAllowZoom) {
+  if (!ZoomConstraintsAllowZoom()) {
     StartTouch(aEvent.mLocalFocusPoint, aEvent.mTimeStamp);
   }
 
@@ -1513,7 +1513,7 @@ nsEventStatus AsyncPanZoomController::OnScale(const PinchGestureInput& aEvent) {
 
   mPinchEventBuffer.push(aEvent);
   HandlePinchLocking(aEvent);
-  bool allowZoom = mZoomConstraints.mAllowZoom && !mPinchLocked;
+  bool allowZoom = ZoomConstraintsAllowZoom() && !mPinchLocked;
 
   
   
@@ -1725,7 +1725,7 @@ nsEventStatus AsyncPanZoomController::OnScaleEnd(
 
   if (aEvent.mType == PinchGestureInput::PINCHGESTURE_FINGERLIFTED) {
     
-    if (mZoomConstraints.mAllowZoom) {
+    if (ZoomConstraintsAllowZoom()) {
       mPanDirRestricted = false;
       StartTouch(aEvent.mLocalFocusPoint, aEvent.mTimeStamp);
       SetState(TOUCHING);
@@ -1746,7 +1746,7 @@ nsEventStatus AsyncPanZoomController::OnScaleEnd(
     StateChangeNotificationBlocker blocker(this);
     SetState(NOTHING);
 
-    if (mZoomConstraints.mAllowZoom) {
+    if (ZoomConstraintsAllowZoom()) {
       RecursiveMutexAutoLock lock(mRecursiveMutex);
 
       
@@ -2946,7 +2946,7 @@ nsEventStatus AsyncPanZoomController::OnSingleTapUp(
   
   
   MOZ_ASSERT(GetCurrentTouchBlock());
-  if (!(mZoomConstraints.mAllowDoubleTapZoom &&
+  if (!(ZoomConstraintsAllowDoubleTapZoom() &&
         GetCurrentTouchBlock()->TouchActionAllowsDoubleTapZoom())) {
     return GenerateSingleTap(TapType::eSingleTap, aEvent.mPoint,
                              aEvent.modifiers);
@@ -2966,7 +2966,7 @@ nsEventStatus AsyncPanZoomController::OnDoubleTap(
   APZC_LOG("%p got a double-tap in state %d\n", this, mState);
   RefPtr<GeckoContentController> controller = GetGeckoContentController();
   if (controller) {
-    if (mZoomConstraints.mAllowDoubleTapZoom &&
+    if (ZoomConstraintsAllowDoubleTapZoom() &&
         (!GetCurrentTouchBlock() ||
          GetCurrentTouchBlock()->TouchActionAllowsDoubleTapZoom())) {
       if (Maybe<LayoutDevicePoint> geckoScreenPoint =
@@ -5734,8 +5734,14 @@ void AsyncPanZoomController::UpdateZoomConstraints(
   }
 }
 
-ZoomConstraints AsyncPanZoomController::GetZoomConstraints() const {
-  return mZoomConstraints;
+bool AsyncPanZoomController::ZoomConstraintsAllowZoom() const {
+  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  return mZoomConstraints.mAllowZoom;
+}
+
+bool AsyncPanZoomController::ZoomConstraintsAllowDoubleTapZoom() const {
+  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  return mZoomConstraints.mAllowDoubleTapZoom;
 }
 
 void AsyncPanZoomController::PostDelayedTask(already_AddRefed<Runnable> aTask,
