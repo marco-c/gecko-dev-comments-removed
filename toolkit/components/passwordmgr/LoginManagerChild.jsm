@@ -3087,13 +3087,8 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
       candidate = element;
     }
 
-    
-    
-    if (
-      candidate &&
-      (this.isProbablyAUsernameField(candidate) ||
-        this.isProbablyALoginForm(formElement))
-    ) {
+    if (candidate &&
+        this.isProbablyAUsernameLoginForm(formElement, candidate)) {
       return candidate;
     }
 
@@ -3145,11 +3140,33 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
 
 
 
-  isProbablyALoginForm(formElement) {
+
+
+
+
+  isProbablyAUsernameLoginForm(formElement, inputElement) {
     let docState = this.stateForDocument(formElement.ownerDocument);
     let result = docState.cachedIsInferredLoginForm.get(formElement);
     if (result === undefined) {
-      result = LoginHelper.isInferredLoginForm(formElement);
+      
+      
+      
+      
+      
+
+      result = false;
+      
+      
+      if (
+        this.isProbablyAUsernameField(inputElement) ||
+        LoginHelper.isInferredLoginForm(formElement)
+      ) {
+        
+        
+        if (!LoginHelper.isInferredNonUsernameField(inputElement)) {
+          result = true;
+        }
+      }
       docState.cachedIsInferredLoginForm.set(formElement, result);
     }
 

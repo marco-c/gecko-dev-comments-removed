@@ -1387,6 +1387,28 @@ this.LoginHelper = {
 
 
 
+  isInferredNonUsernameField(element) {
+    const expr = /search|code/i;
+
+    if (
+      this._elementAttrsMatchRegex(element, expr) ||
+      this._hasLabelMatchingRegex(element, expr)
+    ) {
+      return true;
+    }
+
+    return false;
+  },
+
+  
+
+
+
+
+
+
+
+
   isInferredEmailField(element) {
     const expr = /email/i;
 
