@@ -97,9 +97,6 @@ loader.lazyGetter(this, "certDecoder", () => {
 });
 
 
-const gNSURLStore = new Map();
-
-
 
 const COOKIE_SAMESITE = {
   LAX: "Lax",
@@ -886,19 +883,6 @@ var NetworkHelper = {
       });
 
     return paramsArray;
-  },
-
-  
-
-
-  nsIURL: function(url, store = gNSURLStore) {
-    if (store.has(url)) {
-      return store.get(url);
-    }
-
-    const uri = Services.io.newURI(url).QueryInterface(Ci.nsIURL);
-    store.set(url, uri);
-    return uri;
   },
 };
 
