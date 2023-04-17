@@ -281,10 +281,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:nssSlot_GetToken\n"
 
          
-         "race:DataChannelConnection::SetSignals\n"
-         "race:DataChannelConnection::SetReady\n"
-
-         
          "race:storage::Connection::Release\n"
 
          
