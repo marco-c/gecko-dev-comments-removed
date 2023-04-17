@@ -418,13 +418,21 @@ var PrintEventHandler = {
       this.printProgressIndicator.hidden = false;
 
       let bc = this.currentPreviewBrowser.browsingContext;
-      await bc.print(settings);
+      await this._doPrint(bc, settings);
     } catch (e) {
       Cu.reportError(e);
     }
 
     window.close();
     return true;
+  },
+
+  
+
+
+
+  _doPrint(aBrowsingContext, aSettings) {
+    return aBrowsingContext.print(settings);
   },
 
   cancelPrint() {
