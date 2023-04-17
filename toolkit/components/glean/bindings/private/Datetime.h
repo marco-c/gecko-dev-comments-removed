@@ -44,7 +44,7 @@ class DatetimeMetric {
 
 
 
-  Maybe<nsCString> TestGetValue(
+  Maybe<PRExplodedTime> TestGetValue(
       const nsACString& aPingName = nsCString()) const;
 
  private:
