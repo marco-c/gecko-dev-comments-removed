@@ -5,6 +5,7 @@
 
 #include "ChangeStyleTransaction.h"
 
+#include "HTMLEditUtils.h"
 #include "mozilla/Logging.h"
 #include "mozilla/ToString.h"
 #include "mozilla/dom/Element.h"  
@@ -154,7 +155,7 @@ void ChangeStyleTransaction::RemoveValueFromListOfValues(
 
     if (start < end && !aRemoveValue.Equals(start)) {
       outString.Append(start);
-      outString.Append(' ');
+      outString.Append(HTMLEditUtils::kSpace);
     }
 
     start = ++end;
@@ -336,7 +337,7 @@ void ChangeStyleTransaction::AddValueToMultivalueProperty(
     aValues.Assign(aNewValue);
   } else if (!ValueIncludes(aValues, aNewValue)) {
     
-    aValues.Append(char16_t(' '));
+    aValues.Append(HTMLEditUtils::kSpace);
     aValues.Append(aNewValue);
   }
 }
