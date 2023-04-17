@@ -4,30 +4,17 @@
 
 
 #include <windows.h>
-#include <dbghelp.h>
-#include <sstream>
 #include <psapi.h>
 
 #include "BaseProfilerSharedLibraries.h"
 
 #include "mozilla/glue/WindowsUnicode.h"
-#include "mozilla/Unused.h"
+#include "mozilla/NativeNt.h"
 #include "mozilla/WindowsEnumProcessModules.h"
 #include "mozilla/WindowsVersion.h"
 
 #include <cctype>
 #include <string>
-
-#define CV_SIGNATURE 0x53445352  // 'SDSR'
-
-struct CodeViewRecord70 {
-  uint32_t signature;
-  GUID pdbSignature;
-  uint32_t pdbAge;
-  
-  
-  char pdbFileName[1];
-};
 
 static constexpr char digits[16] = {'0', '1', '2', '3', '4', '5', '6', '7',
                                     '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
@@ -60,59 +47,6 @@ static void AppendHex(T aValue, std::string& aOut, bool aWithPadding) {
     }
     aOut += digits[nibble];
   }
-}
-
-static bool GetPdbInfo(uintptr_t aStart, std::string& aSignature,
-                       uint32_t& aAge, char** aPdbName) {
-  if (!aStart) {
-    return false;
-  }
-
-  PIMAGE_DOS_HEADER dosHeader = reinterpret_cast<PIMAGE_DOS_HEADER>(aStart);
-  if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE) {
-    return false;
-  }
-
-  PIMAGE_NT_HEADERS ntHeaders =
-      reinterpret_cast<PIMAGE_NT_HEADERS>(aStart + dosHeader->e_lfanew);
-  if (ntHeaders->Signature != IMAGE_NT_SIGNATURE) {
-    return false;
-  }
-
-  uint32_t relativeVirtualAddress =
-      ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG]
-          .VirtualAddress;
-  if (!relativeVirtualAddress) {
-    return false;
-  }
-
-  PIMAGE_DEBUG_DIRECTORY debugDirectory =
-      reinterpret_cast<PIMAGE_DEBUG_DIRECTORY>(aStart + relativeVirtualAddress);
-  if (!debugDirectory || debugDirectory->Type != IMAGE_DEBUG_TYPE_CODEVIEW) {
-    return false;
-  }
-
-  CodeViewRecord70* debugInfo = reinterpret_cast<CodeViewRecord70*>(
-      aStart + debugDirectory->AddressOfRawData);
-  if (!debugInfo || debugInfo->signature != CV_SIGNATURE) {
-    return false;
-  }
-
-  aAge = debugInfo->pdbAge;
-  GUID& pdbSignature = debugInfo->pdbSignature;
-  AppendHex(pdbSignature.Data1, aSignature, WITH_PADDING);
-  AppendHex(pdbSignature.Data2, aSignature, WITH_PADDING);
-  AppendHex(pdbSignature.Data3, aSignature, WITH_PADDING);
-  AppendHex(reinterpret_cast<const unsigned char*>(&pdbSignature.Data4),
-            reinterpret_cast<const unsigned char*>(&pdbSignature.Data4) +
-                sizeof(pdbSignature.Data4),
-            aSignature);
-
-  
-  
-  *aPdbName = debugInfo->pdbFileName;
-
-  return true;
 }
 
 static std::string GetVersion(const wchar_t* dllPath) {
@@ -202,40 +136,45 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
     }
 #endif  
 
+    
+    
+    
+    
+    
+    
+    
+    
+    nsModuleHandle handleLock(::LoadLibraryExW(
+        aModulePath, NULL,
+        LOAD_LIBRARY_AS_DATAFILE | LOAD_LIBRARY_AS_IMAGE_RESOURCE));
+
     std::string breakpadId;
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    HMODULE handleLock =
-        LoadLibraryExW(aModulePath, NULL, LOAD_LIBRARY_AS_DATAFILE);
-    MEMORY_BASIC_INFORMATION vmemInfo = {0};
-    std::string pdbSig;
-    uint32_t pdbAge;
     std::string pdbPathStr;
     std::string pdbNameStr;
-    char* pdbName = nullptr;
-    if (handleLock &&
-        sizeof(vmemInfo) ==
-            VirtualQuery(module.lpBaseOfDll, &vmemInfo, sizeof(vmemInfo)) &&
-        vmemInfo.State == MEM_COMMIT &&
-        GetPdbInfo((uintptr_t)module.lpBaseOfDll, pdbSig, pdbAge, &pdbName)) {
-      MOZ_ASSERT(breakpadId.empty());
-      breakpadId += pdbSig;
-      AppendHex(pdbAge, breakpadId, WITHOUT_PADDING);
+    if (handleLock) {
+      mozilla::nt::PEHeaders headers(handleLock.get());
+      if (headers) {
+        if (const auto* debugInfo = headers.GetPdbInfo()) {
+          MOZ_ASSERT(breakpadId.empty());
+          const GUID& pdbSig = debugInfo->pdbSignature;
+          AppendHex(pdbSig.Data1, breakpadId, WITH_PADDING);
+          AppendHex(pdbSig.Data2, breakpadId, WITH_PADDING);
+          AppendHex(pdbSig.Data3, breakpadId, WITH_PADDING);
+          AppendHex(reinterpret_cast<const unsigned char*>(&pdbSig.Data4),
+                    reinterpret_cast<const unsigned char*>(&pdbSig.Data4) +
+                        sizeof(pdbSig.Data4),
+                    breakpadId);
+          AppendHex(debugInfo->pdbAge, breakpadId, WITHOUT_PADDING);
 
-      pdbPathStr = pdbName;
-      size_t pos = pdbPathStr.find_last_of("\\/");
-      pdbNameStr =
-          (pos != std::string::npos) ? pdbPathStr.substr(pos + 1) : pdbPathStr;
+          
+          
+          
+          pdbPathStr = debugInfo->pdbFileName;
+          size_t pos = pdbPathStr.find_last_of("\\/");
+          pdbNameStr = (pos != std::string::npos) ? pdbPathStr.substr(pos + 1)
+                                                  : pdbPathStr;
+        }
+      }
     }
 
     SharedLibrary shlib((uintptr_t)module.lpBaseOfDll,
@@ -244,8 +183,6 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
                         breakpadId, moduleNameStr, modulePathStr, pdbNameStr,
                         pdbPathStr, GetVersion(aModulePath), "");
     sharedLibraryInfo.AddSharedLibrary(shlib);
-
-    FreeLibrary(handleLock);  
   };
 
   mozilla::EnumerateProcessModules(addSharedLibraryFromModuleInfo);

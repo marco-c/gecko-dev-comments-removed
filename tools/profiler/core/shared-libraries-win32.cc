@@ -4,81 +4,16 @@
 
 
 #include <windows.h>
-#include <dbghelp.h>
-#include <sstream>
 #include <psapi.h>
 
 #include "shared-libraries.h"
 #include "nsWindowsHelpers.h"
+#include "mozilla/NativeNt.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/Unused.h"
 #include "mozilla/WindowsEnumProcessModules.h"
 #include "mozilla/WindowsProcessMitigations.h"
 #include "mozilla/WindowsVersion.h"
-#include "nsNativeCharsetUtils.h"
 #include "nsPrintfCString.h"
-#include "nsReadableUtils.h"
-
-#define CV_SIGNATURE 0x53445352  // 'SDSR'
-
-struct CodeViewRecord70 {
-  uint32_t signature;
-  GUID pdbSignature;
-  uint32_t pdbAge;
-  
-  
-  char pdbFileName[1];
-};
-
-static bool GetPdbInfo(uintptr_t aStart, nsID& aSignature, uint32_t& aAge,
-                       char** aPdbName) {
-  if (!aStart) {
-    return false;
-  }
-
-  PIMAGE_DOS_HEADER dosHeader = reinterpret_cast<PIMAGE_DOS_HEADER>(aStart);
-  if (dosHeader->e_magic != IMAGE_DOS_SIGNATURE) {
-    return false;
-  }
-
-  PIMAGE_NT_HEADERS ntHeaders =
-      reinterpret_cast<PIMAGE_NT_HEADERS>(aStart + dosHeader->e_lfanew);
-  if (ntHeaders->Signature != IMAGE_NT_SIGNATURE) {
-    return false;
-  }
-
-  uint32_t relativeVirtualAddress =
-      ntHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG]
-          .VirtualAddress;
-  if (!relativeVirtualAddress) {
-    return false;
-  }
-
-  PIMAGE_DEBUG_DIRECTORY debugDirectory =
-      reinterpret_cast<PIMAGE_DEBUG_DIRECTORY>(aStart + relativeVirtualAddress);
-  if (!debugDirectory || debugDirectory->Type != IMAGE_DEBUG_TYPE_CODEVIEW) {
-    return false;
-  }
-
-  CodeViewRecord70* debugInfo = reinterpret_cast<CodeViewRecord70*>(
-      aStart + debugDirectory->AddressOfRawData);
-  if (!debugInfo || debugInfo->signature != CV_SIGNATURE) {
-    return false;
-  }
-
-  aAge = debugInfo->pdbAge;
-  GUID& pdbSignature = debugInfo->pdbSignature;
-  aSignature.m0 = pdbSignature.Data1;
-  aSignature.m1 = pdbSignature.Data2;
-  aSignature.m2 = pdbSignature.Data3;
-  memcpy(aSignature.m3, pdbSignature.Data4, sizeof(pdbSignature.Data4));
-
-  
-  
-  *aPdbName = debugInfo->pdbFileName;
-
-  return true;
-}
 
 static nsCString GetVersion(const WCHAR* dllPath) {
   DWORD infoSize = GetFileVersionInfoSizeW(dllPath, nullptr);
@@ -163,7 +98,6 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
     bool canGetPdbInfo = (!mozilla::IsEafPlusEnabled() ||
                           !moduleNameStr.LowerCaseEqualsLiteral("ntdll.dll"));
 
-    nsCString breakpadId;
     
     
     
@@ -172,37 +106,39 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
     
     
     
-    
-    
-    
-    HMODULE handleLock =
-        LoadLibraryEx(aModulePath, NULL, LOAD_LIBRARY_AS_DATAFILE);
-    MEMORY_BASIC_INFORMATION vmemInfo = {0};
-    nsID pdbSig;
-    uint32_t pdbAge;
+    nsModuleHandle handleLock(::LoadLibraryExW(
+        aModulePath, NULL,
+        LOAD_LIBRARY_AS_DATAFILE | LOAD_LIBRARY_AS_IMAGE_RESOURCE));
+
+    nsAutoCString breakpadId;
     nsAutoString pdbPathStr;
     nsAutoString pdbNameStr;
-    char* pdbName = nullptr;
-    if (handleLock &&
-        sizeof(vmemInfo) ==
-            VirtualQuery(module.lpBaseOfDll, &vmemInfo, sizeof(vmemInfo)) &&
-        vmemInfo.State == MEM_COMMIT && canGetPdbInfo &&
-        GetPdbInfo((uintptr_t)module.lpBaseOfDll, pdbSig, pdbAge, &pdbName)) {
-      MOZ_ASSERT(breakpadId.IsEmpty());
-      breakpadId.AppendPrintf(
-          "%08X"                              
-          "%04X%04X"                          
-          "%02X%02X%02X%02X%02X%02X%02X%02X"  
-          "%X",                               
-          pdbSig.m0, pdbSig.m1, pdbSig.m2, pdbSig.m3[0], pdbSig.m3[1],
-          pdbSig.m3[2], pdbSig.m3[3], pdbSig.m3[4], pdbSig.m3[5], pdbSig.m3[6],
-          pdbSig.m3[7], pdbAge);
+    if (handleLock && canGetPdbInfo) {
+      mozilla::nt::PEHeaders headers(handleLock.get());
+      if (headers) {
+        if (const auto* debugInfo = headers.GetPdbInfo()) {
+          MOZ_ASSERT(breakpadId.IsEmpty());
+          const GUID& pdbSig = debugInfo->pdbSignature;
+          breakpadId.AppendPrintf(
+              "%08X"                              
+              "%04X%04X"                          
+              "%02X%02X%02X%02X%02X%02X%02X%02X"  
+              "%X",                               
+              pdbSig.Data1, pdbSig.Data2, pdbSig.Data3, pdbSig.Data4[0],
+              pdbSig.Data4[1], pdbSig.Data4[2], pdbSig.Data4[3],
+              pdbSig.Data4[4], pdbSig.Data4[5], pdbSig.Data4[6],
+              pdbSig.Data4[7], debugInfo->pdbAge);
 
-      pdbPathStr = NS_ConvertUTF8toUTF16(pdbName);
-      pdbNameStr = pdbPathStr;
-      int32_t pos = pdbNameStr.RFindCharInSet(u"\\/");
-      if (pos != kNotFound) {
-        pdbNameStr.Cut(0, pos + 1);
+          
+          
+          
+          pdbPathStr = NS_ConvertUTF8toUTF16(debugInfo->pdbFileName);
+          pdbNameStr = pdbPathStr;
+          int32_t pos = pdbNameStr.RFindCharInSet(u"\\/");
+          if (pos != kNotFound) {
+            pdbNameStr.Cut(0, pos + 1);
+          }
+        }
       }
     }
 
@@ -212,8 +148,6 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
                         breakpadId, moduleNameStr, modulePathStr, pdbNameStr,
                         pdbPathStr, GetVersion(aModulePath), "");
     sharedLibraryInfo.AddSharedLibrary(shlib);
-
-    FreeLibrary(handleLock);  
   };
 
   mozilla::EnumerateProcessModules(addSharedLibraryFromModuleInfo);

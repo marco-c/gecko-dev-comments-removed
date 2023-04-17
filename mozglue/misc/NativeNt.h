@@ -520,6 +520,15 @@ inline size_t StrlenASCII(const char* aStr) {
   return len;
 }
 
+struct CodeViewRecord70 {
+  uint32_t signature;
+  GUID pdbSignature;
+  uint32_t pdbAge;
+  
+  
+  char pdbFileName[1];
+};
+
 class MOZ_RAII PEHeaders final {
   
 
@@ -882,6 +891,19 @@ class MOZ_RAII PEHeaders final {
     
     return RVAToPtrUnchecked<FARPROC>(
         mPeHeader->OptionalHeader.AddressOfEntryPoint);
+  }
+
+  const CodeViewRecord70* GetPdbInfo() const {
+    PIMAGE_DEBUG_DIRECTORY debugDirectory =
+        GetImageDirectoryEntry<PIMAGE_DEBUG_DIRECTORY>(
+            IMAGE_DIRECTORY_ENTRY_DEBUG);
+    if (!debugDirectory) {
+      return nullptr;
+    }
+
+    const CodeViewRecord70* debugInfo =
+        RVAToPtr<CodeViewRecord70*>(debugDirectory->AddressOfRawData);
+    return (debugInfo && debugInfo->signature == 'SDSR') ? debugInfo : nullptr;
   }
 
  private:
