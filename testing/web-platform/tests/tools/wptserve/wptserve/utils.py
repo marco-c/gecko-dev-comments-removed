@@ -166,7 +166,6 @@ def http2_compatible():
     
     
     
-    
     import ssl
     if not ssl.OPENSSL_VERSION.startswith("OpenSSL"):
         logger = get_logger()

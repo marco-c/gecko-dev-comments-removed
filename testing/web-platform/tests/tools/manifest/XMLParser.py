@@ -58,9 +58,6 @@ class XMLParser(object):
         self._parser.SetParamEntityParsing(expat.XML_PARAM_ENTITY_PARSING_UNLESS_STANDALONE)
         
         self._parser.XmlDeclHandler = self._xml_decl
-        
-        
-        
         self._parser.StartElementHandler = self._start
         self._parser.EndElementHandler = self._end
         self._parser.CharacterDataHandler = self._data
