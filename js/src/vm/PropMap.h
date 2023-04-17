@@ -646,6 +646,11 @@ class SharedPropMap : public PropMap {
                                     uint32_t* mapLength, HandleId id,
                                     PropertyFlags flags,
                                     ObjectFlags* objectFlags);
+
+  
+  static DictionaryPropMap* toDictionaryMap(JSContext* cx,
+                                            Handle<SharedPropMap*> map,
+                                            uint32_t length);
 };
 
 class CompactPropMap final : public SharedPropMap {
@@ -866,11 +871,18 @@ class DictionaryPropMap final : public PropMap {
 
   void clearProperty(uint32_t index) { keys_[index] = JSID_VOID; }
 
+  static void skipTrailingHoles(MutableHandle<DictionaryPropMap*> map,
+                                uint32_t* mapLength);
+
+  void handOffLastMapStateTo(DictionaryPropMap* newLast);
+
   void incHoleCount() { holeCount_++; }
   void decHoleCount() {
     MOZ_ASSERT(holeCount_ > 0);
     holeCount_--;
   }
+  static void maybeCompact(JSContext* cx, MutableHandle<DictionaryPropMap*> map,
+                           uint32_t* mapLength);
 
  public:
   bool isDictionary() const = delete;
@@ -894,6 +906,41 @@ class DictionaryPropMap final : public PropMap {
   PropertyInfo getPropertyInfo(uint32_t index) const {
     MOZ_ASSERT(hasKey(index));
     return linkedData_.propInfos[index];
+  }
+
+  
+  
+  static bool addProperty(JSContext* cx, const JSClass* clasp,
+                          MutableHandle<DictionaryPropMap*> map,
+                          uint32_t* mapLength, HandleId id, PropertyFlags flags,
+                          uint32_t slot, ObjectFlags* objectFlags);
+
+  
+  
+  
+  static void removeProperty(JSContext* cx,
+                             MutableHandle<DictionaryPropMap*> map,
+                             uint32_t* mapLength, PropMapTable* table,
+                             PropMapTable::Ptr& ptr);
+
+  
+  
+  
+  static void densifyElements(JSContext* cx,
+                              MutableHandle<DictionaryPropMap*> map,
+                              uint32_t* mapLength, NativeObject* obj);
+
+  
+  
+  void changeProperty(JSContext* cx, const JSClass* clasp, uint32_t index,
+                      PropertyFlags flags, uint32_t slot,
+                      ObjectFlags* objectFlags);
+
+  
+  void changePropertyFlags(JSContext* cx, const JSClass* clasp, uint32_t index,
+                           PropertyFlags flags, ObjectFlags* objectFlags) {
+    uint32_t slot = getPropertyInfo(index).maybeSlot();
+    changeProperty(cx, clasp, index, flags, slot, objectFlags);
   }
 
   static void staticAsserts() {
