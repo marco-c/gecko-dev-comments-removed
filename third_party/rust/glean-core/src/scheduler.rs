@@ -52,7 +52,7 @@ impl MetricsPingSubmitter for GleanMetricsPingSubmitter {
     fn submit_metrics_ping(&self, glean: &Glean, reason: Option<&str>, now: DateTime<FixedOffset>) {
         glean.submit_ping_by_name("metrics", reason);
         
-        get_last_sent_time_metric().set(glean, Some(now));
+        get_last_sent_time_metric().set(&glean, Some(now));
     }
 }
 
@@ -84,7 +84,7 @@ pub fn schedule(glean: &Glean) {
     let submitter = GleanMetricsPingSubmitter {};
     let scheduler = GleanMetricsPingScheduler {};
 
-    schedule_internal(glean, submitter, scheduler, now)
+    schedule_internal(&glean, submitter, scheduler, now)
 }
 
 
@@ -101,21 +101,21 @@ fn schedule_internal(
     now: DateTime<FixedOffset>,
 ) {
     let last_sent_build_metric = get_last_sent_build_metric();
-    if let Some(last_sent_build) = last_sent_build_metric.get_value(glean, INTERNAL_STORAGE) {
+    if let Some(last_sent_build) = last_sent_build_metric.get_value(&glean, INTERNAL_STORAGE) {
         
         
         
         
         if last_sent_build != glean.app_build {
-            last_sent_build_metric.set(glean, &glean.app_build);
+            last_sent_build_metric.set(&glean, &glean.app_build);
             log::info!("App build changed. Sending 'metrics' ping");
-            submitter.submit_metrics_ping(glean, Some("upgrade"), now);
+            submitter.submit_metrics_ping(&glean, Some("upgrade"), now);
             scheduler.start_scheduler(submitter, now, When::Reschedule);
             return;
         }
     }
 
-    let last_sent_time = get_last_sent_time_metric().get_value(glean, INTERNAL_STORAGE);
+    let last_sent_time = get_last_sent_time_metric().get_value(&glean, INTERNAL_STORAGE);
     if let Some(last_sent) = last_sent_time {
         log::info!("The 'metrics' ping was last sent on {}", last_sent);
     }
@@ -137,7 +137,7 @@ fn schedule_internal(
     } else if now > now.date().and_hms(SCHEDULED_HOUR, 0, 0) {
         
         log::info!("Sending the 'metrics' ping immediately, {}", now);
-        submitter.submit_metrics_ping(glean, Some("overdue"), now);
+        submitter.submit_metrics_ping(&glean, Some("overdue"), now);
         scheduler.start_scheduler(submitter, now, When::Reschedule);
     } else {
         

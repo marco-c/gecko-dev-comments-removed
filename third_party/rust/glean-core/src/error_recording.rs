@@ -26,7 +26,6 @@ use crate::Lifetime;
 
 
 
-
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum ErrorType {
     
@@ -48,27 +47,6 @@ impl ErrorType {
             ErrorType::InvalidState => "invalid_state",
             ErrorType::InvalidOverflow => "invalid_overflow",
         }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn iter() -> impl Iterator<Item = Self> {
-        
-        
-        [
-            ErrorType::InvalidValue,
-            ErrorType::InvalidLabel,
-            ErrorType::InvalidState,
-            ErrorType::InvalidOverflow,
-        ]
-        .iter()
-        .copied()
     }
 }
 
