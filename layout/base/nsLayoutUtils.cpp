@@ -4515,18 +4515,16 @@ static nscoord GetDefiniteSizeTakenByBoxSizing(
 }
 
 
+enum class SizeProperty { Size, MinSize, MaxSize };
 
 
 
-enum eWidthProperty { PROP_WIDTH, PROP_MAX_WIDTH, PROP_MIN_WIDTH };
+
+
 static bool GetIntrinsicCoord(nsIFrame::ExtremumLength aStyle,
                               gfxContext* aRenderingContext, nsIFrame* aFrame,
                               Maybe<nscoord> aInlineSizeFromAspectRatio,
-                              eWidthProperty aProperty, nscoord& aResult) {
-  MOZ_ASSERT(aProperty == PROP_WIDTH || aProperty == PROP_MAX_WIDTH ||
-                 aProperty == PROP_MIN_WIDTH,
-             "unexpected property");
-
+                              SizeProperty aProperty, nscoord& aResult) {
   if (aStyle == nsIFrame::ExtremumLength::MozAvailable) {
     return false;
   }
@@ -4537,13 +4535,19 @@ static bool GetIntrinsicCoord(nsIFrame::ExtremumLength aStyle,
   }
 
   if (aStyle == nsIFrame::ExtremumLength::MozFitContent) {
-    if (aProperty == PROP_WIDTH) return false;  
-    if (aProperty == PROP_MAX_WIDTH)
-      
-      aStyle = nsIFrame::ExtremumLength::MaxContent;
-    else
-      
-      aStyle = nsIFrame::ExtremumLength::MinContent;
+    switch (aProperty) {
+      case SizeProperty::Size:
+        
+        return false;
+      case SizeProperty::MaxSize:
+        
+        aStyle = nsIFrame::ExtremumLength::MaxContent;
+        break;
+      case SizeProperty::MinSize:
+        
+        aStyle = nsIFrame::ExtremumLength::MinContent;
+        break;
+    }
   }
 
   NS_ASSERTION(aStyle == nsIFrame::ExtremumLength::MinContent ||
@@ -4568,7 +4572,7 @@ template <typename SizeOrMaxSize>
 static bool GetIntrinsicCoord(const SizeOrMaxSize& aStyle,
                               gfxContext* aRenderingContext, nsIFrame* aFrame,
                               Maybe<nscoord> aInlineSizeFromAspectRatio,
-                              eWidthProperty aProperty, nscoord& aResult) {
+                              SizeProperty aProperty, nscoord& aResult) {
   auto length = nsIFrame::ToExtremumLength(aStyle);
   if (!length) {
     return false;
@@ -4646,14 +4650,15 @@ static nscoord AddIntrinsicSizeOffset(
     result = 0;  
   } else if (GetAbsoluteCoord(aStyleSize, size) ||
              GetIntrinsicCoord(aStyleSize, aRenderingContext, aFrame,
-                               aInlineSizeFromAspectRatio, PROP_WIDTH, size)) {
+                               aInlineSizeFromAspectRatio, SizeProperty::Size,
+                               size)) {
     result = size + coordOutsideSize;
   }
 
   nscoord maxSize = aFixedMaxSize ? *aFixedMaxSize : 0;
-  if (aFixedMaxSize ||
-      GetIntrinsicCoord(aStyleMaxSize, aRenderingContext, aFrame,
-                        aInlineSizeFromAspectRatio, PROP_MAX_WIDTH, maxSize)) {
+  if (aFixedMaxSize || GetIntrinsicCoord(aStyleMaxSize, aRenderingContext,
+                                         aFrame, aInlineSizeFromAspectRatio,
+                                         SizeProperty::MaxSize, maxSize)) {
     maxSize += coordOutsideSize;
     if (result > maxSize) {
       result = maxSize;
@@ -4661,9 +4666,9 @@ static nscoord AddIntrinsicSizeOffset(
   }
 
   nscoord minSize = aFixedMinSize ? *aFixedMinSize : 0;
-  if (aFixedMinSize ||
-      GetIntrinsicCoord(aStyleMinSize, aRenderingContext, aFrame,
-                        aInlineSizeFromAspectRatio, PROP_MIN_WIDTH, minSize)) {
+  if (aFixedMinSize || GetIntrinsicCoord(aStyleMinSize, aRenderingContext,
+                                         aFrame, aInlineSizeFromAspectRatio,
+                                         SizeProperty::MinSize, minSize)) {
     minSize += coordOutsideSize;
     if (result < minSize) {
       result = minSize;
