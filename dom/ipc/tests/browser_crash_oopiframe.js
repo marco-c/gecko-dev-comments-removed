@@ -6,7 +6,8 @@ ChromeUtils.defineModuleGetter(
   "resource://testing-common/TelemetryTestUtils.jsm"
 );
 
-const SUBFRAME_CRASH_PRESENTED_KEY = "notificationbar.crash_subframe_ui";
+const SUBFRAME_CRASH_PRESENTED_KEY =
+  "dom.contentprocess.crash_subframe_ui_presented";
 
 
 
@@ -125,33 +126,30 @@ async function testFrameCrash(numTabs) {
   
   await notificationPromise;
 
-  info("Subframe crashed ui count");
-  TelemetryTestUtils.assertKeyedScalar(
-    TelemetryTestUtils.getProcessScalars("parent", true),
+  TelemetryTestUtils.assertScalar(
+    TelemetryTestUtils.getProcessScalars("parent"),
     SUBFRAME_CRASH_PRESENTED_KEY,
-    "shown",
-    1
+    1,
+    "Subframe crashed ui count"
   );
 
   if (numTabs > 1) {
     
     
     await BrowserTestUtils.switchTab(gBrowser, gBrowser.tabs[1]);
-    info("Subframe crashed ui count after switching tab");
-    TelemetryTestUtils.assertKeyedScalar(
-      TelemetryTestUtils.getProcessScalars("parent", true),
+    TelemetryTestUtils.assertScalar(
+      TelemetryTestUtils.getProcessScalars("parent"),
       SUBFRAME_CRASH_PRESENTED_KEY,
-      "shown",
-      2
+      2,
+      "Subframe crashed ui count after switching tab"
     );
 
     await BrowserTestUtils.switchTab(gBrowser, gBrowser.tabs[2]);
-    info("Subframe crashed ui count after switching tab again");
-    TelemetryTestUtils.assertKeyedScalar(
-      TelemetryTestUtils.getProcessScalars("parent", true),
+    TelemetryTestUtils.assertScalar(
+      TelemetryTestUtils.getProcessScalars("parent"),
       SUBFRAME_CRASH_PRESENTED_KEY,
-      "shown",
-      3
+      3,
+      "Subframe crashed ui count after switching tab again"
     );
   }
 
@@ -205,12 +203,11 @@ async function testFrameCrash(numTabs) {
     BrowserTestUtils.removeTab(gBrowser.selectedTab);
   }
 
-  info("Subframe crashed ui count at end of test");
-  TelemetryTestUtils.assertKeyedScalar(
-    TelemetryTestUtils.getProcessScalars("parent", true),
+  TelemetryTestUtils.assertScalar(
+    TelemetryTestUtils.getProcessScalars("parent"),
     SUBFRAME_CRASH_PRESENTED_KEY,
-    "shown",
-    numTabs > 1 ? 3 : 1
+    numTabs > 1 ? 3 : 1,
+    "Subframe crashed ui count at end of test"
   );
 }
 

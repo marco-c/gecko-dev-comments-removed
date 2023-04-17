@@ -133,35 +133,27 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    appendNotification(aType, aNotification, aButtons) {
+    appendNotification(
+      aLabel,
+      aValue,
+      aImage,
+      aPriority,
+      aButtons,
+      aEventCallback,
+      aNotificationIs
+    ) {
       if (
-        aNotification.priority < this.PRIORITY_SYSTEM ||
-        aNotification.priority > this.PRIORITY_CRITICAL_HIGH
+        aPriority < this.PRIORITY_SYSTEM ||
+        aPriority > this.PRIORITY_CRITICAL_HIGH
       ) {
-        throw new Error(
-          "Invalid notification priority " + aNotification.priority
-        );
+        throw new Error("Invalid notification priority " + aPriority);
       }
 
       MozXULElement.insertFTLIfNeeded("toolkit/global/notification.ftl");
 
       
       var newitem;
-      if (!aNotification.notificationIs) {
+      if (!aNotificationIs) {
         if (!customElements.get("notification-message")) {
           
           
@@ -172,9 +164,7 @@
       } else {
         newitem = document.createXULElement(
           "notification",
-          aNotification.notificationIs
-            ? { is: aNotification.notificationIs }
-            : {}
+          aNotificationIs ? { is: aNotificationIs } : {}
         );
       }
 
@@ -189,38 +179,30 @@
       if (newitem.messageText) {
         
         if (
-          aNotification.label &&
-          typeof aNotification.label == "object" &&
-          aNotification.label.nodeType &&
-          aNotification.label.nodeType ==
-            aNotification.label.DOCUMENT_FRAGMENT_NODE
+          aLabel &&
+          typeof aLabel == "object" &&
+          aLabel.nodeType &&
+          aLabel.nodeType == aLabel.DOCUMENT_FRAGMENT_NODE
         ) {
-          newitem.messageText.appendChild(aNotification.label);
+          newitem.messageText.appendChild(aLabel);
         } else {
-          newitem.messageText.textContent = aNotification.label;
+          newitem.messageText.textContent = aLabel;
         }
       }
-      newitem.setAttribute("value", aType);
+      newitem.setAttribute("value", aValue);
 
-      newitem.eventCallback = aNotification.eventCallback;
+      newitem.eventCallback = aEventCallback;
 
       if (aButtons) {
         newitem.setButtons(aButtons);
       }
 
-      if (aNotification.telemetry) {
-        newitem.telemetry = aNotification.telemetry;
-        if (aNotification.telemetryFilter) {
-          newitem.telemetryFilter = aNotification.telemetryFilter;
-        }
-      }
-
-      newitem.priority = aNotification.priority;
-      if (aNotification.priority == this.PRIORITY_SYSTEM) {
+      newitem.priority = aPriority;
+      if (aPriority == this.PRIORITY_SYSTEM) {
         newitem.setAttribute("type", "system");
-      } else if (aNotification.priority >= this.PRIORITY_CRITICAL_LOW) {
+      } else if (aPriority >= this.PRIORITY_CRITICAL_LOW) {
         newitem.setAttribute("type", "critical");
-      } else if (aNotification.priority <= this.PRIORITY_INFO_HIGH) {
+      } else if (aPriority <= this.PRIORITY_INFO_HIGH) {
         newitem.setAttribute("type", "info");
       } else {
         newitem.setAttribute("type", "warning");
@@ -238,13 +220,6 @@
       var event = document.createEvent("Events");
       event.initEvent("AlertActive", true, true);
       newitem.dispatchEvent(event);
-
-      
-      
-      
-      if (this.isShown) {
-        newitem.shown();
-      }
 
       return newitem;
     }
@@ -310,22 +285,6 @@
           this.removeNotification(notification, true);
         }
       }
-    }
-
-    shown() {
-      for (let notification of this.allNotifications) {
-        notification.shown();
-      }
-    }
-
-    get isShown() {
-      let stack = this.stack;
-      let parent = this.stack.parentNode;
-      if (parent.localName == "named-deck") {
-        return parent.selectedViewName == stack.getAttribute("name");
-      }
-
-      return true;
     }
 
     _showNotification(aNotification, aSlideIn, aSkipAnimation) {
@@ -419,8 +378,6 @@
       this.persistence = 0;
       this.priority = 0;
       this.timeout = 0;
-      this.telemetry = [];
-      this._shown = false;
     }
 
     connectedCallback() {
@@ -514,8 +471,6 @@
 
 
     dismiss() {
-      this._doTelemetry("dismissed");
-
       if (this.eventCallback) {
         this.eventCallback("dismissed");
       }
@@ -529,32 +484,12 @@
       this.control.removeNotification(this);
     }
 
-    
-    
-    shown() {
-      if (!this._shown) {
-        this._shown = true;
-        this._doTelemetry("shown");
-      }
-    }
-
-    _doTelemetry(type) {
-      if (
-        this.telemetry &&
-        (!this.telemetryFilter || this.telemetryFilter.includes(type))
-      ) {
-        Services.telemetry.keyedScalarAdd(this.telemetry, type, 1);
-      }
-    }
-
     _doButtonCommand(event) {
       if (!("buttonInfo" in event.target)) {
         return;
       }
 
       var button = event.target.buttonInfo;
-      this._doTelemetry(button.telemetry || "action");
-
       if (button.popup) {
         document
           .getElementById(button.popup)
@@ -593,8 +528,6 @@
         this.persistence = 0;
         this.priority = 0;
         this.timeout = 0;
-        this.telemetry = [];
-        this._shown = false;
       }
 
       connectedCallback() {
@@ -630,15 +563,6 @@
         }
       }
 
-      _doTelemetry(type) {
-        if (
-          this.telemetry &&
-          (!this.telemetryFilter || this.telemetryFilter.includes(type))
-        ) {
-          Services.telemetry.keyedScalarAdd(this.telemetry, type, 1);
-        }
-      }
-
       get control() {
         return this.closest(".notificationbox-stack")._notificationBox;
       }
@@ -648,15 +572,6 @@
           return;
         }
         this.control.removeNotification(this);
-      }
-
-      
-      
-      shown() {
-        if (!this._shown) {
-          this._shown = true;
-          this._doTelemetry("shown");
-        }
       }
 
       setAlertRole() {
@@ -678,9 +593,6 @@
         if ("buttonInfo" in e.target) {
           let { buttonInfo } = e.target;
           let { callback, popup } = buttonInfo;
-
-          this._doTelemetry(buttonInfo.telemetry || "action");
-
           if (popup) {
             document
               .getElementById(popup)
@@ -760,8 +672,6 @@
       }
 
       dismiss() {
-        this._doTelemetry("dismissed");
-
         if (this.eventCallback) {
           this.eventCallback("dismissed");
         }
