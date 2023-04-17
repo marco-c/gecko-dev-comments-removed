@@ -259,60 +259,19 @@ nsresult TextEditor::EnsureCaretNotAtEndOfTextNode() {
   
   
   
-  if (!SelectionRef().RangeCount()) {
-    DebugOnly<nsresult> rvIgnored = CollapseSelectionToEnd();
-    if (NS_WARN_IF(Destroyed())) {
-      return NS_ERROR_EDITOR_DESTROYED;
-    }
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rvIgnored),
-        "EditorBase::CollapseSelectionToEnd() failed, but ignored");
-  }
-
-  
-  
-  
-  EditorRawDOMPoint selectionStartPoint(
-      EditorBase::GetStartPoint(SelectionRef()));
-  if (NS_WARN_IF(!selectionStartPoint.IsSet())) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  if (!selectionStartPoint.IsInTextNode() ||
-      !selectionStartPoint.IsEndOfContainer()) {
+  if (SelectionRef().RangeCount()) {
     return NS_OK;
   }
 
-  Element* anonymousDivElement = GetRoot();
-  if (NS_WARN_IF(!anonymousDivElement)) {
-    return NS_ERROR_NULL_POINTER;
-  }
-  nsINode* parentNode = selectionStartPoint.GetContainer()->GetParentNode();
-  if (parentNode != anonymousDivElement) {
-    return NS_OK;
-  }
-
-  nsIContent* nextContent =
-      selectionStartPoint.GetContainer()->GetNextSibling();
-  if (!nextContent ||
-      !EditorUtils::IsPaddingBRElementForEmptyLastLine(*nextContent)) {
-    return NS_OK;
-  }
-
-  EditorRawDOMPoint afterStartContainer(
-      EditorRawDOMPoint::After(*selectionStartPoint.GetContainer()));
-  if (NS_WARN_IF(!afterStartContainer.IsSet())) {
-    return NS_ERROR_FAILURE;
-  }
-  IgnoredErrorResult ignoredError;
-  SelectionRef().CollapseInLimiter(afterStartContainer, ignoredError);
+  DebugOnly<nsresult> rvIgnored = CollapseSelectionToEnd();
   if (NS_WARN_IF(Destroyed())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
-  NS_WARNING_ASSERTION(!ignoredError.Failed(),
-                       "Selection::CollapseInLimiter() failed");
-  return ignoredError.StealNSResult();
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rvIgnored),
+      "EditorBase::CollapseSelectionToEnd() failed, but ignored");
+
+  return NS_OK;
 }
 
 void TextEditor::HandleNewLinesInStringForSingleLineEditor(
