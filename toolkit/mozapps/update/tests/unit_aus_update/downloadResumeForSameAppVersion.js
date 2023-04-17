@@ -3,7 +3,7 @@
 
 
 
-function run_test() {
+async function run_test() {
   setupTestCommon();
 
   debugDump(
@@ -33,6 +33,6 @@ function run_test() {
 
   
   
-  gAUS.stopDownload();
+  await gAUS.stopDownload();
   executeSoon(doTestFinish);
 }

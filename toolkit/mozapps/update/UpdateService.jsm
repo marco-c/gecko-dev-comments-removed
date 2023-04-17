@@ -1635,7 +1635,7 @@ function getPatchOfType(update, patch_type) {
 
 
 
-function handleFallbackToCompleteUpdate(postStaging) {
+async function handleFallbackToCompleteUpdate(postStaging) {
   
   
   
@@ -1661,7 +1661,7 @@ function handleFallbackToCompleteUpdate(postStaging) {
     return;
   }
 
-  aus.stopDownload();
+  await aus.stopDownload();
   cleanupActiveUpdates();
 
   if (!update.selectedPatch) {
@@ -2579,7 +2579,7 @@ UpdateService.prototype = {
       
       case "test-post-update-processing":
         
-        this._postUpdateProcessing();
+        await this._postUpdateProcessing();
         break;
       case "network:offline-status-changed":
         this._offlineStatusChanged(data);
@@ -2625,7 +2625,7 @@ UpdateService.prototype = {
         
         
         if (this._downloader && !this._downloader.usingBits) {
-          this.stopDownload();
+          await this.stopDownload();
         }
         
         this._downloader = null;
@@ -2666,7 +2666,7 @@ UpdateService.prototype = {
 
 
   
-  _postUpdateProcessing: function AUS__postUpdateProcessing() {
+  _postUpdateProcessing: async function AUS__postUpdateProcessing() {
     if (this.disabledByPolicy) {
       
       
@@ -2984,7 +2984,7 @@ UpdateService.prototype = {
       }
 
       
-      handleFallbackToCompleteUpdate(false);
+      await handleFallbackToCompleteUpdate(false);
     }
   },
 
@@ -3937,16 +3937,16 @@ UpdateService.prototype = {
   
 
 
-  stopDownload: function AUS_stopDownload() {
+  stopDownload: async function AUS_stopDownload() {
     if (this.isDownloading) {
-      this._downloader.cancel();
+      await this._downloader.cancel();
     } else if (this._retryTimer) {
       
       
       this._retryTimer.cancel();
       this._retryTimer = null;
       if (this._downloader) {
-        this._downloader.cancel();
+        await this._downloader.cancel();
       }
     }
     this._downloader = null;
@@ -4449,7 +4449,7 @@ UpdateManager.prototype = {
         update.state = getBestPendingState();
         writeStatusFile(getReadyUpdateDir(), update.state);
       } else if (!handleUpdateFailure(update, parts[1])) {
-        handleFallbackToCompleteUpdate(true);
+        await handleFallbackToCompleteUpdate(true);
       }
     }
     if (update.state == STATE_APPLIED && shouldUseService()) {
@@ -4466,14 +4466,13 @@ UpdateManager.prototype = {
 
     
     
-    promiseLangPacksUpdated(update).then(() => {
-      LOG(
-        "UpdateManager:refreshUpdateStatus - Notifying observers that " +
-          "the update was staged. topic: update-staged, status: " +
-          update.state
-      );
-      Services.obs.notifyObservers(update, "update-staged", update.state);
-    });
+    await promiseLangPacksUpdated(update);
+    LOG(
+      "UpdateManager:refreshUpdateStatus - Notifying observers that " +
+        "the update was staged. topic: update-staged, status: " +
+        update.state
+    );
+    Services.obs.notifyObservers(update, "update-staged", update.state);
   },
 
   

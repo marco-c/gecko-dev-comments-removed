@@ -28,6 +28,7 @@
 #include "nsIObserverService.h"
 #include "nsNetCID.h"
 #include "mozilla/Services.h"
+#include "mozilla/dom/Promise.h"
 
 #ifdef XP_MACOSX
 #  include "nsILocalFileMac.h"
@@ -1068,7 +1069,10 @@ void nsUpdateProcessor::UpdateDone() {
   nsCOMPtr<nsIUpdateManager> um =
       do_GetService("@mozilla.org/updates/update-manager;1");
   if (um) {
-    um->RefreshUpdateStatus();
+    
+    
+    RefPtr<mozilla::dom::Promise> outPromise;
+    um->RefreshUpdateStatus(getter_AddRefs(outPromise));
   }
 
   ShutdownWatcherThread();
