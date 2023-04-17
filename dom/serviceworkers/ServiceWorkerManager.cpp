@@ -2907,6 +2907,13 @@ ServiceWorkerManager::PropagateUnregister(
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aPrincipal);
 
+  
+  
+  
+  if (NS_WARN_IF(!mActor)) {
+    return NS_ERROR_FAILURE;
+  }
+
   PrincipalInfo principalInfo;
   if (NS_WARN_IF(
           NS_FAILED(PrincipalToPrincipalInfo(aPrincipal, &principalInfo)))) {
