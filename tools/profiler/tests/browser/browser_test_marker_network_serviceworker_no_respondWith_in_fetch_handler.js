@@ -151,8 +151,8 @@ add_task(async function test_network_markers_service_worker_use() {
     );
     Assert.equal(
       parentRedirectMarkers.length,
-      expectedFiles.length,
-      "There should be as many redirect markers in the parent process as requested files."
+      expectedFiles.length * 2, 
+      "There should be twice as many redirect markers in the parent process as requested files."
     );
     Assert.equal(
       contentStopMarkers.length,
@@ -172,16 +172,19 @@ add_task(async function test_network_markers_service_worker_use() {
       info(
         `Checking if "${expectedFile}" if present in the network markers in both processes.`
       );
-      const parentMarker = parentStopMarkers.find(
+      const [
+        parentRedirectMarkerIntercept,
+        parentRedirectMarkerReset,
+      ] = parentRedirectMarkers.filter(
         marker => marker.data.URI === expectedFile
       );
-      const parentRedirectMarker = parentRedirectMarkers.find(
-        marker => marker.data.URI === expectedFile
-      );
-      const contentMarker = contentStopMarkers.find(
+      const parentStopMarker = parentStopMarkers.find(
         marker => marker.data.URI === expectedFile
       );
       const contentRedirectMarker = contentRedirectMarkers.find(
+        marker => marker.data.URI === expectedFile
+      );
+      const contentStopMarker = contentStopMarkers.find(
         marker => marker.data.URI === expectedFile
       );
 
@@ -190,9 +193,10 @@ add_task(async function test_network_markers_service_worker_use() {
           `Load \\d+:.*${escapeStringRegexp(expectedFile)}`
         ),
       };
-      Assert.objectContains(parentMarker, commonProperties);
-      Assert.objectContains(parentRedirectMarker, commonProperties);
-      Assert.objectContains(contentMarker, commonProperties);
+      Assert.objectContains(parentRedirectMarkerIntercept, commonProperties);
+      Assert.objectContains(parentRedirectMarkerReset, commonProperties);
+      Assert.objectContains(parentStopMarker, commonProperties);
+      Assert.objectContains(contentStopMarker, commonProperties);
       
       
 
@@ -239,7 +243,7 @@ add_task(async function test_network_markers_service_worker_use() {
         
         
         
-        Assert.objectContainsOnly(parentMarker.data, {
+        Assert.objectContainsOnly(parentStopMarker.data, {
           ...commonDataProperties,
           
           
@@ -248,18 +252,23 @@ add_task(async function test_network_markers_service_worker_use() {
           
           cache: Expect.stringMatches(/^(Missed|Unresolved)$/),
         });
-        Assert.objectContainsOnly(contentMarker.data, commonDataProperties);
+        Assert.objectContainsOnly(contentStopMarker.data, commonDataProperties);
 
-        Assert.objectContainsOnly(parentRedirectMarker.data, {
+        Assert.objectContainsOnly(parentRedirectMarkerIntercept.data, {
           ...commonRedirectProperties,
-          redirectId: parentMarker.data.id,
+          redirectId: parentRedirectMarkerReset.data.id,
+          cache: "Unresolved",
+        });
+        Assert.objectContainsOnly(parentRedirectMarkerReset.data, {
+          ...commonRedirectProperties,
+          redirectId: parentStopMarker.data.id,
         });
 
         
         
       } else {
         
-        Assert.objectContainsOnly(parentMarker.data, {
+        Assert.objectContainsOnly(parentStopMarker.data, {
           ...commonDataProperties,
           
           
@@ -267,20 +276,27 @@ add_task(async function test_network_markers_service_worker_use() {
           cache: Expect.stringMatches(/^(Missed|Unresolved)$/),
           innerWindowID: Expect.number(),
         });
-        Assert.objectContainsOnly(contentMarker.data, {
+        Assert.objectContains(contentStopMarker, commonProperties);
+        Assert.objectContainsOnly(contentStopMarker.data, {
           ...commonDataProperties,
           innerWindowID: Expect.number(),
         });
 
-        Assert.objectContainsOnly(parentRedirectMarker.data, {
+        Assert.objectContainsOnly(parentRedirectMarkerIntercept.data, {
           ...commonRedirectProperties,
           innerWindowID: Expect.number(),
-          redirectId: parentMarker.data.id,
+          redirectId: parentRedirectMarkerReset.data.id,
+          cache: "Unresolved",
+        });
+        Assert.objectContainsOnly(parentRedirectMarkerReset.data, {
+          ...commonRedirectProperties,
+          innerWindowID: Expect.number(),
+          redirectId: parentStopMarker.data.id,
         });
         Assert.objectContainsOnly(contentRedirectMarker.data, {
           ...commonRedirectProperties,
           innerWindowID: Expect.number(),
-          redirectId: contentMarker.data.id,
+          redirectId: contentStopMarker.data.id,
         });
       }
     }
