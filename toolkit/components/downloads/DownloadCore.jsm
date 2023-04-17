@@ -1385,6 +1385,12 @@ DownloadSource.prototype = {
 
 
 
+  cookieJarSettings: null,
+
+  
+
+
+
 
   toSerializable() {
     if (this.adjustChannel) {
@@ -1421,10 +1427,19 @@ DownloadSource.prototype = {
         : E10SUtils.serializePrincipal(this.loadingPrincipal);
     }
 
+    if (this.cookieJarSettings) {
+      serializable.cookieJarSettings = isString(this.cookieJarSettings)
+        ? this.cookieJarSettings
+        : E10SUtils.serializePrincipal(this.cookieJarSettings);
+    }
+
     serializeUnknownProperties(this, serializable);
     return serializable;
   },
 };
+
+
+
 
 
 
@@ -1498,13 +1513,24 @@ DownloadSource.fromSerializable = function(aSerializable) {
       source.allowHttpStatus = aSerializable.allowHttpStatus;
     }
 
+    if ("cookieJarSettings" in aSerializable) {
+      if (aSerializable.cookieJarSettings instanceof Ci.nsICookieJarSettings) {
+        source.cookieJarSettings = aSerializable.cookieJarSettings;
+      } else {
+        source.cookieJarSettings = E10SUtils.deserializeCookieJarSettings(
+          aSerializable.cookieJarSettings
+        );
+      }
+    }
+
     deserializeUnknownProperties(
       source,
       aSerializable,
       property =>
         property != "url" &&
         property != "isPrivate" &&
-        property != "referrerInfo"
+        property != "referrerInfo" &&
+        property != "cookieJarSettings"
     );
   }
 
@@ -2307,6 +2333,13 @@ DownloadCopySaver.prototype = {
           channel.referrerInfo = download.source.referrerInfo;
           
           download.source.referrerInfo = channel.referrerInfo;
+        }
+        if (
+          channel instanceof Ci.nsIHttpChannel &&
+          download.source.cookieJarSettings
+        ) {
+          channel.loadInfo.cookieJarSettings =
+            download.source.cookieJarSettings;
         }
 
         
