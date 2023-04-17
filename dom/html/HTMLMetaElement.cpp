@@ -41,13 +41,9 @@ void HTMLMetaElement::SetMetaReferrer(Document* aDocument) {
   }
   nsAutoString content;
   GetContent(content);
-
-  Element* headElt = aDocument->GetHeadElement();
-  if (headElt && IsInclusiveDescendantOf(headElt)) {
-    content = nsContentUtils::TrimWhitespace<nsContentUtils::IsHTMLWhitespace>(
-        content);
-    aDocument->UpdateReferrerInfoFromMeta(content, false);
-  }
+  content =
+      nsContentUtils::TrimWhitespace<nsContentUtils::IsHTMLWhitespace>(content);
+  aDocument->UpdateReferrerInfoFromMeta(content, false);
 }
 
 nsresult HTMLMetaElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
@@ -135,8 +131,6 @@ nsresult HTMLMetaElement::BindToTree(BindContext& aContext, nsINode& aParent) {
     }
   }
 
-  
-  
   SetMetaReferrer(&doc);
   CreateAndDispatchEvent(&doc, u"DOMMetaAdded"_ns);
   return rv;
