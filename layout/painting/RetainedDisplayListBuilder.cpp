@@ -282,13 +282,6 @@ bool RetainedDisplayListBuilder::PreProcessDisplayList(
 
     
     
-    
-    if (item->RestoreState()) {
-      item->InvalidateItemCacheEntry();
-    }
-
-    
-    
     if (aKeepLinked) {
       item->SetReused(true);
       if (item->GetChildren()) {
