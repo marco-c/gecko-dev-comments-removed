@@ -2623,37 +2623,25 @@ impl TileCacheInstance {
         }
 
         
-        
-        
-        
-        
-        let mut surface_to_device = get_relative_scale_offset(
+        let local_to_device = get_relative_scale_offset(
             self.spatial_node_index,
             ROOT_SPATIAL_NODE_INDEX,
             frame_context.spatial_tree,
         );
 
-        let local_to_surface = if frame_context.config.low_quality_pinch_zoom {
-            
-            
-            let local_to_surface = ScaleOffset::from_scale(
-                Vector2D::new(self.current_raster_scale, self.current_raster_scale)
-            );
+        
+        let mut surface_to_device = local_to_device;
 
-            surface_to_device = surface_to_device.accumulate(&local_to_surface.inverse());
-
-            local_to_surface
+        if frame_context.config.low_quality_pinch_zoom {
+            surface_to_device.scale.x /= self.current_raster_scale;
+            surface_to_device.scale.y /= self.current_raster_scale;
         } else {
-            surface_to_device.scale = Vector2D::new(1.0, 1.0);
+            surface_to_device.scale.x = 1.0;
+            surface_to_device.scale.y = 1.0;
+        }
 
-            let local_to_surface = get_relative_scale_offset(
-                self.spatial_node_index,
-                ROOT_SPATIAL_NODE_INDEX,
-                frame_context.spatial_tree,
-            ).accumulate(&surface_to_device.inverse());
-
-            local_to_surface
-        };
+        
+        let local_to_surface = local_to_device.accumulate(&surface_to_device.inverse());
 
         const EPSILON: f32 = 0.001;
         let compositor_translation_changed =
