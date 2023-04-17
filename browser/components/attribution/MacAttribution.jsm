@@ -54,7 +54,6 @@ function getQuarantineDatabasePath() {
 
 
 async function getQuarantineAttributes(path) {
-  
   let bytes = await OS.File.macGetXAttr(path, "com.apple.quarantine");
   if (!bytes) {
     throw new Components.Exception(

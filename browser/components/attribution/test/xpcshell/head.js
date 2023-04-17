@@ -84,6 +84,7 @@ async function setupStubs() {
   const { AppConstants } = ChromeUtils.import(
     "resource://gre/modules/AppConstants.jsm"
   );
+  const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
   const { sinon } = ChromeUtils.import("resource://testing-common/Sinon.jsm");
 
   
@@ -116,7 +117,5 @@ async function setupStubs() {
   
   
   
-  await IOUtils.makeDirectory(applicationFile.path, {
-    from: do_get_tempdir().path,
-  });
+  await OS.File.makeDir(applicationFile.path, { from: do_get_tempdir().path });
 }
