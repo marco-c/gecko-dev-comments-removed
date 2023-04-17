@@ -24,10 +24,12 @@ var EXPORTED_SYMBOLS = ["SessionFile"];
 
 
 
+
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
+const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");
 const { AsyncShutdown } = ChromeUtils.import(
   "resource://gre/modules/AsyncShutdown.jsm"
 );
@@ -87,35 +89,32 @@ var SessionFile = {
 
 Object.freeze(SessionFile);
 
-var profileDir = Services.dirsvc.get("ProfD", Ci.nsIFile).path;
+var Path = OS.Path;
+var profileDir = OS.Constants.Path.profileDir;
 
 var SessionFileInternal = {
   Paths: Object.freeze({
     
     
-    clean: PathUtils.join(profileDir, "sessionstore.jsonlz4"),
+    clean: Path.join(profileDir, "sessionstore.jsonlz4"),
 
     
     
-    cleanBackup: PathUtils.join(
+    cleanBackup: Path.join(
       profileDir,
       "sessionstore-backups",
       "previous.jsonlz4"
     ),
 
     
-    backups: PathUtils.join(profileDir, "sessionstore-backups"),
+    backups: Path.join(profileDir, "sessionstore-backups"),
 
     
     
     
     
     
-    recovery: PathUtils.join(
-      profileDir,
-      "sessionstore-backups",
-      "recovery.jsonlz4"
-    ),
+    recovery: Path.join(profileDir, "sessionstore-backups", "recovery.jsonlz4"),
 
     
     
@@ -124,7 +123,7 @@ var SessionFileInternal = {
     
     
     
-    recoveryBackup: PathUtils.join(
+    recoveryBackup: Path.join(
       profileDir,
       "sessionstore-backups",
       "recovery.baklz4"
@@ -134,7 +133,7 @@ var SessionFileInternal = {
     
     
     
-    upgradeBackupPrefix: PathUtils.join(
+    upgradeBackupPrefix: Path.join(
       profileDir,
       "sessionstore-backups",
       "upgrade.jsonlz4-"
@@ -237,16 +236,16 @@ var SessionFileInternal = {
         let path;
         let startMs = Date.now();
 
-        let options = {};
+        let options = { encoding: "utf-8" };
         if (useOldExtension) {
           path = this.Paths[key]
             .replace("jsonlz4", "js")
             .replace("baklz4", "bak");
         } else {
           path = this.Paths[key];
-          options.decompress = true;
+          options.compression = "lz4";
         }
-        let source = await IOUtils.readUTF8(path, options);
+        let source = await OS.File.read(path, options);
         let parsed = JSON.parse(source);
 
         if (parsed._cachedObjs) {
@@ -300,12 +299,12 @@ var SessionFileInternal = {
           .add(Date.now() - startMs);
         break;
       } catch (ex) {
-        if (ex instanceof DOMException && ex.name == "NotFoundError") {
+        if (ex instanceof OS.File.Error && ex.becauseNoSuchFile) {
           exists = false;
-        } else if (ex instanceof DOMException && ex.name == "NotAllowedError") {
+        } else if (ex instanceof OS.File.Error) {
           
           
-          console.error("Could not read session file ", ex);
+          console.error("Could not read session file ", ex, ex.stack);
           corrupted = true;
         } else if (ex instanceof SyntaxError) {
           console.error(

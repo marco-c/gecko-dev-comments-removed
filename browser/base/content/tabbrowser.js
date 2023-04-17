@@ -383,15 +383,7 @@
             oa
           );
         } else {
-          
-          
-          
-          
-          
-
-          
-          
-          remoteType = E10SUtils.PRIVILEGEDABOUT_REMOTE_TYPE;
+          remoteType = E10SUtils.DEFAULT_REMOTE_TYPE;
         }
       }
 
