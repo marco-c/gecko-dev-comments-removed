@@ -219,12 +219,19 @@ static nsRect GetLineTextArea(nsLineBox* aLine,
 
 
 
-static Maybe<nscolor> GetBackplateColor(nsIFrame* aFrame) {
+static nscolor GetBackplateColor(nsIFrame* aFrame) {
   nsPresContext* pc = aFrame->PresContext();
+  nscolor currentBackgroundColor = NS_TRANSPARENT;
   for (nsIFrame* frame = aFrame; frame; frame = frame->GetParent()) {
-    if (frame->IsThemed()) {
-      return Nothing();
-    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
     auto* style = frame->Style();
     if (style->StyleBackground()->IsTransparent(style)) {
       continue;
@@ -240,12 +247,24 @@ static Maybe<nscolor> GetBackplateColor(nsIFrame* aFrame) {
       
       continue;
     }
-    
-    
-    return Some(NS_RGB(NS_GET_R(backgroundColor), NS_GET_G(backgroundColor),
-                       NS_GET_B(backgroundColor)));
+    if (NS_GET_A(currentBackgroundColor) == 0) {
+      
+      currentBackgroundColor = backgroundColor;
+    } else {
+      currentBackgroundColor =
+          NS_ComposeColors(backgroundColor, currentBackgroundColor);
+    }
+    if (NS_GET_A(currentBackgroundColor) == 0xff) {
+      
+      
+      return currentBackgroundColor;
+    }
   }
-  return Some(aFrame->PresContext()->DefaultBackgroundColor());
+  nscolor backgroundColor = aFrame->PresContext()->DefaultBackgroundColor();
+  if (NS_GET_A(currentBackgroundColor) == 0) {
+    return backgroundColor;
+  }
+  return NS_ComposeColors(backgroundColor, currentBackgroundColor);
 }
 
 #ifdef DEBUG
@@ -7006,17 +7025,15 @@ void nsBlockFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   Maybe<nscolor> backplateColor;
 
-  {
-    
-    
-    
-    
-    
-    if (StaticPrefs::browser_display_permit_backplate() &&
-        !PresContext()->PrefSheetPrefs().mUseDocumentColors &&
-        !IsComboboxControlFrame()) {
-      backplateColor = GetBackplateColor(this);
-    }
+  
+  
+  
+  
+  
+  if (StaticPrefs::browser_display_permit_backplate() &&
+      !PresContext()->PrefSheetPrefs().mUseDocumentColors &&
+      !IsComboboxControlFrame()) {
+    backplateColor.emplace(GetBackplateColor(this));
   }
 
   
