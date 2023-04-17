@@ -1206,23 +1206,7 @@ StyleEditorUI.prototype = {
         continue;
       }
 
-      if (resource.name === "dom-loading") {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if (resource.shouldBeIgnoredAsRedundantWithTargetAvailable) {
-          continue;
-        }
-
+      if (resource.name === "will-navigate") {
         this._startLoadingStyleSheets();
         this._clear();
       } else if (resource.name === "dom-complete") {
@@ -1267,8 +1251,6 @@ StyleEditorUI.prototype = {
 
   async _onTargetAvailable({ targetFront }) {
     if (targetFront.isTopLevel) {
-      this._startLoadingStyleSheets();
-      this._clear();
       await this.initializeHighlighter(targetFront);
     }
   },
