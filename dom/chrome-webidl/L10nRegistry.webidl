@@ -40,8 +40,19 @@ interface L10nFileSource {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
   [Throws]
-  constructor(UTF8String name, sequence<UTF8String> locales, UTF8String prePath, optional FileSourceOptions options = {}, optional sequence<UTF8String> index);
+  constructor(UTF8String name, UTF8String metaSource, sequence<UTF8String> locales, UTF8String prePath, optional FileSourceOptions options = {}, optional sequence<UTF8String> index);
 
   
 
@@ -68,9 +79,10 @@ interface L10nFileSource {
 
 
   [Throws]
-  static L10nFileSource createMock(UTF8String name, sequence<UTF8String> locales, UTF8String prePath, sequence<L10nFileSourceMockFile> fs);
+  static L10nFileSource createMock(UTF8String name, UTF8String metasource, sequence<UTF8String> locales, UTF8String prePath, sequence<L10nFileSourceMockFile> fs);
 
   readonly attribute UTF8String name;
+  readonly attribute UTF8String metaSource;
   [Pure, Cached, Frozen]
   readonly attribute sequence<UTF8String> locales;
   
