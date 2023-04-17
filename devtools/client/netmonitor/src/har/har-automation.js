@@ -35,9 +35,7 @@ const trace = {
 
 
 
-function HarAutomation(toolbox) {
-  this.initialize(toolbox);
-}
+function HarAutomation() {}
 
 HarAutomation.prototype = {
   
