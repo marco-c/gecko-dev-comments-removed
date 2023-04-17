@@ -1007,7 +1007,8 @@ bool EmitterScope::lookupPrivate(BytecodeEmitter* bce,
   
   
   
-  if (loc.kind() != NameLocation::Kind::EnvironmentCoordinate) {
+  if (loc.kind() != NameLocation::Kind::EnvironmentCoordinate &&
+      loc.kind() != NameLocation::Kind::FrameSlot) {
     MOZ_ASSERT(loc.kind() == NameLocation::Kind::Dynamic ||
                loc.kind() == NameLocation::Kind::Global);
     
@@ -1029,8 +1030,18 @@ bool EmitterScope::lookupPrivate(BytecodeEmitter* bce,
   }
 
   if (loc.bindingKind() == BindingKind::PrivateMethod) {
+    uint32_t hops = 0;
+    if (loc.kind() == NameLocation::Kind::EnvironmentCoordinate) {
+      hops = loc.environmentCoordinate().hops();
+    } else {
+      
+      
+      
+      MOZ_ASSERT(bce->innermostScope().is<ClassBodyScope>());
+    }
+
     brandLoc = Some(NameLocation::EnvironmentCoordinate(
-        BindingKind::Synthetic, loc.environmentCoordinate().hops(),
+        BindingKind::Synthetic, hops,
         JSSLOT_FREE(&ClassBodyLexicalEnvironmentObject::class_)));
   } else {
     brandLoc = Nothing();
