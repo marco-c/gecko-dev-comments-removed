@@ -218,6 +218,14 @@ nsDeckFrame::DoXULLayout(nsBoxLayoutState& aState) {
   nsresult rv = nsBoxFrame::DoXULLayout(aState);
 
   
+  
+  MOZ_ASSERT((mContent->IsXULElement(nsGkAtoms::tabpanels) &&
+              mContent->AsElement()->AttrValueIs(
+                  kNameSpaceID_None, nsGkAtoms::id, u"tabbrowser-tabpanels"_ns,
+                  eCaseMatters)) ||
+             !HasPossiblyRemoteContents());
+
+  
   nsIFrame* box = nsIFrame::GetChildXULBox(this);
 
   nscoord count = 0;
@@ -235,4 +243,22 @@ nsDeckFrame::DoXULLayout(nsBoxLayoutState& aState) {
   aState.SetLayoutFlags(oldFlags);
 
   return rv;
+}
+
+bool nsDeckFrame::HasPossiblyRemoteContents() const {
+  auto hasRemoteOrMayChangeRemoteNessAttribute =
+      [](dom::Element& aElement) -> bool {
+    return (aElement.AttrValueIs(kNameSpaceID_None, nsGkAtoms::remote,
+                                 nsGkAtoms::_true, eCaseMatters) ||
+            aElement.HasAttribute(u"maychangeremoteness"_ns));
+  };
+
+  for (nsIContent* node = mContent; node; node = node->GetNextNode(mContent)) {
+    if ((node->IsXULElement(nsGkAtoms::browser) ||
+         node->IsHTMLElement(nsGkAtoms::iframe)) &&
+        hasRemoteOrMayChangeRemoteNessAttribute(*(node->AsElement()))) {
+      return true;
+    }
+  }
+  return false;
 }

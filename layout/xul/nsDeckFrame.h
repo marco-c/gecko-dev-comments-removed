@@ -56,6 +56,11 @@ class nsDeckFrame final : public nsBoxFrame {
 
   nsIFrame* GetSelectedBox();
 
+  
+  
+  
+  bool HasPossiblyRemoteContents() const;
+
  protected:
   void IndexChanged();
   int32_t GetSelectedIndex();
