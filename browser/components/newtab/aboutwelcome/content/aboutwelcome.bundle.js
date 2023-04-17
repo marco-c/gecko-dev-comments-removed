@@ -300,9 +300,11 @@ const MultiStageAboutWelcome = props => {
   }, [index]);
   Object(react__WEBPACK_IMPORTED_MODULE_0__["useEffect"])(() => {
     
+    
+    
     const handler = ({
       state
-    }) => setScreenIndex(Number(state)); 
+    }) => setScreenIndex(Math.min(state, props.screens.length - 1)); 
 
 
     handler(window.history); 
