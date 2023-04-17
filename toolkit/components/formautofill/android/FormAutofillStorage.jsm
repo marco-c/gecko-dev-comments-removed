@@ -64,7 +64,7 @@ class GeckoViewStorage extends JSONFile {
   }
 
   async _save() {
-    
+    throw Components.Exception("", Cr.NS_ERROR_NOT_IMPLEMENTED);
   }
 }
 
