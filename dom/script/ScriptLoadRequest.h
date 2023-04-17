@@ -76,7 +76,7 @@ class ScriptFetchOptions {
 class ScriptLoadRequest
     : public PreloaderBase,
       private mozilla::LinkedListElement<ScriptLoadRequest> {
-  typedef LinkedListElement<ScriptLoadRequest> super;
+  using super = LinkedListElement<ScriptLoadRequest>;
 
   
   friend class mozilla::LinkedListElement<ScriptLoadRequest>;
@@ -291,11 +291,11 @@ class ScriptLoadRequest
                                    
   bool mIsXSLT;                    
   bool mInCompilingList;  
-  bool mIsCanceled;                
-  bool mWasCompiledOMT;  
-                         
-  bool mIsTracking;      
-                         
+  bool mIsCanceled;       
+  bool mWasCompiledOMT;   
+                          
+  bool mIsTracking;       
+                          
 
   RefPtr<ScriptFetchOptions> mFetchOptions;
 
@@ -347,7 +347,7 @@ class ScriptLoadRequest
 };
 
 class ScriptLoadRequestList : private mozilla::LinkedList<ScriptLoadRequest> {
-  typedef mozilla::LinkedList<ScriptLoadRequest> super;
+  using super = mozilla::LinkedList<ScriptLoadRequest>;
 
  public:
   ~ScriptLoadRequestList();
