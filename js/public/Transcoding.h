@@ -103,25 +103,6 @@ extern JS_PUBLIC_API TranscodeResult EncodeScript(JSContext* cx,
 
 
 
-extern JS_PUBLIC_API TranscodeResult
-DecodeScript(JSContext* cx, const ReadOnlyCompileOptions& options,
-             TranscodeBuffer& buffer, MutableHandle<JSScript*> scriptp,
-             size_t cursorIndex = 0);
-
-
-
-
-
-
-extern JS_PUBLIC_API TranscodeResult
-DecodeScript(JSContext* cx, const ReadOnlyCompileOptions& options,
-             const TranscodeRange& range, MutableHandle<JSScript*> scriptp);
-
-
-
-
-
-
 extern JS_PUBLIC_API TranscodeResult DecodeScriptMaybeStencil(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     TranscodeBuffer& buffer, MutableHandle<JSScript*> scriptp,
