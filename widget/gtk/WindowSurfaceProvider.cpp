@@ -68,16 +68,35 @@ void WindowSurfaceProvider::Initialize(Window aWindow, Visual* aVisual,
 }
 #endif
 
-void WindowSurfaceProvider::CleanupResources() { mWindowSurface = nullptr; }
+void WindowSurfaceProvider::CleanupResources() {
+  mWindowSurface = nullptr;
+#ifdef MOZ_WAYLAND
+  mWidget = nullptr;
+#endif
+#ifdef MOZ_X11
+  mXWindow = 0;
+  mXVisual = 0;
+  mXDepth = 0;
+  mIsShaped = false;
+#endif
+}
 
 RefPtr<WindowSurface> WindowSurfaceProvider::CreateWindowSurface() {
 #ifdef MOZ_WAYLAND
   if (GdkIsWaylandDisplay()) {
+    
+    if (!mWidget) {
+      return nullptr;
+    }
     return MakeRefPtr<WindowSurfaceWaylandMB>(mWidget);
   }
 #endif
 #ifdef MOZ_X11
   if (GdkIsX11Display()) {
+    
+    if (!mXWindow) {
+      return nullptr;
+    }
     
     
     
@@ -101,11 +120,15 @@ already_AddRefed<gfx::DrawTarget>
 WindowSurfaceProvider::StartRemoteDrawingInRegion(
     const LayoutDeviceIntRegion& aInvalidRegion,
     layers::BufferMode* aBufferMode) {
-  if (aInvalidRegion.IsEmpty()) return nullptr;
+  if (aInvalidRegion.IsEmpty()) {
+    return nullptr;
+  }
 
   if (!mWindowSurface) {
     mWindowSurface = CreateWindowSurface();
-    if (!mWindowSurface) return nullptr;
+    if (!mWindowSurface) {
+      return nullptr;
+    }
   }
 
   *aBufferMode = BufferMode::BUFFER_NONE;
