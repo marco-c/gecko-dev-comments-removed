@@ -348,7 +348,7 @@ nsresult GetAddrInfo(const nsACString& aHost, uint16_t aAddressFamily,
   
   if (gOverrideService &&
       FindAddrOverride(aHost, aAddressFamily, aFlags, aAddrInfo)) {
-    return NS_OK;
+    return (*aAddrInfo)->Addresses().Length() ? NS_OK : NS_ERROR_UNKNOWN_HOST;
   }
 
   nsAutoCString host(aHost);
@@ -416,6 +416,13 @@ NS_IMETHODIMP NativeDNSResolverOverride::AddIPOverride(
   
   
   memset(&tempAddr, 0, sizeof(PRNetAddr));
+
+  if (aIPLiteral.Equals("N/A"_ns)) {
+    AutoWriteLock lock(mLock);
+    auto& overrides = mOverrides.LookupOrInsert(aHost);
+    overrides.Clear();
+    return NS_OK;
+  }
 
   if (PR_StringToNetAddr(nsCString(aIPLiteral).get(), &tempAddr) !=
       PR_SUCCESS) {
