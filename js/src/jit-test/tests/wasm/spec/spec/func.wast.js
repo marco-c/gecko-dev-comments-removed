@@ -687,7 +687,50 @@ assert_invalid(() =>
   )`), `unknown type`);
 
 
+assert_malformed(
+  () =>
+    instantiate(
+      `(func $$f (result f64) (f64.const 0)) (func $$g (param i32)) (func $$h (result f64) (f64.const 1)) (type $$t (func (param i32))) (func (type 2) (param i32)) `,
+    ),
+  `unknown type`,
+);
+
+
 let $2 = instantiate(`(module
+  (type $$proc (func (result i32)))
+  (type $$sig (func (param i32) (result i32)))
+
+  (func (export "f") (type $$sig)
+    (local $$var i32)
+    (local.get $$var)
+  )
+
+  (func $$g (type $$sig)
+    (local $$var i32)
+    (local.get $$var)
+  )
+  (func (export "g") (type $$sig)
+    (call $$g (local.get 0))
+  )
+
+  (func (export "p") (type $$proc)
+    (local $$var i32)
+    (local.set 0 (i32.const 42))
+    (local.get $$var)
+  )
+)`);
+
+
+assert_return(() => invoke($2, `f`, [42]), [value("i32", 0)]);
+
+
+assert_return(() => invoke($2, `g`, [42]), [value("i32", 0)]);
+
+
+assert_return(() => invoke($2, `p`, []), [value("i32", 42)]);
+
+
+let $3 = instantiate(`(module
   (type $$sig (func))
 
   (func $$empty-sig-1)  ;; should be assigned type $$sig
@@ -751,16 +794,16 @@ let $2 = instantiate(`(module
 )`);
 
 
-assert_return(() => invoke($2, `signature-explicit-reused`, []), []);
+assert_return(() => invoke($3, `signature-explicit-reused`, []), []);
 
 
-assert_return(() => invoke($2, `signature-implicit-reused`, []), []);
+assert_return(() => invoke($3, `signature-implicit-reused`, []), []);
 
 
-assert_return(() => invoke($2, `signature-explicit-duplicate`, []), []);
+assert_return(() => invoke($3, `signature-explicit-duplicate`, []), []);
 
 
-assert_return(() => invoke($2, `signature-implicit-duplicate`, []), []);
+assert_return(() => invoke($3, `signature-implicit-duplicate`, []), []);
 
 
 assert_malformed(

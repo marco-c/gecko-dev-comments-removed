@@ -779,6 +779,60 @@ assert_invalid(() =>
 assert_invalid(
   () =>
     instantiate(
+      `(module (func $$unbound-local (local i32 i64) (local.get 3)))`,
+    ),
+  `unknown local`,
+);
+
+
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func $$large-local (local i32 i64) (local.get 14324343)))`,
+    ),
+  `unknown local`,
+);
+
+
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func $$unbound-param (param i32 i64) (local.get 2)))`,
+    ),
+  `unknown local`,
+);
+
+
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func $$large-param (local i32 i64) (local.get 714324343)))`,
+    ),
+  `unknown local`,
+);
+
+
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func $$unbound-mixed (param i32) (local i32 i64) (local.get 3)))`,
+    ),
+  `unknown local`,
+);
+
+
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func $$large-mixed (param i64) (local i32 i64) (local.get 214324343)))`,
+    ),
+  `unknown local`,
+);
+
+
+assert_invalid(
+  () =>
+    instantiate(
       `(module (func $$type-mixed-arg-num-vs-num (param f32) (local i32) (local.tee 1 (f32.const 0))))`,
     ),
   `type mismatch`,
@@ -800,58 +854,4 @@ assert_invalid(
       `(module (func $$type-mixed-arg-num-vs-num (param i64) (local f64 i64) (local.tee 1 (i64.const 0))))`,
     ),
   `type mismatch`,
-);
-
-
-assert_invalid(
-  () =>
-    instantiate(
-      `(module (func $$unbound-local (local i32 i64) (local.tee 3 (i32.const 0)) drop))`,
-    ),
-  `unknown local`,
-);
-
-
-assert_invalid(
-  () =>
-    instantiate(
-      `(module (func $$large-local (local i32 i64) (local.tee 14324343 (i32.const 0)) drop))`,
-    ),
-  `unknown local`,
-);
-
-
-assert_invalid(
-  () =>
-    instantiate(
-      `(module (func $$unbound-param (param i32 i64) (local.tee 2 (i32.const 0)) drop))`,
-    ),
-  `unknown local`,
-);
-
-
-assert_invalid(
-  () =>
-    instantiate(
-      `(module (func $$large-param (param i32 i64) (local.tee 714324343 (i32.const 0)) drop))`,
-    ),
-  `unknown local`,
-);
-
-
-assert_invalid(
-  () =>
-    instantiate(
-      `(module (func $$unbound-mixed (param i32) (local i32 i64) (local.tee 3 (i32.const 0)) drop))`,
-    ),
-  `unknown local`,
-);
-
-
-assert_invalid(
-  () =>
-    instantiate(
-      `(module (func $$large-mixed (param i64) (local i32 i64) (local.tee 214324343 (i32.const 0)) drop))`,
-    ),
-  `unknown local`,
 );

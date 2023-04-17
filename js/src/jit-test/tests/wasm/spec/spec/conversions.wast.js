@@ -296,6 +296,12 @@ assert_return(() => invoke($0, `i32.trunc_f64_s`, [value('f64', 2147483647)]), [
 assert_return(() => invoke($0, `i32.trunc_f64_s`, [value('f64', -2147483648)]), [value('i32', -2147483648)]);
 
 
+assert_return(() => invoke($0, `i32.trunc_f64_s`, [value('f64', -2147483648.9)]), [value('i32', -2147483648)]);
+
+
+assert_return(() => invoke($0, `i32.trunc_f64_s`, [value('f64', 2147483647.9)]), [value('i32', 2147483647)]);
+
+
 assert_trap(() => invoke($0, `i32.trunc_f64_s`, [value('f64', 2147483648)]), `integer overflow`);
 
 
@@ -360,6 +366,12 @@ assert_return(() => invoke($0, `i32.trunc_f64_u`, [value('f64', -0.9999999999999
 
 
 assert_return(() => invoke($0, `i32.trunc_f64_u`, [value('f64', 100000000)]), [value('i32', 100000000)]);
+
+
+assert_return(() => invoke($0, `i32.trunc_f64_u`, [value('f64', -0.9)]), [value('i32', 0)]);
+
+
+assert_return(() => invoke($0, `i32.trunc_f64_u`, [value('f64', 4294967295.9)]), [value('i32', -1)]);
 
 
 assert_trap(() => invoke($0, `i32.trunc_f64_u`, [value('f64', 4294967296)]), `integer overflow`);

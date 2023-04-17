@@ -849,7 +849,7 @@ let $8 = instantiate(`(module
     ))`);
 
 
-assert_trap(() => invoke($8, `test`, []), `out of bounds`);
+assert_trap(() => invoke($8, `test`, []), `out of bounds table access`);
 
 
 let $9 = instantiate(`(module
@@ -930,7 +930,7 @@ let $11 = instantiate(`(module
     (table.init 1 (i32.const 12) (i32.const 1) (i32.const 1))))`);
 
 
-assert_trap(() => invoke($11, `test`, []), `out of bounds`);
+assert_trap(() => invoke($11, `test`, []), `out of bounds table access`);
 
 
 let $12 = instantiate(`(module
@@ -957,7 +957,7 @@ let $12 = instantiate(`(module
     ))`);
 
 
-assert_trap(() => invoke($12, `test`, []), `out of bounds`);
+assert_trap(() => invoke($12, `test`, []), `out of bounds table access`);
 
 
 let $13 = instantiate(`(module
@@ -984,7 +984,7 @@ let $13 = instantiate(`(module
     ))`);
 
 
-assert_trap(() => invoke($13, `test`, []), `out of bounds`);
+assert_trap(() => invoke($13, `test`, []), `out of bounds table access`);
 
 
 let $14 = instantiate(`(module
@@ -1011,7 +1011,7 @@ let $14 = instantiate(`(module
     ))`);
 
 
-assert_trap(() => invoke($14, `test`, []), `out of bounds`);
+assert_trap(() => invoke($14, `test`, []), `out of bounds table access`);
 
 
 let $15 = instantiate(`(module
@@ -1065,7 +1065,7 @@ let $16 = instantiate(`(module
     ))`);
 
 
-assert_trap(() => invoke($16, `test`, []), `out of bounds`);
+assert_trap(() => invoke($16, `test`, []), `out of bounds table access`);
 
 
 let $17 = instantiate(`(module
@@ -1119,7 +1119,7 @@ let $18 = instantiate(`(module
     ))`);
 
 
-assert_trap(() => invoke($18, `test`, []), `out of bounds`);
+assert_trap(() => invoke($18, `test`, []), `out of bounds table access`);
 
 
 let $19 = instantiate(`(module
@@ -1173,7 +1173,7 @@ let $20 = instantiate(`(module
     ))`);
 
 
-assert_trap(() => invoke($20, `test`, []), `out of bounds`);
+assert_trap(() => invoke($20, `test`, []), `out of bounds table access`);
 
 
 let $21 = instantiate(`(module
@@ -1200,7 +1200,7 @@ let $21 = instantiate(`(module
     ))`);
 
 
-assert_trap(() => invoke($21, `test`, []), `out of bounds`);
+assert_trap(() => invoke($21, `test`, []), `out of bounds table access`);
 
 
 let $22 = instantiate(`(module
@@ -1254,7 +1254,7 @@ let $23 = instantiate(`(module
     ))`);
 
 
-assert_trap(() => invoke($23, `test`, []), `out of bounds`);
+assert_trap(() => invoke($23, `test`, []), `out of bounds table access`);
 
 
 let $24 = instantiate(`(module
@@ -1308,7 +1308,7 @@ let $25 = instantiate(`(module
     ))`);
 
 
-assert_trap(() => invoke($25, `test`, []), `out of bounds`);
+assert_trap(() => invoke($25, `test`, []), `out of bounds table access`);
 
 
 let $26 = instantiate(`(module
@@ -1362,7 +1362,7 @@ let $27 = instantiate(`(module
     ))`);
 
 
-assert_trap(() => invoke($27, `test`, []), `out of bounds`);
+assert_trap(() => invoke($27, `test`, []), `out of bounds table access`);
 
 
 assert_invalid(
@@ -2151,7 +2151,7 @@ let $28 = instantiate(`(module
     (table.init 0 (local.get $$offs) (i32.const 0) (local.get $$len))))`);
 
 
-assert_trap(() => invoke($28, `run`, [24, 16]), `out of bounds`);
+assert_trap(() => invoke($28, `run`, [24, 16]), `out of bounds table access`);
 
 
 assert_trap(() => invoke($28, `test`, [0]), `uninitialized element`);
@@ -2280,7 +2280,7 @@ let $29 = instantiate(`(module
     (table.init 0 (local.get $$offs) (i32.const 0) (local.get $$len))))`);
 
 
-assert_trap(() => invoke($29, `run`, [25, 16]), `out of bounds`);
+assert_trap(() => invoke($29, `run`, [25, 16]), `out of bounds table access`);
 
 
 assert_trap(() => invoke($29, `test`, [0]), `uninitialized element`);
@@ -2409,7 +2409,7 @@ let $30 = instantiate(`(module
     (table.init 0 (local.get $$offs) (i32.const 0) (local.get $$len))))`);
 
 
-assert_trap(() => invoke($30, `run`, [96, 32]), `out of bounds`);
+assert_trap(() => invoke($30, `run`, [96, 32]), `out of bounds table access`);
 
 
 assert_trap(() => invoke($30, `test`, [0]), `uninitialized element`);
@@ -2922,7 +2922,7 @@ let $31 = instantiate(`(module
     (table.init 0 (local.get $$offs) (i32.const 0) (local.get $$len))))`);
 
 
-assert_trap(() => invoke($31, `run`, [97, 31]), `out of bounds`);
+assert_trap(() => invoke($31, `run`, [97, 31]), `out of bounds table access`);
 
 
 assert_trap(() => invoke($31, `test`, [0]), `uninitialized element`);
@@ -3435,7 +3435,7 @@ let $32 = instantiate(`(module
     (table.init 0 (local.get $$offs) (i32.const 0) (local.get $$len))))`);
 
 
-assert_trap(() => invoke($32, `run`, [48, -16]), `out of bounds`);
+assert_trap(() => invoke($32, `run`, [48, -16]), `out of bounds table access`);
 
 
 assert_trap(() => invoke($32, `test`, [0]), `uninitialized element`);
@@ -3660,7 +3660,7 @@ let $33 = instantiate(`(module
     (table.init 0 (local.get $$offs) (i32.const 8) (local.get $$len))))`);
 
 
-assert_trap(() => invoke($33, `run`, [0, -4]), `out of bounds`);
+assert_trap(() => invoke($33, `run`, [0, -4]), `out of bounds table access`);
 
 
 assert_trap(() => invoke($33, `test`, [0]), `uninitialized element`);

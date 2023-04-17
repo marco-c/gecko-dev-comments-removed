@@ -17,59 +17,38 @@
 
 
 let $0 = instantiate(`(module
-  ;; Auxiliary
-  (func $$dummy)
-  (table $$tab funcref (elem $$dummy))
+
   (memory 1)
 
-  (func (export "select-i32") (param i32 i32 i32) (result i32)
-    (select (local.get 0) (local.get 1) (local.get 2))
-  )
-  (func (export "select-i64") (param i64 i64 i32) (result i64)
-    (select (local.get 0) (local.get 1) (local.get 2))
-  )
-  (func (export "select-f32") (param f32 f32 i32) (result f32)
-    (select (local.get 0) (local.get 1) (local.get 2))
-  )
-  (func (export "select-f64") (param f64 f64 i32) (result f64)
-    (select (local.get 0) (local.get 1) (local.get 2))
-  )
+  (func $$dummy)
 
-  (func (export "select-i32-t") (param i32 i32 i32) (result i32)
-    (select (result i32) (local.get 0) (local.get 1) (local.get 2))
-  )
-  (func (export "select-i64-t") (param i64 i64 i32) (result i64)
-    (select (result i64) (local.get 0) (local.get 1) (local.get 2))
-  )
-  (func (export "select-f32-t") (param f32 f32 i32) (result f32)
-    (select (result f32) (local.get 0) (local.get 1) (local.get 2))
-  )
-  (func (export "select-f64-t") (param f64 f64 i32) (result f64)
-    (select (result f64) (local.get 0) (local.get 1) (local.get 2))
-  )
-  (func (export "select-funcref") (param funcref funcref i32) (result funcref)
-    (select (result funcref) (local.get 0) (local.get 1) (local.get 2))
-  )
-  (func (export "select-externref") (param externref externref i32) (result externref)
-    (select (result externref) (local.get 0) (local.get 1) (local.get 2))
-  )
+  (func (export "select_i32") (param $$lhs i32) (param $$rhs i32) (param $$cond i32) (result i32)
+   (select (local.get $$lhs) (local.get $$rhs) (local.get $$cond)))
+
+  (func (export "select_i64") (param $$lhs i64) (param $$rhs i64) (param $$cond i32) (result i64)
+   (select (local.get $$lhs) (local.get $$rhs) (local.get $$cond)))
+
+  (func (export "select_f32") (param $$lhs f32) (param $$rhs f32) (param $$cond i32) (result f32)
+   (select (local.get $$lhs) (local.get $$rhs) (local.get $$cond)))
+
+  (func (export "select_f64") (param $$lhs f64) (param $$rhs f64) (param $$cond i32) (result f64)
+   (select (local.get $$lhs) (local.get $$rhs) (local.get $$cond)))
 
   ;; Check that both sides of the select are evaluated
-  (func (export "select-trap-left") (param $$cond i32) (result i32)
+  (func (export "select_trap_l") (param $$cond i32) (result i32)
     (select (unreachable) (i32.const 0) (local.get $$cond))
   )
-  (func (export "select-trap-right") (param $$cond i32) (result i32)
+  (func (export "select_trap_r") (param $$cond i32) (result i32)
     (select (i32.const 0) (unreachable) (local.get $$cond))
   )
 
-  (func (export "select-unreached")
+  (func (export "select_unreached")
     (unreachable) (select)
     (unreachable) (i32.const 0) (select)
     (unreachable) (i32.const 0) (i32.const 0) (select)
     (unreachable) (f32.const 0) (i32.const 0) (select)
     (unreachable)
   )
-
 
   ;; As the argument of control constructs and instructions
 
@@ -119,24 +98,24 @@ let $0 = instantiate(`(module
 
   (func $$func (param i32 i32) (result i32) (local.get 0))
   (type $$check (func (param i32 i32) (result i32)))
-  (table $$t funcref (elem $$func))
+  (table funcref (elem $$func))
   (func (export "as-call_indirect-first") (param i32) (result i32)
     (block (result i32)
-      (call_indirect $$t (type $$check)
+      (call_indirect (type $$check)
         (select (i32.const 2) (i32.const 3) (local.get 0)) (i32.const 1) (i32.const 0)
       )
     )
   )
   (func (export "as-call_indirect-mid") (param i32) (result i32)
     (block (result i32)
-      (call_indirect $$t (type $$check)
+      (call_indirect (type $$check)
         (i32.const 1) (select (i32.const 2) (i32.const 3) (local.get 0)) (i32.const 0)
       )
     )
   )
   (func (export "as-call_indirect-last") (param i32) (result i32)
     (block (result i32)
-      (call_indirect $$t (type $$check)
+      (call_indirect (type $$check)
         (i32.const 1) (i32.const 4) (select (i32.const 2) (i32.const 3) (local.get 0))
       )
     )
@@ -213,44 +192,45 @@ let $0 = instantiate(`(module
       (i32.wrap_i64 (select (i64.const 1) (i64.const 0) (local.get 0)))
     )
   )
+
 )`);
 
 
-assert_return(() => invoke($0, `select-i32`, [1, 2, 1]), [value("i32", 1)]);
+assert_return(() => invoke($0, `select_i32`, [1, 2, 1]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($0, `select-i64`, [2n, 1n, 1]), [value("i64", 2n)]);
+assert_return(() => invoke($0, `select_i64`, [2n, 1n, 1]), [value("i64", 2n)]);
 
 
 assert_return(
-  () => invoke($0, `select-f32`, [value("f32", 1), value("f32", 2), 1]),
+  () => invoke($0, `select_f32`, [value("f32", 1), value("f32", 2), 1]),
   [value("f32", 1)],
 );
 
 
 assert_return(
-  () => invoke($0, `select-f64`, [value("f64", 1), value("f64", 2), 1]),
+  () => invoke($0, `select_f64`, [value("f64", 1), value("f64", 2), 1]),
   [value("f64", 1)],
 );
 
 
-assert_return(() => invoke($0, `select-i32`, [1, 2, 0]), [value("i32", 2)]);
+assert_return(() => invoke($0, `select_i32`, [1, 2, 0]), [value("i32", 2)]);
 
 
-assert_return(() => invoke($0, `select-i32`, [2, 1, 0]), [value("i32", 1)]);
+assert_return(() => invoke($0, `select_i32`, [2, 1, 0]), [value("i32", 1)]);
 
 
-assert_return(() => invoke($0, `select-i64`, [2n, 1n, -1]), [value("i64", 2n)]);
+assert_return(() => invoke($0, `select_i64`, [2n, 1n, -1]), [value("i64", 2n)]);
 
 
-assert_return(() => invoke($0, `select-i64`, [2n, 1n, -252645136]), [
+assert_return(() => invoke($0, `select_i64`, [2n, 1n, -252645136]), [
   value("i64", 2n),
 ]);
 
 
 assert_return(
   () =>
-    invoke($0, `select-f32`, [
+    invoke($0, `select_f32`, [
       bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
       value("f32", 1),
       1,
@@ -261,7 +241,7 @@ assert_return(
 
 assert_return(
   () =>
-    invoke($0, `select-f32`, [
+    invoke($0, `select_f32`, [
       bytes("f32", [0x4, 0x3, 0x82, 0x7f]),
       value("f32", 1),
       1,
@@ -272,7 +252,7 @@ assert_return(
 
 assert_return(
   () =>
-    invoke($0, `select-f32`, [
+    invoke($0, `select_f32`, [
       bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
       value("f32", 1),
       0,
@@ -283,7 +263,7 @@ assert_return(
 
 assert_return(
   () =>
-    invoke($0, `select-f32`, [
+    invoke($0, `select_f32`, [
       bytes("f32", [0x4, 0x3, 0x82, 0x7f]),
       value("f32", 1),
       0,
@@ -294,7 +274,7 @@ assert_return(
 
 assert_return(
   () =>
-    invoke($0, `select-f32`, [
+    invoke($0, `select_f32`, [
       value("f32", 2),
       bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
       1,
@@ -305,7 +285,7 @@ assert_return(
 
 assert_return(
   () =>
-    invoke($0, `select-f32`, [
+    invoke($0, `select_f32`, [
       value("f32", 2),
       bytes("f32", [0x4, 0x3, 0x82, 0x7f]),
       1,
@@ -316,7 +296,7 @@ assert_return(
 
 assert_return(
   () =>
-    invoke($0, `select-f32`, [
+    invoke($0, `select_f32`, [
       value("f32", 2),
       bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
       0,
@@ -327,7 +307,7 @@ assert_return(
 
 assert_return(
   () =>
-    invoke($0, `select-f32`, [
+    invoke($0, `select_f32`, [
       value("f32", 2),
       bytes("f32", [0x4, 0x3, 0x82, 0x7f]),
       0,
@@ -338,7 +318,7 @@ assert_return(
 
 assert_return(
   () =>
-    invoke($0, `select-f64`, [
+    invoke($0, `select_f64`, [
       bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
       value("f64", 1),
       1,
@@ -349,7 +329,7 @@ assert_return(
 
 assert_return(
   () =>
-    invoke($0, `select-f64`, [
+    invoke($0, `select_f64`, [
       bytes("f64", [0x4, 0x3, 0x2, 0x0, 0x0, 0x0, 0xf0, 0x7f]),
       value("f64", 1),
       1,
@@ -360,7 +340,7 @@ assert_return(
 
 assert_return(
   () =>
-    invoke($0, `select-f64`, [
+    invoke($0, `select_f64`, [
       bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
       value("f64", 1),
       0,
@@ -371,7 +351,7 @@ assert_return(
 
 assert_return(
   () =>
-    invoke($0, `select-f64`, [
+    invoke($0, `select_f64`, [
       bytes("f64", [0x4, 0x3, 0x2, 0x0, 0x0, 0x0, 0xf0, 0x7f]),
       value("f64", 1),
       0,
@@ -382,7 +362,7 @@ assert_return(
 
 assert_return(
   () =>
-    invoke($0, `select-f64`, [
+    invoke($0, `select_f64`, [
       value("f64", 2),
       bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
       1,
@@ -393,7 +373,7 @@ assert_return(
 
 assert_return(
   () =>
-    invoke($0, `select-f64`, [
+    invoke($0, `select_f64`, [
       value("f64", 2),
       bytes("f64", [0x4, 0x3, 0x2, 0x0, 0x0, 0x0, 0xf0, 0x7f]),
       1,
@@ -404,7 +384,7 @@ assert_return(
 
 assert_return(
   () =>
-    invoke($0, `select-f64`, [
+    invoke($0, `select_f64`, [
       value("f64", 2),
       bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
       0,
@@ -415,7 +395,7 @@ assert_return(
 
 assert_return(
   () =>
-    invoke($0, `select-f64`, [
+    invoke($0, `select_f64`, [
       value("f64", 2),
       bytes("f64", [0x4, 0x3, 0x2, 0x0, 0x0, 0x0, 0xf0, 0x7f]),
       0,
@@ -424,251 +404,16 @@ assert_return(
 );
 
 
-assert_return(() => invoke($0, `select-i32-t`, [1, 2, 1]), [value("i32", 1)]);
+assert_trap(() => invoke($0, `select_trap_l`, [1]), `unreachable`);
 
 
-assert_return(() => invoke($0, `select-i64-t`, [2n, 1n, 1]), [
-  value("i64", 2n),
-]);
+assert_trap(() => invoke($0, `select_trap_l`, [0]), `unreachable`);
 
 
-assert_return(
-  () => invoke($0, `select-f32-t`, [value("f32", 1), value("f32", 2), 1]),
-  [value("f32", 1)],
-);
+assert_trap(() => invoke($0, `select_trap_r`, [1]), `unreachable`);
 
 
-assert_return(
-  () => invoke($0, `select-f64-t`, [value("f64", 1), value("f64", 2), 1]),
-  [value("f64", 1)],
-);
-
-
-assert_return(() => invoke($0, `select-funcref`, [null, null, 1]), [
-  value("funcref", null),
-]);
-
-
-assert_return(
-  () => invoke($0, `select-externref`, [externref(1), externref(2), 1]),
-  [value("externref", externref(1))],
-);
-
-
-assert_return(() => invoke($0, `select-i32-t`, [1, 2, 0]), [value("i32", 2)]);
-
-
-assert_return(() => invoke($0, `select-i32-t`, [2, 1, 0]), [value("i32", 1)]);
-
-
-assert_return(() => invoke($0, `select-i64-t`, [2n, 1n, -1]), [
-  value("i64", 2n),
-]);
-
-
-assert_return(() => invoke($0, `select-i64-t`, [2n, 1n, -252645136]), [
-  value("i64", 2n),
-]);
-
-
-assert_return(
-  () => invoke($0, `select-externref`, [externref(1), externref(2), 0]),
-  [value("externref", externref(2))],
-);
-
-
-assert_return(
-  () => invoke($0, `select-externref`, [externref(2), externref(1), 0]),
-  [value("externref", externref(1))],
-);
-
-
-assert_return(
-  () =>
-    invoke($0, `select-f32-t`, [
-      bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
-      value("f32", 1),
-      1,
-    ]),
-  [bytes("f32", [0x0, 0x0, 0xc0, 0x7f])],
-);
-
-
-assert_return(
-  () =>
-    invoke($0, `select-f32-t`, [
-      bytes("f32", [0x4, 0x3, 0x82, 0x7f]),
-      value("f32", 1),
-      1,
-    ]),
-  [bytes("f32", [0x4, 0x3, 0x82, 0x7f])],
-);
-
-
-assert_return(
-  () =>
-    invoke($0, `select-f32-t`, [
-      bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
-      value("f32", 1),
-      0,
-    ]),
-  [value("f32", 1)],
-);
-
-
-assert_return(
-  () =>
-    invoke($0, `select-f32-t`, [
-      bytes("f32", [0x4, 0x3, 0x82, 0x7f]),
-      value("f32", 1),
-      0,
-    ]),
-  [value("f32", 1)],
-);
-
-
-assert_return(
-  () =>
-    invoke($0, `select-f32-t`, [
-      value("f32", 2),
-      bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
-      1,
-    ]),
-  [value("f32", 2)],
-);
-
-
-assert_return(
-  () =>
-    invoke($0, `select-f32-t`, [
-      value("f32", 2),
-      bytes("f32", [0x4, 0x3, 0x82, 0x7f]),
-      1,
-    ]),
-  [value("f32", 2)],
-);
-
-
-assert_return(
-  () =>
-    invoke($0, `select-f32-t`, [
-      value("f32", 2),
-      bytes("f32", [0x0, 0x0, 0xc0, 0x7f]),
-      0,
-    ]),
-  [bytes("f32", [0x0, 0x0, 0xc0, 0x7f])],
-);
-
-
-assert_return(
-  () =>
-    invoke($0, `select-f32-t`, [
-      value("f32", 2),
-      bytes("f32", [0x4, 0x3, 0x82, 0x7f]),
-      0,
-    ]),
-  [bytes("f32", [0x4, 0x3, 0x82, 0x7f])],
-);
-
-
-assert_return(
-  () =>
-    invoke($0, `select-f64-t`, [
-      bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
-      value("f64", 1),
-      1,
-    ]),
-  [bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f])],
-);
-
-
-assert_return(
-  () =>
-    invoke($0, `select-f64-t`, [
-      bytes("f64", [0x4, 0x3, 0x2, 0x0, 0x0, 0x0, 0xf0, 0x7f]),
-      value("f64", 1),
-      1,
-    ]),
-  [bytes("f64", [0x4, 0x3, 0x2, 0x0, 0x0, 0x0, 0xf0, 0x7f])],
-);
-
-
-assert_return(
-  () =>
-    invoke($0, `select-f64-t`, [
-      bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
-      value("f64", 1),
-      0,
-    ]),
-  [value("f64", 1)],
-);
-
-
-assert_return(
-  () =>
-    invoke($0, `select-f64-t`, [
-      bytes("f64", [0x4, 0x3, 0x2, 0x0, 0x0, 0x0, 0xf0, 0x7f]),
-      value("f64", 1),
-      0,
-    ]),
-  [value("f64", 1)],
-);
-
-
-assert_return(
-  () =>
-    invoke($0, `select-f64-t`, [
-      value("f64", 2),
-      bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
-      1,
-    ]),
-  [value("f64", 2)],
-);
-
-
-assert_return(
-  () =>
-    invoke($0, `select-f64-t`, [
-      value("f64", 2),
-      bytes("f64", [0x4, 0x3, 0x2, 0x0, 0x0, 0x0, 0xf0, 0x7f]),
-      1,
-    ]),
-  [value("f64", 2)],
-);
-
-
-assert_return(
-  () =>
-    invoke($0, `select-f64-t`, [
-      value("f64", 2),
-      bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f]),
-      0,
-    ]),
-  [bytes("f64", [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xf8, 0x7f])],
-);
-
-
-assert_return(
-  () =>
-    invoke($0, `select-f64-t`, [
-      value("f64", 2),
-      bytes("f64", [0x4, 0x3, 0x2, 0x0, 0x0, 0x0, 0xf0, 0x7f]),
-      0,
-    ]),
-  [bytes("f64", [0x4, 0x3, 0x2, 0x0, 0x0, 0x0, 0xf0, 0x7f])],
-);
-
-
-assert_trap(() => invoke($0, `select-trap-left`, [1]), `unreachable`);
-
-
-assert_trap(() => invoke($0, `select-trap-left`, [0]), `unreachable`);
-
-
-assert_trap(() => invoke($0, `select-trap-right`, [1]), `unreachable`);
-
-
-assert_trap(() => invoke($0, `select-trap-right`, [0]), `unreachable`);
+assert_trap(() => invoke($0, `select_trap_r`, [0]), `unreachable`);
 
 
 assert_return(() => invoke($0, `as-select-first`, [0]), [value("i32", 1)]);
@@ -751,6 +496,11 @@ assert_return(() => invoke($0, `as-br_table-last`, [1]), [value("i32", 2)]);
 
 assert_return(() => invoke($0, `as-call_indirect-first`, [0]), [
   value("i32", 3),
+]);
+
+
+assert_return(() => invoke($0, `as-call_indirect-first`, [1]), [
+  value("i32", 2),
 ]);
 
 
@@ -876,8 +626,15 @@ assert_return(() => invoke($0, `as-convert-operand`, [1]), [value("i32", 1)]);
 
 assert_invalid(
   () =>
+    instantiate(`(module (func $$arity-0 (select (nop) (nop) (i32.const 1))))`),
+  `type mismatch`,
+);
+
+
+assert_invalid(
+  () =>
     instantiate(
-      `(module (func $$arity-0-implicit (select (nop) (nop) (i32.const 1))))`,
+      `(module (func $$type-num-vs-num (select (i32.const 1) (i64.const 1) (i32.const 1))))`,
     ),
   `type mismatch`,
 );
@@ -886,47 +643,19 @@ assert_invalid(
 assert_invalid(
   () =>
     instantiate(
-      `(module (func $$arity-0 (select (result) (nop) (nop) (i32.const 1))))`,
+      `(module (func $$type-num-vs-num (select (i32.const 1) (f32.const 1.0) (i32.const 1))))`,
     ),
-  `invalid result arity`,
-);
-
-
-assert_invalid(() =>
-  instantiate(`(module (func $$arity-2 (result i32 i32)
-    (select (result i32 i32)
-      (i32.const 0) (i32.const 0)
-      (i32.const 0) (i32.const 0)
-      (i32.const 1)
-    )
-  ))`), `invalid result arity`);
-
-
-assert_invalid(
-  () =>
-    instantiate(`(module (func $$type-externref-implicit (param $$r externref)
-    (drop (select (local.get $$r) (local.get $$r) (i32.const 1)))
-  ))`),
   `type mismatch`,
 );
 
 
-assert_invalid(() =>
-  instantiate(`(module (func $$type-num-vs-num
-    (drop (select (i32.const 1) (i64.const 1) (i32.const 1)))
-  ))`), `type mismatch`);
-
-
-assert_invalid(() =>
-  instantiate(`(module (func $$type-num-vs-num
-    (drop (select (i32.const 1) (f32.const 1.0) (i32.const 1)))
-  ))`), `type mismatch`);
-
-
-assert_invalid(() =>
-  instantiate(`(module (func $$type-num-vs-num
-    (drop (select (i32.const 1) (f64.const 1.0) (i32.const 1)))
-  ))`), `type mismatch`);
+assert_invalid(
+  () =>
+    instantiate(
+      `(module (func $$type-num-vs-num (select (i32.const 1) (f64.const 1.0) (i32.const 1))))`,
+    ),
+  `type mismatch`,
+);
 
 
 assert_invalid(() =>
