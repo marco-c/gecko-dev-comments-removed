@@ -5,10 +5,9 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 #![allow(non_upper_case_globals)]
+
+
 #![cfg_attr(feature = "neon", feature(stdsimd))]
-
-
-#![cfg_attr(feature = "neon", feature(platform_intrinsics, simd_ffi, link_llvm_intrinsics))]
 #![cfg_attr(feature = "neon", feature(aarch64_target_feature, arm_target_feature, raw_ref_op))]
 
 
