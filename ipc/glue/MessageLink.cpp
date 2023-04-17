@@ -25,19 +25,6 @@
 
 using namespace mozilla;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 namespace mozilla {
 namespace ipc {
 
