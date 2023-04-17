@@ -213,7 +213,9 @@ class SessionHistoryInfo {
 struct LoadingSessionHistoryInfo {
   LoadingSessionHistoryInfo() = default;
   explicit LoadingSessionHistoryInfo(SessionHistoryEntry* aEntry);
-  LoadingSessionHistoryInfo(SessionHistoryEntry* aEntry, uint64_t aLoadId);
+  
+  LoadingSessionHistoryInfo(SessionHistoryEntry* aEntry,
+                            LoadingSessionHistoryInfo* aInfo);
 
   already_AddRefed<nsDocShellLoadState> CreateLoadInfo() const;
 
