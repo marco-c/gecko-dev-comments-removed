@@ -47,7 +47,6 @@ var HeuristicsRegExp = {
       "address-line3": "addrline3|address_3",
       "address-level1": "land", 
       "additional-name": "apellido.?materno|lastlastname",
-      "cc-name": "account.*holder.*name",
       "cc-number": "(cc|kk)nr", 
       "cc-exp-month": "(cc|kk)month", 
       "cc-exp-year": "(cc|kk)year", 
@@ -163,23 +162,27 @@ var HeuristicsRegExp = {
         "|(^family-?n$)" +
         "|(^last-?n$)",
 
-      
-      
       "cc-name":
         "cc-?name" +
         "|card-?name" +
         "|cardholder-?name" +
+        "|cardholder" +
+        
         "|(^nom$)",
-      
 
       "cc-number":
         "cc-?number" +
         "|cc-?num" +
         "|card-?number" +
         "|card-?num" +
+        "|(^number$)" +
+        "|(^cc$)" +
         "|cc-?no" +
         "|card-?no" +
+        "|(^credit-?card$)" +
         "|numero-?carte" +
+        "|(^carte$)" +
+        "|(^carte-?credit$)" +
         "|num-?carte" +
         "|cb-?num",
 
@@ -452,7 +455,7 @@ var HeuristicsRegExp = {
       "cc-name":
         "card.?(?:holder|owner)|name.*(\\b)?on(\\b)?.*card" +
         "|(?:card|cc).?name|cc.?full.?name" +
-        "|(?:card|cc).?owner" +
+        "|karteninhaber" + 
         "|nombre.*tarjeta" + 
         "|nom.*carte" + 
         "|nome.*cart" + 
@@ -509,8 +512,8 @@ var HeuristicsRegExp = {
       
       
       "cc-number":
-        "(add)?(?:card|cc|acct).?(?:number|#|no|num)" +
-        "|(?<!telefon|haus|person|fødsels|zimmer)nummer" + 
+        "(add)?(?:card|cc|acct).?(?:number|#|no|num|field)" +
+        "|(?<!telefon|haus|person|fødsels)nummer" + 
         "|カード番号" + 
         "|Номер.*карты" + 
         "|信用卡号|信用卡号码" + 
@@ -520,29 +523,29 @@ var HeuristicsRegExp = {
         "|(numero|número|numéro)(?!.*(document|fono|phone|réservation))",
 
       "cc-exp-month":
-        "exp.*mo|ccmonth|cardmonth|addmonth" +
-        "|monat" + 
-        
-        
-        
-        
-        
-        
+        "expir|exp.*mo|exp.*date|ccmonth|cardmonth|addmonth" +
+        "|gueltig|gültig|monat" + 
+        "|fecha" + 
+        "|date.*exp" + 
+        "|scadenza" + 
+        "|有効期限" + 
+        "|validade" + 
+        "|Срок действия карты" + 
         "|月", 
 
       "cc-exp-year":
-        "(add)?year" +
-        "|jahr" + 
-        
-        
-        
-        
-        
+        "exp|^/|(add)?year" +
+        "|ablaufdatum|gueltig|gültig|jahr" + 
+        "|fecha" + 
+        "|scadenza" + 
+        "|有効期限" + 
+        "|validade" + 
+        "|Срок действия карты" + 
         "|年|有效期", 
 
       "cc-exp":
         "expir|exp.*date|^expfield$" +
-        "|ablaufdatum|gueltig|gültig" + 
+        "|gueltig|gültig" + 
         "|fecha" + 
         "|date.*exp" + 
         "|scadenza" + 
