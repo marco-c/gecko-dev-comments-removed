@@ -21,9 +21,9 @@ class AutoScrollParent extends JSWindowActorParent {
     
     
     
-    
-    
-    const requestedInForegroundTab = Services.focus.focusedElement == browser;
+    const requestedInForegroundTab = browser.isRemoteBrowser
+      ? Services.focus.focusedElement == browser
+      : true;
 
     let data = msg.data;
     switch (msg.name) {
