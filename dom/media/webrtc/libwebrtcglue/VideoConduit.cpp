@@ -1087,12 +1087,8 @@ void WebrtcVideoConduit::UnsetRemoteSSRC(uint32_t ssrc) {
 
 bool WebrtcVideoConduit::GetRemoteSSRC(uint32_t* aSsrc) const {
   MOZ_ASSERT(mCallThread->IsOnCurrentThread());
-  if (!mRecvStream) {
-    return false;
-  }
   
-  *aSsrc = mRecvStreamConfig.rtp.remote_ssrc;
-  return true;
+  return (*aSsrc = mRecvStreamConfig.rtp.remote_ssrc) != 0;
 }
 
 Maybe<webrtc::VideoReceiveStream::Stats> WebrtcVideoConduit::GetReceiverStats()
@@ -1489,17 +1485,6 @@ void WebrtcVideoConduit::OnRtcpReceived(MediaPacket&& aPacket) {
 
   DeliverPacket(rtc::CopyOnWriteBuffer(aPacket.data(), aPacket.len()),
                 PacketType::RTCP);
-
-  
-  
-  mLastRtcpReceived = Some(GetNow());
-}
-
-
-
-Maybe<DOMHighResTimeStamp> WebrtcVideoConduit::LastRtcpReceived() const {
-  MOZ_ASSERT(mCallThread->IsOnCurrentThread());
-  return mLastRtcpReceived;
 }
 
 Maybe<uint16_t> WebrtcVideoConduit::RtpSendBaseSeqFor(uint32_t aSsrc) const {

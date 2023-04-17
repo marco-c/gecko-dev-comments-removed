@@ -134,7 +134,6 @@ class MediaSessionConduit {
       MediaEventSourceExc<MediaPacket>& aEvent) = 0;
 
   
-  virtual Maybe<DOMHighResTimeStamp> LastRtcpReceived() const = 0;
   virtual Maybe<uint16_t> RtpSendBaseSeqFor(uint32_t aSsrc) const = 0;
 
   virtual DOMHighResTimeStamp GetNow() const = 0;
