@@ -82,17 +82,21 @@ void js::GCParallelTask::joinWithLockHeld(AutoLockHelperThreadState& lock) {
     return;
   }
 
-  
-  
-  
   if (isDispatched(lock)) {
+    
+    
+    
     cancelDispatchedTask(lock);
     AutoUnlockHelperThreadState unlock(lock);
     runFromMainThread();
-    return;
+  } else {
+    
+    joinRunningOrFinishedTask(lock);
   }
 
-  joinRunningOrFinishedTask(lock);
+  if (phaseKind != gcstats::PhaseKind::NONE) {
+    gc->stats().recordParallelPhase(phaseKind, duration());
+  }
 }
 
 void js::GCParallelTask::joinRunningOrFinishedTask(
