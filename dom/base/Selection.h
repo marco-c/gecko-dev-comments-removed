@@ -430,6 +430,8 @@ class Selection final : public nsSupportsWeakReference,
   
 
 
+
+
   void GetRangesForInterval(nsINode& aBeginNode, int32_t aBeginOffset,
                             nsINode& aEndNode, int32_t aEndOffset,
                             bool aAllowAdjacent,
