@@ -237,12 +237,30 @@ add_task(async function test_store_preferredAction() {
   await deleteHandlerStore();
 
   let handlerInfo = getKnownHandlerInfo("example/new");
+  
+  
+  
+  const actions = [
+    {
+      preferred: Ci.nsIHandlerInfo.alwaysAsk,
+      expected: Services.prefs.getBoolPref(
+        "browser.download.improvements_to_download_panel"
+      )
+        ? Ci.nsIHandlerInfo.alwaysAsk
+        : Ci.nsIHandlerInfo.useHelperApp,
+    },
+    {
+      preferred: Ci.nsIHandlerInfo.handleInternally,
+      expected: Ci.nsIHandlerInfo.handleInternally,
+    },
+    { preferred: 999, expected: Ci.nsIHandlerInfo.useHelperApp },
+  ];
 
-  for (let preferredAction of [Ci.nsIHandlerInfo.alwaysAsk, 999]) {
-    handlerInfo.preferredAction = preferredAction;
+  for (let action of actions) {
+    handlerInfo.preferredAction = action.preferred;
     gHandlerService.store(handlerInfo);
     gHandlerService.fillHandlerInfo(handlerInfo, "");
-    Assert.equal(handlerInfo.preferredAction, Ci.nsIHandlerInfo.useHelperApp);
+    Assert.equal(handlerInfo.preferredAction, action.expected);
   }
 });
 
