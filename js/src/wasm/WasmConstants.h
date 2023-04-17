@@ -1071,22 +1071,10 @@ static const unsigned MaxTags = 1000000;
 
 static const unsigned MaxBrTableElems = 1000000;
 static const unsigned MaxCodeSectionBytes = MaxModuleBytes;
-static const unsigned MaxArgsForJitInlineCall = 8;
-static const unsigned MaxResultsForJitEntry = 1;
-static const unsigned MaxResultsForJitExit = 1;
-static const unsigned MaxResultsForJitInlineCall = MaxResultsForJitEntry;
-
-
-static const unsigned MaxRegisterResults = 1;
 
 
 
 static const uint32_t RttDepthNone = MaxRttDepth + 1;
-
-
-
-
-static const unsigned FailFP = 0xbad;
 
 
 
