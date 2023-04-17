@@ -305,9 +305,10 @@ static Result<> CheckCallable(JSContext* cx, JSObject* obj,
   return Ok();
 }
 
+
 bool js::ToPropertyDescriptor(JSContext* cx, HandleValue descval,
                               bool checkAccessors,
-                              MutableHandle<PropertyDescriptor> desc) {
+                              MutableHandle<PropertyDescriptor> desc_) {
   
   RootedObject obj(cx,
                    RequireObject(cx, JSMSG_OBJECT_REQUIRED_PROP_DESC, descval));
@@ -316,121 +317,108 @@ bool js::ToPropertyDescriptor(JSContext* cx, HandleValue descval,
   }
 
   
-  desc.clear();
+  Rooted<PropertyDescriptor> desc(cx, PropertyDescriptor::Empty());
 
-  bool found = false;
   RootedId id(cx);
   RootedValue v(cx);
-  unsigned attrs = 0;
 
   
   id = NameToId(cx->names().enumerable);
-  if (!GetPropertyIfPresent(cx, obj, id, &v, &found)) {
+  bool hasEnumerable = false;
+  if (!GetPropertyIfPresent(cx, obj, id, &v, &hasEnumerable)) {
     return false;
   }
-  if (found) {
-    if (ToBoolean(v)) {
-      attrs |= JSPROP_ENUMERATE;
-    }
-  } else {
-    attrs |= JSPROP_IGNORE_ENUMERATE;
+  if (hasEnumerable) {
+    desc.setEnumerable(ToBoolean(v));
   }
 
   
   id = NameToId(cx->names().configurable);
-  if (!GetPropertyIfPresent(cx, obj, id, &v, &found)) {
+  bool hasConfigurable = false;
+  if (!GetPropertyIfPresent(cx, obj, id, &v, &hasConfigurable)) {
     return false;
   }
-  if (found) {
-    if (!ToBoolean(v)) {
-      attrs |= JSPROP_PERMANENT;
-    }
-  } else {
-    attrs |= JSPROP_IGNORE_PERMANENT;
+  if (hasConfigurable) {
+    desc.setConfigurable(ToBoolean(v));
   }
 
   
   id = NameToId(cx->names().value);
-  if (!GetPropertyIfPresent(cx, obj, id, &v, &found)) {
+  bool hasValue = false;
+  if (!GetPropertyIfPresent(cx, obj, id, &v, &hasValue)) {
     return false;
   }
-  if (found) {
-    desc.value().set(v);
-  } else {
-    attrs |= JSPROP_IGNORE_VALUE;
+  if (hasValue) {
+    desc.setValue(v);
   }
 
   
   id = NameToId(cx->names().writable);
-  if (!GetPropertyIfPresent(cx, obj, id, &v, &found)) {
+  bool hasWritable = false;
+  if (!GetPropertyIfPresent(cx, obj, id, &v, &hasWritable)) {
     return false;
   }
-  if (found) {
-    if (!ToBoolean(v)) {
-      attrs |= JSPROP_READONLY;
-    }
-  } else {
-    attrs |= JSPROP_IGNORE_READONLY;
+  if (hasWritable) {
+    desc.setWritable(ToBoolean(v));
   }
 
   
-  bool hasGetOrSet;
   id = NameToId(cx->names().get);
-  if (!GetPropertyIfPresent(cx, obj, id, &v, &found)) {
+  bool hasGet = false;
+  if (!GetPropertyIfPresent(cx, obj, id, &v, &hasGet)) {
     return false;
   }
-  hasGetOrSet = found;
-  if (found) {
+  if (hasGet) {
     if (v.isObject()) {
       if (checkAccessors) {
         JS_TRY_OR_RETURN_FALSE(cx,
                                CheckCallable(cx, &v.toObject(), js_getter_str));
       }
       desc.setGetterObject(&v.toObject());
-    } else if (!v.isUndefined()) {
+    } else if (v.isUndefined()) {
+      desc.setGetterObject(nullptr);
+    } else {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_BAD_GET_SET_FIELD, js_getter_str);
       return false;
     }
-    attrs |= JSPROP_GETTER;
   }
 
   
   id = NameToId(cx->names().set);
-  if (!GetPropertyIfPresent(cx, obj, id, &v, &found)) {
+  bool hasSet = false;
+  if (!GetPropertyIfPresent(cx, obj, id, &v, &hasSet)) {
     return false;
   }
-  hasGetOrSet |= found;
-  if (found) {
+  if (hasSet) {
     if (v.isObject()) {
       if (checkAccessors) {
         JS_TRY_OR_RETURN_FALSE(cx,
                                CheckCallable(cx, &v.toObject(), js_setter_str));
       }
       desc.setSetterObject(&v.toObject());
-    } else if (!v.isUndefined()) {
+    } else if (v.isUndefined()) {
+      desc.setSetterObject(nullptr);
+    } else {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_BAD_GET_SET_FIELD, js_setter_str);
       return false;
     }
-    attrs |= JSPROP_SETTER;
   }
 
   
-  if (hasGetOrSet) {
-    if (!(attrs & JSPROP_IGNORE_READONLY) || !(attrs & JSPROP_IGNORE_VALUE)) {
+  if (hasGet || hasSet) {
+    
+    
+    if (hasValue || hasWritable) {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_INVALID_DESCRIPTOR);
       return false;
     }
-
-    
-    attrs &= ~(JSPROP_IGNORE_READONLY | JSPROP_IGNORE_VALUE);
   }
 
-  desc.setAttributes(attrs);
-  MOZ_ASSERT_IF(attrs & JSPROP_READONLY,
-                !(attrs & (JSPROP_GETTER | JSPROP_SETTER)));
+  desc.assertValid();
+  desc_.set(desc);
   return true;
 }
 
@@ -601,12 +589,7 @@ bool js::SetIntegrityLevel(JSContext* cx, HandleObject obj,
     }
 
     RootedId id(cx);
-    Rooted<PropertyDescriptor> desc(cx);
-
-    const unsigned AllowConfigure =
-        JSPROP_IGNORE_ENUMERATE | JSPROP_IGNORE_READONLY | JSPROP_IGNORE_VALUE;
-    const unsigned AllowConfigureAndWritable =
-        AllowConfigure & ~JSPROP_IGNORE_READONLY;
+    Rooted<PropertyDescriptor> desc(cx, PropertyDescriptor::Empty());
 
     
     for (size_t i = 0; i < keys.length(); i++) {
@@ -614,7 +597,7 @@ bool js::SetIntegrityLevel(JSContext* cx, HandleObject obj,
 
       if (level == IntegrityLevel::Sealed) {
         
-        desc.setAttributes(AllowConfigure | JSPROP_PERMANENT);
+        desc.setConfigurable(false);
       } else {
         
         Rooted<Maybe<PropertyDescriptor>> currentDesc(cx);
@@ -628,11 +611,12 @@ bool js::SetIntegrityLevel(JSContext* cx, HandleObject obj,
         }
 
         
+        desc = PropertyDescriptor::Empty();
         if (currentDesc->isAccessorDescriptor()) {
-          desc.setAttributes(AllowConfigure | JSPROP_PERMANENT);
+          desc.setConfigurable(false);
         } else {
-          desc.setAttributes(AllowConfigureAndWritable | JSPROP_PERMANENT |
-                             JSPROP_READONLY);
+          desc.setConfigurable(false);
+          desc.setWritable(false);
         }
       }
 

@@ -600,11 +600,9 @@ JSObject* GlobalObject::getOrCreateThrowTypeError(
   }
 
   
-  
-  Rooted<PropertyDescriptor> nonConfigurableDesc(cx);
-  nonConfigurableDesc.setAttributes(JSPROP_PERMANENT | JSPROP_IGNORE_READONLY |
-                                    JSPROP_IGNORE_ENUMERATE |
-                                    JSPROP_IGNORE_VALUE);
+  Rooted<PropertyDescriptor> nonConfigurableDesc(cx,
+                                                 PropertyDescriptor::Empty());
+  nonConfigurableDesc.setConfigurable(false);
 
   RootedId lengthId(cx, NameToId(cx->names().length));
   ObjectOpResult lengthResult;
