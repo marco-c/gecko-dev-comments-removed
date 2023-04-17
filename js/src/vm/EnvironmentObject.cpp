@@ -1851,10 +1851,8 @@ class DebugEnvironmentProxyHandler : public BaseProxyHandler {
 
 
   static bool isMissingArgumentsBinding(EnvironmentObject& env) {
-    return isFunctionEnvironment(env) && !env.as<CallObject>()
-                                              .callee()
-                                              .baseScript()
-                                              ->needsArgsObj();
+    return isFunctionEnvironment(env) &&
+           !env.as<CallObject>().callee().baseScript()->needsArgsObj();
   }
 
   
@@ -1874,62 +1872,12 @@ class DebugEnvironmentProxyHandler : public BaseProxyHandler {
 
 
 
-
   static bool isMissingArguments(JSContext* cx, jsid id,
                                  EnvironmentObject& env) {
-    return isArguments(cx, id) && isFunctionEnvironment(env) &&
-           !env.as<CallObject>().callee().nonLazyScript()->needsArgsObj();
+    return isArguments(cx, id) && isMissingArgumentsBinding(env);
   }
   static bool isMissingThis(JSContext* cx, jsid id, EnvironmentObject& env) {
     return isThis(cx, id) && isMissingThisBinding(env);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  static bool isMagicMissingArgumentsValue(EnvironmentObject& env,
-                                           HandleValue v) {
-    bool isMagic = v.isMagic() && v.whyMagic() == JS_OPTIMIZED_ARGUMENTS;
-
-#ifdef DEBUG
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (isMagic) {
-      JSFunction* callee = nullptr;
-      if (isFunctionEnvironment(env)) {
-        callee = &env.as<CallObject>().callee();
-      } else {
-        
-        
-        for (ScopeIter si(getEnvironmentScope(env)); si; si++) {
-          if (si.kind() == ScopeKind::Function) {
-            callee = si.scope()->as<FunctionScope>().canonicalFunction();
-            break;
-          }
-        }
-      }
-      MOZ_ASSERT(callee && callee->baseScript()->needsArgsObj());
-    }
-#endif
-
-    return isMagic;
   }
 
   
@@ -2109,10 +2057,6 @@ class DebugEnvironmentProxyHandler : public BaseProxyHandler {
 
     switch (access) {
       case ACCESS_UNALIASED: {
-        if (isMagicMissingArgumentsValue(*env, v)) {
-          return getMissingArgumentsPropertyDescriptor(cx, debugEnv, *env,
-                                                       desc);
-        }
         Rooted<PropertyDescriptor> desc_(cx);
         desc_.object().set(debugEnv);
         desc_.setAttributes(JSPROP_READONLY | JSPROP_ENUMERATE |
@@ -2190,9 +2134,6 @@ class DebugEnvironmentProxyHandler : public BaseProxyHandler {
 
     switch (access) {
       case ACCESS_UNALIASED:
-        if (isMagicMissingArgumentsValue(*env, vp)) {
-          return getMissingArguments(cx, *env, vp);
-        }
         if (isMaybeUninitializedThisValue(cx, id, vp)) {
           return getMissingThis(cx, *env, vp);
         }
@@ -2220,8 +2161,7 @@ class DebugEnvironmentProxyHandler : public BaseProxyHandler {
     if (!createMissingArguments(cx, env, &argsObj)) {
       return false;
     }
-    vp.set(argsObj ? ObjectValue(*argsObj)
-                   : MagicValue(JS_OPTIMIZED_ARGUMENTS));
+    vp.set(argsObj ? ObjectValue(*argsObj) : MagicValue(JS_MISSING_ARGUMENTS));
     return true;
   }
 
@@ -2259,9 +2199,6 @@ class DebugEnvironmentProxyHandler : public BaseProxyHandler {
 
     switch (access) {
       case ACCESS_UNALIASED:
-        if (isMagicMissingArgumentsValue(*env, vp)) {
-          return getMissingArgumentsMaybeSentinelValue(cx, *env, vp);
-        }
         if (isMaybeUninitializedThisValue(cx, id, vp)) {
           return getMissingThisMaybeSentinelValue(cx, *env, vp);
         }

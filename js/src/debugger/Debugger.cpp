@@ -1413,7 +1413,7 @@ bool Debugger::wrapDebuggeeValue(JSContext* cx, MutableHandleValue vp) {
     
     PropertyName* name;
     switch (vp.whyMagic()) {
-      case JS_OPTIMIZED_ARGUMENTS:
+      case JS_MISSING_ARGUMENTS:
         name = cx->names().missingArguments;
         break;
       case JS_OPTIMIZED_OUT:
