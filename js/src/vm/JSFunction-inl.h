@@ -76,6 +76,7 @@ inline JSFunction* JSFunction::create(JSContext* cx, js::gc::AllocKind kind,
 
   JSFunction* fun = static_cast<JSFunction*>(nobj);
   fun->initFlagsAndArgCount();
+  fun->nativeFuncOrInterpretedEnv_.init(JS::UndefinedValue());
 
   
   
