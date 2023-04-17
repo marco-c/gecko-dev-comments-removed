@@ -1886,6 +1886,7 @@ STATIC_ATOMS = [
     Atom("ondeviceorientation", "ondeviceorientation"),
     Atom("onabsolutedeviceorientation", "onabsolutedeviceorientation"),
     Atom("onmozorientationchange", "onmozorientationchange"),
+    Atom("onuserproximity", "onuserproximity"),
     
     Atom("ondevicelight", "ondevicelight"),
     
