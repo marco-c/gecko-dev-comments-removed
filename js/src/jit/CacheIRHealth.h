@@ -72,7 +72,6 @@ class CacheIRHealth {
                          ICEntry* entry, ICFallbackStub* fallback,
                          jsbytecode* pc, JSOp op, Happiness* entryHappiness);
   
-  
   void spewShapeInformation(AutoStructuredSpewer& spew, ICStub* stub);
 
  public:
