@@ -3,79 +3,29 @@
 
 "use strict";
 
-Cu.importGlobalProperties(["Glean", "GleanPings"]);
-const { MockRegistrar } = ChromeUtils.import(
-  "resource://testing-common/MockRegistrar.jsm"
+Cu.importGlobalProperties(["Glean"]);
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
 );
-const { ObjectUtils } = ChromeUtils.import(
-  "resource://gre/modules/ObjectUtils.jsm"
-);
-const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
-
-
-
-
-var SysInfo = {
-  overrides: {},
-
-  
-
-
-
-
-  _getOverridden(name) {
-    if (name in this.overrides) {
-      return this.overrides[name];
-    }
-
-    return undefined;
-  },
-
-  
-  getProperty(name) {
-    let override = this._getOverridden(name);
-    return override !== undefined
-      ? override
-      : this._genuine.QueryInterface(Ci.nsIPropertyBag).getProperty(name);
-  },
-
-  
-  get(name) {
-    let override = this._getOverridden(name);
-    return override !== undefined
-      ? override
-      : this._genuine.QueryInterface(Ci.nsIPropertyBag2).get(name);
-  },
-
-  
-  getPropertyAsACString(name) {
-    return this.get(name);
-  },
-
-  QueryInterface: ChromeUtils.generateQI(["nsIPropertyBag2", "nsISystemInfo"]),
-};
 
 function sleep(ms) {
   
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-add_task({ skip_if: () => !runningInParent }, function test_setup() {
+add_task(
   
-  do_get_profile();
+  { skip_if: () => !runningInParent || AppConstants.platform == "android" },
+  function test_setup() {
+    
+    do_get_profile();
 
-  
-  SysInfo.overrides = {
-    version: "1.2.3",
-    arch: "x64",
-  };
-  MockRegistrar.register("@mozilla.org/system-info;1", SysInfo);
-
-  
-  let FOG = Cc["@mozilla.org/toolkit/glean;1"].createInstance(Ci.nsIFOG);
-  FOG.initializeFOG();
-});
+    
+    let FOG = Cc["@mozilla.org/toolkit/glean;1"].createInstance(Ci.nsIFOG);
+    FOG.initializeFOG();
+  }
+);
 
 const BAD_CODE_COUNT = 42;
 const CHEESY_STRING = "a very cheesy string!";
