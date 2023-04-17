@@ -360,6 +360,8 @@ static nsresult addNrIceServer(const nsString& aIceUrl,
     if (hostPos > 1) 
       return NS_ERROR_FAILURE;
     path.Mid(host, hostPos, hostLen);
+    
+    host.Trim("[]");
   }
   if (port == -1) port = (isStuns || isTurns) ? 5349 : 3478;
 
