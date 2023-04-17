@@ -503,7 +503,6 @@ pref("media.videocontrols.keyboard-tab-to-all-controls", true);
   pref("media.peerconnection.ice.proxy_only_if_behind_proxy", false);
   pref("media.peerconnection.ice.proxy_only", false);
   pref("media.peerconnection.turn.disable", false);
-  pref("media.peerconnection.mute_on_bye_or_timeout", false);
 
   
 pref("media.peerconnection.dtls.version.min", 771);
@@ -516,15 +515,16 @@ pref("media.peerconnection.dtls.version.min", 771);
   
   
   pref("media.getusermedia.aec_enabled", true);
-  pref("media.getusermedia.noise_enabled", true);
-  pref("media.getusermedia.use_aec_mobile", false);
   pref("media.getusermedia.aec", 1); 
-  pref("media.getusermedia.aec_extended_filter", true);
+  pref("media.getusermedia.use_aec_mobile", false);
+  pref("media.getusermedia.residual_echo_enabled", true);
+  pref("media.getusermedia.noise_enabled", true);
   pref("media.getusermedia.noise", 1); 
   pref("media.getusermedia.agc_enabled", true);
   pref("media.getusermedia.agc", 1); 
+  pref("media.getusermedia.agc2_forced", false);
   pref("media.getusermedia.hpf_enabled", true);
-  pref("media.getusermedia.aecm_output_routing", 3); 
+  pref("media.getusermedia.transient_enabled", false);
 #endif // MOZ_WEBRTC
 
 #if !defined(ANDROID)
