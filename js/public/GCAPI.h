@@ -424,7 +424,7 @@ typedef enum JSGCParamKey {
 
 
 
-  JSGC_URGENT_THRESHOLD_BYTES = 48,
+  JSGC_URGENT_THRESHOLD_MB = 48,
 } JSGCParamKey;
 
 
