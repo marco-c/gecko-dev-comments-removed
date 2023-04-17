@@ -9,6 +9,7 @@
 #endif
 
 #include "BrowserChild.h"
+#include "nsNSSComponent.h"
 #include "ContentChild.h"
 #include "GeckoProfiler.h"
 #include "HandlerServiceChild.h"
@@ -2588,7 +2589,7 @@ mozilla::ipc::IPCResult ContentChild::RecvRemoteType(
 }
 
 
-void ContentChild::PreallocInit() {}
+void ContentChild::PreallocInit() { EnsureNSSInitializedChromeOrContent(); }
 
 
 
