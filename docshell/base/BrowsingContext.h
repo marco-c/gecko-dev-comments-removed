@@ -1037,8 +1037,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   CanSetResult CanSet(FieldIndex<IDX_AllowContentRetargetingOnChildren>,
                       const bool& aAllowContentRetargetingOnChildren,
                       ContentParent* aSource);
-  bool CanSet(FieldIndex<IDX_AllowPlugins>, const bool& aAllowPlugins,
-              ContentParent* aSource);
+  CanSetResult CanSet(FieldIndex<IDX_AllowPlugins>, const bool& aAllowPlugins,
+                      ContentParent* aSource);
   bool CanSet(FieldIndex<IDX_FullscreenAllowedByOwner>, const bool&,
               ContentParent*);
   bool CanSet(FieldIndex<IDX_WatchedByDevToolsInternal>,
@@ -1063,8 +1063,8 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   bool CanSet(FieldIndex<IDX_PendingInitialization>, bool aNewValue,
               ContentParent* aSource);
 
-  bool CanSet(FieldIndex<IDX_HasMainMediaController>, bool aNewValue,
-              ContentParent* aSource);
+  CanSetResult CanSet(FieldIndex<IDX_HasMainMediaController>, bool aNewValue,
+                      ContentParent* aSource);
   void DidSet(FieldIndex<IDX_HasMainMediaController>, bool aOldValue);
 
   bool CanSet(FieldIndex<IDX_HasRestoreData>, bool aNewValue,
@@ -1093,8 +1093,6 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
   
   
   
-  bool LegacyCheckOnlyOwningProcessCanSet(ContentParent* aSource);
-
   CanSetResult LegacyRevertIfNotOwningOrParentProcess(ContentParent* aSource);
 
   
