@@ -29,6 +29,47 @@ using mozilla::IsPowerOfTwo;
 
 
 
+
+
+
+struct EnterJITStackEntry {
+  void* result;
+
+#if defined(_WIN64)
+  struct XMM {
+    using XMM128 = char[16];
+    XMM128 xmm6;
+    XMM128 xmm7;
+    XMM128 xmm8;
+    XMM128 xmm9;
+    XMM128 xmm10;
+    XMM128 xmm11;
+    XMM128 xmm12;
+    XMM128 xmm13;
+    XMM128 xmm14;
+    XMM128 xmm15;
+  } xmm;
+
+  
+  uint64_t xmmPadding;
+
+  void* rsi;
+  void* rdi;
+#endif
+
+  void* r15;
+  void* r14;
+  void* r13;
+  void* r12;
+  void* rbx;
+  void* rbp;
+
+  
+  void* rip;
+};
+
+
+
 static const LiveRegisterSet AllRegs =
     LiveRegisterSet(GeneralRegisterSet(Registers::AllMask),
                     FloatRegisterSet(FloatRegisters::AllMask));
@@ -60,6 +101,8 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
 #endif
 
   
+
+  
   masm.push(rbp);
   masm.mov(rsp, rbp);
 
@@ -76,23 +119,26 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   masm.push(rsi);
 
   
-  masm.subq(Imm32(16 * 10 + 8), rsp);
+  masm.subq(Imm32(sizeof(EnterJITStackEntry::XMM) + 8), rsp);
 
-  masm.vmovdqa(xmm6, Operand(rsp, 16 * 0));
-  masm.vmovdqa(xmm7, Operand(rsp, 16 * 1));
-  masm.vmovdqa(xmm8, Operand(rsp, 16 * 2));
-  masm.vmovdqa(xmm9, Operand(rsp, 16 * 3));
-  masm.vmovdqa(xmm10, Operand(rsp, 16 * 4));
-  masm.vmovdqa(xmm11, Operand(rsp, 16 * 5));
-  masm.vmovdqa(xmm12, Operand(rsp, 16 * 6));
-  masm.vmovdqa(xmm13, Operand(rsp, 16 * 7));
-  masm.vmovdqa(xmm14, Operand(rsp, 16 * 8));
-  masm.vmovdqa(xmm15, Operand(rsp, 16 * 9));
+  masm.vmovdqa(xmm6, Operand(rsp, offsetof(EnterJITStackEntry::XMM, xmm6)));
+  masm.vmovdqa(xmm7, Operand(rsp, offsetof(EnterJITStackEntry::XMM, xmm7)));
+  masm.vmovdqa(xmm8, Operand(rsp, offsetof(EnterJITStackEntry::XMM, xmm8)));
+  masm.vmovdqa(xmm9, Operand(rsp, offsetof(EnterJITStackEntry::XMM, xmm9)));
+  masm.vmovdqa(xmm10, Operand(rsp, offsetof(EnterJITStackEntry::XMM, xmm10)));
+  masm.vmovdqa(xmm11, Operand(rsp, offsetof(EnterJITStackEntry::XMM, xmm11)));
+  masm.vmovdqa(xmm12, Operand(rsp, offsetof(EnterJITStackEntry::XMM, xmm12)));
+  masm.vmovdqa(xmm13, Operand(rsp, offsetof(EnterJITStackEntry::XMM, xmm13)));
+  masm.vmovdqa(xmm14, Operand(rsp, offsetof(EnterJITStackEntry::XMM, xmm14)));
+  masm.vmovdqa(xmm15, Operand(rsp, offsetof(EnterJITStackEntry::XMM, xmm15)));
 #endif
 
   
   masm.push(result);
 
+  
+  
+  
   
   masm.mov(rsp, r14);
 
@@ -305,18 +351,18 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
 
   
 #if defined(_WIN64)
-  masm.vmovdqa(Operand(rsp, 16 * 0), xmm6);
-  masm.vmovdqa(Operand(rsp, 16 * 1), xmm7);
-  masm.vmovdqa(Operand(rsp, 16 * 2), xmm8);
-  masm.vmovdqa(Operand(rsp, 16 * 3), xmm9);
-  masm.vmovdqa(Operand(rsp, 16 * 4), xmm10);
-  masm.vmovdqa(Operand(rsp, 16 * 5), xmm11);
-  masm.vmovdqa(Operand(rsp, 16 * 6), xmm12);
-  masm.vmovdqa(Operand(rsp, 16 * 7), xmm13);
-  masm.vmovdqa(Operand(rsp, 16 * 8), xmm14);
-  masm.vmovdqa(Operand(rsp, 16 * 9), xmm15);
+  masm.vmovdqa(Operand(rsp, offsetof(EnterJITStackEntry::XMM, xmm6)), xmm6);
+  masm.vmovdqa(Operand(rsp, offsetof(EnterJITStackEntry::XMM, xmm7)), xmm7);
+  masm.vmovdqa(Operand(rsp, offsetof(EnterJITStackEntry::XMM, xmm8)), xmm8);
+  masm.vmovdqa(Operand(rsp, offsetof(EnterJITStackEntry::XMM, xmm9)), xmm9);
+  masm.vmovdqa(Operand(rsp, offsetof(EnterJITStackEntry::XMM, xmm10)), xmm10);
+  masm.vmovdqa(Operand(rsp, offsetof(EnterJITStackEntry::XMM, xmm11)), xmm11);
+  masm.vmovdqa(Operand(rsp, offsetof(EnterJITStackEntry::XMM, xmm12)), xmm12);
+  masm.vmovdqa(Operand(rsp, offsetof(EnterJITStackEntry::XMM, xmm13)), xmm13);
+  masm.vmovdqa(Operand(rsp, offsetof(EnterJITStackEntry::XMM, xmm14)), xmm14);
+  masm.vmovdqa(Operand(rsp, offsetof(EnterJITStackEntry::XMM, xmm15)), xmm15);
 
-  masm.addq(Imm32(16 * 10 + 8), rsp);
+  masm.addq(Imm32(sizeof(EnterJITStackEntry::XMM) + 8), rsp);
 
   masm.pop(rsi);
   masm.pop(rdi);
