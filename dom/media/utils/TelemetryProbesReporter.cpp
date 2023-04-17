@@ -176,11 +176,21 @@ void TelemetryProbesReporter::OnAudibleChanged(AudibleState aAudibleState) {
 }
 
 void TelemetryProbesReporter::OnMutedChanged(bool aMuted) {
+  
+  
+  
+  
+  
+  
   AssertOnMainThreadAndNotShutdown();
+  if (!(mMediaContent & MediaContent::MEDIA_HAS_AUDIO)) {
+    return;
+  }
   LOG("Muted changed, was %s now %s", ToMutedStr(mIsMuted), ToMutedStr(aMuted));
   if (aMuted) {
-    MOZ_ASSERT(!mIsMuted);
-    StartMutedAudioTimeAccumulator();
+    if (!mMutedAudioPlayTime.IsStarted()) {
+      StartMutedAudioTimeAccumulator();
+    }
   } else {
     
     
@@ -215,6 +225,9 @@ void TelemetryProbesReporter::OnMediaContentChanged(MediaContent aContent) {
     if (mInaudibleAudioPlayTime.IsStarted()) {
       mInaudibleAudioPlayTime.Pause();
     }
+    if (mMutedAudioPlayTime.IsStarted()) {
+      mMutedAudioPlayTime.Pause();
+    }
   }
   if (!(mMediaContent & MediaContent::MEDIA_HAS_VIDEO) &&
       aContent & MediaContent::MEDIA_HAS_VIDEO) {
@@ -231,6 +244,9 @@ void TelemetryProbesReporter::OnMediaContentChanged(MediaContent aContent) {
     LOG("Audio track added to media.");
     if (mIsPlaying) {
       mTotalAudioPlayTime.Start();
+      if (mIsMuted) {
+        StartMutedAudioTimeAccumulator();
+      }
     }
   }
 
