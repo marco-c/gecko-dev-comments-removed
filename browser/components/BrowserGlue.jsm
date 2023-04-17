@@ -3883,15 +3883,18 @@ BrowserGlue.prototype = {
       if (lastVersion === dialogVersion) {
         return "already-shown";
       }
+
+      
+      const defaultPrefs = Services.prefs.getDefaultBranch("");
       if (
-        !Services.prefs.getBoolPref(
+        !defaultPrefs.getBoolPref(
           "browser.messaging-system.whatsNewPanel.enabled",
           true
         )
       ) {
         return "no-whatsNew";
       }
-      if (!Services.prefs.getBoolPref("browser.aboutwelcome.enabled", true)) {
+      if (!defaultPrefs.getBoolPref("browser.aboutwelcome.enabled", true)) {
         return "no-welcome";
       }
       if (!Services.policies.isAllowed("postUpdateCustomPage")) {
