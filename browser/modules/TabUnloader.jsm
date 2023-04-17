@@ -29,6 +29,10 @@ const MIN_TABS_COUNT = 10;
 
 const NEVER_DISCARD = 100000;
 
+
+
+const kMinInactiveDurationInMs = 600000; 
+
 let criteriaTypes = [
   ["isNonDiscardable", NEVER_DISCARD],
   ["isLoading", 8],
@@ -80,6 +84,10 @@ let DefaultTabUnloaderMethods = {
 
   getMinTabCount() {
     return MIN_TABS_COUNT;
+  },
+
+  getNow() {
+    return Date.now();
   },
 
   *iterateTabs() {
@@ -155,7 +163,7 @@ var TabUnloader = {
   },
 
   
-  async unloadTabAsync() {
+  async unloadTabAsync(minInactiveDuration = kMinInactiveDurationInMs) {
     const watcher = Cc["@mozilla.org/xpcom/memory-watcher;1"].getService(
       Ci.nsIAvailableMemoryWatcherBase
     );
@@ -174,7 +182,9 @@ var TabUnloader = {
     }
 
     this._isUnloading = true;
-    const isTabUnloaded = await this.unloadLeastRecentlyUsedTab();
+    const isTabUnloaded = await this.unloadLeastRecentlyUsedTab(
+      minInactiveDuration
+    );
     this._isUnloading = false;
 
     watcher.onUnloadAttemptCompleted(
@@ -210,11 +220,28 @@ var TabUnloader = {
 
 
 
-  async getSortedTabs(tabMethods = DefaultTabUnloaderMethods) {
+
+
+
+
+  async getSortedTabs(
+    minInactiveDuration = kMinInactiveDurationInMs,
+    tabMethods = DefaultTabUnloaderMethods
+  ) {
     let tabs = [];
+
+    const now = tabMethods.getNow();
 
     let lowestWeight = 1000;
     for (let tab of tabMethods.iterateTabs()) {
+      if (
+        typeof minInactiveDuration == "number" &&
+        now - tab.tab.lastAccessed < minInactiveDuration
+      ) {
+        
+        continue;
+      }
+
       let weight = determineTabBaseWeight(tab, tabMethods);
 
       
@@ -279,8 +306,10 @@ var TabUnloader = {
 
 
 
-  async unloadLeastRecentlyUsedTab() {
-    let sortedTabs = await this.getSortedTabs();
+  async unloadLeastRecentlyUsedTab(
+    minInactiveDuration = kMinInactiveDurationInMs
+  ) {
+    const sortedTabs = await this.getSortedTabs(minInactiveDuration);
 
     for (let tabInfo of sortedTabs) {
       if (!this.isDiscardable(tabInfo)) {
