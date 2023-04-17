@@ -1241,9 +1241,6 @@ BrowserGlue.prototype = {
     if (AppConstants.platform == "win") {
       JawsScreenReaderVersionCheck.init();
     }
-
-    
-    this._placesTelemetryGathered = false;
   },
 
   
@@ -1696,14 +1693,6 @@ BrowserGlue.prototype = {
     this._firstWindowLoaded();
 
     this._collectStartupConditionsTelemetry();
-
-    if (!this._placesTelemetryGathered && TelemetryUtils.isTelemetryEnabled) {
-      this._placesTelemetryGathered = true;
-      
-      Services.tm.idleDispatchToMainThread(() => {
-        PlacesDBUtils.telemetry();
-      });
-    }
 
     
     PlacesUtils.favicons.setDefaultIconURIPreferredSize(
@@ -2342,6 +2331,13 @@ BrowserGlue.prototype = {
           
           
           PlacesUIUtils.unblockToolbars();
+        },
+      },
+
+      {
+        condition: TelemetryUtils.isTelemetryEnabled,
+        task: () => {
+          PlacesDBUtils.telemetry().catch(console.error);
         },
       },
 
