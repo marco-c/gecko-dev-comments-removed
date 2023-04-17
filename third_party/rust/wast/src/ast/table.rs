@@ -9,8 +9,6 @@ pub struct Table<'a> {
     
     pub id: Option<ast::Id<'a>>,
     
-    pub name: Option<ast::NameAnnotation<'a>>,
-    
     
     pub exports: ast::InlineExport<'a>,
     
@@ -44,7 +42,6 @@ impl<'a> Parse<'a> for Table<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
         let span = parser.parse::<kw::table>()?.0;
         let id = parser.parse()?;
-        let name = parser.parse()?;
         let exports = parser.parse()?;
 
         
@@ -78,7 +75,6 @@ impl<'a> Parse<'a> for Table<'a> {
         Ok(Table {
             span,
             id,
-            name,
             exports,
             kind,
         })
@@ -92,8 +88,6 @@ pub struct Elem<'a> {
     pub span: ast::Span,
     
     pub id: Option<ast::Id<'a>>,
-    
-    pub name: Option<ast::NameAnnotation<'a>>,
     
     pub kind: ElemKind<'a>,
     
@@ -121,7 +115,7 @@ pub enum ElemKind<'a> {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ElemPayload<'a> {
     
     Indices(Vec<ast::ItemRef<'a, kw::func>>),
@@ -132,7 +126,8 @@ pub enum ElemPayload<'a> {
         
         ty: ast::RefType<'a>,
         
-        exprs: Vec<ast::Expression<'a>>,
+        
+        exprs: Vec<Option<ast::ItemRef<'a, kw::func>>>,
     },
 }
 
@@ -140,7 +135,6 @@ impl<'a> Parse<'a> for Elem<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
         let span = parser.parse::<kw::elem>()?.0;
         let id = parser.parse()?;
-        let name = parser.parse()?;
 
         let kind = if parser.peek::<u32>()
             || (parser.peek::<ast::LParen>() && !parser.peek::<ast::RefType>())
@@ -173,7 +167,6 @@ impl<'a> Parse<'a> for Elem<'a> {
         Ok(Elem {
             span,
             id,
-            name,
             kind,
             payload,
         })
@@ -206,12 +199,38 @@ impl<'a> ElemPayload<'a> {
         }
         let mut exprs = Vec::new();
         while !parser.is_empty() {
-            let expr = parser.parens(|p| {
-                p.parse::<Option<kw::item>>()?;
-                p.parse()
+            let func = parser.parens(|p| match p.parse::<Option<kw::item>>()? {
+                Some(_) => {
+                    if parser.peek::<ast::LParen>() {
+                        parser.parens(|p| parse_ref_func(p, ty))
+                    } else {
+                        parse_ref_func(parser, ty)
+                    }
+                }
+                None => parse_ref_func(parser, ty),
             })?;
-            exprs.push(expr);
+            exprs.push(func);
         }
         Ok(ElemPayload::Exprs { exprs, ty })
+    }
+}
+
+fn parse_ref_func<'a>(
+    parser: Parser<'a>,
+    ty: ast::RefType<'a>,
+) -> Result<Option<ast::ItemRef<'a, kw::func>>> {
+    let mut l = parser.lookahead1();
+    if l.peek::<kw::ref_null>() {
+        parser.parse::<kw::ref_null>()?;
+        let null_ty: ast::HeapType = parser.parse()?;
+        if ty.heap != null_ty {
+            return Err(parser.error("elem segment item doesn't match elem segment type"));
+        }
+        Ok(None)
+    } else if l.peek::<kw::ref_func>() {
+        parser.parse::<kw::ref_func>()?;
+        Ok(Some(parser.parse::<ast::IndexOrRef<_>>()?.0))
+    } else {
+        Err(l.error())
     }
 }

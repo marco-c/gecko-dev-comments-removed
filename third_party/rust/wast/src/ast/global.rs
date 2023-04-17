@@ -9,8 +9,6 @@ pub struct Global<'a> {
     
     pub id: Option<ast::Id<'a>>,
     
-    pub name: Option<ast::NameAnnotation<'a>>,
-    
     
     pub exports: ast::InlineExport<'a>,
     
@@ -37,7 +35,6 @@ impl<'a> Parse<'a> for Global<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
         let span = parser.parse::<kw::global>()?.0;
         let id = parser.parse()?;
-        let name = parser.parse()?;
         let exports = parser.parse()?;
 
         let (ty, kind) = if let Some(import) = parser.parse()? {
@@ -48,7 +45,6 @@ impl<'a> Parse<'a> for Global<'a> {
         Ok(Global {
             span,
             id,
-            name,
             exports,
             ty,
             kind,
