@@ -20,7 +20,7 @@ class nsRange;
 class nsIWidget;
 
 namespace mozilla {
-class TextEditor;
+class EditorBase;
 namespace dom {
 class Selection;
 }
@@ -400,7 +400,7 @@ class HyperTextAccessible : public AccessibleWrap {
 
 
 
-  virtual already_AddRefed<TextEditor> GetEditor() const;
+  virtual already_AddRefed<EditorBase> GetEditor() const;
 
   
 

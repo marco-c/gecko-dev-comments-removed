@@ -26,13 +26,13 @@ class nsIURI;
 struct nsSize;
 
 namespace mozilla {
+class EditorBase;
 class ErrorResult;
 class EventChainPostVisitor;
 class EventChainPreVisitor;
 class EventChainVisitor;
 class EventListenerManager;
 class EventStates;
-class TextEditor;
 class PresState;
 namespace dom {
 class ElementInternals;
@@ -843,7 +843,7 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
 
 
 
-  virtual already_AddRefed<mozilla::TextEditor> GetAssociatedEditor();
+  virtual already_AddRefed<mozilla::EditorBase> GetAssociatedEditor();
 
   
 

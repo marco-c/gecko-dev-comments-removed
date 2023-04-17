@@ -140,6 +140,7 @@ class PropertyDescriptor;
 
 namespace mozilla {
 class Dispatcher;
+class EditorBase;
 class ErrorResult;
 class EventListenerManager;
 class HTMLEditor;
@@ -1518,7 +1519,7 @@ class nsContentUtils {
   MOZ_CAN_RUN_SCRIPT static nsresult DispatchInputEvent(
       Element* aEventTarget, mozilla::EventMessage aEventMessage,
       mozilla::EditorInputType aEditorInputType,
-      mozilla::TextEditor* aTextEditor, mozilla::InputEventOptions&& aOptions,
+      mozilla::EditorBase* aEditorBase, mozilla::InputEventOptions&& aOptions,
       nsEventStatus* aEventStatus = nullptr);
 
   
@@ -2714,8 +2715,8 @@ class nsContentUtils {
 
 
 
-  static mozilla::TextEditor* GetActiveEditor(nsPresContext* aPresContext);
-  static mozilla::TextEditor* GetActiveEditor(nsPIDOMWindowOuter* aWindow);
+  static mozilla::EditorBase* GetActiveEditor(nsPresContext* aPresContext);
+  static mozilla::EditorBase* GetActiveEditor(nsPIDOMWindowOuter* aWindow);
 
   
 

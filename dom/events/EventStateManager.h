@@ -35,11 +35,11 @@ class nsPresContext;
 
 namespace mozilla {
 
+class EditorBase;
 class EnterLeaveDispatcher;
 class EventStates;
 class IMEContentObserver;
 class ScrollbarsForWheel;
-class TextEditor;
 class WheelTransaction;
 
 namespace dom {
@@ -344,7 +344,7 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   nsresult HandleMiddleClickPaste(PresShell* aPresShell,
                                   WidgetMouseEvent* aMouseEvent,
                                   nsEventStatus* aStatus,
-                                  TextEditor* aTextEditor);
+                                  EditorBase* aEditorBase);
 
  protected:
   
