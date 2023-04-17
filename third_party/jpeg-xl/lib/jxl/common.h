@@ -22,6 +22,11 @@
 #define JXL_HIGH_PRECISION 1
 #endif
 
+
+#ifndef JPEGXL_ENABLE_TRANSCODE_JPEG
+#define JPEGXL_ENABLE_TRANSCODE_JPEG 1
+#endif  
+
 namespace jxl {
 
 
@@ -156,30 +161,18 @@ JXL_INLINE T Clamp1(T val, T low, T hi) {
   return val < low ? low : val > hi ? hi : val;
 }
 
-template <typename T>
-JXL_INLINE T ClampToRange(int64_t val) {
-  return Clamp1<int64_t>(val, std::numeric_limits<T>::min(),
-                         std::numeric_limits<T>::max());
-}
 
-template <typename T>
-JXL_INLINE T SaturatingMul(int64_t a, int64_t b) {
-  return ClampToRange<T>(a * b);
-}
-
-template <typename T>
-JXL_INLINE T SaturatingAdd(int64_t a, int64_t b) {
-  return ClampToRange<T>(a + b);
-}
-
-
-constexpr uint32_t PackSigned(int32_t value) {
+constexpr uint32_t PackSigned(int32_t value)
+    JXL_NO_SANITIZE("unsigned-integer-overflow") {
   return (static_cast<uint32_t>(value) << 1) ^
          ((static_cast<uint32_t>(~value) >> 31) - 1);
 }
 
 
-constexpr intptr_t UnpackSigned(size_t value) {
+
+
+constexpr intptr_t UnpackSigned(size_t value)
+    JXL_NO_SANITIZE("unsigned-integer-overflow") {
   return static_cast<intptr_t>((value >> 1) ^ (((~value) & 1) - 1));
 }
 

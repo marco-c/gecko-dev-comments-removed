@@ -602,9 +602,6 @@ std::vector<PatchInfo> FindTextLikePatches(
 void FindBestPatchDictionary(const Image3F& opsin,
                              PassesEncoderState* JXL_RESTRICT state,
                              ThreadPool* pool, AuxOut* aux_out, bool is_xyb) {
-  state->shared.image_features.patches = PatchDictionary();
-  state->shared.image_features.patches.SetPassesSharedState(&state->shared);
-
   std::vector<PatchInfo> info =
       FindTextLikePatches(opsin, state, pool, aux_out, is_xyb);
 
@@ -752,10 +749,31 @@ void FindBestPatchDictionary(const Image3F& opsin,
   }
 
   CompressParams cparams = state->cparams;
-  cparams.resampling = 1;
-  cparams.ec_resampling = 1;
   
   cparams.patches = Override::kOff;
+  
+  if (!cparams.modular_mode) {
+    cparams.quality_pair.first = cparams.quality_pair.second =
+        90.f - cparams.butteraugli_distance * 5.f;
+  }
+
+  RoundtripPatchFrame(&reference_frame, state, 0, cparams, pool, true);
+
+  
+  
+  
+  std::sort(positions.begin(), positions.end());
+  PatchDictionaryEncoder::SetPositions(&state->shared.image_features.patches,
+                                       std::move(positions));
+}
+
+void RoundtripPatchFrame(Image3F* reference_frame,
+                         PassesEncoderState* JXL_RESTRICT state, int idx,
+                         CompressParams& cparams, ThreadPool* pool,
+                         bool subtract) {
+  FrameInfo patch_frame_info;
+  cparams.resampling = 1;
+  cparams.ec_resampling = 1;
   cparams.dots = Override::kOff;
   cparams.noise = Override::kOff;
   cparams.modular_mode = true;
@@ -765,26 +783,14 @@ void FindBestPatchDictionary(const Image3F& opsin,
   cparams.qprogressive_mode = false;
   
   cparams.options.predictor = Predictor::Gradient;
-  
-  if (!cparams.modular_mode) {
-    cparams.quality_pair.first = cparams.quality_pair.second =
-        80 - cparams.butteraugli_distance * 12;
-  } else {
-    cparams.quality_pair.first = (100 + 3 * cparams.quality_pair.first) * 0.25f;
-    cparams.quality_pair.second =
-        (100 + 3 * cparams.quality_pair.second) * 0.25f;
-  }
-  FrameInfo patch_frame_info;
-  patch_frame_info.save_as_reference = 0;  
+  patch_frame_info.save_as_reference = idx;  
   patch_frame_info.frame_type = FrameType::kReferenceOnly;
   patch_frame_info.save_before_color_transform = true;
-
   ImageBundle ib(&state->shared.metadata->m);
   
   
   patch_frame_info.ib_needs_color_transform = false;
-  patch_frame_info.save_as_reference = 0;
-  ib.SetFromImage(std::move(reference_frame),
+  ib.SetFromImage(std::move(*reference_frame),
                   state->shared.metadata->m.color_encoding);
   if (!ib.metadata()->extra_channel_info.empty()) {
     
@@ -797,37 +803,40 @@ void FindBestPatchDictionary(const Image3F& opsin,
       
       
       
-      FillImage(1.0f, &extra_channels.back());
+      ZeroFillImage(&extra_channels.back());
     }
     ib.SetExtraChannels(std::move(extra_channels));
   }
-
   PassesEncoderState roundtrip_state;
   auto special_frame = std::unique_ptr<BitWriter>(new BitWriter());
   JXL_CHECK(EncodeFrame(cparams, patch_frame_info, state->shared.metadata, ib,
                         &roundtrip_state, pool, special_frame.get(), nullptr));
   const Span<const uint8_t> encoded = special_frame->GetSpan();
   state->special_frames.emplace_back(std::move(special_frame));
-  if (cparams.butteraugli_distance < kMinButteraugliToSubtractOriginalPatches) {
+  if (subtract) {
     BitReader br(encoded);
     ImageBundle decoded(&state->shared.metadata->m);
     PassesDecoderState dec_state;
-    JXL_CHECK(dec_state.output_encoding_info.Set(state->shared.metadata->m));
+    JXL_CHECK(dec_state.output_encoding_info.Set(
+        *state->shared.metadata,
+        ColorEncoding::LinearSRGB(
+            state->shared.metadata->m.color_encoding.IsGray())));
     JXL_CHECK(DecodeFrame({}, &dec_state, pool, &br, &decoded,
                           *state->shared.metadata, nullptr));
+    
+    if (!dec_state.shared_storage.reference_frames[idx]
+             .storage.color()
+             ->xsize())
+      JXL_CHECK(DecodeFrame({}, &dec_state, pool, &br, &decoded,
+                            *state->shared.metadata, nullptr));
     JXL_CHECK(br.Close());
-    state->shared.reference_frames[0] =
-        std::move(dec_state.shared_storage.reference_frames[0]);
+    state->shared.reference_frames[idx] =
+        std::move(dec_state.shared_storage.reference_frames[idx]);
   } else {
-    state->shared.reference_frames[0].storage = std::move(ib);
+    state->shared.reference_frames[idx].storage = std::move(ib);
   }
-  state->shared.reference_frames[0].frame =
-      &state->shared.reference_frames[0].storage;
-  
-  
-  
-  std::sort(positions.begin(), positions.end());
-  PatchDictionaryEncoder::SetPositions(&state->shared.image_features.patches,
-                                       std::move(positions));
+  state->shared.reference_frames[idx].frame =
+      &state->shared.reference_frames[idx].storage;
 }
+
 }  

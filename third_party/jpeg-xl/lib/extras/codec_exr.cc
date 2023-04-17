@@ -17,6 +17,7 @@
 #include "lib/jxl/color_management.h"
 
 namespace jxl {
+namespace extras {
 
 namespace {
 
@@ -127,8 +128,8 @@ class InMemoryOStream : public OpenEXR::OStream {
 
 }  
 
-Status DecodeImageEXR(Span<const uint8_t> bytes, ThreadPool* pool,
-                      CodecInOut* io) {
+Status DecodeImageEXR(Span<const uint8_t> bytes, const ColorHints& color_hints,
+                      ThreadPool* pool, CodecInOut* io) {
   
   
   
@@ -347,4 +348,5 @@ Status EncodeImageEXR(const CodecInOut* io, const ColorEncoding& c_desired,
   return true;
 }
 
+}  
 }  

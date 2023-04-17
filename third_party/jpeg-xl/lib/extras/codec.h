@@ -13,6 +13,7 @@
 
 #include <string>
 
+#include "lib/extras/color_hints.h"
 #include "lib/jxl/base/compiler_specific.h"
 #include "lib/jxl/base/data_parallel.h"
 #include "lib/jxl/base/padded_bytes.h"
@@ -59,12 +60,20 @@ Codec CodecFromExtension(const std::string& extension,
 
 
 
-Status SetFromBytes(const Span<const uint8_t> bytes, CodecInOut* io,
-                    ThreadPool* pool = nullptr, Codec* orig_codec = nullptr);
+Status SetFromBytes(const Span<const uint8_t> bytes,
+                    const ColorHints& color_hints, CodecInOut* io,
+                    ThreadPool* pool, Codec* orig_codec);
+
+JXL_INLINE Status SetFromBytes(const Span<const uint8_t> bytes, CodecInOut* io,
+                               ThreadPool* pool = nullptr,
+                               Codec* orig_codec = nullptr) {
+  return SetFromBytes(bytes, ColorHints(), io, pool, orig_codec);
+}
 
 
-Status SetFromFile(const std::string& pathname, CodecInOut* io,
-                   ThreadPool* pool = nullptr, Codec* orig_codec = nullptr);
+Status SetFromFile(const std::string& pathname, const ColorHints& color_hints,
+                   CodecInOut* io, ThreadPool* pool = nullptr,
+                   Codec* orig_codec = nullptr);
 
 
 

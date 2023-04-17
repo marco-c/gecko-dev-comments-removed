@@ -34,7 +34,7 @@ namespace jxl {
 
 Status FinalizeFrameDecoding(ImageBundle* JXL_RESTRICT decoded,
                              PassesDecoderState* dec_state, ThreadPool* pool,
-                             bool force_fir, bool skip_blending);
+                             bool force_fir, bool skip_blending, bool move_ec);
 
 
 

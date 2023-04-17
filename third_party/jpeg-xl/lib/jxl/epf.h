@@ -36,9 +36,11 @@ void ComputeSigma(const Rect& block_rect, PassesDecoderState* state);
 
 
 
-void ApplyFilters(PassesDecoderState* dec_state, const Rect& image_rect,
-                  const Image3F& input, const Rect& input_rect, size_t thread,
-                  Image3F* JXL_RESTRICT out, const Rect& output_rect);
+
+
+
+
+
 
 
 

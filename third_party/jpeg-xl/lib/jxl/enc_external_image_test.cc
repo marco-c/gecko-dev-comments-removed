@@ -30,20 +30,40 @@ TEST(ExternalImageTest, InvalidSize) {
       Span<const uint8_t>(buf, 10), 10, 100,
       ColorEncoding::SRGB(), true,
       false, 16, JXL_BIG_ENDIAN,
-      false, nullptr, &ib));
+      false, nullptr, &ib, false));
   EXPECT_FALSE(ConvertFromExternal(
       Span<const uint8_t>(buf, sizeof(buf) - 1), 10, 100,
       ColorEncoding::SRGB(), true,
       false, 16, JXL_BIG_ENDIAN,
-      false, nullptr, &ib));
-  EXPECT_TRUE(
-      ConvertFromExternal(Span<const uint8_t>(buf, sizeof(buf)), 10,
-                          100, ColorEncoding::SRGB(),
-                          true, false,
-                          16, JXL_BIG_ENDIAN,
-                          false, nullptr, &ib));
+      false, nullptr, &ib, false));
+  EXPECT_TRUE(ConvertFromExternal(
+      Span<const uint8_t>(buf, sizeof(buf)), 10,
+      100, ColorEncoding::SRGB(),
+      true, false,
+      16, JXL_BIG_ENDIAN,
+      false, nullptr, &ib, false));
 }
 #endif
+
+TEST(ExternalImageTest, AlphaMissing) {
+  ImageMetadata im;
+  im.SetAlphaBits(0);  
+  ImageBundle ib(&im);
+
+  const size_t xsize = 10;
+  const size_t ysize = 20;
+  const uint8_t buf[xsize * ysize * 4] = {};
+
+  
+  
+  EXPECT_TRUE(ConvertFromExternal(
+      Span<const uint8_t>(buf, sizeof(buf)), xsize, ysize,
+      ColorEncoding::SRGB(),
+      true, false,
+      8, JXL_BIG_ENDIAN,
+      false, nullptr, &ib, false));
+  EXPECT_FALSE(ib.HasAlpha());
+}
 
 }  
 }  

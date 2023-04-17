@@ -8,6 +8,8 @@
 
 
 
+
+
 #ifndef JXL_MEMORY_MANAGER_H_
 #define JXL_MEMORY_MANAGER_H_
 
@@ -65,3 +67,5 @@ typedef struct JxlMemoryManagerStruct {
 #endif
 
 #endif 
+
+

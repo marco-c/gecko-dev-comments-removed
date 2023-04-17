@@ -104,57 +104,20 @@ class ThreadPool {
   void* const runner_opaque_;
 };
 
-void TraceRunBegin(const char* caller, double* t0);
-void TraceRunEnd(const char* caller, double t0);
-
 
 template <class InitFunc, class DataFunc>
 bool RunOnPool(ThreadPool* pool, const uint32_t begin, const uint32_t end,
                const InitFunc& init_func, const DataFunc& data_func,
                const char* caller) {
   Status ret = true;
-  double t0;
-  TraceRunBegin(caller, &t0);
   if (pool == nullptr) {
     ThreadPool default_pool(nullptr, nullptr);
     ret = default_pool.Run(begin, end, init_func, data_func, caller);
   } else {
     ret = pool->Run(begin, end, init_func, data_func, caller);
   }
-  TraceRunEnd(caller, t0);
   return ret;
 }
-
-
-
-
-
-class Divider {
- public:
-  
-  explicit Divider(const uint32_t d) : shift_(FloorLog2Nonzero(d)) {
-    
-    
-    JXL_ASSERT((d & (d - 1)) != 0);
-
-    
-    const uint64_t next_pow2 = 1ULL << (shift_ + 1);
-
-    mul_ = ((next_pow2 - d) << 32) / d + 1;
-  }
-
-  
-  inline uint32_t operator()(const uint32_t n) const {
-    
-    
-    const uint32_t hi = (uint64_t(mul_) * n) >> 32;
-    return (hi + ((n - hi) >> 1)) >> shift_;
-  }
-
- private:
-  uint32_t mul_;
-  const int shift_;
-};
 
 }  
 

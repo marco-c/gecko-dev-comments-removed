@@ -35,7 +35,10 @@ struct OutputEncodingInfo {
   
   
   OpsinParams opsin_params;
-  Status Set(const ImageMetadata& metadata);
+  
+  
+  
+  Status Set(const CodecMetadata& metadata, const ColorEncoding& default_enc);
   bool all_default_opsin = true;
   bool color_encoding_is_original = false;
 };
@@ -55,12 +58,6 @@ void OpsinToLinear(const Image3F& opsin, const Rect& rect, ThreadPool* pool,
 
 
 void YcbcrToRgb(const Image3F& ycbcr, Image3F* rgb, const Rect& rect);
-
-ImageF UpsampleV2(const ImageF& src, ThreadPool* pool);
-
-
-
-ImageF UpsampleH2(const ImageF& src, size_t output_xsize, ThreadPool* pool);
 
 bool HasFastXYBTosRGB8();
 void FastXYBTosRGB8(const Image3F& input, const Rect& input_rect,

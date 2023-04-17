@@ -172,14 +172,12 @@ class ImageBundle {
     const ExtraChannelInfo* eci = metadata_->Find(ExtraChannel::kAlpha);
     return (eci == nullptr) ? false : eci->alpha_associated;
   }
+  
+  void PremultiplyAlpha();
+  
+  void UnpremultiplyAlpha();
   const ImageF& alpha() const;
   ImageF* alpha();
-
-  
-  bool HasDepth() const {
-    return metadata_->Find(ExtraChannel::kDepth) != nullptr;
-  }
-  const ImageF& depth() const;
 
   
 
@@ -201,7 +199,13 @@ class ImageBundle {
 
   
   
-  bool IsJPEG() const { return jpeg_data != nullptr; }
+  bool IsJPEG() const {
+#if JPEGXL_ENABLE_TRANSCODE_JPEG
+    return jpeg_data != nullptr;
+#else   
+    return false;
+#endif  
+  }
 
   std::unique_ptr<jpeg::JPEGData> jpeg_data;
   

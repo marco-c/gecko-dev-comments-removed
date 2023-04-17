@@ -8,6 +8,8 @@
 
 
 
+
+
 #ifndef JXL_ENCODE_H_
 #define JXL_ENCODE_H_
 
@@ -152,8 +154,17 @@ JXL_EXPORT JxlEncoderStatus JxlEncoderProcessOutput(JxlEncoder* enc,
 
 
 
+
+
+
+
+
+
+
+
 JXL_EXPORT JxlEncoderStatus JxlEncoderAddJPEGFrame(
     const JxlEncoderOptions* options, const uint8_t* buffer, size_t size);
+
 
 
 
@@ -224,6 +235,17 @@ JxlEncoderSetColorEncoding(JxlEncoder* enc, const JxlColorEncoding* color);
 JXL_EXPORT JxlEncoderStatus JxlEncoderSetICCProfile(JxlEncoder* enc,
                                                     const uint8_t* icc_profile,
                                                     size_t size);
+
+
+
+
+
+
+
+
+
+
+JXL_EXPORT void JxlEncoderInitBasicInfo(JxlBasicInfo* info);
 
 
 
@@ -306,6 +328,7 @@ JxlEncoderOptionsSetDecodingSpeed(JxlEncoderOptions* options, int tier);
 
 
 
+
 JXL_EXPORT JxlEncoderStatus
 JxlEncoderOptionsSetEffort(JxlEncoderOptions* options, int effort);
 
@@ -369,3 +392,5 @@ JXL_EXPORT void JxlColorEncodingSetToLinearSRGB(
 #endif
 
 #endif 
+
+

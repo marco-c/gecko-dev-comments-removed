@@ -8,6 +8,8 @@
 
 
 
+
+
 #ifndef JXL_BUTTERAUGLI_H_
 #define JXL_BUTTERAUGLI_H_
 
@@ -154,3 +156,5 @@ JXL_EXPORT void JxlButteraugliResultGetDistmap(
 #endif
 
 #endif 
+
+

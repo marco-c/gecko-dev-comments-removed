@@ -11,6 +11,7 @@
 #include <stdint.h>
 
 #include "lib/extras/codec.h"
+#include "lib/extras/color_hints.h"
 #include "lib/jxl/base/data_parallel.h"
 #include "lib/jxl/base/padded_bytes.h"
 #include "lib/jxl/base/span.h"
@@ -18,6 +19,7 @@
 #include "lib/jxl/codec_in_out.h"
 
 namespace jxl {
+namespace extras {
 
 enum class JpegEncoder {
   kLibJpeg,
@@ -33,15 +35,26 @@ static inline bool IsJPG(const Span<const uint8_t> bytes) {
 
 
 
-Status DecodeImageJPG(Span<const uint8_t> bytes, ThreadPool* pool,
-                      CodecInOut* io, double* elapsed_deinterleave = nullptr);
+Status DecodeImageJPG(Span<const uint8_t> bytes, const ColorHints& color_hints,
+                      ThreadPool* pool, CodecInOut* io,
+                      double* elapsed_deinterleave = nullptr);
 
 
 Status EncodeImageJPG(const CodecInOut* io, JpegEncoder encoder, size_t quality,
                       YCbCrChromaSubsampling chroma_subsampling,
-                      ThreadPool* pool, PaddedBytes* bytes,
-                      DecodeTarget target = DecodeTarget::kPixels);
+                      ThreadPool* pool, PaddedBytes* bytes);
 
+
+
+
+
+
+Status DecodeImageJPGCoefficients(Span<const uint8_t> bytes, CodecInOut* io);
+
+
+Status EncodeImageJPGCoefficients(const CodecInOut* io, PaddedBytes* bytes);
+
+}  
 }  
 
 #endif  

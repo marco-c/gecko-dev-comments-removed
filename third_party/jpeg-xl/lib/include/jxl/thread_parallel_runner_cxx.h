@@ -9,6 +9,9 @@
 
 
 
+
+
+
 #ifndef JXL_THREAD_PARALLEL_RUNNER_CXX_H_
 #define JXL_THREAD_PARALLEL_RUNNER_CXX_H_
 
@@ -57,3 +60,5 @@ static inline JxlThreadParallelRunnerPtr JxlThreadParallelRunnerMake(
 }
 
 #endif  
+
+

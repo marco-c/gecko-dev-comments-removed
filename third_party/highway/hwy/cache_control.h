@@ -32,6 +32,14 @@
 #include <emmintrin.h>  
 #endif
 
+
+
+
+#pragma push_macro("LoadFence")
+#pragma push_macro("StoreFence")
+#undef LoadFence
+#undef StoreFence
+
 namespace hwy {
 
 
@@ -91,5 +99,9 @@ HWY_INLINE HWY_ATTR_CACHE void Pause() {
 }
 
 }  
+
+
+#pragma pop_macro("StoreFence")
+#pragma pop_macro("LoadFence")
 
 #endif  

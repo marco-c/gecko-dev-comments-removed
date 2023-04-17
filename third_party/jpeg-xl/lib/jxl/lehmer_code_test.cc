@@ -68,7 +68,7 @@ void Roundtrip(size_t n, WorkingSet<PermutationT>* ws) {
 
 template <typename PermutationT>
 void RoundtripSizeRange(ThreadPool* pool, uint32_t begin, uint32_t end) {
-  ASSERT_NE(0, begin);  
+  ASSERT_NE(0u, begin);  
   std::vector<WorkingSet<PermutationT>> working_sets;
 
   RunOnPool(
