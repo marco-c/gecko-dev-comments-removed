@@ -51,7 +51,7 @@ class ASCIIMask {
 
 
 
-namespace details {
+namespace asciimask_details {
 template <typename F, size_t... Indices>
 constexpr std::array<bool, 128> CreateASCIIMask(
     F fun, std::index_sequence<Indices...>) {
@@ -61,7 +61,8 @@ constexpr std::array<bool, 128> CreateASCIIMask(
 
 template <typename F>
 constexpr std::array<bool, 128> CreateASCIIMask(F fun) {
-  return details::CreateASCIIMask(fun, std::make_index_sequence<128>{});
+  return asciimask_details::CreateASCIIMask(fun,
+                                            std::make_index_sequence<128>{});
 }
 
 }  

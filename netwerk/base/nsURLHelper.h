@@ -8,6 +8,7 @@
 
 #include "nsString.h"
 #include "nsTArray.h"
+#include "nsASCIIMask.h"
 
 class nsIFile;
 class nsIURLParser;
@@ -101,7 +102,9 @@ void net_FilterURIString(const nsACString& input, nsACString& result);
 
 
 
+
 nsresult net_FilterAndEscapeURI(const nsACString& aInput, uint32_t aFlags,
+                                const ASCIIMaskArray& aFilterMask,
                                 nsACString& aResult);
 
 #if defined(XP_WIN)
