@@ -1566,7 +1566,8 @@
     function _assert_inherits(name) {
         return function (object, property_name, description)
         {
-            assert(typeof object === "object" || typeof object === "function" ||
+            assert((typeof object === "object" && object !== null) ||
+                   typeof object === "function" ||
                    
                    String(object) === "[object HTMLAllCollection]",
                    name, description,
