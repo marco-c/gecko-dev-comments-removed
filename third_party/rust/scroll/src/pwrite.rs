@@ -24,11 +24,6 @@ use crate::error;
 
 
 
-
-
-
-
-
 pub trait Pwrite<Ctx, E> : Index<usize> + IndexMut<RangeFrom<usize>> + MeasureWith<Ctx>
  where
        Ctx: Copy,

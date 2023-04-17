@@ -32,6 +32,7 @@ use crate::ctx::{FromCtx, IntoCtx};
 
 
 
+
 pub trait Cread<Ctx, I = usize> : Index<I> + Index<RangeFrom<I>>
  where
     Ctx: Copy,
@@ -85,6 +86,8 @@ pub trait Cread<Ctx, I = usize> : Index<I> + Index<RangeFrom<I>>
 }
 
 impl<Ctx: Copy, I, R: ?Sized + Index<I> + Index<RangeFrom<I>>> Cread<Ctx, I> for R {}
+
+
 
 
 
