@@ -179,8 +179,7 @@ bool IsReasonableHeaderValue(const nsACString& s);
 
 
 
-const char* FindToken(const char* input, const char* token,
-                      const char* separators);
+const char* FindToken(const char* input, const char* token, const char* seps);
 
 
 
@@ -231,7 +230,7 @@ void DetermineFramingAndImmutability(nsICacheEntry* entry,
 
 
 void NotifyActiveTabLoadOptimization();
-TimeStamp const GetLastActiveTabLoadOptimizationHit();
+TimeStamp GetLastActiveTabLoadOptimizationHit();
 void SetLastActiveTabLoadOptimizationHit(TimeStamp const& when);
 bool IsBeforeLastActiveTabLoadOptimization(TimeStamp const& when);
 
@@ -369,7 +368,7 @@ class ParsedHeaderValueListList {
   
   
   
-  explicit ParsedHeaderValueListList(const nsCString& txt,
+  explicit ParsedHeaderValueListList(const nsCString& fullHeader,
                                      bool allowInvalidValue = true);
   nsTArray<ParsedHeaderValueList> mValues;
 
