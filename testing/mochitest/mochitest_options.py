@@ -1174,7 +1174,6 @@ class MochitestArguments(ArgumentContainer):
             "forkserver": options.defaultLeakThreshold,
             
             "gmplugin": 20000,
-            "rdd": 400,
         }
 
         
