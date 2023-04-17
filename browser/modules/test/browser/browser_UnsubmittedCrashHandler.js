@@ -115,6 +115,7 @@ function createPendingCrashReports(howMany, accessDate) {
     ServerURL: SERVER_URL,
     TelemetryServerURL: "http://telemetry.mozilla.org/",
     TelemetryClientId: "c69e7487-df10-4c98-ab1a-c85660feecf3",
+    TelemetrySessionId: "22af5a41-6e84-4112-b1f7-4cb12cb6f6a5",
   });
 
   return (async function() {
@@ -160,6 +161,7 @@ function waitForSubmittedReports(reportIDs) {
             "ServerURL",
             "TelemetryClientId",
             "TelemetryServerURL",
+            "TelemetrySessionId",
           ];
           for (const key of blockedAnnotations) {
             Assert.ok(
@@ -304,7 +306,7 @@ add_task(async function test_other_ignored() {
   Assert.ok(notification, "There should be a notification");
 
   
-  notification.querySelector(".messageCloseButton").click();
+  notification.closeButton.click();
   gNotificationBox.removeNotification(notification, true);
   await waitForIgnoredReports(toIgnore);
 
@@ -367,7 +369,9 @@ add_task(async function test_can_submit() {
 
   
   
-  let buttons = notification.querySelectorAll(".notification-button");
+  let buttons = notification.buttonContainer.querySelectorAll(
+    ".notification-button"
+  );
   
   let submit = buttons[0];
 
@@ -395,7 +399,9 @@ add_task(async function test_can_submit_several() {
 
   
   
-  let buttons = notification.querySelectorAll(".notification-button");
+  let buttons = notification.buttonContainer.querySelectorAll(
+    ".notification-button"
+  );
   
   let submit = buttons[0];
 
@@ -431,7 +437,9 @@ add_task(async function test_can_submit_always() {
 
   
   
-  let buttons = notification.querySelectorAll(".notification-button");
+  let buttons = notification.buttonContainer.querySelectorAll(
+    ".notification-button"
+  );
   
   let sendAll = buttons[1];
 
@@ -493,7 +501,7 @@ add_task(async function test_can_ignore() {
   Assert.ok(notification, "There should be a notification");
 
   
-  notification.querySelector(".messageCloseButton").click();
+  notification.closeButton.click();
   
   
   gNotificationBox.removeNotification(notification, true);
@@ -564,7 +572,7 @@ add_task(async function test_shutdown_while_not_showing() {
   Assert.ok(notification, "There should be a notification");
 
   
-  notification.querySelector(".messageCloseButton").click();
+  notification.closeButton.click();
   
   
   gNotificationBox.removeNotification(notification, true);
