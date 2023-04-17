@@ -6,9 +6,7 @@
 
 ChromeUtils.import("resource://gre/modules/NetUtil.jsm");
 
-let prefs;
 let h2Port;
-let listen;
 
 const dns = Cc["@mozilla.org/network/dns-service;1"].getService(
   Ci.nsIDNSService
@@ -16,93 +14,28 @@ const dns = Cc["@mozilla.org/network/dns-service;1"].getService(
 const certOverrideService = Cc[
   "@mozilla.org/security/certoverride;1"
 ].getService(Ci.nsICertOverrideService);
-const threadManager = Cc["@mozilla.org/thread-manager;1"].getService(
-  Ci.nsIThreadManager
-);
-const mainThread = threadManager.currentThread;
-
-const defaultOriginAttributes = {};
 
 function setup() {
+  trr_test_setup();
+
   let env = Cc["@mozilla.org/process/environment;1"].getService(
     Ci.nsIEnvironment
   );
   h2Port = env.get("MOZHTTP2_PORT");
   Assert.notEqual(h2Port, null);
   Assert.notEqual(h2Port, "");
-
-  
-  do_get_profile();
-  prefs = Cc["@mozilla.org/preferences-service;1"].getService(Ci.nsIPrefBranch);
-
-  prefs.setBoolPref("network.http.spdy.enabled", true);
-  prefs.setBoolPref("network.http.spdy.enabled.http2", true);
-  
-  prefs.setCharPref("network.trr.bootstrapAddress", "127.0.0.1");
-
-  
-  prefs.setBoolPref("network.dns.native-is-localhost", true);
-
-  
-  prefs.setIntPref("network.trr.mode", 2); 
-  prefs.setBoolPref("network.trr.wait-for-portal", false);
-  
-  prefs.setCharPref("network.trr.confirmationNS", "skip");
-
-  
-  
-  Services.prefs.setBoolPref("network.trr.clear-cache-on-pref-change", false);
+  Services.prefs.setIntPref("network.trr.mode", 2); 
 
   Services.prefs.setBoolPref("network.dns.upgrade_with_https_rr", true);
   Services.prefs.setBoolPref("network.dns.use_https_rr_as_altsvc", true);
-
-  
-  
-  const certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
-    Ci.nsIX509CertDB
-  );
-  addCertFromFile(certdb, "http2-ca.pem", "CTu,u,u");
 }
 
 setup();
 registerCleanupFunction(() => {
-  prefs.clearUserPref("network.http.spdy.enabled");
-  prefs.clearUserPref("network.http.spdy.enabled.http2");
-  prefs.clearUserPref("network.dns.localDomains");
-  prefs.clearUserPref("network.dns.native-is-localhost");
-  prefs.clearUserPref("network.trr.mode");
-  prefs.clearUserPref("network.trr.uri");
-  prefs.clearUserPref("network.trr.credentials");
-  prefs.clearUserPref("network.trr.wait-for-portal");
-  prefs.clearUserPref("network.trr.allow-rfc1918");
-  prefs.clearUserPref("network.trr.useGET");
-  prefs.clearUserPref("network.trr.confirmationNS");
-  prefs.clearUserPref("network.trr.bootstrapAddress");
-  prefs.clearUserPref("network.trr.blacklist-duration");
-  prefs.clearUserPref("network.trr.request-timeout");
-  prefs.clearUserPref("network.trr.clear-cache-on-pref-change");
-  prefs.clearUserPref("network.dns.upgrade_with_https_rr");
-  prefs.clearUserPref("network.dns.use_https_rr_as_altsvc");
+  trr_clear_prefs();
+  Services.prefs.clearUserPref("network.dns.upgrade_with_https_rr");
+  Services.prefs.clearUserPref("network.dns.use_https_rr_as_altsvc");
 });
-
-class DNSListener {
-  constructor() {
-    this.promise = new Promise(resolve => {
-      this.resolve = resolve;
-    });
-  }
-  onLookupComplete(inRequest, inRecord, inStatus) {
-    this.resolve([inRequest, inRecord, inStatus]);
-  }
-  
-  then() {
-    return this.promise.then.apply(this.promise, arguments);
-  }
-}
-
-DNSListener.prototype.QueryInterface = ChromeUtils.generateQI([
-  "nsIDNSListener",
-]);
 
 function makeChan(url) {
   let chan = NetUtil.newChannel({
@@ -128,7 +61,7 @@ function channelOpenPromise(chan) {
 
 add_task(async function testUseHTTPSSVCForHttpsUpgrade() {
   
-  prefs.setCharPref(
+  Services.prefs.setCharPref(
     "network.trr.uri",
     "https://foo.example.com:" + h2Port + "/httpssvc_as_altsvc"
   );
@@ -169,7 +102,7 @@ EventSinkListener.prototype.QueryInterface = ChromeUtils.generateQI([
 
 add_task(async function testUseHTTPSSVCAsHSTS() {
   
-  prefs.setCharPref(
+  Services.prefs.setCharPref(
     "network.trr.uri",
     "https://foo.example.com:" + h2Port + "/httpssvc_as_altsvc"
   );
@@ -210,28 +143,16 @@ add_task(async function testUseHTTPSSVCAsHSTS() {
 
 add_task(async function testUseHTTPSSVC() {
   
-  prefs.setCharPref(
+  Services.prefs.setCharPref(
     "network.trr.uri",
     "https://foo.example.com:" + h2Port + "/httpssvc_as_altsvc"
   );
 
-  let listener = new DNSListener();
-
   
   
-  let request = dns.asyncResolve(
-    "test.httpssvc.com",
-    dns.RESOLVE_TYPE_HTTPSSVC,
-    0,
-    null, 
-    listener,
-    mainThread,
-    defaultOriginAttributes
-  );
-
-  let [inRequest, , inStatus] = await listener;
-  Assert.equal(inRequest, request, "correct request was used");
-  Assert.equal(inStatus, Cr.NS_OK, "status OK");
+  await new TRRDNSListener("test.httpssvc.com", {
+    type: dns.RESOLVE_TYPE_HTTPSSVC,
+  });
 
   
   
@@ -291,21 +212,9 @@ add_task(async function testFallback() {
     ],
   });
 
-  let listener = new DNSListener();
-
-  let request = dns.asyncResolve(
-    "test.fallback.com",
-    dns.RESOLVE_TYPE_HTTPSSVC,
-    0,
-    null, 
-    listener,
-    mainThread,
-    defaultOriginAttributes
-  );
-
-  let [inRequest, inRecord, inStatus] = await listener;
-  Assert.equal(inRequest, request, "correct request was used");
-  Assert.equal(inStatus, Cr.NS_OK, "status OK");
+  let [, inRecord] = await new TRRDNSListener("test.fallback.com", {
+    type: dns.RESOLVE_TYPE_HTTPSSVC,
+  });
 
   let record = inRecord
     .QueryInterface(Ci.nsIDNSHTTPSSVCRecord)
