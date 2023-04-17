@@ -544,6 +544,10 @@ class BrowserParent final : public PBrowserParent,
   mozilla::ipc::IPCResult RecvSynthesizeNativeTouchpadDoubleTap(
       const LayoutDeviceIntPoint& aPoint, const uint32_t& aModifierFlags);
 
+  mozilla::ipc::IPCResult RecvLockNativePointer();
+
+  mozilla::ipc::IPCResult RecvUnlockNativePointer();
+
   void SendMouseEvent(const nsAString& aType, float aX, float aY,
                       int32_t aButton, int32_t aClickCount, int32_t aModifiers);
 
@@ -791,6 +795,10 @@ class BrowserParent final : public PBrowserParent,
   
   bool QueryDropLinksForVerification();
 
+  void UnlockNativePointer();
+
+  void UpdateNativePointerLockCenter(nsIWidget* aWidget);
+
  private:
   
   
@@ -974,6 +982,10 @@ class BrowserParent final : public PBrowserParent,
   
   
   bool mIsMouseEnterIntoWidgetEventSuppressed : 1;
+
+  
+  
+  bool mLockedNativePointer : 1;
 };
 
 struct MOZ_STACK_CLASS BrowserParent::AutoUseNewTab final {

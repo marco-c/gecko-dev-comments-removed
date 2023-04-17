@@ -4816,7 +4816,15 @@ void EventStateManager::SetPointerLock(nsIWidget* aWidget,
     if (dragService) {
       dragService->Suppress();
     }
+
+    
+    aWidget->LockNativePointer();
   } else {
+    if (aWidget) {
+      
+      aWidget->UnlockNativePointer();
+    }
+
     
     
     

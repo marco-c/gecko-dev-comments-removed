@@ -1833,6 +1833,16 @@ class nsIWidget : public nsISupports {
 
 
 
+
+  virtual void SetNativePointerLockCenter(
+      const LayoutDeviceIntPoint& aLockCenter) {}
+  virtual void LockNativePointer() {}
+  virtual void UnlockNativePointer() {}
+
+  
+
+
+
   virtual mozilla::ScreenIntMargin GetSafeAreaInsets() const {
     return mozilla::ScreenIntMargin();
   }
