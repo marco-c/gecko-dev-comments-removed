@@ -36,6 +36,7 @@
 #include "js/Object.h"                
 #include "js/PropertyAndElement.h"    
 #include "js/SavedFrameAPI.h"
+#include "js/Stack.h"
 #include "js/UniquePtr.h"
 #include "js/Value.h"
 #include "js/Warnings.h"  

@@ -46,6 +46,7 @@
 #include "js/friend/StackLimits.h"    
 #include "js/Printf.h"
 #include "js/PropertyAndElement.h"  
+#include "js/Stack.h"
 #include "util/DiagnosticAssertions.h"
 #include "util/DifferentialTesting.h"
 #include "util/DoubleToString.h"

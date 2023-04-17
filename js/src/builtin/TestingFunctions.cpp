@@ -84,6 +84,7 @@
 #include "js/RegExpFlags.h"  
 #include "js/SourceText.h"
 #include "js/StableStringChars.h"
+#include "js/Stack.h"
 #include "js/String.h"  
 #include "js/StructuredClone.h"
 #include "js/UbiNode.h"

@@ -20,6 +20,7 @@
 #include "js/ForOfIterator.h"         
 #include "js/friend/ErrorMessages.h"  
 #include "js/PropertySpec.h"
+#include "js/Stack.h"
 #include "vm/ArrayObject.h"
 #include "vm/AsyncFunction.h"
 #include "vm/AsyncIteration.h"
