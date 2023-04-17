@@ -4619,12 +4619,12 @@ class ShapeSnapshot {
 
   GCVector<HeapPtr<Value>, 8> slots_;
 
-  struct PropertyInfo {
+  struct PropertySnapshot {
     HeapPtr<Shape*> propShape;
     HeapPtr<PropertyKey> key;
     ShapeProperty prop;
 
-    explicit PropertyInfo(Shape* shape)
+    explicit PropertySnapshot(Shape* shape)
         : propShape(shape),
           key(shape->propertyWithKey().key()),
           prop(propShape->property()) {}
@@ -4632,15 +4632,15 @@ class ShapeSnapshot {
       TraceEdge(trc, &propShape, "propShape");
       TraceEdge(trc, &key, "key");
     }
-    bool operator==(const PropertyInfo& other) const {
+    bool operator==(const PropertySnapshot& other) const {
       return propShape == other.propShape && key == other.key &&
              prop == other.prop;
     }
-    bool operator!=(const PropertyInfo& other) const {
+    bool operator!=(const PropertySnapshot& other) const {
       return !operator==(other);
     }
   };
-  GCVector<PropertyInfo, 8> properties_;
+  GCVector<PropertySnapshot, 8> properties_;
 
  public:
   explicit ShapeSnapshot(JSContext* cx) : slots_(cx), properties_(cx) {}
@@ -4727,7 +4727,7 @@ bool ShapeSnapshot::init(JSObject* obj) {
     
     Shape* propShape = shape_;
     while (!propShape->isEmptyShape()) {
-      if (!properties_.append(PropertyInfo(propShape))) {
+      if (!properties_.append(PropertySnapshot(propShape))) {
         return false;
       }
       propShape = propShape->previous();
@@ -4754,21 +4754,21 @@ void ShapeSnapshot::checkSelf(JSContext* cx) const {
     MOZ_RELEASE_ASSERT(shape_->objectFlags() == objectFlags_);
   }
 
-  for (const PropertyInfo& propInfo : properties_) {
-    Shape* propShape = propInfo.propShape;
-    ShapeProperty prop = propInfo.prop;
+  for (const PropertySnapshot& propSnapshot : properties_) {
+    Shape* propShape = propSnapshot.propShape;
+    ShapeProperty prop = propSnapshot.prop;
 
     
     
-    if (PropertyInfo(propShape) != propInfo) {
+    if (PropertySnapshot(propShape) != propSnapshot) {
       MOZ_RELEASE_ASSERT(propShape->inDictionary());
       MOZ_RELEASE_ASSERT(prop.configurable());
       continue;
     }
 
     
-    ObjectFlags expectedFlags =
-        GetObjectFlagsForNewProperty(shape_, propInfo.key, prop.flags(), cx);
+    ObjectFlags expectedFlags = GetObjectFlagsForNewProperty(
+        shape_, propSnapshot.key, prop.flags(), cx);
     MOZ_RELEASE_ASSERT(expectedFlags == objectFlags_);
 
     
