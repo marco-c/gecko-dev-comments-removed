@@ -1263,20 +1263,10 @@ SearchService.prototype = {
       await this._init();
       TelemetryStopwatch.finish("SEARCH_SERVICE_INIT_MS");
     } catch (ex) {
-      Services.telemetry.scalarSet(
-        "browser.searchinit.init_result_status_code",
-        
-        ex.result?.toString(10)
-      );
       TelemetryStopwatch.cancel("SEARCH_SERVICE_INIT_MS");
       this._initObservers.reject(ex.result);
       throw ex;
     }
-    Services.telemetry.scalarSet(
-      "browser.searchinit.init_result_status_code",
-      
-      this._initRV?.toString(10)
-    );
 
     if (!Components.isSuccessCode(this._initRV)) {
       throw Components.Exception(
