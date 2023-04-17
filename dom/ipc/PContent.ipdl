@@ -645,7 +645,7 @@ child:
 
 
 
-    [Priority=mediumhigh] async RebuildFontList(bool aFulLRebuild);
+    [Priority=mediumhigh] async RebuildFontList(bool aFullRebuild);
 
     
 
@@ -653,6 +653,12 @@ child:
 
 
     async FontListChanged();
+
+    
+
+
+
+    async ForceGlobalReflow(bool aNeedsReframe);
 
     
 

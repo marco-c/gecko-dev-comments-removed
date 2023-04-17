@@ -138,11 +138,42 @@ bool nsPresContext::IsDOMPaintEventPending() {
   return false;
 }
 
-void nsPresContext::ForceReflowForFontInfoUpdate() {
+void nsPresContext::ForceReflowForFontInfoUpdate(bool aNeedsReframe) {
   
   
   
-  PreferenceChanged("font.internaluseonly.changed");
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (IsPrintingOrPrintPreview()) {
+    return;
+  }
+
+  
+  
+  if (auto* fonts = Document()->GetFonts()) {
+    fonts->GetUserFontSet()->ForgetLocalFaces();
+  }
+
+  FlushFontCache();
+
+  nsChangeHint changeHint =
+      aNeedsReframe ? nsChangeHint_ReconstructFrame : NS_STYLE_HINT_REFLOW;
+
+  
+  
+  auto restyleHint =
+      UsesExChUnits() ? RestyleHint::RecascadeSubtree() : RestyleHint{0};
+
+  RebuildAllStyleData(changeHint, restyleHint);
 }
 
 static bool IsVisualCharset(NotNull<const Encoding*> aCharset) {
@@ -567,46 +598,16 @@ void nsPresContext::PreferenceChanged(const char* aPrefName) {
       mMissingFonts = nullptr;
     }
   }
-  if (prefName.EqualsLiteral("font.internaluseonly.changed") &&
-      !IsPrintingOrPrintPreview()) {
-    
-    
-    if (auto* fonts = Document()->GetFonts()) {
-      fonts->GetUserFontSet()->ForgetLocalFaces();
-    }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    changeHint |= nsChangeHint_ReconstructFrame;
-    
-    
-    if (UsesExChUnits()) {
-      restyleHint |= RestyleHint::RecascadeSubtree();
-    }
-  } else if (StringBeginsWith(prefName, "font."_ns) ||
-             
-             
-             
-             prefName.EqualsLiteral("intl.accept_languages") ||
-             
-             StringBeginsWith(prefName, "bidi."_ns) ||
-             
-             StringBeginsWith(prefName, "gfx.font_rendering."_ns)) {
+  if (StringBeginsWith(prefName, "font."_ns) ||
+      
+      
+      
+      prefName.EqualsLiteral("intl.accept_languages") ||
+      
+      StringBeginsWith(prefName, "bidi."_ns) ||
+      
+      StringBeginsWith(prefName, "gfx.font_rendering."_ns)) {
     changeHint |= NS_STYLE_HINT_REFLOW;
     if (UsesExChUnits()) {
       restyleHint |= RestyleHint::RecascadeSubtree();

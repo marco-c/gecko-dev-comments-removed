@@ -1114,7 +1114,7 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
  public:
   
   
-  void ForceReflowForFontInfoUpdate();
+  void ForceReflowForFontInfoUpdate(bool aNeedsReframe);
 
   
 

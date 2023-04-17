@@ -761,9 +761,6 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   void GetPrefsAndStartLoader();
 
   
-  void ForceGlobalReflow();
-
-  
   
   
   void RebuildLocalFonts(bool aForgetLocalFaces = false);

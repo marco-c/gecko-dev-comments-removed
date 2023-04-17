@@ -1313,9 +1313,7 @@ void gfxMacPlatformFontList::RegisteredFontsChangedNotificationCallback(
   
   fl->UpdateFontList();
 
-  
-  fl->ForceGlobalReflow();
-
+  gfxPlatform::ForceGlobalReflow(gfxPlatform::NeedsReframe::Yes);
   dom::ContentParent::NotifyUpdatedFonts(true);
 }
 

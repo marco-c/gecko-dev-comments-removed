@@ -98,21 +98,15 @@ add_task(async function() {
       }
 
       
-      
-      
-      let prefBranch = Services.prefs.getBranch("font.internaluseonly.");
-
-      
       let getFontNotificationPromise = () =>
         new Promise(resolve => {
-          let prefObserver = {
-            QueryInterface: ChromeUtils.generateQI(["nsIObserver"]),
-            observe() {
-              prefBranch.removeObserver("changed", prefObserver);
-              resolve();
-            },
-          };
-          prefBranch.addObserver("changed", prefObserver);
+          const kTopic = "font-info-updated";
+          function observe() {
+            Services.obs.removeObserver(observe, kTopic);
+            resolve();
+          }
+
+          Services.obs.addObserver(observe, kTopic);
         });
 
       let homeDir = Services.dirsvc.get("Home", Ci.nsIFile);
