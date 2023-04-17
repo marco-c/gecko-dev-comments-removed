@@ -2,7 +2,7 @@
 
 
 
-#include "FileInfoTImpl.h"
+#include "FileInfoImpl.h"
 #include "FileManagerBase.h"
 
 #include "gtest/gtest.h"
@@ -18,7 +18,7 @@ using namespace mozilla::dom::indexedDB;
 
 class SimpleFileManager;
 
-using SimpleFileInfo = FileInfoT<SimpleFileManager>;
+using SimpleFileInfo = FileInfo<SimpleFileManager>;
 
 struct SimpleFileManagerStats final {
   
