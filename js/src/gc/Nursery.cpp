@@ -71,6 +71,8 @@ struct NurseryChunk : public ChunkBase {
   void poisonAfterEvict(size_t extent = ChunkSize);
 
   
+  
+  
   void markPagesUnusedHard(size_t startOffset);
 
   
@@ -113,6 +115,7 @@ inline void js::NurseryChunk::poisonAfterEvict(size_t extent) {
 
 inline void js::NurseryChunk::markPagesUnusedHard(size_t startOffset) {
   MOZ_ASSERT(startOffset >= sizeof(ChunkBase));  
+  MOZ_ASSERT(startOffset >= SystemPageSize());
   MOZ_ASSERT(startOffset <= ChunkSize);
   uintptr_t start = uintptr_t(this) + startOffset;
   size_t length = ChunkSize - startOffset;
@@ -121,8 +124,11 @@ inline void js::NurseryChunk::markPagesUnusedHard(size_t startOffset) {
 
 inline bool js::NurseryChunk::markPagesInUseHard(size_t endOffset) {
   MOZ_ASSERT(endOffset >= sizeof(ChunkBase));
+  MOZ_ASSERT(endOffset >= SystemPageSize());
   MOZ_ASSERT(endOffset <= ChunkSize);
-  return MarkPagesInUseHard(this, endOffset);
+  uintptr_t start = uintptr_t(this) + SystemPageSize();
+  size_t length = endOffset - SystemPageSize();
+  return MarkPagesInUseHard(reinterpret_cast<void*>(start), length);
 }
 
 
