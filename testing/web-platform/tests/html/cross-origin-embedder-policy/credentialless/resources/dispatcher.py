@@ -22,7 +22,7 @@ def main(request, response):
     
     
     with stash.lock:
-        queue = stash.take(uuid) or [];
+        queue = stash.take(uuid, '/coep-credentialless') or [];
 
         
         if b"show-headers" in request.GET:
@@ -45,5 +45,5 @@ def main(request, response):
             else:
                 ret = queue.pop(0)
 
-        stash.put(uuid, queue)
+        stash.put(uuid, queue, '/coep-credentialless')
     return ret;
