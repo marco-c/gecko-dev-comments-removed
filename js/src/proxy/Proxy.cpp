@@ -82,7 +82,7 @@ static bool ProxyGetOnExpando(JSContext* cx, HandleObject proxy,
 
   
   if (desc->hasGetter()) {
-    RootedValue getter(cx, JS::ObjectValue(*desc->getterObject()));
+    RootedValue getter(cx, JS::ObjectValue(*desc->getter()));
     return js::CallGetter(cx, receiver, getter, vp);
   }
 
