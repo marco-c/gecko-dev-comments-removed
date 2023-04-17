@@ -1500,7 +1500,6 @@ class BuildDriver(MozbuildObject):
         line_handler = line_handler or on_line
 
         append_env = dict(append_env or {})
-        append_env["MAKE"] = self._make_path()
 
         
         
