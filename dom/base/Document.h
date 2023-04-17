@@ -1567,11 +1567,6 @@ class Document : public nsINode,
   
 
 
-  already_AddRefed<nsPIWindowRoot> GetWindowRoot();
-
-  
-
-
   void DisconnectNodeTree();
 
   
@@ -3527,13 +3522,8 @@ class Document : public nsINode,
   XULBroadcastManager* GetXULBroadcastManager() const {
     return mXULBroadcastManager;
   }
-  already_AddRefed<nsINode> GetPopupNode();
-  void SetPopupNode(nsINode* aNode);
   nsINode* GetPopupRangeParent(ErrorResult& aRv);
   int32_t GetPopupRangeOffset(ErrorResult& aRv);
-  already_AddRefed<nsINode> GetTooltipNode();
-  void SetTooltipNode(nsINode* aNode) { 
-  }
 
   bool DevToolsWatchingDOMMutations() const {
     return mDevToolsWatchingDOMMutations;

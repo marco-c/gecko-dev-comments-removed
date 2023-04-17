@@ -647,11 +647,6 @@ Tester.prototype = {
       }, this);
 
       
-      
-      
-      document.popupNode = null;
-
-      
       await new Promise(resolve => SpecialPowers.flushPrefEnv(resolve));
 
       if (gConfig.cleanupCrashes) {
