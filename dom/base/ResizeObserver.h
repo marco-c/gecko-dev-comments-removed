@@ -7,6 +7,7 @@
 #ifndef mozilla_dom_ResizeObserver_h
 #define mozilla_dom_ResizeObserver_h
 
+#include "gfxPoint.h"
 #include "js/TypeDecls.h"
 #include "mozilla/AppUnits.h"
 #include "mozilla/Attributes.h"
@@ -231,11 +232,9 @@ class ResizeObserverSize final : public nsISupports, public nsWrapperCache {
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(ResizeObserverSize)
 
-  
-  
-  ResizeObserverSize(nsISupports* aOwner, const nsSize& aSize,
+  ResizeObserverSize(nsISupports* aOwner, const gfx::Size& aSize,
                      const WritingMode aWM)
-      : mOwner(aOwner), mSize(aWM, aSize), mWM(aWM) {
+      : mOwner(aOwner), mSize(aSize), mWM(aWM) {
     MOZ_ASSERT(mOwner, "Need a non-null owner");
   }
 
@@ -247,18 +246,22 @@ class ResizeObserverSize final : public nsISupports, public nsWrapperCache {
   }
 
   double InlineSize() const {
-    return NSAppUnitsToDoublePixels(mSize.ISize(mWM), AppUnitsPerCSSPixel());
+    return mWM.IsVertical() ? mSize.Height() : mSize.Width();
   }
 
   double BlockSize() const {
-    return NSAppUnitsToDoublePixels(mSize.BSize(mWM), AppUnitsPerCSSPixel());
+    return mWM.IsVertical() ? mSize.Width() : mSize.Height();
   }
 
  protected:
   ~ResizeObserverSize() = default;
 
   nsCOMPtr<nsISupports> mOwner;
-  const LogicalSize mSize;
+  
+  
+  
+  const gfx::Size mSize;
+  
   const WritingMode mWM;
 };
 
