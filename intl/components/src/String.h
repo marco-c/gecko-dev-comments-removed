@@ -243,6 +243,11 @@ class String final {
     utext_close(&text);
     return len;
   }
+
+  
+
+
+  static Span<const char> GetUnicodeVersion();
 };
 
 }  
