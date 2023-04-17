@@ -48,24 +48,6 @@ dictionary L10nMessage {
 
 
 
-callback GenerateBundles = Promise<any> (sequence<DOMString> aResourceIds);
-callback GenerateBundlesSync = any (sequence<DOMString> aResourceIds);
-
-
-
-
-
-
-dictionary BundleGenerator {
-  GenerateBundles generateBundles;
-  GenerateBundlesSync generateBundlesSync;
-};
-
-
-
-
-
-
 
 
 
@@ -99,14 +81,14 @@ interface Localization {
   
 
 
-  void addResourceIds(sequence<DOMString> aResourceIds);
+  void addResourceIds(sequence<UTF8String> aResourceIds);
 
   
 
 
 
 
-  unsigned long removeResourceIds(sequence<DOMString> aResourceIds);
+  unsigned long removeResourceIds(sequence<UTF8String> aResourceIds);
 
   
 
