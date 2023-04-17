@@ -130,9 +130,7 @@ nsresult TextEditor::Init(Document& aDoc, Element* aRoot,
     return rv;
   }
 
-  
-  
-  AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
+  AutoEditActionDataSetter editActionData(*this, EditAction::eInitializing);
   if (NS_WARN_IF(!editActionData.CanHandle())) {
     return NS_ERROR_FAILURE;
   }

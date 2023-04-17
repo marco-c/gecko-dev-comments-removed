@@ -25,6 +25,9 @@ enum class EditAction {
   eNotEditing,
 
   
+  eInitializing,
+
+  
   eInsertText,
 
   
@@ -632,6 +635,7 @@ inline bool MayEditActionDeleteSelection(const EditAction aEditAction) {
   switch (aEditAction) {
     case EditAction::eNone:
     case EditAction::eNotEditing:
+    case EditAction::eInitializing:
       return false;
 
     

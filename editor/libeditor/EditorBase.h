@@ -1142,6 +1142,9 @@ class EditorBase : public nsIEditor,
         case EditAction::eNotEditing:
         
         
+        case EditAction::eInitializing:
+        
+        
         case EditAction::eUnknown:
         
         
