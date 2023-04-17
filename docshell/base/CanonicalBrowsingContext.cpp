@@ -740,12 +740,12 @@ void CanonicalBrowsingContext::SessionHistoryCommit(uint64_t aLoadId,
           }
         }
 
-        if (loadFromSessionHistory) {
-          
-          shistory->UpdateIndex();
-        } else if (addEntry) {
+        if (!loadFromSessionHistory && addEntry) {
           shistory->AddEntry(mActiveEntry, aPersist);
         }
+        
+        
+        shistory->UpdateIndexWithEntry(mActiveEntry);
       } else {
         
         
@@ -759,9 +759,6 @@ void CanonicalBrowsingContext::SessionHistoryCommit(uint64_t aLoadId,
                                                          this);
           }
           mActiveEntry = newActiveEntry;
-          
-          
-          shistory->UpdateIndex();
         } else if (addEntry) {
           if (mActiveEntry) {
             if (LOAD_TYPE_HAS_FLAGS(
@@ -791,6 +788,10 @@ void CanonicalBrowsingContext::SessionHistoryCommit(uint64_t aLoadId,
             }
           }
         }
+        
+        
+        
+        shistory->UpdateIndexWithEntry(mActiveEntry);
       }
 
       ResetSHEntryHasUserInteractionCache();
@@ -2334,8 +2335,7 @@ bool CanonicalBrowsingContext::AllowedInBFCache(
   uint16_t bfcacheCombo = 0;
   if (mRestoreState) {
     bfcacheCombo |= BFCacheStatus::RESTORING;
-    MOZ_LOG(gSHIPBFCacheLog, LogLevel::Debug,
-            (" * during session restore"));
+    MOZ_LOG(gSHIPBFCacheLog, LogLevel::Debug, (" * during session restore"));
   }
 
   if (Group()->Toplevels().Length() > 1) {
