@@ -10,7 +10,7 @@ use webdriver::error::{ErrorStatus, WebDriverError};
 
 
 
-const TARGET_PORT: u16 = 2829;
+const MARIONETTE_TARGET_PORT: u16 = 2829;
 
 const CONFIG_FILE_HEADING: &str = r#"## GeckoView configuration YAML
 ##
@@ -103,8 +103,11 @@ pub struct AndroidHandler {
     pub test_root: UnixPathBuf,
 
     
-    pub host_port: u16,
-    pub target_port: u16,
+    pub marionette_host_port: u16,
+    pub marionette_target_port: u16,
+
+    
+    pub websocket_port: Option<u16>,
 }
 
 impl Drop for AndroidHandler {
@@ -130,21 +133,39 @@ impl Drop for AndroidHandler {
             Err(e) => error!("Failed deleting test root folder: {}", e),
         }
 
-        match self.process.device.kill_forward_port(self.host_port) {
+        match self
+            .process
+            .device
+            .kill_forward_port(self.marionette_host_port)
+        {
             Ok(_) => debug!(
-                "Android port forward ({} -> {}) stopped",
-                &self.host_port, &self.target_port
+                "Marionette port forward ({} -> {}) stopped",
+                &self.marionette_host_port, &self.marionette_target_port
             ),
             Err(e) => error!(
-                "Android port forward ({} -> {}) failed to stop: {}",
-                &self.host_port, &self.target_port, e
+                "Marionette port forward ({} -> {}) failed to stop: {}",
+                &self.marionette_host_port, &self.marionette_target_port, e
             ),
+        }
+
+        if let Some(port) = self.websocket_port {
+            match self.process.device.kill_forward_port(port) {
+                Ok(_) => debug!("WebSocket port forward ({0} -> {0}) stopped", &port),
+                Err(e) => error!(
+                    "WebSocket port forward ({0} -> {0}) failed to stop: {1}",
+                    &port, e
+                ),
+            }
         }
     }
 }
 
 impl AndroidHandler {
-    pub fn new(options: &AndroidOptions, host_port: u16) -> Result<AndroidHandler> {
+    pub fn new(
+        options: &AndroidOptions,
+        marionette_host_port: u16,
+        websocket_port: Option<u16>,
+    ) -> Result<AndroidHandler> {
         
         
         
@@ -160,11 +181,17 @@ impl AndroidHandler {
         let mut device = host.device_or_default(options.device_serial.as_ref(), options.storage)?;
 
         
-        device.forward_port(host_port, TARGET_PORT)?;
+        device.forward_port(marionette_host_port, MARIONETTE_TARGET_PORT)?;
         debug!(
-            "Android port forward ({} -> {}) started",
-            host_port, TARGET_PORT
+            "Marionette port forward ({} -> {}) started",
+            marionette_host_port, MARIONETTE_TARGET_PORT
         );
+
+        if let Some(port) = websocket_port {
+            
+            device.forward_port(port, port)?;
+            debug!("WebSocket port forward ({} -> {}) started", port, port);
+        }
 
         let test_root = match device.storage {
             AndroidStorage::App => {
@@ -245,9 +272,10 @@ impl AndroidHandler {
             process,
             profile,
             test_root,
-            host_port,
+            marionette_host_port,
+            marionette_target_port: MARIONETTE_TARGET_PORT,
             options: options.clone(),
-            target_port: TARGET_PORT,
+            websocket_port,
         })
     }
 
@@ -426,7 +454,7 @@ mod test {
 
     fn run_handler_storage_test(package: &str, storage: AndroidStorageInput) {
         let options = AndroidOptions::new(package.to_owned(), storage);
-        let handler = AndroidHandler::new(&options, 4242).expect("has valid Android handler");
+        let handler = AndroidHandler::new(&options, 4242, None).expect("has valid Android handler");
 
         assert_eq!(handler.options, options);
         assert_eq!(handler.process.package, package);
