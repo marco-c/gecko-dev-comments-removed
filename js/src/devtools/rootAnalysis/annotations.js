@@ -289,6 +289,11 @@ var ignoreFunctions = {
     
     
     "uint8 nsAutoOwningEventTarget::IsCurrentThread() const": true,
+
+    
+    
+    
+    "void mozilla::dom::JSStreamConsumer::~JSStreamConsumer() [[base_dtor]]": true,
 };
 
 function extraGCFunctions() {

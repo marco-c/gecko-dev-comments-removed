@@ -244,19 +244,6 @@ class WindowStreamOwner final : public nsIObserver,
     return self.forget();
   }
 
-  struct Destroyer final : Runnable {
-    RefPtr<WindowStreamOwner> mDoomed;
-
-    explicit Destroyer(already_AddRefed<WindowStreamOwner> aDoomed)
-        : Runnable("WindowStreamOwner::Destroyer"), mDoomed(aDoomed) {}
-
-    NS_IMETHOD
-    Run() override {
-      mDoomed = nullptr;
-      return NS_OK;
-    }
-  };
-
   
 
   NS_IMETHOD
@@ -287,15 +274,23 @@ class WindowStreamOwner final : public nsIObserver,
 
 NS_IMPL_ISUPPORTS(WindowStreamOwner, nsIObserver, nsISupportsWeakReference)
 
+inline nsISupports* ToSupports(WindowStreamOwner* aObj) {
+  return static_cast<nsIObserver*>(aObj);
+}
+
 class WorkerStreamOwner final {
  public:
   NS_INLINE_DECL_REFCOUNTING(WorkerStreamOwner)
 
-  explicit WorkerStreamOwner(nsIAsyncInputStream* aStream) : mStream(aStream) {}
+  explicit WorkerStreamOwner(nsIAsyncInputStream* aStream,
+                             nsCOMPtr<nsIEventTarget>&& target)
+      : mStream(aStream), mOwningEventTarget(std::move(target)) {}
 
   static already_AddRefed<WorkerStreamOwner> Create(
-      nsIAsyncInputStream* aStream, WorkerPrivate* aWorker) {
-    RefPtr<WorkerStreamOwner> self = new WorkerStreamOwner(aStream);
+      nsIAsyncInputStream* aStream, WorkerPrivate* aWorker,
+      nsCOMPtr<nsIEventTarget>&& target) {
+    RefPtr<WorkerStreamOwner> self =
+        new WorkerStreamOwner(aStream, std::move(target));
 
     self->mWorkerRef = WeakWorkerRef::Create(aWorker, [self]() {
       if (self->mStream) {
@@ -315,21 +310,12 @@ class WorkerStreamOwner final {
     return self.forget();
   }
 
-  struct Destroyer final : CancelableRunnable {
-    RefPtr<WorkerStreamOwner> mDoomed;
-
-    explicit Destroyer(RefPtr<WorkerStreamOwner>&& aDoomed)
-        : CancelableRunnable("WorkerStreamOwner::Destroyer"),
-          mDoomed(std::move(aDoomed)) {}
-
-    NS_IMETHOD
-    Run() override {
-      mDoomed = nullptr;
-      return NS_OK;
-    }
-
-    nsresult Cancel() override { return Run(); }
-  };
+  static void ProxyRelease(already_AddRefed<WorkerStreamOwner> aDoomed) {
+    RefPtr<WorkerStreamOwner> doomed = aDoomed;
+    nsIEventTarget* target = doomed->mOwningEventTarget;
+    NS_ProxyRelease("WorkerStreamOwner", target, doomed.forget(),
+                     true);
+  }
 
  private:
   ~WorkerStreamOwner() = default;
@@ -338,11 +324,11 @@ class WorkerStreamOwner final {
   
   nsCOMPtr<nsIAsyncInputStream> mStream;
   RefPtr<WeakWorkerRef> mWorkerRef;
+  nsCOMPtr<nsIEventTarget> mOwningEventTarget;
 };
 
 class JSStreamConsumer final : public nsIInputStreamCallback,
                                public JS::OptimizedEncodingListener {
-  nsCOMPtr<nsIEventTarget> mOwningEventTarget;
   RefPtr<WindowStreamOwner> mWindowStreamOwner;
   RefPtr<WorkerStreamOwner> mWorkerStreamOwner;
   nsMainThreadPtrHandle<nsICacheInfoChannel> mCache;
@@ -355,8 +341,7 @@ class JSStreamConsumer final : public nsIInputStreamCallback,
                    nsIGlobalObject* aGlobal, JS::StreamConsumer* aConsumer,
                    nsMainThreadPtrHandle<nsICacheInfoChannel>&& aCache,
                    bool aOptimizedEncoding)
-      : mOwningEventTarget(aGlobal->EventTargetFor(TaskCategory::Other)),
-        mWindowStreamOwner(aWindowStreamOwner),
+      : mWindowStreamOwner(aWindowStreamOwner),
         mCache(std::move(aCache)),
         mOptimizedEncoding(aOptimizedEncoding),
         mConsumer(aConsumer),
@@ -369,8 +354,7 @@ class JSStreamConsumer final : public nsIInputStreamCallback,
                    nsIGlobalObject* aGlobal, JS::StreamConsumer* aConsumer,
                    nsMainThreadPtrHandle<nsICacheInfoChannel>&& aCache,
                    bool aOptimizedEncoding)
-      : mOwningEventTarget(aGlobal->EventTargetFor(TaskCategory::Other)),
-        mWorkerStreamOwner(std::move(aWorkerStreamOwner)),
+      : mWorkerStreamOwner(std::move(aWorkerStreamOwner)),
         mCache(std::move(aCache)),
         mOptimizedEncoding(aOptimizedEncoding),
         mConsumer(aConsumer),
@@ -383,17 +367,23 @@ class JSStreamConsumer final : public nsIInputStreamCallback,
     
     
 
-    RefPtr<Runnable> destroyer;
     if (mWindowStreamOwner) {
       MOZ_DIAGNOSTIC_ASSERT(!mWorkerStreamOwner);
-      destroyer = new WindowStreamOwner::Destroyer(mWindowStreamOwner.forget());
+      NS_ReleaseOnMainThread("JSStreamConsumer::mWindowStreamOwner",
+                             mWindowStreamOwner.forget(),
+                              true);
     } else {
       MOZ_DIAGNOSTIC_ASSERT(mWorkerStreamOwner);
-      destroyer =
-          new WorkerStreamOwner::Destroyer(std::move(mWorkerStreamOwner));
+      WorkerStreamOwner::ProxyRelease(mWorkerStreamOwner.forget());
     }
 
-    MOZ_ALWAYS_SUCCEEDS(mOwningEventTarget->Dispatch(destroyer.forget()));
+    
+    
+    
+    
+    
+    JS_HAZ_VALUE_IS_GC_SAFE(mWindowStreamOwner);
+    JS_HAZ_VALUE_IS_GC_SAFE(mWorkerStreamOwner);
   }
 
   static nsresult WriteSegment(nsIInputStream* aStream, void* aClosure,
@@ -437,8 +427,9 @@ class JSStreamConsumer final : public nsIInputStreamCallback,
 
     RefPtr<JSStreamConsumer> consumer;
     if (aMaybeWorker) {
-      RefPtr<WorkerStreamOwner> owner =
-          WorkerStreamOwner::Create(asyncStream, aMaybeWorker);
+      RefPtr<WorkerStreamOwner> owner = WorkerStreamOwner::Create(
+          asyncStream, aMaybeWorker,
+          aGlobal->EventTargetFor(TaskCategory::Other));
       if (!owner) {
         return false;
       }
