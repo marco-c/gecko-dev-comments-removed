@@ -36,6 +36,10 @@ static inline AllocKind GetGCObjectKind(const JSClass* clasp) {
     return AllocKind::FUNCTION;
   }
 
+  if (clasp == FunctionExtendedClassPtr) {
+    return AllocKind::FUNCTION_EXTENDED;
+  }
+
   MOZ_ASSERT(!clasp->isProxyObject(),
              "Proxies should use GetProxyGCObjectKind");
 
@@ -121,7 +125,7 @@ static inline size_t GetGCKindSlots(AllocKind thingKind, const JSClass* clasp) {
 
 
 
-  if (clasp == FunctionClassPtr) {
+  if (clasp->isJSFunction()) {
     return 0;
   }
 
