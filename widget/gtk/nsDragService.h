@@ -138,6 +138,11 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   
   
   nsTHashMap<nsCStringHashKey, nsTArray<uint8_t>> mCachedData;
+  
+  
+  
+  
+  uintptr_t mCachedDragContext;
 
 #ifdef MOZ_WAYLAND
   RefPtr<DataOffer> mPendingWaylandDataOffer;
@@ -186,6 +191,9 @@ class nsDragService final : public nsBaseDragService, public nsIObserver {
   void GetTargetDragData(GdkAtom aFlavor, nsTArray<nsCString>& aDropFlavors);
   
   void TargetResetData(void);
+  
+  
+  void EnsureCachedDataValidForContext(GdkDragContext* aDragContext);
 
   
 
