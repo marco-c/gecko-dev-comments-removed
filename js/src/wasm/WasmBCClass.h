@@ -228,6 +228,9 @@ struct BaseCompiler final {
   
 
   
+  Decoder& decoder_;
+
+  
   BaseOpIter iter_;
 
   

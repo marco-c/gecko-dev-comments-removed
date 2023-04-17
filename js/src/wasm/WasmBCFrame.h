@@ -26,6 +26,7 @@
 #include "wasm/WasmBCDefs.h"
 #include "wasm/WasmBCRegDefs.h"
 #include "wasm/WasmBCStk.h"
+#include "wasm/WasmConstants.h"        
 
 
 
@@ -554,17 +555,7 @@ class BaseStackFrame final : public BaseStackFrameAllocator {
 
   
 
-  bool checkStackHeight() {
-    
-    
-    
-    
-    
-    
-    
-    
-    return maxFramePushed_ <= 512 * 1024;
-  }
+  bool checkStackHeight() { return maxFramePushed_ <= MaxFrameSize; }
 
   
   
