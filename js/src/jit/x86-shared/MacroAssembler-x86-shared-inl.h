@@ -1485,6 +1485,11 @@ void MacroAssembler::swizzleInt8x16(FloatRegister rhs, FloatRegister lhsDest) {
   vpshufb(scratch, lhsDest, lhsDest);                    
 }
 
+void MacroAssembler::swizzleInt8x16Relaxed(FloatRegister rhs,
+                                           FloatRegister lhsDest) {
+  vpshufb(rhs, lhsDest, lhsDest);
+}
+
 
 
 void MacroAssembler::addInt8x16(FloatRegister rhs, FloatRegister lhsDest) {
