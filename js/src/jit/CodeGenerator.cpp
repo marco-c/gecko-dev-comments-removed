@@ -12746,7 +12746,8 @@ void CodeGenerator::visitTypeOfV(LTypeOfV* lir) {
     }
     remaining -= type;
 
-    if (remaining.isEmpty()) {
+    if (remaining.isEmpty() && type != JSVAL_TYPE_OBJECT) {
+      
       
 #ifdef DEBUG
       emitTypeOfCheck(type, tag, output, &done, ool->entry());
