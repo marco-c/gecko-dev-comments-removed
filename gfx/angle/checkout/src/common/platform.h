@@ -82,16 +82,8 @@
 #        endif
 #    endif
 
-
-
-
-
 #    undef near
 #    undef far
-#    undef NEAR
-#    undef FAR
-#    define NEAR
-#    define FAR
 #endif
 
 #if defined(_MSC_VER) && !defined(_M_ARM) && !defined(_M_ARM64)
@@ -152,13 +144,6 @@
 #    if __has_feature(address_sanitizer)
 #        define ANGLE_WITH_ASAN 1
 #    endif
-#endif
-
-#include <cstdint>
-#if INTPTR_MAX == INT64_MAX
-#    define ANGLE_IS_64_BIT_CPU 1
-#else
-#    define ANGLE_IS_32_BIT_CPU 1
 #endif
 
 #endif  

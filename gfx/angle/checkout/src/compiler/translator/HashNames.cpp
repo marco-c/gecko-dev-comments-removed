@@ -69,10 +69,8 @@ ImmutableString HashName(const ImmutableString &name,
             
             return name;
         }
-        if (name == "gl_ClipDistance" || name == "gl_CullDistance" || name == "gl_LastFragData")
+        if (name == "gl_ClipDistance")
         {
-            
-            
             
             
             

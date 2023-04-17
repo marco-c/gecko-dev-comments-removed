@@ -60,13 +60,12 @@ void StretchedBlitNearest_RowByRow(const gl::Box &sourceArea,
                                    uint8_t *destData)
 {
     int srcHeightSubOne = (sourceArea.height - 1);
-    size_t copySize     = pixelSize * clippedDestArea.width;
+    size_t copySize     = pixelSize * destArea.width;
     size_t srcOffset    = sourceArea.x * pixelSize;
-    size_t destOffset   = clippedDestArea.x * pixelSize;
+    size_t destOffset   = destArea.x * pixelSize;
 
     for (int y = clippedDestArea.y; y < clippedDestArea.y + clippedDestArea.height; y++)
     {
-        
         float yPerc = static_cast<float>(y - destArea.y) / (destArea.height - 1);
 
         
@@ -142,10 +141,7 @@ void StretchedBlitNearest(const gl::Box &sourceArea,
                           uint8_t *destData)
 {
     gl::Rectangle clippedDestArea(destArea.x, destArea.y, destArea.width, destArea.height);
-    if (!gl::ClipRectangle(clippedDestArea, clipRect, &clippedDestArea))
-    {
-        return;
-    }
+    gl::ClipRectangle(clippedDestArea, clipRect, &clippedDestArea);
 
     
     

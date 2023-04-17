@@ -10,7 +10,6 @@
 
 #include "common/bitset_utils.h"
 #include "libANGLE/Context.h"
-#include "libANGLE/ErrorStrings.h"
 #include "libANGLE/Framebuffer.h"
 #include "libANGLE/FramebufferAttachment.h"
 #include "libANGLE/Surface.h"
@@ -250,15 +249,13 @@ angle::Result FramebufferD3D::blit(const gl::Context *context,
     return angle::Result::Continue;
 }
 
-gl::FramebufferStatus FramebufferD3D::checkStatus(const gl::Context *context) const
+bool FramebufferD3D::checkStatus(const gl::Context *context) const
 {
     
     
     if (mState.hasSeparateDepthAndStencilAttachments())
     {
-        return gl::FramebufferStatus::Incomplete(
-            GL_FRAMEBUFFER_UNSUPPORTED,
-            gl::err::kFramebufferIncompleteUnsupportedSeparateDepthStencilBuffers);
+        return false;
     }
 
     
@@ -269,21 +266,17 @@ gl::FramebufferStatus FramebufferD3D::checkStatus(const gl::Context *context) co
     {
         if (!mState.colorAttachmentsAreUniqueImages())
         {
-            return gl::FramebufferStatus::Incomplete(
-                GL_FRAMEBUFFER_UNSUPPORTED,
-                gl::err::kFramebufferIncompleteUnsupportedNonUniqueAttachments);
+            return false;
         }
     }
 
     
     if (!mState.attachmentsHaveSameDimensions())
     {
-        return gl::FramebufferStatus::Incomplete(
-            GL_FRAMEBUFFER_UNSUPPORTED,
-            gl::err::kFramebufferIncompleteUnsupportedMissmatchedDimensions);
+        return false;
     }
 
-    return gl::FramebufferStatus::Complete();
+    return true;
 }
 
 angle::Result FramebufferD3D::syncState(const gl::Context *context,

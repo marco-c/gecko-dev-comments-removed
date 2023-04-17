@@ -32,12 +32,12 @@
 #include "libANGLE/Context.h"
 #include "libANGLE/Device.h"
 #include "libANGLE/EGLSync.h"
+#include "libANGLE/FrameCapture.h"
 #include "libANGLE/Image.h"
 #include "libANGLE/ResourceManager.h"
 #include "libANGLE/Stream.h"
 #include "libANGLE/Surface.h"
 #include "libANGLE/Thread.h"
-#include "libANGLE/capture/FrameCapture.h"
 #include "libANGLE/histogram_macros.h"
 #include "libANGLE/renderer/DeviceImpl.h"
 #include "libANGLE/renderer/DisplayImpl.h"
@@ -172,13 +172,6 @@ EGLAttrib GetDisplayTypeFromEnvironment()
     if (angleDefaultEnv == "d3d11")
     {
         return EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE;
-    }
-#endif
-
-#if defined(ANGLE_ENABLE_METAL)
-    if (angleDefaultEnv == "metal")
-    {
-        return EGL_PLATFORM_ANGLE_TYPE_METAL_ANGLE;
     }
 #endif
 
@@ -374,10 +367,11 @@ rx::DisplayImpl *CreateDisplayFromAttribs(EGLAttrib displayType,
             {
                 impl = rx::CreateVulkanSimpleDisplay(state);
             }
-            else if (platformType == EGL_PLATFORM_VULKAN_DISPLAY_MODE_HEADLESS_ANGLE &&
-                     rx::IsVulkanHeadlessDisplayAvailable())
+            else if (platformType == EGL_PLATFORM_VULKAN_DISPLAY_MODE_HEADLESS_ANGLE)
             {
-                impl = rx::CreateVulkanHeadlessDisplay(state);
+                
+                
+                UNIMPLEMENTED();
             }
             else
             {
@@ -689,7 +683,6 @@ Display::Display(EGLenum platform, EGLNativeDisplayType displayId, Device *eglDe
       mDisplayExtensions(),
       mDisplayExtensionString(),
       mVendorString(),
-      mVersionString(),
       mDevice(eglDevice),
       mSurface(nullptr),
       mPlatform(platform),
@@ -870,32 +863,34 @@ Error Display::initialize()
 
     initDisplayExtensions();
     initVendorString();
-    initVersionString();
 
     
-    if (mPlatform == EGL_PLATFORM_DEVICE_EXT)
+    if (mPlatform != EGL_PLATFORM_DEVICE_EXT)
+    {
+        if (mDisplayExtensions.deviceQuery)
+        {
+            std::unique_ptr<rx::DeviceImpl> impl(mImplementation->createDevice());
+            ASSERT(impl != nullptr);
+            error = impl->initialize();
+            if (error.isError())
+            {
+                ERR() << "Failed to initialize display because device creation failed: "
+                      << error.getMessage();
+                mImplementation->terminate();
+                return error;
+            }
+            mDevice = new Device(this, impl.release());
+        }
+        else
+        {
+            mDevice = nullptr;
+        }
+    }
+    else
     {
         
         
         ASSERT(mDevice != nullptr);
-    }
-    else if (GetClientExtensions().deviceQueryEXT)
-    {
-        std::unique_ptr<rx::DeviceImpl> impl(mImplementation->createDevice());
-        ASSERT(impl);
-        error = impl->initialize();
-        if (error.isError())
-        {
-            ERR() << "Failed to initialize display because device creation failed: "
-                  << error.getMessage();
-            mImplementation->terminate();
-            return error;
-        }
-        mDevice = new Device(this, impl.release());
-    }
-    else
-    {
-        mDevice = nullptr;
     }
 
     mInitialized = true;
@@ -1237,13 +1232,6 @@ Error Display::createContext(const Config *configuration,
     gl::Context *context = new gl::Context(this, configuration, shareContext, shareTextures,
                                            shareSemaphores, cachePointer, clientType, attribs,
                                            mDisplayExtensions, GetClientExtensions());
-    Error error          = context->initialize();
-    if (error.isError())
-    {
-        delete context;
-        return error;
-    }
-
     if (shareContext != nullptr)
     {
         shareContext->setShared();
@@ -1298,11 +1286,14 @@ Error Display::makeCurrent(gl::Context *previousContext,
     
     
     
-    bool contextChanged = context != previousContext;
-    if (previousContext != nullptr && contextChanged)
+    bool updateRefCount = context != previousContext;
+    if (previousContext != nullptr)
     {
         ANGLE_TRY(previousContext->unMakeCurrent(this));
-        ANGLE_TRY(releaseContext(previousContext));
+        if (updateRefCount)
+        {
+            ANGLE_TRY(releaseContext(previousContext));
+        }
     }
 
     ANGLE_TRY(mImplementation->makeCurrent(this, drawSurface, readSurface, context));
@@ -1310,7 +1301,7 @@ Error Display::makeCurrent(gl::Context *previousContext,
     if (context != nullptr)
     {
         ANGLE_TRY(context->makeCurrent(this, drawSurface, readSurface));
-        if (contextChanged)
+        if (updateRefCount)
         {
             context->addRef();
         }
@@ -1440,17 +1431,6 @@ Error Display::releaseContext(gl::Context *context)
 
 Error Display::destroyContext(const Thread *thread, gl::Context *context)
 {
-    return destroyContextWithSurfaces(thread, context, thread->getContext(),
-                                      thread->getCurrentDrawSurface(),
-                                      thread->getCurrentReadSurface());
-}
-
-Error Display::destroyContextWithSurfaces(const Thread *thread,
-                                          gl::Context *context,
-                                          gl::Context *currentContext,
-                                          Surface *currentDrawSurface,
-                                          Surface *currentReadSurface)
-{
     size_t refCount = context->getRefCount();
     if (refCount > 1)
     {
@@ -1459,15 +1439,10 @@ Error Display::destroyContextWithSurfaces(const Thread *thread,
     }
 
     
+    gl::Context *currentContext   = thread->getContext();
+    Surface *currentDrawSurface   = thread->getCurrentDrawSurface();
+    Surface *currentReadSurface   = thread->getCurrentReadSurface();
     bool changeContextForDeletion = context != currentContext;
-
-    
-    
-    if (changeContextForDeletion && context->isExternal())
-    {
-        ASSERT(!currentContext);
-        changeContextForDeletion = false;
-    }
 
     
     
@@ -1692,7 +1667,6 @@ static ClientExtensions GenerateClientExtensions()
     extensions.debug                     = true;
     extensions.explicitContext           = true;
     extensions.featureControlANGLE       = true;
-    extensions.deviceQueryEXT            = true;
 
     return extensions;
 }
@@ -1779,7 +1753,7 @@ Error Display::validateImageClientBuffer(const gl::Context *context,
     return mImplementation->validateImageClientBuffer(context, target, clientBuffer, attribs);
 }
 
-Error Display::valdiatePixmap(const Config *config,
+Error Display::valdiatePixmap(Config *config,
                               EGLNativePixmapType pixmap,
                               const AttributeMap &attributes) const
 {
@@ -1831,35 +1805,19 @@ bool Display::isValidNativeDisplay(EGLNativeDisplayType display)
 
 void Display::initVendorString()
 {
-    mVendorString                = "Google Inc.";
-    std::string vendorStringImpl = mImplementation->getVendorString();
-    if (!vendorStringImpl.empty())
-    {
-        mVendorString += " (" + vendorStringImpl + ")";
-    }
-}
-
-void Display::initVersionString()
-{
-    mVersionString = mImplementation->getVersionString();
+    mVendorString = mImplementation->getVendorString();
 }
 
 void Display::initializeFrontendFeatures()
 {
     
     ANGLE_FEATURE_CONDITION((&mFrontendFeatures), loseContextOnOutOfMemory, true);
+    ANGLE_FEATURE_CONDITION((&mFrontendFeatures), scalarizeVecAndMatConstructorArgs, true);
     ANGLE_FEATURE_CONDITION((&mFrontendFeatures), allowCompressedFormats, true);
-
-    
-    ANGLE_FEATURE_CONDITION((&mFrontendFeatures), scalarizeVecAndMatConstructorArgs, false);
 
     mImplementation->initializeFrontendFeatures(&mFrontendFeatures);
 
     rx::ApplyFeatureOverrides(&mFrontendFeatures, mState);
-
-    
-    
-    ANGLE_FEATURE_CONDITION(&mFrontendFeatures, enableCompressingPipelineCacheInThreadPool, false);
 }
 
 const DisplayExtensions &Display::getExtensions() const
@@ -1875,26 +1833,6 @@ const std::string &Display::getExtensionString() const
 const std::string &Display::getVendorString() const
 {
     return mVendorString;
-}
-
-const std::string &Display::getVersionString() const
-{
-    return mVersionString;
-}
-
-std::string Display::getBackendRendererDescription() const
-{
-    return mImplementation->getRendererDescription();
-}
-
-std::string Display::getBackendVendorString() const
-{
-    return mImplementation->getVendorString();
-}
-
-std::string Display::getBackendVersionString() const
-{
-    return mImplementation->getVersionString();
 }
 
 Device *Display::getDevice() const
@@ -2107,11 +2045,8 @@ void Display::returnScratchBufferImpl(angle::ScratchBuffer scratchBuffer,
     bufferVector->push_back(std::move(scratchBuffer));
 }
 
-Error Display::handleGPUSwitch()
+egl::Error Display::handleGPUSwitch()
 {
-    ANGLE_TRY(mImplementation->handleGPUSwitch());
-    initVendorString();
-    return NoError();
+    return mImplementation->handleGPUSwitch();
 }
-
 }  

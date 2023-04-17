@@ -15,6 +15,25 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include <KHR/khrplatform.h>
 
 
@@ -48,13 +67,7 @@
 
 
 
-#if defined(EGL_NO_PLATFORM_SPECIFIC_TYPES)
-
-typedef void *EGLNativeDisplayType;
-typedef void *EGLNativePixmapType;
-typedef void *EGLNativeWindowType;
-
-#elif defined(_WIN32) || defined(__VC32__) && !defined(__CYGWIN__) && !defined(__SCITECH_SNAP__) 
+#if defined(_WIN32) || defined(__VC32__) && !defined(__CYGWIN__) && !defined(__SCITECH_SNAP__) 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN 1
 #endif
@@ -69,12 +82,6 @@ typedef HWND    EGLNativeWindowType;
 #include <inspectable.h>
 typedef IInspectable* EGLNativeWindowType;
 #endif
-
-#elif defined(__EMSCRIPTEN__)
-
-typedef int EGLNativeDisplayType;
-typedef int EGLNativePixmapType;
-typedef int EGLNativeWindowType;
 
 #elif defined(__WINSCW__) || defined(__SYMBIAN32__)  
 
@@ -103,17 +110,17 @@ typedef void*                           EGLNativeDisplayType;
 typedef struct egl_native_pixmap_t*     EGLNativePixmapType;
 typedef struct ANativeWindow*           EGLNativeWindowType;
 
-#elif defined(USE_OZONE)
+#elif defined(USE_OZONE) || defined(USE_SYSTEM_EGL)
 
 typedef intptr_t EGLNativeDisplayType;
 typedef intptr_t EGLNativePixmapType;
 typedef intptr_t EGLNativeWindowType;
 
-#elif defined(__unix__) && defined(EGL_NO_X11)
+#elif defined(__ggp__)
 
-typedef void             *EGLNativeDisplayType;
-typedef khronos_uintptr_t EGLNativePixmapType;
-typedef khronos_uintptr_t EGLNativeWindowType;
+typedef intptr_t EGLNativeDisplayType;
+typedef intptr_t EGLNativePixmapType;
+typedef intptr_t EGLNativeWindowType;
 
 #elif defined(__unix__) || defined(USE_X11)
 
@@ -141,9 +148,9 @@ typedef khronos_uintptr_t  EGLNativeWindowType;
 
 #elif defined(__Fuchsia__)
 
-typedef void              *EGLNativeDisplayType;
-typedef khronos_uintptr_t  EGLNativePixmapType;
-typedef khronos_uintptr_t  EGLNativeWindowType;
+typedef int   EGLNativeDisplayType;
+typedef void *EGLNativePixmapType;
+typedef void *EGLNativeWindowType
 
 #else
 #error "Platform not recognized"

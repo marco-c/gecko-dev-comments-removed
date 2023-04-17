@@ -34,9 +34,8 @@ BufferState::BufferState()
       mBindingCount(0),
       mTransformFeedbackIndexedBindingCount(0),
       mTransformFeedbackGenericBindingCount(0),
-      mImmutable(GL_FALSE),
-      mStorageExtUsageFlags(0),
-      mExternal(GL_FALSE)
+      mImmutable(false),
+      mStorageExtUsageFlags(0)
 {}
 
 BufferState::~BufferState() {}
@@ -69,15 +68,6 @@ void Buffer::setLabel(const Context *context, const std::string &label)
 const std::string &Buffer::getLabel() const
 {
     return mState.mLabel;
-}
-
-angle::Result Buffer::bufferStorageExternal(Context *context,
-                                            BufferBinding target,
-                                            GLsizeiptr size,
-                                            GLeglClientBufferEXT clientBuffer,
-                                            GLbitfield flags)
-{
-    return bufferExternalDataImpl(context, target, clientBuffer, size, flags);
 }
 
 angle::Result Buffer::bufferStorage(Context *context,
@@ -132,7 +122,7 @@ angle::Result Buffer::bufferDataImpl(Context *context,
         dataForImpl = scratchBuffer->data();
     }
 
-    if (mImpl->setDataWithUsageFlags(context, target, nullptr, dataForImpl, size, usage, flags) ==
+    if (mImpl->setDataWithUsageFlags(context, target, dataForImpl, size, usage, flags) ==
         angle::Result::Stop)
     {
         
@@ -150,51 +140,6 @@ angle::Result Buffer::bufferDataImpl(Context *context,
     mState.mSize                 = size;
     mState.mImmutable            = (usage == BufferUsage::InvalidEnum);
     mState.mStorageExtUsageFlags = flags;
-
-    
-    onStateChange(angle::SubjectMessage::SubjectChanged);
-
-    return angle::Result::Continue;
-}
-
-angle::Result Buffer::bufferExternalDataImpl(Context *context,
-                                             BufferBinding target,
-                                             GLeglClientBufferEXT clientBuffer,
-                                             GLsizeiptr size,
-                                             GLbitfield flags)
-{
-    if (mState.isMapped())
-    {
-        
-        
-        
-        
-        
-        
-        
-        GLboolean dontCare = GL_FALSE;
-        ANGLE_TRY(unmap(context, &dontCare));
-    }
-
-    if (mImpl->setDataWithUsageFlags(context, target, clientBuffer, nullptr, size,
-                                     BufferUsage::InvalidEnum, flags) == angle::Result::Stop)
-    {
-        
-        mIndexRangeCache.clear();
-        mState.mSize = 0;
-
-        
-        onStateChange(angle::SubjectMessage::SubjectChanged);
-
-        return angle::Result::Stop;
-    }
-
-    mIndexRangeCache.clear();
-    mState.mUsage                = BufferUsage::InvalidEnum;
-    mState.mSize                 = size;
-    mState.mImmutable            = GL_TRUE;
-    mState.mStorageExtUsageFlags = flags;
-    mState.mExternal             = GL_TRUE;
 
     
     onStateChange(angle::SubjectMessage::SubjectChanged);

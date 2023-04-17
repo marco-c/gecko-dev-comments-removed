@@ -162,6 +162,10 @@ class ContextImpl : public GLImplFactory
     virtual gl::GraphicsResetStatus getResetStatus() = 0;
 
     
+    virtual std::string getVendorString() const        = 0;
+    virtual std::string getRendererDescription() const = 0;
+
+    
     virtual angle::Result insertEventMarker(GLsizei length, const char *marker) = 0;
     virtual angle::Result pushGroupMarker(GLsizei length, const char *marker)   = 0;
     virtual angle::Result popGroupMarker()                                      = 0;
@@ -178,9 +182,6 @@ class ContextImpl : public GLImplFactory
 
     
     virtual void invalidateTexture(gl::TextureType target);
-
-    
-    virtual void framebufferFetchBarrier() {}
 
     
     virtual angle::Result syncState(const gl::Context *context,

@@ -42,8 +42,6 @@ class RemoveArrayLengthTraverser : public TIntermTraverser
     bool foundArrayLength() const { return mFoundArrayLength; }
 
   private:
-    void insertSideEffectsInParentBlock(TIntermTyped *node);
-
     bool mFoundArrayLength;
 };
 
@@ -53,7 +51,12 @@ bool RemoveArrayLengthTraverser::visitUnary(Visit visit, TIntermUnary *node)
     if (node->getOp() == EOpArrayLength && !node->getOperand()->getType().isUnsizedArray())
     {
         mFoundArrayLength = true;
-        insertSideEffectsInParentBlock(node->getOperand());
+        if (!node->getOperand()->hasSideEffects())
+        {
+            queueReplacement(node->fold(nullptr), OriginalNode::IS_DROPPED);
+            return false;
+        }
+        insertStatementInParentBlock(node->getOperand()->deepCopy());
         TConstantUnion *constArray = new TConstantUnion[1];
         constArray->setIConst(node->getOperand()->getOutermostArraySize());
         queueReplacement(new TIntermConstantUnion(constArray, node->getType()),
@@ -61,28 +64,6 @@ bool RemoveArrayLengthTraverser::visitUnary(Visit visit, TIntermUnary *node)
         return false;
     }
     return true;
-}
-
-void RemoveArrayLengthTraverser::insertSideEffectsInParentBlock(TIntermTyped *node)
-{
-    
-    
-    
-    if (!node->hasSideEffects())
-    {
-        return;
-    }
-
-    TIntermBinary *asBinary = node->getAsBinaryNode();
-    if (asBinary && !asBinary->isAssignment())
-    {
-        insertSideEffectsInParentBlock(asBinary->getLeft());
-        insertSideEffectsInParentBlock(asBinary->getRight());
-    }
-    else
-    {
-        insertStatementInParentBlock(node);
-    }
 }
 
 }  

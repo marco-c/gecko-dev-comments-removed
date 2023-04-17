@@ -251,45 +251,4 @@ std::vector<std::string> GetCachedStringsFromEnvironmentVarOrAndroidProperty(
     std::string environment = GetEnvironmentVarOrAndroidProperty(varName, propertyName);
     return SplitString(environment, separator, TRIM_WHITESPACE, SPLIT_WANT_NONEMPTY);
 }
-
-
-bool NamesMatchWithWildcard(const char *ref, const char *testName)
-{
-    
-    const char *firstWildcard = strchr(ref, '*');
-
-    
-    if (firstWildcard == nullptr)
-    {
-        return strcmp(ref, testName) == 0;
-    }
-
-    
-    size_t preWildcardLen = firstWildcard - ref;
-    if (strncmp(ref, testName, preWildcardLen) != 0)
-    {
-        return false;
-    }
-
-    const char *postWildcardRef = ref + preWildcardLen + 1;
-
-    
-    
-    if (postWildcardRef[0] == '\0')
-    {
-        return true;
-    }
-
-    
-    for (size_t matchSize = 0; testName[matchSize] != '\0'; ++matchSize)
-    {
-        if (NamesMatchWithWildcard(postWildcardRef, testName + matchSize))
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 }  
