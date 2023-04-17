@@ -602,13 +602,7 @@ class SMapsReader : private FdReader {
 
 class Replay {
  public:
-  Replay()
-      : mOps(0),
-        mNumUsedSlots(0),
-        mTotalRequestedSize(0),
-        mTotalAllocatedSize(0),
-        mCalculateSlop(false),
-        mDoMemset(false) {
+  Replay() {
 #ifdef _WIN32
     
     mStdErr = reinterpret_cast<intptr_t>(GetStdHandle(STD_ERROR_HANDLE));
@@ -1027,19 +1021,19 @@ class Replay {
   }
 
   intptr_t mStdErr;
-  size_t mOps;
+  size_t mOps = 0;
 
   
   
-  size_t mNumUsedSlots;
+  size_t mNumUsedSlots = 0;
 
   MemSlotList mSlots;
-  size_t mTotalRequestedSize;
-  size_t mTotalAllocatedSize;
+  size_t mTotalRequestedSize = 0;
+  size_t mTotalAllocatedSize = 0;
   
   
-  bool mCalculateSlop;
-  bool mDoMemset;
+  bool mCalculateSlop = false;
+  bool mDoMemset = false;
 
 #ifdef XP_LINUX
   
