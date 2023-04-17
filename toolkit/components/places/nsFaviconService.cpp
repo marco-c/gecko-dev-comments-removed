@@ -337,7 +337,6 @@ nsFaviconService::SetAndFetchFaviconForPage(
   
   
   if (icon.spec.Equals(page.spec) ||
-      icon.spec.EqualsLiteral(FAVICON_CERTERRORPAGE_URL) ||
       icon.spec.EqualsLiteral(FAVICON_ERRORPAGE_URL)) {
     return NS_OK;
   }

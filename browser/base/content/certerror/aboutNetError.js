@@ -81,17 +81,12 @@ const KNOWN_ERROR_TITLE_IDS = new Set([
 
 let searchParams = new URLSearchParams(document.documentURI.split("?")[1]);
 
-let gErrorCode = searchParams.get("e");
 
-let gIsCertError = gErrorCode == "nssBadCert";
+let gIsCertError;
 
-
-
-
-document.getElementById("favicon").href =
-  gIsCertError || gErrorCode == "nssFailure2"
-    ? "chrome://global/skin/icons/warning.svg"
-    : "chrome://global/skin/icons/info.svg";
+function getErrorCode() {
+  return searchParams.get("e");
+}
 
 function getCSSClass() {
   return searchParams.get("s");
@@ -262,7 +257,7 @@ function initPage() {
     });
   }
 
-  var err = gErrorCode;
+  var err = getErrorCode();
   
   let illustratedErrors = [
     "malformedURI",
@@ -283,6 +278,7 @@ function initPage() {
     document.body.classList.add("blocked");
   }
 
+  gIsCertError = err == "nssBadCert";
   
   let showCaptivePortalUI = isCaptive() && gIsCertError;
   if (showCaptivePortalUI) {
@@ -498,7 +494,7 @@ function reportBlockingError() {
     return;
   }
 
-  let err = gErrorCode;
+  let err = getErrorCode();
   
   if (!["xfoBlocked", "cspBlocked"].includes(err)) {
     return;
@@ -797,7 +793,7 @@ function setCertErrorDetails(event) {
   let es = document.getElementById("errorWhatToDoText");
   let errWhatToDoTitle = document.getElementById("edd_nssBadCert");
   let est = document.getElementById("errorWhatToDoTitleText");
-  let error = gErrorCode;
+  let error = getErrorCode();
 
   if (error == "sslv3Used") {
     learnMoreLink.setAttribute("href", baseURL + "sslv3-error-messages");
@@ -1056,7 +1052,7 @@ async function setTechnicalDetailsOnCertError(
   }
 
   let cssClass = getCSSClass();
-  let error = gErrorCode;
+  let error = getErrorCode();
 
   let hostString = HOST_NAME;
   let port = document.location.port;
