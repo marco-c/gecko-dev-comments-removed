@@ -126,6 +126,10 @@ gfxPlatformGtk::gfxPlatformGtk() {
     g_signal_connect(gdkScreen, "notify::resolution",
                      G_CALLBACK(screen_resolution_changed), nullptr);
   }
+
+  
+  
+  PR_SetEnv("__GL_ALLOW_FXAA_USAGE=0");
 }
 
 gfxPlatformGtk::~gfxPlatformGtk() {
