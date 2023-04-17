@@ -123,7 +123,37 @@ void AudioSink::Shutdown() {
     mAudioStream->Shutdown();
     mAudioStream = nullptr;
   }
-  mProcessedQueue.Reset();
+  
+  
+  
+  
+  {
+    MonitorAutoLock mon(mMonitor);
+    while (mProcessedQueue.GetSize() > 0) {
+      RefPtr<AudioData> audio = mProcessedQueue.PopBack();
+      if (audio == mCurrentData) {
+        break;
+      }
+      mAudioQueue.PushFront(audio);
+    }
+    if (mCurrentData) {
+      uint32_t unplayedFrames = mCursor->Available();
+      
+      
+      
+      if (unplayedFrames > 0 && unplayedFrames < mCurrentData->Frames()) {
+        const uint32_t orginalFrames = mCurrentData->Frames();
+        const uint32_t offsetFrames = mCurrentData->Frames() - unplayedFrames;
+        Unused << mCurrentData->SetTrimWindow(
+            {mCurrentData->mTime + FramesToTimeUnit(offsetFrames, mOutputRate),
+             mCurrentData->GetEndTime()});
+        SINK_LOG_V("After adjustment, audio frame from %u to %u", orginalFrames,
+                   mCurrentData->Frames());
+      }
+      mAudioQueue.PushFront(mCurrentData);
+    }
+    MOZ_ASSERT(mProcessedQueue.GetSize() == 0);
+  }
   mProcessedQueue.Finish();
 }
 
@@ -243,9 +273,9 @@ UniquePtr<AudioStream::Chunk> AudioSink::PopFrames(uint32_t aFrames) {
     
     
     needPopping = true;
-    mCurrentData = mProcessedQueue.PeekFront();
     {
       MonitorAutoLock mon(mMonitor);
+      mCurrentData = mProcessedQueue.PeekFront();
       mCursor = MakeUnique<AudioBufferCursor>(mCurrentData->Data(),
                                               mCurrentData->mChannels,
                                               mCurrentData->Frames());
@@ -278,12 +308,11 @@ UniquePtr<AudioStream::Chunk> AudioSink::PopFrames(uint32_t aFrames) {
     MonitorAutoLock mon(mMonitor);
     mWritten += framesToPop;
     mCursor->Advance(framesToPop);
-  }
-
-  
-  
-  if (!mCursor->Available()) {
-    mCurrentData = nullptr;
+    
+    
+    if (!mCursor->Available()) {
+      mCurrentData = nullptr;
+    }
   }
 
   if (needPopping) {

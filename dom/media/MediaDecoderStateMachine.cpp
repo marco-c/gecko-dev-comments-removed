@@ -1205,8 +1205,10 @@ class MediaDecoderStateMachine::AccurateSeekingState
     mDoneAudioSeeking = !Info().HasAudio();
     mDoneVideoSeeking = !Info().HasVideo();
 
-    mMaster->ResetDecode();
+    
+    
     mMaster->StopMediaSink();
+    mMaster->ResetDecode();
 
     DemuxerSeek();
   }
@@ -2655,8 +2657,10 @@ RefPtr<ShutdownPromise> MediaDecoderStateMachine::ShutdownState::Enter() {
   master->mAudioWaitRequest.DisconnectIfExists();
   master->mVideoWaitRequest.DisconnectIfExists();
 
-  master->ResetDecode();
+  
+  
   master->StopMediaSink();
+  master->ResetDecode();
   master->mMediaSink->Shutdown();
 
   
