@@ -223,18 +223,6 @@ class WebExtensionDesktop(PerftestDesktop, WebExtension):
 
 
 class WebExtensionFirefox(WebExtensionDesktop):
-    def disable_non_local_connections(self):
-        
-        
-        
-        LOG.info("setting MOZ_DISABLE_NONLOCAL_CONNECTIONS=1")
-        os.environ["MOZ_DISABLE_NONLOCAL_CONNECTIONS"] = "1"
-
-    def enable_non_local_connections(self):
-        
-        LOG.info("setting MOZ_DISABLE_NONLOCAL_CONNECTIONS=0")
-        os.environ["MOZ_DISABLE_NONLOCAL_CONNECTIONS"] = "0"
-
     def launch_desktop_browser(self, test):
         LOG.info("starting %s" % self.config["app"])
         if self.config["is_release_build"]:
