@@ -141,6 +141,11 @@ ScriptPreloader& ScriptPreloader::GetSingleton() {
 
 
 
+
+
+
+
+
 ScriptPreloader& ScriptPreloader::GetChildSingleton() {
   static RefPtr<ScriptPreloader> singleton;
 
@@ -770,14 +775,6 @@ void ScriptPreloader::CacheWriteComplete() {
 
   nsCOMPtr<nsIAsyncShutdownClient> barrier = GetShutdownBarrier();
   barrier->RemoveBlocker(this);
-
-  ScriptPreloader& contentPreloader = GetChildSingleton();
-  auto fd = contentPreloader.mCacheData.cloneFileDescriptor();
-  
-  
-  if (!fd.IsValid()) {
-    Unused << contentPreloader.OpenCache();
-  }
 }
 
 void ScriptPreloader::NoteStencil(const nsCString& url,
