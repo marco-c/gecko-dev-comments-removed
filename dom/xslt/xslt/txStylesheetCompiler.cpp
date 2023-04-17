@@ -213,8 +213,6 @@ nsresult txStylesheetCompiler::startElementInternal(
         if (namespaceID == kNameSpaceID_Unknown)
           return NS_ERROR_XSLT_PARSE_FAILURE;
 
-        
-        
         mElementContext->mInstructionNamespaces.AppendElement(namespaceID);
       }
 
@@ -668,8 +666,6 @@ nsresult txStylesheetCompilerState::loadIncludedStylesheet(
   
   mToplevelIterator.next();
 
-  
-  
   mChildCompilerList.AppendElement(compiler);
 
   nsresult rv =
@@ -699,8 +695,6 @@ nsresult txStylesheetCompilerState::loadImportedStylesheet(
   RefPtr<txStylesheetCompiler> compiler = new txStylesheetCompiler(
       aURI, mStylesheet, &iter, mReferrerPolicy, observer);
 
-  
-  
   mChildCompilerList.AppendElement(compiler);
 
   nsresult rv =
@@ -714,17 +708,14 @@ nsresult txStylesheetCompilerState::loadImportedStylesheet(
 
 nsresult txStylesheetCompilerState::addGotoTarget(
     txInstruction** aTargetPointer) {
-  
-  
   mGotoTargetPointers.AppendElement(aTargetPointer);
+
   return NS_OK;
 }
 
 nsresult txStylesheetCompilerState::addVariable(const txExpandedName& aName) {
-  txInScopeVariable* var = new txInScopeVariable(aName);
-  
-  
-  mInScopeVariables.AppendElement(var);
+  mInScopeVariables.AppendElement(new txInScopeVariable(aName));
+
   return NS_OK;
 }
 

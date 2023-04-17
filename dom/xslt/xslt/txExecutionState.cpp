@@ -322,8 +322,6 @@ txIEvalContext* txExecutionState::popEvalContext() {
 }
 
 nsresult txExecutionState::pushBool(bool aBool) {
-  
-  
   mBoolStack.AppendElement(aBool);
   return NS_OK;
 }

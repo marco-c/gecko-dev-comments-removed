@@ -46,12 +46,7 @@ nsresult txNamespaceMap::mapNamespace(nsAtom* aPrefix,
   }
 
   
-  
-  
   mPrefixes.AppendElement(prefix);
-
-  
-  
   mNamespaces.AppendElement(nsId);
 
   return NS_OK;

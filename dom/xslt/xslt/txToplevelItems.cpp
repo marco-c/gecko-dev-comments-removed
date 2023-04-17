@@ -29,9 +29,8 @@ txStripSpaceItem::~txStripSpaceItem() {
 
 nsresult txStripSpaceItem::addStripSpaceTest(
     txStripSpaceTest* aStripSpaceTest) {
-  
-  
   mStripSpaceTests.AppendElement(aStripSpaceTest);
+
   return NS_OK;
 }
 
