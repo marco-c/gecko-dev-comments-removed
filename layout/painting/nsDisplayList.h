@@ -2395,9 +2395,6 @@ class nsDisplayItem : public nsDisplayItemLink {
     if (aOther.ForceNotVisible()) {
       mItemFlags += ItemFlag::ForceNotVisible;
     }
-    if (aOther.IsSubpixelAADisabled()) {
-      mItemFlags += ItemFlag::DisableSubpixelAA;
-    }
     if (mFrame->In3DContextAndBackfaceIsHidden()) {
       mItemFlags += ItemFlag::BackfaceHidden;
     }
@@ -2431,24 +2428,6 @@ class nsDisplayItem : public nsDisplayItemLink {
  public:
   nsDisplayItem() = delete;
   nsDisplayItem(const nsDisplayItem&) = delete;
-
-  
-
-
-
-
-
-  virtual bool RestoreState() {
-    if (mClipChain == mState.mClipChain && mClip == mState.mClip &&
-        !mItemFlags.contains(ItemFlag::DisableSubpixelAA)) {
-      return false;
-    }
-
-    mClipChain = mState.mClipChain;
-    mClip = mState.mClip;
-    mItemFlags -= ItemFlag::DisableSubpixelAA;
-    return true;
-  }
 
   
 
@@ -2857,16 +2836,6 @@ class nsDisplayItem : public nsDisplayItemLink {
   
 
 
-
-  void DisableComponentAlpha() { mItemFlags += ItemFlag::DisableSubpixelAA; }
-
-  bool IsSubpixelAADisabled() const {
-    return mItemFlags.contains(ItemFlag::DisableSubpixelAA);
-  }
-
-  
-
-
   virtual bool CanUseAsyncAnimations(nsDisplayListBuilder* aBuilder) {
     return false;
   }
@@ -2962,7 +2931,6 @@ class nsDisplayItem : public nsDisplayItemLink {
 #endif
     BackfaceHidden,
     Combines3DTransformWithAncestors,
-    DisableSubpixelAA,
     ForceNotVisible,
     HasHitTestInfo,
     IsGlassItem,
@@ -3003,11 +2971,6 @@ class nsDisplayItem : public nsDisplayItemLink {
   RefPtr<const ActiveScrolledRoot> mActiveScrolledRoot;
   RefPtr<const DisplayItemClipChain> mClipChain;
   const DisplayItemClip* mClip = nullptr;
-
-  struct {
-    RefPtr<const DisplayItemClipChain> mClipChain;
-    const DisplayItemClip* mClip;
-  } mState;
 
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
  public:
@@ -4891,6 +4854,7 @@ class nsDisplayWrapList : public nsPaintedDisplayItem {
     MOZ_COUNT_CTOR(nsDisplayWrapList);
     mBaseBuildingRect = GetBuildingRect();
     mListPtr = &mList;
+    mOriginalClipChain = mClipChain;
   }
 
   nsDisplayWrapList() = delete;
@@ -4908,6 +4872,7 @@ class nsDisplayWrapList : public nsPaintedDisplayItem {
         mMergedFrames(aOther.mMergedFrames.Clone()),
         mBounds(aOther.mBounds),
         mBaseBuildingRect(aOther.mBaseBuildingRect),
+        mOriginalClipChain(aOther.mClipChain),
         mOverrideZIndex(aOther.mOverrideZIndex),
         mHasZIndexOverride(aOther.mHasZIndexOverride),
         mClearingClipChain(aOther.mClearingClipChain) {
@@ -4939,7 +4904,7 @@ class nsDisplayWrapList : public nsPaintedDisplayItem {
     
     
     if (mClearingClipChain) {
-      const DisplayItemClipChain* clip = mState.mClipChain;
+      const DisplayItemClipChain* clip = mOriginalClipChain;
       while (clip && ActiveScrolledRoot::IsAncestor(GetActiveScrolledRoot(),
                                                     clip->mASR)) {
         clip = clip->mParent;
@@ -4959,6 +4924,15 @@ class nsDisplayWrapList : public nsPaintedDisplayItem {
     
     buildingRect.UnionRect(mBaseBuildingRect, buildingRect);
     SetBuildingRect(buildingRect);
+  }
+
+  void SetClipChain(const DisplayItemClipChain* aClipChain,
+                    bool aStore) override {
+    nsDisplayItem::SetClipChain(aClipChain, aStore);
+
+    if (aStore) {
+      mOriginalClipChain = mClipChain;
+    }
   }
 
   void HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
@@ -5084,6 +5058,7 @@ class nsDisplayWrapList : public nsPaintedDisplayItem {
   
   
   nsRect mBaseBuildingRect;
+  RefPtr<const DisplayItemClipChain> mOriginalClipChain;
   int32_t mOverrideZIndex;
   bool mHasZIndexOverride;
   bool mClearingClipChain = false;
@@ -6231,15 +6206,6 @@ class nsDisplayTransform : public nsPaintedDisplayItem {
 
   NS_DISPLAY_DECL_NAME("nsDisplayTransform", TYPE_TRANSFORM)
 
-  bool RestoreState() override {
-    if (!nsPaintedDisplayItem::RestoreState() && !mShouldFlatten) {
-      return false;
-    }
-
-    mShouldFlatten = false;
-    return true;
-  }
-
   void UpdateBounds(nsDisplayListBuilder* aBuilder) override;
 
   
@@ -6308,8 +6274,6 @@ class nsDisplayTransform : public nsPaintedDisplayItem {
       aInvalidRegion->Or(GetBounds(aBuilder, &snap), geometry->mBounds);
     }
   }
-
-  bool NeedsGeometryUpdates() const override { return mShouldFlatten; }
 
   const nsIFrame* ReferenceFrameForChildren() const override {
     
@@ -6576,8 +6540,6 @@ class nsDisplayTransform : public nsPaintedDisplayItem {
   
   
   bool mIsTransformSeparator : 1;
-  
-  bool mShouldFlatten : 1;
   
   bool mHasTransformGetter : 1;
 };
