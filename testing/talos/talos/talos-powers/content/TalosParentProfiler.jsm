@@ -29,7 +29,6 @@ const TalosParentProfiler = {
   
   interval: undefined,
   entries: undefined,
-  featuresArray: undefined,
   threadsArray: undefined,
   profileDir: undefined,
 
@@ -51,7 +50,6 @@ const TalosParentProfiler = {
 
 
 
-
   initFromObject(obj = {}) {
     if (!this.initted) {
       if (
@@ -61,14 +59,11 @@ const TalosParentProfiler = {
         Number.isFinite(obj.gecko_profile_interval * 1) &&
         "gecko_profile_entries" in obj &&
         Number.isFinite(obj.gecko_profile_entries * 1) &&
-        "gecko_profile_features" in obj &&
-        typeof obj.gecko_profile_features == "string" &&
         "gecko_profile_threads" in obj &&
         typeof obj.gecko_profile_threads == "string"
       ) {
         this.interval = obj.gecko_profile_interval;
         this.entries = obj.gecko_profile_entries;
-        this.featuresArray = obj.gecko_profile_features.split(",");
         this.threadsArray = obj.gecko_profile_threads.split(",");
         this.profileDir = obj.gecko_profile_dir;
         this.initted = true;
@@ -127,7 +122,6 @@ const TalosParentProfiler = {
       this.TalosPowers.profilerBegin({
         entries: this.entries,
         interval: this.interval,
-        featuresArray: this.featuresArray,
         threadsArray: this.threadsArray,
       });
     } else {
