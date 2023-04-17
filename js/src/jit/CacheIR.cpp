@@ -7791,7 +7791,40 @@ AttachDecision CallIRGenerator::tryAttachSetHas(HandleFunction callee) {
 
   ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
 
+#ifndef JS_CODEGEN_X86
+  
+  
+  
+  if (isFirstStub_) {
+    switch (args_[0].type()) {
+      case ValueType::Double:
+      case ValueType::Int32:
+      case ValueType::Boolean:
+      case ValueType::Undefined:
+      case ValueType::Null: {
+        writer.guardToNonGCThing(argId);
+        writer.setHasNonGCThingResult(objId, argId);
+        break;
+      }
+      case ValueType::String:
+      case ValueType::Symbol:
+      case ValueType::BigInt:
+      case ValueType::Object:
+        writer.setHasResult(objId, argId);
+        break;
+
+      case ValueType::Magic:
+      case ValueType::PrivateGCThing:
+        MOZ_CRASH("Unexpected type");
+    }
+  } else {
+    writer.setHasResult(objId, argId);
+  }
+#else
+  
   writer.setHasResult(objId, argId);
+#endif
+
   writer.returnFromIC();
 
   trackAttached("SetHas");
