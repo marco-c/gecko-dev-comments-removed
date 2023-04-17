@@ -2,7 +2,7 @@
 <html>
   <meta charset="utf-8">
   <title>CSS Multi-column Layout Test Ref: Test width:max-content for a multi-column container with column-span:all children</title>
-  <link rel="author" title="Ting-Yu Lin" href="tlin@mozilla.com">
+  <link rel="author" title="Ting-Yu Lin" href="mailto:tlin@mozilla.com">
   <link rel="author" title="Mozilla" href="http://www.mozilla.org/">
 
   <style>
@@ -19,7 +19,7 @@
   }
   </style>
 
-  
+  <!-- Case 1 -->
   <article style="width: 80px;">
     <div class="block">block1</div>
     <div class="spanner" style="width: 50px;">spanner</div>
@@ -27,7 +27,7 @@
   </article>
   <br>
 
-  
+  <!-- Case 2 -->
   <article style="width: 120px;">
     <div class="block">block1</div>
     <div class="spanner" style="width: 50px;">spanner</div>
@@ -35,7 +35,7 @@
   </article>
   <br>
 
-  
+  <!-- Case 3 -->
   <article style="width: 150px;">
     <div class="block">block1</div>
     <div class="spanner" style="width: 150px;">spanner</div>
@@ -43,7 +43,7 @@
   </article>
   <br>
 
-  
+  <!-- Case 4 -->
   <article style="width: 210px;">
     <div class="block">block1</div>
     <div class="spanner">spanner</div>
@@ -51,7 +51,7 @@
   </article>
   <br>
 
-  
+  <!-- Case 4 -->
   <article style="width: 230px;">
     <div class="block">block1</div>
     <div class="spanner">spanner</div>
@@ -59,7 +59,7 @@
   </article>
   <br>
 
-  
+  <!-- Case 6 -->
   <article style="width: 250px;">
     <div class="block">block1</div>
     <div class="spanner" style="width: 250px;">spanner</div>

@@ -2,7 +2,7 @@
 <html>
   <meta charset="utf-8">
   <title>CSS Multi-column Layout Test: Test the column rule's block-size</title>
-  <link rel="author" title="Ting-Yu Lin" href="tlin@mozilla.com">
+  <link rel="author" title="Ting-Yu Lin" href="mailto:tlin@mozilla.com">
   <link rel="author" title="Mozilla" href="https://www.mozilla.org/">
   <link rel="help" href="https://drafts.csswg.org/css-multicol-1/#column-span">
   <link rel="help" href="https://drafts.csswg.org/css-multicol-1/#column-gaps-and-rules">
@@ -32,14 +32,14 @@
   </style>
 
   <article>
-    
-
+    <!-- Each block spreads its height evenly into two columns, and
+         each column contains 100px height. -->
     <div class="block">block1</div>
     <div class="column-span">column-span1</div>
     <div class="block">block2</div>
     <div class="column-span">column-span2</div>
-    
-
+    <!-- The column rule after column-span2 should extend to the content edge
+         of the multicol container as if block3 has "height: 400px;"  -->
     <div class="block">block3</div>
   </article>
 </html>

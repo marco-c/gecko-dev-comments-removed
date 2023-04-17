@@ -2,7 +2,7 @@
 <html>
   <meta charset="utf-8">
   <title>CSS Multi-column Layout Test: Test the column rules' block-size with nested balancing multicol container</title>
-  <link rel="author" title="Ting-Yu Lin" href="tlin@mozilla.com">
+  <link rel="author" title="Ting-Yu Lin" href="mailto:tlin@mozilla.com">
   <link rel="author" title="Mozilla" href="https://www.mozilla.org/">
   <link rel="help" href="https://drafts.csswg.org/css-multicol-1/#cf">
   <link rel="help" href="https://drafts.csswg.org/css-multicol-1/#column-gaps-and-rules">
@@ -30,9 +30,9 @@
   }
   </style>
 
-  
-
-
+  <!-- It is deliberate that the inner column's block-size is greater than
+       outer column's, and the inner-block's block-size is also greater than
+       inner column's. -->
   <article class="outer">
     <article class="inner">
       <div class="inner-block"></div>

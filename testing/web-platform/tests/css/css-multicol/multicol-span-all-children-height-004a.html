@@ -2,7 +2,7 @@
 <html>
   <meta charset="utf-8">
   <title>CSS Multi-column Layout Test: Test the block-size distribution across column-span split in a balancing multicol container</title>
-  <link rel="author" title="Ting-Yu Lin" href="tlin@mozilla.com">
+  <link rel="author" title="Ting-Yu Lin" href="mailto:tlin@mozilla.com">
   <link rel="author" title="Mozilla" href="https://www.mozilla.org/">
   <link rel="help" href="https://drafts.csswg.org/css-multicol-1/#column-span">
   <link rel="match" href="multicol-span-all-children-height-004a-ref.html">
@@ -31,16 +31,16 @@
   </style>
 
   <article>
-    
-
-
-
-
-
-
+    <!-- The container is split by the column-spans.
+         a) Before column-span1, it distributes 200px height into two columns,
+            and each column takes 100px height.
+         b) In between column-span1 and column-span2, same distribution as a).
+         c) After column-span2, it has 50px height left, which goes to the first
+            column.
+    -->
     <div class="container">
-      
-
+      <!-- Each block spreads its height evenly into two columns, and
+           each column contains 100px height. -->
       <div class="block">block1</div>
       <div class="column-span">column-span1</div>
       <div class="block">block2</div>
