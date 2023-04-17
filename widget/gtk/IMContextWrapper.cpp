@@ -211,11 +211,6 @@ const static bool kUseSimpleContextDefault = false;
 
 
 
-static Maybe<nscolor> GetSystemColor(LookAndFeel::ColorID aId) {
-  return LookAndFeel::GetColor(aId, LookAndFeel::ColorScheme::Light,
-                               LookAndFeel::UseStandins::No);
-}
-
 class SelectionStyleProvider final {
  public:
   static SelectionStyleProvider* GetInstance() {
@@ -259,27 +254,31 @@ class SelectionStyleProvider final {
     
     nsAutoCString style(":selected{");
     
-    if (auto selectionForegroundColor =
-            GetSystemColor(LookAndFeel::ColorID::TextSelectForeground)) {
+    nscolor selectionForegroundColor;
+    if (NS_SUCCEEDED(
+            LookAndFeel::GetColor(LookAndFeel::ColorID::TextSelectForeground,
+                                  &selectionForegroundColor))) {
       double alpha =
-          static_cast<double>(NS_GET_A(*selectionForegroundColor)) / 0xFF;
+          static_cast<double>(NS_GET_A(selectionForegroundColor)) / 0xFF;
       style.AppendPrintf("color:rgba(%u,%u,%u,",
-                         NS_GET_R(*selectionForegroundColor),
-                         NS_GET_G(*selectionForegroundColor),
-                         NS_GET_B(*selectionForegroundColor));
+                         NS_GET_R(selectionForegroundColor),
+                         NS_GET_G(selectionForegroundColor),
+                         NS_GET_B(selectionForegroundColor));
       
       
       style.AppendFloat(alpha);
       style.AppendPrintf(");");
     }
-    if (auto selectionBackgroundColor =
-            GetSystemColor(LookAndFeel::ColorID::TextSelectBackground)) {
+    nscolor selectionBackgroundColor;
+    if (NS_SUCCEEDED(
+            LookAndFeel::GetColor(LookAndFeel::ColorID::TextSelectBackground,
+                                  &selectionBackgroundColor))) {
       double alpha =
-          static_cast<double>(NS_GET_A(*selectionBackgroundColor)) / 0xFF;
+          static_cast<double>(NS_GET_A(selectionBackgroundColor)) / 0xFF;
       style.AppendPrintf("background-color:rgba(%u,%u,%u,",
-                         NS_GET_R(*selectionBackgroundColor),
-                         NS_GET_G(*selectionBackgroundColor),
-                         NS_GET_B(*selectionBackgroundColor));
+                         NS_GET_R(selectionBackgroundColor),
+                         NS_GET_G(selectionBackgroundColor),
+                         NS_GET_B(selectionBackgroundColor));
       style.AppendFloat(alpha);
       style.AppendPrintf(");");
     }

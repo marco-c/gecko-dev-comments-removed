@@ -14,18 +14,11 @@
 #include "nsColor.h"
 #include "nsString.h"
 #include "nsTArray.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/widget/ThemeChangeKind.h"
 
 struct gfxFontStyle;
 
-class nsIFrame;
-
 namespace mozilla {
-
-namespace dom {
-class Document;
-}
 
 namespace widget {
 class FullLookAndFeel;
@@ -430,54 +423,30 @@ class LookAndFeel {
   using FontID = mozilla::StyleSystemFont;
 
   
-  
-  
-  enum class ColorScheme : uint8_t { Light, Dark };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static nsresult GetColor(ColorID aID, nscolor* aResult);
 
   
-  
-  enum class UseStandins : bool { No, Yes };
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  static Maybe<nscolor> GetColor(ColorID, ColorScheme, UseStandins);
 
-  
-  
-  static Maybe<nscolor> GetColor(ColorID, const dom::Document&);
 
-  
-  
-  
-  
-  
-  
-  static Maybe<nscolor> GetColor(ColorID, const nsIFrame*);
 
-  
-  
-  static nscolor Color(ColorID aId, ColorScheme aScheme,
-                       UseStandins aUseStandins,
-                       nscolor aDefault = NS_RGB(0, 0, 0)) {
-    return GetColor(aId, aScheme, aUseStandins).valueOr(aDefault);
-  }
 
-  static nscolor Color(ColorID aId, const dom::Document& aDoc,
-                       nscolor aDefault = NS_RGB(0, 0, 0)) {
-    return GetColor(aId, aDoc).valueOr(aDefault);
-  }
-
-  static nscolor Color(ColorID aId, nsIFrame* aFrame,
-                       nscolor aDefault = NS_RGB(0, 0, 0)) {
-    return GetColor(aId, aFrame).valueOr(aDefault);
-  }
+  static nsresult GetColor(ColorID aID, bool aUseStandinsForNativeColors,
+                           nscolor* aResult);
 
   
 
@@ -487,8 +456,27 @@ class LookAndFeel {
 
 
 
-  static nsresult GetInt(IntID, int32_t* aResult);
+  static nsresult GetInt(IntID aID, int32_t* aResult);
   static nsresult GetFloat(FloatID aID, float* aResult);
+
+  static nscolor GetColor(ColorID aID, nscolor aDefault = NS_RGB(0, 0, 0)) {
+    nscolor result = NS_RGB(0, 0, 0);
+    if (NS_FAILED(GetColor(aID, &result))) {
+      return aDefault;
+    }
+    return result;
+  }
+
+  static nscolor GetColorUsingStandins(ColorID aID,
+                                       nscolor aDefault = NS_RGB(0, 0, 0)) {
+    nscolor result = NS_RGB(0, 0, 0);
+    if (NS_FAILED(GetColor(aID,
+                           true,  
+                           &result))) {
+      return aDefault;
+    }
+    return result;
+  }
 
   static int32_t GetInt(IntID aID, int32_t aDefault = 0) {
     int32_t result;
