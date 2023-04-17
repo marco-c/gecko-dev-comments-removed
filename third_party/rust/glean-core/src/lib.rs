@@ -2,7 +2,7 @@
 
 
 
-#![deny(rustdoc::broken_intra_doc_links)]
+#![deny(broken_intra_doc_links)]
 #![deny(missing_docs)]
 
 
