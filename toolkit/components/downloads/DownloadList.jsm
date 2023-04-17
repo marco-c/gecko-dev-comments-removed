@@ -222,10 +222,22 @@ DownloadList.prototype = {
           
           await this.remove(download);
           
+          let sameFileIsDownloading = false;
+          for (let otherDownload of await this.getAll()) {
+            if (
+              download !== otherDownload &&
+              download.target.path == otherDownload.target.path &&
+              !otherDownload.error
+            ) {
+              sameFileIsDownloading = true;
+            }
+          }
           
           
           
-          download.finalize(true).catch(Cu.reportError);
+          
+          let removePartialData = !sameFileIsDownloading;
+          download.finalize(removePartialData).catch(Cu.reportError);
         }
       }
     })().catch(Cu.reportError);

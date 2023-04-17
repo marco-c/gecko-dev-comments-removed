@@ -1037,6 +1037,11 @@ Download.prototype = {
   
 
 
+  _finalizeExecuted: false,
+
+  
+
+
 
 
 
@@ -1056,16 +1061,24 @@ Download.prototype = {
   finalize(aRemovePartialData) {
     
     this._finalized = true;
+    let promise;
 
     if (aRemovePartialData) {
       
       
       
       this.cancel();
-      return this.removePartialData();
+      promise = this.removePartialData();
+    } else {
+      
+      promise = this.cancel();
     }
-    
-    return this.cancel();
+    promise.then(() => {
+      
+      this._finalizeExecuted = true;
+    });
+
+    return promise;
   },
 
   
