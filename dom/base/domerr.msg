@@ -42,10 +42,6 @@ DOM4_MSG_DEF(OperationError, "The operation failed for an operation-specific rea
 
 
 
-DOM4_MSG_DEF(TypeError, "Unknown or invalid type", NS_ERROR_DOM_SVG_WRONG_TYPE_ERR)
-
-
-
 DOM4_MSG_DEF(SyntaxError, "The expression is not a legal expression.", NS_ERROR_DOM_INVALID_EXPRESSION_ERR)
 
 
