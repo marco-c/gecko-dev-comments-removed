@@ -24,6 +24,15 @@ class MsaaDocAccessible : public DocAccessible {
   MsaaDocAccessible(dom::Document* aDocument, PresShell* aPresShell)
       : DocAccessible(aDocument, aPresShell) {}
 
+  DocAccessible* DocAcc();
+
+  
+  
+  
+  STDMETHODIMP QueryInterface(REFIID iid, void** ppv) override {
+    return MsaaAccessible::QueryInterface(iid, ppv);
+  }
+
   
 
   
@@ -52,9 +61,6 @@ class MsaaDocAccessible : public DocAccessible {
 
 
   nsTHashMap<nsUint32HashKey, AccessibleWrap*> mIDToAccessibleMap;
-
- private:
-  DocAccessible* DocAcc();
 };
 
 }  
