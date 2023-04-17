@@ -33,11 +33,15 @@ class SplitBox extends Component {
       
       startPanel: PropTypes.any,
       
+      startPanelCollapsed: PropTypes.bool,
+      
       minSize: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
       
       maxSize: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
       
       endPanel: PropTypes.any,
+      
+      endPanelCollapsed: PropTypes.bool,
       
       endPanelControl: PropTypes.bool,
       
@@ -48,6 +52,8 @@ class SplitBox extends Component {
       style: PropTypes.object,
       
       onControlledPanelResized: PropTypes.func,
+      
+      onResizeEnd: PropTypes.func,
       
       onSelectContainerElement: PropTypes.any,
     };
@@ -153,6 +159,12 @@ class SplitBox extends Component {
     doc.documentElement.style.cursor = this.state.defaultCursor;
 
     this.splitBox.classList.remove("dragging");
+
+    if (this.props.onResizeEnd) {
+      this.props.onResizeEnd(
+        this.state.vert ? this.state.width : this.state.height
+      );
+    }
   }
 
   
@@ -225,7 +237,9 @@ class SplitBox extends Component {
     const { endPanelControl, splitterSize, vert } = this.state;
     const {
       startPanel,
+      startPanelCollapsed,
       endPanel,
+      endPanelCollapsed,
       minSize,
       maxSize,
       onSelectContainerElement,
@@ -291,7 +305,7 @@ class SplitBox extends Component {
         },
         style,
       },
-      startPanel
+      startPanel && !startPanelCollapsed
         ? dom.div(
             {
               className: endPanelControl ? "uncontrolled" : "controlled",
@@ -316,7 +330,7 @@ class SplitBox extends Component {
             onMove: this.onMove,
           })
         : null,
-      endPanel
+      endPanel && !endPanelCollapsed
         ? dom.div(
             {
               className: endPanelControl ? "controlled" : "uncontrolled",

@@ -21,7 +21,6 @@ import * as reactAriaComponentsTabs from "react-aria-components/src/tabs";
 
 
 import classnames from "classnames";
-import devtoolsSplitter from "devtools-splitter";
 import move from "lodash-move";
 
 
@@ -30,7 +29,6 @@ import move from "lodash-move";
 
 export const vendored = {
   classnames,
-  "devtools-splitter": devtoolsSplitter,
   "devtools-utils": devtoolsUtils,
   "fuzzaldrin-plus": fuzzaldrinPlus,
   "lodash-move": move,

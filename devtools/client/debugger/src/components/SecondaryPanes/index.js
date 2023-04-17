@@ -2,6 +2,8 @@
 
 
 
+const SplitBox = require("devtools/client/shared/components/splitter/SplitBox");
+
 import React, { Component } from "react";
 import classnames from "classnames";
 import { isGeneratedId } from "devtools-source-map";
@@ -33,7 +35,6 @@ import { prefs, features } from "../../utils/prefs";
 
 import Breakpoints from "./Breakpoints";
 import Expressions from "./Expressions";
-import SplitBox from "devtools-splitter";
 import Frames from "./Frames";
 import Threads from "./Threads";
 import Accordion from "../shared/Accordion";

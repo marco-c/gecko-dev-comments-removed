@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 @import url("chrome://devtools/content/debugger/src/components/variables.css");
 
@@ -54,3 +54,5 @@
 @import url("chrome://devtools/content/debugger/src/components/ShortcutsModal.css");
 @import url("chrome://devtools/content/debugger/src/components/WelcomeBox.css");
 @import url("chrome://devtools/content/debugger/src/utils/editor/source-editor.css");
+
+@import url("chrome://devtools/content/shared/components/splitter/SplitBox.css");
