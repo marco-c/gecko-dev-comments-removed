@@ -14,6 +14,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   Normandy: "resource://normandy/Normandy.jsm",
+  TaskScheduler: "resource://gre/modules/TaskScheduler.jsm",
 });
 
 const PREF_TIMEOUT = "first-startup.timeout";
@@ -47,13 +48,21 @@ var FirstStartup = {
     this._state = this.IN_PROGRESS;
     const timeout = Services.prefs.getIntPref(PREF_TIMEOUT, 30000); 
     let startingTime = Date.now();
+    let initialized = false;
 
+    let promises = [];
     if (AppConstants.MOZ_NORMANDY) {
-      let normandyInitialized = false;
+      promises.push(Normandy.init({ runAsync: false }));
+    }
 
-      Normandy.init({ runAsync: false }).then(
-        () => (normandyInitialized = true)
-      );
+    if (AppConstants.MOZ_UPDATE_AGENT) {
+      
+      
+      promises.push(TaskScheduler.deleteAllTasks().catch(() => {}));
+    }
+
+    if (promises.length) {
+      Promise.all(promises).then(() => (initialized = true));
 
       this.elapsed = 0;
       Services.tm.spinEventLoopUntil("FirstStartup.jsm:init", () => {
@@ -61,7 +70,7 @@ var FirstStartup = {
         if (this.elapsed >= timeout) {
           this._state = this.TIMED_OUT;
           return true;
-        } else if (normandyInitialized) {
+        } else if (initialized) {
           this._state = this.SUCCESS;
           return true;
         }
