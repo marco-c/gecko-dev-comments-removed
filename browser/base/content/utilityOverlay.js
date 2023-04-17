@@ -709,6 +709,7 @@ function openLinkIn(url, where, params) {
 
 
 
+
 function checkForMiddleClick(node, event) {
   
   
@@ -716,6 +717,11 @@ function checkForMiddleClick(node, event) {
   if (node.getAttribute("disabled") == "true") {
     return;
   } 
+
+  if (event.target.tagName == "menuitem") {
+    
+    return;
+  }
 
   if (event.button == 1) {
     
