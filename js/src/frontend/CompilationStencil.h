@@ -19,7 +19,6 @@
 
 #include "builtin/ModuleObject.h"
 #include "ds/LifoAlloc.h"
-#include "frontend/NameAnalysisTypes.h"  
 #include "frontend/ParserAtom.h"   
 #include "frontend/ScriptIndex.h"  
 #include "frontend/SharedContext.h"
@@ -65,8 +64,6 @@ struct ScopeContext {
     Let,
     Const,
     CatchParameter,
-    Synthetic,
-    PrivateMethod,
   };
 
   using EnclosingLexicalBindingCache =
@@ -77,12 +74,8 @@ struct ScopeContext {
   
   mozilla::Maybe<EnclosingLexicalBindingCache> enclosingLexicalBindingCache_;
 
-  
-  
-  
   using EffectiveScopePrivateFieldCache =
-      mozilla::HashMap<TaggedParserAtomIndex, NameLocation,
-                       TaggedParserAtomIndexHasher>;
+      mozilla::HashSet<TaggedParserAtomIndex, TaggedParserAtomIndexHasher>;
 
   
   
@@ -145,8 +138,6 @@ struct ScopeContext {
                                       TaggedParserAtomIndex name, uint8_t hops);
 
   bool effectiveScopePrivateFieldCacheHas(TaggedParserAtomIndex name);
-  mozilla::Maybe<NameLocation> getPrivateFieldLocation(
-      TaggedParserAtomIndex name);
 
  private:
   void computeThisBinding(Scope* scope);

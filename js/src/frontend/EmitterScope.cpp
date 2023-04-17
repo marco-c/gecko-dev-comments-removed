@@ -11,7 +11,6 @@
 #include "frontend/ModuleSharedContext.h"
 #include "frontend/TDZCheckCache.h"
 #include "js/friend/ErrorMessages.h"  
-#include "vm/EnvironmentObject.h"     
 #include "vm/GlobalObject.h"
 #include "vm/WellKnownAtom.h"  
 
@@ -345,7 +344,7 @@ bool EmitterScope::enterLexical(BytecodeEmitter* bce, ScopeKind kind,
       return false;
     }
 
-    NameLocation loc = bi.nameLocation();
+    NameLocation loc = NameLocation::fromBinding(bi.kind(), bi.location());
     if (!putNameInCache(bce, bi.name(), loc)) {
       return false;
     }
@@ -391,64 +390,6 @@ bool EmitterScope::enterLexical(BytecodeEmitter* bce, ScopeKind kind,
   return checkEnvironmentChainLength(bce);
 }
 
-bool EmitterScope::enterClassBody(BytecodeEmitter* bce, ScopeKind kind,
-                                  ClassBodyScope::ParserData* bindings) {
-  MOZ_ASSERT(kind == ScopeKind::ClassBody);
-  MOZ_ASSERT(this == bce->innermostEmitterScopeNoCheck());
-
-  if (!ensureCache(bce)) {
-    return false;
-  }
-
-  
-  TDZCheckCache* tdzCache = bce->innermostTDZCheckCache;
-  uint32_t firstFrameSlot = frameSlotStart();
-  ParserBindingIter bi(*bindings, firstFrameSlot);
-  for (; bi; bi++) {
-    if (!checkSlotLimits(bce, bi)) {
-      return false;
-    }
-
-    NameLocation loc = bi.nameLocation();
-    if (!putNameInCache(bce, bi.name(), loc)) {
-      return false;
-    }
-
-    if (!tdzCache->noteTDZCheck(bce, bi.name(), CheckTDZ)) {
-      return false;
-    }
-  }
-
-  updateFrameFixedSlots(bce, bi);
-
-  ScopeIndex scopeIndex;
-  if (!ScopeStencil::createForClassBodyScope(
-          bce->cx, bce->compilationState, kind, bindings, firstFrameSlot,
-          enclosingScopeIndex(bce), &scopeIndex)) {
-    return false;
-  }
-  if (!internScopeStencil(bce, scopeIndex)) {
-    return false;
-  }
-
-  if (ScopeKindIsInBody(kind) && hasEnvironment()) {
-    
-    
-    
-    
-    if (!bce->emitInternedScopeOp(index(), JSOp::PushClassBodyEnv)) {
-      return false;
-    }
-  }
-
-  
-  if (!appendScopeNote(bce)) {
-    return false;
-  }
-
-  return checkEnvironmentChainLength(bce);
-}
-
 bool EmitterScope::enterNamedLambda(BytecodeEmitter* bce, FunctionBox* funbox) {
   MOZ_ASSERT(this == bce->innermostEmitterScopeNoCheck());
   MOZ_ASSERT(funbox->namedLambdaBindings());
@@ -463,7 +404,7 @@ bool EmitterScope::enterNamedLambda(BytecodeEmitter* bce, FunctionBox* funbox) {
 
   
   
-  NameLocation loc = bi.nameLocation();
+  NameLocation loc = NameLocation::fromBinding(bi.kind(), bi.location());
   if (!putNameInCache(bce, bi.name(), loc)) {
     return false;
   }
@@ -511,7 +452,7 @@ bool EmitterScope::enterFunction(BytecodeEmitter* bce, FunctionBox* funbox) {
         return false;
       }
 
-      NameLocation loc = bi.nameLocation();
+      NameLocation loc = NameLocation::fromBinding(bi.kind(), bi.location());
       NameLocationMap::AddPtr p = cache.lookupForAdd(bi.name());
 
       
@@ -562,7 +503,7 @@ bool EmitterScope::enterFunction(BytecodeEmitter* bce, FunctionBox* funbox) {
         break;
       }
 
-      NameLocation loc = bi.nameLocation();
+      NameLocation loc = NameLocation::fromBinding(bi.kind(), bi.location());
       if (loc.kind() == NameLocation::Kind::FrameSlot) {
         MOZ_ASSERT(paramFrameSlotEnd <= loc.frameSlot());
         paramFrameSlotEnd = loc.frameSlot() + 1;
@@ -613,7 +554,7 @@ bool EmitterScope::enterFunctionExtraBodyVar(BytecodeEmitter* bce,
         return false;
       }
 
-      NameLocation loc = bi.nameLocation();
+      NameLocation loc = NameLocation::fromBinding(bi.kind(), bi.location());
       MOZ_ASSERT(bi.kind() == BindingKind::Var);
       if (!putNameInCache(bce, bi.name(), loc)) {
         return false;
@@ -719,7 +660,7 @@ bool EmitterScope::enterGlobal(BytecodeEmitter* bce,
   
   if (globalsc->bindings) {
     for (ParserBindingIter bi(*globalsc->bindings); bi; bi++) {
-      NameLocation loc = bi.nameLocation();
+      NameLocation loc = NameLocation::fromBinding(bi.kind(), bi.location());
       if (!putNameInCache(bce, bi.name(), loc)) {
         return false;
       }
@@ -770,7 +711,7 @@ bool EmitterScope::enterEval(BytecodeEmitter* bce, EvalSharedContext* evalsc) {
           return false;
         }
 
-        NameLocation loc = bi.nameLocation();
+        NameLocation loc = NameLocation::fromBinding(bi.kind(), bi.location());
         if (!putNameInCache(bce, bi.name(), loc)) {
           return false;
         }
@@ -824,7 +765,7 @@ bool EmitterScope::enterModule(BytecodeEmitter* bce,
         return false;
       }
 
-      NameLocation loc = bi.nameLocation();
+      NameLocation loc = NameLocation::fromBinding(bi.kind(), bi.location());
       if (!putNameInCache(bce, bi.name(), loc)) {
         return false;
       }
@@ -988,54 +929,6 @@ NameLocation EmitterScope::lookup(BytecodeEmitter* bce,
     return *loc;
   }
   return searchAndCache(bce, name);
-}
-
-bool EmitterScope::lookupPrivate(BytecodeEmitter* bce,
-                                 TaggedParserAtomIndex name, NameLocation& loc,
-                                 mozilla::Maybe<NameLocation>& brandLoc) {
-  loc = lookup(bce, name);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (loc.kind() != NameLocation::Kind::EnvironmentCoordinate) {
-    MOZ_ASSERT(loc.kind() == NameLocation::Kind::Dynamic ||
-               loc.kind() == NameLocation::Kind::Global);
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bce->reportError(nullptr, JSMSG_DEBUG_NO_PRIVATE_METHOD);
-    return false;
-  }
-
-  if (loc.bindingKind() == BindingKind::PrivateMethod) {
-    brandLoc = Some(NameLocation::EnvironmentCoordinate(
-        BindingKind::Synthetic, loc.environmentCoordinate().hops(),
-        JSSLOT_FREE(&ClassBodyLexicalEnvironmentObject::class_)));
-  } else {
-    brandLoc = Nothing();
-  }
-  return true;
 }
 
 Maybe<NameLocation> EmitterScope::locationBoundInScope(

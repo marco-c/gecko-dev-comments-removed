@@ -37,7 +37,6 @@
 #include "frontend/ParseNode.h"            
 #include "frontend/Parser.h"               
 #include "frontend/ParserAtom.h"           
-#include "frontend/PrivateOpEmitter.h"     
 #include "frontend/ScriptIndex.h"          
 #include "frontend/SharedContext.h"        
 #include "frontend/SourceNotes.h"          
@@ -220,10 +219,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   T* findInnermostNestableControl(Predicate predicate) const;
 
   NameLocation lookupName(TaggedParserAtomIndex name);
-
-  
-  bool lookupPrivate(TaggedParserAtomIndex name, NameLocation& loc,
-                     mozilla::Maybe<NameLocation>& brandLoc);
 
   
   
@@ -520,6 +515,7 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   [[nodiscard]] bool emitObjLiteralValue(ObjLiteralWriter& writer,
                                          ParseNode* value);
 
+  enum class FieldPlacement { Instance, Static };
   mozilla::Maybe<MemberInitializers> setupMemberInitializers(
       ListNode* classMembers, FieldPlacement placement);
   [[nodiscard]] bool emitCreateFieldKeys(ListNode* obj,
@@ -606,9 +602,6 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
 
   [[nodiscard]] bool emitComputedPropertyName(UnaryNode* computedPropName);
 
-  [[nodiscard]] bool emitObjAndKey(ParseNode* exprOrSuper, ParseNode* key,
-                                   ElemOpEmitter& eoe);
-
   
   
   
@@ -620,11 +613,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
                                        ElemOpEmitter& eoe);
   [[nodiscard]] bool emitElemOpBase(
       JSOp op, ShouldInstrument shouldInstrument = ShouldInstrument::No);
-
+  [[nodiscard]] bool emitElemOp(PropertyByValue* elem, JSOp op);
   [[nodiscard]] bool emitElemIncDec(UnaryNode* incDec);
-  [[nodiscard]] bool emitObjAndPrivateName(PrivateMemberAccess* elem,
-                                           ElemOpEmitter& eoe);
-  [[nodiscard]] bool emitPrivateIncDec(UnaryNode* incDec);
 
   [[nodiscard]] bool emitCatch(BinaryNode* catchClause);
   [[nodiscard]] bool emitIf(TernaryNode* ifNode);
@@ -753,12 +743,9 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
                                                PropOpEmitter& poe, bool isSuper,
                                                OptionalEmitter& oe);
   [[nodiscard]] bool emitOptionalElemExpression(PropertyByValueBase* elem,
-                                                ElemOpEmitter& eoe,
+                                                ElemOpEmitter& poe,
                                                 bool isSuper,
                                                 OptionalEmitter& oe);
-  [[nodiscard]] bool emitOptionalPrivateExpression(
-      PrivateMemberAccessBase* privateExpr, PrivateOpEmitter& xoe,
-      OptionalEmitter& oe);
   [[nodiscard]] bool emitOptionalCall(CallNode* callNode, OptionalEmitter& oe,
                                       ValueUsage valueUsage);
   [[nodiscard]] bool emitDeletePropertyInOptChain(PropertyAccessBase* propExpr,
@@ -884,14 +871,8 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
                  uint8_t(msgKind));
   }
 
-  [[nodiscard]] bool emitNewPrivateName(TaggedParserAtomIndex bindingName,
-                                        TaggedParserAtomIndex symbolName);
-
   template <class ClassMemberType>
   [[nodiscard]] bool emitNewPrivateNames(ListNode* classMembers);
-
-  [[nodiscard]] bool emitNewPrivateNames(TaggedParserAtomIndex privateBrandName,
-                                         ListNode* classMembers);
 
   [[nodiscard]] bool emitInstrumentation(InstrumentationKind kind,
                                          uint32_t npopped = 0) {
