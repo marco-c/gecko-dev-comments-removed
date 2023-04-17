@@ -14,9 +14,10 @@ var ABSADDR = `${HEX}{2} ${HEX}{2} ${HEX}{2} ${HEX}{2}`;
 
 
 
+
 var x86_prefix = `
-8b ec            mov %esp, %ebp
-b8 ef be ad de   mov \\$0xDEADBEEF, %eax
+8b ec            mov %esp, %ebp(
+b8 ef be ad de   mov \\$0xDEADBEEF, %eax)?
 `
 
 
