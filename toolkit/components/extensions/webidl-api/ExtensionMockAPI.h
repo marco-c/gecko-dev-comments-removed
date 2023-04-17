@@ -60,10 +60,6 @@ class ExtensionMockAPI final : public nsISupports,
                                 JS::MutableHandle<JS::Value> aRetval);
   void GetPropertyAsString(DOMString& aRetval);
 
-  already_AddRefed<ExtensionPort> CallWebExtMethodReturnsPort(
-      JSContext* aCx, const nsAString& aApiMethod,
-      const dom::Sequence<JS::Value>& aArgs, ErrorResult& aRv);
-
   ExtensionEventManager* OnTestEvent();
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
