@@ -1296,12 +1296,25 @@ class MOZ_STACK_CLASS mozInlineSpellChecker::SpellCheckerTimeSlice {
   void CheckWordsAndAddRangesForMisspellings(
       const nsTArray<nsString>& aWords, nsTArray<NodeOffsetRange>&& aRanges);
 
+  bool ShouldSpellCheckRange(const nsRange& aRange) const;
+
   mozInlineSpellChecker& mInlineSpellChecker;
   mozInlineSpellWordUtil& mWordUtil;
   mozilla::dom::Selection& mSpellCheckSelection;
   const mozilla::UniquePtr<mozInlineSpellStatus>& mStatus;
   bool& mDoneChecking;
 };
+
+bool mozInlineSpellChecker::SpellCheckerTimeSlice::ShouldSpellCheckRange(
+    const nsRange& aRange) const {
+  nsINode* beginNode = aRange.GetStartContainer();
+  nsINode* endNode = aRange.GetEndContainer();
+
+  const nsINode* rootNode = mWordUtil.GetRootNode();
+  return beginNode->IsInComposedDoc() && endNode->IsInComposedDoc() &&
+         beginNode->IsShadowIncludingInclusiveDescendantOf(rootNode) &&
+         endNode->IsShadowIncludingInclusiveDescendantOf(rootNode);
+}
 
 
 
@@ -1372,12 +1385,7 @@ nsresult mozInlineSpellChecker::SpellCheckerTimeSlice::Execute() {
     nsINode* endNode = mStatus->mRange->GetEndContainer();
     int32_t endOffset = mStatus->mRange->EndOffset();
 
-    
-    
-    const nsINode* rootNode = mWordUtil.GetRootNode();
-    if (!beginNode->IsInComposedDoc() || !endNode->IsInComposedDoc() ||
-        !beginNode->IsShadowIncludingInclusiveDescendantOf(rootNode) ||
-        !endNode->IsShadowIncludingInclusiveDescendantOf(rootNode)) {
+    if (!ShouldSpellCheckRange(*mStatus->mRange)) {
       
       return NS_OK;
     }
