@@ -305,11 +305,9 @@ class Port {
 
 
 class Messenger {
-  constructor(context, sender) {
+  constructor(context) {
     this.context = context;
     this.conduit = context.openConduit(this, {
-      url: sender.url,
-      frameId: sender.frameId,
       childId: context.childManager.id,
       query: ["NativeMessage", "RuntimeMessage", "PortConnect"],
       recv: ["RuntimeMessage", "PortConnect"],
