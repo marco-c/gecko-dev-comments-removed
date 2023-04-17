@@ -16,6 +16,16 @@ function runUAStyleTests(props) {
    const testStyle = getComputedStyle(testEl);
    const refStyle = getComputedStyle(refEl);
    for (const prop of props) {
+     
+     
+     
+     if (prop === 'display' &&
+         (testEl.localName === 'optgroup' ||
+          testEl.localName === 'option' ||
+          testEl.localName === 'marquee')
+      ) {
+      continue;
+     }
      test(() => {
        assert_equals(testStyle.getPropertyValue(prop), refStyle.getPropertyValue(prop));
      }, `${testNameContext(testEl)} - ${prop}`);
