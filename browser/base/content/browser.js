@@ -2187,7 +2187,7 @@ var gBrowserInit = {
       
       const aboutWelcomeSkipUrlBarFocus =
         uriToLoad == "about:welcome" &&
-        NimbusFeatures.aboutwelcome.getVariable("skipFocus");
+        NimbusFeatures.aboutwelcome.getValue()?.skipFocus;
 
       if (
         (isBlankPageURL(uriToLoad) && !aboutWelcomeSkipUrlBarFocus) ||
