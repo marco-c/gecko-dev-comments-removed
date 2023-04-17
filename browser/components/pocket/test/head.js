@@ -8,6 +8,9 @@ ChromeUtils.defineModuleGetter(
   "pktApi",
   "chrome://pocket/content/pktApi.jsm"
 );
+const { ContentTaskUtils } = ChromeUtils.import(
+  "resource://testing-common/ContentTaskUtils.jsm"
+);
 const { sinon } = ChromeUtils.import("resource://testing-common/Sinon.jsm");
 
 
