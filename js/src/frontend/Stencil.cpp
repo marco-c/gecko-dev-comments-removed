@@ -1745,22 +1745,11 @@ bool CompilationStencil::delazifySelfHostedFunction(
   }
 
   
-  ScriptIndex innerStart(range.start + 1);
-  for (size_t i = innerStart; i < range.limit; i++) {
+  for (size_t i = range.start; i < range.limit; i++) {
     if (!JSScript::fromStencil(cx, atomCache, *this, gcOutput.get(),
                                ScriptIndex(i))) {
       return false;
     }
-  }
-
-  
-  
-  
-  
-  
-  if (!JSScript::fromStencil(cx, atomCache, *this, gcOutput.get(),
-                             range.start)) {
-    return false;
   }
 
   
