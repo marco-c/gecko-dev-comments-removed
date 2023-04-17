@@ -140,7 +140,7 @@ class nsView final : public nsIWidgetListener {
 
 
 
-  static nsView* GetViewFor(nsIWidget* aWidget);
+  static nsView* GetViewFor(const nsIWidget* aWidget);
 
   
 

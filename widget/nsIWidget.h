@@ -528,7 +528,7 @@ class nsIWidget : public nsISupports {
 
 
   virtual void SetAttachedWidgetListener(nsIWidgetListener* aListener) = 0;
-  virtual nsIWidgetListener* GetAttachedWidgetListener() = 0;
+  virtual nsIWidgetListener* GetAttachedWidgetListener() const = 0;
   virtual void SetPreviouslyAttachedWidgetListener(
       nsIWidgetListener* aListener) = 0;
   virtual nsIWidgetListener* GetPreviouslyAttachedWidgetListener() = 0;
@@ -538,7 +538,7 @@ class nsIWidget : public nsISupports {
 
 
   
-  virtual nsIWidgetListener* GetWidgetListener() = 0;
+  virtual nsIWidgetListener* GetWidgetListener() const = 0;
   virtual void SetWidgetListener(nsIWidgetListener* alistener) = 0;
   
 
