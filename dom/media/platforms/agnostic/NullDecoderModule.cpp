@@ -5,6 +5,7 @@
 
 
 #include "DummyMediaDataDecoder.h"
+#include "ImageContainer.h"
 
 namespace mozilla {
 
@@ -15,10 +16,11 @@ class NullVideoDataCreator : public DummyDataCreator {
   already_AddRefed<MediaData> Create(MediaRawData* aSample) override {
     
     
-    RefPtr<VideoData> v(new VideoData(aSample->mOffset, aSample->mTime,
-                                      aSample->mDuration, aSample->mKeyframe,
-                                      aSample->mTimecode, gfx::IntSize(), 0));
-    return v.forget();
+    RefPtr<layers::PlanarYCbCrImage> image =
+        new layers::RecyclingPlanarYCbCrImage(new layers::BufferRecycleBin());
+    return VideoData::CreateFromImage(gfx::IntSize(), aSample->mOffset,
+                                      aSample->mTime, aSample->mDuration, image,
+                                      aSample->mKeyframe, aSample->mTimecode);
   }
 };
 
