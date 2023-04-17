@@ -65,6 +65,7 @@
 #include "js/Object.h"  
 #include "js/PropertyAndElement.h"  
 #include "js/Warnings.h"            
+#include "js/SliceBudget.h"
 #include "jsfriendapi.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/AutoRestore.h"
@@ -532,6 +533,11 @@ void JSHolderMap::Iter::Settle() {
   }
 }
 
+void JSHolderMap::Iter::UpdateForRemovals() {
+  mIter.Settle();
+  Settle();
+}
+
 JSHolderMap::JSHolderMap() : mJSHolderMap(256) {}
 
 bool JSHolderMap::RemoveEntry(EntryVector& aJSHolders, Entry* aEntry) {
@@ -586,6 +592,7 @@ inline nsScriptObjectTracer* JSHolderMap::Extract(void* aHolder) {
   MOZ_ASSERT(entry->mHolder == aHolder);
   nsScriptObjectTracer* tracer = entry->mTracer;
 
+  
   
   *entry = Entry();
 
@@ -744,7 +751,7 @@ void CycleCollectedJSRuntime::Shutdown(JSContext* cx) {
 #ifdef NS_BUILD_REFCNT_LOGGING
   JSLeakTracer tracer(Runtime());
   TraceNativeBlackRoots(&tracer);
-  TraceNativeGrayRoots(&tracer, JSHolderMap::AllHolders);
+  TraceAllNativeGrayRoots(&tracer);
 #endif
 
 #ifdef DEBUG
@@ -997,9 +1004,7 @@ bool CycleCollectedJSRuntime::TraceGrayJS(JSTracer* aTracer,
     which = JSHolderMap::AllHolders;
   }
 
-  self->TraceNativeGrayRoots(aTracer, which);
-
-  return true;
+  return self->TraceNativeGrayRoots(aTracer, which, budget);
 }
 
 
@@ -1405,28 +1410,63 @@ static inline bool ShouldCheckSingleZoneHolders() {
 #endif
 }
 
-void CycleCollectedJSRuntime::TraceNativeGrayRoots(
-    JSTracer* aTracer, JSHolderMap::WhichHolders aWhich) {
-  
-  
-  TraceAdditionalNativeGrayRoots(aTracer);
+#ifdef NS_BUILD_REFCNT_LOGGING
+void CycleCollectedJSRuntime::TraceAllNativeGrayRoots(JSTracer* aTracer) {
+  MOZ_RELEASE_ASSERT(mHolderIter.isNothing());
+  js::SliceBudget budget = js::SliceBudget::unlimited();
+  MOZ_ALWAYS_TRUE(
+      TraceNativeGrayRoots(aTracer, JSHolderMap::AllHolders, budget));
+}
+#endif
 
+bool CycleCollectedJSRuntime::TraceNativeGrayRoots(
+    JSTracer* aTracer, JSHolderMap::WhichHolders aWhich,
+    js::SliceBudget& aBudget) {
+  if (!mHolderIter) {
+    
+    
+    TraceAdditionalNativeGrayRoots(aTracer);
+
+    mHolderIter.emplace(mJSHolders, aWhich);
+    aBudget.stepAndForceCheck();
+  } else {
+    
+    
+    mHolderIter->UpdateForRemovals();
+  }
+
+  bool finished = TraceJSHolders(aTracer, *mHolderIter, aBudget);
+  if (finished) {
+    mHolderIter.reset();
+  }
+
+  return finished;
+}
+
+bool CycleCollectedJSRuntime::TraceJSHolders(JSTracer* aTracer,
+                                             JSHolderMap::Iter& aIter,
+                                             js::SliceBudget& aBudget) {
   bool checkSingleZoneHolders = ShouldCheckSingleZoneHolders();
-  for (JSHolderMap::Iter entry(mJSHolders, aWhich); !entry.Done();
-       entry.Next()) {
-    void* holder = entry->mHolder;
-    nsScriptObjectTracer* tracer = entry->mTracer;
+
+  while (!aIter.Done() && !aBudget.isOverBudget()) {
+    void* holder = aIter->mHolder;
+    nsScriptObjectTracer* tracer = aIter->mTracer;
 
 #ifdef CHECK_SINGLE_ZONE_JS_HOLDERS
     if (checkSingleZoneHolders && !tracer->IsMultiZoneJSHolder()) {
-      CheckHolderIsSingleZone(holder, tracer, entry.Zone());
+      CheckHolderIsSingleZone(holder, tracer, aIter.Zone());
     }
 #else
     Unused << checkSingleZoneHolders;
 #endif
 
     tracer->Trace(holder, JsGcTracer(), aTracer);
+
+    aIter.Next();
+    aBudget.step();
   }
+
+  return aIter.Done();
 }
 
 void CycleCollectedJSRuntime::AddJSHolder(void* aHolder,
