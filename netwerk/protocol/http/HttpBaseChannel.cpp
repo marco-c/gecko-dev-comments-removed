@@ -2801,31 +2801,37 @@ bool HttpBaseChannel::EnsureOpaqueResponseIsAllowed() {
   }
 
   
-  const bool isPrivateWin =
-      mLoadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
-  bool isSameOrigin = false;
-  principal->IsSameOrigin(mURI, isPrivateWin, &isSameOrigin);
-  if (isSameOrigin) {
+  
+  nsContentPolicyType contentPolicy = mLoadInfo->InternalContentPolicyType();
+  
+  if (contentPolicy == nsIContentPolicy::TYPE_DOCUMENT ||
+      contentPolicy == nsIContentPolicy::TYPE_SUBDOCUMENT ||
+      contentPolicy == nsIContentPolicy::TYPE_INTERNAL_FRAME ||
+      contentPolicy == nsIContentPolicy::TYPE_INTERNAL_IFRAME ||
+      
+      contentPolicy == nsIContentPolicy::TYPE_INTERNAL_WORKER ||
+      contentPolicy == nsIContentPolicy::TYPE_INTERNAL_SHARED_WORKER) {
     return true;
   }
 
-  nsAutoCString corsOrigin;
-  nsresult rv = mResponseHead->GetHeader(
-      nsHttp::ResolveAtom("Access-Control-Allow-Origin"_ns), corsOrigin);
-  if (NS_SUCCEEDED(rv)) {
-    if (corsOrigin.Equals("*")) {
-      return true;
-    }
+  uint32_t securityMode = mLoadInfo->GetSecurityMode();
+  
+  if (securityMode !=
+          nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT &&
+      securityMode != nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL) {
+    return true;
+  }
 
-    nsCOMPtr<nsIURI> corsOriginURI;
-    rv = NS_NewURI(getter_AddRefs(corsOriginURI), corsOrigin);
-    if (NS_SUCCEEDED(rv)) {
-      bool isSameOrigin = false;
-      principal->IsSameOrigin(corsOriginURI, isPrivateWin, &isSameOrigin);
-      if (isSameOrigin) {
-        return true;
-      }
-    }
+  
+  if (mLoadInfo->GetTainting() != mozilla::LoadTainting::Opaque) {
+    return true;
+  }
+
+  
+  auto extContentPolicyType = mLoadInfo->GetExternalContentPolicyType();
+  if (extContentPolicyType == ExtContentPolicy::TYPE_OBJECT ||
+      extContentPolicyType == ExtContentPolicy::TYPE_OBJECT_SUBREQUEST) {
+    return true;
   }
 
   InitiateORBTelemetry();
