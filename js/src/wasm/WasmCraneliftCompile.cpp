@@ -521,6 +521,8 @@ bool wasm::CraneliftCompileFunctions(const ModuleEnvironment& moduleEnv,
   TempAllocator alloc(&lifo);
   JitContext jitContext(&alloc);
   WasmMacroAssembler masm(alloc, moduleEnv);
+  AutoCreatedBy acb(masm, "wasm::CraneliftCompileFunctions");
+
   MOZ_ASSERT(IsCompilingWasm());
 
   
