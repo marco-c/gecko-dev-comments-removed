@@ -147,6 +147,10 @@ inline bool IsIonEnabled(JSContext* cx) {
   return false;
 }
 
+
+
+bool CPUFlagsHaveBeenComputed();
+
 }  
 }  
 

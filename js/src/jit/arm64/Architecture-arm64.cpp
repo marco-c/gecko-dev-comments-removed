@@ -114,6 +114,11 @@ FloatRegisterSet FloatRegister::BroadcastToAllSizes(const FloatRegisterSet& s) {
 
 uint32_t GetARM64Flags() { return 0; }
 
+
+
+
+bool CPUFlagsHaveBeenComputed() { return true; }
+
 void FlushICache(void* code, size_t size, bool codeIsThreadLocal) {
   vixl::CPU::EnsureIAndDCacheCoherency(code, size, codeIsThreadLocal);
 }

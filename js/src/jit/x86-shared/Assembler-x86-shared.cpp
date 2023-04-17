@@ -210,6 +210,12 @@ bool CPUInfo::bmi1Present = false;
 bool CPUInfo::bmi2Present = false;
 bool CPUInfo::lzcntPresent = false;
 
+namespace js {
+namespace jit {
+bool CPUFlagsHaveBeenComputed() { return CPUInfo::FlagsHaveBeenComputed(); }
+}  
+}  
+
 static uintptr_t ReadXGETBV() {
   
   

@@ -12765,6 +12765,12 @@ int main(int argc, char** argv) {
   
 
 #if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
+  
+  MOZ_ASSERT(js::jit::CPUFlagsHaveBeenComputed());
+
+  
+  js::jit::CPUInfo::ResetSSEFlagsForTesting();
+
   if (op.getBoolOption("no-sse3")) {
     js::jit::CPUInfo::SetSSE3Disabled();
     if (!sCompilerProcessFlags.append("--no-sse3")) {
@@ -12799,6 +12805,14 @@ int main(int argc, char** argv) {
     fprintf(stderr, "Error: AVX encodings are currently disabled\n");
     return EXIT_FAILURE;
   }
+
+  
+  js::jit::CPUInfo::GetSSEVersion();
+#endif
+
+#ifndef JS_CODEGEN_NONE
+  
+  MOZ_ASSERT(js::jit::CPUFlagsHaveBeenComputed());
 #endif
 
 #ifndef __wasi__

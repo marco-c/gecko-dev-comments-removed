@@ -72,6 +72,11 @@ bool isLoongson = check_loongson();
 bool hasR2 = check_r2();
 }  
 
+bool CPUFlagsHaveBeenComputed() {
+  
+  return true;
+}
+
 Registers::Code Registers::FromName(const char* name) {
   for (size_t i = 0; i < Total; i++) {
     if (strcmp(GetName(i), name) == 0) {
