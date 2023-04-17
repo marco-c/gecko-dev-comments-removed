@@ -8,6 +8,7 @@
 #define mozilla_glean_GleanTimespan_h
 
 #include "mozilla/Maybe.h"
+#include "mozilla/Result.h"
 #include "nsIGleanMetrics.h"
 
 namespace mozilla::glean {
@@ -72,7 +73,8 @@ class TimespanMetric {
 
 
 
-  Maybe<int64_t> TestGetValue(const nsACString& aPingName = nsCString()) const;
+  Result<Maybe<uint64_t>, nsCString> TestGetValue(
+      const nsACString& aPingName = nsCString()) const;
 
  private:
   const uint32_t mId;
