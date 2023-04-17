@@ -247,7 +247,7 @@ void gfxMacFont::InitMetrics() {
 
   
   
-  mAdjustedSize = std::max(GetAdjustedSize(), 1.0);
+  mAdjustedSize = GetAdjustedSize();
   mFUnitsConvFactor = mAdjustedSize / upem;
 
   
@@ -288,7 +288,7 @@ void gfxMacFont::InitMetrics() {
 
   if (FontSizeAdjust::Tag(mStyle.sizeAdjustBasis) !=
           FontSizeAdjust::Tag::None &&
-      mStyle.sizeAdjust >= 0.0) {
+      mStyle.sizeAdjust >= 0.0 && GetAdjustedSize() > 0.0) {
     
     gfxFloat aspect;
     switch (FontSizeAdjust::Tag(mStyle.sizeAdjustBasis)) {

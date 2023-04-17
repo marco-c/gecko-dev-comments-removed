@@ -220,7 +220,7 @@ void gfxFT2FontBase::InitMetrics() {
 
   if (FontSizeAdjust::Tag(mStyle.sizeAdjustBasis) !=
           FontSizeAdjust::Tag::None &&
-      mStyle.sizeAdjust >= 0.0 && mFTSize == 0.0) {
+      mStyle.sizeAdjust >= 0.0 && GetAdjustedSize() > 0.0 && mFTSize == 0.0) {
     
     
     
