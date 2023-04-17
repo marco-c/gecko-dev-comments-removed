@@ -113,7 +113,7 @@ impl Node for ConnectionNode {
                     self.c.authenticated(AuthenticationStatus::Ok, now);
                 }
 
-                active |= self.process_goals(|goal, c| goal.handle_event(c, &e, now))
+                active |= self.process_goals(|goal, c| goal.handle_event(c, &e, now));
             }
             
             

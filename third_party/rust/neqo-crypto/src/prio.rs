@@ -4,12 +4,7 @@
 
 
 
-#![allow(
-    unknown_lints,
-    renamed_and_removed_lints,
-    clippy::unknown_clippy_lints,
-    clippy::upper_case_acronyms
-)] 
+#![allow(clippy::upper_case_acronyms)]
 #![allow(unknown_lints, deref_nullptr)] 
 #![allow(
     dead_code,

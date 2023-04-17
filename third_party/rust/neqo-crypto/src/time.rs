@@ -4,12 +4,7 @@
 
 
 
-#![allow(
-    unknown_lints,
-    renamed_and_removed_lints,
-    clippy::unknown_clippy_lints,
-    clippy::upper_case_acronyms
-)] 
+#![allow(clippy::upper_case_acronyms)]
 
 use crate::agentio::as_c_void;
 use crate::err::{Error, Res};

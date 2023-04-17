@@ -658,18 +658,13 @@ impl SendStream {
         
         let length = min(space.saturating_sub(1), data_len);
         let length_len = Encoder::varint_len(u64::try_from(length).unwrap());
-        if length_len > space {
-            qtrace!(
-                "SendStream::length_and_fill no room for length of {} in {}",
-                length,
-                space
-            );
-            return (0, false);
-        }
+        debug_assert!(length_len <= space); 
 
-        let length = min(data_len, space - length_len);
-        qtrace!("SendStream::length_and_fill {} in {}", length, space);
-        (length, false)
+        
+        
+        let fill = data_len + length_len + PacketBuilder::MINIMUM_FRAME_SIZE > space;
+        qtrace!("SendStream::length_and_fill {} fill {}", data_len, fill);
+        (data_len, fill)
     }
 
     
@@ -718,6 +713,7 @@ impl SendStream {
             }
             if fill {
                 builder.encode(&data[..length]);
+                builder.mark_full();
             } else {
                 builder.encode_vvec(&data[..length]);
             }
@@ -1517,28 +1513,24 @@ mod tests {
         
         
         s.set_max_stream_data(4);
-        let evts = conn_events.events().collect::<Vec<_>>();
-        assert_eq!(evts.len(), 0);
+        assert_eq!(conn_events.events().count(), 0);
         assert_eq!(s.send(b"hello").unwrap(), 0);
 
         
         
         
         assert!(conn_fc.borrow_mut().update(4));
-        let evts = conn_events.events().collect::<Vec<_>>();
-        assert_eq!(evts.len(), 0);
+        assert_eq!(conn_events.events().count(), 0);
         assert_eq!(s.avail(), 2);
         assert_eq!(s.send(b"hello").unwrap(), 2);
 
         
         s.set_max_stream_data(1_000_000_000);
-        let evts = conn_events.events().collect::<Vec<_>>();
-        assert_eq!(evts.len(), 0);
+        assert_eq!(conn_events.events().count(), 0);
 
         
         conn_fc.borrow_mut().update(1_000_000_000);
-        let evts = conn_events.events().collect::<Vec<_>>();
-        assert_eq!(evts.len(), 0);
+        assert_eq!(conn_events.events().count(), 0);
 
         
         
@@ -1551,8 +1543,7 @@ mod tests {
 
         
         s.set_max_stream_data(2_000_000_000);
-        let evts = conn_events.events().collect::<Vec<_>>();
-        assert_eq!(evts.len(), 0);
+        assert_eq!(conn_events.events().count(), 0);
         assert_eq!(s.send(b"hello").unwrap(), 0);
     }
 
@@ -1943,6 +1934,16 @@ mod tests {
 
     fn frame_sent_sid(stream: u64, offset: usize, len: usize, fin: bool, space: usize) -> bool {
         const BUF: &[u8] = &[0x42; 128];
+
+        qtrace!(
+            "frame_sent stream={} offset={} len={} fin={}, space={}",
+            stream,
+            offset,
+            len,
+            fin,
+            space
+        );
+
         let mut s = stream_with_sent(stream, offset);
 
         
@@ -2044,100 +2045,68 @@ mod tests {
         assert!(frame_sent_sid(BIG, BIGSZ, 1, true, 100));
     }
 
-    #[test]
-    fn stream_frame_16384() {
-        const DATA16384: &[u8] = &[0x43; 16384];
+    fn stream_frame_at_boundary(data: &[u8]) {
+        fn send_with_extra_capacity(data: &[u8], extra: usize, expect_full: bool) -> Vec<u8> {
+            qtrace!("send_with_extra_capacity {} + {}", data.len(), extra);
+            let mut s = stream_with_sent(0, 0);
+            s.send(data).unwrap();
+            s.close();
+
+            let mut builder = PacketBuilder::short(Encoder::new(), false, &[]);
+            let header_len = builder.len();
+            
+            builder.set_limit(header_len + data.len() + 2 + extra);
+            let mut tokens = Vec::new();
+            let mut stats = FrameStats::default();
+            s.write_stream_frame(
+                TransmissionPriority::default(),
+                &mut builder,
+                &mut tokens,
+                &mut stats,
+            );
+            assert_eq!(stats.stream, 1);
+            assert_eq!(builder.is_full(), expect_full);
+            Vec::from(Encoder::from(builder)).split_off(header_len)
+        }
+
+        
+        let mut enc = Encoder::new();
+        enc.encode_varint(u64::try_from(data.len()).unwrap());
+        let len_buf = Vec::from(enc);
+        let minimum_extra = len_buf.len() + PacketBuilder::MINIMUM_FRAME_SIZE;
+
+        
+        for i in 0..minimum_extra {
+            let frame = send_with_extra_capacity(data, i, true);
+            let (header, body) = frame.split_at(2);
+            assert_eq!(header, &[0b1001, 0]);
+            assert_eq!(body, data);
+        }
 
         
         
-        
-        let mut s = stream_with_sent(0, 0);
-        s.send(DATA16384).unwrap();
-        s.close();
-
-        let mut builder = PacketBuilder::short(Encoder::new(), false, &[]);
-        let header_len = builder.len();
-        builder.set_limit(header_len + DATA16384.len() + 2);
-        let mut tokens = Vec::new();
-        let mut stats = FrameStats::default();
-        s.write_stream_frame(
-            TransmissionPriority::default(),
-            &mut builder,
-            &mut tokens,
-            &mut stats,
-        );
-        assert_eq!(stats.stream, 1);
-        
-        assert_eq!(&builder[header_len..header_len + 2], &[0b1001, 0]);
-        assert_eq!(&builder[header_len + 2..], DATA16384);
-
-        s.mark_as_lost(0, DATA16384.len(), true);
-
-        
-        
-        
-        
-        let mut builder = PacketBuilder::short(Encoder::new(), false, &[]);
-        let header_len = builder.len();
-        builder.set_limit(header_len + DATA16384.len() + 3);
-        s.write_stream_frame(
-            TransmissionPriority::default(),
-            &mut builder,
-            &mut tokens,
-            &mut stats,
-        );
-        assert_eq!(stats.stream, 2);
-        
-        assert_eq!(
-            &builder[header_len..header_len + 4],
-            &[0b1010, 0, 0x7f, 0xfd]
-        );
-        assert_eq!(
-            &builder[header_len + 4..],
-            &DATA16384[..DATA16384.len() - 3]
-        );
+        let frame = send_with_extra_capacity(data, minimum_extra, false);
+        let (header, rest) = frame.split_at(2);
+        assert_eq!(header, &[0b1011, 0]);
+        let (len, body) = rest.split_at(len_buf.len());
+        assert_eq!(len, &len_buf);
+        assert_eq!(body, data);
     }
 
+    
+    
+    
+    
+    #[test]
+    fn stream_frame_16384() {
+        stream_frame_at_boundary(&[4; 16383]);
+        stream_frame_at_boundary(&[4; 16384]);
+    }
+
+    
     #[test]
     fn stream_frame_64() {
-        const DATA64: &[u8] = &[0x43; 64];
-
-        
-        
-        let mut s = stream_with_sent(0, 0);
-        s.send(DATA64).unwrap();
-        s.close();
-
-        let mut builder = PacketBuilder::short(Encoder::new(), false, &[]);
-        let header_len = builder.len();
-        builder.set_limit(header_len + 66);
-        let mut tokens = Vec::new();
-        let mut stats = FrameStats::default();
-        s.write_stream_frame(
-            TransmissionPriority::default(),
-            &mut builder,
-            &mut tokens,
-            &mut stats,
-        );
-        assert_eq!(stats.stream, 1);
-        
-        assert_eq!(&builder[header_len..header_len + 2], &[0b1001, 0]);
-        assert_eq!(&builder[header_len + 2..], DATA64);
-
-        s.mark_as_lost(0, DATA64.len(), true);
-
-        let mut builder = PacketBuilder::short(Encoder::new(), false, &[]);
-        let header_len = builder.len();
-        builder.set_limit(header_len + 67);
-        s.write_stream_frame(
-            TransmissionPriority::default(),
-            &mut builder,
-            &mut tokens,
-            &mut stats,
-        );
-        assert_eq!(stats.stream, 2);
-        
-        assert_eq!(&builder[header_len..header_len + 3], &[0b1010, 0, 63]);
-        assert_eq!(&builder[header_len + 3..], &DATA64[..63]);
+        stream_frame_at_boundary(&[2; 63]);
+        stream_frame_at_boundary(&[2; 64]);
     }
 }

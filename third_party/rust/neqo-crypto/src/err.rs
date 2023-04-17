@@ -5,12 +5,7 @@
 
 
 #![allow(dead_code)]
-#![allow(
-    unknown_lints,
-    renamed_and_removed_lints,
-    clippy::unknown_clippy_lints,
-    clippy::upper_case_acronyms
-)] 
+#![allow(clippy::upper_case_acronyms)]
 
 use std::os::raw::c_char;
 use std::str::Utf8Error;
@@ -34,7 +29,7 @@ pub mod nspr {
 pub type Res<T> = Result<T, Error>;
 
 #[derive(Clone, Debug, PartialEq, PartialOrd, Ord, Eq)]
-#[allow(clippy::pub_enum_variant_names)]
+#[allow(renamed_and_removed_lints, clippy::pub_enum_variant_names)] 
 pub enum Error {
     AeadInitFailure,
     AeadError,
@@ -150,7 +145,9 @@ mod tests {
     fn set_error_code(code: PRErrorCode) {
         
         fixture_init();
-        unsafe { PR_SetError(code, 0) };
+        unsafe {
+            PR_SetError(code, 0);
+        }
     }
 
     #[test]

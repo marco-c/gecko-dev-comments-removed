@@ -15,12 +15,7 @@ use std::ptr::null_mut;
 use std::time::{Duration, Instant};
 
 
-#[allow(
-    unknown_lints,
-    renamed_and_removed_lints,
-    clippy::unknown_clippy_lints,
-    clippy::upper_case_acronyms
-)] 
+#[allow(clippy::upper_case_acronyms)]
 #[allow(clippy::empty_enum)]
 pub enum SSLAntiReplayContext {}
 

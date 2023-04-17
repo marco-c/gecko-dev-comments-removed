@@ -5,17 +5,12 @@
 
 
 #![allow(
-    unknown_lints,
-    renamed_and_removed_lints,
-    clippy::unknown_clippy_lints,
-    clippy::upper_case_acronyms
-)] 
-#![allow(
     dead_code,
     non_upper_case_globals,
     non_snake_case,
     clippy::cognitive_complexity,
-    clippy::too_many_lines
+    clippy::too_many_lines,
+    clippy::upper_case_acronyms
 )]
 #![allow(unknown_lints, deref_nullptr)] 
 

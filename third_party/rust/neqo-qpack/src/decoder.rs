@@ -133,7 +133,7 @@ impl QPackDecoder {
                 self.stats.dynamic_table_inserts += 1;
             }
             DecodedEncoderInstruction::NoInstruction => {
-                unreachable!("This can be call only with an instruction.")
+                unreachable!("This can be call only with an instruction.");
             }
         }
         Ok(())
@@ -165,12 +165,7 @@ impl QPackDecoder {
     
     
     
-    #[allow(
-        clippy::map_err_ignore,
-        unknown_lints,
-        renamed_and_removed_lints,
-        clippy::unknown_clippy_lints
-    )]
+    #[allow(clippy::map_err_ignore)]
     pub fn send(&mut self, conn: &mut Connection) -> Res<()> {
         
         let increment = self.table.base() - self.acked_inserts;

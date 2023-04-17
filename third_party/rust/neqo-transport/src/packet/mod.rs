@@ -158,6 +158,9 @@ pub struct PacketBuilder {
 }
 
 impl PacketBuilder {
+    
+    pub const MINIMUM_FRAME_SIZE: usize = 2;
+
     fn infer_limit(encoder: &Encoder) -> usize {
         if encoder.capacity() > 64 {
             encoder.capacity()
@@ -175,7 +178,6 @@ impl PacketBuilder {
     
     
     
-    #[allow(unknown_lints, renamed_and_removed_lints, clippy::unknown_clippy_lints)] 
     #[allow(clippy::reversed_empty_ranges)]
     pub fn short(mut encoder: Encoder, key_phase: bool, dcid: impl AsRef<[u8]>) -> Self {
         let mut limit = Self::infer_limit(&encoder);
@@ -207,8 +209,6 @@ impl PacketBuilder {
     
     
     
-    
-    #[allow(unknown_lints, renamed_and_removed_lints, clippy::unknown_clippy_lints)]
     
     #[allow(clippy::reversed_empty_ranges)] 
     pub fn long(
@@ -258,6 +258,8 @@ impl PacketBuilder {
         self.limit = limit;
     }
 
+    
+    #[must_use]
     pub fn limit(&mut self) -> usize {
         self.limit
     }
@@ -272,7 +274,12 @@ impl PacketBuilder {
     #[must_use]
     pub fn is_full(&self) -> bool {
         
-        self.limit < self.encoder.len() + 2
+        self.limit < self.encoder.len() + Self::MINIMUM_FRAME_SIZE
+    }
+
+    
+    pub fn mark_full(&mut self) {
+        self.limit = self.encoder.len()
     }
 
     
@@ -935,7 +942,7 @@ mod tests {
         );
         builder.initial_token(&[]);
         builder.pn(1, 2);
-        builder.encode(&SAMPLE_INITIAL_PAYLOAD);
+        builder.encode(SAMPLE_INITIAL_PAYLOAD);
         let packet = builder.build(&mut prot).expect("build");
         assert_eq!(&packet[..], SAMPLE_INITIAL);
     }

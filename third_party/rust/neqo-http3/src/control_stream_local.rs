@@ -67,7 +67,7 @@ impl ControlStreamLocal {
             }
             
             if self.buf.is_empty() {
-                self.send_priority_update(stream_id, conn, recv_conn)?
+                self.send_priority_update(stream_id, conn, recv_conn)?;
             }
         }
         Ok(())

@@ -18,12 +18,7 @@ use std::ops::{Deref, DerefMut};
 use std::os::raw::{c_int, c_uint};
 use std::ptr::null_mut;
 
-#[allow(
-    unknown_lints,
-    renamed_and_removed_lints,
-    clippy::unknown_clippy_lints,
-    clippy::upper_case_acronyms
-)] 
+#[allow(clippy::upper_case_acronyms)]
 #[allow(unknown_lints, deref_nullptr)] 
 #[allow(clippy::unreadable_literal)]
 mod nss_p11 {
@@ -148,7 +143,9 @@ impl PrivateKey {
         
         
         
-        unsafe { SECITEM_FreeItem(&mut key_item, PRBool::from(false)) };
+        unsafe {
+            SECITEM_FreeItem(&mut key_item, PRBool::from(false));
+        }
         Ok(key)
     }
 }

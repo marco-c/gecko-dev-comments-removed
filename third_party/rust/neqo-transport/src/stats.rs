@@ -13,10 +13,12 @@ use std::cell::RefCell;
 use std::fmt::{self, Debug};
 use std::ops::Deref;
 use std::rc::Rc;
+use std::time::Duration;
 
 pub(crate) const MAX_PTO_COUNTS: usize = 16;
 
 #[derive(Default, Clone)]
+#[cfg_attr(test, derive(PartialEq))]
 #[allow(clippy::module_name_repetitions)]
 pub struct FrameStats {
     pub all: usize,
@@ -94,6 +96,19 @@ impl Debug for FrameStats {
 
 #[derive(Default, Clone)]
 #[allow(clippy::module_name_repetitions)]
+pub struct DatagramStats {
+    
+    pub lost: usize,
+    
+    pub dropped_too_big: usize,
+    
+    
+    pub dropped_queue_full: usize,
+}
+
+
+#[derive(Default, Clone)]
+#[allow(clippy::module_name_repetitions)]
 pub struct Stats {
     info: String,
 
@@ -120,6 +135,11 @@ pub struct Stats {
     pub resumed: bool,
 
     
+    pub rtt: Duration,
+    
+    pub rttvar: Duration,
+
+    
     
     pub pto_counts: [usize; MAX_PTO_COUNTS],
 
@@ -127,6 +147,12 @@ pub struct Stats {
     pub frame_rx: FrameStats,
     
     pub frame_tx: FrameStats,
+
+    
+    
+    pub incoming_datagram_dropped: usize,
+
+    pub datagram_tx: DatagramStats,
 }
 
 impl Stats {
@@ -141,7 +167,7 @@ impl Stats {
             "Dropped received packet: {}; Total: {}",
             reason.as_ref(),
             self.dropped_rx
-        )
+        );
     }
 
     

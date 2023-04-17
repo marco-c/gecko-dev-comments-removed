@@ -109,7 +109,6 @@ impl<'a> Decoder<'a> {
     }
 
     
-    #[allow(unknown_lints, renamed_and_removed_lints, clippy::unknown_clippy_lints)] 
     #[allow(clippy::missing_panics_doc)] 
     pub fn decode_varint(&mut self) -> Option<u64> {
         let b1 = match self.decode_byte() {
@@ -253,7 +252,7 @@ impl Encoder {
     
     #[must_use]
     pub fn as_decoder(&self) -> Decoder {
-        Decoder::new(&self)
+        Decoder::new(self)
     }
 
     
@@ -335,7 +334,7 @@ impl Encoder {
         let len = self.buf.len() - start - n;
         assert!(len < (1 << (n * 8)));
         for i in 0..n {
-            self.buf[start + i] = ((len >> (8 * (n - i - 1))) & 0xff) as u8
+            self.buf[start + i] = ((len >> (8 * (n - i - 1))) & 0xff) as u8;
         }
         self
     }
@@ -671,7 +670,7 @@ mod tests {
     fn builder_from_slice() {
         let slice = &[1, 2, 3];
         let enc = Encoder::from(&slice[..]);
-        assert_eq!(enc, Encoder::from_hex("010203"))
+        assert_eq!(enc, Encoder::from_hex("010203"));
     }
 
     #[test]

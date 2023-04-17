@@ -128,8 +128,7 @@ fn raw() {
 
     
     let mut certs = client.peer_certificate().unwrap();
-    let cert_vec: Vec<&[u8]> = certs.collect();
-    assert_eq!(1, cert_vec.len());
+    assert_eq!(1, certs.count());
 
     
     assert!(server.peer_certificate().is_none());
