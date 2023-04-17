@@ -277,6 +277,15 @@ ExtensionTestCommon = class ExtensionTestCommon {
     provide(manifest, ["manifest_version"], 2);
     provide(manifest, ["version"], "1.0");
 
+    
+    if (manifest.manifest_version === 2 && manifest.host_permissions) {
+      manifest.permissions = [].concat(
+        manifest.permissions || [],
+        manifest.host_permissions
+      );
+      delete manifest.host_permissions;
+    }
+
     if (data.background) {
       let bgScript = uuidGen.generateUUID().number + ".js";
 
