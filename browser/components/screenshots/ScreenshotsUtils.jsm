@@ -19,6 +19,8 @@ var ScreenshotsUtils = {
     
     let dialogBox = gBrowser.getTabDialogBox(browser);
 
+    Services.obs.notifyObservers(subj, "toggle-screenshot-disable", "true");
+
     return dialogBox.open(
       `chrome://browser/content/screenshots/screenshots.html?browsingContextId=${browser.browsingContext.id}`,
       { features: "resizable=no", sizeTo: "available" }
