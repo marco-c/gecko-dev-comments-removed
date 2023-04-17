@@ -959,6 +959,7 @@ let tv = {
     pub_jwk: {
       kty: "EC",
       crv: "P-521",
+      alg: "ES512",
 
       
       
@@ -999,6 +1000,27 @@ let tv = {
         "0087488c859a96fea266ea13bf6d114c429b163be97a57559086edb64aed4a1859" +
         "4b46fb9efc7fd25d8b2de8f09ca0587f54bd287299f47b2ff124aac56600000000"
     ),
+  },
+
+  
+  
+  ecdsa_jwk_alg_mismatch: {
+    pub_jwk: {
+      kty: "EC",
+      crv: "P-521",
+      alg: "ES256",
+
+      
+      
+      x:
+        "AGE4f9a5WRTohfkS7fu1-ydGVQJ_IWxAkcqD4ZM2dA_Y" +
+        "Gu3-BH9RtCvfaBYRIQE-DVWxF6FOQwP5Jsjeu3en_arR",
+      
+      
+      y:
+        "AOfQx1w4Ym6JXKIVJrn5_fhNzsuT8rIzOQVQ0rFGO37j" +
+        "9Y33NGQ1_wQ0GZWDyXxmWpfxL3BvI1faS0Aoje-Ijlnm",
+    },
   },
 
   ecdsa_bad: {
