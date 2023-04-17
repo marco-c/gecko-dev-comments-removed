@@ -33,6 +33,8 @@ const LINUX = AppConstants.platform == "linux";
 const WIN = AppConstants.platform == "win";
 const MAC = AppConstants.platform == "macosx";
 
+const kNSSDBPrefix = AppConstants.NIGHTLY_BUILD ? "gecko-no-share-" : "";
+
 const kSharedFontList = SpecialPowers.getBoolPref("gfx.e10s.font-list.shared");
 
 
@@ -357,14 +359,20 @@ const startupPhases = {
     },
     {
       
-      path: "ProfD:cert9.db",
-      condition: WIN,
-      read: 5,
-      stat: 4,
+      path: `ProfD:cert9.db`,
+      condition: WIN && AppConstants.NIGHTLY_BUILD,
+      stat: 1,
     },
     {
       
-      path: "ProfD:cert9.db",
+      path: `ProfD:${kNSSDBPrefix}cert9.db`,
+      condition: WIN,
+      read: 5,
+      stat: AppConstants.NIGHTLY_BUILD ? 5 : 4,
+    },
+    {
+      
+      path: `ProfD:${kNSSDBPrefix}cert9.db`,
       condition: WIN,
       ignoreIfUnused: true, 
       canonicalize: true,
@@ -372,14 +380,14 @@ const startupPhases = {
     },
     {
       
-      path: "ProfD:cert9.db-journal",
+      path: `ProfD:${kNSSDBPrefix}cert9.db-journal`,
       condition: WIN,
       canonicalize: true,
       stat: 3,
     },
     {
       
-      path: "ProfD:cert9.db-wal",
+      path: `ProfD:${kNSSDBPrefix}cert9.db-wal`,
       condition: WIN,
       canonicalize: true,
       stat: 3,
@@ -392,14 +400,20 @@ const startupPhases = {
     },
     {
       
-      path: "ProfD:key4.db",
-      condition: WIN,
-      read: 8,
-      stat: 4,
+      path: `ProfD:key4.db`,
+      condition: WIN && AppConstants.NIGHTLY_BUILD,
+      stat: 1,
     },
     {
       
-      path: "ProfD:key4.db",
+      path: `ProfD:${kNSSDBPrefix}key4.db`,
+      condition: WIN,
+      read: 8,
+      stat: AppConstants.NIGHTLY_BUILD ? 5 : 4,
+    },
+    {
+      
+      path: `ProfD:${kNSSDBPrefix}key4.db`,
       condition: WIN,
       ignoreIfUnused: true, 
       canonicalize: true,
@@ -407,14 +421,14 @@ const startupPhases = {
     },
     {
       
-      path: "ProfD:key4.db-journal",
+      path: `ProfD:${kNSSDBPrefix}key4.db-journal`,
       condition: WIN,
       canonicalize: true,
       stat: 5,
     },
     {
       
-      path: "ProfD:key4.db-wal",
+      path: `ProfD:${kNSSDBPrefix}key4.db-wal`,
       condition: WIN,
       canonicalize: true,
       stat: 5,
@@ -527,13 +541,13 @@ const startupPhases = {
       write: 1300,
     },
     {
-      path: "ProfD:key4.db-journal",
+      path: `ProfD:${kNSSDBPrefix}key4.db-journal`,
       condition: WIN,
       canonicalize: true,
       stat: 2,
     },
     {
-      path: "ProfD:key4.db-wal",
+      path: `ProfD:${kNSSDBPrefix}key4.db-wal`,
       condition: WIN,
       canonicalize: true,
       stat: 2,
