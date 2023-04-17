@@ -1397,7 +1397,7 @@ pref("prompts.windowPromptSubDialog", true);
 pref("browser.newtab.preload", true);
 
 
-pref("browser.newtabpage.activity-stream.newNewtabExperience.enabled", false);
+pref("browser.newtabpage.activity-stream.newNewtabExperience.enabled", true);
 
 
 
@@ -1471,7 +1471,7 @@ pref("browser.newtabpage.activity-stream.feeds.section.topstories", true);
 
 pref("browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar", true);
 
-pref("browser.newtabpage.activity-stream.logowordmark.alwaysVisible", false);
+pref("browser.newtabpage.activity-stream.logowordmark.alwaysVisible", true);
 
 
 pref("trailhead.firstrun.newtab.triplets", "");
