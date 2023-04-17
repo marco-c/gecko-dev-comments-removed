@@ -1056,25 +1056,8 @@ nsresult EditorBase::UndoAsAction(uint32_t aCount, nsIPrincipal* aPrincipal) {
       DoAfterUndoTransaction();
     }
 
-    if (NS_WARN_IF(!mRootElement)) {
-      NS_WARNING("Failed to handle padding BR Element due to no root element");
-      rv = NS_ERROR_FAILURE;
-    } else {
-      
-      
-      
-      
-      
-      
-      nsIContent* firstLeafChild = HTMLEditUtils::GetFirstLeafContent(
-          *mRootElement, {LeafNodeType::OnlyLeafNode});
-      if (firstLeafChild &&
-          EditorUtils::IsPaddingBRElementForEmptyEditor(*firstLeafChild)) {
-        mPaddingBRElementForEmptyEditor =
-            static_cast<HTMLBRElement*>(firstLeafChild);
-      } else {
-        mPaddingBRElementForEmptyEditor = nullptr;
-      }
+    if (IsHTMLEditor()) {
+      rv = AsHTMLEditor()->ReflectPaddingBRElementForEmptyEditor();
     }
   }
 
@@ -1138,26 +1121,8 @@ nsresult EditorBase::RedoAsAction(uint32_t aCount, nsIPrincipal* aPrincipal) {
       DoAfterRedoTransaction();
     }
 
-    if (NS_WARN_IF(!mRootElement)) {
-      NS_WARNING("Failed to handle padding BR element due to no root element");
-      rv = NS_ERROR_FAILURE;
-    } else {
-      
-      
-      
-      
-      nsCOMPtr<nsIHTMLCollection> nodeList =
-          mRootElement->GetElementsByTagName(u"br"_ns);
-      MOZ_ASSERT(nodeList);
-      Element* brElement =
-          nodeList->Length() == 1 ? nodeList->Item(0) : nullptr;
-      if (brElement &&
-          EditorUtils::IsPaddingBRElementForEmptyEditor(*brElement)) {
-        mPaddingBRElementForEmptyEditor =
-            static_cast<HTMLBRElement*>(brElement);
-      } else {
-        mPaddingBRElementForEmptyEditor = nullptr;
-      }
+    if (IsHTMLEditor()) {
+      rv = AsHTMLEditor()->ReflectPaddingBRElementForEmptyEditor();
     }
   }
 
