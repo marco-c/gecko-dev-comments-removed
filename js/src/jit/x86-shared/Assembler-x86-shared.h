@@ -213,16 +213,12 @@ class CPUInfo {
 
   static void SetSSEVersion();
 
-  
-  
-  
-
-  static void reset() {
-    maxSSEVersion = UnknownSSE;
-    maxEnabledSSEVersion = UnknownSSE;
-    avxPresent = false;
-    avxEnabled = false;
-    popcntPresent = false;
+  static void SetMaxEnabledSSEVersion(SSEVersion v) {
+    if (maxEnabledSSEVersion == UnknownSSE) {
+      maxEnabledSSEVersion = v;
+    } else {
+      maxEnabledSSEVersion = std::min(v, maxEnabledSSEVersion);
+    }
   }
 
  public:
@@ -242,30 +238,37 @@ class CPUInfo {
   static bool IsBMI2Present() { return bmi2Present; }
   static bool IsLZCNTPresent() { return lzcntPresent; }
 
+  
+  
+  
+
+  static void ResetSSEFlagsForTesting() {
+    maxSSEVersion = UnknownSSE;
+    maxEnabledSSEVersion = UnknownSSE;
+    avxPresent = false;
+    avxEnabled = false;
+  }
+
+  
+  
+
   static void SetSSE3Disabled() {
-    reset();
-    maxEnabledSSEVersion = SSE2;
+    SetMaxEnabledSSEVersion(SSE2);
     avxEnabled = false;
   }
   static void SetSSSE3Disabled() {
-    reset();
-    maxEnabledSSEVersion = SSE3;
+    SetMaxEnabledSSEVersion(SSE3);
     avxEnabled = false;
   }
   static void SetSSE41Disabled() {
-    reset();
-    maxEnabledSSEVersion = SSSE3;
+    SetMaxEnabledSSEVersion(SSSE3);
     avxEnabled = false;
   }
   static void SetSSE42Disabled() {
-    reset();
-    maxEnabledSSEVersion = SSE4_1;
+    SetMaxEnabledSSEVersion(SSE4_1);
     avxEnabled = false;
   }
-  static void SetAVXEnabled() {
-    reset();
-    avxEnabled = true;
-  }
+  static void SetAVXEnabled() { avxEnabled = true; }
 };
 
 class AssemblerX86Shared : public AssemblerShared {

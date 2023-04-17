@@ -12765,6 +12765,11 @@ int main(int argc, char** argv) {
   
 
 #if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
+  
+  
+  
+  js::jit::CPUInfo::ResetSSEFlagsForTesting();
+
   if (op.getBoolOption("no-sse3")) {
     js::jit::CPUInfo::SetSSE3Disabled();
     if (!sCompilerProcessFlags.append("--no-sse3")) {
