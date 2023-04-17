@@ -2,9 +2,9 @@
 
 
 
-mod env;
+pub mod env;
 mod fetcher;
 pub mod load;
-mod registry;
+pub mod registry;
 mod source;
 mod xpcom_utils;
