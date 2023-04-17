@@ -94,9 +94,14 @@ const load = {
 
   
   
-  xhr_sync: async path => {
+  xhr_sync: async (path, headers) => {
     const xhr = new XMLHttpRequest;
     xhr.open("GET", path,  false);
+    if (headers instanceof Object) {
+      for (const [key, value] of Object.entries(headers)) {
+        xhr.setRequestHeader(key, value);
+      }
+    }
     xhr.send();
   }
 };
