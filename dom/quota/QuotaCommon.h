@@ -782,7 +782,7 @@ class NotNull;
 
 
 
-#define QM_NOTEONLY_TRY(...) QM_REPORTONLY_TRY_GLUE(Note, __VA_ARGS__)
+#define QM_INFOONLY_TRY(...) QM_REPORTONLY_TRY_GLUE(Info, __VA_ARGS__)
 
 
 
@@ -846,8 +846,8 @@ class NotNull;
 
 
 
-#define QM_NOTEONLY_TRY_UNWRAP(...) \
-  QM_REPORTONLY_TRY_ASSIGN_GLUE(Note, __VA_ARGS__)
+#define QM_INFOONLY_TRY_UNWRAP(...) \
+  QM_REPORTONLY_TRY_ASSIGN_GLUE(Info, __VA_ARGS__)
 
 
 
@@ -878,7 +878,7 @@ class NotNull;
 
 
 
-#define QM_OR_ELSE_NOTE(...) QM_OR_ELSE_REPORT(Note, __VA_ARGS__)
+#define QM_OR_ELSE_INFO(...) QM_OR_ELSE_REPORT(Info, __VA_ARGS__)
 
 
 
@@ -941,7 +941,7 @@ auto OrElseIf(Result<V, E>&& aResult, P&& aPred, F&& aFunc) -> Result<V, E> {
 
 
 
-#define QM_OR_ELSE_NOTE_IF(...) QM_OR_ELSE_REPORT_IF(Note, __VA_ARGS__)
+#define QM_OR_ELSE_INFO_IF(...) QM_OR_ELSE_REPORT_IF(Info, __VA_ARGS__)
 
 
 
@@ -1318,7 +1318,7 @@ nsDependentCSubstring MakeSourceFileRelativePath(
 enum class Severity {
   Error,
   Warning,
-  Note,
+  Info,
   Verbose,
 };
 
