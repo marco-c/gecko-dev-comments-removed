@@ -1175,6 +1175,12 @@ impl Profiler {
 
 pub trait ProfilerHooks : Send + Sync {
     
+    fn register_thread(&self, thread_name: &str);
+
+    
+    fn unregister_thread(&self);
+
+    
     
     fn begin_marker(&self, label: &CStr);
 
@@ -1216,6 +1222,26 @@ pub fn set_profiler_hooks(hooks: Option<&'static dyn ProfilerHooks>) {
 
 pub struct ProfileScope {
     name: &'static CStr,
+}
+
+
+
+pub fn register_thread(thread_name: &str) {
+    unsafe {
+        if let Some(ref hooks) = PROFILER_HOOKS {
+            hooks.register_thread(thread_name);
+        }
+    }
+}
+
+
+
+pub fn unregister_thread() {
+    unsafe {
+        if let Some(ref hooks) = PROFILER_HOOKS {
+            hooks.unregister_thread();
+        }
+    }
 }
 
 
