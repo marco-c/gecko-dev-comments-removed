@@ -1532,38 +1532,25 @@ Inspector.prototype = {
       return;
     }
 
-    if (this._destroyed) {
-      return;
-    }
-
-    try {
-      await this.commands.resourceCommand.watchResources(
-        [this.commands.resourceCommand.TYPES.REFLOW],
-        {
-          onAvailable: this.onReflowInSelection,
-        }
-      );
-    } catch (e) {
-      
-      
-      
-      
-      if (!this._destroyed) {
-        throw e;
-      }
-    }
+    const { targetFront } = this.selection.nodeFront;
+    this.reflowFront = await targetFront.getFront("reflow");
+    this.reflowFront.on("reflows", this.onReflowInSelection);
+    this.reflowFront.start();
   },
 
   
 
 
   untrackReflowsInSelection() {
-    this.commands.resourceCommand.unwatchResources(
-      [this.commands.resourceCommand.REFLOW],
-      {
-        onAvailable: this.onReflowInSelection,
-      }
-    );
+    
+    
+    if (!this.reflowFront || !this.reflowFront.actorID) {
+      return;
+    }
+
+    this.reflowFront.off("reflows", this.onReflowInSelection);
+    this.reflowFront.stop();
+    this.reflowFront = null;
   },
 
   onReflowInSelection() {
@@ -1712,7 +1699,6 @@ Inspector.prototype = {
       ],
       { onAvailable: this.onResourceAvailable }
     );
-    this.untrackReflowsInSelection();
 
     this._is3PaneModeChromeEnabled = null;
     this._is3PaneModeEnabled = null;

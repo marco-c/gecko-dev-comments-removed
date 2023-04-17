@@ -305,7 +305,7 @@ LayoutChangesObserver.prototype = {
   _startEventLoop: function() {
     
     
-    if (!this.targetActor || this.targetActor.isDestroyed()) {
+    if (!this.targetActor || !this.targetActor.attached) {
       return;
     }
 
