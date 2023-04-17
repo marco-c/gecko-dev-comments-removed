@@ -82,6 +82,7 @@ class ServoStyleSet;
 class StaticPresData;
 struct MediaFeatureChange;
 enum class MediaFeatureChangePropagation : uint8_t;
+enum class ColorScheme : uint8_t;
 namespace layers {
 class ContainerLayer;
 class LayerManager;
@@ -89,6 +90,7 @@ class LayerManager;
 namespace dom {
 class Document;
 class Element;
+enum class PrefersColorSchemeOverride : uint8_t;
 }  
 }  
 
@@ -574,9 +576,12 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   float GetOverrideDPPX() const { return mMediaEmulationData.mDPPX; }
 
   
+  
+  
+  
+  Maybe<mozilla::ColorScheme> GetOverriddenColorScheme() const;
 
-
-
+  
 
 
 
@@ -876,15 +881,15 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
   gfxTextPerfMetrics* GetTextPerfMetrics() { return mTextPerf.get(); }
 
-  bool IsDynamic() {
-    return (mType == eContext_PageLayout || mType == eContext_Galley);
+  bool IsDynamic() const {
+    return mType == eContext_PageLayout || mType == eContext_Galley;
   }
-  bool IsScreen() {
-    return (mMedium == nsGkAtoms::screen || mType == eContext_PageLayout ||
-            mType == eContext_PrintPreview);
+  bool IsScreen() const {
+    return mMedium == nsGkAtoms::screen || mType == eContext_PageLayout ||
+           mType == eContext_PrintPreview;
   }
-  bool IsPrintingOrPrintPreview() {
-    return (mType == eContext_Print || mType == eContext_PrintPreview);
+  bool IsPrintingOrPrintPreview() const {
+    return mType == eContext_Print || mType == eContext_PrintPreview;
   }
 
   
@@ -1373,7 +1378,10 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   unsigned mInitialized : 1;
 #endif
 
+  
+  
   FontVisibility mFontVisibility = FontVisibility::Unknown;
+  mozilla::dom::PrefersColorSchemeOverride mColorSchemeOverride;
 
  protected:
   virtual ~nsPresContext();
