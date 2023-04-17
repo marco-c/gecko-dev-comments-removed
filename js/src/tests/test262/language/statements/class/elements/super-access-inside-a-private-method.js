@@ -27,7 +27,6 @@
 
 
 
-
 class A {
   method() {
     return "Test262";

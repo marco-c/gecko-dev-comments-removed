@@ -34,7 +34,6 @@
 
 
 
-
 var C = class {
   static #method(a, b, c) {};
 

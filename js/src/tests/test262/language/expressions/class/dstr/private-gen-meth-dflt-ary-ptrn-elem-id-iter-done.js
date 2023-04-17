@@ -72,7 +72,6 @@
 
 
 
-
 var callCount = 0;
 var C = class {
   * #method([_, x] = []) {

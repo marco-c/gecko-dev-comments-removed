@@ -23,7 +23,6 @@
 
 
 
-
 class C {
   ;;;;
   ;;;;;;static #xVal; static #yVal;;;;;;;

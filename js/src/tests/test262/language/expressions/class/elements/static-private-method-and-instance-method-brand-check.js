@@ -32,7 +32,6 @@
 
 
 
-
 var C = class {
   static #f() {
     return 'static';

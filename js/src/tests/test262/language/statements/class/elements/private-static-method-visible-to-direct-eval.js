@@ -38,7 +38,6 @@
 
 
 
-
 class C {
   static #m() {
     return "Test262";

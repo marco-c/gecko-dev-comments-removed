@@ -22,7 +22,6 @@
 
 
 
-
 class C {
   m() { return 42; } get #m() { return 'test262'; };
   method() {

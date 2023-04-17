@@ -23,7 +23,6 @@
 
 
 
-
 class C {
   
   static #x(value) {

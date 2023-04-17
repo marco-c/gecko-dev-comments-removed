@@ -63,7 +63,6 @@
 
 
 
-
 class C {
   static #m() { return 'outer class'; }
 

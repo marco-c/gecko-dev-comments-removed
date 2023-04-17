@@ -20,7 +20,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   class C {
     #m() {

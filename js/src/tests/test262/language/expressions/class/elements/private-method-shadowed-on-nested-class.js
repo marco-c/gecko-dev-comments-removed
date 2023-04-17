@@ -21,7 +21,6 @@
 
 
 
-
 var C = class {
   #m() { throw new Test262Error(); }
 

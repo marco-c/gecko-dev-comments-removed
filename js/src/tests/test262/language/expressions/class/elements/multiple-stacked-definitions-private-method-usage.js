@@ -22,7 +22,6 @@
 
 
 
-
 var C = class {
   #m() { return 'test262'; }
   foo = "foobar"

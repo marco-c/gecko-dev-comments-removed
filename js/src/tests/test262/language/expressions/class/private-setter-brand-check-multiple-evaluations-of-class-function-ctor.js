@@ -19,7 +19,6 @@
 
 
 
-
 let classStringExpression = `
 return class {
   set #m(v) { this._v = v; }

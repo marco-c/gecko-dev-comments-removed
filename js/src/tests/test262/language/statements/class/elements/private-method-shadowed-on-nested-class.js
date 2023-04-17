@@ -21,7 +21,6 @@
 
 
 
-
 class C {
   #m() { throw new Test262Error(); }
 

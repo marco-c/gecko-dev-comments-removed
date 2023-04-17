@@ -55,7 +55,6 @@
 
 
 
-
 class C {
   ;;;;
   ;;;;;;static #$(value) {

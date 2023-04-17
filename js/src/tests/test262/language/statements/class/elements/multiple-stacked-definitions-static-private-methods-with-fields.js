@@ -24,7 +24,6 @@
 
 
 
-
 class C {
   static #xVal; static #yVal
   foo = "foobar"

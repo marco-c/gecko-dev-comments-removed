@@ -24,7 +24,6 @@
 
 
 
-
 class C {
   
   foo = "foobar"

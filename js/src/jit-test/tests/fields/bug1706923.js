@@ -1,5 +1,3 @@
-
-
 var error = undefined;
 try {
     eval(`class a {

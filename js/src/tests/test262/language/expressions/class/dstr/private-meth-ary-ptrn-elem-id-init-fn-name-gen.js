@@ -73,7 +73,6 @@
 
 
 
-
 var callCount = 0;
 var C = class {
   #method([gen = function* () {}, xGen = function* x() {}]) {

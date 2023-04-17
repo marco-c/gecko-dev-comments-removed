@@ -24,7 +24,6 @@
 
 
 
-
 var C = class {
   
   foo = "foobar"

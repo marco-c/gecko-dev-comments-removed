@@ -22,7 +22,6 @@
 
 
 
-
 let createClass = function () {
   return class {
     static set #m(v) {

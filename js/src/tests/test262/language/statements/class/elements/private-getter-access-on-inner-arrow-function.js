@@ -21,7 +21,6 @@
 
 
 
-
 class C {
   get #m() { return 'Test262'; }
 

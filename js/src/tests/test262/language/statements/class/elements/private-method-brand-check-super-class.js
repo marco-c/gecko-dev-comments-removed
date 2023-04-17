@@ -22,7 +22,6 @@
 
 
 
-
 class S {
   #method() { return 'super class'; }
   

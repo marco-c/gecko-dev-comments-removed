@@ -24,7 +24,6 @@
 
 
 
-
 class C {
   static f() { return this.#g(); }
   static #g() { return 42; }
