@@ -6,27 +6,17 @@
 
 
 
-use crate::context::QuirksMode;
 use crate::media_queries::MediaList;
 use crate::shared_lock::{DeepCloneParams, DeepCloneWithLock};
 use crate::shared_lock::{SharedRwLock, SharedRwLockReadGuard, ToCssWithGuard};
 use crate::str::CssStringWriter;
-use crate::stylesheets::{CssRule, Origin, StylesheetInDocument};
+use crate::stylesheets::{CssRule, StylesheetInDocument};
 use crate::stylesheets::layer_rule::LayerName;
 use crate::values::CssUrl;
 use cssparser::SourceLocation;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
 use to_shmem::{self, SharedMemoryBuilder, ToShmem};
-
-
-
-#[cfg(feature = "gecko")]
-#[derive(Clone, Debug)]
-pub struct PendingSheet {
-    origin: Origin,
-    quirks_mode: QuirksMode,
-}
 
 
 #[cfg(feature = "gecko")]
@@ -36,7 +26,7 @@ pub enum ImportSheet {
     Sheet(crate::gecko::data::GeckoStyleSheet),
     
     
-    Pending(PendingSheet),
+    Pending,
 }
 
 #[cfg(feature = "gecko")]
@@ -47,11 +37,8 @@ impl ImportSheet {
     }
 
     
-    pub fn new_pending(origin: Origin, quirks_mode: QuirksMode) -> Self {
-        ImportSheet::Pending(PendingSheet {
-            origin,
-            quirks_mode,
-        })
+    pub fn new_pending() -> Self {
+        ImportSheet::Pending
     }
 
     
@@ -65,7 +52,7 @@ impl ImportSheet {
                 }
                 Some(s)
             },
-            ImportSheet::Pending(_) => None,
+            ImportSheet::Pending => None,
         }
     }
 
@@ -100,7 +87,7 @@ impl DeepCloneWithLock for ImportSheet {
                 };
                 ImportSheet::Sheet(unsafe { GeckoStyleSheet::from_addrefed(clone) })
             },
-            ImportSheet::Pending(ref p) => ImportSheet::Pending(p.clone()),
+            ImportSheet::Pending => ImportSheet::Pending,
         }
     }
 }
