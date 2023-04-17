@@ -2964,23 +2964,20 @@ void BrowserChild::MakeVisible() {
     mPuppetWidget->Show(true);
   }
 
-  nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
-  if (!docShell) {
-    return;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (RefPtr<PresShell> presShell = docShell->GetPresShell()) {
-    presShell->SetIsActive(true);
+  if (nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation())) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (RefPtr<PresShell> presShell = docShell->GetPresShell()) {
+      presShell->ActivenessMaybeChanged();
+    }
   }
 }
 
@@ -2994,8 +2991,11 @@ void BrowserChild::MakeHidden() {
   
   
   
-  if (mPuppetWidget && mPuppetWidget->HasLayerManager()) {
-    ClearCachedResources();
+  if (mPuppetWidget) {
+    if (mPuppetWidget->HasLayerManager()) {
+      ClearCachedResources();
+    }
+    mPuppetWidget->Show(false);
   }
 
   if (nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation())) {
@@ -3003,14 +3003,9 @@ void BrowserChild::MakeHidden() {
     
     
     
-    
     if (RefPtr<PresShell> presShell = docShell->GetPresShell()) {
-      presShell->SetIsActive(false);
+      presShell->ActivenessMaybeChanged();
     }
-  }
-
-  if (mPuppetWidget) {
-    mPuppetWidget->Show(false);
   }
 }
 

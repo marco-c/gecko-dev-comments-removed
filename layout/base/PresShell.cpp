@@ -1034,7 +1034,7 @@ void PresShell::Init(nsPresContext* aPresContext, nsViewManager* aViewManager) {
   }
 
   
-  QueryIsActive();
+  ActivenessMaybeChanged();
 
   
   mFontSizeInflationEmPerLine = StaticPrefs::font_size_inflation_emPerLine();
@@ -9315,7 +9315,7 @@ void PresShell::Thaw(bool aIncludeSubDocuments) {
 
   
   
-  QueryIsActive();
+  ActivenessMaybeChanged();
 
   
   mFrozen = false;
@@ -10771,12 +10771,15 @@ nsAccessibilityService* PresShell::GetAccessibilityService() {
 
 #endif  
 
-
-void PresShell::QueryIsActive() {
-  Document* doc = mDocument;
-  if (!doc) {
+void PresShell::ActivenessMaybeChanged() {
+  if (!mDocument) {
     return;
   }
+  SetIsActive(ShouldBeActive());
+}
+
+bool PresShell::ShouldBeActive() const {
+  Document* doc = mDocument;
   if (Document* displayDoc = doc->GetDisplayDocument()) {
     
     
@@ -10786,25 +10789,33 @@ void PresShell::QueryIsActive() {
     doc = displayDoc;
   }
 
-  if (BrowsingContext* bc = doc->GetBrowsingContext()) {
+  Document* root = nsContentUtils::GetInProcessSubtreeRootDocument(doc);
+  if (auto* browserChild = BrowserChild::GetFrom(root->GetDocShell())) {
     
     
     
     
-    auto* browserChild = BrowserChild::GetFrom(doc->GetDocShell());
-    const bool hiddenInRemoteFrame = browserChild &&
-                                     !browserChild->IsTopLevel() &&
-                                     !browserChild->IsVisible();
-    SetIsActive(bc->IsActive() && !hiddenInRemoteFrame);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    return browserChild->IsVisible();
   }
+
+  BrowsingContext* bc = doc->GetBrowsingContext();
+  return bc && bc->IsActive();
 }
 
-nsresult PresShell::SetIsActive(bool aIsActive) {
+void PresShell::SetIsActive(bool aIsActive) {
   MOZ_ASSERT(mDocument, "should only be called with a document");
 
-#if defined(MOZ_WIDGET_ANDROID)
   const bool changed = mIsActive != aIsActive;
-#endif
 
   mIsActive = aIsActive;
 
@@ -10814,17 +10825,24 @@ nsresult PresShell::SetIsActive(bool aIsActive) {
     presContext->RefreshDriver()->SetThrottled(!mIsActive);
   }
 
-  {
+  if (changed) {
     
-    auto recurse = [aIsActive](Document& aResourceDoc) {
-      if (PresShell* presShell = aResourceDoc.GetPresShell()) {
+    
+    
+    
+    
+    
+    auto recurse = [aIsActive](Document& aSubDoc) {
+      if (PresShell* presShell = aSubDoc.GetPresShell()) {
         presShell->SetIsActive(aIsActive);
       }
       return CallState::Continue;
     };
     mDocument->EnumerateExternalResources(recurse);
+    mDocument->EnumerateSubDocuments(recurse);
   }
-  nsresult rv = UpdateImageLockingState();
+
+  UpdateImageLockingState();
 #ifdef ACCESSIBILITY
   if (aIsActive) {
     if (nsAccessibilityService* accService =
@@ -10849,8 +10867,6 @@ nsresult PresShell::SetIsActive(bool aIsActive) {
       rootFrame->SchedulePaint();
     }
   }
-
-  return rv;
 }
 
 RefPtr<MobileViewportManager> PresShell::GetMobileViewportManager() const {
@@ -10960,11 +10976,11 @@ bool PresShell::UsesMobileViewportSizing() const {
 
 
 
-nsresult PresShell::UpdateImageLockingState() {
+void PresShell::UpdateImageLockingState() {
   
   bool locked = !mFrozen && mIsActive;
 
-  nsresult rv = mDocument->ImageTracker()->SetLockingState(locked);
+  mDocument->ImageTracker()->SetLockingState(locked);
 
   if (locked) {
     
@@ -10975,8 +10991,6 @@ nsresult PresShell::UpdateImageLockingState() {
       }
     }
   }
-
-  return rv;
 }
 
 PresShell* PresShell::GetRootPresShell() const {
