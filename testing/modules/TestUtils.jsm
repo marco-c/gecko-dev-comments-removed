@@ -21,7 +21,9 @@
 var EXPORTED_SYMBOLS = ["TestUtils"];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
-const { setTimeout } = ChromeUtils.import("resource://gre/modules/Timer.jsm");
+const { clearTimeout, setTimeout } = ChromeUtils.import(
+  "resource://gre/modules/Timer.jsm"
+);
 
 var TestUtils = {
   executeSoon(callbackFn) {
@@ -51,19 +53,49 @@ var TestUtils = {
 
 
   topicObserved(topic, checkFn) {
+    let startTime = Cu.now();
     return new Promise((resolve, reject) => {
-      Services.obs.addObserver(function observer(subject, topic, data) {
+      let removed = false;
+      function observer(subject, topic, data) {
         try {
           if (checkFn && !checkFn(subject, data)) {
             return;
           }
           Services.obs.removeObserver(observer, topic);
+          
+          
+          
+          checkFn = null;
+          removed = true;
+          ChromeUtils.addProfilerMarker(
+            "TestUtils",
+            { startTime, category: "Test" },
+            "topicObserved: " + topic
+          );
           resolve([subject, data]);
         } catch (ex) {
           Services.obs.removeObserver(observer, topic);
+          checkFn = null;
+          removed = true;
           reject(ex);
         }
-      }, topic);
+      }
+      Services.obs.addObserver(observer, topic);
+
+      TestUtils.promiseTestFinished?.then(() => {
+        if (removed) {
+          return;
+        }
+
+        Services.obs.removeObserver(observer, topic);
+        let text = topic + " observer not removed before the end of test";
+        reject(text);
+        ChromeUtils.addProfilerMarker(
+          "TestUtils",
+          { startTime, category: "Test" },
+          "topicObserved: " + text
+        );
+      });
     });
   },
 
@@ -169,14 +201,21 @@ var TestUtils = {
 
 
 
-
   waitForCondition(condition, msg, interval = 100, maxTries = 50) {
     let startTime = Cu.now();
     return new Promise((resolve, reject) => {
       let tries = 0;
+      let timeoutId = 0;
       async function tryOnce() {
+        timeoutId = 0;
         if (tries >= maxTries) {
           msg += ` - timed out after ${maxTries} tries.`;
+          ChromeUtils.addProfilerMarker(
+            "TestUtils",
+            { startTime, category: "Test" },
+            `waitForCondition - ${msg}`
+          );
+          condition = null;
           reject(msg);
           return;
         }
@@ -185,7 +224,13 @@ var TestUtils = {
         try {
           conditionPassed = await condition();
         } catch (e) {
+          ChromeUtils.addProfilerMarker(
+            "TestUtils",
+            { startTime, category: "Test" },
+            `waitForCondition - ${msg}`
+          );
           msg += ` - threw exception: ${e}`;
+          condition = null;
           reject(msg);
           return;
         }
@@ -196,12 +241,31 @@ var TestUtils = {
             { startTime, category: "Test" },
             `waitForCondition succeeded after ${tries} retries - ${msg}`
           );
+          
+          
+          
+          condition = null;
           resolve(conditionPassed);
           return;
         }
         tries++;
-        setTimeout(tryOnce, interval);
+        timeoutId = setTimeout(tryOnce, interval);
       }
+
+      TestUtils.promiseTestFinished?.then(() => {
+        if (!timeoutId) {
+          return;
+        }
+
+        clearTimeout(timeoutId);
+        msg += " - still pending at the end of the test";
+        ChromeUtils.addProfilerMarker(
+          "TestUtils",
+          { startTime, category: "Test" },
+          `waitForCondition - ${msg}`
+        );
+        reject("waitForCondition timer - " + msg);
+      });
 
       TestUtils.executeSoon(tryOnce);
     });
