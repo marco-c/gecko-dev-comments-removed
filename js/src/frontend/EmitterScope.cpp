@@ -432,7 +432,10 @@ bool EmitterScope::enterClassBody(BytecodeEmitter* bce, ScopeKind kind,
 
   if (ScopeKindIsInBody(kind) && hasEnvironment()) {
     
-    if (!bce->emitInternedScopeOp(index(), JSOp::PushLexicalEnv)) {
+    
+    
+    
+    if (!bce->emitInternedScopeOp(index(), JSOp::PushClassBodyEnv)) {
       return false;
     }
   }
