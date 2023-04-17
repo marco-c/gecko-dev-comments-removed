@@ -958,6 +958,9 @@ NS_IMETHODIMP AppWindow::SetVisibility(bool aVisibility) {
   if (mDebuting) {
     return NS_OK;
   }
+
+  NS_ENSURE_STATE(mDocShell);
+
   mDebuting = true;  
 
   
