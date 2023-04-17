@@ -166,8 +166,6 @@ class GeckoContentController {
 
   virtual bool IsRemote() { return false; }
 
-  virtual PresShell* GetTopLevelPresShell() const { return nullptr; };
-
  protected:
   
   virtual ~GeckoContentController() = default;
