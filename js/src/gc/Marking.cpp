@@ -836,9 +836,27 @@ void GCMarker::severWeakDelegate(JSObject* key, JSObject* delegate) {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
   EphemeronEdgeVector& edges = p->value;
-  gc::AutoSetMarkColor autoColor(
-      *this, gc::detail::GetEffectiveColor(runtime(), delegate));
+  gc::AutoSetMarkColor autoColor(*this, MarkColor::Black);
   markEphemeronEdges(edges);
 }
 
@@ -858,8 +876,7 @@ void GCMarker::restoreWeakDelegate(JSObject* key, JSObject* delegate) {
 
   
   EphemeronEdgeVector& edges = p->value;
-  gc::AutoSetMarkColor autoColor(*this,
-                                 gc::detail::GetEffectiveColor(runtime(), key));
+  gc::AutoSetMarkColor autoColor(*this, MarkColor::Black);
   markEphemeronEdges(edges);
 }
 
