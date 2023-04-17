@@ -2155,7 +2155,8 @@ void UpdateReflectorGlobal(JSContext* aCx, JS::Handle<JSObject*> aObjArg,
   
   
   
-  if (!js::CheckRecursionLimitConservative(aCx)) {
+  js::AutoCheckRecursionLimit recursion(aCx);
+  if (!recursion.checkConservative(aCx)) {
     aError.StealExceptionFromJSContext(aCx);
     return;
   }

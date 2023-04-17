@@ -8896,7 +8896,8 @@ static bool TransplantObject(JSContext* cx, unsigned argc, Value* vp) {
   
   
 
-  if (!CheckRecursionLimitConservative(cx)) {
+  AutoCheckRecursionLimit recursion(cx);
+  if (!recursion.checkConservative(cx)) {
     return false;
   }
 
