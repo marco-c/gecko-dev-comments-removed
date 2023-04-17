@@ -13,6 +13,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 const HOMEPAGE_PREF = "browser.startup.homepage";
+const NEWTAB_PREF = "browser.newtabpage.enabled";
 
 
 const SCREEN_STRINGS = [
@@ -251,11 +252,15 @@ function onLoad(ready) {
     adjustModalBackdrop();
 
     
-    if (Services.prefs.prefHasUserValue(HOMEPAGE_PREF)) {
+    if (
+      Services.prefs.prefHasUserValue(HOMEPAGE_PREF) ||
+      Services.prefs.prefHasUserValue(NEWTAB_PREF)
+    ) {
       checkbox.classList.remove("hidden");
-      recordEvent("show", "revert-home");
+      recordEvent("show", checkbox.lastElementChild.dataset.l10nId);
     } else {
       checkbox.remove();
+      checkbox.firstElementChild.checked = false;
     }
 
     return selected;
@@ -269,8 +274,11 @@ function onLoad(ready) {
     checkbox.remove();
 
     
+    
     if (checkbox.firstElementChild.checked) {
       Services.prefs.clearUserPref(HOMEPAGE_PREF);
+      Services.prefs.clearUserPref(NEWTAB_PREF);
+      recordEvent("button", checkbox.lastElementChild.dataset.l10nId);
     }
   }
 
