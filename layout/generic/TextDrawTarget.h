@@ -76,7 +76,7 @@ class TextDrawTarget : public DrawTarget {
     mHasUnsupportedFeatures = false;
     mHasShadows = false;
 
-    SetPermitSubpixelAA(true);
+    SetPermitSubpixelAA(!aItem->IsSubpixelAADisabled());
 
     
     auto appUnitsPerDevPixel =
