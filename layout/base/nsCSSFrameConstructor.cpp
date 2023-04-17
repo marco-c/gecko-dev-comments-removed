@@ -1901,8 +1901,7 @@ nsIFrame* nsCSSFrameConstructor::ConstructTable(nsFrameConstructorState& aState,
   const bool isMathMLContent = content->IsMathMLElement();
 
   
-  RefPtr<ComputedStyle> outerComputedStyle;
-  outerComputedStyle =
+  RefPtr<ComputedStyle> outerComputedStyle =
       mPresShell->StyleSet()->ResolveInheritingAnonymousBoxStyle(
           PseudoStyleType::tableWrapper, computedStyle);
 
@@ -2102,9 +2101,9 @@ nsIFrame* nsCSSFrameConstructor::ConstructTableCell(
   newFrame->AddStateBits(NS_FRAME_OWNS_ANON_BOXES);
 
   
-  RefPtr<ComputedStyle> innerPseudoStyle;
-  innerPseudoStyle = mPresShell->StyleSet()->ResolveInheritingAnonymousBoxStyle(
-      PseudoStyleType::cellContent, computedStyle);
+  RefPtr<ComputedStyle> innerPseudoStyle =
+      mPresShell->StyleSet()->ResolveInheritingAnonymousBoxStyle(
+          PseudoStyleType::cellContent, computedStyle);
 
   
   bool isBlock;
@@ -2778,9 +2777,9 @@ nsContainerFrame* nsCSSFrameConstructor::ConstructPageFrame(
   
   pageFrame->Init(nullptr, aParentFrame, aPrevPageFrame);
 
-  RefPtr<ComputedStyle> pageContentPseudoStyle;
-  pageContentPseudoStyle = styleSet->ResolveNonInheritingAnonymousBoxStyle(
-      PseudoStyleType::pageContent);
+  RefPtr<ComputedStyle> pageContentPseudoStyle =
+      styleSet->ResolveNonInheritingAnonymousBoxStyle(
+          PseudoStyleType::pageContent);
 
   nsContainerFrame* pageContentFrame =
       NS_NewPageContentFrame(aPresShell, pageContentPseudoStyle);
@@ -2803,9 +2802,9 @@ nsContainerFrame* nsCSSFrameConstructor::ConstructPageFrame(
   pageContentFrame->AddStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
   pageContentFrame->MarkAsAbsoluteContainingBlock();
 
-  RefPtr<ComputedStyle> canvasPseudoStyle;
-  canvasPseudoStyle = styleSet->ResolveInheritingAnonymousBoxStyle(
-      PseudoStyleType::canvas, pageContentPseudoStyle);
+  RefPtr<ComputedStyle> canvasPseudoStyle =
+      styleSet->ResolveInheritingAnonymousBoxStyle(PseudoStyleType::canvas,
+                                                   pageContentPseudoStyle);
 
   aCanvasFrame = NS_NewCanvasFrame(aPresShell, canvasPseudoStyle);
 
@@ -2894,9 +2893,9 @@ nsIFrame* nsCSSFrameConstructor::ConstructSelectFrame(
     aState.AddChild(comboboxFrame, aFrameList, content, aParentFrame);
 
     
-    RefPtr<ComputedStyle> listStyle;
-    listStyle = mPresShell->StyleSet()->ResolveInheritingAnonymousBoxStyle(
-        PseudoStyleType::dropDownList, computedStyle);
+    RefPtr<ComputedStyle> listStyle =
+        mPresShell->StyleSet()->ResolveInheritingAnonymousBoxStyle(
+            PseudoStyleType::dropDownList, computedStyle);
 
     
     nsListControlFrame* listFrame =
@@ -3049,8 +3048,7 @@ nsIFrame* nsCSSFrameConstructor::ConstructFieldSetFrame(
   fieldsetFrame->AddStateBits(NS_FRAME_OWNS_ANON_BOXES);
 
   
-  RefPtr<ComputedStyle> fieldsetContentStyle;
-  fieldsetContentStyle =
+  RefPtr<ComputedStyle> fieldsetContentStyle =
       mPresShell->StyleSet()->ResolveInheritingAnonymousBoxStyle(
           PseudoStyleType::fieldsetContent, computedStyle);
 
@@ -4659,8 +4657,7 @@ void nsCSSFrameConstructor::FlushAccumulatedBlock(
   ComputedStyle* parentContext =
       nsIFrame::CorrectStyleParentFrame(aParentFrame, anonPseudo)->Style();
   ServoStyleSet* styleSet = mPresShell->StyleSet();
-  RefPtr<ComputedStyle> blockContext;
-  blockContext =
+  RefPtr<ComputedStyle> blockContext =
       styleSet->ResolveInheritingAnonymousBoxStyle(anonPseudo, parentContext);
 
   
@@ -4776,9 +4773,9 @@ nsContainerFrame* nsCSSFrameConstructor::ConstructFrameWithAnonymousChild(
   newFrame->AddStateBits(NS_FRAME_OWNS_ANON_BOXES);
 
   
-  RefPtr<ComputedStyle> scForAnon;
-  scForAnon = mPresShell->StyleSet()->ResolveInheritingAnonymousBoxStyle(
-      aInnerPseudo, computedStyle);
+  RefPtr<ComputedStyle> scForAnon =
+      mPresShell->StyleSet()->ResolveInheritingAnonymousBoxStyle(aInnerPseudo,
+                                                                 computedStyle);
 
   
   nsContainerFrame* innerFrame = aInnerConstructor(mPresShell, scForAnon);
