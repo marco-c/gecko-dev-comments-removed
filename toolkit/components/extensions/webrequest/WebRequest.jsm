@@ -36,6 +36,11 @@ XPCOMUtils.defineLazyGetter(this, "getCookieStoreIdForOriginAttributes", () => {
 
 
 
+const ALLOWED_SERVICEWORKER_SCHEMES = ["https", "http", "moz-extension"];
+
+
+
+
 const URGENT_CLASSES =
   Ci.nsIClassOfService.Leader |
   Ci.nsIClassOfService.Unblocked |
@@ -80,6 +85,32 @@ function parseExtra(extra, allowed = [], optionsObj = {}) {
 
 function isThenable(value) {
   return value && typeof value === "object" && typeof value.then === "function";
+}
+
+
+function verifyRedirect(channel, redirectUri, finalUrl, addonId) {
+  const { isServiceWorkerScript } = channel;
+
+  if (
+    isServiceWorkerScript &&
+    channel.loadInfo?.internalContentPolicyType ===
+      Ci.nsIContentPolicy.TYPE_INTERNAL_SERVICE_WORKER
+  ) {
+    throw new Error(
+      `Invalid redirectUrl ${redirectUri?.spec} on service worker main script ${finalUrl} requested by ${addonId}`
+    );
+  }
+
+  if (
+    isServiceWorkerScript &&
+    channel.loadInfo?.internalContentPolicyType ===
+      Ci.nsIContentPolicy.TYPE_INTERNAL_WORKER_IMPORT_SCRIPTS &&
+    !ALLOWED_SERVICEWORKER_SCHEMES.includes(redirectUri?.scheme)
+  ) {
+    throw new Error(
+      `Invalid redirectUrl ${redirectUri?.spec} on service worker imported script ${finalUrl} requested by ${addonId}`
+    );
+  }
 }
 
 class HeaderChanger {
@@ -1020,7 +1051,9 @@ HttpObserverManager = {
           try {
             const { redirectUrl } = result;
             channel.resume();
-            channel.redirectTo(Services.io.newURI(redirectUrl));
+            const redirectUri = Services.io.newURI(redirectUrl);
+            verifyRedirect(channel, redirectUri, finalURL, opts.addonId);
+            channel.redirectTo(redirectUri);
             ChromeUtils.addProfilerMarker(
               "Extension Redirected",
               { category: "Network" },
