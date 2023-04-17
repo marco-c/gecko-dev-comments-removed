@@ -96,18 +96,15 @@ class DebianBootstrapper(LinuxBootstrapper, BaseBootstrapper):
     def install_system_packages(self):
         self.apt_install(*self.packages)
 
-    def install_browser_packages(self, mozconfig_builder):
-        self.ensure_browser_packages()
-
-    def install_browser_artifact_mode_packages(self, mozconfig_builder):
-        self.ensure_browser_packages(artifact_mode=True)
-
-    def ensure_browser_packages(self, artifact_mode=False):
+    def install_browser_packages(self, mozconfig_builder, artifact_mode=False):
         
         self.apt_install(*self.BROWSER_COMMON_PACKAGES)
         modern = self.is_nasm_modern()
         if not modern:
             self.apt_install("nasm")
+
+    def install_browser_artifact_mode_packages(self, mozconfig_builder):
+        self.install_browser_packages(mozconfig_builder, artifact_mode=True)
 
     def install_mobile_android_packages(self, mozconfig_builder, artifact_mode=False):
         
@@ -117,7 +114,9 @@ class DebianBootstrapper(LinuxBootstrapper, BaseBootstrapper):
 
         
         self.ensure_java(mozconfig_builder)
-        super().install_mobile_android_packages(artifact_mode=artifact_mode)
+        super().install_mobile_android_packages(
+            mozconfig_builder, artifact_mode=artifact_mode
+        )
 
     def _update_package_manager(self):
         self.apt_update()
