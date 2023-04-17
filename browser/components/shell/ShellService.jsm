@@ -154,6 +154,19 @@ let ShellServiceInternal = {
         throw new Error("checkBrowserUserChoiceHashes() failed");
       }
 
+      
+      
+      
+      if (
+        !(
+          AppConstants.isPlatformAndVersionAtLeast("win", "10") &&
+          parseInt(Services.sysinfo.getProperty("build")) >= 15063
+        )
+      ) {
+        telemetryResult = "ErrBuild";
+        throw new Error("Windows build is unsupported");
+      }
+
       const wdba = Services.dirsvc.get("XREExeF", Ci.nsIFile);
       wdba.leafName = "default-browser-agent.exe";
       const aumi = XreDirProvider.getInstallHash();
