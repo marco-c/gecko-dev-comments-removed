@@ -363,7 +363,7 @@ var interfaceNamesInGlobalScope = [
   
   { name: "Event", insecureContext: true },
   
-  { name: "EventCounts", insecureContext: true, nightly: true },
+  { name: "EventCounts", insecureContext: true },
   
   { name: "EventSource", insecureContext: true },
   
@@ -849,7 +849,7 @@ var interfaceNamesInGlobalScope = [
   
   { name: "PerformanceEntry", insecureContext: true },
   
-  { name: "PerformanceEventTiming", insecureContext: true, nightly: true },
+  { name: "PerformanceEventTiming", insecureContext: true },
   
   { name: "PerformanceMark", insecureContext: true },
   
