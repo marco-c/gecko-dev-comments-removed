@@ -391,14 +391,14 @@ class MOZ_STACK_CLASS Locale final {
 
 
 
-  [[nodiscard]] bool addLikelySubtags();
+  ICUResult addLikelySubtags();
 
   
 
 
 
 
-  [[nodiscard]] bool removeLikelySubtags();
+  ICUResult removeLikelySubtags();
 
   
 
