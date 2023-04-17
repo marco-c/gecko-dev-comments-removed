@@ -1058,7 +1058,8 @@ nsresult TextServicesDocument::DeleteSelection() {
   }
 
   
-  return RemoveInvalidOffsetEntries();
+  mOffsetTable.RemoveInvalidElements();
+  return NS_OK;
 }
 
 nsresult TextServicesDocument::InsertText(const nsAString& aText) {
@@ -2558,26 +2559,21 @@ TextServicesDocument::OffsetEntryArray::Init(
   return IteratorStatus::eDone;
 }
 
-nsresult TextServicesDocument::RemoveInvalidOffsetEntries() {
-  for (size_t i = 0; i < mOffsetTable.Length();) {
-    if (!mOffsetTable[i]->mIsValid) {
-      mOffsetTable.RemoveElementAt(i);
-      if (mOffsetTable.mSelection.IsSet() &&
-          mOffsetTable.mSelection.StartIndex() >= i) {
+void TextServicesDocument::OffsetEntryArray::RemoveInvalidElements() {
+  for (size_t i = 0; i < Length();) {
+    if (!ElementAt(i)->mIsValid) {
+      RemoveElementAt(i);
+      if (mSelection.IsSet() && mSelection.StartIndex() >= i) {
         
         
         
-        NS_ASSERTION(i != mOffsetTable.mSelection.StartIndex(),
-                     "Invalid selection index.");
-        mOffsetTable.mSelection.Set(mOffsetTable.mSelection.StartIndex() - 1,
-                                    mOffsetTable.mSelection.EndIndex() - 1);
+        NS_ASSERTION(i != mSelection.StartIndex(), "Invalid selection index.");
+        mSelection.Set(mSelection.StartIndex() - 1, mSelection.EndIndex() - 1);
       }
     } else {
       i++;
     }
   }
-
-  return NS_OK;
 }
 
 nsresult TextServicesDocument::OffsetEntryArray::SplitElementAt(
