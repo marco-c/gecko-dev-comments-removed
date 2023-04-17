@@ -3543,7 +3543,7 @@ class AddSearchEngineHelper {
 
 
   get maxInlineEngines() {
-    return 3;
+    return this.shortcutButtons._maxInlineAddEngines;
   }
 
   
@@ -3556,21 +3556,7 @@ class AddSearchEngineHelper {
     let engines = browser.engines?.slice() || [];
     if (!this._sameEngines(this.engines, engines)) {
       this.engines = engines;
-
-      
-      
-      this.shortcutButtons.updateWebEngines(
-        engines.slice(0, this.maxInlineEngines).map(e => ({
-          name: e.title,
-          uri: e.uri,
-          get icon() {
-            
-            
-            
-            return e.icon;
-          },
-        }))
-      );
+      this.shortcutButtons.updateWebEngines(engines);
     }
   }
 

@@ -10,12 +10,12 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 XPCOMUtils.defineLazyModuleGetters(this, {
-  clearTimeout: "resource://gre/modules/Timer.jsm",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   SearchUIUtils: "resource:///modules/SearchUIUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
-  setTimeout: "resource://gre/modules/Timer.jsm",
 });
+
+const EMPTY_ADD_ENGINES = [];
 
 
 
@@ -40,7 +40,6 @@ class SearchOneOffs {
         <hbox class="search-one-offs-spacer"/>
         <button class="searchbar-engine-one-off-item search-setting-button-compact" tabindex="-1" data-l10n-id="search-one-offs-change-settings-compact-button"/>
       </box>
-      <vbox class="search-add-engines"/>
       <menuseparator class="searchbar-separator"/>
       <button class="search-setting-button" pack="start" data-l10n-id="search-one-offs-change-settings-button"/>
       <box>
@@ -73,8 +72,6 @@ class SearchOneOffs {
 
     this.header = this.querySelector(".search-panel-one-offs-header");
 
-    this.addEngines = this.querySelector(".search-add-engines");
-
     this.settingsButton = this.querySelector(".search-setting-button");
 
     this.settingsButtonCompact = this.querySelector(
@@ -99,27 +96,7 @@ class SearchOneOffs {
 
     this._rebuilding = false;
 
-    
-
-
-
-
-    this._addEngineMenuThreshold = 5;
-
-    
-
-
-
-
-    this._addEngineMenuTimeoutMs = 200;
-
-    this._addEngineMenuTimeout = null;
-
-    this._addEngineMenuShouldBeOpen = false;
-
     this.addEventListener("mousedown", this);
-    this.addEventListener("mousemove", this);
-    this.addEventListener("mouseout", this);
     this.addEventListener("click", this);
     this.addEventListener("command", this);
     this.addEventListener("contextmenu", this);
@@ -413,6 +390,14 @@ class SearchOneOffs {
     this.invalidateCache();
   }
 
+  _getAddEngines() {
+    return this.window.gBrowser.selectedBrowser.engines || EMPTY_ADD_ENGINES;
+  }
+
+  get _maxInlineAddEngines() {
+    return 3;
+  }
+
   
 
 
@@ -436,17 +421,11 @@ class SearchOneOffs {
 
   async __rebuild() {
     
-    
-    
-    
-    if (!this.compact) {
-      this._rebuildAddEngineList();
-    }
-
-    
     if (!this.popup && this._engineInfo?.domWasUpdated) {
       return;
     }
+
+    const addEngines = this._getAddEngines();
 
     
     if (this.popup && this._textbox) {
@@ -455,11 +434,13 @@ class SearchOneOffs {
       });
       if (
         this._engineInfo?.domWasUpdated &&
-        this._textboxWidth == textboxWidth
+        this._textboxWidth == textboxWidth &&
+        this._addEngines == addEngines
       ) {
         return;
       }
       this._textboxWidth = textboxWidth;
+      this._addEngines = addEngines;
     }
 
     
@@ -498,6 +479,7 @@ class SearchOneOffs {
     }
 
     let engines = (await this.getEngineInfo()).engines;
+
     if (this.popup) {
       let buttonsWidth = this.popup.clientWidth;
 
@@ -529,7 +511,8 @@ class SearchOneOffs {
       
       
       
-      let rowCount = Math.ceil(engines.length / enginesPerRow);
+      let engineCount = engines.length + addEngines.length;
+      let rowCount = Math.ceil(engineCount / enginesPerRow);
       let height = rowCount * this.buttonHeight;
       this.buttons.style.setProperty("height", `${height}px`);
     }
@@ -538,7 +521,7 @@ class SearchOneOffs {
     this.settingsButton.id = origin + "-anon-search-settings";
     this.settingsButtonCompact.id = origin + "-anon-search-settings-compact";
 
-    this._rebuildEngineList(engines);
+    this._rebuildEngineList(engines, addEngines);
     this.dispatchEvent(new Event("rebuild"));
   }
 
@@ -548,7 +531,9 @@ class SearchOneOffs {
 
 
 
-  _rebuildEngineList(engines) {
+
+
+  _rebuildEngineList(engines, addEngines) {
     for (let i = 0; i < engines.length; ++i) {
       let engine = engines[i];
       let button = this.document.createXULElement("button");
@@ -563,102 +548,29 @@ class SearchOneOffs {
       this.setTooltipForEngineButton(button);
       this.buttons.appendChild(button);
     }
-  }
 
-  _rebuildAddEngineList() {
-    let list = this.addEngines;
-    while (list.firstChild) {
-      list.firstChild.remove();
-    }
-
-    
-    
-    
-    
-    
-
-    if (!this.window.gBrowser.selectedBrowser.engines) {
-      return;
-    }
-
-    let engines = this.window.gBrowser.selectedBrowser.engines;
-    let tooManyEngines = engines.length > this._addEngineMenuThreshold;
-
-    if (tooManyEngines) {
-      
-      let button = this.document.createXULElement("toolbarbutton");
-      button.classList.add("addengine-menu-button", "addengine-item");
-      button.setAttribute("badged", "true");
-      button.setAttribute("type", "menu");
-      button.setAttribute("wantdropmarker", "true");
-      button.setAttribute("data-l10n-id", "search-one-offs-add-engine-menu");
-      button.setAttribute("crop", "end");
-      button.setAttribute("pack", "start");
-
-      
-      
-      
-      let engine = engines[0];
+    for (
+      let i = 0, len = Math.min(addEngines.length, this._maxInlineAddEngines);
+      i < len;
+      i++
+    ) {
+      const engine = addEngines[i];
+      const button = this.document.createXULElement("button");
+      button.id = this._buttonIDForEngine(engine);
+      button.classList.add("searchbar-engine-one-off-item");
+      button.classList.add("searchbar-engine-one-off-add-engine");
+      button.setAttribute("tabindex", "-1");
       if (engine.icon) {
         button.setAttribute("image", engine.icon);
       }
-      list.appendChild(button);
-
-      
-      list = this.document.createXULElement("menupopup");
-      button.appendChild(list);
-      list.setAttribute("class", "addengine-menu");
-      list.setAttribute("position", "topright topleft");
-
-      
-      
-      let suppressEventTypes = [
-        "popupshowing",
-        "popuphiding",
-        "popupshown",
-        "popuphidden",
-      ];
-      for (let type of suppressEventTypes) {
-        list.addEventListener(type, event => {
-          event.stopPropagation();
-        });
-      }
-    }
-
-    
-    
-    
-    
-    
-    let eltType = tooManyEngines ? "menuitem" : "toolbarbutton";
-    for (let engine of engines) {
-      let button = this.document.createXULElement(eltType);
-      button.classList.add("addengine-item");
-      if (!tooManyEngines) {
-        button.setAttribute("badged", "true");
-      }
-      button.id =
-        this.telemetryOrigin +
-        "-add-engine-" +
-        this._fixUpEngineNameForID(engine.title);
       button.setAttribute("data-l10n-id", "search-one-offs-add-engine");
       button.setAttribute(
         "data-l10n-args",
         JSON.stringify({ engineName: engine.title })
       );
-      button.setAttribute("crop", "end");
-      button.setAttribute("tooltiptext", engine.title + "\n" + engine.uri);
-      button.setAttribute("uri", engine.uri);
       button.setAttribute("engine-name", engine.title);
-      if (engine.icon) {
-        button.setAttribute("image", engine.icon);
-      }
-      if (tooManyEngines) {
-        button.classList.add("menuitem-iconic");
-      } else {
-        button.setAttribute("pack", "start");
-      }
-      list.appendChild(button);
+      button.setAttribute("uri", engine.uri);
+      this.buttons.appendChild(button);
     }
   }
 
@@ -666,7 +578,7 @@ class SearchOneOffs {
     return (
       this.telemetryOrigin +
       "-engine-one-off-item-" +
-      this._fixUpEngineNameForID(engine.name)
+      this._fixUpEngineNameForID(engine.name || engine.title)
     );
   }
 
@@ -680,23 +592,11 @@ class SearchOneOffs {
   }
 
   getSelectableButtons(aIncludeNonEngineButtons) {
-    let buttons = [];
-    for (
-      let oneOff = this.buttons.firstElementChild;
-      oneOff;
-      oneOff = oneOff.nextElementSibling
-    ) {
-      buttons.push(oneOff);
-    }
+    const buttons = [
+      ...this.buttons.querySelectorAll(".searchbar-engine-one-off-item"),
+    ];
 
     if (aIncludeNonEngineButtons) {
-      for (
-        let addEngine = this.addEngines.firstElementChild;
-        addEngine;
-        addEngine = addEngine.nextElementSibling
-      ) {
-        buttons.push(addEngine);
-      }
       buttons.push(
         this.compact ? this.settingsButtonCompact : this.settingsButton
       );
@@ -1056,17 +956,6 @@ class SearchOneOffs {
     return false;
   }
 
-  _resetAddEngineMenuTimeout() {
-    if (this._addEngineMenuTimeout) {
-      clearTimeout(this._addEngineMenuTimeout);
-    }
-    this._addEngineMenuTimeout = setTimeout(() => {
-      delete this._addEngineMenuTimeout;
-      let button = this.querySelector(".addengine-menu-button");
-      button.open = this._addEngineMenuShouldBeOpen;
-    }, this._addEngineMenuTimeoutMs);
-  }
-
   
 
   
@@ -1137,42 +1026,10 @@ class SearchOneOffs {
   
 
   _on_mousedown(event) {
-    let target = event.originalTarget;
-    if (target.classList.contains("addengine-menu-button")) {
-      return;
-    }
     
     
     
     event.preventDefault();
-  }
-
-  _on_mousemove(event) {
-    let target = event.originalTarget;
-
-    
-    if (
-      (target.localName == "menuitem" &&
-        target.classList.contains("addengine-item")) ||
-      target.classList.contains("addengine-menu-button")
-    ) {
-      this._addEngineMenuShouldBeOpen = true;
-      this._resetAddEngineMenuTimeout();
-    }
-  }
-
-  _on_mouseout(event) {
-    let target = event.originalTarget;
-
-    
-    if (
-      (target.localName == "menuitem" &&
-        target.classList.contains("addengine-item")) ||
-      target.classList.contains("addengine-menu-button")
-    ) {
-      this._addEngineMenuShouldBeOpen = false;
-      this._resetAddEngineMenuTimeout();
-    }
   }
 
   _on_click(event) {
@@ -1205,10 +1062,7 @@ class SearchOneOffs {
       return;
     }
 
-    if (
-      target.classList.contains("addengine-item") ||
-      target.classList.contains("searchbar-engine-one-off-add-engine")
-    ) {
+    if (target.classList.contains("searchbar-engine-one-off-add-engine")) {
       
       
       SearchUIUtils.addOpenSearchEngine(
