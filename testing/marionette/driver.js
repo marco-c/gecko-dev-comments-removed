@@ -57,6 +57,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   WebDriverSession: "chrome://marionette/content/session.js",
   WebElement: "chrome://marionette/content/element.js",
   WebElementEventTarget: "chrome://marionette/content/dom.js",
+  windowManager: "chrome://marionette/content/window-manager.js",
   WindowState: "chrome://marionette/content/browser.js",
 });
 
@@ -110,9 +111,6 @@ this.GeckoDriver = function(server) {
   this.currentSession = null;
 
   this.browsers = {};
-
-  
-  this._browserIds = new WeakMap();
 
   
   this.curBrowser = null;
@@ -169,51 +167,11 @@ Object.defineProperty(GeckoDriver.prototype, "title", {
   },
 });
 
-Object.defineProperty(GeckoDriver.prototype, "windows", {
-  get() {
-    return Services.wm.getEnumerator(null);
-  },
-});
-
 Object.defineProperty(GeckoDriver.prototype, "windowType", {
   get() {
     return this.curBrowser.window.document.documentElement.getAttribute(
       "windowtype"
     );
-  },
-});
-
-Object.defineProperty(GeckoDriver.prototype, "windowHandles", {
-  get() {
-    let hs = [];
-
-    for (let win of this.windows) {
-      let tabBrowser = browser.getTabBrowser(win);
-
-      
-      if (tabBrowser && tabBrowser.tabs) {
-        for (let tab of tabBrowser.tabs) {
-          let winId = this.getIdForBrowser(browser.getBrowserForTab(tab));
-          if (winId !== null) {
-            hs.push(winId);
-          }
-        }
-      }
-    }
-
-    return hs;
-  },
-});
-
-Object.defineProperty(GeckoDriver.prototype, "chromeWindowHandles", {
-  get() {
-    let hs = [];
-
-    for (let win of this.windows) {
-      hs.push(getWindowId(win));
-    }
-
-    return hs;
   },
 });
 
@@ -357,7 +315,7 @@ GeckoDriver.prototype.isReftestBrowser = function(element) {
 
 GeckoDriver.prototype.addBrowser = function(win) {
   let context = new browser.Context(win, this);
-  let winId = getWindowId(win);
+  let winId = windowManager.getIdForWindow(win);
 
   this.browsers[winId] = context;
   this.curBrowser = this.browsers[winId];
@@ -593,7 +551,7 @@ GeckoDriver.prototype.newSession = async function(cmd) {
     }
   );
 
-  for (let win of this.windows) {
+  for (let win of windowManager.windows) {
     const tabBrowser = browser.getTabBrowser(win);
 
     if (tabBrowser) {
@@ -655,7 +613,10 @@ GeckoDriver.prototype.observe = function(subject, topic, data) {
         
         
         
-        this.updateIdForBrowser(this.curBrowser.contentBrowser, subject.id);
+        windowManager.updateIdForBrowser(
+          this.curBrowser.contentBrowser,
+          subject.id
+        );
       }
       break;
   }
@@ -1095,36 +1056,6 @@ GeckoDriver.prototype.refresh = async function() {
 
 
 
-GeckoDriver.prototype.updateIdForBrowser = function(browser, newId) {
-  this._browserIds.set(browser.permanentKey, newId);
-};
-
-
-
-
-
-
-GeckoDriver.prototype.getIdForBrowser = function(browser) {
-  if (browser === null) {
-    return null;
-  }
-
-  let permKey = browser.permanentKey;
-  if (this._browserIds.has(permKey)) {
-    return this._browserIds.get(permKey);
-  }
-
-  let winId = browser.browsingContext.id;
-  if (winId) {
-    this._browserIds.set(permKey, winId);
-    return winId;
-  }
-  return null;
-};
-
-
-
-
 
 
 
@@ -1159,7 +1090,7 @@ GeckoDriver.prototype.getWindowHandle = function() {
 
 
 GeckoDriver.prototype.getWindowHandles = function() {
-  return this.windowHandles.map(String);
+  return windowManager.windowHandles.map(String);
 };
 
 
@@ -1197,7 +1128,7 @@ GeckoDriver.prototype.getChromeWindowHandle = function() {
 
 
 GeckoDriver.prototype.getChromeWindowHandles = function() {
-  return this.chromeWindowHandles.map(String);
+  return windowManager.chromeWindowHandles.map(String);
 };
 
 
@@ -1319,7 +1250,10 @@ GeckoDriver.prototype.switchToWindow = async function(cmd) {
   assert.boolean(focus, pprint`Expected "focus" to be a boolean, got ${focus}`);
 
   const id = parseInt(handle);
-  const found = this.findWindow(this.windows, (win, winId) => id == winId);
+  const found = this.findWindow(
+    windowManager.windows,
+    (win, winId) => id == winId
+  );
 
   let selected = false;
   if (found) {
@@ -1364,7 +1298,7 @@ GeckoDriver.prototype.findWindow = function(winIterable, filter) {
     } else if (tabBrowser && tabBrowser.tabs) {
       for (let i = 0; i < tabBrowser.tabs.length; ++i) {
         let contentBrowser = browser.getBrowserForTab(tabBrowser.tabs[i]);
-        let contentWindowId = this.getIdForBrowser(contentBrowser);
+        let contentWindowId = windowManager.getIdForBrowser(contentBrowser);
 
         if (filter(win, contentWindowId)) {
           return {
@@ -2233,8 +2167,8 @@ GeckoDriver.prototype.newWindow = async function(cmd) {
   
   
   let windowId = await new PollPromise((resolve, reject) => {
-    let id = this.getIdForBrowser(contentBrowser);
-    this.windowHandles.includes(id) ? resolve(id) : reject();
+    let id = windowManager.getIdForBrowser(contentBrowser);
+    windowManager.windowHandles.includes(id) ? resolve(id) : reject();
   });
 
   return { handle: windowId.toString(), type };
@@ -2263,7 +2197,7 @@ GeckoDriver.prototype.close = async function() {
 
   let nwins = 0;
 
-  for (let win of this.windows) {
+  for (let win of windowManager.windows) {
     
     let tabbrowser = browser.getTabBrowser(win);
     if (tabbrowser && tabbrowser.tabs) {
@@ -2283,7 +2217,7 @@ GeckoDriver.prototype.close = async function() {
   await this.curBrowser.closeTab();
   this.currentSession.contentBrowsingContext = null;
 
-  return this.windowHandles.map(String);
+  return windowManager.windowHandles.map(String);
 };
 
 
@@ -2306,7 +2240,7 @@ GeckoDriver.prototype.closeChromeWindow = async function() {
   let nwins = 0;
 
   
-  for (let _ of this.windows) {
+  for (let _ of windowManager.windows) {
     nwins++;
   }
 
@@ -2321,7 +2255,7 @@ GeckoDriver.prototype.closeChromeWindow = async function() {
   this.currentSession.chromeBrowsingContext = null;
   this.currentSession.contentBrowsingContext = null;
 
-  return this.chromeWindowHandles.map(String);
+  return windowManager.chromeWindowHandles.map(String);
 };
 
 
@@ -3221,10 +3155,6 @@ GeckoDriver.prototype.commands = {
   "WebDriver:SwitchToWindow": GeckoDriver.prototype.switchToWindow,
   "WebDriver:TakeScreenshot": GeckoDriver.prototype.takeScreenshot,
 };
-
-function getWindowId(win) {
-  return win.docShell.browsingContext.id;
-}
 
 async function exitFullscreen(win) {
   let cb;
