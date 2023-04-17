@@ -42,9 +42,18 @@
 
 CAIRO_BEGIN_DECLS
 
+
+
+
+
+
+
+
+
+
 typedef enum {
-    CAIRO_SCRIPT_MODE_BINARY,
-    CAIRO_SCRIPT_MODE_ASCII
+    CAIRO_SCRIPT_MODE_ASCII,
+    CAIRO_SCRIPT_MODE_BINARY
 } cairo_script_mode_t;
 
 cairo_public cairo_device_t *

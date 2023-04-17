@@ -342,6 +342,36 @@ _cairo_ucs4_to_utf8 (uint32_t  unicode,
     return bytes;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+int
+_cairo_ucs4_to_utf16 (uint32_t  unicode,
+		      uint16_t *utf16)
+{
+    if (unicode < 0x10000) {
+	if (utf16)
+	    utf16[0] = unicode;
+	return 1;
+    } else if (unicode < 0x110000) {
+	if (utf16) {
+	    utf16[0] = (unicode - 0x10000) / 0x400 + 0xd800;
+	    utf16[1] = (unicode - 0x10000) % 0x400 + 0xdc00;
+	}
+	return 2;
+    } else {
+	return 0;
+    }
+}
+
 #if CAIRO_HAS_UTF8_TO_UTF16
 
 
@@ -401,12 +431,7 @@ _cairo_utf8_to_utf16 (const char *str,
     for (i = 0; i < n16;) {
 	uint32_t wc = _utf8_get_char (in);
 
-	if (wc < 0x10000) {
-	    str16[i++] = wc;
-	} else {
-	    str16[i++] = (wc - 0x10000) / 0x400 + 0xd800;
-	    str16[i++] = (wc - 0x10000) % 0x400 + 0xdc00;
-	}
+	i += _cairo_ucs4_to_utf16 (wc, str16 + i);
 
 	in = UTF8_NEXT_CHAR (in);
     }

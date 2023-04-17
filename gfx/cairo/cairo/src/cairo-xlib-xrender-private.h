@@ -96,26 +96,35 @@ __attribute__((__unused__)) static void   _void_consume_free   (Display *p, XID 
 #define PictOpBlendMaximum			    0x3e
 #endif
 
+#if !HAVE_XRENDERCREATESOLIDFILL
+#define XRenderCreateSolidFill				_int_consume
+#endif
 
-
-#if RENDER_MAJOR == 0 && RENDER_MINOR < 10
+#if !HAVE_XRENDERCREATELINEARGRADIENT
 #define XRenderCreateLinearGradient			_int_consume
+
+typedef struct _XLinearGradient {
+    XPointFixed p1;
+    XPointFixed p2;
+} XLinearGradient;
+#endif
+
+#if !HAVE_XRENDERCREATERADIALGRADIENT
 #define XRenderCreateRadialGradient			_int_consume
-#define XRenderCreateConicalGradient			_int_consume
+
 typedef struct _XCircle {
     XFixed x;
     XFixed y;
     XFixed radius;
 } XCircle;
-typedef struct _XLinearGradient {
-    XPointFixed p1;
-    XPointFixed p2;
-} XLinearGradient;
-
 typedef struct _XRadialGradient {
     XCircle inner;
     XCircle outer;
 } XRadialGradient;
+#endif
+
+#if !HAVE_XRENDERCREATECONICALGRADIENT
+#define XRenderCreateConicalGradient			_int_consume
 
 typedef struct _XConicalGradient {
     XPointFixed center;

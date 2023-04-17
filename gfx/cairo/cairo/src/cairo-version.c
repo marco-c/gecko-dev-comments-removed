@@ -36,13 +36,22 @@
 
 
 
-#define CAIRO_VERSION_H 1
-
 #include "cairoint.h"
 
 
-#undef CAIRO_VERSION_H
-#include "cairo-features.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -224,6 +233,8 @@ cairo_version (void)
 {
     return CAIRO_VERSION;
 }
+
+
 
 
 
