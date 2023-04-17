@@ -2260,13 +2260,6 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
 
   gfxPlatform::GetPlatform()->SchedulePaintIfDeviceReset();
 
-  
-  
-  
-  if (StaticPrefs::apz_peek_messages_enabled()) {
-    DisplayPortUtils::UpdateDisplayPortMarginsFromPendingMessages();
-  }
-
   FlushForceNotifyContentfulPaintPresContext();
 
   AutoTArray<nsCOMPtr<nsIRunnable>, 16> earlyRunners = std::move(mEarlyRunners);
