@@ -17,6 +17,9 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPtr.h"
 
+#define FOCUSMETHOD_MASK 0xF000
+#define FOCUSMETHODANDRING_MASK 0xF0F000
+
 #define FOCUSMANAGER_CONTRACTID "@mozilla.org/focus-manager;1"
 
 class nsIContent;
@@ -474,9 +477,10 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
+
   void SendFocusOrBlurEvent(
       mozilla::EventMessage aEventMessage, mozilla::PresShell* aPresShell,
-      Document* aDocument, nsISupports* aTarget,
+      Document* aDocument, nsISupports* aTarget, uint32_t aFocusMethod,
       bool aWindowRaised, bool aIsRefocus = false,
       mozilla::dom::EventTarget* aRelatedTarget = nullptr);
   
