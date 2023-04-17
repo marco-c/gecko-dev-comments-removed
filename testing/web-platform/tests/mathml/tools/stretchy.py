@@ -7,7 +7,7 @@ import fontforge
 font = mathfont.create("stretchy", "Copyright (c) 2021 Igalia S.L.")
 
 
-font.math.MinConnectorOverlap = mathfont.em / 2
+font.math.MinConnectorOverlap = mathfont.em // 2
 
 
 font.math.LowerLimitBaselineDropMin = 0

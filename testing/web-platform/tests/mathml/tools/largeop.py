@@ -56,9 +56,9 @@ mathfont.drawRectangleGlyph(g,
 f[nAryWhiteVerticalBarCodePoint].verticalVariants = "uni2AFF"
 
 f[nAryWhiteVerticalBarCodePoint].verticalComponents = \
-  (("uni2AFF.bot", False, 0, mathfont.em / 2, mathfont.em),
-   ("uni2AFF.ext", True, mathfont.em / 2, mathfont.em / 2, 2 * mathfont.em),
-   ("uni2AFF.top", False, mathfont.em / 2, 0, mathfont.em)
+  (("uni2AFF.bot", False, 0, mathfont.em // 2, mathfont.em),
+   ("uni2AFF.ext", True, mathfont.em // 2, mathfont.em // 2, 2 * mathfont.em),
+   ("uni2AFF.top", False, mathfont.em // 2, 0, mathfont.em)
   );
 f[nAryWhiteVerticalBarCodePoint].verticalComponentItalicCorrection = v2
 mathfont.save(f)

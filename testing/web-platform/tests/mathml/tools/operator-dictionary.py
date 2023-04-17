@@ -30,7 +30,7 @@ def buildKeyAndValueFrom(characters, form):
     
     key = ""
     for c in characters:
-        key += unichr(c)
+        key += chr(c)
     key += " " + form
     
     
@@ -82,7 +82,7 @@ font = mathfont.create("operators", "Copyright (c) 2019 Igalia S.L.")
 
 
 font.math.DisplayOperatorMinHeight = 2 * mathfont.em
-font.math.MinConnectorOverlap = mathfont.em / 2
+font.math.MinConnectorOverlap = mathfont.em // 2
 
 
 
@@ -99,7 +99,7 @@ for key in operatorDictionary:
             continue
         if c == NonBreakingSpace:
             g = font.createChar(c)
-            mathfont.drawRectangleGlyph(g, mathfont.em, mathfont.em / 3, 0)
+            mathfont.drawRectangleGlyph(g, mathfont.em, mathfont.em // 3, 0)
         else:
             mathfont.createSquareGlyph(font, c)
         mathfont.createStretchy(font, c, c in inlineAxisOperators)
