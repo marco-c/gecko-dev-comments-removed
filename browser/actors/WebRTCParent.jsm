@@ -388,34 +388,21 @@ class WebRTCParent extends JSWindowActorParent {
     if (!aRequest.secure) {
       return false;
     }
+    
+    if (aRequest.sharingScreen) {
+      return false;
+    }
+    if (aRequest.audioOutputDevices?.length) {
+      return false;
+    }
 
-    let {
-      audioInputDevices,
-      videoInputDevices,
-      audioOutputDevices,
-      sharingScreen,
-    } = aRequest;
-
-    let micAllowed =
-      SitePermissions.getForPrincipal(aPrincipal, "microphone").state ==
-      SitePermissions.ALLOW;
-    let camAllowed =
-      SitePermissions.getForPrincipal(aPrincipal, "camera").state ==
-      SitePermissions.ALLOW;
-
-    let perms = Services.perms;
-    let mediaManagerPerm = perms.testExactPermissionFromPrincipal(
-      aPrincipal,
-      "MediaManagerVideo"
-    );
-    if (mediaManagerPerm) {
+    let { perms } = Services;
+    if (
+      perms.testExactPermissionFromPrincipal(aPrincipal, "MediaManagerVideo")
+    ) {
       perms.removeFromPrincipal(aPrincipal, "MediaManagerVideo");
     }
 
-    
-    if (videoInputDevices.length && sharingScreen) {
-      camAllowed = false;
-    }
     
     
     
@@ -423,104 +410,60 @@ class WebRTCParent extends JSWindowActorParent {
     let limited =
       (aRequest.isThirdPartyOrigin && !aRequest.shouldDelegatePermission) ||
       aRequest.secondOrigin;
-    if (limited) {
-      camAllowed = false;
-      micAllowed = false;
-    }
 
-    let activeCamera;
-    let activeMic;
-    let browser = this.getBrowser();
+    let set = webrtcUI.activePerms.get(this.manager.outerWindowId);
+    let { callID, windowID } = aRequest;
 
     
-    if (!sharingScreen) {
-      let set = webrtcUI.activePerms.get(this.manager.outerWindowId);
+    
+    const isAllowed = ({ mediaSource, id }, permissionID) =>
+      set?.has(windowID + mediaSource + id) ||
+      (!limited &&
+        (SitePermissions.getForPrincipal(aPrincipal, permissionID).state ==
+          SitePermissions.ALLOW ||
+          SitePermissions.getForPrincipal(
+            aPrincipal,
+            [mediaSource, id].join("^"),
+            this.getBrowser()
+          ).state == SitePermissions.ALLOW));
 
-      for (let device of videoInputDevices) {
-        if (
-          (set &&
-            set.has(aRequest.windowID + device.mediaSource + device.id)) ||
-          (!limited &&
-            SitePermissions.getForPrincipal(
-              aPrincipal,
-              [device.mediaSource, device.id].join("^"),
-              browser
-            ).state == SitePermissions.ALLOW)
-        ) {
-          
-          
-          activeCamera = device;
-        }
-        
-        break;
-      }
+    let {
+      audioInputDevices: [microphone],
+      videoInputDevices: [camera],
+    } = aRequest;
 
-      for (let device of audioInputDevices) {
-        if (
-          (set &&
-            set.has(aRequest.windowID + device.mediaSource + device.id)) ||
-          (!limited &&
-            SitePermissions.getForPrincipal(
-              aPrincipal,
-              [device.mediaSource, device.id].join("^"),
-              browser
-            ).state == SitePermissions.ALLOW)
-        ) {
-          
-          
-          activeMic = device;
-        }
-        
-        break;
-      }
+    if (microphone && !isAllowed(microphone, "microphone")) {
+      return false;
     }
-    if (
-      (!audioInputDevices.length || micAllowed || activeMic) &&
-      (!videoInputDevices.length || camAllowed || activeCamera) &&
-      !audioOutputDevices.length
-    ) {
-      let allowedDevices = [];
-      if (videoInputDevices.length) {
-        let { deviceIndex, mediaSource, id } =
-          activeCamera || videoInputDevices[0];
-        allowedDevices.push(deviceIndex);
-        perms.addFromPrincipal(
-          aPrincipal,
-          "MediaManagerVideo",
-          perms.ALLOW_ACTION,
-          perms.EXPIRE_SESSION
-        );
-        this.activateDevicePerm(aRequest.windowID, mediaSource, id);
-      }
-      if (audioInputDevices.length) {
-        let { deviceIndex, mediaSource, id } =
-          activeMic || audioInputDevices[0];
-        allowedDevices.push(deviceIndex);
-        this.activateDevicePerm(aRequest.windowID, mediaSource, id);
-      }
+    if (camera && !isAllowed(camera, "camera")) {
+      return false;
+    }
 
-      
-      let camNeeded = !!videoInputDevices.length && !sharingScreen;
-      let scrNeeded = !!videoInputDevices.length && sharingScreen;
-      let micNeeded = !!audioInputDevices.length;
-      this.checkOSPermission(camNeeded, micNeeded, scrNeeded).then(
-        havePermission => {
-          if (havePermission) {
-            this.sendAsyncMessage("webrtc:Allow", {
-              callID: aRequest.callID,
-              windowID: aRequest.windowID,
-              devices: allowedDevices,
-            });
-          } else {
-            this.denyRequestNoPermission(aRequest);
-          }
-        }
+    let devices = [];
+    if (camera) {
+      perms.addFromPrincipal(
+        aPrincipal,
+        "MediaManagerVideo",
+        perms.ALLOW_ACTION,
+        perms.EXPIRE_SESSION
       );
-
-      return true;
+      devices.push(camera.deviceIndex);
+      this.activateDevicePerm(windowID, camera.mediaSource, camera.id);
     }
-
-    return false;
+    if (microphone) {
+      devices.push(microphone.deviceIndex);
+      this.activateDevicePerm(windowID, microphone.mediaSource, microphone.id);
+    }
+    this.checkOSPermission(!!camera, !!microphone, false).then(
+      havePermission => {
+        if (havePermission) {
+          this.sendAsyncMessage("webrtc:Allow", { callID, windowID, devices });
+        } else {
+          this.denyRequestNoPermission(aRequest);
+        }
+      }
+    );
+    return true;
   }
 }
 
