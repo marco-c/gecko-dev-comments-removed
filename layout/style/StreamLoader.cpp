@@ -115,19 +115,8 @@ StreamLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
     }
   }  
 
-  auto info = nsContentUtils::GetSubresourceCacheValidationInfo(aRequest);
-
-  
-  
-  
-  
-  
-  
-  if (mSheetLoadData->mURI->SchemeIs("data")) {
-    MOZ_ASSERT(!info.mExpirationTime);
-    MOZ_ASSERT(!info.mMustRevalidate);
-    info.mExpirationTime = Some(0);  
-  }
+  auto info = nsContentUtils::GetSubresourceCacheValidationInfo(
+      aRequest, mSheetLoadData->mURI);
 
   
   

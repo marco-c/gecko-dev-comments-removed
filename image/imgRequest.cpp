@@ -544,7 +544,17 @@ void imgRequest::SetCacheValidation(imgCacheEntry* aCacheEntry,
     return;
   }
 
-  auto info = nsContentUtils::GetSubresourceCacheValidationInfo(aRequest);
+  RefPtr<imgRequest> req = aCacheEntry->GetRequest();
+  MOZ_ASSERT(req);
+  RefPtr<nsIURI> uri;
+  req->GetURI(getter_AddRefs(uri));
+  
+  
+  
+  
+  
+  
+  auto info = nsContentUtils::GetSubresourceCacheValidationInfo(aRequest, uri);
 
   
   
