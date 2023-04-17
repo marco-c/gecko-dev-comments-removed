@@ -237,7 +237,12 @@ void WebrtcAudioConduit::GetRtpSources(
       default:
         MOZ_CRASH("Unexpected RTCRtpSourceEntryType");
     }
-    domEntry.mTimestamp = source.timestamp_ms();
+    
+    
+    
+    double ago = webrtc::Clock::GetRealTimeClock()->TimeInMilliseconds() -
+                 source.timestamp_ms();
+    domEntry.mTimestamp = GetNow() - ago;
     domEntry.mRtpTimestamp = source.rtp_timestamp();
     if (source.audio_level()) {
       if (*source.audio_level() == 127) {
