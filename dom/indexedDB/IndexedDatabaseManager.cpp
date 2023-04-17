@@ -23,6 +23,7 @@
 #include "mozilla/dom/ErrorEventBinding.h"
 #include "mozilla/dom/WorkerScope.h"
 #include "mozilla/dom/WorkerPrivate.h"
+#include "mozilla/intl/LocaleCanonicalizer.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/PBackgroundChild.h"
 #include "nsContentUtils.h"
@@ -39,7 +40,6 @@
 #include "ProfilerHelpers.h"
 #include "ScriptErrorHelper.h"
 #include "nsCharSeparatedTokenizer.h"
-#include "unicode/locid.h"
 
 
 #include "mozilla/dom/IDBCursorBinding.h"
@@ -324,11 +324,11 @@ nsresult IndexedDatabaseManager::Init() {
   
   for (const auto& lang :
        nsCCharSeparatedTokenizer(acceptLang, ',').ToRange()) {
-    icu::Locale locale =
-        icu::Locale::createCanonical(PromiseFlatCString(lang).get());
-    if (!locale.isBogus()) {
-      
-      mLocale.AssignASCII(locale.getBaseName());
+    mozilla::intl::LocaleCanonicalizer::Vector asciiString{};
+    auto result = mozilla::intl::LocaleCanonicalizer::CanonicalizeICULevel1(
+        PromiseFlatCString(lang).get(), asciiString);
+    if (result.isOk()) {
+      mLocale.AssignASCII(asciiString);
       break;
     }
   }
