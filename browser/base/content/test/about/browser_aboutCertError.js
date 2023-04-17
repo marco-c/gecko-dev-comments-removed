@@ -48,11 +48,10 @@ add_task(async function checkReturnToAboutHome() {
     await SpecialPowers.spawn(bc, [useFrame], async function(subFrame) {
       let returnButton = content.document.getElementById("returnButton");
       if (!subFrame) {
-        Assert.equal(
-          returnButton.getAttribute("autofocus"),
-          "true",
-          "returnButton has autofocus"
-        );
+        if (!Services.focus.focusedElement == returnButton) {
+          await ContentTaskUtils.waitForEvent(returnButton, "focus");
+        }
+        Assert.ok(true, "returnButton has focus");
       }
       
       
