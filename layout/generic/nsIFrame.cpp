@@ -3802,7 +3802,7 @@ static nsDisplayItem* WrapInWrapList(nsDisplayListBuilder* aBuilder,
   
   
   bool needsWrapList =
-      item->GetAbove() || item->Frame() != aFrame || item->GetChildren();
+      aList->Count() > 1 || item->Frame() != aFrame || item->GetChildren();
 
   
   
