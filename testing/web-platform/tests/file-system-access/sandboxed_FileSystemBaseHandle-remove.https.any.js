@@ -1,3 +1,7 @@
 
 
 
+
+directory_test(async (t, root) => {
+    await promise_rejects_dom(t, 'InvalidStateError', root.remove());
+}, 'cannot remove the root of a sandbox file system');
