@@ -1,0 +1,277 @@
+
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["CDPConnection", "splitMethod"];
+
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  Log: "chrome://remote/content/shared/Log.jsm",
+  truncate: "chrome://remote/content/shared/Format.jsm",
+  UnknownMethodError: "chrome://remote/content/cdp/Error.jsm",
+  WebSocketConnection: "chrome://remote/content/shared/WebSocketConnection.jsm",
+});
+
+XPCOMUtils.defineLazyGetter(this, "logger", () => Log.get());
+
+class CDPConnection extends WebSocketConnection {
+  
+
+
+
+
+
+  constructor(webSocket, httpdConnection) {
+    super(webSocket, httpdConnection);
+
+    this.sessions = new Map();
+    this.defaultSession = null;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  registerSession(session) {
+    if (!session.id) {
+      if (this.defaultSession) {
+        throw new Error(
+          "Default session is already set on Connection, " +
+            "can't register another one."
+        );
+      }
+      this.defaultSession = session;
+    }
+
+    this.sessions.set(session.id, session);
+  }
+
+  
+
+
+
+
+
+  send(data) {
+    const payload = JSON.stringify(data, null, Log.verbose ? "\t" : null);
+    logger.trace(truncate`${this.constructor.name} ${this.id} <- ${payload}`);
+
+    super.send(data);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  sendError(id, err, sessionId) {
+    const error = {
+      message: err.message,
+      data: err.stack,
+    };
+
+    this.send({ id, error, sessionId });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  sendEvent(method, params, sessionId) {
+    this.send({ method, params, sessionId });
+
+    
+    
+    
+    
+    
+    if (sessionId) {
+      
+      
+      
+      this.send({
+        method: "Target.receivedMessageFromTarget",
+        params: { sessionId, message: JSON.stringify({ method, params }) },
+      });
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+  sendMessageToTarget(sessionId, message) {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      throw new Error(`Session '${sessionId}' doesn't exist.`);
+    }
+    
+    
+    
+    const packet = JSON.parse(message);
+
+    
+    
+    
+    
+    
+    
+    packet.sessionId = sessionId;
+    this.onPacket(packet);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  sendResult(id, result, sessionId) {
+    result = typeof result != "undefined" ? result : {};
+    this.send({ id, result, sessionId });
+
+    
+    
+    
+    
+    
+    
+    if (sessionId) {
+      
+      
+      
+      this.send({
+        method: "Target.receivedMessageFromTarget",
+        params: { sessionId, message: JSON.stringify({ id, result }) },
+      });
+    }
+  }
+
+  
+
+  
+
+
+  onClosed() {
+    
+    for (const session of this.sessions.values()) {
+      session.destructor();
+    }
+    this.sessions.clear();
+
+    super.onClosed();
+  }
+
+  
+
+
+
+
+
+
+
+
+  async onPacket(packet) {
+    const payload = JSON.stringify(packet, null, Log.verbose ? "\t" : null);
+    logger.trace(truncate`${this.constructor.name} ${this.id} -> ${payload}`);
+
+    try {
+      const { id, method, params, sessionId } = packet;
+
+      
+      if (typeof id == "undefined") {
+        throw new TypeError("Message missing 'id' field");
+      }
+      if (typeof method == "undefined") {
+        throw new TypeError("Message missing 'method' field");
+      }
+
+      
+      const { domain, command } = splitMethod(method);
+
+      
+      
+      let session;
+      if (!sessionId) {
+        if (!this.defaultSession) {
+          throw new Error("Connection is missing a default Session.");
+        }
+        session = this.defaultSession;
+      } else {
+        session = this.sessions.get(sessionId);
+        if (!session) {
+          throw new Error(`Session '${sessionId}' doesn't exists.`);
+        }
+      }
+
+      
+      if (command.startsWith("_")) {
+        throw new UnknownMethodError(command);
+      }
+
+      
+      const result = await session.execute(id, domain, command, params);
+      this.sendResult(id, result, sessionId);
+    } catch (e) {
+      this.sendError(packet.id, e, packet.sessionId);
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+function splitMethod(method) {
+  const parts = method.split(".");
+
+  if (parts.length != 2 || parts[0].length == 0 || parts[1].length == 0) {
+    throw new TypeError(`Invalid method format: '${method}'`);
+  }
+
+  return {
+    domain: parts[0],
+    command: parts[1],
+  };
+}
