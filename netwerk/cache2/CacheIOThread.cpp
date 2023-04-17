@@ -231,12 +231,21 @@ nsresult CacheIOThread::Init() {
     mBlockingIOWatcher = MakeUnique<detail::BlockingIOWatcher>();
   }
 
+  
+  
+  
+  RefPtr<CacheIOThread> self = this;
   mThread =
       PR_CreateThread(PR_USER_THREAD, ThreadFunc, this, PR_PRIORITY_NORMAL,
                       PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 128 * 1024);
   if (!mThread) {
     return NS_ERROR_FAILURE;
   }
+
+  
+  
+  
+  Unused << self.forget().take();
 
   return NS_OK;
 }
@@ -391,7 +400,9 @@ void CacheIOThread::ThreadFunc(void* aClosure) {
   NS_SetCurrentThreadName("Cache2 I/O");
 
   mozilla::IOInterposer::RegisterCurrentThread();
-  CacheIOThread* thread = static_cast<CacheIOThread*>(aClosure);
+  
+  RefPtr<CacheIOThread> thread =
+      dont_AddRef(static_cast<CacheIOThread*>(aClosure));
   thread->ThreadFunc();
   mozilla::IOInterposer::UnregisterCurrentThread();
 }
