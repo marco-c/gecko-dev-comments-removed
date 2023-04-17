@@ -49,7 +49,7 @@ pub const TEXTURE_REGION_DIMENSIONS: i32 = 512;
 
 
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub enum EntryDetails {
@@ -1351,26 +1351,6 @@ impl TextureCache {
 
     
     
-    
-    
-    
-    fn allocate_cache_entry(
-        &mut self,
-        params: &CacheAllocParams,
-    ) -> (CacheEntry, BudgetType) {
-        assert!(!params.descriptor.size.is_empty());
-
-        
-        
-        if self.is_allowed_in_shared_cache(params.filter, &params.descriptor) {
-            self.allocate_from_shared_cache(params)
-        } else {
-            self.allocate_standalone_entry(params)
-        }
-    }
-
-    
-    
     fn allocate(
         &mut self,
         params: &CacheAllocParams,
@@ -1378,7 +1358,19 @@ impl TextureCache {
         eviction: Eviction,
     ) {
         debug_assert!(self.now.is_valid());
-        let (new_cache_entry, budget_type) = self.allocate_cache_entry(params);
+        assert!(!params.descriptor.size.is_empty());
+
+        
+        
+        let use_shared_cache = self.is_allowed_in_shared_cache(params.filter, &params.descriptor);
+        let (new_cache_entry, budget_type) = if use_shared_cache {
+            self.allocate_from_shared_cache(params)
+        } else {
+            self.allocate_standalone_entry(params)
+        };
+
+        let details = new_cache_entry.details.clone();
+        let texture_id = new_cache_entry.texture_id;
 
         
         
@@ -1416,6 +1408,16 @@ impl TextureCache {
         if let Some(old_entry) = old_entry {
             old_entry.evict();
             self.free(&old_entry);
+        }
+
+        if let EntryDetails::Cache { alloc_id, .. } = details {
+            let allocator_list = self.shared_textures.select(
+                params.descriptor.format,
+                params.filter,
+                params.shader,
+            ).0;
+
+            allocator_list.set_handle(texture_id, alloc_id, handle);
         }
     }
 
