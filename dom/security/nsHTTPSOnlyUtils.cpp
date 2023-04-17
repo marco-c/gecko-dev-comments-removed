@@ -45,6 +45,11 @@ bool nsHTTPSOnlyUtils::IsHttpsOnlyModeEnabled(bool aFromPrivateWindow) {
 }
 
 
+bool nsHTTPSOnlyUtils::IsHttpsFirstModeEnabled() {
+  return mozilla::StaticPrefs::dom_security_https_only_mode_https_first();
+}
+
+
 void nsHTTPSOnlyUtils::PotentiallyFireHttpRequestToShortenTimout(
     mozilla::net::DocumentLoadListener* aDocumentLoadListener) {
   
@@ -63,7 +68,8 @@ void nsHTTPSOnlyUtils::PotentiallyFireHttpRequestToShortenTimout(
   bool isPrivateWin = loadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
 
   
-  if (!IsHttpsOnlyModeEnabled(isPrivateWin)) {
+  
+  if (!IsHttpsOnlyModeEnabled(isPrivateWin) && !IsHttpsFirstModeEnabled()) {
     return;
   }
 
@@ -213,7 +219,7 @@ bool nsHTTPSOnlyUtils::IsUpgradeDowngradeEndlessLoop(nsIURI* aURI,
                                                      nsILoadInfo* aLoadInfo) {
   
   bool isPrivateWin = aLoadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
-  if (!IsHttpsOnlyModeEnabled(isPrivateWin)) {
+  if (!IsHttpsOnlyModeEnabled(isPrivateWin) && !IsHttpsFirstModeEnabled()) {
     return false;
   }
 
@@ -287,6 +293,93 @@ bool nsHTTPSOnlyUtils::IsUpgradeDowngradeEndlessLoop(nsIURI* aURI,
 }
 
 
+bool nsHTTPSOnlyUtils::ShouldUpgradeHttpsFirstRequest(nsIURI* aURI,
+                                                      nsILoadInfo* aLoadInfo) {
+  
+  if (!IsHttpsFirstModeEnabled()) {
+    return false;
+  }
+
+  
+  if (aLoadInfo->GetExternalContentPolicyType() !=
+      ExtContentPolicy::TYPE_DOCUMENT) {
+    return false;
+  }
+
+  
+  uint32_t httpsOnlyStatus = aLoadInfo->GetHttpsOnlyStatus();
+  if (httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_UPGRADED_HTTPS_FIRST ||
+      httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_EXEMPT) {
+    return false;
+  }
+
+  
+  
+  MOZ_ASSERT(aURI->SchemeIs("http"), "how come the request is not 'http'?");
+  nsAutoCString scheme;
+  aURI->GetScheme(scheme);
+  scheme.AppendLiteral("s");
+  NS_ConvertUTF8toUTF16 reportSpec(aURI->GetSpecOrDefault());
+  NS_ConvertUTF8toUTF16 reportScheme(scheme);
+
+  AutoTArray<nsString, 2> params = {reportSpec, reportScheme};
+  nsHTTPSOnlyUtils::LogLocalizedString("HTTPSOnlyUpgradeRequest", params,
+                                       nsIScriptError::warningFlag, aLoadInfo,
+                                       aURI, true);
+
+  
+  httpsOnlyStatus |= nsILoadInfo::HTTPS_ONLY_UPGRADED_HTTPS_FIRST;
+  aLoadInfo->SetHttpsOnlyStatus(httpsOnlyStatus);
+  return true;
+}
+
+
+already_AddRefed<nsIURI>
+nsHTTPSOnlyUtils::PotentiallyDowngradeHttpsFirstRequest(nsIChannel* aChannel,
+                                                        nsresult aError) {
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  uint32_t httpsOnlyStatus = loadInfo->GetHttpsOnlyStatus();
+  
+  if (!(httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_UPGRADED_HTTPS_FIRST)) {
+    return nullptr;
+  }
+
+  
+  
+  loadInfo->SetHttpsOnlyStatus(
+      httpsOnlyStatus | nsILoadInfo::HTTPS_ONLY_TOP_LEVEL_LOAD_IN_PROGRESS);
+
+  
+  
+  if (HttpsUpgradeUnrelatedErrorCode(aError)) {
+    return nullptr;
+  }
+
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = aChannel->GetURI(getter_AddRefs(uri));
+  NS_ENSURE_SUCCESS(rv, nullptr);
+
+  
+  if (!uri->SchemeIs("https")) {
+    return nullptr;
+  }
+
+  
+  nsCOMPtr<nsIURI> newURI;
+  mozilla::Unused << NS_MutateURI(uri).SetScheme("http"_ns).Finalize(
+      getter_AddRefs(newURI));
+
+  
+  NS_ConvertUTF8toUTF16 reportSpec(uri->GetSpecOrDefault());
+  AutoTArray<nsString, 1> params = {reportSpec};
+  nsHTTPSOnlyUtils::LogLocalizedString("HTTPSOnlyFailedDowngradeAgain", params,
+                                       nsIScriptError::warningFlag, loadInfo,
+                                       uri, true);
+
+  return newURI.forget();
+}
+
+
 bool nsHTTPSOnlyUtils::CouldBeHttpsOnlyError(nsIChannel* aChannel,
                                              nsresult aError) {
   
@@ -311,14 +404,7 @@ bool nsHTTPSOnlyUtils::CouldBeHttpsOnlyError(nsIChannel* aChannel,
 
   
   
-  return !(NS_ERROR_UNKNOWN_PROTOCOL == aError ||
-           NS_ERROR_FILE_NOT_FOUND == aError ||
-           NS_ERROR_FILE_ACCESS_DENIED == aError ||
-           NS_ERROR_UNKNOWN_HOST == aError || NS_ERROR_PHISHING_URI == aError ||
-           NS_ERROR_MALWARE_URI == aError || NS_ERROR_UNWANTED_URI == aError ||
-           NS_ERROR_HARMFUL_URI == aError ||
-           NS_ERROR_CONTENT_CRASHED == aError ||
-           NS_ERROR_FRAME_CRASHED == aError);
+  return !HttpsUpgradeUnrelatedErrorCode(aError);
 }
 
 
@@ -392,22 +478,34 @@ bool nsHTTPSOnlyUtils::IsSafeToAcceptCORSOrMixedContent(
 }
 
 
+bool nsHTTPSOnlyUtils::HttpsUpgradeUnrelatedErrorCode(nsresult aError) {
+  return NS_ERROR_UNKNOWN_PROTOCOL == aError ||
+         NS_ERROR_FILE_NOT_FOUND == aError ||
+         NS_ERROR_FILE_ACCESS_DENIED == aError ||
+         NS_ERROR_UNKNOWN_HOST == aError || NS_ERROR_PHISHING_URI == aError ||
+         NS_ERROR_MALWARE_URI == aError || NS_ERROR_UNWANTED_URI == aError ||
+         NS_ERROR_HARMFUL_URI == aError || NS_ERROR_CONTENT_CRASHED == aError ||
+         NS_ERROR_FRAME_CRASHED == aError;
+}
+
+
 
 
 void nsHTTPSOnlyUtils::LogLocalizedString(const char* aName,
                                           const nsTArray<nsString>& aParams,
                                           uint32_t aFlags,
-                                          nsILoadInfo* aLoadInfo,
-                                          nsIURI* aURI) {
+                                          nsILoadInfo* aLoadInfo, nsIURI* aURI,
+                                          bool aUseHttpsFirst) {
   nsAutoString logMsg;
   nsContentUtils::FormatLocalizedString(nsContentUtils::eSECURITY_PROPERTIES,
                                         aName, aParams, logMsg);
-  LogMessage(logMsg, aFlags, aLoadInfo, aURI);
+  LogMessage(logMsg, aFlags, aLoadInfo, aURI, aUseHttpsFirst);
 }
 
 
 void nsHTTPSOnlyUtils::LogMessage(const nsAString& aMessage, uint32_t aFlags,
-                                  nsILoadInfo* aLoadInfo, nsIURI* aURI) {
+                                  nsILoadInfo* aLoadInfo, nsIURI* aURI,
+                                  bool aUseHttpsFirst) {
   
   uint32_t httpsOnlyStatus = aLoadInfo->GetHttpsOnlyStatus();
   if (httpsOnlyStatus & nsILoadInfo::HTTPS_ONLY_DO_NOT_LOG_TO_CONSOLE) {
@@ -416,11 +514,12 @@ void nsHTTPSOnlyUtils::LogMessage(const nsAString& aMessage, uint32_t aFlags,
 
   
   nsString message;
-  message.AppendLiteral(u"HTTPS-Only Mode: ");
+  message.Append(aUseHttpsFirst ? u"HTTPS-First Mode: "_ns
+                                : u"HTTPS-Only Mode: "_ns);
   message.Append(aMessage);
 
   
-  nsCString category("HTTPSOnly");
+  nsCString category(aUseHttpsFirst ? "HTTPSFirst" : "HTTPSOnly");
 
   uint32_t innerWindowId = aLoadInfo->GetInnerWindowID();
   if (innerWindowId > 0) {

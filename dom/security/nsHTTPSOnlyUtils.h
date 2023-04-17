@@ -24,6 +24,12 @@ class nsHTTPSOnlyUtils {
 
 
 
+  static bool IsHttpsFirstModeEnabled();
+
+  
+
+
+
 
 
 
@@ -70,6 +76,27 @@ class nsHTTPSOnlyUtils {
 
 
 
+
+  static bool ShouldUpgradeHttpsFirstRequest(nsIURI* aURI,
+                                             nsILoadInfo* aLoadInfo);
+
+  
+
+
+
+
+
+
+  static already_AddRefed<nsIURI> PotentiallyDowngradeHttpsFirstRequest(
+      nsIChannel* aChannel, nsresult aError);
+
+  
+
+
+
+
+
+
   static bool CouldBeHttpsOnlyError(nsIChannel* aChannel, nsresult aError);
 
   
@@ -80,10 +107,12 @@ class nsHTTPSOnlyUtils {
 
 
 
+
   static void LogLocalizedString(const char* aName,
                                  const nsTArray<nsString>& aParams,
                                  uint32_t aFlags, nsILoadInfo* aLoadInfo,
-                                 nsIURI* aURI = nullptr);
+                                 nsIURI* aURI = nullptr,
+                                 bool aUseHttpsFirst = false);
 
   
 
@@ -129,9 +158,18 @@ class nsHTTPSOnlyUtils {
 
 
 
+  static bool HttpsUpgradeUnrelatedErrorCode(nsresult aError);
+  
+
+
+
+
+
+
 
   static void LogMessage(const nsAString& aMessage, uint32_t aFlags,
-                         nsILoadInfo* aLoadInfo, nsIURI* aURI = nullptr);
+                         nsILoadInfo* aLoadInfo, nsIURI* aURI = nullptr,
+                         bool aUseHttpsFirst = false);
 
   
 

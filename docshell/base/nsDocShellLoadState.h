@@ -131,6 +131,10 @@ class nsDocShellLoadState final {
 
   void SetForceAllowDataURI(bool aForceAllowDataURI);
 
+  bool IsExemptFromHTTPSOnlyMode() const;
+
+  void SetIsExemptFromHTTPSOnlyMode(bool aIsExemptFromHTTPSOnlyMode);
+
   bool OriginalFrameSrc() const;
 
   void SetOriginalFrameSrc(bool aOriginalFrameSrc);
@@ -403,6 +407,10 @@ class nsDocShellLoadState final {
   
   
   bool mForceAllowDataURI;
+
+  
+  
+  bool mIsExemptFromHTTPSOnlyMode;
 
   
   
