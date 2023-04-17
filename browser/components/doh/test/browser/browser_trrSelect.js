@@ -4,22 +4,6 @@
 
 "use strict";
 
-async function waitForStartup() {
-  await ensureTRRMode(2);
-  await checkHeuristicsTelemetry("enable_doh", "startup");
-}
-
-async function setPrefAndWaitForConfigFlush(pref, value) {
-  let configFlushed = DoHTestUtils.waitForConfigFlush();
-  if (value) {
-    Preferences.set(pref, value);
-  } else {
-    Preferences.reset(pref);
-  }
-  await configFlushed;
-  await waitForStartup();
-}
-
 add_task(setup);
 
 add_task(async function testTRRSelect() {
@@ -42,9 +26,10 @@ add_task(async function testTRRSelect() {
   
   Preferences.reset(prefs.TRR_SELECT_DRY_RUN_RESULT_PREF);
   Preferences.reset(prefs.TRR_SELECT_URI_PREF);
-  await restartDoHController();
-  await waitForStartup();
 
+  prefPromise = TestUtils.waitForPrefChange(prefs.TRR_SELECT_URI_PREF);
+  await restartDoHController();
+  await prefPromise;
   is(
     Preferences.get(prefs.TRR_SELECT_URI_PREF),
     "https://example.com/dns-query",
@@ -52,12 +37,14 @@ add_task(async function testTRRSelect() {
   );
 
   
+  await ensureTRRMode(2);
+  await checkHeuristicsTelemetry("enable_doh", "startup");
+
   
-  prefPromise = TestUtils.waitForPrefChange(
-    prefs.TRR_SELECT_URI_PREF,
-    newVal => newVal == "https://example.com/1"
-  );
-  await setPrefAndWaitForConfigFlush(prefs.TRR_SELECT_COMMIT_PREF, false);
+  
+  Preferences.set(prefs.TRR_SELECT_COMMIT_PREF, false);
+  prefPromise = TestUtils.waitForPrefChange(prefs.TRR_SELECT_URI_PREF);
+  await restartDoHController();
   await prefPromise;
   is(
     Preferences.get(prefs.TRR_SELECT_URI_PREF),
@@ -79,12 +66,14 @@ add_task(async function testTRRSelect() {
   );
 
   
+  await ensureTRRMode(2);
+  await checkHeuristicsTelemetry("enable_doh", "startup");
+
+  
   
   Preferences.reset(prefs.TRR_SELECT_DRY_RUN_RESULT_PREF);
   Preferences.reset(prefs.TRR_SELECT_URI_PREF);
   await restartDoHController();
-  await waitForStartup();
-
   try {
     await BrowserTestUtils.waitForCondition(() => {
       return (
@@ -106,6 +95,11 @@ add_task(async function testTRRSelect() {
     "https://example.com/dns-query",
     "TRR selection complete, dry-run result recorded."
   );
+  Preferences.set(prefs.TRR_SELECT_COMMIT_PREF, true);
+
+  
+  await ensureTRRMode(2);
+  await checkHeuristicsTelemetry("enable_doh", "startup");
 
   
   
@@ -118,7 +112,7 @@ add_task(async function testTRRSelect() {
     prefs.TRR_SELECT_URI_PREF,
     newVal => newVal == "https://example.com/2"
   );
-  await setPrefAndWaitForConfigFlush(prefs.TRR_SELECT_COMMIT_PREF, true);
+  await restartDoHController();
   await prefPromise;
   is(
     Preferences.get(prefs.TRR_SELECT_URI_PREF),
@@ -127,16 +121,17 @@ add_task(async function testTRRSelect() {
   );
 
   
+  await ensureTRRMode(2);
+  await checkHeuristicsTelemetry("enable_doh", "startup");
+
   
-  prefPromise = TestUtils.waitForPrefChange(
-    prefs.TRR_SELECT_URI_PREF,
-    newVal => newVal == "https://example.com/dns-query"
-  );
+  
   Preferences.reset(prefs.TRR_SELECT_URI_PREF);
   Preferences.set(
     prefs.TRR_SELECT_DRY_RUN_RESULT_PREF,
     "https://example.com/4"
   );
+  prefPromise = TestUtils.waitForPrefChange(prefs.TRR_SELECT_URI_PREF);
   await restartDoHController();
   await prefPromise;
   is(
@@ -144,4 +139,8 @@ add_task(async function testTRRSelect() {
     "https://example.com/dns-query",
     "TRR selection complete, existing dry-run-result discarded and refreshed."
   );
+
+  
+  await ensureTRRMode(2);
+  await checkHeuristicsTelemetry("enable_doh", "startup");
 });
