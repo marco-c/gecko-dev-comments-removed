@@ -1166,12 +1166,7 @@ class ModalPrompter {
     
     
     
-    let id =
-      "id" +
-      Cc["@mozilla.org/uuid-generator;1"]
-        .getService(Ci.nsIUUIDGenerator)
-        .generateUUID()
-        .toString();
+    let id = "id" + Services.uuid.generateUUID().toString();
 
     args._remoteId = id;
 

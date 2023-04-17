@@ -198,8 +198,7 @@ add_task(async function test_broken_referrer() {
   
   
   function generateQuarantineGUID() {
-    let str = Cc["@mozilla.org/uuid-generator;1"]
-      .getService(Ci.nsIUUIDGenerator)
+    let str = Services.uuid
       .generateUUID()
       .toString()
       .toUpperCase();

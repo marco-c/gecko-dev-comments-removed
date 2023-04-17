@@ -594,9 +594,7 @@ class SpecialPowersChild extends JSWindowActorChild {
 
   loadChromeScript(urlOrFunction, sandboxOptions) {
     
-    let uuidGenerator = Cc["@mozilla.org/uuid-generator;1"].getService(
-      Ci.nsIUUIDGenerator
-    );
+    let uuidGenerator = Services.uuid;
     let id = uuidGenerator.generateUUID().toString();
 
     
@@ -1784,9 +1782,7 @@ class SpecialPowersChild extends JSWindowActorChild {
     if (cid) {
       componentRegistrar.unregisterFactory(currentCID, currentFactory);
     } else {
-      let uuidGenerator = Cc["@mozilla.org/uuid-generator;1"].getService(
-        Ci.nsIUUIDGenerator
-      );
+      let uuidGenerator = Services.uuid;
       cid = uuidGenerator.generateUUID();
     }
 

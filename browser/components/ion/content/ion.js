@@ -402,10 +402,7 @@ async function updateStudy(studyAddonId) {
 
 
 function generateUUID() {
-  let str = Cc["@mozilla.org/uuid-generator;1"]
-    .getService(Ci.nsIUUIDGenerator)
-    .generateUUID()
-    .toString();
+  let str = Services.uuid.generateUUID().toString();
   return str.substring(1, str.length - 1);
 }
 

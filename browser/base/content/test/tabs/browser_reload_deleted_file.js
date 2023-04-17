@@ -1,9 +1,7 @@
 
 
 
-const uuidGenerator = Cc["@mozilla.org/uuid-generator;1"].getService(
-  Ci.nsIUUIDGenerator
-);
+const uuidGenerator = Services.uuid;
 
 const DUMMY_FILE = "dummy_page.html";
 

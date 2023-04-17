@@ -497,9 +497,7 @@ class CryptoCollection {
       
       
       
-      const uuidgen = Cc["@mozilla.org/uuid-generator;1"].getService(
-        Ci.nsIUUIDGenerator
-      );
+      const uuidgen = Services.uuid;
       const uuid = uuidgen.generateUUID().toString();
       data = { uuid, id: STORAGE_SYNC_CRYPTO_KEYRING_RECORD_ID };
     }
