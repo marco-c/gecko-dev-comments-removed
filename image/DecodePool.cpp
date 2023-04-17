@@ -29,6 +29,7 @@
 
 #if defined(XP_WIN)
 #  include <objbase.h>
+#  include "mozilla/WindowsProcessMitigations.h"
 #endif
 
 using std::max;
@@ -91,7 +92,9 @@ DecodePool::DecodePool() : mMutex("image::IOThread") {
   
   
   
-  nsCOMPtr<nsIRunnable> initer = new IOThreadIniter();
+  
+  nsCOMPtr<nsIRunnable> initer =
+      IsWin32kLockedDown() ? nullptr : new IOThreadIniter();
   nsresult rv = NS_NewNamedThread("ImageIO", getter_AddRefs(mIOThread), initer);
 #else
   nsresult rv = NS_NewNamedThread("ImageIO", getter_AddRefs(mIOThread));
