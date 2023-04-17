@@ -2143,7 +2143,7 @@ pref("devtools.browsertoolbox.fission", false);
 #endif
 
 
-pref("devtools.target-switching.server.enabled", true);
+pref("devtools.target-switching.server.enabled", false);
 
 
 pref("devtools.command-button-pick.enabled", true);
