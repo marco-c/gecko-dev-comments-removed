@@ -818,7 +818,8 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
 
   NS_IMETHOD OnFileOpened(CacheFileHandle* aHandle, nsresult aResult) override;
   void OnFileOpenedInternal(FileOpenHelper* aOpener, CacheFileHandle* aHandle,
-                            nsresult aResult);
+                            nsresult aResult,
+                            const StaticMutexAutoLock& aProofOfLock);
   NS_IMETHOD OnDataWritten(CacheFileHandle* aHandle, const char* aBuf,
                            nsresult aResult) override;
   NS_IMETHOD OnDataRead(CacheFileHandle* aHandle, char* aBuf,
@@ -827,7 +828,8 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   NS_IMETHOD OnEOFSet(CacheFileHandle* aHandle, nsresult aResult) override;
   NS_IMETHOD OnFileRenamed(CacheFileHandle* aHandle, nsresult aResult) override;
 
-  nsresult InitInternal(nsIFile* aCacheDirectory);
+  nsresult InitInternal(nsIFile* aCacheDirectory,
+                        const StaticMutexAutoLock& aProofOfLock);
   void PreShutdownInternal();
 
   
@@ -850,7 +852,7 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
                               const uint32_t* aSize);
 
   
-  void ProcessPendingOperations();
+  void ProcessPendingOperations(const StaticMutexAutoLock& aProofOfLock);
 
   
   
@@ -862,14 +864,14 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   
   
   
-  bool WriteIndexToDiskIfNeeded();
+  bool WriteIndexToDiskIfNeeded(const StaticMutexAutoLock& aProofOfLock);
   
-  void WriteIndexToDisk();
+  void WriteIndexToDisk(const StaticMutexAutoLock& aProofOfLock);
   
   
-  void WriteRecords();
+  void WriteRecords(const StaticMutexAutoLock& aProofOfLock);
   
-  void FinishWrite(bool aSucceeded);
+  void FinishWrite(bool aSucceeded, const StaticMutexAutoLock& aProofOfLock);
 
   
   
@@ -922,17 +924,17 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   
   
   
-  void ReadIndexFromDisk();
+  void ReadIndexFromDisk(const StaticMutexAutoLock& aProofOfLock);
   
-  void StartReadingIndex();
+  void StartReadingIndex(const StaticMutexAutoLock& aProofOfLock);
   
-  void ParseRecords();
+  void ParseRecords(const StaticMutexAutoLock& aProofOfLock);
   
-  void StartReadingJournal();
+  void StartReadingJournal(const StaticMutexAutoLock& aProofOfLock);
   
-  void ParseJournal();
+  void ParseJournal(const StaticMutexAutoLock& aProofOfLock);
   
-  void MergeJournal();
+  void MergeJournal(const StaticMutexAutoLock& aProofOfLock);
   
   
   void EnsureNoFreshEntry();
@@ -940,12 +942,12 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   
   void EnsureCorrectStats();
   
-  void FinishRead(bool aSucceeded);
+  void FinishRead(bool aSucceeded, const StaticMutexAutoLock& aProofOfLock);
 
   
   
   static void DelayedUpdate(nsITimer* aTimer, void* aClosure);
-  void DelayedUpdateLocked();
+  void DelayedUpdateLocked(const StaticMutexAutoLock& aProofOfLock);
   
   nsresult ScheduleUpdateTimer(uint32_t aDelay);
   nsresult SetupDirectoryEnumerator();
@@ -956,20 +958,22 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   bool IsUpdatePending();
   
   
-  void BuildIndex();
+  void BuildIndex(const StaticMutexAutoLock& aProofOfLock);
 
-  bool StartUpdatingIndexIfNeeded(bool aSwitchingToReadyState = false);
+  bool StartUpdatingIndexIfNeeded(const StaticMutexAutoLock& aProofOfLock,
+                                  bool aSwitchingToReadyState = false);
   
   
-  void StartUpdatingIndex(bool aRebuild);
+  void StartUpdatingIndex(bool aRebuild,
+                          const StaticMutexAutoLock& aProofOfLock);
   
   
   
-  void UpdateIndex();
+  void UpdateIndex(const StaticMutexAutoLock& aProofOfLock);
   
-  void FinishUpdate(bool aSucceeded);
+  void FinishUpdate(bool aSucceeded, const StaticMutexAutoLock& aProofOfLock);
 
-  void RemoveNonFreshEntries();
+  void RemoveNonFreshEntries(const StaticMutexAutoLock& aProofOfLock);
 
   enum EState {
     
@@ -1022,7 +1026,7 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   };
 
   static char const* StateString(EState aState);
-  void ChangeState(EState aNewState);
+  void ChangeState(EState aNewState, const StaticMutexAutoLock& aProofOfLock);
   void NotifyAsyncGetDiskConsumptionCallbacks();
 
   
@@ -1030,10 +1034,13 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
   void ReleaseBuffer();
 
   
-  void AddRecordToIterators(CacheIndexRecordWrapper* aRecord);
-  void RemoveRecordFromIterators(CacheIndexRecordWrapper* aRecord);
+  void AddRecordToIterators(CacheIndexRecordWrapper* aRecord,
+                            const StaticMutexAutoLock& aProofOfLock);
+  void RemoveRecordFromIterators(CacheIndexRecordWrapper* aRecord,
+                                 const StaticMutexAutoLock& aProofOfLock);
   void ReplaceRecordInIterators(CacheIndexRecordWrapper* aOldRecord,
-                                CacheIndexRecordWrapper* aNewRecord);
+                                CacheIndexRecordWrapper* aNewRecord,
+                                const StaticMutexAutoLock& aProofOfLock);
 
   
   size_t SizeOfExcludingThisInternal(mozilla::MallocSizeOf mallocSizeOf) const;
@@ -1181,14 +1188,17 @@ class CacheIndex final : public CacheFileIOListener, public nsIRunnable {
     FrecencyArray() = default;
 
     
-    void AppendRecord(CacheIndexRecordWrapper* aRecord);
-    void RemoveRecord(CacheIndexRecordWrapper* aRecord);
+    void AppendRecord(CacheIndexRecordWrapper* aRecord,
+                      const StaticMutexAutoLock& aProofOfLock);
+    void RemoveRecord(CacheIndexRecordWrapper* aRecord,
+                      const StaticMutexAutoLock& aProofOfLock);
     void ReplaceRecord(CacheIndexRecordWrapper* aOldRecord,
-                       CacheIndexRecordWrapper* aNewRecord);
-    void SortIfNeeded();
+                       CacheIndexRecordWrapper* aNewRecord,
+                       const StaticMutexAutoLock& aProofOfLock);
+    void SortIfNeeded(const StaticMutexAutoLock& aProofOfLock);
 
     size_t Length() const { return mRecs.Length() - mRemovedElements; }
-    void Clear() { mRecs.Clear(); }
+    void Clear(const StaticMutexAutoLock& aProofOfLock) { mRecs.Clear(); }
 
    private:
     friend class CacheIndex;
