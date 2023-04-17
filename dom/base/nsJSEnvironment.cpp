@@ -1805,7 +1805,8 @@ void nsJSContext::RunNextCollectorTimer(JS::GCReason aReason,
     
     
     
-    if (!sScheduler.InIncrementalGC() && sScheduler.mMajorGCReason != JS::GCReason::INTER_SLICE_GC) {
+    if (!sScheduler.InIncrementalGC() &&
+        sScheduler.mMajorGCReason != JS::GCReason::INTER_SLICE_GC) {
       sScheduler.SetWantMajorGC(aReason);
     }
     sGCRunner->SetIdleDeadline(aDeadline);

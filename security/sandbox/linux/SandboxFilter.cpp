@@ -93,17 +93,17 @@ static_assert(F_GET_SEALS == (F_LINUX_SPECIFIC_BASE + 10));
 #endif
 
 namespace {
-  static const unsigned long kIoctlTypeMask = _IOC_TYPEMASK << _IOC_TYPESHIFT;
-  static const unsigned long kTtyIoctls = TIOCSTI & kIoctlTypeMask;
-  
-  
-  
-  
-  
-  static_assert(kTtyIoctls == (TCSETA & kIoctlTypeMask) &&
-      kTtyIoctls == (FIOASYNC & kIoctlTypeMask),
-      "tty-related ioctls use the same type");
-};
+static const unsigned long kIoctlTypeMask = _IOC_TYPEMASK << _IOC_TYPESHIFT;
+static const unsigned long kTtyIoctls = TIOCSTI & kIoctlTypeMask;
+
+
+
+
+
+static_assert(kTtyIoctls == (TCSETA & kIoctlTypeMask) &&
+                  kTtyIoctls == (FIOASYNC & kIoctlTypeMask),
+              "tty-related ioctls use the same type");
+};  
 
 
 
@@ -1713,9 +1713,8 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
         Arg<unsigned long> request(1);
         
         
-        return If(request == TCGETS, Error(ENOTTY))
-            .Else(InvalidSyscall());
-       }
+        return If(request == TCGETS, Error(ENOTTY)).Else(InvalidSyscall());
+      }
       
       default:
         return SandboxPolicyCommon::EvaluateSyscall(sysno);
