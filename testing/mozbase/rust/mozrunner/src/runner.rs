@@ -288,7 +288,9 @@ impl Runner for FirefoxRunner {
                 Arg::Other(_) | Arg::None => {}
             }
         }
-        if !seen_foreground {
+        
+        
+        if cfg!(target_os = "macos") && !seen_foreground {
             cmd.arg("-foreground");
         }
         if !seen_no_remote {
