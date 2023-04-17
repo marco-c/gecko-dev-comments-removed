@@ -25,6 +25,8 @@
 
 #include <algorithm>
 
+#include "jsapi.h"
+
 #include "ds/IdValuePair.h"  
 #include "gc/FreeOp.h"
 #include "jit/AtomicOperations.h"
