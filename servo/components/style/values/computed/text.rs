@@ -110,6 +110,14 @@ impl ToComputedValue for specified::WordSpacing {
 
 pub type LineHeight = GenericLineHeight<NonNegativeNumber, NonNegativeLength>;
 
+impl WordSpacing {
+    
+    #[inline]
+    pub fn normal() -> Self {
+        LengthPercentage::zero()
+    }
+}
+
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToResolvedValue)]
 #[repr(C)]
 
