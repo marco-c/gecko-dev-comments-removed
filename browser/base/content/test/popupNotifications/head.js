@@ -210,11 +210,7 @@ function checkPopup(popup, notifyObj) {
 
   
   
-  if (
-    !gProtonDoorhangers ||
-    notifyObj.options.popupIconURL ||
-    notifyObj.options.popupIconClass
-  ) {
+  if (notifyObj.options.popupIconURL || notifyObj.options.popupIconClass) {
     let icon = notification.querySelector(".popup-notification-icon");
     if (notifyObj.id == "geolocation") {
       isnot(icon.getBoundingClientRect().width, 0, "icon for geo displayed");

@@ -11,15 +11,10 @@ add_task(async function setup() {
   
   
   
-  
-  
-  
-  if (gProton) {
-    BrowserPageActions.mainButtonNode.style.visibility = "visible";
-    registerCleanupFunction(() => {
-      BrowserPageActions.mainButtonNode.style.removeProperty("visibility");
-    });
-  }
+  BrowserPageActions.mainButtonNode.style.visibility = "visible";
+  registerCleanupFunction(() => {
+    BrowserPageActions.mainButtonNode.style.removeProperty("visibility");
+  });
 });
 
 add_task(async function test_clickData() {

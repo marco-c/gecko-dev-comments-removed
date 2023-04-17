@@ -5,10 +5,7 @@
 "use strict";
 
 const kCustomClass = "acustomclassnoonewilluse";
-const kDevPanelId =
-  gProton && gProtonDoorhangers
-    ? "appmenu-moreTools"
-    : "PanelUI-developerItems";
+const kDevPanelId = "appmenu-moreTools";
 var tempElement = null;
 
 function insertClassNameToMenuChildren(parentMenu) {
@@ -53,10 +50,7 @@ function checkSubviewButtonClass(menuId, buttonId, subviewId) {
     
     
     
-    let query =
-      gProton && gProtonDoorhangers
-        ? "#appmenu-developer-tools-view toolbarbutton"
-        : "toolbarbutton";
+    let query = "#appmenu-developer-tools-view toolbarbutton";
     let subviewchildren = subview.querySelectorAll(query);
 
     for (let i = 0; i < subviewchildren.length; i++) {

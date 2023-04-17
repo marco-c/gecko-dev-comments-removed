@@ -111,12 +111,11 @@ add_task(async function test_pageAction_pinned() {
 
   
   
+  
+  
+  
   let action = PageActions.actionForID(makeWidgetId(extension.id));
-  Assert.equal(
-    action && action.pinnedToUrlbar,
-    gProton,
-    "Check pageAction pinning"
-  );
+  ok(action && action.pinnedToUrlbar, "Check pageAction pinning");
 
   await extension.unload();
 });

@@ -330,13 +330,6 @@ var gTests = [
         "anchored to device icon"
       );
       checkDeviceSelectors(false, false, true);
-      let notification = PopupNotifications.panel.firstElementChild;
-
-      
-      if (!gProtonDoorhangers) {
-        let iconclass = notification.getAttribute("iconclass");
-        ok(iconclass.includes("screen-icon"), "panel using screen icon");
-      }
 
       let menulist = document.getElementById("webRTC-selectWindow-menulist");
       menulist.getItemAtIndex(menulist.itemCount - 1).doCommand();

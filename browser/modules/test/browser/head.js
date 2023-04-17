@@ -328,12 +328,10 @@ async function initPageActionsTest() {
   const addon = await AddonManager.getAddonByID("screenshots@mozilla.org");
   await addon.disable({ allowSystemAddons: true });
 
-  if (gProton) {
-    
-    
-    BrowserPageActions.mainButtonNode.style.visibility = "visible";
-    registerCleanupFunction(() => {
-      BrowserPageActions.mainButtonNode.style.removeProperty("visibility");
-    });
-  }
+  
+  
+  BrowserPageActions.mainButtonNode.style.visibility = "visible";
+  registerCleanupFunction(() => {
+    BrowserPageActions.mainButtonNode.style.removeProperty("visibility");
+  });
 }

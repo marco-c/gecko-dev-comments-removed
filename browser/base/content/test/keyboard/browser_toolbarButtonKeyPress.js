@@ -3,8 +3,7 @@
 
 "use strict";
 
-const kDevPanelID =
-  gProton && gProtonDoorhangers ? "appmenu-moreTools" : "PanelUI-developer";
+const kDevPanelID = "appmenu-moreTools";
 
 
 
@@ -119,12 +118,10 @@ add_task(async function testDeveloperButtonWrongKey() {
 add_task(async function testPageActionsButtonPress() {
   
   
-  if (gProton) {
-    BrowserPageActions.mainButtonNode.style.visibility = "visible";
-    registerCleanupFunction(() => {
-      BrowserPageActions.mainButtonNode.style.removeProperty("visibility");
-    });
-  }
+  BrowserPageActions.mainButtonNode.style.visibility = "visible";
+  registerCleanupFunction(() => {
+    BrowserPageActions.mainButtonNode.style.removeProperty("visibility");
+  });
   await BrowserTestUtils.withNewTab("https://example.com", async function() {
     let button = document.getElementById("pageActionButton");
     forceFocus(button);
@@ -160,36 +157,6 @@ add_task(async function testBackForwardButtonPress() {
     EventUtils.synthesizeKey(" ");
     await onLocationChange;
     ok(true, "Location changed after forward button pressed");
-  });
-});
-
-
-
-
-add_task(async function testSendTabToDeviceButtonPress() {
-  
-  if (gProton) {
-    return;
-  }
-  await BrowserTestUtils.withNewTab("https://example.com", async function() {
-    PageActions.actionForID("sendToDevice").pinnedToUrlbar = true;
-    let button = document.getElementById("pageAction-urlbar-sendToDevice");
-    forceFocus(button);
-    let mainPopupSet = document.getElementById("mainPopupSet");
-    let focused = BrowserTestUtils.waitForEvent(mainPopupSet, "focus", true);
-    EventUtils.synthesizeKey(" ");
-    await focused;
-    let view = document.getElementById(
-      "pageAction-urlbar-sendToDevice-subview"
-    );
-    ok(
-      view.contains(document.activeElement),
-      "Focus inside Page Actions menu after toolbar button pressed"
-    );
-    let hidden = BrowserTestUtils.waitForEvent(document, "popuphidden", true);
-    view.closest("panel").hidePopup();
-    await hidden;
-    PageActions.actionForID("sendToDevice").pinnedToUrlbar = false;
   });
 });
 

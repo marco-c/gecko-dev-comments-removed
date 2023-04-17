@@ -46,55 +46,6 @@ add_task(async function contextMenu() {
   let contextMenuPromise;
   let menuItems;
 
-  if (!gProton) {
-    
-    contextMenuPromise = promisePanelShown("pageActionContextMenu");
-    EventUtils.synthesizeMouseAtCenter(panelButton, {
-      type: "contextmenu",
-      button: 2,
-    });
-    await contextMenuPromise;
-    menuItems = collectContextMenuItems();
-    Assert.deepEqual(
-      makeMenuItemSpecs(menuItems),
-      makeContextMenuItemSpecs(true)
-    );
-
-    
-    contextMenuPromise = promisePanelHidden("pageActionContextMenu");
-    cxmenu.activateItem(menuItems[0]);
-    await contextMenuPromise;
-
-    
-    await BrowserTestUtils.waitForCondition(() => {
-      return !BrowserPageActions.urlbarButtonNodeForActionID(actionId);
-    }, "Waiting for urlbar button to be removed");
-
-    
-    
-    contextMenuPromise = promisePanelShown("pageActionContextMenu");
-    EventUtils.synthesizeMouseAtCenter(panelButton, {
-      type: "contextmenu",
-      button: 2,
-    });
-    await contextMenuPromise;
-    menuItems = collectContextMenuItems();
-    Assert.deepEqual(
-      makeMenuItemSpecs(menuItems),
-      makeContextMenuItemSpecs(false)
-    );
-
-    
-    contextMenuPromise = promisePanelHidden("pageActionContextMenu");
-    cxmenu.activateItem(menuItems[0]);
-    await contextMenuPromise;
-
-    
-    await BrowserTestUtils.waitForCondition(() => {
-      return BrowserPageActions.urlbarButtonNodeForActionID(actionId);
-    }, "Waiting for urlbar button to be added back");
-  }
-
   
   
   contextMenuPromise = promisePanelShown("pageActionContextMenu");
@@ -104,13 +55,10 @@ add_task(async function contextMenu() {
   });
   await contextMenuPromise;
   menuItems = collectContextMenuItems();
-  Assert.deepEqual(
-    makeMenuItemSpecs(menuItems),
-    makeContextMenuItemSpecs(true)
-  );
+  Assert.deepEqual(makeMenuItemSpecs(menuItems), makeContextMenuItemSpecs());
 
   
-  let manageItemIndex = gProton ? 0 : 2;
+  let manageItemIndex = 0;
   contextMenuPromise = promisePanelHidden("pageActionContextMenu");
   let aboutAddonsPromise = BrowserTestUtils.waitForNewTab(
     gBrowser,
@@ -127,60 +75,8 @@ add_task(async function contextMenu() {
     return BrowserPageActions.urlbarButtonNodeForActionID(actionId);
   }, "Waiting for urlbar button to be added back");
 
-  let urlbarButton;
-
-  if (!gProton) {
-    
-    urlbarButton = BrowserPageActions.urlbarButtonNodeForActionID(actionId);
-    contextMenuPromise = promisePanelShown("pageActionContextMenu");
-    EventUtils.synthesizeMouseAtCenter(urlbarButton, {
-      type: "contextmenu",
-      button: 2,
-    });
-    await contextMenuPromise;
-    menuItems = collectContextMenuItems();
-    Assert.deepEqual(
-      makeMenuItemSpecs(menuItems),
-      makeContextMenuItemSpecs(true)
-    );
-
-    
-    contextMenuPromise = promisePanelHidden("pageActionContextMenu");
-    cxmenu.activateItem(menuItems[0]);
-    await contextMenuPromise;
-
-    
-    await BrowserTestUtils.waitForCondition(() => {
-      return !BrowserPageActions.urlbarButtonNodeForActionID(actionId);
-    }, "Waiting for urlbar button to be removed");
-
-    
-    await promiseOpenPageActionPanel();
-    contextMenuPromise = promisePanelShown("pageActionContextMenu");
-    EventUtils.synthesizeMouseAtCenter(panelButton, {
-      type: "contextmenu",
-      button: 2,
-    });
-    await contextMenuPromise;
-    menuItems = collectContextMenuItems();
-    Assert.deepEqual(
-      makeMenuItemSpecs(menuItems),
-      makeContextMenuItemSpecs(false)
-    );
-
-    
-    contextMenuPromise = promisePanelHidden("pageActionContextMenu");
-    cxmenu.activateItem(menuItems[0]);
-    await contextMenuPromise;
-
-    
-    await BrowserTestUtils.waitForCondition(() => {
-      return BrowserPageActions.urlbarButtonNodeForActionID(actionId);
-    }, "Waiting for urlbar button to be added back");
-  }
-
   
-  urlbarButton = BrowserPageActions.urlbarButtonNodeForActionID(actionId);
+  let urlbarButton = BrowserPageActions.urlbarButtonNodeForActionID(actionId);
   contextMenuPromise = promisePanelShown("pageActionContextMenu");
   EventUtils.synthesizeMouseAtCenter(urlbarButton, {
     type: "contextmenu",
@@ -188,10 +84,7 @@ add_task(async function contextMenu() {
   });
   await contextMenuPromise;
   menuItems = collectContextMenuItems();
-  Assert.deepEqual(
-    makeMenuItemSpecs(menuItems),
-    makeContextMenuItemSpecs(true)
-  );
+  Assert.deepEqual(makeMenuItemSpecs(menuItems), makeContextMenuItemSpecs());
 
   
   contextMenuPromise = promisePanelHidden("pageActionContextMenu");
@@ -216,10 +109,7 @@ add_task(async function contextMenu() {
   });
   await contextMenuPromise;
   menuItems = collectContextMenuItems();
-  Assert.deepEqual(
-    makeMenuItemSpecs(menuItems),
-    makeContextMenuItemSpecs(true)
-  );
+  Assert.deepEqual(makeMenuItemSpecs(menuItems), makeContextMenuItemSpecs());
 
   
   
@@ -338,21 +228,11 @@ function makeMenuItemSpecs(elements) {
   );
 }
 
-function makeContextMenuItemSpecs(actionInUrlbar = false) {
+function makeContextMenuItemSpecs() {
   let items = [
     { label: "Manage Extension\u2026" },
     { label: "Remove Extension" },
   ];
-  if (!gProton) {
-    items.unshift(
-      {
-        label: actionInUrlbar
-          ? "Remove from Address Bar"
-          : "Add to Address Bar",
-      },
-      {} 
-    );
-  }
   return items;
 }
 
