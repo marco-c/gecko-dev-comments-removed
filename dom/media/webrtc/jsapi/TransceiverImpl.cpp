@@ -264,6 +264,9 @@ nsresult TransceiverImpl::UpdateConduit() {
 
   mTransmitPipeline->Stop();
 
+  mConduit->StopReceiving();
+  mConduit->StopTransmitting();
+
   
   
   if (mJsepTransceiver->mSendTrack.GetSsrcs().empty()) {
@@ -301,6 +304,7 @@ nsresult TransceiverImpl::UpdateConduit() {
   }
 
   if (mJsepTransceiver->mRecvTrack.GetActive()) {
+    mConduit->StartReceiving();
     mReceiver->Start();
   }
 
@@ -310,6 +314,8 @@ nsresult TransceiverImpl::UpdateConduit() {
                 mPCHandle << "[" << mMid << "]: " << __FUNCTION__
                           << " Starting transmit conduit without send track!");
     }
+
+    mConduit->StartTransmitting();
     mTransmitPipeline->Start();
   }
 
@@ -919,7 +925,7 @@ void TransceiverImpl::UpdateConduitRtpExtmap(
 }
 
 void TransceiverImpl::Stop() {
-  mTransmitPipeline->Shutdown_m();
+  mTransmitPipeline->Shutdown();
   mReceiver->Shutdown();
   
   UpdateSendTrack(nullptr);

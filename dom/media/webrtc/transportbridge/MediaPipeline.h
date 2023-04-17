@@ -16,6 +16,7 @@
 #include "libwebrtcglue/MediaConduitInterface.h"
 #include "mozilla/ReentrantMonitor.h"
 #include "mozilla/Atomics.h"
+#include "mozilla/StateMirroring.h"
 #include "transport/SrtpFlow.h"  
 #include "transport/mediapacket.h"
 #include "transport/runnable_utils.h"
@@ -88,14 +89,13 @@ class MediaPipeline : public sigslot::has_slots<> {
                 RefPtr<nsISerialEventTarget> aStsThread,
                 RefPtr<MediaSessionConduit> aConduit);
 
-  virtual void Start() = 0;
-  virtual RefPtr<GenericPromise> Stop() = 0;
-  virtual void DetachMedia() {}
+  void Start();
+  void Stop();
 
   void SetLevel(size_t aLevel) { mLevel = aLevel; }
 
   
-  void Shutdown_m();
+  virtual void Shutdown();
 
   void UpdateTransport_m(const std::string& aTransportId,
                          UniquePtr<MediaPipelineFilter>&& aFilter);
@@ -219,7 +219,15 @@ class MediaPipeline : public sigslot::has_slots<> {
   const RefPtr<MediaSessionConduit> mConduit;
   const DirectionType mDirection;
 
+  
+  
+  const RefPtr<nsISerialEventTarget> mMainThread;
+  const RefPtr<nsISerialEventTarget> mStsThread;
+
  protected:
+  
+  
+  Watchable<bool> mActive;
   Atomic<size_t> mLevel;
   std::string mTransportId;
   const RefPtr<MediaTransportHandler> mTransportHandler;
@@ -227,11 +235,6 @@ class MediaPipeline : public sigslot::has_slots<> {
   TransportLayer::State mRtpState = TransportLayer::TS_NONE;
   TransportLayer::State mRtcpState = TransportLayer::TS_NONE;
   bool mSignalsConnected = false;
-
-  
-  
-  const RefPtr<nsISerialEventTarget> mMainThread;
-  const RefPtr<nsISerialEventTarget> mStsThread;
 
   
   const RefPtr<PipelineTransport> mTransport;
@@ -275,10 +278,9 @@ class MediaPipelineTransmit : public MediaPipeline {
                         RefPtr<nsISerialEventTarget> aStsThread, bool aIsVideo,
                         RefPtr<MediaSessionConduit> aConduit);
 
-  bool Transmitting() const;
+  void Shutdown() override;
 
-  void Start() override;
-  RefPtr<GenericPromise> Stop() override;
+  bool Transmitting() const;
 
   
   bool IsVideo() const override;
@@ -291,9 +293,6 @@ class MediaPipelineTransmit : public MediaPipeline {
                                     const PeerIdentity* aSinkIdentity);
 
   
-  void DetachMedia() override;
-
-  
   void TransportReady_s() override;
 
   
@@ -303,7 +302,8 @@ class MediaPipelineTransmit : public MediaPipeline {
   RefPtr<dom::MediaStreamTrack> GetTrack() const;
 
   
-  void SetSendTrack(RefPtr<ProcessedMediaTrack> aSendTrack);
+  
+  void SetSendTrackOverride(RefPtr<ProcessedMediaTrack> aSendTrack);
 
   
   class PipelineListener;
@@ -314,26 +314,37 @@ class MediaPipelineTransmit : public MediaPipeline {
 
   void SetDescription();
 
- private:
-  void AsyncStart(const RefPtr<GenericPromise>& aPromise);
+  
+  
+  void UpdateSendState();
 
+ private:
+  WatchManager<MediaPipelineTransmit> mWatchManager;
   const bool mIsVideo;
   const RefPtr<PipelineListener> mListener;
   const RefPtr<VideoFrameFeeder> mFeeder;
   RefPtr<AudioProxyThread> mAudioProcessing;
   RefPtr<VideoFrameConverter> mConverter;
-  RefPtr<dom::MediaStreamTrack> mDomTrack;
+  Watchable<RefPtr<dom::MediaStreamTrack>> mDomTrack;
   
   RefPtr<MediaInputPort> mSendPort;
   
+  
+  bool mUnsettingSendTrack = false;
+  
+  
+  
+  
+  
+  
   RefPtr<ProcessedMediaTrack> mSendTrack;
   
-  bool mTransmitting;
   
   
+  Watchable<RefPtr<ProcessedMediaTrack>> mSendTrackOverride;
   
   
-  bool mAsyncStartRequested;
+  bool mTransmitting = false;
 };
 
 
@@ -363,22 +374,22 @@ class MediaPipelineReceiveAudio : public MediaPipelineReceive {
                             const RefPtr<dom::MediaStreamTrack>& aTrack,
                             const PrincipalHandle& aPrincipalHandle);
 
-  void DetachMedia() override;
+  void Shutdown() override;
 
   bool IsVideo() const override { return false; }
 
   void MakePrincipalPrivate_s() override;
 
-  void Start() override;
-  RefPtr<GenericPromise> Stop() override;
-
   void OnRtpPacketReceived() override;
 
  private:
+  void UpdateListener();
+
   
   class PipelineListener;
 
   const RefPtr<PipelineListener> mListener;
+  WatchManager<MediaPipelineReceiveAudio> mWatchManager;
 };
 
 
@@ -393,21 +404,19 @@ class MediaPipelineReceiveVideo : public MediaPipelineReceive {
                             const RefPtr<dom::MediaStreamTrack>& aTrack,
                             const PrincipalHandle& aPrincipalHandle);
 
-  
-  void DetachMedia() override;
+  void Shutdown() override;
 
   bool IsVideo() const override { return true; }
 
   void MakePrincipalPrivate_s() override;
-
-  void Start() override;
-  RefPtr<GenericPromise> Stop() override;
 
   void OnRtpPacketReceived() override;
 
   void OnFrameDelivered();
 
  private:
+  void UpdateListener();
+
   class PipelineRenderer;
   friend class PipelineRenderer;
 
@@ -416,6 +425,7 @@ class MediaPipelineReceiveVideo : public MediaPipelineReceive {
 
   const RefPtr<PipelineRenderer> mRenderer;
   const RefPtr<PipelineListener> mListener;
+  WatchManager<MediaPipelineReceiveVideo> mWatchManager;
 };
 
 }  
