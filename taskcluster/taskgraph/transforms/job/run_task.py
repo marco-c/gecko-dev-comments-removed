@@ -43,6 +43,10 @@ run_task_schema = Schema(
         
         Required("command"): Any([taskref_or_string], taskref_or_string),
         
+        
+        
+        Optional("command-context"): dict,
+        
         Optional("workdir"): str,
         
         
@@ -116,6 +120,11 @@ def docker_worker_run_task(config, job, taskdesc):
         )
 
     run_command = run["command"]
+
+    command_context = run.get("command-context")
+    if command_context:
+        run_command = run_command.format(**command_context)
+
     run_cwd = run.get("cwd")
     if run_cwd and run["checkout"]:
         run_cwd = path.normpath(
@@ -218,6 +227,11 @@ def generic_worker_run_task(config, job, taskdesc):
             else:
                 run_command = f'"{run_command}"'
         run_command = ["bash", "-cx", run_command]
+
+    command_context = run.get("command-context")
+    if command_context:
+        for i in range(len(run_command)):
+            run_command[i] = run_command[i].format(**command_context)
 
     if run["comm-checkout"]:
         command.append(
