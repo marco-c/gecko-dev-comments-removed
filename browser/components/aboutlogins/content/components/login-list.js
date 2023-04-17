@@ -48,6 +48,8 @@ const headersFnOptions = {
   
   name: () => "",
   "name-reverse": () => "",
+  username: () => "",
+  "username-reverse": () => "",
   "last-used": l => headerFromDate(l.timeLastUsed),
   "last-changed": l => headerFromDate(l.timePasswordChanged),
   alerts: (l, breachesByLoginGUID, vulnerableLoginsByLoginGUID) => {
