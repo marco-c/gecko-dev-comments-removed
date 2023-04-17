@@ -70,6 +70,16 @@ class Sanitizer final : public nsISupports, public nsWrapperCache {
 
 
 
+  already_AddRefed<Element> SanitizeFor(const nsAString& aElement,
+                                        const nsAString& aInput,
+                                        ErrorResult& aRv);
+
+  
+
+
+
+
+
 
 
   RefPtr<DocumentFragment> SanitizeFragment(RefPtr<DocumentFragment> aFragment,
