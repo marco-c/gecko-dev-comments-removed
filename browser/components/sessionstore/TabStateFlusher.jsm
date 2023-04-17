@@ -8,6 +8,11 @@ var EXPORTED_SYMBOLS = ["TabStateFlusher"];
 
 ChromeUtils.defineModuleGetter(
   this,
+  "Services",
+  "resource://gre/modules/Services.jsm"
+);
+ChromeUtils.defineModuleGetter(
+  this,
   "SessionStore",
   "resource:///modules/sessionstore/SessionStore.jsm"
 );
@@ -110,7 +115,9 @@ var TabStateFlusherInternal = {
 
       nativePromise = browser.frameLoader.requestTabStateFlush();
     }
-    
+
+    if (!Services.appinfo.sessionHistoryInParent) {
+      
 
 
 
@@ -118,13 +125,14 @@ var TabStateFlusherInternal = {
 
 
 
-    SessionStore.ensureInitialized(browser.ownerGlobal);
+      SessionStore.ensureInitialized(browser.ownerGlobal);
 
-    let mm = browser.messageManager;
-    mm.sendAsyncMessage("SessionStore:flush", {
-      id,
-      epoch: SessionStore.getCurrentEpoch(browser),
-    });
+      let mm = browser.messageManager;
+      mm.sendAsyncMessage("SessionStore:flush", {
+        id,
+        epoch: SessionStore.getCurrentEpoch(browser),
+      });
+    }
 
     
     let permanentKey = browser.permanentKey;
@@ -136,13 +144,20 @@ var TabStateFlusherInternal = {
       this._requests.set(permanentKey, request);
     }
 
-    let promise = new Promise(resolve => {
-      
-      request.perBrowserRequests.set(id, resolve);
-    });
+    
+    
+    
+    
+    let requestPromise = Promise.resolve();
+    if (!Services.appinfo.sessionHistoryInParent) {
+      requestPromise = new Promise(resolve => {
+        
+        request.perBrowserRequests.set(id, resolve);
+      });
+    }
 
     return Promise.race([
-      nativePromise.then(_ => promise),
+      nativePromise.then(_ => requestPromise),
       request.cancelPromise,
     ]);
   },
