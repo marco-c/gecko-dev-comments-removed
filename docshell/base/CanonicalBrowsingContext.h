@@ -10,6 +10,7 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/MediaControlKeySource.h"
 #include "mozilla/dom/BrowsingContextWebProgress.h"
+#include "mozilla/dom/ProcessIsolation.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
 #include "mozilla/dom/SessionStoreRestoreData.h"
@@ -54,16 +55,6 @@ class MediaController;
 struct LoadingSessionHistoryInfo;
 class SSCacheCopy;
 class WindowGlobalParent;
-
-
-
-struct RemotenessChangeOptions {
-  nsCString mRemoteType;
-  bool mReplaceBrowsingContext = false;
-  uint64_t mSpecificGroupId = 0;
-  bool mTryUseBFCache = false;
-  RefPtr<SessionHistoryEntry> mActiveSessionHistoryEntry;
-};
 
 
 
@@ -233,7 +224,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   using RemotenessPromise = MozPromise<RefPtr<BrowserParent>, nsresult, false>;
   RefPtr<RemotenessPromise> ChangeRemoteness(
-      const RemotenessChangeOptions& aOptions, uint64_t aPendingSwitchId);
+      const NavigationIsolationOptions& aOptions, uint64_t aPendingSwitchId);
 
   
   
@@ -272,7 +263,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   
   
   void ReplacedBy(CanonicalBrowsingContext* aNewContext,
-                  const RemotenessChangeOptions& aRemotenessOptions);
+                  const NavigationIsolationOptions& aRemotenessOptions);
 
   bool HasHistoryEntry(nsISHEntry* aEntry);
 
@@ -388,7 +379,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
     PendingRemotenessChange(CanonicalBrowsingContext* aTarget,
                             RemotenessPromise::Private* aPromise,
                             uint64_t aPendingSwitchId,
-                            const RemotenessChangeOptions& aOptions);
+                            const NavigationIsolationOptions& aOptions);
 
     void Cancel(nsresult aRv);
 
@@ -411,7 +402,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
     RefPtr<BrowsingContextGroup> mSpecificGroup;
 
     uint64_t mPendingSwitchId;
-    RemotenessChangeOptions mOptions;
+    NavigationIsolationOptions mOptions;
   };
 
   struct RestoreState {
