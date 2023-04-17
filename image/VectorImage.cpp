@@ -722,6 +722,10 @@ VectorImage::GetFrameInternal(const IntSize& aSize,
                      RefPtr<SourceSurface>());
   }
 
+  float animTime = (aWhichFrame == FRAME_FIRST)
+                       ? 0.0f
+                       : mSVGDocumentWrapper->GetCurrentTimeAsFloat();
+
   
   
   
@@ -729,8 +733,7 @@ VectorImage::GetFrameInternal(const IntSize& aSize,
   
   SVGDrawingParameters params(
       nullptr, decodeSize, aSize, ImageRegion::Create(decodeSize),
-      SamplingFilter::POINT, aSVGContext,
-      mSVGDocumentWrapper->GetCurrentTimeAsFloat(), aFlags, 1.0);
+      SamplingFilter::POINT, aSVGContext, animTime, aFlags, 1.0);
 
   bool didCache;  
   bool contextPaint = aSVGContext && aSVGContext->GetContextPaint();
