@@ -44,7 +44,7 @@ void ViewportFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   
   
 
-  nsIFrame* parent = nsLayoutUtils::GetCrossDocParentFrame(this);
+  nsIFrame* parent = nsLayoutUtils::GetCrossDocParentFrameInProcess(this);
   if (parent) {
     nsFrameState state = parent->GetStateBits();
 
