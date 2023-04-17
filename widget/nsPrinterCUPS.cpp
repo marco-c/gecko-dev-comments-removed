@@ -149,8 +149,7 @@ bool nsPrinterCUPS::SupportsColor() const {
 
 bool nsPrinterCUPS::SupportsCollation() const {
   
-  const char* const value = mShim.cupsGetOption(
-      "printer-type", mPrinter->num_options, mPrinter->options);
+  const char* const value = FindCUPSOption("printer-type");
   if (!value) {
     return false;
   }
@@ -348,6 +347,77 @@ nsPrinterCUPS::PrinterInfoLock nsPrinterCUPS::TryEnsurePrinterInfo(
     lock->mTriedInitWithDefault = true;
   } else {
     lock->mTriedInitWithConnection = true;
+  }
+
+  MOZ_ASSERT(mPrinter);
+
+  
+  
+  if (aConnection && MOZ_LIKELY(mShim.httpGetAddress && mShim.httpAddrPort)) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    const char* const serverNameBytes = mShim.cupsServer();
+
+    if (MOZ_LIKELY(serverNameBytes)) {
+      const nsDependentCString serverName{serverNameBytes};
+
+      
+      
+      
+      
+      
+      const size_t hostnameMemLength = serverName.Length() + 2;
+      auto hostnameMem = MakeUnique<char[]>(hostnameMemLength);
+
+      
+      
+      const char* const hostnameBytes = mShim.httpGetHostname(
+          aConnection, hostnameMem.get(), hostnameMemLength);
+
+      if (MOZ_LIKELY(hostnameBytes)) {
+        const nsDependentCString hostname{hostnameBytes};
+
+        
+        
+        const bool portsDiffer =
+            mShim.httpAddrPort(mShim.httpGetAddress(aConnection)) !=
+            mShim.ippPort();
+        const bool cupsDestDeviceFlag =
+            (hostname != serverName && serverName[0] != '/') || portsDiffer;
+
+        
+        
+        
+        if ((cupsDestDeviceFlag || !FindCUPSOption("printer-uri-supported")) &&
+            !FindCUPSOption("device-uri")) {
+          return lock;
+        }
+      }
+    }
   }
 
   
