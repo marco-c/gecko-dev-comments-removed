@@ -687,7 +687,21 @@ function wait(ms) {
 
 
 
+
+
+
+
 async function waitFor(condition, message = "", interval = 10, maxTries = 500) {
+  
+  interval =
+    typeof waitFor.overrideIntervalForTestFile !== "undefined"
+      ? waitFor.overrideIntervalForTestFile
+      : interval;
+  maxTries =
+    typeof waitFor.overrideMaxTriesForTestFile !== "undefined"
+      ? waitFor.overrideMaxTriesForTestFile
+      : maxTries;
+
   try {
     const value = await BrowserTestUtils.waitForCondition(
       condition,
