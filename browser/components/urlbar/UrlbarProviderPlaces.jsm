@@ -11,6 +11,12 @@
 
 
 
+var EXPORTED_SYMBOLS = ["UrlbarProviderPlaces"];
+
+
+
+
+
 const QUERYTYPE_FILTERED = 0;
 
 
@@ -116,8 +122,10 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PromiseUtils: "resource://gre/modules/PromiseUtils.jsm",
   Sqlite: "resource://gre/modules/Sqlite.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
+  UrlbarProvider: "resource:///modules/UrlbarUtils.jsm",
   UrlbarProviderOpenTabs: "resource:///modules/UrlbarProviderOpenTabs.jsm",
   UrlbarProvidersManager: "resource:///modules/UrlbarProvidersManager.jsm",
+  UrlbarResult: "resource:///modules/UrlbarResult.jsm",
   UrlbarSearchUtils: "resource:///modules/UrlbarSearchUtils.jsm",
   UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
@@ -336,6 +344,175 @@ function makeActionUrl(type, params) {
     encodedParams[key] = encodeURIComponent(params[key]);
   }
   return `moz-action:${type},${JSON.stringify(encodedParams)}`;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function convertLegacyAutocompleteResult(context, acResult, urls) {
+  let results = [];
+  for (let i = 0; i < acResult.matchCount; ++i) {
+    
+    
+    
+    
+    let url = acResult.getFinalCompleteValueAt(i);
+    if (urls.has(url)) {
+      continue;
+    }
+    urls.add(url);
+    let style = acResult.getStyleAt(i);
+    let result = makeUrlbarResult(context.tokens, {
+      url,
+      
+      
+      
+      icon: acResult.getImageAt(i) || undefined,
+      style,
+      comment: acResult.getCommentAt(i),
+      firstToken: context.tokens[0],
+    });
+    
+    if (!result) {
+      continue;
+    }
+
+    results.push(result);
+  }
+  return results;
+}
+
+
+
+
+
+
+
+function makeUrlbarResult(tokens, info) {
+  let action = PlacesUtils.parseActionUrl(info.url);
+  if (action) {
+    switch (action.type) {
+      case "searchengine": {
+        if (action.params.isSearchHistory) {
+          
+          return new UrlbarResult(
+            UrlbarUtils.RESULT_TYPE.SEARCH,
+            UrlbarUtils.RESULT_SOURCE.HISTORY,
+            ...UrlbarResult.payloadAndSimpleHighlights(tokens, {
+              engine: action.params.engineName,
+              suggestion: [
+                action.params.searchSuggestion,
+                UrlbarUtils.HIGHLIGHT.SUGGESTED,
+              ],
+              lowerCaseSuggestion: action.params.searchSuggestion.toLocaleLowerCase(),
+            })
+          );
+        }
+
+        return new UrlbarResult(
+          UrlbarUtils.RESULT_TYPE.SEARCH,
+          UrlbarUtils.RESULT_SOURCE.SEARCH,
+          ...UrlbarResult.payloadAndSimpleHighlights(tokens, {
+            engine: [action.params.engineName, UrlbarUtils.HIGHLIGHT.TYPED],
+            suggestion: [
+              action.params.searchSuggestion,
+              UrlbarUtils.HIGHLIGHT.SUGGESTED,
+            ],
+            lowerCaseSuggestion: action.params.searchSuggestion?.toLocaleLowerCase(),
+            keyword: action.params.alias,
+            query: [
+              action.params.searchQuery.trim(),
+              UrlbarUtils.HIGHLIGHT.NONE,
+            ],
+            icon: info.icon,
+          })
+        );
+      }
+      case "switchtab":
+        return new UrlbarResult(
+          UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
+          UrlbarUtils.RESULT_SOURCE.TABS,
+          ...UrlbarResult.payloadAndSimpleHighlights(tokens, {
+            url: [action.params.url, UrlbarUtils.HIGHLIGHT.TYPED],
+            title: [info.comment, UrlbarUtils.HIGHLIGHT.TYPED],
+            icon: info.icon,
+          })
+        );
+      case "visiturl":
+        return new UrlbarResult(
+          UrlbarUtils.RESULT_TYPE.URL,
+          UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+          ...UrlbarResult.payloadAndSimpleHighlights(tokens, {
+            title: [info.comment, UrlbarUtils.HIGHLIGHT.TYPED],
+            url: [action.params.url, UrlbarUtils.HIGHLIGHT.TYPED],
+            icon: info.icon,
+          })
+        );
+      default:
+        Cu.reportError(`Unexpected action type: ${action.type}`);
+        return null;
+    }
+  }
+
+  
+  let source;
+  let tags = [];
+  let comment = info.comment;
+
+  
+  
+  
+  if (info.style.includes("bookmark")) {
+    source = UrlbarUtils.RESULT_SOURCE.BOOKMARKS;
+  } else {
+    source = UrlbarUtils.RESULT_SOURCE.HISTORY;
+  }
+
+  
+  
+  if (info.style.includes("tag")) {
+    [comment, tags] = info.comment.split(UrlbarUtils.TITLE_TAGS_SEPARATOR);
+
+    
+    
+    
+    if (source != UrlbarUtils.RESULT_SOURCE.BOOKMARKS) {
+      tags = "";
+    }
+
+    
+    
+    tags = tags
+      .split(",")
+      .map(t => t.trim())
+      .filter(tag => {
+        let lowerCaseTag = tag.toLocaleLowerCase();
+        return tokens.some(token =>
+          lowerCaseTag.includes(token.lowerCaseValue)
+        );
+      })
+      .sort();
+  }
+
+  return new UrlbarResult(
+    UrlbarUtils.RESULT_TYPE.URL,
+    source,
+    ...UrlbarResult.payloadAndSimpleHighlights(tokens, {
+      url: [info.url, UrlbarUtils.HIGHLIGHT.TYPED],
+      icon: info.icon,
+      title: [comment, UrlbarUtils.HIGHLIGHT.TYPED],
+      tags: [tags, UrlbarUtils.HIGHLIGHT.TYPED],
+    })
+  );
 }
 
 const MATCH_TYPE = {
@@ -1447,16 +1624,26 @@ Search.prototype = {
 
 
 
-function UnifiedComplete() {}
+class ProviderPlaces extends UrlbarProvider {
+  
+  
+  _promiseDatabase = null;
 
-UnifiedComplete.prototype = {
   
 
+
+
+  get name() {
+    return "Places";
+  }
+
   
 
 
 
-  _promiseDatabase: null,
+  get type() {
+    return UrlbarUtils.PROVIDER_TYPE.PROFILE;
+  }
 
   
 
@@ -1485,7 +1672,7 @@ UnifiedComplete.prototype = {
       });
     }
     return this._promiseDatabase;
-  },
+  }
 
   
 
@@ -1494,72 +1681,48 @@ UnifiedComplete.prototype = {
 
 
 
-
-
-
-  startQuery(queryContext, onAutocompleteResult) {
-    let deferred = PromiseUtils.defer();
-    let listener = {
-      onSearchResult(_, result) {
-        let done =
-          [
-            Ci.nsIAutoCompleteResult.RESULT_IGNORED,
-            Ci.nsIAutoCompleteResult.RESULT_FAILURE,
-            Ci.nsIAutoCompleteResult.RESULT_NOMATCH,
-            Ci.nsIAutoCompleteResult.RESULT_SUCCESS,
-          ].includes(result.searchResult) || result.errorDescription;
-        onAutocompleteResult(result);
-        if (done) {
-          deferred.resolve();
-        }
-      },
-    };
-    this.startSearch(
-      queryContext.searchString,
-      "",
-      null,
-      listener,
-      queryContext
-    );
-    this._deferred = deferred;
-    return this._deferred.promise;
-  },
-
-  
-
-  startSearch(
-    searchString,
-    searchParam,
-    acPreviousResult,
-    listener,
-    queryContext
-  ) {
-    
-    if (this._currentSearch) {
-      this.stopSearch();
+  isActive(queryContext) {
+    if (
+      !queryContext.trimmedSearchString &&
+      queryContext.searchMode?.engineName &&
+      UrlbarPrefs.get("update2.emptySearchBehavior") < 2
+    ) {
+      return false;
     }
+    return true;
+  }
 
-    let search = (this._currentSearch = new Search(
-      searchString,
-      searchParam,
-      listener,
-      this,
-      queryContext
-    ));
-    this.getDatabaseHandle()
-      .then(conn => search.execute(conn))
-      .catch(ex => {
-        dump(`Query failed: ${ex}\n`);
-        Cu.reportError(ex);
-      })
-      .then(() => {
-        if (search == this._currentSearch) {
-          this.finishSearch(true);
-        }
-      });
-  },
+  
 
-  stopSearch() {
+
+
+
+
+
+  startQuery(queryContext, addCallback) {
+    let instance = this.queryInstance;
+    let urls = new Set();
+    this._startLegacyQuery(queryContext, acResult => {
+      if (instance != this.queryInstance) {
+        return;
+      }
+      let results = convertLegacyAutocompleteResult(
+        queryContext,
+        acResult,
+        urls
+      );
+      for (let result of results) {
+        addCallback(this, result);
+      }
+    });
+    return this._deferred.promise;
+  }
+
+  
+
+
+
+  cancelQuery(queryContext) {
     if (this._currentSearch) {
       this._currentSearch.stop();
     }
@@ -1569,7 +1732,7 @@ UnifiedComplete.prototype = {
     
     
     this.finishSearch();
-  },
+  }
 
   
 
@@ -1601,29 +1764,54 @@ UnifiedComplete.prototype = {
     
     
     search.notifyResult(false);
-  },
+  }
 
-  
+  _startLegacyQuery(queryContext, callback) {
+    let deferred = PromiseUtils.defer();
+    let listener = {
+      onSearchResult(_, result) {
+        let done =
+          [
+            Ci.nsIAutoCompleteResult.RESULT_IGNORED,
+            Ci.nsIAutoCompleteResult.RESULT_FAILURE,
+            Ci.nsIAutoCompleteResult.RESULT_NOMATCH,
+            Ci.nsIAutoCompleteResult.RESULT_SUCCESS,
+          ].includes(result.searchResult) || result.errorDescription;
+        callback(result);
+        if (done) {
+          deferred.resolve();
+        }
+      },
+    };
+    this._startSearch(queryContext.searchString, listener, queryContext);
+    this._deferred = deferred;
+  }
 
-  get searchType() {
-    return Ci.nsIAutoCompleteSearchDescriptor.SEARCH_TYPE_IMMEDIATE;
-  },
+  _startSearch(searchString, listener, queryContext) {
+    
+    if (this._currentSearch) {
+      this.cancelQuery();
+    }
 
-  get clearingAutoFillSearchesAgain() {
-    return true;
-  },
+    let search = (this._currentSearch = new Search(
+      searchString,
+      "",
+      listener,
+      this,
+      queryContext
+    ));
+    this.getDatabaseHandle()
+      .then(conn => search.execute(conn))
+      .catch(ex => {
+        dump(`Query failed: ${ex}\n`);
+        Cu.reportError(ex);
+      })
+      .then(() => {
+        if (search == this._currentSearch) {
+          this.finishSearch(true);
+        }
+      });
+  }
+}
 
-  
-
-  classID: Components.ID("f964a319-397a-4d21-8be6-5cdd1ee3e3ae"),
-
-  QueryInterface: ChromeUtils.generateQI([
-    "nsIAutoCompleteSearch",
-    "nsIAutoCompleteSearchDescriptor",
-    "mozIPlacesAutoComplete",
-    "nsIObserver",
-    "nsISupportsWeakReference",
-  ]),
-};
-
-var EXPORTED_SYMBOLS = ["UnifiedComplete"];
+var UrlbarProviderPlaces = new ProviderPlaces();

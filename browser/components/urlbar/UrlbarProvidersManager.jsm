@@ -33,8 +33,6 @@ XPCOMUtils.defineLazyGetter(this, "logger", () =>
 
 
 var localProviderModules = {
-  UrlbarProviderUnifiedComplete:
-    "resource:///modules/UrlbarProviderUnifiedComplete.jsm",
   UrlbarProviderAboutPages: "resource:///modules/UrlbarProviderAboutPages.jsm",
   UrlbarProviderAliasEngines:
     "resource:///modules/UrlbarProviderAliasEngines.jsm",
