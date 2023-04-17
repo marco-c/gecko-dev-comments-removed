@@ -9,6 +9,7 @@
 
 
 
+#include "mozilla/ProfilerThreadPlatformData.h"
 #include "mozilla/ProfilerThreadRegistrationInfo.h"
 #include "mozilla/ProfilerUtils.h"
 #include "mozilla/UniquePtrExtensions.h"
