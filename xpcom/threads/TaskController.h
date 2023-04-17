@@ -170,7 +170,11 @@ class Task {
   virtual PerformanceCounter* GetPerformanceCounter() const { return nullptr; }
 
   
+#ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
+  virtual bool GetName(nsACString& aName) = 0;
+#else
   virtual bool GetName(nsACString& aName) { return false; }
+#endif
 
  protected:
   Task(bool aMainThreadOnly,
