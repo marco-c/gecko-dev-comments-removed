@@ -699,6 +699,8 @@ def cargo_incremental(
 
     if not enabled:
         return "0"
+    elif enabled.origin != "default":
+        return "1"
 
     
     
