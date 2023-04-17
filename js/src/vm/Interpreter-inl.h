@@ -557,7 +557,7 @@ static MOZ_ALWAYS_INLINE bool CheckPrivateFieldOperation(JSContext* cx,
   
   if (condition == ThrowCondition::OnlyCheckRhs) {
     if (!val.isObject()) {
-      ReportInNotObjectError(cx, idval, -2, val, -1);
+      ReportInNotObjectError(cx, idval, val);
       return false;
     }
   }
