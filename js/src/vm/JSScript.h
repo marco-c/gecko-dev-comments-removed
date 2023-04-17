@@ -552,8 +552,6 @@ class ScriptSource {
   
   
   
-  
-  
   UniquePtr<XDRIncrementalStencilEncoder> xdrEncoder_ = nullptr;
 
   
@@ -1067,29 +1065,8 @@ class ScriptSource {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class ScriptSourceObject : public NativeObject {
   static const JSClassOps classOps_;
-
-  bool isCanonical() const {
-    return &getReservedSlot(CANONICAL_SLOT).toObject() == this;
-  }
-  ScriptSourceObject* unwrappedCanonical() const;
 
  public:
   static const JSClass class_;
@@ -1097,7 +1074,6 @@ class ScriptSourceObject : public NativeObject {
   static void finalize(JSFreeOp* fop, JSObject* obj);
 
   static ScriptSourceObject* create(JSContext* cx, ScriptSource* source);
-  static ScriptSourceObject* clone(JSContext* cx, HandleScriptSourceObject sso);
 
   
   
@@ -1117,15 +1093,13 @@ class ScriptSourceObject : public NativeObject {
 
   const Value& unwrappedElementAttributeName() const {
     MOZ_ASSERT(isInitialized());
-    const Value& v =
-        unwrappedCanonical()->getReservedSlot(ELEMENT_PROPERTY_SLOT);
+    const Value& v = getReservedSlot(ELEMENT_PROPERTY_SLOT);
     MOZ_ASSERT(!v.isMagic());
     return v;
   }
   BaseScript* unwrappedIntroductionScript() const {
     MOZ_ASSERT(isInitialized());
-    Value value =
-        unwrappedCanonical()->getReservedSlot(INTRODUCTION_SCRIPT_SLOT);
+    Value value = getReservedSlot(INTRODUCTION_SCRIPT_SLOT);
     if (value.isUndefined()) {
       return nullptr;
     }
@@ -1138,23 +1112,15 @@ class ScriptSourceObject : public NativeObject {
     setReservedSlot(INTRODUCTION_SCRIPT_SLOT, introductionScript);
   }
 
-  Value canonicalPrivate() const {
+  Value getPrivate() const {
     MOZ_ASSERT(isInitialized());
     Value value = getReservedSlot(PRIVATE_SLOT);
-    MOZ_ASSERT_IF(!isCanonical(), value.isUndefined());
     return value;
   }
 
  private:
 #ifdef DEBUG
   bool isInitialized() const {
-    if (!isCanonical()) {
-      
-      
-      
-      return true;
-    }
-
     Value element = getReservedSlot(ELEMENT_PROPERTY_SLOT);
     if (element.isMagic(JS_GENERIC_MAGIC)) {
       return false;
@@ -1165,7 +1131,6 @@ class ScriptSourceObject : public NativeObject {
 
   enum {
     SOURCE_SLOT = 0,
-    CANONICAL_SLOT,
     ELEMENT_PROPERTY_SLOT,
     INTRODUCTION_SCRIPT_SLOT,
     PRIVATE_SLOT,
@@ -1462,7 +1427,6 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
   
   const GCPtrObject functionOrGlobal_ = {};
 
-  
   
   
   const GCPtr<ScriptSourceObject*> sourceObject_ = {};

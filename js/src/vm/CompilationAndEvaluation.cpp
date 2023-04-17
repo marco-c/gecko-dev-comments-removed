@@ -451,7 +451,7 @@ JS_PUBLIC_API bool JS::UpdateDebugMetadata(
     
     
     if (scriptOrModule) {
-      privateValueStore = scriptOrModule->sourceObject()->canonicalPrivate();
+      privateValueStore = scriptOrModule->sourceObject()->getPrivate();
     }
   } else {
     privateValueStore = privateValue;
