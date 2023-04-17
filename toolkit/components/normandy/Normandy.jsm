@@ -51,12 +51,15 @@ var Normandy = {
 
   async init({ runAsync = true } = {}) {
     
+
+    
     Services.obs.addObserver(
       this,
       TelemetryUtils.TELEMETRY_UPLOAD_DISABLED_TOPIC
     );
 
-    await NormandyMigrations.applyAll();
+    
+    
     this.rolloutPrefsChanged = this.applyStartupPrefs(
       STARTUP_ROLLOUT_PREFS_BRANCH
     );
@@ -64,6 +67,8 @@ var Normandy = {
       STARTUP_EXPERIMENT_PREFS_BRANCH
     );
     this.defaultPrefsHaveBeenApplied.resolve();
+
+    await NormandyMigrations.applyAll();
 
     if (runAsync) {
       Services.obs.addObserver(this, UI_AVAILABLE_NOTIFICATION);
@@ -184,7 +189,11 @@ var Normandy = {
 
 
 
+
   applyStartupPrefs(sourcePrefix) {
+    
+    
+    
     const originalValues = {};
     const sourceBranch = Services.prefs.getBranch(sourcePrefix);
     const targetBranch = Services.prefs.getDefaultBranch("");
