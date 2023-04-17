@@ -229,10 +229,10 @@ StoragePrincipalHelper::PrepareEffectiveStoragePrincipalOriginAttributes(
 
 
 bool StoragePrincipalHelper::VerifyValidStoragePrincipalInfoForPrincipalInfo(
-    const mozilla::ipc::PrincipalInfo& aStoragePrincipalInfo,
+    const mozilla::ipc::PrincipalInfo& aPartitionedPrincipalInfo,
     const mozilla::ipc::PrincipalInfo& aPrincipalInfo) {
   return VerifyValidPartitionedPrincipalInfoForPrincipalInfoInternal(
-      aStoragePrincipalInfo, aPrincipalInfo, false, false);
+      aPartitionedPrincipalInfo, aPrincipalInfo, false, false);
 }
 
 
@@ -265,25 +265,6 @@ nsresult StoragePrincipalHelper::GetPrincipal(nsIChannel* aChannel,
                                       getter_AddRefs(partitionedPrincipal));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (XRE_IsParentProcess() && loadInfo->GetBrowsingContextID() != 0) {
-    AntiTrackingUtils::ComputeIsThirdPartyToTopWindow(aChannel);
   }
 
   nsCOMPtr<nsIPrincipal> outPrincipal = principal;
