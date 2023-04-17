@@ -1860,6 +1860,36 @@ Result<bool, nsresult> MaybeUpdateGroupForOrigin(
   return updated;
 }
 
+Result<bool, nsresult> MaybeUpdateLastAccessTimeForOrigin(
+    FullOriginMetadata& aFullOriginMetadata) {
+  MOZ_ASSERT(!NS_IsMainThread());
+
+  if (aFullOriginMetadata.mLastAccessTime == INT64_MIN) {
+    QuotaManager* quotaManager = QuotaManager::Get();
+    MOZ_ASSERT(quotaManager);
+
+    QM_TRY_INSPECT(
+        const auto& metadataFile,
+        quotaManager->GetDirectoryForOrigin(
+            aFullOriginMetadata.mPersistenceType, aFullOriginMetadata.mOrigin));
+
+    QM_TRY(metadataFile->Append(nsLiteralString(METADATA_V2_FILE_NAME)));
+
+    QM_TRY_UNWRAP(int64_t timestamp,
+                  MOZ_TO_RESULT_INVOKE(metadataFile, GetLastModifiedTime));
+
+    
+    MOZ_ASSERT((INT64_MAX / PR_USEC_PER_MSEC) > timestamp);
+    timestamp *= int64_t(PR_USEC_PER_MSEC);
+
+    aFullOriginMetadata.mLastAccessTime = timestamp;
+
+    return true;
+  }
+
+  return false;
+}
+
 }  
 
 BackgroundThreadObject::BackgroundThreadObject()
@@ -2387,6 +2417,10 @@ int64_t GetLastModifiedTime(PersistenceType aPersistenceType, nsIFile& aFile) {
   if (NS_FAILED(rv)) {
     timestamp = PR_Now();
   }
+
+  
+  
+  
 
   return timestamp;
 }
@@ -4099,19 +4133,6 @@ nsresult QuotaManager::LoadQuota() {
               fullOriginMetadata.mOrigin,
               MOZ_TO_RESULT_INVOKE_TYPED(nsCString, stmt, GetUTF8String, 3));
 
-          QM_TRY_INSPECT(const bool& updated,
-                         MaybeUpdateGroupForOrigin(fullOriginMetadata));
-
-          Unused << updated;
-
-          
-          
-          
-          
-          
-          
-          
-
           QM_TRY_INSPECT(
               const auto& clientUsagesText,
               MOZ_TO_RESULT_INVOKE_TYPED(nsCString, stmt, GetUTF8String, 4));
@@ -4127,6 +4148,25 @@ nsresult QuotaManager::LoadQuota() {
                          MOZ_TO_RESULT_INVOKE(stmt, GetInt32, 7));
           QM_TRY_UNWRAP(fullOriginMetadata.mPersisted,
                         MOZ_TO_RESULT_INVOKE(stmt, GetInt32, 8));
+
+          QM_TRY_INSPECT(const bool& groupUpdated,
+                         MaybeUpdateGroupForOrigin(fullOriginMetadata));
+
+          Unused << groupUpdated;
+
+          QM_TRY_INSPECT(
+              const bool& lastAccessTimeUpdated,
+              MaybeUpdateLastAccessTimeForOrigin(fullOriginMetadata));
+
+          Unused << lastAccessTimeUpdated;
+
+          
+          
+          
+          
+          
+          
+          
 
           if (accessed) {
             QM_TRY_INSPECT(
@@ -4617,10 +4657,16 @@ Result<FullOriginMetadata, nsresult> QuotaManager::LoadFullOriginMetadata(
 
   QM_TRY(binaryStream->Close());
 
-  QM_TRY_INSPECT(const bool& updated,
+  QM_TRY_INSPECT(const bool& groupUpdated,
                  MaybeUpdateGroupForOrigin(fullOriginMetadata));
 
-  if (updated) {
+  
+  
+  
+  QM_TRY_INSPECT(const bool& lastAccessTimeUpdated,
+                 MaybeUpdateLastAccessTimeForOrigin(fullOriginMetadata));
+
+  if (groupUpdated || lastAccessTimeUpdated) {
     
     
     QM_TRY(CreateDirectoryMetadata2(
