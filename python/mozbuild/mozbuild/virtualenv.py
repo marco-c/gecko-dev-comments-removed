@@ -14,7 +14,6 @@ import platform
 import shutil
 import subprocess
 import sys
-from tempfile import TemporaryDirectory
 
 IS_NATIVE_WIN = sys.platform == "win32" and os.sep == "\\"
 IS_CYGWIN = sys.platform == "cygwin"
@@ -440,16 +439,13 @@ class VirtualenvManager(VirtualenvHelper):
 
         exec(open(self.activate_path).read(), dict(__file__=self.activate_path))
 
-    def install_pip_package(self, package, vendored=False):
+    def install_pip_package(self, package):
         """Install a package via pip.
 
         The supplied package is specified using a pip requirement specifier.
         e.g. 'foo' or 'foo==1.0'.
 
         If the package is already installed, this is a no-op.
-
-        If vendored is True, no package index will be used and no dependencies
-        will be installed.
         """
         if sys.executable.startswith(self.bin_path):
             
@@ -461,47 +457,9 @@ class VirtualenvManager(VirtualenvHelper):
             if req.satisfied_by is not None:
                 return
 
-        args = ["install"]
-        vendored_dist_info_dir = None
+        return self._run_pip(["install", package], stderr=subprocess.STDOUT)
 
-        if vendored:
-            args.extend(
-                [
-                    "--no-deps",
-                    "--no-index",
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    "--no-build-isolation",
-                ]
-            )
-            vendored_dist_info_dir = next(
-                (d for d in os.listdir(package) if d.endswith(".dist-info")), None
-            )
-
-        with TemporaryDirectory() as tmp:
-            if vendored_dist_info_dir:
-                
-                
-                wheel_file = os.path.join(
-                    tmp, "{}-1.0-py3-none-any.whl".format(os.path.basename(package))
-                )
-                shutil.make_archive(wheel_file, "zip", package)
-                shutil.move("{}.zip".format(wheel_file), wheel_file)
-                package = wheel_file
-
-            args.append(package)
-            return self._run_pip(args, stderr=subprocess.STDOUT)
-
-    def install_pip_requirements(
-        self, path, require_hashes=True, quiet=False, vendored=False
-    ):
+    def install_pip_requirements(self, path, require_hashes=True, quiet=False):
         """Install a pip requirements.txt file.
 
         The supplied path is a text file containing pip requirement
@@ -522,9 +480,6 @@ class VirtualenvManager(VirtualenvHelper):
 
         if quiet:
             args.append("--quiet")
-
-        if vendored:
-            args.extend(["--no-deps", "--no-index"])
 
         return self._run_pip(args, stderr=subprocess.STDOUT)
 
