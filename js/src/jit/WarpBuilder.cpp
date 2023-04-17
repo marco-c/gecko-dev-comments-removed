@@ -1328,6 +1328,18 @@ bool WarpBuilder::build_LoopHead(BytecodeLocation loc) {
 }
 
 bool WarpBuilder::buildTestOp(BytecodeLocation loc) {
+  MDefinition* originalValue = current->peek(-1);
+
+  if (auto* cacheIRSnapshot = getOpSnapshot<WarpCacheIR>(loc)) {
+    
+    
+    
+    MDefinition* value = current->pop();
+    if (!TranspileCacheIRToMIR(this, loc, cacheIRSnapshot, {value})) {
+      return false;
+    }
+  }
+
   if (loc.isBackedge()) {
     return buildTestBackedge(loc);
   }
@@ -1340,12 +1352,18 @@ bool WarpBuilder::buildTestOp(BytecodeLocation loc) {
     std::swap(target1, target2);
   }
 
+  MDefinition* value = current->pop();
+
+  
+  
   
   
   
   
   bool mustKeepCondition = (op == JSOp::And || op == JSOp::Or);
-  MDefinition* value = mustKeepCondition ? current->peek(-1) : current->pop();
+  if (mustKeepCondition) {
+    current->push(originalValue);
+  }
 
   
   
@@ -1499,6 +1517,15 @@ bool WarpBuilder::build_DynamicImport(BytecodeLocation loc) {
 }
 
 bool WarpBuilder::build_Not(BytecodeLocation loc) {
+  if (auto* cacheIRSnapshot = getOpSnapshot<WarpCacheIR>(loc)) {
+    
+    
+    MDefinition* value = current->pop();
+    if (!TranspileCacheIRToMIR(this, loc, cacheIRSnapshot, {value})) {
+      return false;
+    }
+  }
+
   MDefinition* value = current->pop();
   MNot* ins = MNot::New(alloc(), value);
   current->add(ins);
