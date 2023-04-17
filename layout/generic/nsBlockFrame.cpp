@@ -1929,6 +1929,10 @@ void nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
     aMetrics.mCarriedOutBEndMargin.Zero();
     autoBSize += borderPadding.BStartEnd(wm);
     finalSize.BSize(wm) = autoBSize;
+  } else if (aState.mReflowStatus.IsInlineBreakBefore()) {
+    
+    
+    finalSize.BSize(wm) = aReflowInput.AvailableBSize();
   } else if (aState.mReflowStatus.IsComplete()) {
     nscoord contentBSize = blockEndEdgeOfChildren - borderPadding.BStart(wm);
     nscoord lineClampedContentBSize =
@@ -1946,8 +1950,13 @@ void nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
                      aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE)) {
       
       
+      
       bSize = aReflowInput.AvailableBSize();
-      aState.mReflowStatus.SetIncomplete();
+      if (ShouldAvoidBreakInside(aReflowInput)) {
+        aState.mReflowStatus.SetInlineLineBreakBeforeAndReset();
+      } else {
+        aState.mReflowStatus.SetIncomplete();
+      }
     }
     finalSize.BSize(wm) = bSize;
   } else {
