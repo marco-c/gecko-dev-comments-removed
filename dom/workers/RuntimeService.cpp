@@ -25,6 +25,7 @@
 #include "jsfriendapi.h"
 #include "js/friend/ErrorMessages.h"  
 #include "js/ContextOptions.h"
+#include "js/Initialization.h"
 #include "js/LocaleSensitive.h"
 #include "js/WasmFeatures.h"
 #include "mozilla/ArrayUtils.h"
@@ -64,6 +65,7 @@
 #include "nsXPCOMPrivate.h"
 #include "OSFileConstants.h"
 #include "xpcpublic.h"
+#include "XPCSelfHostedShmem.h"
 
 #if defined(XP_MACOSX)
 #  include "nsMacUtilsImpl.h"
@@ -729,7 +731,12 @@ bool InitJSContextForWorker(WorkerPrivate* aWorkerPrivate,
   JS::InitConsumeStreamCallback(aWorkerCx, ConsumeStream,
                                 FetchUtil::ReportJSStreamError);
 
-  if (!JS::InitSelfHostedCode(aWorkerCx)) {
+  
+  
+  auto& shm = xpc::SelfHostedShmem::GetSingleton();
+  JS::SelfHostedCache selfHostedContent = shm.Content();
+
+  if (!JS::InitSelfHostedCode(aWorkerCx, selfHostedContent)) {
     NS_WARNING("Could not init self-hosted code!");
     return false;
   }

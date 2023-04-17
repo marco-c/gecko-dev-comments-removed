@@ -17,6 +17,7 @@
 #include "jsfriendapi.h"
 #include "js/CompilationAndEvaluation.h"  
 #include "js/ContextOptions.h"
+#include "js/Initialization.h"
 #include "js/PropertySpec.h"
 #include "js/SourceText.h"  
 #include "js/Utility.h"
@@ -33,6 +34,8 @@
 #if defined(XP_MACOSX)
 #  include "nsMacUtilsImpl.h"
 #endif
+
+#include "XPCSelfHostedShmem.h"
 
 namespace mozilla {
 namespace net {
@@ -642,8 +645,15 @@ class JSContextWrapper {
 
     JS::SetWarningReporter(mContext, PACWarningReporter);
 
-    if (!JS::InitSelfHostedCode(mContext)) {
-      return NS_ERROR_OUT_OF_MEMORY;
+    
+    
+    {
+      auto& shm = xpc::SelfHostedShmem::GetSingleton();
+      JS::SelfHostedCache selfHostedContent = shm.Content();
+
+      if (!JS::InitSelfHostedCode(mContext, selfHostedContent)) {
+        return NS_ERROR_OUT_OF_MEMORY;
+      }
     }
 
     JS::RealmOptions options;

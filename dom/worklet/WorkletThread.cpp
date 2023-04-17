@@ -18,6 +18,8 @@
 #include "mozilla/EventQueue.h"
 #include "mozilla/ThreadEventQueue.h"
 #include "js/Exception.h"
+#include "js/Initialization.h"
+#include "XPCSelfHostedShmem.h"
 
 namespace mozilla {
 namespace dom {
@@ -369,7 +371,12 @@ void WorkletThread::EnsureCycleCollectedJSContext(JSRuntime* aParentRuntime) {
   JS_SetNativeStackQuota(context->Context(),
                          WORKLET_CONTEXT_NATIVE_STACK_LIMIT);
 
-  if (!JS::InitSelfHostedCode(context->Context())) {
+  
+  
+  auto& shm = xpc::SelfHostedShmem::GetSingleton();
+  JS::SelfHostedCache selfHostedContent = shm.Content();
+
+  if (!JS::InitSelfHostedCode(context->Context(), selfHostedContent)) {
     
     return;
   }
