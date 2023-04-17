@@ -13,6 +13,11 @@
 #ifndef ProfilerState_h
 #define ProfilerState_h
 
+#include <mozilla/DefineEnum.h>
+#include <mozilla/EnumSet.h>
+
+#include <functional>
+
 
 
 
@@ -100,6 +105,61 @@ struct ProfilerFeature {
 #undef DECLARE
 };
 
+
+MOZ_DEFINE_ENUM_CLASS(ProfilingState,(
+  
+  AlreadyActive,     
+  RemovingCallback,  
+  Started,           
+  Pausing,           
+  Resumed,           
+  GeneratingProfile, 
+  Stopping,          
+  ShuttingDown       
+));
+
+
+inline static const char* ProfilingStateToString(
+    ProfilingState aProfilingState) {
+  switch (aProfilingState) {
+    case ProfilingState::AlreadyActive:
+      return "Profiler already active";
+    case ProfilingState::RemovingCallback:
+      return "Callback being removed";
+    case ProfilingState::Started:
+      return "Profiler started";
+    case ProfilingState::Pausing:
+      return "Profiler pausing";
+    case ProfilingState::Resumed:
+      return "Profiler resumed";
+    case ProfilingState::GeneratingProfile:
+      return "Generating profile";
+    case ProfilingState::Stopping:
+      return "Profiler stopping";
+    case ProfilingState::ShuttingDown:
+      return "Profiler shutting down";
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unexpected ProfilingState enum value");
+      return "?";
+  }
+}
+
+using ProfilingStateSet = mozilla::EnumSet<ProfilingState>;
+
+constexpr ProfilingStateSet AllProfilingStates() {
+  ProfilingStateSet set;
+  using Value = std::underlying_type_t<ProfilingState>;
+  for (Value stateValue = 0;
+       stateValue <= static_cast<Value>(kHighestProfilingState); ++stateValue) {
+    set += static_cast<ProfilingState>(stateValue);
+  }
+  return set;
+}
+
+
+
+using ProfilingStateChangeCallback = std::function<void(ProfilingState)>;
+
 #ifndef MOZ_GECKO_PROFILER
 
 inline bool profiler_is_active() { return false; }
@@ -108,6 +168,12 @@ inline bool profiler_thread_is_being_profiled() { return false; }
 inline bool profiler_is_active_and_thread_is_registered() { return false; }
 inline bool profiler_feature_active(uint32_t aFeature) { return false; }
 inline bool profiler_is_locked_on_current_thread() { return false; }
+inline void profiler_add_state_change_callback(
+    ProfilingStateSet aProfilingStateSet,
+    ProfilingStateChangeCallback&& aCallback, uintptr_t aUniqueIdentifier = 0) {
+}
+inline void profiler_remove_state_change_callback(uintptr_t aUniqueIdentifier) {
+}
 
 #else  
 
@@ -317,6 +383,17 @@ inline bool profiler_is_main_thread() {
 
 
 bool profiler_is_locked_on_current_thread();
+
+
+
+
+
+void profiler_add_state_change_callback(
+    ProfilingStateSet aProfilingStateSet,
+    ProfilingStateChangeCallback&& aCallback, uintptr_t aUniqueIdentifier = 0);
+
+
+void profiler_remove_state_change_callback(uintptr_t aUniqueIdentifier);
 
 #endif  
 
