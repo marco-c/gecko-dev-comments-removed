@@ -3889,6 +3889,16 @@ class nsIFrame : public nsQueryFrame {
 
   SelectablePeekReport GetFrameFromDirection(const nsPeekOffsetStruct& aPos);
 
+  
+
+
+
+
+
+
+  nsIFrame* GetContainingBlockForLine(bool aLockScroll,
+                                      nsIFrame*& aLineFrame) const;
+
  private:
   Result<bool, nsresult> IsVisuallyAtLineEdge(nsILineIterator* aLineIterator,
                                               int32_t aLine,
@@ -3897,7 +3907,6 @@ class nsIFrame : public nsQueryFrame {
                                                int32_t aLine,
                                                nsDirection aDirection);
 
-  
   
   
   
@@ -4455,6 +4464,12 @@ class nsIFrame : public nsQueryFrame {
 
 
   CaretPosition GetExtremeCaretPosition(bool aStart);
+
+  
+
+
+
+  virtual bool CanProvideLineIterator() const { return false; }
 
   
 
