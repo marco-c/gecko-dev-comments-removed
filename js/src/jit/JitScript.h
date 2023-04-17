@@ -141,7 +141,7 @@ class alignas(uintptr_t) ICScript final : public TrailingArray {
   void removeInlinedChild(uint32_t pcOffset);
   bool hasInlinedChild(uint32_t pcOffset);
 
-  FallbackICStubSpace* fallbackStubSpace();
+  JitScriptICStubSpace* jitScriptStubSpace();
   void purgeOptimizedStubs(Zone* zone);
 
   void trace(JSTracer* trc);
@@ -251,7 +251,7 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
   friend class ::JSScript;
 
   
-  FallbackICStubSpace fallbackStubSpace_ = {};
+  JitScriptICStubSpace jitScriptStubSpace_ = {};
 
   
   const char* profileString_ = nullptr;
@@ -335,7 +335,7 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
   ~JitScript() {
     
     
-    MOZ_ASSERT(fallbackStubSpace_.isEmpty());
+    MOZ_ASSERT(jitScriptStubSpace_.isEmpty());
 
     
     MOZ_ASSERT(!hasBaselineScript());
@@ -389,10 +389,10 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
     
     
     
-    fallbackStubSpace_.freeAllAfterMinorGC(zone);
+    jitScriptStubSpace_.freeAllAfterMinorGC(zone);
   }
 
-  FallbackICStubSpace* fallbackStubSpace() { return &fallbackStubSpace_; }
+  JitScriptICStubSpace* jitScriptStubSpace() { return &jitScriptStubSpace_; }
 
   void addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf, size_t* data,
                               size_t* fallbackStubs) const {
@@ -400,7 +400,7 @@ class alignas(uintptr_t) JitScript final : public TrailingArray {
 
     
     
-    *fallbackStubs += fallbackStubSpace_.sizeOfExcludingThis(mallocSizeOf);
+    *fallbackStubs += jitScriptStubSpace_.sizeOfExcludingThis(mallocSizeOf);
   }
 
   ICEntry& icEntry(size_t index) { return icScript_.icEntry(index); }

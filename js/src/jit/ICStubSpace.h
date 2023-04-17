@@ -19,6 +19,9 @@ namespace jit {
 
 
 
+
+
+
 class ICStubSpace {
  protected:
   LifoAlloc allocator_;
@@ -42,7 +45,6 @@ class ICStubSpace {
 };
 
 
-
 struct OptimizedICStubSpace : public ICStubSpace {
   static const size_t STUB_DEFAULT_CHUNK_SIZE = 4096;
 
@@ -51,12 +53,11 @@ struct OptimizedICStubSpace : public ICStubSpace {
 };
 
 
-
-struct FallbackICStubSpace : public ICStubSpace {
+struct JitScriptICStubSpace : public ICStubSpace {
   static const size_t STUB_DEFAULT_CHUNK_SIZE = 4096;
 
  public:
-  FallbackICStubSpace() : ICStubSpace(STUB_DEFAULT_CHUNK_SIZE) {}
+  JitScriptICStubSpace() : ICStubSpace(STUB_DEFAULT_CHUNK_SIZE) {}
 };
 
 }  
