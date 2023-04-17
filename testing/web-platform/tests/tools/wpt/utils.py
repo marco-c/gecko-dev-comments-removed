@@ -11,38 +11,7 @@ from io import BytesIO
 from socket import error as SocketError  
 from urllib.request import urlopen
 
-MYPY = False
-if MYPY:
-    from typing import Any
-    from typing import Callable
-
 logger = logging.getLogger(__name__)
-
-
-class Kwargs(dict):
-    def set_if_none(self,
-                    name,            
-                    value,           
-                    err_fn=None,     
-                    desc=None,       
-                    extra_cond=None  
-                    ):
-        
-        if desc is None:
-            desc = name
-
-        if name not in self or self[name] is None:
-            if extra_cond is not None and not extra_cond(self):
-                return
-            if callable(value):
-                value = value()
-            if not value:
-                if err_fn is not None:
-                    return err_fn(self, "Failed to find %s" % desc)
-                else:
-                    return
-            self[name] = value
-            logger.info("Set %s to %s" % (desc, value))
 
 
 def call(*args):
