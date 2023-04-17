@@ -192,6 +192,9 @@ void NativeMenuMac::OnMenuDidOpen(dom::Element* aPopupElement) {
   }
 }
 
+void NativeMenuMac::OnMenuWillActivateItem(mozilla::dom::Element* aPopupElement,
+                                           mozilla::dom::Element* aMenuItemElement) {}
+
 void NativeMenuMac::OnMenuClosed(dom::Element* aPopupElement) {
   
   
@@ -309,14 +312,16 @@ void NativeMenuMac::ActivateItem(dom::Element* aItemElement, Modifiers aModifier
     aRv.ThrowInvalidStateError("Menu containing menu item is not open");
     return;
   }
-  Maybe<nsMenuX::MenuChild> item = menu->GetItemForElement(aItemElement);
-  if (!item || !item->is<RefPtr<nsMenuItemX>>()) {
+  Maybe<nsMenuX::MenuChild> child = menu->GetItemForElement(aItemElement);
+  if (!child || !child->is<RefPtr<nsMenuItemX>>()) {
     aRv.ThrowInvalidStateError("Could not find the supplied menu item");
     return;
   }
 
-  menu->ActivateItemAfterClosing(std::move(item->as<RefPtr<nsMenuItemX>>()),
-                                 ConvertModifierFlags(aModifiers), aButton);
+  RefPtr<nsMenuItemX> item = std::move(child->as<RefPtr<nsMenuItemX>>());
+  NSMenuItem* nativeItem = [item->NativeNSMenuItem() retain];
+
+  menu->ActivateItemAfterClosing(std::move(item), ConvertModifierFlags(aModifiers), aButton);
 
   
   mMenu->MenuClosed(true);
@@ -328,6 +333,13 @@ void NativeMenuMac::ActivateItem(dom::Element* aItemElement, Modifiers aModifier
   
   
   [mMenu->NativeNSMenu() cancelTrackingWithoutAnimation];
+
+  
+  
+  
+  menu->OnWillActivateItem(nativeItem);
+
+  [nativeItem release];
 }
 
 void NativeMenuMac::OpenSubmenu(dom::Element* aMenuElement) {

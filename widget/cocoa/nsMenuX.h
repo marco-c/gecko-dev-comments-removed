@@ -48,6 +48,10 @@ class nsMenuXObserver {
   virtual void OnMenuDidOpen(mozilla::dom::Element* aPopupElement) = 0;
 
   
+  virtual void OnMenuWillActivateItem(mozilla::dom::Element* aPopupElement,
+                                      mozilla::dom::Element* aMenuItemElement) = 0;
+
+  
   
   virtual void OnMenuClosed(mozilla::dom::Element* aPopupElement) = 0;
 };
@@ -79,6 +83,8 @@ class nsMenuX final : public nsMenuParentX,
   
   void OnMenuWillOpen(mozilla::dom::Element* aPopupElement) override;
   void OnMenuDidOpen(mozilla::dom::Element* aPopupElement) override;
+  void OnMenuWillActivateItem(mozilla::dom::Element* aPopupElement,
+                              mozilla::dom::Element* aMenuItemElement) override;
   void OnMenuClosed(mozilla::dom::Element* aPopupElement) override;
 
   bool IsVisible() const { return mVisible; }
@@ -137,6 +143,10 @@ class nsMenuX final : public nsMenuParentX,
   
   
   void OnHighlightedItemChanged(const mozilla::Maybe<uint32_t>& aNewHighlightedIndex);
+
+  
+  
+  void OnWillActivateItem(NSMenuItem* aItem);
 
   void SetRebuild(bool aMenuEvent);
   void SetupIcon();
