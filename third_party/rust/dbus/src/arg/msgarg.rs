@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use {Signature};
+use {Signature, Message, arg::TypeMismatchError};
 use std::{fmt, any};
 use std::sync::Arc;
 use std::rc::Rc;
@@ -29,10 +29,23 @@ pub trait Append: Sized {
 }
 
 
+pub trait AppendAll: Sized {
+    
+    fn append(self, &mut IterAppend);
+}
+
+
 pub trait Get<'a>: Sized {
     
     fn get(i: &mut Iter<'a>) -> Option<Self>;
 }
+
+
+pub trait ReadAll: Sized {
+    
+    fn read(i: &mut Iter) -> Result<Self, TypeMismatchError>;
+}
+
 
 
 pub trait RefArg: fmt::Debug {
@@ -201,6 +214,83 @@ impl<T: Append> Append for Box<T> {
 deref_impl!(Box, self, &mut **self );
 deref_impl!(Rc, self, Rc::get_mut(self).unwrap());
 deref_impl!(Arc, self, Arc::get_mut(self).unwrap());
+
+
+
+
+
+
+pub trait ArgBuilder: Sized {
+    
+    type strs;
+    
+    fn strs_sig<F: FnMut(&'static str, Signature<'static>)>(a: Self::strs, f: F);
+    
+    fn read(msg: &Message) -> Result<Self, TypeMismatchError>;
+    
+    fn append(self, msg: &mut Message);
+}
+
+impl ArgBuilder for () {
+    type strs = ();
+    fn strs_sig<F: FnMut(&'static str, Signature<'static>)>(_: Self::strs, _: F) {}
+    fn read(_: &Message) -> Result<Self, TypeMismatchError> { Ok(()) }
+    fn append(self, _: &mut Message) {}
+}
+
+macro_rules! argbuilder_impl {
+    ($($n: ident $t: ident $s: ty,)+) => {
+
+impl<$($t: Arg + Append + for<'z> Get<'z>),*> ArgBuilder for ($($t,)*) {
+    type strs = ($(&'static $s,)*); 
+    fn strs_sig<Q: FnMut(&'static str, Signature<'static>)>(z: Self::strs, mut q: Q) {
+        let ( $($n,)*) = z;
+        $( q($n, $t::signature()); )*
+    }
+
+    fn read(msg: &Message) -> Result<Self, TypeMismatchError> {
+        let mut ii = msg.iter_init();
+        $( let $n = ii.read()?; )*
+        Ok(($( $n, )* ))
+    }
+
+    fn append(self, msg: &mut Message) {
+        let ( $($n,)*) = self;
+        let mut ia = IterAppend::new(msg);
+        $( ia.append($n); )*
+    }
+}
+
+impl<$($t: Append),*> AppendAll for ($($t,)*) {
+    fn append(self, ia: &mut IterAppend) {
+        let ( $($n,)*) = self;
+        $( ia.append($n); )*
+    }
+}
+
+impl<$($t: Arg + for<'z> Get<'z>),*> ReadAll for ($($t,)*) {
+    fn read(ii: &mut Iter) -> Result<Self, TypeMismatchError> {
+        $( let $n = ii.read()?; )*
+        Ok(($( $n, )* ))
+    }
+}
+
+
+    }
+}
+
+argbuilder_impl!(a A str,);
+argbuilder_impl!(a A str, b B str,);
+argbuilder_impl!(a A str, b B str, c C str,);
+argbuilder_impl!(a A str, b B str, c C str, d D str,);
+argbuilder_impl!(a A str, b B str, c C str, d D str, e E str,);
+argbuilder_impl!(a A str, b B str, c C str, d D str, e E str, f F str,);
+argbuilder_impl!(a A str, b B str, c C str, d D str, e E str, f F str, g G str,);
+argbuilder_impl!(a A str, b B str, c C str, d D str, e E str, f F str, g G str, h H str,);
+argbuilder_impl!(a A str, b B str, c C str, d D str, e E str, f F str, g G str, h H str, i I str,);
+argbuilder_impl!(a A str, b B str, c C str, d D str, e E str, f F str, g G str, h H str, i I str, j J str,);
+
+
 
 #[cfg(test)]
 mod test {

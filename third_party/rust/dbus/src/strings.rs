@@ -60,6 +60,9 @@ impl<'m> $t<'m> {
     pub fn into_static(self) -> $t<'static> {
         $t(Cow::Owned(self.0.into_owned()))
     }
+
+    /// Converts this struct to a CString.
+    pub fn into_cstring(self) -> CString { self.0.into_owned() }
 }
 
 /*
@@ -83,6 +86,9 @@ impl<'m> From<&'m String> for $t<'m> { fn from(s: &'m String) -> $t<'m> { $t::fr
 ///
 /// If given string is not valid.
 impl<'m> From<&'m str> for $t<'m> { fn from(s: &'m str) -> $t<'m> { $t::from_slice(s.as_bytes()).unwrap() } }
+
+impl<'m> From<$t<'m>> for CString { fn from(s: $t<'m>) -> CString { s.0.into_owned() } }
+
 
 /// #Panics
 ///
@@ -150,29 +156,29 @@ impl<'a> default::Default for Path<'a> {
     fn default() -> Path<'a> { Path(Cow::Borrowed(unsafe { CStr::from_ptr(b"/\0".as_ptr() as *const c_char)})) }
 }
 
-/// A wrapper around a string that is guaranteed to be
-/// a valid D-Bus member, i e, a signal or method name.
+
+
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct Member<'a>(Cow<'a, CStr>);
 
 cstring_wrapper!(Member, dbus_validate_member);
 
-/// A wrapper around a string that is guaranteed to be
-/// a valid D-Bus interface name.
+
+
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct Interface<'a>(Cow<'a, CStr>);
 
 cstring_wrapper!(Interface, dbus_validate_interface);
 
-/// A wrapper around a string that is guaranteed to be
-/// a valid D-Bus bus name.
+
+
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct BusName<'a>(Cow<'a, CStr>);
 
 cstring_wrapper!(BusName, dbus_validate_bus_name);
 
-/// A wrapper around a string that is guaranteed to be
-/// a valid D-Bus bus name.
+
+
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct ErrorName<'a>(Cow<'a, CStr>);
 
@@ -197,10 +203,10 @@ fn reborrow_path() {
     {
         let p2_borrow: &Path = &p2;
         let p3 = Path::from(p2_borrow);
-        // Check path created from borrow
+        
         assert_eq!(p2, p3);
     }
-    // Check path that was previously borrowed
+    
     assert_eq!(p1, p2);
 }
 

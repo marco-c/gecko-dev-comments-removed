@@ -63,12 +63,12 @@ mod basic_impl;
 mod variantstruct_impl;
 mod array_impl;
 
-pub use self::msgarg::{Arg, FixedArray, Get, DictKey, Append, RefArg, cast, cast_mut};
+pub use self::msgarg::{Arg, FixedArray, Get, DictKey, Append, RefArg, AppendAll, ReadAll, cast, cast_mut};
 pub use self::array_impl::{Array, Dict};
 pub use self::variantstruct_impl::Variant;
 
 use std::{fmt, mem, ptr, error};
-use {ffi, Message, message, Signature, Path, OwnedFd};
+use {ffi, Message, Signature, Path, OwnedFd};
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_void, c_int};
 
@@ -85,7 +85,7 @@ impl<'a> IterAppend<'a> {
     
     pub fn new(m: &'a mut Message) -> IterAppend<'a> { 
         let mut i = ffi_iter();
-        unsafe { ffi::dbus_message_iter_init_append(message::get_message_ptr(m), &mut i) };
+        unsafe { ffi::dbus_message_iter_init_append(m.ptr(), &mut i) };
         IterAppend(i, m)
     }
 
@@ -168,7 +168,7 @@ impl<'a> Iter<'a> {
     
     pub fn new(m: &'a Message) -> Iter<'a> { 
         let mut i = ffi_iter();
-        unsafe { ffi::dbus_message_iter_init(message::get_message_ptr(m), &mut i) };
+        unsafe { ffi::dbus_message_iter_init(m.ptr(), &mut i) };
         Iter(i, m, 0)
     }
 
