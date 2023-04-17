@@ -93,6 +93,11 @@ class WidgetUtils {
 
 
   static void GetBrandShortName(nsAString& aBrandName);
+
+  
+
+
+  static const char* GetSnapInstanceName();
 };
 
 }  

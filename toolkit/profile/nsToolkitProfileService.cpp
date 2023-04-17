@@ -6,6 +6,7 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"
+#include "mozilla/WidgetUtils.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -1833,14 +1834,15 @@ nsToolkitProfileService::CreateProfile(nsIFile* aRootDir,
 
 
 bool nsToolkitProfileService::IsSnapEnvironment() {
+  const char* snapName = mozilla::widget::WidgetUtils::GetSnapInstanceName();
+
   
-  
-  
-  const char* snap_name = PR_GetEnv("SNAP_NAME");
-  if (snap_name == nullptr) {
+  if (snapName == nullptr) {
     return false;
   }
-  return (strcmp(snap_name, "firefox") == 0);
+
+  
+  return (strcmp(snapName, "firefox") == 0);
 }
 
 
