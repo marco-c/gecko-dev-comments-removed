@@ -3139,16 +3139,16 @@ bool BaselineCodeGen<Handler>::emitSetElemSuper(bool strict) {
   prepareVMCall();
 
   pushArg(Imm32(strict));
-  pushArg(R1);  
   pushArg(R0);  
   masm.loadValue(frame.addressOfStackValue(-2), R0);
   pushArg(R0);  
-  masm.unboxObject(frame.addressOfStackValue(-1), R0.scratchReg());
-  pushArg(R0.scratchReg());  
+  pushArg(R1);  
+  masm.loadValue(frame.addressOfStackValue(-1), R0);
+  pushArg(R0);  
 
-  using Fn = bool (*)(JSContext*, HandleObject, HandleValue, HandleValue,
+  using Fn = bool (*)(JSContext*, HandleValue, HandleValue, HandleValue,
                       HandleValue, bool);
-  if (!callVM<Fn, js::SetObjectElementWithReceiver>()) {
+  if (!callVM<Fn, js::SetElementSuper>()) {
     return false;
   }
 
@@ -3403,10 +3403,10 @@ bool BaselineCodeGen<Handler>::emitSetPropSuper(bool strict) {
   pushArg(R0);  
   pushScriptNameArg(R0.scratchReg(), R2.scratchReg());
   pushArg(R1);  
-  masm.unboxObject(frame.addressOfStackValue(-1), R0.scratchReg());
-  pushArg(R0.scratchReg());  
+  masm.loadValue(frame.addressOfStackValue(-1), R0);
+  pushArg(R0);  
 
-  using Fn = bool (*)(JSContext*, HandleObject, HandleValue, HandlePropertyName,
+  using Fn = bool (*)(JSContext*, HandleValue, HandleValue, HandlePropertyName,
                       HandleValue, bool);
   if (!callVM<Fn, js::SetPropertySuper>()) {
     return false;
@@ -5502,20 +5502,17 @@ bool BaselineCodeGen<Handler>::emit_SuperBase() {
   masm.bind(&proxyCheckDone);
 #endif
 
-  Label hasProto;
-  masm.branchPtr(Assembler::NotEqual, proto, ImmWord(0), &hasProto);
+  Label nullProto, done;
+  masm.branchPtr(Assembler::Equal, proto, ImmWord(0), &nullProto);
 
   
-  prepareVMCall();
-
-  using Fn = bool (*)(JSContext*);
-  if (!callVM<Fn, ThrowHomeObjectNotObject>()) {
-    return false;
-  }
-
-  
-  masm.bind(&hasProto);
   masm.tagValue(JSVAL_TYPE_OBJECT, proto, R1);
+  masm.jump(&done);
+
+  masm.bind(&nullProto);
+  masm.moveValue(NullValue(), R1);
+
+  masm.bind(&done);
   frame.push(R1);
   return true;
 }
