@@ -11,6 +11,7 @@
 #include <iosfwd>
 
 #include "Units.h"                  
+#include "UnitTransforms.h"         
 #include "mozilla/DefineEnum.h"     
 #include "mozilla/HashFunctions.h"  
 #include "mozilla/Maybe.h"
@@ -157,7 +158,16 @@ struct FrameMetrics {
     
     
     
-    return mZoom * ParentLayerToLayerScale(1.0f) / mExtraResolution;
+    
+    
+    
+    
+    
+    
+    
+    
+    return mZoom * ParentLayerToLayerScale(1.0f) *
+           ViewAs<LayerToScreenScale2D>(mTransformToAncestorScale);
   }
 
   CSSToLayerScale2D LayersPixelsPerCSSPixel() const {

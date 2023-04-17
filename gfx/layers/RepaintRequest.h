@@ -17,6 +17,7 @@
 #include "mozilla/gfx/ScaleFactor.h"  
 #include "mozilla/TimeStamp.h"        
 #include "Units.h"                    
+#include "UnitTransforms.h"           
 
 namespace IPC {
 template <typename T>
@@ -117,13 +118,8 @@ struct RepaintRequest {
 
   CSSToScreenScale2D DisplayportPixelsPerCSSPixel() const {
     
-    
-    
-    
-    
-    
-    
-    return mZoom * ParentLayerToLayerScale(1.0f) / mExtraResolution;
+    return mZoom * ParentLayerToLayerScale(1.0f) *
+           ViewAs<LayerToScreenScale2D>(mTransformToAncestorScale);
   }
 
   CSSToLayerScale2D LayersPixelsPerCSSPixel() const {
