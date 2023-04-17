@@ -6,24 +6,21 @@
 #ifndef NSIMAGETOPIXBUF_H_
 #define NSIMAGETOPIXBUF_H_
 
-#include "nsIImageToPixbuf.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
 #include "nsSize.h"
 
-namespace mozilla {
-namespace gfx {
+class imgIContainer;
+typedef struct _GdkPixbuf GdkPixbuf;
+
+namespace mozilla::gfx {
 class SourceSurface;
-}
 }  
 
-class nsImageToPixbuf final : public nsIImageToPixbuf {
-  typedef mozilla::gfx::SourceSurface SourceSurface;
+class nsImageToPixbuf final {
+  using SourceSurface = mozilla::gfx::SourceSurface;
 
  public:
-  NS_DECL_ISUPPORTS
-  NS_IMETHOD_(GdkPixbuf*) ConvertImageToPixbuf(imgIContainer* aImage) override;
-
   
   
   
@@ -39,13 +36,5 @@ class nsImageToPixbuf final : public nsIImageToPixbuf {
  private:
   ~nsImageToPixbuf() = default;
 };
-
-
-#define NS_IMAGE_TO_PIXBUF_CID                       \
-  {                                                  \
-    0xfc2389b8, 0xc650, 0x4093, {                    \
-      0x9e, 0x42, 0xb0, 0x5e, 0x5f, 0x06, 0x85, 0xb7 \
-    }                                                \
-  }
 
 #endif
