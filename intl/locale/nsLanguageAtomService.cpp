@@ -11,6 +11,7 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Encoding.h"
+#include "mozilla/intl/Locale.h"
 #include "mozilla/intl/OSPreferences.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoUtils.h"
@@ -187,23 +188,28 @@ nsStaticAtom* nsLanguageAtomService::GetUncachedLanguageGroup(
       langStr.Truncate(start.get() - langStr.BeginReading());
     }
 
-    MozLocale loc(langStr);
-    if (loc.IsWellFormed()) {
+    Locale loc;
+    auto result = LocaleParser::tryParse(langStr, loc);
+    if (result.isOk() && loc.canonicalize().isOk()) {
       
-      if (loc.GetScript().IsEmpty()) {
-        loc.Maximize();
+      if (loc.script().missing()) {
+        if (loc.addLikelySubtags().isErr()) {
+          
+          return nsGkAtoms::Unicode;
+        }
       }
       
       
-      if (loc.GetScript().EqualsLiteral("Hant")) {
-        if (loc.GetRegion().EqualsLiteral("HK")) {
+      if (loc.script().equalTo("Hant")) {
+        if (loc.region().equalTo("HK")) {
           return nsGkAtoms::HongKongChinese;
         }
         return nsGkAtoms::Taiwanese;
       }
       
       size_t foundIndex;
-      nsDependentCSubstring script = loc.GetScript();
+      Span<const char> scriptAsSpan = loc.script().span();
+      nsDependentCSubstring script(scriptAsSpan.data(), scriptAsSpan.size());
       if (BinarySearchIf(
               kScriptLangGroup, 0, ArrayLength(kScriptLangGroup),
               [script](const auto& entry) -> int {
@@ -215,19 +221,19 @@ nsStaticAtom* nsLanguageAtomService::GetUncachedLanguageGroup(
       
       
       
-      if (loc.GetLanguage().EqualsLiteral("zh")) {
-        if (loc.GetRegion().EqualsLiteral("HK")) {
+      if (loc.language().equalTo("zh")) {
+        if (loc.region().equalTo("HK")) {
           return nsGkAtoms::HongKongChinese;
         }
-        if (loc.GetRegion().EqualsLiteral("TW")) {
+        if (loc.region().equalTo("TW")) {
           return nsGkAtoms::Taiwanese;
         }
         return nsGkAtoms::Chinese;
       }
-      if (loc.GetLanguage().EqualsLiteral("ja")) {
+      if (loc.language().equalTo("ja")) {
         return nsGkAtoms::Japanese;
       }
-      if (loc.GetLanguage().EqualsLiteral("ko")) {
+      if (loc.language().equalTo("ko")) {
         return nsGkAtoms::ko;
       }
     }
