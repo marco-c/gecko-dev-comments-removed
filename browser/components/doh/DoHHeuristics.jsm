@@ -39,7 +39,7 @@ XPCOMUtils.defineLazyServiceGetter(
 
 ChromeUtils.defineModuleGetter(
   this,
-  "DoHConfigController",
+  "Config",
   "resource:///modules/DoHConfig.jsm"
 );
 
@@ -363,7 +363,7 @@ async function platform() {
 
 
 async function providerSteering() {
-  if (!DoHConfigController.currentConfig.providerSteering.enabled) {
+  if (!Config.providerSteering.enabled) {
     return null;
   }
   const TEST_DOMAIN = "doh.test.";
@@ -371,8 +371,13 @@ async function providerSteering() {
   
   
   
-  let steeredProviders =
-    DoHConfigController.currentConfig.providerSteering.providerList;
+  let steeredProviders = Config.providerSteering.providerList;
+  try {
+    steeredProviders = JSON.parse(steeredProviders);
+  } catch (e) {
+    console.log("Provider list is invalid JSON, moving on.");
+    return null;
+  }
 
   if (!steeredProviders || !steeredProviders.length) {
     return null;
