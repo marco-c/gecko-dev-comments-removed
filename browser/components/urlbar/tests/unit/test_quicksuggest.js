@@ -9,7 +9,6 @@
 XPCOMUtils.defineLazyModuleGetters(this, {
   UrlbarProviderQuickSuggest:
     "resource:///modules/UrlbarProviderQuickSuggest.jsm",
-  UrlbarQuickSuggest: "resource:///modules/UrlbarQuickSuggest.jsm",
 });
 
 const SPONSORED_SEARCH_STRING = "frab";
@@ -152,7 +151,7 @@ add_task(async function init() {
   
   
   UrlbarPrefs.set("suggest.quicksuggest", true);
-  await UrlbarTestUtils.ensureQuickSuggestInit(REMOTE_SETTINGS_DATA);
+  await QuickSuggestTestUtils.ensureQuickSuggestInit(REMOTE_SETTINGS_DATA);
 });
 
 

@@ -67,9 +67,8 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
   get helpUrl() {
     return (
-      this._helpUrl ||
       Services.urlFormatter.formatURLPref("app.support.baseURL") +
-        "firefox-suggest"
+      "firefox-suggest"
     );
   }
 
@@ -440,9 +439,6 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
   
   _addedResultInLastQuery = false;
-
-  
-  _helpUrl = undefined;
 }
 
 var UrlbarProviderQuickSuggest = new ProviderQuickSuggest();

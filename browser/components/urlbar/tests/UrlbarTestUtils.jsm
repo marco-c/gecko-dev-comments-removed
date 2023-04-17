@@ -21,12 +21,10 @@ XPCOMUtils.defineLazyModuleGetters(this, {
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
-  sinon: "resource://testing-common/Sinon.jsm",
   TestUtils: "resource://testing-common/TestUtils.jsm",
   UrlbarController: "resource:///modules/UrlbarController.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
   UrlbarProvider: "resource:///modules/UrlbarUtils.jsm",
-  UrlbarQuickSuggest: "resource:///modules/UrlbarQuickSuggest.jsm",
   UrlbarSearchUtils: "resource:///modules/UrlbarSearchUtils.jsm",
   UrlbarUtils: "resource:///modules/UrlbarUtils.jsm",
 });
@@ -190,6 +188,7 @@ var UrlbarTestUtils = {
     let element = await this.waitForAutocompleteResultAt(win, index);
     let details = {};
     let result = element.result;
+    details.result = result;
     let { url, postData } = UrlbarUtils.getUrlFromResult(result);
     details.url = url;
     details.postData = postData;
@@ -822,33 +821,6 @@ var UrlbarTestUtils = {
       value: valueOverrides,
     });
     return doExperimentCleanup;
-  },
-
-  
-
-
-
-
-
-
-
-
-  async ensureQuickSuggestInit(data = null) {
-    this._testScope?.info("Awaiting UrlbarQuickSuggest.init");
-    await UrlbarQuickSuggest.init();
-    this._testScope?.info("Done awaiting UrlbarQuickSuggest.init");
-    let sandbox = sinon.createSandbox();
-    sandbox.stub(UrlbarQuickSuggest, "_ensureAttachmentsDownloadedHelper");
-    this._testScope?.registerCleanupFunction(() => sandbox.restore());
-    if (data) {
-      this._testScope?.info(
-        "Awaiting UrlbarQuickSuggest._processSuggestionsJSON"
-      );
-      await UrlbarQuickSuggest._processSuggestionsJSON(data);
-      this._testScope?.info(
-        "Done awaiting UrlbarQuickSuggest._processSuggestionsJSON"
-      );
-    }
   },
 };
 

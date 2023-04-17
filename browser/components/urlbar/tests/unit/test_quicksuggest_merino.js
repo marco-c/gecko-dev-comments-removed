@@ -48,7 +48,7 @@ add_task(async function init() {
   UrlbarPrefs.set(PREF_MERINO_ENDPOINT_URL, url.toString());
 
   
-  await UrlbarTestUtils.ensureQuickSuggestInit(REMOTE_SETTINGS_DATA);
+  await QuickSuggestTestUtils.ensureQuickSuggestInit(REMOTE_SETTINGS_DATA);
 });
 
 

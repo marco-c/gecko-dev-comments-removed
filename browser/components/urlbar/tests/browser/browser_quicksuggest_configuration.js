@@ -12,7 +12,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 add_task(async function init() {
-  await UrlbarTestUtils.ensureQuickSuggestInit();
+  await QuickSuggestTestUtils.ensureQuickSuggestInit();
 });
 
 
