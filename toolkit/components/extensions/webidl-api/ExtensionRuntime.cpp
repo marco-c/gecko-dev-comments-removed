@@ -42,6 +42,17 @@ JSObject* ExtensionRuntime::WrapObject(JSContext* aCx,
 
 nsIGlobalObject* ExtensionRuntime::GetParentObject() const { return mGlobal; }
 
+void ExtensionRuntime::GetLastError(JSContext* aCx,
+                                    JS::MutableHandle<JS::Value> aRetval) {
+  
+  
+  
+}
+
+void ExtensionRuntime::GetId(DOMString& aRetval) {
+  GetWebExtPropertyAsString(u"id"_ns, aRetval);
+}
+
 ExtensionEventManager* ExtensionRuntime::OnStartup() {
   if (!mOnStartupEventMgr) {
     mOnStartupEventMgr = CreateEventManager(u"onStartup"_ns);
