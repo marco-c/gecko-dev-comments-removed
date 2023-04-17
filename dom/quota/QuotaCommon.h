@@ -12,7 +12,6 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
-#include <map>
 #include <type_traits>
 #include <utility>
 #include "mozIStorageStatement.h"
@@ -24,7 +23,6 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/Result.h"
 #include "mozilla/ResultExtensions.h"
-#include "mozilla/ThreadLocal.h"
 #if defined(QM_LOG_ERROR_ENABLED) && defined(QM_ERROR_STACKS_ENABLED)
 #  include "mozilla/Variant.h"
 #endif
@@ -42,7 +40,6 @@
 #include "nsString.h"
 #include "nsTArray.h"
 #include "nsTLiteralString.h"
-#include "nsXULAppAPI.h"
 
 namespace mozilla {
 template <typename T>
@@ -1340,58 +1337,6 @@ Result<bool, nsresult> WarnIfFileIsUnknown(nsIFile& aFile,
                                            const char* aSourceFilePath,
                                            int32_t aSourceFileLine);
 #endif
-
-struct MOZ_STACK_CLASS ScopedLogExtraInfo {
-  static constexpr const char kTagQuery[] = "query";
-  static constexpr const char kTagContext[] = "context";
-
-#ifdef QM_SCOPED_LOG_EXTRA_INFO_ENABLED
- private:
-  static auto FindSlot(const char* aTag);
-
- public:
-  template <size_t N>
-  ScopedLogExtraInfo(const char (&aTag)[N], const nsACString& aExtraInfo)
-      : mTag{aTag}, mCurrentValue{aExtraInfo} {
-    
-    
-    
-    
-    MOZ_ASSERT(XRE_IsParentProcess());
-
-    AddInfo();
-  }
-
-  ~ScopedLogExtraInfo();
-
-  ScopedLogExtraInfo(ScopedLogExtraInfo&& aOther);
-  ScopedLogExtraInfo& operator=(ScopedLogExtraInfo&& aOther) = delete;
-
-  ScopedLogExtraInfo(const ScopedLogExtraInfo&) = delete;
-  ScopedLogExtraInfo& operator=(const ScopedLogExtraInfo&) = delete;
-
-  using ScopedLogExtraInfoMap = std::map<const char*, const nsACString*>;
-  static ScopedLogExtraInfoMap GetExtraInfoMap();
-
-  static void Initialize();
-
- private:
-  const char* mTag;
-  const nsACString* mPreviousValue;
-  nsCString mCurrentValue;
-
-  static MOZ_THREAD_LOCAL(const nsACString*) sQueryValue;
-  static MOZ_THREAD_LOCAL(const nsACString*) sContextValue;
-
-  void AddInfo();
-#else
-  template <size_t N>
-  ScopedLogExtraInfo(const char (&aTag)[N], const nsACString& aExtraInfo) {}
-
-  
-  ~ScopedLogExtraInfo() {}
-#endif
-};
 
 
 
