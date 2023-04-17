@@ -330,17 +330,6 @@ export interface InitializeStoreValues {
 export type PopupBackgroundFeatures = { [feature: string]: boolean };
 
 
-
-
-export interface PopupBackgroundState {
-  features: PopupBackgroundFeatures;
-  buffersize: number;
-  windowLength: number;
-  interval: number;
-  threads: string;
-}
-
-
 export interface ContentFrameMessageManager {
   addMessageListener: (event: string, listener: (event: any) => void) => void;
   addEventListener: (event: string, listener: (event: any) => void) => void;
@@ -410,15 +399,6 @@ export interface PerformancePref {
 
 
   PopupFeatureFlag: "devtools.performance.popup.feature-flag";
-}
-
-
-
-
-
-export interface PopupWindow extends Window {
-  gResizePopup?: (height: number) => void;
-  gIsDarkMode?: boolean;
 }
 
 
