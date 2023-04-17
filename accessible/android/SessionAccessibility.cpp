@@ -182,8 +182,7 @@ RefPtr<SessionAccessibility> SessionAccessibility::GetInstanceFor(
     return nullptr;
   }
 
-  nsCOMPtr<nsIWidget> rootWidget;
-  vm->GetRootWidget(getter_AddRefs(rootWidget));
+  nsCOMPtr<nsIWidget> rootWidget = vm->GetRootWidget();
   
   
   if (RefPtr<nsWindow> window = nsWindow::From(rootWidget)) {
