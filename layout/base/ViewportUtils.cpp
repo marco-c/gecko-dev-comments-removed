@@ -2,9 +2,11 @@
 
 
 
+#include "Units.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ViewportFrame.h"
 #include "mozilla/ViewportUtils.h"
+#include "mozilla/dom/BrowserChild.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
 #include "mozilla/layers/InputAPZContext.h"
 #include "mozilla/layers/ScrollableLayerGuid.h"
@@ -147,6 +149,20 @@ CSSRect ViewportUtils::DocumentRelativeLayoutToVisual(const CSSRect& aRect,
   return visualToLayout.Inverse().TransformBounds(aRect);
 }
 
+template <class SourceUnits, class DestUnits>
+gfx::PointTyped<DestUnits> TransformPointOrRect(
+    const gfx::Matrix4x4Typed<SourceUnits, DestUnits>& aMatrix,
+    const gfx::PointTyped<SourceUnits>& aPoint) {
+  return aMatrix.TransformPoint(aPoint);
+}
+
+template <class SourceUnits, class DestUnits>
+gfx::RectTyped<DestUnits> TransformPointOrRect(
+    const gfx::Matrix4x4Typed<SourceUnits, DestUnits>& aMatrix,
+    const gfx::RectTyped<SourceUnits>& aRect) {
+  return aMatrix.TransformBounds(aRect);
+}
+
 template <class LDPointOrRect>
 LDPointOrRect ConvertToScreenRelativeVisual(const LDPointOrRect& aInput,
                                             nsPresContext* aCtx) {
@@ -179,10 +195,26 @@ LDPointOrRect ConvertToScreenRelativeVisual(const LDPointOrRect& aInput,
 
   
   
+  
+  
+  
+  
+  Scale2D enclosingResolution =
+      ViewportUtils::TryInferEnclosingResolution(prevCtx->GetPresShell());
+  if (enclosingResolution != Scale2D{1.0f, 1.0f}) {
+    layoutToVisual = TransformPointOrRect(
+        LayoutDeviceToLayoutDeviceMatrix4x4::Scaling(
+            enclosingResolution.xScale, enclosingResolution.yScale, 1.0f),
+        layoutToVisual);
+  }
+
+  
+  
   LayoutDeviceIntRect rootScreenRect =
       LayoutDeviceIntRect::FromAppUnitsToNearest(
           prevRootFrame->GetScreenRectInAppUnits(),
           prevCtx->AppUnitsPerDevPixel());
+
   return layoutToVisual + rootScreenRect.TopLeft();
 }
 
@@ -225,6 +257,42 @@ const nsIFrame* ViewportUtils::IsZoomedContentRoot(const nsIFrame* aFrame) {
     }
   }
   return nullptr;
+}
+
+Scale2D ViewportUtils::TryInferEnclosingResolution(PresShell* aShell) {
+  MOZ_ASSERT(aShell && aShell->GetPresContext());
+  MOZ_ASSERT(!aShell->GetPresContext()->GetParentPresContext(),
+             "TryInferEnclosingResolution can only be called for a root pres "
+             "shell within a process");
+  if (dom::BrowserChild* bc = dom::BrowserChild::GetFrom(aShell)) {
+    if (!bc->IsTopLevel()) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      gfx::Point3DTyped<gfx::UnknownUnits> translation;
+      gfx::Quaternion rotation;
+      gfx::Point3DTyped<gfx::UnknownUnits> scale;
+      
+      
+      if (bc->GetChildToParentConversionMatrix().ToUnknownMatrix().Decompose(
+              translation, rotation, scale)) {
+        return {scale.x, scale.y};
+      }
+    }
+  }
+  return {1.0f, 1.0f};
 }
 
 }  

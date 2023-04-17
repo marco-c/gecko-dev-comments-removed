@@ -4825,6 +4825,15 @@ UniquePtr<RangePaintInfo> PresShell::CreateRangePaintInfo(
        ctx = ctx->GetParentPresContext()) {
     PresShell* shell = ctx->PresShell();
     float resolution = shell->GetResolution();
+
+    
+    
+    if (!ctx->GetParentPresContext()) {
+      
+      
+      resolution *= ViewportUtils::TryInferEnclosingResolution(shell).xScale;
+    }
+
     if (resolution == 1.0) {
       continue;
     }

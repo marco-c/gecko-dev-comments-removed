@@ -9,6 +9,7 @@
 #include "mozilla/layers/ScrollableLayerGuid.h"
 
 class nsIFrame;
+class nsPresContext;
 
 namespace mozilla {
 
@@ -93,6 +94,21 @@ class ViewportUtils {
 
 
   static const nsIFrame* IsZoomedContentRoot(const nsIFrame* aFrame);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  static Scale2D TryInferEnclosingResolution(PresShell* aShell);
 };
 
 
