@@ -42,7 +42,7 @@ import sys
 import time
 
 from six import StringIO
-from mach.decorators import CommandArgument, Command
+from mach.decorators import CommandArgument, CommandProvider, Command
 from mozbuild.base import MachCommandBase, BinaryNotFoundException
 from mozbuild.util import mkdir
 import mozpack.path as mozpath
@@ -151,522 +151,530 @@ host_fetches = {
 }
 
 
-def artifact_cache_path(command_context):
-    r"""Downloaded artifacts will be kept here."""
-    
-    return mozpath.join(command_context._mach_context.state_dir, "cache", "browsertime")
-
-
-def state_path(command_context):
-    r"""Unpacked artifacts will be kept here."""
-    
-    return mozpath.join(command_context._mach_context.state_dir, "browsertime")
-
-
-def setup_prerequisites(command_context):
-    r"""Install browsertime and visualmetrics.py prerequisites."""
-
-    from mozbuild.action.tooltool import unpack_file
-    from mozbuild.artifact_cache import ArtifactCache
-
-    if not AUTOMATION and host_platform().startswith("linux"):
+@CommandProvider
+class MachBrowsertime(MachCommandBase):
+    def artifact_cache_path(self, command_context):
+        r"""Downloaded artifacts will be kept here."""
         
+        return mozpath.join(
+            command_context._mach_context.state_dir, "cache", "browsertime"
+        )
+
+    def state_path(self, command_context):
+        r"""Unpacked artifacts will be kept here."""
         
-        from shutil import which
+        return mozpath.join(command_context._mach_context.state_dir, "browsertime")
 
-        im_programs = ("compare", "convert", "mogrify")
-        for im_program in im_programs:
-            prog = which(im_program)
-            if not prog:
-                print(
-                    "Error: On Linux, ImageMagick must be on the PATH. "
-                    "Install ImageMagick manually and try again (or update PATH). "
-                    "On Ubuntu and Debian, try `sudo apt-get install imagemagick`. "
-                    "On Fedora, try `sudo dnf install imagemagick`. "
-                    "On CentOS, try `sudo yum install imagemagick`."
-                )
-                return 1
+    def setup_prerequisites(self, command_context):
+        r"""Install browsertime and visualmetrics.py prerequisites."""
 
-    
-    artifact_cache = ArtifactCache(
-        artifact_cache_path(command_context),
-        log=command_context.log,
-        skip_cache=False,
-    )
+        from mozbuild.action.tooltool import unpack_file
+        from mozbuild.artifact_cache import ArtifactCache
 
-    fetches = host_fetches[host_platform()]
-    for tool, fetch in sorted(fetches.items()):
-        archive = artifact_cache.fetch(fetch["url"])
-        
+        if not AUTOMATION and host_platform().startswith("linux"):
+            
+            
+            from shutil import which
 
-        if fetch.get("unpack", True):
-            cwd = os.getcwd()
-            try:
-                mkdir(state_path(command_context))
-                os.chdir(state_path(command_context))
-                command_context.log(
-                    logging.INFO,
-                    "browsertime",
-                    {"path": archive},
-                    "Unpacking temporary location {path}",
-                )
-
-                if "win64" in host_platform() and "imagemagick" in tool.lower():
-                    
-                    
-                    mkdir(fetch.get("path"))
-                    os.chdir(
-                        os.path.join(state_path(command_context), fetch.get("path"))
+            im_programs = ("compare", "convert", "mogrify")
+            for im_program in im_programs:
+                prog = which(im_program)
+                if not prog:
+                    print(
+                        "Error: On Linux, ImageMagick must be on the PATH. "
+                        "Install ImageMagick manually and try again (or update PATH). "
+                        "On Ubuntu and Debian, try `sudo apt-get install imagemagick`. "
+                        "On Fedora, try `sudo dnf install imagemagick`. "
+                        "On CentOS, try `sudo yum install imagemagick`."
                     )
-                    unpack_file(archive)
-                    os.chdir(state_path(command_context))
-                else:
-                    unpack_file(archive)
+                    return 1
 
-                
-                path = os.path.join(state_path(command_context), fetch.get("path"))
-                if not os.path.exists(path):
-                    raise Exception("Cannot find an extracted directory: %s" % path)
+        
+        artifact_cache = ArtifactCache(
+            self.artifact_cache_path(command_context),
+            log=command_context.log,
+            skip_cache=False,
+        )
 
+        fetches = host_fetches[host_platform()]
+        for tool, fetch in sorted(fetches.items()):
+            archive = artifact_cache.fetch(fetch["url"])
+            
+
+            if fetch.get("unpack", True):
+                cwd = os.getcwd()
                 try:
-                    
-                    
-                    for root, dirs, files in os.walk(path):
-                        for edir in dirs:
-                            loc_to_change = os.path.join(root, edir)
-                            st = os.stat(loc_to_change)
-                            os.chmod(loc_to_change, st.st_mode | stat.S_IEXEC)
-                        for efile in files:
-                            loc_to_change = os.path.join(root, efile)
-                            st = os.stat(loc_to_change)
-                            os.chmod(loc_to_change, st.st_mode | stat.S_IEXEC)
-                except Exception as e:
-                    raise Exception(
-                        "Could not set executable bit in %s, error: %s" % (path, str(e))
+                    mkdir(self.state_path(command_context))
+                    os.chdir(self.state_path(command_context))
+                    command_context.log(
+                        logging.INFO,
+                        "browsertime",
+                        {"path": archive},
+                        "Unpacking temporary location {path}",
                     )
-            finally:
-                os.chdir(cwd)
 
+                    if "win64" in host_platform() and "imagemagick" in tool.lower():
+                        
+                        
+                        mkdir(fetch.get("path"))
+                        os.chdir(
+                            os.path.join(
+                                self.state_path(command_context), fetch.get("path")
+                            )
+                        )
+                        unpack_file(archive)
+                        os.chdir(self.state_path(command_context))
+                    else:
+                        unpack_file(archive)
 
-def setup_browsertime(command_context, should_clobber=False, new_upstream_url=""):
-    r"""Install browsertime and visualmetrics.py prerequisites and the Node.js package."""
+                    
+                    path = os.path.join(
+                        self.state_path(command_context), fetch.get("path")
+                    )
+                    if not os.path.exists(path):
+                        raise Exception("Cannot find an extracted directory: %s" % path)
 
-    sys.path.append(mozpath.join(command_context.topsrcdir, "tools", "lint", "eslint"))
-    import setup_helper
+                    try:
+                        
+                        
+                        for root, dirs, files in os.walk(path):
+                            for edir in dirs:
+                                loc_to_change = os.path.join(root, edir)
+                                st = os.stat(loc_to_change)
+                                os.chmod(loc_to_change, st.st_mode | stat.S_IEXEC)
+                            for efile in files:
+                                loc_to_change = os.path.join(root, efile)
+                                st = os.stat(loc_to_change)
+                                os.chmod(loc_to_change, st.st_mode | stat.S_IEXEC)
+                    except Exception as e:
+                        raise Exception(
+                            "Could not set executable bit in %s, error: %s"
+                            % (path, str(e))
+                        )
+                finally:
+                    os.chdir(cwd)
 
-    if not new_upstream_url:
-        setup_prerequisites(command_context)
+    def setup_browsertime(
+        self, command_context, should_clobber=False, new_upstream_url=""
+    ):
+        r"""Install browsertime and visualmetrics.py prerequisites and the Node.js package."""
 
-    if new_upstream_url:
-        package_json_path = os.path.join(BROWSERTIME_ROOT, "package.json")
+        sys.path.append(
+            mozpath.join(command_context.topsrcdir, "tools", "lint", "eslint")
+        )
+        import setup_helper
+
+        if not new_upstream_url:
+            self.setup_prerequisites(command_context)
+
+        if new_upstream_url:
+            package_json_path = os.path.join(BROWSERTIME_ROOT, "package.json")
+
+            command_context.log(
+                logging.INFO,
+                "browsertime",
+                {
+                    "new_upstream_url": new_upstream_url,
+                    "package_json_path": package_json_path,
+                },
+                "Updating browsertime node module version in {package_json_path} "
+                "to {new_upstream_url}",
+            )
+
+            if not re.search("/tarball/[a-f0-9]{40}$", new_upstream_url):
+                raise ValueError(
+                    "New upstream URL does not end with /tarball/[a-f0-9]{40}: '%s'"
+                    % new_upstream_url
+                )
+
+            with open(package_json_path) as f:
+                existing_body = json.loads(
+                    f.read(), object_pairs_hook=collections.OrderedDict
+                )
+
+            existing_body["devDependencies"]["browsertime"] = new_upstream_url
+
+            updated_body = json.dumps(existing_body)
+
+            with open(package_json_path, "w") as f:
+                f.write(updated_body)
+
+        
+        if not setup_helper.check_node_executables_valid():
+            return 1
+
+        
+        
+        
+        
+        if AUTOMATION:
+            os.environ["CHROMEDRIVER_SKIP_DOWNLOAD"] = "true"
+            os.environ["GECKODRIVER_SKIP_DOWNLOAD"] = "true"
 
         command_context.log(
             logging.INFO,
             "browsertime",
-            {
-                "new_upstream_url": new_upstream_url,
-                "package_json_path": package_json_path,
-            },
-            "Updating browsertime node module version in {package_json_path} "
-            "to {new_upstream_url}",
+            {"package_json": mozpath.join(BROWSERTIME_ROOT, "package.json")},
+            "Installing browsertime node module from {package_json}",
+        )
+        status = setup_helper.package_setup(
+            BROWSERTIME_ROOT,
+            "browsertime",
+            should_update=new_upstream_url != "",
+            should_clobber=should_clobber,
+            no_optional=new_upstream_url or AUTOMATION,
         )
 
-        if not re.search("/tarball/[a-f0-9]{40}$", new_upstream_url):
-            raise ValueError(
-                "New upstream URL does not end with /tarball/[a-f0-9]{40}: '%s'"
-                % new_upstream_url
-            )
+        if status:
+            return status
 
-        with open(package_json_path) as f:
-            existing_body = json.loads(
-                f.read(), object_pairs_hook=collections.OrderedDict
-            )
+        if new_upstream_url or AUTOMATION:
+            return 0
 
-        existing_body["devDependencies"]["browsertime"] = new_upstream_url
+        return self.check(command_context)
 
-        updated_body = json.dumps(existing_body)
-
-        with open(package_json_path, "w") as f:
-            f.write(updated_body)
-
-    
-    if not setup_helper.check_node_executables_valid():
-        return 1
-
-    
-    
-    
-    
-    if AUTOMATION:
-        os.environ["CHROMEDRIVER_SKIP_DOWNLOAD"] = "true"
-        os.environ["GECKODRIVER_SKIP_DOWNLOAD"] = "true"
-
-    command_context.log(
-        logging.INFO,
-        "browsertime",
-        {"package_json": mozpath.join(BROWSERTIME_ROOT, "package.json")},
-        "Installing browsertime node module from {package_json}",
-    )
-    status = setup_helper.package_setup(
-        BROWSERTIME_ROOT,
-        "browsertime",
-        should_update=new_upstream_url != "",
-        should_clobber=should_clobber,
-        no_optional=new_upstream_url or AUTOMATION,
-    )
-
-    if status:
-        return status
-
-    if new_upstream_url or AUTOMATION:
-        return 0
-
-    return check(command_context)
-
-
-def node(command_context, args):
-    r"""Invoke node (interactively) with the given arguments."""
-    return command_context.run_process(
-        [node_path()] + args,
-        append_env=append_env(command_context),
-        pass_thru=True,  
-        ensure_exit_code=False,  
-        cwd=mozpath.join(command_context.topsrcdir),
-    )
-
-
-def append_env(command_context, append_path=True):
-    fetches = host_fetches[host_platform()]
-
-    
-    
-    
-    
-    path = os.environ.get("PATH", "").split(os.pathsep) if append_path else []
-    path_to_ffmpeg = mozpath.join(
-        state_path(command_context), fetches["ffmpeg"]["path"]
-    )
-
-    path_to_imagemagick = None
-    if "ImageMagick" in fetches:
-        path_to_imagemagick = mozpath.join(
-            state_path(command_context), fetches["ImageMagick"]["path"]
+    def node(self, command_context, args):
+        r"""Invoke node (interactively) with the given arguments."""
+        return command_context.run_process(
+            [node_path()] + args,
+            append_env=self.append_env(command_context),
+            pass_thru=True,  
+            ensure_exit_code=False,  
+            cwd=mozpath.join(command_context.topsrcdir),
         )
 
-    if path_to_imagemagick:
+    def append_env(self, command_context, append_path=True):
+        fetches = host_fetches[host_platform()]
+
         
         
+        
+        
+        path = os.environ.get("PATH", "").split(os.pathsep) if append_path else []
+        path_to_ffmpeg = mozpath.join(
+            self.state_path(command_context), fetches["ffmpeg"]["path"]
+        )
+
+        path_to_imagemagick = None
+        if "ImageMagick" in fetches:
+            path_to_imagemagick = mozpath.join(
+                self.state_path(command_context), fetches["ImageMagick"]["path"]
+            )
+
+        if path_to_imagemagick:
+            
+            
+            path.insert(
+                0,
+                self.state_path(command_context)
+                if host_platform().startswith("win")
+                else mozpath.join(path_to_imagemagick, "bin"),
+            )  
         path.insert(
             0,
-            state_path(command_context)
-            if host_platform().startswith("win")
-            else mozpath.join(path_to_imagemagick, "bin"),
+            path_to_ffmpeg
+            if host_platform().startswith("linux")
+            else mozpath.join(path_to_ffmpeg, "bin"),
         )  
-    path.insert(
-        0,
-        path_to_ffmpeg
-        if host_platform().startswith("linux")
-        else mozpath.join(path_to_ffmpeg, "bin"),
-    )  
 
-    
-    
-    
-    
-    node_dir = os.path.dirname(node_path())
-    path = [node_dir] + path
+        
+        
+        
+        
+        node_dir = os.path.dirname(node_path())
+        path = [node_dir] + path
 
-    
-    
-    
-    if "win64" in host_platform() and path_to_imagemagick:
         
         
         
-        path.insert(2, path_to_imagemagick)
+        if "win64" in host_platform() and path_to_imagemagick:
+            
+            
+            
+            path.insert(2, path_to_imagemagick)
 
-    
-    
-    
-    
-    
-    
-    
-    if host_platform() == "darwin":
-        for p in os.environ["PATH"].split(os.pathsep):
-            p = p.strip()
-            if not p or p in path:
-                continue
-            path.append(p)
+        
+        
+        
+        
+        
+        
+        
+        if host_platform() == "darwin":
+            for p in os.environ["PATH"].split(os.pathsep):
+                p = p.strip()
+                if not p or p in path:
+                    continue
+                path.append(p)
 
-    append_env = {
-        "PATH": os.pathsep.join(path),
-        
-        
-        
-        
-        
-        
-        
-        
-        "PYTHON": command_context.virtualenv_manager.python_path,
-    }
+        append_env = {
+            "PATH": os.pathsep.join(path),
+            
+            
+            
+            
+            
+            
+            
+            
+            "PYTHON": command_context.virtualenv_manager.python_path,
+        }
 
-    if path_to_imagemagick:
-        append_env.update(
-            {
-                
-                
-                "LD_LIBRARY_PATH": mozpath.join(path_to_imagemagick, "lib"),
-                "DYLD_LIBRARY_PATH": mozpath.join(path_to_imagemagick, "lib"),
-                "MAGICK_HOME": path_to_imagemagick,
-            }
+        if path_to_imagemagick:
+            append_env.update(
+                {
+                    
+                    
+                    "LD_LIBRARY_PATH": mozpath.join(path_to_imagemagick, "lib"),
+                    "DYLD_LIBRARY_PATH": mozpath.join(path_to_imagemagick, "lib"),
+                    "MAGICK_HOME": path_to_imagemagick,
+                }
+            )
+
+        return append_env
+
+    def _need_install(self, command_context, package):
+        from pip._internal.req.constructors import install_req_from_line
+
+        req = install_req_from_line(package)
+        req.check_if_exists(use_user_site=False)
+        if req.satisfied_by is None:
+            return True
+        venv_site_lib = os.path.abspath(
+            os.path.join(command_context.virtualenv_manager.bin_path, "..", "lib")
+        )
+        site_packages = os.path.abspath(req.satisfied_by.location)
+        return not site_packages.startswith(venv_site_lib)
+
+    def activate_browsertime_virtualenv(self, command_context, *args, **kwargs):
+        r"""Activates virtualenv.
+
+        This function will also install Pillow and pyssim if needed.
+        It will raise an error in case the install failed.
+        """
+        MachCommandBase.activate_virtualenv(command_context, *args, **kwargs)
+
+        
+        for dep in ("Pillow==%s" % PILLOW_VERSION, "pyssim==%s" % PYSSIM_VERSION):
+            if self._need_install(command_context, dep):
+                command_context.virtualenv_manager._run_pip(["install", dep])
+
+    def check(self, command_context):
+        r"""Run `visualmetrics.py --check`."""
+        command_context.activate_virtualenv()
+
+        args = ["--check"]
+        status = command_context.run_process(
+            [command_context.virtualenv_manager.python_path, visualmetrics_path()]
+            + args,
+            
+            
+            
+            append_env=self.append_env(
+                command_context, append_path=host_platform().startswith("linux")
+            ),
+            pass_thru=True,
+            ensure_exit_code=False,  
+            cwd=mozpath.join(command_context.topsrcdir),
         )
 
-    return append_env
+        sys.stdout.flush()
+        sys.stderr.flush()
 
+        if status:
+            return status
 
-def _need_install(command_context, package):
-    from pip._internal.req.constructors import install_req_from_line
+        
+        command_context.log_manager.terminal_handler.setLevel(logging.CRITICAL)
+        print("browsertime version:", end=" ")
 
-    req = install_req_from_line(package)
-    req.check_if_exists(use_user_site=False)
-    if req.satisfied_by is None:
+        sys.stdout.flush()
+        sys.stderr.flush()
+
+        return self.node(command_context, [browsertime_path()] + ["--version"])
+
+    def extra_default_args(self, command_context, args=[]):
+        
+        
+        
+
+        def extract_browser_name(args):
+            "Extracts the browser name if any"
+            
+            
+            res = re.findall("(--browser|-b)[= ]([\w]+)", " ".join(args))
+            if res == []:
+                return None
+            return res[0][-1]
+
+        def matches(args, *flags):
+            "Return True if any argument matches any of the given flags (maybe with an argument)."
+            for flag in flags:
+                if flag in args or any(arg.startswith(flag + "=") for arg in args):
+                    return True
+            return False
+
+        extra_args = []
+
+        
+        specifies_browser = matches(args, "-b", "--browser")
+        if not specifies_browser:
+            extra_args.extend(("-b", "firefox"))
+
+        
+        specifies_har = matches(args, "--har", "--skipHar", "--gzipHar")
+        if not specifies_har:
+            extra_args.append("--skipHar")
+
+        if not matches(args, "--android"):
+            
+            
+            
+            specifies_binaryPath = matches(
+                args,
+                "--firefox.binaryPath",
+                "--firefox.release",
+                "--firefox.nightly",
+                "--firefox.beta",
+                "--firefox.developer",
+            )
+
+            if not specifies_binaryPath:
+                specifies_binaryPath = extract_browser_name(args) == "chrome"
+
+            if not specifies_binaryPath:
+                try:
+                    extra_args.extend(
+                        ("--firefox.binaryPath", command_context.get_binary_path())
+                    )
+                except BinaryNotFoundException as e:
+                    command_context.log(
+                        logging.ERROR,
+                        "browsertime",
+                        {"error": str(e)},
+                        "ERROR: {error}",
+                    )
+                    command_context.log(
+                        logging.INFO,
+                        "browsertime",
+                        {},
+                        "Please run |./mach build| "
+                        "or specify a Firefox binary with --firefox.binaryPath.",
+                    )
+                    return 1
+
+        if extra_args:
+            command_context.log(
+                logging.DEBUG,
+                "browsertime",
+                {"extra_args": extra_args},
+                "Running browsertime with extra default arguments: {extra_args}",
+            )
+
+        return extra_args
+
+    def _verify_node_install(self, command_context):
+        
+        sys.path.append(
+            mozpath.join(command_context.topsrcdir, "tools", "lint", "eslint")
+        )
+        import setup_helper
+
+        with silence():
+            node_valid = setup_helper.check_node_executables_valid()
+        if not node_valid:
+            print("Can't find Node. did you run ./mach bootstrap ?")
+            return False
+
+        
+        
+        if not os.path.exists(browsertime_path()):
+            print("Could not find browsertime.js, try ./mach browsertime --setup")
+            print("If that still fails, try ./mach browsertime --setup --clobber")
+            return False
+
         return True
-    venv_site_lib = os.path.abspath(
-        os.path.join(command_context.virtualenv_manager.bin_path, "..", "lib")
+
+    @Command(
+        "browsertime",
+        category="testing",
+        description="Run [browsertime](https://github.com/sitespeedio/browsertime) "
+        "performance tests.",
     )
-    site_packages = os.path.abspath(req.satisfied_by.location)
-    return not site_packages.startswith(venv_site_lib)
-
-
-def activate_browsertime_virtualenv(command_context, *args, **kwargs):
-    r"""Activates virtualenv.
-
-    This function will also install Pillow and pyssim if needed.
-    It will raise an error in case the install failed.
-    """
-    MachCommandBase.activate_virtualenv(command_context, *args, **kwargs)
-
-    
-    for dep in ("Pillow==%s" % PILLOW_VERSION, "pyssim==%s" % PYSSIM_VERSION):
-        if _need_install(command_context, dep):
-            command_context.virtualenv_manager._run_pip(["install", dep])
-
-
-def check(command_context):
-    r"""Run `visualmetrics.py --check`."""
-    command_context.activate_virtualenv()
-
-    args = ["--check"]
-    status = command_context.run_process(
-        [command_context.virtualenv_manager.python_path, visualmetrics_path()] + args,
-        
-        
-        
-        append_env=append_env(
-            command_context, append_path=host_platform().startswith("linux")
-        ),
-        pass_thru=True,
-        ensure_exit_code=False,  
-        cwd=mozpath.join(command_context.topsrcdir),
+    @CommandArgument(
+        "--verbose",
+        action="store_true",
+        help="Verbose output for what commands the build is running.",
     )
+    @CommandArgument("--update-upstream-url", default="")
+    @CommandArgument("--setup", default=False, action="store_true")
+    @CommandArgument("--clobber", default=False, action="store_true")
+    @CommandArgument(
+        "--skip-cache",
+        default=False,
+        action="store_true",
+        help="Skip all local caches to force re-fetching remote artifacts.",
+    )
+    @CommandArgument("--check", default=False, action="store_true")
+    @CommandArgument(
+        "--browsertime-help",
+        default=False,
+        action="store_true",
+        help="Show the browsertime help message.",
+    )
+    @CommandArgument("args", nargs=argparse.REMAINDER)
+    def browsertime(
+        self,
+        command_context,
+        args,
+        verbose=False,
+        update_upstream_url="",
+        setup=False,
+        clobber=False,
+        skip_cache=False,
+        check=False,
+        browsertime_help=False,
+    ):
+        command_context._set_log_level(verbose)
 
-    sys.stdout.flush()
-    sys.stderr.flush()
-
-    if status:
-        return status
-
-    
-    command_context.log_manager.terminal_handler.setLevel(logging.CRITICAL)
-    print("browsertime version:", end=" ")
-
-    sys.stdout.flush()
-    sys.stderr.flush()
-
-    return node(command_context, [browsertime_path()] + ["--version"])
-
-
-def extra_default_args(command_context, args=[]):
-    
-    
-    
-
-    def extract_browser_name(args):
-        "Extracts the browser name if any"
-        
-        
-        res = re.findall("(--browser|-b)[= ]([\w]+)", " ".join(args))
-        if res == []:
-            return None
-        return res[0][-1]
-
-    def matches(args, *flags):
-        "Return True if any argument matches any of the given flags (maybe with an argument)."
-        for flag in flags:
-            if flag in args or any(arg.startswith(flag + "=") for arg in args):
-                return True
-        return False
-
-    extra_args = []
-
-    
-    specifies_browser = matches(args, "-b", "--browser")
-    if not specifies_browser:
-        extra_args.extend(("-b", "firefox"))
-
-    
-    specifies_har = matches(args, "--har", "--skipHar", "--gzipHar")
-    if not specifies_har:
-        extra_args.append("--skipHar")
-
-    if not matches(args, "--android"):
         
         
         
-        specifies_binaryPath = matches(
-            args,
-            "--firefox.binaryPath",
-            "--firefox.release",
-            "--firefox.nightly",
-            "--firefox.beta",
-            "--firefox.developer",
+        
+        command_context.log(
+            logging.INFO,
+            "browsertime",
+            {},
+            "[WARNING] This tool is UNSUPPORTED by the perftest team and it is NOT recommended "
+            "to use for performance testing. Instead, if you are looking to perform "
+            "performance tests on your patch, use `./mach raptor --browsertime`.\n\n"
+            "You can get visual-metrics by using the --browsertime-video and "
+            "--browsertime-visualmetrics. Here is a sample command for raptor-browsertime: \n"
+            "\t./mach raptor --browsertime -t amazon --browsertime-video "
+            "--browsertime-visualmetrics\n\n"
+            "See this wiki page for more information if needed: "
+            "https://wiki.mozilla.org/TestEngineering/Performance/Raptor/Browsertime\n\n",
         )
+        time.sleep(5)
 
-        if not specifies_binaryPath:
-            specifies_binaryPath = extract_browser_name(args) == "chrome"
-
-        if not specifies_binaryPath:
-            try:
-                extra_args.extend(
-                    ("--firefox.binaryPath", command_context.get_binary_path())
-                )
-            except BinaryNotFoundException as e:
-                command_context.log(
-                    logging.ERROR,
-                    "browsertime",
-                    {"error": str(e)},
-                    "ERROR: {error}",
-                )
-                command_context.log(
-                    logging.INFO,
-                    "browsertime",
-                    {},
-                    "Please run |./mach build| "
-                    "or specify a Firefox binary with --firefox.binaryPath.",
-                )
+        if update_upstream_url:
+            return self.setup_browsertime(
+                command_context, new_upstream_url=update_upstream_url
+            )
+        elif setup:
+            return self.setup_browsertime(command_context, should_clobber=clobber)
+        else:
+            if not self._verify_node_install(command_context):
                 return 1
 
-    if extra_args:
-        command_context.log(
-            logging.DEBUG,
-            "browsertime",
-            {"extra_args": extra_args},
-            "Running browsertime with extra default arguments: {extra_args}",
-        )
+        if check:
+            return self.check(command_context)
 
-    return extra_args
+        if browsertime_help:
+            args.append("--help")
 
-
-def _verify_node_install(command_context):
-    
-    sys.path.append(mozpath.join(command_context.topsrcdir, "tools", "lint", "eslint"))
-    import setup_helper
-
-    with silence():
-        node_valid = setup_helper.check_node_executables_valid()
-    if not node_valid:
-        print("Can't find Node. did you run ./mach bootstrap ?")
-        return False
-
-    
-    
-    if not os.path.exists(browsertime_path()):
-        print("Could not find browsertime.js, try ./mach browsertime --setup")
-        print("If that still fails, try ./mach browsertime --setup --clobber")
-        return False
-
-    return True
-
-
-@Command(
-    "browsertime",
-    category="testing",
-    description="Run [browsertime](https://github.com/sitespeedio/browsertime) "
-    "performance tests.",
-)
-@CommandArgument(
-    "--verbose",
-    action="store_true",
-    help="Verbose output for what commands the build is running.",
-)
-@CommandArgument("--update-upstream-url", default="")
-@CommandArgument("--setup", default=False, action="store_true")
-@CommandArgument("--clobber", default=False, action="store_true")
-@CommandArgument(
-    "--skip-cache",
-    default=False,
-    action="store_true",
-    help="Skip all local caches to force re-fetching remote artifacts.",
-)
-@CommandArgument("--check", default=False, action="store_true")
-@CommandArgument(
-    "--browsertime-help",
-    default=False,
-    action="store_true",
-    help="Show the browsertime help message.",
-)
-@CommandArgument("args", nargs=argparse.REMAINDER)
-def browsertime(
-    command_context,
-    args,
-    verbose=False,
-    update_upstream_url="",
-    setup=False,
-    clobber=False,
-    skip_cache=False,
-    check=False,
-    browsertime_help=False,
-):
-    command_context._set_log_level(verbose)
-
-    
-    
-    
-    
-    command_context.log(
-        logging.INFO,
-        "browsertime",
-        {},
-        "[WARNING] This tool is UNSUPPORTED by the perftest team and it is NOT recommended "
-        "to use for performance testing. Instead, if you are looking to perform "
-        "performance tests on your patch, use `./mach raptor --browsertime`.\n\n"
-        "You can get visual-metrics by using the --browsertime-video and "
-        "--browsertime-visualmetrics. Here is a sample command for raptor-browsertime: \n"
-        "\t./mach raptor --browsertime -t amazon --browsertime-video "
-        "--browsertime-visualmetrics\n\n"
-        "See this wiki page for more information if needed: "
-        "https://wiki.mozilla.org/TestEngineering/Performance/Raptor/Browsertime\n\n",
-    )
-    time.sleep(5)
-
-    if update_upstream_url:
-        return setup_browsertime(command_context, new_upstream_url=update_upstream_url)
-    elif setup:
-        return setup_browsertime(command_context, should_clobber=clobber)
-    else:
-        if not _verify_node_install(command_context):
+        self.activate_browsertime_virtualenv(command_context)
+        default_args = self.extra_default_args(command_context, args)
+        if default_args == 1:
             return 1
-
-    if check:
-        return check(command_context)
-
-    if browsertime_help:
-        args.append("--help")
-
-    activate_browsertime_virtualenv(command_context)
-    default_args = extra_default_args(command_context, args)
-    if default_args == 1:
-        return 1
-    return node(command_context, [browsertime_path()] + default_args + args)
+        return self.node(command_context, [browsertime_path()] + default_args + args)

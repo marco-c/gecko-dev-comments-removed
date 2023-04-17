@@ -14,12 +14,14 @@ import sys
 import warnings
 
 from mozbuild.base import (
+    MachCommandBase,
     MachCommandConditions as conditions,
     MozbuildObject,
 )
 
 from mach.decorators import (
     CommandArgument,
+    CommandProvider,
     Command,
 )
 
@@ -295,267 +297,284 @@ def verify_host_bin():
     return 0
 
 
-@Command(
-    "mochitest",
-    category="testing",
-    conditions=[functools.partial(conditions.is_buildapp_in, apps=SUPPORTED_APPS)],
-    description="Run any flavor of mochitest (integration test).",
-    parser=setup_argument_parser,
-)
-def run_mochitest_general(
-    command_context, flavor=None, test_objects=None, resolve_tests=True, **kwargs
-):
-    from mochitest_options import ALL_FLAVORS
-    from mozlog.commandline import setup_logging
-    from mozlog.handlers import StreamHandler
-    from moztest.resolve import get_suite_definition
+@CommandProvider
+class MachCommands(MachCommandBase):
+    @Command(
+        "mochitest",
+        category="testing",
+        conditions=[functools.partial(conditions.is_buildapp_in, apps=SUPPORTED_APPS)],
+        description="Run any flavor of mochitest (integration test).",
+        parser=setup_argument_parser,
+    )
+    def run_mochitest_general(
+        self,
+        command_context,
+        flavor=None,
+        test_objects=None,
+        resolve_tests=True,
+        **kwargs
+    ):
+        from mochitest_options import ALL_FLAVORS
+        from mozlog.commandline import setup_logging
+        from mozlog.handlers import StreamHandler
+        from moztest.resolve import get_suite_definition
 
-    
-    
-    command_context.activate_virtualenv()
+        
+        
+        command_context.activate_virtualenv()
 
-    buildapp = None
-    for app in SUPPORTED_APPS:
-        if conditions.is_buildapp_in(command_context, apps=[app]):
-            buildapp = app
-            break
-
-    flavors = None
-    if flavor:
-        for fname, fobj in six.iteritems(ALL_FLAVORS):
-            if flavor in fobj["aliases"]:
-                if buildapp not in fobj["enabled_apps"]:
-                    continue
-                flavors = [fname]
+        buildapp = None
+        for app in SUPPORTED_APPS:
+            if conditions.is_buildapp_in(command_context, apps=[app]):
+                buildapp = app
                 break
-    else:
-        flavors = [
-            f for f, v in six.iteritems(ALL_FLAVORS) if buildapp in v["enabled_apps"]
-        ]
 
-    from mozbuild.controller.building import BuildDriver
+        flavors = None
+        if flavor:
+            for fname, fobj in six.iteritems(ALL_FLAVORS):
+                if flavor in fobj["aliases"]:
+                    if buildapp not in fobj["enabled_apps"]:
+                        continue
+                    flavors = [fname]
+                    break
+        else:
+            flavors = [
+                f
+                for f, v in six.iteritems(ALL_FLAVORS)
+                if buildapp in v["enabled_apps"]
+            ]
 
-    command_context._ensure_state_subdir_exists(".")
+        from mozbuild.controller.building import BuildDriver
 
-    test_paths = kwargs["test_paths"]
-    kwargs["test_paths"] = []
+        command_context._ensure_state_subdir_exists(".")
 
-    if kwargs.get("debugger", None):
-        import mozdebug
+        test_paths = kwargs["test_paths"]
+        kwargs["test_paths"] = []
 
-        if not mozdebug.get_debugger_info(kwargs.get("debugger")):
-            sys.exit(1)
+        if kwargs.get("debugger", None):
+            import mozdebug
 
-    mochitest = command_context._spawn(MochitestRunner)
-    tests = []
-    if resolve_tests:
-        tests = mochitest.resolve_tests(
-            test_paths, test_objects, cwd=command_context._mach_context.cwd
-        )
+            if not mozdebug.get_debugger_info(kwargs.get("debugger")):
+                sys.exit(1)
 
-    if not kwargs.get("log"):
-        
-        format_args = {"level": command_context._mach_context.settings["test"]["level"]}
-        if len(tests) == 1:
-            format_args["verbose"] = True
-            format_args["compact"] = False
+        mochitest = command_context._spawn(MochitestRunner)
+        tests = []
+        if resolve_tests:
+            tests = mochitest.resolve_tests(
+                test_paths, test_objects, cwd=command_context._mach_context.cwd
+            )
 
-        default_format = command_context._mach_context.settings["test"]["format"]
-        kwargs["log"] = setup_logging(
-            "mach-mochitest", kwargs, {default_format: sys.stdout}, format_args
-        )
-        for handler in kwargs["log"].handlers:
-            if isinstance(handler, StreamHandler):
-                handler.formatter.inner.summary_on_shutdown = True
-
-    driver = command_context._spawn(BuildDriver)
-    driver.install_tests()
-
-    subsuite = kwargs.get("subsuite")
-    if subsuite == "default":
-        kwargs["subsuite"] = None
-
-    suites = defaultdict(list)
-    is_webrtc_tag_present = False
-    unsupported = set()
-    for test in tests:
-        
-        
-        if "webrtc" in test.get("tags", ""):
-            is_webrtc_tag_present = True
-
-        
-        if test["flavor"] not in ALL_FLAVORS:
-            continue
-
-        key = (test["flavor"], test.get("subsuite", ""))
-        if test["flavor"] not in flavors:
-            unsupported.add(key)
-            continue
-
-        if subsuite == "default":
+        if not kwargs.get("log"):
             
-            if test.get("subsuite"):
+            format_args = {
+                "level": command_context._mach_context.settings["test"]["level"]
+            }
+            if len(tests) == 1:
+                format_args["verbose"] = True
+                format_args["compact"] = False
+
+            default_format = command_context._mach_context.settings["test"]["format"]
+            kwargs["log"] = setup_logging(
+                "mach-mochitest", kwargs, {default_format: sys.stdout}, format_args
+            )
+            for handler in kwargs["log"].handlers:
+                if isinstance(handler, StreamHandler):
+                    handler.formatter.inner.summary_on_shutdown = True
+
+        driver = command_context._spawn(BuildDriver)
+        driver.install_tests()
+
+        subsuite = kwargs.get("subsuite")
+        if subsuite == "default":
+            kwargs["subsuite"] = None
+
+        suites = defaultdict(list)
+        is_webrtc_tag_present = False
+        unsupported = set()
+        for test in tests:
+            
+            
+            if "webrtc" in test.get("tags", ""):
+                is_webrtc_tag_present = True
+
+            
+            if test["flavor"] not in ALL_FLAVORS:
+                continue
+
+            key = (test["flavor"], test.get("subsuite", ""))
+            if test["flavor"] not in flavors:
                 unsupported.add(key)
                 continue
-        elif subsuite and test.get("subsuite", "") != subsuite:
-            unsupported.add(key)
-            continue
 
-        suites[key].append(test)
+            if subsuite == "default":
+                
+                if test.get("subsuite"):
+                    unsupported.add(key)
+                    continue
+            elif subsuite and test.get("subsuite", "") != subsuite:
+                unsupported.add(key)
+                continue
 
-    
-    if ("mochitest", "media") in suites and is_webrtc_tag_present:
-        req = os.path.join(
-            "testing",
-            "tools",
-            "websocketprocessbridge",
-            "websocketprocessbridge_requirements_3.txt",
-        )
-        command_context.virtualenv_manager.activate()
-        command_context.virtualenv_manager.install_pip_requirements(
-            req, require_hashes=False
-        )
+            suites[key].append(test)
 
         
-        
-        sys.executable = command_context.virtualenv_manager.python_path
-
-    
-    
-    
-    if not resolve_tests:
-        for flavor in flavors:
-            key = (flavor, kwargs.get("subsuite"))
-            suites[key] = []
-
-    if not suites:
-        
-        if not unsupported:
-            print(
-                TESTS_NOT_FOUND.format(
-                    "\n".join(sorted(list(test_paths or test_objects)))
-                )
+        if ("mochitest", "media") in suites and is_webrtc_tag_present:
+            req = os.path.join(
+                "testing",
+                "tools",
+                "websocketprocessbridge",
+                "websocketprocessbridge_requirements_3.txt",
             )
+            command_context.virtualenv_manager.activate()
+            command_context.virtualenv_manager.install_pip_requirements(
+                req, require_hashes=False
+            )
+
+            
+            
+            sys.executable = command_context.virtualenv_manager.python_path
+
+        
+        
+        
+        if not resolve_tests:
+            for flavor in flavors:
+                key = (flavor, kwargs.get("subsuite"))
+                suites[key] = []
+
+        if not suites:
+            
+            if not unsupported:
+                print(
+                    TESTS_NOT_FOUND.format(
+                        "\n".join(sorted(list(test_paths or test_objects)))
+                    )
+                )
+                return 1
+
+            msg = []
+            for f, s in unsupported:
+                fobj = ALL_FLAVORS[f]
+                apps = fobj["enabled_apps"]
+                name = fobj["aliases"][0]
+                if s:
+                    name = "{} --subsuite {}".format(name, s)
+
+                if buildapp not in apps:
+                    reason = "requires {}".format(" or ".join(apps))
+                else:
+                    reason = "excluded by the command line"
+                msg.append("    mochitest -f {} ({})".format(name, reason))
+            print(SUPPORTED_TESTS_NOT_FOUND.format(buildapp, "\n".join(sorted(msg))))
             return 1
 
-        msg = []
-        for f, s in unsupported:
-            fobj = ALL_FLAVORS[f]
-            apps = fobj["enabled_apps"]
-            name = fobj["aliases"][0]
-            if s:
-                name = "{} --subsuite {}".format(name, s)
+        if buildapp == "android":
+            from mozrunner.devices.android_device import (
+                verify_android_device,
+                InstallIntent,
+            )
 
-            if buildapp not in apps:
-                reason = "requires {}".format(" or ".join(apps))
-            else:
-                reason = "excluded by the command line"
-            msg.append("    mochitest -f {} ({})".format(name, reason))
-        print(SUPPORTED_TESTS_NOT_FOUND.format(buildapp, "\n".join(sorted(msg))))
-        return 1
+            app = kwargs.get("app")
+            if not app:
+                app = "org.mozilla.geckoview.test"
+            device_serial = kwargs.get("deviceSerial")
+            install = (
+                InstallIntent.NO if kwargs.get("no_install") else InstallIntent.YES
+            )
 
-    if buildapp == "android":
+            
+            verify_android_device(
+                command_context,
+                install=install,
+                xre=False,
+                network=True,
+                app=app,
+                device_serial=device_serial,
+            )
+            run_mochitest = mochitest.run_android_test
+        else:
+            run_mochitest = mochitest.run_desktop_test
+
+        overall = None
+        for (flavor, subsuite), tests in sorted(suites.items()):
+            suite_name, suite = get_suite_definition(flavor, subsuite)
+            if "test_paths" in suite["kwargs"]:
+                del suite["kwargs"]["test_paths"]
+
+            harness_args = kwargs.copy()
+            harness_args.update(suite["kwargs"])
+            
+            
+            
+            harness_args.update({"suite_name": suite_name})
+
+            result = run_mochitest(command_context, tests=tests, **harness_args)
+
+            if result:
+                overall = result
+
+            
+            if result == -1:
+                break
+
+        
+        if kwargs["log"].name == "mach-mochitest":
+            kwargs["log"].shutdown()
+
+        return overall
+
+
+@CommandProvider
+class GeckoviewJunitCommands(MachCommandBase):
+    @Command(
+        "geckoview-junit",
+        category="testing",
+        conditions=[conditions.is_android],
+        description="Run remote geckoview junit tests.",
+        parser=setup_junit_argument_parser,
+    )
+    @CommandArgument(
+        "--no-install",
+        help="Do not try to install application on device before "
+        + "running (default: False)",
+        action="store_true",
+        default=False,
+    )
+    def run_junit(self, command_context, no_install, **kwargs):
+        command_context._ensure_state_subdir_exists(".")
+
         from mozrunner.devices.android_device import (
+            get_adb_path,
             verify_android_device,
             InstallIntent,
         )
 
-        app = kwargs.get("app")
-        if not app:
-            app = "org.mozilla.geckoview.test"
-        device_serial = kwargs.get("deviceSerial")
-        install = InstallIntent.NO if kwargs.get("no_install") else InstallIntent.YES
-
         
+        app = kwargs.get("app")
+        device_serial = kwargs.get("deviceSerial")
         verify_android_device(
             command_context,
-            install=install,
+            install=InstallIntent.NO if no_install else InstallIntent.YES,
             xre=False,
-            network=True,
             app=app,
             device_serial=device_serial,
         )
-        run_mochitest = mochitest.run_android_test
-    else:
-        run_mochitest = mochitest.run_desktop_test
 
-    overall = None
-    for (flavor, subsuite), tests in sorted(suites.items()):
-        suite_name, suite = get_suite_definition(flavor, subsuite)
-        if "test_paths" in suite["kwargs"]:
-            del suite["kwargs"]["test_paths"]
+        if not kwargs.get("adbPath"):
+            kwargs["adbPath"] = get_adb_path(command_context)
 
-        harness_args = kwargs.copy()
-        harness_args.update(suite["kwargs"])
-        
-        
-        
-        harness_args.update({"suite_name": suite_name})
+        if not kwargs.get("log"):
+            from mozlog.commandline import setup_logging
 
-        result = run_mochitest(
-            command_context._mach_context, tests=tests, **harness_args
+            format_args = {
+                "level": command_context._mach_context.settings["test"]["level"]
+            }
+            default_format = command_context._mach_context.settings["test"]["format"]
+            kwargs["log"] = setup_logging(
+                "mach-mochitest", kwargs, {default_format: sys.stdout}, format_args
+            )
+
+        mochitest = command_context._spawn(MochitestRunner)
+        return mochitest.run_geckoview_junit_test(
+            command_context._mach_context, **kwargs
         )
-
-        if result:
-            overall = result
-
-        
-        if result == -1:
-            break
-
-    
-    if kwargs["log"].name == "mach-mochitest":
-        kwargs["log"].shutdown()
-
-    return overall
-
-
-@Command(
-    "geckoview-junit",
-    category="testing",
-    conditions=[conditions.is_android],
-    description="Run remote geckoview junit tests.",
-    parser=setup_junit_argument_parser,
-)
-@CommandArgument(
-    "--no-install",
-    help="Do not try to install application on device before "
-    + "running (default: False)",
-    action="store_true",
-    default=False,
-)
-def run_junit(command_context, no_install, **kwargs):
-    command_context._ensure_state_subdir_exists(".")
-
-    from mozrunner.devices.android_device import (
-        get_adb_path,
-        verify_android_device,
-        InstallIntent,
-    )
-
-    
-    app = kwargs.get("app")
-    device_serial = kwargs.get("deviceSerial")
-    verify_android_device(
-        command_context,
-        install=InstallIntent.NO if no_install else InstallIntent.YES,
-        xre=False,
-        app=app,
-        device_serial=device_serial,
-    )
-
-    if not kwargs.get("adbPath"):
-        kwargs["adbPath"] = get_adb_path(command_context)
-
-    if not kwargs.get("log"):
-        from mozlog.commandline import setup_logging
-
-        format_args = {"level": command_context._mach_context.settings["test"]["level"]}
-        default_format = command_context._mach_context.settings["test"]["format"]
-        kwargs["log"] = setup_logging(
-            "mach-mochitest", kwargs, {default_format: sys.stdout}, format_args
-        )
-
-    mochitest = command_context._spawn(MochitestRunner)
-    return mochitest.run_geckoview_junit_test(command_context._mach_context, **kwargs)
