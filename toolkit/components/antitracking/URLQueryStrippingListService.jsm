@@ -35,26 +35,41 @@ class URLQueryStrippingListService {
     this.prefAllowList = [];
     this.remoteStripList = [];
     this.remoteAllowList = [];
+    this.isParentProcess =
+      Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_DEFAULT;
 
     this._initPromise = this._init();
   }
 
   async _init() {
-    let rs = RemoteSettings(COLLECTION_NAME);
-
-    rs.on("sync", event => {
-      let {
-        data: { current },
-      } = event;
-      this._onRemoteSettingsUpdate(current);
-    });
-
     
-    let entries;
-    try {
-      entries = await rs.get();
-    } catch (e) {}
-    this._onRemoteSettingsUpdate(entries || []);
+    
+    
+    if (this.isParentProcess) {
+      let rs = RemoteSettings(COLLECTION_NAME);
+
+      rs.on("sync", event => {
+        let {
+          data: { current },
+        } = event;
+        this._onRemoteSettingsUpdate(current);
+      });
+
+      
+      let entries;
+      try {
+        entries = await rs.get();
+      } catch (e) {}
+      this._onRemoteSettingsUpdate(entries || []);
+
+      Services.ppmm.addMessageListener("query-stripping:request-rs", this);
+    } else {
+      
+      
+      
+      Services.cpmm.addMessageListener("query-stripping:rs-updated", this);
+      Services.cpmm.sendAsyncMessage("query-stripping:request-rs");
+    }
 
     
     this._onPrefUpdate(
@@ -78,6 +93,12 @@ class URLQueryStrippingListService {
     Services.obs.removeObserver(this, "xpcom-shutdown");
     Services.prefs.removeObserver(PREF_STRIP_LIST_NAME, this);
     Services.prefs.removeObserver(PREF_ALLOW_LIST_NAME, this);
+
+    if (this.isParentProcess) {
+      Services.ppmm.removeMessageListener("query-stripping:request-rs", this);
+    } else {
+      Services.cpmm.removeMessageListener("query-stripping:rs-updated", this);
+    }
   }
 
   _onRemoteSettingsUpdate(entries) {
@@ -92,6 +113,16 @@ class URLQueryStrippingListService {
       for (let item of entry.allowList) {
         this.remoteAllowList.push(item);
       }
+    }
+
+    
+    
+    
+    if (this.isParentProcess) {
+      Services.ppmm.broadcastAsyncMessage(
+        "query-stripping:rs-updated",
+        entries
+      );
     }
 
     this._notifyObservers();
@@ -164,6 +195,16 @@ class URLQueryStrippingListService {
         break;
       default:
         Cu.reportError(`Unexpected event ${topic}`);
+    }
+  }
+
+  receiveMessage({ target, name, data }) {
+    if (name == "query-stripping:rs-updated") {
+      this._onRemoteSettingsUpdate(data);
+    } else if (name == "query-stripping:request-rs") {
+      target.sendAsyncMessage("query-stripping:rs-updated", [
+        { stripList: this.remoteStripList, allowList: this.remoteAllowList },
+      ]);
     }
   }
 }
