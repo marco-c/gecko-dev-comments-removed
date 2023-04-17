@@ -423,6 +423,25 @@ pub enum GenericFontFamily {
     MozEmoji,
 }
 
+impl GenericFontFamily {
+    
+    
+    
+    pub (crate) fn valid_for_user_font_prioritization(self) -> bool {
+        match self {
+            Self::None |
+            Self::Fantasy |
+            Self::Cursive |
+            Self::SystemUi |
+            Self::MozEmoji => false,
+
+            Self::Serif |
+            Self::SansSerif |
+            Self::Monospace => true,
+        }
+    }
+}
+
 impl Parse for SingleFontFamily {
     
     fn parse<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>) -> Result<Self, ParseError<'i>> {
@@ -545,7 +564,7 @@ impl FontFamilyList {
     pub (crate) fn prioritize_first_generic_or_prepend(&mut self, generic: GenericFontFamily) {
         let index_of_first_generic = self.iter().position(|f| {
             match *f {
-                SingleFontFamily::Generic(f) => f != GenericFontFamily::Cursive && f != GenericFontFamily::Fantasy,
+                SingleFontFamily::Generic(f) => f.valid_for_user_font_prioritization(),
                 _ => false,
             }
         });
