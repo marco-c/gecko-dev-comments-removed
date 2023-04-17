@@ -81,7 +81,8 @@ TEST(IHistory, Test)
   run_next_test();
 
   
-  mozilla::SpinEventLoopUntil([&]() { return !gPendingTests; });
+  mozilla::SpinEventLoopUntil("places:TEST(IHistory, Test)"_ns,
+                              [&]() { return !gPendingTests; });
 
   
   (void)NS_ProcessPendingEvents(nullptr);
