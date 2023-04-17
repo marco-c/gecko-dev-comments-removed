@@ -394,7 +394,7 @@ nsresult nsHttpChannel::PrepareToConnect() {
   
   
   
-  if (StaticPrefs::network_http_windows10_sso_enabled() &&
+  if (StaticPrefs::network_http_windows_sso_enabled() &&
       mURI->SchemeIs("https") &&
       mLoadInfo->GetExternalContentPolicyType() ==
           ExtContentPolicy::TYPE_DOCUMENT &&
