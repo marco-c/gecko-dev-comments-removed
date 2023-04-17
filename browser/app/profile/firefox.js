@@ -169,7 +169,8 @@ pref("app.update.staging.enabled", true);
 
 pref("app.update.langpack.enabled", true);
 
-#if defined(MOZ_BACKGROUNDTASKS) && defined(MOZ_UPDATE_AGENT) && defined(NIGHTLY_BUILD)
+#if defined(MOZ_UPDATE_AGENT)
+  pref("app.update.background.loglevel", "error");
   
   
   
