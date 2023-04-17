@@ -31,6 +31,7 @@ class nsIWidget;
   nsMenuX* mGeckoMenu;  
 }
 - (id)initWithGeckoMenu:(nsMenuX*)geckoMenu;
+@property BOOL menuIsInMenubar;
 @end
 
 
