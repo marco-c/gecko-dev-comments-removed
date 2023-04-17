@@ -13,6 +13,8 @@ const FONT_PREVIEW_FILLSTYLE = "black";
 
 const FONT_PREVIEW_OFFSET = 4;
 
+const FONT_PREVIEW_OVERSAMPLING_FACTOR = 2;
+
 
 
 
@@ -29,6 +31,7 @@ const FONT_PREVIEW_OFFSET = 4;
 function getFontPreviewData(font, doc, options) {
   options = options || {};
   const previewText = options.previewText || FONT_PREVIEW_TEXT;
+  const previewTextLines = previewText.split("\n");
   const previewFontSize = options.previewFontSize || FONT_PREVIEW_FONT_SIZE;
   const fillStyle = options.fillStyle || FONT_PREVIEW_FILLSTYLE;
   const fontStyle = options.fontStyle || "";
@@ -41,23 +44,46 @@ function getFontPreviewData(font, doc, options) {
   
   ctx.font = fontValue;
   ctx.fillStyle = fillStyle;
-  const textWidth = Math.round(ctx.measureText(previewText).width);
+  const previewTextLinesWidths = previewTextLines.map(
+    previewTextLine => ctx.measureText(previewTextLine).width
+  );
+  const textWidth = Math.round(Math.max(...previewTextLinesWidths));
 
-  canvas.width = textWidth * 2 + FONT_PREVIEW_OFFSET * 4;
-  canvas.height = previewFontSize * 3;
+  
+  
+  
+  
+  
+  
+  
+  
+  const simpleCanvasWidth = textWidth + FONT_PREVIEW_OFFSET * 2;
+  canvas.width = simpleCanvasWidth * FONT_PREVIEW_OVERSAMPLING_FACTOR;
+  canvas.height =
+    (previewFontSize * previewTextLines.length + FONT_PREVIEW_OFFSET * 2) *
+    FONT_PREVIEW_OVERSAMPLING_FACTOR;
 
   
   ctx.font = fontValue;
   ctx.fillStyle = fillStyle;
 
   
+  ctx.scale(FONT_PREVIEW_OVERSAMPLING_FACTOR, FONT_PREVIEW_OVERSAMPLING_FACTOR);
+
   ctx.textBaseline = "top";
-  ctx.scale(2, 2);
-  ctx.fillText(
-    previewText,
-    FONT_PREVIEW_OFFSET,
-    Math.round(previewFontSize / 3)
-  );
+  ctx.textAlign = "center";
+  const horizontalTextPosition = simpleCanvasWidth / 2;
+  let verticalTextPosition = FONT_PREVIEW_OFFSET;
+  for (let i = 0; i < previewTextLines.length; i++) {
+    ctx.fillText(
+      previewTextLines[i],
+      horizontalTextPosition,
+      verticalTextPosition
+    );
+
+    
+    verticalTextPosition += previewFontSize;
+  }
 
   const dataURL = canvas.toDataURL("image/png");
 
