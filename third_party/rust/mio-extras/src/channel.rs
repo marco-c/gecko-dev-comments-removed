@@ -115,7 +115,7 @@ impl<T> Sender<T> {
     
     pub fn send(&self, t: T) -> Result<(), SendError<T>> {
         self.tx.send(t).map_err(SendError::from).and_then(|_| {
-            try!(self.ctl.inc());
+            self.ctl.inc()?;
             Ok(())
         })
     }
@@ -137,7 +137,7 @@ impl<T> SyncSender<T> {
     
     pub fn send(&self, t: T) -> Result<(), SendError<T>> {
         self.tx.send(t).map_err(From::from).and_then(|_| {
-            try!(self.ctl.inc());
+            self.ctl.inc()?;
             Ok(())
         })
     }
@@ -148,7 +148,7 @@ impl<T> SyncSender<T> {
     
     pub fn try_send(&self, t: T) -> Result<(), TrySendError<T>> {
         self.tx.try_send(t).map_err(From::from).and_then(|_| {
-            try!(self.ctl.inc());
+            self.ctl.inc()?;
             Ok(())
         })
     }
@@ -213,7 +213,7 @@ impl SenderCtl {
         if 0 == cnt {
             
             if let Some(set_readiness) = self.inner.set_readiness.borrow() {
-                try!(set_readiness.set_readiness(Ready::readable()));
+                set_readiness.set_readiness(Ready::readable())?;
             }
         }
 
@@ -245,7 +245,7 @@ impl ReceiverCtl {
         if first == 1 {
             
             if let Some(set_readiness) = self.inner.set_readiness.borrow() {
-                try!(set_readiness.set_readiness(Ready::empty()));
+                set_readiness.set_readiness(Ready::empty())?;
             }
         }
 
@@ -256,7 +256,7 @@ impl ReceiverCtl {
             
             
             if let Some(set_readiness) = self.inner.set_readiness.borrow() {
-                try!(set_readiness.set_readiness(Ready::readable()));
+                set_readiness.set_readiness(Ready::readable())?;
             }
         }
 
