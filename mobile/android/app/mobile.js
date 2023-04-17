@@ -224,10 +224,6 @@ pref("accessibility.browsewithcaret_shortcut.enabled", false);
 pref("findbar.matchdiacritics", 0);
 
 
-
-pref("browser.menu.showCharacterEncoding", "chrome://browser/locale/browser.properties");
-
-
 pref("browser.ssl_override_behavior", 2);
 pref("browser.xul.error_pages.expert_bad_cert", false);
 
