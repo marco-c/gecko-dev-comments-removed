@@ -37,12 +37,6 @@ struct JS_PUBLIC_API JSContext;
 
 namespace js {
 
-namespace detail {
-
-extern JS_FRIEND_API bool RunningWithTrustedPrincipals(JSContext* cx);
-
-}  
-
 class MOZ_RAII AutoCheckRecursionLimit {
   [[nodiscard]] MOZ_ALWAYS_INLINE bool checkLimit(JSContext* cx,
                                                   uintptr_t limit) const;
@@ -53,6 +47,8 @@ class MOZ_RAII AutoCheckRecursionLimit {
   MOZ_ALWAYS_INLINE uintptr_t getStackLimitHelper(JSContext* cx,
                                                   JS::StackKind kind,
                                                   int extraAllowance) const;
+
+  JS_FRIEND_API bool runningWithTrustedPrincipals(JSContext* cx) const;
 
  public:
   explicit MOZ_ALWAYS_INLINE AutoCheckRecursionLimit(JSContext* cx) {}
@@ -78,7 +74,7 @@ extern MOZ_COLD JS_FRIEND_API void ReportOverRecursed(JSContext* maybecx);
 
 MOZ_ALWAYS_INLINE uintptr_t
 AutoCheckRecursionLimit::getStackLimit(JSContext* cx) const {
-  JS::StackKind kind = detail::RunningWithTrustedPrincipals(cx)
+  JS::StackKind kind = runningWithTrustedPrincipals(cx)
                            ? JS::StackForTrustedScript
                            : JS::StackForUntrustedScript;
   return getStackLimitHelper(cx, kind, 0);
