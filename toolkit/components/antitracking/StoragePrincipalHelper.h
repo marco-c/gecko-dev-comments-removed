@@ -248,6 +248,19 @@ class StoragePrincipalHelper final {
     
     
     ePartitionedPrincipal,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    eForeignPartitionedPrincipal,
   };
 
   
