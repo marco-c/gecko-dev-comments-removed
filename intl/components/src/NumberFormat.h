@@ -102,6 +102,14 @@ struct MOZ_STACK_CLASS NumberFormatOptions {
 
 
 
+
+  bool mStripTrailingZero = false;
+
+  
+
+
+
+
   bool mUseGrouping = true;
 
   
@@ -127,9 +135,11 @@ struct MOZ_STACK_CLASS NumberFormatOptions {
     Never,
     Always,
     ExceptZero,
+    Negative,
     Accounting,
     AccountingAlways,
-    AccountingExceptZero
+    AccountingExceptZero,
+    AccountingNegative,
   } mSignDisplay = SignDisplay::Auto;
 
   
@@ -137,7 +147,25 @@ struct MOZ_STACK_CLASS NumberFormatOptions {
 
 
 
-  bool mRoundingModeHalfUp = true;
+  uint32_t mRoundingIncrement = 1;
+
+  
+
+
+
+
+  enum class RoundingMode {
+    Ceil,
+    Floor,
+    Expand,
+    Trunc,
+    HalfCeil,
+    HalfFloor,
+    HalfExpand,
+    HalfTrunc,
+    HalfEven,
+    HalfOdd,
+  } mRoundingMode = RoundingMode::HalfExpand;
 };
 
 enum class NumberPartType {
