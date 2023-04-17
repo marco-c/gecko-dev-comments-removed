@@ -978,7 +978,8 @@ class nsDocShell final : public nsDocLoader,
   void RefreshURIToQueue();
   nsresult Embed(nsIContentViewer* aContentViewer,
                  mozilla::dom::WindowGlobalChild* aWindowActor,
-                 bool aIsTransientAboutBlank, bool aPersist);
+                 bool aIsTransientAboutBlank, bool aPersist,
+                 nsIRequest* aRequest);
   nsPresContext* GetEldestPresContext();
   nsresult CheckLoadingPermissions();
   nsresult LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType,
@@ -1074,7 +1075,8 @@ class nsDocShell final : public nsDocLoader,
 
   
   
-  void MoveLoadingToActiveEntry(bool aPersist);
+  
+  void MoveLoadingToActiveEntry(bool aPersist, bool aExpired);
 
   void ActivenessMaybeChanged();
 

@@ -140,7 +140,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   void SessionHistoryCommit(uint64_t aLoadId, const nsID& aChangeID,
                             uint32_t aLoadType, bool aPersist,
-                            bool aCloneEntryChildren);
+                            bool aCloneEntryChildren, bool aChannelExpired);
 
   
   
