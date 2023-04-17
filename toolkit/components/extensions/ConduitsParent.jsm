@@ -118,10 +118,42 @@ const Hub = {
 
 
 
-  verifyEnv({ actor, envType, extensionId }) {
+
+  verifyWorkerEnv({ actor, extensionId, workerScriptURL }) {
+    const addonPolicy = WebExtensionPolicy.getByID(extensionId);
+    if (!addonPolicy) {
+      throw new Error(`No WebExtensionPolicy found for ${extensionId}`);
+    }
+    if (actor.manager.remoteType !== addonPolicy.extension.remoteType) {
+      throw new Error(
+        `Bad ${extensionId} process: ${actor.manager.remoteType}`
+      );
+    }
+    if (!addonPolicy.isManifestBackgroundWorker(workerScriptURL)) {
+      throw new Error(
+        `Bad ${extensionId} background service worker script url: ${workerScriptURL}`
+      );
+    }
+    return true;
+  },
+
+  
+
+
+
+
+
+
+  verifyEnv({ actor, envType, extensionId, ...rest }) {
     if (!extensionId || !ADDON_ENV.has(envType)) {
       return false;
     }
+
+    
+    if (actor.manager && actor.manager instanceof Ci.nsIDOMProcessParent) {
+      return this.verifyWorkerEnv({ actor, envType, extensionId, ...rest });
+    }
+
     let windowGlobal = actor.manager;
 
     while (windowGlobal) {
@@ -150,8 +182,19 @@ const Hub = {
   fillInAddress(address, actor) {
     address.actor = actor;
     address.verified = this.verifyEnv(address);
-    address.frameId = WebNavigationFrames.getFrameId(actor.browsingContext);
-    address.url = actor.browsingContext.currentURI.spec;
+    if (actor instanceof JSWindowActorParent) {
+      address.frameId = WebNavigationFrames.getFrameId(actor.browsingContext);
+      address.url = actor.browsingContext.currentURI.spec;
+    } else {
+      
+      
+      
+      
+      
+      
+      address.frameId = -1;
+      address.url = address.workerScriptURL;
+    }
   },
 
   
