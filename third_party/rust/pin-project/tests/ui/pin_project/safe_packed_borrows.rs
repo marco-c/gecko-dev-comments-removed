@@ -1,21 +1,27 @@
-#![deny(safe_packed_borrows)]
+#![forbid(safe_packed_borrows)]
+#![allow(unaligned_references)]
+
+
+
 
 
 
 #[repr(packed)]
-struct A {
-    field: u32,
+struct Packed {
+    f: u32,
 }
 
 #[repr(packed(2))]
-struct B {
-    field: u32,
+struct PackedN {
+    f: u32,
 }
 
 fn main() {
-    let a = A { field: 1 };
-    &a.field; 
+    let a = Packed { f: 1 };
+    &a.f; 
+    let _ = &a.f; 
 
-    let b = B { field: 1 };
-    &b.field; 
+    let b = PackedN { f: 1 };
+    &b.f; 
+    let _ = &b.f; 
 }

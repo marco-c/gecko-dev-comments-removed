@@ -1,15 +1,15 @@
-use auxiliary_macros::add_attr;
+use auxiliary_macro::add_pin_attr;
 use pin_project::pin_project;
 use std::marker::PhantomPinned;
 
 #[pin_project]
-#[add_attr(struct)] 
+#[add_pin_attr(struct)] 
 struct Foo {
     #[pin]
     field: PhantomPinned,
 }
 
-#[add_attr(struct)] 
+#[add_pin_attr(struct)] 
 #[pin_project]
 struct Bar {
     #[pin]

@@ -1,7 +1,7 @@
 use pin_project::pin_project;
 
 #[pin_project(PinnedDrop)] 
-pub struct Struct {
+struct Struct {
     #[pin]
     field: u8,
 }

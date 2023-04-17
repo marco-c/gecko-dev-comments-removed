@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 #![feature(proc_macro_hygiene, stmt_expr_attributes)]
 
 use pin_project::{pin_project, project};
@@ -36,9 +37,6 @@ fn type_mismatch() {
     }
 }
 
-
-
-
 fn type_mismatch_span_issue() {
     #[pin_project]
     enum Enum<A, B, C, D> {
@@ -67,7 +65,7 @@ fn type_mismatch_span_issue() {
             let _x: &mut Pin<&mut i32> = field1;
             let _y: &mut &mut i32 = field2;
         }
-        None => {}
+        None => {} 
     }
 }
 

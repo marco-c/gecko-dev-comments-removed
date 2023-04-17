@@ -21,113 +21,140 @@
 
 
 
-#![allow(dead_code, unused_imports, unused_parens)]
 
-use pin_project::{pin_project, pinned_drop};
+#![allow(dead_code, unused_imports, unused_parens, unknown_lints, renamed_and_removed_lints)]
+#![allow(clippy::no_effect, clippy::needless_lifetimes)]
+
 use std::pin::Pin;
 
-pub struct Foo<'a, T> {
+use pin_project::{pin_project, pinned_drop};
+
+pub struct Struct<'a, T> {
     was_dropped: &'a mut bool,
     
     field: T,
 }
 
-#[allow(clippy::mut_mut)] 
-#[allow(dead_code)] 
-pub(crate) struct __FooProjection<'pin, 'a, T> {
-    was_dropped: &'pin mut (&'a mut bool),
-    field: ::core::pin::Pin<&'pin mut (T)>,
-}
-
-#[allow(dead_code)] 
-pub(crate) struct __FooProjectionRef<'pin, 'a, T> {
-    was_dropped: &'pin (&'a mut bool),
-    field: ::core::pin::Pin<&'pin (T)>,
-}
-
-impl<'a, T> Foo<'a, T> {
-    pub(crate) fn project<'pin>(
-        self: ::core::pin::Pin<&'pin mut Self>,
-    ) -> __FooProjection<'pin, 'a, T> {
-        unsafe {
-            let Foo { was_dropped, field } = self.get_unchecked_mut();
-            __FooProjection { was_dropped, field: ::core::pin::Pin::new_unchecked(field) }
-        }
-    }
-    pub(crate) fn project_ref<'pin>(
-        self: ::core::pin::Pin<&'pin Self>,
-    ) -> __FooProjectionRef<'pin, 'a, T> {
-        unsafe {
-            let Foo { was_dropped, field } = self.get_ref();
-            __FooProjectionRef { was_dropped, field: ::core::pin::Pin::new_unchecked(field) }
-        }
-    }
-}
-
+#[doc(hidden)]
+#[allow(dead_code)]
 #[allow(single_use_lifetimes)]
-impl<'a, T> ::core::ops::Drop for Foo<'a, T> {
-    fn drop(&mut self) {
-        
-        
-        let pinned_self = unsafe { ::core::pin::Pin::new_unchecked(self) };
-        
-        
-        
-        unsafe {
-            ::pin_project::__private::PinnedDrop::drop(pinned_self);
-        }
-    }
+#[allow(clippy::mut_mut)]
+#[allow(clippy::type_repetition_in_bounds)]
+pub(crate) struct __StructProjection<'pin, 'a, T>
+where
+    Struct<'a, T>: 'pin,
+{
+    was_dropped: &'pin mut (&'a mut bool),
+    field: ::pin_project::__private::Pin<&'pin mut (T)>,
+}
+#[doc(hidden)]
+#[allow(dead_code)]
+#[allow(single_use_lifetimes)]
+#[allow(clippy::type_repetition_in_bounds)]
+pub(crate) struct __StructProjectionRef<'pin, 'a, T>
+where
+    Struct<'a, T>: 'pin,
+{
+    was_dropped: &'pin (&'a mut bool),
+    field: ::pin_project::__private::Pin<&'pin (T)>,
 }
 
-
-
-
-
-
-
-
-
-
-
-
-impl<T> ::pin_project::__private::PinnedDrop for Foo<'_, T> {
-    
-    
-    unsafe fn drop(self: Pin<&mut Self>) {
-        fn __drop_inner<T>(__self: Pin<&mut Foo<'_, T>>) {
-            **__self.project().was_dropped = true;
+#[doc(hidden)]
+#[allow(non_upper_case_globals)]
+#[allow(single_use_lifetimes)]
+#[allow(clippy::used_underscore_binding)]
+const _: () = {
+    impl<'a, T> Struct<'a, T> {
+        pub(crate) fn project<'pin>(
+            self: ::pin_project::__private::Pin<&'pin mut Self>,
+        ) -> __StructProjection<'pin, 'a, T> {
+            unsafe {
+                let Self { was_dropped, field } = self.get_unchecked_mut();
+                __StructProjection {
+                    was_dropped,
+                    field: ::pin_project::__private::Pin::new_unchecked(field),
+                }
+            }
         }
-        __drop_inner(self);
+        pub(crate) fn project_ref<'pin>(
+            self: ::pin_project::__private::Pin<&'pin Self>,
+        ) -> __StructProjectionRef<'pin, 'a, T> {
+            unsafe {
+                let Self { was_dropped, field } = self.get_ref();
+                __StructProjectionRef {
+                    was_dropped,
+                    field: ::pin_project::__private::Pin::new_unchecked(field),
+                }
+            }
+        }
     }
-}
 
+    impl<'a, T> ::pin_project::__private::Drop for Struct<'a, T> {
+        fn drop(&mut self) {
+            
+            
+            let pinned_self = unsafe { ::pin_project::__private::Pin::new_unchecked(self) };
+            
+            
+            
+            unsafe {
+                ::pin_project::__private::PinnedDrop::drop(pinned_self);
+            }
+        }
+    }
 
-
-
-
-#[allow(non_snake_case)]
-fn __unpin_scope_Foo() {
-    pub struct __Foo<'pin, 'a, T> {
+    
+    
+    
+    
+    pub struct __Struct<'pin, 'a, T> {
         __pin_project_use_generics: ::pin_project::__private::AlwaysUnpin<'pin, (T)>,
         __field0: T,
         __lifetime0: &'a (),
     }
-    impl<'pin, 'a, T> ::core::marker::Unpin for Foo<'a, T> where
-        __Foo<'pin, 'a, T>: ::core::marker::Unpin
+    impl<'pin, 'a, T> ::pin_project::__private::Unpin for Struct<'a, T> where
+        __Struct<'pin, 'a, T>: ::pin_project::__private::Unpin
     {
     }
-}
+    unsafe impl<'a, T> ::pin_project::UnsafeUnpin for Struct<'a, T> {}
+
+    
+    
+    
+    
+    
+    #[forbid(unaligned_references, safe_packed_borrows)]
+    fn __assert_not_repr_packed<'a, T>(this: &Struct<'a, T>) {
+        let _ = &this.was_dropped;
+        let _ = &this.field;
+    }
+};
 
 
 
 
 
-#[allow(single_use_lifetimes)]
-#[allow(non_snake_case)]
-#[deny(safe_packed_borrows)]
-fn __pin_project_assert_not_repr_packed_Foo<'a, T>(val: &Foo<'a, T>) {
-    &val.was_dropped;
-    &val.field;
+
+
+
+
+
+
+
+
+impl<T> ::pin_project::__private::PinnedDrop for Struct<'_, T> {
+    
+    
+    unsafe fn drop(self: Pin<&mut Self>) {
+        #[allow(clippy::needless_pass_by_value)]
+        fn __drop_inner<T>(__self: Pin<&mut Struct<'_, T>>) {
+            
+            fn __drop_inner() {}
+
+            **__self.project().was_dropped = true;
+        }
+        __drop_inner(self);
+    }
 }
 
 fn main() {}
