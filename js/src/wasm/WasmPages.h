@@ -56,6 +56,7 @@ struct Pages {
   uint64_t value_;
 
  public:
+  constexpr Pages() : value_(0) {}
   constexpr explicit Pages(uint64_t value) : value_(value) {}
 
   

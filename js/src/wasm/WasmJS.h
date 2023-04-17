@@ -168,6 +168,11 @@ static inline uint64_t MaxMemoryLimitField(IndexType indexType) {
 
 
 
+Pages ClampedMaxPages(Pages initialPages, const Maybe<Pages>& sourceMaxPages,
+                      bool useHugeMemory);
+
+
+
 
 [[nodiscard]] bool Eval(JSContext* cx, Handle<TypedArrayObject*> code,
                         HandleObject importObj, HandleValue maybeOptions,
@@ -417,7 +422,8 @@ class WasmMemoryObject : public NativeObject {
 
   
   
-  mozilla::Maybe<wasm::Pages> maxPages() const;
+  wasm::Pages clampedMaxPages() const;
+  mozilla::Maybe<wasm::Pages> sourceMaxPages() const;
 
   wasm::IndexType indexType() const;
   bool isShared() const;

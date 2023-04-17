@@ -376,6 +376,7 @@ bool wasm::IsValidBoundsCheckImmediate(uint32_t i) {
 
 size_t wasm::ComputeMappedSize(wasm::Pages maxPages) {
   
+  
   size_t maxSize = maxPages.byteLength();
 
   
