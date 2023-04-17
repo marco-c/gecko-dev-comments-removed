@@ -90,6 +90,11 @@ exports.Meta = Meta;
 
 
 
+
+
+
+
+
 function AbstractWorker(agent) {
   this._agent = agent;
 }
@@ -100,7 +105,7 @@ AbstractWorker.prototype = {
   
 
 
-  handleMessage(msg) {
+  async handleMessage(msg) {
     let data = msg.data;
     this.log("Received message", data);
     let id = data.id;
@@ -126,7 +131,7 @@ AbstractWorker.prototype = {
     let method = data.fun;
     try {
       this.log("Calling method", method);
-      result = this.dispatch(method, data.args);
+      result = await this.dispatch(method, data.args);
       this.log("Method", method, "succeeded");
     } catch (ex) {
       exn = ex;
