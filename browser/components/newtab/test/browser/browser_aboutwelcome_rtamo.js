@@ -209,7 +209,7 @@ add_task(async function test_rtamo_aboutwelcome() {
   );
 });
 
-add_task(async function test_experiments_over_rtamo() {
+add_task(async function test_rtamo_over_experimnts() {
   let doExperimentCleanup = await ExperimentFakes.enrollWithFeatureConfig({
     featureId: "aboutwelcome",
     enabled: true,
@@ -219,13 +219,14 @@ add_task(async function test_experiments_over_rtamo() {
   let browser = await openRTAMOWelcomePage();
 
   
+  
   await test_screen_content(
     browser,
-    "Experiment no RTAMO UI",
+    "Experiment RTAMO UI",
     
-    [],
+    ["h2[data-l10n-id='return-to-amo-addon-title']"],
     
-    ["h2[data-l10n-id='return-to-amo-addon-title']"]
+    []
   );
 
   await doExperimentCleanup();
