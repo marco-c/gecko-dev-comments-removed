@@ -1,20 +1,29 @@
 
 
 
-#![cfg_attr(feature = "rustc-dep-of-std", no_std)]
-#![feature(const_raw_ptr_to_usize_cast)]
+#![no_std]
 extern crate libc;
 
+pub mod tcplistener;
 pub mod tcpstream;
 
 use libc::c_void;
 
 
+
+extern "Rust" {
+	fn sys_secure_rand64() -> Option<u64>;
+	fn sys_secure_rand32() -> Option<u32>;
+}
+
 extern "C" {
+	fn sys_rand() -> u32;
+	fn sys_srand(seed: u32);
 	fn sys_get_processor_count() -> usize;
 	fn sys_malloc(size: usize, align: usize) -> *mut u8;
 	fn sys_realloc(ptr: *mut u8, size: usize, align: usize, new_size: usize) -> *mut u8;
 	fn sys_free(ptr: *mut u8, size: usize, align: usize);
+	fn sys_init_queue(ptr: usize) -> i32;
 	fn sys_notify(id: usize, count: i32) -> i32;
 	fn sys_add_queue(id: usize, timeout_ns: i64) -> i32;
 	fn sys_wait(id: usize) -> i32;
@@ -55,10 +64,16 @@ extern "C" {
 	fn sys_open(name: *const i8, flags: i32, mode: i32) -> i32;
 	fn sys_unlink(name: *const i8) -> i32;
 	fn sys_network_init() -> i32;
+	fn sys_block_current_task();
+	fn sys_wakeup_task(tid: Tid);
+	fn sys_get_priority() -> u8;
 }
 
 
 pub type Tid = u32;
+
+
+pub const NO_PRIORITIES: usize = 31;
 
 
 #[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone, Copy)]
@@ -118,6 +133,34 @@ pub struct timespec {
 }
 
 
+#[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+pub enum Version {
+	Unspecified,
+	Ipv4,
+	Ipv6,
+}
+
+
+#[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Default)]
+pub struct Ipv4Address(pub [u8; 4]);
+
+
+#[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Default)]
+pub struct Ipv6Address(pub [u8; 16]);
+
+
+#[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+pub enum IpAddress {
+	
+	
+	Unspecified,
+	
+	Ipv4(Ipv4Address),
+	
+	Ipv6(Ipv6Address),
+}
+
+
 #[inline(always)]
 pub unsafe fn get_processor_count() -> usize {
 	sys_get_processor_count()
@@ -156,6 +199,12 @@ pub unsafe fn add_queue(id: usize, timeout_ns: i64) -> i32 {
 #[inline(always)]
 pub unsafe fn wait(id: usize) -> i32 {
 	sys_wait(id)
+}
+
+#[doc(hidden)]
+#[inline(always)]
+pub unsafe fn init_queue(id: usize) -> i32 {
+	sys_init_queue(id)
 }
 
 #[doc(hidden)]
@@ -383,4 +432,56 @@ pub unsafe fn open(name: *const i8, flags: i32, mode: i32) -> i32 {
 #[inline(always)]
 pub unsafe fn unlink(name: *const i8) -> i32 {
 	sys_unlink(name)
+}
+
+
+pub const RAND_MAX: u64 = 2_147_483_647;
+
+
+
+#[inline(always)]
+pub unsafe fn rand() -> u32 {
+	sys_rand()
+}
+
+
+
+#[inline(always)]
+pub unsafe fn srand(seed: u32) {
+	sys_srand(seed);
+}
+
+
+
+
+#[inline(always)]
+pub unsafe fn secure_rand32() -> Option<u32> {
+	sys_secure_rand32()
+}
+
+
+
+
+#[inline(always)]
+pub unsafe fn secure_rand64() -> Option<u64> {
+	sys_secure_rand64()
+}
+
+
+
+#[inline(always)]
+pub unsafe fn block_current_task() {
+	sys_block_current_task();
+}
+
+
+#[inline(always)]
+pub unsafe fn wakeup_task(tid: Tid) {
+	sys_wakeup_task(tid);
+}
+
+
+#[inline(always)]
+pub unsafe fn get_priority() -> Priority {
+	Priority::from(sys_get_priority())
 }
