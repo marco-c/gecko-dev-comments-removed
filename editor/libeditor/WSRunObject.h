@@ -279,7 +279,6 @@ class MOZ_STACK_CLASS WSRunScanner final {
                const EditorDOMPointType& aScanStartPoint)
       : mScanStartPoint(aScanStartPoint),
         mEditingHost(aHTMLEditor.GetActiveEditingHost()),
-        mHTMLEditor(&aHTMLEditor),
         mTextFragmentDataAtStart(mScanStartPoint, mEditingHost) {}
 
   
@@ -1215,9 +1214,6 @@ class MOZ_STACK_CLASS WSRunScanner final {
 
   
   RefPtr<dom::Element> mEditingHost;
-
-  
-  const HTMLEditor* mHTMLEditor;
 
  private:
   
