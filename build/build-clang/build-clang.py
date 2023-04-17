@@ -993,19 +993,17 @@ if __name__ == "__main__":
         )
 
     
-    if "wasi-sysroot" in config:
-        sysroot = config["wasi-sysroot"].format(**os.environ)
-        if os.path.isdir(sysroot):
-            for srcdir in glob.glob(
-                os.path.join(sysroot, "lib", "clang", "*", "lib", "wasi")
+    if "wasi-compiler-rt" in config:
+        compiler_rt = config["wasi-compiler-rt"].format(**os.environ)
+        if os.path.isdir(compiler_rt):
+            for libdir in glob.glob(
+                os.path.join(final_inst_dir, "lib", "clang", "*", "lib")
             ):
-                print("Copying from wasi-sysroot srcdir %s" % srcdir)
+                srcdir = os.path.join(compiler_rt, "lib", "wasi")
+                print("Copying from wasi-compiler-rt srcdir %s" % srcdir)
                 
                 
-                version = os.path.basename(os.path.dirname(os.path.dirname(srcdir)))
-                destdir = os.path.join(
-                    final_inst_dir, "lib", "clang", version, "lib", "wasi"
-                )
+                destdir = os.path.join(libdir, "wasi")
                 mkdir_p(destdir)
                 copy_tree(srcdir, destdir)
 
