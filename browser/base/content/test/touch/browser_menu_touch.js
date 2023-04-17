@@ -130,6 +130,14 @@ add_task(async function test_main_menu_touch() {
 add_task(async function test_page_action_panel_touch() {
   
   await BrowserTestUtils.withNewTab("https://example.com", async function() {
+    
+    
+    if (gProton) {
+      BrowserPageActions.mainButtonNode.style.visibility = "visible";
+      registerCleanupFunction(() => {
+        BrowserPageActions.mainButtonNode.style.removeProperty("visibility");
+      });
+    }
     let target = document.getElementById("pageActionButton");
     await openAndCheckLazyMenu("pageActionPanel", target);
   });

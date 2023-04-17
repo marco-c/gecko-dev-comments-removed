@@ -109,13 +109,14 @@ add_task(async function test_pageAction_pinned() {
   await extension.startup();
   await extension.awaitMessage("page-action-shown");
 
-  let elem = await getPageActionButton(extension);
-  is(elem && elem.parentNode, null, "pageAction is not pinned to urlbar");
-
   
   
   let action = PageActions.actionForID(makeWidgetId(extension.id));
-  ok(action && !action.pinnedToUrlbar, "pageAction is in main pageaction menu");
+  Assert.equal(
+    action && action.pinnedToUrlbar,
+    gProton,
+    "Check pageAction pinning"
+  );
 
   await extension.unload();
 });

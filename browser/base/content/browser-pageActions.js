@@ -947,7 +947,7 @@ var BrowserPageActions = {
     if (
       !action ||
       
-      (UrlbarPrefs.get("browser.proton.urlbar.enabled") && !action.extensionID)
+      (gProton && !action.extensionID)
     ) {
       this._contextAction = null;
       event.preventDefault();
