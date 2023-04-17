@@ -491,9 +491,6 @@ pub struct SceneBuilder<'a> {
     iframe_size: Vec<LayoutSize>,
 
     
-    iframe_clips: Vec<ClipChainId>,
-
-    
     quality_settings: QualitySettings,
 
     
@@ -551,7 +548,6 @@ impl<'a> SceneBuilder<'a> {
             rf_mapper: ReferenceFrameMapper::new(),
             external_scroll_mapper: ScrollOffsetMapper::new(),
             iframe_size: Vec::new(),
-            iframe_clips: Vec::new(),
             quality_settings: view.quality_settings,
             tile_cache_builder: TileCacheBuilder::new(),
             snap_to_device,
@@ -775,17 +771,8 @@ impl<'a> SceneBuilder<'a> {
                             self.add_tile_cache_barrier_if_needed(SliceFlags::empty());
                         }
 
-                        
-                        
-                        
-                        
-                        
-                        let clip_id = ClipId::root(info.pipeline_id);
-                        let clip_chain_id = self.get_clip_chain(clip_id);
-
                         self.rf_mapper.push_scope();
                         self.iframe_size.push(size);
-                        self.iframe_clips.push(clip_chain_id);
 
                         let new_context = BuildContext {
                             pipeline_id: info.pipeline_id,
@@ -814,7 +801,6 @@ impl<'a> SceneBuilder<'a> {
                 }
                 ContextKind::Iframe { parent_traversal } => {
                     self.iframe_size.pop();
-                    self.iframe_clips.pop();
                     self.rf_mapper.pop_scope();
 
                     self.clip_store.pop_clip_root();
@@ -1672,7 +1658,6 @@ impl<'a> SceneBuilder<'a> {
                     self.interners,
                     &self.config,
                     &self.quality_settings,
-                    &self.iframe_clips,
                 );
             }
         }
@@ -2022,7 +2007,6 @@ impl<'a> SceneBuilder<'a> {
                 &self.clip_store,
                 self.interners,
                 &self.config,
-                &self.iframe_clips,
             );
 
             return;
