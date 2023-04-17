@@ -100,10 +100,6 @@ struct BlobItemData {
   struct DIGroup* mGroup;
 
   
-  Matrix mMatrix;  
-  RefPtr<BasicLayerManager> mLayerManager;
-
-  
   
   
   std::vector<RefPtr<SourceSurface>> mExternalSurfaces;
@@ -227,13 +223,13 @@ struct Grouper {
                        wr::IpcResourceUpdateQueue& aResources, DIGroup* aGroup,
                        nsDisplayList* aList, const StackingContextHelper& aSc);
   
-  void ConstructGroupInsideInactive(WebRenderCommandBuilder* aCommandBuilder,
+  bool ConstructGroupInsideInactive(WebRenderCommandBuilder* aCommandBuilder,
                                     wr::DisplayListBuilder& aBuilder,
                                     wr::IpcResourceUpdateQueue& aResources,
                                     DIGroup* aGroup, nsDisplayList* aList,
                                     const StackingContextHelper& aSc);
   
-  void ConstructItemInsideInactive(WebRenderCommandBuilder* aCommandBuilder,
+  bool ConstructItemInsideInactive(WebRenderCommandBuilder* aCommandBuilder,
                                    wr::DisplayListBuilder& aBuilder,
                                    wr::IpcResourceUpdateQueue& aResources,
                                    DIGroup* aGroup, nsDisplayItem* aItem,
@@ -267,12 +263,6 @@ static bool IsContainerLayerItem(nsDisplayItem* aItem) {
 static bool DetectContainerLayerPropertiesBoundsChange(
     nsDisplayItem* aItem, BlobItemData* aData,
     nsDisplayItemGeometry& aGeometry) {
-  if (aItem->GetType() == DisplayItemType::TYPE_FILTER) {
-    
-    
-    aGeometry.mBounds = aGeometry.mBounds.Intersect(aItem->GetBuildingRect());
-  }
-
   return !aGeometry.mBounds.IsEqualEdges(aData->mGeometry->mBounds);
 }
 
@@ -317,6 +307,7 @@ struct DIGroup {
                                 
   Maybe<wr::BlobImageKey> mKey;
   std::vector<RefPtr<ScaledFont>> mFonts;
+  bool mSuppressInvalidations = false;
 
   DIGroup()
       : mAppUnitsPerDevPixel(0),
@@ -324,6 +315,9 @@ struct DIGroup {
         mHitInfo(CompositorHitTestInvisibleToHit) {}
 
   void InvalidateRect(const IntRect& aRect) {
+    if (mSuppressInvalidations) {
+      return;
+    }
     auto r = aRect.Intersect(mPreservedRect);
     
     if (!r.IsEmpty()) {
@@ -365,13 +359,14 @@ struct DIGroup {
         ToRect(nsLayoutUtils::RectToGfxRect(aBounds, aAppUnitsPerDevPixel))));
   }
 
-  void ComputeGeometryChange(nsDisplayItem* aItem, BlobItemData* aData,
+  bool ComputeGeometryChange(nsDisplayItem* aItem, BlobItemData* aData,
                              Matrix& aMatrix, nsDisplayListBuilder* aBuilder) {
     
     
     
     
     nsRect invalid;
+    bool invalidated = false;
     const DisplayItemClip& clip = aItem->GetClip();
 
     int32_t appUnitsPerDevPixel =
@@ -410,6 +405,7 @@ struct DIGroup {
          aData->mRect.width, aData->mRect.height);
       InvalidateRect(aData->mRect);
       aData->mInvalid = true;
+      invalidated = true;
     } else if (aData->mInvalid ||
                 (
                    aItem->IsInvalid(invalid) && invalid.IsEmpty())) {
@@ -435,6 +431,7 @@ struct DIGroup {
       GP("new rect: %d %d %d %d\n", aData->mRect.x, aData->mRect.y,
          aData->mRect.width, aData->mRect.height);
       aData->mInvalid = true;
+      invalidated = true;
     } else {
       GP("else invalidate: %s\n", aItem->Name());
       nsRegion combined;
@@ -460,6 +457,7 @@ struct DIGroup {
         InvalidateRect(aData->mRect);
 
         aData->mInvalid = true;
+        invalidated = true;
       } else {
         if (aData->mClip != clip) {
           UniquePtr<nsDisplayItemGeometry> geometry(
@@ -480,38 +478,11 @@ struct DIGroup {
           InvalidateRect(aData->mRect);
           aData->mRect = transformedRect.Intersect(mClippedImageBounds);
           InvalidateRect(aData->mRect);
+          invalidated = true;
 
           GP("ClipChange: %s %d %d %d %d\n", aItem->Name(), aData->mRect.x,
              aData->mRect.y, aData->mRect.XMost(), aData->mRect.YMost());
 
-        } else if (!aMatrix.ExactlyEquals(aData->mMatrix)) {
-          
-          
-          
-          
-          
-          
-
-          UniquePtr<nsDisplayItemGeometry> geometry(
-              aItem->AllocateGeometry(aBuilder));
-          if (!IsContainerLayerItem(aItem)) {
-            
-            
-            MOZ_RELEASE_ASSERT(
-                geometry->mBounds.IsEqualEdges(aData->mGeometry->mBounds));
-          } else {
-            aData->mGeometry = std::move(geometry);
-          }
-          nsRect clippedBounds = clip.ApplyNonRoundedIntersection(
-              aData->mGeometry->ComputeInvalidationRegion());
-          IntRect transformedRect =
-              ToDeviceSpace(clippedBounds, aMatrix, appUnitsPerDevPixel);
-          InvalidateRect(aData->mRect);
-          aData->mRect = transformedRect.Intersect(mClippedImageBounds);
-          InvalidateRect(aData->mRect);
-
-          GP("TransformChange: %s %d %d %d %d\n", aItem->Name(), aData->mRect.x,
-             aData->mRect.y, aData->mRect.XMost(), aData->mRect.YMost());
         } else if (IsContainerLayerItem(aItem)) {
           UniquePtr<nsDisplayItemGeometry> geometry(
               aItem->AllocateGeometry(aBuilder));
@@ -527,6 +498,7 @@ struct DIGroup {
             InvalidateRect(aData->mRect);
             aData->mRect = transformedRect.Intersect(mClippedImageBounds);
             InvalidateRect(aData->mRect);
+            invalidated = true;
             GP("DetectContainerLayerPropertiesBoundsChange change\n");
           } else {
             
@@ -540,6 +512,7 @@ struct DIGroup {
               InvalidateRect(aData->mRect);
               aData->mRect = rect;
               InvalidateRect(aData->mRect);
+              invalidated = true;
             } else {
               GP("Layer NoChange: %s %d %d %d %d\n", aItem->Name(),
                  aData->mRect.x, aData->mRect.y, aData->mRect.XMost(),
@@ -560,6 +533,7 @@ struct DIGroup {
             InvalidateRect(aData->mRect);
             aData->mRect = rect;
             InvalidateRect(aData->mRect);
+            invalidated = true;
           } else {
             GP("NoChange: %s %d %d %d %d\n", aItem->Name(), aData->mRect.x,
                aData->mRect.y, aData->mRect.XMost(), aData->mRect.YMost());
@@ -569,10 +543,10 @@ struct DIGroup {
     }
     mActualBounds.OrWith(aData->mRect);
     aData->mClip = clip;
-    aData->mMatrix = aMatrix;
     aData->mImageRect = mClippedImageBounds;
     GP("post mInvalidRect: %d %d %d %d\n", mInvalidRect.x, mInvalidRect.y,
        mInvalidRect.width, mInvalidRect.height);
+    return invalidated;
   }
 
   void EndGroup(WebRenderLayerManager* aWrManager,
@@ -926,15 +900,12 @@ void Grouper::PaintContainerItem(DIGroup* aGroup, nsDisplayItem* aItem,
       if (!trans.Is2D(&trans2d)) {
         
         
-        BlobItemData* data = GetBlobItemDataForGroup(aItem, aGroup);
-        if (data->mLayerManager->GetRoot()) {
-          data->mLayerManager->BeginTransaction();
-          data->mLayerManager->EndTransaction(
-              FrameLayerBuilder::DrawPaintedLayer, mDisplayListBuilder);
-          TakeExternalSurfaces(aRecorder, data->mExternalSurfaces, aRootManager,
-                               aResources);
-          aContext->GetDrawTarget()->FlushItem(aItemBounds);
-        }
+        aItem->SetPaintRect(aItem->GetClippedBounds(mDisplayListBuilder));
+
+        aItem->AsPaintedDisplayItem()->Paint(mDisplayListBuilder, aContext);
+        TakeExternalSurfaces(aRecorder, aData->mExternalSurfaces, aRootManager,
+                             aResources);
+        aContext->GetDrawTarget()->FlushItem(aItemBounds);
       } else {
         aContext->Multiply(ThebesMatrix(trans2d));
         aGroup->PaintItemRange(this, aChildren->GetBottom(), nullptr, aContext,
@@ -1023,20 +994,14 @@ void Grouper::PaintContainerItem(DIGroup* aGroup, nsDisplayItem* aItem,
     }
     case DisplayItemType::TYPE_FILTER: {
       GP("Paint Filter\n");
-      
-      
-      BlobItemData* data = GetBlobItemDataForGroup(aItem, aGroup);
-      if (data->mLayerManager->GetRoot()) {
-        data->mLayerManager->BeginTransaction();
-        static_cast<nsDisplayFilters*>(aItem)->PaintAsLayer(
-            mDisplayListBuilder, aContext, data->mLayerManager);
-        if (data->mLayerManager->InTransaction()) {
-          data->mLayerManager->AbortTransaction();
-        }
-        TakeExternalSurfaces(aRecorder, data->mExternalSurfaces, aRootManager,
-                             aResources);
-        aContext->GetDrawTarget()->FlushItem(aItemBounds);
-      }
+      auto filterItem = static_cast<nsDisplayFilters*>(aItem);
+      filterItem->SetPaintRect(
+          filterItem->GetClippedBounds(mDisplayListBuilder));
+
+      filterItem->Paint(mDisplayListBuilder, aContext);
+      TakeExternalSurfaces(aRecorder, aData->mExternalSurfaces, aRootManager,
+                           aResources);
+      aContext->GetDrawTarget()->FlushItem(aItemBounds);
       break;
     }
 
@@ -1264,23 +1229,21 @@ void Grouper::ConstructGroups(nsDisplayListBuilder* aDisplayListBuilder,
 
 
 
-void Grouper::ConstructGroupInsideInactive(
+bool Grouper::ConstructGroupInsideInactive(
     WebRenderCommandBuilder* aCommandBuilder, wr::DisplayListBuilder& aBuilder,
     wr::IpcResourceUpdateQueue& aResources, DIGroup* aGroup,
     nsDisplayList* aList, const StackingContextHelper& aSc) {
   nsDisplayItem* item = aList->GetBottom();
+  bool invalidated = false;
   while (item) {
-    ConstructItemInsideInactive(aCommandBuilder, aBuilder, aResources, aGroup,
-                                item, aSc);
+    invalidated |= ConstructItemInsideInactive(aCommandBuilder, aBuilder,
+                                               aResources, aGroup, item, aSc);
     item = item->GetAbove();
   }
+  return invalidated;
 }
 
-bool BuildLayer(nsDisplayItem* aItem, BlobItemData* aData,
-                nsDisplayListBuilder* aDisplayListBuilder,
-                const gfx::Size& aScale);
-
-void Grouper::ConstructItemInsideInactive(
+bool Grouper::ConstructItemInsideInactive(
     WebRenderCommandBuilder* aCommandBuilder, wr::DisplayListBuilder& aBuilder,
     wr::IpcResourceUpdateQueue& aResources, DIGroup* aGroup,
     nsDisplayItem* aItem, const StackingContextHelper& aSc) {
@@ -1294,7 +1257,8 @@ void Grouper::ConstructItemInsideInactive(
 
   
   
-  aGroup->ComputeGeometryChange(aItem, data, mTransform, mDisplayListBuilder);
+  bool invalidated = aGroup->ComputeGeometryChange(aItem, data, mTransform,
+                                                   mDisplayListBuilder);
 
   
   
@@ -1306,49 +1270,66 @@ void Grouper::ConstructItemInsideInactive(
       aGroup->mClippedImageBounds.Intersect(data->mRect);
 
   if (aItem->GetType() == DisplayItemType::TYPE_FILTER) {
-    gfx::Size scale(1, 1);
     
     
     
-    if (BuildLayer(aItem, data, mDisplayListBuilder, scale)) {
+    Matrix m = mTransform;
+    mTransform = Matrix();
+    bool old = aGroup->mSuppressInvalidations;
+    aGroup->mSuppressInvalidations = true;
+    sIndent++;
+    if (ConstructGroupInsideInactive(aCommandBuilder, aBuilder, aResources,
+                                     aGroup, children, aSc)) {
       data->mInvalid = true;
+      aGroup->mSuppressInvalidations = old;
       aGroup->InvalidateRect(data->mRect);
+      invalidated = true;
     }
+    sIndent--;
+    aGroup->mSuppressInvalidations = old;
+    mTransform = m;
   } else if (aItem->GetType() == DisplayItemType::TYPE_TRANSFORM) {
+    Matrix m = mTransform;
     nsDisplayTransform* transformItem = static_cast<nsDisplayTransform*>(aItem);
     const Matrix4x4Flagged& t = transformItem->GetTransform();
     Matrix t2d;
-    bool is2D = t.Is2D(&t2d);
+    bool is2D = t.CanDraw2D(&t2d);
     if (!is2D) {
       
-      gfx::Size scale(1, 1);
       
       
-      
-      if (BuildLayer(aItem, data, mDisplayListBuilder, scale)) {
+      bool old = aGroup->mSuppressInvalidations;
+      aGroup->mSuppressInvalidations = true;
+      mTransform = Matrix();
+      sIndent++;
+      if (ConstructGroupInsideInactive(aCommandBuilder, aBuilder, aResources,
+                                       aGroup, children, aSc)) {
         data->mInvalid = true;
         aGroup->InvalidateRect(data->mRect);
+        invalidated = true;
       }
+      sIndent--;
+      aGroup->mSuppressInvalidations = old;
     } else {
-      Matrix m = mTransform;
-
       GP("t2d: %f %f\n", t2d._31, t2d._32);
       mTransform.PreMultiply(t2d);
       GP("mTransform: %f %f\n", mTransform._31, mTransform._32);
-      ConstructGroupInsideInactive(aCommandBuilder, aBuilder, aResources,
-                                   aGroup, children, aSc);
-
-      mTransform = m;
+      sIndent++;
+      invalidated |= ConstructGroupInsideInactive(
+          aCommandBuilder, aBuilder, aResources, aGroup, children, aSc);
+      sIndent--;
     }
+    mTransform = m;
   } else if (children) {
     sIndent++;
-    ConstructGroupInsideInactive(aCommandBuilder, aBuilder, aResources, aGroup,
-                                 children, aSc);
+    invalidated |= ConstructGroupInsideInactive(
+        aCommandBuilder, aBuilder, aResources, aGroup, children, aSc);
     sIndent--;
   }
 
   GP("Including %s of %d\n", aItem->Name(), aGroup->mDisplayItems.Count());
   aGroup->mClippedImageBounds = oldClippedImageBounds;
+  return invalidated;
 }
 
 
@@ -1972,49 +1953,6 @@ bool WebRenderCommandBuilder::PushBlobImage(
                      wr::AsImageKey(key.value()));
 
   return true;
-}
-
-bool BuildLayer(nsDisplayItem* aItem, BlobItemData* aData,
-                nsDisplayListBuilder* aDisplayListBuilder,
-                const gfx::Size& aScale) {
-  if (!aData->mLayerManager) {
-    aData->mLayerManager =
-        new BasicLayerManager(BasicLayerManager::BLM_INACTIVE);
-  }
-  RefPtr<BasicLayerManager> blm = aData->mLayerManager;
-  UniquePtr<LayerProperties> props;
-  if (blm->GetRoot()) {
-    props = LayerProperties::CloneFrom(blm->GetRoot());
-  }
-  FrameLayerBuilder* layerBuilder = new FrameLayerBuilder();
-  layerBuilder->Init(aDisplayListBuilder, blm, nullptr, true);
-  layerBuilder->DidBeginRetainedLayerTransaction(blm);
-
-  blm->BeginTransaction();
-  bool isInvalidated = false;
-
-  ContainerLayerParameters param(aScale.width, aScale.height);
-  RefPtr<Layer> root = aItem->AsPaintedDisplayItem()->BuildLayer(
-      aDisplayListBuilder, blm, param);
-
-  if (root) {
-    blm->SetRoot(root);
-    layerBuilder->WillEndTransaction();
-
-    
-    nsIntRegion invalid;
-    if (props) {
-      props->ComputeDifferences(root, invalid, nullptr);
-      if (!invalid.IsEmpty()) {
-        isInvalidated = true;
-      }
-    } else {
-      isInvalidated = true;
-    }
-  }
-  blm->AbortTransaction();
-
-  return isInvalidated;
 }
 
 static bool PaintByLayer(nsDisplayItem* aItem,
