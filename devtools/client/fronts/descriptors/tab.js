@@ -247,6 +247,20 @@ class TabDescriptorFront extends DescriptorMixin(
 
     if (this.isServerTargetSwitchingEnabled()) {
       this._resolveTargetFrontPromise(targetFront);
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      this._targetFrontPromise = new Promise(
+        r => (this._resolveTargetFrontPromise = r)
+      );
     }
   }
 
