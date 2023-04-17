@@ -1214,7 +1214,8 @@ void MacroAssemblerX86Shared::unsignedTruncSatFloat32x4ToInt32x4Relaxed(
   vcvttps2dq(dest, dest);
   
   
-  vpslld(Imm32(7), scratch, scratch);
+  vaddps(Operand(scratch), scratch, scratch);
+  vpslld(Imm32(8), scratch, scratch);
 
   
   vpaddd(Operand(scratch), dest, dest);
