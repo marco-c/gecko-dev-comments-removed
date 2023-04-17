@@ -1206,8 +1206,8 @@ void DisplayListBuilder::PushRoundedRect(const wr::LayoutRect& aBounds,
   
   
   wr::BorderSide side = {aColor, wr::BorderStyle::Solid};
-  float h = aBounds.size.width * 0.6f;
-  float v = aBounds.size.height * 0.6f;
+  float h = aBounds.width() * 0.6f;
+  float v = aBounds.height() * 0.6f;
   wr::LayoutSideOffsets widths = {v, h, v, h};
   wr::BorderRadius radii = {{h, v}, {h, v}, {h, v}, {h, v}};
 

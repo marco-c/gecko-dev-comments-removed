@@ -59,14 +59,14 @@ fn render_blob(
     
     
     let bpp = 4;
-    let mut texels = Vec::with_capacity((descriptor.rect.size.area() * bpp) as usize);
+    let mut texels = Vec::with_capacity((descriptor.rect.area() * bpp) as usize);
 
     
     
     let tile_checker = (tile.x % 2 == 0) != (tile.y % 2 == 0);
 
-    let [w, h] = descriptor.rect.size.to_array();
-    let offset = descriptor.rect.origin;
+    let [w, h] = descriptor.rect.size().to_array();
+    let offset = descriptor.rect.min;
 
     for y in 0..h {
         for x in 0..w {
