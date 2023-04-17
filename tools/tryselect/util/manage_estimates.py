@@ -67,6 +67,7 @@ def download_task_history_data(cache_dir):
 
     try:
         r = requests.get(TASK_DURATION_URL, stream=True)
+        r.raise_for_status()
     except requests.exceptions.RequestException as exc:
         
         print(
@@ -90,6 +91,7 @@ def download_task_history_data(cache_dir):
 
     try:
         r = requests.get(GRAPH_QUANTILES_URL, stream=True)
+        r.raise_for_status()
     except requests.exceptions.RequestException as exc:
         
         print(
