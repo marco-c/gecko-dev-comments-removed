@@ -21,7 +21,7 @@ Services.scriptloader.loadSubScript(
 
 
 const TEST_COM_URI =
-  `http://example.com/document-builder.sjs?html=` +
+  `https://example.com/document-builder.sjs?html=` +
   encodeURI(
     `<input disabled=""/>
      <button onclick="document.querySelector('input').toggleAttribute('disabled')">
@@ -30,7 +30,7 @@ const TEST_COM_URI =
   );
 
 
-const TEST_URI = `http://example.org/document-builder.sjs?html=
+const TEST_URI = `https://example.org/document-builder.sjs?html=
 <iframe src="${encodeURI(TEST_COM_URI)}"></iframe><body>`;
 
 add_task(async function() {
