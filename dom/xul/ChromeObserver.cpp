@@ -102,28 +102,6 @@ void ChromeObserver::SetDrawsTitle(bool aState) {
   }
 }
 
-void ChromeObserver::UpdateWindowAppearance() {
-  nsIWidget* mainWidget = GetWindowWidget();
-  if (mainWidget) {
-    nsIWidget::WindowAppearance appearance;
-    switch (mDocument->GetDocumentLWTheme()) {
-      case Document::Doc_Theme_Bright:
-        
-        
-        appearance = nsIWidget::WindowAppearance::eDark;
-        break;
-      case Document::Doc_Theme_Dark:
-        
-        
-        appearance = nsIWidget::WindowAppearance::eLight;
-        break;
-      default:
-        appearance = nsIWidget::WindowAppearance::eSystem;
-    }
-    mainWidget->SetWindowAppearance(appearance);
-  }
-}
-
 class MarginSetter : public Runnable {
  public:
   explicit MarginSetter(nsIWidget* aWidget)
@@ -205,7 +183,6 @@ void ChromeObserver::AttributeChanged(dom::Element* aElement,
       
       
       mDocument->ResetDocumentLWTheme();
-      UpdateWindowAppearance();
     }
   } else {
     if (aName == nsGkAtoms::hidechrome) {
@@ -220,7 +197,6 @@ void ChromeObserver::AttributeChanged(dom::Element* aElement,
                 aName == nsGkAtoms::lwthemetextcolor)) {
       
       mDocument->ResetDocumentLWTheme();
-      UpdateWindowAppearance();
     } else if (aName == nsGkAtoms::drawintitlebar) {
       SetDrawsInTitlebar(false);
     } else if (aName == nsGkAtoms::drawtitle) {
