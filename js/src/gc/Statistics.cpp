@@ -1130,7 +1130,8 @@ Statistics::SliceData::SliceData(const SliceBudget& budget,
       startFaults(startFaults) {}
 
 void Statistics::beginSlice(const ZoneGCStats& zoneStats, JS::GCOptions options,
-                            const SliceBudget& budget, JS::GCReason reason) {
+                            const SliceBudget& budget, JS::GCReason reason,
+                            bool budgetWasIncreased) {
   MOZ_ASSERT(phaseStack.empty() ||
              (phaseStack.length() == 1 && phaseStack[0] == Phase::MUTATOR));
 
@@ -1161,6 +1162,8 @@ void Statistics::beginSlice(const ZoneGCStats& zoneStats, JS::GCOptions options,
   }
 
   runtime->addTelemetry(JS_TELEMETRY_GC_REASON, uint32_t(reason));
+  runtime->addTelemetry(JS_TELEMETRY_GC_BUDGET_WAS_INCREASED,
+                        budgetWasIncreased);
 
   
   bool wasFullGC = zoneStats.isFullCollection();
@@ -1270,7 +1273,11 @@ void Statistics::sendSliceTelemetry(const SliceData& slice) {
 
     
     double longSliceThreshold = std::min(1.5 * budget_ms, budget_ms + 5.0);
-    if (sliceTime.ToMilliseconds() > longSliceThreshold) {
+    bool wasLongSlice = sliceTime.ToMilliseconds() > longSliceThreshold;
+    runtime->addTelemetry(JS_TELEMETRY_GC_SLICE_WAS_LONG, wasLongSlice);
+
+    
+    if (wasLongSlice) {
       PhaseKind longest = LongestPhaseSelfTimeInMajorGC(slice.phaseTimes);
       reportLongestPhaseInMajorGC(longest, JS_TELEMETRY_GC_SLOW_PHASE);
 
