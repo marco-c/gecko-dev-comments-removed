@@ -6598,22 +6598,10 @@ fn get_transform_key(
     cache_spatial_node_index: SpatialNodeIndex,
     spatial_tree: &SpatialTree,
 ) -> TransformKey {
-    
-    
-    let transform = if cache_spatial_node_index >= spatial_node_index {
-        spatial_tree
-            .get_relative_transform(
-                cache_spatial_node_index,
-                spatial_node_index,
-            )
-    } else {
-        spatial_tree
-            .get_relative_transform(
-                spatial_node_index,
-                cache_spatial_node_index,
-            )
-    };
-    transform.into()
+    spatial_tree.get_relative_transform(
+        spatial_node_index,
+        cache_spatial_node_index,
+    ).into()
 }
 
 
