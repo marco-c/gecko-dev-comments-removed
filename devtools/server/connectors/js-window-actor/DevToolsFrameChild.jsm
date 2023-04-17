@@ -715,6 +715,14 @@ class DevToolsFrameChild extends JSWindowActorChild {
       connectionInfo.connection.close();
     }
     this._connections.clear();
+    
+    
+    if (this.loader) {
+      const { DevToolsServer } = this.loader.require(
+        "devtools/server/devtools-server"
+      );
+      DevToolsServer.off("connectionchange", this._onConnectionChange);
+    }
     if (this.useCustomLoader) {
       this.loader.destroy();
     }
