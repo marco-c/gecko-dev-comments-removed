@@ -1282,8 +1282,6 @@ void HTMLSelectElement::SaveState() {
   }
 }
 
-
-
 bool HTMLSelectElement::RestoreState(PresState* aState) {
   
   const PresContentData& state = aState->contentData();
@@ -1334,6 +1332,8 @@ void HTMLSelectElement::RestoreStateTo(const SelectContentData& aNewSelected) {
     }
   }
 }
+
+
 
 NS_IMETHODIMP
 HTMLSelectElement::Reset() {

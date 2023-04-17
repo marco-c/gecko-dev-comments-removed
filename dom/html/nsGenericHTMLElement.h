@@ -975,9 +975,6 @@ class nsGenericHTMLFormElement : public nsGenericHTMLElement,
   virtual void SetForm(mozilla::dom::HTMLFormElement* aForm) override;
   virtual void ClearForm(bool aRemoveFromForm, bool aUnbindOrDelete) override;
 
-  virtual bool RestoreState(mozilla::PresState* aState) override {
-    return false;
-  }
   virtual bool AllowDrop() override { return true; }
 
   
@@ -996,6 +993,17 @@ class nsGenericHTMLFormElement : public nsGenericHTMLElement,
 
 
   virtual void SaveState() {}
+
+  
+
+
+
+
+
+
+
+
+  virtual bool RestoreState(mozilla::PresState* aState) { return false; }
 
   
 
