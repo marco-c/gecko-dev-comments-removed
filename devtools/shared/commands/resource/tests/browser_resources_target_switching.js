@@ -28,13 +28,7 @@ add_task(async function() {
   );
   const availableResources = [];
   const onAvailable = resources => {
-    
-    
-    resources
-      .filter(r => {
-        return !r.message.arguments[0].startsWith("[WORKER] started");
-      })
-      .map(r => availableResources.push(r));
+    availableResources.push(...resources);
   };
   await resourceCommand.watchResources([CONSOLE_MESSAGE], { onAvailable });
 

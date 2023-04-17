@@ -47,12 +47,6 @@ async function testTabConsoleMessagesResources(executeInIframe) {
   const onRuntimeDone = new Promise(resolve => (runtimeDoneResolve = resolve));
   const onAvailable = resources => {
     for (const resource of resources) {
-      if (resource.message.arguments?.[0] === "[WORKER] started") {
-        
-        
-        continue;
-      }
-
       is(
         resource.resourceType,
         resourceCommand.TYPES.CONSOLE_MESSAGE,
@@ -105,12 +99,6 @@ async function testTabConsoleMessagesResources(executeInIframe) {
 
   targetCommand.destroy();
   await client.close();
-
-  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
-    
-    const registration = await content.wrappedJSObject.registrationPromise;
-    registration.unregister();
-  });
 }
 
 async function testTabConsoleMessagesResourcesWithIgnoreExistingResources(
@@ -178,12 +166,6 @@ async function testTabConsoleMessagesResourcesWithIgnoreExistingResources(
 
   targetCommand.destroy();
   await client.close();
-
-  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
-    
-    const registration = await content.wrappedJSObject.registrationPromise;
-    registration.unregister();
-  });
 }
 
 async function logExistingMessages(browser, executeInIframe) {
