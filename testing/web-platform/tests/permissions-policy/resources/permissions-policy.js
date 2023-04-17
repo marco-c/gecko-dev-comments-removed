@@ -97,7 +97,7 @@ async function test_feature_in_iframe(feature_name, feature_promise_factory) {
 
 
 function page_loaded_in_iframe() {
-  return location.hash.startsWith('#iframe');
+  return new URLSearchParams(location.search).get('in-iframe');
 }
 
 
@@ -105,7 +105,9 @@ function page_loaded_in_iframe() {
 function same_origin_url(feature_name) {
   
   
-  return location.pathname + '#iframe#' + feature_name;
+  
+  
+  return location.pathname + '?in-iframe=yes#' + feature_name;
 }
 
 
