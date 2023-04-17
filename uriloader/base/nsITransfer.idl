@@ -10,6 +10,7 @@ interface nsIURI;
 interface nsICancelable;
 interface nsIMIMEInfo;
 interface nsIFile;
+interface nsIReferrerInfo;
 webidl BrowsingContext;
 
 [scriptable, uuid(37ec75d3-97ad-4da8-afaa-eabe5b4afd73)]
@@ -58,6 +59,7 @@ interface nsITransfer : nsIWebProgressListener2 {
 
 
 
+
     void init(in nsIURI aSource,
               in nsIURI aTarget,
               in AString aDisplayName,
@@ -66,7 +68,8 @@ interface nsITransfer : nsIWebProgressListener2 {
               in nsIFile aTempFile,
               in nsICancelable aCancelable,
               in boolean aIsPrivate,
-              in long aDownloadClassification);
+              in long aDownloadClassification,
+              in nsIReferrerInfo aReferrerInfo);
 
     
 
@@ -87,6 +90,7 @@ interface nsITransfer : nsIWebProgressListener2 {
                                  in nsICancelable aCancelable,
                                  in boolean aIsPrivate,
                                  in long aDownloadClassification,
+                                 in nsIReferrerInfo aReferrerInfo,
                                  in BrowsingContext aBrowsingContext,
                                  in boolean aHandleInternally);
 
