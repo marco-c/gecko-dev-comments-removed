@@ -424,6 +424,71 @@ bool HTMLEditUtils::IsInVisibleTextFrames(nsPresContext* aPresContext,
   return NS_SUCCEEDED(rv) && isVisible;
 }
 
+bool HTMLEditUtils::IsVisibleBRElement(
+    const nsIContent& aContent, const Element* aEditingHost ) {
+  if (!aContent.IsHTMLElement(nsGkAtoms::br)) {
+    return false;
+  }
+  
+  
+  
+  
+  
+  
+  if (!aEditingHost) {
+    aEditingHost = HTMLEditUtils::
+        GetInclusiveAncestorEditableBlockElementOrInlineEditingHost(aContent);
+    if (NS_WARN_IF(!aEditingHost)) {
+      return false;
+    }
+  }
+  nsIContent* nextContent =
+      HTMLEditUtils::GetNextContent(aContent,
+                                    {WalkTreeOption::IgnoreDataNodeExceptText,
+                                     WalkTreeOption::StopAtBlockBoundary},
+                                    aEditingHost);
+  if (nextContent && nextContent->IsHTMLElement(nsGkAtoms::br)) {
+    return true;
+  }
+
+  
+  
+  
+  if (!nextContent) {
+    
+    return false;
+  }
+  if (HTMLEditUtils::IsBlockElement(*nextContent)) {
+    
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  nsIContent* previousContent = HTMLEditUtils::GetPreviousContent(
+      aContent,
+      {WalkTreeOption::IgnoreDataNodeExceptText,
+       WalkTreeOption::StopAtBlockBoundary},
+      aEditingHost);
+  if (previousContent && previousContent->IsHTMLElement(nsGkAtoms::br)) {
+    return true;
+  }
+
+  
+  
+  EditorRawDOMPoint afterBRElement(EditorRawDOMPoint::After(aContent));
+  if (NS_WARN_IF(!afterBRElement.IsSet())) {
+    return false;
+  }
+  return !WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(
+              const_cast<Element*>(aEditingHost), afterBRElement)
+              .ReachedBlockBoundary();
+}
+
 bool HTMLEditUtils::IsEmptyNode(nsPresContext* aPresContext, nsINode& aNode,
                                 const EmptyCheckOptions& aOptions ,
                                 bool* aSeenBR ) {
@@ -1322,7 +1387,7 @@ EditorDOMPointType HTMLEditUtils::GetNextEditablePoint(
 
 Element*
 HTMLEditUtils::GetInclusiveAncestorEditableBlockElementOrInlineEditingHost(
-    nsIContent& aContent) {
+    const nsIContent& aContent) {
   MOZ_ASSERT(EditorUtils::IsEditableContent(aContent, EditorType::HTML));
   Element* maybeInlineEditingHost = nullptr;
   for (Element* element : aContent.InclusiveAncestorsOfType<Element>()) {

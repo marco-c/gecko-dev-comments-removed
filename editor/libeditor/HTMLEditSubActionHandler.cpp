@@ -2354,7 +2354,8 @@ EditorDOMPoint HTMLEditor::GetGoodCaretPointFor(
   
   
   
-  if (!aContent.IsHTMLElement(nsGkAtoms::br) || IsVisibleBRElement(&aContent)) {
+  if (!aContent.IsHTMLElement(nsGkAtoms::br) ||
+      HTMLEditUtils::IsVisibleBRElement(aContent)) {
     EditorDOMPoint ret(EditorDOMPoint::After(aContent));
     NS_WARNING_ASSERTION(ret.IsSet(), "Failed to set after aContent");
     return ret;
@@ -5582,7 +5583,8 @@ EditorDOMPoint HTMLEditor::GetCurrentHardLineStartPoint(
   for (nsIContent* previousEditableContent = HTMLEditUtils::GetPreviousContent(
            point, ignoreNonEditableNodeAndStopAtBlockBoundary, editingHost);
        previousEditableContent && previousEditableContent->GetParentNode() &&
-       !IsVisibleBRElement(previousEditableContent) &&
+       !HTMLEditUtils::IsVisibleBRElement(*previousEditableContent,
+                                          editingHost) &&
        !HTMLEditUtils::IsBlockElement(*previousEditableContent);
        previousEditableContent = HTMLEditUtils::GetPreviousContent(
            point, ignoreNonEditableNodeAndStopAtBlockBoundary, editingHost)) {
@@ -5691,7 +5693,7 @@ EditorDOMPoint HTMLEditor::GetCurrentHardLineEndPoint(
     if (NS_WARN_IF(!point.IsSet())) {
       break;
     }
-    if (IsVisibleBRElement(nextEditableContent)) {
+    if (HTMLEditUtils::IsVisibleBRElement(*nextEditableContent, editingHost)) {
       break;
     }
 
@@ -6689,7 +6691,7 @@ EditActionResult HTMLEditor::HandleInsertParagraphInParagraph(
     if (atStartOfSelection.IsStartOfContainer()) {
       
       brContent = GetPriorHTMLSibling(atStartOfSelection.GetContainer());
-      if (!brContent || !IsVisibleBRElement(brContent) ||
+      if (!brContent || !HTMLEditUtils::IsVisibleBRElement(*brContent) ||
           EditorUtils::IsPaddingBRElementForEmptyLastLine(*brContent)) {
         pointToInsertBR.Set(atStartOfSelection.GetContainer());
         brContent = nullptr;
@@ -6698,7 +6700,7 @@ EditActionResult HTMLEditor::HandleInsertParagraphInParagraph(
       
       
       brContent = GetNextHTMLSibling(atStartOfSelection.GetContainer());
-      if (!brContent || !IsVisibleBRElement(brContent) ||
+      if (!brContent || !HTMLEditUtils::IsVisibleBRElement(*brContent) ||
           EditorUtils::IsPaddingBRElementForEmptyLastLine(*brContent)) {
         pointToInsertBR.SetAfter(atStartOfSelection.GetContainer());
         NS_WARNING_ASSERTION(
@@ -6739,7 +6741,8 @@ EditActionResult HTMLEditor::HandleInsertParagraphInParagraph(
                           atStartOfSelection,
                           {WalkTreeOption::IgnoreNonEditableNode}, editingHost)
                     : nullptr;
-    if (!nearContent || !IsVisibleBRElement(nearContent) ||
+    if (!nearContent ||
+        !HTMLEditUtils::IsVisibleBRElement(*nearContent, editingHost) ||
         EditorUtils::IsPaddingBRElementForEmptyLastLine(*nearContent)) {
       
       nearContent = editingHost ? HTMLEditUtils::GetNextContent(
@@ -6747,7 +6750,8 @@ EditActionResult HTMLEditor::HandleInsertParagraphInParagraph(
                                       {WalkTreeOption::IgnoreNonEditableNode},
                                       editingHost)
                                 : nullptr;
-      if (!nearContent || !IsVisibleBRElement(nearContent) ||
+      if (!nearContent ||
+          !HTMLEditUtils::IsVisibleBRElement(*nearContent, editingHost) ||
           EditorUtils::IsPaddingBRElementForEmptyLastLine(*nearContent)) {
         pointToInsertBR = atStartOfSelection;
         splitAfterNewBR = true;
@@ -6830,7 +6834,7 @@ nsresult HTMLEditor::SplitParagraph(
 
   
   
-  if (aNextBRNode && IsVisibleBRElement(aNextBRNode)) {
+  if (aNextBRNode && HTMLEditUtils::IsVisibleBRElement(*aNextBRNode)) {
     rv = DeleteNodeWithTransaction(*aNextBRNode);
     if (NS_WARN_IF(Destroyed())) {
       return NS_ERROR_EDITOR_DESTROYED;
@@ -8199,7 +8203,8 @@ nsresult HTMLEditor::AdjustCaretPositionAndEnsurePaddingBRElement(
           previousEditableContent->IsHTMLElement(nsGkAtoms::br)) {
         
         
-        if (!IsVisibleBRElement(previousEditableContent)) {
+        if (!HTMLEditUtils::IsVisibleBRElement(*previousEditableContent,
+                                               editingHost)) {
           CreateElementResult createPaddingBRResult =
               InsertPaddingBRElementForEmptyLastLineWithTransaction(point);
           if (createPaddingBRResult.Failed()) {

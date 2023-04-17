@@ -271,6 +271,18 @@ class HTMLEditUtils final {
 
 
 
+  static bool IsVisibleBRElement(const nsIContent& aContent,
+                                 const Element* aEditingHost = nullptr);
+
+  
+
+
+
+
+
+
+
+
 
 
 
@@ -880,7 +892,7 @@ class HTMLEditUtils final {
 
 
   static Element* GetInclusiveAncestorEditableBlockElementOrInlineEditingHost(
-      nsIContent& aContent);
+      const nsIContent& aContent);
   
 
 

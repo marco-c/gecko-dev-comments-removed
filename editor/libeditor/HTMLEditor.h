@@ -870,11 +870,6 @@ class HTMLEditor final : public TextEditor,
   
 
 
-  bool IsVisibleBRElement(const nsINode* aNode) const;
-
-  
-
-
   enum class FontSize { incr, decr };
   MOZ_CAN_RUN_SCRIPT nsresult RelativeFontChangeOnTextNode(FontSize aDir,
                                                            Text& aTextNode,
