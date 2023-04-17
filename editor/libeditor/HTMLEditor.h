@@ -2564,23 +2564,6 @@ class HTMLEditor final : public TextEditor,
 
 
 
-
-
-
-
-
-
-  template <typename PT, typename CT>
-  nsIContent* FindNearEditableContent(const EditorDOMPointBase<PT, CT>& aPoint,
-                                      nsIEditor::EDirection aDirection);
-
-  
-
-
-
-
-
-
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   AdjustCaretPositionAndEnsurePaddingBRElement(
       nsIEditor::EDirection aDirectionAndAmount);
