@@ -568,6 +568,16 @@ void SandboxBrokerPolicyFactory::InitContentPolicy() {
 
   
   
+  const char* snap = PR_GetEnv("SNAP");
+  if (snap) {
+    
+    
+    
+    policy->AddFutureDir(rdonly, snap);
+  }
+
+  
+  
   AddDynamicPathList(policy, "security.sandbox.content.write_path_whitelist",
                      rdwr);
 
