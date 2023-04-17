@@ -761,6 +761,83 @@ static float AngleOfVector(const Point& cp1, const Point& cp2) {
   return static_cast<float>(AngleOfVector(cp1 - cp2));
 }
 
+
+
+static std::tuple<float, float, float, float>
+
+ComputeSegAnglesAndCorrectRadii(const Point& aSegStart, const Point& aSegEnd,
+                                const float aAngle, const bool aLargeArcFlag,
+                                const bool aSweepFlag, const float aRx,
+                                const float aRy) {
+  float rx = fabs(aRx);  
+  float ry = fabs(aRy);
+
+  
+  const float angle = static_cast<float>(aAngle * M_PI / 180.0);
+  double x1p = cos(angle) * (aSegStart.x - aSegEnd.x) / 2.0 +
+               sin(angle) * (aSegStart.y - aSegEnd.y) / 2.0;
+  double y1p = -sin(angle) * (aSegStart.x - aSegEnd.x) / 2.0 +
+               cos(angle) * (aSegStart.y - aSegEnd.y) / 2.0;
+
+  
+  double root;
+  double numerator =
+      rx * rx * ry * ry - rx * rx * y1p * y1p - ry * ry * x1p * x1p;
+
+  if (numerator >= 0.0) {
+    root = sqrt(numerator / (rx * rx * y1p * y1p + ry * ry * x1p * x1p));
+    if (aLargeArcFlag == aSweepFlag) root = -root;
+  } else {
+    
+    
+    
+    
+    
+    
+
+    double lamedh =
+        1.0 - numerator / (rx * rx * ry * ry);  
+    double s = sqrt(lamedh);
+    rx = static_cast<float>((double)rx * s);  
+    ry = static_cast<float>((double)ry * s);
+    root = 0.0;
+  }
+
+  double cxp = root * rx * y1p / ry;  
+  double cyp = -root * ry * x1p / rx;
+
+  double theta =
+      AngleOfVector(Point(static_cast<float>((x1p - cxp) / rx),
+                          static_cast<float>((y1p - cyp) / ry)));  
+  double delta =
+      AngleOfVector(Point(static_cast<float>((-x1p - cxp) / rx),
+                          static_cast<float>((-y1p - cyp) / ry))) -  
+      theta;
+  if (!aSweepFlag && delta > 0) {
+    delta -= 2.0 * M_PI;
+  } else if (aSweepFlag && delta < 0) {
+    delta += 2.0 * M_PI;
+  }
+
+  double tx1, ty1, tx2, ty2;
+  tx1 = -cos(angle) * rx * sin(theta) - sin(angle) * ry * cos(theta);
+  ty1 = -sin(angle) * rx * sin(theta) + cos(angle) * ry * cos(theta);
+  tx2 = -cos(angle) * rx * sin(theta + delta) -
+        sin(angle) * ry * cos(theta + delta);
+  ty2 = -sin(angle) * rx * sin(theta + delta) +
+        cos(angle) * ry * cos(theta + delta);
+
+  if (delta < 0.0f) {
+    tx1 = -tx1;
+    ty1 = -ty1;
+    tx2 = -tx2;
+    ty2 = -ty2;
+  }
+
+  return {rx, ry, static_cast<float>(atan2(ty1, tx1)),
+          static_cast<float>(atan2(ty2, tx2))};
+}
+
 void SVGPathData::GetMarkerPositioningData(nsTArray<SVGMark>* aMarks) const {
   
   
@@ -859,9 +936,9 @@ void SVGPathData::GetMarkerPositioningData(nsTArray<SVGMark>* aMarks) const {
 
       case PATHSEG_ARC_ABS:
       case PATHSEG_ARC_REL: {
-        double rx = mData[i];
-        double ry = mData[i + 1];
-        double angle = mData[i + 2];
+        float rx = mData[i];
+        float ry = mData[i + 1];
+        float angle = mData[i + 2];
         bool largeArcFlag = mData[i + 3] != 0.0f;
         bool sweepFlag = mData[i + 4] != 0.0f;
         if (segType == PATHSEG_ARC_ABS) {
@@ -896,71 +973,10 @@ void SVGPathData::GetMarkerPositioningData(nsTArray<SVGMark>* aMarks) const {
           i += 7;
           break;
         }
-        rx = fabs(rx);  
-        ry = fabs(ry);
 
-        
-        angle = angle * M_PI / 180.0;
-        double x1p = cos(angle) * (segStart.x - segEnd.x) / 2.0 +
-                     sin(angle) * (segStart.y - segEnd.y) / 2.0;
-        double y1p = -sin(angle) * (segStart.x - segEnd.x) / 2.0 +
-                     cos(angle) * (segStart.y - segEnd.y) / 2.0;
-
-        
-        double root;
-        double numerator =
-            rx * rx * ry * ry - rx * rx * y1p * y1p - ry * ry * x1p * x1p;
-
-        if (numerator >= 0.0) {
-          root = sqrt(numerator / (rx * rx * y1p * y1p + ry * ry * x1p * x1p));
-          if (largeArcFlag == sweepFlag) root = -root;
-        } else {
-          
-          
-          
-          
-          
-          
-
-          double lamedh =
-              1.0 - numerator / (rx * rx * ry * ry);  
-          double s = sqrt(lamedh);
-          rx *= s;  
-          ry *= s;
-          root = 0.0;
-        }
-
-        double cxp = root * rx * y1p / ry;  
-        double cyp = -root * ry * x1p / rx;
-
-        double theta, delta;
-        theta = AngleOfVector(
-            Point((x1p - cxp) / rx, (y1p - cyp) / ry));  
-        delta = AngleOfVector(
-                    Point((-x1p - cxp) / rx, (-y1p - cyp) / ry)) -  
-                theta;
-        if (!sweepFlag && delta > 0)
-          delta -= 2.0 * M_PI;
-        else if (sweepFlag && delta < 0)
-          delta += 2.0 * M_PI;
-
-        double tx1, ty1, tx2, ty2;
-        tx1 = -cos(angle) * rx * sin(theta) - sin(angle) * ry * cos(theta);
-        ty1 = -sin(angle) * rx * sin(theta) + cos(angle) * ry * cos(theta);
-        tx2 = -cos(angle) * rx * sin(theta + delta) -
-              sin(angle) * ry * cos(theta + delta);
-        ty2 = -sin(angle) * rx * sin(theta + delta) +
-              cos(angle) * ry * cos(theta + delta);
-
-        if (delta < 0.0f) {
-          tx1 = -tx1;
-          ty1 = -ty1;
-          tx2 = -tx2;
-          ty2 = -ty2;
-        }
-
-        segStartAngle = static_cast<float>(atan2(ty1, tx1));
-        segEndAngle = static_cast<float>(atan2(ty2, tx2));
+        std::tie(rx, ry, segStartAngle, segEndAngle) =
+            ComputeSegAnglesAndCorrectRadii(segStart, segEnd, angle,
+                                            largeArcFlag, sweepFlag, rx, ry);
         i += 7;
         break;
       }
@@ -1162,9 +1178,9 @@ void SVGPathData::GetMarkerPositioningData(Span<const StylePathCommand> aPath,
       }
       case StylePathCommand::Tag::EllipticalArc: {
         const auto& arc = cmd.elliptical_arc;
-        double rx = arc.rx;
-        double ry = arc.ry;
-        double angle = arc.angle;
+        float rx = arc.rx;
+        float ry = arc.ry;
+        float angle = arc.angle;
         bool largeArcFlag = arc.large_arc_flag._0;
         bool sweepFlag = arc.sweep_flag._0;
         Point radii(arc.rx, arc.ry);
@@ -1197,71 +1213,10 @@ void SVGPathData::GetMarkerPositioningData(Span<const StylePathCommand> aPath,
           segStartAngle = segEndAngle = AngleOfVector(segEnd, segStart);
           break;
         }
-        rx = fabs(rx);  
-        ry = fabs(ry);
 
-        
-        angle = angle * M_PI / 180.0;
-        double x1p = cos(angle) * (segStart.x - segEnd.x) / 2.0 +
-                     sin(angle) * (segStart.y - segEnd.y) / 2.0;
-        double y1p = -sin(angle) * (segStart.x - segEnd.x) / 2.0 +
-                     cos(angle) * (segStart.y - segEnd.y) / 2.0;
-
-        
-        double root;
-        double numerator =
-            rx * rx * ry * ry - rx * rx * y1p * y1p - ry * ry * x1p * x1p;
-
-        if (numerator >= 0.0) {
-          root = sqrt(numerator / (rx * rx * y1p * y1p + ry * ry * x1p * x1p));
-          if (largeArcFlag == sweepFlag) root = -root;
-        } else {
-          
-          
-          
-          
-          
-          
-
-          double lamedh =
-              1.0 - numerator / (rx * rx * ry * ry);  
-          double s = sqrt(lamedh);
-          rx *= s;  
-          ry *= s;
-          root = 0.0;
-        }
-
-        double cxp = root * rx * y1p / ry;  
-        double cyp = -root * ry * x1p / rx;
-
-        double theta, delta;
-        theta = AngleOfVector(
-            Point((x1p - cxp) / rx, (y1p - cyp) / ry));  
-        delta = AngleOfVector(
-                    Point((-x1p - cxp) / rx, (-y1p - cyp) / ry)) -  
-                theta;
-        if (!sweepFlag && delta > 0)
-          delta -= 2.0 * M_PI;
-        else if (sweepFlag && delta < 0)
-          delta += 2.0 * M_PI;
-
-        double tx1, ty1, tx2, ty2;
-        tx1 = -cos(angle) * rx * sin(theta) - sin(angle) * ry * cos(theta);
-        ty1 = -sin(angle) * rx * sin(theta) + cos(angle) * ry * cos(theta);
-        tx2 = -cos(angle) * rx * sin(theta + delta) -
-              sin(angle) * ry * cos(theta + delta);
-        ty2 = -sin(angle) * rx * sin(theta + delta) +
-              cos(angle) * ry * cos(theta + delta);
-
-        if (delta < 0.0f) {
-          tx1 = -tx1;
-          ty1 = -ty1;
-          tx2 = -tx2;
-          ty2 = -ty2;
-        }
-
-        segStartAngle = static_cast<float>(atan2(ty1, tx1));
-        segEndAngle = static_cast<float>(atan2(ty2, tx2));
+        std::tie(rx, ry, segStartAngle, segEndAngle) =
+            ComputeSegAnglesAndCorrectRadii(segStart, segEnd, angle,
+                                            largeArcFlag, sweepFlag, rx, ry);
         break;
       }
       case StylePathCommand::Tag::HorizontalLineTo: {
