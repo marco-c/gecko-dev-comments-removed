@@ -904,11 +904,11 @@ bool js::intrinsic_NewRegExpStringIterator(JSContext* cx, unsigned argc,
   return true;
 }
 
-static js::PropertyName* GetUnclonedSelfHostedFunctionName(JSFunction* fun) {
+static js::PropertyName* GetUnclonedSelfHostedCanonicalName(JSFunction* fun) {
   if (!fun->isExtended()) {
     return nullptr;
   }
-  Value name = fun->getExtendedSlot(ORIGINAL_FUNCTION_NAME_SLOT);
+  Value name = fun->getExtendedSlot(CANONICAL_FUNCTION_NAME_SLOT);
   if (!name.isString()) {
     return nullptr;
   }
@@ -943,8 +943,8 @@ bool js::IsExtendedUnclonedSelfHostedFunctionName(JSAtom* name) {
          ExtendedUnclonedSelfHostedFunctionNamePrefix;
 }
 
-static void SetUnclonedSelfHostedFunctionName(JSFunction* fun, JSAtom* name) {
-  fun->setExtendedSlot(ORIGINAL_FUNCTION_NAME_SLOT, StringValue(name));
+static void SetUnclonedSelfHostedCanonicalName(JSFunction* fun, JSAtom* name) {
+  fun->setExtendedSlot(CANONICAL_FUNCTION_NAME_SLOT, StringValue(name));
 }
 
 static void SetClonedSelfHostedFunctionName(JSFunction* fun, JSAtom* name) {
@@ -970,12 +970,10 @@ static bool intrinsic_SetCanonicalName(JSContext* cx, unsigned argc,
   MOZ_ASSERT(!fun->isLambda());
 
   
-  MOZ_ASSERT(!GetUnclonedSelfHostedFunctionName(fun));
+  MOZ_ASSERT(!GetUnclonedSelfHostedCanonicalName(fun));
 
   
-  
-  SetUnclonedSelfHostedFunctionName(fun, fun->explicitName());
-  fun->setAtom(atom);
+  SetUnclonedSelfHostedCanonicalName(fun, atom);
 
   args.rval().setUndefined();
   return true;
@@ -3094,11 +3092,12 @@ static JSObject* CloneObject(JSContext* cx,
       if (clone && !selfHostedFunction->isLambda()) {
         
         
-        JSAtom* name = GetUnclonedSelfHostedFunctionName(selfHostedFunction);
-        if (!name) {
-          name = selfHostedFunction->explicitName();
+        if (JSAtom* name =
+                GetUnclonedSelfHostedCanonicalName(selfHostedFunction)) {
+          clone->as<JSFunction>().setAtom(name);
         }
-        SetClonedSelfHostedFunctionName(&clone->as<JSFunction>(), name);
+        SetClonedSelfHostedFunctionName(&clone->as<JSFunction>(),
+                                        selfHostedFunction->explicitName());
       }
     } else {
       clone = CloneSelfHostingIntrinsic(cx, selfHostedFunction);
@@ -3192,12 +3191,9 @@ bool JSRuntime::createLazySelfHostedFunctionClone(
     return false;
   }
 
-  if (!selfHostedFun->isClassConstructor() &&
-      !selfHostedFun->hasGuessedAtom() &&
-      selfHostedFun->explicitName() != selfHostedName) {
-    MOZ_ASSERT(GetUnclonedSelfHostedFunctionName(selfHostedFun) ==
-               selfHostedName);
-    funName = selfHostedFun->explicitName();
+  
+  if (JSAtom* name = GetUnclonedSelfHostedCanonicalName(selfHostedFun)) {
+    funName = name;
   }
 
   RootedObject proto(cx);
@@ -3307,7 +3303,7 @@ void JSRuntime::assertSelfHostedFunctionHasCanonicalName(
 #ifdef DEBUG
   JSFunction* selfHostedFun = getUnclonedSelfHostedFunction(name);
   MOZ_ASSERT(selfHostedFun);
-  MOZ_ASSERT(GetUnclonedSelfHostedFunctionName(selfHostedFun) == name);
+  MOZ_ASSERT(GetUnclonedSelfHostedCanonicalName(selfHostedFun));
 #endif
 }
 
