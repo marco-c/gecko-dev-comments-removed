@@ -1030,7 +1030,11 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
     
     
     
-    let usernameField = this.getUsernameFieldFromUsernameOnlyForm(form);
+
+    
+    
+    
+    let usernameField = this.getUsernameFieldFromUsernameOnlyForm(form, {});
     if (usernameField) {
       
       log(
@@ -1639,8 +1643,10 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
       }
 
       usernameField = this.getUsernameFieldFromUsernameOnlyForm(
-        form.rootElement
+        form.rootElement,
+        fieldOverrideRecipe
       );
+
       if (usernameField) {
         let acFieldName = usernameField.getAutocompleteInfo().fieldName;
         log(
@@ -3056,7 +3062,9 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
 
 
 
-  getUsernameFieldFromUsernameOnlyForm(formElement) {
+
+
+  getUsernameFieldFromUsernameOnlyForm(formElement, recipe = null) {
     if (ChromeUtils.getClassName(formElement) !== "HTMLFormElement") {
       return null;
     }
@@ -3076,6 +3084,13 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
 
       
       if (!LoginHelper.isUsernameFieldType(element)) {
+        continue;
+      }
+
+      if (
+        recipe?.notUsernameSelector &&
+        element.matches(recipe.notUsernameSelector)
+      ) {
         continue;
       }
 
