@@ -139,6 +139,10 @@ void ShapeCachePtr::maybePurgeCache(JSFreeOp* fop, Shape* shape) {
     if (table->freeList() == SHAPE_INVALID_SLOT) {
       fop->delete_(shape, getTablePointer(), MemoryUse::ShapeCache);
       p = 0;
+    } else {
+      
+      
+      table->compact();
     }
   } else if (isIC()) {
     fop->delete_<ShapeIC>(shape, getICPointer(), MemoryUse::ShapeCache);
