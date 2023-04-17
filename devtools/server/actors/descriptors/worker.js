@@ -69,10 +69,7 @@ const WorkerDescriptorActor = protocol.ActorClassWithSpec(
 
 
 
-        if (
-          !swm.isParentInterceptEnabled() ||
-          !DevToolsServer.isInChildProcess
-        ) {
+        if (!DevToolsServer.isInChildProcess) {
           const registration = this._getServiceWorkerRegistrationInfo();
           form.scope = registration.scope;
           const newestWorker =

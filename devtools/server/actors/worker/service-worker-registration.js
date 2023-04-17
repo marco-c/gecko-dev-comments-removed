@@ -75,9 +75,6 @@ const ServiceWorkerRegistrationActor = protocol.ActorClassWithSpec(
       const newestWorker =
         activeWorker || waitingWorker || installingWorker || evaluatingWorker;
 
-      const isMultiE10sWithOldImplementation =
-        Services.appinfo.browserTabsRemoteAutostart &&
-        !swm.isParentInterceptEnabled();
       return {
         actor: this.actorID,
         scope: registration.scope,
@@ -88,8 +85,7 @@ const ServiceWorkerRegistrationActor = protocol.ActorClassWithSpec(
         activeWorker,
         fetch: newestWorker?.fetch,
         
-        
-        active: isMultiE10sWithOldImplementation ? true : !!activeWorker,
+        active: !!activeWorker,
         lastUpdateTime: registration.lastUpdateTime,
         traits: {},
       };
@@ -99,11 +95,7 @@ const ServiceWorkerRegistrationActor = protocol.ActorClassWithSpec(
       protocol.Actor.prototype.destroy.call(this);
 
       
-      if (
-        swm.isParentInterceptEnabled() &&
-        this._registration.activeWorker &&
-        this._preventedShutdown
-      ) {
+      if (this._registration.activeWorker && this._preventedShutdown) {
         this.allowShutdown();
       }
 
@@ -144,19 +136,10 @@ const ServiceWorkerRegistrationActor = protocol.ActorClassWithSpec(
     },
 
     start() {
-      if (!swm.isParentInterceptEnabled()) {
-        throw new Error(
-          "ServiceWorkerRegistrationActor.start can only be used " +
-            "in parent-intercept mode"
-        );
-      }
-
       const { activeWorker } = this._registration;
 
       
       if (activeWorker) {
-        
-        
         
         
         
@@ -185,13 +168,6 @@ const ServiceWorkerRegistrationActor = protocol.ActorClassWithSpec(
     },
 
     push() {
-      if (!swm.isParentInterceptEnabled()) {
-        throw new Error(
-          "ServiceWorkerRegistrationActor.push can only be used " +
-            "in parent-intercept mode"
-        );
-      }
-
       const { principal, scope } = this._registration;
       const originAttributes = ChromeUtils.originAttributesToSuffix(
         principal.originAttributes
@@ -203,14 +179,6 @@ const ServiceWorkerRegistrationActor = protocol.ActorClassWithSpec(
 
 
     preventShutdown() {
-      if (!swm.isParentInterceptEnabled()) {
-        
-        throw new Error(
-          "ServiceWorkerRegistrationActor.preventShutdown can only be used " +
-            "in parent-intercept mode"
-        );
-      }
-
       if (!this._registration.activeWorker) {
         throw new Error(
           "ServiceWorkerRegistrationActor.preventShutdown could not find " +
@@ -227,14 +195,6 @@ const ServiceWorkerRegistrationActor = protocol.ActorClassWithSpec(
 
 
     allowShutdown() {
-      if (!swm.isParentInterceptEnabled()) {
-        
-        throw new Error(
-          "ServiceWorkerRegistrationActor.allowShutdown can only be used " +
-            "in parent-intercept mode"
-        );
-      }
-
       if (!this._registration.activeWorker) {
         throw new Error(
           "ServiceWorkerRegistrationActor.allowShutdown could not find " +
