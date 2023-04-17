@@ -103,13 +103,6 @@ var testSpec = protocol.generateActorSpec({
       },
       response: {},
     },
-    waitForEventOnNode: {
-      request: {
-        eventName: Arg(0, "string"),
-        selector: Arg(1, "nullable:string"),
-      },
-      response: {},
-    },
     getAllAdjustedQuads: {
       request: {
         selector: Arg(0, "string"),
@@ -331,25 +324,6 @@ var TestActor = protocol.ActorClassWithSpec(testSpec, {
     _highlighter.once("updated").then(() => this.emit("highlighter-updated"));
 
     
-  },
-
-  
-
-
-
-
-
-  waitForEventOnNode: function(eventName, selector) {
-    return new Promise(resolve => {
-      const node = selector ? this._querySelector(selector) : this.content;
-      node.addEventListener(
-        eventName,
-        function() {
-          resolve();
-        },
-        { once: true }
-      );
-    });
   },
 
   
