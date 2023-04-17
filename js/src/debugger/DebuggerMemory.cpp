@@ -68,7 +68,7 @@ bool DebuggerMemory::construct(JSContext* cx, unsigned argc, Value* vp) {
 }
 
  const JSClass DebuggerMemory::class_ = {
-    "Memory", JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(JSSLOT_COUNT)};
+    "Memory", JSCLASS_HAS_RESERVED_SLOTS(JSSLOT_COUNT)};
 
 
 DebuggerMemory* DebuggerMemory::checkThis(JSContext* cx, CallArgs& args) {
