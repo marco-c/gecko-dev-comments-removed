@@ -149,6 +149,10 @@
 
 
 
+#[cfg(all(
+    not(all(target_arch = "wasm32", any(target_os = "unknown", target_os = "wasi"))),
+    feature = "proc-macro"
+))]
 extern crate proc_macro;
 
 use std::collections::HashSet;
@@ -161,7 +165,7 @@ use syn::{
     TraitBound, Type, TypeMacro, TypeParamBound, TypePath, WhereClause, WherePredicate,
 };
 
-use quote::{quote_spanned, format_ident, ToTokens};
+use quote::{format_ident, quote_spanned, ToTokens};
 
 
 #[doc(hidden)]
@@ -378,11 +382,7 @@ impl<'a> BindingInfo<'a> {
     
     
     pub fn pat(&self) -> TokenStream {
-        let BindingInfo {
-            binding,
-            style,
-            ..
-        } = self;
+        let BindingInfo { binding, style, .. } = self;
         quote!(#style #binding)
     }
 
@@ -488,12 +488,9 @@ impl<'a> VariantInfo<'a> {
         let bindings = match ast.fields {
             Fields::Unit => vec![],
             Fields::Unnamed(FieldsUnnamed {
-                unnamed: fields,
-                ..
+                unnamed: fields, ..
             })
-            | Fields::Named(FieldsNamed {
-                named: fields, ..
-            }) => {
+            | Fields::Named(FieldsNamed { named: fields, .. }) => {
                 fields
                     .into_iter()
                     .enumerate()
@@ -935,6 +932,7 @@ impl<'a> VariantInfo<'a> {
 pub struct Structure<'a> {
     variants: Vec<VariantInfo<'a>>,
     omitted_variants: bool,
+    underscore_const: bool,
     ast: &'a DeriveInput,
     extra_impl: Vec<GenericParam>,
     extra_predicates: Vec<WherePredicate>,
@@ -1007,6 +1005,7 @@ impl<'a> Structure<'a> {
         Ok(Structure {
             variants,
             omitted_variants: false,
+            underscore_const: false,
             ast,
             extra_impl: vec![],
             extra_predicates: vec![],
@@ -1655,6 +1654,52 @@ impl<'a> Structure<'a> {
     
     
     
+    pub fn underscore_const(&mut self, enabled: bool) -> &mut Self {
+        self.underscore_const = enabled;
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1895,12 +1940,6 @@ impl<'a> Structure<'a> {
         let mut where_clause = where_clause.cloned();
         self.add_trait_bounds(&bound, &mut where_clause, mode);
 
-        let dummy_const: Ident = sanitize_ident(&format!(
-            "_DERIVE_{}_FOR_{}",
-            (&bound).into_token_stream(),
-            name.into_token_stream(),
-        ));
-
         
         
         
@@ -1913,18 +1952,48 @@ impl<'a> Structure<'a> {
             }
         }
 
-        quote! {
-            #[allow(non_upper_case_globals)]
-            #[doc(hidden)]
-            const #dummy_const: () = {
-                #extern_crate
-                #safety impl #impl_generics #bound for #name #ty_generics #where_clause {
-                    #body
-                }
-            };
+        let generated = quote! {
+            #extern_crate
+            #safety impl #impl_generics #bound for #name #ty_generics #where_clause {
+                #body
+            }
+        };
+
+        if self.underscore_const {
+            quote! {
+                const _: () = { #generated }
+            }
+        } else {
+            let dummy_const: Ident = sanitize_ident(&format!(
+                "_DERIVE_{}_FOR_{}",
+                (&bound).into_token_stream(),
+                name.into_token_stream(),
+            ));
+            quote! {
+                #[allow(non_upper_case_globals)]
+                #[doc(hidden)]
+                const #dummy_const: () = {
+                    #generated
+                };
+            }
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -2210,18 +2279,23 @@ impl<'a> Structure<'a> {
         };
 
         if wrap {
-            let dummy_const: Ident = sanitize_ident(&format!(
-                "_DERIVE_{}_FOR_{}",
-                (&bound).into_token_stream(),
-                name.into_token_stream(),
-            ));
-
-            Ok(quote! {
-                #[allow(non_upper_case_globals)]
-                const #dummy_const: () = {
-                    #generated
-                };
-            })
+            if self.underscore_const {
+                Ok(quote! {
+                    const _: () = { #generated };
+                })
+            } else {
+                let dummy_const: Ident = sanitize_ident(&format!(
+                    "_DERIVE_{}_FOR_{}",
+                    (&bound).into_token_stream(),
+                    name.into_token_stream(),
+                ));
+                Ok(quote! {
+                    #[allow(non_upper_case_globals)]
+                    const #dummy_const: () = {
+                        #generated
+                    };
+                })
+            }
         } else {
             Ok(generated)
         }
@@ -2320,9 +2394,28 @@ pub trait MacroResult {
     
     
     
-    fn into_stream(self) -> proc_macro::TokenStream;
+    
+    
+    
+    #[cfg(all(
+        not(all(target_arch = "wasm32", any(target_os = "unknown", target_os = "wasi"))),
+        feature = "proc-macro"
+    ))]
+    fn into_stream(self) -> proc_macro::TokenStream
+    where
+        Self: Sized,
+    {
+        match self.into_result() {
+            Ok(ts) => ts.into(),
+            Err(err) => err.to_compile_error().into(),
+        }
+    }
 }
 
+#[cfg(all(
+    not(all(target_arch = "wasm32", any(target_os = "unknown", target_os = "wasi"))),
+    feature = "proc-macro"
+))]
 impl MacroResult for proc_macro::TokenStream {
     fn into_result(self) -> Result<TokenStream> {
         Ok(self.into())
@@ -2337,10 +2430,6 @@ impl MacroResult for TokenStream {
     fn into_result(self) -> Result<TokenStream> {
         Ok(self)
     }
-
-    fn into_stream(self) -> proc_macro::TokenStream {
-        self.into()
-    }
 }
 
 impl<T: MacroResult> MacroResult for Result<T> {
@@ -2348,13 +2437,6 @@ impl<T: MacroResult> MacroResult for Result<T> {
         match self {
             Ok(v) => v.into_result(),
             Err(err) => Err(err),
-        }
-    }
-
-    fn into_stream(self) -> proc_macro::TokenStream {
-        match self {
-            Ok(v) => v.into_stream(),
-            Err(err) => err.to_compile_error().into(),
         }
     }
 }
