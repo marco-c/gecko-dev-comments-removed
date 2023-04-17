@@ -7,10 +7,10 @@ use std::cell::{Cell, RefCell};
 use std::mem;
 use std::result;
 
-use ast::{self, Ast, Position, Span};
-use either::Either;
+use crate::ast::{self, Ast, Position, Span};
+use crate::either::Either;
 
-use is_meta_character;
+use crate::is_meta_character;
 
 type Result<T> = result::Result<T, ast::Error>;
 
@@ -58,10 +58,10 @@ impl Primitive {
     
     fn into_class_set_item<P: Borrow<Parser>>(
         self,
-        p: &ParserI<P>,
+        p: &ParserI<'_, P>,
     ) -> Result<ast::ClassSetItem> {
         use self::Primitive::*;
-        use ast::ClassSetItem;
+        use crate::ast::ClassSetItem;
 
         match self {
             Literal(lit) => Ok(ClassSetItem::Literal(lit)),
@@ -79,7 +79,7 @@ impl Primitive {
     
     fn into_class_literal<P: Borrow<Parser>>(
         self,
-        p: &ParserI<P>,
+        p: &ParserI<'_, P>,
     ) -> Result<ast::Literal> {
         use self::Primitive::*;
 
@@ -101,9 +101,10 @@ fn is_hex(c: char) -> bool {
 
 fn is_capture_char(c: char, first: bool) -> bool {
     c == '_'
-        || (!first && c >= '0' && c <= '9')
-        || (c >= 'a' && c <= 'z')
-        || (c >= 'A' && c <= 'Z')
+        || (!first
+            && (('0' <= c && c <= '9') || c == '.' || c == '[' || c == ']'))
+        || ('A' <= c && c <= 'Z')
+        || ('a' <= c && c <= 'z')
 }
 
 
@@ -2095,6 +2096,12 @@ impl<'s, P: Borrow<Parser>> ParserI<'s, P> {
         } else {
             let start = self.pos();
             let c = self.char();
+            if c == '\\' {
+                return Err(self.error(
+                    self.span_char(),
+                    ast::ErrorKind::UnicodeClassInvalid,
+                ));
+            }
             self.bump_and_bump_space();
             let kind = ast::ClassUnicodeKind::OneLetter(c);
             (start, kind)
@@ -2130,7 +2137,7 @@ impl<'s, P: Borrow<Parser>> ParserI<'s, P> {
 
 
 #[derive(Debug)]
-struct NestLimiter<'p, 's: 'p, P: 'p + 's> {
+struct NestLimiter<'p, 's, P> {
     
     p: &'p ParserI<'s, P>,
     
@@ -2305,7 +2312,7 @@ mod tests {
     use std::ops::Range;
 
     use super::{Parser, ParserBuilder, ParserI, Primitive};
-    use ast::{self, Ast, Position, Span};
+    use crate::ast::{self, Ast, Position, Span};
 
     
     
@@ -2350,21 +2357,24 @@ mod tests {
         str.to_string()
     }
 
-    fn parser(pattern: &str) -> ParserI<Parser> {
+    fn parser(pattern: &str) -> ParserI<'_, Parser> {
         ParserI::new(Parser::new(), pattern)
     }
 
-    fn parser_octal(pattern: &str) -> ParserI<Parser> {
+    fn parser_octal(pattern: &str) -> ParserI<'_, Parser> {
         let parser = ParserBuilder::new().octal(true).build();
         ParserI::new(parser, pattern)
     }
 
-    fn parser_nest_limit(pattern: &str, nest_limit: u32) -> ParserI<Parser> {
+    fn parser_nest_limit(
+        pattern: &str,
+        nest_limit: u32,
+    ) -> ParserI<'_, Parser> {
         let p = ParserBuilder::new().nest_limit(nest_limit).build();
         ParserI::new(p, pattern)
     }
 
-    fn parser_ignore_whitespace(pattern: &str) -> ParserI<Parser> {
+    fn parser_ignore_whitespace(pattern: &str) -> ParserI<'_, Parser> {
         let p = ParserBuilder::new().ignore_whitespace(true).build();
         ParserI::new(p, pattern)
     }
@@ -3842,6 +3852,45 @@ bar
                     index: 1,
                 }),
                 ast: Box::new(lit('z', 8)),
+            }))
+        );
+
+        assert_eq!(
+            parser("(?P<a_1>z)").parse(),
+            Ok(Ast::Group(ast::Group {
+                span: span(0..10),
+                kind: ast::GroupKind::CaptureName(ast::CaptureName {
+                    span: span(4..7),
+                    name: s("a_1"),
+                    index: 1,
+                }),
+                ast: Box::new(lit('z', 8)),
+            }))
+        );
+
+        assert_eq!(
+            parser("(?P<a.1>z)").parse(),
+            Ok(Ast::Group(ast::Group {
+                span: span(0..10),
+                kind: ast::GroupKind::CaptureName(ast::CaptureName {
+                    span: span(4..7),
+                    name: s("a.1"),
+                    index: 1,
+                }),
+                ast: Box::new(lit('z', 8)),
+            }))
+        );
+
+        assert_eq!(
+            parser("(?P<a[1]>z)").parse(),
+            Ok(Ast::Group(ast::Group {
+                span: span(0..11),
+                kind: ast::GroupKind::CaptureName(ast::CaptureName {
+                    span: span(4..8),
+                    name: s("a[1]"),
+                    index: 1,
+                }),
+                ast: Box::new(lit('z', 9)),
             }))
         );
 
@@ -5712,6 +5761,20 @@ bar
                     }),
                 ],
             }))
+        );
+        assert_eq!(
+            parser(r"\p\{").parse().unwrap_err(),
+            TestError {
+                span: span(2..3),
+                kind: ast::ErrorKind::UnicodeClassInvalid,
+            }
+        );
+        assert_eq!(
+            parser(r"\P\{").parse().unwrap_err(),
+            TestError {
+                span: span(2..3),
+                kind: ast::ErrorKind::UnicodeClassInvalid,
+            }
         );
     }
 

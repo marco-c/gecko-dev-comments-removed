@@ -4,6 +4,8 @@
 
 
 
+
+
 pub const PROPERTY_NAMES: &'static [(&'static str, &'static str)] = &[
     ("age", "Age"),
     ("ahex", "ASCII_Hex_Digit"),
@@ -47,7 +49,9 @@ pub const PROPERTY_NAMES: &'static [(&'static str, &'static str)] = &[
     ("cjkirgkpsource", "kIRG_KPSource"),
     ("cjkirgksource", "kIRG_KSource"),
     ("cjkirgmsource", "kIRG_MSource"),
+    ("cjkirgssource", "kIRG_SSource"),
     ("cjkirgtsource", "kIRG_TSource"),
+    ("cjkirguksource", "kIRG_UKSource"),
     ("cjkirgusource", "kIRG_USource"),
     ("cjkirgvsource", "kIRG_VSource"),
     ("cjkothernumeric", "kOtherNumeric"),
@@ -74,11 +78,15 @@ pub const PROPERTY_NAMES: &'static [(&'static str, &'static str)] = &[
     ("dt", "Decomposition_Type"),
     ("ea", "East_Asian_Width"),
     ("eastasianwidth", "East_Asian_Width"),
+    ("ebase", "Emoji_Modifier_Base"),
+    ("ecomp", "Emoji_Component"),
+    ("emod", "Emoji_Modifier"),
     ("emoji", "Emoji"),
     ("emojicomponent", "Emoji_Component"),
     ("emojimodifier", "Emoji_Modifier"),
     ("emojimodifierbase", "Emoji_Modifier_Base"),
     ("emojipresentation", "Emoji_Presentation"),
+    ("epres", "Emoji_Presentation"),
     ("equideo", "Equivalent_Unified_Ideograph"),
     ("equivalentunifiedideograph", "Equivalent_Unified_Ideograph"),
     ("expandsonnfc", "Expands_On_NFC"),
@@ -88,6 +96,7 @@ pub const PROPERTY_NAMES: &'static [(&'static str, &'static str)] = &[
     ("ext", "Extender"),
     ("extendedpictographic", "Extended_Pictographic"),
     ("extender", "Extender"),
+    ("extpict", "Extended_Pictographic"),
     ("fcnfkc", "FC_NFKC_Closure"),
     ("fcnfkcclosure", "FC_NFKC_Closure"),
     ("fullcompositionexclusion", "Full_Composition_Exclusion"),
@@ -138,7 +147,9 @@ pub const PROPERTY_NAMES: &'static [(&'static str, &'static str)] = &[
     ("kirgkpsource", "kIRG_KPSource"),
     ("kirgksource", "kIRG_KSource"),
     ("kirgmsource", "kIRG_MSource"),
+    ("kirgssource", "kIRG_SSource"),
     ("kirgtsource", "kIRG_TSource"),
+    ("kirguksource", "kIRG_UKSource"),
     ("kirgusource", "kIRG_USource"),
     ("kirgvsource", "kIRG_VSource"),
     ("kothernumeric", "kOtherNumeric"),

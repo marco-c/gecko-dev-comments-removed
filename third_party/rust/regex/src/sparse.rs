@@ -1,3 +1,4 @@
+use std::fmt;
 use std::ops::Deref;
 use std::slice;
 
@@ -11,7 +12,7 @@ use std::slice;
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct SparseSet {
     
     
@@ -57,6 +58,12 @@ impl SparseSet {
 
     pub fn clear(&mut self) {
         self.dense.clear();
+    }
+}
+
+impl fmt::Debug for SparseSet {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "SparseSet({:?})", self.dense)
     }
 }
 

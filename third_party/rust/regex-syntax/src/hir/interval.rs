@@ -4,7 +4,7 @@ use std::fmt::Debug;
 use std::slice;
 use std::u8;
 
-use unicode;
+use crate::unicode;
 
 
 
@@ -60,7 +60,7 @@ impl<I: Interval> IntervalSet<I> {
     
     
     
-    pub fn iter(&self) -> IntervalSetIter<I> {
+    pub fn iter(&self) -> IntervalSetIter<'_, I> {
         IntervalSetIter(self.ranges.iter())
     }
 
@@ -322,7 +322,7 @@ impl<I: Interval> IntervalSet<I> {
 
 
 #[derive(Debug)]
-pub struct IntervalSetIter<'a, I: 'a>(slice::Iter<'a, I>);
+pub struct IntervalSetIter<'a, I>(slice::Iter<'a, I>);
 
 impl<'a, I> Iterator for IntervalSetIter<'a, I> {
     type Item = &'a I;

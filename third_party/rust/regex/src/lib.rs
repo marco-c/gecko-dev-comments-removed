@@ -605,47 +605,31 @@
 
 
 
-
-
-
-
-
-
-
 #![deny(missing_docs)]
-#![cfg_attr(test, deny(warnings))]
 #![cfg_attr(feature = "pattern", feature(pattern))]
+#![warn(missing_debug_implementations)]
 
 #[cfg(not(feature = "std"))]
 compile_error!("`std` feature is currently required to build this crate");
 
-#[cfg(feature = "perf-literal")]
-extern crate aho_corasick;
-#[cfg(test)]
-extern crate doc_comment;
-#[cfg(feature = "perf-literal")]
-extern crate memchr;
-#[cfg(test)]
-#[cfg_attr(feature = "perf-literal", macro_use)]
-extern crate quickcheck;
-extern crate regex_syntax as syntax;
-#[cfg(feature = "perf-cache")]
-extern crate thread_local;
 
-#[cfg(test)]
-doc_comment::doctest!("../README.md");
+
+
+
+
+
 
 #[cfg(feature = "std")]
-pub use error::Error;
+pub use crate::error::Error;
 #[cfg(feature = "std")]
-pub use re_builder::set_unicode::*;
+pub use crate::re_builder::set_unicode::*;
 #[cfg(feature = "std")]
-pub use re_builder::unicode::*;
+pub use crate::re_builder::unicode::*;
 #[cfg(feature = "std")]
-pub use re_set::unicode::*;
+pub use crate::re_set::unicode::*;
 #[cfg(feature = "std")]
 #[cfg(feature = "std")]
-pub use re_unicode::{
+pub use crate::re_unicode::{
     escape, CaptureLocations, CaptureMatches, CaptureNames, Captures,
     Locations, Match, Matches, NoExpand, Regex, Replacer, ReplacerRef, Split,
     SplitN, SubCaptureMatches,
@@ -740,14 +724,13 @@ pub use re_unicode::{
 
 #[cfg(feature = "std")]
 pub mod bytes {
-    pub use re_builder::bytes::*;
-    pub use re_builder::set_bytes::*;
-    pub use re_bytes::*;
-    pub use re_set::bytes::*;
+    pub use crate::re_builder::bytes::*;
+    pub use crate::re_builder::set_bytes::*;
+    pub use crate::re_bytes::*;
+    pub use crate::re_set::bytes::*;
 }
 
 mod backtrack;
-mod cache;
 mod compile;
 #[cfg(feature = "perf-dfa")]
 mod dfa;
@@ -755,13 +738,12 @@ mod error;
 mod exec;
 mod expand;
 mod find_byte;
-#[cfg(feature = "perf-literal")]
-mod freqs;
 mod input;
 mod literal;
 #[cfg(feature = "pattern")]
 mod pattern;
 mod pikevm;
+mod pool;
 mod prog;
 mod re_builder;
 mod re_bytes;
@@ -777,9 +759,9 @@ mod utf8;
 #[doc(hidden)]
 #[cfg(feature = "std")]
 pub mod internal {
-    pub use compile::Compiler;
-    pub use exec::{Exec, ExecBuilder};
-    pub use input::{Char, CharInput, Input, InputAt};
-    pub use literal::LiteralSearcher;
-    pub use prog::{EmptyLook, Inst, InstRanges, Program};
+    pub use crate::compile::Compiler;
+    pub use crate::exec::{Exec, ExecBuilder};
+    pub use crate::input::{Char, CharInput, Input, InputAt};
+    pub use crate::literal::LiteralSearcher;
+    pub use crate::prog::{EmptyLook, Inst, InstRanges, Program};
 }
