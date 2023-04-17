@@ -399,19 +399,21 @@ var ExtensionAddonObserver = {
     
     
     
-    if (WebExtensionPolicy.backgroundServiceWorkerEnabled) {
-      
-      
-      
-      
-      
-      
-      
-      AsyncShutdown.profileChangeTeardown.addBlocker(
-        `Clear ServiceWorkers for ${addon.id}`,
-        ServiceWorkerCleanUp.removeFromPrincipal(principal)
-      );
-    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    AsyncShutdown.profileChangeTeardown.addBlocker(
+      `Clear ServiceWorkers for ${addon.id}`,
+      ServiceWorkerCleanUp.removeFromPrincipal(principal)
+    );
 
     if (!Services.prefs.getBoolPref(LEAVE_STORAGE_PREF, false)) {
       
@@ -2836,6 +2838,20 @@ class Extension extends ExtensionData {
     Services.ppmm.removeMessageListener(this.MESSAGE_EMIT_EVENT, this);
 
     this.updatePermissions(reason);
+
+    
+    
+    
+    
+    
+    
+    
+    if (!isAppShutdown) {
+      this.state = "Shutdown: ServiceWorkers";
+      
+      await ServiceWorkerCleanUp.removeFromPrincipal(this.principal);
+      this.state = "Shutdown: ServiceWorkers completed";
+    }
 
     if (!this.manifest) {
       this.state = "Shutdown: Complete: No manifest";
