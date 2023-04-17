@@ -50,7 +50,7 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
-  "isFrameWithChildTarget",
+  "isRemoteFrame",
   "devtools/shared/layout/utils",
   true
 );
@@ -113,8 +113,7 @@ function getNodeDescription(node) {
 
 
 
-
-function getSnapshot(acc, a11yService, targetActor) {
+function getSnapshot(acc, a11yService) {
   if (isDefunct(acc)) {
     return {
       states: [a11yService.getStringStates(0, STATE_DEFUNCT)],
@@ -140,14 +139,7 @@ function getSnapshot(acc, a11yService, targetActor) {
 
   const children = [];
   for (let child = acc.firstChild; child; child = child.nextSibling) {
-    
-    if (
-      targetActor.ignoreSubFrames &&
-      child.DOMNode.ownerDocument !== targetActor.contentDocument
-    ) {
-      continue;
-    }
-    children.push(getSnapshot(child, a11yService, targetActor));
+    children.push(getSnapshot(child, a11yService));
   }
 
   const { nodeType, nodeCssSelector } = getNodeDescription(acc.DOMNode);
@@ -166,11 +158,11 @@ function getSnapshot(acc, a11yService, targetActor) {
     children,
     attributes,
   };
-  const useChildTargetToFetchChildren =
+  const remoteFrame =
     acc.role === Ci.nsIAccessibleRole.ROLE_INTERNAL_FRAME &&
-    isFrameWithChildTarget(targetActor, acc.DOMNode);
-  if (useChildTargetToFetchChildren) {
-    snapshot.useChildTargetToFetchChildren = useChildTargetToFetchChildren;
+    isRemoteFrame(acc.DOMNode);
+  if (remoteFrame) {
+    snapshot.remoteFrame = remoteFrame;
     snapshot.childCount = 1;
     snapshot.contentDOMReference = ContentDOMReference.get(acc.DOMNode);
   }
@@ -268,7 +260,7 @@ const AccessibleActor = ActorClassWithSpec(accessibleSpec, {
     }
     
     
-    if (this.useChildTargetToFetchChildren) {
+    if (this.remoteFrame) {
       return 1;
     }
 
@@ -440,17 +432,14 @@ const AccessibleActor = ActorClassWithSpec(accessibleSpec, {
     return relationObjects;
   },
 
-  get useChildTargetToFetchChildren() {
+  get remoteFrame() {
     if (this.isDefunct) {
       return false;
     }
 
     return (
       this.rawAccessible.role === Ci.nsIAccessibleRole.ROLE_INTERNAL_FRAME &&
-      isFrameWithChildTarget(
-        this.walker.targetActor,
-        this.rawAccessible.DOMNode
-      )
+      isRemoteFrame(this.rawAccessible.DOMNode)
     );
   },
 
@@ -459,7 +448,7 @@ const AccessibleActor = ActorClassWithSpec(accessibleSpec, {
       actor: this.actorID,
       role: this.role,
       name: this.name,
-      useChildTargetToFetchChildren: this.useChildTargetToFetchChildren,
+      remoteFrame: this.remoteFrame,
       childCount: this.childCount,
       checks: this._lastAudit,
     };
@@ -637,11 +626,7 @@ const AccessibleActor = ActorClassWithSpec(accessibleSpec, {
   },
 
   snapshot() {
-    return getSnapshot(
-      this.rawAccessible,
-      this.walker.a11yService,
-      this.walker.targetActor
-    );
+    return getSnapshot(this.rawAccessible, this.walker.a11yService);
   },
 });
 

@@ -334,11 +334,11 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
   }
 
   async children(node, options) {
-    if (!node.useChildTargetToFetchChildren) {
+    if (!node.remoteFrame) {
       return super.children(node, options);
     }
-    const target = await node.connectToFrame();
-    const walker = (await target.getFront("inspector")).walker;
+    const remoteTarget = await node.connectToRemoteFrame();
+    const walker = (await remoteTarget.getFront("inspector")).walker;
 
     
     const documentNode = await walker.getRootNode();
@@ -407,10 +407,8 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
       if (!selector) {
         return nodeFront;
       }
-      nodeFront = await nodeFront.walkerFront.querySelector(
-        nodeFront,
-        selector
-      );
+      nodeFront = await this.querySelector(nodeFront, selector);
+
       
       
       
@@ -446,6 +444,23 @@ class WalkerFront extends FrontClassWithSpec(walkerSpec) {
       return querySelectors(nodeFront) || nodeFront;
     };
     const nodeFront = await this.getRootNode();
+
+    
+    
+    
+    
+    
+    const rootFrontSelectors = await nodeFront.getAllSelectors();
+    for (let i = 0; i < rootFrontSelectors.length - 1; i++) {
+      if (rootFrontSelectors[i] !== nodeSelectors[i]) {
+        return null;
+      }
+    }
+
+    
+    
+    nodeSelectors.splice(0, rootFrontSelectors.length - 1);
+
     return querySelectors(nodeFront);
   }
 

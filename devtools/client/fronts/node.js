@@ -281,15 +281,12 @@ class NodeFront extends FrontClassWithSpec(nodeSpec) {
   get numChildren() {
     return this._form.numChildren;
   }
-  get useChildTargetToFetchChildren() {
+  get remoteFrame() {
     if (!BROWSER_TOOLBOX_FISSION_ENABLED && this._hasParentProcessTarget) {
       return false;
     }
 
-    
-    
-    
-    return this._form.useChildTargetToFetchChildren || this._form.remoteFrame;
+    return this._form.remoteFrame;
   }
   get hasEventListeners() {
     return this._form.hasEventListeners;
@@ -532,23 +529,20 @@ class NodeFront extends FrontClassWithSpec(nodeSpec) {
     return actor.rawNode;
   }
 
-  async connectToFrame() {
-    if (!this.useChildTargetToFetchChildren) {
-      console.warn("Tried to open connection to an invalid frame.");
+  async connectToRemoteFrame() {
+    if (!this.remoteFrame) {
+      console.warn("Tried to open remote connection to an invalid frame.");
       return null;
     }
-    if (
-      this._childBrowsingContextTarget &&
-      !this._childBrowsingContextTarget.isDestroyed()
-    ) {
-      return this._childBrowsingContextTarget;
+    if (this._remoteFrameTarget && !this._remoteFrameTarget.isDestroyed()) {
+      return this._remoteFrameTarget;
     }
 
     
-    this._childBrowsingContextTarget = await this.targetFront.getWindowGlobalTarget(
+    this._remoteFrameTarget = await this.targetFront.getWindowGlobalTarget(
       this._form.browsingContextID
     );
-    return this._childBrowsingContextTarget;
+    return this._remoteFrameTarget;
   }
 }
 

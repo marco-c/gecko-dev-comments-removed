@@ -726,7 +726,7 @@ class HighlightersOverlay {
 
 
   async toggleShapesHighlighter(node, options, textProperty) {
-    const shapesEditor = await this.getInContextEditor(node, "shapesEditor");
+    const shapesEditor = await this.getInContextEditor("shapesEditor");
     if (!shapesEditor) {
       return;
     }
@@ -743,7 +743,7 @@ class HighlightersOverlay {
 
 
   async showShapesHighlighter(node, options) {
-    const shapesEditor = await this.getInContextEditor(node, "shapesEditor");
+    const shapesEditor = await this.getInContextEditor("shapesEditor");
     if (!shapesEditor) {
       return;
     }
@@ -771,10 +771,8 @@ class HighlightersOverlay {
 
 
 
-
-
-  async hideShapesHighlighter(node) {
-    const shapesEditor = await this.getInContextEditor(node, "shapesEditor");
+  async hideShapesHighlighter() {
+    const shapesEditor = await this.getInContextEditor("shapesEditor");
     if (!shapesEditor) {
       return;
     }
@@ -1273,10 +1271,7 @@ class HighlightersOverlay {
 
 
   async showGeometryEditor(node) {
-    const highlighter = await this._getHighlighterTypeForNode(
-      "GeometryEditorHighlighter",
-      node
-    );
+    const highlighter = await this._getHighlighter("GeometryEditorHighlighter");
     if (!highlighter) {
       return;
     }
@@ -1294,19 +1289,14 @@ class HighlightersOverlay {
 
 
   async hideGeometryEditor() {
-    if (!this.geometryEditorHighlighterShown) {
+    if (
+      !this.geometryEditorHighlighterShown ||
+      !this.highlighters.GeometryEditorHighlighter
+    ) {
       return;
     }
 
-    const highlighter = this.geometryEditorHighlighterShown.inspectorFront.getKnownHighlighter(
-      "GeometryEditorHighlighter"
-    );
-
-    if (!highlighter) {
-      return;
-    }
-
-    await highlighter.hide();
+    await this.highlighters.GeometryEditorHighlighter.hide();
 
     this.emit("geometry-editor-highlighter-hidden");
     this.geometryEditorHighlighterShown = null;
@@ -1403,8 +1393,7 @@ class HighlightersOverlay {
 
 
 
-
-  async getInContextEditor(node, type) {
+  async getInContextEditor(type) {
     if (this.editors[type]) {
       return this.editors[type];
     }
@@ -1413,10 +1402,7 @@ class HighlightersOverlay {
 
     switch (type) {
       case "shapesEditor":
-        const highlighter = await this._getHighlighterTypeForNode(
-          "ShapesHighlighter",
-          node
-        );
+        const highlighter = await this._getHighlighter("ShapesHighlighter");
         if (!highlighter) {
           return null;
         }

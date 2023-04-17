@@ -10,7 +10,6 @@ const InspectorUtils = require("InspectorUtils");
 const protocol = require("devtools/shared/protocol");
 const { PSEUDO_CLASSES } = require("devtools/shared/css/constants");
 const { nodeSpec, nodeListSpec } = require("devtools/shared/specs/node");
-
 loader.lazyRequireGetter(
   this,
   ["getCssPath", "getXPath", "findCssSelector", "findAllCssSelectors"],
@@ -30,7 +29,7 @@ loader.lazyRequireGetter(
     "isShadowHost",
     "isShadowRoot",
     "getShadowRootMode",
-    "isFrameWithChildTarget",
+    "isRemoteFrame",
   ],
   "devtools/shared/layout/utils",
   true
@@ -215,10 +214,8 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
 
     
     
-    if (this.useChildTargetToFetchChildren) {
-      form.useChildTargetToFetchChildren = true;
-      
-      
+    if (this.isRemoteFrame) {
+      form.remoteFrame = true;
       form.numChildren = 1;
       form.browsingContextID = this.rawNode.browsingContext.id;
     }
@@ -261,8 +258,9 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
 
 
 
-  get useChildTargetToFetchChildren() {
-    return isFrameWithChildTarget(this.walker.targetActor, this.rawNode);
+
+  get isRemoteFrame() {
+    return isRemoteFrame(this.rawNode);
   },
 
   get isTopLevelDocument() {
