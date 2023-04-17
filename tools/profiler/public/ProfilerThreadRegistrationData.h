@@ -44,6 +44,7 @@
 #include "nsCOMPtr.h"
 #include "nsIThread.h"
 
+class ProfiledThreadData;
 class PSAutoLock;
 struct JSContext;
 
@@ -65,6 +66,16 @@ class ThreadRegistrationData {
   
  protected:
   ThreadRegistrationData(const char* aName, const void* aStackTop);
+
+#ifdef DEBUG
+  
+  ~ThreadRegistrationData() {
+    MOZ_ASSERT(mIsBeingProfiled == !!mProfiledThreadData);
+    MOZ_ASSERT(!mProfiledThreadData,
+               "mProfiledThreadData pointer should have been reset before "
+               "~ThreadRegistrationData");
+  }
+#endif  
 
   
   
@@ -163,6 +174,7 @@ class ThreadRegistrationData {
 
   
   
+  
   Atomic<bool, MemoryOrdering::Relaxed> mIsBeingProfiled{false};
 
   
@@ -203,6 +215,12 @@ class ThreadRegistrationData {
   static const int SLEEPING_OBSERVED = 2;
   
   Atomic<int> mSleep{AWAKE};
+
+  
+  
+  
+  
+  ProfiledThreadData* mProfiledThreadData = nullptr;
 
   
   RegisteredThread* mRegisteredThread;
@@ -309,8 +327,20 @@ class ThreadRegistrationUnlockedRWForLockedProfiler
 
   
   
+  
   [[nodiscard]] bool IsBeingProfiled(const PSAutoLock&) const {
-    return mIsBeingProfiled;
+    
+    
+    return mProfiledThreadData;
+  }
+
+  [[nodiscard]] const ProfiledThreadData* GetProfiledThreadData(
+      const PSAutoLock&) const {
+    return mProfiledThreadData;
+  }
+
+  [[nodiscard]] ProfiledThreadData* GetProfiledThreadData(const PSAutoLock&) {
+    return mProfiledThreadData;
   }
 
  protected:
@@ -344,7 +374,9 @@ class ThreadRegistrationUnlockedReaderAndAtomicRWOnThread
 class ThreadRegistrationLockedRWFromAnyThread
     : public ThreadRegistrationUnlockedReaderAndAtomicRWOnThread {
  public:
-  void SetIsBeingProfiled(bool aIsBeingProfiled, const PSAutoLock&);
+  void SetIsBeingProfiledWithProfiledThreadData(
+      ProfiledThreadData* aProfiledThreadData, const PSAutoLock&);
+  void ClearIsBeingProfiledAndProfiledThreadData(const PSAutoLock&);
 
   [[nodiscard]] const nsCOMPtr<nsIEventTarget> GetEventTarget() const {
     return mThread;

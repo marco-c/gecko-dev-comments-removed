@@ -358,9 +358,11 @@ static void TestLockedRWFromAnyThread(
 
   
   
-  static_assert(std::is_same_v<decltype(aData.SetIsBeingProfiled(
-                                   true, std::declval<PSAutoLock>())),
-                               void>);
+  static_assert(
+      std::is_same_v<decltype(aData.SetIsBeingProfiledWithProfiledThreadData(
+                         std::declval<ProfiledThreadData*>(),
+                         std::declval<PSAutoLock>())),
+                     void>);
 
   aData.ResetMainThread(nullptr);
 

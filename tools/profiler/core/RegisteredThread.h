@@ -29,10 +29,6 @@ class RacyRegisteredThread final {
 
   MOZ_COUNTED_DTOR(RacyRegisteredThread)
 
-  void SetIsBeingProfiled(bool aIsBeingProfiled) {
-    mThreadRegistration.mData.mIsBeingProfiled = aIsBeingProfiled;
-  }
-
   
   
   void ReinitializeOnResume() {
