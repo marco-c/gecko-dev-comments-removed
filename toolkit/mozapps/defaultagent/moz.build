@@ -23,11 +23,13 @@ UNIFIED_SOURCES += [
     "Registry.cpp",
     "RemoteSettings.cpp",
     "ScheduledTask.cpp",
+    "SetDefaultBrowser.cpp",
     "Telemetry.cpp",
 ]
 
 SOURCES += [
     "/browser/components/shell/WindowsDefaultBrowser.cpp",
+    "/browser/components/shell/WindowsUserChoice.cpp",
     "/other-licenses/nsis/Contrib/CityHash/cityhash/city.cpp",
     "/third_party/WinToast/wintoastlib.cpp",
     "/toolkit/mozapps/update/common/readstrings.cpp",
@@ -50,6 +52,8 @@ LOCAL_INCLUDES += [
 
 OS_LIBS += [
     "advapi32",
+    "bcrypt",
+    "crypt32",
     "kernel32",
     "netapi32",
     "ole32",
