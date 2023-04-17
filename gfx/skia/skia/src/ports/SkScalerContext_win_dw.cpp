@@ -363,8 +363,15 @@ SkScalerContext_DW::SkScalerContext_DW(sk_sp<DWriteFontTypeface> typefaceRef,
     
     
     } else {
-        fTextSizeRender = is_hinted(this, typeface) ? gdiTextSize : realTextSize;
-        fRenderingMode = DWRITE_RENDERING_MODE_NATURAL;
+        if (is_hinted(this, typeface)) {
+          fTextSizeRender = gdiTextSize;
+          fRenderingMode = DWRITE_RENDERING_MODE_NATURAL;
+        } else {
+          
+          
+          fTextSizeRender = realTextSize;
+          fRenderingMode = DWRITE_RENDERING_MODE_NATURAL_SYMMETRIC;
+        }
         fTextureType = DWRITE_TEXTURE_CLEARTYPE_3x1;
         fTextSizeMeasure = realTextSize;
         fMeasuringMode = DWRITE_MEASURING_MODE_NATURAL;
