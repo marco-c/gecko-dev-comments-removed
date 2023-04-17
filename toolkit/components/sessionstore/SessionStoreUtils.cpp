@@ -1708,15 +1708,17 @@ already_AddRefed<Promise> SessionStoreUtils::RestoreDocShellState(
 
     DocShellRestoreState state = {uri, aDocShellCaps, storage};
 
-    if (wgp->IsInProcess()) {
-      RestoreDocShellState(aContext.GetDocShell(), state);
-      promise->MaybeResolveWithUndefined();
-    } else {
-      wgp->SendRestoreDocShellState(state)->Then(
-          GetMainThreadSerialEventTarget(), __func__,
-          [promise](void) { promise->MaybeResolveWithUndefined(); },
-          [promise](void) { promise->MaybeReject(NS_ERROR_FAILURE); });
-    }
+    
+    
+    
+    
+    
+    
+    
+    wgp->SendRestoreDocShellState(state)->Then(
+        GetMainThreadSerialEventTarget(), __func__,
+        [promise](void) { promise->MaybeResolveWithUndefined(); },
+        [promise](void) { promise->MaybeRejectWithUndefined(); });
 
     return promise.forget();
   }

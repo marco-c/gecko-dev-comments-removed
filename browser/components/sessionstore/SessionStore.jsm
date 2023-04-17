@@ -561,6 +561,10 @@ var SessionStoreInternal = {
 
   
   
+  _historyRestorePromises: new WeakMap(),
+
+  
+  
   
   _crashedBrowsers: new WeakSet(),
 
@@ -1190,6 +1194,7 @@ var SessionStoreInternal = {
     if (!Services.appinfo.sessionHistoryInParent) {
       throw new Error("This function should only be used with SHIP");
     }
+
     class ProgressListener {
       constructor() {
         browser.addProgressListener(
@@ -5614,15 +5619,6 @@ var SessionStoreInternal = {
   _resetLocalTabRestoringState(aTab) {
     let browser = aTab.linkedBrowser;
 
-    if (Services.appinfo.sessionHistoryInParent) {
-      if (this._browserProgressListenerForRestore.has(browser.permanentKey)) {
-        this._browserProgressListenerForRestore
-          .get(browser.permanentKey)
-          .uninstall();
-      }
-      browser.browsingContext.clearRestoreState();
-    }
-
     
     let previousState = TAB_STATE_FOR_BROWSER.get(browser);
 
@@ -5633,6 +5629,16 @@ var SessionStoreInternal = {
 
     
     TAB_STATE_FOR_BROWSER.delete(browser);
+
+    if (Services.appinfo.sessionHistoryInParent) {
+      if (this._browserProgressListenerForRestore.has(browser.permanentKey)) {
+        this._browserProgressListenerForRestore
+          .get(browser.permanentKey)
+          .uninstall();
+      }
+      browser.browsingContext.clearRestoreState();
+      this._historyRestorePromises.delete(browser.permanentKey);
+    }
 
     aTab.removeAttribute("pending");
 
@@ -5845,16 +5851,38 @@ var SessionStoreInternal = {
     let storage = data.tabData?.storage || {};
     delete data.tabData?.storage;
 
+    
+    
+    
+    
     let promise = SessionStoreUtils.restoreDocShellState(
       browser.browsingContext,
       uri,
       disallow,
       storage
     );
+    this._historyRestorePromises.set(browser.permanentKey, promise);
 
-    promise.finally(() => {
-      this._restoreHistoryComplete(browser, data);
-    });
+    promise
+      .then(() => {
+        if (
+          this._historyRestorePromises.get(browser.permanentKey) === promise
+        ) {
+          this._historyRestorePromises.delete(browser.permanentKey);
+          this._restoreHistoryComplete(browser, data);
+        }
+      })
+      .catch(() => {
+        
+        
+        
+        
+        if (
+          this._historyRestorePromises.get(browser.permanentKey) === promise
+        ) {
+          console.error("Rejected active restore promise");
+        }
+      });
 
     this._shistoryToRestore.set(browser.permanentKey, data);
 
@@ -5901,7 +5929,7 @@ var SessionStoreInternal = {
     let tabData = data.tabData || {};
     let uri = null;
     let loadFlags = null;
-    let promises = [];
+    let promises = [this._historyRestorePromises.get(browser.permanentKey)];
 
     if (tabData.userTypedValue && tabData.userTypedClear) {
       uri = tabData.userTypedValue;
