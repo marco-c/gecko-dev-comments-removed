@@ -5,10 +5,7 @@ const HELPER_PAGE_ORIGIN = "http://example.com/";
 
 
 let testDir = gTestPath.substr(0, gTestPath.lastIndexOf("/"));
-Services.scriptloader.loadSubScript(
-  testDir + "/helper_localStorage_e10s.js",
-  this
-);
+Services.scriptloader.loadSubScript(testDir + "/helper_localStorage.js", this);
 
 function clearOrigin() {
   let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
@@ -106,25 +103,29 @@ add_task(async function() {
 
   
   const knownTabs = new KnownTabs();
-  const writerTab1 = await openTestTabInOwnProcess(
+  const writerTab1 = await openTestTab(
     HELPER_PAGE_URL,
     "writer1",
-    knownTabs
+    knownTabs,
+    true
   );
-  const writerTab2 = await openTestTabInOwnProcess(
+  const writerTab2 = await openTestTab(
     HELPER_PAGE_URL,
     "writer2",
-    knownTabs
+    knownTabs,
+    true
   );
-  const readerTab1 = await openTestTabInOwnProcess(
+  const readerTab1 = await openTestTab(
     HELPER_PAGE_URL,
     "reader1",
-    knownTabs
+    knownTabs,
+    true
   );
-  const readerTab2 = await openTestTabInOwnProcess(
+  const readerTab2 = await openTestTab(
     HELPER_PAGE_URL,
     "reader2",
-    knownTabs
+    knownTabs,
+    true
   );
 
   const initialMutations = [

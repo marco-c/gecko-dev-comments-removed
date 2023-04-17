@@ -1,219 +1,11 @@
 const HELPER_PAGE_URL =
-  "http://example.com/browser/dom/tests/browser/page_localstorage_e10s.html";
+  "http://example.com/browser/dom/tests/browser/page_localstorage.html";
 const HELPER_PAGE_ORIGIN = "http://example.com/";
 
 let testDir = gTestPath.substr(0, gTestPath.lastIndexOf("/"));
-Services.scriptloader.loadSubScript(
-  testDir + "/helper_localStorage_e10s.js",
-  this
-);
+Services.scriptloader.loadSubScript(testDir + "/helper_localStorage.js", this);
 
 
-
-
-
-
-
-
-
-
-
-function waitForLocalStorageFlush() {
-  if (Services.domStorageManager.nextGenLocalStorageEnabled) {
-    return new Promise(resolve => executeSoon(resolve));
-  }
-
-  return new Promise(function(resolve) {
-    let observer = {
-      observe() {
-        SpecialPowers.removeObserver(observer, "domstorage-test-flushed");
-        resolve();
-      },
-    };
-    SpecialPowers.addObserver(observer, "domstorage-test-flushed");
-  });
-}
-
-
-
-
-
-
-
-
-
-
-
-function triggerAndWaitForLocalStorageFlush() {
-  if (Services.domStorageManager.nextGenLocalStorageEnabled) {
-    return new Promise(resolve => executeSoon(resolve));
-  }
-
-  SpecialPowers.notifyObservers(null, "domstorage-test-flush-force");
-  
-  return waitForLocalStorageFlush().then(function() {
-    
-    SpecialPowers.notifyObservers(null, "domstorage-test-flush-force");
-    return waitForLocalStorageFlush();
-  });
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function clearOriginStorageEnsuringNoPreload() {
-  let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-    HELPER_PAGE_ORIGIN
-  );
-
-  if (Services.domStorageManager.nextGenLocalStorageEnabled) {
-    let request = Services.qms.clearStoragesForPrincipal(
-      principal,
-      "default",
-      "ls"
-    );
-    let promise = new Promise(resolve => {
-      request.callback = () => {
-        resolve();
-      };
-    });
-    return promise;
-  }
-
-  
-  
-  
-  let storage = Services.domStorageManager.createStorage(
-    null,
-    principal,
-    principal,
-    ""
-  );
-  storage.clear();
-
-  
-  
-  return triggerAndWaitForLocalStorageFlush();
-}
-
-async function verifyTabPreload(knownTab, expectStorageExists) {
-  let storageExists = await SpecialPowers.spawn(
-    knownTab.tab.linkedBrowser,
-    [HELPER_PAGE_ORIGIN],
-    function(origin) {
-      let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-        origin
-      );
-      if (Services.domStorageManager.nextGenLocalStorageEnabled) {
-        return Services.domStorageManager.isPreloaded(principal);
-      }
-      return !!Services.domStorageManager.getStorage(
-        null,
-        principal,
-        principal
-      );
-    }
-  );
-  is(storageExists, expectStorageExists, "Storage existence === preload");
-}
-
-
-
-
-
-async function mutateTabStorage(knownTab, mutations, sentinelValue) {
-  await SpecialPowers.spawn(
-    knownTab.tab.linkedBrowser,
-    [{ mutations, sentinelValue }],
-    function(args) {
-      return content.wrappedJSObject.mutateStorage(Cu.cloneInto(args, content));
-    }
-  );
-}
-
-
-
-
-
-
-async function recordTabStorageEvents(knownTab, sentinelValue) {
-  await SpecialPowers.spawn(
-    knownTab.tab.linkedBrowser,
-    [sentinelValue],
-    function(sentinelValue) {
-      return content.wrappedJSObject.listenForStorageEvents(sentinelValue);
-    }
-  );
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function verifyTabStorageState(knownTab, expectedState, maybeSentinel) {
-  let actualState = await SpecialPowers.spawn(
-    knownTab.tab.linkedBrowser,
-    [maybeSentinel],
-    function(maybeSentinel) {
-      return content.wrappedJSObject.getStorageState(maybeSentinel);
-    }
-  );
-
-  for (let [expectedKey, expectedValue] of Object.entries(expectedState)) {
-    ok(actualState.hasOwnProperty(expectedKey), "key present: " + expectedKey);
-    is(actualState[expectedKey], expectedValue, "value correct");
-  }
-  for (let actualKey of Object.keys(actualState)) {
-    if (!expectedState.hasOwnProperty(actualKey)) {
-      ok(false, "actual state has key it shouldn't have: " + actualKey);
-    }
-  }
-}
-
-
-
-
-
-
-
-
-
-async function verifyTabStorageEvents(knownTab, expectedEvents) {
-  let actualEvents = await SpecialPowers.spawn(
-    knownTab.tab.linkedBrowser,
-    [],
-    function() {
-      return content.wrappedJSObject.returnAndClearStorageEvents();
-    }
-  );
-
-  is(actualEvents.length, expectedEvents.length, "right number of events");
-  for (let i = 0; i < actualEvents.length; i++) {
-    let [actualKey, actualNewValue, actualOldValue] = actualEvents[i];
-    let [expectedKey, expectedNewValue, expectedOldValue] = expectedEvents[i];
-    is(actualKey, expectedKey, "keys match");
-    is(actualNewValue, expectedNewValue, "new values match");
-    is(actualOldValue, expectedOldValue, "old values match");
-  }
-}
 
 
 requestLongerTimeout(4);
@@ -290,38 +82,42 @@ add_task(async function() {
   
   
   
-  await clearOriginStorageEnsuringNoPreload();
+  await clearOriginStorageEnsuringNoPreload(HELPER_PAGE_ORIGIN);
 
   
   await triggerAndWaitForLocalStorageFlush();
 
   
   const knownTabs = new KnownTabs();
-  const writerTab = await openTestTabInOwnProcess(
+  const writerTab = await openTestTab(
     HELPER_PAGE_URL,
     "writer",
-    knownTabs
+    knownTabs,
+    true
   );
-  const listenerTab = await openTestTabInOwnProcess(
+  const listenerTab = await openTestTab(
     HELPER_PAGE_URL,
     "listener",
-    knownTabs
+    knownTabs,
+    true
   );
-  const readerTab = await openTestTabInOwnProcess(
+  const readerTab = await openTestTab(
     HELPER_PAGE_URL,
     "reader",
-    knownTabs
+    knownTabs,
+    true
   );
-  const lateWriteThenListenTab = await openTestTabInOwnProcess(
+  const lateWriteThenListenTab = await openTestTab(
     HELPER_PAGE_URL,
     "lateWriteThenListen",
-    knownTabs
+    knownTabs,
+    true
   );
 
   
-  await verifyTabPreload(writerTab, false);
-  await verifyTabPreload(listenerTab, false);
-  await verifyTabPreload(readerTab, false);
+  await verifyTabPreload(writerTab, false, HELPER_PAGE_ORIGIN);
+  await verifyTabPreload(listenerTab, false, HELPER_PAGE_ORIGIN);
+  await verifyTabPreload(readerTab, false, HELPER_PAGE_ORIGIN);
 
   
   const initialSentinel = "initial";
@@ -473,15 +269,16 @@ add_task(async function() {
 
   
   info("late open preload check");
-  const lateOpenSeesPreload = await openTestTabInOwnProcess(
+  const lateOpenSeesPreload = await openTestTab(
     HELPER_PAGE_URL,
     "lateOpenSeesPreload",
-    knownTabs
+    knownTabs,
+    true
   );
-  await verifyTabPreload(lateOpenSeesPreload, true);
+  await verifyTabPreload(lateOpenSeesPreload, true, HELPER_PAGE_ORIGIN);
 
   
   await cleanupTabs(knownTabs);
 
-  clearOriginStorageEnsuringNoPreload();
+  clearOriginStorageEnsuringNoPreload(HELPER_PAGE_ORIGIN);
 });
