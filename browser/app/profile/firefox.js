@@ -705,8 +705,6 @@ pref("browser.bookmarks.openInTabClosesMenu", true);
 
 
 
-
-
 pref("browser.bookmarks.defaultLocation", "toolbar");
 
 
@@ -2128,11 +2126,6 @@ pref("browser.toolbars.bookmarks.visibility", "newtab");
 
 
 pref("browser.toolbars.bookmarks.showOtherBookmarks", true);
-
-
-
-
-pref("browser.toolbars.bookmarks.2h2020", true);
 
 
 
