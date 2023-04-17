@@ -2,6 +2,8 @@
 
 
 
+
+
 "use strict";
 
 const EventEmitter = require("devtools/shared/event-emitter");
@@ -153,7 +155,37 @@ DocumentEventsListener.prototype = {
     
     const window = event.target.defaultView;
     const time = window.performance.timing.domComplete;
-    this.emit("dom-complete", { time, isFrameSwitching });
+    this.emit("dom-complete", {
+      time,
+      isFrameSwitching,
+      hasNativeConsoleAPI: this.hasNativeConsoleAPI(window),
+    });
+  },
+
+  
+
+
+
+
+
+
+
+
+  hasNativeConsoleAPI(window) {
+    let isNative = false;
+    try {
+      
+      
+      const console = window.wrappedJSObject.console;
+      
+      
+      if (console) {
+        isNative = new XPCNativeWrapper(console).IS_NATIVE_CONSOLE === true;
+      }
+    } catch (ex) {
+      
+    }
+    return isNative;
   },
 
   destroy() {

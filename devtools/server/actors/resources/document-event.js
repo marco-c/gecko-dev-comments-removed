@@ -37,6 +37,8 @@ class DocumentEventWatcher {
         
         isFrameSwitching,
         
+        hasNativeConsoleAPI,
+        
         newURI,
       } = {}
     ) => {
@@ -57,6 +59,10 @@ class DocumentEventWatcher {
           
           
           newURI: name === "will-navigate" ? newURI : null,
+          
+          
+          hasNativeConsoleAPI:
+            name == "dom-complete" ? hasNativeConsoleAPI : null,
         },
       ]);
     };
