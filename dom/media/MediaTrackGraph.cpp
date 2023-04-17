@@ -434,11 +434,7 @@ bool MediaTrackGraphImpl::AudioTrackPresent() {
 
   
   
-  
-  if (!audioTrackPresent && mDeviceTrackMap.Count() != 0) {
-    NS_WARNING("No audio tracks, but full-duplex audio is enabled!!!!!");
-    audioTrackPresent = true;
-  }
+  MOZ_DIAGNOSTIC_ASSERT_IF(!audioTrackPresent, mDeviceTrackMap.Count() == 0);
 
   return audioTrackPresent;
 }
