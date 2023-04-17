@@ -8,7 +8,6 @@
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/CompositorThread.h"
 #include <stddef.h>              
-#include "ClientLayerManager.h"  
 #include "base/task.h"           
 #include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/layers/CompositorManagerChild.h"
@@ -17,6 +16,7 @@
 #include "mozilla/layers/IAPZCTreeManager.h"
 #include "mozilla/layers/APZCTreeManagerChild.h"
 #include "mozilla/layers/CanvasChild.h"
+#include "mozilla/layers/LayerManager.h"
 #include "mozilla/layers/LayerTransactionChild.h"
 #include "mozilla/layers/PLayerTransactionChild.h"
 #include "mozilla/layers/PTextureChild.h"
