@@ -2449,7 +2449,7 @@ class nsContentUtils {
 
 
 
-  static Document* GetRootDocument(Document* aDoc);
+  static Document* GetInProcessSubtreeRootDocument(Document* aDoc);
 
   static void GetShiftText(nsAString& text);
   static void GetControlText(nsAString& text);

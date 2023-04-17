@@ -449,7 +449,8 @@ struct OopIframeMetrics {
 
 static Maybe<OopIframeMetrics> GetOopIframeMetrics(Document& aDocument,
                                                    Document* aRootDocument) {
-  Document* rootDoc = nsContentUtils::GetRootDocument(&aDocument);
+  Document* rootDoc =
+      nsContentUtils::GetInProcessSubtreeRootDocument(&aDocument);
   MOZ_ASSERT(rootDoc);
 
   if (rootDoc->IsTopLevelContentDocument()) {
@@ -457,7 +458,8 @@ static Maybe<OopIframeMetrics> GetOopIframeMetrics(Document& aDocument,
   }
 
   if (aRootDocument &&
-      rootDoc == nsContentUtils::GetRootDocument(aRootDocument)) {
+      rootDoc ==
+          nsContentUtils::GetInProcessSubtreeRootDocument(aRootDocument)) {
     
     
     

@@ -6944,7 +6944,7 @@ void nsContentUtils::FireMutationEventsForDirectParsing(
 }
 
 
-Document* nsContentUtils::GetRootDocument(Document* aDoc) {
+Document* nsContentUtils::GetInProcessSubtreeRootDocument(Document* aDoc) {
   if (!aDoc) {
     return nullptr;
   }
