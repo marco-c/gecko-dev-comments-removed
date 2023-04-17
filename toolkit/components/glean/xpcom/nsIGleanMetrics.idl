@@ -310,6 +310,13 @@ interface nsIGleanTimespan : nsISupports
 
 
 
+  void cancel();
+
+  
+
+
+
+
 
 
 
