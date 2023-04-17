@@ -23,10 +23,9 @@
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsIOService.h"
 #include "nsIPermissionManager.h"
+#include "nsNPAPIPluginInstance.h"
 #include "nsPluginHost.h"
-#include "nsPluginInstanceOwner.h"
 #include "nsIHttpChannel.h"
-#include "nsJSNPRuntime.h"
 #include "nsINestedURI.h"
 #include "nsScriptSecurityManager.h"
 #include "nsIURILoader.h"
@@ -107,8 +106,6 @@
 #    undef CreateEvent
 #  endif
 #endif  
-
-static NS_DEFINE_CID(kAppShellCID, NS_APPSHELL_CID);
 
 static const char kPrefYoutubeRewrite[] = "plugins.rewrite_youtube_embeds";
 static const char kPrefFavorFallbackMode[] = "plugins.favorfallback.mode";
@@ -497,26 +494,7 @@ void nsObjectLoadingContent::QueueCheckPluginStopEvent() {
 
 
 
-bool nsObjectLoadingContent::MakePluginListener() {
-  if (!mInstanceOwner) {
-    MOZ_ASSERT_UNREACHABLE("expecting a spawned plugin");
-    return false;
-  }
-  RefPtr<nsPluginHost> pluginHost = nsPluginHost::GetInst();
-  if (!pluginHost) {
-    MOZ_ASSERT_UNREACHABLE("No pluginHost");
-    return false;
-  }
-  NS_ASSERTION(!mFinalListener, "overwriting a final listener");
-  nsresult rv;
-  RefPtr<nsNPAPIPluginInstance> inst = mInstanceOwner->GetInstance();
-  nsCOMPtr<nsIStreamListener> finalListener;
-  rv = pluginHost->NewPluginStreamListener(mURI, inst,
-                                           getter_AddRefs(finalListener));
-  NS_ENSURE_SUCCESS(rv, false);
-  mFinalListener = finalListener;
-  return true;
-}
+bool nsObjectLoadingContent::MakePluginListener() { return false; }
 
 
 void nsObjectLoadingContent::SetupFrameLoader(int32_t aJSPluginId) {
@@ -580,15 +558,7 @@ void nsObjectLoadingContent::UnbindFromTree(bool aNullParent) {
   Document* ownerDoc = thisElement->OwnerDoc();
   ownerDoc->RemovePlugin(this);
 
-  
-  
-  if (mType == eType_Plugin && (mInstanceOwner || mInstantiating)) {
-    
-    
-    
-    
-    QueueCheckPluginStopEvent();
-  } else if (mType != eType_Image) {
+  if (mType != eType_Image) {
     
     
     
@@ -632,7 +602,7 @@ nsObjectLoadingContent::~nsObjectLoadingContent() {
         "Should not be tearing down frame loaders at this point");
     mFrameLoader->Destroy();
   }
-  if (mInstanceOwner || mInstantiating) {
+  if (mInstantiating) {
     
     
     MOZ_ASSERT_UNREACHABLE(
@@ -643,137 +613,7 @@ nsObjectLoadingContent::~nsObjectLoadingContent() {
 }
 
 nsresult nsObjectLoadingContent::InstantiatePluginInstance(bool aIsLoading) {
-  if (mInstanceOwner || mType != eType_Plugin || (mIsLoading != aIsLoading) ||
-      mInstantiating) {
-    
-    
-    
-    NS_ASSERTION(mIsLoading || !aIsLoading,
-                 "aIsLoading should only be true inside LoadObject");
-    return NS_OK;
-  }
-
-  mInstantiating = true;
-  AutoSetInstantiatingToFalse autoInstantiating(this);
-
-  nsCOMPtr<nsIContent> thisContent =
-      do_QueryInterface(static_cast<nsIImageLoadingContent*>(this));
-
-  nsCOMPtr<Document> doc = thisContent->GetComposedDoc();
-  if (!doc || !InActiveDocument(thisContent)) {
-    NS_ERROR(
-        "Shouldn't be calling "
-        "InstantiatePluginInstance without an active document");
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  
-  
-  nsCOMPtr<nsIObjectLoadingContent> kungFuDeathGrip = this;
-
-  
-  
-  doc->FlushPendingNotifications(FlushType::Layout);
-  
-  NS_ENSURE_TRUE(mInstantiating, NS_OK);
-
-  if (!thisContent->GetPrimaryFrame()) {
-    LOG(("OBJLC [%p]: Not instantiating plugin with no frame", this));
-    return NS_OK;
-  }
-
-  RefPtr<nsPluginHost> pluginHost = nsPluginHost::GetInst();
-
-  if (!pluginHost) {
-    MOZ_ASSERT_UNREACHABLE("No pluginhost");
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  
-  
-  nsCOMPtr<nsIAppShell> appShell = do_GetService(kAppShellCID);
-  if (appShell) {
-    appShell->SuspendNative();
-  }
-
-  RefPtr<nsPluginInstanceOwner> newOwner;
-  nsresult rv = pluginHost->InstantiatePluginInstance(
-      mContentType, mURI.get(), this, getter_AddRefs(newOwner));
-
-  
-  if (appShell) {
-    appShell->ResumeNative();
-  }
-
-  if (!mInstantiating || NS_FAILED(rv)) {
-    LOG(
-        ("OBJLC [%p]: Plugin instantiation failed or re-entered, "
-         "killing old instance",
-         this));
-    
-    
-    
-    if (newOwner) {
-      RefPtr<nsNPAPIPluginInstance> inst = newOwner->GetInstance();
-      if (inst) {
-        pluginHost->StopPluginInstance(inst);
-      }
-      newOwner->Destroy();
-    }
-    return NS_OK;
-  }
-
-  mInstanceOwner = newOwner;
-
-  if (mInstanceOwner) {
-    RefPtr<nsNPAPIPluginInstance> inst = mInstanceOwner->GetInstance();
-
-    rv = inst->GetRunID(&mRunID);
-    mHasRunID = NS_SUCCEEDED(rv);
-  }
-
-  
-  NotifyContentObjectWrapper();
-
-  RefPtr<nsNPAPIPluginInstance> pluginInstance = GetPluginInstance();
-  if (pluginInstance) {
-    nsCOMPtr<nsIPluginTag> pluginTag;
-    pluginHost->GetPluginTagForInstance(pluginInstance,
-                                        getter_AddRefs(pluginTag));
-
-    uint32_t blockState = nsIBlocklistService::STATE_NOT_BLOCKED;
-    pluginTag->GetBlocklistState(&blockState);
-    if (blockState == nsIBlocklistService::STATE_OUTDATED) {
-      
-      LOG(("OBJLC [%p]: Dispatching plugin outdated event for content\n",
-           this));
-      nsCOMPtr<nsIRunnable> ev =
-          new nsSimplePluginEvent(thisContent, u"PluginOutdated"_ns);
-      nsresult rv = NS_DispatchToCurrentThread(ev);
-      if (NS_FAILED(rv)) {
-        NS_WARNING("failed to dispatch nsSimplePluginEvent");
-      }
-    }
-
-    
-    
-    
-    
-    if ((mURI && !mChannelLoaded) || (mChannelLoaded && !aIsLoading)) {
-      NS_ASSERTION(!mChannel, "should not have an existing channel here");
-      
-      
-      OpenChannel();
-    }
-  }
-
-  nsCOMPtr<nsIRunnable> ev =
-      new nsSimplePluginEvent(thisContent, doc, u"PluginInstantiated"_ns);
-  NS_DispatchToCurrentThread(ev);
-
-  return NS_OK;
+  return NS_ERROR_FAILURE;
 }
 
 void nsObjectLoadingContent::GetPluginAttributes(
@@ -898,7 +738,7 @@ void nsObjectLoadingContent::NotifyOwnerDocumentActivityChanged() {
 
   
   
-  if (mInstanceOwner || mInstantiating) {
+  if (mInstantiating) {
     QueueCheckPluginStopEvent();
   }
   nsImageLoadingContent::NotifyOwnerDocumentActivityChanged();
@@ -913,25 +753,6 @@ nsObjectLoadingContent::OnStartRequest(nsIRequest* aRequest) {
 
   if (aRequest != mChannel || !aRequest) {
     
-    return NS_BINDING_ABORTED;
-  }
-
-  
-  
-  if (mType == eType_Plugin) {
-    if (!mInstanceOwner) {
-      
-      MOZ_ASSERT_UNREACHABLE(
-          "Opened a channel in plugin mode, but don't have "
-          "a plugin");
-      return NS_BINDING_ABORTED;
-    }
-    if (MakePluginListener()) {
-      return mFinalListener->OnStartRequest(aRequest);
-    }
-    MOZ_ASSERT_UNREACHABLE(
-        "Failed to create PluginStreamListener, aborting "
-        "channel");
     return NS_BINDING_ABORTED;
   }
 
@@ -1097,11 +918,7 @@ nsObjectLoadingContent::GetDisplayedType(uint32_t* aType) {
 }
 
 nsNPAPIPluginInstance* nsObjectLoadingContent::GetPluginInstance() {
-  if (!mInstanceOwner) {
-    return nullptr;
-  }
-
-  return mInstanceOwner->GetInstance();
+  return nullptr;
 }
 
 NS_IMETHODIMP
@@ -2023,7 +1840,7 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
 
   
   
-  if (mFrameLoader || mPendingInstantiateEvent || mInstanceOwner ||
+  if (mFrameLoader || mPendingInstantiateEvent ||
       mPendingCheckPluginStopEvent || mFinalListener) {
     MOZ_ASSERT_UNREACHABLE("Trying to load new plugin with existing content");
     return NS_OK;
@@ -2157,7 +1974,7 @@ nsresult nsObjectLoadingContent::LoadObject(bool aNotify, bool aForceLoad,
   
   if (mType == eType_Null) {
     LOG(("OBJLC [%p]: Loading fallback, type %u", this, fallbackType));
-    NS_ASSERTION(!mFrameLoader && !mInstanceOwner,
+    NS_ASSERTION(!mFrameLoader,
                  "switched to type null but also loaded something");
 
     
@@ -2426,7 +2243,7 @@ void nsObjectLoadingContent::Destroy() {
     mFrameLoader = nullptr;
   }
 
-  if (mInstanceOwner || mInstantiating) {
+  if (mInstantiating) {
     QueueCheckPluginStopEvent();
   }
 
@@ -2479,13 +2296,7 @@ void nsObjectLoadingContent::UnloadObject(bool aResetState) {
 
   mScriptRequested = false;
 
-  if (mIsStopping) {
-    
-    
-    
-    TeardownProtoChain();
-    mIsStopping = false;
-  }
+  mIsStopping = false;
 
   mCachedAttributes.Clear();
   mCachedParameters.Clear();
@@ -2595,17 +2406,7 @@ void nsObjectLoadingContent::CreateStaticClone(
 }
 
 NS_IMETHODIMP
-nsObjectLoadingContent::PluginDestroyed() {
-  
-  
-  
-  TeardownProtoChain();
-  if (mInstanceOwner) {
-    mInstanceOwner->Destroy();
-    mInstanceOwner = nullptr;
-  }
-  return NS_OK;
-}
+nsObjectLoadingContent::PluginDestroyed() { return NS_OK; }
 
 NS_IMETHODIMP
 nsObjectLoadingContent::PluginCrashed(nsIPluginTag* aPluginTag,
@@ -2674,16 +2475,12 @@ nsNPAPIPluginInstance* nsObjectLoadingContent::ScriptRequestPluginInstance(
       MOZ_ASSERT_UNREACHABLE("failed to dispatch PluginScripted event");
     }
     mScriptRequested = true;
-  } else if (callerIsContentJS && mType == eType_Plugin && !mInstanceOwner &&
+  } else if (callerIsContentJS && mType == eType_Plugin &&
              nsContentUtils::IsSafeToRunScript() &&
              InActiveDocument(thisContent)) {
     
     
     SyncStartPluginInstance();
-  }
-
-  if (mInstanceOwner) {
-    return mInstanceOwner->GetInstance();
   }
 
   
@@ -2713,8 +2510,7 @@ nsObjectLoadingContent::SyncStartPluginInstance() {
 
 NS_IMETHODIMP
 nsObjectLoadingContent::AsyncStartPluginInstance() {
-  
-  if (mInstanceOwner || mPendingInstantiateEvent) {
+  if (mPendingInstantiateEvent) {
     return NS_OK;
   }
 
@@ -2746,7 +2542,7 @@ void nsObjectLoadingContent::LoadFallback(FallbackType aType, bool aNotify) {
   ObjectType oldType = mType;
   FallbackType oldFallbackType = mFallbackType;
 
-  NS_ASSERTION(!mInstanceOwner && !mFrameLoader && !mChannel,
+  NS_ASSERTION(!mFrameLoader && !mChannel,
                "LoadFallback called with loaded content");
 
   
@@ -2813,49 +2609,6 @@ void nsObjectLoadingContent::LoadFallback(FallbackType aType, bool aNotify) {
   NotifyStateChanged(oldType, oldState, oldFallbackType, false, true);
 }
 
-void nsObjectLoadingContent::DoStopPlugin(
-    nsPluginInstanceOwner* aInstanceOwner) {
-  
-  
-  
-  
-  if (mIsStopping) {
-    return;
-  }
-  mIsStopping = true;
-
-  RefPtr<nsPluginInstanceOwner> kungFuDeathGrip(aInstanceOwner);
-  if (mType == eType_FakePlugin) {
-    if (mFrameLoader) {
-      mFrameLoader->Destroy();
-      mFrameLoader = nullptr;
-    }
-  } else {
-    RefPtr<nsNPAPIPluginInstance> inst = aInstanceOwner->GetInstance();
-    if (inst) {
-#if defined(XP_MACOSX)
-      aInstanceOwner->HidePluginWindow();
-#endif
-
-      RefPtr<nsPluginHost> pluginHost = nsPluginHost::GetInst();
-      NS_ASSERTION(pluginHost, "No plugin host?");
-      pluginHost->StopPluginInstance(inst);
-    }
-  }
-
-  aInstanceOwner->Destroy();
-
-  
-  
-  if (!mIsStopping) {
-    LOG(("OBJLC [%p]: Re-entered in plugin teardown", this));
-    return;
-  }
-
-  TeardownProtoChain();
-  mIsStopping = false;
-}
-
 NS_IMETHODIMP
 nsObjectLoadingContent::StopPluginInstance() {
   AUTO_PROFILER_LABEL("nsObjectLoadingContent::StopPluginInstance", OTHER);
@@ -2866,26 +2619,6 @@ nsObjectLoadingContent::StopPluginInstance() {
   
   
   mInstantiating = false;
-
-  if (!mInstanceOwner) {
-    return NS_OK;
-  }
-
-  if (mChannel) {
-    
-    
-    
-    
-    
-    LOG(("OBJLC [%p]: StopPluginInstance - Closing used channel", this));
-    CloseChannel();
-  }
-
-  RefPtr<nsPluginInstanceOwner> ownerGrip(mInstanceOwner);
-  mInstanceOwner = nullptr;
-
-  
-  DoStopPlugin(ownerGrip);
 
   return NS_OK;
 }
@@ -3316,52 +3049,6 @@ nsresult nsObjectLoadingContent::GetPluginJSObject(
   }
 
   return NS_OK;
-}
-
-void nsObjectLoadingContent::TeardownProtoChain() {
-  nsCOMPtr<nsIContent> thisContent =
-      do_QueryInterface(static_cast<nsIImageLoadingContent*>(this));
-
-  NS_ENSURE_TRUE_VOID(thisContent->GetWrapper());
-
-  
-  
-  AutoJSAPI jsapi;
-  jsapi.Init();
-  JSContext* cx = jsapi.cx();
-  JS::Rooted<JSObject*> obj(cx, thisContent->GetWrapper());
-  MOZ_ASSERT(obj);
-
-  JS::Rooted<JSObject*> proto(cx);
-  JSAutoRealm ar(cx, obj);
-
-  
-  
-  DebugOnly<bool> removed = false;
-  while (obj) {
-    if (!::JS_GetPrototype(cx, obj, &proto)) {
-      return;
-    }
-    if (!proto) {
-      break;
-    }
-    
-    
-    if (nsNPObjWrapper::IsWrapper(js::UncheckedUnwrap(proto))) {
-      
-      if (!::JS_GetPrototype(cx, proto, &proto)) {
-        return;
-      }
-
-      MOZ_ASSERT(!removed, "more than one NPObject in prototype chain");
-      removed = true;
-
-      
-      ::JS_SetPrototype(cx, obj, proto);
-    }
-
-    obj = proto;
-  }
 }
 
 bool nsObjectLoadingContent::DoResolve(
