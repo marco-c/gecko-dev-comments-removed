@@ -9,7 +9,6 @@
 #if defined(OS_WIN)
 #  include <windows.h>
 #  include <shellapi.h>
-#  include "mozilla/DynamicallyLinkedFunctionPtr.h"
 #endif
 
 #include <algorithm>
@@ -51,16 +50,8 @@ void CommandLine::ParseFromString(const std::wstring& command_line) {
 
   int num_args = 0;
   wchar_t** args = NULL;
-  
-  
-  mozilla::DynamicallyLinkedFunctionPtr<decltype(&::CommandLineToArgvW)>
-      pCommandLineToArgvW(L"api-ms-win-downlevel-shell32-l1-1-0.dll",
-                          "CommandLineToArgvW");
-  if (pCommandLineToArgvW) {
-    args = pCommandLineToArgvW(command_line_string_.c_str(), &num_args);
-  } else {
-    args = CommandLineToArgvW(command_line_string_.c_str(), &num_args);
-  }
+
+  args = CommandLineToArgvW(command_line_string_.c_str(), &num_args);
 
   
   TrimWhitespace(args[0], TRIM_ALL, &program_);
