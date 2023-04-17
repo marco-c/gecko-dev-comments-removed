@@ -1,10 +1,10 @@
 <!DOCTYPE>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1154791
+-->
 <head>
-  <title>Test for Bug 1100966</title>
+  <title>Test for Bug 1154791</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
   <link rel="stylesheet" href="/tests/SimpleTest/test.css">
   <script src="/tests/SimpleTest/EventUtils.js"></script>
@@ -12,12 +12,11 @@
 <body>
 <div id="display">
 </div>
+
 <div id="content" contenteditable>
-=====<br>
-correct<br>
-fivee sixx<br>
-====
+<tt>thiss onee is stilll a</tt>
 </div>
+
 <pre id="test">
 </pre>
 
@@ -25,25 +24,26 @@ fivee sixx<br>
 
 let {onSpellCheck} = SpecialPowers.Cu.import("resource://testing-common/AsyncSpellCheckTestHelper.jsm", {});
 
-/** Test for Bug 1100966 **/
+/** Test for Bug 1154791 **/
 SimpleTest.waitForExplicitFinish();
 SimpleTest.waitForFocus(function() {
   var div = document.getElementById("content");
   div.focus();
-  synthesizeMouseAtCenter(div, {});
-
   getSpellChecker().UpdateCurrentDictionary(() => {
-    sendString(" ");
+    synthesizeMouseAtCenter(div, {});
+    synthesizeKey("KEY_ArrowLeft");
+    synthesizeKey("KEY_ArrowLeft");
+
     SimpleTest.executeSoon(function() {
-      sendString("a");
+      synthesizeKey("KEY_Backspace");
       SimpleTest.executeSoon(function() {
-        synthesizeKey("KEY_Backspace");
+        sendString(" ");
 
         onSpellCheck(div, function() {
           var sel = getSpellCheckSelection();
           is(sel.rangeCount, 2, "We should have two misspelled words");
-          is(String(sel.getRangeAt(0)), "fivee", "Correct misspelled word");
-          is(String(sel.getRangeAt(1)), "sixx", "Correct misspelled word");
+          is(String(sel.getRangeAt(0)), "thiss", "Correct misspelled word");
+          is(String(sel.getRangeAt(1)), "onee", "Correct misspelled word");
 
           SimpleTest.finish();
         });
