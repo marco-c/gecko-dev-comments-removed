@@ -192,6 +192,15 @@ pref("app.update.langpack.enabled", true);
   pref("app.update.background.interval", 25200);
 #endif
 
+#ifdef XP_MACOSX
+  
+  
+  pref("app.update.noWindowAutoRestart.enabled", true);
+  
+  
+  pref("app.update.noWindowAutoRestart.delayMs", 300000);
+#endif
+
 #if defined(MOZ_BACKGROUNDTASKS)
   
   
