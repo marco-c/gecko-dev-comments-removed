@@ -40,7 +40,7 @@ class ThreadRegistration {
   
   
   
-  static ProfilingStack& RegisterThread(const char* aName,
+  static ProfilingStack* RegisterThread(const char* aName,
                                         const void* aStackTop);
   static void UnregisterThread();
 
@@ -330,14 +330,15 @@ class ThreadRegistration {
   
   int mOtherRegistrations = 0;
 
-  enum class TLSInitialization { NOT_YET, DONE, FAILED };
-  static TLSInitialization sIsTLSInitialized;
+  
+  
+  bool mIsOnHeap = false;
+
   static MOZ_THREAD_LOCAL(ThreadRegistration*) tlsThreadRegistration;
 
   [[nodiscard]] static decltype(tlsThreadRegistration)* GetTLS() {
-    return (sIsTLSInitialized == TLSInitialization::DONE)
-               ? &tlsThreadRegistration
-               : nullptr;
+    static const bool initialized = tlsThreadRegistration.init();
+    return initialized ? &tlsThreadRegistration : nullptr;
   }
 
   [[nodiscard]] static ThreadRegistration* GetFromTLS() {

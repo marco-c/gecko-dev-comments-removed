@@ -6,37 +6,41 @@
 
 #include "mozilla/ProfilerThreadRegistration.h"
 
+#include "mozilla/ProfilerMarkers.h"
 #include "mozilla/ProfilerThreadRegistry.h"
+#include "nsString.h"
 
 namespace mozilla::profiler {
-
-
-
-ThreadRegistration::TLSInitialization ThreadRegistration::sIsTLSInitialized;
 
 
 MOZ_THREAD_LOCAL(ThreadRegistration*) ThreadRegistration::tlsThreadRegistration;
 
 ThreadRegistration::ThreadRegistration(const char* aName, const void* aStackTop)
     : mData(aName, aStackTop) {
-  if (mData.Info().IsMainThread() &&
-      sIsTLSInitialized == TLSInitialization::NOT_YET) {
-    sIsTLSInitialized = tlsThreadRegistration.init()
-                            ? TLSInitialization::DONE
-                            : TLSInitialization::FAILED;
+  auto* tls = GetTLS();
+  if (MOZ_UNLIKELY(!tls)) {
+    
+    return;
   }
 
-  if (auto* tls = GetTLS(); tls) {
-    if (ThreadRegistration* rootRegistration = tls->get(); rootRegistration) {
-      
-      
-      
-      return;
-    }
-
-    tls->set(this);
-    ThreadRegistry::Register(OnThreadRef{*this});
+  if (ThreadRegistration* rootRegistration = tls->get(); rootRegistration) {
+    
+    
+    
+    MOZ_ASSERT(
+        mData.Info().ThreadId() == rootRegistration->mData.Info().ThreadId(),
+        "Thread being re-registered has changed its TID");
+    
+    
+    
+    PROFILER_MARKER_TEXT("Nested ThreadRegistration()", OTHER_Profiling,
+                         MarkerOptions{},
+                         ProfilerString8View::WrapNullTerminatedString(aName));
+    return;
   }
+
+  tls->set(this);
+  ThreadRegistry::Register(OnThreadRef{*this});
 }
 
 ThreadRegistration::~ThreadRegistration() {
@@ -52,45 +56,127 @@ ThreadRegistration::~ThreadRegistration() {
   
   mDataMutex.Unlock();
 #endif  
-  if (auto* tls = GetTLS(); tls) {
-    if (tls->get() != this) {
+  auto* tls = GetTLS();
+  if (MOZ_UNLIKELY(!tls)) {
+    
+    return;
+  }
+
+  if (ThreadRegistration* rootRegistration = tls->get(); rootRegistration) {
+    if (rootRegistration != this) {
       
+      
+      PROFILER_MARKER_TEXT(
+          "Nested ~ThreadRegistration()", OTHER_Profiling, MarkerOptions{},
+          ProfilerString8View::WrapNullTerminatedString(mData.Info().Name()));
       return;
     }
 
     ThreadRegistry::Unregister(OnThreadRef{*this});
     tls->set(nullptr);
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  if (!profiler_is_main_thread()) {
+    nsAutoCString threadId("thread id: ");
+    threadId.AppendInt(profiler_current_thread_id().ToNumber());
+    threadId.AppendLiteral(", name: \"");
+    threadId.AppendASCII(mData.Info().Name());
+    threadId.AppendLiteral("\"");
+    PROFILER_MARKER_TEXT(
+        "~ThreadRegistration() but TLS is empty", OTHER_Profiling,
+        MarkerOptions(MarkerThreadId::MainThread(), MarkerStack::Capture()),
+        threadId);
   }
 }
 
 
-ProfilingStack& ThreadRegistration::RegisterThread(const char* aName,
+ProfilingStack* ThreadRegistration::RegisterThread(const char* aName,
                                                    const void* aStackTop) {
-  if (ThreadRegistration* rootRegistration = GetFromTLS(); rootRegistration) {
+  auto* tls = GetTLS();
+  if (MOZ_UNLIKELY(!tls)) {
+    
+    return nullptr;
+  }
+
+  if (ThreadRegistration* rootRegistration = tls->get(); rootRegistration) {
     
     
     ++rootRegistration->mOtherRegistrations;
-    return rootRegistration->mData.mProfilingStack;
+    
+    
+    
+    PROFILER_MARKER_TEXT("Nested ThreadRegistration::RegisterThread()",
+                         OTHER_Profiling, MarkerOptions{},
+                         ProfilerString8View::WrapNullTerminatedString(aName));
+    return &rootRegistration->mData.mProfilingStack;
   }
 
   
   
   ThreadRegistration* tr = new ThreadRegistration(aName, aStackTop);
-  return tr->mData.mProfilingStack;
+  tr->mIsOnHeap = true;
+  return &tr->mData.mProfilingStack;
 }
 
 
 void ThreadRegistration::UnregisterThread() {
-  if (ThreadRegistration* rootRegistration = GetFromTLS(); rootRegistration) {
+  auto* tls = GetTLS();
+  if (MOZ_UNLIKELY(!tls)) {
+    
+    return;
+  }
+
+  if (ThreadRegistration* rootRegistration = tls->get(); rootRegistration) {
     if (rootRegistration->mOtherRegistrations != 0) {
       
       
       --rootRegistration->mOtherRegistrations;
+      
+      PROFILER_MARKER_UNTYPED("Nested ThreadRegistration::UnregisterThread()",
+                              OTHER_Profiling);
       return;
     }
+
+    if (!rootRegistration->mIsOnHeap) {
+      
+      
+      
+      
+      
+      PROFILER_MARKER_UNTYPED("Excess ThreadRegistration::UnregisterThread()",
+                              OTHER_Profiling, MarkerStack::Capture());
+      return;
+    }
+
+    
+    
     
     
     delete rootRegistration;
+    return;
+  }
+
+  
+  
+  
+  
+  
+  if (!profiler_is_main_thread()) {
+    nsAutoCString threadId("thread id: ");
+    threadId.AppendInt(profiler_current_thread_id().ToNumber());
+    PROFILER_MARKER_TEXT(
+        "ThreadRegistration::UnregisterThread() but TLS is empty",
+        OTHER_Profiling,
+        MarkerOptions(MarkerThreadId::MainThread(), MarkerStack::Capture()),
+        threadId);
   }
 }
 

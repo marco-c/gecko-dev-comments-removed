@@ -168,12 +168,6 @@ TEST(GeckoProfiler, ThreadRegistrationInfo)
   }
 }
 
-static void EnsureThreadRegistrationTLSIsInitialized() {
-  char onStackChar;
-  profiler::ThreadRegistration tr{
-      "Temporary main thread registration to init TLS", &onStackChar};
-}
-
 static void TestConstUnlockedConstReader(
     const profiler::ThreadRegistration::UnlockedConstReader& aData,
     const TimeStamp& aBeforeRegistration, const TimeStamp& aAfterRegistration,
@@ -381,7 +375,6 @@ TEST(GeckoProfiler, ThreadRegistration_DataAccess)
   profiler_init_main_thread_id();
   ASSERT_TRUE(profiler_is_main_thread())
   << "This test assumes it runs on the main thread";
-  EnsureThreadRegistrationTLSIsInitialized();
 
   
   
@@ -568,7 +561,6 @@ TEST(GeckoProfiler, ThreadRegistration_NestedRegistrations)
   profiler_init_main_thread_id();
   ASSERT_TRUE(profiler_is_main_thread())
   << "This test assumes it runs on the main thread";
-  EnsureThreadRegistrationTLSIsInitialized();
 
   
   
@@ -688,6 +680,47 @@ TEST(GeckoProfiler, ThreadRegistration_NestedRegistrations)
       ASSERT_FALSE(TR::IsRegistered());
     }
 
+    
+    {
+      TR rt2{"Test thread #11", &onStackChar};
+      ASSERT_TRUE(TR::IsRegistered());
+      EXPECT_STREQ(GetThreadName(), "Test thread #11");
+
+      TR::UnregisterThread();
+      ASSERT_TRUE(TR::IsRegistered())
+      << "On-stack thread should still be registered after off-stack "
+         "un-registration";
+      EXPECT_STREQ(GetThreadName(), "Test thread #11")
+          << "On-stack thread should still be registered after off-stack "
+             "un-registration";
+    }
+    ASSERT_FALSE(TR::IsRegistered());
+
+    
+    
+    {
+      TR::RegisterThread("Test thread #12", &onStackChar);
+      ASSERT_TRUE(TR::IsRegistered());
+      EXPECT_STREQ(GetThreadName(), "Test thread #12");
+
+      {
+        TR rt3{"Test thread #13", &onStackChar};
+        ASSERT_TRUE(TR::IsRegistered());
+        EXPECT_STREQ(GetThreadName(), "Test thread #12")
+            << "Nested registration shouldn't change the name";
+
+        
+        
+        TR::UnregisterThread();
+        ASSERT_FALSE(TR::IsRegistered())
+        << "UnregisterThread() of the root RegisterThread() should always work";
+
+        
+        
+      }
+      ASSERT_FALSE(TR::IsRegistered());
+    }
+
     ASSERT_FALSE(TR::IsRegistered());
   });
   testThread.join();
@@ -701,7 +734,6 @@ TEST(GeckoProfiler, ThreadRegistry_DataAccess)
   profiler_init_main_thread_id();
   ASSERT_TRUE(profiler_is_main_thread())
   << "This test assumes it runs on the main thread";
-  EnsureThreadRegistrationTLSIsInitialized();
 
   
   
@@ -1358,8 +1390,6 @@ TEST(GeckoProfiler, MultiRegistration)
 {
   
   
-  char top;
-  profiler_register_thread("Main thread again", &top);
 
   {
     std::thread thread([]() {
