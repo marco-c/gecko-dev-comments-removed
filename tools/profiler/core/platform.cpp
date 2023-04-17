@@ -2189,7 +2189,14 @@ static void DoLULBacktrace(
     uintptr_t nToCopy = 0;
     if (start < end) {
       nToCopy = end - start;
-      if (nToCopy > lul::N_STACK_BYTES) nToCopy = lul::N_STACK_BYTES;
+      if (nToCopy >= 1024u * 1024u) {
+        
+        
+        
+        nToCopy = 0;
+      } else if (nToCopy > lul::N_STACK_BYTES) {
+        nToCopy = lul::N_STACK_BYTES;
+      }
     }
     MOZ_ASSERT(nToCopy <= lul::N_STACK_BYTES);
     stackImg.mLen = nToCopy;
