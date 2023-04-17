@@ -31,6 +31,13 @@ let tests = [
   },
 ];
 
+function waitDelay(delay) {
+  return new Promise((resolve, reject) => {
+    
+    window.setTimeout(resolve, delay);
+  });
+}
+
 add_task(async function test_unknownContentType_dialog_layout() {
   for (let test of tests) {
     let UCTObserver = {
@@ -72,7 +79,26 @@ add_task(async function test_unknownContentType_dialog_layout() {
         waitForStateStop: true,
       },
       async function() {
-        let uctWindow = await UCTObserver.opened.promise;
+        
+        
+        
+        let windowOpenDelay = waitDelay(1000);
+        let uctWindow = await Promise.race([
+          windowOpenDelay,
+          UCTObserver.opened.promise,
+        ]);
+        const prefEnabled = Services.prefs.getBoolPref(
+          "browser.download.improvements_to_download_panel"
+        );
+
+        if (prefEnabled) {
+          SimpleTest.is(
+            !uctWindow,
+            true,
+            "UnknownContentType window shouldn't open."
+          );
+          return;
+        }
 
         for (let [id, props] of Object.entries(test.elements)) {
           let elem = uctWindow.dialog.dialogElement(id);

@@ -8,12 +8,38 @@ const TEST_PATH = getRootDirectory(gTestPath).replace(
   "http://example.com"
 );
 
+function waitDelay(delay) {
+  return new Promise((resolve, reject) => {
+    
+    window.setTimeout(resolve, delay);
+  });
+}
+
 
 
 
 
 add_task(async function test_download_filename_extension() {
   let windowObserver = BrowserTestUtils.domWindowOpenedAndLoaded();
+
+  
+  
+  
+  let windowOpenDelay = waitDelay(1000);
+  let uctWindow = await Promise.race([windowOpenDelay, windowObserver.promise]);
+  const prefEnabled = Services.prefs.getBoolPref(
+    "browser.download.improvements_to_download_panel"
+  );
+
+  if (prefEnabled) {
+    SimpleTest.is(
+      !uctWindow,
+      true,
+      "UnknownContentType window shouldn't open."
+    );
+    return;
+  }
+
   let tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     opening: TEST_PATH + "unknownContentType.EXE",
