@@ -1300,9 +1300,8 @@ mozilla::ipc::IPCResult ContentParent::RecvUngrabPointer(
 
 Atomic<bool, mozilla::Relaxed> sContentParentTelemetryEventEnabled(false);
 
-
-void ContentParent::LogAndAssertFailedPrincipalValidationInfo(
-    nsIPrincipal* aPrincipal, const char* aMethod) {
+static void LogAndAssertFailedPrincipalValidationInfo(nsIPrincipal* aPrincipal,
+                                                      const char* aMethod) {
   
   if (!sContentParentTelemetryEventEnabled.exchange(true)) {
     sContentParentTelemetryEventEnabled = true;
