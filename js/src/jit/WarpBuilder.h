@@ -52,6 +52,7 @@ namespace jit {
   _(SetIntrinsic)                        \
   /* Private Fields */                   \
   _(InitLockedElem)                      \
+  _(GetAliasedDebugVar)                  \
   // === !! WARNING WARNING WARNING !! ===
   
   

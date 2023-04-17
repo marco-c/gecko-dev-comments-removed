@@ -12,6 +12,7 @@
 #include "jsnum.h"
 
 #include "jit/Ion.h"
+#include "js/friend/DumpFunctions.h"
 #include "js/friend/ErrorMessages.h"  
 #include "vm/ArgumentsObject.h"
 #include "vm/BytecodeUtil.h"  
@@ -561,6 +562,9 @@ static MOZ_ALWAYS_INLINE bool CheckPrivateFieldOperation(JSContext* cx,
       return false;
     }
   }
+
+  
+  
 
   MOZ_ASSERT(idval.isSymbol());
   MOZ_ASSERT(idval.toSymbol()->isPrivateName());

@@ -316,6 +316,11 @@ void EmitterScope::dump(BytecodeEmitter* bce) {
                 l.environmentCoordinate().hops(),
                 l.environmentCoordinate().slot());
         break;
+      case NameLocation::Kind::DebugEnvironmentCoordinate:
+        fprintf(stdout, "debugEnvironment hops=%u slot=%u\n",
+                l.environmentCoordinate().hops(),
+                l.environmentCoordinate().slot());
+        break;
       case NameLocation::Kind::DynamicAnnexBVar:
         fprintf(stdout, "dynamic annex b var\n");
         break;
@@ -989,11 +994,24 @@ NameLocation EmitterScope::lookup(BytecodeEmitter* bce,
   return searchAndCache(bce, name);
 }
 
+
+uint32_t EmitterScope::CountEnclosingCompilationEnvironments(
+    BytecodeEmitter* bce, EmitterScope* emitterScope) {
+  uint32_t environments = emitterScope->hasEnvironment() ? 1 : 0;
+  while ((emitterScope = emitterScope->enclosing(&bce))) {
+    if (emitterScope->hasEnvironment()) {
+      environments++;
+    }
+  }
+  return environments;
+}
+
 bool EmitterScope::lookupPrivate(BytecodeEmitter* bce,
                                  TaggedParserAtomIndex name, NameLocation& loc,
                                  mozilla::Maybe<NameLocation>& brandLoc) {
   loc = lookup(bce, name);
 
+  
   
   
   
@@ -1023,10 +1041,29 @@ bool EmitterScope::lookupPrivate(BytecodeEmitter* bce,
     MOZ_ASSERT(cacheEntry);
 
     if (cacheEntry->bindingKind() == BindingKind::PrivateMethod) {
-      bce->reportError(nullptr, JSMSG_DEBUG_NO_PRIVATE_METHOD);
-      return false;
+      MOZ_ASSERT(cacheEntry->kind() ==
+                 NameLocation::Kind::DebugEnvironmentCoordinate);
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      uint32_t compilation_hops =
+          CountEnclosingCompilationEnvironments(bce, this);
+
+      uint32_t external_hops = cacheEntry->environmentCoordinate().hops();
+
+      brandLoc = Some(NameLocation::DebugEnvironmentCoordinate(
+          BindingKind::Synthetic, compilation_hops + external_hops,
+          ClassBodyLexicalEnvironmentObject::privateBrandSlot()));
+    } else {
+      brandLoc = Nothing();
     }
-    brandLoc = Nothing();
     return true;
   }
 

@@ -200,6 +200,12 @@ class EmitterScope : public Nestable<EmitterScope> {
 
   mozilla::Maybe<NameLocation> locationBoundInScope(TaggedParserAtomIndex name,
                                                     EmitterScope* target);
+
+  
+  
+  
+  static uint32_t CountEnclosingCompilationEnvironments(
+      BytecodeEmitter* bce, EmitterScope* emitterScope);
 };
 
 } 

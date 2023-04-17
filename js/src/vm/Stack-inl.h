@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef vm_Stack_inl_h
 #define vm_Stack_inl_h
@@ -12,19 +12,19 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/PodOperations.h"
 
-#include "builtin/Array.h"  // js::NewDenseEmptyArray
+#include "builtin/Array.h"  
 #include "builtin/ModuleObject.h"
 #include "jit/BaselineFrame.h"
 #include "jit/RematerializedFrame.h"
 #include "js/Debug.h"
-#include "js/friend/StackLimits.h"  // js::ReportOverRecursed
+#include "js/friend/StackLimits.h"  
 #include "vm/EnvironmentObject.h"
-#include "vm/FrameIter.h"  // js::FrameIter
+#include "vm/FrameIter.h"  
 #include "vm/JSContext.h"
 #include "vm/JSScript.h"
 
 #include "jit/BaselineFrame-inl.h"
-#include "jit/RematerializedFrame-inl.h"  // js::jit::RematerializedFrame::unsetIsDebuggee
+#include "jit/RematerializedFrame-inl.h"  
 #include "vm/JSObject-inl.h"
 #include "vm/JSScript-inl.h"
 #include "vm/NativeObject-inl.h"
@@ -52,7 +52,7 @@ inline void InterpreterFrame::initCallFrame(InterpreterFrame* prev,
                                             MaybeConstruct constructing) {
   MOZ_ASSERT(callee.baseScript() == script);
 
-  /* Initialize stack frame members. */
+  
   flags_ = 0;
   if (constructing) {
     flags_ |= CONSTRUCTING;
@@ -100,9 +100,9 @@ inline Value& InterpreterFrame::unaliasedActual(
 
 template <class Op>
 inline void InterpreterFrame::unaliasedForEachActual(Op op) {
-  // Don't assert !script()->funHasAnyAliasedFormal() since this function is
-  // called from ArgumentsObject::createUnexpected() which can access aliased
-  // slots.
+  
+  
+  
 
   const Value* argsEnd = argv() + numActualArgs();
   for (const Value* p = argv(); p < argsEnd; ++p) {
@@ -144,6 +144,22 @@ inline EnvironmentObject& InterpreterFrame::aliasedEnvironment(
     env = &env->as<EnvironmentObject>().enclosingEnvironment();
   }
   return env->as<EnvironmentObject>();
+}
+
+inline EnvironmentObject& InterpreterFrame::aliasedEnvironmentMaybeDebug(
+    EnvironmentCoordinate ec) const {
+  JSObject* env = environmentChain();
+  for (unsigned i = ec.hops(); i; i--) {
+    if (env->is<EnvironmentObject>()) {
+      env = &env->as<EnvironmentObject>().enclosingEnvironment();
+    } else {
+      MOZ_ASSERT(env->is<DebugEnvironmentProxy>());
+      env = &env->as<DebugEnvironmentProxy>().enclosingEnvironment();
+    }
+  }
+  return env->is<EnvironmentObject>()
+             ? env->as<EnvironmentObject>()
+             : env->as<DebugEnvironmentProxy>().environment();
 }
 
 template <typename SpecificEnvironment>
@@ -202,7 +218,7 @@ inline void InterpreterFrame::restoreGeneratorSlots(ArrayObject* src) {
   mozilla::PodCopy(slots(), srcElements, src->length());
 }
 
-/*****************************************************************************/
+
 
 inline void InterpreterStack::purge(JSRuntime* rt) {
   rt->gc.queueUnusedLifoBlocksForFree(&allocator_);
@@ -247,10 +263,10 @@ MOZ_ALWAYS_INLINE InterpreterFrame* InterpreterStack::getCallFrame(
     return reinterpret_cast<InterpreterFrame*>(buffer);
   }
 
-  // Pad any missing arguments with |undefined|.
+  
   MOZ_ASSERT(args.length() < nformal);
 
-  unsigned nfunctionState = 2 + constructing;  // callee, |this|, |new.target|
+  unsigned nfunctionState = 2 + constructing;  
 
   nvals += nformal + nfunctionState;
   uint8_t* buffer =
@@ -295,7 +311,7 @@ MOZ_ALWAYS_INLINE bool InterpreterStack::pushInlineFrame(
 
   fp->mark_ = mark;
 
-  /* Initialize frame, locals, regs. */
+  
   fp->initCallFrame(prev, prevpc, prevsp, *callee, script, argv, args.length(),
                     constructing);
 
@@ -315,10 +331,10 @@ MOZ_ALWAYS_INLINE bool InterpreterStack::resumeGeneratorCallFrame(
 
   LifoAlloc::Mark mark = allocator_.mark();
 
-  // (Async) generators and async functions are not constructors.
+  
   MOZ_ASSERT(!callee->isConstructor());
 
-  // Include callee, |this|, and maybe |new.target|
+  
   unsigned nformal = callee->nargs();
   unsigned nvals = 2 + nformal + script->nslots();
 
@@ -371,9 +387,9 @@ inline void AbstractFramePtr::setReturnValue(const Value& rval) const {
     return;
   }
   if (isWasmDebugFrame()) {
-    // TODO handle wasm function return value
-    // The function is called from Debugger::slowPathOnLeaveFrame --
-    // ignoring value for wasm.
+    
+    
+    
     return;
   }
   asRematerializedFrame()->setReturnValue(rval);
@@ -812,7 +828,7 @@ InterpreterActivation::InterpreterActivation(RunState& state, JSContext* cx,
 }
 
 InterpreterActivation::~InterpreterActivation() {
-  // Pop all inline frames.
+  
   while (regs_.fp() != entryFrame_) {
     popInlineFrame(regs_.fp());
   }
@@ -837,7 +853,7 @@ inline bool InterpreterActivation::pushInlineFrame(
 }
 
 inline void InterpreterActivation::popInlineFrame(InterpreterFrame* frame) {
-  (void)frame;  // Quell compiler warning.
+  (void)frame;  
   MOZ_ASSERT(regs_.fp() == frame);
   MOZ_ASSERT(regs_.fp() != entryFrame_);
 
@@ -855,6 +871,6 @@ inline bool InterpreterActivation::resumeGeneratorFrame(HandleFunction callee,
   return true;
 }
 
-} /* namespace js */
+} 
 
-#endif /* vm_Stack_inl_h */
+#endif 

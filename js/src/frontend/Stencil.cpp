@@ -86,7 +86,8 @@ bool ScopeContext::init(JSContext* cx, CompilationInput& input,
     if (!cacheEnclosingScopeBindingForEval(cx, input, parserAtoms)) {
       return false;
     }
-    if (!cachePrivateFieldsForEval(cx, input, effectiveScope, parserAtoms)) {
+    if (!cachePrivateFieldsForEval(cx, input, enclosingEnv, effectiveScope,
+                                   parserAtoms)) {
       return false;
     }
   }
@@ -222,9 +223,9 @@ void ScopeContext::cacheEnclosingScope(Scope* enclosingScope) {
 #endif
 }
 
-
 Scope* ScopeContext::determineEffectiveScope(Scope* scope,
                                              JSObject* environment) {
+  MOZ_ASSERT(effectiveScopeHops == 0);
   
   
   if (environment && scope->hasOnChain(ScopeKind::NonSyntactic)) {
@@ -235,6 +236,9 @@ Scope* ScopeContext::determineEffectiveScope(Scope* scope,
       JSObject* unwrapped = env;
       if (env->is<DebugEnvironmentProxy>()) {
         unwrapped = &env->as<DebugEnvironmentProxy>().environment();
+#ifdef DEBUG
+        enclosingEnvironmentIsDebugProxy_ = true;
+#endif
       }
 
       if (unwrapped->is<CallObject>()) {
@@ -243,6 +247,7 @@ Scope* ScopeContext::determineEffectiveScope(Scope* scope,
       }
 
       env = env->enclosingEnvironment();
+      effectiveScopeHops++;
     }
   }
 
@@ -356,6 +361,7 @@ static bool IsPrivateField(JSAtom* atom) {
 
 bool ScopeContext::cachePrivateFieldsForEval(JSContext* cx,
                                              CompilationInput& input,
+                                             JSObject* enclosingEnvironment,
                                              Scope* effectiveScope,
                                              ParserAtomsTable& parserAtoms) {
   if (!input.options.privateClassFields) {
@@ -367,34 +373,40 @@ bool ScopeContext::cachePrivateFieldsForEval(JSContext* cx,
   
   
   
-  uint32_t hops = 0;
+  
+  uint32_t hops = effectiveScopeHops;
   for (ScopeIter si(effectiveScope); si; si++) {
-    if (si.scope()->kind() != ScopeKind::ClassBody) {
-      continue;
-    }
-    uint32_t slots = 0;
-    for (js::BindingIter bi(si.scope()); bi; bi++) {
-      if (bi.kind() == BindingKind::PrivateMethod ||
-          (bi.kind() == BindingKind::Synthetic && IsPrivateField(bi.name()))) {
-        auto parserName =
-            parserAtoms.internJSAtom(cx, input.atomCache, bi.name());
-        if (!parserName) {
-          return false;
-        }
+    if (si.scope()->kind() == ScopeKind::ClassBody) {
+      uint32_t slots = 0;
+      for (js::BindingIter bi(si.scope()); bi; bi++) {
+        if (bi.kind() == BindingKind::PrivateMethod ||
+            (bi.kind() == BindingKind::Synthetic &&
+             IsPrivateField(bi.name()))) {
+          auto parserName =
+              parserAtoms.internJSAtom(cx, input.atomCache, bi.name());
+          if (!parserName) {
+            return false;
+          }
 
-        NameLocation loc =
-            NameLocation::EnvironmentCoordinate(bi.kind(), hops, slots);
+          NameLocation loc =
+              NameLocation::DebugEnvironmentCoordinate(bi.kind(), hops, slots);
 
-        if (!effectiveScopePrivateFieldCache_->put(parserName, loc)) {
-          ReportOutOfMemory(cx);
-          return false;
+          if (!effectiveScopePrivateFieldCache_->put(parserName, loc)) {
+            ReportOutOfMemory(cx);
+            return false;
+          }
         }
+        slots++;
       }
-      slots++;
     }
-    if (si.scope()->hasEnvironment()) {
-      hops++;
-    }
+
+    
+    
+    
+    
+    
+    
+    hops++;
   }
 
   return true;
@@ -595,6 +607,11 @@ bool ScopeContext::effectiveScopePrivateFieldCacheHas(
 
 mozilla::Maybe<NameLocation> ScopeContext::getPrivateFieldLocation(
     TaggedParserAtomIndex name) {
+  
+  
+  
+  
+  MOZ_ASSERT(enclosingEnvironmentIsDebugProxy_);
   auto p = effectiveScopePrivateFieldCache_->lookup(name);
   if (!p) {
     return mozilla::Nothing();

@@ -2869,6 +2869,16 @@
 
 
 
+
+ \
+    MACRO(GetAliasedDebugVar, get_aliased_debug_var, NULL, 5, 0, 1, JOF_DEBUGCOORD|JOF_NAME) \
+    
+
+
+
+
+
+
  \
     MACRO(GetImport, get_import, NULL, 5, 0, 1, JOF_ATOM|JOF_NAME) \
     
@@ -3503,7 +3513,6 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-  MACRO(226)                                   \
   MACRO(227)                                   \
   MACRO(228)                                   \
   MACRO(229)                                   \

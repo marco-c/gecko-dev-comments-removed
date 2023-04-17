@@ -43,8 +43,6 @@ bool PrivateOpEmitter::emitLoad(TaggedParserAtomIndex name,
 }
 
 bool PrivateOpEmitter::emitLoadPrivateBrand() {
-  
-  MOZ_ASSERT(loc_->bindingKind() == BindingKind::PrivateMethod);
   return emitLoad(TaggedParserAtomIndex::WellKnown::dotPrivateBrand(),
                   *brandLoc_);
 }
@@ -93,7 +91,7 @@ bool PrivateOpEmitter::emitReference() {
     return false;
   }
 
-  if (loc_->bindingKind() == BindingKind::PrivateMethod) {
+  if (brandLoc_) {
     if (!emitLoadPrivateBrand()) {
       
       return false;
@@ -128,7 +126,7 @@ bool PrivateOpEmitter::emitGet() {
 
   
 
-  if (loc_->bindingKind() == BindingKind::PrivateMethod) {
+  if (brandLoc_) {
     
     
     
@@ -226,7 +224,7 @@ bool PrivateOpEmitter::emitAssignment() {
 
   
 
-  if (loc_->bindingKind() == BindingKind::PrivateMethod) {
+  if (brandLoc_) {
     if (!bce_->emit2(JSOp::ThrowMsg,
                      uint8_t(ThrowMsgKind::AssignToPrivateMethod))) {
       return false;
