@@ -71,6 +71,9 @@ bool IsWindowMaximized(HWND window, bool* result);
 
 bool IsWindowValidAndVisible(HWND window);
 
+
+bool IsWindowResponding(HWND window);
+
 enum GetWindowListFlags {
   kNone = 0x00,
   kIgnoreUntitled = 1 << 0,

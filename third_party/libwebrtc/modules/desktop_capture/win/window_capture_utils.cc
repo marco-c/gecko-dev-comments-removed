@@ -36,14 +36,23 @@ struct GetWindowListParams {
   DesktopCapturer::SourceList* const result;
 };
 
+
+
+
+
+bool CanSafelyMakeBlockingCalls(HWND hwnd) {
+  DWORD process_id;
+  GetWindowThreadProcessId(hwnd, &process_id);
+  if (process_id != GetCurrentProcessId() || IsWindowResponding(hwnd)) {
+    return true;
+  }
+
+  return false;
+}
+
 BOOL CALLBACK GetWindowListHandler(HWND hwnd, LPARAM param) {
   GetWindowListParams* params = reinterpret_cast<GetWindowListParams*>(param);
   DesktopCapturer::SourceList* list = params->result;
-
-  
-  if (params->ignoreUntitled && GetWindowTextLength(hwnd) == 0) {
-    return TRUE;
-  }
 
   
   if (!IsWindowVisible(hwnd) || IsIconic(hwnd)) {
@@ -58,15 +67,30 @@ BOOL CALLBACK GetWindowListHandler(HWND hwnd, LPARAM param) {
     return TRUE;
   }
 
-  
-  
-  
-  const UINT uTimeout = 50;  
-  if (params->ignoreUnresponsive &&
-      !SendMessageTimeout(hwnd, WM_NULL, 0, 0, SMTO_ABORTIFHUNG, uTimeout,
-                          nullptr)) {
+  if (params->ignoreUnresponsive && !IsWindowResponding(hwnd)) {
     return TRUE;
   }
+
+  DesktopCapturer::Source window;
+  window.id = reinterpret_cast<WindowId>(hwnd);
+
+  
+  
+  
+  
+  
+  if (params->ignoreUnresponsive || CanSafelyMakeBlockingCalls(hwnd)) {
+    const size_t kTitleLength = 500;
+    WCHAR window_title[kTitleLength] = L"";
+    if (GetWindowTextLength(hwnd) != 0 &&
+        GetWindowTextW(hwnd, window_title, kTitleLength) > 0) {
+      window.title = rtc::ToUtf8(window_title);
+    }
+  }
+
+  
+  if (params->ignoreUntitled && window.title.empty())
+    return TRUE;
 
   
   
@@ -89,19 +113,6 @@ BOOL CALLBACK GetWindowListHandler(HWND hwnd, LPARAM param) {
   
   
   if (wcscmp(class_name, L"Button") == 0)
-    return TRUE;
-
-  DesktopCapturer::Source window;
-  window.id = reinterpret_cast<WindowId>(hwnd);
-
-  const size_t kTitleLength = 500;
-  WCHAR window_title[kTitleLength] = L"";
-  if (GetWindowTextW(hwnd, window_title, kTitleLength) > 0) {
-    window.title = rtc::ToUtf8(window_title);
-  }
-
-  
-  if (params->ignoreUntitled && window.title.empty())
     return TRUE;
 
   list->push_back(window);
@@ -250,6 +261,14 @@ bool IsWindowMaximized(HWND window, bool* result) {
 
 bool IsWindowValidAndVisible(HWND window) {
   return IsWindow(window) && IsWindowVisible(window) && !IsIconic(window);
+}
+
+bool IsWindowResponding(HWND window) {
+  
+  
+  const UINT uTimeoutMs = 50;
+  return SendMessageTimeout(window, WM_NULL, 0, 0, SMTO_ABORTIFHUNG, uTimeoutMs,
+                            nullptr);
 }
 
 bool GetWindowList(int flags, DesktopCapturer::SourceList* windows) {
