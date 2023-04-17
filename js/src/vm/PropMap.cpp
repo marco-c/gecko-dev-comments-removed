@@ -154,17 +154,20 @@ static MOZ_ALWAYS_INLINE SharedPropMap* PropMapChildReadBarrier(
     return child;
   }
 
-  if (MOZ_LIKELY(!zone->isGCSweepingOrCompacting() ||
-                 !IsAboutToBeFinalizedUnbarriered(&child))) {
-    return child;
+  if (MOZ_UNLIKELY(zone->isGCSweeping() &&
+                   IsAboutToBeFinalizedUnbarriered(&child))) {
+    
+    
+    MOZ_ASSERT(parent->isMarkedAny());
+    parent->removeChild(zone->runtimeFromMainThread()->defaultFreeOp(), child);
+    return nullptr;
   }
 
   
   
-  MOZ_ASSERT(parent->isMarkedAny());
-  parent->removeChild(zone->runtimeFromMainThread()->defaultFreeOp(), child);
+  MOZ_ASSERT(!zone->isGCCompacting());
 
-  return nullptr;
+  return child;
 }
 
 SharedPropMap* SharedPropMap::lookupChild(uint32_t length, HandleId id,
