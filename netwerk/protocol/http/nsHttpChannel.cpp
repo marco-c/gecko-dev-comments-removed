@@ -2653,8 +2653,7 @@ nsresult nsHttpChannel::ProxyFailover() {
     }
     
     
-    if (mLoadInfo->GetLoadingPrincipal() &&
-        mLoadInfo->GetLoadingPrincipal()->IsSystemPrincipal()) {
+    if (LoadBeConservative()) {
       rv = pps->NewProxyInfo("direct"_ns, ""_ns, 0, ""_ns, ""_ns, 0, UINT32_MAX,
                              nullptr, getter_AddRefs(pi));
     }
