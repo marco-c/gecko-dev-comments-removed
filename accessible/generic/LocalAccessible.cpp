@@ -963,6 +963,11 @@ nsresult LocalAccessible::HandleAccEvent(AccEvent* aEvent) {
           ipcDoc->SendEvent(id, aEvent->GetEventType());
           break;
         }
+        case nsIAccessibleEvent::EVENT_VALUE_CHANGE: {
+          SendCacheUpdate(CacheDomain::Value);
+          ipcDoc->SendEvent(id, aEvent->GetEventType());
+          break;
+        }
         default:
           ipcDoc->SendEvent(id, aEvent->GetEventType());
       }
@@ -1227,19 +1232,32 @@ void LocalAccessible::DOMAttributeChanged(int32_t aNameSpaceID,
 
   dom::Element* elm = Elm();
 
+  if (HasNumericValue() &&
+      (aAttribute == nsGkAtoms::aria_valuemax ||
+       aAttribute == nsGkAtoms::aria_valuemin || aAttribute == nsGkAtoms::min ||
+       aAttribute == nsGkAtoms::max || aAttribute == nsGkAtoms::step)) {
+    SendCacheUpdate(CacheDomain::Value);
+    return;
+  }
+
   
   if (aAttribute == nsGkAtoms::aria_valuetext) {
     mDoc->FireDelayedEvent(nsIAccessibleEvent::EVENT_TEXT_VALUE_CHANGE, this);
     return;
   }
 
-  
-  
-  if (aAttribute == nsGkAtoms::aria_valuenow &&
-      (!elm->HasAttr(kNameSpaceID_None, nsGkAtoms::aria_valuetext) ||
-       elm->AttrValueIs(kNameSpaceID_None, nsGkAtoms::aria_valuetext,
-                        nsGkAtoms::_empty, eCaseMatters))) {
-    mDoc->FireDelayedEvent(nsIAccessibleEvent::EVENT_VALUE_CHANGE, this);
+  if (aAttribute == nsGkAtoms::aria_valuenow) {
+    if (!elm->HasAttr(kNameSpaceID_None, nsGkAtoms::aria_valuetext) ||
+        elm->AttrValueIs(kNameSpaceID_None, nsGkAtoms::aria_valuetext,
+                         nsGkAtoms::_empty, eCaseMatters)) {
+      
+      
+      mDoc->FireDelayedEvent(nsIAccessibleEvent::EVENT_VALUE_CHANGE, this);
+    } else {
+      
+      
+      SendCacheUpdate(CacheDomain::Value);
+    }
     return;
   }
 
@@ -3008,6 +3026,13 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
     int32_t nameFlag = Name(name);
     fields->SetAttribute(nsGkAtoms::explicit_name, nameFlag);
     fields->SetAttribute(nsGkAtoms::name, name);
+  }
+
+  if ((aCacheDomain & CacheDomain::Value) && HasNumericValue()) {
+    fields->SetAttribute(nsGkAtoms::value, CurValue());
+    fields->SetAttribute(nsGkAtoms::max, MaxValue());
+    fields->SetAttribute(nsGkAtoms::min, MinValue());
+    fields->SetAttribute(nsGkAtoms::step, Step());
   }
 
   return fields.forget();
