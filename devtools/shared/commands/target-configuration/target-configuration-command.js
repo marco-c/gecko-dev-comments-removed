@@ -61,23 +61,29 @@ class TargetConfigurationCommand {
   }
 
   async isJavascriptEnabled() {
-    if (this._hasTargetWatcherSupport()) {
-      const front = await this.getFront();
-      return front.isJavascriptEnabled();
+    
+    
+    
+    if (!this._hasTargetWatcherSupport()) {
+      return true;
     }
 
-    
-    
     
     
     const { targetFront } = this._commands.targetCommand;
-    if (targetFront.traits.javascriptEnabled) {
+    if (!targetFront.traits.javascriptEnabledHandledInParent) {
+      
+      if (typeof this.configuration.javascriptEnabled !== "undefined") {
+        return this.configuration.javascriptEnabled;
+      }
+
+      
+      
       return targetFront._javascriptEnabled;
     }
 
-    
-    
-    return true;
+    const front = await this.getFront();
+    return front.isJavascriptEnabled();
   }
 
   

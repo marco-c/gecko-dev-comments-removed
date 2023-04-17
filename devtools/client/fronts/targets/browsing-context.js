@@ -122,6 +122,8 @@ class BrowsingContextTargetFront extends TargetMixin(
       this.targetForm.threadActor = response.threadActor;
       this.traits = response.traits || {};
 
+      
+      
       if (!this.traits.javascriptEnabledHandledInParent) {
         this._javascriptEnabled = response.javascriptEnabled;
       }

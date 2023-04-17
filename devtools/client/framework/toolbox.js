@@ -862,7 +862,7 @@ Toolbox.prototype = {
       this._buildTabs();
       this._applyCacheSettings();
       this._applyServiceWorkersTestingSettings();
-      this._applyJavascriptEnabledSettings();
+      this._forwardJavascriptEnabledToTargetConfiguration();
       this._addWindowListeners();
       this._addChromeEventHandlerEvents();
 
@@ -2119,7 +2119,14 @@ Toolbox.prototype = {
 
 
 
-  _applyJavascriptEnabledSettings: function() {
+
+
+
+
+
+
+
+  _forwardJavascriptEnabledToTargetConfiguration: function() {
     if (!this.target.traits.javascriptEnabledHandledInParent) {
       const javascriptEnabled = this.target._javascriptEnabled;
       this.commands.targetConfigurationCommand.updateConfiguration({
