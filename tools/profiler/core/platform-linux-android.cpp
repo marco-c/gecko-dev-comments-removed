@@ -438,11 +438,11 @@ SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
       mIntervalMicroseconds(
           std::max(1, int(floor(aIntervalMilliseconds * 1000 + 0.5)))) {
 #if defined(USE_LUL_STACKWALK)
-  lul::LUL* lul = CorePS::Lul();
+  lul::LUL* lul = CorePS::Lul(aLock);
   if (!lul && aStackWalkEnabled) {
-    CorePS::SetLul(MakeUnique<lul::LUL>(logging_sink_for_LUL));
+    CorePS::SetLul(aLock, MakeUnique<lul::LUL>(logging_sink_for_LUL));
     
-    lul = CorePS::Lul();
+    lul = CorePS::Lul(aLock);
     read_procmaps(lul);
 
     
@@ -569,9 +569,14 @@ static void PlatformInit(PSLockRef aLock) {}
 #endif
 
 #if defined(HAVE_NATIVE_UNWIND)
+
+
+
+ucontext_t sSyncUContext;
+
 void Registers::SyncPopulate() {
-  if (!getcontext(&mContextSyncStorage)) {
-    PopulateRegsFromContext(*this, &mContextSyncStorage);
+  if (!getcontext(&sSyncUContext)) {
+    PopulateRegsFromContext(*this, &sSyncUContext);
   }
 }
 #endif

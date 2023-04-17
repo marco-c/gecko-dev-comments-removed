@@ -37,7 +37,6 @@
 #ifndef ProfilerThreadRegistrationData_h
 #define ProfilerThreadRegistrationData_h
 
-#include "js/ProfilingFrameIterator.h"
 #include "js/ProfilingStack.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/MemoryReporting.h"
@@ -69,10 +68,6 @@ class ThreadRegistrationData {
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
     return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
-
-  static constexpr size_t MAX_JS_FRAMES = 1024;
-  using JsFrame = JS::ProfilingFrameIterator::Frame;
-  using JsFrameBuffer = JsFrame[MAX_JS_FRAMES];
 
   
  protected:
@@ -109,10 +104,6 @@ class ThreadRegistrationData {
   
   
   JSContext* mJSContext = nullptr;
-
-  
-  
-  JsFrame* mJsFrameBuffer = nullptr;
 
   
   
@@ -361,9 +352,6 @@ class ThreadRegistrationUnlockedReaderAndAtomicRWOnThread
   
 
   [[nodiscard]] JSContext* GetJSContext() const { return mJSContext; }
-
-  
-  [[nodiscard]] JsFrame* GetJsFrameBuffer() const { return mJsFrameBuffer; }
 
  protected:
   ThreadRegistrationUnlockedReaderAndAtomicRWOnThread(const char* aName,

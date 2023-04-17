@@ -116,7 +116,6 @@ void ThreadRegistrationLockedRWFromAnyThread::
     ClearIsBeingProfiledAndProfiledThreadData(const PSAutoLock&) {
   mIsBeingProfiled = false;
   mProfiledThreadData = nullptr;
-
   
   MOZ_ASSERT(mIsBeingProfiled == !!mProfiledThreadData);
 }
@@ -128,27 +127,11 @@ void ThreadRegistrationLockedRWOnThread::SetJSContext(JSContext* aJSContext) {
 
   
   
-  MOZ_ASSERT(!mJsFrameBuffer);
-  mJsFrameBuffer = new JsFrame[MAX_JS_FRAMES];
-
-  
-  
   js::SetContextProfilingStack(aJSContext, &ProfilingStackRef());
-
-  
-  MOZ_ASSERT(!!mJSContext == !!mJsFrameBuffer);
 }
 
 void ThreadRegistrationLockedRWOnThread::ClearJSContext() {
   mJSContext = nullptr;
-
-  if (mJsFrameBuffer) {
-    delete[] mJsFrameBuffer;
-    mJsFrameBuffer = nullptr;
-  }
-
-  
-  MOZ_ASSERT(!!mJSContext == !!mJsFrameBuffer);
 }
 
 void ThreadRegistrationLockedRWOnThread::PollJSSampling() {
