@@ -200,7 +200,7 @@ async function focusAndWaitForFieldsIdentified(browserOrContext, selector) {
   
 
   const { FormAutofillParent } = ChromeUtils.import(
-    "resource://autofill/FormAutofillParent.jsm"
+    "resource://formautofill/FormAutofillParent.jsm"
   );
 
   
