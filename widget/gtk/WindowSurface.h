@@ -16,7 +16,7 @@ namespace widget {
 
 class WindowSurface {
  public:
-  virtual ~WindowSurface() = default;
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WindowSurface);
 
   
   
@@ -30,6 +30,9 @@ class WindowSurface {
 
   
   virtual bool IsFallback() const { return false; }
+
+ protected:
+  virtual ~WindowSurface() = default;
 };
 
 }  

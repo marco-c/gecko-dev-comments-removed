@@ -60,14 +60,14 @@ class WindowSurfaceProvider final {
                                 const LayoutDeviceIntRegion& aInvalidRegion);
 
  private:
-  UniquePtr<WindowSurface> CreateWindowSurface();
+  RefPtr<WindowSurface> CreateWindowSurface();
 
   
   bool mIsX11Display;
   Window mXWindow;
   Visual* mXVisual;
   int mXDepth;
-  UniquePtr<WindowSurface> mWindowSurface;
+  RefPtr<WindowSurface> mWindowSurface;
 #ifdef MOZ_WAYLAND
   nsWindow* mWidget;
 #endif
