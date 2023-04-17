@@ -140,6 +140,8 @@ class HTMLMediaElement : public nsGenericHTMLElement,
     
     
     RefPtr<DOMMediaStream> mFinishWhenEndedAttrStream;
+    
+    RefPtr<MediaSource> mFinishWhenEndedMediaSource;
   };
 
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
