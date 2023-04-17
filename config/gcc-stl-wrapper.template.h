@@ -36,6 +36,10 @@
 #  define moz_dont_include_mozalloc_for_cstdlib
 #endif
 
+#ifndef moz_dont_include_mozalloc_for_cmath
+#  define moz_dont_include_mozalloc_for_cmath
+#endif
+
 #ifndef moz_dont_include_mozalloc_for_type_traits
 #  define moz_dont_include_mozalloc_for_type_traits
 #endif
