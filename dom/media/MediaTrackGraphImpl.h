@@ -67,14 +67,6 @@ class NativeInputTrack : public ProcessedMediaTrack {
   
   void InitDataHolderIfNeeded();
 
-  
-  NativeInputTrack* AsNativeInputTrack() override { return this; }
-
- public:
-  
-  nsTArray<RefPtr<AudioDataListener>> mDataUsers;
-
- private:
   struct BufferInfo {
     AudioDataValue* mBuffer = nullptr;
     size_t mFrames = 0;
@@ -93,7 +85,17 @@ class NativeInputTrack : public ProcessedMediaTrack {
       mChannels = 0;
     }
   };
+  
+  Maybe<BufferInfo> GetInputBufferData();
 
+  
+  NativeInputTrack* AsNativeInputTrack() override { return this; }
+
+ public:
+  
+  nsTArray<RefPtr<AudioDataListener>> mDataUsers;
+
+ private:
   class AudioDataBuffers {
    public:
     AudioDataBuffers() = default;
