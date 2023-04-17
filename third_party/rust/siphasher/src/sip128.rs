@@ -15,10 +15,10 @@ use core::hash;
 use core::marker::PhantomData;
 use core::mem;
 use core::ptr;
-use core::slice;
 
 
 #[derive(Debug, Clone, Copy, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Hash128 {
     pub h1: u64,
     pub h2: u64,
@@ -33,20 +33,22 @@ impl From<u128> for Hash128 {
     }
 }
 
-impl Into<u128> for Hash128 {
-    fn into(self) -> u128 {
-        (self.h1 as u128) | ((self.h2 as u128) << 64)
+impl From<Hash128> for u128 {
+    fn from(h: Hash128) -> u128 {
+        (h.h1 as u128) | ((h.h2 as u128) << 64)
     }
 }
 
 
 #[derive(Debug, Clone, Copy, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SipHasher13 {
     hasher: Hasher<Sip13Rounds>,
 }
 
 
 #[derive(Debug, Clone, Copy, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct SipHasher24 {
     hasher: Hasher<Sip24Rounds>,
 }
@@ -65,6 +67,7 @@ pub struct SipHasher24 {
 pub struct SipHasher(SipHasher24);
 
 #[derive(Debug, Copy)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct Hasher<S: Sip> {
     k0: u64,
     k1: u64,
@@ -76,6 +79,7 @@ struct Hasher<S: Sip> {
 }
 
 #[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 struct State {
     
     
@@ -126,6 +130,8 @@ macro_rules! load_int_le {
         data.to_le()
     }};
 }
+
+
 
 
 
@@ -277,30 +283,36 @@ impl<S: Sip> Hasher<S> {
     
     
     
-    #[inline(always)]
-    fn short_write(&mut self, msg: &[u8]) {
-        debug_assert!(msg.len() <= 8);
-        let length = msg.len();
-        self.length += length;
+    
+    
+    
+    
+    
+    
+    #[inline]
+    fn short_write<T>(&mut self, _x: T, x: u64) {
+        let size = mem::size_of::<T>();
+        self.length += size;
 
+        
+        debug_assert!(if size < 8 { x >> (8 * size) == 0 } else { true });
+
+        
         let needed = 8 - self.ntail;
-        let fill = cmp::min(length, needed);
-        if fill == 8 {
-            self.tail = unsafe { load_int_le!(msg, 0, u64) };
-        } else {
-            self.tail |= unsafe { u8to64_le(msg, 0, fill) } << (8 * self.ntail);
-            if length < needed {
-                self.ntail += length;
-                return;
-            }
+
+        self.tail |= x << (8 * self.ntail);
+        if size < needed {
+            self.ntail += size;
+            return;
         }
+
+        
         self.state.v3 ^= self.tail;
         S::c_rounds(&mut self.state);
         self.state.v0 ^= self.tail;
 
-        
-        self.ntail = length - needed;
-        self.tail = unsafe { u8to64_le(msg, needed, self.ntail) };
+        self.ntail = size - needed;
+        self.tail = if needed < 8 { x >> (8 * needed) } else { 0 };
     }
 }
 
@@ -364,19 +376,24 @@ impl hash::Hasher for SipHasher24 {
 }
 
 impl<S: Sip> hash::Hasher for Hasher<S> {
-    
     #[inline]
     fn write_usize(&mut self, i: usize) {
-        let bytes = unsafe {
-            slice::from_raw_parts(&i as *const usize as *const u8, mem::size_of::<usize>())
-        };
-        self.short_write(bytes);
+        self.short_write(i, i.to_le() as u64);
     }
 
-    
     #[inline]
     fn write_u8(&mut self, i: u8) {
-        self.short_write(&[i]);
+        self.short_write(i, i as u64);
+    }
+
+    #[inline]
+    fn write_u32(&mut self, i: u32) {
+        self.short_write(i, i.to_le() as u64);
+    }
+
+    #[inline]
+    fn write_u64(&mut self, i: u64) {
+        self.short_write(i, i.to_le() as u64);
     }
 
     #[inline]
