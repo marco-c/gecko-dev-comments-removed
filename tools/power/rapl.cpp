@@ -615,8 +615,9 @@ static double JoulesToWatts(double aJoules) {
 
 
 
+
 static void NormalizeAndPrintAsWatts(char* aBuf, double& aValue_J) {
-  if (aValue_J == kUnsupported_j) {
+  if (aValue_J == kUnsupported_j || aValue_J >= 1000) {
     aValue_J = 0;
     sprintf(aBuf, "%s", " n/a ");
   } else {
