@@ -5,23 +5,11 @@
 "use strict";
 
 async function test(context, commands) {
-  let testUrl = context.options.browsertime.test_url;
-  let secondaryUrl = context.options.browsertime.secondary_url;
+  let rootUrl = context.options.browsertime.url;
   let testName = context.options.browsertime.testName;
 
-  
-  await commands.wait.byTime(1000);
-
-  await commands.measure.start(testUrl);
-  commands.screenshot.take("test_url_" + testName);
-
-  if (secondaryUrl !== null) {
-    
-    await commands.wait.byTime(1000);
-
-    await commands.measure.start(secondaryUrl);
-    commands.screenshot.take("secondary_url_" + testName);
-  }
+  await commands.measure.start(rootUrl);
+  commands.screenshot.take(testName);
 
   
   await commands.wait.byTime(1000);
