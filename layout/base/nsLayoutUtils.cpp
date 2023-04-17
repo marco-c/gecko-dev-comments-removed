@@ -6441,6 +6441,59 @@ CSSIntSize nsLayoutUtils::ComputeSizeForDrawingWithFallback(
   return imageSize;
 }
 
+ LayerIntRect SnapRectForImage(const gfx::Matrix& aTransform,
+                                           const gfx::Size& aScaleFactors,
+                                           const LayoutDeviceRect& aRect) {
+  
+  
+  bool snapped = false;
+  LayerIntRect snapRect;
+  if (!aTransform.HasNonAxisAlignedTransform() && aTransform._11 > 0.0 &&
+      aTransform._22 > 0.0) {
+    gfxRect rect(gfxPoint(aRect.X(), aRect.Y()),
+                 gfxSize(aRect.Width(), aRect.Height()));
+
+    gfxPoint p1 =
+        ThebesPoint(aTransform.TransformPoint(ToPoint(rect.TopLeft())));
+    gfxPoint p2 =
+        ThebesPoint(aTransform.TransformPoint(ToPoint(rect.TopRight())));
+    gfxPoint p3 =
+        ThebesPoint(aTransform.TransformPoint(ToPoint(rect.BottomRight())));
+
+    if (p2 == gfxPoint(p1.x, p3.y) || p2 == gfxPoint(p3.x, p1.y)) {
+      p1.Round();
+      p3.Round();
+
+      IntPoint p1i(int32_t(p1.x), int32_t(p1.y));
+      IntPoint p3i(int32_t(p3.x), int32_t(p3.y));
+
+      snapRect.MoveTo(std::min(p1i.x, p3i.x), std::min(p1i.y, p3i.y));
+      snapRect.SizeTo(std::max(p1i.x, p3i.x) - snapRect.X(),
+                      std::max(p1i.y, p3i.y) - snapRect.Y());
+      snapped = true;
+    }
+  }
+
+  if (!snapped) {
+    
+    
+    snapRect = RoundedToInt(LayerRect(aRect.X() * aScaleFactors.width,
+                                      aRect.Y() * aScaleFactors.height,
+                                      aRect.Width() * aScaleFactors.width,
+                                      aRect.Height() * aScaleFactors.height));
+  }
+
+  
+  
+  if (snapRect.Width() < 1) {
+    snapRect.SetWidth(1);
+  }
+  if (snapRect.Height() < 1) {
+    snapRect.SetHeight(1);
+  }
+  return snapRect;
+}
+
 
 IntSize nsLayoutUtils::ComputeImageContainerDrawingParameters(
     imgIContainer* aImage, nsIFrame* aForFrame,
@@ -6472,49 +6525,44 @@ IntSize nsLayoutUtils::ComputeImageContainerDrawingParameters(
     }
   }
 
-  
-  
-  bool snapped = false;
-  gfxSize gfxLayerSize;
   const gfx::Matrix& itm = aSc.GetInheritedTransform();
-  if (!itm.HasNonAxisAlignedTransform() && itm._11 > 0.0 && itm._22 > 0.0) {
-    gfxRect rect(gfxPoint(aDestRect.X(), aDestRect.Y()),
-                 gfxSize(aDestRect.Width(), aDestRect.Height()));
+  LayerIntRect destRect = SnapRectForImage(itm, scaleFactors, aDestRect);
 
-    gfxPoint p1 = ThebesPoint(itm.TransformPoint(ToPoint(rect.TopLeft())));
-    gfxPoint p2 = ThebesPoint(itm.TransformPoint(ToPoint(rect.TopRight())));
-    gfxPoint p3 = ThebesPoint(itm.TransformPoint(ToPoint(rect.BottomRight())));
+  
+  
+  
+  if (aImage->GetType() != imgIContainer::TYPE_VECTOR) {
+    return aImage->OptimalImageSizeForDest(
+        gfxSize(destRect.Width(), destRect.Height()),
+        imgIContainer::FRAME_CURRENT, samplingFilter, aFlags);
+  }
 
-    if (p2 == gfxPoint(p1.x, p3.y) || p2 == gfxPoint(p3.x, p1.y)) {
-      p1.Round();
-      p3.Round();
+  
+  
+  
+  LayerIntRect clipRect = SnapRectForImage(itm, scaleFactors, aFillRect);
+  if (destRect.Contains(clipRect)) {
+    LayerIntRect restrictRect = destRect.Intersect(clipRect);
+    restrictRect.MoveBy(-destRect.TopLeft());
 
-      rect.MoveTo(gfxPoint(std::min(p1.x, p3.x), std::min(p1.y, p3.y)));
-      rect.SizeTo(gfxSize(std::max(p1.x, p3.x) - rect.X(),
-                          std::max(p1.y, p3.y) - rect.Y()));
+    if (restrictRect.Width() < 1) {
+      restrictRect.SetWidth(1);
+    }
+    if (restrictRect.Height() < 1) {
+      restrictRect.SetHeight(1);
+    }
 
-      
-      
-      gfxLayerSize =
-          gfxSize(std::max(rect.Width(), 1.0), std::max(rect.Height(), 1.0));
-      snapped = true;
+    if (restrictRect.X() != 0 || restrictRect.Y() != 0 ||
+        restrictRect.Size() != destRect.Size()) {
+      IntRect sampleRect = restrictRect.ToUnknownRect();
+      aRegion = Some(ImageIntRegion::CreateWithSamplingRestriction(
+          sampleRect, sampleRect, ExtendMode::CLAMP));
     }
   }
 
-  if (!snapped) {
-    
-    const LayerIntSize layerSize =
-        RoundedToInt(LayerSize(aDestRect.Width() * scaleFactors.width,
-                               aDestRect.Height() * scaleFactors.height));
-
-    
-    
-    gfxLayerSize =
-        gfxSize(std::max(layerSize.width, 1), std::max(layerSize.height, 1));
-  }
-
-  return aImage->OptimalImageSizeForDest(
-      gfxLayerSize, imgIContainer::FRAME_CURRENT, samplingFilter, aFlags);
+  
+  
+  return destRect.Size().ToUnknownSize();
 }
 
 
