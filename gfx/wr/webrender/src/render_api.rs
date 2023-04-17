@@ -913,19 +913,6 @@ pub enum DebugCommand {
     
     EnableDualSourceBlending(bool),
     
-    FetchDocuments,
-    
-    FetchPasses,
-    
-    
-    
-    
-    FetchClipScrollTree,
-    
-    FetchRenderTasks,
-    
-    FetchScreenshot,
-    
     SaveCapture(PathBuf, CaptureBits),
     
     LoadCapture(PathBuf, Option<(u32, u32)>, Sender<CapturedDocument>),
