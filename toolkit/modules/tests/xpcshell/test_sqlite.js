@@ -15,6 +15,13 @@ const { TelemetryTestUtils } = ChromeUtils.import(
   "resource://testing-common/TelemetryTestUtils.jsm"
 );
 
+
+
+Services.prefs.setBoolPref(
+  "toolkit.telemetry.testing.overrideProductsCheck",
+  true
+);
+
 function sleep(ms) {
   return new Promise(resolve => {
     let timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
