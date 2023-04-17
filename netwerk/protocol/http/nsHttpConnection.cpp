@@ -1722,7 +1722,7 @@ nsresult nsHttpConnection::OnReadSegment(const char* buf, uint32_t count,
   
   
   if (EarlyDataAvailable() && !CheckCanWrite0RTTData()) {
-    MOZ_DIAGNOSTIC_ASSERT(!mTlsHandshakeComplitionPending);
+    MOZ_DIAGNOSTIC_ASSERT(mTlsHandshakeComplitionPending);
     LOG(
         ("nsHttpConnection::OnReadSegment Do not write any data, wait"
          " for EnsureNPNComplete to be called [this=%p]",
