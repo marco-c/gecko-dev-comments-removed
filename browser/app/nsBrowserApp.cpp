@@ -28,6 +28,7 @@
 #  include "freestanding/SharedSection.h"
 #  include "LauncherProcessWin.h"
 #  include "mozilla/WindowsDllBlocklist.h"
+#  include "mozilla/WindowsDpiInitialization.h"
 
 #  define XRE_WANT_ENVIRON
 #  define strcasecmp _stricmp
@@ -296,6 +297,19 @@ int main(int argc, char* argv[], char* envp[]) {
     DllBlocklist_Initialize(gBlocklistInitFlags |
                             eDllBlocklistInitFlagIsChildProcess);
 #  endif
+#  if defined(XP_WIN)
+    
+    
+    
+    
+    
+    
+    
+    {
+      auto result = mozilla::WindowsDpiInitialization();
+      (void)result;  
+    }
+#  endif
 #  if defined(XP_WIN) && defined(MOZ_SANDBOX)
     
     
@@ -328,6 +342,19 @@ int main(int argc, char* argv[], char* envp[]) {
 #endif
 
 #if defined(XP_WIN)
+
+  
+  
+  
+  
+  
+  
+  
+  {
+    auto result = mozilla::WindowsDpiInitialization();
+    (void)result;  
+  }
+
   
   
   
