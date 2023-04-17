@@ -1125,6 +1125,12 @@ nsresult nsHttpChannelAuthProvider::GetAuthenticator(
     return NS_ERROR_FACTORY_NOT_REGISTERED;
   }
 
+  if (!authenticator) {
+    
+    
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
   MOZ_ASSERT(authenticator);
   authenticator.forget(auth);
 
