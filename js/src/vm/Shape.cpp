@@ -1064,7 +1064,7 @@ bool NativeObject::removeProperty(JSContext* cx, HandleNativeObject obj,
   
   
   
-  RootedShape spare(cx, Allocate<Shape>(cx));
+  Shape* spare = Allocate<Shape>(cx);
   if (!spare) {
     return false;
   }
@@ -1080,43 +1080,46 @@ bool NativeObject::removeProperty(JSContext* cx, HandleNativeObject obj,
 
 bool NativeObject::densifySparseElements(JSContext* cx,
                                          HandleNativeObject obj) {
+  AutoCheckShapeConsistency check(obj);
   MOZ_ASSERT(obj->inDictionaryMode());
 
-  RootedValue value(cx);
+  
+  
+  Shape* spare = Allocate<Shape>(cx);
+  if (!spare) {
+    return false;
+  }
+  new (spare) Shape(obj->lastProperty()->base(), ObjectFlags(), 0);
 
-  RootedShape shape(cx, obj->shape());
-  while (!shape->isEmptyShape()) {
-    jsid id = shape->propid();
-    uint32_t index;
-    if (!IdIsIndex(id, &index)) {
-      shape = shape->previous();
-      continue;
+  
+  {
+    AutoCheckCannotGC nogc;
+    ShapeTable* table = obj->lastProperty()->ensureTableForDictionary(cx, nogc);
+    if (!table) {
+      return false;
     }
 
-    value = obj->getSlot(shape->slot());
-
-    
-
-
-
-
-
-
-    if (shape != obj->lastProperty()) {
-      shape = shape->previous();
-      if (!NativeObject::removeProperty(cx, obj, id)) {
-        return false;
+    Shape* shape = obj->lastProperty();
+    while (!shape->isEmptyShape()) {
+      jsid id = shape->propid();
+      uint32_t index;
+      if (!IdIsIndex(id, &index)) {
+        shape = shape->previous();
+        continue;
       }
-    } else {
-      if (!NativeObject::removeProperty(cx, obj, id)) {
-        return false;
-      }
-      shape = obj->lastProperty();
+
+      Value value = obj->getSlot(shape->slot());
+      obj->setDenseElement(index, value);
+
+      Shape* previous = shape->previous();
+      ShapeTable::Ptr ptr = table->search(id, nogc);
+      obj->removeDictionaryPropertyWithoutReshape(table, ptr, shape);
+      shape = previous;
     }
-
-    obj->setDenseElement(index, value);
   }
 
+  
+  MOZ_ALWAYS_TRUE(NativeObject::generateOwnShape(cx, obj, spare));
   return true;
 }
 
