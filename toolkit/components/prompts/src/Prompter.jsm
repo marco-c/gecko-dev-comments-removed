@@ -1147,6 +1147,8 @@ class ModalPrompter {
       if (windowUtils) {
         windowUtils.enterModalState();
       }
+    } else if (args.inPermitUnload) {
+      args.promptPrincipal = this.browsingContext.currentWindowGlobal.documentPrincipal;
     }
 
     
