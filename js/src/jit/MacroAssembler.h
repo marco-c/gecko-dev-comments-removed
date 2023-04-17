@@ -2265,14 +2265,16 @@ class MacroAssembler : public MacroAssemblerSpecific {
                              FloatRegister dest) DEFINED_ON(x86_shared, arm64);
 
   
+  inline void permuteInt16x8(const uint16_t lanes[8], FloatRegister src,
+                             FloatRegister dest) DEFINED_ON(arm64);
+
+  
   inline void permuteHighInt16x8(const uint16_t lanes[4], FloatRegister src,
-                                 FloatRegister dest)
-      DEFINED_ON(x86_shared, arm64);
+                                 FloatRegister dest) DEFINED_ON(x86_shared);
 
   
   inline void permuteLowInt16x8(const uint16_t lanes[4], FloatRegister src,
-                                FloatRegister dest)
-      DEFINED_ON(x86_shared, arm64);
+                                FloatRegister dest) DEFINED_ON(x86_shared);
 
   
   inline void permuteInt32x4(const uint32_t lanes[4], FloatRegister src,
