@@ -11,10 +11,10 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 XPCOMUtils.defineLazyModuleGetters(this, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
+  L10nCache: "resource:///modules/UrlbarUtils.jsm",
+  ObjectUtils: "resource://gre/modules/ObjectUtils.jsm",
   Services: "resource://gre/modules/Services.jsm",
   UrlbarPrefs: "resource:///modules/UrlbarPrefs.jsm",
-  UrlbarProviderQuickSuggest:
-    "resource:///modules/UrlbarProviderQuickSuggest.jsm",
   UrlbarProvidersManager: "resource:///modules/UrlbarProvidersManager.jsm",
   UrlbarSearchOneOffs: "resource:///modules/UrlbarSearchOneOffs.jsm",
   UrlbarTokenizer: "resource:///modules/UrlbarTokenizer.jsm",
@@ -80,6 +80,9 @@ class UrlbarView {
     
     
     this._queryContextCache = new QueryContextCache(5);
+
+    
+    this._l10nCache = new L10nCache(this.document.l10n);
 
     for (let viewTemplate of UrlbarView.dynamicViewTemplatesByName.values()) {
       if (viewTemplate.stylesheet) {
@@ -571,6 +574,13 @@ class UrlbarView {
       this._previousTabToSearchEngine = null;
     }
     this._startRemoveStaleRowsTimer();
+
+    
+    
+    
+    
+    
+    this._cacheL10nStrings();
   }
 
   onQueryCancelled(queryContext) {
@@ -1674,7 +1684,7 @@ class UrlbarView {
       if (visible) {
         label = this._rowLabel(item, currentLabel);
         if (label) {
-          if (label == currentLabel) {
+          if (ObjectUtils.deepEqual(label, currentLabel)) {
             label = null;
           } else {
             currentLabel = label;
@@ -1682,9 +1692,20 @@ class UrlbarView {
         }
       }
       if (label) {
-        item.setAttribute("label", label);
+        
+        let message = this._l10nCache.get(label.id, label.args);
+        if (message) {
+          item.setAttribute("label", message.attributes.label);
+        } else {
+          
+          
+          item.setAttribute("data-l10n-attrs", "label");
+          this.document.l10n.setAttributes(item, label.id, label.args);
+        }
       } else {
         item.removeAttribute("label");
+        item.removeAttribute("data-l10n-attrs");
+        item.removeAttribute("data-l10n-id");
       }
     }
 
@@ -1701,12 +1722,22 @@ class UrlbarView {
     }
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
   _rowLabel(row, currentLabel) {
-    
     
     if (
       UrlbarPrefs.get("groupLabels.enabled") &&
-      Services.locale.appLocaleAsBCP47.substring(0, 2) == "en" &&
       this._queryContext?.searchString &&
       !row.result.heuristic
     ) {
@@ -1715,14 +1746,16 @@ class UrlbarView {
         case UrlbarUtils.RESULT_TYPE.REMOTE_TAB:
         case UrlbarUtils.RESULT_TYPE.TAB_SWITCH:
         case UrlbarUtils.RESULT_TYPE.URL:
-          return UrlbarProviderQuickSuggest.featureName;
+          return { id: "urlbar-group-firefox-suggest" };
         case UrlbarUtils.RESULT_TYPE.SEARCH:
-          
           
           if (currentLabel && row.result.payload.suggestion) {
             let engineName =
               row.result.payload.engine || Services.search.defaultEngine.name;
-            return engineName + " Suggestions";
+            return {
+              id: "urlbar-group-search-suggestions",
+              args: { engine: engineName },
+            };
           }
           break;
       }
@@ -2118,6 +2151,39 @@ class UrlbarView {
     }
     this.input.pickElement(tipButton, event);
     return true;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  async _cacheL10nStrings() {
+    if (!UrlbarPrefs.get("groupLabels.enabled")) {
+      
+      return;
+    }
+
+    let idArgs = [
+      { id: "urlbar-group-firefox-suggest" },
+      ...[
+        Services.search.defaultEngine?.name,
+        Services.search.defaultPrivateEngine?.name,
+      ]
+        .filter(engineName => engineName)
+        .map(engineName => ({
+          id: "urlbar-group-search-suggestions",
+          args: { engine: engineName },
+        })),
+    ];
+
+    await this._l10nCache.ensureAll(idArgs);
   }
 
   

@@ -9,6 +9,7 @@ const SUGGESTIONS_FIRST_PREF = "browser.urlbar.showSearchSuggestionsFirst";
 const SUGGESTIONS_PREF = "browser.urlbar.suggest.searches";
 
 const TEST_ENGINE_BASENAME = "searchSuggestionEngine.xml";
+const TEST_ENGINE_2_BASENAME = "searchSuggestionEngine2.xml";
 const MAX_RESULTS = UrlbarPrefs.get("maxRichResults");
 
 const TOP_SITES = [
@@ -31,11 +32,6 @@ add_task(async function init() {
   Assert.ok(
     UrlbarPrefs.get("showSearchSuggestionsFirst"),
     "Precondition: Search suggestions shown first by default"
-  );
-  Assert.equal(
-    Services.locale.appLocaleAsBCP47,
-    "en-US",
-    "Precondition: App locale is en-US"
   );
 
   
@@ -64,33 +60,6 @@ add_task(async function init() {
   registerCleanupFunction(async () => {
     await PlacesUtils.history.clear();
     Services.search.setDefault(oldDefaultEngine);
-  });
-});
-
-
-add_task(async function unsupportedLocale() {
-  await withLocales(["de"], async () => {
-    await UrlbarTestUtils.promiseAutocompleteResultPopup({
-      window,
-      value: "test",
-    });
-    await checkLabels(MAX_RESULTS, {});
-    await UrlbarTestUtils.promisePopupClose(window);
-  });
-});
-
-
-
-add_task(async function supportedLocaleNonUS() {
-  await withLocales(["en-GB"], async () => {
-    await UrlbarTestUtils.promiseAutocompleteResultPopup({
-      window,
-      value: "test",
-    });
-    await checkLabels(MAX_RESULTS, {
-      1: FIREFOX_SUGGEST_LABEL,
-    });
-    await UrlbarTestUtils.promisePopupClose(window);
   });
 });
 
@@ -187,6 +156,35 @@ add_task(async function generalBeforeSuggestions_suggestionsOnly() {
 
   
   await addHistory();
+});
+
+
+add_task(async function generalBeforeSuggestions_defaultChanged() {
+  
+  
+  await withSuggestions(async engine1 => {
+    await withSuggestions(async engine2 => {
+      Assert.ok(engine2.name, "Engine 2 name is non-empty");
+      Assert.notEqual(engine1.name, engine2.name, "Engine names are different");
+      Assert.equal(
+        Services.search.defaultEngine.name,
+        engine2.name,
+        "Engine 2 is default"
+      );
+      await SpecialPowers.pushPrefEnv({
+        set: [[SUGGESTIONS_FIRST_PREF, false]],
+      });
+      await UrlbarTestUtils.promiseAutocompleteResultPopup({
+        window,
+        value: "test",
+      });
+      await checkLabels(MAX_RESULTS, {
+        1: FIREFOX_SUGGEST_LABEL,
+        [MAX_RESULTS - 2]: engineSuggestionsLabel(engine2.name),
+      });
+      await UrlbarTestUtils.promisePopupClose(window);
+    }, TEST_ENGINE_2_BASENAME);
+  });
 });
 
 
@@ -507,12 +505,17 @@ function engineSuggestionsLabel(engineName) {
 
 
 
-async function withSuggestions(callback) {
+
+
+async function withSuggestions(
+  callback,
+  engineBasename = TEST_ENGINE_BASENAME
+) {
   await SpecialPowers.pushPrefEnv({
     set: [[SUGGESTIONS_PREF, true]],
   });
   let engine = await SearchTestUtils.promiseNewSearchEngine(
-    getRootDirectory(gTestPath) + TEST_ENGINE_BASENAME
+    getRootDirectory(gTestPath) + engineBasename
   );
   let oldDefaultEngine = await Services.search.getDefault();
   await Services.search.setDefault(engine);
@@ -523,43 +526,6 @@ async function withSuggestions(callback) {
     await Services.search.removeEngine(engine);
     await SpecialPowers.popPrefEnv();
   }
-}
-
-
-
-
-
-
-
-
-
-
-async function withLocales(locales, callback) {
-  let available = Services.locale.availableLocales;
-  let requested = Services.locale.requestedLocales;
-
-  
-  
-  let enginesPromise = SearchTestUtils.promiseSearchNotification(
-    "engines-reloaded"
-  );
-  Services.locale.availableLocales = locales;
-  Services.locale.requestedLocales = locales.slice(0, 1);
-  await enginesPromise;
-  Assert.equal(
-    Services.locale.appLocaleAsBCP47,
-    locales[0],
-    "App locale is now " + locales[0]
-  );
-
-  await callback();
-
-  enginesPromise = SearchTestUtils.promiseSearchNotification(
-    "engines-reloaded"
-  );
-  Services.locale.availableLocales = available;
-  Services.locale.requestedLocales = requested;
-  await enginesPromise;
 }
 
 function click(element, { x = undefined, y = undefined } = {}) {
