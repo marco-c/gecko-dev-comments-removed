@@ -437,9 +437,23 @@ Result<nsCOMPtr<nsIFile>, nsresult> GetMarkerFileHandle(
 nsresult CreateMarkerFile(const QuotaInfo& aQuotaInfo) {
   QM_TRY_INSPECT(const auto& marker, GetMarkerFileHandle(aQuotaInfo));
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   QM_TRY(
-      QM_OR_ELSE_WARN(ToResult(marker->Create(nsIFile::NORMAL_FILE_TYPE, 0644)),
-                      MapAlreadyExistsToDefault));
+      QM_OR_ELSE_LOG(ToResult(marker->Create(nsIFile::NORMAL_FILE_TYPE, 0644)),
+                     MapAlreadyExistsToDefault));
 
   
   

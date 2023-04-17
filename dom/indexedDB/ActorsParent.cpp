@@ -5728,6 +5728,14 @@ nsresult DeleteFile(nsIFile& aFile, QuotaManager* const aQuotaManager,
   MOZ_ASSERT(!NS_IsMainThread());
   MOZ_ASSERT(!IsOnBackgroundThread());
 
+  
+  
+  
+  
+  
+  
+  
+
   QM_TRY_INSPECT(
       const auto& fileSize,
       ([aQuotaManager, &aFile,
@@ -5735,7 +5743,7 @@ nsresult DeleteFile(nsIFile& aFile, QuotaManager* const aQuotaManager,
         if (aQuotaManager) {
           QM_TRY_INSPECT(
               const Maybe<int64_t>& fileSize,
-              QM_OR_ELSE_WARN(
+              QM_OR_ELSE_LOG(
                   MOZ_TO_RESULT_INVOKE(aFile, GetFileSize)
                       .map([](const int64_t val) { return Some(val); }),
                   MakeMaybeIdempotentFilter<int64_t>(aIdempotent)));
@@ -5756,8 +5764,8 @@ nsresult DeleteFile(nsIFile& aFile, QuotaManager* const aQuotaManager,
   }
 
   QM_TRY_INSPECT(const auto& didExist,
-                 QM_OR_ELSE_WARN(ToResult(aFile.Remove(false)).map(Some<Ok>),
-                                 MakeMaybeIdempotentFilter<Ok>(aIdempotent)));
+                 QM_OR_ELSE_LOG(ToResult(aFile.Remove(false)).map(Some<Ok>),
+                                MakeMaybeIdempotentFilter<Ok>(aIdempotent)));
 
   if (!didExist) {
     
@@ -5825,7 +5833,24 @@ Result<nsCOMPtr<nsIFile>, nsresult> CreateMarkerFile(
       CloneFileAndAppend(aBaseDirectory,
                          kIdbDeletionMarkerFilePrefix + aDatabaseNameBase));
 
-  QM_TRY(QM_OR_ELSE_WARN(
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  QM_TRY(QM_OR_ELSE_LOG(
       ToResult(markerFile->Create(nsIFile::NORMAL_FILE_TYPE, 0644)),
       ErrToDefaultOkOrErr<NS_ERROR_FILE_ALREADY_EXISTS>));
 
@@ -14608,7 +14633,9 @@ nsresult DatabaseOperationBase::InsertIndexTableRows(
     QM_TRY(aObjectStoreKey.BindToStatement(&*borrowedStmt,
                                            kStmtParamNameObjectDataKey));
 
-    QM_TRY(QM_OR_ELSE_WARN(
+    
+    
+    QM_TRY(QM_OR_ELSE_LOG(
         ToResult(borrowedStmt->Execute()),
         ([&info, index, &aIndexValues](nsresult rv) -> Result<Ok, nsresult> {
           if (rv == NS_ERROR_STORAGE_CONSTRAINT && info.mUnique) {
