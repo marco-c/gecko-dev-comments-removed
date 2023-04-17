@@ -2346,6 +2346,12 @@ nsresult nsExternalAppHandler::CreateFailedTransfer() {
 
   
   
+  if (mTempFile) {
+    mTempFile->Remove(false);
+  }
+
+  
+  
   rv = pseudoFile->Append(mSuggestedFileName);
   NS_ENSURE_SUCCESS(rv, rv);
 
