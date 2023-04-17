@@ -5617,7 +5617,7 @@ def getJSToNativeConversionInfo(
     we're a non-finite float that's not unrestricted.
 
     If allowTreatNonCallableAsNull is true, then [TreatNonCallableAsNull] and
-    [TreatNonObjectAsNull] extended attributes on nullable callback functions
+    [LegacyTreatNonObjectAsNull] extended attributes on nullable callback functions
     will be honored.
 
     If isCallbackReturnValue is "JSImpl" or "Callback", then the declType may be
