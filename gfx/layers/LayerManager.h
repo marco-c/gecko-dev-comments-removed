@@ -144,6 +144,8 @@ class DidCompositeObserver {
 
 
 class LayerManager : public WindowRenderer {
+  NS_INLINE_DECL_REFCOUNTING(LayerManager)
+
  protected:
   typedef mozilla::gfx::DrawTarget DrawTarget;
   typedef mozilla::gfx::IntSize IntSize;
@@ -158,7 +160,7 @@ class LayerManager : public WindowRenderer {
 
 
 
-  void Destroy() override;
+  virtual void Destroy();
   bool IsDestroyed() { return mDestroyed; }
 
   virtual LayerManager* AsLayerManager() override { return this; }
@@ -505,6 +507,15 @@ class LayerManager : public WindowRenderer {
   static bool IsLogEnabled();
   static mozilla::LogModule* GetLog();
 
+  bool IsCompositingCheap(LayersBackend aBackend) {
+    
+    
+    return LayersBackend::LAYERS_BASIC != aBackend &&
+           LayersBackend::LAYERS_NONE != aBackend;
+  }
+
+  virtual bool IsCompositingCheap() { return true; }
+
   bool IsInTransaction() const { return mInTransaction; }
 
   virtual void SetRegionToClear(const nsIntRegion& aRegion) {
@@ -512,6 +523,8 @@ class LayerManager : public WindowRenderer {
   }
 
   virtual float RequestProperty(const nsAString& property) { return -1; }
+
+  const TimeStamp& GetAnimationReadyTime() const { return mAnimationReadyTime; }
 
   virtual bool AsyncPanZoomEnabled() const { return false; }
 
@@ -587,6 +600,9 @@ class LayerManager : public WindowRenderer {
 
   
   bool mContainsSVG;
+  
+  
+  TimeStamp mAnimationReadyTime;
   
   uint32_t mPaintedPixelCount;
   

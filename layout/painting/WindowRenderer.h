@@ -12,8 +12,8 @@
 #include "mozilla/layers/ScrollableLayerGuid.h"  
 #include "nsRefPtrHashtable.h"  
 
-class gfxContext;
 namespace mozilla {
+
 namespace layers {
 class LayerManager;
 class WebRenderLayerManager;
@@ -24,9 +24,6 @@ class ClientLayerManager;
 class FrameUniformityData;
 class PersistentBufferProvider;
 }  
-class FallbackRenderer;
-class nsDisplayListBuilder;
-class nsDisplayList;
 
 class FrameRecorder {
  public:
@@ -84,26 +81,11 @@ class FrameRecorder {
   FramesTimingRecording mRecording;
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
 class WindowRenderer : public FrameRecorder {
-  NS_INLINE_DECL_REFCOUNTING(WindowRenderer)
-
  public:
   
   virtual layers::LayerManager* AsLayerManager() { return nullptr; }
   virtual layers::WebRenderLayerManager* AsWebRender() { return nullptr; }
-  virtual FallbackRenderer* AsFallback() { return nullptr; }
 
   
 
@@ -134,8 +116,6 @@ class WindowRenderer : public FrameRecorder {
 
   virtual bool EndEmptyTransaction(
       EndTransactionFlags aFlags = END_DEFAULT) = 0;
-
-  virtual void Destroy() {}
 
   
 
@@ -173,8 +153,6 @@ class WindowRenderer : public FrameRecorder {
 
 
   virtual void WaitOnTransactionProcessed() {}
-
-  virtual bool IsCompositingCheap() { return true; }
 
   
 
@@ -218,64 +196,13 @@ class WindowRenderer : public FrameRecorder {
   void UpdatePartialPrerenderedAnimations(
       const nsTArray<uint64_t>& aJankedAnimations);
 
-  const TimeStamp& GetAnimationReadyTime() const { return mAnimationReadyTime; }
-
  protected:
-  virtual ~WindowRenderer() = default;
-
   
   
   
   
   nsRefPtrHashtable<nsUint64HashKey, dom::Animation>
       mPartialPrerenderedAnimations;
-
-  
-  
-  TimeStamp mAnimationReadyTime;
-};
-
-
-
-
-
-
-
-
-
-
-
-class FallbackRenderer : public WindowRenderer {
- public:
-  FallbackRenderer* AsFallback() override { return this; }
-
-  void SetTarget(gfxContext* aContext, layers::BufferMode aDoubleBuffering);
-
-  bool BeginTransaction(const nsCString& aURL = nsCString()) override;
-
-  bool EndEmptyTransaction(EndTransactionFlags aFlags = END_DEFAULT) override {
-    return false;
-  }
-
-  layers::LayersBackend GetBackendType() override {
-    return layers::LayersBackend::LAYERS_NONE;
-  }
-
-  virtual void GetBackendName(nsAString& name) override {
-    name.AssignLiteral("Fallback");
-  }
-
-  bool IsCompositingCheap() override { return false; }
-
-  void EndTransactionWithColor(const nsIntRect& aRect,
-                               const gfx::DeviceColor& aColor);
-  void EndTransactionWithList(nsDisplayListBuilder* aBuilder,
-                              nsDisplayList* aList,
-                              int32_t aAppUnitsPerDevPixel,
-                              EndTransactionFlags aFlags);
-
-  RefPtr<gfxContext> mTarget;
-  layers::BufferMode mBufferMode;
 };
 
 }  

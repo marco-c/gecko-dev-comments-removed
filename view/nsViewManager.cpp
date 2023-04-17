@@ -333,15 +333,7 @@ void nsViewManager::Refresh(nsView* aView,
       if (!renderer->NeedsWidgetInvalidation()) {
         renderer->FlushRendering();
       } else {
-        
-        
-        
-        
-        
-        
-        if (!presShell->Composite(aView)) {
-          presShell->Paint(aView, damageRegion, PaintFlags::PaintComposite);
-        }
+        presShell->Paint(aView, damageRegion, PaintFlags::PaintComposite);
       }
 #ifdef MOZ_DUMP_PAINTING
       if (nsLayoutUtils::InvalidationDebuggingIsEnabled()) {
@@ -464,7 +456,7 @@ void nsViewManager::ProcessPendingUpdatesPaint(nsIWidget* aWidget) {
       }
 #endif
 
-      presShell->Paint(view, nsRegion(), PaintFlags::None);
+      presShell->Paint(view, nsRegion(), PaintFlags::PaintLayers);
       view->SetForcedRepaint(false);
 
 #ifdef MOZ_DUMP_PAINTING

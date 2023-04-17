@@ -21,7 +21,6 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/StaticPrefs_browser.h"
-#include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/TextComposition.h"
 #include "mozilla/TextEventDispatcher.h"
 #include "mozilla/TextEvents.h"
@@ -118,7 +117,7 @@ void PuppetWidget::InfallibleCreate(nsIWidget* aParent,
   PuppetWidget* parent = static_cast<PuppetWidget*>(aParent);
   if (parent) {
     parent->SetChild(this);
-    mWindowRenderer = parent->GetWindowRenderer();
+    mLayerManager = parent->GetWindowRenderer()->AsLayerManager();
   } else {
     Resize(mBounds.X(), mBounds.Y(), mBounds.Width(), mBounds.Height(), false);
   }
@@ -166,10 +165,10 @@ void PuppetWidget::Destroy() {
     mMemoryPressureObserver = nullptr;
   }
   mChild = nullptr;
-  if (mWindowRenderer) {
-    mWindowRenderer->Destroy();
+  if (mLayerManager) {
+    mLayerManager->Destroy();
   }
-  mWindowRenderer = nullptr;
+  mLayerManager = nullptr;
   mBrowserChild = nullptr;
 }
 
@@ -587,18 +586,13 @@ bool PuppetWidget::GetEditCommands(NativeKeyBindingsType aType,
 }
 
 WindowRenderer* PuppetWidget::GetWindowRenderer() {
-  if (!mWindowRenderer) {
+  if (!mLayerManager) {
     if (XRE_IsParentProcess()) {
       
       
       
-      if (StaticPrefs::gfx_basic_layer_manager_force_enabled()) {
-        mWindowRenderer =
-            new BasicLayerManager(BasicLayerManager::BLM_OFFSCREEN);
-      } else {
-        mWindowRenderer = new FallbackRenderer;
-      }
-      return mWindowRenderer;
+      mLayerManager = new BasicLayerManager(BasicLayerManager::BLM_OFFSCREEN);
+      return mLayerManager;
     }
 
     
@@ -607,10 +601,10 @@ WindowRenderer* PuppetWidget::GetWindowRenderer() {
     
     MOZ_ASSERT(!mBrowserChild ||
                mBrowserChild->IsLayersConnected() != Some(true));
-    mWindowRenderer = CreateBasicLayerManager();
+    mLayerManager = new BasicLayerManager(this);
   }
 
-  return mWindowRenderer;
+  return mLayerManager;
 }
 
 bool PuppetWidget::CreateRemoteLayerManager(
@@ -632,7 +626,7 @@ bool PuppetWidget::CreateRemoteLayerManager(
   
   
   DestroyLayerManager();
-  mWindowRenderer = std::move(lm);
+  mLayerManager = std::move(lm);
   return true;
 }
 
@@ -1012,9 +1006,8 @@ void PuppetWidget::PaintNowIfNeeded() {
 
 void PuppetWidget::OnMemoryPressure(layers::MemoryPressureReason aWhy) {
   if (aWhy != MemoryPressureReason::LOW_MEMORY_ONGOING && !mVisible &&
-      mWindowRenderer && mWindowRenderer->AsLayerManager() &&
-      XRE_IsContentProcess()) {
-    mWindowRenderer->AsLayerManager()->ClearCachedResources();
+      mLayerManager && XRE_IsContentProcess()) {
+    mLayerManager->ClearCachedResources();
   }
 }
 
