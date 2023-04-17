@@ -15,8 +15,7 @@
 #include "nsCOMPtr.h"
 #include "SurfaceFlags.h"
 
-namespace mozilla {
-namespace image {
+namespace mozilla::image {
 
 class Decoder;
 class IDecodingTask;
@@ -39,6 +38,7 @@ enum class DecoderType {
   ICON,
   WEBP,
   AVIF,
+  JXL,
   UNKNOWN
 };
 
@@ -201,7 +201,6 @@ class DecoderFactory {
                                               bool aIsRedecode);
 };
 
-}  
 }  
 
 #endif  
