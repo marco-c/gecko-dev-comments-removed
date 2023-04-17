@@ -7,6 +7,7 @@
 
 
 
+
 let C = class {
   static #f /* a */ ( /* b */ ) /* c */ { /* d */ }/* after */
   static assert(expected) {

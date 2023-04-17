@@ -24,6 +24,7 @@
 
 
 
+
 var C = class {
   ;
   m() { return 42; }

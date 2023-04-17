@@ -23,6 +23,7 @@
 
 
 
+
 let classStringExpression = `(
 class {
   static set #m(v) {

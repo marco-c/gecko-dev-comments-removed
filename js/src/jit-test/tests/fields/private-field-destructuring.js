@@ -1,3 +1,5 @@
+
+
 function assertThrows(fun, errorType) {
   try {
     fun();

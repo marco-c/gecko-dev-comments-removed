@@ -63,6 +63,7 @@
 
 
 
+
 class C {
   static #m = () => 'outer class';
 

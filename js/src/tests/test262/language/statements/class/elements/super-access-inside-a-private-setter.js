@@ -29,6 +29,7 @@
 
 
 
+
 class A {
   method(v) {
     return v;

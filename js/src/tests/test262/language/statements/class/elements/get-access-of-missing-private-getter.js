@@ -23,6 +23,7 @@
 
 
 
+
 class C {
   set #f(v) {
     throw new Test262Error();

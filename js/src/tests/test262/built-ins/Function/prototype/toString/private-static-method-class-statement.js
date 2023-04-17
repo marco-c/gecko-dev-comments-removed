@@ -7,6 +7,7 @@
 
 
 
+
 class C {
   static #f /* a */ ( /* b */ ) /* c */ { /* d */ }/* after */
   static assert(expected) {

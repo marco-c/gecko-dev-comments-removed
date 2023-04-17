@@ -24,6 +24,7 @@
 
 
 
+
 class C {
   static get #f() {
     return 'Test262';

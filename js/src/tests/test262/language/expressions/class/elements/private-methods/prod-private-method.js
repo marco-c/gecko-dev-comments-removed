@@ -75,6 +75,7 @@
 
 
 
+
 function hasProp(obj, name, expected, msg) {
   var hasOwnProperty = Object.prototype.hasOwnProperty.call(obj, name);
   assert.sameValue(hasOwnProperty, expected, msg);

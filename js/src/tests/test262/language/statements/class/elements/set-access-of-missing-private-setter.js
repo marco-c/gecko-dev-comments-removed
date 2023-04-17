@@ -24,6 +24,7 @@
 
 
 
+
 class C {
   get #f() {
     throw new Test262Error();

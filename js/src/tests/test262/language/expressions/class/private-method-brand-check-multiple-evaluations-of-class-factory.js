@@ -19,6 +19,7 @@
 
 
 
+
 let createAndInstantiateClass = function () {
   const C = class {
     #m() { return 'test262'; }

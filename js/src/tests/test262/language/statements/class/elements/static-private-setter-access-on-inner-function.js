@@ -24,6 +24,7 @@
 
 
 
+
 class C {
   static set #f(v) {
     this._v = v;

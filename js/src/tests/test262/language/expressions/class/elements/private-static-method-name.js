@@ -57,6 +57,7 @@
 
 
 
+
 var C = class {
   static #method() {
     return 'Test262';

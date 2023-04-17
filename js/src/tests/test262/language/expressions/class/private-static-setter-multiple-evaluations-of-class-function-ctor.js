@@ -22,6 +22,7 @@
 
 
 
+
 let classStringExpression = `
 return class {
   static set #m(v) {

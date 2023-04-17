@@ -63,6 +63,7 @@
 
 
 
+
 var C = class {
   static #m() {
     return 'outer class';

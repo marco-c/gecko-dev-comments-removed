@@ -32,6 +32,7 @@
 
 
 
+
 var C = class {
   field = function() {};
   #field = (a, b, c, d) => undefined;

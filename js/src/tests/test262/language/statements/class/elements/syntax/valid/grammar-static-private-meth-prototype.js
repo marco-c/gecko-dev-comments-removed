@@ -15,6 +15,7 @@
 
 
 
+
 class C {
   static #prototype() {}
 }

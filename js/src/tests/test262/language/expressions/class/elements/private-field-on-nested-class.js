@@ -21,6 +21,7 @@
 
 
 
+
 var C = class {
   #outer = 'test262';
 

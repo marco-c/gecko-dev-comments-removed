@@ -39,6 +39,7 @@
 
 
 
+
 class C {
   set #m(v) { this._v = v; };
   v = (eval("this.#m = 53"), this._v);

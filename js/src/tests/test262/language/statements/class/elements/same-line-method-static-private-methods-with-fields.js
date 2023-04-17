@@ -24,6 +24,7 @@
 
 
 
+
 class C {
   static #xVal; static #yVal; m() { return 42; }
   static #x(value) {

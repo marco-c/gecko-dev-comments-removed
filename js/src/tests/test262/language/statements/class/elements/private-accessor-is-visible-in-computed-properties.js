@@ -20,6 +20,7 @@
 
 
 
+
 assert.throws(TypeError, function() {
   class C {
     get #f() {

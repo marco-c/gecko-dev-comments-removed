@@ -7,6 +7,7 @@
 
 
 
+
 class C {
   #f /* a */ ( /* b */ ) /* c */ { /* d */ }/* after */
   assert(expected) {

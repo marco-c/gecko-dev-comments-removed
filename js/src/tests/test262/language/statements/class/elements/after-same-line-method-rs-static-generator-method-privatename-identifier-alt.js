@@ -59,6 +59,7 @@
 
 
 
+
 class C {
   m() { return 42; } static * #$(value) {
     yield * value;

@@ -22,6 +22,7 @@
 
 
 
+
 let classStringExpression = `
 return class {
   static #m() { return 'test262'; }

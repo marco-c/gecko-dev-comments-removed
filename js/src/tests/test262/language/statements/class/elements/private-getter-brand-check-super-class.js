@@ -22,6 +22,7 @@
 
 
 
+
 class S {
   get #m() { return 'super class'; }
   

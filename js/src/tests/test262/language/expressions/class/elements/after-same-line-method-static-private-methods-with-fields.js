@@ -24,6 +24,7 @@
 
 
 
+
 var C = class {
   m() { return 42; } static #xVal; static #yVal;
   static #x(value) {

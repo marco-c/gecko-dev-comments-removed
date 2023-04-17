@@ -77,6 +77,7 @@
 
 
 
+
 Array.prototype[Symbol.iterator] = function* () {
     if (this.length > 0) {
         yield this[0];

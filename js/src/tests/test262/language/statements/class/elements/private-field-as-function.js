@@ -21,6 +21,7 @@
 
 
 
+
 class C {
   #m = function () { return 'test262'; };
 

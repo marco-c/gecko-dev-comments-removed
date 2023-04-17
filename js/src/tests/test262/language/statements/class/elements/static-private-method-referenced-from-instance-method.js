@@ -24,6 +24,7 @@
 
 
 
+
 class C {
   static #f() { return 42; }
   g() {

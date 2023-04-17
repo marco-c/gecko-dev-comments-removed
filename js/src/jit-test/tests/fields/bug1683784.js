@@ -1,3 +1,5 @@
+
+
 class C {
   #x() { }
   constructor() { this.#x = 1; }

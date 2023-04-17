@@ -28,6 +28,7 @@
 
 
 
+
 class C {
   constructor() {
       this.f();

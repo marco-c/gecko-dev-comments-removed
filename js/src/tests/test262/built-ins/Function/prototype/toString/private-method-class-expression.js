@@ -7,6 +7,7 @@
 
 
 
+
 let c = new (class {
   #f /* a */ ( /* b */ ) /* c */ { /* d */ }/* after */
   assert(expected) {

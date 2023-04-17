@@ -1,4 +1,5 @@
 
+
 function assertLineAndColumn(str, line, column) {
   try {
     eval(str);

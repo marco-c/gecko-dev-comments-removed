@@ -28,6 +28,7 @@
 
 
 
+
 class C {
   f = this.g();
 

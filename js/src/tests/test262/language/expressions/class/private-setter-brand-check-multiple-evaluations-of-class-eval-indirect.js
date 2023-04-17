@@ -20,6 +20,7 @@
 
 
 
+
 let classStringExpression = `(
 class {
   set #m(v) { this._v = v; }

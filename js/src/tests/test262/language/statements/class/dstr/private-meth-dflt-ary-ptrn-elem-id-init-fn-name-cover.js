@@ -71,6 +71,7 @@
 
 
 
+
 var callCount = 0;
 class C {
   #method([cover = (function () {}), xCover = (0, function() {})] = []) {

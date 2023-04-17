@@ -34,6 +34,7 @@
 
 
 
+
 class C {
   #method(a) {};
 

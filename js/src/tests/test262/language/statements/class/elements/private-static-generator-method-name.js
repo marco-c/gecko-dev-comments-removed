@@ -49,6 +49,7 @@
 
 
 
+
 class C {
   static * #method() {};
 

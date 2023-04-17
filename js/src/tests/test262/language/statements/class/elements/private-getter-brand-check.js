@@ -27,6 +27,7 @@
 
 
 
+
 class C {
   get #m() { return 'test262'; }
   

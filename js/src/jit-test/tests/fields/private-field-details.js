@@ -1,3 +1,5 @@
+
+
 var shouldBeThis;
 
 class A {

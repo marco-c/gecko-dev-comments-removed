@@ -38,6 +38,7 @@
 
 
 
+
 class C {
   static get #m() {
     return 'Test262';

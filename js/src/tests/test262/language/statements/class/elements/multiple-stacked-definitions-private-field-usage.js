@@ -22,6 +22,7 @@
 
 
 
+
 class C {
   #m = 'test262';
   foo = "foobar"

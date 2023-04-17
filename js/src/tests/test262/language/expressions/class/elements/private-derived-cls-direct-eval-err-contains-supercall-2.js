@@ -16,6 +16,7 @@
 
 
 
+
 var executed = false;
 var A = class {}
 var C = class extends A {

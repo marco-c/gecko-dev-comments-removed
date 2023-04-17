@@ -22,6 +22,7 @@
 
 
 
+
 class C {
   #m() { return 'test262'; }
   foo = "foobar"

@@ -23,6 +23,7 @@
 
 
 
+
 class C {
   get #m() { return "Test262"; }
   ["#m"] = 0;

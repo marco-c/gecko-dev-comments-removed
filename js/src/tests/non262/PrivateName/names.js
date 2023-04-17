@@ -1,4 +1,5 @@
 
+
 var C = class {
   static #field = () => 'Test262';
   static field = () => 'Test262';

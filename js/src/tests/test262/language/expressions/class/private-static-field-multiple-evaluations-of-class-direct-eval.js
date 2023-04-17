@@ -39,6 +39,7 @@
 
 
 
+
 let classStringExpression = `(
 class {
   static #m = 'test262';

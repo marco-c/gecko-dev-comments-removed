@@ -15,6 +15,7 @@
 
 
 
+
 class C {
   constructor() {
     class B {

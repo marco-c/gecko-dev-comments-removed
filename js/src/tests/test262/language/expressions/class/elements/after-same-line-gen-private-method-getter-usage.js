@@ -22,6 +22,7 @@
 
 
 
+
 var C = class {
   *m() { return 42; } get #m() { return 'test262'; };
   method() {

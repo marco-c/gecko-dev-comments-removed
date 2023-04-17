@@ -24,6 +24,7 @@
 
 
 
+
 class C {
   set #m(_) {
     throw new Test262Error();

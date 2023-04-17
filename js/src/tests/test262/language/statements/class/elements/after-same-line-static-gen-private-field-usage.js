@@ -22,6 +22,7 @@
 
 
 
+
 class C {
   static *m() { return 42; } #m = 'test262';;
   method() {

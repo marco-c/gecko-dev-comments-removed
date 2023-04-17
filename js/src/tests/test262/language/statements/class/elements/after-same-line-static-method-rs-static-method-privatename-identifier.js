@@ -56,6 +56,7 @@
 
 
 
+
 class C {
   static m() { return 42; } static #$(value) {
     return value;

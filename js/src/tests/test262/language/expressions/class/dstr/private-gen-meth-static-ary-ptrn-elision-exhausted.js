@@ -77,6 +77,7 @@
 
 
 
+
 var iter = function*() {}();
 iter.next();
 

@@ -28,6 +28,7 @@
 
 
 
+
 var C = class {
   f = this.g();
 

@@ -72,6 +72,7 @@
 
 
 
+
 var callCount = 0;
 var C = class {
   #method([cls = class {}, xCls = class X {}, xCls2 = class { static name() {} }]) {

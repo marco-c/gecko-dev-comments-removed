@@ -15,6 +15,7 @@
 
 
 
+
 var C = class {
   static async #prototype() {}
 };

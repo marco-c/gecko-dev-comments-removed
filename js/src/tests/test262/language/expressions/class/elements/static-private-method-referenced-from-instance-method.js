@@ -24,6 +24,7 @@
 
 
 
+
 var C = class {
   static #f() { return 42; }
   g() {

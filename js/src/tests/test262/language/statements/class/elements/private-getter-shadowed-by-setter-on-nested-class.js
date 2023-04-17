@@ -21,6 +21,7 @@
 
 
 
+
 class C {
   get #m() { return 'outer class'; }
 

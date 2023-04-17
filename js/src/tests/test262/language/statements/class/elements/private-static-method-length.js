@@ -34,6 +34,7 @@
 
 
 
+
 class C {
   static #method(a, b, c) {};
 
