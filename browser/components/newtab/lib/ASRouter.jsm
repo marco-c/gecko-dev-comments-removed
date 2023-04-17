@@ -297,9 +297,7 @@ const MessageLoaderUtils = {
           if (record && record.data) {
             const downloader = new Downloader(
               RS_MAIN_BUCKET,
-              RS_COLLECTION_L10N,
-              "browser",
-              "newtab"
+              RS_COLLECTION_L10N
             );
             
             await downloader.download(record.data, {
