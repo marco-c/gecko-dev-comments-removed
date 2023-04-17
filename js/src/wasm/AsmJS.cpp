@@ -7352,7 +7352,7 @@ bool js::IsValidAsmJSHeapLength(size_t length) {
   }
 
   
-  if (length > MaxMemoryBytes()) {
+  if (length > MaxMemoryBytes(IndexType::I32)) {
     return false;
   }
 

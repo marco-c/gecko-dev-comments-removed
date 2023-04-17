@@ -467,10 +467,12 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
   mozilla::Maybe<wasm::Pages> wasmSourceMaxPages() const;
 
   [[nodiscard]] static bool wasmGrowToPagesInPlace(
-      wasm::Pages newPages, Handle<ArrayBufferObject*> oldBuf,
+      wasm::IndexType t, wasm::Pages newPages,
+      Handle<ArrayBufferObject*> oldBuf,
       MutableHandle<ArrayBufferObject*> newBuf, JSContext* cx);
   [[nodiscard]] static bool wasmMovingGrowToPages(
-      wasm::Pages newPages, Handle<ArrayBufferObject*> oldBuf,
+      wasm::IndexType t, wasm::Pages newPages,
+      Handle<ArrayBufferObject*> oldBuf,
       MutableHandle<ArrayBufferObject*> newBuf, JSContext* cx);
 
   static void finalize(JSFreeOp* fop, JSObject* obj);
@@ -515,8 +517,9 @@ using HandleArrayBufferObject = Handle<ArrayBufferObject*>;
 using MutableHandleArrayBufferObject = MutableHandle<ArrayBufferObject*>;
 
 
-bool CreateWasmBuffer32(JSContext* cx, const wasm::MemoryDesc& memory,
-                        MutableHandleArrayBufferObjectMaybeShared buffer);
+
+bool CreateWasmBuffer(JSContext* cx, const wasm::MemoryDesc& memory,
+                      MutableHandleArrayBufferObjectMaybeShared buffer);
 
 
 

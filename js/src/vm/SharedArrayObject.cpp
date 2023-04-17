@@ -130,6 +130,7 @@ void SharedArrayRawBuffer::tryGrowMaxPagesInPlace(Pages deltaMaxPages) {
 }
 
 bool SharedArrayRawBuffer::wasmGrowToPagesInPlace(const Lock&,
+                                                  wasm::IndexType t,
                                                   wasm::Pages newPages) {
   
   
@@ -137,7 +138,7 @@ bool SharedArrayRawBuffer::wasmGrowToPagesInPlace(const Lock&,
   if (newPages > wasmClampedMaxPages_) {
     return false;
   }
-  MOZ_ASSERT(newPages <= wasm::MaxMemoryPages() &&
+  MOZ_ASSERT(newPages <= wasm::MaxMemoryPages(t) &&
              newPages.byteLength() < ArrayBufferObject::maxBufferByteLength());
 
   
