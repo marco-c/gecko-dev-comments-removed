@@ -21,9 +21,6 @@ var origOut = os.file.redirect(callgraphOut_filename);
 
 var memoized = new Map();
 
-var JSNativeCaller = Object.create(null);
-var JSNatives = [];
-
 var unmangled2id = new Set();
 
 
@@ -111,11 +108,11 @@ function processBody(functionName, body)
     if (!('PEdge' in body))
         return;
 
-
     for (var tag of getAnnotations(functionName, body).values()) {
-        print("T " + functionId(functionName) + " " + tag);
+        const id = functionId(functionName);
+        print(`T ${id} ${tag}`);
         if (tag == "Calls JSNatives")
-            JSNativeCaller[functionName] = true;
+            printOnce(`D ${id} ${functionId("(js-code)")}`);
     }
 
     
@@ -184,6 +181,21 @@ function processBody(functionName, body)
     }
 }
 
+
+
+
+assert(ID.jscode == functionId("(js-code)"));
+
+
+
+assert(ID.anyfunc == functionId("(any-function)"));
+
+
+assert(ID.nogcfunc == functionId("(nogc-function)"));
+
+
+assert(ID.gc == functionId("(GC)"));
+
 var typeInfo = loadTypeInfo(typeInfo_filename);
 
 loadTypes("src_comp.xdb");
@@ -223,7 +235,7 @@ for (const [csu, methods] of virtualDeclarations) {
     for (const {field, dtor} of methods) {
         const caller = getId(fieldKey(csu, field));
         if (isOverridable(csu, field.Name[0]))
-            printOnce(`D ${caller} ${functionId("(unknown-definition)")}`);
+            printOnce(`D ${caller} ${functionId("(js-code)")}`);
         if (dtor)
             printOnce(`D ${caller} ${functionId(dtor)}`);
         if (!subclasses.has(csu))
@@ -264,6 +276,12 @@ function process(functionName, functionBodies)
 
     for (var body of functionBodies)
         processBody(functionName, body);
+
+    
+    
+    
+    if (functionName.includes("js::RunScript"))
+        print(`D ${functionId("(js-code)")} ${functionId(functionName)}`);
 
     
     
@@ -367,15 +385,7 @@ function process(functionName, functionBodies)
     }
 
     if (isJSNative(mangled))
-        JSNatives.push(functionName);
-}
-
-function postprocess_callgraph() {
-    for (const caller of Object.keys(JSNativeCaller)) {
-        const caller_id = functionId(caller);
-        for (const callee of JSNatives)
-            printOnce(`D ${caller_id} ${functionId(callee)}`);
-    }
+        printOnce(`D ${functionId("(js-code)")} ${functionId(functionName)}`);
 }
 
 for (var nameIndex = minStream; nameIndex <= maxStream; nameIndex++) {
@@ -385,7 +395,5 @@ for (var nameIndex = minStream; nameIndex <= maxStream; nameIndex++) {
     xdb.free_string(name);
     xdb.free_string(data);
 }
-
-postprocess_callgraph();
 
 os.file.close(os.file.redirect(origOut));

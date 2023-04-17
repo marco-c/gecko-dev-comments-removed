@@ -7,6 +7,7 @@
 "use strict";
 
 loadRelativeToScript('utility.js');
+loadRelativeToScript('callgraph.js');
 
 
 
@@ -202,6 +203,22 @@ function loadCallgraph(file)
     
     
     callersOf = merge_repeated_calls(calleesOf);
+    assert(ID.jscode == mangledToId["(js-code)"]);
+    assert(ID.anyfunc == mangledToId["(any-function)"]);
+    assert(ID.nogcfunc == mangledToId["(nogc-function)"]);
+    assert(ID.gc == mangledToId["(GC)"]);
+
+    addToKeyedList(calleesOf, mangledToId["(any-function)"], {callee:ID.gc, any:0, all:0});
+
+    
+    
+    
+
+    
+    for (var [name, attrs] of Object.entries(fieldCallAttrs))
+        functionAttrs[name] = [attrs, attrs];
+    functionAttrs[ID.gc] = [0, 0];
+    addGCFunction(ID.gc, "annotation", functionAttrs);
 
     
     
@@ -214,6 +231,7 @@ function loadCallgraph(file)
         addGCFunction(unknown, "internal", functionAttrs);
     }
 
+    
     
     
 
@@ -265,9 +283,7 @@ function loadCallgraph(file)
     assert(numGCCalls > 0, "No GC functions found!");
 
     
-    var worklist = [];
-    for (const name in gcFunctions)
-        worklist.push(name);
+    const worklist = Object.keys(gcFunctions);
 
     
     for (const [name, csuName] of fieldCallCSU) {
@@ -337,6 +353,7 @@ function propagate_attrs(roots, functionAttrs, calleesOf) {
         
         
         const [caller, edge_attrs, callercaller] = worklist[--top];
+        assert(caller in functionAttrs);
         const [prev_any, prev_all] = functionAttrs[caller];
         assert(prev_any !== undefined);
         assert(prev_all !== undefined);
