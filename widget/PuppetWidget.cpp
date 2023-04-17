@@ -925,13 +925,30 @@ void PuppetWidget::SetCursor(const Cursor& aCursor) {
   IntSize customCursorSize;
   int32_t stride = 0;
   auto format = SurfaceFormat::B8G8R8A8;
+  float resolution = aCursor.mResolution;
   if (aCursor.IsCustom()) {
-    
-    
-    
-    RefPtr<SourceSurface> surface = aCursor.mContainer->GetFrame(
-        imgIContainer::FRAME_CURRENT,
-        imgIContainer::FLAG_SYNC_DECODE | imgIContainer::FLAG_ASYNC_NOTIFY);
+    int32_t width = 0, height = 0;
+    aCursor.mContainer->GetWidth(&width);
+    aCursor.mContainer->GetHeight(&height);
+    const int32_t flags =
+        imgIContainer::FLAG_SYNC_DECODE | imgIContainer::FLAG_ASYNC_NOTIFY;
+    RefPtr<SourceSurface> surface;
+    if (width && height &&
+        aCursor.mContainer->GetType() == imgIContainer::TYPE_VECTOR) {
+      
+      resolution *= GetDefaultScale().scale;
+      width = std::ceil(width * resolution);
+      height = std::ceil(height * resolution);
+      surface = aCursor.mContainer->GetFrameAtSize(
+          {width, height},
+          imgIContainer::FRAME_CURRENT, flags);
+    } else {
+      
+      
+      
+      surface =
+          aCursor.mContainer->GetFrame(imgIContainer::FRAME_CURRENT, flags);
+    }
     if (surface) {
       if (RefPtr<DataSourceSurface> dataSurface = surface->GetDataSurface()) {
         hasCustomCursor = true;
@@ -947,7 +964,7 @@ void PuppetWidget::SetCursor(const Cursor& aCursor) {
                                 length);
   if (!mBrowserChild->SendSetCursor(
           aCursor.mDefaultCursor, hasCustomCursor, cursorData,
-          customCursorSize.width, customCursorSize.height, aCursor.mResolution,
+          customCursorSize.width, customCursorSize.height, resolution,
           stride, format, aCursor.mHotspotX, aCursor.mHotspotY, force)) {
     return;
   }
