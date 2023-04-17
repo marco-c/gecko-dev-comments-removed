@@ -771,12 +771,6 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
 
   void RunRefreshDrivers(VsyncId aId, TimeStamp aTimeStamp) {
     Tick(aId, aTimeStamp);
-    for (auto& driver : mContentRefreshDrivers) {
-      driver->FinishedVsyncTick();
-    }
-    for (auto& driver : mRootRefreshDrivers) {
-      driver->FinishedVsyncTick();
-    }
   }
 
   
@@ -1114,6 +1108,8 @@ nsRefreshDriver::nsRefreshDriver(nsPresContext* aPresContext)
       mPresContext(aPresContext),
       mRootRefresh(nullptr),
       mNextTransactionId{0},
+      mOutstandingTransactionId{0},
+      mCompletedTransaction{0},
       mFreezeCount(0),
       mThrottledFrameRequestInterval(
           TimeDuration::FromMilliseconds(GetThrottledTimerInterval())),
@@ -1129,8 +1125,6 @@ nsRefreshDriver::nsRefreshDriver(nsPresContext* aPresContext)
       mResizeSuppressed(false),
       mNotifyDOMContentFlushed(false),
       mNeedToUpdateIntersectionObservations(false),
-      mInNormalTick(false),
-      mAttemptedExtraTickSinceLastVsync(false),
       mWarningThreshold(REFRESH_WAIT_WARNING) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mPresContext,
@@ -1192,7 +1186,7 @@ void nsRefreshDriver::AdvanceTimeAndRefresh(int64_t aMilliseconds) {
 void nsRefreshDriver::RestoreNormalRefresh() {
   mTestControllingRefreshes = false;
   EnsureTimerStarted(eAllowTimeToGoBackwards);
-  mPendingTransactions.Clear();
+  mCompletedTransaction = mOutstandingTransactionId = mNextTransactionId;
 }
 
 TimeStamp nsRefreshDriver::MostRecentRefresh(bool aEnsureTimerStarted) const {
@@ -1409,36 +1403,6 @@ bool nsRefreshDriver::CanDoCatchUpTick() {
   return true;
 }
 
-bool nsRefreshDriver::CanDoExtraTick() {
-  
-  if (mAttemptedExtraTickSinceLastVsync) {
-    return false;
-  }
-
-  
-  
-  
-  if (!mActiveTimer ||
-      mActiveTimer->MostRecentRefresh() != mMostRecentRefresh) {
-    return false;
-  }
-
-  
-  
-  
-  TimeStamp now = TimeStamp::Now();
-  Maybe<TimeStamp> nextTick = mActiveTimer->GetNextTickHint();
-  int32_t minimumRequiredTime = StaticPrefs::layout_extra_tick_minimum_ms();
-  
-  
-  if (minimumRequiredTime < 0 || !nextTick ||
-      (*nextTick - now) < TimeDuration::FromMilliseconds(minimumRequiredTime)) {
-    return false;
-  }
-
-  return true;
-}
-
 void nsRefreshDriver::EnsureTimerStarted(EnsureTimerStartedFlags aFlags) {
   
   
@@ -1453,31 +1417,7 @@ void nsRefreshDriver::EnsureTimerStarted(EnsureTimerStartedFlags aFlags) {
   }
 
   
-  if (mActiveTimer && !(aFlags & eForceAdjustTimer)) {
-    
-    
-    
-    if (mUserInputProcessingCount && CanDoExtraTick()) {
-      RefPtr<nsRefreshDriver> self = this;
-      NS_DispatchToCurrentThreadQueue(
-          NS_NewRunnableFunction(
-              "RefreshDriver::EnsureTimerStarted::extra",
-              [self]() -> void {
-                
-                
-                if (self->CanDoExtraTick()) {
-                  PROFILER_MARKER_UNTYPED("ExtraRefreshDriverTick", GRAPHICS);
-                  LOG("[%p] Doing extra tick for user input", self.get());
-                  self->mAttemptedExtraTickSinceLastVsync = true;
-                  self->Tick(self->mActiveTimer->MostRecentRefreshVsyncId(),
-                             self->mActiveTimer->MostRecentRefresh(),
-                             IsExtraTick::Yes);
-                }
-              }),
-          EventQueuePriority::Vsync);
-    }
-    return;
-  }
+  if (mActiveTimer && !(aFlags & eForceAdjustTimer)) return;
 
   if (IsFrozen() || !mPresContext) {
     
@@ -1517,7 +1457,6 @@ void nsRefreshDriver::EnsureTimerStarted(EnsureTimerStartedFlags aFlags) {
                 
                 
                 if (self->CanDoCatchUpTick()) {
-                  LOG("[%p] Doing catch up tick", self.get());
                   self->Tick(self->mActiveTimer->MostRecentRefreshVsyncId(),
                              self->mActiveTimer->MostRecentRefresh());
                 }
@@ -2027,8 +1966,7 @@ static CallState ReduceAnimations(Document& aDocument) {
   return CallState::Continue;
 }
 
-void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
-                           IsExtraTick aIsExtraTick ) {
+void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime) {
   MOZ_ASSERT(!nsContentUtils::GetCurrentJSContext(),
              "Shouldn't have a JSContext on the stack");
 
@@ -2045,14 +1983,9 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
   
   
   
-  
-  
-  if ((aNowTime <= mMostRecentRefresh) && !mTestControllingRefreshes &&
-      aIsExtraTick == IsExtraTick::No) {
+  if ((aNowTime <= mMostRecentRefresh) && !mTestControllingRefreshes) {
     return;
   }
-  auto cleanupInExtraTick = MakeScopeExit([&] { mInNormalTick = false; });
-  mInNormalTick = aIsExtraTick != IsExtraTick::Yes;
 
   bool isPresentingInVR = false;
 #if defined(MOZ_WIDGET_ANDROID)
@@ -2564,21 +2497,14 @@ void nsRefreshDriver::FinishedWaitingForTransaction() {
 
 mozilla::layers::TransactionId nsRefreshDriver::GetTransactionId(
     bool aThrottle) {
+  mOutstandingTransactionId = mOutstandingTransactionId.Next();
   mNextTransactionId = mNextTransactionId.Next();
-  LOG("[%p] Allocating transaction id %" PRIu64, this, mNextTransactionId.mId);
 
-  
-  
-  
-  if (aThrottle && mInNormalTick) {
-    mPendingTransactions.AppendElement(mNextTransactionId);
-    if (TooManyPendingTransactions() && !mWaitingForTransaction &&
-        !mTestControllingRefreshes) {
-      LOG("[%p] Hit max pending transaction limit, entering wait mode", this);
-      mWaitingForTransaction = true;
-      mSkippedPaints = false;
-      mWarningThreshold = 1;
-    }
+  if (aThrottle && mOutstandingTransactionId - mCompletedTransaction >= 2 &&
+      !mWaitingForTransaction && !mTestControllingRefreshes) {
+    mWaitingForTransaction = true;
+    mSkippedPaints = false;
+    mWarningThreshold = 1;
   }
 
   return mNextTransactionId;
@@ -2591,11 +2517,8 @@ mozilla::layers::TransactionId nsRefreshDriver::LastTransactionId() const {
 void nsRefreshDriver::RevokeTransactionId(
     mozilla::layers::TransactionId aTransactionId) {
   MOZ_ASSERT(aTransactionId == mNextTransactionId);
-  LOG("[%p] Revoking transaction id %" PRIu64, this, aTransactionId.mId);
-  if (AtPendingTransactionLimit() &&
-      mPendingTransactions.Contains(aTransactionId) && mWaitingForTransaction) {
-    LOG("[%p] No longer over pending transaction limit, leaving wait state",
-        this);
+  if (mOutstandingTransactionId - mCompletedTransaction == 2 &&
+      mWaitingForTransaction) {
     MOZ_ASSERT(!mSkippedPaints,
                "How did we skip a paint when we're in the middle of one?");
     FinishedWaitingForTransaction();
@@ -2610,18 +2533,18 @@ void nsRefreshDriver::RevokeTransactionId(
   
   
   
-  mPendingTransactions.RemoveElement(aTransactionId);
+  mOutstandingTransactionId = mOutstandingTransactionId.Prev();
 }
 
 void nsRefreshDriver::ClearPendingTransactions() {
-  LOG("[%p] ClearPendingTransactions", this);
-  mPendingTransactions.Clear();
+  mCompletedTransaction = mOutstandingTransactionId = mNextTransactionId;
   mWaitingForTransaction = false;
 }
 
 void nsRefreshDriver::ResetInitialTransactionId(
     mozilla::layers::TransactionId aTransactionId) {
-  mNextTransactionId = aTransactionId;
+  mCompletedTransaction = mOutstandingTransactionId = mNextTransactionId =
+      aTransactionId;
 }
 
 mozilla::TimeStamp nsRefreshDriver::GetTransactionStart() { return mTickStart; }
@@ -2632,12 +2555,20 @@ mozilla::TimeStamp nsRefreshDriver::GetVsyncStart() { return mTickVsyncTime; }
 
 void nsRefreshDriver::NotifyTransactionCompleted(
     mozilla::layers::TransactionId aTransactionId) {
-  LOG("[%p] Completed transaction id %" PRIu64, this, aTransactionId.mId);
-  mPendingTransactions.RemoveElement(aTransactionId);
-  if (mWaitingForTransaction && !TooManyPendingTransactions()) {
-    LOG("[%p] No longer over pending transaction limit, leaving wait state",
-        this);
-    FinishedWaitingForTransaction();
+  if (aTransactionId > mCompletedTransaction) {
+    if (mOutstandingTransactionId - mCompletedTransaction > 1 &&
+        mWaitingForTransaction) {
+      mCompletedTransaction = aTransactionId;
+      FinishedWaitingForTransaction();
+    } else {
+      mCompletedTransaction = aTransactionId;
+    }
+  }
+
+  
+  
+  if (mCompletedTransaction > mOutstandingTransactionId) {
+    mOutstandingTransactionId = mCompletedTransaction;
   }
 }
 
@@ -2665,9 +2596,6 @@ bool nsRefreshDriver::IsWaitingForPaint(mozilla::TimeStamp aTime) {
       mWarningThreshold *= 2;
     }
 
-    LOG("[%p] Over max pending transaction limit when trying to paint, "
-        "skipping",
-        this);
     mSkippedPaints = true;
     return true;
   }

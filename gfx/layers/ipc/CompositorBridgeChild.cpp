@@ -349,25 +349,23 @@ mozilla::ipc::IPCResult CompositorBridgeChild::RecvInvalidateLayers(
 }
 
 mozilla::ipc::IPCResult CompositorBridgeChild::RecvDidComposite(
-    const LayersId& aId, const nsTArray<TransactionId>& aTransactionIds,
+    const LayersId& aId, const TransactionId& aTransactionId,
     const TimeStamp& aCompositeStart, const TimeStamp& aCompositeEnd) {
   
   const auto texturePools = mTexturePools.Clone();
 
-  for (const auto& id : aTransactionIds) {
-    if (mLayerManager) {
-      MOZ_ASSERT(!aId.IsValid());
-      MOZ_ASSERT(mLayerManager->GetBackendType() ==
-                     LayersBackend::LAYERS_CLIENT ||
-                 mLayerManager->GetBackendType() == LayersBackend::LAYERS_WR);
-      
-      RefPtr<LayerManager> m = mLayerManager;
-      m->DidComposite(id, aCompositeStart, aCompositeEnd);
-    } else if (aId.IsValid()) {
-      RefPtr<dom::BrowserChild> child = dom::BrowserChild::GetFrom(aId);
-      if (child) {
-        child->DidComposite(id, aCompositeStart, aCompositeEnd);
-      }
+  if (mLayerManager) {
+    MOZ_ASSERT(!aId.IsValid());
+    MOZ_ASSERT(mLayerManager->GetBackendType() ==
+                   LayersBackend::LAYERS_CLIENT ||
+               mLayerManager->GetBackendType() == LayersBackend::LAYERS_WR);
+    
+    RefPtr<LayerManager> m = mLayerManager;
+    m->DidComposite(aTransactionId, aCompositeStart, aCompositeEnd);
+  } else if (aId.IsValid()) {
+    RefPtr<dom::BrowserChild> child = dom::BrowserChild::GetFrom(aId);
+    if (child) {
+      child->DidComposite(aTransactionId, aCompositeStart, aCompositeEnd);
     }
   }
 
