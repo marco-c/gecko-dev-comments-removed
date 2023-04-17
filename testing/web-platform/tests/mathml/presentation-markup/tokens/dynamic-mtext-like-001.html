@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <title>Dynamic mtext-like elements</title>
 <link rel="stylesheet" type="text/css" href="/fonts/ahem.css" />
-<link rel="help" href="https://mathml-refresh.github.io/mathml-core/#text-mtext">
+<link rel="help" href="https://w3c.github.io/mathml-core/#text-mtext">
 <script src="/mathml/support/mathml-fragments.js"></script>
 <meta name="assert" content="Dynamically set children of mtext-like elements.">
 <style>
@@ -59,8 +59,8 @@
     <li><math><ms class="testedElement"></ms></math></li>
     <li><math><ms class="testedElement">X</ms></math></li>
     <li><math><ms class="testedElement">p</ms></math></li>
-    
-
+    <!-- HTML parser does not accept span as a child of annotation or
+         annotation-xml, so we can't test dynamic VS static. -->
     <li><math><annotation class="testedElement"></annotation></math></li>
     <li><math><annotation class="testedElement">X</annotation></math></li>
     <li><math><annotation-xml class="testedElement"></annotation-xml></math></li>

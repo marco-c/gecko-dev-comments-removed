@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <title>Space-like elements</title>
 <link rel="stylesheet" type="text/css" href="/fonts/ahem.css" />
-<link rel="help" href="https://mathml-refresh.github.io/mathml-core/#definition-of-space-like-elements">
-<link rel="help" href="https://mathml-refresh.github.io/mathml-core/#operator-fence-separator-or-accent-mo">
-<link rel="help" href="https://mathml-refresh.github.io/mathml-core/#layout-of-mrow">
+<link rel="help" href="https://w3c.github.io/mathml-core/#definition-of-space-like-elements">
+<link rel="help" href="https://w3c.github.io/mathml-core/#operator-fence-separator-or-accent-mo">
+<link rel="help" href="https://w3c.github.io/mathml-core/#layout-of-mrow">
 <meta name="assert" content="Verify definition of space-like elements">
 <script src="/resources/testharness.js"></script>
 <script src="/resources/testharnessreport.js"></script>
@@ -94,7 +94,7 @@
     <math>
       <mn>X</mn>
       <mrow>
-        
+        <!-- maction is space-like when its first child exists and is space-like -->
         <maction id="maction1" class="testedElement" actiontype="statusline">
           <mtext>X</mtext>
           <mtext>STATUS MESSAGE</mtext>
@@ -108,7 +108,7 @@
     <math>
       <mn>X</mn>
       <mrow>
-        
+        <!-- maction is not space-like when its first does not exist-like -->
         <maction id="maction2" class="testedElement" actiontype="statusline">
         </maction>
         <mo lspace="1em" rspace="0em">X</mo>
@@ -120,7 +120,7 @@
     <math>
       <mn>X</mn>
       <mrow>
-        
+        <!-- maction is not space-like when its first is not space-like -->
         <maction id="maction3" class="testedElement" actiontype="statusline">
           <mn>1</mn>
           <mtext>STATUS MESSAGE</mtext>
@@ -134,7 +134,7 @@
     <math>
       <mn>X</mn>
       <mrow>
-        
+        <!-- semantics is space-like when its first child exists and is space-like -->
         <semantics id="semantics1" class="testedElement" actiontype="statusline">
           <mtext>X</mtext>
           <annotation>TEXT ANNOTATION</annotation>
@@ -148,7 +148,7 @@
     <math>
       <mn>X</mn>
       <mrow>
-        
+        <!-- semantics is not space-like when its first does not exist-like -->
         <semantics id="semantics2" class="testedElement" actiontype="statusline">
         </semantics>
         <mo lspace="1em" rspace="0em">X</mo>
@@ -160,7 +160,7 @@
     <math>
       <mn>X</mn>
       <mrow>
-        
+        <!-- semantics is not space-like when its first is not space-like -->
         <semantics id="semantics3" class="testedElement" actiontype="statusline">
           <mn>1</mn>
           <annotation>TEXT ANNOTATION</annotation>

@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <title>Embellished operators</title>
 <link rel="stylesheet" type="text/css" href="/fonts/ahem.css" />
-<link rel="help" href="https://mathml-refresh.github.io/mathml-core/#embellished-operators">
-<link rel="help" href="https://mathml-refresh.github.io/mathml-core/#definition-of-space-like-elements">
-<link rel="help" href="https://mathml-refresh.github.io/mathml-core/#layout-of-mrow">
+<link rel="help" href="https://w3c.github.io/mathml-core/#embellished-operators">
+<link rel="help" href="https://w3c.github.io/mathml-core/#definition-of-space-like-elements">
+<link rel="help" href="https://w3c.github.io/mathml-core/#layout-of-mrow">
 <meta name="assert" content="Verify definition of embellished operators">
 <script src="/resources/testharness.js"></script>
 <script src="/resources/testharnessreport.js"></script>
@@ -86,10 +86,10 @@
 </head>
 <body>
   <div id="log"></div>
-  
-
-
-
+  <!-- <msub>, <msup>, <msubsup>, <munder>, <mover>, <munderover>,
+       <mmultiscripts>, <mfrac> are embellished
+       operators if their first in-flow
+       child exists and is an embellished operator -->
   <p>
     <math>
       <mn>X</mn>
@@ -175,7 +175,7 @@
     </math>
   </p>
 
-  
+  <!-- Only in-flow children affect determination of embellished operators. -->
   <p>
     <math>
       <mn class="oof1">0</mn><mn class="oof2">1</mn><mn class="nobox">2</mn>
@@ -321,9 +321,9 @@
     </math>
   </p>
 
-  
-
-
+  <!-- <msub>, <msup>, <msubsup>, <munder>, <mover>, <munderover>,
+       <mmultiscripts>, <mfrac> are not embellished
+       operators if their first in-flow child is not an embellished operator -->
   <p>
     <math>
       <mn>X</mn>
@@ -409,7 +409,7 @@
     </math>
   </p>
 
-  
+  <!-- Only in-flow children affect determination of embellished operators. -->
   <p>
     <math>
       <mn class="oof1">0</mn><mn class="oof2">1</mn><mn class="nobox">2</mn>

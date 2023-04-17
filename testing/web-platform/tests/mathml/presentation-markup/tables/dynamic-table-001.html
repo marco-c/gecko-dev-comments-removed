@@ -5,8 +5,8 @@
 <title>Dynamic tabular elements</title>
 <link rel="stylesheet" type="text/css" href="/fonts/ahem.css" />
 <script src="/mathml/support/mathml-fragments.js"></script>
-<link rel="help" href="https://mathml-refresh.github.io/mathml-core/#table-or-matrix-mtable">
-<link rel="help" href="https://mathml-refresh.github.io/mathml-core/#dom-and-javascript">
+<link rel="help" href="https://w3c.github.io/mathml-core/#table-or-matrix-mtable">
+<link rel="help" href="https://w3c.github.io/mathml-core/#dom-and-javascript">
 <meta name="assert" content="Dynamically modify DOM tree of mtables">
 <script src="/resources/testharness.js"></script>
 <script src="/resources/testharnessreport.js"></script>
@@ -135,7 +135,7 @@
           <mtd><mspace height="10px" width="30px" style="background: black;"/></mtd>
         </mtr>
         <mtr>
-          
+          <!-- Empty mtr -->
         </mtr>
         <mtr>
           <mtd><mspace height="30px" width="10px" style="background: black;"/></mtd>
@@ -160,7 +160,7 @@
         </mtr>
         <mtr>
           <mtd><mspace height="20px" width="10px" style="background: black;"/></mtd>
-          <mtd></mtd>
+          <mtd><!-- Empty --></mtd>
           <mtd><mspace height="20px" width="30px" style="background: black;"/></mtd>
         </mtr>
         <mtr>
@@ -182,11 +182,11 @@
         <mtr>
           <mtd><mspace height="10px" width="10px" style="background: black;"/></mtd>
           <mtd><mspace height="10px" width="20px" style="background: black;"/></mtd>
-          
+          <!-- Cell missing -->
         </mtr>
         <mtr>
           <mtd><mspace height="20px" width="10px" style="background: black;"/></mtd>
-          <mtd></mtd>
+          <mtd><!-- Empty --></mtd>
           <mtd><mspace height="20px" width="30px" style="background: black;"/></mtd>
         </mtr>
         <mtr>
@@ -194,7 +194,7 @@
           <mtd><mspace height="30px" width="20px" style="background: black;"/></mtd>
           <mtd><mspace height="30px" width="30px" style="background: black;"/></mtd>
         </mtr>
-        
+        <!-- Row missing -->
       </mtable>
     </math>
   </p>
@@ -267,13 +267,13 @@
           <mtd><mspace height="10px" width="20px" style="background: black;"/></mtd>
           <mtd><mspace height="10px" width="30px" style="background: black;"/></mtd>
           <mtd><mspace height="10px" width="40px" style="background: black;"/></mtd>
-          <mtd><mspace height="10px" width="50px" style="background: red;"/></mtd>
+          <mtd><mspace height="10px" width="50px" style="background: red;"/></mtd><!-- extra mtd -->
         </mtr>
         <mtr>
           <mtd><mspace height="20px" width="10px" style="background: black;"/></mtd>
           <mtd><mspace height="20px" width="20px" style="background: black;"/></mtd>
           <mtd><mspace height="20px" width="30px" style="background: black;"/></mtd>
-          <mtd><mspace height="20px" width="40px" style="background: black;"/><mspace height="20px" width="40px" style="background: red;"/></mtd>
+          <mtd><mspace height="20px" width="40px" style="background: black;"/><mspace height="20px" width="40px" style="background: red;"/><!-- extra child--></mtd>
         </mtr>
         <mtr>
           <mtd><mspace height="30px" width="10px" style="background: black;"/></mtd>
@@ -292,7 +292,7 @@
           <mtd><mspace height="50px" width="20px" style="background: red;"/></mtd>
           <mtd><mspace height="50px" width="30px" style="background: red;"/></mtd>
           <mtd><mspace height="50px" width="40px" style="background: red;"/></mtd>
-        </mtr> 
+        </mtr> <!-- extra row -->
       </mtable>
     </math>
   </p>

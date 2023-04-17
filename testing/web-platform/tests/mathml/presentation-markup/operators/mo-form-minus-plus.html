@@ -3,13 +3,13 @@
   <head>
     <meta charset="utf-8"/>
     <title>form plus/minus</title>
-    <link rel="help" href="https://mathml-refresh.github.io/mathml-core/#operator-fence-separator-or-accent-mo">
+    <link rel="help" href="https://w3c.github.io/mathml-core/#operator-fence-separator-or-accent-mo">
     <meta name="assert" content="Verifies behavior of form of plus/minus etc.">
     <link rel="match" href="mo-form-minus-plus-ref.html">
   </head>
   <body>
 
-    
+    <!-- These operators should have form "prefix" -->
 
     _<math><merror><mo>−</mo><mi>x</mi></merror></math>_
     _<math><mo>−</mo><mi>x</mi></math>_
@@ -47,7 +47,7 @@
 
     <br/>
 
-    
+    <!-- These operators should have form "infix" -->
 
     _<math><merror><mi>x</mi><mo>−</mo><mi>y</mi></merror></math>_
     _<math><mi>x</mi><mo>−</mo><mi>y</mi></math>_

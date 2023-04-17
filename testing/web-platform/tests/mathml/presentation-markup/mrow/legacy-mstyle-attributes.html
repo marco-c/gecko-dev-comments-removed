@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <title>Legacy mstyle attributes</title>
 <link rel="help" href="https://www.w3.org/TR/MathML3/chapter3.html#presm.mstyle">
-<link rel="help" href="https://mathml-refresh.github.io/mathml-core/#style-change-mstyle">
-<link rel="help" href="https://mathml-refresh.github.io/mathml-core/#space-mspace">
-<link rel="help" href="https://mathml-refresh.github.io/mathml-core/#fractions-mfrac">
-<link rel="help" href="https://mathml-refresh.github.io/mathml-core/#operator-fence-separator-or-accent-mo">
-<link rel="help" href="https://mathml-refresh.github.io/mathml-core/#string-literal-ms">
+<link rel="help" href="https://w3c.github.io/mathml-core/#style-change-mstyle">
+<link rel="help" href="https://w3c.github.io/mathml-core/#space-mspace">
+<link rel="help" href="https://w3c.github.io/mathml-core/#fractions-mfrac">
+<link rel="help" href="https://w3c.github.io/mathml-core/#operator-fence-separator-or-accent-mo">
+<link rel="help" href="https://w3c.github.io/mathml-core/#string-literal-ms">
 <link rel="help" href="https://www.w3.org/TR/MathML3/chapter3.html#presm.menclose">
 <meta name="assert" content="Legacy mstyle attributes are ignored">
 <script src="/resources/testharness.js"></script>
@@ -35,12 +35,12 @@
 </head>
 <body>
   <div id="log"></div>
-  
-
-
-
-
-
+  <!-- Note: mpadded attributes are not tested since MathML3 did not allow to
+       set them from mstyle. Also, it is not clear whether munderover's
+       accent/accentunder could be applied from mstyle, given that the former
+       clashes with mo@accent. Other legacy mstyle attributes not in MathML
+       Core or without visual effect are not tested.
+    -->
   <p class="TestContainer" id="mspace">
     <math>
       <mstyle width="50px" height="50px" depth="50px">
@@ -135,7 +135,7 @@
       </mstyle>
     </math>
   </p>
-  
+  <!-- notation attribute is from MathML3's menclose element -->
   <p class="TestContainer" id="menclose">
     <math>
       <mstyle notation="box">
