@@ -26,14 +26,7 @@ const perfDescription = {
       
       
       
-      
-      
-      
-      
-      
-      
-      activeBrowsingContextID: Arg(4, "nullable:number"),
-      activeTabID: Arg(4, "nullable:number"),
+      activeTabID: Arg(4, "number"),
     },
     "profiler-stopped": {
       type: "profiler-stopped",
