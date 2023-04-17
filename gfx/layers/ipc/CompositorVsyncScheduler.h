@@ -15,6 +15,7 @@
 #include "mozilla/TimeStamp.h"   
 #include "mozilla/gfx/Point.h"   
 #include "mozilla/layers/SampleTime.h"
+#include "mozilla/webrender/webrender_ffi.h"
 #include "mozilla/VsyncDispatcher.h"
 #include "mozilla/widget/CompositorWidget.h"
 #include "nsISupportsImpl.h"
@@ -60,12 +61,14 @@ class CompositorVsyncScheduler {
 
 
 
-  void ScheduleComposition();
+  void ScheduleComposition(wr::RenderReasons aReasons);
 
   
 
 
-  void CancelCurrentCompositeTask();
+
+
+  wr::RenderReasons CancelCurrentCompositeTask();
 
   
 
@@ -77,7 +80,8 @@ class CompositorVsyncScheduler {
 
 
 
-  void ForceComposeToTarget(gfx::DrawTarget* aTarget,
+  void ForceComposeToTarget(wr::RenderReasons aReasons,
+                            gfx::DrawTarget* aTarget,
                             const gfx::IntRect* aRect);
 
   
@@ -113,7 +117,8 @@ class CompositorVsyncScheduler {
 
   
   
-  void PostCompositeTask(const VsyncEvent& aVsyncEvent);
+  void PostCompositeTask(const VsyncEvent& aVsyncEvent,
+                         wr::RenderReasons aReasons);
 
   
   
@@ -126,7 +131,7 @@ class CompositorVsyncScheduler {
 
   
   
-  void Composite(const VsyncEvent& aVsyncEvent);
+  void Composite(const VsyncEvent& aVsyncEvent, wr::RenderReasons aReasons);
 
   void ObserveVsync();
   void UnobserveVsync();
@@ -155,6 +160,8 @@ class CompositorVsyncScheduler {
 
   bool mAsapScheduling;
   bool mIsObservingVsync;
+  
+  wr::RenderReasons mRendersDelayedByVsyncReasons;
   TimeStamp mCompositeRequestedAt;
   int32_t mVsyncNotificationsSkipped;
   widget::CompositorWidget* mWidget;
@@ -162,6 +169,8 @@ class CompositorVsyncScheduler {
 
   mozilla::Monitor mCurrentCompositeTaskMonitor;
   RefPtr<CancelableRunnable> mCurrentCompositeTask;
+  
+  wr::RenderReasons mCurrentCompositeTaskReasons;
 
   mozilla::Monitor mCurrentVRTaskMonitor;
   RefPtr<CancelableRunnable> mCurrentVRTask;

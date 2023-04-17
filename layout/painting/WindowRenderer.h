@@ -7,6 +7,7 @@
 #ifndef MOZILLA_PAINTING_WINDOWRENDERER_H
 #define MOZILLA_PAINTING_WINDOWRENDERER_H
 
+#include "mozilla/webrender/webrender_ffi.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/dom/Animation.h"  
 #include "mozilla/layers/ScrollableLayerGuid.h"  
@@ -164,7 +165,7 @@ class WindowRenderer : public FrameRecorder {
 
 
 
-  virtual void FlushRendering() {}
+  virtual void FlushRendering(wr::RenderReasons aReasons) {}
 
   
 

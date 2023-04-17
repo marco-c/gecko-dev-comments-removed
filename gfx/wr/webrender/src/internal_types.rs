@@ -2,7 +2,7 @@
 
 
 
-use api::{ColorF, DocumentId, ExternalImageId, PrimitiveFlags, Parameter};
+use api::{ColorF, DocumentId, ExternalImageId, PrimitiveFlags, Parameter, RenderReasons};
 use api::{ImageFormat, NotificationRequest, Shadow, FilterOp, ImageBufferKind};
 use api::units::*;
 use api;
@@ -653,6 +653,7 @@ pub struct RenderedDocument {
     pub frame: Frame,
     pub is_new_scene: bool,
     pub profile: TransactionProfile,
+    pub render_reasons: RenderReasons,
     pub frame_stats: Option<FullFrameStats>
 }
 

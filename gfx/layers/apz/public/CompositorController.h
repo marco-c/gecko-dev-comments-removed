@@ -21,9 +21,7 @@ class CompositorController {
   
 
 
-  virtual void ScheduleRenderOnCompositorThread() = 0;
-  virtual void ScheduleHideAllPluginWindows() = 0;
-  virtual void ScheduleShowAllPluginWindows() = 0;
+  virtual void ScheduleRenderOnCompositorThread(wr::RenderReasons aReasons) = 0;
 
  protected:
   virtual ~CompositorController() = default;

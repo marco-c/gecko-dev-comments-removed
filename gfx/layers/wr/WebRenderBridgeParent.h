@@ -143,7 +143,8 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
 
   mozilla::ipc::IPCResult RecvClearCachedResources() override;
   mozilla::ipc::IPCResult RecvInvalidateRenderedFrame() override;
-  mozilla::ipc::IPCResult RecvScheduleComposite() override;
+  mozilla::ipc::IPCResult RecvScheduleComposite(
+      const wr::RenderReasons& aReasons) override;
   mozilla::ipc::IPCResult RecvCapture() override;
   mozilla::ipc::IPCResult RecvStartCaptureSequence(
       const nsCString& path, const uint32_t& aFlags) override;
@@ -182,7 +183,8 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
   
   bool IsPendingComposite() override { return false; }
   void FinishPendingComposite() override {}
-  void CompositeToTarget(VsyncId aId, gfx::DrawTarget* aTarget,
+  void CompositeToTarget(VsyncId aId, wr::RenderReasons aReasons,
+                         gfx::DrawTarget* aTarget,
                          const gfx::IntRect* aRect = nullptr) override;
   TimeDuration GetVsyncInterval() const override;
 
@@ -240,7 +242,7 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
     return aFontKey.mNamespace == mIdNamespace;
   }
 
-  void FlushRendering(bool aWaitForPresent = true);
+  void FlushRendering(wr::RenderReasons aReasons, bool aWaitForPresent = true);
 
   
 
@@ -253,7 +255,7 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
 
 
 
-  void ScheduleGenerateFrame();
+  void ScheduleGenerateFrame(wr::RenderReasons aReason);
 
   
 
@@ -261,7 +263,7 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
 
 
 
-  void InvalidateRenderedFrame();
+  void InvalidateRenderedFrame(wr::RenderReasons aReasons);
 
   
 
@@ -269,7 +271,7 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
 
 
 
-  void ScheduleForcedGenerateFrame();
+  void ScheduleForcedGenerateFrame(wr::RenderReasons aReasons);
 
   void NotifyDidSceneBuild(RefPtr<const wr::WebRenderPipelineInfo> aInfo);
 
@@ -412,10 +414,11 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
   void RollbackWrEpoch();
 
   void FlushSceneBuilds();
-  void FlushFrameGeneration();
+  void FlushFrameGeneration(wr::RenderReasons aReasons);
   void FlushFramePresentation();
 
-  void MaybeGenerateFrame(VsyncId aId, bool aForceGenerateFrame);
+  void MaybeGenerateFrame(VsyncId aId, bool aForceGenerateFrame,
+                          wr::RenderReasons aReasons);
 
   VsyncId GetVsyncIdForEpoch(const wr::Epoch& aEpoch) {
     for (auto& id : mPendingTransactionIds) {
@@ -504,6 +507,7 @@ class WebRenderBridgeParent final : public PWebRenderBridgeParent,
 #endif
   uint32_t mBoolParameterBits;
   uint16_t mBlobTileSize;
+  wr::RenderReasons mSkippedCompositeReasons;
   bool mDestroyed;
   bool mReceivedDisplayList;
   bool mIsFirstPaint;

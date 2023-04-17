@@ -39,6 +39,7 @@ using mozilla::layers::TextureFlags from "mozilla/layers/CompositorTypes.h";
 using mozilla::layers::CompositorOptions from "mozilla/layers/CompositorOptions.h";
 using mozilla::wr::PipelineId from "mozilla/webrender/WebRenderTypes.h";
 using mozilla::wr::IdNamespace from "mozilla/webrender/WebRenderTypes.h";
+using mozilla::wr::RenderReasons from "mozilla/webrender/webrender_ffi.h";
 using base::ProcessId from "base/process.h";
 using mozilla::wr::MaybeExternalImageId from "mozilla/webrender/WebRenderTypes.h";
 using mozilla::layers::LayersObserverEpoch from "mozilla/layers/LayersTypes.h";
@@ -176,18 +177,18 @@ parent:
 
   
   
-  sync FlushRendering();
+  sync FlushRendering(RenderReasons aReasons);
 
   
   
-  async FlushRenderingAsync();
+  async FlushRenderingAsync(RenderReasons aReasons);
 
   
   sync WaitOnTransactionProcessed();
 
   
   
-  async ForcePresent();
+  async ForcePresent(RenderReasons aReasons);
 
   sync StartFrameTimeRecording(int32_t bufferSize)
     returns (uint32_t startIndex);

@@ -3591,7 +3591,7 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
   }
 
   if (knowsCompositor && layerManager && layerManager->NeedsComposite()) {
-    layerManager->ScheduleComposite();
+    layerManager->ScheduleComposite(wr::RenderReasons::WIDGET);
     layerManager->SetNeedsComposite(false);
   }
 
@@ -3863,7 +3863,7 @@ gboolean nsWindow::OnConfigureEvent(GtkWidget* aWidget,
     
     
     
-    GetWindowRenderer()->FlushRendering();
+    GetWindowRenderer()->FlushRendering(wr::RenderReasons::WIDGET);
     return FALSE;
   }
 
@@ -6042,7 +6042,7 @@ void nsWindow::ResumeCompositorHiddenWindow() {
       mCompositorState = COMPOSITOR_ENABLED;
       remoteRenderer->SendResumeAsync();
     }
-    remoteRenderer->SendForcePresent();
+    remoteRenderer->SendForcePresent(wr::RenderReasons::WIDGET);
   }
 }
 
@@ -6158,7 +6158,7 @@ void nsWindow::ResumeCompositor() {
   if (remoteRenderer) {
     mCompositorState = COMPOSITOR_ENABLED;
     remoteRenderer->SendResumeAsync();
-    remoteRenderer->SendForcePresent();
+    remoteRenderer->SendForcePresent(wr::RenderReasons::WIDGET);
   }
 }
 
