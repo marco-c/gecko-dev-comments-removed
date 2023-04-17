@@ -1,0 +1,4 @@
+
+
+
+parent.promise = (new Function('x', 'return import(x)'))('../../imports-a.js');
