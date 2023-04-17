@@ -70,8 +70,14 @@ using RootedWasmExceptionObject = Rooted<WasmExceptionObject*>;
 namespace wasm {
 
 struct ModuleEnvironment;
+class Code;
+class DebugState;
 class Decoder;
+class GeneratedSourceMap;
 class Instance;
+class Memory;
+class Module;
+class Table;
 
 
 

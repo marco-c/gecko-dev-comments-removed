@@ -30,6 +30,8 @@
 namespace js {
 namespace wasm {
 
+using mozilla::Some;
+
 
 
 
