@@ -1155,9 +1155,6 @@ parent:
         returns (uint8_t[] bits);
 
     
-    async PrivateDocShellsExist(bool aExist);
-
-    
     async FirstIdle();
 
     async DeviceReset();
