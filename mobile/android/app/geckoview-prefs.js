@@ -49,12 +49,6 @@ pref("dom.storageManager.enabled", true);
 pref("dom.storage_access.enabled", true);
 
 
-
-
-
-pref("dom.storage.next_gen", true);
-
-
 pref("intl.locale.requested", "");
 
 
