@@ -311,6 +311,56 @@ using namespace mozilla::net;
 using namespace mozilla::widget;
 using mozilla::loader::PScriptCacheChild;
 
+#ifdef MOZ_GECKO_PROFILER
+namespace geckoprofiler::markers {
+struct ProcessPriorityChange {
+  static constexpr Span<const char> MarkerTypeName() {
+    return MakeStringSpan("ProcessPriorityChange");
+  }
+  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
+                                   const ProfilerString8View& aPreviousPriority,
+                                   const ProfilerString8View& aNewPriority) {
+    aWriter.StringProperty("Before", aPreviousPriority);
+    aWriter.StringProperty("After", aNewPriority);
+  }
+  static MarkerSchema MarkerTypeDisplay() {
+    using MS = MarkerSchema;
+    MS schema{MS::Location::markerChart, MS::Location::markerTable};
+    schema.AddKeyFormat("Before", MS::Format::string);
+    schema.AddKeyFormat("After", MS::Format::string);
+    schema.AddStaticLabelValue("Note",
+                               "This is a notification of the priority change "
+                               "that was done by the parent process");
+    schema.SetAllLabels(
+        "priority: {marker.data.Before} -> {marker.data.After}");
+    return schema;
+  }
+};
+
+struct ProcessPriority {
+  static constexpr Span<const char> MarkerTypeName() {
+    return MakeStringSpan("ProcessPriority");
+  }
+  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
+                                   const ProfilerString8View& aPriority,
+                                   const ProfilingState& aProfilingState) {
+    aWriter.StringProperty("Priority", aPriority);
+    aWriter.StringProperty("Marker cause",
+                           ProfilerString8View::WrapNullTerminatedString(
+                               ProfilingStateToString(aProfilingState)));
+  }
+  static MarkerSchema MarkerTypeDisplay() {
+    using MS = MarkerSchema;
+    MS schema{MS::Location::markerChart, MS::Location::markerTable};
+    schema.AddKeyFormat("Priority", MS::Format::string);
+    schema.AddKeyFormat("Marker cause", MS::Format::string);
+    schema.SetAllLabels("priority: {marker.data.Priority}");
+    return schema;
+  }
+};
+}  
+#endif  
+
 namespace mozilla {
 
 namespace dom {
@@ -574,6 +624,25 @@ ContentChild::ContentChild()
   
   nsDebugImpl::SetMultiprocessMode("Child");
 
+#ifdef MOZ_GECKO_PROFILER
+  
+  
+  
+  uintptr_t self = reinterpret_cast<uintptr_t>(this);
+  profiler_add_state_change_callback(
+      AllProfilingStates(),
+      [self](ProfilingState aProfilingState) {
+        const ContentChild* selfPtr =
+            reinterpret_cast<const ContentChild*>(self);
+        PROFILER_MARKER("Process Priority", OTHER,
+                        mozilla::MarkerThreadId::MainThread(), ProcessPriority,
+                        ProfilerString8View::WrapNullTerminatedString(
+                            ProcessPriorityToString(selfPtr->mProcessPriority)),
+                        aProfilingState);
+      },
+      self);
+#endif  
+
   
   
   
@@ -593,6 +662,10 @@ ContentChild::ContentChild()
 #endif
 
 ContentChild::~ContentChild() {
+#ifdef MOZ_GECKO_PROFILER
+  profiler_remove_state_change_callback(reinterpret_cast<uintptr_t>(this));
+#endif  
+
 #ifndef NS_FREE_PERMANENT_DATA
   MOZ_CRASH("Content Child shouldn't be destroyed.");
 #endif
@@ -2698,6 +2771,14 @@ mozilla::ipc::IPCResult ContentChild::RecvNotifyProcessPriorityChanged(
 
   RefPtr<nsHashPropertyBag> props = new nsHashPropertyBag();
   props->SetPropertyAsInt32(u"priority"_ns, static_cast<int32_t>(aPriority));
+
+  PROFILER_MARKER("Process Priority", OTHER,
+                  mozilla::MarkerThreadId::MainThread(), ProcessPriorityChange,
+                  ProfilerString8View::WrapNullTerminatedString(
+                      ProcessPriorityToString(mProcessPriority)),
+                  ProfilerString8View::WrapNullTerminatedString(
+                      ProcessPriorityToString(aPriority)));
+  mProcessPriority = aPriority;
 
   os->NotifyObservers(static_cast<nsIPropertyBag2*>(props),
                       "ipc:process-priority-changed", nullptr);
