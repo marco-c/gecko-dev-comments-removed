@@ -141,9 +141,6 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
 
  private:
   
-  void Init();
-
-  
 
 
 
