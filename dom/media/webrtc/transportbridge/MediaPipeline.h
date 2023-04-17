@@ -253,6 +253,9 @@ class MediaPipeline : public sigslot::has_slots<> {
 
   
   const std::string mPc;
+
+  
+  
   std::string mDescription;
 
   
@@ -312,7 +315,9 @@ class MediaPipelineTransmit : public MediaPipeline {
  protected:
   ~MediaPipelineTransmit();
 
-  void SetDescription();
+  
+  
+  std::string GenerateDescription() const;
 
   
   
@@ -328,6 +333,9 @@ class MediaPipelineTransmit : public MediaPipeline {
   Watchable<RefPtr<dom::MediaStreamTrack>> mDomTrack;
   
   RefPtr<MediaInputPort> mSendPort;
+  
+  
+  bool mDescriptionInvalidated = true;
   
   
   bool mUnsettingSendTrack = false;
