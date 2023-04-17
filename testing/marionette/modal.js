@@ -58,16 +58,14 @@ modal.findModalDialogs = function(context) {
   
   
   
-  if (context.tabBrowser?.getTabDialogBox) {
-    const tabDialogBox = context.tabBrowser.getTabDialogBox(contentBrowser);
-
-    let dialogs = tabDialogBox.getTabDialogManager().dialogs;
+  if (contentBrowser?.tabDialogBox) {
+    let dialogs = contentBrowser.tabDialogBox.getTabDialogManager().dialogs;
     if (dialogs.length) {
       logger.trace("Found open tab modal prompt");
       return new modal.Dialog(() => context, dialogs[0].frameContentWindow);
     }
 
-    dialogs = tabDialogBox.getContentDialogManager().dialogs;
+      dialogs = contentBrowser.tabDialogBox.getContentDialogManager().dialogs;
 
     
     
@@ -80,10 +78,8 @@ modal.findModalDialogs = function(context) {
   
   
   
-  if (context.tabBrowser?.getTabModalPromptBox) {
-    const promptBox = context.tabBrowser.getTabModalPromptBox(contentBrowser);
-
-    const prompts = promptBox.listPrompts();
+  if (contentBrowser?.tabModalPromptBox) {
+    const prompts = contentBrowser.tabModalPromptBox.listPrompts();
     if (prompts.length) {
       logger.trace("Found open old-style content prompt");
       return new modal.Dialog(() => context, null);
