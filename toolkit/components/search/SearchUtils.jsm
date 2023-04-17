@@ -190,6 +190,23 @@ var SearchUtils = {
   LoadListener,
 
   
+  
+  
+  
+  
+  
+  
+  
+  GENERAL_SEARCH_ENGINE_IDS: new Set([
+    "google@search.mozilla.org",
+    "ddg@search.mozilla.org",
+    "bing@search.mozilla.org",
+    "baidu@search.mozilla.org",
+    "yahoo-jp@search.mozilla.org",
+    "yandex@search.mozilla.org",
+  ]),
+
+  
 
 
 

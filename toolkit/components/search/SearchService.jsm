@@ -188,26 +188,6 @@ SearchService.prototype = {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  GENERAL_SEARCH_ENGINE_IDS: new Set([
-    "google@search.mozilla.org",
-    "ddg@search.mozilla.org",
-    "bing@search.mozilla.org",
-    "baidu@search.mozilla.org",
-    "yahoo-jp@search.mozilla.org",
-    "yandex@search.mozilla.org",
-  ]),
-
-  
-  
-  
   get _separatePrivateDefault() {
     return (
       this._separatePrivateDefaultPrefValue &&
@@ -2119,9 +2099,10 @@ SearchService.prototype = {
       newDefault.name == excludeEngineName
     ) {
       let sortedEngines = this._getSortedEngines(false);
-      let generalSearchEngines = sortedEngines.filter(e =>
-        this.GENERAL_SEARCH_ENGINE_IDS.has(e._extensionID)
+      let generalSearchEngines = sortedEngines.filter(
+        e => e.isGeneralPurposeEngine
       );
+
       
       let firstVisible = generalSearchEngines.find(
         e => e.name != excludeEngineName
@@ -2142,9 +2123,7 @@ SearchService.prototype = {
       if (!newDefault) {
         if (!firstVisible) {
           sortedEngines = this._getSortedEngines(true);
-          firstVisible = sortedEngines.find(e =>
-            this.GENERAL_SEARCH_ENGINE_IDS.has(e._extensionID)
-          );
+          firstVisible = sortedEngines.find(e => e.isGeneralPurposeEngine);
           if (!firstVisible) {
             firstVisible = sortedEngines[0];
           }
