@@ -1,0 +1,21 @@
+
+
+
+
+
+
+#ifndef ProfilerBindings_h
+#define ProfilerBindings_h
+
+
+
+
+
+
+extern "C" {
+
+
+
+}  
+
+#endif  
