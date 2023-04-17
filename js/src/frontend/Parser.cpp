@@ -2900,8 +2900,7 @@ bool GeneralParser<ParseHandler, Unit>::functionArguments(
 
 template <typename Unit>
 bool Parser<FullParseHandler, Unit>::skipLazyInnerFunction(
-    FunctionNode* funNode, uint32_t toStringStart, FunctionSyntaxKind kind,
-    bool tryAnnexB) {
+    FunctionNode* funNode, uint32_t toStringStart, bool tryAnnexB) {
   
   
   
@@ -2966,16 +2965,14 @@ bool Parser<FullParseHandler, Unit>::skipLazyInnerFunction(
 
 template <typename Unit>
 bool Parser<SyntaxParseHandler, Unit>::skipLazyInnerFunction(
-    FunctionNodeType funNode, uint32_t toStringStart, FunctionSyntaxKind kind,
-    bool tryAnnexB) {
+    FunctionNodeType funNode, uint32_t toStringStart, bool tryAnnexB) {
   MOZ_CRASH("Cannot skip lazy inner functions when syntax parsing");
 }
 
 template <class ParseHandler, typename Unit>
 bool GeneralParser<ParseHandler, Unit>::skipLazyInnerFunction(
-    FunctionNodeType funNode, uint32_t toStringStart, FunctionSyntaxKind kind,
-    bool tryAnnexB) {
-  return asFinalParser()->skipLazyInnerFunction(funNode, toStringStart, kind,
+    FunctionNodeType funNode, uint32_t toStringStart, bool tryAnnexB) {
+  return asFinalParser()->skipLazyInnerFunction(funNode, toStringStart,
                                                 tryAnnexB);
 }
 
@@ -3076,7 +3073,7 @@ GeneralParser<ParseHandler, Unit>::functionDefinition(
   
   
   if (handler_.canSkipLazyInnerFunctions()) {
-    if (!skipLazyInnerFunction(funNode, toStringStart, kind, tryAnnexB)) {
+    if (!skipLazyInnerFunction(funNode, toStringStart, tryAnnexB)) {
       return null();
     }
 
@@ -8105,7 +8102,6 @@ GeneralParser<ParseHandler, Unit>::synthesizeConstructor(
   
   if (handler_.canSkipLazyInnerFunctions()) {
     if (!skipLazyInnerFunction(funNode, synthesizedBodyPos.begin,
-                               functionSyntaxKind,
                                 false)) {
       return null();
     }
