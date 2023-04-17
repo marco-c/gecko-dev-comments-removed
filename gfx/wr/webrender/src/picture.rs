@@ -222,15 +222,32 @@ impl PartialEq for MatrixKey {
 }
 
 
+#[derive(Debug, Clone)]
+struct ScaleOffsetKey {
+    sx: f32,
+    sy: f32,
+    tx: f32,
+    ty: f32,
+}
+
+impl PartialEq for ScaleOffsetKey {
+    fn eq(&self, other: &Self) -> bool {
+        const EPSILON: f32 = 0.001;
+
+        self.sx.approx_eq_eps(&other.sx, &EPSILON) &&
+        self.sy.approx_eq_eps(&other.sy, &EPSILON) &&
+        self.tx.approx_eq_eps(&other.tx, &EPSILON) &&
+        self.ty.approx_eq_eps(&other.ty, &EPSILON)
+    }
+}
+
+
 
 #[derive(Debug, PartialEq, Clone)]
 enum TransformKey {
     Local,
     ScaleOffset {
-        scale_x: f32,
-        scale_y: f32,
-        offset_x: f32,
-        offset_y: f32,
+        so: ScaleOffsetKey,
     },
     Transform {
         m: MatrixKey,
@@ -245,10 +262,12 @@ impl<Src, Dst> From<CoordinateSpaceMapping<Src, Dst>> for TransformKey {
             }
             CoordinateSpaceMapping::ScaleOffset(ref scale_offset) => {
                 TransformKey::ScaleOffset {
-                    scale_x: scale_offset.scale.x,
-                    scale_y: scale_offset.scale.y,
-                    offset_x: scale_offset.offset.x,
-                    offset_y: scale_offset.offset.y,
+                    so: ScaleOffsetKey {
+                        sx: scale_offset.scale.x,
+                        sy: scale_offset.scale.y,
+                        tx: scale_offset.offset.x,
+                        ty: scale_offset.offset.y,
+                    }
                 }
             }
             CoordinateSpaceMapping::Transform(ref m) => {
