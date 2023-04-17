@@ -11,6 +11,7 @@
 #include "mozilla/Casting.h"
 #include "mozilla/Logging.h"
 #include "mozilla/Span.h"
+#include "mozilla/StaticPrefs_security.h"
 #include "mozilla/Telemetry.h"
 #include "nsDependentString.h"
 #include "nsServiceManagerUtils.h"
@@ -26,6 +27,30 @@ using namespace mozilla::pkix;
 using namespace mozilla::psm;
 
 LazyLogModule gPublicKeyPinningLog("PublicKeyPinningService");
+
+enum class PinningMode : uint32_t {
+  Disabled = 0,
+  AllowUserCAMITM = 1,
+  Strict = 2,
+  EnforceTestMode = 3
+};
+
+PinningMode GetPinningMode() {
+  PinningMode pinningMode = static_cast<PinningMode>(
+      StaticPrefs::security_cert_pinning_enforcement_level_DoNotUseDirectly());
+  switch (pinningMode) {
+    case PinningMode::Disabled:
+      return PinningMode::Disabled;
+    case PinningMode::AllowUserCAMITM:
+      return PinningMode::AllowUserCAMITM;
+    case PinningMode::Strict:
+      return PinningMode::Strict;
+    case PinningMode::EnforceTestMode:
+      return PinningMode::EnforceTestMode;
+    default:
+      return PinningMode::Disabled;
+  }
+}
 
 
 
@@ -161,7 +186,6 @@ static void ValidatePinningPreloadList() {
 
 static nsresult FindPinningInformation(
     const char* hostname, mozilla::pkix::Time time,
-    const OriginAttributes& originAttributes,
      const TransportSecurityPreload*& staticFingerprints) {
 #ifdef DEBUG
   ValidatePinningPreloadList();
@@ -217,7 +241,6 @@ static nsresult FindPinningInformation(
 static nsresult CheckPinsForHostname(
     const nsTArray<Span<const uint8_t>>& certList, const char* hostname,
     bool enforceTestMode, mozilla::pkix::Time time,
-    const OriginAttributes& originAttributes,
      bool& chainHasValidPins,
      PinningTelemetryInfo* pinningTelemetryInfo) {
   chainHasValidPins = false;
@@ -229,8 +252,10 @@ static nsresult CheckPinsForHostname(
   }
 
   const TransportSecurityPreload* staticFingerprints = nullptr;
-  nsresult rv = FindPinningInformation(hostname, time, originAttributes,
-                                       staticFingerprints);
+  nsresult rv = FindPinningInformation(hostname, time, staticFingerprints);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
   
   
   if (!staticFingerprints) {
@@ -299,10 +324,16 @@ static nsresult CheckPinsForHostname(
 
 nsresult PublicKeyPinningService::ChainHasValidPins(
     const nsTArray<Span<const uint8_t>>& certList, const char* hostname,
-    mozilla::pkix::Time time, bool enforceTestMode,
-    const OriginAttributes& originAttributes,
+    mozilla::pkix::Time time, bool isBuiltInRoot,
      bool& chainHasValidPins,
      PinningTelemetryInfo* pinningTelemetryInfo) {
+  PinningMode pinningMode(GetPinningMode());
+  if (pinningMode == PinningMode::Disabled ||
+      (!isBuiltInRoot && pinningMode == PinningMode::AllowUserCAMITM)) {
+    chainHasValidPins = true;
+    return NS_OK;
+  }
+
   chainHasValidPins = false;
   if (certList.IsEmpty()) {
     return NS_ERROR_INVALID_ARG;
@@ -311,25 +342,30 @@ nsresult PublicKeyPinningService::ChainHasValidPins(
     return NS_ERROR_INVALID_ARG;
   }
   nsAutoCString canonicalizedHostname(CanonicalizeHostname(hostname));
+  bool enforceTestMode = pinningMode == PinningMode::EnforceTestMode;
   return CheckPinsForHostname(certList, canonicalizedHostname.get(),
-                              enforceTestMode, time, originAttributes,
-                              chainHasValidPins, pinningTelemetryInfo);
+                              enforceTestMode, time, chainHasValidPins,
+                              pinningTelemetryInfo);
 }
 
-nsresult PublicKeyPinningService::HostHasPins(
-    const char* hostname, mozilla::pkix::Time time, bool enforceTestMode,
-    const OriginAttributes& originAttributes,
-     bool& hostHasPins) {
+nsresult PublicKeyPinningService::HostHasPins(const char* hostname,
+                                              mozilla::pkix::Time time,
+                                               bool& hostHasPins) {
   hostHasPins = false;
+  PinningMode pinningMode(GetPinningMode());
+  if (pinningMode == PinningMode::Disabled) {
+    return NS_OK;
+  }
   nsAutoCString canonicalizedHostname(CanonicalizeHostname(hostname));
   const TransportSecurityPreload* staticFingerprints = nullptr;
   nsresult rv = FindPinningInformation(canonicalizedHostname.get(), time,
-                                       originAttributes, staticFingerprints);
+                                       staticFingerprints);
   if (NS_FAILED(rv)) {
     return rv;
   }
   if (staticFingerprints) {
-    hostHasPins = !staticFingerprints->mTestMode || enforceTestMode;
+    hostHasPins = !staticFingerprints->mTestMode ||
+                  pinningMode == PinningMode::EnforceTestMode;
   }
   return NS_OK;
 }
