@@ -22,14 +22,6 @@ class FormValidationChild extends JSWindowActorChild {
     this._element = null;
   }
 
-  actorCreated() {
-    
-    
-    
-    
-    this.contentWindow.addEventListener("pageshow", this);
-  }
-
   
 
 

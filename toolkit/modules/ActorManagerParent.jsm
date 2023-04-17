@@ -349,6 +349,9 @@ let JSWINDOWACTORS = {
       moduleURI: "resource://gre/actors/PopupBlockingChild.jsm",
       events: {
         DOMPopupBlocked: { capture: true },
+        
+        
+        pageshow: { createActor: false },
       },
     },
     allFrames: true,

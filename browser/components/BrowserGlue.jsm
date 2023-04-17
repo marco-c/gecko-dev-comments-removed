@@ -500,6 +500,9 @@ let JSWINDOWACTORS = {
       moduleURI: "resource:///actors/FormValidationChild.jsm",
       events: {
         MozInvalidForm: {},
+        
+        
+        pageshow: { createActor: false },
       },
     },
 
@@ -537,7 +540,9 @@ let JSWINDOWACTORS = {
         DOMLinkAdded: {},
         DOMLinkChanged: {},
         pageshow: {},
-        pagehide: {},
+        
+        
+        pagehide: { createActor: false },
       },
     },
 
@@ -656,7 +661,9 @@ let JSWINDOWACTORS = {
       events: {
         DOMContentLoaded: {},
         pageshow: { mozSystemGroup: true },
-        unload: {},
+        
+        
+        unload: { createActor: false },
       },
     },
   },

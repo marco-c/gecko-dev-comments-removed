@@ -20,14 +20,6 @@ class PopupBlockingChild extends JSWindowActorChild {
     this.weakDocStates = new WeakMap();
   }
 
-  actorCreated() {
-    this.contentWindow.addEventListener("pageshow", this);
-  }
-
-  didDestroy() {
-    this.contentWindow.removeEventListener("pageshow", this);
-  }
-
   
 
 
