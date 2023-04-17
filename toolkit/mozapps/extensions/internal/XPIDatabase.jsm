@@ -1428,6 +1428,8 @@ defineAddonWrapperProperty("signedDate", function() {
     if (
       (aProp === "name" || aProp === "description") &&
       addon.location.name === KEY_APP_BUILTINS &&
+      
+      !addon.id.endsWith("colorway@mozilla.org") &&
       addon.type === "theme"
     ) {
       
