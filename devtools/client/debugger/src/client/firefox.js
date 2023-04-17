@@ -35,6 +35,16 @@ export async function onConnect(commands, _resourceCommand, _actions, store) {
     await targetCommand.startListening();
   }
 
+  
+  
+  
+  
+  await actions.connect(
+    targetFront.url,
+    targetFront.threadFront.actor,
+    targetFront.isWebExtension
+  );
+
   await targetCommand.watchTargets(
     targetCommand.ALL_TYPES,
     onTargetAvailable,
@@ -100,13 +110,10 @@ async function onTargetAvailable({ targetFront, isTargetSwitching }) {
     return;
   }
 
-  if (isTargetSwitching) {
-    
-    
-    
-    
-    actions.willNavigate({ url: targetFront.url });
-  }
+  
+  
+  
+  actions.willNavigate({ url: targetFront.url });
 
   
   const { threadFront } = targetFront;
@@ -130,12 +137,6 @@ async function onTargetAvailable({ targetFront, isTargetSwitching }) {
   
   
   actions.addEventListenerBreakpoints([]).catch(e => console.error(e));
-
-  await actions.connect(
-    targetFront.url,
-    threadFront.actor,
-    targetFront.isWebExtension
-  );
 
   await actions.addTarget(targetFront);
 }
