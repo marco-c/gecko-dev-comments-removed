@@ -43,9 +43,7 @@ Maybe<uint64_t> NowIncludingSuspendMs() {
   return Some(clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW) / kNSperMS);
 }
 
-#endif  
-
-#if defined(XP_WIN)
+#elif defined(XP_WIN)
 
 
 static constexpr uint64_t kHNSperMS = 10000;
@@ -77,9 +75,8 @@ Maybe<uint64_t> NowIncludingSuspendMs() {
   pQueryInterruptTime(&interrupt_time);
   return Some(interrupt_time / kHNSperMS);
 }
-#endif  
 
-#if defined(XP_LINUX)  
+#elif defined(XP_LINUX)  
 #  include <time.h>
 
 
@@ -111,7 +108,12 @@ Maybe<uint64_t> NowIncludingSuspendMs() {
 #  endif
 }
 
-#endif  
+#else  
+
+Maybe<uint64_t> NowExcludingSuspendMs() { return Nothing(); }
+Maybe<uint64_t> NowIncludingSuspendMs() { return Nothing(); }
+
+#endif
 
 };  
 
