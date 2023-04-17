@@ -6,8 +6,8 @@
 
 const EXPORTED_SYMBOLS = [
   "ExperimentAPI",
-  "ExperimentFeature",
   "NimbusFeatures",
+  "_ExperimentFeature",
 ];
 
 
@@ -291,11 +291,11 @@ for (let feature in FeatureManifest) {
   XPCOMUtils.defineLazyGetter(
     NimbusFeatures,
     feature,
-    () => new ExperimentFeature(feature)
+    () => new _ExperimentFeature(feature)
   );
 }
 
-class ExperimentFeature {
+class _ExperimentFeature {
   constructor(featureId, manifest) {
     this.featureId = featureId;
     this.prefGetters = {};
