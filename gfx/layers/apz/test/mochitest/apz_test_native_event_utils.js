@@ -193,7 +193,7 @@ function getBoundingClientRectRelativeToVisualViewport(aElement) {
 
 
 
-function getTargetRect(aTarget) {
+function _getTargetRect(aTarget) {
   let rect = { left: 0, top: 0, width: 0, height: 0 };
 
   
@@ -258,17 +258,16 @@ function getTargetRect(aTarget) {
     aTarget = iframe;
   }
 
-  
-  
-  
-  
-  var offsetX = {},
-    offsetY = {};
-  let rootUtils = SpecialPowers.getDOMWindowUtils(window.top);
-  rootUtils.getVisualViewportOffsetRelativeToLayoutViewport(offsetX, offsetY);
-  rect.left -= offsetX.value;
-  rect.top -= offsetY.value;
   return rect;
+}
+
+
+function getInProcessRootWindow(aWindow) {
+  let window = aWindow;
+  while (window.frameElement) {
+    window = window.frameElement.ownerDocument.defaultView;
+  }
+  return window;
 }
 
 
@@ -294,27 +293,49 @@ async function coordinatesRelativeToScreen(aParams) {
   
   
   
-  const utils = SpecialPowers.getDOMWindowUtils(window);
-  const deviceScale = utils.screenPixelsPerCSSPixel;
-  const deviceScaleNoOverride = utils.screenPixelsPerCSSPixelNoOverride;
-  const resolution = await getResolution();
-  const rect = getTargetRect(target);
+
   
   
   
   
   
+  
+  
+  
+  
+  if (target instanceof Window && window.parent == window) {
+    
+    
+    
+    
+    
+    const utils = SpecialPowers.getDOMWindowUtils(window);
+    const resolution = await getResolution();
+    const deviceScale = utils.screenPixelsPerCSSPixel;
+    const deviceScaleNoOverride = utils.screenPixelsPerCSSPixelNoOverride;
+    return {
+      x:
+        window.mozInnerScreenX * deviceScaleNoOverride +
+        (atCenter ? 0 : offsetX) * resolution * deviceScale,
+      y:
+        window.mozInnerScreenY * deviceScaleNoOverride +
+        (atCenter ? 0 : offsetY) * resolution * deviceScale,
+    };
+  }
+
+  const rect = _getTargetRect(target);
+
+  const utils = SpecialPowers.getDOMWindowUtils(getInProcessRootWindow(window));
+  const positionInScreenCoords = utils.toScreenRect(
+    rect.left + (atCenter ? rect.width / 2 : offsetX),
+    rect.top + (atCenter ? rect.height / 2 : offsetY),
+    0,
+    0
+  );
+
   return {
-    x:
-      window.top.mozInnerScreenX * deviceScaleNoOverride +
-      (rect.left + (atCenter ? rect.width / 2 : offsetX)) *
-        resolution *
-        deviceScale,
-    y:
-      window.top.mozInnerScreenY * deviceScaleNoOverride +
-      (rect.top + (atCenter ? rect.height / 2 : offsetY)) *
-        resolution *
-        deviceScale,
+    x: positionInScreenCoords.x,
+    y: positionInScreenCoords.y,
   };
 }
 
