@@ -179,7 +179,12 @@ function InitializeDisplayNames(displayNames, locales, options, mozExtensions) {
     }
 
     
-    var style = GetOption(options, "style", "string", ["narrow", "short", "long"], "long");
+    var style;
+    if (mozExtensions) {
+      style = GetOption(options, "style", "string", ["narrow", "short", "abbreviated", "long"], "long");
+    } else {
+      style = GetOption(options, "style", "string", ["narrow", "short", "long"], "long");
+    }
 
     
     lazyDisplayNamesData.style = style;
