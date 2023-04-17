@@ -249,19 +249,18 @@ nsresult ContentEventHandler::InitBasic(bool aRequireFlush) {
   return NS_OK;
 }
 
-nsresult ContentEventHandler::InitRootContent(Selection* aNormalSelection) {
-  MOZ_ASSERT(aNormalSelection);
+nsresult ContentEventHandler::InitRootContent(
+    const Selection& aNormalSelection) {
+  
+  
+  
+  
+  MOZ_ASSERT(aNormalSelection.Type() == SelectionType::eNormal);
 
-  
-  
-  
-  
-  MOZ_ASSERT(aNormalSelection->Type() == SelectionType::eNormal);
-
-  if (!aNormalSelection->RangeCount()) {
+  if (!aNormalSelection.RangeCount()) {
     
     
-    mRootContent = aNormalSelection->GetAncestorLimiter();
+    mRootContent = aNormalSelection.GetAncestorLimiter();
     if (!mRootContent) {
       mRootContent = mDocument->GetRootElement();
       if (NS_WARN_IF(!mRootContent)) {
@@ -271,7 +270,7 @@ nsresult ContentEventHandler::InitRootContent(Selection* aNormalSelection) {
     return NS_OK;
   }
 
-  RefPtr<const nsRange> range(aNormalSelection->GetRangeAt(0));
+  RefPtr<const nsRange> range(aNormalSelection.GetRangeAt(0));
   if (NS_WARN_IF(!range)) {
     return NS_ERROR_UNEXPECTED;
   }
@@ -341,7 +340,7 @@ nsresult ContentEventHandler::InitCommon(SelectionType aSelectionType,
     }
   }
 
-  rv = InitRootContent(normalSelection);
+  rv = InitRootContent(*normalSelection);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }

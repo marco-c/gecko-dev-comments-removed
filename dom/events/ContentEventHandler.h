@@ -161,7 +161,8 @@ class MOZ_STACK_CLASS ContentEventHandler {
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult InitRootContent(Selection* aNormalSelection);
+  MOZ_CAN_RUN_SCRIPT nsresult
+  InitRootContent(const Selection& aNormalSelection);
 
  public:
   
