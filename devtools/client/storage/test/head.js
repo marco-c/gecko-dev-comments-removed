@@ -1133,12 +1133,21 @@ function buildURLWithContent(domain, html) {
 
 
 function checkCookieData(name, value) {
+  ok(
+    hasCookieData(name, value),
+    `Table row has an entry for: ${name} with value: ${value}`
+  );
+}
+
+
+
+
+
+
+function hasCookieData(name, value) {
   const rows = Array.from(gUI.table.items);
   const cookie = rows.map(([, data]) => data).find(x => x.name === name);
 
-  is(
-    cookie?.value,
-    value,
-    `Table row has an entry for: ${name} with value: ${value}`
-  );
+  info(`found ${cookie?.value}`);
+  return cookie?.value === value;
 }

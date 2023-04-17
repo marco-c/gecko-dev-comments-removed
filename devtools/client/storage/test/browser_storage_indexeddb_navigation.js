@@ -8,7 +8,20 @@
 
 requestLongerTimeout(3);
 
+const TARGET_SWITCHING_PREF = "devtools.target-switching.server.enabled";
+
+
 add_task(async function() {
+  await testNavigation(true);
+});
+
+
+add_task(async function() {
+  await pushPref(TARGET_SWITCHING_PREF, true);
+  await testNavigation();
+});
+
+async function testNavigation(shallCleanup = false) {
   const URL1 = URL_ROOT_COM + "storage-indexeddb-simple.html";
   const URL2 = URL_ROOT_NET + "storage-indexeddb-simple-alt.html";
 
@@ -30,10 +43,7 @@ add_task(async function() {
 
   
   info("Removing database…");
-  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
-    const win = content.wrappedJSObject;
-    await win.clear();
-  });
+  await clearStorage();
 
   
   await navigateTo(URL2);
@@ -48,4 +58,22 @@ add_task(async function() {
   
   
   
-});
+
+  
+  await refreshTab();
+  
+  info("Checking storage tree…");
+  await waitUntil(() => isInTree(doc, ["indexedDB", "http://example.net"]));
+
+  
+  if (shallCleanup) {
+    await clearStorage();
+  }
+}
+
+async function clearStorage() {
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function() {
+    const win = content.wrappedJSObject;
+    await win.clear();
+  });
+}

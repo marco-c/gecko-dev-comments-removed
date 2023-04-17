@@ -37,47 +37,23 @@ class ParentProcessStorage {
 
     this.onStoresUpdate = this.onStoresUpdate.bind(this);
     this.onStoresCleared = this.onStoresCleared.bind(this);
+
+    this.observe = this.observe.bind(this);
+    
+    
+    Services.obs.addObserver(this, "window-global-created");
+    Services.obs.addObserver(this, "window-global-destroyed");
   }
 
-  async watch(watcherActor, { onAvailable, onUpdated, onDestroyed }) {
-    const browsingContext = watcherActor.browserElement.browsingContext;
+  async watch(watcherActor, { onAvailable }) {
+    this.watcherActor = watcherActor;
+    this.onAvailable = onAvailable;
 
-    const ActorConstructor = storageTypePool.get(this.storageKey);
-    const storageActor = new StorageActorMock(watcherActor);
-    this.storageActor = storageActor;
-    this.actor = new ActorConstructor(storageActor);
-
-    
-    if (typeof this.actor.preListStores === "function") {
-      await this.actor.preListStores();
-    }
-
-    
-    
-    
-    
-    
-    
-    watcherActor.manage(this.actor);
-    
-    const storage = this.actor.form();
-
-    
-    
-    storage.resourceType = this.storageType;
-    storage.resourceId = `${this.storageType}-${browsingContext.id}`;
-    storage.resourceKey = this.storageKey;
-    
-    storage.browsingContextID = browsingContext.id;
-
-    onAvailable([storage]);
-
-    
-    
-    storageActor.on("stores-update", this.onStoresUpdate);
-
-    
-    storageActor.on("stores-cleared", this.onStoresCleared);
+    const {
+      browsingContext,
+      innerWindowID: innerWindowId,
+    } = watcherActor.browserElement;
+    await this._spawnActor(browsingContext.id, innerWindowId);
   }
 
   onStoresUpdate(response) {
@@ -105,6 +81,54 @@ class ParentProcessStorage {
   }
 
   destroy() {
+    
+    Services.obs.removeObserver(this, "window-global-created");
+    Services.obs.removeObserver(this, "window-global-destroyed");
+
+    this._cleanActor();
+  }
+
+  async _spawnActor(browsingContextID, innerWindowId) {
+    const ActorConstructor = storageTypePool.get(this.storageKey);
+
+    const storageActor = new StorageActorMock(this.watcherActor);
+    this.storageActor = storageActor;
+    this.actor = new ActorConstructor(storageActor);
+
+    
+    if (typeof this.actor.preListStores === "function") {
+      await this.actor.preListStores();
+    }
+
+    
+    
+    
+    
+    
+    
+    this.watcherActor.manage(this.actor);
+    
+    const storage = this.actor.form();
+
+    
+    
+    storage.resourceType = this.storageType;
+    storage.resourceId = `${this.storageType}-${innerWindowId}`;
+    storage.resourceKey = this.storageKey;
+    
+    storage.browsingContextID = browsingContextID;
+
+    this.onAvailable([storage]);
+
+    
+    
+    storageActor.on("stores-update", this.onStoresUpdate);
+
+    
+    storageActor.on("stores-cleared", this.onStoresCleared);
+  }
+
+  _cleanActor() {
     this.actor?.destroy();
     this.actor = null;
     if (this.storageActor) {
@@ -112,6 +136,57 @@ class ParentProcessStorage {
       this.storageActor.off("stores-cleared", this.onStoresCleared);
       this.storageActor.destroy();
       this.storageActor = null;
+    }
+  }
+
+  
+
+
+
+  async observe(subject, topic) {
+    
+    
+    if (
+      this.watcherActor.browserId &&
+      subject.browsingContext.browserId != this.watcherActor.browserId
+    ) {
+      return;
+    }
+    
+    if (subject.documentURI.displaySpec === "about:blank") {
+      return;
+    }
+
+    const isTargetSwitching = Services.prefs.getBoolPref(
+      "devtools.target-switching.server.enabled",
+      false
+    );
+    const isTopContext = subject.browsingContext.top == subject.browsingContext;
+
+    
+    
+    
+    
+    
+    if (isTopContext && isTargetSwitching) {
+      if (topic === "window-global-created") {
+        
+        
+        
+        
+        await new Promise(resolve => {
+          const listener = targetActorForm => {
+            if (targetActorForm.innerWindowId != subject.innerWindowId) {
+              return;
+            }
+            this.watcherActor.off("target-available-form", listener);
+            resolve();
+          };
+          this.watcherActor.on("target-available-form", listener);
+        });
+        this._cleanActor();
+        this._spawnActor(subject.browsingContext.id, subject.innerWindowId);
+      }
     }
   }
 }
@@ -125,23 +200,22 @@ class StorageActorMock extends EventEmitter {
     this.conn = watcherActor.conn;
     this.watcherActor = watcherActor;
 
+    this.boundUpdate = {};
+
+    
+    
     this.observe = this.observe.bind(this);
-    
-    
     Services.obs.addObserver(this, "window-global-created");
     Services.obs.addObserver(this, "window-global-destroyed");
-
-    this.boundUpdate = {};
   }
 
   destroy() {
     
-    Services.obs.removeObserver(this, "window-global-created");
-    Services.obs.removeObserver(this, "window-global-destroyed");
-
-    
     clearTimeout(this.batchTimer);
     this.batchTimer = null;
+    
+    Services.obs.removeObserver(this, "window-global-created");
+    Services.obs.removeObserver(this, "window-global-destroyed");
   }
 
   get windows() {
@@ -200,7 +274,7 @@ class StorageActorMock extends EventEmitter {
 
 
 
-  observe(subject, topic) {
+  async observe(subject, topic) {
     
     
     if (
@@ -214,6 +288,19 @@ class StorageActorMock extends EventEmitter {
       return;
     }
 
+    
+    
+    
+    const isTargetSwitching = Services.prefs.getBoolPref(
+      "devtools.target-switching.server.enabled",
+      false
+    );
+    const isTopContext = subject.browsingContext.top == subject.browsingContext;
+    if (isTopContext && isTargetSwitching) {
+      return;
+    }
+
+    
     const windowMock = { location: subject.documentURI };
     if (topic === "window-global-created") {
       this.emit("window-ready", windowMock);

@@ -12,11 +12,14 @@ const { Front, types } = require("devtools/shared/protocol.js");
 
 module.exports = function({ resource, watcherFront, targetFront }) {
   if (!(resource instanceof Front) && watcherFront) {
+    const { innerWindowId } = resource;
+
     
     resource = types.getType("indexedDB").read(resource, targetFront);
     resource.resourceType = INDEXED_DB;
     resource.resourceId = `${INDEXED_DB}-${targetFront.browsingContextID}`;
     resource.resourceKey = "indexedDB";
+    resource.innerWindowId = innerWindowId;
   }
 
   return resource;

@@ -5,7 +5,20 @@
 
 "use strict";
 
+const TARGET_SWITCHING_PREF = "devtools.target-switching.server.enabled";
+
+
 add_task(async function() {
+  await testNavigation();
+});
+
+
+add_task(async function() {
+  await pushPref(TARGET_SWITCHING_PREF, true);
+  await testNavigation();
+});
+
+async function testNavigation() {
   const URL1 = buildURLWithContent(
     "example.com",
     `<h1>example.com</h1>` + `<script>document.cookie = "lorem=ipsum";</script>`
@@ -35,6 +48,25 @@ add_task(async function() {
   info("Waiting for storage tree to refresh and show correct host…");
   await waitUntil(() => isInTree(doc, ["cookies", "http://example.net"]));
   
+  
+  
+  
+  await selectTreeItem(["cookies"]);
   await selectTreeItem(["cookies", "http://example.net"]);
-  checkCookieData("foo", "bar");
-});
+  info("Waiting for table data to update and show correct values");
+  await waitUntil(() => hasCookieData("foo", "bar"));
+
+  
+  await refreshTab();
+  
+  info("Waiting for storage tree to refresh and show correct host…");
+  await waitUntil(() => isInTree(doc, ["cookies", "http://example.net"]));
+  
+  
+  
+  
+  await selectTreeItem(["cookies"]);
+  await selectTreeItem(["cookies", "http://example.net"]);
+  info("Waiting for table data to update and show correct values");
+  await waitUntil(() => hasCookieData("foo", "bar"));
+}

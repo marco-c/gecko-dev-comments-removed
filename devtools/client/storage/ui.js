@@ -3,7 +3,6 @@
 
 
 "use strict";
-
 const EventEmitter = require("devtools/shared/event-emitter");
 const { LocalizationHelper, ELLIPSIS } = require("devtools/shared/l10n");
 const KeyShortcuts = require("devtools/client/shared/key-shortcuts");
@@ -319,10 +318,12 @@ class StorageUI {
 
       
       
+      
       if (!this.storageResources[resourceKey]) {
         this.storageResources[resourceKey] = [];
       }
       this.storageResources[resourceKey].push(resource);
+
       resource.on(
         "single-store-update",
         this._onStoreUpdate.bind(this, resource)
@@ -352,6 +353,7 @@ class StorageUI {
     for (const type in this.storageResources) {
       this.storageResources[type] = this.storageResources[type].filter(
         storage => {
+          
           
           
           return !storage.isDestroyed() && storage.targetFront != targetFront;
