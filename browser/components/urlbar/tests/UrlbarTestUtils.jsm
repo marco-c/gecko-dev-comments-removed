@@ -40,7 +40,6 @@ XPCOMUtils.defineLazyServiceGetter(
 
 
 const DEFAULT_EXPERIMENT_FEATURE_VARIABLES = {
-  firefoxSuggestLabelsEnabled: false,
   quickSuggestEnabled: false,
   quickSuggestNonSponsoredIndex: -1,
   quickSuggestShouldShowOnboardingDialog: true,

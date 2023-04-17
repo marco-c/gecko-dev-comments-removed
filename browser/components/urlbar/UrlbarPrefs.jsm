@@ -102,6 +102,11 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["formatting.enabled", true],
 
   
+  
+  
+  ["groupLabels.enabled", true],
+
+  
   ["keepPanelOpenDuringImeComposition", false],
 
   

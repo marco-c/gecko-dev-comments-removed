@@ -1,0 +1,575 @@
+
+
+
+
+
+"use strict";
+
+const SUGGESTIONS_FIRST_PREF = "browser.urlbar.showSearchSuggestionsFirst";
+const SUGGESTIONS_PREF = "browser.urlbar.suggest.searches";
+
+const TEST_ENGINE_BASENAME = "searchSuggestionEngine.xml";
+const MAX_RESULTS = UrlbarPrefs.get("maxRichResults");
+
+const TOP_SITES = [
+  "http://example-1.com/",
+  "http://example-2.com/",
+  "http://example-3.com/",
+];
+
+const FIREFOX_SUGGEST_LABEL = "Firefox Suggest";
+
+
+const ENGINE_SUGGESTIONS_LABEL = "%s Suggestions";
+
+
+if (AppConstants.platform == "macosx") {
+  requestLongerTimeout(3);
+}
+
+add_task(async function init() {
+  Assert.ok(
+    UrlbarPrefs.get("showSearchSuggestionsFirst"),
+    "Precondition: Search suggestions shown first by default"
+  );
+  Assert.equal(
+    Services.locale.appLocaleAsBCP47,
+    "en-US",
+    "Precondition: App locale is en-US"
+  );
+
+  
+  await PlacesUtils.history.clear();
+  await PlacesUtils.bookmarks.eraseEverything();
+  await UrlbarTestUtils.formHistory.clear();
+  await addHistory();
+
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.urlbar.suggest.topsites", true],
+      ["browser.newtabpage.activity-stream.default.sites", TOP_SITES.join(",")],
+    ],
+  });
+  
+  
+  
+  await updateTopSites(sites => sites && sites.length);
+
+  
+  await SearchTestUtils.installSearchExtension();
+  let oldDefaultEngine = await Services.search.getDefault();
+  await Services.search.setDefault(Services.search.getEngineByName("Example"));
+
+  registerCleanupFunction(async () => {
+    await PlacesUtils.history.clear();
+    Services.search.setDefault(oldDefaultEngine);
+  });
+});
+
+
+add_task(async function unsupportedLocale() {
+  await withLocales(["de"], async () => {
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: "test",
+    });
+    await checkLabels(MAX_RESULTS, {});
+    await UrlbarTestUtils.promisePopupClose(window);
+  });
+});
+
+
+
+add_task(async function supportedLocaleNonUS() {
+  await withLocales(["en-GB"], async () => {
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: "test",
+    });
+    await checkLabels(MAX_RESULTS, {
+      1: FIREFOX_SUGGEST_LABEL,
+    });
+    await UrlbarTestUtils.promisePopupClose(window);
+  });
+});
+
+
+add_task(async function prefDisabled() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.groupLabels.enabled", false]],
+  });
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "test",
+  });
+  await checkLabels(MAX_RESULTS, {});
+  await UrlbarTestUtils.promisePopupClose(window);
+  await SpecialPowers.popPrefEnv();
+});
+
+
+add_task(async function topSites() {
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "",
+  });
+  await checkLabels(-1, {});
+  await UrlbarTestUtils.promisePopupClose(window);
+});
+
+
+
+add_task(async function general() {
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "test",
+  });
+  await checkLabels(MAX_RESULTS, {
+    1: FIREFOX_SUGGEST_LABEL,
+  });
+  await UrlbarTestUtils.promisePopupClose(window);
+});
+
+
+
+add_task(async function suggestionsBeforeGeneral() {
+  await withSuggestions(async () => {
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: "test",
+    });
+    await checkLabels(MAX_RESULTS, {
+      3: FIREFOX_SUGGEST_LABEL,
+    });
+    await UrlbarTestUtils.promisePopupClose(window);
+  });
+});
+
+
+
+
+add_task(async function generalBeforeSuggestions() {
+  await withSuggestions(async engine => {
+    Assert.ok(engine.name, "Engine name is non-empty");
+    await SpecialPowers.pushPrefEnv({
+      set: [[SUGGESTIONS_FIRST_PREF, false]],
+    });
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: "test",
+    });
+    await checkLabels(MAX_RESULTS, {
+      1: FIREFOX_SUGGEST_LABEL,
+      [MAX_RESULTS - 2]: engineSuggestionsLabel(engine.name),
+    });
+    await UrlbarTestUtils.promisePopupClose(window);
+  });
+});
+
+
+
+
+add_task(async function generalBeforeSuggestions_suggestionsOnly() {
+  await PlacesUtils.history.clear();
+
+  await withSuggestions(async engine => {
+    await SpecialPowers.pushPrefEnv({
+      set: [[SUGGESTIONS_FIRST_PREF, false]],
+    });
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: "test",
+    });
+    await checkLabels(3, {});
+    await UrlbarTestUtils.promisePopupClose(window);
+  });
+
+  
+  await addHistory();
+});
+
+
+
+add_task(async function suggestedIndex_only() {
+  
+  
+  
+  await PlacesUtils.history.clear();
+
+  let index = -1;
+  let provider = new SuggestedIndexProvider(index);
+  UrlbarProvidersManager.registerProvider(provider);
+
+  await withSuggestions(async engine => {
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: "test",
+    });
+    let result = await UrlbarTestUtils.getDetailsOfResultAt(window, 3);
+    Assert.equal(
+      result.element.row.result.suggestedIndex,
+      index,
+      "Sanity check: Our suggested-index result is present"
+    );
+    await checkLabels(4, {
+      3: FIREFOX_SUGGEST_LABEL,
+    });
+    await UrlbarTestUtils.promisePopupClose(window);
+  });
+
+  UrlbarProvidersManager.unregisterProvider(provider);
+
+  
+  await addHistory();
+});
+
+
+
+add_task(async function suggestedIndex_first() {
+  let index = 1;
+  let provider = new SuggestedIndexProvider(index);
+  UrlbarProvidersManager.registerProvider(provider);
+
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "test",
+  });
+  let result = await UrlbarTestUtils.getDetailsOfResultAt(window, index);
+  Assert.equal(
+    result.element.row.result.suggestedIndex,
+    index,
+    "Sanity check: Our suggested-index result is present"
+  );
+  await checkLabels(MAX_RESULTS, {
+    [index]: FIREFOX_SUGGEST_LABEL,
+  });
+  await UrlbarTestUtils.promisePopupClose(window);
+
+  UrlbarProvidersManager.unregisterProvider(provider);
+});
+
+
+
+add_task(async function suggestedIndex_notFirst() {
+  let index = -1;
+  let provider = new SuggestedIndexProvider(index);
+  UrlbarProvidersManager.registerProvider(provider);
+
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "test",
+  });
+  let result = await UrlbarTestUtils.getDetailsOfResultAt(
+    window,
+    MAX_RESULTS + index
+  );
+  Assert.equal(
+    result.element.row.result.suggestedIndex,
+    index,
+    "Sanity check: Our suggested-index result is present"
+  );
+  await checkLabels(MAX_RESULTS, {
+    1: FIREFOX_SUGGEST_LABEL,
+  });
+  await UrlbarTestUtils.promisePopupClose(window);
+
+  UrlbarProvidersManager.unregisterProvider(provider);
+});
+
+
+add_task(async function repeatLabels() {
+  let engineName = Services.search.defaultEngine.name;
+  let results = [
+    new UrlbarResult(
+      UrlbarUtils.RESULT_TYPE.URL,
+      UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+      { url: "http://example.com/1" }
+    ),
+    new UrlbarResult(
+      UrlbarUtils.RESULT_TYPE.SEARCH,
+      UrlbarUtils.RESULT_SOURCE.SEARCH,
+      { suggestion: "test1", engine: engineName }
+    ),
+    new UrlbarResult(
+      UrlbarUtils.RESULT_TYPE.URL,
+      UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+      { url: "http://example.com/2" }
+    ),
+    new UrlbarResult(
+      UrlbarUtils.RESULT_TYPE.SEARCH,
+      UrlbarUtils.RESULT_SOURCE.SEARCH,
+      { suggestion: "test2", engine: engineName }
+    ),
+  ];
+
+  for (let i = 0; i < results.length; i++) {
+    results[i].suggestedIndex = i;
+  }
+
+  let provider = new UrlbarTestUtils.TestProvider({
+    results,
+    priority: Infinity,
+  });
+  UrlbarProvidersManager.registerProvider(provider);
+
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "test",
+  });
+  await checkLabels(results.length, {
+    0: FIREFOX_SUGGEST_LABEL,
+    1: engineSuggestionsLabel(engineName),
+    2: FIREFOX_SUGGEST_LABEL,
+    3: engineSuggestionsLabel(engineName),
+  });
+  await UrlbarTestUtils.promisePopupClose(window);
+
+  UrlbarProvidersManager.unregisterProvider(provider);
+});
+
+
+add_task(async function clickLabel() {
+  await BrowserTestUtils.withNewTab("about:blank", async () => {
+    
+    
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: "test",
+    });
+    await checkLabels(MAX_RESULTS, {
+      1: FIREFOX_SUGGEST_LABEL,
+    });
+
+    
+    let result2 = await UrlbarTestUtils.getDetailsOfResultAt(window, 2);
+    Assert.ok(result2.url, "Result at index 2 has a URL");
+    let url2 = result2.url;
+    Assert.ok(
+      url2.startsWith("http://example.com/"),
+      "Result at index 2 is one of our mock history results"
+    );
+
+    
+    
+    
+    
+    
+    let result3 = await UrlbarTestUtils.getDetailsOfResultAt(window, 3);
+    let loadPromise = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+
+    info("Performing click relative to index 3");
+    await UrlbarTestUtils.promisePopupClose(window, () =>
+      click(result3.element.row, { y: -2 })
+    );
+    info("Waiting for load after performing click relative to index 3");
+    await loadPromise;
+    Assert.equal(gBrowser.currentURI.spec, url2, "Loaded URL at index 2");
+    
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: "test",
+    });
+
+    await checkLabels(MAX_RESULTS, {
+      1: FIREFOX_SUGGEST_LABEL,
+    });
+
+    
+    let result1 = await UrlbarTestUtils.getDetailsOfResultAt(window, 1);
+    Assert.ok(result1.url, "Result at index 1 has a URL");
+    let url1 = result1.url;
+    Assert.ok(
+      url1.startsWith("http://example.com/"),
+      "Result at index 1 is one of our mock history results"
+    );
+    Assert.notEqual(url1, url2, "URLs at indexes 1 and 2 are different");
+
+    
+    
+    
+    info("Clicking row label at index 1");
+    click(result1.element.row, { y: -2 });
+    
+    await new Promise(r => setTimeout(r, 500));
+    Assert.ok(UrlbarTestUtils.isPopupOpen(window), "View remains open");
+    Assert.equal(
+      gBrowser.currentURI.spec,
+      url2,
+      "Current URL is still URL from index 2"
+    );
+
+    
+    loadPromise = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+    let { height } = result1.element.row.getBoundingClientRect();
+    info(`Clicking main part of the row at index 1, height=${height}`);
+    await UrlbarTestUtils.promisePopupClose(window, () =>
+      click(result1.element.row)
+    );
+    info("Waiting for load after clicking row at index 1");
+    await loadPromise;
+    Assert.equal(gBrowser.currentURI.spec, url1, "Loaded URL at index 1");
+  });
+});
+
+
+
+
+class SuggestedIndexProvider extends UrlbarTestUtils.TestProvider {
+  constructor(suggestedIndex) {
+    super({
+      results: [
+        Object.assign(
+          new UrlbarResult(
+            UrlbarUtils.RESULT_TYPE.URL,
+            UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
+            { url: "http://example.com/" }
+          ),
+          { suggestedIndex }
+        ),
+      ],
+    });
+  }
+}
+
+async function addHistory() {
+  for (let i = 0; i < MAX_RESULTS; i++) {
+    await PlacesTestUtils.addVisits("http://example.com/" + i);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+async function checkLabels(resultCount, labelsByIndex) {
+  if (resultCount >= 0) {
+    Assert.equal(
+      UrlbarTestUtils.getResultCount(window),
+      resultCount,
+      "Expected result count"
+    );
+  } else {
+    
+    
+    
+    let indexes = Object.keys(labelsByIndex);
+    if (indexes.length) {
+      resultCount = indexes.sort((a, b) => b - a)[0] + 1;
+    } else {
+      resultCount = UrlbarTestUtils.getResultCount(window);
+      Assert.greater(resultCount, 0, "Actual result count is > 0");
+    }
+  }
+  for (let i = 0; i < resultCount; i++) {
+    let result = await UrlbarTestUtils.getDetailsOfResultAt(window, i);
+    let { row } = result.element;
+    let before = getComputedStyle(row, "::before");
+    if (labelsByIndex.hasOwnProperty(i)) {
+      Assert.equal(
+        before.content,
+        "attr(label)",
+        `::before.content is correct at index ${i}`
+      );
+      Assert.equal(
+        row.getAttribute("label"),
+        labelsByIndex[i],
+        `Row has correct label at index ${i}`
+      );
+    } else {
+      Assert.equal(
+        before.content,
+        "none",
+        `::before.content is 'none' at index ${i}`
+      );
+      Assert.ok(
+        !row.hasAttribute("label"),
+        `Row does not have label attribute at index ${i}`
+      );
+    }
+  }
+}
+
+function engineSuggestionsLabel(engineName) {
+  return ENGINE_SUGGESTIONS_LABEL.replace("%s", engineName);
+}
+
+
+
+
+
+
+
+
+async function withSuggestions(callback) {
+  await SpecialPowers.pushPrefEnv({
+    set: [[SUGGESTIONS_PREF, true]],
+  });
+  let engine = await SearchTestUtils.promiseNewSearchEngine(
+    getRootDirectory(gTestPath) + TEST_ENGINE_BASENAME
+  );
+  let oldDefaultEngine = await Services.search.getDefault();
+  await Services.search.setDefault(engine);
+  try {
+    await callback(engine);
+  } finally {
+    await Services.search.setDefault(oldDefaultEngine);
+    await Services.search.removeEngine(engine);
+    await SpecialPowers.popPrefEnv();
+  }
+}
+
+
+
+
+
+
+
+
+
+
+async function withLocales(locales, callback) {
+  let available = Services.locale.availableLocales;
+  let requested = Services.locale.requestedLocales;
+
+  
+  
+  let enginesPromise = SearchTestUtils.promiseSearchNotification(
+    "engines-reloaded"
+  );
+  Services.locale.availableLocales = locales;
+  Services.locale.requestedLocales = locales.slice(0, 1);
+  await enginesPromise;
+  Assert.equal(
+    Services.locale.appLocaleAsBCP47,
+    locales[0],
+    "App locale is now " + locales[0]
+  );
+
+  await callback();
+
+  enginesPromise = SearchTestUtils.promiseSearchNotification(
+    "engines-reloaded"
+  );
+  Services.locale.availableLocales = available;
+  Services.locale.requestedLocales = requested;
+  await enginesPromise;
+}
+
+function click(element, { x = undefined, y = undefined } = {}) {
+  let { width, height } = element.getBoundingClientRect();
+  if (typeof x != "number") {
+    x = width / 2;
+  }
+  if (typeof y != "number") {
+    y = height / 2;
+  }
+  EventUtils.synthesizeMouse(element, x, y, { type: "mousedown" });
+  EventUtils.synthesizeMouse(element, x, y, { type: "mouseup" });
+}

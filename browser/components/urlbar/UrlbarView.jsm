@@ -1706,7 +1706,8 @@ class UrlbarView {
     
     
     if (
-      UrlbarPrefs.get("firefoxSuggestLabelsEnabled") &&
+      UrlbarPrefs.get("groupLabels.enabled") &&
+      Services.locale.appLocaleAsBCP47.substring(0, 2) == "en" &&
       this._queryContext?.searchString &&
       !row.result.heuristic
     ) {

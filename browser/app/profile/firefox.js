@@ -447,7 +447,7 @@ pref("browser.urlbar.dnsResolveSingleWordsAfterSearch", 1);
 pref("browser.urlbar.keepPanelOpenDuringImeComposition", false);
 
 
-pref("browser.urlbar.experimental.firefoxSuggestLabels.enabled", false);
+pref("browser.urlbar.groupLabels.enabled", true);
 
 pref("browser.altClickSave", false);
 
