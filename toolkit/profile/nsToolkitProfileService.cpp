@@ -50,10 +50,6 @@
 #include "mozilla/Telemetry.h"
 #include "nsProxyRelease.h"
 
-#if defined(MOZ_WIDGET_GTK)
-#include "mozilla/WidgetUtilsGtk.h"
-#endif
-
 using namespace mozilla;
 
 #define DEV_EDITION_NAME "dev-edition-default"
@@ -1837,19 +1833,14 @@ nsToolkitProfileService::CreateProfile(nsIFile* aRootDir,
 
 
 bool nsToolkitProfileService::IsSnapEnvironment() {
-#if defined(MOZ_WIDGET_GTK)
-  const char* snapName = mozilla::widget::WidgetUtilsGtk::GetSnapInstanceName();
-
   
-  if (snapName == nullptr) {
+  
+  
+  const char* snap_name = PR_GetEnv("SNAP_NAME");
+  if (snap_name == nullptr) {
     return false;
   }
-
-  
-  return (strcmp(snapName, "firefox") == 0);
-#endif
-
-  return false;
+  return (strcmp(snap_name, "firefox") == 0);
 }
 
 
