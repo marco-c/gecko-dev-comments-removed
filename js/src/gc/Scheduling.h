@@ -440,6 +440,9 @@ static const double HelperThreadRatio = 0.5;
 
 static const size_t MaxHelperThreads = 8;
 
+
+static const size_t UrgentThresholdBytes = 16 * 1024 * 1024;
+
 }  
 
 
@@ -604,6 +607,13 @@ class GCSchedulingTunables {
 
   MainThreadOrGCTaskData<double> mallocGrowthFactor_;
 
+  
+
+
+
+
+  MainThreadData<size_t> urgentThresholdBytes_;
+
  public:
   GCSchedulingTunables();
 
@@ -658,6 +668,8 @@ class GCSchedulingTunables {
 
   size_t mallocThresholdBase() const { return mallocThresholdBase_; }
   double mallocGrowthFactor() const { return mallocGrowthFactor_; }
+
+  size_t urgentThresholdBytes() const { return urgentThresholdBytes_; }
 
   [[nodiscard]] bool setParameter(JSGCParamKey key, uint32_t value,
                                   const AutoLockGC& lock);
@@ -813,6 +825,7 @@ class HeapThreshold {
   size_t sliceBytes() const { return sliceBytes_; }
   size_t incrementalLimitBytes() const { return incrementalLimitBytes_; }
   double eagerAllocTrigger(bool highFrequencyGC) const;
+  size_t incrementalBytesRemaining(const HeapSize& heapSize) const;
 
   void setSliceThreshold(ZoneAllocator* zone, const HeapSize& heapSize,
                          const GCSchedulingTunables& tunables);

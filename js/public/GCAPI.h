@@ -421,6 +421,17 @@ typedef enum JSGCParamKey {
 
 
   JSGC_SYSTEM_PAGE_SIZE_KB = 47,
+
+  
+
+
+
+
+
+
+
+
+  JSGC_URGENT_THRESHOLD_BYTES = 48,
 } JSGCParamKey;
 
 
