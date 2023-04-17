@@ -5,30 +5,42 @@ add_task(async function() {
   registerCleanupFunction(function() {
     window.restore();
   });
-  function waitForActive() {
+  function isActive() {
     return gBrowser.selectedTab.linkedBrowser.docShellIsActive;
   }
-  function waitForInactive() {
-    return !gBrowser.selectedTab.linkedBrowser.docShellIsActive;
-  }
-  await TestUtils.waitForCondition(waitForActive);
-  is(
-    gBrowser.selectedTab.linkedBrowser.docShellIsActive,
-    true,
-    "Docshell should be active"
+
+  ok(isActive(), "Docshell should be active when starting the test");
+
+  info("Calling window.minimize");
+  let promiseSizeModeChange = BrowserTestUtils.waitForEvent(
+    window,
+    "sizemodechange"
   );
   window.minimize();
-  await TestUtils.waitForCondition(waitForInactive);
-  is(
-    gBrowser.selectedTab.linkedBrowser.docShellIsActive,
-    false,
-    "Docshell should be Inactive"
+  await promiseSizeModeChange;
+  ok(!isActive(), "Docshell should be Inactive");
+
+  info("Calling window.restore");
+  promiseSizeModeChange = BrowserTestUtils.waitForEvent(
+    window,
+    "sizemodechange"
   );
   window.restore();
-  await TestUtils.waitForCondition(waitForActive);
-  is(
-    gBrowser.selectedTab.linkedBrowser.docShellIsActive,
-    true,
-    "Docshell should be active again"
-  );
+  
+  
+  await Promise.race([
+    promiseSizeModeChange,
+    new Promise((resolve, reject) =>
+      
+      setTimeout(() => {
+        reject("timed out waiting for sizemodechange event");
+      }, 5000)
+    ),
+  ]);
+  
+  
+  if (window.isFullyOccluded) {
+    await BrowserTestUtils.waitForEvent(window, "occlusionstatechange");
+  }
+  ok(isActive(), "Docshell should be active again");
 });
