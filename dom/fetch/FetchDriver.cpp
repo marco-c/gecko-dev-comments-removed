@@ -235,21 +235,18 @@ AlternativeDataStreamListener::OnStartRequest(nsIRequest* aRequest) {
     
     MOZ_ASSERT(mFetchDriver);
     return mFetchDriver->HttpFetch();
-
-  } else {
-    
-    
-    
-    
-    
-    
-    MOZ_ASSERT(alternativeDataType.IsEmpty());
-    mStatus = AlternativeDataStreamListener::FALLBACK;
-    mAlternativeDataCacheEntryId = 0;
-    MOZ_ASSERT(mFetchDriver);
-    return mFetchDriver->OnStartRequest(aRequest);
   }
-  return NS_OK;
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(alternativeDataType.IsEmpty());
+  mStatus = AlternativeDataStreamListener::FALLBACK;
+  mAlternativeDataCacheEntryId = 0;
+  MOZ_ASSERT(mFetchDriver);
+  return mFetchDriver->OnStartRequest(aRequest);
 }
 
 NS_IMETHODIMP
