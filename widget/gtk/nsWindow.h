@@ -547,6 +547,10 @@ class nsWindow final : public nsBaseWidget {
   LayoutDeviceIntRegion mDraggableRegion;
   
   bool mIsPIPWindow;
+  
+  
+  
+  bool mIsWaylandPanelWindow;
   bool mAlwaysOnTop;
 
   
