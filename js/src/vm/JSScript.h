@@ -528,7 +528,7 @@ class ScriptSource {
   bool hadCompressionTask_ = false;
 
   
-  mozilla::Maybe<SharedImmutableString> filename_;
+  SharedImmutableString filename_;
 
   
   
@@ -540,10 +540,10 @@ class ScriptSource {
   
   
   
-  mozilla::Maybe<SharedImmutableString> introducerFilename_;
+  SharedImmutableString introducerFilename_;
 
-  mozilla::Maybe<SharedImmutableTwoByteString> displayURL_;
-  mozilla::Maybe<SharedImmutableTwoByteString> sourceMapURL_;
+  SharedImmutableTwoByteString displayURL_;
+  SharedImmutableTwoByteString sourceMapURL_;
 
   
   
@@ -623,10 +623,9 @@ class ScriptSource {
 
   static constexpr size_t MinimumCompressibleLength = 256;
 
-  mozilla::Maybe<SharedImmutableString> getOrCreateStringZ(JSContext* cx,
-                                                           UniqueChars&& str);
-  mozilla::Maybe<SharedImmutableTwoByteString> getOrCreateStringZ(
-      JSContext* cx, UniqueTwoByteChars&& str);
+  SharedImmutableString getOrCreateStringZ(JSContext* cx, UniqueChars&& str);
+  SharedImmutableTwoByteString getOrCreateStringZ(JSContext* cx,
+                                                  UniqueTwoByteChars&& str);
 
  private:
   class LoadSourceMatcher;
@@ -971,13 +970,13 @@ class ScriptSource {
 
  public:
   const char* filename() const {
-    return filename_ ? filename_.ref().chars() : nullptr;
+    return filename_ ? filename_.chars() : nullptr;
   }
   [[nodiscard]] bool setFilename(JSContext* cx, const char* filename);
   [[nodiscard]] bool setFilename(JSContext* cx, UniqueChars&& filename);
 
   const char* introducerFilename() const {
-    return introducerFilename_ ? introducerFilename_.ref().chars() : filename();
+    return introducerFilename_ ? introducerFilename_.chars() : filename();
   }
   [[nodiscard]] bool setIntroducerFilename(JSContext* cx, const char* filename);
   [[nodiscard]] bool setIntroducerFilename(JSContext* cx,
@@ -994,14 +993,14 @@ class ScriptSource {
   
   [[nodiscard]] bool setDisplayURL(JSContext* cx, const char16_t* url);
   [[nodiscard]] bool setDisplayURL(JSContext* cx, UniqueTwoByteChars&& url);
-  bool hasDisplayURL() const { return displayURL_.isSome(); }
-  const char16_t* displayURL() { return displayURL_.ref().chars(); }
+  bool hasDisplayURL() const { return bool(displayURL_); }
+  const char16_t* displayURL() { return displayURL_.chars(); }
 
   
   [[nodiscard]] bool setSourceMapURL(JSContext* cx, const char16_t* url);
   [[nodiscard]] bool setSourceMapURL(JSContext* cx, UniqueTwoByteChars&& url);
-  bool hasSourceMapURL() const { return sourceMapURL_.isSome(); }
-  const char16_t* sourceMapURL() { return sourceMapURL_.ref().chars(); }
+  bool hasSourceMapURL() const { return bool(sourceMapURL_); }
+  const char16_t* sourceMapURL() { return sourceMapURL_.chars(); }
 
   bool mutedErrors() const { return mutedErrors_; }
 

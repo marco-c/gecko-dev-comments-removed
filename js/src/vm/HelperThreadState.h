@@ -614,7 +614,7 @@ class SourceCompressionTask : public HelperThreadTask {
   
   
   
-  mozilla::Maybe<SharedImmutableString> resultString_;
+  SharedImmutableString resultString_;
 
  public:
   
