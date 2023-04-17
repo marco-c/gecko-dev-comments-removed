@@ -9,8 +9,8 @@
 #include "FormControlAccessible.h"
 #include "HyperTextAccessibleWrap.h"
 #include "mozilla/dom/Element.h"
+#include "AccAttributes.h"
 #include "nsAccUtils.h"
-#include "nsIPersistentProperties2.h"
 #include "Relation.h"
 
 namespace mozilla {
@@ -89,7 +89,7 @@ class HTMLTextFieldAccessible : public HyperTextAccessibleWrap {
   virtual void ApplyARIAState(uint64_t* aState) const override;
   virtual mozilla::a11y::role NativeRole() const override;
   virtual uint64_t NativeState() const override;
-  virtual already_AddRefed<nsIPersistentProperties> NativeAttributes() override;
+  virtual already_AddRefed<AccAttributes> NativeAttributes() override;
 
   
   virtual uint8_t ActionCount() const override;
@@ -336,16 +336,14 @@ class HTMLDateTimeAccessible : public AccessibleWrap {
 
   
   virtual mozilla::a11y::role NativeRole() const override { return R; }
-  virtual already_AddRefed<nsIPersistentProperties> NativeAttributes()
-      override {
-    nsCOMPtr<nsIPersistentProperties> attributes =
-        AccessibleWrap::NativeAttributes();
+  virtual already_AddRefed<AccAttributes> NativeAttributes() override {
+    RefPtr<AccAttributes> attributes = AccessibleWrap::NativeAttributes();
     
     
     nsAutoString type;
     if (mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::type,
                                        type)) {
-      nsAccUtils::SetAccAttr(attributes, nsGkAtoms::textInputType, type);
+      attributes->SetAttribute(nsGkAtoms::textInputType, type);
     }
     return attributes.forget();
   }

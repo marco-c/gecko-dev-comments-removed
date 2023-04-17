@@ -35,32 +35,8 @@ class nsAccUtils {
   
 
 
-
-
-
-
-  static void GetAccAttr(nsIPersistentProperties* aAttributes,
-                         nsAtom* aAttrName, nsAString& aAttrValue);
-
-  
-
-
-
-
-
-
-  static void SetAccAttr(nsIPersistentProperties* aAttributes,
-                         nsAtom* aAttrName, const nsAString& aAttrValue);
-
-  static void SetAccAttr(nsIPersistentProperties* aAttributes,
-                         nsAtom* aAttrName, nsAtom* aAttrValue);
-
-  
-
-
-  static void SetAccGroupAttrs(nsIPersistentProperties* aAttributes,
-                               int32_t aLevel, int32_t aSetSize,
-                               int32_t aPosInSet);
+  static void SetAccGroupAttrs(AccAttributes* aAttributes, int32_t aLevel,
+                               int32_t aSetSize, int32_t aPosInSet);
 
   
 
@@ -84,7 +60,7 @@ class nsAccUtils {
 
 
 
-  static void SetLiveContainerAttributes(nsIPersistentProperties* aAttributes,
+  static void SetLiveContainerAttributes(AccAttributes* aAttributes,
                                          nsIContent* aStartContent);
 
   
@@ -254,7 +230,7 @@ class nsAccUtils {
 
   static bool MustPrune(AccessibleOrProxy aAccessible);
 
-  static bool PersistentPropertiesToArray(nsIPersistentProperties* aProps,
+  static bool PersistentPropertiesToArray(AccAttributes* aProps,
                                           nsTArray<Attribute>* aAttributes);
 
   

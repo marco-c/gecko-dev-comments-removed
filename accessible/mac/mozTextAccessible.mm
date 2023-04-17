@@ -5,11 +5,11 @@
 
 
 
-#include "LocalAccessible-inl.h"
+#include "AccAttributes.h"
 #include "HyperTextAccessible-inl.h"
+#include "LocalAccessible-inl.h"
 #include "mozilla/a11y/PDocAccessible.h"
 #include "nsCocoaUtils.h"
-#include "nsIPersistentProperties2.h"
 #include "nsObjCExceptions.h"
 #include "TextLeafAccessible.h"
 
@@ -84,9 +84,8 @@ inline NSString* ToNSString(id aValue) {
         return @"true";
       }
       nsAutoString invalidStr;
-      nsCOMPtr<nsIPersistentProperties> attributes =
-          text->DefaultTextAttributes();
-      nsAccUtils::GetAccAttr(attributes, nsGkAtoms::invalid, invalidStr);
+      RefPtr<AccAttributes> attributes = text->DefaultTextAttributes();
+      attributes->GetAttribute(nsGkAtoms::invalid, invalidStr);
       if (invalidStr.IsEmpty()) {
         
         

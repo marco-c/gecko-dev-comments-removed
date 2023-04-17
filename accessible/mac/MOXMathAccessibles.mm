@@ -58,7 +58,8 @@ using namespace mozilla::a11y;
   
   
   
-  if (NSString* thickness = utils::GetAccAttr(self, "thickness")) {
+  RefPtr<nsAtom> attrName = NS_Atomize("thickness"_ns);
+  if (NSString* thickness = utils::GetAccAttr(self, attrName)) {
     NSNumberFormatter* formatter =
         [[[NSNumberFormatter alloc] init] autorelease];
     NSNumber* value = [formatter numberFromString:thickness];

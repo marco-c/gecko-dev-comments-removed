@@ -21,7 +21,6 @@
 struct nsRoleMapEntry;
 
 class nsIFrame;
-class nsIPersistentProperties;
 
 namespace mozilla::dom {
 class Element;
@@ -31,6 +30,7 @@ namespace mozilla {
 namespace a11y {
 
 class LocalAccessible;
+class AccAttributes;
 class AccEvent;
 class AccGroupInfo;
 class ApplicationAccessible;
@@ -288,7 +288,7 @@ class LocalAccessible : public nsISupports, public Accessible {
   
 
 
-  virtual already_AddRefed<nsIPersistentProperties> Attributes();
+  virtual already_AddRefed<AccAttributes> Attributes();
 
   
 
@@ -927,7 +927,7 @@ class LocalAccessible : public nsISupports, public Accessible {
 
 
 
-  virtual already_AddRefed<nsIPersistentProperties> NativeAttributes();
+  virtual already_AddRefed<AccAttributes> NativeAttributes();
 
   
   

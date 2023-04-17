@@ -35,7 +35,7 @@ NSString* LocalizedString(const nsString& aString);
 
 
 
-NSString* GetAccAttr(mozAccessible* aNativeAccessible, const char* aAttrName);
+NSString* GetAccAttr(mozAccessible* aNativeAccessible, nsAtom* aAttrName);
 }
 }
 }

@@ -22,7 +22,6 @@
 
 class nsImageFrame;
 class nsIArray;
-class nsIPersistentProperties;
 class nsITreeView;
 
 namespace mozilla {
@@ -36,6 +35,7 @@ class Element;
 
 namespace a11y {
 
+class AccAttributes;
 class ApplicationAccessible;
 class xpcAccessibleApplication;
 
@@ -277,7 +277,7 @@ class nsAccessibilityService final : public mozilla::a11y::DocManager,
 
 
   void MarkupAttributes(const nsIContent* aContent,
-                        nsIPersistentProperties* aAttributes) const;
+                        mozilla::a11y::AccAttributes* aAttributes) const;
 
   
 
