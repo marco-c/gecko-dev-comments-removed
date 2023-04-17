@@ -1019,14 +1019,16 @@ bool EmitterScope::lookupPrivate(BytecodeEmitter* bce,
     
     
     
-    
-    
-    
-    
-    
-    
-    bce->reportError(nullptr, JSMSG_DEBUG_NO_PRIVATE_METHOD);
-    return false;
+    mozilla::Maybe<NameLocation> cacheEntry =
+        bce->compilationState.scopeContext.getPrivateFieldLocation(name);
+    MOZ_ASSERT(cacheEntry);
+
+    if (cacheEntry->bindingKind() == BindingKind::PrivateMethod) {
+      bce->reportError(nullptr, JSMSG_DEBUG_NO_PRIVATE_METHOD);
+      return false;
+    }
+    brandLoc = Nothing();
+    return true;
   }
 
   if (loc.bindingKind() == BindingKind::PrivateMethod) {

@@ -937,7 +937,11 @@ static bool EvaluateInEnv(JSContext* cx, Handle<Env*> env,
 
 
 
-      .setSkipFilenameValidation(true);
+      .setSkipFilenameValidation(true)
+      
+
+
+      .setForceFullParse();
 
   if (frame && frame.hasScript() && frame.script()->strict()) {
     options.setForceStrictMode();
