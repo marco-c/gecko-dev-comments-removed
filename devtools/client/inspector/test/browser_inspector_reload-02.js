@@ -23,12 +23,6 @@ const TEST_URI =
   "</svg>";
 
 add_task(async function() {
-  
-  
-  await SpecialPowers.pushPrefEnv({
-    set: [["fission.bfcacheInParent", false]],
-  });
-
   const { inspector } = await openInspectorForURL(TEST_URI);
 
   const markupLoaded = inspector.once("markuploaded");
