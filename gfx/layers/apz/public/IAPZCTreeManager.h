@@ -36,7 +36,10 @@ enum ZoomToRectBehavior : uint32_t {
   DEFAULT_BEHAVIOR = 0,
   DISABLE_ZOOM_OUT = 1 << 0,
   PAN_INTO_VIEW_ONLY = 1 << 1,
-  ONLY_ZOOM_TO_DEFAULT_SCALE = 1 << 2
+  ONLY_ZOOM_TO_DEFAULT_SCALE = 1 << 2,
+  
+  
+  ZOOM_IN_IF_CANT_ZOOM_OUT = 1 << 3
 };
 
 class AsyncDragMetrics;

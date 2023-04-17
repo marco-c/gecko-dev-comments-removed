@@ -31,6 +31,13 @@ struct ZoomTarget {
   
   
   Maybe<CSSRect> elementBoundingRect;
+
+  
+  
+  
+  
+  
+  Maybe<CSSPoint> documentRelativePointerPosition;
 };
 
 

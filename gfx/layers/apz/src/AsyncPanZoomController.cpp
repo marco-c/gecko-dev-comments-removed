@@ -5480,8 +5480,8 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
 
     ParentLayerRect compositionBounds = Metrics().GetCompositionBounds();
     CSSRect cssPageRect = Metrics().GetScrollableRect();
-    CSSSize sizeBeforeZoom = Metrics().CalculateCompositedSizeInCssPixels();
     CSSPoint scrollOffset = Metrics().GetVisualScrollOffset();
+    CSSSize sizeBeforeZoom = Metrics().CalculateCompositedSizeInCssPixels();
     
     CSSToParentLayerScale currentZoom = Metrics().GetZoom().ToScaleFactor();
     CSSToParentLayerScale targetZoom;
@@ -5515,13 +5515,37 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
     
     
     
-    bool zoomOut;
+    
+    
+    bool zoomOut = false;
+    
+    
+    bool zoomInDefaultAmount = false;
     if (aFlags & DISABLE_ZOOM_OUT) {
       zoomOut = false;
     } else {
-      zoomOut = rect.IsEmpty() ||
-                (currentZoom == localMaxZoom && targetZoom >= localMaxZoom) ||
-                (currentZoom == localMinZoom && targetZoom <= localMinZoom);
+      if (rect.IsEmpty()) {
+        if (currentZoom == localMinZoom &&
+            (aFlags & ZOOM_IN_IF_CANT_ZOOM_OUT)) {
+          zoomInDefaultAmount = true;
+        } else {
+          zoomOut = true;
+        }
+      } else if (currentZoom == localMaxZoom && targetZoom >= localMaxZoom) {
+        zoomOut = true;
+      }
+    }
+
+    
+    if (!zoomOut && currentZoom == localMinZoom && targetZoom <= localMinZoom &&
+        (aFlags & ZOOM_IN_IF_CANT_ZOOM_OUT)) {
+      zoomInDefaultAmount = true;
+    }
+    MOZ_ASSERT(!(zoomInDefaultAmount && zoomOut));
+
+    if (zoomInDefaultAmount) {
+      targetZoom = CSSToParentLayerScale(
+          currentZoom.scale * StaticPrefs::apz_doubletapzoom_defaultzoomin());
     }
 
     if (zoomOut) {
@@ -5552,20 +5576,31 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
     CSSSize sizeAfterZoom =
         endZoomToMetrics.CalculateCompositedSizeInCssPixels();
 
-    if (zoomOut) {
+    if (zoomInDefaultAmount || zoomOut) {
       
       
       
-      rect = CSSRect(
-          scrollOffset.x + (sizeBeforeZoom.width - sizeAfterZoom.width) / 2,
-          scrollOffset.y + (sizeBeforeZoom.height - sizeAfterZoom.height) / 2,
-          sizeAfterZoom.Width(), sizeAfterZoom.Height());
+      
+      
+      if (!zoomOut && aZoomTarget.documentRelativePointerPosition.isSome()) {
+        rect = CSSRect(aZoomTarget.documentRelativePointerPosition->x -
+                           sizeAfterZoom.width / 2,
+                       aZoomTarget.documentRelativePointerPosition->y -
+                           sizeAfterZoom.height / 2,
+                       sizeAfterZoom.Width(), sizeAfterZoom.Height());
+      } else {
+        rect = CSSRect(
+            scrollOffset.x + (sizeBeforeZoom.width - sizeAfterZoom.width) / 2,
+            scrollOffset.y + (sizeBeforeZoom.height - sizeAfterZoom.height) / 2,
+            sizeAfterZoom.Width(), sizeAfterZoom.Height());
+      }
 
       rect = rect.Intersect(cssPageRect);
     }
 
     
-    if (!zoomOut && aZoomTarget.elementBoundingRect.isSome()) {
+    if (!aZoomTarget.targetRect.IsEmpty() && !zoomOut &&
+        aZoomTarget.elementBoundingRect.isSome()) {
       MOZ_ASSERT(aZoomTarget.elementBoundingRect->Contains(rect));
       CSSRect elementBoundingRect =
           aZoomTarget.elementBoundingRect->Intersect(cssPageRect);
