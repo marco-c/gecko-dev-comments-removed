@@ -68,14 +68,10 @@ AutoEntryScript::AutoEntryScript(nsIGlobalObject* aGlobalObject,
       
       
       ,
-      mCallerOverride(cx())
-#ifdef MOZ_GECKO_PROFILER
-      ,
+      mCallerOverride(cx()),
       mAutoProfilerLabel(
           "", aReason, JS::ProfilingCategoryPair::JS,
-          uint32_t(js::ProfilingStackFrame::Flags::RELEVANT_FOR_JS))
-#endif
-      ,
+          uint32_t(js::ProfilingStackFrame::Flags::RELEVANT_FOR_JS)),
       mJSThreadExecution(aGlobalObject, aIsMainThread) {
   MOZ_ASSERT(aGlobalObject);
 

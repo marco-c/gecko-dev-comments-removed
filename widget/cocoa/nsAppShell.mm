@@ -284,7 +284,6 @@ void nsAppShell::OnRunLoopActivityChanged(CFRunLoopActivity aActivity) {
     mozilla::BackgroundHangMonitor().NotifyWait();
   }
 
-#ifdef MOZ_GECKO_PROFILER
   
   
   
@@ -312,7 +311,6 @@ void nsAppShell::OnRunLoopActivityChanged(CFRunLoopActivity aActivity) {
       mProfilingStackOwnerWhileWaiting = nullptr;
     }
   }
-#endif
 }
 
 

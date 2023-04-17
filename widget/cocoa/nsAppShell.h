@@ -66,10 +66,8 @@ class nsAppShell : public nsBaseAppShell {
   
   CFRunLoopObserverRef mCFRunLoopObserver;
 
-#ifdef MOZ_GECKO_PROFILER
   
   mozilla::ProfilingStackOwner* mProfilingStackOwnerWhileWaiting = nullptr;
-#endif
 
   bool mRunningEventLoop;
   bool mStarted;
