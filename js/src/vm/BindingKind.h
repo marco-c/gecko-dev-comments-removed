@@ -30,7 +30,11 @@ enum class BindingKind : uint8_t {
   
   
   
-  Synthetic
+  Synthetic,
+
+  
+  
+  PrivateMethod,
 };
 
 static inline bool BindingKindIsLexical(BindingKind kind) {

@@ -240,6 +240,12 @@ class ParseContext : public Nestable<ParseContext> {
         settle();
       }
 
+      bool isLexicallyDeclared() {
+        return BindingKindIsLexical(kind()) ||
+               kind() == BindingKind::Synthetic ||
+               kind() == BindingKind::PrivateMethod;
+      }
+
       void settle() {
         
         
@@ -250,8 +256,7 @@ class ParseContext : public Nestable<ParseContext> {
         
         
         while (!declaredRange_.empty()) {
-          if (BindingKindIsLexical(kind()) ||
-              kind() == BindingKind::Synthetic) {
+          if (isLexicallyDeclared()) {
             break;
           }
           declaredRange_.popFront();
