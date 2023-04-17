@@ -20,7 +20,6 @@ class SkString;
 
 
 IDWriteFactory* sk_get_dwrite_factory();
-IDWriteRenderingParams* sk_get_dwrite_default_rendering_params();
 
 
 

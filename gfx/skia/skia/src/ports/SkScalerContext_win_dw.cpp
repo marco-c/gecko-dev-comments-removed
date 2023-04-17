@@ -332,33 +332,27 @@ SkScalerContext_DW::SkScalerContext_DW(sk_sp<DWriteFontTypeface> typefaceRef,
         fMeasuringMode = DWRITE_MEASURING_MODE_GDI_CLASSIC;
 
     
-    } else if ((get_gasp_range(typeface, SkScalarRoundToInt(gdiTextSize), &range) &&
-                range.fVersion >= 1) ||
-               realTextSize > SkIntToScalar(20) || !is_hinted(this, typeface)) {
+    
+    
+    
+    } else if (realTextSize > SkIntToScalar(20) ||
+               typeface->GetRenderingMode() == DWRITE_RENDERING_MODE_NATURAL ||
+               typeface->GetRenderingMode() == DWRITE_RENDERING_MODE_NATURAL_SYMMETRIC) {
         fTextSizeRender = realTextSize;
-        fRenderingMode = DWRITE_RENDERING_MODE_NATURAL_SYMMETRIC;
+        fRenderingMode = typeface->GetRenderingMode() == DWRITE_RENDERING_MODE_NATURAL ?
+            DWRITE_RENDERING_MODE_NATURAL : DWRITE_RENDERING_MODE_NATURAL_SYMMETRIC;
         fTextureType = DWRITE_TEXTURE_CLEARTYPE_3x1;
         fTextSizeMeasure = realTextSize;
         fMeasuringMode = DWRITE_MEASURING_MODE_NATURAL;
-
-        switch (typeface->GetRenderingMode()) {
-        case DWRITE_RENDERING_MODE_NATURAL:
-        case DWRITE_RENDERING_MODE_NATURAL_SYMMETRIC:
-            fRenderingMode = typeface->GetRenderingMode();
-            break;
-        default:
-            if (IDWriteRenderingParams* params = sk_get_dwrite_default_rendering_params()) {
-                typeface->fDWriteFontFace->GetRecommendedRenderingMode(
-                    fTextSizeRender, 1.0f, fMeasuringMode, params, &fRenderingMode);
-            }
-            break;
-        }
-
-        
-        if (fRenderingMode == DWRITE_RENDERING_MODE_OUTLINE) {
-            fRenderingMode = DWRITE_RENDERING_MODE_CLEARTYPE_NATURAL_SYMMETRIC;
-        }
-
+    
+    } else if (get_gasp_range(typeface, SkScalarRoundToInt(gdiTextSize), &range) &&
+               range.fVersion >= 1) {
+        fTextSizeRender = realTextSize;
+        fRenderingMode = !range.fFlags.field.SymmetricSmoothing ?
+            DWRITE_RENDERING_MODE_NATURAL : DWRITE_RENDERING_MODE_NATURAL_SYMMETRIC;
+        fTextureType = DWRITE_TEXTURE_CLEARTYPE_3x1;
+        fTextSizeMeasure = realTextSize;
+        fMeasuringMode = DWRITE_MEASURING_MODE_NATURAL;
     
     
     
@@ -369,7 +363,7 @@ SkScalerContext_DW::SkScalerContext_DW(sk_sp<DWriteFontTypeface> typefaceRef,
     
     
     } else {
-        fTextSizeRender = gdiTextSize;
+        fTextSizeRender = is_hinted(this, typeface) ? gdiTextSize : realTextSize;
         fRenderingMode = DWRITE_RENDERING_MODE_NATURAL;
         fTextureType = DWRITE_TEXTURE_CLEARTYPE_3x1;
         fTextSizeMeasure = realTextSize;
