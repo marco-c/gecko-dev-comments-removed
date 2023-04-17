@@ -3852,6 +3852,8 @@ Toolbox.prototype = {
             this._removeWindowListeners();
             this._removeChromeEventHandlerEvents();
 
+            this._store = null;
+
             
             this.emit("toolbox-unload");
 
