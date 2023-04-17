@@ -891,8 +891,8 @@ ArrayObject* RegExpRealm::createMatchResultTemplateObject(
 
   
   RootedArrayObject templateObject(
-      cx, NewDenseUnallocatedArray(cx, RegExpObject::MaxPairCount, nullptr,
-                                   TenuredObject));
+      cx,
+      NewDenseUnallocatedArray(cx, RegExpObject::MaxPairCount, TenuredObject));
   if (!templateObject) {
     return nullptr;
   }

@@ -3914,21 +3914,18 @@ static MOZ_ALWAYS_INLINE ArrayObject* NewArray(JSContext* cx, uint32_t length,
   return arr;
 }
 
-ArrayObject* js::NewDenseEmptyArray(JSContext* cx,
-                                    HandleObject proto ) {
-  return NewArray<0>(cx, 0, proto, GenericObject);
+ArrayObject* js::NewDenseEmptyArray(JSContext* cx) {
+  return NewArray<0>(cx, 0, nullptr, GenericObject);
 }
 
-ArrayObject* js::NewTenuredDenseEmptyArray(JSContext* cx,
-                                           HandleObject proto ) {
-  return NewArray<0>(cx, 0, proto, TenuredObject);
+ArrayObject* js::NewTenuredDenseEmptyArray(JSContext* cx) {
+  return NewArray<0>(cx, 0, nullptr, TenuredObject);
 }
 
 ArrayObject* js::NewDenseFullyAllocatedArray(
-    JSContext* cx, uint32_t length, HandleObject proto ,
-    NewObjectKind newKind ,
+    JSContext* cx, uint32_t length, NewObjectKind newKind ,
     gc::AllocSite* site ) {
-  return NewArray<UINT32_MAX>(cx, length, proto, newKind, site);
+  return NewArray<UINT32_MAX>(cx, length, nullptr, newKind, site);
 }
 
 ArrayObject* js::NewDensePartlyAllocatedArray(
@@ -3939,9 +3936,9 @@ ArrayObject* js::NewDensePartlyAllocatedArray(
 }
 
 ArrayObject* js::NewDenseUnallocatedArray(
-    JSContext* cx, uint32_t length, HandleObject proto ,
+    JSContext* cx, uint32_t length,
     NewObjectKind newKind ) {
-  return NewArray<0>(cx, length, proto, newKind);
+  return NewArray<0>(cx, length, nullptr, newKind);
 }
 
 

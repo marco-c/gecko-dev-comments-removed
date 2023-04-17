@@ -41,25 +41,22 @@ MOZ_ALWAYS_INLINE bool IdIsIndex(jsid id, uint32_t* indexp) {
 
 
 
-extern ArrayObject* NewDenseEmptyArray(JSContext* cx,
-                                       HandleObject proto = nullptr);
+extern ArrayObject* NewDenseEmptyArray(JSContext* cx);
 
 
 
-extern ArrayObject* NewTenuredDenseEmptyArray(JSContext* cx,
-                                              HandleObject proto = nullptr);
+extern ArrayObject* NewTenuredDenseEmptyArray(JSContext* cx);
 
 
 
 extern ArrayObject* NewDenseUnallocatedArray(
-    JSContext* cx, uint32_t length, HandleObject proto = nullptr,
-    NewObjectKind newKind = GenericObject);
+    JSContext* cx, uint32_t length, NewObjectKind newKind = GenericObject);
 
 
 
 extern ArrayObject* NewDenseFullyAllocatedArray(
-    JSContext* cx, uint32_t length, HandleObject proto = nullptr,
-    NewObjectKind newKind = GenericObject, gc::AllocSite* site = nullptr);
+    JSContext* cx, uint32_t length, NewObjectKind newKind = GenericObject,
+    gc::AllocSite* site = nullptr);
 
 
 
