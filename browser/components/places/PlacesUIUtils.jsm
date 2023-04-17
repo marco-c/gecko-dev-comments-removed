@@ -1344,6 +1344,12 @@ var PlacesUIUtils = {
       return true;
     }
     let document = menupopup.ownerDocument;
+    
+    
+    
+    
+    
+    document.popupNode = menupopup.triggerNode;
     menupopup._view = this.getViewForNode(document.popupNode);
     if (!menupopup._view) {
       
