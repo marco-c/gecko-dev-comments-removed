@@ -258,6 +258,7 @@ class mozInlineSpellChecker final : public nsIInlineSpellChecker,
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
   RemoveRange(mozilla::dom::Selection* aSpellCheckSelection, nsRange* aRange);
+
   MOZ_CAN_RUN_SCRIPT_BOUNDARY nsresult
   AddRange(mozilla::dom::Selection* aSpellCheckSelection, nsRange* aRange);
   bool IsSpellCheckSelectionFull() const {
@@ -294,6 +295,13 @@ class mozInlineSpellChecker final : public nsIInlineSpellChecker,
 
  protected:
   virtual ~mozInlineSpellChecker();
+
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void AddRangesForMisspelledWords(
+      const nsTArray<NodeOffsetRange>& aRanges,
+      const nsTArray<bool>& aIsMisspelled,
+      mozilla::dom::Selection& aSpellCheckerSelection);
 
   
   nsresult EditorSpellCheckInited();
