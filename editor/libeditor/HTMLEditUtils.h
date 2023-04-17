@@ -3,8 +3,8 @@
 
 
 
-#ifndef HTMLEditUtils_h
-#define HTMLEditUtils_h
+#ifndef mozilla_HTMLEditUtils_h
+#define mozilla_HTMLEditUtils_h
 
 #include "mozilla/Attributes.h"
 #include "mozilla/EditorBase.h"
