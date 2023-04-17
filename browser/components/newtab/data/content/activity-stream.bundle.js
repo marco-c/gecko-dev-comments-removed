@@ -8057,10 +8057,6 @@ function topSiteIconType(link) {
     return "rich_icon";
   }
 
-  if (link.screenshot && link.faviconSize >= _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__["MIN_CORNER_FAVICON_SIZE"]) {
-    return "screenshot_with_icon";
-  }
-
   if (link.screenshot) {
     return "screenshot";
   }
@@ -8082,7 +8078,6 @@ function countTopSitesIconsTypes(topSites) {
 
   return topSites.reduce(countTopSitesTypes, {
     custom_screenshot: 0,
-    screenshot_with_icon: 0,
     screenshot: 0,
     tippytop: 0,
     rich_icon: 0,
@@ -8247,7 +8242,7 @@ __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, "TOP_SITES_SPONSORED_POSITION_CONTEXT_MENU_OPTIONS", function() { return TOP_SITES_SPONSORED_POSITION_CONTEXT_MENU_OPTIONS; });
  __webpack_require__.d(__webpack_exports__, "TOP_SITES_SEARCH_SHORTCUTS_CONTEXT_MENU_OPTIONS", function() { return TOP_SITES_SEARCH_SHORTCUTS_CONTEXT_MENU_OPTIONS; });
  __webpack_require__.d(__webpack_exports__, "MIN_RICH_FAVICON_SIZE", function() { return MIN_RICH_FAVICON_SIZE; });
- __webpack_require__.d(__webpack_exports__, "MIN_CORNER_FAVICON_SIZE", function() { return MIN_CORNER_FAVICON_SIZE; });
+ __webpack_require__.d(__webpack_exports__, "MIN_SMALL_FAVICON_SIZE", function() { return MIN_SMALL_FAVICON_SIZE; });
 
 
 
@@ -8260,7 +8255,7 @@ const TOP_SITES_SEARCH_SHORTCUTS_CONTEXT_MENU_OPTIONS = ["CheckPinTopSite", "Sep
 
 const MIN_RICH_FAVICON_SIZE = 96; 
 
-const MIN_CORNER_FAVICON_SIZE = 16;
+const MIN_SMALL_FAVICON_SIZE = 16;
 
  }),
 
@@ -8669,13 +8664,11 @@ class TopSiteLink extends react__WEBPACK_IMPORTED_MODULE_4___default.a.PureCompo
     let imageStyle;
     let showSmallFavicon = false;
     let smallFaviconStyle;
-    let smallFaviconFallback;
     let hasScreenshotImage = this.state.screenshotImage && this.state.screenshotImage.url;
     let selectedColor;
 
     if (defaultStyle) {
       
-      smallFaviconFallback = false;
       selectedColor = this.generateColor();
     } else if (link.searchTopSite) {
       imageClassName = "top-site-icon rich-icon";
@@ -8702,27 +8695,18 @@ class TopSiteLink extends react__WEBPACK_IMPORTED_MODULE_4___default.a.PureCompo
         backgroundColor: link.backgroundColor,
         backgroundImage: `url(${tippyTopIcon || link.favicon})`
       };
+    } else if (faviconSize >= _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__["MIN_SMALL_FAVICON_SIZE"]) {
+      showSmallFavicon = true;
+      smallFaviconStyle = {
+        backgroundImage: `url(${link.favicon})`
+      };
     } else {
-      
-      imageClassName = `screenshot${hasScreenshotImage ? " active" : ""}`;
-      imageStyle = {
-        backgroundImage: hasScreenshotImage ? `url(${this.state.screenshotImage.url})` : "none"
-      }; 
-
-      if (faviconSize >= _TopSitesConstants__WEBPACK_IMPORTED_MODULE_1__["MIN_CORNER_FAVICON_SIZE"]) {
-        showSmallFavicon = true;
-        smallFaviconStyle = {
-          backgroundImage: `url(${link.favicon})`
-        };
-      } else {
-        selectedColor = this.generateColor();
-        imageClassName = "";
-      }
+      selectedColor = this.generateColor();
+      imageClassName = "";
     }
 
     return {
       showSmallFavicon,
-      smallFaviconFallback,
       smallFaviconStyle,
       imageStyle,
       imageClassName,
@@ -8743,7 +8727,6 @@ class TopSiteLink extends react__WEBPACK_IMPORTED_MODULE_4___default.a.PureCompo
     const [letterFallback] = title;
     const {
       showSmallFavicon,
-      smallFaviconFallback,
       smallFaviconStyle,
       imageStyle,
       imageClassName,
@@ -8789,7 +8772,7 @@ class TopSiteLink extends react__WEBPACK_IMPORTED_MODULE_4___default.a.PureCompo
       style: imageStyle
     }), showSmallFavicon && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
       className: "top-site-icon default-icon",
-      "data-fallback": smallFaviconFallback && letterFallback,
+      "data-fallback": smallFaviconStyle ? "" : letterFallback,
       style: smallFaviconStyle
     })), link.searchTopSite && react__WEBPACK_IMPORTED_MODULE_4___default.a.createElement("div", {
       className: "top-site-icon search-topsite"
