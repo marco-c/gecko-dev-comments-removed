@@ -12,34 +12,52 @@ add_task(async function test() {
     "Test that the profiler pop-up correctly opens the captured profile on the " +
       "correct frontend view by adding proper view query string"
   );
+
+  
+  
+  BackgroundJSM.changePreset(
+    "aboutprofiling",
+    "web-developer",
+    Services.profiler.GetFeatures()
+  );
+
   await setProfilerFrontendUrl(FRONTEND_BASE_URL);
   await makeSureProfilerPopupIsEnabled();
 
   
   
   await openPopupAndAssertUrlForPreset({
-    preset: "firefox-platform",
+    preset: "Firefox Platform",
     expectedUrl: FRONTEND_BASE_URL,
   });
 
   
   
   await openPopupAndAssertUrlForPreset({
-    preset: "web-developer",
+    preset: "Web Developer",
     expectedUrl: FRONTEND_BASE_URL + "?view=active-tab&implementation=js",
   });
 });
 
 async function openPopupAndAssertUrlForPreset({ preset, expectedUrl }) {
   
-  BackgroundJSM.changePreset(
-    "aboutprofiling",
-    preset,
-    [] 
-  );
-
-  
   await openPopupAndEnsureCloses(window, async () => {
+    {
+      
+      const presetsInPopup = document.getElementById(
+        "PanelUI-profiler-presets"
+      );
+      presetsInPopup.menupopup.openPopup();
+      presetsInPopup.menupopup.activateItem(
+        await getElementByLabel(presetsInPopup, preset)
+      );
+
+      await TestUtils.waitForCondition(
+        () => presetsInPopup.label === preset,
+        `After selecting the preset in the popup, waiting until the preset is changed to ${preset} in the popup.`
+      );
+    }
+
     {
       const button = await getElementByLabel(document, "Start Recording");
       info("Click the button to start recording.");
