@@ -14,7 +14,6 @@
 #include "HitTestingTreeNode.h"     
 #include "InputBlockState.h"        
 #include "InputData.h"              
-#include "InternalHitTester.h"      
 #include "Layers.h"                 
 #include "WRHitTester.h"            
 #include "mozilla/RecursiveMutex.h"
@@ -269,7 +268,7 @@ class MOZ_RAII AutoFocusSequenceNumberSetter {
 };
 
 APZCTreeManager::APZCTreeManager(LayersId aRootLayersId,
-                                 HitTestKind aHitTestKind)
+                                 UniquePtr<IAPZHitTester> aHitTester)
     : mTestSampleTime(Nothing(), "APZCTreeManager::mTestSampleTime"),
       mInputQueue(new InputQueue()),
       mRootLayersId(aRootLayersId),
@@ -283,7 +282,8 @@ APZCTreeManager::APZCTreeManager(LayersId aRootLayersId,
                             "APZCTreeManager::mCurrentMousePosition"),
       mApzcTreeLog("apzctree"),
       mTestDataLock("APZTestDataLock"),
-      mDPI(160.0) {
+      mDPI(160.0),
+      mHitTester(std::move(aHitTester)) {
   RefPtr<APZCTreeManager> self(this);
   NS_DispatchToMainThread(NS_NewRunnableFunction(
       "layers::APZCTreeManager::APZCTreeManager",
@@ -291,10 +291,8 @@ APZCTreeManager::APZCTreeManager(LayersId aRootLayersId,
   AsyncPanZoomController::InitializeGlobalState();
   mApzcTreeLog.ConditionOnPrefFunction(StaticPrefs::apz_printtree);
 
-  if (aHitTestKind == HitTestKind::WebRender) {
+  if (!mHitTester) {
     mHitTester = MakeUnique<WRHitTester>();
-  } else {
-    mHitTester = MakeUnique<InternalHitTester>();
   }
   mHitTester->Initialize(this);
 }
