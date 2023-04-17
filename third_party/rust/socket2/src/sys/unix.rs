@@ -9,42 +9,53 @@
 
 
 use std::cmp;
+#[cfg(target_os = "linux")]
+use std::ffi::{CStr, CString};
 use std::fmt;
 use std::io;
 use std::io::{ErrorKind, Read, Write};
 use std::mem;
+#[cfg(target_os = "linux")]
+use std::mem::MaybeUninit;
 use std::net::Shutdown;
 use std::net::{self, Ipv4Addr, Ipv6Addr};
 use std::ops::Neg;
 #[cfg(feature = "unix")]
 use std::os::unix::net::{UnixDatagram, UnixListener, UnixStream};
 use std::os::unix::prelude::*;
+#[cfg(target_os = "linux")]
+use std::ptr;
+#[cfg(target_os = "linux")]
+use std::slice;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-use libc::{self, c_int, c_void, socklen_t, ssize_t};
+use libc::{self, c_void, socklen_t, ssize_t};
+
+use crate::{Domain, Type};
+
+pub use libc::c_int;
+
+
+pub(crate) use libc::{AF_INET, AF_INET6};
+
+#[cfg(not(target_os = "redox"))]
+pub(crate) use libc::SOCK_RAW;
+pub(crate) use libc::{SOCK_DGRAM, SOCK_SEQPACKET, SOCK_STREAM};
+
+pub(crate) use libc::{IPPROTO_ICMP, IPPROTO_ICMPV6, IPPROTO_TCP, IPPROTO_UDP};
 
 cfg_if::cfg_if! {
     if #[cfg(any(target_os = "dragonfly", target_os = "freebsd",
                  target_os = "ios", target_os = "macos",
                  target_os = "openbsd", target_os = "netbsd",
-                 target_os = "solaris", target_os = "haiku"))] {
+                 target_os = "solaris", target_os = "illumos",
+                 target_os = "haiku"))] {
         use libc::IPV6_JOIN_GROUP as IPV6_ADD_MEMBERSHIP;
         use libc::IPV6_LEAVE_GROUP as IPV6_DROP_MEMBERSHIP;
     } else {
         use libc::IPV6_ADD_MEMBERSHIP;
         use libc::IPV6_DROP_MEMBERSHIP;
-    }
-}
-
-cfg_if::cfg_if! {
-    if #[cfg(any(target_os = "linux", target_os = "android",
-                 target_os = "dragonfly", target_os = "freebsd",
-                 target_os = "openbsd", target_os = "netbsd",
-                 target_os = "haiku", target_os = "bitrig"))] {
-        use libc::MSG_NOSIGNAL;
-    } else {
-        const MSG_NOSIGNAL: c_int = 0x0;
     }
 }
 
@@ -61,12 +72,109 @@ cfg_if::cfg_if! {
 use crate::utils::One;
 use crate::SockAddr;
 
-pub const IPPROTO_ICMP: i32 = libc::IPPROTO_ICMP;
-pub const IPPROTO_ICMPV6: i32 = libc::IPPROTO_ICMPV6;
-pub const IPPROTO_TCP: i32 = libc::IPPROTO_TCP;
-pub const IPPROTO_UDP: i32 = libc::IPPROTO_UDP;
-pub const SOCK_SEQPACKET: i32 = libc::SOCK_SEQPACKET;
-pub const SOCK_RAW: i32 = libc::SOCK_RAW;
+
+impl Domain {
+    
+    pub fn unix() -> Domain {
+        Domain(libc::AF_UNIX)
+    }
+
+    
+    
+    
+    
+    
+    #[cfg(target_os = "linux")]
+    pub fn packet() -> Domain {
+        Domain(libc::AF_PACKET)
+    }
+}
+
+impl_debug!(
+    Domain,
+    libc::AF_INET,
+    libc::AF_INET6,
+    libc::AF_UNIX,
+    libc::AF_UNSPEC, // = 0.
+);
+
+
+impl Type {
+    
+    
+    
+    
+    
+    
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "linux",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    ))]
+    pub fn non_blocking(self) -> Type {
+        Type(self.0 | libc::SOCK_NONBLOCK)
+    }
+
+    
+    
+    
+    
+    
+    
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "linux",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    ))]
+    pub fn cloexec(self) -> Type {
+        Type(self.0 | libc::SOCK_CLOEXEC)
+    }
+}
+
+impl_debug!(
+    crate::Type,
+    libc::SOCK_STREAM,
+    libc::SOCK_DGRAM,
+    #[cfg(not(target_os = "redox"))]
+    libc::SOCK_RAW,
+    #[cfg(not(any(target_os = "haiku", target_os = "redox")))]
+    libc::SOCK_RDM,
+    libc::SOCK_SEQPACKET,
+    /* TODO: add these optional bit OR-ed flags:
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "linux",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    ))]
+    libc::SOCK_NONBLOCK,
+    #[cfg(any(
+        target_os = "android",
+        target_os = "dragonfly",
+        target_os = "freebsd",
+        target_os = "linux",
+        target_os = "netbsd",
+        target_os = "openbsd"
+    ))]
+    libc::SOCK_CLOEXEC,
+    */
+);
+
+impl_debug!(
+    crate::Protocol,
+    libc::IPPROTO_ICMP,
+    libc::IPPROTO_ICMPV6,
+    libc::IPPROTO_TCP,
+    libc::IPPROTO_UDP,
+);
 
 pub struct Socket {
     fd: c_int,
@@ -75,11 +183,11 @@ pub struct Socket {
 impl Socket {
     pub fn new(family: c_int, ty: c_int, protocol: c_int) -> io::Result<Socket> {
         unsafe {
-            // On linux we first attempt to pass the SOCK_CLOEXEC flag to
-            // atomically create the socket and set it as CLOEXEC. Support for
-            // this option, however, was added in 2.6.27, and we still support
-            // 2.6.18 as a kernel, so if the returned error is EINVAL we
-            // fallthrough to the fallback.
+            
+            
+            
+            
+            
             #[cfg(target_os = "linux")]
             {
                 match cvt(libc::socket(family, ty | libc::SOCK_CLOEXEC, protocol)) {
@@ -92,7 +200,7 @@ impl Socket {
             let fd = cvt(libc::socket(family, ty, protocol))?;
             let fd = Socket::from_raw_fd(fd);
             set_cloexec(fd.as_raw_fd())?;
-            #[cfg(target_os = "macos")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             {
                 fd.setsockopt(libc::SOL_SOCKET, libc::SO_NOSIGPIPE, 1i32)?;
             }
@@ -107,7 +215,7 @@ impl Socket {
             let fds = (Socket::from_raw_fd(fds[0]), Socket::from_raw_fd(fds[1]));
             set_cloexec(fds.0.as_raw_fd())?;
             set_cloexec(fds.1.as_raw_fd())?;
-            #[cfg(target_os = "macos")]
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             {
                 fds.0
                     .setsockopt(libc::SOL_SOCKET, libc::SO_NOSIGPIPE, 1i32)?;
@@ -137,7 +245,7 @@ impl Socket {
 
         match r {
             Ok(()) => return Ok(()),
-            // there's no io::ErrorKind conversion registered for EINPROGRESS :(
+            
             Err(ref e) if e.raw_os_error() == Some(libc::EINPROGRESS) => {}
             Err(e) => return Err(e),
         }
@@ -191,8 +299,8 @@ impl Socket {
                     ))
                 }
                 _ => {
-                    // linux returns POLLOUT|POLLERR|POLLHUP for refused connections (!), so look
-                    // for POLLHUP rather than read readiness
+                    
+                    
                     if pollfd.revents & libc::POLLHUP != 0 {
                         let e = self.take_error()?.unwrap_or_else(|| {
                             io::Error::new(io::ErrorKind::Other, "no error set after POLLHUP")
@@ -238,7 +346,7 @@ impl Socket {
     }
 
     pub fn try_clone(&self) -> io::Result<Socket> {
-        // implementation lifted from libstd
+        
         #[cfg(any(target_os = "android", target_os = "haiku"))]
         use libc::F_DUPFD as F_DUPFD_CLOEXEC;
         #[cfg(not(any(target_os = "android", target_os = "haiku")))]
@@ -281,7 +389,7 @@ impl Socket {
                     libc::SYS_accept4,
                     self.fd as libc::c_long,
                     &mut storage as *mut _ as libc::c_long,
-                    len as libc::c_long,
+                    &mut len,
                     libc::SOCK_CLOEXEC as libc::c_long,
                 ) as libc::c_int
             });
@@ -342,14 +450,14 @@ impl Socket {
         Ok(())
     }
 
-    pub fn recv(&self, buf: &mut [u8]) -> io::Result<usize> {
+    pub fn recv(&self, buf: &mut [u8], flags: c_int) -> io::Result<usize> {
         unsafe {
             let n = cvt({
                 libc::recv(
                     self.fd,
                     buf.as_mut_ptr() as *mut c_void,
                     cmp::min(buf.len(), max_len()),
-                    0,
+                    flags,
                 )
             })?;
             Ok(n as usize)
@@ -370,15 +478,11 @@ impl Socket {
         }
     }
 
-    pub fn recv_from(&self, buf: &mut [u8]) -> io::Result<(usize, SockAddr)> {
-        self.recvfrom(buf, 0)
-    }
-
     pub fn peek_from(&self, buf: &mut [u8]) -> io::Result<(usize, SockAddr)> {
-        self.recvfrom(buf, libc::MSG_PEEK)
+        self.recv_from(buf, libc::MSG_PEEK)
     }
 
-    fn recvfrom(&self, buf: &mut [u8], flags: c_int) -> io::Result<(usize, SockAddr)> {
+    pub fn recv_from(&self, buf: &mut [u8], flags: c_int) -> io::Result<(usize, SockAddr)> {
         unsafe {
             let mut storage: libc::sockaddr_storage = mem::zeroed();
             let mut addrlen = mem::size_of_val(&storage) as socklen_t;
@@ -398,28 +502,28 @@ impl Socket {
         }
     }
 
-    pub fn send(&self, buf: &[u8]) -> io::Result<usize> {
+    pub fn send(&self, buf: &[u8], flags: c_int) -> io::Result<usize> {
         unsafe {
             let n = cvt({
                 libc::send(
                     self.fd,
                     buf.as_ptr() as *const c_void,
                     cmp::min(buf.len(), max_len()),
-                    MSG_NOSIGNAL,
+                    flags,
                 )
             })?;
             Ok(n as usize)
         }
     }
 
-    pub fn send_to(&self, buf: &[u8], addr: &SockAddr) -> io::Result<usize> {
+    pub fn send_to(&self, buf: &[u8], flags: c_int, addr: &SockAddr) -> io::Result<usize> {
         unsafe {
             let n = cvt({
                 libc::sendto(
                     self.fd,
                     buf.as_ptr() as *const c_void,
                     cmp::min(buf.len(), max_len()),
-                    MSG_NOSIGNAL,
+                    flags,
                     addr.as_ptr(),
                     addr.len(),
                 )
@@ -428,7 +532,7 @@ impl Socket {
         }
     }
 
-    // ================================================
+    
 
     pub fn ttl(&self) -> io::Result<u32> {
         unsafe {
@@ -439,6 +543,88 @@ impl Socket {
 
     pub fn set_ttl(&self, ttl: u32) -> io::Result<()> {
         unsafe { self.setsockopt(libc::IPPROTO_IP, libc::IP_TTL, ttl as c_int) }
+    }
+
+    #[cfg(not(target_os = "redox"))]
+    pub fn mss(&self) -> io::Result<u32> {
+        unsafe {
+            let raw: c_int = self.getsockopt(libc::IPPROTO_TCP, libc::TCP_MAXSEG)?;
+            Ok(raw as u32)
+        }
+    }
+
+    #[cfg(not(target_os = "redox"))]
+    pub fn set_mss(&self, mss: u32) -> io::Result<()> {
+        unsafe { self.setsockopt(libc::IPPROTO_TCP, libc::TCP_MAXSEG, mss as c_int) }
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn mark(&self) -> io::Result<u32> {
+        unsafe {
+            let raw: c_int = self.getsockopt(libc::SOL_SOCKET, libc::SO_MARK)?;
+            Ok(raw as u32)
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn set_mark(&self, mark: u32) -> io::Result<()> {
+        unsafe { self.setsockopt(libc::SOL_SOCKET, libc::SO_MARK, mark as c_int) }
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn device(&self) -> io::Result<Option<CString>> {
+        
+        let mut buf: [MaybeUninit<u8>; libc::IFNAMSIZ] =
+            unsafe { MaybeUninit::<[MaybeUninit<u8>; libc::IFNAMSIZ]>::uninit().assume_init() };
+        let mut len = buf.len() as libc::socklen_t;
+        let len = unsafe {
+            cvt(libc::getsockopt(
+                self.fd,
+                libc::SOL_SOCKET,
+                libc::SO_BINDTODEVICE,
+                buf.as_mut_ptr().cast(),
+                &mut len,
+            ))?
+        };
+        if len == 0 {
+            Ok(None)
+        } else {
+            
+            
+            let len = len as usize;
+            let mut name = Vec::with_capacity(len);
+
+            
+            
+            
+            
+            let buf = unsafe { slice::from_raw_parts(buf.as_ptr().cast(), len - 1) };
+            name.extend_from_slice(buf);
+
+            
+            
+            Ok(Some(unsafe { CString::from_vec_unchecked(name) }))
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn bind_device(&self, interface: Option<&CStr>) -> io::Result<()> {
+        let (value, len) = if let Some(interface) = interface {
+            (interface.as_ptr(), interface.to_bytes_with_nul().len())
+        } else {
+            (ptr::null(), 0)
+        };
+
+        unsafe {
+            cvt(libc::setsockopt(
+                self.fd,
+                libc::SOL_SOCKET,
+                libc::SO_BINDTODEVICE,
+                value.cast(),
+                len as libc::socklen_t,
+            ))
+            .map(|_| ())
+        }
     }
 
     pub fn unicast_hops_v6(&self) -> io::Result<u32> {
@@ -679,7 +865,7 @@ impl Socket {
 
     pub fn set_recv_buffer_size(&self, size: usize) -> io::Result<()> {
         unsafe {
-            // TODO: casting usize to a c_int should be a checked cast
+            
             self.setsockopt(libc::SOL_SOCKET, libc::SO_RCVBUF, size as c_int)
         }
     }
@@ -693,7 +879,7 @@ impl Socket {
 
     pub fn set_send_buffer_size(&self, size: usize) -> io::Result<()> {
         unsafe {
-            // TODO: casting usize to a c_int should be a checked cast
+            
             self.setsockopt(libc::SOL_SOCKET, libc::SO_SNDBUF, size as c_int)
         }
     }
@@ -717,14 +903,18 @@ impl Socket {
                 keepalive.is_some() as c_int,
             )?;
             if let Some(dur) = keepalive {
-                // TODO: checked cast here
+                
                 self.setsockopt(libc::IPPROTO_TCP, KEEPALIVE_OPTION, dur.as_secs() as c_int)?;
             }
             Ok(())
         }
     }
 
-    #[cfg(all(unix, feature = "reuseport"))]
+    #[cfg(all(
+        unix,
+        not(any(target_os = "solaris", target_os = "illumos")),
+        feature = "reuseport"
+    ))]
     pub fn reuse_port(&self) -> io::Result<bool> {
         unsafe {
             let raw: c_int = self.getsockopt(libc::SOL_SOCKET, libc::SO_REUSEPORT)?;
@@ -732,9 +922,24 @@ impl Socket {
         }
     }
 
-    #[cfg(all(unix, feature = "reuseport"))]
+    #[cfg(all(
+        unix,
+        not(any(target_os = "solaris", target_os = "illumos")),
+        feature = "reuseport"
+    ))]
     pub fn set_reuse_port(&self, reuse: bool) -> io::Result<()> {
         unsafe { self.setsockopt(libc::SOL_SOCKET, libc::SO_REUSEPORT, reuse as c_int) }
+    }
+
+    pub fn out_of_band_inline(&self) -> io::Result<bool> {
+        unsafe {
+            let raw: c_int = self.getsockopt(libc::SOL_SOCKET, libc::SO_OOBINLINE)?;
+            Ok(raw != 0)
+        }
+    }
+
+    pub fn set_out_of_band_inline(&self, oob_inline: bool) -> io::Result<()> {
+        unsafe { self.setsockopt(libc::SOL_SOCKET, libc::SO_OOBINLINE, oob_inline as c_int) }
     }
 
     unsafe fn setsockopt<T>(&self, opt: c_int, val: c_int, payload: T) -> io::Result<()>
@@ -800,7 +1005,7 @@ impl Write for Socket {
 
 impl<'a> Write for &'a Socket {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.send(buf)
+        self.send(buf, 0)
     }
 
     fn flush(&mut self) -> io::Result<()> {
@@ -949,14 +1154,14 @@ impl From<UnixDatagram> for Socket {
 }
 
 fn max_len() -> usize {
-    // The maximum read limit on most posix-like systems is `SSIZE_MAX`,
-    // with the man page quoting that if the count of bytes to read is
-    // greater than `SSIZE_MAX` the result is "unspecified".
-    //
-    // On macOS, however, apparently the 64-bit libc is either buggy or
-    // intentionally showing odd behavior by rejecting any read with a size
-    // larger than or equal to INT_MAX. To handle both of these the read
-    // size is capped on both platforms.
+    
+    
+    
+    
+    
+    
+    
+    
     if cfg!(target_os = "macos") {
         <c_int>::max_value() as usize - 1
     } else {
@@ -1100,4 +1305,13 @@ fn dur2linger(dur: Option<Duration>) -> libc::linger {
 fn test_ip() {
     let ip = Ipv4Addr::new(127, 0, 0, 1);
     assert_eq!(ip, from_s_addr(to_s_addr(&ip)));
+}
+
+#[test]
+fn test_out_of_band_inline() {
+    let tcp = Socket::new(libc::AF_INET, libc::SOCK_STREAM, 0).unwrap();
+    assert_eq!(tcp.out_of_band_inline().unwrap(), false);
+
+    tcp.set_out_of_band_inline(true).unwrap();
+    assert_eq!(tcp.out_of_band_inline().unwrap(), true);
 }

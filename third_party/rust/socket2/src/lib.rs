@@ -39,16 +39,44 @@
 
 use crate::utils::NetInt;
 
-#[cfg(any(unix, target_os = "redox"))]
-use libc::{sockaddr_storage, socklen_t};
-#[cfg(windows)]
-use winapi::shared::ws2def::SOCKADDR_STORAGE as sockaddr_storage;
-#[cfg(windows)]
-use winapi::um::ws2tcpip::socklen_t;
+
+
+
+
+
+macro_rules! impl_debug {
+    (
+        
+        $type: path,
+        $(
+            $(#[$target: meta])*
+            
+            
+            
+            $libc: ident :: $flag: ident
+        ),+ $(,)*
+    ) => {
+        impl std::fmt::Debug for $type {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                let string = match self.0 {
+                    $(
+                        $(#[$target])*
+                        $libc :: $flag => stringify!($flag),
+                    )+
+                    n => return write!(f, "{}", n),
+                };
+                f.write_str(string)
+            }
+        }
+    };
+}
 
 mod sockaddr;
 mod socket;
 mod utils;
+
+#[cfg(test)]
+mod tests;
 
 #[cfg(unix)]
 #[path = "sys/unix.rs"]
@@ -56,9 +84,11 @@ mod sys;
 #[cfg(windows)]
 #[path = "sys/windows.rs"]
 mod sys;
-#[cfg(target_os = "redox")]
-#[path = "sys/redox/mod.rs"]
-mod sys;
+
+use sys::c_int;
+
+pub use sockaddr::SockAddr;
+pub use socket::Socket;
 
 
 
@@ -69,33 +99,82 @@ mod sys;
 
 
 
+#[derive(Copy, Clone)]
+pub struct Domain(c_int);
 
+impl Domain {
+    
+    pub fn ipv4() -> Domain {
+        Domain(sys::AF_INET)
+    }
 
+    
+    pub fn ipv6() -> Domain {
+        Domain(sys::AF_INET6)
+    }
+}
 
+impl From<c_int> for Domain {
+    fn from(d: c_int) -> Domain {
+        Domain(d)
+    }
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-pub struct Socket {
-    inner: sys::Socket,
+impl From<Domain> for c_int {
+    fn from(d: Domain) -> c_int {
+        d.0
+    }
 }
 
 
 
 
 
-pub struct SockAddr {
-    storage: sockaddr_storage,
-    len: socklen_t,
+
+
+
+
+
+#[derive(Copy, Clone)]
+pub struct Type(c_int);
+
+impl Type {
+    
+    
+    
+    pub fn stream() -> Type {
+        Type(sys::SOCK_STREAM)
+    }
+
+    
+    
+    
+    pub fn dgram() -> Type {
+        Type(sys::SOCK_DGRAM)
+    }
+
+    
+    pub fn seqpacket() -> Type {
+        Type(sys::SOCK_SEQPACKET)
+    }
+
+    
+    #[cfg(not(target_os = "redox"))]
+    pub fn raw() -> Type {
+        Type(sys::SOCK_RAW)
+    }
+}
+
+impl From<c_int> for Type {
+    fn from(t: c_int) -> Type {
+        Type(t)
+    }
+}
+
+impl From<Type> for c_int {
+    fn from(t: Type) -> c_int {
+        t.0
+    }
 }
 
 
@@ -105,38 +184,47 @@ pub struct SockAddr {
 
 
 
-
-
 #[derive(Copy, Clone)]
-pub struct Domain(i32);
+pub struct Protocol(c_int);
 
+impl Protocol {
+    
+    pub fn icmpv4() -> Self {
+        Protocol(sys::IPPROTO_ICMP)
+    }
 
+    
+    pub fn icmpv6() -> Self {
+        Protocol(sys::IPPROTO_ICMPV6)
+    }
 
+    
+    pub fn tcp() -> Self {
+        Protocol(sys::IPPROTO_TCP)
+    }
 
+    
+    pub fn udp() -> Self {
+        Protocol(sys::IPPROTO_UDP)
+    }
+}
 
+impl From<c_int> for Protocol {
+    fn from(p: c_int) -> Protocol {
+        Protocol(p)
+    }
+}
 
-
-
-
-
-#[derive(Copy, Clone)]
-pub struct Type(i32);
-
-
-
-
-
-
-
-
-#[derive(Copy, Clone)]
-pub struct Protocol(i32);
+impl From<Protocol> for c_int {
+    fn from(p: Protocol) -> c_int {
+        p.0
+    }
+}
 
 fn hton<I: NetInt>(i: I) -> I {
     i.to_be()
 }
 
-#[cfg(not(target_os = "redox"))]
 fn ntoh<I: NetInt>(i: I) -> I {
     I::from_be(i)
 }

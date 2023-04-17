@@ -8,6 +8,8 @@
 
 
 
+#[cfg(target_os = "linux")]
+use std::ffi::{CStr, CString};
 use std::fmt;
 use std::io::{self, Read, Write};
 use std::net::{self, Ipv4Addr, Ipv6Addr, Shutdown};
@@ -16,12 +18,42 @@ use std::os::unix::net::{UnixDatagram, UnixListener, UnixStream};
 use std::time::Duration;
 
 #[cfg(any(unix, target_os = "redox"))]
-use libc as c;
+use libc::MSG_OOB;
 #[cfg(windows)]
-use winapi::shared::ws2def as c;
+use winapi::um::winsock2::MSG_OOB;
 
 use crate::sys;
-use crate::{Domain, Protocol, SockAddr, Socket, Type};
+use crate::{Domain, Protocol, SockAddr, Type};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub struct Socket {
+    
+    pub(crate) inner: sys::Socket,
+}
 
 impl Socket {
     
@@ -213,7 +245,26 @@ impl Socket {
     
     
     pub fn recv(&self, buf: &mut [u8]) -> io::Result<usize> {
-        self.inner.recv(buf)
+        self.inner.recv(buf, 0)
+    }
+
+    
+    
+    
+    
+    pub fn recv_with_flags(&self, buf: &mut [u8], flags: i32) -> io::Result<usize> {
+        self.inner.recv(buf, flags)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn recv_out_of_band(&self, buf: &mut [u8]) -> io::Result<usize> {
+        self.inner.recv(buf, MSG_OOB)
     }
 
     
@@ -229,7 +280,19 @@ impl Socket {
     
     
     pub fn recv_from(&self, buf: &mut [u8]) -> io::Result<(usize, SockAddr)> {
-        self.inner.recv_from(buf)
+        self.inner.recv_from(buf, 0)
+    }
+
+    
+    
+    
+    
+    pub fn recv_from_with_flags(
+        &self,
+        buf: &mut [u8],
+        flags: i32,
+    ) -> io::Result<(usize, SockAddr)> {
+        self.inner.recv_from(buf, flags)
     }
 
     
@@ -250,7 +313,26 @@ impl Socket {
     
     
     pub fn send(&self, buf: &[u8]) -> io::Result<usize> {
-        self.inner.send(buf)
+        self.inner.send(buf, 0)
+    }
+
+    
+    
+    
+    
+    pub fn send_with_flags(&self, buf: &[u8], flags: i32) -> io::Result<usize> {
+        self.inner.send(buf, flags)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn send_out_of_band(&self, buf: &[u8]) -> io::Result<usize> {
+        self.inner.send(buf, MSG_OOB)
     }
 
     
@@ -259,7 +341,15 @@ impl Socket {
     
     
     pub fn send_to(&self, buf: &[u8], addr: &SockAddr) -> io::Result<usize> {
-        self.inner.send_to(buf, addr)
+        self.inner.send_to(buf, 0, addr)
+    }
+
+    
+    
+    
+    
+    pub fn send_to_with_flags(&self, buf: &[u8], addr: &SockAddr, flags: i32) -> io::Result<usize> {
+        self.inner.send_to(buf, flags, addr)
     }
 
     
@@ -279,6 +369,73 @@ impl Socket {
     
     pub fn set_ttl(&self, ttl: u32) -> io::Result<()> {
         self.inner.set_ttl(ttl)
+    }
+
+    
+    
+    
+    
+    #[cfg(all(unix, not(target_os = "redox")))]
+    pub fn mss(&self) -> io::Result<u32> {
+        self.inner.mss()
+    }
+
+    
+    
+    
+    
+    #[cfg(all(unix, not(target_os = "redox")))]
+    pub fn set_mss(&self, mss: u32) -> io::Result<()> {
+        self.inner.set_mss(mss)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(target_os = "linux")]
+    pub fn mark(&self) -> io::Result<u32> {
+        self.inner.mark()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(target_os = "linux")]
+    pub fn set_mark(&self, mark: u32) -> io::Result<()> {
+        self.inner.set_mark(mark)
+    }
+
+    
+    
+    
+    
+    
+    #[cfg(target_os = "linux")]
+    pub fn device(&self) -> io::Result<Option<CString>> {
+        self.inner.device()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(target_os = "linux")]
+    pub fn bind_device(&self, interface: Option<&CStr>) -> io::Result<()> {
+        self.inner.bind_device(interface)
     }
 
     
@@ -632,7 +789,29 @@ impl Socket {
     
     
     
-    #[cfg(all(unix, feature = "reuseport"))]
+    pub fn out_of_band_inline(&self) -> io::Result<bool> {
+        self.inner.out_of_band_inline()
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn set_out_of_band_inline(&self, oob_inline: bool) -> io::Result<()> {
+        self.inner.set_out_of_band_inline(oob_inline)
+    }
+
+    
+    
+    
+    
+    #[cfg(all(
+        unix,
+        not(any(target_os = "solaris", target_os = "illumos")),
+        feature = "reuseport"
+    ))]
     pub fn reuse_port(&self) -> io::Result<bool> {
         self.inner.reuse_port()
     }
@@ -645,7 +824,11 @@ impl Socket {
     
     
     
-    #[cfg(all(unix, feature = "reuseport"))]
+    #[cfg(all(
+        unix,
+        not(any(target_os = "solaris", target_os = "illumos")),
+        feature = "reuseport"
+    ))]
     pub fn set_reuse_port(&self, reuse: bool) -> io::Result<()> {
         self.inner.set_reuse_port(reuse)
     }
@@ -779,111 +962,6 @@ impl From<Socket> for UnixDatagram {
     }
 }
 
-impl Domain {
-    
-    pub fn ipv4() -> Domain {
-        Domain(c::AF_INET)
-    }
-
-    
-    pub fn ipv6() -> Domain {
-        Domain(c::AF_INET6)
-    }
-
-    
-    
-    
-    
-    #[cfg(all(unix, feature = "unix"))]
-    pub fn unix() -> Domain {
-        Domain(c::AF_UNIX)
-    }
-}
-
-impl From<i32> for Domain {
-    fn from(a: i32) -> Domain {
-        Domain(a)
-    }
-}
-
-impl From<Domain> for i32 {
-    fn from(a: Domain) -> i32 {
-        a.0
-    }
-}
-
-impl Type {
-    
-    
-    
-    pub fn stream() -> Type {
-        Type(c::SOCK_STREAM)
-    }
-
-    
-    
-    
-    pub fn dgram() -> Type {
-        Type(c::SOCK_DGRAM)
-    }
-
-    
-    pub fn seqpacket() -> Type {
-        Type(sys::SOCK_SEQPACKET)
-    }
-
-    
-    pub fn raw() -> Type {
-        Type(sys::SOCK_RAW)
-    }
-}
-
-impl crate::Protocol {
-    
-    pub fn icmpv4() -> Self {
-        crate::Protocol(sys::IPPROTO_ICMP)
-    }
-
-    
-    pub fn icmpv6() -> Self {
-        crate::Protocol(sys::IPPROTO_ICMPV6)
-    }
-
-    
-    pub fn tcp() -> Self {
-        crate::Protocol(sys::IPPROTO_TCP)
-    }
-
-    
-    pub fn udp() -> Self {
-        crate::Protocol(sys::IPPROTO_UDP)
-    }
-}
-
-impl From<i32> for Type {
-    fn from(a: i32) -> Type {
-        Type(a)
-    }
-}
-
-impl From<Type> for i32 {
-    fn from(a: Type) -> i32 {
-        a.0
-    }
-}
-
-impl From<i32> for Protocol {
-    fn from(a: i32) -> Protocol {
-        Protocol(a)
-    }
-}
-
-impl From<Protocol> for i32 {
-    fn from(a: Protocol) -> i32 {
-        a.0
-    }
-}
-
 #[cfg(test)]
 mod test {
     use std::net::SocketAddr;
@@ -993,5 +1071,58 @@ mod test {
 
         assert!(result.is_ok());
         assert!(result.unwrap());
+    }
+
+    #[test]
+    fn out_of_band_inline() {
+        let socket = Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
+
+        assert_eq!(socket.out_of_band_inline().unwrap(), false);
+
+        socket.set_out_of_band_inline(true).unwrap();
+        assert_eq!(socket.out_of_band_inline().unwrap(), true);
+    }
+
+    #[test]
+    #[cfg(any(target_os = "windows", target_os = "linux"))]
+    fn out_of_band_send_recv() {
+        let s1 = Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
+        s1.bind(&"127.0.0.1:0".parse::<SocketAddr>().unwrap().into())
+            .unwrap();
+        let s1_addr = s1.local_addr().unwrap();
+        s1.listen(1).unwrap();
+
+        let s2 = Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
+        s2.connect(&s1_addr).unwrap();
+
+        let (s3, _) = s1.accept().unwrap();
+
+        let mut buf = [0; 10];
+        
+        s2.send(&mut buf).unwrap();
+        
+        assert_eq!(s2.send_out_of_band(&mut [b"!"[0]]).unwrap(), 1);
+        
+        assert_eq!(s3.recv_out_of_band(&mut buf).unwrap(), 1);
+        assert_eq!(buf[0], b"!"[0]);
+        assert_eq!(s3.recv(&mut buf).unwrap(), 10);
+    }
+
+    #[test]
+    fn tcp() {
+        let s1 = Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
+        s1.bind(&"127.0.0.1:0".parse::<SocketAddr>().unwrap().into())
+            .unwrap();
+        let s1_addr = s1.local_addr().unwrap();
+        s1.listen(1).unwrap();
+
+        let s2 = Socket::new(Domain::ipv4(), Type::stream(), None).unwrap();
+        s2.connect(&s1_addr).unwrap();
+
+        let (s3, _) = s1.accept().unwrap();
+
+        let mut buf = [0; 11];
+        assert_eq!(s2.send(&mut buf).unwrap(), 11);
+        assert_eq!(s3.recv(&mut buf).unwrap(), 11);
     }
 }
