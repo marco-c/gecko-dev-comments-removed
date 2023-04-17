@@ -39,11 +39,11 @@ class MsaaDocAccessible : public ia2AccessibleHypertext {
   
 
 
-  void AddID(uint32_t aID, AccessibleWrap* aAcc) {
+  void AddID(uint32_t aID, Accessible* aAcc) {
     mIDToAccessibleMap.InsertOrUpdate(aID, aAcc);
   }
   void RemoveID(uint32_t aID) { mIDToAccessibleMap.Remove(aID); }
-  AccessibleWrap* GetAccessibleByID(uint32_t aID) const {
+  Accessible* GetAccessibleByID(uint32_t aID) const {
     return mIDToAccessibleMap.Get(aID);
   }
 
@@ -61,7 +61,7 @@ class MsaaDocAccessible : public ia2AccessibleHypertext {
   
 
 
-  nsTHashMap<nsUint32HashKey, AccessibleWrap*> mIDToAccessibleMap;
+  nsTHashMap<nsUint32HashKey, Accessible*> mIDToAccessibleMap;
 };
 
 }  
