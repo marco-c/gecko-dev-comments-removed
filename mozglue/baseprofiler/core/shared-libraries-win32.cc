@@ -4,7 +4,6 @@
 
 
 #include <windows.h>
-#include <psapi.h>
 
 #include "BaseProfilerSharedLibraries.h"
 
@@ -49,85 +48,89 @@ static void AppendHex(T aValue, std::string& aOut, bool aWithPadding) {
   }
 }
 
+
+
+
+
+
+static bool IsModuleUnsafeToLoad(const std::string& aModuleName) {
+#if defined(_M_ARM64)
+  return false;
+#else
+#  if defined(_M_AMD64)
+  LPCWSTR kNvidiaShimDriver = L"nvd3d9wrapx.dll";
+  LPCWSTR kNvidiaInitDriver = L"nvinitx.dll";
+#  elif defined(_M_IX86)
+  LPCWSTR kNvidiaShimDriver = L"nvd3d9wrap.dll";
+  LPCWSTR kNvidiaInitDriver = L"nvinit.dll";
+#  endif
+  constexpr std::string_view detoured_dll = "detoured.dll";
+  return std::equal(aModuleName.cbegin(), aModuleName.cend(),
+                    detoured_dll.cbegin(), detoured_dll.cend(),
+                    [](char aModuleChar, char aDetouredChar) {
+                      return std::tolower(aModuleChar) == aDetouredChar;
+                    }) &&
+         !mozilla::IsWin8OrLater() && ::GetModuleHandleW(kNvidiaShimDriver) &&
+         !::GetModuleHandleW(kNvidiaInitDriver);
+#endif  
+}
+
 SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
   SharedLibraryInfo sharedLibraryInfo;
 
-  auto addSharedLibraryFromModuleInfo = [&sharedLibraryInfo](
-                                            const wchar_t* aModulePath,
-                                            HMODULE aModule) {
-    mozilla::UniquePtr<char[]> utf8ModulePath(
-        mozilla::glue::WideToUTF8(aModulePath));
-    if (!utf8ModulePath) {
-      return;
-    }
+  auto addSharedLibraryFromModuleInfo =
+      [&sharedLibraryInfo](const wchar_t* aModulePath, HMODULE aModule) {
+        mozilla::UniquePtr<char[]> utf8ModulePath(
+            mozilla::glue::WideToUTF8(aModulePath));
+        if (!utf8ModulePath) {
+          return;
+        }
 
-    MODULEINFO module = {0};
-    if (!GetModuleInformation(mozilla::nt::kCurrentProcess, aModule, &module,
-                              sizeof(MODULEINFO))) {
-      return;
-    }
+        std::string modulePathStr(utf8ModulePath.get());
+        size_t pos = modulePathStr.find_last_of("\\/");
+        std::string moduleNameStr = (pos != std::string::npos)
+                                        ? modulePathStr.substr(pos + 1)
+                                        : modulePathStr;
 
-    std::string modulePathStr(utf8ModulePath.get());
-    size_t pos = modulePathStr.find_last_of("\\/");
-    std::string moduleNameStr = (pos != std::string::npos)
-                                    ? modulePathStr.substr(pos + 1)
-                                    : modulePathStr;
+        
+        if (IsModuleUnsafeToLoad(moduleNameStr)) {
+          return;
+        }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-#if !defined(_M_ARM64)
-#  if defined(_M_AMD64)
-    LPCWSTR kNvidiaShimDriver = L"nvd3d9wrapx.dll";
-    LPCWSTR kNvidiaInitDriver = L"nvinitx.dll";
-#  elif defined(_M_IX86)
-    LPCWSTR kNvidiaShimDriver = L"nvd3d9wrap.dll";
-    LPCWSTR kNvidiaInitDriver = L"nvinit.dll";
-#  endif
-    constexpr std::string_view detoured_dll = "detoured.dll";
-    if (std::equal(moduleNameStr.cbegin(), moduleNameStr.cend(),
-                   detoured_dll.cbegin(), detoured_dll.cend(),
-                   [](char aModuleChar, char aDetouredChar) {
-                     return std::tolower(aModuleChar) == aDetouredChar;
-                   }) &&
-        !mozilla::IsWin8OrLater() && ::GetModuleHandleW(kNvidiaShimDriver) &&
-        !::GetModuleHandleW(kNvidiaInitDriver)) {
-      const std::string pdbNameStr = "detoured.pdb";
-      SharedLibrary shlib((uintptr_t)module.lpBaseOfDll,
-                          (uintptr_t)module.lpBaseOfDll + module.SizeOfImage,
-                          0,  
-                          "000000000000000000000000000000000", moduleNameStr,
-                          modulePathStr, pdbNameStr, pdbNameStr, "", "");
-      sharedLibraryInfo.AddSharedLibrary(shlib);
-      return;
-    }
-#endif  
+        
+        
+        
+        
+        
+        
+        
+        
+        nsModuleHandle handleLock(::LoadLibraryExW(
+            aModulePath, NULL,
+            LOAD_LIBRARY_AS_DATAFILE | LOAD_LIBRARY_AS_IMAGE_RESOURCE));
+        if (!handleLock) {
+          return;
+        }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    nsModuleHandle handleLock(::LoadLibraryExW(
-        aModulePath, NULL,
-        LOAD_LIBRARY_AS_DATAFILE | LOAD_LIBRARY_AS_IMAGE_RESOURCE));
+        mozilla::nt::PEHeaders headers(handleLock.get());
+        if (!headers) {
+          return;
+        }
 
-    std::string breakpadId;
-    std::string pdbPathStr;
-    std::string pdbNameStr;
-    std::string versionStr;
-    if (handleLock) {
-      mozilla::nt::PEHeaders headers(handleLock.get());
-      if (headers) {
+        mozilla::Maybe<mozilla::Range<const uint8_t>> bounds =
+            headers.GetBounds();
+        if (!bounds) {
+          return;
+        }
+
+        
+        
+        const uintptr_t modStart = reinterpret_cast<uintptr_t>(aModule);
+        const uintptr_t modEnd = modStart + bounds->length();
+
+        std::string breakpadId;
+        std::string pdbPathStr;
+        std::string pdbNameStr;
         if (const auto* debugInfo = headers.GetPdbInfo()) {
           MOZ_ASSERT(breakpadId.empty());
           const GUID& pdbSig = debugInfo->pdbSignature;
@@ -149,6 +152,7 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
                                                   : pdbPathStr;
         }
 
+        std::string versionStr;
         uint64_t version;
         if (headers.GetVersionInfo(version)) {
           versionStr += std::to_string((version >> 48) & 0xFFFF);
@@ -159,16 +163,13 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
           versionStr += '.';
           versionStr += std::to_string(version & 0xFFFF);
         }
-      }
-    }
 
-    SharedLibrary shlib((uintptr_t)module.lpBaseOfDll,
-                        (uintptr_t)module.lpBaseOfDll + module.SizeOfImage,
-                        0,  
-                        breakpadId, moduleNameStr, modulePathStr, pdbNameStr,
-                        pdbPathStr, versionStr, "");
-    sharedLibraryInfo.AddSharedLibrary(shlib);
-  };
+        SharedLibrary shlib(modStart, modEnd,
+                            0,  
+                            breakpadId, moduleNameStr, modulePathStr,
+                            pdbNameStr, pdbPathStr, versionStr, "");
+        sharedLibraryInfo.AddSharedLibrary(shlib);
+      };
 
   mozilla::EnumerateProcessModules(addSharedLibraryFromModuleInfo);
   return sharedLibraryInfo;

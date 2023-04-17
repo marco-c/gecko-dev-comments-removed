@@ -4,7 +4,6 @@
 
 
 #include <windows.h>
-#include <psapi.h>
 
 #include "shared-libraries.h"
 #include "nsWindowsHelpers.h"
@@ -14,60 +13,47 @@
 #include "mozilla/WindowsVersion.h"
 #include "nsPrintfCString.h"
 
+
+
+
+
+
+static bool IsModuleUnsafeToLoad(const nsAString& aModuleName) {
+#if defined(_M_ARM64)
+  return false;
+#else
+#  if defined(_M_AMD64)
+  LPCWSTR kNvidiaShimDriver = L"nvd3d9wrapx.dll";
+  LPCWSTR kNvidiaInitDriver = L"nvinitx.dll";
+#  elif defined(_M_IX86)
+  LPCWSTR kNvidiaShimDriver = L"nvd3d9wrap.dll";
+  LPCWSTR kNvidiaInitDriver = L"nvinit.dll";
+#  endif
+  return aModuleName.LowerCaseEqualsLiteral("detoured.dll") &&
+         !mozilla::IsWin8OrLater() && ::GetModuleHandleW(kNvidiaShimDriver) &&
+         !::GetModuleHandleW(kNvidiaInitDriver);
+#endif  
+}
+
 SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
   SharedLibraryInfo sharedLibraryInfo;
 
   auto addSharedLibraryFromModuleInfo = [&sharedLibraryInfo](
                                             const wchar_t* aModulePath,
                                             HMODULE aModule) {
-    MODULEINFO module = {0};
-    if (!GetModuleInformation(mozilla::nt::kCurrentProcess, aModule, &module,
-                              sizeof(MODULEINFO))) {
+    nsDependentSubstring moduleNameStr(
+        mozilla::nt::GetLeafName(nsDependentString(aModulePath)));
+
+    
+    if (IsModuleUnsafeToLoad(moduleNameStr)) {
       return;
     }
 
-    nsAutoString modulePathStr(aModulePath);
-    nsAutoString moduleNameStr = modulePathStr;
-    int32_t pos = moduleNameStr.RFindCharInSet(u"\\/");
-    if (pos != kNotFound) {
-      moduleNameStr.Cut(0, pos + 1);
-    }
-
     
-    
-    
-    
-    
-    
-    
-    
-    
-#if !defined(_M_ARM64)
-#  if defined(_M_AMD64)
-    LPCWSTR kNvidiaShimDriver = L"nvd3d9wrapx.dll";
-    LPCWSTR kNvidiaInitDriver = L"nvinitx.dll";
-#  elif defined(_M_IX86)
-    LPCWSTR kNvidiaShimDriver = L"nvd3d9wrap.dll";
-    LPCWSTR kNvidiaInitDriver = L"nvinit.dll";
-#  endif
-    if (moduleNameStr.LowerCaseEqualsLiteral("detoured.dll") &&
-        !mozilla::IsWin8OrLater() && ::GetModuleHandle(kNvidiaShimDriver) &&
-        !::GetModuleHandle(kNvidiaInitDriver)) {
-      constexpr auto pdbNameStr = u"detoured.pdb"_ns;
-      SharedLibrary shlib((uintptr_t)module.lpBaseOfDll,
-                          (uintptr_t)module.lpBaseOfDll + module.SizeOfImage,
-                          0,  
-                          "000000000000000000000000000000000"_ns, moduleNameStr,
-                          modulePathStr, pdbNameStr, pdbNameStr, ""_ns, "");
-      sharedLibraryInfo.AddSharedLibrary(shlib);
+    if (mozilla::IsEafPlusEnabled() &&
+        moduleNameStr.LowerCaseEqualsLiteral("ntdll.dll")) {
       return;
     }
-#endif  
-
-    
-    
-    bool canGetPdbInfo = (!mozilla::IsEafPlusEnabled() ||
-                          !moduleNameStr.LowerCaseEqualsLiteral("ntdll.dll"));
 
     
     
@@ -80,52 +66,60 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
     nsModuleHandle handleLock(::LoadLibraryExW(
         aModulePath, NULL,
         LOAD_LIBRARY_AS_DATAFILE | LOAD_LIBRARY_AS_IMAGE_RESOURCE));
-
-    nsAutoCString breakpadId;
-    nsAutoCString versionStr;
-    nsAutoString pdbPathStr;
-    nsAutoString pdbNameStr;
-    if (handleLock && canGetPdbInfo) {
-      mozilla::nt::PEHeaders headers(handleLock.get());
-      if (headers) {
-        if (const auto* debugInfo = headers.GetPdbInfo()) {
-          MOZ_ASSERT(breakpadId.IsEmpty());
-          const GUID& pdbSig = debugInfo->pdbSignature;
-          breakpadId.AppendPrintf(
-              "%08X"                              
-              "%04X%04X"                          
-              "%02X%02X%02X%02X%02X%02X%02X%02X"  
-              "%X",                               
-              pdbSig.Data1, pdbSig.Data2, pdbSig.Data3, pdbSig.Data4[0],
-              pdbSig.Data4[1], pdbSig.Data4[2], pdbSig.Data4[3],
-              pdbSig.Data4[4], pdbSig.Data4[5], pdbSig.Data4[6],
-              pdbSig.Data4[7], debugInfo->pdbAge);
-
-          
-          
-          
-          pdbPathStr = NS_ConvertUTF8toUTF16(debugInfo->pdbFileName);
-          pdbNameStr = pdbPathStr;
-          int32_t pos = pdbNameStr.RFindCharInSet(u"\\/");
-          if (pos != kNotFound) {
-            pdbNameStr.Cut(0, pos + 1);
-          }
-        }
-
-        uint64_t version;
-        if (headers.GetVersionInfo(version)) {
-          versionStr.AppendPrintf("%d.%d.%d.%d", (version >> 48) & 0xFFFF,
-                                  (version >> 32) & 0xFFFF,
-                                  (version >> 16) & 0xFFFF, version & 0xFFFF);
-        }
-      }
+    if (!handleLock) {
+      return;
     }
 
-    SharedLibrary shlib((uintptr_t)module.lpBaseOfDll,
-                        (uintptr_t)module.lpBaseOfDll + module.SizeOfImage,
+    mozilla::nt::PEHeaders headers(handleLock.get());
+    if (!headers) {
+      return;
+    }
+
+    mozilla::Maybe<mozilla::Range<const uint8_t>> bounds = headers.GetBounds();
+    if (!bounds) {
+      return;
+    }
+
+    
+    
+    const uintptr_t modStart = reinterpret_cast<uintptr_t>(aModule);
+    const uintptr_t modEnd = modStart + bounds->length();
+
+    nsAutoCString breakpadId;
+    nsAutoString pdbPathStr;
+    if (const auto* debugInfo = headers.GetPdbInfo()) {
+      MOZ_ASSERT(breakpadId.IsEmpty());
+      const GUID& pdbSig = debugInfo->pdbSignature;
+      breakpadId.AppendPrintf(
+          "%08X"                              
+          "%04X%04X"                          
+          "%02X%02X%02X%02X%02X%02X%02X%02X"  
+          "%X",                               
+          pdbSig.Data1, pdbSig.Data2, pdbSig.Data3, pdbSig.Data4[0],
+          pdbSig.Data4[1], pdbSig.Data4[2], pdbSig.Data4[3], pdbSig.Data4[4],
+          pdbSig.Data4[5], pdbSig.Data4[6], pdbSig.Data4[7], debugInfo->pdbAge);
+
+      
+      
+      
+      pdbPathStr = NS_ConvertUTF8toUTF16(debugInfo->pdbFileName);
+    }
+
+    nsAutoCString versionStr;
+    uint64_t version;
+    if (headers.GetVersionInfo(version)) {
+      versionStr.AppendPrintf("%d.%d.%d.%d", (version >> 48) & 0xFFFF,
+                              (version >> 32) & 0xFFFF,
+                              (version >> 16) & 0xFFFF, version & 0xFFFF);
+    }
+
+    const nsString& pdbNameStr =
+        PromiseFlatString(mozilla::nt::GetLeafName(pdbPathStr));
+    SharedLibrary shlib(modStart, modEnd,
                         0,  
-                        breakpadId, moduleNameStr, modulePathStr, pdbNameStr,
-                        pdbPathStr, versionStr, "");
+                        breakpadId, PromiseFlatString(moduleNameStr),
+                        nsDependentString(aModulePath), pdbNameStr, pdbPathStr,
+                        versionStr, "");
     sharedLibraryInfo.AddSharedLibrary(shlib);
   };
 
