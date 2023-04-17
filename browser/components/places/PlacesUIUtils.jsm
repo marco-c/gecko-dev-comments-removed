@@ -53,6 +53,10 @@ let InternalFaviconLoader = {
   
 
 
+
+
+
+
   _cancelRequest({ uri, innerWindowID, timerID, callback }, reason) {
     
     let request = callback.request;
@@ -73,6 +77,9 @@ let InternalFaviconLoader = {
   },
 
   
+
+
+
 
 
   removeRequestsForInner(innerID) {
@@ -99,6 +106,9 @@ let InternalFaviconLoader = {
 
 
 
+
+
+
   onUnload(win) {
     let loadDataForWindow = gFaviconLoadDataMap.get(win);
     if (loadDataForWindow) {
@@ -110,6 +120,7 @@ let InternalFaviconLoader = {
   },
 
   
+
 
 
 
@@ -140,6 +151,10 @@ let InternalFaviconLoader = {
   },
 
   
+
+
+
+
 
 
 
@@ -281,6 +296,7 @@ var PlacesUIUtils = {
 
 
 
+
   async showBookmarkDialog(aInfo, aParentWindow = null) {
     
     
@@ -359,6 +375,12 @@ var PlacesUIUtils = {
   },
 
   
+
+
+
+
+
+
 
 
 
@@ -520,6 +542,9 @@ var PlacesUIUtils = {
 
 
 
+
+
+
   markPageAsTyped: function PUIU_markPageAsTyped(aURL) {
     PlacesUtils.history.markPageAsTyped(
       Services.uriFixup.getFixupURIInfo(aURL).preferredURI
@@ -533,6 +558,9 @@ var PlacesUIUtils = {
 
 
 
+
+
+
   markPageAsFollowedBookmark: function PUIU_markPageAsFollowedBookmark(aURL) {
     PlacesUtils.history.markPageAsFollowedBookmark(
       Services.uriFixup.getFixupURIInfo(aURL).preferredURI
@@ -540,6 +568,9 @@ var PlacesUIUtils = {
   },
 
   
+
+
+
 
 
 
@@ -679,6 +710,12 @@ var PlacesUIUtils = {
   
 
 
+
+
+
+
+
+
   openTabset(aItemsToOpen, aEvent, aWindow) {
     if (!aItemsToOpen.length) {
       return;
@@ -802,6 +839,15 @@ var PlacesUIUtils = {
   },
 
   
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1132,6 +1178,9 @@ var PlacesUIUtils = {
   },
 
   
+
+
+
 
 
 

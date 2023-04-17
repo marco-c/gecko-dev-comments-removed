@@ -13,6 +13,8 @@ var wasCollapsed = toolbar.collapsed;
 
 
 
+
+
 function fakeOpenPopup(aPopup) {
   var popupEvent = document.createEvent("MouseEvent");
   popupEvent.initMouseEvent(
@@ -310,6 +312,7 @@ var bookmarksObserver = {
 
 
 
+
 function searchItemInView(itemGuid, view, validator) {
   switch (view) {
     case "toolbar":
@@ -322,6 +325,9 @@ function searchItemInView(itemGuid, view, validator) {
 
   return [null, null, false];
 }
+
+
+
 
 
 
@@ -374,6 +380,9 @@ function getNodeForToolbarItem(itemGuid, validator) {
 
 
 
+
+
+
 function getNodeForMenuItem(itemGuid, validator) {
   var menu = document.getElementById("bookmarksMenu");
 
@@ -411,6 +420,9 @@ function getNodeForMenuItem(itemGuid, validator) {
 
   return findNode(menu.lastElementChild);
 }
+
+
+
 
 
 
@@ -475,6 +487,7 @@ function getNodeForSidebarItem(itemGuid, validator) {
   }
   return [null, null, false];
 }
+
 
 
 

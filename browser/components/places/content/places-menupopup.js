@@ -14,6 +14,9 @@
     "resource://gre/modules/AppConstants.jsm"
   );
 
+  
+
+
   class MozPlacesPopup extends MozElements.MozMenuPopup {
     constructor() {
       super();
@@ -226,6 +229,10 @@
     
 
 
+
+
+
+
     _hideDropIndicator(aEvent) {
       let target = aEvent.target;
 
@@ -242,6 +249,11 @@
     }
 
     
+
+
+
+
+
 
 
 
@@ -566,6 +578,9 @@
   customElements.define("places-popup", MozPlacesPopup, {
     extends: "menupopup",
   });
+
+  
+
 
   class MozPlacesPopupArrow extends MozPlacesPopup {
     constructor() {

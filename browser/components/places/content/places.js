@@ -123,6 +123,7 @@ var PlacesOrganizer = {
 
 
 
+
   selectLeftPaneContainerByHierarchy(aHierarchy) {
     if (!aHierarchy) {
       throw new Error("Containers hierarchy not specified");
@@ -467,6 +468,7 @@ var PlacesOrganizer = {
 
 
 
+
   getCurrentOptions: function PO_getCurrentOptions() {
     return PlacesUtils.asQuery(ContentArea.currentView.result.root)
       .queryOptions;
@@ -603,6 +605,8 @@ var PlacesOrganizer = {
   
 
 
+
+
   async onRestoreMenuItemClick(aMenuItem) {
     let backupName = aMenuItem.getAttribute("value");
     let backupFilePaths = await PlacesBackups.getBackupFiles();
@@ -642,6 +646,9 @@ var PlacesOrganizer = {
   },
 
   
+
+
+
 
 
   restoreBookmarksFromFile: function PO_restoreBookmarksFromFile(aFilePath) {
@@ -1155,6 +1162,8 @@ var ViewMenu = {
   },
 
   
+
+
 
 
   populateSortMenu: function VM_populateSortMenu(event) {

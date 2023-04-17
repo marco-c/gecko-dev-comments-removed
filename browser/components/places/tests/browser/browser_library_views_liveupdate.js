@@ -198,6 +198,7 @@ async function removeAndCheckItem(itemData) {
 
 
 
+
 function getNodeForTreeItem(aItemGuid, aTree) {
   function findNode(aContainerIndex) {
     if (aTree.view.isContainerEmpty(aContainerIndex)) {

@@ -8,6 +8,11 @@
 
 
 
+
+
+
+
+
 function PlacesViewBase(aPlace, aOptions = {}) {
   if ("rootElt" in aOptions) {
     this._rootElt = aOptions.rootElt;
@@ -114,6 +119,7 @@ PlacesViewBase.prototype = {
   },
 
   
+
 
 
 
@@ -1587,6 +1593,10 @@ PlacesToolbar.prototype = {
 
 
 
+
+
+
+
   _getDropPoint: function PT__getDropPoint(aEvent) {
     if (!PlacesUtils.nodeIsFolder(this._resultNode)) {
       return null;
@@ -2003,6 +2013,13 @@ PlacesToolbar.prototype = {
     }
   },
 };
+
+
+
+
+
+
+
 
 
 

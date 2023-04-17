@@ -687,6 +687,9 @@ PlacesController.prototype = {
   
 
 
+
+
+
   openSelectionInTabs: function PC_openLinksInTabs(aEvent) {
     var node = this._view.selectedNode;
     var nodes = this._view.selectedNodes;
@@ -763,7 +766,6 @@ PlacesController.prototype = {
 
   _shouldSkipNode: function PC_shouldSkipNode(node, pastFolders) {
     
-
 
 
 
@@ -1272,6 +1274,7 @@ PlacesController.prototype = {
 
 
 
+
   disallowInsertion(container) {
     if (!container) {
       throw new Error("empty container");
@@ -1362,6 +1365,7 @@ var PlacesControllerDragHelper = {
 
 
 
+
   getFirstValidFlavor: function PCDH_getFirstValidFlavor(aFlavors) {
     for (let i = 0; i < aFlavors.length; i++) {
       if (PlacesUIUtils.SUPPORTED_FLAVORS.includes(aFlavors[i])) {
@@ -1380,6 +1384,9 @@ var PlacesControllerDragHelper = {
   },
 
   
+
+
+
 
 
 

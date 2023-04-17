@@ -8,6 +8,9 @@
 
 
 {
+  
+
+
   class MozPlacesTree extends customElements.get("tree") {
     constructor() {
       super();
@@ -156,6 +159,7 @@
       return this.getAttribute("disableUserActions") == "true";
     }
     
+
 
 
     set view(val) {
@@ -461,6 +465,8 @@
 
 
 
+
+
     selectPlaceURI(placeURI) {
       
       if (this.hasSelection && this.selectedNode.uri == placeURI) {
@@ -523,6 +529,8 @@
     }
 
     
+
+
 
 
 
@@ -660,6 +668,11 @@
 
 
 
+
+
+
+
+
     selectItems(aGuids, aOpenContainers) {
       
       if (this.flatList) {
@@ -687,6 +700,10 @@
       var checkedGuidsSet = new Set();
 
       
+
+
+
+
 
 
 

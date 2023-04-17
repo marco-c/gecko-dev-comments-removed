@@ -35,6 +35,8 @@ function openLibrary(callback, aLeftPaneRoot) {
 
 
 
+
+
 function promiseLibrary(aLeftPaneRoot) {
   return new Promise(resolve => {
     let library = Services.wm.getMostRecentWindow("Places:Organizer");
@@ -108,6 +110,8 @@ function checkLibraryPaneVisibility(library, selectedPane) {
 
 
 
+
+
 function promiseClipboard(aPopulateClipboardFn, aFlavor) {
   return new Promise((resolve, reject) => {
     waitForClipboard(
@@ -164,6 +168,7 @@ function synthesizeClickOnSelectedTreeCell(aTree, aOptions) {
 
 
 
+
 function promiseSetToolbarVisibility(aToolbar, aVisible, aCallback) {
   if (isToolbarVisible(aToolbar) != aVisible) {
     let visibilityChanged = TestUtils.waitForCondition(
@@ -191,6 +196,10 @@ function isToolbarVisible(aToolbar) {
   
   return hidingValue !== "true" && hidingValue !== hidingAttribute;
 }
+
+
+
+
 
 
 
@@ -299,6 +308,8 @@ var withBookmarksDialog = async function(
     await dialogClosePromise;
   }
 };
+
+
 
 
 
