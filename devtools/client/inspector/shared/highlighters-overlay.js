@@ -726,7 +726,7 @@ class HighlightersOverlay {
 
 
   async toggleShapesHighlighter(node, options, textProperty) {
-    const shapesEditor = await this.getInContextEditor("shapesEditor");
+    const shapesEditor = await this.getInContextEditor(node, "shapesEditor");
     if (!shapesEditor) {
       return;
     }
@@ -743,7 +743,7 @@ class HighlightersOverlay {
 
 
   async showShapesHighlighter(node, options) {
-    const shapesEditor = await this.getInContextEditor("shapesEditor");
+    const shapesEditor = await this.getInContextEditor(node, "shapesEditor");
     if (!shapesEditor) {
       return;
     }
@@ -771,8 +771,10 @@ class HighlightersOverlay {
 
 
 
-  async hideShapesHighlighter() {
-    const shapesEditor = await this.getInContextEditor("shapesEditor");
+
+
+  async hideShapesHighlighter(node) {
+    const shapesEditor = await this.getInContextEditor(node, "shapesEditor");
     if (!shapesEditor) {
       return;
     }
@@ -1393,7 +1395,8 @@ class HighlightersOverlay {
 
 
 
-  async getInContextEditor(type) {
+
+  async getInContextEditor(node, type) {
     if (this.editors[type]) {
       return this.editors[type];
     }
@@ -1402,7 +1405,10 @@ class HighlightersOverlay {
 
     switch (type) {
       case "shapesEditor":
-        const highlighter = await this._getHighlighter("ShapesHighlighter");
+        const highlighter = await this._getHighlighterTypeForNode(
+          "ShapesHighlighter",
+          node
+        );
         if (!highlighter) {
           return null;
         }
