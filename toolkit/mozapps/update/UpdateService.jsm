@@ -819,7 +819,9 @@ XPCOMUtils.defineLazyGetter(
 
 
 
-function getCanStageUpdates() {
+
+
+function getCanStageUpdates(transient = true) {
   
   if (!Services.prefs.getBoolPref(PREF_APP_UPDATE_STAGING_ENABLED, false)) {
     LOG(
@@ -836,7 +838,7 @@ function getCanStageUpdates() {
     return true;
   }
 
-  if (!hasUpdateMutex()) {
+  if (transient && !hasUpdateMutex()) {
     LOG(
       "getCanStageUpdates - unable to apply updates because another " +
         "instance of the application is already handling updates for this " +
@@ -863,7 +865,9 @@ function getCanStageUpdates() {
 
 
 
-function getCanUseBits() {
+
+
+function getCanUseBits(transient = true) {
   if (AppConstants.platform != "win") {
     LOG("getCanUseBits - Not using BITS because this is not Windows");
     return "NoBits_NotWindows";
@@ -877,10 +881,6 @@ function getCanUseBits() {
     LOG("getCanUseBits - Not using BITS. Disabled by pref.");
     return "NoBits_Pref";
   }
-  if (gBITSInUseByAnotherUser) {
-    LOG("getCanUseBits - Not using BITS. Already in use by another user");
-    return "NoBits_OtherUser";
-  }
   
   
   
@@ -892,6 +892,10 @@ function getCanUseBits() {
   ) {
     LOG("getCanUseBits - Not using BITS because of proxy usage");
     return "NoBits_Proxy";
+  }
+  if (transient && gBITSInUseByAnotherUser) {
+    LOG("getCanUseBits - Not using BITS. Already in use by another user");
+    return "NoBits_OtherUser";
   }
   LOG("getCanUseBits - BITS can be used to download updates");
   return "CanUseBits";
@@ -3648,10 +3652,10 @@ UpdateService.prototype = {
   
 
 
-  get canCheckForUpdates() {
+  get canUsuallyCheckForUpdates() {
     if (this.disabledByPolicy) {
       LOG(
-        "UpdateService.canCheckForUpdates - unable to automatically check " +
+        "UpdateService.canUsuallyCheckForUpdates - unable to automatically check " +
           "for updates, the option has been disabled by the administrator."
       );
       return false;
@@ -3660,7 +3664,7 @@ UpdateService.prototype = {
     
     if (!UpdateUtils.ABI) {
       LOG(
-        "UpdateService.canCheckForUpdates - unable to check for updates, " +
+        "UpdateService.canUsuallyCheckForUpdates - unable to check for updates, " +
           "unknown ABI"
       );
       return false;
@@ -3669,9 +3673,21 @@ UpdateService.prototype = {
     
     if (!UpdateUtils.OSVersion) {
       LOG(
-        "UpdateService.canCheckForUpdates - unable to check for updates, " +
+        "UpdateService.canUsuallyCheckForUpdates - unable to check for updates, " +
           "unknown OS version"
       );
+      return false;
+    }
+
+    LOG("UpdateService.canUsuallyCheckForUpdates - able to check for updates");
+    return true;
+  },
+
+  
+
+
+  get canCheckForUpdates() {
+    if (!this.canUsuallyCheckForUpdates) {
       return false;
     }
 
@@ -3706,10 +3722,26 @@ UpdateService.prototype = {
   
 
 
+  get canUsuallyApplyUpdates() {
+    return getCanApplyUpdates();
+  },
+
+  
+
+
   get canApplyUpdates() {
     return (
-      getCanApplyUpdates() && hasUpdateMutex() && !isOtherInstanceRunning()
+      this.canUsuallyApplyUpdates &&
+      hasUpdateMutex() &&
+      !isOtherInstanceRunning()
     );
+  },
+
+  
+
+
+  get canUsuallyStageUpdates() {
+    return getCanStageUpdates(false);
   },
 
   
@@ -3717,6 +3749,20 @@ UpdateService.prototype = {
 
   get canStageUpdates() {
     return getCanStageUpdates();
+  },
+
+  
+
+
+  get canUsuallyUseBits() {
+    return getCanUseBits(false) == "CanUseBits";
+  },
+
+  
+
+
+  get canUseBits() {
+    return getCanUseBits() == "CanUseBits";
   },
 
   
