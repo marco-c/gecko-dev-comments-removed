@@ -7,6 +7,12 @@
 
 
 
+ChromeUtils.defineModuleGetter(
+  this,
+  "DoHConfigController",
+  "resource:///modules/DoHConfig.jsm"
+);
+
 document
   .getElementById("ConnectionsDialog")
   .addEventListener("dialoghelp", window.top.openPrefsHelp);
@@ -33,12 +39,15 @@ Preferences.addAll([
   { id: "network.proxy.backup.ssl_port", type: "int" },
   { id: "network.trr.mode", type: "int" },
   { id: "network.trr.uri", type: "string" },
-  { id: "network.trr.resolvers", type: "string" },
   { id: "network.trr.custom_uri", type: "string" },
   { id: "doh-rollout.enabled", type: "bool" },
   { id: "doh-rollout.disable-heuristics", type: "bool" },
   { id: "doh-rollout.skipHeuristicsCheck", type: "bool" },
 ]);
+
+const DoHConfigObserver = () => {
+  gConnectionsDialog.initDnsOverHttpsUI();
+};
 
 window.addEventListener(
   "DOMContentLoaded",
@@ -56,9 +65,20 @@ window.addEventListener(
       gConnectionsDialog.updateDnsOverHttpsUI();
     });
 
-    Preferences.get("network.trr.resolvers").on("change", () => {
-      gConnectionsDialog.initDnsOverHttpsUI();
-    });
+    Services.obs.addObserver(
+      DoHConfigObserver,
+      DoHConfigController.kConfigUpdateTopic
+    );
+    window.addEventListener(
+      "unload",
+      e => {
+        Services.obs.removeObserver(
+          DoHConfigObserver,
+          DoHConfigController.kConfigUpdateTopic
+        );
+      },
+      { once: true }
+    );
 
     
     
@@ -107,9 +127,12 @@ var gConnectionsDialog = {
       if (customValue) {
         Services.prefs.setStringPref("network.trr.uri", customValue);
       } else {
-        Services.prefs.clearUserPref("network.trr.uri");
+        Services.prefs.setStringPref(
+          "network.trr.uri",
+          DoHConfigController.currentConfig.fallbackProviderURI
+        );
       }
-    } else {
+    } else if (this.isDnsOverHttpsEnabled()) {
       Services.prefs.setStringPref(
         "network.trr.uri",
         dnsOverHttpsResolverChoice
@@ -399,30 +422,14 @@ var gConnectionsDialog = {
   },
 
   get dnsOverHttpsResolvers() {
-    let rawValue = Preferences.get("network.trr.resolvers", "").value;
+    let providers = DoHConfigController.currentConfig.providerList;
     
-    let defaultURI = Preferences.get("network.trr.uri", "").defaultValue;
-    let providers = [];
-    if (rawValue) {
-      try {
-        providers = JSON.parse(rawValue);
-      } catch (ex) {
-        Cu.reportError(
-          `Bad JSON data in pref network.trr.resolvers: ${rawValue}`
-        );
-      }
-    }
-    if (!Array.isArray(providers)) {
-      Cu.reportError(
-        `Expected a JSON array in network.trr.resolvers: ${rawValue}`
-      );
-      providers = [];
-    }
-    let defaultIndex = providers.findIndex(p => p.url == defaultURI);
+    let defaultURI = DoHConfigController.currentConfig.fallbackProviderURI;
+    let defaultIndex = providers.findIndex(p => p.uri == defaultURI);
     if (defaultIndex == -1 && defaultURI) {
       
       
-      providers.unshift({ url: defaultURI });
+      providers.unshift({ uri: defaultURI });
     }
     return providers;
   },
@@ -491,7 +498,7 @@ var gConnectionsDialog = {
         if (
           currentURI &&
           !customURI &&
-          !resolvers.find(r => r.url == currentURI)
+          !resolvers.find(r => r.uri == currentURI)
         ) {
           Services.prefs.setStringPref("network.trr.custom_uri", currentURI);
         }
@@ -536,24 +543,24 @@ var gConnectionsDialog = {
 
   initDnsOverHttpsUI() {
     let resolvers = this.dnsOverHttpsResolvers;
-    let defaultURI = Preferences.get("network.trr.uri").defaultValue;
+    let defaultURI = DoHConfigController.currentConfig.fallbackProviderURI;
     let currentURI = Preferences.get("network.trr.uri").value;
     let menu = document.getElementById("networkDnsOverHttpsResolverChoices");
 
     
     menu.removeAllItems();
     for (let resolver of resolvers) {
-      let item = menu.appendItem(undefined, resolver.url);
-      if (resolver.url == defaultURI) {
+      let item = menu.appendItem(undefined, resolver.uri);
+      if (resolver.uri == defaultURI) {
         document.l10n.setAttributes(
           item,
           "connection-dns-over-https-url-item-default",
           {
-            name: resolver.name || resolver.url,
+            name: resolver.UIName || resolver.uri,
           }
         );
       } else {
-        item.label = resolver.name || resolver.url;
+        item.label = resolver.UIName || resolver.uri;
       }
     }
     let lastItem = menu.appendItem(undefined, "custom");
@@ -564,7 +571,7 @@ var gConnectionsDialog = {
 
     
     let selectedIndex = currentURI
-      ? resolvers.findIndex(r => r.url == currentURI)
+      ? resolvers.findIndex(r => r.uri == currentURI)
       : 0;
     if (selectedIndex == -1) {
       
