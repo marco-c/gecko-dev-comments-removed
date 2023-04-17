@@ -29,21 +29,13 @@
 
 
 
-- (nsresult)setCursor:(nsCursor)aCursor;
+
+- (nsresult)setNonCustomCursor:(const nsIWidget::Cursor&)aCursor;
 
 
 
-
-
-
-
-
-
-
-- (nsresult)setCursorWithImage:(imgIContainer*)aCursorImage
-                      hotSpotX:(uint32_t)aHotspotX
-                      hotSpotY:(uint32_t)aHotspotY
-                   scaleFactor:(CGFloat)scaleFactor;
+- (nsresult)setCustomCursor:(const nsIWidget::Cursor&)aCursor
+          widgetScaleFactor:(CGFloat)aWidgetScaleFactor;
 
 
 

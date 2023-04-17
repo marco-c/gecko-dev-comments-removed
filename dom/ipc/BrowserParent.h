@@ -925,9 +925,7 @@ class BrowserParent final : public PBrowserParent,
 
   
   
-  nsCursor mCursor;
-  nsCOMPtr<imgIContainer> mCustomCursor;
-  uint32_t mCustomCursorHotspotX, mCustomCursorHotspotY;
+  nsIWidget::Cursor mCursor;
 
   nsTArray<nsString> mVerifyDropLinks;
 
