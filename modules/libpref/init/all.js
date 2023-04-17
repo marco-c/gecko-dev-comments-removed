@@ -4491,7 +4491,11 @@ pref("services.common.log.logger.tokenserverclient", "Debug");
 pref("devtools.jsonview.enabled", true);
 
 
-pref("devtools.theme", "auto", sticky);
+#ifdef MOZ_DEV_EDITION
+  pref("devtools.theme", "dark", sticky);
+#else
+  pref("devtools.theme", "light", sticky);
+#endif
 
 
 
