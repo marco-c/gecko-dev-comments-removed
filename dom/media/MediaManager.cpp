@@ -1067,8 +1067,12 @@ void MediaDevice::GetSettings(MediaTrackSettings& aOutSettings) const {
 
 NS_IMETHODIMP
 MediaDevice::GetMediaSource(nsAString& aMediaSource) {
-  aMediaSource.AssignASCII(
-      dom::MediaSourceEnumValues::GetString(GetMediaSource()));
+  if (mKind == MediaDeviceKind::Audiooutput) {
+    aMediaSource.Truncate();
+  } else {
+    aMediaSource.AssignASCII(
+        dom::MediaSourceEnumValues::GetString(GetMediaSource()));
+  }
   return NS_OK;
 }
 
