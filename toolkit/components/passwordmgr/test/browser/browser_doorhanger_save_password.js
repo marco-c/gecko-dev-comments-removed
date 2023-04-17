@@ -118,7 +118,7 @@ async function test_save_change(testData) {
 
       
       
-      let formSubmittedPromise = listenForTestNotification("ShowDoorhanger");
+      let formSubmittedPromise = listenForTestNotification("FormSubmit");
       await SpecialPowers.spawn(browser, [], async function() {
         let doc = this.content.document;
         doc.getElementById("form-basic").submit();

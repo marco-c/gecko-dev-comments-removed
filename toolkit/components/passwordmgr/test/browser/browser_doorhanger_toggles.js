@@ -302,7 +302,7 @@ async function testDoorhangerToggles({
         let { panel } = browser.ownerGlobal.PopupNotifications;
         
         info("Submitting the form");
-        let submittedPromise = listenForTestNotification("ShowDoorhanger");
+        let submittedPromise = listenForTestNotification("FormSubmit");
         let promiseShown = BrowserTestUtils.waitForEvent(panel, "popupshown");
         await submitForm(browser, "/");
         await submittedPromise;

@@ -112,7 +112,7 @@ add_task(async function test_edit_username() {
         
         
         info("Submitting the form");
-        let formSubmittedPromise = listenForTestNotification("ShowDoorhanger");
+        let formSubmittedPromise = listenForTestNotification("FormSubmit");
         let promiseShown = BrowserTestUtils.waitForEvent(
           PopupNotifications.panel,
           "popupshown",
