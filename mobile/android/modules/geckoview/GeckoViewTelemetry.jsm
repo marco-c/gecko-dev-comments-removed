@@ -3,7 +3,20 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["HistogramStopwatch"];
+var EXPORTED_SYMBOLS = ["HistogramStopwatch", "InitializationTracker"];
+
+var InitializationTracker = {
+  initialized: false,
+  onInitialized(profilerTime) {
+    if (!this.initialized) {
+      this.initialized = true;
+      ChromeUtils.addProfilerMarker(
+        "GeckoView Initialization END",
+        profilerTime
+      );
+    }
+  },
+};
 
 
 class HistogramStopwatch {
