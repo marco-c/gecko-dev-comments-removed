@@ -176,10 +176,9 @@ Modifiers FuzzingFunctions::InactivateModifiers(
 }
 
 
-void FuzzingFunctions::SynthesizeKeyboardEvents(const GlobalObject&,
-                                                const nsAString& aKeyValue,
-                                                const KeyboardEventInit& aDict,
-                                                ErrorResult& aRv) {
+void FuzzingFunctions::SynthesizeKeyboardEvents(
+    const GlobalObject& aGlobalObject, const nsAString& aKeyValue,
+    const KeyboardEventInit& aDict, ErrorResult& aRv) {
   
   uint32_t flags = 0;
   
@@ -269,19 +268,27 @@ void FuzzingFunctions::SynthesizeKeyboardEvents(const GlobalObject&,
   }
 
   
-  nsFocusManager* focusManager = nsFocusManager::GetFocusManager();
-  if (NS_WARN_IF(!focusManager)) {
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsPIDOMWindowInner> windowInner =
+      do_QueryInterface(aGlobalObject.GetAsSupports());
+  if (!windowInner) {
     aRv.Throw(NS_ERROR_NOT_AVAILABLE);
     return;
   }
 
-  nsPIDOMWindowOuter* activeWindow = focusManager->GetActiveWindow();
-  if (NS_WARN_IF(!activeWindow)) {
-    aRv.Throw(NS_ERROR_NOT_AVAILABLE);
+  nsPIDOMWindowOuter* inProcessTopWindowOuter =
+      windowInner->GetInProcessScriptableTop();
+  if (NS_WARN_IF(!inProcessTopWindowOuter)) {
+    aRv.Throw(NS_ERROR_FAILURE);
     return;
   }
 
-  nsIDocShell* docShell = activeWindow->GetDocShell();
+  nsIDocShell* docShell = inProcessTopWindowOuter->GetDocShell();
   if (NS_WARN_IF(!docShell)) {
     aRv.Throw(NS_ERROR_FAILURE);
     return;
@@ -299,9 +306,9 @@ void FuzzingFunctions::SynthesizeKeyboardEvents(const GlobalObject&,
     return;
   }
 
-  nsCOMPtr<nsPIDOMWindowInner> activeWindowInner =
-      activeWindow->EnsureInnerWindow();
-  if (NS_WARN_IF(!activeWindowInner)) {
+  nsCOMPtr<nsPIDOMWindowInner> inProcessTopWindowInner =
+      inProcessTopWindowOuter->EnsureInnerWindow();
+  if (NS_WARN_IF(!inProcessTopWindowInner)) {
     aRv.Throw(NS_ERROR_FAILURE);
     return;
   }
@@ -309,7 +316,7 @@ void FuzzingFunctions::SynthesizeKeyboardEvents(const GlobalObject&,
   RefPtr<TextInputProcessor> textInputProcessor = new TextInputProcessor();
   bool beganInputTransaction = false;
   aRv = textInputProcessor->BeginInputTransactionForFuzzing(
-      activeWindowInner, nullptr, &beganInputTransaction);
+      inProcessTopWindowInner, nullptr, &beganInputTransaction);
   if (NS_WARN_IF(aRv.Failed())) {
     return;
   }
