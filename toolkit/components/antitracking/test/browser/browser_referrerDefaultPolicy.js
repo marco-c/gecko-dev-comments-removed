@@ -274,6 +274,13 @@ async function testOnSameOrigin(private) {
 
 async function testOnNoReferrerWhenDowngrade(private) {
   
+  
+  
+  
+  
+  
+
+  
   await SpecialPowers.pushPrefEnv({
     set: [[pn("network.http.referer.defaultPolicy.trackers", private), 3]],
   });
@@ -283,19 +290,31 @@ async function testOnNoReferrerWhenDowngrade(private) {
   await SpecialPowers.pushPrefEnv({
     set: [[pn("network.http.referer.defaultPolicy.trackers", private), 2]],
   });
-  await testOnWindow(private, TEST_TOP_PAGE, "no-referrer-when-downgrade");
+  if (private) {
+    await testOnWindow(private, TEST_DOMAIN, "no-referrer-when-downgrade");
+  } else {
+    await testOnWindow(private, TEST_TOP_PAGE, "no-referrer-when-downgrade");
+  }
 
   
   await SpecialPowers.pushPrefEnv({
     set: [[pn("network.http.referer.defaultPolicy.trackers", private), 1]],
   });
-  await testOnWindow(private, TEST_TOP_PAGE, "no-referrer-when-downgrade");
+  if (private) {
+    await testOnWindow(private, "", "no-referrer-when-downgrade");
+  } else {
+    await testOnWindow(private, TEST_TOP_PAGE, "no-referrer-when-downgrade");
+  }
 
   
   await SpecialPowers.pushPrefEnv({
     set: [[pn("network.http.referer.defaultPolicy.trackers", private), 0]],
   });
-  await testOnWindow(private, TEST_TOP_PAGE, "no-referrer-when-downgrade");
+  if (private) {
+    await testOnWindow(private, "", "no-referrer-when-downgrade");
+  } else {
+    await testOnWindow(private, TEST_TOP_PAGE, "no-referrer-when-downgrade");
+  }
 }
 
 async function testOnOrigin(private) {
@@ -352,10 +371,18 @@ async function testOnStrictOrigin(private) {
 
 async function testOnOriginWhenCrossOrigin(private) {
   
+  
+  
+
+  
   await SpecialPowers.pushPrefEnv({
     set: [[pn("network.http.referer.defaultPolicy.trackers", private), 3]],
   });
-  await testOnWindow(private, TEST_DOMAIN, "origin-when-cross-origin");
+  if (private) {
+    await testOnWindow(private, TEST_TOP_PAGE, "origin-when-cross-origin");
+  } else {
+    await testOnWindow(private, TEST_DOMAIN, "origin-when-cross-origin");
+  }
 
   
   await SpecialPowers.pushPrefEnv({
@@ -367,13 +394,21 @@ async function testOnOriginWhenCrossOrigin(private) {
   await SpecialPowers.pushPrefEnv({
     set: [[pn("network.http.referer.defaultPolicy.trackers", private), 1]],
   });
-  await testOnWindow(private, TEST_DOMAIN, "origin-when-cross-origin");
+  if (private) {
+    await testOnWindow(private, "", "origin-when-cross-origin");
+  } else {
+    await testOnWindow(private, TEST_DOMAIN, "origin-when-cross-origin");
+  }
 
   
   await SpecialPowers.pushPrefEnv({
     set: [[pn("network.http.referer.defaultPolicy.trackers", private), 0]],
   });
-  await testOnWindow(private, TEST_DOMAIN, "origin-when-cross-origin");
+  if (private) {
+    await testOnWindow(private, "", "origin-when-cross-origin");
+  } else {
+    await testOnWindow(private, TEST_DOMAIN, "origin-when-cross-origin");
+  }
 }
 
 async function testOnStrictOriginWhenCrossOrigin(private) {
@@ -404,6 +439,10 @@ async function testOnStrictOriginWhenCrossOrigin(private) {
 
 async function testOnUnsafeUrl(private) {
   
+  
+  
+
+  
   await SpecialPowers.pushPrefEnv({
     set: [[pn("network.http.referer.defaultPolicy.trackers", private), 3]],
   });
@@ -413,19 +452,31 @@ async function testOnUnsafeUrl(private) {
   await SpecialPowers.pushPrefEnv({
     set: [[pn("network.http.referer.defaultPolicy.trackers", private), 2]],
   });
-  await testOnWindow(private, TEST_TOP_PAGE, "unsafe-url");
+  if (private) {
+    await testOnWindow(private, TEST_DOMAIN, "unsafe-url");
+  } else {
+    await testOnWindow(private, TEST_TOP_PAGE, "unsafe-url");
+  }
 
   
   await SpecialPowers.pushPrefEnv({
     set: [[pn("network.http.referer.defaultPolicy.trackers", private), 1]],
   });
-  await testOnWindow(private, TEST_TOP_PAGE, "unsafe-url");
+  if (private) {
+    await testOnWindow(private, "", "unsafe-url");
+  } else {
+    await testOnWindow(private, TEST_TOP_PAGE, "unsafe-url");
+  }
 
   
   await SpecialPowers.pushPrefEnv({
     set: [[pn("network.http.referer.defaultPolicy.trackers", private), 0]],
   });
-  await testOnWindow(private, TEST_TOP_PAGE, "unsafe-url");
+  if (private) {
+    await testOnWindow(private, "", "unsafe-url");
+  } else {
+    await testOnWindow(private, TEST_TOP_PAGE, "unsafe-url");
+  }
 }
 
 add_task(async function() {
