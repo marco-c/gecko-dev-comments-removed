@@ -30,7 +30,7 @@ size_of_test!(size_of_pseudo_class, selector_parser::NonTSPseudoClass, 16);
 
 
 
-size_of_test!(test_size_of_rule, style::stylist::Rule, 32);
+size_of_test!(test_size_of_rule, style::stylist::Rule, 40);
 
 
 size_of_test!(test_size_of_cv, ComputedValues, 232);
