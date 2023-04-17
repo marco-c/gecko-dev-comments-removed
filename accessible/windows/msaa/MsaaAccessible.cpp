@@ -1531,13 +1531,7 @@ MsaaAccessible::accLocation(
                                    kVarChildIdSelf);
   }
 
-  LocalAccessible* localAcc = LocalAcc();
-  if (!localAcc) {
-    return E_NOTIMPL;  
-  }
-
-  nsIntRect rect = localAcc->Bounds();
-
+  nsIntRect rect = Acc()->Bounds();
   *pxLeft = rect.X();
   *pyTop = rect.Y();
   *pcxWidth = rect.Width();
