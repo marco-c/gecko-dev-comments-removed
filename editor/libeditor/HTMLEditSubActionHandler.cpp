@@ -851,6 +851,27 @@ nsresult HTMLEditor::MaybeCreatePaddingBRElementForEmptyEditor() {
   return NS_OK;
 }
 
+nsresult HTMLEditor::EnsureNoPaddingBRElementForEmptyEditor() {
+  MOZ_ASSERT(IsEditActionDataAvailable());
+
+  if (!mPaddingBRElementForEmptyEditor) {
+    return NS_OK;
+  }
+
+  
+  
+  
+  RefPtr<HTMLBRElement> paddingBRElement(
+      std::move(mPaddingBRElementForEmptyEditor));
+  nsresult rv = DeleteNodeWithTransaction(*paddingBRElement);
+  if (NS_WARN_IF(Destroyed())) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                       "EditorBase::DeleteNodeWithTransaction() failed");
+  return rv;
+}
+
 nsresult HTMLEditor::PrepareInlineStylesForCaret() {
   MOZ_ASSERT(IsTopLevelEditSubActionDataAvailable());
   MOZ_ASSERT(SelectionRef().IsCollapsed());
