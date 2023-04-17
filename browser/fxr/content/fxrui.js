@@ -141,13 +141,6 @@ function setupBrowser() {
     
     
     Services.obs.notifyObservers(window, "extensions-late-startup");
-
-    
-    
-    browser.messageManager.loadFrameScript(
-      "chrome://fxr/content/fxr-content.js",
-      true 
-    );
   }
 }
 
