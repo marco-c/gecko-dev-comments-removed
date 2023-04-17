@@ -56,7 +56,7 @@ class InspectorFront extends FrontClassWithSpec(inspectorSpec) {
     
     const { resourceWatcher } = this.targetFront;
     if (
-      resourceWatcher?.hasResourceWatcherSupport(
+      resourceWatcher?.hasResourceCommandSupport(
         resourceWatcher.TYPES.STYLESHEET
       )
     ) {

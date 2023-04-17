@@ -6,7 +6,6 @@
 const {
   STUBS_UPDATE_ENV,
   createCommandsForTab,
-  createResourceWatcherForCommands,
   getCleanedPacket,
   getSerializedPacket,
   getStubFile,
@@ -65,7 +64,8 @@ async function generatePageErrorStubs() {
 
   const tab = await addTab(TEST_URI);
   const commands = await createCommandsForTab(tab);
-  const resourceWatcher = await createResourceWatcherForCommands(commands);
+  await commands.targetCommand.startListening();
+  const resourceWatcher = commands.resourceCommand;
 
   
   

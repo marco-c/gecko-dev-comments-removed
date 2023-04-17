@@ -10,7 +10,7 @@ const TEST_URI = "data:text/html;charset=utf-8,getAllResources test";
 add_task(async function() {
   const tab = await addTab(TEST_URI);
 
-  const { client, resourceWatcher, targetCommand } = await initResourceWatcher(
+  const { client, resourceWatcher, targetCommand } = await initResourceCommand(
     tab
   );
 

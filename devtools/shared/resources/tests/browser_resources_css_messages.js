@@ -35,7 +35,7 @@ async function testWatchingCssMessages() {
   
   const tab = await addTab(TEST_URI);
 
-  const { client, resourceWatcher, targetCommand } = await initResourceWatcher(
+  const { client, resourceWatcher, targetCommand } = await initResourceCommand(
     tab
   );
 
@@ -50,7 +50,7 @@ async function testWatchingCssMessages() {
   });
 
   info(
-    "Now log CSS warning *after* the call to ResourceWatcher.watchResources and after " +
+    "Now log CSS warning *after* the call to ResourceCommand.watchResources and after " +
       "having received the existing message"
   );
   
@@ -98,7 +98,7 @@ async function testWatchingCachedCssMessages() {
 
   
   
-  const { client, resourceWatcher, targetCommand } = await initResourceWatcher(
+  const { client, resourceWatcher, targetCommand } = await initResourceCommand(
     tab
   );
 

@@ -15,10 +15,10 @@ add_task(async function() {
     client,
     resourceWatcher,
     targetCommand,
-  } = await initMultiProcessResourceWatcher();
+  } = await initMultiProcessResourceCommand();
 
   info(
-    "Log some messages *before* calling ResourceWatcher.watchResources in order to " +
+    "Log some messages *before* calling ResourceCommand.watchResources in order to " +
       "assert the behavior of already existing messages."
   );
   console.log("foobar");

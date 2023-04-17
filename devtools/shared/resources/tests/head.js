@@ -15,7 +15,7 @@ Services.scriptloader.loadSubScript(
 const { DevToolsClient } = require("devtools/client/devtools-client");
 const { DevToolsServer } = require("devtools/server/devtools-server");
 
-async function _initResourceWatcherFromCommands(
+async function _initResourceCommandFromCommands(
   commands,
   { listenForWorkers = false } = {}
 ) {
@@ -52,9 +52,9 @@ async function _initResourceWatcherFromCommands(
 
 
 
-async function initResourceWatcher(tab, options) {
+async function initResourceCommand(tab, options) {
   const commands = await CommandsFactory.forTab(tab);
-  return _initResourceWatcherFromCommands(commands, options);
+  return _initResourceCommandFromCommands(commands, options);
 }
 
 
@@ -70,9 +70,9 @@ async function initResourceWatcher(tab, options) {
 
 
 
-async function initMultiProcessResourceWatcher() {
+async function initMultiProcessResourceCommand() {
   const commands = await CommandsFactory.forMainProcess();
-  return _initResourceWatcherFromCommands(commands);
+  return _initResourceCommandFromCommands(commands);
 }
 
 

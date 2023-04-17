@@ -31,12 +31,6 @@ async function createCommandsForMainProcess() {
 }
 
 
-async function createResourceWatcherForCommands(commands) {
-  await commands.targetCommand.startListening();
-  return commands.resourceCommand;
-}
-
-
 function getCleanedPacket(key, packet) {
   const { stubPackets } = require(CHROME_PREFIX + STUBS_FOLDER + "index");
 
@@ -542,7 +536,6 @@ module.exports = {
   STUBS_UPDATE_ENV,
   createCommandsForTab,
   createCommandsForMainProcess,
-  createResourceWatcherForCommands,
   getStubFile,
   getCleanedPacket,
   getSerializedPacket,

@@ -20,7 +20,7 @@ add_task(async function() {
     client,
     resourceWatcher,
     targetCommand,
-  } = await initResourceWatcher(tab, { listenForWorkers: true });
+  } = await initResourceCommand(tab, { listenForWorkers: true });
 
   info("Wait for the workers (from the main page and the iframe) to be ready");
   const targets = [];
@@ -80,7 +80,7 @@ add_task(async function() {
   let messageCount = resources.length;
 
   info(
-    "Now log messages *after* the call to ResourceWatcher.watchResources and after having received all existing messages"
+    "Now log messages *after* the call to ResourceCommand.watchResources and after having received all existing messages"
   );
 
   await SpecialPowers.spawn(tab.linkedBrowser, [], () => {
