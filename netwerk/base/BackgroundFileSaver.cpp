@@ -10,6 +10,7 @@
 #include "mozilla/ArrayAlgorithm.h"
 #include "mozilla/Casting.h"
 #include "mozilla/Logging.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/Telemetry.h"
 #include "nsCOMArray.h"
 #include "nsComponentManagerUtils.h"
@@ -512,6 +513,10 @@ nsresult BackgroundFileSaver::ProcessStateChange() {
     if (rv != NS_ERROR_FILE_NOT_FOUND) {
       NS_ENSURE_SUCCESS(rv, rv);
 
+      
+      auto closeGuard =
+          mozilla::MakeScopeExit([&] { Unused << inputStream->Close(); });
+
       char buffer[BUFFERED_IO_SIZE];
       while (true) {
         uint32_t count;
@@ -523,11 +528,21 @@ nsresult BackgroundFileSaver::ProcessStateChange() {
           break;
         }
 
-        nsresult rv =
-            mDigest->Update(BitwiseCast<unsigned char*, char*>(buffer), count);
+        rv = mDigest->Update(BitwiseCast<unsigned char*, char*>(buffer), count);
         NS_ENSURE_SUCCESS(rv, rv);
+
+        
+        
+        
+        
+        MutexAutoLock lock(mLock);
+        if (NS_FAILED(mStatus)) {
+          return NS_ERROR_ABORT;
+        }
       }
 
+      
+      closeGuard.release();
       rv = inputStream->Close();
       NS_ENSURE_SUCCESS(rv, rv);
     }
