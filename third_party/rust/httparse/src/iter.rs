@@ -64,7 +64,7 @@ impl<'a> Bytes<'a> {
 
     #[inline]
     pub fn next_8<'b>(&'b mut self) -> Option<Bytes8<'b, 'a>> {
-        if self.slice.len() > self.pos + 8 {
+        if self.slice.len() >= self.pos + 8 {
             Some(Bytes8::new(self))
         } else {
             None
@@ -152,5 +152,65 @@ impl<'a, 'b: 'a> Bytes8<'a, 'b> {
     fn assert_pos(&mut self, pos: usize) {
         assert!(self.pos == pos);
         self.pos += 1;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Bytes;
+
+    #[test]
+    fn test_next_8_too_short() {
+        
+        let slice = [0u8, 1u8, 2u8, 3u8, 4u8, 5u8, 6u8, 7u8, 8u8, 9u8];
+        let mut bytes = Bytes::new(&slice);
+        
+        unsafe { bytes.advance(3); }
+        
+        assert!(bytes.next_8().is_none());
+    }
+
+    #[test]
+    fn test_next_8_just_right() {
+        
+        let slice = [0u8, 1u8, 2u8, 3u8, 4u8, 5u8, 6u8, 7u8, 8u8, 9u8];
+        let mut bytes = Bytes::new(&slice);
+        
+        unsafe { bytes.advance(2); }
+        
+        let ret = bytes.next_8();
+        assert!(ret.is_some());
+        let mut ret = ret.unwrap();
+        
+        assert_eq!(ret._0(), 2u8);
+        assert_eq!(ret._1(), 3u8);
+        assert_eq!(ret._2(), 4u8);
+        assert_eq!(ret._3(), 5u8);
+        assert_eq!(ret._4(), 6u8);
+        assert_eq!(ret._5(), 7u8);
+        assert_eq!(ret._6(), 8u8);
+        assert_eq!(ret._7(), 9u8);
+    }
+
+    #[test]
+    fn test_next_8_extra() {
+        
+        let slice = [0u8, 1u8, 2u8, 3u8, 4u8, 5u8, 6u8, 7u8, 8u8, 9u8];
+        let mut bytes = Bytes::new(&slice);
+        
+        unsafe { bytes.advance(1); }
+        
+        let ret = bytes.next_8();
+        assert!(ret.is_some());
+        let mut ret = ret.unwrap();
+        
+        assert_eq!(ret._0(), 1u8);
+        assert_eq!(ret._1(), 2u8);
+        assert_eq!(ret._2(), 3u8);
+        assert_eq!(ret._3(), 4u8);
+        assert_eq!(ret._4(), 5u8);
+        assert_eq!(ret._5(), 6u8);
+        assert_eq!(ret._6(), 7u8);
+        assert_eq!(ret._7(), 8u8);
     }
 }

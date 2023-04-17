@@ -24,9 +24,24 @@ unsafe fn match_url_char_16_sse(buf: &[u8]) -> usize {
     let ptr = buf.as_ptr();
 
     let LSH: __m128i = _mm_set1_epi8(0x0f);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
     let URI: __m128i = _mm_setr_epi8(
-        0xb8, 0xfc, 0xf8, 0xfc, 0xfc, 0xfc, 0xfc, 0xfc,
-        0xfc, 0xfc, 0xfc, 0x7c, 0x54, 0x7c, 0xd4, 0x7c,
+        0xf8, 0xfc, 0xfc, 0xfc, 0xfc, 0xfc, 0xfc, 0xfc,
+        0xfc, 0xfc, 0xfc, 0xfc, 0xf4, 0xfc, 0xf4, 0x7c,
     );
     let ARF: __m128i = _mm_setr_epi8(
         0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,
@@ -81,4 +96,42 @@ unsafe fn match_header_value_char_16_sse(buf: &[u8]) -> usize {
     let res = 0xffff_0000 | _mm_movemask_epi8(rev) as u32;
 
     _tzcnt_u32(res) as usize
+}
+
+#[test]
+fn sse_code_matches_uri_chars_table() {
+    match super::detect() {
+        super::SSE_42 | super::AVX_2_AND_SSE_42 => {},
+        _ => return,
+    }
+
+    unsafe {
+        assert!(byte_is_allowed(b'_'));
+
+        for (b, allowed) in ::URI_MAP.iter().cloned().enumerate() {
+            assert_eq!(
+                byte_is_allowed(b as u8), allowed,
+                "byte_is_allowed({:?}) should be {:?}", b, allowed,
+            );
+        }
+    }
+}
+
+#[cfg(test)]
+unsafe fn byte_is_allowed(byte: u8) -> bool {
+    let slice = [
+        b'_', b'_', b'_', b'_',
+        b'_', b'_', b'_', b'_',
+        b'_', b'_', byte, b'_',
+        b'_', b'_', b'_', b'_',
+    ];
+    let mut bytes = Bytes::new(&slice);
+
+    parse_uri_batch_16(&mut bytes);
+
+    match bytes.pos() {
+        16 => true,
+        10 => false,
+        _ => unreachable!(),
+    }
 }
