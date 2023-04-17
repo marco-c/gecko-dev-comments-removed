@@ -165,8 +165,6 @@ class StartupCache : public nsIMemoryReporter {
   
   static void IgnoreDiskCache();
 
-  static bool GetIgnoreDiskCache();
-
   
   
   nsresult GetDebugObjectOutputStream(nsIObjectOutputStream* aStream,
