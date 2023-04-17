@@ -381,7 +381,6 @@ class nsIWidget : public nsISupports {
   typedef mozilla::WindowRenderer WindowRenderer;
   typedef mozilla::layers::LayerManagerComposite LayerManagerComposite;
   typedef mozilla::layers::LayersBackend LayersBackend;
-  typedef mozilla::layers::LayersId LayersId;
   typedef mozilla::layers::PLayerTransactionChild PLayerTransactionChild;
   typedef mozilla::layers::ScrollableLayerGuid ScrollableLayerGuid;
   typedef mozilla::layers::ZoomConstraints ZoomConstraints;
@@ -1758,8 +1757,6 @@ class nsIWidget : public nsISupports {
 
 
   virtual void StopAsyncAutoscroll(const ScrollableLayerGuid& aGuid) = 0;
-
-  virtual LayersId GetRootLayerTreeId() = 0;
 
   
   

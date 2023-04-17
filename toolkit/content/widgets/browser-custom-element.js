@@ -1251,6 +1251,7 @@
             .getActor("AutoScroll")
             .sendAsyncMessage("Autoscroll:Stop", {});
         }
+        this._autoScrollBrowsingContext = null;
 
         try {
           Services.obs.removeObserver(this.observer, "apz:cancel-autoscroll");
@@ -1258,17 +1259,17 @@
           
         }
 
-        if (this._autoScrollScrollId != null) {
-          this._autoScrollBrowsingContext.stopApzAutoscroll(
-            this._autoScrollScrollId,
-            this._autoScrollPresShellId
-          );
-
+        if (this.isRemoteBrowser && this._autoScrollScrollId != null) {
+          let { remoteTab } = this.frameLoader;
+          if (remoteTab) {
+            remoteTab.stopApzAutoscroll(
+              this._autoScrollScrollId,
+              this._autoScrollPresShellId
+            );
+          }
           this._autoScrollScrollId = null;
           this._autoScrollPresShellId = null;
         }
-
-        this._autoScrollBrowsingContext = null;
       }
     }
 
@@ -1371,23 +1372,29 @@
       window.addEventListener("keyup", this, true);
 
       let usingApz = false;
-
       if (
+        this.isRemoteBrowser &&
         scrollId != null &&
         this.mPrefs.getBoolPref("apz.autoscroll.enabled", false)
       ) {
-        
-        
-        
-        Services.obs.addObserver(this.observer, "apz:cancel-autoscroll", true);
+        let { remoteTab } = this.frameLoader;
+        if (remoteTab) {
+          
+          
+          
+          Services.obs.addObserver(
+            this.observer,
+            "apz:cancel-autoscroll",
+            true
+          );
 
-        usingApz = browsingContext.startApzAutoscroll(
-          screenX,
-          screenY,
-          scrollId,
-          presShellId
-        );
-
+          usingApz = remoteTab.startApzAutoscroll(
+            screenX,
+            screenY,
+            scrollId,
+            presShellId
+          );
+        }
         
         this._autoScrollScrollId = scrollId;
         this._autoScrollPresShellId = presShellId;
