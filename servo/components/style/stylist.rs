@@ -26,7 +26,7 @@ use crate::shared_lock::{Locked, SharedRwLockReadGuard, StylesheetGuards};
 use crate::stylesheet_set::{DataValidity, DocumentStylesheetSet, SheetRebuildKind};
 use crate::stylesheet_set::{DocumentStylesheetFlusher, SheetCollectionFlusher};
 use crate::stylesheets::keyframes_rule::KeyframesAnimation;
-use crate::stylesheets::layer_rule::{LayerName, LayerOrder};
+use crate::stylesheets::layer_rule::{LayerName, LayerId, LayerOrder};
 use crate::stylesheets::viewport_rule::{self, MaybeNew, ViewportRule};
 use crate::stylesheets::{StyleRule, StylesheetInDocument, StylesheetContents};
 #[cfg(feature = "gecko")]
@@ -293,6 +293,8 @@ impl CascadeDataCacheEntry for UserAgentCascadeData {
                 Some(&mut new_data.precomputed_pseudo_element_decls),
             )?;
         }
+
+        new_data.cascade_data.compute_layer_order();
 
         Ok(Arc::new(new_data))
     }
@@ -1892,12 +1894,21 @@ impl PartElementAndPseudoRules {
     }
 }
 
-#[derive(Debug, Clone, MallocSizeOf)]
-struct LayerOrderState {
-    
+#[derive(Clone, Debug, MallocSizeOf)]
+struct CascadeLayer {
+    id: LayerId,
     order: LayerOrder,
-    
-    next_child: LayerOrder,
+    children: Vec<LayerId>,
+}
+
+impl CascadeLayer {
+    const fn root() -> Self {
+        Self {
+            id: LayerId::root(),
+            order: LayerOrder::root(),
+            children: vec![],
+        }
+    }
 }
 
 
@@ -1966,10 +1977,10 @@ pub struct CascadeData {
     animations: PrecomputedHashMap<Atom, KeyframesAnimation>,
 
     
-    layer_order: FxHashMap<LayerName, LayerOrderState>,
+    layer_id: FxHashMap<LayerName, LayerId>,
 
     
-    next_layer_order: LayerOrder,
+    layers: SmallVec<[CascadeLayer; 1]>,
 
     
     effective_media_query_results: EffectiveMediaQueryResults,
@@ -2011,8 +2022,8 @@ impl CascadeData {
             
             selectors_for_cache_revalidation: SelectorMap::new_without_attribute_bucketing(),
             animations: Default::default(),
-            layer_order: Default::default(),
-            next_layer_order: LayerOrder::first(),
+            layer_id: Default::default(),
+            layers: smallvec::smallvec![CascadeLayer::root()],
             extra_data: ExtraStyleData::default(),
             effective_media_query_results: EffectiveMediaQueryResults::new(),
             rules_source_order: 0,
@@ -2058,6 +2069,8 @@ impl CascadeData {
             );
             result.is_ok()
         });
+
+        self.compute_layer_order();
 
         result
     }
@@ -2120,6 +2133,43 @@ impl CascadeData {
         self.part_rules.is_some()
     }
 
+    #[inline]
+    fn layer_order_for(&self, id: LayerId) -> LayerOrder {
+        self.layers[id.0 as usize].order
+    }
+
+    fn compute_layer_order(&mut self) {
+        debug_assert_ne!(self.layers.len(), 0, "There should be at least the root layer!");
+        if self.layers.len() == 1 {
+            return; 
+        }
+        let (first, remaining) = self.layers.split_at_mut(1);
+        let root = &mut first[0];
+        let mut order = LayerOrder::first();
+        compute_layer_order_for_subtree(root, remaining, &mut order);
+
+        
+        
+        fn compute_layer_order_for_subtree(
+            parent: &mut CascadeLayer,
+            remaining_layers: &mut [CascadeLayer],
+            order: &mut LayerOrder,
+        ) {
+            for child in parent.children.iter() {
+                debug_assert!(parent.id < *child, "Children are always registered after parents");
+                let child_index = (child.0 - parent.id.0 - 1) as usize;
+                let (first, remaining) = remaining_layers.split_at_mut(child_index + 1);
+                let child = &mut first[child_index];
+                compute_layer_order_for_subtree(child, remaining, order);
+            }
+
+            if parent.id != LayerId::root() {
+                parent.order = *order;
+                order.inc();
+            }
+        }
+    }
+
     
     
     
@@ -2176,7 +2226,7 @@ impl CascadeData {
         guard: &SharedRwLockReadGuard,
         rebuild_kind: SheetRebuildKind,
         mut current_layer: &mut LayerName,
-        current_layer_order: LayerOrder,
+        current_layer_id: LayerId,
         mut precomputed_pseudo_element_decls: Option<&mut PrecomputedPseudoElementDeclarations>,
     ) -> Result<(), FailedAllocationError>
     where
@@ -2199,6 +2249,7 @@ impl CascadeData {
                             if pseudo.is_precomputed() {
                                 debug_assert!(selector.is_universal());
                                 debug_assert_eq!(stylesheet.contents().origin, Origin::UserAgent);
+                                debug_assert_eq!(current_layer_id, LayerId::root());
 
                                 precomputed_pseudo_element_decls
                                     .as_mut()
@@ -2209,7 +2260,7 @@ impl CascadeData {
                                         self.rules_source_order,
                                         CascadeLevel::UANormal,
                                         selector.specificity(),
-                                        current_layer_order,
+                                        LayerOrder::root(),
                                     ));
                                 continue;
                             }
@@ -2225,7 +2276,7 @@ impl CascadeData {
                             hashes,
                             locked.clone(),
                             self.rules_source_order,
-                            current_layer_order,
+                            current_layer_id,
                         );
 
                         if rebuild_kind.should_rebuild_invalidation() {
@@ -2299,22 +2350,24 @@ impl CascadeData {
                             e.insert(KeyframesAnimation::from_keyframes(
                                 &keyframes_rule.keyframes,
                                 keyframes_rule.vendor_prefix.clone(),
-                                current_layer_order,
+                                current_layer_id,
                                 guard,
                             ));
                         },
                         Entry::Occupied(mut e) => {
                             
                             
+                            
+                            
+                            
                             let needs_insert =
-                                current_layer_order > e.get().layer_order ||
-                                (current_layer_order == e.get().layer_order &&
-                                 (keyframes_rule.vendor_prefix.is_none() || e.get().vendor_prefix.is_some()));
+                                 keyframes_rule.vendor_prefix.is_none() ||
+                                 e.get().vendor_prefix.is_some();
                             if needs_insert {
                                 e.insert(KeyframesAnimation::from_keyframes(
                                     &keyframes_rule.keyframes,
                                     keyframes_rule.vendor_prefix.clone(),
-                                    current_layer_order,
+                                    current_layer_id,
                                     guard,
                                 ));
                             }
@@ -2382,32 +2435,38 @@ impl CascadeData {
                 continue;
             }
 
-            fn maybe_register_layer(data: &mut CascadeData, layer: &LayerName) -> LayerOrder {
+            fn maybe_register_layer(data: &mut CascadeData, layer: &LayerName) -> LayerId {
                 
                 
                 
-                if let Some(ref mut state) = data.layer_order.get(layer) {
-                    return state.order;
+                if let Some(id) = data.layer_id.get(layer) {
+                    return *id;
                 }
-                
-                let order = if layer.layer_names().len() > 1 {
+                let id = LayerId(data.layers.len() as u32);
+
+                let parent_layer_id = if layer.layer_names().len() > 1 {
                     let mut parent = layer.clone();
                     parent.0.pop();
 
-                    let mut parent_state = data.layer_order.get_mut(&parent).expect("Parent layers should be registered before child layers");
-                    let order = parent_state.next_child;
-                    parent_state.next_child = order.for_next_sibling();
-                    order
+                    *data.layer_id
+                        .get_mut(&parent)
+                        .expect("Parent layers should be registered before child layers")
                 } else {
-                    let order = data.next_layer_order;
-                    data.next_layer_order = order.for_next_sibling();
-                    order
+                    LayerId::root()
                 };
-                data.layer_order.insert(layer.clone(), LayerOrderState {
-                    order,
-                    next_child: order.for_child(),
+
+                data.layers[parent_layer_id.0 as usize].children.push(id);
+                data.layers.push(CascadeLayer {
+                    id,
+                    
+                    
+                    order: LayerOrder::first(),
+                    children: vec![],
                 });
-                order
+
+                data.layer_id.insert(layer.clone(), id);
+
+                id
             }
 
             fn maybe_register_layers(
@@ -2415,7 +2474,7 @@ impl CascadeData {
                 name: Option<&LayerName>,
                 current_layer: &mut LayerName,
                 pushed_layers: &mut usize,
-            ) -> LayerOrder {
+            ) -> LayerId {
                 let anon_name;
                 let name = match name {
                     Some(name) => name,
@@ -2425,18 +2484,18 @@ impl CascadeData {
                     },
                 };
 
-                let mut order = LayerOrder::top_level();
+                let mut id = LayerId::root();
                 for name in name.layer_names() {
                     current_layer.0.push(name.clone());
-                    order = maybe_register_layer(data, &current_layer);
+                    id = maybe_register_layer(data, &current_layer);
                     *pushed_layers += 1;
                 }
-                debug_assert_ne!(order, LayerOrder::top_level());
-                order
+                debug_assert_ne!(id, LayerId::root());
+                id
             }
 
             let mut layer_names_to_pop = 0;
-            let mut children_layer_order = current_layer_order;
+            let mut children_layer_id = current_layer_id;
             match *rule {
                 CssRule::Import(ref lock) => {
                     let import_rule = lock.read_with(guard);
@@ -2445,7 +2504,7 @@ impl CascadeData {
                             .saw_effective(import_rule);
                     }
                     if let Some(ref layer) = import_rule.layer {
-                        children_layer_order = maybe_register_layers(
+                        children_layer_id = maybe_register_layers(
                             self,
                             layer.name.as_ref(),
                             &mut current_layer,
@@ -2466,7 +2525,7 @@ impl CascadeData {
                     let layer_rule = lock.read_with(guard);
                     match layer_rule.kind {
                         LayerRuleKind::Block { ref name, .. } => {
-                            children_layer_order = maybe_register_layers(
+                            children_layer_id = maybe_register_layers(
                                 self,
                                 name.as_ref(),
                                 &mut current_layer,
@@ -2504,7 +2563,7 @@ impl CascadeData {
                     guard,
                     rebuild_kind,
                     current_layer,
-                    children_layer_order,
+                    children_layer_id,
                     precomputed_pseudo_element_decls.as_deref_mut(),
                 )?;
             }
@@ -2549,7 +2608,7 @@ impl CascadeData {
             guard,
             rebuild_kind,
             &mut current_layer,
-            LayerOrder::top_level(),
+            LayerId::root(),
             precomputed_pseudo_element_decls.as_deref_mut(),
         )?;
 
@@ -2668,8 +2727,9 @@ impl CascadeData {
             host_rules.clear();
         }
         self.animations.clear();
-        self.layer_order.clear();
-        self.next_layer_order = LayerOrder::first();
+        self.layer_id.clear();
+        self.layers.clear();
+        self.layers.push(CascadeLayer::root());
         self.extra_data.clear();
         self.rules_source_order = 0;
         self.num_selectors = 0;
@@ -2759,7 +2819,7 @@ pub struct Rule {
     pub source_order: u32,
 
     
-    pub layer_order: LayerOrder,
+    pub layer_id: LayerId,
 
     
     #[cfg_attr(
@@ -2787,9 +2847,16 @@ impl Rule {
     pub fn to_applicable_declaration_block(
         &self,
         level: CascadeLevel,
+        cascade_data: &CascadeData,
     ) -> ApplicableDeclarationBlock {
         let source = StyleSource::from_rule(self.style_rule.clone());
-        ApplicableDeclarationBlock::new(source, self.source_order, level, self.specificity(), self.layer_order)
+        ApplicableDeclarationBlock::new(
+            source,
+            self.source_order,
+            level,
+            self.specificity(),
+            cascade_data.layer_order_for(self.layer_id),
+        )
     }
 
     
@@ -2798,14 +2865,14 @@ impl Rule {
         hashes: AncestorHashes,
         style_rule: Arc<Locked<StyleRule>>,
         source_order: u32,
-        layer_order: LayerOrder,
+        layer_id: LayerId,
     ) -> Self {
         Rule {
             selector,
             hashes,
             style_rule,
             source_order,
-            layer_order,
+            layer_id,
         }
     }
 }

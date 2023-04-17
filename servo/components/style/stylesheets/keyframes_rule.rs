@@ -14,7 +14,7 @@ use crate::properties::{PropertyDeclarationId, SourcePropertyDeclaration};
 use crate::shared_lock::{DeepCloneParams, DeepCloneWithLock, SharedRwLock, SharedRwLockReadGuard};
 use crate::shared_lock::{Locked, ToCssWithGuard};
 use crate::str::CssStringWriter;
-use crate::stylesheets::layer_rule::LayerOrder;
+use crate::stylesheets::layer_rule::LayerId;
 use crate::stylesheets::rule_parser::VendorPrefix;
 use crate::stylesheets::{CssRuleType, StylesheetContents};
 use crate::values::{serialize_percentage, KeyframesName};
@@ -359,7 +359,7 @@ pub struct KeyframesAnimation {
     
     pub vendor_prefix: Option<VendorPrefix>,
     
-    pub layer_order: LayerOrder,
+    pub layer_id: LayerId,
 }
 
 
@@ -412,14 +412,14 @@ impl KeyframesAnimation {
     pub fn from_keyframes(
         keyframes: &[Arc<Locked<Keyframe>>],
         vendor_prefix: Option<VendorPrefix>,
-        layer_order: LayerOrder,
+        layer_id: LayerId,
         guard: &SharedRwLockReadGuard,
     ) -> Self {
         let mut result = KeyframesAnimation {
             steps: vec![],
             properties_changed: LonghandIdSet::new(),
             vendor_prefix,
-            layer_order,
+            layer_id,
         };
 
         if keyframes.is_empty() {
