@@ -1,18 +1,18 @@
-/* vim:set ts=4 sw=2 sts=2 et cindent: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-//
-// GSSAPI Authentication Support Module
-//
-// Described by IETF Internet draft: draft-brezak-kerberos-http-00.txt
-// (formerly draft-brezak-spnego-http-04.txt)
-//
-// Also described here:
-// http://msdn.microsoft.com/library/default.asp?url=/library/en-us/dnsecure/html/http-sso-1.asp
-//
-//
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/IntegerPrintfMacros.h"
@@ -45,11 +45,11 @@ typedef KLStatus (*KLCacheHasValidTickets_type)(KLPrincipal, KLKerberosVersion,
 
 using namespace mozilla;
 
-//-----------------------------------------------------------------------------
 
-// We define GSS_C_NT_HOSTBASED_SERVICE explicitly since it may be referenced
-// by by a different name depending on the implementation of gss but always
-// has the same value
+
+
+
+
 
 static gss_OID_desc gss_c_nt_hostbased_service = {
     10, (void*)"\x2a\x86\x48\x86\xf7\x12\x01\x02\x01\x04"};
@@ -124,11 +124,11 @@ static nsresult gssInit() {
 
     lib = LoadLibraryWithFlags(kLibName.get());
 #elif defined(__OpenBSD__)
-    /* OpenBSD doesn't register inter-library dependencies in basesystem
-     * libs therefor we need to load all the libraries gssapi depends on,
-     * in the correct order and with LD_GLOBAL for GSSAPI auth to work
-     * fine.
-     */
+    
+
+
+
+
 
     const char* const verLibNames[] = {
         "libasn1.so",    "libcrypto.so", "libroken.so", "libheimbase.so",
@@ -146,20 +146,20 @@ static nsresult gssInit() {
     const char* const libNames[] = {"gss", "gssapi_krb5", "gssapi"};
 
     const char* const verLibNames[] = {
-        "libgssapi_krb5.so.2", /* MIT - FC, Suse10, Debian */
-        "libgssapi.so.4",      /* Heimdal - Suse10, MDK */
-        "libgssapi.so.1"       /* Heimdal - Suse9, CITI - FC, MDK, Suse10*/
+        "libgssapi_krb5.so.2", 
+        "libgssapi.so.4",      
+        "libgssapi.so.1"       
     };
 
     for (size_t i = 0; i < ArrayLength(verLibNames) && !lib; ++i) {
       lib = PR_LoadLibrary(verLibNames[i]);
 
-      /* The CITI libgssapi library calls exit() during
-       * initialization if it's not correctly configured. Try to
-       * ensure that we never use this library for our GSSAPI
-       * support, as its just a wrapper library, anyway.
-       * See Bugzilla #325433
-       */
+      
+
+
+
+
+
       if (lib && PR_FindFunctionSymbol(lib, "internal_krb5_gss_initialize") &&
           PR_FindFunctionSymbol(lib, "gssd_pname_to_uid")) {
         LOG(("CITI libgssapi found, which calls exit(). Skipping\n"));
@@ -213,8 +213,8 @@ static nsresult gssInit() {
   return NS_OK;
 }
 
-// Generate proper GSSAPI error messages from the major and
-// minor status codes.
+
+
 void LogGssError(OM_uint32 maj_stat, OM_uint32 min_stat, const char* prefix) {
   if (!MOZ_LOG_TEST(gNegotiateLog, LogLevel::Debug)) {
     return;
@@ -247,7 +247,7 @@ void LogGssError(OM_uint32 maj_stat, OM_uint32 min_stat, const char* prefix) {
   LOG(("%s\n", errorStr.get()));
 }
 
-//-----------------------------------------------------------------------------
+
 
 nsAuthGSSAPI::nsAuthGSSAPI(pType package) : mServiceFlags(REQ_DEFAULT) {
   OM_uint32 minstat;
@@ -270,20 +270,20 @@ nsAuthGSSAPI::nsAuthGSSAPI(pType package) : mServiceFlags(REQ_DEFAULT) {
   mCtx = GSS_C_NO_CONTEXT;
   mMechOID = &gss_krb5_mech_oid_desc;
 
-  // if the type is kerberos we accept it as default
-  // and exit
+  
+  
 
   if (package == PACKAGE_TYPE_KERBEROS) return;
 
-  // Now, look at the list of supported mechanisms,
-  // if SPNEGO is found, then use it.
-  // Otherwise, set the desired mechanism to
-  // GSS_C_NO_OID and let the system try to use
-  // the default mechanism.
-  //
-  // Using Kerberos directly (instead of negotiating
-  // with SPNEGO) may work in some cases depending
-  // on how smart the server side is.
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   majstat = gss_indicate_mechs_ptr(&minstat, &mech_set);
   if (GSS_ERROR(majstat)) return;
@@ -294,7 +294,7 @@ nsAuthGSSAPI::nsAuthGSSAPI(pType package) : mServiceFlags(REQ_DEFAULT) {
       if (item->length == gss_spnego_mech_oid_desc.length &&
           !memcmp(item->elements, gss_spnego_mech_oid_desc.elements,
                   item->length)) {
-        // ok, we found it
+        
         mMechOID = &gss_spnego_mech_oid_desc;
         break;
       }
@@ -312,7 +312,7 @@ void nsAuthGSSAPI::Reset() {
   mComplete = false;
 }
 
-/* static */
+
 void nsAuthGSSAPI::Shutdown() {
   if (gssLibrary) {
     PR_UnloadLibrary(gssLibrary);
@@ -320,18 +320,19 @@ void nsAuthGSSAPI::Shutdown() {
   }
 }
 
-/* Limitations apply to this class's thread safety. See the header file */
+
 NS_IMPL_ISUPPORTS(nsAuthGSSAPI, nsIAuthModule)
 
 NS_IMETHODIMP
-nsAuthGSSAPI::Init(const char* serviceName, uint32_t serviceFlags,
-                   const char16_t* domain, const char16_t* username,
-                   const char16_t* password) {
-  // we don't expect to be passed any user credentials
-  NS_ASSERTION(!domain && !username && !password, "unexpected credentials");
+nsAuthGSSAPI::Init(const nsACString& serviceName, uint32_t serviceFlags,
+                   const nsAString& domain, const nsAString& username,
+                   const nsAString& password) {
+  
+  NS_ASSERTION(domain.IsEmpty() && username.IsEmpty() && password.IsEmpty(),
+               "unexpected credentials");
 
-  // it's critial that the caller supply a service name to be used
-  NS_ENSURE_TRUE(serviceName && *serviceName, NS_ERROR_INVALID_ARG);
+  
+  NS_ENSURE_TRUE(!serviceName.IsEmpty(), NS_ERROR_INVALID_ARG);
 
   LOG(("entering nsAuthGSSAPI::Init()\n"));
 
@@ -368,7 +369,7 @@ nsAuthGSSAPI::GetNextToken(const void* inToken, uint32_t inTokenLen,
 
   if (!gssLibrary) return NS_ERROR_NOT_INITIALIZED;
 
-  // If they've called us again after we're complete, reset to start afresh.
+  
   if (mComplete) Reset();
 
   if (mServiceFlags & REQ_DELEGATE) req_flags |= GSS_C_DELEG_FLAG;
@@ -395,19 +396,19 @@ nsAuthGSSAPI::GetNextToken(const void* inToken, uint32_t inTokenLen,
     input_token.value = (void*)inToken;
     in_token_ptr = &input_token;
   } else if (mCtx != GSS_C_NO_CONTEXT) {
-    // If there is no input token, then we are starting a new
-    // authentication sequence.  If we have already initialized our
-    // security context, then we're in trouble because it means that the
-    // first sequence failed.  We need to bail or else we might end up in
-    // an infinite loop.
+    
+    
+    
+    
+    
     LOG(("Cannot restart authentication sequence!"));
     return NS_ERROR_UNEXPECTED;
   }
 
 #if defined(XP_MACOSX)
-  // Suppress Kerberos prompts to get credentials.  See bug 240643.
-  // We can only use Mac OS X specific kerb functions if we are using
-  // the native lib
+  
+  
+  
   KLBoolean found;
   bool doingMailTask = mServiceName.Find("imap@") ||
                        mServiceName.Find("pop@") ||
@@ -421,7 +422,7 @@ nsAuthGSSAPI::GetNextToken(const void* inToken, uint32_t inTokenLen,
     major_status = GSS_S_FAILURE;
     minor_status = 0;
   } else
-#endif /* XP_MACOSX */
+#endif 
     major_status = gss_init_sec_context_ptr(
         &minor_status, GSS_C_NO_CREDENTIAL, &mCtx, server, mMechOID, req_flags,
         GSS_C_INDEFINITE, GSS_C_NO_CHANNEL_BINDINGS, in_token_ptr, nullptr,
@@ -434,15 +435,15 @@ nsAuthGSSAPI::GetNextToken(const void* inToken, uint32_t inTokenLen,
     goto end;
   }
   if (major_status == GSS_S_COMPLETE) {
-    // Mark ourselves as being complete, so that if we're called again
-    // we know to start afresh.
+    
+    
     mComplete = true;
   } else if (major_status == GSS_S_CONTINUE_NEEDED) {
-    //
-    // The important thing is that we do NOT reset the
-    // context here because it will be needed on the
-    // next call.
-    //
+    
+    
+    
+    
+    
   }
 
   *outTokenLen = output_token.length;
@@ -522,7 +523,7 @@ nsAuthGSSAPI::Wrap(const void* inToken, uint32_t inTokenLen, bool confidential,
 
   *outTokenLen = output_token.length;
 
-  /* it is not possible for output_token.length to be zero */
+  
   *outToken = moz_xmemdup(output_token.value, output_token.length);
   gss_release_buffer_ptr(&minor_status, &output_token);
 
