@@ -166,12 +166,6 @@ exports.WatcherActor = protocol.ActorClassWithSpec(watcherSpec, {
         
         
         
-        
-        "thread-configuration": true,
-        
-        
-        
-        
         "set-xhr-breakpoints": true,
       },
     };
