@@ -528,12 +528,6 @@ function prompt(aActor, aBrowser, aRequest) {
     }
   }
 
-  
-  
-  aBrowser.dispatchEvent(
-    new aBrowser.ownerGlobal.CustomEvent("PermissionStateChange")
-  );
-
   let chromeDoc = aBrowser.ownerDocument;
   let stringBundle = chromeDoc.defaultView.gNavigatorBundle;
   let localization = new Localization(

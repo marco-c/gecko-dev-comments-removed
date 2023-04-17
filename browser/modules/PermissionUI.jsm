@@ -401,12 +401,6 @@ var PermissionPromptPrototype = {
         this.allow();
         return;
       }
-
-      
-      
-      this.browser.dispatchEvent(
-        new this.browser.ownerGlobal.CustomEvent("PermissionStateChange")
-      );
     } else if (this.permissionKey) {
       
       
