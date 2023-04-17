@@ -3,6 +3,20 @@
 
 "use strict";
 
+
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/devtools/client/performance-new/test/browser/helpers.js",
+  this
+);
+
+const BackgroundJSM = ChromeUtils.import(
+  "resource://devtools/client/performance-new/popup/background.jsm.js"
+);
+
+registerCleanupFunction(() => {
+  BackgroundJSM.revertRecordingSettings();
+});
+
 const RUNTIME_ID = "1337id";
 const DEVICE_NAME = "Fancy Phone";
 const RUNTIME_NAME = "Lorem ipsum";
@@ -10,18 +24,8 @@ const RUNTIME_NAME = "Lorem ipsum";
 
 
 
-add_task(async function() {
-  
-  const clientWrapper = await createLocalClientWrapper();
-
-  
-  const mocks = new Mocks();
-  mocks.createUSBRuntime(RUNTIME_ID, {
-    deviceName: DEVICE_NAME,
-    name: RUNTIME_NAME,
-    clientWrapper,
-  });
-
+add_task(async function test_opening_profiler_dialog() {
+  const { mocks } = await connectToLocalFirefox();
   const { document, tab, window } = await openAboutDebugging();
 
   mocks.emitUSBUpdate();
@@ -61,12 +65,75 @@ add_task(async function() {
   await selectRuntime(DEVICE_NAME, RUNTIME_NAME, document);
   assertDialogHidden(document);
 
+  await disconnectFromLocalFirefox({ mocks, doc: document });
+  await removeTab(tab);
+});
+
+add_task(async function test_set_profiler_settings() {
+  const { mocks } = await connectToLocalFirefox();
+  const { document, tab } = await openAboutDebugging();
+
+  mocks.emitUSBUpdate();
+  await connectToRuntime(DEVICE_NAME, document);
+  await selectRuntime(DEVICE_NAME, RUNTIME_NAME, document);
+
+  info("Open the profiler dialog");
+  await openProfilerDialogWithRealClient(document);
+  assertDialogVisible(document);
+
+  const profilerSettingsDocument = await openProfilerSettings(document);
+  const radioButtonForCustomPreset = await getNearestInputFromText(
+    profilerSettingsDocument,
+    "Custom"
+  );
+  ok(
+    radioButtonForCustomPreset.checked,
+    "The radio button for the preset 'custom' is checked."
+  );
+
+  info("Change the preset to Firefox Platform.");
+  const radioButtonForPlatformPreset = await getNearestInputFromText(
+    profilerSettingsDocument,
+    "Firefox Platform"
+  );
+  radioButtonForPlatformPreset.click();
+
+  const profilerDocument = await saveSettingsAndGoBack(document);
+  const perfPresetsSelect = await getNearestInputFromText(
+    profilerDocument,
+    "Settings"
+  );
+  is(
+    perfPresetsSelect.value,
+    "firefox-platform",
+    "The preset has been changed in the devtools panel UI as well."
+  );
+
+  await disconnectFromLocalFirefox({ mocks, doc: document });
+  await removeTab(tab);
+});
+
+async function connectToLocalFirefox() {
+  
+  const clientWrapper = await createLocalClientWrapper();
+
+  
+  const mocks = new Mocks();
+  const usbClient = mocks.createUSBRuntime(RUNTIME_ID, {
+    deviceName: DEVICE_NAME,
+    name: RUNTIME_NAME,
+    clientWrapper,
+  });
+
+  return { mocks, usbClient };
+}
+
+async function disconnectFromLocalFirefox({ doc, mocks }) {
   info("Remove USB runtime");
   mocks.removeUSBRuntime(RUNTIME_ID);
   mocks.emitUSBUpdate();
-  await waitUntilUsbDeviceIsUnplugged(DEVICE_NAME, document);
-  await removeTab(tab);
-});
+  await waitUntilUsbDeviceIsUnplugged(DEVICE_NAME, doc);
+}
 
 function assertDialogVisible(doc) {
   ok(doc.querySelector(".qa-profiler-dialog"), "Dialog is displayed");
@@ -81,21 +148,92 @@ function assertDialogHidden(doc) {
 
 
 
+
+function getProfilerIframe(doc) {
+  return doc.querySelector(".profiler-dialog__frame");
+}
+
+
+
+
+
+async function waitForProfilerUiRendering(doc, selector) {
+  
+  
+  const profilerIframe = getProfilerIframe(doc);
+  
+  await TestUtils.waitForCondition(
+    () =>
+      profilerIframe.contentDocument &&
+      profilerIframe.contentDocument.querySelector(selector)
+  );
+
+  return profilerIframe.contentDocument;
+}
+
+
+
+
 async function openProfilerDialogWithRealClient(doc) {
   info("Click on the Profile Runtime button");
   const profileButton = doc.querySelector(".qa-profile-runtime-button");
   profileButton.click();
 
   info("Wait for the rendering of the profiler UI");
-  const profilerIframe = await TestUtils.waitForCondition(
-    () => doc.querySelector(".profiler-dialog__frame"),
-    "Waiting for the profiler frame."
+  const contentDocument = await waitForProfilerUiRendering(
+    doc,
+    ".perf-presets"
   );
-  await TestUtils.waitForCondition(
-    () =>
-      profilerIframe.contentDocument &&
-      profilerIframe.contentDocument.querySelector(".perf-presets"),
-    "Waiting for the rendering of the profiler UI."
+  await getActiveButtonFromText(contentDocument, "Start recording");
+  info("The profiler UI is rendered!");
+  return contentDocument;
+}
+
+
+
+
+
+async function openProfilerSettings(doc) {
+  const profilerDocument = getProfilerIframe(doc).contentDocument;
+
+  
+  const perfPresetsSelect = await getNearestInputFromText(
+    profilerDocument,
+    "Settings"
   );
-  return profilerIframe.contentDocument;
+  setReactFriendlyInputValue(perfPresetsSelect, "custom");
+
+  
+  const editSettingsLink = await getElementFromDocumentByText(
+    profilerDocument,
+    "Edit Settings"
+  );
+  editSettingsLink.click();
+
+  info("Wait for the rendering of the profiler settings UI");
+  const contentDocument = await waitForProfilerUiRendering(
+    doc,
+    ".perf-aboutprofiling-remote"
+  );
+  info("The profiler settings UI is rendered!");
+  return contentDocument;
+}
+
+async function saveSettingsAndGoBack(doc) {
+  const profilerDocument = getProfilerIframe(doc).contentDocument;
+
+  const saveSettingsAndGoBackButton = await getActiveButtonFromText(
+    profilerDocument,
+    "Save settings"
+  );
+  saveSettingsAndGoBackButton.click();
+
+  info("Wait for the rendering of the profiler UI");
+  const contentDocument = await waitForProfilerUiRendering(
+    doc,
+    ".perf-presets"
+  );
+  await getActiveButtonFromText(contentDocument, "Start recording");
+  info("The profiler UI is rendered!");
+  return contentDocument;
 }
