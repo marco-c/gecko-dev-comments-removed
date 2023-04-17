@@ -16,6 +16,10 @@ const { createLazyLoaders } = ChromeUtils.import(
 
 
 
+
+
+
+
 const lazy = createLazyLoaders({
   OS: () => ChromeUtils.import("resource://gre/modules/osfile.jsm"),
 });
@@ -102,20 +106,9 @@ function getWASMProfilerGetSymbolsModule() {
 
 
 
-
-
-
-async function getSymbolTableFromLocalBinary(
-  binaryPath,
-  debugPath,
-  breakpadId
-) {
-  const module = await getWASMProfilerGetSymbolsModule();
-
+async function getResultFromWorker(workerURL, initialMessageToWorker) {
   return new Promise((resolve, reject) => {
-    const worker = new ChromeWorker(
-      "resource://devtools/client/performance-new/symbolication-worker.js"
-    );
+    const worker = new ChromeWorker(workerURL);
     gActiveWorkers.add(worker);
 
     
@@ -175,8 +168,35 @@ async function getSymbolTableFromLocalBinary(
       }
     };
 
-    worker.postMessage({ binaryPath, debugPath, breakpadId, module });
+    worker.postMessage(initialMessageToWorker);
   });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function getSymbolTableFromLocalBinary(
+  binaryPath,
+  debugPath,
+  breakpadId
+) {
+  const module = await getWASMProfilerGetSymbolsModule();
+  return getResultFromWorker(
+    "resource://devtools/client/performance-new/symbolication-worker.js",
+    { binaryPath, debugPath, breakpadId, module }
+  );
 }
 
 
