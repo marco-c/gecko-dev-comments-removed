@@ -11,7 +11,6 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  OS: "resource://gre/modules/osfile.jsm",
   Services: "resource://gre/modules/Services.jsm",
 
   Addon: "chrome://remote/content/marionette/addon.js",
@@ -2906,12 +2905,10 @@ GeckoDriver.prototype.print = async function(cmd) {
 
   
   let bytes;
-  const file = await OS.File.open(filePath);
   try {
-    bytes = await file.read();
+    bytes = await IOUtils.read(filePath);
   } finally {
-    file.close();
-    await OS.File.remove(filePath);
+    await IOUtils.remove(filePath);
   }
 
   
