@@ -1549,6 +1549,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
   inline void branchNeg32(Condition cond, Register reg,
                           Label* label) PER_SHARED_ARCH;
 
+  inline void branchAdd64(Condition cond, Imm32 imm, Register64 dest,
+                          Label* label) DEFINED_ON(x86, arm);
+
   template <typename T>
   inline void branchAddPtr(Condition cond, T src, Register dest,
                            Label* label) PER_SHARED_ARCH;
@@ -3651,20 +3654,20 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
 
   void wasmBoundsCheck32(Condition cond, Register index,
-                         Register boundsCheckLimit, Label* label)
+                         Register boundsCheckLimit, Label* ok)
       DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
 
   void wasmBoundsCheck32(Condition cond, Register index,
-                         Address boundsCheckLimit, Label* label)
+                         Address boundsCheckLimit, Label* ok)
       DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
 
   void wasmBoundsCheck64(Condition cond, Register64 index,
-                         Register64 boundsCheckLimit, Label* label)
-      DEFINED_ON(arm64, mips64, x64);
+                         Register64 boundsCheckLimit, Label* ok)
+      DEFINED_ON(arm64, mips64, x64, x86, arm);
 
   void wasmBoundsCheck64(Condition cond, Register64 index,
-                         Address boundsCheckLimit, Label* label)
-      DEFINED_ON(arm64, mips64, x64);
+                         Address boundsCheckLimit, Label* ok)
+      DEFINED_ON(arm64, mips64, x64, x86, arm);
 
   
   void wasmLoad(const wasm::MemoryAccessDesc& access, Operand srcAddr,
