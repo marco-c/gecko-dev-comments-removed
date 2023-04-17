@@ -41,7 +41,13 @@ add_gcc_warning("-Wall")
 check_and_add_gcc_warning("-Wbitfield-enum-conversion")
 
 
+check_and_add_gcc_warning("-Wdeprecated-this-capture", cxx_compiler)
+
+
 add_gcc_warning("-Wempty-body")
+
+
+check_and_add_gcc_warning("-Wformat-type-confusion")
 
 
 add_gcc_warning("-Wignored-qualifiers")
@@ -60,6 +66,9 @@ add_gcc_warning("-Wpointer-arith")
 
 
 check_and_add_gcc_warning("-Wshadow-field-in-constructor-modified")
+
+
+check_and_add_gcc_warning("-Wshadow-uncaptured-local", cxx_compiler)
 
 
 add_gcc_warning("-Wsign-compare")
@@ -101,6 +110,9 @@ check_and_add_gcc_warning("-Wcomma", cxx_compiler)
 
 
 check_and_add_gcc_warning("-Wduplicated-cond")
+
+
+check_and_add_gcc_warning("-Wenum-compare-conditional")
 
 
 check_and_add_gcc_warning("-Wimplicit-fallthrough", cxx_compiler)
