@@ -584,17 +584,6 @@ uint32_t ContentEventHandler::GetNativeTextLength(const Text& aTextNode,
 }
 
 
-uint32_t ContentEventHandler::GetNativeTextLengthBefore(nsIContent* aContent,
-                                                        nsINode* aRootNode) {
-  if (NS_WARN_IF(aContent->IsText())) {
-    return 0;
-  }
-  return ShouldBreakLineBefore(*aContent, aRootNode)
-             ? GetBRLength(LINE_BREAK_TYPE_NATIVE)
-             : 0;
-}
-
-
 uint32_t ContentEventHandler::GetBRLength(LineBreakType aLineBreakType) {
 #if defined(XP_WIN)
   
