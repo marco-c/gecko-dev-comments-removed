@@ -33,11 +33,6 @@ interface imgIRequest : nsIRequest
   
 
 
-  [infallible] readonly attribute unsigned long producerId;
-
-  
-
-
   [infallible] readonly attribute unsigned long providerId;
 
   

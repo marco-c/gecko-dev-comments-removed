@@ -172,11 +172,6 @@ interface imgIContainer : nsISupports
   
 
 
-  [infallible] readonly attribute unsigned long producerId;
-
-  
-
-
   [infallible] readonly attribute unsigned long providerId;
 
   
@@ -329,35 +324,6 @@ interface imgIContainer : nsISupports
 
   [noscript, notxpcom] boolean isImageContainerAvailable(in WindowRenderer aRenderer,
                                                          in uint32_t aFlags);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  [noscript, notxpcom] ImgDrawResult getImageContainerAtSize(in WindowRenderer aRenderer,
-                                                             [const] in nsIntSize aSize,
-                                                             [const] in MaybeSVGImageContext aSVGContext,
-                                                             [const] in MaybeImageIntRegion aRegion,
-                                                             in uint32_t aFlags,
-                                                             out ImageContainer aOutContainer);
 
   
 
