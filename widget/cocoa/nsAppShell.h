@@ -16,8 +16,9 @@
 #include "nsBaseAppShell.h"
 #include "nsTArray.h"
 
+class ProfilingStack;
+
 namespace mozilla {
-class ProfilingStackOwner;
 class nsAvailableMemoryWatcherBase;
 }
 
@@ -72,7 +73,7 @@ class nsAppShell : public nsBaseAppShell {
   CFRunLoopObserverRef mCFRunLoopObserver;
 
   
-  mozilla::ProfilingStackOwner* mProfilingStackOwnerWhileWaiting = nullptr;
+  ProfilingStack* mProfilingStackWhileWaiting = nullptr;
 
   
   dispatch_source_t mMemoryPressureSource = nullptr;
