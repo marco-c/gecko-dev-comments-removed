@@ -5303,13 +5303,15 @@ nsresult HTMLEditor::SetCSSBackgroundColorWithTransaction(
         
         
         if (startOfRange.IsInTextNode()) {
-          if (RefPtr<nsStyledElement> blockStyledElement =
+          if (const RefPtr<nsStyledElement> editableBlockStyledElement =
                   nsStyledElement::FromNodeOrNull(
-                      HTMLEditUtils::GetAncestorBlockElement(
-                          *startOfRange.ContainerAsText()))) {
+                      HTMLEditUtils::GetAncestorElement(
+                          *startOfRange.ContainerAsText(),
+                          HTMLEditUtils::ClosestEditableBlockElement))) {
             Result<int32_t, nsresult> result =
                 mCSSEditUtils->SetCSSEquivalentToHTMLStyleWithTransaction(
-                    *blockStyledElement, nullptr, nsGkAtoms::bgcolor, &aColor);
+                    *editableBlockStyledElement, nullptr, nsGkAtoms::bgcolor,
+                    &aColor);
             if (result.isErr()) {
               if (result.inspectErr() == NS_ERROR_EDITOR_DESTROYED) {
                 NS_WARNING(
@@ -5358,13 +5360,15 @@ nsresult HTMLEditor::SetCSSBackgroundColorWithTransaction(
           if (NS_WARN_IF(startOfRange.IsInDataNode())) {
             continue;
           }
-          if (RefPtr<nsStyledElement> blockStyledElement =
+          if (const RefPtr<nsStyledElement> editableBlockStyledElement =
                   nsStyledElement::FromNodeOrNull(
-                      HTMLEditUtils::GetInclusiveAncestorBlockElement(
-                          *startOfRange.GetChild()))) {
+                      HTMLEditUtils::GetInclusiveAncestorElement(
+                          *startOfRange.GetChild(),
+                          HTMLEditUtils::ClosestEditableBlockElement))) {
             Result<int32_t, nsresult> result =
                 mCSSEditUtils->SetCSSEquivalentToHTMLStyleWithTransaction(
-                    *blockStyledElement, nullptr, nsGkAtoms::bgcolor, &aColor);
+                    *editableBlockStyledElement, nullptr, nsGkAtoms::bgcolor,
+                    &aColor);
             if (result.isErr()) {
               if (result.inspectErr() == NS_ERROR_EDITOR_DESTROYED) {
                 NS_WARNING(
@@ -5412,12 +5416,14 @@ nsresult HTMLEditor::SetCSSBackgroundColorWithTransaction(
       if (startOfRange.IsInTextNode() &&
           EditorUtils::IsEditableContent(*startOfRange.ContainerAsText(),
                                          EditorType::HTML)) {
-        RefPtr<Element> blockElement = HTMLEditUtils::GetAncestorBlockElement(
-            *startOfRange.ContainerAsText());
-        if (blockElement && handledBlockParent != blockElement) {
-          handledBlockParent = blockElement;
+        Element* const editableBlockElement = HTMLEditUtils::GetAncestorElement(
+            *startOfRange.ContainerAsText(),
+            HTMLEditUtils::ClosestEditableBlockElement);
+        if (editableBlockElement &&
+            handledBlockParent != editableBlockElement) {
+          handledBlockParent = editableBlockElement;
           if (nsStyledElement* blockStyledElement =
-                  nsStyledElement::FromNode(blockElement)) {
+                  nsStyledElement::FromNode(handledBlockParent)) {
             
             
             Result<int32_t, nsresult> result =
@@ -5442,12 +5448,14 @@ nsresult HTMLEditor::SetCSSBackgroundColorWithTransaction(
       
       
       for (OwningNonNull<nsIContent>& content : arrayOfContents) {
-        RefPtr<Element> blockElement =
-            HTMLEditUtils::GetInclusiveAncestorBlockElement(content);
-        if (blockElement && handledBlockParent != blockElement) {
-          handledBlockParent = blockElement;
+        Element* const editableBlockElement =
+            HTMLEditUtils::GetInclusiveAncestorElement(
+                content, HTMLEditUtils::ClosestEditableBlockElement);
+        if (editableBlockElement &&
+            handledBlockParent != editableBlockElement) {
+          handledBlockParent = editableBlockElement;
           if (nsStyledElement* blockStyledElement =
-                  nsStyledElement::FromNode(blockElement)) {
+                  nsStyledElement::FromNode(handledBlockParent)) {
             
             
             Result<int32_t, nsresult> result =
@@ -5474,17 +5482,16 @@ nsresult HTMLEditor::SetCSSBackgroundColorWithTransaction(
       if (endOfRange.IsInTextNode() &&
           EditorUtils::IsEditableContent(*endOfRange.ContainerAsText(),
                                          EditorType::HTML)) {
-        RefPtr<Element> blockElement = HTMLEditUtils::GetAncestorBlockElement(
-            *endOfRange.ContainerAsText());
-        if (blockElement && handledBlockParent != blockElement) {
-          if (nsStyledElement* blockStyledElement =
-                  nsStyledElement::FromNode(blockElement)) {
-            
-            
+        Element* const editableBlockElement = HTMLEditUtils::GetAncestorElement(
+            *endOfRange.ContainerAsText(),
+            HTMLEditUtils::ClosestEditableBlockElement);
+        if (editableBlockElement &&
+            handledBlockParent != editableBlockElement) {
+          if (RefPtr<nsStyledElement> blockStyledElement =
+                  nsStyledElement::FromNode(editableBlockElement)) {
             Result<int32_t, nsresult> result =
                 mCSSEditUtils->SetCSSEquivalentToHTMLStyleWithTransaction(
-                    MOZ_KnownLive(*blockStyledElement), nullptr,
-                    nsGkAtoms::bgcolor, &aColor);
+                    *blockStyledElement, nullptr, nsGkAtoms::bgcolor, &aColor);
             if (result.isErr()) {
               if (result.inspectErr() == NS_ERROR_EDITOR_DESTROYED) {
                 NS_WARNING(
