@@ -116,11 +116,11 @@ bool js::intl::LanguageTag::languageMapping(LanguageSubtag& language) {
   MOZ_ASSERT(IsCanonicallyCasedLanguageTag(language.span()));
 
   if (language.length() == 2) {
-    static const char languages[9][3] = {
-      "bh", "in", "iw", "ji", "jw", "mo", "no", "tl", "tw",
+    static const char languages[8][3] = {
+      "bh", "in", "iw", "ji", "jw", "mo", "tl", "tw",
     };
-    static const char* aliases[9] = {
-      "bho", "id", "he", "yi", "jv", "ro", "nb", "fil", "ak",
+    static const char* aliases[8] = {
+      "bho", "id", "he", "yi", "jv", "ro", "fil", "ak",
     };
 
     if (const char* replacement = SearchReplacement(languages, aliases, language)) {
@@ -201,7 +201,7 @@ bool js::intl::LanguageTag::languageMapping(LanguageSubtag& language) {
       "wnn", "xnt",  "ro",  "mn",  "mi",  "ms", "mry", "raj", "dmw", "vaj",
        "my", "aog", "mry", "xny",  "na",  "nv", "nru",  "nr", "ekc", "kdz",
        "nd",  "ng",  "ne",  "nl", "azd", "nrk",  "nn", "nbr", "ngv",  "nb",
-      "dtd",  "nb",  "ne", "pij", "bpp",  "ny",  "oc",  "oj",  "oj",  "or",
+      "dtd",  "no",  "ne", "pij", "bpp",  "ny",  "oc",  "oj",  "oj",  "or",
        "om",  "or",  "os", "vaj",  "pa",  "ps", "adx",  "fa",  "fa",  "pi",
        "mg", "huw", "phr", "lah",  "pl",  "pt", "bfy", "lcq", "prt",  "ps",
       "pub",  "qu",  "qu", "emx", "rom",  "rm",  "ro",  "ro",  "rn",  "ru",
@@ -517,9 +517,7 @@ void js::intl::LanguageTag::performComplexRegionMappings() {
     if (language().equalTo("akk") ||
         language().equalTo("ckb") ||
         (language().equalTo("ku") && script().equalTo("Arab")) ||
-        language().equalTo("mis") ||
         language().equalTo("syr") ||
-        (language().equalTo("und") && script().equalTo("Hatr")) ||
         (language().equalTo("und") && script().equalTo("Syrc")) ||
         (language().equalTo("und") && script().equalTo("Xsux"))) {
       setRegion("IQ");
@@ -856,7 +854,8 @@ bool js::intl::LanguageTag::updateLegacyMappings(JSContext* cx) {
       setLanguage("hsn");
     }
   }
-  else if (language().equalTo("no")) {
+  else if (language().equalTo("no") ||
+           language().equalTo("nor")) {
     if (auto* bokmal = findVariant("bokmal")) {
       removeVariant(bokmal);
       setLanguage("nb");
