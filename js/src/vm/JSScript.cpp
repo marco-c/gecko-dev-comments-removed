@@ -19,7 +19,6 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Span.h"  
 #include "mozilla/Sprintf.h"
-#include "mozilla/Unused.h"
 #include "mozilla/Utf8.h"
 #include "mozilla/Vector.h"
 
@@ -2462,7 +2461,7 @@ ScriptSource::~ScriptSource() {
   }
 
   
-  mozilla::Unused << unique.release();
+  (void)unique.release();
   unique.reset(newPtr);
   return true;
 }
