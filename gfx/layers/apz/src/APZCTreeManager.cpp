@@ -966,32 +966,6 @@ bool APZCTreeManager::AdvanceAnimationsInternal(
   return activeAnimations;
 }
 
-
-
-Maybe<ParentLayerIntRegion> APZCTreeManager::ComputeClipRegion(
-    const LayersId& aLayersId, const ScrollNode& aLayer) {
-  Maybe<ParentLayerIntRegion> clipRegion;
-  if (aLayer.GetClipRect()) {
-    clipRegion.emplace(*aLayer.GetClipRect());
-  } else if (aLayer.Metrics().IsRootContent() &&
-             mAsyncZoomContainerSubtree == Some(aLayersId)) {
-    
-    
-    
-    
-    
-    
-  } else {
-    
-    
-    
-    
-    clipRegion.emplace(RoundedToInt(aLayer.Metrics().GetCompositionBounds()));
-  }
-
-  return clipRegion;
-}
-
 void APZCTreeManager::PrintAPZCInfo(const ScrollNode& aLayer,
                                     const AsyncPanZoomController* apzc) {
   const FrameMetrics& metrics = aLayer.Metrics();
