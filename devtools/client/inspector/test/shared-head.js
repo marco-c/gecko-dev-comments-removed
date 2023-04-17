@@ -929,14 +929,3 @@ async function removeContentPageElementAttribute(selector, attribute) {
     }
   );
 }
-
-function ignoreGetGridsPromiseRejections() {
-  const { PromiseTestUtils } = ChromeUtils.import(
-    "resource://testing-common/PromiseTestUtils.jsm"
-  );
-  
-  
-  PromiseTestUtils.allowMatchingRejectionsGlobally(
-    /Connection closed.*getGrids failed/
-  );
-}

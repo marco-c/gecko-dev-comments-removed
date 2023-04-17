@@ -49,7 +49,13 @@ const SWALLOWED_RET = Symbol("swallowed");
 
 
 
-exports.safeAsyncMethod = function(asyncFn, shouldSwallow) {
+
+
+exports.safeAsyncMethod = function(
+  asyncFn,
+  shouldSwallow,
+  retValue = SWALLOWED_RET
+) {
   return async function(...args) {
     try {
       const ret = await asyncFn(...args);
@@ -57,7 +63,7 @@ exports.safeAsyncMethod = function(asyncFn, shouldSwallow) {
     } catch (e) {
       if (shouldSwallow()) {
         console.warn("Async method failed in safeAsyncMethod", e);
-        return SWALLOWED_RET;
+        return retValue;
       }
       throw e;
     }
