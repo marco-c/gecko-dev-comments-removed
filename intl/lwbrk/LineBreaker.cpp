@@ -370,8 +370,9 @@ static inline bool IS_HYPHEN(char16_t u) {
   return (u == U_HYPHEN || u == 0x2010 ||  
           u == 0x2012 ||                   
           u == 0x2013 ||                   
-#if ANDROID
+#if ANDROID || XP_WIN
           
+
 
 
 
