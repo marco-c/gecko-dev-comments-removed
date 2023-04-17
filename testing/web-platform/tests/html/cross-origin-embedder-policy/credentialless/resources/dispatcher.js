@@ -22,13 +22,21 @@ const concurrencyLimiter = (max_concurrency) => {
 
 
 const randomDelay = () => {
-  return new Promise(resolve => setTimeout(resolve, 50 + 100*Math.random()));
+  return new Promise(resolve => setTimeout(resolve, 10 + 90*Math.random()));
 }
 
 
 
 
-const limiter = concurrencyLimiter(1);
+
+
+
+
+
+
+
+
+const limiter = concurrencyLimiter(6);
 
 const send = async function(uuid, message) {
   await limiter(async () => {
