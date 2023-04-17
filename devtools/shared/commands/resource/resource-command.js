@@ -110,6 +110,10 @@ class ResourceCommand {
 
 
 
+
+
+
+
   async watchResources(resources, options) {
     const {
       onAvailable,
@@ -195,7 +199,7 @@ class ResourceCommand {
     });
 
     if (!ignoreExistingResources) {
-      await this._forwardCachedResources(watchedResources, onAvailable);
+      await this._forwardExistingResources(watchedResources, onAvailable);
     }
   }
 
@@ -696,7 +700,7 @@ class ResourceCommand {
       for (const { callbackType, updates } of pendingEvents) {
         try {
           if (callbackType == "available") {
-            onAvailable(updates);
+            onAvailable(updates, { areExistingResources: false });
           } else if (callbackType == "updated" && onUpdated) {
             onUpdated(updates);
           } else if (callbackType == "destroyed" && onDestroyed) {
@@ -856,12 +860,12 @@ class ResourceCommand {
     );
   }
 
-  async _forwardCachedResources(resourceTypes, onAvailable) {
-    const cachedResources = this._cache.filter(resource =>
+  async _forwardExistingResources(resourceTypes, onAvailable) {
+    const existingResources = this._cache.filter(resource =>
       resourceTypes.includes(resource.resourceType)
     );
-    if (cachedResources.length > 0) {
-      await onAvailable(cachedResources);
+    if (existingResources.length > 0) {
+      await onAvailable(existingResources, { areExistingResources: true });
     }
   }
 
