@@ -7,29 +7,37 @@ requests.models
 This module contains the primary objects that power Requests.
 """
 
-import collections
 import datetime
+import sys
 
-from io import BytesIO, UnsupportedOperation
+
+
+
+import encodings.idna
+
+from urllib3.fields import RequestField
+from urllib3.filepost import encode_multipart_formdata
+from urllib3.util import parse_url
+from urllib3.exceptions import (
+    DecodeError, ReadTimeoutError, ProtocolError, LocationParseError)
+
+from io import UnsupportedOperation
 from .hooks import default_hooks
 from .structures import CaseInsensitiveDict
 
 from .auth import HTTPBasicAuth
 from .cookies import cookiejar_from_dict, get_cookie_header, _copy_cookie_jar
-from .packages.urllib3.fields import RequestField
-from .packages.urllib3.filepost import encode_multipart_formdata
-from .packages.urllib3.util import parse_url
-from .packages.urllib3.exceptions import (
-    DecodeError, ReadTimeoutError, ProtocolError, LocationParseError)
 from .exceptions import (
     HTTPError, MissingSchema, InvalidURL, ChunkedEncodingError,
     ContentDecodingError, ConnectionError, StreamConsumedError)
+from ._internal_utils import to_native_string, unicode_is_ascii
 from .utils import (
     guess_filename, get_auth_from_url, requote_uri,
     stream_decode_response_unicode, to_key_val_list, parse_header_links,
-    iter_slices, guess_json_utf, super_len, to_native_string)
+    iter_slices, guess_json_utf, super_len, check_header_validity)
 from .compat import (
-    cookielib, urlunparse, urlsplit, urlencode, str, bytes, StringIO,
+    Callable, Mapping,
+    cookielib, urlunparse, urlsplit, urlencode, str, bytes,
     is_py2, chardet, builtin_str, basestring)
 from .compat import json as complexjson
 from .status_codes import codes
@@ -37,11 +45,11 @@ from .status_codes import codes
 
 
 REDIRECT_STATI = (
-    codes.moved,              
-    codes.found,              
-    codes.other,              
-    codes.temporary_redirect, 
-    codes.permanent_redirect, 
+    codes.moved,               
+    codes.found,               
+    codes.other,               
+    codes.temporary_redirect,  
+    codes.permanent_redirect,  
 )
 
 DEFAULT_REDIRECT_LIMIT = 30
@@ -103,9 +111,10 @@ class RequestEncodingMixin(object):
         """Build the body for a multipart/form-data request.
 
         Will successfully encode files when passed as a dict or a list of
-        2-tuples. Order is retained if data is a list of 2-tuples but arbitrary
+        tuples. Order is retained if data is a list of tuples but arbitrary
         if parameters are supplied as a dict.
-
+        The tuples may be 2-tuples (filename, fileobj), 3-tuples (filename, fileobj, contentype)
+        or 4-tuples (filename, fileobj, contentype, custom_headers).
         """
         if (not files):
             raise ValueError("Files must be provided.")
@@ -146,8 +155,12 @@ class RequestEncodingMixin(object):
 
             if isinstance(fp, (str, bytes, bytearray)):
                 fdata = fp
-            else:
+            elif hasattr(fp, 'read'):
                 fdata = fp.read()
+            elif fp is None:
+                continue
+            else:
+                fdata = fp
 
             rf = RequestField(name=k, data=fdata, filename=fn, headers=fh)
             rf.make_multipart(content_type=ft)
@@ -165,10 +178,10 @@ class RequestHooksMixin(object):
         if event not in self.hooks:
             raise ValueError('Unsupported event specified, with event name "%s"' % (event))
 
-        if isinstance(hook, collections.Callable):
+        if isinstance(hook, Callable):
             self.hooks[event].append(hook)
         elif hasattr(hook, '__iter__'):
-            self.hooks[event].extend(h for h in hook if isinstance(h, collections.Callable))
+            self.hooks[event].extend(h for h in hook if isinstance(h, Callable))
 
     def deregister_hook(self, event, hook):
         """Deregister a previously registered hook.
@@ -191,9 +204,13 @@ class Request(RequestHooksMixin):
     :param url: URL to send.
     :param headers: dictionary of headers to send.
     :param files: dictionary of {filename: fileobject} files to multipart upload.
-    :param data: the body to attach to the request. If a dictionary is provided, form-encoding will take place.
+    :param data: the body to attach to the request. If a dictionary or
+        list of tuples ``[(key, value)]`` is provided, form-encoding will
+        take place.
     :param json: json for the body to attach to the request (if files or data is not specified).
-    :param params: dictionary of URL parameters to append to the URL.
+    :param params: URL parameters to append to the URL. If a dictionary or
+        list of tuples ``[(key, value)]`` is provided, form-encoding will
+        take place.
     :param auth: Auth handler or (user, pass) tuple.
     :param cookies: dictionary or CookieJar of cookies to attach to this request.
     :param hooks: dictionary of callback hooks, for internal usage.
@@ -201,13 +218,14 @@ class Request(RequestHooksMixin):
     Usage::
 
       >>> import requests
-      >>> req = requests.Request('GET', 'http://httpbin.org/get')
+      >>> req = requests.Request('GET', 'https://httpbin.org/get')
       >>> req.prepare()
       <PreparedRequest [GET]>
-
     """
-    def __init__(self, method=None, url=None, headers=None, files=None,
-        data=None, params=None, auth=None, cookies=None, hooks=None, json=None):
+
+    def __init__(self,
+            method=None, url=None, headers=None, files=None, data=None,
+            params=None, auth=None, cookies=None, hooks=None, json=None):
 
         
         data = [] if data is None else data
@@ -255,19 +273,21 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
     """The fully mutable :class:`PreparedRequest <PreparedRequest>` object,
     containing the exact bytes that will be sent to the server.
 
-    Generated from either a :class:`Request <Request>` object or manually.
+    Instances are generated from a :class:`Request <Request>` object, and
+    should not be instantiated manually; doing so may produce undesirable
+    effects.
 
     Usage::
 
       >>> import requests
-      >>> req = requests.Request('GET', 'http://httpbin.org/get')
+      >>> req = requests.Request('GET', 'https://httpbin.org/get')
       >>> r = req.prepare()
+      >>> r
       <PreparedRequest [GET]>
 
       >>> s = requests.Session()
       >>> s.send(r)
       <Response [200]>
-
     """
 
     def __init__(self):
@@ -284,9 +304,12 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
         self.body = None
         
         self.hooks = default_hooks()
+        
+        self._body_position = None
 
-    def prepare(self, method=None, url=None, headers=None, files=None,
-        data=None, params=None, auth=None, cookies=None, hooks=None, json=None):
+    def prepare(self,
+            method=None, url=None, headers=None, files=None, data=None,
+            params=None, auth=None, cookies=None, hooks=None, json=None):
         """Prepares the entire request with the given parameters."""
 
         self.prepare_method(method)
@@ -313,6 +336,7 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
         p._cookies = _copy_cookie_jar(self._cookies)
         p.body = self.body
         p.hooks = self.hooks
+        p._body_position = self._body_position
         return p
 
     def prepare_method(self, method):
@@ -320,6 +344,16 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
         self.method = method
         if self.method is not None:
             self.method = to_native_string(self.method.upper())
+
+    @staticmethod
+    def _get_idna_encoded_host(host):
+        import idna
+
+        try:
+            host = idna.encode(host, uts46=True).decode('utf-8')
+        except idna.IDNAError:
+            raise UnicodeError
+        return host
 
     def prepare_url(self, url, params):
         """Prepares the given HTTP URL."""
@@ -332,6 +366,9 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
             url = url.decode('utf8')
         else:
             url = unicode(url) if is_py2 else str(url)
+
+        
+        url = url.lstrip()
 
         
         
@@ -356,9 +393,15 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
             raise InvalidURL("Invalid URL %r: No host supplied" % url)
 
         
-        try:
-            host = host.encode('idna').decode('utf-8')
-        except UnicodeError:
+        
+        
+        
+        if not unicode_is_ascii(host):
+            try:
+                host = self._get_idna_encoded_host(host)
+            except UnicodeError:
+                raise InvalidURL('URL has an invalid label.')
+        elif host.startswith(u'*'):
             raise InvalidURL('URL has an invalid label.')
 
         
@@ -401,10 +444,13 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
     def prepare_headers(self, headers):
         """Prepares the given HTTP headers."""
 
+        self.headers = CaseInsensitiveDict()
         if headers:
-            self.headers = CaseInsensitiveDict((to_native_string(name), value) for name, value in headers.items())
-        else:
-            self.headers = CaseInsensitiveDict()
+            for header in headers.items():
+                
+                check_header_validity(header)
+                name, value = header
+                self.headers[to_native_string(name)] = value
 
     def prepare_body(self, data, files, json=None):
         """Prepares the given HTTP body data."""
@@ -415,24 +461,38 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
         
         body = None
         content_type = None
-        length = None
 
         if not data and json is not None:
+            
+            
             content_type = 'application/json'
             body = complexjson.dumps(json)
+            if not isinstance(body, bytes):
+                body = body.encode('utf-8')
 
         is_stream = all([
             hasattr(data, '__iter__'),
-            not isinstance(data, (basestring, list, tuple, dict))
+            not isinstance(data, (basestring, list, tuple, Mapping))
         ])
 
-        try:
-            length = super_len(data)
-        except (TypeError, AttributeError, UnsupportedOperation):
-            length = None
-
         if is_stream:
+            try:
+                length = super_len(data)
+            except (TypeError, AttributeError, UnsupportedOperation):
+                length = None
+
             body = data
+
+            if getattr(body, 'tell', None) is not None:
+                
+                
+                
+                try:
+                    self._body_position = body.tell()
+                except (IOError, OSError):
+                    
+                    
+                    self._body_position = object()
 
             if files:
                 raise NotImplementedError('Streamed bodies and files are mutually exclusive.')
@@ -462,15 +522,16 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
         self.body = body
 
     def prepare_content_length(self, body):
-        if hasattr(body, 'seek') and hasattr(body, 'tell'):
-            body.seek(0, 2)
-            self.headers['Content-Length'] = builtin_str(body.tell())
-            body.seek(0, 0)
-        elif body is not None:
-            l = super_len(body)
-            if l:
-                self.headers['Content-Length'] = builtin_str(l)
-        elif (self.method not in ('GET', 'HEAD')) and (self.headers.get('Content-Length') is None):
+        """Prepare Content-Length header based on request method and body"""
+        if body is not None:
+            length = super_len(body)
+            if length:
+                
+                
+                self.headers['Content-Length'] = builtin_str(length)
+        elif self.method not in ('GET', 'HEAD') and self.headers.get('Content-Length') is None:
+            
+            
             self.headers['Content-Length'] = '0'
 
     def prepare_auth(self, auth, url=''):
@@ -504,8 +565,8 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
         can only be called once for the life of the
         :class:`PreparedRequest <PreparedRequest>` object. Any subsequent calls
         to ``prepare_cookies`` will have no actual effect, unless the "Cookie"
-        header is removed beforehand."""
-
+        header is removed beforehand.
+        """
         if isinstance(cookies, cookielib.CookieJar):
             self._cookies = cookies
         else:
@@ -536,10 +597,9 @@ class Response(object):
     ]
 
     def __init__(self):
-        super(Response, self).__init__()
-
         self._content = False
         self._content_consumed = False
+        self._next = None
 
         
         self.status_code = None
@@ -583,16 +643,19 @@ class Response(object):
         
         self.request = None
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.close()
+
     def __getstate__(self):
         
         
         if not self._content_consumed:
             self.content
 
-        return dict(
-            (attr, getattr(self, attr, None))
-            for attr in self.__attrs__
-        )
+        return {attr: getattr(self, attr, None) for attr in self.__attrs__}
 
     def __setstate__(self, state):
         for name, value in state.items():
@@ -606,11 +669,23 @@ class Response(object):
         return '<Response [%s]>' % (self.status_code)
 
     def __bool__(self):
-        """Returns true if :attr:`status_code` is 'OK'."""
+        """Returns True if :attr:`status_code` is less than 400.
+
+        This attribute checks if the status code of the response is between
+        400 and 600 to see if there was a client error or a server error. If
+        the status code, is between 200 and 400, this will return True. This
+        is **not** a check to see if the response code is ``200 OK``.
+        """
         return self.ok
 
     def __nonzero__(self):
-        """Returns true if :attr:`status_code` is 'OK'."""
+        """Returns True if :attr:`status_code` is less than 400.
+
+        This attribute checks if the status code of the response is between
+        400 and 600 to see if there was a client error or a server error. If
+        the status code, is between 200 and 400, this will return True. This
+        is **not** a check to see if the response code is ``200 OK``.
+        """
         return self.ok
 
     def __iter__(self):
@@ -619,6 +694,13 @@ class Response(object):
 
     @property
     def ok(self):
+        """Returns True if :attr:`status_code` is less than 400, False if not.
+
+        This attribute checks if the status code of the response is between
+        400 and 600 to see if there was a client error or a server error. If
+        the status code is between 200 and 400, this will return True. This
+        is **not** a check to see if the response code is ``200 OK``.
+        """
         try:
             self.raise_for_status()
         except HTTPError:
@@ -634,12 +716,17 @@ class Response(object):
 
     @property
     def is_permanent_redirect(self):
-        """True if this Response one of the permanent versions of redirect"""
+        """True if this Response one of the permanent versions of redirect."""
         return ('location' in self.headers and self.status_code in (codes.moved_permanently, codes.permanent_redirect))
 
     @property
+    def next(self):
+        """Returns a PreparedRequest for the next request in a redirect chain, if there is one."""
+        return self._next
+
+    @property
     def apparent_encoding(self):
-        """The apparent encoding, provided by the chardet library"""
+        """The apparent encoding, provided by the chardet library."""
         return chardet.detect(self.content)['encoding']
 
     def iter_content(self, chunk_size=1, decode_unicode=False):
@@ -648,6 +735,12 @@ class Response(object):
         large responses.  The chunk size is the number of bytes it should
         read into memory.  This is not necessarily the length of each item
         returned as decoding can take place.
+
+        chunk_size must be of type int or None. A value of None will
+        function differently depending on the value of `stream`.
+        stream=True will read data as it arrives in whatever size the
+        chunks are received. If stream=False, data is returned as
+        a single chunk.
 
         If decode_unicode is True, content will be decoded using the best
         available encoding based on the response.
@@ -677,6 +770,8 @@ class Response(object):
 
         if self._content_consumed and isinstance(self._content, bool):
             raise StreamConsumedError()
+        elif chunk_size is not None and not isinstance(chunk_size, int):
+            raise TypeError("chunk_size must be an int, it is instead a %s." % type(chunk_size))
         
         reused_chunks = iter_slices(self._content, chunk_size)
 
@@ -689,7 +784,7 @@ class Response(object):
 
         return chunks
 
-    def iter_lines(self, chunk_size=ITER_CHUNK_SIZE, decode_unicode=None, delimiter=None):
+    def iter_lines(self, chunk_size=ITER_CHUNK_SIZE, decode_unicode=False, delimiter=None):
         """Iterates over the response data, one line at a time.  When
         stream=True is set on the request, this avoids reading the
         content at once into memory for large responses.
@@ -726,18 +821,14 @@ class Response(object):
 
         if self._content is False:
             
-            try:
-                if self._content_consumed:
-                    raise RuntimeError(
-                        'The content for this response was already consumed')
+            if self._content_consumed:
+                raise RuntimeError(
+                    'The content for this response was already consumed')
 
-                if self.status_code == 0:
-                    self._content = None
-                else:
-                    self._content = bytes().join(self.iter_content(CONTENT_CHUNK_SIZE)) or bytes()
-
-            except AttributeError:
+            if self.status_code == 0 or self.raw is None:
                 self._content = None
+            else:
+                self._content = b''.join(self.iter_content(CONTENT_CHUNK_SIZE)) or b''
 
         self._content_consumed = True
         
@@ -783,12 +874,13 @@ class Response(object):
         return content
 
     def json(self, **kwargs):
-        """Returns the json-encoded content of a response, if any.
+        r"""Returns the json-encoded content of a response, if any.
 
         :param \*\*kwargs: Optional arguments that ``json.loads`` takes.
+        :raises ValueError: If the response body does not contain valid json.
         """
 
-        if not self.encoding and len(self.content) > 3:
+        if not self.encoding and self.content and len(self.content) > 3:
             
             
             
@@ -826,15 +918,26 @@ class Response(object):
         return l
 
     def raise_for_status(self):
-        """Raises stored :class:`HTTPError`, if one occurred."""
+        """Raises :class:`HTTPError`, if one occurred."""
 
         http_error_msg = ''
+        if isinstance(self.reason, bytes):
+            
+            
+            
+            
+            try:
+                reason = self.reason.decode('utf-8')
+            except UnicodeDecodeError:
+                reason = self.reason.decode('iso-8859-1')
+        else:
+            reason = self.reason
 
         if 400 <= self.status_code < 500:
-            http_error_msg = '%s Client Error: %s for url: %s' % (self.status_code, self.reason, self.url)
+            http_error_msg = u'%s Client Error: %s for url: %s' % (self.status_code, reason, self.url)
 
         elif 500 <= self.status_code < 600:
-            http_error_msg = '%s Server Error: %s for url: %s' % (self.status_code, self.reason, self.url)
+            http_error_msg = u'%s Server Error: %s for url: %s' % (self.status_code, reason, self.url)
 
         if http_error_msg:
             raise HTTPError(http_error_msg, response=self)
@@ -846,6 +949,8 @@ class Response(object):
         *Note: Should not normally need to be called explicitly.*
         """
         if not self._content_consumed:
-            return self.raw.close()
+            self.raw.close()
 
-        return self.raw.release_conn()
+        release_conn = getattr(self.raw, 'release_conn', None)
+        if release_conn is not None:
+            release_conn()
