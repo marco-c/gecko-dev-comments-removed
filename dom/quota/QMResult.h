@@ -71,4 +71,6 @@ inline OkOrErr ToResult(QMResult&& aValue);
 
 }  
 
+#define QM_TO_RESULT(expr) ToResult(ToQMResult(expr))
+
 #endif
