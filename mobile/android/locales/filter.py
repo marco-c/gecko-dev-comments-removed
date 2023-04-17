@@ -14,7 +14,7 @@ def test(mod, path, entity=None):
     import re
 
     
-    if mod not in ("dom", "toolkit", "mobile", "mobile/android/base", "mobile/android"):
+    if mod not in ("dom", "toolkit", "mobile", "mobile/android"):
         return "ignore"
 
     if mod == "toolkit":
