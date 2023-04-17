@@ -1610,37 +1610,33 @@ bool GCRunnerFired(TimeStamp aDeadline, void* ) {
 
     case GCRunnerAction::MajorGC: {
       RefPtr<MayGCPromise> mbPromise = MayGCNow(step.mReason);
-      if (mbPromise) {
+      if (!mbPromise || mbPromise->IsResolved()) {
         
         
-        if (!mbPromise->IsResolved()) {
-          nsJSContext::KillGCRunner();
-          JS::GCReason reason = step.mReason;
-          mbPromise->Then(
-              GetMainThreadSerialEventTarget(), __func__,
-              [reason](bool aIgnored) {
-                sScheduler.NoteReadyForMajorGC(reason);
-                if (sGCRunner) {
-                  
-                  
-                  sGCRunner->Cancel();
-                }
-                
-                sGCRunner = IdleTaskRunner::Create(
-                    [](TimeStamp aDeadline) {
-                      return GCRunnerFired(aDeadline, nullptr);
-                    },
-                    "GCRunnerFired", 0,
-                    StaticPrefs::javascript_options_gc_delay_interslice(),
-                    int64_t(
-                        sScheduler.mActiveIntersliceGCBudget.ToMilliseconds()),
-                    true, [] { return sShuttingDown; });
-              },
-              [](mozilla::ipc::ResponseRejectReason r) {});
-          return true;
-        }
+        break;
       }
-      break;
+
+      nsJSContext::KillGCRunner();
+      JS::GCReason reason = step.mReason;
+      mbPromise->Then(
+          GetMainThreadSerialEventTarget(), __func__,
+          [reason](bool aIgnored) {
+            sScheduler.NoteReadyForMajorGC(reason);
+            
+            
+            nsJSContext::KillGCRunner();
+            sGCRunner = IdleTaskRunner::Create(
+                [](TimeStamp aDeadline) {
+                  return GCRunnerFired(aDeadline, nullptr);
+                },
+                "GCRunnerFired", 0,
+                StaticPrefs::javascript_options_gc_delay_interslice(),
+                int64_t(sScheduler.mActiveIntersliceGCBudget.ToMilliseconds()),
+                true, [] { return sShuttingDown; });
+          },
+          [](mozilla::ipc::ResponseRejectReason r) {});
+
+      return true;
     }
     case GCRunnerAction::MajorGCReady:
     case GCRunnerAction::GCSlice:
