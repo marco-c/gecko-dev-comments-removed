@@ -4455,9 +4455,8 @@ static JSScript* CopyScriptImpl(JSContext* cx, HandleScript src,
   SourceExtent extent = src->extent();
 
   ImmutableScriptFlags flags = src->immutableFlags();
-  
-  MOZ_ASSERT(flags.hasFlag(JSScript::ImmutableFlags::HasNonSyntacticScope) ==
-             scopes[0]->hasOnChain(ScopeKind::NonSyntactic));
+  flags.setFlag(JSScript::ImmutableFlags::HasNonSyntacticScope,
+                scopes[0]->hasOnChain(ScopeKind::NonSyntactic));
 
   
   MOZ_ASSERT_IF(functionOrGlobal->is<JSFunction>(),

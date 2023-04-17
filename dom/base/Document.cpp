@@ -16215,6 +16215,12 @@ bool Document::IsExtensionPage() const {
          BasePrincipal::Cast(NodePrincipal())->AddonPolicy();
 }
 
+void Document::TraceProtos(JSTracer* aTrc) {
+  if (mPrototypeDocument) {
+    mPrototypeDocument->TraceProtos(aTrc);
+  }
+}
+
 
 
 

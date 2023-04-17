@@ -12,8 +12,6 @@
 #include "nsISupports.h"
 #include "nsCOMPtr.h"
 #include "jspubtd.h"
-#include "js/experimental/JSStencil.h"
-#include "mozilla/RefPtr.h"
 
 class nsIScriptGlobalObject;
 
@@ -83,8 +81,7 @@ class nsIOffThreadScriptReceiver : public nsISupports {
 
 
 
-  NS_IMETHOD OnScriptCompileComplete(JS::Stencil* aStencil,
-                                     nsresult aStatus) = 0;
+  NS_IMETHOD OnScriptCompileComplete(JSScript* aScript, nsresult aStatus) = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIOffThreadScriptReceiver,
