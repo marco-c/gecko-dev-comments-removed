@@ -724,10 +724,6 @@ class ScrollWheelInput : public InputData {
   double mDeltaY;
 
   
-  double mWheelTicksX = 0.0;
-  double mWheelTicksY = 0.0;
-
-  
   
   ParentLayerPoint mLocalOrigin;
 

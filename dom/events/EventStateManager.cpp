@@ -6046,7 +6046,6 @@ void EventStateManager::DeltaAccumulator::InitLineOrPageDelta(
   
   
   
-  
   if (!mIsNoLineOrPageDeltaDevice &&
       !EventStateManager::WheelPrefs::GetInstance()
            ->NeedToComputeLineOrPageDelta(aEvent)) {
@@ -6106,7 +6105,13 @@ EventStateManager::DeltaAccumulator::ComputeScrollAmountForDefaultAction(
     WidgetWheelEvent* aEvent, const nsIntSize& aScrollAmountInDevPixels) {
   MOZ_ASSERT(aEvent);
 
-  DeltaValues acceleratedDelta = WheelTransaction::AccelerateWheelDelta(aEvent);
+  
+  
+  bool allowScrollSpeedOverride =
+      (!aEvent->mCustomizedByUserPrefs &&
+       aEvent->mDeltaMode == WheelEvent_Binding::DOM_DELTA_LINE);
+  DeltaValues acceleratedDelta =
+      WheelTransaction::AccelerateWheelDelta(aEvent, allowScrollSpeedOverride);
 
   nsIntPoint result(0, 0);
   if (aEvent->mDeltaMode == WheelEvent_Binding::DOM_DELTA_PIXEL) {

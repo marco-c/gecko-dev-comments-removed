@@ -357,12 +357,17 @@ LayoutDeviceIntPoint WheelTransaction::GetScreenPoint(WidgetGUIEvent* aEvent) {
 }
 
 
-DeltaValues WheelTransaction::AccelerateWheelDelta(WidgetWheelEvent* aEvent) {
-  DeltaValues result = OverrideSystemScrollSpeed(aEvent);
+DeltaValues WheelTransaction::AccelerateWheelDelta(
+    WidgetWheelEvent* aEvent, bool aAllowScrollSpeedOverride) {
+  DeltaValues result(aEvent);
 
   
   if (aEvent->mDeltaMode != dom::WheelEvent_Binding::DOM_DELTA_LINE) {
     return result;
+  }
+
+  if (aAllowScrollSpeedOverride) {
+    result = OverrideSystemScrollSpeed(aEvent);
   }
 
   
@@ -389,6 +394,7 @@ double WheelTransaction::ComputeAcceleratedWheelDelta(double aDelta,
 DeltaValues WheelTransaction::OverrideSystemScrollSpeed(
     WidgetWheelEvent* aEvent) {
   MOZ_ASSERT(sTargetFrame, "We don't have mouse scrolling transaction");
+  MOZ_ASSERT(aEvent->mDeltaMode == dom::WheelEvent_Binding::DOM_DELTA_LINE);
 
   
   
