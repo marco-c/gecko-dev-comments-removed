@@ -59,6 +59,10 @@ enum class ScrollSource {
 };
 
 
+inline bool ScrollSourceRespectsDisregardedDirections(ScrollSource aSource) {
+  return aSource == ScrollSource::Wheel;
+}
+
 
 
 
