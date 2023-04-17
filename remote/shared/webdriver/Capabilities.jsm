@@ -440,9 +440,7 @@ class Capabilities extends Map {
       [
         "moz:debuggerAddress",
         
-        RemoteAgent.listening && RemoteAgent.cdp
-          ? remoteAgent.debuggerAddress
-          : null,
+        RemoteAgent.cdp ? remoteAgent.debuggerAddress : null,
       ],
       [
         "moz:headless",
