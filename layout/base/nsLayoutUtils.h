@@ -1196,10 +1196,10 @@ class nsLayoutUtils {
 
 
 
-  static nsresult PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
-                             const nsRegion& aDirtyRegion, nscolor aBackstop,
-                             nsDisplayListBuilderMode aBuilderMode,
-                             PaintFrameFlags aFlags = PaintFrameFlags(0));
+  static void PaintFrame(gfxContext* aRenderingContext, nsIFrame* aFrame,
+                         const nsRegion& aDirtyRegion, nscolor aBackstop,
+                         nsDisplayListBuilderMode aBuilderMode,
+                         PaintFrameFlags aFlags = PaintFrameFlags(0));
 
   
 
