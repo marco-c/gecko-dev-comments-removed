@@ -20,7 +20,6 @@
 #include "Registry.h"
 #include "RemoteSettings.h"
 #include "ScheduledTask.h"
-#include "SetDefaultBrowser.h"
 #include "Telemetry.h"
 
 
@@ -251,8 +250,6 @@ static bool CheckIfAppRanRecently(bool* aResult) {
 
 
 
-
-
 int wmain(int argc, wchar_t** argv) {
   if (argc < 2 || !argv[1]) {
     return E_INVALIDARG;
@@ -385,12 +382,6 @@ int wmain(int argc, wchar_t** argv) {
         MaybeShowNotification(browserInfo, argv[2]);
 
     return SendDefaultBrowserPing(browserInfo, activitiesPerformed);
-  } else if (!wcscmp(argv[1], L"set-default-browser-user-choice")) {
-    if (argc < 3 || !argv[2]) {
-      return E_INVALIDARG;
-    }
-
-    return SetDefaultBrowserUserChoice(argv[2]);
   } else {
     return E_INVALIDARG;
   }

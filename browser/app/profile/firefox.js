@@ -260,12 +260,6 @@ pref("browser.shell.mostRecentDateSetAsDefault", "");
 pref("browser.shell.skipDefaultBrowserCheckOnFirstRun", true);
 pref("browser.shell.didSkipDefaultBrowserCheckOnFirstRun", false);
 pref("browser.shell.defaultBrowserCheckCount", 0);
-#if defined(XP_WIN)
-
-
-pref("browser.shell.setDefaultBrowserUserChoice", false);
-#endif
-
 
 
 
