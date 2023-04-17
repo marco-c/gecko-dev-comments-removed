@@ -142,7 +142,6 @@ static already_AddRefed<MediaDataEncoder> CreateH264Encoder(
     int32_t aWidth = WIDTH, int32_t aHeight = HEIGHT,
     const Maybe<MediaDataEncoder::H264Specific>& aSpecific =
         Some(MediaDataEncoder::H264Specific(
-            KEYFRAME_INTERVAL,
             MediaDataEncoder::H264Specific::ProfileLevel::BaselineAutoLevel))) {
   RefPtr<PEMFactory> f(new PEMFactory());
 
@@ -159,11 +158,13 @@ static already_AddRefed<MediaDataEncoder> CreateH264Encoder(
   if (aSpecific) {
     e = f->CreateEncoder(CreateEncoderParams(
         videoInfo , aUsage, taskQueue, aPixelFormat,
-        FRAME_RATE , BIT_RATE , aSpecific.value()));
+        FRAME_RATE , KEYFRAME_INTERVAL ,
+        BIT_RATE , aSpecific.value()));
   } else {
     e = f->CreateEncoder(CreateEncoderParams(
         videoInfo , aUsage, taskQueue, aPixelFormat,
-        FRAME_RATE , BIT_RATE ));
+        FRAME_RATE , KEYFRAME_INTERVAL ,
+        BIT_RATE ));
   }
 
   return e.forget();
@@ -221,11 +222,7 @@ TEST_F(MediaDataEncoderTest, H264InitWithoutSpecific) {
       MediaDataEncoder::Usage::Realtime, MediaDataEncoder::PixelFormat::YUV420P,
       WIDTH, HEIGHT, Nothing());
 
-#if defined(MOZ_WIDGET_ANDROID)  
-  EXPECT_FALSE(EnsureInit(e));
-#else
   EXPECT_TRUE(EnsureInit(e));
-#endif
 
   WaitForShutdown(e);
 }
