@@ -6,6 +6,7 @@
 
 #include "mozilla/dom/ElementInternals.h"
 #include "mozilla/dom/ElementInternalsBinding.h"
+#include "mozilla/dom/FormData.h"
 #include "mozilla/dom/HTMLElement.h"
 #include "mozilla/dom/HTMLFieldSetElement.h"
 #include "mozilla/dom/ShadowRoot.h"
@@ -13,7 +14,8 @@
 
 namespace mozilla::dom {
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(ElementInternals)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(ElementInternals, mSubmissionValue,
+                                      mState)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(ElementInternals)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(ElementInternals)
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ElementInternals)
@@ -47,6 +49,68 @@ ShadowRoot* ElementInternals::GetShadowRoot() const {
 }
 
 
+void ElementInternals::SetFormValue(
+    const Nullable<FileOrUSVStringOrFormData>& aValue,
+    const Optional<Nullable<FileOrUSVStringOrFormData>>& aState,
+    ErrorResult& aRv) {
+  
+
+
+
+
+  if (!mTarget || !mTarget->IsFormAssociatedElement()) {
+    aRv.ThrowNotSupportedError(
+        "Target element is not a form-associated custom element");
+    return;
+  }
+
+  
+
+
+
+
+  mSubmissionValue.SetNull();
+  if (!aValue.IsNull()) {
+    const FileOrUSVStringOrFormData& value = aValue.Value();
+    OwningFileOrUSVStringOrFormData& owningValue = mSubmissionValue.SetValue();
+    if (value.IsFormData()) {
+      owningValue.SetAsFormData() = value.GetAsFormData().Clone();
+    } else if (value.IsFile()) {
+      owningValue.SetAsFile() = &value.GetAsFile();
+    } else {
+      owningValue.SetAsUSVString() = value.GetAsUSVString();
+    }
+  }
+
+  
+
+
+
+  if (!aState.WasPassed()) {
+    mState = mSubmissionValue;
+    return;
+  }
+
+  
+
+
+
+
+  mState.SetNull();
+  if (!aState.Value().IsNull()) {
+    const FileOrUSVStringOrFormData& state = aState.Value().Value();
+    OwningFileOrUSVStringOrFormData& owningState = mState.SetValue();
+    if (state.IsFormData()) {
+      owningState.SetAsFormData() = state.GetAsFormData().Clone();
+    } else if (state.IsFile()) {
+      owningState.SetAsFile() = &state.GetAsFile();
+    } else {
+      owningState.SetAsUSVString() = state.GetAsUSVString();
+    }
+  }
+}
+
+
 HTMLFormElement* ElementInternals::GetForm(ErrorResult& aRv) const {
   if (!mTarget || !mTarget->IsFormAssociatedElement()) {
     aRv.ThrowNotSupportedError(
@@ -76,8 +140,33 @@ void ElementInternals::ClearForm(bool aRemoveFromForm, bool aUnbindOrDelete) {
 }
 
 NS_IMETHODIMP ElementInternals::SubmitNamesValues(FormData* aFormData) {
+  if (!mTarget) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  MOZ_ASSERT(mTarget->IsFormAssociatedElement());
+
   
-  
+  if (!mSubmissionValue.IsNull()) {
+    if (mSubmissionValue.Value().IsFormData()) {
+      aFormData->Append(mSubmissionValue.Value().GetAsFormData());
+      return NS_OK;
+    }
+
+    
+    nsAutoString name;
+    if (!mTarget->GetAttr(nsGkAtoms::name, name) || name.IsEmpty()) {
+      return NS_OK;
+    }
+
+    if (mSubmissionValue.Value().IsUSVString()) {
+      return aFormData->AddNameValuePair(
+          name, mSubmissionValue.Value().GetAsUSVString());
+    }
+
+    return aFormData->AddNameBlobPair(name,
+                                      mSubmissionValue.Value().GetAsFile());
+  }
   return NS_OK;
 }
 

@@ -8,6 +8,7 @@
 #define mozilla_dom_ElementInternals_h
 
 #include "js/TypeDecls.h"
+#include "mozilla/dom/ElementInternalsBinding.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIFormControl.h"
 #include "nsWrapperCache.h"
@@ -39,6 +40,9 @@ class ElementInternals final : public nsIFormControl, public nsWrapperCache {
 
   
   ShadowRoot* GetShadowRoot() const;
+  void SetFormValue(const Nullable<FileOrUSVStringOrFormData>& aValue,
+                    const Optional<Nullable<FileOrUSVStringOrFormData>>& aState,
+                    ErrorResult& aRv);
   mozilla::dom::HTMLFormElement* GetForm(ErrorResult& aRv) const;
   already_AddRefed<nsINodeList> GetLabels(ErrorResult& aRv) const;
 
@@ -78,6 +82,14 @@ class ElementInternals final : public nsIFormControl, public nsWrapperCache {
   
   
   HTMLFieldSetElement* mFieldSet;
+
+  
+  Nullable<OwningFileOrUSVStringOrFormData> mSubmissionValue;
+
+  
+  
+  
+  Nullable<OwningFileOrUSVStringOrFormData> mState;
 };
 
 }  
