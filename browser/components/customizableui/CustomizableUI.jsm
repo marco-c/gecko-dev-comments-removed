@@ -2085,12 +2085,14 @@ var CustomizableUIInternal = {
       
       
       
+      
       let button = aNode.firstElementChild;
       let area = this.getPlacementOfWidget(aNode.id).area;
       let areaType = CustomizableUI.getAreaType(area);
       if (
         areaType == CustomizableUI.TYPE_TOOLBAR &&
-        button.contains(aEvent.target)
+        button.contains(aEvent.target) &&
+        !aNode.hasAttribute("overflowedItem")
       ) {
         this.doWidgetCommand(aWidget, aNode, aEvent);
       } else {

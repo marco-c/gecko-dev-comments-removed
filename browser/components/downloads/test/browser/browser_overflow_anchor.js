@@ -1,9 +1,6 @@
 
 
 
-
-const kForceOverflowWidthPx = 450;
-
 registerCleanupFunction(async function() {
   
   await task_resetState();
