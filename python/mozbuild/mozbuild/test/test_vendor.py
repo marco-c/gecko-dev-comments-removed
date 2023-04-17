@@ -28,9 +28,11 @@ def test_up_to_date_vendor():
             
             
             
-            
             file.write("vendored:third_party/python/Click\n")
+            file.write("vendored:third_party/python/pip\n")
             file.write("vendored:third_party/python/pip_tools\n")
+            file.write("vendored:third_party/python/setuptools\n")
+            file.write("vendored:third_party/python/wheel\n")
 
         
         existing_vendored = os.path.join(topsrcdir, "third_party", "python")

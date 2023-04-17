@@ -38,6 +38,7 @@ class VendorPython(MozbuildObject):
             shutil.copy(requirements, tmp_requirements_absolute)
 
             
+            
             subprocess.check_output(
                 [
                     self.virtualenv_manager.python_path,
@@ -50,6 +51,7 @@ class VendorPython(MozbuildObject):
                     "--output-file",
                     tmp_requirements_absolute,
                     "--generate-hashes",
+                    "--allow-unsafe",
                 ],
                 
                 
