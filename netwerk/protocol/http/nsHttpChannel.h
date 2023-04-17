@@ -582,8 +582,15 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   mozilla::TimeStamp mSuspendTimestamp;
   mozilla::TimeStamp mOnCacheEntryCheckTimestamp;
+
+  
+  
   
   mozilla::TimeStamp mLastStatusReported;
+  
+  
+  bool mEndMarkerAdded = false;
+
   
   
   uint32_t mSuspendTotalTime{0};
