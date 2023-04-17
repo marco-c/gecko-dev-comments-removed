@@ -23,6 +23,8 @@ const SUPPORTED_OPTIONS = {
   
   colorSchemeSimulation: true,
   
+  customUserAgent: true,
+  
   javascriptEnabled: true,
   
   overrideDPPX: true,
@@ -168,6 +170,9 @@ const TargetConfigurationActor = ActorClassWithSpec(targetConfigurationSpec, {
         case "colorSchemeSimulation":
           this._setColorSchemeSimulation(value);
           break;
+        case "customUserAgent":
+          this._setCustomUserAgent(value);
+          break;
         case "overrideDPPX":
           this._setDPPXOverride(value);
           break;
@@ -202,6 +207,11 @@ const TargetConfigurationActor = ActorClassWithSpec(targetConfigurationSpec, {
     
     if (this._resetColorSchemeSimulationOnDestroy) {
       this._setColorSchemeSimulation(null);
+    }
+
+    
+    if (this._initialUserAgent !== undefined) {
+      this._setCustomUserAgent(this._initialUserAgent);
     }
 
     
@@ -243,6 +253,25 @@ const TargetConfigurationActor = ActorClassWithSpec(targetConfigurationSpec, {
       this._browsingContext.prefersColorSchemeOverride = value;
       this._resetColorSchemeSimulationOnDestroy = true;
     }
+  },
+
+  
+
+
+
+
+
+
+  _setCustomUserAgent(userAgent = "") {
+    if (this._browsingContext.customUserAgent === userAgent) {
+      return;
+    }
+
+    if (this._initialUserAgent === undefined) {
+      this._initialUserAgent = this._browsingContext.customUserAgent;
+    }
+
+    this._browsingContext.customUserAgent = userAgent;
   },
 
   
