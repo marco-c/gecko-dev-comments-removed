@@ -1718,7 +1718,7 @@ class UrlbarView {
           if (currentLabel && row.result.payload.suggestion) {
             let engineName =
               row.result.payload.engine || Services.search.defaultEngine.name;
-            return engineName + " suggestions";
+            return engineName + " Suggestions";
           }
           break;
       }
