@@ -53,10 +53,6 @@ class PrintingChild extends JSWindowActorChild {
   
   
 
-  get shouldSavePrintSettings() {
-    return Services.prefs.getBoolPref("print.save_print_settings");
-  }
-
   handleEvent(event) {
     switch (event.type) {
       case "PrintingError": {
