@@ -1551,6 +1551,34 @@ class ChoiceType extends Type {
   checkBaseType(baseType) {
     return this.choices.some(t => t.checkBaseType(baseType));
   }
+
+  getDescriptor(path, context) {
+    
+    
+    
+    if (
+      !this.choices.length ||
+      !this.choices.every(t => t.checkBaseType("string") && t.enumeration)
+    ) {
+      return;
+    }
+
+    let obj = Cu.createObjectIn(context.cloneScope);
+    let descriptor = { value: obj };
+    for (let choice of this.choices) {
+      
+      
+      if (!context.matchManifestVersion(choice)) {
+        continue;
+      }
+      let d = choice.getDescriptor(path, context);
+      if (d) {
+        Object.assign(obj, d.descriptor.value);
+      }
+    }
+
+    return { descriptor };
+  }
 }
 
 
