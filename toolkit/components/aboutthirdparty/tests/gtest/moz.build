@@ -1,0 +1,13 @@
+
+
+
+
+
+
+LOCAL_INCLUDES += [
+    "../..",
+]
+
+UNIFIED_SOURCES += ["TestAboutThirdParty.cpp"]
+
+FINAL_LIBRARY = "xul-gtest"
