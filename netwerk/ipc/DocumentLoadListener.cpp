@@ -2187,6 +2187,8 @@ DocumentLoadListener::OnStartRequest(nsIRequest* aRequest) {
       
       mDoingProcessSwitch = true;
 
+      DisconnectListeners(NS_BINDING_ABORTED, NS_BINDING_ABORTED, true);
+
       
       
       
