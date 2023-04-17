@@ -80,6 +80,7 @@ var BLOCKED_PORTS_LIST = [
     6668, 
     6669, 
     6697, 
+    10080, 
 ];
 
 BLOCKED_PORTS_LIST.map(function(a){

@@ -85,6 +85,7 @@ async_test(t => {
   6668, 
   6669, 
   6697, 
+  10080, 
 ].forEach(blockedPort => {
   async_test(t => {
     const ws = CreateWebSocketWithBlockedPort(blockedPort)
