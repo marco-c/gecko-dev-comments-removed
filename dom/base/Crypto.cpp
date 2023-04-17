@@ -3,11 +3,13 @@
 
 
 
+
 #include "Crypto.h"
 #include "js/ScalarType.h"
 #include "js/experimental/TypedData.h"  
 #include "nsCOMPtr.h"
 #include "nsIRandomGenerator.h"
+#include "nsReadableUtils.h"
 
 #include "mozilla/dom/CryptoBinding.h"
 #include "mozilla/dom/SubtleCrypto.h"
@@ -88,6 +90,18 @@ void Crypto::GetRandomValues(JSContext* aCx, const ArrayBufferView& aArray,
   free(buf);
 
   aRetval.set(view);
+}
+
+void Crypto::RandomUUID(nsAString& aRetVal) {
+  
+  static_assert(NSID_LENGTH == 39);
+
+  nsIDToCString uuidString(nsID::GenerateUUID());
+  MOZ_ASSERT(strlen(uuidString.get()) == NSID_LENGTH - 1);
+
+  
+  CopyASCIItoUTF16(Substring(uuidString.get() + 1, NSID_LENGTH - 3), aRetVal);
+  MOZ_ASSERT(aRetVal.Length() == NSID_LENGTH - 3);
 }
 
 SubtleCrypto* Crypto::Subtle() {

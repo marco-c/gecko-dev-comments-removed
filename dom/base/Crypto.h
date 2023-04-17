@@ -3,12 +3,13 @@
 
 
 
+
 #ifndef mozilla_dom_Crypto_h
 #define mozilla_dom_Crypto_h
 
 #include "mozilla/dom/SubtleCrypto.h"
 #include "nsIGlobalObject.h"
-
+#include "nsString.h"
 #include "nsWrapperCache.h"
 #include "mozilla/dom/TypedArray.h"
 
@@ -30,6 +31,8 @@ class Crypto final : public nsISupports, public nsWrapperCache {
 
   void GetRandomValues(JSContext* aCx, const ArrayBufferView& aArray,
                        JS::MutableHandle<JSObject*> aRetval, ErrorResult& aRv);
+
+  void RandomUUID(nsAString& aRetVal);
 
   SubtleCrypto* Subtle();
 
