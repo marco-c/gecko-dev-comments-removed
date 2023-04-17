@@ -221,6 +221,27 @@ BrowserHost::TransmitPermissionsForPrincipal(nsIPrincipal* aPrincipal) {
 
 
 NS_IMETHODIMP
+BrowserHost::CreateAboutBlankContentViewer(
+    nsIPrincipal* aPrincipal, nsIPrincipal* aPartitionedPrincipal) {
+  if (!mRoot) {
+    return NS_OK;
+  }
+
+  
+  
+  nsresult rv = GetContentParent()->TransmitPermissionsForPrincipal(aPrincipal);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  Unused << mRoot->SendCreateAboutBlankContentViewer(aPrincipal,
+                                                     aPartitionedPrincipal);
+  return NS_OK;
+}
+
+
+
+NS_IMETHODIMP
 BrowserHost::StartApzAutoscroll(float aAnchorX, float aAnchorY,
                                 nsViewID aScrollId, uint32_t aPresShellId,
                                 bool* _retval) {

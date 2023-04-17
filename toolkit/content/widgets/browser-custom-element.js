@@ -1024,6 +1024,7 @@
           aboutBlank,
           this.loadContext
         );
+        this._contentPartitionedPrincipal = this._contentPrincipal;
         
         
         this._csp = null;
@@ -1238,35 +1239,6 @@
     }
 
     createAboutBlankContentViewer(aPrincipal, aPartitionedPrincipal) {
-      if (this.isRemoteBrowser) {
-        
-        
-        let permissionPrincipal = BrowserUtils.principalWithMatchingOA(
-          aPrincipal,
-          this.contentPrincipal
-        );
-        this.frameLoader.remoteTab.transmitPermissionsForPrincipal(
-          permissionPrincipal
-        );
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        this.messageManager.sendAsyncMessage(
-          "BrowserElement:CreateAboutBlank",
-          { principal: aPrincipal, partitionedPrincipal: aPartitionedPrincipal }
-        );
-        return;
-      }
       let principal = BrowserUtils.principalWithMatchingOA(
         aPrincipal,
         this.contentPrincipal
@@ -1275,10 +1247,18 @@
         aPartitionedPrincipal,
         this.contentPartitionedPrincipal
       );
-      this.docShell.createAboutBlankContentViewer(
-        principal,
-        partitionedPrincipal
-      );
+
+      if (this.isRemoteBrowser) {
+        this.frameLoader.remoteTab.createAboutBlankContentViewer(
+          principal,
+          partitionedPrincipal
+        );
+      } else {
+        this.docShell.createAboutBlankContentViewer(
+          principal,
+          partitionedPrincipal
+        );
+      }
     }
 
     stopScroll() {
