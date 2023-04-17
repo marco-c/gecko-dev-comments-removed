@@ -274,10 +274,10 @@ var pktUI = (function() {
     
     
     
-    var frame = getPanelFrame();
+    var iframe = getPanelFrame();
 
     
-    frame.setAttribute("src", url);
+    iframe.setAttribute("src", url);
   }
 
   function onShowSignup() {
@@ -440,11 +440,11 @@ var pktUI = (function() {
 
 
   function resizePanel(options = {}) {
-    var frame = getPanelFrame();
+    var iframe = getPanelFrame();
 
     
-    frame.style.width = options.width + "px";
-    frame.style.height = options.height + "px";
+    iframe.style.width = options.width + "px";
+    iframe.style.height = options.height + "px";
   }
 
   
