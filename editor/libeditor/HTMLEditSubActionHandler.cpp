@@ -1810,7 +1810,8 @@ HTMLEditor::GetPreviousCharPointDataForNormalizingWhiteSpaces(
         HTMLEditor::GetPreviousCharPointType(aPoint));
   }
   EditorDOMPointInText previousCharPoint =
-      WSRunScanner::GetPreviousEditableCharPoint(*this, aPoint);
+      WSRunScanner::GetPreviousEditableCharPoint(GetActiveEditingHost(),
+                                                 aPoint);
   if (!previousCharPoint.IsSet()) {
     return CharPointData::InDifferentTextNode(CharPointType::TextEnd);
   }
@@ -1827,7 +1828,8 @@ HTMLEditor::GetInclusiveNextCharPointDataForNormalizingWhiteSpaces(
     return CharPointData::InSameTextNode(HTMLEditor::GetCharPointType(aPoint));
   }
   EditorDOMPointInText nextCharPoint =
-      WSRunScanner::GetInclusiveNextEditableCharPoint(*this, aPoint);
+      WSRunScanner::GetInclusiveNextEditableCharPoint(GetActiveEditingHost(),
+                                                      aPoint);
   if (!nextCharPoint.IsSet()) {
     return CharPointData::InDifferentTextNode(CharPointType::TextEnd);
   }
@@ -1916,10 +1918,12 @@ void HTMLEditor::ExtendRangeToDeleteWithNormalizingWhiteSpaces(
   
   
   
+  Element* editingHost = GetActiveEditingHost();
   EditorDOMPointInText precedingCharPoint =
-      WSRunScanner::GetPreviousEditableCharPoint(*this, aStartToDelete);
+      WSRunScanner::GetPreviousEditableCharPoint(editingHost, aStartToDelete);
   EditorDOMPointInText followingCharPoint =
-      WSRunScanner::GetInclusiveNextEditableCharPoint(*this, aEndToDelete);
+      WSRunScanner::GetInclusiveNextEditableCharPoint(editingHost,
+                                                      aEndToDelete);
   
   
   
