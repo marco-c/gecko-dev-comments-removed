@@ -424,7 +424,7 @@ class nsViewManager final {
   
 
   
-  static nsTArray<nsViewManager*>* gViewManagers;
+  static mozilla::StaticAutoPtr<nsTArray<nsViewManager*>> gViewManagers;
 };
 
 
