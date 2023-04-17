@@ -1886,24 +1886,15 @@ impl BreakBetween {
     
     
     #[inline]
-    pub fn parse_legacy<'i>(input: &mut Parser<'i, '_>) -> Result<Self, ParseError<'i>> {
-        let location = input.current_source_location();
-        let ident = input.expect_ident()?;
-        let break_value = match BreakBetween::from_ident(ident) {
-            Ok(v) => v,
-            Err(()) => {
-                return Err(location
-                    .new_custom_error(SelectorParseErrorKind::UnexpectedIdent(ident.clone())));
-            },
-        };
+    pub(crate) fn parse_legacy<'i>(_: &ParserContext, input: &mut Parser<'i, '_>) -> Result<Self, ParseError<'i>> {
+        let break_value = BreakBetween::parse(input)?;
         match break_value {
             BreakBetween::Always => Ok(BreakBetween::Page),
             BreakBetween::Auto | BreakBetween::Avoid | BreakBetween::Left | BreakBetween::Right => {
                 Ok(break_value)
             },
             BreakBetween::Page => {
-                Err(location
-                    .new_custom_error(SelectorParseErrorKind::UnexpectedIdent(ident.clone())))
+                Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
             },
         }
     }
@@ -1911,7 +1902,7 @@ impl BreakBetween {
     
     
     
-    pub fn to_css_legacy<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    pub(crate) fn to_css_legacy<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
         W: Write,
     {
@@ -1948,6 +1939,37 @@ impl BreakBetween {
 pub enum BreakWithin {
     Auto,
     Avoid,
+    AvoidPage,
+    AvoidColumn,
+}
+
+impl BreakWithin {
+    
+    
+    
+    #[inline]
+    pub(crate) fn parse_legacy<'i>(_: &ParserContext, input: &mut Parser<'i, '_>) -> Result<Self, ParseError<'i>> {
+        let break_value = BreakWithin::parse(input)?;
+        match break_value {
+            BreakWithin::Auto | BreakWithin::Avoid => Ok(break_value),
+            BreakWithin::AvoidPage | BreakWithin::AvoidColumn => {
+                Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
+            },
+        }
+    }
+
+    
+    
+    
+    pub(crate) fn to_css_legacy<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        match *self {
+            BreakWithin::Auto | BreakWithin::Avoid => self.to_css(dest),
+            BreakWithin::AvoidPage | BreakWithin::AvoidColumn => Ok(()),
+        }
+    }
 }
 
 
