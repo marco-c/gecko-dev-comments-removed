@@ -24,10 +24,15 @@ const { WebConsoleUtils } = require("devtools/server/actors/webconsole/utils");
 
 
 
+
+
+
+
 class ConsoleServiceListener {
-  constructor(window, handler) {
+  constructor(window, handler, { matchExactWindow } = {}) {
     this.window = window;
     this.handler = handler;
+    this.matchExactWindow = matchExactWindow;
   }
 
   QueryInterface = ChromeUtils.generateQI([Ci.nsIConsoleListener]);
@@ -76,7 +81,16 @@ class ConsoleServiceListener {
       const errorWindow = Services.wm.getOuterWindowWithId(
         message.outerWindowID
       );
-      if (!errorWindow || !isWindowIncluded(this.window, errorWindow)) {
+
+      if (!errorWindow) {
+        return;
+      }
+
+      if (this.matchExactWindow && this.window !== errorWindow) {
+        return;
+      }
+
+      if (!isWindowIncluded(this.window, errorWindow)) {
         return;
       }
     }
@@ -140,7 +154,9 @@ class ConsoleServiceListener {
       });
     }
 
-    const ids = WebConsoleUtils.getInnerWindowIDsForFrames(this.window);
+    const ids = this.matchExactWindow
+      ? [WebConsoleUtils.getInnerWindowId(this.window)]
+      : WebConsoleUtils.getInnerWindowIDsForFrames(this.window);
 
     return errors.filter(error => {
       if (error instanceof Ci.nsIScriptError) {

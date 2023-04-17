@@ -31,12 +31,19 @@ const {
 
 
 
+
+
 class ConsoleAPIListener {
-  constructor(window, handler, { addonId, excludeMessagesBoundToWindow } = {}) {
+  constructor(
+    window,
+    handler,
+    { addonId, excludeMessagesBoundToWindow, matchExactWindow } = {}
+  ) {
     this.window = window;
     this.handler = handler;
     this.addonId = addonId;
     this.excludeMessagesBoundToWindow = excludeMessagesBoundToWindow;
+    this.matchExactWindow = matchExactWindow;
   }
 
   QueryInterface = ChromeUtils.generateQI([Ci.nsIObserver]);
@@ -139,14 +146,17 @@ class ConsoleAPIListener {
         return false;
       }
 
-      if (
-        this.window &&
-        !WebConsoleUtils.getInnerWindowIDsForFrames(this.window).includes(
-          message.innerID
-        )
-      ) {
-        
-        return false;
+      if (this.window) {
+        const matchesWindow = this.matchExactWindow
+          ? WebConsoleUtils.getInnerWindowId(this.window) === message.innerID
+          : WebConsoleUtils.getInnerWindowIDsForFrames(this.window).includes(
+              message.innerID
+            );
+
+        if (!matchesWindow) {
+          
+          return false;
+        }
       }
     }
 
@@ -194,7 +204,10 @@ class ConsoleAPIListener {
     if (!this.window) {
       messages = ConsoleAPIStorage.getEvents();
     } else {
-      const ids = WebConsoleUtils.getInnerWindowIDsForFrames(this.window);
+      const ids = this.matchExactWindow
+        ? [WebConsoleUtils.getInnerWindowId(this.window)]
+        : WebConsoleUtils.getInnerWindowIDsForFrames(this.window);
+
       ids.forEach(id => {
         messages = messages.concat(ConsoleAPIStorage.getEvents(id));
       });
