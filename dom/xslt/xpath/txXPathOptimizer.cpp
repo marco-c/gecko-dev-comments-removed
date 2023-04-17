@@ -46,8 +46,9 @@ class txEarlyEvalContext : public txIEvalContext {
   txResultRecycler* mRecycler;
 };
 
-void txXPathOptimizer::optimize(Expr* aInExpr, Expr** aOutExpr) {
+nsresult txXPathOptimizer::optimize(Expr* aInExpr, Expr** aOutExpr) {
   *aOutExpr = nullptr;
+  nsresult rv = NS_OK;
 
   
   
@@ -60,12 +61,12 @@ void txXPathOptimizer::optimize(Expr* aInExpr, Expr** aOutExpr) {
 
     
     
-    nsresult rv = aInExpr->evaluate(&context, getter_AddRefs(exprRes));
+    rv = aInExpr->evaluate(&context, getter_AddRefs(exprRes));
     if (NS_SUCCEEDED(rv)) {
       *aOutExpr = new txLiteralExpr(exprRes);
     }
 
-    return;
+    return NS_OK;
   }
 
   
@@ -73,7 +74,8 @@ void txXPathOptimizer::optimize(Expr* aInExpr, Expr** aOutExpr) {
   Expr* subExpr;
   while ((subExpr = aInExpr->getSubExprAt(i))) {
     Expr* newExpr = nullptr;
-    optimize(subExpr, &newExpr);
+    rv = optimize(subExpr, &newExpr);
+    NS_ENSURE_SUCCESS(rv, rv);
     if (newExpr) {
       delete subExpr;
       aInExpr->setSubExprAt(i, newExpr);
@@ -85,23 +87,22 @@ void txXPathOptimizer::optimize(Expr* aInExpr, Expr** aOutExpr) {
   
   switch (exprType) {
     case Expr::LOCATIONSTEP_EXPR:
-      optimizeStep(aInExpr, aOutExpr);
-      return;
+      return optimizeStep(aInExpr, aOutExpr);
 
     case Expr::PATH_EXPR:
-      optimizePath(aInExpr, aOutExpr);
-      return;
+      return optimizePath(aInExpr, aOutExpr);
 
     case Expr::UNION_EXPR:
-      optimizeUnion(aInExpr, aOutExpr);
-      return;
+      return optimizeUnion(aInExpr, aOutExpr);
 
     default:
-      return;
+      break;
   }
+
+  return NS_OK;
 }
 
-void txXPathOptimizer::optimizeStep(Expr* aInExpr, Expr** aOutExpr) {
+nsresult txXPathOptimizer::optimizeStep(Expr* aInExpr, Expr** aOutExpr) {
   LocationStep* step = static_cast<LocationStep*>(aInExpr);
 
   if (step->getAxisIdentifier() == LocationStep::ATTRIBUTE_AXIS) {
@@ -113,7 +114,7 @@ void txXPathOptimizer::optimizeStep(Expr* aInExpr, Expr** aOutExpr) {
                 ->mLocalName != nsGkAtoms::_asterisk) {
       *aOutExpr = new txNamedAttributeStep(
           nameTest->mNamespace, nameTest->mPrefix, nameTest->mLocalName);
-      return;  
+      return NS_OK;  
     }
   }
 
@@ -126,9 +127,11 @@ void txXPathOptimizer::optimizeStep(Expr* aInExpr, Expr** aOutExpr) {
     step->dropFirst();
     step->setNodeTest(predTest);
   }
+
+  return NS_OK;
 }
 
-void txXPathOptimizer::optimizePath(Expr* aInExpr, Expr** aOutExpr) {
+nsresult txXPathOptimizer::optimizePath(Expr* aInExpr, Expr** aOutExpr) {
   PathExpr* path = static_cast<PathExpr*>(aInExpr);
 
   uint32_t i;
@@ -170,7 +173,7 @@ void txXPathOptimizer::optimizePath(Expr* aInExpr, Expr** aOutExpr) {
           *aOutExpr = path->getSubExprAt(1);
           path->setSubExprAt(1, nullptr);
 
-          return;
+          return NS_OK;
         }
 
         
@@ -178,14 +181,17 @@ void txXPathOptimizer::optimizePath(Expr* aInExpr, Expr** aOutExpr) {
       }
     }
   }
+
+  return NS_OK;
 }
 
-void txXPathOptimizer::optimizeUnion(Expr* aInExpr, Expr** aOutExpr) {
+nsresult txXPathOptimizer::optimizeUnion(Expr* aInExpr, Expr** aOutExpr) {
   UnionExpr* uni = static_cast<UnionExpr*>(aInExpr);
 
   
   
 
+  nsresult rv;
   uint32_t current;
   Expr* subExpr;
   for (current = 0; (subExpr = uni->getSubExprAt(current)); ++current) {
@@ -216,14 +222,16 @@ void txXPathOptimizer::optimizeUnion(Expr* aInExpr, Expr** aOutExpr) {
       
       if (!unionTest) {
         UniquePtr<txNodeTest> owner(unionTest = new txUnionNodeTest);
-        unionTest->addNodeTest(currentStep->getNodeTest());
+        rv = unionTest->addNodeTest(currentStep->getNodeTest());
+        NS_ENSURE_SUCCESS(rv, rv);
 
         currentStep->setNodeTest(unionTest);
         Unused << owner.release();
       }
 
       
-      unionTest->addNodeTest(step->getNodeTest());
+      rv = unionTest->addNodeTest(step->getNodeTest());
+      NS_ENSURE_SUCCESS(rv, rv);
 
       step->setNodeTest(nullptr);
 
@@ -240,7 +248,9 @@ void txXPathOptimizer::optimizeUnion(Expr* aInExpr, Expr** aOutExpr) {
       *aOutExpr = currentStep;
 
       
-      return;
+      return NS_OK;
     }
   }
+
+  return NS_OK;
 }

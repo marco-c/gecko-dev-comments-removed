@@ -223,7 +223,13 @@ class FunctionCall : public Expr {
 
 
 
-  void addParam(Expr* aExpr) { mParams.AppendElement(aExpr); }
+
+  nsresult addParam(Expr* aExpr) {
+    
+    
+    mParams.AppendElement(aExpr);
+    return NS_OK;
+  }
 
   
 
@@ -442,9 +448,13 @@ class PredicateList {
 
 
 
-  void add(Expr* aExpr) {
+
+  nsresult add(Expr* aExpr) {
     NS_ASSERTION(aExpr, "missing expression");
+    
+    
     mPredicates.AppendElement(aExpr);
+    return NS_OK;
   }
 
   nsresult evaluatePredicates(txNodeSet* aNodes, txIMatchContext* aContext);
@@ -701,7 +711,8 @@ class PathExpr : public Expr {
 
 
 
-  void addExpr(Expr* aExpr, PathOperator pathOp);
+
+  nsresult addExpr(Expr* aExpr, PathOperator pathOp);
 
   
 
@@ -777,7 +788,13 @@ class UnionExpr : public Expr {
 
 
 
-  void addExpr(Expr* aExpr) { mExpressions.AppendElement(aExpr); }
+
+  nsresult addExpr(Expr* aExpr) {
+    
+    
+    mExpressions.AppendElement(aExpr);
+    return NS_OK;
+  }
 
   
 
@@ -817,8 +834,11 @@ class txNamedAttributeStep : public Expr {
 
 class txUnionNodeTest : public txNodeTest {
  public:
-  void addNodeTest(txNodeTest* aNodeTest) {
+  nsresult addNodeTest(txNodeTest* aNodeTest) {
+    
+    
     mNodeTests.AppendElement(aNodeTest);
+    return NS_OK;
   }
 
   TX_DECL_NODE_TEST

@@ -18,13 +18,13 @@ class txXPathOptimizer {
 
 
 
-  void optimize(Expr* aInExpr, Expr** aOutExpr);
+  nsresult optimize(Expr* aInExpr, Expr** aOutExpr);
 
  private:
   
-  void optimizeStep(Expr* aInExpr, Expr** aOutExpr);
-  void optimizePath(Expr* aInExpr, Expr** aOutExpr);
-  void optimizeUnion(Expr* aInExpr, Expr** aOutExpr);
+  nsresult optimizeStep(Expr* aInExpr, Expr** aOutExpr);
+  nsresult optimizePath(Expr* aInExpr, Expr** aOutExpr);
+  nsresult optimizeUnion(Expr* aInExpr, Expr** aOutExpr);
 };
 
 #endif

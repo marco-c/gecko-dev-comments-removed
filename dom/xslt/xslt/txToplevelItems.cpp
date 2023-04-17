@@ -27,8 +27,12 @@ txStripSpaceItem::~txStripSpaceItem() {
   }
 }
 
-void txStripSpaceItem::addStripSpaceTest(txStripSpaceTest* aStripSpaceTest) {
+nsresult txStripSpaceItem::addStripSpaceTest(
+    txStripSpaceTest* aStripSpaceTest) {
+  
+  
   mStripSpaceTests.AppendElement(aStripSpaceTest);
+  return NS_OK;
 }
 
 TX_IMPL_GETTYPE(txTemplateItem, txToplevelItem::templ)
