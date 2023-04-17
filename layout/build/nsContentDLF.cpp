@@ -106,7 +106,7 @@ nsContentDLF::CreateInstance(const char* aCommand, nsIChannel* aChannel,
 
     if (knownType) {
       viewSourceChannel->SetContentType(type);
-    } else if (IsImageContentType(type.get())) {
+    } else if (IsImageContentType(type)) {
       
       
       contentType = type;
@@ -173,7 +173,7 @@ nsContentDLF::CreateInstance(const char* aCommand, nsIChannel* aChannel,
   }
 
   
-  if (IsImageContentType(contentType.get())) {
+  if (IsImageContentType(contentType)) {
     return CreateDocument(
         aCommand, aChannel, aLoadGroup, aContainer,
         []() -> already_AddRefed<Document> {
@@ -307,6 +307,6 @@ nsresult nsContentDLF::CreateDocument(
   return NS_OK;
 }
 
-bool nsContentDLF::IsImageContentType(const char* aContentType) {
+bool nsContentDLF::IsImageContentType(const nsACString& aContentType) {
   return imgLoader::SupportImageWithMimeType(aContentType);
 }

@@ -74,11 +74,10 @@ uint32_t nsWebNavigationInfo::IsTypeSupportedInternal(const nsCString& aType) {
       
       
       
-      if (imgLoader::SupportImageWithMimeType(aType.get())) {
+      if (imgLoader::SupportImageWithMimeType(aType)) {
         return nsIWebNavigationInfo::IMAGE;
-      } else {
-        return nsIWebNavigationInfo::OTHER;
       }
+      return nsIWebNavigationInfo::OTHER;
   }
 
   return nsIWebNavigationInfo::UNSUPPORTED;

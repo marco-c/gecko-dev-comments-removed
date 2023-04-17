@@ -273,8 +273,7 @@ class imgLoader final : public imgILoader,
 
 
   static bool SupportImageWithMimeType(
-      const char* aMimeType,
-      AcceptedMimeTypes aAccept = AcceptedMimeTypes::IMAGES);
+      const nsACString&, AcceptedMimeTypes aAccept = AcceptedMimeTypes::IMAGES);
 
   static void GlobalInit();  
   static void Shutdown();    
