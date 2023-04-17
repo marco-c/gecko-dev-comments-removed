@@ -205,10 +205,6 @@ class LookAndFeel {
     
 
 
-    WindowsThemeIdentifier,
-    
-
-
     OperatingSystemVersionIdentifier,
     
 
@@ -357,21 +353,6 @@ class LookAndFeel {
   static bool UseOverlayScrollbars() {
     return GetInt(IntID::UseOverlayScrollbars);
   }
-
-  
-
-
-  enum WindowsTheme {
-    eWindowsTheme_Generic = 0,  
-    eWindowsTheme_Classic,
-    eWindowsTheme_Aero,
-    eWindowsTheme_LunaBlue,
-    eWindowsTheme_LunaOlive,
-    eWindowsTheme_LunaSilver,
-    eWindowsTheme_Royale,
-    eWindowsTheme_Zune,
-    eWindowsTheme_AeroLite
-  };
 
   
 
