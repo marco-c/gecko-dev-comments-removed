@@ -53,6 +53,7 @@ struct CompilationInput;
 struct CompilationStencil;
 struct CompilationGCOutput;
 class ScriptStencilIterable;
+class ParserAtomsTable;
 
 
 
@@ -229,6 +230,10 @@ struct CompilationInput {
  private:
   BaseScript* lazy_ = nullptr;
 
+  
+  
+  mozilla::Span<TaggedScriptThingIndex> cachedGCThings_;
+
  public:
   RefPtr<ScriptSource> source;
 
@@ -354,6 +359,21 @@ struct CompilationInput {
   
   
   bool isInitialStencil() { return !lazy_; }
+
+  
+  
+  bool isDelazifying() { return target == CompilationTarget::Delazification; }
+
+  
+  
+  
+  
+  mozilla::Span<TaggedScriptThingIndex> gcThings() const {
+    return cachedGCThings_;
+  }
+
+  [[nodiscard]] bool cacheGCThings(JSContext* cx, LifoAlloc& alloc,
+                                   ParserAtomsTable& parseAtoms);
 
   void trace(JSTracer* trc);
 
@@ -835,7 +855,18 @@ struct MOZ_RAII CompilationState : public ExtensibleCompilationStencil {
 
   bool init(JSContext* cx, InheritThis inheritThis = InheritThis::No,
             JSObject* enclosingEnv = nullptr) {
-    return scopeContext.init(cx, input, parserAtoms, inheritThis, enclosingEnv);
+    if (!scopeContext.init(cx, input, parserAtoms, inheritThis, enclosingEnv)) {
+      return false;
+    }
+
+    
+    if (input.isDelazifying()) {
+      if (!input.cacheGCThings(cx, alloc, parserAtoms)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   
