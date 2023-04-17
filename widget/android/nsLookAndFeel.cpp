@@ -376,6 +376,11 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
       aResult = 25;
       break;
 
+    case IntID::TouchDeviceSupportPresent:
+      
+      aResult = 1;
+      break;
+
     default:
       aResult = 0;
       rv = NS_ERROR_FAILURE;

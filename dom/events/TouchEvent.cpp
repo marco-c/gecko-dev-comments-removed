@@ -9,12 +9,12 @@
 #include "mozilla/dom/Touch.h"
 #include "mozilla/dom/TouchListBinding.h"
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/LookAndFeel.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/TouchEvents.h"
 #include "nsContentUtils.h"
 #include "nsIDocShell.h"
-#include "mozilla/WidgetUtils.h"
 
 namespace mozilla::dom {
 
@@ -194,29 +194,16 @@ bool TouchEvent::PrefEnabled(JSContext* aCx, JSObject* aGlobal) {
   return PrefEnabled(docShell);
 }
 
+static bool PlatformSupportsTouch() {
+  
+  
+  
+  
+  static bool sIsTouchDeviceSupportPresent =
+      !!LookAndFeel::GetInt(LookAndFeel::IntID::TouchDeviceSupportPresent) &&
+      gfxPlatform::AsyncPanZoomEnabled();
 
-bool TouchEvent::PlatformSupportsTouch() {
-#if defined(MOZ_WIDGET_ANDROID)
-  
-  return true;
-#elif defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
-  static bool sDidCheckTouchDeviceSupport = false;
-  static bool sIsTouchDeviceSupportPresent = false;
-  
-  if (!sDidCheckTouchDeviceSupport) {
-    sDidCheckTouchDeviceSupport = true;
-    sIsTouchDeviceSupportPresent =
-        widget::WidgetUtils::IsTouchDeviceSupportPresent();
-    
-    
-    
-    
-    sIsTouchDeviceSupportPresent &= gfxPlatform::AsyncPanZoomEnabled();
-  }
   return sIsTouchDeviceSupportPresent;
-#else
-  return false;
-#endif
 }
 
 

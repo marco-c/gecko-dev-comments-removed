@@ -343,6 +343,9 @@ class LookAndFeel {
     SystemHorizontalScrollbarHeight,
 
     
+    TouchDeviceSupportPresent,
+
+    
 
 
     End,
