@@ -406,6 +406,14 @@ nsDependentCSubstring MakeSourceFileRelativePath(
 void LogError(const nsACString& aExpr, const Maybe<nsresult> aRv,
               const nsACString& aSourceFilePath, const int32_t aSourceFileLine,
               const Severity aSeverity) {
+  
+
+  
+  
+  if (aSeverity == Severity::Log) {
+    return;
+  }
+
 #if defined(EARLY_BETA_OR_EARLIER) || defined(DEBUG)
   nsAutoCString extraInfosString;
 
@@ -435,6 +443,8 @@ void LogError(const nsACString& aExpr, const Maybe<nsresult> aRv,
         return "WARNING"_ns;
       case Severity::Note:
         return "NOTE"_ns;
+      case Severity::Log:
+        return "LOG"_ns;
     }
     MOZ_MAKE_COMPILER_ASSUME_IS_UNREACHABLE("Bad severity value!");
   }();

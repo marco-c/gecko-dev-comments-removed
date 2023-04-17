@@ -873,6 +873,22 @@ class NotNull;
   })
 
 
+
+
+
+
+
+
+
+
+#define QM_OR_ELSE_LOG(expr, orElseFunc)                                      \
+  (expr).orElse([&](const auto& firstRes) {                                   \
+    mozilla::dom::quota::QM_HANDLE_ERROR(#expr, firstRes,                     \
+                                         mozilla::dom::quota::Severity::Log); \
+    return orElseFunc(firstRes);                                              \
+  })
+
+
 #ifdef NIGHTLY_BUILD
 #  define RECORD_IN_NIGHTLY(_recorder, _status) \
     do {                                        \
@@ -1202,6 +1218,7 @@ enum class Severity {
   Error,
   Warning,
   Note,
+  Log,
 };
 
 void LogError(const nsACString& aExpr, Maybe<nsresult> aRv,
