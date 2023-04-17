@@ -155,47 +155,58 @@ function openProfilerAndDisplayProfile(
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function createLibraryMap(profile) {
-  const map = new Map();
-
+function sharedLibrariesFromProfile(profile) {
   
 
 
-  function fillMapForProcessRecursive(processProfile) {
-    for (const lib of processProfile.libs) {
-      const { debugName, breakpadId } = lib;
-      const key = [debugName, breakpadId].join(":");
-      map.set(key, lib);
-    }
-    for (const subprocess of processProfile.processes) {
-      fillMapForProcessRecursive(subprocess);
-    }
+
+  function getLibsRecursive(processProfile) {
+    return processProfile.libs.concat(
+      ...processProfile.processes.map(getLibsRecursive)
+    );
   }
 
-  fillMapForProcessRecursive(profile);
+  return getLibsRecursive(profile);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function createLibraryMap(sharedLibraries) {
+  const map = new Map(
+    sharedLibraries.map(lib => {
+      const { debugName, breakpadId } = lib;
+      const key = [debugName, breakpadId].join(":");
+      return [key, lib];
+    })
+  );
+
   return function getLibraryFor(debugName, breakpadId) {
     const key = [debugName, breakpadId].join(":");
     return map.get(key);
@@ -213,7 +224,8 @@ function createLibraryMap(profile) {
 
 
 function createMultiModalGetSymbolTableFn(profile, objdirs, perfFront) {
-  const libraryGetter = createLibraryMap(profile);
+  const sharedLibraries = sharedLibrariesFromProfile(profile);
+  const libraryGetter = createLibraryMap(sharedLibraries);
 
   return async function getSymbolTable(debugName, breakpadId) {
     const lib = libraryGetter(debugName, breakpadId);
