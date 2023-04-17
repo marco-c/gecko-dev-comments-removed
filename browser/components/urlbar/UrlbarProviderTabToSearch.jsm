@@ -309,7 +309,9 @@ class ProviderTabToSearch extends UrlbarProvider {
       
       
       
-      Cu.reportError(`Exception while recording TabToSearch telemetry: ${ex})`);
+      this.logger.error(
+        `Exception while recording TabToSearch telemetry: ${ex})`
+      );
     } finally {
       
       
