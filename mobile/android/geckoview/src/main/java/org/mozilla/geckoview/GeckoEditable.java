@@ -1723,7 +1723,10 @@ import android.view.inputmethod.EditorInfo;
             outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_CAP_SENTENCES;
         } else if (autocapitalize.equals("words")) {
             outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_CAP_WORDS;
-        } else if (!typeHint.equalsIgnoreCase("text") && modeHint.length() == 0) {
+        } else if (modeHint.length() == 0 &&
+                   (outAttrs.inputType & InputType.TYPE_TEXT_FLAG_IME_MULTI_LINE) != 0 &&
+                   !typeHint.equalsIgnoreCase("text")) {
+            
             
             outAttrs.inputType |= InputType.TYPE_TEXT_FLAG_CAP_SENTENCES;
         }
