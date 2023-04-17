@@ -113,12 +113,14 @@ var getContainerForSelector = async function(
 
 
 
-
-async function getFirstChildNodeValue(selector, testActor) {
-  const nodeValue = await testActor.eval(`
-    document.querySelector("${selector}").firstChild.nodeValue;
-  `);
-  return nodeValue;
+function getFirstChildNodeValue(selector) {
+  return SpecialPowers.spawn(
+    gBrowser.selectedBrowser,
+    [selector],
+    _selector => {
+      return content.document.querySelector(_selector).firstChild.nodeValue;
+    }
+  );
 }
 
 

@@ -15,12 +15,12 @@ loadHelperScript("helper_diff.js");
 
 
 async function runEventPopupTests(url, tests) {
-  const { inspector, testActor } = await openInspectorForURL(url);
+  const { inspector } = await openInspectorForURL(url);
 
   await inspector.markup.expandAll();
 
   for (const test of tests) {
-    await checkEventsForNode(test, inspector, testActor);
+    await checkEventsForNode(test, inspector);
   }
 
   
@@ -48,13 +48,12 @@ async function runEventPopupTests(url, tests) {
 
 
 
-
-async function checkEventsForNode(test, inspector, testActor) {
+async function checkEventsForNode(test, inspector) {
   const { selector, expected, beforeTest, isSourceMapped } = test;
   const container = await getContainerForSelector(selector, inspector);
 
   if (typeof beforeTest === "function") {
-    await beforeTest(inspector, testActor);
+    await beforeTest(inspector);
   }
 
   const evHolder = container.elt.querySelector(

@@ -32,9 +32,7 @@ add_task(async function() {
   
   
   
-  const { toolbox, inspector, testActor } = await openInspectorForURL(
-    INITIAL_URL
-  );
+  const { toolbox, inspector } = await openInspectorForURL(INITIAL_URL);
 
   
   
@@ -46,7 +44,7 @@ add_task(async function() {
   await inspector.markup.expandAll();
 
   for (const test of TEST_DATA) {
-    await checkEventsForNode(test, inspector, testActor);
+    await checkEventsForNode(test, inspector);
   }
 
   

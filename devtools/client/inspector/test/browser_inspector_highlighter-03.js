@@ -53,7 +53,9 @@ add_task(async function() {
 
   info("Scrolling the document");
   await testActor.setProperty("iframe", "style", "margin-bottom: 2000px");
-  await testActor.eval("window.scrollBy(0, 40);");
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], () =>
+    content.scrollBy(0, 40)
+  );
 
   
   const iframeBodySelector = ["iframe", "body"];

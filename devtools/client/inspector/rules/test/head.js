@@ -41,21 +41,6 @@ registerCleanupFunction(() => {
 
 
 
-function getStyle(testActor, selector, propName) {
-  return testActor.eval(`
-    document.querySelector("${selector}")
-            .style.getPropertyValue("${propName}");
-  `);
-}
-
-
-
-
-
-
-
-
-
 
 async function hideTooltipAndWaitForRuleViewChanged(editorTooltip, view) {
   const onModified = view.once("ruleview-changed");
