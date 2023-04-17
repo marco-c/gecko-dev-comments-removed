@@ -11,6 +11,7 @@
 #include "mozilla/Monitor.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ThreadEventQueue.h"
 #include "mozilla/TimeStamp.h"
@@ -19,6 +20,9 @@
 #include "nsThread.h"
 #include "nsThreadManager.h"
 #include "nsThreadUtils.h"
+
+#include <android/api-level.h>
+#include <pthread.h>
 
 using namespace mozilla;
 
@@ -165,11 +169,46 @@ class CreateOnUiThread : public Runnable {
     sThread = new AndroidUiThread();
     sThread->InitCurrentThread();
     sThread->SetObserver(new ThreadObserver());
-    PROFILER_REGISTER_THREAD("AndroidUI");
+    RegisterThreadWithProfiler();
     sMessageLoop =
         new MessageLoop(MessageLoop::TYPE_MOZILLA_ANDROID_UI, sThread.get());
     lock.NotifyAll();
     return NS_OK;
+  }
+
+ private:
+  static void RegisterThreadWithProfiler() {
+#if defined(MOZ_GECKO_PROFILER)
+    
+    
+    
+    
+    
+
+    
+    char fallback;
+    char* stackTop = &fallback;
+
+    auto regOnExit = MakeScopeExit(
+        [&stackTop]() { profiler_register_thread("AndroidUI", stackTop); });
+
+    
+    
+#  if __ANDROID_API__ >= __ANDROID_API_L__
+    pthread_attr_t attrs;
+    if (pthread_getattr_np(pthread_self(), &attrs)) {
+      return;
+    }
+
+    void* stackBase;
+    size_t stackSize;
+    if (pthread_attr_getstack(&attrs, &stackBase, &stackSize)) {
+      return;
+    }
+
+    stackTop = static_cast<char*>(stackBase) + stackSize - 1;
+#  endif  
+#endif    
   }
 };
 
