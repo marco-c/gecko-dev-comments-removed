@@ -1184,7 +1184,7 @@ void nsMessageManagerScriptExecutor::LoadScriptInternal(
   if (holder) {
     script = holder->mScript;
   } else {
-    TryCacheLoadAndCompileScript(aURL, aRunInUniqueScope, true, aMessageManager,
+    TryCacheLoadAndCompileScript(aURL, aRunInUniqueScope, aMessageManager,
                                  &script);
   }
 
@@ -1211,7 +1211,7 @@ void nsMessageManagerScriptExecutor::LoadScriptInternal(
 }
 
 void nsMessageManagerScriptExecutor::TryCacheLoadAndCompileScript(
-    const nsAString& aURL, bool aRunInUniqueScope, bool aShouldCache,
+    const nsAString& aURL, bool aRunInUniqueScope,
     JS::Handle<JSObject*> aMessageManager,
     JS::MutableHandle<JSScript*> aScriptp) {
   nsCString url = NS_ConvertUTF16toUTF8(aURL);
@@ -1237,12 +1237,12 @@ void nsMessageManagerScriptExecutor::TryCacheLoadAndCompileScript(
   
   
   
-  bool isRunOnce = !aShouldCache || IsProcessScoped();
+  bool isRunOnce = IsProcessScoped();
 
   
   nsAutoCString scheme;
   uri->GetScheme(scheme);
-  bool useScriptPreloader = aShouldCache && !scheme.EqualsLiteral("data");
+  bool useScriptPreloader = !scheme.EqualsLiteral("data");
 
   
   
@@ -1259,8 +1259,10 @@ void nsMessageManagerScriptExecutor::TryCacheLoadAndCompileScript(
   options.setNonSyntacticScope(true);
 
   JS::Rooted<JSScript*> script(cx);
-  script =
-      ScriptPreloader::GetChildSingleton().GetCachedScript(cx, options, url);
+  if (useScriptPreloader) {
+    script =
+        ScriptPreloader::GetChildSingleton().GetCachedScript(cx, options, url);
+  }
 
   if (!script) {
     nsCOMPtr<nsIChannel> channel;
