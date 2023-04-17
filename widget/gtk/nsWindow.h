@@ -381,7 +381,9 @@ class nsWindow final : public nsBaseWidget {
       const LayoutDeviceIntRegion& aRegion) override;
 
   
-  gint GdkScaleFactor();
+  gint GdkCeiledScaleFactor();
+  bool UseFractionalScale();
+  double FractionalScaleFactor();
 
   
   gint DevicePixelsToGdkCoordRoundUp(int pixels);
