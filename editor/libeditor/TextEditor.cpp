@@ -579,11 +579,7 @@ nsresult TextEditor::InsertWithQuotationsAsSubAction(
 
   
   nsString quotedStuff;
-  nsresult rv = InternetCiter::GetCiteString(aQuotedText, quotedStuff);
-  if (NS_FAILED(rv)) {
-    NS_WARNING("InternetCiter::GetCiteString() failed");
-    return rv;
-  }
+  InternetCiter::GetCiteString(aQuotedText, quotedStuff);
 
   
   
@@ -605,7 +601,7 @@ nsresult TextEditor::InsertWithQuotationsAsSubAction(
   
   MaybeDoAutoPasswordMasking();
 
-  rv = InsertTextAsSubAction(quotedStuff, SelectionHandling::Delete);
+  nsresult rv = InsertTextAsSubAction(quotedStuff, SelectionHandling::Delete);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "EditorBase::InsertTextAsSubAction() failed");
   return rv;
