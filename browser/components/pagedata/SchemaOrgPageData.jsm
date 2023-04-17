@@ -162,9 +162,10 @@ class SchemaOrgPageData extends PageDataCollector {
     for (let scope of scopes) {
       switch (scope.getAttribute("itemtype")) {
         case "https://schema.org/Product":
-          
-          
-          insert(1, this.#collectProduct(scope));
+          insert(
+            PageDataCollector.DATA_TYPE.PRODUCT,
+            this.#collectProduct(scope)
+          );
           break;
       }
     }

@@ -21,6 +21,15 @@ class PageDataCollector extends EventEmitter {
   
 
 
+  static get DATA_TYPE() {
+    return {
+      PRODUCT: 1,
+    };
+  }
+
+  
+
+
 
 
 
