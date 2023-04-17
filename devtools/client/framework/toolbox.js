@@ -2981,6 +2981,17 @@ Toolbox.prototype = {
 
 
 
+
+  isHighlighted(id) {
+    return this.component.state.highlightedTools.has(id);
+  },
+
+  
+
+
+
+
+
   async highlightTool(id) {
     if (!this.component) {
       await this.isOpen;
