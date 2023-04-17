@@ -9,7 +9,7 @@ from requests import HTTPError
 from taskgraph.util.taskcluster import (
     find_task_id,
     get_artifact,
-    status_task,
+    state_task,
 )
 
 
@@ -59,7 +59,7 @@ def is_backstop(
         
         return True
 
-    if status_task(last_backstop_id) in ("failed", "exception"):
+    if state_task(last_backstop_id) in ("failed", "exception"):
         
         return True
 
