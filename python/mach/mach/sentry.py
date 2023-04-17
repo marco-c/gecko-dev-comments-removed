@@ -147,6 +147,12 @@ def _patch_absolute_paths(sentry_event, topsrcdir):
             
             
             
+
+            
+            
+            if target.startswith("/"):
+                target = "/?" + target[1:]
+
             
             
             
