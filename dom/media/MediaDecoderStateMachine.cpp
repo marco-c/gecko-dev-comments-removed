@@ -3737,12 +3737,17 @@ void MediaDecoderStateMachine::UpdateOutputCaptured() {
 
   
   if (!mIsMediaSinkSuspended) {
+    const bool wasPlaying = IsPlaying();
     
     StopMediaSink();
     mMediaSink->Shutdown();
 
     
     mMediaSink = CreateMediaSink();
+    if (wasPlaying) {
+      DebugOnly<nsresult> rv = StartMediaSink();
+      MOZ_ASSERT(NS_SUCCEEDED(rv));
+    }
   }
 
   
