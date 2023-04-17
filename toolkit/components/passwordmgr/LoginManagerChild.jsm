@@ -1547,8 +1547,31 @@ this.LoginManagerChild = class LoginManagerChild extends JSWindowActorChild {
       });
     }
 
+    
+    
+    
     if (!pwFields) {
-      return emptyResult;
+      usernameField = this.getUsernameFieldFromUsernameOnlyForm(
+        form.rootElement
+      );
+      if (usernameField) {
+        let acFieldName = usernameField.getAutocompleteInfo().fieldName;
+        log(
+          "Username field ",
+          usernameField,
+          "has name/value/autocomplete:",
+          usernameField.name,
+          "/",
+          usernameField.value,
+          "/",
+          acFieldName
+        );
+      }
+
+      return {
+        ...emptyResult,
+        usernameField,
+      };
     }
 
     if (!usernameField) {
