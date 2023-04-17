@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 "use strict";
 
@@ -142,7 +142,7 @@ var AboutReader = function(actor, articlePromise) {
     "aboutReader.toolbar.close"
   );
 
-  // we're ready for any external setup, send a signal for that.
+  
   this._actor.sendAsyncMessage("Reader:OnSetup");
 
   let colorSchemeValues = JSON.parse(
@@ -169,8 +169,8 @@ var AboutReader = function(actor, articlePromise) {
   let styleButton = this._doc.querySelector(".style-button");
   this._setButtonTip(styleButton, "aboutReader.toolbar.typeControls");
 
-  // See bug 1637089.
-  // let fontTypeSample = gStrings.GetStringFromName("aboutReader.fontTypeSample");
+  
+  
 
   let fontTypeOptions = [
     {
@@ -368,12 +368,12 @@ AboutReader.prototype = {
     let target = aEvent.target;
     switch (aEvent.type) {
       case "touchstart":
-      /* fall through */
+      
       case "mousedown":
         if (
           !target.closest(".dropdown-popup") &&
-          // Skip handling the toggle button here becase
-          // the dropdown will get toggled with the 'click' event.
+          
+          
           !target.classList.contains("dropdown-toggle")
         ) {
           this._closeDropdowns();
@@ -405,8 +405,8 @@ AboutReader.prototype = {
         this._lastHeight = windowUtils.getBoundsWithoutFlushing(
           this._doc.body
         ).height;
-        // Only close dropdowns if the scroll events are not a result of line
-        // height / font-size changes that caused a page height change.
+        
+        
         if (lastHeight == this._lastHeight) {
           this._closeDropdowns(true);
         }
@@ -425,15 +425,15 @@ AboutReader.prototype = {
         }
         aEvent.preventDefault();
 
-        // Throttle events to once per 150ms. This avoids excessively fast zooming.
+        
         if (aEvent.timeStamp <= this._zoomBackoffTime) {
           return;
         }
         this._zoomBackoffTime = aEvent.timeStamp + 150;
 
-        // Determine the direction of the delta (we don't care about its size);
-        // This code is adapted from normalizeWheelEventDelta in
-        // toolkt/components/pdfjs/content/web/viewer.js
+        
+        
+        
         let delta = Math.abs(aEvent.deltaX) + Math.abs(aEvent.deltaY);
         let angle = Math.atan2(aEvent.deltaY, aEvent.deltaX);
         if (-0.25 * Math.PI < angle && angle < 0.75 * Math.PI) {
@@ -479,8 +479,8 @@ AboutReader.prototype = {
     );
     let size;
     if (this._fontSize > this.FONT_SIZE_LEGACY_MAX) {
-      // -1 because we're indexing into a 0-indexed array, so the first value
-      // over the legacy max should be 0, the next 1, etc.
+      
+      
       let index = this._fontSize - this.FONT_SIZE_LEGACY_MAX - 1;
       size = this.FONT_SIZE_EXTENDED_VALUES[index];
     } else {
@@ -720,7 +720,7 @@ AboutReader.prototype = {
   },
 
   _setColorScheme(newColorScheme) {
-    // "auto" is not a real color scheme
+    
     if (this._colorScheme === newColorScheme || newColorScheme === "auto") {
       return;
     }
@@ -735,7 +735,7 @@ AboutReader.prototype = {
     bodyClasses.add(this._colorScheme);
   },
 
-  // Pref values include "dark", "light", and "sepia"
+  
   _setColorSchemePref(colorSchemePref) {
     this._setColorScheme(colorSchemePref);
 
@@ -784,50 +784,15 @@ AboutReader.prototype = {
       return;
     }
 
-    // Replace the loading message with an error message if there's a failure.
-    // Users are supposed to navigate away by themselves (because we cannot
-    // remove ourselves from session history.)
+    
+    
+    
     if (!article) {
       this._showError();
       return;
     }
 
     this._showContent(article);
-  },
-
-  async _requestPocketLoginStatus() {
-    let isLoggedIn = await this._actor.sendQuery(
-      "Reader:PocketLoginStatusRequest"
-    );
-
-    return isLoggedIn;
-  },
-
-  async _requestPocketArticleInfo(url) {
-    let articleInfo = await this._actor.sendQuery(
-      "Reader:PocketGetArticleInfo",
-      {
-        url,
-      }
-    );
-
-    return articleInfo?.item_preview?.item_id;
-  },
-
-  async _requestPocketArticleRecs(itemID) {
-    let recs = await this._actor.sendQuery("Reader:PocketGetArticleRecs", {
-      itemID,
-    });
-
-    return recs;
-  },
-
-  async _savePocketArticle(url) {
-    let result = await this._actor.sendQuery("Reader:PocketSaveArticle", {
-      url,
-    });
-
-    return result;
   },
 
   async _requestFavicon() {
@@ -860,14 +825,14 @@ AboutReader.prototype = {
     let bodyWidth = this._doc.body.clientWidth;
 
     let setImageMargins = function(img) {
-      // If the image is at least as wide as the window, make it fill edge-to-edge on mobile.
+      
       if (img.naturalWidth >= windowWidth) {
         img.setAttribute("moz-reader-full-width", true);
       } else {
         img.removeAttribute("moz-reader-full-width");
       }
 
-      // If the image is at least half as wide as the body, center it on desktop.
+      
       if (img.naturalWidth >= bodyWidth / 2) {
         img.setAttribute("moz-reader-center", true);
       } else {
@@ -890,23 +855,23 @@ AboutReader.prototype = {
   },
 
   _maybeSetTextDirection: function Read_maybeSetTextDirection(article) {
-    // Set the article's "dir" on the contents.
-    // If no direction is specified, the contents should automatically be LTR
-    // regardless of the UI direction to avoid inheriting the parent's direction
-    // if the UI is RTL.
+    
+    
+    
+    
     this._containerElement.dir = article.dir || "ltr";
 
-    // The native locale could be set differently than the article's text direction.
+    
     this._readTimeElement.dir = isAppLocaleRTL ? "rtl" : "ltr";
 
-    // This is used to mirror the line height buttons in the toolbar, when relevant.
+    
     this._toolbarElement.setAttribute("articledir", article.dir || "ltr");
   },
 
   _formatReadTime(slowEstimate, fastEstimate) {
     let displayStringKey = "aboutReader.estimatedReadTimeRange1";
 
-    // only show one reading estimate when they are the same value
+    
     if (slowEstimate == fastEstimate) {
       displayStringKey = "aboutReader.estimatedReadTimeValue1";
     }
@@ -941,7 +906,7 @@ AboutReader.prototype = {
     );
   },
 
-  // This function is the JS version of Java's StringUtils.stripCommonSubdomains.
+  
   _stripHost(host) {
     if (!host) {
       return host;
@@ -1012,7 +977,7 @@ AboutReader.prototype = {
       })
     );
 
-    // Show Pocket CTA block after article has loaded to prevent it flashing in prematurely
+    
     this._setupPocketCTA();
   },
 
@@ -1023,9 +988,9 @@ AboutReader.prototype = {
 
   _showProgressDelayed() {
     this._win.setTimeout(() => {
-      // No need to show progress if the article has been loaded,
-      // if the window has been unloaded, or if there was an error
-      // trying to load the article.
+      
+      
+      
       if (this._article || !this._actor || this._error) {
         return;
       }
@@ -1040,9 +1005,9 @@ AboutReader.prototype = {
     }, 300);
   },
 
-  /**
-   * Returns the original article URL for this about:reader view.
-   */
+  
+
+
   _getOriginalUrl(win) {
     let url = win ? win.location.href : this._win.location.href;
     return ReaderMode.getOriginalUrl(url) || url;
@@ -1113,10 +1078,10 @@ AboutReader.prototype = {
     );
   },
 
-  /**
-   * Sets a tooltip-style label on a button.
-   * @param   Localizable string providing UI element usage tip.
-   */
+  
+
+
+
   _setButtonTip(button, titleEntity) {
     let tip = this._doc.createElement("span");
     let localizedString = gStrings.GetStringFromName(titleEntity);
@@ -1142,9 +1107,9 @@ AboutReader.prototype = {
     }
   },
 
-  /*
-   * If the ReaderView banner font-dropdown is closed, open it.
-   */
+  
+
+
   _openDropdown(dropdown, window) {
     if (dropdown.classList.contains("open")) {
       return;
@@ -1152,7 +1117,7 @@ AboutReader.prototype = {
 
     this._closeDropdowns();
 
-    // Get the height of the doc and start handling scrolling:
+    
     let { windowUtils } = this._win;
     this._lastHeight = windowUtils.getBoundsWithoutFlushing(
       this._doc.body
@@ -1166,11 +1131,11 @@ AboutReader.prototype = {
     this._toggleToolbarFixedPosition(true);
   },
 
-  /*
-   * If the ReaderView has open dropdowns, close them. If we are closing the
-   * dropdowns because the page is scrolling, allow popups to stay open with
-   * the keep-open class.
-   */
+  
+
+
+
+
   _closeDropdowns(scrolling) {
     let selector = ".dropdown.open";
     if (scrolling) {
@@ -1189,7 +1154,7 @@ AboutReader.prototype = {
       this._toggleToolbarFixedPosition(false);
     }
 
-    // Stop handling scrolling:
+    
     this._doc.removeEventListener("scroll", this);
   },
 
@@ -1233,7 +1198,7 @@ AboutReader.prototype = {
 
   _toolbarOverlapHandler() {
     delete this._enqueuedToolbarOverlapHandler;
-    // Ensure the dropdown is still open to avoid racing with that changing.
+    
     if (this._toolbarContainerElement.classList.contains("dropdown-open")) {
       let { windowUtils } = this._win;
       let toolbarBounds = windowUtils.getBoundsWithoutFlushing(
@@ -1256,158 +1221,39 @@ AboutReader.prototype = {
     if (!entries.length) {
       return;
     }
-    // If we don't intersect the item at the top of the document, we're
-    // scrolled down:
+    
+    
     let scrolled = !entries[entries.length - 1].isIntersecting;
     let tbc = this._toolbarContainerElement;
     tbc.classList.toggle("scrolled", scrolled);
   },
 
-  /*
-   * Scroll reader view to a reference
-   */
+  
+
+
   _goToReference(ref) {
     if (ref) {
       this._win.location.hash = ref;
     }
   },
 
-  _enableDismissCTA() {
-    let elDismissCta = this._doc.querySelector(`.pocket-dismiss-cta`);
-
-    elDismissCta?.addEventListener(`click`, e => {
-      this._doc.querySelector("#pocket-cta-container").hidden = true;
-    });
-  },
-
-  _enableRecShowHide() {
-    let elPocketRecs = this._doc.querySelector(`.pocket-recs`);
-    let elCollapseRecs = this._doc.querySelector(`.pocket-collapse-recs`);
-
-    let toggleRecsVisibility = () => {
-      let isClosed = elPocketRecs.classList.contains(`closed`);
-
-      isClosed = !isClosed; // Toggle
-
-      if (isClosed) {
-        elPocketRecs.classList.add(`closed`);
-        elCollapseRecs.classList.add(`closed`);
-      } else {
-        elPocketRecs.classList.remove(`closed`);
-        elCollapseRecs.classList.remove(`closed`);
-      }
-    };
-
-    elCollapseRecs?.addEventListener(`click`, e => {
-      toggleRecsVisibility();
-    });
-  },
-
-  _buildPocketRec(title, url, publisher, thumb, time) {
-    let fragment = this._doc.createDocumentFragment();
-
-    let elContainer = this._doc.createElement(`div`);
-    let elTitle = this._doc.createElement(`header`);
-    let elMetadata = this._doc.createElement(`p`);
-    let elThumb = this._doc.createElement(`img`);
-    let elSideWrap = this._doc.createElement(`div`);
-    let elTop = this._doc.createElement(`a`);
-    let elBottom = this._doc.createElement(`div`);
-    let elAdd = this._doc.createElement(`button`);
-
-    elAdd.classList.add(`pocket-btn-add`);
-    elBottom.classList.add(`pocket-rec-bottom`);
-    elTop.classList.add(`pocket-rec-top`);
-    elSideWrap.classList.add(`pocket-rec-side`);
-    elContainer.classList.add(`pocket-rec`);
-    elTitle.classList.add(`pocket-rec-title`);
-    elMetadata.classList.add(`pocket-rec-meta`);
-
-    elTop.setAttribute(`href`, url);
-
-    elThumb.classList.add(`pocket-rec-thumb`);
-    elThumb.setAttribute(`loading`, `lazy`);
-    elThumb.setAttribute(
-      `src`,
-      `https://img-getpocket.cdn.mozilla.net/132x132/filters:format(jpeg):quality(60):no_upscale():strip_exif()/${thumb}`
-    );
-
-    elAdd.textContent = `Save`;
-    elTitle.textContent = title;
-
-    if (publisher && time) {
-      elMetadata.textContent = `${publisher} · ${time} min`;
-    } else if (publisher) {
-      elMetadata.textContent = `${publisher}`;
-    } else if (time) {
-      elMetadata.textContent = `${time} min`;
-    }
-
-    elSideWrap.appendChild(elTitle);
-    elSideWrap.appendChild(elMetadata);
-    elTop.appendChild(elSideWrap);
-    elTop.appendChild(elThumb);
-    elBottom.appendChild(elAdd);
-    elContainer.appendChild(elTop);
-    elContainer.appendChild(elBottom);
-    fragment.appendChild(elContainer);
-
-    elAdd.addEventListener(`click`, e => {
-      this._savePocketArticle(url);
-      elAdd.textContent = `Saved`;
-      elAdd.classList.add(`saved`);
-    });
-
-    return fragment;
-  },
-
-  async _getAndBuildPocketRecs() {
-    let elTarget = this._doc.querySelector(`.pocket-recs`);
-    let url = this._getOriginalUrl();
-    let itemID = await this._requestPocketArticleInfo(url);
-    let articleRecs = await this._requestPocketArticleRecs(itemID);
-
-    articleRecs.recommendations.forEach(rec => {
-      // Parse a domain from the article URL in case the Publisher name isn't available
-      let parsedDomain = new URL(rec.item?.normal_url)?.hostname;
-
-      // Calculate read time from word count in case it's not available
-      let calculatedReadTime = Math.ceil(rec.item?.word_count / 220);
-
-      let elRec = this._buildPocketRec(
-        rec.item?.title,
-        rec.item?.normal_url,
-        rec.item?.domain_metadata?.name || parsedDomain,
-        rec.item?.top_image_url,
-        rec.item?.time_to_read || calculatedReadTime
-      );
-
-      elTarget.appendChild(elRec);
-    });
-  },
-
-  async _setupPocketCTA() {
+  _setupPocketCTA() {
     let ctaVersion = NimbusFeatures.readerMode.getAllVariables()
       ?.pocketCTAVersion;
-    let isLoggedInUser = await this._requestPocketLoginStatus();
     let elPocketCTAWrapper = this._doc.querySelector("#pocket-cta-container");
 
-    // Show the Pocket CTA container if the pref is set and valid
-    if (ctaVersion === `cta-and-recs` || ctaVersion === `cta-only`) {
-      if (ctaVersion === `cta-and-recs` && isLoggedInUser) {
-        this._getAndBuildPocketRecs();
-        this._enableRecShowHide();
-      } else if (ctaVersion === `cta-and-recs` && !isLoggedInUser) {
-        // Fall back to cta only for logged out users:
-        ctaVersion = `cta-only`;
-      }
-
-      if (ctaVersion == `cta-only`) {
-        this._enableDismissCTA();
-      }
-
+    
+    if (ctaVersion) {
       elPocketCTAWrapper.hidden = false;
+
+      
       elPocketCTAWrapper.classList.add(`pocket-cta-container-${ctaVersion}`);
+
+      this._doc
+        .querySelector(`.pocket-dismiss-cta`)
+        .addEventListener(`click`, e => {
+          elPocketCTAWrapper.hidden = true;
+        });
     }
   },
 };
