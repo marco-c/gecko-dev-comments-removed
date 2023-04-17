@@ -477,11 +477,7 @@ class ResourceCommand {
     
     
     
-    if (
-      !this.targetCommand.hasTargetWatcherSupport(
-        "supportsDocumentEventWillNavigate"
-      )
-    ) {
+    if (!this.targetCommand.hasTargetWatcherSupport()) {
       const offWillNavigate = targetFront.on(
         "will-navigate",
         ({ url, isFrameSwitching }) => {
