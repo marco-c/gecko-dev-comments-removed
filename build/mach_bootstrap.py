@@ -195,7 +195,6 @@ install a recent enough Python 3.
 def bootstrap(topsrcdir):
     
     
-    major = sys.version_info[:2][0]
     if sys.version_info < (3, 6):
         print("Python 3.6+ is required to run mach.")
         print("You are running Python", platform.python_version())
@@ -216,10 +215,7 @@ def bootstrap(topsrcdir):
     if os.path.exists(deleted_dir):
         shutil.rmtree(deleted_dir, ignore_errors=True)
 
-    if major == 3 and sys.prefix == sys.base_prefix:
-        
-        
-        
+    if sys.prefix == sys.base_prefix:
         
         
         site_paths = set(site.getsitepackages() + [site.getusersitepackages()])
