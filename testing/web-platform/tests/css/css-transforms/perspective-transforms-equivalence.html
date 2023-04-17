@@ -5,11 +5,11 @@
 <link rel="help" href="http://www.w3.org/TR/css-transforms-2/#perspective-property">
 <link rel="help" href="http://www.w3.org/TR/css-transforms-1/#transform-property">
 <link rel="match" href="perspective-transforms-equivalence-ref.html">
-
-
-
-
-<meta name="fuzzy" content="maxDifference=0-10;totalPixels=0-10">
+<!--
+Perspective with different transforms can have small anti-aliasing
+pixel differences, so the test should fuzzy patch to the ref.
+-->
+<meta name="fuzzy" content="maxDifference=0-27;totalPixels=0-174">
 <style>
 
 #container {
