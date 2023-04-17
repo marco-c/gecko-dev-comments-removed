@@ -253,6 +253,7 @@ no shell found in %s -- must build the JS shell with `mach hazards build-shell` 
         buildscript = " ".join(
             [
                 command_context.topsrcdir + "/mach hazards compile",
+                "--job-size=3.0",  
                 "--application=" + application,
                 "--haz-objdir=" + objdir,
             ]
