@@ -142,7 +142,8 @@ class RenderCompositor {
                           wr::ImageRendering aImageRendering) {}
   
   
-  virtual void StartCompositing(const wr::DeviceIntRect* aDirtyRects,
+  virtual void StartCompositing(wr::ColorF aClearColor,
+                                const wr::DeviceIntRect* aDirtyRects,
                                 size_t aNumDirtyRects,
                                 const wr::DeviceIntRect* aOpaqueRects,
                                 size_t aNumOpaqueRects) {}
