@@ -52,6 +52,9 @@ JS_PUBLIC_API void StencilRelease(Stencil* stencil);
 extern JS_PUBLIC_API already_AddRefed<Stencil> CompileGlobalScriptToStencil(
     JSContext* cx, const ReadOnlyCompileOptions& options,
     SourceText<mozilla::Utf8Unit>& srcBuf);
+extern JS_PUBLIC_API already_AddRefed<Stencil> CompileGlobalScriptToStencil(
+    JSContext* cx, const ReadOnlyCompileOptions& options,
+    SourceText<char16_t>& srcBuf);
 
 
 extern JS_PUBLIC_API JSScript* InstantiateGlobalStencil(
