@@ -583,10 +583,6 @@ var PermissionPromptPrototype = {
       options.hideClose = true;
     }
 
-    if (!mainAction.hasOwnProperty("disableHighlight")) {
-      mainAction.disableHighlight = true;
-    }
-
     options.eventCallback = (topic, nextRemovalReason, isCancel) => {
       
       

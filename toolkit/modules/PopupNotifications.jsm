@@ -533,8 +533,6 @@ PopupNotifications.prototype = {
 
 
 
-
-
   show: function PopupNotifications_show(
     browser,
     id,
@@ -1025,10 +1023,6 @@ PopupNotifications.prototype = {
         popupnotification.setAttribute(
           "buttonaccesskey",
           n.mainAction.accessKey
-        );
-        popupnotification.toggleAttribute(
-          "buttonhighlight",
-          !n.mainAction.disableHighlight
         );
         popupnotification.setAttribute(
           "buttoncommand",
