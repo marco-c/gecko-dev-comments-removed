@@ -91,8 +91,18 @@ let FormAutofillStatus = {
       Services.prefs.addObserver(ENABLED_AUTOFILL_CREDITCARDS_PREF, this);
     }
 
-    for (let win of Services.wm.getEnumerator("navigator:browser")) {
-      this.injectElements(win.document);
+    
+    
+    for (let win of Services.wm.getEnumerator("")) {
+      let { documentElement } = win.document;
+      if (documentElement?.getAttribute("windowtype") == "navigator:browser") {
+        this.injectElements(win.document);
+      } else {
+        
+        
+        
+        this.onOpenWindow(win);
+      }
     }
     Services.wm.addListener(this);
 
