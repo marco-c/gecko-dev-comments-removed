@@ -177,15 +177,6 @@ parent:
 
   
   
-  
-  
-  
-  
-  
-  sync MakeSnapshot(SurfaceDescriptor inSnapshot, IntRect dirtyRect);
-
-  
-  
   sync FlushRendering();
 
   

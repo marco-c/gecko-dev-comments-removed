@@ -500,20 +500,6 @@ mozilla::ipc::IPCResult CompositorBridgeParent::RecvResumeAsync() {
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult CompositorBridgeParent::RecvMakeSnapshot(
-    const SurfaceDescriptor& aInSnapshot, const gfx::IntRect& aRect) {
-  RefPtr<DrawTarget> target = GetDrawTargetForDescriptor(aInSnapshot);
-  MOZ_ASSERT(target);
-  if (!target) {
-    
-    
-    
-    return IPC_FAIL_NO_REASON(this);
-  }
-  ForceComposeToTarget(target, &aRect);
-  return IPC_OK();
-}
-
 mozilla::ipc::IPCResult
 CompositorBridgeParent::RecvWaitOnTransactionProcessed() {
   return IPC_OK();
