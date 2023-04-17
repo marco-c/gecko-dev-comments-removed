@@ -485,14 +485,20 @@ async function navigateTo(uri, { isErrorPage = false } = {}) {
     toolbox.getCurrentPanel()
   );
 
+  uri = uri.replaceAll("\n", "");
   info(`Load document "${uri}"`);
   const browser = gBrowser.selectedBrowser;
   const currentPID = browser.browsingContext.currentWindowGlobal.osPid;
   const currentBrowsingContextID = browser.browsingContext.id;
   const onBrowserLoaded = BrowserTestUtils.browserLoaded(
     browser,
+    
     false,
-    null,
+    
+    loadedUrl => {
+      
+      return loadedUrl === uri || decodeURI(loadedUrl) === uri;
+    },
     isErrorPage
   );
   BrowserTestUtils.loadURI(browser, uri);
