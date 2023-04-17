@@ -2971,8 +2971,7 @@ class PreferencesWriter final {
     
     
     
-    mozilla::SpinEventLoopUntil("PreferencesWriter::Flush"_ns,
-                                []() { return sPendingWriteCount <= 0; });
+    mozilla::SpinEventLoopUntil([]() { return sPendingWriteCount <= 0; });
   }
 
   

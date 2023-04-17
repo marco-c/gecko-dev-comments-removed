@@ -1224,8 +1224,7 @@ nsresult ContentChild::ProvideWindowCommon(
     
     
     
-    SpinEventLoopUntil("ContentChild::ProvideWindowCommon"_ns,
-                       [&]() { return ready; });
+    SpinEventLoopUntil([&]() { return ready; });
     MOZ_RELEASE_ASSERT(ready,
                        "We are on the main thread, so we should not exit this "
                        "loop without ready being true.");

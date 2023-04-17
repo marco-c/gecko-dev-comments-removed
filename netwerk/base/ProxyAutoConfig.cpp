@@ -471,7 +471,7 @@ bool ProxyAutoConfig::ResolveAddress(const nsCString& aHostName,
   
   
   
-  SpinEventLoopUntil("ProxyAutoConfig::ResolveAddress"_ns, [&, helper, this]() {
+  SpinEventLoopUntil([&, helper, this]() {
     if (!helper->mRequest) {
       return true;
     }

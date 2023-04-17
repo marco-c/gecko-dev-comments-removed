@@ -836,35 +836,29 @@ TEST(ThreadUtils, IdleTaskRunner)
       TimeDuration::FromMilliseconds(3), false, nullptr);
 
   
-  MOZ_ALWAYS_TRUE(
-      SpinEventLoopUntil("xpcom:TEST(ThreadUtils, IdleTaskRunner) cnt1"_ns,
-                         [&]() { return cnt1 >= 100; }));
-  MOZ_ALWAYS_TRUE(
-      SpinEventLoopUntil("xpcom:TEST(ThreadUtils, IdleTaskRunner) cnt2"_ns,
-                         [&]() { return cnt2 >= 100; }));
+  MOZ_ALWAYS_TRUE(SpinEventLoopUntil([&]() { return cnt1 >= 100; }));
+  MOZ_ALWAYS_TRUE(SpinEventLoopUntil([&]() { return cnt2 >= 100; }));
 
   
   
-  MOZ_ALWAYS_TRUE(SpinEventLoopUntil(
-      "xpcom:TEST(ThreadUtils, IdleTaskRunner) cnt3"_ns, [&]() {
-        if (cnt3 > 2) {
-          EXPECT_TRUE(false) << "MaybeContinueProcess() doesn't work.";
-          return true;  
-        }
-        return cnt3 == 2;  
-      }));
+  MOZ_ALWAYS_TRUE(SpinEventLoopUntil([&]() {
+    if (cnt3 > 2) {
+      EXPECT_TRUE(false) << "MaybeContinueProcess() doesn't work.";
+      return true;  
+    }
+    return cnt3 == 2;  
+  }));
 
   
   
-  MOZ_ALWAYS_TRUE(SpinEventLoopUntil(
-      "xpcom:TEST(ThreadUtils, IdleTaskRunner) cnt4"_ns, [&]() {
-        
-        if (cnt4 > 1) {
-          EXPECT_TRUE(false) << "The 'mRepeating' flag doesn't work.";
-          return true;  
-        }
-        return cnt4 == 1;
-      }));
+  MOZ_ALWAYS_TRUE(SpinEventLoopUntil([&]() {
+    
+    if (cnt4 > 1) {
+      EXPECT_TRUE(false) << "The 'mRepeating' flag doesn't work.";
+      return true;  
+    }
+    return cnt4 == 1;
+  }));
 
   
   runner1->Cancel();

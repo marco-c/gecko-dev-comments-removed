@@ -231,24 +231,21 @@ static int FuzzingRunNetworkHttp(const uint8_t* data, size_t size) {
           NS_NewRunnableFunction("Dummy", [&]() { mainPingBack = true; }));
     }));
 
-    SpinEventLoopUntil("FuzzingRunNetworkHttp(mainPingBack)"_ns,
-                       [&]() -> bool { return mainPingBack; });
+    SpinEventLoopUntil([&]() -> bool { return mainPingBack; });
 
     channelRef = do_GetWeakReference(gHttpChannel);
   }
 
   
-  SpinEventLoopUntil(
-      "FuzzingRunNetworkHttp(channel == nullptr)"_ns, [&]() -> bool {
-        nsCycleCollector_collect(nullptr);
-        nsCOMPtr<nsIHttpChannel> channel = do_QueryReferent(channelRef);
-        return channel == nullptr;
-      });
+  SpinEventLoopUntil([&]() -> bool {
+    nsCycleCollector_collect(nullptr);
+    nsCOMPtr<nsIHttpChannel> channel = do_QueryReferent(channelRef);
+    return channel == nullptr;
+  });
 
   if (!signalNetworkFuzzingDone()) {
     
-    SpinEventLoopUntil("FuzzingRunNetworkHttp(gFuzzingConnClosed)"_ns,
-                       [&]() -> bool { return gFuzzingConnClosed; });
+    SpinEventLoopUntil([&]() -> bool { return gFuzzingConnClosed; });
   }
 
   rcsvc->RemoveRequestContext(rcID);

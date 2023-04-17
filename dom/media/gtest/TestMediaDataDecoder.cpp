@@ -37,7 +37,7 @@ class BenchmarkRunner {
         [&]() { done = true; });
 
     
-    SpinEventLoopUntil("BenchmarkRunner::Run"_ns, [&]() { return done; });
+    SpinEventLoopUntil([&]() { return done; });
     return result;
   }
 

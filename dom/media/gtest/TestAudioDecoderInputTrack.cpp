@@ -338,7 +338,6 @@ TEST_F(TestAudioDecoderInputTrack, VolumeChange) {
   expectedVolume = 0.1;
   mTrack->SetVolume(expectedVolume);
   SpinEventLoopUntil<ProcessFailureBehavior::IgnoreAndContinue>(
-      "TEST_F(TestAudioDecoderInputTrack, VolumeChange)"_ns,
       [&] { return mTrack->Volume() == expectedVolume; });
   start = end;
   end += 10;
@@ -367,7 +366,6 @@ TEST_F(TestAudioDecoderInputTrack, BatchedData) {
   
   
   SpinEventLoopUntil<ProcessFailureBehavior::IgnoreAndContinue>(
-      "TEST_F(TestAudioDecoderInputTrack, BatchedData)"_ns,
       [&] { return !mTrack->HasBatchedData(); });
 
   
@@ -426,7 +424,6 @@ TEST_F(TestAudioDecoderInputTrack, PlaybackRateChange) {
   float expectedPlaybackRate = 2.0;
   mTrack->SetPlaybackRate(expectedPlaybackRate);
   SpinEventLoopUntil<ProcessFailureBehavior::IgnoreAndContinue>(
-      "TEST_F(TestAudioDecoderInputTrack, PlaybackRateChange)"_ns,
       [&] { return mTrack->PlaybackRate() == expectedPlaybackRate; });
 
   
