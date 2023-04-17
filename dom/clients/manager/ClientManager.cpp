@@ -13,6 +13,7 @@
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/ipc/PBackgroundChild.h"
+#include "mozilla/ClearOnShutdown.h"  
 #include "nsContentUtils.h"
 #include "prthread.h"
 
@@ -217,6 +218,12 @@ already_AddRefed<ClientManager> ClientManager::GetOrCreateForCurrentThread() {
   }
 
   MOZ_DIAGNOSTIC_ASSERT(cm);
+  
+  
+  
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(!cm->IsShutdown());
   return cm.forget();
 }
 
@@ -230,6 +237,12 @@ WorkerPrivate* ClientManager::GetWorkerPrivate() const {
  bool ClientManager::ExpectOrForgetFutureSource(
     const ClientInfo& aClientInfo,
     bool (PClientManagerChild::*aMethod)(const IPCClientInfo&)) {
+  
+  
+  if (NS_WARN_IF(PastShutdownPhase(ShutdownPhase::XPCOMShutdown))) {
+    return false;
+  }
+
   bool rv = true;
 
   RefPtr<ClientManager> mgr = ClientManager::GetOrCreateForCurrentThread();
