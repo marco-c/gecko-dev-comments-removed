@@ -2208,8 +2208,12 @@ class Extension extends ExtensionData {
       this.addonData.signedState === AddonManager.SIGNEDSTATE_PRIVILEGED ||
       this.addonData.signedState === AddonManager.SIGNEDSTATE_SYSTEM ||
       this.addonData.builtIn ||
-      (AddonSettings.EXPERIMENTS_ENABLED && this.addonData.temporarilyInstalled)
+      (AddonSettings.EXPERIMENTS_ENABLED && this.temporarilyInstalled)
     );
+  }
+
+  get temporarilyInstalled() {
+    return !!this.addonData.temporarilyInstalled;
   }
 
   get experimentsAllowed() {
@@ -2320,6 +2324,7 @@ class Extension extends ExtensionData {
       permissions: this.permissions,
       optionalPermissions: this.optionalPermissions,
       isPrivileged: this.isPrivileged,
+      temporarilyInstalled: this.temporarilyInstalled,
     };
   }
 
@@ -2576,6 +2581,7 @@ class Extension extends ExtensionData {
       mozExtensionHostname: this.uuid,
       baseURL: this.resourceURL,
       isPrivileged: this.isPrivileged,
+      temporarilyInstalled: this.temporarilyInstalled,
       allowedOrigins: new MatchPatternSet([]),
       localizeCallback() {},
       readyPromise,
@@ -2630,7 +2636,7 @@ class Extension extends ExtensionData {
       } else if (
         !isAllowed &&
         this.isPrivileged &&
-        !this.addonData.temporarilyInstalled
+        !this.temporarilyInstalled
       ) {
         
         
