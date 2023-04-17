@@ -9,10 +9,10 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/ComposerCommandsUpdater.h"
 #include "mozilla/CSSEditUtils.h"
+#include "mozilla/EditorBase.h"
 #include "mozilla/EditorUtils.h"
 #include "mozilla/ManualNAC.h"
 #include "mozilla/Result.h"
-#include "mozilla/TextEditor.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BlobImpl.h"
 #include "mozilla/dom/Element.h"
@@ -85,7 +85,7 @@ enum class ParagraphSeparator { div, p, br };
 
 
 
-class HTMLEditor final : public TextEditor,
+class HTMLEditor final : public EditorBase,
                          public nsIHTMLEditor,
                          public nsIHTMLObjectResizer,
                          public nsIHTMLAbsPosEditor,
@@ -105,7 +105,7 @@ class HTMLEditor final : public TextEditor,
 
 
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(HTMLEditor, TextEditor)
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(HTMLEditor, EditorBase)
 
   
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
@@ -209,7 +209,7 @@ class HTMLEditor final : public TextEditor,
   MOZ_CAN_RUN_SCRIPT NS_IMETHOD Paste(int32_t aClipboardType) final {
     const nsresult rv = HTMLEditor::PasteAsAction(aClipboardType, true);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                         "TextEditor::PasteAsAction() failed");
+                         "HTMLEditor::PasteAsAction() failed");
     return rv;
   }
 
@@ -4400,7 +4400,6 @@ class HTMLEditor final : public TextEditor,
   friend class ParagraphStateAtSelection;
   friend class SlurpBlobEventListener;
   friend class SplitNodeTransaction;
-  friend class TextEditor;
   friend class WhiteSpaceVisibilityKeeper;
   friend class WSRunScanner;
   friend class WSScanResult;
