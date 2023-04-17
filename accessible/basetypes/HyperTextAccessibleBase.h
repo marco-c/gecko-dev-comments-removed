@@ -6,6 +6,7 @@
 #ifndef _HyperTextAccessibleBase_H_
 #define _HyperTextAccessibleBase_H_
 
+#include "AccAttributes.h"
 #include "nsIAccessibleText.h"
 
 namespace mozilla::a11y {
@@ -123,6 +124,14 @@ class HyperTextAccessibleBase {
 
 
   Accessible* LinkAt(uint32_t aIndex);
+
+  
+
+
+  virtual already_AddRefed<AccAttributes> TextAttributes(bool aIncludeDefAttrs,
+                                                         int32_t aOffset,
+                                                         int32_t* aStartOffset,
+                                                         int32_t* aEndOffset);
 
  protected:
   virtual const Accessible* Acc() const = 0;

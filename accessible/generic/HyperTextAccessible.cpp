@@ -1165,6 +1165,14 @@ void HyperTextAccessible::TextAfterOffset(int32_t aOffset,
 already_AddRefed<AccAttributes> HyperTextAccessible::TextAttributes(
     bool aIncludeDefAttrs, int32_t aOffset, int32_t* aStartOffset,
     int32_t* aEndOffset) {
+  if (StaticPrefs::accessibility_cache_enabled_AtStartup()) {
+    
+    
+    
+    return HyperTextAccessibleBase::TextAttributes(aIncludeDefAttrs, aOffset,
+                                                   aStartOffset, aEndOffset);
+  }
+
   
   
   

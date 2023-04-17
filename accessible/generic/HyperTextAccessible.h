@@ -177,13 +177,9 @@ class HyperTextAccessible : public AccessibleWrap,
                        int32_t* aStartOffset, int32_t* aEndOffset,
                        nsAString& aText);
 
-  
-
-
-  already_AddRefed<AccAttributes> TextAttributes(bool aIncludeDefAttrs,
-                                                 int32_t aOffset,
-                                                 int32_t* aStartOffset,
-                                                 int32_t* aEndOffset);
+  virtual already_AddRefed<AccAttributes> TextAttributes(
+      bool aIncludeDefAttrs, int32_t aOffset, int32_t* aStartOffset,
+      int32_t* aEndOffset) override;
 
   
 
