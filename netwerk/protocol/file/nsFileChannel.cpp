@@ -295,6 +295,10 @@ nsresult nsFileChannel::MakeFileInputStream(nsIFile* file,
     
     if (rv == NS_ERROR_FILE_TARGET_DOES_NOT_EXIST) rv = NS_ERROR_FILE_NOT_FOUND;
 
+    if (rv == NS_ERROR_FILE_NOT_FOUND) {
+      CheckForBrokenChromeURL(mLoadInfo, OriginalURI());
+    }
+
     if (async && (NS_ERROR_FILE_NOT_FOUND == rv)) {
       
       
