@@ -3,8 +3,10 @@
 
 
 
+importScripts("mediasource-message-util.js");
+
 if (!this.MediaSource)
-  postMessage("Error: MediaSource API missing from Worker");
+  postMessage({ subject: messageSubject.ERROR, info: "MediaSource API missing from Worker" });
 
 let MEDIA_LIST = [
   {
@@ -36,7 +38,7 @@ class MediaSourceWorkerUtil {
     if (this.foundSupportedMedia) {
       this.mediaLoadPromise = MediaSourceWorkerUtil.loadBinaryAsync(this.mediaMetadata.url);
     } else {
-      postMessage("Error: No supported test media");
+      postMessage({ subject: messageSubject.ERROR, info: "No supported test media" });
     }
   }
 

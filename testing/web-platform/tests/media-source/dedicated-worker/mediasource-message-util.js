@@ -1,0 +1,9 @@
+
+
+
+const messageSubject = {
+  ERROR: "error",
+  OBJECT_URL: "object url",
+  STARTED_BUFFERING: "started buffering",
+  FINISHED_BUFFERING: "finished buffering",
+}
