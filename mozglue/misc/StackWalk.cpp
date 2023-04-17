@@ -93,7 +93,6 @@ class FrameSkipper {
 
 #  include <windows.h>
 #  include <process.h>
-#  include <winternl.h>
 #  include <stdio.h>
 #  include <malloc.h>
 #  include "mozilla/ArrayUtils.h"
@@ -238,39 +237,6 @@ class CONTEXTGenericAccessors {
   CONTEXT& mCONTEXT;
 };
 
-#  if defined(_M_AMD64) || defined(_M_ARM64)
-static PVOID GetStackHighLimit(HANDLE aThread) {
-  
-  
-  
-  struct CLIENT_ID {
-    PVOID UniqueProcess;
-    PVOID UniqueThread;
-  };
-  struct THREAD_BASIC_INFORMATION {
-    NTSTATUS ExitStatus;
-    PVOID TebBaseAddress;
-    CLIENT_ID ClientId;
-    KAFFINITY AffMask;
-    DWORD Priority;
-    DWORD BasePriority;
-  };
-  THREAD_BASIC_INFORMATION info;
-  ULONG written = 0;
-  NTSTATUS status =
-      NtQueryInformationThread(aThread, THREADINFOCLASS(0), &info,
-                               sizeof(THREAD_BASIC_INFORMATION), &written);
-  if (NT_SUCCESS(status) &&
-      written >= (offsetof(THREAD_BASIC_INFORMATION, TebBaseAddress) +
-                  sizeof(info.TebBaseAddress))) {
-    const NT_TIB* const teb = reinterpret_cast<NT_TIB*>(info.TebBaseAddress);
-    return teb->StackBase;
-  }
-
-  return nullptr;
-}
-#  endif  
-
 
 
 
@@ -336,14 +302,10 @@ static void DoMozStackWalkThread(MozWalkStackCallback aCallback,
   if (sStackWalkSuppressions) {
     return;
   }
+#  endif
 
+#  if defined(_M_AMD64) || defined(_M_ARM64)
   bool firstFrame = true;
-
-  PVOID stackHighLimit = GetStackHighLimit(targetThread);
-  if (!stackHighLimit) {
-    
-    stackHighLimit = (PVOID)(context.SP() | 0xFFFFFu + 1);
-  }
 #  endif
 
   FrameSkipper skipper(aFirstFramePC);
@@ -391,6 +353,13 @@ static void DoMozStackWalkThread(MozWalkStackCallback aCallback,
 
     
     
+    if (sJitCodeRegionStart && (uint8_t*)currentInstr >= sJitCodeRegionStart &&
+        (uint8_t*)currentInstr < sJitCodeRegionStart + sJitCodeRegionSize) {
+      break;
+    }
+
+    
+    
     
     if (sMsMpegJitCodeRegionStart &&
         (uint8_t*)currentInstr >= sMsMpegJitCodeRegionStart &&
@@ -417,31 +386,7 @@ static void DoMozStackWalkThread(MozWalkStackCallback aCallback,
       context.SP() += sizeof(void*);
     } else {
       
-      
-      
-      
-      if (!(context.SP() && context.SP() <= context.BP() &&
-            context.BP() < ((DWORD64)stackHighLimit - 2 * sizeof(void*)) &&
-            (context.BP() & 7u) == 0)) {
-        break;
-      }
-      
-      
-      const DWORD64 callersBP = *reinterpret_cast<DWORD64*>(context.BP());
-      
-      context.PC() = *(reinterpret_cast<DWORD64*>(context.BP()) + 1);
-      
-      
-      context.SP() = reinterpret_cast<DWORD64>(
-          reinterpret_cast<DWORD64*>(context.BP()) + 2);
-      
-      context.BP() = callersBP;
-      if (!(context.SP() <= context.BP() &&
-            context.BP() < (DWORD64)stackHighLimit &&
-            (context.BP() & 7u) == 0)) {
-        
-        break;
-      }
+      break;
     }
 
     addr = context.PC();
