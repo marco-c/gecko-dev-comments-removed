@@ -114,18 +114,19 @@ function createLibraryMap(sharedLibraries) {
 
 
 
+
+
+
+
 class LocalSymbolicationService {
   
 
 
 
 
-
-
-  constructor(sharedLibraries, objdirs, perfFront) {
+  constructor(sharedLibraries, objdirs) {
     this._libraryGetter = createLibraryMap(sharedLibraries);
     this._objdirs = objdirs;
-    this._perfFront = perfFront;
   }
 
   
@@ -164,28 +165,12 @@ class LocalSymbolicationService {
       }
     }
 
-    
-    
-    if (!this._perfFront) {
-      throw new Error(
-        `Could not obtain symbols for the library ${debugName} ${breakpadId} ` +
-          `because there was no matching file at any of the candidate paths: ${JSON.stringify(
-            candidatePaths
-          )}`
-      );
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    return getSymbolTableFromDebuggee(this._perfFront, lib.path, breakpadId);
+    throw new Error(
+      `Could not obtain symbols for the library ${debugName} ${breakpadId} ` +
+        `because there was no matching file at any of the candidate paths: ${JSON.stringify(
+          candidatePaths
+        )}`
+    );
   }
 
   
@@ -243,12 +228,74 @@ class LocalSymbolicationService {
 
 
 
+class LocalSymbolicationServiceWithRemoteSymbolTableFallback {
+  
+
+
+
+
+
+  constructor(symbolicationService, sharedLibraries, perfFront) {
+    this._symbolicationService = symbolicationService;
+    this._libraryGetter = createLibraryMap(sharedLibraries);
+    this._perfFront = perfFront;
+  }
+
+  
+
+
+
+
+  async getSymbolTable(debugName, breakpadId) {
+    try {
+      return await this._symbolicationService.getSymbolTable(
+        debugName,
+        breakpadId
+      );
+    } catch (errorFromLocalFiles) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      const lib = this._libraryGetter(debugName, breakpadId);
+      if (!lib) {
+        throw new Error(
+          `Could not find the library for "${debugName}", "${breakpadId}" after falling ` +
+            `back to remote symbol table querying because regular getSymbolTable failed ` +
+            `with error: ${errorFromLocalFiles.message}.`
+        );
+      }
+      return getSymbolTableFromDebuggee(this._perfFront, lib.path, breakpadId);
+    }
+  }
+}
+
+
+
+
+
+
+
 
 
 
 
 function createLocalSymbolicationService(sharedLibraries, objdirs, perfFront) {
-  return new LocalSymbolicationService(sharedLibraries, objdirs, perfFront);
+  const service = new LocalSymbolicationService(sharedLibraries, objdirs);
+  if (perfFront) {
+    return new LocalSymbolicationServiceWithRemoteSymbolTableFallback(
+      service,
+      sharedLibraries,
+      perfFront
+    );
+  }
+  return service;
 }
 
 
