@@ -516,23 +516,8 @@ class AudioSessionConduit : public MediaSessionConduit {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-  virtual MediaConduitErrorCode SendAudioFrame(const int16_t audioData[],
-                                               int32_t lengthSamples,
-                                               int32_t samplingFreqHz,
-                                               uint32_t channels,
-                                               int32_t capture_delay) = 0;
+  virtual MediaConduitErrorCode SendAudioFrame(
+      std::unique_ptr<webrtc::AudioFrame> frame) = 0;
 
   
 

@@ -549,9 +549,7 @@ MediaConduitErrorCode WebrtcAudioConduit::SetLocalRTPExtensions(
 }
 
 MediaConduitErrorCode WebrtcAudioConduit::SendAudioFrame(
-    const int16_t audio_data[],
-    int32_t lengthSamples,  
-    int32_t samplingFreqHz, uint32_t channels, int32_t capture_delay) {
+    std::unique_ptr<webrtc::AudioFrame> frame) {
   CSFLogDebug(LOGTAG, "%s ", __FUNCTION__);
   
   
@@ -560,19 +558,11 @@ MediaConduitErrorCode WebrtcAudioConduit::SendAudioFrame(
   
   
   
-  
 
-  if (!audio_data || (lengthSamples <= 0) ||
-      (IsSamplingFreqSupported(samplingFreqHz) == false) ||
-      ((lengthSamples % (samplingFreqHz / 100) != 0))) {
+  if (!frame->data() ||
+      (IsSamplingFreqSupported(frame->sample_rate_hz()) == false) ||
+      ((frame->samples_per_channel() % (frame->sample_rate_hz() / 100) != 0))) {
     CSFLogError(LOGTAG, "%s Invalid Parameters ", __FUNCTION__);
-    MOZ_ASSERT(PR_FALSE);
-    return kMediaConduitMalformedArgument;
-  }
-
-  
-  if (capture_delay < 0) {
-    CSFLogError(LOGTAG, "%s Invalid Capture Delay ", __FUNCTION__);
     MOZ_ASSERT(PR_FALSE);
     return kMediaConduitMalformedArgument;
   }
@@ -583,14 +573,7 @@ MediaConduitErrorCode WebrtcAudioConduit::SendAudioFrame(
     return kMediaConduitSessionNotInited;
   }
 
-  
-  
-
-
-
-
-
-  
+  mSendStream->SendAudioData(std::move(frame));
   return kMediaConduitNoError;
 }
 
