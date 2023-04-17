@@ -2898,73 +2898,80 @@ bool handleResultFunc(bool aAllowSTS, bool aIsStsHost, uint32_t aHstsSource) {
   return false;
 };
 
-nsresult NS_ShouldHSTSUpgrade(
-    nsIURI* aURI, bool aPrivateBrowsing, bool aAllowSTS,
-    const mozilla::OriginAttributes& aOriginAttributes, bool& aShouldUpgrade,
-    std::function<void(bool, nsresult)>&& aResultCallback,
-    bool& aWillCallback) {
-  MOZ_ASSERT(XRE_IsParentProcess());
-  MOZ_ASSERT(!aURI->SchemeIs("https"));
 
+
+static bool ShouldSecureUpgradeNoHSTS(nsIURI* aURI, nsILoadInfo* aLoadInfo) {
   
-  nsISiteSecurityService* sss = gHttpHandler->GetSSService();
-  NS_ENSURE_TRUE(sss, NS_ERROR_OUT_OF_MEMORY);
-
-  bool isStsHost = false;
-  uint32_t hstsSource = 0;
-  uint32_t flags =
-      aPrivateBrowsing ? nsISocketProvider::NO_PERMANENT_STORAGE : 0;
-
+  if (aLoadInfo->GetUpgradeInsecureRequests()) {
+    
+    nsAutoCString scheme;
+    aURI->GetScheme(scheme);
+    
+    scheme.AppendLiteral("s");
+    NS_ConvertUTF8toUTF16 reportSpec(aURI->GetSpecOrDefault());
+    NS_ConvertUTF8toUTF16 reportScheme(scheme);
+    AutoTArray<nsString, 2> params = {reportSpec, reportScheme};
+    uint32_t innerWindowId = aLoadInfo->GetInnerWindowID();
+    CSP_LogLocalizedStr("upgradeInsecureRequest", params,
+                        u""_ns,  
+                        u""_ns,  
+                        0,       
+                        0,       
+                        nsIScriptError::warningFlag,
+                        "upgradeInsecureRequest"_ns, innerWindowId,
+                        !!aLoadInfo->GetOriginAttributes().mPrivateBrowsingId);
+    Telemetry::AccumulateCategorical(
+        Telemetry::LABELS_HTTP_SCHEME_UPGRADE_TYPE::CSP);
+    return true;
+  }
   
-  
-  
-  static Atomic<bool, Relaxed> storageReady(false);
-  if (!storageReady && gSocketTransportService && aResultCallback) {
-    nsCOMPtr<nsIURI> uri = aURI;
-    nsCOMPtr<nsISiteSecurityService> service = sss;
-    nsresult rv = gSocketTransportService->Dispatch(
-        NS_NewRunnableFunction(
-            "net::NS_ShouldSecureUpgrade",
-            [service{std::move(service)}, uri{std::move(uri)}, flags(flags),
-             originAttributes(aOriginAttributes),
-             handleResultFunc{std::move(handleResultFunc)},
-             resultCallback{std::move(aResultCallback)},
-             allowSTS{std::move(aAllowSTS)}]() mutable {
-              uint32_t hstsSource = 0;
-              bool isStsHost = false;
-              nsresult rv =
-                  service->IsSecureURI(uri, flags, originAttributes, nullptr,
-                                       &hstsSource, &isStsHost);
+  if (aLoadInfo->GetBrowserUpgradeInsecureRequests()) {
+    
+    nsAutoCString scheme;
+    aURI->GetScheme(scheme);
+    
+    scheme.AppendLiteral("s");
+    NS_ConvertUTF8toUTF16 reportSpec(aURI->GetSpecOrDefault());
+    NS_ConvertUTF8toUTF16 reportScheme(scheme);
+    AutoTArray<nsString, 2> params = {reportSpec, reportScheme};
 
-              
-              
-              storageReady = NS_SUCCEEDED(rv);
-              bool shouldUpgrade =
-                  handleResultFunc(allowSTS, isStsHost, hstsSource);
+    nsAutoString localizedMsg;
+    nsContentUtils::FormatLocalizedString(nsContentUtils::eSECURITY_PROPERTIES,
+                                          "MixedContentAutoUpgrade", params,
+                                          localizedMsg);
 
-              NS_DispatchToMainThread(NS_NewRunnableFunction(
-                  "net::NS_ShouldSecureUpgrade::ResultCallback",
-                  [rv, shouldUpgrade,
-                   resultCallback{std::move(resultCallback)}]() {
-                    resultCallback(shouldUpgrade, rv);
-                  }));
-            }),
-        NS_DISPATCH_NORMAL);
-    aWillCallback = NS_SUCCEEDED(rv);
-    return rv;
+    
+    nsString message;
+    message.AppendLiteral(u"Mixed Content: ");
+    message.Append(localizedMsg);
+
+    uint32_t innerWindowId = aLoadInfo->GetInnerWindowID();
+    nsContentUtils::ReportToConsoleByWindowID(
+        message, nsIScriptError::warningFlag, "Mixed Content Message"_ns,
+        innerWindowId, aURI);
+
+    
+    
+    aLoadInfo->SetBrowserDidUpgradeInsecureRequests(true);
+    Telemetry::AccumulateCategorical(
+        Telemetry::LABELS_HTTP_SCHEME_UPGRADE_TYPE::BrowserDisplay);
+
+    return true;
   }
 
-  nsresult rv = sss->IsSecureURI(aURI, flags, aOriginAttributes, nullptr,
-                                 &hstsSource, &isStsHost);
-
   
-  
-  
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  aShouldUpgrade = handleResultFunc(aAllowSTS, isStsHost, hstsSource);
-  return NS_OK;
+  if (nsHTTPSOnlyUtils::ShouldUpgradeRequest(aURI, aLoadInfo) ||
+      nsHTTPSOnlyUtils::ShouldUpgradeHttpsFirstRequest(aURI, aLoadInfo)) {
+    return true;
+  }
+  return false;
 }
+
+
+
+
+
+
 
 nsresult NS_ShouldSecureUpgrade(
     nsIURI* aURI, nsILoadInfo* aLoadInfo, nsIPrincipal* aChannelResultPrincipal,
@@ -2978,6 +2985,7 @@ nsresult NS_ShouldSecureUpgrade(
   }
 
   aWillCallback = false;
+  aShouldUpgrade = false;
 
   
   
@@ -2998,77 +3006,92 @@ nsresult NS_ShouldSecureUpgrade(
     aShouldUpgrade = false;
     return NS_OK;
   }
-  if (aLoadInfo) {
-    
-    if (nsHTTPSOnlyUtils::ShouldUpgradeRequest(aURI, aLoadInfo) ||
-        nsHTTPSOnlyUtils::ShouldUpgradeHttpsFirstRequest(aURI, aLoadInfo)) {
-      aShouldUpgrade = true;
-      return NS_OK;
-    }
-
-    
-    
-    
-    
-    if (aLoadInfo->GetUpgradeInsecureRequests() ||
-        aLoadInfo->GetBrowserUpgradeInsecureRequests()) {
-      
-      nsAutoCString scheme;
-      aURI->GetScheme(scheme);
-      
-      scheme.AppendLiteral("s");
-      NS_ConvertUTF8toUTF16 reportSpec(aURI->GetSpecOrDefault());
-      NS_ConvertUTF8toUTF16 reportScheme(scheme);
-
-      if (aLoadInfo->GetUpgradeInsecureRequests()) {
-        AutoTArray<nsString, 2> params = {reportSpec, reportScheme};
-        uint32_t innerWindowId = aLoadInfo->GetInnerWindowID();
-        CSP_LogLocalizedStr(
-            "upgradeInsecureRequest", params,
-            u""_ns,  
-            u""_ns,  
-            0,       
-            0,       
-            nsIScriptError::warningFlag, "upgradeInsecureRequest"_ns,
-            innerWindowId,
-            !!aLoadInfo->GetOriginAttributes().mPrivateBrowsingId);
-        Telemetry::AccumulateCategorical(
-            Telemetry::LABELS_HTTP_SCHEME_UPGRADE_TYPE::CSP);
-      } else {
-        AutoTArray<nsString, 2> params = {reportSpec, reportScheme};
-
-        nsAutoString localizedMsg;
-        nsContentUtils::FormatLocalizedString(
-            nsContentUtils::eSECURITY_PROPERTIES, "MixedContentAutoUpgrade",
-            params, localizedMsg);
-
-        
-        nsString message;
-        message.AppendLiteral(u"Mixed Content: ");
-        message.Append(localizedMsg);
-
-        uint32_t innerWindowId = aLoadInfo->GetInnerWindowID();
-        nsContentUtils::ReportToConsoleByWindowID(
-            message, nsIScriptError::warningFlag, "Mixed Content Message"_ns,
-            innerWindowId, aURI);
-
-        
-        
-        aLoadInfo->SetBrowserDidUpgradeInsecureRequests(true);
-        Telemetry::AccumulateCategorical(
-            Telemetry::LABELS_HTTP_SCHEME_UPGRADE_TYPE::BrowserDisplay);
-      }
-
-      aShouldUpgrade = true;
-      return NS_OK;
-    }
-    
-    return NS_ShouldHSTSUpgrade(aURI, aPrivateBrowsing, aAllowSTS,
-                                aOriginAttributes, aShouldUpgrade,
-                                std::move(aResultCallback), aWillCallback);
+  
+  if (!aLoadInfo) {
+    aShouldUpgrade = false;
+    return NS_OK;
   }
-  aShouldUpgrade = false;
-  return NS_OK;
+  MOZ_ASSERT(!aURI->SchemeIs("https"));
+
+  
+  nsISiteSecurityService* sss = gHttpHandler->GetSSService();
+  NS_ENSURE_TRUE(sss, NS_ERROR_OUT_OF_MEMORY);
+
+  bool isStsHost = false;
+  uint32_t hstsSource = 0;
+  uint32_t flags =
+      aPrivateBrowsing ? nsISocketProvider::NO_PERMANENT_STORAGE : 0;
+  
+  
+  
+  static Atomic<bool, Relaxed> storageReady(false);
+  if (!storageReady && gSocketTransportService && aResultCallback) {
+    nsCOMPtr<nsILoadInfo> loadInfo = aLoadInfo;
+    nsCOMPtr<nsIURI> uri = aURI;
+    auto callbackWrapper = [resultCallback{std::move(aResultCallback)}, uri,
+                            loadInfo](bool aShouldUpgrade, nsresult aStatus) {
+      MOZ_ASSERT(NS_IsMainThread());
+
+      
+      if (aShouldUpgrade || NS_FAILED(aStatus)) {
+        resultCallback(aShouldUpgrade, aStatus);
+        return;
+      }
+      
+      
+      
+      
+      bool shouldUpgrade = ShouldSecureUpgradeNoHSTS(uri, loadInfo);
+      resultCallback(shouldUpgrade, aStatus);
+    };
+    nsCOMPtr<nsISiteSecurityService> service = sss;
+    nsresult rv = gSocketTransportService->Dispatch(
+        NS_NewRunnableFunction(
+            "net::NS_ShouldSecureUpgrade",
+            [service{std::move(service)}, uri{std::move(uri)}, flags(flags),
+             originAttributes(aOriginAttributes),
+             handleResultFunc{std::move(handleResultFunc)},
+             callbackWrapper{std::move(callbackWrapper)},
+             allowSTS{std::move(aAllowSTS)}]() mutable {
+              bool isStsHost = false;
+              uint32_t hstsSource = 0;
+              nsresult rv =
+                  service->IsSecureURI(uri, flags, originAttributes, nullptr,
+                                       &hstsSource, &isStsHost);
+
+              
+              
+              storageReady = NS_SUCCEEDED(rv);
+              bool shouldUpgrade =
+                  handleResultFunc(allowSTS, isStsHost, hstsSource);
+              
+              NS_DispatchToMainThread(NS_NewRunnableFunction(
+                  "net::NS_ShouldSecureUpgrade::ResultCallback",
+                  [rv, shouldUpgrade,
+                   callbackWrapper{std::move(callbackWrapper)}]() {
+                    callbackWrapper(shouldUpgrade, rv);
+                  }));
+            }),
+        NS_DISPATCH_NORMAL);
+    aWillCallback = NS_SUCCEEDED(rv);
+    return rv;
+  }
+
+  nsresult rv = sss->IsSecureURI(aURI, flags, aOriginAttributes, nullptr,
+                                 &hstsSource, &isStsHost);
+
+  
+  
+  
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  aShouldUpgrade = handleResultFunc(aAllowSTS, isStsHost, hstsSource);
+  if (!aShouldUpgrade) {
+    
+    
+    aShouldUpgrade = ShouldSecureUpgradeNoHSTS(aURI, aLoadInfo);
+  }
+  return rv;
 }
 
 nsresult NS_GetSecureUpgradedURI(nsIURI* aURI, nsIURI** aUpgradedURI) {
