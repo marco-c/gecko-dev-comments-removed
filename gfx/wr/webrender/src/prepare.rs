@@ -81,7 +81,7 @@ pub fn prepare_primitives(
                 VisibilityState::Culled => {
                     continue;
                 }
-                VisibilityState::Coarse { ref rect_in_pic_space, vis_flags } => {
+                VisibilityState::Coarse { ref filter, vis_flags } => {
                     
                     
                     
@@ -91,15 +91,13 @@ pub fn prepare_primitives(
                     
                     
                     let dirty_region = frame_state.current_dirty_region();
-                    let is_in_dirty_region = dirty_region.dirty_rects
+                    let is_in_dirty_region = dirty_region.filters
                         .iter()
-                        .any(|region| {
-                            rect_in_pic_space.intersects(&region.rect_in_pic_space)
-                        });
+                        .any(|region_filter| region_filter.matches(filter));
 
                     if is_in_dirty_region {
                         prim_instance.vis.state = VisibilityState::Detailed {
-                            rect_in_pic_space: *rect_in_pic_space,
+                            filter: *filter,
                             vis_flags,
                         }
                     } else {

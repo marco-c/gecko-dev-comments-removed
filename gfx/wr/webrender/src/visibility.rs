@@ -11,6 +11,7 @@ use api::{ColorF, DebugFlags};
 use api::units::*;
 use euclid::Scale;
 use std::{usize, mem};
+use crate::batch::BatchFilter;
 use crate::clip::{ClipStore, ClipChainStack};
 use crate::composite::CompositeState;
 use crate::spatial_tree::{ROOT_SPATIAL_NODE_INDEX, SpatialTree, SpatialNodeIndex};
@@ -100,7 +101,8 @@ pub enum VisibilityState {
     
     
     Coarse {
-        rect_in_pic_space: PictureRect,
+        
+        filter: BatchFilter,
 
         
         
@@ -110,8 +112,7 @@ pub enum VisibilityState {
     
     Detailed {
         
-        
-        rect_in_pic_space: PictureRect,
+        filter: BatchFilter,
 
         
         
