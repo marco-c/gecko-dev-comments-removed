@@ -2578,8 +2578,6 @@ void nsFocusManager::Focus(
       
       
       if (presShell->GetDocument() == aElement->GetComposedDoc()) {
-        
-        
         ActivateRemoteFrameIfNeeded(*aElement, aActionId);
       }
 

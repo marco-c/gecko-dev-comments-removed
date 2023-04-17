@@ -15,7 +15,6 @@
 #include "nsGkAtoms.h"
 #include "nsError.h"
 #include "mozilla/dom/Document.h"
-#include "nsIPluginDocument.h"
 #include "nsNPAPIPluginInstance.h"
 #include "nsIWidget.h"
 #include "nsContentUtils.h"
@@ -99,17 +98,10 @@ nsresult HTMLObjectElement::BindToTree(BindContext& aContext,
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  
-  
-  if (IsInComposedDoc()) {
-    nsCOMPtr<nsIPluginDocument> pluginDoc =
-        do_QueryInterface(&aContext.OwnerDoc());
-    
-    if (mIsDoneAddingChildren && !pluginDoc) {
-      void (HTMLObjectElement::*start)() = &HTMLObjectElement::StartObjectLoad;
-      nsContentUtils::AddScriptRunner(
-          NewRunnableMethod("dom::HTMLObjectElement::BindToTree", this, start));
-    }
+  if (IsInComposedDoc() && mIsDoneAddingChildren) {
+    void (HTMLObjectElement::*start)() = &HTMLObjectElement::StartObjectLoad;
+    nsContentUtils::AddScriptRunner(
+        NewRunnableMethod("dom::HTMLObjectElement::BindToTree", this, start));
   }
 
   return NS_OK;
@@ -210,14 +202,6 @@ bool HTMLObjectElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
   }
 
   return false;
-}
-
-NS_IMETHODIMP
-HTMLObjectElement::Reset() { return NS_OK; }
-
-NS_IMETHODIMP
-HTMLObjectElement::SubmitNamesValues(HTMLFormSubmission* aFormSubmission) {
-  return NS_OK;
 }
 
 int32_t HTMLObjectElement::TabIndexDefault() { return 0; }
