@@ -18,6 +18,7 @@
 
 namespace mozilla {
 class ProfilingStackOwner;
+class nsAvailableMemoryWatcherBase;
 }
 
 
@@ -47,11 +48,15 @@ class nsAppShell : public nsBaseAppShell {
   
   void WillTerminate();
 
+  static void OnMemoryPressureChanged(dispatch_source_memorypressure_flags_t aPressureLevel);
+
  protected:
   virtual ~nsAppShell();
 
   virtual void ScheduleNativeEventCallback() override;
   virtual bool ProcessNextNativeEvent(bool aMayWait) override;
+
+  void InitMemoryPressureObserver();
 
   static void ProcessGeckoEvents(void* aInfo);
 
@@ -68,6 +73,9 @@ class nsAppShell : public nsBaseAppShell {
 
   
   mozilla::ProfilingStackOwner* mProfilingStackOwnerWhileWaiting = nullptr;
+
+  
+  dispatch_source_t mMemoryPressureSource = nullptr;
 
   bool mRunningEventLoop;
   bool mStarted;

@@ -8,10 +8,23 @@
 #define mozilla_AvailableMemoryWatcher_h
 
 #include "mozilla/TimeStamp.h"
+#include "mozilla/ipc/CrashReporterHost.h"
+#include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
 #include "nsIAvailableMemoryWatcherBase.h"
 
 namespace mozilla {
+
+#if defined(XP_MACOSX)
+
+enum class MacMemoryPressureLevel {
+  Unset,
+  Unexpected,
+  Normal,
+  Warning,
+  Critical,
+};
+#endif
 
 
 
@@ -36,6 +49,12 @@ class nsAvailableMemoryWatcherBase : public nsIAvailableMemoryWatcherBase {
   static already_AddRefed<nsAvailableMemoryWatcherBase> GetSingleton();
 
   nsAvailableMemoryWatcherBase();
+
+#if defined(XP_MACOSX)
+  virtual void OnMemoryPressureChanged(MacMemoryPressureLevel aLevel){};
+  virtual void AddChildAnnotations(
+      const UniquePtr<ipc::CrashReporterHost>& aCrashReporter){};
+#endif
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIAVAILABLEMEMORYWATCHERBASE
