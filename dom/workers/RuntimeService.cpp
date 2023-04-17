@@ -2207,6 +2207,7 @@ WorkerThreadPrimaryRunnable::Run() {
 
     
     
+    
     mWorkerPrivate->EnsurePerformanceStorage();
 
     if (NS_WARN_IF(!BackgroundChild::GetOrCreateForCurrentThread())) {
