@@ -471,6 +471,9 @@ const individualsModel = (exports.individuals = PropTypes.shape({
 
 exports.app = {
   
+  commands: PropTypes.object,
+
+  
   front: PropTypes.instanceOf(MemoryFront),
 
   

@@ -87,18 +87,17 @@ Memory.prototype = {
 
 
 
-  attach: expectState(
-    "detached",
-    function() {
-      this.dbg.addDebuggees();
-      this.dbg.memory.onGarbageCollection = this._onGarbageCollection.bind(
-        this
-      );
-      this.state = "attached";
+  attach() {
+    
+    
+    if (this.state == "attached") {
       return this.state;
-    },
-    "attaching to the debugger"
-  ),
+    }
+    this.dbg.addDebuggees();
+    this.dbg.memory.onGarbageCollection = this._onGarbageCollection.bind(this);
+    this.state = "attached";
+    return this.state;
+  },
 
   
 

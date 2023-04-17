@@ -38,6 +38,8 @@ const SUPPORTED_OPTIONS = {
   
   rdmPaneOrientation: true,
   
+  recordAllocations: true,
+  
   reloadOnTouchSimulationToggle: true,
   
   restoreFocus: true,
