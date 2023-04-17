@@ -15,10 +15,13 @@
 
 #include <algorithm>
 #include <stdint.h>
+#include <string>
+#include <string.h>
 #include <utility>
 
 #include "builtin/Array.h"
 #include "builtin/intl/CommonFunctions.h"
+#include "builtin/intl/LanguageTag.h"
 #include "builtin/intl/ScopedICUObject.h"
 #include "builtin/intl/TimeZoneDataGenerated.h"
 #include "builtin/String.h"
@@ -356,33 +359,91 @@ bool js::intl::SharedIntlData::getAvailableLocales(
     if (!lang.append(locale, length)) {
       return false;
     }
+    MOZ_ASSERT(lang.length() == length);
 
     std::replace(lang.begin(), lang.end(), '_', '-');
 
     if (!addLocale(lang.begin(), length)) {
       return false;
     }
-  }
 
-  
-  
-  
-  
+    
+    
+    
+    
+    
+    
 
-  
-  
-  for (const auto& mapping : js::intl::oldStyleLanguageTagMappings) {
-    const char* oldStyle = mapping.oldStyle;
-    const char* modernStyle = mapping.modernStyle;
+    
+    
+    
+    
+    
+    using namespace intl::LanguageTagLimits;
+    static constexpr size_t MinLanguageLength = 2;
+    static constexpr size_t MinLengthForScriptAndRegion =
+        MinLanguageLength + 1 + ScriptLength + 1 + AlphaRegionLength;
 
-    LocaleHasher::Lookup lookup(modernStyle, strlen(modernStyle));
-    if (locales.has(lookup)) {
-      if (!addLocale(oldStyle, strlen(oldStyle))) {
-        return false;
-      }
+    
+    if (length < MinLengthForScriptAndRegion) {
+      continue;
+    }
+
+    
+    
+
+    
+    const char* sep = std::char_traits<char>::find(lang.begin(), length, '-');
+    if (!sep) {
+      continue;
+    }
+
+    
+    const char* script = sep + 1;
+
+    
+    sep = std::char_traits<char>::find(script, lang.end() - script, '-');
+    if (!sep) {
+      continue;
+    }
+
+    
+    size_t scriptLength = sep - script;
+    if (!IsStructurallyValidScriptTag<char>({script, scriptLength})) {
+      continue;
+    }
+
+    
+    const char* region = sep + 1;
+
+    
+    sep = std::char_traits<char>::find(region, lang.end() - region, '-');
+
+    
+    size_t regionLength = (sep ? sep : lang.end()) - region;
+    if (!IsStructurallyValidRegionTag<char>({region, regionLength})) {
+      continue;
+    }
+
+    
+
+    static constexpr size_t ScriptWithSeparatorLength = ScriptLength + 1;
+
+    
+    
+    char* p = const_cast<char*>(script);
+    lang.erase(p, p + ScriptWithSeparatorLength);
+
+    MOZ_ASSERT(lang.length() == length - ScriptWithSeparatorLength);
+
+    
+    if (!addLocale(lang.begin(), lang.length())) {
+      return false;
     }
   }
 
+  
+  
   
   {
     const char* lastDitch = intl::LastDitchLocale();
