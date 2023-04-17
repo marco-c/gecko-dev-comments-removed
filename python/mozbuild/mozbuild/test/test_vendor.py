@@ -29,20 +29,13 @@ def test_up_to_date_vendor():
             
             
             
-            file.write("vendored:third_party/python/Click\n")
-            file.write("vendored:third_party/python/pip_tools\n")
+            file.write("pth:third_party/python/Click\n")
+            file.write("pth:third_party/python/pip_tools\n")
 
         
         existing_vendored = os.path.join(topsrcdir, "third_party", "python")
         work_vendored = os.path.join(work_dir, "third_party", "python")
         shutil.copytree(existing_vendored, work_vendored)
-
-        
-        
-        
-        existing_mach = os.path.join(topsrcdir, "python", "mach")
-        work_mach = os.path.join(work_dir, "python", "mach")
-        shutil.copytree(existing_mach, work_mach)
 
         
         vendor = VendorPython(
@@ -60,6 +53,7 @@ def test_up_to_date_vendor():
                 existing_vendored,
                 work_vendored,
                 "--exclude=__pycache__",
+                "--exclude=*.egg-info",
             ]
         )
 
