@@ -59,7 +59,10 @@ async function testTopLevelNavigations(bfcacheInParent) {
 
   
   info("Load the second page");
-  let onNavigate = bfcacheInParent ? null : targets[0].once("navigate");
+  let onDomComplete = bfcacheInParent
+    ? null
+    : (await waitForNextTopLevelDomCompleteResource(commands))
+        .onDomCompleteResource;
   const secondPageUrl = TEST_COM_URL + "?second-load";
   const previousBrowsingContextID = gBrowser.selectedBrowser.browsingContext.id;
   ok(
@@ -111,14 +114,17 @@ async function testTopLevelNavigations(bfcacheInParent) {
     );
     ok(targets[0].isDestroyed(), "the first target is destroyed");
   } else {
-    info("Wait for 'navigate'");
-    await onNavigate;
+    info("Wait for 'dom-complete' resource");
+    await onDomComplete;
   }
 
   
   
   info("Go back to the first page");
-  onNavigate = bfcacheInParent ? null : targets[0].once("navigate");
+  onDomComplete = bfcacheInParent
+    ? null
+    : (await waitForNextTopLevelDomCompleteResource(commands))
+        .onDomCompleteResource;
   gBrowser.selectedBrowser.goBack();
 
   if (bfcacheInParent) {
@@ -140,15 +146,18 @@ async function testTopLevelNavigations(bfcacheInParent) {
     await targets[2].attachAndInitThread(targetCommand);
     await waitForAllTargetsToBeAttached(targetCommand);
   } else {
-    info("Wait for 'navigate'");
-    await onNavigate;
+    info("Wait for 'dom-complete' resource");
+    await onDomComplete;
   }
 
   
   
   info("Go forward to the second page");
 
-  onNavigate = bfcacheInParent ? null : targets[0].once("navigate");
+  onDomComplete = bfcacheInParent
+    ? null
+    : (await waitForNextTopLevelDomCompleteResource(commands))
+        .onDomCompleteResource;
 
   
   
@@ -191,8 +200,8 @@ async function testTopLevelNavigations(bfcacheInParent) {
     await waitForAllTargetsToBeAttached(targetCommand);
     await onNewTargetProcessed;
   } else {
-    info("Wait for 'navigate'");
-    await onNavigate;
+    info("Wait for 'dom-complete' resource");
+    await onDomComplete;
   }
 
   await waitForAllTargetsToBeAttached(targetCommand);

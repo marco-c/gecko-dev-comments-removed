@@ -479,7 +479,19 @@ async function navigateTo(uri, { isErrorPage = false } = {}) {
     "switched-target"
   );
   
-  const onNavigate = target.once("navigate");
+  
+  
+  const documentEventName = isErrorPage ? "dom-loading" : "dom-complete";
+  const {
+    onResource: onTopLevelDomEvent,
+  } = await toolbox.commands.resourceCommand.waitForNextResource(
+    toolbox.commands.resourceCommand.TYPES.DOCUMENT_EVENT,
+    {
+      ignoreExistingResources: true,
+      predicate: resource =>
+        resource.targetFront.isTopLevel && resource.name === documentEventName,
+    }
+  );
 
   
   
@@ -550,9 +562,9 @@ async function navigateTo(uri, { isErrorPage = false } = {}) {
     await onTargetSwitched;
     info(`→ switched-target emitted`);
   } else {
-    info(`Waiting for target 'navigate' event…`);
-    await onNavigate;
-    info(`→ 'navigate' emitted`);
+    info(`Waiting for '${documentEventName}' resource…`);
+    await onTopLevelDomEvent;
+    info(`→ 'dom-complete' resource emitted`);
   }
 }
 
@@ -1581,4 +1593,30 @@ function scrollContentPageNodeIntoView(browsingContext, selector) {
 
 function setContentPageZoomLevel(zoomLevel) {
   gBrowser.selectedBrowser.fullZoom = zoomLevel;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function waitForNextTopLevelDomCompleteResource(commands) {
+  const {
+    onResource: onDomCompleteResource,
+  } = await commands.resourceCommand.waitForNextResource(
+    commands.resourceCommand.TYPES.DOCUMENT_EVENT,
+    {
+      ignoreExistingResources: true,
+      predicate: resource =>
+        resource.name === "dom-complete" && resource.targetFront.isTopLevel,
+    }
+  );
+  return { onDomCompleteResource };
 }
