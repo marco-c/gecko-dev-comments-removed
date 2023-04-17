@@ -1283,6 +1283,15 @@ inline void js::GCMarker::eagerlyMarkChildren(JSLinearString* linearStr) {
   
   while (linearStr->hasBase()) {
     linearStr = linearStr->base();
+
+    
+    
+    
+    if (static_cast<JSString*>(linearStr)->isRope()) {
+      MOZ_ASSERT(!JS::RuntimeHeapIsMajorCollecting());
+      break;
+    }
+
     MOZ_ASSERT(linearStr->JSString::isLinear());
     if (linearStr->isPermanentAtom()) {
       break;
