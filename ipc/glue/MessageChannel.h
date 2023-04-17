@@ -394,9 +394,6 @@ class MessageChannel : HasResultCodes {
 
   void Clear();
 
-  
-  void DispatchOnChannelConnected();
-
   bool InterruptEventOccurred();
   bool HasPendingEvents();
 
@@ -530,8 +527,6 @@ class MessageChannel : HasResultCodes {
   
   
   bool MaybeInterceptSpecialIOMessage(const Message& aMsg);
-
-  void OnChannelConnected(int32_t peer_id);
 
   
   void SynchronouslyClose();
@@ -850,13 +845,6 @@ class MessageChannel : HasResultCodes {
 
   
   ChannelFlags mFlags;
-
-  
-  
-  
-  RefPtr<CancelableRunnable> mOnChannelConnectedTask;
-  bool mPeerPidSet;
-  int32_t mPeerPid;
 
   
   
