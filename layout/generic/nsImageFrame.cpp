@@ -949,6 +949,13 @@ void nsImageFrame::UpdateImage(imgIRequest* aRequest, imgIContainer* aImage) {
     
     
     if (!(mState & IMAGE_SIZECONSTRAINED)) {
+#ifdef ACCESSIBILITY
+      if (mKind != Kind::ListStyleImage) {
+        if (nsAccessibilityService* accService = GetAccService()) {
+          accService->NotifyOfImageSizeAvailable(PresShell(), mContent);
+        }
+      }
+#endif
       PresShell()->FrameNeedsReflow(this, IntrinsicDirty::StyleChange,
                                     NS_FRAME_IS_DIRTY);
     } else if (PresShell()->IsActive()) {
