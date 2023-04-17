@@ -27,9 +27,6 @@ INCLUDE_VERSION_REGEXES = {
     "beta": r"'^(\d+\.\d+(b\d+)?)$'",
     "nonbeta": r"'^\d+\.\d+(\.\d+)?$'",
     
-    
-    "devedition_hack": r"'^((?!58\.0b1$)\d+\.\d+(b\d+)?)$'",
-    
     "esr": r"'^\d+\.\d+(\.\d+)?esr$'",
     
     "esr91-next": r"'^(52|60|68|78)+\.\d+(\.\d+)?esr$'",
