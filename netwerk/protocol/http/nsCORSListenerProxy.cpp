@@ -508,6 +508,15 @@ nsresult nsCORSListenerProxy::CheckRequestApproved(nsIRequest* aRequest) {
   
   nsCOMPtr<nsIHttpChannel> http = do_QueryInterface(aRequest);
   if (!http) {
+    nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
+    nsCOMPtr<nsIURI> uri;
+    NS_GetFinalChannelURI(channel, getter_AddRefs(uri));
+    if (uri && uri->SchemeIs("moz-extension")) {
+      
+      
+      
+      return NS_OK;
+    }
     LogBlockedRequest(aRequest, "CORSRequestNotHttp", nullptr,
                       nsILoadInfo::BLOCKING_REASON_CORSREQUESTNOTHTTP,
                       topChannel);
@@ -880,6 +889,15 @@ nsresult nsCORSListenerProxy::UpdateChannel(nsIChannel* aChannel,
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
+  if (uri->SchemeIs("moz-extension")) {
+    
+    
+    
+    
+    
+    return NS_OK;
+  }
+
   if (!mHasBeenCrossSite &&
       NS_SUCCEEDED(mRequestingPrincipal->CheckMayLoad(uri, false)) &&
       (originalURI == uri ||
@@ -984,6 +1002,9 @@ nsresult nsCORSListenerProxy::CheckPreflightNeeded(nsIChannel* aChannel,
 
   nsCOMPtr<nsIHttpChannel> http = do_QueryInterface(aChannel);
   if (!http) {
+    
+    
+    
     LogBlockedRequest(aChannel, "CORSRequestNotHttp", nullptr,
                       nsILoadInfo::BLOCKING_REASON_CORSREQUESTNOTHTTP,
                       mHttpChannel);
