@@ -14,7 +14,13 @@ add_task(async function test_locale_change() {
 
     Services.obs.notifyObservers(null, "intl:app-locales-changed");
 
-    await simulateRestart(browser, false);
+    
+    
+    
+    await simulateRestart(browser, {
+      withAutoShutdownWrite: false,
+      ensureCacheWinsRace: false,
+    });
     await ensureDynamicAboutHome(
       browser,
       AboutHomeStartupCache.CACHE_RESULT_SCALARS.DOES_NOT_EXIST

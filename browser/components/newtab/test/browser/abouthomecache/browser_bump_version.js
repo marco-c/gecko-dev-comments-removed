@@ -20,7 +20,13 @@ add_task(async function test_bump_version() {
       "Cache entry should be versioned on the build ID"
     );
     cacheEntry.setMetaDataElement("version", "somethingnew");
-    await simulateRestart(browser, false );
+    
+    
+    
+    await simulateRestart(browser, {
+      withAutoShutdownWrite: false,
+      ensureCacheWinsRace: false,
+    });
     await ensureDynamicAboutHome(
       browser,
       AboutHomeStartupCache.CACHE_RESULT_SCALARS.INVALIDATED

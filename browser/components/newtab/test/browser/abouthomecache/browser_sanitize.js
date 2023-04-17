@@ -37,7 +37,14 @@ add_task(async function test_sanitize() {
         });
       });
 
-      await simulateRestart(browser, { withAutoShutdownWrite: false });
+      
+      
+      
+      
+      await simulateRestart(browser, {
+        withAutoShutdownWrite: false,
+        ensureCacheWinsRace: false,
+      });
       await ensureDynamicAboutHome(
         browser,
         AboutHomeStartupCache.CACHE_RESULT_SCALARS.DOES_NOT_EXIST
