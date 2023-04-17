@@ -14,6 +14,7 @@
 #include <utility>         
 #include "FrameMetrics.h"  
 #include "ImageContainer.h"  
+#include "WindowRenderer.h"
 #include "mozilla/AlreadyAddRefed.h"  
 #include "mozilla/Maybe.h"            
 #include "mozilla/RefPtr.h"           
@@ -94,9 +95,6 @@ class DidCompositeObserver {
   virtual void DidComposite() = 0;
 };
 
-class FrameRecorder {
- public:
-  
 
 
 
@@ -115,40 +113,15 @@ class FrameRecorder {
 
 
 
-  
 
 
-  virtual uint32_t StartFrameTimeRecording(int32_t aBufferSize);
 
-  
 
 
 
 
-  virtual void StopFrameTimeRecording(uint32_t aStartIndex,
-                                      nsTArray<float>& aFrameIntervals);
 
-  void RecordFrame();
 
- private:
-  struct FramesTimingRecording {
-    
-    
-    
-    FramesTimingRecording()
-        : mNextIndex(0),
-          mLatestStartIndex(0),
-          mCurrentRunStartIndex(0),
-          mIsPaused(true) {}
-    nsTArray<float> mIntervals;
-    TimeStamp mLastFrameTime;
-    uint32_t mNextIndex;
-    uint32_t mLatestStartIndex;
-    uint32_t mCurrentRunStartIndex;
-    bool mIsPaused;
-  };
-  FramesTimingRecording mRecording;
-};
 
 
 
@@ -170,35 +143,7 @@ class FrameRecorder {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class LayerManager : public FrameRecorder {
+class LayerManager : public WindowRenderer {
   NS_INLINE_DECL_REFCOUNTING(LayerManager)
 
  protected:
@@ -218,13 +163,9 @@ class LayerManager : public FrameRecorder {
   virtual void Destroy();
   bool IsDestroyed() { return mDestroyed; }
 
-  virtual ShadowLayerForwarder* AsShadowForwarder() { return nullptr; }
-
-  virtual KnowsCompositor* AsKnowsCompositor() { return nullptr; }
+  virtual LayerManager* AsLayerManager() override { return this; }
 
   virtual LayerManagerComposite* AsLayerManagerComposite() { return nullptr; }
-
-  virtual ClientLayerManager* AsClientLayerManager() { return nullptr; }
 
   virtual BasicLayerManager* AsBasicLayerManager() { return nullptr; }
   virtual HostLayerManager* AsHostLayerManager() { return nullptr; }
@@ -244,41 +185,14 @@ class LayerManager : public FrameRecorder {
 
 
 
-  virtual bool BeginTransaction(const nsCString& aURL = nsCString()) = 0;
-  
-
-
-
-
-
 
   virtual bool BeginTransactionWithTarget(
       gfxContext* aTarget, const nsCString& aURL = nsCString()) = 0;
-
-  enum EndTransactionFlags {
-    END_DEFAULT = 0,
-    END_NO_IMMEDIATE_REDRAW = 1 << 0,  
-    END_NO_COMPOSITE =
-        1 << 1,  
-    END_NO_REMOTE_COMPOSITE = 1 << 2  
-                                      
-  };
 
   FrameLayerBuilder* GetLayerBuilder() {
     return reinterpret_cast<FrameLayerBuilder*>(
         GetUserData(&gLayerManagerLayerBuilder));
   }
-
-  
-
-
-
-
-
-
-
-  virtual bool EndEmptyTransaction(
-      EndTransactionFlags aFlags = END_DEFAULT) = 0;
 
   
 
@@ -470,20 +384,6 @@ class LayerManager : public FrameRecorder {
 
 
 
-
-  virtual LayersBackend GetBackendType() = 0;
-
-  
-
-
-
-
-  virtual LayersBackend GetCompositorBackendType() { return GetBackendType(); }
-
-  
-
-
-
   virtual already_AddRefed<DrawTarget> CreateOptimalDrawTarget(
       const IntSize& aSize, SurfaceFormat imageFormat);
 
@@ -503,14 +403,6 @@ class LayerManager : public FrameRecorder {
   virtual already_AddRefed<mozilla::gfx::DrawTarget> CreateDrawTarget(
       const mozilla::gfx::IntSize& aSize, mozilla::gfx::SurfaceFormat aFormat);
 
-  
-
-
-
-  virtual already_AddRefed<PersistentBufferProvider>
-  CreatePersistentBufferProvider(const mozilla::gfx::IntSize& aSize,
-                                 mozilla::gfx::SurfaceFormat aFormat);
-
   virtual bool CanUseCanvasLayerForSize(const gfx::IntSize& aSize) {
     return true;
   }
@@ -520,11 +412,6 @@ class LayerManager : public FrameRecorder {
 
 
   virtual int32_t GetMaxTextureSize() const = 0;
-
-  
-
-
-  virtual void GetBackendName(nsAString& aName) = 0;
 
   
 
@@ -583,27 +470,7 @@ class LayerManager : public FrameRecorder {
 
   virtual void SetFocusTarget(const FocusTarget& aFocusTarget) {}
 
-  
-
-
-
-
-
-
-  virtual void FlushRendering() {}
-
-  
-
-
-  virtual void WaitOnTransactionProcessed() {}
-
   virtual void SendInvalidRegion(const nsIntRegion& aRegion) {}
-
-  
-
-
-
-  virtual bool NeedsWidgetInvalidation() { return true; }
 
   virtual const char* Name() const { return "???"; }
 
@@ -650,7 +517,6 @@ class LayerManager : public FrameRecorder {
   virtual bool IsCompositingCheap() { return true; }
 
   bool IsInTransaction() const { return mInTransaction; }
-  virtual void GetFrameUniformity(FrameUniformityData* aOutData) {}
 
   virtual void SetRegionToClear(const nsIntRegion& aRegion) {
     mRegionToClear = aRegion;
@@ -696,8 +562,6 @@ class LayerManager : public FrameRecorder {
 
   virtual TransactionId GetLastTransactionId() { return TransactionId{0}; }
 
-  virtual CompositorBridgeChild* GetCompositorBridgeChild() { return nullptr; }
-
   void RegisterPayload(const CompositionPayload& aPayload) {
     mPayload.AppendElement(aPayload);
     MOZ_ASSERT(mPayload.Length() < 10000);
@@ -711,13 +575,6 @@ class LayerManager : public FrameRecorder {
   virtual void PayloadPresented(const TimeStamp& aTimeStamp);
 
   void SetContainsSVG(bool aContainsSVG) { mContainsSVG = aContainsSVG; }
-
-  void AddPartialPrerenderedAnimation(uint64_t aCompositorAnimationId,
-                                      dom::Animation* aAnimation);
-  void RemovePartialPrerenderedAnimation(uint64_t aCompositorAnimationId,
-                                         dom::Animation* aAnimation);
-  void UpdatePartialPrerenderedAnimations(
-      const nsTArray<uint64_t>& aJankedAnimations);
 
  protected:
   RefPtr<Layer> mRoot;
@@ -756,12 +613,6 @@ class LayerManager : public FrameRecorder {
   
   
   nsTArray<CompositionPayload> mPayload;
-  
-  
-  
-  
-  nsRefPtrHashtable<nsUint64HashKey, dom::Animation>
-      mPartialPrerenderedAnimations;
 
  public:
   
@@ -771,7 +622,7 @@ class LayerManager : public FrameRecorder {
 
   virtual bool AddPendingScrollUpdateForNextTransaction(
       ScrollableLayerGuid::ViewID aScrollId,
-      const ScrollPositionUpdate& aUpdateInfo);
+      const ScrollPositionUpdate& aUpdateInfo) override;
   Maybe<nsTArray<ScrollPositionUpdate>> GetPendingScrollInfoUpdate(
       ScrollableLayerGuid::ViewID aScrollId);
   std::unordered_set<ScrollableLayerGuid::ViewID>

@@ -4080,7 +4080,7 @@ bool nsWindow::HasPendingInputEvent() {
 
 
 
-LayerManager* nsWindow::GetLayerManager() {
+WindowRenderer* nsWindow::GetWindowRenderer() {
   if (mLayerManager) {
     return mLayerManager;
   }
@@ -4205,7 +4205,8 @@ nsresult nsWindow::OnDefaultButtonLoaded(
 
 void nsWindow::UpdateThemeGeometries(
     const nsTArray<ThemeGeometry>& aThemeGeometries) {
-  RefPtr<LayerManager> layerManager = GetLayerManager();
+  RefPtr<LayerManager> layerManager =
+      GetWindowRenderer() ? GetWindowRenderer()->AsLayerManager() : nullptr;
   if (!layerManager) {
     return;
   }
@@ -7329,7 +7330,8 @@ nsresult nsWindow::ConfigureChildren(
       w->Move(configuration.mBounds.X(), configuration.mBounds.Y());
 
       if (gfxWindowsPlatform::GetPlatform()->IsDirect2DBackend() ||
-          GetLayerManager()->GetBackendType() != LayersBackend::LAYERS_BASIC) {
+          GetWindowRenderer()->GetBackendType() !=
+              LayersBackend::LAYERS_BASIC) {
         
         
         
@@ -7775,8 +7777,8 @@ void nsWindow::SetWindowTranslucencyInner(nsTransparencyMode aMode) {
   
   
   
-  if (HasGlass() && GetLayerManager()->AsKnowsCompositor() &&
-      GetLayerManager()->AsKnowsCompositor()->GetUseCompositorWnd()) {
+  if (HasGlass() && GetWindowRenderer()->AsKnowsCompositor() &&
+      GetWindowRenderer()->AsKnowsCompositor()->GetUseCompositorWnd()) {
     HDC hdc;
     RECT rect;
     hdc = ::GetWindowDC(mWnd);

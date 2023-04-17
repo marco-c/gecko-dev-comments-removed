@@ -3089,8 +3089,9 @@ void ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange,
           PAINT_SKIP_LOG("Skipping due to APZ scroll\n");
         } else if (mScrollableByAPZ) {
           nsIWidget* widget = presContext->GetNearestWidget();
-          LayerManager* manager = widget ? widget->GetLayerManager() : nullptr;
-          if (manager) {
+          WindowRenderer* renderer =
+              widget ? widget->GetWindowRenderer() : nullptr;
+          if (renderer) {
             mozilla::layers::ScrollableLayerGuid::ViewID id;
             bool success = nsLayoutUtils::FindIDFor(content, &id);
             MOZ_ASSERT(success);  
@@ -3100,7 +3101,7 @@ void ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange,
             
             
             MOZ_ASSERT(!mScrollUpdates.IsEmpty());
-            success = manager->AddPendingScrollUpdateForNextTransaction(
+            success = renderer->AddPendingScrollUpdateForNextTransaction(
                 id, mScrollUpdates.LastElement());
             if (success) {
               schedulePaint = false;

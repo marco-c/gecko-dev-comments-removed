@@ -218,7 +218,7 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
                           nsIScreen* aScreen = nullptr) override;
   void InfallibleMakeFullScreen(bool aFullScreen, nsIScreen* aScreen = nullptr);
 
-  LayerManager* GetLayerManager() override;
+  WindowRenderer* GetWindowRenderer() override;
 
   
   

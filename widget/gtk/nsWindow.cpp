@@ -3382,11 +3382,15 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
   LayoutDeviceIntRegion region = exposeRegion;
   region.ScaleRoundOut(scale, scale);
 
-  if (GetLayerManager()->AsKnowsCompositor() && mCompositorSession) {
+  WindowRenderer* renderer = GetWindowRenderer();
+  LayerManager* layerManager = renderer->AsLayerManager();
+  KnowsCompositor* knowsCompositor = renderer->AsKnowsCompositor();
+
+  if (knowsCompositor && layerManager && mCompositorSession) {
     
     
-    GetLayerManager()->SetNeedsComposite(true);
-    GetLayerManager()->SendInvalidRegion(region.ToUnknownRegion());
+    layerManager->SetNeedsComposite(true);
+    layerManager->SendInvalidRegion(region.ToUnknownRegion());
   }
 
   RefPtr<nsWindow> strongThis(this);
@@ -3406,10 +3410,9 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
     if (!listener) return FALSE;
   }
 
-  if (GetLayerManager()->AsKnowsCompositor() &&
-      GetLayerManager()->NeedsComposite()) {
-    GetLayerManager()->ScheduleComposite();
-    GetLayerManager()->SetNeedsComposite(false);
+  if (knowsCompositor && layerManager && layerManager->NeedsComposite()) {
+    layerManager->ScheduleComposite();
+    layerManager->SetNeedsComposite(false);
   }
 
   
@@ -3460,8 +3463,8 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
   }
 
   
-  if (GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_CLIENT ||
-      GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_WR) {
+  if (renderer->GetBackendType() == LayersBackend::LAYERS_CLIENT ||
+      renderer->GetBackendType() == LayersBackend::LAYERS_WR) {
     listener->PaintWindow(this, region);
 
     
@@ -3526,7 +3529,7 @@ gboolean nsWindow::OnExposeEvent(cairo_t* cr) {
 
   bool painted = false;
   {
-    if (GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_BASIC) {
+    if (renderer->GetBackendType() == LayersBackend::LAYERS_BASIC) {
       if (GetTransparencyMode() == eTransparencyTransparent &&
           layerBuffering == BufferMode::BUFFER_NONE && mHasAlphaVisual) {
         
@@ -3668,7 +3671,7 @@ gboolean nsWindow::OnConfigureEvent(GtkWidget* aWidget,
     
     
     
-    GetLayerManager()->FlushRendering();
+    GetWindowRenderer()->FlushRendering();
     return FALSE;
   }
 
@@ -8276,7 +8279,7 @@ nsresult nsWindow::BeginResizeDrag(WidgetGUIEvent* aEvent, int32_t aHorizontal,
   return NS_OK;
 }
 
-nsIWidget::LayerManager* nsWindow::GetLayerManager() {
+nsIWidget::WindowRenderer* nsWindow::GetWindowRenderer() {
   if (mIsDestroyed) {
     
     
@@ -8284,7 +8287,7 @@ nsIWidget::LayerManager* nsWindow::GetLayerManager() {
     return mLayerManager;
   }
 
-  return nsBaseWidget::GetLayerManager();
+  return nsBaseWidget::GetWindowRenderer();
 }
 
 void nsWindow::SetCompositorWidgetDelegate(CompositorWidgetDelegate* delegate) {

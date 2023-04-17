@@ -207,9 +207,7 @@ class DataSourceSurface;
 enum class SurfaceFormat : int8_t;
 }  
 
-namespace layers {
-class LayerManager;
-}  
+class WindowRenderer;
 
 }  
 
@@ -2361,8 +2359,8 @@ class nsContentUtils {
 
 
 
-  static already_AddRefed<mozilla::layers::LayerManager>
-  LayerManagerForDocument(const Document* aDoc);
+  static mozilla::WindowRenderer* WindowRendererForDocument(
+      const Document* aDoc);
 
   
 
@@ -2371,7 +2369,7 @@ class nsContentUtils {
 
 
 
-  static already_AddRefed<mozilla::layers::LayerManager> LayerManagerForContent(
+  static mozilla::WindowRenderer* WindowRendererForContent(
       const nsIContent* aContent);
 
   

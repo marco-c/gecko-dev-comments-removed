@@ -169,11 +169,14 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
     return true;
   }
 
+  WindowRenderer* renderer = GetWindowRenderer();
+  KnowsCompositor* knowsCompositor = renderer->AsKnowsCompositor();
+  LayerManager* layerManager = renderer->AsLayerManager();
+
   
   
   
-  if (HasGlass() && GetLayerManager()->AsKnowsCompositor() &&
-      GetLayerManager()->AsKnowsCompositor()->GetUseCompositorWnd()) {
+  if (HasGlass() && knowsCompositor && knowsCompositor->GetUseCompositorWnd()) {
     HDC hdc;
     RECT rect;
     hdc = ::GetWindowDC(mWnd);
@@ -184,17 +187,16 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
     ReleaseDC(mWnd, hdc);
   }
 
-  if (GetLayerManager()->AsKnowsCompositor() &&
+  if (knowsCompositor && layerManager &&
       !mBounds.IsEqualEdges(mLastPaintBounds)) {
     
     
-    GetLayerManager()->ScheduleComposite();
+    layerManager->ScheduleComposite();
   }
   mLastPaintBounds = mBounds;
 
 #ifdef MOZ_XUL
-  if (!aDC &&
-      (GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_BASIC) &&
+  if (!aDC && (renderer->GetBackendType() == LayersBackend::LAYERS_BASIC) &&
       (eTransparencyTransparent == mTransparencyMode)) {
     
     
@@ -233,11 +235,11 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
 #endif
   LayoutDeviceIntRegion region = GetRegionToPaint(forceRepaint, ps, hDC);
 
-  if (GetLayerManager()->AsKnowsCompositor()) {
+  if (knowsCompositor && layerManager) {
     
     
-    GetLayerManager()->SetNeedsComposite(true);
-    GetLayerManager()->SendInvalidRegion(region.ToUnknownRegion());
+    layerManager->SetNeedsComposite(true);
+    layerManager->SendInvalidRegion(region.ToUnknownRegion());
   }
 
   RefPtr<nsWindow> strongThis(this);
@@ -252,10 +254,9 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
     return false;
   }
 
-  if (GetLayerManager()->AsKnowsCompositor() &&
-      GetLayerManager()->NeedsComposite()) {
-    GetLayerManager()->ScheduleComposite();
-    GetLayerManager()->SetNeedsComposite(false);
+  if (knowsCompositor && layerManager && layerManager->NeedsComposite()) {
+    layerManager->ScheduleComposite();
+    layerManager->SetNeedsComposite(false);
   }
 
   bool result = true;
@@ -268,7 +269,7 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
                          (int32_t)mWnd);
 #endif  
 
-    switch (GetLayerManager()->GetBackendType()) {
+    switch (renderer->GetBackendType()) {
       case LayersBackend::LAYERS_BASIC: {
         RefPtr<gfxASurface> targetSurface;
 

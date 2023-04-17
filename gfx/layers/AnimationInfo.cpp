@@ -204,11 +204,9 @@ void AnimationInfo::EnumerateGenerationOnFrame(
     }
   }
 
-  RefPtr<LayerManager> layerManager =
-      nsContentUtils::LayerManagerForContent(aContent);
+  WindowRenderer* renderer = nsContentUtils::WindowRendererForContent(aContent);
 
-  if (layerManager &&
-      layerManager->GetBackendType() == layers::LayersBackend::LAYERS_WR) {
+  if (renderer && renderer->AsWebRender()) {
     
     
     if (nsLayoutUtils::IsFirstContinuationOrIBSplitSibling(aFrame)) {

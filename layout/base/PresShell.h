@@ -915,7 +915,7 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-  LayerManager* GetLayerManager();
+  WindowRenderer* GetWindowRenderer();
 
   
 

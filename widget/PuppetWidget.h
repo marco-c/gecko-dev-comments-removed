@@ -171,7 +171,7 @@ class PuppetWidget : public nsBaseWidget,
     return eTransparencyTransparent;
   }
 
-  virtual LayerManager* GetLayerManager() override;
+  virtual WindowRenderer* GetWindowRenderer() override;
 
   
   

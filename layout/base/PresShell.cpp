@@ -4565,11 +4565,11 @@ nsresult PresShell::RenderDocument(const nsRect& aRect,
     nsView* view = rootFrame->GetView();
     if (view && view->GetWidget() &&
         nsLayoutUtils::GetDisplayRootFrame(rootFrame) == rootFrame) {
-      LayerManager* layerManager = view->GetWidget()->GetLayerManager();
+      WindowRenderer* renderer = view->GetWidget()->GetWindowRenderer();
       
       
-      if (layerManager &&
-          (!layerManager->AsKnowsCompositor() || XRE_IsParentProcess())) {
+      if (renderer &&
+          (!renderer->AsKnowsCompositor() || XRE_IsParentProcess())) {
         flags |= PaintFrameFlags::WidgetLayers;
       }
     }
@@ -5351,13 +5351,13 @@ struct PaintParams {
   nscolor mBackgroundColor;
 };
 
-LayerManager* PresShell::GetLayerManager() {
+WindowRenderer* PresShell::GetWindowRenderer() {
   NS_ASSERTION(mViewManager, "Should have view manager");
 
   nsView* rootView = mViewManager->GetRootView();
   if (rootView) {
     if (nsIWidget* widget = rootView->GetWidget()) {
-      return widget->GetLayerManager();
+      return widget->GetWindowRenderer();
     }
   }
   return nullptr;
@@ -5429,9 +5429,9 @@ void PresShell::SetRenderingState(const RenderingState& aState) {
   if (mRenderingStateFlags != aState.mRenderingStateFlags) {
     
     
-    LayerManager* manager = GetLayerManager();
-    if (manager) {
-      FrameLayerBuilder::InvalidateAllLayers(manager);
+    WindowRenderer* renderer = GetWindowRenderer();
+    if (renderer && renderer->AsLayerManager()) {
+      FrameLayerBuilder::InvalidateAllLayers(renderer->AsLayerManager());
     }
   }
 
@@ -6271,9 +6271,10 @@ void PresShell::Paint(nsView* aViewToPaint, const nsRegion& aDirtyRegion,
 
   nsIFrame* frame = aViewToPaint->GetFrame();
 
-  LayerManager* layerManager = aViewToPaint->GetWidget()->GetLayerManager();
-  NS_ASSERTION(layerManager, "Must be in paint event");
-  bool shouldInvalidate = layerManager->NeedsWidgetInvalidation();
+  WindowRenderer* renderer = aViewToPaint->GetWidget()->GetWindowRenderer();
+  NS_ASSERTION(renderer, "Must be in paint event");
+  LayerManager* layerManager = renderer->AsLayerManager();
+  bool shouldInvalidate = renderer->NeedsWidgetInvalidation();
 
   nsAutoNotifyDidPaint notifyDidPaint(this, aFlags);
 
@@ -6285,17 +6286,21 @@ void PresShell::Paint(nsView* aViewToPaint, const nsRegion& aDirtyRegion,
     MOZ_LOG(gLog, LogLevel::Debug,
             ("PresShell::Paint, first paint, this=%p", this));
 
-    layerManager->SetIsFirstPaint();
+    if (layerManager) {
+      layerManager->SetIsFirstPaint();
+    }
     mIsFirstPaint = false;
   }
 
-  if (!layerManager->BeginTransaction(url)) {
+  if (!renderer->BeginTransaction(url)) {
     return;
   }
 
   
   
-  layerManager->SetFocusTarget(mAPZFocusTarget);
+  if (layerManager) {
+    layerManager->SetFocusTarget(mAPZFocusTarget);
+  }
 
   if (frame) {
     
@@ -6306,7 +6311,7 @@ void PresShell::Paint(nsView* aViewToPaint, const nsRegion& aDirtyRegion,
     
 
     if (!(aFlags & PaintFlags::PaintLayers)) {
-      if (layerManager->EndEmptyTransaction()) {
+      if (renderer->EndEmptyTransaction()) {
         return;
       }
       NS_WARNING("Must complete empty transaction when compositing!");
@@ -6321,22 +6326,23 @@ void PresShell::Paint(nsView* aViewToPaint, const nsRegion& aDirtyRegion,
               : 0;
       bool computeInvalidRect =
           computeInvalidFunc ||
-          (layerManager->GetBackendType() == LayersBackend::LAYERS_BASIC);
+          (renderer->GetBackendType() == LayersBackend::LAYERS_BASIC);
 
       UniquePtr<LayerProperties> props;
       
       
       
-      if (computeInvalidRect && layerManager->GetRoot()) {
+      if (computeInvalidRect && layerManager && layerManager->GetRoot()) {
         props = LayerProperties::CloneFrom(layerManager->GetRoot());
       }
 
-      MaybeSetupTransactionIdAllocator(layerManager, presContext);
+      if (layerManager) {
+        MaybeSetupTransactionIdAllocator(layerManager, presContext);
+      }
 
-      if (layerManager->EndEmptyTransaction(
-              (aFlags & PaintFlags::PaintComposite)
-                  ? LayerManager::END_DEFAULT
-                  : LayerManager::END_NO_COMPOSITE)) {
+      if (renderer->EndEmptyTransaction((aFlags & PaintFlags::PaintComposite)
+                                            ? LayerManager::END_DEFAULT
+                                            : LayerManager::END_NO_COMPOSITE)) {
         nsIntRegion invalid;
         bool areaOverflowed = false;
         if (props) {
@@ -6344,7 +6350,7 @@ void PresShell::Paint(nsView* aViewToPaint, const nsRegion& aDirtyRegion,
                                          computeInvalidFunc)) {
             areaOverflowed = true;
           }
-        } else {
+        } else if (layerManager) {
           LayerProperties::ClearInvalidations(layerManager->GetRoot());
         }
         if (props && !areaOverflowed) {
@@ -6391,7 +6397,7 @@ void PresShell::Paint(nsView* aViewToPaint, const nsRegion& aDirtyRegion,
     flags |= PaintFrameFlags::Compressed;
     mNextPaintCompressed = false;
   }
-  if (layerManager->GetBackendType() == layers::LayersBackend::LAYERS_WR) {
+  if (renderer->GetBackendType() == layers::LayersBackend::LAYERS_WR) {
     flags |= PaintFrameFlags::ForWebRender;
   }
 
@@ -6399,6 +6405,12 @@ void PresShell::Paint(nsView* aViewToPaint, const nsRegion& aDirtyRegion,
     
     nsLayoutUtils::PaintFrame(nullptr, frame, aDirtyRegion, bgcolor,
                               nsDisplayListBuilderMode::Painting, flags);
+    return;
+  }
+
+  if (!layerManager) {
+    
+    
     return;
   }
 
