@@ -35,7 +35,6 @@ class nsAtom;
 class nsIChannel;
 class nsIContent;
 class nsNodeInfoManager;
-class nsIApplicationCache;
 
 namespace mozilla {
 namespace css {
@@ -119,28 +118,6 @@ class nsContentSink : public nsICSSLoaderObserver,
   nsContentSink();
   virtual ~nsContentSink();
 
-  enum CacheSelectionAction {
-    
-    
-    
-    
-    
-    CACHE_SELECTION_NONE = 0,
-
-    
-    CACHE_SELECTION_UPDATE = 1,
-
-    
-    
-    
-    
-    
-    CACHE_SELECTION_RELOAD = 2,
-
-    
-    CACHE_SELECTION_RESELECT_WITHOUT_MANIFEST = 3
-  };
-
   nsresult Init(Document* aDoc, nsIURI* aURI, nsISupports* aContainer,
                 nsIChannel* aChannel);
 
@@ -173,59 +150,7 @@ class nsContentSink : public nsICSSLoaderObserver,
   
   nsresult GetChannelCacheKey(nsIChannel* aChannel, nsACString& aCacheKey);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nsresult SelectDocAppCache(nsIApplicationCache* aLoadApplicationCache,
-                             nsIURI* aManifestURI,
-                             bool aFetchedWithHTTPGetOrEquiv,
-                             CacheSelectionAction* aAction);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nsresult SelectDocAppCacheNoManifest(
-      nsIApplicationCache* aLoadApplicationCache, nsIURI** aManifestURI,
-      CacheSelectionAction* aAction);
-
  public:
-  
-  
-  
-  
-  
-  
-  void ProcessOfflineManifest(const nsAString& aManifestSpec);
-
-  
-  
-  void ProcessOfflineManifest(nsIContent* aElement);
-
   
   
   void Preconnect(const nsAString& aHref, const nsAString& aCrossOrigin);
