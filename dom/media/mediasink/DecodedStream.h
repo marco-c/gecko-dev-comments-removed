@@ -89,6 +89,13 @@ class DecodedStream : public MediaSink {
   void ConnectListener();
   void DisconnectListener();
 
+  
+  
+  
+  
+  already_AddRefed<AudioData> CreateSilenceDataIfGapExists(
+      RefPtr<AudioData>& aNextAudio);
+
   const RefPtr<AbstractThread> mOwnerThread;
 
   

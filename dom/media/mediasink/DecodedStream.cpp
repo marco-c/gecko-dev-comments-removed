@@ -730,6 +730,16 @@ void DecodedStream::SendAudio(const PrincipalHandle& aPrincipalHandle) {
   mAudioQueue.GetElementsAfter(mData->mNextAudioTime, &audio);
 
   
+  
+  
+  RefPtr<AudioData> nextAudio = audio.IsEmpty() ? nullptr : audio[0];
+  if (RefPtr<AudioData> silence = CreateSilenceDataIfGapExists(nextAudio)) {
+    LOG_DS(LogLevel::Verbose, "Detect a gap in audio, insert silence=%u",
+           silence->Frames());
+    audio.InsertElementAt(0, silence);
+  }
+
+  
   mData->mAudioTrack->AppendData(audio, aPrincipalHandle);
   for (uint32_t i = 0; i < audio.Length(); ++i) {
     CheckIsDataAudible(audio[i]);
@@ -741,6 +751,41 @@ void DecodedStream::SendAudio(const PrincipalHandle& aPrincipalHandle) {
     mData->mAudioTrack->NotifyEndOfStream();
     mData->mHaveSentFinishAudio = true;
   }
+}
+
+already_AddRefed<AudioData> DecodedStream::CreateSilenceDataIfGapExists(
+    RefPtr<AudioData>& aNextAudio) {
+  AssertOwnerThread();
+  if (!aNextAudio) {
+    return nullptr;
+  }
+  CheckedInt64 audioWrittenOffset =
+      mData->mAudioFramesWritten +
+      TimeUnitToFrames(*mStartTime, aNextAudio->mRate);
+  CheckedInt64 frameOffset =
+      TimeUnitToFrames(aNextAudio->mTime, aNextAudio->mRate);
+  if (audioWrittenOffset.value() >= frameOffset.value()) {
+    return nullptr;
+  }
+  
+  
+  CheckedInt64 missingFrames = frameOffset - audioWrittenOffset;
+  AlignedAudioBuffer silenceBuffer(missingFrames.value() *
+                                   aNextAudio->mChannels);
+  if (!silenceBuffer) {
+    NS_WARNING("OOM in DecodedStream::CreateSilenceDataIfGapExists");
+    return nullptr;
+  }
+  auto duration = FramesToTimeUnit(missingFrames.value(), aNextAudio->mRate);
+  if (!duration.IsValid()) {
+    NS_WARNING("Int overflow in DecodedStream::CreateSilenceDataIfGapExists");
+    return nullptr;
+  }
+  RefPtr<AudioData> silenceData = new AudioData(
+      aNextAudio->mOffset, aNextAudio->mTime, std::move(silenceBuffer),
+      aNextAudio->mChannels, aNextAudio->mRate);
+  MOZ_DIAGNOSTIC_ASSERT(duration == silenceData->mDuration, "must be equal");
+  return silenceData.forget();
 }
 
 void DecodedStream::CheckIsDataAudible(const AudioData* aData) {
