@@ -24,11 +24,6 @@ XPCOMUtils.defineLazyGetter(this, "gBrandBundle", function() {
 });
 
 var SiteDataManager = {
-  _appCache: Cc["@mozilla.org/network/application-cache-service;1"].getService(
-    Ci.nsIApplicationCacheService
-  ),
-
-  
   
   
   
@@ -68,7 +63,6 @@ var SiteDataManager = {
     this._sites.clear();
     this._getAllCookies(entryUpdatedCallback);
     await this._getQuotaUsage(entryUpdatedCallback);
-    this._updateAppCache(entryUpdatedCallback);
     Services.obs.notifyObservers(null, "sitedatamanager:sites-updated");
   },
 
@@ -102,7 +96,6 @@ var SiteDataManager = {
         quotaUsage: 0,
         lastAccessed: 0,
         principals: [],
-        appCacheList: [],
       };
       this._sites.set(host, site);
     }
@@ -215,76 +208,7 @@ var SiteDataManager = {
     }
   },
 
-  _updateAppCache(entryUpdatedCallback) {
-    let groups;
-    try {
-      groups = this._appCache.getGroups();
-    } catch (e) {
-      
-      
-      
-      if (e.result != Cr.NS_ERROR_NOT_AVAILABLE) {
-        Cu.reportError(e);
-      }
-      return;
-    }
-
-    for (let group of groups) {
-      let cache = this._appCache.getActiveCache(group);
-      if (cache.usage <= 0) {
-        
-        continue;
-      }
-      let principal = Services.scriptSecurityManager.createContentPrincipalFromOrigin(
-        group
-      );
-      let site = this._getOrInsertSite(principal.host);
-      if (!site.principals.some(p => p.origin == principal.origin)) {
-        site.principals.push(principal);
-      }
-      site.appCacheList.push(cache);
-      if (entryUpdatedCallback) {
-        entryUpdatedCallback(principal.host, site);
-      }
-    }
-  },
-
   
-
-
-
-
-
-
-  getAppCacheUsageByHost(host) {
-    let usage = 0;
-
-    let groups;
-    try {
-      groups = this._appCache.getGroups();
-    } catch (e) {
-      
-      
-      
-      if (e.result != Cr.NS_ERROR_NOT_AVAILABLE) {
-        Cu.reportError(e);
-      }
-      return usage;
-    }
-
-    for (let group of groups) {
-      let uri = Services.io.newURI(group);
-      if (uri.asciiHost == host) {
-        let cache = this._appCache.getActiveCache(group);
-        usage += cache.usage;
-      }
-    }
-
-    return usage;
-  },
-
-  
-
 
 
 
@@ -297,11 +221,6 @@ var SiteDataManager = {
 
   async hasSiteData(asciiHost) {
     if (Services.cookies.countCookiesFromHost(asciiHost)) {
-      return true;
-    }
-
-    let appCacheUsage = this.getAppCacheUsageByHost(asciiHost);
-    if (appCacheUsage > 0) {
       return true;
     }
 
@@ -341,9 +260,6 @@ var SiteDataManager = {
     return this._getQuotaUsagePromise.then(() => {
       let usage = 0;
       for (let site of this._sites.values()) {
-        for (let cache of site.appCacheList) {
-          usage += cache.usage;
-        }
         usage += site.quotaUsage;
       }
       return usage;
@@ -373,9 +289,6 @@ var SiteDataManager = {
         }
 
         let usage = site.quotaUsage;
-        for (let cache of site.appCacheList) {
-          usage += cache.usage;
-        }
         list.push({
           baseDomain: site.baseDomain,
           cookies: site.cookies,
@@ -436,12 +349,6 @@ var SiteDataManager = {
       );
     }
     return Promise.all(promises);
-  },
-
-  _removeAppCache(site) {
-    for (let cache of site.appCacheList) {
-      cache.discard();
-    }
   },
 
   _removeCookies(site) {
