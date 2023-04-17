@@ -4,13 +4,73 @@
 
 
 use api::{ExternalScrollId, PipelineId, PropertyBinding, PropertyBindingId, ReferenceFrameKind, ScrollClamping, ScrollLocation};
-use api::{TransformStyle, ScrollSensitivity, StickyOffsetBounds};
+use api::{TransformStyle, ScrollSensitivity, StickyOffsetBounds, SpatialTreeItemKey};
 use api::units::*;
 use crate::spatial_tree::{CoordinateSystem, SpatialNodeIndex, TransformUpdateState};
 use crate::spatial_tree::{CoordinateSystemId, StaticCoordinateSystemId};
 use euclid::{Vector2D, SideOffsets2D};
 use crate::scene::SceneProperties;
 use crate::util::{LayoutFastTransform, MatrixHelpers, ScaleOffset, TransformedRectKind, PointHelpers};
+
+
+
+
+
+
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+pub enum SpatialNodeUidKind {
+    
+    InternalScrollFrame {
+        pipeline_id: PipelineId,
+    },
+    
+    InternalReferenceFrame {
+        pipeline_id: PipelineId,
+    },
+    
+    External {
+        key: SpatialTreeItemKey,
+    },
+}
+
+
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+pub struct SpatialNodeUid {
+    
+    pub kind: SpatialNodeUidKind,
+}
+
+impl SpatialNodeUid {
+    pub fn root_scroll_frame(
+        pipeline_id: PipelineId,
+    ) -> Self {
+        SpatialNodeUid {
+            kind: SpatialNodeUidKind::InternalScrollFrame {
+                pipeline_id,
+            },
+        }
+    }
+
+    pub fn root_reference_frame(
+        pipeline_id: PipelineId,
+    ) -> Self {
+        SpatialNodeUid {
+            kind: SpatialNodeUidKind::InternalReferenceFrame {
+                pipeline_id,
+            },
+        }
+    }
+
+    pub fn external(
+        key: SpatialTreeItemKey,
+    ) -> Self {
+        SpatialNodeUid {
+            kind: SpatialNodeUidKind::External {
+                key,
+            },
+        }
+    }
+}
 
 pub enum SpatialNodeType {
     
@@ -941,6 +1001,7 @@ fn test_cst_perspective_relative_scroll() {
         },
         LayoutVector2D::zero(),
         pipeline_id,
+        SpatialNodeUid::external(SpatialTreeItemKey::new(0, 0)),
     );
 
     let scroll_frame_1 = cst.add_scroll_frame(
@@ -952,6 +1013,7 @@ fn test_cst_perspective_relative_scroll() {
         ScrollSensitivity::Script,
         ScrollFrameKind::Explicit,
         LayoutVector2D::zero(),
+        SpatialNodeUid::external(SpatialTreeItemKey::new(0, 1)),
     );
 
     let scroll_frame_2 = cst.add_scroll_frame(
@@ -963,6 +1025,7 @@ fn test_cst_perspective_relative_scroll() {
         ScrollSensitivity::Script,
         ScrollFrameKind::Explicit,
         LayoutVector2D::new(0.0, 50.0),
+        SpatialNodeUid::external(SpatialTreeItemKey::new(0, 3)),
     );
 
     let ref_frame = cst.add_reference_frame(
@@ -974,6 +1037,7 @@ fn test_cst_perspective_relative_scroll() {
         },
         LayoutVector2D::zero(),
         pipeline_id,
+        SpatialNodeUid::external(SpatialTreeItemKey::new(0, 4)),
     );
 
     cst.update_tree(&SceneProperties::new());

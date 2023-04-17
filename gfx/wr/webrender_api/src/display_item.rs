@@ -115,6 +115,26 @@ impl SpaceAndClipInfo {
     }
 }
 
+
+
+
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize, PeekPoke, Default, Eq, Hash)]
+pub struct SpatialTreeItemKey {
+    key0: u64,
+    key1: u64,
+}
+
+impl SpatialTreeItemKey {
+    pub fn new(key0: u64, key1: u64) -> Self {
+        SpatialTreeItemKey {
+            key0,
+            key1,
+        }
+    }
+}
+
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize, PeekPoke)]
 pub enum SpatialTreeItem {
@@ -293,6 +313,9 @@ pub struct StickyFrameDescriptor {
     
     
     pub previously_applied_offset: LayoutVector2D,
+
+    
+    pub key: SpatialTreeItemKey,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize, PeekPoke)]
@@ -318,6 +341,8 @@ pub struct ScrollFrameDescriptor {
     
     
     pub external_scroll_offset: LayoutVector2D,
+    
+    pub key: SpatialTreeItemKey,
 }
 
 
@@ -830,6 +855,8 @@ pub struct ReferenceFrame {
     
     pub transform: ReferenceTransformBinding,
     pub id: SpatialId,
+    
+    pub key: SpatialTreeItemKey,
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize, PeekPoke)]
