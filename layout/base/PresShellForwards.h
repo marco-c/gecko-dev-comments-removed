@@ -197,9 +197,6 @@ enum class PaintFlags {
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(PaintFlags)
 
 
-enum class PaintType { Default, DelayedCompress };
-
-
 
 
 enum class RenderingStateFlags : uint8_t {

@@ -1281,11 +1281,7 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-
-
-
-
-  void ScheduleViewManagerFlush(PaintType aType = PaintType::Default);
+  void ScheduleViewManagerFlush();
 
   
   NS_IMETHOD SetCaretEnabled(bool aInEnable) override;
@@ -1537,8 +1533,6 @@ class PresShell final : public nsStubDocumentObserver,
           AddCanvasBackgroundColorFlags::None);
 
   size_t SizeOfTextRuns(MallocSizeOf aMallocSizeOf) const;
-
-  void SetNextPaintCompressed() { mNextPaintCompressed = true; }
 
   static PresShell* GetShellForEventTarget(nsIFrame* aFrame,
                                            nsIContent* aContent);
@@ -3095,8 +3089,6 @@ class PresShell final : public nsStubDocumentObserver,
   bool mNoDelayedKeyEvents : 1;
 
   bool mApproximateFrameVisibilityVisited : 1;
-
-  bool mNextPaintCompressed : 1;
 
   bool mHasCSSBackgroundColor : 1;
 
