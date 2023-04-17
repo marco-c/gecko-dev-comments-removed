@@ -3,8 +3,10 @@
 
 
 mod guillotine;
+mod slab;
 
 pub use guillotine::*;
+pub use slab::*;
 
 
 
@@ -59,6 +61,7 @@ pub trait AtlasAllocatorList<TextureParameters> {
 
     fn texture_parameters(&self) -> &TextureParameters;
 }
+
 
 
 #[cfg_attr(feature = "capture", derive(Serialize))]
