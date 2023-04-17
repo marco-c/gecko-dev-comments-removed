@@ -1048,7 +1048,7 @@ class Document : public nsINode,
 
   void SetIsInitialDocument(bool aIsInitialDocument);
 
-  void SetLoadedAsData(bool aLoadedAsData) { mLoadedAsData = aLoadedAsData; }
+  void SetLoadedAsData(bool aLoadedAsData, bool aConsiderForMemoryReporting);
 
   
 
@@ -2518,6 +2518,12 @@ class Document : public nsINode,
   }
 
   bool IsLoadedAsData() { return mLoadedAsData; }
+
+  void SetAddedToMemoryReportAsDataDocument() {
+    mAddedToMemoryReportingAsDataDocument = true;
+  }
+
+  void UnregisterFromMemoryReportingForDataDocument();
 
   bool MayStartLayout() { return mMayStartLayout; }
 
@@ -4485,6 +4491,10 @@ class Document : public nsINode,
   
   
   bool mLoadedAsData : 1;
+
+  
+  
+  bool mAddedToMemoryReportingAsDataDocument : 1;
 
   
   
