@@ -5249,7 +5249,7 @@ bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
       }
       if (wParam == SPI_SETFONTSMOOTHING ||
           wParam == SPI_SETFONTSMOOTHINGTYPE) {
-        gfxDWriteFont::UpdateSystemTextQuality();
+        gfxDWriteFont::UpdateSystemTextVars();
         break;
       }
       if (lParam) {
@@ -5443,7 +5443,7 @@ bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
 
 
 
-      gfxDWriteFont::UpdateSystemTextQuality();
+      gfxDWriteFont::UpdateSystemTextVars();
 
       
 
