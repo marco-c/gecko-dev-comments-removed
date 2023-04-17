@@ -105,43 +105,43 @@ static NO_INLINE void scale_blit(Texture& srctex, const IntRect& srcReq,
   int dstWidth = dstReq.width();
   int dstHeight = dstReq.height();
   
-  IntRect dstBounds = dsttex.sample_bounds(dstReq);
+  IntRect dstBounds = dsttex.sample_bounds(dstReq).intersect(clipRect);
+  
+  IntRect srcBounds = srctex.sample_bounds(srcReq, invertY);
   
   
-  IntRect srcBounds =
-      srctex.sample_bounds(srcReq, invertY)
-          .scale(srcWidth, srcHeight, dstWidth, dstHeight, true);
   
-  dstBounds.intersect(srcBounds);
   
-  IntRect clippedDest = dstBounds.intersection(clipRect) - dstBounds.origin();
+  IntRect srcClip = srctex.bounds() - srcReq.origin();
+  if (invertY) {
+    srcClip.invert_y(srcReq.height());
+  }
+  srcClip.scale(srcWidth, srcHeight, dstWidth, dstHeight, true);
+  dstBounds.intersect(srcClip);
   
-  if (clippedDest.is_empty()) {
+  if (dstBounds.is_empty()) {
     return;
   }
-  
-  srcBounds =
-      IntRect(dstBounds).scale(dstWidth, dstHeight, srcWidth, srcHeight);
+
   
   int bpp = srctex.bpp();
   int srcStride = srctex.stride();
   int destStride = dsttex.stride();
   char* dest = dsttex.sample_ptr(dstReq, dstBounds);
+  
+  int fracX = srcWidth * dstBounds.x0;
+  int fracY = srcHeight * dstBounds.y0;
+  srcBounds.x0 = max(fracX / dstWidth, srcBounds.x0);
+  srcBounds.y0 = max(fracY / dstHeight, srcBounds.y0);
+  fracX %= dstWidth;
+  fracY %= dstHeight;
   char* src = srctex.sample_ptr(srcReq, srcBounds, invertY);
   
   if (invertY) {
     srcStride = -srcStride;
   }
-  int span = clippedDest.width();
-  int fracX = srcWidth * clippedDest.x0;
-  int fracY = srcHeight * clippedDest.y0;
-  dest += destStride * clippedDest.y0;
-  dest += bpp * clippedDest.x0;
-  src += srcStride * (fracY / dstHeight);
-  src += bpp * (fracX / dstWidth);
-  fracY %= dstHeight;
-  fracX %= dstWidth;
-  for (int rows = clippedDest.height(); rows > 0; rows--) {
+  int span = dstBounds.width();
+  for (int rows = dstBounds.height(); rows > 0; rows--) {
     switch (bpp) {
       case 1:
         if (srcWidth == dstWidth)
