@@ -79,9 +79,6 @@ inline id<mozAccessible> GetObjectOrRepresentedView(id<mozAccessible> aObject) {
 - (id)accessibilityFocusedUIElement;
 
 
-- (NSValue*)accessibilityFrame;
-
-
 - (BOOL)isAccessibilityElement;
 
 

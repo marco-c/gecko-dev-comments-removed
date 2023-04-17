@@ -194,9 +194,6 @@ inline mozAccessible* GetNativeFromGeckoAccessible(
 - (NSNumber*)moxSelected;
 
 
-- (NSValue*)moxFrame;
-
-
 - (NSString*)moxARIACurrent;
 
 

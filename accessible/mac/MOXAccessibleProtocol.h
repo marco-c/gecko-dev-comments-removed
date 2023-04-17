@@ -112,9 +112,6 @@
 - (id _Nullable)moxWindow;
 
 
-- (NSValue* _Nullable)moxFrame;
-
-
 - (id _Nullable)moxTitleUIElement;
 
 
