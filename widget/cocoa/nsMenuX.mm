@@ -166,7 +166,6 @@ void nsMenuX::DetachFromGroupOwnerRecursive() {
   if (mMenuGroupOwner && mContent) {
     mMenuGroupOwner->UnregisterForContentChanges(mContent);
   }
-  UnregisterCommands();
   mMenuGroupOwner = nullptr;
 
   
@@ -197,20 +196,6 @@ void nsMenuX::OnMenuClosed(dom::Element* aPopupElement) {
   }
 }
 
-void nsMenuX::UnregisterCommands() {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
-
-  if (!mMenuGroupOwner || !mNativeMenu) {
-    return;
-  }
-
-  for (NSMenuItem* item in mNativeMenu.itemArray) {
-    mMenuGroupOwner->UnregisterCommand(static_cast<uint32_t>(item.tag));
-  }
-
-  NS_OBJC_END_TRY_ABORT_BLOCK;
-}
-
 void nsMenuX::AddMenuItem(RefPtr<nsMenuItemX>&& aMenuItem) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
@@ -220,20 +205,8 @@ void nsMenuX::AddMenuItem(RefPtr<nsMenuItemX>&& aMenuItem) {
     return;
   }
 
+  [mNativeMenu addItem:aMenuItem->NativeNSMenuItem()];
   ++mVisibleItemsCount;
-
-  NSMenuItem* newNativeMenuItem = aMenuItem->NativeNSMenuItem();
-
-  
-  [mNativeMenu addItem:newNativeMenuItem];
-
-  
-  newNativeMenuItem.target = nsMenuBarX::sNativeEventTarget;
-  newNativeMenuItem.action = @selector(menuItemHit:);
-
-  
-  newNativeMenuItem.tag = mMenuGroupOwner->RegisterForCommand(aMenuItem);
-  newNativeMenuItem.representedObject = mMenuGroupOwner->GetRepresentedObject();
 
   aMenuItem->SetupIcon();
 
@@ -329,7 +302,6 @@ Maybe<nsMenuX::MenuChild> nsMenuX::GetItemForElement(Element* aMenuChildElement)
 nsresult nsMenuX::RemoveAll() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
-  UnregisterCommands();
   [mNativeMenu removeAllItems];
 
   for (auto& child : mMenuChildren) {
