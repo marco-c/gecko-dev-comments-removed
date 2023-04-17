@@ -2138,8 +2138,14 @@ public class GeckoSessionTestRule implements TestRule {
     
 
 
-    public void removeAllCertOverrides() {
-        webExtensionApiCall("RemoveAllCertOverrides", null);
+
+
+
+    public void removeCertOverride(final String host, final long port) {
+        webExtensionApiCall("RemoveCertOverride", args -> {
+            args.put("host", host);
+            args.put("port", port);
+        });
     }
 
     private interface SetArgs {

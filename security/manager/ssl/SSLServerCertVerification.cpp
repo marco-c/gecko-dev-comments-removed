@@ -971,8 +971,8 @@ PRErrorCode AuthCertificateParseResults(
         return SEC_ERROR_NO_MEMORY;
       }
       nsresult rv = overrideService->HasMatchingOverride(
-          aHostName, aPort, aOriginAttributes, nssCert, &overrideBits,
-          &isTemporaryOverride, &haveOverride);
+          aHostName, aPort, nssCert, &overrideBits, &isTemporaryOverride,
+          &haveOverride);
       if (NS_SUCCEEDED(rv) && haveOverride) {
         
         remainingDisplayErrors &= ~overrideBits;
