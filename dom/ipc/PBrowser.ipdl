@@ -223,12 +223,6 @@ parent:
 
 
 
-    async SetNativeChildOfShareableWindow(uintptr_t childWindow);
-
-    
-
-
-
 
     sync DispatchFocusToTopLevelWindow();
 
@@ -999,12 +993,6 @@ child:
 
 
     async AllowScriptsToClose();
-
-    
-
-
-
-    async SetWidgetNativeData(WindowsHandle aHandle);
 
     async WillChangeProcess();
 

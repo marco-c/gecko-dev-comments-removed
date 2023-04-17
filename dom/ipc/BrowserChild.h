@@ -640,9 +640,6 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
 #endif
 
   
-  WindowsHandle WidgetNativeData() { return mWidgetNativeData; }
-
-  
   
   mozilla::LayoutDeviceToLayoutDeviceMatrix4x4
   GetChildToParentConversionMatrix() const;
@@ -721,9 +718,6 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   mozilla::ipc::IPCResult RecvStopIMEStateManagement();
 
   mozilla::ipc::IPCResult RecvAllowScriptsToClose();
-
-  mozilla::ipc::IPCResult RecvSetWidgetNativeData(
-      const WindowsHandle& aWidgetNativeData);
 
   mozilla::ipc::IPCResult RecvReleaseAllPointerCapture();
 
@@ -902,8 +896,6 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   
   uint32_t mPendingDocShellBlockers;
   int32_t mCancelContentJSEpoch;
-
-  WindowsHandle mWidgetNativeData;
 
   Maybe<LayoutDeviceToLayoutDeviceMatrix4x4> mChildToParentConversionMatrix;
   ScreenRect mTopLevelViewportVisibleRectInBrowserCoords;

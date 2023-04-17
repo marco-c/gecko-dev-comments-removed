@@ -118,10 +118,7 @@ class PuppetWidget : public nsBaseWidget,
   virtual void Invalidate(const LayoutDeviceIntRect& aRect) override;
 
   
-  virtual void* GetNativeData(uint32_t aDataType) override;
-#if defined(XP_WIN)
-  void SetNativeData(uint32_t aDataType, uintptr_t aVal) override;
-#endif
+  virtual void* GetNativeData(uint32_t aDataType) override { return nullptr; }
 
   
   virtual nsresult SetTitle(const nsAString& aTitle) override {
