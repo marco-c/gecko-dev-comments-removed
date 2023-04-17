@@ -3610,45 +3610,29 @@ void SamplerThread::Run() {
         if (stackSampling || cpuUtilization) {
           samplingState = SamplingState::SamplingCompleted;
 
-          const Vector<LiveProfiledThreadData>& liveThreads =
-              ActivePS::LiveProfiledThreads(lock);
-
           
           
           ThreadRegistry::LockedRegistry lockedRegistry;
 
-          for (auto& thread : liveThreads) {
+          for (ThreadRegistry::OffThreadRef offThreadRef : lockedRegistry) {
+            ThreadRegistration::UnlockedRWForLockedProfiler&
+                unlockedThreadData =
+                    offThreadRef.UnlockedRWForLockedProfilerRef();
             ProfiledThreadData* profiledThreadData =
-                thread.mProfiledThreadData.get();
+                unlockedThreadData.GetProfiledThreadData(lock);
+            if (!profiledThreadData) {
+              
+              continue;
+            }
             const ProfilerThreadId threadId =
-                profiledThreadData->Info().ThreadId();
-
-            
-            
-            
-            
-            
-            
-            
-            ThreadRegistry::OffThreadRef* offThreadRef =
-                [&]() -> ThreadRegistry::OffThreadRef* {
-              for (ThreadRegistry::OffThreadRef& otr : lockedRegistry) {
-                if (otr.UnlockedConstReaderCRef().Info().ThreadId() ==
-                    threadId) {
-                  return &otr;
-                }
-              }
-              return nullptr;
-            }();
-            MOZ_RELEASE_ASSERT(offThreadRef);
+                unlockedThreadData.Info().ThreadId();
 
             const RunningTimes runningTimesDiff = [&]() {
               if (!cpuUtilization) {
                 
                 return RunningTimes(TimeStamp::Now());
               }
-              return GetThreadRunningTimesDiff(
-                  lock, offThreadRef->UnlockedRWForLockedProfilerRef());
+              return GetThreadRunningTimesDiff(lock, unlockedThreadData);
             }();
 
             const TimeStamp& now = runningTimesDiff.PostMeasurementTimeStamp();
@@ -3667,8 +3651,7 @@ void SamplerThread::Run() {
             
             
             
-            if (offThreadRef->UnlockedConstReaderAndAtomicRWRef()
-                    .CanDuplicateLastSampleDueToSleep() ||
+            if (unlockedThreadData.CanDuplicateLastSampleDueToSleep() ||
                 runningTimesDiff.GetThreadCPUDelta() == Some(uint64_t(0))) {
               const bool dup_ok = ActivePS::Buffer(lock).DuplicateLastSample(
                   threadId, threadSampleDeltaMs,
@@ -3707,7 +3690,7 @@ void SamplerThread::Run() {
 
             if (stackSampling) {
               ThreadRegistry::OffThreadRef::RWFromAnyThreadWithLock
-                  lockedThreadData = offThreadRef->LockedRWFromAnyThread();
+                  lockedThreadData = offThreadRef.LockedRWFromAnyThread();
               
               
               mSampler.SuspendAndSampleAndResumeThread(
