@@ -188,10 +188,8 @@ PlacesViewBase.prototype = {
     
     
     
-    if (
-      document.popupNode &&
-      (document.popupNode == "menupopup" || !document.popupNode._placesNode)
-    ) {
+    let popupNode = PlacesUIUtils.lastContextMenuTriggerNode;
+    if (popupNode && (popupNode == "menupopup" || !popupNode._placesNode)) {
       return [];
     }
 
@@ -222,11 +220,11 @@ PlacesViewBase.prototype = {
 
     let selectedNode = this.selectedNode;
     if (selectedNode) {
-      let popup = document.popupNode;
+      let popupNode = PlacesUIUtils.lastContextMenuTriggerNode;
       if (
-        !popup._placesNode ||
-        popup._placesNode == this._resultNode ||
-        popup._placesNode.itemId == -1 ||
+        !popupNode._placesNode ||
+        popupNode._placesNode == this._resultNode ||
+        popupNode._placesNode.itemId == -1 ||
         !selectedNode.parent
       ) {
         
@@ -375,13 +373,6 @@ PlacesViewBase.prototype = {
   },
 
   _removeChild: function PVB__removeChild(aChild) {
-    
-    
-    
-    if (document.popupNode == aChild) {
-      document.popupNode = null;
-    }
-
     aChild.remove();
   },
 

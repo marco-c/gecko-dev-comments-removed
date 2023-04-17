@@ -251,6 +251,8 @@ var PlacesUIUtils = {
   _bookmarkToolbarTelemetryListening: false,
   LAST_USED_FOLDERS_META_KEY: "bookmarks/lastusedfolders",
 
+  lastContextMenuTriggerNode: null,
+
   getFormattedString: function PUIU_getFormattedString(key, params) {
     return bundle.formatStringFromName(key, params);
   },
@@ -461,13 +463,7 @@ var PlacesUIUtils = {
   getControllerForCommand(win, command) {
     
     
-    let popupNode;
-    try {
-      popupNode = win.document.popupNode;
-    } catch (e) {
-      
-      return null;
-    }
+    let popupNode = PlacesUIUtils.lastContextMenuTriggerNode;
     if (popupNode) {
       let isManaged = !!popupNode.closest("#managed-bookmarks");
       if (isManaged) {
@@ -1394,19 +1390,14 @@ var PlacesUIUtils = {
       return true;
     }
 
+    PlacesUIUtils.lastContextMenuTriggerNode = menupopup.triggerNode;
+
     let isManaged = !!menupopup.triggerNode.closest("#managed-bookmarks");
     if (isManaged) {
       this.managedPlacesContextShowing(event);
       return true;
     }
-    let document = menupopup.ownerDocument;
-    
-    
-    
-    
-    
-    document.popupNode = menupopup.triggerNode;
-    menupopup._view = this.getViewForNode(document.popupNode);
+    menupopup._view = this.getViewForNode(menupopup.triggerNode);
     if (!menupopup._view) {
       
       
@@ -1414,7 +1405,7 @@ var PlacesUIUtils = {
       return false;
     }
     if (!this.openInTabClosesMenu) {
-      document
+      menupopup.ownerDocument
         .getElementById("placesContext_open:newtab")
         .setAttribute("closemenu", "single");
     }
@@ -1426,6 +1417,8 @@ var PlacesUIUtils = {
     if (menupopup._view) {
       menupopup._view.destroyContextMenu();
     }
+
+    PlacesUIUtils.lastContextMenuTriggerNode = null;
   },
 
   openSelectionInTabs(event) {
@@ -1436,8 +1429,9 @@ var PlacesUIUtils = {
     if (isManaged) {
       controller = this.managedBookmarksController;
     } else {
-      let document = event.target.ownerDocument;
-      controller = PlacesUIUtils.getViewForNode(document.popupNode).controller;
+      controller = PlacesUIUtils.getViewForNode(
+        PlacesUIUtils.lastContextMenuTriggerNode
+      ).controller;
     }
     controller.openSelectionInTabs(event);
   },
