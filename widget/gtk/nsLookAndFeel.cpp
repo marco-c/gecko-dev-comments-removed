@@ -1016,7 +1016,7 @@ void nsLookAndFeel::ConfigureTheme(const LookAndFeelTheme& aTheme) {
 }
 
 void nsLookAndFeel::WithThemeConfiguredForContent(
-    const std::function<void(const LookAndFeelTheme& aTheme)>& aFn) {
+    const std::function<void(const LookAndFeelTheme&, bool)>& aFn) {
   nsWindow::WithSettingsChangesIgnored([&]() {
     
     static auto sGtkSettingsResetProperty =
@@ -1046,7 +1046,7 @@ void nsLookAndFeel::WithThemeConfiguredForContent(
     theme.themeName() = GetGtkTheme();
     theme.preferDarkTheme() = GetPreferDarkTheme();
 
-    aFn(theme);
+    aFn(theme, changed);
 
     if (changed) {
       GtkSettings* settings = gtk_settings_get_default();
@@ -1062,6 +1062,24 @@ void nsLookAndFeel::WithThemeConfiguredForContent(
       RefreshImpl();
     }
   });
+}
+
+bool nsLookAndFeel::FromParentTheme(IntID aID) {
+  switch (aID) {
+    case IntID::SystemUsesDarkTheme:
+    case IntID::UseAccessibilityTheme:
+      
+      
+      
+      
+      
+      
+      
+      
+      return true;
+    default:
+      return false;
+  }
 }
 
 bool nsLookAndFeel::ConfigureContentGtkTheme() {
