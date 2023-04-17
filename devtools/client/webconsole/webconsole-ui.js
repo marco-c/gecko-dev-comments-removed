@@ -149,16 +149,37 @@ class WebConsoleUI {
 
     this._initializer = (async () => {
       this._initUI();
-      
-      
-      
-      await this._attachTargets();
+
+      if (this.isBrowserConsole) {
+        
+        
+        
+        
+        
+        
+        
+        
+        await this.hud.commands.targetCommand.startListening();
+      }
 
       this._consoleCommands = new ConsoleCommands({
         commands: this.hud.commands,
       });
 
       await this.wrapper.init();
+
+      
+      
+      
+      
+      
+      await this._attachTargets();
+
+      
+      
+      
+      
+      await this.wrapper.waitAsyncDispatches();
     })();
 
     return this._initializer;
@@ -330,17 +351,6 @@ class WebConsoleUI {
 
   async _attachTargets() {
     this.additionalProxies = new Map();
-
-    if (this.isBrowserConsole) {
-      
-      
-      
-      
-      
-      
-      
-      await this.hud.commands.targetCommand.startListening();
-    }
 
     
     
