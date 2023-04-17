@@ -3,7 +3,6 @@
 
 
 
-#include "nsCOMArray.h"
 #include "nsIAuthPrompt.h"
 #include "mozilla/dom/Document.h"
 #include "nsIExpatSink.h"
