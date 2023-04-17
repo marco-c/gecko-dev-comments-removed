@@ -5,6 +5,8 @@
 
 
 
+const { createCommandsDictionary } = require("devtools/shared/commands/index");
+
 add_task(async function() {
   await testTabDescriptorWithURL("data:text/html;charset=utf-8,foo");
 
@@ -28,6 +30,12 @@ async function testTabDescriptorWithURL(url) {
   );
   is(descriptor, secondDescriptor, "second descriptor is the same");
 
+  
+  
+  
+  const commands = await createCommandsDictionary(descriptor);
+  await commands.targetCommand.startListening();
+
   info("Wait for descriptor's target");
   const target = await descriptor.getTarget();
 
@@ -36,6 +44,9 @@ async function testTabDescriptorWithURL(url) {
 
   info("Destroy the descriptor");
   await descriptor.destroy();
+
+  info("Destroy the command");
+  await commands.destroy();
 
   gBrowser.removeCurrentTab();
 }
