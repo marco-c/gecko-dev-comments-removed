@@ -121,12 +121,11 @@ where
                     
                     
                     
-                    frame.fds.take().and_then(|cmsg| {
+                    if let Some(cmsg) = frame.fds.take() {
                         for fds in cmsg::iterator(cmsg) {
                             close_fds(&*fds)
                         }
-                        Some(())
-                    });
+                    }
 
                     if n != frame.msgs.len() {
                         

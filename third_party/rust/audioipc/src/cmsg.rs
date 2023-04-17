@@ -111,6 +111,8 @@ impl ControlMsgBuilder {
             
             let zeroed = unsafe { mem::zeroed() };
             #[allow(clippy::needless_update)]
+            
+            #[allow(clippy::useless_conversion)]
             let cmsghdr = cmsghdr {
                 cmsg_len: len(msg.len()).try_into().unwrap(),
                 cmsg_level: level,
