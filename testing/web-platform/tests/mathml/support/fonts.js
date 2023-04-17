@@ -1,0 +1,9 @@
+function loadAllFonts() {
+  
+  
+  
+  
+
+  
+  return Promise.allSettled([...document.fonts].map(f => f.load()));
+}

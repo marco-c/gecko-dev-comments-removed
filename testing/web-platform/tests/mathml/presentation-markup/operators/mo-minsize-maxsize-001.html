@@ -8,6 +8,7 @@
 <meta name="assert" content="Verify edge cases for minsize and maxsize .">
 <script src="/resources/testharness.js"></script>
 <script src="/resources/testharnessreport.js"></script>
+<script src="/mathml/support/fonts.js"></script>
 <style>
   math {
       font: 25px/1 Ahem;
@@ -22,7 +23,7 @@
 </style>
 <script>
   setup({ explicit_done: true });
-  window.addEventListener("load", () => { document.fonts.ready.then(runTests); });
+  window.addEventListener("load", () => { loadAllFonts().then(runTests); });
 
   function runTests() {
       var epsilon = 1;
@@ -54,7 +55,7 @@
       <mrow>
         <mspace width="1em" height="5em" style="background: blue"/>
         <mo id="negative_minsize" minsize="-10em" stretchy="true" symmetric="false">⥯</mo>
-        <mn></mn>
+        <mn><!-- not space like --></mn>
       </mrow>
     </math>
   </p>
@@ -63,7 +64,7 @@
       <mrow>
         <mspace width="1em" height="5em" style="background: blue"/>
         <mo id="maxsize_less_than_minsize" minsize="7em" maxsize="2em" stretchy="true" symmetric="false">⥯</mo>
-        <mn></mn>
+        <mn><!-- not space like --></mn>
       </mrow>
     </math>
   </p>
@@ -72,7 +73,7 @@
       <mrow>
         <mspace width="1em" height="5em" style="background: blue"/>
         <mo id="minsize_less_than_negative_maxsize" minsize="-2em" maxsize="-1em" stretchy="true" symmetric="false">⥯</mo>
-        <mn></mn>
+        <mn><!-- not space like --></mn>
       </mrow>
     </math>
   </p>
@@ -81,7 +82,7 @@
       <mrow>
         <mspace width="1em" height="0em" style="background: blue"/>
         <mo id="zero_target_size_with_minsize" minsize="2em" stretchy="true" symmetric="true">⥯</mo>
-        <mn></mn>
+        <mn><!-- not space like --></mn>
       </mrow>
     </math>
   </p>

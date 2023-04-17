@@ -39,6 +39,7 @@
     width: 100%;
   }
 </style>
+<script src="/mathml/support/fonts.js"></script>
 <script>
   function runTests() {
     var div = document.getElementById("frame");
@@ -47,7 +48,7 @@
     div.style.height = `${refBox.height-4}px`;
     document.documentElement.classList.remove('reftest-wait');
   }
-  window.addEventListener("load", () => { document.fonts.ready.then(runTests); });
+  window.addEventListener("load", () => { loadAllFonts().then(runTests); });
 </script>
 </head>
 <body>
@@ -56,14 +57,14 @@
   </p>
   <p>
     <math display="block" style="font-family: numeratordisplaystylegapmin8000-rulethickness1000;">
-      
+      <!-- This is a dummy mspace element to ensure that the font ascent/descent does not affect the size of the math element. -->
       <mspace height="20em" depth="2em"/>
-      
-
-
-
-
-
+      <!--
+           All the fraction bars must be aligned.
+           The gap between the numerators and bar must be FractionNumDisplayStyleGapMin.
+           The gap should be calculated using the exact bounding box of the glyphs.
+           Hence glyphs A, B, C should be rendered at the same vertical position, even if they have different ascent/descent.
+        -->
       <mfrac>
         <mspace id="reference" width="3em" height=".5em" depth=".5em"/>
         <mspace width="3em"/>

@@ -14,6 +14,7 @@
 <link rel="help" href="https://mathml-refresh.github.io/mathml-core/#operator-fence-separator-or-accent-mo">
 <meta name="assert" content="Operators can stretch inside mrow-like elements.">
 <script src="/mathml/support/feature-detection.js"></script>
+<script src="/mathml/support/fonts.js"></script>
 <script src="/resources/testharness.js"></script>
 <script src="/resources/testharnessreport.js"></script>
 <style>
@@ -28,7 +29,7 @@
 </style>
 <script type="text/javascript">
   setup({ explicit_done: true });
-  window.addEventListener("load", () => { document.fonts.ready.then(runTests); });
+  window.addEventListener("load", () => { loadAllFonts().then(runTests); });
   function runTests()
   {
       ["Mrow", "Sqrt", "Style", "Error", "Phantom", "Math", "Menclose", "Mpadded", "Unknown"].forEach((tag) => {
@@ -51,7 +52,7 @@
     <math><merror><mo id="moError">&#x21A8;</mo><mspace width="1px" height="100px" style="background: magenta"></mspace></merror></math>
     <math><mphantom><mo style="visibilty: visible;" id="moPhantom">&#x21A8;</mo><mspace width="1px" height="100px" style="background: magenta"></mspace></mphantom></math>
     <math><mo id="moMath">&#x21A8;</mo><mspace width="1px" height="100px" style="background: magenta"></mspace></math>
-    
+    <!-- menclose is treated as <unknown> in MathML Core -->
     <math><menclose notation="box"><mo id="moMenclose">&#x21A8;</mo><mspace width="1px" height="100px" style="background: magenta"></mspace></menclose></math>
     <math><mpadded lspace="10px"><mo id="moMpadded">&#x21A8;</mo><mspace width="1px" height="100px" style="background: magenta"></mspace></mpadded></math>
     <math><unknown><mo id="moUnknown">&#x21A8;</mo><mspace width="1px" height="100px" style="background: magenta"></mspace></unknown></math>

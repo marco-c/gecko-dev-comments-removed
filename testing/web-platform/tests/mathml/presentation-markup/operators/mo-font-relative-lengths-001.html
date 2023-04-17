@@ -11,6 +11,7 @@
 <meta name="assert" content="Verify font-relative lengths refer to the core operator, not the embellished operator">
 <script src="/resources/testharness.js"></script>
 <script src="/resources/testharnessreport.js"></script>
+<script src="/mathml/support/fonts.js"></script>
 <style>
   math {
       font: 100px/1 Ahem;
@@ -25,7 +26,7 @@
 </style>
 <script>
   setup({ explicit_done: true });
-  window.addEventListener("load", () => { document.fonts.ready.then(runTests); });
+  window.addEventListener("load", () => { loadAllFonts().then(runTests); });
 
   function runTests() {
       var epsilon = 1;
@@ -93,7 +94,7 @@
           <mo id="operator1" lspace="1em" rspace="0em" minsize="8em">⥯</mo>
           <mspace id="after1" width="1em" height=".5em" depth=".5em" style="background: green"/>
         </mrow>
-        <mn></mn>
+        <mn><!-- not space like --></mn>
       </mrow>
     </math>
   </p>
@@ -105,7 +106,7 @@
           <mo id="operator2" lspace="0em" rspace="1em" maxsize="1em">⥯</mo>
         </mrow>
         <mspace id="after2" width="1em" height="2em" depth="2em" style="background: blue"/>
-        <mn></mn>
+        <mn><!-- not space like --></mn>
       </mrow>
     </math>
   </p>
