@@ -27,11 +27,6 @@
 namespace mozilla {
 namespace psm {
 
-enum class EVStatus : uint8_t {
-  NotEV = 0,
-  EV = 1,
-};
-
 class TransportSecurityInfo : public nsITransportSecurityInfo,
                               public nsIInterfaceRequestor,
                               public nsISerializable,

@@ -12,7 +12,7 @@
 namespace mozilla {
 namespace pkix {
 struct CertPolicyId;
-}
+}  
 }  
 
 namespace mozilla {
@@ -32,13 +32,12 @@ nsresult LoadExtendedValidationInfo();
 
 
 
-bool GetFirstEVPolicy(CERTCertificate& cert,
-                       mozilla::pkix::CertPolicyId& policy,
-                       SECOidTag& policyOidTag);
+bool GetFirstEVPolicy(const nsTArray<uint8_t>& cert,
+                       mozilla::pkix::CertPolicyId& policy);
 
 
 
-bool CertIsAuthoritativeForEVPolicy(const UniqueCERTCertificate& cert,
+bool CertIsAuthoritativeForEVPolicy(const nsTArray<uint8_t>& cert,
                                     const mozilla::pkix::CertPolicyId& policy);
 
 }  

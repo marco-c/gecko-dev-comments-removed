@@ -49,6 +49,11 @@ namespace psm {
 
 typedef mozilla::pkix::Result Result;
 
+enum class EVStatus : uint8_t {
+  NotEV = 0,
+  EV = 1,
+};
+
 
 enum class KeySizeStatus {
   NeverChecked = 0,
@@ -173,7 +178,7 @@ class CertVerifier {
        const Maybe<nsTArray<uint8_t>>& sctsFromTLS = Nothing(),
        const OriginAttributes& originAttributes =
           OriginAttributes(),
-       SECOidTag* evOidPolicy = nullptr,
+       EVStatus* evStatus = nullptr,
        OCSPStaplingStatus* ocspStaplingStatus = nullptr,
        KeySizeStatus* keySizeStatus = nullptr,
        SHA1ModeResult* sha1ModeResult = nullptr,
@@ -194,7 +199,7 @@ class CertVerifier {
        const Maybe<DelegatedCredentialInfo>& dcInfo = Nothing(),
        const OriginAttributes& originAttributes =
           OriginAttributes(),
-       SECOidTag* evOidPolicy = nullptr,
+       EVStatus* evStatus = nullptr,
        OCSPStaplingStatus* ocspStaplingStatus = nullptr,
        KeySizeStatus* keySizeStatus = nullptr,
        SHA1ModeResult* sha1ModeResult = nullptr,
