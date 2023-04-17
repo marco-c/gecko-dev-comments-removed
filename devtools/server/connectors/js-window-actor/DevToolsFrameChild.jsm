@@ -183,11 +183,20 @@ class DevToolsFrameChild extends JSWindowActorChild {
         
         
         
-        const existingTarget = this._getTargetActorForWatcherActorID(
-          watcherActorID,
-          browserId
-        );
 
+        
+        
+        
+        
+        
+        const existingTarget = this._findTargetActor({
+          watcherActorID,
+          browserId,
+          browsingContextId: this.manager.browsingContext.id,
+        });
+
+        
+        
         
         
         
@@ -198,7 +207,7 @@ class DevToolsFrameChild extends JSWindowActorChild {
           !existingTarget.createdFromJsWindowActor &&
           !isBFCache
         ) {
-          return;
+          continue;
         }
 
         
@@ -503,12 +512,27 @@ class DevToolsFrameChild extends JSWindowActorChild {
     }
   }
 
-  _getTargetActorForWatcherActorID(watcherActorID, browserId) {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  _findTargetActor({ watcherActorID, browserId, browsingContextId }) {
+    
+    
     const connectionInfo = this._connections.get(watcherActorID);
     let targetActor = connectionInfo ? connectionInfo.actor : null;
-    
-    
-    
+
     
     
     
@@ -518,19 +542,32 @@ class DevToolsFrameChild extends JSWindowActorChild {
       
       
       const connectionPrefix = watcherActorID.replace(/watcher\d+$/, "");
-      targetActor = TargetActorRegistry.getTargetActor(
+      const targetActors = TargetActorRegistry.getTargetActors(
         browserId,
         connectionPrefix
       );
+
+      if (!browsingContextId) {
+        targetActor = targetActors[0] || null;
+      } else {
+        targetActor = targetActors.find(
+          actor => actor.browsingContextID === browsingContextId
+        );
+      }
     }
+
     return targetActor;
   }
 
   _addWatcherDataEntry(watcherActorID, browserId, type, entries) {
-    const targetActor = this._getTargetActorForWatcherActorID(
+    
+    
+    
+    const targetActor = this._findTargetActor({
       watcherActorID,
-      browserId
-    );
+      browserId,
+    });
+
     if (!targetActor) {
       throw new Error(
         `No target actor for this Watcher Actor ID:"${watcherActorID}" / BrowserId:${browserId}`
@@ -540,10 +577,13 @@ class DevToolsFrameChild extends JSWindowActorChild {
   }
 
   _removeWatcherDataEntry(watcherActorID, browserId, type, entries) {
-    const targetActor = this._getTargetActorForWatcherActorID(
+    
+    
+    
+    const targetActor = this._findTargetActor({
       watcherActorID,
-      browserId
-    );
+      browserId,
+    });
     
     if (targetActor) {
       return targetActor.removeWatcherDataEntry(type, entries);
@@ -612,10 +652,13 @@ class DevToolsFrameChild extends JSWindowActorChild {
       for (const [watcherActorID, watchedData] of watchedDataByWatcherActor) {
         const { browserId, isServerTargetSwitchingEnabled } = watchedData;
 
-        const existingTarget = this._getTargetActorForWatcherActorID(
+        
+        
+        
+        const existingTarget = this._findTargetActor({
           watcherActorID,
-          browserId
-        );
+          browserId,
+        });
 
         if (!existingTarget) {
           continue;
