@@ -12,6 +12,14 @@
 var EXPORTED_SYMBOLS = ["WatchedDataHelpers"];
 
 
+
+
+const { validateBreakpointLocation } =
+  typeof module == "object"
+    ? require("devtools/shared/validate-breakpoint.jsm")
+    : ChromeUtils.import("resource://devtools/shared/validate-breakpoint.jsm");
+
+
 const SUPPORTED_DATA = {
   BREAKPOINTS: "breakpoints",
   XHR_BREAKPOINTS: "xhr-breakpoints",
@@ -24,35 +32,9 @@ const SUPPORTED_DATA = {
 
 
 const DATA_KEY_FUNCTION = {
-  [SUPPORTED_DATA.BREAKPOINTS]: function({
-    location: { sourceUrl, sourceId, line, column },
-  }) {
-    if (!sourceUrl && !sourceId) {
-      throw new Error(
-        `Breakpoints expect to have either a sourceUrl or a sourceId.`
-      );
-    }
-    if (sourceUrl && typeof sourceUrl != "string") {
-      throw new Error(
-        `Breakpoints expect to have sourceUrl string, got ${typeof sourceUrl} instead.`
-      );
-    }
-    
-    if (sourceId && typeof sourceId != "string") {
-      throw new Error(
-        `Breakpoints expect to have sourceId string, got ${typeof sourceId} instead.`
-      );
-    }
-    if (typeof line != "number") {
-      throw new Error(
-        `Breakpoints expect to have line number, got ${typeof line} instead.`
-      );
-    }
-    if (typeof column != "number") {
-      throw new Error(
-        `Breakpoints expect to have column number, got ${typeof column} instead.`
-      );
-    }
+  [SUPPORTED_DATA.BREAKPOINTS]: function({ location }) {
+    validateBreakpointLocation(location);
+    const { sourceUrl, sourceId, line, column } = location;
     return `${sourceUrl}:${sourceId}:${line}:${column}`;
   },
   [SUPPORTED_DATA.TARGET_CONFIGURATION]: function({ key }) {

@@ -5,6 +5,9 @@
 
 var Services = require("Services");
 const asyncStoreHelper = require("devtools/client/shared/async-store-helper");
+const {
+  validateBreakpointLocation,
+} = require("devtools/shared/validate-breakpoint.jsm");
 
 const asyncStore = asyncStoreHelper("debugger", {
   pendingBreakpoints: ["pending-breakpoints", {}],
@@ -40,7 +43,7 @@ exports.getThreadOptions = async function() {
     ),
     
     observeAsmJS: true,
-    breakpoints: await asyncStore.pendingBreakpoints,
+    breakpoints: sanitizeBreakpoints(await asyncStore.pendingBreakpoints),
     
     
     
@@ -49,3 +52,39 @@ exports.getThreadOptions = async function() {
       ((await asyncStore.eventListenerBreakpoints) || {}).active || [],
   };
 };
+
+
+
+
+
+function sanitizeBreakpoints(breakpoints) {
+  if (typeof breakpoints != "object") {
+    return {};
+  }
+  
+  
+  const validBreakpoints = {};
+  for (const key in breakpoints) {
+    const bp = breakpoints[key];
+    try {
+      if (!bp) {
+        throw new Error("Undefined breakpoint");
+      }
+      
+      
+      validateBreakpointLocation(bp.generatedLocation);
+      
+      
+      validateBreakpointLocation(bp.location);
+      validBreakpoints[key] = bp;
+    } catch (e) {
+      console.error(
+        "Ignore invalid breakpoint from debugger store",
+        bp,
+        e.message
+      );
+    }
+  }
+  return validBreakpoints;
+}
+exports.sanitizeBreakpoints = sanitizeBreakpoints;
