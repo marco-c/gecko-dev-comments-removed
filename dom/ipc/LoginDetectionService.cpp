@@ -59,7 +59,15 @@ void LoginDetectionService::MaybeStartMonitoring() {
     
     
     FetchLogins();
+  }
 
+  if (IsIsolateHighValueSiteEnabled() ||
+      StaticPrefs::fission_highValue_login_monitor()) {
+    
+    
+    
+    
+    
     if (!mObs) {
       mObs = mozilla::services::GetObserverService();
       mObs->AddObserver(this, "passwordmgr-form-submission-detected", false);
