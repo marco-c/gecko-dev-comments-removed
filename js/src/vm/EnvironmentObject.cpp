@@ -1042,14 +1042,21 @@ NamedLambdaObject* NamedLambdaObject::create(JSContext* cx,
   MOZ_ASSERT(callee->isNamedLambda());
   RootedScope scope(cx, callee->nonLazyScript()->maybeNamedLambdaScope());
   MOZ_ASSERT(scope && scope->environmentShape());
-  MOZ_ASSERT(scope->environmentShape()->slot() == lambdaSlot());
-  MOZ_ASSERT(!scope->environmentShape()->writable());
 
 #ifdef DEBUG
-  
-  BindingIter bi(scope);
-  bi++;
-  MOZ_ASSERT(bi.done());
+  {
+    
+    ShapePropertyIter<NoGC> iter(scope->environmentShape());
+    MOZ_ASSERT(iter->slot() == lambdaSlot());
+    MOZ_ASSERT(!iter->writable());
+    iter++;
+    MOZ_ASSERT(iter.done());
+
+    
+    BindingIter bi(scope);
+    bi++;
+    MOZ_ASSERT(bi.done());
+  }
 #endif
 
   BlockLexicalEnvironmentObject* obj = BlockLexicalEnvironmentObject::create(
