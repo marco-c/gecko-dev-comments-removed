@@ -48,6 +48,10 @@ const GA_PARAMS = `?${new URLSearchParams({
 const wcActions = require("devtools/client/webconsole/actions/index");
 
 registerCleanupFunction(async function() {
+  
+  
+  Services.cookies.removeAll();
+
   Services.prefs.clearUserPref("devtools.webconsole.ui.filterbar");
 
   
