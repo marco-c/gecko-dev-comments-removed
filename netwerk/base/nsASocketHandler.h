@@ -14,25 +14,21 @@
 
 class nsASocketHandler : public nsISupports {
  public:
-  nsASocketHandler()
-      : mCondition(NS_OK),
-        mPollFlags(0),
-        mPollTimeout(UINT16_MAX),
-        mIsPrivate(false) {}
+  nsASocketHandler() = default;
 
   
   
   
   
   
-  nsresult mCondition;
+  nsresult mCondition{NS_OK};
 
   
   
   
   
   
-  uint16_t mPollFlags;
+  uint16_t mPollFlags{0};
 
   
   
@@ -43,9 +39,9 @@ class nsASocketHandler : public nsISupports {
   
   
   
-  uint16_t mPollTimeout;
+  uint16_t mPollTimeout{UINT16_MAX};
 
-  bool mIsPrivate;
+  bool mIsPrivate{false};
 
   
   

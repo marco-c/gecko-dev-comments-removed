@@ -111,12 +111,12 @@ class CacheIOThread final : public nsIThreadObserver {
 
   static CacheIOThread* sSelf;
 
-  mozilla::Monitor mMonitor;
-  PRThread* mThread;
+  mozilla::Monitor mMonitor{"CacheIOThread"};
+  PRThread* mThread{nullptr};
   UniquePtr<detail::BlockingIOWatcher> mBlockingIOWatcher;
-  Atomic<nsIThread*> mXPCOMThread;
-  Atomic<uint32_t, Relaxed> mLowestLevelWaiting;
-  uint32_t mCurrentlyExecutingLevel;
+  Atomic<nsIThread*> mXPCOMThread{nullptr};
+  Atomic<uint32_t, Relaxed> mLowestLevelWaiting{LAST_LEVEL};
+  uint32_t mCurrentlyExecutingLevel{0};
 
   
   
@@ -124,20 +124,20 @@ class CacheIOThread final : public nsIThreadObserver {
 
   EventQueue mEventQueue[LAST_LEVEL];
   
-  Atomic<bool, Relaxed> mHasXPCOMEvents;
+  Atomic<bool, Relaxed> mHasXPCOMEvents{false};
   
-  bool mRerunCurrentEvent;
-  
-  
-  bool mShutdown;
+  bool mRerunCurrentEvent{false};
   
   
+  bool mShutdown{false};
   
-  Atomic<uint32_t, Relaxed> mIOCancelableEvents;
   
-  Atomic<uint32_t, Relaxed> mEventCounter;
+  
+  Atomic<uint32_t, Relaxed> mIOCancelableEvents{0};
+  
+  Atomic<uint32_t, Relaxed> mEventCounter{0};
 #ifdef DEBUG
-  bool mInsideLoop;
+  bool mInsideLoop{true};
 #endif
 };
 

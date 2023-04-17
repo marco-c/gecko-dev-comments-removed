@@ -35,7 +35,7 @@ class nsFileStreamBase : public nsISeekableStream, public nsIFileMetadata {
   NS_DECL_NSITELLABLESTREAM
   NS_DECL_NSIFILEMETADATA
 
-  nsFileStreamBase();
+  nsFileStreamBase() = default;
 
  protected:
   virtual ~nsFileStreamBase();
@@ -53,12 +53,12 @@ class nsFileStreamBase : public nsISeekableStream, public nsIFileMetadata {
   nsresult WriteSegments(nsReadSegmentFun aReader, void* aClosure,
                          uint32_t aCount, uint32_t* _retval);
 
-  PRFileDesc* mFD;
+  PRFileDesc* mFD{nullptr};
 
   
 
 
-  int32_t mBehaviorFlags;
+  int32_t mBehaviorFlags{0};
 
   enum {
     
@@ -72,7 +72,7 @@ class nsFileStreamBase : public nsISeekableStream, public nsIFileMetadata {
     
     
     eError
-  } mState;
+  } mState{eUnitialized};
 
   struct OpenParams {
     nsCOMPtr<nsIFile> localFile;
@@ -85,7 +85,7 @@ class nsFileStreamBase : public nsISeekableStream, public nsIFileMetadata {
 
   OpenParams mOpenParams;
 
-  nsresult mErrorValue;
+  nsresult mErrorValue{NS_ERROR_FAILURE};
 
   
 
@@ -148,8 +148,7 @@ class nsFileInputStream : public nsFileStreamBase,
   
   NS_IMETHOD Seek(int32_t aWhence, int64_t aOffset) override;
 
-  nsFileInputStream()
-      : mLineBuffer(nullptr), mIOFlags(0), mPerm(0), mCachedPosition(0) {}
+  nsFileInputStream() : mLineBuffer(nullptr) {}
 
   static nsresult Create(nsISupports* aOuter, REFNSIID aIID, void** aResult);
 
@@ -171,16 +170,16 @@ class nsFileInputStream : public nsFileStreamBase,
   
 
 
-  int32_t mIOFlags;
+  int32_t mIOFlags{0};
   
 
 
-  int32_t mPerm;
+  int32_t mPerm{0};
 
   
 
 
-  int64_t mCachedPosition;
+  int64_t mCachedPosition{0};
 
  protected:
   
@@ -220,7 +219,7 @@ class nsAtomicFileOutputStream : public nsFileOutputStream,
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSISAFEOUTPUTSTREAM
 
-  nsAtomicFileOutputStream() : mTargetFileExists(true), mWriteResult(NS_OK) {}
+  nsAtomicFileOutputStream() = default;
 
   virtual nsresult DoOpen() override;
 
@@ -235,8 +234,8 @@ class nsAtomicFileOutputStream : public nsFileOutputStream,
   nsCOMPtr<nsIFile> mTargetFile;
   nsCOMPtr<nsIFile> mTempFile;
 
-  bool mTargetFileExists;
-  nsresult mWriteResult;  
+  bool mTargetFileExists{true};
+  nsresult mWriteResult{NS_OK};  
 };
 
 

@@ -151,8 +151,9 @@ class CacheEntry final : public nsIRunnable, public CacheFileListener {
                              const nsACString& aURISpec, nsACString& aResult);
 
   
-  double mFrecency;
-  ::mozilla::Atomic<uint32_t, ::mozilla::Relaxed> mSortingExpirationTime;
+  double mFrecency{0};
+  ::mozilla::Atomic<uint32_t, ::mozilla::Relaxed> mSortingExpirationTime{
+      uint32_t(-1)};
 
   
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
@@ -307,7 +308,7 @@ class CacheEntry final : public nsIRunnable, public CacheFileListener {
       bool aMemoryOnly, nsICacheEntryOpenCallback* aCallback);
   void TransferCallbacks(CacheEntry& aFromEntry);
 
-  mozilla::Mutex mLock;
+  mozilla::Mutex mLock{"CacheEntry"};
 
   
   ::mozilla::ThreadSafeAutoRefCnt mHandlesCount;
@@ -320,7 +321,7 @@ class CacheEntry final : public nsIRunnable, public CacheFileListener {
   
   
   
-  ::mozilla::Atomic<nsresult, ::mozilla::ReleaseAcquire> mFileStatus;
+  Atomic<nsresult, ReleaseAcquire> mFileStatus{NS_ERROR_NOT_INITIALIZED};
   nsCString mURI;
   nsCString mEnhanceID;
   nsCString mStorageID;
@@ -334,7 +335,7 @@ class CacheEntry final : public nsIRunnable, public CacheFileListener {
   
   bool const mSkipSizeCheck;
   
-  bool mIsDoomed;
+  bool mIsDoomed{false};
 
   
 
@@ -368,7 +369,7 @@ class CacheEntry final : public nsIRunnable, public CacheFileListener {
   };
 
   
-  EState mState;
+  EState mState{NOTLOADED};
 
   enum ERegistration {
     NEVERREGISTERED = 0,  
@@ -378,7 +379,7 @@ class CacheEntry final : public nsIRunnable, public CacheFileListener {
 
   
   
-  ERegistration mRegistration;
+  ERegistration mRegistration{NEVERREGISTERED};
 
   
   
@@ -389,7 +390,7 @@ class CacheEntry final : public nsIRunnable, public CacheFileListener {
   
   
   
-  CacheEntryHandle* mWriter;
+  CacheEntryHandle* mWriter{nullptr};
 
   
   
@@ -400,7 +401,7 @@ class CacheEntry final : public nsIRunnable, public CacheFileListener {
     static uint32_t const CALLBACKS = 1 << 2;
     static uint32_t const UNREGISTER = 1 << 3;
 
-    Ops() : mFlags(0) {}
+    Ops() = default;
     uint32_t Grab() {
       uint32_t flags = mFlags;
       mFlags = 0;
@@ -413,12 +414,12 @@ class CacheEntry final : public nsIRunnable, public CacheFileListener {
     }
 
    private:
-    uint32_t mFlags;
+    uint32_t mFlags{0};
   } mBackgroundOperations;
 
   nsCOMPtr<nsISupports> mSecurityInfo;
   mozilla::TimeStamp mLoadStart;
-  uint32_t mUseCount;
+  uint32_t mUseCount{0};
 
   const uint64_t mCacheEntryId;
 };
@@ -547,7 +548,7 @@ class CacheEntryHandle final : public nsICacheEntry {
 
   
   
-  Atomic<bool, ReleaseAcquire> mClosed;
+  Atomic<bool, ReleaseAcquire> mClosed{false};
 };
 
 class CacheOutputCloseListener final : public Runnable {

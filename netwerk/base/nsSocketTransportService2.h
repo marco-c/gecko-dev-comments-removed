@@ -100,6 +100,8 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   NS_DECL_NSIOBSERVER
   NS_DECL_NSIDIRECTTASKDISPATCHER
 
+  static const uint32_t SOCKET_LIMIT_MIN = 50U;
+
   nsSocketTransportService();
 
   
@@ -144,7 +146,7 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   
   
   
-  nsIThread* mRawThread;
+  nsIThread* mRawThread{nullptr};
 
   
   already_AddRefed<nsIThread> GetThreadSafely();
@@ -155,10 +157,10 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   
   
 
-  Atomic<bool> mInitialized;
+  Atomic<bool> mInitialized{false};
   
-  Atomic<bool> mShuttingDown;
-  Mutex mLock;
+  Atomic<bool> mShuttingDown{false};
+  Mutex mLock{"nsSocketTransportService::mLock"};
   
 
   
@@ -170,8 +172,8 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   
   nsCOMPtr<nsIDirectTaskDispatcher> mDirectTaskDispatcher;
   UniquePtr<PollableEvent> mPollableEvent;
-  bool mOffline;
-  bool mGoingOffline;
+  bool mOffline{false};
+  bool mGoingOffline{false};
 
   
   void Reset(bool aGuardLocals);
@@ -218,10 +220,10 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   SocketContext* mActiveList; 
   SocketContext* mIdleList;   
 
-  uint32_t mActiveListSize;
-  uint32_t mIdleListSize;
-  uint32_t mActiveCount;
-  uint32_t mIdleCount;
+  uint32_t mActiveListSize{SOCKET_LIMIT_MIN};
+  uint32_t mIdleListSize{SOCKET_LIMIT_MIN};
+  uint32_t mActiveCount{0};
+  uint32_t mIdleCount{0};
 
   nsresult DetachSocket(SocketContext*, SocketContext*);
   nsresult AddToIdleList(SocketContext*);
@@ -236,8 +238,8 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   void InitMaxCount();
 
   
-  uint64_t mSentBytesCount;
-  uint64_t mReceivedBytesCount;
+  uint64_t mSentBytesCount{0};
+  uint64_t mReceivedBytesCount{0};
   
   
   
@@ -267,24 +269,24 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   nsresult UpdatePrefs();
   static void UpdatePrefs(const char* aPref, void* aSelf);
   void UpdateSendBufferPref();
-  int32_t mSendBufferSize;
+  int32_t mSendBufferSize{0};
   
-  int32_t mKeepaliveIdleTimeS;
+  int32_t mKeepaliveIdleTimeS{600};
   
-  int32_t mKeepaliveRetryIntervalS;
+  int32_t mKeepaliveRetryIntervalS{1};
   
-  int32_t mKeepaliveProbeCount;
+  int32_t mKeepaliveProbeCount{kDefaultTCPKeepCount};
   
-  bool mKeepaliveEnabledPref;
+  bool mKeepaliveEnabledPref{false};
   
   TimeDuration mPollableEventTimeout;
 
-  Atomic<bool> mServingPendingQueue;
-  Atomic<int32_t, Relaxed> mMaxTimePerPollIter;
+  Atomic<bool> mServingPendingQueue{false};
+  Atomic<int32_t, Relaxed> mMaxTimePerPollIter{100};
   Atomic<PRIntervalTime, Relaxed> mMaxTimeForPrClosePref;
   
   
-  Atomic<PRIntervalTime, Relaxed> mLastNetworkLinkChangeTime;
+  Atomic<PRIntervalTime, Relaxed> mLastNetworkLinkChangeTime{0};
   
   
   Atomic<PRIntervalTime, Relaxed> mNetworkLinkChangeBusyWaitPeriod;
@@ -294,7 +296,7 @@ class nsSocketTransportService final : public nsPISocketTransportService,
 
   
   
-  Atomic<bool, Relaxed> mSleepPhase;
+  Atomic<bool, Relaxed> mSleepPhase{false};
   nsCOMPtr<nsITimer> mAfterWakeUpTimer;
 
   
@@ -317,7 +319,7 @@ class nsSocketTransportService final : public nsPISocketTransportService,
 #if defined(XP_WIN)
   void ProbeMaxCount();
 #endif
-  bool mProbedMaxCount;
+  bool mProbedMaxCount{false};
 
   void AnalyzeConnection(nsTArray<SocketInfo>* data, SocketContext* context,
                          bool aActive);
@@ -329,7 +331,7 @@ class nsSocketTransportService final : public nsPISocketTransportService,
   void MarkTheLastElementOfPendingQueue();
 
 #if defined(XP_WIN)
-  Atomic<bool> mPolling;
+  Atomic<bool> mPolling{false};
   nsCOMPtr<nsITimer> mPollRepairTimer;
   void StartPollWatchdog();
   void DoPollRepair();
@@ -339,7 +341,7 @@ class nsSocketTransportService final : public nsPISocketTransportService,
 
   void TryRepairPollableEvent();
 
-  bool mNotTrustedMitmDetected;
+  bool mNotTrustedMitmDetected{false};
 
   CopyableTArray<nsCOMPtr<nsISTSShutdownObserver>> mShutdownObservers;
 };

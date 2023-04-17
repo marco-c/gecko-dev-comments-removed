@@ -27,7 +27,7 @@ namespace net {
 
 class nsSimpleURI : public nsIURI, public nsISerializable, public nsISizeOf {
  protected:
-  nsSimpleURI();
+  nsSimpleURI() = default;
   virtual ~nsSimpleURI() = default;
 
  public:
@@ -108,8 +108,9 @@ class nsSimpleURI : public nsIURI, public nsISerializable, public nsISizeOf {
   nsCString mRef;   
   nsCString
       mQuery;  
-  bool mIsRefValid;    
-  bool mIsQueryValid;  
+  bool mIsRefValid{false};  
+  
+  bool mIsQueryValid{false};
 
  public:
   class Mutator final : public nsIURIMutator,

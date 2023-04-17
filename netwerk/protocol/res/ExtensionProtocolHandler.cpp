@@ -346,16 +346,7 @@ ExtensionProtocolHandler::GetSingleton() {
 }
 
 ExtensionProtocolHandler::ExtensionProtocolHandler()
-    : SubstitutingProtocolHandler(EXTENSION_SCHEME)
-#if !defined(XP_WIN)
-#  if defined(XP_MACOSX)
-      ,
-      mAlreadyCheckedDevRepo(false)
-#  endif 
-      ,
-      mAlreadyCheckedAppDir(false)
-#endif 
-{
+    : SubstitutingProtocolHandler(EXTENSION_SCHEME) {
   
   
   

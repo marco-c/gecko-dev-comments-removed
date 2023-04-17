@@ -155,9 +155,9 @@ class SocketProcessChild final
   RefPtr<ChildProfilerController> mProfilerController;
 #endif
 
-  bool mShuttingDown;
+  bool mShuttingDown{false};
   
-  Mutex mMutex;
+  Mutex mMutex{"SocketProcessChild::mMutex"};
   nsTHashMap<uint64_t, RefPtr<BackgroundDataBridgeParent>>
       mBackgroundDataBridgeMap;
 };

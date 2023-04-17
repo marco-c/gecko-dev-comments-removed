@@ -341,19 +341,19 @@ class nsProtocolProxyService final : public nsIProtocolProxyService2,
  protected:
   
   struct HostInfo {
-    bool is_ipaddr;
-    int32_t port;
+    bool is_ipaddr{false};
+    int32_t port{0};
+    
     union {
-      HostInfoIP ip{};
+      HostInfoIP ip;
       HostInfoName name;
     };
 
-    HostInfo()
-        : is_ipaddr(false),
-          port(0) { 
-    }
+    HostInfo() = default;
     ~HostInfo() {
-      if (!is_ipaddr && name.host) free(name.host);
+      if (!is_ipaddr && name.host) {
+        free(name.host);
+      }
     }
   };
 
@@ -364,7 +364,7 @@ class nsProtocolProxyService final : public nsIProtocolProxyService2,
 
  protected:
   
-  bool mFilterLocalHosts;
+  bool mFilterLocalHosts{false};
 
   
   nsTArray<UniquePtr<HostInfo>> mHostFiltersArray;
@@ -372,36 +372,37 @@ class nsProtocolProxyService final : public nsIProtocolProxyService2,
   
   nsTArray<RefPtr<FilterLink>> mFilters;
 
-  uint32_t mProxyConfig;
+  uint32_t mProxyConfig{PROXYCONFIG_DIRECT};
 
   nsCString mHTTPProxyHost;
-  int32_t mHTTPProxyPort;
+  int32_t mHTTPProxyPort{-1};
 
   nsCString mHTTPSProxyHost;
-  int32_t mHTTPSProxyPort;
+  int32_t mHTTPSProxyPort{-1};
 
   
   
   nsCString mSOCKSProxyTarget;
-  int32_t mSOCKSProxyPort;
-  int32_t mSOCKSProxyVersion;
-  bool mSOCKSProxyRemoteDNS;
-  bool mProxyOverTLS;
-  bool mWPADOverDHCPEnabled;
+  int32_t mSOCKSProxyPort{-1};
+  int32_t mSOCKSProxyVersion{4};
+  bool mSOCKSProxyRemoteDNS{false};
+  bool mProxyOverTLS{true};
+  bool mWPADOverDHCPEnabled{false};
 
   RefPtr<nsPACMan> mPACMan;  
   nsCOMPtr<nsISystemProxySettings> mSystemProxySettings;
 
   PRTime mSessionStart;
   nsFailedProxyTable mFailedProxies;
-  int32_t mFailedProxyTimeout;
+  
+  int32_t mFailedProxyTimeout{30 * 60};
 
  private:
   nsresult AsyncResolveInternal(nsIChannel* channel, uint32_t flags,
                                 nsIProtocolProxyCallback* callback,
                                 nsICancelable** result, bool isSyncOK,
                                 nsISerialEventTarget* mainThreadEventTarget);
-  bool mIsShutdown;
+  bool mIsShutdown{false};
   nsCOMPtr<nsITimer> mReloadPACTimer;
 };
 
