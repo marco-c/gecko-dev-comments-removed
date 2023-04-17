@@ -135,7 +135,9 @@ interface nsIHelperAppLauncher : nsICancelable
 
 
 
-  void launchWithApplication(in boolean aHandleInternally);
+
+
+  void launchWithApplication(in boolean aHandleInternally, in nsIFile aFile);
 
   
 

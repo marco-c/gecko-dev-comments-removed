@@ -1081,7 +1081,7 @@ nsUnknownContentTypeDialog.prototype = {
         );
         this._saveToDiskTimer.initWithCallback(this, 0, nsITimer.TYPE_ONE_SHOT);
       } else {
-        this.mLauncher.launchWithApplication(this.handleInternally);
+        this.mLauncher.launchWithApplication(this.handleInternally, null);
       }
 
       

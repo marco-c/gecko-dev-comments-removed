@@ -1815,9 +1815,7 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
   bool alwaysAsk = true;
 
   
-  
   bool skipShowingDialog =
-      Preferences::GetBool("browser.download.useDownloadDir") &&
       StaticPrefs::browser_download_improvements_to_download_panel();
 
   if (skipShowingDialog) {
@@ -1955,10 +1953,15 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
     }
 
 #endif
-    if (action == nsIMIMEInfo::useHelperApp ||
-        action == nsIMIMEInfo::useSystemDefault ||
-        shouldAutomaticallyHandleInternally) {
-      rv = LaunchWithApplication(shouldAutomaticallyHandleInternally);
+    bool alwaysAskWhereToSave =
+        !Preferences::GetBool("browser.download.useDownloadDir") &&
+        StaticPrefs::browser_download_improvements_to_download_panel();
+
+    if ((action == nsIMIMEInfo::useHelperApp ||
+         action == nsIMIMEInfo::useSystemDefault ||
+         shouldAutomaticallyHandleInternally) &&
+        !alwaysAskWhereToSave) {
+      rv = LaunchWithApplication(shouldAutomaticallyHandleInternally, nullptr);
     } else {
       rv = PromptForSaveDestination();
     }
@@ -2489,7 +2492,9 @@ void nsExternalAppHandler::RequestSaveDestination(
 NS_IMETHODIMP nsExternalAppHandler::PromptForSaveDestination() {
   if (mCanceled) return NS_OK;
 
-  mMimeInfo->SetPreferredAction(nsIMIMEInfo::saveToDisk);
+  if (!StaticPrefs::browser_download_improvements_to_download_panel()) {
+    mMimeInfo->SetPreferredAction(nsIMIMEInfo::saveToDisk);
+  }
 
   if (mSuggestedFileName.IsEmpty()) {
     RequestSaveDestination(mTempLeafName, mTempFileExtension);
@@ -2512,6 +2517,20 @@ nsresult nsExternalAppHandler::ContinueSave(nsIFile* aNewFileLocation) {
   if (mCanceled) return NS_OK;
 
   MOZ_ASSERT(aNewFileLocation, "Must be called with a non-null file");
+
+  int32_t action = nsIMIMEInfo::saveToDisk;
+  mMimeInfo->GetPreferredAction(&action);
+  bool shouldAutomaticallyHandleInternally =
+      action == nsIMIMEInfo::handleInternally &&
+      StaticPrefs::browser_download_improvements_to_download_panel();
+
+  if (StaticPrefs::browser_download_improvements_to_download_panel() &&
+      (action == nsIMIMEInfo::useHelperApp ||
+       action == nsIMIMEInfo::useSystemDefault ||
+       shouldAutomaticallyHandleInternally)) {
+    return LaunchWithApplication(shouldAutomaticallyHandleInternally,
+                                 aNewFileLocation);
+  }
 
   nsresult rv = NS_OK;
   nsCOMPtr<nsIFile> fileToUse = aNewFileLocation;
@@ -2559,7 +2578,7 @@ nsresult nsExternalAppHandler::ContinueSave(nsIFile* aNewFileLocation) {
 
 
 NS_IMETHODIMP nsExternalAppHandler::LaunchWithApplication(
-    bool aHandleInternally) {
+    bool aHandleInternally, nsIFile* aNewFileLocation) {
   if (mCanceled) return NS_OK;
 
   mHandleInternally = aHandleInternally;
@@ -2591,19 +2610,24 @@ NS_IMETHODIMP nsExternalAppHandler::LaunchWithApplication(
   
   
   nsCOMPtr<nsIFile> fileToUse;
-  (void)GetDownloadDirectory(getter_AddRefs(fileToUse));
+  if (aNewFileLocation &&
+      StaticPrefs::browser_download_improvements_to_download_panel()) {
+    fileToUse = aNewFileLocation;
+  } else {
+    (void)GetDownloadDirectory(getter_AddRefs(fileToUse));
 
-  if (mSuggestedFileName.IsEmpty()) {
-    
-    
-    mSuggestedFileName = mTempLeafName;
-  }
+    if (mSuggestedFileName.IsEmpty()) {
+      
+      
+      mSuggestedFileName = mTempLeafName;
+    }
 
 #ifdef XP_WIN
-  fileToUse->Append(mSuggestedFileName + mTempFileExtension);
+    fileToUse->Append(mSuggestedFileName + mTempFileExtension);
 #else
-  fileToUse->Append(mSuggestedFileName);
+    fileToUse->Append(mSuggestedFileName);
 #endif
+  }
 
   nsresult rv = fileToUse->CreateUnique(nsIFile::NORMAL_FILE_TYPE, 0600);
   if (NS_SUCCEEDED(rv)) {
