@@ -9231,8 +9231,13 @@ GeneralParser<ParseHandler, Unit>::orExpr(InHandling inHandling,
   int depth = 0;
   Node pn;
   EnforcedParentheses unparenthesizedExpression = EnforcedParentheses::None;
+  PrivateNameHandling privateNameHandling =
+      cx_->options().ergonomicBrandChecks()
+          ? PrivateNameHandling::PrivateNameAllowed
+          : PrivateNameHandling::PrivateNameProhibited;
   for (;;) {
-    pn = unaryExpr(yieldHandling, tripledotHandling, possibleError, invoked);
+    pn = unaryExpr(yieldHandling, tripledotHandling, possibleError, invoked,
+                   privateNameHandling);
     if (!pn) {
       return null();
     }
@@ -9242,6 +9247,15 @@ GeneralParser<ParseHandler, Unit>::orExpr(InHandling inHandling,
     TokenKind tok;
     if (!tokenStream.getToken(&tok)) {
       return null();
+    }
+
+    
+    
+    if (handler_.isPrivateName(pn)) {
+      if (tok != TokenKind::In || inHandling != InAllowed) {
+        error(JSMSG_ILLEGAL_PRIVATE_NAME);
+        return null();
+      }
     }
 
     ParseNodeKind pnk;
@@ -9284,6 +9298,21 @@ GeneralParser<ParseHandler, Unit>::orExpr(InHandling inHandling,
           
           
           unparenthesizedExpression = EnforcedParentheses::CoalesceExpr;
+          break;
+
+        case TokenKind::In:
+          
+          
+          
+          
+          
+          if (handler_.isPrivateName(pn)) {
+            if (depth > 0 && Precedence(kindStack[depth - 1]) >=
+                                 Precedence(ParseNodeKind::InExpr)) {
+              error(JSMSG_ILLEGAL_PRIVATE_NAME);
+              return null();
+            }
+          }
           break;
 
         default:
@@ -9865,7 +9894,8 @@ template <class ParseHandler, typename Unit>
 typename ParseHandler::Node GeneralParser<ParseHandler, Unit>::unaryExpr(
     YieldHandling yieldHandling, TripledotHandling tripledotHandling,
     PossibleError* possibleError ,
-    InvokedPrediction invoked ) {
+    InvokedPrediction invoked ,
+    PrivateNameHandling privateNameHandling ) {
   AutoCheckRecursionLimit recursion(cx_);
   if (!recursion.check(cx_)) {
     return null();
@@ -9925,6 +9955,14 @@ typename ParseHandler::Node GeneralParser<ParseHandler, Unit>::unaryExpr(
                               : ParseNodeKind::PreDecrementExpr;
       return handler_.newUpdate(pnk, begin, operand);
     }
+    case TokenKind::PrivateName: {
+      if (privateNameHandling == PrivateNameHandling::PrivateNameAllowed) {
+        TaggedParserAtomIndex field = anyChars.currentName();
+        return privateNameReference(field);
+      }
+      error(JSMSG_ILLEGAL_PRIVATE_NAME);
+      return null();
+    }
 
     case TokenKind::Delete: {
       uint32_t exprOffset;
@@ -9956,7 +9994,6 @@ typename ParseHandler::Node GeneralParser<ParseHandler, Unit>::unaryExpr(
 
       return handler_.newDelete(begin, expr);
     }
-
     case TokenKind::Await: {
       
       if (!pc_->isAsync() && pc_->sc()->isModule()) {
