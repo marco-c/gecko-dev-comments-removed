@@ -920,7 +920,7 @@ add_task(async function test_multistage_aboutwelcome_proton() {
     browser,
     "multistage proton step 1",
     
-    ["div.onboardingContainer"],
+    ["div.onboardingContainer", "div.proton[style*='.avif']"],
     
     ["main.AW_STEP2", "main.AW_STEP3"]
   );
