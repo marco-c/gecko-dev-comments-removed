@@ -212,8 +212,9 @@ nsresult nsReadConfig::readConfigFile() {
     
     
 
-    if (PL_strncmp(lockFileName.get(), lockVendor.get(), fileNameLen - 4) != 0)
+    if (strncmp(lockFileName.get(), lockVendor.get(), fileNameLen - 4) != 0) {
       return NS_ERROR_FAILURE;
+    }
   }
 
   
