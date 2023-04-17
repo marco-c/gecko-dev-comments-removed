@@ -944,14 +944,25 @@ HttpObserverManager = {
     requestHeaders,
     responseHeaders
   ) {
+    const { finalURL, id: chanId } = channel;
     let shouldResume = !channel.suspended;
-    let suspenders = [];
-
+    
+    
+    
+    
+    
+    let markerText = "";
+    if (Services.profiler?.IsActive()) {
+      const suspenders = handlerResults
+        .filter(({ result }) => isThenable(result))
+        .map(({ opts }) => opts.addonId)
+        .join(", ");
+      markerText = `${kind} ${finalURL} by ${suspenders} (chanId: ${chanId})`;
+    }
     try {
       for (let { opts, result } of handlerResults) {
         if (isThenable(result)) {
-          suspenders.push(opts.addonId);
-          channel.suspend();
+          channel.suspend(markerText);
           try {
             result = await result;
           } catch (e) {
@@ -986,16 +997,15 @@ HttpObserverManager = {
         }
 
         if (result.cancel) {
-          let text = "";
-          if (Services.profiler?.IsActive()) {
-            text =
-              `${kind} ${channel.finalURL}` +
-              ` by ${suspenders.join(", ")} canceled`;
-          }
-          channel.resume(text);
+          channel.resume();
           channel.cancel(
             Cr.NS_ERROR_ABORT,
             Ci.nsILoadInfo.BLOCKING_REASON_EXTENSION_WEBREQUEST
+          );
+          ChromeUtils.addProfilerMarker(
+            "Extension Canceled",
+            { category: "Network" },
+            `${kind} ${finalURL} canceled by ${opts.addonId} (chanId: ${chanId})`
           );
           if (opts.policy) {
             let properties = channel.channel.QueryInterface(
@@ -1008,15 +1018,14 @@ HttpObserverManager = {
 
         if (result.redirectUrl) {
           try {
-            let text = "";
-            if (Services.profiler?.IsActive()) {
-              text =
-                `${kind} ${channel.finalURL}` +
-                ` by ${suspenders.join(", ")}` +
-                ` redirected to ${result.redirectUrl}`;
-            }
-            channel.resume(text);
-            channel.redirectTo(Services.io.newURI(result.redirectUrl));
+            const { redirectUrl } = result;
+            channel.resume();
+            channel.redirectTo(Services.io.newURI(redirectUrl));
+            ChromeUtils.addProfilerMarker(
+              "Extension Redirected",
+              { category: "Network" },
+              `${kind} ${finalURL} redirected to ${redirectUrl} by ${opts.addonId} (chanId: ${chanId})`
+            );
             if (opts.policy) {
               let properties = channel.channel.QueryInterface(
                 Ci.nsIWritablePropertyBag
@@ -1102,11 +1111,7 @@ HttpObserverManager = {
 
     
     if (shouldResume) {
-      let text = "";
-      if (Services.profiler?.IsActive()) {
-        text = `${kind} ${channel.finalURL} by ${suspenders.join(", ")}`;
-      }
-      channel.resume(text);
+      channel.resume();
     }
   },
 
