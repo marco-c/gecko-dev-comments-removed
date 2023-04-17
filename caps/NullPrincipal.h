@@ -70,7 +70,12 @@ class NullPrincipal final : public BasePrincipal {
   
   
   
-  static already_AddRefed<nsIURI> CreateURI(nsIPrincipal* aPrecursor = nullptr);
+  
+  
+  
+  
+  static already_AddRefed<nsIURI> CreateURI(nsIPrincipal* aPrecursor = nullptr,
+                                            const nsID* aPrincipalID = nullptr);
 
   virtual nsresult GetScriptLocation(nsACString& aStr) override;
 

@@ -304,10 +304,24 @@ nsresult nsScriptSecurityManager::GetChannelResultPrincipal(
   }
 
   if (!aIgnoreSandboxing && loadInfo->GetLoadingSandboxed()) {
-    nsCOMPtr<nsIPrincipal> sandboxedLoadingPrincipal =
-        loadInfo->GetSandboxedLoadingPrincipal();
-    MOZ_ASSERT(sandboxedLoadingPrincipal);
-    sandboxedLoadingPrincipal.forget(aPrincipal);
+    
+    
+    
+    nsCOMPtr<nsIPrincipal> precursor;
+    GetChannelResultPrincipal(aChannel, getter_AddRefs(precursor),
+                               true);
+
+    
+    
+    nsCOMPtr<nsIURI> nullPrincipalURI = NullPrincipal::CreateURI(
+        precursor, &loadInfo->GetSandboxedNullPrincipalID());
+
+    
+    OriginAttributes attrs;
+    loadInfo->GetOriginAttributes(&attrs);
+    nsCOMPtr<nsIPrincipal> sandboxedPrincipal =
+        NullPrincipal::Create(attrs, nullPrincipalURI);
+    sandboxedPrincipal.forget(aPrincipal);
     return NS_OK;
   }
 
