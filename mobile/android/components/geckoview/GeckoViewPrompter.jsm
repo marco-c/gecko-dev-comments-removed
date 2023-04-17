@@ -36,6 +36,8 @@ class GeckoViewPrompter {
         this._domWin,
       ] = GeckoViewUtils.getActiveDispatcherAndWindow();
     }
+
+    this._innerWindowId = this._domWin?.browsingContext.currentWindowContext.innerWindowId;
   }
 
   get domWin() {
@@ -95,6 +97,17 @@ class GeckoViewPrompter {
     return result;
   }
 
+  checkInnerWindow() {
+    
+    
+    
+    
+    return (
+      this._innerWindowId ===
+      this._domWin.browsingContext.currentWindowContext.innerWindowId
+    );
+  }
+
   asyncShowPromptPromise(aMsg) {
     return new Promise(resolve => {
       this.asyncShowPrompt(aMsg, resolve);
@@ -107,7 +120,12 @@ class GeckoViewPrompter {
       if (handled) {
         return;
       }
-      aCallback(response);
+      if (!this.checkInnerWindow()) {
+        
+        aCallback(null);
+      } else {
+        aCallback(response);
+      }
       
       
       
@@ -118,7 +136,7 @@ class GeckoViewPrompter {
       handled = true;
     };
 
-    if (!this._dispatcher) {
+    if (!this._dispatcher || !this.checkInnerWindow()) {
       onResponse(null);
       return;
     }
