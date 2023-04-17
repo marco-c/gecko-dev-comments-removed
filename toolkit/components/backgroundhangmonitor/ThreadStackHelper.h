@@ -83,7 +83,7 @@ class ThreadStackHelper : public ProfilerStackCollector {
   
 
 
-  int GetThreadId() const { return mThreadId; }
+  ProfilerThreadId GetThreadId() const { return mThreadId; }
 
  protected:
   
@@ -101,7 +101,7 @@ class ThreadStackHelper : public ProfilerStackCollector {
   void TryAppendFrame(mozilla::HangEntry aFrame);
 
   
-  int mThreadId;
+  ProfilerThreadId mThreadId;
 };
 
 }  

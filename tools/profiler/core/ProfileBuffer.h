@@ -38,7 +38,7 @@ class ProfileBuffer final {
 
   
   
-  uint64_t AddThreadIdEntry(int aThreadId);
+  uint64_t AddThreadIdEntry(ProfilerThreadId aThreadId);
 
   void CollectCodeLocation(
       const char* aLabel, const char* aStr, uint32_t aFrameFlags,
@@ -52,7 +52,7 @@ class ProfileBuffer final {
   
   
   
-  void AddJITInfoForRange(uint64_t aRangeStart, int aThreadId,
+  void AddJITInfoForRange(uint64_t aRangeStart, ProfilerThreadId aThreadId,
                           JSContext* aContext,
                           JITFrameInfo& aJITFrameInfo) const;
 
@@ -66,10 +66,13 @@ class ProfileBuffer final {
   
   
   
-  int StreamSamplesToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
-                          double aSinceTime, UniqueStacks& aUniqueStacks) const;
+  ProfilerThreadId StreamSamplesToJSON(SpliceableJSONWriter& aWriter,
+                                       ProfilerThreadId aThreadId,
+                                       double aSinceTime,
+                                       UniqueStacks& aUniqueStacks) const;
 
-  void StreamMarkersToJSON(SpliceableJSONWriter& aWriter, int aThreadId,
+  void StreamMarkersToJSON(SpliceableJSONWriter& aWriter,
+                           ProfilerThreadId aThreadId,
                            const mozilla::TimeStamp& aProcessStartTime,
                            double aSinceTime,
                            UniqueStacks& aUniqueStacks) const;
@@ -86,7 +89,7 @@ class ProfileBuffer final {
   
   
   
-  bool DuplicateLastSample(int aThreadId, double aSampleTimeMs,
+  bool DuplicateLastSample(ProfilerThreadId aThreadId, double aSampleTimeMs,
                            mozilla::Maybe<uint64_t>& aLastSample,
                            const RunningTimes& aRunningTimes);
 
@@ -139,7 +142,8 @@ class ProfileBuffer final {
   
   
   static mozilla::ProfileBufferBlockIndex AddThreadIdEntry(
-      mozilla::ProfileChunkedBuffer& aProfileChunkedBuffer, int aThreadId);
+      mozilla::ProfileChunkedBuffer& aProfileChunkedBuffer,
+      ProfilerThreadId aThreadId);
 
   
   mozilla::ProfileChunkedBuffer& mEntries;

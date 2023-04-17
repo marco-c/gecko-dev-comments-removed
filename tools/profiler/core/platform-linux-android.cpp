@@ -78,16 +78,19 @@ ProfilerProcessId profiler_current_process_id() {
   return ProfilerProcessId::FromNumber(getpid());
 }
 
-int profiler_current_thread_id() {
+ProfilerThreadId profiler_current_thread_id() {
 #if defined(GP_OS_linux)
   
-  return static_cast<int>(static_cast<pid_t>(syscall(SYS_gettid)));
+  return ProfilerThreadId::FromNumber(
+      static_cast<ProfilerThreadId::NumberType>(syscall(SYS_gettid)));
 #elif defined(GP_OS_android)
-  return gettid();
+  return ProfilerThreadId::FromNumber(
+      static_cast<ProfilerThreadId::NumberType>(gettid()));
 #elif defined(GP_OS_freebsd)
   long id;
   (void)thr_self(&id);
-  return static_cast<int>(id);
+  return ProfilerThreadId::FromNumber(
+      static_cast<ProfilerThreadId::NumberType>(id));
 #else
 #  error "bad platform"
 #endif
@@ -156,7 +159,7 @@ int tgkill(pid_t tgid, pid_t tid, int signalno) {
 
 class PlatformData {
  public:
-  explicit PlatformData(int aThreadId) {
+  explicit PlatformData(ProfilerThreadId aThreadId) {
     MOZ_ASSERT(aThreadId == profiler_current_thread_id());
     MOZ_COUNT_CTOR(PlatformData);
     if (clockid_t clockid;
@@ -293,12 +296,11 @@ static void SigprofHandler(int aSignal, siginfo_t* aInfo, void* aContext) {
 }
 
 Sampler::Sampler(PSLockRef aLock)
-    : mMyPid(profiler_current_process_id())
+    : mMyPid(profiler_current_process_id()),
       
       
       
-      ,
-      mSamplerTid(-1) {
+      mSamplerTid{} {
 #if defined(USE_EHABI_STACKWALK)
   mozilla::EHABIStackWalkInit();
 #endif
@@ -376,10 +378,10 @@ void Sampler::SuspendAndSampleAndResumeThread(
   
   MOZ_ASSERT(!sSigHandlerCoordinator);
 
-  if (mSamplerTid == -1) {
+  if (!mSamplerTid.IsSpecified()) {
     mSamplerTid = profiler_current_thread_id();
   }
-  int sampleeTid = aRegisteredThread.Info()->ThreadId();
+  ProfilerThreadId sampleeTid = aRegisteredThread.Info()->ThreadId();
   MOZ_RELEASE_ASSERT(sampleeTid != mSamplerTid);
 
   
@@ -391,7 +393,7 @@ void Sampler::SuspendAndSampleAndResumeThread(
   
   
   
-  int r = tgkill(mMyPid.ToNumber(), sampleeTid, SIGPROF);
+  int r = tgkill(mMyPid.ToNumber(), sampleeTid.ToNumber(), SIGPROF);
   if (r == 0) {
     
     

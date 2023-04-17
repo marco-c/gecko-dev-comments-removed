@@ -33,8 +33,8 @@ class AudioThreadRegistry final {
 
   
   
-  void Register(int aThreadId) {
-    if (aThreadId == 0) {
+  void Register(ProfilerThreadId aThreadId) {
+    if (!aThreadId.IsSpecified()) {
       
       return;
     }
@@ -54,8 +54,8 @@ class AudioThreadRegistry final {
   }
 
   
-  void Unregister(int aThreadId) {
-    if (aThreadId == 0) {
+  void Unregister(ProfilerThreadId aThreadId) {
+    if (!aThreadId.IsSpecified()) {
       
       return;
     }
@@ -83,7 +83,7 @@ class AudioThreadRegistry final {
   AudioThreadRegistry& operator=(AudioThreadRegistry&&) = delete;
 
   struct ThreadUserCount {
-    int mId;  
+    ProfilerThreadId mId;  
     int mUserCount;
   };
   DataMutex<nsTArray<ThreadUserCount>> mThreadIds;

@@ -744,7 +744,7 @@ class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
 
   AudioMixer mMixer;
   
-  std::atomic<int> mAudioThreadId;
+  std::atomic<ProfilerThreadId> mAudioThreadId;
   
 
 

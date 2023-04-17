@@ -282,11 +282,6 @@ class MarkerThreadId {
       : mThreadId(aThreadId) {}
 
   
-  
-  constexpr explicit MarkerThreadId(int aThreadId)
-      : mThreadId(baseprofiler::BaseProfilerThreadId::FromNumber(aThreadId)) {}
-
-  
   static MarkerThreadId CurrentThread() {
     return MarkerThreadId(baseprofiler::profiler_current_thread_id());
   }

@@ -20,8 +20,12 @@ using ProfilerThreadId = mozilla::baseprofiler::BaseProfilerThreadId;
 [[nodiscard]] inline ProfilerProcessId profiler_current_process_id() {
   return ProfilerProcessId{};
 }
-[[nodiscard]] inline int profiler_current_thread_id() { return 0; }
-[[nodiscard]] inline int profiler_main_thread_id() { return 0; }
+[[nodiscard]] inline ProfilerThreadId profiler_current_thread_id() {
+  return ProfilerThreadId{};
+}
+[[nodiscard]] inline ProfilerThreadId profiler_main_thread_id() {
+  return ProfilerThreadId{};
+}
 [[nodiscard]] inline bool profiler_is_main_thread() { return false; }
 
 #else  
@@ -30,15 +34,15 @@ using ProfilerThreadId = mozilla::baseprofiler::BaseProfilerThreadId;
 [[nodiscard]] ProfilerProcessId profiler_current_process_id();
 
 
-[[nodiscard]] int profiler_current_thread_id();
+[[nodiscard]] ProfilerThreadId profiler_current_thread_id();
 
 namespace mozilla::profiler::detail {
 
 
-extern int scProfilerMainThreadId;
+extern ProfilerThreadId scProfilerMainThreadId;
 }  
 
-[[nodiscard]] inline int profiler_main_thread_id() {
+[[nodiscard]] inline ProfilerThreadId profiler_main_thread_id() {
   return mozilla::profiler::detail::scProfilerMainThreadId;
 }
 

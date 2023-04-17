@@ -27,7 +27,7 @@ class ProfilingStackOwner;
 
 class RacyRegisteredThread final {
  public:
-  explicit RacyRegisteredThread(int aThreadId);
+  explicit RacyRegisteredThread(ProfilerThreadId aThreadId);
 
   MOZ_COUNTED_DTOR(RacyRegisteredThread)
 
@@ -76,7 +76,7 @@ class RacyRegisteredThread final {
 
   bool IsSleeping() { return mSleep != AWAKE; }
 
-  int ThreadId() const { return mThreadId; }
+  ProfilerThreadId ThreadId() const { return mThreadId; }
 
   class ProfilingStack& ProfilingStack() {
     return mProfilingStackOwner->ProfilingStack();
@@ -94,7 +94,7 @@ class RacyRegisteredThread final {
 
   
   
-  const int mThreadId;
+  const ProfilerThreadId mThreadId;
 
   
   

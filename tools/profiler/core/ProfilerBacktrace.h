@@ -73,9 +73,9 @@ class ProfilerBacktrace {
   
   
   
-  int StreamJSON(mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
-                 const mozilla::TimeStamp& aProcessStartTime,
-                 UniqueStacks& aUniqueStacks);
+  ProfilerThreadId StreamJSON(
+      mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
+      const mozilla::TimeStamp& aProcessStartTime, UniqueStacks& aUniqueStacks);
 
  private:
   

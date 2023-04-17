@@ -13,6 +13,7 @@
 #  include "mozilla/Atomics.h"
 #  include "mozilla/Monitor.h"
 #  include "mozilla/MozPromise.h"
+#  include "mozilla/ProfilerUtils.h"
 #  include "mozilla/RefPtr.h"
 #  include "mozilla/Result.h"
 #  include "mozilla/TimeStamp.h"
@@ -331,7 +332,7 @@ class AudioStream final {
   
   RefPtr<AudioDeviceInfo> mSinkInfo;
   
-  std::atomic<int> mAudioThreadId;
+  std::atomic<ProfilerThreadId> mAudioThreadId;
   const bool mSandboxed = false;
 
   MozPromiseHolder<MediaSink::EndedPromise> mEndedPromise;

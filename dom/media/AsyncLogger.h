@@ -58,7 +58,7 @@ class AsyncLogger {
     
     uint32_t mDurationUs;
     
-    int mTID;
+    ProfilerThreadId mTID;
     
     
     

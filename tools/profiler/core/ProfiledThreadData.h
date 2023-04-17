@@ -128,8 +128,8 @@ class ProfiledThreadData final {
 
 
 
-int StreamSamplesAndMarkers(
-    const char* aName, int aThreadId, const ProfileBuffer& aBuffer,
+ProfilerThreadId StreamSamplesAndMarkers(
+    const char* aName, ProfilerThreadId aThreadId, const ProfileBuffer& aBuffer,
     mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
     const nsACString& aProcessName, const nsACString& aETLDplus1,
     const mozilla::TimeStamp& aProcessStartTime,
