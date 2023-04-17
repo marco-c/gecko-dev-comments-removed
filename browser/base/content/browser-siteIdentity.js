@@ -1170,9 +1170,6 @@ var gIdentityHandler = {
     this.refreshIdentityPopup();
 
     
-    this._identityIconBox.setAttribute("open", "true");
-
-    
     let openPanels = Array.from(document.querySelectorAll("panel[openpanel]"));
     for (let panel of openPanels) {
       PanelMultiView.hidePopup(panel);
@@ -1195,7 +1192,6 @@ var gIdentityHandler = {
   onPopupHidden(event) {
     if (event.target == this._identityPopup) {
       window.removeEventListener("focus", this, true);
-      this._identityIconBox.removeAttribute("open");
     }
   },
 
