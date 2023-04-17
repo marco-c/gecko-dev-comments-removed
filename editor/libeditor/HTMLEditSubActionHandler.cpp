@@ -5916,9 +5916,19 @@ void HTMLEditor::SelectBRElementIfCollapsedInEmptyBlock(
     return;
   }
 
-  Element* blockElement = HTMLEditUtils::GetInclusiveAncestorBlockElement(
-      *aStartRef.Container()->AsContent());
-  if (!blockElement) {
+  
+  
+  
+  
+  
+  
+  
+  
+  const Element* const maybeNonEditableBlockElement =
+      HTMLEditUtils::GetInclusiveAncestorElement(
+          *aStartRef.Container()->AsContent(),
+          HTMLEditUtils::ClosestBlockElement);
+  if (!maybeNonEditableBlockElement) {
     return;
   }
 
@@ -5928,13 +5938,14 @@ void HTMLEditor::SelectBRElementIfCollapsedInEmptyBlock(
   }
 
   
-  if (editingHost->IsInclusiveDescendantOf(blockElement)) {
+  if (editingHost->IsInclusiveDescendantOf(maybeNonEditableBlockElement)) {
     return;
   }
 
-  if (HTMLEditUtils::IsEmptyNode(*blockElement)) {
-    aStartRef = {blockElement, 0u};
-    aEndRef = {blockElement, blockElement->Length()};
+  if (HTMLEditUtils::IsEmptyNode(*maybeNonEditableBlockElement)) {
+    aStartRef = {const_cast<Element*>(maybeNonEditableBlockElement), 0u};
+    aEndRef = {const_cast<Element*>(maybeNonEditableBlockElement),
+               maybeNonEditableBlockElement->Length()};
   }
 }
 
