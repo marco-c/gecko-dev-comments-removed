@@ -5919,8 +5919,11 @@ void nsWindow::ResumeCompositorHiddenWindow() {
 
 
 void nsWindow::PauseCompositorHiddenWindow() {
-  if (!mIsAccelerated || mIsDestroyed ||
-      mCompositorState == COMPOSITOR_PAUSED_INITIALLY) {
+  
+  
+  
+  if ((!mIsAccelerated && !gfx::gfxVars::UseWebRenderCompositor()) ||
+      mIsDestroyed || mCompositorState == COMPOSITOR_PAUSED_INITIALLY) {
     return;
   }
 
