@@ -198,7 +198,8 @@ PerHandlerParser<ParseHandler>::PerHandlerParser(
     JSContext* cx, const ReadOnlyCompileOptions& options, bool foldConstants,
     CompilationState& compilationState, void* internalSyntaxParser)
     : ParserBase(cx, options, foldConstants, compilationState),
-      handler_(cx, compilationState),
+      handler_(cx, compilationState.parserAllocScope.alloc(),
+               compilationState.input.lazyOuterScript()),
       internalSyntaxParser_(internalSyntaxParser) {
   MOZ_ASSERT(compilationState.isInitialStencil() ==
              compilationState.input.isInitialStencil());
@@ -292,44 +293,6 @@ FunctionBox* PerHandlerParser<ParseHandler>::newFunctionBox(
   }
 
   handler_.setFunctionBox(funNode, funbox);
-
-  return funbox;
-}
-
-template <class ParseHandler>
-FunctionBox* PerHandlerParser<ParseHandler>::newFunctionBox(
-    FunctionNodeType funNode, const ScriptStencil& cachedScriptData,
-    const ScriptStencilExtra& cachedScriptExtra) {
-  MOZ_ASSERT(funNode);
-
-  ScriptIndex index = ScriptIndex(compilationState_.scriptData.length());
-  if (uint32_t(index) >= TaggedScriptThingIndex::IndexLimit) {
-    ReportAllocationOverflow(cx_);
-    return nullptr;
-  }
-  if (!compilationState_.appendScriptStencilAndData(cx_)) {
-    return nullptr;
-  }
-
-  
-
-
-
-
-
-
-  FunctionBox* funbox = alloc_.new_<FunctionBox>(
-      cx_, cachedScriptExtra.extent, compilationState_,
-      Directives( false), cachedScriptExtra.generatorKind(),
-      cachedScriptExtra.asyncKind(), compilationState_.isInitialStencil(),
-      cachedScriptData.functionAtom, cachedScriptData.functionFlags, index);
-  if (!funbox) {
-    ReportOutOfMemory(cx_);
-    return nullptr;
-  }
-
-  handler_.setFunctionBox(funNode, funbox);
-  funbox->initFromScriptStencilExtra(cachedScriptExtra);
 
   return funbox;
 }
@@ -907,14 +870,22 @@ bool PerHandlerParser<ParseHandler>::
     return false;
   }
 
-  if (handler_.reuseClosedOverBindings()) {
+  if (handler_.canSkipLazyClosedOverBindings()) {
     MOZ_ASSERT(pc_->isOutermostOfCurrentCompile());
 
     
     
-    
     uint32_t slotCount = scope.declaredCount();
-    while (auto parserAtom = handler_.nextLazyClosedOverBinding()) {
+    while (JSAtom* name = handler_.nextLazyClosedOverBinding()) {
+      
+      
+      
+      auto parserAtom = this->parserAtoms().internJSAtom(
+          cx_, this->getCompilationState().input.atomCache, name);
+      if (!parserAtom) {
+        return false;
+      }
+
       scope.lookupDeclaredName(parserAtom)->value()->setClosedOver();
       MOZ_ASSERT(slotCount > 0);
       slotCount--;
@@ -2490,7 +2461,8 @@ GeneralParser<ParseHandler, Unit>::functionBody(InHandling inHandling,
   
   
   if (kind != FunctionSyntaxKind::Arrow) {
-    bool canSkipLazyClosedOverBindings = handler_.reuseClosedOverBindings();
+    bool canSkipLazyClosedOverBindings =
+        handler_.canSkipLazyClosedOverBindings();
     if (!pc_->declareFunctionArgumentsObject(usedNames_,
                                              canSkipLazyClosedOverBindings)) {
       return null();
@@ -2935,17 +2907,28 @@ bool Parser<FullParseHandler, Unit>::skipLazyInnerFunction(
   
 
   MOZ_ASSERT(pc_->isOutermostOfCurrentCompile());
-  handler_.nextLazyInnerFunction();
-  const ScriptStencil& cachedData = handler_.cachedScriptData();
-  const ScriptStencilExtra& cachedExtra = handler_.cachedScriptExtra();
-  MOZ_ASSERT(toStringStart == cachedExtra.extent.toStringStart);
 
-  FunctionBox* funbox = newFunctionBox(funNode, cachedData, cachedExtra);
+  RootedFunction fun(cx_, handler_.nextLazyInnerFunction());
+
+  
+  TaggedParserAtomIndex displayAtom;
+  if (fun->displayAtom()) {
+    displayAtom = this->parserAtoms().internJSAtom(
+        cx_, this->compilationState_.input.atomCache, fun->displayAtom());
+    if (!displayAtom) {
+      return false;
+    }
+  }
+
+  FunctionBox* funbox = newFunctionBox(
+      funNode, displayAtom, fun->flags(), toStringStart,
+      Directives( false), fun->generatorKind(), fun->asyncKind());
   if (!funbox) {
     return false;
   }
 
   ScriptStencil& script = funbox->functionStencil();
+  funbox->initFromLazyFunctionToSkip(fun);
   funbox->copyFunctionFields(script);
 
   
@@ -2959,6 +2942,11 @@ bool Parser<FullParseHandler, Unit>::skipLazyInnerFunction(
 
   MOZ_ASSERT_IF(pc_->isFunctionBox(),
                 pc_->functionBox()->index() < funbox->index());
+
+  
+  
+  
+  MOZ_ASSERT(fun->baseScript()->hasEnclosingScript());
 
   PropagateTransitiveParseFlags(funbox, pc_->sc());
 
@@ -3084,7 +3072,7 @@ GeneralParser<ParseHandler, Unit>::functionDefinition(
   
   
   
-  if (handler_.reuseLazyInnerFunctions()) {
+  if (handler_.canSkipLazyInnerFunctions()) {
     if (!skipLazyInnerFunction(funNode, toStringStart, tryAnnexB)) {
       return null();
     }
@@ -8113,7 +8101,7 @@ GeneralParser<ParseHandler, Unit>::synthesizeConstructor(
   
   
   
-  if (handler_.reuseLazyInnerFunctions()) {
+  if (handler_.canSkipLazyInnerFunctions()) {
     if (!skipLazyInnerFunction(funNode, synthesizedBodyPos.begin,
                                 false)) {
       return null();
@@ -8203,7 +8191,7 @@ GeneralParser<ParseHandler, Unit>::synthesizeConstructorBody(
     return null();
   }
 
-  bool canSkipLazyClosedOverBindings = handler_.reuseClosedOverBindings();
+  bool canSkipLazyClosedOverBindings = handler_.canSkipLazyClosedOverBindings();
   if (!pc_->declareFunctionThis(usedNames_, canSkipLazyClosedOverBindings)) {
     return null();
   }
@@ -8339,7 +8327,7 @@ GeneralParser<ParseHandler, Unit>::privateMethodInitializer(
     return null();
   }
 
-  bool canSkipLazyClosedOverBindings = handler_.reuseClosedOverBindings();
+  bool canSkipLazyClosedOverBindings = handler_.canSkipLazyClosedOverBindings();
   if (!pc_->declareFunctionThis(usedNames_, canSkipLazyClosedOverBindings)) {
     return null();
   }
@@ -8679,7 +8667,7 @@ GeneralParser<ParseHandler, Unit>::fieldInitializerOpt(
     return null();
   }
 
-  bool canSkipLazyClosedOverBindings = handler_.reuseClosedOverBindings();
+  bool canSkipLazyClosedOverBindings = handler_.canSkipLazyClosedOverBindings();
   if (!pc_->declareFunctionThis(usedNames_, canSkipLazyClosedOverBindings)) {
     return null();
   }
@@ -10941,7 +10929,7 @@ RegExpLiteral* Parser<FullParseHandler, Unit>::newRegExp() {
   uint32_t line, column;
   tokenStream.computeLineAndColumn(offset, &line, &column);
 
-  if (!handler_.reuseRegexpSyntaxParse()) {
+  if (!handler_.canSkipRegexpSyntaxParse()) {
     
     
     

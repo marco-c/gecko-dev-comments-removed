@@ -53,7 +53,6 @@ struct CompilationInput;
 struct CompilationStencil;
 struct CompilationGCOutput;
 class ScriptStencilIterable;
-class ParserAtomsTable;
 
 
 
@@ -356,10 +355,6 @@ struct CompilationInput {
   
   bool isInitialStencil() { return !lazy_; }
 
-  
-  
-  bool isDelazifying() { return target == CompilationTarget::Delazification; }
-
   void trace(JSTracer* trc);
 
   
@@ -370,83 +365,6 @@ struct CompilationInput {
   size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
     return mallocSizeOf(this) + sizeOfExcludingThis(mallocSizeOf);
   }
-};
-
-
-
-
-
-
-class CompilationSyntaxParseCache {
-  
-  
-  
-  
-  mozilla::Span<TaggedScriptThingIndex> cachedGCThings_;
-
-  
-  
-  
-  
-  
-  mozilla::Span<ScriptStencil> cachedScriptData_;
-  mozilla::Span<ScriptStencilExtra> cachedScriptExtra_;
-
-  
-  
-  
-  mozilla::Span<TaggedParserAtomIndex> closedOverBindings_;
-
-#ifdef DEBUG
-  
-  bool isInitialized = false;
-#endif
-
- public:
-  
-  
-  
-  
-  mozilla::Span<TaggedParserAtomIndex> closedOverBindings() const {
-    MOZ_ASSERT(isInitialized);
-    return closedOverBindings_;
-  }
-  const ScriptStencil& scriptData(size_t functionIndex) const {
-    return cachedScriptData_[scriptIndex(functionIndex)];
-  }
-  const ScriptStencilExtra& scriptExtra(size_t functionIndex) const {
-    return cachedScriptExtra_[scriptIndex(functionIndex)];
-  }
-
-  
-  
-  [[nodiscard]] bool init(JSContext* cx, LifoAlloc& alloc,
-                          ParserAtomsTable& parseAtoms,
-                          CompilationAtomCache& atomCache, BaseScript* lazy);
-
- private:
-  
-  
-  
-  
-  
-  
-  
-  ScriptIndex scriptIndex(size_t functionIndex) const {
-    MOZ_ASSERT(isInitialized);
-    auto taggedScriptIndex = cachedGCThings_[functionIndex];
-    MOZ_ASSERT(taggedScriptIndex.isFunction());
-    return taggedScriptIndex.toFunction();
-  }
-
-  [[nodiscard]] bool copyScriptInfo(JSContext* cx, LifoAlloc& alloc,
-                                    ParserAtomsTable& parseAtoms,
-                                    CompilationAtomCache& atomCache,
-                                    BaseScript* lazy);
-  [[nodiscard]] bool copyClosedOverBindings(JSContext* cx, LifoAlloc& alloc,
-                                            ParserAtomsTable& parseAtoms,
-                                            CompilationAtomCache& atomCache,
-                                            BaseScript* lazy);
 };
 
 
@@ -902,7 +820,6 @@ struct MOZ_RAII CompilationState : public ExtensibleCompilationStencil {
   LifoAllocScope& parserAllocScope;
 
   CompilationInput& input;
-  CompilationSyntaxParseCache previousParseCache;
 
   
   
@@ -918,20 +835,7 @@ struct MOZ_RAII CompilationState : public ExtensibleCompilationStencil {
 
   bool init(JSContext* cx, InheritThis inheritThis = InheritThis::No,
             JSObject* enclosingEnv = nullptr) {
-    if (!scopeContext.init(cx, input, parserAtoms, inheritThis, enclosingEnv)) {
-      return false;
-    }
-
-    
-    if (input.isDelazifying()) {
-      BaseScript* lazy = input.lazyOuterScript();
-      auto& atomCache = input.atomCache;
-      if (!previousParseCache.init(cx, alloc, parserAtoms, atomCache, lazy)) {
-        return false;
-      }
-    }
-
-    return true;
+    return scopeContext.init(cx, input, parserAtoms, inheritThis, enclosingEnv);
   }
 
   

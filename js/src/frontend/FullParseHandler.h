@@ -13,7 +13,6 @@
 #include <cstddef>  
 #include <string.h>
 
-#include "frontend/CompilationStencil.h"  
 #include "frontend/FunctionSyntaxKind.h"  
 #include "frontend/NameAnalysisTypes.h"   
 #include "frontend/ParseNode.h"
@@ -40,25 +39,21 @@ class FullParseHandler {
   }
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  const CompilationSyntaxParseCache& previousParseCache_;
 
+
+
+
+
+
+
+
+
+
+
+  const Rooted<BaseScript*> lazyOuterFunction_;
   size_t lazyInnerFunctionIndex;
-  size_t lazyClosedOverBindingIndex;
 
-  bool reuseGCThings;
+  size_t lazyClosedOverBindingIndex;
 
  public:
   
@@ -105,12 +100,27 @@ class FullParseHandler {
                                   node->isKind(ParseNodeKind::ArrayExpr));
   }
 
-  FullParseHandler(JSContext* cx, CompilationState& compilationState)
-      : allocator(cx, compilationState.allocScope.alloc()),
-        previousParseCache_(compilationState.previousParseCache),
+  FullParseHandler(JSContext* cx, LifoAlloc& alloc,
+                   BaseScript* lazyOuterFunction)
+      : allocator(cx, alloc),
+        lazyOuterFunction_(cx, lazyOuterFunction),
         lazyInnerFunctionIndex(0),
-        lazyClosedOverBindingIndex(0),
-        reuseGCThings(compilationState.input.isDelazifying()) {}
+        lazyClosedOverBindingIndex(0) {
+    
+    
+    
+    
+    
+    if (lazyOuterFunction) {
+      for (JS::GCCellPtr gcThing : lazyOuterFunction->gcthings()) {
+        if (gcThing.is<JSObject>()) {
+          lazyClosedOverBindingIndex++;
+        } else {
+          break;
+        }
+      }
+    }
+  }
 
   static NullNode null() { return NullNode(); }
 
@@ -1078,30 +1088,27 @@ class FullParseHandler {
     return TaggedParserAtomIndex::null();
   }
 
-  bool reuseLazyInnerFunctions() { return reuseGCThings; }
-  bool reuseClosedOverBindings() { return reuseGCThings; }
-  bool reuseRegexpSyntaxParse() { return reuseGCThings; }
-  void nextLazyInnerFunction() { lazyInnerFunctionIndex++; }
-  TaggedParserAtomIndex nextLazyClosedOverBinding() {
+  bool canSkipLazyInnerFunctions() { return !!lazyOuterFunction_; }
+  bool canSkipLazyClosedOverBindings() { return !!lazyOuterFunction_; }
+  bool canSkipRegexpSyntaxParse() { return !!lazyOuterFunction_; }
+  JSFunction* nextLazyInnerFunction() {
+    return &lazyOuterFunction_->gcthings()[lazyInnerFunctionIndex++]
+                .as<JSObject>()
+                .as<JSFunction>();
+  }
+  JSAtom* nextLazyClosedOverBinding() {
+    auto gcthings = lazyOuterFunction_->gcthings();
+
     
-    auto closedOverBindings = previousParseCache_.closedOverBindings();
-    if (lazyClosedOverBindingIndex >= closedOverBindings.Length()) {
-      return TaggedParserAtomIndex::null();
+    if (lazyClosedOverBindingIndex >= gcthings.Length()) {
+      return nullptr;
     }
 
-    return closedOverBindings[lazyClosedOverBindingIndex++];
-  }
-  const ScriptStencil& cachedScriptData() const {
     
     
-    
-    return previousParseCache_.scriptData(lazyInnerFunctionIndex - 1);
-  }
-  const ScriptStencilExtra& cachedScriptExtra() const {
-    
-    
-    
-    return previousParseCache_.scriptExtra(lazyInnerFunctionIndex - 1);
+    gc::Cell* cell = gcthings[lazyClosedOverBindingIndex++].asCell();
+    MOZ_ASSERT_IF(cell, cell->as<JSString>()->isAtom());
+    return static_cast<JSAtom*>(cell);
   }
 
   void setPrivateNameKind(Node node, PrivateNameKind kind) {
