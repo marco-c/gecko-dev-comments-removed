@@ -30,8 +30,8 @@ class nsInputStreamPump final : public nsIInputStreamPump,
   ~nsInputStreamPump() = default;
 
  public:
-  using RecursiveMutexAutoLock = mozilla::RecursiveMutexAutoLock;
-  using RecursiveMutexAutoUnlock = mozilla::RecursiveMutexAutoUnlock;
+  typedef mozilla::RecursiveMutexAutoLock RecursiveMutexAutoLock;
+  typedef mozilla::RecursiveMutexAutoUnlock RecursiveMutexAutoUnlock;
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIREQUEST
   NS_DECL_NSIINPUTSTREAMPUMP
@@ -46,7 +46,8 @@ class nsInputStreamPump final : public nsIInputStreamPump,
                          bool closeWhenDone = false,
                          nsIEventTarget* mainThreadTarget = nullptr);
 
-  using PeekSegmentFun = void (*)(void*, const uint8_t*, uint32_t);
+  typedef void (*PeekSegmentFun)(void* closure, const uint8_t* buf,
+                                 uint32_t bufLen);
   
 
 

@@ -91,7 +91,7 @@ class ASpdySession : public nsAHttpTransaction {
   virtual bool CanAcceptWebsocket() = 0;
 };
 
-using ALPNCallback = bool (*)(nsISupports*);  
+typedef bool (*ALPNCallback)(nsISupports*);  
 
 
 
@@ -111,14 +111,14 @@ class SpdyInformation {
   
   bool ProtocolEnabled(uint32_t index) const;
 
-  SpdyVersion Version[kCount]{};    
+  SpdyVersion Version[kCount];      
   nsCString VersionString[kCount];  
 
   
   
   
   
-  ALPNCallback ALPNCallbacks[kCount]{};
+  ALPNCallback ALPNCallbacks[kCount];
 };
 
 }  

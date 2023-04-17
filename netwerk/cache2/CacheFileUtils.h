@@ -104,8 +104,8 @@ class DetailedCacheHitTelemetry {
     void Reset();
 
    private:
-    uint32_t mHitCnt = 0;
-    uint32_t mMissCnt = 0;
+    uint32_t mHitCnt;
+    uint32_t mMissCnt;
   };
 
   

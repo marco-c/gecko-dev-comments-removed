@@ -215,27 +215,27 @@ class nsStandardURL : public nsIFileURL,
   char* AppendToSubstring(uint32_t pos, int32_t len, const char* tail);
 
   
-  nsDependentCSubstring Segment(uint32_t pos, int32_t len);  
-  nsDependentCSubstring Segment(const URLSegment& s) {
+  const nsDependentCSubstring Segment(uint32_t pos, int32_t len);  
+  const nsDependentCSubstring Segment(const URLSegment& s) {
     return Segment(s.mPos, s.mLen);
   }
 
   
-  nsDependentCSubstring Prepath();  
-  nsDependentCSubstring Scheme() { return Segment(mScheme); }
-  nsDependentCSubstring Userpass(bool includeDelim = false);  
-  nsDependentCSubstring Username() { return Segment(mUsername); }
-  nsDependentCSubstring Password() { return Segment(mPassword); }
-  nsDependentCSubstring Hostport();  
-  nsDependentCSubstring Host();      
-  nsDependentCSubstring Path() { return Segment(mPath); }
-  nsDependentCSubstring Filepath() { return Segment(mFilepath); }
-  nsDependentCSubstring Directory() { return Segment(mDirectory); }
-  nsDependentCSubstring Filename();  
-  nsDependentCSubstring Basename() { return Segment(mBasename); }
-  nsDependentCSubstring Extension() { return Segment(mExtension); }
-  nsDependentCSubstring Query() { return Segment(mQuery); }
-  nsDependentCSubstring Ref() { return Segment(mRef); }
+  const nsDependentCSubstring Prepath();  
+  const nsDependentCSubstring Scheme() { return Segment(mScheme); }
+  const nsDependentCSubstring Userpass(bool includeDelim = false);  
+  const nsDependentCSubstring Username() { return Segment(mUsername); }
+  const nsDependentCSubstring Password() { return Segment(mPassword); }
+  const nsDependentCSubstring Hostport();  
+  const nsDependentCSubstring Host();      
+  const nsDependentCSubstring Path() { return Segment(mPath); }
+  const nsDependentCSubstring Filepath() { return Segment(mFilepath); }
+  const nsDependentCSubstring Directory() { return Segment(mDirectory); }
+  const nsDependentCSubstring Filename();  
+  const nsDependentCSubstring Basename() { return Segment(mBasename); }
+  const nsDependentCSubstring Extension() { return Segment(mExtension); }
+  const nsDependentCSubstring Query() { return Segment(mQuery); }
+  const nsDependentCSubstring Ref() { return Segment(mRef); }
 
   
   void ShiftFromAuthority(int32_t diff);
@@ -476,7 +476,8 @@ class nsStandardURL : public nsIFileURL,
 
 
 
-inline nsDependentCSubstring nsStandardURL::Segment(uint32_t pos, int32_t len) {
+inline const nsDependentCSubstring nsStandardURL::Segment(uint32_t pos,
+                                                          int32_t len) {
   if (len < 0) {
     pos = 0;
     len = 0;
@@ -484,13 +485,13 @@ inline nsDependentCSubstring nsStandardURL::Segment(uint32_t pos, int32_t len) {
   return Substring(mSpec, pos, uint32_t(len));
 }
 
-inline nsDependentCSubstring nsStandardURL::Prepath() {
+inline const nsDependentCSubstring nsStandardURL::Prepath() {
   uint32_t len = 0;
   if (mAuthority.mLen >= 0) len = mAuthority.mPos + mAuthority.mLen;
   return Substring(mSpec, 0, len);
 }
 
-inline nsDependentCSubstring nsStandardURL::Userpass(bool includeDelim) {
+inline const nsDependentCSubstring nsStandardURL::Userpass(bool includeDelim) {
   uint32_t pos = 0, len = 0;
   if (mUsername.mLen > 0 || mPassword.mLen > 0) {
     if (mUsername.mLen > 0) {
@@ -509,7 +510,7 @@ inline nsDependentCSubstring nsStandardURL::Userpass(bool includeDelim) {
   return Substring(mSpec, pos, len);
 }
 
-inline nsDependentCSubstring nsStandardURL::Hostport() {
+inline const nsDependentCSubstring nsStandardURL::Hostport() {
   uint32_t pos = 0, len = 0;
   if (mAuthority.mLen > 0) {
     pos = mHost.mPos;
@@ -518,7 +519,7 @@ inline nsDependentCSubstring nsStandardURL::Hostport() {
   return Substring(mSpec, pos, len);
 }
 
-inline nsDependentCSubstring nsStandardURL::Host() {
+inline const nsDependentCSubstring nsStandardURL::Host() {
   uint32_t pos = 0, len = 0;
   if (mHost.mLen > 0) {
     pos = mHost.mPos;
@@ -531,7 +532,7 @@ inline nsDependentCSubstring nsStandardURL::Host() {
   return Substring(mSpec, pos, len);
 }
 
-inline nsDependentCSubstring nsStandardURL::Filename() {
+inline const nsDependentCSubstring nsStandardURL::Filename() {
   uint32_t pos = 0, len = 0;
   
   if (mBasename.mLen > 0) {

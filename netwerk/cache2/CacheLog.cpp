@@ -4,7 +4,8 @@
 
 #include "CacheLog.h"
 
-namespace mozilla::net {
+namespace mozilla {
+namespace net {
 
 
 
@@ -17,4 +18,5 @@ namespace mozilla::net {
 
 LazyLogModule gCache2Log("cache2");
 
+}  
 }  

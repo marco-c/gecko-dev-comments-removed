@@ -21,7 +21,7 @@ namespace net {
 
 
 
-using TCacheEntryTable = nsRefPtrHashtable<nsCStringHashKey, CacheEntry>;
+typedef nsRefPtrHashtable<nsCStringHashKey, CacheEntry> TCacheEntryTable;
 class CacheEntryTable : public TCacheEntryTable {
  public:
   enum EType { MEMORY_ONLY, ALL_ENTRIES };

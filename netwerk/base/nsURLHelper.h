@@ -68,7 +68,7 @@ void net_CoalesceDirs(netCoalesceFlags flags, char* path);
 
 
 
-bool net_IsAbsoluteURL(const nsACString& uri);
+bool net_IsAbsoluteURL(const nsACString& inURL);
 
 
 
@@ -137,7 +137,7 @@ void net_ToLowerCase(char* str);
 
 
 
-char* net_FindCharInSet(const char* iter, const char* stop, const char* set);
+char* net_FindCharInSet(const char* str, const char* end, const char* set);
 
 
 
@@ -145,14 +145,13 @@ char* net_FindCharInSet(const char* iter, const char* stop, const char* set);
 
 
 
-char* net_FindCharNotInSet(const char* iter, const char* stop, const char* set);
+char* net_FindCharNotInSet(const char* str, const char* end, const char* set);
 
 
 
 
 
-char* net_RFindCharNotInSet(const char* stop, const char* iter,
-                            const char* set);
+char* net_RFindCharNotInSet(const char* str, const char* end, const char* set);
 
 
 

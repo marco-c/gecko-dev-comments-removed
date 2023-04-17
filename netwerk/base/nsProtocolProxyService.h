@@ -25,7 +25,7 @@ class nsISystemProxySettings;
 namespace mozilla {
 namespace net {
 
-using nsFailedProxyTable = nsTHashMap<nsCStringHashKey, uint32_t>;
+typedef nsTHashMap<nsCStringHashKey, uint32_t> nsFailedProxyTable;
 
 class nsPACMan;
 class nsProxyInfo;
@@ -90,7 +90,7 @@ class nsProtocolProxyService final : public nsIProtocolProxyService2,
 
 
 
-  void PrefsChanged(nsIPrefBranch* prefBranch, const char* pref);
+  void PrefsChanged(nsIPrefBranch* prefs, const char* name);
 
   
 
@@ -108,7 +108,7 @@ class nsProtocolProxyService final : public nsIProtocolProxyService2,
 
 
 
-  const char* ExtractProxyInfo(const char* start, uint32_t aResolveFlags,
+  const char* ExtractProxyInfo(const char* proxy, uint32_t aResolveFlags,
                                nsProxyInfo** result);
 
   
@@ -117,7 +117,7 @@ class nsProtocolProxyService final : public nsIProtocolProxyService2,
 
 
 
-  nsresult ConfigureFromPAC(const nsCString& spec, bool forceReload);
+  nsresult ConfigureFromPAC(const nsCString& pacURI, bool forceReload);
 
   
 
@@ -143,7 +143,7 @@ class nsProtocolProxyService final : public nsIProtocolProxyService2,
 
 
 
-  void GetProxyKey(nsProxyInfo* pi, nsCString& key);
+  void GetProxyKey(nsProxyInfo* pi, nsCString& result);
 
   
 
@@ -187,7 +187,7 @@ class nsProtocolProxyService final : public nsIProtocolProxyService2,
 
 
 
-  nsresult GetProtocolInfo(nsIURI* uri, nsProtocolInfo* info);
+  nsresult GetProtocolInfo(nsIURI* uri, nsProtocolInfo* result);
 
   
 
@@ -220,8 +220,8 @@ class nsProtocolProxyService final : public nsIProtocolProxyService2,
                                  const nsACString& aProxyAuthorizationHeader,
                                  const nsACString& aConnectionIsolationKey,
                                  uint32_t flags, uint32_t timeout,
-                                 nsIProxyInfo* aFailoverProxy,
-                                 uint32_t aResolveFlags, nsIProxyInfo** result);
+                                 nsIProxyInfo* next, uint32_t aResolveFlags,
+                                 nsIProxyInfo** result);
 
   
 
@@ -258,7 +258,7 @@ class nsProtocolProxyService final : public nsIProtocolProxyService2,
 
 
   bool ApplyFilter(FilterLink const* filterLink, nsIChannel* channel,
-                   const nsProtocolInfo& info, nsCOMPtr<nsIProxyInfo> list,
+                   const nsProtocolInfo& info, nsCOMPtr<nsIProxyInfo> proxyInfo,
                    nsIProxyProtocolFilterResult* callback);
 
   
@@ -270,7 +270,7 @@ class nsProtocolProxyService final : public nsIProtocolProxyService2,
 
 
 
-  void PruneProxyInfo(const nsProtocolInfo& info, nsIProxyInfo** list);
+  void PruneProxyInfo(const nsProtocolInfo& info, nsIProxyInfo** proxyInfo);
 
   
 
@@ -290,7 +290,7 @@ class nsProtocolProxyService final : public nsIProtocolProxyService2,
 
 
 
-  void LoadHostFilters(const nsACString& aFilters);
+  void LoadHostFilters(const nsACString& hostFilters);
 
   
 
@@ -344,7 +344,7 @@ class nsProtocolProxyService final : public nsIProtocolProxyService2,
     bool is_ipaddr;
     int32_t port;
     union {
-      HostInfoIP ip{};
+      HostInfoIP ip;
       HostInfoName name;
     };
 

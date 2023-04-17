@@ -90,7 +90,7 @@ class nsHttpConnectionInfo final : public ARefBase {
   
   already_AddRefed<nsHttpConnectionInfo> CloneAndAdoptHTTPSSVCRecord(
       nsISVCBRecord* aRecord) const;
-  void CloneAsDirectRoute(nsHttpConnectionInfo** outCI);
+  void CloneAsDirectRoute(nsHttpConnectionInfo** outParam);
   [[nodiscard]] nsresult CreateWildCard(nsHttpConnectionInfo** outParam);
 
   const char* ProxyHost() const {
@@ -226,28 +226,27 @@ class nsHttpConnectionInfo final : public ARefBase {
  private:
   void Init(const nsACString& host, int32_t port, const nsACString& npnToken,
             const nsACString& username, nsProxyInfo* proxyInfo,
-            const OriginAttributes& originAttributes, bool e2eSSL,
+            const OriginAttributes& originAttributes, bool EndToEndSSL,
             bool aIsHttp3);
   void SetOriginServer(const nsACString& host, int32_t port);
 
   nsCString mOrigin;
-  int32_t mOriginPort = 0;
+  int32_t mOriginPort;
   nsCString mRoutedHost;
   int32_t mRoutedPort;
 
   nsCString mHashKey;
   nsCString mUsername;
   nsCOMPtr<nsProxyInfo> mProxyInfo;
-  bool mUsingHttpProxy = false;
-  bool mUsingHttpsProxy = false;
-  bool mEndToEndSSL = false;
-  
-  bool mUsingConnect = false;
+  bool mUsingHttpProxy;
+  bool mUsingHttpsProxy;
+  bool mEndToEndSSL;
+  bool mUsingConnect;  
   nsCString mNPNToken;
   OriginAttributes mOriginAttributes;
   nsIRequest::TRRMode mTRRMode;
 
-  uint32_t mTlsFlags = 0;
+  uint32_t mTlsFlags;
   uint16_t mIsTrrServiceChannel : 1;
   uint16_t mIPv4Disabled : 1;
   uint16_t mIPv6Disabled : 1;
@@ -255,7 +254,7 @@ class nsHttpConnectionInfo final : public ARefBase {
   bool mLessThanTls13;  
                         
                         
-  bool mIsHttp3 = false;
+  bool mIsHttp3;
 
   bool mHasIPHintAddress = false;
   nsCString mEchConfig;

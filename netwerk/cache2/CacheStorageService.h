@@ -122,7 +122,7 @@ class CacheStorageService final : public nsICacheStorageService,
 
   
   static void GetCacheEntryInfo(CacheEntry* aEntry,
-                                EntryInfoCallback* aCallback);
+                                EntryInfoCallback* aVisitor);
 
   nsresult GetCacheIndexEntryAttrs(CacheStorage const* aStorage,
                                    const nsACString& aURI,
@@ -202,7 +202,7 @@ class CacheStorageService final : public nsICacheStorageService,
 
 
 
-  bool IsForcedValidEntry(nsACString const& aContextEntryKey);
+  bool IsForcedValidEntry(nsACString const& aEntryKeyWithContext);
 
  private:
   

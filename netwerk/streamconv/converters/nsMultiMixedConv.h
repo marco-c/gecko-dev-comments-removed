@@ -135,7 +135,7 @@ class nsMultiMixedConv : public nsIStreamConverter {
   explicit nsMultiMixedConv();
 
  protected:
-  using Token = mozilla::IncrementalTokenizer::Token;
+  typedef mozilla::IncrementalTokenizer::Token Token;
 
   virtual ~nsMultiMixedConv() = default;
 
@@ -220,7 +220,7 @@ class nsMultiMixedConv : public nsIStreamConverter {
   
   
   nsACString::const_char_iterator mRawData;
-  nsACString::size_type mRawDataLength{0};
+  nsACString::size_type mRawDataLength;
 
   
   

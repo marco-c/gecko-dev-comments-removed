@@ -556,12 +556,11 @@ uint32_t nsInputStreamPump::OnStateTransfer() {
         
         
         int64_t offsetAfter;
-        if (NS_FAILED(tellable->Tell(&offsetAfter))) {
+        if (NS_FAILED(tellable->Tell(&offsetAfter)))
           offsetAfter = offsetBefore + odaAvail;
-        }
-        if (offsetAfter > offsetBefore) {
+        if (offsetAfter > offsetBefore)
           mStreamOffset += (offsetAfter - offsetBefore);
-        } else if (mSuspendCount == 0) {
+        else if (mSuspendCount == 0) {
           
           
           
@@ -572,9 +571,8 @@ uint32_t nsInputStreamPump::OnStateTransfer() {
           NS_ERROR("OnDataAvailable implementation consumed no data");
           mStatus = NS_ERROR_UNEXPECTED;
         }
-      } else {
+      } else
         mStreamOffset += odaAvail;  
-      }
     }
   }
 
@@ -582,9 +580,9 @@ uint32_t nsInputStreamPump::OnStateTransfer() {
   
 
   if (NS_SUCCEEDED(mStatus)) {
-    if (NS_FAILED(rv)) {
+    if (NS_FAILED(rv))
       mStatus = rv;
-    } else if (avail) {
+    else if (avail) {
       
       
       
@@ -635,11 +633,10 @@ uint32_t nsInputStreamPump::OnStateStop() {
     return STATE_IDLE;
   }
 
-  if (NS_FAILED(mStatus)) {
+  if (NS_FAILED(mStatus))
     mAsyncStream->CloseWithStatus(mStatus);
-  } else if (mCloseWhenDone) {
+  else if (mCloseWhenDone)
     mAsyncStream->Close();
-  }
 
   mAsyncStream = nullptr;
   mTargetThread = nullptr;

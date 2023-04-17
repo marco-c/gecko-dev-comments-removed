@@ -59,7 +59,7 @@ struct StreamFilterRequest {
     }
   }
   RefPtr<ChildEndpointPromise::Private> mPromise;
-  base::ProcessId mChildProcessId = 0;
+  base::ProcessId mChildProcessId;
   mozilla::ipc::Endpoint<extensions::PStreamFilterChild> mChildEndpoint;
 };
 }  
@@ -119,8 +119,9 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
     bool mSwitchedProcess = false;
   };
 
-  using OpenPromise =
-      MozPromise<OpenPromiseSucceededType, OpenPromiseFailedType, true>;
+  typedef MozPromise<OpenPromiseSucceededType, OpenPromiseFailedType,
+                     true >
+      OpenPromise;
 
   
   
@@ -168,7 +169,7 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
       nsDOMNavigationTiming* aTiming, Maybe<dom::ClientInfo>&& aInfo,
       uint64_t aInnerWindowId, nsLoadFlags aLoadFlags,
       nsContentPolicyType aContentPolicyType, bool aUrgentStart,
-      base::ProcessId aPid, ObjectUpgradeHandler* aObjectUpgradeHandler,
+      base::ProcessId aPid, ObjectUpgradeHandler* aUpgradeHandler,
       nsresult* aRv);
 
   
@@ -400,9 +401,10 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
     bool mIsThirdParty;
   };
 
-  using IParentChannelFunction = mozilla::Variant<
+  typedef mozilla::Variant<
       nsIHttpChannel::FlashPluginState, ClassifierMatchedInfoParams,
-      ClassifierMatchedTrackingInfoParams, ClassificationFlagsParams>;
+      ClassifierMatchedTrackingInfoParams, ClassificationFlagsParams>
+      IParentChannelFunction;
 
   
   
@@ -425,14 +427,15 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
 
   struct LogMimeTypeMismatchParams {
     nsCString mMessageName;
-    bool mWarning = false;
+    bool mWarning;
     nsString mURL;
     nsString mContentType;
   };
 
-  using SecurityWarningFunction =
-      mozilla::Variant<ReportSecurityMessageParams, LogBlockedCORSRequestParams,
-                       LogMimeTypeMismatchParams>;
+  typedef mozilla::Variant<ReportSecurityMessageParams,
+                           LogBlockedCORSRequestParams,
+                           LogMimeTypeMismatchParams>
+      SecurityWarningFunction;
   nsTArray<SecurityWarningFunction> mSecurityWarningFunctions;
 
   struct OnStartRequestParams {
@@ -451,9 +454,9 @@ class DocumentLoadListener : public nsIInterfaceRequestor,
   struct OnAfterLastPartParams {
     nsresult status;
   };
-  using StreamListenerFunction =
-      mozilla::Variant<OnStartRequestParams, OnDataAvailableParams,
-                       OnStopRequestParams, OnAfterLastPartParams>;
+  typedef mozilla::Variant<OnStartRequestParams, OnDataAvailableParams,
+                           OnStopRequestParams, OnAfterLastPartParams>
+      StreamListenerFunction;
   
   
   

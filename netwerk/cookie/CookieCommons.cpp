@@ -68,7 +68,11 @@ bool CookieCommons::PathMatches(Cookie* aCookie, const nsACString& aPath) {
   
   
   uint32_t cookiePathLen = cookiePath.Length();
-  return isPrefix && aPath[cookiePathLen] == '/';
+  if (isPrefix && aPath[cookiePathLen] == '/') {
+    return true;
+  }
+
+  return false;
 }
 
 

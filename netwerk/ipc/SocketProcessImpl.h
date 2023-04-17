@@ -16,7 +16,7 @@ namespace net {
 
 class SocketProcessImpl final : public mozilla::ipc::ProcessChild {
  protected:
-  using ProcessChild = mozilla::ipc::ProcessChild;
+  typedef mozilla::ipc::ProcessChild ProcessChild;
 
  public:
   explicit SocketProcessImpl(ProcessId aParentPid);

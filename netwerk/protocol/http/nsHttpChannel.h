@@ -269,7 +269,7 @@ class nsHttpChannel final : public HttpBaseChannel,
   virtual ~nsHttpChannel();
 
  private:
-  using nsContinueRedirectionFunc = nsresult (nsHttpChannel::*)(nsresult);
+  typedef nsresult (nsHttpChannel::*nsContinueRedirectionFunc)(nsresult result);
 
   
   

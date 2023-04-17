@@ -61,7 +61,7 @@ class RequestContext final : public nsIRequestContext, public nsITimerCallback {
   Atomic<uint32_t> mBlockingTransactionCount;
   UniquePtr<SpdyPushCache> mSpdyCache;
 
-  using PendingTailRequest = nsCOMPtr<nsIRequestTailUnblockCallback>;
+  typedef nsCOMPtr<nsIRequestTailUnblockCallback> PendingTailRequest;
   
   uint32_t mNonTailRequests;
   
