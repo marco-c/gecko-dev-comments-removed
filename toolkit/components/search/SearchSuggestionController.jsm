@@ -22,6 +22,10 @@ const BROWSER_SUGGEST_PRIVATE_PREF = "browser.search.suggest.enabled.private";
 const REMOTE_TIMEOUT_PREF = "browser.search.suggest.timeout";
 const REMOTE_TIMEOUT_DEFAULT = 500; 
 
+const SEARCH_DATA_TRANSFERRED_SCALAR = "browser.search.data_transferred";
+const SEARCH_TELEMETRY_KEY_PREFIX = "sggt";
+const SEARCH_TELEMETRY_PRIVATE_BROWSING_KEY_SUFFIX = "pb";
+
 
 
 
@@ -366,6 +370,36 @@ SearchSuggestionController.prototype = {
 
 
 
+  _reportBandwidthForEngine(engineId, privateMode) {
+    if (!this._request || !this._request.channel) {
+      return;
+    }
+
+    let channel = ChannelWrapper.get(this._request.channel);
+    let bytesTransferred = channel.requestSize + channel.responseSize;
+    if (bytesTransferred == 0) {
+      return;
+    }
+
+    let telemetryKey = `${SEARCH_TELEMETRY_KEY_PREFIX}-${engineId}`;
+    if (privateMode) {
+      telemetryKey += `-${SEARCH_TELEMETRY_PRIVATE_BROWSING_KEY_SUFFIX}`;
+    }
+
+    Services.telemetry.keyedScalarAdd(
+      SEARCH_DATA_TRANSFERRED_SCALAR,
+      telemetryKey,
+      bytesTransferred
+    );
+  },
+
+  
+
+
+
+
+
+
 
 
 
@@ -409,16 +443,20 @@ SearchSuggestionController.prototype = {
 
     this._request.mozBackgroundRequest = true; 
 
+    let engineId = engine.identifier || "other";
+
     this._request.addEventListener(
       "load",
-      this._onRemoteLoaded.bind(this, deferredResponse)
+      this._onRemoteLoaded.bind(this, deferredResponse, engineId, privateMode)
     );
     this._request.addEventListener("error", evt => {
+      this._reportBandwidthForEngine(engineId, privateMode);
       deferredResponse.resolve("HTTP error");
     });
     
     
     this._request.addEventListener("abort", evt => {
+      this._reportBandwidthForEngine(engineId, privateMode);
       deferredResponse.reject("HTTP request aborted");
     });
 
@@ -439,13 +477,19 @@ SearchSuggestionController.prototype = {
 
 
 
-  _onRemoteLoaded(deferredResponse) {
+
+
+
+
+  _onRemoteLoaded(deferredResponse, engineId, privateMode) {
     if (!this._request) {
       deferredResponse.resolve(
         "Got HTTP response after the request was cancelled"
       );
       return;
     }
+
+    this._reportBandwidthForEngine(engineId, privateMode);
 
     let status, serverResults;
     try {
