@@ -870,6 +870,15 @@ static bool x11_egltest(int pci_count) {
 
   
   
+  int screenCount = ScreenCount(dpy);
+  for (int idx = 0; idx < screenCount; idx++) {
+    if (DefaultDepth(dpy, idx) != 24) {
+      return false;
+    }
+  }
+
+  
+  
   if (!get_egl_status(dpy, true, pci_count != 1)) {
     return false;
   }
