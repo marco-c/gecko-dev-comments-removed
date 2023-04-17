@@ -260,20 +260,17 @@ class ProviderQuickSuggest extends UrlbarProvider {
       let isQuickSuggestLinkClicked =
         details.selIndex == resultIndex && details.selType !== "help";
       let {
+        qsSuggestion, 
         sponsoredAdvertiser,
         sponsoredImpressionUrl,
         sponsoredClickUrl,
         sponsoredBlockId,
       } = result.payload;
       
-      
-      
-      
-      
       PartnerLinkAttribution.sendContextualServicesPing(
         {
-          search_query: "",
-          matched_keywords: "",
+          search_query: details.searchString,
+          matched_keywords: qsSuggestion || details.searchString,
           advertiser: sponsoredAdvertiser,
           block_id: sponsoredBlockId,
           position: telemetryResultIndex,
