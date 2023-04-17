@@ -1,6 +1,7 @@
 import argparse
 import json
 import logging
+import multiprocessing
 import os
 import sys
 
@@ -131,6 +132,15 @@ def setup_virtualenv(path, skip_venv_setup, props):
 
 def main(prog=None, argv=None):
     logging.basicConfig(level=logging.INFO)
+    
+    try:
+        multiprocessing.set_start_method('spawn')
+    except RuntimeError as e:
+        
+        start_method = multiprocessing.get_start_method()
+        if start_method != "spawn":
+            logging.critical("The multiprocessing start method was set to %s by a caller", start_method)
+            raise e
 
     if prog is None:
         prog = sys.argv[0]
