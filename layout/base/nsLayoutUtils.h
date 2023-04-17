@@ -934,6 +934,7 @@ class nsLayoutUtils {
 
 
 
+
   static gfxSize GetTransformToAncestorScale(const nsIFrame* aFrame);
 
   
