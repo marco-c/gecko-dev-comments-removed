@@ -748,6 +748,7 @@ function checkForMiddleClick(node, event) {
     
     
     event.stopPropagation();
+    event.preventDefault();
 
     
     

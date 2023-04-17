@@ -255,8 +255,7 @@
             animate: true,
             byMouse: event.mozInputSource == MouseEvent.MOZ_SOURCE_MOUSE,
           });
-          event.preventDefault();
-        } else if (event.originalTarget.localName == "scrollbox") {
+        } else if (event.originalTarget.closest("scrollbox")) {
           
           
           let visibleTabs = this._getVisibleTabs();
@@ -275,6 +274,7 @@
           return;
         }
 
+        event.preventDefault();
         event.stopPropagation();
       }
     }
