@@ -1,8 +1,8 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+
+
+
 
 EXPORTS += [
     'fdlibm.h',
@@ -24,14 +24,14 @@ if CONFIG['CC_TYPE'] == 'clang':
 if CONFIG['CC_TYPE'] == 'clang-cl':
     CXXFLAGS += [
         '-Wno-sign-compare',
-        '-wd4146', # unary minus operator applied to unsigned type
-        '-wd4305', # truncation from 'double' to 'const float'
-        '-wd4723', # potential divide by 0
-        '-wd4756', # overflow in constant arithmetic
+        '-wd4146', 
+        '-wd4305', 
+        '-wd4723', 
+        '-wd4756', 
     ]
 
-# These sources can't be unified because there are too many conflicting global
-# variables (e.g. almost every source file defines a `one` and a `huge`).
+
+
 SOURCES += [
     'e_acos.cpp',
     'e_acosh.cpp',
@@ -46,13 +46,18 @@ SOURCES += [
     'e_log2.cpp',
     'e_pow.cpp',
     'e_sinh.cpp',
+    'k_cos.cpp',
     'k_exp.cpp',
+    'k_rem_pio2.cpp',
+    'k_sin.cpp',
+    'k_tan.cpp',
     's_asinh.cpp',
     's_atan.cpp',
     's_cbrt.cpp',
     's_ceil.cpp',
     's_ceilf.cpp',
     's_copysign.cpp',
+    's_cos.cpp',
     's_expm1.cpp',
     's_fabs.cpp',
     's_floor.cpp',
@@ -62,6 +67,8 @@ SOURCES += [
     's_rint.cpp',
     's_rintf.cpp',
     's_scalbn.cpp',
+    's_sin.cpp',
+    's_tan.cpp',
     's_tanh.cpp',
     's_trunc.cpp',
     's_truncf.cpp',
