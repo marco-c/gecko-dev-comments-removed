@@ -144,6 +144,12 @@ typedef struct {
 } wasm_rt_memory_t;
 
 
+#if UINTPTR_MAX == 0xffffffff
+
+# define WASM_HEAP_MASK 0xffffff
+#endif
+
+
 typedef struct {
   
   wasm_rt_elem_t* data;
