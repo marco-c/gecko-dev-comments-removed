@@ -205,7 +205,7 @@ class WebrtcVideoConduit
                        const rtc::VideoSinkWants& wants) override;
   void RemoveSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) override;
 
-  bool HasCodecPluginID(uint64_t aPluginID) override;
+  bool HasCodecPluginID(uint64_t aPluginID) const override;
 
   void Shutdown() override;
 
@@ -227,10 +227,10 @@ class WebrtcVideoConduit
   
   void InitCall();
 
-  std::vector<uint32_t> GetLocalSSRCs() override;
+  std::vector<uint32_t> GetLocalSSRCs() const override;
 
   
-  bool GetRemoteSSRC(uint32_t* ssrc) override;
+  bool GetRemoteSSRC(uint32_t* ssrc) const override;
 
   
   bool SetLocalSSRCs(const std::vector<uint32_t>& ssrcs,
@@ -308,7 +308,7 @@ class WebrtcVideoConduit
   
   const nsCOMPtr<nsISerialEventTarget> mStsThread;
 
-  Mutex mMutex;
+  mutable Mutex mMutex;
 
   
   
