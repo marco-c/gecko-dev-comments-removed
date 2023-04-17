@@ -63,7 +63,6 @@ class ContainerLayer;
 class ColorLayer;
 class CompositorBridgeChild;
 class ReadbackProcessor;
-class RefLayer;
 class HostLayer;
 class FocusTarget;
 class KnowsCompositor;
@@ -292,11 +291,6 @@ class LayerManager : public WindowRenderer {
 
 
   virtual already_AddRefed<ContainerLayer> CreateContainerLayer() = 0;
-  
-
-
-
-  virtual already_AddRefed<RefLayer> CreateRefLayer() { return nullptr; }
   
 
 
