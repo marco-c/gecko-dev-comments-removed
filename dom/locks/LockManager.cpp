@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/LockManager.h"
+#include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/locks/LockManagerChild.h"
 #include "mozilla/dom/locks/LockRequestChild.h"
 #include "mozilla/Assertions.h"
@@ -51,6 +52,18 @@ LockManager::LockManager(nsIGlobalObject* aGlobal) : mOwner(aGlobal) {
   mActor = new locks::LockManagerChild(aGlobal);
   backgroundActor->SendPLockManagerConstructor(mActor, principalInfo,
                                                clientInfo->Id());
+
+  if (!NS_IsMainThread()) {
+    mWorkerRef = WeakWorkerRef::Create(GetCurrentThreadWorkerPrivate(),
+                                       [self = RefPtr(this)]() {
+                                         
+                                         
+                                         
+                                         
+                                         self->Shutdown();
+                                         self->mWorkerRef = nullptr;
+                                       });
+  }
 }
 
 static bool ValidateRequestArguments(const nsAString& name,
