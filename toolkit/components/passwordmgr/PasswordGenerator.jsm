@@ -81,7 +81,13 @@ this.PasswordGenerator = {
     for (const charClassString of requiredClasses) {
       password +=
         charClassString[this._randomUInt8Index(charClassString.length)];
-      allRequiredCharacters += charClassString;
+      if (Array.isArray(charClassString)) {
+        
+        
+        allRequiredCharacters += charClassString.join("");
+      } else {
+        allRequiredCharacters += charClassString;
+      }
     }
 
     
