@@ -38,6 +38,7 @@
 
 
 
+
 use once_cell::sync::OnceCell;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -172,12 +173,19 @@ fn launch_with_glean_mut(callback: impl FnOnce(&mut Glean) + Send + 'static) {
 
 
 pub fn initialize(cfg: Configuration, client_info: ClientInfoMetrics) {
+    initialize_internal(cfg, client_info);
+}
+
+fn initialize_internal(
+    cfg: Configuration,
+    client_info: ClientInfoMetrics,
+) -> Option<std::thread::JoinHandle<()>> {
     if was_initialize_called() {
         log::error!("Glean should not be initialized multiple times");
-        return;
+        return None;
     }
 
-    std::thread::Builder::new()
+    let init_handle = std::thread::Builder::new()
         .name("glean.init".into())
         .spawn(move || {
             let core_cfg = glean_core::Configuration {
@@ -187,6 +195,8 @@ pub fn initialize(cfg: Configuration, client_info: ClientInfoMetrics) {
                 language_binding_name: LANGUAGE_BINDING_NAME.into(),
                 max_events: cfg.max_events,
                 delay_ping_lifetime_io: cfg.delay_ping_lifetime_io,
+                app_build: client_info.app_build.clone(),
+                use_core_mps: cfg.use_core_mps,
             };
 
             let glean = match Glean::new(core_cfg) {
@@ -302,7 +312,7 @@ pub fn initialize(cfg: Configuration, client_info: ClientInfoMetrics) {
                 
                 
                 
-                
+                glean.start_metrics_ping_scheduler();
 
                 
                 
@@ -313,10 +323,7 @@ pub fn initialize(cfg: Configuration, client_info: ClientInfoMetrics) {
                     
                     
                     
-                    if glean
-                        .submit_ping_by_name("baseline", Some("dirty_startup"))
-                        .unwrap()
-                    {
+                    if glean.submit_ping_by_name("baseline", Some("dirty_startup")) {
                         state.upload_manager.trigger_upload();
                     }
                 }
@@ -347,6 +354,7 @@ pub fn initialize(cfg: Configuration, client_info: ClientInfoMetrics) {
     
     
     INITIALIZE_CALLED.store(true, Ordering::SeqCst);
+    Some(init_handle)
 }
 
 
@@ -364,6 +372,7 @@ pub fn shutdown() {
     }
 
     crate::launch_with_glean_mut(|glean| {
+        glean.cancel_metrics_ping_scheduler();
         glean.set_dirty_flag(false);
     });
 
@@ -464,16 +473,15 @@ pub fn set_upload_enabled(enabled: bool) {
         let old_enabled = glean.is_upload_enabled();
         glean.set_upload_enabled(enabled);
 
-        
-        
-
         if !old_enabled && enabled {
+            glean.start_metrics_ping_scheduler();
             
             
             initialize_core_metrics(&glean, &state.client_info, state.channel.clone());
         }
 
         if old_enabled && !enabled {
+            glean.cancel_metrics_ping_scheduler();
             
             
             state.upload_manager.trigger_upload();
@@ -553,13 +561,13 @@ pub(crate) fn submit_ping_by_name_sync(ping: &str, reason: Option<&str>) {
             
             
             
-            return Some(false);
+            return false;
         }
 
-        glean.submit_ping_by_name(&ping, reason.as_deref()).ok()
+        glean.submit_ping_by_name(&ping, reason.as_deref())
     });
 
-    if let Some(true) = submitted_ping {
+    if submitted_ping {
         let state = global_state().lock().unwrap();
         state.upload_manager.trigger_upload();
     }
@@ -661,6 +669,19 @@ pub(crate) fn destroy_glean(clear_stores: bool) {
     
     if was_initialize_called() {
         
+        dispatcher::reset_dispatcher();
+
+        
+        
+        
+        
+        
+        {
+            let state = global_state().lock().unwrap();
+            state.upload_manager.test_wait_for_upload();
+        }
+
+        
         
         
         
@@ -674,8 +695,12 @@ pub(crate) fn destroy_glean(clear_stores: bool) {
         }
         
         INITIALIZE_CALLED.store(false, Ordering::SeqCst);
+
         
-        dispatcher::reset_dispatcher();
+        
+        
+        let state = global_state().lock().unwrap();
+        state.upload_manager.test_clear_upload_thread();
     }
 }
 
@@ -684,9 +709,9 @@ pub(crate) fn destroy_glean(clear_stores: bool) {
 pub fn test_reset_glean(cfg: Configuration, client_info: ClientInfoMetrics, clear_stores: bool) {
     destroy_glean(clear_stores);
 
-    
-    
-    initialize(cfg, client_info);
+    if let Some(handle) = initialize_internal(cfg, client_info) {
+        handle.join().unwrap();
+    }
 }
 
 
@@ -743,22 +768,16 @@ pub fn set_log_pings(value: bool) {
 
 
 
-
-
-
-
-
-pub fn set_source_tags(tags: Vec<String>) -> bool {
+pub fn set_source_tags(tags: Vec<String>) {
     if was_initialize_called() {
-        with_glean_mut(|glean| glean.set_source_tags(tags))
+        crate::launch_with_glean_mut(|glean| {
+            glean.set_source_tags(tags);
+        });
     } else {
         
         let m = PRE_INIT_SOURCE_TAGS.get_or_init(Default::default);
         let mut lock = m.lock().unwrap();
         *lock = tags;
-        
-        
-        true
     }
 }
 

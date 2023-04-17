@@ -38,6 +38,7 @@ mod internal_metrics;
 mod internal_pings;
 pub mod metrics;
 pub mod ping;
+mod scheduler;
 pub mod storage;
 mod system;
 pub mod traits;
@@ -129,7 +130,14 @@ pub struct Configuration {
     pub max_events: Option<usize>,
     
     pub delay_ping_lifetime_io: bool,
+    
+    
+    pub app_build: String,
+    
+    pub use_core_mps: bool,
 }
+
+
 
 
 
@@ -185,6 +193,8 @@ pub struct Glean {
     is_first_run: bool,
     upload_manager: PingUploadManager,
     debug: DebugOptions,
+    app_build: String,
+    schedule_metrics_pings: bool,
 }
 
 impl Glean {
@@ -233,6 +243,9 @@ impl Glean {
             max_events: cfg.max_events.unwrap_or(DEFAULT_MAX_EVENTS),
             is_first_run: false,
             debug: DebugOptions::new(),
+            app_build: cfg.app_build.to_string(),
+            
+            schedule_metrics_pings: false,
         };
 
         
@@ -289,6 +302,9 @@ impl Glean {
         }
 
         
+        glean.schedule_metrics_pings = cfg.use_core_mps;
+
+        
         
         
         
@@ -311,6 +327,8 @@ impl Glean {
             upload_enabled,
             max_events: None,
             delay_ping_lifetime_io: false,
+            app_build: "unknown".into(),
+            use_core_mps: false,
         };
 
         let mut glean = Self::new(cfg).unwrap();
@@ -454,8 +472,8 @@ impl Glean {
         } else {
             Some("set_upload_enabled")
         };
-        if let Err(err) = self.internal_pings.deletion_request.submit(self, reason) {
-            log::error!("Failed to submit deletion-request ping on optout: {}", err);
+        if !self.internal_pings.deletion_request.submit(self, reason) {
+            log::error!("Failed to submit deletion-request ping on optout.");
         }
         self.clear_metrics();
         self.upload_enabled = false;
@@ -626,10 +644,10 @@ impl Glean {
     
     
     
-    pub fn submit_ping(&self, ping: &PingType, reason: Option<&str>) -> Result<bool> {
+    pub fn submit_ping(&self, ping: &PingType, reason: Option<&str>) -> bool {
         if !self.is_upload_enabled() {
             log::info!("Glean disabled: not submitting any pings.");
-            return Ok(false);
+            return false;
         }
 
         let ping_maker = PingMaker::new();
@@ -641,7 +659,7 @@ impl Glean {
                     "No content for ping '{}', therefore no ping queued.",
                     ping.name
                 );
-                Ok(false)
+                false
             }
             Some(ping) => {
                 
@@ -656,7 +674,12 @@ impl Glean {
                 if let Err(e) = ping_maker.store_ping(&self.get_data_path(), &ping) {
                     log::warn!("IO error while writing ping to file: {}. Enqueuing upload of what we have in memory.", e);
                     self.additional_metrics.io_errors.add(self, 1);
-                    let content = ::serde_json::to_string(&ping.content)?;
+                    
+                    
+                    
+                    
+                    let content =
+                        ::serde_json::to_string(&ping.content).expect("ping serialization failed");
                     self.upload_manager.enqueue_ping(
                         self,
                         ping.doc_id,
@@ -664,8 +687,7 @@ impl Glean {
                         &content,
                         Some(ping.headers),
                     );
-                    
-                    return Ok(true);
+                    return true;
                 }
 
                 self.upload_manager.enqueue_ping_from_file(self, &doc_id);
@@ -674,7 +696,8 @@ impl Glean {
                     "The ping '{}' was submitted and will be sent as soon as possible",
                     ping.name
                 );
-                Ok(true)
+
+                true
             }
         }
     }
@@ -699,11 +722,11 @@ impl Glean {
     
     
     
-    pub fn submit_ping_by_name(&self, ping_name: &str, reason: Option<&str>) -> Result<bool> {
+    pub fn submit_ping_by_name(&self, ping_name: &str, reason: Option<&str>) -> bool {
         match self.get_ping_by_name(ping_name) {
             None => {
                 log::error!("Attempted to submit unknown ping '{}'", ping_name);
-                Ok(false)
+                false
             }
             Some(ping) => self.submit_ping(ping, reason),
         }
@@ -917,8 +940,8 @@ impl Glean {
     
     
     pub fn handle_client_active(&mut self) {
-        if let Err(err) = self.internal_pings.baseline.submit(self, Some("active")) {
-            log::warn!("Failed to submit baseline ping on active: {}", err);
+        if !self.internal_pings.baseline.submit(self, Some("active")) {
+            log::info!("baseline ping not submitted on active");
         }
 
         self.set_dirty_flag(true);
@@ -929,12 +952,12 @@ impl Glean {
     
     
     pub fn handle_client_inactive(&mut self) {
-        if let Err(err) = self.internal_pings.baseline.submit(self, Some("inactive")) {
-            log::warn!("Failed to submit baseline ping on inactive: {}", err);
+        if !self.internal_pings.baseline.submit(self, Some("inactive")) {
+            log::info!("baseline ping not submitted on inactive");
         }
 
-        if let Err(err) = self.internal_pings.events.submit(self, Some("inactive")) {
-            log::warn!("Failed to submit events ping on inactive: {}", err);
+        if !self.internal_pings.events.submit(self, Some("inactive")) {
+            log::info!("events ping not submitted on inactive");
         }
 
         self.set_dirty_flag(false);
@@ -988,6 +1011,22 @@ impl Glean {
         }
         
         let _ = self.event_data_store.clear_all();
+    }
+
+    
+    
+    pub fn cancel_metrics_ping_scheduler(&self) {
+        if self.schedule_metrics_pings {
+            scheduler::cancel();
+        }
+    }
+
+    
+    
+    pub fn start_metrics_ping_scheduler(&self) {
+        if self.schedule_metrics_pings {
+            scheduler::schedule(&self);
+        }
     }
 }
 

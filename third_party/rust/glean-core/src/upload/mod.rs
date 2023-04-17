@@ -874,14 +874,10 @@ mod test {
         
         let n = 10;
         for _ in 0..n {
-            glean.submit_ping(&ping_type, None).unwrap();
+            glean.submit_ping(&ping_type, None);
         }
 
-        glean
-            .internal_pings
-            .deletion_request
-            .submit(&glean, None)
-            .unwrap();
+        glean.internal_pings.deletion_request.submit(&glean, None);
 
         
         drop(glean.upload_manager.clear_ping_queue());
@@ -907,7 +903,7 @@ mod test {
         
         let n = 10;
         for _ in 0..n {
-            glean.submit_ping(&ping_type, None).unwrap();
+            glean.submit_ping(&ping_type, None);
         }
 
         
@@ -935,7 +931,7 @@ mod test {
         glean.register_ping_type(&ping_type);
 
         
-        glean.submit_ping(&ping_type, None).unwrap();
+        glean.submit_ping(&ping_type, None);
 
         
         let pending_pings_dir = dir.path().join(PENDING_PINGS_DIRECTORY);
@@ -965,7 +961,7 @@ mod test {
         glean.register_ping_type(&ping_type);
 
         
-        glean.submit_ping(&ping_type, None).unwrap();
+        glean.submit_ping(&ping_type, None);
 
         
         let pending_pings_dir = dir.path().join(PENDING_PINGS_DIRECTORY);
@@ -995,7 +991,7 @@ mod test {
         glean.register_ping_type(&ping_type);
 
         
-        glean.submit_ping(&ping_type, None).unwrap();
+        glean.submit_ping(&ping_type, None);
 
         
         match glean.get_upload_task() {
@@ -1027,7 +1023,7 @@ mod test {
         glean.register_ping_type(&ping_type);
 
         
-        glean.submit_ping(&ping_type, None).unwrap();
+        glean.submit_ping(&ping_type, None);
 
         
         let pending_pings_dir = dir.path().join(PENDING_PINGS_DIRECTORY);
@@ -1104,7 +1100,7 @@ mod test {
         glean.register_ping_type(&ping_type);
 
         
-        glean.submit_ping(&ping_type, None).unwrap();
+        glean.submit_ping(&ping_type, None);
 
         
         match glean.get_upload_task() {
@@ -1152,7 +1148,7 @@ mod test {
         
         let n = 5;
         for _ in 0..n {
-            glean.submit_ping(&ping_type, None).unwrap();
+            glean.submit_ping(&ping_type, None);
         }
 
         let mut upload_manager = PingUploadManager::no_policy(dir.path());
@@ -1200,7 +1196,7 @@ mod test {
         
         let n = 10;
         for _ in 0..n {
-            glean.submit_ping(&ping_type, None).unwrap();
+            glean.submit_ping(&ping_type, None);
         }
 
         let directory_manager = PingDirectoryManager::new(dir.path());
@@ -1272,7 +1268,7 @@ mod test {
 
         
         for _ in 0..n {
-            glean.submit_ping(&ping_type, None).unwrap();
+            glean.submit_ping(&ping_type, None);
         }
 
         let directory_manager = PingDirectoryManager::new(dir.path());
@@ -1343,7 +1339,7 @@ mod test {
 
         
         for _ in 0..n {
-            glean.submit_ping(&ping_type, None).unwrap();
+            glean.submit_ping(&ping_type, None);
         }
 
         let directory_manager = PingDirectoryManager::new(dir.path());
@@ -1417,7 +1413,7 @@ mod test {
 
         
         for _ in 0..n {
-            glean.submit_ping(&ping_type, None).unwrap();
+            glean.submit_ping(&ping_type, None);
         }
 
         let directory_manager = PingDirectoryManager::new(dir.path());

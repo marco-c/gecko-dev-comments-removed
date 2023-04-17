@@ -2,7 +2,6 @@
 
 
 
-use crate::error::Result;
 use crate::Glean;
 
 
@@ -60,7 +59,7 @@ impl PingType {
     
     
     
-    pub fn submit(&self, glean: &Glean, reason: Option<&str>) -> Result<bool> {
+    pub fn submit(&self, glean: &Glean, reason: Option<&str>) -> bool {
         let corrected_reason = match reason {
             Some(reason) => {
                 if self.reason_codes.contains(&reason.to_string()) {

@@ -30,4 +30,6 @@ pub struct Configuration {
     pub server_endpoint: Option<String>,
     
     pub uploader: Option<Box<dyn PingUploader + 'static>>,
+    
+    pub use_core_mps: bool,
 }

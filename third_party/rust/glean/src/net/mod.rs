@@ -70,9 +70,37 @@ impl UploadManager {
     }
 
     
+    pub(crate) fn test_wait_for_upload(&self) {
+        
+        while self
+            .inner
+            .thread_running
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .is_err()
+        {
+            thread::yield_now();
+        }
+    }
+
+    
+    
+    
+    
+    pub(crate) fn test_clear_upload_thread(&self) {
+        self.inner.thread_running.store(false, Ordering::SeqCst);
+    }
+
+    
     pub(crate) fn trigger_upload(&self) {
-        if self.inner.thread_running.load(Ordering::SeqCst) {
-            log::debug!("The upload task is already running.");
+        
+        
+        
+        if self
+            .inner
+            .thread_running
+            .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+            .is_err()
+        {
             return;
         }
 
@@ -81,12 +109,10 @@ impl UploadManager {
         thread::Builder::new()
             .name("glean.upload".into())
             .spawn(move || {
-                
-                inner.thread_running.store(true, Ordering::SeqCst);
-
                 loop {
                     let incoming_task = with_glean(|glean| glean.get_upload_task());
 
+                    log::trace!("Received upload task: {:?}", incoming_task);
                     match incoming_task {
                         PingUploadTask::Upload(request) => {
                             let doc_id = request.document_id.clone();
