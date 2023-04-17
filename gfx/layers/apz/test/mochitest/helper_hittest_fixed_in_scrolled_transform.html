@@ -50,7 +50,7 @@ body {
 </style>
 </head>
 <body>
-
+<!-- This is lifted from layout/reftests/async-scrolling/fixed-pos-scrolled-clip-3.html -->
 <div class="transform">
   <div class="subframe">
     <div class="scrolled">
@@ -73,9 +73,12 @@ async function test() {
   await promiseApzFlushedRepaints();
 
   var target = document.querySelector(".absoluteClip");
+  // The fixed item is fixed with respect to the transform, which is
+  // outside the subframe, so we should scroll the root scroll frame,
+  // not the subframe.
   checkHitResult(hitTest(centerOf(target)),
                  APZHitResultFlags.VISIBLE,
-                 utils.getViewId(subframe),
+                 utils.getViewId(document.scrollingElement),
                  utils.getLayersId(),
                  "fixed item inside a scrolling transform");
 }
