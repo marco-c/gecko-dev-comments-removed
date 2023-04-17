@@ -250,6 +250,17 @@ def lto(
         else:
             cflags.append("-flto=thin")
             ldflags.append("-flto=thin")
+
+        if target.os == "Android" and value == "cross":
+            
+            
+            
+            
+            
+            if target.cpu == "x86":
+                ldflags.append("-Wl,-plugin-opt=-mattr=+ssse3")
+            elif target.cpu == "x86_64":
+                ldflags.append("-Wl,-plugin-opt=-mattr=+sse4.2")
     elif c_compiler.type == "clang-cl":
         if value == "full":
             cflags.append("-flto")
