@@ -107,7 +107,7 @@ var BackgroundTasksManager = {
       `Running background task named '${name}' (with ${commandLine.length} arguments)`
     );
 
-    let exitCode = 2;
+    let exitCode = BackgroundTasksManager.EXIT_CODE.NOT_FOUND;
     try {
       let runBackgroundTask = findRunBackgroundTask(name);
       addMarker("BackgroundTasksManager:AfterFindRunBackgroundTask");
@@ -120,7 +120,7 @@ var BackgroundTasksManager = {
         );
       } catch (e) {
         log.error(`Backgroundtask named '${name}' threw exception`, e);
-        exitCode = 3;
+        exitCode = BackgroundTasksManager.EXIT_CODE.EXCEPTION;
       }
     } finally {
       addMarker("BackgroundTasksManager:AfterAwaitRunBackgroundTask");
@@ -131,4 +131,34 @@ var BackgroundTasksManager = {
 
     return exitCode;
   },
+};
+
+
+
+
+
+
+
+
+BackgroundTasksManager.EXIT_CODE = {
+  
+
+
+
+
+  SUCCESS: 0,
+
+  
+
+
+
+
+  NOT_FOUND: 2,
+
+  
+
+
+
+
+  EXCEPTION: 3,
 };

@@ -4,22 +4,35 @@
 
 
 
+"use strict";
+
+
+
+const { EXIT_CODE } = ChromeUtils.import(
+  "resource://gre/modules/BackgroundTasksManager.jsm"
+).BackgroundTasksManager;
+
 add_task(async function test_success() {
   let exitCode = await do_backgroundtask("success");
   Assert.equal(0, exitCode);
+  Assert.equal(EXIT_CODE.SUCCESS, exitCode);
 });
 
 add_task(async function test_failure() {
   let exitCode = await do_backgroundtask("failure");
   Assert.equal(1, exitCode);
+  
+  Assert.notEqual(EXIT_CODE.SUCCESS, exitCode);
 });
 
 add_task(async function test_exception() {
   let exitCode = await do_backgroundtask("exception");
   Assert.equal(3, exitCode);
+  Assert.equal(EXIT_CODE.EXCEPTION, exitCode);
 });
 
 add_task(async function test_not_found() {
   let exitCode = await do_backgroundtask("not_found");
   Assert.equal(2, exitCode);
+  Assert.equal(EXIT_CODE.NOT_FOUND, exitCode);
 });
