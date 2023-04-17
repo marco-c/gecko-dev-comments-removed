@@ -17,9 +17,6 @@ using namespace mozilla;
 
 static tainted_hunspell<char*> allocStrInSandbox(
     rlbox_sandbox_hunspell& aSandbox, const nsAutoCString& str) {
-  if (str.IsEmpty()) {
-    return nullptr;
-  }
   size_t size = str.Length() + 1;
   tainted_hunspell<char*> t_str = aSandbox.malloc_in_sandbox<char>(size);
   MOZ_RELEASE_ASSERT(t_str);
@@ -30,9 +27,6 @@ static tainted_hunspell<char*> allocStrInSandbox(
 
 static tainted_hunspell<char*> allocStrInSandbox(
     rlbox_sandbox_hunspell& aSandbox, const std::string& str) {
-  if (str.empty()) {
-    return nullptr;
-  }
   size_t size = str.size() + 1;
   tainted_hunspell<char*> t_str = aSandbox.malloc_in_sandbox<char>(size);
   MOZ_RELEASE_ASSERT(t_str);
@@ -58,12 +52,8 @@ RLBoxHunspell::RLBoxHunspell(const nsAutoCString& affpath,
 #endif
 
   
-  if (!affpath.IsEmpty()) {
-    mozHunspellCallbacks::AllowFile(affpath);
-  }
-  if (!dpath.IsEmpty()) {
-    mozHunspellCallbacks::AllowFile(dpath);
-  }
+  mozHunspellCallbacks::AllowFile(affpath);
+  mozHunspellCallbacks::AllowFile(dpath);
 
   
   mCreateFilemgr =
@@ -94,12 +84,8 @@ RLBoxHunspell::RLBoxHunspell(const nsAutoCString& affpath,
       rlbox::sandbox_const_cast<const char*>(t_dpath));
   MOZ_RELEASE_ASSERT(mHandle);
 
-  if (t_dpath) {
-    mSandbox.free_in_sandbox(t_dpath);
-  }
-  if (t_affpath) {
-    mSandbox.free_in_sandbox(t_affpath);
-  }
+  mSandbox.free_in_sandbox(t_dpath);
+  mSandbox.free_in_sandbox(t_affpath);
 
   
   tainted_hunspell<char*> t_enc =
