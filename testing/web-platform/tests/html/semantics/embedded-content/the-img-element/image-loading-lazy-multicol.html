@@ -29,16 +29,16 @@
 <div class=texty style="column-count: 2; height: 300px">
   <div style="border: 1px solid black">
     <h2 style="column-span: all"></h2>
-    <img loading="lazy" src="resources/image.png?first" width="160" height="120"
+    <img loading="lazy" src="resources/image.png?loading-lazy-multicol-first" width="160" height="120"
         onload="in_viewport_img_onload()">
   </div>
 </div>
 
-  
-
-
-
-
-
-
+  <!--
+    This async script loads very slowly in order to ensure that, if the
+    below_viewport element has started loading, it has a chance to finish
+    loading before window load event fires, so that the test will dependably fail
+    in that case instead of potentially passing depending on how long different
+    resource fetches take.
+  -->
   <script async src="/common/slow.py"></script>
