@@ -163,6 +163,33 @@ public final class StorageController {
 
 
 
+
+
+
+
+    @AnyThread
+    public @NonNull GeckoResult<Void> clearDataFromBaseDomain(
+            final @NonNull String baseDomain,
+            final @StorageControllerClearFlags long flags) {
+        final GeckoBundle bundle = new GeckoBundle(2);
+        bundle.putString("baseDomain", baseDomain);
+        bundle.putLong("flags", flags);
+
+        return EventDispatcher.getInstance()
+                .queryVoid("GeckoView:ClearBaseDomainData", bundle);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
     @AnyThread
     public void clearDataForSessionContext(final @NonNull String contextId) {
         final GeckoBundle bundle = new GeckoBundle(1);
