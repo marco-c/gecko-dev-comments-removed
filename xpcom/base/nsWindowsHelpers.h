@@ -299,6 +299,10 @@ struct LocalFreeDeleter {
   void operator()(void* aPtr) { ::LocalFree(aPtr); }
 };
 
+struct VirtualFreeDeleter {
+  void operator()(void* aPtr) { ::VirtualFree(aPtr, 0, MEM_RELEASE); }
+};
+
 
 struct FreeSidDeleter {
   void operator()(void* aPtr) { ::FreeSid(aPtr); }

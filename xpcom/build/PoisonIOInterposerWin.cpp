@@ -19,6 +19,7 @@
 #include "mozilla/FileUtilsWin.h"
 #include "mozilla/IOInterposer.h"
 #include "mozilla/Mutex.h"
+#include "mozilla/NativeNt.h"
 #include "mozilla/SmallArrayLRUCache.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
@@ -257,6 +258,16 @@ static NTSTATUS NTAPI InterposedNtCreateFile(
     ULONG aCreateDisposition, ULONG aCreateOptions, PVOID aEaBuffer,
     ULONG aEaLength) {
   
+  MOZ_ASSERT(gOriginalNtCreateFile);
+
+  if (!mozilla::nt::RtlGetThreadLocalStoragePointer()) {
+    return gOriginalNtCreateFile(
+        aFileHandle, aDesiredAccess, aObjectAttributes, aIoStatusBlock,
+        aAllocationSize, aFileAttributes, aShareAccess, aCreateDisposition,
+        aCreateOptions, aEaBuffer, aEaLength);
+  }
+
+  
   const wchar_t* buf =
       aObjectAttributes ? aObjectAttributes->ObjectName->Buffer : L"";
   uint32_t len = aObjectAttributes
@@ -265,9 +276,6 @@ static NTSTATUS NTAPI InterposedNtCreateFile(
   nsDependentSubstring filename(buf, len);
   WinIOAutoObservation timer(mozilla::IOInterposeObserver::OpCreateOrOpen,
                              filename);
-
-  
-  MOZ_ASSERT(gOriginalNtCreateFile);
 
   
   NTSTATUS status = gOriginalNtCreateFile(
@@ -287,11 +295,16 @@ static NTSTATUS NTAPI InterposedNtReadFile(HANDLE aFileHandle, HANDLE aEvent,
                                            PLARGE_INTEGER aOffset,
                                            PULONG aKey) {
   
-  WinIOAutoObservation timer(mozilla::IOInterposeObserver::OpRead, aFileHandle,
-                             aOffset);
+  MOZ_ASSERT(gOriginalNtReadFile);
+
+  if (!mozilla::nt::RtlGetThreadLocalStoragePointer()) {
+    return gOriginalNtReadFile(aFileHandle, aEvent, aApc, aApcCtx, aIoStatus,
+                               aBuffer, aLength, aOffset, aKey);
+  }
 
   
-  MOZ_ASSERT(gOriginalNtReadFile);
+  WinIOAutoObservation timer(mozilla::IOInterposeObserver::OpRead, aFileHandle,
+                             aOffset);
 
   
   return gOriginalNtReadFile(aFileHandle, aEvent, aApc, aApcCtx, aIoStatus,
@@ -303,11 +316,17 @@ static NTSTATUS NTAPI InterposedNtReadFileScatter(
     PIO_STATUS_BLOCK aIoStatus, FILE_SEGMENT_ELEMENT* aSegments, ULONG aLength,
     PLARGE_INTEGER aOffset, PULONG aKey) {
   
-  WinIOAutoObservation timer(mozilla::IOInterposeObserver::OpRead, aFileHandle,
-                             aOffset);
+  MOZ_ASSERT(gOriginalNtReadFileScatter);
+
+  if (!mozilla::nt::RtlGetThreadLocalStoragePointer()) {
+    return gOriginalNtReadFileScatter(aFileHandle, aEvent, aApc, aApcCtx,
+                                      aIoStatus, aSegments, aLength, aOffset,
+                                      aKey);
+  }
 
   
-  MOZ_ASSERT(gOriginalNtReadFileScatter);
+  WinIOAutoObservation timer(mozilla::IOInterposeObserver::OpRead, aFileHandle,
+                             aOffset);
 
   
   return gOriginalNtReadFileScatter(aFileHandle, aEvent, aApc, aApcCtx,
@@ -323,11 +342,16 @@ static NTSTATUS NTAPI InterposedNtWriteFile(HANDLE aFileHandle, HANDLE aEvent,
                                             PLARGE_INTEGER aOffset,
                                             PULONG aKey) {
   
-  WinIOAutoObservation timer(mozilla::IOInterposeObserver::OpWrite, aFileHandle,
-                             aOffset);
+  MOZ_ASSERT(gOriginalNtWriteFile);
+
+  if (!mozilla::nt::RtlGetThreadLocalStoragePointer()) {
+    return gOriginalNtWriteFile(aFileHandle, aEvent, aApc, aApcCtx, aIoStatus,
+                                aBuffer, aLength, aOffset, aKey);
+  }
 
   
-  MOZ_ASSERT(gOriginalNtWriteFile);
+  WinIOAutoObservation timer(mozilla::IOInterposeObserver::OpWrite, aFileHandle,
+                             aOffset);
 
   
   return gOriginalNtWriteFile(aFileHandle, aEvent, aApc, aApcCtx, aIoStatus,
@@ -340,11 +364,17 @@ static NTSTATUS NTAPI InterposedNtWriteFileGather(
     PIO_STATUS_BLOCK aIoStatus, FILE_SEGMENT_ELEMENT* aSegments, ULONG aLength,
     PLARGE_INTEGER aOffset, PULONG aKey) {
   
-  WinIOAutoObservation timer(mozilla::IOInterposeObserver::OpWrite, aFileHandle,
-                             aOffset);
+  MOZ_ASSERT(gOriginalNtWriteFileGather);
+
+  if (!mozilla::nt::RtlGetThreadLocalStoragePointer()) {
+    return gOriginalNtWriteFileGather(aFileHandle, aEvent, aApc, aApcCtx,
+                                      aIoStatus, aSegments, aLength, aOffset,
+                                      aKey);
+  }
 
   
-  MOZ_ASSERT(gOriginalNtWriteFileGather);
+  WinIOAutoObservation timer(mozilla::IOInterposeObserver::OpWrite, aFileHandle,
+                             aOffset);
 
   
   return gOriginalNtWriteFileGather(aFileHandle, aEvent, aApc, aApcCtx,
@@ -355,11 +385,15 @@ static NTSTATUS NTAPI InterposedNtWriteFileGather(
 static NTSTATUS NTAPI InterposedNtFlushBuffersFile(
     HANDLE aFileHandle, PIO_STATUS_BLOCK aIoStatusBlock) {
   
-  WinIOAutoObservation timer(mozilla::IOInterposeObserver::OpFSync, aFileHandle,
-                             nullptr);
+  MOZ_ASSERT(gOriginalNtFlushBuffersFile);
+
+  if (!mozilla::nt::RtlGetThreadLocalStoragePointer()) {
+    return gOriginalNtFlushBuffersFile(aFileHandle, aIoStatusBlock);
+  }
 
   
-  MOZ_ASSERT(gOriginalNtFlushBuffersFile);
+  WinIOAutoObservation timer(mozilla::IOInterposeObserver::OpFSync, aFileHandle,
+                             nullptr);
 
   
   return gOriginalNtFlushBuffersFile(aFileHandle, aIoStatusBlock);
@@ -369,6 +403,14 @@ static NTSTATUS NTAPI InterposedNtQueryFullAttributesFile(
     POBJECT_ATTRIBUTES aObjectAttributes,
     PFILE_NETWORK_OPEN_INFORMATION aFileInformation) {
   
+  MOZ_ASSERT(gOriginalNtQueryFullAttributesFile);
+
+  if (!mozilla::nt::RtlGetThreadLocalStoragePointer()) {
+    return gOriginalNtQueryFullAttributesFile(aObjectAttributes,
+                                              aFileInformation);
+  }
+
+  
   const wchar_t* buf =
       aObjectAttributes ? aObjectAttributes->ObjectName->Buffer : L"";
   uint32_t len = aObjectAttributes
@@ -376,9 +418,6 @@ static NTSTATUS NTAPI InterposedNtQueryFullAttributesFile(
                      : 0;
   nsDependentSubstring filename(buf, len);
   WinIOAutoObservation timer(mozilla::IOInterposeObserver::OpStat, filename);
-
-  
-  MOZ_ASSERT(gOriginalNtQueryFullAttributesFile);
 
   
   return gOriginalNtQueryFullAttributesFile(aObjectAttributes,
