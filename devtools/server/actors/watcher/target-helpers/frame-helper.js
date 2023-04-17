@@ -25,19 +25,6 @@ const browsingContextAttachedObserverByWatcher = new Map();
 
 
 
-function isServerTargetSwitchingEnabled() {
-  return Services.prefs.getBoolPref(
-    "devtools.target-switching.server.enabled",
-    false
-  );
-}
-
-
-
-
-
-
-
 async function createTargets(watcher) {
   
   
@@ -83,7 +70,7 @@ async function createTargets(watcher) {
     );
   }
 
-  if (isServerTargetSwitchingEnabled() && watcher.browserElement) {
+  if (watcher.isServerTargetSwitchingEnabled && watcher.browserElement) {
     
     
     
@@ -147,7 +134,7 @@ function destroyTargets(watcher) {
   const browsingContexts = getFilteredRemoteBrowsingContext(
     watcher.browserElement
   );
-  if (isServerTargetSwitchingEnabled() && watcher.browserElement) {
+  if (watcher.isServerTargetSwitchingEnabled && watcher.browserElement) {
     
     
     browsingContexts.push(watcher.browserElement.browsingContext);

@@ -123,17 +123,6 @@ class DevToolsFrameChild extends JSWindowActorChild {
     
     
     
-    XPCOMUtils.defineLazyGetter(this, "isServerTargetSwitchingEnabled", () =>
-      Services.prefs.getBoolPref(
-        "devtools.target-switching.server.enabled",
-        false
-      )
-    );
-
-    
-    
-    
-    
     
     
     
@@ -146,7 +135,21 @@ class DevToolsFrameChild extends JSWindowActorChild {
     );
   }
 
-  instantiate({ forceOverridingFirstTarget = false } = {}) {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  instantiate({ isBFCache = false } = {}) {
     const { sharedData } = Services.cpmm;
     const watchedDataByWatcherActor = sharedData.get(SHARED_DATA_KEY_NAME);
     if (!watchedDataByWatcherActor) {
@@ -157,12 +160,23 @@ class DevToolsFrameChild extends JSWindowActorChild {
 
     
     for (const [watcherActorID, watchedData] of watchedDataByWatcherActor) {
-      const { connectionPrefix, browserId } = watchedData;
+      const {
+        connectionPrefix,
+        browserId,
+        isServerTargetSwitchingEnabled,
+      } = watchedData;
+      
+      
+      
+      
+      
+      const acceptTopLevelTarget =
+        isServerTargetSwitchingEnabled ||
+        (isBFCache && this.isBfcacheInParentEnabled);
       if (
         watchedData.targets.includes("frame") &&
         shouldNotifyWindowGlobal(this.manager, browserId, {
-          acceptTopLevelTarget:
-            forceOverridingFirstTarget || this.isServerTargetSwitchingEnabled,
+          acceptTopLevelTarget,
         })
       ) {
         
@@ -179,11 +193,10 @@ class DevToolsFrameChild extends JSWindowActorChild {
         
         
         
-        
         if (
           existingTarget &&
           !existingTarget.createdFromJsWindowActor &&
-          !forceOverridingFirstTarget
+          !isBFCache
         ) {
           return;
         }
@@ -530,77 +543,96 @@ class DevToolsFrameChild extends JSWindowActorChild {
 
     
     
-    
-    
-    const shouldHandleBfCacheEvents =
-      this.isBfcacheInParentEnabled || this.isServerTargetSwitchingEnabled;
-
-    
-    
     if (type == "DOMWindowCreated") {
       this.instantiate();
       return;
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+
     if (type === "pageshow" && persisted) {
-      this.sendAsyncMessage("DevToolsFrameChild:bf-cache-navigation-pageshow", {
-        isNewTargetCreated: shouldHandleBfCacheEvents,
+      
+      
+      this.sendAsyncMessage("DevToolsFrameChild:bf-cache-navigation-pageshow");
+
+      
+      
+      
+      
+      this.instantiate({
+        isBFCache: true,
       });
-
-      if (shouldHandleBfCacheEvents) {
-        
-        
-        
-        
-        
-        
-        
-        this.instantiate({ forceOverridingFirstTarget: true });
-      }
-
       return;
     }
 
     if (type === "pagehide" && persisted) {
+      
+      
       this.sendAsyncMessage("DevToolsFrameChild:bf-cache-navigation-pagehide");
 
-      if (shouldHandleBfCacheEvents) {
+      
+      
+      
+      
+      const { sharedData } = Services.cpmm;
+      const watchedDataByWatcherActor = sharedData.get(SHARED_DATA_KEY_NAME);
+      if (!watchedDataByWatcherActor) {
+        throw new Error(
+          "Request to instantiate the target(s) for the BrowsingContext, but `sharedData` is empty about watched targets"
+        );
+      }
+
+      const actors = [];
+      
+      
+      let allActorsAreDestroyed = true;
+      for (const [watcherActorID, watchedData] of watchedDataByWatcherActor) {
+        const { browserId, isServerTargetSwitchingEnabled } = watchedData;
+
+        const existingTarget = this._getTargetActorForWatcherActorID(
+          watcherActorID,
+          browserId
+        );
+
+        if (!existingTarget) {
+          continue;
+        }
+        if (existingTarget.window.document != target) {
+          throw new Error("Existing target actor is for a distinct document");
+        }
         
         
         
         
-        const { sharedData } = Services.cpmm;
-        const watchedDataByWatcherActor = sharedData.get(SHARED_DATA_KEY_NAME);
-        if (!watchedDataByWatcherActor) {
-          throw new Error(
-            "Request to instantiate the target(s) for the BrowsingContext, but `sharedData` is empty about watched targets"
-          );
+        if (!this.isBfcacheInParentEnabled && !isServerTargetSwitchingEnabled) {
+          allActorsAreDestroyed = false;
+          continue;
         }
 
-        const actors = [];
-        for (const [watcherActorID, watchedData] of watchedDataByWatcherActor) {
-          const { browserId } = watchedData;
-          const existingTarget = this._getTargetActorForWatcherActorID(
-            watcherActorID,
-            browserId
-          );
+        actors.push({
+          watcherActorID,
+          form: existingTarget.form(),
+        });
+        existingTarget.destroy();
+      }
 
-          if (!existingTarget) {
-            continue;
-          }
-          if (existingTarget.window.document != target) {
-            throw new Error("Existing target actor is for a distinct document");
-          }
-          actors.push({ watcherActorID, form: existingTarget.form() });
-          existingTarget.destroy();
-        }
+      if (actors.length > 0) {
         
         
         
         
         
         this.sendAsyncMessage("DevToolsFrameChild:destroy", { actors });
+      }
 
+      if (allActorsAreDestroyed) {
         
         
         

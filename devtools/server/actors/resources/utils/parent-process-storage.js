@@ -43,6 +43,16 @@ class ParentProcessStorage {
     
     Services.obs.addObserver(this, "window-global-created");
     Services.obs.addObserver(this, "window-global-destroyed");
+
+    
+    
+    loader.lazyGetter(
+      this,
+      "isBfcacheInParentEnabled",
+      () =>
+        Services.appinfo.sessionHistoryInParent &&
+        Services.prefs.getBoolPref("fission.bfcacheInParent", false)
+    );
   }
 
   async watch(watcherActor, { onAvailable }) {
@@ -54,8 +64,7 @@ class ParentProcessStorage {
     
     this._offPageShow = watcherActor.on(
       "bf-cache-navigation-pageshow",
-      ({ windowGlobal, isNewTargetCreated }) =>
-        this._onNewWindowGlobal(windowGlobal, isNewTargetCreated)
+      ({ windowGlobal }) => this._onNewWindowGlobal(windowGlobal, true)
     );
 
     const {
@@ -179,7 +188,7 @@ class ParentProcessStorage {
 
 
 
-  async _onNewWindowGlobal(windowGlobal, isBfCacheNavigationCreatingNewTarget) {
+  async _onNewWindowGlobal(windowGlobal, isBfCacheNavigation) {
     
     
     if (
@@ -206,7 +215,8 @@ class ParentProcessStorage {
     
     
     const isNewTargetBeingCreated =
-      isTargetSwitchingEnabled() || isBfCacheNavigationCreatingNewTarget;
+      this.watcherActor.isServerTargetSwitchingEnabled ||
+      (isBfCacheNavigation && this.isBfcacheInParentEnabled);
 
     if (!isNewTargetBeingCreated) {
       return;
@@ -264,14 +274,15 @@ class StorageActorMock extends EventEmitter {
     
     
     
-    if (!isTargetSwitchingEnabled()) {
+    if (!this.watcherActor.isServerTargetSwitchingEnabled) {
       this._offPageShow = watcherActor.on(
         "bf-cache-navigation-pageshow",
-        ({ windowGlobal, isNewTargetCreated }) => {
+        ({ windowGlobal }) => {
           
           
           
-          if (isNewTargetCreated) {
+          
+          if (this.isBfcacheInParentEnabled) {
             return;
           }
           const windowMock = { location: windowGlobal.documentURI };
@@ -383,12 +394,8 @@ class StorageActorMock extends EventEmitter {
     
     
     
-    const isTargetSwitching = Services.prefs.getBoolPref(
-      "devtools.target-switching.server.enabled",
-      false
-    );
     const isTopContext = subject.browsingContext.top == subject.browsingContext;
-    if (isTopContext && isTargetSwitching) {
+    if (isTopContext && this.watcherActor.isServerTargetSwitchingEnabled) {
       return;
     }
 
@@ -537,11 +544,4 @@ class StorageActorMock extends EventEmitter {
     }
     return null;
   }
-}
-
-function isTargetSwitchingEnabled() {
-  return Services.prefs.getBoolPref(
-    "devtools.target-switching.server.enabled",
-    false
-  );
 }
