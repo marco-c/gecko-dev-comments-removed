@@ -281,7 +281,10 @@ class WebRtcCallWrapper : public RefCounted<WebRtcCallWrapper> {
   WebRtcCallWrapper(const WebRtcCallWrapper&) = delete;
   void operator=(const WebRtcCallWrapper&) = delete;
 
-  webrtc::Call* Call() const { return mCall.get(); }
+  webrtc::Call* Call() const {
+    MOZ_ASSERT(NS_IsMainThread());
+    return mCall.get();
+  }
 
   virtual ~WebRtcCallWrapper() = default;
 
@@ -309,6 +312,27 @@ class WebRtcCallWrapper : public RefCounted<WebRtcCallWrapper> {
   }
 
   DOMHighResTimeStamp GetNow() const { return mTimestampMaker.GetNow(); }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void Destroy() {
+    MOZ_ASSERT(NS_IsMainThread());
+    auto current = TaskQueueWrapper::MainAsCurrent();
+    mCall = nullptr;
+  }
 
   const dom::RTCStatsTimestampMaker& GetTimestampMaker() const {
     return mTimestampMaker;
@@ -342,7 +366,10 @@ class WebRtcCallWrapper : public RefCounted<WebRtcCallWrapper> {
   const RefPtr<webrtc::AudioDecoderFactory> mAudioDecoderFactory;
   const UniquePtr<webrtc::RtcEventLog> mEventLog;
   const UniquePtr<webrtc::TaskQueueFactory> mTaskQueueFactory;
-  const UniquePtr<webrtc::Call> mCall;
+
+ private:
+  
+  UniquePtr<webrtc::Call> mCall;
 };
 
 

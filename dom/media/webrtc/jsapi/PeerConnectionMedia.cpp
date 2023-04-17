@@ -614,6 +614,14 @@ void PeerConnectionMedia::SelfDestruct() {
 
   mQueuedIceCtxOperations.clear();
 
+  if (mCall) {
+    
+    
+    mMainThread->Dispatch(NS_NewRunnableFunction(
+        "PeerConnectionMedia::SelfDestruct(mCall)",
+        [call = std::move(mCall)]() { call->Destroy(); }));
+  }
+
   
   RUN_ON_THREAD(
       mSTSThread,
