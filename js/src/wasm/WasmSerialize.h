@@ -28,6 +28,8 @@
 namespace js {
 namespace wasm {
 
+using mozilla::MallocSizeOf;
+
 
 
 
@@ -212,6 +214,45 @@ static inline const uint8_t* DeserializePodVectorChecked(
   return cursor;
 }
 
+
+
+
+
+#define WASM_DECLARE_POD_VECTOR(Type, VectorName)   \
+  }                                                 \
+  }                                                 \
+  namespace mozilla {                               \
+  template <>                                       \
+  struct IsPod<js::wasm::Type> : std::true_type {}; \
+  }                                                 \
+  namespace js {                                    \
+  namespace wasm {                                  \
+  typedef Vector<Type, 0, SystemAllocPolicy> VectorName;
+
+
+
+
+
+
+
+#define WASM_DECLARE_SERIALIZABLE(Type)              \
+  size_t serializedSize() const;                     \
+  uint8_t* serialize(uint8_t* cursor) const;         \
+  const uint8_t* deserialize(const uint8_t* cursor); \
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+
+template <class T>
+struct SerializableRefPtr : RefPtr<T> {
+  using RefPtr<T>::operator=;
+
+  SerializableRefPtr() = default;
+
+  template <class U>
+  MOZ_IMPLICIT SerializableRefPtr(U&& u) : RefPtr<T>(std::forward<U>(u)) {}
+
+  WASM_DECLARE_SERIALIZABLE(SerializableRefPtr)
+};
+
 template <class T>
 inline size_t SerializableRefPtr<T>::serializedSize() const {
   return (*this)->serializedSize();
@@ -239,4 +280,4 @@ inline size_t SerializableRefPtr<T>::sizeOfExcludingThis(
 }  
 }  
 
-#endif  
+#endif
