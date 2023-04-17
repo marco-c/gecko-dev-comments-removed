@@ -561,10 +561,10 @@ bool nsUnknownDecoder::SniffForHTML(nsIRequest* aRequest) {
   uint32_t bufSize = end - str;
   
   
-#define MATCHES_TAG(_tagstr)                                  \
-  (bufSize >= sizeof(_tagstr) &&                              \
-   (PL_strncasecmp(str, _tagstr " ", sizeof(_tagstr)) == 0 || \
-    PL_strncasecmp(str, _tagstr ">", sizeof(_tagstr)) == 0))
+#define MATCHES_TAG(_tagstr)                                      \
+  (bufSize >= sizeof(_tagstr) &&                                  \
+   (nsCRT::strncasecmp(str, _tagstr " ", sizeof(_tagstr)) == 0 || \
+    nsCRT::strncasecmp(str, _tagstr ">", sizeof(_tagstr)) == 0))
 
   if (MATCHES_TAG("html") || MATCHES_TAG("frameset") || MATCHES_TAG("body") ||
       MATCHES_TAG("head") || MATCHES_TAG("script") || MATCHES_TAG("iframe") ||

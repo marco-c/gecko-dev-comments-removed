@@ -41,19 +41,40 @@ class nsCRT {
 
   
   static int32_t strcasecmp(const char* aStr1, const char* aStr2) {
+    
+
+
+
+#if defined(LIBFUZZER) && defined(LINUX)
+    return int32_t(::strcasecmp(aStr1, aStr2));
+#else
     return int32_t(PL_strcasecmp(aStr1, aStr2));
+#endif
   }
 
   
   static int32_t strncasecmp(const char* aStr1, const char* aStr2,
                              uint32_t aMaxLen) {
+#if defined(LIBFUZZER) && defined(LINUX)
+    int32_t result = int32_t(::strncasecmp(aStr1, aStr2, aMaxLen));
+#else
     int32_t result = int32_t(PL_strncasecmp(aStr1, aStr2, aMaxLen));
+#endif
     
     
     if (result < 0) {
       result = -1;
     }
     return result;
+  }
+
+  
+  static char* strcasestr(const char* aStr1, const char* aStr2) {
+#if defined(LIBFUZZER) && defined(LINUX)
+    return const_cast<char*>(::strcasestr(aStr1, aStr2));
+#else
+    return PL_strcasestr(aStr1, aStr2);
+#endif
   }
 
   

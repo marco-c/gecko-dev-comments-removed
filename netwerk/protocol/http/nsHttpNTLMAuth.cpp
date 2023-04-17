@@ -31,6 +31,7 @@
 #include "mozilla/Tokenizer.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
+#include "nsCRT.h"
 #include "nsNetUtil.h"
 #include "nsIChannel.h"
 #include "nsUnicharUtils.h"
@@ -171,7 +172,7 @@ nsHttpNTLMAuth::ChallengeReceived(nsIHttpAuthenticableChannel* channel,
   
   
   
-  if (PL_strcasecmp(challenge, "NTLM") == 0) {
+  if (nsCRT::strcasecmp(challenge, "NTLM") == 0) {
     nsCOMPtr<nsIAuthModule> module;
 
     
@@ -285,7 +286,7 @@ nsHttpNTLMAuth::GenerateCredentials(nsIHttpAuthenticableChannel* authChannel,
   Maybe<nsTArray<uint8_t>> certArray;
 
   
-  if (PL_strcasecmp(challenge, "NTLM") == 0) {
+  if (nsCRT::strcasecmp(challenge, "NTLM") == 0) {
     
     nsCOMPtr<nsIURI> uri;
     rv = authChannel->GetURI(getter_AddRefs(uri));

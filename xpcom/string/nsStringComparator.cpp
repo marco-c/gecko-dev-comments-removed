@@ -13,10 +13,23 @@
 int nsCaseInsensitiveCStringComparator(const char* aLhs, const char* aRhs,
                                        uint32_t aLhsLength,
                                        uint32_t aRhsLength) {
+#if defined(LIBFUZZER) && defined(LINUX)
+  
+  
+  
+  
+  int32_t result =
+      int32_t(strncasecmp(aLhs, aRhs, std::min(aLhsLength, aRhsLength)));
+
+  if (aLhsLength != aRhsLength) {
+    return (aLhsLength > aRhsLength) ? 1 : -1;
+  }
+#else
   if (aLhsLength != aRhsLength) {
     return (aLhsLength > aRhsLength) ? 1 : -1;
   }
   int32_t result = int32_t(PL_strncasecmp(aLhs, aRhs, aLhsLength));
+#endif
   
   
   if (result < 0) {
