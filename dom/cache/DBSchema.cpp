@@ -520,18 +520,12 @@ nsresult CreateOrMigrateSchema(mozIStorageConnection& aConn) {
     
     
 
-    
-    
-    
-    QM_TRY(
-        QM_OR_ELSE_WARN(ToResult(aConn.ExecuteSimpleSQL("VACUUM"_ns)),
-                        ([&aConn](const nsresult rv) -> Result<Ok, nsresult> {
-                          if (rv == NS_ERROR_STORAGE_CONSTRAINT) {
-                            QM_TRY(IntegrityCheck(aConn));
-                          }
-
-                          return Err(rv);
-                        })));
+    QM_TRY(aConn.ExecuteSimpleSQL("VACUUM"_ns), QM_PROPAGATE,
+           ([&aConn](const nsresult rv) {
+             if (rv == NS_ERROR_STORAGE_CONSTRAINT) {
+               QM_WARNONLY_TRY(IntegrityCheck(aConn));
+             }
+           }));
   }
 
   return NS_OK;
