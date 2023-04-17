@@ -66,35 +66,40 @@ function timelineTestOpenUrl(url) {
 
 
 
-
-
-
-
-
-function runCharsetTest(url, check1, charset, check2) {
+function runCharsetTest(url, check1, check2) {
   waitForExplicitFinish();
 
   BrowserTestUtils.openNewForegroundTab(gBrowser, url, true).then(afterOpen);
 
   function afterOpen() {
-    if (charset) {
-      BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser).then(
-        afterChangeCharset
-      );
+    BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser).then(
+      afterChangeCharset
+    );
 
-      SpecialPowers.spawn(gBrowser.selectedBrowser, [], check1).then(() => {
-        BrowserSetForcedCharacterSet(charset);
-      });
-    } else {
-      SpecialPowers.spawn(gBrowser.selectedBrowser, [], check1).then(() => {
-        gBrowser.removeCurrentTab();
-        finish();
-      });
-    }
+    SpecialPowers.spawn(gBrowser.selectedBrowser, [], check1).then(() => {
+      BrowserForceEncodingDetection();
+    });
   }
 
   function afterChangeCharset() {
     SpecialPowers.spawn(gBrowser.selectedBrowser, [], check2).then(() => {
+      gBrowser.removeCurrentTab();
+      finish();
+    });
+  }
+}
+
+
+
+
+
+function runCharsetCheck(url, check) {
+  waitForExplicitFinish();
+
+  BrowserTestUtils.openNewForegroundTab(gBrowser, url, true).then(afterOpen);
+
+  function afterOpen() {
+    SpecialPowers.spawn(gBrowser.selectedBrowser, [], check).then(() => {
       gBrowser.removeCurrentTab();
       finish();
     });

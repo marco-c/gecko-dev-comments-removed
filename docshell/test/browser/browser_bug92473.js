@@ -34,7 +34,7 @@ function afterOpen() {
 
   
   testContent(wrongText).then(() => {
-    BrowserSetForcedCharacterSet("Shift_JIS");
+    BrowserForceEncodingDetection();
   });
 }
 
