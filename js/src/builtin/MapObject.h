@@ -381,13 +381,13 @@ template <SetInitGetPrototypeOp getPrototypeOp, SetInitIsBuiltinOp isBuiltinOp>
   }
 
   
-  Shape* addShape = setProto->lookup(cx, cx->names().add);
-  if (!addShape || !addShape->isDataProperty()) {
+  mozilla::Maybe<ShapeProperty> addProp = setProto->lookup(cx, cx->names().add);
+  if (addProp.isNothing() || !addProp->isDataProperty()) {
     return true;
   }
 
   
-  RootedValue add(cx, setProto->getSlot(addShape->slot()));
+  RootedValue add(cx, setProto->getSlot(addProp->slot()));
   if (!isBuiltinOp(add)) {
     return true;
   }

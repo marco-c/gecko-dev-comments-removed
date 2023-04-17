@@ -208,11 +208,12 @@ void AbstractGeneratorObject::finalSuspend(HandleObject obj) {
 static AbstractGeneratorObject* GetGeneratorObjectForCall(JSContext* cx,
                                                           CallObject& callObj) {
   
-  Shape* shape = callObj.lookup(cx, cx->names().dotGenerator);
-  if (shape == nullptr) {
+  mozilla::Maybe<ShapeProperty> prop =
+      callObj.lookup(cx, cx->names().dotGenerator);
+  if (prop.isNothing()) {
     return nullptr;
   }
-  Value genValue = callObj.getSlot(shape->slot());
+  Value genValue = callObj.getSlot(prop->slot());
 
   
   
@@ -229,8 +230,9 @@ AbstractGeneratorObject* js::GetGeneratorObjectForFrame(
   if (frame.isModuleFrame()) {
     ModuleEnvironmentObject* moduleEnv =
         frame.script()->module()->environment();
-    Shape* shape = moduleEnv->lookup(cx, cx->names().dotGenerator);
-    Value genValue = moduleEnv->getSlot(shape->slot());
+    mozilla::Maybe<ShapeProperty> prop =
+        moduleEnv->lookup(cx, cx->names().dotGenerator);
+    Value genValue = moduleEnv->getSlot(prop->slot());
     return genValue.isObject()
                ? &genValue.toObject().as<AbstractGeneratorObject>()
                : nullptr;

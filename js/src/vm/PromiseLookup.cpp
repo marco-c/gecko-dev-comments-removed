@@ -82,15 +82,16 @@ void js::PromiseLookup::initialize(JSContext* cx) {
 
   
   
-  Shape* ctorShape = promiseProto->lookup(cx, cx->names().constructor);
-  if (!ctorShape || !ctorShape->isDataProperty()) {
+  mozilla::Maybe<ShapeProperty> ctorProp =
+      promiseProto->lookup(cx, cx->names().constructor);
+  if (ctorProp.isNothing() || !ctorProp->isDataProperty()) {
     return;
   }
 
   
   
   JSFunction* ctorFun;
-  if (!IsFunctionObject(promiseProto->getSlot(ctorShape->slot()), &ctorFun)) {
+  if (!IsFunctionObject(promiseProto->getSlot(ctorProp->slot()), &ctorFun)) {
     return;
   }
   if (ctorFun != promiseCtor) {
@@ -99,29 +100,30 @@ void js::PromiseLookup::initialize(JSContext* cx) {
 
   
   
-  Shape* thenShape = promiseProto->lookup(cx, cx->names().then);
-  if (!thenShape || !thenShape->isDataProperty()) {
+  mozilla::Maybe<ShapeProperty> thenProp =
+      promiseProto->lookup(cx, cx->names().then);
+  if (thenProp.isNothing() || !thenProp->isDataProperty()) {
     return;
   }
 
   
   
-  if (!isDataPropertyNative(cx, promiseProto, thenShape->slot(),
-                            Promise_then)) {
+  if (!isDataPropertyNative(cx, promiseProto, thenProp->slot(), Promise_then)) {
     return;
   }
 
   
   
-  Shape* speciesShape =
+  mozilla::Maybe<ShapeProperty> speciesProp =
       promiseCtor->lookup(cx, SYMBOL_TO_JSID(cx->wellKnownSymbols().species));
-  if (!speciesShape || !promiseCtor->hasGetter(speciesShape)) {
+  if (speciesProp.isNothing() ||
+      !promiseCtor->hasGetter(speciesProp->shapeDeprecated())) {
     return;
   }
 
   
   
-  uint32_t speciesGetterSlot = speciesShape->slot();
+  uint32_t speciesGetterSlot = speciesProp->slot();
   if (!isAccessorPropertyNative(cx, promiseCtor, speciesGetterSlot,
                                 Promise_static_species)) {
     return;
@@ -129,14 +131,15 @@ void js::PromiseLookup::initialize(JSContext* cx) {
 
   
   
-  Shape* resolveShape = promiseCtor->lookup(cx, cx->names().resolve);
-  if (!resolveShape || !resolveShape->isDataProperty()) {
+  mozilla::Maybe<ShapeProperty> resolveProp =
+      promiseCtor->lookup(cx, cx->names().resolve);
+  if (resolveProp.isNothing() || !resolveProp->isDataProperty()) {
     return;
   }
 
   
   
-  if (!isDataPropertyNative(cx, promiseCtor, resolveShape->slot(),
+  if (!isDataPropertyNative(cx, promiseCtor, resolveProp->slot(),
                             Promise_static_resolve)) {
     return;
   }
@@ -144,16 +147,15 @@ void js::PromiseLookup::initialize(JSContext* cx) {
   
   
   MOZ_ASSERT(!gc::IsInsideNursery(promiseCtor->lastProperty()));
-  MOZ_ASSERT(!gc::IsInsideNursery(speciesShape));
   MOZ_ASSERT(!gc::IsInsideNursery(promiseProto->lastProperty()));
 
   state_ = State::Initialized;
   promiseConstructorShape_ = promiseCtor->lastProperty();
   promiseProtoShape_ = promiseProto->lastProperty();
   promiseSpeciesGetterSlot_ = speciesGetterSlot;
-  promiseResolveSlot_ = resolveShape->slot();
-  promiseProtoConstructorSlot_ = ctorShape->slot();
-  promiseProtoThenSlot_ = thenShape->slot();
+  promiseResolveSlot_ = resolveProp->slot();
+  promiseProtoConstructorSlot_ = ctorProp->slot();
+  promiseProtoThenSlot_ = thenProp->slot();
 }
 
 void js::PromiseLookup::reset() {
