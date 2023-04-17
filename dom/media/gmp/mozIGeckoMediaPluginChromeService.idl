@@ -41,6 +41,13 @@ interface mozIGeckoMediaPluginChromeService : nsISupports
 
 
 
+  void forgetThisBaseDomain(in AString baseDomain);
+
+  
+
+
+
+
   bool isPersistentStorageAllowed(in ACString nodeId);
 
   
