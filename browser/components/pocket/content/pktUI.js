@@ -67,6 +67,7 @@ ChromeUtils.defineModuleGetter(
 
 const POCKET_ONSAVERECS_PREF = "extensions.pocket.onSaveRecs";
 const POCKET_ONSAVERECS_LOCLES_PREF = "extensions.pocket.onSaveRecs.locales";
+const POCKET_HOME_PREF = "extensions.pocket.showHome";
 
 var pktUI = (function() {
   
@@ -92,10 +93,16 @@ var pktUI = (function() {
     saved: {
       control: { height: 133, width: 350 },
     },
+    home: {
+      control: { height: 474, width: 328 },
+      
+      no_topics: { height: 247, width: 328 },
+    },
   };
 
   var onSaveRecsEnabledPref;
   var onSaveRecsLocalesPref;
+  var pocketHomePref;
 
   function initPrefs() {
     onSaveRecsEnabledPref = Services.prefs.getBoolPref(
@@ -106,6 +113,7 @@ var pktUI = (function() {
       POCKET_ONSAVERECS_LOCLES_PREF,
       ""
     );
+    pocketHomePref = Services.prefs.getBoolPref(POCKET_HOME_PREF);
   }
   initPrefs();
 
@@ -125,15 +133,19 @@ var pktUI = (function() {
     }
 
     
-    if (pktApi.isUserLoggedIn()) {
-      _titleToSave = title;
-      _urlToSave = url;
-      saveAndShowConfirmation();
+    if (!pktApi.isUserLoggedIn()) {
+      showSignUp();
       return;
     }
 
+    _titleToSave = title;
+    _urlToSave = url;
     
-    showSignUp();
+    if (!pocketHomePref || isValidURL()) {
+      saveAndShowConfirmation();
+      return;
+    }
+    showPocketHome();
   }
 
   
@@ -228,6 +240,27 @@ var pktUI = (function() {
   
 
 
+  function showPocketHome() {
+    const locale = getUILocale();
+    let homeVersion = "no_topics";
+    
+    
+    if (locale.startsWith("en-")) {
+      homeVersion = "control";
+    }
+    const sizes = initialPanelSize.home[homeVersion];
+    showPanel(
+      "about:pocket-home?pockethost=" +
+        Services.prefs.getCharPref("extensions.pocket.site") +
+        "&locale=" +
+        locale,
+      sizes
+    );
+  }
+
+  
+
+
   function showPanel(url, options) {
     
     _panelId += 1;
@@ -255,6 +288,20 @@ var pktUI = (function() {
           {
             action: "click",
             source: "save_button",
+          },
+        ],
+      })
+    );
+  }
+
+  function onShowHome() {
+    
+    pktTelemetry.sendStructuredIngestionEvent(
+      pktTelemetry.createPingPayload({
+        events: [
+          {
+            action: "click",
+            source: "home_button",
           },
         ],
       })
@@ -459,11 +506,14 @@ var pktUI = (function() {
 
     
     if (data.source) {
+      const { position, source } = data;
       const payload = pktTelemetry.createPingPayload({
         events: [
           {
             action: "click",
-            source: data.source,
+            source,
+            
+            ...(position || position === 0 ? { position } : {}),
           },
         ],
       });
@@ -575,6 +625,7 @@ var pktUI = (function() {
     onOpenTabWithPocketUrl,
     onShowSaved,
     onShowSignup,
+    onShowHome,
 
     getAndShowRecsForItem,
     tryToSaveUrl,

@@ -1933,6 +1933,9 @@ pref("extensions.pocket.onSaveRecs", true);
 pref("extensions.pocket.onSaveRecs.locales", "en-US,en-GB,en-CA");
 
 
+pref("extensions.pocket.showHome", true);
+
+
 
 pref("extensions.pocket.loggedOutVariant", "control");
 
