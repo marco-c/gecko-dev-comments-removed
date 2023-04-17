@@ -2865,6 +2865,8 @@ nsIFrame* Selection::GetSelectionEndPointGeometry(SelectionRegion aRegion,
       content, nodeOffset, mFrameSelection->GetHint(), &frameOffset);
   if (!frame) return nullptr;
 
+  nsFrameSelection::AdjustFrameForLineStart(frame, frameOffset);
+
   
   
   bool isText = node->IsText();

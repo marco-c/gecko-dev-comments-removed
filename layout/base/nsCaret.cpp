@@ -81,32 +81,6 @@ static nsLineBox* FindContainingLine(nsIFrame* aFrame) {
   return nullptr;
 }
 
-static bool AdjustCaretFrameForLineStart(nsIFrame*& aFrame,
-                                         int32_t& aFrameOffset,
-                                         nsFrameSelection& aFrameSelection) {
-  if (!aFrame->HasSignificantTerminalNewline()) {
-    return false;
-  }
-
-  int32_t start;
-  int32_t end;
-  aFrame->GetOffsets(start, end);
-  if (aFrameOffset != end) {
-    return false;
-  }
-
-  nsIFrame* nextSibling = aFrame->GetNextSibling();
-  if (!nextSibling) {
-    return false;
-  }
-
-  aFrame = nextSibling;
-  aFrame->GetOffsets(start, end);
-  aFrameOffset = start;
-  aFrameSelection.SetHint(CARET_ASSOCIATE_AFTER);
-  return true;
-}
-
 static void AdjustCaretFrameForLineEnd(nsIFrame** aFrame, int32_t* aOffset) {
   nsLineBox* line = FindContainingLine(*aFrame);
   if (!line) {
@@ -664,16 +638,15 @@ nsIFrame* nsCaret::GetCaretFrameForNodeOffset(
     *aReturnUnadjustedFrame = theFrame;
   }
 
-  
-  
-  if (!AdjustCaretFrameForLineStart(theFrame, theFrameOffset,
-                                    *aFrameSelection)) {
+  if (nsFrameSelection::AdjustFrameForLineStart(theFrame, theFrameOffset)) {
+    aFrameSelection->SetHint(CARET_ASSOCIATE_AFTER);
+  } else {
     
     
     
     
     AdjustCaretFrameForLineEnd(&theFrame, &theFrameOffset);
-  };
+  }
 
   
   
