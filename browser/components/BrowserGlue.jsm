@@ -3810,8 +3810,6 @@ BrowserGlue.prototype = {
         return "disallow-postUpdate";
       }
 
-      
-      await NimbusFeatures.upgradeDialog.ready();
       return NimbusFeatures.upgradeDialog.isEnabled() ? "" : "disabled";
     })();
 

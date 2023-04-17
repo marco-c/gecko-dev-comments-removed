@@ -88,7 +88,7 @@ XPCOMUtils.defineLazyGetter(this, "syncDataStore", () => {
 const DEFAULT_STORE_ID = "ExperimentStoreData";
 
 
-const SYNC_ACCESS_FEATURES = ["newtab", "aboutwelcome"];
+const SYNC_ACCESS_FEATURES = ["newtab", "aboutwelcome", "upgradeDialog"];
 
 class ExperimentStore extends SharedDataMap {
   constructor(sharedDataKey, options = { isParent: IS_MAIN_PROCESS }) {
