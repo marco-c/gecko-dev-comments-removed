@@ -11,6 +11,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/ProfilerMarkers.h"
+#include "mozilla/StaticMutex.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
 #include "xpcpublic.h"
@@ -86,6 +87,7 @@ struct MOZ_STACK_CLASS AutoNestedEventLoopAnnotation {
   explicit AutoNestedEventLoopAnnotation(const nsACString& aEntry)
       : mPrev(nullptr) {
     if (NS_IsMainThread()) {
+      StaticMutexAutoLock lock(sStackMutex);
       mPrev = sCurrent;
       sCurrent = this;
       if (mPrev) {
@@ -99,6 +101,7 @@ struct MOZ_STACK_CLASS AutoNestedEventLoopAnnotation {
 
   ~AutoNestedEventLoopAnnotation() {
     if (NS_IsMainThread()) {
+      StaticMutexAutoLock lock(sStackMutex);
       MOZ_ASSERT(sCurrent == this);
       sCurrent = mPrev;
       if (mPrev) {
@@ -109,6 +112,18 @@ struct MOZ_STACK_CLASS AutoNestedEventLoopAnnotation {
     }
   }
 
+  static void CopyCurrentStack(nsCString& aNestedSpinStack) {
+    
+    
+    
+    StaticMutexAutoLock lock(sStackMutex);
+    if (sCurrent) {
+      aNestedSpinStack = sCurrent->mStack;
+    } else {
+      aNestedSpinStack = "(no nested event loop active)"_ns;
+    }
+  }
+
  private:
   AutoNestedEventLoopAnnotation(const AutoNestedEventLoopAnnotation&) = delete;
   AutoNestedEventLoopAnnotation& operator=(
@@ -116,6 +131,7 @@ struct MOZ_STACK_CLASS AutoNestedEventLoopAnnotation {
 
   
   static AutoNestedEventLoopAnnotation* sCurrent;
+  static StaticMutex sStackMutex;
 
   
   

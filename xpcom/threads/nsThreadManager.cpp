@@ -659,6 +659,7 @@ nsThreadManager::SpinEventLoopUntilOrQuit(
 
 AutoNestedEventLoopAnnotation* AutoNestedEventLoopAnnotation::sCurrent =
     nullptr;
+StaticMutex AutoNestedEventLoopAnnotation::sStackMutex;
 
 
 void AutoNestedEventLoopAnnotation::AnnotateXPCOMSpinEventLoopStack(

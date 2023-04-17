@@ -49,6 +49,7 @@
 #include "mozilla/MemoryChecking.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
+#include "mozilla/SpinEventLoopUntil.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
 #include "mozilla/Telemetry.h"
@@ -81,7 +82,7 @@ namespace {
 
 struct ShutdownStep {
   mozilla::ShutdownPhase mPhase;
-  int mTicks;
+  Atomic<int> mTicks;
 
   constexpr explicit ShutdownStep(mozilla::ShutdownPhase aPhase)
       : mPhase(aPhase), mTicks(-1) {}
@@ -195,6 +196,15 @@ void RunWatchdog(void* arg) {
     }
 
     NoteIntentionalCrash(XRE_GetProcessTypeString());
+
+    
+    
+    
+    nsCString stack;
+    AutoNestedEventLoopAnnotation::CopyCurrentStack(stack);
+    printf_stderr(
+        "RunWatchdog: Mainthread nested event loops during hang: \n --- %s\n",
+        stack.get());
 
     
     if (!sShutdownNotified) {
