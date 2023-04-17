@@ -104,10 +104,7 @@ enum EscapeMask {
       1u << 13, 
   esc_Colon = 1u << 14,       
   esc_SkipControl = 1u << 15, 
-  esc_Spaces = 1u << 16,      
-  esc_ExtHandler = 1u << 17   
-
-
+  esc_Spaces = 1u << 16       
 };
 
 
