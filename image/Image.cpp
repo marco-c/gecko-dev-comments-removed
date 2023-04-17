@@ -382,39 +382,15 @@ void ImageResource::CollectSizeOfSurfaces(
     }
 
     
-    bool isMappedSurface = surface->GetType() == gfx::SurfaceType::DATA_MAPPED;
-    const gfx::SourceSurface* actualSurface =
-        isMappedSurface
-            ? static_cast<gfx::SourceSurfaceMappedData*>(surface.get())
-                  ->GetScopedSurface()
-            : surface.get();
-
-    
-    bool found = false;
-    for (const auto& counter : aCounters) {
-      if (counter.Surface() == actualSurface) {
-        found = true;
-        break;
-      }
-    }
-    if (found) {
-      continue;
-    }
-
-    
     
     
     gfx::SourceSurface::SizeOfInfo info;
     surface->SizeOfExcludingThis(aMallocSizeOf, info);
 
-    uint32_t heapBytes = aMallocSizeOf(actualSurface);
-    if (isMappedSurface) {
-      heapBytes += aMallocSizeOf(surface.get());
-    }
-
+    uint32_t heapBytes = aMallocSizeOf(surface);
     SurfaceKey key = ContainerSurfaceKey(surface->GetSize(), entry.mSVGContext,
                                          ToSurfaceFlags(entry.mFlags));
-    SurfaceMemoryCounter counter(key, actualSurface,  false,
+    SurfaceMemoryCounter counter(key,  false,
                                   false,
                                   false,  true,
                                  SurfaceMemoryCounterType::CONTAINER);
