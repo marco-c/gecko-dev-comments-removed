@@ -457,9 +457,17 @@ var removeTab = async function(tab) {
 async function reloadBrowser({
   browser = gBrowser.selectedBrowser,
   isErrorPage = false,
+  waitForLoad = true,
 } = {}) {
-  return navigateTo(browser.currentURI.spec, { browser, isErrorPage });
+  return navigateTo(browser.currentURI.spec, {
+    browser,
+    isErrorPage,
+    waitForLoad,
+  });
 }
+
+
+
 
 
 
@@ -480,10 +488,15 @@ async function reloadBrowser({
 
 async function navigateTo(
   uri,
-  { browser = gBrowser.selectedBrowser, isErrorPage = false } = {}
+  {
+    browser = gBrowser.selectedBrowser,
+    isErrorPage = false,
+    waitForLoad = true,
+  } = {}
 ) {
   const waitForDevToolsReload = await watchForDevToolsReload(browser, {
     isErrorPage,
+    waitForLoad,
   });
 
   uri = uri.replaceAll("\n", "");
@@ -509,9 +522,11 @@ async function navigateTo(
     BrowserTestUtils.loadURI(browser, uri);
   }
 
-  info(`Waiting for page to be loaded…`);
-  await onBrowserLoaded;
-  info(`→ page loaded`);
+  if (waitForLoad) {
+    info(`Waiting for page to be loaded…`);
+    await onBrowserLoaded;
+    info(`→ page loaded`);
+  }
 
   await waitForDevToolsReload();
 }
@@ -547,12 +562,17 @@ async function navigateTo(
 
 
 
-async function watchForDevToolsReload(browser, { isErrorPage = false } = {}) {
-  const waitForToolboxReload = await watchForToolboxReload(browser, {
+async function watchForDevToolsReload(
+  browser,
+  { isErrorPage = false, waitForLoad = true } = {}
+) {
+  const waitForToolboxReload = await _watchForToolboxReload(browser, {
     isErrorPage,
+    waitForLoad,
   });
-  const waitForResponsiveReload = await watchForResponsiveReload(browser, {
+  const waitForResponsiveReload = await _watchForResponsiveReload(browser, {
     isErrorPage,
+    waitForLoad,
   });
 
   return async function() {
@@ -569,7 +589,10 @@ async function watchForDevToolsReload(browser, { isErrorPage = false } = {}) {
 
 
 
-async function watchForToolboxReload(browser, { isErrorPage } = {}) {
+async function _watchForToolboxReload(
+  browser,
+  { isErrorPage, waitForLoad } = {}
+) {
   const tab = gBrowser.getTabForBrowser(browser);
   const toolbox = await gDevTools.getToolboxForTab(tab);
   if (!toolbox) {
@@ -582,7 +605,7 @@ async function watchForToolboxReload(browser, { isErrorPage } = {}) {
   const waitForCurrentPanelReload = watchForPanelReload(currentToolId, panel);
   const waitForToolboxCommandsReload = await watchForCommandsReload(
     toolbox.commands,
-    { isErrorPage }
+    { isErrorPage, waitForLoad }
   );
   const checkTargetSwitching = await watchForTargetSwitching(
     toolbox.commands,
@@ -610,7 +633,10 @@ async function watchForToolboxReload(browser, { isErrorPage } = {}) {
 
 
 
-async function watchForResponsiveReload(browser, { isErrorPage } = {}) {
+async function _watchForResponsiveReload(
+  browser,
+  { isErrorPage, waitForLoad } = {}
+) {
   const tab = gBrowser.getTabForBrowser(browser);
   const ui = ResponsiveUIManager.getResponsiveUIForTab(tab);
 
@@ -622,7 +648,7 @@ async function watchForResponsiveReload(browser, { isErrorPage } = {}) {
   const onResponsiveTargetSwitch = ui.once("responsive-ui-target-switch-done");
   const waitForResponsiveCommandsReload = await watchForCommandsReload(
     ui.commands,
-    { isErrorPage }
+    { isErrorPage, waitForLoad }
   );
   const checkTargetSwitching = await watchForTargetSwitching(
     ui.commands,
@@ -687,7 +713,10 @@ function watchForPanelReload(toolId, panel) {
 
 
 
-async function watchForCommandsReload(commands, { isErrorPage = false } = {}) {
+async function watchForCommandsReload(
+  commands,
+  { isErrorPage = false, waitForLoad = true } = {}
+) {
   
   
   
@@ -698,7 +727,15 @@ async function watchForCommandsReload(commands, { isErrorPage = false } = {}) {
   
   
   
-  const documentEventName = isErrorPage ? "dom-loading" : "dom-complete";
+  
+  
+  
+  
+  const waitForCompleteLoad = waitForLoad && !isErrorPage;
+  const documentEventName = waitForCompleteLoad
+    ? "dom-complete"
+    : "dom-loading";
+
   const {
     onResource: onTopLevelDomEvent,
   } = await commands.resourceCommand.waitForNextResource(
@@ -719,11 +756,11 @@ async function watchForCommandsReload(commands, { isErrorPage = false } = {}) {
       info(`Waiting for target switch…`);
       await onTargetSwitched;
       info(`→ switched-target emitted`);
-    } else {
-      info(`Waiting for '${documentEventName}' resource…`);
-      await onTopLevelDomEvent;
-      info(`→ 'dom-complete' resource emitted`);
     }
+
+    info(`Waiting for '${documentEventName}' resource…`);
+    await onTopLevelDomEvent;
+    info(`→ '${documentEventName}' resource emitted`);
 
     return isTargetSwitching;
   };
