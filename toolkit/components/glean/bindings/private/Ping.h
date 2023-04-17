@@ -7,15 +7,12 @@
 #ifndef mozilla_glean_Ping_h
 #define mozilla_glean_Ping_h
 
-#include "mozilla/DataMutex.h"
 #include "mozilla/glean/fog_ffi_generated.h"
 #include "mozilla/Maybe.h"
 #include "nsIGleanMetrics.h"
 #include "nsString.h"
 
 namespace mozilla::glean {
-
-typedef std::function<void(const nsACString& aReason)> PingTestCallback;
 
 namespace impl {
 
@@ -43,21 +40,13 @@ class Ping {
 
 
 
-  void Submit(const nsACString& aReason = nsCString()) const;
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  void TestBeforeNextSubmit(PingTestCallback&& aCallback) const;
+  void Submit(const nsACString& aReason = nsCString()) const {
+#ifdef MOZ_GLEAN_ANDROID
+    Unused << mId;
+#else
+    fog_submit_ping_by_id(mId, &aReason);
+#endif
+  }
 
  private:
   const uint32_t mId;

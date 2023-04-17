@@ -42,23 +42,6 @@ impl Ping {
             ))
         }
     }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn test_before_next_submit(&self, cb: impl FnOnce(Option<&str>) + Send + 'static) {
-        match self {
-            Ping::Parent(p) => p.test_before_next_submit(cb),
-            Ping::Child => {
-                panic!("Cannot use ping test API from non-parent process!");
-            }
-        };
-    }
 }
 
 #[inherent(pub)]
@@ -89,11 +72,6 @@ mod test {
     use super::*;
     use crate::common_test::*;
 
-    use std::sync::{
-        atomic::{AtomicBool, Ordering},
-        Arc,
-    };
-
     
     static PROTOTYPE_PING: Lazy<Ping> = Lazy::new(|| Ping::new("prototype", false, true, vec![]));
 
@@ -101,13 +79,8 @@ mod test {
     fn smoke_test_custom_ping() {
         let _lock = lock_test();
 
-        let called = Arc::new(AtomicBool::new(false));
-        let rcalled = Arc::clone(&called);
-        PROTOTYPE_PING.test_before_next_submit(move |reason| {
-            (*rcalled).store(true, Ordering::Relaxed);
-            assert_eq!(None, reason);
-        });
+        
+        
         PROTOTYPE_PING.submit(None);
-        assert!((*called).load(Ordering::Relaxed));
     }
 }
