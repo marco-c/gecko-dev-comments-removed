@@ -314,3 +314,25 @@ add_task(async function test_cookie_allow_session() {
     Ci.nsICookiePermission.ACCESS_SESSION
   );
 });
+
+
+
+add_task(async function test_autolaunchprotocolsfromorigins() {
+  await setupPolicyEngineWithJson({
+    policies: {
+      AutoLaunchProtocolsFromOrigins: [
+        {
+          allowed_origins: ["https://allowsession.example.com"],
+          protocol: "test-protocol",
+        },
+      ],
+    },
+  });
+  equal(
+    PermissionTestUtils.testPermission(
+      URI("https://allowsession.example.com"),
+      "open-protocol-handler^test-protocol"
+    ),
+    Ci.nsIPermissionManager.ALLOW_ACTION
+  );
+});
