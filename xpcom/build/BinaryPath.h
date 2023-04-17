@@ -137,12 +137,12 @@ class BinaryPath {
   static nsresult Get(char aResult[MAXPATHLEN]) {
     
     
-    const char* greHome = getenv("GRE_HOME");
-    if (!greHome) {
+    const char* libDir = getenv("MOZ_ANDROID_LIBDIR");
+    if (!libDir) {
       return NS_ERROR_FAILURE;
     }
 
-    snprintf(aResult, MAXPATHLEN, "%s/%s", greHome, "dummy");
+    snprintf(aResult, MAXPATHLEN, "%s/%s", libDir, "dummy");
     aResult[MAXPATHLEN - 1] = '\0';
     return NS_OK;
   }
