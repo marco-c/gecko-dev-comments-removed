@@ -91,6 +91,6 @@ extern "C" void abort(void) {
   
   
   
-  MOZ_CRASH();
+  MOZ_ASSUME_UNREACHABLE_MARKER();
 }
 #endif
