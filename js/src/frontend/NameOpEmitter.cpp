@@ -36,12 +36,22 @@ bool NameOpEmitter::emitGet() {
         return false;
       }
       break;
-    case NameLocation::Kind::Global:
-      if (!bce_->emitAtomOp(JSOp::GetGName, name_)) {
-        
-        return false;
+    case NameLocation::Kind::Global: {
+      MOZ_ASSERT(bce_->outermostScope().hasNonSyntacticScopeOnChain() ==
+                 bce_->sc->hasNonSyntacticScope());
+      if (bce_->sc->hasNonSyntacticScope()) {
+        if (!bce_->emitAtomOp(JSOp::GetName, name_)) {
+          
+          return false;
+        }
+      } else {
+        if (!bce_->emitAtomOp(JSOp::GetGName, name_)) {
+          
+          return false;
+        }
       }
       break;
+    }
     case NameLocation::Kind::Intrinsic:
       if (!bce_->emitAtomOp(JSOp::GetIntrinsic, name_)) {
         
