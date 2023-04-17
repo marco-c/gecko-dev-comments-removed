@@ -914,7 +914,11 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
 
 
 
-  virtual void EnterModalState() = 0;
+
+
+
+
+  virtual nsPIDOMWindowOuter* EnterModalState() = 0;
   virtual void LeaveModalState() = 0;
 
   virtual bool CanClose() = 0;
