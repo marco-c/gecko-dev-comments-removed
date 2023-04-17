@@ -100,12 +100,11 @@ void InternetCiter::Rewrap(const nsAString& aInString, uint32_t aWrapCol,
   mozilla::intl::LineBreaker* lineBreaker = nsContentUtils::LineBreaker();
 
   
-  uint32_t length;
   uint32_t posInString = 0;
   uint32_t outStringCol = 0;
   uint32_t citeLevel = 0;
   const nsPromiseFlatString& tString = PromiseFlatString(aInString);
-  length = tString.Length();
+  const uint32_t length = tString.Length();
   while (posInString < length) {
     
     uint32_t newCiteLevel = 0;
@@ -221,16 +220,24 @@ void InternetCiter::Rewrap(const nsAString& aInString, uint32_t aWrapCol,
       
       
       
-      
       if (eol <= (int32_t)posInString) {
         BreakLine(aOutString, outStringCol, citeLevel);
         continue;  
       }
 
-      int32_t breakPt =
-          lineBreaker->Prev(tString.get() + posInString, length - posInString,
-                            eol + 1 - posInString);
-      if (breakPt == NS_LINEBREAKER_NEED_MORE_TEXT) {
+      int32_t breakPt = 0;
+      int32_t nextBreakPt = 0;
+      while (true) {
+        nextBreakPt = lineBreaker->Next(tString.get() + posInString,
+                                        length - posInString, breakPt);
+        if (nextBreakPt == NS_LINEBREAKER_NEED_MORE_TEXT ||
+            nextBreakPt > eol - (int32_t)posInString) {
+          break;
+        }
+        breakPt = nextBreakPt;
+      }
+
+      if (breakPt == 0) {
         
         
         
@@ -239,9 +246,7 @@ void InternetCiter::Rewrap(const nsAString& aInString, uint32_t aWrapCol,
           continue;  
         }
 
-        
-        breakPt = lineBreaker->Next(tString.get() + posInString,
-                                    length - posInString, eol - posInString);
+        breakPt = nextBreakPt;
         MOZ_ASSERT(breakPt != NS_LINEBREAKER_NEED_MORE_TEXT,
                    "Next() always treats end-of-text as a break");
       }
