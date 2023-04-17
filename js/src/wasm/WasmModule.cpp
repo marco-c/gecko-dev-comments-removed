@@ -73,7 +73,6 @@ class Module::Tier2GeneratorTaskImpl : public Tier2GeneratorTask {
     
     
     
-    
     HelperThreadState().incWasmTier2GeneratorsFinished(locked);
 
     

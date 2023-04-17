@@ -99,6 +99,8 @@ class GlobalHelperThreadState {
   typedef Vector<PromiseHelperTask*, 0, SystemAllocPolicy>
       PromiseHelperTaskVector;
   typedef Vector<JSContext*, 0, SystemAllocPolicy> ContextVector;
+  using HelperThreadVector =
+      Vector<UniquePtr<HelperThread>, 0, SystemAllocPolicy>;
 
   
   mozilla::EnumeratedArray<ThreadType, ThreadType::THREAD_TYPE_MAX, size_t>
@@ -110,6 +112,9 @@ class GlobalHelperThreadState {
 
  private:
   
+
+  
+  HelperThreadVector threads_;
 
   
   IonCompileTaskVector ionWorklist_, ionFinishedList_;
@@ -163,7 +168,7 @@ class GlobalHelperThreadState {
 
   
   
-  size_t tasksPending_ = 0;
+  size_t externalTasksPending_ = 0;
 
   bool isInitialized_ = false;
 
@@ -190,15 +195,23 @@ class GlobalHelperThreadState {
     return isInitialized_;
   }
 
+  HelperThreadVector& threads(const AutoLockHelperThreadState& lock) {
+    return threads_;
+  }
+  const HelperThreadVector& threads(
+      const AutoLockHelperThreadState& lock) const {
+    return threads_;
+  }
+
   [[nodiscard]] bool ensureInitialized();
   [[nodiscard]] bool ensureThreadCount(size_t count,
-                                       AutoLockHelperThreadState& lock);
+                                       const AutoLockHelperThreadState& lock);
   void finish(AutoLockHelperThreadState& lock);
   void finishThreads(AutoLockHelperThreadState& lock);
 
   void setCpuCount(size_t count);
 
-  void setDispatchTaskCallback(JS::HelperThreadTaskCallback callback,
+  void setExternalTaskCallback(JS::HelperThreadTaskCallback callback,
                                size_t threadCount);
 
   [[nodiscard]] bool ensureContextList(size_t count,
@@ -210,9 +223,21 @@ class GlobalHelperThreadState {
   void assertIsLockedByCurrentThread() const;
 #endif
 
-  void wait(AutoLockHelperThreadState& locked,
+  enum CondVar {
+    
+    
+    
+    CONSUMER,
+
+    
+    
+    
+    PRODUCER,
+  };
+
+  void wait(AutoLockHelperThreadState& locked, CondVar which,
             mozilla::TimeDuration timeout = mozilla::TimeDuration::Forever());
-  void notifyAll(const AutoLockHelperThreadState&);
+  void notifyAll(CondVar which, const AutoLockHelperThreadState&);
 
   bool useInternalThreadPool(const AutoLockHelperThreadState& lock) const {
     return useInternalThreadPool_;
@@ -223,7 +248,7 @@ class GlobalHelperThreadState {
   }
 
  private:
-  void notifyOne(const AutoLockHelperThreadState&);
+  void notifyOne(CondVar which, const AutoLockHelperThreadState&);
 
  public:
   
@@ -413,8 +438,19 @@ class GlobalHelperThreadState {
 
  private:
   
-  
   js::ConditionVariable consumerWakeup;
+  js::ConditionVariable producerWakeup;
+
+  js::ConditionVariable& whichWakeup(CondVar which) {
+    switch (which) {
+      case CONSUMER:
+        return consumerWakeup;
+      case PRODUCER:
+        return producerWakeup;
+      default:
+        MOZ_CRASH("Invalid CondVar in |whichWakeup|");
+    }
+  }
 
   void dispatch(const AutoLockHelperThreadState& locked);
 
@@ -434,8 +470,8 @@ class GlobalHelperThreadState {
   bool submitTask(PromiseHelperTask* task);
   bool submitTask(GCParallelTask* task,
                   const AutoLockHelperThreadState& locked);
-  void runOneTask(AutoLockHelperThreadState& lock);
   void runTaskLocked(HelperThreadTask* task, AutoLockHelperThreadState& lock);
+  void runTaskFromExternalThread(AutoLockHelperThreadState& lock);
 
   using Selector = HelperThreadTask* (
       GlobalHelperThreadState::*)(const AutoLockHelperThreadState&);
@@ -451,6 +487,43 @@ static inline GlobalHelperThreadState& HelperThreadState() {
   MOZ_ASSERT(gHelperThreadState);
   return *gHelperThreadState;
 }
+
+
+class HelperThread {
+  Thread thread;
+
+  
+
+
+
+
+
+  ProfilingStack* profilingStack = nullptr;
+
+ public:
+  HelperThread();
+  [[nodiscard]] bool init();
+
+  ThreadId threadId() { return thread.get_id(); }
+
+  void join();
+
+  static void ThreadMain(void* arg);
+  void threadLoop();
+
+  void ensureRegisteredWithProfiler();
+  void unregisterWithProfilerIfNeeded();
+
+ private:
+  struct AutoProfilerLabel {
+    AutoProfilerLabel(HelperThread* helperThread, const char* label,
+                      JS::ProfilingCategoryPair categoryPair);
+    ~AutoProfilerLabel();
+
+   private:
+    ProfilingStack* profilingStack;
+  };
+};
 
 class MOZ_RAII AutoSetHelperThreadContext {
   JSContext* cx;
