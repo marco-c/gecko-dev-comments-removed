@@ -168,6 +168,47 @@ GMPInstallManager.prototype = {
     log.info("Using url (with replacement): " + url);
     return url;
   },
+
+  
+
+
+
+
+
+
+
+
+
+
+  recordUpdateXmlTelemetry(didGetAddonList, checkContentSignature) {
+    let log = getScopedLogger("GMPInstallManager.recordUpdateXmlTelemetry");
+
+    try {
+      let updateResultHistogram = Services.telemetry.getHistogramById(
+        "MEDIA_GMP_UPDATE_XML_FETCH_RESULT"
+      );
+
+      if (didGetAddonList) {
+        if (checkContentSignature) {
+          updateResultHistogram.add("content_sig_ok");
+        } else {
+          updateResultHistogram.add("cert_pinning_ok");
+        }
+      } else if (checkContentSignature) {
+        updateResultHistogram.add("content_sig_fail");
+      } else {
+        updateResultHistogram.add("cert_pinning_fail");
+      }
+    } catch (e) {
+      
+      
+      
+      log.error(
+        `Failed to record telemetry result of getProductAddonList, got error: ${e}`
+      );
+    }
+  },
+
   
 
 
@@ -228,7 +269,15 @@ GMPInstallManager.prototype = {
       allowNonBuiltIn,
       certs,
       checkContentSignature
-    ).catch(downloadLocalConfig);
+    )
+      .then(res => {
+        this.recordUpdateXmlTelemetry(true, checkContentSignature);
+        return res;
+      })
+      .catch(() => {
+        this.recordUpdateXmlTelemetry(false, checkContentSignature);
+        return downloadLocalConfig();
+      });
 
     addonPromise.then(
       res => {
