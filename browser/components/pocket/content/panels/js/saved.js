@@ -6,7 +6,6 @@
 
 
 
-
 var PKT_PANEL_OVERLAY = function(options) {
   var myself = this;
 
