@@ -12,12 +12,10 @@
 let runWorkerTest = async function(data) {
   let expectedPrecision = data.precision;
   await new Promise(resolve => {
-    var isRounded = function() {
-      return "Placeholder for eslint";
-    };
-    let evalStr = "var isRounded = " + data.isRoundedFunc;
     
-    eval(evalStr);
+    
+    
+    let isRounded = eval(data.isRoundedFunc);
 
     let worker = new content.Worker(
       "coop_header.sjs?crossOriginIsolated=true&worker=true"
