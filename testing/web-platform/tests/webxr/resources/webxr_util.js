@@ -15,6 +15,10 @@ var xr_debug = function(name, msg) {};
 
 function xr_promise_test(name, func, properties, glContextType, glContextProperties) {
   promise_test(async (t) => {
+    if (glContextType === 'webgl2') {
+      
+      assert_implements('WebGL2RenderingContext' in window, 'webgl2 not supported.');
+    }
     
     xr_debug(name, 'setup');
 
