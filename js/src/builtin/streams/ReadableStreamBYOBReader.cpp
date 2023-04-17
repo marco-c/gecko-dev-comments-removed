@@ -14,6 +14,7 @@
 
 #include "builtin/streams/ReadableStream.h"  
 #include "builtin/streams/ReadableStreamReader.h"  
+#include "js/ErrorReport.h"           
 #include "js/friend/ErrorMessages.h"  
 
 using JS::Handle;

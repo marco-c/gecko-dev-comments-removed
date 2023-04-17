@@ -12,8 +12,9 @@
 
 #include "jsfriendapi.h"  
 
-#include "js/UniquePtr.h"  
-#include "js/Utility.h"    
+#include "js/ErrorReport.h"  
+#include "js/UniquePtr.h"    
+#include "js/Utility.h"      
 
 namespace js {
 

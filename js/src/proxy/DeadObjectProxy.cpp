@@ -6,6 +6,7 @@
 
 #include "proxy/DeadObjectProxy.h"
 
+#include "js/ErrorReport.h"           
 #include "js/friend/ErrorMessages.h"  
 #include "vm/JSFunction.h"            
 #include "vm/ProxyObject.h"
