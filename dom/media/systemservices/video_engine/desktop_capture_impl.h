@@ -156,7 +156,6 @@ class BrowserDeviceInfoImpl : public VideoCaptureModule::DeviceInfo {
 
 class DesktopCaptureImpl : public DesktopCapturer::Callback,
                            public VideoCaptureModule {
-  
  public:
   
 
@@ -178,7 +177,6 @@ class DesktopCaptureImpl : public DesktopCapturer::Callback,
 
   const char* CurrentDeviceName() const override;
 
-  
   
   int32_t IncomingFrame(uint8_t* videoFrame, size_t videoFrameLength,
                         const VideoCaptureCapability& frameInfo,
