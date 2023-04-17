@@ -68,7 +68,7 @@ let gPrevTheme = AddonManager.getAddonsByTypes(["theme"]).then(addons => {
   }
 
   
-  return {};
+  return { id: THEME_IDS[0] };
 });
 
 
