@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>CSS Test: Inline transform style on SVG group element and presentation attribute style on group and child elements</title>
-    <link rel="author" title="Rebecca Hauck" href="mailto:rhauck@adobe.com">
+    <title>CSS Transforms Test: Inline style of rotate with 3 arguments on SVG element with presentation attribute style on the same element</title>
+    <link rel="author" title="David Alcala" href="mailto:dalcala@adobe.com">
     <link rel="help" href="http://www.w3.org/TR/css-transforms-1/#svg-transform">
     <link rel="help" href="http://www.w3.org/TR/css-transforms-1/#transform-attribute-specificity">
+    <link rel="help" href="http://www.w3.org/TR/css-transforms-1/#svg-transform-functions">
     <link rel="match" href="reference/svg-inline-styles-ref.html">
     <meta name="flags" content="svg">
-    <meta name="assert" content="Inline styles on SVG group elements override presentation attribute styles on the same element. Presentation attribute styles on child elements should be post-multiplied. The rect in the test should be rotated by 90 degrees clockwise and moved up 100 pixels and not scaled.">
+    <meta name="assert" content="Rotate with three arguments inline style on SVG elements should override presentation attribute styles on the same element. The rect in the test should be rotated by 90 degrees clockwise after the transform origin is translated by 20 pixels in both the vertical and horizontal directions and not scaled.">
     <style type="text/css">
     svg {
         height: 300px;
@@ -26,9 +27,9 @@
             </linearGradient>
         </defs>
         <rect x="1" y="1" width="98" height="98" fill="red"/>
-        <g style="transform: rotate(90deg)" transform="scale(0.5)">
-            <rect width="100" height="100" fill="url(#grad)" transform="translate(0 -100)"/>
-        </g>
+        <rect y="-60" width="100" height="100" fill="url(#grad)"
+              style="transform: translate(20px, 20px) rotate(90deg) translate(-20px, -20px)"
+              transform="scale(0.5)"/>
     </svg>
 </body>
 </html>
