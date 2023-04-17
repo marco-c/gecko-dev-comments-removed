@@ -291,67 +291,158 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde_json/1.0.44")]
-#![allow(unknown_lints, bare_trait_objects, ellipsis_inclusive_range_patterns)]
-#![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
-#![cfg_attr(feature = "cargo-clippy", deny(clippy, clippy_pedantic))]
 
-#![cfg_attr(
-    feature = "cargo-clippy",
-    allow(deprecated_cfg_attr, doc_markdown, needless_doctest_main)
+
+
+
+
+
+
+
+
+#![doc(html_root_url = "https://docs.rs/serde_json/1.0.64")]
+#![deny(clippy::all, clippy::pedantic)]
+
+#![allow(
+    clippy::comparison_chain,
+    clippy::deprecated_cfg_attr,
+    clippy::doc_markdown,
+    clippy::excessive_precision,
+    clippy::float_cmp,
+    clippy::manual_range_contains,
+    clippy::match_like_matches_macro,
+    clippy::match_single_binding,
+    clippy::needless_doctest_main,
+    clippy::transmute_ptr_to_ptr,
+    clippy::unnecessary_wraps,
+    
+    clippy::unnested_or_patterns,
 )]
 
-#![cfg_attr(feature = "cargo-clippy", allow(
+#![allow(
     
-    should_implement_trait,
+    clippy::should_implement_trait,
     
-    cast_possible_wrap,
-    cast_precision_loss,
-    cast_sign_loss,
+    clippy::cast_possible_truncation,
+    clippy::cast_possible_wrap,
+    clippy::cast_precision_loss,
+    clippy::cast_sign_loss,
     
-    integer_division,
+    clippy::enum_glob_use,
+    clippy::if_not_else,
+    clippy::integer_division,
+    clippy::map_err_ignore,
+    clippy::match_same_arms,
+    clippy::similar_names,
+    clippy::unused_self,
+    clippy::wildcard_imports,
     
-    cast_lossless,
-    module_name_repetitions,
-    shadow_unrelated,
-    single_match_else,
-    too_many_lines,
-    use_self,
-    zero_prefixed_literal,
+    clippy::cast_lossless,
+    clippy::module_name_repetitions,
+    clippy::redundant_else,
+    clippy::shadow_unrelated,
+    clippy::single_match_else,
+    clippy::too_many_lines,
+    clippy::unreadable_literal,
+    clippy::unseparated_literal_suffix,
+    clippy::use_self,
+    clippy::zero_prefixed_literal,
     
-    checked_conversions,
-    redundant_field_names,
+    clippy::checked_conversions,
+    clippy::mem_replace_with_default,
     
-    must_use_candidate,
-))]
+    clippy::missing_errors_doc,
+    clippy::must_use_candidate,
+)]
+#![allow(non_upper_case_globals)]
 #![deny(missing_docs)]
+#![cfg_attr(not(feature = "std"), no_std)]
 
-#[macro_use]
-extern crate serde;
-#[cfg(feature = "preserve_order")]
-extern crate indexmap;
-extern crate itoa;
-extern crate ryu;
 
+
+#[cfg(not(feature = "std"))]
+extern crate alloc;
+
+
+
+
+mod lib {
+    mod core {
+        #[cfg(not(feature = "std"))]
+        pub use core::*;
+        #[cfg(feature = "std")]
+        pub use std::*;
+    }
+
+    pub use self::core::cell::{Cell, RefCell};
+    pub use self::core::clone::{self, Clone};
+    pub use self::core::convert::{self, From, Into};
+    pub use self::core::default::{self, Default};
+    pub use self::core::fmt::{self, Debug, Display};
+    pub use self::core::hash::{self, Hash};
+    pub use self::core::iter::FusedIterator;
+    pub use self::core::marker::{self, PhantomData};
+    pub use self::core::ops::{Bound, RangeBounds};
+    pub use self::core::result::{self, Result};
+    pub use self::core::{borrow, char, cmp, iter, mem, num, ops, slice, str};
+
+    #[cfg(not(feature = "std"))]
+    pub use alloc::borrow::{Cow, ToOwned};
+    #[cfg(feature = "std")]
+    pub use std::borrow::{Cow, ToOwned};
+
+    #[cfg(not(feature = "std"))]
+    pub use alloc::string::{String, ToString};
+    #[cfg(feature = "std")]
+    pub use std::string::{String, ToString};
+
+    #[cfg(not(feature = "std"))]
+    pub use alloc::vec::{self, Vec};
+    #[cfg(feature = "std")]
+    pub use std::vec::{self, Vec};
+
+    #[cfg(not(feature = "std"))]
+    pub use alloc::boxed::Box;
+    #[cfg(feature = "std")]
+    pub use std::boxed::Box;
+
+    #[cfg(not(feature = "std"))]
+    pub use alloc::collections::{btree_map, BTreeMap};
+    #[cfg(feature = "std")]
+    pub use std::collections::{btree_map, BTreeMap};
+
+    #[cfg(feature = "std")]
+    pub use std::error;
+}
+
+
+
+#[cfg(feature = "std")]
 #[doc(inline)]
-pub use self::de::{from_reader, from_slice, from_str, Deserializer, StreamDeserializer};
+pub use crate::de::from_reader;
 #[doc(inline)]
-pub use self::error::{Error, Result};
+pub use crate::de::{from_slice, from_str, Deserializer, StreamDeserializer};
 #[doc(inline)]
-pub use self::ser::{
-    to_string, to_string_pretty, to_vec, to_vec_pretty, to_writer, to_writer_pretty, Serializer,
-};
+pub use crate::error::{Error, Result};
 #[doc(inline)]
-pub use self::value::{from_value, to_value, Map, Number, Value};
+pub use crate::ser::{to_string, to_string_pretty, to_vec, to_vec_pretty};
+#[cfg(feature = "std")]
+#[doc(inline)]
+pub use crate::ser::{to_writer, to_writer_pretty, Serializer};
+#[doc(inline)]
+pub use crate::value::{from_value, to_value, Map, Number, Value};
 
 
 
-macro_rules! try {
+macro_rules! tri {
     ($e:expr) => {
         match $e {
-            ::std::result::Result::Ok(val) => val,
-            ::std::result::Result::Err(err) => return ::std::result::Result::Err(err),
+            crate::lib::Result::Ok(val) => val,
+            crate::lib::Result::Err(err) => return crate::lib::Result::Err(err),
         }
+    };
+    ($e:expr,) => {
+        tri!($e)
     };
 }
 
@@ -361,10 +452,19 @@ mod macros;
 pub mod de;
 pub mod error;
 pub mod map;
+#[cfg(feature = "std")]
 pub mod ser;
+#[cfg(not(feature = "std"))]
+mod ser;
 pub mod value;
 
+mod features_check;
+
+mod io;
+#[cfg(feature = "std")]
 mod iter;
+#[cfg(feature = "float_roundtrip")]
+mod lexical;
 mod number;
 mod read;
 

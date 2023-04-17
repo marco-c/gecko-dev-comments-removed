@@ -90,29 +90,24 @@
 
 
 
-use std::fmt::{self, Debug};
-use std::io;
-use std::mem;
-use std::str;
-
+use crate::error::Error;
+use crate::io;
+use crate::lib::*;
 use serde::de::DeserializeOwned;
 use serde::ser::Serialize;
 
-use error::Error;
-pub use map::Map;
-pub use number::Number;
+pub use self::index::Index;
+pub use self::ser::Serializer;
+pub use crate::map::Map;
+pub use crate::number::Number;
 
 #[cfg(feature = "raw_value")]
-pub use raw::RawValue;
-
-pub use self::index::Index;
-
-use self::ser::Serializer;
+pub use crate::raw::{to_raw_value, RawValue};
 
 
 
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub enum Value {
     
     
@@ -182,30 +177,17 @@ impl Debug for Value {
             Value::Bool(v) => formatter.debug_tuple("Bool").field(&v).finish(),
             Value::Number(ref v) => Debug::fmt(v, formatter),
             Value::String(ref v) => formatter.debug_tuple("String").field(v).finish(),
-            Value::Array(ref v) => formatter.debug_tuple("Array").field(v).finish(),
-            Value::Object(ref v) => formatter.debug_tuple("Object").field(v).finish(),
+            Value::Array(ref v) => {
+                formatter.write_str("Array(")?;
+                Debug::fmt(v, formatter)?;
+                formatter.write_str(")")
+            }
+            Value::Object(ref v) => {
+                formatter.write_str("Object(")?;
+                Debug::fmt(v, formatter)?;
+                formatter.write_str(")")
+            }
         }
-    }
-}
-
-struct WriterFormatter<'a, 'b: 'a> {
-    inner: &'a mut fmt::Formatter<'b>,
-}
-
-impl<'a, 'b> io::Write for WriterFormatter<'a, 'b> {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        fn io_error<E>(_: E) -> io::Error {
-            
-            
-            io::Error::new(io::ErrorKind::Other, "fmt error")
-        }
-        let s = try!(str::from_utf8(buf).map_err(io_error));
-        try!(self.inner.write_str(s).map_err(io_error));
-        Ok(buf.len())
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        Ok(())
     }
 }
 
@@ -235,6 +217,30 @@ impl fmt::Display for Value {
     
     
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        struct WriterFormatter<'a, 'b: 'a> {
+            inner: &'a mut fmt::Formatter<'b>,
+        }
+
+        impl<'a, 'b> io::Write for WriterFormatter<'a, 'b> {
+            fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+                
+                
+                let s = unsafe { str::from_utf8_unchecked(buf) };
+                tri!(self.inner.write_str(s).map_err(io_error));
+                Ok(buf.len())
+            }
+
+            fn flush(&mut self) -> io::Result<()> {
+                Ok(())
+            }
+        }
+
+        fn io_error(_: fmt::Error) -> io::Error {
+            
+            
+            io::Error::new(io::ErrorKind::Other, "fmt error")
+        }
+
         let alternate = f.alternate();
         let mut wr = WriterFormatter { inner: f };
         if alternate {
@@ -745,8 +751,8 @@ impl Value {
     
     
     
-    pub fn pointer<'a>(&'a self, pointer: &str) -> Option<&'a Value> {
-        if pointer == "" {
+    pub fn pointer(&self, pointer: &str) -> Option<&Value> {
+        if pointer.is_empty() {
             return Some(self);
         }
         if !pointer.starts_with('/') {
@@ -808,8 +814,10 @@ impl Value {
     
     
     
-    pub fn pointer_mut<'a>(&'a mut self, pointer: &str) -> Option<&'a mut Value> {
-        if pointer == "" {
+    
+    
+    pub fn pointer_mut(&mut self, pointer: &str) -> Option<&mut Value> {
+        if pointer.is_empty() {
             return Some(self);
         }
         if !pointer.starts_with('/') {

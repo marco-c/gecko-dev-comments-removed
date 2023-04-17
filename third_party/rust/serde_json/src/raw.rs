@@ -1,14 +1,12 @@
-use std::fmt::{self, Debug, Display};
-use std::mem;
-
+use crate::error::Error;
+use crate::lib::*;
 use serde::de::value::BorrowedStrDeserializer;
 use serde::de::{
     self, Deserialize, DeserializeSeed, Deserializer, IntoDeserializer, MapAccess, Unexpected,
     Visitor,
 };
+use serde::forward_to_deserialize_any;
 use serde::ser::{Serialize, SerializeStruct, Serializer};
-
-use error::Error;
 
 
 
@@ -171,7 +169,7 @@ impl RawValue {
     
     pub fn from_string(json: String) -> Result<Box<Self>, Error> {
         {
-            let borrowed = ::from_str::<&Self>(&json)?;
+            let borrowed = crate::from_str::<&Self>(&json)?;
             if borrowed.json.len() < json.len() {
                 return Ok(borrowed.to_owned());
             }
@@ -217,7 +215,67 @@ impl RawValue {
     }
 }
 
-pub const TOKEN: &'static str = "$serde_json::private::RawValue";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn to_raw_value<T>(value: &T) -> Result<Box<RawValue>, Error>
+where
+    T: Serialize,
+{
+    let json_string = crate::to_string(value)?;
+    Ok(RawValue::from_owned(json_string.into_boxed_str()))
+}
+
+pub const TOKEN: &str = "$serde_json::private::RawValue";
 
 impl Serialize for RawValue {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

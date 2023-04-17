@@ -1,13 +1,9 @@
 
 
-use std::error;
-use std::fmt::{self, Debug, Display};
-use std::io;
-use std::result;
-use std::str::FromStr;
-
-use serde::de;
-use serde::ser;
+use crate::io;
+use crate::lib::str::FromStr;
+use crate::lib::*;
+use serde::{de, ser};
 
 
 
@@ -58,10 +54,8 @@ impl Error {
             ErrorCode::ExpectedColon
             | ErrorCode::ExpectedListCommaOrEnd
             | ErrorCode::ExpectedObjectCommaOrEnd
-            | ErrorCode::ExpectedObjectOrArray
             | ErrorCode::ExpectedSomeIdent
             | ErrorCode::ExpectedSomeValue
-            | ErrorCode::ExpectedSomeString
             | ErrorCode::InvalidEscape
             | ErrorCode::InvalidNumber
             | ErrorCode::NumberOutOfRange
@@ -130,7 +124,8 @@ pub enum Category {
     Eof,
 }
 
-#[cfg_attr(feature = "cargo-clippy", allow(fallible_impl_from))]
+#[cfg(feature = "std")]
+#[allow(clippy::fallible_impl_from)]
 impl From<Error> for io::Error {
     
     
@@ -178,9 +173,7 @@ struct ErrorImpl {
     column: usize,
 }
 
-
-#[doc(hidden)]
-pub enum ErrorCode {
+pub(crate) enum ErrorCode {
     
     Message(Box<str>),
 
@@ -209,16 +202,10 @@ pub enum ErrorCode {
     ExpectedObjectCommaOrEnd,
 
     
-    ExpectedObjectOrArray,
-
-    
     ExpectedSomeIdent,
 
     
     ExpectedSomeValue,
-
-    
-    ExpectedSomeString,
 
     
     InvalidEscape,
@@ -255,16 +242,10 @@ pub enum ErrorCode {
 }
 
 impl Error {
-    
-    #[doc(hidden)]
     #[cold]
-    pub fn syntax(code: ErrorCode, line: usize, column: usize) -> Self {
+    pub(crate) fn syntax(code: ErrorCode, line: usize, column: usize) -> Self {
         Error {
-            err: Box::new(ErrorImpl {
-                code: code,
-                line: line,
-                column: column,
-            }),
+            err: Box::new(ErrorImpl { code, line, column }),
         }
     }
 
@@ -283,10 +264,8 @@ impl Error {
         }
     }
 
-    
-    #[doc(hidden)]
     #[cold]
-    pub fn fix_position<F>(self, f: F) -> Self
+    pub(crate) fn fix_position<F>(self, f: F) -> Self
     where
         F: FnOnce(ErrorCode) -> Error,
     {
@@ -310,10 +289,8 @@ impl Display for ErrorCode {
             ErrorCode::ExpectedColon => f.write_str("expected `:`"),
             ErrorCode::ExpectedListCommaOrEnd => f.write_str("expected `,` or `]`"),
             ErrorCode::ExpectedObjectCommaOrEnd => f.write_str("expected `,` or `}`"),
-            ErrorCode::ExpectedObjectOrArray => f.write_str("expected `{` or `[`"),
             ErrorCode::ExpectedSomeIdent => f.write_str("expected ident"),
             ErrorCode::ExpectedSomeValue => f.write_str("expected value"),
-            ErrorCode::ExpectedSomeString => f.write_str("expected string"),
             ErrorCode::InvalidEscape => f.write_str("invalid escape"),
             ErrorCode::InvalidNumber => f.write_str("invalid number"),
             ErrorCode::NumberOutOfRange => f.write_str("number out of range"),
@@ -333,18 +310,9 @@ impl Display for ErrorCode {
     }
 }
 
-impl error::Error for Error {
-    fn description(&self) -> &str {
-        match self.err.code {
-            ErrorCode::Io(ref err) => error::Error::description(err),
-            _ => {
-                
-                "JSON error"
-            }
-        }
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
+impl serde::de::StdError for Error {
+    #[cfg(feature = "std")]
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match self.err.code {
             ErrorCode::Io(ref err) => Some(err),
             _ => None,
@@ -393,7 +361,7 @@ impl de::Error for Error {
     }
 
     #[cold]
-    fn invalid_type(unexp: de::Unexpected, exp: &de::Expected) -> Self {
+    fn invalid_type(unexp: de::Unexpected, exp: &dyn de::Expected) -> Self {
         if let de::Unexpected::Unit = unexp {
             Error::custom(format_args!("invalid type: null, expected {}", exp))
         } else {
@@ -416,8 +384,8 @@ fn make_error(mut msg: String) -> Error {
     Error {
         err: Box::new(ErrorImpl {
             code: ErrorCode::Message(msg.into_boxed_str()),
-            line: line,
-            column: column,
+            line,
+            column,
         }),
     }
 }

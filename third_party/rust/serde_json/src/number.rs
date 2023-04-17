@@ -1,27 +1,22 @@
-use error::Error;
+use crate::de::ParserNumber;
+use crate::error::Error;
+use crate::lib::*;
 use serde::de::{self, Unexpected, Visitor};
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::fmt::{self, Debug, Display};
+use serde::{
+    forward_to_deserialize_any, serde_if_integer128, Deserialize, Deserializer, Serialize,
+    Serializer,
+};
 
 #[cfg(feature = "arbitrary_precision")]
-use itoa;
-#[cfg(feature = "arbitrary_precision")]
-use ryu;
+use crate::error::ErrorCode;
 #[cfg(feature = "arbitrary_precision")]
 use serde::de::{IntoDeserializer, MapAccess};
 
-use de::ParserNumber;
-
 #[cfg(feature = "arbitrary_precision")]
-use error::ErrorCode;
-
-#[cfg(feature = "arbitrary_precision")]
-
-#[doc(hidden)]
-pub const TOKEN: &'static str = "$serde_json::private::Number";
+pub(crate) const TOKEN: &str = "$serde_json::private::Number";
 
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct Number {
     n: N,
 }
@@ -35,6 +30,10 @@ enum N {
     
     Float(f64),
 }
+
+
+#[cfg(not(feature = "arbitrary_precision"))]
+impl Eq for N {}
 
 #[cfg(feature = "arbitrary_precision")]
 type N = String;
@@ -212,7 +211,7 @@ impl Number {
             N::Float(n) => Some(n),
         }
         #[cfg(feature = "arbitrary_precision")]
-        self.n.parse().ok()
+        self.n.parse::<f64>().ok().filter(|float| float.is_finite())
     }
 
     
@@ -240,7 +239,7 @@ impl Number {
                     ryu::Buffer::new().format_finite(f).to_owned()
                 }
             };
-            Some(Number { n: n })
+            Some(Number { n })
         } else {
             None
         }
@@ -251,7 +250,7 @@ impl Number {
     #[doc(hidden)]
     #[inline]
     pub fn from_string_unchecked(n: String) -> Self {
-        Number { n: n }
+        Number { n }
     }
 }
 
@@ -291,7 +290,10 @@ impl Debug for Number {
 
     #[cfg(feature = "arbitrary_precision")]
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(formatter, "Number({})", &self.n)
+        formatter
+            .debug_tuple("Number")
+            .field(&format_args!("{}", self.n))
+            .finish()
     }
 }
 
@@ -434,7 +436,7 @@ impl<'de> de::Deserialize<'de> for NumberFromString {
             where
                 E: de::Error,
             {
-                let n = try!(s.parse().map_err(de::Error::custom));
+                let n = tri!(s.parse().map_err(de::Error::custom));
                 Ok(NumberFromString { value: n })
             }
         }
@@ -510,7 +512,7 @@ macro_rules! deserialize_number {
         {
             visitor.$visit(self.n.parse().map_err(|_| invalid_number())?)
         }
-    }
+    };
 }
 
 impl<'de> Deserializer<'de> for Number {
@@ -570,9 +572,7 @@ impl<'de, 'a> Deserializer<'de> for &'a Number {
 }
 
 #[cfg(feature = "arbitrary_precision")]
-
-#[doc(hidden)]
-pub struct NumberDeserializer {
+pub(crate) struct NumberDeserializer {
     pub number: Option<String>,
 }
 
@@ -655,7 +655,7 @@ impl From<ParserNumber> for Number {
             #[cfg(feature = "arbitrary_precision")]
             ParserNumber::String(s) => s,
         };
-        Number { n: n }
+        Number { n }
     }
 }
 
@@ -675,7 +675,7 @@ macro_rules! impl_from_unsigned {
                             itoa::Buffer::new().format(u).to_owned()
                         }
                     };
-                    Number { n: n }
+                    Number { n }
                 }
             }
         )*
@@ -704,7 +704,7 @@ macro_rules! impl_from_signed {
                             itoa::Buffer::new().format(i).to_owned()
                         }
                     };
-                    Number { n: n }
+                    Number { n }
                 }
             }
         )*
@@ -731,10 +731,8 @@ serde_if_integer128! {
 
 impl Number {
     #[cfg(not(feature = "arbitrary_precision"))]
-    
-    #[doc(hidden)]
     #[cold]
-    pub fn unexpected(&self) -> Unexpected {
+    pub(crate) fn unexpected(&self) -> Unexpected {
         match self.n {
             N::PosInt(u) => Unexpected::Unsigned(u),
             N::NegInt(i) => Unexpected::Signed(i),
@@ -743,10 +741,8 @@ impl Number {
     }
 
     #[cfg(feature = "arbitrary_precision")]
-    
-    #[doc(hidden)]
     #[cold]
-    pub fn unexpected(&self) -> Unexpected {
+    pub(crate) fn unexpected(&self) -> Unexpected {
         Unexpected::Other("number")
     }
 }

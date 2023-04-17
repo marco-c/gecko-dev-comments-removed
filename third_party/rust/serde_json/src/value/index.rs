@@ -1,8 +1,6 @@
-use std::fmt;
-use std::ops;
-
 use super::Value;
-use map::Map;
+use crate::lib::*;
+use crate::map::Map;
 
 
 
@@ -115,9 +113,9 @@ impl Index for String {
     }
 }
 
-impl<'a, T: ?Sized> Index for &'a T
+impl<'a, T> Index for &'a T
 where
-    T: Index,
+    T: ?Sized + Index,
 {
     fn index_into<'v>(&self, v: &'v Value) -> Option<&'v Value> {
         (**self).index_into(v)
@@ -135,8 +133,8 @@ mod private {
     pub trait Sealed {}
     impl Sealed for usize {}
     impl Sealed for str {}
-    impl Sealed for String {}
-    impl<'a, T: ?Sized> Sealed for &'a T where T: Sealed {}
+    impl Sealed for super::String {}
+    impl<'a, T> Sealed for &'a T where T: ?Sized + Sealed {}
 }
 
 

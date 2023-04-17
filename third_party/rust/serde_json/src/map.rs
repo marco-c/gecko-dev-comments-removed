@@ -6,16 +6,11 @@
 
 
 
-use serde::{de, ser};
-use std::borrow::Borrow;
-use std::fmt::{self, Debug};
-use std::hash::Hash;
-use std::iter::FromIterator;
-use std::ops;
-use value::Value;
-
-#[cfg(not(feature = "preserve_order"))]
-use std::collections::{btree_map, BTreeMap};
+use crate::lib::borrow::Borrow;
+use crate::lib::iter::FromIterator;
+use crate::lib::*;
+use crate::value::Value;
+use serde::de;
 
 #[cfg(feature = "preserve_order")]
 use indexmap::{self, IndexMap};
@@ -39,22 +34,17 @@ impl Map<String, Value> {
         }
     }
 
-    #[cfg(not(feature = "preserve_order"))]
-    
-    #[inline]
-    pub fn with_capacity(capacity: usize) -> Self {
-        
-        let _ = capacity;
-        Map {
-            map: BTreeMap::new(),
-        }
-    }
-
-    #[cfg(feature = "preserve_order")]
     
     #[inline]
     pub fn with_capacity(capacity: usize) -> Self {
         Map {
+            #[cfg(not(feature = "preserve_order"))]
+            map: {
+                
+                let _ = capacity;
+                BTreeMap::new()
+            },
+            #[cfg(feature = "preserve_order")]
             map: IndexMap::with_capacity(capacity),
         }
     }
@@ -70,10 +60,10 @@ impl Map<String, Value> {
     
     
     #[inline]
-    pub fn get<Q: ?Sized>(&self, key: &Q) -> Option<&Value>
+    pub fn get<Q>(&self, key: &Q) -> Option<&Value>
     where
         String: Borrow<Q>,
-        Q: Ord + Eq + Hash,
+        Q: ?Sized + Ord + Eq + Hash,
     {
         self.map.get(key)
     }
@@ -83,10 +73,10 @@ impl Map<String, Value> {
     
     
     #[inline]
-    pub fn contains_key<Q: ?Sized>(&self, key: &Q) -> bool
+    pub fn contains_key<Q>(&self, key: &Q) -> bool
     where
         String: Borrow<Q>,
-        Q: Ord + Eq + Hash,
+        Q: ?Sized + Ord + Eq + Hash,
     {
         self.map.contains_key(key)
     }
@@ -96,10 +86,10 @@ impl Map<String, Value> {
     
     
     #[inline]
-    pub fn get_mut<Q: ?Sized>(&mut self, key: &Q) -> Option<&mut Value>
+    pub fn get_mut<Q>(&mut self, key: &Q) -> Option<&mut Value>
     where
         String: Borrow<Q>,
-        Q: Ord + Eq + Hash,
+        Q: ?Sized + Ord + Eq + Hash,
     {
         self.map.get_mut(key)
     }
@@ -121,10 +111,10 @@ impl Map<String, Value> {
     
     
     #[inline]
-    pub fn remove<Q: ?Sized>(&mut self, key: &Q) -> Option<Value>
+    pub fn remove<Q>(&mut self, key: &Q) -> Option<Value>
     where
         String: Borrow<Q>,
-        Q: Ord + Eq + Hash,
+        Q: ?Sized + Ord + Eq + Hash,
     {
         #[cfg(feature = "preserve_order")]
         return self.map.swap_remove(key);
@@ -134,18 +124,77 @@ impl Map<String, Value> {
 
     
     
+    
+    
+    
+    pub fn remove_entry<Q>(&mut self, key: &Q) -> Option<(String, Value)>
+    where
+        String: Borrow<Q>,
+        Q: ?Sized + Ord + Eq + Hash,
+    {
+        #[cfg(any(feature = "preserve_order", not(no_btreemap_remove_entry)))]
+        return self.map.remove_entry(key);
+        #[cfg(all(
+            not(feature = "preserve_order"),
+            no_btreemap_remove_entry,
+            not(no_btreemap_get_key_value),
+        ))]
+        {
+            let (key, _value) = self.map.get_key_value(key)?;
+            let key = key.clone();
+            let value = self.map.remove::<String>(&key)?;
+            Some((key, value))
+        }
+        #[cfg(all(
+            not(feature = "preserve_order"),
+            no_btreemap_remove_entry,
+            no_btreemap_get_key_value,
+        ))]
+        {
+            struct Key<'a, Q: ?Sized>(&'a Q);
+
+            impl<'a, Q: ?Sized> RangeBounds<Q> for Key<'a, Q> {
+                fn start_bound(&self) -> Bound<&Q> {
+                    Bound::Included(self.0)
+                }
+                fn end_bound(&self) -> Bound<&Q> {
+                    Bound::Included(self.0)
+                }
+            }
+
+            let mut range = self.map.range(Key(key));
+            let (key, _value) = range.next()?;
+            let key = key.clone();
+            let value = self.map.remove::<String>(&key)?;
+            Some((key, value))
+        }
+    }
+
+    
+    #[inline]
+    pub fn append(&mut self, other: &mut Self) {
+        #[cfg(feature = "preserve_order")]
+        for (k, v) in mem::replace(&mut other.map, MapImpl::default()) {
+            self.map.insert(k, v);
+        }
+        #[cfg(not(feature = "preserve_order"))]
+        self.map.append(&mut other.map);
+    }
+
+    
+    
     pub fn entry<S>(&mut self, key: S) -> Entry
     where
         S: Into<String>,
     {
+        #[cfg(not(feature = "preserve_order"))]
+        use crate::lib::btree_map::Entry as EntryImpl;
         #[cfg(feature = "preserve_order")]
         use indexmap::map::Entry as EntryImpl;
-        #[cfg(not(feature = "preserve_order"))]
-        use std::collections::btree_map::Entry as EntryImpl;
 
         match self.map.entry(key.into()) {
-            EntryImpl::Vacant(vacant) => Entry::Vacant(VacantEntry { vacant: vacant }),
-            EntryImpl::Occupied(occupied) => Entry::Occupied(OccupiedEntry { occupied: occupied }),
+            EntryImpl::Vacant(vacant) => Entry::Vacant(VacantEntry { vacant }),
+            EntryImpl::Occupied(occupied) => Entry::Occupied(OccupiedEntry { occupied }),
         }
     }
 
@@ -223,19 +272,11 @@ impl Clone for Map<String, Value> {
 impl PartialEq for Map<String, Value> {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        if cfg!(feature = "preserve_order") {
-            if self.len() != other.len() {
-                return false;
-            }
-
-            self.iter()
-                .all(|(key, value)| other.get(key).map_or(false, |v| *value == *v))
-        } else {
-            self.map.eq(&other.map)
-        }
+        self.map.eq(&other.map)
     }
 }
 
+impl Eq for Map<String, Value> {}
 
 
 
@@ -252,10 +293,11 @@ impl PartialEq for Map<String, Value> {
 
 
 
-impl<'a, Q: ?Sized> ops::Index<&'a Q> for Map<String, Value>
+
+impl<'a, Q> ops::Index<&'a Q> for Map<String, Value>
 where
     String: Borrow<Q>,
-    Q: Ord + Eq + Hash,
+    Q: ?Sized + Ord + Eq + Hash,
 {
     type Output = Value;
 
@@ -275,10 +317,10 @@ where
 
 
 
-impl<'a, Q: ?Sized> ops::IndexMut<&'a Q> for Map<String, Value>
+impl<'a, Q> ops::IndexMut<&'a Q> for Map<String, Value>
 where
     String: Borrow<Q>,
-    Q: Ord + Eq + Hash,
+    Q: ?Sized + Ord + Eq + Hash,
 {
     fn index_mut(&mut self, index: &Q) -> &mut Value {
         self.map.get_mut(index).expect("no entry found for key")
@@ -292,17 +334,17 @@ impl Debug for Map<String, Value> {
     }
 }
 
-impl ser::Serialize for Map<String, Value> {
+#[cfg(any(feature = "std", feature = "alloc"))]
+impl serde::ser::Serialize for Map<String, Value> {
     #[inline]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
-        S: ser::Serializer,
+        S: serde::ser::Serializer,
     {
         use serde::ser::SerializeMap;
-        let mut map = try!(serializer.serialize_map(Some(self.len())));
+        let mut map = tri!(serializer.serialize_map(Some(self.len())));
         for (k, v) in self {
-            try!(map.serialize_key(k));
-            try!(map.serialize_value(v));
+            tri!(map.serialize_entry(k, v));
         }
         map.end()
     }
@@ -331,6 +373,7 @@ impl<'de> de::Deserialize<'de> for Map<String, Value> {
                 Ok(Map::new())
             }
 
+            #[cfg(any(feature = "std", feature = "alloc"))]
             #[inline]
             fn visit_map<V>(self, mut visitor: V) -> Result<Self::Value, V::Error>
             where
@@ -338,7 +381,7 @@ impl<'de> de::Deserialize<'de> for Map<String, Value> {
             {
                 let mut values = Map::new();
 
-                while let Some((key, value)) = try!(visitor.next_entry()) {
+                while let Some((key, value)) = tri!(visitor.next_entry()) {
                     values.insert(key, value);
                 }
 
@@ -397,6 +440,8 @@ macro_rules! delegate_iterator {
                 self.iter.len()
             }
         }
+
+        impl $($generics)* FusedIterator for $name $($generics)* {}
     }
 }
 
@@ -495,6 +540,40 @@ impl<'a> Entry<'a> {
         match self {
             Entry::Vacant(entry) => entry.insert(default()),
             Entry::Occupied(entry) => entry.into_mut(),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn and_modify<F>(self, f: F) -> Self
+    where
+        F: FnOnce(&mut Value),
+    {
+        match self {
+            Entry::Occupied(mut entry) => {
+                f(entry.get_mut());
+                Entry::Occupied(entry)
+            }
+            Entry::Vacant(entry) => Entry::Vacant(entry),
         }
     }
 }

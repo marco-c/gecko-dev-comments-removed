@@ -1,8 +1,11 @@
-use std::borrow::Cow;
-
 use super::Value;
-use map::Map;
-use number::Number;
+use crate::lib::iter::FromIterator;
+use crate::lib::*;
+use crate::map::Map;
+use crate::number::Number;
+
+#[cfg(feature = "arbitrary_precision")]
+use serde::serde_if_integer128;
 
 macro_rules! from_integer {
     ($($ty:ident)*) => {
@@ -133,6 +136,22 @@ impl<'a> From<Cow<'a, str>> for Value {
     }
 }
 
+impl From<Number> for Value {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn from(f: Number) -> Self {
+        Value::Number(f)
+    }
+}
+
 impl From<Map<String, Value>> for Value {
     
     
@@ -182,7 +201,7 @@ impl<'a, T: Clone + Into<Value>> From<&'a [T]> for Value {
     }
 }
 
-impl<T: Into<Value>> ::std::iter::FromIterator<T> for Value {
+impl<T: Into<Value>> FromIterator<T> for Value {
     
     
     
@@ -209,6 +228,26 @@ impl<T: Into<Value>> ::std::iter::FromIterator<T> for Value {
     
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
         Value::Array(iter.into_iter().map(Into::into).collect())
+    }
+}
+
+impl<K: Into<String>, V: Into<Value>> FromIterator<(K, V)> for Value {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn from_iter<I: IntoIterator<Item = (K, V)>>(iter: I) -> Self {
+        Value::Object(
+            iter.into_iter()
+                .map(|(k, v)| (k.into(), v.into()))
+                .collect(),
+        )
     }
 }
 
