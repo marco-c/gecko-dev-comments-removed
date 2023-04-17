@@ -5071,25 +5071,18 @@
     },
 
     toggleMuteAudioOnMultiSelectedTabs(aTab) {
-      let tabsToToggle;
-      if (aTab.activeMediaBlocked) {
-        tabsToToggle = this.selectedTabs.filter(
-          tab => tab.activeMediaBlocked || tab.linkedBrowser.audioMuted
-        );
-      } else {
-        let tabMuted = aTab.linkedBrowser.audioMuted;
-        tabsToToggle = this.selectedTabs.filter(
-          tab =>
-            
-            
-            
-            (tab.linkedBrowser.audioMuted == tabMuted &&
-              !tab.activeMediaBlocked) ||
-            (tab.activeMediaBlocked && tabMuted)
-        );
-      }
+      let tabMuted = aTab.linkedBrowser.audioMuted;
+      let tabsToToggle = this.selectedTabs.filter(
+        tab => tab.linkedBrowser.audioMuted == tabMuted
+      );
       for (let tab of tabsToToggle) {
         tab.toggleMuteAudio();
+      }
+    },
+
+    resumeDelayedMediaOnMultiSelectedTabs() {
+      for (let tab of this.selectedTabs) {
+        tab.resumeDelayedMedia();
       }
     },
 
@@ -6887,6 +6880,14 @@ var TabContextMenu = {
     ).hidden = !multiselectionContext;
 
     
+    document.getElementById("context_playTab").hidden = !(
+      this.contextTab.activeMediaBlocked && !multiselectionContext
+    );
+    document.getElementById("context_playSelectedTabs").hidden = !(
+      this.contextTab.activeMediaBlocked && multiselectionContext
+    );
+
+    
     let contextPinTab = document.getElementById("context_pinTab");
     contextPinTab.hidden = this.contextTab.pinned || multiselectionContext;
     let contextUnpinTab = document.getElementById("context_unpinTab");
@@ -6997,10 +6998,7 @@ var TabContextMenu = {
     toggleMultiSelectMute.hidden = !multiselectionContext;
 
     
-    if (this.contextTab.hasAttribute("activemedia-blocked")) {
-      toggleMute.label = gNavigatorBundle.getString("playTab.label");
-      toggleMute.accessKey = gNavigatorBundle.getString("playTab.accesskey");
-    } else if (this.contextTab.hasAttribute("muted")) {
+    if (this.contextTab.hasAttribute("muted")) {
       toggleMute.label = gNavigatorBundle.getString("unmuteTab.label");
       toggleMute.accessKey = gNavigatorBundle.getString("unmuteTab.accesskey");
     } else {
@@ -7009,14 +7007,7 @@ var TabContextMenu = {
     }
 
     
-    if (this.contextTab.hasAttribute("activemedia-blocked")) {
-      toggleMultiSelectMute.label = gNavigatorBundle.getString(
-        "playTabs.label"
-      );
-      toggleMultiSelectMute.accessKey = gNavigatorBundle.getString(
-        "playTabs.accesskey"
-      );
-    } else if (this.contextTab.hasAttribute("muted")) {
+    if (this.contextTab.hasAttribute("muted")) {
       toggleMultiSelectMute.label = gNavigatorBundle.getString(
         "unmuteSelectedTabs2.label"
       );
