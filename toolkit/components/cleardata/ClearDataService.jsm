@@ -1096,7 +1096,34 @@ const SecuritySettingsCleaner = {
 
     cars
       .getDecisions()
-      .filter(({ asciiHost }) => hasBaseDomain({ host: asciiHost }, aDomain))
+      .filter(({ asciiHost, entryKey }) => {
+        
+        
+        let originSuffixEncoded = entryKey.split(",")[2];
+        let originAttributes;
+
+        if (originSuffixEncoded) {
+          try {
+            
+            
+            
+            let originSuffix = decodeURIComponent(originSuffixEncoded);
+            originAttributes = ChromeUtils.CreateOriginAttributesFromOriginSuffix(
+              originSuffix
+            );
+          } catch (e) {
+            Cu.reportError(e);
+          }
+        }
+
+        return hasBaseDomain(
+          {
+            host: asciiHost,
+            originAttributes,
+          },
+          aDomain
+        );
+      })
       .forEach(({ entryKey }) => cars.forgetRememberedDecision(entryKey));
   },
 
