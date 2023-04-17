@@ -1629,9 +1629,8 @@ void ArenaLists::queueForBackgroundSweep(AllocKind thingKind) {
   }
 }
 
-
-void ArenaLists::backgroundFinalize(JSFreeOp* fop, Arena* listHead,
-                                    Arena** empty) {
+void GCRuntime::backgroundFinalize(JSFreeOp* fop, Arena* listHead,
+                                   Arena** empty) {
   MOZ_ASSERT(listHead);
   MOZ_ASSERT(empty);
 
@@ -1652,7 +1651,6 @@ void ArenaLists::backgroundFinalize(JSFreeOp* fop, Arena* listHead,
   
   
   ArenaLists* lists = &zone->arenas;
-  ArenaList& al = lists->arenaList(thingKind);
 
   
   ArenaList finalized = finalizedSorted.toArenaList();
@@ -1663,9 +1661,11 @@ void ArenaLists::backgroundFinalize(JSFreeOp* fop, Arena* listHead,
   
   
   {
-    AutoLockGC lock(lists->runtimeFromAnyThread());
+    AutoLockGC lock(rt);
+    ArenaList& al = lists->arenaList(thingKind);
+
     MOZ_ASSERT(lists->concurrentUse(thingKind) ==
-               ConcurrentUse::BackgroundFinalize);
+               ArenaLists::ConcurrentUse::BackgroundFinalize);
 
     
     ArenaList allocatedDuringSweep = std::move(al);
@@ -1677,7 +1677,7 @@ void ArenaLists::backgroundFinalize(JSFreeOp* fop, Arena* listHead,
     lists->arenasToSweep(thingKind) = nullptr;
   }
 
-  lists->concurrentUse(thingKind) = ConcurrentUse::None;
+  lists->concurrentUse(thingKind) = ArenaLists::ConcurrentUse::None;
 }
 
 void ArenaLists::queueForegroundThingsForSweep() {
@@ -2099,7 +2099,7 @@ void GCRuntime::sweepBackgroundThings(ZoneList& zones) {
         Arena* arenas = zone->arenas.arenasToSweep(kind);
         MOZ_RELEASE_ASSERT(uintptr_t(arenas) != uintptr_t(-1));
         if (arenas) {
-          ArenaLists::backgroundFinalize(&fop, arenas, &emptyArenas);
+          backgroundFinalize(&fop, arenas, &emptyArenas);
         }
       }
     }
