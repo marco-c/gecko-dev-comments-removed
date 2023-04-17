@@ -396,7 +396,7 @@ nsresult nsMenuFrame::HandleEvent(nsPresContext* aPresContext,
   } else if (
 #ifndef NSCONTEXTMENUISMOUSEUP
       (aEvent->mMessage == eMouseUp &&
-       (aEvent->AsMouseEvent()->mButton == MouseButton::eSecondary
+       (aEvent->AsMouseEvent()->mButton != MouseButton::ePrimary
 #  ifdef XP_MACOSX
         
         
