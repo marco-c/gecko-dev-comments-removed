@@ -79,23 +79,13 @@
 
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(all(feature = "alloc", not(feature = "std")), feature(alloc))]
 
 #[cfg(feature = "std")]
 extern crate core;
 
-#[cfg(all(feature = "alloc", not(feature = "std")))]
+#[cfg(feature = "alloc")]
 #[macro_use]
 extern crate alloc;
-
-#[cfg(feature = "std")]
-mod alloc {
-    pub use std::borrow;
-    pub use std::boxed;
-    pub use std::string;
-    pub use std::vec;
-    pub use std::collections;
-}
 
 
 

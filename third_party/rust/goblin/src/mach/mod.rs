@@ -1,6 +1,6 @@
 
 use core::fmt;
-use crate::alloc::vec::Vec;
+use alloc::vec::Vec;
 
 use log::debug;
 
