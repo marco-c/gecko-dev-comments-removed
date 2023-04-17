@@ -4037,23 +4037,6 @@ bool BaselineCompilerCodeGen::emitFormalArgAccess(JSOp op) {
   frame.syncStack(0);
 
   
-  
-  
-  Label done;
-  if (!handler.script()->needsArgsObj()) {
-    Label hasArgsObj;
-    masm.branchTest32(Assembler::NonZero, frame.addressOfFlags(),
-                      Imm32(BaselineFrame::HAS_ARGS_OBJ), &hasArgsObj);
-    if (op == JSOp::GetArg) {
-      masm.loadValue(frame.addressOfArg(arg), R0);
-    } else {
-      frame.storeStackValue(-1, frame.addressOfArg(arg), R0);
-    }
-    masm.jump(&done);
-    masm.bind(&hasArgsObj);
-  }
-
-  
   Register reg = R2.scratchReg();
   masm.loadPtr(frame.addressOfArgsObj(), reg);
   masm.loadPrivate(Address(reg, ArgumentsObject::getDataSlotOffset()), reg);
@@ -4085,7 +4068,6 @@ bool BaselineCompilerCodeGen::emitFormalArgAccess(JSOp op) {
     masm.bind(&skipBarrier);
   }
 
-  masm.bind(&done);
   return true;
 }
 
@@ -5523,23 +5505,7 @@ template <typename Handler>
 bool BaselineCodeGen<Handler>::emit_Arguments() {
   frame.syncStack(0);
 
-  MOZ_ASSERT_IF(handler.maybeScript(),
-                handler.maybeScript()->argumentsHasVarBinding());
-
-  Label done;
-  if (!handler.maybeScript() || !handler.maybeScript()->needsArgsObj()) {
-    
-    
-    
-    masm.moveValue(MagicValue(JS_OPTIMIZED_ARGUMENTS), R0);
-
-    
-    Register scratch = R1.scratchReg();
-    loadScript(scratch);
-    masm.branchTest32(
-        Assembler::Zero, Address(scratch, JSScript::offsetOfMutableFlags()),
-        Imm32(uint32_t(JSScript::MutableFlags::NeedsArgsObj)), &done);
-  }
+  MOZ_ASSERT_IF(handler.maybeScript(), handler.maybeScript()->needsArgsObj());
 
   prepareVMCall();
 
@@ -5551,7 +5517,6 @@ bool BaselineCodeGen<Handler>::emit_Arguments() {
     return false;
   }
 
-  masm.bind(&done);
   frame.push(R0);
   return true;
 }
