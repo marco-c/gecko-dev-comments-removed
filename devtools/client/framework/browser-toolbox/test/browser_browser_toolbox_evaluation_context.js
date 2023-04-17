@@ -22,7 +22,7 @@ add_task(async function() {
   
   
   const tab = await addTab(
-    "http://example.com/document-builder.sjs?html=<html><title>Test tab</title></html>"
+    "https://example.com/document-builder.sjs?html=<html><title>Test tab</title></html>"
   );
 
   const ToolboxTask = await initBrowserToolboxTask({
@@ -61,7 +61,7 @@ add_task(async function() {
       const labelTexts = Array.from(labels).map(item => item.textContent);
 
       const expectedTitle = _isFissionEnabled
-        ? `(pid ${processID}) http://example.com`
+        ? `(pid ${processID}) https://example.com`
         : `(pid ${processID}) web`;
       is(
         labelTexts.includes(expectedTitle),

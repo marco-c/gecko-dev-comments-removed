@@ -38,7 +38,7 @@ add_task(async function() {
   
   
   const tab = await addTab(
-    `http://example.com/browser/devtools/client/framework/browser-toolbox/test/doc_browser_toolbox_ruleview_stylesheet.html`
+    `https://example.com/browser/devtools/client/framework/browser-toolbox/test/doc_browser_toolbox_ruleview_stylesheet.html`
   );
 
   
