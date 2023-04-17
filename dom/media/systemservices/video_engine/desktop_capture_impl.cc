@@ -382,11 +382,7 @@ DesktopCaptureImpl::DesktopCaptureImpl(const int32_t id, const char* uniqueId,
       _deviceType(type),
       _requestedCapability(),
       _rotateFrame(kVideoRotation_0),
-      last_capture_time_(rtc::TimeNanos() / rtc::kNumNanosecsPerMillisec),
-      
-      delta_ntp_internal_ms_(
-          Clock::GetRealTimeClock()->CurrentNtpInMilliseconds() -
-          last_capture_time_),
+      last_capture_time_ms_(rtc::TimeMillis()),
       time_event_(EventWrapper::Create()),
 #if defined(_WIN32)
       capturer_thread_(
@@ -440,22 +436,17 @@ int32_t DesktopCaptureImpl::StopCaptureIfAllClientsClose() {
 }
 
 int32_t DesktopCaptureImpl::DeliverCapturedFrame(
-    webrtc::VideoFrame& captureFrame, int64_t capture_time) {
+    webrtc::VideoFrame& captureFrame) {
   UpdateFrameCount();  
 
   
-  if (capture_time != 0) {
-    captureFrame.set_timestamp_us(1000 *
-                                  (capture_time - delta_ntp_internal_ms_));
-  } else {
-    captureFrame.set_timestamp_us(rtc::TimeMicros());
-  }
+  captureFrame.set_timestamp_us(rtc::TimeMicros());
 
-  if (captureFrame.render_time_ms() == last_capture_time_) {
+  if (captureFrame.render_time_ms() == last_capture_time_ms_) {
     
     return -1;
   }
-  last_capture_time_ = captureFrame.render_time_ms();
+  last_capture_time_ms_ = captureFrame.render_time_ms();
 
   for (auto dataCallBack : _dataCallBacks) {
     dataCallBack->OnFrame(captureFrame);
@@ -467,7 +458,7 @@ int32_t DesktopCaptureImpl::DeliverCapturedFrame(
 
 int32_t DesktopCaptureImpl::IncomingFrame(
     uint8_t* videoFrame, size_t videoFrameLength,
-    const VideoCaptureCapability& frameInfo, int64_t captureTime) {
+    const VideoCaptureCapability& frameInfo) {
   int64_t startProcessTime = rtc::TimeNanos();
   rtc::CritScope cs(&_apiCs);
 
@@ -507,9 +498,8 @@ int32_t DesktopCaptureImpl::IncomingFrame(
   }
 
   VideoFrame captureFrame(buffer, 0, rtc::TimeMillis(), kVideoRotation_0);
-  captureFrame.set_ntp_time_ms(captureTime);
 
-  DeliverCapturedFrame(captureFrame, captureTime);
+  DeliverCapturedFrame(captureFrame);
 
   const int64_t processTime =
       (rtc::TimeNanos() - startProcessTime) / rtc::kNumNanosecsPerMillisec;
