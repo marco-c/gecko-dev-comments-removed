@@ -1068,7 +1068,7 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual void SetColorScheme(mozilla::ColorScheme) {}
+  virtual void SetColorScheme(const mozilla::Maybe<mozilla::ColorScheme>&) {}
 
   
 
