@@ -9444,6 +9444,17 @@ var gDialogBox = {
         this._queued.push({ resolve, reject, uri, args });
       });
     }
+
+    
+    
+    
+    if (window.windowUtils.isInModalState() && !args.getProperty("async")) {
+      throw Components.Exception(
+        "Prompt could not be shown.",
+        Cr.NS_ERROR_NOT_AVAILABLE
+      );
+    }
+
     
     this._didOpenHTMLDialog = false;
     let haveClosedPromise = new Promise(resolve => {
