@@ -15,6 +15,11 @@ const TEST_PATH = getRootDirectory(gTestPath).replace(
   "https://example.com"
 );
 
+const MimeSvc = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
+const HandlerSvc = Cc["@mozilla.org/uriloader/handler-service;1"].getService(
+  Ci.nsIHandlerService
+);
+
 function waitForAcceptButtonToGetEnabled(doc) {
   let dialog = doc.querySelector("#unknownContentType");
   let button = dialog.getButton("accept");
@@ -42,6 +47,25 @@ async function waitForPdfJS(browser, url) {
   return loadPromise;
 }
 
+
+
+
+
+
+
+
+
+function alwaysAskForHandlingTypes(typeExtensions) {
+  let mimeInfos = [];
+  for (let [type, ext] of Object.entries(typeExtensions)) {
+    const mimeInfo = MimeSvc.getFromTypeAndExtension(type, ext);
+    mimeInfo.alwaysAskBeforeHandling = true;
+    HandlerSvc.store(mimeInfo);
+    mimeInfos.push(mimeInfo);
+  }
+  return mimeInfos;
+}
+
 add_task(async function setup() {
   
   await SpecialPowers.pushPrefEnv({
@@ -53,18 +77,15 @@ add_task(async function setup() {
   });
 
   
-  const mimeSvc = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
-  const handlerSvc = Cc["@mozilla.org/uriloader/handler-service;1"].getService(
-    Ci.nsIHandlerService
-  );
   const registerRestoreHandler = function(type, ext) {
-    const mimeInfo = mimeSvc.getFromTypeAndExtension(type, ext);
-    const existed = handlerSvc.exists(mimeInfo);
+    const mimeInfo = MimeSvc.getFromTypeAndExtension(type, ext);
+    const existed = HandlerSvc.exists(mimeInfo);
+
     registerCleanupFunction(() => {
       if (existed) {
-        handlerSvc.store(mimeInfo);
+        HandlerSvc.store(mimeInfo);
       } else {
-        handlerSvc.remove(mimeInfo);
+        HandlerSvc.remove(mimeInfo);
       }
     });
   };
@@ -80,6 +101,11 @@ add_task(async function setup() {
 
 
 add_task(async function test_check_open_with_internal_handler() {
+  const mimeInfosToRestore = alwaysAskForHandlingTypes({
+    "application/pdf": "pdf",
+    "binary/octet-stream": "pdf",
+  });
+
   for (let file of [
     "file_pdf_application_pdf.pdf",
     "file_pdf_binary_octet_stream.pdf",
@@ -234,6 +260,9 @@ add_task(async function test_check_open_with_internal_handler() {
     }
     await publicList.removeFinished();
   }
+  for (let mimeInfo of mimeInfosToRestore) {
+    HandlerSvc.remove(mimeInfo);
+  }
 });
 
 
@@ -241,6 +270,11 @@ add_task(async function test_check_open_with_internal_handler() {
 
 
 add_task(async function test_check_open_with_external_application() {
+  const mimeInfosToRestore = alwaysAskForHandlingTypes({
+    "application/pdf": "pdf",
+    "binary/octet-stream": "pdf",
+  });
+
   for (let file of [
     "file_pdf_application_pdf.pdf",
     "file_pdf_binary_octet_stream.pdf",
@@ -305,6 +339,9 @@ add_task(async function test_check_open_with_external_application() {
     }
     await publicList.removeFinished();
   }
+  for (let mimeInfo of mimeInfosToRestore) {
+    HandlerSvc.remove(mimeInfo);
+  }
 });
 
 
@@ -319,14 +356,14 @@ add_task(async function test_check_open_with_external_then_internal() {
   }
 
   
-  const mimeSvc = Cc["@mozilla.org/mime;1"].getService(Ci.nsIMIMEService);
-  const handlerSvc = Cc["@mozilla.org/uriloader/handler-service;1"].getService(
-    Ci.nsIHandlerService
+  const mimeInfo = MimeSvc.getFromTypeAndExtension("application/pdf", "pdf");
+  console.log(
+    "mimeInfo.preferredAction is currently:",
+    mimeInfo.preferredAction
   );
-  const mimeInfo = mimeSvc.getFromTypeAndExtension("application/pdf", "pdf");
   mimeInfo.preferredAction = mimeInfo.alwaysAsk;
   mimeInfo.alwaysAskBeforeHandling = true;
-  handlerSvc.store(mimeInfo);
+  HandlerSvc.store(mimeInfo);
 
   for (let [file, mimeType] of [
     ["file_pdf_application_pdf.pdf", "application/pdf"],
@@ -334,7 +371,7 @@ add_task(async function test_check_open_with_external_then_internal() {
     ["file_pdf_application_unknown.pdf", "application/unknown"],
   ]) {
     info("Testing with " + file);
-    let originalMimeInfo = mimeSvc.getFromTypeAndExtension(mimeType, "pdf");
+    let originalMimeInfo = MimeSvc.getFromTypeAndExtension(mimeType, "pdf");
 
     let publicList = await Downloads.getList(Downloads.PUBLIC);
     registerCleanupFunction(async () => {
@@ -448,7 +485,7 @@ add_task(async function test_check_open_with_external_then_internal() {
     
     
     
-    handlerSvc.store(originalMimeInfo);
+    HandlerSvc.store(originalMimeInfo);
     DownloadIntegration.launchFile = oldLaunchFile;
     let [download] = await publicList.getAll();
     if (download?.target.exists) {
@@ -469,6 +506,11 @@ add_task(async function test_check_open_with_external_then_internal() {
 
 add_task(
   async function test_internal_handler_hidden_with_viewable_internally_type() {
+    const mimeInfosToRestore = alwaysAskForHandlingTypes({
+      "text/xml": "xml",
+      "binary/octet-stream": "xml",
+    });
+
     for (let [file, checkDefault] of [
       
       
@@ -502,6 +544,9 @@ add_task(
       dialog.cancelDialog();
       BrowserTestUtils.removeTab(loadingTab);
     }
+    for (let mimeInfo of mimeInfosToRestore) {
+      HandlerSvc.remove(mimeInfo);
+    }
   }
 );
 
@@ -510,6 +555,10 @@ add_task(
 
 
 add_task(async function test_internal_handler_hidden_with_other_type() {
+  const mimeInfosToRestore = alwaysAskForHandlingTypes({
+    "text/plain": "txt",
+  });
+
   let dialogWindowPromise = BrowserTestUtils.domWindowOpenedAndLoaded();
   let loadingTab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
@@ -536,6 +585,9 @@ add_task(async function test_internal_handler_hidden_with_other_type() {
   let dialog = doc.querySelector("#unknownContentType");
   dialog.cancelDialog();
   BrowserTestUtils.removeTab(loadingTab);
+  for (let mimeInfo of mimeInfosToRestore) {
+    HandlerSvc.remove(mimeInfo);
+  }
 });
 
 
@@ -543,6 +595,10 @@ add_task(async function test_internal_handler_hidden_with_other_type() {
 
 
 add_task(async function test_internal_handler_hidden_with_pdf_pref_disabled() {
+  const mimeInfosToRestore = alwaysAskForHandlingTypes({
+    "application/pdf": "pdf",
+    "binary/octet-stream": "pdf",
+  });
   await SpecialPowers.pushPrefEnv({
     set: [["browser.helperApps.showOpenOptionForPdfJS", false]],
   });
@@ -575,6 +631,9 @@ add_task(async function test_internal_handler_hidden_with_pdf_pref_disabled() {
     dialog.cancelDialog();
     BrowserTestUtils.removeTab(loadingTab);
   }
+  for (let mimeInfo of mimeInfosToRestore) {
+    HandlerSvc.remove(mimeInfo);
+  }
 });
 
 
@@ -583,6 +642,9 @@ add_task(async function test_internal_handler_hidden_with_pdf_pref_disabled() {
 
 add_task(
   async function test_internal_handler_hidden_with_viewable_internally_pref_disabled() {
+    const mimeInfosToRestore = alwaysAskForHandlingTypes({
+      "text/xml": "xml",
+    });
     await SpecialPowers.pushPrefEnv({
       set: [["browser.helperApps.showOpenOptionForViewableInternally", false]],
     });
@@ -610,5 +672,8 @@ add_task(
     let dialog = doc.querySelector("#unknownContentType");
     dialog.cancelDialog();
     BrowserTestUtils.removeTab(loadingTab);
+    for (let mimeInfo of mimeInfosToRestore) {
+      HandlerSvc.remove(mimeInfo);
+    }
   }
 );
