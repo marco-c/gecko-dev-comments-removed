@@ -39,7 +39,6 @@
 #include "nsIScrollableFrame.h"
 #include "nsIObjectLoadingContent.h"
 #include "nsLayoutUtils.h"
-#include "FrameLayerBuilder.h"
 #include "nsContentUtils.h"
 #include "nsServiceManagerUtils.h"
 #include "nsQueryObject.h"
@@ -989,8 +988,6 @@ nsIDocShell* nsSubDocumentFrame::GetDocShell() const {
 }
 
 static void DestroyDisplayItemDataForFrames(nsIFrame* aFrame) {
-  FrameLayerBuilder::DestroyDisplayItemDataFor(aFrame);
-
   for (const auto& childList : aFrame->ChildLists()) {
     for (nsIFrame* child : childList.mList) {
       DestroyDisplayItemDataForFrames(child);
@@ -1237,11 +1234,6 @@ static nsPoint GetContentRectLayerOffset(nsIFrame* aContainerFrame,
 
 
 
-inline static bool IsTempLayerManager(LayerManager* aManager) {
-  return (LayersBackend::LAYERS_BASIC == aManager->GetBackendType() &&
-          !static_cast<BasicLayerManager*>(aManager)->IsRetained());
-}
-
 nsDisplayRemote::nsDisplayRemote(nsDisplayListBuilder* aBuilder,
                                  nsSubDocumentFrame* aFrame)
     : nsPaintedDisplayItem(aBuilder, aFrame),
@@ -1259,15 +1251,6 @@ nsDisplayRemote::nsDisplayRemote(nsDisplayListBuilder* aBuilder,
   mPaintData = aFrame->GetRemotePaintData();
 }
 
-mozilla::LayerState nsDisplayRemote::GetLayerState(
-    nsDisplayListBuilder* aBuilder, LayerManager* aManager,
-    const ContainerLayerParameters& aParameters) {
-  if (IsTempLayerManager(aManager)) {
-    return mozilla::LayerState::LAYER_NONE;
-  }
-  return mozilla::LayerState::LAYER_ACTIVE_FORCE;
-}
-
 LayerIntSize GetFrameSize(const nsIFrame* aFrame) {
   LayoutDeviceSize size = LayoutDeviceRect::FromAppUnits(
       aFrame->GetContentRectRelativeToSelf().Size(),
@@ -1276,85 +1259,6 @@ LayerIntSize GetFrameSize(const nsIFrame* aFrame) {
   float cumulativeResolution = aFrame->PresShell()->GetCumulativeResolution();
   return LayerIntSize::Round(size.width * cumulativeResolution,
                              size.height * cumulativeResolution);
-}
-
-already_AddRefed<mozilla::layers::Layer> nsDisplayRemote::BuildLayer(
-    nsDisplayListBuilder* aBuilder, LayerManager* aManager,
-    const ContainerLayerParameters& aContainerParameters) {
-  MOZ_ASSERT(mFrame, "Makes no sense to have a shadow tree without a frame");
-
-  if (IsTempLayerManager(aManager)) {
-    
-    
-    
-    
-    
-    
-    NS_WARNING("Remote iframe not rendered");
-    return nullptr;
-  }
-
-  if (!mPaintData.mLayersId.IsValid()) {
-    return nullptr;
-  }
-
-  if (RefPtr<RemoteBrowser> remoteBrowser =
-          GetFrameLoader()->GetRemoteBrowser()) {
-    
-    
-    nsRect visibleRect;
-    if (aContainerParameters.mItemVisibleRect) {
-      visibleRect = *aContainerParameters.mItemVisibleRect;
-    } else {
-      visibleRect = GetBuildingRect();
-    }
-    visibleRect -= ToReferenceFrame();
-    nsRect contentRect = Frame()->GetContentRectRelativeToSelf();
-    visibleRect.IntersectRect(visibleRect, contentRect);
-    visibleRect -= contentRect.TopLeft();
-
-    
-    aBuilder->AddEffectUpdate(remoteBrowser,
-                              EffectsInfo::VisibleWithinRect(
-                                  visibleRect, aContainerParameters.mXScale,
-                                  aContainerParameters.mYScale));
-    
-    
-  }
-
-  RefPtr<Layer> layer =
-      aManager->GetLayerBuilder()->GetLeafLayerFor(aBuilder, this);
-
-  if (!layer) {
-    layer = aManager->CreateRefLayer();
-  }
-  if (!layer || !layer->AsRefLayer()) {
-    
-    
-    return nullptr;
-  }
-  RefLayer* refLayer = layer->AsRefLayer();
-
-  nsPoint layerOffset = GetContentRectLayerOffset(Frame(), aBuilder);
-  nscoord auPerDevPixel = Frame()->PresContext()->AppUnitsPerDevPixel();
-  LayoutDeviceIntPoint offset =
-      mozilla::LayoutDeviceIntPoint::FromAppUnitsToNearest(layerOffset,
-                                                           auPerDevPixel);
-
-  
-  
-  
-  MOZ_ASSERT(aContainerParameters.mOffset == nsIntPoint());
-  Matrix4x4 m = Matrix4x4::Translation(offset.x, offset.y, 0.0);
-  
-  
-  m.PostScale(aContainerParameters.mXScale, aContainerParameters.mYScale, 1.0);
-  refLayer->SetBaseTransform(m);
-  refLayer->SetEventRegionsOverride(mEventRegionsOverride);
-  refLayer->SetReferentId(mPaintData.mLayersId);
-  refLayer->SetRemoteDocumentSize(GetFrameSize(mFrame));
-
-  return layer.forget();
 }
 
 namespace mozilla {
