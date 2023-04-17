@@ -427,7 +427,7 @@ XULContentSinkImpl::HandleEndElement(const char16_t* aName) {
           static_cast<nsXULPrototypeScript*>(node.get());
 
       
-      if (!script->mSrcURI && !script->HasScriptObject()) {
+      if (!script->mSrcURI && !script->HasStencil()) {
         nsCOMPtr<Document> doc = do_QueryReferent(mDocument);
 
         script->mOutOfLine = false;

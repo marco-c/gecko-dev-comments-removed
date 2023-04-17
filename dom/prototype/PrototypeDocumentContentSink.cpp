@@ -50,11 +50,13 @@
 #include "mozilla/LoadInfo.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ProfilerLabels.h"
+#include "mozilla/RefPtr.h"
 
 #include "nsXULPrototypeCache.h"
 #include "nsXULElement.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "js/CompilationAndEvaluation.h"
+#include "js/experimental/JSStencil.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -566,7 +568,7 @@ nsresult PrototypeDocumentContentSink::ResumeWalkInternal() {
             
 
             if (NS_SUCCEEDED(rv) && blocked) return NS_OK;
-          } else if (scriptproto->HasScriptObject()) {
+          } else if (scriptproto->HasStencil()) {
             
             rv = ExecuteScript(scriptproto);
             if (NS_FAILED(rv)) return rv;
@@ -725,7 +727,7 @@ nsresult PrototypeDocumentContentSink::LoadScript(
 
   bool isChromeDoc = IsChromeURI(mDocumentURI);
 
-  if (isChromeDoc && aScriptProto->HasScriptObject()) {
+  if (isChromeDoc && aScriptProto->HasStencil()) {
     rv = ExecuteScript(aScriptProto);
 
     
@@ -739,15 +741,15 @@ nsresult PrototypeDocumentContentSink::LoadScript(
   bool useXULCache = nsXULPrototypeCache::GetInstance()->IsEnabled();
 
   if (isChromeDoc && useXULCache) {
-    JSScript* newScriptObject =
-        nsXULPrototypeCache::GetInstance()->GetScript(aScriptProto->mSrcURI);
-    if (newScriptObject) {
+    RefPtr<JS::Stencil> newStencil =
+        nsXULPrototypeCache::GetInstance()->GetStencil(aScriptProto->mSrcURI);
+    if (newStencil) {
       
       
-      aScriptProto->Set(newScriptObject);
+      aScriptProto->Set(newStencil);
     }
 
-    if (aScriptProto->HasScriptObject()) {
+    if (aScriptProto->HasStencil()) {
       rv = ExecuteScript(aScriptProto);
 
       
@@ -757,7 +759,7 @@ nsresult PrototypeDocumentContentSink::LoadScript(
   }
 
   
-  aScriptProto->UnlinkJSObjects();
+  aScriptProto->Set(nullptr);
 
   
   
@@ -867,7 +869,7 @@ PrototypeDocumentContentSink::OnStreamComplete(nsIStreamLoader* aLoader,
       rv = mCurrentScriptProto->Compile(units, unitsLength,
                                         JS::SourceOwnership::TakeOwnership, uri,
                                         1, mDocument, this);
-      if (NS_SUCCEEDED(rv) && !mCurrentScriptProto->HasScriptObject()) {
+      if (NS_SUCCEEDED(rv) && !mCurrentScriptProto->HasStencil()) {
         mOffThreadCompiling = true;
         mDocument->BlockOnload();
         return NS_OK;
@@ -875,11 +877,11 @@ PrototypeDocumentContentSink::OnStreamComplete(nsIStreamLoader* aLoader,
     }
   }
 
-  return OnScriptCompileComplete(mCurrentScriptProto->GetScriptObject(), rv);
+  return OnScriptCompileComplete(mCurrentScriptProto->GetStencil(), rv);
 }
 
 NS_IMETHODIMP
-PrototypeDocumentContentSink::OnScriptCompileComplete(JSScript* aScript,
+PrototypeDocumentContentSink::OnScriptCompileComplete(JS::Stencil* aStencil,
                                                       nsresult aStatus) {
   
   
@@ -889,8 +891,9 @@ PrototypeDocumentContentSink::OnScriptCompileComplete(JSScript* aScript,
 
   
   
-  if (aScript && !mCurrentScriptProto->HasScriptObject())
-    mCurrentScriptProto->Set(aScript);
+  if (aStencil && !mCurrentScriptProto->HasStencil()) {
+    mCurrentScriptProto->Set(aStencil);
+  }
 
   
   if (mOffThreadCompiling) {
@@ -943,11 +946,9 @@ PrototypeDocumentContentSink::OnScriptCompileComplete(JSScript* aScript,
     
     bool useXULCache = nsXULPrototypeCache::GetInstance()->IsEnabled();
 
-    if (useXULCache && IsChromeURI(mDocumentURI) &&
-        scriptProto->HasScriptObject()) {
-      JS::Rooted<JSScript*> script(RootingCx(), scriptProto->GetScriptObject());
-      nsXULPrototypeCache::GetInstance()->PutScript(scriptProto->mSrcURI,
-                                                    script);
+    if (useXULCache && IsChromeURI(mDocumentURI) && scriptProto->HasStencil()) {
+      nsXULPrototypeCache::GetInstance()->PutStencil(scriptProto->mSrcURI,
+                                                     scriptProto->GetStencil());
     }
     
   }
@@ -970,7 +971,7 @@ PrototypeDocumentContentSink::OnScriptCompileComplete(JSScript* aScript,
     *docp = doc->mNextSrcLoadWaiter;
     doc->mNextSrcLoadWaiter = nullptr;
 
-    if (aStatus == NS_BINDING_ABORTED && !scriptProto->HasScriptObject()) {
+    if (aStatus == NS_BINDING_ABORTED && !scriptProto->HasStencil()) {
       
       
       
@@ -981,7 +982,7 @@ PrototypeDocumentContentSink::OnScriptCompileComplete(JSScript* aScript,
     }
 
     
-    if (NS_SUCCEEDED(aStatus) && scriptProto->HasScriptObject()) {
+    if (NS_SUCCEEDED(aStatus) && scriptProto->HasStencil()) {
       doc->ExecuteScript(scriptProto);
     }
     doc->ResumeWalk();
@@ -1015,17 +1016,17 @@ nsresult PrototypeDocumentContentSink::ExecuteScript(
   AutoEntryScript aes(scriptGlobalObject, "precompiled XUL <script> element");
   JSContext* cx = aes.cx();
 
-  JS::Rooted<JSScript*> scriptObject(cx, aScript->GetScriptObject());
-  NS_ENSURE_TRUE(scriptObject, NS_ERROR_UNEXPECTED);
+  JS::Rooted<JSScript*> scriptObject(cx);
+  rv = aScript->InstantiateScript(cx, &scriptObject);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   JS::Rooted<JSObject*> global(cx, JS::CurrentGlobalOrNull(cx));
   NS_ENSURE_TRUE(xpc::Scriptability::Get(global).Allowed(), NS_OK);
 
   
   
-  
   JS::RootedValue rval(cx);
-  JS::CloneAndExecuteScript(cx, scriptObject, &rval);
+  Unused << JS_ExecuteScript(cx, scriptObject, &rval);
 
   return NS_OK;
 }
