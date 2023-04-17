@@ -635,7 +635,9 @@ nsresult VerifyCertificate(Span<const uint8_t> signerCert,
       trustDomain, certDER, Now(), EndEntityOrCA::MustBeEndEntity,
       KeyUsage::digitalSignature, KeyPurposeId::id_kp_codeSigning,
       CertPolicyId::anyPolicy, nullptr );
-  if (result == mozilla::pkix::Result::ERROR_EXPIRED_CERTIFICATE) {
+  if (result == mozilla::pkix::Result::ERROR_EXPIRED_CERTIFICATE ||
+      result == mozilla::pkix::Result::ERROR_NOT_YET_VALID_CERTIFICATE) {
+    
     
     
     

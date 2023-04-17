@@ -4,7 +4,7 @@
 
 
 
-DIRS += ["tlsserver"]
+DIRS += ["tlsserver", "test_signed_apps"]
 
 if not CONFIG["MOZ_NO_SMART_CARDS"]:
     DIRS += ["pkcs11testmodule"]

@@ -1008,6 +1008,26 @@ add_test(function() {
 
 
 
+add_test(function() {
+  certdb.openSignedAppFileAsync(
+    Ci.nsIX509CertDB.AppXPCShellRoot,
+    original_app_path("validity_not_yet_valid"),
+    check_open_result("validity_not_yet_valid", Cr.NS_OK)
+  );
+});
+
+
+
+add_test(function() {
+  certdb.openSignedAppFileAsync(
+    Ci.nsIX509CertDB.AppXPCShellRoot,
+    original_app_path("validity_expired"),
+    check_open_result("validity_expired", Cr.NS_OK)
+  );
+});
+
+
+
 
 
 
