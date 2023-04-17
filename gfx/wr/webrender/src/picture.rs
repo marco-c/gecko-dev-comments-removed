@@ -3485,11 +3485,9 @@ impl TileCacheInstance {
                     
                     
                     
-                    
                     if image_properties.descriptor.is_opaque() &&
                        image_properties.tiling.is_none() &&
-                       image_data.tile_spacing == LayoutSize::zero() &&
-                       image_data.color.a >= 1.0 {
+                       image_data.tile_spacing == LayoutSize::zero() {
                         backdrop_candidate = Some(BackdropInfo {
                             opaque_rect: pic_clip_rect,
                             kind: None,
