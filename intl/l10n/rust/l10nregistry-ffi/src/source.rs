@@ -12,7 +12,7 @@ use nsstring::{nsACString, nsCString};
 use thin_vec::ThinVec;
 use unic_langid::LanguageIdentifier;
 
-use std::{mem, rc::Rc};
+use std::{borrow::Cow, mem, rc::Rc};
 use xpcom::RefPtr;
 
 #[repr(C)]
@@ -22,6 +22,21 @@ pub enum L10nFileSourceStatus {
     EmptyPrePath,
     EmptyResId,
     InvalidLocaleCode,
+}
+
+
+
+
+
+
+
+
+fn get_locale_from_gecko<'s>(input: Cow<'s, str>) -> Cow<'s, str> {
+    if input == "ja-JP-mac" {
+        "ja-JP-macos".into()
+    } else {
+        input
+    }
 }
 
 #[no_mangle]
@@ -41,8 +56,10 @@ pub extern "C" fn l10nfilesource_new(
         return std::ptr::null();
     }
 
-    let locales: Result<Vec<LanguageIdentifier>, _> =
-        locales.iter().map(|l| l.to_utf8().parse()).collect();
+    let locales: Result<Vec<LanguageIdentifier>, _> = locales
+        .iter()
+        .map(|l| get_locale_from_gecko(l.to_utf8()).parse())
+        .collect();
 
     let locales = match locales {
         Ok(locales) => locales,
@@ -84,8 +101,10 @@ pub unsafe extern "C" fn l10nfilesource_new_with_index(
         return std::ptr::null();
     }
 
-    let locales: Result<Vec<LanguageIdentifier>, _> =
-        locales.iter().map(|l| l.to_utf8().parse()).collect();
+    let locales: Result<Vec<LanguageIdentifier>, _> = locales
+        .iter()
+        .map(|l| get_locale_from_gecko(l.to_utf8()).parse())
+        .collect();
 
     let index = if index_length > 0 {
         assert!(!index_elements.is_null());
@@ -142,8 +161,10 @@ pub extern "C" fn l10nfilesource_new_mock(
         return std::ptr::null();
     }
 
-    let locales: Result<Vec<LanguageIdentifier>, _> =
-        locales.iter().map(|l| l.to_utf8().parse()).collect();
+    let locales: Result<Vec<LanguageIdentifier>, _> = locales
+        .iter()
+        .map(|l| get_locale_from_gecko(l.to_utf8()).parse())
+        .collect();
 
     let locales = match locales {
         Ok(locales) => locales,
