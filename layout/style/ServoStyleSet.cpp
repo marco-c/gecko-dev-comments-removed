@@ -677,11 +677,17 @@ bool ServoStyleSet::GeneratedContentPseudoExists(
     if (!aParentStyle.StyleDisplay()->IsListItem()) {
       return false;
     }
+    const auto& content = aPseudoStyle.StyleContent()->mContent;
+    
+    
+    if (content.IsNone()) {
+      return false;
+    }
     
     
     if (aPseudoStyle.StyleList()->mCounterStyle.IsNone() &&
         aPseudoStyle.StyleList()->mListStyleImage.IsNone() &&
-        aPseudoStyle.StyleContent()->ContentCount() == 0) {
+	content.IsNormal()) {
       return false;
     }
     
@@ -692,12 +698,14 @@ bool ServoStyleSet::GeneratedContentPseudoExists(
 
   
   
-  
   if (type == PseudoStyleType::before || type == PseudoStyleType::after) {
-    if (aPseudoStyle.StyleDisplay()->mDisplay == StyleDisplay::None) {
+    if (!aPseudoStyle.StyleContent()->mContent.IsItems()) {
       return false;
     }
-    if (!aPseudoStyle.StyleContent()->ContentCount()) {
+    MOZ_ASSERT(aPseudoStyle.StyleContent()->ContentCount() > 0,
+               "IsItems() implies we have at least one item");
+    
+    if (aPseudoStyle.StyleDisplay()->mDisplay == StyleDisplay::None) {
       return false;
     }
   }

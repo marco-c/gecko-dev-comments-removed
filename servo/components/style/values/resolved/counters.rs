@@ -27,15 +27,16 @@ impl ToResolvedValue for computed::Content {
             .style
             .pseudo()
             .map_or(false, |p| p.is_before_or_after());
+        let is_marker = context
+            .style
+            .pseudo()
+            .map_or(false, |p| p.is_marker());
 
         match self {
             Self::Normal if is_before_or_after => Self::None,
             
             
-            
-            
-            
-            Self::None if !is_before_or_after => Self::Normal,
+            Self::None if !is_before_or_after && !is_marker => Self::Normal,
             other => other,
         }
     }

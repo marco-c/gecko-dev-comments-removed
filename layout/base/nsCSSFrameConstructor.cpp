@@ -1693,6 +1693,8 @@ void nsCSSFrameConstructor::CreateGeneratedContentItem(
   ServoStyleSet* styleSet = mPresShell->StyleSet();
 
   
+  
+  
   RefPtr<ComputedStyle> pseudoStyle = styleSet->ProbePseudoElementStyle(
       aOriginatingElement, aPseudoElement, &aStyle);
   if (!pseudoStyle) {
@@ -1720,10 +1722,6 @@ void nsCSSFrameConstructor::CreateGeneratedContentItem(
       MOZ_ASSERT_UNREACHABLE("unexpected aPseudoElement");
   }
 
-  
-  
-  
-  
   RefPtr<NodeInfo> nodeInfo = mDocument->NodeInfoManager()->GetNodeInfo(
       elemName, nullptr, kNameSpaceID_None, nsINode::ELEMENT_NODE);
   RefPtr<Element> container;
