@@ -142,7 +142,7 @@ function getInflatedNetworkMarkers(thread) {
       m.data.type === "Network" &&
       
       
-      m.data.URI.includes("/browser/tools/profiler/")
+      m.data.URI.includes("/tools/profiler/")
   );
 }
 
