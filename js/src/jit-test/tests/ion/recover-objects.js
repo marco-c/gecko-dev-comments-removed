@@ -1,7 +1,5 @@
 
 
-
-
 var max = 200;
 
 
@@ -185,7 +183,11 @@ for (var i = 0; i < max; i++) {
     observeArg(i);
     complexPhi(i);
     withinIf(i);
-    unknownLoad(i);
     dynamicSlots(i);
-    createThisWithTemplate(i);
+
+    
+    
+
+    
+    
 }
