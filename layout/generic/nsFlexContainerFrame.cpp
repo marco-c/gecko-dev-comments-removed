@@ -3059,14 +3059,25 @@ void FlexLine::ResolveFlexibleLengths(nscoord aFlexContainerMainSize,
       availableFreeSpace -= item.MainSize();
     }
 
-    FLEX_LOG(" available free space = %" PRId64, availableFreeSpace.value);
+    FLEX_LOG(" available free space: %" PRId64 "; flex items should \"%s\"",
+             availableFreeSpace.value, isUsingFlexGrow ? "grow" : "shrink");
 
     
     
     
     
     
-    MOZ_ASSERT((isUsingFlexGrow && availableFreeSpace >= 0) ||
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT(!(mTotalOuterHypotheticalMainSize >= 0 && mTotalItemMBP >= 0) ||
+                   (isUsingFlexGrow && availableFreeSpace >= 0) ||
                    (!isUsingFlexGrow && availableFreeSpace <= 0),
                "availableFreeSpace's sign should match isUsingFlexGrow");
 
