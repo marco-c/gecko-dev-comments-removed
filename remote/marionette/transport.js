@@ -208,7 +208,7 @@ DebuggerTransport.prototype = {
 
 
 
-  async close(reason) {
+  close(reason) {
     this.emit("close", reason);
 
     this.active = false;
@@ -218,7 +218,7 @@ DebuggerTransport.prototype = {
     this._destroyIncoming();
     this._destroyAllOutgoing();
     if (this.hooks) {
-      await this.hooks.onClosed(reason);
+      this.hooks.onClosed(reason);
       this.hooks = null;
     }
     if (reason) {
