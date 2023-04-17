@@ -1024,7 +1024,7 @@ bool PerHandlerParser<ParseHandler>::
     return false;
   }
 
-  if (handler_.canSkipLazyClosedOverBindings()) {
+  if (handler_.reuseClosedOverBindings()) {
     MOZ_ASSERT(pc_->isOutermostOfCurrentCompile());
 
     
@@ -2607,8 +2607,7 @@ GeneralParser<ParseHandler, Unit>::functionBody(InHandling inHandling,
   
   
   if (kind != FunctionSyntaxKind::Arrow) {
-    bool canSkipLazyClosedOverBindings =
-        handler_.canSkipLazyClosedOverBindings();
+    bool canSkipLazyClosedOverBindings = handler_.reuseClosedOverBindings();
     if (!pc_->declareFunctionArgumentsObject(usedNames_,
                                              canSkipLazyClosedOverBindings)) {
       return null();
@@ -3204,7 +3203,7 @@ GeneralParser<ParseHandler, Unit>::functionDefinition(
   
   
   
-  if (handler_.canSkipLazyInnerFunctions()) {
+  if (handler_.reuseLazyInnerFunctions()) {
     if (!skipLazyInnerFunction(funNode, toStringStart, tryAnnexB)) {
       return null();
     }
@@ -8233,7 +8232,7 @@ GeneralParser<ParseHandler, Unit>::synthesizeConstructor(
   
   
   
-  if (handler_.canSkipLazyInnerFunctions()) {
+  if (handler_.reuseLazyInnerFunctions()) {
     if (!skipLazyInnerFunction(funNode, synthesizedBodyPos.begin,
                                 false)) {
       return null();
@@ -8323,7 +8322,7 @@ GeneralParser<ParseHandler, Unit>::synthesizeConstructorBody(
     return null();
   }
 
-  bool canSkipLazyClosedOverBindings = handler_.canSkipLazyClosedOverBindings();
+  bool canSkipLazyClosedOverBindings = handler_.reuseClosedOverBindings();
   if (!pc_->declareFunctionThis(usedNames_, canSkipLazyClosedOverBindings)) {
     return null();
   }
@@ -8459,7 +8458,7 @@ GeneralParser<ParseHandler, Unit>::privateMethodInitializer(
     return null();
   }
 
-  bool canSkipLazyClosedOverBindings = handler_.canSkipLazyClosedOverBindings();
+  bool canSkipLazyClosedOverBindings = handler_.reuseClosedOverBindings();
   if (!pc_->declareFunctionThis(usedNames_, canSkipLazyClosedOverBindings)) {
     return null();
   }
@@ -8799,7 +8798,7 @@ GeneralParser<ParseHandler, Unit>::fieldInitializerOpt(
     return null();
   }
 
-  bool canSkipLazyClosedOverBindings = handler_.canSkipLazyClosedOverBindings();
+  bool canSkipLazyClosedOverBindings = handler_.reuseClosedOverBindings();
   if (!pc_->declareFunctionThis(usedNames_, canSkipLazyClosedOverBindings)) {
     return null();
   }
@@ -11061,7 +11060,7 @@ RegExpLiteral* Parser<FullParseHandler, Unit>::newRegExp() {
   uint32_t line, column;
   tokenStream.computeLineAndColumn(offset, &line, &column);
 
-  if (!handler_.canSkipRegexpSyntaxParse()) {
+  if (!handler_.reuseRegexpSyntaxParse()) {
     
     
     

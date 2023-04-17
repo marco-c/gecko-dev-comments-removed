@@ -40,25 +40,27 @@ class FullParseHandler {
   }
 
   
-
-
-
-
-
-
-
-
-
-
-
-  const Rooted<BaseScript*> lazyOuterFunction_;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   const mozilla::Span<TaggedScriptThingIndex> gcThingsData;
   const mozilla::Span<ScriptStencil> scriptData_;
   const mozilla::Span<ScriptStencilExtra> scriptExtra_;
 
   size_t lazyInnerFunctionIndex;
-
   size_t lazyClosedOverBindingIndex;
+
+  bool reuseGCThings;
 
  public:
   
@@ -107,12 +109,12 @@ class FullParseHandler {
 
   FullParseHandler(JSContext* cx, CompilationState& compilationState)
       : allocator(cx, compilationState.allocScope.alloc()),
-        lazyOuterFunction_(cx, compilationState.input.lazyOuterScript()),
         gcThingsData(compilationState.input.gcThings()),
         scriptData_(compilationState.input.scriptData()),
         scriptExtra_(compilationState.input.scriptExtra()),
         lazyInnerFunctionIndex(0),
-        lazyClosedOverBindingIndex(0) {
+        lazyClosedOverBindingIndex(0),
+        reuseGCThings(compilationState.input.isDelazifying()) {
     
     
     
@@ -1092,9 +1094,9 @@ class FullParseHandler {
     return TaggedParserAtomIndex::null();
   }
 
-  bool canSkipLazyInnerFunctions() { return !!lazyOuterFunction_; }
-  bool canSkipLazyClosedOverBindings() { return !!lazyOuterFunction_; }
-  bool canSkipRegexpSyntaxParse() { return !!lazyOuterFunction_; }
+  bool reuseLazyInnerFunctions() { return reuseGCThings; }
+  bool reuseClosedOverBindings() { return reuseGCThings; }
+  bool reuseRegexpSyntaxParse() { return reuseGCThings; }
   ScriptIndex nextLazyInnerFunction() {
     auto taggedScriptIndex = gcThingsData[lazyInnerFunctionIndex++];
     MOZ_ASSERT(taggedScriptIndex.isFunction());

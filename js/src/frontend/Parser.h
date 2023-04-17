@@ -504,7 +504,7 @@ class MOZ_STACK_CLASS PerHandlerParser : public ParserBase {
       mozilla::Maybe<TokenPos> tokenPosition = mozilla::Nothing()) {
     
     
-    if (handler_.canSkipLazyClosedOverBindings()) {
+    if (handler_.reuseClosedOverBindings()) {
       return true;
     }
 
