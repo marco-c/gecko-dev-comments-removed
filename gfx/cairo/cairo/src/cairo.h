@@ -1380,6 +1380,30 @@ typedef enum _cairo_hint_metrics {
 
 
 
+typedef enum _cairo_lcd_filter {
+    CAIRO_LCD_FILTER_DEFAULT,
+    CAIRO_LCD_FILTER_NONE,
+    CAIRO_LCD_FILTER_INTRA_PIXEL,
+    CAIRO_LCD_FILTER_FIR3,
+    CAIRO_LCD_FILTER_FIR5
+} cairo_lcd_filter_t;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1468,6 +1492,13 @@ cairo_set_font_options (cairo_t                    *cr,
 cairo_public void
 cairo_get_font_options (cairo_t              *cr,
 			cairo_font_options_t *options);
+
+cairo_public void
+cairo_font_options_set_lcd_filter (cairo_font_options_t   *options,
+                                  cairo_lcd_filter_t  lcd_filter);
+
+cairo_public cairo_lcd_filter_t
+cairo_font_options_get_lcd_filter (const cairo_font_options_t *options);
 
 cairo_public void
 cairo_set_font_face (cairo_t *cr, cairo_font_face_t *font_face);
