@@ -856,9 +856,13 @@ nsThread::Shutdown() {
   NotNull<nsThreadShutdownContext*> context = WrapNotNull(maybeContext);
 
   
+  nsAutoCString threadName;
+  GetThreadName(threadName);
+
+  
   
   SpinEventLoopUntil(
-      "nsThread::Shutdown"_ns,
+      "nsThread::Shutdown: "_ns + threadName,
       [&, context]() { return !context->mAwaitingShutdownAck; },
       context->mJoiningThread);
 
