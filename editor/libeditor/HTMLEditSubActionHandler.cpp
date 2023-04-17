@@ -76,6 +76,7 @@ using EmptyCheckOption = HTMLEditUtils::EmptyCheckOption;
 using LeafNodeType = HTMLEditUtils::LeafNodeType;
 using LeafNodeTypes = HTMLEditUtils::LeafNodeTypes;
 using StyleDifference = HTMLEditUtils::StyleDifference;
+using WalkTreeOption = HTMLEditUtils::WalkTreeOption;
 
 
 
@@ -3167,20 +3168,28 @@ nsresult HTMLEditor::FormatBlockContainerWithTransaction(nsAtom& blockType) {
     }
 
     
-    nsCOMPtr<nsIContent> brNode =
-        GetNextEditableHTMLNodeInBlock(pointToInsertBlock);
-    if (brNode && brNode->IsHTMLElement(nsGkAtoms::br)) {
-      AutoEditorDOMPointChildInvalidator lockOffset(pointToInsertBlock);
-      rv = DeleteNodeWithTransaction(*brNode);
-      if (NS_WARN_IF(Destroyed())) {
-        return NS_ERROR_EDITOR_DESTROYED;
+    
+    
+    if (Element* editingHost = GetActiveEditingHost()) {
+      if (nsCOMPtr<nsIContent> maybeBRContent = HTMLEditUtils::GetNextContent(
+              pointToInsertBlock,
+              {WalkTreeOption::IgnoreNonEditableNode,
+               WalkTreeOption::StopAtBlockBoundary},
+              editingHost)) {
+        if (maybeBRContent->IsHTMLElement(nsGkAtoms::br)) {
+          AutoEditorDOMPointChildInvalidator lockOffset(pointToInsertBlock);
+          rv = DeleteNodeWithTransaction(*maybeBRContent);
+          if (NS_WARN_IF(Destroyed())) {
+            return NS_ERROR_EDITOR_DESTROYED;
+          }
+          if (NS_FAILED(rv)) {
+            NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
+            return rv;
+          }
+          
+          arrayOfContents.RemoveElement(maybeBRContent);
+        }
       }
-      if (NS_FAILED(rv)) {
-        NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
-        return rv;
-      }
-      
-      arrayOfContents.RemoveElement(brNode);
     }
     
     SplitNodeResult splitNodeResult =
@@ -4950,24 +4959,30 @@ EditActionResult HTMLEditor::AlignContentsAtSelectionWithEmptyDivElement(
 
   
   
-  if (nsCOMPtr<nsIContent> maybeBRContent =
-          GetNextEditableHTMLNodeInBlock(splitNodeResult.SplitPoint())) {
-    if (maybeBRContent->IsHTMLElement(nsGkAtoms::br) &&
-        pointToInsertDiv.GetChild()) {
-      
-      
-      
-      if (nsIContent* nextEditableSibling =
-              GetNextHTMLSibling(pointToInsertDiv.GetChild())) {
-        if (!HTMLEditUtils::IsBlockElement(*nextEditableSibling)) {
-          AutoEditorDOMPointChildInvalidator lockOffset(pointToInsertDiv);
-          nsresult rv = DeleteNodeWithTransaction(*maybeBRContent);
-          if (NS_WARN_IF(Destroyed())) {
-            return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
-          }
-          if (NS_FAILED(rv)) {
-            NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
-            return EditActionResult(rv);
+  
+  if (Element* editingHost = GetActiveEditingHost()) {
+    if (nsCOMPtr<nsIContent> maybeBRContent = HTMLEditUtils::GetNextContent(
+            splitNodeResult.SplitPoint(),
+            {WalkTreeOption::IgnoreNonEditableNode,
+             WalkTreeOption::StopAtBlockBoundary},
+            editingHost)) {
+      if (maybeBRContent->IsHTMLElement(nsGkAtoms::br) &&
+          pointToInsertDiv.GetChild()) {
+        
+        
+        
+        if (nsIContent* nextEditableSibling =
+                GetNextHTMLSibling(pointToInsertDiv.GetChild())) {
+          if (!HTMLEditUtils::IsBlockElement(*nextEditableSibling)) {
+            AutoEditorDOMPointChildInvalidator lockOffset(pointToInsertDiv);
+            nsresult rv = DeleteNodeWithTransaction(*maybeBRContent);
+            if (NS_WARN_IF(Destroyed())) {
+              return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
+            }
+            if (NS_FAILED(rv)) {
+              NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
+              return EditActionResult(rv);
+            }
           }
         }
       }
@@ -5529,15 +5544,28 @@ EditorDOMPoint HTMLEditor::GetCurrentHardLineStartPoint(
     point.Set(point.GetContainer());
   }
 
+  Element* editingHost = GetActiveEditingHost();
+  if (!editingHost) {
+    NS_WARNING(
+        "No editing host, HTMLEditor::GetCurrentHardLineStartPoint() returned "
+        "given point");
+    return point;
+  }
+
   
   
   
-  for (nsIContent* previousEditableContent =
-           GetPreviousEditableHTMLNodeInBlock(point);
+  constexpr HTMLEditUtils::WalkTreeOptions
+      ignoreNonEditableNodeAndStopAtBlockBoundary{
+          WalkTreeOption::IgnoreNonEditableNode,
+          WalkTreeOption::StopAtBlockBoundary};
+  for (nsIContent* previousEditableContent = HTMLEditUtils::GetPreviousContent(
+           point, ignoreNonEditableNodeAndStopAtBlockBoundary, editingHost);
        previousEditableContent && previousEditableContent->GetParentNode() &&
        !IsVisibleBRElement(previousEditableContent) &&
        !HTMLEditUtils::IsBlockElement(*previousEditableContent);
-       previousEditableContent = GetPreviousEditableHTMLNodeInBlock(point)) {
+       previousEditableContent = HTMLEditUtils::GetPreviousContent(
+           point, ignoreNonEditableNodeAndStopAtBlockBoundary, editingHost)) {
     point.Set(previousEditableContent);
     
   }
@@ -5546,10 +5574,12 @@ EditorDOMPoint HTMLEditor::GetCurrentHardLineStartPoint(
   
   
   
-  for (nsIContent* nearContent = GetPreviousEditableHTMLNodeInBlock(point);
+  for (nsIContent* nearContent = HTMLEditUtils::GetPreviousContent(
+           point, ignoreNonEditableNodeAndStopAtBlockBoundary, editingHost);
        !nearContent && !point.IsContainerHTMLElement(nsGkAtoms::body) &&
        point.GetContainer()->GetParentNode();
-       nearContent = GetPreviousEditableHTMLNodeInBlock(point)) {
+       nearContent = HTMLEditUtils::GetPreviousContent(
+           point, ignoreNonEditableNodeAndStopAtBlockBoundary, editingHost)) {
     
     
     
@@ -5604,6 +5634,14 @@ EditorDOMPoint HTMLEditor::GetCurrentHardLineEndPoint(
     NS_WARNING_ASSERTION(point.IsSet(), "Failed to set to after the text node");
   }
 
+  Element* editingHost = GetActiveEditingHost();
+  if (!editingHost) {
+    NS_WARNING(
+        "No editing host, HTMLEditor::GetCurrentHardLineEndPoint() returned "
+        "given point");
+    return point;
+  }
+
   
   
   
@@ -5618,11 +5656,17 @@ EditorDOMPoint HTMLEditor::GetCurrentHardLineEndPoint(
   
   
   
-  for (nsIContent* nextEditableContent = GetNextEditableHTMLNodeInBlock(point);
+  constexpr HTMLEditUtils::WalkTreeOptions
+      ignoreNonEditableNodeAndStopAtBlockBoundary{
+          WalkTreeOption::IgnoreNonEditableNode,
+          WalkTreeOption::StopAtBlockBoundary};
+  for (nsIContent* nextEditableContent = HTMLEditUtils::GetNextContent(
+           point, ignoreNonEditableNodeAndStopAtBlockBoundary, editingHost);
        nextEditableContent &&
        !HTMLEditUtils::IsBlockElement(*nextEditableContent) &&
        nextEditableContent->GetParent();
-       nextEditableContent = GetNextEditableHTMLNodeInBlock(point)) {
+       nextEditableContent = HTMLEditUtils::GetNextContent(
+           point, ignoreNonEditableNodeAndStopAtBlockBoundary, editingHost)) {
     point.SetAfter(nextEditableContent);
     if (NS_WARN_IF(!point.IsSet())) {
       break;
@@ -5651,10 +5695,12 @@ EditorDOMPoint HTMLEditor::GetCurrentHardLineEndPoint(
   
   
   
-  for (nsIContent* nearContent = GetNextEditableHTMLNodeInBlock(point);
+  for (nsIContent* nearContent = HTMLEditUtils::GetNextContent(
+           point, ignoreNonEditableNodeAndStopAtBlockBoundary, editingHost);
        !nearContent && !point.IsContainerHTMLElement(nsGkAtoms::body) &&
        point.GetContainer()->GetParentNode();
-       nearContent = GetNextEditableHTMLNodeInBlock(point)) {
+       nearContent = HTMLEditUtils::GetNextContent(
+           point, ignoreNonEditableNodeAndStopAtBlockBoundary, editingHost)) {
     
     
     
@@ -7987,15 +8033,21 @@ void HTMLEditor::SetSelectionInterlinePosition() {
   
   
   
-  if (nsIContent* previousEditableContentInBlock =
-          GetPreviousEditableHTMLNodeInBlock(atCaret)) {
-    if (previousEditableContentInBlock->IsHTMLElement(nsGkAtoms::br)) {
-      IgnoredErrorResult ignoredError;
-      SelectionRef().SetInterlinePosition(true, ignoredError);
-      NS_WARNING_ASSERTION(
-          !ignoredError.Failed(),
-          "Selection::SetInterlinePosition(true) failed, but ignored");
-      return;
+  if (Element* editingHost = GetActiveEditingHost()) {
+    if (nsIContent* previousEditableContentInBlock =
+            HTMLEditUtils::GetPreviousContent(
+                atCaret,
+                {WalkTreeOption::IgnoreNonEditableNode,
+                 WalkTreeOption::StopAtBlockBoundary},
+                editingHost)) {
+      if (previousEditableContentInBlock->IsHTMLElement(nsGkAtoms::br)) {
+        IgnoredErrorResult ignoredError;
+        SelectionRef().SetInterlinePosition(true, ignoredError);
+        NS_WARNING_ASSERTION(
+            !ignoredError.Failed(),
+            "Selection::SetInterlinePosition(true) failed, but ignored");
+        return;
+      }
     }
   }
 
@@ -8099,7 +8151,7 @@ nsresult HTMLEditor::AdjustCaretPositionAndEnsurePaddingBRElement(
   
   
   
-
+  RefPtr<Element> editingHost = GetActiveEditingHost();
   if (nsCOMPtr<nsIContent> previousEditableContent =
           GetPreviousEditableHTMLNode(point)) {
     RefPtr<Element> blockElementAtCaret =
@@ -8143,41 +8195,57 @@ nsresult HTMLEditor::AdjustCaretPositionAndEnsurePaddingBRElement(
       }
       
       
-      else if (nsIContent* nextEditableContentInBlock =
-                   GetNextEditableHTMLNodeInBlock(*previousEditableContent)) {
-        if (EditorUtils::IsPaddingBRElementForEmptyLastLine(
-                *nextEditableContentInBlock)) {
-          
-          
-          IgnoredErrorResult ignoredError;
-          SelectionRef().SetInterlinePosition(true, ignoredError);
-          NS_WARNING_ASSERTION(
-              !ignoredError.Failed(),
-              "Selection::SetInterlinePosition(true) failed, but ignored");
+      else if (editingHost) {
+        if (nsIContent* nextEditableContentInBlock =
+                HTMLEditUtils::GetNextContent(
+                    *previousEditableContent,
+                    {WalkTreeOption::IgnoreNonEditableNode,
+                     WalkTreeOption::StopAtBlockBoundary},
+                    editingHost)) {
+          if (EditorUtils::IsPaddingBRElementForEmptyLastLine(
+                  *nextEditableContentInBlock)) {
+            
+            
+            IgnoredErrorResult ignoredError;
+            SelectionRef().SetInterlinePosition(true, ignoredError);
+            NS_WARNING_ASSERTION(
+                !ignoredError.Failed(),
+                "Selection::SetInterlinePosition(true) failed, but ignored");
+          }
         }
       }
     }
   }
 
-  
-  
-  if (nsIContent* previousEditableContentInBlock =
-          GetPreviousEditableHTMLNodeInBlock(point)) {
-    if (previousEditableContentInBlock->IsHTMLElement(nsGkAtoms::br) ||
-        previousEditableContentInBlock->IsText() ||
-        HTMLEditUtils::IsImage(previousEditableContentInBlock) ||
-        previousEditableContentInBlock->IsHTMLElement(nsGkAtoms::hr)) {
-      return NS_OK;
+  if (editingHost) {
+    
+    
+    if (nsIContent* previousEditableContentInBlock =
+            HTMLEditUtils::GetPreviousContent(
+                point,
+                {WalkTreeOption::IgnoreNonEditableNode,
+                 WalkTreeOption::StopAtBlockBoundary},
+                editingHost)) {
+      if (previousEditableContentInBlock->IsHTMLElement(nsGkAtoms::br) ||
+          previousEditableContentInBlock->IsText() ||
+          HTMLEditUtils::IsImage(previousEditableContentInBlock) ||
+          previousEditableContentInBlock->IsHTMLElement(nsGkAtoms::hr)) {
+        return NS_OK;
+      }
     }
-  }
-  
-  
-  if (nsIContent* nextEditableContentInBlock =
-          GetNextEditableHTMLNodeInBlock(point)) {
-    if (nextEditableContentInBlock->IsText() ||
-        nextEditableContentInBlock->IsAnyOfHTMLElements(
-            nsGkAtoms::br, nsGkAtoms::img, nsGkAtoms::hr)) {
-      return NS_OK;
+
+    
+    
+    if (nsIContent* nextEditableContentInBlock = HTMLEditUtils::GetNextContent(
+            point,
+            {WalkTreeOption::IgnoreNonEditableNode,
+             WalkTreeOption::StopAtBlockBoundary},
+            editingHost)) {
+      if (nextEditableContentInBlock->IsText() ||
+          nextEditableContentInBlock->IsAnyOfHTMLElements(
+              nsGkAtoms::br, nsGkAtoms::img, nsGkAtoms::hr)) {
+        return NS_OK;
+      }
     }
   }
 

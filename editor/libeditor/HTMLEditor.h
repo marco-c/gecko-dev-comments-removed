@@ -950,31 +950,22 @@ class HTMLEditor final : public TextEditor,
 
 
   nsIContent* GetPreviousEditableHTMLNode(nsINode& aNode) const {
-    return GetPreviousEditableHTMLNodeInternal(aNode, false);
-  }
-  nsIContent* GetPreviousEditableHTMLNodeInBlock(nsINode& aNode) const {
-    return GetPreviousEditableHTMLNodeInternal(aNode, true);
+    return GetPreviousEditableHTMLNodeInternal(aNode);
   }
   template <typename PT, typename CT>
   nsIContent* GetPreviousEditableHTMLNode(
       const EditorDOMPointBase<PT, CT>& aPoint) const {
-    return GetPreviousEditableHTMLNodeInternal(aPoint, false);
-  }
-  template <typename PT, typename CT>
-  nsIContent* GetPreviousEditableHTMLNodeInBlock(
-      const EditorDOMPointBase<PT, CT>& aPoint) const {
-    return GetPreviousEditableHTMLNodeInternal(aPoint, true);
+    return GetPreviousEditableHTMLNodeInternal(aPoint);
   }
 
   
 
 
 
-  nsIContent* GetPreviousEditableHTMLNodeInternal(nsINode& aNode,
-                                                  bool aNoBlockCrossing) const;
+  nsIContent* GetPreviousEditableHTMLNodeInternal(nsINode& aNode) const;
   template <typename PT, typename CT>
   nsIContent* GetPreviousEditableHTMLNodeInternal(
-      const EditorDOMPointBase<PT, CT>& aPoint, bool aNoBlockCrossing) const;
+      const EditorDOMPointBase<PT, CT>& aPoint) const;
 
   
 
@@ -987,31 +978,22 @@ class HTMLEditor final : public TextEditor,
 
 
   nsIContent* GetNextEditableHTMLNode(nsINode& aNode) const {
-    return GetNextEditableHTMLNodeInternal(aNode, false);
-  }
-  nsIContent* GetNextEditableHTMLNodeInBlock(nsINode& aNode) const {
-    return GetNextEditableHTMLNodeInternal(aNode, true);
+    return GetNextEditableHTMLNodeInternal(aNode);
   }
   template <typename PT, typename CT>
   nsIContent* GetNextEditableHTMLNode(
       const EditorDOMPointBase<PT, CT>& aPoint) const {
-    return GetNextEditableHTMLNodeInternal(aPoint, false);
-  }
-  template <typename PT, typename CT>
-  nsIContent* GetNextEditableHTMLNodeInBlock(
-      const EditorDOMPointBase<PT, CT>& aPoint) const {
-    return GetNextEditableHTMLNodeInternal(aPoint, true);
+    return GetNextEditableHTMLNodeInternal(aPoint);
   }
 
   
 
 
 
-  nsIContent* GetNextEditableHTMLNodeInternal(nsINode& aNode,
-                                              bool aNoBlockCrossing) const;
+  nsIContent* GetNextEditableHTMLNodeInternal(nsINode& aNode) const;
   template <typename PT, typename CT>
   nsIContent* GetNextEditableHTMLNodeInternal(
-      const EditorDOMPointBase<PT, CT>& aPoint, bool aNoBlockCrossing) const;
+      const EditorDOMPointBase<PT, CT>& aPoint) const;
 
   bool IsFirstEditableChild(nsINode* aNode) const;
   bool IsLastEditableChild(nsINode* aNode) const;
