@@ -43,6 +43,11 @@ impl SceneProperties {
     }
 
     
+    pub fn reset_properties(&mut self) {
+        self.pending_properties = None;
+    }
+
+    
     pub fn set_properties(&mut self, properties: DynamicProperties) {
         self.pending_properties = Some(properties);
     }
