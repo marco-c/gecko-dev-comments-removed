@@ -995,7 +995,7 @@ add_task(async function test_multistage_aboutwelcome_proton() {
     
     [
       "div.onboardingContainer",
-      "div.proton[style*='.avif']",
+      "div.proton[style*='.webp']",
       "div.section-left",
       "span.attrib-text",
       "div.secondary-cta.top",
@@ -1028,7 +1028,7 @@ add_task(async function test_multistage_aboutwelcome_proton() {
     
     [
       "div.onboardingContainer",
-      "div.proton[style*='.avif']",
+      "div.proton[style*='.webp']",
       "div.section-main",
     ],
     
@@ -1043,7 +1043,7 @@ add_task(async function test_multistage_aboutwelcome_proton() {
     
     [
       "div.onboardingContainer",
-      "div.proton[style*='.avif']",
+      "div.proton[style*='.webp']",
       "div.section-main",
       "div.tiles-theme-container",
     ],
