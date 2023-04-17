@@ -2704,7 +2704,7 @@ class nsContentUtils {
 
 
   static mozilla::TextEditor* GetTextEditorFromAnonymousNodeWithoutCreation(
-      nsIContent* aAnonymousContent);
+      const nsIContent* aAnonymousContent);
 
   
 
