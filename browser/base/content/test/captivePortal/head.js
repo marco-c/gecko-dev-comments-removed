@@ -134,7 +134,7 @@ function ensurePortalNotification(win) {
 
 
 function testShowLoginPageButtonVisibility(notification, visibility) {
-  let showLoginPageButton = notification.querySelector(
+  let showLoginPageButton = notification.buttonContainer.querySelector(
     "button.notification-button"
   );
   
