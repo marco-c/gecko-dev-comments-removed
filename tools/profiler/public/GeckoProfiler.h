@@ -130,10 +130,6 @@ class ProfilerBacktrace;
 class ProfilerCodeAddressService;
 struct JSContext;
 
-namespace JS {
-struct RecordAllocationInfo;
-}
-
 namespace mozilla {
 class ProfileBufferControlledChunkManager;
 class ProfileChunkedBuffer;
@@ -486,24 +482,6 @@ struct ProfilerBufferInfo {
 
 
 mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
-
-
-
-
-
-void profiler_add_js_marker(const char* aMarkerName, const char* aMarkerText);
-void profiler_add_js_allocation_marker(JS::RecordAllocationInfo&& info);
-
-
-
-bool profiler_add_native_allocation_marker(int64_t aSize,
-                                           uintptr_t aMemoryAddress);
-
-enum TracingKind {
-  TRACING_EVENT,
-  TRACING_INTERVAL_START,
-  TRACING_INTERVAL_END,
-};
 
 
 
