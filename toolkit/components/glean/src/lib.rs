@@ -35,6 +35,7 @@ extern crate cstr;
 #[macro_use]
 extern crate xpcom;
 
+use std::env;
 use std::ffi::CStr;
 use std::os::raw::c_char;
 use std::path::PathBuf;
@@ -144,6 +145,14 @@ pub unsafe extern "C" fn fog_init(
         }
     } else {
         log::error!("Failed to create Viaduct via XPCOM. Ping upload may not be available.");
+    }
+
+    
+    
+    
+    
+    if env::var("MOZ_AUTOMATION").is_ok() && env::var("GLEAN_SOURCE_TAGS").is_err() {
+        glean::set_source_tags(vec!["automation".to_string()]);
     }
 
     glean::initialize(configuration, client_info);
