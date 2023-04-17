@@ -4066,7 +4066,9 @@ void ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     
     
     
-    if (topLayerIsOpaque && mOuter->PresContext()->IsRootContentDocument()) {
+    
+    if (topLayerIsOpaque &&
+        mOuter->PresContext()->IsRootContentDocumentInProcess()) {
       set.DeleteAll(aBuilder);
     }
     set.PositionedDescendants()->AppendToTop(topLayerWrapList);
