@@ -81,8 +81,6 @@ class WebrtcCallWrapper {
                     const dom::RTCStatsTimestampMaker& aTimestampMaker,
                     UniquePtr<media::ShutdownBlockingTicket> aShutdownTicket);
 
-  explicit WebrtcCallWrapper(UniquePtr<webrtc::Call> aCall);
-
   const RefPtr<SharedWebrtcState> mSharedState;
 
   
