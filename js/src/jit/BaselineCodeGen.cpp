@@ -11,6 +11,7 @@
 #include "jit/ABIFunctions.h"
 #include "jit/BaselineIC.h"
 #include "jit/BaselineJIT.h"
+#include "jit/CacheIRCompiler.h"
 #include "jit/CalleeToken.h"
 #include "jit/FixedList.h"
 #include "jit/IonAnalysis.h"
@@ -541,6 +542,58 @@ bool BaselineCodeGen<Handler>::emitOutOfLinePostBarrierSlot() {
   return true;
 }
 
+
+
+
+
+static bool CreateAllocSitesForCacheIRStub(JSScript* script,
+                                           ICCacheIRStub* stub) {
+  const CacheIRStubInfo* stubInfo = stub->stubInfo();
+  uint8_t* stubData = stub->stubDataStart();
+
+  uint32_t field = 0;
+  size_t offset = 0;
+  while (true) {
+    StubField::Type fieldType = stubInfo->fieldType(field);
+    if (fieldType == StubField::Type::Limit) {
+      break;
+    }
+
+    if (fieldType == StubField::Type::AllocSite) {
+      gc::AllocSite* site =
+          stubInfo->getPtrStubField<ICCacheIRStub, gc::AllocSite>(stub, offset);
+      if (site->kind() == gc::AllocSite::Kind::Unknown) {
+        gc::AllocSite* newSite = script->createAllocSite();
+        if (!newSite) {
+          return false;
+        }
+
+        stubInfo->replaceStubRawWord(stubData, offset, uintptr_t(site),
+                                     uintptr_t(newSite));
+      }
+    }
+
+    field++;
+    offset += StubField::sizeInBytes(fieldType);
+  }
+
+  return true;
+}
+
+static void CreateAllocSitesForICChain(JSScript* script, uint32_t entryIndex) {
+  JitScript* jitScript = script->jitScript();
+  ICStub* stub = jitScript->icEntry(entryIndex).firstStub();
+
+  while (!stub->isFallback()) {
+    if (!CreateAllocSitesForCacheIRStub(script, stub->toCacheIRStub())) {
+      
+      
+      return;
+    }
+    stub = stub->toCacheIRStub()->next();
+  }
+}
+
 template <>
 bool BaselineCompilerCodeGen::emitNextIC() {
   
@@ -562,6 +615,10 @@ bool BaselineCompilerCodeGen::emitNextIC() {
 
   MOZ_ASSERT(stub->pcOffset() == pcOffset);
   MOZ_ASSERT(BytecodeOpHasIC(JSOp(*handler.pc())));
+
+  if (BytecodeOpCanHaveAllocSite(JSOp(*handler.pc()))) {
+    CreateAllocSitesForICChain(script, entryIndex);
+  }
 
   
   masm.loadPtr(frame.addressOfICScript(), ICStubReg);
