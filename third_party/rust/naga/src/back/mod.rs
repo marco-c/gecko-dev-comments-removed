@@ -29,6 +29,10 @@ impl crate::Expression {
             
             crate::Expression::Derivative { .. } => 1,
             
+            
+            
+            crate::Expression::Load { .. } => 1,
+            
             _ => 2,
         }
     }

@@ -9,6 +9,8 @@
 
 
 
+pub use external_memory::DrmModifier;
+
 bitflags!(
     /// Bitflags which describe what properties of an image
     /// a format specifies or does not specify.  For example,
@@ -127,7 +129,28 @@ impl Default for Swizzle {
 }
 
 
-#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct DrmFormatProperties {
+    
+    pub drm_modifier: DrmModifier,
+    
+    pub plane_count: u32,
+    
+    pub valid_usages: ImageFeature,
+}
+impl Default for DrmFormatProperties {
+    fn default() -> Self {
+        Self {
+            drm_modifier: DrmModifier::Invalid,
+            plane_count: 0,
+            valid_usages: ImageFeature::default(),
+        }
+    }
+}
+
+
+#[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Properties {
     
@@ -139,6 +162,8 @@ pub struct Properties {
     pub optimal_tiling: ImageFeature,
     
     pub buffer_features: BufferFeature,
+    
+    pub drm_format_properties: Vec<DrmFormatProperties>,
 }
 
 
