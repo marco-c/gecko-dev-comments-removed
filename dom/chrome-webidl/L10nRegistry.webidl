@@ -14,6 +14,10 @@ enum L10nFileSourceHasFileStatus {
     "unknown"
 };
 
+dictionary FileSourceOptions {
+  FluentBundleAddResourceOptions addResourceOptions = {};
+};
+
 
 
 
@@ -37,7 +41,7 @@ interface L10nFileSource {
 
 
   [Throws]
-  constructor(UTF8String name, sequence<UTF8String> locales, UTF8String prePath, optional sequence<UTF8String> index);
+  constructor(UTF8String name, sequence<UTF8String> locales, UTF8String prePath, optional FileSourceOptions options = {}, optional sequence<UTF8String> index);
 
   
 
@@ -105,9 +109,13 @@ interface FluentBundleAsyncIterator {
   [Alias="@@asyncIterator"] FluentBundleAsyncIterator values();
 };
 
+dictionary L10nRegistryOptions {
+  FluentBundleOptions bundleOptions = {};
+};
+
 [ChromeOnly, Exposed=Window]
 interface L10nRegistry {
-  constructor();
+  constructor(optional L10nRegistryOptions aOptions = {});
 
   static L10nRegistry getInstance();
 
