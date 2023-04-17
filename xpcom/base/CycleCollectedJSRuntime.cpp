@@ -971,7 +971,14 @@ void CycleCollectedJSRuntime::TraceGrayJS(JSTracer* aTracer, void* aData) {
   CycleCollectedJSRuntime* self = static_cast<CycleCollectedJSRuntime*>(aData);
 
   
-  self->TraceNativeGrayRoots(aTracer, JSHolderMap::HoldersInCollectingZones);
+
+  JSHolderMap::WhichHolders which = JSHolderMap::HoldersInCollectingZones;
+  if (JS::AtomsZoneIsCollecting(self->Runtime())) {
+    
+    which = JSHolderMap::AllHolders;
+  }
+
+  self->TraceNativeGrayRoots(aTracer, which);
 }
 
 
@@ -1268,6 +1275,11 @@ struct CheckZoneTracer : public TraceCallbacks {
       : mClassName(aClassName), mZone(aZone) {}
 
   void checkZone(JS::Zone* aZone, const char* aName) const {
+    if (JS::IsAtomsZone(aZone)) {
+      
+      return;
+    }
+
     if (!mZone) {
       mZone = aZone;
       return;
@@ -1277,6 +1289,9 @@ struct CheckZoneTracer : public TraceCallbacks {
       return;
     }
 
+    
+    
+    
     
     
     
@@ -1306,7 +1321,7 @@ struct CheckZoneTracer : public TraceCallbacks {
                      void* aClosure) const override {
     jsid id = aPtr->unbarrieredGet();
     if (id.isGCThing()) {
-      checkZone(JS::GetTenuredGCThingZone(id.toGCCellPtr()), aName);
+      MOZ_ASSERT(JS::IsAtomsZone(JS::GetTenuredGCThingZone(id.toGCCellPtr())));
     }
   }
   virtual void Trace(JS::Heap<JSObject*>* aPtr, const char* aName,
