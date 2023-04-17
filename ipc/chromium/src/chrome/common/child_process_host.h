@@ -38,8 +38,6 @@ class ChildProcessHost : public IPC::Channel::Listener {
   
   bool CreateChannel();
 
-  bool CreateChannel(mozilla::ipc::FileDescriptor& aFileDescriptor);
-
   
   virtual void OnMessageReceived(IPC::Message&& msg) override {}
   virtual void OnChannelConnected(int32_t peer_pid) override {}
