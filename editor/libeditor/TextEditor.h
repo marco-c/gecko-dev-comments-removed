@@ -405,7 +405,7 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
 
 
 
-  EditActionResult ComputeValueFromTextNodeAndPaddingBRElement(
+  EditActionResult ComputeValueFromTextNodeAndBRElement(
       nsAString& aValue) const;
 
   

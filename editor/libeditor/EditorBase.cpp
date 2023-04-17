@@ -1435,23 +1435,28 @@ nsresult EditorBase::ComputeValueInternal(const nsAString& aFormatType,
 
   
   
-  
-  
-  
-  if (IsTextEditor() && aFormatType.LowerCaseEqualsLiteral("text/plain")) {
+  if (aFormatType.LowerCaseEqualsLiteral("text/plain") &&
+      !(aDocumentEncoderFlags & (nsIDocumentEncoder::OutputSelectionOnly |
+                                 nsIDocumentEncoder::OutputWrap))) {
+    
+    if (mPaddingBRElementForEmptyEditor) {
+      aOutputString.Truncate();
+      return NS_OK;
+    }
     
     
     
-    
-    if (!(aDocumentEncoderFlags & (nsIDocumentEncoder::OutputSelectionOnly |
-                                   nsIDocumentEncoder::OutputWrap))) {
+    if (IsTextEditor()) {
+      
+      
+      
+      
       EditActionResult result =
-          AsTextEditor()->ComputeValueFromTextNodeAndPaddingBRElement(
-              aOutputString);
+          AsTextEditor()->ComputeValueFromTextNodeAndBRElement(aOutputString);
       if (result.Failed() || result.Canceled() || result.Handled()) {
         NS_WARNING_ASSERTION(
             result.Succeeded(),
-            "TextEditor::ComputeValueFromTextNodeAndPaddingBRElement() failed");
+            "TextEditor::ComputeValueFromTextNodeAndBRElement() failed");
         return result.Rv();
       }
     }
