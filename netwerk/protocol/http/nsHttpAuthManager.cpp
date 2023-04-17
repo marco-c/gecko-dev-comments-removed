@@ -81,9 +81,7 @@ nsHttpAuthManager::SetAuthIdentity(
     const nsACString& aPath, const nsAString& aUserDomain,
     const nsAString& aUserName, const nsAString& aUserPassword, bool aIsPrivate,
     nsIPrincipal* aPrincipal) {
-  nsHttpAuthIdentity ident(PromiseFlatString(aUserDomain).get(),
-                           PromiseFlatString(aUserName).get(),
-                           PromiseFlatString(aUserPassword).get());
+  nsHttpAuthIdentity ident(aUserDomain, aUserName, aUserPassword);
 
   nsAutoCString originSuffix;
   if (aPrincipal) {
@@ -91,13 +89,11 @@ nsHttpAuthManager::SetAuthIdentity(
   }
 
   nsHttpAuthCache* auth_cache = aIsPrivate ? mPrivateAuthCache : mAuthCache;
-  return auth_cache->SetAuthEntry(
-      PromiseFlatCString(aScheme).get(), PromiseFlatCString(aHost).get(), aPort,
-      PromiseFlatCString(aPath).get(), PromiseFlatCString(aRealm).get(),
-      nullptr,  
-      nullptr,  
-      originSuffix, &ident,
-      nullptr);  
+  return auth_cache->SetAuthEntry(aScheme, aHost, aPort, aPath, aRealm,
+                                  ""_ns,  
+                                  ""_ns,  
+                                  originSuffix, &ident,
+                                  nullptr);  
 }
 
 NS_IMETHODIMP
