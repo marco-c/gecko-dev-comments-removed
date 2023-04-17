@@ -3583,8 +3583,12 @@ bool BaseCompiler::emitCatch() {
 
   
   
-  RegRef exn = RegRef(WasmExceptionReg);
-  needRef(exn);
+  ResultType exnResult = ResultType::Single(RefType::extern_());
+  captureResultRegisters(exnResult);
+  if (!pushBlockResults(exnResult)) {
+    return false;
+  }
+  RegRef exn = popRef();
   RegRef values = needRef();
   RegRef refs = needRef();
 
@@ -3690,11 +3694,13 @@ bool BaseCompiler::emitCatchAll() {
 
   
   
-  RegRef exn = RegRef(WasmExceptionReg);
-  needRef(exn);
+  ResultType exnResult = ResultType::Single(RefType::extern_());
+  captureResultRegisters(exnResult);
   
   
-  pushRef(exn);
+  if (!pushBlockResults(exnResult)) {
+    return false;
+  }
 
   return true;
 }
@@ -3867,9 +3873,6 @@ bool BaseCompiler::endTryCatch(ResultType type) {
     tryNote.end = tryNote.entryPoint;
   }
 
-  RegRef exn = RegRef(WasmExceptionReg);
-  needRef(exn);
-
   
   fr.loadTlsPtr(WasmTlsReg);
   masm.loadWasmPinnedRegsFromTls();
@@ -3881,6 +3884,7 @@ bool BaseCompiler::endTryCatch(ResultType type) {
 
   
   
+  RegRef exn = needRef();
   loadPendingException(exn);
   pushRef(exn);
 
@@ -3889,12 +3893,16 @@ bool BaseCompiler::endTryCatch(ResultType type) {
   }
 
   
-  needRef(exn);
-  RegI32 index = popI32();
-  freeRef(exn);
+  RegI32 temp = popI32();
+  RegI32 index = needI32();
+  moveI32(temp, index);
+  freeI32(temp);
 
   
-  exn = popRef(RegRef(WasmExceptionReg));
+  
+  ResultType exnResult = ResultType::Single(RefType::extern_());
+  popBlockResults(exnResult, tryCatch.stackHeight, ContinuationKind::Jump);
+  freeResultRegisters(exnResult);
 
   bool hasCatchAll = false;
   for (CatchInfo& info : tryCatch.catchInfos) {
@@ -3904,17 +3912,17 @@ bool BaseCompiler::endTryCatch(ResultType type) {
     } else {
       masm.jump(&info.label);
       hasCatchAll = true;
-      
-      
-      freeRef(exn);
     }
   }
   freeI32(index);
 
   
   
-  if (!hasCatchAll && !throwFrom(exn, lineOrBytecode)) {
-    return false;
+  if (!hasCatchAll) {
+    captureResultRegisters(exnResult);
+    if (!pushBlockResults(exnResult) || !throwFrom(popRef(), lineOrBytecode)) {
+      return false;
+    }
   }
 
   
