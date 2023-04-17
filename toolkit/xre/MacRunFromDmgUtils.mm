@@ -26,7 +26,9 @@
 #include "nsIMacDockSupport.h"
 #include "nsObjCExceptions.h"
 #include "nsString.h"
-#include "nsUpdateDriver.h"
+#ifdef MOZ_UPDATER
+#  include "nsUpdateDriver.h"
+#endif
 #include "SDKDeclarations.h"
 
 
@@ -198,6 +200,7 @@ static void StripQuarantineBit(NSString* aBundlePath) {
   LaunchTask(@"/usr/bin/xattr", arguments);
 }
 
+#ifdef MOZ_UPDATER
 bool LaunchElevatedDmgInstall(NSString* aBundlePath, NSArray* aArguments) {
   NSTask* task;
   if (@available(macOS 10.13, *)) {
@@ -226,6 +229,7 @@ bool LaunchElevatedDmgInstall(NSString* aBundlePath, NSArray* aArguments) {
 
   return didSucceed;
 }
+#endif
 
 
 
@@ -238,6 +242,7 @@ static bool InstallFromDmg(NSString* aBundlePath, NSString* aDestPath) {
     installSuccessful = true;
   }
 
+#ifdef MOZ_UPDATER
   
   
   
@@ -257,6 +262,7 @@ static bool InstallFromDmg(NSString* aBundlePath, NSString* aDestPath) {
     LaunchElevatedDmgInstall(updaterBinPath, arguments);
     installSuccessful = [fileManager fileExistsAtPath:aDestPath];
   }
+#endif
 
   if (!installSuccessful) {
     return false;
