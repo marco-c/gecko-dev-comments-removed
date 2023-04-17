@@ -43,9 +43,17 @@ const Spotlight = {
     ]);
 
     
-    if (params.secondaryBtn || !params.primaryBtn) {
+    if (!params.secondaryBtn && !params.primaryBtn) {
       this.sendUserEventTelemetry("DISMISS", message, dispatchCFRAction);
       return true;
+    }
+
+    if (params.secondaryBtn) {
+      this.sendUserEventTelemetry("DISMISS", message, dispatchCFRAction);
+      SpecialMessageActions.handleAction(
+        message.content.body.secondary.action,
+        browser
+      );
     }
 
     if (params.primaryBtn) {
