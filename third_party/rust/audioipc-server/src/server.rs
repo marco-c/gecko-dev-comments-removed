@@ -672,7 +672,24 @@ impl CubebServer {
 
         let (ipc_server, ipc_client) = MessageStream::anonymous_ipc_pair()?;
         debug!("Created callback pair: {:?}-{:?}", ipc_server, ipc_client);
-        let shm = SharedMem::new(&get_shm_id(), self.shm_area_size)?;
+
+        
+        
+        
+        
+        let shm_area_size = if self.shm_area_size == 0 {
+            let frame_size = output_frame_size.max(input_frame_size) as u32;
+            let in_rate = params.input_stream_params.map(|p| p.rate).unwrap_or(0);
+            let out_rate = params.output_stream_params.map(|p| p.rate).unwrap_or(0);
+            let rate = out_rate.max(in_rate);
+            
+            (((rate * frame_size) + 0xffff) & !0xffff) as usize
+        } else {
+            self.shm_area_size
+        };
+        debug!("shm_area_size = {}", shm_area_size);
+
+        let shm = SharedMem::new(&get_shm_id(), shm_area_size)?;
 
         
         
@@ -698,7 +715,7 @@ impl CubebServer {
         let shm_handle = unsafe { shm.make_handle().unwrap() };
         let shm_setup = Some(rpc.call(CallbackReq::SharedMem(
             SerializableHandle::new(shm_handle, self.remote_pid.unwrap()),
-            self.shm_area_size,
+            shm_area_size,
         )));
 
         let cbs = Box::new(ServerStreamCallbacks {

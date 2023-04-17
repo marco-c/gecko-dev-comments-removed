@@ -44,8 +44,6 @@
 #define AUDIOIPC_POOL_SIZE_DEFAULT 1
 #define AUDIOIPC_STACK_SIZE_DEFAULT (64 * 4096)
 
-#define AUDIOIPC_SHM_AREA_SIZE_DEFAULT (512 * 4096)
-
 #define PREF_VOLUME_SCALE "media.volume_scale"
 #define PREF_CUBEB_BACKEND "media.cubeb.backend"
 #define PREF_CUBEB_OUTPUT_DEVICE "media.cubeb.output_device"
@@ -275,8 +273,7 @@ void PrefChanged(const char* aPref, void* aClosure) {
                                               AUDIOIPC_STACK_SIZE_DEFAULT);
   } else if (strcmp(aPref, PREF_AUDIOIPC_SHM_AREA_SIZE) == 0) {
     StaticMutexAutoLock lock(sMutex);
-    sAudioIPCShmAreaSize = Preferences::GetUint(PREF_AUDIOIPC_SHM_AREA_SIZE,
-                                                AUDIOIPC_SHM_AREA_SIZE_DEFAULT);
+    sAudioIPCShmAreaSize = Preferences::GetUint(PREF_AUDIOIPC_SHM_AREA_SIZE);
   }
 #endif
   else if (strcmp(aPref, PREF_CUBEB_OUTPUT_VOICE_ROUTING) == 0) {
