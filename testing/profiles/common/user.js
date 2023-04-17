@@ -77,4 +77,4 @@ user_pref("browser.region.network.url", "");
 
 user_pref("browser.tabs.unloadOnLowMemory", false);
 
-user_pref("browser.topsites.contile.endpoint", "http://localhost/contile-dummy/v1");
+user_pref("browser.topsites.contile.enabled", false);
