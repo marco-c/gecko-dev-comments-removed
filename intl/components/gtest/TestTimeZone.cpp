@@ -17,7 +17,7 @@ TEST(IntlTimeZone, SystemDependentTests)
   auto timeZone = TimeZone::TryCreate(Some(MakeStringSpan(u"GMT+3"))).unwrap();
   TestBuffer<char16_t> buffer;
   
-  timeZone->GetDefaultTimeZoneOffsetMs().unwrap();
+  timeZone->GetRawOffsetMs().unwrap();
 
   
   TimeZone::GetDefaultTimeZone(buffer).unwrap();

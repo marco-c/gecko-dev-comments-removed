@@ -45,7 +45,7 @@ class TimeZone final {
   
 
 
-  Result<int32_t, ICUError> GetDefaultTimeZoneOffsetMs();
+  Result<int32_t, ICUError> GetRawOffsetMs();
 
   
 
