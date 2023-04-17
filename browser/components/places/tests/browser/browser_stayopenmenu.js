@@ -134,28 +134,11 @@ add_task(async function testStayopenBookmarksClicks() {
   await PopupShownPromise;
 
   let BMview;
-  
-  
-  
-  if (PanelUI.protonAppMenuEnabled) {
-    document.getElementById("appMenu-bookmarks-button").click();
-    BMview = document.getElementById("PanelUI-bookmarks");
-    let promise = BrowserTestUtils.waitForEvent(BMview, "ViewShown");
-    await promise;
-    info("Bookmarks panel shown.");
-  } else {
-    document.getElementById("appMenu-library-button").click();
-    let libraryView = document.getElementById("appMenu-libraryView");
-    let promise = BrowserTestUtils.waitForEvent(libraryView, "ViewShown");
-    await promise;
-    info("Library panel shown.");
-
-    document.getElementById("appMenu-library-bookmarks-button").click();
-    BMview = document.getElementById("PanelUI-bookmarks");
-    promise = BrowserTestUtils.waitForEvent(BMview, "ViewShown");
-    await promise;
-    info("Library's bookmarks panel shown.");
-  }
+  document.getElementById("appMenu-bookmarks-button").click();
+  BMview = document.getElementById("PanelUI-bookmarks");
+  let promise = BrowserTestUtils.waitForEvent(BMview, "ViewShown");
+  await promise;
+  info("Bookmarks panel shown.");
 
   
   let menu = document.getElementById("panelMenu_bookmarksMenu");

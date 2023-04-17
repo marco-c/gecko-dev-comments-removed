@@ -17,14 +17,12 @@ registerCleanupFunction(async function resetToolbar() {
 });
 
 add_task(async function setupHomeButton() {
-  if (CustomizableUI.protonToolbarEnabled) {
-    
-    CustomizableUI.addWidgetToArea(
-      "home-button",
-      "nav-bar",
-      CustomizableUI.getPlacementOfWidget("stop-reload-button").position + 1
-    );
-  }
+  
+  CustomizableUI.addWidgetToArea(
+    "home-button",
+    "nav-bar",
+    CustomizableUI.getPlacementOfWidget("stop-reload-button").position + 1
+  );
 });
 
 function synthesizeKeyAndWaitForFocus(element, keyCode, options) {

@@ -16,25 +16,11 @@ add_task(async function test_history_after_appMenu() {
   await waitForElementShown(document.getElementById("history-panelmenu"));
 
   let historyView = PanelMultiView.getViewNode(document, "PanelUI-history");
-  let libraryView = PanelMultiView.getViewNode(document, "appMenu-libraryView");
-
   
   await gCUITestUtils.openMainMenu();
 
-  if (!PanelUI.protonAppMenuEnabled) {
-    
-    document.getElementById("appMenu-library-button").click();
-    await BrowserTestUtils.waitForEvent(libraryView, "ViewShown");
-  }
-
   
-  document
-    .getElementById(
-      PanelUI.protonAppMenuEnabled
-        ? "appMenu-history-button"
-        : "appMenu-library-history-button"
-    )
-    .click();
+  document.getElementById("appMenu-history-button").click();
   await BrowserTestUtils.waitForEvent(historyView, "ViewShown");
 
   

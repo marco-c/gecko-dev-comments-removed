@@ -213,9 +213,7 @@ add_task(async function appMenu() {
       "popuphidden"
     );
 
-    let findButtonID = PanelUI.protonAppMenuEnabled
-      ? "appMenu-find-button2"
-      : "appMenu-find-button";
+    let findButtonID = "appMenu-find-button2";
     click(findButtonID);
     await hidden;
 
@@ -242,75 +240,38 @@ add_task(async function devtools() {
     click("PanelUI-menu-button");
     await shown;
 
+    click("appMenu-more-button2");
+    shown = BrowserTestUtils.waitForEvent(
+      elem("appmenu-moreTools"),
+      "ViewShown"
+    );
+    await shown;
+
+    let tabOpen = BrowserTestUtils.waitForNewTab(gBrowser);
+    let hidden = BrowserTestUtils.waitForEvent(
+      elem("appMenu-popup"),
+      "popuphidden"
+    );
+    click(
+      document.querySelector(
+        "#appmenu-moreTools toolbarbutton[key='key_viewSource']"
+      )
+    );
+    await hidden;
+
+    let tab = await tabOpen;
+    BrowserTestUtils.removeTab(tab);
+
     
-    
-    if (PanelUI.protonAppMenuEnabled) {
-      click("appMenu-more-button2");
-      shown = BrowserTestUtils.waitForEvent(
-        elem("appmenu-moreTools"),
-        "ViewShown"
-      );
-      await shown;
-
-      let tabOpen = BrowserTestUtils.waitForNewTab(gBrowser);
-      let hidden = BrowserTestUtils.waitForEvent(
-        elem("appMenu-popup"),
-        "popuphidden"
-      );
-      click(
-        document.querySelector(
-          "#appmenu-moreTools toolbarbutton[key='key_viewSource']"
-        )
-      );
-      await hidden;
-
-      let tab = await tabOpen;
-      BrowserTestUtils.removeTab(tab);
-
-      
-      assertInteractionScalars({
-        nav_bar: {
-          "PanelUI-menu-button": 1,
-        },
-        app_menu: {
-          "appMenu-more-button2": 1,
-          "key-viewSource": 1,
-        },
-      });
-    } else {
-      click("appMenu-developer-button");
-      shown = BrowserTestUtils.waitForEvent(
-        elem("PanelUI-developer"),
-        "ViewShown"
-      );
-      await shown;
-
-      let tabOpen = BrowserTestUtils.waitForNewTab(gBrowser);
-      let hidden = BrowserTestUtils.waitForEvent(
-        elem("appMenu-popup"),
-        "popuphidden"
-      );
-      click(
-        document.querySelector(
-          "#PanelUI-developer toolbarbutton[key='key_viewSource']"
-        )
-      );
-      await hidden;
-
-      let tab = await tabOpen;
-      BrowserTestUtils.removeTab(tab);
-
-      
-      assertInteractionScalars({
-        nav_bar: {
-          "PanelUI-menu-button": 1,
-        },
-        app_menu: {
-          "appMenu-developer-button": 1,
-          "key-viewSource": 1,
-        },
-      });
-    }
+    assertInteractionScalars({
+      nav_bar: {
+        "PanelUI-menu-button": 1,
+      },
+      app_menu: {
+        "appMenu-more-button2": 1,
+        "key-viewSource": 1,
+      },
+    });
   });
 });
 
