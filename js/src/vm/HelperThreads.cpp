@@ -21,6 +21,7 @@
 #include "jit/JitRuntime.h"
 #include "js/ContextOptions.h"      
 #include "js/friend/StackLimits.h"  
+#include "js/HelperThreadAPI.h"
 #include "js/OffThreadScriptCompilation.h"  
 #include "js/SourceText.h"
 #include "js/UniquePtr.h"
@@ -131,6 +132,21 @@ void JS::SetProfilingThreadCallbacks(
     JS::UnregisterThreadCallback unregisterThread) {
   HelperThreadState().registerThread = registerThread;
   HelperThreadState().unregisterThread = unregisterThread;
+}
+
+
+
+JS_PUBLIC_API MOZ_NEVER_INLINE void JS::SetHelperThreadTaskCallback(
+    HelperThreadTaskCallback callback) {
+  HelperThreadState().setExternalTaskCallback(callback);
+}
+
+void GlobalHelperThreadState::setExternalTaskCallback(
+    JS::HelperThreadTaskCallback callback) {
+  AutoLockHelperThreadState lock;
+  MOZ_ASSERT(!isInitialized(lock));
+  MOZ_ASSERT(!dispatchTaskCallback);
+  dispatchTaskCallback = callback;
 }
 
 bool js::StartOffThreadWasmCompile(wasm::CompileTask* task,
@@ -1301,7 +1317,7 @@ bool GlobalHelperThreadState::ensureInitialized() {
     return true;
   }
 
-  useInternalThreadPool_ = HelperThreadTaskCallback == nullptr;
+  useInternalThreadPool_ = dispatchTaskCallback == nullptr;
 
   for (size_t& i : runningTaskCount) {
     i = 0;
@@ -1358,6 +1374,8 @@ GlobalHelperThreadState::GlobalHelperThreadState()
       unregisterThread(nullptr),
       wasmTier2GeneratorsFinished_(0),
       useInternalThreadPool_(true) {
+  MOZ_ASSERT(!gHelperThreadState);
+
   cpuCount = ClampDefaultCPUCount(GetCPUCount());
   threadCount = ThreadCountForCPUCount(cpuCount);
   gcParallelThreadCount = threadCount;
