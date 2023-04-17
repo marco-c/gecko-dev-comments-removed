@@ -838,8 +838,9 @@ void LIRGenerator::visitTest(MTest* test) {
     }
   }
 
-#if defined(ENABLE_WASM_SIMD) && \
-    (defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64))
+#if defined(ENABLE_WASM_SIMD) &&                           \
+    (defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64) || \
+     defined(JS_CODEGEN_ARM64))
   
   
   

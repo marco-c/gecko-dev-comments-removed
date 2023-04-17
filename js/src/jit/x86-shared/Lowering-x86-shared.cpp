@@ -1340,8 +1340,8 @@ void LIRGenerator::visitWasmLoadLaneSimd128(MWasmLoadLaneSimd128* ins) {
   LAllocation memoryBase = ins->hasMemoryBase()
                                ? useRegisterAtStart(ins->memoryBase())
                                : LAllocation();
-  LWasmLoadLaneSimd128* lir =
-      new (alloc()) LWasmLoadLaneSimd128(base, inputUse, memoryBase);
+  LWasmLoadLaneSimd128* lir = new (alloc()) LWasmLoadLaneSimd128(
+      base, inputUse, LDefinition::BogusTemp(), memoryBase);
   defineReuseInput(lir, ins, LWasmLoadLaneSimd128::Src);
 }
 
@@ -1351,8 +1351,8 @@ void LIRGenerator::visitWasmStoreLaneSimd128(MWasmStoreLaneSimd128* ins) {
   LAllocation memoryBase = ins->hasMemoryBase()
                                ? useRegisterAtStart(ins->memoryBase())
                                : LAllocation();
-  LWasmStoreLaneSimd128* lir =
-      new (alloc()) LWasmStoreLaneSimd128(base, input, memoryBase);
+  LWasmStoreLaneSimd128* lir = new (alloc())
+      LWasmStoreLaneSimd128(base, input, LDefinition::BogusTemp(), memoryBase);
   add(lir, ins);
 }
 
@@ -1424,8 +1424,8 @@ void LIRGenerator::visitWasmReduceSimd128(MWasmReduceSimd128* ins) {
     
     
     
-    auto* lir =
-        new (alloc()) LWasmReduceSimd128(useRegisterAtStart(ins->input()));
+    auto* lir = new (alloc()) LWasmReduceSimd128(
+        useRegisterAtStart(ins->input()), LDefinition::BogusTemp());
     define(lir, ins);
   }
 }
