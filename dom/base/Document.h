@@ -1201,7 +1201,10 @@ class Document : public nsINode,
 
   
   
-  void DisallowBFCaching();
+  void DisallowBFCaching() {
+    NS_ASSERTION(!mBFCacheEntry, "We're already in the bfcache!");
+    mBFCacheDisallowed = true;
+  }
 
   bool IsBFCachingAllowed() const { return !mBFCacheDisallowed; }
 
@@ -1516,9 +1519,6 @@ class Document : public nsINode,
   bool HasThirdPartyChannel();
 
   bool ShouldIncludeInTelemetry(bool aAllowExtensionURIs);
-
-  void AddMediaElementWithMSE();
-  void RemoveMediaElementWithMSE();
 
  protected:
   friend class nsUnblockOnloadEvent;
@@ -5232,8 +5232,6 @@ class Document : public nsINode,
   
   int32_t mNextFormNumber;
   int32_t mNextControlNumber;
-
-  uint32_t mMediaElementWithMSECount = 0;
 
   
   PreloadService mPreloadService;

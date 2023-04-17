@@ -213,10 +213,6 @@ class WindowGlobalParent final : public WindowContext,
                               const Maybe<nsPoint>& aScrollPosition,
                               uint32_t aEpoch);
 
-  Maybe<uint64_t> GetSingleChannelId() { return mSingleChannelId; }
-
-  uint16_t GetBFCacheStatus() { return mBFCacheStatus; }
-
  protected:
   already_AddRefed<JSActor> InitJSActor(JS::HandleObject aMaybeActor,
                                         const nsACString& aName,
@@ -283,13 +279,6 @@ class WindowGlobalParent final : public WindowContext,
       uint32_t aEpoch);
 
   mozilla::ipc::IPCResult RecvResetSessionStore(uint32_t aEpoch);
-
-  mozilla::ipc::IPCResult RecvUpdateBFCacheStatus(const uint16_t& aOnFlags,
-                                                  const uint16_t& aOffFlags);
-
- public:
-  mozilla::ipc::IPCResult RecvSetSingleChannelId(
-      const Maybe<uint64_t>& aSingleChannelId);
 
  private:
   WindowGlobalParent(CanonicalBrowsingContext* aBrowsingContext,
@@ -363,19 +352,6 @@ class WindowGlobalParent final : public WindowContext,
   
   
   bool mSentPageUseCounters = false;
-
-  uint16_t mBFCacheStatus = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  Maybe<uint64_t> mSingleChannelId;
 };
 
 }  

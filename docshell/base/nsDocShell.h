@@ -511,10 +511,6 @@ class nsDocShell final : public nsDocLoader,
   
   bool IsLoadingFromSessionHistory();
 
-  NS_IMETHODIMP OnStartRequest(nsIRequest* aRequest) override;
-  NS_IMETHODIMP OnStopRequest(nsIRequest* aRequest,
-                              nsresult aStatusCode) override;
-
  private:  
   friend class nsDSURIContentListener;
   friend class FramingChecker;
@@ -863,7 +859,7 @@ class nsDocShell final : public nsDocLoader,
   bool CanSavePresentation(uint32_t aLoadType, nsIRequest* aNewRequest,
                            mozilla::dom::Document* aNewDocument);
 
-  static void ReportBFCacheComboTelemetry(uint16_t aCombo);
+  void ReportBFCacheComboTelemetry(uint16_t aCombo);
 
   
   
@@ -1083,8 +1079,6 @@ class nsDocShell final : public nsDocLoader,
   bool ShouldOpenInBlankTarget(const nsAString& aOriginalTarget,
                                nsIURI* aLinkURI, nsIContent* aContent);
 
-  void RecordSingleChannelId();
-
  private:  
   nsString mTitle;
   nsCString mOriginalUriString;
@@ -1220,9 +1214,6 @@ class nsDocShell final : public nsDocLoader,
   
   
   MetaViewportOverride mMetaViewportOverride;
-
-  
-  mozilla::Maybe<uint64_t> mSingleChannelId;
 
   
   
