@@ -2456,11 +2456,12 @@ bool FlexItem::NeedsFinalReflow(const nscoord aAvailableBSizeForItem) const {
           aAvailableBSizeForItem > 0,
       "We can only handle unconstrained or positive available block-size.");
 
-  if (mFrame->GetPrevInFlow()) {
+  
+  
+  if (mFrame->GetPrevInFlow() || mFrame->GetNextInFlow()) {
     
-    FLEX_LOG(
-        "[frag] Flex item %p needed a final reflow due to being a continuation",
-        mFrame);
+    FLEX_LOG("[frag] Flex item %p needed a final reflow due to continuation(s)",
+             mFrame);
     return true;
   }
 
