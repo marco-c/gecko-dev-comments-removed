@@ -15,7 +15,6 @@
 #include "xpcpublic.h"
 #include "XPCWrapper.h"
 #include "XPCJSMemoryReporter.h"
-#include "XPCJSThreadPool.h"
 #include "XrayWrapper.h"
 #include "WrapperFactory.h"
 #include "mozJSComponentLoader.h"
@@ -1086,15 +1085,6 @@ void XPCJSRuntime::SystemIsBeingShutDown() {
   while (mWrappedJSRoots) {
     mWrappedJSRoots->RemoveFromRootSet();
   }
-}
-
-StaticAutoPtr<HelperThreadPool> gHelperThreads;
-
-void InitializeHelperThreadPool() { gHelperThreads = new HelperThreadPool(); }
-
-bool DispatchOffThreadTask(js::UniquePtr<RunnableTask> task) {
-  return NS_SUCCEEDED(gHelperThreads->Dispatch(
-      MakeAndAddRef<HelperThreadTaskHandler>(std::move(task))));
 }
 
 void XPCJSRuntime::Shutdown(JSContext* cx) {
@@ -2916,29 +2906,6 @@ void ConstructUbiNode(void* storage, JSObject* ptr) {
   JS::ubi::ReflectorNode::construct(storage, ptr);
 }
 
-class HelperThreadPoolShutdownObserver : public nsIObserver {
- public:
-  NS_DECL_ISUPPORTS
-  NS_DECL_NSIOBSERVER
- protected:
-  virtual ~HelperThreadPoolShutdownObserver() = default;
-};
-
-NS_IMPL_ISUPPORTS(HelperThreadPoolShutdownObserver, nsIObserver, nsISupports)
-
-NS_IMETHODIMP
-HelperThreadPoolShutdownObserver::Observe(nsISupports* aSubject,
-                                          const char* aTopic,
-                                          const char16_t* aData) {
-  MOZ_RELEASE_ASSERT(!strcmp(aTopic, "xpcom-shutdown-threads"));
-
-  
-  gHelperThreads->Shutdown();
-  gHelperThreads = nullptr;
-
-  return NS_OK;
-}
-
 void XPCJSRuntime::Initialize(JSContext* cx) {
   mLoaderGlobal.init(cx, nullptr);
 
@@ -2994,14 +2961,6 @@ void XPCJSRuntime::Initialize(JSContext* cx) {
   JS::SetProcessLargeAllocationFailureCallback(
       OnLargeAllocationFailureCallback);
   JS::SetProcessBuildIdOp(GetBuildId);
-
-  
-  
-  nsCOMPtr<nsIObserverService> obsService = services::GetObserverService();
-  nsCOMPtr<nsIObserver> obs = new HelperThreadPoolShutdownObserver();
-  obsService->AddObserver(obs, "xpcom-shutdown-threads", false);
-  InitializeHelperThreadPool();
-  SetHelperThreadTaskCallback(&DispatchOffThreadTask);
 
   
   
@@ -3292,26 +3251,3 @@ uint32_t GetAndClampCPUCount() {
   }
   return std::min(proc, 8);
 }
-nsresult HelperThreadPool::Dispatch(
-    already_AddRefed<HelperThreadTaskHandler> aRunnable) {
-  return mPool->Dispatch(std::move(aRunnable), NS_DISPATCH_NORMAL);
-}
-
-HelperThreadPool::HelperThreadPool() {
-  mPool = new nsThreadPool();
-  mPool->SetName("JSHelperThreads"_ns);
-  mPool->SetThreadLimit(GetAndClampCPUCount());
-  
-  
-  const uint32_t kDefaultHelperStackSize = 2048 * 1024 - 2 * 4096;
-
-#if defined(MOZ_TSAN)
-  const uint32_t HELPER_STACK_SIZE = 2 * kDefaultHelperStackSize;
-#else
-  const uint32_t HELPER_STACK_SIZE = kDefaultHelperStackSize;
-#endif
-
-  mPool->SetThreadStackSize(HELPER_STACK_SIZE);
-}
-
-void HelperThreadPool::Shutdown() { mPool->Shutdown(); }
