@@ -254,6 +254,10 @@ class MultiTouchInput : public InputData {
   
   ExternalPoint mScreenOffset;
   bool mHandledByAPZ;
+  
+  
+  int16_t mButton = 0;
+  int16_t mButtons = 0;
 };
 
 class MouseInput : public InputData {
