@@ -269,16 +269,12 @@ impl Transaction {
     
     
     
-    
-    
-    
     pub fn set_display_list(
         &mut self,
         epoch: Epoch,
         background: Option<ColorF>,
         viewport_size: LayoutSize,
         (pipeline_id, mut display_list): (PipelineId, BuiltDisplayList),
-        preserve_frame_state: bool,
     ) {
         display_list.set_send_time_ns(precise_time_ns());
         self.scene_ops.push(
@@ -288,7 +284,6 @@ impl Transaction {
                 pipeline_id,
                 background,
                 viewport_size,
-                preserve_frame_state,
             }
         );
     }
@@ -776,8 +771,6 @@ pub enum SceneMsg {
         background: Option<ColorF>,
         
         viewport_size: LayoutSize,
-        
-        preserve_frame_state: bool,
     },
     
     SetDocumentView {
