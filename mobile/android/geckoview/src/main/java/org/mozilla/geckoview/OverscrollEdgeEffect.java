@@ -8,6 +8,7 @@ package org.mozilla.geckoview;
 import org.mozilla.gecko.util.ThreadUtils;
 
 import android.content.Context;
+import android.graphics.BlendMode;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
@@ -17,9 +18,11 @@ import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.UiThread;
+
 import android.widget.EdgeEffect;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 @UiThread
 public final class OverscrollEdgeEffect {
@@ -44,6 +47,61 @@ public final class OverscrollEdgeEffect {
         mSession = session;
     }
 
+    private static Field sPaintField;
+    private static Method sSetType;
+
+    
+    
+    
+    
+    private void setType(final EdgeEffect edgeEffect) {
+        if (Build.VERSION.SDK_INT < 31 && !Build.VERSION.CODENAME.equals("S")) {
+            
+            
+            return;
+        }
+
+        
+        if (sSetType == null) {
+            try {
+                sSetType = EdgeEffect.class.getDeclaredMethod("setType", int.class);
+            } catch (final NoSuchMethodException e) {
+                
+                return;
+            }
+        }
+
+        try {
+            sSetType.invoke(edgeEffect,  0);
+        } catch (final Exception ex) {
+        }
+    }
+
+    private void setBlendMode(final EdgeEffect edgeEffect) {
+        if (Build.VERSION.SDK_INT >= 29) {
+            edgeEffect.setBlendMode(BlendMode.SRC);
+            return;
+        }
+
+        if (sPaintField == null) {
+            try {
+                sPaintField = EdgeEffect.class.getDeclaredField("mPaint");
+                sPaintField.setAccessible(true);
+            } catch (final NoSuchFieldException e) {
+                
+                return;
+            }
+        }
+
+        try {
+            final Paint paint = (Paint) sPaintField.get(edgeEffect);
+            final PorterDuffXfermode mode = new PorterDuffXfermode(PorterDuff.Mode.SRC);
+            paint.setXfermode(mode);
+        } catch (final IllegalAccessException ex) {
+            
+        }
+    }
+
     
 
 
@@ -52,34 +110,11 @@ public final class OverscrollEdgeEffect {
     public void setTheme(final @NonNull Context context) {
         ThreadUtils.assertOnUiThread();
 
-        final PorterDuffXfermode mode = new PorterDuffXfermode(PorterDuff.Mode.SRC);
-        Field paintField = null;
-
-        if (Build.VERSION.SDK_INT >= 21) {
-            try {
-                paintField = EdgeEffect.class.getDeclaredField("mPaint");
-                paintField.setAccessible(true);
-            } catch (final NoSuchFieldException e) {
-            }
-        }
-
         for (int i = 0; i < mEdges.length; i++) {
-            mEdges[i] = new EdgeEffect(context);
-
-            if (paintField == null) {
-                continue;
-            }
-
-            try {
-                final Paint p = (Paint) paintField.get(mEdges[i]);
-
-                
-                
-                
-                
-                p.setXfermode(mode);
-            } catch (final IllegalAccessException e) {
-            }
+            final EdgeEffect edgeEffect = new EdgeEffect(context);
+            setBlendMode(edgeEffect);
+            setType(edgeEffect);
+            mEdges[i] = edgeEffect;
         }
     }
 
