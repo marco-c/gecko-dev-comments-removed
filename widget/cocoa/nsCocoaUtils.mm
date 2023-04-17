@@ -725,12 +725,9 @@ bool nsCocoaUtils::HiDPIEnabled() {
       if ([desc objectForKey:NSDeviceIsScreen] == nil) {
         continue;
       }
-      CGFloat scale = [screen respondsToSelector:@selector(backingScaleFactor)]
-                          ? [screen backingScaleFactor]
-                          : 1.0;
       
       
-      if (scale > 1.0) {
+      if ([screen backingScaleFactor] > 1.0) {
         scaleFactors |= 2;
       } else {
         scaleFactors |= 1;
