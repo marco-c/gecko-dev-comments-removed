@@ -2,6 +2,8 @@
 
 
 
+
+
 test(() => {
   assert_throws_js(TypeError, () => new WebSocketStream(),
                 'constructor should throw');
