@@ -538,14 +538,7 @@ bool ParticularProcessPriorityManager::IsHoldingWakeLock(
 ParticularProcessPriorityManager::~ParticularProcessPriorityManager() {
   LOGP("Destroying ParticularProcessPriorityManager.");
 
-  
-  
-  
-  
-
-  if (mContentParent) {
-    UnregisterWakeLockObserver(this);
-  }
+  ShutDown();
 }
 
 
@@ -745,11 +738,15 @@ void ParticularProcessPriorityManager::ActivityChanged(
 }
 
 void ParticularProcessPriorityManager::ShutDown() {
-  MOZ_ASSERT(mContentParent);
-
   LOGP("shutdown for %p (mContentParent %p)", this, mContentParent);
 
-  UnregisterWakeLockObserver(this);
+  
+  
+  
+  
+  if (mContentParent) {
+    UnregisterWakeLockObserver(this);
+  }
 
   if (mResetPriorityTimer) {
     mResetPriorityTimer->Cancel();
