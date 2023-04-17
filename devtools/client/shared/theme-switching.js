@@ -15,6 +15,7 @@
 
   const {
     getTheme,
+    getAutoTheme,
     addThemeObserver,
     removeThemeObserver,
   } = require("devtools/client/shared/theme");
@@ -66,7 +67,7 @@
     
     
     if (!newThemeDef) {
-      newThemeDef = gDevTools.getThemeDefinition("light");
+      newThemeDef = gDevTools.getThemeDefinition(getAutoTheme());
     }
 
     
