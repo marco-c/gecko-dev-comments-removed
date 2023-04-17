@@ -5,7 +5,7 @@
 
 
 
-use cocoa_foundation::foundation::NSUInteger;
+use super::NSUInteger;
 
 #[repr(u64)]
 #[allow(non_camel_case_types)]
