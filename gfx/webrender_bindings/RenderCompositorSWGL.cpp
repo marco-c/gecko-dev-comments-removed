@@ -9,6 +9,10 @@
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/widget/CompositorWidget.h"
 
+#ifdef MOZ_WIDGET_GTK
+#  include "mozilla/WidgetUtilsGtk.h"
+#endif
+
 namespace mozilla {
 using namespace gfx;
 
@@ -265,7 +269,13 @@ void RenderCompositorSWGL::GetCompositorCapabilities(
   aCaps->max_update_rects = 1;
 
   
+  
+  
+#ifdef MOZ_WIDGET_GTK
+  aCaps->redraw_on_invalidation = widget::GdkIsX11Display();
+#else
   aCaps->redraw_on_invalidation = true;
+#endif
 }
 
 }  
