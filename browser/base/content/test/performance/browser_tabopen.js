@@ -25,6 +25,11 @@ add_task(async function() {
   
   gReduceMotionOverride = false;
 
+  
+  
+  
+  gBrowser.tabContainer.setAttribute("noshadowfortests", "true");
+
   await ensureNoPreloadedBrowser();
   await disableFxaBadge();
 
@@ -42,6 +47,11 @@ add_task(async function() {
   let tabStripRect = gBrowser.tabContainer.arrowScrollbox.getBoundingClientRect();
 
   let firstTabRect = gBrowser.selectedTab.getBoundingClientRect();
+  let tabPaddingStart = parseFloat(
+    getComputedStyle(gBrowser.selectedTab).paddingInlineStart
+  );
+  let minTabWidth = firstTabRect.width - 2 * tabPaddingStart;
+  let maxTabWidth = firstTabRect.width;
   let firstTabLabelRect = gBrowser.selectedTab.textLabel.getBoundingClientRect();
   let textBoxRect = gURLBar
     .querySelector("moz-input-box")
@@ -76,8 +86,12 @@ add_task(async function() {
                   
                   
                   
-                  ((inRange(r.w, firstTabRect.width, firstTabRect.width * 2) &&
-                    r.x1 == firstTabRect.x) ||
+                  ((inRange(r.w, minTabWidth, maxTabWidth * 2) &&
+                    inRange(
+                      r.x1,
+                      firstTabRect.x,
+                      firstTabRect.x + tabPaddingStart
+                    )) ||
                   
                   (inRange(
                     r.x1,
