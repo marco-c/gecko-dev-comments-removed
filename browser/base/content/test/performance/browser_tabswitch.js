@@ -23,6 +23,11 @@ const EXPECTED_REFLOWS = [
 
 
 add_task(async function() {
+  
+  
+  
+  gBrowser.tabContainer.setAttribute("noshadowfortests", "true");
+
   await ensureNoPreloadedBrowser();
   await disableFxaBadge();
 
@@ -49,6 +54,11 @@ add_task(async function() {
 
   let tabStripRect = gBrowser.tabContainer.arrowScrollbox.getBoundingClientRect();
   let firstTabRect = origTab.getBoundingClientRect();
+  let tabPaddingStart = parseFloat(
+    getComputedStyle(gBrowser.selectedTab).paddingInlineStart
+  );
+  let minTabWidth = firstTabRect.width - 2 * tabPaddingStart;
+  let maxTabWidth = firstTabRect.width;
   let inRange = (val, min, max) => min <= val && val <= max;
 
   await withPerfObserver(
@@ -75,8 +85,8 @@ add_task(async function() {
                   
                   inRange(
                     r.w,
-                    (origTab.clientWidth - 1) * 2, 
-                    origTab.clientWidth * 2
+                    minTabWidth - 1, 
+                    maxTabWidth * 2
                   )
                 )
               )
