@@ -1,0 +1,20 @@
+
+
+
+
+
+"use strict";
+
+var { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+
+
+
+
+
+XPCOMUtils.defineLazyScriptGetter(
+  this,
+  "ZoomManager",
+  "chrome://global/content/viewZoomOverlay.js"
+);
