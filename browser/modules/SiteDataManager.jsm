@@ -23,7 +23,16 @@ XPCOMUtils.defineLazyGetter(this, "gBrandBundle", function() {
   );
 });
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "gFirstPartyIsolateUseSite",
+  "privacy.firstparty.isolate.use_site",
+  false
+);
+
 var SiteDataManager = {
+  
+  
   
   
   
@@ -66,6 +75,15 @@ var SiteDataManager = {
     Services.obs.notifyObservers(null, "sitedatamanager:sites-updated");
   },
 
+  
+
+
+
+
+
+
+
+
   getBaseDomainFromHost(host) {
     let result = host;
     try {
@@ -86,18 +104,18 @@ var SiteDataManager = {
     return result;
   },
 
-  _getOrInsertSite(host) {
-    let site = this._sites.get(host);
+  _getOrInsertSite(baseDomainOrHost) {
+    let site = this._sites.get(baseDomainOrHost);
     if (!site) {
       site = {
-        baseDomain: this.getBaseDomainFromHost(host),
+        baseDomainOrHost,
         cookies: [],
         persisted: false,
         quotaUsage: 0,
         lastAccessed: 0,
         principals: [],
       };
-      this._sites.set(host, site);
+      this._sites.set(baseDomainOrHost, site);
     }
     return site;
   },
@@ -142,6 +160,20 @@ var SiteDataManager = {
     return this._getCacheSizePromise;
   },
 
+  _getBaseDomainFromPartitionKey(partitionKey) {
+    if (!partitionKey?.length) {
+      return undefined;
+    }
+    if (gFirstPartyIsolateUseSite) {
+      return partitionKey;
+    }
+    let entries = partitionKey.substr(1, partitionKey.length - 2).split(",");
+    if (entries.length < 2) {
+      return undefined;
+    }
+    return entries[1];
+  },
+
   _getQuotaUsage(entryUpdatedCallback) {
     this._cancelGetQuotaUsage();
     this._getQuotaUsagePromise = new Promise(resolve => {
@@ -157,7 +189,16 @@ var SiteDataManager = {
               item.origin
             );
             if (principal.schemeIs("http") || principal.schemeIs("https")) {
-              let site = this._getOrInsertSite(principal.host);
+              
+              
+              
+              let pkBaseDomain = this._getBaseDomainFromPartitionKey(
+                principal.originAttributes.partitionKey
+              );
+              let site = this._getOrInsertSite(
+                pkBaseDomain || principal.baseDomain
+              );
+              
               
               
               
@@ -173,7 +214,7 @@ var SiteDataManager = {
               site.principals.push(principal);
               site.quotaUsage += item.usage;
               if (entryUpdatedCallback) {
-                entryUpdatedCallback(principal.host, site);
+                entryUpdatedCallback(principal.baseDomain, site);
               }
             }
           }
@@ -190,9 +231,17 @@ var SiteDataManager = {
 
   _getAllCookies(entryUpdatedCallback) {
     for (let cookie of Services.cookies.cookies) {
-      let site = this._getOrInsertSite(cookie.rawHost);
+      
+      
+      
+      let pkBaseDomain = this._getBaseDomainFromPartitionKey(
+        cookie.originAttributes.partitionKey
+      );
+      let baseDomainOrHost =
+        pkBaseDomain || this.getBaseDomainFromHost(cookie.rawHost);
+      let site = this._getOrInsertSite(baseDomainOrHost);
       if (entryUpdatedCallback) {
-        entryUpdatedCallback(cookie.rawHost, site);
+        entryUpdatedCallback(baseDomainOrHost, site);
       }
       site.cookies.push(cookie);
       if (site.lastAccessed < cookie.lastAccessed) {
@@ -280,26 +329,49 @@ var SiteDataManager = {
 
 
 
-  getSites(baseDomain) {
-    return this._getQuotaUsagePromise.then(() => {
-      let list = [];
-      for (let [host, site] of this._sites) {
-        if (baseDomain && site.baseDomain != baseDomain) {
-          continue;
-        }
 
-        let usage = site.quotaUsage;
-        list.push({
-          baseDomain: site.baseDomain,
-          cookies: site.cookies,
-          host,
-          usage,
-          persisted: site.persisted,
-          lastAccessed: new Date(site.lastAccessed / 1000),
-        });
-      }
-      return list;
-    });
+
+
+
+
+  async getSites() {
+    await this._getQuotaUsagePromise;
+
+    return Array.from(this._sites.values()).map(site => ({
+      baseDomain: site.baseDomainOrHost,
+      cookies: site.cookies,
+      usage: site.quotaUsage,
+      persisted: site.persisted,
+      lastAccessed: new Date(site.lastAccessed / 1000),
+    }));
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  async getSite(baseDomainOrHost) {
+    let baseDomain = this.getBaseDomainFromHost(baseDomainOrHost);
+
+    let site = this._sites.get(baseDomain);
+    if (!site) {
+      return null;
+    }
+    return {
+      baseDomain: site.baseDomainOrHost,
+      cookies: site.cookies,
+      usage: site.quotaUsage,
+      persisted: site.persisted,
+      lastAccessed: new Date(site.lastAccessed / 1000),
+    };
   },
 
   _removePermission(site) {
@@ -387,10 +459,23 @@ var SiteDataManager = {
 
 
 
-  async remove(hosts) {
+
+
+
+
+
+
+  async remove(domainsOrHosts) {
+    if (domainsOrHosts == null) {
+      throw new Error("domainsOrHosts is required.");
+    }
+    
+    if (!Array.isArray(domainsOrHosts)) {
+      domainsOrHosts = [domainsOrHosts];
+    }
     let perms = this._getDeletablePermissions();
     let promises = [];
-    for (let host of hosts) {
+    for (let domainOrHost of domainsOrHosts) {
       const kFlags =
         Ci.nsIClearDataService.CLEAR_COOKIES |
         Ci.nsIClearDataService.CLEAR_DOM_STORAGES |
@@ -400,8 +485,25 @@ var SiteDataManager = {
       promises.push(
         new Promise(function(resolve) {
           const { clearData } = Services;
-          if (host) {
-            clearData.deleteDataFromHost(host, true, kFlags, resolve);
+          if (domainOrHost) {
+            
+            
+            try {
+              clearData.deleteDataFromBaseDomain(
+                domainOrHost,
+                true,
+                kFlags,
+                resolve
+              );
+            } catch (e) {
+              if (
+                e.result != Cr.NS_ERROR_HOST_IS_IP_ADDRESS &&
+                e.result != Cr.NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS
+              ) {
+                throw e;
+              }
+              clearData.deleteDataFromHost(domainOrHost, true, kFlags, resolve);
+            }
           } else {
             clearData.deleteDataFromLocalFiles(true, kFlags, resolve);
           }
@@ -410,11 +512,13 @@ var SiteDataManager = {
 
       for (let perm of perms) {
         
-        if (!host) {
+        if (!domainOrHost) {
           if (perm.principal.schemeIs("file")) {
             Services.perms.removePermission(perm);
           }
-        } else if (Services.eTLD.hasRootDomain(perm.principal.host, host)) {
+        } else if (
+          Services.eTLD.hasRootDomain(perm.principal.host, domainOrHost)
+        ) {
           Services.perms.removePermission(perm);
         }
       }
@@ -435,11 +539,9 @@ var SiteDataManager = {
 
 
 
-
-  promptSiteDataRemoval(win, removals, baseDomain) {
-    if (baseDomain || removals) {
+  promptSiteDataRemoval(win, removals) {
+    if (removals) {
       let args = {
-        baseDomain,
         hosts: removals,
         allowed: false,
       };
