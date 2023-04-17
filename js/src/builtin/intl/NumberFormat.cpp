@@ -179,7 +179,8 @@ void js::NumberFormatObject::finalize(JSFreeOp* fop, JSObject* obj) {
 
   if (nf) {
     intl::RemoveICUCellMemory(fop, obj, NumberFormatObject::EstimatedMemoryUse);
-    js_delete(nf);
+    
+    mozilla::WrapUnique(nf);
   }
 }
 
@@ -307,6 +308,7 @@ static constexpr size_t MaxUnitLength() {
   }
   return length * 2 + std::char_traits<char>::length("-per-");
 }
+
 
 
 
@@ -630,12 +632,19 @@ static mozilla::intl::NumberFormat* NewNumberFormat(
 
   options.mRoundingModeHalfUp = true;
 
-  auto* formatter = js_new<mozilla::intl::NumberFormat>(locale.get(), options);
-  if (!formatter) {
+  using NumberFormat = mozilla::intl::NumberFormat;
+  mozilla::Result<mozilla::UniquePtr<NumberFormat>, NumberFormat::FormatError>
+      result = NumberFormat::TryCreate(locale.get(), options);
+
+  if (result.isOk()) {
+    return result.unwrap().release();
+  }
+
+  if (result.unwrapErr() == NumberFormat::FormatError::OutOfMemory) {
     ReportOutOfMemory(cx);
   }
 
-  return formatter;
+  return nullptr;
 }
 
 static JSString* FormattedNumberToString(
