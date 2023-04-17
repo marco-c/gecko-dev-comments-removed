@@ -333,7 +333,7 @@ struct CompilationInput {
 
   
   
-  JSFunction* function() { return lazy_->function(); }
+  JSFunction* function() const { return lazy_->function(); }
 
   
   
@@ -345,6 +345,11 @@ struct CompilationInput {
   }
 
   RO_IMMUTABLE_SCRIPT_FLAGS(immutableFlags())
+
+  FunctionFlags functionFlags() const { return function()->flags(); }
+
+  
+  FunctionSyntaxKind functionSyntaxKind() const;
 
   bool hasPrivateScriptData() const {
     
@@ -397,6 +402,13 @@ class CompilationSyntaxParseCache {
   
   mozilla::Span<TaggedParserAtomIndex> closedOverBindings_;
 
+  
+  
+  TaggedParserAtomIndex displayAtom_;
+
+  
+  ScriptStencilExtra funExtra_;
+
 #ifdef DEBUG
   
   bool isInitialized = false;
@@ -416,6 +428,18 @@ class CompilationSyntaxParseCache {
   }
   const ScriptStencilExtra& scriptExtra(size_t functionIndex) const {
     return cachedScriptExtra_[scriptIndex(functionIndex)];
+  }
+
+  
+  TaggedParserAtomIndex displayAtom() const {
+    MOZ_ASSERT(isInitialized);
+    return displayAtom_;
+  }
+
+  
+  const ScriptStencilExtra& funExtra() const {
+    MOZ_ASSERT(isInitialized);
+    return funExtra_;
   }
 
   
@@ -439,6 +463,10 @@ class CompilationSyntaxParseCache {
     return taggedScriptIndex.toFunction();
   }
 
+  [[nodiscard]] bool copyFunctionInfo(JSContext* cx,
+                                      ParserAtomsTable& parseAtoms,
+                                      CompilationAtomCache& atomCache,
+                                      BaseScript* lazy);
   [[nodiscard]] bool copyScriptInfo(JSContext* cx, LifoAlloc& alloc,
                                     ParserAtomsTable& parseAtoms,
                                     CompilationAtomCache& atomCache,

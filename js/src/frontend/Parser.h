@@ -1765,7 +1765,7 @@ class MOZ_STACK_CLASS Parser<FullParseHandler, Unit> final
 
   
   
-  FunctionNodeType standaloneLazyFunction(HandleFunction fun,
+  FunctionNodeType standaloneLazyFunction(CompilationInput& input,
                                           uint32_t toStringStart, bool strict,
                                           GeneratorKind generatorKind,
                                           FunctionAsyncKind asyncKind);
