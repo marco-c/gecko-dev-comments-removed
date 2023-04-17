@@ -227,58 +227,23 @@ async function doesFileExistAtPath(path) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-function createLibraryMap(sharedLibraries) {
-  const map = new Map(
-    sharedLibraries.map(lib => {
-      const { debugName, breakpadId } = lib;
-      const key = [debugName, breakpadId].join(":");
-      return [key, lib];
-    })
-  );
-
-  return function getLibraryFor(debugName, breakpadId) {
-    const key = [debugName, breakpadId].join(":");
-    return map.get(key);
-  };
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class LocalSymbolicationService {
   
 
 
 
 
+
+
+
   constructor(sharedLibraries, objdirs) {
-    this._libraryGetter = createLibraryMap(sharedLibraries);
+    this._libInfoMap = new Map(
+      sharedLibraries.map(lib => {
+        const { debugName, breakpadId } = lib;
+        const key = `${debugName}:${breakpadId}`;
+        return [key, lib];
+      })
+    );
     this._objdirs = objdirs;
   }
 
@@ -335,7 +300,8 @@ class LocalSymbolicationService {
 
 
   _getCandidatePaths(debugName, breakpadId) {
-    const lib = this._libraryGetter(debugName, breakpadId);
+    const key = `${debugName}:${breakpadId}`;
+    const lib = this._libInfoMap.get(key);
     if (!lib) {
       throw new Error(
         `Could not find the library for "${debugName}", "${breakpadId}".`
