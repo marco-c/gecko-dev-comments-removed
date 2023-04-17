@@ -224,42 +224,14 @@ bool nsHttpAuthIdentity::Equals(const nsHttpAuthIdentity& ident) const {
 
 
 
-nsHttpAuthEntry::~nsHttpAuthEntry() {
-  while (mRoot) {
-    nsHttpAuthPath* ap = mRoot;
-    mRoot = mRoot->mNext;
-    free(ap);
-  }
-}
-
 nsresult nsHttpAuthEntry::AddPath(const nsACString& aPath) {
-  nsHttpAuthPath* tempPtr = mRoot;
-  while (tempPtr) {
-    if (StringBeginsWith(aPath, nsDependentCString(tempPtr->mPath))) {
+  for (const auto& p : mPaths) {
+    if (StringBeginsWith(aPath, p)) {
       return NS_OK;  
     }
-
-    tempPtr = tempPtr->mNext;
   }
 
-  
-  nsHttpAuthPath* newAuthPath;
-  int newpathLen = aPath.Length();
-  newAuthPath = (nsHttpAuthPath*)malloc(sizeof(nsHttpAuthPath) + newpathLen);
-  if (!newAuthPath) return NS_ERROR_OUT_OF_MEMORY;
-
-  memcpy(newAuthPath->mPath, aPath.BeginReading(), newpathLen);
-  newAuthPath->mPath[aPath.Length()] = '\0';
-  newAuthPath->mNext = nullptr;
-
-  if (!mRoot) {
-    mRoot = newAuthPath;  
-  } else {
-    mTail->mNext = newAuthPath;  
-  }
-
-  
-  mTail = newAuthPath;
+  mPaths.AppendElement(aPath);
   return NS_OK;
 }
 
@@ -304,26 +276,23 @@ nsHttpAuthNode::~nsHttpAuthNode() {
   mList.Clear();
 }
 
-nsHttpAuthEntry* nsHttpAuthNode::LookupEntryByPath(const nsACString& path) {
+nsHttpAuthEntry* nsHttpAuthNode::LookupEntryByPath(const nsACString& aPath) {
   
   
   
   for (uint32_t i = 0; i < mList.Length(); ++i) {
     const auto& entry = mList[i];
-    nsHttpAuthPath* authPath = entry->RootPath();
-    while (authPath) {
-      const char* entryPath = authPath->mPath;
+
+    for (const auto& entryPath : entry->mPaths) {
       
       
-      if (entryPath[0] == '\0') {
-        if (path.IsEmpty()) {
+      if (entryPath.IsEmpty()) {
+        if (aPath.IsEmpty()) {
           return entry.get();
         }
-      } else if (StringBeginsWith(path, nsDependentCString(entryPath))) {
+      } else if (StringBeginsWith(aPath, entryPath)) {
         return entry.get();
       }
-
-      authPath = authPath->mNext;
     }
   }
   return nullptr;
