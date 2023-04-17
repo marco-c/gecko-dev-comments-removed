@@ -12,6 +12,19 @@ const Services = require("Services");
 
 
 
+function isServerTargetSwitchingEnabled() {
+  return Services.prefs.getBoolPref(
+    "devtools.target-switching.server.enabled",
+    false
+  );
+}
+
+
+
+
+
+
+
 
 
 
@@ -99,8 +112,12 @@ function getAllRemoteBrowsingContexts(topBrowsingContext) {
   
   if (topBrowsingContext) {
     walk(topBrowsingContext);
-    
-    browsingContexts.shift();
+    if (!isServerTargetSwitchingEnabled()) {
+      
+      
+      
+      browsingContexts.shift();
+    }
   } else {
     
     

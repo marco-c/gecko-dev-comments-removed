@@ -164,8 +164,6 @@ class DevToolsFrameChild extends JSWindowActorChild {
             forceOverridingFirstTarget || this.isServerTargetSwitchingEnabled,
         })
       ) {
-        const browsingContext = this.manager.browsingContext;
-
         
         
         
@@ -189,15 +187,7 @@ class DevToolsFrameChild extends JSWindowActorChild {
           return;
         }
 
-        const isTopLevelTarget =
-          !browsingContext.parent && browsingContext.browserId == browserId;
-
-        this._createTargetActor(
-          watcherActorID,
-          connectionPrefix,
-          watchedData,
-          isTopLevelTarget
-        );
+        this._createTargetActor(watcherActorID, connectionPrefix, watchedData);
       }
     }
   }
@@ -215,15 +205,7 @@ class DevToolsFrameChild extends JSWindowActorChild {
 
 
 
-
-
-
-  _createTargetActor(
-    watcherActorID,
-    parentConnectionPrefix,
-    initialData,
-    isTopLevelTarget
-  ) {
+  _createTargetActor(watcherActorID, parentConnectionPrefix, watchedData) {
     if (this._connections.get(watcherActorID)) {
       throw new Error(
         "DevToolsFrameChild _createTargetActor was called more than once" +
@@ -245,6 +227,14 @@ class DevToolsFrameChild extends JSWindowActorChild {
       "Instantiate WindowGlobalTarget with prefix: " + forwardingPrefix
     );
 
+    
+    
+    
+    const browsingContext = this.manager.browsingContext;
+    const isTopLevelTarget =
+      !browsingContext.parent &&
+      browsingContext.browserId == watchedData.browserId;
+
     const { connection, targetActor } = this._createConnectionAndActor(
       forwardingPrefix,
       isTopLevelTarget
@@ -256,10 +246,10 @@ class DevToolsFrameChild extends JSWindowActorChild {
     });
 
     
-    for (const type in initialData) {
+    for (const type in watchedData) {
       
       
-      const entries = initialData[type];
+      const entries = watchedData[type];
       if (!Array.isArray(entries) || entries.length == 0) {
         continue;
       }
@@ -333,10 +323,14 @@ class DevToolsFrameChild extends JSWindowActorChild {
     const targetActor = new FrameTargetActor(connection, {
       docShell: this.docShell,
       doNotFireFrameUpdates: true,
-      followWindowGlobalLifeCycle: true,
+      
+      
+      followWindowGlobalLifeCycle:
+        !isTopLevelTarget || this.isServerTargetSwitchingEnabled,
       isTopLevelTarget,
     });
     targetActor.manage(targetActor);
+    targetActor.createdFromJsWindowActor = true;
 
     return { connection, targetActor };
   }
@@ -413,17 +407,10 @@ class DevToolsFrameChild extends JSWindowActorChild {
       case "DevToolsFrameParent:instantiate-already-available": {
         const { watcherActorID, connectionPrefix, watchedData } = message.data;
 
-        
-        
-        
-        
-        const isTopLevelTarget = false;
-
         return this._createTargetActor(
           watcherActorID,
           connectionPrefix,
-          watchedData,
-          isTopLevelTarget
+          watchedData
         );
       }
       case "DevToolsFrameParent:destroy": {

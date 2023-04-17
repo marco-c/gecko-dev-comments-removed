@@ -140,7 +140,12 @@ async function testCrossOriginNavigation() {
     "There is no duplicated event and only the 3 expected DOCUMENT_EVENT states"
   );
 
-  if (isFissionEnabled()) {
+  
+  
+  if (
+    isFissionEnabled() ||
+    targetCommand.targetFront.targetForm.followWindowGlobalLifeCycle
+  ) {
     is(
       documentEvents[0].shouldBeIgnoredAsRedundantWithTargetAvailable,
       true,

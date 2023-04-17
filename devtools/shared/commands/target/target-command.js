@@ -8,8 +8,6 @@ const Services = require("Services");
 const EventEmitter = require("devtools/shared/event-emitter");
 
 const BROWSERTOOLBOX_FISSION_ENABLED = "devtools.browsertoolbox.fission";
-const SERVER_TARGET_SWITCHING_ENABLED =
-  "devtools.target-switching.server.enabled";
 
 const {
   LegacyProcessesWatcher,
@@ -64,6 +62,12 @@ class TargetCommand extends EventEmitter {
       );
     }
 
+    if (this.isServerTargetSwitchingEnabled()) {
+      
+      
+      this._onFirstTarget = new Promise(r => (this._resolveOnFirstTarget = r));
+    }
+
     
     this._listenersStarted = new Set();
 
@@ -112,6 +116,15 @@ class TargetCommand extends EventEmitter {
       false;
     this.listenForServiceWorkers = false;
     this.destroyServiceWorkersOnNavigation = false;
+
+    
+    
+    
+    
+    
+    
+    
+    this._gotFirstTopLevelTarget = false;
   }
 
   
@@ -123,6 +136,8 @@ class TargetCommand extends EventEmitter {
     
     
     const isTargetSwitching = targetFront.isTopLevel;
+    const isFirstTarget =
+      targetFront.isTopLevel && !this._gotFirstTopLevelTarget;
 
     if (this._targets.has(targetFront)) {
       
@@ -146,23 +161,30 @@ class TargetCommand extends EventEmitter {
     
     if (targetFront.isTopLevel) {
       
-      for (const target of this._targets) {
+      if (!isFirstTarget) {
+        for (const target of this._targets) {
+          
+          const isDestroyedTargetSwitching = target == this.targetFront;
+          this._onTargetDestroyed(target, {
+            isTargetSwitching: isDestroyedTargetSwitching,
+          });
+        }
         
-        const isDestroyedTargetSwitching = target == this.targetFront;
-        this._onTargetDestroyed(target, {
-          isTargetSwitching: isDestroyedTargetSwitching,
-        });
-      }
-      
-      
-      this.stopListening({ onlyLegacy: true });
+        
+        this.stopListening({ onlyLegacy: true });
 
-      
-      this._targets.clear();
+        
+        this._targets.clear();
+      }
 
       
       this.targetFront = targetFront;
       this.descriptorFront.setTarget(targetFront);
+
+      if (isFirstTarget && this.isServerTargetSwitchingEnabled()) {
+        this._gotFirstTopLevelTarget = true;
+        this._resolveOnFirstTarget();
+      }
     }
 
     
@@ -194,7 +216,7 @@ class TargetCommand extends EventEmitter {
 
     
     
-    if (targetFront.isTopLevel) {
+    if (targetFront.isTopLevel && !isFirstTarget) {
       await this.startListening({ onlyLegacy: true });
     }
 
@@ -297,7 +319,7 @@ class TargetCommand extends EventEmitter {
     
     
     if (
-      this.targetFront.isParentProcess &&
+      this.descriptorFront.isParent &&
       !Services.prefs.getBoolPref(BROWSERTOOLBOX_FISSION_ENABLED, false)
     ) {
       return false;
@@ -311,16 +333,6 @@ class TargetCommand extends EventEmitter {
     }
 
     return !!this.watcherFront;
-  }
-
-  isServerTargetSwitchingEnabled() {
-    if (typeof this._isServerTargetSwitchingEnabled == "undefined") {
-      this._isServerTargetSwitchingEnabled = Services.prefs.getBoolPref(
-        SERVER_TARGET_SWITCHING_ENABLED,
-        false
-      );
-    }
-    return this._isServerTargetSwitchingEnabled;
   }
 
   
@@ -340,15 +352,11 @@ class TargetCommand extends EventEmitter {
 
   async startListening({ onlyLegacy = false } = {}) {
     
-    if (!this.targetFront) {
-      
-      
-      this.targetFront = await this.descriptorFront.getTarget();
-      this.targetFront.setTargetType(this.getTargetType(this.targetFront));
-      this.targetFront.setIsTopLevel(true);
-
-      
-      this._targets.add(this.targetFront);
+    if (
+      !this.isServerTargetSwitchingEnabled() &&
+      !this._gotFirstTopLevelTarget
+    ) {
+      await this._createFirstTarget();
     }
 
     
@@ -363,36 +371,10 @@ class TargetCommand extends EventEmitter {
       }
     }
 
-    let types = [];
-    if (this.targetFront.isParentProcess) {
-      const fissionBrowserToolboxEnabled = Services.prefs.getBoolPref(
-        BROWSERTOOLBOX_FISSION_ENABLED
-      );
-      if (fissionBrowserToolboxEnabled) {
-        types = TargetCommand.ALL_TYPES;
-      }
-    } else if (this.descriptorFront.isLocalTab) {
-      types = [TargetCommand.TYPES.FRAME];
-    }
-    if (this.listenForWorkers && !types.includes(TargetCommand.TYPES.WORKER)) {
-      types.push(TargetCommand.TYPES.WORKER);
-    }
-    if (
-      this.listenForWorkers &&
-      !types.includes(TargetCommand.TYPES.SHARED_WORKER)
-    ) {
-      types.push(TargetCommand.TYPES.SHARED_WORKER);
-    }
-    if (
-      this.listenForServiceWorkers &&
-      !types.includes(TargetCommand.TYPES.SERVICE_WORKER)
-    ) {
-      types.push(TargetCommand.TYPES.SERVICE_WORKER);
-    }
-
     
     
     
+    const types = this._computeTargetTypes();
 
     for (const type of types) {
       if (this._isListening(type)) {
@@ -415,6 +397,54 @@ class TargetCommand extends EventEmitter {
         throw new Error(`Unsupported target type '${type}'`);
       }
     }
+
+    if (this.isServerTargetSwitchingEnabled()) {
+      await this._onFirstTarget;
+    }
+  }
+
+  async _createFirstTarget() {
+    
+    
+    this.targetFront = await this.descriptorFront.getTarget();
+    this.targetFront.setTargetType(this.getTargetType(this.targetFront));
+    this.targetFront.setIsTopLevel(true);
+    this._gotFirstTopLevelTarget = true;
+
+    
+    this._targets.add(this.targetFront);
+  }
+
+  _computeTargetTypes() {
+    let types = [];
+
+    if (this.descriptorFront.isLocalTab) {
+      types = [TargetCommand.TYPES.FRAME];
+    } else if (this.targetFront.isParentProcess) {
+      const fissionBrowserToolboxEnabled = Services.prefs.getBoolPref(
+        BROWSERTOOLBOX_FISSION_ENABLED
+      );
+      if (fissionBrowserToolboxEnabled) {
+        types = TargetCommand.ALL_TYPES;
+      }
+    }
+    if (this.listenForWorkers && !types.includes(TargetCommand.TYPES.WORKER)) {
+      types.push(TargetCommand.TYPES.WORKER);
+    }
+    if (
+      this.listenForWorkers &&
+      !types.includes(TargetCommand.TYPES.SHARED_WORKER)
+    ) {
+      types.push(TargetCommand.TYPES.SHARED_WORKER);
+    }
+    if (
+      this.listenForServiceWorkers &&
+      !types.includes(TargetCommand.TYPES.SERVICE_WORKER)
+    ) {
+      types.push(TargetCommand.TYPES.SERVICE_WORKER);
+    }
+
+    return types;
   }
 
   
@@ -727,6 +757,13 @@ class TargetCommand extends EventEmitter {
 
   isDestroyed() {
     return this._isDestroyed;
+  }
+
+  isServerTargetSwitchingEnabled() {
+    if (this.descriptorFront.isServerTargetSwitchingEnabled) {
+      return this.descriptorFront.isServerTargetSwitchingEnabled();
+    }
+    return false;
   }
 
   destroy() {
