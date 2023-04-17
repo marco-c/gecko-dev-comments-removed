@@ -613,7 +613,8 @@ bool ResponsiveImageCandidate::ConsumeDescriptors(
         descriptors.AddDescriptor(Substring(currentDescriptor, iter));
         iter++;
         break;
-      } else if (nsContentUtils::IsHTMLWhitespace(*iter)) {
+      }
+      if (nsContentUtils::IsHTMLWhitespace(*iter)) {
         
         
         descriptors.AddDescriptor(Substring(currentDescriptor, iter));
