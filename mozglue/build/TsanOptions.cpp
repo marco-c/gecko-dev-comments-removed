@@ -305,9 +305,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:mozilla::layers::AsyncPanZoomController::AsyncPanZoomController\n"
 
          
-         "race:mozilla::layers::AsyncPanZoomController::ApplyAsyncTestAttributes\n"
-
-         
          "race:mozilla::layers::APZCTreeManager::NewAPZCInstance\n"
 
       
