@@ -41,7 +41,7 @@ class WindowImageSurface {
 
 class WindowSurfaceWayland : public WindowSurface {
  public:
-  explicit WindowSurfaceWayland(nsWindow* aWindow);
+  explicit WindowSurfaceWayland(RefPtr<nsWindow> aWindow);
 
   
   
@@ -98,9 +98,7 @@ class WindowSurfaceWayland : public WindowSurface {
   void FrameCallbackHandler();
   void BufferReleaseCallbackHandler(wl_buffer* aBuffer);
 
-  
-  
-  nsWindow* mWindow;
+  RefPtr<nsWindow> mWindow;
 
   
   
