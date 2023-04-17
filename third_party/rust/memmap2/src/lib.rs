@@ -1,6 +1,6 @@
 
 
-#![doc(html_root_url = "https://docs.rs/memmap2/0.2.2")]
+#![doc(html_root_url = "https://docs.rs/memmap2/0.2.3")]
 
 #[cfg(windows)]
 mod windows;
@@ -11,6 +11,11 @@ use windows::MmapInner;
 mod unix;
 #[cfg(unix)]
 use unix::MmapInner;
+
+#[cfg(not(any(unix, windows)))]
+mod stub;
+#[cfg(not(any(unix, windows)))]
+use crate::stub::MmapInner;
 
 use std::fmt;
 use std::fs::File;
