@@ -128,8 +128,11 @@ already_AddRefed<nsWebBrowser> nsWebBrowser::Create(
   MOZ_ASSERT(browser->mDocShell == docShell);
 
   
-  LookAndFeel::GetColor(LookAndFeel::ColorID::WindowBackground,
-                        &browser->mBackgroundColor);
+  
+  
+  browser->mBackgroundColor = LookAndFeel::Color(
+      LookAndFeel::ColorID::WindowBackground, LookAndFeel::ColorScheme::Light,
+      LookAndFeel::UseStandins::No);
 
   
   
