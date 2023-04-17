@@ -21,6 +21,10 @@ webidl Node;
 
 
 
+[ref] native OriginAttributes(const mozilla::OriginAttributes);
+
+
+
 
 
 
@@ -132,11 +136,22 @@ interface nsIWebSocketChannel : nsISupports
 
 
 
-    [must_use] void asyncOpen(in nsIURI aURI,
-                              in ACString aOrigin,
-                              in unsigned long long aInnerWindowID,
-                              in nsIWebSocketListener aListener,
-                              in nsISupports aContext);
+
+    [implicit_jscontext]
+    void asyncOpen(in nsIURI aURI,
+                   in ACString aOrigin,
+                   in jsval aOriginAttributes,
+                   in unsigned long long aInnerWindowID,
+                   in nsIWebSocketListener aListener,
+                   in nsISupports aContext);
+
+    [must_use]
+    void asyncOpenNative(in nsIURI aURI,
+                         in ACString aOrigin,
+                         in OriginAttributes aOriginAttributes,
+                         in unsigned long long aInnerWindowID,
+                         in nsIWebSocketListener aListener,
+                         in nsISupports aContext);
 
     
 

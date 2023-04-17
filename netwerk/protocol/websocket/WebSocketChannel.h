@@ -92,8 +92,14 @@ class WebSocketChannel : public BaseWebSocketChannel,
   
   
   NS_IMETHOD AsyncOpen(nsIURI* aURI, const nsACString& aOrigin,
-                       uint64_t aWindowID, nsIWebSocketListener* aListener,
-                       nsISupports* aContext) override;
+                       JS::HandleValue aOriginAttributes, uint64_t aWindowID,
+                       nsIWebSocketListener* aListener, nsISupports* aContext,
+                       JSContext* aCx) override;
+  NS_IMETHOD AsyncOpenNative(nsIURI* aURI, const nsACString& aOrigin,
+                             const OriginAttributes& aOriginAttributes,
+                             uint64_t aWindowID,
+                             nsIWebSocketListener* aListener,
+                             nsISupports* aContext) override;
   NS_IMETHOD Close(uint16_t aCode, const nsACString& aReason) override;
   NS_IMETHOD SendMsg(const nsACString& aMsg) override;
   NS_IMETHOD SendBinaryMsg(const nsACString& aMsg) override;
@@ -207,6 +213,8 @@ class WebSocketChannel : public BaseWebSocketChannel,
   
   nsCString mAddress;
   int32_t mPort;  
+  
+  nsCString mOriginSuffix;
 
   
   nsCString mHost;

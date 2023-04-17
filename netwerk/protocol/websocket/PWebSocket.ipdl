@@ -16,7 +16,7 @@ include protocol PChildToParentStream;
 include protocol PParentToChildStream; 
 
 using class IPC::SerializedLoadContext from "SerializedLoadContext.h";
-using refcounted class nsIURI from "mozilla/ipc/URIUtils.h";
+[RefCounted] using class nsIURI from "mozilla/ipc/URIUtils.h";
 
 namespace mozilla {
 namespace net {
@@ -29,6 +29,7 @@ parent:
   
   async AsyncOpen(nsIURI aURI,
                   nsCString aOrigin,
+                  OriginAttributes aOriginAttributes,
                   uint64_t aInnerWindowID,
                   nsCString aProtocol,
                   bool aSecure,

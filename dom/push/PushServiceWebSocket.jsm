@@ -537,7 +537,7 @@ var PushServiceWebSocket = {
     try {
       
       
-      this._ws.asyncOpen(uri, uri.spec, 0, this._wsListener, null);
+      this._ws.asyncOpen(uri, uri.spec, {}, 0, this._wsListener, null);
       this._currentState = STATE_WAITING_FOR_WS_START;
     } catch (e) {
       console.error(
