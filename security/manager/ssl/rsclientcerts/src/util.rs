@@ -6,8 +6,8 @@
 use byteorder::{BigEndian, NativeEndian, ReadBytesExt, WriteBytesExt};
 use std::convert::TryInto;
 
-use crate::error_here;
 use crate::error::{Error, ErrorType};
+use crate::error_here;
 
 
 
