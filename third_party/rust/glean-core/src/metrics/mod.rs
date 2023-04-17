@@ -29,7 +29,6 @@ mod string_list;
 mod time_unit;
 mod timespan;
 mod timing_distribution;
-mod url;
 mod uuid;
 
 pub use crate::event_database::RecordedEvent;
@@ -64,7 +63,6 @@ pub use self::time_unit::TimeUnit;
 pub use self::timespan::TimespanMetric;
 pub use self::timing_distribution::TimerId;
 pub use self::timing_distribution::TimingDistributionMetric;
-pub use self::url::UrlMetric;
 pub use self::uuid::UuidMetric;
 
 
@@ -123,8 +121,6 @@ pub enum Metric {
     Jwe(String),
     
     Rate(i32, i32),
-    
-    Url(String),
 }
 
 
@@ -164,7 +160,6 @@ impl Metric {
             Metric::StringList(_) => "string_list",
             Metric::Timespan(..) => "timespan",
             Metric::TimingDistribution(_) => "timing_distribution",
-            Metric::Url(_) => "url",
             Metric::Uuid(_) => "uuid",
             Metric::MemoryDistribution(_) => "memory_distribution",
             Metric::Jwe(_) => "jwe",
@@ -192,7 +187,6 @@ impl Metric {
                 json!({"value": time_unit.duration_convert(*time), "time_unit": time_unit})
             }
             Metric::TimingDistribution(hist) => json!(timing_distribution::snapshot(hist)),
-            Metric::Url(s) => json!(s),
             Metric::Uuid(s) => json!(s),
             Metric::MemoryDistribution(hist) => json!(memory_distribution::snapshot(hist)),
             Metric::Jwe(s) => json!(s),
