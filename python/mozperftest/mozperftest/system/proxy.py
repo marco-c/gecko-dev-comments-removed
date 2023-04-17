@@ -140,7 +140,11 @@ class ProxyRunner(Layer):
         else:
             command.extend(["--tool=%s" % "mitmproxy"])
             
-            command.extend(["--binary=%s" % self.get_arg("browsertime-binary")])
+            
+            binary = self.get_arg("browsertime-binary")
+            if binary is None:
+                binary = self.mach_cmd.get_binary_path()
+            command.extend(["--binary=%s" % binary])
 
         if self.get_arg("mode") == "record":
             output = self.get_arg("output")
