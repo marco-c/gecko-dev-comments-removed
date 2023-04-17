@@ -6,7 +6,7 @@
 importScripts("/resources/testharness.js");
 importScripts("/html/canvas/resources/canvas-tests.js");
 
-var t = async_test("crbug.com/1212190, make sure offscreencanvas doesn't crashh with Math Font");
+var t = async_test("crbug.com/1212190, make sure offscreencanvas doesn't crash with Math Font");
 var t_pass = t.done.bind(t);
 var t_fail = t.step_func(function(reason) {
     throw reason;
