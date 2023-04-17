@@ -125,7 +125,7 @@ class ServiceRequest extends XMLHttpRequest {
       internal.beConservative = true;
       
       if (options?.bypassProxy && this.bypassProxyEnabled) {
-        internal.bypassProxy = this.bypassProxyEnabled;
+        internal.bypassProxy = true;
       }
     }
   }

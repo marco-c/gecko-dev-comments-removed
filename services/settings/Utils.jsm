@@ -112,12 +112,25 @@ var Utils = {
   async fetch(input, init = {}) {
     return new Promise(function(resolve, reject) {
       const request = new ServiceRequest();
+      function fallbackOrReject(err) {
+        if (
+          
+          bypassProxy ||
+          !request.isProxied ||
+          !request.bypassProxyEnabled
+        ) {
+          reject(err);
+          return;
+        }
+        resolve(Utils.fetch(input, { ...init, bypassProxy: true }));
+      }
 
       request.onerror = () =>
-        reject(new TypeError("NetworkError: Network request failed"));
+        fallbackOrReject(new TypeError("NetworkError: Network request failed"));
       request.ontimeout = () =>
-        reject(new TypeError("Timeout: Network request failed"));
-      request.onabort = () => reject(new DOMException("Aborted", "AbortError"));
+        fallbackOrReject(new TypeError("Timeout: Network request failed"));
+      request.onabort = () =>
+        fallbackOrReject(new DOMException("Aborted", "AbortError"));
       request.onload = () => {
         
         const headers = new Headers();
@@ -141,9 +154,9 @@ var Utils = {
         resolve(new Response(request.response, responseAttributes));
       };
 
-      const { method = "GET", headers = {} } = init;
+      const { method = "GET", headers = {}, bypassProxy = false } = init;
 
-      request.open(method, input, true);
+      request.open(method, input, { bypassProxy });
       
       
       
