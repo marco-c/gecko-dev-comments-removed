@@ -65,7 +65,7 @@ modal.findModalDialogs = function(context) {
       return new modal.Dialog(() => context, dialogs[0].frameContentWindow);
     }
 
-      dialogs = contentBrowser.tabDialogBox.getContentDialogManager().dialogs;
+    dialogs = contentBrowser.tabDialogBox.getContentDialogManager().dialogs;
 
     
     
