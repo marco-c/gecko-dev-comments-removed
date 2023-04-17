@@ -221,17 +221,18 @@ void PerformanceMainThread::InsertEventTimingEntry(
   
   
   
-  mHasQueuedRefreshdriverObserver =
-      presContext->RegisterManagedPostRefreshObserver(
-          new ManagedPostRefreshObserver(
-              presShell, [performance = RefPtr<PerformanceMainThread>(this)](
-                             bool aWasCanceled) {
-                if (!aWasCanceled) {
-                  
-                  performance->DispatchPendingEventTimingEntries();
-                }
-                return ManagedPostRefreshObserver::Unregister::Yes;
-              }));
+  mHasQueuedRefreshdriverObserver = true;
+  presContext->RegisterManagedPostRefreshObserver(
+      new ManagedPostRefreshObserver(
+          presContext, [performance = RefPtr<PerformanceMainThread>(this)](
+                           bool aWasCanceled) {
+            if (!aWasCanceled) {
+              
+              performance->DispatchPendingEventTimingEntries();
+            }
+            performance->mHasQueuedRefreshdriverObserver = false;
+            return ManagedPostRefreshObserver::Unregister::Yes;
+          }));
 }
 
 void PerformanceMainThread::BufferEventTimingEntryIfNeeded(
@@ -285,7 +286,6 @@ void PerformanceMainThread::DispatchPendingEventTimingEntries() {
       }
     }
   }
-  mHasQueuedRefreshdriverObserver = false;
 }
 
 

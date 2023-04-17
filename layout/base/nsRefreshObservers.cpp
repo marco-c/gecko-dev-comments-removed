@@ -5,45 +5,39 @@
 
 
 #include "nsRefreshObservers.h"
-#include "PresShell.h"
+#include "nsPresContext.h"
 
 namespace mozilla {
 
-ManagedPostRefreshObserver::ManagedPostRefreshObserver(PresShell* aPresShell,
+ManagedPostRefreshObserver::ManagedPostRefreshObserver(nsPresContext* aPc,
                                                        Action&& aAction)
-    : mPresShell(aPresShell), mAction(std::move(aAction)) {}
+    : mPresContext(aPc), mAction(std::move(aAction)) {}
 
-ManagedPostRefreshObserver::ManagedPostRefreshObserver(PresShell* aPresShell)
-    : mPresShell(aPresShell) {}
+ManagedPostRefreshObserver::ManagedPostRefreshObserver(nsPresContext* aPc)
+    : mPresContext(aPc) {}
 
 ManagedPostRefreshObserver::~ManagedPostRefreshObserver() = default;
 
 void ManagedPostRefreshObserver::Cancel() {
+  
   mAction(true);
   mAction = nullptr;
-  mPresShell = nullptr;
+  mPresContext = nullptr;
 }
 
 void ManagedPostRefreshObserver::DidRefresh() {
-  if (!mPresShell) {
-    MOZ_ASSERT_UNREACHABLE(
-        "Post-refresh observer fired again after failed attempt at "
-        "unregistering it");
-    return;
-  }
+  RefPtr<ManagedPostRefreshObserver> thisObject = this;
+
   Unregister unregister = mAction(false);
-  if (bool(unregister)) {
-    nsPresContext* presContext = mPresShell->GetPresContext();
-    if (!presContext) {
-      MOZ_ASSERT_UNREACHABLE(
-          "Unable to unregister post-refresh observer! Leaking it instead of "
-          "leaving garbage registered");
+  if (unregister == Unregister::Yes) {
+    if (RefPtr<nsPresContext> pc = std::move(mPresContext)) {
       
-      mPresShell = nullptr;
+      
       mAction = nullptr;
-      return;
+      pc->UnregisterManagedPostRefreshObserver(this);
+    } else {
+      MOZ_DIAGNOSTIC_ASSERT(!mAction);
     }
-    presContext->UnregisterManagedPostRefreshObserver(this);
   }
 }
 
