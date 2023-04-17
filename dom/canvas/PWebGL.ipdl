@@ -6,6 +6,7 @@
 
 
 include protocol PCompositorBridge;
+include protocol PLayerTransaction;
 
 using mozilla::layers::CompositableHandle from "mozilla/layers/LayersTypes.h";
 using mozilla::layers::SurfaceDescriptor from "mozilla/layers/LayersTypes.h";

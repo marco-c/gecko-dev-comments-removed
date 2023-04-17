@@ -23,8 +23,8 @@
 #include "mozilla/layers/CompositableForwarder.h"
 #include "mozilla/layers/CompositorTypes.h"  
 #include "mozilla/layers/ISurfaceAllocator.h"
-#include "mozilla/layers/LayersSurfaces.h"  
-#include "mozilla/layers/TextureForwarder.h"
+#include "mozilla/layers/LayersSurfaces.h"    
+#include "mozilla/layers/ShadowLayers.h"      
 #include "mozilla/layers/TextureClient.h"     
 #include "mozilla/layers/TextureClientOGL.h"  
 #include "mozilla/mozalloc.h"                 
@@ -47,6 +47,9 @@ already_AddRefed<ImageClient> ImageClient::CreateImageClient(
     case CompositableType::IMAGE:
       result =
           new ImageClientSingle(aForwarder, aFlags, CompositableType::IMAGE);
+      break;
+    case CompositableType::IMAGE_BRIDGE:
+      result = new ImageClientBridge(aForwarder, aFlags);
       break;
     case CompositableType::UNKNOWN:
       result = nullptr;
@@ -273,6 +276,30 @@ ImageClient::ImageClient(CompositableForwarder* aFwd, TextureFlags aFlags,
       mLayer(nullptr),
       mType(aType),
       mLastUpdateGenerationCounter(0) {}
+
+ImageClientBridge::ImageClientBridge(CompositableForwarder* aFwd,
+                                     TextureFlags aFlags)
+    : ImageClient(aFwd, aFlags, CompositableType::IMAGE_BRIDGE) {}
+
+bool ImageClientBridge::UpdateImage(ImageContainer* aContainer,
+                                    uint32_t aContentFlags) {
+  if (!GetForwarder() || !mLayer) {
+    return false;
+  }
+  if (mAsyncContainerHandle == aContainer->GetAsyncContainerHandle()) {
+    return true;
+  }
+
+  mAsyncContainerHandle = aContainer->GetAsyncContainerHandle();
+  if (!mAsyncContainerHandle) {
+    
+    return true;
+  }
+
+  static_cast<ShadowLayerForwarder*>(GetForwarder())
+      ->AttachAsyncCompositable(mAsyncContainerHandle, mLayer);
+  return true;
+}
 
 }  
 }  

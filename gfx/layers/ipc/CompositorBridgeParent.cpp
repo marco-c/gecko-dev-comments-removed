@@ -12,6 +12,7 @@
 #include <utility>   
 
 #include "apz/src/APZCTreeManager.h"  
+#include "LayerTransactionParent.h"   
 #include "RenderTrace.h"              
 #include "base/process.h"             
 #include "gfxContext.h"               
@@ -56,6 +57,7 @@
 #include "mozilla/layers/LayerTreeOwnerTracker.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/OMTASampler.h"
+#include "mozilla/layers/PLayerTransactionParent.h"
 #include "mozilla/layers/RemoteContentController.h"
 #include "mozilla/layers/UiCompositorControllerParent.h"
 #include "mozilla/layers/WebRenderBridgeParent.h"
@@ -222,7 +224,8 @@ CompositorBridgeParent::LayerTreeState::LayerTreeState()
     : mApzcTreeManagerParent(nullptr),
       mParent(nullptr),
       mLayerManager(nullptr),
-      mContentCompositorBridgeParent(nullptr) {}
+      mContentCompositorBridgeParent(nullptr),
+      mLayerTree(nullptr) {}
 
 CompositorBridgeParent::LayerTreeState::~LayerTreeState() {
   if (mController) {
@@ -773,6 +776,27 @@ void CompositorBridgeParent::ResumeCompositionAndResize(int x, int y, int width,
   ResumeComposition();
 }
 
+void CompositorBridgeParent::UpdatePaintTime(LayerTransactionParent* aLayerTree,
+                                             const TimeDuration& aPaintTime) {
+  
+  if (!mLayerManager || aPaintTime.ToMilliseconds() < 1.0) {
+    return;
+  }
+
+  mLayerManager->SetPaintTime(aPaintTime);
+}
+
+void CompositorBridgeParent::RegisterPayloads(
+    LayerTransactionParent* aLayerTree,
+    const nsTArray<CompositionPayload>& aPayload) {
+  
+  if (!mLayerManager) {
+    return;
+  }
+
+  mLayerManager->RegisterPayloads(aPayload);
+}
+
 void CompositorBridgeParent::NotifyShadowTreeTransaction(
     LayersId aId, bool aIsFirstPaint, const FocusTarget& aFocusTarget,
     bool aScheduleComposite, uint32_t aPaintSequenceNumber,
@@ -837,6 +861,107 @@ void CompositorBridgeParent::SetShadowProperties(Layer* aLayer) {
     layerCompositor->SetShadowVisibleRegion(layer->GetVisibleRegion());
     layerCompositor->SetShadowClipRect(layer->GetClipRect());
   });
+}
+
+void CompositorBridgeParent::CompositeToTarget(VsyncId aId, DrawTarget* aTarget,
+                                               const gfx::IntRect* aRect) {
+  AUTO_PROFILER_TRACING_MARKER("Paint", "Composite", GRAPHICS);
+  AUTO_PROFILER_LABEL("CompositorBridgeParent::CompositeToTarget", GRAPHICS);
+  PerfStats::AutoMetricRecording<PerfStats::Metric::Compositing> autoRecording;
+
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread(),
+             "Composite can only be called on the compositor thread");
+  TimeStamp start = TimeStamp::Now();
+
+  if (!CanComposite()) {
+    TimeStamp end = TimeStamp::Now();
+    DidComposite(aId, start, end);
+    return;
+  }
+
+  AutoResolveRefLayers resolve(mCompositionManager, this);
+
+  nsCString none;
+  if (aTarget) {
+    mLayerManager->BeginTransactionWithDrawTarget(aTarget, *aRect);
+  } else {
+    mLayerManager->BeginTransaction(none);
+  }
+
+  SetShadowProperties(mLayerManager->GetRoot());
+
+  if (mForceCompositionTask && !mOverrideComposeReadiness) {
+    if (mCompositionManager->ReadyForCompose()) {
+      mForceCompositionTask->Cancel();
+      mForceCompositionTask = nullptr;
+    } else {
+      return;
+    }
+  }
+
+  mCompositionManager->ComputeRotation();
+
+  SampleTime time = mTestTime ? SampleTime::FromTest(*mTestTime)
+                              : mCompositorScheduler->GetLastComposeTime();
+  bool requestNextFrame =
+      mCompositionManager->TransformShadowTree(time, mVsyncRate);
+
+  if (requestNextFrame) {
+    ScheduleComposition();
+  }
+
+  RenderTraceLayers(mLayerManager->GetRoot(), "0000");
+
+  if (StaticPrefs::layers_dump_host_layers() || StaticPrefs::layers_dump()) {
+    printf_stderr("Painting --- compositing layer tree:\n");
+    mLayerManager->Dump( true);
+  }
+  mLayerManager->SetDebugOverlayWantsNextFrame(false);
+  mLayerManager->EndTransaction(time.Time());
+
+  if (!aTarget) {
+    TimeStamp end = TimeStamp::Now();
+    DidComposite(aId, start, end);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  if (!mLayerManager->GetCompositeUntilTime().IsNull() ||
+      mLayerManager->DebugOverlayWantsNextFrame()) {
+    ScheduleComposition();
+  }
+
+#ifdef COMPOSITOR_PERFORMANCE_WARNING
+  TimeDuration executionTime =
+      TimeStamp::Now() - mCompositorScheduler->GetLastComposeTime().Time();
+  TimeDuration frameBudget = TimeDuration::FromMilliseconds(15);
+  int32_t frameRate = CalculateCompositionFrameRate();
+  if (frameRate > 0) {
+    frameBudget = TimeDuration::FromSeconds(1.0 / frameRate);
+  }
+  if (executionTime > frameBudget) {
+    printf_stderr("Compositor: Composite execution took %4.1f ms\n",
+                  executionTime.ToMilliseconds());
+  }
+#endif
+
+  
+  if (StaticPrefs::layers_offmainthreadcomposition_frame_rate() == 0 ||
+      mLayerManager->AlwaysScheduleComposite()) {
+    
+    ScheduleComposition();
+  }
+
+  
+  mLayerManager->SetCompositionTime(TimeStamp());
+
+  mozilla::Telemetry::AccumulateTimeDelta(mozilla::Telemetry::COMPOSITE_TIME,
+                                          start);
 }
 
 void CompositorBridgeParent::ForceComposeToTarget(DrawTarget* aTarget,
@@ -991,6 +1116,68 @@ void CompositorBridgeParent::ScheduleRotationOnCompositorThread(
   }
 }
 
+void CompositorBridgeParent::ShadowLayersUpdated(
+    LayerTransactionParent* aLayerTree, const TransactionInfo& aInfo,
+    bool aHitTestUpdate) {
+  const TargetConfig& targetConfig = aInfo.targetConfig();
+
+  ScheduleRotationOnCompositorThread(targetConfig, aInfo.isFirstPaint());
+
+  
+  
+  
+  mLayerManager->UpdateRenderBounds(targetConfig.naturalBounds());
+  mLayerManager->SetRegionToClear(targetConfig.clearRegion());
+  if (mLayerManager->GetCompositor()) {
+    mLayerManager->GetCompositor()->SetScreenRotation(targetConfig.rotation());
+  }
+
+  mCompositionManager->Updated(aInfo.isFirstPaint(), targetConfig);
+  Layer* root = aLayerTree->GetRoot();
+  mLayerManager->SetRoot(root);
+
+  if (mApzUpdater && !aInfo.isRepeatTransaction()) {
+    mApzUpdater->UpdateFocusState(mRootLayerTreeID, mRootLayerTreeID,
+                                  aInfo.focusTarget());
+
+    if (aHitTestUpdate) {
+      AutoResolveRefLayers resolve(mCompositionManager);
+
+      mApzUpdater->UpdateHitTestingTree(root, aInfo.isFirstPaint(),
+                                        mRootLayerTreeID,
+                                        aInfo.paintSequenceNumber());
+    }
+  }
+
+  
+  
+  
+  MOZ_ASSERT(aInfo.id() == TransactionId{1} || mPendingTransactions.IsEmpty() ||
+             aInfo.id() > mPendingTransactions.LastElement());
+  mPendingTransactions.AppendElement(aInfo.id());
+  mRefreshStartTime = aInfo.refreshStart();
+  mTxnStartTime = aInfo.transactionStart();
+  mFwdTime = aInfo.fwdTime();
+  RegisterPayloads(aLayerTree, aInfo.payload());
+
+  if (root) {
+    SetShadowProperties(root);
+  }
+  if (aInfo.scheduleComposite()) {
+    ScheduleComposition();
+    if (mPaused) {
+      TimeStamp now = TimeStamp::Now();
+      DidComposite(VsyncId(), now, now);
+    }
+  }
+  mLayerManager->NotifyShadowTreeTransaction();
+}
+
+void CompositorBridgeParent::ScheduleComposite(
+    LayerTransactionParent* aLayerTree) {
+  ScheduleComposition();
+}
+
 bool CompositorBridgeParent::SetTestSampleTime(const LayersId& aId,
                                                const TimeStamp& aTime) {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
@@ -1032,6 +1219,34 @@ void CompositorBridgeParent::LeaveTestMode(const LayersId& aId) {
   mTestTime = Nothing();
   if (mApzcTreeManager) {
     mApzcTreeManager->SetTestSampleTime(mTestTime);
+  }
+}
+
+void CompositorBridgeParent::ApplyAsyncProperties(
+    LayerTransactionParent* aLayerTree, TransformsToSkip aSkip) {
+  
+  
+  
+
+  
+  if (aLayerTree->GetRoot()) {
+    AutoResolveRefLayers resolve(mCompositionManager);
+    SetShadowProperties(mLayerManager->GetRoot());
+
+    SampleTime time;
+    if (mTestTime) {
+      time = SampleTime::FromTest(*mTestTime);
+    } else {
+      time = mCompositorScheduler->GetLastComposeTime();
+    }
+    bool requestNextFrame =
+        mCompositionManager->TransformShadowTree(time, mVsyncRate, aSkip);
+    if (!requestNextFrame) {
+      CancelCurrentCompositeTask();
+      
+      TimeStamp now = TimeStamp::Now();
+      DidComposite(VsyncId(), now, now);
+    }
   }
 }
 
@@ -1132,8 +1347,8 @@ void CompositorBridgeParent::SetConfirmedTargetAPZC(
 
 void CompositorBridgeParent::SetFixedLayerMargins(ScreenIntCoord aTop,
                                                   ScreenIntCoord aBottom) {
-  if (mCompositionManager) {
-    mCompositionManager->SetFixedLayerMargins(aTop, aBottom);
+  if (AsyncCompositionManager* manager = GetCompositionManager(nullptr)) {
+    manager->SetFixedLayerMargins(aTop, aBottom);
   }
 
   if (mApzcTreeManager) {
@@ -1237,6 +1452,44 @@ RefPtr<Compositor> CompositorBridgeParent::NewCompositor(
   }
 
   return nullptr;
+}
+
+PLayerTransactionParent* CompositorBridgeParent::AllocPLayerTransactionParent(
+    const nsTArray<LayersBackend>& aBackendHints, const LayersId& aId) {
+  MOZ_ASSERT(!aId.IsValid());
+
+#ifdef XP_WIN
+  
+  
+  if (gfxVars::UseDoubleBufferingWithCompositor() && XRE_IsGPUProcess() &&
+      aBackendHints.Contains(LayersBackend::LAYERS_D3D11)) {
+    mWidget->AsWindows()->EnsureCompositorWindow();
+  }
+#endif
+
+  InitializeLayerManager(aBackendHints);
+
+  if (!mLayerManager) {
+    NS_WARNING("Failed to initialise Compositor");
+    LayerTransactionParent* p = new LayerTransactionParent(
+         nullptr, this,  nullptr,
+        mRootLayerTreeID, mVsyncRate);
+    p->AddIPDLReference();
+    return p;
+  }
+
+  mCompositionManager = new AsyncCompositionManager(this, mLayerManager);
+
+  LayerTransactionParent* p = new LayerTransactionParent(
+      mLayerManager, this, GetAnimationStorage(), mRootLayerTreeID, mVsyncRate);
+  p->AddIPDLReference();
+  return p;
+}
+
+bool CompositorBridgeParent::DeallocPLayerTransactionParent(
+    PLayerTransactionParent* actor) {
+  static_cast<LayerTransactionParent*>(actor)->ReleaseIPDLReference();
+  return true;
 }
 
 CompositorBridgeParent* CompositorBridgeParent::GetCompositorBridgeParent(
@@ -1423,6 +1676,14 @@ mozilla::ipc::IPCResult CompositorBridgeParent::RecvAdoptChild(
       oldApzUpdater = sIndirectLayerTrees[child].mParent->mApzUpdater;
     }
     NotifyChildCreated(child);
+    if (sIndirectLayerTrees[child].mLayerTree) {
+      sIndirectLayerTrees[child].mLayerTree->SetLayerManager(
+          mLayerManager, GetAnimationStorage());
+      
+      
+      
+      scheduleComposition = true;
+    }
     if (mWrBridge) {
       childWrBridge = sIndirectLayerTrees[child].mWrBridge;
     }
@@ -1882,6 +2143,22 @@ bool CompositorBridgeParent::DeallocPCompositorWidgetParent(
 #else
   return false;
 #endif
+}
+
+bool CompositorBridgeParent::IsPendingComposite() {
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  if (!mCompositor) {
+    return false;
+  }
+  return mCompositor->IsPendingComposite();
+}
+
+void CompositorBridgeParent::FinishPendingComposite() {
+  MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
+  if (!mCompositor) {
+    return;
+  }
+  return mCompositor->FinishPendingComposite();
 }
 
 CompositorController*

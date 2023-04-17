@@ -15,6 +15,7 @@ include protocol PBrowser;
 include protocol PCanvas;
 include protocol PCompositorManager;
 include protocol PCompositorWidget;
+include protocol PLayerTransaction;
 include protocol PTexture;
 include protocol PWebGL;
 include protocol PWebRenderBridge;
@@ -98,6 +99,7 @@ struct FrameStats {
   manages PAPZ;
   manages PAPZCTreeManager;
   
+  manages PLayerTransaction;
   manages PTexture;
   manages PCompositorWidget;
   manages PWebRenderBridge;
@@ -206,6 +208,11 @@ parent:
 
   sync StopFrameTimeRecording(uint32_t startIndex)
     returns (float[] intervals);
+
+  
+  
+  
+  async PLayerTransaction(LayersBackend[] layersBackendHints, LayersId id);
 
   
   async NotifyRegionInvalidated(nsIntRegion region);
