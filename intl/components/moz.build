@@ -3,7 +3,6 @@
 
 
 
-
 EXPORTS.mozilla.intl = [
     "src/NumberFormat.h",
 ]
