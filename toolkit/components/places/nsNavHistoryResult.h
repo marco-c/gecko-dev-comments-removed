@@ -186,6 +186,9 @@ class nsNavHistoryResult final
   
   
   uint32_t mBatchInProgress;
+
+  
+  void StopObservingOnUnlink();
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsNavHistoryResult, NS_NAVHISTORYRESULT_IID)
