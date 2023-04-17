@@ -13,15 +13,13 @@
 #include "mozilla/WindowsVersion.h"
 #include "nsPrintfCString.h"
 
-
-
-
-
-
 static bool IsModuleUnsafeToLoad(const nsAString& aModuleName) {
-#if defined(_M_ARM64)
-  return false;
-#else
+#if defined(_M_AMD64) || defined(_M_IX86)
+  
+  
+  
+  
+  
 #  if defined(_M_AMD64)
   LPCWSTR kNvidiaShimDriver = L"nvd3d9wrapx.dll";
   LPCWSTR kNvidiaInitDriver = L"nvinitx.dll";
@@ -29,10 +27,22 @@ static bool IsModuleUnsafeToLoad(const nsAString& aModuleName) {
   LPCWSTR kNvidiaShimDriver = L"nvd3d9wrap.dll";
   LPCWSTR kNvidiaInitDriver = L"nvinit.dll";
 #  endif
-  return aModuleName.LowerCaseEqualsLiteral("detoured.dll") &&
-         !mozilla::IsWin8OrLater() && ::GetModuleHandleW(kNvidiaShimDriver) &&
-         !::GetModuleHandleW(kNvidiaInitDriver);
+  if (aModuleName.LowerCaseEqualsLiteral("detoured.dll") &&
+      !mozilla::IsWin8OrLater() && ::GetModuleHandleW(kNvidiaShimDriver) &&
+      !::GetModuleHandleW(kNvidiaInitDriver)) {
+    return true;
+  }
 #endif  
+
+  
+  
+  
+  
+  if (aModuleName.LowerCaseEqualsLiteral("msvp9dec_store.dll")) {
+    return true;
+  }
+
+  return false;
 }
 
 SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {

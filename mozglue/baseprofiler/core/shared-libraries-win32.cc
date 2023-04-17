@@ -48,15 +48,17 @@ static void AppendHex(T aValue, std::string& aOut, bool aWithPadding) {
   }
 }
 
-
-
-
-
-
 static bool IsModuleUnsafeToLoad(const std::string& aModuleName) {
-#if defined(_M_ARM64)
-  return false;
-#else
+  auto LowerCaseEqualsLiteral = [](char aModuleChar, char aDetouredChar) {
+    return std::tolower(aModuleChar) == aDetouredChar;
+  };
+
+#if defined(_M_AMD64) || defined(_M_IX86)
+  
+  
+  
+  
+  
 #  if defined(_M_AMD64)
   LPCWSTR kNvidiaShimDriver = L"nvd3d9wrapx.dll";
   LPCWSTR kNvidiaInitDriver = L"nvinitx.dll";
@@ -65,14 +67,27 @@ static bool IsModuleUnsafeToLoad(const std::string& aModuleName) {
   LPCWSTR kNvidiaInitDriver = L"nvinit.dll";
 #  endif
   constexpr std::string_view detoured_dll = "detoured.dll";
-  return std::equal(aModuleName.cbegin(), aModuleName.cend(),
-                    detoured_dll.cbegin(), detoured_dll.cend(),
-                    [](char aModuleChar, char aDetouredChar) {
-                      return std::tolower(aModuleChar) == aDetouredChar;
-                    }) &&
-         !mozilla::IsWin8OrLater() && ::GetModuleHandleW(kNvidiaShimDriver) &&
-         !::GetModuleHandleW(kNvidiaInitDriver);
+  if (std::equal(aModuleName.cbegin(), aModuleName.cend(),
+                 detoured_dll.cbegin(), detoured_dll.cend(),
+                 LowerCaseEqualsLiteral) &&
+      !mozilla::IsWin8OrLater() && ::GetModuleHandleW(kNvidiaShimDriver) &&
+      !::GetModuleHandleW(kNvidiaInitDriver)) {
+    return true;
+  }
 #endif  
+
+  
+  
+  
+  
+  constexpr std::string_view vp9_decoder_dll = "msvp9dec_store.dll";
+  if (std::equal(aModuleName.cbegin(), aModuleName.cend(),
+                 vp9_decoder_dll.cbegin(), vp9_decoder_dll.cend(),
+                 LowerCaseEqualsLiteral)) {
+    return true;
+  }
+
+  return false;
 }
 
 SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
