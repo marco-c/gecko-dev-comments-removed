@@ -55,18 +55,18 @@ extern mozilla::LazyLogModule gProfilerLog;
 
 
 #define LOG_TEST MOZ_LOG_TEST(gProfilerLog, mozilla::LogLevel::Info)
-#define LOG(arg, ...)                                                  \
-  MOZ_LOG(gProfilerLog, mozilla::LogLevel::Info,                       \
-          ("[%d] " arg, int(profiler_current_process_id().ToNumber()), \
-           ##__VA_ARGS__))
+#define LOG(arg, ...)                            \
+  MOZ_LOG(gProfilerLog, mozilla::LogLevel::Info, \
+          ("[%" PRIu64 "d] " arg,                \
+           uint64_t(profiler_current_process_id().ToNumber()), ##__VA_ARGS__))
 
 
 
 #define DEBUG_LOG_TEST MOZ_LOG_TEST(gProfilerLog, mozilla::LogLevel::Debug)
-#define DEBUG_LOG(arg, ...)                                            \
-  MOZ_LOG(gProfilerLog, mozilla::LogLevel::Debug,                      \
-          ("[%d] " arg, int(profiler_current_process_id().ToNumber()), \
-           ##__VA_ARGS__))
+#define DEBUG_LOG(arg, ...)                       \
+  MOZ_LOG(gProfilerLog, mozilla::LogLevel::Debug, \
+          ("[%" PRIu64 "] " arg,                  \
+           uint64_t(profiler_current_process_id().ToNumber()), ##__VA_ARGS__))
 
 typedef uint8_t* Address;
 

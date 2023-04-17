@@ -1607,8 +1607,9 @@ void AutoProfilerLabel::ProfilingStackOwnerTLS::Init() {
 
 void ProfilingStackOwner::DumpStackAndCrash() const {
   fprintf(stderr,
-          "ProfilingStackOwner::DumpStackAndCrash() thread id: %d, size: %u\n",
-          int(profiler_current_thread_id().ToNumber()),
+          "ProfilingStackOwner::DumpStackAndCrash() thread id: %" PRIu64
+          ", size: %u\n",
+          uint64_t(profiler_current_thread_id().ToNumber()),
           unsigned(mProfilingStack.stackSize()));
   js::ProfilingStackFrame* allFrames = mProfilingStack.frames;
   for (uint32_t i = 0; i < mProfilingStack.stackSize(); i++) {
@@ -5501,8 +5502,9 @@ ProfilingStack* profiler_register_thread(const char* aName,
     MOZ_RELEASE_ASSERT(
         thread->Info()->ThreadId() == profiler_current_thread_id(),
         "Thread being re-registered has changed its TID");
-    LOG("profiler_register_thread(%s) - thread %d already registered as %s",
-        aName, int(profiler_current_thread_id().ToNumber()),
+    LOG("profiler_register_thread(%s) - thread %" PRIu64
+        " already registered as %s",
+        aName, uint64_t(profiler_current_thread_id().ToNumber()),
         thread->Info()->Name());
     
     
@@ -5585,8 +5587,9 @@ void profiler_unregister_thread() {
     
     
     
-    LOG("profiler_unregister_thread() - thread %d already unregistered",
-        int(profiler_current_thread_id().ToNumber()));
+    LOG("profiler_unregister_thread() - thread %" PRIu64
+        " already unregistered",
+        uint64_t(profiler_current_thread_id().ToNumber()));
     
     
     

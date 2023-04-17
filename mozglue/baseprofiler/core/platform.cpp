@@ -3365,8 +3365,9 @@ ProfilingStack* profiler_register_thread(const char* aName,
 
   if (RegisteredThread* thread = FindCurrentThreadRegisteredThread(lock);
       thread) {
-    LOG("profiler_register_thread(%s) - thread %d already registered as %s",
-        aName, int(profiler_current_thread_id().ToNumber()),
+    LOG("profiler_register_thread(%s) - thread %" PRIu64
+        " already registered as %s",
+        aName, uint64_t(profiler_current_thread_id().ToNumber()),
         thread->Info()->Name());
     
     
@@ -3416,8 +3417,9 @@ void profiler_unregister_thread() {
     
     CorePS::RemoveRegisteredThread(lock, registeredThread);
   } else {
-    LOG("profiler_unregister_thread() - thread %d already unregistered",
-        (profiler_current_thread_id().ToNumber()));
+    LOG("profiler_unregister_thread() - thread %" PRIu64
+        " already unregistered",
+        uint64_t(profiler_current_thread_id().ToNumber()));
     
     
     

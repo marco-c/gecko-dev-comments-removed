@@ -70,5 +70,6 @@ void logging_sink_for_LUL(const char* str) {
   
   
   MOZ_LOG(gProfilerLog, mozilla::LogLevel::Verbose,
-          ("[%d] %s", int(profiler_current_process_id().ToNumber()), str));
+          ("[%" PRIu64 "] %s",
+           uint64_t(profiler_current_process_id().ToNumber()), str));
 }

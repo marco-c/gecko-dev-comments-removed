@@ -96,7 +96,12 @@ static bool profiler_add_native_allocation_marker(int64_t aSize,
       aWriter.IntProperty("size", aSize);
       aWriter.IntProperty("memoryAddress",
                           static_cast<int64_t>(aMemoryAddress));
-      aWriter.IntProperty("threadId", aThreadId.ToNumber());
+      
+      
+      
+      
+      aWriter.IntProperty("threadId",
+                          static_cast<int64_t>(aThreadId.ToNumber()));
     }
     static mozilla::MarkerSchema MarkerTypeDisplay() {
       return mozilla::MarkerSchema::SpecialFrontendLocation{};
