@@ -310,7 +310,8 @@ bool WebExtensionPolicy::Enable() {
 
   if (XRE_IsParentProcess()) {
     
-    mBrowsingContextGroupId = nsContentUtils::GenerateBrowsingContextId();
+    RefPtr<BrowsingContextGroup> group = BrowsingContextGroup::Create();
+    mBrowsingContextGroup = group->MakeKeepAlivePtr();
   }
 
   Unused << Proto()->SetSubstitution(MozExtensionHostname(), mBaseURI);
@@ -325,6 +326,12 @@ bool WebExtensionPolicy::Disable() {
 
   if (!EPS().UnregisterExtension(*this)) {
     return false;
+  }
+
+  if (XRE_IsParentProcess()) {
+    
+    
+    mBrowsingContextGroup = nullptr;
   }
 
   Unused << Proto()->SetSubstitution(MozExtensionHostname(), nullptr);
@@ -570,7 +577,7 @@ void WebExtensionPolicy::GetReadyPromise(
 
 uint64_t WebExtensionPolicy::GetBrowsingContextGroupId() const {
   MOZ_ASSERT(XRE_IsParentProcess() && mActive);
-  return mBrowsingContextGroupId;
+  return mBrowsingContextGroup ? mBrowsingContextGroup->Id() : 0;
 }
 
 uint64_t WebExtensionPolicy::GetBrowsingContextGroupId(ErrorResult& aRv) {
@@ -583,11 +590,9 @@ uint64_t WebExtensionPolicy::GetBrowsingContextGroupId(ErrorResult& aRv) {
   return 0;
 }
 
-NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_WEAK_PTR(WebExtensionPolicy, mParent,
-                                               mLocalizeCallback,
-                                               mHostPermissions,
-                                               mWebAccessibleResources,
-                                               mContentScripts)
+NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_WEAK_PTR(
+    WebExtensionPolicy, mParent, mBrowsingContextGroup, mLocalizeCallback,
+    mHostPermissions, mWebAccessibleResources, mContentScripts)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(WebExtensionPolicy)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY

@@ -272,6 +272,11 @@ void BrowsingContextGroup::RemoveKeepAlive() {
   MaybeDestroy();
 }
 
+auto BrowsingContextGroup::MakeKeepAlivePtr() -> KeepAlivePtr {
+  AddKeepAlive();
+  return KeepAlivePtr{do_AddRef(this).take()};
+}
+
 void BrowsingContextGroup::MaybeDestroy() {
   
   
