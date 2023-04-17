@@ -250,13 +250,12 @@ uint32_t CountGraphemeClusters(const char16_t* aText, uint32_t aLength);
 
 
 
-inline bool IsCombiningDiacritic(uint32_t aCh) {
-  uint8_t cc = u_getCombiningClass(aCh);
-  return cc != HB_UNICODE_COMBINING_CLASS_NOT_REORDERED &&
-         cc != HB_UNICODE_COMBINING_CLASS_KANA_VOICING &&
-         cc != HB_UNICODE_COMBINING_CLASS_VIRAMA && cc != 91 && cc != 129 &&
-         cc != 130 && cc != 132;
-}
+
+
+
+
+
+bool IsCombiningDiacritic(uint32_t aCh);
 
 
 inline bool IsMathOrMusicSymbol(uint32_t aCh) {
