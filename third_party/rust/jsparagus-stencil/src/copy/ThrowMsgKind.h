@@ -19,6 +19,7 @@ enum class ThrowMsgKind : uint8_t {
   CantDeleteSuper,
   
   PrivateDoubleInit,
+  PrivateBrandDoubleInit,
   MissingPrivateOnGet,
   MissingPrivateOnSet,
   AssignToPrivateMethod,
