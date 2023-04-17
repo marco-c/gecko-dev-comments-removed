@@ -9199,6 +9199,7 @@ static const int PrecedenceTable[] = {
     9,  
     9,  
     9,  
+    9,  
     10, 
     10, 
     10, 
@@ -9280,6 +9281,7 @@ GeneralParser<ParseHandler, Unit>::orExpr(InHandling inHandling,
         return null();
       }
 
+      bool isErgonomicBrandCheck = false;
       switch (tok) {
         
         case TokenKind::Pow:
@@ -9325,6 +9327,8 @@ GeneralParser<ParseHandler, Unit>::orExpr(InHandling inHandling,
               error(JSMSG_ILLEGAL_PRIVATE_NAME);
               return null();
             }
+
+            isErgonomicBrandCheck = true;
           }
           break;
 
@@ -9333,7 +9337,12 @@ GeneralParser<ParseHandler, Unit>::orExpr(InHandling inHandling,
           break;
       }
 
-      pnk = BinaryOpTokenKindToParseNodeKind(tok);
+      if (isErgonomicBrandCheck) {
+        pnk = ParseNodeKind::PrivateInExpr;
+      } else {
+        pnk = BinaryOpTokenKindToParseNodeKind(tok);
+      }
+
     } else {
       tok = TokenKind::Eof;
       pnk = ParseNodeKind::Limit;

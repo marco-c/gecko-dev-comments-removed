@@ -550,6 +550,18 @@ static MOZ_ALWAYS_INLINE bool CheckPrivateFieldOperation(JSContext* cx,
   ThrowMsgKind msgKind;
   GetCheckPrivateFieldOperands(pc, &condition, &msgKind);
 
+  
+  
+  
+  
+  
+  if (condition == ThrowCondition::OnlyCheckRhs) {
+    if (!val.isObject()) {
+      ReportInNotObjectError(cx, idval, -2, val, -1);
+      return false;
+    }
+  }
+
   MOZ_ASSERT(idval.isSymbol());
   MOZ_ASSERT(idval.toSymbol()->isPrivateName());
 
