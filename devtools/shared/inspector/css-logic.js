@@ -652,51 +652,6 @@ exports.findCssSelector = findCssSelector;
 
 
 
-function getSelectorParent(node) {
-  const shadowRoot = node.containingShadowRoot;
-  if (shadowRoot) {
-    
-    return shadowRoot.host;
-  }
-
-  
-  return node.ownerGlobal.frameElement;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-const findAllCssSelectors = function(node) {
-  const selectors = [];
-  while (node) {
-    selectors.unshift(findCssSelector(node));
-    node = getSelectorParent(node);
-  }
-
-  return selectors;
-};
-exports.findAllCssSelectors = findAllCssSelectors;
-
-
-
-
-
 
 
 

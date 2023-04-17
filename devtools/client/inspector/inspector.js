@@ -1435,28 +1435,19 @@ Inspector.prototype = {
 
 
 
-
-
-
-
-  get selectionCssSelector() {
-    if (this.selectionCssSelectors.length) {
-      return this.selectionCssSelectors[this.selectionCssSelectors.length - 1];
-    }
-
-    return null;
-  },
-
-  
-
-
-
   updateSelectionCssSelectors() {
-    if (this.selection.isElementNode()) {
-      this.selection.nodeFront.getAllSelectors().then(selectors => {
-        this.selectionCssSelectors = selectors;
-      }, this._handleRejectionIfNotDestroyed);
+    if (!this.selection.isElementNode()) {
+      return;
     }
+
+    this.commands.inspectorCommand
+      .getNodeFrontSelectorsFromTopDocument(this.selection.nodeFront)
+      .then(selectors => {
+        this.selectionCssSelectors = selectors;
+        
+        
+        this.emitForTests("selection-css-selectors-updated", selectors);
+      }, this._handleRejectionIfNotDestroyed);
   },
 
   

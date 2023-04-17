@@ -201,50 +201,8 @@ class InspectorCommand {
       }
 
       if (nodeSelectors.length > 0) {
-        const domLoadingPromises = [];
-
-        
-        
-        
-        
-        
-        if (!nodeFront.useChildTargetToFetchChildren) {
-          domLoadingPromises.push(nodeFront.waitForFrameLoad());
-        }
-
-        const {
-          onResource: onDomInteractiveResource,
-        } = await this.commands.resourceCommand.waitForNextResource(
-          this.commands.resourceCommand.TYPES.DOCUMENT_EVENT,
-          {
-            
-            
-            
-            predicate: resource =>
-              resource.name == "dom-interactive" &&
-              resource.targetFront !== nodeFront.targetFront &&
-              resource.targetFront.browsingContextID ==
-                nodeFront.browsingContextID,
-          }
-        );
-        const newTargetResolveValue = Symbol();
-        domLoadingPromises.push(
-          onDomInteractiveResource.then(() => newTargetResolveValue)
-        );
-
-        
-        
-        const loadResult = await Promise.any(domLoadingPromises);
-
-        
-        
-        
-        
-        
-        
-        
-        if (loadResult == newTargetResolveValue) {
-          nodeFront._form.useChildTargetToFetchChildren = true;
+        if (!nodeFront.isShadowHost) {
+          await this.#waitForFrameLoad(nodeFront);
         }
 
         const { nodes } = await walker.children(nodeFront);
@@ -281,6 +239,100 @@ class InspectorCommand {
     );
     const onQuerySelectors = querySelectors(rootNodeFront);
     return Promise.race([onTimeout, onQuerySelectors]);
+  }
+
+  
+
+
+
+
+  async #waitForFrameLoad(nodeFront) {
+    const domLoadingPromises = [];
+
+    
+    
+    
+    
+    
+    if (!nodeFront.useChildTargetToFetchChildren) {
+      domLoadingPromises.push(nodeFront.waitForFrameLoad());
+    }
+
+    const {
+      onResource: onDomInteractiveResource,
+    } = await this.commands.resourceCommand.waitForNextResource(
+      this.commands.resourceCommand.TYPES.DOCUMENT_EVENT,
+      {
+        
+        
+        
+        predicate: resource =>
+          resource.name == "dom-interactive" &&
+          resource.targetFront !== nodeFront.targetFront &&
+          resource.targetFront.browsingContextID == nodeFront.browsingContextID,
+      }
+    );
+    const newTargetResolveValue = Symbol();
+    domLoadingPromises.push(
+      onDomInteractiveResource.then(() => newTargetResolveValue)
+    );
+
+    
+    
+    const loadResult = await Promise.any(domLoadingPromises);
+
+    
+    
+    
+    
+    
+    
+    
+    if (loadResult == newTargetResolveValue) {
+      nodeFront._form.useChildTargetToFetchChildren = true;
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async getNodeFrontSelectorsFromTopDocument(nodeFront) {
+    const selectors = [];
+
+    let currentNode = nodeFront;
+    while (currentNode) {
+      
+      const selector = await currentNode.getUniqueSelector();
+      selectors.unshift(selector);
+
+      
+      
+      
+      const rootNode = currentNode.getOwnerRootNodeFront();
+      currentNode = rootNode?.parentOrHost();
+    }
+
+    return selectors;
   }
 }
 

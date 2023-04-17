@@ -13,7 +13,7 @@ const { nodeSpec, nodeListSpec } = require("devtools/shared/specs/node");
 
 loader.lazyRequireGetter(
   this,
-  ["getCssPath", "getXPath", "findCssSelector", "findAllCssSelectors"],
+  ["getCssPath", "getXPath", "findCssSelector"],
   "devtools/shared/inspector/css-logic",
   true
 );
@@ -240,6 +240,10 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
 
 
   watchDocument: function(doc, callback) {
+    if (!doc.defaultView) {
+      return;
+    }
+
     const node = this.rawNode;
     
     
@@ -509,17 +513,6 @@ const NodeActor = protocol.ActorClassWithSpec(nodeSpec, {
       return [];
     }
     return findCssSelector(this.rawNode);
-  },
-
-  
-
-
-
-  getAllSelectors: function() {
-    if (Cu.isDeadWrapper(this.rawNode)) {
-      return "";
-    }
-    return findAllCssSelectors(this.rawNode);
   },
 
   

@@ -194,6 +194,28 @@ class NodeFront extends FrontClassWithSpec(nodeSpec) {
 
 
 
+  getOwnerRootNodeFront() {
+    let currentNode = this;
+    while (currentNode) {
+      if (
+        currentNode.isShadowRoot ||
+        currentNode.nodeType === Node.DOCUMENT_NODE
+      ) {
+        return currentNode;
+      }
+
+      currentNode = currentNode.parentNode();
+    }
+
+    return null;
+  }
+
+  
+
+
+
+
+
   updateMutation(change) {
     if (change.type === "attributes") {
       

@@ -1057,7 +1057,11 @@ class HighlightersOverlay {
     try {
       
       const { url } = this.target;
-      const selectors = await node.getAllSelectors();
+
+      const selectors = await this.inspector.commands.inspectorCommand.getNodeFrontSelectorsFromTopDocument(
+        node
+      );
+
       this.state.grids.set(node, { selectors, options, url });
 
       
