@@ -112,8 +112,6 @@
 #  include "nsIPrintSettingsService.h"
 #  include "nsISimpleEnumerator.h"
 
-#  include "nsIPluginDocument.h"
-
 #endif  
 
 
@@ -2967,12 +2965,6 @@ nsDocumentViewer::Print(nsIPrintSettings* aPrintSettings,
   if (NS_WARN_IF(!mDocument) || NS_WARN_IF(!mDeviceContext)) {
     PR_PL(("Can't Print without a document and a device context"));
     return NS_ERROR_FAILURE;
-  }
-
-  
-  
-  if (nsCOMPtr<nsIPluginDocument> pDoc = do_QueryInterface(mDocument)) {
-    return pDoc->Print();
   }
 
   if (NS_WARN_IF(mPrintJob && mPrintJob->GetIsPrinting())) {
