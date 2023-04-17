@@ -852,16 +852,13 @@ function rotateViewport(ui) {
 
 
 async function setTouchAndMetaViewportSupport(ui, value) {
-  const reloadNeeded = await ui.updateTouchSimulation(value);
-  if (reloadNeeded) {
-    info("Reload is needed -- waiting for it.");
-    const reload = waitForViewportLoad(ui);
-    const browser = ui.getViewportBrowser();
-    browser.reload();
-    await reload;
-    await promiseContentReflow(ui);
-  }
-  return reloadNeeded;
+  await ui.updateTouchSimulation(value);
+  info("Reload so the new configuration applies cleanly to the page");
+  const reload = waitForViewportLoad(ui);
+  const browser = ui.getViewportBrowser();
+  browser.reload();
+  await reload;
+  await promiseContentReflow(ui);
 }
 
 

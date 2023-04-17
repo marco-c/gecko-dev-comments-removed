@@ -37,6 +37,8 @@ const SUPPORTED_OPTIONS = {
   
   rdmPaneOrientation: true,
   
+  reloadOnTouchSimulationToggle: true,
+  
   restoreFocus: true,
   
   serviceWorkersTestingEnabled: true,
