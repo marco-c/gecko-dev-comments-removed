@@ -5,6 +5,7 @@
 
 
 #include "LibrarySandboxPreload.h"
+#include "nsXPCOMPrivate.h"  
 
 #include "BinaryPath.h"
 #include "prlink.h"
@@ -19,7 +20,7 @@ PathString GetSandboxedRLBoxPath() {
     MOZ_CRASH("Library preload failure: Failed to get binary file\n");
   }
 
-  rv = libFile->SetNativeLeafName(MOZ_DLL_PREFIX "rlbox" MOZ_DLL_SUFFIX ""_ns);
+  rv = libFile->SetNativeLeafName(XPCOM_DLL ""_ns);
   if (NS_FAILED(rv)) {
     MOZ_CRASH("Library preload failure: Failed to get library file\n");
   }
@@ -38,17 +39,6 @@ PRLibrary* PreloadLibrary(const PathString& path) {
 #endif
   PRLibrary* ret = PR_LoadLibraryWithFlags(libSpec, PR_LD_LAZY);
   return ret;
-}
-
-void PreloadSandboxedDynamicLibrary() {
-  
-  
-  
-#if (defined(XP_LINUX) || defined(XP_WIN)) && defined(MOZ_USING_WASM_SANDBOXING)
-  if (!PreloadLibrary(GetSandboxedRLBoxPath())) {
-    MOZ_CRASH("Library preload failure: Failed to load librlbox\n");
-  }
-#endif
 }
 
 }  
