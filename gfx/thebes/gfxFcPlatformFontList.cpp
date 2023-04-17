@@ -2219,8 +2219,6 @@ bool gfxFcPlatformFontList::GetStandardFamilyName(const nsCString& aFontName,
 void gfxFcPlatformFontList::AddGenericFonts(
     StyleGenericFontFamily aGenericType, nsAtom* aLanguage,
     nsTArray<FamilyAndGeneric>& aFamilyList) {
-  bool usePrefFontList = false;
-
   const char* generic = GetGenericName(aGenericType);
   NS_ASSERTION(generic, "weird generic font type");
   if (!generic) {
@@ -2230,6 +2228,10 @@ void gfxFcPlatformFontList::AddGenericFonts(
   
   
   
+  
+  const bool isSystemUi = aGenericType == StyleGenericFontFamily::SystemUi;
+  bool usePrefFontList = isSystemUi;
+
   nsAutoCString genericToLookup(generic);
   if ((!mAlwaysUseFontconfigGenerics && aLanguage) ||
       aLanguage == nsGkAtoms::x_math) {
@@ -2262,8 +2264,10 @@ void gfxFcPlatformFontList::AddGenericFonts(
 
   
   if (usePrefFontList) {
-    return gfxPlatformFontList::AddGenericFonts(aGenericType, aLanguage,
-                                                aFamilyList);
+    gfxPlatformFontList::AddGenericFonts(aGenericType, aLanguage, aFamilyList);
+    if (!isSystemUi) {
+      return;
+    }
   }
 
   PrefFontList* prefFonts = FindGenericFamilies(genericToLookup, aLanguage);
