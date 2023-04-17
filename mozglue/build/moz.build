@@ -42,7 +42,6 @@ if CONFIG["OS_TARGET"] == "WINNT":
     
     
     DELAYLOAD_DLLS += [
-        "oleaut32.dll",
         "ole32.dll",
         "user32.dll",
         "winmm.dll",

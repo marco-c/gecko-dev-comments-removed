@@ -5,6 +5,7 @@
 
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"]:
+
     SOURCES += [
         
         "WindowsDllBlocklist.cpp",
@@ -34,10 +35,6 @@ DELAYLOAD_DLLS += [
     "wintrust.dll",
 ]
 
-EXPORTS += [
-    "nsWindowsDllInterceptor.h",
-]
-
 EXPORTS.mozilla += [
     "Authenticode.h",
     "CacheNtDllThunk.h",
@@ -64,11 +61,6 @@ GeneratedFile(
     entry_point="gen_blocklists",
     inputs=["WindowsDllBlocklistDefs.in"]
 )
-
 EXPORTS.mozilla += ["!" + hdr for hdr in blocklist_files]
-
-DIRS += [
-    "interceptor",
-]
 
 FINAL_LIBRARY = "mozglue"
