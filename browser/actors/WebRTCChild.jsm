@@ -270,31 +270,14 @@ function handleGUMRequest(aSubject, aTopic, aData) {
   let isHandlingUserInput = aSubject.isHandlingUserInput;
   let contentWindow = Services.wm.getOuterWindowWithId(aSubject.windowID);
 
-  contentWindow.navigator.mozGetUserMediaDevices(
-    function(devices) {
-      
-      
-      if (contentWindow.closed) {
-        return;
-      }
-
-      prompt(
-        contentWindow,
-        aSubject.windowID,
-        aSubject.callID,
-        constraints,
-        devices,
-        secure,
-        isHandlingUserInput
-      );
-    },
-    function(error) {
-      
-      
-      denyGUMRequest({ callID: aSubject.callID });
-    },
-    aSubject.innerWindowID,
-    aSubject.callID
+  prompt(
+    contentWindow,
+    aSubject.windowID,
+    aSubject.callID,
+    constraints,
+    aSubject.devices,
+    secure,
+    isHandlingUserInput
   );
 }
 
