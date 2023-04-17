@@ -26,6 +26,9 @@ class nsXPLookAndFeel : public mozilla::LookAndFeel {
   void Init();
 
   
+  static const char* GetColorPrefName(ColorID);
+
+  
   
   
   
