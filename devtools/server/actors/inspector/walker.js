@@ -2472,6 +2472,10 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
   },
 
   onFrameLoad: function({ window, isTopLevel }) {
+    
+    if (this._destroyed) {
+      return;
+    }
     const { readyState } = window.document;
     if (readyState != "interactive" && readyState != "complete") {
       
