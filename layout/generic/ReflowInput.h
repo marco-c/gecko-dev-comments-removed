@@ -695,9 +695,10 @@ struct ReflowInput : public SizeComputationInput {
   
 
 
-  nscoord CalcLineHeight() const;
+  nscoord GetLineHeight() const;
 
   
+
 
 
 
@@ -1007,6 +1008,9 @@ struct ReflowInput : public SizeComputationInput {
   
   mozilla::LogicalSize mComputedMaxSize{mWritingMode, NS_UNCONSTRAINEDSIZE,
                                         NS_UNCONSTRAINEDSIZE};
+
+  
+  mutable nscoord mLineHeight = NS_UNCONSTRAINEDSIZE;
 };
 
 }  

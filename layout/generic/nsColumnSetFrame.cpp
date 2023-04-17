@@ -996,7 +996,7 @@ void nsColumnSetFrame::FindBestBalanceBSize(const ReflowInput& aReflowInput,
   
   
   
-  nscoord extraBlockSize = std::max(570, aReflowInput.CalcLineHeight() / 2);
+  nscoord extraBlockSize = std::max(570, aReflowInput.GetLineHeight() / 2);
 
   
   

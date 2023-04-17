@@ -341,7 +341,7 @@ void nsRubyBaseContainerFrame::Reflow(nsPresContext* aPresContext,
     
     
     
-    lineLayout->Init(nullptr, reflowInput->CalcLineHeight(), -1);
+    lineLayout->Init(nullptr, reflowInput->GetLineHeight(), -1);
     reflowInput->mLineLayout = lineLayout;
 
     
