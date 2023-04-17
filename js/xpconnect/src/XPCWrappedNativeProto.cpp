@@ -58,7 +58,7 @@ bool XPCWrappedNativeProto::Init(JSContext* cx, nsIXPCScriptable* scriptable) {
 
   bool success = !!mJSProtoObject;
   if (success) {
-    JS::SetPrivate(mJSProtoObject, this);
+    JS::SetReservedSlot(mJSProtoObject, ProtoSlot, JS::PrivateValue(this));
   }
 
   return success;
@@ -91,7 +91,7 @@ void XPCWrappedNativeProto::SystemIsBeingShutDown() {
 
   if (mJSProtoObject) {
     
-    JS::SetPrivate(mJSProtoObject, nullptr);
+    JS::SetReservedSlot(mJSProtoObject, ProtoSlot, JS::UndefinedValue());
     mJSProtoObject = nullptr;
   }
 }
