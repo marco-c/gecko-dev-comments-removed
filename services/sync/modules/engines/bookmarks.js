@@ -432,7 +432,9 @@ BookmarksEngine.prototype = {
         throw ex;
       }
       if (ex.name == "MergeConflictError") {
-        this._log.warn("Bookmark syncing ran into a merge conflict error...will retry later");
+        this._log.warn(
+          "Bookmark syncing ran into a merge conflict error...will retry later"
+        );
         return;
       }
       
