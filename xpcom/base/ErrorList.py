@@ -734,11 +734,6 @@ with modules["DOM"]:
     ] = FAILURE(
         1023
     )  
-    errors[
-        "NS_ERROR_DOM_INVALID_STATE_XHR_CHUNKED_RESPONSETYPES_UNSUPPORTED_FOR_SYNC"
-    ] = FAILURE(
-        1024
-    )  
 
     
     
