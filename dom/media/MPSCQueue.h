@@ -17,7 +17,7 @@ namespace mozilla {
 
 
 
-const size_t MPSC_MSG_RESERVERD = sizeof(std::atomic<void*>);
+const size_t MPSC_MSG_RESERVED = sizeof(std::atomic<void*>);
 
 template <typename T>
 class MPSCQueue {

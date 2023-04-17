@@ -46,7 +46,7 @@ class AsyncLogger {
   enum AsyncLoggerOutputMode { MOZLOG, PROFILER };
 
   struct TextPayload {
-    char mPayload[PAYLOAD_TOTAL_SIZE - MPSC_MSG_RESERVERD];
+    char mPayload[PAYLOAD_TOTAL_SIZE - MPSC_MSG_RESERVED];
   };
 
   
@@ -77,7 +77,7 @@ class AsyncLogger {
     };
     static constexpr size_t scRemainingSpaceForName =
         PAYLOAD_TOTAL_SIZE - offsetof(MembersWithChar, c) -
-        ((MPSC_MSG_RESERVERD + alignof(MembersWithChar) - 1) &
+        ((MPSC_MSG_RESERVED + alignof(MembersWithChar) - 1) &
          ~(alignof(MembersWithChar) - 1));
 #undef MEMBERS_EXCEPT_NAME
 
