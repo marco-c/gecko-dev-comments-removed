@@ -1,5 +1,5 @@
 
-from six.moves import urllib
+import urllib
 
 
 def web_socket_do_extra_handshake(request):
