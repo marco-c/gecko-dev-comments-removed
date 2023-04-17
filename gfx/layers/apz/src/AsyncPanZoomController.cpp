@@ -1201,6 +1201,23 @@ nsEventStatus AsyncPanZoomController::HandleGestureEvent(
           rv = OnSingleTapConfirmed(tapGestureInput);
           break;
         case TapGestureInput::TAPGESTURE_DOUBLE:
+          
+          
+          
+          
+          
+          
+          
+          
+          if (!IsRootContent()) {
+            if (APZCTreeManager* treeManagerLocal = GetApzcTreeManager()) {
+              if (RefPtr<AsyncPanZoomController> root =
+                      treeManagerLocal->FindZoomableApzc(this)) {
+                rv = root->OnDoubleTap(tapGestureInput);
+              }
+            }
+            break;
+          }
           rv = OnDoubleTap(tapGestureInput);
           break;
         case TapGestureInput::TAPGESTURE_SECOND:
