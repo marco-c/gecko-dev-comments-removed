@@ -45,7 +45,7 @@ class LightweightThemeChild extends JSWindowActorChild {
   handleEvent(event) {
     switch (event.type) {
       
-      case "pageshow":
+      case "DOMContentLoaded":
         this.update();
         break;
 
