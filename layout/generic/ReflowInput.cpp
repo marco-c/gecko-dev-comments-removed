@@ -92,10 +92,6 @@ static nscoord FontSizeInflationListMarginAdjustment(const nsIFrame* aFrame) {
     return margin;
   }
 
-  
-  
-  
-  
   nsAtom* type = list->mCounterStyle.AsAtom();
   if (type != nsGkAtoms::none && type != nsGkAtoms::disc &&
       type != nsGkAtoms::circle && type != nsGkAtoms::square &&
