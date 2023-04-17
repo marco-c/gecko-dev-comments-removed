@@ -831,7 +831,7 @@ bool ContentChild::Init(base::ProcessId aParentPid, const char* aParentBuildID,
 }
 
 void ContentChild::SetProcessName(const nsACString& aName,
-                                  const nsACString* aETLDplus1) {
+                                  const nsACString* aSite) {
   char* name;
   if ((name = PR_GetEnv("MOZ_DEBUG_APP_PROCESS")) && aName.EqualsASCII(name)) {
 #ifdef OS_POSIX
@@ -847,13 +847,60 @@ void ContentChild::SetProcessName(const nsACString& aName,
 #endif
   }
 
-  mProcessName = aName;
-  if (aETLDplus1) {
-    profiler_set_process_name(mProcessName, aETLDplus1);
+  if (aSite) {
+    profiler_set_process_name(aName, aSite);
   } else {
-    profiler_set_process_name(mProcessName);
+    profiler_set_process_name(aName);
   }
-  mozilla::ipc::SetThisProcessName(PromiseFlatCString(mProcessName).get());
+  
+  if (aSite && StaticPrefs::fission_processSiteNames()) {
+    nsCOMPtr<nsIPrincipal> isolationPrincipal =
+        ContentParent::CreateRemoteTypeIsolationPrincipal(mRemoteType);
+    if (isolationPrincipal) {
+      
+      MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
+              ("private = %d, pref = %d",
+               isolationPrincipal->OriginAttributesRef().mPrivateBrowsingId !=
+               nsIScriptSecurityManager::DEFAULT_PRIVATE_BROWSING_ID,
+               StaticPrefs::fission_processPrivateWindowSiteNames()));
+      if (isolationPrincipal->OriginAttributesRef().mPrivateBrowsingId ==
+          nsIScriptSecurityManager::DEFAULT_PRIVATE_BROWSING_ID
+#ifdef NIGHTLY_BUILD
+          
+          || StaticPrefs::fission_processPrivateWindowSiteNames()
+#endif
+          ) {
+#if !defined(XP_MACOSX)
+        
+        
+        if (isolationPrincipal->SchemeIs("https")) {
+          nsAutoCString schemeless;
+          isolationPrincipal->GetHostPort(schemeless);
+          nsAutoCString originSuffix;
+          isolationPrincipal->GetOriginSuffix(originSuffix);
+          schemeless.Append(originSuffix);
+          mozilla::ipc::SetThisProcessName(schemeless.get());
+          MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
+                  ("Changed name of process %d to %s", getpid(),
+                   PromiseFlatCString(schemeless).get()));
+        } else
+#endif
+        {
+          mozilla::ipc::SetThisProcessName(PromiseFlatCString(*aSite).get());
+          MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
+                  ("Changed name of process %d to %s", getpid(),
+                   PromiseFlatCString(*aSite).get()));
+        }
+
+        mProcessName = *aSite;
+        return;
+      }
+    }
+  }
+  
+  
+  mProcessName = aName;
+  mozilla::ipc::SetThisProcessName(mProcessName.get());
 }
 
 static nsresult GetCreateWindowParams(nsIOpenWindowInfo* aOpenWindowInfo,
@@ -2650,6 +2697,9 @@ mozilla::ipc::IPCResult ContentChild::RecvRemoteType(
   auto remoteTypePrefix = RemoteTypePrefix(aRemoteType);
 
   
+  mRemoteType.Assign(aRemoteType);
+
+  
   if (aRemoteType == FILE_REMOTE_TYPE) {
     SetProcessName("file:// Content"_ns);
   } else if (aRemoteType == EXTENSION_REMOTE_TYPE) {
@@ -2658,33 +2708,18 @@ mozilla::ipc::IPCResult ContentChild::RecvRemoteType(
     SetProcessName("Privileged Content"_ns);
   } else if (aRemoteType == LARGE_ALLOCATION_REMOTE_TYPE) {
     SetProcessName("Large Allocation Web Content"_ns);
-  } else if (RemoteTypePrefix(aRemoteType) == FISSION_WEB_REMOTE_TYPE) {
-    SetProcessName("Isolated Web Content"_ns);
+  } else if (remoteTypePrefix == WITH_COOP_COEP_REMOTE_TYPE) {
 #ifdef NIGHTLY_BUILD
-    
-    if (StaticPrefs::fission_processOriginNames()) {
-      
-      SetProcessName(
-          Substring(aRemoteType, FISSION_WEB_REMOTE_TYPE.Length() + 1));
-
-      MOZ_LOG(ContentParent::GetLog(), LogLevel::Debug,
-              ("Changed name of process %d from %s to %s", getpid(),
-               PromiseFlatCString(mRemoteType).get(),
-               PromiseFlatCString(
-                   Substring(aRemoteType, FISSION_WEB_REMOTE_TYPE.Length() + 1))
-                   .get()));
-    } else
+    SetProcessName("WebCOOP+COEP Content"_ns);
+#else
+    SetProcessName("Isolated Web Content"_ns); 
 #endif
-    {
-      
-      nsCString etld(
-          Substring(aRemoteType, FISSION_WEB_REMOTE_TYPE.Length() + 1));
-      SetProcessName("Isolated Web Content"_ns, &etld);
-    }
+  } else if (remoteTypePrefix == FISSION_WEB_REMOTE_TYPE) {
+    
+    nsDependentCSubstring etld = Substring(aRemoteType, FISSION_WEB_REMOTE_TYPE.Length() + 1);
+    SetProcessName("Isolated Web Content"_ns, &etld);
   }
   
-
-  mRemoteType.Assign(aRemoteType);
 
   
   CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::RemoteType,
