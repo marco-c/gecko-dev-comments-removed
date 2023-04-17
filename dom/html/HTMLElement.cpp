@@ -39,6 +39,7 @@ JSObject* HTMLElement::WrapNode(JSContext* aCx,
 
 void HTMLElement::SetCustomElementDefinition(
     CustomElementDefinition* aDefinition) {
+  nsGenericHTMLFormElement::SetCustomElementDefinition(aDefinition);
   
   
   
@@ -48,8 +49,14 @@ void HTMLElement::SetCustomElementDefinition(
     CustomElementData* data = GetCustomElementData();
     MOZ_ASSERT(data);
     data->GetOrCreateElementInternals(this);
+
+    
+    
+    
+    if (data->mState == CustomElementData::State::eCustom) {
+      UpdateDisabledState(true);
+    }
   }
-  nsGenericHTMLFormElement::SetCustomElementDefinition(aDefinition);
 }
 
 
@@ -143,6 +150,20 @@ void HTMLElement::UpdateFormOwner() {
     nsGenericHTMLFormElement::UpdateFormOwner(true, nullptr);
   }
   UpdateFieldSet(true);
+  UpdateDisabledState(true);
+}
+
+nsresult HTMLElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
+                                   const nsAttrValue* aValue,
+                                   const nsAttrValue* aOldValue,
+                                   nsIPrincipal* aMaybeScriptedPrincipal,
+                                   bool aNotify) {
+  if (aNameSpaceID == kNameSpaceID_None && aName == nsGkAtoms::disabled) {
+    UpdateDisabledState(aNotify);
+  }
+
+  return nsGenericHTMLFormElement::AfterSetAttr(
+      aNameSpaceID, aName, aValue, aOldValue, aMaybeScriptedPrincipal, aNotify);
 }
 
 void HTMLElement::SetFormInternal(HTMLFormElement* aForm, bool aBindToTree) {
