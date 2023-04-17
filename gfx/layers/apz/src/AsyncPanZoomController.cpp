@@ -2789,20 +2789,25 @@ nsEventStatus AsyncPanZoomController::OnPanEnd(const PanGestureInput& aEvent) {
     return HandleEndOfPan();
   }
 
-  if (IsOverscrolled() && mState != OVERSCROLL_ANIMATION) {
-    
-    
-    StartOverscrollAnimation(GetVelocityVector(), GetOverscrollSideBits());
-  } else {
+  MOZ_ASSERT(GetCurrentPanGestureBlock());
+  RefPtr<const OverscrollHandoffChain> overscrollHandoffChain =
+      GetCurrentPanGestureBlock()->GetOverscrollHandoffChain();
+
+  
+  
+  
+  
+  overscrollHandoffChain->SnapBackOverscrolledApzcForMomentum(
+      this, GetVelocityVector());
+  
+  
+  if (mState != OVERSCROLL_ANIMATION) {
     SetState(NOTHING);
   }
 
   
   
   
-  MOZ_ASSERT(GetCurrentPanGestureBlock());
-  RefPtr<const OverscrollHandoffChain> overscrollHandoffChain =
-      GetCurrentPanGestureBlock()->GetOverscrollHandoffChain();
   {
     RecursiveMutexAutoLock lock(mRecursiveMutex);
     if (!overscrollHandoffChain->CanScrollInDirection(
@@ -4266,11 +4271,7 @@ void AsyncPanZoomController::FlushRepaintForNewInputBlock() {
 
 bool AsyncPanZoomController::SnapBackIfOverscrolled() {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
-  
-  
-  if (IsOverscrolled() && mState != OVERSCROLL_ANIMATION) {
-    APZC_LOG("%p is overscrolled, starting snap-back\n", this);
-    StartOverscrollAnimation(ParentLayerPoint(0, 0), GetOverscrollSideBits());
+  if (SnapBackIfOverscrolledForMomentum(ParentLayerPoint(0, 0))) {
     return true;
   }
   
@@ -4278,6 +4279,19 @@ bool AsyncPanZoomController::SnapBackIfOverscrolled() {
   
   if (mState != FLING) {
     ScrollSnap();
+  }
+  return false;
+}
+
+bool AsyncPanZoomController::SnapBackIfOverscrolledForMomentum(
+    const ParentLayerPoint& aVelocity) {
+  RecursiveMutexAutoLock lock(mRecursiveMutex);
+  
+  
+  if (IsOverscrolled() && mState != OVERSCROLL_ANIMATION) {
+    APZC_LOG("%p is overscrolled, starting snap-back\n", this);
+    StartOverscrollAnimation(aVelocity, GetOverscrollSideBits());
+    return true;
   }
   return false;
 }

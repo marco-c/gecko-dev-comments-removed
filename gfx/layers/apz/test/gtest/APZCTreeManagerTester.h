@@ -50,17 +50,23 @@ class APZCTreeManagerTester : public APZCTesterBase {
   
 
 
-  void SampleAnimationsOnce() {
+
+  bool SampleAnimationsOnce() {
     const TimeDuration increment = TimeDuration::FromMilliseconds(1);
     ParentLayerPoint pointOut;
     AsyncTransform viewTransformOut;
     mcc->AdvanceBy(increment);
 
+    bool activeAnimations = false;
+
     for (const RefPtr<Layer>& layer : layers) {
       if (TestAsyncPanZoomController* apzc = ApzcOf(layer)) {
-        apzc->SampleContentTransformForFrame(&viewTransformOut, pointOut);
+        activeAnimations |=
+            apzc->SampleContentTransformForFrame(&viewTransformOut, pointOut);
       }
     }
+
+    return activeAnimations;
   }
 
   

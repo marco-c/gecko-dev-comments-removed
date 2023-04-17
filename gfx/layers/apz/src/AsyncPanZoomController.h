@@ -1595,7 +1595,15 @@ class AsyncPanZoomController {
 
 
 
+
+
   bool SnapBackIfOverscrolled();
+
+  
+
+
+
+  bool SnapBackIfOverscrolledForMomentum(const ParentLayerPoint& aVelocity);
 
   
 

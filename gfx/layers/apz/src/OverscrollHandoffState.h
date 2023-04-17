@@ -77,6 +77,14 @@ class OverscrollHandoffChain {
 
   
   
+  
+  
+  void SnapBackOverscrolledApzcForMomentum(
+      const AsyncPanZoomController* aStart,
+      const ParentLayerPoint& aVelocity) const;
+
+  
+  
   bool CanBePanned(const AsyncPanZoomController* aApzc) const;
 
   
