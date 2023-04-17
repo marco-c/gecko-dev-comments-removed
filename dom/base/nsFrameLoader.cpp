@@ -1857,7 +1857,13 @@ void nsFrameLoader::StartDestroy(bool aForProcessSwitch) {
   mDestroyCalled = true;
 
   
-  RequestFinalTabStateFlush();
+  
+  
+  
+  
+  if (!aForProcessSwitch) {
+    RequestFinalTabStateFlush();
+  }
 
   
   
