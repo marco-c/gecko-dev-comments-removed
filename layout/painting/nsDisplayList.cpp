@@ -7720,6 +7720,8 @@ nsDisplayText::nsDisplayText(nsDisplayListBuilder* aBuilder,
   mBounds = mFrame->InkOverflowRectRelativeToSelf() + ToReferenceFrame();
   
   mBounds.Inflate(mFrame->PresContext()->AppUnitsPerDevPixel());
+  mVisibleRect = aBuilder->GetVisibleRect() +
+                 aBuilder->GetCurrentFrameOffsetToReferenceFrame();
 }
 
 bool nsDisplayText::CanApplyOpacity(WebRenderLayerManager* aManager,
@@ -7743,7 +7745,10 @@ bool nsDisplayText::CanApplyOpacity(WebRenderLayerManager* aManager,
 
 void nsDisplayText::Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) {
   AUTO_PROFILER_LABEL("nsDisplayText::Paint", GRAPHICS);
-  RenderToContext(aCtx, aBuilder);
+  
+  
+  
+  RenderToContext(aCtx, aBuilder, GetPaintRect(aBuilder, aCtx));
 }
 
 bool nsDisplayText::CreateWebRenderCommands(
@@ -7793,7 +7798,7 @@ bool nsDisplayText::CreateWebRenderCommands(
   
   
   if (!(f->IsSelected() || f->StyleText()->HasTextShadow())) {
-    nsRect visible = GetPaintRect();
+    nsRect visible = mVisibleRect;
     visible.Inflate(3 * appUnitsPerDevPixel);
     bounds = bounds.Intersect(visible);
   }
@@ -7803,7 +7808,7 @@ bool nsDisplayText::CreateWebRenderCommands(
 
   aBuilder.StartGroup(this);
 
-  RenderToContext(textDrawer, aDisplayListBuilder,
+  RenderToContext(textDrawer, aDisplayListBuilder, mVisibleRect,
                   aBuilder.GetInheritedOpacity(), true);
   const bool result = textDrawer->GetTextDrawer()->Finish();
 
@@ -7818,7 +7823,8 @@ bool nsDisplayText::CreateWebRenderCommands(
 
 void nsDisplayText::RenderToContext(gfxContext* aCtx,
                                     nsDisplayListBuilder* aBuilder,
-                                    float aOpacity, bool aIsRecording) {
+                                    const nsRect& aVisibleRect, float aOpacity,
+                                    bool aIsRecording) {
   nsTextFrame* f = static_cast<nsTextFrame*>(mFrame);
 
   
@@ -7827,7 +7833,7 @@ void nsDisplayText::RenderToContext(gfxContext* aCtx,
   
   auto A2D = mFrame->PresContext()->AppUnitsPerDevPixel();
   LayoutDeviceRect extraVisible =
-      LayoutDeviceRect::FromAppUnits(GetPaintRect(), A2D);
+      LayoutDeviceRect::FromAppUnits(aVisibleRect, A2D);
   extraVisible.Inflate(1);
 
   gfxRect pixelVisible(extraVisible.x, extraVisible.y, extraVisible.width,
