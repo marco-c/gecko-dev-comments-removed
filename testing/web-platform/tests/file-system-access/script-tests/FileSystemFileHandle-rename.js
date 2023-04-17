@@ -81,7 +81,7 @@ directory_test(async (t, root) => {
   
   const stream = await handle.createWritable();
   await promise_rejects_dom(
-      t, 'InvalidStateError', handle.rename('file-after'));
+      t, 'NoModificationAllowedError', handle.rename('file-after'));
 
   
   await stream.close();
@@ -97,7 +97,7 @@ directory_test(async (t, root) => {
   
   const stream = await handle_dest.createWritable();
   await promise_rejects_dom(
-      t, 'InvalidStateError', handle.rename('file-after'));
+      t, 'NoModificationAllowedError', handle.rename('file-after'));
 
   
   await stream.close();
