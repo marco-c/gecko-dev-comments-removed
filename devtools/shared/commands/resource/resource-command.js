@@ -152,13 +152,6 @@ class ResourceCommand {
       );
     }
 
-    
-    
-    
-    
-    
-    await this._watchAllTargets();
-
     const promises = [];
     for (const resource of resources) {
       
@@ -748,32 +741,41 @@ class ResourceCommand {
 
     this._processingExistingResources.add(resourceType);
 
+    const shouldRunLegacyListeners =
+      !this.hasResourceCommandSupport(resourceType) ||
+      this._shouldRunLegacyListenerEvenWithWatcherSupport(resourceType);
+    if (shouldRunLegacyListeners) {
+      
+      
+      
+      
+      
+      
+      
+      const promises = [];
+      const targets = this.targetCommand.getAllTargets(
+        this.targetCommand.ALL_TYPES
+      );
+      for (const target of targets) {
+        promises.push(this._watchResourcesForTarget(target, resourceType));
+      }
+      await Promise.all(promises);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    await this._watchAllTargets();
+
     
     
     if (this.hasResourceCommandSupport(resourceType)) {
       await this.watcherFront.watchResources([resourceType]);
-
-      const shouldRunLegacyListeners = this._shouldRunLegacyListenerEvenWithWatcherSupport(
-        resourceType
-      );
-      if (!shouldRunLegacyListeners) {
-        this._processingExistingResources.delete(resourceType);
-        return;
-      }
     }
-    
-
-    
-    
-    
-    const promises = [];
-    const targets = this.targetCommand.getAllTargets(
-      this.targetCommand.ALL_TYPES
-    );
-    for (const target of targets) {
-      promises.push(this._watchResourcesForTarget(target, resourceType));
-    }
-    await Promise.all(promises);
     this._processingExistingResources.delete(resourceType);
   }
 
