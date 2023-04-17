@@ -17,9 +17,11 @@
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/TaskQueue.h"
 #include "mozilla/UniquePtr.h"
+#include "MediaEventSource.h"
 #include "nsCOMPtr.h"
 #include "nsIAsyncShutdown.h"
 #include "nsISupportsImpl.h"
+#include "nsProxyRelease.h"
 #include "nsThreadUtils.h"
 
 class nsIEventTarget;
@@ -153,6 +155,7 @@ class Refcountable<bool> : public RefcountableBase {
 
 
 
+
 nsCOMPtr<nsIAsyncShutdownClient> GetShutdownBarrier();
 
 
@@ -160,7 +163,7 @@ nsCOMPtr<nsIAsyncShutdownClient> MustGetShutdownBarrier();
 
 class ShutdownBlocker : public nsIAsyncShutdownBlocker {
  public:
-  ShutdownBlocker(const nsString& aName) : mName(aName) {}
+  ShutdownBlocker(nsString aName) : mName(std::move(aName)) {}
 
   NS_IMETHOD
   BlockShutdown(nsIAsyncShutdownClient* aProfileBeforeChange) override = 0;
@@ -180,15 +183,31 @@ class ShutdownBlocker : public nsIAsyncShutdownBlocker {
   const nsString mName;
 };
 
-class ShutdownTicket final {
- public:
-  explicit ShutdownTicket(nsIAsyncShutdownBlocker* aBlocker)
-      : mBlocker(aBlocker) {}
-  NS_INLINE_DECL_REFCOUNTING(ShutdownTicket)
- private:
-  ~ShutdownTicket() { GetShutdownBarrier()->RemoveBlocker(mBlocker); }
+namespace {
+class RefCountedTicket;
+}
 
-  nsCOMPtr<nsIAsyncShutdownBlocker> mBlocker;
+
+
+
+
+
+class ShutdownBlockingTicket final {
+  RefPtr<RefCountedTicket> mTicket;
+
+ public:
+  
+
+
+
+
+  ShutdownBlockingTicket(nsString aName, nsString aFileName, int32_t aLineNr);
+  ~ShutdownBlockingTicket();
+
+  
+
+
+  MediaEventSource<void>& ShutdownEvent();
 };
 
 
