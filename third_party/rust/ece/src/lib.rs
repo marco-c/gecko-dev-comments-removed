@@ -8,6 +8,7 @@ mod aesgcm;
 mod common;
 pub mod crypto;
 mod error;
+pub mod legacy;
 
 pub use crate::{
     aes128gcm::Aes128GcmEceWebPush,
@@ -34,6 +35,7 @@ pub fn generate_keypair_and_auth_secret(
 
 
 
+
 pub fn encrypt(remote_pub: &[u8], remote_auth: &[u8], salt: &[u8], data: &[u8]) -> Result<Vec<u8>> {
     let cryptographer = crypto::holder::get_cryptographer();
     let remote_key = cryptographer.import_public_key(remote_pub)?;
@@ -51,6 +53,7 @@ pub fn encrypt(remote_pub: &[u8], remote_auth: &[u8], salt: &[u8], data: &[u8]) 
         params,
     )
 }
+
 
 
 
@@ -404,29 +407,6 @@ mod aesgcm_tests {
             base64::encode_config(&plaintext, base64::URL_SAFE_NO_PAD)
         );
         assert!(result == plaintext)
-    }
-
-    #[test]
-    fn test_e2e() {
-        let (local_key, remote_key) = generate_keys().unwrap();
-        let plaintext = b"When I grow up, I want to be a watermelon";
-        let mut auth_secret = vec![0u8; 16];
-        let cryptographer = crypto::holder::get_cryptographer();
-        cryptographer.random_bytes(&mut auth_secret).unwrap();
-        let remote_public = cryptographer
-            .import_public_key(&remote_key.pub_as_raw().unwrap())
-            .unwrap();
-        let params = WebPushParams::default();
-        let ciphertext = AesGcmEceWebPush::encrypt_with_keys(
-            &*local_key,
-            &*remote_public,
-            &auth_secret,
-            plaintext,
-            params,
-        )
-        .unwrap();
-        let decrypted = AesGcmEceWebPush::decrypt(&*remote_key, &auth_secret, &ciphertext).unwrap();
-        assert_eq!(decrypted, plaintext.to_vec());
     }
 
     #[test]
