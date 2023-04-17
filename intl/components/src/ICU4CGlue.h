@@ -179,10 +179,15 @@ class Enumeration {
 
   
   Enumeration& operator=(Enumeration&& other) noexcept {
-    if (this != &other) {
-      mUEnumeration = other.mUEnumeration;
-      other.mUEnumeration = nullptr;
+    if (this == &other) {
+      return *this;
     }
+    if (mUEnumeration) {
+      uenum_close(mUEnumeration);
+    }
+    mUEnumeration = other.mUEnumeration;
+    other.mUEnumeration = nullptr;
+    return *this;
   }
 
   

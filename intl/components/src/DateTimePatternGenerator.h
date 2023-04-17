@@ -22,18 +22,12 @@ class DateTimePatternGenerator final {
   };
 
   
-  DateTimePatternGenerator(DateTimePatternGenerator&& other) noexcept
-      : mGenerator(other.mGenerator) {
-    other.mGenerator = nullptr;
-  }
+  
+  DateTimePatternGenerator(DateTimePatternGenerator&& other) noexcept;
+
+  
   DateTimePatternGenerator& operator=(
-      DateTimePatternGenerator&& other) noexcept {
-    if (this != &other) {
-      mGenerator = other.mGenerator;
-      other.mGenerator = nullptr;
-    }
-    return *this;
-  }
+      DateTimePatternGenerator&& other) noexcept;
 
   
   DateTimePatternGenerator(const DateTimePatternGenerator&) = delete;
