@@ -259,6 +259,13 @@ interface nsIHttpChannelInternal : nsISupports
 
 
 
+
+    [must_use] attribute boolean bypassProxy;
+
+    
+
+
+
     [noscript, must_use] attribute boolean isTRRServiceChannel;
 
     

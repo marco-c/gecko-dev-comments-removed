@@ -42,11 +42,12 @@ class ServiceRequest extends XMLHttpRequest {
   open(method, url, options) {
     super.open(method, url, true);
 
-    
     if (super.channel instanceof Ci.nsIHttpChannelInternal) {
-      super.channel.QueryInterface(
-        Ci.nsIHttpChannelInternal
-      ).beConservative = true;
+      let internal = super.channel.QueryInterface(Ci.nsIHttpChannelInternal);
+      
+      internal.beConservative = true;
+      
+      internal.bypassProxy = options?.bypassProxy;
     }
   }
 }
