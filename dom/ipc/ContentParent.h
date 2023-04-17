@@ -53,6 +53,7 @@
 #define CHILD_PROCESS_SHUTDOWN_MESSAGE u"child-process-shutdown"_ns
 
 class nsConsoleService;
+class nsIContentProcessInfo;
 class nsICycleCollectorLogSink;
 class nsIDumpGCAndCCLogsCallback;
 class nsIRemoteTab;
@@ -180,16 +181,23 @@ class ContentParent final
 
 
 
+  static already_AddRefed<ContentParent> MinTabSelect(
+      const nsTArray<ContentParent*>& aContentParents,
+      int32_t maxContentParents);
+
+  
+
+
+
+
 
   static RefPtr<ContentParent::LaunchPromise> GetNewOrUsedBrowserProcessAsync(
       const nsACString& aRemoteType, BrowsingContextGroup* aGroup = nullptr,
-      uint64_t aBrowserId = 0,
       hal::ProcessPriority aPriority =
           hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND,
       bool aPreferUsed = false);
   static already_AddRefed<ContentParent> GetNewOrUsedBrowserProcess(
       const nsACString& aRemoteType, BrowsingContextGroup* aGroup = nullptr,
-      uint64_t aBrowserId = 0,
       hal::ProcessPriority aPriority =
           hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND,
       bool aPreferUsed = false);
@@ -206,7 +214,6 @@ class ContentParent final
 
   static already_AddRefed<ContentParent> GetNewOrUsedLaunchingBrowserProcess(
       const nsACString& aRemoteType, BrowsingContextGroup* aGroup = nullptr,
-      uint64_t aBrowserId = 0,
       hal::ProcessPriority aPriority =
           hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND,
       bool aPreferUsed = false);
@@ -367,9 +374,8 @@ class ContentParent final
 
   
   
-  
-  void AddKeepAlive(uint64_t aBrowserId = 0);
-  void RemoveKeepAlive(uint64_t aBrowserId = 0);
+  void AddKeepAlive();
+  void RemoveKeepAlive();
 
   TestShellParent* CreateTestShell();
 
@@ -403,6 +409,8 @@ class ContentParent final
   }
 
   GeckoChildProcessHost* Process() const { return mSubprocess; }
+
+  nsIContentProcessInfo* ScriptableHelper() const { return mScriptableHelper; }
 
   mozilla::dom::ProcessMessageManager* GetMessageManager() const {
     return mMessageManager;
@@ -1442,8 +1450,7 @@ class ContentParent final
   
   static already_AddRefed<ContentParent> GetUsedBrowserProcess(
       const nsACString& aRemoteType, nsTArray<ContentParent*>& aContentParents,
-      uint32_t aMaxContentParents, uint64_t aBrowserId, bool aPreferUsed,
-      ProcessPriority aPriority);
+      uint32_t aMaxContentParents, bool aPreferUsed, ProcessPriority aPriority);
 
   void AddToPool(nsTArray<ContentParent*>&);
   void RemoveFromPool(nsTArray<ContentParent*>&);
@@ -1519,10 +1526,7 @@ class ContentParent final
   
   int32_t mNumDestroyingTabs;
 
-  
-  
-  
-  nsTHashMap<uint64_t, uint32_t> mKeepAlivesByBrowserId;
+  uint32_t mNumKeepaliveCalls;
 
   
   
@@ -1564,6 +1568,7 @@ class ContentParent final
 
   RefPtr<nsConsoleService> mConsoleService;
   nsConsoleService* GetConsoleService();
+  nsCOMPtr<nsIContentProcessInfo> mScriptableHelper;
 
   nsTArray<nsCOMPtr<nsIObserver>> mIdleListeners;
 
