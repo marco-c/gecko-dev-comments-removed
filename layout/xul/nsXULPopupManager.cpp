@@ -794,23 +794,22 @@ bool nsXULPopupManager::ShowPopupAsNativeMenu(nsIContent* aPopup, int32_t aXPos,
 
   popupFrame->InitializePopupAsNativeContextMenu(triggerContent, aXPos, aYPos);
 
-  
-  
-  
-  mOpeningPopup = aPopup;
-  bool succeeded = menu->ShowAsContextMenu(DesktopPoint(aXPos, aYPos));
-  mOpeningPopup = nullptr;
+  nsEventStatus status =
+      FirePopupShowingEvent(aPopup, popupFrame->PresContext(), aTriggerEvent);
 
-  if (!succeeded) {
-    
+  
+  
+  if (status == nsEventStatus_eConsumeNoDefault) {
     if (nsMenuPopupFrame* popupFrame = GetPopupFrameForContent(aPopup, true)) {
       popupFrame->SetPopupState(ePopupClosed);
+      popupFrame->ClearTriggerContent();
     }
     return true;
   }
 
   mNativeMenu = menu;
   mNativeMenu->AddObserver(this);
+  mNativeMenu->ShowAsContextMenu(DesktopPoint(aXPos, aYPos));
 
   
   

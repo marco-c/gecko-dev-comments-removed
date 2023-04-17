@@ -78,6 +78,8 @@ class nsMenuX final : public nsMenuParentX,
   
   bool OnOpen();
 
+  void PopupShowingEventWasSentAndApprovedExternally() { DidFirePopupShowing(); }
+
   
   
   
@@ -158,6 +160,7 @@ class nsMenuX final : public nsMenuParentX,
   void LoadSubMenu(nsIContent* aMenuContent);
   GeckoNSMenu* CreateMenuWithGeckoString(nsString& aMenuTitle);
   void UnregisterCommands();
+  void DidFirePopupShowing();
 
   
   

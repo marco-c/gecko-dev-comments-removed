@@ -616,25 +616,27 @@ bool nsMenuX::OnOpen() {
     return false;
   }
 
+  DidFirePopupShowing();
+
+  return true;
+}
+
+void nsMenuX::DidFirePopupShowing() {
   mDidFirePopupshowingAndIsApprovedToOpen = true;
 
   
   
   
 
-  
-  
-  popupContent = GetMenuPopupContent();
+  nsCOMPtr<nsIContent> popupContent = GetMenuPopupContent();
   if (!popupContent) {
-    return true;
+    return;
   }
 
   nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
   if (pm) {
     pm->UpdateMenuItems(popupContent);
   }
-
-  return true;
 }
 
 

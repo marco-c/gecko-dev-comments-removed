@@ -216,12 +216,8 @@ static NSView* NativeViewForContent(nsIContent* aContent) {
   return (NSView*)widget->GetNativeData(NS_NATIVE_WIDGET);
 }
 
-bool NativeMenuMac::ShowAsContextMenu(const mozilla::DesktopPoint& aPosition) {
-  bool allowOpening = mMenu->OnOpen();
-  if (!allowOpening) {
-    
-    return false;
-  }
+void NativeMenuMac::ShowAsContextMenu(const mozilla::DesktopPoint& aPosition) {
+  mMenu->PopupShowingEventWasSentAndApprovedExternally();
 
   
   
@@ -229,8 +225,6 @@ bool NativeMenuMac::ShowAsContextMenu(const mozilla::DesktopPoint& aPosition) {
   RefPtr<NativeMenuMac> self = this;
   NS_DispatchToCurrentThread(NS_NewRunnableFunction("nsStandaloneNativeMenu::OpenMenu",
                                                     [=]() { self->OpenMenu(position); }));
-
-  return true;
 }
 
 void NativeMenuMac::OpenMenu(const mozilla::DesktopPoint& aPosition) {

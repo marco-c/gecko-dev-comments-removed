@@ -21,7 +21,8 @@ class NativeMenu {
 
   
   
-  virtual bool ShowAsContextMenu(const mozilla::DesktopPoint& aPosition) = 0;
+  
+  virtual void ShowAsContextMenu(const mozilla::DesktopPoint& aPosition) = 0;
 
   
   
