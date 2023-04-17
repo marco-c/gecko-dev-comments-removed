@@ -303,10 +303,24 @@ class mozInlineSpellChecker final : public nsIInlineSpellChecker,
  protected:
   virtual ~mozInlineSpellChecker();
 
+  struct CompareRangeAndNodeOffsetRange;
+
   
   
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void AddRangesForMisspelledWords(
-      const nsTArray<NodeOffsetRange>& aRanges,
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void UpdateRangesForMisspelledWords(
+      const nsTArray<NodeOffsetRange>& aNodeOffsetRangesForWords,
+      const nsTArray<RefPtr<nsRange>>& aOldRangesForSomeWords,
       const nsTArray<bool>& aIsMisspelled,
       mozilla::dom::Selection& aSpellCheckerSelection);
 
