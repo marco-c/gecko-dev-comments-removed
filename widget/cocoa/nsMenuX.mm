@@ -412,16 +412,16 @@ void nsMenuX::MenuOpenedAsync() {
   }
 
   
+  if (mObserver) {
+    mObserver->OnMenuOpened();
+  }
+
+  
   nsEventStatus status = nsEventStatus_eIgnore;
   WidgetMouseEvent event(true, eXULPopupShown, nullptr, WidgetMouseEvent::eReal);
   nsCOMPtr<nsIContent> popupContent = GetMenuPopupContent();
   nsIContent* dispatchTo = popupContent ? popupContent : mContent;
   EventDispatcher::Dispatch(dispatchTo, nullptr, &event, nullptr, &status);
-
-  
-  if (mObserver) {
-    mObserver->OnMenuOpened();
-  }
 }
 
 void nsMenuX::MenuClosed() {
