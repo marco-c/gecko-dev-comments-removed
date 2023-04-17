@@ -599,6 +599,9 @@ class MOZ_STACK_CLASS WSRunScanner final {
     bool StartsFromSpecialContent() const {
       return mLeftWSType == WSType::SpecialContent;
     }
+    bool StartsFromPreformattedLineBreak() const {
+      return mLeftWSType == WSType::PreformattedLineBreak;
+    }
 
     
 
@@ -807,30 +810,16 @@ class MOZ_STACK_CLASS WSRunScanner final {
           const Element& aEditableBlockParentOrTopmostEditableInlineElement,
           const Element* aEditingHost, NoBreakingSpaceData* aNBSPData);
 
-      enum class WhiteSpacePreformatted : bool { Yes, No };
-      BoundaryData()
-          : mReason(WSType::NotInitialized),
-            mAcrossPreformattedWhiteSpaceOrNonCollapsibleCharacter(
-                WhiteSpacePreformatted::No) {}
+      BoundaryData() : mReason(WSType::NotInitialized) {}
       template <typename EditorDOMPointType>
       BoundaryData(const EditorDOMPointType& aPoint, nsIContent& aReasonContent,
-                   WSType aReason,
-                   WhiteSpacePreformatted
-                       aDidCrossPreformattedWhiteSpaceOrNonCollapsibleCharacter)
-          : mReasonContent(&aReasonContent),
-            mPoint(aPoint),
-            mReason(aReason),
-            mAcrossPreformattedWhiteSpaceOrNonCollapsibleCharacter(
-                aDidCrossPreformattedWhiteSpaceOrNonCollapsibleCharacter) {}
+                   WSType aReason)
+          : mReasonContent(&aReasonContent), mPoint(aPoint), mReason(aReason) {}
       bool Initialized() const { return mReasonContent && mPoint.IsSet(); }
 
       nsIContent* GetReasonContent() const { return mReasonContent; }
       const EditorDOMPoint& PointRef() const { return mPoint; }
       WSType RawReason() const { return mReason; }
-      bool AcrossPreformattedWhiteSpaceOrNonCollapsibleCharacter() const {
-        return mAcrossPreformattedWhiteSpaceOrNonCollapsibleCharacter ==
-               WhiteSpacePreformatted::Yes;
-      }
 
       bool IsNonCollapsibleCharacters() const {
         return mReason == WSType::NonCollapsibleCharacters;
@@ -887,11 +876,6 @@ class MOZ_STACK_CLASS WSRunScanner final {
       
       
       WSType mReason;
-      
-      
-      
-      WhiteSpacePreformatted
-          mAcrossPreformattedWhiteSpaceOrNonCollapsibleCharacter;
     };
 
     class MOZ_STACK_CLASS NoBreakingSpaceData final {
@@ -976,6 +960,10 @@ class MOZ_STACK_CLASS WSRunScanner final {
     }
     bool EndsByPreformattedLineBreak() const {
       return mEnd.IsPreformattedLineBreak();
+    }
+    bool EndsByInvisiblePreformattedLineBreak() const {
+      return mEnd.IsPreformattedLineBreak() &&
+             HTMLEditUtils::IsInvisiblePreformattedNewLine(mEnd.PointRef());
     }
     bool EndsByCurrentBlockBoundary() const {
       return mEnd.IsCurrentBlockBoundary();
@@ -1264,19 +1252,6 @@ class MOZ_STACK_CLASS WSRunScanner final {
     const VisibleWhiteSpacesData& VisibleWhiteSpacesDataRef() const;
 
    private:
-    
-
-
-
-
-    bool IsWhiteSpaceNotCollapsibleOrSurrondedByVisibleContent() const {
-      return !mIsWhiteSpaceCollapsible ||
-             ((StartsFromNonCollapsibleCharacters() ||
-               StartsFromSpecialContent()) &&
-              (EndsByNonCollapsibleCharacters() || EndsBySpecialContent() ||
-               EndsByBRElement() || EndsByPreformattedLineBreak()));
-    }
-
     EditorDOMPoint mScanStartPoint;
     BoundaryData mStart;
     BoundaryData mEnd;
@@ -1285,11 +1260,6 @@ class MOZ_STACK_CLASS WSRunScanner final {
     mutable Maybe<EditorDOMRange> mLeadingWhiteSpaceRange;
     mutable Maybe<EditorDOMRange> mTrailingWhiteSpaceRange;
     mutable Maybe<VisibleWhiteSpacesData> mVisibleWhiteSpacesData;
-    
-    
-    
-    
-    bool mIsWhiteSpaceCollapsible;
   };
 
   const TextFragmentData& TextFragmentDataAtStartRef() const {

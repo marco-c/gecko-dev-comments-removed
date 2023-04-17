@@ -2025,11 +2025,11 @@ void HTMLEditor::GenerateWhiteSpaceSequence(
   
   
   MOZ_ASSERT(aPreviousCharPointData.AcrossTextNodeBoundary() ||
-             !aPreviousCharPointData.IsWhiteSpace());
+             !aPreviousCharPointData.IsCollapsibleWhiteSpace());
   
   
   MOZ_ASSERT(aNextCharPointData.AcrossTextNodeBoundary() ||
-             !aNextCharPointData.IsWhiteSpace());
+             !aNextCharPointData.IsCollapsibleWhiteSpace());
 
   if (aLength == 1) {
     
@@ -2044,6 +2044,13 @@ void HTMLEditor::GenerateWhiteSpaceSequence(
     
     if (aPreviousCharPointData.Type() == CharPointType::TextEnd ||
         aNextCharPointData.Type() == CharPointType::TextEnd) {
+      aResult.Assign(HTMLEditUtils::kNBSP);
+      return;
+    }
+    
+    
+    if (aPreviousCharPointData.Type() == CharPointType::PreformattedLineBreak ||
+        aNextCharPointData.Type() == CharPointType::PreformattedLineBreak) {
       aResult.Assign(HTMLEditUtils::kNBSP);
       return;
     }
@@ -2077,7 +2084,8 @@ void HTMLEditor::GenerateWhiteSpaceSequence(
   
   *lastChar =
       aNextCharPointData.AcrossTextNodeBoundary() ||
-              aNextCharPointData.Type() == CharPointType::ASCIIWhiteSpace
+              aNextCharPointData.Type() == CharPointType::ASCIIWhiteSpace ||
+              aNextCharPointData.Type() == CharPointType::PreformattedLineBreak
           ? HTMLEditUtils::kNBSP
           : HTMLEditUtils::kSpace;
 }

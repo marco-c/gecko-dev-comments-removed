@@ -1458,7 +1458,7 @@ WSScanResult WSRunScanner::ScanNextVisibleNodeOrBlockBoundaryFrom(
 template <typename EditorDOMPointType>
 WSRunScanner::TextFragmentData::TextFragmentData(
     const EditorDOMPointType& aPoint, const Element* aEditingHost)
-    : mEditingHost(aEditingHost), mIsWhiteSpaceCollapsible(true) {
+    : mEditingHost(aEditingHost) {
   if (!aPoint.IsSetAndValid()) {
     NS_WARNING("aPoint was invalid");
     return;
@@ -1497,22 +1497,17 @@ WSRunScanner::TextFragmentData::TextFragmentData(
   mStart = BoundaryData::ScanCollapsibleWhiteSpaceStartFrom(
       mScanStartPoint, *editableBlockElementOrInlineEditingHost, mEditingHost,
       &mNBSPData);
+  MOZ_ASSERT_IF(mStart.IsNonCollapsibleCharacters(),
+                !mStart.PointRef().IsPreviousCharPreformattedNewLine());
+  MOZ_ASSERT_IF(mStart.IsPreformattedLineBreak(),
+                mStart.PointRef().IsPreviousCharPreformattedNewLine());
   mEnd = BoundaryData::ScanCollapsibleWhiteSpaceEndFrom(
       mScanStartPoint, *editableBlockElementOrInlineEditingHost, mEditingHost,
       &mNBSPData);
-  
-  
-  
-  
-  
-  
-  mIsWhiteSpaceCollapsible =
-      !mStart.AcrossPreformattedWhiteSpaceOrNonCollapsibleCharacter() &&
-      !mEnd.AcrossPreformattedWhiteSpaceOrNonCollapsibleCharacter() &&
-      !(EditorUtils::IsWhiteSpacePreformatted(
-            *mScanStartPoint.ContainerAsContent()) &&
-        !mStart.IsNonCollapsibleCharacters() &&
-        !mEnd.IsNonCollapsibleCharacters());
+  MOZ_ASSERT_IF(mEnd.IsNonCollapsibleCharacters(),
+                !mEnd.PointRef().IsCharPreformattedNewLine());
+  MOZ_ASSERT_IF(mEnd.IsPreformattedLineBreak(),
+                mEnd.PointRef().IsCharPreformattedNewLine());
 }
 
 
@@ -1566,11 +1561,9 @@ Maybe<WSRunScanner::TextFragmentData::BoundaryData> WSRunScanner::
         break;
     }
 
-    return Some(
-        BoundaryData(EditorDOMPoint(aPoint.ContainerAsText(), i),
-                     *aPoint.ContainerAsText(), wsTypeOfNonCollapsibleChar,
-                     !isWhiteSpaceCollapsible ? WhiteSpacePreformatted::Yes
-                                              : WhiteSpacePreformatted::No));
+    return Some(BoundaryData(EditorDOMPoint(aPoint.ContainerAsText(), i),
+                             *aPoint.ContainerAsText(),
+                             wsTypeOfNonCollapsibleChar));
   }
 
   return Nothing();
@@ -1613,13 +1606,12 @@ WSRunScanner::TextFragmentData::BoundaryData WSRunScanner::TextFragmentData::
     return BoundaryData(aPoint,
                         const_cast<Element&>(
                             aEditableBlockParentOrTopmostEditableInlineContent),
-                        WSType::CurrentBlockBoundary,
-                        WhiteSpacePreformatted::No);
+                        WSType::CurrentBlockBoundary);
   }
 
   if (HTMLEditUtils::IsBlockElement(*previousLeafContentOrBlock)) {
     return BoundaryData(aPoint, *previousLeafContentOrBlock,
-                        WSType::OtherBlockBoundary, WhiteSpacePreformatted::No);
+                        WSType::OtherBlockBoundary);
   }
 
   if (!previousLeafContentOrBlock->IsText() ||
@@ -1629,8 +1621,7 @@ WSRunScanner::TextFragmentData::BoundaryData WSRunScanner::TextFragmentData::
     return BoundaryData(aPoint, *previousLeafContentOrBlock,
                         previousLeafContentOrBlock->IsHTMLElement(nsGkAtoms::br)
                             ? WSType::BRElement
-                            : WSType::SpecialContent,
-                        WhiteSpacePreformatted::No);
+                            : WSType::SpecialContent);
   }
 
   if (!previousLeafContentOrBlock->AsText()->TextLength()) {
@@ -1709,11 +1700,9 @@ Maybe<WSRunScanner::TextFragmentData::BoundaryData> WSRunScanner::
         break;
     }
 
-    return Some(
-        BoundaryData(EditorDOMPoint(aPoint.ContainerAsText(), i),
-                     *aPoint.ContainerAsText(), wsTypeOfNonCollapsibleChar,
-                     !isWhiteSpaceCollapsible ? WhiteSpacePreformatted::Yes
-                                              : WhiteSpacePreformatted::No));
+    return Some(BoundaryData(EditorDOMPoint(aPoint.ContainerAsText(), i),
+                             *aPoint.ContainerAsText(),
+                             wsTypeOfNonCollapsibleChar));
   }
 
   return Nothing();
@@ -1755,14 +1744,13 @@ WSRunScanner::TextFragmentData::BoundaryData::ScanCollapsibleWhiteSpaceEndFrom(
     return BoundaryData(aPoint,
                         const_cast<Element&>(
                             aEditableBlockParentOrTopmostEditableInlineElement),
-                        WSType::CurrentBlockBoundary,
-                        WhiteSpacePreformatted::No);
+                        WSType::CurrentBlockBoundary);
   }
 
   if (HTMLEditUtils::IsBlockElement(*nextLeafContentOrBlock)) {
     
     return BoundaryData(aPoint, *nextLeafContentOrBlock,
-                        WSType::OtherBlockBoundary, WhiteSpacePreformatted::No);
+                        WSType::OtherBlockBoundary);
   }
 
   if (!nextLeafContentOrBlock->IsText() ||
@@ -1773,8 +1761,7 @@ WSRunScanner::TextFragmentData::BoundaryData::ScanCollapsibleWhiteSpaceEndFrom(
     return BoundaryData(aPoint, *nextLeafContentOrBlock,
                         nextLeafContentOrBlock->IsHTMLElement(nsGkAtoms::br)
                             ? WSType::BRElement
-                            : WSType::SpecialContent,
-                        WhiteSpacePreformatted::No);
+                            : WSType::SpecialContent);
   }
 
   if (!nextLeafContentOrBlock->AsText()->TextFragment().GetLength()) {
@@ -1809,7 +1796,6 @@ WSRunScanner::TextFragmentData::InvisibleLeadingWhiteSpaceRangeRef() const {
   }
 
   
-  
   if (!StartsFromHardLineBreak()) {
     mLeadingWhiteSpaceRange.emplace();
     return mLeadingWhiteSpaceRange.ref();
@@ -1840,7 +1826,7 @@ WSRunScanner::TextFragmentData::InvisibleTrailingWhiteSpaceRangeRef() const {
   
   
   
-  if (!EndsByBlockBoundary()) {
+  if (!EndsByBlockBoundary() && !EndsByInvisiblePreformattedLineBreak()) {
     mTrailingWhiteSpaceRange.emplace();
     return mTrailingWhiteSpaceRange.ref();
   }
@@ -1920,18 +1906,28 @@ WSRunScanner::TextFragmentData::VisibleWhiteSpacesDataRef() const {
     return mVisibleWhiteSpacesData.ref();
   }
 
-  if (IsWhiteSpaceNotCollapsibleOrSurrondedByVisibleContent()) {
-    VisibleWhiteSpacesData visibleWhiteSpaces;
-    if (mStart.PointRef().IsSet()) {
-      visibleWhiteSpaces.SetStartPoint(mStart.PointRef());
+  {
+    
+    
+    const bool mayHaveInvisibleLeadingSpace =
+        !StartsFromNonCollapsibleCharacters() && !StartsFromSpecialContent();
+    const bool mayHaveInvisibleTrailingWhiteSpace =
+        !EndsByNonCollapsibleCharacters() && !EndsBySpecialContent() &&
+        !EndsByBRElement() && !EndsByInvisiblePreformattedLineBreak();
+
+    if (!mayHaveInvisibleLeadingSpace && !mayHaveInvisibleTrailingWhiteSpace) {
+      VisibleWhiteSpacesData visibleWhiteSpaces;
+      if (mStart.PointRef().IsSet()) {
+        visibleWhiteSpaces.SetStartPoint(mStart.PointRef());
+      }
+      visibleWhiteSpaces.SetStartFrom(mStart.RawReason());
+      if (mEnd.PointRef().IsSet()) {
+        visibleWhiteSpaces.SetEndPoint(mEnd.PointRef());
+      }
+      visibleWhiteSpaces.SetEndBy(mEnd.RawReason());
+      mVisibleWhiteSpacesData.emplace(visibleWhiteSpaces);
+      return mVisibleWhiteSpacesData.ref();
     }
-    visibleWhiteSpaces.SetStartFrom(mStart.RawReason());
-    if (mEnd.PointRef().IsSet()) {
-      visibleWhiteSpaces.SetEndPoint(mEnd.PointRef());
-    }
-    visibleWhiteSpaces.SetEndBy(mEnd.RawReason());
-    mVisibleWhiteSpacesData.emplace(visibleWhiteSpaces);
-    return mVisibleWhiteSpacesData.ref();
   }
 
   
@@ -2926,7 +2922,9 @@ nsresult WhiteSpaceVisibilityKeeper::NormalizeVisibleWhiteSpacesAt(
             atEndOfVisibleWhiteSpaces);
     if (!atPreviousCharOfEndOfVisibleWhiteSpaces.IsSet() ||
         atPreviousCharOfEndOfVisibleWhiteSpaces.IsEndOfContainer() ||
-        !atPreviousCharOfEndOfVisibleWhiteSpaces.IsCharNBSP()) {
+        
+        
+        !atPreviousCharOfEndOfVisibleWhiteSpaces.IsCharCollapsibleNBSP()) {
       return NS_OK;
     }
 
@@ -2935,28 +2933,30 @@ nsresult WhiteSpaceVisibilityKeeper::NormalizeVisibleWhiteSpacesAt(
     EditorDOMPointInText atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces =
         textFragmentData.GetPreviousEditableCharPoint(
             atPreviousCharOfEndOfVisibleWhiteSpaces);
-    bool isPreviousCharASCIIWhiteSpace =
+    bool isPreviousCharCollapsibleASCIIWhiteSpace =
         atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces.IsSet() &&
         !atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces
              .IsEndOfContainer() &&
         atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces
-            .IsCharASCIISpace();
-    bool maybeNBSPFollowingVisibleContent =
+            .IsCharCollapsibleASCIISpace();
+    const bool maybeNBSPFollowsVisibleContent =
         (atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces.IsSet() &&
-         !isPreviousCharASCIIWhiteSpace) ||
+         !isPreviousCharCollapsibleASCIIWhiteSpace) ||
         (!atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces.IsSet() &&
          (visibleWhiteSpaces.StartsFromNonCollapsibleCharacters() ||
           visibleWhiteSpaces.StartsFromSpecialContent()));
-    bool followedByVisibleContentOrBRElement = false;
+    bool followedByVisibleContent =
+        visibleWhiteSpaces.EndsByNonCollapsibleCharacters() ||
+        visibleWhiteSpaces.EndsBySpecialContent();
+    bool followedByBRElement = visibleWhiteSpaces.EndsByBRElement();
+    bool followedByPreformattedLineBreak =
+        visibleWhiteSpaces.EndsByPreformattedLineBreak();
 
     
     
     
-    if (maybeNBSPFollowingVisibleContent || isPreviousCharASCIIWhiteSpace) {
-      followedByVisibleContentOrBRElement =
-          visibleWhiteSpaces.EndsByNonCollapsibleCharacters() ||
-          visibleWhiteSpaces.EndsBySpecialContent() ||
-          visibleWhiteSpaces.EndsByBRElement();
+    if (maybeNBSPFollowsVisibleContent ||
+        isPreviousCharCollapsibleASCIIWhiteSpace) {
       
       
       if (visibleWhiteSpaces.EndsByBlockBoundary() &&
@@ -3017,20 +3017,35 @@ nsresult WhiteSpaceVisibilityKeeper::NormalizeVisibleWhiteSpacesAt(
           atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces =
               textFragmentData.GetPreviousEditableCharPoint(
                   atPreviousCharOfEndOfVisibleWhiteSpaces);
-          isPreviousCharASCIIWhiteSpace =
+          isPreviousCharCollapsibleASCIIWhiteSpace =
               atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces.IsSet() &&
               !atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces
                    .IsEndOfContainer() &&
               atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces
-                  .IsCharASCIISpace();
-          followedByVisibleContentOrBRElement = true;
+                  .IsCharCollapsibleASCIISpace();
+          followedByBRElement = true;
+          followedByVisibleContent = followedByPreformattedLineBreak = false;
         }
       }
 
       
       
-      if (maybeNBSPFollowingVisibleContent &&
-          followedByVisibleContentOrBRElement) {
+      
+      
+      if (EditorUtils::IsWhiteSpacePreformatted(
+              *atPreviousCharOfEndOfVisibleWhiteSpaces.ContainerAsText())) {
+        return NS_OK;
+      }
+
+      
+      
+      
+      
+      
+      if (maybeNBSPFollowsVisibleContent &&
+          (followedByVisibleContent || followedByBRElement) &&
+          !visibleWhiteSpaces.StartsFromPreformattedLineBreak()) {
+        MOZ_ASSERT(!followedByPreformattedLineBreak);
         AutoTransactionsConserveSelection dontChangeMySelection(aHTMLEditor);
         nsresult rv = aHTMLEditor.ReplaceTextWithTransaction(
             MOZ_KnownLive(
@@ -3048,8 +3063,9 @@ nsresult WhiteSpaceVisibilityKeeper::NormalizeVisibleWhiteSpacesAt(
     
     
     
-    if (maybeNBSPFollowingVisibleContent || !isPreviousCharASCIIWhiteSpace ||
-        !followedByVisibleContentOrBRElement ||
+    if (maybeNBSPFollowsVisibleContent ||
+        !isPreviousCharCollapsibleASCIIWhiteSpace ||
+        !(followedByVisibleContent || followedByBRElement) ||
         EditorUtils::IsWhiteSpacePreformatted(
             *atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces
                  .GetContainerAsText())) {
@@ -3082,7 +3098,11 @@ nsresult WhiteSpaceVisibilityKeeper::NormalizeVisibleWhiteSpacesAt(
     nsresult rv = aHTMLEditor.ReplaceTextWithTransaction(
         MOZ_KnownLive(*atFirstASCIIWhiteSpace.ContainerAsText()),
         atFirstASCIIWhiteSpace.Offset(), replaceLengthInStartNode,
-        u"\x00A0 "_ns);
+        textFragmentData.StartsFromPreformattedLineBreak() &&
+                textFragmentData.EndsByPreformattedLineBreak()
+            ? u"\x00A0\x00A0"_ns
+            : (textFragmentData.EndsByPreformattedLineBreak() ? u" \x00A0"_ns
+                                                              : u"\x00A0 "_ns));
     if (NS_FAILED(rv)) {
       NS_WARNING("HTMLEditor::ReplaceTextWithTransaction() failed");
       return rv;
@@ -3124,7 +3144,11 @@ nsresult WhiteSpaceVisibilityKeeper::NormalizeVisibleWhiteSpacesAt(
       textFragmentData.GetPreviousEditableCharPoint(atEndOfVisibleWhiteSpaces);
   if (!atPreviousCharOfEndOfVisibleWhiteSpaces.IsSet() ||
       atPreviousCharOfEndOfVisibleWhiteSpaces.IsEndOfContainer() ||
-      !atPreviousCharOfEndOfVisibleWhiteSpaces.IsCharNBSP()) {
+      !atPreviousCharOfEndOfVisibleWhiteSpaces.IsCharCollapsibleNBSP() ||
+      
+      
+      
+      visibleWhiteSpaces.EndsByPreformattedLineBreak()) {
     return NS_OK;
   }
 
@@ -3139,7 +3163,7 @@ nsresult WhiteSpaceVisibilityKeeper::NormalizeVisibleWhiteSpacesAt(
   if (atPreviousCharOfEndOfVisibleWhiteSpaces.IsCharNBSP() &&
       atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces.IsSet() &&
       atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces
-          .IsCharASCIISpace()) {
+          .IsCharCollapsibleASCIISpace()) {
     startToDelete = textFragmentData.GetFirstASCIIWhiteSpacePointCollapsedTo(
         atPreviousCharOfPreviousCharOfEndOfVisibleWhiteSpaces,
         nsIEditor::eNone);

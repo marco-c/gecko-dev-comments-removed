@@ -328,6 +328,48 @@ class HTMLEditUtils final {
 
 
 
+  template <typename EditorDOMPointType>
+  static bool IsVisiblePreformattedNewLine(const EditorDOMPointType& aPoint) {
+    if (!aPoint.IsInTextNode() || aPoint.IsEndOfContainer() ||
+        !aPoint.IsCharPreformattedNewLine()) {
+      return false;
+    }
+    
+    
+    if (!aPoint.IsAtLastContent()) {
+      if (EditorUtils::IsWhiteSpacePreformatted(*aPoint.ContainerAsText())) {
+        return true;
+      }
+      const nsTextFragment& textFragment =
+          aPoint.ContainerAsText()->TextFragment();
+      for (uint32_t offset = aPoint.Offset() + 1;
+           offset < textFragment.GetLength(); ++offset) {
+        char16_t ch = textFragment.CharAt(AssertedCast<int32_t>(offset));
+        if (nsCRT::IsAsciiSpace(ch) && ch != HTMLEditUtils::kNewLine) {
+          continue;  
+        }
+        return true;  
+      }
+    }
+    
+    
+    return !HTMLEditUtils::GetElementOfImmediateBlockBoundary(
+        *aPoint.ContainerAsText(), WalkTreeDirection::Forward);
+  }
+  template <typename EditorDOMPointType>
+  static bool IsInvisiblePreformattedNewLine(const EditorDOMPointType& aPoint) {
+    if (!aPoint.IsInTextNode() || aPoint.IsEndOfContainer() ||
+        !aPoint.IsCharPreformattedNewLine()) {
+      return false;
+    }
+    return !IsVisiblePreformattedNewLine(aPoint);
+  }
+
+  
+
+
+
+
 
 
 
@@ -1569,6 +1611,56 @@ class HTMLEditUtils final {
     return previousVisibleCharOffset.isSome()
                ? previousVisibleCharOffset.value() + 1
                : 0;
+  }
+
+  
+
+
+
+
+
+  template <typename EditorDOMPointType, typename ArgEditorDOMPointType>
+  static EditorDOMPointType GetPreviousPreformattedNewLineInTextNode(
+      const ArgEditorDOMPointType& aPoint) {
+    if (!aPoint.IsInTextNode() || aPoint.IsStartOfContainer() ||
+        !EditorUtils::IsNewLinePreformatted(*aPoint.ContainerAsText())) {
+      return EditorDOMPointType();
+    }
+    Text* textNode = aPoint.ContainerAsText();
+    const nsTextFragment& textFragment = textNode->TextFragment();
+    MOZ_ASSERT(aPoint.Offset() <= textFragment.GetLength());
+    for (uint32_t offset = aPoint.Offset(); offset; --offset) {
+      if (textFragment.CharAt(AssertedCast<int32_t>(offset - 1)) ==
+          HTMLEditUtils::kNewLine) {
+        return EditorDOMPointType(textNode, offset - 1);
+      }
+    }
+    return EditorDOMPointType();
+  }
+
+  
+
+
+
+
+
+  template <typename EditorDOMPointType, typename ArgEditorDOMPointType>
+  static EditorDOMPointType GetInclusiveNextPreformattedNewLineInTextNode(
+      const ArgEditorDOMPointType& aPoint) {
+    if (!aPoint.IsInTextNode() || aPoint.IsEndOfContainer() ||
+        !EditorUtils::IsNewLinePreformatted(*aPoint.ContainerAsText())) {
+      return EditorDOMPointType();
+    }
+    Text* textNode = aPoint.ContainerAsText();
+    const nsTextFragment& textFragment = textNode->TextFragment();
+    for (uint32_t offset = aPoint.Offset(); offset < textFragment.GetLength();
+         ++offset) {
+      if (textFragment.CharAt(AssertedCast<int32_t>(offset)) ==
+          HTMLEditUtils::kNewLine) {
+        return EditorDOMPointType(textNode, offset);
+      }
+    }
+    return EditorDOMPointType();
   }
 
   
