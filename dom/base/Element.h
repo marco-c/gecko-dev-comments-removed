@@ -31,6 +31,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/PseudoStyleType.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/Result.h"
 #include "mozilla/RustCell.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BorrowedAttrInfo.h"
@@ -1659,9 +1660,13 @@ class Element : public FragmentOrElement {
 
 
 
-  MOZ_CAN_RUN_SCRIPT virtual bool PerformAccesskey(bool aKeyCausesActivation,
-                                                   bool aIsTrustedEvent) {
-    return false;
+
+
+
+  MOZ_CAN_RUN_SCRIPT
+  virtual Result<bool, nsresult> PerformAccesskey(bool aKeyCausesActivation,
+                                                  bool aIsTrustedEvent) {
+    return Err(NS_ERROR_NOT_IMPLEMENTED);
   }
 
  protected:
