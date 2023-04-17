@@ -28,7 +28,7 @@ static const uint32_t kNumFullIDBits = 31UL;
 
 
 
-static const uint32_t kNumContentProcessIDBits = 7UL;
+static const uint32_t kNumContentProcessIDBits = 8UL;
 static const uint32_t kNumUniqueIDBits = (31UL - kNumContentProcessIDBits);
 
 static_assert(

@@ -49,7 +49,7 @@ const uint32_t kEmulatedWindowClassNameNChars =
 
 
 
-const uint32_t kIdContentProcessMask = 0x7F000000;
+const uint32_t kIdContentProcessMask = 0x7F800000;
 
 static mscom::Factory<AccessibleHandler> sHandlerFactory;
 
