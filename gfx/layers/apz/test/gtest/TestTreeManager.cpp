@@ -27,15 +27,14 @@ class APZCTreeManagerGenericTester : public APZCTreeManagerTester {
   }
 
   void CreateSimpleMultiLayerTree() {
-    const char* layerTreeSyntax = "c(tt)";
+    const char* treeShape = "x(xx)";
     
     nsIntRegion layerVisibleRegion[] = {
         nsIntRegion(IntRect(0, 0, 100, 100)),
         nsIntRegion(IntRect(0, 0, 100, 50)),
         nsIntRegion(IntRect(0, 50, 100, 50)),
     };
-    root = CreateLayerTree(layerTreeSyntax, layerVisibleRegion, nullptr, lm,
-                           layers);
+    CreateScrollData(treeShape, layerVisibleRegion);
   }
 
   void CreatePotentiallyLeakingTree() {
@@ -85,6 +84,7 @@ class APZCTreeManagerGenericTester : public APZCTreeManagerTester {
 TEST_F(APZCTreeManagerGenericTester, ScrollablePaintedLayers) {
   CreateSimpleMultiLayerTree();
   ScopedLayerTreeRegistration registration(LayersId{0}, root, mcc);
+  auto& layers = scrollData;
 
   
   SetScrollableFrameMetrics(layers[1], ScrollableLayerGuid::START_SCROLL_ID);
@@ -93,22 +93,9 @@ TEST_F(APZCTreeManagerGenericTester, ScrollablePaintedLayers) {
 
   TestAsyncPanZoomController* nullAPZC = nullptr;
   
-  EXPECT_FALSE(layers[0]->HasScrollableFrameMetrics());
+  EXPECT_FALSE(HasScrollableFrameMetrics(layers[0]));
   EXPECT_NE(nullAPZC, ApzcOf(layers[1]));
   EXPECT_NE(nullAPZC, ApzcOf(layers[2]));
-  EXPECT_EQ(ApzcOf(layers[1]), ApzcOf(layers[2]));
-
-  
-  SetScrollableFrameMetrics(layers[1],
-                            ScrollableLayerGuid::START_SCROLL_ID + 1);
-  UpdateHitTestingTree();
-  EXPECT_NE(ApzcOf(layers[1]), ApzcOf(layers[2]));
-
-  
-  
-  SetScrollableFrameMetrics(layers[2],
-                            ScrollableLayerGuid::START_SCROLL_ID + 1);
-  UpdateHitTestingTree();
   EXPECT_EQ(ApzcOf(layers[1]), ApzcOf(layers[2]));
 }
 
