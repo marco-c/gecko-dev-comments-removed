@@ -16,6 +16,7 @@
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Logging.h"
+#include "mozilla/Monitor.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/ScopeExit.h"
@@ -766,14 +767,29 @@ void MessageChannel::Clear() {
 
 bool MessageChannel::Open(ScopedPort aPort, Side aSide,
                           nsISerialEventTarget* aEventTarget) {
-  MOZ_ASSERT(!mLink, "Open() called > once");
+  {
+    MonitorAutoLock lock(*mMonitor);
+    MOZ_RELEASE_ASSERT(!mLink, "Open() called > once");
+    MOZ_RELEASE_ASSERT(ChannelClosed == mChannelState, "Not currently closed");
 
-  mWorkerThread = aEventTarget ? aEventTarget : GetCurrentSerialEventTarget();
-  MOZ_ASSERT(mWorkerThread, "We should always be on a nsISerialEventTarget");
+    mWorkerThread = aEventTarget ? aEventTarget : GetCurrentSerialEventTarget();
+    MOZ_ASSERT(mWorkerThread, "We should always be on a nsISerialEventTarget");
+
+    mLink = MakeUnique<PortLink>(this, std::move(aPort));
+    mSide = aSide;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   mListener->OnIPCChannelOpened();
-
-  mLink = MakeUnique<PortLink>(this, std::move(aPort));
-  mSide = aSide;
   return true;
 }
 
@@ -793,7 +809,6 @@ bool MessageChannel::Open(MessageChannel* aTargetChan,
   
 
   MOZ_ASSERT(aTargetChan, "Need a target channel");
-  MOZ_ASSERT(ChannelClosed == mChannelState, "Not currently closed");
 
   std::pair<ScopedPort, ScopedPort> ports =
       NodeController::GetSingleton()->CreatePortPair();
