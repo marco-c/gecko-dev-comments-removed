@@ -3,11 +3,11 @@
 
 
 
-use ErrorCode;
-use Result;
 use ffi;
 use mainloop_api;
 use mainloop_api::MainloopApi;
+use ErrorCode;
+use Result;
 
 #[derive(Debug)]
 pub struct ThreadedMainloop(*mut ffi::pa_threaded_mainloop);
