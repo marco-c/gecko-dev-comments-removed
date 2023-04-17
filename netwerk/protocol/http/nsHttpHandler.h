@@ -351,7 +351,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   
   
   
-  [[nodiscard]] nsresult GetStreamConverterService(nsIStreamConverterService**);
   [[nodiscard]] nsresult GetIOService(nsIIOService** result);
   nsICookieService* GetCookieService();  
   nsISiteSecurityService* GetSSService();
@@ -550,7 +549,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
  private:
   
   nsMainThreadPtrHandle<nsIIOService> mIOService;
-  nsMainThreadPtrHandle<nsIStreamConverterService> mStreamConvSvc;
   nsMainThreadPtrHandle<nsICookieService> mCookieService;
   nsMainThreadPtrHandle<nsISiteSecurityService> mSSService;
 

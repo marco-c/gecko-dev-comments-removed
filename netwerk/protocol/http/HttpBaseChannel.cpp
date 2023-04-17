@@ -46,6 +46,7 @@
 #include "nsEscape.h"
 #include "nsGlobalWindowOuter.h"
 #include "nsHttpChannel.h"
+#include "nsHTTPCompressConv.h"
 #include "nsHttpHandler.h"
 #include "nsICacheInfoChannel.h"
 #include "nsICachingChannel.h"
@@ -1242,21 +1243,11 @@ HttpBaseChannel::DoApplyContentConversions(nsIStreamListener* aNextListener,
     }
 
     if (gHttpHandler->IsAcceptableEncoding(val, mURI->SchemeIs("https"))) {
-      nsCOMPtr<nsIStreamConverterService> serv;
-      rv = gHttpHandler->GetStreamConverterService(getter_AddRefs(serv));
-
-      
-      
-      if (NS_FAILED(rv)) {
-        if (val) LOG(("Unknown content encoding '%s', ignoring\n", val));
-        continue;
-      }
-
-      nsCOMPtr<nsIStreamListener> converter;
+      RefPtr<nsHTTPCompressConv> converter = new nsHTTPCompressConv();
       nsAutoCString from(val);
       ToLowerCase(from);
-      rv = serv->AsyncConvertData(from.get(), "uncompressed", nextListener,
-                                  aCtxt, getter_AddRefs(converter));
+      rv = converter->AsyncConvertData(from.get(), "uncompressed", nextListener,
+                                       aCtxt);
       if (NS_FAILED(rv)) {
         LOG(("Unexpected failure of AsyncConvertData %s\n", val));
         return rv;
