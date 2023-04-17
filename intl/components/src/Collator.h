@@ -40,33 +40,27 @@ class Collator final {
 
   template <typename B>
   ICUResult GetSortKey(Span<const char16_t> aString, B& aBuffer) const {
-    static_assert(std::is_same_v<typename B::CharType, uint8_t>,
-                  "Expected a uint8_t* buffer.");
-    
-    
-    
-    UErrorCode status = U_ZERO_ERROR;
-    int32_t length =
-        ucol_getSortKey(mCollator.GetConst(), aString.data(),
-                        static_cast<int32_t>(aString.size()), nullptr, 0);
-    if (U_FAILURE(status) || length == 0) {
-      
-      return Err(ICUError::InternalError);
-    }
-
-    if (!aBuffer.reserve(length)) {
-      return Err(ICUError::OutOfMemory);
-    }
-
-    length = ucol_getSortKey(mCollator.GetConst(), aString.data(),
-                             aString.size(), aBuffer.data(), length);
-
-    if (U_FAILURE(status) || length == 0) {
-      return Err(ICUError::InternalError);
-    }
-
-    aBuffer.written(length);
-    return Ok();
+    return FillBufferWithICUCall(
+        aBuffer,
+        [this, aString](uint8_t* target, int32_t length, UErrorCode* status) {
+          
+          
+          
+          
+          
+          int32_t len = ucol_getSortKey(mCollator.GetConst(), aString.data(),
+                                        static_cast<int32_t>(aString.size()),
+                                        target, length);
+          if (len == 0) {
+            
+            *status = U_INTERNAL_PROGRAM_ERROR;
+          } else if (len > length) {
+            *status = U_BUFFER_OVERFLOW_ERROR;
+          } else {
+            *status = U_ZERO_ERROR;
+          }
+          return len;
+        });
   }
 
   int32_t CompareStrings(Span<const char16_t> aSource,
