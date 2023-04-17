@@ -156,32 +156,6 @@ OrientedImage::IsImageContainerAvailable(LayerManager* aManager,
   return false;
 }
 
-NS_IMETHODIMP_(already_AddRefed<ImageContainer>)
-OrientedImage::GetImageContainer(WindowRenderer* aRenderer, uint32_t aFlags) {
-  
-  
-  
-  
-  
-
-  if (mOrientation.IsIdentity()) {
-    return InnerImage()->GetImageContainer(aRenderer, aFlags);
-  }
-
-  return nullptr;
-}
-
-NS_IMETHODIMP_(bool)
-OrientedImage::IsImageContainerAvailableAtSize(LayerManager* aManager,
-                                               const IntSize& aSize,
-                                               uint32_t aFlags) {
-  if (mOrientation.IsIdentity()) {
-    return InnerImage()->IsImageContainerAvailableAtSize(aManager, aSize,
-                                                         aFlags);
-  }
-  return false;
-}
-
 NS_IMETHODIMP_(ImgDrawResult)
 OrientedImage::GetImageContainerAtSize(
     WindowRenderer* aRenderer, const gfx::IntSize& aSize,

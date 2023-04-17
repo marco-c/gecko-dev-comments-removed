@@ -324,22 +324,6 @@ interface imgIContainer : nsISupports
 
   [noscript, notxpcom] boolean isImageContainerAvailable(in LayerManager aManager,
                                                          in uint32_t aFlags);
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  [noscript, notxpcom] TempRefImageContainer getImageContainer(in WindowRenderer aRenderer,
-                                                               in uint32_t aFlags);
 
   
 
@@ -369,15 +353,6 @@ interface imgIContainer : nsISupports
                                                              [const] in MaybeImageIntRegion aRegion,
                                                              in uint32_t aFlags,
                                                              out ImageContainer aOutContainer);
-
-  
-
-
-
-
-  [noscript, notxpcom] boolean isImageContainerAvailableAtSize(in LayerManager aManager,
-                                                               [const] in nsIntSize aSize,
-                                                               in uint32_t aFlags);
 
   
 
