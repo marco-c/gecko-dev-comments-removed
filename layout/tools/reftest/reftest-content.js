@@ -1454,7 +1454,8 @@ function SendAssertionCount(numAssertions)
 function SendContentReady()
 {
     let gfxInfo = (NS_GFXINFO_CONTRACTID in Cc) && Cc[NS_GFXINFO_CONTRACTID].getService(Ci.nsIGfxInfo);
-    let info = gfxInfo.getInfo();
+
+    let info = {};
 
     
     
@@ -1473,6 +1474,9 @@ function SendContentReady()
         info.DWriteEnabled = false;
         info.EmbeddedInFirefoxReality = false;
     }
+
+    info.AzureCanvasBackend = gfxInfo.AzureCanvasBackend;
+    info.AzureContentBackend = gfxInfo.AzureContentBackend;
 
     return sendSyncMessage("reftest:ContentReady", { 'gfx': info })[0];
 }
