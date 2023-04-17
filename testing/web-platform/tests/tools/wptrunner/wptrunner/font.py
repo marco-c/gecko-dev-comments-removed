@@ -77,7 +77,9 @@ class FontInstaller(object):
 
         
         
-        fonts = check_output(['/usr/sbin/system_profiler', '-xml', 'SPFontsDataType'])
+        with open(os.devnull, 'w') as f:
+            fonts = check_output(['/usr/sbin/system_profiler', '-xml', 'SPFontsDataType'], stderr=f)
+
         try:
             
             load_plist = plistlib.loads
