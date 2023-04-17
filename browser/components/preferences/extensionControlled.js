@@ -288,7 +288,9 @@ async function initListenersForPrefChange(type, prefId, controlledElement) {
 
   let managementObserver = async () => {
     let managementControlled = await handleControllingExtension(type, prefId);
-    controlledElement.disabled = managementControlled;
+    
+    controlledElement.disabled =
+      managementControlled || Services.prefs.prefIsLocked(prefId);
   };
   managementObserver();
   Management.on(`extension-setting-changed:${prefId}`, managementObserver);
