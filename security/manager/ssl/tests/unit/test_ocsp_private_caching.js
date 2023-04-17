@@ -50,7 +50,7 @@ function add_flush_cache() {
   });
 }
 
-function add_ocsp_necko_cache_test(loadContext, shouldFindEntry) {
+function add_ocsp_necko_cache_test(loadContext) {
   
   add_test(() => {
     Services.cache2.clear();
@@ -70,7 +70,7 @@ function add_ocsp_necko_cache_test(loadContext, shouldFindEntry) {
       [],
       [],
       [],
-      [["Cache-Control", "max-age: 1000"]]
+      [["Cache-Control", "max-age=1000"]]
     );
     run_next_test();
   });
@@ -87,7 +87,6 @@ function add_ocsp_necko_cache_test(loadContext, shouldFindEntry) {
 
   add_flush_cache();
 
-  
   
   add_test(() => {
     let foundEntry = false;
@@ -111,11 +110,7 @@ function add_ocsp_necko_cache_test(loadContext, shouldFindEntry) {
         foundEntry = true;
       },
       onCacheEntryVisitCompleted() {
-        Assert.equal(
-          foundEntry,
-          shouldFindEntry,
-          "should only find a cached entry if we're expecting one"
-        );
+        Assert.ok(!foundEntry, "should not find a cached entry");
         run_next_test();
       },
       QueryInterface: ChromeUtils.generateQI(["nsICacheStorageVisitor"]),
@@ -132,7 +127,7 @@ function add_ocsp_necko_cache_test(loadContext, shouldFindEntry) {
 function run_test() {
   Services.prefs.setIntPref("security.OCSP.enabled", 1);
   add_tls_server_setup("OCSPStaplingServer", "ocsp_certs");
-  add_ocsp_necko_cache_test(Services.loadContextInfo.private, false);
-  add_ocsp_necko_cache_test(Services.loadContextInfo.default, true);
+  add_ocsp_necko_cache_test(Services.loadContextInfo.private);
+  add_ocsp_necko_cache_test(Services.loadContextInfo.default);
   run_next_test();
 }
