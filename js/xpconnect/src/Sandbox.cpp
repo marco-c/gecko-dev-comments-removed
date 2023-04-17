@@ -704,22 +704,22 @@ bool SandboxProxyHandler::getPropertyDescriptorImpl(
 
   MOZ_ASSERT(JS::GetCompartment(obj) == JS::GetCompartment(proxy));
 
+  Rooted<PropertyDescriptor> desc(cx);
   if (getOwn) {
-    if (!JS_GetOwnPropertyDescriptorById(cx, obj, id, desc_)) {
+    if (!JS_GetOwnPropertyDescriptorById(cx, obj, id, &desc)) {
       return false;
     }
   } else {
-    Rooted<JSObject*> holder(cx);
-    if (!JS_GetPropertyDescriptorById(cx, obj, id, desc_, &holder)) {
+    if (!JS_GetPropertyDescriptorById(cx, obj, id, &desc)) {
       return false;
     }
   }
 
-  if (desc_.isNothing()) {
+  if (!desc.object()) {
+    
+    desc_.reset();
     return true;
   }
-
-  Rooted<PropertyDescriptor> desc(cx, *desc_);
 
   
   if (desc.hasGetterObject() &&

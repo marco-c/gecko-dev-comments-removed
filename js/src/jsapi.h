@@ -992,22 +992,17 @@ extern JS_PUBLIC_API bool JS_GetOwnUCPropertyDescriptor(
 
 
 
-
-
 extern JS_PUBLIC_API bool JS_GetPropertyDescriptorById(
     JSContext* cx, JS::HandleObject obj, JS::HandleId id,
-    JS::MutableHandle<mozilla::Maybe<JS::PropertyDescriptor>> desc,
-    JS::MutableHandleObject holder);
+    JS::MutableHandle<JS::PropertyDescriptor> desc);
 
 extern JS_PUBLIC_API bool JS_GetPropertyDescriptor(
     JSContext* cx, JS::HandleObject obj, const char* name,
-    JS::MutableHandle<mozilla::Maybe<JS::PropertyDescriptor>> desc,
-    JS::MutableHandleObject holder);
+    JS::MutableHandle<JS::PropertyDescriptor> desc);
 
 extern JS_PUBLIC_API bool JS_GetUCPropertyDescriptor(
     JSContext* cx, JS::HandleObject obj, const char16_t* name, size_t namelen,
-    JS::MutableHandle<mozilla::Maybe<JS::PropertyDescriptor>> desc,
-    JS::MutableHandleObject holder);
+    JS::MutableHandle<JS::PropertyDescriptor> desc);
 
 
 

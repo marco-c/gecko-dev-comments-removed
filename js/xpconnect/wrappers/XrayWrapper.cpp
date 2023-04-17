@@ -758,11 +758,10 @@ bool JSXrayTraits::delete_(JSContext* cx, HandleObject wrapper, HandleId id,
   return result.succeed();
 }
 
-bool JSXrayTraits::defineProperty(
-    JSContext* cx, HandleObject wrapper, HandleId id,
-    Handle<PropertyDescriptor> desc,
-    Handle<Maybe<PropertyDescriptor>> existingDesc,
-    Handle<JSObject*> existingHolder, ObjectOpResult& result, bool* defined) {
+bool JSXrayTraits::defineProperty(JSContext* cx, HandleObject wrapper,
+                                  HandleId id, Handle<PropertyDescriptor> desc,
+                                  Handle<PropertyDescriptor> existingDesc,
+                                  ObjectOpResult& result, bool* defined) {
   *defined = false;
   RootedObject holder(cx, ensureHolder(cx, wrapper));
   if (!holder) {
@@ -799,19 +798,17 @@ bool JSXrayTraits::defineProperty(
                           "property on [Object] or [Array] XrayWrapper");
       return false;
     }
-    if (existingDesc.isSome()) {
-      if (existingDesc->hasGetterOrSetter()) {
-        JS_ReportErrorASCII(cx,
-                            "Not allowed to overwrite accessor property on "
-                            "[Object] or [Array] XrayWrapper");
-        return false;
-      }
-      if (existingHolder != wrapper) {
-        JS_ReportErrorASCII(cx,
-                            "Not allowed to shadow non-own Xray-resolved "
-                            "property on [Object] or [Array] XrayWrapper");
-        return false;
-      }
+    if (existingDesc.hasGetterOrSetter()) {
+      JS_ReportErrorASCII(cx,
+                          "Not allowed to overwrite accessor property on "
+                          "[Object] or [Array] XrayWrapper");
+      return false;
+    }
+    if (existingDesc.object() && existingDesc.object() != wrapper) {
+      JS_ReportErrorASCII(cx,
+                          "Not allowed to shadow non-own Xray-resolved "
+                          "property on [Object] or [Array] XrayWrapper");
+      return false;
     }
 
     Rooted<PropertyDescriptor> wrappedDesc(cx, desc);
@@ -1719,11 +1716,10 @@ bool DOMXrayTraits::delete_(JSContext* cx, JS::HandleObject wrapper,
   return XrayDeleteNamedProperty(cx, wrapper, target, id, result);
 }
 
-bool DOMXrayTraits::defineProperty(
-    JSContext* cx, HandleObject wrapper, HandleId id,
-    Handle<PropertyDescriptor> desc,
-    Handle<Maybe<PropertyDescriptor>> existingDesc,
-    Handle<JSObject*> existingHolder, JS::ObjectOpResult& result, bool* done) {
+bool DOMXrayTraits::defineProperty(JSContext* cx, HandleObject wrapper,
+                                   HandleId id, Handle<PropertyDescriptor> desc,
+                                   Handle<PropertyDescriptor> existingDesc,
+                                   JS::ObjectOpResult& result, bool* done) {
   
   
   if (IsWindow(cx, wrapper)) {
@@ -1959,10 +1955,8 @@ bool XrayWrapper<Base, Traits>::defineProperty(JSContext* cx,
                                                ObjectOpResult& result) const {
   assertEnteredPolicy(cx, wrapper, id, BaseProxyHandler::SET);
 
-  Rooted<Maybe<PropertyDescriptor>> existingDesc(cx);
-  Rooted<JSObject*> existingHolder(cx);
-  if (!JS_GetPropertyDescriptorById(cx, wrapper, id, &existingDesc,
-                                    &existingHolder)) {
+  Rooted<PropertyDescriptor> existing_desc(cx);
+  if (!JS_GetPropertyDescriptorById(cx, wrapper, id, &existing_desc)) {
     return false;
   }
 
@@ -1972,27 +1966,26 @@ bool XrayWrapper<Base, Traits>::defineProperty(JSContext* cx,
   
   
   
-  if (existingDesc.isSome() && existingHolder == wrapper &&
-      !existingDesc->configurable()) {
+  if (existing_desc.object() == wrapper && !existing_desc.configurable()) {
     
     
-    if (existingDesc->isAccessorDescriptor() || desc.isAccessorDescriptor() ||
+    if (existing_desc.isAccessorDescriptor() || desc.isAccessorDescriptor() ||
         (desc.hasEnumerable() &&
-         existingDesc->enumerable() != desc.enumerable()) ||
-        (desc.hasWritable() && !existingDesc->writable() && desc.writable())) {
+         existing_desc.enumerable() != desc.enumerable()) ||
+        (desc.hasWritable() && !existing_desc.writable() && desc.writable())) {
       
       
       return result.succeed();
     }
-    if (!existingDesc->writable()) {
+    if (!existing_desc.writable()) {
       
       return result.succeed();
     }
   }
 
   bool done = false;
-  if (!Traits::singleton.defineProperty(cx, wrapper, id, desc, existingDesc,
-                                        existingHolder, result, &done)) {
+  if (!Traits::singleton.defineProperty(cx, wrapper, id, desc, existing_desc,
+                                        result, &done)) {
     return false;
   }
   if (done) {
