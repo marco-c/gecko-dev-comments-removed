@@ -854,11 +854,7 @@ class FunctionCompiler {
   
   
   MWasmLoadTls* maybeLoadBoundsCheckLimit(MIRType type) {
-#ifdef JS_64BIT
     MOZ_ASSERT(type == MIRType::Int32 || type == MIRType::Int64);
-#else
-    MOZ_ASSERT(type == MIRType::Int32);
-#endif
     if (moduleEnv_.hugeMemoryEnabled()) {
       return nullptr;
     }
@@ -886,8 +882,14 @@ class FunctionCompiler {
 
     
     if (base->isConstant()) {
-      int32_t ptr = base->toConstant()->toInt32();
       
+      
+      uint32_t ptr = 0;
+      if (isMem64()) {
+        ptr = uint32_t(base->toConstant()->toInt64());
+      } else {
+        ptr = base->toConstant()->toInt32();
+      }
       if (((ptr + access->offset()) & (access->byteSize() - 1)) == 0) {
         return false;
       }
@@ -908,14 +910,27 @@ class FunctionCompiler {
         GetMaxOffsetGuardLimit(moduleEnv_.hugeMemoryEnabled());
 
     if ((*base)->isConstant()) {
-      uint32_t basePtr = (*base)->toConstant()->toInt32();
+      uint64_t basePtr = 0;
+      if (isMem64()) {
+        basePtr = uint64_t((*base)->toConstant()->toInt64());
+      } else {
+        basePtr = uint64_t(int64_t((*base)->toConstant()->toInt32()));
+      }
+
       uint32_t offset = access->offset();
 
       if (offset < offsetGuardLimit && basePtr < offsetGuardLimit - offset) {
-        auto* ins = MConstant::New(alloc(), Int32Value(0), MIRType::Int32);
+        offset += uint32_t(basePtr);
+        access->setOffset(offset);
+
+        MConstant* ins = nullptr;
+        if (isMem64()) {
+          ins = MConstant::NewInt64(alloc(), 0);
+        } else {
+          ins = MConstant::New(alloc(), Int32Value(0), MIRType::Int32);
+        }
         curBlock_->add(ins);
         *base = ins;
-        access->setOffset(access->offset() + basePtr);
       }
     }
   }
@@ -933,7 +948,7 @@ class FunctionCompiler {
     }
   }
 
-  MWasmLoadTls* needBoundsCheck(bool* limitIs64Bits_) {
+  MWasmLoadTls* needBoundsCheck() {
 #ifdef JS_64BIT
     
     
@@ -944,24 +959,19 @@ class FunctionCompiler {
     
     
     
-    bool limitIs64Bits =
-        !moduleEnv_.memory->boundsCheckLimitIs32Bits() &&
+    bool mem32LimitIs64Bits =
+        isMem32() && !moduleEnv_.memory->boundsCheckLimitIs32Bits() &&
         ArrayBufferObject::maxBufferByteLength() >= 0x100000000;
 #else
     
     
-    bool limitIs64Bits = false;
+    bool mem32LimitIs64Bits = false;
 #endif
-    MWasmLoadTls* boundsCheckLimit = maybeLoadBoundsCheckLimit(
-        limitIs64Bits ? MIRType::Int64 : MIRType::Int32);
-    if (boundsCheckLimit) {
-      *limitIs64Bits_ = limitIs64Bits;
-    }
-    return boundsCheckLimit;
+    return maybeLoadBoundsCheckLimit(
+        mem32LimitIs64Bits || isMem64() ? MIRType::Int64 : MIRType::Int32);
   }
 
-  void performBoundsCheck(MDefinition** base, MWasmLoadTls* boundsCheckLimit,
-                          bool limitIs64Bits) {
+  void performBoundsCheck(MDefinition** base, MWasmLoadTls* boundsCheckLimit) {
     
     
     
@@ -970,12 +980,14 @@ class FunctionCompiler {
 
     
     
-
-    if (limitIs64Bits) {
+    bool extendAndWrapIndex =
+        isMem32() && boundsCheckLimit->type() == MIRType::Int64;
+    if (extendAndWrapIndex) {
       auto* extended = MWasmExtendU32Index::New(alloc(), actualBase);
       curBlock_->add(extended);
       actualBase = extended;
     }
+
     auto* ins = MWasmBoundsCheck::New(alloc(), actualBase, boundsCheckLimit,
                                       bytecodeOffset());
     curBlock_->add(ins);
@@ -984,9 +996,8 @@ class FunctionCompiler {
     
     
     
-
     if (JitOptions.spectreIndexMasking) {
-      if (limitIs64Bits) {
+      if (extendAndWrapIndex) {
         auto* wrapped = MWasmWrapU32Index::New(alloc(), actualBase);
         curBlock_->add(wrapped);
         actualBase = wrapped;
@@ -997,6 +1008,12 @@ class FunctionCompiler {
 
   
   
+  
+  
+  
+  
+  
+
   void checkOffsetAndAlignmentAndBounds(MemoryAccessDesc* access,
                                         MDefinition** base) {
     MOZ_ASSERT(!inDeadCode());
@@ -1025,11 +1042,25 @@ class FunctionCompiler {
 
     
     
-    bool limitIs64Bits = false;
-    MWasmLoadTls* boundsCheckLimit = needBoundsCheck(&limitIs64Bits);
+    MWasmLoadTls* boundsCheckLimit = needBoundsCheck();
     if (boundsCheckLimit) {
-      performBoundsCheck(base, boundsCheckLimit, limitIs64Bits);
+      performBoundsCheck(base, boundsCheckLimit);
     }
+
+#ifndef JS_64BIT
+    if (isMem64()) {
+      
+      
+      
+      
+      MOZ_ASSERT((*base)->type() == MIRType::Int64);
+      MOZ_ASSERT(!moduleEnv_.hugeMemoryEnabled());
+      auto* chopped = MWasmWrapU32Index::New(alloc(), *base);
+      MOZ_ASSERT(chopped->type() == MIRType::Int32);
+      curBlock_->add(chopped);
+      *base = chopped;
+    }
+#endif
   }
 
   bool isSmallerAccessForI64(ValType result, const MemoryAccessDesc* access) {
@@ -1043,6 +1074,7 @@ class FunctionCompiler {
 
  public:
   bool isMem32() { return moduleEnv_.memory->indexType() == IndexType::I32; }
+  bool isMem64() { return moduleEnv_.memory->indexType() == IndexType::I64; }
 
   
   MDefinition* computeEffectiveAddress(MDefinition* base,
@@ -1076,6 +1108,9 @@ class FunctionCompiler {
                                  access->type());
     } else {
       checkOffsetAndAlignmentAndBounds(access, &base);
+#ifndef JS_64BIT
+      MOZ_ASSERT(base->type() == MIRType::Int32);
+#endif
       load =
           MWasmLoad::New(alloc(), memoryBase, base, *access, ToMIRType(result));
     }
@@ -1101,6 +1136,9 @@ class FunctionCompiler {
                                    access->type(), v);
     } else {
       checkOffsetAndAlignmentAndBounds(access, &base);
+#ifndef JS_64BIT
+      MOZ_ASSERT(base->type() == MIRType::Int32);
+#endif
       store = MWasmStore::New(alloc(), memoryBase, base, *access, v);
     }
     if (!store) {
@@ -1118,6 +1156,9 @@ class FunctionCompiler {
     }
 
     checkOffsetAndAlignmentAndBounds(access, &base);
+#ifndef JS_64BIT
+    MOZ_ASSERT(base->type() == MIRType::Int32);
+#endif
 
     if (isSmallerAccessForI64(result, access)) {
       auto* cvtOldv =
@@ -1155,6 +1196,9 @@ class FunctionCompiler {
     }
 
     checkOffsetAndAlignmentAndBounds(access, &base);
+#ifndef JS_64BIT
+    MOZ_ASSERT(base->type() == MIRType::Int32);
+#endif
 
     if (isSmallerAccessForI64(result, access)) {
       auto* cvtValue =
@@ -1188,6 +1232,9 @@ class FunctionCompiler {
     }
 
     checkOffsetAndAlignmentAndBounds(access, &base);
+#ifndef JS_64BIT
+    MOZ_ASSERT(base->type() == MIRType::Int32);
+#endif
 
     if (isSmallerAccessForI64(result, access)) {
       auto* cvtValue =
@@ -1281,6 +1328,9 @@ class FunctionCompiler {
     MDefinition* base = addr.base;
     MOZ_ASSERT(!moduleEnv_.isAsmJS());
     checkOffsetAndAlignmentAndBounds(&access, &base);
+#  ifndef JS_64BIT
+    MOZ_ASSERT(base->type() == MIRType::Int32);
+#  endif
     MInstruction* load = MWasmLoadLaneSimd128::New(
         alloc(), memoryBase, base, access, laneSize, laneIndex, src);
     if (!load) {
@@ -1302,6 +1352,9 @@ class FunctionCompiler {
     MDefinition* base = addr.base;
     MOZ_ASSERT(!moduleEnv_.isAsmJS());
     checkOffsetAndAlignmentAndBounds(&access, &base);
+#  ifndef JS_64BIT
+    MOZ_ASSERT(base->type() == MIRType::Int32);
+#  endif
     MInstruction* store = MWasmStoreLaneSimd128::New(
         alloc(), memoryBase, base, access, laneSize, laneIndex, src);
     if (!store) {
@@ -3253,7 +3306,6 @@ static bool EmitLoad(FunctionCompiler& f, ValType type, Scalar::Type viewType) {
     return false;
   }
 
-  MOZ_ASSERT(f.isMem32());
   MemoryAccessDesc access(viewType, addr.align, addr.offset,
                           f.bytecodeIfNotAsmJS());
   auto* ins = f.load(addr.base, &access, type);
@@ -3274,7 +3326,6 @@ static bool EmitStore(FunctionCompiler& f, ValType resultType,
     return false;
   }
 
-  MOZ_ASSERT(f.isMem32());
   MemoryAccessDesc access(viewType, addr.align, addr.offset,
                           f.bytecodeIfNotAsmJS());
 
@@ -3291,7 +3342,7 @@ static bool EmitTeeStore(FunctionCompiler& f, ValType resultType,
     return false;
   }
 
-  MOZ_ASSERT(f.isMem32());
+  MOZ_ASSERT(f.isMem32());  
   MemoryAccessDesc access(viewType, addr.align, addr.offset,
                           f.bytecodeIfNotAsmJS());
 
@@ -3316,7 +3367,7 @@ static bool EmitTeeStoreWithCoercion(FunctionCompiler& f, ValType resultType,
     MOZ_CRASH("unexpected coerced store");
   }
 
-  MOZ_ASSERT(f.isMem32());
+  MOZ_ASSERT(f.isMem32());  
   MemoryAccessDesc access(viewType, addr.align, addr.offset,
                           f.bytecodeIfNotAsmJS());
 
@@ -3482,7 +3533,6 @@ static bool EmitAtomicCmpXchg(FunctionCompiler& f, ValType type,
     return false;
   }
 
-  MOZ_ASSERT(f.isMem32());
   MemoryAccessDesc access(viewType, addr.align, addr.offset, f.bytecodeOffset(),
                           Synchronization::Full());
   auto* ins =
@@ -3502,7 +3552,6 @@ static bool EmitAtomicLoad(FunctionCompiler& f, ValType type,
     return false;
   }
 
-  MOZ_ASSERT(f.isMem32());
   MemoryAccessDesc access(viewType, addr.align, addr.offset, f.bytecodeOffset(),
                           Synchronization::Load());
   auto* ins = f.load(addr.base, &access, type);
@@ -3522,7 +3571,6 @@ static bool EmitAtomicRMW(FunctionCompiler& f, ValType type,
     return false;
   }
 
-  MOZ_ASSERT(f.isMem32());
   MemoryAccessDesc access(viewType, addr.align, addr.offset, f.bytecodeOffset(),
                           Synchronization::Full());
   auto* ins = f.atomicBinopHeap(op, addr.base, &access, type, value);
@@ -3542,7 +3590,6 @@ static bool EmitAtomicStore(FunctionCompiler& f, ValType type,
     return false;
   }
 
-  MOZ_ASSERT(f.isMem32());
   MemoryAccessDesc access(viewType, addr.align, addr.offset, f.bytecodeOffset(),
                           Synchronization::Store());
   f.store(addr.base, &access, value);
@@ -3556,7 +3603,8 @@ static bool EmitWait(FunctionCompiler& f, ValType type, uint32_t byteSize) {
   uint32_t lineOrBytecode = f.readCallSiteLineOrBytecode();
 
   const SymbolicAddressSignature& callee =
-      type == ValType::I32 ? SASigWaitI32M32 : SASigWaitI64M32;
+      f.isMem32() ? (type == ValType::I32 ? SASigWaitI32M32 : SASigWaitI64M32)
+                  : (type == ValType::I32 ? SASigWaitI32M64 : SASigWaitI64M64);
   CallCompileState args;
   if (!f.passInstance(callee.argTypes[0], &args)) {
     return false;
@@ -3569,7 +3617,6 @@ static bool EmitWait(FunctionCompiler& f, ValType type, uint32_t byteSize) {
     return false;
   }
 
-  MOZ_ASSERT(f.isMem32());
   MemoryAccessDesc access(type == ValType::I32 ? Scalar::Int32 : Scalar::Int64,
                           addr.align, addr.offset, f.bytecodeOffset());
   MDefinition* ptr = f.computeEffectiveAddress(addr.base, &access);
@@ -3615,7 +3662,8 @@ static bool EmitFence(FunctionCompiler& f) {
 static bool EmitWake(FunctionCompiler& f) {
   uint32_t lineOrBytecode = f.readCallSiteLineOrBytecode();
 
-  const SymbolicAddressSignature& callee = SASigWakeM32;
+  const SymbolicAddressSignature& callee =
+      f.isMem32() ? SASigWakeM32 : SASigWakeM64;
   CallCompileState args;
   if (!f.passInstance(callee.argTypes[0], &args)) {
     return false;
@@ -3627,7 +3675,6 @@ static bool EmitWake(FunctionCompiler& f) {
     return false;
   }
 
-  MOZ_ASSERT(f.isMem32());
   MemoryAccessDesc access(Scalar::Int32, addr.align, addr.offset,
                           f.bytecodeOffset());
   MDefinition* ptr = f.computeEffectiveAddress(addr.base, &access);
@@ -3664,7 +3711,6 @@ static bool EmitAtomicXchg(FunctionCompiler& f, ValType type,
     return false;
   }
 
-  MOZ_ASSERT(f.isMem32());
   MemoryAccessDesc access(viewType, addr.align, addr.offset, f.bytecodeOffset(),
                           Synchronization::Full());
   MDefinition* ins = f.atomicExchangeHeap(addr.base, &access, type, value);
@@ -4605,7 +4651,6 @@ static bool EmitLoadSplatSimd128(FunctionCompiler& f, Scalar::Type viewType,
     return false;
   }
 
-  MOZ_ASSERT(f.isMem32());
   f.iter().setResult(f.loadSplatSimd128(viewType, addr, splatOp));
   return true;
 }
@@ -4616,7 +4661,6 @@ static bool EmitLoadExtendSimd128(FunctionCompiler& f, wasm::SimdOp op) {
     return false;
   }
 
-  MOZ_ASSERT(f.isMem32());
   f.iter().setResult(f.loadExtendSimd128(addr, op));
   return true;
 }
@@ -4628,7 +4672,6 @@ static bool EmitLoadZeroSimd128(FunctionCompiler& f, Scalar::Type viewType,
     return false;
   }
 
-  MOZ_ASSERT(f.isMem32());
   f.iter().setResult(f.loadZeroSimd128(viewType, numBytes, addr));
   return true;
 }
@@ -4641,7 +4684,6 @@ static bool EmitLoadLaneSimd128(FunctionCompiler& f, uint32_t laneSize) {
     return false;
   }
 
-  MOZ_ASSERT(f.isMem32());
   f.iter().setResult(f.loadLaneSimd128(laneSize, addr, laneIndex, src));
   return true;
 }
@@ -4654,7 +4696,6 @@ static bool EmitStoreLaneSimd128(FunctionCompiler& f, uint32_t laneSize) {
     return false;
   }
 
-  MOZ_ASSERT(f.isMem32());
   f.storeLaneSimd128(laneSize, addr, laneIndex, src);
   return true;
 }

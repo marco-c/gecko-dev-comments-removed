@@ -1361,8 +1361,10 @@ void CodeGenerator::visitWasmExtendU32Index(LWasmExtendU32Index*) {
   MOZ_CRASH("64-bit only");
 }
 
-void CodeGenerator::visitWasmWrapU32Index(LWasmWrapU32Index*) {
-  MOZ_CRASH("64-bit only");
+void CodeGenerator::visitWasmWrapU32Index(LWasmWrapU32Index* lir) {
+  
+  
+  MOZ_ASSERT(ToRegister(lir->input()) == ToRegister(lir->output()));
 }
 
 void CodeGenerator::visitClzI64(LClzI64* lir) {
