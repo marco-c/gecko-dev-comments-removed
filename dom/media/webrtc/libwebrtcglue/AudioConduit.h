@@ -15,15 +15,10 @@
 #include "RtpPacketQueue.h"
 
 
-#include "modules/audio_device/include/fake_audio_device.h"
-
 
 
 
 namespace mozilla {
-
-
-DOMHighResTimeStamp NTPtoDOMHighResTimeStamp(uint32_t ntpHigh, uint32_t ntpLow);
 
 
 
@@ -65,9 +60,11 @@ class WebrtcAudioConduit : public AudioSessionConduit,
 
 
 
+
   MediaConduitErrorCode ConfigureSendMediaCodec(
       const AudioCodecConfig* codecConfig) override;
   
+
 
 
 
@@ -127,12 +124,10 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   
 
 
-
   bool SendRtp(const uint8_t* data, size_t len,
                const webrtc::PacketOptions& options) override;
 
   
-
 
 
   bool SendRtcp(const uint8_t* data, size_t len) override;
@@ -156,8 +151,8 @@ class WebrtcAudioConduit : public AudioSessionConduit,
         ,
         mSendStream(nullptr),
         mRecvSSRC(0),
-        mEngineTransmitting(false),
-        mEngineReceiving(false),
+        mSendStreamRunning(false),
+        mRecvStreamRunning(false),
         mDtmfEnabled(false),
         mMutex("WebrtcAudioConduit::mMutex"),
         mStsThread(aStsThread) {}
@@ -165,6 +160,7 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   virtual ~WebrtcAudioConduit();
 
   
+
 
 
 
@@ -254,11 +250,11 @@ class WebrtcAudioConduit : public AudioSessionConduit,
   RtpPacketQueue mRtpPacketQueue;
 
   
-  mozilla::Atomic<bool>
-      mEngineTransmitting;  
-  mozilla::Atomic<bool>
-      mEngineReceiving;  
-                         
+  
+  bool mSendStreamRunning;
+  
+  
+  bool mRecvStreamRunning;
 
   
   bool mDtmfEnabled;
