@@ -24,7 +24,7 @@
 
 
 
-#include "js-config.h"
+#include "jstypes.h"
 
 #ifdef JS_SIMULATOR_ARM64
 

@@ -10,7 +10,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Likely.h"
 
-#include "js-config.h"
+#include "jstypes.h"
 
 
 #if defined(DEBUG) || defined(NIGHTLY_BUILD)

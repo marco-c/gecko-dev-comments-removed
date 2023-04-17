@@ -17,7 +17,6 @@
 
 #include <limits> 
 
-#include "js-config.h"
 #include "jstypes.h"
 
 #include "js/HeapAPI.h"
