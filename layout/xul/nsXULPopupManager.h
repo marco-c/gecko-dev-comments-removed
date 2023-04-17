@@ -487,6 +487,11 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   
 
 
+  void HideMenu(nsIContent* aMenu);
+
+  
+
+
 
 
   void HidePopupAfterDelay(nsMenuPopupFrame* aPopup);

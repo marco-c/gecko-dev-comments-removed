@@ -467,18 +467,19 @@ bool nsXULElement::HasMenu() {
 }
 
 void nsXULElement::OpenMenu(bool aOpenFlag) {
-  nsMenuFrame* menu = do_QueryFrame(GetPrimaryFrame(FlushType::Frames));
+  
+  if (Document* doc = GetComposedDoc()) {
+    doc->FlushPendingNotifications(FlushType::Frames);
+  }
 
   nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
   if (pm) {
     if (aOpenFlag) {
       
       pm->ShowMenu(this, false, false);
-    } else if (menu) {
-      nsMenuPopupFrame* popupFrame = menu->GetPopup();
-      if (popupFrame) {
-        pm->HidePopup(popupFrame->GetContent(), false, true, false, false);
-      }
+    } else {
+      
+      pm->HideMenu(this);
     }
   }
 }
