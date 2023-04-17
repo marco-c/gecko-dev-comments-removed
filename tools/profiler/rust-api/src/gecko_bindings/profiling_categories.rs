@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+
+
+include!(concat!(
+    env!("MOZ_TOPOBJDIR"),
+    "/tools/profiler/rust-api/src/gecko_bindings/profiling_categories.rs"
+));
