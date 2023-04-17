@@ -52,7 +52,7 @@ class nsAvailableMemoryWatcher final : public nsIObserver,
   void UnregisterMemoryResourceHandler();
   void MaybeSaveMemoryReport(const MutexAutoLock&);
   void Shutdown(const MutexAutoLock&);
-  bool ListenForLowMemory();
+  bool ListenForLowMemory(const MutexAutoLock&);
   void OnLowMemory(const MutexAutoLock&);
   void OnHighMemory(const MutexAutoLock&);
   void StartPollingIfUserInteracting(const MutexAutoLock&);
@@ -71,10 +71,19 @@ class nsAvailableMemoryWatcher final : public nsIObserver,
   HANDLE mWaitHandle;
   bool mPolling;
   bool mInteracting;
+
+  
+  
+  
+  bool mNeedToRestartTimerOnUserInteracting;
+  
+  
   
   bool mUnderMemoryPressure;
+
   bool mSavedReport;
   bool mIsShutdown;
+
   
   bool mInitialized;
   uint32_t mPollingInterval;
@@ -97,6 +106,7 @@ nsAvailableMemoryWatcher::nsAvailableMemoryWatcher()
       mWaitHandle(nullptr),
       mPolling(false),
       mInteracting(false),
+      mNeedToRestartTimerOnUserInteracting(false),
       mUnderMemoryPressure(false),
       mSavedReport(false),
       mIsShutdown(false),
@@ -143,29 +153,39 @@ nsAvailableMemoryWatcher::~nsAvailableMemoryWatcher() {
 
 VOID CALLBACK nsAvailableMemoryWatcher::LowMemoryCallback(PVOID aContext,
                                                           BOOLEAN aIsTimer) {
+  if (aIsTimer) {
+    return;
+  }
+
+  
+  
+  
   RefPtr<nsAvailableMemoryWatcher> watcher =
       already_AddRefed<nsAvailableMemoryWatcher>(
           static_cast<nsAvailableMemoryWatcher*>(aContext));
-  if (!aIsTimer) {
-    MutexAutoLock lock(watcher->mMutex);
-    if (watcher->mIsShutdown) {
-      
-      MOZ_ASSERT(!watcher->mWaitHandle);
-      return;
-    }
 
-    ::UnregisterWait(watcher->mWaitHandle);
-    watcher->mWaitHandle = nullptr;
+  MutexAutoLock lock(watcher->mMutex);
+  if (watcher->mIsShutdown) {
+    
+    MOZ_ASSERT(!watcher->mWaitHandle);
+    return;
+  }
 
+  ::UnregisterWait(watcher->mWaitHandle);
+  watcher->mWaitHandle = nullptr;
+
+  
+  
+  
+  
+  
+  
+  if (IsCommitSpaceLow()) {
+    watcher->OnLowMemory(lock);
+  } else {
     
     
-    
-    
-    
-    
-    if (IsCommitSpaceLow()) {
-      watcher->OnLowMemory(lock);
-    }
+    watcher->StartPollingIfUserInteracting(lock);
   }
 }
 
@@ -185,7 +205,8 @@ bool nsAvailableMemoryWatcher::RegisterMemoryResourceHandler() {
     return false;
   }
 
-  return ListenForLowMemory();
+  MutexAutoLock lock(mMutex);
+  return ListenForLowMemory(lock);
 }
 
 void nsAvailableMemoryWatcher::UnregisterMemoryResourceHandler() {
@@ -217,7 +238,7 @@ void nsAvailableMemoryWatcher::Shutdown(const MutexAutoLock&) {
   UnregisterMemoryResourceHandler();
 }
 
-bool nsAvailableMemoryWatcher::ListenForLowMemory() {
+bool nsAvailableMemoryWatcher::ListenForLowMemory(const MutexAutoLock&) {
   if (mLowMemoryHandle && !mWaitHandle) {
     
     
@@ -230,6 +251,9 @@ bool nsAvailableMemoryWatcher::ListenForLowMemory() {
       
       this->Release();
     }
+    
+    
+    mNeedToRestartTimerOnUserInteracting = false;
     return res;
   }
 
@@ -276,14 +300,17 @@ void nsAvailableMemoryWatcher::OnLowMemory(const MutexAutoLock& aLock) {
   StartPollingIfUserInteracting(aLock);
 }
 
-void nsAvailableMemoryWatcher::OnHighMemory(const MutexAutoLock&) {
+void nsAvailableMemoryWatcher::OnHighMemory(const MutexAutoLock& aLock) {
   MOZ_ASSERT(NS_IsMainThread());
+
+  if (mUnderMemoryPressure) {
+    NS_NotifyOfEventualMemoryPressure(MemoryPressureState::NoPressure);
+  }
 
   mUnderMemoryPressure = false;
   mSavedReport = false;  
-  NS_NotifyOfEventualMemoryPressure(MemoryPressureState::NoPressure);
   StopPolling();
-  ListenForLowMemory();
+  ListenForLowMemory(aLock);
 }
 
 
@@ -307,6 +334,10 @@ bool nsAvailableMemoryWatcher::IsCommitSpaceLow() {
 
 void nsAvailableMemoryWatcher::StartPollingIfUserInteracting(
     const MutexAutoLock&) {
+  
+  
+  mNeedToRestartTimerOnUserInteracting = true;
+
   if (mInteracting && !mPolling) {
     if (NS_SUCCEEDED(mTimer->InitWithCallback(
             this, mPollingInterval, nsITimer::TYPE_REPEATING_SLACK))) {
@@ -328,7 +359,7 @@ void nsAvailableMemoryWatcher::StopPollingIfUserIdle(const MutexAutoLock&) {
 
 void nsAvailableMemoryWatcher::OnUserInteracting(const MutexAutoLock& aLock) {
   mInteracting = true;
-  if (mUnderMemoryPressure) {
+  if (mNeedToRestartTimerOnUserInteracting) {
     StartPollingIfUserInteracting(aLock);
   }
 }
