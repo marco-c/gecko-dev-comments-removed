@@ -2342,7 +2342,9 @@ var CustomizableUIInternal = {
     }
 
     
-    if (gSeenWidgets.has(aWidgetId)) {
+    
+    
+    if (gSeenWidgets.has(aWidgetId) || aWidgetId === "save-to-pocket-button") {
       return false;
     }
 
@@ -3417,7 +3419,9 @@ var CustomizableUIInternal = {
 
   get inDefaultState() {
     for (let [areaId, props] of gAreas) {
-      let defaultPlacements = props.get("defaultPlacements");
+      let defaultPlacements = props
+        .get("defaultPlacements")
+        .filter(item => this.widgetExists(item));
       let currentPlacements = gPlacements.get(areaId);
       
       
