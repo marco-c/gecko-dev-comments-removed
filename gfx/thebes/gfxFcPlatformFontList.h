@@ -177,7 +177,7 @@ class gfxFontconfigFontFamily final : public gfxFontFamily {
 
   
   
-  void AddFontPattern(FcPattern* aFontPattern);
+  void AddFontPattern(FcPattern* aFontPattern, bool aSingleName);
 
   void SetFamilyContainsAppFonts(bool aContainsAppFonts) {
     mContainsAppFonts = aContainsAppFonts;
