@@ -567,15 +567,6 @@ DenseElementResult NativeObject::maybeDensifySparseElements(
     return DenseElementResult::Failure;
   }
 
-  
-
-
-
-
-  if (!NativeObject::clearFlag(cx, obj, ObjectFlag::Indexed)) {
-    return DenseElementResult::Failure;
-  }
-
   return DenseElementResult::Success;
 }
 

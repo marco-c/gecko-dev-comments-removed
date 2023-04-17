@@ -4,8 +4,6 @@
 
 
 
-
-
 #include "vm/Shape-inl.h"
 
 #include "mozilla/MathAlgorithms.h"
@@ -756,7 +754,6 @@ bool NativeObject::densifySparseElements(JSContext* cx,
 
   
   
-
   if (!NativeObject::generateNewDictionaryShape(cx, obj)) {
     return false;
   }
@@ -766,8 +763,13 @@ bool NativeObject::densifySparseElements(JSContext* cx,
 
   DictionaryPropMap::densifyElements(cx, &map, &mapLength, obj);
 
-  obj->shape()->updateNewDictionaryShape(obj->shape()->objectFlags(), map,
-                                         mapLength);
+  
+  
+  
+  ObjectFlags objectFlags = obj->shape()->objectFlags();
+  objectFlags.clearFlag(ObjectFlag::Indexed);
+
+  obj->shape()->updateNewDictionaryShape(objectFlags, map, mapLength);
   return true;
 }
 
@@ -885,24 +887,6 @@ bool JSObject::setProtoUnchecked(JSContext* cx, HandleObject obj,
 
   return Shape::replaceShape(cx, obj, obj->shape()->objectFlags(), proto,
                              obj->shape()->numFixedSlots());
-}
-
-
-bool NativeObject::clearFlag(JSContext* cx, HandleNativeObject obj,
-                             ObjectFlag flag) {
-  MOZ_ASSERT(obj->shape()->hasObjectFlag(flag));
-
-  if (!obj->inDictionaryMode()) {
-    if (!toDictionaryMode(cx, obj)) {
-      return false;
-    }
-  }
-
-  Shape* shape = obj->shape();
-  ObjectFlags flags = shape->objectFlags();
-  flags.clearFlag(flag);
-  shape->setObjectFlags(flags);
-  return true;
 }
 
 
