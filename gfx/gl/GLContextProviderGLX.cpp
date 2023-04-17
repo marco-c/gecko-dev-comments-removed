@@ -482,8 +482,10 @@ bool GLContextGLX::MakeCurrentImpl() const {
     
     
     
+    const bool swapInterval = gfxVars::SwapIntervalGLX();
     const bool isASAP = (StaticPrefs::layout_frame_rate() == 0);
-    mGLX->fSwapInterval(*mDisplay, mDrawable, isASAP ? 0 : 1);
+    const int interval = (swapInterval && !isASAP) ? 1 : 0;
+    mGLX->fSwapInterval(*mDisplay, mDrawable, interval);
   }
   return succeeded;
 }
