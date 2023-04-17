@@ -73,20 +73,6 @@ const getOpenRemoteDevTools = state =>
 
 
 
-const getOpenAboutProfiling = state => {
-  const { openAboutProfiling } = getInitializedValues(state);
-  if (!openAboutProfiling) {
-    throw new Error("Expected to get an openAboutProfiling function.");
-  }
-  return openAboutProfiling;
-};
-
-
-
-
-
-
-
 const getRecordingSettings = state => {
   const presets = getPresets(state);
   const presetName = getPresetName(state);
@@ -158,7 +144,6 @@ module.exports = {
   getPresetName,
   getProfilerViewMode,
   getOpenRemoteDevTools,
-  getOpenAboutProfiling,
   getRecordingSettings,
   getInitializedValues,
   getPerfFront,

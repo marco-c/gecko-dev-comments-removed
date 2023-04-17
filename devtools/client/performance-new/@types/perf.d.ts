@@ -251,9 +251,6 @@ export interface InitializedValues {
   
   supportedFeatures: string[];
   
-  
-  openAboutProfiling?: () => void;
-  
   openRemoteDevTools?: () => void;
 }
 
@@ -301,7 +298,6 @@ export type Action =
       setRecordingSettings: SetRecordingSettings;
       presets: Presets;
       pageContext: PageContext;
-      openAboutProfiling?: () => void;
       openRemoteDevTools?: () => void;
       recordingSettingsFromPreferences: RecordingSettings;
       supportedFeatures: string[];
@@ -319,7 +315,6 @@ export interface InitializeStoreValues {
   pageContext: PageContext;
   recordingSettings: RecordingSettings;
   supportedFeatures: string[];
-  openAboutProfiling?: () => void;
   openRemoteDevTools?: () => void;
 }
 

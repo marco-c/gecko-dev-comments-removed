@@ -30,6 +30,10 @@
 
 
 
+
+
+
+
 "use strict";
 
 const {
@@ -89,7 +93,7 @@ class DevToolsPresetSelection extends PureComponent {
   }
 
   render() {
-    const { presetName, presets, openAboutProfiling } = this.props;
+    const { presetName, presets, onEditSettingsLinkClicked } = this.props;
 
     let presetDescription;
     const currentPreset = presets[presetName];
@@ -138,7 +142,10 @@ class DevToolsPresetSelection extends PureComponent {
           })
         ),
         button(
-          { className: "perf-external-link", onClick: openAboutProfiling },
+          {
+            className: "perf-external-link",
+            onClick: onEditSettingsLinkClicked,
+          },
           Localized({ id: "perftools-button-edit-settings" })
         )
       );
@@ -187,7 +194,6 @@ function mapStateToProps(state) {
     interval: selectors.getInterval(state),
     threads: selectors.getThreads(state),
     features: selectors.getFeatures(state),
-    openAboutProfiling: selectors.getOpenAboutProfiling(state),
   };
 }
 
