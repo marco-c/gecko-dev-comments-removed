@@ -990,15 +990,43 @@ NameLocation EmitterScope::lookup(BytecodeEmitter* bce,
   return searchAndCache(bce, name);
 }
 
-NameLocation EmitterScope::lookupPrivate(
-    BytecodeEmitter* bce, TaggedParserAtomIndex name,
-    mozilla::Maybe<NameLocation>& brandLoc) {
-  NameLocation loc = lookup(bce, name);
+bool EmitterScope::lookupPrivate(BytecodeEmitter* bce,
+                                 TaggedParserAtomIndex name, NameLocation& loc,
+                                 mozilla::Maybe<NameLocation>& brandLoc) {
+  loc = lookup(bce, name);
 
   
   
   
-  MOZ_RELEASE_ASSERT(loc.kind() == NameLocation::Kind::EnvironmentCoordinate);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (loc.kind() != NameLocation::Kind::EnvironmentCoordinate) {
+    MOZ_ASSERT(loc.kind() == NameLocation::Kind::Dynamic ||
+               loc.kind() == NameLocation::Kind::Global);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bce->reportError(nullptr, JSMSG_DEBUG_NO_PRIVATE_METHOD);
+    return false;
+  }
 
   if (loc.bindingKind() == BindingKind::PrivateMethod) {
     brandLoc = Some(NameLocation::EnvironmentCoordinate(
@@ -1007,7 +1035,7 @@ NameLocation EmitterScope::lookupPrivate(
   } else {
     brandLoc = Nothing();
   }
-  return loc;
+  return true;
 }
 
 Maybe<NameLocation> EmitterScope::locationBoundInScope(
