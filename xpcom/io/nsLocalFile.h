@@ -53,11 +53,11 @@ inline nsresult nsresultForErrno(int aErr) {
     case 0:
       return NS_OK;
 #ifdef EDQUOT
-    case EDQUOT: 
-                 
+    case EDQUOT:        
+      [[fallthrough]];  
 #endif
     case ENOSPC:
-      return NS_ERROR_FILE_DISK_FULL;
+      return NS_ERROR_FILE_NO_DEVICE_SPACE;
 #ifdef EISDIR
     case EISDIR: 
       return NS_ERROR_FILE_IS_DIRECTORY;
