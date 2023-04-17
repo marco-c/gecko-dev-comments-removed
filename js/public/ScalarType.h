@@ -13,7 +13,7 @@
 
 #include <stddef.h>  
 
-namespace js {
+namespace JS {
 
 namespace Scalar {
 
@@ -193,6 +193,15 @@ static inline const char* byteSizeString(Type atype) {
 }
 
 }  
+
+}  
+
+namespace js {
+
+
+
+
+namespace Scalar = JS::Scalar;
 
 }  
 
