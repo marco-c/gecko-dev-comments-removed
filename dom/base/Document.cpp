@@ -12418,6 +12418,35 @@ void Document::UnsuppressEventHandlingAndFireEvents(bool aFireEvents) {
   nsTArray<nsCOMPtr<Document>> documents;
   GetAndUnsuppressSubDocuments(*this, documents);
 
+  for (nsCOMPtr<Document>& doc : documents) {
+    if (!doc->EventHandlingSuppressed()) {
+      WindowGlobalChild* wgc = doc->GetWindowGlobalChild();
+      if (wgc) {
+        wgc->UnblockBFCacheFor(BFCacheStatus::EVENT_HANDLING_SUPPRESSED);
+      }
+
+      MOZ_ASSERT(NS_IsMainThread());
+      nsTArray<RefPtr<net::ChannelEventQueue>> queues =
+          std::move(doc->mSuspendedQueues);
+      for (net::ChannelEventQueue* queue : queues) {
+        queue->Resume();
+      }
+
+      
+      
+      
+      if (doc->mHasDelayedRefreshEvent) {
+        doc->mHasDelayedRefreshEvent = false;
+
+        if (doc->mPresShell) {
+          nsRefreshDriver* rd =
+              doc->mPresShell->GetPresContext()->RefreshDriver();
+          rd->RunDelayedEventsSoon();
+        }
+      }
+    }
+  }
+
   if (aFireEvents) {
     MOZ_RELEASE_ASSERT(NS_IsMainThread());
     nsCOMPtr<nsIRunnable> ded =
@@ -12425,32 +12454,6 @@ void Document::UnsuppressEventHandlingAndFireEvents(bool aFireEvents) {
     Dispatch(TaskCategory::Other, ded.forget());
   } else {
     FireOrClearDelayedEvents(documents, false);
-  }
-
-  if (!EventHandlingSuppressed()) {
-    WindowGlobalChild* wgc = GetWindowGlobalChild();
-    if (wgc) {
-      wgc->UnblockBFCacheFor(BFCacheStatus::EVENT_HANDLING_SUPPRESSED);
-    }
-
-    MOZ_ASSERT(NS_IsMainThread());
-    nsTArray<RefPtr<net::ChannelEventQueue>> queues =
-        std::move(mSuspendedQueues);
-    for (net::ChannelEventQueue* queue : queues) {
-      queue->Resume();
-    }
-
-    
-    
-    
-    if (mHasDelayedRefreshEvent) {
-      mHasDelayedRefreshEvent = false;
-
-      if (mPresShell) {
-        nsRefreshDriver* rd = mPresShell->GetPresContext()->RefreshDriver();
-        rd->RunDelayedEventsSoon();
-      }
-    }
   }
 }
 
