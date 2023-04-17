@@ -2218,6 +2218,11 @@ bool WarpBuilder::build_CheckResumeKind(BytecodeLocation loc) {
   
   
   
+  
+  
+  
+  
+  
   MDefinition* resumeKind = current->pop();
   MDefinition* gen = current->pop();
   MDefinition* rval = current->peek(-1);
@@ -2226,6 +2231,11 @@ bool WarpBuilder::build_CheckResumeKind(BytecodeLocation loc) {
   resumeKind->setImplicitlyUsedUnchecked();
   gen->setImplicitlyUsedUnchecked();
   rval->setImplicitlyUsedUnchecked();
+
+  
+  MBail* bail = MBail::New(alloc(), BailoutKind::Inevitable);
+  current->add(bail);
+  current->setAlwaysBails();
 
   return true;
 }
