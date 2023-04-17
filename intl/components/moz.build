@@ -5,6 +5,9 @@
 
 EXPORTS.mozilla.intl = [
     "src/NumberFormat.h",
+    
+    
+    "src/NumberFormatterSkeleton.h",
 ]
 
 UNIFIED_SOURCES += [
@@ -13,6 +16,7 @@ UNIFIED_SOURCES += [
     "src/NumberFormatterSkeleton.cpp",
 ]
 
-TEST_DIRS += ["gtest"]
+if not CONFIG["JS_STANDALONE"]:
+    TEST_DIRS += ["gtest"]
 
 Library("intlcomponents")
