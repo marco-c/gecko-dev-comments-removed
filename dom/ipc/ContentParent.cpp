@@ -7122,7 +7122,11 @@ void ContentParent::RemoveBrowsingContextGroup(BrowsingContextGroup* aGroup) {
   MOZ_DIAGNOSTIC_ASSERT(aGroup);
   
   
-  mGroups.Remove(aGroup);
+  if (mGroups.EnsureRemoved(aGroup) && CanSend()) {
+    
+    
+    Unused << SendDestroyBrowsingContextGroup(aGroup->Id());
+  }
 }
 
 mozilla::ipc::IPCResult ContentParent::RecvCommitBrowsingContextTransaction(

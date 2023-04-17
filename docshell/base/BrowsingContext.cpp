@@ -816,22 +816,6 @@ void BrowsingContext::Detach(bool aFromIPC) {
     mGroup->Toplevels().RemoveElement(this);
   }
 
-  auto callSendDiscard = [&](auto* aActor) {
-    
-    
-    
-    
-    
-    
-    
-    mGroup->AddKeepAlive();
-    auto callback = [self = RefPtr{this}](auto) {
-      self->mGroup->RemoveKeepAlive();
-    };
-
-    aActor->SendDiscardBrowsingContext(this, callback, callback);
-  };
-
   if (XRE_IsParentProcess()) {
     Group()->EachParent([&](ContentParent* aParent) {
       
@@ -843,11 +827,25 @@ void BrowsingContext::Detach(bool aFromIPC) {
       
       if (!Canonical()->IsEmbeddedInProcess(aParent->ChildID()) &&
           !Canonical()->IsOwnedByProcess(aParent->ChildID())) {
-        callSendDiscard(aParent);
+        
+        
+        
+        
+        
+        
+        
+        mGroup->AddKeepAlive();
+        auto callback = [self = RefPtr{this}](auto) {
+          self->mGroup->RemoveKeepAlive();
+        };
+
+        aParent->SendDiscardBrowsingContext(this, callback, callback);
       }
     });
   } else if (!aFromIPC) {
-    callSendDiscard(ContentChild::GetSingleton());
+    auto callback = [](auto) {};
+    ContentChild::GetSingleton()->SendDiscardBrowsingContext(this, callback,
+                                                             callback);
   }
 
   mGroup->Unregister(this);
