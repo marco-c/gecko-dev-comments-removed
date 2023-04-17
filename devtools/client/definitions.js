@@ -588,7 +588,7 @@ exports.ToolboxButtons = [
         
         
         if (
-          !toolbox.target.isParentProcess &&
+          !toolbox.isBrowserToolbox &&
           level !== "warn" &&
           level !== "error"
         ) {

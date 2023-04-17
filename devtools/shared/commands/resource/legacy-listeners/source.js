@@ -24,7 +24,8 @@ const ResourceCommand = require("devtools/shared/commands/resource/resource-comm
 
 
 module.exports = async function({ targetCommand, targetFront, onAvailable }) {
-  const isBrowserToolbox = targetCommand.targetFront.isParentProcess;
+  const isBrowserToolbox =
+    targetCommand.descriptorFront.isParentProcessDescriptor;
   const isNonTopLevelFrameTarget =
     !targetFront.isTopLevel &&
     targetFront.targetType === targetCommand.TYPES.FRAME;

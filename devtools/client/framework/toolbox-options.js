@@ -434,7 +434,7 @@ OptionsPanel.prototype = {
       });
     }
 
-    if (this.target.isParentProcess) {
+    if (this.toolbox.isBrowserToolbox) {
       
       
       
@@ -448,7 +448,7 @@ OptionsPanel.prototype = {
         
         
         onChange: async checked => {
-          if (!this.toolbox.isBrowserToolbox()) {
+          if (!this.toolbox.isBrowserToolbox) {
             
             
             

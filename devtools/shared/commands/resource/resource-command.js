@@ -811,7 +811,7 @@ class ResourceCommand {
     
     
     if (
-      this.targetCommand.targetFront.isParentProcess &&
+      this.targetCommand.descriptorFront.isParentProcessDescriptor &&
       !Services.prefs.getBoolPref(BROWSERTOOLBOX_FISSION_ENABLED, false)
     ) {
       return false;
