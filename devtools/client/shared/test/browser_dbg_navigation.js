@@ -12,6 +12,10 @@ const TAB2_FILE = "doc_empty-tab-02.html";
 const TAB2_URL = EXAMPLE_URL + TAB2_FILE;
 
 add_task(async () => {
+  
+  
+  await pushPref("devtools.target-switching.server.enabled", false);
+
   const tab = await addTab(TAB1_URL);
   const target = await createAndAttachTargetForTab(tab);
 

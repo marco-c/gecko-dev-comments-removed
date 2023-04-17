@@ -122,6 +122,10 @@ async function connectAndAttachTab(tab) {
 
 add_task(async function() {
   
+  
+  await pushPref("devtools.target-switching.server.enabled", false);
+
+  
   const browser = await addTab(URL1);
 
   
