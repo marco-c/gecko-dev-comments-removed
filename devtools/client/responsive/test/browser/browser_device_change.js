@@ -39,9 +39,9 @@ addRDMTask(
     testViewportDeviceMenuLabel(ui, "Responsive");
 
     
-    let reloaded = waitForViewportLoad(ui);
+    let { onPageLoaded } = await waitForViewportLoad(ui);
     await selectDevice(ui, "Fake Phone RDM Test");
-    await reloaded;
+    await onPageLoaded;
     await waitForViewportResizeTo(ui, testDevice.width, testDevice.height);
     info("Should have device UA now that device is applied");
     await testUserAgent(ui, testDevice.userAgent);
@@ -50,7 +50,7 @@ addRDMTask(
 
     
     const deviceRemoved = once(ui, "device-association-removed");
-    reloaded = waitForViewportLoad(ui);
+    ({ onPageLoaded } = await waitForViewportLoad(ui));
 
     await testViewportResize(
       ui,
@@ -59,7 +59,7 @@ addRDMTask(
       [0, -10]
     );
 
-    await Promise.all([deviceRemoved, reloaded]);
+    await Promise.all([deviceRemoved, onPageLoaded]);
     info("Should have default UA after resizing viewport");
     await testUserAgent(ui, DEFAULT_UA);
     await testDevicePixelRatio(ui, DEFAULT_DPPX);
@@ -99,17 +99,17 @@ addRDMTask(
     );
 
     
-    let reloaded = waitForViewportLoad(ui);
+    let { onPageLoaded } = await waitForViewportLoad(ui);
     await selectDevice(ui, "Fake Phone RDM Test");
-    await reloaded;
+    await onPageLoaded;
     await waitForViewportResizeTo(ui, testDevice.width, testDevice.height);
     info("Should have device UA now that device is applied");
     await testUserAgent(ui, testDevice.userAgent);
 
     
-    reloaded = waitForViewportLoad(ui);
+    ({ onPageLoaded } = await waitForViewportLoad(ui));
     await closeRDM(tab);
-    await reloaded;
+    await onPageLoaded;
 
     
     info("Should have default UA after closing RDM");
