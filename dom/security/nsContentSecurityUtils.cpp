@@ -1090,6 +1090,15 @@ bool nsContentSecurityUtils::ValidateScriptFilename(const char* aFilename,
     return true;
   }
 
+  bool bergamont_disabled;
+  Preferences::GetBool("extensions.translations.disabled", &bergamont_disabled);
+  if (!bergamont_disabled &&
+      StringBeginsWith(filenameU, u"moz-extension://"_ns)) {
+    
+    
+    return true;
+  }
+
   
   MOZ_LOG(sCSMLog, LogLevel::Info,
           ("ValidateScriptFilename System:%i %s\n", (aIsSystemRealm ? 1 : 0),
