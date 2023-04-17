@@ -5,9 +5,11 @@
 #include "js/SliceBudget.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/CycleCollectedJSContext.h"
+#include "mozilla/IdleTaskRunner.h"
 #include "mozilla/MainThreadIdlePeriod.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/ipc/IdleSchedulerChild.h"
 #include "nsCycleCollector.h"
 #include "nsJSEnvironment.h"
 
@@ -107,6 +109,8 @@ struct CCRunnerStep {
 class CCGCScheduler {
  public:
   
+  
+  
 
   
   
@@ -140,6 +144,13 @@ class CCGCScheduler {
   }
 
   bool NeedsFullGC() const { return mNeedsFullGC; }
+
+  
+  void PokeShrinkingGC();
+  void PokeFullGC();
+  void KillShrinkingGCTimer();
+  void KillFullGCTimer();
+  void KillGCRunner();
 
   
 
@@ -195,7 +206,7 @@ class CCGCScheduler {
     mLikelyShortLivingObjectsNeedingGC = 0;
   }
 
-  void NoteGCSliceEnd() {
+  void NoteGCSliceEnd(TimeDuration aSliceDuration) {
     if (mMajorGCReason == JS::GCReason::NO_REASON) {
       
       
@@ -206,7 +217,19 @@ class CCGCScheduler {
     
     
     mMajorGCReason = JS::GCReason::INTER_SLICE_GC;
+
+    mGCUnnotifiedTotalTime += aSliceDuration;
   }
+
+  void FullGCTimerFired(nsITimer* aTimer);
+  void ShrinkingGCTimerFired(nsITimer* aTimer);
+  bool GCRunnerFired(TimeStamp aDeadline);
+
+  using MayGCPromise =
+      MozPromise<bool , mozilla::ipc::ResponseRejectReason, true>;
+
+  
+  static RefPtr<MayGCPromise> MayGCNow(JS::GCReason reason);
 
   
   
@@ -385,6 +408,16 @@ class CCGCScheduler {
 
   uint32_t mCleanupsSinceLastGC = UINT32_MAX;
 
+  TimeDuration mGCUnnotifiedTotalTime;
+
+ public:  
+  RefPtr<IdleTaskRunner> mGCRunner;
+
+ private:
+  nsITimer* mShrinkingGCTimer = nullptr;
+  nsITimer* mFullGCTimer = nullptr;
+
+ public:
   JS::GCReason mMajorGCReason = JS::GCReason::NO_REASON;
 
  public:
@@ -396,6 +429,10 @@ class CCGCScheduler {
 
   TimeDuration mActiveIntersliceGCBudget = TimeDuration::FromMilliseconds(5);
 };
+
+
+static bool sIsCompactingOnUserInactive = false;
+static bool sUserIsActive = true;
 
 js::SliceBudget CCGCScheduler::ComputeCCSliceBudget(
     TimeStamp aDeadline, TimeStamp aCCBeginTime, TimeStamp aPrevSliceEndTime,
