@@ -849,7 +849,10 @@ static bool x11_egltest(int pci_count) {
 
   get_x11_screen_info(dpy);
 
-  XCloseDisplay(dpy);
+  
+  
+  
+
   record_value("TEST_TYPE\nEGL\n");
   return true;
 }
