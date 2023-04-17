@@ -31,13 +31,6 @@
 
 #include <algorithm>
 
-#if defined(XP_WIN)
-
-const uint32_t kScrollCaptureFillColor = 0xFFa0a0a0;  
-const mozilla::gfx::SurfaceFormat kScrollCaptureFormat =
-    mozilla::gfx::SurfaceFormat::X8R8G8B8_UINT32;
-#endif
-
 class nsIContent;
 class gfxContext;
 
@@ -201,7 +194,6 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
   }
   void SetTransparencyMode(nsTransparencyMode aMode) override;
   nsTransparencyMode GetTransparencyMode() override;
-  void GetWindowClipRegion(nsTArray<LayoutDeviceIntRect>* aRects) override;
   void SetWindowShadowStyle(mozilla::StyleWindowShadow aStyle) override {}
   void SetShowsToolbarButton(bool aShow) override {}
   void SetSupportsNativeFullscreen(bool aSupportsNativeFullscreen) override {}
@@ -242,8 +234,6 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
   void SetModal(bool aModal) override {}
   uint32_t GetMaxTouchPoints() const override;
   void SetWindowClass(const nsAString& xulWinType) override {}
-  nsresult SetWindowClipRegion(const nsTArray<LayoutDeviceIntRect>& aRects,
-                               bool aIntersectWithExisting) override;
   
   
   
@@ -338,10 +328,6 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
   void NotifySizeMoveDone();
   void NotifyWindowMoved(int32_t aX, int32_t aY);
 
-  
-  void RegisterPluginWindowForRemoteUpdates() override;
-  void UnregisterPluginWindowForRemoteUpdates() override;
-
   void SetNativeData(uint32_t aDataType, uintptr_t aVal) override {}
 
   
@@ -416,10 +402,6 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
 
   void QuitIME();
 
-#if defined(XP_WIN)
-  uint64_t CreateScrollCaptureContainer() override;
-#endif
-
   
   
   
@@ -483,11 +465,6 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
   nsEventStatus ProcessUntransformedAPZEvent(
       mozilla::WidgetInputEvent* aEvent,
       const mozilla::layers::APZEventResult& aApzResult);
-
-  const LayoutDeviceIntRegion RegionFromArray(
-      const nsTArray<LayoutDeviceIntRect>& aRects);
-  void ArrayFromRegion(const LayoutDeviceIntRegion& aRegion,
-                       nsTArray<LayoutDeviceIntRect>& aRects);
 
   nsresult SynthesizeNativeKeyEvent(int32_t aNativeKeyboardLayout,
                                     int32_t aNativeKeyCode,
@@ -577,13 +554,6 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
   void* GetPseudoIMEContext();
 
  protected:
-  
-  
-  bool IsWindowClipRegionEqual(const nsTArray<LayoutDeviceIntRect>& aRects);
-
-  
-  void StoreWindowClipRegion(const nsTArray<LayoutDeviceIntRect>& aRects);
-
   virtual already_AddRefed<nsIWidget> AllocateChildPopupWidget() {
     return nsIWidget::CreateChildWindow();
   }
@@ -669,27 +639,6 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
   void DispatchPanGestureInput(mozilla::PanGestureInput& aInput);
   void DispatchPinchGestureInput(mozilla::PinchGestureInput& aInput);
 
-#if defined(XP_WIN)
-  void UpdateScrollCapture() override;
-
-  
-
-
-
-
-  virtual already_AddRefed<SourceSurface> CreateScrollSnapshot() {
-    return nullptr;
-  };
-
-  
-
-
-
-  void DefaultFillScrollCapture(DrawTarget* aSnapshotDrawTarget);
-
-  RefPtr<ImageContainer> mScrollCaptureContainer;
-#endif
-
  protected:
   
   virtual bool UseExternalCompositingSurface() const { return false; }
@@ -732,9 +681,6 @@ class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference {
   nsBorderStyle mBorderStyle;
   LayoutDeviceIntRect mBounds;
   LayoutDeviceIntRect* mOriginalBounds;
-  
-  mozilla::UniquePtr<LayoutDeviceIntRect[]> mClipRects;
-  uint32_t mClipRectCount;
   nsSizeMode mSizeMode;
   bool mIsTiled;
   nsPopupLevel mPopupLevel;

@@ -441,21 +441,6 @@ void MouseScrollHandler::ProcessNativeMouseWheelMessage(nsWindowBase* aWidget,
       ::SetForegroundWindow(destWindow->GetWindowHandle());
     }
 
-    
-    
-    
-    
-    
-    if (destWindow->IsPlugin()) {
-      destWindow = destWindow->GetParentWindowBase(false);
-      if (!destWindow) {
-        MOZ_LOG(
-            gMouseScrollLog, LogLevel::Info,
-            ("MouseScroll::ProcessNativeMouseWheelMessage: "
-             "Our window which is a parent of a plugin window is not found"));
-        return;
-      }
-    }
     MOZ_LOG(gMouseScrollLog, LogLevel::Info,
             ("MouseScroll::ProcessNativeMouseWheelMessage: Succeeded, "
              "Posting internal message to an nsWindow (%p)...",
@@ -478,33 +463,6 @@ void MouseScrollHandler::ProcessNativeMouseWheelMessage(nsWindowBase* aWidget,
     MOZ_LOG(gMouseScrollLog, LogLevel::Info,
             ("MouseScroll::ProcessNativeMouseWheelMessage: "
              "Our window is not found under the cursor"));
-    return;
-  }
-
-  
-  
-  
-  
-  
-  if (aWidget->IsPlugin() && aWidget->GetWindowHandle() == pluginWnd) {
-    nsWindowBase* destWindow = aWidget->GetParentWindowBase(false);
-    if (!destWindow) {
-      MOZ_LOG(gMouseScrollLog, LogLevel::Info,
-              ("MouseScroll::ProcessNativeMouseWheelMessage: Our normal window "
-               "which "
-               "is a parent of this plugin window is not found"));
-      return;
-    }
-    MOZ_LOG(
-        gMouseScrollLog, LogLevel::Info,
-        ("MouseScroll::ProcessNativeMouseWheelMessage: Succeeded, "
-         "Posting internal message to an nsWindow (%p) which is parent of this "
-         "plugin window...",
-         destWindow));
-    mIsWaitingInternalMessage = true;
-    UINT internalMessage = WinUtils::GetInternalMessage(aMessage);
-    ::PostMessage(destWindow->GetWindowHandle(), internalMessage, aWParam,
-                  aLParam);
     return;
   }
 
@@ -1632,11 +1590,6 @@ void MouseScrollHandler::SynthesizingEvent::NativeMessageReceived(
       mWParam == aWParam && mLParam == aLParam) {
     mStatus = NATIVE_MESSAGE_RECEIVED;
     if (aWidget && aWidget->GetWindowHandle() == mWnd) {
-      return;
-    }
-    
-    
-    if (aWidget && aWidget->IsPlugin() && !WinUtils::GetNSWindowBasePtr(mWnd)) {
       return;
     }
     
