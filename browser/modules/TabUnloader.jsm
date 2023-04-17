@@ -141,12 +141,10 @@ var TabUnloader = {
 
 
   init() {
-    if (Services.prefs.getBoolPref("browser.tabs.unloadOnLowMemory", true)) {
-      const watcher = Cc["@mozilla.org/xpcom/memory-watcher;1"].getService(
-        Ci.nsIAvailableMemoryWatcherBase
-      );
-      watcher.registerTabUnloader(this);
-    }
+    const watcher = Cc["@mozilla.org/xpcom/memory-watcher;1"].getService(
+      Ci.nsIAvailableMemoryWatcherBase
+    );
+    watcher.registerTabUnloader(this);
   },
 
   
@@ -154,6 +152,11 @@ var TabUnloader = {
     const watcher = Cc["@mozilla.org/xpcom/memory-watcher;1"].getService(
       Ci.nsIAvailableMemoryWatcherBase
     );
+
+    if (!Services.prefs.getBoolPref("browser.tabs.unloadOnLowMemory", true)) {
+      watcher.onUnloadAttemptCompleted(Cr.NS_ERROR_NOT_AVAILABLE);
+      return;
+    }
 
     if (this._isUnloading) {
       
