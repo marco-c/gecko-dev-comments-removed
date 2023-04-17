@@ -31,9 +31,6 @@ class TestSession(MarionetteTestCase):
         self.assertIn("platformName", caps)
         self.assertIn("platformVersion", caps)
 
-        
-        self.assertIn("rotatable", caps)
-
     def test_get_session_id(self):
         
         self.marionette.start_session()

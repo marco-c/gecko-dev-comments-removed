@@ -528,9 +528,6 @@ class Capabilities extends Map {
       ["unhandledPromptBehavior", UnhandledPromptBehavior.DismissAndNotify],
 
       
-      ["rotatable", AppInfo.isAndroid],
-
-      
       ["moz:accessibilityChecks", false],
       ["moz:buildID", AppInfo.appBuildID],
       ["moz:debuggerAddress", remoteAgent?.debuggerAddress || null],
