@@ -705,9 +705,10 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
 
 
-  void FirePopupShowingEvent(nsIContent* aPopup, bool aIsContextMenu,
-                             bool aSelectFirstItem,
-                             mozilla::dom::Event* aTriggerEvent);
+
+  void BeginShowingPopup(nsIContent* aPopup, bool aIsContextMenu,
+                         bool aSelectFirstItem,
+                         mozilla::dom::Event* aTriggerEvent);
 
   
 
