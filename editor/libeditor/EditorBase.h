@@ -1812,11 +1812,6 @@ class EditorBase : public nsIEditor,
   
 
 
-  nsINode* GetFirstEditableNode(nsINode* aRoot);
-
-  
-
-
   bool ShouldHandleIMEComposition() const;
 
   

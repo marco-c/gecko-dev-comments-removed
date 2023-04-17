@@ -1119,8 +1119,23 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP EditorBase::BeginningOfDocument() {
   }
 
   
-  nsCOMPtr<nsINode> firstNode = GetFirstEditableNode(rootElement);
-  if (!firstNode) {
+  nsCOMPtr<nsIContent> firstEditableLeaf;
+  if (IsTextEditor()) {
+    
+    
+    
+    if (rootElement->GetFirstChild() &&
+        rootElement->GetFirstChild()->IsText()) {
+      firstEditableLeaf = rootElement->GetFirstChild();
+    }
+  } else {
+    MOZ_ASSERT(IsHTMLEditor());
+    
+    
+    firstEditableLeaf =
+        HTMLEditUtils::GetFirstEditableLeafContent(*rootElement);
+  }
+  if (!firstEditableLeaf) {
     
     nsresult rv = SelectionRef().CollapseInLimiter(rootElement, 0);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
@@ -1128,22 +1143,23 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP EditorBase::BeginningOfDocument() {
     return rv;
   }
 
-  if (firstNode->IsText()) {
+  if (firstEditableLeaf->IsText()) {
     
-    nsresult rv = SelectionRef().CollapseInLimiter(firstNode, 0);
+    
+    nsresult rv = SelectionRef().CollapseInLimiter(firstEditableLeaf, 0);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "Selection::CollapseInLimiter() failed");
     return rv;
   }
 
   
-  nsCOMPtr<nsIContent> parent = firstNode->GetParent();
+  nsCOMPtr<nsIContent> parent = firstEditableLeaf->GetParent();
   if (NS_WARN_IF(!parent)) {
     return NS_ERROR_NULL_POINTER;
   }
 
   MOZ_ASSERT(
-      parent->ComputeIndexOf(firstNode) == 0,
+      parent->ComputeIndexOf(firstEditableLeaf) == 0,
       "How come the first node isn't the left most child in its parent?");
   nsresult rv = SelectionRef().CollapseInLimiter(parent, 0);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
@@ -2590,21 +2606,6 @@ nsresult EditorBase::InsertTextIntoTextNodeWithTransaction(
   }
 
   return rv;
-}
-
-nsINode* EditorBase::GetFirstEditableNode(nsINode* aRoot) {
-  MOZ_ASSERT(aRoot);
-
-  EditorType editorType = GetEditorType();
-  nsIContent* content =
-      HTMLEditUtils::GetFirstLeafChild(*aRoot, {LeafNodeType::OnlyLeafNode});
-  if (content && !EditorUtils::IsEditableContent(*content, editorType)) {
-    content = EditorBase::GetNextContent(
-        *content, {WalkTreeOption::IgnoreNonEditableNode}, editorType,
-        GetEditorRoot());
-  }
-
-  return (content != aRoot) ? content : nullptr;
 }
 
 nsresult EditorBase::NotifyDocumentListeners(
