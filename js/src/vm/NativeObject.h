@@ -1123,20 +1123,42 @@ class NativeObject : public JSObject {
 
   inline void shiftDenseElementsUnchecked(uint32_t count);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ALWAYS_INLINE HeapSlot& getReservedSlotRef(uint32_t index) {
+    MOZ_ASSERT(index < JSSLOT_FREE(getClass()));
+    MOZ_ASSERT(slotIsFixed(index) == (index < MAX_FIXED_SLOTS));
+    MOZ_ASSERT(!ObjectMayBeSwapped(this));
+    return index < MAX_FIXED_SLOTS ? fixedSlots()[index]
+                                   : slots_[index - MAX_FIXED_SLOTS];
+  }
+  MOZ_ALWAYS_INLINE const HeapSlot& getReservedSlotRef(uint32_t index) const {
+    MOZ_ASSERT(index < JSSLOT_FREE(getClass()));
+    MOZ_ASSERT(slotIsFixed(index) == (index < MAX_FIXED_SLOTS));
+    MOZ_ASSERT(!ObjectMayBeSwapped(this));
+    return index < MAX_FIXED_SLOTS ? fixedSlots()[index]
+                                   : slots_[index - MAX_FIXED_SLOTS];
+  }
+
  public:
   MOZ_ALWAYS_INLINE const Value& getReservedSlot(uint32_t index) const {
-    MOZ_ASSERT(index < JSSLOT_FREE(getClass()));
-    return getSlot(index);
+    return getReservedSlotRef(index);
   }
-
   MOZ_ALWAYS_INLINE void initReservedSlot(uint32_t index, const Value& v) {
-    MOZ_ASSERT(index < JSSLOT_FREE(getClass()));
-    initSlot(index, v);
+    MOZ_ASSERT(getReservedSlot(index).isUndefined());
+    checkStoredValue(v);
+    getReservedSlotRef(index).init(this, HeapSlot::Slot, index, v);
   }
-
   MOZ_ALWAYS_INLINE void setReservedSlot(uint32_t index, const Value& v) {
-    MOZ_ASSERT(index < JSSLOT_FREE(getClass()));
-    setSlot(index, v);
+    checkStoredValue(v);
+    getReservedSlotRef(index).set(this, HeapSlot::Slot, index, v);
   }
 
   
@@ -1482,11 +1504,11 @@ class NativeObject : public JSObject {
                                                   gc::Cell* cell) {
     MOZ_ASSERT(slot < JSCLASS_RESERVED_SLOTS(getClass()));
     MOZ_ASSERT(cell);
-    getSlotAddress(slot)->unbarrieredSet(PrivateValue(cell));
+    getReservedSlotRef(slot).unbarrieredSet(PrivateValue(cell));
   }
   void clearReservedSlotGCThingAsPrivate(uint32_t slot) {
     MOZ_ASSERT(slot < JSCLASS_RESERVED_SLOTS(getClass()));
-    HeapSlot* pslot = getSlotAddress(slot);
+    HeapSlot* pslot = &getReservedSlotRef(slot);
     if (!pslot->isUndefined()) {
       privatePreWriteBarrier(pslot);
       pslot->unbarrieredSet(UndefinedValue());

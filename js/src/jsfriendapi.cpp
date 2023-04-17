@@ -446,6 +446,8 @@ void JS::detail::SetReservedSlotWithBarrier(JSObject* obj, size_t slot,
   if (obj->is<ProxyObject>()) {
     obj->as<ProxyObject>().setReservedSlot(slot, value);
   } else {
+    
+    
     obj->as<NativeObject>().setSlot(slot, value);
   }
 }
