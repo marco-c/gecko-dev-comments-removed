@@ -106,15 +106,27 @@ class PerformanceRecorder {
   PerformanceRecorder& operator=(const PerformanceRecorder&) = delete;
 
   void Start();
-  void End();
 
- private:
+  
+  
+  float End();
+
+ protected:
   void Reset();
+
+  static bool IsMeasurementEnabled();
+  static TimeStamp GetCurrentTimeForMeasurement();
+
+  
+  static const char* FindMediaResolution(int32_t aHeight);
 
   Stage mStage = Stage::Invalid;
   int32_t mHeight;
   MediaInfoFlag mFlag = MediaInfoFlag::None;
   Maybe<TimeStamp> mStartTime;
+
+  
+  static inline bool sEnableMeasurementForTesting = false;
 };
 
 }  
