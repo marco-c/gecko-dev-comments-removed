@@ -9,18 +9,35 @@
 #include "nsIWebProgressListener.h"
 #include "nsTObserverArray.h"
 #include "nsWeakReference.h"
+#include "nsCycleCollectionParticipant.h"
 
 namespace mozilla {
 namespace dom {
 
+class CanonicalBrowsingContext;
+
+
+
+
+
+
+
+
+
+
+
+
 class BrowsingContextWebProgress final : public nsIWebProgress,
                                          public nsIWebProgressListener {
  public:
-  NS_DECL_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(BrowsingContextWebProgress,
+                                           nsIWebProgress)
   NS_DECL_NSIWEBPROGRESS
   NS_DECL_NSIWEBPROGRESSLISTENER
 
-  BrowsingContextWebProgress() = default;
+  explicit BrowsingContextWebProgress(
+      CanonicalBrowsingContext* aBrowsingContext);
 
   struct ListenerInfo {
     ListenerInfo(nsIWeakReference* aListener, unsigned long aNotifyMask)
@@ -41,9 +58,12 @@ class BrowsingContextWebProgress final : public nsIWebProgress,
   };
 
   void ContextDiscarded();
+  void ContextReplaced(CanonicalBrowsingContext* aNewContext);
+
+  void SetLoadType(uint32_t aLoadType) { mLoadType = aLoadType; }
 
  private:
-  virtual ~BrowsingContextWebProgress() = default;
+  virtual ~BrowsingContextWebProgress();
 
   void UpdateAndNotifyListeners(
       uint32_t aFlag,
@@ -55,13 +75,23 @@ class BrowsingContextWebProgress final : public nsIWebProgress,
   
   
   
+  RefPtr<CanonicalBrowsingContext> mCurrentBrowsingContext;
+
+  
+  
+  
+  
+  nsCOMPtr<nsIRequest> mLoadingDocumentRequest;
+
+  
+  uint32_t mLoadType = 0;
+
   
   
   
   
   
-  
-  bool mAwaitingStop = false;
+  bool mIsLoadingDocument = false;
 };
 
 }  
