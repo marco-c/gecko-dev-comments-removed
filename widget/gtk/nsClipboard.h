@@ -29,6 +29,10 @@ class nsRetrievalContext {
  public:
   
   
+  NS_INLINE_DECL_REFCOUNTING(nsRetrievalContext)
+
+  
+  
   virtual const char* GetClipboardData(const char* aMimeType,
                                        int32_t aWhichClipboard,
                                        uint32_t* aContentLength) = 0;
@@ -41,6 +45,7 @@ class nsRetrievalContext {
 
   virtual bool HasSelectionSupport(void) = 0;
 
+ protected:
   virtual ~nsRetrievalContext() = default;
 };
 
@@ -81,7 +86,7 @@ class nsClipboard : public nsIClipboard, public nsIObserver {
   nsCOMPtr<nsIClipboardOwner> mGlobalOwner;
   nsCOMPtr<nsITransferable> mSelectionTransferable;
   nsCOMPtr<nsITransferable> mGlobalTransferable;
-  mozilla::UniquePtr<nsRetrievalContext> mContext;
+  RefPtr<nsRetrievalContext> mContext;
 };
 
 extern const int kClipboardTimeout;
