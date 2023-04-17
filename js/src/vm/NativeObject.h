@@ -967,18 +967,18 @@ class NativeObject : public JSObject {
   
   
   static bool addProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
-                          uint32_t slot, ShapePropertyFlags flags,
+                          uint32_t slot, PropertyFlags flags,
                           uint32_t* slotOut);
 
   static bool addProperty(JSContext* cx, HandleNativeObject obj,
                           HandlePropertyName name, uint32_t slot,
-                          ShapePropertyFlags flags, uint32_t* slotOut) {
+                          PropertyFlags flags, uint32_t* slotOut) {
     RootedId id(cx, NameToId(name));
     return addProperty(cx, obj, id, slot, flags, slotOut);
   }
 
   static bool addCustomDataProperty(JSContext* cx, HandleNativeObject obj,
-                                    HandleId id, ShapePropertyFlags flags);
+                                    HandleId id, PropertyFlags flags);
 
   static bool addEnumerableDataProperty(JSContext* cx, HandleNativeObject obj,
                                         HandleId id, uint32_t* slotOut);
@@ -986,12 +986,11 @@ class NativeObject : public JSObject {
   
   
   static bool changeProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
-                             ShapePropertyFlags flags, uint32_t* slotOut);
+                             PropertyFlags flags, uint32_t* slotOut);
 
   static bool changeCustomDataPropAttributes(JSContext* cx,
                                              HandleNativeObject obj,
-                                             HandleId id,
-                                             ShapePropertyFlags flags);
+                                             HandleId id, PropertyFlags flags);
 
   
   static bool removeProperty(JSContext* cx, HandleNativeObject obj,
