@@ -4337,7 +4337,7 @@ bool BaseCompiler::emitCallIndirect() {
 
   sync();
 
-  const FuncType& funcType = moduleEnv_.types[funcTypeIndex].funcType();
+  const FuncType& funcType = (*moduleEnv_.types)[funcTypeIndex].funcType();
 
   
 
@@ -5942,7 +5942,7 @@ bool BaseCompiler::emitStructNewWithRtt() {
     return true;
   }
 
-  const StructType& structType = moduleEnv_.types[typeIndex].structType();
+  const StructType& structType = (*moduleEnv_.types)[typeIndex].structType();
 
   
   
@@ -6034,7 +6034,7 @@ bool BaseCompiler::emitStructGet(FieldExtension extension) {
     return true;
   }
 
-  const StructType& structType = moduleEnv_.types[typeIndex].structType();
+  const StructType& structType = (*moduleEnv_.types)[typeIndex].structType();
 
   RegRef rp = popRef();
 
@@ -6086,7 +6086,7 @@ bool BaseCompiler::emitStructSet() {
     return true;
   }
 
-  const StructType& structType = moduleEnv_.types[typeIndex].structType();
+  const StructType& structType = (*moduleEnv_.types)[typeIndex].structType();
   const StructField& structField = structType.fields_[fieldIndex];
 
   
@@ -6153,7 +6153,7 @@ bool BaseCompiler::emitArrayNewWithRtt() {
     return true;
   }
 
-  const ArrayType& arrayType = moduleEnv_.types[typeIndex].arrayType();
+  const ArrayType& arrayType = (*moduleEnv_.types)[typeIndex].arrayType();
 
   
   
@@ -6238,7 +6238,7 @@ bool BaseCompiler::emitArrayGet(FieldExtension extension) {
     return true;
   }
 
-  const ArrayType& arrayType = moduleEnv_.types[typeIndex].arrayType();
+  const ArrayType& arrayType = (*moduleEnv_.types)[typeIndex].arrayType();
 
   RegI32 index = popI32();
   RegRef rp = popRef();
@@ -6286,7 +6286,7 @@ bool BaseCompiler::emitArraySet() {
     return true;
   }
 
-  const ArrayType& arrayType = moduleEnv_.types[typeIndex].arrayType();
+  const ArrayType& arrayType = (*moduleEnv_.types)[typeIndex].arrayType();
 
   
   
@@ -9680,7 +9680,7 @@ bool js::wasm::BaselineCompileFunctions(const ModuleEnvironment& moduleEnv,
     if (!locals.appendAll(moduleEnv.funcs[func.index].type->args())) {
       return false;
     }
-    if (!DecodeLocalEntries(d, moduleEnv.types, moduleEnv.features, &locals)) {
+    if (!DecodeLocalEntries(d, *moduleEnv.types, moduleEnv.features, &locals)) {
       return false;
     }
 

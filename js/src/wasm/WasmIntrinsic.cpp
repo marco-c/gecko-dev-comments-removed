@@ -121,24 +121,29 @@ bool wasm::CompileIntrinsicModule(JSContext* cx,
   moduleEnv.memory = Some(MemoryDesc(Limits(0, Nothing(), sharedMemory)));
 
   
+  if (!moduleEnv.initTypes(ops.size())) {
+    return false;
+  }
+
   
-  for (const IntrinsicOp& op : ops) {
+  
+  for (uint32_t funcIndex = 0; funcIndex < ops.size(); funcIndex++) {
+    const IntrinsicOp& op = ops[funcIndex];
     const Intrinsic& intrinsic = Intrinsic::getFromOp(op);
 
     FuncType type;
-    if (!intrinsic.funcType(&type) ||
-        !moduleEnv.types.append(TypeDef(std::move(type))) ||
-        !moduleEnv.typeIds.append(TypeIdDesc())) {
+    if (!intrinsic.funcType(&type)) {
       ReportOutOfMemory(cx);
       return false;
     }
+    (*moduleEnv.types)[funcIndex] = TypeDef(std::move(type));
   }
 
   
   
   
   for (uint32_t funcIndex = 0; funcIndex < ops.size(); funcIndex++) {
-    FuncDesc decl(&moduleEnv.types[funcIndex].funcType(),
+    FuncDesc decl(&(*moduleEnv.types)[funcIndex].funcType(),
                   &moduleEnv.typeIds[funcIndex], funcIndex);
     if (!moduleEnv.funcs.append(decl)) {
       ReportOutOfMemory(cx);
