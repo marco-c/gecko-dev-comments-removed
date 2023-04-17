@@ -55,6 +55,14 @@ add_task(async function test_sidebar_click_isAppTab_behavior() {
 
   
   let content = SidebarUI.browser.contentWindow;
+
+  
+  
+  
+  
+  await content.promiseDocumentFlushed(() => {});
+
+  info("Clicking link in extension sidebar");
   await BrowserTestUtils.synthesizeMouseAtCenter(
     "#testlink",
     {},
