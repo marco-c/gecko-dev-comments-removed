@@ -2054,7 +2054,8 @@ bool nsToolkitProfileService::IsSnapEnvironment() {
   }
 
   
-  return (strcmp(snapName, "firefox") == 0);
+  
+  return (strcmp(snapName, MOZ_APP_NAME) == 0);
 }
 
 
