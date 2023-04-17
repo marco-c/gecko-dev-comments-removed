@@ -611,8 +611,7 @@ void PeerConnectionMedia::SelfDestruct() {
 
   if (mCall) {
     
-    
-    mMainThread->Dispatch(NS_NewRunnableFunction(
+    mCall->mCallThread->Dispatch(NS_NewRunnableFunction(
         "PeerConnectionMedia::SelfDestruct(mCall)",
         [call = std::move(mCall)]() { call->Destroy(); }));
   }

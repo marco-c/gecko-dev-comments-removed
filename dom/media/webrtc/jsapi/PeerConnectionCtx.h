@@ -39,10 +39,17 @@ class SharedWebrtcState {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SharedWebrtcState)
 
-  SharedWebrtcState(webrtc::AudioState::Config&& aAudioStateConfig,
+  SharedWebrtcState(RefPtr<AbstractThread> aCallWorkerThread,
+                    webrtc::AudioState::Config&& aAudioStateConfig,
                     RefPtr<webrtc::AudioDecoderFactory> aAudioDecoderFactory);
 
   webrtc::SharedModuleThread* GetModuleThread();
+
+  
+  
+  
+  
+  const RefPtr<AbstractThread> mCallWorkerThread;
 
   
   
@@ -53,7 +60,7 @@ class SharedWebrtcState {
   const RefPtr<webrtc::AudioDecoderFactory> mAudioDecoderFactory;
 
  private:
-  virtual ~SharedWebrtcState() = default;
+  virtual ~SharedWebrtcState();
 
   
   
