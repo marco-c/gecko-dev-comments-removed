@@ -193,6 +193,11 @@ this.downloads = class extends ExtensionAPI {
             });
           }
 
+          if (options.cookieStoreId != null) {
+            
+            throw new ExtensionError("Not implemented");
+          }
+
           if (options.headers) {
             for (const { name } of options.headers) {
               if (

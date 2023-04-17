@@ -2361,6 +2361,15 @@ DownloadCopySaver.prototype = {
             download.source.cookieJarSettings;
         }
 
+        if (download.source.userContextId) {
+          
+          
+          channel.loadInfo.originAttributes = {
+            ...channel.loadInfo.originAttributes,
+            userContextId: download.source.userContextId,
+          };
+        }
+
         
         
         if (channel instanceof Ci.nsIHttpChannelInternal) {
