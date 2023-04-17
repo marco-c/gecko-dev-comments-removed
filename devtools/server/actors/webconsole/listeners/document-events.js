@@ -66,8 +66,8 @@ DocumentEventsListener.prototype = {
       
       
       shouldBeIgnoredAsRedundantWithTargetAvailable ||
-        (this.targetActor.isTopLevel &&
-          this.targetActor.followWindowGlobalLifecycle)
+        (this.targetActor.isTopLevelTarget &&
+          this.targetActor.followWindowGlobalLifeCycle)
     );
 
     const { readyState } = window.document;
