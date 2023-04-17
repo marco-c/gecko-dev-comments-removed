@@ -103,12 +103,12 @@ void wasm_rt_cleanup_func_types(wasm_func_type_t** p_func_type_structs, uint32_t
 # define WASM_HEAP_MAX_ALLOWED_PAGES 65536
 #elif UINTPTR_MAX == 0xffffffff
 
-# define WASM_HEAP_GUARD_PAGE_ALIGNMENT 0x800000ul
+# define WASM_HEAP_GUARD_PAGE_ALIGNMENT 0
 # define WASM_HEAP_RESERVE_SIZE 0x1000000ul
 # ifdef WASM_USE_INCREMENTAL_MOVEABLE_MEMORY_ALLOC
 #   define WASM_HEAP_MAX_ALLOWED_PAGES 65536
 # else
-#   define WASM_HEAP_MAX_ALLOWED_PAGES 128
+#   define WASM_HEAP_MAX_ALLOWED_PAGES 256
 # endif
 #else
 # error "Unknown pointer size"
