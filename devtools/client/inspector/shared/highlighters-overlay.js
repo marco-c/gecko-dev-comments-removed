@@ -1273,7 +1273,10 @@ class HighlightersOverlay {
 
 
   async showGeometryEditor(node) {
-    const highlighter = await this._getHighlighter("GeometryEditorHighlighter");
+    const highlighter = await this._getHighlighterTypeForNode(
+      "GeometryEditorHighlighter",
+      node
+    );
     if (!highlighter) {
       return;
     }
@@ -1291,14 +1294,19 @@ class HighlightersOverlay {
 
 
   async hideGeometryEditor() {
-    if (
-      !this.geometryEditorHighlighterShown ||
-      !this.highlighters.GeometryEditorHighlighter
-    ) {
+    if (!this.geometryEditorHighlighterShown) {
       return;
     }
 
-    await this.highlighters.GeometryEditorHighlighter.hide();
+    const highlighter = this.geometryEditorHighlighterShown.inspectorFront.getKnownHighlighter(
+      "GeometryEditorHighlighter"
+    );
+
+    if (!highlighter) {
+      return;
+    }
+
+    await highlighter.hide();
 
     this.emit("geometry-editor-highlighter-hidden");
     this.geometryEditorHighlighterShown = null;
