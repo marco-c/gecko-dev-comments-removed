@@ -21,7 +21,7 @@ use style_traits::{CssWriter, ToCss};
 pub use crate::values::specified::text::{TextAlignLast, TextUnderlinePosition};
 pub use crate::values::specified::{LineBreak, OverflowWrap, RubyPosition, WordBreak};
 pub use crate::values::specified::{TextDecorationLine, TextEmphasisPosition};
-pub use crate::values::specified::{TextDecorationSkipInk, TextTransform};
+pub use crate::values::specified::{TextDecorationSkipInk, TextJustify, TextTransform};
 
 
 pub type InitialLetter = GenericInitialLetter<CSSFloat, CSSInteger>;

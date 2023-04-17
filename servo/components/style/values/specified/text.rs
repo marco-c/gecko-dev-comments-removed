@@ -1018,6 +1018,33 @@ pub enum WordBreak {
     ToShmem,
 )]
 #[allow(missing_docs)]
+pub enum TextJustify {
+    Auto,
+    None,
+    InterWord,
+    
+    
+    #[parse(aliases = "distribute")]
+    InterCharacter,
+}
+
+
+#[repr(u8)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    MallocSizeOf,
+    Parse,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[allow(missing_docs)]
 pub enum LineBreak {
     Auto,
     Loose,
