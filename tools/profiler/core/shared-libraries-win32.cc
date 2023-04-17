@@ -137,9 +137,25 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
       continue;
     }
 
+    
+    
+    
+    
+    
+    
+    nsModuleHandle handleLock(
+        LoadLibraryEx(modulePath, NULL, LOAD_LIBRARY_AS_DATAFILE));
+    if (!handleLock) {
+      continue;
+    }
+
     MODULEINFO module = {0};
     if (!GetModuleInformation(hProcess, hMods[i], &module,
                               sizeof(MODULEINFO))) {
+      
+      
+      
+      
       continue;
     }
 
@@ -187,29 +203,12 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
                           !moduleNameStr.LowerCaseEqualsLiteral("ntdll.dll"));
 
     nsCString breakpadId;
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    HMODULE handleLock =
-        LoadLibraryEx(modulePath, NULL, LOAD_LIBRARY_AS_DATAFILE);
-    MEMORY_BASIC_INFORMATION vmemInfo = {0};
     nsID pdbSig;
     uint32_t pdbAge;
     nsAutoString pdbPathStr;
     nsAutoString pdbNameStr;
     char* pdbName = nullptr;
-    if (handleLock &&
-        sizeof(vmemInfo) ==
-            VirtualQuery(module.lpBaseOfDll, &vmemInfo, sizeof(vmemInfo)) &&
-        vmemInfo.State == MEM_COMMIT && canGetPdbInfo &&
+    if (canGetPdbInfo &&
         GetPdbInfo((uintptr_t)module.lpBaseOfDll, pdbSig, pdbAge, &pdbName)) {
       MOZ_ASSERT(breakpadId.IsEmpty());
       breakpadId.AppendPrintf(
@@ -235,8 +234,6 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf() {
                         breakpadId, moduleNameStr, modulePathStr, pdbNameStr,
                         pdbPathStr, GetVersion(modulePath), "");
     sharedLibraryInfo.AddSharedLibrary(shlib);
-
-    FreeLibrary(handleLock);  
   }
 
   return sharedLibraryInfo;
