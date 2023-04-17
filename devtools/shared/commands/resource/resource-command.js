@@ -564,6 +564,7 @@ class ResourceCommand {
 
   async _onResourceAvailable({ targetFront, watcherFront }, resources) {
     let includesDocumentEventWillNavigate = false;
+    let includesDocumentEventDomLoading = false;
     for (let resource of resources) {
       const { resourceType } = resource;
 
@@ -602,14 +603,29 @@ class ResourceCommand {
         this._onWillNavigate(resource.targetFront);
       }
 
+      if (
+        resourceType == ResourceCommand.TYPES.DOCUMENT_EVENT &&
+        resource.name == "dom-loading" &&
+        resource.targetFront.isTopLevel
+      ) {
+        includesDocumentEventDomLoading = true;
+      }
+
       this._queueResourceEvent("available", resourceType, resource);
 
       this._cache.push(resource);
     }
+
     
     
     
-    if (includesDocumentEventWillNavigate) {
+    
+    
+    if (
+      includesDocumentEventWillNavigate ||
+      (includesDocumentEventDomLoading &&
+        !this.targetCommand.hasTargetWatcherSupport("service_worker"))
+    ) {
       this._notifyWatchers();
     } else {
       this._throttledNotifyWatchers();
