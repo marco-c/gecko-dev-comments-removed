@@ -300,6 +300,9 @@ pref("browser.startup.homepage.abouthome_cache.loglevel", "Warn");
 pref("browser.startup.firstrunSkipsHomepage", true);
 
 
+pref("browser.startup.couldRestoreSession.count", 0);
+
+
 
 
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK) && defined(NIGHTLY_BUILD)
