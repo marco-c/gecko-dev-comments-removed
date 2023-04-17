@@ -263,7 +263,7 @@ class MOZ_STACK_CLASS ContentEventHandler {
                                 uint32_t aMaxLength = UINT32_MAX);
   
   
-  static uint32_t GetTextLengthInRange(nsIContent* aContent,
+  static uint32_t GetTextLengthInRange(const dom::Text& aTextNode,
                                        uint32_t aXPStartOffset,
                                        uint32_t aXPEndOffset,
                                        LineBreakType aLineBreakType);
@@ -319,7 +319,7 @@ class MOZ_STACK_CLASS ContentEventHandler {
 
   using FontRangeArray = nsTArray<mozilla::FontRange>;
   static void AppendFontRanges(FontRangeArray& aFontRanges,
-                               nsIContent* aContent, uint32_t aBaseOffset,
+                               const dom::Text& aTextNode, uint32_t aBaseOffset,
                                uint32_t aXPStartOffset, uint32_t aXPEndOffset,
                                LineBreakType aLineBreakType);
   nsresult GenerateFlatFontRanges(const RawRange& aRawRange,
