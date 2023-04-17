@@ -2127,15 +2127,15 @@ impl Renderer {
             frame_id
         };
 
-        
-        
-        
-        if let CompositorKind::Native { .. } = self.current_compositor_kind {
-            let compositor = self.compositor_config.compositor().unwrap();
-            compositor.begin_frame();
-        }
-
         if let Some(device_size) = device_size {
+            
+            
+            
+            if let CompositorKind::Native { .. } = self.current_compositor_kind {
+                let compositor = self.compositor_config.compositor().unwrap();
+                compositor.begin_frame();
+            }
+
             
             
             self.update_debug_overlay(device_size);
@@ -2302,13 +2302,15 @@ impl Renderer {
             self.unbind_debug_overlay();
         }
 
-        
-        
-        
-        if let CompositorKind::Native { .. } = self.current_compositor_kind {
-            profile_scope!("compositor.end_frame");
-            let compositor = self.compositor_config.compositor().unwrap();
-            compositor.end_frame();
+        if device_size.is_some() { 
+            
+            
+            
+            if let CompositorKind::Native { .. } = self.current_compositor_kind {
+                profile_scope!("compositor.end_frame");
+                let compositor = self.compositor_config.compositor().unwrap();
+                compositor.end_frame();
+            }
         }
 
         self.documents_seen.clear();

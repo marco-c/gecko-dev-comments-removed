@@ -1330,10 +1330,6 @@ impl Compositor for SwCompositor {
         if self.use_native_compositor {
             self.compositor.begin_frame();
         }
-        self.frame_surfaces.clear();
-        self.late_surfaces.clear();
-
-        self.reset_overlaps();
     }
 
     fn add_surface(
@@ -1441,11 +1437,6 @@ impl Compositor for SwCompositor {
             self.compositor.end_frame();
         } else if let Some(ref composite_thread) = self.composite_thread {
             
-            if !composite_thread.is_busy_compositing() {
-                return;
-            }
-
-            
             composite_thread.wait_for_composites(false);
 
             if !self.late_surfaces.is_empty() {
@@ -1472,6 +1463,11 @@ impl Compositor for SwCompositor {
 
             self.unlock_composite_surfaces();
         }
+
+        self.frame_surfaces.clear();
+        self.late_surfaces.clear();
+
+        self.reset_overlaps();
     }
 
     fn enable_native_compositor(&mut self, enable: bool) {
