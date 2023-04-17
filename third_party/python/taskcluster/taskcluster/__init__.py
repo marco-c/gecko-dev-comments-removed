@@ -4,13 +4,14 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 import logging
 import os
 from .client import createSession  
+from .client import createTemporaryCredentials  
 from taskcluster.utils import *  
 from taskcluster.exceptions import *  
-from taskcluster._client_importer import *  
+from taskcluster.generated._client_importer import *  
 
 log = logging.getLogger(__name__)
 
-if os.environ.get('DEBUG_TASKCLUSTER_CLIENT'):
+if os.environ.get("DEBUG_TASKCLUSTER_CLIENT"):
     log.setLevel(logging.DEBUG)
     if len(log.handlers) == 0:
         log.addHandler(logging.StreamHandler())

@@ -5,11 +5,11 @@ import os
 from .asyncclient import createSession  
 from taskcluster.utils import *  
 from taskcluster.exceptions import *  
-from ._client_importer import *  
+from ..generated.aio._client_importer import *  
 
 log = logging.getLogger(__name__)
 
-if os.environ.get('DEBUG_TASKCLUSTER_CLIENT'):
+if os.environ.get("DEBUG_TASKCLUSTER_CLIENT"):
     log.setLevel(logging.DEBUG)
     if len(log.handlers) == 0:
         log.addHandler(logging.StreamHandler())
