@@ -113,7 +113,7 @@ DevToolsClient.prototype = {
 
 
   close() {
-    if (this._closed) {
+    if (this._transportClosed) {
       return Promise.resolve();
     }
     if (this._closePromise) {
@@ -213,7 +213,7 @@ DevToolsClient.prototype = {
       return onResponse(response) || response;
     };
 
-    if (this._closed) {
+    if (this._transportClosed) {
       const msg =
         "'" +
         type +
@@ -589,10 +589,10 @@ DevToolsClient.prototype = {
 
 
   onTransportClosed() {
-    if (this._closed) {
+    if (this._transportClosed) {
       return;
     }
-    this._closed = true;
+    this._transportClosed = true;
     this.emit("closed");
 
     this.purgeRequests();
