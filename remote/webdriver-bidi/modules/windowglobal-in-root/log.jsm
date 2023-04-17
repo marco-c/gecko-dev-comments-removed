@@ -1,0 +1,21 @@
+
+
+
+
+"use strict";
+
+const EXPORTED_SYMBOLS = ["log"];
+
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  Module: "chrome://remote/content/shared/messagehandler/Module.jsm",
+});
+
+class Log extends Module {
+  destroy() {}
+}
+
+const log = Log;
