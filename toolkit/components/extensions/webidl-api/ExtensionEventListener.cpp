@@ -13,6 +13,153 @@
 namespace mozilla {
 namespace extensions {
 
+namespace {
+
+class SendResponseCallback final : public nsISupports {
+ public:
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(SendResponseCallback)
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+
+  static RefPtr<SendResponseCallback> Create(
+      nsIGlobalObject* aGlobalObject, const RefPtr<dom::Promise>& aPromise,
+      JS::Handle<JS::Value> aValue, ErrorResult& aRv) {
+    MOZ_ASSERT(dom::IsCurrentThreadRunningWorker());
+
+    RefPtr<SendResponseCallback> responseCallback =
+        new SendResponseCallback(aPromise, aValue);
+
+    auto cleanupCb = [responseCallback]() { responseCallback->Cleanup(); };
+
+    
+    
+    
+    
+    auto* workerPrivate = dom::GetCurrentThreadWorkerPrivate();
+    MOZ_ASSERT(workerPrivate);
+    workerPrivate->AssertIsOnWorkerThread();
+
+    RefPtr<dom::StrongWorkerRef> workerRef = dom::StrongWorkerRef::Create(
+        workerPrivate, "SendResponseCallback", cleanupCb);
+    if (NS_WARN_IF(!workerRef)) {
+      aRv.Throw(NS_ERROR_UNEXPECTED);
+      return nullptr;
+    }
+
+    responseCallback->mWorkerRef = workerRef;
+
+    return responseCallback;
+  }
+
+  SendResponseCallback(const RefPtr<dom::Promise>& aPromise,
+                       JS::Handle<JS::Value> aValue)
+      : mPromise(aPromise), mValue(aValue) {
+    MOZ_ASSERT(mPromise);
+    mozilla::HoldJSObjects(this);
+
+    
+    
+    mPromiseListener = new dom::DomPromiseListener(
+        mPromise,
+        [self = RefPtr{this}](JSContext* aCx, JS::Handle<JS::Value> aValue) {
+          self->Cleanup();
+        },
+        [self = RefPtr{this}](nsresult aError) { self->Cleanup(); });
+  }
+
+  void Cleanup(bool aIsDestroying = false) {
+    
+    if (!mPromiseListener) {
+      return;
+    }
+
+    NS_WARNING("SendResponseCallback::Cleanup");
+    
+    
+    mPromiseListener->SetResolvers(
+        [](JSContext* aCx, JS::Handle<JS::Value> aValue) {},
+        [](nsresult aError) {});
+    mPromiseListener = nullptr;
+
+    if (mPromise) {
+      mPromise->MaybeResolveWithUndefined();
+    }
+    mPromise = nullptr;
+
+    
+    if (!aIsDestroying && mValue.isObject()) {
+      
+      js::SetFunctionNativeReserved(&mValue.toObject(),
+                                    SLOT_SEND_RESPONSE_CALLBACK_INSTANCE,
+                                    JS::PrivateValue(nullptr));
+    }
+
+    if (mWorkerRef) {
+      mWorkerRef = nullptr;
+    }
+  }
+
+  static bool Call(JSContext* aCx, unsigned aArgc, JS::Value* aVp) {
+    JS::CallArgs args = CallArgsFromVp(aArgc, aVp);
+    JS::Rooted<JSObject*> callee(aCx, &args.callee());
+
+    JS::Value v = js::GetFunctionNativeReserved(
+        callee, SLOT_SEND_RESPONSE_CALLBACK_INSTANCE);
+
+    SendResponseCallback* sendResponse =
+        reinterpret_cast<SendResponseCallback*>(v.toPrivate());
+    if (!sendResponse || !sendResponse->mPromise ||
+        !sendResponse->mPromise->PromiseObj()) {
+      NS_WARNING("SendResponseCallback called after being invalidated");
+      return true;
+    }
+
+    sendResponse->mPromise->MaybeResolve(args.get(0));
+    sendResponse->Cleanup();
+
+    return true;
+  }
+
+ private:
+  ~SendResponseCallback() {
+    mozilla::DropJSObjects(this);
+    this->Cleanup(true);
+  };
+
+  RefPtr<dom::Promise> mPromise;
+  RefPtr<dom::DomPromiseListener> mPromiseListener;
+  JS::Heap<JS::Value> mValue;
+  RefPtr<dom::StrongWorkerRef> mWorkerRef;
+};
+
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(SendResponseCallback)
+  NS_INTERFACE_MAP_ENTRY(nsISupports)
+NS_INTERFACE_MAP_END
+
+NS_IMPL_CYCLE_COLLECTION_CLASS(SendResponseCallback)
+
+NS_IMPL_CYCLE_COLLECTING_ADDREF(SendResponseCallback)
+NS_IMPL_CYCLE_COLLECTING_RELEASE(SendResponseCallback)
+
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(SendResponseCallback)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPromise)
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
+
+NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(SendResponseCallback)
+  NS_IMPL_CYCLE_COLLECTION_TRACE_JS_MEMBER_CALLBACK(mValue)
+NS_IMPL_CYCLE_COLLECTION_TRACE_END
+
+NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(SendResponseCallback)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mPromiseListener);
+  tmp->mValue.setUndefined();
+  
+  if (tmp->mPromise) {
+    tmp->mPromise->MaybeResolveWithUndefined();
+  }
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mPromise);
+NS_IMPL_CYCLE_COLLECTION_UNLINK_END
+
+}  
+
 
 
 NS_IMPL_ISUPPORTS(ExtensionEventListener, mozIExtensionEventListener)
@@ -268,6 +415,55 @@ bool ExtensionListenerCallWorkerRunnable::WorkerRun(
   }
 
   
+  JS::Rooted<JSObject*> sendResponseObj(aCx);
+
+  switch (mCallbackArgType) {
+    case CallbackType::CALLBACK_NONE:
+      break;
+    case CallbackType::CALLBACK_SEND_RESPONSE: {
+      JS::Rooted<JSFunction*> sendResponseFn(
+          aCx, js::NewFunctionWithReserved(aCx, SendResponseCallback::Call,
+                                            1, 0, "sendResponse"));
+      sendResponseObj = JS_GetFunctionObject(sendResponseFn);
+      JS::RootedValue sendResponseValue(aCx, JS::ObjectValue(*sendResponseObj));
+
+      
+      
+      
+      
+      
+      
+      RefPtr<SendResponseCallback> sendResponsePtr =
+          SendResponseCallback::Create(global, retPromise, sendResponseValue,
+                                       rv);
+      if (NS_WARN_IF(rv.Failed())) {
+        retPromise->MaybeReject(NS_ERROR_UNEXPECTED);
+        return true;
+      }
+
+      
+      
+      
+      
+      
+      js::SetFunctionNativeReserved(sendResponseObj,
+                                    SLOT_SEND_RESPONSE_CALLBACK_INSTANCE,
+                                    JS::PrivateValue(sendResponsePtr));
+
+      if (NS_WARN_IF(
+              !argsSequence.AppendElement(sendResponseValue, fallible))) {
+        retPromise->MaybeReject(NS_ERROR_OUT_OF_MEMORY);
+        return true;
+      }
+
+      break;
+    }
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unexpected callbackType");
+      break;
+  }
+
+  
   dom::AutoEntryScript aes(global, "WebExtensionAPIEvent");
   JS::Rooted<JS::Value> retval(aCx);
   ErrorResult erv;
@@ -282,9 +478,57 @@ bool ExtensionListenerCallWorkerRunnable::WorkerRun(
 
   if (erv.Failed()) {
     retPromise->MaybeReject(std::move(erv));
-  } else {
-    retPromise->MaybeResolve(retval);
+    return true;
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mCallbackArgType == CallbackType::CALLBACK_SEND_RESPONSE) {
+    if (retval.isBoolean() && retval.isTrue()) {
+      
+      
+      
+      return true;
+    }
+
+    
+    
+    
+    
+    
+    if (!ExtensionEventListener::IsPromise(aCx, retval)) {
+      
+      
+      
+      
+      
+      
+      
+      mIsCallResultCancelled = true;
+      retPromise->MaybeResolveWithUndefined();
+
+      
+      
+      
+      js::SetFunctionNativeReserved(sendResponseObj,
+          SLOT_SEND_RESPONSE_CALLBACK_INSTANCE,
+          JS::PrivateValue(nullptr));
+
+      return true;
+    }
+  }
+
+  retPromise->MaybeResolve(retval);
 
   return true;
 }
@@ -313,6 +557,19 @@ void ExtensionListenerCallPromiseResultHandler::WorkerRunCallback(
     PromiseCallbackType aCallbackType) {
   MOZ_ASSERT(mWorkerRef);
   mWorkerRef->Private()->AssertIsOnWorkerThread();
+
+  
+  
+  
+  
+  if (mWorkerRunnable->IsCallResultCancelled()) {
+    auto releaseMainThreadPromise = [runnable = std::move(mWorkerRunnable),
+                                     workerRef = std::move(mWorkerRef)]() {};
+    nsCOMPtr<nsIRunnable> runnable =
+        NS_NewRunnableFunction(__func__, std::move(releaseMainThreadPromise));
+    NS_DispatchToMainThread(runnable);
+    return;
+  }
 
   JS::RootedValue retval(aCx, aValue);
 
