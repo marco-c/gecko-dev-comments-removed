@@ -7636,44 +7636,47 @@ bool nsDisplayTransform::ComputePerspectiveMatrix(const nsIFrame* aFrame,
   
   
   
-  nsIFrame* cbFrame = aFrame->GetContainingBlock(nsIFrame::SKIP_SCROLLED_FRAME);
-  if (!cbFrame) {
+  nsIFrame* perspectiveFrame =
+      aFrame->GetClosestFlattenedTreeAncestorPrimaryFrame();
+  if (!perspectiveFrame) {
     return false;
   }
 
   
-  const nsStyleDisplay* cbDisplay = cbFrame->StyleDisplay();
-  if (cbDisplay->mChildPerspective.IsNone()) {
+  const nsStyleDisplay* perspectiveDisplay = perspectiveFrame->StyleDisplay();
+  if (perspectiveDisplay->mChildPerspective.IsNone()) {
     return false;
   }
 
-  MOZ_ASSERT(cbDisplay->mChildPerspective.IsLength());
+  MOZ_ASSERT(perspectiveDisplay->mChildPerspective.IsLength());
   
   
-  nscoord perspective = cbDisplay->mChildPerspective.length._0.ToAppUnits();
+  nscoord perspective =
+      perspectiveDisplay->mChildPerspective.length._0.ToAppUnits();
   if (perspective < std::numeric_limits<Float>::epsilon()) {
     return true;
   }
 
-  TransformReferenceBox refBox(cbFrame);
+  TransformReferenceBox refBox(perspectiveFrame);
 
   Point perspectiveOrigin = nsStyleTransformMatrix::Convert2DPosition(
-      cbDisplay->mPerspectiveOrigin.horizontal,
-      cbDisplay->mPerspectiveOrigin.vertical, refBox, aAppUnitsPerPixel);
+      perspectiveDisplay->mPerspectiveOrigin.horizontal,
+      perspectiveDisplay->mPerspectiveOrigin.vertical, refBox,
+      aAppUnitsPerPixel);
 
   
 
 
 
-  nsPoint frameToCbOffset = -aFrame->GetOffsetTo(cbFrame);
-  Point frameToCbGfxOffset(
-      NSAppUnitsToFloatPixels(frameToCbOffset.x, aAppUnitsPerPixel),
-      NSAppUnitsToFloatPixels(frameToCbOffset.y, aAppUnitsPerPixel));
+  nsPoint frameToPerspectiveOffset = -aFrame->GetOffsetTo(perspectiveFrame);
+  Point frameToPerspectiveGfxOffset(
+      NSAppUnitsToFloatPixels(frameToPerspectiveOffset.x, aAppUnitsPerPixel),
+      NSAppUnitsToFloatPixels(frameToPerspectiveOffset.y, aAppUnitsPerPixel));
 
   
 
 
-  perspectiveOrigin += frameToCbGfxOffset;
+  perspectiveOrigin += frameToPerspectiveGfxOffset;
 
   aOutMatrix._34 =
       -1.0 / NSAppUnitsToFloatPixels(perspective, aAppUnitsPerPixel);
@@ -8930,7 +8933,7 @@ nsDisplayPerspective::nsDisplayPerspective(nsDisplayListBuilder* aBuilder,
   MOZ_ASSERT(mList.Count() == 1);
   MOZ_ASSERT(mList.GetTop()->GetType() == DisplayItemType::TYPE_TRANSFORM);
   mAnimatedGeometryRoot = aBuilder->FindAnimatedGeometryRootFor(
-      mFrame->GetContainingBlock(nsIFrame::SKIP_SCROLLED_FRAME));
+      mFrame->GetClosestFlattenedTreeAncestorPrimaryFrame());
 }
 
 already_AddRefed<Layer> nsDisplayPerspective::BuildLayer(
@@ -9047,7 +9050,7 @@ bool nsDisplayPerspective::CreateWebRenderCommands(
   perspectiveMatrix.PostTranslate(roundedOrigin);
 
   nsIFrame* perspectiveFrame =
-      mFrame->GetContainingBlock(nsIFrame::SKIP_SCROLLED_FRAME);
+      mFrame->GetClosestFlattenedTreeAncestorPrimaryFrame();
 
   
   
