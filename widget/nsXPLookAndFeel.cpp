@@ -631,6 +631,7 @@ Maybe<nscolor> nsXPLookAndFeel::GenericDarkColor(ColorID aID) {
     case ColorID::TextBackground:
       color = kWindowBackground;
       break;
+    case ColorID::MozOddtreerow:
     case ColorID::MozDialog:  
       color = NS_RGB(35, 34, 43);
       break;
@@ -654,6 +655,7 @@ Maybe<nscolor> nsXPLookAndFeel::GenericDarkColor(ColorID aID) {
                              
       color = NS_ComposeColors(kWindowBackground, NS_RGBA(251, 251, 254, 102));
       break;
+    case ColorID::MozCellhighlight:
     case ColorID::Selecteditem:  
                                  
       color = NS_RGB(0, 221, 255);
@@ -661,6 +663,7 @@ Maybe<nscolor> nsXPLookAndFeel::GenericDarkColor(ColorID aID) {
     case ColorID::Field:
     case ColorID::Buttonface:  
     case ColorID::MozCombobox:
+    case ColorID::MozCellhighlighttext:
     case ColorID::Selecteditemtext:  
                                      
       color = NS_RGB(43, 42, 51);
