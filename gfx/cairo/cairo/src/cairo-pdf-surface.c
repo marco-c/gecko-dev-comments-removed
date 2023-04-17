@@ -2432,6 +2432,10 @@ _cairo_pdf_surface_finish (void *abstract_surface)
     char *label;
     cairo_pdf_resource_t xref_res;
 
+    
+    if (surface->base.status != CAIRO_STATUS_SUCCESS)
+	goto CLEANUP;
+
     _cairo_pdf_surface_clear (surface);
 
     status = _cairo_pdf_surface_open_object_stream (surface);
@@ -2490,6 +2494,8 @@ _cairo_pdf_surface_finish (void *abstract_surface)
 				 "%ld\n"
 				 "%%%%EOF\n",
 				 offset);
+
+  CLEANUP:
 
     
 
