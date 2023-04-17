@@ -13,20 +13,25 @@ async function testSteps() {
   
   
   const cachesDatabase = getRelativeFile(
-    `${basePath}/${originDirName}/${cacheClientDirName}/caches.sqlite`
+    `${basePath}/${originDirName}/${cacheClientDirName()}/caches.sqlite`
   );
   
   
   const paddingFile = getRelativeFile(
-    `${basePath}/${originDirName}/${cacheClientDirName}/.padding`
+    `${basePath}/${originDirName}/${cacheClientDirName()}/.padding`
   );
   
   
   const paddingTempFile = getRelativeFile(
-    `${basePath}/${originDirName}/${cacheClientDirName}/.padding-tmp`
+    `${basePath}/${originDirName}/${cacheClientDirName()}/.padding-tmp`
+  );
+  
+  
+  const morgueDir = getRelativeFile(
+    `${basePath}/${originDirName}/${cacheClientDirName()}/morgue`
   );
 
-  async function createTestOrigin() {
+  async function createNormalCacheOrigin() {
     async function sandboxScript() {
       const cache = await caches.open("myCache");
       const request = new Request("https://example.com/index.html");
@@ -57,6 +62,10 @@ async function testSteps() {
     file.remove(false);
   }
 
+  function removeDir(dir) {
+    dir.remove(true);
+  }
+
   function createEmptyFile(file) {
     file.create(Ci.nsIFile.NORMAL_FILE_TYPE, 0o644);
   }
@@ -64,7 +73,8 @@ async function testSteps() {
   function checkFiles(
     expectCachesDatabase,
     expectPaddingFile,
-    expectTempPaddingFile
+    expectTempPaddingFile,
+    expectMorgueDir
   ) {
     let exists = cachesDatabase.exists();
     if (expectCachesDatabase) {
@@ -86,34 +96,47 @@ async function testSteps() {
     } else {
       ok(!exists, ".padding-tmp doesn't exist");
     }
+
+    exists = morgueDir.exists();
+    if (expectMorgueDir) {
+      ok(exists, "morgue does exist");
+    } else {
+      ok(!exists, "moruge doesn't exist");
+    }
   }
 
-  async function testInitFunctionality(
-    hasCachesDatabase,
-    hasPaddingFile,
-    hasTempPaddingFile
+  async function testOriginInit(
+    createCachesDatabase,
+    createPaddingFile,
+    createTempPaddingFile,
+    createMorgueDir
   ) {
     info(
       `Testing init cache directory when caches.sqlite ` +
-        `${hasCachesDatabase ? "exists" : "doesn't exist"}, .padding ` +
-        `${hasPaddingFile ? "exists" : "doesn't exist"}, .padding-tmp ` +
-        `${hasTempPaddingFile ? "exists" : "doesn't exist"}`
+        `${createCachesDatabase ? "exists" : "doesn't exist"}, .padding ` +
+        `${createPaddingFile ? "exists" : "doesn't exist"}, .padding-tmp ` +
+        `${createTempPaddingFile ? "exists" : "doesn't exist"}, morgue ` +
+        `${createMorgueDir ? "exists" : "doesn't exist"}`
     );
 
-    await createTestOrigin();
+    await createNormalCacheOrigin();
 
-    checkFiles(true, true, false);
+    checkFiles(true, true, false, true);
 
-    if (hasTempPaddingFile) {
-      createEmptyFile(paddingTempFile);
+    if (!createCachesDatabase) {
+      removeFile(cachesDatabase);
     }
 
-    if (!hasPaddingFile) {
+    if (!createPaddingFile) {
       removeFile(paddingFile);
     }
 
-    if (!hasCachesDatabase) {
-      removeFile(cachesDatabase);
+    if (createTempPaddingFile) {
+      createEmptyFile(paddingTempFile);
+    }
+
+    if (!createMorgueDir) {
+      removeDir(morgueDir);
     }
 
     let request = initStorage();
@@ -125,25 +148,34 @@ async function testSteps() {
     request = initTemporaryOrigin(principal);
     await requestFinished(request);
 
-    
-    
-    checkFiles(hasCachesDatabase, hasCachesDatabase, false);
+    checkFiles(
+      createCachesDatabase,
+      
+      
+      createCachesDatabase,
+      
+      
+      false,
+      createCachesDatabase && createMorgueDir
+    );
 
     request = clearOrigin(principal);
     await requestFinished(request);
   }
 
-  await testInitFunctionality(false, false, false);
   
-  
-  
-  
-  
-  
-  
-  
-  await testInitFunctionality(true, false, false);
-  await testInitFunctionality(true, false, true);
-  await testInitFunctionality(true, true, false);
-  await testInitFunctionality(true, true, true);
+  for (let createCachesDatabase of [false, true]) {
+    for (let createPaddingFile of [false, true]) {
+      for (let createTempPaddingFile of [false, true]) {
+        for (let createMorgueDir of [false, true]) {
+          await testOriginInit(
+            createCachesDatabase,
+            createPaddingFile,
+            createTempPaddingFile,
+            createMorgueDir
+          );
+        }
+      }
+    }
+  }
 }

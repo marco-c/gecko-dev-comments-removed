@@ -8,14 +8,15 @@
 
 #include "DBAction.h"
 #include "FileUtilsImpl.h"
+#include "mozilla/ResultExtensions.h"
+#include "mozilla/Telemetry.h"
+#include "mozilla/Unused.h"
 #include "mozilla/dom/cache/DBSchema.h"
 #include "mozilla/dom/cache/Manager.h"
 #include "mozilla/dom/quota/QuotaCommon.h"
 #include "mozilla/dom/quota/QuotaManager.h"
 #include "mozilla/dom/quota/UsageInfo.h"
 #include "mozilla/ipc/BackgroundParent.h"
-#include "mozilla/Telemetry.h"
-#include "mozilla/Unused.h"
 #include "nsIFile.h"
 #include "nsThreadUtils.h"
 
@@ -53,14 +54,12 @@ Result<UsageInfo, nsresult> ReduceUsageInfo(nsIFile& aDir,
 }
 
 Result<UsageInfo, nsresult> GetBodyUsage(nsIFile& aMorgueDir,
-                                         const Atomic<bool>& aCanceled,
-                                         const bool aInitializing) {
+                                         const Atomic<bool>& aCanceled) {
   AssertIsOnIOThread();
 
   CACHE_TRY_RETURN(ReduceUsageInfo(
       aMorgueDir, aCanceled,
-      [aInitializing](
-          const nsCOMPtr<nsIFile>& bodyDir) -> Result<UsageInfo, nsresult> {
+      [](const nsCOMPtr<nsIFile>& bodyDir) -> Result<UsageInfo, nsresult> {
         CACHE_TRY_INSPECT(const auto& dirEntryKind, GetDirEntryKind(*bodyDir));
 
         if (dirEntryKind != nsIFileKind::ExistsAsDirectory) {
@@ -104,8 +103,7 @@ Result<UsageInfo, nsresult> GetBodyUsage(nsIFile& aMorgueDir,
           return false;
         };
         CACHE_TRY(ToResult(BodyTraverseFiles(QuotaInfo{}, *bodyDir, getUsage,
-                                             
-                                             aInitializing,
+                                              true,
                                               false))
 #ifdef WIN32
                       .orElse([](const nsresult rv) -> Result<Ok, nsresult> {
@@ -125,7 +123,7 @@ Result<UsageInfo, nsresult> GetBodyUsage(nsIFile& aMorgueDir,
 }
 
 Result<int64_t, nsresult> LockedGetPaddingSizeFromDB(
-    nsIFile& aDir, const OriginMetadata& aOriginMetadata) {
+    nsIFile& aDir, nsIFile& aDBFile, const OriginMetadata& aOriginMetadata) {
   QuotaInfo quotaInfo;
   static_cast<OriginMetadata&>(quotaInfo) = aOriginMetadata;
   
@@ -134,26 +132,18 @@ Result<int64_t, nsresult> LockedGetPaddingSizeFromDB(
   
   
   
-  
   MOZ_DIAGNOSTIC_ASSERT(quotaInfo.mDirectoryLockId == -1);
 
-  CACHE_TRY_INSPECT(const auto& dbFile,
-                    CloneFileAndAppend(aDir, kCachesSQLiteFilename));
-
-  CACHE_TRY_INSPECT(const bool& exists, MOZ_TO_RESULT_INVOKE(dbFile, Exists));
-
-  
-  
-  
-  
-  
-  if (!exists) {
-    return 0;
+#ifdef DEBUG
+  {
+    CACHE_TRY_INSPECT(const bool& exists,
+                      MOZ_TO_RESULT_INVOKE(aDBFile, Exists));
+    MOZ_ASSERT(exists);
   }
+#endif
 
-  CACHE_TRY_INSPECT(const auto& conn, OpenDBConnection(quotaInfo, *dbFile));
+  CACHE_TRY_INSPECT(const auto& conn, OpenDBConnection(quotaInfo, aDBFile));
 
-  
   
   
   
@@ -167,6 +157,7 @@ Result<int64_t, nsresult> LockedGetPaddingSizeFromDB(
 }  
 
 const nsLiteralString kCachesSQLiteFilename = u"caches.sqlite"_ns;
+const nsLiteralString kMorgueDirectoryFilename = u"morgue"_ns;
 
 CacheQuotaClient::CacheQuotaClient()
     : mDirPaddingFileMutex("DOMCacheQuotaClient.mDirPaddingFileMutex") {
@@ -188,8 +179,155 @@ Result<UsageInfo, nsresult> CacheQuotaClient::InitOrigin(
     const AtomicBool& aCanceled) {
   AssertIsOnIOThread();
 
-  return GetUsageForOriginInternal(aPersistenceType, aOriginMetadata, aCanceled,
-                                    true);
+  QuotaManager* const qm = QuotaManager::Get();
+  MOZ_DIAGNOSTIC_ASSERT(qm);
+
+  CACHE_TRY_INSPECT(
+      const auto& dir,
+      qm->GetDirectoryForOrigin(aPersistenceType, aOriginMetadata.mOrigin));
+
+  CACHE_TRY(
+      dir->Append(NS_LITERAL_STRING_FROM_CSTRING(DOMCACHE_DIRECTORY_NAME)));
+
+  CACHE_TRY_INSPECT(
+      const auto& cachesSQLiteFile,
+      ([dir, this]() -> Result<nsCOMPtr<nsIFile>, nsresult> {
+        CACHE_TRY_INSPECT(const auto& cachesSQLite,
+                          CloneFileAndAppend(*dir, kCachesSQLiteFilename));
+
+        
+        
+        
+        CACHE_TRY_INSPECT(const auto& dirEntryKind,
+                          GetDirEntryKind(*cachesSQLite));
+        if (dirEntryKind == nsIFileKind::DoesNotExist) {
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          {
+            MutexAutoLock lock(mDirPaddingFileMutex);
+
+            CACHE_TRY(mozilla::dom::cache::LockedDirectoryPaddingDeleteFile(
+                *dir, DirPaddingFile::TMP_FILE));
+
+            CACHE_TRY(mozilla::dom::cache::LockedDirectoryPaddingDeleteFile(
+                *dir, DirPaddingFile::FILE));
+          }
+
+          CACHE_TRY_INSPECT(const auto& morgueDir,
+                            CloneFileAndAppend(*dir, kMorgueDirectoryFilename));
+
+          QuotaInfo dummy;
+          CACHE_TRY(mozilla::dom::cache::RemoveNsIFileRecursively(
+              dummy, *morgueDir,
+               false));
+
+          return nsCOMPtr<nsIFile>{nullptr};
+        }
+
+        CACHE_TRY(OkIf(dirEntryKind == nsIFileKind::ExistsAsFile),
+                  Err(NS_ERROR_FAILURE));
+
+        return cachesSQLite;
+      }()));
+
+  
+  
+  
+  
+  CACHE_TRY(OkIf(!!cachesSQLiteFile), UsageInfo{});
+
+  CACHE_TRY_INSPECT(
+      const auto& paddingSize,
+      ([this, dir, cachesSQLiteFile,
+        &aOriginMetadata]() -> Result<int64_t, nsresult> {
+        MutexAutoLock lock(mDirPaddingFileMutex);
+
+        if (!DirectoryPaddingFileExists(*dir, DirPaddingFile::TMP_FILE)) {
+          const auto& maybePaddingSize = [dir]() -> Maybe<int64_t> {
+            CACHE_TRY_RETURN(LockedDirectoryPaddingGet(*dir).map(Some<int64_t>),
+                             Nothing{});
+          }();
+
+          if (maybePaddingSize) {
+            return maybePaddingSize.ref();
+          }
+        }
+
+        
+        
+        
+        CACHE_TRY_RETURN(LockedGetPaddingSizeFromDB(*dir, *cachesSQLiteFile,
+                                                    aOriginMetadata));
+      }()));
+
+  CACHE_TRY_INSPECT(
+      const auto& innerUsageInfo,
+      ReduceUsageInfo(
+          *dir, aCanceled,
+          [&aCanceled](
+              const nsCOMPtr<nsIFile>& file) -> Result<UsageInfo, nsresult> {
+            CACHE_TRY_INSPECT(
+                const auto& leafName,
+                MOZ_TO_RESULT_INVOKE_TYPED(nsAutoString, file, GetLeafName));
+
+            CACHE_TRY_INSPECT(const auto& dirEntryKind, GetDirEntryKind(*file));
+
+            switch (dirEntryKind) {
+              case nsIFileKind::ExistsAsDirectory:
+                if (leafName.EqualsLiteral("morgue")) {
+                  CACHE_TRY_RETURN(GetBodyUsage(*file, aCanceled));
+                } else {
+                  NS_WARNING("Unknown Cache directory found!");
+                }
+
+                break;
+
+              case nsIFileKind::ExistsAsFile:
+                
+                if (leafName.EqualsLiteral("caches.sqlite-journal") ||
+                    leafName.EqualsLiteral("caches.sqlite-shm") ||
+                    leafName.Find("caches.sqlite-mj"_ns, false, 0, 0) == 0 ||
+                    leafName.EqualsLiteral("context_open.marker")) {
+                  break;
+                }
+
+                if (leafName.Equals(kCachesSQLiteFilename) ||
+                    leafName.EqualsLiteral("caches.sqlite-wal")) {
+                  CACHE_TRY_INSPECT(const int64_t& fileSize,
+                                    MOZ_TO_RESULT_INVOKE(file, GetFileSize));
+                  MOZ_DIAGNOSTIC_ASSERT(fileSize >= 0);
+
+                  return UsageInfo{DatabaseUsageType(Some(fileSize))};
+                }
+
+                
+                if (leafName.EqualsLiteral(PADDING_FILE_NAME) ||
+                    leafName.EqualsLiteral(PADDING_TMP_FILE_NAME)) {
+                  break;
+                }
+
+                NS_WARNING("Unknown Cache file found!");
+
+                break;
+
+              case nsIFileKind::DoesNotExist:
+                
+                break;
+            }
+
+            return UsageInfo{};
+          }));
+
+  
+  
+  return UsageInfo{DatabaseUsageType(Some(paddingSize))} + innerUsageInfo;
 }
 
 nsresult CacheQuotaClient::InitOriginWithoutTracking(
@@ -210,8 +348,14 @@ Result<UsageInfo, nsresult> CacheQuotaClient::GetUsageForOrigin(
     const AtomicBool& aCanceled) {
   AssertIsOnIOThread();
 
-  return GetUsageForOriginInternal(aPersistenceType, aOriginMetadata, aCanceled,
-                                    false);
+  
+  
+
+  QuotaManager* quotaManager = QuotaManager::Get();
+  MOZ_ASSERT(quotaManager);
+
+  return quotaManager->GetUsageForClient(PERSISTENCE_TYPE_DEFAULT,
+                                         aOriginMetadata, Client::DOMCACHE);
 }
 
 void CacheQuotaClient::OnOriginClearCompleted(PersistenceType aPersistenceType,
@@ -363,123 +507,6 @@ CacheQuotaClient::~CacheQuotaClient() {
   MOZ_DIAGNOSTIC_ASSERT(sInstance == this);
 
   sInstance = nullptr;
-}
-
-Result<UsageInfo, nsresult> CacheQuotaClient::GetUsageForOriginInternal(
-    PersistenceType aPersistenceType, const OriginMetadata& aOriginMetadata,
-    const AtomicBool& aCanceled, const bool aInitializing) {
-  AssertIsOnIOThread();
-
-  QuotaManager* const qm = QuotaManager::Get();
-  MOZ_DIAGNOSTIC_ASSERT(qm);
-
-  CACHE_TRY_INSPECT(
-      const auto& dir,
-      qm->GetDirectoryForOrigin(aPersistenceType, aOriginMetadata.mOrigin));
-
-  CACHE_TRY(
-      dir->Append(NS_LITERAL_STRING_FROM_CSTRING(DOMCACHE_DIRECTORY_NAME)));
-
-  CACHE_TRY_INSPECT(
-      const auto& maybePaddingSize,
-      ([this, &dir, aInitializing,
-        &aOriginMetadata]() -> Result<Maybe<int64_t>, nsresult> {
-        
-        
-        MutexAutoLock lock(mDirPaddingFileMutex);
-
-        if (!DirectoryPaddingFileExists(*dir, DirPaddingFile::TMP_FILE)) {
-          const auto& maybePaddingSize = [&dir]() -> Maybe<int64_t> {
-            CACHE_TRY_RETURN(LockedDirectoryPaddingGet(*dir).map(Some<int64_t>),
-                             Nothing{});
-          }();
-
-          if (maybePaddingSize) {
-            return maybePaddingSize;
-          }
-        }
-
-        if (aInitializing) {
-          CACHE_TRY_RETURN(LockedGetPaddingSizeFromDB(*dir, aOriginMetadata)
-                               .map(Some<int64_t>));
-        }
-
-        
-        
-        
-        
-        
-
-        return Maybe<int64_t>{};
-      }()));
-
-  if (!maybePaddingSize) {
-    return qm->GetUsageForClient(PERSISTENCE_TYPE_DEFAULT, aOriginMetadata,
-                                 Client::DOMCACHE);
-  }
-
-  CACHE_TRY_INSPECT(
-      const auto& innerUsageInfo,
-      ReduceUsageInfo(
-          *dir, aCanceled,
-          [&aCanceled, aInitializing](
-              const nsCOMPtr<nsIFile>& file) -> Result<UsageInfo, nsresult> {
-            CACHE_TRY_INSPECT(
-                const auto& leafName,
-                MOZ_TO_RESULT_INVOKE_TYPED(nsAutoString, file, GetLeafName));
-
-            CACHE_TRY_INSPECT(const auto& dirEntryKind, GetDirEntryKind(*file));
-
-            switch (dirEntryKind) {
-              case nsIFileKind::ExistsAsDirectory:
-                if (leafName.EqualsLiteral("morgue")) {
-                  CACHE_TRY_RETURN(
-                      GetBodyUsage(*file, aCanceled, aInitializing));
-                } else {
-                  NS_WARNING("Unknown Cache directory found!");
-                }
-
-                break;
-
-              case nsIFileKind::ExistsAsFile:
-                
-                if (leafName.EqualsLiteral("caches.sqlite-journal") ||
-                    leafName.EqualsLiteral("caches.sqlite-shm") ||
-                    leafName.Find("caches.sqlite-mj"_ns, false, 0, 0) == 0 ||
-                    leafName.EqualsLiteral("context_open.marker")) {
-                  break;
-                }
-
-                if (leafName.Equals(kCachesSQLiteFilename) ||
-                    leafName.EqualsLiteral("caches.sqlite-wal")) {
-                  CACHE_TRY_INSPECT(const int64_t& fileSize,
-                                    MOZ_TO_RESULT_INVOKE(file, GetFileSize));
-                  MOZ_DIAGNOSTIC_ASSERT(fileSize >= 0);
-
-                  return UsageInfo{DatabaseUsageType(Some(fileSize))};
-                }
-
-                
-                if (leafName.EqualsLiteral(PADDING_FILE_NAME) ||
-                    leafName.EqualsLiteral(PADDING_TMP_FILE_NAME)) {
-                  break;
-                }
-
-                NS_WARNING("Unknown Cache file found!");
-
-                break;
-
-              case nsIFileKind::DoesNotExist:
-                
-                break;
-            }
-
-            return UsageInfo{};
-          }));
-
-  
-  
-  return UsageInfo{DatabaseUsageType(maybePaddingSize)} + innerUsageInfo;
 }
 
 
