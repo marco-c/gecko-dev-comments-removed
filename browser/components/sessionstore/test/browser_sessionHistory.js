@@ -90,9 +90,11 @@ add_task(async function test_pageshow() {
   await promiseBrowserLoaded(browser);
 
   
-  let pageShowPromise = ContentTask.spawn(browser, null, async () => {
-    await ContentTaskUtils.waitForEvent(this, "pageshow", true);
-  });
+  let pageShowPromise = BrowserTestUtils.waitForContentEvent(
+    browser,
+    "pageshow",
+    true
+  );
 
   
   browser.goBack();
