@@ -586,47 +586,6 @@ class TargetCommand extends EventEmitter {
     return this._isDestroyed;
   }
 
-  
-
-
-
-
-
-  async updateConfiguration(configuration) {
-    if (this.hasTargetWatcherSupport("target-configuration")) {
-      const targetConfigurationFront = await this.watcherFront.getTargetConfigurationActor();
-      await targetConfigurationFront.updateConfiguration(configuration);
-    } else {
-      await this.targetFront.reconfigure({ options: configuration });
-    }
-  }
-
-  
-
-
-
-
-
-  async isJavascriptEnabled(configuration) {
-    if (this.hasTargetWatcherSupport("target-configuration")) {
-      const targetConfigurationFront = await this.watcherFront.getTargetConfigurationActor();
-
-      const { javascriptEnabled } = targetConfigurationFront.configuration;
-      if (typeof javascriptEnabled === "undefined") {
-        
-        
-        
-        
-        return this.targetFront._javascriptEnabled;
-      }
-      return targetConfigurationFront.configuration.javascriptEnabled;
-    }
-
-    
-    
-    return this.targetFront._javascriptEnabled;
-  }
-
   destroy() {
     this.stopListening();
     this._createListeners.off();

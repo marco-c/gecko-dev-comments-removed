@@ -213,7 +213,9 @@ async function toggleCache(toolbox, disabled) {
   
   Services.prefs.setBoolPref("devtools.cache.disabled", disabled);
 
-  await toolbox.targetList.updateConfiguration(options);
+  await toolbox.commands.targetConfigurationCommand.updateConfiguration(
+    options
+  );
   await toolbox.target.reload();
 
   await navigationFinished;

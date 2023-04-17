@@ -9,6 +9,8 @@
 
 const Commands = {
   targetCommand: "devtools/shared/commands/target/target-command",
+  targetConfigurationCommand:
+    "devtools/shared/commands/target-configuration/target-configuration-command",
 };
 
 

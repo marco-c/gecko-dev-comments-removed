@@ -467,7 +467,9 @@ class Connector {
 
     
     const reconfigureTab = options => {
-      return this.toolbox.targetList.updateConfiguration(options);
+      return this.toolbox.commands.targetConfigurationCommand.updateConfiguration(
+        options
+      );
     };
 
     

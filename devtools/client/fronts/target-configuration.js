@@ -23,39 +23,10 @@ const {
 class TargetConfigurationFront extends FrontClassWithSpec(
   targetConfigurationSpec
 ) {
-  constructor(client, targetFront, parentFront) {
-    super(client, targetFront, parentFront);
-
-    
-    
-    
-    this._configuration = {};
-  }
-
   form(json) {
     
-    this._configuration = json.configuration;
-
+    this.initialConfiguration = json.configuration;
     this._traits = json.traits;
-  }
-
-  
-
-
-  get configuration() {
-    return this._configuration;
-  }
-
-  
-  
-  supportsConfigurationOption(optionName) {
-    return !!this._traits.supportedOptions[optionName];
-  }
-
-  async updateConfiguration(configuration) {
-    const updatedConfiguration = await super.updateConfiguration(configuration);
-    
-    this._configuration = updatedConfiguration;
   }
 }
 
