@@ -149,6 +149,14 @@ bool PrivateOpEmitter::emitGet() {
       
       return false;
     }
+
+    if (isCompoundAssignment()) {
+      if (!bce_->emit1(JSOp::Dup2)) {
+        
+        return false;
+      }
+    }
+
     if (!bce_->emitElemOpBase(JSOp::GetElem, ShouldInstrument::Yes)) {
       
       return false;
