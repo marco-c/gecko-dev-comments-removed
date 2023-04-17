@@ -931,8 +931,9 @@ var gIdentityHandler = {
   refreshIdentityPopup() {
     
     
+    
     this._clearSiteDataFooter.hidden = true;
-    if (this._uriHasHost) {
+    if (this._uriHasHost && !this._pageExtensionPolicy) {
       SiteDataManager.hasSiteData(this._uri.asciiHost).then(hasData => {
         this._clearSiteDataFooter.hidden = !hasData;
       });
