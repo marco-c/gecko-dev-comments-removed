@@ -2,6 +2,7 @@
 
 
 
+
 #ifndef mozilla_image_decoders_icon_gtk_nsIconChannel_h
 #define mozilla_image_decoders_icon_gtk_nsIconChannel_h
 
@@ -11,6 +12,11 @@
 #include "nsIURI.h"
 #include "nsIIconURI.h"
 #include "nsCOMPtr.h"
+
+namespace mozilla::ipc {
+class ByteBuf;
+}
+
 
 
 
@@ -30,13 +36,18 @@ class nsIconChannel final : public nsIChannel {
   
   nsresult Init(nsIURI* aURI);
 
+  
+  
+  static nsresult GetIcon(nsIURI* aURI, mozilla::ipc::ByteBuf* aDataOut);
+
  private:
   ~nsIconChannel() {}
   
   
   nsCOMPtr<nsIChannel> mRealChannel;
 
-  nsresult InitWithGIO(nsIMozIconURI* aIconURI);
+  static nsresult GetIconWithGIO(nsIMozIconURI* aIconURI,
+                                 mozilla::ipc::ByteBuf* aDataOut);
 };
 
 #endif  
