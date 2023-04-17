@@ -104,18 +104,14 @@ var Sanitizer = {
 
 
 
+
+
   showUI(parentWindow) {
-    let win =
-      AppConstants.platform == "macosx"
-        ? null 
-        : parentWindow;
-    Services.ww.openWindow(
-      win,
-      "chrome://browser/content/sanitize.xhtml",
-      "Sanitize",
-      "chrome,titlebar,dialog,centerscreen,modal",
-      null
-    );
+    if (!parentWindow?.gDialogBox) {
+      throw new Error("Sanitizer.showUI expected a browser window argument.");
+    }
+
+    parentWindow.gDialogBox.open("chrome://browser/content/sanitize.xhtml", {});
   },
 
   
