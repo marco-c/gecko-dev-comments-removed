@@ -1917,10 +1917,6 @@ initialize_iaudioclient3(com_ptr<IAudioClient> & audio_client,
 
   
   
-  flags = flags & ~AUDCLNT_STREAMFLAGS_NOPERSIST;
-
-  
-  
   if (direction == eCapture) {
     LOG("Audio stream is capture, not using IAudioClient3");
     return false;
@@ -2134,11 +2130,6 @@ int setup_wasapi_stream_one_side(cubeb_stream * stm,
 
   DWORD flags = 0;
 
-  bool is_persist = stream_params->prefs & CUBEB_STREAM_PREF_PERSIST;
-  if (!is_persist) {
-    flags |= AUDCLNT_STREAMFLAGS_NOPERSIST;
-  }
-
   
   
   if (is_loopback) {
@@ -2272,15 +2263,14 @@ void wasapi_find_matching_output_device(cubeb_stream * stm) {
   
   
   for (uint32_t i = 0; i < collection.count; i++) {
-    cubeb_device_info dev = collection.device[i];
-    if (dev.devid == input_device_id) {
-      input_device = &dev;
+    if (collection.device[i].devid == input_device_id) {
+      input_device = &collection.device[i];
       break;
     }
   }
 
   for (uint32_t i = 0; i < collection.count; i++) {
-    cubeb_device_info dev = collection.device[i];
+    cubeb_device_info & dev = collection.device[i];
     if (dev.type == CUBEB_DEVICE_TYPE_OUTPUT && dev.group_id && input_device &&
         !strcmp(dev.group_id, input_device->group_id) &&
         dev.default_rate == input_device->default_rate) {

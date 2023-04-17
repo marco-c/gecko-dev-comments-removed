@@ -242,7 +242,6 @@ typedef enum {
 
 
 
-
   CUBEB_STREAM_PREF_JACK_NO_AUTO_CONNECT = 0x20  
 
 
