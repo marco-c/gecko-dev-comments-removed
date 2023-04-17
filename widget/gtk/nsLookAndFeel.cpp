@@ -394,6 +394,7 @@ nsresult nsLookAndFeel::PerThemeData::GetColor(ColorID aID,
   switch (aID) {
       
       
+      
     case ColorID::WindowBackground:
     case ColorID::WidgetBackground:
     case ColorID::TextBackground:
@@ -416,13 +417,14 @@ nsresult nsLookAndFeel::PerThemeData::GetColor(ColorID aID,
       aColor = mMozWindowText;
       break;
     case ColorID::WidgetSelectBackground:
+    case ColorID::TextSelectBackground:
     case ColorID::IMESelectedRawTextBackground:
     case ColorID::IMESelectedConvertedTextBackground:
     case ColorID::MozDragtargetzone:
     case ColorID::Highlight:  
       aColor = mTextSelectedBackground;
       break;
-    case ColorID::Highlighttext:
+    case ColorID::TextSelectForeground:
       if (NS_GET_A(mTextSelectedBackground) < 155) {
         aColor = NS_SAME_AS_FOREGROUND_COLOR;
         break;
@@ -431,13 +433,14 @@ nsresult nsLookAndFeel::PerThemeData::GetColor(ColorID aID,
     case ColorID::WidgetSelectForeground:
     case ColorID::IMESelectedRawTextForeground:
     case ColorID::IMESelectedConvertedTextForeground:
+    case ColorID::Highlighttext:
       aColor = mTextSelectedText;
       break;
-    case ColorID::Selecteditem:
+    case ColorID::MozHtmlCellhighlight:
     case ColorID::MozAccentColor:
       aColor = mAccentColor;
       break;
-    case ColorID::Selecteditemtext:
+    case ColorID::MozHtmlCellhighlighttext:
     case ColorID::MozAccentColorForeground:
       aColor = mAccentColorForeground;
       break;

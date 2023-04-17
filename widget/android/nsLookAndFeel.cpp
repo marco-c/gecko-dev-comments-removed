@@ -104,6 +104,7 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aColorScheme,
   switch (aID) {
       
       
+      
     case ColorID::WindowForeground:
       aColor = mSystemColors.textColorPrimary;
       break;
@@ -121,7 +122,7 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aColorScheme,
       
       aColor = mSystemColors.textColorPrimary;
       break;
-    case ColorID::Highlight: {
+    case ColorID::TextSelectBackground: {
       
       
       nscolor accent =
@@ -130,7 +131,7 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aColorScheme,
           NS_RGBA(NS_GET_R(accent), NS_GET_G(accent), NS_GET_B(accent), 153);
       break;
     }
-    case ColorID::Highlighttext:
+    case ColorID::TextSelectForeground:
       
       
       aColor = NS_SAME_AS_FOREGROUND_COLOR;
@@ -178,13 +179,15 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aColorScheme,
       aColor = NS_RGB(0xb1, 0xa5, 0x98);
       break;
     case ColorID::MozCellhighlight:
-    case ColorID::Selecteditem:
+    case ColorID::MozHtmlCellhighlight:
+    case ColorID::Highlight:
     case ColorID::MozAccentColor:
       aColor = UseNativeAccent() ? mSystemColors.colorAccent
                                  : widget::sDefaultAccent.ToABGR();
       break;
     case ColorID::MozCellhighlighttext:
-    case ColorID::Selecteditemtext:
+    case ColorID::MozHtmlCellhighlighttext:
+    case ColorID::Highlighttext:
     case ColorID::MozAccentColorForeground:
       aColor = UseNativeAccent()
                    ? nsNativeBasicTheme::ComputeCustomAccentForeground(
