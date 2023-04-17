@@ -35,7 +35,20 @@ add_task(async function() {
       origin: "https://shopping.xyz.com",
       persisted: false,
     },
+    {
+      usage: 1024 * 5,
+      origin: "https://example.com",
+      persisted: false,
+    },
+    {
+      usage: 1024 * 5,
+      origin: "https://example.net",
+      persisted: false,
+    },
   ]);
+
+  
+  hosts.sort();
 
   let updatePromise = promiseSiteDataManagerSitesUpdated();
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
