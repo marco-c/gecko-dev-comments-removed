@@ -115,32 +115,20 @@ class FlattenedChildIterator : public ExplicitChildIterator {
                                   bool aStartAtBeginning = true)
       : ExplicitChildIterator(aParent, aStartAtBeginning),
         mOriginalContent(aParent) {
-    Init(false);
+    Init();
   }
 
   bool ShadowDOMInvolved() { return mShadowDOMInvolved; }
 
   const nsIContent* Parent() const { return mOriginalContent; }
 
- private:
-  void Init(bool aIgnoreXBL);
-
  protected:
-  
-
-
-
-  FlattenedChildIterator(const nsIContent* aParent, uint32_t aFlags,
-                         bool aStartAtBeginning = true)
-      : ExplicitChildIterator(aParent, aStartAtBeginning),
-        mOriginalContent(aParent) {
-    bool ignoreXBL = aFlags & nsIContent::eAllButXBL;
-    Init(ignoreXBL);
-  }
 
   const nsIContent* mOriginalContent;
 
  private:
+  void Init();
+
   
   
   bool mShadowDOMInvolved = false;
@@ -159,7 +147,7 @@ class AllChildrenIterator : private FlattenedChildIterator {
  public:
   AllChildrenIterator(const nsIContent* aNode, uint32_t aFlags,
                       bool aStartAtBeginning = true)
-      : FlattenedChildIterator(aNode, aFlags, aStartAtBeginning),
+      : FlattenedChildIterator(aNode, aStartAtBeginning),
         mAnonKidsIdx(aStartAtBeginning ? UINT32_MAX : 0),
         mFlags(aFlags),
         mPhase(aStartAtBeginning ? eAtBegin : eAtEnd) {}

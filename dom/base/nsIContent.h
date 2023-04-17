@@ -125,37 +125,17 @@ class nsIContent : public nsINode {
     
 
 
-
-
-
-
-
-
-
-
-    eAllButXBL = 1,
-
-    
-
-
-
-    eSkipPlaceholderContent = 2,
+    eSkipPlaceholderContent = 1 << 0,
 
     
 
 
 
 
-    eSkipDocumentLevelNativeAnonymousContent = 4,
+    eSkipDocumentLevelNativeAnonymousContent = 1 << 1,
   };
 
   
-
-
-
-
-
-
 
 
 
