@@ -25,8 +25,8 @@ add_task(async function compress_bookmark_backups_test() {
   
   
   
-  await OS.File.remove(mostRecentBackupFile);
-  Assert.equal(false, await OS.File.exists(mostRecentBackupFile));
+  await IOUtils.remove(mostRecentBackupFile);
+  Assert.equal(false, await IOUtils.exists(mostRecentBackupFile));
 
   
   
@@ -56,5 +56,5 @@ add_task(async function compress_bookmark_backups_test() {
   await PlacesUtils.bookmarks.eraseEverything();
 
   
-  await OS.File.remove(jsonFile);
+  await IOUtils.remove(jsonFile);
 });
