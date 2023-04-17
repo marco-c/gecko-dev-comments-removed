@@ -78,20 +78,20 @@ class CacheQuotaClient final : public quota::Client {
 
     if (aIncreaseSize == aDecreaseSize && !temporaryPaddingFileExist) {
       
-      QM_TRY(aCommitHook());
+      QM_TRY(MOZ_TO_RESULT(aCommitHook()));
 
       return NS_OK;
     }
 
     
     
-    QM_TRY(UpdateDirectoryPaddingFile(aBaseDir, aConn, aIncreaseSize,
-                                      aDecreaseSize,
-                                      temporaryPaddingFileExist));
+    QM_TRY(MOZ_TO_RESULT(
+        UpdateDirectoryPaddingFile(aBaseDir, aConn, aIncreaseSize,
+                                   aDecreaseSize, temporaryPaddingFileExist)));
 
     
     
-    QM_TRY(aCommitHook());
+    QM_TRY(MOZ_TO_RESULT(aCommitHook()));
 
     QM_WARNONLY_TRY(ToResult(DirectoryPaddingFinalizeWrite(aBaseDir)),
                     ([&aBaseDir](const nsresult) {

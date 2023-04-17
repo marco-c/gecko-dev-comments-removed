@@ -51,7 +51,7 @@ nsresult BodyTraverseFiles(const QuotaInfo& aQuotaInfo, nsIFile& aBodyDir,
 
           case quota::nsIFileKind::ExistsAsFile: {
             nsAutoCString leafName;
-            QM_TRY(file->GetNativeLeafName(leafName));
+            QM_TRY(MOZ_TO_RESULT(file->GetNativeLeafName(leafName)));
 
             
             
