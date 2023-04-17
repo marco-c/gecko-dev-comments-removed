@@ -114,11 +114,6 @@ nsresult TextEditor::OnEndHandlingTopLevelEditSubAction() {
       break;
     }
 
-    if (NS_FAILED(rv = EnsurePaddingBRElementForEmptyEditor())) {
-      NS_WARNING("TextEditor::EnsurePaddingBRElementForEmptyEditor() failed");
-      break;
-    }
-
     if (!IsSingleLineEditor() &&
         NS_FAILED(rv = EnsurePaddingBRElementInMultilineEditor())) {
       NS_WARNING(
@@ -259,60 +254,19 @@ nsresult TextEditor::EnsureCaretNotAtEndOfTextNode() {
   
   
   
-  if (!SelectionRef().RangeCount()) {
-    DebugOnly<nsresult> rvIgnored = CollapseSelectionToEnd();
-    if (NS_WARN_IF(Destroyed())) {
-      return NS_ERROR_EDITOR_DESTROYED;
-    }
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rvIgnored),
-        "EditorBase::CollapseSelectionToEnd() failed, but ignored");
-  }
-
-  
-  
-  
-  EditorRawDOMPoint selectionStartPoint(
-      EditorBase::GetStartPoint(SelectionRef()));
-  if (NS_WARN_IF(!selectionStartPoint.IsSet())) {
-    return NS_ERROR_FAILURE;
-  }
-
-  
-  if (!selectionStartPoint.IsInTextNode() ||
-      !selectionStartPoint.IsEndOfContainer()) {
+  if (SelectionRef().RangeCount()) {
     return NS_OK;
   }
 
-  Element* anonymousDivElement = GetRoot();
-  if (NS_WARN_IF(!anonymousDivElement)) {
-    return NS_ERROR_NULL_POINTER;
-  }
-  nsINode* parentNode = selectionStartPoint.GetContainer()->GetParentNode();
-  if (parentNode != anonymousDivElement) {
-    return NS_OK;
-  }
-
-  nsIContent* nextContent =
-      selectionStartPoint.GetContainer()->GetNextSibling();
-  if (!nextContent ||
-      !EditorUtils::IsPaddingBRElementForEmptyLastLine(*nextContent)) {
-    return NS_OK;
-  }
-
-  EditorRawDOMPoint afterStartContainer(
-      EditorRawDOMPoint::After(*selectionStartPoint.GetContainer()));
-  if (NS_WARN_IF(!afterStartContainer.IsSet())) {
-    return NS_ERROR_FAILURE;
-  }
-  IgnoredErrorResult ignoredError;
-  SelectionRef().CollapseInLimiter(afterStartContainer, ignoredError);
+  DebugOnly<nsresult> rvIgnored = CollapseSelectionToEnd();
   if (NS_WARN_IF(Destroyed())) {
     return NS_ERROR_EDITOR_DESTROYED;
   }
-  NS_WARNING_ASSERTION(!ignoredError.Failed(),
-                       "Selection::CollapseInLimiter() failed");
-  return ignoredError.StealNSResult();
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rvIgnored),
+      "EditorBase::CollapseSelectionToEnd() failed, but ignored");
+
+  return NS_OK;
 }
 
 void TextEditor::HandleNewLinesInStringForSingleLineEditor(
@@ -593,36 +547,22 @@ EditActionResult TextEditor::SetTextWithoutTransaction(
   }
 
   RefPtr<Element> anonymousDivElement = GetRoot();
-  nsIContent* firstChild = anonymousDivElement->GetFirstChild();
+  RefPtr<Text> textNode =
+      Text::FromNodeOrNull(anonymousDivElement->GetFirstChild());
+  MOZ_ASSERT(textNode);
 
   
   
   
   
   
-  if (IsSingleLineEditor()) {
+  if (!IsSingleLineEditor()) {
     
     
     
-    
-    
-    if (firstChild && (!firstChild->IsText() || firstChild->GetNextSibling())) {
-      return EditActionIgnored();
-    }
-  } else {
-    
-    
-    
-    if (!firstChild) {
-      return EditActionIgnored();
-    }
-    if (firstChild->IsText()) {
-      if (!firstChild->GetNextSibling() ||
-          !EditorUtils::IsPaddingBRElementForEmptyLastLine(
-              *firstChild->GetNextSibling())) {
-        return EditActionIgnored();
-      }
-    } else if (!EditorUtils::IsPaddingBRElementForEmptyLastLine(*firstChild)) {
+    if (!textNode->GetNextSibling() ||
+        !EditorUtils::IsPaddingBRElementForEmptyLastLine(
+            *textNode->GetNextSibling())) {
       return EditActionIgnored();
     }
   }
@@ -634,60 +574,10 @@ EditActionResult TextEditor::SetTextWithoutTransaction(
     HandleNewLinesInStringForSingleLineEditor(sanitizedValue);
   }
 
-  if (!firstChild || !firstChild->IsText()) {
-    if (sanitizedValue.IsEmpty()) {
-      return EditActionHandled();
-    }
-    RefPtr<Document> document = GetDocument();
-    if (NS_WARN_IF(!document)) {
-      return EditActionIgnored();
-    }
-    RefPtr<nsTextNode> newTextNode = CreateTextNode(sanitizedValue);
-    if (!newTextNode) {
-      NS_WARNING("EditorBase::CreateTextNode() failed");
-      return EditActionIgnored();
-    }
-    nsresult rv = InsertNodeWithTransaction(
-        *newTextNode, EditorDOMPoint(anonymousDivElement, 0));
-    if (NS_WARN_IF(Destroyed())) {
-      return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
-    }
-    if (NS_FAILED(rv)) {
-      NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
-      return EditActionResult(rv);
-    }
-    return EditActionHandled();
-  }
-
-  
-  RefPtr<Text> textNode = firstChild->GetAsText();
-  if (MOZ_UNLIKELY(!textNode)) {
-    NS_WARNING("The first child was not a text node");
-    return EditActionIgnored();
-  }
   rv = SetTextNodeWithoutTransaction(sanitizedValue, *textNode);
   if (NS_FAILED(rv)) {
     NS_WARNING("EditorBase::SetTextNodeWithoutTransaction() failed");
     return EditActionResult(rv);
-  }
-
-  
-  
-  if (sanitizedValue.IsEmpty() && !textNode->Length()) {
-    nsresult rv = DeleteNodeWithTransaction(*textNode);
-    if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-      return EditActionResult(NS_ERROR_EDITOR_DESTROYED);
-    }
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rv),
-        "EditorBase::DeleteNodeWithTransaction() failed, but ignored");
-    
-    
-    
-    IgnoredErrorResult ignoredError;
-    SelectionRef().SetInterlinePosition(true, ignoredError);
-    NS_WARNING_ASSERTION(!ignoredError.Failed(),
-                         "Selection::SetInterlinePoisition(true) failed");
   }
 
   return EditActionHandled();
@@ -703,9 +593,7 @@ EditActionResult TextEditor::HandleDeleteSelection(
 
   CANCEL_OPERATION_AND_RETURN_EDIT_ACTION_RESULT_IF_READONLY
 
-  
-  
-  if (mPaddingBRElementForEmptyEditor) {
+  if (IsEmpty()) {
     return EditActionCanceled();
   }
   EditActionResult result =
@@ -796,37 +684,15 @@ EditActionResult TextEditor::ComputeValueFromTextNodeAndBRElement(
     return EditActionHandled();
   }
 
-  nsIContent* textNodeOrPaddingBRElement = anonymousDivElement->GetFirstChild();
-  if (!textNodeOrPaddingBRElement ||
-      textNodeOrPaddingBRElement == mPaddingBRElementForEmptyEditor) {
+  Text* textNode = Text::FromNodeOrNull(anonymousDivElement->GetFirstChild());
+  MOZ_ASSERT(textNode);
+
+  if (!textNode->Length()) {
     aValue.Truncate();
     return EditActionHandled();
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  Text* textNode = textNodeOrPaddingBRElement->GetAsText();
-  if (!textNode) {
-    
-    
-    aValue.Truncate();
-    return EditActionHandled();
-  }
-
-  nsIContent* firstChildExceptText =
-      textNode ? textNodeOrPaddingBRElement->GetNextSibling()
-               : textNodeOrPaddingBRElement;
+  nsIContent* firstChildExceptText = textNode->GetNextSibling();
   
   bool isInput = IsSingleLineEditor();
   bool isTextarea = !isInput;

@@ -77,10 +77,9 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
   using EditorBase::CanPaste;
 
   
-  MOZ_CAN_RUN_SCRIPT virtual nsresult Init(Document& aDoc, Element* aRoot,
-                                           nsISelectionController* aSelCon,
-                                           uint32_t aFlags,
-                                           const nsAString& aValue) override;
+  MOZ_CAN_RUN_SCRIPT virtual nsresult Init(
+      Document& aDoc, Element* aRoot, nsISelectionController* aSelCon,
+      uint32_t aFlags, const nsAString& aInitialValue) override;
 
   bool IsEmpty() const override;
 
@@ -421,13 +420,6 @@ class TextEditor : public EditorBase, public nsITimerCallback, public nsINamed {
       ErrorResult& aRv) override;
   MOZ_CAN_RUN_SCRIPT virtual nsresult OnEndHandlingTopLevelEditSubAction()
       override;
-
-  
-
-
-
-
-  MOZ_CAN_RUN_SCRIPT nsresult EnsurePaddingBRElementForEmptyEditor();
 
   
 
