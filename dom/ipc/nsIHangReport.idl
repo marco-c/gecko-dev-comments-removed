@@ -53,11 +53,6 @@ interface nsIHangReport : nsISupports
 
   
   
-  
-  void terminateGlobal();
-
-  
-  
   void terminatePlugin();
 
   
