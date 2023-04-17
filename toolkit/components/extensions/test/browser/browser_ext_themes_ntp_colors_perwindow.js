@@ -2,6 +2,17 @@
 
 
 
+function waitForAboutNewTabReady(browser, url) {
+  
+  return SpecialPowers.spawn(browser, [url], async url => {
+    let doc = content.document;
+    await ContentTaskUtils.waitForCondition(
+      () => doc.querySelector(".outer-wrapper"),
+      `Waiting for page wrapper to be initialized at ${url}`
+    );
+  });
+}
+
 
 
 
@@ -222,6 +233,7 @@ add_task(async function test_per_window_ntp_theme() {
         await BrowserTestUtils.withNewTab(
           { gBrowser: win.gBrowser, url },
           async browser => {
+            await waitForAboutNewTabReady(browser, url);
             if (theme) {
               await test_ntp_theme(browser, theme, isBrightText);
             } else {
