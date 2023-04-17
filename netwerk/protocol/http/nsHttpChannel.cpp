@@ -590,8 +590,36 @@ nsresult nsHttpChannel::MaybeUseHTTPSRRForUpgrade(bool aShouldUpgrade,
     return ContinueOnBeforeConnect(hasHTTPSRR, aStatus, hasHTTPSRR);
   }
 
+  auto dnsStrategy = GetProxyDNSStrategy();
+  if (!(dnsStrategy & DNS_PREFETCH_ORIGIN)) {
+    return ContinueOnBeforeConnect(aShouldUpgrade, aStatus);
+  }
+
   LOG(("nsHttpChannel::MaybeUseHTTPSRRForUpgrade [%p] wait for HTTPS RR",
        this));
+
+  OriginAttributes originAttributes;
+  StoragePrincipalHelper::GetOriginAttributesForHTTPSRR(this, originAttributes);
+
+  RefPtr<nsDNSPrefetch> resolver =
+      new nsDNSPrefetch(mURI, originAttributes, nsIRequest::GetTRRMode());
+  nsWeakPtr weakPtrThis(
+      do_GetWeakReference(static_cast<nsIHttpChannel*>(this)));
+  nsresult rv = resolver->FetchHTTPSSVC(
+      mCaps & NS_HTTP_REFRESH_DNS, !LoadUseHTTPSSVC(),
+      [weakPtrThis](nsIDNSHTTPSSVCRecord* aRecord) {
+        nsCOMPtr<nsIHttpChannel> channel = do_QueryReferent(weakPtrThis);
+        RefPtr<nsHttpChannel> httpChannelImpl = do_QueryObject(channel);
+        if (httpChannelImpl) {
+          httpChannelImpl->OnHTTPSRRAvailable(aRecord);
+        }
+      });
+  if (NS_FAILED(rv)) {
+    LOG(("  FetchHTTPSSVC failed with 0x%08" PRIx32,
+         static_cast<uint32_t>(rv)));
+    return ContinueOnBeforeConnect(aShouldUpgrade, aStatus);
+  }
+
   StoreWaitHTTPSSVCRecord(true);
   return NS_OK;
 }
@@ -6191,12 +6219,6 @@ nsresult nsHttpChannel::BeginConnect() {
 }
 
 nsresult nsHttpChannel::MaybeStartDNSPrefetch() {
-  bool httpssvcQueried = false;
-  
-  
-  auto resetUsHTTPSSVC = MakeScopeExit(
-      [&] { StoreUseHTTPSSVC(LoadUseHTTPSSVC() && httpssvcQueried); });
-
   
   
   
@@ -6245,11 +6267,9 @@ nsresult nsHttpChannel::MaybeStartDNSPrefetch() {
       mDNSBlockingThenable = mDNSBlockingPromise.Ensure(__func__);
     }
 
-    
-    
-    if (LoadUseHTTPSSVC() ||
-        (gHttpHandler->UseHTTPSRRForSpeculativeConnection() &&
-         !mHTTPSSVCRecord && !(mCaps & NS_HTTP_DISALLOW_HTTPS_RR))) {
+    if ((gHttpHandler->UseHTTPSRRAsAltSvcEnabled() ||
+         gHttpHandler->UseHTTPSRRForSpeculativeConnection()) &&
+        !mHTTPSSVCRecord && !(mCaps & NS_HTTP_DISALLOW_HTTPS_RR)) {
       MOZ_ASSERT(!mHTTPSSVCRecord);
 
       OriginAttributes originAttributes;
@@ -6258,23 +6278,10 @@ nsresult nsHttpChannel::MaybeStartDNSPrefetch() {
 
       RefPtr<nsDNSPrefetch> resolver =
           new nsDNSPrefetch(mURI, originAttributes, nsIRequest::GetTRRMode());
-      nsWeakPtr weakPtrThis(
-          do_GetWeakReference(static_cast<nsIHttpChannel*>(this)));
-      nsresult rv = resolver->FetchHTTPSSVC(
-          mCaps & NS_HTTP_REFRESH_DNS, !LoadUseHTTPSSVC(),
-          [weakPtrThis](nsIDNSHTTPSSVCRecord* aRecord) {
-            nsCOMPtr<nsIHttpChannel> channel = do_QueryReferent(weakPtrThis);
-            RefPtr<nsHttpChannel> httpChannelImpl = do_QueryObject(channel);
-            if (httpChannelImpl) {
-              httpChannelImpl->OnHTTPSRRAvailable(aRecord);
-            }
-          });
-      if (NS_FAILED(rv)) {
-        LOG(("  FetchHTTPSSVC failed with 0x%08" PRIx32,
-             static_cast<uint32_t>(rv)));
-      } else {
-        httpssvcQueried = true;
-      }
+      Unused << resolver->FetchHTTPSSVC(mCaps & NS_HTTP_REFRESH_DNS, true,
+                                        [](nsIDNSHTTPSSVCRecord*) {
+                                          
+                                        });
     }
   }
 
