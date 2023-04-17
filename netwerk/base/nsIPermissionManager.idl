@@ -158,6 +158,8 @@ interface nsIPermissionManager : nsISupports
 
 
 
+
+
   uint32_t testExactPermissionFromPrincipal(in nsIPrincipal principal,
                                             in ACString type);
 
