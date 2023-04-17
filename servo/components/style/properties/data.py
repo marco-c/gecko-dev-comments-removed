@@ -759,7 +759,7 @@ def _add_logical_props(data, props):
 
 def _remove_common_first_line_and_first_letter_properties(props, engine):
     if engine == "gecko":
-        props.remove("-moz-tab-size")
+        props.remove("tab-size")
         props.remove("hyphens")
         props.remove("line-break")
         props.remove("text-align-last")
