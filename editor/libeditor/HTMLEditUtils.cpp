@@ -380,25 +380,37 @@ bool HTMLEditUtils::SupportsAlignAttr(nsINode& aNode) {
       nsGkAtoms::h4, nsGkAtoms::h5, nsGkAtoms::h6);
 }
 
-bool HTMLEditUtils::IsVisibleTextNode(
-    const Text& aText, const Element* aEditingHost ) {
+bool HTMLEditUtils::IsVisibleTextNode(const Text& aText) {
   if (!aText.TextDataLength()) {
     return false;
   }
 
-  if (!const_cast<Text&>(aText).TextIsOnlyWhitespace()) {
+  if (EditorUtils::IsWhiteSpacePreformatted(aText)) {
     return true;
   }
 
-  if (!aEditingHost) {
-    aEditingHost = HTMLEditUtils::GetAncestorElement(
-        aText, HTMLEditUtils::ClosestEditableBlockElementOrInlineEditingHost);
+  
+  
+  
+  
+  const char16_t firstChar = aText.TextFragment().CharAt(0);
+  if (!nsCRT::IsAsciiSpace(firstChar)) {
+    return true;
   }
-  WSScanResult nextWSScanResult =
-      WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(
-          aEditingHost, EditorRawDOMPoint(&aText, 0));
-  return nextWSScanResult.InVisibleOrCollapsibleCharacters() &&
-         nextWSScanResult.TextPtr() == &aText;
+
+  Maybe<uint32_t> visibleCharOffset =
+      HTMLEditUtils::GetNextCharOffsetExceptASCIIWhiteSpaces(
+          EditorDOMPointInText(&aText, 0));
+  if (visibleCharOffset.isSome()) {
+    return true;
+  }
+
+  
+  
+  return !HTMLEditUtils::GetElementOfImmediateBlockBoundary(
+             aText, WalkTreeDirection::Forward) &&
+         !HTMLEditUtils::GetElementOfImmediateBlockBoundary(
+             aText, WalkTreeDirection::Backward);
 }
 
 bool HTMLEditUtils::IsInVisibleTextFrames(nsPresContext* aPresContext,
@@ -438,9 +450,9 @@ bool HTMLEditUtils::IsInVisibleTextFrames(nsPresContext* aPresContext,
   return NS_SUCCEEDED(rv) && isVisible;
 }
 
-Element* HTMLEditUtils::GetBlockElementOfImmediateBlockBoundary(
+Element* HTMLEditUtils::GetElementOfImmediateBlockBoundary(
     const nsIContent& aContent, const WalkTreeDirection aDirection) {
-  MOZ_ASSERT(aContent.IsHTMLElement(nsGkAtoms::br));
+  MOZ_ASSERT(aContent.IsHTMLElement(nsGkAtoms::br) || aContent.IsText());
 
   
   
@@ -466,6 +478,7 @@ Element* HTMLEditUtils::GetBlockElementOfImmediateBlockBoundary(
   };
 
   
+  const bool isBRElement = aContent.IsHTMLElement(nsGkAtoms::br);
   for (nsIContent* nextContent = getNextContent(aContent); nextContent;
        nextContent = getNextContent(*nextContent)) {
     if (nextContent->IsElement()) {
@@ -489,11 +502,23 @@ Element* HTMLEditUtils::GetBlockElementOfImmediateBlockBoundary(
         return nullptr;
       }
 
-      
-      
-      if (aContent.IsHTMLElement(nsGkAtoms::br) &&
-          nextContent->IsHTMLElement(nsGkAtoms::br)) {
-        return nullptr;
+      if (nextContent->IsHTMLElement(nsGkAtoms::br)) {
+        
+        
+        if (isBRElement) {
+          return nullptr;
+        }
+
+        MOZ_ASSERT(aContent.IsText());
+        
+        
+        if (aDirection == WalkTreeDirection::Forward) {
+          return nullptr;
+        }
+        
+        
+        
+        return nextContent->AsElement();
       }
 
       if (HTMLInputElement* inputElement =
@@ -559,19 +584,10 @@ bool HTMLEditUtils::IsEmptyNode(nsPresContext* aPresContext,
     *aSeenBR = false;
   }
 
-  const Element* editableBlockElementOrInlineEditingHost =
-      aNode.IsContent() && EditorUtils::IsEditableContent(*aNode.AsContent(),
-                                                          EditorType::HTML)
-          ? HTMLEditUtils::GetInclusiveAncestorElement(
-                *aNode.AsContent(),
-                HTMLEditUtils::ClosestEditableBlockElementOrInlineEditingHost)
-          : nullptr;
-
   if (const Text* text = Text::FromNode(&aNode)) {
     return aOptions.contains(EmptyCheckOption::SafeToAskLayout)
                ? !IsInVisibleTextFrames(aPresContext, *text)
-               : !IsVisibleTextNode(*text,
-                                    editableBlockElementOrInlineEditingHost);
+               : !IsVisibleTextNode(*text);
   }
 
   
@@ -608,8 +624,7 @@ bool HTMLEditUtils::IsEmptyNode(nsPresContext* aPresContext,
       
       if (aOptions.contains(EmptyCheckOption::SafeToAskLayout)
               ? IsInVisibleTextFrames(aPresContext, *text)
-              : IsVisibleTextNode(*text,
-                                  editableBlockElementOrInlineEditingHost)) {
+              : IsVisibleTextNode(*text)) {
         return false;
       }
       continue;

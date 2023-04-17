@@ -294,12 +294,7 @@ class HTMLEditUtils final {
 
 
 
-
-
-
-
-  static bool IsVisibleTextNode(const Text& aText,
-                                const Element* aEditingHost = nullptr);
+  static bool IsVisibleTextNode(const Text& aText);
 
   
 
@@ -319,7 +314,7 @@ class HTMLEditUtils final {
     }
     
     
-    return !HTMLEditUtils::GetBlockElementOfImmediateBlockBoundary(
+    return !HTMLEditUtils::GetElementOfImmediateBlockBoundary(
         aContent, WalkTreeDirection::Forward);
   }
   static bool IsInvisibleBRElement(const nsIContent& aContent) {
@@ -1713,7 +1708,10 @@ class HTMLEditUtils final {
 
 
 
-  static Element* GetBlockElementOfImmediateBlockBoundary(
+
+
+
+  static Element* GetElementOfImmediateBlockBoundary(
       const nsIContent& aContent, const WalkTreeDirection aDirection);
 };
 
