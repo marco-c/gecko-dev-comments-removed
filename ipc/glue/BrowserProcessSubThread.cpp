@@ -5,6 +5,7 @@
 
 
 #include "mozilla/ipc/BrowserProcessSubThread.h"
+#include "mozilla/ipc/NodeController.h"
 
 #if defined(OS_WIN)
 #  include <objbase.h>
@@ -49,9 +50,18 @@ void BrowserProcessSubThread::Init() {
   
   CoInitialize(nullptr);
 #endif
+
+  
+  if (mIdentifier == IO) {
+    NodeController::InitBrokerProcess();
+  }
 }
 
 void BrowserProcessSubThread::CleanUp() {
+  if (mIdentifier == IO) {
+    NodeController::CleanUp();
+  }
+
 #if defined(OS_WIN)
   
   
