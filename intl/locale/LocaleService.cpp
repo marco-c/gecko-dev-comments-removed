@@ -244,13 +244,6 @@ bool LocaleService::IsLocaleRTL(const nsACString& aLocale) {
 
 bool LocaleService::IsAppLocaleRTL() {
   
-  
-  int pref = Preferences::GetInt("intl.uidirection", -1);
-  if (pref >= 0) {
-    return (pref > 0);
-  }
-
-  
   nsAutoCString pseudoLocale;
   if (NS_SUCCEEDED(Preferences::GetCString("intl.l10n.pseudo", pseudoLocale))) {
     if (pseudoLocale.EqualsLiteral("bidi")) {
