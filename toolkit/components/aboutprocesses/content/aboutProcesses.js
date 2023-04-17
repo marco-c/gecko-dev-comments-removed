@@ -34,6 +34,9 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
+const { AppConstants } = ChromeUtils.import(
+  "resource://gre/modules/AppConstants.jsm"
+);
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   ContextualIdentityService:
@@ -220,14 +223,9 @@ var State = {
       tid: cur.tid,
       name: cur.name || `(${cur.tid})`,
       
-      totalCpuUser: cur.cpuUser,
-      slopeCpuUser: null,
-      
-      totalCpuKernel: cur.cpuKernel,
-      slopeCpuKernel: null,
-      
       totalCpu: cur.cpuUser + cur.cpuKernel,
       slopeCpu: null,
+      active: null,
     };
     if (!prev) {
       return result;
@@ -235,9 +233,9 @@ var State = {
     if (prev.tid != cur.tid) {
       throw new Error("Assertion failed: A thread cannot change tid.");
     }
-    result.slopeCpuUser = (cur.cpuUser - prev.cpuUser) / deltaT;
-    result.slopeCpuKernel = (cur.cpuKernel - prev.cpuKernel) / deltaT;
-    result.slopeCpu = result.slopeCpuKernel + result.slopeCpuUser;
+    result.slopeCpu =
+      (cur.cpuUser + cur.cpuKernel - prev.cpuUser - prev.cpuKernel) / deltaT;
+    result.active = !!result.slopeCpu || cur.cpuCycleCount > prev.cpuCycleCount;
     return result;
   },
 
@@ -314,12 +312,9 @@ var State = {
       filename: cur.filename,
       totalRamSize: cur.memory,
       deltaRamSize: null,
-      totalCpuUser: cur.cpuUser,
-      slopeCpuUser: null,
-      totalCpuKernel: cur.cpuKernel,
-      slopeCpuKernel: null,
       totalCpu: cur.cpuUser + cur.cpuKernel,
       slopeCpu: null,
+      active: null,
       type: cur.type,
       origin: cur.origin || "",
       threads: null,
@@ -366,9 +361,9 @@ var State = {
       });
     }
     result.deltaRamSize = cur.memory - prev.memory;
-    result.slopeCpuUser = (cur.cpuUser - prev.cpuUser) / deltaT;
-    result.slopeCpuKernel = (cur.cpuKernel - prev.cpuKernel) / deltaT;
-    result.slopeCpu = result.slopeCpuUser + result.slopeCpuKernel;
+    result.slopeCpu =
+      (cur.cpuUser + cur.cpuKernel - prev.cpuUser - prev.cpuKernel) / deltaT;
+    result.active = !!result.slopeCpu || cur.cpuCycleCount > prev.cpuCycleCount;
     result.threads = threads;
     return result;
   },
@@ -469,6 +464,46 @@ var View = {
     }
     this._orderedRows.push(row);
     return row;
+  },
+
+  displayCpu(data, cpuCell) {
+    if (data.slopeCpu == null) {
+      this._fillCell(cpuCell, {
+        fluentName: "about-processes-cpu-user-and-kernel-not-ready",
+        classes: ["cpu"],
+      });
+    } else {
+      let { duration, unit } = this._getDuration(data.totalCpu);
+      if (data.totalCpu == 0 && AppConstants.platform == "win") {
+        
+        
+        unit = "ms";
+      }
+      let localizedUnit = gLocalizedUnits.duration[unit];
+      if (data.slopeCpu == 0) {
+        let fluentName = data.active
+          ? "about-processes-cpu-almost-idle"
+          : "about-processes-cpu-fully-idle";
+        this._fillCell(cpuCell, {
+          fluentName,
+          fluentArgs: {
+            total: duration,
+            unit: localizedUnit,
+          },
+          classes: ["cpu"],
+        });
+      } else {
+        this._fillCell(cpuCell, {
+          fluentName: "about-processes-cpu",
+          fluentArgs: {
+            percent: data.slopeCpu,
+            total: duration,
+            unit: localizedUnit,
+          },
+          classes: ["cpu"],
+        });
+      }
+    }
   },
 
   
@@ -684,35 +719,7 @@ var View = {
 
     
     let cpuCell = memoryCell.nextSibling;
-    if (data.slopeCpu == null) {
-      this._fillCell(cpuCell, {
-        fluentName: "about-processes-cpu-user-and-kernel-not-ready",
-        classes: ["cpu"],
-      });
-    } else {
-      let { duration, unit } = this._getDuration(data.totalCpu);
-      let localizedUnit = gLocalizedUnits.duration[unit];
-      if (data.slopeCpu == 0) {
-        this._fillCell(cpuCell, {
-          fluentName: "about-processes-cpu-idle",
-          fluentArgs: {
-            total: duration,
-            unit: localizedUnit,
-          },
-          classes: ["cpu"],
-        });
-      } else {
-        this._fillCell(cpuCell, {
-          fluentName: "about-processes-cpu",
-          fluentArgs: {
-            percent: data.slopeCpu,
-            total: duration,
-            unit: localizedUnit,
-          },
-          classes: ["cpu"],
-        });
-      }
-    }
+    this.displayCpu(data, cpuCell);
 
     
     let killButton = cpuCell.nextSibling;
@@ -764,7 +771,7 @@ var View = {
     let activeThreads = new Map();
     let activeThreadCount = 0;
     for (let t of data.threads) {
-      if (!t.slopeCpu) {
+      if (!t.active) {
         continue;
       }
       ++activeThreadCount;
@@ -929,36 +936,7 @@ var View = {
     });
 
     
-    let cpuCell = nameCell.nextSibling;
-    if (data.slopeCpu == null) {
-      this._fillCell(cpuCell, {
-        fluentName: "about-processes-cpu-user-and-kernel-not-ready",
-        classes: ["cpu"],
-      });
-    } else {
-      let { duration, unit } = this._getDuration(data.totalCpu);
-      let localizedUnit = gLocalizedUnits.duration[unit];
-      if (data.slopeCpu == 0) {
-        this._fillCell(cpuCell, {
-          fluentName: "about-processes-cpu-idle",
-          fluentArgs: {
-            total: duration,
-            unit: localizedUnit,
-          },
-          classes: ["cpu"],
-        });
-      } else {
-        this._fillCell(cpuCell, {
-          fluentName: "about-processes-cpu",
-          fluentArgs: {
-            percent: data.slopeCpu,
-            total: duration,
-            unit: localizedUnit,
-          },
-          classes: ["cpu"],
-        });
-      }
-    }
+    this.displayCpu(data, nameCell.nextSibling);
 
     
   },
@@ -1338,6 +1316,11 @@ var Control = {
     
     document.dispatchEvent(new CustomEvent("AboutProcessesUpdated"));
   },
+  _compareCpu(a, b) {
+    return (
+      b.slopeCpu - a.slopeCpu || b.active - a.active || b.totalCpu - a.totalCpu
+    );
+  },
   _showThreads(row) {
     let process = row.process;
     this._sortThreads(process.threads);
@@ -1353,7 +1336,7 @@ var Control = {
           order = a.name.localeCompare(b.name) || a.tid - b.tid;
           break;
         case "column-cpu-total":
-          order = b.slopeCpu - a.slopeCpu;
+          order = this._compareCpu(a, b);
           break;
         case "column-memory-resident":
         case null:
@@ -1379,7 +1362,7 @@ var Control = {
             a.pid - b.pid;
           break;
         case "column-cpu-total":
-          order = b.slopeCpu - a.slopeCpu;
+          order = this._compareCpu(a, b);
           break;
         case "column-memory-resident":
           order = b.totalRamSize - a.totalRamSize;
