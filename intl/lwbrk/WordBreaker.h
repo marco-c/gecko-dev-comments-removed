@@ -24,9 +24,6 @@ class WordBreaker {
 
   static already_AddRefed<WordBreaker> Create();
 
-  bool BreakInBetween(const char16_t* aText1, uint32_t aTextLen1,
-                      const char16_t* aText2, uint32_t aTextLen2);
-
   
   
   
