@@ -531,6 +531,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
      int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
 
+     boolean mForceEnableAccessibility;
      boolean mDebugPause;
      boolean mUseMaxScreenDepth;
      float mDisplayDensityOverride = -1.0f;
@@ -585,6 +586,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
         mContentBlocking = new ContentBlocking.Settings(
                 this , settings.mContentBlocking);
 
+        mForceEnableAccessibility = settings.mForceEnableAccessibility;
         mDebugPause = settings.mDebugPause;
         mUseMaxScreenDepth = settings.mUseMaxScreenDepth;
         mDisplayDensityOverride = settings.mDisplayDensityOverride;
@@ -701,6 +703,29 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
     public boolean getPauseForDebuggerEnabled() {
         return mDebugPause;
+    }
+
+    
+
+
+
+
+    public boolean getForceEnableAccessibility() {
+        return mForceEnableAccessibility;
+    }
+
+    
+
+
+
+
+
+
+
+    public @NonNull GeckoRuntimeSettings setForceEnableAccessibility(final boolean value) {
+        mForceEnableAccessibility = value;
+        SessionAccessibility.setForceEnabled(value);
+        return this;
     }
 
     
@@ -1261,6 +1286,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
         out.writeStringArray(mArgs);
         mExtras.writeToParcel(out, flags);
+        ParcelableUtils.writeBoolean(out, mForceEnableAccessibility);
         ParcelableUtils.writeBoolean(out, mDebugPause);
         ParcelableUtils.writeBoolean(out, mUseMaxScreenDepth);
         out.writeFloat(mDisplayDensityOverride);
@@ -1279,6 +1305,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
         mArgs = source.createStringArray();
         mExtras.readFromParcel(source);
+        mForceEnableAccessibility = ParcelableUtils.readBoolean(source);
         mDebugPause = ParcelableUtils.readBoolean(source);
         mUseMaxScreenDepth = ParcelableUtils.readBoolean(source);
         mDisplayDensityOverride = source.readFloat();
