@@ -321,6 +321,48 @@ nsresult StoragePrincipalHelper::GetPrincipal(nsPIDOMWindowInner* aWindow,
 }
 
 
+bool StoragePrincipalHelper::ShouldUsePartitionPrincipalForServiceWorker(
+    nsIDocShell* aDocShell) {
+  MOZ_ASSERT(aDocShell);
+
+  RefPtr<Document> document = aDocShell->GetExtantDocument();
+
+  
+  
+  if (!document) {
+    nsCOMPtr<nsIDocShellTreeItem> parentItem;
+    aDocShell->GetInProcessSameTypeParent(getter_AddRefs(parentItem));
+
+    if (parentItem) {
+      document = parentItem->GetDocument();
+    }
+  }
+
+  nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
+
+  if (document) {
+    cookieJarSettings = document->CookieJarSettings();
+  } else {
+    
+    
+    cookieJarSettings = CookieJarSettings::Create(CookieJarSettings::eRegular);
+  }
+
+  
+  if (cookieJarSettings->GetCookieBehavior() !=
+      nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN) {
+    return false;
+  }
+
+  
+  
+  
+  return AntiTrackingUtils::IsThirdPartyContext(
+      document ? document->GetBrowsingContext()
+               : aDocShell->GetBrowsingContext());
+}
+
+
 bool StoragePrincipalHelper::GetOriginAttributes(
     nsIChannel* aChannel, mozilla::OriginAttributes& aAttributes,
     StoragePrincipalHelper::PrincipalType aPrincipalType) {
