@@ -77,6 +77,17 @@ class TextServicesDocument final : public nsIEditActionListener {
 
     Result<EditorDOMRangeInTexts, nsresult> FindWordRange(
         nsAString& aAllTextInBlock, const EditorRawDOMPoint& aStartPointToScan);
+
+    
+
+
+
+
+
+
+
+
+    nsresult SplitElementAt(size_t aIndex, uint32_t aOffsetInTextNode);
   };
 
   RefPtr<dom::Document> mDocument;
@@ -324,7 +335,6 @@ class TextServicesDocument final : public nsIEditActionListener {
   bool SelectionIsValid() const;
 
   nsresult RemoveInvalidOffsetEntries();
-  nsresult SplitOffsetEntry(size_t aTableIndex, uint32_t aOffsetIntoEntry);
 };
 
 }  
