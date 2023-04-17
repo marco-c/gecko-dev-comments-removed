@@ -20,7 +20,6 @@
 
 
 
-
 #[derive(Copy, Clone, Default)]
 pub struct Matrix {
     pub m: [[f32; 3]; 3],

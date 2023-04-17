@@ -6,8 +6,6 @@ extern crate libc;
 
 
 
-
-
 use qcms::c_bindings::{qcms_profile, icSigRgbData, icSigCmykData, icSigGrayData, qcms_profile_is_bogus};
 use qcms::c_bindings::{qcms_profile_get_color_space, qcms_profile_get_rendering_intent, qcms_profile_from_memory, qcms_profile_release, qcms_profile_sRGB, qcms_transform_create};
 use qcms::c_bindings::{qcms_profile_precache_output_transform, qcms_transform_data, qcms_transform_release, qcms_enable_iccv4};
