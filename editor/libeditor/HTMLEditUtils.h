@@ -50,6 +50,21 @@ class HTMLEditUtils final {
 
 
 
+
+  static bool IsNonEditableReplacedContent(const nsIContent& aContent) {
+    for (Element* element : aContent.InclusiveAncestorsOfType<Element>()) {
+      if (element->IsAnyOfHTMLElements(nsGkAtoms::select, nsGkAtoms::option,
+                                       nsGkAtoms::optgroup)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  
+
+
+
   static bool IsRemovableNode(const nsIContent& aContent) {
     return aContent.GetParentNode() && aContent.GetParentNode()->IsEditable();
   }
