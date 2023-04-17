@@ -278,7 +278,7 @@ static void PruneDisplayListForExtraPage(nsDisplayListBuilder* aBuilder,
       i->UpdateBounds(aBuilder);
     } else {
       nsIFrame* f = i->Frame();
-      if (!nsLayoutUtils::IsProperAncestorFrameCrossDoc(aPage, f)) {
+      if (!nsLayoutUtils::IsProperAncestorFrameCrossDocInProcess(aPage, f)) {
         
         
         i->Destroy(aBuilder);
