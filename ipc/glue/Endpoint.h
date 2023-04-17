@@ -141,8 +141,8 @@ class Endpoint {
 #if defined(XP_MACOSX)
 void AnnotateCrashReportWithErrno(CrashReporter::Annotation tag, int error);
 #else
-static inline void AnnotateCrashReportWithErrno(CrashReporter::Annotation tag,
-                                                int error) {}
+inline void AnnotateCrashReportWithErrno(CrashReporter::Annotation tag,
+                                         int error) {}
 #endif
 
 
