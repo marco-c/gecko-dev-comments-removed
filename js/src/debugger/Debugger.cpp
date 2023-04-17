@@ -1718,7 +1718,14 @@ static bool CheckResumptionValue(JSContext* cx, AbstractFramePtr frame,
   if (resumeMode != ResumeMode::Return && resumeMode != ResumeMode::Throw) {
     return true;
   }
-  if (!frame || !frame.isFunctionFrame()) {
+
+  if (!frame) {
+    return true;
+  }
+  
+  
+  bool isAsyncModule = frame.isModuleFrame() && frame.script()->isAsync();
+  if (!frame.isFunctionFrame() && !isAsyncModule) {
     return true;
   }
 
@@ -1729,7 +1736,9 @@ static bool CheckResumptionValue(JSContext* cx, AbstractFramePtr frame,
   
   
   
-  if (frame.callee()->isGenerator()) {
+  
+  
+  if (frame.isFunctionFrame() && frame.callee()->isGenerator()) {
     
     if (resumeMode == ResumeMode::Throw) {
       return true;
@@ -1767,7 +1776,7 @@ static bool CheckResumptionValue(JSContext* cx, AbstractFramePtr frame,
     if (genObj->is<AsyncGeneratorObject>()) {
       genObj->as<AsyncGeneratorObject>().setCompleted();
     }
-  } else if (frame.callee()->isAsync()) {
+  } else if (isAsyncModule || frame.callee()->isAsync()) {
     if (AbstractGeneratorObject* genObj =
             GetGeneratorObjectForFrame(cx, frame)) {
       
