@@ -1603,6 +1603,10 @@ parent:
 
     async StoreUserInteractionAsPermission(Principal aPrincipal);
 
+    async AsyncShouldAllowAccessFor(MaybeDiscardedBrowsingContext aContext,
+                                    Principal aPrincipal)
+          returns (bool allowed, uint32_t rejectReason);
+
    
 
 
