@@ -390,27 +390,31 @@ class nsFlexContainerFrame::FlexItem final {
   nscoord CrossSize() const { return mCrossSize; }
   nscoord CrossPosition() const { return mCrossPosn; }
 
+  
   nscoord ResolvedAscent(bool aUseFirstBaseline) const {
-    if (mAscent == ReflowOutput::ASK_FOR_BASELINE) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      bool found =
-          aUseFirstBaseline
-              ? nsLayoutUtils::GetFirstLineBaseline(mWM, mFrame, &mAscent)
-              : nsLayoutUtils::GetLastLineBaseline(mWM, mFrame, &mAscent);
-
-      if (!found) {
-        mAscent = mFrame->SynthesizeBaselineBOffsetFromBorderBox(
-            mWM, BaselineSharingGroup::First);
-      }
+    
+    
+    
+    
+    
+    
+    
+    if (mAscent != ReflowOutput::ASK_FOR_BASELINE) {
+      return mAscent;
     }
+
+    
+    bool found =
+        aUseFirstBaseline
+            ? nsLayoutUtils::GetFirstLineBaseline(mWM, mFrame, &mAscent)
+            : nsLayoutUtils::GetLastLineBaseline(mWM, mFrame, &mAscent);
+    if (found) {
+      return mAscent;
+    }
+
+    
+    mAscent = mFrame->SynthesizeBaselineBOffsetFromBorderBox(
+        mWM, BaselineSharingGroup::First);
     return mAscent;
   }
 
