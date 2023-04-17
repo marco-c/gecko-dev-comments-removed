@@ -3405,10 +3405,46 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
 
 @end
 
+#if !defined(MAC_OS_VERSION_11_0) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_VERSION_11_0
+typedef NS_ENUM(NSInteger, NSTitlebarSeparatorStyle) {
+  NSTitlebarSeparatorStyleAutomatic,
+  NSTitlebarSeparatorStyleNone,
+  NSTitlebarSeparatorStyleLine,
+  NSTitlebarSeparatorStyleShadow
+};
+@interface NSWindow (NSTitlebarSeparatorStyle)
+@property NSTitlebarSeparatorStyle titlebarSeparatorStyle;
+@end
+#endif
+
+@interface MOZTitlebarAccessoryView : NSView
+@end
+
+@implementation MOZTitlebarAccessoryView : NSView
+- (void)viewWillMoveToWindow:(NSWindow*)aWindow {
+  if (aWindow) {
+    
+    
+    
+    
+    
+    
+    
+#if !defined(MAC_OS_VERSION_11_0) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_VERSION_11_0
+    if (nsCocoaFeatures::OnBigSurOrLater()) {
+#else
+    if (@available(macOS 11.0, *)) {
+#endif
+      aWindow.titlebarSeparatorStyle = NSTitlebarSeparatorStyleNone;
+    }
+  }
+}
+@end
+
 @implementation FullscreenTitlebarTracker
 - (FullscreenTitlebarTracker*)init {
   [super init];
-  self.view = [[[NSView alloc] initWithFrame:NSZeroRect] autorelease];
+  self.view = [[[MOZTitlebarAccessoryView alloc] initWithFrame:NSZeroRect] autorelease];
   self.hidden = YES;
   return self;
 }
@@ -3487,6 +3523,13 @@ static const NSString* kStateWantsTitleDrawn = @"wantsTitleDrawn";
     mInitialTitlebarHeight = [self titlebarHeight];
 
     [self setTitlebarAppearsTransparent:YES];
+#if !defined(MAC_OS_VERSION_11_0) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_VERSION_11_0
+    if (nsCocoaFeatures::OnBigSurOrLater()) {
+#else
+    if (@available(macOS 11.0, *)) {
+#endif
+      self.titlebarSeparatorStyle = NSTitlebarSeparatorStyleNone;
+    }
     [self updateTitlebarView];
 
     mFullscreenTitlebarTracker = [[FullscreenTitlebarTracker alloc] init];
