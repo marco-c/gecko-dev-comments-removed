@@ -369,6 +369,7 @@ var DownloadIntegration = {
             createAncestors: false,
           });
         } catch (ex) {
+          Cu.reportError(ex);
           
           directoryPath = await this.getSystemDownloadsDirectory();
         }
