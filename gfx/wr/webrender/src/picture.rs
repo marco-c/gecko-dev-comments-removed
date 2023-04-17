@@ -2318,6 +2318,8 @@ pub struct TileCacheInstance {
     surface_to_device: ScaleOffset,
     
     current_raster_scale: f32,
+    
+    current_surface_traversal_depth: usize,
 }
 
 enum SurfacePromotionResult {
@@ -2375,6 +2377,7 @@ impl TileCacheInstance {
             local_to_surface: ScaleOffset::identity(),
             invalidate_all_tiles: true,
             current_raster_scale: 1.0,
+            current_surface_traversal_depth: 0,
         }
     }
 
@@ -3277,6 +3280,55 @@ impl TileCacheInstance {
     }
 
     
+    
+    
+    
+    
+    pub fn push_surface(
+        &mut self,
+        estimated_local_rect: LayoutRect,
+        surface_spatial_node_index: SpatialNodeIndex,
+        spatial_tree: &SpatialTree,
+    ) {
+        
+        if self.current_surface_traversal_depth == 0 && self.sub_slices.len() > 1 {
+            let map_local_to_surface = SpaceMapper::new_with_target(
+                self.spatial_node_index,
+                surface_spatial_node_index,
+                self.local_rect,
+                spatial_tree,
+            );
+
+            if let Some(pic_rect) = map_local_to_surface.map(&estimated_local_rect) {
+                
+                
+                for sub_slice in &mut self.sub_slices {
+                    let mut intersects_prohibited_region = false;
+
+                    for surface in &mut sub_slice.compositor_surfaces {
+                        if pic_rect.intersects(&surface.prohibited_rect) {
+                            surface.prohibited_rect = surface.prohibited_rect.union(&pic_rect);
+
+                            intersects_prohibited_region = true;
+                        }
+                    }
+
+                    if !intersects_prohibited_region {
+                        break;
+                    }
+                }
+            }
+        }
+
+        self.current_surface_traversal_depth += 1;
+    }
+
+    
+    pub fn pop_surface(&mut self) {
+        self.current_surface_traversal_depth -= 1;
+    }
+
+    
     pub fn update_prim_dependencies(
         &mut self,
         prim_instance: &mut PrimitiveInstance,
@@ -3815,6 +3867,8 @@ impl TileCacheInstance {
         frame_context: &FrameVisibilityContext,
         frame_state: &mut FrameVisibilityState,
     ) {
+        assert!(self.current_surface_traversal_depth == 0);
+
         self.dirty_region.reset(self.spatial_node_index);
         self.subpixel_mode = self.calculate_subpixel_mode();
 
