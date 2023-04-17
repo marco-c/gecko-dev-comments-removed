@@ -2583,3 +2583,8 @@ pref("first-startup.timeout", 30000);
 
 
 pref("svg.context-properties.content.allowed-domains", "profile.accounts.firefox.com,profile.stage.mozaws.net");
+
+
+#ifdef NIGHTLY_BUILD
+  pref("extensions.translations.disabled", true);
+#endif
