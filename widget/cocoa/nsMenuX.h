@@ -99,6 +99,12 @@ class nsMenuX final : public nsMenuParentX,
   
   bool Close();
 
+  
+  
+  
+  
+  void OnHighlightedItemChanged(const mozilla::Maybe<uint32_t>& aNewHighlightedIndex);
+
   void SetRebuild(bool aMenuEvent);
   void SetupIcon();
   nsIContent* Content() { return mContent; }
@@ -188,6 +194,10 @@ class nsMenuX final : public nsMenuParentX,
   MenuDelegate* mMenuDelegate = nil;  
   
   NSMenuItem* mNativeMenuItem = nil;  
+
+  
+  mozilla::Maybe<uint32_t> mHighlightedItemIndex;
+
   bool mIsEnabled = true;
   bool mNeedsRebuild = true;
 
