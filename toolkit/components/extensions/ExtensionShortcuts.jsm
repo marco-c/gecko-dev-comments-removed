@@ -4,7 +4,7 @@
 "use strict";
 
 
-const EXPORTED_SYMBOLS = ["ExtensionShortcuts"];
+const EXPORTED_SYMBOLS = ["ExtensionShortcuts", "ExtensionShortcutKeyMap"];
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
@@ -48,7 +48,7 @@ XPCOMUtils.defineLazyGetter(this, "sidebarActionFor", () => {
   return ExtensionParent.apiManager.global.sidebarActionFor;
 });
 
-const { ExtensionError } = ExtensionUtils;
+const { ExtensionError, DefaultMap } = ExtensionUtils;
 const { makeWidgetId } = ExtensionCommon;
 
 const EXECUTE_PAGE_ACTION = "_execute_page_action";
@@ -57,6 +57,108 @@ const EXECUTE_SIDEBAR_ACTION = "_execute_sidebar_action";
 
 function normalizeShortcut(shortcut) {
   return shortcut ? shortcut.replace(/\s+/g, "") : "";
+}
+
+class ExtensionShortcutKeyMap extends DefaultMap {
+  async buildForAddonIds(addonIds) {
+    this.clear();
+    for (const addonId of addonIds) {
+      const policy = WebExtensionPolicy.getByID(addonId);
+      if (policy?.extension?.shortcuts) {
+        const { shortcuts } = policy.extension;
+        for (const command of await shortcuts.allCommands()) {
+          this.recordShortcut(command.shortcut, policy.name, command.name);
+        }
+      }
+    }
+  }
+
+  recordShortcut(shortcutString, addonName, commandName) {
+    if (!shortcutString) {
+      return;
+    }
+
+    const valueSet = this.get(shortcutString);
+    valueSet.add({ addonName, commandName });
+  }
+
+  removeShortcut(shortcutString, addonName, commandName) {
+    if (!this.has(shortcutString)) {
+      return;
+    }
+
+    const valueSet = this.get(shortcutString);
+    for (const entry of valueSet.values()) {
+      if (entry.addonName === addonName && entry.commandName === commandName) {
+        valueSet.delete(entry);
+      }
+    }
+    if (valueSet.size === 0) {
+      this.delete(shortcutString);
+    }
+  }
+
+  getFirstAddonName(shortcutString) {
+    if (this.has(shortcutString)) {
+      return this.get(shortcutString)
+        .values()
+        .next().value.addonName;
+    }
+    return null;
+  }
+
+  has(shortcutString) {
+    const platformShortcut = this.getPlatformShortcutString(shortcutString);
+    return super.has(platformShortcut) && super.get(platformShortcut).size > 0;
+  }
+
+  
+
+  constructor() {
+    super();
+
+    
+    
+    
+    this._os = ExtensionParent.PlatformInfo.os;
+  }
+
+  defaultConstructor() {
+    return new Set();
+  }
+
+  getPlatformShortcutString(shortcutString) {
+    if (this._os == "mac") {
+      
+      
+      
+      
+      
+      
+      
+      shortcutString = shortcutString
+        .split("+")
+        .map(p => (p === "Ctrl" ? "Command" : p))
+        .join("+");
+    }
+
+    return shortcutString;
+  }
+
+  get(shortcutString) {
+    const platformShortcut = this.getPlatformShortcutString(shortcutString);
+    return super.get(platformShortcut);
+  }
+
+  add(shortcutString, addonCommandValue) {
+    const setValue = this.get(shortcutString);
+    setValue.add(addonCommandValue);
+  }
+
+  delete(shortcutString) {
+    const platformShortcut = this.getPlatformShortcutString(shortcutString);
+    super.delete(platformShortcut);
+  }
 }
 
 
