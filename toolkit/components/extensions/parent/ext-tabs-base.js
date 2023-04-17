@@ -452,16 +452,6 @@ class TabBase {
 
 
 
-  get selected() {
-    throw new Error("Not implemented");
-  }
-
-  
-
-
-
-
-
 
   get status() {
     throw new Error("Not implemented");
