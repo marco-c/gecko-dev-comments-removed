@@ -45,6 +45,14 @@ add_task(async function test_flush() {
 });
 
 add_task(async function test_crash() {
+  if (Services.appinfo.sessionHistoryInParent) {
+    
+    
+    
+    ok(true, "Test relies on frame script message ordering.");
+    return;
+  }
+
   
   let tab = BrowserTestUtils.addTab(gBrowser, URL);
   gBrowser.selectedTab = tab;
