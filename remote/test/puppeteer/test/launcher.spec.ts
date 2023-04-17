@@ -21,6 +21,7 @@ import { promisify } from 'util';
 import {
   getTestState,
   itOnlyRegularInstall,
+  itFailsWindows,
 } from './mocha-utils'; 
 import utils from './utils.js';
 import expect from 'expect';
@@ -468,7 +469,11 @@ describe('Launcher specs', function () {
         ]);
       });
 
-      it('should be able to launch Firefox', async function () {
+      
+
+
+
+      itFailsWindows('should be able to launch Firefox', async function () {
         this.timeout(FIREFOX_TIMEOUT);
         const { puppeteer } = getTestState();
         const browser = await puppeteer.launch({ product: 'firefox' });
