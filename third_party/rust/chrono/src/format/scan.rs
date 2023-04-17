@@ -7,13 +7,16 @@
 
 #![allow(deprecated)]
 
+use super::{ParseResult, INVALID, OUT_OF_RANGE, TOO_SHORT};
 use Weekday;
-use super::{ParseResult, TOO_SHORT, INVALID, OUT_OF_RANGE};
 
 
 
 fn equals(s: &str, pattern: &str) -> bool {
-    let mut xs = s.as_bytes().iter().map(|&c| match c { b'A'...b'Z' => c + 32, _ => c });
+    let mut xs = s.as_bytes().iter().map(|&c| match c {
+        b'A'...b'Z' => c + 32,
+        _ => c,
+    });
     let mut ys = pattern.as_bytes().iter().cloned();
     loop {
         match (xs.next(), ys.next()) {
@@ -43,7 +46,8 @@ pub fn number(s: &str, min: usize, max: usize) -> ParseResult<(&str, i64)> {
     }
 
     let mut n = 0i64;
-    for (i, c) in bytes.iter().take(max).cloned().enumerate() { 
+    for (i, c) in bytes.iter().take(max).cloned().enumerate() {
+        
         if c < b'0' || b'9' < c {
             if i < min {
                 return Err(INVALID);
@@ -70,8 +74,8 @@ pub fn nanosecond(s: &str) -> ParseResult<(&str, i64)> {
     let consumed = origlen - s.len();
 
     
-    static SCALE: [i64; 10] = [0, 100_000_000, 10_000_000, 1_000_000, 100_000, 10_000,
-                               1_000, 100, 10, 1];
+    static SCALE: [i64; 10] =
+        [0, 100_000_000, 10_000_000, 1_000_000, 100_000, 10_000, 1_000, 100, 10, 1];
     let v = v.checked_mul(SCALE[consumed]).ok_or(OUT_OF_RANGE)?;
 
     
@@ -87,8 +91,8 @@ pub fn nanosecond_fixed(s: &str, digits: usize) -> ParseResult<(&str, i64)> {
     let (s, v) = number(s, digits, digits)?;
 
     
-    static SCALE: [i64; 10] = [0, 100_000_000, 10_000_000, 1_000_000, 100_000, 10_000,
-                               1_000, 100, 10, 1];
+    static SCALE: [i64; 10] =
+        [0, 100_000_000, 10_000_000, 1_000_000, 100_000, 10_000, 1_000, 100, 10, 1];
     let v = v.checked_mul(SCALE[digits]).ok_or(OUT_OF_RANGE)?;
 
     Ok((s, v))
@@ -96,39 +100,43 @@ pub fn nanosecond_fixed(s: &str, digits: usize) -> ParseResult<(&str, i64)> {
 
 
 pub fn short_month0(s: &str) -> ParseResult<(&str, u8)> {
-    if s.len() < 3 { return Err(TOO_SHORT); }
+    if s.len() < 3 {
+        return Err(TOO_SHORT);
+    }
     let buf = s.as_bytes();
     let month0 = match (buf[0] | 32, buf[1] | 32, buf[2] | 32) {
-        (b'j',b'a',b'n') => 0,
-        (b'f',b'e',b'b') => 1,
-        (b'm',b'a',b'r') => 2,
-        (b'a',b'p',b'r') => 3,
-        (b'm',b'a',b'y') => 4,
-        (b'j',b'u',b'n') => 5,
-        (b'j',b'u',b'l') => 6,
-        (b'a',b'u',b'g') => 7,
-        (b's',b'e',b'p') => 8,
-        (b'o',b'c',b't') => 9,
-        (b'n',b'o',b'v') => 10,
-        (b'd',b'e',b'c') => 11,
-        _ => return Err(INVALID)
+        (b'j', b'a', b'n') => 0,
+        (b'f', b'e', b'b') => 1,
+        (b'm', b'a', b'r') => 2,
+        (b'a', b'p', b'r') => 3,
+        (b'm', b'a', b'y') => 4,
+        (b'j', b'u', b'n') => 5,
+        (b'j', b'u', b'l') => 6,
+        (b'a', b'u', b'g') => 7,
+        (b's', b'e', b'p') => 8,
+        (b'o', b'c', b't') => 9,
+        (b'n', b'o', b'v') => 10,
+        (b'd', b'e', b'c') => 11,
+        _ => return Err(INVALID),
     };
     Ok((&s[3..], month0))
 }
 
 
 pub fn short_weekday(s: &str) -> ParseResult<(&str, Weekday)> {
-    if s.len() < 3 { return Err(TOO_SHORT); }
+    if s.len() < 3 {
+        return Err(TOO_SHORT);
+    }
     let buf = s.as_bytes();
     let weekday = match (buf[0] | 32, buf[1] | 32, buf[2] | 32) {
-        (b'm',b'o',b'n') => Weekday::Mon,
-        (b't',b'u',b'e') => Weekday::Tue,
-        (b'w',b'e',b'd') => Weekday::Wed,
-        (b't',b'h',b'u') => Weekday::Thu,
-        (b'f',b'r',b'i') => Weekday::Fri,
-        (b's',b'a',b't') => Weekday::Sat,
-        (b's',b'u',b'n') => Weekday::Sun,
-        _ => return Err(INVALID)
+        (b'm', b'o', b'n') => Weekday::Mon,
+        (b't', b'u', b'e') => Weekday::Tue,
+        (b'w', b'e', b'd') => Weekday::Wed,
+        (b't', b'h', b'u') => Weekday::Thu,
+        (b'f', b'r', b'i') => Weekday::Fri,
+        (b's', b'a', b't') => Weekday::Sat,
+        (b's', b'u', b'n') => Weekday::Sun,
+        _ => return Err(INVALID),
     };
     Ok((&s[3..], weekday))
 }
@@ -200,13 +208,19 @@ pub fn colon_or_space(s: &str) -> ParseResult<&str> {
 
 
 pub fn timezone_offset<F>(s: &str, consume_colon: F) -> ParseResult<(&str, i32)>
-        where F: FnMut(&str) -> ParseResult<&str> {
+where
+    F: FnMut(&str) -> ParseResult<&str>,
+{
     timezone_offset_internal(s, consume_colon, false)
 }
 
-fn timezone_offset_internal<F>(mut s: &str, mut consume_colon: F, allow_missing_minutes: bool)
--> ParseResult<(&str, i32)>
-    where F: FnMut(&str) -> ParseResult<&str>
+fn timezone_offset_internal<F>(
+    mut s: &str,
+    mut consume_colon: F,
+    allow_missing_minutes: bool,
+) -> ParseResult<(&str, i32)>
+where
+    F: FnMut(&str) -> ParseResult<&str>,
 {
     fn digits(s: &str) -> ParseResult<(u8, u8)> {
         let b = s.as_bytes();
@@ -254,25 +268,37 @@ fn timezone_offset_internal<F>(mut s: &str, mut consume_colon: F, allow_missing_
     };
 
     let seconds = hours * 3600 + minutes * 60;
-    Ok((s, if negative {-seconds} else {seconds}))
+    Ok((s, if negative { -seconds } else { seconds }))
 }
 
 
-pub fn timezone_offset_zulu<F>(s: &str, colon: F)
--> ParseResult<(&str, i32)>
-    where F: FnMut(&str) -> ParseResult<&str>
+pub fn timezone_offset_zulu<F>(s: &str, colon: F) -> ParseResult<(&str, i32)>
+where
+    F: FnMut(&str) -> ParseResult<&str>,
 {
-    match s.as_bytes().first() {
+    let bytes = s.as_bytes();
+    match bytes.first() {
         Some(&b'z') | Some(&b'Z') => Ok((&s[1..], 0)),
+        Some(&b'u') | Some(&b'U') => {
+            if bytes.len() >= 3 {
+                let (b, c) = (bytes[1], bytes[2]);
+                match (b | 32, c | 32) {
+                    (b't', b'c') => Ok((&s[3..], 0)),
+                    _ => Err(INVALID),
+                }
+            } else {
+                Err(INVALID)
+            }
+        }
         _ => timezone_offset(s, colon),
     }
 }
 
 
 
-pub fn timezone_offset_permissive<F>(s: &str, colon: F)
--> ParseResult<(&str, i32)>
-    where F: FnMut(&str) -> ParseResult<&str>
+pub fn timezone_offset_permissive<F>(s: &str, colon: F) -> ParseResult<(&str, i32)>
+where
+    F: FnMut(&str) -> ParseResult<&str>,
 {
     match s.as_bytes().first() {
         Some(&b'z') | Some(&b'Z') => Ok((&s[1..], 0)),
@@ -284,8 +310,13 @@ pub fn timezone_offset_permissive<F>(s: &str, colon: F)
 
 pub fn timezone_offset_2822(s: &str) -> ParseResult<(&str, Option<i32>)> {
     
-    let upto = s.as_bytes().iter().position(|&c| match c { b'a'...b'z' | b'A'...b'Z' => false,
-                                                           _ => true })
+    let upto = s
+        .as_bytes()
+        .iter()
+        .position(|&c| match c {
+            b'a'...b'z' | b'A'...b'Z' => false,
+            _ => true,
+        })
         .unwrap_or_else(|| s.len());
     if upto > 0 {
         let name = &s[..upto];
@@ -308,11 +339,12 @@ pub fn timezone_offset_2822(s: &str) -> ParseResult<(&str, Option<i32>)> {
         }
     } else {
         let (s_, offset) = timezone_offset(s, |s| Ok(s))?;
-        if offset == 0 && s.starts_with('-') { 
-            Ok((s_, None))
-        } else {
-            Ok((s_, Some(offset)))
-        }
+        Ok((s_, Some(offset)))
     }
 }
 
+
+
+pub fn timezone_name_skip(s: &str) -> ParseResult<(&str, ())> {
+    Ok((s.trim_left_matches(|c: char| !c.is_whitespace()), ()))
+}

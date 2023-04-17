@@ -381,94 +381,162 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/chrono/latest/")]
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![doc(html_root_url = "https://docs.rs/chrono/latest/")]
 #![cfg_attr(feature = "bench", feature(test))] 
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
 #![deny(dead_code)]
 
+#![allow(unknown_lints)]
 #![cfg_attr(not(any(feature = "std", test)), no_std)]
-
-
-
-
-
-
-
-
-
-
-
 #![cfg_attr(feature = "cargo-clippy", allow(
-    const_static_lifetime,
+    renamed_and_removed_lints,
+    
+    
+    
+    
+    redundant_static_lifetimes,
+    
+    
     redundant_field_names,
+    
+    
     trivially_copy_pass_by_ref,
+    try_err,
+    
+    
+    derive_hash_xor_eq,
 ))]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
+#[cfg(all(feature = "std", not(feature = "alloc")))]
+extern crate std as alloc;
 #[cfg(any(feature = "std", test))]
 extern crate std as core;
-#[cfg(all(feature = "std", not(feature="alloc")))]
-extern crate std as alloc;
 
-#[cfg(feature="clock")]
+#[cfg(feature = "oldtime")]
 extern crate time as oldtime;
+#[cfg(not(feature = "oldtime"))]
+mod oldtime;
+
+#[cfg(feature = "clock")]
+extern crate libc;
+#[cfg(all(feature = "clock", windows))]
+extern crate winapi;
+#[cfg(all(
+    feature = "clock",
+    not(all(target_arch = "wasm32", not(target_os = "wasi"), feature = "wasmbind"))
+))]
+mod sys;
+
 extern crate num_integer;
 extern crate num_traits;
 #[cfg(feature = "rustc-serialize")]
 extern crate rustc_serialize;
 #[cfg(feature = "serde")]
 extern crate serde as serdelib;
-#[cfg(test)]
+#[cfg(feature = "__doctest")]
+#[cfg_attr(feature = "__doctest", cfg(doctest))]
 #[macro_use]
 extern crate doc_comment;
-#[cfg(all(target_arch = "wasm32", feature="wasmbind"))]
-extern crate wasm_bindgen;
-#[cfg(all(target_arch = "wasm32", feature="wasmbind"))]
+#[cfg(all(target_arch = "wasm32", not(target_os = "wasi"), feature = "wasmbind"))]
 extern crate js_sys;
+#[cfg(feature = "unstable-locales")]
+extern crate pure_rust_locales;
 #[cfg(feature = "bench")]
 extern crate test;
+#[cfg(all(target_arch = "wasm32", not(target_os = "wasi"), feature = "wasmbind"))]
+extern crate wasm_bindgen;
 
-#[cfg(test)]
+#[cfg(feature = "__doctest")]
+#[cfg_attr(feature = "__doctest", cfg(doctest))]
 doctest!("../README.md");
 
 
 pub use oldtime::Duration;
 
-#[cfg(feature="clock")]
-#[doc(no_inline)] pub use offset::Local;
-#[doc(no_inline)] pub use offset::{TimeZone, Offset, LocalResult, Utc, FixedOffset};
-#[doc(no_inline)] pub use naive::{NaiveDate, IsoWeek, NaiveTime, NaiveDateTime};
-pub use date::{Date, MIN_DATE, MAX_DATE};
-pub use datetime::{DateTime, SecondsFormat};
+pub use date::{Date, MAX_DATE, MIN_DATE};
 #[cfg(feature = "rustc-serialize")]
 pub use datetime::rustc_serialize::TsSeconds;
+pub use datetime::{DateTime, SecondsFormat, MAX_DATETIME, MIN_DATETIME};
+
+#[cfg(feature = "unstable-locales")]
+pub use format::Locale;
 pub use format::{ParseError, ParseResult};
-pub use round::SubsecRound;
+#[doc(no_inline)]
+pub use naive::{IsoWeek, NaiveDate, NaiveDateTime, NaiveTime};
+#[cfg(feature = "clock")]
+#[doc(no_inline)]
+pub use offset::Local;
+#[doc(no_inline)]
+pub use offset::{FixedOffset, LocalResult, Offset, TimeZone, Utc};
+pub use round::{DurationRound, RoundingError, SubsecRound};
 
 
 pub mod prelude {
-    #[doc(no_inline)] pub use {Datelike, Timelike, Weekday};
-    #[doc(no_inline)] pub use {TimeZone, Offset};
-    #[cfg(feature="clock")]
-    #[doc(no_inline)] pub use Local;
-    #[doc(no_inline)] pub use {Utc, FixedOffset};
-    #[doc(no_inline)] pub use {NaiveDate, NaiveTime, NaiveDateTime};
-    #[doc(no_inline)] pub use Date;
-    #[doc(no_inline)] pub use {DateTime, SecondsFormat};
-    #[doc(no_inline)] pub use SubsecRound;
+    #[doc(no_inline)]
+    pub use Date;
+    #[cfg(feature = "clock")]
+    #[doc(no_inline)]
+    pub use Local;
+    #[cfg(feature = "unstable-locales")]
+    #[doc(no_inline)]
+    pub use Locale;
+    #[doc(no_inline)]
+    pub use SubsecRound;
+    #[doc(no_inline)]
+    pub use {DateTime, SecondsFormat};
+    #[doc(no_inline)]
+    pub use {Datelike, Month, Timelike, Weekday};
+    #[doc(no_inline)]
+    pub use {FixedOffset, Utc};
+    #[doc(no_inline)]
+    pub use {NaiveDate, NaiveDateTime, NaiveTime};
+    #[doc(no_inline)]
+    pub use {Offset, TimeZone};
 }
 
 
 macro_rules! try_opt {
-    ($e:expr) => (match $e { Some(v) => v, None => return None })
+    ($e:expr) => {
+        match $e {
+            Some(v) => v,
+            None => return None,
+        }
+    };
 }
 
 mod div;
-#[cfg(not(feature="clock"))]
-mod oldtime;
 pub mod offset;
 pub mod naive {
     
@@ -477,20 +545,23 @@ pub mod naive {
     
     
 
-    mod internals;
     mod date;
+    mod datetime;
+    mod internals;
     mod isoweek;
     mod time;
-    mod datetime;
 
-    pub use self::date::{NaiveDate, MIN_DATE, MAX_DATE};
-    pub use self::isoweek::IsoWeek;
-    pub use self::time::NaiveTime;
-    pub use self::datetime::NaiveDateTime;
+    pub use self::date::{NaiveDate, MAX_DATE, MIN_DATE};
     #[cfg(feature = "rustc-serialize")]
     #[allow(deprecated)]
     pub use self::datetime::rustc_serialize::TsSeconds;
+    pub use self::datetime::{NaiveDateTime, MAX_DATETIME, MIN_DATETIME};
+    pub use self::isoweek::IsoWeek;
+    pub use self::time::NaiveTime;
 
+    #[cfg(feature = "__internal_bench")]
+    #[doc(hidden)]
+    pub use self::internals::YearFlags as __BenchYearFlags;
 
     
     
@@ -509,6 +580,10 @@ mod date;
 mod datetime;
 pub mod format;
 mod round;
+
+#[cfg(feature = "__internal_bench")]
+#[doc(hidden)]
+pub use naive::__BenchYearFlags;
 
 
 
@@ -549,11 +624,14 @@ impl<V: fmt::Display, D: fmt::Display> fmt::Debug for SerdeError<V, D> {
 impl<V: fmt::Display, D: fmt::Display> fmt::Display for SerdeError<V, D> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            &SerdeError::NonExistent { ref timestamp } => write!(
-                f, "value is not a legal timestamp: {}", timestamp),
+            &SerdeError::NonExistent { ref timestamp } => {
+                write!(f, "value is not a legal timestamp: {}", timestamp)
+            }
             &SerdeError::Ambiguous { ref timestamp, ref min, ref max } => write!(
-                f, "value is an ambiguous timestamp: {}, could be either of {}, {}",
-                timestamp, min, max),
+                f,
+                "value is an ambiguous timestamp: {}, could be either of {}, {}",
+                timestamp, min, max
+            ),
         }
     }
 }
@@ -759,11 +837,12 @@ impl fmt::Debug for ParseWeekdayError {
 mod weekday_serde {
     use super::Weekday;
     use core::fmt;
-    use serdelib::{ser, de};
+    use serdelib::{de, ser};
 
     impl ser::Serialize for Weekday {
         fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-            where S: ser::Serializer
+        where
+            S: ser::Serializer,
         {
             serializer.collect_str(&self)
         }
@@ -779,7 +858,8 @@ mod weekday_serde {
         }
 
         fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-            where E: de::Error
+        where
+            E: de::Error,
         {
             value.parse().map_err(|_| E::custom("short or long weekday names expected"))
         }
@@ -787,7 +867,8 @@ mod weekday_serde {
 
     impl<'de> de::Deserialize<'de> for Weekday {
         fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-            where D: de::Deserializer<'de>
+        where
+            D: de::Deserializer<'de>,
         {
             deserializer.deserialize_str(WeekdayVisitor)
         }
@@ -846,17 +927,316 @@ mod weekday_serde {
             assert_eq!(weekday, expected_weekday);
         }
 
-        let errors: Vec<&str> = vec![
-            "\"not a weekday\"",
-            "\"monDAYs\"",
-            "\"mond\"",
-            "mon",
-            "\"thur\"",
-            "\"thurs\"",
-        ];
+        let errors: Vec<&str> =
+            vec!["\"not a weekday\"", "\"monDAYs\"", "\"mond\"", "mon", "\"thur\"", "\"thurs\""];
 
         for str in errors {
             from_str::<Weekday>(str).unwrap_err();
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(PartialEq, Eq, Copy, Clone, Debug, Hash)]
+#[cfg_attr(feature = "rustc-serialize", derive(RustcEncodable, RustcDecodable))]
+pub enum Month {
+    
+    January = 0,
+    
+    February = 1,
+    
+    March = 2,
+    
+    April = 3,
+    
+    May = 4,
+    
+    June = 5,
+    
+    July = 6,
+    
+    August = 7,
+    
+    September = 8,
+    
+    October = 9,
+    
+    November = 10,
+    
+    December = 11,
+}
+
+impl Month {
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn succ(&self) -> Month {
+        match *self {
+            Month::January => Month::February,
+            Month::February => Month::March,
+            Month::March => Month::April,
+            Month::April => Month::May,
+            Month::May => Month::June,
+            Month::June => Month::July,
+            Month::July => Month::August,
+            Month::August => Month::September,
+            Month::September => Month::October,
+            Month::October => Month::November,
+            Month::November => Month::December,
+            Month::December => Month::January,
+        }
+    }
+
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn pred(&self) -> Month {
+        match *self {
+            Month::January => Month::December,
+            Month::February => Month::January,
+            Month::March => Month::February,
+            Month::April => Month::March,
+            Month::May => Month::April,
+            Month::June => Month::May,
+            Month::July => Month::June,
+            Month::August => Month::July,
+            Month::September => Month::August,
+            Month::October => Month::September,
+            Month::November => Month::October,
+            Month::December => Month::November,
+        }
+    }
+
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn number_from_month(&self) -> u32 {
+        match *self {
+            Month::January => 1,
+            Month::February => 2,
+            Month::March => 3,
+            Month::April => 4,
+            Month::May => 5,
+            Month::June => 6,
+            Month::July => 7,
+            Month::August => 8,
+            Month::September => 9,
+            Month::October => 10,
+            Month::November => 11,
+            Month::December => 12,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn name(&self) -> &'static str {
+        match *self {
+            Month::January => "January",
+            Month::February => "February",
+            Month::March => "March",
+            Month::April => "April",
+            Month::May => "May",
+            Month::June => "June",
+            Month::July => "July",
+            Month::August => "August",
+            Month::September => "September",
+            Month::October => "October",
+            Month::November => "November",
+            Month::December => "December",
+        }
+    }
+}
+
+impl num_traits::FromPrimitive for Month {
+    
+    
+    
+    
+    
+
+    #[inline]
+    fn from_u64(n: u64) -> Option<Month> {
+        Self::from_u32(n as u32)
+    }
+
+    #[inline]
+    fn from_i64(n: i64) -> Option<Month> {
+        Self::from_u32(n as u32)
+    }
+
+    #[inline]
+    fn from_u32(n: u32) -> Option<Month> {
+        match n {
+            1 => Some(Month::January),
+            2 => Some(Month::February),
+            3 => Some(Month::March),
+            4 => Some(Month::April),
+            5 => Some(Month::May),
+            6 => Some(Month::June),
+            7 => Some(Month::July),
+            8 => Some(Month::August),
+            9 => Some(Month::September),
+            10 => Some(Month::October),
+            11 => Some(Month::November),
+            12 => Some(Month::December),
+            _ => None,
+        }
+    }
+}
+
+
+#[derive(Clone, PartialEq)]
+pub struct ParseMonthError {
+    _dummy: (),
+}
+
+impl fmt::Debug for ParseMonthError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "ParseMonthError {{ .. }}")
+    }
+}
+
+#[cfg(feature = "serde")]
+mod month_serde {
+    use super::Month;
+    use serdelib::{de, ser};
+
+    use core::fmt;
+
+    impl ser::Serialize for Month {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: ser::Serializer,
+        {
+            serializer.collect_str(self.name())
+        }
+    }
+
+    struct MonthVisitor;
+
+    impl<'de> de::Visitor<'de> for MonthVisitor {
+        type Value = Month;
+
+        fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            write!(f, "Month")
+        }
+
+        fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+        where
+            E: de::Error,
+        {
+            value.parse().map_err(|_| E::custom("short (3-letter) or full month names expected"))
+        }
+    }
+
+    impl<'de> de::Deserialize<'de> for Month {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: de::Deserializer<'de>,
+        {
+            deserializer.deserialize_str(MonthVisitor)
+        }
+    }
+
+    #[cfg(test)]
+    extern crate serde_json;
+
+    #[test]
+    fn test_serde_serialize() {
+        use self::serde_json::to_string;
+        use Month::*;
+
+        let cases: Vec<(Month, &str)> = vec![
+            (January, "\"January\""),
+            (February, "\"February\""),
+            (March, "\"March\""),
+            (April, "\"April\""),
+            (May, "\"May\""),
+            (June, "\"June\""),
+            (July, "\"July\""),
+            (August, "\"August\""),
+            (September, "\"September\""),
+            (October, "\"October\""),
+            (November, "\"November\""),
+            (December, "\"December\""),
+        ];
+
+        for (month, expected_str) in cases {
+            let string = to_string(&month).unwrap();
+            assert_eq!(string, expected_str);
+        }
+    }
+
+    #[test]
+    fn test_serde_deserialize() {
+        use self::serde_json::from_str;
+        use Month::*;
+
+        let cases: Vec<(&str, Month)> = vec![
+            ("\"january\"", January),
+            ("\"jan\"", January),
+            ("\"FeB\"", February),
+            ("\"MAR\"", March),
+            ("\"mar\"", March),
+            ("\"april\"", April),
+            ("\"may\"", May),
+            ("\"june\"", June),
+            ("\"JULY\"", July),
+            ("\"august\"", August),
+            ("\"september\"", September),
+            ("\"October\"", October),
+            ("\"November\"", November),
+            ("\"DECEmbEr\"", December),
+        ];
+
+        for (string, expected_month) in cases {
+            let month = from_str::<Month>(string).unwrap();
+            assert_eq!(month, expected_month);
+        }
+
+        let errors: Vec<&str> =
+            vec!["\"not a month\"", "\"ja\"", "\"Dece\"", "Dec", "\"Augustin\""];
+
+        for string in errors {
+            from_str::<Month>(string).unwrap_err();
         }
     }
 }
@@ -963,6 +1343,9 @@ pub trait Datelike: Sized {
     
     fn num_days_from_ce(&self) -> i32 {
         
+        
+
+        
         let mut year = self.year() - 1;
         let mut ndays = 0;
         if year < 0 {
@@ -1035,31 +1418,118 @@ pub trait Timelike: Sized {
     }
 }
 
-#[cfg(test)] extern crate num_iter;
+#[cfg(test)]
+extern crate num_iter;
+
+mod test {
+    #[allow(unused_imports)]
+    use super::*;
+
+    #[test]
+    fn test_readme_doomsday() {
+        use num_iter::range_inclusive;
+
+        for y in range_inclusive(naive::MIN_DATE.year(), naive::MAX_DATE.year()) {
+            
+            let d4 = NaiveDate::from_ymd(y, 4, 4);
+            let d6 = NaiveDate::from_ymd(y, 6, 6);
+            let d8 = NaiveDate::from_ymd(y, 8, 8);
+            let d10 = NaiveDate::from_ymd(y, 10, 10);
+            let d12 = NaiveDate::from_ymd(y, 12, 12);
+
+            
+            let d59 = NaiveDate::from_ymd(y, 5, 9);
+            let d95 = NaiveDate::from_ymd(y, 9, 5);
+            let d711 = NaiveDate::from_ymd(y, 7, 11);
+            let d117 = NaiveDate::from_ymd(y, 11, 7);
+
+            
+            let d30 = NaiveDate::from_ymd(y, 3, 1).pred();
+
+            let weekday = d30.weekday();
+            let other_dates = [d4, d6, d8, d10, d12, d59, d95, d711, d117];
+            assert!(other_dates.iter().all(|d| d.weekday() == weekday));
+        }
+    }
+
+    #[test]
+    fn test_month_enum_primitive_parse() {
+        use num_traits::FromPrimitive;
+
+        let jan_opt = Month::from_u32(1);
+        let feb_opt = Month::from_u64(2);
+        let dec_opt = Month::from_i64(12);
+        let no_month = Month::from_u32(13);
+        assert_eq!(jan_opt, Some(Month::January));
+        assert_eq!(feb_opt, Some(Month::February));
+        assert_eq!(dec_opt, Some(Month::December));
+        assert_eq!(no_month, None);
+
+        let date = Utc.ymd(2019, 10, 28).and_hms(9, 10, 11);
+        assert_eq!(Month::from_u32(date.month()), Some(Month::October));
+
+        let month = Month::January;
+        let dt = Utc.ymd(2019, month.number_from_month(), 28).and_hms(9, 10, 11);
+        assert_eq!((dt.year(), dt.month(), dt.day()), (2019, 1, 28));
+    }
+}
+
+
+
+
 
 #[test]
-fn test_readme_doomsday() {
+fn test_num_days_from_ce_against_alternative_impl() {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn in_between(start: i32, end: i32, div: i32) -> i32 {
+        assert!(div > 0, "in_between: nonpositive div = {}", div);
+        let start = (start.div_euclid(div), start.rem_euclid(div));
+        let end = (end.div_euclid(div), end.rem_euclid(div));
+        
+        let start = start.0 + (start.1 != 0) as i32;
+        
+        let end = end.0 + (end.1 != 0) as i32;
+        end - start
+    }
+
+    
+    fn num_days_from_ce<Date: Datelike>(date: &Date) -> i32 {
+        let year = date.year();
+        let diff = move |div| in_between(1, year, div);
+        
+        
+        date.ordinal() as i32 + 365 * diff(1) + diff(4) - diff(100) + diff(400)
+    }
+
     use num_iter::range_inclusive;
 
-    for y in range_inclusive(naive::MIN_DATE.year(), naive::MAX_DATE.year()) {
-        
-        let d4 = NaiveDate::from_ymd(y, 4, 4);
-        let d6 = NaiveDate::from_ymd(y, 6, 6);
-        let d8 = NaiveDate::from_ymd(y, 8, 8);
-        let d10 = NaiveDate::from_ymd(y, 10, 10);
-        let d12 = NaiveDate::from_ymd(y, 12, 12);
-
-        
-        let d59 = NaiveDate::from_ymd(y, 5, 9);
-        let d95 = NaiveDate::from_ymd(y, 9, 5);
-        let d711 = NaiveDate::from_ymd(y, 7, 11);
-        let d117 = NaiveDate::from_ymd(y, 11, 7);
-
-        
-        let d30 = NaiveDate::from_ymd(y, 3, 1).pred();
-
-        let weekday = d30.weekday();
-        let other_dates = [d4, d6, d8, d10, d12, d59, d95, d711, d117];
-        assert!(other_dates.iter().all(|d| d.weekday() == weekday));
+    for year in range_inclusive(naive::MIN_DATE.year(), naive::MAX_DATE.year()) {
+        let jan1_year = NaiveDate::from_ymd(year, 1, 1);
+        assert_eq!(
+            jan1_year.num_days_from_ce(),
+            num_days_from_ce(&jan1_year),
+            "on {:?}",
+            jan1_year
+        );
+        let mid_year = jan1_year + Duration::days(133);
+        assert_eq!(mid_year.num_days_from_ce(), num_days_from_ce(&mid_year), "on {:?}", mid_year);
     }
+}
+
+#[test]
+fn test_month_enum_succ_pred() {
+    assert_eq!(Month::January.succ(), Month::February);
+    assert_eq!(Month::December.succ(), Month::January);
+    assert_eq!(Month::January.pred(), Month::December);
+    assert_eq!(Month::February.pred(), Month::January);
 }

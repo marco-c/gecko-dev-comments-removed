@@ -29,12 +29,14 @@ pub struct IsoWeek {
 
 pub fn iso_week_from_yof(year: i32, of: Of) -> IsoWeek {
     let (rawweek, _) = of.isoweekdate_raw();
-    let (year, week) = if rawweek < 1 { 
+    let (year, week) = if rawweek < 1 {
+        
         let prevlastweek = YearFlags::from_year(year - 1).nisoweeks();
         (year - 1, prevlastweek)
     } else {
         let lastweek = of.flags().nisoweeks();
-        if rawweek > lastweek { 
+        if rawweek > lastweek {
+            
             (year + 1, 1)
         } else {
             (year, rawweek)
@@ -140,7 +142,7 @@ impl fmt::Debug for IsoWeek {
 
 #[cfg(test)]
 mod tests {
-    use naive::{internals, MIN_DATE, MAX_DATE};
+    use naive::{internals, MAX_DATE, MIN_DATE};
     use Datelike;
 
     #[test]
