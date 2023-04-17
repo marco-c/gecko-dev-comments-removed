@@ -481,8 +481,7 @@ static inline void CreateAndStartTimer(nsCOMPtr<nsITimer>& aTimer,
 void nsHttpTransaction::OnPendingQueueInserted() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
-  
-  if (mConnInfo->IsHttp3() && !mOrigConnInfo) {
+  if (mConnInfo->IsHttp3() && !mResolver) {
     
     if (!mHttp3BackupTimerCreated) {
       CreateAndStartTimer(mHttp3BackupTimer, this,
@@ -3133,7 +3132,7 @@ nsresult nsHttpTransaction::OnHTTPSRRAvailable(
 
   RefPtr<nsHttpConnectionInfo> newInfo =
       mConnInfo->CloneAndAdoptHTTPSSVCRecord(svcbRecord);
-  bool needFastFallback = newInfo->IsHttp3();
+  bool needFastFallback = !mConnInfo->IsHttp3() && newInfo->IsHttp3();
   if (!gHttpHandler->ConnMgr()->MoveTransToNewConnEntry(this, newInfo)) {
     
     
@@ -3142,9 +3141,6 @@ nsresult nsHttpTransaction::OnHTTPSRRAvailable(
     
     UpdateConnectionInfo(newInfo);
   }
-
-  
-  MaybeCancelFallbackTimer();
 
   if (needFastFallback) {
     CreateAndStartTimer(
@@ -3229,21 +3225,6 @@ void nsHttpTransaction::OnBackupConnectionReady(bool aHTTPSRRUsed) {
   }
 }
 
-static void CreateBackupConnection(
-    nsHttpConnectionInfo* aBackupConnInfo, nsIInterfaceRequestor* aCallbacks,
-    uint32_t aCaps, std::function<void(bool)>&& aResultCallback) {
-  RefPtr<SpeculativeTransaction> trans = new SpeculativeTransaction(
-      aBackupConnInfo, aCallbacks, aCaps | NS_HTTP_DISALLOW_HTTP3,
-      std::move(aResultCallback));
-  uint32_t limit =
-      StaticPrefs::network_http_http3_parallel_fallback_conn_limit();
-  if (limit) {
-    trans->SetParallelSpeculativeConnectLimit(limit);
-    trans->SetIgnoreIdle(true);
-  }
-  gHttpHandler->ConnMgr()->DoSpeculativeConnection(trans, false);
-}
-
 void nsHttpTransaction::OnHttp3BackupTimer() {
   LOG(("nsHttpTransaction::OnHttp3BackupTimer [%p]", this));
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
@@ -3261,8 +3242,10 @@ void nsHttpTransaction::OnHttp3BackupTimer() {
     }
   };
 
-  CreateBackupConnection(mBackupConnInfo, mCallbacks, mCaps,
-                         std::move(callback));
+  RefPtr<SpeculativeTransaction> trans = new SpeculativeTransaction(
+      mBackupConnInfo, mCallbacks, mCaps | NS_HTTP_DISALLOW_HTTP3,
+      std::move(callback));
+  gHttpHandler->ConnMgr()->DoSpeculativeConnection(trans, false);
 }
 
 void nsHttpTransaction::OnFastFallbackTimer() {
@@ -3296,8 +3279,10 @@ void nsHttpTransaction::OnFastFallbackTimer() {
     self->OnBackupConnectionReady(true);
   };
 
-  CreateBackupConnection(mBackupConnInfo, mCallbacks, mCaps,
-                         std::move(callback));
+  RefPtr<SpeculativeTransaction> trans = new SpeculativeTransaction(
+      mBackupConnInfo, mCallbacks, mCaps | NS_HTTP_DISALLOW_HTTP3,
+      std::move(callback));
+  gHttpHandler->ConnMgr()->DoSpeculativeConnection(trans, false);
 }
 
 void nsHttpTransaction::HandleFallback(
