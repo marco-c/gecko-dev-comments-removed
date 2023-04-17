@@ -44,10 +44,6 @@ async function setAboutWelcomeMultiStage(value = "") {
   return pushPrefs([ABOUT_WELCOME_OVERRIDE_CONTENT_PREF, value]);
 }
 
-async function setProton(value = false) {
-  return pushPrefs(["browser.aboutwelcome.protonDesign", value]);
-}
-
 
 
 
