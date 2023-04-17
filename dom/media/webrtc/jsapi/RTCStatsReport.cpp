@@ -4,7 +4,6 @@
 
 
 
-
 #include "RTCStatsReport.h"
 #include "mozilla/dom/Performance.h"
 #include "mozilla/dom/PerformanceService.h"
@@ -12,23 +11,22 @@
 
 namespace mozilla::dom {
 
-RTCStatsTimestampMaker::RTCStatsTimestampMaker(const GlobalObject* aGlobal) {
-  nsCOMPtr<nsPIDOMWindowInner> window;
-  if (aGlobal && (window = do_QueryInterface(aGlobal->GetAsSupports())) &&
-      window->GetPerformance()) {
-    mRandomTimelineSeed = window->GetPerformance()->GetRandomTimelineSeed();
-    mStartMonotonic = window->GetPerformance()->CreationTimeStamp();
-    
-    
-    
-    
-    
-    mStartWallClockRaw =
-        PerformanceService::GetOrCreate()->TimeOrigin(mStartMonotonic);
-    MOZ_ASSERT(window->AsGlobal());
-    mCrossOriginIsolated = window->AsGlobal()->CrossOriginIsolated();
-  }
-}
+RTCStatsTimestampMaker::RTCStatsTimestampMaker(nsPIDOMWindowInner* aWindow)
+    : mRandomTimelineSeed(aWindow && aWindow->GetPerformance() ?
+          aWindow->GetPerformance()->GetRandomTimelineSeed() : 0),
+      mStartMonotonic(aWindow && aWindow->GetPerformance() ?
+          aWindow->GetPerformance()->CreationTimeStamp() : mozilla::TimeStamp::Now()),
+      
+      
+      
+      
+      
+      mStartWallClockRaw(
+          aWindow
+              ? PerformanceService::GetOrCreate()->TimeOrigin(mStartMonotonic)
+              : (double)PR_Now() / PR_USEC_PER_MSEC),
+      mCrossOriginIsolated(aWindow ? aWindow->AsGlobal()->CrossOriginIsolated()
+                                   : false) {}
 
 DOMHighResTimeStamp RTCStatsTimestampMaker::GetNow() const {
   
