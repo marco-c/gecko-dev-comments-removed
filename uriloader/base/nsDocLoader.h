@@ -30,7 +30,6 @@
 
 namespace mozilla {
 namespace dom {
-class BrowserBridgeChild;
 class BrowsingContext;
 }  
 }  
@@ -55,8 +54,6 @@ class nsDocLoader : public nsIDocumentLoader,
                     public nsIChannelEventSink,
                     public nsISupportsPriority {
  public:
-  using BrowserBridgeChild = mozilla::dom::BrowserBridgeChild;
-
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_THIS_DOCLOADER_IMPL_CID)
 
   nsDocLoader() : nsDocLoader(false) {}
@@ -136,27 +133,9 @@ class nsDocLoader : public nsIDocumentLoader,
     mTreatAsBackgroundLoad = false;
   };
 
-  
-  
-  
-  void OOPChildLoadStarted(BrowserBridgeChild* aChild) {
-    MOZ_DIAGNOSTIC_ASSERT(!mOOPChildrenLoading.Contains(aChild));
-    mOOPChildrenLoading.AppendElement(aChild);
-  }
-
-  
-  
-  
-  void OOPChildLoadDone(BrowserBridgeChild* aChild) {
-    
-    
-    
-    if (mOOPChildrenLoading.RemoveElement(aChild)) {
-      DocLoaderIsEmpty(true);
-    }
-  }
-
   uint32_t ChildCount() const { return mChildList.Length(); }
+
+  void OOPChildrenLoadingIsEmpty() { DocLoaderIsEmpty(true); }
 
  protected:
   explicit nsDocLoader(bool aNotifyAboutBackgroundRequests);
@@ -373,10 +352,6 @@ class nsDocLoader : public nsIDocumentLoader,
   
   
   nsCOMArray<nsIDocumentLoader> mChildrenInOnload;
-
-  
-  
-  nsTArray<const BrowserBridgeChild*> mOOPChildrenLoading;
 
   int64_t GetMaxTotalProgress();
 
