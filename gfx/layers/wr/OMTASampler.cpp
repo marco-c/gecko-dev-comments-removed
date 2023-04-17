@@ -114,9 +114,7 @@ void OMTASampler::Sample(wr::TransactionWrapper& aTxn) {
 
   WrAnimations animations = SampleAnimations(previousSampleTime, sampleTime);
 
-  
-  
-  aTxn.UpdateDynamicProperties(animations.mOpacityArrays,
+  aTxn.AppendDynamicProperties(animations.mOpacityArrays,
                                animations.mTransformArrays,
                                animations.mColorArrays);
 }
