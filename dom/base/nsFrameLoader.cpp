@@ -2590,7 +2590,7 @@ bool nsFrameLoader::TryRemoteBrowserInternal() {
   
   
   
-  if (!OwnerIsMozBrowserFrame()) {
+  if (!OwnerIsMozBrowserFrame() && !mOwnerContent->GetPrimaryFrame()) {
     doc->FlushPendingNotifications(FlushType::Frames);
   }
 
