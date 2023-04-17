@@ -78,8 +78,6 @@ class InterceptedHttpChannel final
   nsCOMPtr<nsIInterceptedBodyCallback> mBodyCallback;
   nsCOMPtr<nsICacheInfoChannel> mSynthesizedCacheInfo;
   RefPtr<nsInputStreamPump> mPump;
-  TimeStamp mFinishResponseStart;
-  TimeStamp mFinishResponseEnd;
   TimeStamp mInterceptedChannelCreationTimestamp;
 
   
@@ -91,8 +89,89 @@ class InterceptedHttpChannel final
   uint64_t mResumeStartPos;
   nsCString mResumeEntityId;
   nsString mStatusHost;
-  
   Atomic<bool> mCallingStatusAndProgress;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  class InterceptionTimeStamps final {
+   public:
+    
+    enum Status {
+      Created,
+      Initialized,
+      Synthesized,
+      Reset,
+      Redirected,
+      Canceled,
+      CanceledAfterSynthesized,
+      CanceledAfterReset,
+      CanceledAfterRedirected
+    };
+
+    InterceptionTimeStamps();
+    ~InterceptionTimeStamps() = default;
+
+    
+
+
+
+    void Init(nsIChannel* aChannel);
+
+    
+
+
+
+
+    void RecordTime(TimeStamp&& aTimeStamp = TimeStamp::Now());
+
+    
+
+
+
+
+
+
+    void RecordTime(Status&& aStatus,
+                    TimeStamp&& aTimeStamp = TimeStamp::Now());
+
+   private:
+    
+    TimeStamp mInterceptionStart;
+
+    
+    TimeStamp mInterceptionFinish;
+
+    
+    enum Stage { InterceptionStart, InterceptionFinish } mStage;
+
+    
+    Status mStatus;
+
+    bool mIsNonSubresourceRequest;
+    
+    nsCString mKey;
+    nsCString mSubresourceKey;
+
+    void RecordTimeInternal(TimeStamp&& aTimeStamp);
+
+    
+    void GenKeysWithStatus(nsCString& aKey, nsCString& aSubresourceKey);
+
+    
+    void SaveTimeStamps();
+  };
+
+  InterceptionTimeStamps mTimeStamps;
 
   InterceptedHttpChannel(PRTime aCreationTime,
                          const TimeStamp& aCreationTimestamp,

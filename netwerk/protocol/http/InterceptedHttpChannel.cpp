@@ -34,8 +34,8 @@ InterceptedHttpChannel::InterceptedHttpChannel(
       mProgressReported(0),
       mSynthesizedStreamLength(-1),
       mResumeStartPos(0),
-      
-      mCallingStatusAndProgress(false) {
+      mCallingStatusAndProgress(false),
+      mTimeStamps() {
   
   
   
@@ -92,6 +92,10 @@ void InterceptedHttpChannel::AsyncOpenInternal() {
   
   
   nsresult rv = NS_OK;
+
+  
+  mTimeStamps.Init(this);
+  mTimeStamps.RecordTime();
 
   
   
@@ -216,6 +220,9 @@ nsresult InterceptedHttpChannel::FollowSyntheticRedirect() {
 
   if (NS_WARN_IF(NS_FAILED(rv))) {
     OnRedirectVerifyCallback(rv);
+  } else {
+    
+    mTimeStamps.RecordTime(InterceptionTimeStamps::Redirected);
   }
 
   return rv;
@@ -472,6 +479,11 @@ InterceptedHttpChannel::Cancel(nsresult aStatus) {
   if (mCanceled) {
     return NS_OK;
   }
+
+  
+  
+  mTimeStamps.RecordTime(InterceptionTimeStamps::Canceled);
+
   mCanceled = true;
 
   MOZ_DIAGNOSTIC_ASSERT(NS_FAILED(aStatus));
@@ -691,6 +703,10 @@ InterceptedHttpChannel::ResetInterception(bool aBypass) {
 
   if (NS_FAILED(rv)) {
     OnRedirectVerifyCallback(rv);
+  } else {
+    
+    
+    mTimeStamps.RecordTime(InterceptionTimeStamps::Reset);
   }
 
   return rv;
@@ -825,9 +841,6 @@ InterceptedHttpChannel::FinishSynthesizedResponse() {
     
     return NS_OK;
   }
-
-  
-  
 
   return NS_OK;
 }
@@ -977,6 +990,8 @@ InterceptedHttpChannel::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
   }
 
   MaybeCallBodyCallback();
+
+  mTimeStamps.RecordTime(InterceptionTimeStamps::Synthesized);
 
   
   
@@ -1245,6 +1260,150 @@ InterceptedHttpChannel::SetCacheKey(uint32_t key) {
     return mSynthesizedCacheInfo->SetCacheKey(key);
   }
   return NS_ERROR_NOT_AVAILABLE;
+}
+
+
+InterceptedHttpChannel::InterceptionTimeStamps::InterceptionTimeStamps()
+    : mStage(InterceptedHttpChannel::InterceptionTimeStamps::InterceptionStart),
+      mStatus(InterceptedHttpChannel::InterceptionTimeStamps::Created) {}
+
+void InterceptedHttpChannel::InterceptionTimeStamps::Init(
+    nsIChannel* aChannel) {
+  MOZ_ASSERT(aChannel);
+  MOZ_ASSERT(mStatus == Created);
+
+  mStatus = Initialized;
+
+  mIsNonSubresourceRequest = nsContentUtils::IsNonSubresourceRequest(aChannel);
+  mKey = mIsNonSubresourceRequest ? "navigation"_ns : "subresource"_ns;
+  nsCOMPtr<nsIInterceptedChannel> interceptedChannel =
+      do_QueryInterface(aChannel);
+  
+  MOZ_ASSERT(interceptedChannel);
+  if (!mIsNonSubresourceRequest) {
+    interceptedChannel->GetSubresourceTimeStampKey(aChannel, mSubresourceKey);
+  }
+}
+
+void InterceptedHttpChannel::InterceptionTimeStamps::RecordTime(
+    InterceptedHttpChannel::InterceptionTimeStamps::Status&& aStatus,
+    TimeStamp&& aTimeStamp) {
+  
+  
+  MOZ_ASSERT(aStatus == Synthesized || aStatus == Reset ||
+             aStatus == Canceled || aStatus == Redirected);
+  if (mStatus == Canceled) {
+    return;
+  }
+
+  
+  
+  MOZ_ASSERT(mStatus == Initialized || aStatus == Canceled);
+
+  if (mStatus == Initialized) {
+    mStatus = aStatus;
+  } else {
+    switch (mStatus) {
+      case Synthesized:
+        mStatus = CanceledAfterSynthesized;
+        break;
+      case Reset:
+        mStatus = CanceledAfterReset;
+        break;
+      case Redirected:
+        mStatus = CanceledAfterRedirected;
+        break;
+      default:
+        MOZ_ASSERT(false);
+        break;
+    }
+  }
+
+  RecordTimeInternal(std::move(aTimeStamp));
+}
+
+void InterceptedHttpChannel::InterceptionTimeStamps::RecordTime(
+    TimeStamp&& aTimeStamp) {
+  MOZ_ASSERT(mStatus == Initialized);
+  RecordTimeInternal(std::move(aTimeStamp));
+}
+
+void InterceptedHttpChannel::InterceptionTimeStamps::RecordTimeInternal(
+    TimeStamp&& aTimeStamp) {
+  MOZ_ASSERT(mStatus != Created);
+  switch (mStage) {
+    case InterceptionStart: {
+      MOZ_ASSERT(mInterceptionStart.IsNull());
+      mInterceptionStart = aTimeStamp;
+      mStage = InterceptionFinish;
+      break;
+    }
+    case InterceptionFinish: {
+      mInterceptionFinish = aTimeStamp;
+      SaveTimeStamps();
+      return;
+    }
+    default: {
+      return;
+    }
+  }
+}
+
+void InterceptedHttpChannel::InterceptionTimeStamps::GenKeysWithStatus(
+    nsCString& aKey, nsCString& aSubresourceKey) {
+  nsAutoCString statusString;
+  switch (mStatus) {
+    case Synthesized:
+      statusString = "synthesized"_ns;
+      break;
+    case Reset:
+      statusString = "reset"_ns;
+      break;
+    case Redirected:
+      statusString = "redirected"_ns;
+      break;
+    case Canceled:
+      statusString = "canceled"_ns;
+      break;
+    case CanceledAfterSynthesized:
+      statusString = "canceled-after-synthesized"_ns;
+      break;
+    case CanceledAfterReset:
+      statusString = "canceled-after-reset"_ns;
+      break;
+    case CanceledAfterRedirected:
+      statusString = "canceled-after-redirected"_ns;
+      break;
+    default:
+      return;
+  }
+  aKey = mKey;
+  aSubresourceKey = mSubresourceKey;
+  aKey.AppendLiteral("_");
+  aSubresourceKey.AppendLiteral("_");
+  aKey.Append(statusString);
+  aSubresourceKey.Append(statusString);
+}
+
+void InterceptedHttpChannel::InterceptionTimeStamps::SaveTimeStamps() {
+  MOZ_ASSERT(mStatus != Initialized && mStatus != Created);
+
+  nsAutoCString key, subresourceKey;
+  GenKeysWithStatus(key, subresourceKey);
+
+  if (!mInterceptionFinish.IsNull()) {
+    Telemetry::Accumulate(
+        Telemetry::SERVICE_WORKER_FETCH_INTERCEPTION_DURATION_MS_2, key,
+        static_cast<uint32_t>(
+            (mInterceptionFinish - mInterceptionStart).ToMilliseconds()));
+    if (!mIsNonSubresourceRequest && !mSubresourceKey.IsEmpty()) {
+      Telemetry::Accumulate(
+          Telemetry::SERVICE_WORKER_FETCH_INTERCEPTION_DURATION_MS_2,
+          subresourceKey,
+          static_cast<uint32_t>(
+              (mInterceptionFinish - mInterceptionStart).ToMilliseconds()));
+    }
+  }
 }
 
 }  
