@@ -14747,15 +14747,36 @@ var external_ReactTransitionGroup_ = __webpack_require__(29);
 
 
 class CustomizeMenu_CustomizeMenu extends external_React_default.a.PureComponent {
+  constructor(props) {
+    super(props);
+    this.onEntered = this.onEntered.bind(this);
+    this.onExited = this.onExited.bind(this);
+  }
+
+  onEntered() {
+    if (this.closeButton) {
+      this.closeButton.focus();
+    }
+  }
+
+  onExited() {
+    if (this.openButton) {
+      this.openButton.focus();
+    }
+  }
+
   render() {
     return external_React_default.a.createElement("span", null, external_React_default.a.createElement("button", {
       className: "personalize-button",
       onClick: () => this.props.onOpen(),
-      "data-l10n-id": "newtab-personalize-button-label"
+      "data-l10n-id": "newtab-personalize-button-label",
+      ref: c => this.openButton = c
     }), external_React_default.a.createElement(external_ReactTransitionGroup_["CSSTransition"], {
-      timeout: 0,
+      timeout: 250,
       classNames: "customize-animate",
       in: this.props.showing,
+      onEntered: this.onEntered,
+      onExited: this.onExited,
       appear: true
     }, external_React_default.a.createElement("div", {
       className: "customize-menu",
@@ -14764,7 +14785,8 @@ class CustomizeMenu_CustomizeMenu extends external_React_default.a.PureComponent
     }, external_React_default.a.createElement("button", {
       onClick: () => this.props.onClose(),
       className: "close-button",
-      "data-l10n-id": "newtab-custom-close-button"
+      "data-l10n-id": "newtab-custom-close-button",
+      ref: c => this.closeButton = c
     }), external_React_default.a.createElement(ThemesSection_ThemesSection, null), external_React_default.a.createElement(BackgroundsSection_BackgroundsSection, null), external_React_default.a.createElement(ContentSection_ContentSection, {
       openPreferences: this.props.openPreferences,
       setPref: this.props.setPref,
