@@ -338,6 +338,9 @@ class LookAndFeel {
     TouchDeviceSupportPresent,
 
     
+    TitlebarRadius,
+
+    
 
 
     End,
@@ -396,9 +399,6 @@ class LookAndFeel {
 
     
     TextScaleFactor,
-
-    
-    TitlebarRadius,
 
     
     End,
