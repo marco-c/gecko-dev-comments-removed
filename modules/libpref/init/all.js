@@ -3926,7 +3926,11 @@ pref("network.connectivity-service.IPv6.url", "http://detectportal.firefox.com/s
 
 
 pref("network.trr.mode", 0);
-pref("network.trr.uri", "");
+
+pref("network.trr.uri", "https://mozilla.cloudflare-dns.com/dns-query");
+
+
+pref("network.trr.resolvers", "[{ \"name\": \"Cloudflare\", \"url\": \"https://mozilla.cloudflare-dns.com/dns-query\" },{ \"name\": \"NextDNS\", \"url\": \"https://firefox.dns.nextdns.io/\" }]");
 
 pref("network.trr.credentials", "");
 pref("network.trr.custom_uri", "");

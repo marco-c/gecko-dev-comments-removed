@@ -8,11 +8,7 @@ add_task(setup);
 
 add_task(async function testTrrSelectionDisable() {
   
-  let configFlushed = DoHTestUtils.waitForConfigFlush();
   Preferences.set(prefs.TRR_SELECT_ENABLED_PREF, false);
-  await configFlushed;
-
-  
   setPassingHeuristics();
   let promise = waitForDoorhanger();
   Preferences.set(prefs.ENABLED_PREF, true);
