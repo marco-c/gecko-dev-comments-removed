@@ -857,6 +857,14 @@ class MOZ_RAII CacheIRCompiler {
     MOZ_ASSERT(stubFieldPolicy_ == StubFieldPolicy::Constant);
     return (JSObject*)readStubWord(offset, StubField::Type::JSObject);
   }
+  
+  
+  
+  JSObject* objectStubFieldUnchecked(uint32_t offset) {
+    return (JSObject*)writer_
+        .readStubFieldForIon(offset, StubField::Type::JSObject)
+        .asWord();
+  }
   JSString* stringStubField(uint32_t offset) {
     MOZ_ASSERT(stubFieldPolicy_ == StubFieldPolicy::Constant);
     return (JSString*)readStubWord(offset, StubField::Type::String);

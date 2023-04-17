@@ -10997,46 +10997,32 @@ void NewObjectIRGenerator::trackAttached(const char* name) {
 #endif
 }
 
-AttachDecision NewObjectIRGenerator::tryAttachPlainObject() {
-  NativeObject* nativeObj = &templateObject_->as<NativeObject>();
-  MOZ_ASSERT(nativeObj->is<PlainObject>());
-
-  
-  
-  if (nativeObj->numDynamicSlots() > NativeObject::MAX_FIXED_SLOTS) {
+AttachDecision NewObjectIRGenerator::tryAttachStub() {
+  AutoAssertNoPendingException aanpe(cx_);
+  if (templateObject_->as<NativeObject>().hasDynamicSlots()) {
+    trackAttached(IRGenerator::NotAttached);
     return AttachDecision::NoAction;
   }
 
   
   if (cx_->realm()->hasAllocationMetadataBuilder()) {
+    trackAttached(IRGenerator::NotAttached);
     return AttachDecision::NoAction;
   }
 
-  MOZ_ASSERT(!nativeObj->hasPrivate());
-  MOZ_ASSERT(!nativeObj->hasDynamicElements());
-  MOZ_ASSERT(!nativeObj->isSharedMemory());
-
-  uint32_t numFixedSlots = nativeObj->numUsedFixedSlots();
-  uint32_t numDynamicSlots = nativeObj->numDynamicSlots();
-  gc::AllocKind allocKind = nativeObj->asTenured().getAllocKind();
-  Shape* shape = nativeObj->lastProperty();
-
   writer.guardNoAllocationMetadataBuilder();
-  writer.newPlainObjectResult(numFixedSlots, numDynamicSlots, allocKind, shape);
+
+  
+  
+  uint64_t id = cx_->runtime()->jitRuntime()->nextDisambiguationId();
+  uint32_t idHi = id >> 32;
+  uint32_t idLo = id & UINT32_MAX;
+  writer.loadNewObjectFromTemplateResult(templateObject_, idHi, idLo);
 
   writer.returnFromIC();
 
-  trackAttached("NewPlainObject");
+  trackAttached("NewObjectWithTemplate");
   return AttachDecision::Attach;
-}
-
-AttachDecision NewObjectIRGenerator::tryAttachStub() {
-  AutoAssertNoPendingException aanpe(cx_);
-
-  TRY_ATTACH(tryAttachPlainObject());
-
-  trackAttached(IRGenerator::NotAttached);
-  return AttachDecision::NoAction;
 }
 
 #ifdef JS_SIMULATOR

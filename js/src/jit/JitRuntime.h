@@ -229,6 +229,9 @@ class JitRuntime {
   MainThreadData<IonCompileTaskList> ionLazyLinkList_;
   MainThreadData<size_t> ionLazyLinkListSize_{0};
 
+  
+  MainThreadData<uint64_t> disambiguationId_{0};
+
 #ifdef DEBUG
   
   
@@ -440,6 +443,8 @@ class JitRuntime {
 
   void ionLazyLinkListRemove(JSRuntime* rt, js::jit::IonCompileTask* task);
   void ionLazyLinkListAdd(JSRuntime* rt, js::jit::IonCompileTask* task);
+
+  uint64_t nextDisambiguationId() { return disambiguationId_++; }
 };
 
 }  
