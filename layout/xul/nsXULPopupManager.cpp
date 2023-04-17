@@ -1829,37 +1829,30 @@ bool nsXULPopupManager::MayShowPopup(nsMenuPopupFrame* aPopup) {
 
   nsCOMPtr<nsPIDOMWindowOuter> rootWin = root->GetWindow();
 
-  if (XRE_IsParentProcess()) {
-    
-    
-    if (docShell->ItemType() != nsIDocShellTreeItem::typeChrome) {
-      
-      nsFocusManager* fm = nsFocusManager::GetFocusManager();
-      if (!fm || !rootWin) {
-        return false;
-      }
+  MOZ_RELEASE_ASSERT(XRE_IsParentProcess(),
+                     "Cannot have XUL in content process showing popups.");
 
-      nsCOMPtr<nsPIDOMWindowOuter> activeWindow = fm->GetActiveWindow();
-      if (activeWindow != rootWin) {
-        return false;
-      }
-
-      
-      
-      
-      
-      bool visible;
-      baseWin->GetVisibility(&visible);
-      if (!visible) {
-        return false;
-      }
-    }
-  } else {
+  
+  
+  if (docShell->ItemType() != nsIDocShellTreeItem::typeChrome) {
+    
     nsFocusManager* fm = nsFocusManager::GetFocusManager();
-    BrowsingContext* bc = docShell->GetBrowsingContext();
-    if (!fm || !bc || fm->GetActiveBrowsingContext() != bc->Top()) {
-      
-      
+    if (!fm || !rootWin) {
+      return false;
+    }
+
+    nsCOMPtr<nsPIDOMWindowOuter> activeWindow = fm->GetActiveWindow();
+    if (activeWindow != rootWin) {
+      return false;
+    }
+
+    
+    
+    
+    
+    bool visible;
+    baseWin->GetVisibility(&visible);
+    if (!visible) {
       return false;
     }
   }
