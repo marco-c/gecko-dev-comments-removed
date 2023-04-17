@@ -42,11 +42,9 @@ const add_plain_task = add_task.bind(this);
 
 
 
-let remoteAgentStarted = false;
 async function startRemoteAgent() {
-  if (!remoteAgentStarted) {
+  if (!RemoteAgent.listening) {
     await RemoteAgent.listen(Services.io.newURI("http://localhost:9222"));
-    remoteAgentStarted = true;
     info("Remote agent started");
   }
 }
