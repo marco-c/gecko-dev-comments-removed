@@ -2658,7 +2658,7 @@ class Document : public nsINode,
 
 
 
-  bool IsActive() const { return mDocumentContainer && !mRemovedFromDocShell; }
+  bool IsActive() const;
 
   
 
@@ -2700,6 +2700,8 @@ class Document : public nsINode,
   
   using ActivityObserverEnumerator = FunctionRef<void(nsISupports*)>;
   void EnumerateActivityObservers(ActivityObserverEnumerator aEnumerator);
+
+  void NotifyActivityChanged();
 
   
   
