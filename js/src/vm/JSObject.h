@@ -237,6 +237,13 @@ class JSObject
   
   
   
+  
+  
+  
+  
+  
+  
+  
   inline bool hasInvalidatedTeleporting() const;
   static bool setInvalidatedTeleporting(JSContext* cx, JS::HandleObject obj) {
     MOZ_ASSERT(obj->isUsedAsPrototype());

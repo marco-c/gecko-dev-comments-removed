@@ -668,6 +668,7 @@ static void GeneratePrototypeGuards(CacheIRWriter& writer, JSObject* obj,
   
   
   
+  
 
   MOZ_ASSERT(holder);
   MOZ_ASSERT(obj != holder);
@@ -692,12 +693,11 @@ static void GeneratePrototypeGuards(CacheIRWriter& writer, JSObject* obj,
   ObjOperandId protoId = writer.loadProto(objId);
 
   
+  
   while (pobj != holder) {
-    pobj = pobj->staticPrototype();
+    writer.guardShape(protoId, pobj->shape());
 
-    
-    
-    writer.guardProto(protoId, pobj);
+    pobj = pobj->staticPrototype();
     protoId = writer.loadProto(protoId);
   }
 }

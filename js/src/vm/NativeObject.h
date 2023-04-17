@@ -760,9 +760,6 @@ class NativeObject : public JSObject {
   [[nodiscard]] static bool generateNewDictionaryShape(JSContext* cx,
                                                        HandleNativeObject obj);
 
-  [[nodiscard]] static bool reshapeForShadowedProp(JSContext* cx,
-                                                   HandleNativeObject obj);
-
   
   
   
