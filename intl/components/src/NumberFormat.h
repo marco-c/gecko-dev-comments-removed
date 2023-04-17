@@ -166,8 +166,20 @@ using NumberPartVector = mozilla::Vector<NumberPart, 8 * sizeof(NumberPart)>;
 
 
 
+
+
+
+
+
+
 class NumberFormat final {
  public:
+  
+
+
+
+
+
   explicit NumberFormat(std::string_view aLocale,
                         const NumberFormatOptions& aOptions = {});
 
@@ -178,6 +190,13 @@ class NumberFormat final {
     OutOfMemory,
   };
 
+  
+
+
+
+
+
+
   Result<std::u16string_view, NumberFormat::FormatError> format(
       double number) const {
     if (!mIsInitialized || !formatInternal(number)) {
@@ -186,6 +205,13 @@ class NumberFormat final {
 
     return formatResult();
   }
+
+  
+
+
+
+
+
 
   Result<std::u16string_view, NumberFormat::FormatError> formatToParts(
       double number, NumberPartVector& parts) const {
@@ -198,6 +224,11 @@ class NumberFormat final {
     return formatResultToParts(Some(number), isNegative, parts);
   }
 
+  
+
+
+
+
   template <typename B>
   Result<Ok, NumberFormat::FormatError> format(double number, B& buffer) const {
     if (!mIsInitialized || !formatInternal(number)) {
@@ -206,6 +237,13 @@ class NumberFormat final {
 
     return formatResult<typename B::CharType, B>(buffer);
   }
+
+  
+
+
+
+
+
 
   Result<std::u16string_view, NumberFormat::FormatError> format(
       int64_t number) const {
@@ -216,6 +254,13 @@ class NumberFormat final {
     return formatResult();
   }
 
+  
+
+
+
+
+
+
   Result<std::u16string_view, NumberFormat::FormatError> formatToParts(
       int64_t number, NumberPartVector& parts) const {
     if (!mIsInitialized || !formatInternal(number)) {
@@ -224,6 +269,11 @@ class NumberFormat final {
 
     return formatResultToParts(Nothing(), number < 0, parts);
   }
+
+  
+
+
+
 
   template <typename B>
   Result<Ok, NumberFormat::FormatError> format(int64_t number,
@@ -235,6 +285,13 @@ class NumberFormat final {
     return formatResult<typename B::CharType, B>(buffer);
   }
 
+  
+
+
+
+
+
+
   Result<std::u16string_view, NumberFormat::FormatError> format(
       std::string_view number) const {
     if (!mIsInitialized || !formatInternal(number)) {
@@ -243,6 +300,14 @@ class NumberFormat final {
 
     return formatResult();
   }
+
+  
+
+
+
+
+
+
 
   Result<std::u16string_view, NumberFormat::FormatError> formatToParts(
       std::string_view number, NumberPartVector& parts) const {
@@ -254,6 +319,12 @@ class NumberFormat final {
 
     return formatResultToParts(Nothing(), isNegative, parts);
   }
+
+  
+
+
+
+
 
   template <typename B>
   Result<Ok, NumberFormat::FormatError> format(std::string_view number,
