@@ -774,7 +774,11 @@ class ScriptStencil {
   
   
   
-  ScopeIndex lazyFunctionEnclosingScopeIndex_;
+  
+  
+  
+  
+  TaggedScriptThingIndex enclosingScopeOrCanonicalName;
 
   
   FunctionFlags functionFlags = {};
@@ -796,6 +800,11 @@ class ScriptStencil {
   
   
   static constexpr uint16_t HasLazyFunctionEnclosingScopeIndexFlag = 1 << 3;
+
+  
+  
+  
+  static constexpr uint16_t HasSelfHostedCanonicalName = 1 << 4;
 
   uint16_t flags_ = 0;
 
@@ -835,25 +844,43 @@ class ScriptStencil {
     return flags_ & HasLazyFunctionEnclosingScopeIndexFlag;
   }
 
+  bool hasSelfHostedCanonicalName() const {
+    return flags_ & HasSelfHostedCanonicalName;
+  }
+
  private:
   void setHasLazyFunctionEnclosingScopeIndex() {
     flags_ |= HasLazyFunctionEnclosingScopeIndexFlag;
   }
 
+  void setHasSelfHostedCanonicalName() { flags_ |= HasSelfHostedCanonicalName; }
+
  public:
   void setLazyFunctionEnclosingScopeIndex(ScopeIndex index) {
-    lazyFunctionEnclosingScopeIndex_ = index;
+    MOZ_ASSERT(enclosingScopeOrCanonicalName.isNull());
+    enclosingScopeOrCanonicalName = TaggedScriptThingIndex(index);
     setHasLazyFunctionEnclosingScopeIndex();
   }
 
   void resetHasLazyFunctionEnclosingScopeIndexAfterStencilMerge() {
     flags_ &= ~HasLazyFunctionEnclosingScopeIndexFlag;
-    lazyFunctionEnclosingScopeIndex_ = ScopeIndex::invalid();
+    enclosingScopeOrCanonicalName = TaggedScriptThingIndex();
   }
 
   ScopeIndex lazyFunctionEnclosingScopeIndex() const {
     MOZ_ASSERT(hasLazyFunctionEnclosingScopeIndex());
-    return lazyFunctionEnclosingScopeIndex_;
+    return enclosingScopeOrCanonicalName.toScope();
+  }
+
+  void setSelfHostedCanonicalName(TaggedParserAtomIndex name) {
+    MOZ_ASSERT(enclosingScopeOrCanonicalName.isNull());
+    enclosingScopeOrCanonicalName = TaggedScriptThingIndex(name);
+    setHasSelfHostedCanonicalName();
+  }
+
+  TaggedParserAtomIndex selfHostedCanonicalName() const {
+    MOZ_ASSERT(hasSelfHostedCanonicalName());
+    return enclosingScopeOrCanonicalName.toAtom();
   }
 
 #if defined(DEBUG) || defined(JS_JITSPEW)

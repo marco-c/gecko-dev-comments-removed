@@ -44,6 +44,7 @@
 #include "vm/RegExpObject.h"  
 #include "vm/Scope.h"  
 #include "vm/ScopeKind.h"     
+#include "vm/SelfHosting.h"   
 #include "vm/StencilEnums.h"  
 #include "vm/StringType.h"    
 #include "vm/Xdr.h"           
@@ -996,6 +997,15 @@ static bool InstantiateFunctions(JSContext* cx, CompilationInput& input,
                              index);
     if (!fun) {
       return false;
+    }
+
+    
+    
+    
+    if (scriptStencil.hasSelfHostedCanonicalName()) {
+      JSAtom* canonicalName = input.atomCache.getExistingAtomAt(
+          cx, scriptStencil.selfHostedCanonicalName());
+      SetUnclonedSelfHostedCanonicalName(fun, canonicalName);
     }
 
     gcOutput.functions[index] = fun;
@@ -2749,7 +2759,13 @@ void ScriptStencil::dumpFields(js::JSONPrinter& json,
 
     if (hasLazyFunctionEnclosingScopeIndex()) {
       json.formatProperty("lazyFunctionEnclosingScopeIndex", "ScopeIndex(%zu)",
-                          size_t(lazyFunctionEnclosingScopeIndex_));
+                          size_t(lazyFunctionEnclosingScopeIndex()));
+    }
+
+    if (hasSelfHostedCanonicalName()) {
+      json.beginObjectProperty("selfHostCanonicalName");
+      DumpTaggedParserAtomIndex(json, selfHostedCanonicalName(), stencil);
+      json.endObject();
     }
   }
 }
