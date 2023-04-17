@@ -334,10 +334,10 @@ nsHttpConnectionInfo::CloneAndAdoptHTTPSSVCRecord(
   
   
   Maybe<uint16_t> port = aRecord->GetPort();
-  Maybe<Tuple<nsCString, bool>> alpn = aRecord->GetAlpn();
+  Maybe<Tuple<nsCString, SupportedAlpnType>> alpn = aRecord->GetAlpn();
 
   
-  bool isHttp3 = alpn ? Get<1>(*alpn) : false;
+  bool isHttp3 = alpn ? Get<1>(*alpn) == SupportedAlpnType::HTTP_3 : false;
 
   LOG(("HTTPSSVC: use new routed host (%s) and new npnToken (%s)", name.get(),
        alpn ? Get<0>(*alpn).get() : "None"));

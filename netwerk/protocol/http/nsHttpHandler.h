@@ -489,7 +489,7 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
 
   bool UseHTTPSRRAsAltSvcEnabled() const;
 
-  bool EchConfigEnabled() const;
+  bool EchConfigEnabled(bool aIsHttp3 = false) const;
   
   
   
