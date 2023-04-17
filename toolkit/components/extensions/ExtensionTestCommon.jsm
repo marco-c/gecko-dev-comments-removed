@@ -443,10 +443,29 @@ ExtensionTestCommon = class ExtensionTestCommon {
 
 
   static generate(data) {
-    
-    if (data.androidBrowserTest && AppConstants.platform === "android") {
-      data.useAddonManager ??= "permanent";
-      this.setExtensionID(data);
+    if (data.useAddonManager === "android-only") {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (AppConstants.platform === "android") {
+        data.useAddonManager = "permanent";
+        
+        
+        this.setExtensionID(data);
+      } else {
+        
+        data.useAddonManager = null;
+      }
     }
 
     let file = this.generateXPI(data);
