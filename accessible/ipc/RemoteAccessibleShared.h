@@ -261,10 +261,6 @@ void URLDocTypeMimeType(nsString& aURL, nsString& aDocType,
 void Extents(bool aNeedsScreenCoords, int32_t* aX, int32_t* aY, int32_t* aWidth,
              int32_t* aHeight);
 
-
-
-
-
-void DOMNodeID(nsString& aID);
+virtual void DOMNodeID(nsString& aID) const override;
 
 #endif

@@ -224,6 +224,12 @@ class RemoteAccessibleBase : public Accessible, public HyperTextAccessibleBase {
   }
 
   
+
+
+
+  virtual void DOMNodeID(nsString& aID) const;
+
+  
   
   virtual int32_t CaretOffset() const override { return -1; }
 
