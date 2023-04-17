@@ -80,6 +80,7 @@ uint8_t* LazyLinkTopActivation(JSContext* cx, LazyLinkExitFrameLayout* frame);
 inline bool IsIonInlinableGetterOrSetterOp(JSOp op) {
   
   
+  
   return IsGetPropOp(op) || IsGetElemOp(op) || IsSetPropOp(op);
 }
 
