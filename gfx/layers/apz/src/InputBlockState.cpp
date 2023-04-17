@@ -285,15 +285,18 @@ WheelBlockState::WheelBlockState(
         mOverscrollHandoffChain->FindFirstScrollable(aInitialEvent,
                                                      &mAllowedScrollDirections);
 
-    
-    
-    if (!apzc) {
+    if (apzc) {
+      if (apzc != GetTargetApzc()) {
+        UpdateTargetApzc(apzc);
+      }
+    } else if (!mOverscrollHandoffChain->CanBePanned(
+                   mOverscrollHandoffChain->GetApzcAtIndex(0))) {
+      
+      
+      mIsScrollable = false;
+    } else {
+      
       EndTransaction();
-      return;
-    }
-
-    if (apzc != GetTargetApzc()) {
-      UpdateTargetApzc(apzc);
     }
   }
 }
@@ -349,7 +352,7 @@ void WheelBlockState::Update(ScrollWheelInput& aEvent) {
   
   
   RefPtr<AsyncPanZoomController> apzc = GetTargetApzc();
-  if (IsTargetConfirmed() && !apzc->CanScroll(aEvent)) {
+  if (mIsScrollable && IsTargetConfirmed() && !apzc->CanScroll(aEvent)) {
     return;
   }
 
