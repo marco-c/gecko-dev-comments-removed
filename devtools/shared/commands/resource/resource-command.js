@@ -128,6 +128,14 @@ class ResourceCommand {
       );
     }
 
+    for (const type of resources) {
+      if (!this._isValidResourceType(type)) {
+        throw new Error(
+          `ResourceCommand.watchResources invoked with an unknown type: "${type}"`
+        );
+      }
+    }
+
     
     
     
@@ -217,6 +225,14 @@ class ResourceCommand {
       throw new Error(
         "ResourceCommand.unwatchResources expects an onAvailable function as argument"
       );
+    }
+
+    for (const type of resources) {
+      if (!this._isValidResourceType(type)) {
+        throw new Error(
+          `ResourceCommand.unwatchResources invoked with an unknown type: "${type}"`
+        );
+      }
     }
 
     
@@ -837,6 +853,10 @@ class ResourceCommand {
     return this.hasResourceCommandSupport(resourceType);
   }
 
+  _isValidResourceType(type) {
+    return this.ALL_TYPES.includes(type);
+  }
+
   
 
 
@@ -1079,6 +1099,9 @@ ResourceCommand.TYPES = ResourceCommand.prototype.TYPES = {
   THREAD_STATE: "thread-state",
   SERVER_SENT_EVENT: "server-sent-event",
 };
+ResourceCommand.ALL_TYPES = ResourceCommand.prototype.ALL_TYPES = Object.values(
+  ResourceCommand.TYPES
+);
 module.exports = ResourceCommand;
 
 
