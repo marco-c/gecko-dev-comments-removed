@@ -4106,6 +4106,15 @@ static bool EnableTraceLogger(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+static bool DisableTraceLogger(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  TraceLoggerThread* logger = TraceLoggerForCurrentThread(cx);
+  args.rval().setBoolean(TraceLoggerDisable(logger));
+
+  return true;
+}
+#endif  
+
 
 
 class ShapeSnapshot {
@@ -4408,15 +4417,6 @@ static bool CheckShapeSnapshot(JSContext* cx, unsigned argc, Value* vp) {
   args.rval().setUndefined();
   return true;
 }
-
-static bool DisableTraceLogger(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-  TraceLoggerThread* logger = TraceLoggerForCurrentThread(cx);
-  args.rval().setBoolean(TraceLoggerDisable(logger));
-
-  return true;
-}
-#endif
 
 #if defined(DEBUG) || defined(JS_JITSPEW)
 static bool DumpObject(JSContext* cx, unsigned argc, Value* vp) {
