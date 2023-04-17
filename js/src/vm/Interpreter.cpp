@@ -47,7 +47,6 @@
 #include "vm/EqualityOperations.h"  
 #include "vm/FunctionFlags.h"       
 #include "vm/GeneratorObject.h"
-#include "vm/Instrumentation.h"
 #include "vm/Iteration.h"
 #include "vm/JSAtom.h"
 #include "vm/JSContext.h"

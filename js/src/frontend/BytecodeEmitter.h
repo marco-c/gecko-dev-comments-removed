@@ -50,7 +50,6 @@
 #include "vm/CheckIsObjectKind.h"          
 #include "vm/FunctionPrefixKind.h"         
 #include "vm/GeneratorResumeKind.h"        
-#include "vm/Instrumentation.h"            
 #include "vm/JSFunction.h"                 
 #include "vm/JSScript.h"       
 #include "vm/Runtime.h"        
