@@ -82,14 +82,28 @@ exports.allocationTracker = function({
     acceptGlobal = () => true;
   } else if (watchDevToolsGlobals) {
     
+    const builtinGlobal = require("devtools/shared/builtin-modules");
     acceptGlobal = g => {
       
       if (g.class == "self-hosting-global") {
+        dump("TRACKER NEW GLOBAL: - : " + g.class + "\n");
         return false;
       }
       const ref = g.unsafeDereference();
       const location = Cu.getRealmLocation(ref);
-      const accept = !!location.match(/devtools/i);
+      let accept = !!location.match(/devtools/i);
+
+      
+      
+      
+      
+      if (
+        ref == Cu.getGlobalForObject(builtinGlobal) ||
+        ref == builtinGlobal.internalSandbox
+      ) {
+        accept = false;
+      }
+
       dump(
         "TRACKER NEW GLOBAL: " + (accept ? "+" : "-") + " : " + location + "\n"
       );

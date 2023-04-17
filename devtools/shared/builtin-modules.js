@@ -38,7 +38,7 @@ const {
 
 
 
-const debuggerSandbox = Cu.Sandbox(systemPrincipal, {
+const debuggerSandbox = (exports.internalSandbox = Cu.Sandbox(systemPrincipal, {
   
   
   
@@ -66,7 +66,7 @@ const debuggerSandbox = Cu.Sandbox(systemPrincipal, {
     "URL",
     "XMLHttpRequest",
   ],
-});
+}));
 
 const {
   AbortController,
