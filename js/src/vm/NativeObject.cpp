@@ -1272,6 +1272,33 @@ static bool ChangeProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
   return true;
 }
 
+static unsigned ComputeAttributes(const PropertyDescriptor& desc) {
+  desc.assertComplete();
+
+  unsigned attrs = 0;
+  if (!desc.configurable()) {
+    attrs |= JSPROP_PERMANENT;
+  }
+  if (desc.enumerable()) {
+    attrs |= JSPROP_ENUMERATE;
+  }
+  if (desc.isDataDescriptor()) {
+    if (!desc.writable()) {
+      attrs |= JSPROP_READONLY;
+    }
+  } else {
+    MOZ_ASSERT(desc.isAccessorDescriptor());
+    attrs |= JSPROP_GETTER | JSPROP_SETTER;
+  }
+
+  if (desc.resolving()) {
+    attrs |= JSPROP_RESOLVING;
+  }
+
+  MOZ_ASSERT(attrs == desc.attributesDoNotUse());
+  return attrs;
+}
+
 
 
 enum class IsAddOrChange { Add, Change };
@@ -1300,7 +1327,8 @@ static MOZ_ALWAYS_INLINE bool AddOrChangeProperty(
   
   
   
-  if (id.isInt() && desc.attributes() == JSPROP_ENUMERATE &&
+  unsigned attrs = ComputeAttributes(desc);
+  if (id.isInt() && attrs == JSPROP_ENUMERATE &&
       (AddOrChange == IsAddOrChange::Add || existing->isDenseElement())) {
     MOZ_ASSERT(!desc.isAccessorDescriptor());
     MOZ_ASSERT(!obj->is<TypedArrayObject>());
@@ -1326,15 +1354,15 @@ static MOZ_ALWAYS_INLINE bool AddOrChangeProperty(
         return false;
       }
       uint32_t slot;
-      if (!NativeObject::addProperty(cx, obj, id, SHAPE_INVALID_SLOT,
-                                     desc.attributes(), &slot)) {
+      if (!NativeObject::addProperty(cx, obj, id, SHAPE_INVALID_SLOT, attrs,
+                                     &slot)) {
         return false;
       }
       obj->initSlot(slot, PrivateGCThingValue(gs));
     } else {
       uint32_t slot;
-      if (!NativeObject::addProperty(cx, obj, id, SHAPE_INVALID_SLOT,
-                                     desc.attributes(), &slot)) {
+      if (!NativeObject::addProperty(cx, obj, id, SHAPE_INVALID_SLOT, attrs,
+                                     &slot)) {
         return false;
       }
       obj->initSlot(slot, desc.value());
@@ -1342,19 +1370,18 @@ static MOZ_ALWAYS_INLINE bool AddOrChangeProperty(
   } else {
     if (desc.isAccessorDescriptor()) {
       if (!ChangeProperty(cx, obj, id, desc.getterObject(), desc.setterObject(),
-                          desc.attributes(), existing)) {
+                          attrs, existing)) {
         return false;
       }
     } else {
       uint32_t slot;
       if (existing->isNativeProperty()) {
-        if (!NativeObject::changeProperty(cx, obj, id, desc.attributes(),
-                                          &slot)) {
+        if (!NativeObject::changeProperty(cx, obj, id, attrs, &slot)) {
           return false;
         }
       } else {
-        if (!NativeObject::addProperty(cx, obj, id, SHAPE_INVALID_SLOT,
-                                       desc.attributes(), &slot)) {
+        if (!NativeObject::addProperty(cx, obj, id, SHAPE_INVALID_SLOT, attrs,
+                                       &slot)) {
           return false;
         }
       }
@@ -1563,9 +1590,7 @@ bool js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj,
       
       
       
-      
-      
-      if ((desc_.attributes() & JSPROP_RESOLVING) == 0) {
+      if (!desc_.resolving()) {
         if (!ArgumentsObject::reifyLength(cx, argsobj)) {
           return false;
         }
@@ -1573,13 +1598,13 @@ bool js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj,
     } else if (JSID_IS_SYMBOL(id) &&
                JSID_TO_SYMBOL(id) == cx->wellKnownSymbols().iterator) {
       
-      if ((desc_.attributes() & JSPROP_RESOLVING) == 0) {
+      if (!desc_.resolving()) {
         if (!ArgumentsObject::reifyIterator(cx, argsobj)) {
           return false;
         }
       }
     } else if (JSID_IS_INT(id)) {
-      if ((desc_.attributes() & JSPROP_RESOLVING) == 0) {
+      if (!desc_.resolving()) {
         argsobj->markElementOverridden();
       }
     }
@@ -1587,7 +1612,7 @@ bool js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj,
 
   
   PropertyResult prop;
-  if (desc_.attributes() & JSPROP_RESOLVING) {
+  if (desc_.resolving()) {
     
     
     
