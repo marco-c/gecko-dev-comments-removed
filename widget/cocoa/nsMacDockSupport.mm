@@ -346,7 +346,18 @@ nsresult nsMacDockSupport::EnsureAppIsPinnedToDock(const nsAString& aAppPath,
       NSString* persistentAppName = [persistentAppPath lastPathComponent];
 
       if ([persistentAppName isEqual:appName]) {
-        sameNameAppIndex = index;
+        if ([appToReplacePath hasPrefix:@"/private/var/folders/"] &&
+            [appToReplacePath containsString:@"/AppTranslocation/"] &&
+            [persistentAppPath hasPrefix:@"/Volumes/"]) {
+          
+          
+          
+          
+          
+          toReplaceAppIndex = index;
+        } else {
+          sameNameAppIndex = index;
+        }
       } else {
         if ([browserAppNames containsObject:persistentAppName]) {
           lastBrowserAppIndex = index;
