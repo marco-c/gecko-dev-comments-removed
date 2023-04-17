@@ -94,10 +94,12 @@ static const char kMaxSpellCheckSelectionSize[] =
 static const PRTime kMaxSpellCheckTimeInUsec =
     INLINESPELL_CHECK_TIMEOUT * PR_USEC_PER_MSEC;
 
-mozInlineSpellStatus::mozInlineSpellStatus(mozInlineSpellChecker* aSpellChecker,
-                                           const bool aForceNavigationWordCheck)
+mozInlineSpellStatus::mozInlineSpellStatus(
+    mozInlineSpellChecker* aSpellChecker, const bool aForceNavigationWordCheck,
+    const int32_t aNewNavigationPositionOffset)
     : mSpellChecker(aSpellChecker),
-      mForceNavigationWordCheck(aForceNavigationWordCheck) {}
+      mForceNavigationWordCheck(aForceNavigationWordCheck),
+      mNewNavigationPositionOffset(aNewNavigationPositionOffset) {}
 
 
 
@@ -121,7 +123,7 @@ mozInlineSpellStatus::CreateForEditorChange(
 
   UniquePtr<mozInlineSpellStatus> status{
       
-      new mozInlineSpellStatus{&aSpellChecker, false}};
+      new mozInlineSpellStatus{&aSpellChecker, false, 0}};
 
   
   status->mAnchorRange =
@@ -229,11 +231,10 @@ mozInlineSpellStatus::CreateForNavigation(
 
   UniquePtr<mozInlineSpellStatus> status{
       
-      new mozInlineSpellStatus{&aSpellChecker, aForceCheck}};
+      new mozInlineSpellStatus{&aSpellChecker, aForceCheck,
+                               aNewPositionOffset}};
 
   status->mOp = eOpNavigation;
-
-  status->mNewNavigationPositionOffset = aNewPositionOffset;
 
   
   TextEditor* textEditor = status->mSpellChecker->mTextEditor;
@@ -278,7 +279,7 @@ UniquePtr<mozInlineSpellStatus> mozInlineSpellStatus::CreateForSelection(
 
   UniquePtr<mozInlineSpellStatus> status{
       
-      new mozInlineSpellStatus{&aSpellChecker, false}};
+      new mozInlineSpellStatus{&aSpellChecker, false, 0}};
   status->mOp = eOpSelection;
   return status;
 }
@@ -296,7 +297,7 @@ UniquePtr<mozInlineSpellStatus> mozInlineSpellStatus::CreateForRange(
 
   UniquePtr<mozInlineSpellStatus> status{
       
-      new mozInlineSpellStatus{&aSpellChecker, false}};
+      new mozInlineSpellStatus{&aSpellChecker, false, 0}};
 
   status->mOp = eOpChange;
   status->mRange = aRange;

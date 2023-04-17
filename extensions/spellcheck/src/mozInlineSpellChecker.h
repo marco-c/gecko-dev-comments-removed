@@ -85,8 +85,10 @@ class mozInlineSpellStatus {
  private:
   
   
+  
   explicit mozInlineSpellStatus(mozInlineSpellChecker* aSpellChecker,
-                                bool aForceNavigationWordCheck);
+                                bool aForceNavigationWordCheck,
+                                int32_t aNewNavigationPositionOffset);
 
   
   Operation mOp;
@@ -121,7 +123,7 @@ class mozInlineSpellStatus {
   const bool mForceNavigationWordCheck;
 
   
-  int32_t mNewNavigationPositionOffset;
+  const int32_t mNewNavigationPositionOffset;
 
   nsresult FinishNavigationEvent(mozInlineSpellWordUtil& aWordUtil);
 
