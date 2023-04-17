@@ -78,7 +78,7 @@ class WorkerThread;
 
 
 class SharedMutex {
-  using Mutex = mozilla::Mutex;
+  typedef mozilla::Mutex Mutex;
 
   class RefCountedMutex final : public Mutex {
    public:

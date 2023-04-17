@@ -65,7 +65,7 @@ class MainThreadReleaseRunnable final : public Runnable {
 
 template <class T>
 struct ISupportsBaseInfo {
-  using ISupportsBase = T;
+  typedef T ISupportsBase;
 };
 
 template <template <class> class SmartPtr, class T>
