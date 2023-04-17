@@ -997,12 +997,21 @@ bool NativeObject::removeProperty(JSContext* cx, HandleNativeObject obj,
 
   const bool removingLastProperty = (shape == obj->lastProperty());
 
-  
+  if (!obj->inDictionaryMode()) {
+    if (removingLastProperty && obj->canRemoveLastProperty()) {
+      
+      
+      
+      
+      if (shape->hasSlot()) {
+        obj->setSlot(shape->slot(), UndefinedValue());
+      }
+      obj->removeLastProperty(cx);
+      return true;
+    }
 
-
-
-  if (!obj->inDictionaryMode() &&
-      (!removingLastProperty || !obj->canRemoveLastProperty())) {
+    
+    
     if (!toDictionaryMode(cx, obj)) {
       return false;
     }
@@ -1012,21 +1021,18 @@ bool NativeObject::removeProperty(JSContext* cx, HandleNativeObject obj,
     shape = *ptr;
   }
 
+  MOZ_ASSERT(obj->inDictionaryMode());
+
   
-
-
-
-
-
-
-  RootedShape spare(cx);
-  if (obj->inDictionaryMode()) {
-    spare = Allocate<Shape>(cx);
-    if (!spare) {
-      return false;
-    }
-    new (spare) Shape(shape->base(), ObjectFlags(), 0);
+  
+  
+  
+  
+  RootedShape spare(cx, Allocate<Shape>(cx));
+  if (!spare) {
+    return false;
   }
+  new (spare) Shape(shape->base(), ObjectFlags(), 0);
 
   
   if (shape->hasSlot()) {
@@ -1034,45 +1040,29 @@ bool NativeObject::removeProperty(JSContext* cx, HandleNativeObject obj,
   }
 
   
+  
+  
+  MOZ_ASSERT(obj->lastProperty()->maybeTable(keep) == table);
+  table->remove(ptr);
 
+  
+  MOZ_ASSERT(removingLastProperty == (shape == obj->lastProperty()));
+  shape->removeFromDictionary(obj);
 
-
-
-  if (obj->inDictionaryMode()) {
-    MOZ_ASSERT(obj->lastProperty()->maybeTable(keep) == table);
-    table->remove(ptr);
-
-    {
-      
-      MOZ_ASSERT(removingLastProperty == (shape == obj->lastProperty()));
-      shape->removeFromDictionary(obj);
-
-      
-      
-      
-      
-      
-      if (removingLastProperty) {
-        MOZ_ASSERT(obj->lastProperty() != shape);
-        shape->handoffTableTo(obj->lastProperty());
-        obj->lastProperty()->setBase(shape->base());
-        obj->lastProperty()->setObjectFlags(shape->objectFlags());
-      }
-    }
-
-    
-    MOZ_ALWAYS_TRUE(NativeObject::generateOwnShape(cx, obj, spare));
-  } else {
-    
-
-
-
-
-
-    MOZ_ASSERT(shape == obj->lastProperty());
-    obj->removeLastProperty(cx);
+  
+  
+  
+  
+  
+  if (removingLastProperty) {
+    MOZ_ASSERT(obj->lastProperty() != shape);
+    shape->handoffTableTo(obj->lastProperty());
+    obj->lastProperty()->setBase(shape->base());
+    obj->lastProperty()->setObjectFlags(shape->objectFlags());
   }
 
+  
+  MOZ_ALWAYS_TRUE(NativeObject::generateOwnShape(cx, obj, spare));
   return true;
 }
 
