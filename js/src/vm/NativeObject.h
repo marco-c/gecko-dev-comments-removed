@@ -23,6 +23,7 @@
 #include "js/shadow/Object.h"  
 #include "js/shadow/Zone.h"    
 #include "js/Value.h"
+#include "vm/GetterSetter.h"
 #include "vm/JSObject.h"
 #include "vm/Shape.h"
 #include "vm/StringType.h"
@@ -865,6 +866,13 @@ class NativeObject : public JSObject {
     return hasFlag(ObjectFlag::HasInterestingSymbol);
   }
 
+  static bool setHadGetterSetterChange(JSContext* cx, HandleNativeObject obj) {
+    return setFlag(cx, obj, ObjectFlag::HadGetterSetterChange);
+  }
+  bool hadGetterSetterChange() const {
+    return hasFlag(ObjectFlag::HadGetterSetterChange);
+  }
+
   
 
 
@@ -1089,19 +1097,45 @@ class NativeObject : public JSObject {
   }
 
   
-  
-  JSObject* getGetter(Shape* shape) const { return shape->getterObject(); }
-  JSObject* getSetter(Shape* shape) const { return shape->setterObject(); }
+  GetterSetter* getGetterSetter(Shape* shape) const {
+    MOZ_ASSERT(shape->isAccessorDescriptor());
+    return getSlot(shape->slot()).toGCThing()->as<GetterSetter>();
+  }
 
   
   
-  bool hasGetter(Shape* shape) const { return shape->hasGetterObject(); }
-  bool hasSetter(Shape* shape) const { return shape->hasSetterObject(); }
+  JSObject* getGetter(Shape* shape) const {
+    return getGetterSetter(shape)->getter();
+  }
+  JSObject* getSetter(Shape* shape) const {
+    return getGetterSetter(shape)->setter();
+  }
 
   
   
-  Value getGetterValue(Shape* shape) const { return shape->getterValue(); }
-  Value getSetterValue(Shape* shape) const { return shape->setterValue(); }
+  bool hasGetter(Shape* shape) const {
+    return shape->hasGetterValue() && getGetter(shape);
+  }
+  bool hasSetter(Shape* shape) const {
+    return shape->hasSetterValue() && getSetter(shape);
+  }
+
+  
+  
+  Value getGetterValue(Shape* shape) const {
+    MOZ_ASSERT(shape->hasGetterValue());
+    if (JSObject* getterObj = getGetter(shape)) {
+      return ObjectValue(*getterObj);
+    }
+    return UndefinedValue();
+  }
+  Value getSetterValue(Shape* shape) const {
+    MOZ_ASSERT(shape->hasSetterValue());
+    if (JSObject* setterObj = getSetter(shape)) {
+      return ObjectValue(*setterObj);
+    }
+    return UndefinedValue();
+  }
 
   
   

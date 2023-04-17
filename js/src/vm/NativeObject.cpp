@@ -25,6 +25,7 @@
 #include "js/Value.h"
 #include "util/Memory.h"
 #include "vm/EqualityOperations.h"  
+#include "vm/GetterSetter.h"        
 #include "vm/PlainObject.h"         
 #include "vm/TypedArrayObject.h"
 
@@ -1280,6 +1281,41 @@ bool NativeObject::reshapeForShadowedProp(JSContext* cx,
   return generateOwnShape(cx, obj);
 }
 
+static bool ChangeProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
+                           HandleObject getter, HandleObject setter,
+                           unsigned attrs, PropertyResult* existing) {
+  MOZ_ASSERT(existing);
+
+  Rooted<GetterSetter*> gs(cx);
+
+  
+  
+  if (existing->isNativeProperty()) {
+    Shape* prop = existing->shape();
+    if (prop->isAccessorDescriptor()) {
+      GetterSetter* current = obj->getGetterSetter(prop);
+      if (current->getter() == getter && current->setter() == setter) {
+        gs = current;
+      }
+    }
+  }
+
+  if (!gs) {
+    gs = GetterSetter::create(cx, getter, setter);
+    if (!gs) {
+      return false;
+    }
+  }
+
+  Shape* shape = NativeObject::putDataProperty(cx, obj, id, attrs);
+  if (!shape) {
+    return false;
+  }
+
+  obj->setSlot(shape->slot(), PrivateGCThingValue(gs));
+  return true;
+}
+
 
 
 enum class IsAddOrChange { Add, Change };
@@ -1330,11 +1366,17 @@ static MOZ_ALWAYS_INLINE bool AddOrChangeProperty(
   
   if constexpr (AddOrChange == IsAddOrChange::Add) {
     if (desc.isAccessorDescriptor()) {
-      if (!NativeObject::addAccessorProperty(cx, obj, id, desc.getterObject(),
-                                             desc.setterObject(),
-                                             desc.attributes())) {
+      Rooted<GetterSetter*> gs(cx, GetterSetter::create(cx, desc.getterObject(),
+                                                        desc.setterObject()));
+      if (!gs) {
         return false;
       }
+      Shape* shape = NativeObject::addDataProperty(
+          cx, obj, id, SHAPE_INVALID_SLOT, desc.attributes());
+      if (!shape) {
+        return false;
+      }
+      obj->initSlot(shape->slot(), PrivateGCThingValue(gs));
     } else {
       Shape* shape = NativeObject::addDataProperty(
           cx, obj, id, SHAPE_INVALID_SLOT, desc.attributes());
@@ -1345,9 +1387,8 @@ static MOZ_ALWAYS_INLINE bool AddOrChangeProperty(
     }
   } else {
     if (desc.isAccessorDescriptor()) {
-      if (!NativeObject::putAccessorProperty(cx, obj, id, desc.getterObject(),
-                                             desc.setterObject(),
-                                             desc.attributes())) {
+      if (!ChangeProperty(cx, obj, id, desc.getterObject(), desc.setterObject(),
+                          desc.attributes(), existing)) {
         return false;
       }
     } else {

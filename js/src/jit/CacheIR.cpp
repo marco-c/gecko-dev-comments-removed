@@ -877,12 +877,39 @@ static void EmitCallGetterResultNoGuards(JSContext* cx, CacheIRWriter& writer,
   }
 }
 
+
+
+static void EmitGuardGetterSetterSlot(CacheIRWriter& writer,
+                                      NativeObject* holder, Shape* shape,
+                                      ObjOperandId holderId,
+                                      bool holderIsConstant = false) {
+  
+  
+  
+  if (holderIsConstant && !holder->hadGetterSetterChange()) {
+    return;
+  }
+
+  size_t slot = shape->slot();
+  Value slotVal = holder->getSlot(slot);
+  MOZ_ASSERT(slotVal.isPrivateGCThing());
+
+  if (holder->isFixedSlot(slot)) {
+    size_t offset = NativeObject::getFixedSlotOffset(slot);
+    writer.guardFixedSlotValue(holderId, offset, slotVal);
+  } else {
+    size_t offset = holder->dynamicSlotIndex(slot) * sizeof(Value);
+    writer.guardDynamicSlotValue(holderId, offset, slotVal);
+  }
+}
+
 static void EmitCallGetterResultGuards(CacheIRWriter& writer, NativeObject* obj,
                                        NativeObject* holder, Shape* shape,
                                        ObjOperandId objId, ICState::Mode mode) {
   
   
   
+
   if (mode == ICState::Mode::Specialized || IsWindow(obj)) {
     TestMatchingNativeReceiver(writer, obj, objId);
 
@@ -892,9 +919,15 @@ static void EmitCallGetterResultGuards(CacheIRWriter& writer, NativeObject* obj,
       
       ObjOperandId holderId = writer.loadObject(holder);
       TestMatchingHolder(writer, holder, holderId);
+
+      EmitGuardGetterSetterSlot(writer, holder, shape, holderId,
+                                 true);
+    } else {
+      EmitGuardGetterSetterSlot(writer, holder, shape, objId);
     }
   } else {
-    writer.guardHasGetterSetter(objId, shape->propid(), shape);
+    GetterSetter* gs = holder->getGetterSetter(shape);
+    writer.guardHasGetterSetter(objId, shape->propid(), gs);
   }
 }
 
@@ -1495,6 +1528,8 @@ AttachDecision GetPropIRGenerator::tryAttachDOMProxyExpando(
     
     MOZ_ASSERT(canCache == CanAttachNativeGetter ||
                canCache == CanAttachScriptedGetter);
+    EmitGuardGetterSetterSlot(writer, nativeExpandoObj, propShape,
+                              expandoObjId);
     EmitCallGetterResultNoGuards(cx_, writer, nativeExpandoObj,
                                  nativeExpandoObj, propShape, receiverId);
   }
@@ -1598,6 +1633,8 @@ AttachDecision GetPropIRGenerator::tryAttachDOMProxyUnshadowed(
       MOZ_ASSERT(canCache == CanAttachNativeGetter ||
                  canCache == CanAttachScriptedGetter);
       MOZ_ASSERT(!isSuper());
+      EmitGuardGetterSetterSlot(writer, holder, shape, holderId,
+                                 true);
       EmitCallGetterResultNoGuards(cx_, writer, nativeCheckObj, holder, shape,
                                    receiverId);
     }
@@ -2822,6 +2859,13 @@ AttachDecision GetNameIRGenerator::tryAttachGlobalNameGetter(ObjOperandId objId,
     
     ObjOperandId holderId = writer.loadObject(holder);
     writer.guardShape(holderId, holder->lastProperty());
+    EmitGuardGetterSetterSlot(writer, holder, shape, holderId,
+                               true);
+  } else {
+    
+    
+    EmitGuardGetterSetterSlot(writer, holder, shape, globalId,
+                               true);
   }
 
   if (CanAttachDOMGetterSetter(cx_, JSJitInfo::Getter, global, holder, shape,
@@ -3842,9 +3886,15 @@ AttachDecision SetPropIRGenerator::tryAttachSetter(HandleObject obj,
       
       ObjOperandId holderId = writer.loadObject(holder);
       TestMatchingHolder(writer, holder, holderId);
+
+      EmitGuardGetterSetterSlot(writer, holder, propShape, holderId,
+                                 true);
+    } else {
+      EmitGuardGetterSetterSlot(writer, holder, propShape, objId);
     }
   } else {
-    writer.guardHasGetterSetter(objId, id, propShape);
+    GetterSetter* gs = holder->getGetterSetter(propShape);
+    writer.guardHasGetterSetter(objId, id, gs);
   }
 
   if (CanAttachDOMGetterSetter(cx_, JSJitInfo::Setter, nobj, holder, propShape,
@@ -4233,6 +4283,9 @@ AttachDecision SetPropIRGenerator::tryAttachDOMProxyUnshadowed(
   ObjOperandId holderId = writer.loadObject(holder);
   TestMatchingHolder(writer, holder, holderId);
 
+  EmitGuardGetterSetterSlot(writer, holder, propShape, holderId,
+                             true);
+
   
   
   
@@ -4280,12 +4333,13 @@ AttachDecision SetPropIRGenerator::tryAttachDOMProxyExpando(
 
     
     
-    
     maybeEmitIdGuard(id);
-    guardDOMProxyExpandoObjectAndShape(obj, objId, expandoVal,
-                                       nativeExpandoObj);
+    ObjOperandId expandoObjId = guardDOMProxyExpandoObjectAndShape(
+        obj, objId, expandoVal, nativeExpandoObj);
 
     MOZ_ASSERT(holder == nativeExpandoObj);
+    EmitGuardGetterSetterSlot(writer, nativeExpandoObj, propShape,
+                              expandoObjId);
     EmitCallSetterNoGuards(cx_, writer, nativeExpandoObj, nativeExpandoObj,
                            propShape, objId, rhsId);
     trackAttached("DOMProxyExpandoSetter");
