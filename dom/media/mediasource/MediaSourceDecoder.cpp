@@ -227,22 +227,11 @@ void MediaSourceDecoder::SetMediaSourceDuration(double aDuration) {
   }
 }
 
-RefPtr<GenericPromise> MediaSourceDecoder::RequestDebugInfo(
-    dom::MediaSourceDecoderDebugInfo& aInfo) {
-  
-  
-  MOZ_ASSERT(NS_IsMainThread(), "Expects to be called on main thread.");
-  if (mReader) {
-    return mReader->RequestDebugInfo(aInfo.mReader)
-        ->Then(GetCurrentSerialEventTarget(), __func__,
-               [this, self = RefPtr<MediaSourceDecoder>{this}, &aInfo] {
-                 if (mDemuxer) {
-                   mDemuxer->GetDebugInfo(aInfo.mDemuxer);
-                 }
-                 return GenericPromise::CreateAndResolve(true, __func__);
-               });
+void MediaSourceDecoder::GetDebugInfo(dom::MediaSourceDecoderDebugInfo& aInfo) {
+  if (mReader && mDemuxer) {
+    mReader->GetDebugInfo(aInfo.mReader);
+    mDemuxer->GetDebugInfo(aInfo.mDemuxer);
   }
-  return GenericPromise::CreateAndResolve(true, __func__);
 }
 
 double MediaSourceDecoder::GetDuration() {

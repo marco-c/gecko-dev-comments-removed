@@ -16,7 +16,6 @@
 #  include "SeekTarget.h"
 #  include "mozilla/Atomics.h"
 #  include "mozilla/Maybe.h"
-#  include "mozilla/MozPromise.h"
 #  include "mozilla/Mutex.h"
 #  include "mozilla/StateMirroring.h"
 #  include "mozilla/StaticPrefs_media.h"
@@ -186,9 +185,7 @@ class MediaFormatReader final
 
   
   
-  
-  RefPtr<GenericPromise> RequestDebugInfo(
-      dom::MediaFormatReaderDebugInfo& aInfo);
+  void GetDebugInfo(dom::MediaFormatReaderDebugInfo& aInfo);
 
   
   
@@ -810,8 +807,6 @@ class MediaFormatReader final
   MozPromiseHolder<SetCDMPromise> mSetCDMPromise;
   TrackSet mSetCDMForTracks{};
   bool IsDecoderWaitingForCDM(TrackType aTrack);
-
-  void GetDebugInfo(dom::MediaFormatReaderDebugInfo& aInfo);
 };
 
 }  
