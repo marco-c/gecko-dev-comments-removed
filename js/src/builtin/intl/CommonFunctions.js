@@ -644,6 +644,40 @@ function GetOption(options, property, type, values, fallback) {
 
 
 
+function GetStringOrBooleanOption(options, property, values, trueValue, falsyValue, fallback) {
+    assert(IsObject(values), "GetStringOrBooleanOption");
+
+    
+    var value = options[property];
+
+    
+    if (value === undefined)
+        return fallback;
+
+    
+    if (value === true)
+        return trueValue;
+
+    
+    if (!value)
+        return falsyValue;
+
+    
+    value = ToString(value);
+
+    
+    if (callFunction(ArrayIndexOf, values, value) === -1)
+        ThrowRangeError(JSMSG_INVALID_OPTION_VALUE, property, `"${value}"`);
+
+    
+    return value;
+}
+
+
+
+
+
+
 
 
 function DefaultNumberOption(value, minimum, maximum, fallback) {

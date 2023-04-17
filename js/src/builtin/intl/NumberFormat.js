@@ -415,6 +415,8 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
     
     
     
+    
+    
     var lazyNumberFormatData = std_Object_create(null);
 
     
@@ -576,7 +578,13 @@ function InitializeNumberFormat(numberFormat, thisValue, locales, options) {
         lazyNumberFormatData.compactDisplay = compactDisplay;
 
     
+#ifdef NIGHTLY_BUILD
+    var defaultUseGrouping = notation !== "compact" ? "auto" : "min2";
+    var useGrouping = GetStringOrBooleanOption(options, "useGrouping", ["min2", "auto", "always"],
+                                               "always", false, defaultUseGrouping);
+#else
     var useGrouping = GetOption(options, "useGrouping", "boolean", undefined, true);
+#endif
     lazyNumberFormatData.useGrouping = useGrouping;
 
     
