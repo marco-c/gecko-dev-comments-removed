@@ -78,14 +78,7 @@ class nsTimerImpl {
   struct FuncCallback {
     nsTimerCallbackFunc mFunc;
     void* mClosure;
-
-    
-    
-    struct NameNothing {};
-    using NameString = const char*;
-    using NameFunc = nsTimerNameCallbackFunc;
-    using Name = mozilla::Variant<NameNothing, NameString, NameFunc>;
-    Name mName;
+    const char* mName;
   };
 
   
@@ -139,10 +132,6 @@ class nsTimerImpl {
   nsCOMPtr<nsIEventTarget> mEventTarget;
 
   void LogFiring(const Callback& aCallback, uint8_t aType, uint32_t aDelay);
-
-  nsresult InitWithFuncCallbackCommon(nsTimerCallbackFunc aFunc, void* aClosure,
-                                      uint32_t aDelay, uint32_t aType,
-                                      const FuncCallback::Name& aName);
 
   nsresult InitWithClosureCallback(std::function<void(nsITimer*)>&& aCallback,
                                    const mozilla::TimeDuration& aDelay,

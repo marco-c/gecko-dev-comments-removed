@@ -23,27 +23,9 @@ interface nsIEventTarget;
 
 class nsITimer;
 typedef void (*nsTimerCallbackFunc) (nsITimer *aTimer, void *aClosure);
-
-
-
-
-
-
-
-
-
-
-
-
-
-typedef void (*nsTimerNameCallbackFunc) (nsITimer *aTimer,
-                                         bool aAnonymize,
-                                         void *aClosure,
-                                         char *aBuf, size_t aLen);
 %}
 
 native nsTimerCallbackFunc(nsTimerCallbackFunc);
-native nsTimerNameCallbackFunc(nsTimerNameCallbackFunc);
 [ref] native TimeDuration(mozilla::TimeDuration);
 
 
@@ -209,23 +191,6 @@ interface nsITimer : nsISupports
 
 
 
-
-
-
-  [noscript] void initWithNameableFuncCallback(
-                    in nsTimerCallbackFunc aCallback,
-                    in voidPtr aClosure,
-                    in unsigned long aDelay,
-                    in unsigned long aType,
-                    in nsTimerNameCallbackFunc aNameCallback);
-
-  
-
-
-
-
-
-
   attribute unsigned long delay;
 
   
@@ -347,22 +312,6 @@ NS_NewTimerWithFuncCallback(nsTimerCallbackFunc aCallback,
                             uint32_t aDelay,
                             uint32_t aType,
                             const char* aNameString,
-                            nsIEventTarget* aTarget = nullptr);
-
-nsresult
-NS_NewTimerWithFuncCallback(nsITimer** aTimer,
-                            nsTimerCallbackFunc aCallback,
-                            void* aClosure,
-                            uint32_t aDelay,
-                            uint32_t aType,
-                            nsTimerNameCallbackFunc aNameCallback,
-                            nsIEventTarget* aTarget = nullptr);
-mozilla::Result<nsCOMPtr<nsITimer>, nsresult>
-NS_NewTimerWithFuncCallback(nsTimerCallbackFunc aCallback,
-                            void* aClosure,
-                            uint32_t aDelay,
-                            uint32_t aType,
-                            nsTimerNameCallbackFunc aNameCallback,
                             nsIEventTarget* aTarget = nullptr);
 
 #define NS_TIMER_CONTRACTID "@mozilla.org/timer;1"
