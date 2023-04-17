@@ -8,6 +8,10 @@
   self.uniqueName = (testCase, prefix) => {
     return `${self.location.pathname}-${prefix}-${testCase.name}-${++res_num}`;
   };
+  self.uniqueNameByQuery = () => {
+    const prefix = new URL(location.href).searchParams.get('prefix');
+    return `${prefix}-${++res_num}`;
+  }
 
   
   
