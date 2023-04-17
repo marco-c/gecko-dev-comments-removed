@@ -123,7 +123,18 @@ add_task(async () => {
       
       
       
-      is(rootChildCount(), 5, "Root with no popups has 5 children");
+      
+      let baseRootChildCount = Services.prefs.getBoolPref(
+        "browser.proton.infobars.enabled",
+        false
+      )
+        ? 6
+        : 5;
+      is(
+        rootChildCount(),
+        baseRootChildCount,
+        "Root with no popups has 6 children"
+      );
 
       
       const menu = document.getElementById("contentAreaContextMenu");
@@ -133,7 +144,7 @@ add_task(async () => {
       await waitForMacEvent("AXMenuOpened");
 
       
-      is(rootChildCount(), 6, "Root has 6 children");
+      is(rootChildCount(), baseRootChildCount + 1, "Root has 1 more child");
 
       
       let closed = waitForMacEvent("AXMenuClosed", "contentAreaContextMenu");
@@ -142,7 +153,7 @@ add_task(async () => {
       await closed;
 
       
-      is(rootChildCount(), 5, "Root has 5 children");
+      is(rootChildCount(), baseRootChildCount, "Root has original child count");
 
       
       document.getElementById("identity-icon-box").click();
@@ -150,14 +161,14 @@ add_task(async () => {
       await BrowserTestUtils.waitForPopupEvent(identityPopup, "shown");
 
       
-      is(rootChildCount(), 6, "Root has 6 children");
+      is(rootChildCount(), baseRootChildCount + 1, "Root has another child");
 
       
       EventUtils.synthesizeKey("KEY_Escape");
       await BrowserTestUtils.waitForPopupEvent(identityPopup, "hidden");
 
       
-      is(rootChildCount(), 5, "Root has 5 children");
+      is(rootChildCount(), baseRootChildCount, "Root has the base child count");
     }
   );
 });
