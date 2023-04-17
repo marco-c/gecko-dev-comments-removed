@@ -685,10 +685,6 @@ NS_IMETHODIMP EditorBase::SetFlags(uint32_t aFlags) {
   MOZ_ASSERT_IF(IsHTMLEditor(), !(aFlags & nsIEditor::eEditorPasswordMask));
   
   
-  
-  MOZ_ASSERT_IF(IsHTMLEditor(), !(aFlags & nsIEditor::eEditorDontEchoPassword));
-  
-  
   MOZ_ASSERT_IF(IsTextEditor(), !(aFlags & nsIEditor::eEditorMailMask));
   
   

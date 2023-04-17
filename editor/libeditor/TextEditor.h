@@ -192,6 +192,14 @@ class TextEditor final : public EditorBase,
 
   static char16_t PasswordMask();
 
+  
+
+
+
+  bool EchoingPasswordPrevented() const { return mEchoingPasswordPrevented; }
+  void PreventToEchoPassword() { mEchoingPasswordPrevented = true; }
+  void AllowToEchoPassword() { mEchoingPasswordPrevented = false; }
+
  protected:  
   
 
@@ -489,6 +497,10 @@ class TextEditor final : public EditorBase,
   
   
   bool mIsMaskingPassword;
+
+  
+  
+  bool mEchoingPasswordPrevented;
 
   friend class DeleteNodeTransaction;
   friend class EditorBase;

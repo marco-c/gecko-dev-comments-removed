@@ -206,7 +206,9 @@ class MOZ_RAII AutoRestoreEditorState final {
   MOZ_CAN_RUN_SCRIPT explicit AutoRestoreEditorState(TextEditor* aTextEditor)
       : mTextEditor(aTextEditor),
         mSavedFlags(mTextEditor->Flags()),
-        mSavedMaxLength(mTextEditor->MaxTextLength()) {
+        mSavedMaxLength(mTextEditor->MaxTextLength()),
+        mSavedEchoingPasswordPrevented(
+            mTextEditor->EchoingPasswordPrevented()) {
     MOZ_ASSERT(mTextEditor);
 
     
@@ -214,16 +216,19 @@ class MOZ_RAII AutoRestoreEditorState final {
     
     
     uint32_t flags = mSavedFlags;
-    flags &= ~(nsIEditor::eEditorReadonlyMask);
-    flags |= nsIEditor::eEditorDontEchoPassword;
+    flags &= ~nsIEditor::eEditorReadonlyMask;
     if (mSavedFlags != flags) {
       
       MOZ_KnownLive(mTextEditor)->SetFlags(flags);
     }
+    mTextEditor->PreventToEchoPassword();
     mTextEditor->SetMaxTextLength(-1);
   }
 
   MOZ_CAN_RUN_SCRIPT ~AutoRestoreEditorState() {
+    if (!mSavedEchoingPasswordPrevented) {
+      mTextEditor->AllowToEchoPassword();
+    }
     mTextEditor->SetMaxTextLength(mSavedMaxLength);
     
     
@@ -235,6 +240,7 @@ class MOZ_RAII AutoRestoreEditorState final {
   TextEditor* mTextEditor;
   uint32_t mSavedFlags;
   int32_t mSavedMaxLength;
+  bool mSavedEchoingPasswordPrevented;
 };
 
 
