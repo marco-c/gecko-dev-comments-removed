@@ -187,8 +187,7 @@ extern const nsNavigationDirection DirectionFromKeyCodeTable[2][6];
 
 
 struct PendingPopup {
-  MOZ_CAN_RUN_SCRIPT PendingPopup(nsIContent* aPopup,
-                                  mozilla::dom::Event* aEvent);
+  PendingPopup(nsIContent* aPopup, mozilla::dom::Event* aEvent);
 
   const nsCOMPtr<nsIContent> mPopup;
   const RefPtr<mozilla::dom::Event> mEvent;
@@ -206,7 +205,7 @@ struct PendingPopup {
 
   already_AddRefed<nsIContent> GetTriggerContent() const;
 
-  MOZ_CAN_RUN_SCRIPT void InitMousePoint();
+  void InitMousePoint();
 
   void SetMousePoint(mozilla::LayoutDeviceIntPoint aMousePoint) {
     mMousePoint = aMousePoint;
@@ -467,18 +466,6 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   
   
   void SetActiveMenuBar(nsMenuBarFrame* aMenuBar, bool aActivate);
-
-  
-  
-  
-  
-  
-  nsIContent* GetMouseLocationParent() const {
-    return mPendingPopup ? mPendingPopup->mRangeParentContent.get() : nullptr;
-  }
-  int32_t MouseLocationOffset() const {
-    return mPendingPopup ? mPendingPopup->mRangeOffset : -1;
-  }
 
   
 
@@ -754,6 +741,10 @@ class nsXULPopupManager final : public nsIDOMEventListener,
   nsresult UpdateIgnoreKeys(bool aIgnoreKeys);
 
   nsPopupState GetPopupState(mozilla::dom::Element* aPopupElement);
+
+  mozilla::dom::Event* GetOpeningPopupEvent() const {
+    return mPendingPopup->mEvent.get();
+  }
 
   nsresult KeyUp(mozilla::dom::KeyboardEvent* aKeyEvent);
   nsresult KeyDown(mozilla::dom::KeyboardEvent* aKeyEvent);
