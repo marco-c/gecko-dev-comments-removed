@@ -6344,9 +6344,7 @@ void PresShell::Paint(nsView* aViewToPaint, PaintFlags aFlags) {
   nscolor bgcolor = ComputeBackstopColor(aViewToPaint);
   PaintFrameFlags flags =
       PaintFrameFlags::WidgetLayers | PaintFrameFlags::ExistingTransaction;
-  if (!(aFlags & PaintFlags::PaintComposite)) {
-    flags |= PaintFrameFlags::NoComposite;
-  }
+
   
   
   if (aFlags & PaintFlags::PaintSyncDecodeImages ||
