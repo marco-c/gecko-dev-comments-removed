@@ -1216,6 +1216,9 @@ class AsyncPanZoomController {
     return mScrollMetadata.GetMetrics().GetCumulativeResolution();
   }
 
+  
+  ParentLayerPoint GetDeltaForEvent(const InputData& aEvent) const;
+
  private:
   
 
@@ -1641,9 +1644,6 @@ class AsyncPanZoomController {
 
 
   void OverscrollBy(ParentLayerPoint& aOverscroll);
-
-  
-  ParentLayerPoint GetDeltaForEvent(const InputData& aEvent) const;
 
   
 

@@ -8,6 +8,7 @@
 
 #include <algorithm>  
 #include "mozilla/Assertions.h"
+#include "mozilla/FloatingPoint.h"
 #include "AsyncPanZoomController.h"
 
 namespace mozilla {
@@ -160,8 +161,25 @@ RefPtr<AsyncPanZoomController> OverscrollHandoffChain::FindFirstScrollable(
     if (StaticPrefs::apz_overscroll_enabled() &&
         
         aInput.mInputType == PANGESTURE_INPUT && mChain[i]->IsRootContent()) {
-      *aOutAllowedScrollDirections &= mChain[i]->GetOverscrollableDirections();
-      if (!aOutAllowedScrollDirections->isEmpty()) {
+      
+      
+      
+      
+      
+      
+      ScrollDirections allowedOverscrollDirections =
+          mChain[i]->GetOverscrollableDirections();
+      ParentLayerPoint delta = mChain[i]->GetDeltaForEvent(aInput);
+      if (FuzzyEqualsAdditive(delta.x, 0.0f, COORDINATE_EPSILON)) {
+        allowedOverscrollDirections -= ScrollDirection::eHorizontal;
+      }
+      if (FuzzyEqualsAdditive(delta.y, 0.0f, COORDINATE_EPSILON)) {
+        allowedOverscrollDirections -= ScrollDirection::eVertical;
+      }
+
+      allowedOverscrollDirections &= *aOutAllowedScrollDirections;
+      if (!allowedOverscrollDirections.isEmpty()) {
+        *aOutAllowedScrollDirections = allowedOverscrollDirections;
         return mChain[i];
       }
     }
