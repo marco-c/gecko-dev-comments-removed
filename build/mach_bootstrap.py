@@ -13,14 +13,8 @@ import sys
 
 if sys.version_info[0] < 3:
     import __builtin__ as builtins
-
-    class MetaPathFinder(object):
-        pass
-
-
 else:
-    from importlib.abc import MetaPathFinder
-
+    import builtins
 
 from types import ModuleType
 
@@ -515,52 +509,5 @@ class ImportHook(object):
 
 
 
-
-
-
-
-class PathFinderHook(MetaPathFinder):
-    def __init__(self, klass):
-        
-        
-        self._source_dir = (
-            os.path.normcase(
-                os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-            )
-            + os.sep
-        )
-        self._finder_class = klass
-
-    def find_spec(self, full_name, paths=None, target=None):
-        spec = self._finder_class.find_spec(full_name, paths, target)
-
-        
-        if spec is None or spec.origin is None:
-            return spec
-
-        
-        path = os.path.normcase(os.path.abspath(spec.origin))
-        
-        
-        if not path.endswith((".pyc", ".pyo")):
-            return spec
-
-        
-        if not path.startswith(self._source_dir):
-            return spec
-
-        
-        
-        if not os.path.exists(spec.origin[:-1]):
-            if os.path.exists(spec.origin):
-                os.remove(spec.origin)
-            spec = self._finder_class.find_spec(full_name, paths, target)
-
-        return spec
-
-
-
 if sys.version_info[0] < 3:
     builtins.__import__ = ImportHook(builtins.__import__)
-else:
-    sys.meta_path = [PathFinderHook(c) for c in sys.meta_path]
