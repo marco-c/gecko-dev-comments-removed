@@ -85,9 +85,9 @@ void ClientMultiTiledLayerBuffer::PaintThebes(
     LayerManager::DrawPaintedLayerCallback aCallback, void* aCallbackData,
     TilePaintFlags aFlags) {
   TILING_LOG("TILING %p: PaintThebes painting region %s\n", &mPaintedLayer,
-             Stringify(aPaintRegion).c_str());
+             ToString(aPaintRegion).c_str());
   TILING_LOG("TILING %p: PaintThebes new valid region %s\n", &mPaintedLayer,
-             Stringify(aNewValidRegion).c_str());
+             ToString(aNewValidRegion).c_str());
 
   mCallback = aCallback;
   mCallbackData = aCallbackData;
@@ -450,7 +450,7 @@ bool ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(
   staleRegion.And(aInvalidRegion, aOldValidRegion);
 
   TILING_LOG("TILING %p: Progressive update stale region %s\n", &mPaintedLayer,
-             Stringify(staleRegion).c_str());
+             ToString(staleRegion).c_str());
 
   LayerMetricsWrapper scrollAncestor;
   mPaintedLayer.GetAncestorLayers(&scrollAncestor, nullptr, nullptr);
@@ -495,7 +495,7 @@ bool ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(
   }
 
   TILING_LOG("TILING %p: Progressive update transformed compositor bounds %s\n",
-             &mPaintedLayer, Stringify(*transformedCompositionBounds).c_str());
+             &mPaintedLayer, ToString(*transformedCompositionBounds).c_str());
 
   
   
@@ -516,7 +516,7 @@ bool ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(
                                  .ToUnknownRect());
 
   TILING_LOG("TILING %p: Progressive update final coherency rect %s\n",
-             &mPaintedLayer, Stringify(coherentUpdateRect).c_str());
+             &mPaintedLayer, ToString(coherentUpdateRect).c_str());
 
   aRegionToPaint.And(aInvalidRegion, coherentUpdateRect);
   aRegionToPaint.Or(aRegionToPaint, staleRegion);
@@ -533,7 +533,7 @@ bool ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(
   }
 
   TILING_LOG("TILING %p: Progressive update final paint region %s\n",
-             &mPaintedLayer, Stringify(aRegionToPaint).c_str());
+             &mPaintedLayer, ToString(aRegionToPaint).c_str());
 
   
   
@@ -626,11 +626,11 @@ bool ClientMultiTiledLayerBuffer::ProgressiveUpdate(
     BasicTiledLayerPaintData* aPaintData,
     LayerManager::DrawPaintedLayerCallback aCallback, void* aCallbackData) {
   TILING_LOG("TILING %p: Progressive update valid region %s\n", &mPaintedLayer,
-             Stringify(aValidRegion).c_str());
+             ToString(aValidRegion).c_str());
   TILING_LOG("TILING %p: Progressive update invalid region %s\n",
-             &mPaintedLayer, Stringify(aInvalidRegion).c_str());
+             &mPaintedLayer, ToString(aInvalidRegion).c_str());
   TILING_LOG("TILING %p: Progressive update old valid region %s\n",
-             &mPaintedLayer, Stringify(aOldValidRegion).c_str());
+             &mPaintedLayer, ToString(aOldValidRegion).c_str());
 
   bool repeat = false;
   bool isBufferChanged = false;
@@ -646,7 +646,7 @@ bool ClientMultiTiledLayerBuffer::ProgressiveUpdate(
 
     TILING_LOG(
         "TILING %p: Progressive update computed paint region %s repeat %d\n",
-        &mPaintedLayer, Stringify(regionToPaint).c_str(), repeat);
+        &mPaintedLayer, ToString(regionToPaint).c_str(), repeat);
 
     
     if (regionToPaint.IsEmpty()) {
@@ -673,9 +673,9 @@ bool ClientMultiTiledLayerBuffer::ProgressiveUpdate(
 
   TILING_LOG(
       "TILING %p: Progressive update final valid region %s buffer changed %d\n",
-      &mPaintedLayer, Stringify(updatedValidRegion).c_str(), isBufferChanged);
+      &mPaintedLayer, ToString(updatedValidRegion).c_str(), isBufferChanged);
   TILING_LOG("TILING %p: Progressive update final invalid region %s\n",
-             &mPaintedLayer, Stringify(remainingInvalidRegion).c_str());
+             &mPaintedLayer, ToString(remainingInvalidRegion).c_str());
 
   
   
