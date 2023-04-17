@@ -370,8 +370,8 @@ class DevToolsFrameChild extends JSWindowActorChild {
       "devtools/server/devtools-server"
     );
 
-    const { FrameTargetActor } = this.loader.require(
-      "devtools/server/actors/targets/frame"
+    const { WindowGlobalTargetActor } = this.loader.require(
+      "devtools/server/actors/targets/window-global"
     );
 
     DevToolsServer.init();
@@ -388,7 +388,7 @@ class DevToolsFrameChild extends JSWindowActorChild {
     );
 
     
-    const targetActor = new FrameTargetActor(connection, {
+    const targetActor = new WindowGlobalTargetActor(connection, {
       docShell: this.docShell,
       
       

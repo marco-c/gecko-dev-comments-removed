@@ -505,7 +505,7 @@ const windowGlobalTargetPrototype = {
 
 
   get title() {
-    return this.contentDocument.contentTitle;
+    return this.contentDocument.title;
   },
 
   

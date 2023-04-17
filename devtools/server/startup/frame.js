@@ -84,15 +84,15 @@ try {
         });
       } else {
         const {
-          FrameTargetActor,
-        } = require("devtools/server/actors/targets/frame");
+          WindowGlobalTargetActor,
+        } = require("devtools/server/actors/targets/window-global");
         const { docShell } = chromeGlobal;
         
         
         
         
         
-        actor = new FrameTargetActor(conn, {
+        actor = new WindowGlobalTargetActor(conn, {
           docShell,
           isTopLevelTarget: true,
         });
