@@ -128,8 +128,15 @@ class SharedDataMap extends EventEmitter {
 
 
   _removeEntriesByKeys(keysToRemove) {
+    if (!keysToRemove.length) {
+      return;
+    }
     for (let key of keysToRemove) {
-      delete this._store.data[key];
+      try {
+        delete this._store.data[key];
+      } catch (e) {
+        
+      }
     }
     this._store.saveSoon();
   }
