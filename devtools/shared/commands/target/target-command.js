@@ -8,6 +8,8 @@ const Services = require("Services");
 const EventEmitter = require("devtools/shared/event-emitter");
 
 const BROWSERTOOLBOX_FISSION_ENABLED = "devtools.browsertoolbox.fission";
+const SERVER_TARGET_SWITCHING_ENABLED =
+  "devtools.target-switching.server.enabled";
 
 const {
   LegacyProcessesWatcher,
@@ -157,6 +159,7 @@ class TargetCommand extends EventEmitter {
 
       
       this.targetFront = targetFront;
+      this.descriptorFront.setTarget(targetFront);
     }
 
     
@@ -194,6 +197,9 @@ class TargetCommand extends EventEmitter {
 
     
     this.emitForTests("processed-available-target", targetFront);
+    if (isTargetSwitching) {
+      this.emitForTests("switched-target", targetFront);
+    }
   }
 
   
@@ -271,6 +277,16 @@ class TargetCommand extends EventEmitter {
     }
 
     return !!this.watcherFront?.traits[type];
+  }
+
+  isServerTargetSwitchingEnabled() {
+    if (typeof this._isServerTargetSwitchingEnabled == "undefined") {
+      this._isServerTargetSwitchingEnabled = Services.prefs.getBoolPref(
+        SERVER_TARGET_SWITCHING_ENABLED,
+        false
+      );
+    }
+    return this._isServerTargetSwitchingEnabled;
   }
 
   
@@ -580,6 +596,12 @@ class TargetCommand extends EventEmitter {
 
 
   async onLocalTabRemotenessChange(targetFront) {
+    if (this.isServerTargetSwitchingEnabled()) {
+      
+      
+      return;
+    }
+
     
     
     if (targetFront) {
@@ -602,9 +624,8 @@ class TargetCommand extends EventEmitter {
 
   async switchToTarget(newTarget) {
     
+    
     await this._onTargetAvailable(newTarget);
-
-    this.emit("switched-target", newTarget);
   }
 
   isTargetRegistered(targetFront) {

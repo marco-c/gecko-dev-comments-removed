@@ -322,8 +322,13 @@ class ResourceWatcher {
         if (!this._listenerCount.get(resourceType)) {
           continue;
         }
-        await this._stopListening(resourceType, { bypassListenerCount: true });
-        resources.push(resourceType);
+
+        if (this._shouldRestartListenerOnTargetSwitching(resourceType)) {
+          await this._stopListening(resourceType, {
+            bypassListenerCount: true,
+          });
+          resources.push(resourceType);
+        }
       }
     }
 
@@ -375,6 +380,18 @@ class ResourceWatcher {
         )
       );
     }
+  }
+
+  _shouldRestartListenerOnTargetSwitching(resourceType) {
+    if (!this.targetList.isServerTargetSwitchingEnabled()) {
+      
+      
+      return true;
+    }
+
+    
+    
+    return !this.hasResourceWatcherSupport(resourceType);
   }
 
   
