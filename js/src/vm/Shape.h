@@ -120,6 +120,10 @@ MOZ_ALWAYS_INLINE size_t JSSLOT_FREE(const JSClass* clasp) {
 
 namespace js {
 
+
+static const uint32_t SHAPE_INVALID_SLOT = Bit(24) - 1;
+static const uint32_t SHAPE_MAXIMUM_SLOT = Bit(24) - 2;
+
 class Shape;
 struct StackShape;
 
@@ -127,26 +131,44 @@ struct StackShape;
 
 
 class ShapeProperty {
-  Shape* shape_;
+  uint32_t slot_;
+  uint8_t attrs_;
 
  public:
-  explicit ShapeProperty(Shape* shape) : shape_(shape) { MOZ_ASSERT(shape); }
+  inline explicit ShapeProperty(Shape* shape);
 
-  inline bool isDataProperty() const;
-  inline bool isCustomDataProperty() const;
-  inline bool isAccessorProperty() const;
-  inline uint32_t slot() const;
+  bool isDataProperty() const {
+    return !(attrs_ &
+             (JSPROP_GETTER | JSPROP_SETTER | JSPROP_CUSTOM_DATA_PROP));
+  }
+  bool isCustomDataProperty() const { return attrs_ & JSPROP_CUSTOM_DATA_PROP; }
+  bool isAccessorProperty() const {
+    return attrs_ & (JSPROP_GETTER | JSPROP_SETTER);
+  }
 
   
   
-  inline bool isDataDescriptor() const;
+  bool isDataDescriptor() const {
+    return isDataProperty() || isCustomDataProperty();
+  }
 
-  inline uint8_t attributes() const;
-  inline bool writable() const;
-  inline bool configurable() const;
-  inline bool enumerable() const;
+  uint32_t slot() const {
+    MOZ_ASSERT(!isCustomDataProperty());
+    MOZ_ASSERT(slot_ < SHAPE_INVALID_SLOT);
+    return slot_;
+  }
 
-  Shape* shapeDeprecated() const { return shape_; }
+  uint8_t attributes() const { return attrs_; }
+  bool writable() const { return !(attrs_ & JSPROP_READONLY); }
+  bool configurable() const { return !(attrs_ & JSPROP_PERMANENT); }
+  bool enumerable() const { return attrs_ & JSPROP_ENUMERATE; }
+
+  bool operator==(const ShapeProperty& other) const {
+    return slot_ == other.slot_ && attrs_ == other.attrs_;
+  }
+  bool operator!=(const ShapeProperty& other) const {
+    return !operator==(other);
+  }
 };
 
 struct ShapeHasher : public DefaultHasher<Shape*> {
@@ -282,10 +304,6 @@ class PropertyTree {
 };
 
 class TenuringTracer;
-
-
-static const uint32_t SHAPE_INVALID_SLOT = Bit(24) - 1;
-static const uint32_t SHAPE_MAXIMUM_SLOT = Bit(24) - 2;
 
 enum class MaybeAdding { Adding = true, NotAdding = false };
 
@@ -1615,35 +1633,8 @@ MOZ_ALWAYS_INLINE bool ShapeIC::search(jsid id, Shape** foundShape) {
   return false;
 }
 
-inline bool ShapeProperty::isDataProperty() const {
-  return shape_->isDataProperty();
-}
-
-inline bool ShapeProperty::isCustomDataProperty() const {
-  return shape_->isCustomDataProperty();
-}
-
-inline bool ShapeProperty::isAccessorProperty() const {
-  return shape_->isAccessorProperty();
-}
-
-inline uint32_t ShapeProperty::slot() const { return shape_->slot(); }
-
-inline bool ShapeProperty::isDataDescriptor() const {
-  return shape_->isDataDescriptor();
-}
-
-inline uint8_t ShapeProperty::attributes() const {
-  return shape_->attributes();
-}
-
-inline bool ShapeProperty::writable() const { return shape_->writable(); }
-
-inline bool ShapeProperty::configurable() const {
-  return shape_->configurable();
-}
-
-inline bool ShapeProperty::enumerable() const { return shape_->enumerable(); }
+inline ShapeProperty::ShapeProperty(Shape* shape)
+    : slot_(shape->maybeSlot()), attrs_(shape->attributes()) {}
 
 }  
 
