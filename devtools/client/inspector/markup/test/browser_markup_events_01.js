@@ -7,7 +7,7 @@
 
 
 
-const TEST_URL = URL_ROOT + "doc_markup_events_01.html";
+const TEST_URL = URL_ROOT_SSL + "doc_markup_events_01.html";
 
 loadHelperScript("helper_events_test_runner.js");
 
