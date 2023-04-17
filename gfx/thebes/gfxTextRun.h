@@ -1417,8 +1417,7 @@ class gfxFontGroup final : public gfxTextRunFactory {
   bool mExplicitLanguage;  
 
   
-  
-  mozilla::StyleGenericFontFamily mFirstGeneric =
+  mozilla::StyleGenericFontFamily mFallbackGeneric =
       mozilla::StyleGenericFontFamily::None;
 
   uint32_t mFontListGeneration = 0;  
