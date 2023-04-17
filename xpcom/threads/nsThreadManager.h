@@ -67,14 +67,6 @@ class nsThreadManager : public nsIThreadManager {
   already_AddRefed<nsISerialEventTarget> CreateBackgroundTaskQueue(
       const char* aName);
 
-  
-  
-  
-  
-  
-  
-  void CancelBackgroundDelayedRunnables();
-
   ~nsThreadManager();
 
   void EnableMainThreadEventPrioritization();
