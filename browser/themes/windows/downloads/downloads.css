@@ -1,10 +1,10 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 %include ../../shared/downloads/downloads.inc.css
 
-
+/*** Panel and outer controls ***/
 
 #downloadsSummary:-moz-focusring {
   outline-offset: -5px;
@@ -14,7 +14,7 @@
   outline: none;
 }
 
-
+/*** List items and similar elements in the summary ***/
 
 :root {
   --downloads-item-height: 5.5em;
@@ -27,6 +27,7 @@
 }
 
 @media (-moz-windows-default-theme) {
+  @media not (-moz-proton-doorhangers) {
   @item@[verdict="Malware"]:not(:hover) {
     color: #aa1b08;
   }
@@ -34,8 +35,9 @@
   :root[lwt-popup-brighttext] @item@[verdict="Malware"]:not(:hover) {
     color: #ff0039;
   }
+  } /** END not Proton **/
 
-  
+  /* Use unified color for the progressbar on default theme */
   .downloadProgress::-moz-progress-bar {
     background-color: #3c9af8;
   }
@@ -45,7 +47,7 @@
   }
 }
 
-
+/*** Highlighted list items ***/
 
 @keyfocus@ @itemFocused@ {
   outline: 1px -moz-dialogtext dotted;
