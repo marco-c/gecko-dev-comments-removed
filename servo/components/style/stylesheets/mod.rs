@@ -308,6 +308,7 @@ impl CssRule {
 }
 
 
+#[allow(missing_docs)]
 #[derive(Clone, Copy, Debug, Eq, FromPrimitive, PartialEq)]
 pub enum CssRuleType {
     
