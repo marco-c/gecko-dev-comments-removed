@@ -725,7 +725,7 @@ void nsSHistory::HandleEntriesToSwapInDocShell(
 }
 
 void nsSHistory::UpdateRootBrowsingContextState() {
-  if (mRootBC) {
+  if (mRootBC && mRootBC->EverAttached()) {
     bool sameDocument = IsEmptyOrHasEntriesForSingleTopLevelPage();
     if (sameDocument != mRootBC->GetIsSingleToplevelInHistory()) {
       
