@@ -32,31 +32,34 @@
 
 
 
+
+
+
+
 #![no_std]
-#![recursion_limit = "256"]
-#![doc(html_root_url = "https://docs.rs/pin-project/0.4.9")]
 #![doc(test(
     no_crate_inject,
     attr(deny(warnings, rust_2018_idioms, single_use_lifetimes), allow(dead_code))
 ))]
-#![warn(unsafe_code)]
 #![warn(missing_docs, rust_2018_idioms, single_use_lifetimes, unreachable_pub)]
-#![warn(clippy::all)]
+#![warn(clippy::all, clippy::default_trait_access)]
 
-#![allow(clippy::mem_replace_with_default)]
+#![allow(clippy::mem_replace_with_default, clippy::manual_non_exhaustive)]
 #![allow(clippy::needless_doctest_main)]
 
 #[doc(inline)]
 pub use pin_project_internal::pin_project;
-
 #[doc(inline)]
 pub use pin_project_internal::pinned_drop;
-
+#[allow(deprecated)]
 #[doc(inline)]
 pub use pin_project_internal::project;
-
+#[allow(deprecated)]
 #[doc(inline)]
 pub use pin_project_internal::project_ref;
+#[allow(deprecated)]
+#[doc(inline)]
+pub use pin_project_internal::project_replace;
 
 
 
@@ -112,18 +115,29 @@ pub use pin_project_internal::project_ref;
 
 
 
-#[allow(unsafe_code)]
+
+
+
 pub unsafe trait UnsafeUnpin {}
 
 
 #[doc(hidden)]
 pub mod __private {
-    use super::UnsafeUnpin;
-    use core::{marker::PhantomData, pin::Pin};
+    #[doc(hidden)]
+    pub use core::{
+        marker::{PhantomData, PhantomPinned, Unpin},
+        mem::ManuallyDrop,
+        ops::Drop,
+        pin::Pin,
+        ptr,
+    };
 
     #[doc(hidden)]
     pub use pin_project_internal::__PinProjectInternalDerive;
 
+    use super::UnsafeUnpin;
+
+    
     
     
     
@@ -137,9 +151,6 @@ pub mod __private {
     
     #[doc(hidden)]
     pub trait PinnedDrop {
-        
-        
-        #[allow(unsafe_code)]
         #[doc(hidden)]
         unsafe fn drop(self: Pin<&mut Self>);
     }
@@ -189,17 +200,51 @@ pub mod __private {
     
     
     
+    
+    
+    
+    
+    
+    
+    
     #[doc(hidden)]
     pub struct Wrapper<'a, T: ?Sized>(PhantomData<&'a ()>, T);
 
-    #[allow(unsafe_code)]
     unsafe impl<T: ?Sized> UnsafeUnpin for Wrapper<'_, T> where T: UnsafeUnpin {}
 
     
     
     
     #[doc(hidden)]
-    pub struct AlwaysUnpin<'a, T: ?Sized>(PhantomData<&'a ()>, PhantomData<T>);
+    pub struct AlwaysUnpin<'a, T>(PhantomData<&'a ()>, PhantomData<T>);
 
-    impl<T: ?Sized> Unpin for AlwaysUnpin<'_, T> {}
+    impl<T> Unpin for AlwaysUnpin<'_, T> {}
+
+    
+    #[doc(hidden)]
+    pub struct UnsafeDropInPlaceGuard<T: ?Sized>(pub *mut T);
+
+    impl<T: ?Sized> Drop for UnsafeDropInPlaceGuard<T> {
+        fn drop(&mut self) {
+            unsafe {
+                ptr::drop_in_place(self.0);
+            }
+        }
+    }
+
+    
+    
+    #[doc(hidden)]
+    pub struct UnsafeOverwriteGuard<T> {
+        pub value: ManuallyDrop<T>,
+        pub target: *mut T,
+    }
+
+    impl<T> Drop for UnsafeOverwriteGuard<T> {
+        fn drop(&mut self) {
+            unsafe {
+                ptr::write(self.target, ptr::read(&*self.value));
+            }
+        }
+    }
 }

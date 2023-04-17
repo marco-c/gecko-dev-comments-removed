@@ -4,9 +4,9 @@
 
 #![feature(trivial_bounds)]
 
-use std::marker::{PhantomData, PhantomPinned};
+mod phantom_pinned {
+    use std::marker::{PhantomData, PhantomPinned};
 
-fn phantom_pinned() {
     struct A(PhantomPinned);
 
     
@@ -26,8 +26,8 @@ fn phantom_pinned() {
 
     struct C(PhantomPinned);
 
-    impl<'a> Unpin for C where WrapperWithLifetime<'a, PhantomPinned>: Unpin {}
     
+    impl<'a> Unpin for C where WrapperWithLifetime<'a, PhantomPinned>: Unpin {}
 }
 
 fn main() {}

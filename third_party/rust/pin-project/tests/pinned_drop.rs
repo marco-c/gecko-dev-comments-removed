@@ -1,9 +1,8 @@
-#![warn(unsafe_code)]
 #![warn(rust_2018_idioms, single_use_lifetimes)]
-#![allow(dead_code)]
+
+use std::pin::Pin;
 
 use pin_project::{pin_project, pinned_drop};
-use std::pin::Pin;
 
 #[test]
 fn safe_project() {
@@ -27,66 +26,64 @@ fn safe_project() {
 }
 
 #[test]
-fn mut_self_argument() {
+fn self_argument_in_macro() {
+    use std::pin::Pin;
+
+    use pin_project::{pin_project, pinned_drop};
+
     #[pin_project(PinnedDrop)]
     struct Struct {
-        data: usize,
-    }
-
-    #[pinned_drop]
-    impl PinnedDrop for Struct {
-        fn drop(mut self: Pin<&mut Self>) {
-            let _: &mut _ = &mut self.data;
-        }
-    }
-}
-
-#[test]
-fn self_in_vec() {
-    #[pin_project(PinnedDrop)]
-    struct Struct {
-        data: usize,
+        x: (),
     }
 
     #[pinned_drop]
     impl PinnedDrop for Struct {
         fn drop(self: Pin<&mut Self>) {
-            let _: Vec<_> = vec![self.data];
+            let _: Vec<_> = vec![self.x];
         }
     }
 }
 
 #[test]
 fn self_in_macro_containing_fn() {
-    #[pin_project(PinnedDrop)]
-    pub struct Struct {
-        data: usize,
-    }
+    use std::pin::Pin;
 
-    macro_rules! emit {
+    use pin_project::{pin_project, pinned_drop};
+
+    macro_rules! mac {
         ($($tt:tt)*) => {
             $($tt)*
         };
     }
 
+    #[pin_project(PinnedDrop)]
+    pub struct Struct {
+        _x: (),
+    }
+
     #[pinned_drop]
     impl PinnedDrop for Struct {
         fn drop(self: Pin<&mut Self>) {
-            let _ = emit!({
+            let _ = mac!({
                 impl Struct {
-                    pub fn f(self) {}
+                    pub fn _f(self) -> Self {
+                        self
+                    }
                 }
             });
-            self.data;
         }
     }
 }
 
 #[test]
 fn self_call() {
+    use std::pin::Pin;
+
+    use pin_project::{pin_project, pinned_drop};
+
     #[pin_project(PinnedDrop)]
-    pub struct Struct {
-        data: usize,
+    pub struct Struct<T> {
+        _x: T,
     }
 
     trait Trait {
@@ -97,10 +94,10 @@ fn self_call() {
         fn assoc_fn(_this: Pin<&mut Self>) {}
     }
 
-    impl Trait for Struct {}
+    impl<T> Trait for Struct<T> {}
 
     #[pinned_drop]
-    impl PinnedDrop for Struct {
+    impl<T> PinnedDrop for Struct<T> {
         fn drop(mut self: Pin<&mut Self>) {
             self.self_ref();
             self.as_ref().self_pin_ref();
@@ -112,74 +109,45 @@ fn self_call() {
     }
 }
 
-
 #[test]
-fn self_expr() {
+fn self_struct() {
+    use std::pin::Pin;
+
+    use pin_project::{pin_project, pinned_drop};
+
     #[pin_project(PinnedDrop)]
     pub struct Struct {
-        x: usize,
+        pub x: (),
     }
 
     #[pinned_drop]
     impl PinnedDrop for Struct {
+        #[allow(irrefutable_let_patterns)]
+        #[allow(clippy::match_single_binding)]
         fn drop(mut self: Pin<&mut Self>) {
-            let _: Self = Self { x: 0 };
+            
+            let _: Self = Self { x: () };
+
+            
+            match *self {
+                Self { x: _ } => {}
+            }
+            if let Self { x: _ } = *self {}
+            let Self { x: _ } = *self;
         }
     }
 
     #[pin_project(PinnedDrop)]
-    pub struct TupleStruct(usize);
-
-    #[pinned_drop]
-    impl PinnedDrop for TupleStruct {
-        fn drop(mut self: Pin<&mut Self>) {
-            let _: Self = Self(0);
-        }
-    }
-
-    #[rustversion::since(1.37)]
-    #[pin_project(PinnedDrop)]
-    pub enum Enum {
-        StructVariant { x: usize },
-        TupleVariant(usize),
-    }
-
-    #[rustversion::since(1.37)]
-    #[pinned_drop]
-    impl PinnedDrop for Enum {
-        fn drop(mut self: Pin<&mut Self>) {
-            
-            let _: Self = Self::TupleVariant(0);
-        }
-    }
-}
-
-
-#[test]
-fn self_pat() {
-    #[pin_project(PinnedDrop)]
-    pub struct Struct {
-        x: usize,
-    }
-
-    #[pinned_drop]
-    impl PinnedDrop for Struct {
-        fn drop(mut self: Pin<&mut Self>) {
-            
-            
-            
-            
-            
-        }
-    }
-
-    #[pin_project(PinnedDrop)]
-    pub struct TupleStruct(usize);
+    pub struct TupleStruct(());
 
     #[pinned_drop]
     impl PinnedDrop for TupleStruct {
         #[allow(irrefutable_let_patterns)]
         fn drop(mut self: Pin<&mut Self>) {
+            
+            let _: Self = Self(());
+
+            
             match *self {
                 Self(_) => {}
             }
@@ -187,24 +155,148 @@ fn self_pat() {
             let Self(_) = *self;
         }
     }
+}
 
-    #[rustversion::since(1.37)]
+#[rustversion::since(1.37)] 
+#[test]
+fn self_enum() {
+    use std::pin::Pin;
+
+    use pin_project::{pin_project, pinned_drop};
+
     #[pin_project(PinnedDrop)]
     pub enum Enum {
-        StructVariant { x: usize },
-        TupleVariant(usize),
+        Struct { x: () },
+        Tuple(()),
     }
 
-    #[rustversion::since(1.37)]
     #[pinned_drop]
     impl PinnedDrop for Enum {
         fn drop(mut self: Pin<&mut Self>) {
             
+            let _: Self = Self::Struct { x: () };
+            let _: Self = Self::Tuple(());
+
             
-            
-            
-            
-            
+            match *self {
+                Self::Struct { x: _ } => {}
+                Self::Tuple(_) => {}
+            }
+            if let Self::Struct { x: _ } = *self {}
+            if let Self::Tuple(_) = *self {}
         }
     }
+}
+
+
+#[rustversion::since(1.40)] 
+#[test]
+fn self_in_macro_def() {
+    use std::pin::Pin;
+
+    use pin_project::{pin_project, pinned_drop};
+
+    #[pin_project(PinnedDrop)]
+    pub struct Struct {
+        _x: (),
+    }
+
+    #[pinned_drop]
+    impl PinnedDrop for Struct {
+        fn drop(self: Pin<&mut Self>) {
+            macro_rules! mac {
+                () => {{
+                    let _ = self;
+                }};
+            }
+            mac!();
+        }
+    }
+}
+
+#[test]
+fn self_inside_macro() {
+    use std::pin::Pin;
+
+    use pin_project::{pin_project, pinned_drop};
+
+    macro_rules! mac {
+        ($($tt:tt)*) => {
+            $($tt)*
+        };
+    }
+
+    #[pin_project(PinnedDrop)]
+    pub struct Struct<T: Send>
+    where
+        mac!(Self): Send,
+    {
+        _x: T,
+    }
+
+    impl<T: Send> Struct<T> {
+        const ASSOCIATED1: &'static str = "1";
+        fn associated1() {}
+    }
+
+    trait Trait {
+        type Associated2;
+        const ASSOCIATED2: &'static str;
+        fn associated2();
+    }
+
+    impl<T: Send> Trait for Struct<T> {
+        type Associated2 = ();
+        const ASSOCIATED2: &'static str = "2";
+        fn associated2() {}
+    }
+
+    #[pinned_drop]
+    impl<T: Send> PinnedDrop for Struct<T>
+    where
+        mac!(Self): Send,
+    {
+        #[allow(path_statements)]
+        #[allow(clippy::no_effect)]
+        fn drop(self: Pin<&mut Self>) {
+            
+            mac!(Self::ASSOCIATED1;);
+            mac!(<Self>::ASSOCIATED1;);
+            mac!(Self::associated1(););
+            mac!(<Self>::associated1(););
+
+            
+            mac!(let _: <Self as Trait>::Associated2;);
+            mac!(Self::ASSOCIATED2;);
+            mac!(<Self>::ASSOCIATED2;);
+            mac!(<Self as Trait>::ASSOCIATED2;);
+            mac!(Self::associated2(););
+            mac!(<Self>::associated2(););
+            mac!(<Self as Trait>::associated2(););
+        }
+    }
+}
+
+#[test]
+fn inside_macro() {
+    use std::pin::Pin;
+
+    use pin_project::{pin_project, pinned_drop};
+
+    #[pin_project(PinnedDrop)]
+    struct Struct(());
+
+    macro_rules! mac {
+        ($expr:expr) => {
+            #[pinned_drop]
+            impl PinnedDrop for Struct {
+                #[allow(clippy::no_effect)]
+                fn drop(self: Pin<&mut Self>) {
+                    $expr;
+                }
+            }
+        };
+    }
+
+    mac!(1);
 }

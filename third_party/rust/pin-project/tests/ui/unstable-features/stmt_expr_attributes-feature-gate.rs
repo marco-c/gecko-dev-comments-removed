@@ -1,5 +1,7 @@
 
 
+#![allow(deprecated)]
+
 use pin_project::{pin_project, project};
 use std::pin::Pin;
 

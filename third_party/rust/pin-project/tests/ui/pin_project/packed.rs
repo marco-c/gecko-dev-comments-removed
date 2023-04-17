@@ -2,24 +2,32 @@ use pin_project::pin_project;
 
 #[pin_project]
 #[repr(packed, C)] 
-struct A {
+struct Packed1 {
     #[pin]
-    field: u8,
+    f: u8,
 }
 
 
 #[repr(packed, C)] 
 #[pin_project]
-struct B {
+struct Packed2 {
     #[pin]
-    field: u8,
+    f: u8,
 }
 
 #[pin_project]
 #[repr(packed(2))] 
-struct C {
+struct PackedN1 {
     #[pin]
-    field: u32,
+    f: u32,
+}
+
+
+#[repr(packed(2))] 
+#[pin_project]
+struct PackedN2 {
+    #[pin]
+    f: u32,
 }
 
 fn main() {}
