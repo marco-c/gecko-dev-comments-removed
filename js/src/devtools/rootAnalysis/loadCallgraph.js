@@ -34,9 +34,6 @@ loadRelativeToScript('callgraph.js');
 
 
 var readableNames = {}; 
-var calleesOf = {}; 
-var callersOf; 
-var gcFunctions = {}; 
 var limitedFunctions = {}; 
 var gcEdges = {};
 
@@ -47,7 +44,7 @@ var mangledToId = {};
 
 
 
-function addGCFunction(caller, reason, functionAttrs)
+function addGCFunction(caller, reason, gcFunctions, functionAttrs)
 {
     if (functionAttrs[caller] && functionAttrs[caller][1] & ATTR_GC_SUPPRESSED)
         return false;
@@ -73,10 +70,11 @@ function addGCFunction(caller, reason, functionAttrs)
 
 
 
-function merge_repeated_calls(calleesOf) {
-    const callersOf = Object.create(null);
+function generate_callgraph(rawCallees) {
+    const callersOf = new Map();
+    const calleesOf = new Map();
 
-    for (const [caller_prop, callee_attrs] of Object.entries(calleesOf)) {
+    for (const [caller_prop, callee_attrs] of Object.entries(rawCallees)) {
         const caller = caller_prop|0;
         const ordered_callees = [];
 
@@ -104,15 +102,18 @@ function merge_repeated_calls(calleesOf) {
         for (const callee of ordered_callees) {
             const any = callee2any.get(callee);
             const all = callee2all.get(callee);
-            callee_attrs.push({callee, any, all});
-            if (!(callee in callersOf))
-                callersOf[callee] = [];
-            callersOf[callee].push({caller, any, all});
+            if (!calleesOf.has(caller))
+                calleesOf.set(caller, new Map());
+            calleesOf.get(caller).set(callee, {any, all});
+            if (!callersOf.has(callee))
+                callersOf.set(callee, new Map());
+            callersOf.get(callee).set(caller, {any, all});
         }
     }
 
-    return callersOf;
+    return {callersOf, calleesOf};
 }
+
 
 function loadCallgraph(file)
 {
@@ -122,7 +123,10 @@ function loadCallgraph(file)
     
     var functionAttrs = {};
 
-    let numGCCalls = 0;
+    const gcCalls = [];
+    const indirectCalls = [];
+
+    const rawCallees = {}; 
 
     for (let line of readFileLines_gen(file)) {
         line = line.replace(/\n/, "");
@@ -161,13 +165,9 @@ function loadCallgraph(file)
         if (match = tag == 'I' && /^I (\d+) VARIABLE ([^\,]*)/.exec(line)) {
             const caller = match[1]|0;
             const name = match[2];
-            if (!indirectCallCannotGC(functionNames[caller], name) &&
-                !(attrs & ATTR_GC_SUPPRESSED))
-            {
-                
-                
-                addGCFunction(caller, "IndirectCall: " + name, functionAttrs);
-            }
+            if (indirectCallCannotGC(functionNames[caller], name))
+                attrs |= ATTR_GC_SUPPRESSED;
+            indirectCalls.push([caller, "IndirectCall: " + name, attrs]);
         } else if (match = tag == 'F' && /^F (\d+) (\d+) CLASS (.*?) FIELD (.*)/.exec(line)) {
             const caller = match[1]|0;
             const fullfield = match[2]|0;
@@ -176,39 +176,38 @@ function loadCallgraph(file)
             assert(functionNames[fullfield] == fullfield_str);
             if (attrs)
                 fieldCallAttrs[fullfield] = attrs;
-            addToKeyedList(calleesOf, caller, {callee:fullfield, any:attrs, all:attrs});
+            addToKeyedList(rawCallees, caller, {callee:fullfield, any:attrs, all:attrs});
             fieldCallCSU.set(fullfield, csu);
+
+            if (fieldCallCannotGC(csu, fullfield_str))
+                addToKeyedList(rawCallees, fullfield, {callee:ID.nogcfunc, any:0, all:0});
+            else
+                addToKeyedList(rawCallees, fullfield, {callee:ID.anyfunc, any:0, all:0});
         } else if (match = tag == 'V' && /^V (\d+) (\d+) CLASS (.*?) FIELD (.*)/.exec(line)) {
             
             
         } else if (match = tag == 'D' && /^D (\d+) (\d+)/.exec(line)) {
             const caller = match[1]|0;
             const callee = match[2]|0;
-            addToKeyedList(calleesOf, caller, {callee, any:attrs, all:attrs});
+            addToKeyedList(rawCallees, caller, {callee, any:attrs, all:attrs});
         } else if (match = tag == 'R' && /^R (\d+) (\d+)/.exec(line)) {
             assert(false, "R tag is no longer used");
         } else if (match = tag == 'T' && /^T (\d+) (.*)/.exec(line)) {
             const id = match[1]|0;
             let tag = match[2];
-            if (tag == 'GC Call') {
-                addGCFunction(id, "GC", functionAttrs);
-                numGCCalls++;
-            }
+            if (tag == 'GC Call')
+                gcCalls.push(id);
         } else {
             assert(false, "Invalid format in callgraph line: " + line);
         }
     }
 
-    
-    
-    
-    callersOf = merge_repeated_calls(calleesOf);
     assert(ID.jscode == mangledToId["(js-code)"]);
     assert(ID.anyfunc == mangledToId["(any-function)"]);
     assert(ID.nogcfunc == mangledToId["(nogc-function)"]);
     assert(ID.gc == mangledToId["(GC)"]);
 
-    addToKeyedList(calleesOf, mangledToId["(any-function)"], {callee:ID.gc, any:0, all:0});
+    addToKeyedList(rawCallees, mangledToId["(any-function)"], {callee:ID.gc, any:0, all:0});
 
     
     
@@ -217,19 +216,35 @@ function loadCallgraph(file)
     
     for (var [name, attrs] of Object.entries(fieldCallAttrs))
         functionAttrs[name] = [attrs, attrs];
-    functionAttrs[ID.gc] = [0, 0];
-    addGCFunction(ID.gc, "annotation", functionAttrs);
+
+    
+    const gcFunctions = { [ID.gc]: 'internal' };
 
     
     
     
     for (var func of extraGCFunctions()) {
-        addGCFunction(mangledToId[func], "annotation", functionAttrs);
+        addGCFunction(mangledToId[func], "annotation", gcFunctions, functionAttrs);
     }
-    const unknown = mangledToId['(unknown-definition)'];
-    if (unknown) {
-        addGCFunction(unknown, "internal", functionAttrs);
+
+    for (const func of gcCalls)
+        addToKeyedList(rawCallees, func, {callee:ID.gc, any:0, all:0});
+    for (const [caller, indirect, attrs] of indirectCalls) {
+        const id = functionNames.length;
+        functionNames.push(indirect);
+        mangledToId[indirect] = id;
+        addToKeyedList(rawCallees, caller, {callee:id, any:attrs, all:attrs});
+        addToKeyedList(rawCallees, id, {callee:ID.anyfunc, any:0, all:0});
     }
+
+    
+    
+    
+    
+    
+    
+    
+    const {callersOf, calleesOf} = generate_callgraph(rawCallees);
 
     
     
@@ -242,7 +257,7 @@ function loadCallgraph(file)
     
     
     
-    const simple_roots = gather_simple_roots(functionAttrs, callersOf);
+    const simple_roots = gather_simple_roots(functionAttrs, calleesOf, callersOf);
 
     
     propagate_attrs(simple_roots, functionAttrs, calleesOf);
@@ -280,10 +295,10 @@ function loadCallgraph(file)
     
     
     
-    assert(numGCCalls > 0, "No GC functions found!");
+    assert(gcCalls.length > 0, "No GC functions found!");
 
     
-    const worklist = Object.keys(gcFunctions);
+    const worklist = [ID.gc];
 
     
     for (const [name, csuName] of fieldCallCSU) {
@@ -299,11 +314,11 @@ function loadCallgraph(file)
     while (worklist.length) {
         name = worklist.shift();
         assert(name in gcFunctions, "gcFunctions does not contain " + name);
-        if (!(name in callersOf))
+        if (!callersOf.has(name))
             continue;
-        for (const {caller, any, all} of callersOf[name]) {
+        for (const [caller, {any, all}] of callersOf.get(name)) {
             if (!(all & ATTR_GC_SUPPRESSED)) {
-                if (addGCFunction(caller, name, functionAttrs))
+                if (addGCFunction(caller, name, gcFunctions, functionAttrs))
                     worklist.push(caller);
             }
         }
@@ -322,21 +337,24 @@ function loadCallgraph(file)
     }
 
     
-    
-    
-    remap_ids_to_mangled_names();
+    const namedGCFunctions = {};
+    for (const [caller, reason] of Object.entries(gcFunctions)) {
+        namedGCFunctions[functionNames[caller]] = functionNames[reason] || reason;
+    }
+
+    return namedGCFunctions;
 }
 
 
 
 
-function gather_simple_roots(functionAttrs, callersOf) {
+function gather_simple_roots(functionAttrs, calleesOf, callersOf) {
     const roots = [];
-    for (let callee in callersOf)
+    for (const callee of callersOf.keys())
         functionAttrs[callee] = [ATTRS_NONE, ATTRS_UNVISITED];
-    for (let caller in calleesOf) {
+    for (const caller of calleesOf.keys()) {
         functionAttrs[caller] = [ATTRS_NONE, ATTRS_UNVISITED];
-        if (!(caller in callersOf))
+        if (!callersOf.has(caller))
             roots.push([caller, ATTRS_NONE, 'root']);
     }
 
@@ -362,7 +380,7 @@ function propagate_attrs(roots, functionAttrs, calleesOf) {
             
             
             functionAttrs[caller] = [new_any, new_all];
-            for (const {callee, any, all} of (calleesOf[caller] || []))
+            for (const [callee, {any, all}] of (calleesOf.get(caller) || new Map))
                 worklist[top++] = [callee, all | edge_attrs, caller];
         }
     }
@@ -389,7 +407,8 @@ function gather_recursive_roots(functionAttrs, calleesOf, callersOf) {
 
         
         
-        assert(callersOf[func].length > 0);
+        assert(callersOf.has(func));
+        assert(callersOf.get(func).size > 0);
 
         if (seen.has(func))
             continue;
@@ -397,7 +416,9 @@ function gather_recursive_roots(functionAttrs, calleesOf, callersOf) {
         const work = [func];
         while (work.length > 0) {
             const f = work.pop();
-            for (const callee of (calleesOf[f] || []).map(o => o.callee)) {
+            if (!calleesOf.has(f)) continue;
+            for (const callee of calleesOf.get(f).keys()) {
+                if (!functionAttrs[callee]) debugger;
                 if (!seen.has(callee) &&
                     callee != func &&
                     functionAttrs[callee][1] == ATTRS_UNVISITED)
@@ -410,7 +431,7 @@ function gather_recursive_roots(functionAttrs, calleesOf, callersOf) {
 
         assert(!seen.has(func));
         seen.add(func);
-        if (callersOf[func].findIndex(o => !seen.has(o.caller)) == -1) {
+        if ([...callersOf.get(func).keys()].findIndex(f => !seen.has(f)) == -1) {
             
             
             roots.push([func, ATTRS_NONE, 'recursive-root']);
@@ -418,11 +439,21 @@ function gather_recursive_roots(functionAttrs, calleesOf, callersOf) {
     }
 
     return roots;
-}
 
-function remap_ids_to_mangled_names() {
-    var tmp = gcFunctions;
-    gcFunctions = {};
-    for (const [caller, reason] of Object.entries(tmp))
-        gcFunctions[functionNames[caller]] = functionNames[reason] || reason;
+    tmp = calleesOf;
+    calleesOf = {};
+    for (const [callerId, callees] of Object.entries(calleesOf)) {
+        const caller = functionNames[callerId];
+        for (const {calleeId, limits} of callees)
+            calleesOf[caller][functionNames[calleeId]] = limits;
+    }
+
+    tmp = callersOf;
+    callersOf = {};
+    for (const [calleeId, callers] of Object.entries(callersOf)) {
+        const callee = functionNames[calleeId];
+        callersOf[callee] = {};
+        for (const {callerId, limits} of callers)
+            callersOf[callee][functionNames[caller]] = limits;
+    }
 }
