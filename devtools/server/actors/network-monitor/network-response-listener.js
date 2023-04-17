@@ -46,7 +46,10 @@ loader.lazyGetter(
 
 
 
-function NetworkResponseListener(owner, httpActivity) {
+
+
+
+function NetworkResponseListener(owner, httpActivity, decodedCertificateCache) {
   this.owner = owner;
   this.receivedData = "";
   this.httpActivity = httpActivity;
@@ -58,6 +61,7 @@ function NetworkResponseListener(owner, httpActivity) {
   const channel = this.httpActivity.channel;
   this._wrappedNotificationCallbacks = channel.notificationCallbacks;
   channel.notificationCallbacks = this;
+  this._decodedCertificateCache = decodedCertificateCache;
 }
 
 exports.NetworkResponseListener = NetworkResponseListener;
@@ -116,6 +120,12 @@ NetworkResponseListener.prototype = {
 
 
   _wrappedNotificationCallbacks: null,
+
+  
+
+
+
+  _decodedCertificateCache: null,
 
   
 
@@ -330,7 +340,8 @@ NetworkResponseListener.prototype = {
     }
     const info = await NetworkHelper.parseSecurityInfo(
       secinfo,
-      this.httpActivity
+      this.httpActivity,
+      this._decodedCertificateCache
     );
     let isRacing = false;
     try {

@@ -190,6 +190,9 @@ function NetworkObserver(filters, owner) {
 
   this._throttleData = null;
   this._throttler = null;
+  
+  
+  this._decodedCertificateCache = new Map();
 }
 
 exports.NetworkObserver = NetworkObserver;
@@ -299,6 +302,8 @@ NetworkObserver.prototype = {
     }
     return this._throttler;
   },
+
+  _decodedCertificateCache: null,
 
   _serviceWorkerRequest: function(subject, topic, data) {
     const channel = subject.QueryInterface(Ci.nsIHttpChannel);
@@ -953,7 +958,11 @@ NetworkObserver.prototype = {
     sink.init(false, false, this.responsePipeSegmentSize, PR_UINT32_MAX, null);
 
     
-    const newListener = new NetworkResponseListener(this, httpActivity);
+    const newListener = new NetworkResponseListener(
+      this,
+      httpActivity,
+      this._decodedCertificateCache
+    );
 
     
     newListener.inputStream = sink.inputStream;
@@ -1522,6 +1531,7 @@ NetworkObserver.prototype = {
     this.owner = null;
     this.filters = null;
     this._throttler = null;
+    this._decodedCertificateCache.clear();
   },
 };
 

@@ -578,7 +578,14 @@ var NetworkHelper = {
 
 
 
-  parseSecurityInfo: async function(securityInfo, httpActivity) {
+
+
+
+  parseSecurityInfo: async function(
+    securityInfo,
+    httpActivity,
+    decodedCertificateCache
+  ) {
     const info = {
       state: "insecure",
     };
@@ -672,7 +679,10 @@ var NetworkHelper = {
       );
 
       
-      info.cert = await this.parseCertificateInfo(securityInfo.serverCert);
+      info.cert = await this.parseCertificateInfo(
+        securityInfo.serverCert,
+        decodedCertificateCache
+      );
 
       
       info.certificateTransparency = securityInfo.certificateTransparencyStatus;
@@ -732,7 +742,10 @@ var NetworkHelper = {
 
 
 
-  parseCertificateInfo: async function(cert) {
+
+
+
+  parseCertificateInfo: async function(cert, decodedCertificateCache) {
     function getDNComponent(dn, componentType) {
       for (const [type, value] of dn.entries) {
         if (type == componentType) {
@@ -744,9 +757,14 @@ var NetworkHelper = {
 
     const info = {};
     if (cert) {
-      const parsedCert = await certDecoder.parse(
-        certDecoder.pemToDER(cert.getBase64DERString())
-      );
+      const certHash = cert.sha256Fingerprint;
+      let parsedCert = decodedCertificateCache.get(certHash);
+      if (!parsedCert) {
+        parsedCert = await certDecoder.parse(
+          certDecoder.pemToDER(cert.getBase64DERString())
+        );
+        decodedCertificateCache.set(certHash, parsedCert);
+      }
       info.subject = {
         commonName: getDNComponent(parsedCert.subject, "Common Name"),
         organization: getDNComponent(parsedCert.subject, "Organization"),
