@@ -6,6 +6,7 @@
 
 #include "jit/arm64/MacroAssembler-arm64.h"
 
+#include "mozilla/MathAlgorithms.h"
 #include "mozilla/Maybe.h"
 
 #include "jsmath.h"
@@ -401,12 +402,16 @@ void MacroAssemblerCompat::wasmLoadImpl(const wasm::MemoryAccessDesc& access,
 void MacroAssemblerCompat::wasmLoadImpl(const wasm::MemoryAccessDesc& access,
                                         MemOperand srcAddr, AnyRegister outany,
                                         Register64 out64) {
-  auto instructionsExpected = 1;
+  
+  
+  
+  int32_t instructionsExpected = 1;
+
+  
+  
   if (access.isSplatSimd128Load() || access.isWidenSimd128Load()) {
     MOZ_ASSERT(access.type() == Scalar::Float64);
-    
-    
-    instructionsExpected = 2;
+    instructionsExpected++;
   }
 
   asMasm().memoryBarrierBefore(access.sync());
@@ -415,8 +420,6 @@ void MacroAssemblerCompat::wasmLoadImpl(const wasm::MemoryAccessDesc& access,
     
     
     
-    
-
     AutoForbidPoolsAndNops afp(this, instructionsExpected);
 
     append(access, asMasm().currentOffset());
@@ -501,6 +504,44 @@ void MacroAssemblerCompat::wasmLoadImpl(const wasm::MemoryAccessDesc& access,
   asMasm().memoryBarrierAfter(access.sync());
 }
 
+
+
+
+
+static bool IsLSImmediateOffset(uint64_t address, size_t accessByteSize) {
+  
+  if (address > INT64_MAX) {
+    return false;
+  }
+
+  
+  
+  unsigned logAccessSize = mozilla::CountTrailingZeroes32(accessByteSize);
+  return (MacroAssemblerCompat::IsImmLSUnscaled(int64_t(address)) ||
+          MacroAssemblerCompat::IsImmLSScaled(int64_t(address), logAccessSize));
+}
+
+void MacroAssemblerCompat::wasmLoadAbsolute(
+    const wasm::MemoryAccessDesc& access, Register memoryBase, uint64_t address,
+    AnyRegister output, Register64 out64) {
+  if (!IsLSImmediateOffset(address, access.byteSize())) {
+    
+    
+    
+    
+    
+    
+    vixl::UseScratchRegisterScope temps(this);
+    ARMRegister scratch = temps.AcquireX();
+    Mov(scratch, address);
+    MemOperand srcAddr(X(memoryBase), scratch);
+    wasmLoadImpl(access, srcAddr, output, out64);
+  } else {
+    MemOperand srcAddr(X(memoryBase), address);
+    wasmLoadImpl(access, srcAddr, output, out64);
+  }
+}
+
 void MacroAssemblerCompat::wasmStoreImpl(const wasm::MemoryAccessDesc& access,
                                          AnyRegister valany, Register64 val64,
                                          Register memoryBase_, Register ptr_) {
@@ -570,6 +611,24 @@ void MacroAssemblerCompat::wasmStoreImpl(const wasm::MemoryAccessDesc& access,
   }
 
   asMasm().memoryBarrierAfter(access.sync());
+}
+
+void MacroAssemblerCompat::wasmStoreAbsolute(
+    const wasm::MemoryAccessDesc& access, AnyRegister value, Register64 value64,
+    Register memoryBase, uint64_t address) {
+  
+  unsigned logAccessSize = mozilla::CountTrailingZeroes32(access.byteSize());
+  if (address > INT64_MAX || !(IsImmLSScaled(int64_t(address), logAccessSize) ||
+                               IsImmLSUnscaled(int64_t(address)))) {
+    vixl::UseScratchRegisterScope temps(this);
+    ARMRegister scratch = temps.AcquireX();
+    Mov(scratch, address);
+    MemOperand destAddr(X(memoryBase), scratch);
+    wasmStoreImpl(access, destAddr, value, value64);
+  } else {
+    MemOperand destAddr(X(memoryBase), address);
+    wasmStoreImpl(access, destAddr, value, value64);
+  }
 }
 
 void MacroAssemblerCompat::compareSimd128Int(Assembler::Condition cond,
