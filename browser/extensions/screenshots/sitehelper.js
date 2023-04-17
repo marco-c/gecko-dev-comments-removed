@@ -9,15 +9,13 @@
 "use strict";
 
 this.sitehelper = (function() {
-
   
   
   const ContentXMLHttpRequest = content.XMLHttpRequest;
 
-  catcher.registerHandler((errorObj) => {
+  catcher.registerHandler(errorObj => {
     callBackground("reportError", errorObj);
   });
-
 
   const capabilities = {};
   function registerListener(name, func) {
@@ -31,7 +29,7 @@ this.sitehelper = (function() {
       
       detail = JSON.stringify(detail);
     }
-    document.dispatchEvent(new CustomEvent(name, {detail}));
+    document.dispatchEvent(new CustomEvent(name, { detail }));
   }
 
   
@@ -43,7 +41,10 @@ this.sitehelper = (function() {
 
     
     
-    if (Object.toString.apply(ContentXMLHttpRequest) !== "function XMLHttpRequest() {\n    [native code]\n}") {
+    if (
+      Object.toString.apply(ContentXMLHttpRequest) !==
+      "function XMLHttpRequest() {\n    [native code]\n}"
+    ) {
       console.warn("Insecure copy of XMLHttpRequest");
       return;
     }
@@ -55,40 +56,66 @@ this.sitehelper = (function() {
     req.send("");
     req.onload = () => {
       if (req.status !== 200) {
-        console.warn("Attempt to set Screenshots cookie via /api/set-login-cookie failed:", req.status, req.statusText, req.responseText);
+        console.warn(
+          "Attempt to set Screenshots cookie via /api/set-login-cookie failed:",
+          req.status,
+          req.statusText,
+          req.responseText
+        );
       }
     };
   }
 
-  registerListener("delete-everything", catcher.watchFunction((event) => {
-    
-  }, false));
+  registerListener(
+    "delete-everything",
+    catcher.watchFunction(event => {
+      
+    }, false)
+  );
 
-  registerListener("request-login", catcher.watchFunction((event) => {
-    const shotId = event.detail;
-    catcher.watchPromise(callBackground("getAuthInfo", shotId || null).then((info) => {
-      if (info) {
-        sendBackupCookieRequest(info.authHeaders);
-        sendCustomEvent("login-successful", {deviceId: info.deviceId, accountId: info.accountId, isOwner: info.isOwner, backupCookieRequest: true});
-      }
-    }));
-  }));
+  registerListener(
+    "request-login",
+    catcher.watchFunction(event => {
+      const shotId = event.detail;
+      catcher.watchPromise(
+        callBackground("getAuthInfo", shotId || null).then(info => {
+          if (info) {
+            sendBackupCookieRequest(info.authHeaders);
+            sendCustomEvent("login-successful", {
+              deviceId: info.deviceId,
+              accountId: info.accountId,
+              isOwner: info.isOwner,
+              backupCookieRequest: true,
+            });
+          }
+        })
+      );
+    })
+  );
 
-  registerListener("copy-to-clipboard", catcher.watchFunction(event => {
-    catcher.watchPromise(callBackground("copyShotToClipboard", event.detail));
-  }));
+  registerListener(
+    "copy-to-clipboard",
+    catcher.watchFunction(event => {
+      catcher.watchPromise(callBackground("copyShotToClipboard", event.detail));
+    })
+  );
 
-  registerListener("show-notification", catcher.watchFunction(event => {
-    catcher.watchPromise(callBackground("showNotification", event.detail));
-  }));
+  registerListener(
+    "show-notification",
+    catcher.watchFunction(event => {
+      catcher.watchPromise(callBackground("showNotification", event.detail));
+    })
+  );
 
   
   
-  registerListener("request-addon-present", catcher.watchFunction(() => {
-    sendCustomEvent("addon-present", capabilities);
-  }));
+  registerListener(
+    "request-addon-present",
+    catcher.watchFunction(() => {
+      sendCustomEvent("addon-present", capabilities);
+    })
+  );
 
   sendCustomEvent("addon-present", capabilities);
-
 })();
 null;
