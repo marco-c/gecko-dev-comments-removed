@@ -972,7 +972,7 @@ child:
 
 
     async PrintPreview(PrintData aPrintData,
-                       uint64_t? aSourceOuterWindowID) returns (PrintPreviewResultInfo aInfo);
+                       MaybeDiscardedBrowsingContext aSourceBrowsingContext) returns (PrintPreviewResultInfo aInfo);
 
     
 

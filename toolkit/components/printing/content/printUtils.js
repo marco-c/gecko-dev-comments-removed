@@ -143,12 +143,12 @@ var PrintUtils = {
     }
   },
 
-  createPreviewBrowsers(aBrowsingContext, aDialogBrowser) {
+  createPreviewBrowsers(aBrowsingContext, aDialogBrowser, aPrintFrameOnly) {
     let _createPreviewBrowser = previewType => {
       
       
       let browsingContext =
-        previewType == "selection"
+        previewType == "selection" || aPrintFrameOnly
           ? aBrowsingContext
           : aBrowsingContext.top.embedderElement.browsingContext;
       let browser = gBrowser.createBrowser({
