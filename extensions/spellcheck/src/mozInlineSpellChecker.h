@@ -201,7 +201,7 @@ class mozInlineSpellChecker final : public nsIInlineSpellChecker,
   
   bool mIsListeningToEditSubActions;
 
-  class SpellCheckerTimeSlice;
+  class SpellCheckerSlice;
 
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
