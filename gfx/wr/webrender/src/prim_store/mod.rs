@@ -1114,6 +1114,12 @@ impl PrimitiveInstance {
     
     pub fn reset(&mut self) {
         self.vis.reset();
+
+        if self.is_chased() {
+            #[cfg(debug_assertions)] 
+            println!("\tpreparing {:?}", self.id);
+            println!("\t{:?}", self.kind);
+        }
     }
 
     pub fn clear_visibility(&mut self) {
@@ -1428,15 +1434,6 @@ impl PrimitiveStore {
         use crate::print_tree::PrintTree;
         let mut pt = PrintTree::new("picture tree");
         self.pictures[root.0].print(&self.pictures, root, &mut pt);
-    }
-
-    
-    pub fn prim_count(&self) -> usize {
-        let mut prim_count = 0;
-        for pic in &self.pictures {
-            prim_count += pic.prim_list.prim_instances.len();
-        }
-        prim_count
     }
 }
 
