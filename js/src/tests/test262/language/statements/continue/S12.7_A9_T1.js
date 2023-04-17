@@ -26,7 +26,7 @@ FOR : for(;;){
 
 
 if (x!==10) {
-	$ERROR('#1: Continue inside of try-catch nested in loop is allowed');
+	throw new Test262Error('#1: Continue inside of try-catch nested in loop is allowed');
 }
 
 

@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+class C extends class {} {
+  constructor() {
+    super();
+
+    try {
+      return 0;
+    } catch(e) {
+      return;
+    }
+  }
+}
+
+assert.throws(TypeError, function() {
+  new C();
+});
+
+reportCompare(0, 0);

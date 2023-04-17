@@ -14,7 +14,7 @@
 
 
 if (__func() !== "both") {
-	$ERROR('#1: __func() === "both". Actual:  __func() ==='+ __func()  );
+	throw new Test262Error('#1: __func() === "both". Actual:  __func() ==='+ __func()  );
 }
 
 

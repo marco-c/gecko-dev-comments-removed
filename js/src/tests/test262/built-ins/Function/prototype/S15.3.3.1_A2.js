@@ -9,7 +9,7 @@
 
 
 if (Function.propertyIsEnumerable('prototype')) {
-  $ERROR('#1: the Function.prototype property has the attributes DontEnum');
+  throw new Test262Error('#1: the Function.prototype property has the attributes DontEnum');
 }
 
 
@@ -20,7 +20,7 @@ for (var p in Function) {
 }
 
 if (count !== 0) {
-  $ERROR('#2: the Function.prototype property has the attributes DontEnum');
+  throw new Test262Error('#2: the Function.prototype property has the attributes DontEnum');
 }
 
 reportCompare(0, 0);

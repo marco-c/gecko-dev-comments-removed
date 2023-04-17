@@ -10,7 +10,7 @@
 
 
 if ((typeof Promise.resolve) !== "function") {
-  $ERROR("Expected Promise.resolve to be a function");
+  throw new Test262Error("Expected Promise.resolve to be a function");
 }
 
 reportCompare(0, 0);

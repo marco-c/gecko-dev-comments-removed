@@ -16,7 +16,7 @@
 
 
 if (delete(__variable)) {
-	$ERROR('#1: delete(__variable)===false');
+	throw new Test262Error('#1: delete(__variable)===false');
 }
 
 
@@ -24,7 +24,7 @@ if (delete(__variable)) {
 
 
 if (delete(this["__variable"])) {
-	$ERROR('#2: delete(this["__variable"])===false');
+	throw new Test262Error('#2: delete(this["__variable"])===false');
 }
 
 
@@ -36,7 +36,7 @@ var __variable = "defined";
 
 
 if (delete(__variable) | delete(this["__variable"])) {
-	$ERROR('#3: (delete(__variable) | delete(this["__variable"]))===false' );
+	throw new Test262Error('#3: (delete(__variable) | delete(this["__variable"]))===false' );
 }
 
 
@@ -44,7 +44,7 @@ if (delete(__variable) | delete(this["__variable"])) {
 
 
 if ((__variable !== "defined")|(this["__variable"] !=="defined")) {
-	$ERROR('#4: __variable === "defined" and this["__variable"] ==="defined"');
+	throw new Test262Error('#4: __variable === "defined" and this["__variable"] ==="defined"');
 }
 
 

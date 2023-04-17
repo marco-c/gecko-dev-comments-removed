@@ -9,17 +9,17 @@
 
 
 if (parseFloat("Infinity") !== Number.POSITIVE_INFINITY) {
-  $ERROR('#1: parseFloat("Infinity") === Number.POSITIVE_INFINITY. Actual: ' + (parseFloat("Infinity")));
+  throw new Test262Error('#1: parseFloat("Infinity") === Number.POSITIVE_INFINITY. Actual: ' + (parseFloat("Infinity")));
 }
 
 
 if (parseFloat("+Infinity") !== Number.POSITIVE_INFINITY) {
-  $ERROR('#2: parseFloat("+Infinity") === Number.POSITIVE_INFINITY. Actual: ' + (parseFloat("+Infinity")));
+  throw new Test262Error('#2: parseFloat("+Infinity") === Number.POSITIVE_INFINITY. Actual: ' + (parseFloat("+Infinity")));
 }
 
 
 if (parseFloat("-Infinity") !== Number.NEGATIVE_INFINITY) {
-  $ERROR('#3: parseFloat("-Infinity") === Number.NEGATIVE_INFINITY. Actual: ' + (parseFloat("-Infinity")));
+  throw new Test262Error('#3: parseFloat("-Infinity") === Number.NEGATIVE_INFINITY. Actual: ' + (parseFloat("-Infinity")));
 }
 
 reportCompare(0, 0);

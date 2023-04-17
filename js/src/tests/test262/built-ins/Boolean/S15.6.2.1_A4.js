@@ -15,7 +15,7 @@ var obj = new Boolean();
 
 
 if (obj.toString() !== "[object Boolean]") {
-  $ERROR('#1: The [[Class]] property of the newly constructed object is set to "Boolean"');
+  throw new Test262Error('#1: The [[Class]] property of the newly constructed object is set to "Boolean"');
 }
 
 reportCompare(0, 0);

@@ -28,7 +28,7 @@ __obj = new __func(__FOO, __BAR);
 
 
 if (__obj.foo!==__FOO) {
-	$ERROR('#1: __obj.foo === __FOO. Actual: __obj.foo==='+__obj.foo);
+	throw new Test262Error('#1: __obj.foo === __FOO. Actual: __obj.foo==='+__obj.foo);
 }
 
 
@@ -36,7 +36,7 @@ if (__obj.foo!==__FOO) {
 
 
 if (__obj.bar!==undefined) {
-	$ERROR('#2: __obj.bar === undefined. Actual: __obj.bar==='+__obj.bar);
+	throw new Test262Error('#2: __obj.bar === undefined. Actual: __obj.bar==='+__obj.bar);
 }
 
 

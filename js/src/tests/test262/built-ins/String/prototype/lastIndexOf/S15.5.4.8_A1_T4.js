@@ -13,7 +13,7 @@
 
 
 if ("".lastIndexOf() !== -1) {
-  $ERROR('#1: "".lastIndexOf() === -1. Actual: ' + ("".lastIndexOf()));
+  throw new Test262Error('#1: "".lastIndexOf() === -1. Actual: ' + ("".lastIndexOf()));
 }
 
 

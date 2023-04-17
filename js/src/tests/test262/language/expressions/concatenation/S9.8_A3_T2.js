@@ -11,12 +11,12 @@
 
 
 if (false + "" !== "false") {
-  $ERROR('#1: false + "" === "false". Actual: ' + (false + ""));
+  throw new Test262Error('#1: false + "" === "false". Actual: ' + (false + ""));
 }
 
 
 if (true + "" !== "true") {
-  $ERROR('#2: true + "" === "true". Actual: ' + (true + ""));	
+  throw new Test262Error('#2: true + "" === "true". Actual: ' + (true + ""));	
 }
 
 reportCompare(0, 0);

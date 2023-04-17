@@ -9,33 +9,33 @@
 
 
 if (("x" > "x") !== false) {
-  $ERROR('#1: ("x" > "x") === false');
+  throw new Test262Error('#1: ("x" > "x") === false');
 }
 
 
 if (("" > "x") !== false) {
-  $ERROR('#2: ("" > "x") === false');
+  throw new Test262Error('#2: ("" > "x") === false');
 }
 
 
 if (("ab" > "abcd") !== false) {
-  $ERROR('#3: ("ab" > abcd") === false');
+  throw new Test262Error('#3: ("ab" > abcd") === false');
 }
 
 
 if (("abcd" > "abc\u0064") !== false) {
-  $ERROR('#4: ("abcd" > abc\\u0064") === false');
+  throw new Test262Error('#4: ("abcd" > abc\\u0064") === false');
 }
 
 
 if (("x" > "x" + "y") !== false) {
-  $ERROR('#5: ("x" > "x" + "y") === false');
+  throw new Test262Error('#5: ("x" > "x" + "y") === false');
 }
 
 
 var x = "x";
 if ((x > x + "y") !== false) {
-  $ERROR('#6: var x = "x"; (x > x + "y") === false');
+  throw new Test262Error('#6: var x = "x"; (x > x + "y") === false');
 }
 
 reportCompare(0, 0);

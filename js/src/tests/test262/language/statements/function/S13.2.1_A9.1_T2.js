@@ -20,7 +20,7 @@ var __func = function(){
 
 
 if (__func() !== undefined) {
-	$ERROR('#1: __func() === undefined. Actual: __func() ==='+__func());
+	throw new Test262Error('#1: __func() === undefined. Actual: __func() ==='+__func());
 };
 
 
@@ -28,7 +28,7 @@ if (__func() !== undefined) {
 
 
 if (!x) {
-	$ERROR('#2: x === true. Actual: x === '+x);
+	throw new Test262Error('#2: x === true. Actual: x === '+x);
 }
 
 

@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+var __string = {toString:function(){return "abcdefghi";}};
+var __re = /a[a-z]{2,4}?/;
+
+
+if (__re.test(__string) !== (__re.exec(__string) !== null)) {
+	throw new Test262Error('#0: var __string = {toString:function(){return "abcdefghi";}}; __re = /a[a-z]{2,4}?/; __re.test(__string) === (__re.exec(__string) !== null)');
+}
+
+reportCompare(0, 0);

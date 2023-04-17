@@ -15,52 +15,52 @@ function dynaString(s1, s2) {
 
 
 if (Number(dynaString("-", "0")) !== -Number("0")) {
-  $ERROR('#1: Number("-"+"0") === -Number("0")');
+  throw new Test262Error('#1: Number("-"+"0") === -Number("0")');
 } else {
   
   if (1 / Number(dynaString("-", "0")) !== -1 / Number("0")) {
-    $ERROR('#2: 1/Number("-"+"0") === -1/Number("0")');
+    throw new Test262Error('#2: 1/Number("-"+"0") === -1/Number("0")');
   }
 }
 
 
 if (Number(dynaString("-Infi", "nity")) !== -Number("Infinity")) {
-  $ERROR('#3: Number("-Infi"+"nity") === -Number("Infinity")');
+  throw new Test262Error('#3: Number("-Infi"+"nity") === -Number("Infinity")');
 }
 
 
 if (Number(dynaString("-12345", "67890")) !== -Number("1234567890")) {
-  $ERROR('#4: Number("-12345"+"67890") === -Number("1234567890")');
+  throw new Test262Error('#4: Number("-12345"+"67890") === -Number("1234567890")');
 }
 
 
 if (Number(dynaString("-1234.", "5678")) !== -Number("1234.5678")) {
-  $ERROR('#5: Number("-1234."+"5678") === -Number("1234.5678")');
+  throw new Test262Error('#5: Number("-1234."+"5678") === -Number("1234.5678")');
 }
 
 
 if (Number(dynaString("-1234.", "5678e90")) !== -Number("1234.5678e90")) {
-  $ERROR('#6: Number("-1234."+"5678e90") === -Number("1234.5678e90")');
+  throw new Test262Error('#6: Number("-1234."+"5678e90") === -Number("1234.5678e90")');
 }
 
 
 if (Number(dynaString("-1234.", "5678E90")) !== -Number("1234.5678E90")) {
-  $ERROR('#6: Number("-1234."+"5678E90") === -Number("1234.5678E90")');
+  throw new Test262Error('#6: Number("-1234."+"5678E90") === -Number("1234.5678E90")');
 }
 
 
 if (Number(dynaString("-1234.", "5678e-90")) !== -Number("1234.5678e-90")) {
-  $ERROR('#6: Number("-1234."+"5678e-90") === -Number("1234.5678e-90")');
+  throw new Test262Error('#6: Number("-1234."+"5678e-90") === -Number("1234.5678e-90")');
 }
 
 
 if (Number(dynaString("-1234.", "5678E-90")) !== -Number("1234.5678E-90")) {
-  $ERROR('#6: Number("-1234."+"5678E-90") === -Number("1234.5678E-90")');
+  throw new Test262Error('#6: Number("-1234."+"5678E-90") === -Number("1234.5678E-90")');
 }
 
 
 if (Number(dynaString("-Infi", "nity")) !== Number.NEGATIVE_INFINITY) {
-  $ERROR('#3: Number("-Infi"+"nity") === Number.NEGATIVE_INFINITY');
+  throw new Test262Error('#3: Number("-Infi"+"nity") === Number.NEGATIVE_INFINITY');
 }
 
 reportCompare(0, 0);

@@ -23,7 +23,7 @@
     value: 20
   });
   if (a !== 10) {
-    $ERROR('Expected "a === 10", actually ' + a);
+    throw new Test262Error('Expected "a === 10", actually ' + a);
   }
 
   verifyEqualTo(arguments, "0", 20);

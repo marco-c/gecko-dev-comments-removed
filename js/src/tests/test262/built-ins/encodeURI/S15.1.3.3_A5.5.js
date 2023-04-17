@@ -9,7 +9,7 @@
 
 
 if (this.propertyIsEnumerable('encodeURI') !== false) {
-  $ERROR('#1: this.propertyIsEnumerable(\'encodeURI\') === false. Actual: ' + (this.propertyIsEnumerable('encodeURI')));
+  throw new Test262Error('#1: this.propertyIsEnumerable(\'encodeURI\') === false. Actual: ' + (this.propertyIsEnumerable('encodeURI')));
 }
 
 
@@ -21,7 +21,7 @@ for (var p in this) {
 }
 
 if (result !== true) {
-  $ERROR('#2: result = true; for (p in this) { if (p === "encodeURI") result = false; }  result === true;');
+  throw new Test262Error('#2: result = true; for (p in this) { if (p === "encodeURI") result = false; }  result === true;');
 }
 
 reportCompare(0, 0);

@@ -9,19 +9,19 @@
 
 
 if (typeof Object.prototype.valueOf !== "function") {
-  $ERROR('#1: valueOf method defined');
+  throw new Test262Error('#1: valueOf method defined');
 }
 
 var obj = new Object(true);
 
 
 if (typeof obj.valueOf !== "function") {
-  $ERROR('#2: valueOf method accessed');
+  throw new Test262Error('#2: valueOf method accessed');
 }
 
 
 if (obj.valueOf() !== true) {
-  $ERROR('#3: The valueOf method returns its this value');
+  throw new Test262Error('#3: The valueOf method returns its this value');
 }
 
 reportCompare(0, 0);

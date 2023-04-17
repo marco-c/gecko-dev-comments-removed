@@ -15,7 +15,7 @@ while({}){
 
 
 if (__in__do !== 1) {
-	$ERROR('#1: "{}" in while expression evaluates to true');
+	throw new Test262Error('#1: "{}" in while expression evaluates to true');
 }
 
 

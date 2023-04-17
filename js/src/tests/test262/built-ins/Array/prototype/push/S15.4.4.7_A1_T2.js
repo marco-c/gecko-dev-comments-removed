@@ -13,49 +13,49 @@
 
 var x = [];
 if (x.length !== 0) {
-  $ERROR('#1: x = []; x.length === 0. Actual: ' + (x.length));
+  throw new Test262Error('#1: x = []; x.length === 0. Actual: ' + (x.length));
 }
 
 
 x[0] = 0;
 var push = x.push(true, Number.POSITIVE_INFINITY, "NaN", "1", -1);
 if (push !== 6) {
-  $ERROR('#2: x = []; x[0] = 0; x.push(true, Number.POSITIVE_INFINITY, "NaN", "1", -1) === 6. Actual: ' + (push));
+  throw new Test262Error('#2: x = []; x[0] = 0; x.push(true, Number.POSITIVE_INFINITY, "NaN", "1", -1) === 6. Actual: ' + (push));
 }
 
 
 if (x[0] !== 0) {
-  $ERROR('#3: x = []; x[0] = 0; x.push(true, Number.POSITIVE_INFINITY, "NaN", "1", -1); x[0] === 0. Actual: ' + (x[0]));
+  throw new Test262Error('#3: x = []; x[0] = 0; x.push(true, Number.POSITIVE_INFINITY, "NaN", "1", -1); x[0] === 0. Actual: ' + (x[0]));
 }
 
 
 if (x[1] !== true) {
-  $ERROR('#4: x = []; x[0] = 0; x.push(true, Number.POSITIVE_INFINITY, "NaN", "1", -1); x[1] === true. Actual: ' + (x[1]));
+  throw new Test262Error('#4: x = []; x[0] = 0; x.push(true, Number.POSITIVE_INFINITY, "NaN", "1", -1); x[1] === true. Actual: ' + (x[1]));
 }
 
 
 if (x[2] !== Number.POSITIVE_INFINITY) {
-  $ERROR('#5: x = []; x[0] = 0; x.push(true, Number.POSITIVE_INFINITY, "NaN", "1", -1); x[2] === Number.POSITIVE_INFINITY. Actual: ' + (x[2]));
+  throw new Test262Error('#5: x = []; x[0] = 0; x.push(true, Number.POSITIVE_INFINITY, "NaN", "1", -1); x[2] === Number.POSITIVE_INFINITY. Actual: ' + (x[2]));
 }
 
 
 if (x[3] !== "NaN") {
-  $ERROR('#6: x = []; x[0] = 0; x.push(true, Number.POSITIVE_INFINITY, "NaN", "1", -1); x[3] === "NaN". Actual: ' + (x[3]));
+  throw new Test262Error('#6: x = []; x[0] = 0; x.push(true, Number.POSITIVE_INFINITY, "NaN", "1", -1); x[3] === "NaN". Actual: ' + (x[3]));
 }
 
 
 if (x[4] !== "1") {
-  $ERROR('#7: x = []; x[0] = 0; x.push(true, Number.POSITIVE_INFINITY, "NaN", "1", -1); x[4] === "1". Actual: ' + (x[4]));
+  throw new Test262Error('#7: x = []; x[0] = 0; x.push(true, Number.POSITIVE_INFINITY, "NaN", "1", -1); x[4] === "1". Actual: ' + (x[4]));
 }
 
 
 if (x[5] !== -1) {
-  $ERROR('#8: x = []; x[0] = 0; x.push(true, Number.POSITIVE_INFINITY, "NaN", "1", -1); x[5] === -1. Actual: ' + (x[5]));
+  throw new Test262Error('#8: x = []; x[0] = 0; x.push(true, Number.POSITIVE_INFINITY, "NaN", "1", -1); x[5] === -1. Actual: ' + (x[5]));
 }
 
 
 if (x.length !== 6) {
-  $ERROR('#9: x = []; x[0] = 0; x.push(true, Number.POSITIVE_INFINITY, "NaN", "1", -1); x.length === 6. Actual: ' + (x.length));
+  throw new Test262Error('#9: x = []; x[0] = 0; x.push(true, Number.POSITIVE_INFINITY, "NaN", "1", -1); x.length === 6. Actual: ' + (x.length));
 }
 
 reportCompare(0, 0);

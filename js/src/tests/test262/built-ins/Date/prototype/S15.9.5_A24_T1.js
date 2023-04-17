@@ -8,7 +8,7 @@
 
 
 if (Date.prototype.hasOwnProperty("getMilliseconds") !== true) {
-  $ERROR('#1: The Date.prototype has the property "getMilliseconds"');
+  throw new Test262Error('#1: The Date.prototype has the property "getMilliseconds"');
 }
 
 reportCompare(0, 0);

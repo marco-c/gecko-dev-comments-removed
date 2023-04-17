@@ -13,12 +13,12 @@ var f = Function("return arguments[0];");
 
 
 if (!(f instanceof Function)) {
-  $ERROR('#1: f instanceof Function');
+  throw new Test262Error('#1: f instanceof Function');
 }
 
 
 if (f(1) !== 1) {
-  $ERROR('#2: f(1) !== 1');
+  throw new Test262Error('#2: f(1) !== 1');
 }
 
 var g = new Function("return arguments[0];");
@@ -26,17 +26,17 @@ var g = new Function("return arguments[0];");
 
 
 if (!(g instanceof Function)) {
-  $ERROR('#3: g instanceof Function');
+  throw new Test262Error('#3: g instanceof Function');
 }
 
 
 if (g("A") !== "A") {
-  $ERROR('#4: g("A") !== "A"');
+  throw new Test262Error('#4: g("A") !== "A"');
 }
 
 
 if (g("A") !== f("A")) {
-  $ERROR('#5: g("A") !== f("A")');
+  throw new Test262Error('#5: g("A") !== f("A")');
 }
 
 reportCompare(0, 0);

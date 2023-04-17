@@ -9,17 +9,17 @@
 
 
 if (!(undefined === undefined)) {
-  $ERROR('#1: undefined === undefined');
+  throw new Test262Error('#1: undefined === undefined');
 }
 
 
 if (!(void 0 === undefined)) {
-  $ERROR('#2: void 0 === undefined');
+  throw new Test262Error('#2: void 0 === undefined');
 }
 
 
 if (!(undefined === eval("var x"))) {
-  $ERROR('#3: undefined === eval("var x")');
+  throw new Test262Error('#3: undefined === eval("var x")');
 }
 
 reportCompare(0, 0);

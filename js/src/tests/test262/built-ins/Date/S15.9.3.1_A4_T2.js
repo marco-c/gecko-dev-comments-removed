@@ -29,33 +29,33 @@ var myObj = function(val) {
 
 try {
   var x1 = new Date(new myObj(1), new myObj(2), new myObj(3));
-  $ERROR("#1: The 1st step is calling ToNumber(year)");
+  throw new Test262Error("#1: The 1st step is calling ToNumber(year)");
 }
 catch (e) {
   if (e !== "valueOf-1") {
-    $ERROR("#1: The 1st step is calling ToNumber(year)");
+    throw new Test262Error("#1: The 1st step is calling ToNumber(year)");
   }
 }
 
 
 try {
   var x2 = new Date(1, new myObj(2), new myObj(3));
-  $ERROR("#2: The 2nd step is calling ToNumber(month)");
+  throw new Test262Error("#2: The 2nd step is calling ToNumber(month)");
 }
 catch (e) {
   if (e !== "valueOf-2") {
-    $ERROR("#2: The 2nd step is calling ToNumber(month)");
+    throw new Test262Error("#2: The 2nd step is calling ToNumber(month)");
   }
 }
 
 
 try {
   var x3 = new Date(1, 2, new myObj(3));
-  $ERROR("#3: The 3rd step is calling ToNumber(date)");
+  throw new Test262Error("#3: The 3rd step is calling ToNumber(date)");
 }
 catch (e) {
   if (e !== "valueOf-3") {
-    $ERROR("#3: The 3rd step is calling ToNumber(date)");
+    throw new Test262Error("#3: The 3rd step is calling ToNumber(date)");
   }
 }
 

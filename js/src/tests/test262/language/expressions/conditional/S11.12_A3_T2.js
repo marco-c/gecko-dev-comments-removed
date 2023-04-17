@@ -9,13 +9,13 @@
 
 
 if ((0 ? 0 : 1) !== 1) {
-  $ERROR('#1: (0 ? 0 : 1) === 1');
+  throw new Test262Error('#1: (0 ? 0 : 1) === 1');
 }
 
 
 var z = new Number(1);
 if ((0 ? 1 : z) !== z) {
-  $ERROR('#2: (var y = new Number(1); (0 ? 1 : z) === z');
+  throw new Test262Error('#2: (var y = new Number(1); (0 ? 1 : z) === z');
 }
 
 reportCompare(0, 0);

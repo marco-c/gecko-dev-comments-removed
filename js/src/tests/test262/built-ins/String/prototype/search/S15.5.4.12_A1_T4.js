@@ -11,11 +11,11 @@
 
 
 if ("".search() !== 0) {
-  $ERROR('#1: "".search() === 0. Actual: ' + ("".search()));
+  throw new Test262Error('#1: "".search() === 0. Actual: ' + ("".search()));
 }
 
 if ("--undefined--".search() != 0) {
-  $ERROR('#1: "--undefined--".search() === 0. Actual: ' + ("--undefined--".search()));
+  throw new Test262Error('#1: "--undefined--".search() === 0. Actual: ' + ("--undefined--".search()));
 }
 
 

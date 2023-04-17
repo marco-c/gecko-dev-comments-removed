@@ -13,29 +13,29 @@ var bool = true;
 
 
 if (typeof bool !== 'boolean') {
-  $ERROR('#1: true is NOT a boolean');
+  throw new Test262Error('#1: true is NOT a boolean');
 }
 
 var n_obj = new Object(bool);
 
 
 if (n_obj.constructor !== Boolean) {
-  $ERROR('#2: When the Object constructor is called with Boolean argument return ToObject(boolean)');
+  throw new Test262Error('#2: When the Object constructor is called with Boolean argument return ToObject(boolean)');
 }
 
 
 if (typeof n_obj !== 'object') {
-  $ERROR('#3: When the Object constructor is called with Boolean argument return ToObject(boolean)');
+  throw new Test262Error('#3: When the Object constructor is called with Boolean argument return ToObject(boolean)');
 }
 
 
 if (n_obj != bool) {
-  $ERROR('#4: When the Object constructor is called with Boolean argument return ToObject(boolean)');
+  throw new Test262Error('#4: When the Object constructor is called with Boolean argument return ToObject(boolean)');
 }
 
 
 if (n_obj === bool) {
-  $ERROR('#5: When the Object constructor is called with Boolean argument return ToObject(boolean)');
+  throw new Test262Error('#5: When the Object constructor is called with Boolean argument return ToObject(boolean)');
 }
 
 reportCompare(0, 0);

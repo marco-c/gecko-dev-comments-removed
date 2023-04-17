@@ -13,24 +13,24 @@ var str = '';
 
 
 if (typeof(str) !== 'string') {
-  $ERROR('#1: "" is NOT a String');
+  throw new Test262Error('#1: "" is NOT a String');
 }
 
 var obj = Object(str);
 
 
 if (obj.constructor !== String) {
-  $ERROR('#2: Object("") returns ToObject("")');
+  throw new Test262Error('#2: Object("") returns ToObject("")');
 }
 
 
 if (typeof obj !== "object") {
-  $ERROR('#3: Object("") returns ToObject("")');
+  throw new Test262Error('#3: Object("") returns ToObject("")');
 }
 
 
 if ((obj != "") || (obj === "")) {
-  $ERROR('#4: Object("") returns ToObject("")');
+  throw new Test262Error('#4: Object("") returns ToObject("")');
 }
 
 reportCompare(0, 0);

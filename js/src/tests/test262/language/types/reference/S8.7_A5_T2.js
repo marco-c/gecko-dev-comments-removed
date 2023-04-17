@@ -11,8 +11,8 @@
 
 
 if (typeof(__ref) !== "undefined"){
-    $ERROR('#1: typeof(__ref) === "undefined". Actual: ' + (typeof(__ref)));  
-}; 
+    throw new Test262Error('#1: typeof(__ref) === "undefined". Actual: ' + (typeof(__ref)));
+};
 
 
 
@@ -22,15 +22,15 @@ __ref = obj;
 
 
 if (typeof(__ref) === "undefined"){
-    $ERROR('#2: obj = new Object(); __ref = obj; typeof(__ref) !== "undefined"');
-}; 
+    throw new Test262Error('#2: obj = new Object(); __ref = obj; typeof(__ref) !== "undefined"');
+};
 
 
 
 
 
 if (delete __ref !== true){
-    $ERROR('#3: obj = new Object(); __ref = obj; delete __ref === true. Actual: ' + (delete __ref));
+    throw new Test262Error('#3: obj = new Object(); __ref = obj; delete __ref === true. Actual: ' + (delete __ref));
 };
 
 
@@ -38,7 +38,7 @@ if (delete __ref !== true){
 
 
 if (typeof(__ref) !== "undefined"){
-    $ERROR('#4: obj = new Object(); __ref = obj; delete __ref; typeof(__ref) === "undefined". Actual: ' + (typeof(__ref)));
+    throw new Test262Error('#4: obj = new Object(); __ref = obj; delete __ref; typeof(__ref) === "undefined". Actual: ' + (typeof(__ref)));
 };
 
 
@@ -46,7 +46,7 @@ if (typeof(__ref) !== "undefined"){
 
 
 if (typeof(obj) !== "object"){
-    $ERROR('#5: obj = new Object(); __ref = obj; delete __ref; typeof(obj) === "object". Actual: ' + (typeof(obj)));
+    throw new Test262Error('#5: obj = new Object(); __ref = obj; delete __ref; typeof(obj) === "object". Actual: ' + (typeof(obj)));
 };
 
 

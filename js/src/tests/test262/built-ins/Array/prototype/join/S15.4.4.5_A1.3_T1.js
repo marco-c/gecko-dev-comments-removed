@@ -11,20 +11,20 @@
 var x = [];
 x[0] = undefined;
 if (x.join() !== "") {
-  $ERROR('#1: x = []; x[0] = undefined; x.join() === "". Actual: ' + (x.join()));
+  throw new Test262Error('#1: x = []; x[0] = undefined; x.join() === "". Actual: ' + (x.join()));
 }
 
 
 x = [];
 x[0] = null;
 if (x.join() !== "") {
-  $ERROR('#2: x = []; x[0] = null; x.join() === "". Actual: ' + (x.join()));
+  throw new Test262Error('#2: x = []; x[0] = null; x.join() === "". Actual: ' + (x.join()));
 }
 
 
 x = Array(undefined, 1, null, 3);
 if (x.join() !== ",1,,3") {
-  $ERROR('#3: x = Array(undefined,1,null,3); x.join() === ",1,,3". Actual: ' + (x.join()));
+  throw new Test262Error('#3: x = Array(undefined,1,null,3); x.join() === ",1,,3". Actual: ' + (x.join()));
 }
 
 reportCompare(0, 0);

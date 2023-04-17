@@ -11,17 +11,17 @@
 
 
 if (typeof Object.prototype.toLocaleString !== "function") {
-  $ERROR('#1: toLocaleString method defined');
+  throw new Test262Error('#1: toLocaleString method defined');
 }
 
 
 if (Object.prototype.toLocaleString() !== Object.prototype.toString()) {
-  $ERROR('#1: toLocaleString function returns the result of calling toString()');
+  throw new Test262Error('#1: toLocaleString function returns the result of calling toString()');
 }
 
 
 if ({}.toLocaleString() !== {}.toString()) {
-  $ERROR('#2: toLocaleString function returns the result of calling toString()');
+  throw new Test262Error('#2: toLocaleString function returns the result of calling toString()');
 }
 
 reportCompare(0, 0);

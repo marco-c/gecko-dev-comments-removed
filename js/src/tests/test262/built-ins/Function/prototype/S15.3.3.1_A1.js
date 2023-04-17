@@ -16,16 +16,16 @@ verifyNotWritable(Function, "prototype", null, function() {
 
 
 if (Function.prototype !== obj) {
-  $ERROR('#1: the Function.prototype property has the attributes ReadOnly.');
+  throw new Test262Error('#1: the Function.prototype property has the attributes ReadOnly.');
 }
 
 
 try {
   if (Function.prototype() !== undefined) {
-    $ERROR('#2: the Function.prototype property has the attributes ReadOnly');
+    throw new Test262Error('#2: the Function.prototype property has the attributes ReadOnly');
   }
 } catch (e) {
-  $ERROR('#2.1: the Function.prototype property has the attributes ReadOnly: ' + e);
+  throw new Test262Error('#2.1: the Function.prototype property has the attributes ReadOnly: ' + e);
 }
 
 reportCompare(0, 0);

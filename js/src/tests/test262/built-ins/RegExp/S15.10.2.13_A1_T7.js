@@ -14,7 +14,7 @@ var __executed = /ab[erst]de/.test("abcde");
 
 
 if (__executed) {
-	$ERROR('#1: /ab[erst]de/.test("abcde") === false');
+	throw new Test262Error('#1: /ab[erst]de/.test("abcde") === false');
 }
 
 reportCompare(0, 0);

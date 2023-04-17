@@ -21,23 +21,23 @@ var y = Object(x);
 
 
 if (y.valueOf() !== x.valueOf()) {
-  $ERROR('#1: Object(obj).valueOf() === obj.valueOf(). Actual: ' + (Object(obj).valueOf()));
+  throw new Test262Error('#1: Object(obj).valueOf() === obj.valueOf(). Actual: ' + (Object(obj).valueOf()));
 }
 
 
 if (typeof y !== typeof x) {
-  $ERROR('#2: typeof Object(obj) === typeof obj. Actual: ' + (typeof Object(obj)));
+  throw new Test262Error('#2: typeof Object(obj) === typeof obj. Actual: ' + (typeof Object(obj)));
 }
 
 
 if (y.constructor.prototype !== x.constructor.prototype) {
-  $ERROR('#3: Object(obj).constructor.prototype === obj.constructor.prototype. Actual: ' + (Object(obj).constructor.prototype));
+  throw new Test262Error('#3: Object(obj).constructor.prototype === obj.constructor.prototype. Actual: ' + (Object(obj).constructor.prototype));
 }
 
 
 
 if (y !== x) {
-  $ERROR('#4: Object(obj) === obj');
+  throw new Test262Error('#4: Object(obj) === obj');
 }
 
 reportCompare(0, 0);

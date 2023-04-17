@@ -19,6 +19,7 @@
 
 
 const output = new Intl.Locale('en').collations;
+assert(output.length > 0, 'array has at least one element');
 output.forEach(c => {
   if(['standard', 'search'].includes(c))
     throw new Test262Error();

@@ -9,52 +9,52 @@
 
 
 if (0e1 !== 0) {
-  $ERROR('#0: 0e1 === 0');
+  throw new Test262Error('#0: 0e1 === 0');
 }
 
 
 if (1e1 !== 10) {
-  $ERROR('#1: 1e1 === 10');
+  throw new Test262Error('#1: 1e1 === 10');
 }
 
 
 if (2e1 !== 20) {
-  $ERROR('#2: 2e1 === 20');
+  throw new Test262Error('#2: 2e1 === 20');
 }
 
 
 if (3e1 !== 30) {
-  $ERROR('#3: 3e1 === 30');
+  throw new Test262Error('#3: 3e1 === 30');
 }
 
 
 if (4e1 !== 40) {
-  $ERROR('#4: 4e1 === 40');
+  throw new Test262Error('#4: 4e1 === 40');
 }
 
 
 if (5e1 !== 50) {
-  $ERROR('#5: 5e1 === 50');
+  throw new Test262Error('#5: 5e1 === 50');
 }
 
 
 if (6e1 !== 60) {
-  $ERROR('#6: 6e1 === 60');
+  throw new Test262Error('#6: 6e1 === 60');
 }
 
 
 if (7e1 !== 70) {
-  $ERROR('#7: 7e1 === 70');
+  throw new Test262Error('#7: 7e1 === 70');
 }
 
 
 if (8e1 !== 80) {
-  $ERROR('#8: 8e1 === 80');
+  throw new Test262Error('#8: 8e1 === 80');
 }
 
 
 if (9e1 !== 90) {
-  $ERROR('#9: 9e1 === 90');
+  throw new Test262Error('#9: 9e1 === 90');
 }
 
 reportCompare(0, 0);

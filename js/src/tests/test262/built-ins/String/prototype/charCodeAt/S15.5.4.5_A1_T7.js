@@ -11,7 +11,7 @@
 
 
 if (String("lego").charCodeAt(undefined) !== 0x6C) {
-  $ERROR('#1: String("lego").charCodeAt(undefined) === 0x6C. Actual: String("lego").charCodeAt(undefined) ===' + String("lego").charCodeAt(undefined));
+  throw new Test262Error('#1: String("lego").charCodeAt(undefined) === 0x6C. Actual: String("lego").charCodeAt(undefined) ===' + String("lego").charCodeAt(undefined));
 }
 
 

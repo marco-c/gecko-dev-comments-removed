@@ -14,7 +14,7 @@
 
 
 if (__func() !== "unicode") {
-	$ERROR('#1: __func() === "unicode". Actual:  __func() ==='+ __func()  );
+	throw new Test262Error('#1: __func() === "unicode". Actual:  __func() ==='+ __func()  );
 }
 
 

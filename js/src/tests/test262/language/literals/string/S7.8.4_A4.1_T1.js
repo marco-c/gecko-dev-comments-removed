@@ -9,32 +9,32 @@
 
 
 if (String.fromCharCode(0x0008) !== "\b") {
-  $ERROR('#1: String.fromCharCode(0x0008) === "\\b"');
+  throw new Test262Error('#1: String.fromCharCode(0x0008) === "\\b"');
 }
 
 
 if (String.fromCharCode(0x0009) !== "\t") {
-  $ERROR('#2: String.fromCharCode(0x0009) === "\\t"');
+  throw new Test262Error('#2: String.fromCharCode(0x0009) === "\\t"');
 }
 
 
 if (String.fromCharCode(0x000A) !== "\n") {
-  $ERROR('#3: String.fromCharCode(0x000A) === "\\n"');
+  throw new Test262Error('#3: String.fromCharCode(0x000A) === "\\n"');
 }
 
 
 if (String.fromCharCode(0x000B) !== "\v") {
-  $ERROR('#4: String.fromCharCode(0x000B) === "\\v"');
+  throw new Test262Error('#4: String.fromCharCode(0x000B) === "\\v"');
 }
 
 
 if (String.fromCharCode(0x000C) !== "\f") {
-  $ERROR('#5: String.fromCharCode(0x000C) === "\\f"');
+  throw new Test262Error('#5: String.fromCharCode(0x000C) === "\\f"');
 }
 
 
 if (String.fromCharCode(0x000D) !== "\r") {
-  $ERROR('#6: String.fromCharCode(0x000D) === "\\r"');
+  throw new Test262Error('#6: String.fromCharCode(0x000D) === "\\r"');
 }
 
 reportCompare(0, 0);

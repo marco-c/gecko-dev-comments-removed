@@ -11,19 +11,19 @@
 
 
 if (encodeURIComponent.hasOwnProperty('length') !== true) {
-  $ERROR('#1: encodeURIComponent.hasOwnProperty(\'length\') === true. Actual: ' + (encodeURIComponent.hasOwnProperty('length')));
+  throw new Test262Error('#1: encodeURIComponent.hasOwnProperty(\'length\') === true. Actual: ' + (encodeURIComponent.hasOwnProperty('length')));
 }
 
 delete encodeURIComponent.length;
 
 
 if (encodeURIComponent.hasOwnProperty('length') !== false) {
-  $ERROR('#2: delete encodeURIComponent.length; encodeURIComponent.hasOwnProperty(\'length\') === false. Actual: ' + (encodeURIComponent.hasOwnProperty('length')));
+  throw new Test262Error('#2: delete encodeURIComponent.length; encodeURIComponent.hasOwnProperty(\'length\') === false. Actual: ' + (encodeURIComponent.hasOwnProperty('length')));
 }
 
 
 if (encodeURIComponent.length === undefined) {
-  $ERROR('#3: delete encodeURIComponent.length; encodeURIComponent.length !== undefined');
+  throw new Test262Error('#3: delete encodeURIComponent.length; encodeURIComponent.length !== undefined');
 }
 
 reportCompare(0, 0);

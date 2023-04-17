@@ -13,19 +13,19 @@ var num = NaN;
 
 
 if (typeof num !== 'number') {
-  $ERROR('#1: num = NaN should have number type');
+  throw new Test262Error('#1: num = NaN should have number type');
 }
 
 var obj = Object(num);
 
 
 if (obj.constructor !== Number) {
-  $ERROR('#2: Object(NaN) returns ToObject(NaN)');
+  throw new Test262Error('#2: Object(NaN) returns ToObject(NaN)');
 }
 
 
 if (typeof obj !== "object") {
-  $ERROR('#2: Object(NaN) returns ToObject(NaN)');
+  throw new Test262Error('#2: Object(NaN) returns ToObject(NaN)');
 }
 
 

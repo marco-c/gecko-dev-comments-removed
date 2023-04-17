@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+try {
+	throw new Test262Error('#1.1: /[^a]*/() throw TypeError. Actual: ' + (/[^a]*/()));
+} catch (e) {
+	if ((e instanceof TypeError) !== true) {
+		throw new Test262Error('#1.2: /[^a]*/() throw TypeError. Actual: ' + (e));
+	}
+}
+
+reportCompare(0, 0);

@@ -40,7 +40,7 @@ const poisoned = {
 try {
   $DETACHBUFFER(i32a.buffer); 
 } catch (error) {
-  $ERROR(`An unexpected error occurred when detaching ArrayBuffer: ${error.message}`);
+  throw new Test262Error(`An unexpected error occurred when detaching ArrayBuffer: ${error.message}`);
 }
 
 assert.throws(TypeError, function() {

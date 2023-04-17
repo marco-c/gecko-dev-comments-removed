@@ -16,7 +16,7 @@
 if ("$$abcdabcd".indexOf("ab", function() {
     return -Infinity;
   }()) !== 2) {
-  $ERROR('#1: "$$abcdabcd".indexOf("ab", function(){return -Infinity;}())===2. Actual: ' + ("$$abcdabcd".indexOf("ab", function() {
+  throw new Test262Error('#1: "$$abcdabcd".indexOf("ab", function(){return -Infinity;}())===2. Actual: ' + ("$$abcdabcd".indexOf("ab", function() {
     return -Infinity;
   }())));
 }

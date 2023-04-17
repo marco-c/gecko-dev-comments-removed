@@ -11,17 +11,17 @@
 
 
 if (!(undefined) !== true) {
-  $ERROR('#1: !(undefined) === true. Actual: ' + (!(undefined)));
+  throw new Test262Error('#1: !(undefined) === true. Actual: ' + (!(undefined)));
 }
 
 
 if (!(void 0) !== true) {
-  $ERROR('#2: !(undefined) === true. Actual: ' + (!(undefined)));
+  throw new Test262Error('#2: !(undefined) === true. Actual: ' + (!(undefined)));
 }
 
 
 if (!(eval("var x")) !== true) {
-  $ERROR('#3: !(eval("var x")) === true. Actual: ' + (!(eval("var x"))));
+  throw new Test262Error('#3: !(eval("var x")) === true. Actual: ' + (!(eval("var x"))));
 }
 
 reportCompare(0, 0);

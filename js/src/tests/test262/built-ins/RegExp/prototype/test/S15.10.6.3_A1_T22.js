@@ -16,12 +16,12 @@ var __executed = __re.test("aacd22 ");
 
 
 if (!__executed) {
-	$ERROR('#1: __re = /(?:ab|cd)\\d?/g; __re.lastIndex=-1; __executed = __re.test("aacd22 "); __executed === true');
+	throw new Test262Error('#1: __re = /(?:ab|cd)\\d?/g; __re.lastIndex=-1; __executed = __re.test("aacd22 "); __executed === true');
 }
 
 
 if (__re.lastIndex !== 5) {
-	$ERROR('#2: __re = /(?:ab|cd)\\d?/g; __re.lastIndex=-1; __executed = __re.test("aacd22 "); __re.lastIndex === 5. Actual: ' + (__re.lastIndex));
+	throw new Test262Error('#2: __re = /(?:ab|cd)\\d?/g; __re.lastIndex=-1; __executed = __re.test("aacd22 "); __re.lastIndex === 5. Actual: ' + (__re.lastIndex));
 }
 
 __re.lastIndex=-100;
@@ -29,12 +29,12 @@ __executed = __re.test("aacd22 ");
 
 
 if (!__executed) {
-	$ERROR('#3: __re = /(?:ab|cd)\\d?/g; __re.lastIndex=-1; __executed = __re.test("aacd22 "); __re.lastIndex=-100; __executed = __re.test("aacd22 "); __executed === true');
+	throw new Test262Error('#3: __re = /(?:ab|cd)\\d?/g; __re.lastIndex=-1; __executed = __re.test("aacd22 "); __re.lastIndex=-100; __executed = __re.test("aacd22 "); __executed === true');
 }
 
 
 if (__re.lastIndex !== 5) {
-	$ERROR('#4: __re = /(?:ab|cd)\\d?/g; __re.lastIndex=-1; __executed = __re.test("aacd22 "); __re.lastIndex=-100; __executed = __re.test("aacd22 "); __re.lastIndex === 5. Actual: ' + (__re.lastIndex));
+	throw new Test262Error('#4: __re = /(?:ab|cd)\\d?/g; __re.lastIndex=-1; __executed = __re.test("aacd22 "); __re.lastIndex=-100; __executed = __re.test("aacd22 "); __re.lastIndex === 5. Actual: ' + (__re.lastIndex));
 }
 
 reportCompare(0, 0);

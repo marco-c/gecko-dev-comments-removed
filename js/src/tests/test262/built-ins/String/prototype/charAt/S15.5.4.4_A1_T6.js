@@ -13,7 +13,7 @@
 
 
 if (new String("lego").charAt(x) !== "l") {
-  $ERROR('#1: var x; new String("lego").charAt(x) === "l". Actual: new String("lego").charAt(x) ===' + new String("lego").charAt(x));
+  throw new Test262Error('#1: var x; new String("lego").charAt(x) === "l". Actual: new String("lego").charAt(x) ===' + new String("lego").charAt(x));
 }
 
 

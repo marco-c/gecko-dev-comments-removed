@@ -1,0 +1,47 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  #field;
+
+  m() {
+    [...this.#field] = [];
+  }
+}
+
+assert.throws(TypeError, function() {
+  C.prototype.m.call({});
+});
+
+reportCompare(0, 0);

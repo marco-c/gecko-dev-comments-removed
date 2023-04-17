@@ -23,7 +23,7 @@
     Object.defineProperty(arguments, "0", {
       configurable: true
     });
-    $ERROR("Expected an exception.");
+    throw new Test262Error("Expected an exception.");
   } catch (e) {
     verifyEqualTo(arguments, "0", getFunc());
 
@@ -32,7 +32,7 @@
     verifyNotConfigurable(arguments, "0");
 
     if (!(e instanceof TypeError)) {
-      $ERROR("Expected TypeError, got " + e);
+      throw new Test262Error("Expected TypeError, got " + e);
     }
 
   }

@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Base {
+  constructor(o) {
+    return o;
+  }
+}
+
+class C extends Base {
+  set #p(x) {}
+}
+
+var obj = {};
+
+new C(obj);
+
+assert.throws(TypeError, function() {
+  new C(obj);
+});
+
+reportCompare(0, 0);

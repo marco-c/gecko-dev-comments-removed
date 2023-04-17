@@ -13,24 +13,24 @@ var num = Infinity;
 
 
 if (typeof num !== 'number') {
-  $ERROR('#1: num = Infinity should be a Number primitive');
+  throw new Test262Error('#1: num = Infinity should be a Number primitive');
 }
 
 var obj = Object(num);
 
 
 if (obj.constructor !== Number) {
-  $ERROR('#2: Object(Infinity) returns ToObject(Infinity)');
+  throw new Test262Error('#2: Object(Infinity) returns ToObject(Infinity)');
 }
 
 
 if (typeof obj !== "object") {
-  $ERROR('#3: Object(Infinity) returns ToObject(Infinity)');
+  throw new Test262Error('#3: Object(Infinity) returns ToObject(Infinity)');
 }
 
 
 if ((obj != Infinity) || (obj === Infinity)) {
-  $ERROR('#4: Object(Infinity) returns ToObject(Infinity)');
+  throw new Test262Error('#4: Object(Infinity) returns ToObject(Infinity)');
 }
 
 reportCompare(0, 0);

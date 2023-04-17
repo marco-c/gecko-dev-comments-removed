@@ -11,22 +11,22 @@
 
 
 if ((true == true) !== true) {
-  $ERROR('#1: (true == true) === true');
+  throw new Test262Error('#1: (true == true) === true');
 }
 
 
 if ((false == false) !== true) {
-  $ERROR('#2: (false == false) === true');
+  throw new Test262Error('#2: (false == false) === true');
 }
 
 
 if ((true == false) !== false) {
-  $ERROR('#3: (true == false) === false');
+  throw new Test262Error('#3: (true == false) === false');
 }
 
 
 if ((false == true) !== false) {
-  $ERROR('#4: (false == true) === false');
+  throw new Test262Error('#4: (false == true) === false');
 }
 
 reportCompare(0, 0);

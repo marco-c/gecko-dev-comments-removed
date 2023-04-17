@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+var calendar = {
+  get calendar() {
+    throw new Test262Error();
+  },
+};
+
+assert.throws(Test262Error, function() {
+  Temporal.Now.plainDateTime(calendar);
+});
+
+reportCompare(0, 0);

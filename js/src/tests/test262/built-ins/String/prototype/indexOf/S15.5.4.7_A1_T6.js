@@ -13,7 +13,7 @@
 
 
 if (new String("undefined").indexOf(x) !== 0) {
-  $ERROR('#1: var x; new String("undefined").indexOf(x) === 0. Actual: ' + new String("undefined").indexOf(x));
+  throw new Test262Error('#1: var x; new String("undefined").indexOf(x) === 0. Actual: ' + new String("undefined").indexOf(x));
 }
 
 

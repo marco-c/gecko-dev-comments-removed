@@ -9,7 +9,7 @@
 
 
 Array.prototype[Symbol.iterator] = function() {
-  $ERROR('@@iterator invoked');
+  throw new Test262Error('@@iterator invoked');
 };
 
 class Base {

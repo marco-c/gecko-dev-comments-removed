@@ -11,7 +11,7 @@
 
 try {
   Error.prototype();
-  $ERROR('#1: "Error.prototype()" lead to throwing exception');
+  throw new Test262Error('#1: "Error.prototype()" lead to throwing exception');
 } catch (e) {
   if (e instanceof Test262Error) throw e;
 }

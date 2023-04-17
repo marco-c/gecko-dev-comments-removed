@@ -9,12 +9,12 @@
 
 
 if ((!{}) !== false) {
-  $ERROR('#1: !({}) === false');
+  throw new Test262Error('#1: !({}) === false');
 }
 
 
 if (!(function(){return 1}) !== false) {
-  $ERROR('#2: !(function(){return 1}) === false');
+  throw new Test262Error('#2: !(function(){return 1}) === false');
 }
 
 reportCompare(0, 0);

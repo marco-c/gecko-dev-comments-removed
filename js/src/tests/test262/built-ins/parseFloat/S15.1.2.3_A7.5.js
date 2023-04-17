@@ -9,7 +9,7 @@
 
 
 if (this.propertyIsEnumerable('parseFloat') !== false) {
-  $ERROR('#1:this.propertyIsEnumerable(\'parseFloat\') === false. Actual: ' + (this.propertyIsEnumerable('parseFloat')));
+  throw new Test262Error('#1:this.propertyIsEnumerable(\'parseFloat\') === false. Actual: ' + (this.propertyIsEnumerable('parseFloat')));
 }
 
 
@@ -21,7 +21,7 @@ for (var p in this) {
 }
 
 if (result !== true) {
-  $ERROR('#2: result = true; for (p in this) { if (p === "parseFloat") result = false; }  result === true;');
+  throw new Test262Error('#2: result = true; for (p in this) { if (p === "parseFloat") result = false; }  result === true;');
 }
 
 reportCompare(0, 0);

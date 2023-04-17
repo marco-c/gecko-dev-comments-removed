@@ -13,7 +13,7 @@
 
 
 if (String("undefined").lastIndexOf(undefined) !== 0) {
-  $ERROR('#1: String("undefined").lastIndexOf(undefined) === 0. Actual: ' + String("undefined").lastIndexOf(undefined));
+  throw new Test262Error('#1: String("undefined").lastIndexOf(undefined) === 0. Actual: ' + String("undefined").lastIndexOf(undefined));
 }
 
 

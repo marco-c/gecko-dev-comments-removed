@@ -30,10 +30,10 @@
     Object.defineProperty(arguments, "0", {
       get: getFunc2
     });
-    $ERROR("Expected an exception.");
+    throw new Test262Error("Expected an exception.");
   } catch (e) {
     if (a !== 0) {
-      $ERROR('Expected a === 0, actually ' + a);
+      throw new Test262Error('Expected a === 0, actually ' + a);
     }
 
     verifyEqualTo(arguments, "0", getFunc1());
@@ -43,7 +43,7 @@
     verifyNotConfigurable(arguments, "0");
 
     if (!(e instanceof TypeError)) {
-      $ERROR("Expected TypeError, got " + e);
+      throw new Test262Error("Expected TypeError, got " + e);
     }
 
   }

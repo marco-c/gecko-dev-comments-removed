@@ -11,17 +11,17 @@
 
 
 if (("1" != new Boolean(true)) !== false) {
-  $ERROR('#1: ("1" != new Boolean(true)) === false');
+  throw new Test262Error('#1: ("1" != new Boolean(true)) === false');
 }
 
 
 if (("-1" != new Number(-1)) !== false) {
-  $ERROR('#2: ("-1" != new Number(-1)) === false');
+  throw new Test262Error('#2: ("-1" != new Number(-1)) === false');
 }
 
 
 if (("x" != new String("x")) !== false) {
-  $ERROR('#3: ("x" != new String("x")) === false');
+  throw new Test262Error('#3: ("x" != new String("x")) === false');
 }
 
 reportCompare(0, 0);

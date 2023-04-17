@@ -1,0 +1,29 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var predicate = function() {
+  throw new Test262Error();
+};
+
+assert.throws(Test262Error, function() {
+  [1].findLastIndex(predicate);
+});
+
+reportCompare(0, 0);

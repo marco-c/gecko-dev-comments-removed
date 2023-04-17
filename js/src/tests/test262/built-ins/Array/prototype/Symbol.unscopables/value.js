@@ -24,6 +24,9 @@
 
 
 
+
+
+
 var unscopables = Array.prototype[Symbol.unscopables];
 
 assert.sameValue(Object.getPrototypeOf(unscopables), null);
@@ -52,6 +55,17 @@ assert.sameValue(unscopables.findIndex, true, '`findIndex` property value');
 verifyEnumerable(unscopables, 'findIndex');
 verifyWritable(unscopables, 'findIndex');
 verifyConfigurable(unscopables, 'findIndex');
+
+
+assert.sameValue(unscopables.findLast, true, '`findLast` property value');
+verifyEnumerable(unscopables, 'findLast');
+verifyWritable(unscopables, 'findLast');
+verifyConfigurable(unscopables, 'findLast');
+
+assert.sameValue(unscopables.findLastIndex, true, '`findLastIndex` property value');
+verifyEnumerable(unscopables, 'findLastIndex');
+verifyWritable(unscopables, 'findLastIndex');
+verifyConfigurable(unscopables, 'findLastIndex');
 
 assert.sameValue(unscopables.flat, true, '`flat` property value');
 verifyEnumerable(unscopables, 'flat');

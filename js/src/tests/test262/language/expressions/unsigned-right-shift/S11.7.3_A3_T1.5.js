@@ -9,22 +9,22 @@
 
 
 if (({} >>> function(){return 1}) !== 0) {
-  $ERROR('#1: ({} >>> function(){return 1}) === 0. Actual: ' + (({} >>> function(){return 1})));
+  throw new Test262Error('#1: ({} >>> function(){return 1}) === 0. Actual: ' + (({} >>> function(){return 1})));
 }
 
 
 if ((function(){return 1} >>> {}) !== 0) {
-  $ERROR('#2: (function(){return 1} >>> {}) === 0. Actual: ' + ((function(){return 1} >>> {})));
+  throw new Test262Error('#2: (function(){return 1} >>> {}) === 0. Actual: ' + ((function(){return 1} >>> {})));
 }
 
 
 if ((function(){return 1} >>> function(){return 1}) !== 0) {
-  $ERROR('#3: (function(){return 1} >>> function(){return 1}) === 0. Actual: ' + ((function(){return 1} >>> function(){return 1})));
+  throw new Test262Error('#3: (function(){return 1} >>> function(){return 1}) === 0. Actual: ' + ((function(){return 1} >>> function(){return 1})));
 }
 
 
 if (({} >>> {}) !== 0) {
-  $ERROR('#4: ({} >>> {}) === 0. Actual: ' + (({} >>> {})));
+  throw new Test262Error('#4: ({} >>> {}) === 0. Actual: ' + (({} >>> {})));
 }
 
 reportCompare(0, 0);

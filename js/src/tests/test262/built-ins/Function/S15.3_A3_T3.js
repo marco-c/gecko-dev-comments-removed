@@ -14,30 +14,30 @@ var g = Function.call(this, "return color;");
 
 
 if (f() !== undefined) {
-  $ERROR('#1: ');
+  throw new Test262Error('#1: ');
 }
 
 var planet = "mars";
 
 
 if (f() !== "mars") {
-  $ERROR('#2: ');
+  throw new Test262Error('#2: ');
 }
 
 
 try {
   g();
-  $ERROR('#3: ');
+  throw new Test262Error('#3: ');
 } catch (e) {
   if (!(e instanceof ReferenceError))
-    $ERROR('#3.1: ');
+    throw new Test262Error('#3.1: ');
 }
 
 this.color = "red";
 
 
 if (g() !== "red") {
-  $ERROR('#4: ');
+  throw new Test262Error('#4: ');
 }
 
 reportCompare(0, 0);

@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+assert(Object.isExtensible(Temporal.Now.plainDateTime));
+
+reportCompare(0, 0);

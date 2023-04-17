@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+var timeZone = {
+  getOffsetNanosecondsFor() {
+    throw new Test262Error();
+  }
+};
+
+assert.throws(Test262Error, function() {
+  Temporal.Now.plainDateTime('iso8601', timeZone);
+});
+
+reportCompare(0, 0);

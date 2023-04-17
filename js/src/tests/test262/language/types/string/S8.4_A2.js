@@ -11,7 +11,7 @@
 
 var str = '';
 if (typeof(str) !== 'string'){
-  $ERROR('#1: var str = \'\'; typeof(str) === \'string\'. Actual: ' + (typeof(str)));
+  throw new Test262Error('#1: var str = \'\'; typeof(str) === \'string\'. Actual: ' + (typeof(str)));
 }
 
 
@@ -20,7 +20,7 @@ if (typeof(str) !== 'string'){
 
 var str = "";
 if (typeof(str) !== "string"){
-  $ERROR('#2: var str = ""; typeof(str) === "string". Actual: ' + (str));
+  throw new Test262Error('#2: var str = ""; typeof(str) === "string". Actual: ' + (str));
 }
 
 

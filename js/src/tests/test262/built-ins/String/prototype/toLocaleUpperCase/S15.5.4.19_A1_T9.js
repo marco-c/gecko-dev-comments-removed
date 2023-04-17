@@ -19,7 +19,7 @@ var __expected = "UNDEFINED";
 
 
 if (__lowerCase.length !== __expected.length) {
-  $ERROR('#1: __obj = {valueOf:function(){}, toString:void 0}; __lowerCase = new String(__obj).toLocaleUpperCase(); __expected ="UNDEFINED"; __lowerCase.length === __expected.length. Actual: ' + __lowerCase.length);
+  throw new Test262Error('#1: __obj = {valueOf:function(){}, toString:void 0}; __lowerCase = new String(__obj).toLocaleUpperCase(); __expected ="UNDEFINED"; __lowerCase.length === __expected.length. Actual: ' + __lowerCase.length);
 }
 
 
@@ -27,7 +27,7 @@ if (__lowerCase.length !== __expected.length) {
 
 
 if (__lowerCase.index !== __expected.index) {
-  $ERROR('#2: __obj = {valueOf:function(){}, toString:void 0}; __lowerCase = new String(__obj).toLocaleUpperCase(); __expected ="UNDEFINED"; __lowerCase.index === __expected.index. Actual: ' + __lowerCase.index);
+  throw new Test262Error('#2: __obj = {valueOf:function(){}, toString:void 0}; __lowerCase = new String(__obj).toLocaleUpperCase(); __expected ="UNDEFINED"; __lowerCase.index === __expected.index. Actual: ' + __lowerCase.index);
 }
 
 
@@ -35,7 +35,7 @@ if (__lowerCase.index !== __expected.index) {
 
 
 if (__lowerCase.input !== __expected.input) {
-  $ERROR('#3: __obj = {valueOf:function(){}, toString:void 0}; __lowerCase = new String(__obj).toLocaleUpperCase(); __expected ="UNDEFINED"; __lowerCase.input === __expected.input. Actual: ' + __lowerCase.input);
+  throw new Test262Error('#3: __obj = {valueOf:function(){}, toString:void 0}; __lowerCase = new String(__obj).toLocaleUpperCase(); __expected ="UNDEFINED"; __lowerCase.input === __expected.input. Actual: ' + __lowerCase.input);
 }
 
 
@@ -44,7 +44,7 @@ if (__lowerCase.input !== __expected.input) {
 
 for (var index = 0; index < __expected.length; index++) {
   if (__lowerCase[index] !== __expected[index]) {
-    $ERROR('#4.' + index + ': __obj = {valueOf:function(){}, toString:void 0}; __lowerCase = new String(__obj).toLocaleUpperCase(); __expected ="UNDEFINED"; __lowerCase[' + index + ']===' + __expected[index] + '. Actual: ' + __lowerCase[index]);
+    throw new Test262Error('#4.' + index + ': __obj = {valueOf:function(){}, toString:void 0}; __lowerCase = new String(__obj).toLocaleUpperCase(); __expected ="UNDEFINED"; __lowerCase[' + index + ']===' + __expected[index] + '. Actual: ' + __lowerCase[index]);
   }
 }
 

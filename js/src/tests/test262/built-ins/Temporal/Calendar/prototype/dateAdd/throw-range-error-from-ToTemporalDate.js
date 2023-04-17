@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+let cal = new Temporal.Calendar("iso8601");
+
+assert.throws(RangeError,
+    () => cal.dateAdd("invalid date string", new Temporal.Duration(1)),
+    "Throw by 4. Set date to ? ToTemporalDate(date)");
+
+reportCompare(0, 0);

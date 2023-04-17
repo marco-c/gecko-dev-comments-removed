@@ -9,7 +9,7 @@
 
 
 if (String(null) !== "null") {
-  $ERROR('#1: String(null) === "null". Actual: ' + (String(null)));
+  throw new Test262Error('#1: String(null) === "null". Actual: ' + (String(null)));
 }
 
 reportCompare(0, 0);

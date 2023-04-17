@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Realm.prototype, "importValue", {
+  enumerable: false,
+  writable: true,
+  configurable: true,
+});
+
+reportCompare(0, 0);

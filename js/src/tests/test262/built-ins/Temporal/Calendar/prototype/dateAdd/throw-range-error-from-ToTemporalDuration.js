@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+let cal = new Temporal.Calendar("iso8601");
+
+assert.throws(RangeError,
+    () => cal.dateAdd("2020-02-03", "invalid duration string"),
+    "Throw by ToTemporalDuration");
+
+reportCompare(0, 0);

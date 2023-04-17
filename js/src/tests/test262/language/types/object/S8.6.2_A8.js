@@ -18,7 +18,7 @@ try {
   
 }
 if (Object.getPrototypeOf(x) !== Object.prototype) {
-  $ERROR("Prototype of non-extensible object mutated");
+  throw new Test262Error("Prototype of non-extensible object mutated");
 }
 
 reportCompare(0, 0);

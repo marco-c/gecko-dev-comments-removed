@@ -1,0 +1,39 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var fn = () => {};
+fn.a = 1;
+Object.defineProperty(fn, "length", {enumerable: true});
+assert.compareArray(Object.keys(fn), ["length", "a"]);
+
+reportCompare(0, 0);

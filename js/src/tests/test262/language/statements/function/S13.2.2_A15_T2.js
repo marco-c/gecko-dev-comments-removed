@@ -18,7 +18,7 @@ var __obj = new __FACTORY();
 
 
 if (obj.prop !== "A") {
-	$ERROR('#1: obj.prop === "A". Actual: obj.prop ==='+obj.prop);
+	throw new Test262Error('#1: obj.prop === "A". Actual: obj.prop ==='+obj.prop);
 }
 
 
@@ -26,7 +26,7 @@ if (obj.prop !== "A") {
 
 
 if (__obj.prop !== "A") {
-	$ERROR('#2: __obj.prop === "A". Actual: __obj.prop ==='+__obj.prop);
+	throw new Test262Error('#2: __obj.prop === "A". Actual: __obj.prop ==='+__obj.prop);
 }
 
 
@@ -34,7 +34,7 @@ if (__obj.prop !== "A") {
 
 
 if (__obj.slot.prop !==1) {
-	$ERROR('#3: __obj.slot.prop === 1. Actual: __obj.slot.prop ==='+__obj.slot.prop);
+	throw new Test262Error('#3: __obj.slot.prop === 1. Actual: __obj.slot.prop ==='+__obj.slot.prop);
 }
 
 

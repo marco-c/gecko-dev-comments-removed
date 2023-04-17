@@ -10,12 +10,12 @@
 
 for (x in Boolean) {
   if (x === "prototype") {
-    $ERROR('#1: Boolean.prototype has the attribute DontEnum');
+    throw new Test262Error('#1: Boolean.prototype has the attribute DontEnum');
   }
 }
 
 if (Boolean.propertyIsEnumerable('prototype')) {
-  $ERROR('#2: Boolean.prototype has the attribute DontEnum');
+  throw new Test262Error('#2: Boolean.prototype has the attribute DontEnum');
 }
 
 reportCompare(0, 0);

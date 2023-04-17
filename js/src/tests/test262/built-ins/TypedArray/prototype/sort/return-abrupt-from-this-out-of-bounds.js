@@ -41,7 +41,10 @@ testWithTypedArrayConstructors(TA => {
 
   var expectedError;
   try {
-    ab.resize(BPE * 3);
+    ab.resize(BPE * 2);
+    
+    
+    
     expectedError = TypeError;
   } catch (_) {
     

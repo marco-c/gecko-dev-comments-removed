@@ -9,7 +9,7 @@
 
 
 if (decodeURI.prototype !== undefined) {
-  $ERROR('#1: decodeURI.prototype === undefined. Actual: ' + (decodeURI.prototype));
+  throw new Test262Error('#1: decodeURI.prototype === undefined. Actual: ' + (decodeURI.prototype));
 }
 
 reportCompare(0, 0);

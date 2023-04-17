@@ -1,0 +1,30 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var findLast = TypedArray.prototype.findLast;
+
+assert.sameValue(typeof findLast, 'function');
+
+assert.throws(TypeError, function() {
+  findLast();
+});
+
+reportCompare(0, 0);

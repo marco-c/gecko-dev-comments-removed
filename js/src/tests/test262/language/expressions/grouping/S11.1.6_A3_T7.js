@@ -9,7 +9,7 @@
 
 
 if (typeof (x) !== "undefined") {
-  $ERROR('#1: typeof (x) === "undefined". Actual: ' + (typeof (x)));
+  throw new Test262Error('#1: typeof (x) === "undefined". Actual: ' + (typeof (x)));
 }
 
 reportCompare(0, 0);

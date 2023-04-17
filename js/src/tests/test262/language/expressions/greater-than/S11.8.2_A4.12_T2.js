@@ -12,37 +12,37 @@
 
 
 if (("x" > "0") !== true) {
-  $ERROR('#1: ("x" > "0") !== true');
+  throw new Test262Error('#1: ("x" > "0") !== true');
 }
 
 
 if (("0" > "-") !== true) {
-  $ERROR('#2: ("0" > "-") !== true');
+  throw new Test262Error('#2: ("0" > "-") !== true');
 }
 
 
 if (("0" > ".") !== true) {
-  $ERROR('#3: ("0" > ".") !== true');
+  throw new Test262Error('#3: ("0" > ".") !== true');
 }
 
 
 if (("-" > "+") !== true) {
-  $ERROR('#4: ("-" > "+") !== true');
+  throw new Test262Error('#4: ("-" > "+") !== true');
 }
 
 
 if (("-1" > "-0") !== true) {
-  $ERROR('#5: ("-1" > "-0") !== true');
+  throw new Test262Error('#5: ("-1" > "-0") !== true');
 }
 
 
 if (("-1" > "+1") !== true) {
-  $ERROR('#6: ("-1" > "+1") !== true');
+  throw new Test262Error('#6: ("-1" > "+1") !== true');
 }
 
 
 if (("1e-10" > "1") !== true) {
-$ERROR('#7: ("1e-10" > "1") !== true');
+throw new Test262Error('#7: ("1e-10" > "1") !== true');
 }
 
 reportCompare(0, 0);

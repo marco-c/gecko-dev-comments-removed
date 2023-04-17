@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(Temporal.Now.instant.name, 'instant');
+
+verifyProperty(Temporal.Now.instant, 'name', {
+  enumerable: false,
+  writable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

@@ -13,7 +13,7 @@ var __executed = /^xxx/.test("yyyyy");
 
 
 if (__executed) {
-	$ERROR('#1: /^xxx/.test("yyyyy") === false');
+	throw new Test262Error('#1: /^xxx/.test("yyyyy") === false');
 }
 
 reportCompare(0, 0);

@@ -11,7 +11,7 @@
 
 
 if (eval("do ; while(false)") !== undefined) {
-  $ERROR('#1: eval("do ; while(false)") === undefined. Actual: ' + (eval("do ; while(false)")));
+  throw new Test262Error('#1: eval("do ; while(false)") === undefined. Actual: ' + (eval("do ; while(false)")));
 }
 
 reportCompare(0, 0);

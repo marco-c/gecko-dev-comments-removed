@@ -18,7 +18,7 @@ try {
 
 if ((this.toString === Object.prototype.toString) && 
   (match(eval("\"bj\""))[0] !== "bj")) {
-  $ERROR('#1: match = String.prototype.match.bind(this); match(eval("\\"bj\\""))[0] === "bj". Actual: ' + match(eval("\"bj\""))[0]);
+  throw new Test262Error('#1: match = String.prototype.match.bind(this); match(eval("\\"bj\\""))[0] === "bj". Actual: ' + match(eval("\"bj\""))[0]);
 }
 
 

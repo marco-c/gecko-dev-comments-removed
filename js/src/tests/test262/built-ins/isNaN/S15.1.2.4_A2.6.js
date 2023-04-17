@@ -9,7 +9,7 @@
 
 
 if (isNaN.prototype !== undefined) {
-  $ERROR('#1: isNaN.prototype === undefined. Actual: ' + (isNaN.prototype));
+  throw new Test262Error('#1: isNaN.prototype === undefined. Actual: ' + (isNaN.prototype));
 }
 
 reportCompare(0, 0);

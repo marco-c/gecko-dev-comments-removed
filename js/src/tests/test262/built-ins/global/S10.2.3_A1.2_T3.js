@@ -12,77 +12,77 @@
 function test() {
   
   if (Object === null) {
-    $ERROR("#13: Object === null");
+    throw new Test262Error("#13: Object === null");
   }
 
   
   if (Function === null) {
-    $ERROR("#14: Function === null");
+    throw new Test262Error("#14: Function === null");
   }
 
   
   if (String === null) {
-    $ERROR("#15: String === null");
+    throw new Test262Error("#15: String === null");
   }
 
   
   if (Number === null) {
-    $ERROR("#16: Function === null");
+    throw new Test262Error("#16: Function === null");
   }
 
   
   if (Array === null) {
-    $ERROR("#17: Array === null");
+    throw new Test262Error("#17: Array === null");
   }
 
   
   if (Boolean === null) {
-    $ERROR("#20: Boolean === null");
+    throw new Test262Error("#20: Boolean === null");
   }
 
   
   if (Date === null) {
-    $ERROR("#18: Date === null");
+    throw new Test262Error("#18: Date === null");
   }
 
   
   if (RegExp === null) {
-    $ERROR("#19: RegExp === null");
+    throw new Test262Error("#19: RegExp === null");
   }
 
   
   if (Error === null) {
-    $ERROR("#20: Error === null");
+    throw new Test262Error("#20: Error === null");
   }
 
   
   if (EvalError === null) {
-    $ERROR("#21: EvalError === null");
+    throw new Test262Error("#21: EvalError === null");
   }
 
   
   if (RangeError === null) {
-    $ERROR("#22: RangeError === null");
+    throw new Test262Error("#22: RangeError === null");
   }
 
   
   if (ReferenceError === null) {
-    $ERROR("#23: ReferenceError === null");
+    throw new Test262Error("#23: ReferenceError === null");
   }
 
   
   if (SyntaxError === null) {
-    $ERROR("#24: SyntaxError === null");
+    throw new Test262Error("#24: SyntaxError === null");
   }
 
   
   if (TypeError === null) {
-    $ERROR("#25: TypeError === null");
+    throw new Test262Error("#25: TypeError === null");
   }
 
   
   if (URIError === null) {
-    $ERROR("#26: URIError === null");
+    throw new Test262Error("#26: URIError === null");
   }
 }
 

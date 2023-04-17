@@ -13,22 +13,22 @@ var obj = Object((1 === 1) && (!false));
 
 
 if (obj.constructor !== Boolean) {
-  $ERROR('#1: Object(expression) returns ToObject(expression)');
+  throw new Test262Error('#1: Object(expression) returns ToObject(expression)');
 }
 
 
 if (typeof obj !== "object") {
-  $ERROR('#1.1: Object(expression) returns ToObject(expression)');
+  throw new Test262Error('#1.1: Object(expression) returns ToObject(expression)');
 }
 
 
 if (!(obj)) {
-  $ERROR('#2: Object(expression) returns ToObject(expression)');
+  throw new Test262Error('#2: Object(expression) returns ToObject(expression)');
 }
 
 
 if (obj === true) {
-  $ERROR('#3: Object(expression) returns ToObject(expression)');
+  throw new Test262Error('#3: Object(expression) returns ToObject(expression)');
 }
 
 reportCompare(0, 0);

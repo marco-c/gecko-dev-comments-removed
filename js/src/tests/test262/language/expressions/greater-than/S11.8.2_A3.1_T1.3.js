@@ -13,22 +13,22 @@
 
 
 if (null > undefined !== false) {
-  $ERROR('#1: null > undefined === false');
+  throw new Test262Error('#1: null > undefined === false');
 }
 
 
 if (undefined > null !== false) {
-  $ERROR('#2: undefined > null === false');
+  throw new Test262Error('#2: undefined > null === false');
 }
 
 
 if (undefined > undefined !== false) {
-  $ERROR('#3: undefined > undefined === false');
+  throw new Test262Error('#3: undefined > undefined === false');
 }
 
 
 if (null > null !== false) {
-  $ERROR('#4: null > null === false');
+  throw new Test262Error('#4: null > null === false');
 }
 
 reportCompare(0, 0);

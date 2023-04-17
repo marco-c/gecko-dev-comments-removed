@@ -9,12 +9,12 @@
 
 
 if (+0 !== -0) {
-  $ERROR('#1: +0 === -0');
+  throw new Test262Error('#1: +0 === -0');
 }
 
 
 if (-0 !== +0) {
-  $ERROR('#2: -0 === +0');
+  throw new Test262Error('#2: -0 === +0');
 }
 
 reportCompare(0, 0);

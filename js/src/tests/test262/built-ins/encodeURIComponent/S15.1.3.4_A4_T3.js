@@ -9,22 +9,22 @@
 
 
 if ((encodeURIComponent("http://unipro.ru/\nabout") !== "http%3A%2F%2Funipro.ru%2F%0Aabout") && encodeURIComponent("http://unipro.ru/\nabout") !== "http%3A%2F%2Funipro.ru%2F%0aabout") {
-  $ERROR('#1: http://unipro.ru/\\nabout');
+  throw new Test262Error('#1: http://unipro.ru/\\nabout');
 }
 
 
 if ((encodeURIComponent("http://unipro.ru/\vabout") !== "http%3A%2F%2Funipro.ru%2F%0Babout") && encodeURIComponent("http://unipro.ru/\vabout") !== "http%3A%2F%2Funipro.ru%2F%0babout") {
-  $ERROR('#2: http://unipro.ru/\\vabout');
+  throw new Test262Error('#2: http://unipro.ru/\\vabout');
 }
 
 
 if ((encodeURIComponent("http://unipro.ru/\fabout") !== "http%3A%2F%2Funipro.ru%2F%0Cabout") && encodeURIComponent("http://unipro.ru/\fabout") !== "http%3A%2F%2Funipro.ru%2F%0cabout") {
-  $ERROR('#3: http://unipro.ru/\\fabout');
+  throw new Test262Error('#3: http://unipro.ru/\\fabout');
 }
 
 
 if ((encodeURIComponent("http://unipro.ru/\rabout") !== "http%3A%2F%2Funipro.ru%2F%0Dabout") && encodeURIComponent("http://unipro.ru/\rabout") !== "http%3A%2F%2Funipro.ru%2F%0dabout") {
-  $ERROR('#4: http://unipro.ru/\\rabout');
+  throw new Test262Error('#4: http://unipro.ru/\\rabout');
 }
 
 reportCompare(0, 0);

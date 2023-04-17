@@ -9,12 +9,12 @@
 
 
 if (!(true) !== false) {
-  $ERROR('#1: !(true) === false. Actual: ' + (!(true)));	
+  throw new Test262Error('#1: !(true) === false. Actual: ' + (!(true)));	
 }
 
 
 if (!(false) !== true) {
-  $ERROR('#2: !(false) === true. Actual: ' + (!(false)));
+  throw new Test262Error('#2: !(false) === true. Actual: ' + (!(false)));
 }
 
 reportCompare(0, 0);

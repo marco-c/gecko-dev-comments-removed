@@ -13,37 +13,37 @@
 
 
 if (Boolean.prototype.toString(true) !== "false") {
-  $ERROR('#1: Boolean.prototype.toString(true) === "false"');
+  throw new Test262Error('#1: Boolean.prototype.toString(true) === "false"');
 }
 
 
 if ((new Boolean()).toString(true) !== "false") {
-  $ERROR('#2: (new Boolean()).toString(true) === "false"');
+  throw new Test262Error('#2: (new Boolean()).toString(true) === "false"');
 }
 
 
 if ((new Boolean(false)).toString(true) !== "false") {
-  $ERROR('#3: (new Boolean(false)).toString(true) === "false"');
+  throw new Test262Error('#3: (new Boolean(false)).toString(true) === "false"');
 }
 
 
 if ((new Boolean(true)).toString(false) !== "true") {
-  $ERROR('#4: (new Boolean(true)).toString(false) === "true"');
+  throw new Test262Error('#4: (new Boolean(true)).toString(false) === "true"');
 }
 
 
 if ((new Boolean(1)).toString(false) !== "true") {
-  $ERROR('#5: (new Boolean(1)).toString(false) === "true"');
+  throw new Test262Error('#5: (new Boolean(1)).toString(false) === "true"');
 }
 
 
 if ((new Boolean(0)).toString(true) !== "false") {
-  $ERROR('#6: (new Boolean(0)).toString(true) === "false"');
+  throw new Test262Error('#6: (new Boolean(0)).toString(true) === "false"');
 }
 
 
 if ((new Boolean(new Object())).toString(false) !== "true") {
-  $ERROR('#7: (new Boolean(new Object())).toString(false) === "true"');
+  throw new Test262Error('#7: (new Boolean(new Object())).toString(false) === "true"');
 }
 
 reportCompare(0, 0);

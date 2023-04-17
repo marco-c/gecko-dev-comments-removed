@@ -9,7 +9,7 @@
 
 
 if ((true || x) !== true) {
-  $ERROR('#1: (true || x) === true');
+  throw new Test262Error('#1: (true || x) === true');
 }
 
 reportCompare(0, 0);

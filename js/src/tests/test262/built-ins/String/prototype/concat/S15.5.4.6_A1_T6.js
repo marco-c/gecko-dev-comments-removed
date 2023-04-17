@@ -13,7 +13,7 @@
 
 
 if (new String("lego").concat(x) !== "legoundefined") {
-  $ERROR('#1: var x; new String("lego").concat(x) === "legoundefined". Actual: ' + new String("lego").concat(x));
+  throw new Test262Error('#1: var x; new String("lego").concat(x) === "legoundefined". Actual: ' + new String("lego").concat(x));
 }
 
 

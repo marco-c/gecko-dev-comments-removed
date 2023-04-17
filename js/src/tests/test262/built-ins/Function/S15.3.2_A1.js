@@ -15,12 +15,12 @@ var f = new Function;
 
 
 if (f.constructor !== Function) {
-  $ERROR('#1: When Function is called as part of a new expression, it is a constructor: it initialises the newly created object');
+  throw new Test262Error('#1: When Function is called as part of a new expression, it is a constructor: it initialises the newly created object');
 }
 
 
 if (f === undefined) {
-  $ERROR('#2: When Function is called as part of a new expression, it is a constructor: it initialises the newly created object');
+  throw new Test262Error('#2: When Function is called as part of a new expression, it is a constructor: it initialises the newly created object');
 }
 
 reportCompare(0, 0);

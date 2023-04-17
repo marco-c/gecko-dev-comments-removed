@@ -13,7 +13,7 @@
 if (function() {
     return "GnulLuNa"
   }().toUpperCase() !== "GNULLUNA") {
-  $ERROR('#1: function(){return "GnulLuNa"}().toUpperCase() === "GNULLUNA". Actual: ' + function() {
+  throw new Test262Error('#1: function(){return "GnulLuNa"}().toUpperCase() === "GNULLUNA". Actual: ' + function() {
     return "GnulLuNa"
   }().toUpperCase());
 }

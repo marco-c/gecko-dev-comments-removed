@@ -11,7 +11,7 @@
 
 
 if (!Object.prototype.isPrototypeOf(Boolean.prototype)) {
-  $ERROR('#1: Object prototype object is the prototype of Boolean prototype object');
+  throw new Test262Error('#1: Object prototype object is the prototype of Boolean prototype object');
 }
 
 reportCompare(0, 0);

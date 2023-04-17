@@ -11,12 +11,12 @@
 
 
 if (!(" ") !== false) {
-  $ERROR('#1: !(" ") === false. Actual: ' + (!(" ")));	
+  throw new Test262Error('#1: !(" ") === false. Actual: ' + (!(" ")));	
 }
 
 
 if (!("Nonempty String") !== false) {
-  $ERROR('#2: !("Nonempty String") === false. Actual: ' + (!("Nonempty String")));	
+  throw new Test262Error('#2: !("Nonempty String") === false. Actual: ' + (!("Nonempty String")));	
 }
 
 reportCompare(0, 0);

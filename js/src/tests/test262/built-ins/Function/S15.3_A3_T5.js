@@ -16,26 +16,26 @@ var g = Function.call(this, "return this.color;");
 
 
 if (f() !== undefined) {
-  $ERROR('#2: ');
+  throw new Test262Error('#2: ');
 }
 
 var planet = "mars";
 
 
 if (f() !== "mars") {
-  $ERROR('#2: ');
+  throw new Test262Error('#2: ');
 }
 
 
 if (g() !== undefined) {
-  $ERROR('#3: ');
+  throw new Test262Error('#3: ');
 }
 
 this.color = "red";
 
 
 if (g() !== "red") {
-  $ERROR('#4: ');
+  throw new Test262Error('#4: ');
 }
 
 reportCompare(0, 0);

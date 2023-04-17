@@ -11,7 +11,7 @@
 
 
 if (!("") !== true) {
-  $ERROR('#1: !("") === true. Actual: ' + (!("")));
+  throw new Test262Error('#1: !("") === true. Actual: ' + (!("")));
 }
 
 reportCompare(0, 0);

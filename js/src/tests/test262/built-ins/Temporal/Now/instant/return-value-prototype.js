@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  Object.getPrototypeOf(Temporal.Now.instant()),
+  Temporal.Instant.prototype
+);
+
+reportCompare(0, 0);

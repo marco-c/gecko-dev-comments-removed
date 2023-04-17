@@ -10,7 +10,7 @@
 
 
 if (!(String.hasOwnProperty('prototype'))) {
-  $ERROR('#0: String.hasOwnProperty(\'prototype\') return true. Actual: ' + String.hasOwnProperty('prototype'));
+  throw new Test262Error('#0: String.hasOwnProperty(\'prototype\') return true. Actual: ' + String.hasOwnProperty('prototype'));
 }
 
 
@@ -19,7 +19,7 @@ if (!(String.hasOwnProperty('prototype'))) {
 
 
 if (String.propertyIsEnumerable('prototype')) {
-  $ERROR('#1: String.propertyIsEnumerable(\'prototype\') return false. Actual: ' + String.propertyIsEnumerable('prototype'));
+  throw new Test262Error('#1: String.propertyIsEnumerable(\'prototype\') return false. Actual: ' + String.propertyIsEnumerable('prototype'));
 }
 
 
@@ -34,7 +34,7 @@ for (var p in String) {
 }
 
 if (count !== 0) {
-  $ERROR('#2: count=0; for (p in String){ if (p==="prototype") count++;}; count === 0. Actual: count ===' + count);
+  throw new Test262Error('#2: count=0; for (p in String){ if (p==="prototype") count++;}; count === 0. Actual: count ===' + count);
 }
 
 

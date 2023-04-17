@@ -11,7 +11,7 @@
 
 
 if (Function.prototype.isPrototypeOf(RegExp) !== true) {
-	$ERROR('#1: Function.prototype.isPrototypeOf(RegExp) === true');
+	throw new Test262Error('#1: Function.prototype.isPrototypeOf(RegExp) === true');
 }
 
 reportCompare(0, 0);

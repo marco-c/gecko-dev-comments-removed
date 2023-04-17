@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  Object.getPrototypeOf(Temporal.Now.timeZone()),
+  Temporal.TimeZone.prototype
+);
+
+reportCompare(0, 0);

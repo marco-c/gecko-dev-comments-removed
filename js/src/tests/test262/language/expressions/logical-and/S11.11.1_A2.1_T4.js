@@ -9,7 +9,7 @@
 
 
 if ((false && x) !== false) {
-  $ERROR('#1: (false && x) === false');
+  throw new Test262Error('#1: (false && x) === false');
 }
 
 reportCompare(0, 0);

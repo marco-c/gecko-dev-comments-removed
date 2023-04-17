@@ -11,12 +11,12 @@
 
 
 if (String(false) !== "false") {
-  $ERROR('#1: String(false) === "false". Actual: ' + (String(false)));
+  throw new Test262Error('#1: String(false) === "false". Actual: ' + (String(false)));
 }
 
 
 if (String(true) !== "true") {
-  $ERROR('#2: String(true) === "true". Actual: ' + (String(true)));
+  throw new Test262Error('#2: String(true) === "true". Actual: ' + (String(true)));
 }
 
 reportCompare(0, 0);

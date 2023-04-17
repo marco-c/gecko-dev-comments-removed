@@ -9,52 +9,52 @@
 
 
 if (0. !== 0) {
-  $ERROR('#0: 0. === 0');
+  throw new Test262Error('#0: 0. === 0');
 }
 
 
 if (1. !== 1) {
-  $ERROR('#1: 1. === 1');
+  throw new Test262Error('#1: 1. === 1');
 }
 
 
 if (2. !== 2) {
-  $ERROR('#2: 2. === 2');
+  throw new Test262Error('#2: 2. === 2');
 }
 
 
 if (3. !== 3) {
-  $ERROR('#3: 3. === 3');
+  throw new Test262Error('#3: 3. === 3');
 }
 
 
 if (4. !== 4) {
-  $ERROR('#4: 4. === 4');
+  throw new Test262Error('#4: 4. === 4');
 }
 
 
 if (5. !== 5) {
-  $ERROR('#5: 5. === 5');
+  throw new Test262Error('#5: 5. === 5');
 }
 
 
 if (6. !== 6) {
-  $ERROR('#6: 6. === 6');
+  throw new Test262Error('#6: 6. === 6');
 }
 
 
 if (7. !== 7) {
-  $ERROR('#7: 7. === 7');
+  throw new Test262Error('#7: 7. === 7');
 }
 
 
 if (8. !== 8) {
-  $ERROR('#8: 8. === 8');
+  throw new Test262Error('#8: 8. === 8');
 }
 
 
 if (9. !== 9) {
-  $ERROR('#9: 9. === 9');
+  throw new Test262Error('#9: 9. === 9');
 }
 
 reportCompare(0, 0);

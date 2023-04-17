@@ -11,7 +11,7 @@
 var x = -Infinity;
 if (Math.floor(x) !== -Infinity)
 {
-  $ERROR("#1: 'var x = -Infinity; Math.floor(x) !== -Infinity'");
+  throw new Test262Error("#1: 'var x = -Infinity; Math.floor(x) !== -Infinity'");
 }
 
 reportCompare(0, 0);

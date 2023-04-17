@@ -9,7 +9,7 @@
 
 
 if ("\u0000" !== "\0") {
-  $ERROR('#1: "\\u0000" === "\\0"');
+  throw new Test262Error('#1: "\\u0000" === "\\0"');
 }
 
 reportCompare(0, 0);

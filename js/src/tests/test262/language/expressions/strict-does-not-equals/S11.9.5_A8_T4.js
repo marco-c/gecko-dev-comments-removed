@@ -9,72 +9,72 @@
 
 
 if (!(undefined !== null)) {
-  $ERROR('#1: undefined !== null');
+  throw new Test262Error('#1: undefined !== null');
 }
 
 
 if (!(null !== undefined)) {
-  $ERROR('#2: null !== undefined');
+  throw new Test262Error('#2: null !== undefined');
 }
 
 
 if (!(null !== 0)) {
-  $ERROR('#3: null !== 0');
+  throw new Test262Error('#3: null !== 0');
 }
 
 
 if (!(0 !== null)) {
-  $ERROR('#4: 0 !== null');
+  throw new Test262Error('#4: 0 !== null');
 }
 
 
 if (!(null !== false)) {
-  $ERROR('#5: null !== false');
+  throw new Test262Error('#5: null !== false');
 }
 
 
 if (!(false !== null)) {
-  $ERROR('#6: false !== null');
+  throw new Test262Error('#6: false !== null');
 }
 
 
 if (!(undefined !== false)) {
-  $ERROR('#7: undefined !== false');
+  throw new Test262Error('#7: undefined !== false');
 }
 
 
 if (!(false !== undefined)) {
-  $ERROR('#8: false !== undefined');
+  throw new Test262Error('#8: false !== undefined');
 }
 
 
 if (!(null !== new Object())) {
-  $ERROR('#9: null !== new Object()');
+  throw new Test262Error('#9: null !== new Object()');
 }
 
 
 if (!(new Object() !== null)) {
-  $ERROR('#10: new Object() !== null');
+  throw new Test262Error('#10: new Object() !== null');
 }
 
 
 if (!(null !== "null")) {
-  $ERROR('#11: null !== "null"');
+  throw new Test262Error('#11: null !== "null"');
 }
 
 
 if (!("null" !== null)) {
-  $ERROR('#12: "null" !== null');
+  throw new Test262Error('#12: "null" !== null');
 }
 
 
 if (!(undefined !== "undefined")) {
-  $ERROR('#13: undefined !== "undefined"');
+  throw new Test262Error('#13: undefined !== "undefined"');
 }
 
 
 if (!("undefined" !== undefined)) {
-  $ERROR('#14: "undefined" !== undefined');
+  throw new Test262Error('#14: "undefined" !== undefined');
 }
 
 reportCompare(0, 0);

@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Array.prototype.findLast.call(undefined, function() {});
+});
+
+assert.throws(TypeError, function() {
+  Array.prototype.findLast.call(null, function() {});
+});
+
+reportCompare(0, 0);

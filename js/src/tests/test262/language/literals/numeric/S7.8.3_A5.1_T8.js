@@ -9,32 +9,32 @@
 
 
 if (0Xa !== 10) {
-  $ERROR('#a: 0Xa === 10');
+  throw new Test262Error('#a: 0Xa === 10');
 }
 
 
 if (0Xb !== 11) {
-  $ERROR('#b: 0Xb === 11');
+  throw new Test262Error('#b: 0Xb === 11');
 }
 
 
 if (0Xc !== 12) {
-  $ERROR('#c: 0Xc === 12');
+  throw new Test262Error('#c: 0Xc === 12');
 }
 
 
 if (0Xd !== 13) {
-  $ERROR('#d: 0Xd === 13');
+  throw new Test262Error('#d: 0Xd === 13');
 }
 
 
 if (0Xe !== 14) {
-  $ERROR('#e: 0Xe === 14');
+  throw new Test262Error('#e: 0Xe === 14');
 }
 
 
 if (0Xf !== 15) {
-  $ERROR('#f: 0Xf === 15');
+  throw new Test262Error('#f: 0Xf === 15');
 }
 
 reportCompare(0, 0);

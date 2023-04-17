@@ -19,7 +19,7 @@ function __func(){
 
 
 if (delete __func) {
-	$ERROR('#1: delete __func returning false');
+	throw new Test262Error('#1: delete __func returning false');
 }
 
 
@@ -27,7 +27,7 @@ if (delete __func) {
 
 
 if (__func() !== ALIVE) {
-	$ERROR('#2: __func() === ALIVE. Actual: __func() ==='+__func());
+	throw new Test262Error('#2: __func() === ALIVE. Actual: __func() ==='+__func());
 }
 
 

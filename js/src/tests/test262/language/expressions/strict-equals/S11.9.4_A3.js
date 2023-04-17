@@ -11,22 +11,22 @@
 
 
 if (!(true === true)) {
-  $ERROR('#1: true === true');
+  throw new Test262Error('#1: true === true');
 }
 
 
 if (!(false === false)) {
-  $ERROR('#2: false === false');
+  throw new Test262Error('#2: false === false');
 }
 
 
 if (true === false) {
-  $ERROR('#3: true !== false');
+  throw new Test262Error('#3: true !== false');
 }
 
 
 if (false === true) {
-  $ERROR('#4: false !== true');
+  throw new Test262Error('#4: false !== true');
 }
 
 reportCompare(0, 0);

@@ -14,42 +14,42 @@
 
 
 if (true < "1" !== false) {
-  $ERROR('#1: true < "1" === false');
+  throw new Test262Error('#1: true < "1" === false');
 }
 
 
 if ("1" < true !== false) {
-  $ERROR('#2: "1" < true === false');
+  throw new Test262Error('#2: "1" < true === false');
 }
 
 
 if (new Boolean(true) < "1" !== false) {
-  $ERROR('#3: new Boolean(true) < "1" === false');
+  throw new Test262Error('#3: new Boolean(true) < "1" === false');
 }
 
 
 if ("1" < new Boolean(true) !== false) {
-  $ERROR('#4: "1" < new Boolean(true) === false');
+  throw new Test262Error('#4: "1" < new Boolean(true) === false');
 }
 
 
 if (true < new String("1") !== false) {
-  $ERROR('#5: true < new String("1") === false');
+  throw new Test262Error('#5: true < new String("1") === false');
 }
 
 
 if (new String("1") < true !== false) {
-  $ERROR('#6: new String("1") < true === false');
+  throw new Test262Error('#6: new String("1") < true === false');
 }
 
 
 if (new Boolean(true) < new String("1") !== false) {
-  $ERROR('#7: new Boolean(true) < new String("1") === false');
+  throw new Test262Error('#7: new Boolean(true) < new String("1") === false');
 }
 
 
 if (new String("1") < new Boolean(true) !== false) {
-  $ERROR('#8: new String("1") < new Boolean(true) === false');
+  throw new Test262Error('#8: new String("1") < new Boolean(true) === false');
 }
 
 reportCompare(0, 0);

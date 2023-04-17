@@ -8,7 +8,7 @@
 
 
 if (!Number.hasOwnProperty("MAX_VALUE")) {
-  $ERROR('#1: The Number constructor has the property "MAX_VALUE"');
+  throw new Test262Error('#1: The Number constructor has the property "MAX_VALUE"');
 }
 
 reportCompare(0, 0);

@@ -15,17 +15,17 @@ var obj = Object(1.1 * ([].length + {
 
 
 if (typeof obj !== "object") {
-  $ERROR('#2: Object(expression) returns ToObject(expression)');
+  throw new Test262Error('#2: Object(expression) returns ToObject(expression)');
 }
 
 
 if (obj.constructor !== Number) {
-  $ERROR('#3: Object(expression) returns ToObject(expression)');
+  throw new Test262Error('#3: Object(expression) returns ToObject(expression)');
 }
 
 
 if ((obj != 1.1) || (obj === 1.1)) {
-  $ERROR('#4: Object(expression) returns ToObject(expression)');
+  throw new Test262Error('#4: Object(expression) returns ToObject(expression)');
 }
 
 

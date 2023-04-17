@@ -11,7 +11,7 @@
 
 
 if ("lego".charAt() !== "l") {
-  $ERROR('#1: "lego".charAt() === "l". Actual: "lego".charAt() ===' + ("lego".charAt()));
+  throw new Test262Error('#1: "lego".charAt() === "l". Actual: "lego".charAt() ===' + ("lego".charAt()));
 }
 
 

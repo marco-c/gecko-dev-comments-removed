@@ -8,7 +8,7 @@
 
 
 if (Date.prototype.hasOwnProperty("getTime") !== true) {
-  $ERROR('#1: The Date.prototype has the property "getTime"');
+  throw new Test262Error('#1: The Date.prototype has the property "getTime"');
 }
 
 reportCompare(0, 0);

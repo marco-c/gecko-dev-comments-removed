@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+let cal = new Temporal.Calendar("iso8601");
+
+assert.sameValue(3, cal.month("2019-03-15"));
+
+reportCompare(0, 0);

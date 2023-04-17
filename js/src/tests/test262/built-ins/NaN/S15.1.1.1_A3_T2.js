@@ -10,7 +10,7 @@
 
 
 if (delete NaN !== false) {
-  $ERROR('#1: delete NaN === false. Actual: ' + (delete NaN));
+  throw new Test262Error('#1: delete NaN === false. Actual: ' + (delete NaN));
 }
 
 reportCompare(0, 0);

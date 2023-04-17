@@ -13,38 +13,38 @@ var obj = {};
 obj.join = Array.prototype.join;
 
 if (obj.length !== undefined) {
-  $ERROR('#0: var obj = {}; obj.length === undefined. Actual: ' + (obj.length));
+  throw new Test262Error('#0: var obj = {}; obj.length === undefined. Actual: ' + (obj.length));
 } else {
   
   if (obj.join() !== "") {
-    $ERROR('#1: var obj = {}; obj.join = Array.prototype.join; obj.join() === "". Actual: ' + (obj.join()));
+    throw new Test262Error('#1: var obj = {}; obj.join = Array.prototype.join; obj.join() === "". Actual: ' + (obj.join()));
   }
   
   if (obj.length !== undefined) {
-    $ERROR('#2: var obj = {}; obj.join = Array.prototype.join; obj.join(); obj.length === undefined. Actual: ' + (obj.length));
+    throw new Test262Error('#2: var obj = {}; obj.join = Array.prototype.join; obj.join(); obj.length === undefined. Actual: ' + (obj.length));
   }
 }
 
 
 obj.length = undefined;
 if (obj.join() !== "") {
-  $ERROR('#3: var obj = {}; obj.length = undefined; obj.join = Array.prototype.join; obj.join() === ". Actual: ' + (obj.join()));
+  throw new Test262Error('#3: var obj = {}; obj.length = undefined; obj.join = Array.prototype.join; obj.join() === ". Actual: ' + (obj.join()));
 }
 
 
 if (obj.length !== undefined) {
-  $ERROR('#4: var obj = {}; obj.length = undefined; obj.join = Array.prototype.join; obj.join(); obj.length === undefined. Actual: ' + (obj.length));
+  throw new Test262Error('#4: var obj = {}; obj.length = undefined; obj.join = Array.prototype.join; obj.join(); obj.length === undefined. Actual: ' + (obj.length));
 }
 
 
 obj.length = null
 if (obj.join() !== "") {
-  $ERROR('#5: var obj = {}; obj.length = null; obj.join = Array.prototype.join; obj.join() === "". Actual: ' + (obj.join()));
+  throw new Test262Error('#5: var obj = {}; obj.length = null; obj.join = Array.prototype.join; obj.join() === "". Actual: ' + (obj.join()));
 }
 
 
 if (obj.length !== null) {
-  $ERROR('#6: var obj = {}; obj.length = null; obj.join = Array.prototype.join; obj.join(); obj.length === null. Actual: ' + (obj.length));
+  throw new Test262Error('#6: var obj = {}; obj.length = null; obj.join = Array.prototype.join; obj.join(); obj.length === null. Actual: ' + (obj.length));
 }
 
 reportCompare(0, 0);

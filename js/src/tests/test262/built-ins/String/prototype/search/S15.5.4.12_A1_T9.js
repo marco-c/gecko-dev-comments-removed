@@ -18,7 +18,7 @@ var __obj = {
 
 
 if (new String(__obj).search(function() {}()) !== 0) {
-  $ERROR('#1: __obj = {valueOf:function(){}, toString:void 0}; new String(__obj).search(function(){}()) === 0. Actual: ' + new String(__obj).search(function() {}()));
+  throw new Test262Error('#1: __obj = {valueOf:function(){}, toString:void 0}; new String(__obj).search(function(){}()) === 0. Actual: ' + new String(__obj).search(function() {}()));
 }
 
 

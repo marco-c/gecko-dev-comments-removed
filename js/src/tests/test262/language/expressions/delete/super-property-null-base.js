@@ -21,6 +21,8 @@
 
 
 
+
+
 class C {
   static m() {
     delete super.x;
@@ -29,7 +31,7 @@ class C {
 
 Object.setPrototypeOf(C, null);
 
-assert.throws(TypeError, () => {
+assert.throws(ReferenceError, () => {
   C.m();
 });
 

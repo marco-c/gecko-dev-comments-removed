@@ -9,17 +9,17 @@
 
 
 if (typeof Math.min !== "function") {
-  $ERROR('#1: Math.min method is not defined');
+  throw new Test262Error('#1: Math.min method is not defined');
 }
 
 
 if (typeof Math.min.length === "undefined") {
-  $ERROR('#2: length property of Math.min method is undefined');
+  throw new Test262Error('#2: length property of Math.min method is undefined');
 }
 
 
 if (Math.min.length !== 2) {
-  $ERROR('#3: The length property of the Math.min method is not 2');
+  throw new Test262Error('#3: The length property of the Math.min method is not 2');
 }
 
 reportCompare(0, 0);

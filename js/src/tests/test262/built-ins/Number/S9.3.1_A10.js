@@ -12,7 +12,7 @@
 
 
 if (Number(".12345") !== +("12345") * 1e-5) {
-  $ERROR('#1: Number(".12345") === +("12345")*1e-5');
+  throw new Test262Error('#1: Number(".12345") === +("12345")*1e-5');
 }
 
 reportCompare(0, 0);

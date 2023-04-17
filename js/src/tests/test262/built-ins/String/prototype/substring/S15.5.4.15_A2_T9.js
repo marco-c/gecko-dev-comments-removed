@@ -12,7 +12,7 @@ var __string = new String("this is a string object");
 
 
 if (__string.substring(-Infinity, -Infinity) !== "") {
-  $ERROR('#1: __string = new String("this is a string object"); __string.substring(-Infinity, -Infinity) === "". Actual: ' + __string.substring(-Infinity, -Infinity));
+  throw new Test262Error('#1: __string = new String("this is a string object"); __string.substring(-Infinity, -Infinity) === "". Actual: ' + __string.substring(-Infinity, -Infinity));
 }
 
 

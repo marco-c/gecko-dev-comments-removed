@@ -20,7 +20,7 @@ var object = {
 [object, object].sort();
 if (counter < 2) {
   
-  $ERROR('#1: [object, object].sort(); counter < 2. Actual: ' + (counter));
+  throw new Test262Error('#1: [object, object].sort(); counter < 2. Actual: ' + (counter));
 }
 
 reportCompare(0, 0);

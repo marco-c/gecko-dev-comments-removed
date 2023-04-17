@@ -25,7 +25,7 @@
 
 Object.defineProperty(Function.prototype, "prototype", {
   get: function() {
-    $ERROR("getter for 'prototype' called");
+    throw new Test262Error("getter for 'prototype' called");
   }
 });
 

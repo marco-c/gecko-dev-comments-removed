@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+TemporalHelpers.checkToTemporalCalendarFastPath((temporalObject, calendar) => {
+  const result = Temporal.Now.plainDateTime(temporalObject);
+  assert.sameValue(result.calendar, calendar, "Temporal object coerced to calendar");
+});
+
+reportCompare(0, 0);

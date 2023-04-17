@@ -11,37 +11,37 @@
 
 
 if (parseFloat("-11string") !== -11) {
-  $ERROR('#1: parseFloat("-11string") === -11. Actual: ' + (parseFloat("-11string")));
+  throw new Test262Error('#1: parseFloat("-11string") === -11. Actual: ' + (parseFloat("-11string")));
 }
 
 
 if (parseFloat("01string") !== 1) {
-  $ERROR('#2: parseFloat("01string") === 1. Actual: ' + (parseFloat("01string")));
+  throw new Test262Error('#2: parseFloat("01string") === 1. Actual: ' + (parseFloat("01string")));
 }
 
 
 if (parseFloat("-11e-1string") !== -1.1) {
-  $ERROR('#3: parseFloat("-11e-1string") === -1.1. Actual: ' + (parseFloat("-11e-1string")));
+  throw new Test262Error('#3: parseFloat("-11e-1string") === -1.1. Actual: ' + (parseFloat("-11e-1string")));
 }
 
 
 if (parseFloat("01e1string") !== 10) {
-  $ERROR('#4: parseFloat("01e1string") === 10. Actual: ' + (parseFloat("01e1string")));
+  throw new Test262Error('#4: parseFloat("01e1string") === 10. Actual: ' + (parseFloat("01e1string")));
 }
 
 
 if (parseFloat("001string") !== 1) {
-  $ERROR('#5: parseFloat("001string") === 1. Actual: ' + (parseFloat("001string")));
+  throw new Test262Error('#5: parseFloat("001string") === 1. Actual: ' + (parseFloat("001string")));
 }
 
 
 if (parseFloat("1e001string") !== 10) {
-  $ERROR('#6: parseFloat("1e001string") === 10. Actual: ' + (parseFloat("1e001string")));
+  throw new Test262Error('#6: parseFloat("1e001string") === 10. Actual: ' + (parseFloat("1e001string")));
 }
 
 
 if (parseFloat("010string") !== 10) {
-  $ERROR('#7: parseFloat("010string") === 10. Actual: ' + (parseFloat("010string")));
+  throw new Test262Error('#7: parseFloat("010string") === 10. Actual: ' + (parseFloat("010string")));
 }
 
 reportCompare(0, 0);

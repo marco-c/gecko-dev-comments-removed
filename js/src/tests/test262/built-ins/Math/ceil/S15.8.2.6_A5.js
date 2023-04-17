@@ -11,7 +11,7 @@
 var x = -Infinity;
 if (Math.ceil(x) !== -Infinity)
 {
-  $ERROR("#1: 'var x = -Infinity; Math.ceil(x) !== -Infinity'");
+  throw new Test262Error("#1: 'var x = -Infinity; Math.ceil(x) !== -Infinity'");
 }
 
 reportCompare(0, 0);

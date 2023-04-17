@@ -10,7 +10,7 @@
 
 
 if (typeof(true) !== "boolean") {
-  $ERROR('#1: typeof(true) === "boolean"');
+  throw new Test262Error('#1: typeof(true) === "boolean"');
 }
 
 
@@ -18,7 +18,7 @@ if (typeof(true) !== "boolean") {
 
 
 if (typeof(true) != "boolean") {
-  $ERROR('#2: typeof(true) == "boolean"');
+  throw new Test262Error('#2: typeof(true) == "boolean"');
 }
 
 
@@ -26,7 +26,7 @@ if (typeof(true) != "boolean") {
 
 
 if (typeof(false) !== "boolean") {
-  $ERROR('#3: typeof(false) === "boolean"');
+  throw new Test262Error('#3: typeof(false) === "boolean"');
 }
 
 
@@ -34,7 +34,7 @@ if (typeof(false) !== "boolean") {
 
 
 if (typeof(false) != "boolean") {
-  $ERROR('#4: typeof(false) == "boolean"');
+  throw new Test262Error('#4: typeof(false) == "boolean"');
 }
 
 
@@ -42,7 +42,7 @@ if (typeof(false) != "boolean") {
 
 
 if (true === false) {
-  $ERROR('#5: true !== false');
+  throw new Test262Error('#5: true !== false');
 }
 
 
@@ -50,7 +50,7 @@ if (true === false) {
 
 
 if (true == false) {
-  $ERROR('#6: true != false');
+  throw new Test262Error('#6: true != false');
 }
 
 
@@ -58,7 +58,7 @@ if (true == false) {
 
 
 if (false === true) {
-  $ERROR('#7: false !== true');
+  throw new Test262Error('#7: false !== true');
 }
 
 
@@ -66,7 +66,7 @@ if (false === true) {
 
 
 if (false == true) {
-  $ERROR('#8: false != true');
+  throw new Test262Error('#8: false != true');
 }
 
 

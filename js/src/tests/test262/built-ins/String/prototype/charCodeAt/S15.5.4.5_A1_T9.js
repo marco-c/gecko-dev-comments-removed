@@ -13,7 +13,7 @@
 
 
 if (new String(42).charCodeAt(function() {}()) !== 0x34) {
-  $ERROR('#1: new String(42).charCodeAt(function(){}()) === 0x34. Actual: new String(42).charCodeAt(function(){}()) ===' + new String(42).charCodeAt(function() {}()));
+  throw new Test262Error('#1: new String(42).charCodeAt(function(){}()) === 0x34. Actual: new String(42).charCodeAt(function(){}()) ===' + new String(42).charCodeAt(function() {}()));
 }
 
 

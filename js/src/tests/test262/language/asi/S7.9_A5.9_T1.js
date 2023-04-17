@@ -22,7 +22,7 @@ y
 
 
 if ((z!==2)&&(y!==1)&&(x!==1)) {
-	$ERROR('#1: ');
+	throw new Test262Error('#1: ');
 }
 
 
@@ -33,7 +33,7 @@ x + + + y
 
 
 if ((z!==2)&&(y!==1)&&(x!==1)) {
-	$ERROR('');
+	throw new Test262Error('');
 }
 
 
@@ -47,7 +47,7 @@ y
 
 
 if ((z!==2)&&(y!==1)&&(x!==1)) {
-	$ERROR('');
+	throw new Test262Error('');
 }
 
 

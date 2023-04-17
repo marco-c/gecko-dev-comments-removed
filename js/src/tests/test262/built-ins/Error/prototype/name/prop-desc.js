@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+verifyProperty(Error.prototype, 'name', {
+  enumerable: false,
+  writable: true,
+  configurable: true,
+  value: 'Error'
+});
+
+reportCompare(0, 0);

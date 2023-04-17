@@ -13,62 +13,62 @@
 
 
 if (String(1000000000000000000000) !== "1e+21") {
-  $ERROR('#1: String(1000000000000000000000) === "1e+21". Actual: ' + (String(1000000000000000000000)));
+  throw new Test262Error('#1: String(1000000000000000000000) === "1e+21". Actual: ' + (String(1000000000000000000000)));
 }
 
 
 if (String(10000000000000000000000) !== "1e+22") {
-  $ERROR('#2: String(10000000000000000000000) === "1e+22". Actual: ' + (String(10000000000000000000000)));
+  throw new Test262Error('#2: String(10000000000000000000000) === "1e+22". Actual: ' + (String(10000000000000000000000)));
 }
 
 
 if (String(1e21) !== "1e+21") {
-  $ERROR('#3: String(1e21) === "1e+21". Actual: ' + (String(1e21)));
+  throw new Test262Error('#3: String(1e21) === "1e+21". Actual: ' + (String(1e21)));
 }
 
 
 if (String(1.0e22) !== "1e+22") {
-  $ERROR('#4: String(1.0e22) === "1e+22". Actual: ' + (String(1.0e22)));
+  throw new Test262Error('#4: String(1.0e22) === "1e+22". Actual: ' + (String(1.0e22)));
 }
 
 
 if (String(1E21) !== "1e+21") {
-  $ERROR('#5: String(1E21) === "1e+21". Actual: ' + (String(1E21)));
+  throw new Test262Error('#5: String(1E21) === "1e+21". Actual: ' + (String(1E21)));
 }
 
 
 if (String(1.0E22) !== "1e+22") {
-  $ERROR('#6: String(1.0E22) === "1e+22". Actual: ' + (String(1.0E22)));
+  throw new Test262Error('#6: String(1.0E22) === "1e+22". Actual: ' + (String(1.0E22)));
 }
 
 
 if (String(-1000000000000000000000) !== "-1e+21") {
-  $ERROR('#7: String(-1000000000000000000000) === "-1e+21". Actual: ' + (String(-1000000000000000000000)));
+  throw new Test262Error('#7: String(-1000000000000000000000) === "-1e+21". Actual: ' + (String(-1000000000000000000000)));
 }
 
 
 if (String(-10000000000000000000000) !== "-1e+22") {
-  $ERROR('#8: String(-10000000000000000000000) === "-1e+22". Actual: ' + (String(-10000000000000000000000)));
+  throw new Test262Error('#8: String(-10000000000000000000000) === "-1e+22". Actual: ' + (String(-10000000000000000000000)));
 }
 
 
 if (String(-1e21) !== "-1e+21") {
-  $ERROR('#9: String(-1e21) === "-1e+21". Actual: ' + (String(-1e21)));
+  throw new Test262Error('#9: String(-1e21) === "-1e+21". Actual: ' + (String(-1e21)));
 }
 
 
 if (String(-1.0e22) !== "-1e+22") {
-  $ERROR('#10: String(-1.0e22) === "-1e+22". Actual: ' + (String(-1.0e22)));
+  throw new Test262Error('#10: String(-1.0e22) === "-1e+22". Actual: ' + (String(-1.0e22)));
 }
 
 
 if (String(-1E21) !== "-1e+21") {
-  $ERROR('#11: String(-1E21) === "-1e+21". Actual: ' + (String(-1E21)));
+  throw new Test262Error('#11: String(-1E21) === "-1e+21". Actual: ' + (String(-1E21)));
 }
 
 
 if (String(-1.0E22) !== "-1e+22") {
-  $ERROR('#12: String(-1.0E22) === "-1e+22". Actual: ' + (String(-1.0E22)));
+  throw new Test262Error('#12: String(-1.0E22) === "-1e+22". Actual: ' + (String(-1.0E22)));
 }
 
 reportCompare(0, 0);

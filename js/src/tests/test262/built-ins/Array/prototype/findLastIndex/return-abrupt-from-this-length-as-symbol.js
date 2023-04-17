@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var o = {};
+
+o.length = Symbol(1);
+
+
+assert.throws(TypeError, function() {
+  [].findLastIndex.call(o, function() {});
+});
+
+reportCompare(0, 0);

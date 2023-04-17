@@ -16,7 +16,7 @@ var __expected = "";
 
 
 if (__lowerCase.length !== __expected.length) {
-  $ERROR('#1: __lowerCase = "".toUpperCase(); __expected = ""; __lowerCase.length === __expected.length. Actual: ' + __lowerCase.length);
+  throw new Test262Error('#1: __lowerCase = "".toUpperCase(); __expected = ""; __lowerCase.length === __expected.length. Actual: ' + __lowerCase.length);
 }
 
 
@@ -24,7 +24,7 @@ if (__lowerCase.length !== __expected.length) {
 
 
 if (__lowerCase.index !== __expected.index) {
-  $ERROR('#2: __lowerCase = "".toUpperCase(); __expected = ""; __lowerCase.index === __expected.index. Actual: ' + __lowerCase.index);
+  throw new Test262Error('#2: __lowerCase = "".toUpperCase(); __expected = ""; __lowerCase.index === __expected.index. Actual: ' + __lowerCase.index);
 }
 
 
@@ -32,7 +32,7 @@ if (__lowerCase.index !== __expected.index) {
 
 
 if (__lowerCase.input !== __expected.input) {
-  $ERROR('#3: __lowerCase = "".toUpperCase(); __expected = ""; __lowerCase.input === __expected.input. Actual: ' + __lowerCase.input);
+  throw new Test262Error('#3: __lowerCase = "".toUpperCase(); __expected = ""; __lowerCase.input === __expected.input. Actual: ' + __lowerCase.input);
 }
 
 
@@ -40,7 +40,7 @@ if (__lowerCase.input !== __expected.input) {
 
 
 if (__lowerCase[0] !== __expected[0]) {
-  $ERROR('#4: __lowerCase = "".toUpperCase(); __expected = ""; __lowerCase[0]===' + __expected[0] + '. Actual: ' + __lowerCase[0]);
+  throw new Test262Error('#4: __lowerCase = "".toUpperCase(); __expected = ""; __lowerCase[0]===' + __expected[0] + '. Actual: ' + __lowerCase[0]);
 }
 
 

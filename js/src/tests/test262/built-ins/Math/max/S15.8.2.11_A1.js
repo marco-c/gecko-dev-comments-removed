@@ -10,7 +10,7 @@
 
 if (Math.max() != -Infinity)
 {
-  $ERROR("#1: 'Math.max() != -Infinity'");
+  throw new Test262Error("#1: 'Math.max() != -Infinity'");
 }
 
 reportCompare(0, 0);

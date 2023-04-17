@@ -11,19 +11,19 @@
 
 
 if (!(Function.prototype.call.hasOwnProperty('length'))) {
-  $ERROR('#0: the Function.prototype.call has length property.');
+  throw new Test262Error('#0: the Function.prototype.call has length property.');
 }
 
 
 
 if (Function.prototype.call.propertyIsEnumerable('length')) {
-  $ERROR('#1: the Function.prototype.call.length property has the attributes DontEnum');
+  throw new Test262Error('#1: the Function.prototype.call.length property has the attributes DontEnum');
 }
 
 
 for (var p in Function.prototype.call) {
   if (p === "length")
-    $ERROR('#2: the Function.prototype.call.length property has the attributes DontEnum');
+    throw new Test262Error('#2: the Function.prototype.call.length property has the attributes DontEnum');
 }
 
 reportCompare(0, 0);

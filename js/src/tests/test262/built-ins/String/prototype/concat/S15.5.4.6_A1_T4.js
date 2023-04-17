@@ -11,7 +11,7 @@
 
 
 if ("lego".concat() !== "lego") {
-  $ERROR('#1: "lego".concat() === "lego". Actual: ' + ("lego".concat()));
+  throw new Test262Error('#1: "lego".concat() === "lego". Actual: ' + ("lego".concat()));
 }
 
 

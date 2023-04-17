@@ -9,27 +9,27 @@
 
 
 if (!"1" !== false) {
-  $ERROR('#1: !"1" === false');
+  throw new Test262Error('#1: !"1" === false');
 }
 
 
 if (!new String("0") !== false) {
-  $ERROR('#2: !new String("0") === false');
+  throw new Test262Error('#2: !new String("0") === false');
 }
 
 
 if (!"x" !== false) {
-  $ERROR('#3: !"x" === false');
+  throw new Test262Error('#3: !"x" === false');
 }
 
 
 if (!"" !== true) {
-  $ERROR('#4: !"" === true');
+  throw new Test262Error('#4: !"" === true');
 }
 
 
 if (!new String("") !== false) {
-  $ERROR('#5: !new String("") === false');
+  throw new Test262Error('#5: !new String("") === false');
 }
 
 reportCompare(0, 0);

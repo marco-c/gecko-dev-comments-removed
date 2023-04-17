@@ -11,30 +11,30 @@
 
 
 function f1(){
-  return (delete arguments.length); 
+  return (delete arguments.length);
 }
 
 try{
   if(!f1()){
-    $ERROR("#1: A property length have attribute { DontDelete }");
+    throw new Test262Error("#1: A property length have attribute { DontDelete }");
   }
 }
 catch(e){
-  $ERROR("#1: arguments object don't exists");
+  throw new Test262Error("#1: arguments object don't exists");
 }
 
 
 var f2 = function(){
-  return (delete arguments.length); 
+  return (delete arguments.length);
 }
 
 try{
   if(!f2()){
-    $ERROR("#2: A property length have attribute { DontDelete }");
+    throw new Test262Error("#2: A property length have attribute { DontDelete }");
   }
 }
 catch(e){
-  $ERROR("#2: arguments object don't exists");
+  throw new Test262Error("#2: arguments object don't exists");
 }
 
 reportCompare(0, 0);

@@ -11,7 +11,7 @@
 
 
 if (!(String.hasOwnProperty('prototype'))) {
-  $ERROR('#1: String.hasOwnProperty(\'prototype\') return true. Actual: ' + String.hasOwnProperty('prototype'));
+  throw new Test262Error('#1: String.hasOwnProperty(\'prototype\') return true. Actual: ' + String.hasOwnProperty('prototype'));
 }
 
 
@@ -22,7 +22,7 @@ verifyNotConfigurable(String, "prototype");
 
 try {
   if ((delete String.prototype) !== false) {
-    $ERROR('#2: String.prototype has the attribute DontDelete');
+    throw new Test262Error('#2: String.prototype has the attribute DontDelete');
   }
 } catch (e) {
   if (e instanceof Test262Error) throw e;
@@ -34,7 +34,7 @@ try {
 
 
 if (!(String.hasOwnProperty('prototype'))) {
-  $ERROR('#3: delete String.prototype; String.hasOwnProperty(\'prototype\') return true. Actual: ' + String.hasOwnProperty('prototype'));
+  throw new Test262Error('#3: delete String.prototype; String.hasOwnProperty(\'prototype\') return true. Actual: ' + String.hasOwnProperty('prototype'));
 }
 
 

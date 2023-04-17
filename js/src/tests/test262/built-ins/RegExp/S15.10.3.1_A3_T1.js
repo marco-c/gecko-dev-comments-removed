@@ -14,12 +14,12 @@ var __instance = RegExp(__re, "i");
 
 
 if (__instance.constructor !== RegExp) {
-	$ERROR('#1: __re = "d+"; __instance = RegExp(__re, "i"); __instance.constructor === RegExp. Actual: ' + (__instance.constructor));
+	throw new Test262Error('#1: __re = "d+"; __instance = RegExp(__re, "i"); __instance.constructor === RegExp. Actual: ' + (__instance.constructor));
 }
 
 
 if (__instance.source !== __re) {
-	$ERROR('#2: __re = "d+"; __instance = RegExp(__re, "i"); __instance.source === __re. Actual: '+ (__instance.source));
+	throw new Test262Error('#2: __re = "d+"; __instance = RegExp(__re, "i"); __instance.source === __re. Actual: '+ (__instance.source));
 }
 
 reportCompare(0, 0);

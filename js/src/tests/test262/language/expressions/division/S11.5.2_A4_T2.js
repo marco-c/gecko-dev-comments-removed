@@ -13,22 +13,22 @@
 
 
 if (1 / 1 !== 1) {
-  $ERROR('#1: 1 / 1 === 1. Actual: ' + (1 / 1));
+  throw new Test262Error('#1: 1 / 1 === 1. Actual: ' + (1 / 1));
 }
 
 
 if (1 / -1 !== -1) {
-  $ERROR('#2: 1 / -1 === -1. Actual: ' + (1 / -1));
+  throw new Test262Error('#2: 1 / -1 === -1. Actual: ' + (1 / -1));
 }
 
 
 if (-1 / 1 !== -1) {
-  $ERROR('#3: -1 / 1 === -1. Actual: ' + (-1 / 1));
+  throw new Test262Error('#3: -1 / 1 === -1. Actual: ' + (-1 / 1));
 }
 
 
 if (-1 / -1 !== 1) {
-  $ERROR('#4: -1 / -1 === 1. Actual: ' + (-1 / -1));
+  throw new Test262Error('#4: -1 / -1 === 1. Actual: ' + (-1 / -1));
 }
 
 reportCompare(0, 0);

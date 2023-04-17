@@ -12,9 +12,9 @@
 var p = Promise.race([]);
 
 p.then(function() {
-  $ERROR("Never settles.");
+  throw new Test262Error("Never settles.");
 }, function() {
-  $ERROR("Never settles.");
+  throw new Test262Error("Never settles.");
 }).then($DONE, $DONE);
 
 

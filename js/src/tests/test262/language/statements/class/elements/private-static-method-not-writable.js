@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class C {
+  static #m() {}
+
+  static assign() {
+    this.#m = 0;
+  }
+}
+
+assert.throws(TypeError, function() {
+  C.assign();
+});
+
+reportCompare(0, 0);

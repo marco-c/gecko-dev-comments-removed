@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+if (String(+0) !== "0") {
+  throw new Test262Error('#1: String(+0) === "0". Actual: ' + (String(+0)));
+}
+
+
+if (String(-0) !== "0") {
+  throw new Test262Error('#2: String(-0) === "0". Actual: ' + (String(-0)));
+}
+
+reportCompare(0, 0);

@@ -15,7 +15,7 @@
 
 var object = {
   get constructor() {
-    $ERROR("get constructor called");
+    throw new Test262Error("get constructor called");
   }
 };
 

@@ -30,7 +30,7 @@ try {
 
 
 if (p1!=="alert") {
-	$ERROR('#1: p1 === "alert". Actual: p1==='+p1);
+	throw new Test262Error('#1: p1 === "alert". Actual: p1==='+p1);
 }
 
 
@@ -38,7 +38,7 @@ if (p1!=="alert") {
 
 
 if (getRight()!=="napravo") {
-	$ERROR('#2: getRight() === "napravo". Actual: getRight() === '+getRight());
+	throw new Test262Error('#2: getRight() === "napravo". Actual: getRight() === '+getRight());
 }
 
 
@@ -46,7 +46,7 @@ if (getRight()!=="napravo") {
 
 
 if (__obj.p1!=="w1") {
-	$ERROR('#3: __obj.p1 === "w1". Actual: __obj.p1 ==='+__obj.p1);
+	throw new Test262Error('#3: __obj.p1 === "w1". Actual: __obj.p1 ==='+__obj.p1);
 }
 
 
@@ -54,7 +54,7 @@ if (__obj.p1!=="w1") {
 
 
 if (__obj.getRight()!==false) {
-	$ERROR('#4: __obj.getRight() === false. Actual: __obj.getRight() === '+__obj.getRight());
+	throw new Test262Error('#4: __obj.getRight() === false. Actual: __obj.getRight() === '+__obj.getRight());
 }
 
 
@@ -62,7 +62,7 @@ if (__obj.getRight()!==false) {
 
 
 if (resukt !== "alert") {
-	$ERROR('#5: resukt === "alert". Actual: resukt ==='+resukt);
+	throw new Test262Error('#5: resukt === "alert". Actual: resukt ==='+resukt);
 }
 
 

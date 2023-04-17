@@ -9,7 +9,7 @@
 
 
 if (null + "" !== "null") {
-  $ERROR('#1: null + "" === "null". Actual: ' + (null + "")); 
+  throw new Test262Error('#1: null + "" === "null". Actual: ' + (null + "")); 
 }
 
 reportCompare(0, 0);

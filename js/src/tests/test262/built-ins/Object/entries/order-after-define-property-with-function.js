@@ -1,0 +1,40 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var fn = () => {};
+fn.a = 1;
+Object.defineProperty(fn, "name", {enumerable: true});
+var fnKeys = Object.entries(fn).map(e => e[0]);
+assert.compareArray(fnKeys, ["name", "a"]);
+
+reportCompare(0, 0);

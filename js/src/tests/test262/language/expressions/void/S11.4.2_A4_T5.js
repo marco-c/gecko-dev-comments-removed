@@ -10,13 +10,13 @@
 
 var x = {}; 
 if (isNaN(void x) !== true) {
-  $ERROR('#1: var x = {}; void x === undefined. Actual: ' + (void x));
+  throw new Test262Error('#1: var x = {}; void x === undefined. Actual: ' + (void x));
 }
 
 
 var x = function(){return 1}; 
 if (isNaN(void x) !== true) {
-  $ERROR('#2: var x = function(){return 1}; void x === undefined. Actual: ' + (void x));
+  throw new Test262Error('#2: var x = function(){return 1}; void x === undefined. Actual: ' + (void x));
 }
 
 reportCompare(0, 0);

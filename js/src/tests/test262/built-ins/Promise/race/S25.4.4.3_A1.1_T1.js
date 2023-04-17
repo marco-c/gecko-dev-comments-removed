@@ -9,7 +9,7 @@
 
 
 if (typeof Promise.race !== "function") {
-  $ERROR("Expected Promise.race to be a function, actually " + typeof Promise.race);
+  throw new Test262Error("Expected Promise.race to be a function, actually " + typeof Promise.race);
 }
 
 reportCompare(0, 0);

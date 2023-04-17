@@ -12,7 +12,7 @@
 function test(arg) {
 
 	if (typeof(arg) !== "undefined") {
-    $ERROR('#1: Function argument that isn\'t provided has a value of undefined. Actual: ' + (typeof(arg)));
+    throw new Test262Error('#1: Function argument that isn\'t provided has a value of undefined. Actual: ' + (typeof(arg)));
   }
 }
 

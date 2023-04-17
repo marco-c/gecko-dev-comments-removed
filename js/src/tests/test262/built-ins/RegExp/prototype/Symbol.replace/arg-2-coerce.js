@@ -17,7 +17,7 @@
 
 var arg = {
   valueOf: function() {
-    $ERROR('This method should not be invoked.');
+    throw new Test262Error('This method should not be invoked.');
   },
   toString: function() {
     return 'toString value';

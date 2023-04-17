@@ -11,7 +11,7 @@
 
 
 if (typeof func !== 'undefined') {
-  $ERROR('#1:  function expression can\'t be declarated');
+  throw new Test262Error('#1:  function expression can\'t be declarated');
 }
 
 var n_obj = Object(function func() {
@@ -20,12 +20,12 @@ var n_obj = Object(function func() {
 
 
 if ((n_obj.constructor !== Function) || (n_obj() !== 1)) {
-  $ERROR('#2: Object(function func(){return 1;}) returns function');
+  throw new Test262Error('#2: Object(function func(){return 1;}) returns function');
 }
 
 
 if (typeof func !== 'undefined') {
-  $ERROR('#3:  function expression can\'t be declarated');
+  throw new Test262Error('#3:  function expression can\'t be declarated');
 }
 
 reportCompare(0, 0);

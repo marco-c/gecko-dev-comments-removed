@@ -13,7 +13,7 @@
 
 
 if (!(String.prototype.concat.hasOwnProperty('length'))) {
-  $ERROR('#1: String.prototype.concat.hasOwnProperty(\'length\') return true. Actual: ' + String.prototype.concat.hasOwnProperty('length'));
+  throw new Test262Error('#1: String.prototype.concat.hasOwnProperty(\'length\') return true. Actual: ' + String.prototype.concat.hasOwnProperty('length'));
 }
 
 
@@ -27,7 +27,7 @@ verifyNotWritable(String.prototype.concat, "length", null, function() {
 
 
 if (String.prototype.concat.length !== __obj) {
-  $ERROR('#2: __obj = String.prototype.concat.length; String.prototype.concat.length = function(){return "shifted";}; String.prototype.concat.length === __obj. Actual: ' + String.prototype.concat.length);
+  throw new Test262Error('#2: __obj = String.prototype.concat.length; String.prototype.concat.length = function(){return "shifted";}; String.prototype.concat.length === __obj. Actual: ' + String.prototype.concat.length);
 }
 
 

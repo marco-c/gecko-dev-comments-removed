@@ -11,7 +11,7 @@
 
 
 if ("smart".charCodeAt() !== 0x73) {
-  $ERROR('#1: "smart".charCodeAt() === 0x73. Actual: "smart".charCodeAt() ===' + ("smart".charCodeAt()));
+  throw new Test262Error('#1: "smart".charCodeAt() === 0x73. Actual: "smart".charCodeAt() ===' + ("smart".charCodeAt()));
 }
 
 

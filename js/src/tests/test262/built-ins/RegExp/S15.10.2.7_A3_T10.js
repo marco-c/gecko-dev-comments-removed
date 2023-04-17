@@ -13,7 +13,7 @@ var __executed = /o+/.test("abcdefg");
 
 
 if (__executed) {
-	$ERROR('#1: /o+/.test("abcdefg") === false');
+	throw new Test262Error('#1: /o+/.test("abcdefg") === false');
 }
 
 reportCompare(0, 0);

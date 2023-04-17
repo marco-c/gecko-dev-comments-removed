@@ -9,11 +9,11 @@
 
 
 if (delete Date.prototype.getDay === false) {
-  $ERROR('#1: The Date.prototype.getDay property has not the attributes DontDelete');
+  throw new Test262Error('#1: The Date.prototype.getDay property has not the attributes DontDelete');
 }
 
 if (Date.prototype.hasOwnProperty('getDay')) {
-  $ERROR('#2: The Date.prototype.getDay property has not the attributes DontDelete');
+  throw new Test262Error('#2: The Date.prototype.getDay property has not the attributes DontDelete');
 }
 
 reportCompare(0, 0);

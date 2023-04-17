@@ -28,10 +28,10 @@ var p = {
 
 try {
   var f = new Function(p, body);
-  $ERROR('#1: If P is not parsable as a FormalParameterList_opt then throw a SyntaxError exception');
+  throw new Test262Error('#1: If P is not parsable as a FormalParameterList_opt then throw a SyntaxError exception');
 } catch (e) {
   if (!(e instanceof SyntaxError)) {
-    $ERROR('#1.1: If P is not parsable as a FormalParameterList_opt then throw a SyntaxError exception');
+    throw new Test262Error('#1.1: If P is not parsable as a FormalParameterList_opt then throw a SyntaxError exception');
   }
 }
 

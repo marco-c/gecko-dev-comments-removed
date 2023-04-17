@@ -19,7 +19,7 @@ function __func(){
 
 
 if (!__func("A","B",1,2)) {
-	$ERROR('#1: Since arguments property has attribute { DontDelete } elements of arguments can be deleted');
+	throw new Test262Error('#1: Since arguments property has attribute { DontDelete } elements of arguments can be deleted');
 }
 
 

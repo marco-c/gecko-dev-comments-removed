@@ -9,27 +9,27 @@
 
 
 if (parseFloat("\u00201.1") !== parseFloat("1.1")) {
-  $ERROR('#1: parseFloat("\\u00201.1") === parseFloat("1.1"). Actual: ' + (parseFloat("\u00201.1")));
+  throw new Test262Error('#1: parseFloat("\\u00201.1") === parseFloat("1.1"). Actual: ' + (parseFloat("\u00201.1")));
 }
 
 
 if (parseFloat("\u0020\u0020-1.1") !== parseFloat("-1.1")) {
-  $ERROR('#2: parseFloat("\\u0020\\u0020-1.1") === parseFloat("-1.1"). Actual: ' + (parseFloat("\u0020\u0020-1.1")));
+  throw new Test262Error('#2: parseFloat("\\u0020\\u0020-1.1") === parseFloat("-1.1"). Actual: ' + (parseFloat("\u0020\u0020-1.1")));
 }
 
 
 if (parseFloat(" 1.1") !== parseFloat("1.1")) {
-  $ERROR('#3: parseFloat(" 1.1") === parseFloat("1.1"). Actual: ' + (parseFloat(" 1.1")));
+  throw new Test262Error('#3: parseFloat(" 1.1") === parseFloat("1.1"). Actual: ' + (parseFloat(" 1.1")));
 }
 
 
 if (parseFloat("       1.1") !== parseFloat("1.1")) {
-  $ERROR('#4: parseFloat("       1.1") === parseFloat("1.1"). Actual: ' + (parseFloat("       1.1")));
+  throw new Test262Error('#4: parseFloat("       1.1") === parseFloat("1.1"). Actual: ' + (parseFloat("       1.1")));
 }
 
 
 if (parseFloat("       \u0020       \u0020-1.1") !== parseFloat("-1.1")) {
-  $ERROR('#5: parseFloat("       \\u0020       \\u0020-1.1") === parseFloat("-1.1"). Actual: ' + (parseFloat("       \u0020       \u0020-1.1")));
+  throw new Test262Error('#5: parseFloat("       \\u0020       \\u0020-1.1") === parseFloat("-1.1"). Actual: ' + (parseFloat("       \u0020       \u0020-1.1")));
 }
 
 

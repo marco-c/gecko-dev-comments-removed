@@ -10,7 +10,7 @@
 
 for (var prop in this) {
   if (prop === "Infinity") {
-    $ERROR('#1: The Infinity is DontEnum');
+    throw new Test262Error('#1: The Infinity is DontEnum');
   }
 }
 

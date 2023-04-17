@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+
+
+let cal = new Temporal.Calendar("iso8601");
+
+let yearMonth = new Temporal.PlainYearMonth(1999, 6);
+assert.sameValue(6, cal.month(yearMonth));
+
+reportCompare(0, 0);

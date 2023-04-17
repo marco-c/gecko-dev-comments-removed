@@ -52,6 +52,7 @@
 
 
 
+
 const fallbacks = ['code', 'none'];
 const types = ['language', 'region', 'script', 'currency'];
 

@@ -12,7 +12,7 @@
 
 
 if (Array.prototype.isPrototypeOf(new Array()) !== true) {
-  $ERROR('#1: Array.prototype.isPrototypeOf(new Array()) === true. Actual: ' + (Array.prototype.isPrototypeOf(new Array())));
+  throw new Test262Error('#1: Array.prototype.isPrototypeOf(new Array()) === true. Actual: ' + (Array.prototype.isPrototypeOf(new Array())));
 }
 
 reportCompare(0, 0);

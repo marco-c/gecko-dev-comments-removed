@@ -9,26 +9,26 @@
 
 
 if ((1 == 1) !== true) {
-  $ERROR('#1: (1 == 1) === true');
+  throw new Test262Error('#1: (1 == 1) === true');
 }
 
 
 var x = 1;
 if ((x == 1) !== true) {
-  $ERROR('#2: var x = 1; (x == 1) === true');
+  throw new Test262Error('#2: var x = 1; (x == 1) === true');
 }
 
 
 var y = 1;
 if ((1 == y) !== true) {
-  $ERROR('#3: var y = 1; (1 == y) === true');
+  throw new Test262Error('#3: var y = 1; (1 == y) === true');
 }
 
 
 var x = 1;
 var y = 1;
 if ((x == y) !== true) {
-  $ERROR('#4: var x = 1; var y = 1; (x == y) === true');
+  throw new Test262Error('#4: var x = 1; var y = 1; (x == y) === true');
 }
 
 
@@ -37,7 +37,7 @@ var objecty = new Object();
 objectx.prop = 1;
 objecty.prop = 1;
 if ((objectx.prop == objecty.prop) !== true) {
-  $ERROR('#5: var objectx = new Object(); var objecty = new Object(); objectx.prop = 1; objecty.prop = 1; (objectx.prop == objecty.prop) === true');
+  throw new Test262Error('#5: var objectx = new Object(); var objecty = new Object(); objectx.prop = 1; objecty.prop = 1; (objectx.prop == objecty.prop) === true');
 }
 
 reportCompare(0, 0);

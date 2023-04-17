@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+
+
+
+class C extends class {} {
+  constructor() {
+    try {
+      return;
+    } finally {
+      super();
+    }
+  }
+}
+
+var o = new C();
+assert.sameValue(typeof o, "object");
+
+reportCompare(0, 0);

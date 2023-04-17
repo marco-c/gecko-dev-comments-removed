@@ -9,42 +9,42 @@
 
 
 if ((false == undefined) !== false) {
-  $ERROR('#1: (false == undefined) === false');
+  throw new Test262Error('#1: (false == undefined) === false');
 }
 
 
 if ((Number.NaN == undefined) !== false) {
-  $ERROR('#2: (Number.NaN == undefined) === false');
+  throw new Test262Error('#2: (Number.NaN == undefined) === false');
 }
 
 
 if (("undefined" == undefined) !== false) {
-  $ERROR('#3: ("undefined" == undefined) === false');
+  throw new Test262Error('#3: ("undefined" == undefined) === false');
 }
 
 
 if (({} == undefined) !== false) {
-  $ERROR('#4: ({} == undefined) === false');
+  throw new Test262Error('#4: ({} == undefined) === false');
 }
 
 
 if ((false == null) !== false) {
-  $ERROR('#5: (false == null) === false');
+  throw new Test262Error('#5: (false == null) === false');
 }
 
 
 if ((0 == null) !== false) {
-  $ERROR('#6: (0 == null) === false');
+  throw new Test262Error('#6: (0 == null) === false');
 }
 
 
 if (("null" == null) !== false) {
-  $ERROR('#7: ("null" == null) === false');
+  throw new Test262Error('#7: ("null" == null) === false');
 }
 
 
 if (({} == null) !== false) {
-  $ERROR('#8: ({} == null) === false');
+  throw new Test262Error('#8: ({} == null) === false');
 }
 
 reportCompare(0, 0);

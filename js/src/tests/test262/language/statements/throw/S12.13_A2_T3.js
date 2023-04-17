@@ -14,7 +14,7 @@ try{
   throw true;
 }
 catch(e){
-  if (e!==true) $ERROR('#1: Exception ===true. Actual:  Exception ==='+ e  );
+  if (e!==true) throw new Test262Error('#1: Exception ===true. Actual:  Exception ==='+ e  );
 }
 
 
@@ -22,7 +22,7 @@ try{
   throw false;
 }
 catch(e){
-  if (e!==false) $ERROR('#2: Exception ===false. Actual:  Exception ==='+ e  );
+  if (e!==false) throw new Test262Error('#2: Exception ===false. Actual:  Exception ==='+ e  );
 }
 
 
@@ -31,7 +31,7 @@ try{
   throw b;
 }
 catch(e){
-  if (e!==false) $ERROR('#3: Exception ===false. Actual:  Exception ==='+ e  );
+  if (e!==false) throw new Test262Error('#3: Exception ===false. Actual:  Exception ==='+ e  );
 }
 
 
@@ -40,7 +40,7 @@ try{
   throw b;
 }
 catch(e){
-  if (e!==true) $ERROR('#4: Exception ===true. Actual:  Exception ==='+ e  );
+  if (e!==true) throw new Test262Error('#4: Exception ===true. Actual:  Exception ==='+ e  );
 }
 
 reportCompare(0, 0);

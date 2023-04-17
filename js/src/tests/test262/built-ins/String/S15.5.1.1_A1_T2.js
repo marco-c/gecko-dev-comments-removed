@@ -14,7 +14,7 @@ var __str = String(null);
 
 
 if (typeof __str !== "string") {
-  $ERROR('#1: __str = String(null); typeof __str === "string". Actual: typeof __str ===' + typeof __str);
+  throw new Test262Error('#1: __str = String(null); typeof __str === "string". Actual: typeof __str ===' + typeof __str);
 }
 
 
@@ -22,7 +22,7 @@ if (typeof __str !== "string") {
 
 
 if (__str !== "null") {
-  $ERROR('#2: __str = String(null); __str === "null". Actual: __str ===' + __str);
+  throw new Test262Error('#2: __str = String(null); __str === "null". Actual: __str ===' + __str);
 }
 
 

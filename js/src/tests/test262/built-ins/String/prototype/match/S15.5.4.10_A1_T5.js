@@ -13,7 +13,7 @@
 if (function() {
     return "gnulluna"
   }().match(null)[0] !== "null") {
-  $ERROR('#1: function(){return "gnulluna"}().match(null)[0] === "null". Actual: ' + function() {
+  throw new Test262Error('#1: function(){return "gnulluna"}().match(null)[0] === "null". Actual: ' + function() {
     return "gnulluna"
   }().match(null)[0]);
 }

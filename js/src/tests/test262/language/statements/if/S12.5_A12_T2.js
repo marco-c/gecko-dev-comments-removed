@@ -10,11 +10,11 @@
 
 if(true){
   if (false)
-    $ERROR('#1.1: At embedded "if/else" constructions engine must select right branches');
+    throw new Test262Error('#1.1: At embedded "if/else" constructions engine must select right branches');
 }
 else{ 
   if (true)
-    $ERROR('#1.2: At embedded "if/else" constructions engine must select right branches');
+    throw new Test262Error('#1.2: At embedded "if/else" constructions engine must select right branches');
 }
 
 
@@ -24,13 +24,13 @@ if(true){
 }
 else{ 
   if (true)
-    $ERROR('#2.2: At embedded "if/else" constructions engine must select right branches');
+    throw new Test262Error('#2.2: At embedded "if/else" constructions engine must select right branches');
 }
 
 
 if(false){
   if (true)
-    $ERROR('#3.1: At embedded "if/else" constructions engine must select right branches');
+    throw new Test262Error('#3.1: At embedded "if/else" constructions engine must select right branches');
 }
 else{ 
   if (true)
@@ -40,11 +40,11 @@ else{
 
 if(false){
   if (true)
-    $ERROR('#4.1: At embedded "if/else" constructions engine must select right branches');
+    throw new Test262Error('#4.1: At embedded "if/else" constructions engine must select right branches');
 }
 else{ 
   if (false)
-    $ERROR('#4.3: At embedded "if/else" constructions engine must select right branches');
+    throw new Test262Error('#4.3: At embedded "if/else" constructions engine must select right branches');
 }
 
 reportCompare(0, 0);

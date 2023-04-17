@@ -9,7 +9,7 @@
 
 
 function fakeObjectKeys() {
-  $ERROR('The overriden version of Object.keys was called!');
+  throw new Test262Error('The overriden version of Object.keys was called!');
 }
 
 Object.keys = fakeObjectKeys;

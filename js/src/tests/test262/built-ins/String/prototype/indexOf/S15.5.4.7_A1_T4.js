@@ -13,7 +13,7 @@
 
 
 if ("".indexOf() !== -1) {
-  $ERROR('#1: "".indexOf() === -1. Actual: ' + ("".indexOf()));
+  throw new Test262Error('#1: "".indexOf() === -1. Actual: ' + ("".indexOf()));
 }
 
 

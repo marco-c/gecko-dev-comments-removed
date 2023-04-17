@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+if (Object.prototype.prototype !== undefined) {
+  throw new Test262Error('#1: Object prototype has not prototype');
+}
+
+reportCompare(0, 0);

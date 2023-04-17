@@ -1,0 +1,32 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(TypedArray.prototype.findLastIndex.name, "findLastIndex");
+
+verifyProperty(TypedArray.prototype.findLastIndex, "name", {
+  enumerable: false,
+  writable: false,
+  configurable: true
+});
+
+reportCompare(0, 0);

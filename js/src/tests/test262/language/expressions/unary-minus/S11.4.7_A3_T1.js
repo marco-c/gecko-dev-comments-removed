@@ -9,12 +9,12 @@
 
 
 if (-false !== 0) {
-  $ERROR('#1: -false === 0. Actual: ' + (-false));
+  throw new Test262Error('#1: -false === 0. Actual: ' + (-false));
 }
 
 
 if (-new Boolean(true) !== -1) {
-  $ERROR('#2: -new Boolean(true) === -1. Actual: ' + (-new Boolean(true)));
+  throw new Test262Error('#2: -new Boolean(true) === -1. Actual: ' + (-new Boolean(true)));
 }
 
 reportCompare(0, 0);

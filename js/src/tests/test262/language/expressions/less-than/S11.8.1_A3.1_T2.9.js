@@ -13,22 +13,22 @@
 
 
 if (true < null !== false) {
-  $ERROR('#1: true < null === false');
+  throw new Test262Error('#1: true < null === false');
 }
 
 
 if (null < true !== true) {
-  $ERROR('#2: null < true === true');
+  throw new Test262Error('#2: null < true === true');
 }
 
 
 if (new Boolean(true) < null !== false) {
-  $ERROR('#3: new Boolean(true) < null === false');
+  throw new Test262Error('#3: new Boolean(true) < null === false');
 }
 
 
 if (null < new Boolean(true) !== true) {
-  $ERROR('#4: null < new Boolean(true) === true');
+  throw new Test262Error('#4: null < new Boolean(true) === true');
 }
 
 reportCompare(0, 0);

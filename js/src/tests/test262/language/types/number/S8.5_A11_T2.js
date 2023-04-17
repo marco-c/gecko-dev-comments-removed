@@ -12,27 +12,27 @@ var n_zero=-0;
 
 
 if ((p_zero == n_zero) !== true){
-  $ERROR('#1: var p_zero=+0; var n_zero=-0; p_zero != n_zero');
+  throw new Test262Error('#1: var p_zero=+0; var n_zero=-0; p_zero != n_zero');
 }
 
 
 if ((n_zero == 0) !== true){
-  $ERROR('#2: var p_zero=+0; var n_zero=-0; n_zero == 0');
+  throw new Test262Error('#2: var p_zero=+0; var n_zero=-0; n_zero == 0');
 }
 
 
 if ((p_zero == -0) !== true){
-  $ERROR('#3: var p_zero=+0; var n_zero=-0; p_zero == -0');
+  throw new Test262Error('#3: var p_zero=+0; var n_zero=-0; p_zero == -0');
 }
 
 
 if ((p_zero === 0) !== true){
-  $ERROR('#4: var p_zero=+0; var n_zero=-0; p_zero === 0');
+  throw new Test262Error('#4: var p_zero=+0; var n_zero=-0; p_zero === 0');
 }
 
 
 if ((n_zero === -0) !== true){
-  $ERROR('#5: var p_zero=+0; var n_zero=-0; n_zero === -0');
+  throw new Test262Error('#5: var p_zero=+0; var n_zero=-0; n_zero === -0');
 }
 
 reportCompare(0, 0);

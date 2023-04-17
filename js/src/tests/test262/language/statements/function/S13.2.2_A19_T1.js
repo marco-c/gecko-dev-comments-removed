@@ -22,7 +22,7 @@ with (__obj)
 
 
 if (result !== 1) {
-	$ERROR('#1: result === 1. Actual: result ==='+result);
+	throw new Test262Error('#1: result === 1. Actual: result ==='+result);
 }
 
 

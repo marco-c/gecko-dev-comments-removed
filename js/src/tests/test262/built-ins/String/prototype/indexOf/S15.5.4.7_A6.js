@@ -10,7 +10,7 @@
 
 
 if (String.prototype.indexOf.prototype !== undefined) {
-  $ERROR('#1: String.prototype.indexOf.prototype === undefined. Actual: ' + String.prototype.indexOf.prototype);
+  throw new Test262Error('#1: String.prototype.indexOf.prototype === undefined. Actual: ' + String.prototype.indexOf.prototype);
 }
 
 

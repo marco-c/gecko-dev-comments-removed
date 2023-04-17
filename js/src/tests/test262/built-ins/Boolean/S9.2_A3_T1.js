@@ -9,12 +9,12 @@
 
 
 if (Boolean(true) !== true) {
-  $ERROR('#1: Boolean(true) === true. Actual: ' + (Boolean(true)));
+  throw new Test262Error('#1: Boolean(true) === true. Actual: ' + (Boolean(true)));
 }
 
 
 if (Boolean(false) !== false) {
-  $ERROR('#2: Boolean(false) === false. Actual: ' + (Boolean(false)));
+  throw new Test262Error('#2: Boolean(false) === false. Actual: ' + (Boolean(false)));
 }
 
 reportCompare(0, 0);

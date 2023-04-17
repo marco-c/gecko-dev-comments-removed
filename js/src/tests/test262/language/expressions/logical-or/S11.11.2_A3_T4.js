@@ -9,12 +9,12 @@
 
 
 if ((false || undefined) !== undefined) {
-  $ERROR('#1: (false || undefined) === undefined');
+  throw new Test262Error('#1: (false || undefined) === undefined');
 }
 
 
 if ((false || null) !== null) {
-  $ERROR('#2: (false || null) === null');
+  throw new Test262Error('#2: (false || null) === null');
 }
 
 reportCompare(0, 0);

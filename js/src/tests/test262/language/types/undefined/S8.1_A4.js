@@ -9,7 +9,7 @@
 
 
 if ((new Object()).newProperty !== undefined) {
-  $ERROR('#1: (new Object()).newProperty === undefined. Actual: ' + ((new Object()).newProperty));
+  throw new Test262Error('#1: (new Object()).newProperty === undefined. Actual: ' + ((new Object()).newProperty));
 }
 
 reportCompare(0, 0);

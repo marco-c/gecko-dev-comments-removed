@@ -13,19 +13,19 @@
 
 
 if (!(Object.prototype.toLocaleString.hasOwnProperty('length'))) {
-  $ERROR('#0: the Object.prototype.toLocaleString has length property.');
+  throw new Test262Error('#0: the Object.prototype.toLocaleString has length property.');
 }
 
 
 
 if (Object.prototype.toLocaleString.propertyIsEnumerable('length')) {
-  $ERROR('#1: the Object.prototype.toLocaleString.length property has the attributes DontEnum');
+  throw new Test262Error('#1: the Object.prototype.toLocaleString.length property has the attributes DontEnum');
 }
 
 
 for (var p in Object.prototype.toLocaleString) {
   if (p === "length")
-    $ERROR('#2: the Object.prototype.toLocaleString.length property has the attributes DontEnum');
+    throw new Test262Error('#2: the Object.prototype.toLocaleString.length property has the attributes DontEnum');
 }
 
 

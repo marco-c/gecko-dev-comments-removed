@@ -11,57 +11,57 @@
 
 
 if (decodeURIComponent("%3B") !== ";") {
-  $ERROR('#1: decodeURIComponent("%3B") equal ";", not "%3B"');
+  throw new Test262Error('#1: decodeURIComponent("%3B") equal ";", not "%3B"');
 }
 
 
 if (decodeURIComponent("%2F") !== "/") {
-  $ERROR('#2: decodeURIComponent("%2F") equal "/", not "%2F"');
+  throw new Test262Error('#2: decodeURIComponent("%2F") equal "/", not "%2F"');
 }
 
 
 if (decodeURIComponent("%3F") !== "?") {
-  $ERROR('#3: decodeURIComponent("%3F") equal "?", not "%3F"');
+  throw new Test262Error('#3: decodeURIComponent("%3F") equal "?", not "%3F"');
 }
 
 
 if (decodeURIComponent("%3A") !== ":") {
-  $ERROR('#4: decodeURIComponent("%3A") equal ":", not "%3A"');
+  throw new Test262Error('#4: decodeURIComponent("%3A") equal ":", not "%3A"');
 }
 
 
 if (decodeURIComponent("%40") !== "@") {
-  $ERROR('#5: decodeURIComponent("%40") equal "@", not "%40"');
+  throw new Test262Error('#5: decodeURIComponent("%40") equal "@", not "%40"');
 }
 
 
 if (decodeURIComponent("%26") !== "&") {
-  $ERROR('#6: decodeURIComponent("%26") equal "&", not "%26"');
+  throw new Test262Error('#6: decodeURIComponent("%26") equal "&", not "%26"');
 }
 
 
 if (decodeURIComponent("%3D") !== "=") {
-  $ERROR('#7.1: decodeURIComponent("%3D") equal "=", not "%3D"');
+  throw new Test262Error('#7.1: decodeURIComponent("%3D") equal "=", not "%3D"');
 }
 
 
 if (decodeURIComponent("%2B") !== "+") {
-  $ERROR('#8.1: decodeURIComponent("%2B") equal "+", not "%2B"');
+  throw new Test262Error('#8.1: decodeURIComponent("%2B") equal "+", not "%2B"');
 }
 
 
 if (decodeURIComponent("%24") !== "$") {
-  $ERROR('#9: decodeURIComponent("%24") equal "$", not "%24"');
+  throw new Test262Error('#9: decodeURIComponent("%24") equal "$", not "%24"');
 }
 
 
 if (decodeURIComponent("%2C") !== ",") {
-  $ERROR('#10: decodeURIComponent("%2C") equal ",", not "%2C"');
+  throw new Test262Error('#10: decodeURIComponent("%2C") equal ",", not "%2C"');
 }
 
 
 if (decodeURIComponent("%23") !== "#") {
-  $ERROR('#11: decodeURIComponent("%23") equal "#", not "%23"');
+  throw new Test262Error('#11: decodeURIComponent("%23") equal "#", not "%23"');
 }
 
 reportCompare(0, 0);

@@ -9,13 +9,13 @@
 
 
 if (("" || "1") !== "1") {
-  $ERROR('#1: ("" || "1") === "1"');
+  throw new Test262Error('#1: ("" || "1") === "1"');
 }
 
 
 var y = new String("1");
 if (("" || y) !== y) {
-  $ERROR('#2: (var y = new String("1"); "" || y) === y');
+  throw new Test262Error('#2: (var y = new String("1"); "" || y) === y');
 }
 
 reportCompare(0, 0);

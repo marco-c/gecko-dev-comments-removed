@@ -1,0 +1,36 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var result;
+
+[1].findLast(function() {
+  result = this;
+});
+
+assert.sameValue(result, this);
+
+var o = {};
+[1].findLast(function() {
+  result = this;
+}, o);
+
+assert.sameValue(result, o);
+
+reportCompare(0, 0);

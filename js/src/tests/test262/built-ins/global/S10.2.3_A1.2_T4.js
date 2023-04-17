@@ -12,7 +12,7 @@
 function test() {
   
   if (Math === null) {
-    $ERROR("#27: Math === null");
+    throw new Test262Error("#27: Math === null");
   }
 }
 

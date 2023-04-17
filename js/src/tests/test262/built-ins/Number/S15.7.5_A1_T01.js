@@ -11,12 +11,12 @@
 
 
 if ((new Number()).hasOwnProperty("constructor") !== false) {
-  $ERROR('#1: Number instance must have no special property "constructor"');
+  throw new Test262Error('#1: Number instance must have no special property "constructor"');
 }
 
 
 if ((new Number()).constructor !== Number.prototype.constructor) {
-  $ERROR('#2: Number instance property "constructor" must be inherited from Number prototype object');
+  throw new Test262Error('#2: Number instance property "constructor" must be inherited from Number prototype object');
 }
 
 reportCompare(0, 0);
