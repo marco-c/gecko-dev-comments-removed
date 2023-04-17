@@ -44,28 +44,12 @@ parent:
                         ChildLoadInfoForwarderArgs? targetLoadInfoForwarder,
                         uint32_t loadFlags, nsIReferrerInfo referrerInfo,
                         URIParams? apiRedirectTo,
-                        CorsPreflightArgs? corsPreflightArgs,
-                        bool chooseAppcache);
+                        CorsPreflightArgs? corsPreflightArgs);
 
   
   
   
   async DocumentChannelCleanup(bool clearCacheEntry);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  async MarkOfflineCacheEntryAsForeign();
 
   
   

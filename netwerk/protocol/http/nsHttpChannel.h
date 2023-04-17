@@ -70,7 +70,6 @@ class nsHttpChannel final : public HttpBaseChannel,
                             public nsITransportEventSink,
                             public nsIProtocolProxyCallback,
                             public nsIHttpAuthenticableChannel,
-                            public nsIApplicationCacheChannel,
                             public nsIAsyncVerifyRedirectCallback,
                             public nsIThreadRetargetableRequest,
                             public nsIThreadRetargetableStreamListener,
@@ -91,8 +90,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   NS_DECL_NSITRANSPORTEVENTSINK
   NS_DECL_NSIPROTOCOLPROXYCALLBACK
   NS_DECL_NSIPROXIEDCHANNEL
-  NS_DECL_NSIAPPLICATIONCACHECONTAINER
-  NS_DECL_NSIAPPLICATIONCACHECHANNEL
   NS_DECL_NSIASYNCVERIFYREDIRECTCALLBACK
   NS_DECL_NSITHREADRETARGETABLEREQUEST
   NS_DECL_NSIDNSLISTENER
@@ -221,31 +218,12 @@ class nsHttpChannel final : public HttpBaseChannel,
   }
 
   
-  
-  
-  class OfflineCacheEntryAsForeignMarker {
-    nsCOMPtr<nsIApplicationCache> mApplicationCache;
-    nsCOMPtr<nsIURI> mCacheURI;
-
-   public:
-    OfflineCacheEntryAsForeignMarker(nsIApplicationCache* appCache,
-                                     nsIURI* aURI)
-        : mApplicationCache(appCache), mCacheURI(aURI) {}
-
-    nsresult MarkAsForeign();
-  };
-
-  OfflineCacheEntryAsForeignMarker* GetOfflineCacheEntryAsForeignMarker();
-
-  
   class AutoCacheWaitFlags {
    public:
     explicit AutoCacheWaitFlags(nsHttpChannel* channel)
         : mChannel(channel), mKeep(0) {
       
-      mChannel->StoreCacheEntriesToWaitFor(
-          nsHttpChannel::WAIT_FOR_CACHE_ENTRY |
-          nsHttpChannel::WAIT_FOR_OFFLINE_CACHE_ENTRY);
+      mChannel->StoreWaitForCacheEntry(nsHttpChannel::WAIT_FOR_CACHE_ENTRY);
     }
 
     void Keep(uint32_t flags) {
@@ -255,13 +233,13 @@ class nsHttpChannel final : public HttpBaseChannel,
 
     ~AutoCacheWaitFlags() {
       
-      mChannel->StoreCacheEntriesToWaitFor(
-          mChannel->LoadCacheEntriesToWaitFor() & mKeep);
+      mChannel->StoreWaitForCacheEntry(mChannel->LoadWaitForCacheEntry() &
+                                       mKeep);
     }
 
    private:
     nsHttpChannel* mChannel;
-    uint32_t mKeep : 2;
+    uint32_t mKeep : 1;
   };
 
   bool AwaitingCacheCallbacks();
@@ -400,15 +378,10 @@ class nsHttpChannel final : public HttpBaseChannel,
   [[nodiscard]] nsresult ResolveProxy();
 
   
-  [[nodiscard]] nsresult OnOfflineCacheEntryAvailable(
-      nsICacheEntry* aEntry, bool aNew, nsIApplicationCache* aAppCache,
-      nsresult aResult);
   [[nodiscard]] nsresult OnNormalCacheEntryAvailable(nsICacheEntry* aEntry,
                                                      bool aNew,
                                                      nsresult aResult);
   [[nodiscard]] nsresult OpenOfflineCacheEntryForWriting();
-  [[nodiscard]] nsresult OnOfflineCacheEntryForWritingAvailable(
-      nsICacheEntry* aEntry, nsIApplicationCache* aAppCache, nsresult aResult);
   [[nodiscard]] nsresult OnCacheEntryAvailableInternal(
       nsICacheEntry* entry, bool aNew, nsIApplicationCache* aAppCache,
       nsresult status);
@@ -419,10 +392,8 @@ class nsHttpChannel final : public HttpBaseChannel,
   bool ShouldUpdateOfflineCacheEntry();
   [[nodiscard]] nsresult ReadFromCache(bool alreadyMarkedValid);
   void CloseCacheEntry(bool doomOnFailure);
-  void CloseOfflineCacheEntry();
   [[nodiscard]] nsresult InitCacheEntry();
   void UpdateInhibitPersistentCachingFlag();
-  [[nodiscard]] nsresult InitOfflineCacheEntry();
   [[nodiscard]] nsresult AddCacheEntryHeaders(nsICacheEntry* entry);
   [[nodiscard]] nsresult FinalizeCacheEntry();
   [[nodiscard]] nsresult InstallCacheListener(int64_t offset = 0);
@@ -647,7 +618,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   uint32_t mRedirectType;
 
   static const uint32_t WAIT_FOR_CACHE_ENTRY = 1;
-  static const uint32_t WAIT_FOR_OFFLINE_CACHE_ENTRY = 2;
 
   bool mCacheOpenWithPriority;
   uint32_t mCacheQueueSizeWhenOpen;
@@ -684,7 +654,7 @@ class nsHttpChannel final : public HttpBaseChannel,
     (uint32_t, CacheEntryIsReadOnly, 1),
     (uint32_t, CacheEntryIsWriteOnly, 1),
     
-    (uint32_t, CacheEntriesToWaitFor, 2),
+    (uint32_t, WaitForCacheEntry, 1),
     
     
     
