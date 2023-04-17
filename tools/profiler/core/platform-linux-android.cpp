@@ -74,7 +74,9 @@
 
 using namespace mozilla;
 
-int profiler_current_process_id() { return getpid(); }
+ProfilerProcessId profiler_current_process_id() {
+  return ProfilerProcessId::FromNumber(getpid());
+}
 
 int profiler_current_thread_id() {
 #if defined(GP_OS_linux)
@@ -389,7 +391,7 @@ void Sampler::SuspendAndSampleAndResumeThread(
   
   
   
-  int r = tgkill(mMyPid, sampleeTid, SIGPROF);
+  int r = tgkill(mMyPid.ToNumber(), sampleeTid, SIGPROF);
   if (r == 0) {
     
     

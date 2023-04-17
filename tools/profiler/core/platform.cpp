@@ -785,7 +785,8 @@ class ActivePS {
 
       
       if (filter.find("pid:") == 0) {
-        std::string mypid = std::to_string(profiler_current_process_id());
+        std::string mypid =
+            std::to_string(profiler_current_process_id().ToNumber());
         if (filter.compare(4, std::string::npos, mypid) == 0) {
           return true;
         }
@@ -3344,7 +3345,7 @@ class Sampler {
 
   
   
-  int mMyPid;
+  ProfilerProcessId mMyPid;
 
   
   
