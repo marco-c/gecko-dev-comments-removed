@@ -90,110 +90,6 @@ use crate::filterdata::{SFilterDataComponent, SFilterData, SFilterDataKey};
 use smallvec::SmallVec;
 
 
-struct ReferenceFrameState {
-    
-    offsets: Vec<LayoutVector2D>,
-}
-
-
-
-struct ReferenceFrameMapper {
-    
-    frames: Vec<ReferenceFrameState>,
-}
-
-impl ReferenceFrameMapper {
-    fn new() -> Self {
-        ReferenceFrameMapper {
-            frames: vec![
-                ReferenceFrameState {
-                    offsets: vec![
-                        LayoutVector2D::zero(),
-                    ],
-                }
-            ],
-        }
-    }
-
-    
-    
-    fn push_scope(&mut self) {
-        self.frames.push(ReferenceFrameState {
-            offsets: vec![
-                LayoutVector2D::zero(),
-            ],
-        });
-    }
-
-    
-    fn pop_scope(&mut self) {
-        self.frames.pop().unwrap();
-    }
-
-    
-    
-    fn push_offset(&mut self, offset: LayoutVector2D) {
-        let frame = self.frames.last_mut().unwrap();
-        let current_offset = *frame.offsets.last().unwrap();
-        frame.offsets.push(current_offset + offset);
-    }
-
-    
-    fn pop_offset(&mut self) {
-        let frame = self.frames.last_mut().unwrap();
-        frame.offsets.pop().unwrap();
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn current_offset(&self) -> LayoutVector2D {
-        *self.frames.last().unwrap().offsets.last().unwrap()
-    }
-}
-
-
-
-pub struct ScrollOffsetMapper {
-    pub current_spatial_node: SpatialNodeIndex,
-    pub current_offset: LayoutVector2D,
-}
-
-impl ScrollOffsetMapper {
-    fn new() -> Self {
-        ScrollOffsetMapper {
-            current_spatial_node: SpatialNodeIndex::INVALID,
-            current_offset: LayoutVector2D::zero(),
-        }
-    }
-
-    
-    
-    
-    fn external_scroll_offset(
-        &mut self,
-        spatial_node_index: SpatialNodeIndex,
-        spatial_tree: &SpatialTree,
-    ) -> LayoutVector2D {
-        if spatial_node_index != self.current_spatial_node {
-            self.current_spatial_node = spatial_node_index;
-            self.current_offset = spatial_tree.external_scroll_offset(spatial_node_index);
-        }
-
-        self.current_offset
-    }
-}
-
-
 
 
 #[derive(Default)]
@@ -487,12 +383,6 @@ pub struct SceneBuilder<'a> {
     interners: &'a mut Interners,
 
     
-    rf_mapper: ReferenceFrameMapper,
-
-    
-    external_scroll_mapper: ScrollOffsetMapper,
-
-    
     
     iframe_size: Vec<LayoutSize>,
 
@@ -567,8 +457,6 @@ impl<'a> SceneBuilder<'a> {
             prim_store: PrimitiveStore::new(&stats.prim_store_stats),
             clip_store: ClipStore::new(&stats.clip_store_stats),
             interners,
-            rf_mapper: ReferenceFrameMapper::new(),
-            external_scroll_mapper: ScrollOffsetMapper::new(),
             iframe_size: Vec::new(),
             root_iframe_clip: None,
             quality_settings: view.quality_settings,
@@ -608,28 +496,6 @@ impl<'a> SceneBuilder<'a> {
             picture_graph: builder.picture_graph,
             plane_splitters: builder.plane_splitters,
         }
-    }
-
-    
-    
-    
-    
-    fn current_offset(
-        &mut self,
-        spatial_node_index: SpatialNodeIndex,
-    ) -> LayoutVector2D {
-        
-        let rf_offset = self.rf_mapper.current_offset();
-
-        
-        let scroll_offset = self
-            .external_scroll_mapper
-            .external_scroll_offset(
-                spatial_node_index,
-                &self.spatial_tree,
-            );
-
-        rf_offset + scroll_offset
     }
 
     fn build_all(&mut self, root_pipeline: &ScenePipeline) {
@@ -699,7 +565,6 @@ impl<'a> SceneBuilder<'a> {
                             bc.pipeline_id,
                         );
 
-                        self.rf_mapper.push_offset(info.origin.to_vector());
                         let new_context = BuildContext {
                             pipeline_id: bc.pipeline_id,
                             kind: ContextKind::StackingContext {
@@ -717,7 +582,6 @@ impl<'a> SceneBuilder<'a> {
                         profile_scope!("build_reference_frame");
                         let parent_space = self.get_space(info.parent_spatial_id);
                         let mut subtraversal = item.sub_iter();
-                        let current_offset = self.current_offset(parent_space);
 
                         let transform = match info.reference_frame.transform {
                             ReferenceTransformBinding::Static { binding } => binding,
@@ -772,10 +636,9 @@ impl<'a> SceneBuilder<'a> {
                             info.reference_frame.transform_style,
                             transform,
                             info.reference_frame.kind,
-                            current_offset + info.origin.to_vector(),
+                            info.origin.to_vector(),
                         );
 
-                        self.rf_mapper.push_scope();
                         let new_context = BuildContext {
                             pipeline_id: bc.pipeline_id,
                             kind: ContextKind::ReferenceFrame,
@@ -813,8 +676,6 @@ impl<'a> SceneBuilder<'a> {
                             assert!(self.root_iframe_clip.is_none());
                             self.root_iframe_clip = Some(clip_chain_id);
                         }
-
-                        self.rf_mapper.push_scope();
                         self.iframe_size.push(size);
 
                         let new_context = BuildContext {
@@ -836,16 +697,11 @@ impl<'a> SceneBuilder<'a> {
             match bc.kind {
                 ContextKind::Root => {}
                 ContextKind::StackingContext { sc_info } => {
-                    self.rf_mapper.pop_offset();
                     self.pop_stacking_context(sc_info);
                 }
-                ContextKind::ReferenceFrame => {
-                    self.rf_mapper.pop_scope();
-                }
+                ContextKind::ReferenceFrame => {}
                 ContextKind::Iframe { parent_traversal } => {
                     self.iframe_size.pop();
-                    self.rf_mapper.pop_scope();
-
                     self.clip_store.pop_clip_root();
                     if self.iframe_size.is_empty() {
                         assert!(self.root_iframe_clip.is_some());
@@ -883,10 +739,8 @@ impl<'a> SceneBuilder<'a> {
         info: &StickyFrameDisplayItem,
         parent_node_index: SpatialNodeIndex,
     ) {
-        let current_offset = self.current_offset(parent_node_index);
-        let frame_rect = info.bounds.translate(current_offset);
         let sticky_frame_info = StickyFrameInfo::new(
-            frame_rect,
+            info.bounds,
             info.margins,
             info.vertical_offset_bounds,
             info.horizontal_offset_bounds,
@@ -907,11 +761,9 @@ impl<'a> SceneBuilder<'a> {
         parent_node_index: SpatialNodeIndex,
         pipeline_id: PipelineId,
     ) {
-        let current_offset = self.current_offset(parent_node_index);
         
         
         
-        let frame_rect = info.frame_rect.translate(current_offset);
         let content_size = info.content_rect.size();
 
         self.add_scroll_frame(
@@ -919,7 +771,7 @@ impl<'a> SceneBuilder<'a> {
             parent_node_index,
             info.external_id,
             pipeline_id,
-            &frame_rect,
+            &info.frame_rect,
             &content_size,
             info.scroll_sensitivity,
             ScrollFrameKind::Explicit,
@@ -941,23 +793,15 @@ impl<'a> SceneBuilder<'a> {
             },
         };
 
-        let current_offset = self.current_offset(spatial_node_index);
-        let clip_rect = info.clip_rect.translate(current_offset);
-
         self.add_rect_clip_node(
             ClipId::root(iframe_pipeline_id),
             &info.space_and_clip,
-            &clip_rect,
+            &info.clip_rect,
         );
 
         self.clip_store.push_clip_root(
             Some(ClipId::root(iframe_pipeline_id)),
             true,
-        );
-
-        let bounds = self.snap_rect(
-            &info.bounds.translate(current_offset),
-            spatial_node_index,
         );
 
         let spatial_node_index = self.push_reference_frame(
@@ -970,10 +814,10 @@ impl<'a> SceneBuilder<'a> {
                 is_2d_scale_translation: false,
                 should_snap: false
             },
-            bounds.min.to_vector(),
+            info.bounds.min.to_vector(),
         );
 
-        let iframe_rect = LayoutRect::from_size(bounds.size());
+        let iframe_rect = LayoutRect::from_size(info.bounds.size());
         let is_root_pipeline = self.iframe_size.is_empty();
 
         self.add_scroll_frame(
@@ -982,7 +826,7 @@ impl<'a> SceneBuilder<'a> {
             ExternalScrollId(0, iframe_pipeline_id),
             iframe_pipeline_id,
             &iframe_rect,
-            &bounds.size(),
+            &info.bounds.size(),
             ScrollSensitivity::ScriptAndInputEvents,
             ScrollFrameKind::PipelineRoot {
                 is_root_pipeline,
@@ -990,7 +834,7 @@ impl<'a> SceneBuilder<'a> {
             LayoutVector2D::zero(),
         );
 
-        Some((bounds.size(), pipeline.display_list.iter()))
+        Some((info.bounds.size(), pipeline.display_list.iter()))
     }
 
     fn get_space(
@@ -1011,44 +855,24 @@ impl<'a> SceneBuilder<'a> {
         &mut self,
         common: &CommonItemProperties,
         bounds: Option<&LayoutRect>,
-    ) -> (LayoutPrimitiveInfo, LayoutRect, SpatialNodeIndex, ClipChainId) {
+    ) -> (LayoutPrimitiveInfo, SpatialNodeIndex, ClipChainId) {
         let spatial_node_index = self.get_space(common.spatial_id);
         let clip_chain_id = self.get_clip_chain(common.clip_id);
 
-        let current_offset = self.current_offset(spatial_node_index);
-
-        let unsnapped_clip_rect = common.clip_rect.translate(current_offset);
-        let clip_rect = self.snap_rect(
-            &unsnapped_clip_rect,
-            spatial_node_index,
-        );
-
-        let unsnapped_rect = bounds.map(|bounds| {
-            bounds.translate(current_offset)
-        });
-
-        
-        let rect = unsnapped_rect.map_or(clip_rect, |bounds| {
-            self.snap_rect(
-                &bounds,
-                spatial_node_index,
-            )
-        });
-
         let layout = LayoutPrimitiveInfo {
-            rect,
-            clip_rect,
+            rect: bounds.cloned().unwrap_or(common.clip_rect),
+            clip_rect: common.clip_rect,
             flags: common.flags,
         };
 
-        (layout, unsnapped_rect.unwrap_or(unsnapped_clip_rect), spatial_node_index, clip_chain_id)
+        (layout, spatial_node_index, clip_chain_id)
     }
 
     fn process_common_properties_with_bounds(
         &mut self,
         common: &CommonItemProperties,
         bounds: &LayoutRect,
-    ) -> (LayoutPrimitiveInfo, LayoutRect, SpatialNodeIndex, ClipChainId) {
+    ) -> (LayoutPrimitiveInfo, SpatialNodeIndex, ClipChainId) {
         self.process_common_properties(
             common,
             Some(bounds),
@@ -1076,7 +900,7 @@ impl<'a> SceneBuilder<'a> {
             DisplayItem::Image(ref info) => {
                 profile_scope!("image");
 
-                let (layout, _, spatial_node_index, clip_chain_id) = self.process_common_properties_with_bounds(
+                let (layout, spatial_node_index, clip_chain_id) = self.process_common_properties_with_bounds(
                     &info.common,
                     &info.bounds,
                 );
@@ -1096,14 +920,14 @@ impl<'a> SceneBuilder<'a> {
             DisplayItem::RepeatingImage(ref info) => {
                 profile_scope!("repeating_image");
 
-                let (layout, unsnapped_rect, spatial_node_index, clip_chain_id) = self.process_common_properties_with_bounds(
+                let (layout, spatial_node_index, clip_chain_id) = self.process_common_properties_with_bounds(
                     &info.common,
                     &info.bounds,
                 );
 
                 let stretch_size = process_repeat_size(
                     &layout.rect,
-                    &unsnapped_rect,
+                    &info.unsnapped_rect,
                     info.stretch_size,
                 );
 
@@ -1122,7 +946,7 @@ impl<'a> SceneBuilder<'a> {
             DisplayItem::YuvImage(ref info) => {
                 profile_scope!("yuv_image");
 
-                let (layout, _, spatial_node_index, clip_chain_id) = self.process_common_properties_with_bounds(
+                let (layout, spatial_node_index, clip_chain_id) = self.process_common_properties_with_bounds(
                     &info.common,
                     &info.bounds,
                 );
@@ -1147,7 +971,7 @@ impl<'a> SceneBuilder<'a> {
                 
                 
                 
-                let (layout, _, spatial_node_index, clip_chain_id) = self.process_common_properties_with_bounds(
+                let (layout, spatial_node_index, clip_chain_id) = self.process_common_properties_with_bounds(
                     &info.common,
                     &info.bounds,
                 );
@@ -1160,12 +984,13 @@ impl<'a> SceneBuilder<'a> {
                     &info.color,
                     item.glyphs(),
                     info.glyph_options,
+                    info.reference_frame_relative_offset,
                 );
             }
             DisplayItem::Rectangle(ref info) => {
                 profile_scope!("rect");
 
-                let (layout, _, spatial_node_index, clip_chain_id) = self.process_common_properties_with_bounds(
+                let (layout, spatial_node_index, clip_chain_id) = self.process_common_properties_with_bounds(
                     &info.common,
                     &info.bounds,
                 );
@@ -1185,7 +1010,7 @@ impl<'a> SceneBuilder<'a> {
 
                 
                 
-                let (layout, _, spatial_node_index, _) = self.process_common_properties(
+                let (layout, spatial_node_index, _) = self.process_common_properties(
                     &info.common,
                     None,
                 );
@@ -1203,7 +1028,7 @@ impl<'a> SceneBuilder<'a> {
             DisplayItem::ClearRectangle(ref info) => {
                 profile_scope!("clear");
 
-                let (layout, _, spatial_node_index, clip_chain_id) = self.process_common_properties_with_bounds(
+                let (layout, spatial_node_index, clip_chain_id) = self.process_common_properties_with_bounds(
                     &info.common,
                     &info.bounds,
                 );
@@ -1217,7 +1042,7 @@ impl<'a> SceneBuilder<'a> {
             DisplayItem::Line(ref info) => {
                 profile_scope!("line");
 
-                let (layout, _, spatial_node_index, clip_chain_id) = self.process_common_properties_with_bounds(
+                let (layout, spatial_node_index, clip_chain_id) = self.process_common_properties_with_bounds(
                     &info.common,
                     &info.area,
                 );
@@ -1239,14 +1064,14 @@ impl<'a> SceneBuilder<'a> {
                     return;
                 }
 
-                let (mut layout, unsnapped_rect, spatial_node_index, clip_chain_id) = self.process_common_properties_with_bounds(
+                let (mut layout, spatial_node_index, clip_chain_id) = self.process_common_properties_with_bounds(
                     &info.common,
                     &info.bounds,
                 );
 
                 let mut tile_size = process_repeat_size(
                     &layout.rect,
-                    &unsnapped_rect,
+                    &info.unsnapped_rect,
                     info.tile_size,
                 );
 
@@ -1315,7 +1140,7 @@ impl<'a> SceneBuilder<'a> {
                     return;
                 }
 
-                let (mut layout, unsnapped_rect, spatial_node_index, clip_chain_id) = self.process_common_properties_with_bounds(
+                let (mut layout, spatial_node_index, clip_chain_id) = self.process_common_properties_with_bounds(
                     &info.common,
                     &info.bounds,
                 );
@@ -1326,7 +1151,7 @@ impl<'a> SceneBuilder<'a> {
 
                 let mut tile_size = process_repeat_size(
                     &layout.rect,
-                    &unsnapped_rect,
+                    &info.unsnapped_rect,
                     info.tile_size,
                 );
 
@@ -1393,14 +1218,14 @@ impl<'a> SceneBuilder<'a> {
                     return;
                 }
 
-                let (mut layout, unsnapped_rect, spatial_node_index, clip_chain_id) = self.process_common_properties_with_bounds(
+                let (mut layout, spatial_node_index, clip_chain_id) = self.process_common_properties_with_bounds(
                     &info.common,
                     &info.bounds,
                 );
 
                 let tile_size = process_repeat_size(
                     &layout.rect,
-                    &unsnapped_rect,
+                    &info.unsnapped_rect,
                     info.tile_size,
                 );
 
@@ -1438,7 +1263,7 @@ impl<'a> SceneBuilder<'a> {
             DisplayItem::BoxShadow(ref info) => {
                 profile_scope!("box_shadow");
 
-                let (layout, _, spatial_node_index, clip_chain_id) = self.process_common_properties_with_bounds(
+                let (layout, spatial_node_index, clip_chain_id) = self.process_common_properties_with_bounds(
                     &info.common,
                     &info.box_bounds,
                 );
@@ -1458,7 +1283,7 @@ impl<'a> SceneBuilder<'a> {
             DisplayItem::Border(ref info) => {
                 profile_scope!("border");
 
-                let (layout, _, spatial_node_index, clip_chain_id) = self.process_common_properties_with_bounds(
+                let (layout, spatial_node_index, clip_chain_id) = self.process_common_properties_with_bounds(
                     &info.common,
                     &info.bounds,
                 );
@@ -1474,18 +1299,10 @@ impl<'a> SceneBuilder<'a> {
             DisplayItem::ImageMaskClip(ref info) => {
                 profile_scope!("image_clip");
 
-                let parent_space = self.get_space(info.parent_space_and_clip.spatial_id);
-                let current_offset = self.current_offset(parent_space);
-
-                let image_mask = ImageMask {
-                    rect: info.image_mask.rect.translate(current_offset),
-                    ..info.image_mask
-                };
-
                 self.add_image_mask_clip_node(
                     info.id,
                     &info.parent_space_and_clip,
-                    &image_mask,
+                    &info.image_mask,
                     info.fill_rule,
                     item.points(),
                 );
@@ -1493,27 +1310,19 @@ impl<'a> SceneBuilder<'a> {
             DisplayItem::RoundedRectClip(ref info) => {
                 profile_scope!("rounded_clip");
 
-                let parent_space = self.get_space(info.parent_space_and_clip.spatial_id);
-                let current_offset = self.current_offset(parent_space);
-
                 self.add_rounded_rect_clip_node(
                     info.id,
                     &info.parent_space_and_clip,
                     &info.clip,
-                    current_offset,
                 );
             }
             DisplayItem::RectClip(ref info) => {
                 profile_scope!("rect_clip");
 
-                let parent_space = self.get_space(info.parent_space_and_clip.spatial_id);
-                let current_offset = self.current_offset(parent_space);
-                let clip_rect = info.clip_rect.translate(current_offset);
-
                 self.add_rect_clip_node(
                     info.id,
                     &info.parent_space_and_clip,
-                    &clip_rect,
+                    &info.clip_rect,
                 );
             }
             DisplayItem::ClipChain(ref info) => {
@@ -1556,7 +1365,7 @@ impl<'a> SceneBuilder<'a> {
             DisplayItem::BackdropFilter(ref info) => {
                 profile_scope!("backdrop");
 
-                let (layout, _, spatial_node_index, clip_chain_id) = self.process_common_properties(
+                let (layout, spatial_node_index, clip_chain_id) = self.process_common_properties(
                     &info.common,
                     None,
                 );
@@ -1664,7 +1473,6 @@ impl<'a> SceneBuilder<'a> {
     fn create_primitive<P>(
         &mut self,
         info: &LayoutPrimitiveInfo,
-        spatial_node_index: SpatialNodeIndex,
         clip_chain_id: ClipChainId,
         prim: P,
     ) -> PrimitiveInstance
@@ -1675,7 +1483,6 @@ impl<'a> SceneBuilder<'a> {
         
         let prim_key = prim.into_key(info);
 
-        let current_offset = self.current_offset(spatial_node_index);
         let interner = self.interners.as_mut();
         let prim_data_handle = interner
             .intern(&prim_key, || ());
@@ -1684,7 +1491,6 @@ impl<'a> SceneBuilder<'a> {
             prim_key,
             prim_data_handle,
             &mut self.prim_store,
-            current_offset,
         );
 
         PrimitiveInstance::new(
@@ -1832,7 +1638,6 @@ impl<'a> SceneBuilder<'a> {
     {
         let prim_instance = self.create_primitive(
             info,
-            spatial_node_index,
             clip_chain_id,
             prim,
         );
@@ -2441,10 +2246,6 @@ impl<'a> SceneBuilder<'a> {
     ) {
         let spatial_node_index = self.id_to_index_mapper.get_spatial_node_index(space_and_clip.spatial_id);
 
-        let snapped_mask_rect = self.snap_rect(
-            &image_mask.rect,
-            spatial_node_index,
-        );
         let points: Vec<LayoutPoint> = points_range.iter().collect();
 
         
@@ -2460,7 +2261,7 @@ impl<'a> SceneBuilder<'a> {
         }
 
         let item = ClipItemKey {
-            kind: ClipItemKeyKind::image_mask(image_mask, snapped_mask_rect, polygon_handle),
+            kind: ClipItemKeyKind::image_mask(image_mask, image_mask.rect, polygon_handle),
         };
 
         let handle = self
@@ -2493,13 +2294,8 @@ impl<'a> SceneBuilder<'a> {
     ) {
         let spatial_node_index = self.id_to_index_mapper.get_spatial_node_index(space_and_clip.spatial_id);
 
-        let snapped_clip_rect = self.snap_rect(
-            clip_rect,
-            spatial_node_index,
-        );
-
         let item = ClipItemKey {
-            kind: ClipItemKeyKind::rectangle(snapped_clip_rect, ClipMode::Clip),
+            kind: ClipItemKeyKind::rectangle(*clip_rect, ClipMode::Clip),
         };
         let handle = self
             .interners
@@ -2522,22 +2318,17 @@ impl<'a> SceneBuilder<'a> {
         );
     }
 
-    pub fn add_rounded_rect_clip_node(
+    fn add_rounded_rect_clip_node(
         &mut self,
         new_node_id: ClipId,
         space_and_clip: &SpaceAndClipInfo,
         clip: &ComplexClipRegion,
-        current_offset: LayoutVector2D,
     ) {
         let spatial_node_index = self.id_to_index_mapper.get_spatial_node_index(space_and_clip.spatial_id);
 
-        let snapped_region_rect = self.snap_rect(
-            &clip.rect.translate(current_offset),
-            spatial_node_index,
-        );
         let item = ClipItemKey {
             kind: ClipItemKeyKind::rounded_rect(
-                snapped_region_rect,
+                clip.rect,
                 clip.radii,
                 clip.mode,
             ),
@@ -2814,7 +2605,6 @@ impl<'a> SceneBuilder<'a> {
         
         let shadow_prim_instance = self.create_primitive(
             &info,
-            pending_primitive.spatial_node_index,
             pending_primitive.clip_chain_id,
             pending_primitive.prim.create_shadow(
                 &pending_shadow.shadow,
@@ -3229,9 +3019,8 @@ impl<'a> SceneBuilder<'a> {
         text_color: &ColorF,
         glyph_range: ItemRange<GlyphInstance>,
         glyph_options: Option<GlyphOptions>,
+        reference_frame_relative_offset: LayoutVector2D,
     ) {
-        let offset = self.current_offset(spatial_node_index);
-
         let text_run = {
             let instance_map = self.font_instances.lock().unwrap();
             let font_instance = match instance_map.get(font_instance_key) {
@@ -3271,16 +3060,8 @@ impl<'a> SceneBuilder<'a> {
             
             
             
-            let prim_offset = prim_info.rect.min.to_vector() - offset;
-            let glyphs = glyph_range
-                .iter()
-                .map(|glyph| {
-                    GlyphInstance {
-                        index: glyph.index,
-                        point: glyph.point - prim_offset,
-                    }
-                })
-                .collect();
+            
+            let glyphs = glyph_range.iter().collect();
 
             
             
@@ -3294,6 +3075,7 @@ impl<'a> SceneBuilder<'a> {
                 font,
                 shadow: false,
                 requested_raster_space,
+                reference_frame_relative_offset,
             }
         };
 
@@ -3415,7 +3197,6 @@ impl<'a> SceneBuilder<'a> {
             
             
             
-            backdrop_spatial_node_index,
             clip_chain_id,
             Backdrop {
                 pic_index: backdrop_pic_index,
