@@ -181,6 +181,38 @@ function getTrackingProtectionURL() {
   return `${MDN_URL}Mozilla/Firefox/Privacy/Tracking_Protection${getGAParams()}`;
 }
 
+
+
+
+
+
+
+
+
+function getCORSErrorURL(reason) {
+  
+  
+  const reasonMap = new Map([
+    [1001, "CORSDisabled"],
+    [1002, "CORSDidNotSucceed"],
+    [1003, "CORSRequestNotHttp"],
+    [1004, "CORSMultipleAllowOriginNotAllowed"],
+    [1005, "CORSMissingAllowOrigin"],
+    [1006, "CORSNotSupportingCredentials"],
+    [1007, "CORSAllowOriginNotMatchingOrigin"],
+    [1008, "CORSMIssingAllowCredentials"],
+    [1009, "CORSOriginHeaderNotAdded"],
+    [1010, "CORSExternalRedirectNotAllowed"],
+    [1011, "CORSPreflightDidNotSucceed"],
+    [1012, "CORSInvalidAllowMethod"],
+    [1013, "CORSMethodNotFound"],
+    [1014, "CORSInvalidAllowHeader"],
+    [1015, "CORSMissingAllowHeaderFromPreflight"],
+  ]);
+  const urlFrag = reasonMap.get(reason) || "";
+  return `${MDN_URL}Web/HTTP/CORS/Errors/${urlFrag}`;
+}
+
 module.exports = {
   getHeadersURL,
   getHTTPStatusCodeURL,
@@ -188,4 +220,5 @@ module.exports = {
   getPerformanceAnalysisURL,
   getFilterBoxURL,
   getTrackingProtectionURL,
+  getCORSErrorURL,
 };
