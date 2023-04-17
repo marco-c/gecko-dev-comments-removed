@@ -127,7 +127,7 @@ var Heartbeat = class {
     this.eventEmitter = new EventEmitter();
     this.options = options;
     this.surveyResults = {};
-    this.buttons = null;
+    this.buttons = [];
 
     if (!windowsWithInjectedCss.has(chromeWindow)) {
       windowsWithInjectedCss.add(chromeWindow);
@@ -140,25 +140,35 @@ var Heartbeat = class {
     this.handleWindowClosed = this.handleWindowClosed.bind(this);
     this.close = this.close.bind(this);
 
-    if (this.options.engagementButtonLabel) {
-      this.buttons = [
-        {
-          label: this.options.engagementButtonLabel,
-          callback: () => {
-            
-            this.maybeNotifyHeartbeat("Engaged");
-
-            this.userEngaged({
-              type: "button",
-              flowId: this.options.flowId,
-            });
-
-            
-            
-            return true;
-          },
+    
+    if (this.options.learnMoreMessage && this.options.learnMoreUrl) {
+      this.buttons.push({
+        link: this.options.learnMoreUrl.toString(),
+        label: this.options.learnMoreMessage,
+        callback: () => {
+          this.maybeNotifyHeartbeat("LearnMore");
+          return true;
         },
-      ];
+      });
+    }
+
+    if (this.options.engagementButtonLabel) {
+      this.buttons.push({
+        label: this.options.engagementButtonLabel,
+        callback: () => {
+          
+          this.maybeNotifyHeartbeat("Engaged");
+
+          this.userEngaged({
+            type: "button",
+            flowId: this.options.flowId,
+          });
+
+          
+          
+          return true;
+        },
+      });
     }
 
     this.notificationBox = this.chromeWindow.gHighPriorityNotificationBox;
@@ -166,7 +176,7 @@ var Heartbeat = class {
       this.options.message,
       "heartbeat-" + this.options.flowId,
       "resource://normandy/skin/shared/heartbeat-icon.svg",
-      this.notificationBox.PRIORITY_INFO_HIGH,
+      this.notificationBox.PRIORITY_SYSTEM,
       this.buttons,
       eventType => {
         if (eventType !== "removed") {
@@ -175,16 +185,13 @@ var Heartbeat = class {
         this.maybeNotifyHeartbeat("NotificationClosed");
       }
     );
-
-    
-    const frag = this.chromeWindow.document.createDocumentFragment();
+    this.notice.classList.add("heartbeat");
+    this.notice.messageText.classList.add("heartbeat");
 
     
     if (!this.options.engagementButtonLabel) {
       const numStars = this.options.engagementButtonLabel ? 0 : 5;
-      this.ratingContainer = this.chromeWindow.document.createXULElement(
-        "hbox"
-      );
+      this.ratingContainer = this.chromeWindow.document.createElement("span");
       this.ratingContainer.id = "star-rating-container";
 
       for (let i = 0; i < numStars; i++) {
@@ -213,38 +220,19 @@ var Heartbeat = class {
         this.ratingContainer.appendChild(ratingElement);
       }
 
-      frag.appendChild(this.ratingContainer);
+      if (
+        Services.prefs.getBoolPref("browser.proton.infobars.enabled", false)
+      ) {
+        
+        this.notice.buttonContainer.append(this.ratingContainer);
+      } else {
+        this.notice.messageText.flex = 0;
+        this.notice.messageDetails.insertBefore(
+          this.ratingContainer,
+          this.notice.spacer
+        );
+      }
     }
-
-    this.notice.messageDetails.style.overflow = "hidden";
-    this.notice.messageImage.classList.add("heartbeat", "pulse-onshow");
-    this.notice.messageText.classList.add("heartbeat");
-
-    
-    this.rightSpacer = this.chromeWindow.document.createXULElement("spacer");
-    this.rightSpacer.flex = 20;
-    frag.appendChild(this.rightSpacer);
-
-    
-    this.notice.messageText.flex = 0;
-    this.notice.spacer.flex = 0;
-
-    
-    if (this.options.learnMoreMessage && this.options.learnMoreUrl) {
-      this.learnMore = this.chromeWindow.document.createXULElement("label", {
-        is: "text-link",
-      });
-      this.learnMore.href = this.options.learnMoreUrl.toString();
-      this.learnMore.setAttribute("value", this.options.learnMoreMessage);
-      this.learnMore.addEventListener("click", () =>
-        this.maybeNotifyHeartbeat("LearnMore")
-      );
-      frag.appendChild(this.learnMore);
-    }
-
-    
-    this.notice.messageDetails.appendChild(frag);
-    this.notice.classList.add("heartbeat");
 
     
     this.maybeNotifyHeartbeat("NotificationOffered");
@@ -358,9 +346,7 @@ var Heartbeat = class {
     if (this.ratingContainer) {
       this.ratingContainer.remove();
     }
-    this.rightSpacer.remove();
-    this.learnMore.remove();
-    for (let button of this.notice.querySelectorAll("button")) {
+    for (let button of this.notice.buttonContainer.querySelectorAll("button")) {
       button.remove();
     }
 
@@ -421,8 +407,6 @@ var Heartbeat = class {
     this.notificationBox = null;
     this.notice = null;
     this.ratingContainer = null;
-    this.rightSpacer = null;
-    this.learnMore = null;
     this.eventEmitter = null;
     
     CleanupManager.removeCleanupHandler(this.close);
