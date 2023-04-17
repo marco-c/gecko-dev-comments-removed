@@ -5107,29 +5107,31 @@ nsDocShell::SetTitle(const nsAString& aTitle) {
 
   
   if (mLoadType != LOAD_BYPASS_HISTORY && mLoadType != LOAD_ERROR_PAGE) {
-    SetTitleOnHistoryEntry();
+    SetTitleOnHistoryEntry(true);
   }
 
   return NS_OK;
 }
 
-void nsDocShell::SetTitleOnHistoryEntry() {
+void nsDocShell::SetTitleOnHistoryEntry(bool aUpdateEntryInSessionHistory) {
   if (mOSHE) {
     mOSHE->SetTitle(mTitle);
   }
 
   if (mActiveEntry && mBrowsingContext) {
     mActiveEntry->SetTitle(mTitle);
-    if (XRE_IsParentProcess()) {
-      SessionHistoryEntry* entry =
-          mBrowsingContext->Canonical()->GetActiveSessionHistoryEntry();
-      if (entry) {
-        entry->SetTitle(mTitle);
+    if (aUpdateEntryInSessionHistory) {
+      if (XRE_IsParentProcess()) {
+        SessionHistoryEntry* entry =
+            mBrowsingContext->Canonical()->GetActiveSessionHistoryEntry();
+        if (entry) {
+          entry->SetTitle(mTitle);
+        }
+      } else {
+        mozilla::Unused
+            << ContentChild::GetSingleton()->SendSessionHistoryEntryTitle(
+                   mBrowsingContext, mTitle);
       }
-    } else {
-      mozilla::Unused
-          << ContentChild::GetSingleton()->SendSessionHistoryEntryTitle(
-                 mBrowsingContext, mTitle);
     }
   }
 }
@@ -8874,6 +8876,11 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
           ("nsDocShell::HandleSameDocumentNavigation %p %s -> %s", this,
            mCurrentURI->GetSpecOrDefault().get(),
            aLoadState->URI()->GetSpecOrDefault().get()));
+
+  RefPtr<Document> doc = GetDocument();
+  NS_ENSURE_TRUE(doc, NS_ERROR_FAILURE);
+  doc->DoNotifyPossibleTitleChange();
+
   nsCOMPtr<nsIURI> currentURI = mCurrentURI;
 
   
@@ -8911,8 +8918,6 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   }
 
   
-  RefPtr<Document> doc = GetDocument();
-  NS_ENSURE_TRUE(doc, NS_ERROR_FAILURE);
   doc->SetDocumentURI(aLoadState->URI());
 
   
@@ -9066,7 +9071,7 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
 
 
 
-    SetTitleOnHistoryEntry();
+    SetTitleOnHistoryEntry(false);
   } else {
     if (aLoadState->LoadIsFromSessionHistory()) {
       MOZ_LOG(
@@ -9083,7 +9088,9 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
 
       
       
-      SetTitleOnHistoryEntry();
+      
+      
+      SetTitleOnHistoryEntry(false);
     } else {
       Maybe<bool> scrollRestorationIsManual;
       if (mActiveEntry) {
@@ -11304,6 +11311,9 @@ nsresult nsDocShell::UpdateURLAndHistory(Document* aDocument, nsIURI* aNewURI,
                                          nsIURI* aCurrentURI, bool aEqualURIs) {
   
   
+
+  
+  aDocument->DoNotifyPossibleTitleChange();
 
   
   
