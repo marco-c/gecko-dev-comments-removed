@@ -185,31 +185,26 @@ class ShutdownBlocker : public nsIAsyncShutdownBlocker {
 
 
 
-namespace anon_media_utils {
-class RefCountedTicket;
-}
 
 
 
-
-
-
-class ShutdownBlockingTicket final {
-  RefPtr<anon_media_utils::RefCountedTicket> mTicket;
-
+class ShutdownBlockingTicket {
  public:
   
 
 
 
 
-  ShutdownBlockingTicket(nsString aName, nsString aFileName, int32_t aLineNr);
-  ~ShutdownBlockingTicket();
+  static UniquePtr<ShutdownBlockingTicket> Create(nsString aName,
+                                                  nsString aFileName,
+                                                  int32_t aLineNr);
+
+  virtual ~ShutdownBlockingTicket() = default;
 
   
 
 
-  MediaEventSource<void>& ShutdownEvent();
+  virtual MediaEventSource<void>& ShutdownEvent() = 0;
 };
 
 
