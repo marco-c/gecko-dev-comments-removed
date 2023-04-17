@@ -270,6 +270,15 @@ class PromptParent extends JSWindowActorParent {
     let browsingContext = this.browsingContext.top;
 
     let browser = browsingContext.embedderElement;
+    let promptRequiresBrowser =
+      args.modalType === Services.prompt.MODAL_TYPE_TAB ||
+      args.modalType === Services.prompt.MODAL_TYPE_CONTENT;
+    if (promptRequiresBrowser && !browser) {
+      let modal_type =
+        args.modalType === Services.prompt.MODAL_TYPE_TAB ? "tab" : "content";
+      throw new Error(`Cannot ${modal_type}-prompt without a browser!`);
+    }
+
     let win;
 
     
@@ -284,7 +293,7 @@ class PromptParent extends JSWindowActorParent {
     
     
     if (win?.winUtils && !win.winUtils.isParentWindowMainWidgetVisible) {
-      throw new Error("Cannot call openModalWindow on a hidden window");
+      throw new Error("Cannot open a prompt in a hidden window");
     }
 
     try {
@@ -304,18 +313,7 @@ class PromptParent extends JSWindowActorParent {
       
       let bag;
 
-      if (
-        (args.modalType === Services.prompt.MODAL_TYPE_TAB ||
-          args.modalType === Services.prompt.MODAL_TYPE_CONTENT) &&
-        win?.gBrowser?.getTabDialogBox
-      ) {
-        if (!browser) {
-          let modal_type =
-            args.modalType === Services.prompt.MODAL_TYPE_TAB
-              ? "tab"
-              : "content";
-          throw new Error(`Cannot ${modal_type}-prompt without a browser!`);
-        }
+      if (promptRequiresBrowser && win?.gBrowser?.getTabDialogBox) {
         
         let dialogBox = win.gBrowser.getTabDialogBox(browser);
 
