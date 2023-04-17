@@ -251,7 +251,7 @@ nsresult GetJSValFromKeyPathString(
 
   
   
-  QM_TRY(rv);
+  QM_TRY(MOZ_TO_RESULT(rv));
   return NS_OK;
 }
 
