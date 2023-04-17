@@ -253,6 +253,76 @@ void nsClipboard::SetTransferableData(nsITransferable* aTransferable,
   aTransferable->SetTransferData(aFlavor.get(), wrapper);
 }
 
+static bool IsMIMEAtFlavourList(const nsTArray<nsCString>& aFlavourList,
+                                const char* aMime) {
+  for (const auto& flavorStr : aFlavourList) {
+    if (flavorStr.Equals(aMime)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+
+
+
+bool nsClipboard::FilterImportedFlavors(int32_t aWhichClipboard,
+                                        nsTArray<nsCString>& aFlavors) {
+  LOGCLIP(("nsClipboard::FilterImportedFlavors"));
+
+  int targetNums;
+  GdkAtom* targets = mContext->GetTargets(aWhichClipboard, &targetNums);
+  if (!targets) {
+    LOGCLIP(("    X11: no targes at clipboard (null), quit.\n"));
+    return false;
+  }
+
+  for (int i = 0; i < targetNums; i++) {
+    gchar* atom_name = gdk_atom_name(targets[i]);
+    if (!atom_name) {
+      continue;
+    }
+    
+    if (strcmp(atom_name, "TARGETS") == 0 ||
+        strcmp(atom_name, "TIMESTAMP") == 0 ||
+        strcmp(atom_name, "SAVE_TARGETS") == 0 ||
+        strcmp(atom_name, "MULTIPLE") == 0) {
+      continue;
+    }
+    
+    if (strncmp(atom_name, "image/", 6) == 0 ||
+        strncmp(atom_name, "application/", 12) == 0 ||
+        strncmp(atom_name, "audio/", 6) == 0 ||
+        strncmp(atom_name, "video/", 6) == 0) {
+      continue;
+    }
+    
+    
+    LOGCLIP(("    X11: text types in clipboard, no need to filter them.\n"));
+    return true;
+  }
+
+  
+  nsTArray<nsCString> clipboardFlavors;
+  for (int i = 0; i < targetNums; i++) {
+    gchar* atom_name = gdk_atom_name(targets[i]);
+    if (!atom_name) {
+      continue;
+    }
+    if (IsMIMEAtFlavourList(aFlavors, atom_name)) {
+      clipboardFlavors.AppendElement(nsCString(atom_name));
+    }
+  }
+  aFlavors.SwapElements(clipboardFlavors);
+#ifdef MOZ_LOGGING
+  LOGCLIP(("    X11: Flavors which match clipboard content:\n"));
+  for (uint32_t i = 0; i < aFlavors.Length(); i++) {
+    LOGCLIP(("    %s\n", aFlavors[i].get()));
+  }
+#endif
+  return true;
+}
+
 NS_IMETHODIMP
 nsClipboard::GetData(nsITransferable* aTransferable, int32_t aWhichClipboard) {
   LOGCLIP(("nsClipboard::GetData (%s)\n",
@@ -270,13 +340,20 @@ nsClipboard::GetData(nsITransferable* aTransferable, int32_t aWhichClipboard) {
     LOGCLIP(("    FlavorsTransferableCanImport falied!\n"));
     return rv;
   }
-
 #ifdef MOZ_LOGGING
   LOGCLIP(("Flavors which can be imported:\n"));
   for (uint32_t i = 0; i < flavors.Length(); i++) {
     LOGCLIP(("    %s\n", flavors[i].get()));
   }
 #endif
+
+  
+  
+  if (widget::GdkIsX11Display()) {
+    if (!FilterImportedFlavors(aWhichClipboard, flavors)) {
+      return NS_OK;
+    }
+  }
 
   for (uint32_t i = 0; i < flavors.Length(); i++) {
     nsCString& flavorStr = flavors[i];

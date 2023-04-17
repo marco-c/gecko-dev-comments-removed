@@ -80,6 +80,9 @@ class nsClipboard : public nsIClipboard, public nsIObserver {
 
   void ClearTransferable(int32_t aWhichClipboard);
 
+  bool FilterImportedFlavors(int32_t aWhichClipboard,
+                             nsTArray<nsCString>& aFlavors);
+
   
   
   nsCOMPtr<nsIClipboardOwner> mSelectionOwner;
