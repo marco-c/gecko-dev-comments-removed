@@ -29,6 +29,7 @@
 #include "mozilla/dom/ReadableStreamGenericReader.h"
 #include "mozilla/dom/ToJSValue.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/UnderlyingSourceCallbackHelpers.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIGlobalObject.h"
 #include "nsISupports.h"
@@ -1083,7 +1084,7 @@ static void ReadableByteStreamControllerRespondInReadableState(
 
   
   
-  ReadableByteStreamControllerShiftPendingPullInto(aController);
+  (void)ReadableByteStreamControllerShiftPendingPullInto(aController);
 
   
   
@@ -1681,8 +1682,8 @@ void SetUpReadableByteStreamController(
     UnderlyingSourceStartCallbackHelper* aStartAlgorithm,
     UnderlyingSourcePullCallbackHelper* aPullAlgorithm,
     UnderlyingSourceCancelCallbackHelper* aCancelAlgorithm,
-    double aHighWaterMark, Maybe<uint64_t> aAutoAllocateChunkSize,
-    ErrorResult& aRv) {
+    UnderlyingSourceErrorCallbackHelper* aErrorAlgorithm, double aHighWaterMark,
+    Maybe<uint64_t> aAutoAllocateChunkSize, ErrorResult& aRv) {
   
   MOZ_ASSERT(!aStream->Controller());
 
@@ -1721,6 +1722,9 @@ void SetUpReadableByteStreamController(
   aController->SetCancelAlgorithm(aCancelAlgorithm);
 
   
+  aStream->SetErrorAlgorithm(aErrorAlgorithm);
+
+  
   aController->SetAutoAllocateChunkSize(aAutoAllocateChunkSize);
 
   
@@ -1753,6 +1757,58 @@ void SetUpReadableByteStreamController(
   
   startPromise->AppendNativeHandler(
       new ByteStreamStartPromiseNativeHandler(aController));
+}
+
+
+
+
+
+
+
+MOZ_CAN_RUN_SCRIPT
+void SetUpReadableByteStreamControllerFromUnderlyingSource(
+    JSContext* aCx, ReadableStream* aStream,
+    BodyStreamHolder* aUnderlyingSource, ErrorResult& aRv) {
+  
+  RefPtr<ReadableByteStreamController> controller =
+      new ReadableByteStreamController(aStream->GetParentObject());
+
+  
+  RefPtr<UnderlyingSourceStartCallbackHelper> startAlgorithm;
+
+  
+  RefPtr<UnderlyingSourcePullCallbackHelper> pullAlgorithm;
+
+  
+  RefPtr<UnderlyingSourceCancelCallbackHelper> cancelAlgorithm;
+
+  
+  RefPtr<UnderlyingSourceErrorCallbackHelper> errorAlgorithm;
+
+  
+  
+  pullAlgorithm =
+      new BodyStreamUnderlyingSourcePullCallbackHelper(aUnderlyingSource);
+
+  
+  cancelAlgorithm =
+      new BodyStreamUnderlyingSourceCancelCallbackHelper(aUnderlyingSource);
+
+  
+  errorAlgorithm =
+      new BodyStreamUnderlyingSourceErrorCallbackHelper(aUnderlyingSource);
+
+  
+  Maybe<double> autoAllocateChunkSize = mozilla::Nothing();
+  
+
+  
+  double highWaterMark = 0.0;
+
+  
+  SetUpReadableByteStreamController(
+      aCx, aStream, controller, startAlgorithm, pullAlgorithm, cancelAlgorithm,
+      errorAlgorithm, highWaterMark, autoAllocateChunkSize, aRv);
 }
 
 }  

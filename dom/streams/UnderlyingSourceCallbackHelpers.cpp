@@ -4,8 +4,10 @@
 
 
 
+#include "mozilla/dom/BodyStream.h"
 #include "mozilla/dom/UnderlyingSourceCallbackHelpers.h"
 #include "mozilla/dom/UnderlyingSourceBinding.h"
+#include "mozilla/dom/NativeUnderlyingSource.h"
 
 namespace mozilla::dom {
 
@@ -71,6 +73,19 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(IDLUnderlyingSourcePullCallbackHelper)
 NS_INTERFACE_MAP_END_INHERITING(UnderlyingSourcePullCallbackHelper)
 
 
+NS_IMPL_CYCLE_COLLECTION(BodyStreamUnderlyingSourcePullCallbackHelper,
+                         mUnderlyingSource)
+
+NS_IMPL_ADDREF_INHERITED(BodyStreamUnderlyingSourcePullCallbackHelper,
+                         UnderlyingSourcePullCallbackHelper)
+NS_IMPL_RELEASE_INHERITED(BodyStreamUnderlyingSourcePullCallbackHelper,
+                          UnderlyingSourcePullCallbackHelper)
+
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(
+    BodyStreamUnderlyingSourcePullCallbackHelper)
+NS_INTERFACE_MAP_END_INHERITING(UnderlyingSourcePullCallbackHelper)
+
+
 NS_IMPL_CYCLE_COLLECTION(UnderlyingSourceCancelCallbackHelper)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(UnderlyingSourceCancelCallbackHelper)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(UnderlyingSourceCancelCallbackHelper)
@@ -109,6 +124,27 @@ NS_IMPL_RELEASE_INHERITED(IDLUnderlyingSourceCancelCallbackHelper,
                           UnderlyingSourceCancelCallbackHelper)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(IDLUnderlyingSourceCancelCallbackHelper)
+NS_INTERFACE_MAP_END_INHERITING(UnderlyingSourceCancelCallbackHelper)
+
+
+NS_IMPL_CYCLE_COLLECTION(UnderlyingSourceErrorCallbackHelper)
+NS_IMPL_CYCLE_COLLECTING_ADDREF(UnderlyingSourceErrorCallbackHelper)
+NS_IMPL_CYCLE_COLLECTING_RELEASE(UnderlyingSourceErrorCallbackHelper)
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(UnderlyingSourceErrorCallbackHelper)
+  NS_INTERFACE_MAP_ENTRY(nsISupports)
+NS_INTERFACE_MAP_END
+
+
+NS_IMPL_CYCLE_COLLECTION(BodyStreamUnderlyingSourceCancelCallbackHelper,
+                         mUnderlyingSource)
+
+NS_IMPL_ADDREF_INHERITED(BodyStreamUnderlyingSourceCancelCallbackHelper,
+                         UnderlyingSourceCancelCallbackHelper)
+NS_IMPL_RELEASE_INHERITED(BodyStreamUnderlyingSourceCancelCallbackHelper,
+                          UnderlyingSourceCancelCallbackHelper)
+
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(
+    BodyStreamUnderlyingSourceCancelCallbackHelper)
 NS_INTERFACE_MAP_END_INHERITING(UnderlyingSourceCancelCallbackHelper)
 
 void UnderlyingSourceStartCallbackHelper::StartCallback(
@@ -150,6 +186,18 @@ already_AddRefed<Promise> IDLUnderlyingSourcePullCallbackHelper::PullCallback(
   return promise.forget();
 }
 
+BodyStreamUnderlyingSourcePullCallbackHelper::
+    BodyStreamUnderlyingSourcePullCallbackHelper(
+        BodyStreamHolder* underlyingSource)
+    : mUnderlyingSource(underlyingSource) {}
+
+already_AddRefed<Promise>
+BodyStreamUnderlyingSourcePullCallbackHelper::PullCallback(
+    JSContext* aCx, ReadableStreamController& aController, ErrorResult& aRv) {
+  RefPtr<BodyStream> bodyStream = mUnderlyingSource->GetBodyStream();
+  return bodyStream->PullCallback(aCx, aController, aRv);
+}
+
 already_AddRefed<Promise>
 IDLUnderlyingSourceCancelCallbackHelper::CancelCallback(
     JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
@@ -163,6 +211,42 @@ IDLUnderlyingSourceCancelCallbackHelper::CancelCallback(
                      CallbackFunction::eRethrowExceptions);
 
   return promise.forget();
+}
+
+BodyStreamUnderlyingSourceCancelCallbackHelper::
+    BodyStreamUnderlyingSourceCancelCallbackHelper(
+        BodyStreamHolder* aUnderlyingSource)
+    : mUnderlyingSource(aUnderlyingSource) {}
+
+already_AddRefed<Promise>
+BodyStreamUnderlyingSourceCancelCallbackHelper::CancelCallback(
+    JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
+    ErrorResult& aRv) {
+  RefPtr<BodyStream> bodyStream = mUnderlyingSource->GetBodyStream();
+  return bodyStream->CancelCallback(aCx, aReason, aRv);
+}
+
+
+NS_IMPL_CYCLE_COLLECTION(BodyStreamUnderlyingSourceErrorCallbackHelper,
+                         mUnderlyingSource)
+
+NS_IMPL_ADDREF_INHERITED(BodyStreamUnderlyingSourceErrorCallbackHelper,
+                         UnderlyingSourceErrorCallbackHelper)
+NS_IMPL_RELEASE_INHERITED(BodyStreamUnderlyingSourceErrorCallbackHelper,
+                          UnderlyingSourceErrorCallbackHelper)
+
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(
+    BodyStreamUnderlyingSourceErrorCallbackHelper)
+NS_INTERFACE_MAP_END_INHERITING(UnderlyingSourceErrorCallbackHelper)
+
+BodyStreamUnderlyingSourceErrorCallbackHelper::
+    BodyStreamUnderlyingSourceErrorCallbackHelper(
+        BodyStreamHolder* aUnderlyingSource)
+    : mUnderlyingSource(aUnderlyingSource) {}
+
+void BodyStreamUnderlyingSourceErrorCallbackHelper::Call() {
+  RefPtr<BodyStream> bodyStream = mUnderlyingSource->GetBodyStream();
+  bodyStream->ErrorCallback();
 }
 
 }  

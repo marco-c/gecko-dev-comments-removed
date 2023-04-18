@@ -12,7 +12,9 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/NativeUnderlyingSource.h"
 #include "mozilla/dom/QueuingStrategyBinding.h"
+#include "mozilla/dom/ReadableStreamController.h"
 #include "mozilla/dom/ReadableStreamDefaultController.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsWrapperCache.h"
@@ -35,6 +37,8 @@ using ReadableStreamReader =
     ReadableStreamDefaultReaderOrReadableStreamBYOBReader;
 using OwningReadableStreamReader =
     OwningReadableStreamDefaultReaderOrReadableStreamBYOBReader;
+class NativeUnderlyingSource;
+class BodyStreamHolder;
 
 class ReadableStream final : public nsISupports, public nsWrapperCache {
  public:
@@ -86,11 +90,23 @@ class ReadableStream final : public nsISupports, public nsWrapperCache {
     mErrorAlgorithm = aErrorAlgorithm;
   }
 
+  void SetNativeUnderlyingSource(BodyStreamHolder* aUnderlyingSource);
+  BodyStreamHolder* GetNativeUnderlyingSource() {
+    return mNativeUnderlyingSource;
+  }
+  bool HasNativeUnderlyingSource() { return mNativeUnderlyingSource; }
+
+  void ReleaseObjects();
+
  public:
   nsIGlobalObject* GetParentObject() const { return mGlobal; }
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
+
+  static already_AddRefed<ReadableStream> Create(
+      JSContext* aCx, nsIGlobalObject* aGlobal,
+      BodyStreamHolder* aUnderlyingSource, ErrorResult& aRv);
 
   
   
@@ -121,6 +137,21 @@ class ReadableStream final : public nsISupports, public nsWrapperCache {
 
   
   RefPtr<UnderlyingSourceErrorCallbackHelper> mErrorAlgorithm;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<BodyStreamHolder> mNativeUnderlyingSource;
 };
 
 extern bool IsReadableStreamLocked(ReadableStream* aStream);

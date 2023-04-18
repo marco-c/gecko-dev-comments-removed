@@ -8,15 +8,22 @@
 #include "InternalResponse.h"
 #include "js/Stream.h"
 #include "mozilla/ConsoleReportCollector.h"
+#include "mozilla/ErrorResult.h"
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/DOMException.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/PromiseBinding.h"
+#ifdef MOZ_DOM_STREAMS
+#  include "mozilla/dom/ReadableStream.h"
+#  include "mozilla/dom/ReadableStreamDefaultController.h"
+#  include "mozilla/dom/ReadableStreamDefaultReader.h"
+#endif
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/TaskCategory.h"
 #include "nsContentUtils.h"
+#include "nsDebug.h"
 #include "nsIAsyncInputStream.h"
 #include "nsIPipe.h"
 #include "nsIScriptError.h"
@@ -32,15 +39,24 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(FetchStreamReader)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(FetchStreamReader)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mGlobal)
+#ifdef MOZ_DOM_STREAMS
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mReader)
+#else
   tmp->mReader = nullptr;
+#endif
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(FetchStreamReader)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mGlobal)
+#ifdef MOZ_DOM_STREAMS
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mReader)
+#endif
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(FetchStreamReader)
+#ifndef MOZ_DOM_STREAMS
   NS_IMPL_CYCLE_COLLECTION_TRACE_JS_MEMBER_CALLBACK(mReader)
+#endif
 NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(FetchStreamReader)
@@ -137,12 +153,24 @@ void FetchStreamReader::CloseAndRelease(JSContext* aCx, nsresult aStatus) {
 
     JS::Rooted<JS::Value> errorValue(aCx);
     if (ToJSValue(aCx, error, &errorValue)) {
+#ifdef MOZ_DOM_STREAMS
+      IgnoredErrorResult ignoredError;
+      
+      
+      
+      
+      RefPtr<Promise> ignoredResultPromise =
+          mReader->Cancel(aCx, errorValue, ignoredError);
+      NS_WARNING_ASSERTION(!ignoredError.Failed(),
+                           "Failed to cancel stream during close and release");
+#else
       JS::Rooted<JSObject*> reader(aCx, mReader);
       
       
       
       
       JS::ReadableStreamReaderCancel(aCx, reader, errorValue);
+#endif
     }
 
     
@@ -161,6 +189,31 @@ void FetchStreamReader::CloseAndRelease(JSContext* aCx, nsresult aStatus) {
   mReader = nullptr;
   mBuffer.Clear();
 }
+
+#ifdef MOZ_DOM_STREAMS
+void FetchStreamReader::StartConsuming(JSContext* aCx, ReadableStream* aStream,
+                                       ReadableStreamDefaultReader** aReader,
+                                       ErrorResult& aRv) {
+  MOZ_DIAGNOSTIC_ASSERT(!mReader);
+  MOZ_DIAGNOSTIC_ASSERT(aStream);
+
+  RefPtr<ReadableStreamDefaultReader> reader =
+      AcquireReadableStreamDefaultReader(aCx, aStream, aRv);
+  if (aRv.Failed()) {
+    CloseAndRelease(aCx, NS_ERROR_DOM_INVALID_STATE_ERR);
+    return;
+  }
+
+  mReader = reader;
+  reader.forget(aReader);
+
+  aRv = mPipeOut->AsyncWait(this, 0, 0, mOwningEventTarget);
+  if (NS_WARN_IF(aRv.Failed())) {
+    return;
+  }
+}
+
+#else
 
 void FetchStreamReader::StartConsuming(JSContext* aCx, JS::HandleObject aStream,
                                        JS::MutableHandle<JSObject*> aReader,
@@ -193,6 +246,7 @@ void FetchStreamReader::StartConsuming(JSContext* aCx, JS::HandleObject aStream,
     return;
   }
 }
+#endif
 
 
 
@@ -216,6 +270,33 @@ FetchStreamReader::OnOutputStreamReady(nsIAsyncOutputStream* aStream) {
   
   AutoEntryScript aes(mGlobal, "ReadableStreamReader.read", !mWorkerRef);
 
+#ifdef MOZ_DOM_STREAMS
+  ErrorResult rv;
+
+  
+  
+  
+  
+  
+  
+  RefPtr<Promise> domPromise = Promise::Create(mGlobal, rv);
+  if (NS_WARN_IF(rv.Failed())) {
+    
+    CloseAndRelease(aes.cx(), NS_ERROR_DOM_INVALID_STATE_ERR);
+    return NS_ERROR_FAILURE;
+  }
+
+  RefPtr<ReadRequest> readRequest =
+      new Read_ReadRequest(domPromise,  false);
+
+  ReadableStreamDefaultReaderRead(aes.cx(), mReader, readRequest, rv);
+  if (NS_WARN_IF(rv.Failed())) {
+    
+    CloseAndRelease(aes.cx(), NS_ERROR_DOM_INVALID_STATE_ERR);
+    return NS_ERROR_FAILURE;
+  }
+
+#else
   JS::Rooted<JSObject*> reader(aes.cx(), mReader);
   JS::Rooted<JSObject*> promise(
       aes.cx(), JS::ReadableStreamDefaultReaderRead(aes.cx(), reader));
@@ -231,7 +312,7 @@ FetchStreamReader::OnOutputStreamReady(nsIAsyncOutputStream* aStream) {
     CloseAndRelease(aes.cx(), NS_ERROR_DOM_INVALID_STATE_ERR);
     return NS_ERROR_FAILURE;
   }
-
+#endif
   
   domPromise->AppendNativeHandler(this);
   return NS_OK;

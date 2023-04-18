@@ -8,6 +8,11 @@
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/DOMException.h"
+#ifdef MOZ_DOM_STREAMS
+#  include "mozilla/dom/NativeUnderlyingSource.h"
+#  include "mozilla/dom/ReadableStream.h"
+#  include "mozilla/dom/ReadableByteStreamController.h"
+#endif
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "mozilla/dom/WorkerPrivate.h"
@@ -50,10 +55,12 @@ void BodyStreamHolder::StoreBodyStream(BodyStream* aBodyStream) {
   mBodyStream = aBodyStream;
 }
 
+#ifndef MOZ_DOM_STREAMS
 void BodyStreamHolder::ForgetBodyStream() {
   MOZ_ASSERT_IF(mStreamCreated, mBodyStream);
   mBodyStream = nullptr;
 }
+#endif
 
 
 
@@ -127,6 +134,13 @@ void BodyStream::Create(JSContext* aCx, BodyStreamHolder* aStreamHolder,
     stream->mWorkerRef = std::move(workerRef);
   }
 
+#ifdef MOZ_DOM_STREAMS
+  RefPtr<ReadableStream> body =
+      ReadableStream::Create(aCx, aGlobal, aStreamHolder, aRv);
+  if (aRv.Failed()) {
+    return;
+  }
+#else
   aRv.MightThrowJSException();
   JS::Rooted<JSObject*> body(aCx, JS::NewReadableExternalSourceStreamObject(
                                       aCx, stream, aStreamHolder));
@@ -139,6 +153,7 @@ void BodyStream::Create(JSContext* aCx, BodyStreamHolder* aStreamHolder,
   
   
   NS_ADDREF(stream.get());
+#endif
 
   cleanup.release();
 
@@ -150,16 +165,92 @@ void BodyStream::Create(JSContext* aCx, BodyStreamHolder* aStreamHolder,
 #endif
 }
 
+#ifdef MOZ_DOM_STREAMS
+
+already_AddRefed<Promise> BodyStream::PullCallback(
+    JSContext* aCx, ReadableStreamController& aController, ErrorResult& aRv) {
+  MOZ_ASSERT(aController.IsByte());
+  ReadableStream* stream = aController.AsByte()->Stream();
+  MOZ_ASSERT(stream);
+
+#  if MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  MOZ_DIAGNOSTIC_ASSERT(stream->Disturbed());
+#  endif
+
+  AssertIsOnOwningThread();
+
+  MutexAutoLock lock(mMutex);
+
+  MOZ_DIAGNOSTIC_ASSERT(mState == eInitializing || mState == eWaiting ||
+                        mState == eChecking || mState == eReading);
+
+  RefPtr<Promise> resolvedWithUndefinedPromise =
+      Promise::CreateResolvedWithUndefined(aController.GetParentObject(), aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
+  if (mState == eReading) {
+    
+    return resolvedWithUndefinedPromise.forget();
+  }
+
+  if (mState == eChecking) {
+    
+    
+    MOZ_ASSERT(mInputStream);
+    mState = eReading;
+
+    return resolvedWithUndefinedPromise.forget();
+  }
+
+  if (mState == eInitializing) {
+    
+    mStreamHolder->MarkAsRead();
+  }
+
+  mState = eReading;
+
+  if (!mInputStream) {
+    
+    
+    MOZ_ASSERT(mOriginalInputStream);
+
+    nsCOMPtr<nsIAsyncInputStream> asyncStream;
+    nsresult rv = NS_MakeAsyncNonBlockingInputStream(
+        mOriginalInputStream.forget(), getter_AddRefs(asyncStream));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      ErrorPropagation(aCx, lock, stream, rv);
+      return nullptr;
+    }
+
+    mInputStream = asyncStream;
+    mOriginalInputStream = nullptr;
+  }
+
+  MOZ_DIAGNOSTIC_ASSERT(mInputStream);
+  MOZ_DIAGNOSTIC_ASSERT(!mOriginalInputStream);
+
+  nsresult rv = mInputStream->AsyncWait(this, 0, 0, mOwningEventTarget);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    ErrorPropagation(aCx, lock, stream, rv);
+    return nullptr;
+  }
+
+  
+  return resolvedWithUndefinedPromise.forget();
+}
+#else
 void BodyStream::requestData(JSContext* aCx, JS::HandleObject aStream,
                              size_t aDesiredSize) {
-#if MOZ_DIAGNOSTIC_ASSERT_ENABLED
+#  if MOZ_DIAGNOSTIC_ASSERT_ENABLED
   bool disturbed;
   if (!JS::ReadableStreamIsDisturbed(aCx, aStream, &disturbed)) {
     JS_ClearPendingException(aCx);
   } else {
     MOZ_DIAGNOSTIC_ASSERT(disturbed);
   }
-#endif
+#  endif
 
   AssertIsOnOwningThread();
 
@@ -216,11 +307,19 @@ void BodyStream::requestData(JSContext* aCx, JS::HandleObject aStream,
 
   
 }
+#endif
 
+#ifdef MOZ_DOM_STREAMS
+void BodyStream::WriteIntoReadRequestBuffer(JSContext* aCx,
+                                            ReadableStream* aStream,
+                                            void* aBuffer, size_t aLength,
+                                            size_t* aByteWritten) {
+#else
 void BodyStream::writeIntoReadRequestBuffer(JSContext* aCx,
                                             JS::HandleObject aStream,
                                             void* aBuffer, size_t aLength,
                                             size_t* aByteWritten) {
+#endif
   MOZ_DIAGNOSTIC_ASSERT(aBuffer);
   MOZ_DIAGNOSTIC_ASSERT(aByteWritten);
 
@@ -256,6 +355,40 @@ void BodyStream::writeIntoReadRequestBuffer(JSContext* aCx,
   
 }
 
+#ifdef MOZ_DOM_STREAMS
+
+already_AddRefed<Promise> BodyStream::CancelCallback(
+    JSContext* aCx, const Optional<JS::Handle<JS::Value>>& aReason,
+    ErrorResult& aRv) {
+  AssertIsOnOwningThread();
+
+  if (mState == eInitializing) {
+    
+    mStreamHolder->MarkAsRead();
+  }
+
+  if (mInputStream) {
+    mInputStream->CloseWithStatus(NS_BASE_STREAM_CLOSED);
+  }
+
+  
+  
+  if (mOriginalInputStream) {
+    MOZ_ASSERT(!mInputStream);
+    mOriginalInputStream->Close();
+  }
+
+  RefPtr<Promise> promise = Promise::CreateResolvedWithUndefined(mGlobal, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
+  
+  ReleaseObjects();
+
+  return promise.forget();
+}
+#else
 JS::Value BodyStream::cancel(JSContext* aCx, JS::HandleObject aStream,
                              JS::HandleValue aReason) {
   AssertIsOnOwningThread();
@@ -281,7 +414,25 @@ JS::Value BodyStream::cancel(JSContext* aCx, JS::HandleObject aStream,
 }
 
 void BodyStream::onClosed(JSContext* aCx, JS::HandleObject aStream) {}
+#endif
 
+#ifdef MOZ_DOM_STREAMS
+
+void BodyStream::ErrorCallback() {
+  AssertIsOnOwningThread();
+
+  if (mState == eInitializing) {
+    
+    mStreamHolder->MarkAsRead();
+  }
+
+  if (mInputStream) {
+    mInputStream->CloseWithStatus(NS_BASE_STREAM_CLOSED);
+  }
+
+  ReleaseObjects();
+}
+#else
 void BodyStream::onErrored(JSContext* aCx, JS::HandleObject aStream,
                            JS::HandleValue aReason) {
   AssertIsOnOwningThread();
@@ -298,6 +449,9 @@ void BodyStream::onErrored(JSContext* aCx, JS::HandleObject aStream,
   ReleaseObjects();
 }
 
+#endif
+
+#ifndef MOZ_DOM_STREAMS
 void BodyStream::finalize() {
   
 
@@ -306,6 +460,7 @@ void BodyStream::finalize() {
 
   stream->ReleaseObjects();
 }
+#endif
 
 BodyStream::BodyStream(nsIGlobalObject* aGlobal,
                        BodyStreamHolder* aStreamHolder,
@@ -320,11 +475,15 @@ BodyStream::BodyStream(nsIGlobalObject* aGlobal,
   MOZ_DIAGNOSTIC_ASSERT(aStreamHolder);
 }
 
-BodyStream::~BodyStream() = default;
-
+#ifdef MOZ_DOM_STREAMS
+void BodyStream::ErrorPropagation(JSContext* aCx,
+                                  const MutexAutoLock& aProofOfLock,
+                                  ReadableStream* aStream, nsresult aError) {
+#else
 void BodyStream::ErrorPropagation(JSContext* aCx,
                                   const MutexAutoLock& aProofOfLock,
                                   JS::HandleObject aStream, nsresult aError) {
+#endif
   AssertIsOnOwningThread();
 
   
@@ -350,11 +509,61 @@ void BodyStream::ErrorPropagation(JSContext* aCx,
 
   {
     MutexAutoUnlock unlock(mMutex);
+#ifdef MOZ_DOM_STREAMS
+    
+    if (aStream->State() == ReadableStream::ReaderState::Readable) {
+      IgnoredErrorResult rv;
+      ReadableStreamError(aCx, aStream, errorValue, rv);
+      NS_WARNING_ASSERTION(!rv.Failed(), "Failed to error BodyStream");
+    }
+#else
     JS::ReadableStreamError(aCx, aStream, errorValue);
+#endif
   }
 
   ReleaseObjects(aProofOfLock);
 }
+
+#ifdef MOZ_DOM_STREAMS
+
+void BodyStream::EnqueueChunkWithSizeIntoStream(JSContext* aCx,
+                                                ReadableStream* aStream,
+                                                uint64_t aAvailableData,
+                                                ErrorResult& aRv) {
+  
+  aRv.MightThrowJSException();
+  JS::RootedObject chunk(aCx, JS_NewUint8Array(aCx, aAvailableData));
+  if (!chunk) {
+    aRv.StealExceptionFromJSContext(aCx);
+    return;
+  }
+
+  size_t bytesWritten = 0;
+  size_t unusedData = 0;
+  {
+    
+    JS::AutoCheckCannotGC noGC;
+    bool dummy;
+    void* buffer = JS_GetArrayBufferViewData(chunk, &dummy, noGC);
+    WriteIntoReadRequestBuffer(aCx, aStream, buffer, aAvailableData,
+                               &bytesWritten);
+
+    unusedData = aAvailableData - bytesWritten;
+  }
+
+  MOZ_ASSERT(aStream->Controller()->IsByte());
+  ReadableByteStreamController* byteStreamController =
+      aStream->Controller()->AsByte();
+
+  ReadableByteStreamControllerEnqueue(aCx, byteStreamController, chunk, aRv);
+  if (aRv.Failed()) {
+    return;
+  }
+
+  
+  byteStreamController->SetQueueTotalSize((double)unusedData);
+}
+#endif
 
 NS_IMETHODIMP
 BodyStream::OnInputStreamReady(nsIAsyncInputStream* aStream) {
@@ -381,13 +590,20 @@ BodyStream::OnInputStreamReady(nsIAsyncInputStream* aStream) {
   MOZ_DIAGNOSTIC_ASSERT(mInputStream);
   MOZ_DIAGNOSTIC_ASSERT(mState == eReading || mState == eChecking);
 
+  JSContext* cx = aes.cx();
+#ifdef MOZ_DOM_STREAMS
+  ReadableStream* stream = mStreamHolder->GetReadableStreamBody();
+  if (!stream) {
+    return NS_ERROR_FAILURE;
+  }
+#else
   JSObject* streamObj = mStreamHolder->GetReadableStreamBody();
   if (!streamObj) {
     return NS_ERROR_FAILURE;
   }
 
-  JSContext* cx = aes.cx();
   JS::Rooted<JSObject*> stream(cx, streamObj);
+#endif
 
   uint64_t size = 0;
   nsresult rv = mInputStream->Available(&size);
@@ -415,7 +631,18 @@ BodyStream::OnInputStreamReady(nsIAsyncInputStream* aStream) {
   
   lock.reset();
 
+#ifdef MOZ_DOM_STREAMS
+  ErrorResult errorResult;
+  EnqueueChunkWithSizeIntoStream(cx, stream, size, errorResult);
+  errorResult.WouldReportJSException();
+  if (errorResult.Failed()) {
+    lock.emplace(mMutex);
+    ErrorPropagation(cx, *lock, stream, errorResult.StealNSResult());
+    return NS_OK;
+  }
+#else
   Unused << JS::ReadableStreamUpdateDataAvailableFromSource(cx, stream, size);
+#endif
 
   
   
@@ -424,6 +651,30 @@ BodyStream::OnInputStreamReady(nsIAsyncInputStream* aStream) {
   return NS_OK;
 }
 
+#ifdef MOZ_DOM_STREAMS
+
+nsresult BodyStream::RetrieveInputStream(BodyStreamHolder* aStream,
+                                         nsIInputStream** aInputStream) {
+  MOZ_ASSERT(aStream);
+  MOZ_ASSERT(aInputStream);
+  BodyStream* stream = aStream->GetBodyStream();
+  if (NS_WARN_IF(!stream)) {
+    return NS_ERROR_DOM_INVALID_STATE_ERR;
+  }
+
+  stream->AssertIsOnOwningThread();
+
+  
+  
+  if (NS_WARN_IF(!stream->mOriginalInputStream)) {
+    return NS_ERROR_DOM_INVALID_STATE_ERR;
+  }
+
+  nsCOMPtr<nsIInputStream> inputStream = stream->mOriginalInputStream;
+  inputStream.forget(aInputStream);
+  return NS_OK;
+}
+#else
 
 nsresult BodyStream::RetrieveInputStream(
     JS::ReadableStreamUnderlyingSource* aUnderlyingReadableStreamSource,
@@ -445,6 +696,7 @@ nsresult BodyStream::RetrieveInputStream(
   inputStream.forget(aInputStream);
   return NS_OK;
 }
+#endif
 
 void BodyStream::Close() {
   AssertIsOnOwningThread();
@@ -460,7 +712,15 @@ void BodyStream::Close() {
     ReleaseObjects(lock);
     return;
   }
-
+#ifdef MOZ_DOM_STREAMS
+  ReadableStream* stream = mStreamHolder->GetReadableStreamBody();
+  if (stream) {
+    JSContext* cx = jsapi.cx();
+    CloseAndReleaseObjects(cx, lock, stream);
+  } else {
+    ReleaseObjects(lock);
+  }
+#else
   JSObject* streamObj = mStreamHolder->GetReadableStreamBody();
   if (streamObj) {
     JSContext* cx = jsapi.cx();
@@ -469,8 +729,27 @@ void BodyStream::Close() {
   } else {
     ReleaseObjects(lock);
   }
+#endif
 }
 
+#ifdef MOZ_DOM_STREAMS
+void BodyStream::CloseAndReleaseObjects(JSContext* aCx,
+                                        const MutexAutoLock& aProofOfLock,
+                                        ReadableStream* aStream) {
+  AssertIsOnOwningThread();
+  MOZ_DIAGNOSTIC_ASSERT(mState != eClosed);
+
+  ReleaseObjects(aProofOfLock);
+
+  MutexAutoUnlock unlock(mMutex);
+
+  if (aStream->State() == ReadableStream::ReaderState::Readable) {
+    IgnoredErrorResult rv;
+    ReadableStreamClose(aCx, aStream, rv);
+    NS_WARNING_ASSERTION(!rv.Failed(), "Failed to Close Stream");
+  }
+}
+#else
 void BodyStream::CloseAndReleaseObjects(JSContext* aCx,
                                         const MutexAutoLock& aProofOfLock,
                                         JS::HandleObject aStream) {
@@ -488,6 +767,7 @@ void BodyStream::CloseAndReleaseObjects(JSContext* aCx,
     JS::ReadableStreamClose(aCx, aStream);
   }
 }
+#endif
 
 void BodyStream::ReleaseObjects() {
   MutexAutoLock lock(mMutex);
@@ -533,16 +813,39 @@ void BodyStream::ReleaseObjects(const MutexAutoLock& aProofOfLock) {
     }
   }
 
+#ifdef MOZ_DOM_STREAMS
+  ReadableStream* stream = mStreamHolder->GetReadableStreamBody();
+  if (stream) {
+    stream->ReleaseObjects();
+  }
+#else
   JSObject* streamObj = mStreamHolder->GetReadableStreamBody();
   if (streamObj) {
     
     JS::ReadableStreamReleaseCCObject(streamObj);
   }
+#endif
 
   mWorkerRef = nullptr;
   mGlobal = nullptr;
 
+#ifdef MOZ_DOM_STREAMS
+  
+  
+  
+  
+  GetCurrentSerialEventTarget()->Dispatch(NS_NewCancelableRunnableFunction(
+      "BodyStream::ReleaseObjects",
+      [streamHolder = RefPtr{mStreamHolder->TakeBodyStream()}] {
+        
+        
+        
+        
+        
+      }));
+#else
   mStreamHolder->ForgetBodyStream();
+#endif
   mStreamHolder->NullifyStream();
   mStreamHolder = nullptr;
 }
