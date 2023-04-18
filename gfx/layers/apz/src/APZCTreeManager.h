@@ -507,8 +507,8 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
  private:
   friend class APZUpdater;
-  void LockTree();
-  void UnlockTree();
+  void LockTree() CAPABILITY_ACQUIRE(mTreeLock);
+  void UnlockTree() CAPABILITY_RELEASE(mTreeLock);
 
   
   virtual AsyncPanZoomController* NewAPZCInstance(
@@ -578,7 +578,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
 
   void AttachNodeToTree(HitTestingTreeNode* aNode, HitTestingTreeNode* aParent,
-                        HitTestingTreeNode* aNextSibling);
+                        HitTestingTreeNode* aNextSibling) REQUIRES(mTreeLock);
   already_AddRefed<AsyncPanZoomController> GetTargetAPZC(
       const ScrollableLayerGuid& aGuid);
   already_AddRefed<HitTestingTreeNode> GetTargetNode(
@@ -718,7 +718,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
   
   LayerToParentLayerMatrix4x4 ComputeTransformForNode(
-      const HitTestingTreeNode* aNode) const;
+      const HitTestingTreeNode* aNode) const REQUIRES(mTreeLock);
 
   
   static already_AddRefed<GeckoContentController> GetContentController(
@@ -774,8 +774,8 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-  mutable mozilla::RecursiveMutex mTreeLock MOZ_UNANNOTATED;
-  RefPtr<HitTestingTreeNode> mRootNode;
+  mutable mozilla::RecursiveMutex mTreeLock;
+  RefPtr<HitTestingTreeNode> mRootNode GUARDED_BY(mTreeLock);
 
   
 
@@ -786,7 +786,8 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-  std::unordered_set<LayersId, LayersId::HashFn> mDetachedLayersIds;
+  std::unordered_set<LayersId, LayersId::HashFn> mDetachedLayersIds
+      GUARDED_BY(mTreeLock);
 
   
 
@@ -796,7 +797,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
 
 
-  mutable mozilla::Mutex mMapLock MOZ_UNANNOTATED;
+  mutable mozilla::Mutex mMapLock;
 
   
 
@@ -1003,7 +1004,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
   std::unordered_map<LayersId, UniquePtr<APZTestData>, LayersId::HashFn>
       mTestData;
-  mutable mozilla::Mutex mTestDataLock MOZ_UNANNOTATED;
+  mutable mozilla::Mutex mTestDataLock;
 
   
   float mDPI;
@@ -1015,7 +1016,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
   
   ScrollGenerationCounter mScrollGenerationCounter;
-  mozilla::Mutex mScrollGenerationLock MOZ_UNANNOTATED;
+  mozilla::Mutex mScrollGenerationLock;
 
 #if defined(MOZ_WIDGET_ANDROID)
  private:
