@@ -345,9 +345,23 @@ enum class DeprecatedOperations : uint16_t {
 
 
 
-#define NS_DOCUMENT_STATE_RTL_LOCALE NS_DEFINE_EVENT_STATE_MACRO(0)
+#define NS_DOCUMENT_STATE_WINDOW_INACTIVE NS_DEFINE_EVENT_STATE_MACRO(0)
 
-#define NS_DOCUMENT_STATE_WINDOW_INACTIVE NS_DEFINE_EVENT_STATE_MACRO(1)
+#define NS_DOCUMENT_STATE_RTL_LOCALE NS_DEFINE_EVENT_STATE_MACRO(1)
+
+
+
+#define NS_DOCUMENT_STATE_LTR_LOCALE NS_DEFINE_EVENT_STATE_MACRO(2)
+
+#define NS_DOCUMENT_STATE_LWTHEME NS_DEFINE_EVENT_STATE_MACRO(3)
+#define NS_DOCUMENT_STATE_LWTHEME_BRIGHTTEXT NS_DEFINE_EVENT_STATE_MACRO(4)
+#define NS_DOCUMENT_STATE_LWTHEME_DARKTEXT NS_DEFINE_EVENT_STATE_MACRO(5)
+
+#define NS_DOCUMENT_STATE_ALL_LOCALEDIR_BITS \
+  (NS_DOCUMENT_STATE_RTL_LOCALE | NS_DOCUMENT_STATE_LTR_LOCALE)
+#define NS_DOCUMENT_STATE_ALL_LWTHEME_BITS                            \
+  (NS_DOCUMENT_STATE_LWTHEME | NS_DOCUMENT_STATE_LWTHEME_BRIGHTTEXT | \
+   NS_DOCUMENT_STATE_LWTHEME_DARKTEXT)
 
 class DocHeaderData {
  public:
@@ -2081,7 +2095,7 @@ class Document : public nsINode,
   
   
   
-  void UpdateDocumentStates(EventStates aStateMask, bool aNotify);
+  void UpdateDocumentStates(EventStates aMaybeChangedStates, bool aNotify);
 
   void ResetDocumentDirection();
 
@@ -3021,14 +3035,6 @@ class Document : public nsINode,
 
   void MaybePreconnect(nsIURI* uri, CORSMode aCORSMode);
 
-  enum DocumentTheme {
-    Doc_Theme_Uninitialized,  
-    Doc_Theme_None,
-    Doc_Theme_Neutral,
-    Doc_Theme_Dark,
-    Doc_Theme_Bright
-  };
-
   
 
 
@@ -3043,15 +3049,18 @@ class Document : public nsINode,
     SetStateObject(aDocument->mStateObjectContainer);
   }
 
+  enum class DocumentTheme { None, Neutral, Dark, Bright };
+
   
 
 
 
 
 
-  DocumentTheme GetDocumentLWTheme();
-  DocumentTheme ThreadSafeGetDocumentLWTheme() const;
-  void ResetDocumentLWTheme() { mDocLWTheme = Doc_Theme_Uninitialized; }
+  DocumentTheme GetDocumentLWTheme() const;
+  void ResetDocumentLWTheme() {
+    UpdateDocumentStates(NS_DOCUMENT_STATE_ALL_LWTHEME_BITS, true);
+  }
 
   
   enum class MediaDocumentKind {
@@ -4506,7 +4515,7 @@ class Document : public nsINode,
   
   TimeStamp mLastFocusTime;
 
-  EventStates mDocumentState;
+  EventStates mDocumentState{NS_DOCUMENT_STATE_LTR_LOCALE};
 
   RefPtr<Promise> mReadyForIdle;
 
@@ -5267,10 +5276,6 @@ class Document : public nsINode,
   RefPtr<ChromeObserver> mChromeObserver;
 
   RefPtr<HTMLAllCollection> mAll;
-
-  
-  
-  DocumentTheme mDocLWTheme;
 
   
   float mSavedResolution;
