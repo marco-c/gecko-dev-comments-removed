@@ -473,7 +473,8 @@ ContentPrincipal::GetSiteOriginNoSuffix(nsACString& aSiteOrigin) {
     
     
     if (rv != NS_ERROR_HOST_IS_IP_ADDRESS &&
-        rv != NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS) {
+        rv != NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS &&
+        rv != NS_ERROR_INVALID_ARG) {
       return rv;
     }
   }
