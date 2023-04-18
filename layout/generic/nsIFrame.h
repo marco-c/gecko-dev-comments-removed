@@ -3591,6 +3591,17 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+
+  mozilla::OverflowAreas GetActualAndNormalOverflowAreasRelativeToParent()
+      const;
+
+  
+
+
+
+
+
+
   nsRect ScrollableOverflowRectRelativeToParent() const;
 
   
