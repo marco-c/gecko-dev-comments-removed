@@ -5,60 +5,117 @@
 
 requestLongerTimeout(3);
 
+
+
 add_task(async function() {
-  const dbg = await initDebugger("doc-scripts.html", "simple1.js");
+  const dbg = await initDebugger("doc-scripts.html", "simple1.js", "long.js");
+
+  await selectSource(dbg, "simple1.js");
+
+  
+  
+  
+  await addBreakpointViaGutter(dbg, 61);
+  await addBreakpointViaGutter(dbg, 56);
+
+  await selectSource(dbg, "long.js");
+
+  await addBreakpointViaGutter(dbg, 1);
+
+  await reload(dbg);
+  await waitForPaused(dbg);
+
+  info("Assert that the source is not long.js")
+  
+  
+  assertSourceDoesNotExist(dbg, "long.js");
+
   const source = findSource(dbg, "simple1.js");
 
-  await selectSource(dbg, source.url);
-  await addBreakpointViaGutter(dbg, 5);
-  await addBreakpointViaGutter(dbg, 4);
+  await assertPausedAtSourceAndLine(dbg, source.id, 61);
 
-  const syncedBps = waitForDispatch(dbg.store, "SET_BREAKPOINT", 2);
-  await reload(dbg, "simple1");
-  await waitForSelectedSource(dbg, "simple1");
-  await syncedBps;
+  info("The breakpoint for long.js does not exist yet");
+  await waitForState(dbg, state => dbg.selectors.getBreakpointCount() == 2);
 
-  await assertBreakpoint(dbg, 4);
-  await assertBreakpoint(dbg, 5);
+  
+  
+  
+  await assertBreakpoint(dbg, 56);
+  await assertBreakpoint(dbg, 61);
+
+  await resume(dbg);
+  await waitForPaused(dbg);
+
+  const source2 = findSource(dbg, "long.js");
+
+  await assertPausedAtSourceAndLine(dbg, source2.id, 1);
+
+  info("All 3 breakpoints from simple1.js and long.js still exist");
+  await waitForState(dbg, state => dbg.selectors.getBreakpointCount() == 3);
+
+  await assertBreakpoint(dbg, 1);
+
+  await resume(dbg);
+
+  
+  
+  await removeBreakpoint(dbg, source.id, 56);
+  await removeBreakpoint(dbg, source.id, 61);
+  await removeBreakpoint(dbg, source2.id, 1);
+
+  await dbg.toolbox.closeToolbox();
 });
 
 
 
 add_task(async function() {
   const dbg = await initDebugger("doc-scripts.html", "doc-scripts.html");
-  let source = findSource(dbg, "doc-scripts.html");
 
-  await selectSource(dbg, source.url);
-  await addBreakpoint(dbg, "doc-scripts.html", 22);
-  await addBreakpoint(dbg, "doc-scripts.html", 27);
+  await selectSource(dbg, "doc-scripts.html");
+  await addBreakpointViaGutter(dbg, 22);
+  await addBreakpointViaGutter(dbg, 27);
 
   await reload(dbg, "doc-scripts.html");
-  source = findSource(dbg, "doc-scripts.html");
-
   await waitForPaused(dbg);
-  assertPausedAtSourceAndLine(dbg, source.id, 22);
+
+  const source = findSource(dbg, "doc-scripts.html");
+
+  await assertPausedAtSourceAndLine(dbg, source.id, 22);
+
+  info("Only the breakpoint for the first inline script should exist");
+  await waitForState(dbg, state => dbg.selectors.getBreakpointCount() == 1);
+
   await assertBreakpoint(dbg, 22);
 
   
   
   
+  await assertNoBreakpoint(dbg, 27);
+
   await resume(dbg);
   await waitForPaused(dbg);
-  assertPausedAtSourceAndLine(dbg, source.id, 27);
+
+  info("All 2 breakpoints from both inline scripts still exist");
+  await waitForState(dbg, state => dbg.selectors.getBreakpointCount() == 2);
+
+  await assertPausedAtSourceAndLine(dbg, source.id, 27);
   await assertBreakpoint(dbg, 27);
+
+  await resume(dbg);
+
+  await removeBreakpoint(dbg, source.id, 22);
+  await removeBreakpoint(dbg, source.id, 27);
+
+  await dbg.toolbox.closeToolbox();
 });
 
-
-function clickGutter(dbg, line) {
-  clickElement(dbg, "gutter", line);
+function assertSourceDoesNotExist(dbg, url) {
+  const source = findSource(dbg, url, { silent: true });
+  ok(!source, `Source for ${url} does not exist`);
 }
 
-function getLineEl(dbg, line) {
-  const lines = dbg.win.document.querySelectorAll(".CodeMirror-code > div");
-  return lines[line - 1];
-}
-
-function addBreakpointViaGutter(dbg, line) {
-  clickGutter(dbg, line);
+async function addBreakpointViaGutter(dbg, line) {
+  info(`Add breakpoint via the editor on line ${line}`);
+  await clickGutter(dbg, line);
   return waitForDispatch(dbg.store, "SET_BREAKPOINT");
 }

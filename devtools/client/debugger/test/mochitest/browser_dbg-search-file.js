@@ -45,6 +45,8 @@ add_task(async function() {
     42,
     
     55,
+    
+    62
   ];
 
   await waitFor(

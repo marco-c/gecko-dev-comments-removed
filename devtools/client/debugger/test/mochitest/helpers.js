@@ -1294,12 +1294,14 @@ async function getEditorLineEl(dbg, line) {
 
 
 
+
 async function assertNoBreakpoint(dbg, line) {
   const el = await getEditorLineEl(dbg, line);
 
   const exists = !!el.querySelector(".new-breakpoint");
   ok(!exists, `Breakpoint doesn't exists on line ${line}`);
 }
+
 
 
 
