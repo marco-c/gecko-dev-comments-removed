@@ -1147,8 +1147,6 @@ void HTMLCanvasElement::InvalidateCanvasContent(const gfx::Rect* damageRect) {
   nsIFrame* frame = GetPrimaryFrame();
   if (!frame) return;
 
-  ActiveLayerTracker::NotifyContentChange(frame);
-
   
   
   

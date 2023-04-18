@@ -109,21 +109,6 @@ class ActiveLayerTracker {
 
 
   static void TransferActivityToFrame(nsIContent* aContent, nsIFrame* aFrame);
-
-  
-
-
-
-
-  
-
-
-
-  static void NotifyContentChange(nsIFrame* aFrame);
-  
-
-
-  static bool IsContentActive(nsIFrame* aFrame);
 };
 
 }  
