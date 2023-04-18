@@ -2924,7 +2924,7 @@ pub mod style_structs {
             % endif
         % endfor
 
-        % if style_struct.name == "Box":
+        % if style_struct.name == "UI":
             
             
             pub fn specifies_animations(&self) -> bool {
@@ -3056,7 +3056,7 @@ impl ComputedValues {
 
     
     pub fn is_display_contents(&self) -> bool {
-        self.get_box().clone_display().is_contents()
+        self.clone_display().is_contents()
     }
 
     
