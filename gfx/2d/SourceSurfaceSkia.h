@@ -10,10 +10,8 @@
 #include "2D.h"
 #include <vector>
 #include "mozilla/Mutex.h"
-#include "skia/include/core/SkRefCnt.h"
-
-class SkImage;
-class SkSurface;
+#include "skia/include/core/SkCanvas.h"
+#include "skia/include/core/SkImage.h"
 
 namespace mozilla {
 
@@ -33,7 +31,14 @@ class SourceSurfaceSkia : public DataSourceSurface {
   IntSize GetSize() const override;
   SurfaceFormat GetFormat() const override;
 
-  void GiveSurface(SkSurface* aSurface);
+  
+  
+  
+  
+  void GiveSurface(sk_sp<SkSurface>& aSurface) {
+    mSurface = aSurface;
+    mDrawTarget = nullptr;
+  }
 
   sk_sp<SkImage> GetImage(Maybe<MutexAutoLock>* aLock);
 

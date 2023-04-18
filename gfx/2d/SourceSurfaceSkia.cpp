@@ -10,8 +10,6 @@
 #include "DrawTargetSkia.h"
 #include "DataSurfaceHelpers.h"
 #include "skia/include/core/SkData.h"
-#include "skia/include/core/SkImage.h"
-#include "skia/include/core/SkSurface.h"
 #include "mozilla/CheckedInt.h"
 
 namespace mozilla::gfx {
@@ -32,15 +30,6 @@ SourceSurfaceSkia::~SourceSurfaceSkia() {
 IntSize SourceSurfaceSkia::GetSize() const { return mSize; }
 
 SurfaceFormat SourceSurfaceSkia::GetFormat() const { return mFormat; }
-
-
-
-
-
-void SourceSurfaceSkia::GiveSurface(SkSurface* aSurface) {
-  mSurface.reset(aSurface);
-  mDrawTarget = nullptr;
-}
 
 sk_sp<SkImage> SourceSurfaceSkia::GetImage(Maybe<MutexAutoLock>* aLock) {
   

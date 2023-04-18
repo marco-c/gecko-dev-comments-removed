@@ -268,7 +268,7 @@ public:
     float getAlphaf() const { return fColor4f.fA; }
 
     
-    uint8_t getAlpha() const { return uint8_t(sk_float_round2int(this->getAlphaf() * 255)); }
+    uint8_t getAlpha() const { return sk_float_round2int(this->getAlphaf() * 255); }
 
     
 
