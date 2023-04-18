@@ -6,20 +6,14 @@
 
 var EXPORTED_SYMBOLS = ["Fetch"];
 
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
+const { Domain } = ChromeUtils.import(
+  "chrome://remote/content/cdp/domains/Domain.jsm"
 );
 
-const lazy = {};
-
-XPCOMUtils.defineLazyModuleGetters(lazy, {
-  Domain: "chrome://remote/content/cdp/domains/Domain.jsm",
-});
 
 
 
-
-class Fetch extends lazy.Domain {
+class Fetch extends Domain {
   constructor(session) {
     super(session);
 

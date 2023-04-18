@@ -6,25 +6,19 @@
 
 var EXPORTED_SYMBOLS = ["RootMessageHandlerRegistry"];
 
-const { XPCOMUtils } = ChromeUtils.import(
-  "resource://gre/modules/XPCOMUtils.jsm"
+const { MessageHandlerRegistry } = ChromeUtils.import(
+  "chrome://remote/content/shared/messagehandler/MessageHandlerRegistry.jsm"
+);
+const { RootMessageHandler } = ChromeUtils.import(
+  "chrome://remote/content/shared/messagehandler/RootMessageHandler.jsm"
 );
 
-const lazy = {};
-
-XPCOMUtils.defineLazyModuleGetters(lazy, {
-  MessageHandlerRegistry:
-    "chrome://remote/content/shared/messagehandler/MessageHandlerRegistry.jsm",
-  RootMessageHandler:
-    "chrome://remote/content/shared/messagehandler/RootMessageHandler.jsm",
-});
 
 
 
 
 
 
-
-var RootMessageHandlerRegistry = new lazy.MessageHandlerRegistry(
-  lazy.RootMessageHandler.type
+var RootMessageHandlerRegistry = new MessageHandlerRegistry(
+  RootMessageHandler.type
 );

@@ -10,13 +10,16 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
+const { Target } = ChromeUtils.import(
+  "chrome://remote/content/cdp/targets/Target.jsm"
+);
+
 const lazy = {};
 
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   MainProcessSession:
     "chrome://remote/content/cdp/sessions/MainProcessSession.jsm",
   RemoteAgent: "chrome://remote/content/components/RemoteAgent.jsm",
-  Target: "chrome://remote/content/cdp/targets/Target.jsm",
 });
 
 
@@ -25,7 +28,7 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
 
 
 
-class MainProcessTarget extends lazy.Target {
+class MainProcessTarget extends Target {
   
 
 
