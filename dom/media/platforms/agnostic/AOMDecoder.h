@@ -82,7 +82,7 @@ class AOMDecoder : public MediaDataDecoder,
   struct OBUIterator {
    public:
     explicit OBUIterator(const Span<const uint8_t>& aData)
-        : mData(aData), mPosition(0), mGoNext(true) {}
+        : mData(aData), mPosition(0), mGoNext(true), mResult(NS_OK) {}
     bool HasNext() {
       UpdateNext();
       return !mGoNext;
@@ -92,12 +92,14 @@ class AOMDecoder : public MediaDataDecoder,
       mGoNext = true;
       return mCurrent;
     }
+    MediaResult GetResult() const { return mResult; }
 
    private:
     const Span<const uint8_t>& mData;
     size_t mPosition;
     OBUInfo mCurrent;
     bool mGoNext;
+    MediaResult mResult;
 
     
     
@@ -226,16 +228,32 @@ class AOMDecoder : public MediaDataDecoder,
 
   
   
-  static bool ReadSequenceHeaderInfo(const Span<const uint8_t>& aSample,
-                                     AV1SequenceInfo& aDestInfo);
+  
+  
+  
+  static MediaResult ReadSequenceHeaderInfo(const Span<const uint8_t>& aSample,
+                                            AV1SequenceInfo& aDestInfo);
   
   static already_AddRefed<MediaByteBuffer> CreateSequenceHeader(
       const AV1SequenceInfo& aInfo, nsresult& aResult);
 
   
   
+  static void TryReadAV1CBox(const MediaByteBuffer* aBox,
+                             AV1SequenceInfo& aDestInfo,
+                             MediaResult& aSeqHdrResult);
+  
+  
+  
+  
   static void ReadAV1CBox(const MediaByteBuffer* aBox,
-                          AV1SequenceInfo& aDestInfo, bool& aHadSeqHdr);
+                          AV1SequenceInfo& aDestInfo, bool& aHadSeqHdr) {
+    MediaResult seqHdrResult;
+    TryReadAV1CBox(aBox, aDestInfo, seqHdrResult);
+    nsresult code = seqHdrResult.Code();
+    MOZ_ASSERT(code == NS_OK || code == NS_ERROR_DOM_MEDIA_WAITING_FOR_DATA);
+    aHadSeqHdr = code == NS_OK;
+  }
   
   static void WriteAV1CBox(const AV1SequenceInfo& aInfo,
                            MediaByteBuffer* aDestBox, bool& aHasSeqHdr);

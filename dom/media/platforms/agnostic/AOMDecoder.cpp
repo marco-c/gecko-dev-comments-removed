@@ -340,7 +340,8 @@ void AOMDecoder::OBUIterator::UpdateNext() {
   
   if (temp.mExtensionFlag) {
     if (br.BitsLeft() < 8) {
-      NS_WARNING("Not enough bits left for an OBU extension header");
+      mResult = MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR,
+                            "Not enough bits left for an OBU extension header");
       return;
     }
     br.ReadBits(3);  
@@ -355,14 +356,16 @@ void AOMDecoder::OBUIterator::UpdateNext() {
   size_t size;
   if (hasSizeField) {
     if (br.BitsLeft() < 8) {
-      NS_WARNING("Not enough bits left for an OBU size field");
+      mResult = MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR,
+                            "Not enough bits left for an OBU size field");
       return;
     }
     CheckedUint32 checkedSize = br.ReadULEB128().toChecked<uint32_t>();
     
     
     if (!checkedSize.isValid()) {
-      NS_WARNING("OBU size was too large");
+      mResult =
+          MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR, "OBU size was too large");
       return;
     }
     size = checkedSize.value();
@@ -375,10 +378,12 @@ void AOMDecoder::OBUIterator::UpdateNext() {
   }
 
   if (br.BitsLeft() / 8 < size) {
-    NS_WARNING(nsPrintfCString("Size specified by the OBU header (%zu) is more "
-                               "than the actual remaining OBU data (%zu)",
-                               size, br.BitsLeft() / 8)
-                   .get());
+    mResult = MediaResult(
+        NS_ERROR_DOM_MEDIA_DECODE_ERR,
+        nsPrintfCString("Size specified by the OBU header (%zu) is more "
+                        "than the actual remaining OBU data (%zu)",
+                        size, br.BitsLeft() / 8)
+            .get());
     return;
   }
 
@@ -391,6 +396,7 @@ void AOMDecoder::OBUIterator::UpdateNext() {
 
   mPosition += bytes + size;
   resetExit.release();
+  mResult = NS_OK;
 }
 
 
@@ -413,8 +419,8 @@ already_AddRefed<MediaByteBuffer> AOMDecoder::CreateOBU(
 }
 
 
-bool AOMDecoder::ReadSequenceHeaderInfo(const Span<const uint8_t>& aSample,
-                                        AV1SequenceInfo& aDestInfo) {
+MediaResult AOMDecoder::ReadSequenceHeaderInfo(
+    const Span<const uint8_t>& aSample, AV1SequenceInfo& aDestInfo) {
   
   
   OBUIterator iter = ReadOBUs(aSample);
@@ -422,6 +428,11 @@ bool AOMDecoder::ReadSequenceHeaderInfo(const Span<const uint8_t>& aSample,
 
   while (true) {
     if (!iter.HasNext()) {
+      
+      MediaResult result = iter.GetResult();
+      if (result.Code() != NS_OK) {
+        return result;
+      }
       break;
     }
     OBUInfo obu = iter.Next();
@@ -431,7 +442,7 @@ bool AOMDecoder::ReadSequenceHeaderInfo(const Span<const uint8_t>& aSample,
   }
 
   if (seqOBU.mType != OBUType::SequenceHeader) {
-    return false;
+    return NS_ERROR_DOM_MEDIA_WAITING_FOR_DATA;
   }
 
   
@@ -450,8 +461,9 @@ bool AOMDecoder::ReadSequenceHeaderInfo(const Span<const uint8_t>& aSample,
   const bool stillPicture = br.ReadBit();
   const bool reducedStillPicture = br.ReadBit();
   if (!stillPicture && reducedStillPicture) {
-    NS_WARNING("reduced_still_picture is true while still_picture is false");
-    return false;
+    return MediaResult(
+        NS_ERROR_DOM_MEDIA_DECODE_ERR,
+        "reduced_still_picture is true while still_picture is false");
   }
 
   if (reducedStillPicture) {
@@ -528,7 +540,7 @@ bool AOMDecoder::ReadSequenceHeaderInfo(const Span<const uint8_t>& aSample,
 
   if (reducedStillPicture) {
     aDestInfo = tempInfo;
-    return true;
+    return NS_OK;
   }
 
   br.ReadBit();  
@@ -648,13 +660,13 @@ bool AOMDecoder::ReadSequenceHeaderInfo(const Span<const uint8_t>& aSample,
     correct &= br.ReadBits(8) == 0;
   }
   if (!correct) {
-    NS_WARNING("AV1 sequence header was parsed incorrectly");
-    return false;
+    return MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR,
+                       "AV1 sequence header was parsed incorrectly");
   }
   
 
   aDestInfo = tempInfo;
-  return true;
+  return NS_OK;
 }
 
 
@@ -874,10 +886,9 @@ already_AddRefed<MediaByteBuffer> AOMDecoder::CreateSequenceHeader(
 }
 
 
-void AOMDecoder::ReadAV1CBox(const MediaByteBuffer* aBox,
-                             AV1SequenceInfo& aDestInfo, bool& aHadSeqHdr) {
-  aHadSeqHdr = false;
-
+void AOMDecoder::TryReadAV1CBox(const MediaByteBuffer* aBox,
+                                AV1SequenceInfo& aDestInfo,
+                                MediaResult& aSeqHdrResult) {
   
   
   BitReader br(aBox);
@@ -913,12 +924,13 @@ void AOMDecoder::ReadAV1CBox(const MediaByteBuffer* aBox,
 
   
   if (obus.Length() < 1) {
+    aSeqHdrResult = NS_ERROR_DOM_MEDIA_WAITING_FOR_DATA;
     return;
   }
 
   
   
-  aHadSeqHdr = ReadSequenceHeaderInfo(obus, aDestInfo);
+  aSeqHdrResult = ReadSequenceHeaderInfo(obus, aDestInfo);
 }
 
 
