@@ -763,7 +763,7 @@ class FormAutofillAddressSection extends FormAutofillSection {
   isRecordCreatable(record) {
     if (
       record.country &&
-      !FormAutofill.isAutofillAddressesAvailableInCountry(record.country)
+      !FormAutofill.supportedCountries.includes(record.country)
     ) {
       
       
