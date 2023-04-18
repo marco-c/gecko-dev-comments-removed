@@ -2294,13 +2294,43 @@ static UINT GetCurrentShowCmd(HWND aWnd) {
   return pl.showCmd;
 }
 
+void nsWindow::SetSizeModeInternal(nsSizeMode aMode) {
+  
+  mLastSizeMode = mSizeMode;
+  nsBaseWidget::SetSizeMode(aMode);
+  if (mIsVisible) {
+    switch (aMode) {
+      case nsSizeMode_Fullscreen:
+        ::ShowWindow(mWnd, SW_SHOW);
+        break;
+
+      case nsSizeMode_Maximized:
+        ::ShowWindow(mWnd, SW_MAXIMIZE);
+        break;
+
+      case nsSizeMode_Minimized:
+        ::ShowWindow(mWnd, SW_MINIMIZE);
+        break;
+
+      default:
+        
+        
+        
+        
+        if (GetCurrentShowCmd(mWnd) != SW_SHOWNORMAL) {
+          ::ShowWindow(mWnd, SW_RESTORE);
+        }
+    }
+  }
+
+  
+  if (mIsVisible && (aMode == nsSizeMode_Maximized || aMode == nsSizeMode_Fullscreen)) {
+    DispatchFocusToTopLevelWindow(true);
+  }
+}
+
 
 void nsWindow::SetSizeMode(nsSizeMode aMode) {
-  
-  
-  
-  if (aMode == mSizeMode) return;
-
   
   
   
@@ -2310,38 +2340,20 @@ void nsWindow::SetSizeMode(nsSizeMode aMode) {
   }
 
   
-  mLastSizeMode = mSizeMode;
-  nsBaseWidget::SetSizeMode(aMode);
-  if (mIsVisible) {
-    int mode;
+  
+  
+  if (aMode == mSizeMode) return;
 
-    switch (aMode) {
-      case nsSizeMode_Fullscreen:
-        mode = SW_SHOW;
-        break;
-
-      case nsSizeMode_Maximized:
-        mode = SW_MAXIMIZE;
-        break;
-
-      case nsSizeMode_Minimized:
-        mode = SW_MINIMIZE;
-        break;
-
-      default:
-        mode = SW_RESTORE;
-    }
-
+  if (aMode == nsSizeMode_Fullscreen) {
+    MakeFullScreen(true, nullptr);
+  } else if ((mSizeMode == nsSizeMode_Fullscreen) && (aMode == nsSizeMode_Normal)) {
     
     
     
     
-    if (!(GetCurrentShowCmd(mWnd) == SW_SHOWNORMAL && mode == SW_RESTORE)) {
-      ::ShowWindow(mWnd, mode);
-    }
-    
-    if (mode == SW_MAXIMIZE || mode == SW_SHOW)
-      DispatchFocusToTopLevelWindow(true);
+    MakeFullScreen(false, nullptr);
+  } else {
+    SetSizeModeInternal(aMode);
   }
 }
 
@@ -3667,8 +3679,9 @@ void nsWindow::CleanupFullscreenTransition() {
 }
 
 nsresult nsWindow::MakeFullScreen(bool aFullScreen, nsIScreen* aTargetScreen) {
-  
-  nsCOMPtr<nsIWinTaskbar> taskbarInfo = do_GetService(NS_TASKBAR_CONTRACTID);
+  if (mFullscreenMode == aFullScreen) {
+    return NS_OK;
+  }
 
   if (mWidgetListener) {
     mWidgetListener->FullscreenWillChange(aFullScreen);
@@ -3676,16 +3689,22 @@ nsresult nsWindow::MakeFullScreen(bool aFullScreen, nsIScreen* aTargetScreen) {
 
   mFullscreenMode = aFullScreen;
   if (aFullScreen) {
-    if (mSizeMode == nsSizeMode_Fullscreen) return NS_OK;
     mOldSizeMode = mSizeMode;
-    SetSizeMode(nsSizeMode_Fullscreen);
-
-    
-    if (taskbarInfo) {
-      taskbarInfo->PrepareFullScreenHWND(mWnd, TRUE);
-    }
+    SetSizeModeInternal(nsSizeMode_Fullscreen);
   } else {
-    SetSizeMode(mOldSizeMode);
+    if (mSizeMode != mOldSizeMode) {
+      SetSizeModeInternal(mOldSizeMode);
+    }
+
+    MOZ_ASSERT(mSizeMode == mOldSizeMode);
+  }
+
+  
+  nsCOMPtr<nsIWinTaskbar> taskbarInfo = do_GetService(NS_TASKBAR_CONTRACTID);
+
+  
+  if (aFullScreen && taskbarInfo) {
+    taskbarInfo->PrepareFullScreenHWND(mWnd, TRUE);
   }
 
   
@@ -3697,7 +3716,9 @@ nsresult nsWindow::MakeFullScreen(bool aFullScreen, nsIScreen* aTargetScreen) {
   
   nsBaseWidget::InfallibleMakeFullScreen(aFullScreen, aTargetScreen);
 
-  if (mIsVisible && !aFullScreen && mOldSizeMode == nsSizeMode_Normal) {
+  if (mIsVisible && !aFullScreen && mSizeMode == nsSizeMode_Normal) {
+    MOZ_ASSERT(mSizeMode == mOldSizeMode);
+
     
     
     DispatchFocusToTopLevelWindow(true);
