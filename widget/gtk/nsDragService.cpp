@@ -1959,8 +1959,7 @@ void nsDragService::SetDragIcon(GdkDragContext* aContext) {
           
           
           
-          GtkWidget* parent;
-          if (parent = gtk_widget_get_parent(gtkWidget)) {
+          if (GtkWidget* parent = gtk_widget_get_parent(gtkWidget)) {
             gtk_container_remove(GTK_CONTAINER(parent), gtkWidget);
           }
           LOGDRAGSERVICE(("  set drag popup [%p]", widget.get()));
