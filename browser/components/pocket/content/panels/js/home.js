@@ -5,12 +5,9 @@
 
 
 
-import React from "react";
-import ReactDOM from "react-dom";
-import PopularTopics from "../components/PopularTopics";
-import pktPanelMessaging from "../messages.js";
 
-var HomeOverlay = function(options) {
+
+var PKT_PANEL_OVERLAY = function(options) {
   this.inited = false;
   this.active = false;
   this.pockethost = "getpocket.com";
@@ -20,15 +17,15 @@ var HomeOverlay = function(options) {
   };
 
   this.setupClickEvents = function() {
-    pktPanelMessaging.clickHelper(document.querySelector(`.pkt_ext_mylist`), {
+    thePKT_PANEL.clickHelper(document.querySelector(`.pkt_ext_mylist`), {
       source: `home_view_list`,
     });
-    pktPanelMessaging.clickHelper(document.querySelector(`.pkt_ext_discover`), {
+    thePKT_PANEL.clickHelper(document.querySelector(`.pkt_ext_discover`), {
       source: `home_discover`,
     });
 
     document.querySelectorAll(`.pkt_ext_topic`).forEach((el, position) => {
-      pktPanelMessaging.clickHelper(el, {
+      thePKT_PANEL.clickHelper(el, {
         source: `home_topic`,
         position,
       });
@@ -36,7 +33,7 @@ var HomeOverlay = function(options) {
   };
 };
 
-HomeOverlay.prototype = {
+PKT_PANEL_OVERLAY.prototype = {
   create() {
     var host = window.location.href.match(/pockethost=([\w|\.]*)&?/);
     if (host && host.length > 1) {
@@ -76,19 +73,19 @@ HomeOverlay.prototype = {
     
     
     if (this.locale.startsWith("en")) {
-      ReactDOM.render(
-        <PopularTopics
-          pockethost={templateData.pockethost}
-          utmsource={templateData.utmsource}
-          topics={[
-            { title: "Self Improvement", topic: "self-improvement" },
-            { title: "Food", topic: "food" },
-            { title: "Entertainment", topic: "entertainment" },
-            { title: "Science", topic: "science" },
-          ]}
-        />,
-        document.querySelector(`.pkt_ext_more`)
-      );
+      const data = {
+        pockethost: templateData.pockethost,
+        utmsource: templateData.utmsource,
+        topics: [
+          { title: "Self Improvement", topic: "self-improvement" },
+          { title: "Food", topic: "food" },
+          { title: "Entertainment", topic: "entertainment" },
+          { title: "Science", topic: "science" },
+        ],
+      };
+      document
+        .querySelector(`.pkt_ext_more`)
+        .append(this.parseHTML(Handlebars.templates.popular_topics(data)));
     } else if (enableLocalizedExploreMore) {
       
       document
@@ -103,5 +100,3 @@ HomeOverlay.prototype = {
     pktPanelMessaging.sendMessage("PKT_show_home");
   },
 };
-
-export default HomeOverlay;
