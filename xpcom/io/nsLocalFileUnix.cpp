@@ -558,8 +558,7 @@ nsLocalFile::AppendNative(const nsACString& aFragment) {
 
   
   nsACString::const_iterator begin, end;
-  if (aFragment.EqualsASCII("..") ||
-      FindCharInReadable('/', aFragment.BeginReading(begin),
+  if (FindCharInReadable('/', aFragment.BeginReading(begin),
                          aFragment.EndReading(end))) {
     return NS_ERROR_FILE_UNRECOGNIZED_PATH;
   }
@@ -574,32 +573,8 @@ nsLocalFile::AppendRelativeNativePath(const nsACString& aFragment) {
   }
 
   
-  if (aFragment.First() == '/' || aFragment.EqualsASCII("..")) {
+  if (aFragment.First() == '/') {
     return NS_ERROR_FILE_UNRECOGNIZED_PATH;
-  }
-
-  if (aFragment.Contains('/')) {
-    
-    
-    
-    
-    constexpr auto doubleDot = "/.."_ns;
-    nsACString::const_iterator start, end, offset;
-    aFragment.BeginReading(start);
-    aFragment.EndReading(end);
-    offset = end;
-    while (FindInReadable(doubleDot, start, offset)) {
-      if (offset == end || *offset == '/') {
-        return NS_ERROR_FILE_UNRECOGNIZED_PATH;
-      }
-      start = offset;
-      offset = end;
-    }
-
-    
-    if (StringBeginsWith(aFragment, "../"_ns)) {
-      return NS_ERROR_FILE_UNRECOGNIZED_PATH;
-    }
   }
 
   if (!mPath.EqualsLiteral("/")) {
