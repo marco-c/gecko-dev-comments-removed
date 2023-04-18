@@ -4,10 +4,8 @@
 
 
 
-#include "Telemetry.h"
 #include "TelemetryOrigin.h"
 
-#include "nsTHashMap.h"
 #include "nsIObserverService.h"
 #include "nsPrintfCString.h"
 #include "nsTArray.h"

@@ -7,9 +7,10 @@
 #define TelemetryOrigin_h__
 
 #include "TelemetryOriginEnums.h"
-#include "jsapi.h"
+#include "mozilla/MemoryReporting.h"
+#include "js/TypeDecls.h"
 #include "nsError.h"
-#include "nsString.h"
+#include "nsStringFwd.h"
 
 
 

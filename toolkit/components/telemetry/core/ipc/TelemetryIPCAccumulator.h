@@ -9,7 +9,9 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Maybe.h"
 #include "nsStringFwd.h"
-#include "TelemetryComms.h"
+#include "mozilla/Telemetry.h"                
+#include "mozilla/TelemetryComms.h"           
+#include "mozilla/TelemetryHistogramEnums.h"  
 
 class nsIRunnable;
 class nsITimer;
