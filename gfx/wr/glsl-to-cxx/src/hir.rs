@@ -919,6 +919,8 @@ pub struct SymRef(u32);
 
 #[derive(Debug)]
 struct Scope {
+    
+    #[allow(dead_code)]
     name: String,
     names: HashMap<String, SymRef>,
 }
