@@ -668,6 +668,33 @@ class ProviderAutofill extends UrlbarProvider {
         break;
     }
 
+    
+    
+    autofilledValue =
+      queryContext.searchString +
+      autofilledValue.substring(searchString.length);
+
+    
+    
+    
+    
+    
+    if (
+      queryType != QUERYTYPE.AUTOFILL_ORIGIN &&
+      queryContext.searchString.length == autofilledValue.length
+    ) {
+      finalCompleteValue =
+        finalCompleteValue.substring(
+          0,
+          finalCompleteValue.length - autofilledValue.length
+        ) + autofilledValue;
+      
+      
+      
+      
+      finalCompleteValue = new URL(finalCompleteValue).href;
+    }
+
     let [title] = UrlbarUtils.stripPrefixAndTrim(finalCompleteValue, {
       stripHttp: true,
       trimEmptyQuery: true,
@@ -682,9 +709,6 @@ class ProviderAutofill extends UrlbarProvider {
         icon: UrlbarUtils.getIconForUrl(finalCompleteValue),
       })
     );
-    autofilledValue =
-      queryContext.searchString +
-      autofilledValue.substring(searchString.length);
     result.autofill = {
       adaptiveHistoryInput,
       value: autofilledValue,
