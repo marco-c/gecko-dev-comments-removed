@@ -1002,7 +1002,7 @@ impl BatchBuilder {
                             self.add_split_composite_instance_to_batches(
                                 key,
                                 BatchFeatures::CLIP_MASK,
-                                &child_prim_info.clip_chain.pic_clip_rect,
+                                &child_prim_info.clip_chain.pic_coverage_rect,
                                 z_id,
                                 prim_header_index,
                                 child.gpu_address,
@@ -1055,7 +1055,7 @@ impl BatchBuilder {
         
         let transform_kind = transform_id.transform_kind();
         let prim_info = &prim_instance.vis;
-        let bounding_rect = &prim_info.clip_chain.pic_clip_rect;
+        let bounding_rect = &prim_info.clip_chain.pic_coverage_rect;
 
         
         

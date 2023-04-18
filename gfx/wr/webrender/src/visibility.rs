@@ -406,7 +406,7 @@ pub fn update_primitive_visibility(
                              if apply_local_clip_rect { "(applied)" } else { "" },
                     );
                     info!("\tpicture rect {:?} @{:?}",
-                             prim_instance.vis.clip_chain.pic_clip_rect,
+                             prim_instance.vis.clip_chain.pic_coverage_rect,
                              prim_instance.vis.clip_chain.pic_spatial_node_index,
                     );
                 }
@@ -484,7 +484,7 @@ pub fn update_primitive_visibility(
                     };
                     if debug_color.a != 0.0 {
                         if let Some(rect) = calculate_prim_clipped_world_rect(
-                            &prim_instance.vis.clip_chain.pic_clip_rect,
+                            &prim_instance.vis.clip_chain.pic_coverage_rect,
                             &world_culling_rect,
                             &map_surface_to_world,
                         ) {
@@ -500,7 +500,7 @@ pub fn update_primitive_visibility(
                     if is_image {
                         
                         if let Some(rect) = calculate_prim_clipped_world_rect(
-                            &prim_instance.vis.clip_chain.pic_clip_rect,
+                            &prim_instance.vis.clip_chain.pic_coverage_rect,
                             &world_culling_rect,
                             &map_surface_to_world,
                         ) {
@@ -611,7 +611,7 @@ fn update_prim_post_visibility(
             
             if let Some(ref mut raster_config) = pic.raster_config {
                 raster_config.clipped_bounding_rect = map_surface_to_world
-                    .map(&prim_instance.vis.clip_chain.pic_clip_rect)
+                    .map(&prim_instance.vis.clip_chain.pic_coverage_rect)
                     .and_then(|rect| {
                         rect.intersection(world_culling_rect)
                     })
@@ -664,7 +664,7 @@ pub fn compute_conservative_visible_rect(
     
     
     
-    let pic_culling_rect = match pic_culling_rect.intersection(&clip_chain.pic_clip_rect) {
+    let pic_culling_rect = match pic_culling_rect.intersection(&clip_chain.pic_coverage_rect) {
         Some(rect) => rect,
         None => return LayoutRect::zero(),
     };
