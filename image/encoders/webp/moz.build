@@ -1,0 +1,15 @@
+
+
+
+
+
+
+SOURCES += [
+    "nsWebPEncoder.cpp",
+]
+
+LOCAL_INCLUDES += [
+    "/image",
+]
+
+FINAL_LIBRARY = "xul"
