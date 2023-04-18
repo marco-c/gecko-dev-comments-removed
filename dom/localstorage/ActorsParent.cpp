@@ -4531,7 +4531,7 @@ void Datastore::GetSnapshotLoadInfo(const nsString& aKey,
   
   
   
-  auto GetLoadState = [&](auto aKeyLength, auto aValueLength) {
+  auto GetLoadState = [&](int64_t aKeyLength, int64_t aValueLength) {
     if (mSizeOfKeys - aKeyLength <= gSnapshotPrefill) {
       if (mSizeOfItems - aKeyLength - aValueLength <= gSnapshotPrefill) {
         return LSSnapshot::LoadState::AllOrderedItems;

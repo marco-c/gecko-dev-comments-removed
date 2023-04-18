@@ -4603,7 +4603,7 @@ void WorkerPrivate::ReportError(JSContext* aCx,
                            mozilla::fallible)) {
       
       
-      uint32_t index = std::min(uint32_t(1024), toStringResult.Length());
+      size_t index = std::min<size_t>(1024, toStringResult.Length());
 
       
       index = RewindToPriorUTF8Codepoint(toStringResult.BeginReading(), index);

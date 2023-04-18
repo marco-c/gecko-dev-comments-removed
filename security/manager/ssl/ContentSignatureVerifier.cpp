@@ -336,7 +336,7 @@ static nsresult VerifyContentSignatureInternal(
   SECItem rawSignatureItem = {
       siBuffer,
       BitwiseCast<unsigned char*, const char*>(rawSignature.get()),
-      rawSignature.Length(),
+      uint32_t(rawSignature.Length()),
   };
   
   

@@ -149,8 +149,8 @@ int32_t nsPlainTextSerializer::CurrentLine::FindWrapIndexForContent(
   
   if (aWrapColumn >= prefixwidth) {
     
-    goodSpace = static_cast<int32_t>(
-        std::min(aWrapColumn - prefixwidth, mContent.Length() - 1));
+    goodSpace =
+        std::min<int32_t>(aWrapColumn - prefixwidth, mContent.Length() - 1);
     while (goodSpace >= 0) {
       if (nsCRT::IsAsciiSpace(mContent.CharAt(goodSpace))) {
         return goodSpace;

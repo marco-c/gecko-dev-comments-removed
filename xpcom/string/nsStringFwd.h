@@ -45,11 +45,11 @@ template <typename T>
 class nsTSubstringSplitter;
 
 template <typename T>
-using nsTStringComparator = int (*)(const T*, const T*, uint32_t, uint32_t);
+using nsTStringComparator = int (*)(const T*, const T*, size_t, size_t);
 
 
 template <typename T>
-int nsTDefaultStringComparator(const T*, const T*, uint32_t, uint32_t);
+int nsTDefaultStringComparator(const T*, const T*, size_t, size_t);
 
 
 

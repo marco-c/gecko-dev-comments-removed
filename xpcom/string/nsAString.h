@@ -26,8 +26,8 @@
 
 
 
-int nsCaseInsensitiveCStringComparator(const char*, const char*, uint32_t,
-                                       uint32_t);
+int nsCaseInsensitiveCStringComparator(const char*, const char*, size_t,
+                                       size_t);
 
 class nsCaseInsensitiveCStringArrayComparator {
  public:

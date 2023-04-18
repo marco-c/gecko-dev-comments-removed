@@ -11,8 +11,7 @@
 #include "nsTStringComparator.cpp"
 
 int nsCaseInsensitiveCStringComparator(const char* aLhs, const char* aRhs,
-                                       uint32_t aLhsLength,
-                                       uint32_t aRhsLength) {
+                                       size_t aLhsLength, size_t aRhsLength) {
 #if defined(LIBFUZZER) && defined(LINUX)
   
   

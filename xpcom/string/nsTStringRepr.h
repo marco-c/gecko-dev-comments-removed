@@ -7,10 +7,13 @@
 #ifndef nsTStringRepr_h
 #define nsTStringRepr_h
 
+#include <limits>
 #include <type_traits>  
 
 #include "mozilla/Char16.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/fallible.h"
+#include "nsStringBuffer.h"
 #include "nsStringFlags.h"
 #include "nsStringIterator.h"
 #include "nsCharTraits.h"
@@ -56,6 +59,44 @@ namespace detail {
 
 
 
+template <typename T>
+class nsTStringLengthStorage {
+ public:
+  
+  
+  
+  static constexpr size_t kMax =
+      size_t{std::numeric_limits<int32_t>::max()} / sizeof(T) - 1;
+  static_assert(
+      (kMax + 1) * sizeof(T) <= std::numeric_limits<int32_t>::max(),
+      "nsTString's maximum length, including the trailing null, must fit "
+      "within `int32_t`, as callers will cast to `int32_t` occasionally");
+  static_assert(((CheckedInt<uint32_t>{kMax} + 1) * sizeof(T) +
+                 sizeof(nsStringBuffer))
+                    .isValid(),
+                "Math required to allocate a nsStringBuffer for a "
+                "maximum-capacity string must not overflow uint32_t");
+
+  
+  
+  MOZ_IMPLICIT constexpr nsTStringLengthStorage(size_t aLength)
+      : mLength(aLength) {
+    MOZ_RELEASE_ASSERT(aLength <= kMax, "string is too large");
+  }
+  constexpr nsTStringLengthStorage& operator=(size_t aLength) {
+    MOZ_RELEASE_ASSERT(aLength <= kMax, "string is too large");
+    mLength = aLength;
+    return *this;
+  }
+  MOZ_IMPLICIT constexpr operator size_t() const { return mLength; }
+
+ private:
+  uint32_t mLength = 0;
+};
+
+
+
+
 
 
 
@@ -90,12 +131,13 @@ class nsTStringRepr {
 
   typedef const char_type* const_char_iterator;
 
-  typedef uint32_t index_type;
-  typedef uint32_t size_type;
+  typedef size_t index_type;
+  typedef size_t size_type;
 
   
   typedef StringDataFlags DataFlags;
   typedef StringClassFlags ClassFlags;
+  typedef nsTStringLengthStorage<T> LengthStorage;
 
   
   constexpr const_char_iterator BeginReading() const { return mData; }
@@ -139,7 +181,7 @@ class nsTStringRepr {
   
   constexpr const typename raw_type<T, int>::type Data() const { return mData; }
 
-  constexpr size_type Length() const { return mLength; }
+  constexpr size_type Length() const { return static_cast<size_type>(mLength); }
 
   constexpr DataFlags GetDataFlags() const { return mDataFlags; }
 
@@ -156,7 +198,7 @@ class nsTStringRepr {
   }
 
   constexpr char_type CharAt(index_type aIndex) const {
-    NS_ASSERTION(aIndex < mLength, "index exceeds allowable range");
+    NS_ASSERTION(aIndex < Length(), "index exceeds allowable range");
     return mData[aIndex];
   }
 
@@ -193,8 +235,9 @@ class nsTStringRepr {
 
 
   template <typename Q = T, typename EnableIfChar = mozilla::CharOnlyT<Q>>
-  int32_t Compare(const char_type* aString, bool aIgnoreCase = false,
-                  int32_t aCount = -1) const;
+  int32_t Compare(
+      const char_type* aString, bool aIgnoreCase = false,
+      size_type aCount = std::numeric_limits<size_type>::max()) const;
 
   
 
@@ -205,13 +248,16 @@ class nsTStringRepr {
 
 
   template <typename Q = T, typename EnableIfChar = mozilla::CharOnlyT<Q>>
-  bool EqualsIgnoreCase(const char_type* aString, int32_t aCount = -1) const {
+  bool EqualsIgnoreCase(
+      const char_type* aString,
+      size_type aCount = std::numeric_limits<size_type>::max()) const {
     return Compare(aString, true, aCount) == 0;
   }
 
   template <typename Q = T, typename EnableIfChar16 = mozilla::Char16OnlyT<Q>>
-  bool EqualsIgnoreCase(const incompatible_char_type* aString,
-                        int32_t aCount = -1) const;
+  bool EqualsIgnoreCase(
+      const incompatible_char_type* aString,
+      size_type aCount = std::numeric_limits<size_type>::max()) const;
 
 #if defined(MOZ_USE_CHAR16_WRAPPER)
   template <typename Q = T, typename EnableIfChar16 = Char16OnlyT<Q>>
@@ -319,8 +365,17 @@ class nsTStringRepr {
         mDataFlags(aDataFlags),
         mClassFlags(aClassFlags) {}
 
+  static constexpr size_type kMaxCapacity = LengthStorage::kMax;
+
+  
+
+
+  [[nodiscard]] static constexpr bool CheckCapacity(size_type aCapacity) {
+    return aCapacity <= kMaxCapacity;
+  }
+
   char_type* mData;
-  size_type mLength;
+  LengthStorage mLength;
   DataFlags mDataFlags;
   ClassFlags const mClassFlags;
 };

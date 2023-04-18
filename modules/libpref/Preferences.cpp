@@ -143,7 +143,7 @@ static const uint32_t MAX_ADVISABLE_PREF_LENGTH = 4 * 1024;
 
 
 static void SerializeAndAppendString(const nsCString& aChars, nsCString& aStr) {
-  aStr.AppendInt(aChars.Length());
+  aStr.AppendInt(uint64_t(aChars.Length()));
   aStr.Append('/');
   aStr.Append(aChars);
 }
