@@ -32,7 +32,6 @@ class CubebDeviceEnumerator final {
   
   
   
-  already_AddRefed<AudioDeviceInfo> DeviceInfoFromName(const nsString& aName);
   enum class Side {
     INPUT,
     OUTPUT,
