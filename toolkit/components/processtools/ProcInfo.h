@@ -30,6 +30,13 @@ nsresult GetCpuTimeSinceProcessStartInMs(uint64_t* aResult);
 
 
 
+
+
+nsresult GetGpuTimeSinceProcessStartInMs(uint64_t* aResult);
+
+
+
+
 enum class ProcType {
   
   Web,

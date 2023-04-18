@@ -6,12 +6,6 @@
 #ifndef GFX_WINDOWS_PLATFORM_H
 #define GFX_WINDOWS_PLATFORM_H
 
-
-
-
-
-#include "cairo-win32.h"
-
 #include "gfxCrashReporterUtils.h"
 #include "gfxFontUtils.h"
 #include "gfxWindowsSurface.h"
@@ -177,6 +171,8 @@ class gfxWindowsPlatform final : public gfxPlatform {
   }
 
  public:
+  static nsresult GetGpuTimeSinceProcessStartInMs(uint64_t* aResult);
+
   bool DwmCompositionEnabled();
 
   mozilla::layers::ReadbackManagerD3D11* GetReadbackManager();

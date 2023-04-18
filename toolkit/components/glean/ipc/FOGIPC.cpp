@@ -21,8 +21,8 @@ using FlushFOGDataPromise = mozilla::dom::ContentParent::FlushFOGDataPromise;
 namespace mozilla {
 namespace glean {
 
-static void RecordCpuTime() {
-  static uint64_t previousCpuTime = 0;
+static void RecordPowerMetrics() {
+  static uint64_t previousCpuTime = 0, previousGpuTime = 0;
 
   uint64_t cpuTime;
   if (NS_FAILED(GetCpuTimeSinceProcessStartInMs(&cpuTime))) {
@@ -38,6 +38,16 @@ static void RecordCpuTime() {
     
     power::total_cpu_time_ms.Add(int32_t(newCpuTime));
   }
+
+  uint64_t gpuTime;
+  if (NS_SUCCEEDED(GetGpuTimeSinceProcessStartInMs(&gpuTime))) {
+    uint64_t newGpuTime = gpuTime - previousGpuTime;
+    previousGpuTime += newGpuTime;
+
+    if (newGpuTime) {
+      power::total_gpu_time_ms.Add(int32_t(newGpuTime));
+    }
+  }
 }
 
 
@@ -49,7 +59,7 @@ static void RecordCpuTime() {
 
 void FlushFOGData(std::function<void(ipc::ByteBuf&&)>&& aResolver) {
   
-  RecordCpuTime();
+  RecordPowerMetrics();
 
   ByteBuf buf;
   uint32_t ipcBufferSize = impl::fog_serialize_ipc_buf();
@@ -131,7 +141,8 @@ void SendFOGData(ipc::ByteBuf&& buf) {
 
 RefPtr<GenericPromise> FlushAndUseFOGData() {
   
-  RecordCpuTime();
+  
+  RecordPowerMetrics();
 
   RefPtr<GenericPromise::Private> ret = new GenericPromise::Private(__func__);
   std::function<void(nsTArray<ByteBuf> &&)> resolver =
