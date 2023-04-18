@@ -49,10 +49,6 @@ class nsLocalFile final : public nsILocalFileWin {
   
   static nsresult RevealFile(const nsString& aResolvedPath);
 
-  
-  
-  static void CheckForReservedFileName(nsString& aFileName);
-
  private:
   
   enum CopyFileOption {
