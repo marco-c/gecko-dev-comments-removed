@@ -452,7 +452,7 @@ FormAutoComplete.prototype = {
 
       
       
-      if (datalistItems) {
+      if (datalistItems?.length) {
         filteredEntries = filteredEntries.map(elt => ({
           value: elt.text,
           
