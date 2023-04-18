@@ -997,6 +997,12 @@ struct CompilationStencil {
   
   mutable mozilla::Atomic<uintptr_t> refCount{0};
 
+ private:
+  
+  
+  UniquePtr<ExtensibleCompilationStencil> ownedBorrowStencil;
+
+ public:
   
   
   bool hasExternalDependency = false;
@@ -1067,6 +1073,21 @@ struct CompilationStencil {
   explicit CompilationStencil(ScriptSource* source)
       : alloc(LifoAllocChunkSize), source(source) {}
 
+  
+  
+  explicit CompilationStencil(
+      UniquePtr<ExtensibleCompilationStencil>&& extensibleStencil);
+
+ protected:
+  void borrowFromExtensibleCompilationStencil(
+      ExtensibleCompilationStencil& extensibleStencil);
+
+#ifdef DEBUG
+  void assertBorrowingFromExtensibleCompilationStencil(
+      const ExtensibleCompilationStencil& extensibleStencil) const;
+#endif
+
+ public:
   static FunctionKey toFunctionKey(const SourceExtent& extent) {
     
     
@@ -1358,6 +1379,10 @@ class MOZ_STACK_CLASS BorrowingCompilationStencil : public CompilationStencil {
 
 inline size_t CompilationStencil::sizeOfExcludingThis(
     mozilla::MallocSizeOf mallocSizeOf) const {
+  if (ownedBorrowStencil) {
+    return ownedBorrowStencil->sizeOfIncludingThis(mallocSizeOf);
+  }
+
   size_t moduleMetadataSize =
       moduleMetadata ? moduleMetadata->sizeOfIncludingThis(mallocSizeOf) : 0;
   size_t asmJSSize = asmJS ? asmJS->sizeOfIncludingThis(mallocSizeOf) : 0;
