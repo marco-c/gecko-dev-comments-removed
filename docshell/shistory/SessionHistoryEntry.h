@@ -431,37 +431,37 @@ class IProtocol;
 
 template <>
 struct IPDLParamTraits<dom::SessionHistoryInfo> {
-  static void Write(IPC::Message* aMsg, IProtocol* aActor,
+  static void Write(IPC::MessageWriter* aWriter, IProtocol* aActor,
                     const dom::SessionHistoryInfo& aParam);
-  static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
-                   IProtocol* aActor, dom::SessionHistoryInfo* aResult);
+  static bool Read(IPC::MessageReader* aReader, IProtocol* aActor,
+                   dom::SessionHistoryInfo* aResult);
 };
 
 
 template <>
 struct IPDLParamTraits<dom::LoadingSessionHistoryInfo> {
-  static void Write(IPC::Message* aMsg, IProtocol* aActor,
+  static void Write(IPC::MessageWriter* aWriter, IProtocol* aActor,
                     const dom::LoadingSessionHistoryInfo& aParam);
-  static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
-                   IProtocol* aActor, dom::LoadingSessionHistoryInfo* aResult);
+  static bool Read(IPC::MessageReader* aReader, IProtocol* aActor,
+                   dom::LoadingSessionHistoryInfo* aResult);
 };
 
 
 template <>
 struct IPDLParamTraits<nsILayoutHistoryState*> {
-  static void Write(IPC::Message* aMsg, IProtocol* aActor,
+  static void Write(IPC::MessageWriter* aWriter, IProtocol* aActor,
                     nsILayoutHistoryState* aParam);
-  static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
-                   IProtocol* aActor, RefPtr<nsILayoutHistoryState>* aResult);
+  static bool Read(IPC::MessageReader* aReader, IProtocol* aActor,
+                   RefPtr<nsILayoutHistoryState>* aResult);
 };
 
 
 template <>
 struct IPDLParamTraits<mozilla::dom::Wireframe> {
-  static void Write(IPC::Message* aMsg, IProtocol* aActor,
+  static void Write(IPC::MessageWriter* aWriter, IProtocol* aActor,
                     const mozilla::dom::Wireframe& aParam);
-  static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
-                   IProtocol* aActor, mozilla::dom::Wireframe* aResult);
+  static bool Read(IPC::MessageReader* aReader, IProtocol* aActor,
+                   mozilla::dom::Wireframe* aResult);
 };
 
 }  

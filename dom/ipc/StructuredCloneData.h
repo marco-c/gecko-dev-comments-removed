@@ -280,8 +280,8 @@ class StructuredCloneData : public StructuredCloneHolder {
   }
 
   
-  void WriteIPCParams(IPC::Message* aMessage) const;
-  bool ReadIPCParams(const IPC::Message* aMessage, PickleIterator* aIter);
+  void WriteIPCParams(IPC::MessageWriter* aWriter) const;
+  bool ReadIPCParams(IPC::MessageReader* aReader);
 
  protected:
   already_AddRefed<SharedJSAllocatedData> TakeSharedData();

@@ -53,19 +53,18 @@ struct EnumSerializer {
   typedef typename mozilla::UnsignedStdintTypeForSize<sizeof(paramType)>::Type
       uintParamType;
 
-  static void Write(Message* aMsg, const paramType& aValue) {
+  static void Write(MessageWriter* aWriter, const paramType& aValue) {
     
     
     
     MOZ_RELEASE_ASSERT(EnumValidator::IsLegalValue(
         static_cast<std::underlying_type_t<paramType>>(aValue)));
-    WriteParam(aMsg, uintParamType(aValue));
+    WriteParam(aWriter, uintParamType(aValue));
   }
 
-  static bool Read(const Message* aMsg, PickleIterator* aIter,
-                   paramType* aResult) {
+  static bool Read(MessageReader* aReader, paramType* aResult) {
     uintParamType value;
-    if (!ReadParam(aMsg, aIter, &value)) {
+    if (!ReadParam(aReader, &value)) {
       CrashReporter::AnnotateCrashReport(
           CrashReporter::Annotation::IPCReadErrorReason, "Bad iter"_ns);
       return false;

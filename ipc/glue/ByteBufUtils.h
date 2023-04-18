@@ -24,34 +24,33 @@ struct ParamTraits<mozilla::ipc::ByteBuf> {
 
   
   
-  static void Write(Message* aMsg, paramType&& aParam) {
+  static void Write(MessageWriter* aWriter, paramType&& aParam) {
     
     
     
     
     mozilla::CheckedInt<uint32_t> length = aParam.mLen;
     MOZ_RELEASE_ASSERT(length.isValid());
-    WriteParam(aMsg, length.value());
+    WriteParam(aWriter, length.value());
     
-    aMsg->WriteBytesZeroCopy(aParam.mData, length.value(), aParam.mCapacity);
+    aWriter->WriteBytesZeroCopy(aParam.mData, length.value(), aParam.mCapacity);
     aParam.mData = nullptr;
     aParam.mCapacity = 0;
     aParam.mLen = 0;
   }
 
-  static bool Read(const Message* aMsg, PickleIterator* aIter,
-                   paramType* aResult) {
+  static bool Read(MessageReader* aReader, paramType* aResult) {
     
     
     
     
     uint32_t length;
-    if (!ReadParam(aMsg, aIter, &length)) return false;
+    if (!ReadParam(aReader, &length)) return false;
     if (!aResult->Allocate(length)) {
       mozalloc_handle_oom(length);
       return false;
     }
-    return aMsg->ReadBytesInto(aIter, aResult->mData, length);
+    return aReader->ReadBytesInto(aResult->mData, length);
   }
 
   static void Log(const paramType& aParam, std::wstring* aLog) {

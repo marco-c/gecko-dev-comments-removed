@@ -107,18 +107,17 @@ namespace IPC {
 using namespace mozilla::_ipdltest;
 using namespace mozilla::ipc;
 
- void ParamTraits<Bad>::Write(Message* aMsg,
+ void ParamTraits<Bad>::Write(MessageWriter* aWriter,
                                         const paramType& aParam) {
   
-  int32_t* ptr = aMsg->GetInt32PtrForTest(2 * sizeof(int32_t));
+  int32_t* ptr = aWriter->GetInt32PtrForTest(2 * sizeof(int32_t));
   ActorHandle* ah = reinterpret_cast<ActorHandle*>(ptr);
   if (ah->mId != -3)
     fail("guessed wrong offset (value is %d, should be -3)", ah->mId);
   ah->mId = -2;
 }
 
- bool ParamTraits<Bad>::Read(const Message* aMsg,
-                                       PickleIterator* aIter,
+ bool ParamTraits<Bad>::Read(MessageReader* aReader,
                                        paramType* aResult) {
   return true;
 }

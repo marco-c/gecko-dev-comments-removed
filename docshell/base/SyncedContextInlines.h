@@ -294,27 +294,27 @@ typename Transaction<Context>::IndexSet Transaction<Context>::Validate(
 }
 
 template <typename Context>
-void Transaction<Context>::Write(IPC::Message* aMsg,
+void Transaction<Context>::Write(IPC::MessageWriter* aWriter,
                                  mozilla::ipc::IProtocol* aActor) const {
   
   
   typename IndexSet::serializedType modified = mModified.serialize();
-  WriteIPDLParam(aMsg, aActor, modified);
+  WriteIPDLParam(aWriter, aActor, modified);
   EachIndex([&](auto idx) {
     if (mModified.contains(idx)) {
-      WriteIPDLParam(aMsg, aActor, mValues.Get(idx));
+      WriteIPDLParam(aWriter, aActor, mValues.Get(idx));
     }
   });
 }
 
 template <typename Context>
-bool Transaction<Context>::Read(const IPC::Message* aMsg, PickleIterator* aIter,
+bool Transaction<Context>::Read(IPC::MessageReader* aReader,
                                 mozilla::ipc::IProtocol* aActor) {
   
   
   typename IndexSet::serializedType modified =
       typename IndexSet::serializedType{};
-  if (!ReadIPDLParam(aMsg, aIter, aActor, &modified)) {
+  if (!ReadIPDLParam(aReader, aActor, &modified)) {
     return false;
   }
   mModified.deserialize(modified);
@@ -322,30 +322,29 @@ bool Transaction<Context>::Read(const IPC::Message* aMsg, PickleIterator* aIter,
   bool ok = true;
   EachIndex([&](auto idx) {
     if (ok && mModified.contains(idx)) {
-      ok = ReadIPDLParam(aMsg, aIter, aActor, &mValues.Get(idx));
+      ok = ReadIPDLParam(aReader, aActor, &mValues.Get(idx));
     }
   });
   return ok;
 }
 
 template <typename Base, size_t Count>
-void FieldValues<Base, Count>::Write(IPC::Message* aMsg,
+void FieldValues<Base, Count>::Write(IPC::MessageWriter* aWriter,
                                      mozilla::ipc::IProtocol* aActor) const {
   
   
-  EachIndex([&](auto idx) { WriteIPDLParam(aMsg, aActor, this->Get(idx)); });
+  EachIndex([&](auto idx) { WriteIPDLParam(aWriter, aActor, this->Get(idx)); });
 }
 
 template <typename Base, size_t Count>
-bool FieldValues<Base, Count>::Read(const IPC::Message* aMsg,
-                                    PickleIterator* aIter,
+bool FieldValues<Base, Count>::Read(IPC::MessageReader* aReader,
                                     mozilla::ipc::IProtocol* aActor) {
   bool ok = true;
   EachIndex([&](auto idx) {
     if (ok) {
       
       
-      ok = ReadIPDLParam(aMsg, aIter, aActor, &this->Get(idx));
+      ok = ReadIPDLParam(aReader, aActor, &this->Get(idx));
     }
   });
   return ok;
