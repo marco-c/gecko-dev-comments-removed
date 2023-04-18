@@ -87,9 +87,7 @@ class ElementInternals final : public nsIFormControl,
   ~ElementInternals() = default;
 
   
-  
-  
-  HTMLElement* mTarget;
+  RefPtr<HTMLElement> mTarget;
 
   
   
