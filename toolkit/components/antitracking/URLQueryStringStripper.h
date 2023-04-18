@@ -34,7 +34,7 @@ class URLQueryStringStripper final : public nsIURLQueryStrippingListObserver {
 
   
   
-  static bool Strip(nsIURI* aURI, nsCOMPtr<nsIURI>& aOutput);
+  static bool Strip(nsIURI* aURI, bool aIsPBM, nsCOMPtr<nsIURI>& aOutput);
 
  private:
   URLQueryStringStripper() = default;
