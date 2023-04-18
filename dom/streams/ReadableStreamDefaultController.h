@@ -127,7 +127,6 @@ class ReadableStreamDefaultController final : public ReadableStreamController,
 
  private:
   
-  
   RefPtr<UnderlyingSourceCancelCallbackHelper> mCancelAlgorithm;
   bool mCloseRequested = false;
   bool mPullAgain = false;
