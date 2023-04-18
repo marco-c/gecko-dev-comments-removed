@@ -10,19 +10,39 @@
 
 
 #include <stdint.h>
+#include <time.h>  
+
+#if defined(_WIN32) || defined(_WIN64)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif  
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif  
+#include <windows.h>
+
+#undef LoadFence
+#undef StoreFence
+#endif
+
+#if defined(__MACH__)
+#include <mach/mach.h>
+#include <mach/mach_time.h>
+#endif
+
+#if defined(__HAIKU__)
+#include <OS.h>
+#endif
 
 #include <ctime>
 #include <hwy/base.h>
 #include <hwy/cache_control.h>  
 
-#if HWY_COMPILER_MSVC
-#include <chrono>
-#endif  
-
 namespace profiler {
 
 
 
+using Ticks = uint64_t;
 
 
 
@@ -73,17 +93,19 @@ namespace profiler {
 
 
 
-static HWY_INLINE HWY_MAYBE_UNUSED uint64_t TicksBefore() {
-  uint64_t t;
-#if HWY_ARCH_PPC
+
+
+static HWY_INLINE HWY_MAYBE_UNUSED Ticks TicksBefore() {
+  Ticks t;
+#if HWY_ARCH_PPC && defined(__GLIBC__)
   asm volatile("mfspr %0, %1" : "=r"(t) : "i"(268));
-#elif HWY_ARCH_X86_64 && HWY_COMPILER_MSVC
+#elif HWY_ARCH_X86 && HWY_COMPILER_MSVC
   hwy::LoadFence();
   HWY_FENCE;
   t = __rdtsc();
   hwy::LoadFence();
   HWY_FENCE;
-#elif HWY_ARCH_X86_64 && (HWY_COMPILER_CLANG || HWY_COMPILER_GCC)
+#elif HWY_ARCH_X86_64
   asm volatile(
       "lfence\n\t"
       "rdtsc\n\t"
@@ -95,30 +117,35 @@ static HWY_INLINE HWY_MAYBE_UNUSED uint64_t TicksBefore() {
       
       
       : "rdx", "memory", "cc");
-#elif HWY_COMPILER_MSVC
-  
-  t = std::chrono::time_point_cast<std::chrono::nanoseconds>(
-          std::chrono::steady_clock::now())
-          .time_since_epoch()
-          .count();
-#else
-  
+#elif HWY_ARCH_RVV
+  asm volatile("rdcycle %0" : "=r"(t));
+#elif defined(_WIN32) || defined(_WIN64)
+  LARGE_INTEGER counter;
+  (void)QueryPerformanceCounter(&counter);
+  t = counter.QuadPart;
+#elif defined(__MACH__)
+  t = mach_absolute_time();
+#elif defined(__HAIKU__)
+  t = system_time_nsecs();  
+#else  
   timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
-  t = ts.tv_sec * 1000000000LL + ts.tv_nsec;
+  t = static_cast<Ticks>(ts.tv_sec * 1000000000LL + ts.tv_nsec);
 #endif
   return t;
 }
 
-static HWY_INLINE HWY_MAYBE_UNUSED uint64_t TicksAfter() {
-  uint64_t t;
-#if HWY_ARCH_X86_64 && HWY_COMPILER_MSVC
+static HWY_INLINE HWY_MAYBE_UNUSED Ticks TicksAfter() {
+  Ticks t;
+#if HWY_ARCH_PPC && defined(__GLIBC__)
+  asm volatile("mfspr %0, %1" : "=r"(t) : "i"(268));
+#elif HWY_ARCH_X86 && HWY_COMPILER_MSVC
   HWY_FENCE;
   unsigned aux;
   t = __rdtscp(&aux);
   hwy::LoadFence();
   HWY_FENCE;
-#elif HWY_ARCH_X86_64 && (HWY_COMPILER_CLANG || HWY_COMPILER_GCC)
+#elif HWY_ARCH_X86_64
   
   asm volatile(
       "rdtscp\n\t"

@@ -8,6 +8,7 @@
 
 
 
+#include <inttypes.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -84,7 +85,7 @@ struct PlaneBase {
 #if defined(ADDRESS_SANITIZER) || defined(MEMORY_SANITIZER) || \
     defined(THREAD_SANITIZER)
     if (y >= ysize_) {
-      JXL_ABORT("Row(%" PRIuS ") in (%u x %u) image\n", y, xsize_, ysize_);
+      JXL_ABORT("Row(%" PRIu64 ") in (%u x %u) image\n", y, xsize_, ysize_);
     }
 #endif
 
@@ -221,6 +222,12 @@ class Rect {
   template <typename Image>
   Rect Crop(const Image& image) const {
     return Rect(x0_, y0_, xsize_, ysize_, image.xsize(), image.ysize());
+  }
+
+  
+  
+  Rect Crop(size_t area_xsize, size_t area_ysize) const {
+    return Rect(x0_, y0_, xsize_, ysize_, area_xsize, area_ysize);
   }
 
   
@@ -416,9 +423,10 @@ class Image3 {
 #if defined(ADDRESS_SANITIZER) || defined(MEMORY_SANITIZER) || \
     defined(THREAD_SANITIZER)
     if (c >= kNumPlanes || y >= ysize()) {
-      JXL_ABORT("PlaneRow(%" PRIuS ", %" PRIuS ") in (%" PRIuS " x %" PRIuS
+      JXL_ABORT("PlaneRow(%" PRIu64 ", %" PRIu64 ") in (%" PRIu64 " x %" PRIu64
                 ") image\n",
-                c, y, xsize(), ysize());
+                static_cast<uint64_t>(c), static_cast<uint64_t>(y),
+                static_cast<uint64_t>(xsize()), static_cast<uint64_t>(ysize()));
     }
 #endif
   }

@@ -37,12 +37,6 @@ class JxlToJpegDecoder {
   
   bool IsParsingBox() const { return inside_box_; }
 
-  const jpeg::JPEGData* JpegData() const { return jpeg_data_.get(); }
-
-  
-  
-  jpeg::JPEGData* ReleaseJpegData() { return jpeg_data_.release(); }
-
   
   JxlDecoderStatus SetOutputBuffer(uint8_t* data, size_t size) {
     if (next_out_) return JXL_DEC_ERROR;
@@ -74,7 +68,38 @@ class JxlToJpegDecoder {
   
   
   
+  
+  
   JxlDecoderStatus Process(const uint8_t** next_in, size_t* avail_in);
+
+  
+  
+  
+  jpeg::JPEGData* GetJpegData() { return jpeg_data_.get(); }
+
+  
+  
+  
+  
+  static size_t NumExifMarkers(const jpeg::JPEGData& jpeg_data);
+  static size_t NumXmpMarkers(const jpeg::JPEGData& jpeg_data);
+
+  
+  
+  static JxlDecoderStatus ExifBoxContentSize(const jpeg::JPEGData& jpeg_data,
+                                             size_t* size);
+  static JxlDecoderStatus XmlBoxContentSize(const jpeg::JPEGData& jpeg_data,
+                                            size_t* size);
+
+  
+  
+  
+  
+  
+  static JxlDecoderStatus SetExif(const uint8_t* data, size_t size,
+                                  jpeg::JPEGData* jpeg_data);
+  static JxlDecoderStatus SetXmp(const uint8_t* data, size_t size,
+                                 jpeg::JPEGData* jpeg_data);
 
   
   
@@ -145,9 +170,6 @@ class JxlToJpegDecoder {
   bool IsOutputSet() const { return false; }
   bool IsParsingBox() const { return false; }
 
-  const jpeg::JPEGData* JpegData() const { return nullptr; }
-  jpeg::JPEGData* ReleaseJpegData() { return nullptr; }
-
   JxlDecoderStatus SetOutputBuffer(uint8_t* , size_t ) {
     return JXL_DEC_ERROR;
   }
@@ -158,8 +180,30 @@ class JxlToJpegDecoder {
   JxlDecoderStatus Process(const uint8_t** next_in, size_t* avail_in) {
     return JXL_DEC_ERROR;
   }
+  jpeg::JPEGData* GetJpegData() { return nullptr; }
 
   Status SetImageBundleJpegData(ImageBundle* ) { return true; }
+
+  static size_t NumExifMarkers(const jpeg::JPEGData& ) {
+    return 0;
+  }
+  static size_t NumXmpMarkers(const jpeg::JPEGData& ) { return 0; }
+  static size_t ExifBoxContentSize(const jpeg::JPEGData& ,
+                                   size_t* ) {
+    return JXL_DEC_ERROR;
+  }
+  static size_t XmlBoxContentSize(const jpeg::JPEGData& ,
+                                  size_t* ) {
+    return JXL_DEC_ERROR;
+  }
+  static JxlDecoderStatus SetExif(const uint8_t* , size_t ,
+                                  jpeg::JPEGData* ) {
+    return JXL_DEC_ERROR;
+  }
+  static JxlDecoderStatus SetXmp(const uint8_t* , size_t ,
+                                 jpeg::JPEGData* ) {
+    return JXL_DEC_ERROR;
+  }
 
   JxlDecoderStatus WriteOutput(const jpeg::JPEGData& ) {
     return JXL_DEC_SUCCESS;

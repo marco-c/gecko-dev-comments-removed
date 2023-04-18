@@ -415,6 +415,19 @@ JxlDecoderSetKeepOrientation(JxlDecoder* dec, JXL_BOOL keep_orientation);
 
 
 
+JXL_EXPORT JxlDecoderStatus
+JxlDecoderSetRenderSpotcolors(JxlDecoder* dec, JXL_BOOL render_spotcolors);
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -460,6 +473,9 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderProcessInput(JxlDecoder* dec);
 
 
 
+
+
+
 JXL_EXPORT JxlDecoderStatus JxlDecoderSetInput(JxlDecoder* dec,
                                                const uint8_t* data,
                                                size_t size);
@@ -482,6 +498,23 @@ JXL_EXPORT JxlDecoderStatus JxlDecoderSetInput(JxlDecoder* dec,
 
 
 JXL_EXPORT size_t JxlDecoderReleaseInput(JxlDecoder* dec);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+JXL_EXPORT void JxlDecoderCloseInput(JxlDecoder* dec);
 
 
 

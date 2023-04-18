@@ -19,6 +19,8 @@
 
 namespace jxl {
 
+
+
 typedef struct JxlEncoderOptionsValuesStruct {
   
   
@@ -44,6 +46,8 @@ constexpr unsigned char kContainerHeader[] = {
     0,   0,   0, 0xc, 'J',  'X', 'L', ' ', 0xd, 0xa, 0x87,
     0xa, 0,   0, 0,   0x14, 'f', 't', 'y', 'p', 'j', 'x',
     'l', ' ', 0, 0,   0,    0,   'j', 'x', 'l', ' '};
+
+constexpr unsigned char kLevelBoxHeader[] = {0, 0, 0, 0x9, 'j', 'x', 'l', 'l'};
 
 namespace {
 template <typename T>
@@ -91,6 +95,11 @@ struct JxlEncoderStruct {
   std::vector<uint8_t> output_byte_queue;
 
   bool use_container = false;
+
+  
+  
+  
+  uint32_t codestream_level = 5;
   bool store_jpeg_metadata = false;
   jxl::CodecMetadata metadata;
   std::vector<uint8_t> jpeg_metadata;
@@ -105,6 +114,10 @@ struct JxlEncoderStruct {
   
   
   JxlEncoderStatus RefillOutputByteQueue();
+
+  bool MustUseContainer() const {
+    return use_container || codestream_level != 5 || store_jpeg_metadata;
+  }
 
   
   

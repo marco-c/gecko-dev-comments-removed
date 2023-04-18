@@ -192,10 +192,18 @@ enum class FrameStage : uint32_t {
 enum class BoxStage : uint32_t {
   kHeader,      
                 
+  kFtyp,        
   kSkip,        
   kCodestream,  
   kPartialCodestream,  
   kJpegRecon,          
+};
+
+enum class JpegReconStage : uint32_t {
+  kNone,             
+  kSettingMetadata,  
+  kOutputting,       
+  kFinished,         
 };
 
 
@@ -444,6 +452,7 @@ struct JxlDecoderStruct {
 
   
   bool keep_orientation;
+  bool render_spotcolors;
 
   
   
@@ -455,6 +464,7 @@ struct JxlDecoderStruct {
   
   size_t basic_info_size_hint;
   bool have_container;
+  size_t box_count;
 
   
   
@@ -551,12 +561,33 @@ struct JxlDecoderStruct {
 
   jxl::JxlToJpegDecoder jpeg_decoder;
   jxl::JxlBoxContentDecoder box_content_decoder;
+  
+  jxl::JxlBoxContentDecoder metadata_decoder;
+  std::vector<uint8_t> exif_metadata;
+  std::vector<uint8_t> xmp_metadata;
+  
+  
+  int store_exif;
+  int store_xmp;
+  size_t recon_out_buffer_pos;
+  size_t recon_exif_size;  
+  size_t recon_xmp_size;   
+  JpegReconStage recon_output_jpeg;
+
+  bool JbrdNeedMoreBoxes() const {
+    
+    if (store_exif < 2 && recon_exif_size > 0) return true;
+    
+    if (store_xmp < 2 && recon_xmp_size > 0) return true;
+    return false;
+  }
 
   
   uint64_t dec_pixels;
 
   const uint8_t* next_in;
   size_t avail_in;
+  bool input_closed;
 
   void AdvanceInput(size_t size) {
     next_in += size;
@@ -601,10 +632,19 @@ void JxlDecoderRewindDecodingState(JxlDecoder* dec) {
   dec->box_out_buffer_size = 0;
   dec->box_out_buffer_begin = 0;
   dec->box_out_buffer_pos = 0;
+  dec->exif_metadata.clear();
+  dec->xmp_metadata.clear();
+  dec->store_exif = 0;
+  dec->store_xmp = 0;
+  dec->recon_out_buffer_pos = 0;
+  dec->recon_exif_size = 0;
+  dec->recon_xmp_size = 0;
+  dec->recon_output_jpeg = JpegReconStage::kNone;
 
   dec->events_wanted = 0;
   dec->basic_info_size_hint = InitialBasicInfoSizeHint();
   dec->have_container = 0;
+  dec->box_count = 0;
   dec->preview_out_buffer_set = false;
   dec->image_out_buffer_set = false;
   dec->preview_out_buffer = nullptr;
@@ -617,6 +657,7 @@ void JxlDecoderRewindDecodingState(JxlDecoder* dec) {
   dec->dec_pixels = 0;
   dec->next_in = 0;
   dec->avail_in = 0;
+  dec->input_closed = false;
 
   dec->passes_state.reset(nullptr);
   dec->frame_dec.reset(nullptr);
@@ -645,6 +686,7 @@ void JxlDecoderReset(JxlDecoder* dec) {
 
   dec->thread_pool.reset();
   dec->keep_orientation = false;
+  dec->render_spotcolors = true;
   dec->orig_events_wanted = 0;
   dec->frame_references.clear();
   dec->frame_saved_as.clear();
@@ -743,6 +785,15 @@ JxlDecoderStatus JxlDecoderSetKeepOrientation(JxlDecoder* dec,
     return JXL_API_ERROR("Must set keep_orientation option before starting");
   }
   dec->keep_orientation = !!keep_orientation;
+  return JXL_DEC_SUCCESS;
+}
+
+JxlDecoderStatus JxlDecoderSetRenderSpotcolors(JxlDecoder* dec,
+                                               JXL_BOOL render_spotcolors) {
+  if (dec->stage != DecoderStage::kInited) {
+    return JXL_API_ERROR("Must set render_spotcolors option before starting");
+  }
+  dec->render_spotcolors = !!render_spotcolors;
   return JXL_DEC_SUCCESS;
 }
 
@@ -1119,6 +1170,7 @@ JxlDecoderStatus JxlDecoderProcessCodestream(JxlDecoder* dec, const uint8_t* in,
       auto reader = GetBitReader(compressed);
       jxl::DecompressParams dparams;
       dparams.preview = want_preview ? jxl::Override::kOn : jxl::Override::kOff;
+      dparams.render_spotcolors = dec->render_spotcolors;
       jxl::ImageBundle ib(&dec->metadata.m);
       PassesDecoderState preview_dec_state;
       JXL_API_RETURN_IF_ERROR(preview_dec_state.output_encoding_info.Set(
@@ -1159,6 +1211,15 @@ JxlDecoderStatus JxlDecoderProcessCodestream(JxlDecoder* dec, const uint8_t* in,
     }
 
     if (dec->frame_stage == FrameStage::kHeader) {
+      if (dec->recon_output_jpeg == JpegReconStage::kSettingMetadata ||
+          dec->recon_output_jpeg == JpegReconStage::kOutputting) {
+        
+        
+        
+        
+        return JXL_API_ERROR(
+            "cannot decode a next frame after JPEG reconstruction frame");
+      }
       size_t pos = dec->frame_start - dec->codestream_pos;
       if (pos >= size) {
         return JXL_DEC_NEED_MORE_INPUT;
@@ -1257,6 +1318,7 @@ JxlDecoderStatus JxlDecoderProcessCodestream(JxlDecoder* dec, const uint8_t* in,
 
       dec->frame_dec.reset(new FrameDecoder(
           dec->passes_state.get(), dec->metadata, dec->thread_pool.get()));
+      dec->frame_dec->SetRenderSpotcolors(dec->render_spotcolors);
 
       
       
@@ -1381,9 +1443,16 @@ JxlDecoderStatus JxlDecoderProcessCodestream(JxlDecoder* dec, const uint8_t* in,
       if (!dec->frame_dec->FinalizeFrame()) {
         return JXL_API_ERROR("decoding frame failed");
       }
+      
+      
+      if (dec->jpeg_decoder.IsOutputSet() && dec->ib->jpeg_data != nullptr) {
+      }
+
       dec->frame_dec_in_progress = false;
       dec->frame_stage = FrameStage::kFullOutput;
     }
+
+    bool output_jpeg_reconstruction = false;
 
     if (dec->frame_stage == FrameStage::kFullOutput) {
       if (dec->is_last_of_still) {
@@ -1400,9 +1469,7 @@ JxlDecoderStatus JxlDecoderProcessCodestream(JxlDecoder* dec, const uint8_t* in,
         
         
         if (dec->jpeg_decoder.IsOutputSet() && dec->ib->jpeg_data != nullptr) {
-          JxlDecoderStatus status =
-              dec->jpeg_decoder.WriteOutput(*dec->ib->jpeg_data);
-          if (status != JXL_DEC_SUCCESS) return status;
+          output_jpeg_reconstruction = true;
         } else if (return_full_image && dec->image_out_buffer_set) {
           if (!dec->frame_dec->HasRGBBuffer()) {
             
@@ -1433,13 +1500,19 @@ JxlDecoderStatus JxlDecoderProcessCodestream(JxlDecoder* dec, const uint8_t* in,
       }
     }
 
-    
-    
-    dec->ib.reset();
     dec->frame_stage = FrameStage::kHeader;
     dec->frame_start += dec->frame_size;
-    if (return_full_image && !dec->skipping_frame) {
+
+    if (output_jpeg_reconstruction) {
+      dec->recon_output_jpeg = JpegReconStage::kSettingMetadata;
       return JXL_DEC_FULL_IMAGE;
+    } else {
+      
+      
+      dec->ib.reset();
+      if (return_full_image && !dec->skipping_frame) {
+        return JXL_DEC_FULL_IMAGE;
+      }
     }
   }
 
@@ -1453,7 +1526,12 @@ JxlDecoderStatus JxlDecoderProcessCodestream(JxlDecoder* dec, const uint8_t* in,
 
 JxlDecoderStatus JxlDecoderSetInput(JxlDecoder* dec, const uint8_t* data,
                                     size_t size) {
-  if (dec->next_in) return JXL_DEC_ERROR;
+  if (dec->next_in) {
+    return JXL_API_ERROR("already set input, use JxlDecoderReleaseInput first");
+  }
+  if (dec->input_closed) {
+    return JXL_API_ERROR("input already closed");
+  }
 
   dec->next_in = data;
   dec->avail_in = size;
@@ -1467,8 +1545,19 @@ size_t JxlDecoderReleaseInput(JxlDecoder* dec) {
   return result;
 }
 
+void JxlDecoderCloseInput(JxlDecoder* dec) { dec->input_closed = true; }
+
 JxlDecoderStatus JxlDecoderSetJPEGBuffer(JxlDecoder* dec, uint8_t* data,
                                          size_t size) {
+  
+  
+  
+  if (dec->internal_frames > 1) {
+    return JXL_API_ERROR("JPEG reconstruction only works for the first frame");
+  }
+  if (dec->jpeg_decoder.IsOutputSet()) {
+    return JXL_API_ERROR("Already set JPEG buffer");
+  }
   return dec->jpeg_decoder.SetOutputBuffer(data, size);
 }
 
@@ -1522,28 +1611,7 @@ static JxlDecoderStatus ParseBoxHeader(const uint8_t* in, size_t size,
 }
 
 
-JxlDecoderStatus JxlDecoderProcessInput(JxlDecoder* dec) {
-  if (dec->stage == DecoderStage::kInited) {
-    dec->stage = DecoderStage::kStarted;
-  }
-  if (dec->stage == DecoderStage::kError) {
-    return JXL_API_ERROR(
-        "Cannot keep using decoder after it encountered an error, use "
-        "JxlDecoderReset to reset it");
-  }
-
-  if (!dec->got_signature) {
-    JxlSignature sig = JxlSignatureCheck(dec->next_in, dec->avail_in);
-    if (sig == JXL_SIG_INVALID) return JXL_API_ERROR("invalid signature");
-    if (sig == JXL_SIG_NOT_ENOUGH_BYTES) return JXL_DEC_NEED_MORE_INPUT;
-
-    dec->got_signature = true;
-
-    if (sig == JXL_SIG_CONTAINER) {
-      dec->have_container = 1;
-    }
-  }
-
+static JxlDecoderStatus HandleBoxes(JxlDecoder* dec) {
   
   for (;;) {
     if (dec->box_stage != BoxStage::kHeader) {
@@ -1567,6 +1635,77 @@ JxlDecoderStatus JxlDecoderProcessInput(JxlDecoder* dec) {
           return box_result;
         }
       }
+
+      if (dec->store_exif == 1 || dec->store_xmp == 1) {
+        std::vector<uint8_t>& metadata =
+            (dec->store_exif == 1) ? dec->exif_metadata : dec->xmp_metadata;
+        for (;;) {
+          if (metadata.empty()) metadata.resize(64);
+          uint8_t* orig_next_out = metadata.data() + dec->recon_out_buffer_pos;
+          uint8_t* next_out = orig_next_out;
+          size_t avail_out = metadata.size() - dec->recon_out_buffer_pos;
+          JxlDecoderStatus box_result = dec->metadata_decoder.Process(
+              dec->next_in, dec->avail_in,
+              dec->file_pos - dec->box_contents_begin, &next_out, &avail_out);
+          size_t produced = next_out - orig_next_out;
+          dec->recon_out_buffer_pos += produced;
+          if (box_result == JXL_DEC_BOX_NEED_MORE_OUTPUT) {
+            metadata.resize(metadata.size() * 2);
+          } else if (box_result == JXL_DEC_NEED_MORE_INPUT) {
+            break;  
+          } else if (box_result == JXL_DEC_SUCCESS) {
+            size_t needed_size = (dec->store_exif == 1) ? dec->recon_exif_size
+                                                        : dec->recon_xmp_size;
+            if (dec->box_contents_unbounded &&
+                dec->recon_out_buffer_pos < needed_size) {
+              
+              
+              break;
+            } else {
+              metadata.resize(dec->recon_out_buffer_pos);
+              if (dec->store_exif == 1) dec->store_exif = 2;
+              if (dec->store_xmp == 1) dec->store_xmp = 2;
+              break;
+            }
+          } else {
+            
+            return box_result;
+          }
+        }
+      }
+    }
+
+    if (dec->recon_output_jpeg == JpegReconStage::kSettingMetadata &&
+        !dec->JbrdNeedMoreBoxes()) {
+      using namespace jxl;
+      jpeg::JPEGData* jpeg_data = dec->ib->jpeg_data.get();
+      if (dec->recon_exif_size) {
+        JxlDecoderStatus status = JxlToJpegDecoder::SetExif(
+            dec->exif_metadata.data(), dec->exif_metadata.size(), jpeg_data);
+        if (status != JXL_DEC_SUCCESS) return status;
+      }
+      if (dec->recon_xmp_size) {
+        JxlDecoderStatus status = JxlToJpegDecoder::SetXmp(
+            dec->xmp_metadata.data(), dec->xmp_metadata.size(), jpeg_data);
+        if (status != JXL_DEC_SUCCESS) return status;
+      }
+      dec->recon_output_jpeg = JpegReconStage::kOutputting;
+    }
+
+    if (dec->recon_output_jpeg == JpegReconStage::kOutputting &&
+        !dec->JbrdNeedMoreBoxes()) {
+      using namespace jxl;
+      JxlDecoderStatus status =
+          dec->jpeg_decoder.WriteOutput(*dec->ib->jpeg_data);
+      if (status != JXL_DEC_SUCCESS) return status;
+      dec->recon_output_jpeg = JpegReconStage::kFinished;
+      dec->ib.reset();
+      if (dec->events_wanted & JXL_DEC_FULL_IMAGE) {
+        
+        
+        
+        return JXL_DEC_FULL_IMAGE;
+      }
     }
 
     if (dec->box_stage == BoxStage::kHeader) {
@@ -1577,12 +1716,27 @@ JxlDecoderStatus JxlDecoderProcessInput(JxlDecoder* dec) {
         continue;
       }
       if (dec->avail_in == 0) {
-        if (dec->stage == DecoderStage::kFinished) {
+        if (dec->stage != DecoderStage::kFinished) {
+          
+          return JXL_DEC_NEED_MORE_INPUT;
+        }
+        if (dec->JbrdNeedMoreBoxes()) {
+          return JXL_DEC_NEED_MORE_INPUT;
+        }
+        if (dec->input_closed) {
+          return JXL_DEC_SUCCESS;
+        }
+        if (!(dec->events_wanted & JXL_DEC_BOX)) {
+          
+          
           
           
           
           return JXL_DEC_SUCCESS;
         }
+        
+        
+        
         return JXL_DEC_NEED_MORE_INPUT;
       }
 
@@ -1597,7 +1751,6 @@ JxlDecoderStatus JxlDecoderProcessInput(JxlDecoder* dec) {
         }
         return status;
       }
-
       if (memcmp(dec->box_type, "brob", 4) == 0) {
         if (dec->avail_in < header_size + 4) {
           return JXL_DEC_NEED_MORE_INPUT;
@@ -1607,6 +1760,17 @@ JxlDecoderStatus JxlDecoderProcessInput(JxlDecoder* dec) {
       } else {
         memcpy(dec->box_decoded_type, dec->box_type,
                sizeof(dec->box_decoded_type));
+      }
+
+      
+      
+      
+      dec->box_count++;
+      if (dec->box_count == 2 && memcmp(dec->box_type, "ftyp", 4) != 0) {
+        return JXL_API_ERROR("the second box must be the ftyp box");
+      }
+      if (memcmp(dec->box_type, "ftyp", 4) == 0 && dec->box_count != 2) {
+        return JXL_API_ERROR("the ftyp box must come second");
       }
 
       dec->AdvanceInput(header_size);
@@ -1620,18 +1784,44 @@ JxlDecoderStatus JxlDecoderProcessInput(JxlDecoder* dec) {
           dec->box_contents_unbounded ? 0 : (box_size - header_size);
       dec->box_size = box_size;
 
+      if (dec->orig_events_wanted & JXL_DEC_JPEG_RECONSTRUCTION) {
+        
+        if (dec->store_exif == 0 &&
+            memcmp(dec->box_decoded_type, "Exif", 4) == 0) {
+          dec->store_exif = 1;
+          dec->recon_out_buffer_pos = 0;
+        }
+        if (dec->store_xmp == 0 &&
+            memcmp(dec->box_decoded_type, "xml ", 4) == 0) {
+          dec->store_xmp = 1;
+          dec->recon_out_buffer_pos = 0;
+        }
+      }
+
       if (dec->events_wanted & JXL_DEC_BOX) {
         bool decompress =
             dec->decompress_boxes && memcmp(dec->box_type, "brob", 4) == 0;
         dec->box_content_decoder.StartBox(
             decompress, dec->box_contents_unbounded, dec->box_contents_size);
       }
+      if (dec->store_exif == 1 || dec->store_xmp == 1) {
+        bool brob = memcmp(dec->box_type, "brob", 4) == 0;
+        dec->metadata_decoder.StartBox(brob, dec->box_contents_unbounded,
+                                       dec->box_contents_size);
+      }
 
-      if (memcmp(dec->box_type, "jxlc", 4) == 0) {
+      if (memcmp(dec->box_type, "ftyp", 4) == 0) {
+        dec->box_stage = BoxStage::kFtyp;
+      } else if (memcmp(dec->box_type, "jxlc", 4) == 0) {
         dec->box_stage = BoxStage::kCodestream;
       } else if (memcmp(dec->box_type, "jxlp", 4) == 0) {
         dec->box_stage = BoxStage::kPartialCodestream;
-      } else if (memcmp(dec->box_type, "jbrd", 4) == 0) {
+      } else if ((dec->orig_events_wanted & JXL_DEC_JPEG_RECONSTRUCTION) &&
+                 memcmp(dec->box_type, "jbrd", 4) == 0) {
+        if (!(dec->events_wanted & JXL_DEC_JPEG_RECONSTRUCTION)) {
+          return JXL_API_ERROR(
+              "multiple JPEG reconstruction boxes not supported");
+        }
         dec->box_stage = BoxStage::kJpegRecon;
       } else {
         dec->box_stage = BoxStage::kSkip;
@@ -1642,6 +1832,16 @@ JxlDecoderStatus JxlDecoderProcessInput(JxlDecoder* dec) {
         dec->box_out_buffer_set_current_box = false;
         return JXL_DEC_BOX;
       }
+    } else if (dec->box_stage == BoxStage::kFtyp) {
+      if (dec->box_contents_size < 12) {
+        return JXL_API_ERROR("file type box too small");
+      }
+      if (dec->avail_in < 4) return JXL_DEC_NEED_MORE_INPUT;
+      if (memcmp(dec->next_in, "jxl ", 4) != 0) {
+        return JXL_API_ERROR("file type box major brand must be \"jxl \"");
+      }
+      dec->AdvanceInput(4);
+      dec->box_stage = BoxStage::kSkip;
     } else if (dec->box_stage == BoxStage::kPartialCodestream) {
       if (dec->last_codestream_seen) {
         return JXL_API_ERROR("cannot have codestream after last codestream");
@@ -1681,19 +1881,29 @@ JxlDecoderStatus JxlDecoderProcessInput(JxlDecoder* dec) {
 
       JxlDecoderStatus status =
           jxl::JxlDecoderProcessCodestream(dec, codestream, avail_codestream);
-      if (!have_copy && status == JXL_DEC_NEED_MORE_INPUT) {
-        dec->codestream_copy.insert(dec->codestream_copy.end(), dec->next_in,
-                                    dec->next_in + avail_codestream);
-        dec->AdvanceInput(avail_codestream);
+      if (status == JXL_DEC_FULL_IMAGE) {
+        if (dec->recon_output_jpeg != JpegReconStage::kNone) {
+          continue;
+        }
       }
+      if (status == JXL_DEC_NEED_MORE_INPUT) {
+        if (!have_copy) {
+          dec->codestream_copy.insert(dec->codestream_copy.end(), dec->next_in,
+                                      dec->next_in + avail_codestream);
+          dec->AdvanceInput(avail_codestream);
+        }
 
-      if (status == JXL_DEC_NEED_MORE_INPUT &&
-          dec->file_pos == dec->box_contents_end) {
-        dec->box_stage = BoxStage::kHeader;
-        continue;
+        if (dec->file_pos == dec->box_contents_end) {
+          dec->box_stage = BoxStage::kHeader;
+          continue;
+        }
       }
 
       if (status == JXL_DEC_SUCCESS) {
+        if (dec->JbrdNeedMoreBoxes()) {
+          dec->box_stage = BoxStage::kSkip;
+          continue;
+        }
         if (dec->box_contents_unbounded) {
           
           dec->AdvanceInput(dec->avail_in);
@@ -1724,6 +1934,30 @@ JxlDecoderStatus JxlDecoderProcessInput(JxlDecoder* dec) {
       size_t consumed = next_in - dec->next_in;
       dec->AdvanceInput(consumed);
       if (recon_result == JXL_DEC_JPEG_RECONSTRUCTION) {
+        jxl::jpeg::JPEGData* jpeg_data = dec->jpeg_decoder.GetJpegData();
+        size_t num_exif = jxl::JxlToJpegDecoder::NumExifMarkers(*jpeg_data);
+        size_t num_xmp = jxl::JxlToJpegDecoder::NumXmpMarkers(*jpeg_data);
+        if (num_exif) {
+          if (num_exif > 1) {
+            return JXL_API_ERROR(
+                "multiple exif markers for JPEG reconstruction not supported");
+          }
+          if (JXL_DEC_SUCCESS != jxl::JxlToJpegDecoder::ExifBoxContentSize(
+                                     *jpeg_data, &dec->recon_exif_size)) {
+            return JXL_API_ERROR("invalid jbrd exif size");
+          }
+        }
+        if (num_xmp) {
+          if (num_xmp > 1) {
+            return JXL_API_ERROR(
+                "multiple XMP markers for JPEG reconstruction not supported");
+          }
+          if (JXL_DEC_SUCCESS != jxl::JxlToJpegDecoder::XmlBoxContentSize(
+                                     *jpeg_data, &dec->recon_xmp_size)) {
+            return JXL_API_ERROR("invalid jbrd XMP size");
+          }
+        }
+
         dec->box_stage = BoxStage::kHeader;
         
         
@@ -1737,9 +1971,19 @@ JxlDecoderStatus JxlDecoderProcessInput(JxlDecoder* dec) {
       }
     } else if (dec->box_stage == BoxStage::kSkip) {
       if (dec->box_contents_unbounded) {
+        if (dec->input_closed) {
+          return JXL_DEC_SUCCESS;
+        }
+        if (!(dec->box_out_buffer_set)) {
+          
+          
+          
+          
+          return JXL_DEC_SUCCESS;
+        }
         
         
-        break;
+        return JXL_DEC_NEED_MORE_INPUT;
       }
       
       size_t remaining = dec->box_contents_end - dec->file_pos;
@@ -1760,11 +2004,58 @@ JxlDecoderStatus JxlDecoderProcessInput(JxlDecoder* dec) {
     }
   }
 
-  if (dec->stage != DecoderStage::kFinished) {
-    return JXL_API_ERROR("codestream never finished");
+  return JXL_DEC_SUCCESS;
+}
+
+JxlDecoderStatus JxlDecoderProcessInput(JxlDecoder* dec) {
+  if (dec->stage == DecoderStage::kInited) {
+    dec->stage = DecoderStage::kStarted;
+  }
+  if (dec->stage == DecoderStage::kError) {
+    return JXL_API_ERROR(
+        "Cannot keep using decoder after it encountered an error, use "
+        "JxlDecoderReset to reset it");
   }
 
-  return JXL_DEC_SUCCESS;
+  if (!dec->got_signature) {
+    JxlSignature sig = JxlSignatureCheck(dec->next_in, dec->avail_in);
+    if (sig == JXL_SIG_INVALID) return JXL_API_ERROR("invalid signature");
+    if (sig == JXL_SIG_NOT_ENOUGH_BYTES) {
+      if (dec->input_closed) {
+        return JXL_API_ERROR("file too small for signature");
+      }
+      return JXL_DEC_NEED_MORE_INPUT;
+    }
+
+    dec->got_signature = true;
+
+    if (sig == JXL_SIG_CONTAINER) {
+      dec->have_container = 1;
+    }
+  }
+
+  JxlDecoderStatus status = HandleBoxes(dec);
+
+  if (status == JXL_DEC_NEED_MORE_INPUT && dec->input_closed) {
+    return JXL_API_ERROR("missing input");
+  }
+
+  
+  
+  if (status == JXL_DEC_SUCCESS) {
+    if (dec->stage != DecoderStage::kFinished) {
+      
+      
+      
+      return JXL_API_ERROR("codestream never finished");
+    }
+
+    if (dec->JbrdNeedMoreBoxes()) {
+      return JXL_API_ERROR("missing metadata boxes for jpeg reconstruction");
+    }
+  }
+
+  return status;
 }
 
 

@@ -10,8 +10,20 @@
 
 namespace jxl {
 
+
+
+
 Status ToneMapTo(std::pair<float, float> display_nits, CodecInOut* io,
                  ThreadPool* pool = nullptr);
+
+
+
+
+
+
+
+Status GamutMap(CodecInOut* io, float preserve_saturation,
+                ThreadPool* pool = nullptr);
 
 }  
 
