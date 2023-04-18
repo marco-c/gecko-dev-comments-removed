@@ -4484,8 +4484,16 @@ static CFTypeRefPtr<CFURLRef> GetPasteLocation(NSPasteboard* aPasteboard) {
 
 
 
+
 - (id)validRequestorForSendType:(NSString*)sendType returnType:(NSString*)returnType {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
+
+  if (!NS_IsMainThread()) {
+    
+    
+    
+    return [super validRequestorForSendType:sendType returnType:returnType];
+  }
 
   
   
