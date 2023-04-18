@@ -104,7 +104,11 @@ async function openProfilerTab(profilerViewMode) {
 
   
   
-  const win = Services.wm.getMostRecentWindow("navigator:browser");
+  
+  
+  const win =
+    Services.wm.getMostRecentWindow("navigator:browser") ||
+    Services.wm.getMostRecentWindow("devtools:toolbox");
   if (!win) {
     throw new Error("No browser window");
   }
@@ -118,7 +122,7 @@ async function openProfilerTab(profilerViewMode) {
     win.openWebLinkIn(urlToLoad, "tab", {
       forceNonPrivate: true,
       resolveOnContentBrowserCreated,
-      userContextId: win.gBrowser.contentPrincipal.userContextId,
+      userContextId: win.gBrowser?.contentPrincipal.userContextId,
     })
   );
   return contentBrowser;

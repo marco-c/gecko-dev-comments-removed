@@ -287,7 +287,8 @@ function switchPerformancePanel() {
       
       
       
-      return toolbox.target.isLocalTab;
+      
+      return toolbox.target.isLocalTab || toolbox.isBrowserToolbox;
     };
   } else {
     Tools.performance.url = "chrome://devtools/content/performance/index.xhtml";
