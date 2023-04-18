@@ -701,8 +701,11 @@ bool GMPParent::DeallocPGMPStorageParent(PGMPStorageParent* aActor) {
 mozilla::ipc::IPCResult GMPParent::RecvPGMPStorageConstructor(
     PGMPStorageParent* aActor) {
   GMPStorageParent* p = (GMPStorageParent*)aActor;
-  if (NS_WARN_IF(NS_FAILED(p->Init()))) {
-    return IPC_FAIL_NO_REASON(this);
+  if (NS_FAILED(p->Init())) {
+    
+    
+    return IPC_FAIL(this,
+                    "GMPParent::RecvPGMPStorageConstructor: p->Init() failed.");
   }
   return IPC_OK();
 }

@@ -287,26 +287,20 @@ mozilla::ipc::IPCResult GMPVideoDecoderParent::RecvDecoded(
                   " frameCount=%d",
                   this, aDecodedFrame.mTimestamp(), mFrameCount);
 
-  if (!mCallback) {
-    
-    return IPC_OK();
-  }
+  if (mCallback) {
+    if (GMPVideoi420FrameImpl::CheckFrameData(aDecodedFrame)) {
+      auto f = new GMPVideoi420FrameImpl(aDecodedFrame, &mVideoHost);
 
-  if (!GMPVideoi420FrameImpl::CheckFrameData(aDecodedFrame)) {
-    GMP_LOG_ERROR(
-        "GMPVideoDecoderParent[%p]::RecvDecoded() "
-        "timestamp=%" PRId64 " decoded frame corrupt, ignoring",
-        this, aDecodedFrame.mTimestamp());
-    
-    
-    
-    return IPC_OK();
+      mCallback->Decoded(f);
+    } else {
+      GMP_LOG_ERROR(
+          "GMPVideoDecoderParent[%p]::RecvDecoded() "
+          "timestamp=%" PRId64 " decoded frame corrupt, ignoring",
+          this, aDecodedFrame.mTimestamp());
+      
+      
+    }
   }
-  auto f = new GMPVideoi420FrameImpl(aDecodedFrame, &mVideoHost);
-
-  
-  
-  mCallback->Decoded(f);
 
   return IPC_OK();
 }
@@ -314,26 +308,18 @@ mozilla::ipc::IPCResult GMPVideoDecoderParent::RecvDecoded(
 mozilla::ipc::IPCResult
 GMPVideoDecoderParent::RecvReceivedDecodedReferenceFrame(
     const uint64_t& aPictureId) {
-  if (!mCallback) {
-    return IPC_FAIL_NO_REASON(this);
+  if (mCallback) {
+    mCallback->ReceivedDecodedReferenceFrame(aPictureId);
   }
-
-  
-  
-  mCallback->ReceivedDecodedReferenceFrame(aPictureId);
 
   return IPC_OK();
 }
 
 mozilla::ipc::IPCResult GMPVideoDecoderParent::RecvReceivedDecodedFrame(
     const uint64_t& aPictureId) {
-  if (!mCallback) {
-    return IPC_FAIL_NO_REASON(this);
+  if (mCallback) {
+    mCallback->ReceivedDecodedFrame(aPictureId);
   }
-
-  
-  
-  mCallback->ReceivedDecodedFrame(aPictureId);
 
   return IPC_OK();
 }
@@ -341,13 +327,9 @@ mozilla::ipc::IPCResult GMPVideoDecoderParent::RecvReceivedDecodedFrame(
 mozilla::ipc::IPCResult GMPVideoDecoderParent::RecvInputDataExhausted() {
   GMP_LOG_VERBOSE("GMPVideoDecoderParent[%p]::RecvInputDataExhausted()", this);
 
-  if (!mCallback) {
-    return IPC_FAIL_NO_REASON(this);
+  if (mCallback) {
+    mCallback->InputDataExhausted();
   }
-
-  
-  
-  mCallback->InputDataExhausted();
 
   return IPC_OK();
 }
@@ -361,21 +343,11 @@ mozilla::ipc::IPCResult GMPVideoDecoderParent::RecvDrainComplete() {
   msg.AppendInt(mFrameCount);
   LogToBrowserConsole(msg);
 
-  if (!mCallback) {
-    
-    
-    
-    return IPC_OK();
-  }
+  if (mCallback && mIsAwaitingDrainComplete) {
+    mIsAwaitingDrainComplete = false;
 
-  if (!mIsAwaitingDrainComplete) {
-    return IPC_OK();
+    mCallback->DrainComplete();
   }
-  mIsAwaitingDrainComplete = false;
-
-  
-  
-  mCallback->DrainComplete();
 
   return IPC_OK();
 }
@@ -385,22 +357,12 @@ mozilla::ipc::IPCResult GMPVideoDecoderParent::RecvResetComplete() {
 
   CancelResetCompleteTimeout();
 
-  if (!mCallback) {
-    
-    
-    
-    return IPC_OK();
-  }
+  if (mCallback && mIsAwaitingResetComplete) {
+    mIsAwaitingResetComplete = false;
+    mFrameCount = 0;
 
-  if (!mIsAwaitingResetComplete) {
-    return IPC_OK();
+    mCallback->ResetComplete();
   }
-  mIsAwaitingResetComplete = false;
-  mFrameCount = 0;
-
-  
-  
-  mCallback->ResetComplete();
 
   return IPC_OK();
 }
@@ -408,18 +370,14 @@ mozilla::ipc::IPCResult GMPVideoDecoderParent::RecvResetComplete() {
 mozilla::ipc::IPCResult GMPVideoDecoderParent::RecvError(const GMPErr& aError) {
   GMP_LOG_DEBUG("GMPVideoDecoderParent[%p]::RecvError(error=%d)", this, aError);
 
-  if (!mCallback) {
-    return IPC_FAIL_NO_REASON(this);
+  if (mCallback) {
+    
+    
+    
+    UnblockResetAndDrain();
+
+    mCallback->Error(aError);
   }
-
-  
-  
-  
-  UnblockResetAndDrain();
-
-  
-  
-  mCallback->Error(aError);
 
   return IPC_OK();
 }
@@ -449,7 +407,7 @@ mozilla::ipc::IPCResult GMPVideoDecoderParent::RecvNeedShmem(
           ipc::SharedMemory::TYPE_BASIC, &mem)) {
     GMP_LOG_ERROR("%s: Failed to get a shared mem buffer for Child! size %u",
                   __FUNCTION__, aFrameBufferSize);
-    return IPC_FAIL_NO_REASON(this);
+    return IPC_FAIL(this, "Failed to get a shared mem buffer for Child!");
   }
   *aMem = mem;
   mem = ipc::Shmem();
