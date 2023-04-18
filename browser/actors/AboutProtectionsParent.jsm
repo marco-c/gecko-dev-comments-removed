@@ -13,6 +13,7 @@ const { XPCOMUtils } = ChromeUtils.import(
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetters(this, {
+  BrowserUtils: "resource://gre/modules/BrowserUtils.jsm",
   fxAccounts: "resource://gre/modules/FxAccounts.jsm",
   FXA_PWDMGR_HOST: "resource://gre/modules/FxAccountsCommon.js",
   FXA_PWDMGR_REALM: "resource://gre/modules/FxAccountsCommon.js",
@@ -314,7 +315,7 @@ class AboutProtectionsParent extends JSWindowActorParent {
   async VPNSubStatus() {
     
     if (gTestOverride && "vpnOverrides" in gTestOverride) {
-      return gTestOverride.vpnOverrides().hasSubscription;
+      return gTestOverride.vpnOverrides();
     }
 
     let vpnToken;
@@ -343,33 +344,6 @@ class AboutProtectionsParent extends JSWindowActorParent {
     }
     
     return false;
-  }
-
-  
-  
-  VPNShouldShow() {
-    let currentRegion = "";
-    if (gTestOverride && "vpnOverrides" in gTestOverride) {
-      currentRegion = gTestOverride.vpnOverrides().location;
-    } else {
-      
-      
-      currentRegion = Region.current ? Region.current.toLowerCase() : "";
-    }
-
-    
-    const homeRegion = Region.home.toLowerCase() || "";
-    const regionsWithVPN = Services.prefs.getStringPref(
-      "browser.contentblocking.report.vpn_regions"
-    );
-    const language = Services.locale.appLocaleAsBCP47;
-
-    return (
-      currentRegion != "cn" &&
-      homeRegion != "cn" &&
-      regionsWithVPN.includes(currentRegion) &&
-      language.includes("en-")
-    );
   }
 
   async receiveMessage(aMessage) {
@@ -456,7 +430,7 @@ class AboutProtectionsParent extends JSWindowActorParent {
         return this.VPNSubStatus();
 
       case "FetchShowVPNCard":
-        return this.VPNShouldShow();
+        return BrowserUtils.shouldShowVPNPromo();
     }
 
     return undefined;
