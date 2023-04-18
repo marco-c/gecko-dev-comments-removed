@@ -719,6 +719,9 @@ struct ObjLiteralModifier : private ObjLiteralReaderBase {
 class ObjLiteralStencil {
   friend class frontend::StencilXDR;
 
+  
+  friend struct frontend::CompilationStencil;
+
   mozilla::Span<uint8_t> code_;
   ObjLiteralKindAndFlags kindAndFlags_;
   uint32_t propertyCount_ = 0;
