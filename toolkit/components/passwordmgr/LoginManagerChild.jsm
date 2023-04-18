@@ -509,7 +509,7 @@ class LoginFormState {
 
   #cachedIsInferredUsernameField = new WeakMap();
   cachedIsInferredEmailField = new WeakMap();
-  cachedIsInferredLoginForm = new WeakMap();
+  #cachedIsInferredLoginForm = new WeakMap();
 
   
 
@@ -564,6 +564,45 @@ class LoginFormState {
     if (result === undefined) {
       result = lazy.LoginHelper.isInferredUsernameField(inputElement);
       this.#cachedIsInferredUsernameField.set(inputElement, result);
+    }
+
+    return result;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  isProbablyAUsernameLoginForm(formElement, inputElement) {
+    let result = this.#cachedIsInferredLoginForm.get(formElement);
+    if (result === undefined) {
+      
+      
+      
+      
+      
+
+      result = false;
+      
+      
+      if (
+        this.isProbablyAUsernameField(inputElement) ||
+        lazy.LoginHelper.isInferredLoginForm(formElement)
+      ) {
+        
+        
+        if (!lazy.LoginHelper.isInferredNonUsernameField(inputElement)) {
+          result = true;
+        }
+      }
+      this.#cachedIsInferredLoginForm.set(formElement, result);
     }
 
     return result;
@@ -3163,53 +3202,14 @@ class LoginManagerChild extends JSWindowActorChild {
       candidate = element;
     }
 
+    let docState = this.stateForDocument(formElement.ownerDocument);
     if (
       candidate &&
-      this.isProbablyAUsernameLoginForm(formElement, candidate)
+      docState.isProbablyAUsernameLoginForm(formElement, candidate)
     ) {
       return candidate;
     }
 
     return null;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-  isProbablyAUsernameLoginForm(formElement, inputElement) {
-    let docState = this.stateForDocument(formElement.ownerDocument);
-    let result = docState.cachedIsInferredLoginForm.get(formElement);
-    if (result === undefined) {
-      
-      
-      
-      
-      
-
-      result = false;
-      
-      
-      if (
-        docState.isProbablyAUsernameField(inputElement) ||
-        lazy.LoginHelper.isInferredLoginForm(formElement)
-      ) {
-        
-        
-        if (!lazy.LoginHelper.isInferredNonUsernameField(inputElement)) {
-          result = true;
-        }
-      }
-      docState.cachedIsInferredLoginForm.set(formElement, result);
-    }
-
-    return result;
   }
 }
