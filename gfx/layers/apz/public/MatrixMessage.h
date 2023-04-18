@@ -38,16 +38,6 @@ class MatrixMessage {
 
   inline const LayersId& GetLayersId() const { return mLayersId; }
 
-  bool operator==(const MatrixMessage& aOther) const {
-    return aOther.mMatrix == mMatrix &&
-           aOther.mTopLevelViewportVisibleRectInBrowserCoords ==
-               mTopLevelViewportVisibleRectInBrowserCoords &&
-           aOther.mLayersId == mLayersId;
-  }
-
-  bool operator!=(const MatrixMessage& aOther) const {
-    return !(*this == aOther);
-  }
   
   
   
