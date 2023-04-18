@@ -793,7 +793,7 @@ class nsWindow final : public nsBaseWidget {
   void WaylandPopupMarkAsClosed();
   void WaylandPopupRemoveClosedPopups();
   void WaylandPopupSetDirectPosition();
-  bool WaylandPopupFitsParentWindow(const GdkRectangle& aSize);
+  bool WaylandPopupFitsToplevelWindow();
   const WaylandPopupMoveToRectParams WaylandPopupGetPositionFromLayout();
   nsWindow* WaylandPopupFindLast(nsWindow* aPopup);
   GtkWindow* GetCurrentTopmostWindow();
@@ -807,8 +807,10 @@ class nsWindow final : public nsBaseWidget {
 
   
   
+  
   GdkPoint mPopupPosition{};
 
+  
   
   GdkPoint mRelativePopupPosition{};
 
