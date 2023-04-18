@@ -139,6 +139,8 @@ class Context::QuotaInitRunnable final : public nsIRunnable,
     mInitAction->CancelOnInitiatingThread();
   }
 
+  void OpenDirectory();
+
   
   virtual void DirectoryLockAcquired(DirectoryLock* aLock) override;
 
@@ -178,6 +180,7 @@ class Context::QuotaInitRunnable final : public nsIRunnable,
     STATE_INIT,
     STATE_GET_INFO,
     STATE_CREATE_QUOTA_MANAGER,
+    STATE_OPEN_DIRECTORY,
     STATE_WAIT_FOR_DIRECTORY_LOCK,
     STATE_ENSURE_ORIGIN_INITIALIZED,
     STATE_RUN_ON_TARGET,
@@ -223,6 +226,25 @@ class Context::QuotaInitRunnable final : public nsIRunnable,
   NS_DECL_NSIRUNNABLE
 };
 
+void Context::QuotaInitRunnable::OpenDirectory() {
+  NS_ASSERT_OWNINGTHREAD(QuotaInitRunnable);
+  MOZ_DIAGNOSTIC_ASSERT(mState == STATE_CREATE_QUOTA_MANAGER ||
+                        mState == STATE_OPEN_DIRECTORY);
+  MOZ_DIAGNOSTIC_ASSERT(QuotaManager::Get());
+
+  RefPtr<DirectoryLock> directoryLock =
+      QuotaManager::Get()->CreateDirectoryLock(PERSISTENCE_TYPE_DEFAULT,
+                                               *mDirectoryMetadata,
+                                               quota::Client::DOMCACHE,
+                                                false);
+
+  
+  
+  
+  mState = STATE_WAIT_FOR_DIRECTORY_LOCK;
+  directoryLock->Acquire(this);
+}
+
 void Context::QuotaInitRunnable::DirectoryLockAcquired(DirectoryLock* aLock) {
   NS_ASSERT_OWNINGTHREAD(QuotaInitRunnable);
   MOZ_DIAGNOSTIC_ASSERT(aLock);
@@ -261,6 +283,11 @@ void Context::QuotaInitRunnable::DirectoryLockFailed() {
 }
 
 NS_IMPL_ISUPPORTS(mozilla::dom::cache::Context::QuotaInitRunnable, nsIRunnable);
+
+
+
+
+
 
 
 
@@ -352,24 +379,25 @@ Context::QuotaInitRunnable::Run() {
         break;
       }
 
-      QM_TRY(QuotaManager::EnsureCreated(), QM_PROPAGATE,
-             [&resolver](const auto rv) { resolver->Resolve(rv); });
+      if (QuotaManager::Get()) {
+        OpenDirectory();
+        return NS_OK;
+      }
 
-      MOZ_DIAGNOSTIC_ASSERT(QuotaManager::Get());
+      mState = STATE_OPEN_DIRECTORY;
+      QuotaManager::GetOrCreate(this);
+      break;
+    }
+    
+    case STATE_OPEN_DIRECTORY: {
+      NS_ASSERT_OWNINGTHREAD(QuotaInitRunnable);
 
-      
-      RefPtr<DirectoryLock> directoryLock =
-          QuotaManager::Get()->CreateDirectoryLock(PERSISTENCE_TYPE_DEFAULT,
-                                                   *mDirectoryMetadata,
-                                                   quota::Client::DOMCACHE,
-                                                    false);
+      if (NS_WARN_IF(!QuotaManager::Get())) {
+        resolver->Resolve(NS_ERROR_FAILURE);
+        break;
+      }
 
-      
-      
-      
-      mState = STATE_WAIT_FOR_DIRECTORY_LOCK;
-      directoryLock->Acquire(this);
-
+      OpenDirectory();
       break;
     }
     
