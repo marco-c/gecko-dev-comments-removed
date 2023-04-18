@@ -1852,7 +1852,19 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
             mAsrStack.empty() ? nullptr : mAsrStack.back();
         newLayerData->ComputeDeferredTransformInfo(aSc, item);
 
-        mAsrStack.push_back(asr);
+        const ActiveScrolledRoot* stopAtAsrForDescendants = asr;
+        
+        
+        
+        
+        
+        
+        
+        if (newLayerData->mTransformShouldGetOwnLayer) {
+          stopAtAsrForDescendants = ActiveScrolledRoot::PickDescendant(
+              asr, newLayerData->mDeferredItem->GetActiveScrolledRoot());
+        }
+        mAsrStack.push_back(stopAtAsrForDescendants);
       }
     }
 
