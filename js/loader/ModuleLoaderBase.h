@@ -10,7 +10,6 @@
 #include "LoadedScript.h"
 #include "ScriptLoadRequest.h"
 
-#include "ImportMap.h"
 #include "js/TypeDecls.h"  
 #include "js/Modules.h"
 #include "nsRefPtrHashtable.h"
@@ -23,8 +22,6 @@
 #include "mozilla/dom/JSExecutionContext.h"
 #include "mozilla/MaybeOneOf.h"
 #include "mozilla/MozPromise.h"
-#include "mozilla/UniquePtr.h"
-#include "ResolveResult.h"
 
 class nsIURI;
 
@@ -62,10 +59,6 @@ class ScriptLoaderInterface : public nsISupports {
 
   virtual void ReportErrorToConsole(ScriptLoadRequest* aRequest,
                                     nsresult aResult) const = 0;
-
-  virtual void ReportWarningToConsole(
-      ScriptLoadRequest* aRequest, const char* aMessageName,
-      const nsTArray<nsString>& aParams = nsTArray<nsString>()) const = 0;
 
   
   
@@ -151,15 +144,8 @@ class ModuleLoaderBase : public nsISupports {
 
   nsCOMPtr<nsIGlobalObject> mGlobalObject;
 
-  
-  
-  
-  bool mAcquiringImportMaps = true;
-
  protected:
   RefPtr<ScriptLoaderInterface> mLoader;
-
-  mozilla::UniquePtr<ImportMap> mImportMap;
 
   virtual ~ModuleLoaderBase();
 
@@ -242,20 +228,6 @@ class ModuleLoaderBase : public nsISupports {
   void CancelAndClearDynamicImports();
 
   
-  mozilla::UniquePtr<ImportMap> ParseImportMap(ScriptLoadRequest* aRequest);
-
-  
-  void RegisterImportMap(mozilla::UniquePtr<ImportMap> aImportMap);
-
-  
-
-
-  bool GetAcquiringImportMaps() const { return mAcquiringImportMaps; }
-  void SetAcquiringImportMaps(bool acquiring) {
-    mAcquiringImportMaps = acquiring;
-  }
-
-  
 
  private:
   friend class JS::loader::ModuleLoadRequest;
@@ -281,15 +253,14 @@ class ModuleLoaderBase : public nsISupports {
   static bool HostGetSupportedImportAssertions(
       JSContext* aCx, JS::ImportAssertionVector& aValues);
 
-  ResolveResult ResolveModuleSpecifier(LoadedScript* aScript,
-                                       const nsAString& aSpecifier);
+  already_AddRefed<nsIURI> ResolveModuleSpecifier(LoadedScript* aScript,
+                                                  const nsAString& aSpecifier);
 
   static nsresult HandleResolveFailure(JSContext* aCx, LoadedScript* aScript,
                                        const nsAString& aSpecifier,
-                                       ResolveError aError,
                                        uint32_t aLineNumber,
                                        uint32_t aColumnNumber,
-                                       JS::MutableHandle<JS::Value> aErrorOut);
+                                       JS::MutableHandle<JS::Value> errorOut);
 
   enum class RestartRequest { No, Yes };
   nsresult StartOrRestartModuleLoad(ModuleLoadRequest* aRequest,

@@ -113,17 +113,6 @@ nsresult ModuleLoader::StartFetch(ModuleLoadRequest* aRequest) {
   nsresult rv = GetScriptLoader()->StartLoadInternal(aRequest, securityFlags);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  
-  
-  
-  
-  
-  if (!aRequest->GetScriptLoadContext()->IsPreload()) {
-    LOG(("ScriptLoadRequest (%p): SetAcquiringImportMaps false", aRequest));
-    SetAcquiringImportMaps(false);
-  }
-
   LOG(("ScriptLoadRequest (%p): Start fetching module", aRequest));
 
   return NS_OK;
