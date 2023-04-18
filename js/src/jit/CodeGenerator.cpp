@@ -5691,14 +5691,10 @@ void CodeGenerator::emitPopArguments(Register extraStackSpace) {
   masm.freeStack(extraStackSpace);
 }
 
-void CodeGenerator::emitPushArguments(LApplyArgsGeneric* apply,
-                                      Register extraStackSpace) {
-  
-  Register argcreg = ToRegister(apply->getArgc());
-  Register copyreg = ToRegister(apply->getTempObject());
-
+void CodeGenerator::emitPushArguments(Register argcreg,
+                                      Register extraStackSpace,
+                                      Register copyreg) {
   Label end;
-  emitAllocateSpaceForApply(argcreg, extraStackSpace);
 
   
   masm.branchTestPtr(Assembler::Zero, argcreg, argcreg, &end);
@@ -5743,6 +5739,17 @@ void CodeGenerator::emitPushArguments(LApplyArgsGeneric* apply,
 
   
   masm.bind(&end);
+}
+
+void CodeGenerator::emitPushArguments(LApplyArgsGeneric* apply,
+                                      Register extraStackSpace) {
+  
+  Register argcreg = ToRegister(apply->getArgc());
+  Register copyreg = ToRegister(apply->getTempObject());
+
+  emitAllocateSpaceForApply(argcreg, extraStackSpace);
+
+  emitPushArguments(argcreg, extraStackSpace, copyreg);
 
   
   masm.addPtr(Imm32(sizeof(Value)), extraStackSpace);
@@ -5857,6 +5864,25 @@ void CodeGenerator::emitPushArguments(LApplyArrayGeneric* apply,
   
   masm.addPtr(Imm32(sizeof(Value)), extraStackSpace);
   masm.pushValue(ToValue(apply, LApplyArrayGeneric::ThisIndex));
+}
+
+void CodeGenerator::emitPushArguments(LConstructArgsGeneric* construct,
+                                      Register extraStackSpace) {
+  MOZ_ASSERT(extraStackSpace == ToRegister(construct->getNewTarget()));
+
+  
+  Register argcreg = ToRegister(construct->getArgc());
+  Register copyreg = ToRegister(construct->getTempObject());
+
+  
+  
+  emitAllocateSpaceForConstructAndPushNewTarget(argcreg, extraStackSpace);
+
+  emitPushArguments(argcreg, extraStackSpace, copyreg);
+
+  
+  masm.addPtr(Imm32(sizeof(Value)), extraStackSpace);
+  masm.pushValue(ToValue(construct, LConstructArgsGeneric::ThisIndex));
 }
 
 void CodeGenerator::emitPushArguments(LConstructArrayGeneric* construct,
@@ -6114,6 +6140,16 @@ void CodeGenerator::visitApplyArrayGeneric(LApplyArrayGeneric* apply) {
   bailoutCmp32(Assembler::NotEqual, tmp, Imm32(0), snapshot);
 
   emitApplyGeneric(apply);
+}
+
+void CodeGenerator::visitConstructArgsGeneric(LConstructArgsGeneric* lir) {
+  LSnapshot* snapshot = lir->snapshot();
+  Register argcreg = ToRegister(lir->getArgc());
+
+  
+  bailoutCmp32(Assembler::Above, argcreg, Imm32(JIT_ARGS_LENGTH_MAX), snapshot);
+
+  emitApplyGeneric(lir);
 }
 
 void CodeGenerator::visitConstructArrayGeneric(LConstructArrayGeneric* lir) {

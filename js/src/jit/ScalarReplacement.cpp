@@ -2007,6 +2007,7 @@ class RestReplacer : public MDefinitionVisitorDefaultNoop {
   void visitArrayLength(MArrayLength* ins);
   void visitInitializedLength(MInitializedLength* ins);
   void visitApplyArray(MApplyArray* ins);
+  void visitConstructArray(MConstructArray* ins);
 
   bool escapes(MElements* ins);
 
@@ -2157,6 +2158,17 @@ bool RestReplacer::escapes(MElements* ins) {
 
       case MDefinition::Opcode::ApplyArray:
         MOZ_ASSERT(def->toApplyArray()->getElements() == ins);
+
+        
+        
+        if (rest()->numFormals()) {
+          JitSpewDef(JitSpew_Escape, "has extra formals\n", def);
+          return true;
+        }
+        break;
+
+      case MDefinition::Opcode::ConstructArray:
+        MOZ_ASSERT(def->toConstructArray()->getElements() == ins);
 
         
         
@@ -2385,6 +2397,36 @@ void RestReplacer::visitApplyArray(MApplyArray* ins) {
   ins->replaceAllUsesWith(apply);
 
   apply->stealResumePoint(ins);
+
+  
+  discardInstruction(ins, elements);
+}
+
+void RestReplacer::visitConstructArray(MConstructArray* ins) {
+  
+  MDefinition* elements = ins->getElements();
+  if (!isRestElements(elements)) {
+    return;
+  }
+
+  
+  
+  MOZ_ASSERT(rest()->numFormals() == 0);
+
+  auto* numActuals = rest()->numActuals();
+
+  auto* construct =
+      MConstructArgs::New(alloc(), ins->getSingleTarget(), ins->getFunction(),
+                          numActuals, ins->getThis(), ins->getNewTarget());
+  construct->setBailoutKind(ins->bailoutKind());
+  if (!ins->maybeCrossRealm()) {
+    construct->setNotCrossRealm();
+  }
+
+  ins->block()->insertBefore(ins, construct);
+  ins->replaceAllUsesWith(construct);
+
+  construct->stealResumePoint(ins);
 
   
   discardInstruction(ins, elements);
