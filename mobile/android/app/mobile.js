@@ -515,9 +515,6 @@ pref("media.plugins.enabled", true);
 pref("media.stagefright.omxcodec.flags", 0);
 
 
-pref("browser.chrome.dynamictoolbar", true);
-
-
 pref("browser.urlbar.autocomplete.enabled", true);
 
 
