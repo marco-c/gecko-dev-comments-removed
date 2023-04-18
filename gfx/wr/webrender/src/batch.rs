@@ -2435,7 +2435,7 @@ impl BatchBuilder {
                     let mut gpu_blocks = Vec::<GpuBlockData>::with_capacity(3 + max_tiles_per_header * 2);
                     for chunk in image_instance.visible_tiles.chunks(max_tiles_per_header) {
                         gpu_blocks.clear();
-                        gpu_blocks.push(PremultipliedColorF::WHITE.into()); 
+                        gpu_blocks.push(image_data.color.premultiplied().into()); 
                         gpu_blocks.push(PremultipliedColorF::WHITE.into()); 
                         gpu_blocks.push([-1.0, 0.0, 0.0, 0.0].into()); 
                         
