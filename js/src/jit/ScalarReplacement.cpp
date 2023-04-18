@@ -327,6 +327,15 @@ static bool IsObjectEscaped(MDefinition* ins, MInstruction* newObject,
         break;
       }
 
+      case MDefinition::Opcode::Compare: {
+        bool canFold;
+        if (!def->toCompare()->tryFold(&canFold)) {
+          JitSpewDef(JitSpew_Escape, "has an unsupported compare\n", def);
+          return true;
+        }
+        break;
+      }
+
       
       
       case MDefinition::Opcode::AssertRecoveredOnBailout:
@@ -393,6 +402,7 @@ class ObjectMemoryView : public MDefinitionVisitorDefaultNoop {
   void visitLambda(MLambda* ins);
   void visitFunctionWithProto(MFunctionWithProto* ins);
   void visitPhi(MPhi* ins);
+  void visitCompare(MCompare* ins);
 };
 
  const char ObjectMemoryView::phaseName[] =
@@ -785,6 +795,25 @@ void ObjectMemoryView::visitPhi(MPhi* ins) {
 
   
   ins->block()->discardPhi(ins);
+}
+
+void ObjectMemoryView::visitCompare(MCompare* ins) {
+  
+  if (ins->lhs() != obj_ && ins->rhs() != obj_) {
+    return;
+  }
+
+  bool folded;
+  MOZ_ALWAYS_TRUE(ins->tryFold(&folded));
+
+  auto* cst = MConstant::New(alloc_, BooleanValue(folded));
+  ins->block()->insertBefore(ins, cst);
+
+  
+  ins->replaceAllUsesWith(cst);
+
+  
+  ins->block()->discard(ins);
 }
 
 static bool IndexOf(MDefinition* ins, int32_t* res) {
