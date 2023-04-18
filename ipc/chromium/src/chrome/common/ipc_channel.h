@@ -57,7 +57,7 @@ class Channel {
     virtual ~Listener() = default;
 
     
-    virtual void OnMessageReceived(mozilla::UniquePtr<Message> message) = 0;
+    virtual void OnMessageReceived(Message&& message) = 0;
 
     
     
@@ -69,8 +69,7 @@ class Channel {
 
     
     
-    virtual void GetQueuedMessages(
-        std::queue<mozilla::UniquePtr<Message>>& queue) {}
+    virtual void GetQueuedMessages(std::queue<Message>& queue) {}
   };
 
   enum Mode { MODE_SERVER, MODE_CLIENT };

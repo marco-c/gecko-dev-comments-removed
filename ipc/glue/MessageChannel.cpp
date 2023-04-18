@@ -249,22 +249,22 @@ class AutoEnterTransaction {
     return mTransaction;
   }
 
-  void ReceivedReply(UniquePtr<IPC::Message> aMessage) {
-    MOZ_RELEASE_ASSERT(aMessage->seqno() == mSeqno);
-    MOZ_RELEASE_ASSERT(aMessage->transaction_id() == mTransaction);
+  void ReceivedReply(IPC::Message&& aMessage) {
+    MOZ_RELEASE_ASSERT(aMessage.seqno() == mSeqno);
+    MOZ_RELEASE_ASSERT(aMessage.transaction_id() == mTransaction);
     MOZ_RELEASE_ASSERT(!mReply);
     IPC_LOG("Reply received on worker thread: seqno=%d", mSeqno);
-    mReply = std::move(aMessage);
+    mReply = MakeUnique<IPC::Message>(std::move(aMessage));
     MOZ_RELEASE_ASSERT(IsComplete());
   }
 
-  void HandleReply(UniquePtr<IPC::Message> aMessage) {
+  void HandleReply(IPC::Message&& aMessage) {
     mChan->mMonitor->AssertCurrentThreadOwns();
     AutoEnterTransaction* cur = mChan->mTransactionStack;
     MOZ_RELEASE_ASSERT(cur == this);
     while (cur) {
       MOZ_RELEASE_ASSERT(cur->mActive);
-      if (aMessage->seqno() == cur->mSeqno) {
+      if (aMessage.seqno() == cur->mSeqno) {
         cur->ReceivedReply(std::move(aMessage));
         break;
       }
@@ -515,8 +515,7 @@ void MessageChannel::AssertMaybeDeferredCountCorrect() {
 
   size_t count = 0;
   for (MessageTask* task : mPending) {
-    task->AssertMonitorHeld(*mMonitor);
-    if (!IsAlwaysDeferred(*task->Msg())) {
+    if (!IsAlwaysDeferred(task->Msg())) {
       count++;
     }
   }
@@ -995,22 +994,22 @@ bool MessageChannel::ShouldDeferMessage(const Message& aMsg) {
          aMsg.transaction_id() != CurrentNestedInsideSyncTransaction();
 }
 
-void MessageChannel::OnMessageReceivedFromLink(UniquePtr<Message> aMsg) {
+void MessageChannel::OnMessageReceivedFromLink(Message&& aMsg) {
   mMonitor->AssertCurrentThreadOwns();
 
-  if (MaybeInterceptSpecialIOMessage(*aMsg)) {
+  if (MaybeInterceptSpecialIOMessage(aMsg)) {
     return;
   }
 
-  mListener->OnChannelReceivedMessage(*aMsg);
+  mListener->OnChannelReceivedMessage(aMsg);
 
   
   
-  if (aMsg->is_sync() && aMsg->is_reply()) {
-    IPC_LOG("Received reply seqno=%d xid=%d", aMsg->seqno(),
-            aMsg->transaction_id());
+  if (aMsg.is_sync() && aMsg.is_reply()) {
+    IPC_LOG("Received reply seqno=%d xid=%d", aMsg.seqno(),
+            aMsg.transaction_id());
 
-    if (aMsg->seqno() == mTimedOutMessageSeqno) {
+    if (aMsg.seqno() == mTimedOutMessageSeqno) {
       
       IPC_LOG("Received reply to timedout message; igoring; xid=%d",
               mTimedOutMessageSeqno);
@@ -1027,49 +1026,53 @@ void MessageChannel::OnMessageReceivedFromLink(UniquePtr<Message> aMsg) {
   }
 
   
-  MOZ_RELEASE_ASSERT(aMsg->compress_type() == IPC::Message::COMPRESSION_NONE ||
-                     aMsg->nested_level() == IPC::Message::NOT_NESTED);
+  MOZ_RELEASE_ASSERT(aMsg.compress_type() == IPC::Message::COMPRESSION_NONE ||
+                     aMsg.nested_level() == IPC::Message::NOT_NESTED);
 
-  if (aMsg->compress_type() == IPC::Message::COMPRESSION_ENABLED &&
-      !mPending.isEmpty()) {
-    auto* last = mPending.getLast();
-    last->AssertMonitorHeld(*mMonitor);
-    bool compress = last->Msg()->type() == aMsg->type() &&
-                    last->Msg()->routing_id() == aMsg->routing_id();
+  bool reuseTask = false;
+  if (aMsg.compress_type() == IPC::Message::COMPRESSION_ENABLED) {
+    bool compress =
+        (!mPending.isEmpty() &&
+         mPending.getLast()->Msg().type() == aMsg.type() &&
+         mPending.getLast()->Msg().routing_id() == aMsg.routing_id());
     if (compress) {
       
       
       
-      MOZ_RELEASE_ASSERT(last->Msg()->compress_type() ==
+      MOZ_RELEASE_ASSERT(mPending.getLast()->Msg().compress_type() ==
                          IPC::Message::COMPRESSION_ENABLED);
-      last->Msg() = std::move(aMsg);
-      return;
+      mPending.getLast()->Msg() = std::move(aMsg);
+
+      reuseTask = true;
     }
-  } else if (aMsg->compress_type() == IPC::Message::COMPRESSION_ALL &&
+  } else if (aMsg.compress_type() == IPC::Message::COMPRESSION_ALL &&
              !mPending.isEmpty()) {
     for (MessageTask* p = mPending.getLast(); p; p = p->getPrevious()) {
-      p->AssertMonitorHeld(*mMonitor);
-      if (p->Msg()->type() == aMsg->type() &&
-          p->Msg()->routing_id() == aMsg->routing_id()) {
+      if (p->Msg().type() == aMsg.type() &&
+          p->Msg().routing_id() == aMsg.routing_id()) {
         
         
         
         
-        MOZ_RELEASE_ASSERT(p->Msg()->compress_type() ==
+        MOZ_RELEASE_ASSERT(p->Msg().compress_type() ==
                            IPC::Message::COMPRESSION_ALL);
-        MOZ_RELEASE_ASSERT(IsAlwaysDeferred(*p->Msg()));
+        MOZ_RELEASE_ASSERT(IsAlwaysDeferred(p->Msg()));
         p->remove();
         break;
       }
     }
   }
 
-  bool alwaysDeferred = IsAlwaysDeferred(*aMsg);
+  bool alwaysDeferred = IsAlwaysDeferred(aMsg);
 
-  bool shouldWakeUp = AwaitingSyncReply() && !ShouldDeferMessage(*aMsg);
+  bool shouldWakeUp = AwaitingSyncReply() && !ShouldDeferMessage(aMsg);
 
-  IPC_LOG("Receive from link; seqno=%d, xid=%d, shouldWakeUp=%d", aMsg->seqno(),
-          aMsg->transaction_id(), shouldWakeUp);
+  IPC_LOG("Receive from link; seqno=%d, xid=%d, shouldWakeUp=%d", aMsg.seqno(),
+          aMsg.transaction_id(), shouldWakeUp);
+
+  if (reuseTask) {
+    return;
+  }
 
   
   
@@ -1114,8 +1117,7 @@ void MessageChannel::PeekMessages(
   MonitorAutoLock lock(*mMonitor);
 
   for (MessageTask* it : mPending) {
-    it->AssertMonitorHeld(*mMonitor);
-    const Message& msg = *it->Msg();
+    const Message& msg = it->Msg();
     if (!aInvoke(msg)) {
       break;
     }
@@ -1145,24 +1147,23 @@ void MessageChannel::ProcessPendingRequests(
       return;
     }
 
-    Vector<UniquePtr<Message>> toProcess;
+    mozilla::Vector<Message> toProcess;
 
     for (MessageTask* p = mPending.getFirst(); p;) {
-      p->AssertMonitorHeld(*mMonitor);
-      UniquePtr<Message>& msg = p->Msg();
+      Message& msg = p->Msg();
 
       MOZ_RELEASE_ASSERT(!aTransaction.IsCanceled(),
                          "Calling ShouldDeferMessage when cancelled");
-      bool defer = ShouldDeferMessage(*msg);
+      bool defer = ShouldDeferMessage(msg);
 
       
-      if (msg->is_sync() ||
-          msg->nested_level() == IPC::Message::NESTED_INSIDE_CPOW) {
-        IPC_LOG("ShouldDeferMessage(seqno=%d) = %d", msg->seqno(), defer);
+      if (msg.is_sync() ||
+          msg.nested_level() == IPC::Message::NESTED_INSIDE_CPOW) {
+        IPC_LOG("ShouldDeferMessage(seqno=%d) = %d", msg.seqno(), defer);
       }
 
       if (!defer) {
-        MOZ_ASSERT(!IsAlwaysDeferred(*msg));
+        MOZ_ASSERT(!IsAlwaysDeferred(msg));
 
         if (!toProcess.append(std::move(msg))) MOZ_CRASH();
 
@@ -1181,15 +1182,15 @@ void MessageChannel::ProcessPendingRequests(
     
     
 
-    for (auto& msg : toProcess) {
-      ProcessPendingRequest(aProxy, std::move(msg));
+    for (auto it = toProcess.begin(); it != toProcess.end(); it++) {
+      ProcessPendingRequest(aProxy, std::move(*it));
     }
   }
 
   AssertMaybeDeferredCountCorrect();
 }
 
-bool MessageChannel::Send(UniquePtr<Message> aMsg, UniquePtr<Message>* aReply) {
+bool MessageChannel::Send(UniquePtr<Message> aMsg, Message* aReply) {
   mozilla::TimeStamp start = TimeStamp::Now();
   if (aMsg->size() >= kMinTelemetryMessageSize) {
     Telemetry::Accumulate(Telemetry::IPC_MESSAGE_SIZE2, aMsg->size());
@@ -1392,12 +1393,11 @@ bool MessageChannel::Send(UniquePtr<Message> aMsg, UniquePtr<Message>* aReply) {
 
   AddProfilerMarker(*reply, MessageDirection::eReceiving);
 
-  if (reply->size() >= kMinTelemetryMessageSize) {
+  *aReply = std::move(*reply);
+  if (aReply->size() >= kMinTelemetryMessageSize) {
     Telemetry::Accumulate(Telemetry::IPC_REPLY_SIZE,
-                          nsDependentCString(msgName), reply->size());
+                          nsDependentCString(msgName), aReply->size());
   }
-
-  *aReply = std::move(reply);
 
   
   
@@ -1415,15 +1415,15 @@ bool MessageChannel::HasPendingEvents() {
 }
 
 bool MessageChannel::ProcessPendingRequest(ActorLifecycleProxy* aProxy,
-                                           UniquePtr<Message> aUrgent) {
+                                           Message&& aUrgent) {
   AssertWorkerThread();
   mMonitor->AssertCurrentThreadOwns();
 
-  IPC_LOG("Process pending: seqno=%d, xid=%d", aUrgent->seqno(),
-          aUrgent->transaction_id());
+  IPC_LOG("Process pending: seqno=%d, xid=%d", aUrgent.seqno(),
+          aUrgent.transaction_id());
 
   
-  msgid_t msgType = aUrgent->type();
+  msgid_t msgType = aUrgent.type();
 
   DispatchMessage(aProxy, std::move(aUrgent));
   if (!Connected()) {
@@ -1468,12 +1468,11 @@ void MessageChannel::RunMessage(ActorLifecycleProxy* aProxy,
                                 MessageTask& aTask) {
   AssertWorkerThread();
   mMonitor->AssertCurrentThreadOwns();
-  aTask.AssertMonitorHeld(*mMonitor);
 
-  UniquePtr<Message>& msg = aTask.Msg();
+  Message& msg = aTask.Msg();
 
   if (!Connected()) {
-    ReportConnectionError("RunMessage", msg->type());
+    ReportConnectionError("RunMessage", msg.type());
     return;
   }
 
@@ -1485,21 +1484,21 @@ void MessageChannel::RunMessage(ActorLifecycleProxy* aProxy,
             break;
         }
 
-        MOZ_ASSERT(!ShouldRunMessage(*task->Msg()) ||
-                   aTask.Msg()->priority() != task->Msg()->priority());
+        MOZ_ASSERT(!ShouldRunMessage(task->Msg()) ||
+                   aTask.Msg().priority() != task->Msg().priority());
 
     }
 #  endif
 #endif
 
-  if (!ShouldRunMessage(*msg)) {
+  if (!ShouldRunMessage(msg)) {
     return;
   }
 
   MOZ_RELEASE_ASSERT(aTask.isInList());
   aTask.remove();
 
-  if (!IsAlwaysDeferred(*msg)) {
+  if (!IsAlwaysDeferred(msg)) {
     mMaybeDeferredPendingCount--;
   }
 
@@ -1509,40 +1508,21 @@ void MessageChannel::RunMessage(ActorLifecycleProxy* aProxy,
 NS_IMPL_ISUPPORTS_INHERITED(MessageChannel::MessageTask, CancelableRunnable,
                             nsIRunnablePriority, nsIRunnableIPCMessageType)
 
-static uint32_t ToRunnablePriority(IPC::Message::PriorityValue aPriority) {
-  switch (aPriority) {
-    case IPC::Message::NORMAL_PRIORITY:
-      return nsIRunnablePriority::PRIORITY_NORMAL;
-    case IPC::Message::INPUT_PRIORITY:
-      return nsIRunnablePriority::PRIORITY_INPUT_HIGH;
-    case IPC::Message::VSYNC_PRIORITY:
-      return nsIRunnablePriority::PRIORITY_VSYNC;
-    case IPC::Message::MEDIUMHIGH_PRIORITY:
-      return nsIRunnablePriority::PRIORITY_MEDIUMHIGH;
-    case IPC::Message::CONTROL_PRIORITY:
-      return nsIRunnablePriority::PRIORITY_CONTROL;
-    default:
-      MOZ_ASSERT_UNREACHABLE();
-      return nsIRunnablePriority::PRIORITY_NORMAL;
-  }
-}
-
 MessageChannel::MessageTask::MessageTask(MessageChannel* aChannel,
-                                         UniquePtr<Message> aMessage)
-    : CancelableRunnable(aMessage->name()),
+                                         Message&& aMessage)
+    : CancelableRunnable(aMessage.name()),
       mMonitor(aChannel->mMonitor),
       mChannel(aChannel),
       mMessage(std::move(aMessage)),
-      mPriority(ToRunnablePriority(mMessage->priority())),
       mScheduled(false)
 #ifdef FUZZING_SNAPSHOT
       ,
       mFuzzStopped(false)
 #endif
 {
-  MOZ_DIAGNOSTIC_ASSERT(mMessage, "message may not be null");
+
 #ifdef FUZZING_SNAPSHOT
-  if (mMessage->IsFuzzMsg()) {
+  if (mMessage.IsFuzzMsg()) {
     MOZ_FUZZING_IPC_MT_CTOR();
   }
 #endif
@@ -1553,15 +1533,33 @@ MessageChannel::MessageTask::~MessageTask() {
   
   
   
-  if (mMessage->IsFuzzMsg() && !mFuzzStopped) {
+  if (mMessage.IsFuzzMsg() && !mFuzzStopped) {
     MOZ_FUZZING_IPC_MT_STOP();
-  } else if (!mMessage->IsFuzzMsg() && !fuzzing::Nyx::instance().started()) {
+  } else if (!mMessage.IsFuzzMsg() && !fuzzing::Nyx::instance().started()) {
     MOZ_FUZZING_IPC_PRE_FUZZ_MT_STOP();
   }
 #endif
 }
 
 nsresult MessageChannel::MessageTask::Run() {
+#ifdef FUZZING_SNAPSHOT
+  if (!mMessage.IsFuzzMsg()) {
+    if (fuzzing::Nyx::instance().started()) {
+      
+      
+      
+      
+      
+      
+      
+      return NS_OK;
+    }
+    
+    
+    MOZ_FUZZING_IPC_PRE_FUZZ_MT_RUN();
+  }
+#endif
+
   mMonitor->AssertNotCurrentThreadOwns();
 
   
@@ -1579,31 +1577,13 @@ nsresult MessageChannel::MessageTask::Run() {
     return NS_OK;
   }
 
-#ifdef FUZZING_SNAPSHOT
-  if (!mMessage->IsFuzzMsg()) {
-    if (fuzzing::Nyx::instance().started()) {
-      
-      
-      
-      
-      
-      
-      
-      return NS_OK;
-    }
-    
-    
-    MOZ_FUZZING_IPC_PRE_FUZZ_MT_RUN();
-  }
-#endif
-
   Channel()->AssertWorkerThread();
   mMonitor->AssertSameMonitor(*Channel()->mMonitor);
   proxy = Channel()->Listener()->GetLifecycleProxy();
   Channel()->RunMessage(proxy, *this);
 
 #ifdef FUZZING_SNAPSHOT
-  if (mMessage->IsFuzzMsg() && !mFuzzStopped) {
+  if (mMessage.IsFuzzMsg() && !mFuzzStopped) {
     MOZ_FUZZING_IPC_MT_STOP();
     mFuzzStopped = true;
   }
@@ -1623,14 +1603,14 @@ nsresult MessageChannel::MessageTask::Cancel() {
 
   Channel()->AssertWorkerThread();
   mMonitor->AssertSameMonitor(*Channel()->mMonitor);
-  if (!IsAlwaysDeferred(*Msg())) {
+  if (!IsAlwaysDeferred(Msg())) {
     Channel()->mMaybeDeferredPendingCount--;
   }
 
   remove();
 
 #ifdef FUZZING_SNAPSHOT
-  if (mMessage->IsFuzzMsg() && !mFuzzStopped) {
+  if (mMessage.IsFuzzMsg() && !mFuzzStopped) {
     MOZ_FUZZING_IPC_MT_STOP();
     mFuzzStopped = true;
   }
@@ -1652,27 +1632,43 @@ void MessageChannel::MessageTask::Post() {
 
 NS_IMETHODIMP
 MessageChannel::MessageTask::GetPriority(uint32_t* aPriority) {
-  *aPriority = mPriority;
+  switch (mMessage.priority()) {
+    case Message::NORMAL_PRIORITY:
+      *aPriority = PRIORITY_NORMAL;
+      break;
+    case Message::INPUT_PRIORITY:
+      *aPriority = PRIORITY_INPUT_HIGH;
+      break;
+    case Message::VSYNC_PRIORITY:
+      *aPriority = PRIORITY_VSYNC;
+      break;
+    case Message::MEDIUMHIGH_PRIORITY:
+      *aPriority = PRIORITY_MEDIUMHIGH;
+      break;
+    case Message::CONTROL_PRIORITY:
+      *aPriority = PRIORITY_CONTROL;
+      break;
+    default:
+      MOZ_ASSERT(false);
+      break;
+  }
   return NS_OK;
 }
 
 NS_IMETHODIMP
 MessageChannel::MessageTask::GetType(uint32_t* aType) {
-  mMonitor->AssertNotCurrentThreadOwns();
-
-  MonitorAutoLock lock(*mMonitor);
-  if (!mMessage) {
+  if (!Msg().is_valid()) {
     
     
     return NS_ERROR_FAILURE;
   }
 
-  *aType = mMessage->type();
+  *aType = Msg().type();
   return NS_OK;
 }
 
 void MessageChannel::DispatchMessage(ActorLifecycleProxy* aProxy,
-                                     UniquePtr<Message> aMsg) {
+                                     Message&& aMsg) {
   AssertWorkerThread();
   mMonitor->AssertCurrentThreadOwns();
 
@@ -1683,15 +1679,15 @@ void MessageChannel::DispatchMessage(ActorLifecycleProxy* aProxy,
 
   UniquePtr<Message> reply;
 
-  IPC_LOG("DispatchMessage: seqno=%d, xid=%d", aMsg->seqno(),
-          aMsg->transaction_id());
-  AddProfilerMarker(*aMsg, MessageDirection::eReceiving);
+  IPC_LOG("DispatchMessage: seqno=%d, xid=%d", aMsg.seqno(),
+          aMsg.transaction_id());
+  AddProfilerMarker(aMsg, MessageDirection::eReceiving);
 
   {
-    AutoEnterTransaction transaction(this, *aMsg);
+    AutoEnterTransaction transaction(this, aMsg);
 
-    int id = aMsg->transaction_id();
-    MOZ_RELEASE_ASSERT(!aMsg->is_sync() || id == transaction.TransactionID());
+    int id = aMsg.transaction_id();
+    MOZ_RELEASE_ASSERT(!aMsg.is_sync() || id == transaction.TransactionID());
 
     {
       MonitorAutoUnlock unlock(*mMonitor);
@@ -1699,10 +1695,10 @@ void MessageChannel::DispatchMessage(ActorLifecycleProxy* aProxy,
 
       mListener->ArtificialSleep();
 
-      if (aMsg->is_sync()) {
-        DispatchSyncMessage(aProxy, *aMsg, reply);
+      if (aMsg.is_sync()) {
+        DispatchSyncMessage(aProxy, aMsg, *getter_Transfers(reply));
       } else {
-        DispatchAsyncMessage(aProxy, *aMsg);
+        DispatchAsyncMessage(aProxy, aMsg);
       }
 
       mListener->ArtificialSleep();
@@ -1711,14 +1707,14 @@ void MessageChannel::DispatchMessage(ActorLifecycleProxy* aProxy,
     if (reply && transaction.IsCanceled()) {
       
       IPC_LOG("Nulling out reply due to cancellation, seqno=%d, xid=%d",
-              aMsg->seqno(), id);
+              aMsg.seqno(), id);
       reply = nullptr;
     }
   }
 
   if (reply && ChannelConnected == mChannelState) {
-    IPC_LOG("Sending reply seqno=%d, xid=%d", aMsg->seqno(),
-            aMsg->transaction_id());
+    IPC_LOG("Sending reply seqno=%d, xid=%d", aMsg.seqno(),
+            aMsg.transaction_id());
     AddProfilerMarker(*reply, MessageDirection::eSending);
 
     mLink->SendMessage(std::move(reply));
@@ -1727,7 +1723,7 @@ void MessageChannel::DispatchMessage(ActorLifecycleProxy* aProxy,
 
 void MessageChannel::DispatchSyncMessage(ActorLifecycleProxy* aProxy,
                                          const Message& aMsg,
-                                         UniquePtr<Message>& aReply) {
+                                         Message*& aReply) {
   AssertWorkerThread();
 
   mozilla::TimeStamp start = TimeStamp::Now();
@@ -2199,10 +2195,9 @@ void MessageChannel::DebugAbort(const char* file, int line, const char* cond,
 
   MessageQueue pending = std::move(mPending);
   while (!pending.isEmpty()) {
-    pending.getFirst()->AssertMonitorHeld(*mMonitor);
     printf_stderr("    [ %s%s ]\n",
-                  pending.getFirst()->Msg()->is_sync() ? "sync" : "async",
-                  pending.getFirst()->Msg()->is_reply() ? "reply" : "");
+                  pending.getFirst()->Msg().is_sync() ? "sync" : "async",
+                  pending.getFirst()->Msg().is_reply() ? "reply" : "");
     pending.popFirst();
   }
 
@@ -2281,10 +2276,9 @@ void MessageChannel::RepostAllMessages() {
   
   MessageQueue queue = std::move(mPending);
   while (RefPtr<MessageTask> task = queue.popFirst()) {
-    task->AssertMonitorHeld(*mMonitor);
     RefPtr<MessageTask> newTask = new MessageTask(this, std::move(task->Msg()));
-    newTask->AssertMonitorHeld(*mMonitor);
     mPending.insertBack(newTask);
+    newTask->AssertMonitorHeld(*mMonitor);
     newTask->Post();
   }
 
@@ -2330,21 +2324,20 @@ void MessageChannel::CancelTransaction(int transaction) {
 
   bool foundSync = false;
   for (MessageTask* p = mPending.getFirst(); p;) {
-    p->AssertMonitorHeld(*mMonitor);
-    UniquePtr<Message>& msg = p->Msg();
+    Message& msg = p->Msg();
 
     
     
     
     
     
-    if (msg->is_sync() && msg->nested_level() != IPC::Message::NOT_NESTED) {
+    if (msg.is_sync() && msg.nested_level() != IPC::Message::NOT_NESTED) {
       MOZ_RELEASE_ASSERT(!foundSync);
-      MOZ_RELEASE_ASSERT(msg->transaction_id() != transaction);
-      IPC_LOG("Removing msg from queue seqno=%d xid=%d", msg->seqno(),
-              msg->transaction_id());
+      MOZ_RELEASE_ASSERT(msg.transaction_id() != transaction);
+      IPC_LOG("Removing msg from queue seqno=%d xid=%d", msg.seqno(),
+              msg.transaction_id());
       foundSync = true;
-      if (!IsAlwaysDeferred(*msg)) {
+      if (!IsAlwaysDeferred(msg)) {
         mMaybeDeferredPendingCount--;
       }
       p = p->removeAndGetNext();

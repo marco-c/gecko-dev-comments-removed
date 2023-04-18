@@ -368,15 +368,15 @@ bool Channel::ChannelImpl::ProcessIncomingMessages(
       
       
       uint32_t message_length = 0;
-      if (incoming_message_) {
-        message_length = incoming_message_->size();
+      if (incoming_message_.isSome()) {
+        message_length = incoming_message_.ref().size();
       } else {
         message_length = Message::MessageSize(p, end);
       }
 
       if (!message_length) {
         
-        MOZ_ASSERT(!incoming_message_);
+        MOZ_ASSERT(incoming_message_.isNothing());
 
         
         
@@ -390,10 +390,10 @@ bool Channel::ChannelImpl::ProcessIncomingMessages(
       input_buf_offset_ = 0;
 
       bool partial;
-      if (incoming_message_) {
+      if (incoming_message_.isSome()) {
         
         
-        Message& m = *incoming_message_;
+        Message& m = incoming_message_.ref();
 
         
         
@@ -412,7 +412,7 @@ bool Channel::ChannelImpl::ProcessIncomingMessages(
         
         uint32_t in_buf = std::min(message_length, uint32_t(end - p));
 
-        incoming_message_ = mozilla::MakeUnique<Message>(p, in_buf);
+        incoming_message_.emplace(p, in_buf);
         p += in_buf;
 
         
@@ -423,7 +423,7 @@ bool Channel::ChannelImpl::ProcessIncomingMessages(
         break;
       }
 
-      Message& m = *incoming_message_;
+      Message& m = incoming_message_.ref();
 
       
       
@@ -467,10 +467,10 @@ bool Channel::ChannelImpl::ProcessIncomingMessages(
         if (!AcceptHandles(m)) {
           return false;
         }
-        listener_->OnMessageReceived(std::move(incoming_message_));
+        listener_->OnMessageReceived(std::move(m));
       }
 
-      incoming_message_ = nullptr;
+      incoming_message_.reset();
     }
 
     bytes_read = 0;  

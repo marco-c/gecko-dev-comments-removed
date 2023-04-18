@@ -110,9 +110,9 @@ class GeckoChildProcessHost : public ChildProcessHost,
                   int32_t timeoutMs = 0);
 
   virtual void OnChannelConnected(base::ProcessId peer_pid) override;
-  virtual void OnMessageReceived(UniquePtr<IPC::Message> aMsg) override;
+  virtual void OnMessageReceived(IPC::Message&& aMsg) override;
   virtual void OnChannelError() override;
-  virtual void GetQueuedMessages(std::queue<UniquePtr<IPC::Message>>& queue) override;
+  virtual void GetQueuedMessages(std::queue<IPC::Message>& queue) override;
 
   
   
@@ -275,7 +275,7 @@ class GeckoChildProcessHost : public ChildProcessHost,
   
   
   
-  std::queue<UniquePtr<IPC::Message>> mQueue;
+  std::queue<IPC::Message> mQueue;
 
   
   nsCString mTmpDirName;

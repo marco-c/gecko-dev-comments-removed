@@ -24,7 +24,7 @@ class ForkServer {
   bool HandleMessages();
 
   
-  void OnMessageReceived(UniquePtr<IPC::Message> message);
+  void OnMessageReceived(IPC::Message&& message);
 
   static bool RunForkServer(int* aArgc, char*** aArgv);
 

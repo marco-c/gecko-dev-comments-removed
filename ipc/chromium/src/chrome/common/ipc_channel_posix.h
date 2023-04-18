@@ -135,7 +135,7 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
 
   
   
-  mozilla::UniquePtr<Message> incoming_message_;
+  mozilla::Maybe<Message> incoming_message_;
   std::vector<int> input_overflow_fds_;
 
   

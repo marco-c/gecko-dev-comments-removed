@@ -172,6 +172,8 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
 
   virtual ~Message();
 
+  Message();
+
   
   
   Message(int32_t routing_id, msgid_t type,
@@ -180,22 +182,20 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
 
   Message(const char* data, int data_len);
 
-  Message(const Message&) = delete;
-  Message(Message&&) = delete;
-  Message& operator=(const Message&) = delete;
-  Message& operator=(Message&&) = delete;
+  Message(const Message& other) = delete;
+  Message(Message&& other);
+  Message& operator=(const Message& other) = delete;
+  Message& operator=(Message&& other);
 
   
   
   
   
-  static mozilla::UniquePtr<Message> IPDLMessage(int32_t routing_id,
-                                                 msgid_t type,
-                                                 uint32_t segmentCapacity,
-                                                 HeaderFlags flags);
+  static Message* IPDLMessage(int32_t routing_id, msgid_t type,
+                              HeaderFlags flags);
 
   
-  static mozilla::UniquePtr<Message> ForSyncDispatchError(NestedLevel level);
+  static Message* ForSyncDispatchError(NestedLevel level);
 
   NestedLevel nested_level() const { return header()->flags.Level(); }
 
@@ -213,6 +213,8 @@ class Message : public mojo::core::ports::UserMessage, public Pickle {
   bool is_reply() const { return header()->flags.IsReply(); }
 
   bool is_reply_error() const { return header()->flags.IsReplyError(); }
+
+  bool is_valid() const { return !!header(); }
 
   msgid_t type() const { return header()->type; }
 
