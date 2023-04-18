@@ -154,7 +154,8 @@ class NetworkEventWatcher {
       return;
     }
     
-    if (this.persist) {
+    
+    if (this.persist || this.watcherActor.context.type == "all") {
       return;
     }
     
@@ -189,7 +190,7 @@ class NetworkEventWatcher {
       } else if (
         child.innerWindowId != innerWindowId &&
         windowGlobal.browsingContext ==
-          this.watcherActor.browserElement.browsingContext
+          this.watcherActor.browserElement?.browsingContext
       ) {
         child.destroy();
       }

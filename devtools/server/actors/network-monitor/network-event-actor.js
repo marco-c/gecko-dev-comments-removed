@@ -100,17 +100,23 @@ const NetworkEventActor = protocol.ActorClassWithSpec(networkEventSpec, {
   asResource() {
     
     
-    const browsingContextID = this._browsingContextID
-      ? this._browsingContextID
-      : -1;
-
-    
-    
     if (!this._browsingContextID && this._networkEventWatcher.browserId) {
       throw new Error(
         `Got a request ${this._request.url} without a browsingContextID set`
       );
     }
+
+    
+    
+    
+    
+    
+    
+    const browsingContextID =
+      this._browsingContextID && this._networkEventWatcher.browserId
+        ? this._browsingContextID
+        : -1;
+
     return {
       resourceType: NETWORK_EVENT,
       browsingContextID,
