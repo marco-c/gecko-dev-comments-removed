@@ -27,7 +27,12 @@ class MFTDecoder final {
   
   
   
-  HRESULT Create(const GUID& aMFTClsID);
+  
+  
+  
+  
+  HRESULT Create(const GUID& aCategory, const GUID& aInSubtype,
+                 const GUID& aOutSubtype);
 
   
   
@@ -46,6 +51,9 @@ class MFTDecoder final {
 
   
   already_AddRefed<IMFAttributes> GetOutputStreamAttributes();
+
+  
+  HRESULT GetInputMediaType(RefPtr<IMFMediaType>& aMediaType);
 
   
   

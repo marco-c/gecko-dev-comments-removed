@@ -18,6 +18,7 @@
 #include "MediaInfo.h"
 #include "MediaTelemetryConstants.h"
 #include "VPXDecoder.h"
+#include "AOMDecoder.h"
 #include "VideoUtils.h"
 #include "WMFDecoderModule.h"
 #include "WMFUtils.h"
@@ -61,14 +62,6 @@ const GUID MFVideoFormat_VP90 = {
     0x0010,
     {0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71}};
 #endif
-
-
-
-extern const GUID CLSID_WebmMfVpxDec = {
-    0xe3aaf548,
-    0xc9a4,
-    0x4c6e,
-    {0x23, 0x4d, 0x5a, 0xda, 0x37, 0x4b, 0x00, 0x00}};
 
 #if !defined(__MINGW32__) && _WIN32_WINNT < _WIN32_WINNT_WIN8
 const GUID MF_SA_MINIMUM_OUTPUT_SAMPLE_COUNT = {
@@ -162,6 +155,8 @@ WMFVideoMFTManager::WMFVideoMFTManager(
     mStreamType = VP8;
   } else if (VPXDecoder::IsVP9(aConfig.mMimeType)) {
     mStreamType = VP9;
+  } else if (AOMDecoder::IsAV1(aConfig.mMimeType)) {
+    mStreamType = AV1;
   } else {
     mStreamType = Unknown;
   }
@@ -178,20 +173,6 @@ WMFVideoMFTManager::~WMFVideoMFTManager() {
   MOZ_COUNT_DTOR(WMFVideoMFTManager);
 }
 
-const GUID& WMFVideoMFTManager::GetMFTGUID() {
-  MOZ_ASSERT(mStreamType != Unknown);
-  switch (mStreamType) {
-    case H264:
-      return CLSID_CMSH264DecoderMFT;
-    case VP8:
-      return CLSID_WebmMfVpxDec;
-    case VP9:
-      return CLSID_WebmMfVpxDec;
-    default:
-      return GUID_NULL;
-  };
-}
-
 const GUID& WMFVideoMFTManager::GetMediaSubtypeGUID() {
   MOZ_ASSERT(mStreamType != Unknown);
   switch (mStreamType) {
@@ -201,6 +182,8 @@ const GUID& WMFVideoMFTManager::GetMediaSubtypeGUID() {
       return MFVideoFormat_VP80;
     case VP9:
       return MFVideoFormat_VP90;
+    case AV1:
+      return MFVideoFormat_AV1;
     default:
       return GUID_NULL;
   };
@@ -310,7 +293,16 @@ MediaResult WMFVideoMFTManager::InitInternal() {
                  InitializeDXVA();
 
   RefPtr<MFTDecoder> decoder = new MFTDecoder();
-  HRESULT hr = decoder->Create(GetMFTGUID());
+  const GUID subtype = GetMediaSubtypeGUID();
+  HRESULT hr =
+      decoder->Create(MFT_CATEGORY_VIDEO_DECODER, subtype, MFVideoFormat_NV12);
+  if (FAILED(hr)) {
+    NS_WARNING(
+        "Hardware decoder MFT creation failed, trying software decoding");
+    hr = decoder->Create(
+        MFT_CATEGORY_VIDEO_DECODER, subtype,
+        mStreamType == H264 ? MFVideoFormat_YUY2 : MFVideoFormat_YV12);
+  }
   NS_ENSURE_TRUE(SUCCEEDED(hr),
                  MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                              RESULT_DETAIL("Can't create the MFT decoder.")));
@@ -377,10 +369,11 @@ MediaResult WMFVideoMFTManager::InitInternal() {
       
       mDXVA2Manager.reset();
     }
-    if (mStreamType == VP9 || mStreamType == VP8) {
-      return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
-                         RESULT_DETAIL("Use VP8/9 MFT only if HW acceleration "
-                                       "is available."));
+    if (mStreamType == VP9 || mStreamType == VP8 || mStreamType == AV1) {
+      return MediaResult(
+          NS_ERROR_DOM_MEDIA_FATAL_ERR,
+          RESULT_DETAIL("Use VP8/VP9/AV1 MFT only if HW acceleration "
+                        "is available."));
     }
     Telemetry::Accumulate(Telemetry::MEDIA_DECODER_BACKEND_USED,
                           uint32_t(media::MediaDecoderBackend::WMFSoftware));
@@ -393,14 +386,14 @@ MediaResult WMFVideoMFTManager::InitInternal() {
       MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                   RESULT_DETAIL("Fail to set the decoder media types.")));
 
-  RefPtr<IMFMediaType> outputType;
-  hr = mDecoder->GetOutputMediaType(outputType);
+  RefPtr<IMFMediaType> inputType;
+  hr = mDecoder->GetInputMediaType(inputType);
   NS_ENSURE_TRUE(
       SUCCEEDED(hr),
       MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
-                  RESULT_DETAIL("Fail to get the output media type.")));
+                  RESULT_DETAIL("Fail to get the input media type.")));
 
-  if (mUseHwAccel && !CanUseDXVA(outputType, mFramerate)) {
+  if (mUseHwAccel && !CanUseDXVA(inputType, mFramerate)) {
     mDXVAEnabled = false;
     
     
@@ -409,6 +402,13 @@ MediaResult WMFVideoMFTManager::InitInternal() {
 
   LOG("Video Decoder initialized, Using DXVA: %s",
       (mUseHwAccel ? "Yes" : "No"));
+
+  RefPtr<IMFMediaType> outputType;
+  hr = mDecoder->GetOutputMediaType(outputType);
+  NS_ENSURE_TRUE(
+      SUCCEEDED(hr),
+      MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                  RESULT_DETAIL("Fail to get the output media type.")));
 
   if (mUseHwAccel) {
     hr = mDXVA2Manager->ConfigureForSize(
@@ -551,14 +551,16 @@ WMFVideoMFTManager::Input(MediaRawData* aSample) {
 
 
 
+
 bool WMFVideoMFTManager::CanUseDXVA(IMFMediaType* aType, float aFramerate) {
   MOZ_ASSERT(mDXVA2Manager);
   
-  if (mStreamType != H264) {
-    return true;
+  
+  if (mStreamType == H264 || mStreamType == AV1) {
+    return mDXVA2Manager->SupportsConfig(aType, aFramerate);
   }
 
-  return mDXVA2Manager->SupportsConfig(aType, aFramerate);
+  return true;
 }
 
 TimeUnit WMFVideoMFTManager::GetSampleDurationOrLastKnownDuration(
@@ -855,6 +857,18 @@ WMFVideoMFTManager::Output(int64_t aStreamOffset, RefPtr<MediaData>& aOutData) {
       }
       TimeUnit pts = GetSampleTime(sample);
       TimeUnit duration = GetSampleDurationOrLastKnownDuration(sample);
+
+      
+      
+      if (mStreamType == AV1 && duration == pts) {
+        LOG("Video sample duration (%" PRId64 ") matched timestamp (%" PRId64
+            "), setting to previous sample duration (%" PRId64 ") instead.",
+            pts.ToMicroseconds(), duration.ToMicroseconds(),
+            mLastDuration.ToMicroseconds());
+        duration = mLastDuration;
+        sample->SetSampleDuration(UsecsToHNs(duration.ToMicroseconds()));
+      }
+
       if (!pts.IsValid() || !duration.IsValid()) {
         return E_FAIL;
       }

@@ -241,6 +241,26 @@ static const GUID DXVA2_Intel_ModeH264_E = {
 
 
 
+static const GUID DXVA2_ModeVP8_VLD = {
+    0x90b899ea,
+    0x3a62,
+    0x4705,
+    {0x88, 0xb3, 0x8d, 0xf0, 0x4b, 0x27, 0x44, 0xe7}};
+
+static const GUID DXVA2_ModeVP9_VLD_Profile0 = {
+    0x463707f8,
+    0xa1d0,
+    0x4585,
+    {0x87, 0x6d, 0x83, 0xaa, 0x6d, 0x60, 0xb8, 0x9e}};
+
+static const GUID DXVA2_ModeAV1_Profile0 = {
+    0xb8be4ccb,
+    0xcf53,
+    0x46ba,
+    {0x8d, 0x59, 0xd6, 0xb8, 0xa6, 0xda, 0x5d, 0x2a}};
+
+
+
 
 
 
@@ -614,14 +634,36 @@ class D3D11DXVA2Manager : public DXVA2Manager {
 };
 
 bool D3D11DXVA2Manager::SupportsConfig(IMFMediaType* aType, float aFramerate) {
-  D3D11_VIDEO_DECODER_DESC desc;
-  desc.Guid = mDecoderGUID;
-  desc.OutputFormat = DXGI_FORMAT_NV12;
+  D3D11_VIDEO_DECODER_DESC desc = {.OutputFormat = DXGI_FORMAT_NV12};
+  GUID subtype;
+
   HRESULT hr = MFGetAttributeSize(aType, MF_MT_FRAME_SIZE, &desc.SampleWidth,
                                   &desc.SampleHeight);
   NS_ENSURE_TRUE(SUCCEEDED(hr), false);
   NS_ENSURE_TRUE(desc.SampleWidth <= MAX_VIDEO_WIDTH, false);
   NS_ENSURE_TRUE(desc.SampleHeight <= MAX_VIDEO_HEIGHT, false);
+
+  hr = aType->GetGUID(MF_MT_SUBTYPE, &subtype);
+  NS_ENSURE_TRUE(SUCCEEDED(hr), false);
+
+  if (subtype == MFVideoFormat_H264) {
+    
+    NS_ENSURE_FALSE(IsUnsupportedResolution(desc.SampleWidth, desc.SampleHeight,
+                                            aFramerate),
+                    false);
+    
+    
+    
+    desc.Guid = mDecoderGUID;
+  } else if (subtype == MFVideoFormat_VP80) {
+    desc.Guid = DXVA2_ModeVP8_VLD;
+  } else if (subtype == MFVideoFormat_VP90) {
+    desc.Guid = DXVA2_ModeVP9_VLD_Profile0;
+  } else if (subtype == MFVideoFormat_AV1) {
+    desc.Guid = DXVA2_ModeAV1_Profile0;
+  } else {
+    return false;
+  }
 
   return CanCreateDecoder(desc, aFramerate);
 }
@@ -733,11 +775,13 @@ D3D11DXVA2Manager::InitInternal(layers::KnowsCompositor* aKnowsCompositor,
   RefPtr<MFTDecoder> mft;
   mozilla::mscom::EnsureMTA([&]() -> void {
     mft = new MFTDecoder();
-    hr = mft->Create(CLSID_VideoProcessorMFT);
+    hr = mft->Create(MFT_CATEGORY_VIDEO_PROCESSOR, MFVideoFormat_NV12,
+                     MFVideoFormat_ARGB32);
 
     if (!SUCCEEDED(hr)) {
       aFailureReason = nsPrintfCString(
-          "MFTDecoder::Create(CLSID_VideoProcessorMFT) failed with code %X",
+          "MFTDecoder::Create of Video Processor MFT for color conversion "
+          "failed with code %X",
           hr);
       return;
     }
@@ -1194,10 +1238,6 @@ D3D11DXVA2Manager::ConfigureForSize(IMFMediaType* aInputType,
 
 bool D3D11DXVA2Manager::CanCreateDecoder(const D3D11_VIDEO_DECODER_DESC& aDesc,
                                          const float aFramerate) const {
-  if (IsUnsupportedResolution(aDesc.SampleWidth, aDesc.SampleHeight,
-                              aFramerate)) {
-    return false;
-  }
   RefPtr<ID3D11VideoDecoder> decoder = CreateDecoder(aDesc);
   return decoder.get() != nullptr;
 }
