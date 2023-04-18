@@ -2823,8 +2823,8 @@ class PresShell final : public nsStubDocumentObserver,
   
   
   
-  RefPtr<Document> const mDocument;
-  RefPtr<nsPresContext> const mPresContext;
+  MOZ_KNOWN_LIVE RefPtr<Document> const mDocument;
+  MOZ_KNOWN_LIVE RefPtr<nsPresContext> const mPresContext;
   
   RefPtr<StyleSheet> mPrefStyleSheet;
   UniquePtr<nsCSSFrameConstructor> mFrameConstructor;

@@ -289,7 +289,7 @@ class TextComposition final {
   
   
   nsPresContext* mPresContext;
-  nsCOMPtr<nsINode> mNode;
+  RefPtr<nsINode> mNode;
   RefPtr<BrowserParent> mBrowserParent;
 
   

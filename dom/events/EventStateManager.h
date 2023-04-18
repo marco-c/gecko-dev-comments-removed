@@ -1167,7 +1167,7 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   
   LayoutDeviceIntPoint mGestureDownPoint;  
   
-  nsCOMPtr<nsIContent> mGestureDownContent;
+  RefPtr<nsIContent> mGestureDownContent;
   
   
   

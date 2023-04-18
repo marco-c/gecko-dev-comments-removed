@@ -1809,7 +1809,9 @@ void EventStateManager::FireContextClick() {
       AutoHandlingUserInputStatePusher userInpStatePusher(true, &event);
 
       
-      EventDispatcher::Dispatch(mGestureDownContent, mPresContext, &event,
+      RefPtr<nsIContent> gestureDownContent = mGestureDownContent;
+      RefPtr<nsPresContext> presContext = mPresContext;
+      EventDispatcher::Dispatch(gestureDownContent, presContext, &event,
                                 nullptr, &status);
 
       
