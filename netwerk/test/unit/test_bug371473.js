@@ -1,19 +1,15 @@
 "use strict";
 
 function test_not_too_long() {
-  var ios = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
-
   var spec = "jar:http://example.com/bar.jar!/";
   try {
-    ios.newURI(spec);
+    Services.io.newURI(spec);
   } catch (e) {
     do_throw("newURI threw even though it wasn't passed a large nested URI?");
   }
 }
 
 function test_too_long() {
-  var ios = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
-
   var i;
   var prefix = "jar:";
   for (i = 0; i < 16; i++) {
@@ -30,7 +26,7 @@ function test_too_long() {
     
     
     
-    ios.newURI(spec);
+    Services.io.newURI(spec);
   } catch (e) {}
 }
 

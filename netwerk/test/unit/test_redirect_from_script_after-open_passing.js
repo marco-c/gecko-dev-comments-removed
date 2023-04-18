@@ -120,9 +120,7 @@ Redirector.prototype = {
   
   
   register() {
-    Cc["@mozilla.org/observer-service;1"]
-      .getService(Ci.nsIObserverService)
-      .addObserver(this, redirectHook, true);
+    Services.obs.addObserver(this, redirectHook, true);
   },
 
   QueryInterface: ChromeUtils.generateQI([
@@ -136,9 +134,6 @@ Redirector.prototype = {
         do_throw(redirectHook + " observed a non-HTTP channel");
       }
       var channel = subject.QueryInterface(Ci.nsIHttpChannel);
-      var ioservice = Cc["@mozilla.org/network/io-service;1"].getService(
-        Ci.nsIIOService
-      );
       var target = null;
       if (channel.URI.spec == baitURI) {
         target = redirectedURI;
@@ -151,7 +146,7 @@ Redirector.prototype = {
       }
       
       if (target) {
-        var tURI = ioservice.newURI(target);
+        var tURI = Services.io.newURI(target);
         try {
           channel.redirectTo(tURI);
         } catch (e) {

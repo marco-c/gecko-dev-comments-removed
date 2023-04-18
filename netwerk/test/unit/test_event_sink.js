@@ -137,14 +137,10 @@ function run_test() {
 function run_test_continued() {
   eventsink.called = false;
 
-  var catMan = Cc["@mozilla.org/categorymanager;1"].getService(
-    Ci.nsICategoryManager
-  );
-
   var chan;
   if (listener._iteration == 1) {
     
-    catMan.nsICategoryManager.addCategoryEntry(
+    Services.catMan.nsICategoryManager.addCategoryEntry(
       categoryName,
       "unit test",
       sinkContract,
@@ -154,7 +150,7 @@ function run_test_continued() {
     chan = makeChan(URL + "/redirect");
   } else {
     
-    catMan.nsICategoryManager.deleteCategoryEntry(
+    Services.catMan.nsICategoryManager.deleteCategoryEntry(
       categoryName,
       "unit test",
       false

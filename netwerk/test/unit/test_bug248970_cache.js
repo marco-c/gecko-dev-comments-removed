@@ -142,10 +142,7 @@ function run_test2() {
 
 function run_test3() {
   
-  var obsvc = Cc["@mozilla.org/observer-service;1"].getService(
-    Ci.nsIObserverService
-  );
-  obsvc.notifyObservers(null, "last-pb-context-exited");
+  Services.obs.notifyObservers(null, "last-pb-context-exited");
 
   
   get_device_entry_count(kMemoryDevice, null, function(count) {

@@ -123,6 +123,8 @@ class TRRDNSListener {
     this.type = this.options.type ?? Ci.nsIDNSService.RESOLVE_TYPE_DEFAULT;
     let trrServer = this.options.trrServer || "";
 
+    
+    
     const threadManager = Cc["@mozilla.org/thread-manager;1"].getService(
       Ci.nsIThreadManager
     );

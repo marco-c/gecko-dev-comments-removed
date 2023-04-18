@@ -17,12 +17,8 @@ var oStr;
 function run_test() {
   do_get_profile();
 
-  var prefBranch = Cc["@mozilla.org/preferences-service;1"].getService(
-    Ci.nsIPrefBranch
-  );
-
   
-  prefBranch.setIntPref("browser.cache.disk.max_chunks_memory_usage", 300);
+  Services.prefs.setIntPref("browser.cache.disk.max_chunks_memory_usage", 300);
 
   asyncOpenCacheEntry(
     "http://a/",

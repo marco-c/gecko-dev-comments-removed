@@ -52,9 +52,7 @@ function test_sockets(serverSocket) {
 }
 
 function run_test() {
-  var ps = Cc["@mozilla.org/preferences-service;1"].getService(
-    Ci.nsIPrefBranch
-  );
+  var ps = Services.prefs;
   
   
   ps.setBoolPref("network.notify.changed", false);

@@ -8,11 +8,7 @@ const ServerSocket = CC(
   "init"
 );
 
-var obs = Cc["@mozilla.org/observer-service;1"].getService(
-  Ci.nsIObserverService
-);
-
-var ios = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
+var obs = Services.obs;
 
 
 

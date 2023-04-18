@@ -152,9 +152,7 @@ TestFailedStreamCallback.prototype = {
 
 function test_speculative_connect() {
   serv = new TestServer();
-  var ssm = Cc["@mozilla.org/scriptsecuritymanager;1"].getService(
-    Ci.nsIScriptSecurityManager
-  );
+  var ssm = Services.scriptSecurityManager;
   var URI = ios.newURI(
     "http://localhost:" + serv.listener.port + "/just/a/test"
   );
@@ -210,9 +208,7 @@ function test_hostnames_resolving_to_addresses(host, next) {
   
   
   
-  var gThreadManager = Cc["@mozilla.org/thread-manager;1"].getService(
-    Ci.nsIThreadManager
-  );
+  var gThreadManager = Services.tm;
   var mainThread = gThreadManager.currentThread;
 
   try {
@@ -293,9 +289,7 @@ function test_proxies(proxyHost, next) {
   
   
   
-  var gThreadManager = Cc["@mozilla.org/thread-manager;1"].getService(
-    Ci.nsIThreadManager
-  );
+  var gThreadManager = Services.tm;
   var mainThread = gThreadManager.currentThread;
 
   try {
@@ -356,7 +350,7 @@ function next_test() {
 
 
 function run_test() {
-  ios = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
+  ios = Services.io;
 
   Services.prefs.setIntPref("network.http.speculative-parallel-limit", 6);
   registerCleanupFunction(() => {

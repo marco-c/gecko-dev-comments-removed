@@ -1,10 +1,8 @@
 "use strict";
 
 function run_test() {
-  var ios = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
-
   
-  var newURI = ios.newURI("http://\u5341%2ecom/");
+  var newURI = Services.io.newURI("http://\u5341%2ecom/");
   Assert.equal(newURI.asciiHost, "xn--kkr.com");
 
   

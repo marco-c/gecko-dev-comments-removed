@@ -3,6 +3,7 @@
 "use strict";
 
 function getCookieService() {
+  
   return Cc["@mozilla.org/cookiemanager;1"].getService(Ci.nsICookieManager);
 }
 

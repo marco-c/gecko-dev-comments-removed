@@ -140,9 +140,7 @@ function run_test_iteration(index) {
   if (sniffing_enabled && index == 2) {
     
     
-    var catMan = Cc["@mozilla.org/categorymanager;1"].getService(
-      Ci.nsICategoryManager
-    );
+    var catMan = Services.catMan;
     catMan.nsICategoryManager.addCategoryEntry(
       categoryName,
       "unit test",

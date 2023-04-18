@@ -49,8 +49,7 @@ async function run_all_tests() {
 
   
   
-  let procType = Cc["@mozilla.org/xre/runtime;1"].getService(Ci.nsIXULRuntime)
-    .processType;
+  let procType = Services.appinfo.processType;
   if (procType != Ci.nsIXULRuntime.PROCESS_TYPE_DEFAULT) {
     return;
   }
