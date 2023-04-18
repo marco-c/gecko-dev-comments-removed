@@ -1015,7 +1015,8 @@ void HyperTextAccessible::TextAtOffset(int32_t aOffset,
       (aBoundaryType == nsIAccessibleText::BOUNDARY_WORD_START ||
        aBoundaryType == nsIAccessibleText::BOUNDARY_WORD_END ||
        aBoundaryType == nsIAccessibleText::BOUNDARY_LINE_START ||
-       aBoundaryType == nsIAccessibleText::BOUNDARY_LINE_END)) {
+       aBoundaryType == nsIAccessibleText::BOUNDARY_LINE_END ||
+       aBoundaryType == nsIAccessibleText::BOUNDARY_PARAGRAPH)) {
     
     
     
