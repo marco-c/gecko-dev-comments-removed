@@ -54,11 +54,11 @@ class AudioInputSource : public CubebInputStream::Listener {
   
   
   
-  virtual void Start();
+  void Start();
   
-  virtual void Stop();
+  void Stop();
   
-  virtual AudioSegment GetAudioSegment(TrackTime aDuration);
+  AudioSegment GetAudioSegment(TrackTime aDuration);
 
   
   
