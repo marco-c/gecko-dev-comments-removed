@@ -10,6 +10,7 @@
 
 XPCOMUtils.defineLazyModuleGetters(this, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.jsm",
+  PromiseUtils: "resource://gre/modules/PromiseUtils.jsm",
   SessionStartup: "resource:///modules/sessionstore/SessionStartup.jsm",
   setTimeout: "resource://gre/modules/Timer.jsm",
   StartupPerformance: "resource:///modules/sessionstore/StartupPerformance.jsm",
@@ -19,10 +20,18 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 
 this.sessionrestore = class extends ExtensionAPI {
   onStartup() {
+    this.promiseIdleFinished = PromiseUtils.defer();
+    Services.obs.addObserver(this, "browser-idle-startup-tasks-finished");
     
     
     
     this.run();
+  }
+
+  observe(subject, topic, data) {
+    if (topic == "browser-idle-startup-tasks-finished") {
+      this.promiseIdleFinished.resolve();
+    }
   }
 
   async ensureTalosParentProfiler() {
@@ -148,6 +157,10 @@ this.sessionrestore = class extends ExtensionAPI {
       dump(ex.stack);
       dump("\n");
     }
+
+    
+    
+    await this.promiseIdleFinished.promise;
 
     Services.startup.quit(Services.startup.eForceQuit);
   }
