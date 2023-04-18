@@ -947,6 +947,10 @@ bool DelazifyTask::init(
       break;
   }
 
+  if (!strategy) {
+    return false;
+  }
+
   
   BorrowingCompilationStencil borrow(merger.getResult());
   ScriptIndex topLevel{0};
