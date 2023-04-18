@@ -128,7 +128,7 @@ static constexpr Register ABINonArgReturnVolatileReg = ecx;
 
 
 
-static constexpr Register WasmTlsReg = esi;
+static constexpr Register InstanceReg = esi;
 
 
 

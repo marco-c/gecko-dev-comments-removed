@@ -415,7 +415,7 @@ class FunctionCompiler {
 
     
     tlsPointer_ =
-        MWasmParameter::New(alloc(), ABIArg(WasmTlsReg), MIRType::Pointer);
+        MWasmParameter::New(alloc(), ABIArg(InstanceReg), MIRType::Pointer);
     curBlock_->add(tlsPointer_);
     if (!mirGen_.ensureBallast()) {
       return false;
@@ -1855,7 +1855,7 @@ class FunctionCompiler {
     }
 
     if (!call->regArgs_.append(
-            MWasmCall::Arg(AnyRegister(WasmTlsReg), tlsPointer_))) {
+            MWasmCall::Arg(AnyRegister(InstanceReg), tlsPointer_))) {
       return false;
     }
 

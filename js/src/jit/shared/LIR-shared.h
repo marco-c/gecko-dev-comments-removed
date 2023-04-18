@@ -3222,7 +3222,7 @@ class LWasmCall : public LVariadicInstruction<0, 0> {
     
     
     
-    return !reg.isFloat() && reg.gpr() == WasmTlsReg;
+    return !reg.isFloat() && reg.gpr() == InstanceReg;
   }
 
   bool needsBoundsCheck() const { return needsBoundsCheck_; }

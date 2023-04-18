@@ -566,7 +566,8 @@ class BaseRegAlloc {
 
 #ifdef RABALDR_PIN_INSTANCE
     
-    availGPR.take(WasmTlsReg);
+    
+    availGPR.take(InstanceReg);
 #endif
 
     

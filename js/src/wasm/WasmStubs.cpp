@@ -776,14 +776,14 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   
   arg = abi.next(MIRType::Pointer);
   if (arg.kind() == ABIArg::GPR) {
-    masm.movePtr(arg.gpr(), WasmTlsReg);
+    masm.movePtr(arg.gpr(), InstanceReg);
   } else {
     masm.loadPtr(
         Address(masm.getStackPointer(), argBase + arg.offsetFromArgBase()),
-        WasmTlsReg);
+        InstanceReg);
   }
 
-  WasmPush(masm, WasmTlsReg);
+  WasmPush(masm, InstanceReg);
 
   
   WasmPush(masm, argv);
@@ -820,7 +820,7 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   masm.movePtr(ImmWord(0), FramePointer);
   masm.loadWasmPinnedRegsFromTls();
 
-  masm.storePtr(WasmTlsReg,
+  masm.storePtr(InstanceReg,
                 Address(masm.getStackPointer(), WasmCalleeTlsOffsetBeforeCall));
 
   
@@ -844,7 +844,7 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   
   WasmPop(masm, argv);
 
-  WasmPop(masm, WasmTlsReg);
+  WasmPop(masm, InstanceReg);
 
   
   
@@ -913,7 +913,7 @@ static void GenerateJitEntryLoadTls(MacroAssembler& masm, unsigned frameSize) {
   
   offset = FunctionExtended::offsetOfExtendedSlot(
       FunctionExtended::WASM_TLSDATA_SLOT);
-  masm.loadPrivate(Address(ScratchIonEntry, offset), WasmTlsReg);
+  masm.loadPrivate(Address(ScratchIonEntry, offset), InstanceReg);
 }
 
 
@@ -928,12 +928,14 @@ static void GenerateJitEntryThrow(MacroAssembler& masm, unsigned frameSize) {
   masm.freeStack(frameSize);
   MoveSPForJitABI(masm);
 
-  masm.loadPtr(Address(WasmTlsReg, Instance::offsetOfCx()), ScratchIonEntry);
+  masm.loadPtr(Address(InstanceReg, Instance::offsetOfCx()),
+               ScratchIonEntry);
   masm.enterFakeExitFrameForWasm(ScratchIonEntry, ScratchIonEntry,
                                  ExitFrameType::WasmGenericJitEntry);
 
-  masm.loadPtr(Address(WasmTlsReg, Instance::offsetOfJSJitExceptionHandler()),
-               ScratchIonEntry);
+  masm.loadPtr(
+      Address(InstanceReg, Instance::offsetOfJSJitExceptionHandler()),
+      ScratchIonEntry);
   masm.jump(ScratchIonEntry);
 }
 
@@ -1277,7 +1279,7 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
   
   masm.loadWasmPinnedRegsFromTls();
 
-  masm.storePtr(WasmTlsReg,
+  masm.storePtr(InstanceReg,
                 Address(masm.getStackPointer(), WasmCalleeTlsOffsetBeforeCall));
 
   
@@ -1355,7 +1357,7 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
             
             
             GenerateJitEntryLoadTls(masm,  0);
-            UnboxAnyrefIntoValueReg(masm, WasmTlsReg, ReturnReg,
+            UnboxAnyrefIntoValueReg(masm, InstanceReg, ReturnReg,
                                     JSReturnOperand, WasmJitEntryReturnScratch);
             break;
           case RefType::TypeIndex:
@@ -1403,9 +1405,10 @@ static bool GenerateJitEntry(MacroAssembler& masm, size_t funcExportIndex,
 
     
     if (argsIter->kind() == ABIArg::GPR) {
-      masm.movePtr(WasmTlsReg, argsIter->gpr());
+      masm.movePtr(InstanceReg, argsIter->gpr());
     } else {
-      masm.storePtr(WasmTlsReg, Address(sp, argsIter->offsetFromArgBase()));
+      masm.storePtr(InstanceReg,
+                    Address(sp, argsIter->offsetFromArgBase()));
     }
     argsIter++;
 
@@ -1597,8 +1600,8 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
   GenPrintf(DebugChannel::Function, masm, "\n");
 
   
-  masm.movePtr(ImmPtr(&inst), WasmTlsReg);
-  masm.storePtr(WasmTlsReg,
+  masm.movePtr(ImmPtr(&inst), InstanceReg);
+  masm.storePtr(InstanceReg,
                 Address(masm.getStackPointer(), WasmCalleeTlsOffsetBeforeCall));
   masm.loadWasmPinnedRegsFromTls();
 
@@ -1659,7 +1662,7 @@ void wasm::GenerateDirectCallFromJit(MacroAssembler& masm, const FuncExport& fe,
           case wasm::RefType::Extern:
             
             
-            UnboxAnyrefIntoValueReg(masm, WasmTlsReg, ReturnReg,
+            UnboxAnyrefIntoValueReg(masm, InstanceReg, ReturnReg,
                                     JSReturnOperand, WasmJitEntryReturnScratch);
             break;
           case wasm::RefType::TypeIndex:
@@ -1990,7 +1993,7 @@ static bool GenerateImportFunction(jit::MacroAssembler& masm,
   masm.wasmReserveStackChecked(framePushed, BytecodeOffset(0));
   MOZ_ASSERT(masm.framePushed() == framePushed);
 
-  masm.storePtr(WasmTlsReg,
+  masm.storePtr(InstanceReg,
                 Address(masm.getStackPointer(), framePushed - sizeOfTlsSlot));
 
   
@@ -2025,7 +2028,7 @@ static bool GenerateImportFunction(jit::MacroAssembler& masm,
 
   
   masm.loadPtr(Address(masm.getStackPointer(), framePushed - sizeOfTlsSlot),
-               WasmTlsReg);
+               InstanceReg);
   masm.loadWasmPinnedRegsFromTls();
 
   
@@ -2121,9 +2124,9 @@ static bool GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi,
 
   
   if (i->kind() == ABIArg::GPR) {
-    masm.movePtr(WasmTlsReg, i->gpr());
+    masm.movePtr(InstanceReg, i->gpr());
   } else {
-    masm.storePtr(WasmTlsReg,
+    masm.storePtr(InstanceReg,
                   Address(masm.getStackPointer(), i->offsetFromArgBase()));
   }
   i++;
@@ -2235,7 +2238,7 @@ static bool GenerateImportInterpExit(MacroAssembler& masm, const FuncImport& fi,
 
   
   
-  MOZ_ASSERT(NonVolatileRegs.has(WasmTlsReg));
+  MOZ_ASSERT(NonVolatileRegs.has(InstanceReg));
 #if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_ARM) ||      \
     defined(JS_CODEGEN_ARM64) || defined(JS_CODEGEN_MIPS64) || \
     defined(JS_CODEGEN_LOONG64)
@@ -2320,14 +2323,16 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
   
   Register scratch = ABINonArgReturnReg1;   
   Register scratch2 = ABINonArgReturnReg0;  
-  FillArgumentArrayForJitExit(masm, WasmTlsReg, funcImportIndex, fi.funcType(),
-                              argOffset, scratch, scratch2, throwLabel);
+  FillArgumentArrayForJitExit(masm, InstanceReg, funcImportIndex,
+                              fi.funcType(), argOffset, scratch, scratch2,
+                              throwLabel);
   argOffset += fi.funcType().args().length() * sizeof(Value);
   MOZ_ASSERT(argOffset == sizeOfThisAndArgs + sizeOfPreFrame + frameAlignExtra);
 
   
   const size_t savedTlsOffset = argOffset;
-  masm.storePtr(WasmTlsReg, Address(masm.getStackPointer(), savedTlsOffset));
+  masm.storePtr(InstanceReg,
+                Address(masm.getStackPointer(), savedTlsOffset));
 
   
   Register callee = ABINonArgReturnReg0;  
@@ -2385,7 +2390,8 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
   AssertStackAlignment(masm, JitStackAlignment,
                        sizeOfRetAddr + frameAlignExtra);
 
-  masm.loadPtr(Address(masm.getStackPointer(), savedTlsOffset), WasmTlsReg);
+  masm.loadPtr(Address(masm.getStackPointer(), savedTlsOffset),
+               InstanceReg);
   masm.moveStackPtrTo(FramePointer);
   masm.addPtr(Imm32(masm.framePushed()), FramePointer);
   offsets->untrustedFPEnd = masm.currentOffset();
@@ -2474,8 +2480,9 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
   {
     
     masm.bind(&rectify);
-    masm.loadPtr(Address(WasmTlsReg, Instance::offsetOfJSJitArgsRectifier()),
-                 callee);
+    masm.loadPtr(
+        Address(InstanceReg, Instance::offsetOfJSJitArgsRectifier()),
+        callee);
     masm.jump(&rejoinBeforeCall);
   }
 
@@ -2823,7 +2830,7 @@ static void ClobberWasmRegsForLongJmp(MacroAssembler& masm, Register jumpReg) {
   RegisterAllocator::takeWasmRegisters(gprs);
   
   
-  gprs.take(WasmTlsReg);
+  gprs.take(InstanceReg);
   
   gprs.take(jumpReg);
   
@@ -2924,7 +2931,7 @@ static bool GenerateThrowStub(MacroAssembler& masm, Label* throwLabel,
   
   masm.bind(&resumeCatch);
   masm.loadPtr(Address(ReturnReg, offsetof(ResumeFromException, tlsData)),
-               WasmTlsReg);
+               InstanceReg);
   masm.loadWasmPinnedRegsFromTls();
   masm.switchToWasmTlsRealm(scratch1, scratch2);
   masm.loadPtr(Address(ReturnReg, offsetof(ResumeFromException, target)),

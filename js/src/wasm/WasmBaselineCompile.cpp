@@ -155,7 +155,7 @@ bool BaseCompiler::generateOutOfLineCode() {
 
 bool BaseCompiler::addInterruptCheck() {
 #ifdef RABALDR_PIN_INSTANCE
-  Register tmp(WasmTlsReg);
+  Register tmp(InstanceReg);
 #else
   ScratchI32 tmp(*this);
   fr.loadTlsPtr(tmp);
@@ -497,7 +497,7 @@ bool BaseCompiler::beginFunction() {
   }
 
   fr.zeroLocals(&ra);
-  fr.storeTlsPtr(WasmTlsReg);
+  fr.storeTlsPtr(InstanceReg);
 
   if (compilerEnv_.debugEnabled()) {
     insertBreakablePoint(CallSiteDesc::EnterFrame);
@@ -560,7 +560,7 @@ bool BaseCompiler::endFunction() {
 #ifndef RABALDR_PIN_INSTANCE
   
   
-  fr.loadTlsPtr(WasmTlsReg);
+  fr.loadTlsPtr(InstanceReg);
 #endif
   GenerateFunctionEpilogue(masm, fr.fixedAllocSize(), &offsets_);
 
@@ -602,7 +602,7 @@ bool BaseCompiler::endFunction() {
 
 void BaseCompiler::insertBreakablePoint(CallSiteDesc::Kind kind) {
 #ifndef RABALDR_PIN_INSTANCE
-  fr.loadTlsPtr(WasmTlsReg);
+  fr.loadTlsPtr(InstanceReg);
 #endif
 
   
@@ -628,7 +628,7 @@ void BaseCompiler::insertBreakablePoint(CallSiteDesc::Kind kind) {
   
   static_assert(Instance::offsetOfDebugTrapHandler() < 128);
   masm.cmpq(Imm32(0),
-            Operand(Address(WasmTlsReg, Instance::offsetOfDebugTrapHandler())));
+            Operand(Address(InstanceReg, Instance::offsetOfDebugTrapHandler())));
 
   
   Label L;
@@ -646,7 +646,7 @@ void BaseCompiler::insertBreakablePoint(CallSiteDesc::Kind kind) {
   
   static_assert(Instance::offsetOfDebugTrapHandler() < 128);
   masm.cmpl(Imm32(0),
-            Operand(Address(WasmTlsReg, Instance::offsetOfDebugTrapHandler())));
+            Operand(Address(InstanceReg, Instance::offsetOfDebugTrapHandler())));
 
   
   Label L;
@@ -665,7 +665,7 @@ void BaseCompiler::insertBreakablePoint(CallSiteDesc::Kind kind) {
   ARMRegister tmp(scratch, 64);
   Label L;
   masm.Ldr(tmp, MemOperand(
-                    Address(WasmTlsReg, Instance::offsetOfDebugTrapHandler())));
+                    Address(InstanceReg, Instance::offsetOfDebugTrapHandler())));
   masm.Cbz(tmp, &L);
   masm.Bl(&debugTrapStub_);
   masm.append(CallSiteDesc(iter_.lastOpcodeOffset(), kind),
@@ -673,7 +673,7 @@ void BaseCompiler::insertBreakablePoint(CallSiteDesc::Kind kind) {
   masm.bind(&L);
 #elif defined(JS_CODEGEN_ARM)
   ScratchPtr scratch(*this);
-  masm.loadPtr(Address(WasmTlsReg, Instance::offsetOfDebugTrapHandler()),
+  masm.loadPtr(Address(InstanceReg, Instance::offsetOfDebugTrapHandler()),
                scratch);
   masm.ma_orr(scratch, scratch, SetCC);
   masm.ma_bl(&debugTrapStub_, Assembler::NonZero);
@@ -708,7 +708,7 @@ void BaseCompiler::insertBreakpointStub() {
     ScratchPtr scratch(*this);
 
     
-    masm.loadPtr(Address(WasmTlsReg, Instance::offsetOfDebugFilter()), scratch);
+    masm.loadPtr(Address(InstanceReg, Instance::offsetOfDebugFilter()), scratch);
 
     
     
@@ -723,7 +723,7 @@ void BaseCompiler::insertBreakpointStub() {
     ScratchPtr scratch(*this);
 
     
-    masm.loadPtr(Address(WasmTlsReg, Instance::offsetOfDebugFilter()), scratch);
+    masm.loadPtr(Address(InstanceReg, Instance::offsetOfDebugFilter()), scratch);
     masm.branchTestPtr(Assembler::NonZero, Address(scratch, func_.index / 32),
                        Imm32(1 << (func_.index % 32)), &L);
     masm.abiret();
@@ -739,7 +739,7 @@ void BaseCompiler::insertBreakpointStub() {
 
     ScratchRegisterScope tmp1(masm);
     ScratchI32 tmp2(*this);
-    masm.ma_ldr(DTRAddr(WasmTlsReg, DtrOffImm(Instance::offsetOfDebugFilter())),
+    masm.ma_ldr(DTRAddr(InstanceReg, DtrOffImm(Instance::offsetOfDebugFilter())),
                 tmp1);
     masm.ma_mov(Imm32(func_.index / 32), tmp2);
     masm.ma_ldr(DTRAddr(tmp1, DtrRegImmShift(tmp2, LSL, 0)), tmp2);
@@ -756,7 +756,7 @@ void BaseCompiler::insertBreakpointStub() {
 
   
   masm.bind(&L);
-  masm.jump(Address(WasmTlsReg, Instance::offsetOfDebugTrapHandler()));
+  masm.jump(Address(InstanceReg, Instance::offsetOfDebugTrapHandler()));
 }
 
 void BaseCompiler::saveRegisterReturnValues(const ResultType& resultType) {
@@ -1312,7 +1312,7 @@ void BaseCompiler::endCall(FunctionCall& call, size_t stackSpace) {
 
   if (call.restoreRegisterStateAndRealm) {
     
-    fr.loadTlsPtr(WasmTlsReg);
+    fr.loadTlsPtr(InstanceReg);
     masm.loadWasmPinnedRegsFromTls();
     masm.switchToWasmTlsRealm(ABINonArgReturnReg0, ABINonArgReturnReg1);
   } else if (call.usesSystemAbi) {
@@ -1320,7 +1320,7 @@ void BaseCompiler::endCall(FunctionCall& call, size_t stackSpace) {
     
 #ifndef JS_CODEGEN_X86
     
-    fr.loadTlsPtr(WasmTlsReg);
+    fr.loadTlsPtr(InstanceReg);
     masm.loadWasmPinnedRegsFromTls();
 #endif
   }
@@ -1574,7 +1574,7 @@ CodeOffset BaseCompiler::builtinInstanceMethodCall(
     const FunctionCall& call) {
 #ifndef RABALDR_PIN_INSTANCE
   
-  fr.loadTlsPtr(WasmTlsReg);
+  fr.loadTlsPtr(InstanceReg);
 #endif
   CallSiteDesc desc(call.lineOrBytecode, CallSiteDesc::Symbolic);
   return masm.wasmCallBuiltinInstanceMethod(desc, instanceArg, builtin.identity,
@@ -1617,14 +1617,15 @@ void BaseCompiler::consumePendingException(RegRef* exnDst, RegRef* tagDst) {
   RegPtr pendingAddr = RegPtr(PreBarrierReg);
   needPtr(pendingAddr);
   masm.computeEffectiveAddress(
-      Address(WasmTlsReg, Instance::offsetOfPendingException()), pendingAddr);
+      Address(InstanceReg, Instance::offsetOfPendingException()),
+      pendingAddr);
   *exnDst = needRef();
   masm.loadPtr(Address(pendingAddr, 0), *exnDst);
   emitBarrieredClear(pendingAddr);
 
   *tagDst = needRef();
   masm.computeEffectiveAddress(
-      Address(WasmTlsReg, Instance::offsetOfPendingExceptionTag()),
+      Address(InstanceReg, Instance::offsetOfPendingExceptionTag()),
       pendingAddr);
   masm.loadPtr(Address(pendingAddr, 0), *tagDst);
   emitBarrieredClear(pendingAddr);
@@ -2077,7 +2078,7 @@ void BaseCompiler::convertI64ToF64(RegI64 src, bool isUnsigned, RegF64 dest,
 Address BaseCompiler::addressOfGlobalVar(const GlobalDesc& global, RegPtr tmp) {
   uint32_t globalToTlsOffset = Instance::offsetOfGlobalArea() + global.offset();
 #ifdef RABALDR_PIN_INSTANCE
-  movePtr(RegPtr(WasmTlsReg), tmp);
+  movePtr(RegPtr(InstanceReg), tmp);
 #else
   fr.loadTlsPtr(tmp);
 #endif
@@ -4019,7 +4020,7 @@ bool BaseCompiler::emitDelegate() {
   
   
   
-  fr.storeTlsPtr(WasmTlsReg);
+  fr.storeTlsPtr(InstanceReg);
 
   
   
@@ -4107,7 +4108,7 @@ bool BaseCompiler::endTryCatch(ResultType type) {
   
   
   
-  fr.storeTlsPtr(WasmTlsReg);
+  fr.storeTlsPtr(InstanceReg);
 
   
   
@@ -4129,7 +4130,7 @@ bool BaseCompiler::endTryCatch(ResultType type) {
   for (CatchInfo& info : tryCatch.catchInfos) {
     if (info.tagIndex != CatchAllIndex) {
       MOZ_ASSERT(!hasCatchAll);
-      loadTag(RegPtr(WasmTlsReg), info.tagIndex, catchTag);
+      loadTag(RegPtr(InstanceReg), info.tagIndex, catchTag);
       masm.branchPtr(Assembler::Equal, tag, catchTag, &info.label);
     } else {
       masm.jump(&info.label);
@@ -4182,7 +4183,7 @@ bool BaseCompiler::emitThrow() {
 
   
 #  ifdef RABALDR_PIN_INSTANCE
-  RegPtr tls(WasmTlsReg);
+  RegPtr tls(InstanceReg);
 #  else
   RegPtr tls = needPtr();
   fr.loadTlsPtr(tls);
@@ -4369,7 +4370,7 @@ bool BaseCompiler::emitCallArgs(const ValTypeVector& argTypes,
   }
 
 #ifndef RABALDR_PIN_INSTANCE
-  fr.loadTlsPtr(WasmTlsReg);
+  fr.loadTlsPtr(InstanceReg);
 #endif
   return true;
 }
@@ -5850,7 +5851,7 @@ void BaseCompiler::emitPreBarrier(RegPtr valueAddr) {
   ScratchPtr scratch(*this);
 
 #ifdef RABALDR_PIN_INSTANCE
-  Register tls(WasmTlsReg);
+  Register tls(InstanceReg);
 #else
   Register tls(scratch);
   fr.loadTlsPtr(tls);
@@ -5946,7 +5947,7 @@ void BaseCompiler::emitGcCanon(uint32_t typeIndex) {
   const TypeIdDesc& typeId = moduleEnv_.typeIds[typeIndex];
   RegRef rp = needRef();
 #  ifndef RABALDR_PIN_INSTANCE
-  fr.loadTlsPtr(WasmTlsReg);
+  fr.loadTlsPtr(InstanceReg);
 #  endif
   masm.loadWasmGlobalPtr(typeId.globalDataOffset(), rp);
   pushRef(rp);

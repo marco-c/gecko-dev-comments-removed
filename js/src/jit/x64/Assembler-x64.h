@@ -222,7 +222,7 @@ static constexpr Register ABINonArgReturnVolatileReg = r10;
 
 
 
-static constexpr Register WasmTlsReg = r14;
+static constexpr Register InstanceReg = r14;
 
 
 

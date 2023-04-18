@@ -61,7 +61,7 @@ static constexpr Register ABINonArgReturnVolatileReg = t0;
 
 
 
-static constexpr Register WasmTlsReg = s5;
+static constexpr Register InstanceReg = s5;
 
 
 

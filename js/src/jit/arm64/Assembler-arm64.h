@@ -700,7 +700,7 @@ static constexpr Register ABINonArgReturnVolatileReg = lr;
 
 
 
-static constexpr Register WasmTlsReg{Registers::x23};
+static constexpr Register InstanceReg{Registers::x23};
 
 
 

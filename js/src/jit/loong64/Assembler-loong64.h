@@ -193,7 +193,7 @@ static constexpr FloatRegister ABINonArgDoubleReg{FloatRegisters::f21,
 
 
 
-static constexpr Register WasmTlsReg = s4;
+static constexpr Register InstanceReg = s4;
 
 
 

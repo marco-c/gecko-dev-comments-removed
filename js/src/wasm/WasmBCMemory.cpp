@@ -230,7 +230,7 @@ void BaseCompiler::pushHeapBase() {
 void BaseCompiler::pushHeapBase() {
   RegPtr heapBase = need<RegPtr>();
 #  ifdef RABALDR_PIN_INSTANCE
-  movePtr(RegPtr(WasmTlsReg), heapBase);
+  movePtr(RegPtr(InstanceReg), heapBase);
 #  else
   fr.loadTlsPtr(heapBase);
 #  endif
@@ -448,7 +448,8 @@ RegPtr BaseCompiler::maybeLoadTlsForAccess(const AccessCheck& check) {
     
     
     
-    return RegPtr(WasmTlsReg);
+    
+    return RegPtr(InstanceReg);
 #else
     RegPtr tls = need<RegPtr>();
     fr.loadTlsPtr(tls);
@@ -462,7 +463,7 @@ RegPtr BaseCompiler::maybeLoadTlsForAccess(const AccessCheck& check,
                                            RegPtr specific) {
   if (needTlsForAccess(check)) {
 #ifdef RABALDR_PIN_INSTANCE
-    movePtr(RegPtr(WasmTlsReg), specific);
+    movePtr(RegPtr(InstanceReg), specific);
 #else
     fr.loadTlsPtr(specific);
 #endif
