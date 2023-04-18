@@ -245,9 +245,14 @@ appUpdater.prototype = {
       return;
     }
 
-    Services.startup.quit(
-      Ci.nsIAppStartup.eAttemptQuit | Ci.nsIAppStartup.eRestart
-    );
+    if (
+      !Services.startup.quit(
+        Ci.nsIAppStartup.eAttemptQuit | Ci.nsIAppStartup.eRestart
+      )
+    ) {
+      
+      gAppUpdater.selectPanel("apply");
+    }
   },
 
   
