@@ -4411,6 +4411,11 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
 
   
   
+  rv = NS_CreateNativeAppSupport(getter_AddRefs(mNativeApp));
+  if (NS_FAILED(rv)) return 1;
+
+  
+  
   if (CheckArg("h") || CheckArg("help") || CheckArg("?")) {
     DumpHelp();
     *aExitFlag = true;
@@ -4875,9 +4880,6 @@ int XREMain::XRE_mainStartup(bool* aExitFlag) {
 #ifdef MOZ_JPROF
   setupProfilingStuff();
 #endif
-
-  rv = NS_CreateNativeAppSupport(getter_AddRefs(mNativeApp));
-  if (NS_FAILED(rv)) return 1;
 
   bool canRun = false;
   rv = mNativeApp->Start(&canRun);
