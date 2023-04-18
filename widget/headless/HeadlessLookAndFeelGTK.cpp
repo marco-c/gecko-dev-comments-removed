@@ -209,9 +209,9 @@ nsresult HeadlessLookAndFeel::NativeGetFloat(FloatID aID, float& aResult) {
 bool HeadlessLookAndFeel::NativeGetFont(FontID aID, nsString& aFontName,
                                         gfxFontStyle& aFontStyle) {
   
-  aFontStyle.style = FontSlantStyle::NORMAL;
-  aFontStyle.weight = FontWeight::NORMAL;
-  aFontStyle.stretch = FontStretch::NORMAL;
+  aFontStyle.style = FontSlantStyle::Normal();
+  aFontStyle.weight = FontWeight::Normal();
+  aFontStyle.stretch = FontStretch::Normal();
   aFontStyle.size = 14;
   aFontStyle.systemFont = true;
 

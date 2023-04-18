@@ -193,10 +193,10 @@ class gfxFontEntry {
   
   
   bool IsNormalStyle() const {
-    return IsUpright() && Weight().Min() <= FontWeight::NORMAL &&
-           Weight().Max() >= FontWeight::NORMAL &&
-           Stretch().Min() <= FontStretch::NORMAL &&
-           Stretch().Max() >= FontStretch::NORMAL;
+    return IsUpright() && Weight().Min() <= FontWeight::Normal() &&
+           Weight().Max() >= FontWeight::Normal() &&
+           Stretch().Min() <= FontStretch::Normal() &&
+           Stretch().Max() >= FontStretch::Normal();
   }
 
   
@@ -518,9 +518,9 @@ class gfxFontEntry {
 
   uint32_t mLanguageOverride = NO_FONT_LANGUAGE_OVERRIDE;
 
-  WeightRange mWeightRange = WeightRange(FontWeight::FromInt(500));
-  StretchRange mStretchRange = StretchRange(FontStretch::NORMAL);
-  SlantStyleRange mStyleRange = SlantStyleRange(FontSlantStyle::NORMAL);
+  WeightRange mWeightRange = WeightRange(FontWeight(500));
+  StretchRange mStretchRange = StretchRange(FontStretch::Normal());
+  SlantStyleRange mStyleRange = SlantStyleRange(FontSlantStyle::Normal());
 
   
   
