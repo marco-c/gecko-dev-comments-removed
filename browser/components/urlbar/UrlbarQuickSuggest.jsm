@@ -150,6 +150,23 @@ class Suggestions {
 
 
 
+  ensureExposureEventRecorded() {
+    
+    
+    
+    if (!this._recordedExposureEvent) {
+      this._recordedExposureEvent = true;
+      Services.tm.idleDispatchToMainThread(() =>
+        NimbusFeatures.urlbar.recordExposureEvent({ once: true })
+      );
+    }
+  }
+
+  
+
+
+
+
 
 
 
@@ -219,10 +236,8 @@ class Suggestions {
 
     
     
-    
     if (
       !UrlbarPrefs.get(FEATURE_AVAILABLE) ||
-      !UrlbarPrefs.get("quickSuggestShouldShowOnboardingDialog") ||
       UrlbarPrefs.get(SEEN_DIALOG_PREF) ||
       UrlbarPrefs.get("quicksuggest.dataCollection.enabled")
     ) {
@@ -243,6 +258,14 @@ class Suggestions {
 
     
     if (win.gBrowser?.currentURI?.spec == "about:welcome") {
+      return false;
+    }
+
+    if (UrlbarPrefs.get("experimentType") === "modal") {
+      this.ensureExposureEventRecorded();
+    }
+
+    if (!UrlbarPrefs.get("quickSuggestShouldShowOnboardingDialog")) {
       return false;
     }
 

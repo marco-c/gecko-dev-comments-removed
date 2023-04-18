@@ -310,29 +310,18 @@ class ProviderQuickSuggest extends UrlbarProvider {
     
     
     if (
-      !UrlbarPrefs.get("isBestMatchExperiment") ||
-      (isSuggestionBestMatch &&
-        (!UrlbarPrefs.get("bestMatchEnabled") ||
-          UrlbarPrefs.get("suggest.bestmatch")))
+      UrlbarPrefs.get("isBestMatchExperiment") ||
+      UrlbarPrefs.get("experimentType") === "best-match"
     ) {
-      this._ensureExposureEventRecorded();
-    }
-  }
-
-  
-
-
-
-
-  _ensureExposureEventRecorded() {
-    
-    
-    
-    if (!this._recordedExposureEvent) {
-      this._recordedExposureEvent = true;
-      Services.tm.idleDispatchToMainThread(() =>
-        NimbusFeatures.urlbar.recordExposureEvent({ once: true })
-      );
+      if (
+        isSuggestionBestMatch &&
+        (!UrlbarPrefs.get("bestMatchEnabled") ||
+          UrlbarPrefs.get("suggest.bestmatch"))
+      ) {
+        UrlbarQuickSuggest.ensureExposureEventRecorded();
+      }
+    } else if (UrlbarPrefs.get("experimentType") !== "modal") {
+      UrlbarQuickSuggest.ensureExposureEventRecorded();
     }
   }
 
