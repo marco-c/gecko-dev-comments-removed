@@ -27,8 +27,7 @@ class BackgroundChildImpl;
 
 }  
 
-namespace dom {
-namespace quota {
+namespace dom::quota {
 
 class QuotaManagerService;
 class Request;
@@ -153,7 +152,6 @@ class QuotaRequestChild final : public PQuotaRequestChild {
       const RequestResponse& aResponse) override;
 };
 
-}  
 }  
 }  
 

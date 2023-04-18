@@ -11,8 +11,7 @@
 #include "mozilla/dom/ReportBody.h"
 #include "nsString.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class DeprecationReportBody final : public ReportBody {
  public:
@@ -51,7 +50,6 @@ class DeprecationReportBody final : public ReportBody {
   const Nullable<uint32_t> mColumnNumber;
 };
 
-}  
 }  
 
 #endif  

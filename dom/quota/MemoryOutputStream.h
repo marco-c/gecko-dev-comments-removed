@@ -15,9 +15,7 @@
 
 class nsIInputStream;
 
-namespace mozilla {
-namespace dom {
-namespace quota {
+namespace mozilla::dom::quota {
 
 
 
@@ -47,8 +45,6 @@ class MemoryOutputStream final : public nsIOutputStream {
   NS_DECL_NSIOUTPUTSTREAM
 };
 
-}  
-}  
 }  
 
 #endif 
