@@ -1106,92 +1106,29 @@ bool WarpBuilder::build_JumpTarget(BytecodeLocation loc) {
     return true;
   };
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  auto createEmptyBlockForTest = [&](MBasicBlock* pred, size_t successor,
-                                     size_t numToPop) -> MBasicBlock* {
-    MOZ_ASSERT(joinBlock);
-
-    if (!startNewBlock(pred, loc, numToPop)) {
-      return nullptr;
-    }
-
-    MBasicBlock* emptyBlock = current;
-    MOZ_ASSERT(emptyBlock->stackDepth() == joinBlock->stackDepth());
-
-    MTest* test = pred->lastIns()->toTest();
-    test->initSuccessor(successor, emptyBlock);
-
-    emptyBlock->end(MGoto::New(alloc(), joinBlock));
-    setTerminatedBlock();
-
-    return emptyBlock;
-  };
-
   for (const PendingEdge& edge : edges) {
     MBasicBlock* source = edge.block();
     MControlInstruction* lastIns = source->lastIns();
     switch (edge.kind()) {
       case PendingEdge::Kind::TestTrue: {
         
-        
-        
-        
         const size_t numToPop = (edge.testOp() == JSOp::Case) ? 1 : 0;
 
         const size_t successor = 0;  
-        if (joinBlock && TestTrueTargetIsJoinPoint(edge.testOp())) {
-          MBasicBlock* pred =
-              createEmptyBlockForTest(source, successor, numToPop);
-          if (!pred || !addEdge(pred,  0)) {
-            return false;
-          }
-        } else {
-          if (!addEdge(source, numToPop)) {
-            return false;
-          }
-          lastIns->toTest()->initSuccessor(successor, joinBlock);
+        if (!addEdge(source, numToPop)) {
+          return false;
         }
+        lastIns->toTest()->initSuccessor(successor, joinBlock);
         continue;
       }
 
       case PendingEdge::Kind::TestFalse: {
         const size_t numToPop = 0;
         const size_t successor = 1;  
-        if (joinBlock && !TestTrueTargetIsJoinPoint(edge.testOp())) {
-          MBasicBlock* pred =
-              createEmptyBlockForTest(source, successor, numToPop);
-          if (!pred || !addEdge(pred,  0)) {
-            return false;
-          }
-        } else {
-          if (!addEdge(source, numToPop)) {
-            return false;
-          }
-          lastIns->toTest()->initSuccessor(successor, joinBlock);
+        if (!addEdge(source, numToPop)) {
+          return false;
         }
+        lastIns->toTest()->initSuccessor(successor, joinBlock);
         continue;
       }
 
