@@ -11924,7 +11924,6 @@ nsresult Document::CloneDocHelper(Document* clone) const {
     }
 
     clone->mIsSrcdocDocument = mIsSrcdocDocument;
-
     clone->SetContainer(mDocumentContainer);
 
     
@@ -11949,7 +11948,11 @@ nsresult Document::CloneDocHelper(Document* clone) const {
   clone->SetChromeXHRDocURI(mChromeXHRDocURI);
   clone->SetPrincipals(NodePrincipal(), mPartitionedPrincipal);
   clone->mActiveStoragePrincipal = mActiveStoragePrincipal;
-  clone->mDocumentBaseURI = mDocumentBaseURI;
+  
+  
+  
+  
+  clone->mDocumentBaseURI = GetDocBaseURI();
   clone->SetChromeXHRDocBaseURI(mChromeXHRDocBaseURI);
   clone->mReferrerInfo =
       static_cast<dom::ReferrerInfo*>(mReferrerInfo.get())->Clone();
