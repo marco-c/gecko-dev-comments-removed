@@ -61,7 +61,7 @@ bool WebIDLGlobalNameHash::DefineIfEnabled(
     bool* aFound) {
   MOZ_ASSERT(aId.isString(), "Check for string id before calling this!");
 
-  const WebIDLNameTableEntry* entry = GetEntry(JSID_TO_LINEAR_STRING(aId));
+  const WebIDLNameTableEntry* entry = GetEntry(aId.toLinearString());
   if (!entry) {
     *aFound = false;
     return true;
@@ -173,7 +173,7 @@ bool WebIDLGlobalNameHash::DefineIfEnabled(
 
 
 bool WebIDLGlobalNameHash::MayResolve(jsid aId) {
-  return GetEntry(JSID_TO_LINEAR_STRING(aId)) != nullptr;
+  return GetEntry(aId.toLinearString()) != nullptr;
 }
 
 
@@ -226,7 +226,7 @@ bool WebIDLGlobalNameHash::ResolveForSystemGlobal(JSContext* aCx,
   MOZ_ASSERT(!xpc::WrapperFactory::IsXrayWrapper(aObj), "Xrays not supported!");
 
   
-  const WebIDLNameTableEntry* entry = GetEntry(JSID_TO_LINEAR_STRING(aId));
+  const WebIDLNameTableEntry* entry = GetEntry(aId.toLinearString());
   if (entry && (!entry->mEnabled || entry->mEnabled(aCx, aObj))) {
     if (NS_WARN_IF(!GetPerInterfaceObjectHandle(
             aCx, entry->mConstructorId, entry->mCreate,
