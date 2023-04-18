@@ -18,7 +18,71 @@ const { FIELD_STATES } = FormAutofillUtils;
 
 this.CreditCardTelemetry = {
   
+  
+  CC_FORM_V2_SUPPORTED_FIELDS: {
+    "cc-name": "cc_name",
+    "cc-number": "cc_number",
+    "cc-type": "cc_type",
+    "cc-exp": "cc_exp",
+    "cc-exp-month": "cc_exp_month",
+    "cc-exp-year": "cc_exp_year",
+  },
 
+  
+
+
+
+
+
+
+  _ccFormV2InitExtra(value) {
+    let extra = {};
+    for (const field of Object.values(this.CC_FORM_V2_SUPPORTED_FIELDS)) {
+      extra[field] = value;
+    }
+    return extra;
+  },
+
+  
+
+
+
+
+
+
+
+
+  _ccFormV2SetExtra(extra, key, value) {
+    extra[this.CC_FORM_V2_SUPPORTED_FIELDS[key]] = value;
+  },
+
+  
+
+
+
+
+
+
+
+  _recordCCFormEvent(method, flowId, ccFormExtra, ccFormV2Extra) {
+    Services.telemetry.recordEvent(
+      "creditcard",
+      method,
+      "cc_form",
+      flowId,
+      ccFormExtra
+    );
+
+    Services.telemetry.recordEvent(
+      "creditcard",
+      method,
+      "cc_form_v2",
+      flowId,
+      ccFormV2Extra
+    );
+  },
+
+  
 
 
 
@@ -26,50 +90,63 @@ this.CreditCardTelemetry = {
 
   recordFormDetected(flowId, fieldDetails) {
     
+    let ccFormV2Extra = this._ccFormV2InitExtra("false");
     let identified = new Set();
-    fieldDetails.forEach(detail => identified.add(detail.fieldName));
+    fieldDetails.forEach(detail => {
+      identified.add(detail.fieldName);
+      this._ccFormV2SetExtra(ccFormV2Extra, detail.fieldName, "true");
+    });
 
-    Services.telemetry.recordEvent(
-      "creditcard",
-      "detected",
-      "cc_form",
-      flowId,
-      {
-        cc_name_found: identified.has("cc-name") ? "true" : "false",
-        cc_number_found: identified.has("cc-number") ? "true" : "false",
-        cc_exp_found:
-          identified.has("cc-exp") ||
-          (identified.has("cc-exp-month") && identified.has("cc-exp-year"))
-            ? "true"
-            : "false",
-      }
-    );
+    let ccFormExtra = {
+      cc_name_found: identified.has("cc-name") ? "true" : "false",
+      cc_number_found: identified.has("cc-number") ? "true" : "false",
+      cc_exp_found:
+        identified.has("cc-exp") ||
+        (identified.has("cc-exp-month") && identified.has("cc-exp-year"))
+          ? "true"
+          : "false",
+    };
+
+    this._recordCCFormEvent("detected", flowId, ccFormExtra, ccFormV2Extra);
+
     Services.telemetry.scalarAdd(
       "formautofill.creditCards.detected_sections_count",
       1
     );
   },
 
-  recordPopupShown(flowId) {
+  
+
+
+
+
+
+  recordPopupShown(flowId, fieldName) {
     if (!flowId) {
       return;
     }
 
-    Services.telemetry.recordEvent(
-      "creditcard",
-      "popup_shown",
-      "cc_form",
-      flowId
-    );
+    let ccFormExtra = null;
+    let ccFormV2Extra = { field_name: fieldName };
+    this._recordCCFormEvent("popup_shown", flowId, ccFormExtra, ccFormV2Extra);
   },
+
+  
+
+
+
+
+
 
   recordFormFilled(flowId, fieldDetails, profile) {
     
-    let extra = {
+    let ccFormExtra = {
       cc_name: "unavailable",
       cc_number: "unavailable",
       cc_exp: "unavailable",
     };
+
+    let ccFormV2Extra = this._ccFormV2InitExtra("unavailable");
 
     for (let fieldDetail of fieldDetails) {
       let element = fieldDetail.elementWeakRef.get();
@@ -82,43 +159,53 @@ this.CreditCardTelemetry = {
       ) {
         state = "user_filled";
       }
+      this._ccFormV2SetExtra(ccFormV2Extra, fieldDetail.fieldName, state);
       switch (fieldDetail.fieldName) {
         case "cc-name":
-          extra.cc_name = state;
+          ccFormExtra.cc_name = state;
           break;
         case "cc-number":
-          extra.cc_number = state;
+          ccFormExtra.cc_number = state;
           break;
         case "cc-exp":
         case "cc-exp-month":
         case "cc-exp-year":
-          extra.cc_exp = state;
+          ccFormExtra.cc_exp = state;
           break;
       }
     }
 
-    Services.telemetry.recordEvent(
-      "creditcard",
-      "filled",
-      "cc_form",
+    this._recordCCFormEvent("filled", flowId, ccFormExtra, ccFormV2Extra);
+  },
+
+  
+
+
+
+
+
+
+  recordFilledModified(flowId, fieldName) {
+    let ccFormExtra = { field_name: fieldName };
+    let ccFormV2Extra = { field_name: fieldName };
+
+    this._recordCCFormEvent(
+      "filled_modified",
       flowId,
-      extra
+      ccFormExtra,
+      ccFormV2Extra
     );
   },
 
-  recordFilledModified(flowId, fieldDetail) {
-    Services.telemetry.recordEvent(
-      "creditcard",
-      "filled_modified",
-      "cc_form",
-      flowId,
-      { field_name: fieldDetail.fieldName }
-    );
-  },
+  
+
+
+
+
 
   recordFormSubmitted(records, elements) {
     records.creditCard.forEach(record => {
-      let extra = {
+      let ccFormExtra = {
         
         fields_not_auto: "0",
         
@@ -126,6 +213,8 @@ this.CreditCardTelemetry = {
         
         fields_modified: "0",
       };
+
+      let ccFormV2Extra = this._ccFormV2InitExtra("unavailable");
 
       if (record.guid !== null) {
         
@@ -135,23 +224,32 @@ this.CreditCardTelemetry = {
         let autofilledCount = Object.keys(record.record).length;
         let unmodifiedCount = record.untouchedFields.length;
 
-        extra.fields_not_auto = (totalCount - autofilledCount).toString();
-        extra.fields_auto = autofilledCount.toString();
-        extra.fields_modified = (autofilledCount - unmodifiedCount).toString();
+        for (let fieldName of Object.keys(record.record)) {
+          if (record.untouchedFields?.includes(fieldName)) {
+            this._ccFormV2SetExtra(ccFormV2Extra, fieldName, "autofilled");
+          } else {
+            this._ccFormV2SetExtra(ccFormV2Extra, fieldName, "user filled");
+          }
+        }
+        ccFormExtra.fields_not_auto = (totalCount - autofilledCount).toString();
+        ccFormExtra.fields_auto = autofilledCount.toString();
+        ccFormExtra.fields_modified = (
+          autofilledCount - unmodifiedCount
+        ).toString();
       } else {
         
         
-        extra.fields_not_auto = Array.from(elements)
+
+        ccFormExtra.fields_not_auto = Array.from(elements)
           .filter(element => !!element.value?.trim().length)
           .length.toString();
       }
 
-      Services.telemetry.recordEvent(
-        "creditcard",
+      this._recordCCFormEvent(
         "submitted",
-        "cc_form",
         record.flowId,
-        extra
+        ccFormExtra,
+        ccFormV2Extra
       );
     });
 
@@ -161,5 +259,23 @@ this.CreditCardTelemetry = {
         records.creditCard.length
       );
     }
+  },
+
+  
+
+
+
+
+
+  recordFormCleared(flowId, fieldName) {
+    
+    
+    Services.telemetry.recordEvent(
+      "creditcard",
+      "cleared",
+      "cc_form_v2",
+      flowId,
+      { field_name: fieldName }
+    );
   },
 };
