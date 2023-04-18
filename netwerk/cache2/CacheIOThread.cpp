@@ -6,7 +6,6 @@
 #include "CacheFileIOManager.h"
 #include "CacheLog.h"
 #include "CacheObserver.h"
-#include "GeckoProfiler.h"
 
 #include "nsIRunnable.h"
 #include "nsISupportsImpl.h"
@@ -396,6 +395,8 @@ already_AddRefed<nsIEventTarget> CacheIOThread::Target() {
 
 
 void CacheIOThread::ThreadFunc(void* aClosure) {
+  
+  
   NS_SetCurrentThreadName("Cache2 I/O");
 
   mozilla::IOInterposer::RegisterCurrentThread();
@@ -407,7 +408,6 @@ void CacheIOThread::ThreadFunc(void* aClosure) {
 }
 
 void CacheIOThread::ThreadFunc() {
-  char stackTop;
   nsCOMPtr<nsIThreadInternal> threadInternal;
 
   {
@@ -421,7 +421,6 @@ void CacheIOThread::ThreadFunc() {
     nsCOMPtr<nsIThread> xpcomThread =
         nsThreadManager::get().CreateCurrentThread(queue,
                                                    nsThread::NOT_MAIN_THREAD);
-    profiler_register_thread("Cache2 I/O", &stackTop);
 
     threadInternal = do_QueryInterface(xpcomThread);
     if (threadInternal) threadInternal->SetObserver(this);
@@ -491,7 +490,6 @@ void CacheIOThread::ThreadFunc() {
   }  
 
   if (threadInternal) threadInternal->SetObserver(nullptr);
-  profiler_unregister_thread();
 }
 
 void CacheIOThread::LoopOneLevel(uint32_t aLevel) {
