@@ -28,6 +28,7 @@ void RemoteDecoderChild::HandleRejectionError(
   
   
   
+  
 
   
   if (mLocation == RemoteDecodeIn::GpuProcess) {
@@ -40,17 +41,22 @@ void RemoteDecoderChild::HandleRejectionError(
     GetManager()->RunWhenGPUProcessRecreated(NS_NewRunnableFunction(
         "RemoteDecoderChild::HandleRejectionError",
         [self, callback = std::move(aCallback)]() {
-          MediaResult error(NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_ERR,
-                            __func__);
+          MediaResult error(
+              NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_RDD_OR_GPU_ERR,
+              __func__);
           callback(error);
         }));
     return;
   }
+
+  nsresult err = ((mLocation == RemoteDecodeIn::GpuProcess) ||
+                  (mLocation == RemoteDecodeIn::RddProcess))
+                     ? NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_RDD_OR_GPU_ERR
+                     : NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_UTILITY_ERR;
   
   
   
-  aCallback(
-      MediaResult(NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_ERR, __func__));
+  aCallback(MediaResult(err, __func__));
 }
 
 
@@ -124,8 +130,12 @@ RefPtr<MediaDataDecoder::DecodePromise> RemoteDecoderChild::Decode(
   AssertOnManagerThread();
 
   if (mRemoteDecoderCrashed) {
-    return MediaDataDecoder::DecodePromise::CreateAndReject(
-        NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_ERR, __func__);
+    nsresult err =
+        ((mLocation == RemoteDecodeIn::GpuProcess) ||
+         (mLocation == RemoteDecodeIn::RddProcess))
+            ? NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_RDD_OR_GPU_ERR
+            : NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_UTILITY_ERR;
+    return MediaDataDecoder::DecodePromise::CreateAndReject(err, __func__);
   }
 
   auto samples = MakeRefPtr<ArrayOfRemoteMediaRawData>();

@@ -363,8 +363,8 @@ class MediaFormatReader final
           mDrainState(DrainState::None),
           mNumOfConsecutiveDecodingError(0),
           mMaxConsecutiveDecodingError(aNumOfMaxError),
-          mNumOfConsecutiveRDDCrashes(0),
-          mMaxConsecutiveRDDCrashes(
+          mNumOfConsecutiveRDDOrGPUCrashes(0),
+          mMaxConsecutiveRDDOrGPUCrashes(
               StaticPrefs::media_rdd_process_max_crashes()),
           mFirstFrameTime(Some(media::TimeUnit::Zero())),
           mNumSamplesInput(0),
@@ -458,8 +458,8 @@ class MediaFormatReader final
     uint32_t mMaxConsecutiveDecodingError;
 
     
-    uint32_t mNumOfConsecutiveRDDCrashes;
-    uint32_t mMaxConsecutiveRDDCrashes;
+    uint32_t mNumOfConsecutiveRDDOrGPUCrashes;
+    uint32_t mMaxConsecutiveRDDOrGPUCrashes;
 
     
     
@@ -482,10 +482,11 @@ class MediaFormatReader final
         
         return false;
       } else if (mError.ref() ==
-                 NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_ERR) {
+                 NS_ERROR_DOM_MEDIA_REMOTE_DECODER_CRASHED_RDD_OR_GPU_ERR) {
         
         
-        return mNumOfConsecutiveRDDCrashes > mMaxConsecutiveRDDCrashes ||
+        return mNumOfConsecutiveRDDOrGPUCrashes >
+                   mMaxConsecutiveRDDOrGPUCrashes ||
                StaticPrefs::media_playback_warnings_as_errors();
       } else {
         
