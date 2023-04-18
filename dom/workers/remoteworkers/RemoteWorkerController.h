@@ -16,8 +16,7 @@
 #include "mozilla/dom/ServiceWorkerOpArgs.h"
 #include "mozilla/dom/ServiceWorkerOpPromise.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -315,7 +314,6 @@ class RemoteWorkerController final {
   nsTArray<UniquePtr<PendingOp>> mPendingOps;
 };
 
-}  
 }  
 
 #endif  

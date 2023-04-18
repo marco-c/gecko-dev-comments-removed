@@ -10,8 +10,7 @@
 #include "mozilla/dom/PSharedWorkerChild.h"
 #include "nsISupportsImpl.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class SharedWorker;
 
@@ -55,7 +54,6 @@ class SharedWorkerChild final : public mozilla::dom::PSharedWorkerChild {
   bool mActive;
 };
 
-}  
 }  
 
 #endif  

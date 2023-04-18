@@ -15,8 +15,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/PRemoteWorkerControllerParent.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -78,7 +77,6 @@ class RemoteWorkerControllerParent final : public PRemoteWorkerControllerParent,
   bool mIPCActive = true;
 };
 
-}  
 }  
 
 #endif  

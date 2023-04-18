@@ -7,8 +7,7 @@
 #ifndef mozilla_dom_workers_WorkerStatus_h
 #define mozilla_dom_workers_WorkerStatus_h
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -54,7 +53,6 @@ enum WorkerStatus {
   Dead
 };
 
-}  
 }  
 
 #endif 

@@ -15,8 +15,7 @@
 
 class nsIPrincipal;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class UniqueMessagePortId;
 class RemoteWorkerData;
@@ -157,7 +156,6 @@ class SharedWorkerManager final : public RemoteWorkerObserver {
   nsTArray<CheckedUnsafePtr<SharedWorkerManagerHolder>> mHolders;
 };
 
-}  
 }  
 
 #endif  

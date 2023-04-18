@@ -22,8 +22,7 @@
 class nsISerialEventTarget;
 class nsIConsoleReportCollector;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class ErrorValue;
 class FetchEventOpProxyChild;
@@ -173,7 +172,6 @@ class RemoteWorkerChild final
   ThreadBound<LauncherBoundData> mLauncherData;
 };
 
-}  
 }  
 
 #endif  

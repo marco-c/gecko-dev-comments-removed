@@ -16,8 +16,7 @@ class nsIChannel;
 class nsIReferrerInfo;
 class nsIURI;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class ClientInfo;
 class WorkerPrivate;
@@ -120,6 +119,5 @@ struct ScriptLoadInfo {
   }
 };
 
-}  
 }  
 #endif 
