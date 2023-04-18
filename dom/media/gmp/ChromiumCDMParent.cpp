@@ -960,6 +960,8 @@ already_AddRefed<VideoData> ChromiumCDMParent::CreateVideoFrame(
   b.mPlanes[2].mStride = aFrame.mVPlane().mStride();
   b.mPlanes[2].mSkip = 0;
 
+  b.mChromaSubsampling = gfx::ChromaSubsampling::HALF_WIDTH_AND_HEIGHT;
+
   
   
   b.mYUVColorSpace =
