@@ -192,7 +192,7 @@ static void moz_container_wayland_destroy(GtkWidget* widget) {
 void moz_container_wayland_add_initial_draw_callback(
     MozContainer* container, const std::function<void(void)>& initial_draw_cb) {
   MozContainerWayland* wl_container = &MOZ_CONTAINER(container)->wl_container;
-  if (wl_container->ready_to_draw) {
+  if (wl_container->ready_to_draw && wl_container->surface) {
     initial_draw_cb();
   } else {
     wl_container->initial_draw_cbs.push_back(initial_draw_cb);
