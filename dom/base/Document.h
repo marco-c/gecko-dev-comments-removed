@@ -45,6 +45,7 @@
 #include "mozilla/UseCounter.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/css/StylePreloadKind.h"
+#include "mozilla/dom/AnimationFrameProvider.h"
 #include "mozilla/dom/DispatcherTrait.h"
 #include "mozilla/dom/DocumentOrShadowRoot.h"
 #include "mozilla/dom/Element.h"
@@ -3103,19 +3104,6 @@ class Document : public nsINode,
 
   SVGSVGElement* GetSVGRootElement() const;
 
-  struct FrameRequest {
-    FrameRequest(FrameRequestCallback& aCallback, int32_t aHandle);
-    ~FrameRequest();
-
-    
-    
-    bool operator==(int32_t aHandle) const { return mHandle == aHandle; }
-    bool operator<(int32_t aHandle) const { return mHandle < aHandle; }
-
-    RefPtr<FrameRequestCallback> mCallback;
-    int32_t mHandle;
-  };
-
   nsresult ScheduleFrameRequestCallback(FrameRequestCallback& aCallback,
                                         int32_t* aHandle);
   void CancelFrameRequestCallback(int32_t aHandle);
@@ -4986,11 +4974,6 @@ class Document : public nsINode,
   uint32_t mIgnoreDestructiveWritesCounter;
 
   
-
-
-  int32_t mFrameRequestCallbackCounter;
-
-  
   uint32_t mStaticCloneCount;
 
   
@@ -5011,11 +4994,7 @@ class Document : public nsINode,
 
   nsCOMPtr<nsIDocumentEncoder> mCachedEncoder;
 
-  nsTArray<FrameRequest> mFrameRequestCallbacks;
-
-  
-  
-  HashSet<int32_t> mCanceledFrameRequestCallbacks;
+  FrameRequestManager mFrameRequestManager;
 
   
   
