@@ -40,7 +40,7 @@ class LoginDetectionService final : public nsILoginDetectionService,
   void MaybeStartMonitoring();
 
  private:
-  LoginDetectionService() = default;
+  LoginDetectionService();
   virtual ~LoginDetectionService();
 
   
@@ -50,6 +50,9 @@ class LoginDetectionService final : public nsILoginDetectionService,
   void UnregisterObserver();
 
   nsCOMPtr<nsIObserverService> mObs;
+
+  
+  bool mIsLoginsLoaded;
 };
 
 }  

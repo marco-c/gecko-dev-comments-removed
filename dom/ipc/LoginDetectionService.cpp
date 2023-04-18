@@ -46,6 +46,7 @@ already_AddRefed<LoginDetectionService> LoginDetectionService::GetSingleton() {
   return do_AddRef(gLoginDetectionService);
 }
 
+LoginDetectionService::LoginDetectionService() : mIsLoginsLoaded(false) {}
 LoginDetectionService::~LoginDetectionService() { UnregisterObserver(); }
 
 void LoginDetectionService::MaybeStartMonitoring() {
@@ -111,6 +112,17 @@ NS_IMETHODIMP LoginDetectionService::Init() {
   return NS_OK;
 }
 
+NS_IMETHODIMP LoginDetectionService::IsLoginsLoaded(bool* aResult) {
+  if (IsIsolateHighValueSiteEnabled()) {
+    *aResult = mIsLoginsLoaded;
+  } else {
+    
+    
+    *aResult = true;
+  }
+  return NS_OK;
+}
+
 
 
 NS_IMETHODIMP
@@ -125,6 +137,7 @@ LoginDetectionService::OnSearchComplete(
                            mozilla::dom::kHighValueHasSavedLoginPermission);
   }
 
+  mIsLoginsLoaded = true;
   return NS_OK;
 }
 
