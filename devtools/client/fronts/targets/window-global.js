@@ -109,20 +109,6 @@ class WindowGlobalTargetFront extends TargetMixin(
     this._title = title;
   }
 
-  
-  
-  async attach() {
-    if (this._attach) {
-      return this._attach;
-    }
-    this._attach = (async () => {
-      const response = await super.attach();
-
-      this.targetForm.threadActor = response.threadActor;
-    })();
-    return this._attach;
-  }
-
   async detach() {
     
     

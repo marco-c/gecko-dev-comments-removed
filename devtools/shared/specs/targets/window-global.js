@@ -11,14 +11,6 @@ const {
   Arg,
 } = require("devtools/shared/protocol");
 
-
-
-types.addDictType("windowGlobalTarget.attach", {
-  threadActor: "number",
-  javascriptEnabled: "nullable:boolean",
-  traits: "json",
-});
-
 types.addDictType("windowGlobalTarget.switchtoframe", {
   message: "string",
 });
@@ -59,12 +51,6 @@ const windowGlobalTargetSpecPrototype = {
   typeName: "windowGlobalTarget",
 
   methods: {
-    
-    
-    attach: {
-      request: {},
-      response: RetVal("windowGlobalTarget.attach"),
-    },
     detach: {
       request: {},
       response: {},

@@ -503,13 +503,7 @@ function TargetMixin(parentClass) {
       
       
       
-      
-      
-      
-      
-      
-      
-      if (this.attach && !this.getTrait("isAutoAttached")) {
+      if (this.attach) {
         await this.attach();
       }
 
