@@ -307,22 +307,32 @@ class nsFlexContainerFrame final : public nsContainerFrame {
 
 
 
+  struct FlexLayoutResult final {
+    
+    nsTArray<FlexLine> mLines;
 
+    
+    nsTArray<nsIFrame*> mPlaceholders;
 
+    
+    
+    nscoord mContentBoxMainSize = NS_UNCONSTRAINEDSIZE;
 
+    
+    
+    nscoord mContentBoxCrossSize = NS_UNCONSTRAINEDSIZE;
 
-
-
-
-
-  void DoFlexLayout(const ReflowInput& aReflowInput,
-                    nscoord& aContentBoxMainSize, nscoord& aContentBoxCrossSize,
-                    nscoord& aFlexContainerAscent, nsTArray<FlexLine>& aLines,
-                    nsTArray<nsIFrame*>& aPlaceholders,
-                    const FlexboxAxisTracker& aAxisTracker,
-                    nscoord aMainGapSize, nscoord aCrossGapSize,
-                    bool aHasLineClampEllipsis, nsTArray<StrutInfo>& aStruts,
-                    ComputedFlexContainerInfo* const aContainerInfo);
+    
+    
+    nscoord mAscent = NS_UNCONSTRAINEDSIZE;
+  };
+  FlexLayoutResult DoFlexLayout(
+      const ReflowInput& aReflowInput,
+      const nscoord aTentativeContentBoxMainSize,
+      const FlexboxAxisTracker& aAxisTracker, nscoord aMainGapSize,
+      nscoord aCrossGapSize, bool aHasLineClampEllipsis,
+      nsTArray<StrutInfo>& aStruts,
+      ComputedFlexContainerInfo* const aContainerInfo);
 
   
 
