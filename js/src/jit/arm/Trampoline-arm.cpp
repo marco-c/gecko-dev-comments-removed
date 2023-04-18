@@ -252,14 +252,15 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
     }
 
     
-    masm.push(r11);
+    masm.push(FramePointer);
+    masm.mov(sp, FramePointer);
 
     
-    Register framePtr = r11;
     masm.subPtr(Imm32(BaselineFrame::Size()), sp);
 
-    masm.touchFrameValues(numStackValues, scratch, framePtr);
-    masm.mov(sp, framePtr);
+    Register framePtrScratch = regs.takeAny();
+    masm.touchFrameValues(numStackValues, scratch, framePtrScratch);
+    masm.mov(sp, framePtrScratch);
 
     
     masm.ma_lsl(Imm32(3), numStackValues, scratch);
@@ -277,27 +278,24 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
     masm.loadJSContext(scratch);
     masm.enterFakeExitFrame(scratch, scratch, ExitFrameType::Bare);
 
-    masm.push(framePtr);  
-    masm.push(r0);        
+    masm.push(r0);  
 
     using Fn = bool (*)(BaselineFrame * frame, InterpreterFrame * interpFrame,
                         uint32_t numStackValues);
     masm.setupUnalignedABICall(scratch);
-    masm.passABIArg(r11);          
-    masm.passABIArg(OsrFrameReg);  
+    masm.passABIArg(framePtrScratch);  
+    masm.passABIArg(OsrFrameReg);      
     masm.passABIArg(numStackValues);
     masm.callWithABI<Fn, jit::InitBaselineFrameForOsr>(
         MoveOp::GENERAL, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
 
     Register jitcode = regs.takeAny();
     masm.pop(jitcode);
-    masm.pop(framePtr);
 
     MOZ_ASSERT(jitcode != ReturnReg);
 
     Label error;
     masm.addPtr(Imm32(ExitFrameLayout::SizeWithFooter()), sp);
-    masm.addPtr(Imm32(BaselineFrame::Size()), framePtr);
     masm.branchIfFalseBool(ReturnReg, &error);
 
     
@@ -309,7 +307,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
           cx->runtime()->geckoProfiler().addressOfEnabled());
       masm.branch32(Assembler::Equal, addressOfEnabled, Imm32(0),
                     &skipProfilingInstrumentation);
-      masm.as_add(realFramePtr, framePtr, Imm8(sizeof(void*)));
+      masm.as_add(realFramePtr, FramePointer, Imm8(sizeof(void*)));
       masm.profilerEnterFrame(realFramePtr, scratch);
       masm.bind(&skipProfilingInstrumentation);
     }
@@ -317,10 +315,10 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
     masm.jump(jitcode);
 
     
-    
     masm.bind(&error);
-    masm.mov(framePtr, sp);
-    masm.addPtr(Imm32(2 * sizeof(uintptr_t)), sp);
+    masm.mov(FramePointer, sp);
+    masm.pop(FramePointer);
+    masm.addPtr(Imm32(sizeof(uintptr_t)), sp);  
     masm.moveValue(MagicValue(JS_ION_ERROR), JSReturnOperand);
     masm.jump(&returnLabel);
 

@@ -194,68 +194,75 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   Label osrReturnPoint;
   {
     
+
+    AllocatableGeneralRegisterSet regs(GeneralRegisterSet::All());
+    MOZ_ASSERT(!regs.has(FramePointer));
+    regs.take(OsrFrameReg);
+    regs.take(reg_code);
+    regs.take(reg_osrNStack);
+    MOZ_ASSERT(!regs.has(ReturnReg), "ReturnReg matches reg_code");
+
     Label notOsr;
     masm.branchTestPtr(Assembler::Zero, OsrFrameReg, OsrFrameReg, &notOsr);
 
+    Register scratch = regs.takeAny();
+
     
-    {
-      vixl::UseScratchRegisterScope temps(&masm.asVIXL());
-      MOZ_ASSERT(temps.IsAvailable(ScratchReg2_64));  
-      temps.Exclude(ScratchReg2_64);
-
-      masm.Adr(ScratchReg2_64, &osrReturnPoint);
-      masm.push(ScratchReg2, FramePointer);
-
-      
-      masm.subFromStackPtr(Imm32(BaselineFrame::Size()));
-
-      masm.touchFrameValues(reg_osrNStack, ScratchReg2, FramePointer);
-    }
+    masm.Adr(ARMRegister(scratch, 64), &osrReturnPoint);
+    masm.push(scratch, FramePointer);
     masm.moveStackPtrTo(FramePointer);
 
     
-    masm.Lsl(w19, ARMRegister(reg_osrNStack, 32),
-             3);  
-    masm.subFromStackPtr(r19);
+    masm.subFromStackPtr(Imm32(BaselineFrame::Size()));
+
+    Register framePtrScratch = regs.takeAny();
+    masm.touchFrameValues(reg_osrNStack, scratch, framePtrScratch);
+    masm.moveStackPtrTo(framePtrScratch);
+
+    
+    
+    masm.Lsl(ARMRegister(scratch, 32), ARMRegister(reg_osrNStack, 32), 3);
+    masm.subFromStackPtr(scratch);
 
     
     masm.addPtr(
-        Imm32(BaselineFrame::Size() + BaselineFrame::FramePointerOffset), r19);
-    masm.makeFrameDescriptor(r19, FrameType::BaselineJS,
+        Imm32(BaselineFrame::Size() + BaselineFrame::FramePointerOffset),
+        scratch);
+    masm.makeFrameDescriptor(scratch, FrameType::BaselineJS,
                              ExitFrameLayout::Size());
-    masm.asVIXL().Push(x19, xzr);  
+    masm.asVIXL().Push(ARMRegister(scratch, 64),
+                       xzr);  
     
-    masm.loadJSContext(r19);
-    masm.enterFakeExitFrame(r19, r19, ExitFrameType::Bare);
+    masm.loadJSContext(scratch);
+    masm.enterFakeExitFrame(scratch, scratch, ExitFrameType::Bare);
 
-    masm.push(FramePointer, reg_code);
+    masm.push(reg_code);
 
     
     using Fn = bool (*)(BaselineFrame * frame, InterpreterFrame * interpFrame,
                         uint32_t numStackValues);
     masm.setupUnalignedABICall(r19);
-    masm.passABIArg(FramePointer);  
-    masm.passABIArg(reg_osrFrame);  
+    masm.passABIArg(framePtrScratch);  
+    masm.passABIArg(reg_osrFrame);     
     masm.passABIArg(reg_osrNStack);
     masm.callWithABI<Fn, jit::InitBaselineFrameForOsr>(
         MoveOp::GENERAL, CheckUnsafeCallWithABI::DontCheckHasExitFrame);
 
-    masm.pop(r19, FramePointer);
-    MOZ_ASSERT(r19 != ReturnReg);
+    masm.pop(scratch);
+    MOZ_ASSERT(scratch != ReturnReg);
 
     masm.addToStackPtr(Imm32(ExitFrameLayout::SizeWithFooter()));
-    masm.addPtr(Imm32(BaselineFrame::Size()), FramePointer);
 
     Label error;
     masm.branchIfFalseBool(ReturnReg, &error);
 
-    masm.jump(r19);
+    masm.jump(scratch);
 
     
-    
     masm.bind(&error);
-    masm.Add(masm.GetStackPointer64(), FramePointer64,
-             Operand(2 * sizeof(uintptr_t)));
+    masm.moveToStackPtr(FramePointer);
+    masm.pop(FramePointer);
+    masm.addToStackPtr(Imm32(sizeof(uintptr_t)));  
     masm.syncStackPtr();
     masm.moveValue(MagicValue(JS_ION_ERROR), JSReturnOperand);
     masm.B(&osrReturnPoint);
