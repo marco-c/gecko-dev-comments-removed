@@ -138,6 +138,7 @@ LSSnapshot::LSSnapshot(LSDatabase* aDatabase)
       mExactUsage(0),
       mPeakUsage(0),
       mLoadState(LoadState::Initial),
+      mHasOtherProcessDatabases(false),
       mHasOtherProcessObservers(false),
       mExplicit(false),
       mHasPendingStableStateCallback(false),
@@ -216,6 +217,7 @@ nsresult LSSnapshot::Init(const nsAString& aKey,
 
   mLoadState = aInitInfo.loadState();
 
+  mHasOtherProcessDatabases = aInitInfo.hasOtherProcessDatabases();
   mHasOtherProcessObservers = aInitInfo.hasOtherProcessObservers();
 
   mExplicit = aExplicit;
@@ -1016,7 +1018,22 @@ LSSnapshot::Run() {
 
   MOZ_ALWAYS_SUCCEEDS(Checkpoint());
 
-  if (mDirty || !Preferences::GetBool("dom.storage.snapshot_reusing")) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (mDirty || mHasOtherProcessDatabases ||
+      !Preferences::GetBool("dom.storage.snapshot_reusing")) {
     MOZ_ALWAYS_SUCCEEDS(Finish());
   } else if (!mExplicit) {
     MOZ_ASSERT(mIdleTimer);
