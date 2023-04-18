@@ -4,7 +4,6 @@
 
 
 #include "nsNativeThemeGTK.h"
-#include "HeadlessThemeGTK.h"
 #include "nsStyleConsts.h"
 #include "gtkdrawing.h"
 #include "ScreenHelperGTK.h"
@@ -2006,10 +2005,11 @@ already_AddRefed<nsITheme> do_GetNativeThemeDoNotUseDirectly() {
   static nsCOMPtr<nsITheme> inst;
 
   if (!inst) {
+    auto scrollbars = MakeUnique<ScrollbarDrawingGTK>();
     if (gfxPlatform::IsHeadless()) {
-      inst = new HeadlessThemeGTK();
+      inst = new nsNativeBasicTheme(std::move(scrollbars));
     } else {
-      inst = new nsNativeThemeGTK(MakeUnique<ScrollbarDrawingGTK>());
+      inst = new nsNativeThemeGTK(std::move(scrollbars));
     }
     ClearOnShutdown(&inst);
   }
