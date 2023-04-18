@@ -35,8 +35,7 @@ mozilla::ipc::IPCResult DocAccessiblePlatformExtParent::RecvSetPivotBoundaries(
   
   
   if (first && last) {
-    sessionAcc->UpdateAccessibleFocusBoundaries(WrapperFor(first),
-                                                WrapperFor(last));
+    sessionAcc->UpdateAccessibleFocusBoundaries(first, last);
   }
 
   return IPC_OK();
