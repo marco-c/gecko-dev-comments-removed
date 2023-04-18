@@ -63,14 +63,14 @@ def add_artifacts(config, job, taskdesc, path):
 
 
 def docker_worker_add_artifacts(config, job, taskdesc):
-    """Adds an artifact directory to the task"""
+    """ Adds an artifact directory to the task """
     path = "{workdir}/artifacts/".format(**job["run"])
     taskdesc["worker"].setdefault("env", {})["UPLOAD_DIR"] = path
     add_artifacts(config, job, taskdesc, path)
 
 
 def generic_worker_add_artifacts(config, job, taskdesc):
-    """Adds an artifact directory to the task"""
+    """ Adds an artifact directory to the task """
     
     
     

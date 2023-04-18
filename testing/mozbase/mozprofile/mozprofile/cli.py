@@ -161,7 +161,7 @@ class MozProfileCLI(object):
 
 
 def cli(args=sys.argv[1:]):
-    """Handles the command line arguments for ``mozprofile`` via ``sys.argv``"""
+    """ Handles the command line arguments for ``mozprofile`` via ``sys.argv``"""
 
     
     def add_options(parser):
