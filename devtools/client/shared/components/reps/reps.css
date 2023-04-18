@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 .theme-dark,
 .theme-light {
@@ -16,7 +16,7 @@
   --comment-node-color: var(--theme-comment);
 }
 
-
+/******************************************************************************/
 
 .inline {
   display: inline;
@@ -35,6 +35,10 @@
 .objectBox-textNode,
 .objectBox-table {
   white-space: pre-wrap;
+}
+
+.objectBox * {
+  unicode-bidi: isolate;
 }
 
 .objectBox-number,
@@ -145,7 +149,7 @@
   cursor: pointer;
 }
 
-
+/******************************************************************************/
 
 .objectBox-event,
 .objectBox-eventLog,
@@ -160,7 +164,7 @@
   white-space: pre-wrap;
 }
 
-
+/******************************************************************************/
 
 .objectBox.theme-comment {
   color: var(--comment-node-color);
@@ -189,14 +193,14 @@
   color: var(--theme-body-color);
 }
 
-
-
+/******************************************************************************/
+/* Length bubble for arraylikes and maplikes */
 
 .objectLengthBubble {
   color: var(--null-color);
 }
 
-
+/******************************************************************************/
 
 .objectLeftBrace,
 .objectRightBrace,
@@ -205,8 +209,8 @@
   color: var(--object-color);
 }
 
-
-
+/******************************************************************************/
+/* Cycle reference */
 
 .objectBox-Reference {
   font-weight: bold;
@@ -221,8 +225,8 @@
   color: var(--caption-color);
 }
 
-
-
+/******************************************************************************/
+/* Themes */
 
 .theme-dark .objectBox-null,
 .theme-dark .objectBox-undefined,
@@ -242,8 +246,8 @@
   font-weight: normal;
 }
 
-
-
+/******************************************************************************/
+/* Open DOMNode in inspector or Accessible in accessibility inspector button */
 
 button.open-accessibility-inspector,
 button.open-inspector {
@@ -268,8 +272,8 @@ button.open-inspector {
   background-color: var(--theme-icon-checked-color);
 }
 
-
-
+/******************************************************************************/
+/* Jump to definition button */
 
 button.jump-definition {
   display: inline-block;
@@ -293,8 +297,8 @@ button.jump-definition {
   stroke: currentColor;
 }
 
-
-
+/******************************************************************************/
+/* Invoke getter button */
 
 button.invoke-getter {
   mask: url(chrome://devtools/content/shared/components/reps/images/input.svg)
@@ -310,13 +314,13 @@ button.invoke-getter {
   background-color: var(--theme-icon-checked-color);
 }
 
-
-
+/******************************************************************************/
+/* "more…" ellipsis */
 .more-ellipsis {
   color: var(--comment-node-color);
 }
 
-
+/* function parameters */
 .objectBox-function .param {
   color: var(--theme-highlight-red);
 }
