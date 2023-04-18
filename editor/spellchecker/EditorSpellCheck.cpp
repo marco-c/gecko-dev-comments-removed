@@ -602,10 +602,22 @@ EditorSpellCheck::SetCurrentDictionaries(
     uint32_t flags = 0;
     mEditor->GetFlags(&flags);
     if (!(flags & nsIEditor::eEditorMailMask)) {
-      if (!aDictionaries.IsEmpty() &&
-          (mPreferredLang.IsEmpty() || aDictionaries.Length() > 1 ||
-           !mPreferredLang.Equals(aDictionaries[0],
-                                  nsCaseInsensitiveCStringComparator))) {
+      bool contentPrefMatchesUserPref = true;
+      
+      if (!aDictionaries.IsEmpty()) {
+        if (aDictionaries.Length() != mPreferredLangs.Length()) {
+          contentPrefMatchesUserPref = false;
+        } else {
+          for (const auto& dictName : aDictionaries) {
+            if (mPreferredLangs.IndexOf(dictName) ==
+                nsTArray<nsCString>::NoIndex) {
+              contentPrefMatchesUserPref = false;
+              break;
+            }
+          }
+        }
+      }
+      if (!contentPrefMatchesUserPref) {
         
         
         
@@ -641,6 +653,24 @@ EditorSpellCheck::SetCurrentDictionaries(
         printf("***** Possibly storing spellchecker.dictionary |%s|\n",
                asString.Data());
 #endif
+      }
+    } else {
+      MOZ_ASSERT(flags & nsIEditor::eEditorMailMask);
+      
+      
+      
+      nsCOMPtr<nsIContent> rootContent;
+      if (HTMLEditor* htmlEditor = mEditor->GetAsHTMLEditor()) {
+        rootContent = htmlEditor->GetActiveEditingHost();
+      } else {
+        rootContent = mEditor->GetRoot();
+      }
+      RefPtr<Document> ownerDoc = rootContent->OwnerDoc();
+      Document* parentDoc = ownerDoc->GetInProcessParentDocument();
+      if (parentDoc) {
+        parentDoc->SetHeaderData(
+            nsGkAtoms::headerContentLanguage,
+            NS_ConvertUTF8toUTF16(DictionariesToString(aDictionaries)));
       }
     }
   }
@@ -751,7 +781,7 @@ EditorSpellCheck::UpdateCurrentDictionary(
 
 
 
-void EditorSpellCheck::BuildDictionaryList(const nsACString& aDictName,
+bool EditorSpellCheck::BuildDictionaryList(const nsACString& aDictName,
                                            const nsTArray<nsCString>& aDictList,
                                            enum dictCompare aCompareType,
                                            nsTArray<nsCString>& aOutList) {
@@ -771,16 +801,20 @@ void EditorSpellCheck::BuildDictionaryList(const nsACString& aDictName,
         break;
     }
     if (equals) {
-      aOutList.AppendElement(dictStr);
+      
+      if (aOutList.IndexOf(dictStr) == nsTArray<nsCString>::NoIndex) {
+        aOutList.AppendElement(dictStr);
+      }
 #ifdef DEBUG_DICT
       printf("***** Trying |%s|.\n", dictStr.get());
 #endif
       
       
       
-      return;
+      return true;
     }
   }
+  return false;
 }
 
 nsresult EditorSpellCheck::DictionaryFetched(DictionaryFetcher* aFetcher) {
@@ -822,21 +856,29 @@ nsresult EditorSpellCheck::DictionaryFetched(DictionaryFetcher* aFetcher) {
 
 
 
-  
-  
-  
-  CopyUTF16toUTF8(aFetcher->mRootContentLang, mPreferredLang);
-#ifdef DEBUG_DICT
-  printf("***** mPreferredLang (element) |%s|\n", mPreferredLang.get());
-#endif
+
+
 
   
-  if (mPreferredLang.IsEmpty()) {
-    CopyUTF16toUTF8(aFetcher->mRootDocContentLang, mPreferredLang);
+  
+  
+  nsCString contentLangs;
+  
+  mPreferredLangs.Clear();
+  CopyUTF16toUTF8(aFetcher->mRootContentLang, contentLangs);
 #ifdef DEBUG_DICT
-    printf("***** mPreferredLang (content-language) |%s|\n",
-           mPreferredLang.get());
+  printf("***** mPreferredLangs (element) |%s|\n", contentLangs.get());
 #endif
+  if (!contentLangs.IsEmpty()) {
+    mPreferredLangs.AppendElement(contentLangs);
+  } else {
+    
+    CopyUTF16toUTF8(aFetcher->mRootDocContentLang, contentLangs);
+#ifdef DEBUG_DICT
+    printf("***** mPreferredLangs (content-language) |%s|\n",
+           contentLangs.get());
+#endif
+    StringToDictionaries(contentLangs, mPreferredLangs);
   }
 
   
@@ -923,10 +965,6 @@ void EditorSpellCheck::SetFallbackDictionary(DictionaryFetcher* aFetcher) {
   
   
   
-  nsAutoCString dictName(mPreferredLang);
-#ifdef DEBUG_DICT
-  printf("***** Assigned from element/doc |%s|\n", dictName.get());
-#endif
 
   
   nsAutoCString prefDictionariesAsString;
@@ -936,14 +974,17 @@ void EditorSpellCheck::SetFallbackDictionary(DictionaryFetcher* aFetcher) {
   StringToDictionaries(prefDictionariesAsString, prefDictionaries);
 
   nsAutoCString appLocaleStr;
-  if (!dictName.IsEmpty()) {
+  
+  
+  for (const auto& dictName : mPreferredLangs) {
     
-    BuildDictionaryList(dictName, dictList, DICT_COMPARE_CASE_INSENSITIVE,
-                        tryDictList);
-
+    if (BuildDictionaryList(dictName, dictList, DICT_COMPARE_CASE_INSENSITIVE,
+                            tryDictList)) {
 #ifdef DEBUG_DICT
-    printf("***** Trying from element/doc |%s| \n", dictName.get());
+      printf("***** Trying from element/doc |%s| \n", dictName.get());
 #endif
+      continue;
+    }
 
     
     
@@ -955,6 +996,7 @@ void EditorSpellCheck::SetFallbackDictionary(DictionaryFetcher* aFetcher) {
 
       
       
+      bool didAppend = false;
       for (const auto& dictionary : prefDictionaries) {
         if (nsStyleUtil::DashMatchCompare(NS_ConvertUTF8toUTF16(dictionary),
                                           NS_ConvertUTF8toUTF16(langCode),
@@ -965,39 +1007,46 @@ void EditorSpellCheck::SetFallbackDictionary(DictionaryFetcher* aFetcher) {
               "code\n",
               dictionary.Data());
 #endif
-          BuildDictionaryList(dictionary, dictList,
-                              DICT_COMPARE_CASE_INSENSITIVE, tryDictList);
-          break;
+          if (BuildDictionaryList(dictionary, dictList,
+                                  DICT_COMPARE_CASE_INSENSITIVE, tryDictList)) {
+            didAppend = true;
+            break;
+          }
+        }
+      }
+      if (didAppend) {
+        continue;
+      }
+
+      
+      
+      LocaleService::GetInstance()->GetAppLocaleAsBCP47(appLocaleStr);
+      if (!appLocaleStr.IsEmpty()) {
+        mozilla::intl::Locale appLoc;
+        auto result =
+            mozilla::intl::LocaleParser::TryParse(appLocaleStr, appLoc);
+        if (result.isOk() && loc.Canonicalize().isOk() &&
+            loc.Language().Span() == appLoc.Language().Span()) {
+          if (BuildDictionaryList(appLocaleStr, dictList,
+                                  DICT_COMPARE_CASE_INSENSITIVE, tryDictList)) {
+            continue;
+          }
         }
       }
 
-      if (tryDictList.IsEmpty()) {
-        
-        
-        LocaleService::GetInstance()->GetAppLocaleAsBCP47(appLocaleStr);
-        if (!appLocaleStr.IsEmpty()) {
-          mozilla::intl::Locale appLoc;
-          auto result =
-              mozilla::intl::LocaleParser::TryParse(appLocaleStr, appLoc);
-          if (result.isOk() && loc.Canonicalize().isOk() &&
-              loc.Language().Span() == appLoc.Language().Span()) {
-            BuildDictionaryList(appLocaleStr, dictList,
-                                DICT_COMPARE_CASE_INSENSITIVE, tryDictList);
-          }
-        }
-
-        
-        
-        nsAutoCString sysLocaleStr;
-        OSPreferences::GetInstance()->GetSystemLocale(sysLocaleStr);
-        if (!sysLocaleStr.IsEmpty()) {
-          mozilla::intl::Locale sysLoc;
-          auto result =
-              mozilla::intl::LocaleParser::TryParse(sysLocaleStr, sysLoc);
-          if (result.isOk() && loc.Canonicalize().isOk() &&
-              loc.Language().Span() == sysLoc.Language().Span()) {
-            BuildDictionaryList(sysLocaleStr, dictList,
-                                DICT_COMPARE_CASE_INSENSITIVE, tryDictList);
+      
+      
+      nsAutoCString sysLocaleStr;
+      OSPreferences::GetInstance()->GetSystemLocale(sysLocaleStr);
+      if (!sysLocaleStr.IsEmpty()) {
+        mozilla::intl::Locale sysLoc;
+        auto result =
+            mozilla::intl::LocaleParser::TryParse(sysLocaleStr, sysLoc);
+        if (result.isOk() && loc.Canonicalize().isOk() &&
+            loc.Language().Span() == sysLoc.Language().Span()) {
+          if (BuildDictionaryList(sysLocaleStr, dictList,
+                                  DICT_COMPARE_CASE_INSENSITIVE, tryDictList)) {
+            continue;
           }
         }
       }
@@ -1014,113 +1063,116 @@ void EditorSpellCheck::SetFallbackDictionary(DictionaryFetcher* aFetcher) {
 
   RefPtr<EditorSpellCheck> self = this;
   RefPtr<DictionaryFetcher> fetcher = aFetcher;
+  RefPtr<GenericPromise> promise;
+
+  if (tryDictList.IsEmpty()) {
+    
+    promise = GenericPromise::CreateAndReject(NS_ERROR_INVALID_ARG, __func__);
+  } else {
+    promise = mSpellChecker->SetCurrentDictionaries(tryDictList);
+  }
 
   
   
   
   
-  mSpellChecker->SetCurrentDictionaryFromList(tryDictList)
-      ->Then(
-          GetMainThreadSerialEventTarget(), __func__,
-          [self, fetcher]() { self->SetDictionarySucceeded(fetcher); },
-          [prefDictionaries = prefDictionaries.Clone(),
-           dictList = dictList.Clone(), self, fetcher]() {
-            
-            
-            
-            AutoTArray<nsCString, 6> tryDictList;
+  promise->Then(
+      GetMainThreadSerialEventTarget(), __func__,
+      [self, fetcher]() { self->SetDictionarySucceeded(fetcher); },
+      [prefDictionaries = prefDictionaries.Clone(), dictList = dictList.Clone(),
+       self, fetcher]() {
+        
+        
+        
+        AutoTArray<nsCString, 6> tryDictList;
 
-            
-            
-            nsAutoCString appLocaleStr;
-            LocaleService::GetInstance()->GetAppLocaleAsBCP47(appLocaleStr);
+        
+        
+        nsAutoCString appLocaleStr;
+        LocaleService::GetInstance()->GetAppLocaleAsBCP47(appLocaleStr);
 #ifdef DEBUG_DICT
-            printf("***** Trying locale |%s|\n", appLocaleStr.get());
+        printf("***** Trying locale |%s|\n", appLocaleStr.get());
 #endif
-            self->BuildDictionaryList(appLocaleStr, dictList,
-                                      DICT_COMPARE_CASE_INSENSITIVE,
-                                      tryDictList);
+        self->BuildDictionaryList(appLocaleStr, dictList,
+                                  DICT_COMPARE_CASE_INSENSITIVE, tryDictList);
 
-            
-            
-            
-            nsTArray<nsCString> currentDictionaries;
-            self->GetCurrentDictionaries(currentDictionaries);
-            if (!currentDictionaries.IsEmpty() && tryDictList.IsEmpty()) {
+        
+        
+        
+        nsTArray<nsCString> currentDictionaries;
+        self->GetCurrentDictionaries(currentDictionaries);
+        if (!currentDictionaries.IsEmpty() && tryDictList.IsEmpty()) {
 #ifdef DEBUG_DICT
-              printf("***** Retrieved current dict |%s|\n",
-                     DictionariesToString(currentDictionaries).Data());
+          printf("***** Retrieved current dict |%s|\n",
+                 DictionariesToString(currentDictionaries).Data());
 #endif
-              self->EndUpdateDictionary();
-              if (fetcher->mCallback) {
-                fetcher->mCallback->EditorSpellCheckDone();
-              }
-              return;
-            }
+          self->EndUpdateDictionary();
+          if (fetcher->mCallback) {
+            fetcher->mCallback->EditorSpellCheckDone();
+          }
+          return;
+        }
 
-            
-            
-            
-            char* env_lang = getenv("LANG");
-            if (env_lang) {
-              nsAutoCString lang(env_lang);
-              
-              int32_t dot_pos = lang.FindChar('.');
-              if (dot_pos != -1) {
-                lang = Substring(lang, 0, dot_pos);
-              }
+        
+        
+        
+        char* env_lang = getenv("LANG");
+        if (env_lang) {
+          nsAutoCString lang(env_lang);
+          
+          int32_t dot_pos = lang.FindChar('.');
+          if (dot_pos != -1) {
+            lang = Substring(lang, 0, dot_pos);
+          }
 
-              int32_t underScore = lang.FindChar('_');
-              if (underScore != -1) {
-                lang.Replace(underScore, 1, '-');
+          int32_t underScore = lang.FindChar('_');
+          if (underScore != -1) {
+            lang.Replace(underScore, 1, '-');
 #ifdef DEBUG_DICT
-                printf("***** Trying LANG from environment |%s|\n", lang.get());
+            printf("***** Trying LANG from environment |%s|\n", lang.get());
 #endif
-                self->BuildDictionaryList(
-                    lang, dictList, DICT_COMPARE_CASE_INSENSITIVE, tryDictList);
-              }
-            }
+            self->BuildDictionaryList(
+                lang, dictList, DICT_COMPARE_CASE_INSENSITIVE, tryDictList);
+          }
+        }
 
-            
-            
-            if (!dictList.IsEmpty()) {
-              self->BuildDictionaryList(dictList[0], dictList,
-                                        DICT_NORMAL_COMPARE, tryDictList);
+        
+        
+        if (!dictList.IsEmpty()) {
+          self->BuildDictionaryList(dictList[0], dictList, DICT_NORMAL_COMPARE,
+                                    tryDictList);
 #ifdef DEBUG_DICT
-              printf("***** Trying first of list |%s|\n", dictList[0].get());
+          printf("***** Trying first of list |%s|\n", dictList[0].get());
 #endif
-            }
+        }
 
-            
-            
-            
-            if (!prefDictionaries.IsEmpty()) {
-              self->mSpellChecker->SetCurrentDictionaries(prefDictionaries)
-                  ->Then(
-                      GetMainThreadSerialEventTarget(), __func__,
-                      [self, fetcher]() {
-                        self->SetDictionarySucceeded(fetcher);
-                      },
-                      
-                      
-                      [tryDictList = tryDictList.Clone(), self, fetcher]() {
-                        self->mSpellChecker
-                            ->SetCurrentDictionaryFromList(tryDictList)
-                            ->Then(GetMainThreadSerialEventTarget(), __func__,
-                                   [self, fetcher]() {
-                                     self->SetDictionarySucceeded(fetcher);
-                                   });
-                      });
-            } else {
-              
-              
-              self->mSpellChecker->SetCurrentDictionaryFromList(tryDictList)
-                  ->Then(GetMainThreadSerialEventTarget(), __func__,
-                         [self, fetcher]() {
-                           self->SetDictionarySucceeded(fetcher);
-                         });
-            }
-          });
+        
+        
+        
+        if (!prefDictionaries.IsEmpty()) {
+          self->mSpellChecker->SetCurrentDictionaries(prefDictionaries)
+              ->Then(
+                  GetMainThreadSerialEventTarget(), __func__,
+                  [self, fetcher]() { self->SetDictionarySucceeded(fetcher); },
+                  
+                  
+                  [tryDictList = tryDictList.Clone(), self, fetcher]() {
+                    self->mSpellChecker
+                        ->SetCurrentDictionaryFromList(tryDictList)
+                        ->Then(GetMainThreadSerialEventTarget(), __func__,
+                               [self, fetcher]() {
+                                 self->SetDictionarySucceeded(fetcher);
+                               });
+                  });
+        } else {
+          
+          
+          self->mSpellChecker->SetCurrentDictionaryFromList(tryDictList)
+              ->Then(
+                  GetMainThreadSerialEventTarget(), __func__,
+                  [self, fetcher]() { self->SetDictionarySucceeded(fetcher); });
+        }
+      });
 }
 
 }  
