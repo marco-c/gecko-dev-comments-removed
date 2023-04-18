@@ -2224,10 +2224,6 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
 #endif
   }
 
-  void loadWasmPinnedRegsFromTls() {
-    loadPtr(Address(WasmTlsReg, offsetof(wasm::TlsData, memoryBase)), HeapReg);
-  }
-
   
   void movePayload(Register src, Register dest) {
     

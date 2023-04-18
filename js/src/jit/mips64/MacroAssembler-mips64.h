@@ -819,10 +819,6 @@ class MacroAssemblerMIPS64Compat : public MacroAssemblerMIPS64 {
     as_movs(dest, src);
   }
 
-  void loadWasmPinnedRegsFromTls() {
-    loadPtr(Address(WasmTlsReg, offsetof(wasm::TlsData, memoryBase)), HeapReg);
-  }
-
   
   void profilerEnterFrame(Register framePtr, Register scratch);
   void profilerExitFrame();

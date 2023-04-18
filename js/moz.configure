@@ -1219,6 +1219,24 @@ set_config(
 
 
 
+
+
+
+
+
+@depends("--enable-simulator", target)
+def wasm_has_heapreg(simulator, target):
+    if target.cpu != "x86":
+        return True
+
+    if simulator and simulator[0] == "arm":
+        return True
+
+
+set_define("WASM_HAS_HEAPREG", wasm_has_heapreg)
+
+
+
 with only_when(compile_environment):
     set_define(
         "HAVE_TM_ZONE_TM_GMTOFF",

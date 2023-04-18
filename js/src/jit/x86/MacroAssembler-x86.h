@@ -1111,10 +1111,6 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared {
   inline void ensureDouble(const ValueOperand& source, FloatRegister dest,
                            Label* failure);
 
-  void loadWasmPinnedRegsFromTls() {
-    
-  }
-
  public:
   
   void handleFailureWithHandlerTail(Label* profilerExitTail);
