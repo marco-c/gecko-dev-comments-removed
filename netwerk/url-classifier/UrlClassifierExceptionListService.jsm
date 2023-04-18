@@ -2,7 +2,7 @@
 
 
 
-this.UrlClassifierExceptionListService = function() {};
+function UrlClassifierExceptionListService() {}
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
