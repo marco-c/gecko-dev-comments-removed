@@ -5369,13 +5369,6 @@ void EditorBase::ReinitializeSelection(Element& aElement) {
   
   
   SyncRealTimeSpell();
-
-  RefPtr<nsPresContext> presContext = GetPresContext();
-  if (NS_WARN_IF(!presContext)) {
-    return;
-  }
-  RefPtr<Element> focusedElement = GetFocusedElement();
-  IMEStateManager::OnFocusInEditor(*presContext, focusedElement, *this);
 }
 
 Element* EditorBase::GetEditorRoot() const { return GetRoot(); }
@@ -5684,10 +5677,34 @@ bool EditorBase::CanKeepHandlingFocusEvent(
          exposedTargetContent == exposedFocusedContent;
 }
 
-void EditorBase::OnFocus(const nsINode& aOriginalEventTargetNode) {
+nsresult EditorBase::OnFocus(const nsINode& aOriginalEventTargetNode) {
+  RefPtr<PresShell> presShell = GetPresShell();
+  if (NS_WARN_IF(!presShell)) {
+    return NS_ERROR_FAILURE;
+  }
+  
+  
+  presShell->FlushPendingNotifications(FlushType::Layout);
+  if (MOZ_UNLIKELY(!CanKeepHandlingFocusEvent(aOriginalEventTargetNode))) {
+    return NS_OK;
+  }
+
   AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
   if (NS_WARN_IF(!editActionData.CanHandle())) {
-    return;
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  nsresult rv = FlushPendingSpellCheck();
+  if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
+    NS_WARNING("EditorBase::FlushPendingSpellCheck() failed");
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
+  NS_WARNING_ASSERTION(
+      NS_SUCCEEDED(rv),
+      "EditorBase::FlushPendingSpellCheck() failed, but ignored");
+  if (MOZ_UNLIKELY(!CanKeepHandlingFocusEvent(aOriginalEventTargetNode))) {
+    return NS_OK;
   }
 
   InitializeSelection(aOriginalEventTargetNode);
@@ -5700,6 +5717,20 @@ void EditorBase::OnFocus(const nsINode& aOriginalEventTargetNode) {
         "mozInlineSpellCHecker::UpdateCurrentDictionary() failed, but ignored");
     mSpellCheckerDictionaryUpdated = true;
   }
+  
+  
+  if (MOZ_UNLIKELY(!CanKeepHandlingFocusEvent(aOriginalEventTargetNode))) {
+    return NS_ERROR_EDITOR_DESTROYED;
+  }
+
+  RefPtr<nsPresContext> presContext = GetPresContext();
+  if (NS_WARN_IF(!presContext)) {
+    return NS_ERROR_FAILURE;
+  }
+  RefPtr<Element> focusedElement = GetFocusedElement();
+  IMEStateManager::OnFocusInEditor(*presContext, focusedElement, *this);
+
+  return NS_OK;
 }
 
 void EditorBase::HideCaret(bool aHide) {

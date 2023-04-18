@@ -614,7 +614,7 @@ class EditorBase : public nsIEditor,
 
 
 
-  MOZ_CAN_RUN_SCRIPT void OnFocus(const nsINode& aOriginalEventTargetNode);
+  MOZ_CAN_RUN_SCRIPT nsresult OnFocus(const nsINode& aOriginalEventTargetNode);
 
   
 
