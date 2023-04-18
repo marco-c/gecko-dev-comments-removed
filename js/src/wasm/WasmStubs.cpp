@@ -2338,8 +2338,8 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
   Register callee = ABINonArgReturnReg0;  
 
   
-  masm.loadWasmGlobalPtr(fi.tlsDataOffset() + offsetof(FuncImportTls, fun),
-                         callee);
+  masm.loadWasmGlobalPtr(
+      fi.tlsDataOffset() + offsetof(FuncImportInstanceData, fun), callee);
 
   
   masm.storePtr(callee, Address(masm.getStackPointer(), calleeArgOffset));

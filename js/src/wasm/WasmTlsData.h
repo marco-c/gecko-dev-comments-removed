@@ -45,14 +45,14 @@ using ExportFuncPtr = int32_t (*)(ExportArg*, Instance*);
 
 
 
-struct FuncImportTls {
+struct FuncImportInstanceData {
   
   
   void* code;
 
   
   
-  Instance* tls;
+  Instance* instance;
 
   
   JS::Realm* realm;
@@ -67,7 +67,7 @@ struct FuncImportTls {
 
 
 
-struct TableTls {
+struct TableInstanceData {
   
   uint32_t length;
 
@@ -90,7 +90,7 @@ struct FunctionTableElem {
 
   
   
-  Instance* tls;
+  Instance* instance;
 };
 
 }  

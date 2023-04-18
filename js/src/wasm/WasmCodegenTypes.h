@@ -544,6 +544,7 @@ class CalleeDesc {
 
     
     
+    
     Import,
 
     
@@ -598,11 +599,12 @@ class CalleeDesc {
   bool isTable() const { return which_ == WasmTable || which_ == AsmJSTable; }
   uint32_t tableLengthGlobalDataOffset() const {
     MOZ_ASSERT(isTable());
-    return u.table.globalDataOffset_ + offsetof(TableTls, length);
+    return u.table.globalDataOffset_ + offsetof(TableInstanceData, length);
   }
   uint32_t tableFunctionBaseGlobalDataOffset() const {
     MOZ_ASSERT(isTable());
-    return u.table.globalDataOffset_ + offsetof(TableTls, functionBase);
+    return u.table.globalDataOffset_ +
+           offsetof(TableInstanceData, functionBase);
   }
   TypeIdDesc wasmTableSigId() const {
     MOZ_ASSERT(which_ == WasmTable);
