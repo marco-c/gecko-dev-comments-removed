@@ -136,7 +136,7 @@ add_task(async function() {
 
   
   
-  EventUtils.sendString(" p");
+  EventUtils.sendString(" pro");
   testAutocompleteContents(["protocol:"], document);
 
   
@@ -180,6 +180,7 @@ add_task(async function() {
       "-larger-than:",
       "-method:",
       "-mime-type:",
+      "-priority:",
       "-protocol:",
       "-regexp:",
       "-remote-ip:",
