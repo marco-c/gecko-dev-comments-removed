@@ -3707,6 +3707,8 @@ pub struct SurfaceInfo {
     pub world_scale_factors: (f32, f32),
     
     pub local_scale: (f32, f32),
+    
+    pub allow_snapping: bool,
 }
 
 impl SurfaceInfo {
@@ -3718,6 +3720,7 @@ impl SurfaceInfo {
         device_pixel_scale: DevicePixelScale,
         world_scale_factors: (f32, f32),
         local_scale: (f32, f32),
+        allow_snapping: bool,
     ) -> Self {
         let map_surface_to_world = SpaceMapper::new_with_target(
             spatial_tree.root_reference_frame_index(),
@@ -3746,6 +3749,7 @@ impl SurfaceInfo {
             device_pixel_scale,
             world_scale_factors,
             local_scale,
+            allow_snapping,
         }
     }
 
@@ -5768,7 +5772,7 @@ impl PicturePrimitive {
                 
                 
 
-                let world_scale_factors = match parent_surface_index {
+                let (world_scale_factors, parent_allows_snapping) = match parent_surface_index {
                     Some(parent_surface_index) => {
                         let parent_surface = &surfaces[parent_surface_index.0];
 
@@ -5791,10 +5795,12 @@ impl PicturePrimitive {
                             local_to_surface.scale_factors()
                         };
 
-                        (
+                        let scale_factors = (
                             scale_factors.0 * parent_surface.world_scale_factors.0,
                             scale_factors.1 * parent_surface.world_scale_factors.1,
-                        )
+                        );
+
+                        (scale_factors, parent_surface.allow_snapping)
                     }
                     None => {
                         let local_to_surface_scale_factors = frame_context
@@ -5805,13 +5811,24 @@ impl PicturePrimitive {
                             )
                             .scale_factors();
 
-                        (
+                        let scale_factors = (
                             local_to_surface_scale_factors.0,
                             local_to_surface_scale_factors.1,
-                        )
+                        );
 
+                        (scale_factors, true)
                     }
                 };
+
+                
+                
+                
+                
+                
+                
+                let allow_snapping =
+                    parent_allows_snapping &&
+                    !self.flags.contains(PictureFlags::IS_SUB_GRAPH);
 
                 
                 
@@ -5860,6 +5877,7 @@ impl PicturePrimitive {
                         let surface_spatial_node = frame_context.spatial_tree.get_spatial_node(surface_spatial_node_index);
 
                         let enable_snapping =
+                            allow_snapping &&
                             surface_spatial_node.coordinate_system_id == CoordinateSystemId::root() &&
                             surface_spatial_node.snapping_transform.is_some();
 
@@ -5899,6 +5917,7 @@ impl PicturePrimitive {
                     device_pixel_scale,
                     world_scale_factors,
                     local_scale,
+                    allow_snapping,
                 );
 
                 let surface_index = SurfaceIndex(surfaces.len());
@@ -7033,6 +7052,7 @@ fn test_large_surface_scale_1() {
             device_pixel_scale: DevicePixelScale::new(1.0),
             world_scale_factors: (1.0, 1.0),
             local_scale: (1.0, 1.0),
+            allow_snapping: true,
         },
         SurfaceInfo {
             unclipped_local_rect: PictureRect::new(
@@ -7048,6 +7068,7 @@ fn test_large_surface_scale_1() {
             device_pixel_scale: DevicePixelScale::new(43.82798767089844),
             world_scale_factors: (1.0, 1.0),
             local_scale: (1.0, 1.0),
+            allow_snapping: true,
         },
     ];
 
