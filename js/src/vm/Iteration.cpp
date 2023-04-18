@@ -237,7 +237,7 @@ static bool EnumerateNativeProperties(JSContext* cx, HandleNativeObject pobj,
       
       
       
-      static_assert(JSID_INT_MAX == INT32_MAX);
+      static_assert(PropertyKey::IntMax == INT32_MAX);
       if (len > INT32_MAX) {
         ReportOutOfMemory(cx);
         return false;

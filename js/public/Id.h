@@ -55,6 +55,9 @@ class PropertyKey {
   
   static constexpr uintptr_t TypeMask = 0x7;
 
+  static constexpr uint32_t IntMin = 0;
+  static constexpr uint32_t IntMax = INT32_MAX;
+
   constexpr PropertyKey() : asBits_(VoidTypeTag) {}
 
   static constexpr MOZ_ALWAYS_INLINE PropertyKey fromRawBits(uintptr_t bits) {
@@ -209,9 +212,6 @@ class PropertyKey {
 }  
 
 using jsid = JS::PropertyKey;
-
-#define JSID_INT_MIN 0
-#define JSID_INT_MAX INT32_MAX
 
 namespace JS {
 

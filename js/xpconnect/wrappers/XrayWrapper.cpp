@@ -936,7 +936,7 @@ bool JSXrayTraits::enumerateNames(JSContext* cx, HandleObject wrapper,
       
       
       
-      static_assert(JSID_INT_MAX >= INT32_MAX);
+      static_assert(PropertyKey::IntMax >= INT32_MAX);
       if (length > INT32_MAX) {
         JS_ReportOutOfMemory(cx);
         return false;
