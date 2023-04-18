@@ -34,7 +34,11 @@ void ChannelEventQueue::FlushQueue() {
   
   
   
-  nsCOMPtr<nsISupports> kungFuDeathGrip(mOwner);
+  nsCOMPtr<nsISupports> kungFuDeathGrip;
+  {
+    MutexAutoLock lock(mMutex);
+    kungFuDeathGrip = mOwner;
+  }
   mozilla::Unused << kungFuDeathGrip;  
 
 #ifdef DEBUG
@@ -155,6 +159,10 @@ void ChannelEventQueue::ResumeInternal() {
       RefPtr<ChannelEventQueue> mQueue;
       nsCOMPtr<nsISupports> mOwner;
     };
+
+    if (!mOwner) {
+      return;
+    }
 
     
     RefPtr<Runnable> event = new CompleteResumeRunnable(this, mOwner);
