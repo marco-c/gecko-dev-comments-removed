@@ -12,7 +12,8 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["Subprocess"];
+
+var EXPORTED_SYMBOLS = ["Subprocess", "SubprocessImpl"];
 
 
 

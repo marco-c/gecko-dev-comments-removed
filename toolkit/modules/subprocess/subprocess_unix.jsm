@@ -7,7 +7,9 @@
 
 
 
-var EXPORTED_SYMBOLS = ["SubprocessImpl"];
+
+
+var EXPORTED_SYMBOLS = ["SubprocessImpl", "libc"];
 
 const { ctypes } = ChromeUtils.import("resource://gre/modules/ctypes.jsm");
 const { OS } = ChromeUtils.import("resource://gre/modules/osfile.jsm");

@@ -129,6 +129,13 @@ var CloudStorage = {
   
 
 
+  get promiseInit() {
+    return CloudStorageInternal.promiseInit;
+  },
+
+  
+
+
 
 
 

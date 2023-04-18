@@ -7,7 +7,9 @@
 
 
 
-var EXPORTED_SYMBOLS = ["SubprocessImpl"];
+
+
+var EXPORTED_SYMBOLS = ["SubprocessImpl", "libc", "win32"];
 
 const { AppConstants } = ChromeUtils.import(
   "resource://gre/modules/AppConstants.jsm"
