@@ -33,9 +33,11 @@
 class nsICacheInfoChannel;
 
 namespace mozilla::dom {
-
 class ScriptLoadContext;
+}  
 
+namespace mozilla::loader {
+class ComponentLoadContext;
 }  
 
 namespace JS {
@@ -294,9 +296,12 @@ class ScriptLoadRequest
 
   void DropBytecodeCacheReferences();
 
-  bool HasLoadContext() { return mLoadContext; }
+  bool HasLoadContext() const { return mLoadContext; }
 
+  bool HasScriptLoadContext() const;
   mozilla::dom::ScriptLoadContext* GetScriptLoadContext();
+
+  mozilla::loader::ComponentLoadContext* GetComponentLoadContext();
 
   const ScriptKind mKind;  
                            

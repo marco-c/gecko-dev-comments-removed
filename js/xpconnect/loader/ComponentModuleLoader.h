@@ -7,6 +7,7 @@
 #ifndef mozilla_loader_ComponentModuleLoader_h
 #define mozilla_loader_ComponentModuleLoader_h
 
+#include "js/loader/LoadContextBase.h"
 #include "js/loader/ModuleLoaderBase.h"
 
 namespace mozilla {
@@ -73,6 +74,21 @@ class ComponentModuleLoader : public JS::loader::ModuleLoaderBase {
       JS::MutableHandle<JSObject*> aModuleScript) override;
 
   void OnModuleLoadComplete(ModuleLoadRequest* aRequest) override;
+};
+
+
+
+class ComponentLoadContext : public JS::loader::LoadContextBase {
+ public:
+  ComponentLoadContext()
+      : LoadContextBase(JS::loader::ContextKind::Component) {}
+
+ public:
+  
+  
+  nsresult mRv;
+  JS::PersistentRootedValue mExceptionValue;
+  JS::PersistentRootedScript mScript;
 };
 
 }  
