@@ -1566,6 +1566,20 @@
 
 
 
+
+
+
+
+ \
+    IF_RECORD_TUPLE(MACRO(AddRecordSpread, add_record_spread, NULL, 1, 2, 1, JOF_BYTE)) \
+    
+
+
+
+
+
+
+
  \
     IF_RECORD_TUPLE(MACRO(FinishRecord, finish_record, NULL, 1, 1, 1, JOF_BYTE)) \
     
@@ -3594,7 +3608,7 @@
   IF_RECORD_TUPLE(, MACRO(231))     \
   IF_RECORD_TUPLE(, MACRO(232))     \
   IF_RECORD_TUPLE(, MACRO(233))     \
-  MACRO(234)                                   \
+  IF_RECORD_TUPLE(, MACRO(234))     \
   MACRO(235)                                   \
   MACRO(236)                                   \
   MACRO(237)                                   \
