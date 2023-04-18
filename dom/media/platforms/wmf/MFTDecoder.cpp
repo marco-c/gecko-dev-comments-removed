@@ -83,7 +83,7 @@ MFTDecoder::Create(const GUID& aCategory, const GUID& aInSubtype,
   }
   auto guard = MakeScopeExit([&] {
     
-    for (int i = 1; i < actsNum; i++) {
+    for (UINT32 i = 1; i < actsNum; i++) {
       acts[i]->Release();
     }
     CoTaskMemFree(acts);

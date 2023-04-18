@@ -1272,7 +1272,7 @@ static nsresult PinCurrentAppToTaskbarImpl(bool aCheckOnly,
   int shortcutCSIDLs[] = {CSIDL_COMMON_PROGRAMS, CSIDL_PROGRAMS,
                           CSIDL_COMMON_DESKTOPDIRECTORY,
                           CSIDL_DESKTOPDIRECTORY};
-  for (int i = 0; i < ArrayLength(shortcutCSIDLs); ++i) {
+  for (size_t i = 0; i < ArrayLength(shortcutCSIDLs); ++i) {
     
     
     
@@ -1539,7 +1539,7 @@ nsWindowsShellService::ClassifyShortcut(const nsAString& aPath,
                  {FOLDERID_UserPinned, u"\\TaskBar\\", u"Taskbar"},
                  {FOLDERID_UserPinned, u"\\StartMenu\\", u"StartMenu"}};
 
-  for (int i = 0; i < ArrayLength(folders); ++i) {
+  for (size_t i = 0; i < ArrayLength(folders); ++i) {
     nsAutoString knownPath;
 
     
