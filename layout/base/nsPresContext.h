@@ -899,16 +899,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   
   bool IsChrome() const;
 
-  
-  void SetPaintFlashing(bool aPaintFlashing) {
-    mPaintFlashing = aPaintFlashing;
-    mPaintFlashingInitialized = true;
-  }
-
-  
-  
-  bool GetPaintFlashing() const;
-
   bool SuppressingResizeReflow() const { return mSuppressResizeReflow; }
 
   gfxUserFontSet* GetUserFontSet();
@@ -1353,11 +1343,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   unsigned mSuppressResizeReflow : 1;
 
   unsigned mIsVisual : 1;
-
-  
-  
-  mutable unsigned mPaintFlashing : 1;
-  mutable unsigned mPaintFlashingInitialized : 1;
 
   unsigned mHasWarnedAboutPositionedTableParts : 1;
 

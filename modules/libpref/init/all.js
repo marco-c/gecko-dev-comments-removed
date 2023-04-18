@@ -930,11 +930,6 @@ pref("view_source.editor.args", "");
 pref("nglayout.enable_drag_images", true);
 
 
-
-pref("nglayout.debug.paint_flashing", false);
-pref("nglayout.debug.paint_flashing_chrome", false);
-
-
 pref("browser.fixup.alternate.enabled", true);
 pref("browser.fixup.alternate.prefix", "www.");
 pref("browser.fixup.alternate.protocol", "https");

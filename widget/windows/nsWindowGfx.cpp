@@ -215,17 +215,6 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
   }
 #endif
 
-#ifdef WIDGET_DEBUG_OUTPUT
-  HRGN debugPaintFlashRegion = nullptr;
-  HDC debugPaintFlashDC = nullptr;
-
-  if (debug_WantPaintFlashing()) {
-    debugPaintFlashRegion = ::CreateRectRgn(0, 0, 0, 0);
-    ::GetUpdateRgn(mWnd, debugPaintFlashRegion, TRUE);
-    debugPaintFlashDC = ::GetDC(mWnd);
-  }
-#endif  
-
   HDC hDC = aDC ? aDC : (::BeginPaint(mWnd, &ps));
   mPaintDC = hDC;
 
@@ -369,22 +358,6 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
 
   mPaintDC = nullptr;
   mLastPaintEndTime = TimeStamp::Now();
-
-#if defined(WIDGET_DEBUG_OUTPUT)
-  if (debug_WantPaintFlashing()) {
-    
-    
-    
-    if (result) {
-      ::InvertRgn(debugPaintFlashDC, debugPaintFlashRegion);
-      PR_Sleep(PR_MillisecondsToInterval(30));
-      ::InvertRgn(debugPaintFlashDC, debugPaintFlashRegion);
-      PR_Sleep(PR_MillisecondsToInterval(30));
-    }
-    ::ReleaseDC(mWnd, debugPaintFlashDC);
-    ::DeleteObject(debugPaintFlashRegion);
-  }
-#endif  
 
   
   listener = GetPaintListener();
