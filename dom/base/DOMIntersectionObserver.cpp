@@ -316,8 +316,7 @@ static BrowsingContextOrigin SimilarOrigin(const Element& aTarget,
 
 
 
-static const Document* GetTopLevelContentDocumentInThisProcess(
-    const Document& aDocument) {
+static Document* GetTopLevelContentDocumentInThisProcess(Document& aDocument) {
   auto* wc = aDocument.GetTopLevelWindowContext();
   return wc ? wc->GetExtantDoc() : nullptr;
 }
@@ -463,9 +462,9 @@ struct OopIframeMetrics {
   nsRect mRemoteDocumentVisibleRect;
 };
 
-static Maybe<OopIframeMetrics> GetOopIframeMetrics(
-    const Document& aDocument, const Document* aRootDocument) {
-  const Document* rootDoc =
+static Maybe<OopIframeMetrics> GetOopIframeMetrics(Document& aDocument,
+                                                   Document* aRootDocument) {
+  Document* rootDoc =
       nsContentUtils::GetInProcessSubtreeRootDocument(&aDocument);
   MOZ_ASSERT(rootDoc);
 
@@ -524,9 +523,8 @@ static Maybe<OopIframeMetrics> GetOopIframeMetrics(
 
 
 
-IntersectionInput DOMIntersectionObserver::ComputeInput(
-    const Document& aDocument, const nsINode* aRoot,
-    const StyleRect<LengthPercentage>* aRootMargin) {
+void DOMIntersectionObserver::Update(Document* aDocument,
+                                     DOMHighResTimeStamp time) {
   
   
   
@@ -535,11 +533,10 @@ IntersectionInput DOMIntersectionObserver::ComputeInput(
   
   nsRect rootRect;
   nsIFrame* rootFrame = nullptr;
-  const nsINode* root = aRoot;
-  const bool isImplicitRoot = !aRoot;
+  nsINode* root = mRoot;
   Maybe<nsRect> remoteDocumentVisibleRect;
-  if (aRoot && aRoot->IsElement()) {
-    if ((rootFrame = aRoot->AsElement()->GetPrimaryFrame())) {
+  if (mRoot && mRoot->IsElement()) {
+    if ((rootFrame = mRoot->AsElement()->GetPrimaryFrame())) {
       nsRect rootRectRelativeToRootFrame;
       if (nsIScrollableFrame* scrollFrame = do_QueryFrame(rootFrame)) {
         
@@ -555,10 +552,10 @@ IntersectionInput DOMIntersectionObserver::ComputeInput(
           rootFrame, rootRectRelativeToRootFrame, containingBlock);
     }
   } else {
-    MOZ_ASSERT(!aRoot || aRoot->IsDocument());
-    const Document* rootDocument =
-        aRoot ? aRoot->AsDocument()
-              : GetTopLevelContentDocumentInThisProcess(aDocument);
+    MOZ_ASSERT(!mRoot || mRoot->IsDocument());
+    Document* rootDocument =
+        mRoot ? mRoot->AsDocument()
+              : GetTopLevelContentDocumentInThisProcess(*aDocument);
     root = rootDocument;
 
     if (rootDocument) {
@@ -584,7 +581,7 @@ IntersectionInput DOMIntersectionObserver::ComputeInput(
     }
 
     if (Maybe<OopIframeMetrics> metrics =
-            GetOopIframeMetrics(aDocument, rootDocument)) {
+            GetOopIframeMetrics(*aDocument, rootDocument)) {
       rootFrame = metrics->mInProcessRootFrame;
       if (!rootDocument) {
         rootRect = metrics->mInProcessRootRect;
@@ -595,104 +592,101 @@ IntersectionInput DOMIntersectionObserver::ComputeInput(
 
   nsMargin rootMargin;  
                         
-  if (aRootMargin) {
-    for (const auto side : mozilla::AllPhysicalSides()) {
-      nscoord basis = side == eSideTop || side == eSideBottom
-                          ? rootRect.Height()
-                          : rootRect.Width();
-      rootMargin.Side(side) = aRootMargin->Get(side).Resolve(
-          basis, static_cast<nscoord (*)(float)>(NSToCoordRoundWithClamp));
-    }
+  for (const auto side : mozilla::AllPhysicalSides()) {
+    nscoord basis = side == eSideTop || side == eSideBottom ? rootRect.Height()
+                                                            : rootRect.Width();
+    rootMargin.Side(side) = mRootMargin.Get(side).Resolve(
+        basis, static_cast<nscoord (*)(float)>(NSToCoordRoundWithClamp));
   }
-  return {isImplicitRoot, root,       rootFrame,
-          rootRect,       rootMargin, remoteDocumentVisibleRect};
-}
-
-
-
-IntersectionOutput DOMIntersectionObserver::Intersect(
-    const IntersectionInput& aInput, Element& aTarget) {
-  const bool isSimilarOrigin = SimilarOrigin(aTarget, aInput.mRootNode) ==
-                               BrowsingContextOrigin::Similar;
-  nsIFrame* targetFrame = aTarget.GetPrimaryFrame();
-  if (!targetFrame || !aInput.mRootFrame) {
-    return {isSimilarOrigin};
-  }
-
-  
-  
-  
-  
-  
-  if (targetFrame->AncestorHidesContent()) {
-    return {isSimilarOrigin};
-  }
-
-  
-  
-  if (!aInput.mIsImplicitRoot &&
-      aInput.mRootNode->OwnerDoc() != aTarget.OwnerDoc()) {
-    return {isSimilarOrigin};
-  }
-
-  
-  
-  
-  
-  
-  
-  if (aInput.mRootFrame == targetFrame ||
-      !nsLayoutUtils::IsAncestorFrameCrossDocInProcess(aInput.mRootFrame,
-                                                       targetFrame)) {
-    return {isSimilarOrigin};
-  }
-
-  nsRect rootBounds = aInput.mRootRect;
-  if (isSimilarOrigin) {
-    rootBounds.Inflate(aInput.mRootMargin);
-  }
-
-  
-  
-  nsRect targetRect = targetFrame->GetBoundingClientRect();
-
-  
-  
-  Maybe<nsRect> intersectionRect =
-      ComputeTheIntersection(targetFrame, aInput.mRootFrame, rootBounds,
-                             aInput.mRemoteDocumentVisibleRect);
-
-  return {isSimilarOrigin, rootBounds, targetRect, intersectionRect};
-}
-
-
-
-void DOMIntersectionObserver::Update(Document* aDocument,
-                                     DOMHighResTimeStamp time) {
-  auto input = ComputeInput(*aDocument, mRoot, &mRootMargin);
 
   
   
   for (Element* target : mObservationTargets) {
-    
-    IntersectionOutput output = Intersect(input, *target);
+    nsIFrame* targetFrame = target->GetPrimaryFrame();
+    BrowsingContextOrigin origin = SimilarOrigin(*target, root);
+
+    Maybe<nsRect> intersectionRect;
+    nsRect targetRect;
+    nsRect rootBounds;
+
+    const bool canComputeIntersection = [&] {
+      if (!targetFrame || !rootFrame) {
+        return false;
+      }
+
+      
+      
+      
+      
+      
+      if (targetFrame->AncestorHidesContent()) {
+        return false;
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (rootFrame == targetFrame ||
+          !nsLayoutUtils::IsAncestorFrameCrossDocInProcess(rootFrame,
+                                                           targetFrame)) {
+        return false;
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      if (mRoot && mRoot->OwnerDoc() != target->OwnerDoc()) {
+        return false;
+      }
+
+      return true;
+    }();
+
+    if (canComputeIntersection) {
+      rootBounds = rootRect;
+      if (origin == BrowsingContextOrigin::Similar) {
+        rootBounds.Inflate(rootMargin);
+      }
+
+      
+      
+      targetRect = targetFrame->GetBoundingClientRect();
+
+      
+      
+      intersectionRect = ComputeTheIntersection(
+          targetFrame, rootFrame, rootBounds, remoteDocumentVisibleRect);
+    }
 
     
-    int64_t targetArea = (int64_t)output.mTargetRect.Width() *
-                         (int64_t)output.mTargetRect.Height();
+    int64_t targetArea =
+        (int64_t)targetRect.Width() * (int64_t)targetRect.Height();
+    
+    int64_t intersectionArea = !intersectionRect
+                                   ? 0
+                                   : (int64_t)intersectionRect->Width() *
+                                         (int64_t)intersectionRect->Height();
 
     
-    int64_t intersectionArea =
-        !output.mIntersectionRect
-            ? 0
-            : (int64_t)output.mIntersectionRect->Width() *
-                  (int64_t)output.mIntersectionRect->Height();
-
     
     
     
-    
-    const bool isIntersecting = output.Intersects();
+    const bool isIntersecting = intersectionRect.isSome();
 
     
     
@@ -735,9 +729,9 @@ void DOMIntersectionObserver::Update(Document* aDocument,
       
       QueueIntersectionObserverEntry(
           target, time,
-          output.mIsSimilarOrigin ? Some(output.mRootBounds) : Nothing(),
-          output.mTargetRect, output.mIntersectionRect, thresholdIndex > 0,
-          intersectionRatio);
+          origin == BrowsingContextOrigin::Similar ? Some(rootBounds)
+                                                   : Nothing(),
+          targetRect, intersectionRect, thresholdIndex > 0, intersectionRatio);
     }
   }
 }

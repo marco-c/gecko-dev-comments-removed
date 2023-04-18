@@ -7042,9 +7042,7 @@ bool Document::ShouldThrottleFrameRequests() const {
   }
 
   if (!mPresShell) {
-    
-    
-    return false;
+    return false;  
   }
 
   if (!mPresShell->IsActive()) {
@@ -7053,27 +7051,28 @@ bool Document::ShouldThrottleFrameRequests() const {
     return true;
   }
 
-  Element* el = GetEmbedderElement();
-  if (!el) {
-    
-    
-    return false;
+  nsIFrame* frame = mPresShell->GetRootFrame();
+  if (!frame) {
+    return false;  
   }
 
-  if (!StaticPrefs::layout_throttle_in_process_iframes()) {
-    return false;
+  nsIFrame* displayRootFrame = nsLayoutUtils::GetDisplayRootFrame(frame);
+  if (!displayRootFrame) {
+    return false;  
+  }
+
+  if (!displayRootFrame->DidPaintPresShell(mPresShell)) {
+    
+    
+    
+    
+    
+    
+    return true;
   }
 
   
-  
-  
-  
-  
-  const IntersectionInput input = DOMIntersectionObserver::ComputeInput(
-      *this,  nullptr,  nullptr);
-  const IntersectionOutput output =
-      DOMIntersectionObserver::Intersect(input, *el);
-  return !output.Intersects();
+  return false;
 }
 
 void Document::DeletePresShell() {
