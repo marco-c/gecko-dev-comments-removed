@@ -1,7 +1,6 @@
 
 
 
-
 "use strict";
 
 const URL_ROOT =
@@ -40,8 +39,8 @@ add_task(async function() {
   info("Focus an input inside the iframe");
   const focusMeInput = panelFrame.contentDocument.querySelector(".focusme");
   const onFocus = BrowserTestUtils.waitForEvent(focusMeInput, "focus");
+  await SimpleTest.promiseFocus(panelFrame);
   focusMeInput.focus();
-  await new Promise(resolve => setTimeout(resolve, 1000));
   await onFocus;
 
   
