@@ -693,6 +693,7 @@ Maybe<nscolor> nsXPLookAndFeel::GenericDarkColor(ColorID aID) {
                                      
       color = NS_RGB(43, 42, 51);
       break;
+    case ColorID::Buttonshadow:
     case ColorID::Threeddarkshadow:  
                                      
     case ColorID::MozDisabledfield:  
