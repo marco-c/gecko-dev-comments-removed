@@ -60,7 +60,9 @@ class ThreadConfigurationCommand {
         )
     );
 
-    await Promise.all(
+    
+    
+    await Promise.allSettled(
       threadFronts.map(threadFront => threadFront.reconfigure(configuration))
     );
   }
