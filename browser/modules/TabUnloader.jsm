@@ -89,7 +89,7 @@ let DefaultTabUnloaderMethods = {
     
     
     return webrtcUI.browserHasStreams(browser) ||
-      browser.browsingContext?.topWindowContext?.hasActivePeerConnections
+      browser.browsingContext?.currentWindowGlobal?.hasActivePeerConnections()
       ? weight
       : 0;
   },
