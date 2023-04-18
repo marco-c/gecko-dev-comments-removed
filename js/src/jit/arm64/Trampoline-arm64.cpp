@@ -169,12 +169,6 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   masm.checkStackAlignment();
 
   
-  masm.subStackPtrFrom(r19);
-
-  
-  masm.makeFrameDescriptor(r19, FrameType::CppToJSJit, JitFrameLayout::Size());
-
-  
   
   
   {
@@ -187,7 +181,7 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
   masm.checkStackAlignment();
 
   
-  masm.Push(r19);
+  masm.PushFrameDescriptor(FrameType::CppToJSJit);
 
   Label osrReturnPoint;
   {
@@ -223,13 +217,8 @@ void JitRuntime::generateEnterJIT(JSContext* cx, MacroAssembler& masm) {
     masm.subFromStackPtr(scratch);
 
     
-    masm.addPtr(
-        Imm32(BaselineFrame::Size() + BaselineFrame::FramePointerOffset),
-        scratch);
-    masm.makeFrameDescriptor(scratch, FrameType::BaselineJS,
-                             ExitFrameLayout::Size());
-    masm.asVIXL().Push(ARMRegister(scratch, 64),
-                       xzr);  
+    masm.pushFrameDescriptor(FrameType::BaselineJS);
+    masm.push(xzr);  
     
     masm.loadJSContext(scratch);
     masm.enterFakeExitFrame(scratch, scratch, ExitFrameType::Bare);
@@ -475,7 +464,6 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
   Label noPadding;
   masm.Tbnz(x7, 0, &noPadding);
   masm.asVIXL().Push(xzr);
-  masm.Add(x7, x7, Operand(1));
   masm.bind(&noPadding);
 
   {
@@ -516,16 +504,9 @@ void JitRuntime::generateArgumentsRectifier(MacroAssembler& masm,
     masm.B(&copyLoopTop, Assembler::NotSigned);
   }
 
-  
-  masm.Add(x6, x7, Operand(1));
-  masm.Lsl(x6, x6, 3);
-
-  
-  masm.makeFrameDescriptor(r6, FrameType::Rectifier, JitFrameLayout::Size());
-
   masm.push(r0,   
-            r1,   
-            r6);  
+            r1);  
+  masm.pushFrameDescriptor(FrameType::Rectifier);
 
   
   switch (kind) {

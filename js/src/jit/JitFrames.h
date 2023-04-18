@@ -76,23 +76,9 @@ struct VMFunctionData;
 
 
 
-
-
-
-
-
 static const uintptr_t FRAMETYPE_BITS = 4;
 static const uintptr_t FRAMETYPE_MASK = (1 << FRAMETYPE_BITS) - 1;
-static const uintptr_t FRAME_HEADER_SIZE_SHIFT = FRAMETYPE_BITS;
-static const uintptr_t FRAME_HEADER_SIZE_BITS = 3;
-static const uintptr_t FRAME_HEADER_SIZE_MASK =
-    (1 << FRAME_HEADER_SIZE_BITS) - 1;
-static const uintptr_t HASCACHEDSAVEDFRAME_BIT =
-    1 << (FRAMETYPE_BITS + FRAME_HEADER_SIZE_BITS);
-static const uintptr_t FRAMESIZE_SHIFT =
-    FRAMETYPE_BITS + FRAME_HEADER_SIZE_BITS + 1 ;
-static const uintptr_t FRAMESIZE_BITS = 32 - FRAMESIZE_SHIFT;
-static const uintptr_t FRAMESIZE_MASK = (1 << FRAMESIZE_BITS) - 1;
+static const uintptr_t HASCACHEDSAVEDFRAME_BIT = 1 << FRAMETYPE_BITS;
 
 struct BaselineBailoutInfo;
 
@@ -181,20 +167,8 @@ void TraceJitActivations(JSContext* cx, JSTracer* trc);
 
 void UpdateJitActivationsForMinorGC(JSRuntime* rt);
 
-static inline uint32_t EncodeFrameHeaderSize(size_t headerSize) {
-  MOZ_ASSERT((headerSize % sizeof(uintptr_t)) == 0);
-
-  uint32_t headerSizeWords = headerSize / sizeof(uintptr_t);
-  MOZ_ASSERT(headerSizeWords <= FRAME_HEADER_SIZE_MASK);
-  return headerSizeWords;
-}
-
-static inline uint32_t MakeFrameDescriptor(uint32_t frameSize, FrameType type,
-                                           uint32_t headerSize) {
-  MOZ_ASSERT(frameSize < FRAMESIZE_MASK);
-  headerSize = EncodeFrameHeaderSize(headerSize);
-  return 0 | (frameSize << FRAMESIZE_SHIFT) |
-         (headerSize << FRAME_HEADER_SIZE_SHIFT) | uint32_t(type);
+static inline uint32_t MakeFrameDescriptor(FrameType type) {
+  return uint32_t(type);
 }
 
 
@@ -231,11 +205,6 @@ class CommonFrameLayout {
   void changePrevType(FrameType type) {
     descriptor_ &= ~FRAMETYPE_MASK;
     descriptor_ |= uintptr_t(type);
-  }
-  size_t prevFrameLocalSize() const { return descriptor_ >> FRAMESIZE_SHIFT; }
-  size_t headerSize() const {
-    return sizeof(uintptr_t) *
-           ((descriptor_ >> FRAME_HEADER_SIZE_SHIFT) & FRAME_HEADER_SIZE_MASK);
   }
   bool hasCachedSavedFrame() const {
     return descriptor_ & HASCACHEDSAVEDFRAME_BIT;

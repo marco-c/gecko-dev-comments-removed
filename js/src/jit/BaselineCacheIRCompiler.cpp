@@ -496,10 +496,9 @@ bool BaselineCacheIRCompiler::emitCallScriptedGetterShared(
     masm.storeICScriptInJSContext(scratch);
   }
 
-  EmitBaselineCreateStubFrameDescriptor(masm, scratch, JitFrameLayout::Size());
   masm.Push(Imm32(0));  
   masm.Push(callee);
-  masm.Push(scratch);
+  masm.PushFrameDescriptor(FrameType::BaselineStub);
 
   
   Label noUnderflow;
@@ -1580,14 +1579,13 @@ bool BaselineCacheIRCompiler::emitCallScriptedSetterShared(
   masm.Push(val);
   masm.Push(TypedOrValueRegister(MIRType::Object, AnyRegister(receiver)));
 
-  EmitBaselineCreateStubFrameDescriptor(masm, scratch, JitFrameLayout::Size());
   masm.Push(Imm32(1));  
 
   
   masm.Push(callee);
 
   
-  masm.Push(scratch);
+  masm.PushFrameDescriptor(FrameType::BaselineStub);
 
   if (isInlined) {
     
@@ -2604,8 +2602,7 @@ bool BaselineCacheIRCompiler::emitCallNativeShared(
   
   masm.push(argcReg);
 
-  EmitBaselineCreateStubFrameDescriptor(masm, scratch, ExitFrameLayout::Size());
-  masm.push(scratch);
+  masm.pushFrameDescriptor(FrameType::BaselineStub);
   masm.push(ICTailCallReg);
   masm.loadJSContext(scratch);
   masm.enterFakeExitFrameForNative(scratch, scratch, isConstructing);
@@ -2902,13 +2899,11 @@ bool BaselineCacheIRCompiler::emitCallScriptedFunction(ObjOperandId calleeId,
   Register code = scratch2;
   masm.loadJitCodeRaw(calleeReg, code);
 
-  EmitBaselineCreateStubFrameDescriptor(masm, scratch, JitFrameLayout::Size());
-
   
   
   masm.Push(argcReg);
   masm.PushCalleeToken(calleeReg, isConstructing);
-  masm.Push(scratch);
+  masm.PushFrameDescriptor(FrameType::BaselineStub);
 
   
   Label noUnderflow;
@@ -3012,13 +3007,11 @@ bool BaselineCacheIRCompiler::emitCallInlinedFunction(ObjOperandId calleeId,
   pushArguments(argcReg, calleeReg, scratch, scratch2, flags,
                 true);
 
-  EmitBaselineCreateStubFrameDescriptor(masm, scratch, JitFrameLayout::Size());
-
   
   
   masm.Push(argcReg);
   masm.PushCalleeToken(calleeReg, isConstructing);
-  masm.Push(scratch);
+  masm.PushFrameDescriptor(FrameType::BaselineStub);
 
   
   Label noUnderflow;
@@ -3191,10 +3184,9 @@ bool BaselineCacheIRCompiler::emitCloseIterScriptedResult(
     masm.pushValue(UndefinedValue());
   }
   masm.Push(TypedOrValueRegister(MIRType::Object, AnyRegister(iter)));
-  EmitBaselineCreateStubFrameDescriptor(masm, scratch, JitFrameLayout::Size());
   masm.Push(Imm32(0));  
   masm.Push(callee);
-  masm.Push(scratch);
+  masm.PushFrameDescriptor(FrameType::BaselineStub);
 
   masm.callJit(code);
 

@@ -464,10 +464,6 @@ struct alignas(uintptr_t) BaselineBailoutInfo {
   uint32_t numFrames = 0;
 
   
-  
-  uint32_t frameSizeOfInnerMostFrame = 0;
-
-  
   mozilla::Maybe<BailoutKind> bailoutKind = {};
 
   BaselineBailoutInfo() = default;

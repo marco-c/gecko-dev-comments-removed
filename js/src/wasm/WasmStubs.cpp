@@ -2277,7 +2277,6 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
                             sizeof(Frame),  
                             totalJitFrameBytes) -
       sizeOfRetAddr;
-  const unsigned sizeOfThisAndArgsAndPadding = jitFramePushed - sizeOfPreFrame;
 
   
 #ifdef JS_CODEGEN_ARM64
@@ -2290,9 +2289,7 @@ static bool GenerateImportJitExit(MacroAssembler& masm, const FuncImport& fi,
 
   
   size_t argOffset = frameAlignExtra;
-  uint32_t descriptor =
-      MakeFrameDescriptor(sizeOfThisAndArgsAndPadding, FrameType::WasmToJSJit,
-                          WasmToJSJitFrameLayout::Size());
+  uint32_t descriptor = MakeFrameDescriptor(FrameType::WasmToJSJit);
   masm.storePtr(ImmWord(uintptr_t(descriptor)),
                 Address(masm.getStackPointer(), argOffset));
   argOffset += sizeof(size_t);
