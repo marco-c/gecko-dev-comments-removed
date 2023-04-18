@@ -130,9 +130,7 @@ function setPrefDefaults() {
   Services.prefs.setBoolPref("layout.css.emulate-moz-box-with-flex", false);
 
   
-  
   Services.prefs.setBoolPref("devtools.performance.enabled", true);
-  Services.prefs.setBoolPref("devtools.performance.new-panel-enabled", true);
 }
 
 window.addEventListener(

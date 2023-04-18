@@ -726,7 +726,6 @@ Toolbox.prototype = {
       if (targetFront.isDestroyed()) {
         return;
       }
-      await this.initPerformance();
     }
 
     if (targetFront.targetForm.ignoreSubFrames) {
@@ -1022,17 +1021,6 @@ Toolbox.prototype = {
         await this.commands.targetConfigurationCommand.updateConfiguration({
           restoreFocus: true,
         });
-      }
-
-      
-      
-      const performanceFrontConnection = this.initPerformance();
-
-      
-      
-      
-      if (flags.testing) {
-        await performanceFrontConnection;
       }
 
       await this.initHarAutomation();
@@ -2224,10 +2212,7 @@ Toolbox.prototype = {
 
   _applyNewPerfPanelEnabled: function() {
     this.commands.targetConfigurationCommand.updateConfiguration({
-      isNewPerfPanelEnabled: Services.prefs.getBoolPref(
-        "devtools.performance.new-panel-enabled",
-        false
-      ),
+      isNewPerfPanelEnabled: true,
     });
   },
 
@@ -4186,33 +4171,6 @@ Toolbox.prototype = {
 
   getTextBoxContextMenu: function() {
     return this.topDoc.getElementById("toolbox-menu");
-  },
-
-  
-
-
-
-  async initPerformance() {
-    
-    
-    
-    
-    const isNewPerfPanel = Services.prefs.getBoolPref(
-      "devtools.performance.new-panel-enabled",
-      false
-    );
-    if (isNewPerfPanel || !this.target.hasActor("performance")) {
-      return;
-    }
-    if (this.target.isDestroyed()) {
-      return;
-    }
-    const performanceFront = await this.target.getFront("performance");
-    performanceFront.once("console-profile-start", () =>
-      this._onPerformanceFrontEvent(performanceFront)
-    );
-
-    return performanceFront;
   },
 
   

@@ -24,16 +24,6 @@ const TOOLS = [
 ];
 
 
-if (
-  Services.prefs.getBoolPref(
-    "devtools.performance.new-panel-enabled",
-    false
-  ) === false
-) {
-  TOOLS.push("performance");
-}
-
-
 
 
 add_task(async function() {
