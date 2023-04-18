@@ -1164,6 +1164,12 @@ static bool ShouldUseStandinsForNativeColorForNonNativeTheme(
     
     case ColorID::MozDisabledfield:
     case ColorID::Graytext:
+
+    
+    
+    
+    case ColorID::Window:
+    case ColorID::Windowtext:
       return true;
 
     default:
