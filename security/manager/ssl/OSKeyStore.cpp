@@ -636,7 +636,7 @@ nsresult AbstractOSKeyStore::DoCipher(const UniquePK11SymKey& aSymKey,
 
   
   
-  if (!encrypt && (inBytes.size() < mIVLength || inBytes.size() == 0)) {
+  if (!encrypt && (inBytes.size() < mIVLength || inBytes.empty())) {
     return NS_ERROR_INVALID_ARG;
   }
 
