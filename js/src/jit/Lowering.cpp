@@ -6524,6 +6524,21 @@ void LIRGenerator::visitWasmStoreExceptionDataValue(
   add(lir, ins);
 }
 
+void LIRGenerator::visitWasmExceptionRefsPointer(
+    MWasmExceptionRefsPointer* ins) {
+  MOZ_ASSERT(ins->type() == MIRType::Pointer);
+  LAllocation exn = useRegister(ins->exn());
+  auto* lir = new (alloc()) LWasmExceptionRefsPointer(exn, temp());
+  define(lir, ins);
+}
+
+void LIRGenerator::visitWasmLoadExceptionRefsValue(
+    MWasmLoadExceptionRefsValue* ins) {
+  LAllocation refsPtr = useRegister(ins->exnRefsPtr());
+  define(new (alloc()) LWasmLoadExceptionRefsValue(refsPtr), ins);
+}
+
+
 
 static_assert(!std::is_polymorphic_v<LIRGenerator>,
               "LIRGenerator should not have any virtual methods");
