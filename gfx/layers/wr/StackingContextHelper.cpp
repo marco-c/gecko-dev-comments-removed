@@ -67,9 +67,8 @@ MatrixScales ChooseScale(nsIFrame* aContainerFrame,
       
       nsSize scaledVisibleSize = nsSize(aVisibleRect.Width() * aXScale,
                                         aVisibleRect.Height() * aYScale);
-      Size size = nsLayoutUtils::ComputeSuitableScaleForAnimation(
+      scale = nsLayoutUtils::ComputeSuitableScaleForAnimation(
           aContainerFrame, scaledVisibleSize, displaySize);
-      scale = MatrixScales(size.width, size.height);
       
       
       float incomingScale = std::max(aXScale, aYScale);
