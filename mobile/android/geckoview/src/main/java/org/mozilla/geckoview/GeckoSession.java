@@ -1271,9 +1271,8 @@ public class GeckoSession {
 
 
 
-  @UiThread
+  @AnyThread
   public boolean isOpen() {
-    ThreadUtils.assertOnUiThread();
     return mWindow != null;
   }
 
