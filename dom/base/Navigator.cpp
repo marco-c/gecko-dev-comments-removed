@@ -1418,6 +1418,8 @@ Promise* Navigator::Share(const ShareData& aData, ErrorResult& aRv) {
   }
 
   
+
+  
   nsCOMPtr<nsIURI> url;
   if (aData.mUrl.WasPassed()) {
     auto result = doc->ResolveWithBaseURI(aData.mUrl.Value());
@@ -1474,7 +1476,31 @@ Promise* Navigator::Share(const ShareData& aData, ErrorResult& aRv) {
   return mSharePromise;
 }
 
+
+
+
+bool Navigator::CanShare(const ShareData& aData) {
+  if (!mWindow || !mWindow->IsFullyActive()) {
+    return false;
+  }
+
+  if (!FeaturePolicyUtils::IsFeatureAllowed(mWindow->GetExtantDoc(),
+                                            u"web-share"_ns)) {
+    return false;
+  }
+
+  IgnoredErrorResult rv;
+  ValidateShareData(aData, rv);
+  return !rv.Failed();
+}
+
 void Navigator::ValidateShareData(const ShareData& aData, ErrorResult& aRv) {
+  
+  if (aData.mFiles.WasPassed() && !aData.mFiles.Value().IsEmpty()) {
+    aRv.ThrowTypeError("Passing files is currently not supported.");
+    return;
+  }
+
   bool titleTextOrUrlPassed = aData.mTitle.WasPassed() ||
                               aData.mText.WasPassed() || aData.mUrl.WasPassed();
 
