@@ -26,7 +26,7 @@ function setupPretenureTest() {
   gcparam("maxNurseryBytes", 1024 * 1024);
 
   
-  gcparam("allocationThreshold", 1024 * 1024);
+  gcparam("allocationThreshold", 1 );
 
   
   gcparam("incrementalGCEnabled", false);
