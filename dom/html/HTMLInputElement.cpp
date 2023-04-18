@@ -3990,16 +3990,35 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
         case eMouseClick: {
           if (!aVisitor.mEvent->DefaultPrevented() &&
               aVisitor.mEvent->IsTrusted() &&
-              mType == FormControlType::InputSearch &&
               aVisitor.mEvent->AsMouseEvent()->mButton ==
                   MouseButton::ePrimary) {
-            if (nsSearchControlFrame* searchControlFrame =
-                    do_QueryFrame(GetPrimaryFrame())) {
-              Element* clearButton = searchControlFrame->GetAnonClearButton();
-              if (clearButton &&
-                  aVisitor.mEvent->mOriginalTarget == clearButton) {
-                SetUserInput(EmptyString(),
-                             *nsContentUtils::GetSystemPrincipal());
+            
+            if (mType == FormControlType::InputSearch) {
+              if (nsSearchControlFrame* searchControlFrame =
+                      do_QueryFrame(GetPrimaryFrame())) {
+                Element* clearButton = searchControlFrame->GetAnonClearButton();
+                if (clearButton &&
+                    aVisitor.mEvent->mOriginalTarget == clearButton) {
+                  SetUserInput(EmptyString(),
+                               *nsContentUtils::GetSystemPrincipal());
+                  
+                  
+                  
+                  
+                }
+              }
+            } else if (mType == FormControlType::InputPassword) {
+              if (nsTextControlFrame* textControlFrame =
+                      do_QueryFrame(GetPrimaryFrame())) {
+                auto* showPassword = textControlFrame->GetShowPasswordButton();
+                if (showPassword &&
+                    aVisitor.mEvent->mOriginalTarget == showPassword) {
+                  SetShowPassword(!ShowPassword());
+                  
+                  
+                  
+                  
+                }
               }
             }
           }
@@ -5946,17 +5965,14 @@ EventStates HTMLInputElement::IntrinsicState() const {
     }
   }
 
-  if (PlaceholderApplies() && HasAttr(nsGkAtoms::placeholder) &&
-      ShouldShowPlaceholder()) {
-    state |= NS_EVENT_STATE_PLACEHOLDERSHOWN;
+  if (mType != FormControlType::InputFile && IsValueEmpty()) {
+    state |= NS_EVENT_STATE_VALUE_EMPTY;
+    if (PlaceholderApplies() && HasAttr(nsGkAtoms::placeholder)) {
+      state |= NS_EVENT_STATE_PLACEHOLDERSHOWN;
+    }
   }
 
   return state;
-}
-
-bool HTMLInputElement::ShouldShowPlaceholder() const {
-  MOZ_ASSERT(PlaceholderApplies());
-  return IsValueEmpty();
 }
 
 static nsTArray<OwningFileOrDirectory> RestoreFileContentData(
@@ -6668,17 +6684,7 @@ void HTMLInputElement::OnValueChanged(ValueChangeKind aKind) {
 
   
   
-  if (PlaceholderApplies() && HasAttr(nsGkAtoms::placeholder)) {
-    UpdateState(true);
-  }
-
-  
-  if (mType == FormControlType::InputSearch) {
-    if (nsSearchControlFrame* searchControlFrame =
-            do_QueryFrame(GetPrimaryFrame())) {
-      searchControlFrame->UpdateClearButtonState();
-    }
-  }
+  UpdateState(true);
 }
 
 bool HTMLInputElement::HasCachedSelection() {
@@ -6689,6 +6695,24 @@ bool HTMLInputElement::HasCachedSelection() {
   return state->IsSelectionCached() && state->HasNeverInitializedBefore() &&
          state->GetSelectionProperties().GetStart() !=
              state->GetSelectionProperties().GetEnd();
+}
+
+void HTMLInputElement::SetShowPassword(bool aValue) {
+  if (NS_WARN_IF(mType != FormControlType::InputPassword)) {
+    return;
+  }
+  if (aValue) {
+    AddStates(NS_EVENT_STATE_REVEALED);
+  } else {
+    RemoveStates(NS_EVENT_STATE_REVEALED);
+  }
+}
+
+bool HTMLInputElement::ShowPassword() const {
+  if (NS_WARN_IF(mType != FormControlType::InputPassword)) {
+    return false;
+  }
+  return State().HasState(NS_EVENT_STATE_REVEALED);
 }
 
 void HTMLInputElement::FieldSetDisabledChanged(bool aNotify) {

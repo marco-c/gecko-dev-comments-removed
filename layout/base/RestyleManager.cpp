@@ -532,6 +532,12 @@ static nsChangeHint ChangeForContentStateChange(const Element& aElement,
     changeHint |= nsChangeHint_RepaintFrame;
   }
 
+  
+  if (aStateMask.HasState(NS_EVENT_STATE_REVEALED)) {
+    
+    changeHint |= NS_STYLE_HINT_REFLOW;
+  }
+
   return changeHint;
 }
 

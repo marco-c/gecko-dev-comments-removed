@@ -233,6 +233,8 @@ class HTMLInputElement final : public TextControlElement,
   MOZ_CAN_RUN_SCRIPT nsresult
   SetValueFromSetRangeText(const nsAString& aValue) override;
   bool HasCachedSelection() override;
+  void SetShowPassword(bool aValue);
+  bool ShowPassword() const;
 
   
 
@@ -929,11 +931,6 @@ class HTMLInputElement final : public TextControlElement,
   
   
   void GetNonFileValueInternal(nsAString& aValue) const;
-
-  
-
-
-  bool ShouldShowPlaceholder() const;
 
   void ClearFiles(bool aSetValueChanged);
 
