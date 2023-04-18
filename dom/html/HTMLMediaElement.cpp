@@ -182,12 +182,6 @@ static const double MIN_PLAYBACKRATE = 1.0 / 16;
 
 static const double MAX_PLAYBACKRATE = 16.0;
 
-
-
-static const double THRESHOLD_HIGH_PLAYBACKRATE_AUDIO = 4.0;
-
-static const double THRESHOLD_LOW_PLAYBACKRATE_AUDIO = 0.25;
-
 static double ClampPlaybackRate(double aPlaybackRate) {
   MOZ_ASSERT(aPlaybackRate >= 0.0);
 
@@ -6763,10 +6757,10 @@ void HTMLMediaElement::SetPlaybackRate(double aPlaybackRate, ErrorResult& aRv) {
   }
 
   mPlaybackRate = aPlaybackRate;
-
+  
+  uint32_t threshold = StaticPrefs::media_audio_playbackrate_muting_threshold();
   if (mPlaybackRate != 0.0 &&
-      (mPlaybackRate > THRESHOLD_HIGH_PLAYBACKRATE_AUDIO ||
-       mPlaybackRate < THRESHOLD_LOW_PLAYBACKRATE_AUDIO)) {
+      (mPlaybackRate > threshold || mPlaybackRate < 1. / threshold)) {
     SetMutedInternal(mMuted | MUTED_BY_INVALID_PLAYBACK_RATE);
   } else {
     SetMutedInternal(mMuted & ~MUTED_BY_INVALID_PLAYBACK_RATE);
