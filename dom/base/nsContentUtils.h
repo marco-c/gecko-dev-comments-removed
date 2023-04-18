@@ -361,7 +361,7 @@ class nsContentUtils {
 
 
 
-  static bool ShouldResistFingerprinting(char* aChar);
+  static bool ShouldResistFingerprinting(const char* aChar);
 
   
   static bool UseStandinsForNativeColors();
