@@ -50,18 +50,15 @@ def configure_ssh(ssh_key_secret):
 
     
     
-    
-    hgrc = Path(user_config_dir("hg")).joinpath("hgrc")
+    hgrc = Path(user_config_dir("hg")) / "hgrc"
     if hgrc.exists():
-        raise FailedCommandError(
-            "Not overwriting `{}`; cannot configure ssh.".format(hgrc)
-        )
+        raise FailedCommandError(f"Not overwriting `{hgrc}`; cannot configure ssh.")
 
     try:
         ssh_key_dir = Path(tempfile.mkdtemp())
 
         ssh_key = get_secret(ssh_key_secret)
-        ssh_key_file = ssh_key_dir.joinpath("id_rsa")
+        ssh_key_file = ssh_key_dir / "id_rsa"
         ssh_key_file.write_text(ssh_key["ssh_privkey"])
         ssh_key_file.chmod(0o600)
 
@@ -77,7 +74,7 @@ def configure_ssh(ssh_key_secret):
         yield
     finally:
         shutil.rmtree(str(ssh_key_dir))
-        os.remove(str(hgrc))
+        hgrc.unlink()
 
 
 def push_canary(scriptworkers, addresses, ssh_key_secret):
@@ -96,7 +93,7 @@ def push_canary(scriptworkers, addresses, ssh_key_secret):
         else:
             logger.info("No tasks for {}.".format(scriptworker))
 
-    mach = Path(GECKO).joinpath("mach")
+    mach = Path(GECKO) / "mach"
     base_command = [str(mach), "try", "scriptworker"]
     for address in addresses:
         base_command.extend(
