@@ -65,18 +65,6 @@ static bool SettingsAppBelievesConnected() {
   return !!value;
 }
 
-
-bool GetInstallDirectory(mozilla::UniquePtr<wchar_t[]>& installPath) {
-  installPath = mozilla::GetFullBinaryPath();
-  
-  
-  if (wcslen(installPath.get()) >= MAX_PATH) {
-    return false;
-  }
-  PathRemoveFileSpecW(installPath.get());
-  return true;
-}
-
 bool GetAppRegName(mozilla::UniquePtr<wchar_t[]>& aAppRegName) {
   mozilla::UniquePtr<wchar_t[]> appDirStr;
   bool success = GetInstallDirectory(appDirStr);

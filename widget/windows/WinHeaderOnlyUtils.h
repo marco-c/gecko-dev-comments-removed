@@ -12,6 +12,8 @@
 #include <winnt.h>
 #include <winternl.h>
 #include <objbase.h>
+#include <shlwapi.h>
+#undef ParseURL
 #include <stdlib.h>
 #include <tuple>
 
@@ -626,6 +628,18 @@ inline UniquePtr<wchar_t[]> GetFullModulePath(HMODULE aModule) {
 
 inline UniquePtr<wchar_t[]> GetFullBinaryPath() {
   return GetFullModulePath(nullptr);
+}
+
+
+inline bool GetInstallDirectory(UniquePtr<wchar_t[]>& installPath) {
+  installPath = GetFullBinaryPath();
+  
+  
+  if (wcslen(installPath.get()) >= MAX_PATH) {
+    return false;
+  }
+  ::PathRemoveFileSpecW(installPath.get());
+  return true;
 }
 
 class ModuleVersion final {
