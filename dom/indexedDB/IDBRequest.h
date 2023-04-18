@@ -45,6 +45,17 @@ struct Nullable;
 class OwningIDBObjectStoreOrIDBIndexOrIDBCursor;
 class StrongWorkerRef;
 
+namespace detail {
+
+class PrivateIDBRequest {
+ public:
+  NS_DECLARE_STATIC_IID_ACCESSOR(PRIVATE_IDBREQUEST_IID)
+};
+
+NS_DEFINE_STATIC_IID_ACCESSOR(PrivateIDBRequest, PRIVATE_IDBREQUEST_IID)
+
+}  
+
 class IDBRequest : public DOMEventTargetHelper {
  protected:
   
