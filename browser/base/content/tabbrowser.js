@@ -2820,6 +2820,20 @@
           });
         } else {
           this._insertBrowser(t, true);
+          
+          
+          
+          if (openerBrowser && !openWindowInfo) {
+            try {
+              b.browsingContext.setCrossGroupOpener(
+                openerBrowser.browsingContext
+              );
+            } catch (ex) {
+              
+              
+              Cu.reportError(ex);
+            }
+          }
         }
       } catch (e) {
         Cu.reportError("Failed to create tab");
