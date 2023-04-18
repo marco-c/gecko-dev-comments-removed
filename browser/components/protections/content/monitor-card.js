@@ -1,8 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* eslint-env mozilla/frame-script */
+
+
+
+
 
 const MONITOR_URL = RPMGetStringPref(
   "browser.contentblocking.report.monitor.url",
@@ -28,7 +28,7 @@ export default class MonitorClass {
   }
 
   init() {
-    // Wait for monitor data and display the card.
+    
     this.getMonitorData();
 
     let monitorAboutLink = this.doc.getElementById("monitor-link");
@@ -143,15 +143,15 @@ export default class MonitorClass {
     }
   }
 
-  /**
-   * Retrieves the monitor data and displays this data in the card.
-   **/
+  
+
+
   getMonitorData() {
     RPMSendQuery("FetchMonitorData", {}).then(monitorData => {
-      // Once data for the user is retrieved, display the monitor card.
+      
       this.buildContent(monitorData);
 
-      // Show the Monitor card.
+      
       const monitorUI = this.doc.querySelector(".card.monitor-card.loading");
       monitorUI.classList.remove("loading");
     });
@@ -186,16 +186,16 @@ export default class MonitorClass {
     }
   }
 
-  /**
-   * Builds the appropriate URL that takes the user to the Monitor website's
-   * sign-up/sign-in page.
-   *
-   * @param {String|null} email
-   *        Optional. The email used to direct the user to the Monitor website's OAuth
-   *        sign-in flow. If null, then direct user to just the Monitor website.
-   *
-   * @return URL to Monitor website.
-   */
+  
+
+
+
+
+
+
+
+
+
   buildMonitorUrl(email = null) {
     return email
       ? `${MONITOR_SIGN_IN_URL}${encodeURIComponent(email)}`

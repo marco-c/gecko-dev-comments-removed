@@ -1,10 +1,10 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import LoginListItemFactory from "./login-list-item.mjs";
-import LoginListSectionFactory from "./login-list-section.mjs";
-import { recordTelemetryEvent } from "../aboutLoginsUtils.mjs";
+
+
+
+import LoginListItemFactory from "./login-list-item.js";
+import LoginListSectionFactory from "./login-list-section.js";
+import { recordTelemetryEvent } from "../aboutLoginsUtils.js";
 
 const collator = new Intl.Collator();
 const monthFormatter = new Intl.DateTimeFormat(undefined, { month: "long" });
@@ -40,12 +40,12 @@ const sortFnOptions = {
 };
 
 const headersFnOptions = {
-  // TODO: name should use the ICU API, see Bug 1592834
-  // name: l =>
-  //   l.title.length && letterRegExp.test(l.title[0])
-  //     ? l.title[0].toUpperCase()
-  //     : "#",
-  // "name-reverse": l => headersFnOptions.name(l),
+  
+  
+  
+  
+  
+  
   name: () => "",
   "name-reverse": () => "",
   username: () => "",
@@ -74,7 +74,7 @@ const headersFnOptions = {
 
 function headerFromDate(timestamp) {
   let now = new Date();
-  now.setHours(0, 0, 0, 0); // reset to start of day
+  now.setHours(0, 0, 0, 0); 
   let date = new Date(timestamp);
 
   if (now < date) {
@@ -98,11 +98,11 @@ function headerFromDate(timestamp) {
 export default class LoginList extends HTMLElement {
   constructor() {
     super();
-    // An array of login GUIDs, stored in sorted order.
+    
     this._loginGuidsSortedOrder = [];
-    // A map of login GUID -> {login, listItem}.
+    
     this._logins = {};
-    // A map of section header -> sectionItem
+    
     this._sections = {};
     this._filter = "";
     this._selectedGuid = null;
@@ -159,7 +159,7 @@ export default class LoginList extends HTMLElement {
     );
     this._sortSelect.disabled = !visibleLoginGuids.size;
 
-    // Add all of the logins that are not in the DOM yet.
+    
     let fragment = document.createDocumentFragment();
     for (let guid of this._loginGuidsSortedOrder) {
       if (this._logins[guid].listItem) {
@@ -174,7 +174,7 @@ export default class LoginList extends HTMLElement {
     }
     this._list.appendChild(fragment);
 
-    // Show, hide, and update state of the list items per the applied search filter.
+    
     for (let guid of this._loginGuidsSortedOrder) {
       let { listItem, login } = this._logins[guid];
 
@@ -209,8 +209,8 @@ export default class LoginList extends HTMLElement {
     if (this._loginGuidsSortedOrder.length) {
       let section = null;
       let currentHeader = null;
-      // Re-arrange the login-list-items according to their sort and
-      // create / re-arrange sections
+      
+      
       for (let i = this._loginGuidsSortedOrder.length - 1; i >= 0; i--) {
         let guid = this._loginGuidsSortedOrder[i];
         let { listItem, _header } = this._logins[guid];
@@ -258,8 +258,8 @@ export default class LoginList extends HTMLElement {
             this._vulnerableLoginsByLoginGUID.has(loginGuid)
           )))
     ) {
-      // Make available the "alerts" option but don't change the
-      // selected sort so the user's current task isn't interrupted.
+      
+      
       this._sortSelect.namedItem("alerts").hidden = false;
     }
   }
@@ -303,7 +303,7 @@ export default class LoginList extends HTMLElement {
           new CustomEvent("AboutLoginsLoginSelected", {
             bubbles: true,
             composed: true,
-            cancelable: true, // allow calling preventDefault() on event
+            cancelable: true, 
             detail: login,
           })
         );
@@ -347,7 +347,7 @@ export default class LoginList extends HTMLElement {
           newlySelectedLogin = this._logins[firstVisibleListItem.dataset.guid]
             .login;
         } else {
-          // Clear the filter if all items have been filtered out.
+          
           this.classList.remove("create-login-selected");
           this._createLoginButton.disabled = false;
           window.dispatchEvent(
@@ -359,7 +359,7 @@ export default class LoginList extends HTMLElement {
             .login;
         }
 
-        // Select the first visible login after any possible filter is applied.
+        
         window.dispatchEvent(
           new CustomEvent("AboutLoginsLoginSelected", {
             detail: newlySelectedLogin,
@@ -379,9 +379,9 @@ export default class LoginList extends HTMLElement {
           return;
         }
 
-        // XXX If an AboutLoginsLoginSelected event is received that doesn't contain
-        // the full login object, re-dispatch the event with the full login object since
-        // only the login-list knows the full details of each login object.
+        
+        
+        
         if (
           Object.keys(event.detail).length == 1 &&
           event.detail.hasOwnProperty("guid")
@@ -424,8 +424,8 @@ export default class LoginList extends HTMLElement {
               event.key == "ArrowUp" ||
               event.key == "ArrowDown")
           ) {
-            // Since Space, ArrowUp and ArrowDown will perform actions, prevent
-            // them from also scrolling the list.
+            
+            
             event.preventDefault();
           }
         }
@@ -436,9 +436,9 @@ export default class LoginList extends HTMLElement {
     }
   }
 
-  /**
-   * @param {login[]} logins An array of logins used for displaying in the list.
-   */
+  
+
+
   setLogins(logins) {
     this._loginGuidsSortedOrder = [];
     this._logins = logins.reduce((map, login) => {
@@ -485,19 +485,19 @@ export default class LoginList extends HTMLElement {
     this.render();
   }
 
-  /**
-   * @param {Map} breachesByLoginGUID A Map of breaches by login GUIDs used
-   *                                  for displaying breached login indicators.
-   */
+  
+
+
+
   setBreaches(breachesByLoginGUID) {
     this._internalSetMonitorData("_breachesByLoginGUID", breachesByLoginGUID);
   }
 
-  /**
-   * @param {Map} breachesByLoginGUID A Map of breaches by login GUIDs that
-   *                                  should be added to the local cache of
-   *                                  breaches.
-   */
+  
+
+
+
+
   updateBreaches(breachesByLoginGUID) {
     this._internalUpdateMonitorData(
       "_breachesByLoginGUID",
@@ -563,8 +563,8 @@ export default class LoginList extends HTMLElement {
   }
 
   setSortDirection(sortDirection) {
-    // The 'alerts' sort becomes visible when there are known alerts.
-    // Don't restore to the 'alerts' sort if there are no alerts to show.
+    
+    
     if (
       sortDirection == "alerts" &&
       this._sortSelect.namedItem("alerts").hidden
@@ -577,17 +577,17 @@ export default class LoginList extends HTMLElement {
     this._selectFirstVisibleLogin();
   }
 
-  /**
-   * @param {login} login A login that was added to storage.
-   */
+  
+
+
   loginAdded(login) {
     this._logins[login.guid] = { login };
     this._loginGuidsSortedOrder.push(login.guid);
     this._applyHeaders(false);
     this._applySort();
 
-    // Add the list item and update any other related state that may pertain
-    // to the list item such as breach alerts.
+    
+    
     this.render();
 
     if (
@@ -598,35 +598,35 @@ export default class LoginList extends HTMLElement {
     }
   }
 
-  /**
-   * @param {login} login A login that was modified in storage. The related
-   *                      login-list-item will get updated.
-   */
+  
+
+
+
   loginModified(login) {
     this._logins[login.guid] = Object.assign(this._logins[login.guid], {
       login,
-      _header: null, // reset header
+      _header: null, 
     });
     this._applyHeaders(false);
     this._applySort();
     let loginObject = this._logins[login.guid];
     LoginListItemFactory.update(loginObject.listItem, login);
 
-    // Update any other related state that may pertain to the list item
-    // such as breach alerts that may or may not now apply.
+    
+    
     this.render();
   }
 
-  /**
-   * @param {login} login A login that was removed from storage. The related
-   *                      login-list-item will get removed. The login object
-   *                      is a plain JS object representation of
-   *                      nsILoginInfo/nsILoginMetaInfo.
-   */
+  
+
+
+
+
+
   loginRemoved(login) {
-    // Update the selected list item to the previous item in the list
-    // if one exists, otherwise the next item. If no logins remain
-    // the login-intro or empty-search text will be shown instead of the login-list.
+    
+    
+    
     if (this._selectedGuid == login.guid) {
       let visibleListItems = this._list.querySelectorAll(
         ".login-list-item[data-guid]:not([hidden])"
@@ -654,14 +654,14 @@ export default class LoginList extends HTMLElement {
       return guid != login.guid;
     });
 
-    // Render the login-list to update the search result count and show the
-    // empty-search message if needed.
+    
+    
     this.render();
   }
 
-  /**
-   * @returns {Set} Set of login guids that match the filter.
-   */
+  
+
+
   _applyFilter() {
     let matchingLoginGuids;
     if (this._filter) {
@@ -733,10 +733,10 @@ export default class LoginList extends HTMLElement {
           this._createLoginButton.disabled)) &&
       event.key == "Tab"
     ) {
-      // Bug 1562716: Pressing Tab from the create-login-button cycles back to the
-      // login-sort dropdown due to the login-list having `overflow`
-      // CSS property set. Explicitly forward focus here until
-      // this keyboard trap is fixed.
+      
+      
+      
+      
       if (event.shiftKey) {
         return;
       }
@@ -796,7 +796,7 @@ export default class LoginList extends HTMLElement {
     return document.dir == "ltr" ? ltr : rtl;
   }
 
-  //TODO May be we can use this fn in render(), but logic is different a bit
+  
   get #activeDescendantForSelection() {
     let activeDescendant = this.#activeDescendant;
     if (
@@ -896,11 +896,11 @@ export default class LoginList extends HTMLElement {
     }
   }
 
-  /**
-   * Selects the first visible login as part of the initial load of the page,
-   * which will bypass any focus changes that occur during manual login
-   * selection.
-   */
+  
+
+
+
+
   _selectFirstVisibleLogin() {
     let firstVisibleListItem = this._list.querySelector(
       ".login-list-item[data-guid]:not([hidden])"
@@ -929,7 +929,7 @@ export default class LoginList extends HTMLElement {
     this._list.setAttribute("aria-activedescendant", listItem.id);
     this._selectedGuid = listItem.dataset.guid;
 
-    // Scroll item into view if it isn't visible
+    
     listItem.scrollIntoView({ block: "nearest" });
   }
 }

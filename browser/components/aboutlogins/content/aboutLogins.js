@@ -1,14 +1,14 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 import {
   recordTelemetryEvent,
   setKeyboardAccessForNonDialogElements,
-} from "./aboutLoginsUtils.mjs";
+} from "./aboutLoginsUtils.js";
 
-// The init code isn't wrapped in a DOMContentLoaded/load event listener so the
-// page works properly when restored from session restore.
+
+
 const gElements = {
   fxAccountsButton: document.querySelector("fxaccounts-button"),
   loginList: document.querySelector("login-list"),
@@ -16,7 +16,7 @@ const gElements = {
   loginItem: document.querySelector("login-item"),
   loginFilter: document.querySelector("login-filter"),
   menuButton: document.querySelector("menu-button"),
-  // removeAllLogins button is nested inside of menuButton
+  
   get removeAllButton() {
     return this.menuButton.shadowRoot.querySelector(
       ".menuitem-remove-all-logins"
@@ -85,9 +85,9 @@ window.addEventListener("AboutLoginsChromeToContent", event => {
       break;
     }
     case "LoginRemoved": {
-      // The loginRemoved function of loginItem needs to be called before
-      // the one in loginList since it will remove the editing. So that the
-      // discard dialog won't show up if we delete a login after edit it.
+      
+      
+      
       gElements.loginItem.loginRemoved(event.detail.value);
       gElements.loginList.loginRemoved(event.detail.value);
       numberOfLogins--;
@@ -173,8 +173,8 @@ window.addEventListener("AboutLoginsRemoveAllLoginsDialog", () => {
     dialogPromise.then(
       () => {
         if (loginItem.dataset.isNewLogin) {
-          // Bug 1681042 - Resetting the form prevents a double confirmation dialog since there
-          // may be pending changes in the new login.
+          
+          
           loginItem.resetForm();
           window.dispatchEvent(new CustomEvent("AboutLoginsClearSelection"));
         } else if (loginItem.dataset.editing) {
@@ -212,11 +212,11 @@ window.addEventListener("AboutLoginsExportPasswordsDialog", async event => {
       new CustomEvent("AboutLoginsExportPasswords", { bubbles: true })
     );
   } catch (ex) {
-    // The user cancelled the dialog.
+    
   }
 });
 
-// Begin code that executes on page load.
+
 
 let searchParamsChanged = false;
 let { protocol, pathname, searchParams } = new URL(document.location);
@@ -227,9 +227,9 @@ recordTelemetryEvent({
 });
 
 if (searchParams.has("entryPoint")) {
-  // Remove this parameter from the URL (after recording above) to make it
-  // cleaner for bookmarking and switch-to-tab and so that bookmarked values
-  // don't skew telemetry.
+  
+  
+  
   searchParams.delete("entryPoint");
   searchParamsChanged = true;
 }
@@ -237,8 +237,8 @@ if (searchParams.has("entryPoint")) {
 if (searchParams.has("filter")) {
   let filter = searchParams.get("filter");
   if (!filter) {
-    // Remove empty `filter` params to give a cleaner URL for bookmarking and
-    // switch-to-tab
+    
+    
     searchParams.delete("filter");
     searchParamsChanged = true;
   }
@@ -250,12 +250,12 @@ if (searchParamsChanged) {
   if (params) {
     newURL += "?" + params;
   }
-  // This redirect doesn't stop this script from running so ensure you guard
-  // later code if it shouldn't run before and after the redirect.
+  
+  
   window.location.replace(newURL);
 } else if (searchParams.has("filter")) {
-  // This must be after the `location.replace` so it doesn't cause telemetry to
-  // record a filter event before the navigation to clean the URL.
+  
+  
   gElements.loginFilter.value = searchParams.get("filter");
 }
 
