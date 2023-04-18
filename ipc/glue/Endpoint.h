@@ -98,11 +98,16 @@ class Endpoint {
 
   
   
-  bool Bind(PFooSide* aActor) {
+  
+  
+  
+  
+  bool Bind(PFooSide* aActor, nsISerialEventTarget* aEventTarget = nullptr) {
     MOZ_RELEASE_ASSERT(IsValid());
     MOZ_RELEASE_ASSERT(mMyPid == base::kInvalidProcessId ||
                        mMyPid == base::GetCurrentProcId());
-    return aActor->Open(std::move(mPort), mOtherPid);
+    MOZ_RELEASE_ASSERT(!aEventTarget || aEventTarget->IsOnCurrentThread());
+    return aActor->Open(std::move(mPort), mOtherPid, aEventTarget);
   }
 
   bool IsValid() const { return mPort.IsValid(); }
