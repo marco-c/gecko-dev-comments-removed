@@ -1123,28 +1123,27 @@ var UrlbarUtils = {
 
 
 
-  canAutofillURL(url, candidate, checkFragmentOnly = false) {
-    if (!checkFragmentOnly) {
-      if (
-        url.length <= candidate.length ||
-        !url.toLocaleLowerCase().startsWith(candidate.toLocaleLowerCase())
-      ) {
-        return false;
-      }
 
-      if (!candidate.includes("/")) {
-        return true;
-      }
+
+  canAutofillURL(url, candidate, checkFragmentOnly = false) {
+    
+    
+    if (
+      !checkFragmentOnly &&
+      (url.length <= candidate.length ||
+        !url.toLocaleLowerCase().startsWith(candidate.toLocaleLowerCase()))
+    ) {
+      return false;
     }
 
+    
+    
     if (!UrlbarTokenizer.REGEXP_PREFIX.test(url)) {
       url = "http://" + url;
     }
-
     if (!UrlbarTokenizer.REGEXP_PREFIX.test(candidate)) {
       candidate = "http://" + candidate;
     }
-
     try {
       url = new URL(url);
       candidate = new URL(candidate);
@@ -1152,11 +1151,26 @@ var UrlbarUtils = {
       return false;
     }
 
-    if (
-      !checkFragmentOnly &&
-      candidate.href.endsWith("/") &&
-      (url.pathname.length > candidate.pathname.length || url.hash)
-    ) {
+    if (checkFragmentOnly) {
+      return url.hash.startsWith(candidate.hash);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!candidate.href.endsWith("/")) {
+      
+      
+      let nextSlashIndex = url.pathname.indexOf("/", candidate.pathname.length);
+      if (nextSlashIndex >= 0 && nextSlashIndex != url.pathname.length - 1) {
+        return false;
+      }
+    } else if (url.pathname.length > candidate.pathname.length || url.hash) {
       return false;
     }
 

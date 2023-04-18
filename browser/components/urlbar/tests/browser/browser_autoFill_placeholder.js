@@ -13,296 +13,921 @@
 
 "use strict";
 
+
+requestLongerTimeout(5);
+
 add_task(async function init() {
   await cleanUp();
 });
 
+
 add_task(async function origin() {
-  await PlacesTestUtils.addVisits("http://example.com/");
+  await addVisits("http://example.com/");
 
-  
-  
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "ex",
-    fireInputEvent: true,
+  await search({
+    searchString: "ex",
+    valueBefore: "ex",
+    valueAfter: "example.com/",
+    placeholderAfter: "example.com/",
   });
-  let details = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
-  Assert.ok(details.autofill);
-  Assert.equal(gURLBar.value, "example.com/");
-  Assert.equal(gURLBar.selectionStart, "ex".length);
-  Assert.equal(gURLBar.selectionEnd, "example.com/".length);
-
-  await searchAndCheck("exa", "example.com/");
-  await searchAndCheck("EXAM", "EXAMple.com/");
-  await searchAndCheck("eXaMp", "eXaMple.com/");
-  await searchAndCheck("exampl", "example.com/");
+  await search({
+    searchString: "exa",
+    valueBefore: "example.com/",
+    valueAfter: "example.com/",
+    placeholderAfter: "example.com/",
+  });
+  await search({
+    searchString: "EXAM",
+    valueBefore: "EXAMple.com/",
+    valueAfter: "EXAMple.com/",
+    placeholderAfter: "EXAMple.com/",
+  });
+  await search({
+    searchString: "eXaMp",
+    valueBefore: "eXaMple.com/",
+    valueAfter: "eXaMple.com/",
+    placeholderAfter: "eXaMple.com/",
+  });
+  await search({
+    searchString: "exampL",
+    valueBefore: "exampLe.com/",
+    valueAfter: "exampLe.com/",
+    placeholderAfter: "exampLe.com/",
+  });
+  await search({
+    searchString: "example.com",
+    valueBefore: "example.com/",
+    valueAfter: "example.com/",
+    placeholderAfter: "example.com/",
+  });
+  await search({
+    searchString: "example.com/",
+    valueBefore: "example.com/",
+    valueAfter: "example.com/",
+    placeholderAfter: "example.com/",
+  });
 
   await cleanUp();
 });
+
+
+add_task(async function url() {
+  await addVisits("http://example.com/aaa/bbb/ccc");
+
+  await search({
+    searchString: "example.com/a",
+    valueBefore: "example.com/a",
+    valueAfter: "example.com/aaa/",
+    placeholderAfter: "example.com/aaa/",
+  });
+  await search({
+    searchString: "EXAmple.com/aA",
+    valueBefore: "EXAmple.com/aAa/",
+    valueAfter: "EXAmple.com/aAa/",
+    placeholderAfter: "EXAmple.com/aAa/",
+  });
+  await search({
+    searchString: "example.com/aAa",
+    valueBefore: "example.com/aAa/",
+    valueAfter: "example.com/aAa/",
+    placeholderAfter: "example.com/aAa/",
+  });
+  await search({
+    searchString: "example.com/aaa/",
+    valueBefore: "example.com/aaa/",
+    valueAfter: "example.com/aaa/",
+    placeholderAfter: "example.com/aaa/",
+  });
+  await search({
+    searchString: "example.com/aaa/b",
+    valueBefore: "example.com/aaa/b",
+    valueAfter: "example.com/aaa/bbb/",
+    placeholderAfter: "example.com/aaa/bbb/",
+  });
+  await search({
+    searchString: "example.com/aAa/bB",
+    valueBefore: "example.com/aAa/bBb/",
+    valueAfter: "example.com/aAa/bBb/",
+    placeholderAfter: "example.com/aAa/bBb/",
+  });
+  await search({
+    searchString: "example.com/aAa/bBb",
+    valueBefore: "example.com/aAa/bBb/",
+    valueAfter: "example.com/aAa/bBb/",
+    placeholderAfter: "example.com/aAa/bBb/",
+  });
+  await search({
+    searchString: "example.com/aaa/bbb/",
+    valueBefore: "example.com/aaa/bbb/",
+    valueAfter: "example.com/aaa/bbb/",
+    placeholderAfter: "example.com/aaa/bbb/",
+  });
+  await search({
+    searchString: "example.com/aaa/bbb/c",
+    valueBefore: "example.com/aaa/bbb/c",
+    valueAfter: "example.com/aaa/bbb/ccc",
+    placeholderAfter: "example.com/aaa/bbb/ccc",
+  });
+  await search({
+    searchString: "example.com/aAa/bBb/cC",
+    valueBefore: "example.com/aAa/bBb/cCc",
+    valueAfter: "example.com/aAa/bBb/cCc",
+    placeholderAfter: "example.com/aAa/bBb/cCc",
+  });
+  await search({
+    searchString: "example.com/aaa/bbb/ccc",
+    valueBefore: "example.com/aaa/bbb/ccc",
+    valueAfter: "example.com/aaa/bbb/ccc",
+    placeholderAfter: "example.com/aaa/bbb/ccc",
+  });
+
+  await cleanUp();
+});
+
+
+add_task(async function adaptiveHistory() {
+  UrlbarPrefs.set("autoFill.adaptiveHistory.enabled", true);
+
+  await addVisits("http://example.com/test");
+  await UrlbarUtils.addToInputHistory("http://example.com/test", "exa");
+
+  await search({
+    searchString: "exa",
+    valueBefore: "exa",
+    valueAfter: "example.com/test",
+    placeholderAfter: "example.com/test",
+  });
+  await search({
+    searchString: "EXAM",
+    valueBefore: "EXAMple.com/test",
+    valueAfter: "EXAMple.com/test",
+    placeholderAfter: "EXAMple.com/test",
+  });
+  await search({
+    searchString: "eXaMpLe",
+    valueBefore: "eXaMpLe.com/test",
+    valueAfter: "eXaMpLe.com/test",
+    placeholderAfter: "eXaMpLe.com/test",
+  });
+  await search({
+    searchString: "example.",
+    valueBefore: "example.com/test",
+    valueAfter: "example.com/test",
+    placeholderAfter: "example.com/test",
+  });
+  await search({
+    searchString: "example.c",
+    valueBefore: "example.com/test",
+    valueAfter: "example.com/test",
+    placeholderAfter: "example.com/test",
+  });
+  await search({
+    searchString: "example.com",
+    valueBefore: "example.com/test",
+    valueAfter: "example.com/test",
+    placeholderAfter: "example.com/test",
+  });
+  await search({
+    searchString: "example.com/",
+    valueBefore: "example.com/test",
+    valueAfter: "example.com/test",
+    placeholderAfter: "example.com/test",
+  });
+  await search({
+    searchString: "example.com/T",
+    valueBefore: "example.com/Test",
+    valueAfter: "example.com/Test",
+    placeholderAfter: "example.com/Test",
+  });
+  await search({
+    searchString: "eXaMple.com/tE",
+    valueBefore: "eXaMple.com/tEst",
+    valueAfter: "eXaMple.com/tEst",
+    placeholderAfter: "eXaMple.com/tEst",
+  });
+  await search({
+    searchString: "example.com/tes",
+    valueBefore: "example.com/test",
+    valueAfter: "example.com/test",
+    placeholderAfter: "example.com/test",
+  });
+  await search({
+    searchString: "example.com/test",
+    valueBefore: "example.com/test",
+    valueAfter: "example.com/test",
+    placeholderAfter: "example.com/test",
+  });
+
+  UrlbarPrefs.clear("autoFill.adaptiveHistory.enabled");
+  await cleanUp();
+});
+
 
 add_task(async function tokenAlias() {
   
   
   await SearchTestUtils.installSearchExtension({ keyword: "@__example" });
 
-  
-  
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "@__ex",
-    fireInputEvent: true,
+  await search({
+    searchString: "@__ex",
+    valueBefore: "@__ex",
+    valueAfter: "@__example ",
+    placeholderAfter: "@__example ",
   });
-  let details = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
-  Assert.ok(details.autofill);
-  Assert.equal(gURLBar.value, "@__example ");
-  Assert.equal(gURLBar.selectionStart, "@__ex".length);
-  Assert.equal(gURLBar.selectionEnd, "@__example ".length);
-
-  await searchAndCheck("@__exa", "@__example ");
-  await searchAndCheck("@__EXAM", "@__EXAMple ");
-  await searchAndCheck("@__eXaMp", "@__eXaMple ");
-  await searchAndCheck("@__exampl", "@__example ");
+  await search({
+    searchString: "@__exa",
+    valueBefore: "@__example ",
+    valueAfter: "@__example ",
+    placeholderAfter: "@__example ",
+  });
+  await search({
+    searchString: "@__EXAM",
+    valueBefore: "@__EXAMple ",
+    valueAfter: "@__EXAMple ",
+    placeholderAfter: "@__EXAMple ",
+  });
+  await search({
+    searchString: "@__eXaMp",
+    valueBefore: "@__eXaMple ",
+    valueAfter: "@__eXaMple ",
+    placeholderAfter: "@__eXaMple ",
+  });
+  await search({
+    searchString: "@__exampl",
+    valueBefore: "@__example ",
+    valueAfter: "@__example ",
+    placeholderAfter: "@__example ",
+  });
 
   await cleanUp();
 });
 
-add_task(async function noMatch1() {
-  await PlacesTestUtils.addVisits("http://example.com/");
+
+
+add_task(async function noAutofill() {
+  await addVisits("http://example.com/");
 
   
   
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "ex",
-    fireInputEvent: true,
+  await search({
+    searchString: "ex",
+    valueBefore: "ex",
+    valueAfter: "example.com/",
+    placeholderAfter: "example.com/",
   });
-  let details = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
-  Assert.ok(details.autofill);
-  Assert.equal(gURLBar.value, "example.com/");
-  Assert.equal(gURLBar.selectionStart, "ex".length);
-  Assert.equal(gURLBar.selectionEnd, "example.com/".length);
 
   
   
-  gURLBar.value = "moz";
-  UrlbarTestUtils.fireInputEvent(window);
-  Assert.equal(gURLBar.value, "moz");
-  Assert.equal(gURLBar.selectionStart, "moz".length);
-  Assert.equal(gURLBar.selectionEnd, "moz".length);
-  await UrlbarTestUtils.promiseSearchComplete(window);
-
-  
-  
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "ex",
-    fireInputEvent: true,
+  await search({
+    searchString: "moz",
+    valueBefore: "moz",
+    valueAfter: "moz",
+    placeholderAfter: "",
   });
-  details = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
-  Assert.ok(details.autofill);
-  Assert.equal(gURLBar.value, "example.com/");
-  Assert.equal(gURLBar.selectionStart, "ex".length);
-  Assert.equal(gURLBar.selectionEnd, "example.com/".length);
 
   
-  await searchAndCheck("exa", "example.com/");
-  await searchAndCheck("EXAM", "EXAMple.com/");
-  await searchAndCheck("eXaMp", "eXaMple.com/");
-  await searchAndCheck("exampl", "example.com/");
+  
+  await search({
+    searchString: "ex",
+    valueBefore: "ex",
+    valueAfter: "example.com/",
+    placeholderAfter: "example.com/",
+  });
+
+  
+  await search({
+    searchString: "exa",
+    valueBefore: "example.com/",
+    valueAfter: "example.com/",
+    placeholderAfter: "example.com/",
+  });
+  await search({
+    searchString: "EXAM",
+    valueBefore: "EXAMple.com/",
+    valueAfter: "EXAMple.com/",
+    placeholderAfter: "EXAMple.com/",
+  });
+  await search({
+    searchString: "eXaMp",
+    valueBefore: "eXaMple.com/",
+    valueAfter: "eXaMple.com/",
+    placeholderAfter: "eXaMple.com/",
+  });
+  await search({
+    searchString: "exampl",
+    valueBefore: "example.com/",
+    valueAfter: "example.com/",
+    placeholderAfter: "example.com/",
+  });
 
   await cleanUp();
 });
 
-add_task(async function noMatch2() {
-  await PlacesTestUtils.addVisits([
-    "http://mozilla.org/",
-    "http://example.com/",
-  ]);
+
+
+add_task(async function differentAutofill() {
+  await addVisits("http://mozilla.org/", "http://example.com/");
 
   
   
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "moz",
-    fireInputEvent: true,
+  await search({
+    searchString: "moz",
+    valueBefore: "moz",
+    valueAfter: "mozilla.org/",
+    placeholderAfter: "mozilla.org/",
   });
-  let details = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
-  Assert.ok(details.autofill);
-  Assert.equal(gURLBar.value, "mozilla.org/");
-  Assert.equal(gURLBar.selectionStart, "moz".length);
-  Assert.equal(gURLBar.selectionEnd, "mozilla.org/".length);
 
   
   
-  gURLBar.value = "ex";
-  UrlbarTestUtils.fireInputEvent(window);
-  Assert.equal(gURLBar.value, "ex");
-  Assert.equal(gURLBar.selectionStart, "ex".length);
-  Assert.equal(gURLBar.selectionEnd, "ex".length);
-  await UrlbarTestUtils.promiseSearchComplete(window);
-  Assert.equal(gURLBar.value, "example.com/");
-  Assert.equal(gURLBar.selectionStart, "ex".length);
-  Assert.equal(gURLBar.selectionEnd, "example.com/".length);
+  await search({
+    searchString: "ex",
+    valueBefore: "ex",
+    valueAfter: "example.com/",
+    placeholderAfter: "example.com/",
+  });
 
   
-  await searchAndCheck("exa", "example.com/");
-  await searchAndCheck("EXAm", "EXAmple.com/");
+  await search({
+    searchString: "exa",
+    valueBefore: "example.com/",
+    valueAfter: "example.com/",
+    placeholderAfter: "example.com/",
+  });
+  await search({
+    searchString: "EXAm",
+    valueBefore: "EXAmple.com/",
+    valueAfter: "EXAmple.com/",
+    placeholderAfter: "EXAmple.com/",
+  });
 
   
   
-  gURLBar.value = "moz";
-  UrlbarTestUtils.fireInputEvent(window);
-  Assert.equal(gURLBar.value, "moz");
-  Assert.equal(gURLBar.selectionStart, "moz".length);
-  Assert.equal(gURLBar.selectionEnd, "moz".length);
-  await UrlbarTestUtils.promiseSearchComplete(window);
-  Assert.equal(gURLBar.value, "mozilla.org/");
-  Assert.equal(gURLBar.selectionStart, "moz".length);
-  Assert.equal(gURLBar.selectionEnd, "mozilla.org/".length);
+  await search({
+    searchString: "moz",
+    valueBefore: "moz",
+    valueAfter: "mozilla.org/",
+    placeholderAfter: "mozilla.org/",
+  });
 
   
-  await searchAndCheck("mozi", "mozilla.org/");
-  await searchAndCheck("MOZil", "MOZilla.org/");
+  await search({
+    searchString: "mozi",
+    valueBefore: "mozilla.org/",
+    valueAfter: "mozilla.org/",
+    placeholderAfter: "mozilla.org/",
+  });
+  await search({
+    searchString: "MOZil",
+    valueBefore: "MOZilla.org/",
+    valueAfter: "MOZilla.org/",
+    placeholderAfter: "MOZilla.org/",
+  });
 
   await cleanUp();
 });
 
-add_task(async function clear_placeholder_for_keyword_or_alias() {
-  info("Clear the autofill placeholder if a keyword is typed");
-  await PlacesTestUtils.addVisits("https://example.com/");
+
+
+
+add_task(async function bookmarkKeyword() {
+  
+  await addVisits("https://example.com/");
+
+  
   await PlacesUtils.keywords.insert({
     keyword: "ex",
     url: "https://somekeyword.com/",
   });
-  await SearchTestUtils.installSearchExtension({ keyword: "exam" });
-  registerCleanupFunction(async function() {
-    await PlacesUtils.keywords.remove("ex");
+
+  
+  
+  await search({
+    searchString: "e",
+    valueBefore: "e",
+    valueAfter: "example.com/",
+    placeholderAfter: "example.com/",
   });
 
   
   
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "e",
-    fireInputEvent: true,
+  
+  
+  await search({
+    searchString: "ex",
+    valueBefore: "example.com/",
+    valueAfter: "ex",
+    placeholderAfter: "",
   });
-  let details = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
-  Assert.ok(details.autofill);
-  Assert.equal(gURLBar.value, "example.com/");
-  Assert.equal(gURLBar.selectionStart, "e".length);
-  Assert.equal(gURLBar.selectionEnd, "example.com/".length);
 
   
   
-
   
-  await searchAndCheck("ex", "example.com/", "ex");
-  await searchAndCheck("EXA", "EXAmple.com/", "EXAmple.com/");
-  
+  await search({
+    searchString: "exa",
+    valueBefore: "exa",
+    valueAfter: "example.com/",
+    placeholderAfter: "example.com/",
+  });
 
-  await searchAndCheck("eXaM", "eXaMple.com/", "eXaMple.com/");
-  await searchAndCheck("examp", "example.com/", "example.com/");
-
+  await PlacesUtils.keywords.remove("ex");
   await cleanUp();
 });
 
-add_task(async function clear_placeholder_for_uri_fragment() {
-  info(
-    "Clear the autofill placeholder if the value has uri fragment that does not match with placeholder"
-  );
-  await PlacesTestUtils.addVisits("https://example.com/#TEST");
+
+
+add_task(async function noURIFragmentMatch1() {
+  await addVisits("https://example.com/#TEST");
 
   const testData = [
     {
-      input: "https://example.com/#T",
-      autofilled: "https://example.com/#TEST",
-      invalidInput: "https://example.com/#t",
+      desc: "Autofill example.com/#TEST then search for example.com/#Te",
+      searches: [
+        {
+          searchString: "example.com/#T",
+          valueBefore: "example.com/#T",
+          valueAfter: "example.com/#TEST",
+          placeholderAfter: "example.com/#TEST",
+        },
+        {
+          searchString: "example.com/#Te",
+          valueBefore: "example.com/#Te",
+          valueAfter: "example.com/#Te",
+          placeholderAfter: "",
+        },
+      ],
     },
     {
-      input: "example.com/#T",
-      autofilled: "example.com/#TEST",
-      invalidInput: "example.com/#t",
+      desc:
+        "Autofill https://example.com/#TEST then search for https://example.com/#Te",
+      searches: [
+        {
+          searchString: "https://example.com/#T",
+          valueBefore: "https://example.com/#T",
+          valueAfter: "https://example.com/#TEST",
+          placeholderAfter: "https://example.com/#TEST",
+        },
+        {
+          searchString: "https://example.com/#Te",
+          valueBefore: "https://example.com/#Te",
+          valueAfter: "https://example.com/#Te",
+          placeholderAfter: "",
+        },
+      ],
     },
     {
-      input: "example.com/#T",
-      autofilled: "example.com/#TEST",
-      invalidInput: "example.com/",
+      desc: "Autofill example.com/#TEST then search for example.com/",
+      searches: [
+        {
+          searchString: "example.com/#T",
+          valueBefore: "example.com/#T",
+          valueAfter: "example.com/#TEST",
+          placeholderAfter: "example.com/#TEST",
+        },
+        {
+          searchString: "example.com/",
+          valueBefore: "example.com/",
+          valueAfter: "example.com/",
+          placeholderAfter: "example.com/",
+        },
+      ],
     },
   ];
 
-  for (const { input, autofilled, invalidInput } of testData) {
+  for (const { desc, searches } of testData) {
+    info("Running subtest: " + desc);
+
+    for (let i = 0; i < searches.length; i++) {
+      info("Doing search at index " + i);
+      await search(searches[i]);
+    }
+
     
-    
-    await UrlbarTestUtils.promiseAutocompleteResultPopup({
-      window,
-      value: input,
-      fireInputEvent: true,
+    info("Doing extra search to clear placeholder");
+    await search({
+      searchString: "no match",
+      valueBefore: "no match",
+      valueAfter: "no match",
+      placeholderAfter: "",
     });
-
-    
-    await searchAndCheck(input, autofilled);
-
-    
-    
-    await searchAndCheck(invalidInput, invalidInput);
-
-    
-    await searchAndCheck(input, input);
   }
 
   await cleanUp();
 });
 
-add_task(async function clear_placeholder_for_deep_path() {
-  info("Check if not autofill if the value expresses parent directory");
-  await PlacesTestUtils.addVisits("http://example.com/shallow/deep/file");
+
+
+add_task(async function noURIFragmentMatch2() {
+  await addVisits("https://example.com/foo#TEST");
 
   const testData = [
     {
-      input: "example.com/s",
-      autofilled: "example.com/shallow/",
-      invalidInput: "example.com/",
+      desc: "Autofill example.com/foo#TEST then search for example.com/foo#Te",
+      searches: [
+        {
+          searchString: "example.com/foo#T",
+          valueBefore: "example.com/foo#T",
+          valueAfter: "example.com/foo#TEST",
+          placeholderAfter: "example.com/foo#TEST",
+        },
+        {
+          searchString: "example.com/foo#Te",
+          valueBefore: "example.com/foo#Te",
+          valueAfter: "example.com/foo#Te",
+          placeholderAfter: "",
+        },
+      ],
     },
     {
-      input: "example.com/shallow/d",
-      autofilled: "example.com/shallow/deep/",
-      invalidInput: "example.com/shallow/",
+      desc:
+        "Autofill https://example.com/foo#TEST then search for https://example.com/foo#Te",
+      searches: [
+        {
+          searchString: "https://example.com/foo#T",
+          valueBefore: "https://example.com/foo#T",
+          valueAfter: "https://example.com/foo#TEST",
+          placeholderAfter: "https://example.com/foo#TEST",
+        },
+        {
+          searchString: "https://example.com/foo#Te",
+          valueBefore: "https://example.com/foo#Te",
+          valueAfter: "https://example.com/foo#Te",
+          placeholderAfter: "",
+        },
+      ],
     },
     {
-      input: "example.com/shallow/deep/f",
-      autofilled: "example.com/shallow/deep/file",
-      invalidInput: "example.com/shallow/deep/",
+      desc: "Autofill example.com/foo#TEST then search for example.com/",
+      searches: [
+        {
+          searchString: "example.com/foo#T",
+          valueBefore: "example.com/foo#T",
+          valueAfter: "example.com/foo#TEST",
+          placeholderAfter: "example.com/foo#TEST",
+        },
+        {
+          searchString: "example.com/",
+          valueBefore: "example.com/",
+          valueAfter: "example.com/",
+          placeholderAfter: "example.com/",
+        },
+      ],
     },
   ];
 
-  for (const { input, autofilled, invalidInput } of testData) {
+  for (const { desc, searches } of testData) {
+    info("Running subtest: " + desc);
+
+    for (let i = 0; i < searches.length; i++) {
+      info("Doing search at index " + i);
+      await search(searches[i]);
+    }
+
     
-    
-    await UrlbarTestUtils.promiseAutocompleteResultPopup({
-      window,
-      value: input,
-      fireInputEvent: true,
+    info("Doing extra search to clear placeholder");
+    await search({
+      searchString: "no match",
+      valueBefore: "no match",
+      valueAfter: "no match",
+      placeholderAfter: "",
     });
-
-    
-    await searchAndCheck(input, autofilled);
-
-    
-    await searchAndCheck(invalidInput, invalidInput);
   }
 
   await cleanUp();
 });
 
-async function searchAndCheck(
+
+
+add_task(async function noPathMatch() {
+  await addVisits("http://example.com/shallow/deep/file");
+
+  const testData = [
+    {
+      desc: "Autofill example.com/shallow/ then search for exam",
+      searches: [
+        {
+          searchString: "example.com/s",
+          valueBefore: "example.com/s",
+          valueAfter: "example.com/shallow/",
+          placeholderAfter: "example.com/shallow/",
+        },
+        {
+          searchString: "exam",
+          valueBefore: "exam",
+          valueAfter: "example.com/",
+          placeholderAfter: "example.com/",
+        },
+      ],
+    },
+    {
+      desc: "Autofill example.com/shallow/ then search for example.com/",
+      searches: [
+        {
+          searchString: "example.com/s",
+          valueBefore: "example.com/s",
+          valueAfter: "example.com/shallow/",
+          placeholderAfter: "example.com/shallow/",
+        },
+        {
+          searchString: "example.com/",
+          valueBefore: "example.com/",
+          valueAfter: "example.com/",
+          placeholderAfter: "example.com/",
+        },
+      ],
+    },
+    {
+      desc: "Autofill example.com/shallow/deep/ then search for exam",
+      searches: [
+        {
+          searchString: "example.com/shallow/d",
+          valueBefore: "example.com/shallow/d",
+          valueAfter: "example.com/shallow/deep/",
+          placeholderAfter: "example.com/shallow/deep/",
+        },
+        {
+          searchString: "exam",
+          valueBefore: "exam",
+          valueAfter: "example.com/",
+          placeholderAfter: "example.com/",
+        },
+      ],
+    },
+    {
+      desc: "Autofill example.com/shallow/deep/ then search for example.com/",
+      searches: [
+        {
+          searchString: "example.com/shallow/d",
+          valueBefore: "example.com/shallow/d",
+          valueAfter: "example.com/shallow/deep/",
+          placeholderAfter: "example.com/shallow/deep/",
+        },
+        {
+          searchString: "example.com/",
+          valueBefore: "example.com/",
+          valueAfter: "example.com/",
+          placeholderAfter: "example.com/",
+        },
+      ],
+    },
+    {
+      desc: "Autofill example.com/shallow/deep/ then search for example.com/s",
+      searches: [
+        {
+          searchString: "example.com/shallow/d",
+          valueBefore: "example.com/shallow/d",
+          valueAfter: "example.com/shallow/deep/",
+          placeholderAfter: "example.com/shallow/deep/",
+        },
+        {
+          searchString: "example.com/s",
+          valueBefore: "example.com/s",
+          valueAfter: "example.com/shallow/",
+          placeholderAfter: "example.com/shallow/",
+        },
+      ],
+    },
+    {
+      desc:
+        "Autofill example.com/shallow/deep/ then search for example.com/shallow/",
+      searches: [
+        {
+          searchString: "example.com/shallow/d",
+          valueBefore: "example.com/shallow/d",
+          valueAfter: "example.com/shallow/deep/",
+          placeholderAfter: "example.com/shallow/deep/",
+        },
+        {
+          searchString: "example.com/shallow/",
+          valueBefore: "example.com/shallow/",
+          valueAfter: "example.com/shallow/",
+          placeholderAfter: "example.com/shallow/",
+        },
+      ],
+    },
+    {
+      desc: "Autofill example.com/shallow/deep/file then search for exam",
+      searches: [
+        {
+          searchString: "example.com/shallow/deep/f",
+          valueBefore: "example.com/shallow/deep/f",
+          valueAfter: "example.com/shallow/deep/file",
+          placeholderAfter: "example.com/shallow/deep/file",
+        },
+        {
+          searchString: "exam",
+          valueBefore: "exam",
+          valueAfter: "example.com/",
+          placeholderAfter: "example.com/",
+        },
+      ],
+    },
+    {
+      desc:
+        "Autofill example.com/shallow/deep/file then search for example.com/",
+      searches: [
+        {
+          searchString: "example.com/shallow/deep/f",
+          valueBefore: "example.com/shallow/deep/f",
+          valueAfter: "example.com/shallow/deep/file",
+          placeholderAfter: "example.com/shallow/deep/file",
+        },
+        {
+          searchString: "example.com/",
+          valueBefore: "example.com/",
+          valueAfter: "example.com/",
+          placeholderAfter: "example.com/",
+        },
+      ],
+    },
+    {
+      desc:
+        "Autofill example.com/shallow/deep/file then search for example.com/s",
+      searches: [
+        {
+          searchString: "example.com/shallow/deep/f",
+          valueBefore: "example.com/shallow/deep/f",
+          valueAfter: "example.com/shallow/deep/file",
+          placeholderAfter: "example.com/shallow/deep/file",
+        },
+        {
+          searchString: "example.com/s",
+          valueBefore: "example.com/s",
+          valueAfter: "example.com/shallow/",
+          placeholderAfter: "example.com/shallow/",
+        },
+      ],
+    },
+    {
+      desc:
+        "Autofill example.com/shallow/deep/file then search for example.com/shallow/",
+      searches: [
+        {
+          searchString: "example.com/shallow/deep/f",
+          valueBefore: "example.com/shallow/deep/f",
+          valueAfter: "example.com/shallow/deep/file",
+          placeholderAfter: "example.com/shallow/deep/file",
+        },
+        {
+          searchString: "example.com/shallow/",
+          valueBefore: "example.com/shallow/",
+          valueAfter: "example.com/shallow/",
+          placeholderAfter: "example.com/shallow/",
+        },
+      ],
+    },
+    {
+      desc:
+        "Autofill example.com/shallow/deep/file then search for example.com/shallow/d",
+      searches: [
+        {
+          searchString: "example.com/shallow/deep/f",
+          valueBefore: "example.com/shallow/deep/f",
+          valueAfter: "example.com/shallow/deep/file",
+          placeholderAfter: "example.com/shallow/deep/file",
+        },
+        {
+          searchString: "example.com/shallow/d",
+          valueBefore: "example.com/shallow/d",
+          valueAfter: "example.com/shallow/deep/",
+          placeholderAfter: "example.com/shallow/deep/",
+        },
+      ],
+    },
+    {
+      desc:
+        "Autofill example.com/shallow/deep/file then search for example.com/shallow/deep/",
+      searches: [
+        {
+          searchString: "example.com/shallow/deep/f",
+          valueBefore: "example.com/shallow/deep/f",
+          valueAfter: "example.com/shallow/deep/file",
+          placeholderAfter: "example.com/shallow/deep/file",
+        },
+        {
+          searchString: "example.com/shallow/deep/fi",
+          valueBefore: "example.com/shallow/deep/file",
+          valueAfter: "example.com/shallow/deep/file",
+          placeholderAfter: "example.com/shallow/deep/file",
+        },
+        {
+          searchString: "example.com/shallow/deep/",
+          valueBefore: "example.com/shallow/deep/",
+          valueAfter: "example.com/shallow/deep/",
+          placeholderAfter: "example.com/shallow/deep/",
+        },
+      ],
+    },
+  ];
+
+  for (const { desc, searches } of testData) {
+    info("Running subtest: " + desc);
+
+    for (let i = 0; i < searches.length; i++) {
+      info("Doing search at index " + i);
+      await search(searches[i]);
+    }
+
+    
+    info("Doing extra search to clear placeholder");
+    await search({
+      searchString: "no match",
+      valueBefore: "no match",
+      valueAfter: "no match",
+      placeholderAfter: "",
+    });
+  }
+
+  await cleanUp();
+});
+
+
+
+add_task(async function noAdaptiveHistoryMatch() {
+  UrlbarPrefs.set("autoFill.adaptiveHistory.enabled", true);
+
+  await addVisits("http://example.com/test");
+  await UrlbarUtils.addToInputHistory("http://example.com/test", "exam");
+
+  
+  
+  await search({
+    searchString: "example",
+    valueBefore: "example",
+    valueAfter: "example.com/test",
+    placeholderAfter: "example.com/test",
+  });
+
+  
+  
+  
+  await search({
+    searchString: "exam",
+    valueBefore: "example.com/test",
+    valueAfter: "example.com/test",
+    placeholderAfter: "example.com/test",
+  });
+
+  
+  
+  
+  await search({
+    searchString: "ex",
+    valueBefore: "ex",
+    valueAfter: "example.com/",
+    placeholderAfter: "example.com/",
+  });
+
+  UrlbarPrefs.clear("autoFill.adaptiveHistory.enabled");
+  await cleanUp();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function search({
   searchString,
-  expectedAutofillValue,
-  onCompleteValue = ""
-) {
-  gURLBar.value = searchString;
+  valueBefore,
+  valueAfter,
+  placeholderAfter,
+}) {
+  info(
+    "Searching: " +
+      JSON.stringify({
+        searchString,
+        valueBefore,
+        valueAfter,
+        placeholderAfter,
+      })
+  );
+
+  await SimpleTest.promiseFocus(window);
+  gURLBar.inputField.focus();
 
   
+  
+  
+  gURLBar.value = searchString;
+  gURLBar.inputField.setSelectionRange(
+    searchString.length,
+    searchString.length
+  );
+
   
   
   
@@ -311,17 +936,81 @@ async function searchAndCheck(
 
   
   
-  Assert.equal(gURLBar.value, expectedAutofillValue);
-  Assert.equal(gURLBar.selectionStart, searchString.length);
-  Assert.equal(gURLBar.selectionEnd, expectedAutofillValue.length);
+  Assert.equal(
+    gURLBar.value,
+    valueBefore,
+    "gURLBar.value before the search completes"
+  );
+  Assert.equal(
+    gURLBar.selectionStart,
+    searchString.length,
+    "gURLBar.selectionStart before the search completes"
+  );
+  Assert.equal(
+    gURLBar.selectionEnd,
+    valueBefore.length,
+    "gURLBar.selectionEnd before the search completes"
+  );
 
+  
+  info("Waiting for the search to complete");
   await UrlbarTestUtils.promiseSearchComplete(window);
 
-  if (onCompleteValue) {
-    
-    Assert.equal(gURLBar.value, onCompleteValue);
-    Assert.equal(gURLBar.selectionStart, searchString.length);
-    Assert.equal(gURLBar.selectionEnd, onCompleteValue.length);
+  
+  Assert.equal(
+    gURLBar.value,
+    valueAfter,
+    "gURLBar.value after the search completes"
+  );
+  Assert.equal(
+    gURLBar.selectionStart,
+    searchString.length,
+    "gURLBar.selectionStart after the search completes"
+  );
+  Assert.equal(
+    gURLBar.selectionEnd,
+    valueAfter.length,
+    "gURLBar.selectionEnd after the search completes"
+  );
+
+  
+  if (placeholderAfter) {
+    Assert.ok(
+      gURLBar._autofillPlaceholder,
+      "gURLBar._autofillPlaceholder exists after the search completes"
+    );
+    Assert.strictEqual(
+      gURLBar._autofillPlaceholder.value,
+      placeholderAfter,
+      "gURLBar._autofillPlaceholder.value after the search completes"
+    );
+  } else {
+    Assert.strictEqual(
+      gURLBar._autofillPlaceholder,
+      null,
+      "gURLBar._autofillPlaceholder does not exist after the search completes"
+    );
+  }
+
+  
+  let details = await UrlbarTestUtils.getDetailsOfResultAt(window, 0);
+  Assert.equal(
+    !!details.autofill,
+    !!placeholderAfter,
+    "First result is an autofill result iff a placeholder is expected"
+  );
+}
+
+
+
+
+
+
+async function addVisits(...urls) {
+  for (let url of urls) {
+    for (let i = 0; i < 5; i++) {
+      await PlacesTestUtils.addVisits(url);
+    }
   }
 }
 
