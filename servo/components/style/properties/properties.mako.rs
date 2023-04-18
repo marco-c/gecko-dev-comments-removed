@@ -474,9 +474,10 @@ impl NonCustomPropertyId {
         self.0
     }
 
+    
     #[cfg(feature = "gecko")]
     #[inline]
-    fn to_nscsspropertyid(self) -> nsCSSPropertyID {
+    pub fn to_nscsspropertyid(self) -> nsCSSPropertyID {
         
         unsafe { std::mem::transmute(self.0 as i32) }
     }
