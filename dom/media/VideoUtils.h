@@ -235,11 +235,15 @@ struct VideoColorSpace {
   
   
   
-  
-  uint8_t mPrimaryId = 1;   
-  uint8_t mTransferId = 1;  
-  uint8_t mMatrixId = 1;    
-  uint8_t mRangeId = 0;
+  gfx::CICP::ColourPrimaries mPrimaries = gfx::CICP::CP_BT709;
+  gfx::CICP::TransferCharacteristics mTransfer = gfx::CICP::TC_BT709;
+  gfx::CICP::MatrixCoefficients mMatrix = gfx::CICP::MC_BT709;
+  gfx::ColorRange mRange = gfx::ColorRange::LIMITED;
+
+  bool operator==(const VideoColorSpace& aOther) const {
+    return mPrimaries == aOther.mPrimaries && mTransfer == aOther.mTransfer &&
+           mMatrix == aOther.mMatrix && mRange == aOther.mRange;
+  }
 };
 
 

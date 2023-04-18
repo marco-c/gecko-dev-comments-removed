@@ -27,6 +27,9 @@ class BitReader {
   uint32_t ReadUE();
   
   int32_t ReadSE();
+  
+  
+  CheckedUint64 ReadULEB128();
 
   
   size_t BitCount() const;

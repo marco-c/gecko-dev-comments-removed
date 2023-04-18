@@ -23,6 +23,8 @@ class BitWriter {
 
   
   void WriteUE(uint32_t aValue);
+  
+  void WriteULEB128(uint64_t aValue);
 
   
   void CloseWithRbspTrailing();

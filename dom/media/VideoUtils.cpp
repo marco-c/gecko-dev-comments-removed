@@ -35,6 +35,10 @@
 
 namespace mozilla {
 
+using gfx::ColorRange;
+using gfx::CICP::ColourPrimaries;
+using gfx::CICP::MatrixCoefficients;
+using gfx::CICP::TransferCharacteristics;
 using layers::PlanarYCbCrImage;
 using media::TimeUnit;
 
@@ -301,14 +305,9 @@ bool ExtractVPXCodecDetails(const nsAString& aCodec, uint8_t& aProfile,
     return false;
   }
   ++fieldsItr;
-  uint8_t* fields[] = {&aProfile,
-                       &aLevel,
-                       &aBitDepth,
-                       &aChromaSubsampling,
-                       &aColorSpace.mPrimaryId,
-                       &aColorSpace.mTransferId,
-                       &aColorSpace.mMatrixId,
-                       &aColorSpace.mRangeId};
+  uint8_t primary, transfer, matrix, range;
+  uint8_t* fields[] = {&aProfile, &aLevel,   &aBitDepth, &aChromaSubsampling,
+                       &primary,  &transfer, &matrix,    &range};
   int fieldsCount = 0;
   nsresult rv;
   for (; fieldsItr != splitter.end(); ++fieldsItr, ++fieldsCount) {
@@ -385,15 +384,15 @@ bool ExtractVPXCodecDetails(const nsAString& aCodec, uint8_t& aProfile,
   
   
   
-  const auto& primaryId = aColorSpace.mPrimaryId;
-  if (primaryId == 0 || primaryId == 3 || primaryId > 22) {
+  if (primary == 0 || primary == 3 || primary > 22) {
     
     return false;
   }
-  if (primaryId > 12 && primaryId < 22) {
+  if (primary > 12 && primary < 22) {
     
     return false;
   }
+  aColorSpace.mPrimaries = static_cast<ColourPrimaries>(primary);
 
   if (fieldsCount == 5) {
     
@@ -403,11 +402,11 @@ bool ExtractVPXCodecDetails(const nsAString& aCodec, uint8_t& aProfile,
   
   
   
-  const auto& transferId = aColorSpace.mTransferId;
-  if (transferId == 0 || transferId == 3 || transferId > 18) {
+  if (transfer == 0 || transfer == 3 || transfer > 18) {
     
     return false;
   }
+  aColorSpace.mTransfer = static_cast<TransferCharacteristics>(transfer);
 
   if (fieldsCount == 6) {
     
@@ -417,14 +416,15 @@ bool ExtractVPXCodecDetails(const nsAString& aCodec, uint8_t& aProfile,
   
   
   
-  const auto& matrixId = aColorSpace.mMatrixId;
-  if (matrixId == 3 || matrixId > 11) {
+  if (matrix == 3 || matrix > 11) {
     return false;
   }
+  aColorSpace.mMatrix = static_cast<MatrixCoefficients>(matrix);
 
   
   
-  if (matrixId == 0 && aChromaSubsampling != 3) {
+  if (aColorSpace.mMatrix == MatrixCoefficients::MC_IDENTITY &&
+      aChromaSubsampling != 3) {
     return false;
   }
 
@@ -436,8 +436,8 @@ bool ExtractVPXCodecDetails(const nsAString& aCodec, uint8_t& aProfile,
   
   
   
-  const auto& rangeId = aColorSpace.mRangeId;
-  return rangeId <= 1;
+  aColorSpace.mRange = static_cast<ColorRange>(range);
+  return range <= 1;
 }
 
 bool ExtractH264CodecDetails(const nsAString& aCodec, uint8_t& aProfile,
