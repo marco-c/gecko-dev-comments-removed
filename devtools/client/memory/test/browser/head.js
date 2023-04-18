@@ -10,13 +10,6 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-
-
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/shared/test/shared-redux-head.js",
-  this
-);
-
 var {
   censusDisplays,
   censusState,

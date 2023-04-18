@@ -14,12 +14,6 @@ Services.scriptloader.loadSubScript(
 );
 
 
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/shared/test/shared-redux-head.js",
-  this
-);
-
-
 Services.scriptloader.loadSubScript(CHROME_URL_ROOT + "helper-mocks.js", this);
 
 

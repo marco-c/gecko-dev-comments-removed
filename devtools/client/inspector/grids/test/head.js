@@ -12,13 +12,6 @@ Services.scriptloader.loadSubScript(
   this
 );
 
-
-
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/devtools/client/shared/test/shared-redux-head.js",
-  this
-);
-
 const asyncStorage = require("devtools/shared/async-storage");
 
 Services.prefs.setIntPref("devtools.toolbox.footer.height", 350);
