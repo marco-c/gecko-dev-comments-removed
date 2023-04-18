@@ -142,7 +142,7 @@ void WMFDecoderModule::Init() {
         
         
         WmfDecoderModuleMarkerAndLog("WMFInit Decoder Failed",
-                                     "%s failed with code 0x%x",
+                                     "%s failed with code 0x%lx",
                                      StreamTypeToString(type), hr);
       }
     }
