@@ -258,10 +258,6 @@ interface nsIPrintSettings : nsISupports
   [infallible] attribute boolean showMarginGuides;
 
   
-
-  [infallible] attribute boolean isPrintSelectionRBEnabled;
-
-  
   [infallible] attribute boolean printSelectionOnly;
 
   attribute AString title;
