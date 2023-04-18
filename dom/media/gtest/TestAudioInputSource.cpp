@@ -214,6 +214,9 @@ TEST(TestAudioInputSource, ErrorCallback)
 
   DispatchFunction([&] { stream->ForceError(); });
   WaitFor(stream->ErrorForcedEvent());
+  
+  
+  WaitFor(stream->ErrorStoppedEvent());
 
   DispatchFunction([&] { ais->Stop(); });
   Unused << WaitFor(cubeb->StreamDestroyEvent());
