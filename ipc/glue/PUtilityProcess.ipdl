@@ -12,6 +12,8 @@ include protocol PProfiler;
 include protocol PSandboxTesting;
 #endif
 
+include "mozilla/ipc/ByteBufUtils.h";
+
 using mozilla::dom::NativeThreadId from "mozilla/dom/NativeThreadId.h";
 
 namespace mozilla {
@@ -29,6 +31,11 @@ parent:
 
   async AddMemoryReport(MemoryReport aReport);
 
+  
+  
+  
+  async FOGData(ByteBuf buf);
+
 child:
   async Init(FileDescriptor? sandboxBroker, bool canRecordReleaseTelemetry);
 
@@ -41,6 +48,16 @@ child:
       returns (uint32_t aGeneration);
 
   async PreferenceUpdate(Pref pref);
+
+  
+  
+  
+  async FlushFOGData() returns (ByteBuf buf);
+
+  
+  
+  
+  async TestTriggerMetrics() returns (bool unused);
 
 #if defined(MOZ_SANDBOX) && defined(MOZ_DEBUG) && defined(ENABLE_TESTS)
   async InitSandboxTesting(Endpoint<PSandboxTestingChild> aEndpoint);
