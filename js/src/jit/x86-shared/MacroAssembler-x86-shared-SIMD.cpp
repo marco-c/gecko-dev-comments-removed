@@ -601,9 +601,7 @@ void MacroAssemblerX86Shared::compareForOrderingInt64x2(
 void MacroAssemblerX86Shared::compareFloat32x4(FloatRegister lhs, Operand rhs,
                                                Assembler::Condition cond,
                                                FloatRegister output) {
-  if (HasAVX()) {
-    MOZ_CRASH("Can do better here with three-address compares");
-  }
+  
 
   
   
@@ -668,9 +666,7 @@ void MacroAssemblerX86Shared::compareFloat32x4(Assembler::Condition cond,
 void MacroAssemblerX86Shared::compareFloat64x2(FloatRegister lhs, Operand rhs,
                                                Assembler::Condition cond,
                                                FloatRegister output) {
-  if (HasAVX()) {
-    MOZ_CRASH("Can do better here with three-address compares");
-  }
+  
 
   
   
@@ -778,7 +774,7 @@ void MacroAssemblerX86Shared::minMaxFloat32x4(bool isMin, FloatRegister lhs_,
   SimdConstant quietBits(SimdConstant::SplatX4(int32_t(0x00400000)));
 
    
-  FloatRegister lhs = reusedInputSimd128Float(lhs_, scratch);
+  FloatRegister lhs = reusedInputSimd128FloatIfNotOther(lhs_, scratch, output);
   if (isMin) {
     vmovaps(lhs, output);                    
     vminps(rhs, output, output);             
@@ -831,7 +827,7 @@ void MacroAssemblerX86Shared::minMaxFloat64x2(bool isMin, FloatRegister lhs_,
   SimdConstant quietBits(SimdConstant::SplatX2(int64_t(0x0008000000000000ull)));
 
    
-  FloatRegister lhs = reusedInputSimd128Float(lhs_, scratch);
+  FloatRegister lhs = reusedInputSimd128FloatIfNotOther(lhs_, scratch, output);
   if (isMin) {
     vmovapd(lhs, output);                    
     vminpd(rhs, output, output);             

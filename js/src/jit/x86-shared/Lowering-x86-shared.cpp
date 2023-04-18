@@ -983,14 +983,33 @@ void LIRGenerator::visitWasmBinarySimd128(MWasmBinarySimd128* ins) {
   
   
   
+  
+  
+  
 
-  LAllocation lhsDestAlloc = useRegisterAtStart(lhs);
-  LAllocation rhsAlloc = willHaveDifferentLIRNodes(lhs, rhs)
-                             ? useRegister(rhs)
-                             : useRegisterAtStart(rhs);
-  auto* lir = new (alloc())
-      LWasmBinarySimd128(op, lhsDestAlloc, rhsAlloc, tempReg0, tempReg1);
-  defineReuseInput(lir, ins, LWasmBinarySimd128::LhsDest);
+  switch (ins->simdOp()) {
+    case wasm::SimdOp::I32x4Add:
+    case wasm::SimdOp::I32x4Sub:
+    case wasm::SimdOp::I32x4Mul:
+      if (isThreeOpAllowed()) {
+        auto* lir = new (alloc())
+            LWasmBinarySimd128(op, useRegisterAtStart(lhs),
+                               useRegisterAtStart(rhs), tempReg0, tempReg1);
+        define(lir, ins);
+        break;
+      }
+      [[fallthrough]];
+    default: {
+      LAllocation lhsDestAlloc = useRegisterAtStart(lhs);
+      LAllocation rhsAlloc = willHaveDifferentLIRNodes(lhs, rhs)
+                                 ? useRegister(rhs)
+                                 : useRegisterAtStart(rhs);
+      auto* lir = new (alloc())
+          LWasmBinarySimd128(op, lhsDestAlloc, rhsAlloc, tempReg0, tempReg1);
+      defineReuseInput(lir, ins, LWasmBinarySimd128::LhsDest);
+      break;
+    }
+  }
 #else
   MOZ_CRASH("No SIMD");
 #endif
@@ -1322,11 +1341,19 @@ void LIRGenerator::visitWasmReplaceLaneSimd128(MWasmReplaceLaneSimd128* ins) {
   
   
   
+  
+  
 
   if (ins->rhs()->type() == MIRType::Int64) {
-    auto* lir = new (alloc()) LWasmReplaceInt64LaneSimd128(
-        useRegisterAtStart(ins->lhs()), useInt64Register(ins->rhs()));
-    defineReuseInput(lir, ins, LWasmReplaceInt64LaneSimd128::LhsDest);
+    if (isThreeOpAllowed()) {
+      auto* lir = new (alloc()) LWasmReplaceInt64LaneSimd128(
+          useRegisterAtStart(ins->lhs()), useInt64RegisterAtStart(ins->rhs()));
+      define(lir, ins);
+    } else {
+      auto* lir = new (alloc()) LWasmReplaceInt64LaneSimd128(
+          useRegisterAtStart(ins->lhs()), useInt64Register(ins->rhs()));
+      defineReuseInput(lir, ins, LWasmReplaceInt64LaneSimd128::LhsDest);
+    }
   } else {
     auto* lir = new (alloc()) LWasmReplaceLaneSimd128(
         useRegisterAtStart(ins->lhs()), useRegister(ins->rhs()));
