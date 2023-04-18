@@ -765,7 +765,7 @@ class HTMLEditor final : public EditorBase,
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
   CopyLastEditableChildStylesWithTransaction(Element& aPreviousBlock,
                                              Element& aNewBlock,
-                                             Element& aEditingHost);
+                                             const Element& aEditingHost);
 
   
 
@@ -1094,7 +1094,7 @@ class HTMLEditor final : public EditorBase,
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
   HandleInsertParagraphInMailCiteElement(Element& aMailCiteElement,
                                          const EditorDOMPoint& aPointToSplit,
-                                         Element& aEditingHost);
+                                         const Element& aEditingHost);
 
   
 
@@ -1108,7 +1108,7 @@ class HTMLEditor final : public EditorBase,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT CreateElementResult HandleInsertBRElement(
-      const EditorDOMPoint& aInsertToBreak, Element& aEditingHost);
+      const EditorDOMPoint& aInsertToBreak, const Element& aEditingHost);
 
   
 
@@ -1118,7 +1118,7 @@ class HTMLEditor final : public EditorBase,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult HandleInsertLinefeed(
-      const EditorDOMPoint& aInsertToBreak, Element& aEditingHost);
+      const EditorDOMPoint& aInsertToBreak, const Element& aEditingHost);
 
   
 
@@ -1242,19 +1242,6 @@ class HTMLEditor final : public EditorBase,
   already_AddRefed<nsRange> CreateRangeIncludingAdjuscentWhiteSpaces(
       const EditorDOMPointType1& aStartPoint,
       const EditorDOMPointType2& aEndPoint);
-
-  
-
-
-
-
-
-
-
-
-  void GetSelectionRangesExtendedToHardLineStartAndEnd(
-      nsTArray<OwningNonNull<nsRange>>& aOutArrayOfRanges,
-      EditSubAction aEditSubAction);
 
   
 
@@ -1498,8 +1485,9 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  FormatBlockContainerWithTransaction(nsAtom& aBlockType);
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult FormatBlockContainerWithTransaction(
+      nsAtom& aBlockType, const Element& aEditingHost);
 
   
 
@@ -1589,14 +1577,16 @@ class HTMLEditor final : public EditorBase,
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
   HandleInsertParagraphInListItemElement(Element& aListItemElement,
                                          const EditorDOMPoint& aPointToSplit,
-                                         Element& aEditingHost);
+                                         const Element& aEditingHost);
 
   
 
 
 
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
-  InsertParagraphSeparatorAsSubAction();
+  InsertParagraphSeparatorAsSubAction(const Element& aEditingHost);
 
   
 
@@ -1642,11 +1632,13 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
   ChangeSelectedHardLinesToList(nsAtom& aListElementTagName,
                                 nsAtom& aListItemElementTagName,
                                 const nsAString& aBulletType,
-                                SelectAllOfCurrentList aSelectAllOfCurrentList);
+                                SelectAllOfCurrentList aSelectAllOfCurrentList,
+                                const Element& aEditingHost);
 
   
 
@@ -2319,7 +2311,10 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult RemoveListAtSelectionAsSubAction();
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  RemoveListAtSelectionAsSubAction(const Element& aEditingHost);
 
   
 
@@ -2337,18 +2332,10 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  HandleCSSIndentAtSelectionInternal();
-
-  
-
-
-
-
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  HandleHTMLIndentAtSelectionInternal();
+  HandleCSSIndentAtSelectionInternal(const Element& aEditingHost);
 
   
 
@@ -2356,7 +2343,11 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult HandleCSSIndentAtSelection();
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  HandleHTMLIndentAtSelectionInternal(const Element& aEditingHost);
 
   
 
@@ -2364,12 +2355,29 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult HandleHTMLIndentAtSelection();
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  HandleCSSIndentAtSelection(const Element& aEditingHost);
 
   
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult HandleIndentAtSelection();
+
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
+  HandleHTMLIndentAtSelection(const Element& aEditingHost);
+
+  
+
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
+  HandleIndentAtSelection(const Element& aEditingHost);
 
   
 
@@ -2414,13 +2422,17 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT SplitRangeOffFromNodeResult
-  HandleOutdentAtSelectionInternal();
+  HandleOutdentAtSelectionInternal(const Element& aEditingHost);
 
   
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult HandleOutdentAtSelection();
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
+  HandleOutdentAtSelection(const Element& aEditingHost);
 
   
 
@@ -2556,8 +2568,9 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  AlignContentsAtSelection(const nsAString& aAlignType);
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult AlignContentsAtSelection(
+      const nsAString& aAlignType, const Element& aEditingHost);
 
   
 
@@ -2565,8 +2578,9 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
-  AlignAsSubAction(const nsAString& aAlignType);
+  AlignAsSubAction(const nsAString& aAlignType, const Element& aEditingHost);
 
   
 
@@ -2643,9 +2657,11 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
+  
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
   MoveSelectedContentsToDivElementToMakeItAbsolutePosition(
-      RefPtr<Element>* aTargetElement);
+      RefPtr<Element>* aTargetElement, const Element& aEditingHost);
 
   
 
@@ -2654,8 +2670,10 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
-  SetSelectionToAbsoluteAsSubAction();
+  SetSelectionToAbsoluteAsSubAction(const Element& aEditingHost);
 
   
 
@@ -3276,12 +3294,18 @@ class HTMLEditor final : public EditorBase,
   
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult IndentAsSubAction();
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
+  IndentAsSubAction(const Element& aEditingHost);
 
   
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult OutdentAsSubAction();
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
+  OutdentAsSubAction(const Element& aEditingHost);
 
   MOZ_CAN_RUN_SCRIPT nsresult LoadHTML(const nsAString& aInputString);
 
@@ -4486,10 +4510,8 @@ class HTMLEditor final : public EditorBase,
 
   ParagraphSeparator mDefaultParagraphSeparator;
 
-  friend class
-      AlignStateAtSelection;  
-                              
-                              
+  friend class AlignStateAtSelection;  
+                                       
   friend class AutoSelectionSetterAfterTableEdit;  
   friend class
       AutoSetTemporaryAncestorLimiter;  
@@ -4506,26 +4528,20 @@ class HTMLEditor final : public EditorBase,
                             
   friend class JoinNodesTransaction;  
                                       
-  friend class
-      ListElementSelectionState;  
-                                  
-                                  
-  friend class
-      ListItemElementSelectionState;  
-                                      
-                                      
+  friend class ListElementSelectionState;      
+                                               
+  friend class ListItemElementSelectionState;  
+                                               
   friend class MoveNodeResult;       
                                      
   friend class MoveNodeTransaction;  
                                      
                                      
-  friend class
-      ParagraphStateAtSelection;  
-                                  
-                                  
-                                  
-                                  
-                                  
+  friend class ParagraphStateAtSelection;    
+                                             
+                                             
+                                             
+                                             
   friend class SlurpBlobEventListener;       
   friend class SplitNodeResult;              
   friend class SplitNodeTransaction;         
@@ -4668,7 +4684,7 @@ class MOZ_STACK_CLASS ParagraphStateAtSelection final {
 
 
   static nsresult CollectEditableFormatNodesInSelection(
-      HTMLEditor& aHTMLEditor,
+      HTMLEditor& aHTMLEditor, const dom::Element& aEditingHost,
       nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents);
 
   RefPtr<nsAtom> mFirstParagraphState;

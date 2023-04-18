@@ -349,6 +349,13 @@ class MOZ_STACK_CLASS AutoRangeArray final {
 
 
 
+  void ExtendRangesToWrapLinesToHandleBlockLevelEditAction(
+      EditSubAction aEditSubAction, const dom::Element& aEditingHost);
+
+  
+
+
+
   [[nodiscard]] static bool IsEditableRange(const dom::AbstractRange& aRange,
                                             const dom::Element& aEditingHost);
 
