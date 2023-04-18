@@ -28,8 +28,8 @@ static Mutex sMutex MOZ_UNANNOTATED;
 
 #ifndef _WIN32
 static void prefork() { sMutex.Lock(); }
-
-static void postfork() { sMutex.Unlock(); }
+static void postfork_parent() { sMutex.Unlock(); }
+static void postfork_child() { sMutex.Init(); }
 #endif
 
 static size_t GetPid() { return size_t(getpid()); }
@@ -229,7 +229,10 @@ void replace_init(malloc_table_t* aTable, ReplaceMallocBridge** aBridge) {
 
 
 
+
+
+
   sFuncs.malloc(-1);
-  pthread_atfork(prefork, postfork, postfork);
+  pthread_atfork(prefork, postfork_parent, postfork_child);
 #endif
 }
