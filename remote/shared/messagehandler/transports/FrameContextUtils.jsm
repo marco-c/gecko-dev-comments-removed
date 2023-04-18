@@ -6,6 +6,21 @@
 
 const EXPORTED_SYMBOLS = ["isBrowsingContextCompatible"];
 
+function isExtensionContext(browsingContext) {
+  let principal;
+  if (browsingContext instanceof CanonicalBrowsingContext) {
+    principal = browsingContext.currentWindowGlobal.documentPrincipal;
+  } else {
+    principal = browsingContext.window.document.nodePrincipal;
+  }
+
+  
+  
+  
+  
+  return principal.isAddonOrExpandedAddonPrincipal;
+}
+
 function isParentProcess(browsingContext) {
   if (browsingContext instanceof CanonicalBrowsingContext) {
     return browsingContext.currentWindowGlobal.osPid === -1;
@@ -38,5 +53,9 @@ function isBrowsingContextCompatible(browsingContext, options = {}) {
   }
 
   
-  return !isParentProcess(browsingContext);
+  
+  
+  return (
+    !isExtensionContext(browsingContext) && !isParentProcess(browsingContext)
+  );
 }
