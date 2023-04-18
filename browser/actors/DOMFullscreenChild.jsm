@@ -43,7 +43,7 @@ class DOMFullscreenChild extends JSWindowActorChild {
         break;
       }
       case "DOMFullscreen:CleanUp": {
-        let isNotTheRequestSource = !!aMessage.data.remoteFrameBC; 
+        let isNotTheRequestSource = !!aMessage.data.remoteFrameBC;
         
         
         
