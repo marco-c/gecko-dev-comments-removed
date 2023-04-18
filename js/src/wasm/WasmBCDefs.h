@@ -102,8 +102,10 @@ class BaseStackFrame;
 
 
 
+
+
 enum class UseABI { Wasm, Builtin, System };
-enum class InterModule { False = false, True = true };
+enum class RestoreRegisterStateAndRealm { False = false, True = true };
 enum class RhsDestOp { True = true };
 
 

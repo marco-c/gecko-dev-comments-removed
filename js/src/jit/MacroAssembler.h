@@ -3800,10 +3800,16 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   
   
-  CodeOffset wasmCallIndirect(const wasm::CallSiteDesc& desc,
-                              const wasm::CalleeDesc& callee,
-                              bool needsBoundsCheck,
-                              mozilla::Maybe<uint32_t> tableSize);
+  
+  
+  
+  
+  
+  
+  void wasmCallIndirect(const wasm::CallSiteDesc& desc,
+                        const wasm::CalleeDesc& callee, bool needsBoundsCheck,
+                        mozilla::Maybe<uint32_t> tableSize,
+                        CodeOffset* fastCallOffset, CodeOffset* slowCallOffset);
 
   
   
@@ -3817,6 +3823,14 @@ class MacroAssembler : public MacroAssemblerSpecific {
                                            const ABIArg& instanceArg,
                                            wasm::SymbolicAddress builtin,
                                            wasm::FailureMode failureMode);
+
+  
+  
+  
+  
+  
+  void shiftIndex32AndAdd(Register indexTemp32, int shift,
+                          Register pointer) PER_SHARED_ARCH;
 
   
   

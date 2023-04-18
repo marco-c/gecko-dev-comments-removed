@@ -3885,8 +3885,8 @@ CodeOffset MacroAssembler::asmCallIndirect(const wasm::CallSiteDesc& desc,
                                            const wasm::CalleeDesc& callee) {
   MOZ_ASSERT(callee.which() == wasm::CalleeDesc::AsmJSTable);
 
-  Register scratch = WasmTableCallScratchReg0;
-  Register index = WasmTableCallIndexReg;
+  const Register scratch = WasmTableCallScratchReg0;
+  const Register index = WasmTableCallIndexReg;
 
   
   
@@ -3913,30 +3913,39 @@ CodeOffset MacroAssembler::asmCallIndirect(const wasm::CallSiteDesc& desc,
   return call(desc, scratch);
 }
 
-CodeOffset MacroAssembler::wasmCallIndirect(
-    const wasm::CallSiteDesc& desc, const wasm::CalleeDesc& callee,
-    bool needsBoundsCheck, mozilla::Maybe<uint32_t> tableSize) {
+
+
+
+
+
+
+
+
+
+void MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc,
+                                      const wasm::CalleeDesc& callee,
+                                      bool needsBoundsCheck,
+                                      mozilla::Maybe<uint32_t> tableSize,
+                                      CodeOffset* fastCallOffset,
+                                      CodeOffset* slowCallOffset) {
+  static_assert(sizeof(wasm::FunctionTableElem) == 2 * sizeof(void*),
+                "Exactly two pointers or index scaling won't work correctly");
   MOZ_ASSERT(callee.which() == wasm::CalleeDesc::WasmTable);
 
-  Register scratch = WasmTableCallScratchReg0;
-  Register index = WasmTableCallIndexReg;
-
-  
-  wasm::TypeIdDesc funcTypeId = callee.wasmTableSigId();
-  switch (funcTypeId.kind()) {
-    case wasm::TypeIdDescKind::Global:
-      loadWasmGlobalPtr(funcTypeId.globalDataOffset(), WasmTableCallSigReg);
-      break;
-    case wasm::TypeIdDescKind::Immediate:
-      move32(Imm32(funcTypeId.immediate()), WasmTableCallSigReg);
-      break;
-    case wasm::TypeIdDescKind::None:
-      break;
-  }
-
+  const int shift = sizeof(wasm::FunctionTableElem) == 8 ? 3 : 4;
   wasm::BytecodeOffset trapOffset(desc.lineOrBytecode());
+  const Register calleeScratch = WasmTableCallScratchReg0;
+  const Register index = WasmTableCallIndexReg;
 
   
+  
+  
+  
+  
+  
+  
+  
+
   if (needsBoundsCheck) {
     Label ok;
     if (tableSize.isSome()) {
@@ -3952,21 +3961,59 @@ CodeOffset MacroAssembler::wasmCallIndirect(
   }
 
   
-  loadWasmGlobalPtr(callee.tableFunctionBaseGlobalDataOffset(), scratch);
+
+  const wasm::TypeIdDesc funcTypeId = callee.wasmTableSigId();
+  switch (funcTypeId.kind()) {
+    case wasm::TypeIdDescKind::Global:
+      loadWasmGlobalPtr(funcTypeId.globalDataOffset(), WasmTableCallSigReg);
+      break;
+    case wasm::TypeIdDescKind::Immediate:
+      move32(Imm32(funcTypeId.immediate()), WasmTableCallSigReg);
+      break;
+    case wasm::TypeIdDescKind::None:
+      break;
+  }
 
   
-  if (sizeof(wasm::FunctionTableElem) == 8) {
-    computeEffectiveAddress(BaseIndex(scratch, index, TimesEight), scratch);
-  } else {
-    lshift32(Imm32(4), index);
-    addPtr(index, scratch);
-  }
+  
+
+  loadWasmGlobalPtr(callee.tableFunctionBaseGlobalDataOffset(), calleeScratch);
+  shiftIndex32AndAdd(index, shift, calleeScratch);
+
+  
+  
+
+  Label fastCall;
+  Label done;
+  const Register newTlsTemp = WasmTableCallScratchReg1;
+  loadPtr(Address(calleeScratch, offsetof(wasm::FunctionTableElem, tls)),
+          newTlsTemp);
+  branchPtr(Assembler::Equal, WasmTlsReg, newTlsTemp, &fastCall);
+
+  
+  
+  
+  
+  
+  
+  
 
   storePtr(WasmTlsReg,
            Address(getStackPointer(), WasmCallerTlsOffsetBeforeCall));
-  loadPtr(Address(scratch, offsetof(wasm::FunctionTableElem, tls)), WasmTlsReg);
+  movePtr(newTlsTemp, WasmTlsReg);
   storePtr(WasmTlsReg,
            Address(getStackPointer(), WasmCalleeTlsOffsetBeforeCall));
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   Label nonNull;
   branchTestPtr(Assembler::NonZero, WasmTlsReg, WasmTlsReg, &nonNull);
@@ -3976,9 +4023,39 @@ CodeOffset MacroAssembler::wasmCallIndirect(
   loadWasmPinnedRegsFromTls();
   switchToWasmTlsRealm(index, WasmTableCallScratchReg1);
 
-  loadPtr(Address(scratch, offsetof(wasm::FunctionTableElem, code)), scratch);
+  loadPtr(Address(calleeScratch, offsetof(wasm::FunctionTableElem, code)),
+          calleeScratch);
 
-  return call(desc, scratch);
+  *slowCallOffset = call(desc, calleeScratch);
+
+  
+
+  loadPtr(Address(getStackPointer(), WasmCallerTlsOffsetBeforeCall),
+          WasmTlsReg);
+  loadWasmPinnedRegsFromTls();
+  switchToWasmTlsRealm(ABINonArgReturnReg0, ABINonArgReturnReg1);
+  jump(&done);
+
+  
+  
+  
+  
+  
+  
+
+  bind(&fastCall);
+
+  loadPtr(Address(calleeScratch, offsetof(wasm::FunctionTableElem, code)),
+          calleeScratch);
+
+  
+  
+
+  wasm::CallSiteDesc newDesc(desc.lineOrBytecode(),
+                             wasm::CallSiteDesc::IndirectFast);
+  *fastCallOffset = call(newDesc, calleeScratch);
+
+  bind(&done);
 }
 
 void MacroAssembler::nopPatchableToCall(const wasm::CallSiteDesc& desc) {

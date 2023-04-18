@@ -3164,9 +3164,43 @@ class LWasmParameterI64 : public LInstructionHelper<INT64_PIECES, 0, 0> {
   LWasmParameterI64() : LInstructionHelper(classOpcode) {}
 };
 
+
+class LWasmCallIndirectAdjunctSafepoint : public LInstructionHelper<0, 0, 0> {
+  CodeOffset offs_;
+  uint32_t framePushedAtStackMapBase_;
+
+ public:
+  LIR_HEADER(WasmCallIndirectAdjunctSafepoint);
+
+  LWasmCallIndirectAdjunctSafepoint()
+      : LInstructionHelper(classOpcode),
+        offs_(0),
+        framePushedAtStackMapBase_(0) {}
+
+  CodeOffset safepointLocation() const {
+    MOZ_ASSERT(offs_.offset() != 0);
+    return offs_;
+  }
+  uint32_t framePushedAtStackMapBase() const {
+    MOZ_ASSERT(offs_.offset() != 0);
+    return framePushedAtStackMapBase_;
+  }
+  void recordSafepointInfo(CodeOffset offs, uint32_t framePushed) {
+    offs_ = offs;
+    framePushedAtStackMapBase_ = framePushed;
+  }
+};
+
+
+
+
+
+
+
 class LWasmCall : public LVariadicInstruction<0, 0> {
   bool needsBoundsCheck_;
   mozilla::Maybe<uint32_t> tableSize_;
+  LWasmCallIndirectAdjunctSafepoint* adjunctSafepoint_;
 
  public:
   LIR_HEADER(WasmCall);
@@ -3175,7 +3209,8 @@ class LWasmCall : public LVariadicInstruction<0, 0> {
             mozilla::Maybe<uint32_t> tableSize = mozilla::Nothing())
       : LVariadicInstruction(classOpcode, numOperands),
         needsBoundsCheck_(needsBoundsCheck),
-        tableSize_(tableSize) {
+        tableSize_(tableSize),
+        adjunctSafepoint_(nullptr) {
     this->setIsCall();
   }
 
@@ -3192,6 +3227,13 @@ class LWasmCall : public LVariadicInstruction<0, 0> {
 
   bool needsBoundsCheck() const { return needsBoundsCheck_; }
   mozilla::Maybe<uint32_t> tableSize() const { return tableSize_; }
+  LWasmCallIndirectAdjunctSafepoint* adjunctSafepoint() const {
+    MOZ_ASSERT(adjunctSafepoint_ != nullptr);
+    return adjunctSafepoint_;
+  }
+  void setAdjunctSafepoint(LWasmCallIndirectAdjunctSafepoint* asp) {
+    adjunctSafepoint_ = asp;
+  }
 };
 
 class LWasmRegisterResult : public LInstructionHelper<1, 0, 0> {
