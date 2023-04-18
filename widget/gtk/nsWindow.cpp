@@ -1028,7 +1028,7 @@ void nsWindow::Move(double aX, double aY) {
   LOG("nsWindow::Move to %d %d\n", x, y);
 
   if (mSizeMode != nsSizeMode_Normal && (mWindowType == eWindowType_toplevel ||
-                                          mWindowType == eWindowType_dialog)) {
+                                         mWindowType == eWindowType_dialog)) {
     LOG("  size state is not normal, bailing");
     return;
   }
