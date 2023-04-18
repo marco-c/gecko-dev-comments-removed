@@ -593,10 +593,6 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
 
   bool mHasStartedTimerAtLeastOnce : 1;
 
-  
-  
-  
-  uint64_t mWarningThreshold;
   mozilla::TimeStamp mMostRecentRefresh;
   mozilla::TimeStamp mTickStart;
   mozilla::VsyncId mTickVsyncId;
