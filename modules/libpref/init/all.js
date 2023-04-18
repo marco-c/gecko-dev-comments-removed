@@ -1414,6 +1414,9 @@ pref("network.http.spdy.websockets", true);
 pref("network.http.spdy.enable-hpack-dump", false);
 
 
+pref("network.http.http3.enabled", true);
+
+
 pref("network.http.http3.default-qpack-table-size", 65536); 
 
 
