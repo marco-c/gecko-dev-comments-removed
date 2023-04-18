@@ -85,9 +85,7 @@ class MediaPipeline : public sigslot::has_slots<> {
   enum class DirectionType { TRANSMIT, RECEIVE };
   MediaPipeline(const std::string& aPc,
                 RefPtr<MediaTransportHandler> aTransportHandler,
-                DirectionType aDirection,
-                RefPtr<nsISerialEventTarget> aMainThread,
-                RefPtr<AbstractThread> aCallThread,
+                DirectionType aDirection, RefPtr<AbstractThread> aCallThread,
                 RefPtr<nsISerialEventTarget> aStsThread,
                 RefPtr<MediaSessionConduit> aConduit);
 
@@ -198,7 +196,6 @@ class MediaPipeline : public sigslot::has_slots<> {
 
   
   
-  const RefPtr<nsISerialEventTarget> mMainThread;
   const RefPtr<AbstractThread> mCallThread;
   const RefPtr<nsISerialEventTarget> mStsThread;
 
@@ -261,7 +258,6 @@ class MediaPipelineTransmit
   
   MediaPipelineTransmit(const std::string& aPc,
                         RefPtr<MediaTransportHandler> aTransportHandler,
-                        RefPtr<nsISerialEventTarget> aMainThread,
                         RefPtr<AbstractThread> aCallThread,
                         RefPtr<nsISerialEventTarget> aStsThread, bool aIsVideo,
                         RefPtr<MediaSessionConduit> aConduit);
@@ -351,7 +347,6 @@ class MediaPipelineReceive : public MediaPipeline {
   
   MediaPipelineReceive(const std::string& aPc,
                        RefPtr<MediaTransportHandler> aTransportHandler,
-                       RefPtr<nsISerialEventTarget> aMainThread,
                        RefPtr<AbstractThread> aCallThread,
                        RefPtr<nsISerialEventTarget> aStsThread,
                        RefPtr<MediaSessionConduit> aConduit);
@@ -366,7 +361,6 @@ class MediaPipelineReceiveAudio : public MediaPipelineReceive {
  public:
   MediaPipelineReceiveAudio(const std::string& aPc,
                             RefPtr<MediaTransportHandler> aTransportHandler,
-                            RefPtr<nsISerialEventTarget> aMainThread,
                             RefPtr<AbstractThread> aCallThread,
                             RefPtr<nsISerialEventTarget> aStsThread,
                             RefPtr<AudioSessionConduit> aConduit,
@@ -397,7 +391,6 @@ class MediaPipelineReceiveVideo : public MediaPipelineReceive {
  public:
   MediaPipelineReceiveVideo(const std::string& aPc,
                             RefPtr<MediaTransportHandler> aTransportHandler,
-                            RefPtr<nsISerialEventTarget> aMainThread,
                             RefPtr<AbstractThread> aCallThread,
                             RefPtr<nsISerialEventTarget> aStsThread,
                             RefPtr<VideoSessionConduit> aConduit,
