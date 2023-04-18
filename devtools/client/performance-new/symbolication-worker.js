@@ -13,7 +13,6 @@
 "use strict";
 
 importScripts(
-  "resource://gre/modules/osfile.jsm",
   "resource://devtools/client/performance-new/profiler_get_symbols.js"
 );
 
@@ -34,41 +33,7 @@ const { getCompactSymbolTable, queryAPI } = wasm_bindgen;
 
 
 
-function readFileBytesInto(file, offset, destBuf) {
-  file.setPosition(offset);
-  
-  
-  const chunkSize = 4 * 1024 * 1024;
-  let posInDestBuf = 0;
-  let remainingBytes = destBuf.byteLength;
-  while (remainingBytes > 0) {
-    const bytes = remainingBytes > chunkSize ? chunkSize : remainingBytes;
-    const chunkData = file.read({ bytes });
-    const chunkBytes = chunkData.byteLength;
-    if (chunkBytes === 0) {
-      break;
-    }
-
-    destBuf.set(chunkData, posInDestBuf);
-    posInDestBuf += chunkBytes;
-    remainingBytes -= chunkBytes;
-  }
-}
-
-
-
 function createPlainErrorObject(e) {
-  if (e instanceof OS.File.Error) {
-    
-    
-    
-    return {
-      name: "OSFileError",
-      message: e.toString(),
-      fileName: e.fileName,
-      lineNumber: e.lineNumber,
-    };
-  }
   
   const { name, message, fileName, lineNumber } = e;
   return { name, message, fileName, lineNumber };
@@ -172,20 +137,19 @@ class FileAndPathHelper {
 
 
   async readFile(path) {
-    const file = OS.File.open(path, { read: true });
-    const info = file.stat();
-    if (info.isDir) {
+    const info = await IOUtils.stat(path);
+    if (info.type === "directory") {
       throw new Error(`Path "${path}" is a directory.`);
     }
 
-    const fileSize = info.size;
+    const file = IOUtils.openFileForSyncReading(path);
 
     
     
     return {
-      getLength: () => fileSize,
+      getLength: () => file.size,
       readBytesInto: (dest, offset) => {
-        readFileBytesInto(file, offset, dest);
+        file.readBytesInto(dest, offset);
       },
       drop: () => {
         file.close();
