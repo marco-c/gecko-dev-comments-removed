@@ -1436,8 +1436,14 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
           
           for (auto& shared : mSharedTextures) {
             if (shared->GetFormat() == format) {
+              bool wasEmpty = !shared->HasAllocatedHandles();
               handle = shared->Allocate(texSize);
               if (handle) {
+                if (wasEmpty) {
+                  
+                  
+                  mEmptyTextureMemory -= shared->UsedBytes();
+                }
                 break;
               }
             }
@@ -1621,9 +1627,19 @@ bool DrawTargetWebgl::SharedContext::RemoveSharedTexture(
   if (pos == mSharedTextures.end()) {
     return false;
   }
-  mTotalTextureMemory -= aTexture->UsedBytes();
-  mSharedTextures.erase(pos);
-  ClearLastTexture();
+  
+  
+  
+  size_t maxBytes = StaticPrefs::gfx_canvas_accelerated_reserve_empty_cache()
+                    << 20;
+  size_t usedBytes = aTexture->UsedBytes();
+  if (mEmptyTextureMemory + usedBytes <= maxBytes) {
+    mEmptyTextureMemory += usedBytes;
+  } else {
+    mTotalTextureMemory -= usedBytes;
+    mSharedTextures.erase(pos);
+    ClearLastTexture();
+  }
   return true;
 }
 
