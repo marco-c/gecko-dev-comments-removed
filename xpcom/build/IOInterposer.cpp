@@ -154,15 +154,17 @@ class PerThreadData {
   RefPtr<ObserverLists> mObserverLists;
 };
 
-class MasterList {
+
+
+class SourceList {
  public:
-  MasterList()
+  SourceList()
       : mObservedOperations(mozilla::IOInterposeObserver::OpNone),
         mIsEnabled(true) {
-    MOZ_COUNT_CTOR(MasterList);
+    MOZ_COUNT_CTOR(SourceList);
   }
 
-  MOZ_COUNTED_DTOR(MasterList)
+  MOZ_COUNTED_DTOR(SourceList)
 
   inline void Disable() { mIsEnabled = false; }
   inline void Enable() { mIsEnabled = true; }
@@ -327,7 +329,7 @@ class NextStageObservation : public mozilla::IOInterposeObserver::Observation {
 };
 
 
-static mozilla::StaticAutoPtr<MasterList> sMasterList;
+static mozilla::StaticAutoPtr<SourceList> sSourceList;
 static MOZ_THREAD_LOCAL(PerThreadData*) sThreadLocalData;
 static bool sThreadLocalDataInitialized;
 
@@ -387,7 +389,7 @@ void IOInterposeObserver::Observation::Report() {
 
 bool IOInterposer::Init() {
   
-  if (sMasterList) {
+  if (sSourceList) {
     return true;
   }
   if (!sThreadLocalData.init()) {
@@ -396,7 +398,7 @@ bool IOInterposer::Init() {
   sThreadLocalDataInitialized = true;
   bool isMainThread = true;
   RegisterCurrentThread(isMainThread);
-  sMasterList = new MasterList();
+  sSourceList = new SourceList();
 
   MainThreadIOLogger::Init();
 
@@ -434,22 +436,22 @@ void IOInterposer::Clear() {
 
 #ifdef NS_FREE_PERMANENT_DATA
   UnregisterCurrentThread();
-  sMasterList = nullptr;
+  sSourceList = nullptr;
 #endif
 }
 
 void IOInterposer::Disable() {
-  if (!sMasterList) {
+  if (!sSourceList) {
     return;
   }
-  sMasterList->Disable();
+  sSourceList->Disable();
 }
 
 void IOInterposer::Enable() {
-  if (!sMasterList) {
+  if (!sSourceList) {
     return;
   }
-  sMasterList->Enable();
+  sSourceList->Enable();
 }
 
 void IOInterposer::Report(IOInterposeObserver::Observation& aObservation) {
@@ -461,13 +463,13 @@ void IOInterposer::Report(IOInterposeObserver::Observation& aObservation) {
     return;
   }
 
-  if (!sMasterList) {
+  if (!sSourceList) {
     
     ptd->ClearObserverLists();
     return;
   }
 
-  sMasterList->Update(*ptd);
+  sSourceList->Update(*ptd);
 
   
   if (!IOInterposer::IsObservedOperation(aObservation.ObservedOperation())) {
@@ -478,26 +480,26 @@ void IOInterposer::Report(IOInterposeObserver::Observation& aObservation) {
 }
 
 bool IOInterposer::IsObservedOperation(IOInterposeObserver::Operation aOp) {
-  return sMasterList && sMasterList->IsObservedOperation(aOp);
+  return sSourceList && sSourceList->IsObservedOperation(aOp);
 }
 
 void IOInterposer::Register(IOInterposeObserver::Operation aOp,
                             IOInterposeObserver* aObserver) {
   MOZ_ASSERT(aObserver);
-  if (!sMasterList || !aObserver) {
+  if (!sSourceList || !aObserver) {
     return;
   }
 
-  sMasterList->Register(aOp, aObserver);
+  sSourceList->Register(aOp, aObserver);
 }
 
 void IOInterposer::Unregister(IOInterposeObserver::Operation aOp,
                               IOInterposeObserver* aObserver) {
-  if (!sMasterList) {
+  if (!sSourceList) {
     return;
   }
 
-  sMasterList->Unregister(aOp, aObserver);
+  sSourceList->Unregister(aOp, aObserver);
 }
 
 void IOInterposer::RegisterCurrentThread(bool aIsMainThread) {
@@ -520,7 +522,7 @@ void IOInterposer::UnregisterCurrentThread() {
 }
 
 void IOInterposer::EnteringNextStage() {
-  if (!sMasterList) {
+  if (!sSourceList) {
     return;
   }
   NextStageObservation observation;
