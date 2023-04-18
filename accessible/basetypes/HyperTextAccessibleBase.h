@@ -132,6 +132,11 @@ class HyperTextAccessibleBase {
   
 
 
+  uint32_t LinkCount();
+
+  
+
+
   Accessible* LinkAt(uint32_t aIndex);
 
   

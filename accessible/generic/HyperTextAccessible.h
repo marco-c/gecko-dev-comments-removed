@@ -75,11 +75,6 @@ class HyperTextAccessible : public AccessibleWrap,
   
 
 
-  uint32_t LinkCount() { return EmbeddedChildCount(); }
-
-  
-
-
   LocalAccessible* LinkAt(uint32_t aIndex) { return EmbeddedChildAt(aIndex); }
 
   
