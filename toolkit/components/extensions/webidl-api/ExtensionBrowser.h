@@ -63,6 +63,11 @@ class ExtensionBrowser final : public nsISupports, public nsWrapperCache {
   bool ClearLastError();
 
   
+  
+  bool HasWakeupEventListener(const nsString& aAPINamespace,
+                              const nsString& aAPIName);
+
+  
 
   
   
