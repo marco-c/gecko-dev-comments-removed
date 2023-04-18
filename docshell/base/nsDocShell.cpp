@@ -9005,7 +9005,20 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
            "%s",
            this, mLoadingEntry->mInfo.GetURI()->GetSpecOrDefault().get()));
       bool hadActiveEntry = !!mActiveEntry;
+
+      nsCOMPtr<nsILayoutHistoryState> currentLayoutHistoryState;
+      if (mActiveEntry) {
+        currentLayoutHistoryState = mActiveEntry->GetLayoutHistoryState();
+      }
       mActiveEntry = MakeUnique<SessionHistoryInfo>(mLoadingEntry->mInfo);
+      if (currentLayoutHistoryState) {
+        
+        
+        
+        
+        mActiveEntry->SetLayoutHistoryState(currentLayoutHistoryState);
+      }
+
       if (cacheKey != 0) {
         mActiveEntry->SetCacheKey(cacheKey);
       }
