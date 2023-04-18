@@ -134,7 +134,7 @@ void nsXULTooltipListener::MouseMove(Event* aEvent) {
   if (!mouseEvent) {
     return;
   }
-  CSSIntPoint newMouseScreenPoint = mouseEvent->ScreenPoint(CallerType::System);
+  auto newMouseScreenPoint = mouseEvent->ScreenPointLayoutDevicePix();
 
   
   if (mMouseScreenPoint == newMouseScreenPoint) {
@@ -154,12 +154,13 @@ void nsXULTooltipListener::MouseMove(Event* aEvent) {
   
   
   
-  if ((currentTooltip && isSameTarget) &&
-      (abs(mMouseScreenPoint.x - newMouseScreenPoint.x) <=
-       kTooltipMouseMoveTolerance) &&
-      (abs(mMouseScreenPoint.y - newMouseScreenPoint.y) <=
-       kTooltipMouseMoveTolerance))
+  if (currentTooltip && isSameTarget &&
+      abs(mMouseScreenPoint.x - newMouseScreenPoint.x) <=
+          kTooltipMouseMoveTolerance &&
+      abs(mMouseScreenPoint.y - newMouseScreenPoint.y) <=
+          kTooltipMouseMoveTolerance) {
     return;
+  }
   mMouseScreenPoint = newMouseScreenPoint;
   mPreviousMouseMoveTarget = do_GetWeakReference(content);
 
@@ -477,8 +478,7 @@ void nsXULTooltipListener::LaunchTooltip() {
     return;
   }
 
-  pm->ShowTooltipAtScreen(currentTooltip, target, mMouseScreenPoint.x,
-                          mMouseScreenPoint.y);
+  pm->ShowTooltipAtScreen(currentTooltip, target, mMouseScreenPoint);
 }
 
 nsresult nsXULTooltipListener::HideTooltip() {
