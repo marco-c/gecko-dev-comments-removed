@@ -1686,7 +1686,10 @@ class D3DVsyncSource final : public VsyncSource {
           UpdateVBlankOutput();
           if (mWaitVBlankOutput) {
             const TimeStamp vblank_begin_wait = TimeStamp::Now();
-            hr = mWaitVBlankOutput->WaitForVBlank();
+            {
+              AUTO_PROFILER_THREAD_SLEEP;
+              hr = mWaitVBlankOutput->WaitForVBlank();
+            }
             if (SUCCEEDED(hr)) {
               
               

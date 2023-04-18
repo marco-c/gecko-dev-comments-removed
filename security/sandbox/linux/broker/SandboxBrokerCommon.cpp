@@ -8,6 +8,14 @@
 
 #include "mozilla/Assertions.h"
 
+
+
+#ifdef MOZILLA_INTERNAL_API
+#  include "GeckoProfiler.h"
+#else
+#  define AUTO_PROFILER_THREAD_SLEEP
+#endif
+
 #include <errno.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -66,6 +74,7 @@ ssize_t SandboxBrokerCommon::RecvWithFd(int aFd, const iovec* aIO,
     
     
     
+    AUTO_PROFILER_THREAD_SLEEP;
     rv = recvmsg(aFd, &msg, MSG_CMSG_CLOEXEC);
   } while (rv < 0 && errno == EINTR);
 
