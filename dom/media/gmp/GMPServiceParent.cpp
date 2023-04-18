@@ -47,8 +47,6 @@
 #  include "mozilla/dom/MediaKeys.h"  
 #endif
 
-using mozilla::ipc::Transport;
-
 namespace mozilla::gmp {
 
 #ifdef __CLASS__

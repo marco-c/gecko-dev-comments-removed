@@ -22,7 +22,6 @@
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/MessageChannel.h"         
-#include "mozilla/ipc/Transport.h"              
 #include "mozilla/layers/CompositableClient.h"  
 #include "mozilla/layers/CompositorThread.h"
 #include "mozilla/layers/ISurfaceAllocator.h"  

@@ -12,6 +12,7 @@
 #include "base/basictypes.h"
 #include "build/build_config.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/WeakPtr.h"
 #include "chrome/common/ipc_message.h"
 
@@ -39,6 +40,10 @@ class Channel {
 #else
   struct ChannelId {};
 #endif
+
+  
+  
+  using ChannelHandle = mozilla::UniqueFileHandle;
 
   
   
@@ -98,16 +103,7 @@ class Channel {
   Channel(const ChannelId& channel_id, Mode mode, Listener* listener);
 
   
-  
-#if defined(OS_POSIX)
-  
-  Channel(int fd, Mode mode, Listener* listener);
-#elif defined(OS_WIN)
-  
-  
-  Channel(const ChannelId& channel_id, void* server_pipe, Mode mode,
-          Listener* listener);
-#endif
+  Channel(ChannelHandle pipe, Mode mode, Listener* listener);
 
   ~Channel();
 
@@ -158,9 +154,6 @@ class Channel {
   int GetFileDescriptor() const;
 
   
-  void ResetFileDescriptor(int fd);
-
-  
   void CloseClientFileDescriptor();
 
 #  if defined(OS_MACOSX)
@@ -174,9 +167,6 @@ class Channel {
 #  endif
 
 #elif defined(OS_WIN)
-  
-  void* GetServerPipeHandle() const;
-
   
   
   
@@ -199,6 +189,10 @@ class Channel {
   
   static void SetClientChannelFd(int fd);
 #endif  
+
+  
+  
+  static bool CreateRawPipe(ChannelHandle* server, ChannelHandle* client);
 
  private:
   
