@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+/* Animation-inspector specific theme variables */
 
 :root {
   --animation-item-hover-color: rgba(215, 215, 219, 0.4);
@@ -36,7 +36,7 @@
   overflow-x: auto;
 }
 
-
+/* Root element of animation inspector */
 #animation-container {
   cursor: default;
   display: flex;
@@ -58,7 +58,7 @@
   overflow: hidden;
 }
 
-
+/* Animation Toolbar */
 .animation-toolbar {
   display: flex;
 }
@@ -92,7 +92,7 @@ select.playback-rate-selector.devtools-button:not(:empty, :disabled, .checked):h
   background-image: var(--rewind-image);
 }
 
-
+/* Animation List Container */
 .animation-list-container {
   overflow: hidden;
   width: 100%;
@@ -104,7 +104,7 @@ select.playback-rate-selector.devtools-button:not(:empty, :disabled, .checked):h
   cursor: col-resize;
 }
 
-
+/* Current Time Scrubber */
 .current-time-scrubber-area {
   grid-column: 2 / 3;
   position: relative;
@@ -117,12 +117,12 @@ select.playback-rate-selector.devtools-button:not(:empty, :disabled, .checked):h
   height: var(--theme-toolbar-height);
   pointer-events: auto;
   position: absolute;
-  
+  /* In order to click on edge of current-time-scrubber-controller element */
   width: calc(100% + 1px);
 }
 
 .current-time-scrubber-area:dir(rtl)::before {
-  
+  /* In order to click on the start edge of current-time-scrubber-area element on RTL */
   margin-inline-start: -1px;
 }
 
@@ -147,7 +147,7 @@ select.playback-rate-selector.devtools-button:not(:empty, :disabled, .checked):h
   background-color: var(--scrubber-color);
 }
 
-
+/* Animation Item */
 .animation-item.cssanimation {
   --graph-color: var(--cssanimation-color);
   --graph-opacity: 0.7;
@@ -171,14 +171,14 @@ select.playback-rate-selector.devtools-button:not(:empty, :disabled, .checked):h
   background-color: var(--animation-item-selected-color);
 }
 
-
+/* Animation Target */
 .animation-target {
   align-items: center;
   display: flex;
   grid-column: 1 / 2;
   height: inherit;
   padding-inline-start: 4px;
-  
+  /* animation-target is tech term, so it should be displayed as ltr. */
   direction: ltr;
 }
 
@@ -186,7 +186,7 @@ select.playback-rate-selector.devtools-button:not(:empty, :disabled, .checked):h
   right:0;
 }
 
-
+/* Reps component */
 .animation-target .objectBox {
   display: flex;
   max-width: 100%;
@@ -212,7 +212,7 @@ select.playback-rate-selector.devtools-button:not(:empty, :disabled, .checked):h
   background-color: var(--theme-highlight-blue);
 }
 
-
+/* Summary Graph */
 .animation-summary-graph {
   cursor: pointer;
   grid-column: 2 / 3;
@@ -314,8 +314,8 @@ select.playback-rate-selector.devtools-button:not(:empty, :disabled, .checked):h
   background-color: var(--graph-color);
 }
 
-
-
+/* These are delay sign directions. Basically, we can't use
+  the transform due to pseudo element, So we use the left/right align. */
 
 .animation-delay-sign:dir(ltr)::before {
   left: -3px;
@@ -384,7 +384,7 @@ select.playback-rate-selector.devtools-button:not(:empty, :disabled, .checked):h
   right:0;
 }
 
-
+/* Animation Detail */
 .animation-detail-container {
   background-color: var(--theme-sidebar-background);
   display: flex;
@@ -400,8 +400,8 @@ select.playback-rate-selector.devtools-button:not(:empty, :disabled, .checked):h
   padding-inline-end: 0;
 }
 
-
-
+/* On OSX the cursor turns into a window-resizing cursor at the edges of the
+ * window, so bring the end of the close button in. */
 :root[platform="mac"] .animation-detail-header {
   padding-inline-end: 2px;
 }
@@ -421,14 +421,14 @@ select.playback-rate-selector.devtools-button:not(:empty, :disabled, .checked):h
   background-image: url(chrome://devtools/skin/images/close.svg);
 }
 
-
+/* Animated Property List Container */
 .animated-property-list-container {
   flex: 1;
   overflow: hidden;
   user-select: none;
 }
 
-
+/* Keyframes Progress Bar */
 .keyframes-progress-bar-area {
   background: none;
   grid-column: 2 / 3;
@@ -445,12 +445,12 @@ select.playback-rate-selector.devtools-button:not(:empty, :disabled, .checked):h
   background-color: var(--progress-bar-color);
 }
 
-
+/* Animated Property Item */
 .animated-property-item.unchanged {
   opacity: 0.6;
 }
 
-
+/* Animated Property Name */
 .animated-property-name {
   align-items: center;
   display: flex;
@@ -485,7 +485,7 @@ select.playback-rate-selector.devtools-button:not(:empty, :disabled, .checked):h
   fill: var(--fast-track-color);
   height: 100%;
   position: absolute;
-  
+  /* In order to support RTL/LTR both of environment, set the left and right to zero */
   left: 0;
   right: 0;
   width: 15px;
@@ -496,7 +496,7 @@ select.playback-rate-selector.devtools-button:not(:empty, :disabled, .checked):h
   text-decoration: underline dotted;
 }
 
-
+/* Keyframes Graph */
 .keyframes-graph {
   grid-column: 2 / 3;
   height: inherit;
@@ -560,7 +560,7 @@ select.playback-rate-selector.devtools-button:not(:empty, :disabled, .checked):h
   stroke-opacity: 1;
 }
 
-
+/* Keyframe Marker List */
 .keyframe-marker-list {
   pointer-events: none;
   position: absolute;
@@ -598,8 +598,8 @@ select.playback-rate-selector.devtools-button:not(:empty, :disabled, .checked):h
   background-color: var(--scriptanimation-color);
 }
 
-
-
+/* Common Components */
+/* Progress Inspection Panel */
 .progress-inspection-panel {
   height: 100%;
   overflow-y: auto;
@@ -617,7 +617,7 @@ select.playback-rate-selector.devtools-button:not(:empty, :disabled, .checked):h
   position: sticky;
   top: 0;
 
-  
+  /* Correspond to the bug 1462235 */
   height: calc(100% - 1px);
 
   pointer-events: none;
@@ -647,7 +647,7 @@ select.playback-rate-selector.devtools-button:not(:empty, :disabled, .checked):h
   position: sticky;
   top: 0;
 
-  
+  /* Correspond to the bug 1462235 */
   height: calc(100% - 1px);
 
   pointer-events: none;
@@ -677,7 +677,7 @@ select.playback-rate-selector.devtools-button:not(:empty, :disabled, .checked):h
   grid-template-columns: subgrid;
 }
 
-
+/* Tick Lines */
 .tick-lines {
   grid-column: 2 / 3;
   position: relative;
@@ -689,7 +689,7 @@ select.playback-rate-selector.devtools-button:not(:empty, :disabled, .checked):h
   border-inline-start: var(--tick-line-style);
 }
 
-
+/* Tick Labels */
 .tick-labels {
   grid-column: 2 / 3;
   height: 100%;
@@ -715,7 +715,7 @@ select.playback-rate-selector.devtools-button:not(:empty, :disabled, .checked):h
   transform: translateX(calc(100% - 0.6px));
 }
 
-
+/* Indication Bar */
 .indication-bar {
   position: absolute;
   height: 100%;
@@ -740,11 +740,11 @@ select.playback-rate-selector.devtools-button:not(:empty, :disabled, .checked):h
   width: 1px;
 }
 
-
+/* No Animation Panel */
 .animation-error-message > p {
   white-space: pre-wrap;
 }
 
 .animation-element-picker::before {
-  background-image: url("chrome://devtools/skin/images/command-pick.svg");
+  background-image: url("chrome://devtools/content/shared/images/command-pick.svg");
 }

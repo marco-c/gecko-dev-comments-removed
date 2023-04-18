@@ -12,11 +12,24 @@ loader.lazyRequireGetter(
   "devtools/shared/layout/utils",
   true
 );
+loader.lazyRequireGetter(
+  this,
+  "HighlighterEnvironment",
+  "devtools/server/actors/highlighters",
+  true
+);
+loader.lazyRequireGetter(
+  this,
+  "RemoteNodePickerNotice",
+  "devtools/server/actors/highlighters/remote-node-picker-notice.js",
+  true
+);
 
 const IS_OSX = Services.appinfo.OS === "Darwin";
 
 class NodePicker {
   #eventListenersAbortController;
+  #remoteNodePickerNoticeHighlighter;
 
   constructor(walker, targetActor) {
     this._walker = walker;
@@ -31,6 +44,16 @@ class NodePicker {
     this._onPick = this._onPick.bind(this);
     this._onSuppressedEvent = this._onSuppressedEvent.bind(this);
     this._preventContentEvent = this._preventContentEvent.bind(this);
+  }
+
+  get remoteNodePickerNoticeHighlighter() {
+    if (!this.#remoteNodePickerNoticeHighlighter) {
+      const env = new HighlighterEnvironment();
+      env.initFromTargetActor(this._targetActor);
+      this.#remoteNodePickerNoticeHighlighter = new RemoteNodePickerNotice(env);
+    }
+
+    return this.#remoteNodePickerNoticeHighlighter;
   }
 
   _findAndAttachElement(event) {
@@ -66,13 +89,28 @@ class NodePicker {
 
 
 
+  _isEventInRemoteNodePickerNotice(event) {
+    return (
+      this.#remoteNodePickerNoticeHighlighter &&
+      event.originalTarget?.closest?.(
+        `#${this.#remoteNodePickerNoticeHighlighter.rootElementId}`
+      )
+    );
+  }
 
-
-
-
+  /**
+   * Pick a node on click.
+   *
+   * This method doesn't respond anything interesting, however, it starts
+   * mousemove, and click listeners on the content document to fire
+   * events and let connected clients know when nodes are hovered over or
+   * clicked.
+   *
+   * Once a node is picked, events will cease, and listeners will be removed.
+   */
   _onPick(event) {
-    
-    
+    // If the picked node is a remote frame, then we need to let the event through
+    // since there's a highlighter actor in that sub-frame also picking.
     if (isRemoteBrowserElement(event.target)) {
       return;
     }
@@ -82,8 +120,17 @@ class NodePicker {
       return;
     }
 
-    
-    
+    // If the click was done inside the node picker notice highlighter (e.g. clicking the
+    // close button), directly call its `onClick` method, as it doesn't have event listeners
+    // itself, to avoid managing events (+ suppressedEventListeners) for the same target
+    // from different places.
+    if (this._isEventInRemoteNodePickerNotice(event)) {
+      this.#remoteNodePickerNoticeHighlighter.onClick(event);
+      return;
+    }
+
+    // If Shift is pressed, this is only a preview click.
+    // Send the event to the client, but don't stop picking.
     if (event.shiftKey) {
       this._walker.emit(
         "picker-node-previewed",
@@ -94,6 +141,10 @@ class NodePicker {
 
     this._stopPickerListeners();
     this._isPicking = false;
+    if (this.#remoteNodePickerNoticeHighlighter) {
+      this.#remoteNodePickerNoticeHighlighter.hide();
+    }
+
     if (!this._currentNode) {
       this._currentNode = this._findAndAttachElement(event);
     }
@@ -111,6 +162,16 @@ class NodePicker {
     this._preventContentEvent(event);
     if (!this._isEventAllowed(event)) {
       return;
+    }
+
+    
+    
+    
+    if (this.#remoteNodePickerNoticeHighlighter) {
+      this.#remoteNodePickerNoticeHighlighter.handleHoveredElement(event);
+      if (this._isEventInRemoteNodePickerNotice(event)) {
+        return;
+      }
     }
 
     this._currentNode = this._findAndAttachElement(event);
@@ -278,10 +339,13 @@ class NodePicker {
       this._stopPickerListeners();
       this._isPicking = false;
       this._hoveredNode = null;
+      if (this.#remoteNodePickerNoticeHighlighter) {
+        this.#remoteNodePickerNoticeHighlighter.hide();
+      }
     }
   }
 
-  pick(doFocus = false) {
+  pick(doFocus = false, isLocalTab = true) {
     if (this._targetActor.threadActor) {
       this._targetActor.threadActor.hideOverlay();
     }
@@ -296,6 +360,10 @@ class NodePicker {
     if (doFocus) {
       this._targetActor.window.focus();
     }
+
+    if (!isLocalTab) {
+      this.remoteNodePickerNoticeHighlighter.show();
+    }
   }
 
   resetHoveredNodeReference() {
@@ -307,6 +375,7 @@ class NodePicker {
 
     this._targetActor = null;
     this._walker = null;
+    this.#remoteNodePickerNoticeHighlighter = null;
   }
 }
 
