@@ -4199,6 +4199,9 @@ pref("reader.has_used_toolbar", false);
 
 pref("reader.toolbar.vertical", true);
 
+
+pref("reader.improvements_H12022.enabled", false);
+
 #if !defined(ANDROID)
   pref("narrate.enabled", true);
 #else
