@@ -1077,7 +1077,13 @@ class nsIWidget : public nsISupports {
 
 
 
-  virtual void SetWindowMouseTransparent(bool aIsTransparent) {}
+
+
+  struct InputRegion {
+    bool mFullyTransparent = false;
+    mozilla::LayoutDeviceIntCoord mMargin = 0;
+  };
+  virtual void SetInputRegion(const InputRegion&) {}
 
   
 
