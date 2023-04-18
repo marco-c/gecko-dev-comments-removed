@@ -9,7 +9,7 @@ const TEST_PATH = getRootDirectory(gTestPath).replace(
 );
 
 
-const OPENED_URI = PrintHelper.defaultTestPageUrl;
+const OPENED_URI = PrintHelper.defaultTestPageUrlHTTPS;
 
 
 
