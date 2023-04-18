@@ -922,7 +922,7 @@ class CancelingRunnable final : public Runnable {
 } 
 
 nsString ComputeWorkerPrivateId() {
-  nsID uuid = nsContentUtils::GenerateUUID();
+  nsID uuid = nsID::GenerateUUID();
   return NSID_TrimBracketsUTF16(uuid);
 }
 
@@ -2420,7 +2420,7 @@ WorkerPrivate::ComputeAgentClusterIdAndCoop(WorkerPrivate* aParent,
     RefPtr<DocGroup> docGroup = doc->GetDocGroup();
 
     nsID agentClusterId =
-        docGroup ? docGroup->AgentClusterId() : nsContentUtils::GenerateUUID();
+        docGroup ? docGroup->AgentClusterId() : nsID::GenerateUUID();
 
     BrowsingContext* bc = aLoadInfo->mWindow->GetBrowsingContext();
     MOZ_DIAGNOSTIC_ASSERT(bc);
@@ -2429,7 +2429,7 @@ WorkerPrivate::ComputeAgentClusterIdAndCoop(WorkerPrivate* aParent,
 
   
   
-  return {nsContentUtils::GenerateUUID(), agentClusterCoop};
+  return {nsID::GenerateUUID(), agentClusterCoop};
 }
 
 
