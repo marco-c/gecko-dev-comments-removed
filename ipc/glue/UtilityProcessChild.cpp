@@ -99,6 +99,10 @@ bool UtilityProcessChild::Init(base::ProcessId aParentPid,
 
   mozilla::ipc::SetThisProcessName("Utility Process");
 
+  
+  
+  SendInitCompleted();
+
   return true;
 }
 

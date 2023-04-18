@@ -222,7 +222,8 @@ void UtilityProcessHost::InitAfterConnect(bool aSucceeded) {
   Unused << GetActor()->SendInitProfiler(
       ProfilerParent::CreateForProcess(GetActor()->OtherPid()));
 
-  ResolvePromise();
+  
+  
 }
 
 void UtilityProcessHost::Shutdown() {

@@ -36,6 +36,8 @@ parent:
   
   async FOGData(ByteBuf buf);
 
+  async InitCompleted();
+
 child:
   async Init(FileDescriptor? sandboxBroker, bool canRecordReleaseTelemetry);
 
