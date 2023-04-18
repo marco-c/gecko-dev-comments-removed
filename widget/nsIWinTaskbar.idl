@@ -129,7 +129,7 @@ interface nsIWinTaskbar : nsISupports
 
 
 
-  nsIJumpListBuilder createJumpListBuilder();
+  nsIJumpListBuilder createJumpListBuilder(in boolean aPrivateBrowsing);
 
   
 

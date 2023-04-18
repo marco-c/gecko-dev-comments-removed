@@ -156,4 +156,6 @@ interface nsIJumpListBuilder : nsISupports
 
 
   boolean deleteActiveList();
+
+  void setAppUserModelID(in AString aAppUserModelId);
 };
