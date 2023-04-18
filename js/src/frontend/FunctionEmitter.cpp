@@ -224,6 +224,17 @@ bool FunctionEmitter::emitNonHoisted(GCThingIndex index) {
 
   
 
+  
+  
+  MOZ_ASSERT(funbox_->isArrow() == (syntaxKind_ == FunctionSyntaxKind::Arrow));
+
+  if (funbox_->isArrow()) {
+    if (!emitNewTargetForArrow()) {
+      
+      return false;
+    }
+  }
+
   if (syntaxKind_ == FunctionSyntaxKind::DerivedClassConstructor) {
     
     if (!bce_->emitGCIndexOp(JSOp::FunWithProto, index)) {
@@ -235,7 +246,9 @@ bool FunctionEmitter::emitNonHoisted(GCThingIndex index) {
 
   
   
-  if (!bce_->emitGCIndexOp(JSOp::Lambda, index)) {
+  JSOp op = syntaxKind_ == FunctionSyntaxKind::Arrow ? JSOp::LambdaArrow
+                                                     : JSOp::Lambda;
+  if (!bce_->emitGCIndexOp(op, index)) {
     
     return false;
   }
@@ -293,6 +306,24 @@ bool FunctionEmitter::emitTopLevelFunction(GCThingIndex index) {
   
   
   (void)index;
+
+  return true;
+}
+
+bool FunctionEmitter::emitNewTargetForArrow() {
+  
+
+  if (bce_->sc->allowNewTarget()) {
+    if (!bce_->emit1(JSOp::NewTarget)) {
+      
+      return false;
+    }
+  } else {
+    if (!bce_->emit1(JSOp::Null)) {
+      
+      return false;
+    }
+  }
 
   return true;
 }
@@ -448,8 +479,8 @@ bool FunctionScriptEmitter::emitExtraBodyVarScope() {
 
     
     
+    
     MOZ_ASSERT(name != TaggedParserAtomIndex::WellKnown::dotThis() &&
-               name != TaggedParserAtomIndex::WellKnown::dotNewTarget() &&
                name != TaggedParserAtomIndex::WellKnown::dotGenerator());
 
     NameOpEmitter noe(bce_, name, NameOpEmitter::Kind::Initialize);

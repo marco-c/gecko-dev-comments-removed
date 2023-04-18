@@ -555,8 +555,7 @@ bool ParseContext::hasUsedName(const UsedNameTracker& usedNames,
 bool ParseContext::hasUsedFunctionSpecialName(const UsedNameTracker& usedNames,
                                               TaggedParserAtomIndex name) {
   MOZ_ASSERT(name == TaggedParserAtomIndex::WellKnown::arguments() ||
-             name == TaggedParserAtomIndex::WellKnown::dotThis() ||
-             name == TaggedParserAtomIndex::WellKnown::dotNewTarget());
+             name == TaggedParserAtomIndex::WellKnown::dotThis());
   return hasUsedName(usedNames, name) ||
          functionBox()->bindingsAccessedDynamically();
 }
@@ -569,7 +568,6 @@ bool ParseContext::declareFunctionThis(const UsedNameTracker& usedNames,
     return true;
   }
 
-  
   
   
   FunctionBox* funbox = functionBox();
@@ -653,38 +651,6 @@ bool ParseContext::declareFunctionArgumentsObject(
 
   if (usesArguments) {
     funbox->setNeedsArgsObj();
-  }
-
-  return true;
-}
-
-bool ParseContext::declareNewTarget(const UsedNameTracker& usedNames,
-                                    bool canSkipLazyClosedOverBindings) {
-  
-  
-  if (useAsmOrInsideUseAsm()) {
-    return true;
-  }
-
-  FunctionBox* funbox = functionBox();
-  auto dotNewTarget = TaggedParserAtomIndex::WellKnown::dotNewTarget();
-
-  bool declareNewTarget;
-  if (canSkipLazyClosedOverBindings) {
-    declareNewTarget = funbox->functionHasNewTargetBinding();
-  } else {
-    declareNewTarget = hasUsedFunctionSpecialName(usedNames, dotNewTarget);
-  }
-
-  if (declareNewTarget) {
-    ParseContext::Scope& funScope = functionScope();
-    AddDeclaredNamePtr p = funScope.lookupDeclaredNameForAdd(dotNewTarget);
-    MOZ_ASSERT(!p);
-    if (!funScope.addDeclaredName(this, p, dotNewTarget, DeclarationKind::Var,
-                                  DeclaredNameInfo::npos)) {
-      return false;
-    }
-    funbox->setFunctionHasNewTargetBinding();
   }
 
   return true;

@@ -231,13 +231,6 @@ class MOZ_STACK_CLASS CallOrNewEmitter {
   
   
   
-  
-  
-  
-  
-  
-  
-  
   enum class State {
     
     Start,
@@ -268,9 +261,6 @@ class MOZ_STACK_CLASS CallOrNewEmitter {
 
     
     WantSpreadOperand,
-
-    
-    SpreadArgumentsTest,
 
     
     SpreadIteration,
@@ -338,7 +328,6 @@ class MOZ_STACK_CLASS CallOrNewEmitter {
   
   [[nodiscard]] bool wantSpreadOperand();
   [[nodiscard]] bool emitSpreadArgumentsTest();
-  [[nodiscard]] bool emitSpreadArgumentsTestEnd();
   [[nodiscard]] bool wantSpreadIteration();
 
   

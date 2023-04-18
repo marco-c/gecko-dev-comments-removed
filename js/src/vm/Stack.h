@@ -210,6 +210,7 @@ class AbstractFramePtr {
   inline Value& thisArgument() const;
 
   inline bool isConstructing() const;
+  inline Value newTarget() const;
 
   inline bool debuggerNeedsCheckPrimitiveReturn() const;
 
@@ -364,7 +365,8 @@ class InterpreterFrame {
 
   
   void initExecuteFrame(JSContext* cx, HandleScript script,
-                        AbstractFramePtr prev, HandleObject envChain);
+                        AbstractFramePtr prev, HandleValue newTargetValue,
+                        HandleObject envChain);
 
  public:
   
@@ -607,9 +609,18 @@ class InterpreterFrame {
 
 
 
+
+
   Value newTarget() const {
+    if (isEvalFrame()) {
+      return ((Value*)this)[-1];
+    }
+
     MOZ_ASSERT(isFunctionFrame());
-    MOZ_ASSERT(!callee().isArrow());
+
+    if (callee().isArrow()) {
+      return callee().getExtendedSlot(FunctionExtended::ARROW_NEWTARGET_SLOT);
+    }
 
     if (isConstructing()) {
       unsigned pushedArgs = std::max(numFormalArgs(), numActualArgs());
@@ -821,6 +832,7 @@ class InterpreterStack {
 
   
   InterpreterFrame* pushExecuteFrame(JSContext* cx, HandleScript script,
+                                     HandleValue newTargetValue,
                                      HandleObject envChain,
                                      AbstractFramePtr evalInFrame);
 
