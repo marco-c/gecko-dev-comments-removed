@@ -81,7 +81,7 @@ function isBlankPageURL(aURL) {
   );
 }
 
-function getTopWin(skipPopups) {
+function getTopWin({ skipPopups } = {}) {
   
   
   
@@ -346,7 +346,7 @@ function openLinkIn(url, where, params) {
   
   
   if ((where == "tab" || where == "tabshifted") && w && !w.toolbar.visible) {
-    w = getTopWin(true);
+    w = getTopWin({ skipPopups: true });
     aRelatedToCurrent = false;
   }
 
