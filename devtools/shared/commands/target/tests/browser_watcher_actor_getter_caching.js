@@ -71,3 +71,17 @@ async function testActorGetter(watcherFront, actorGetterFn, typeName) {
 
   checkPoolChildrenSize(watcherFront, typeName, 1);
 }
+
+
+
+
+
+function checkPoolChildrenSize(parentPool, typeName, expected) {
+  const children = [...parentPool.poolChildren()];
+  const childrenByType = children.filter(pool => pool.typeName === typeName);
+  is(
+    childrenByType.length,
+    expected,
+    `${parentPool.actorID} should have ${expected} children of type ${typeName}`
+  );
+}

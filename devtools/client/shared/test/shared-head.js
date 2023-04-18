@@ -1643,20 +1643,6 @@ function checkImageColorAt({ image, x = 0, y, expectedColor, label }) {
 
 
 
-function checkPoolChildrenSize(parentPool, typeName, expected) {
-  const children = [...parentPool.poolChildren()];
-  const childrenByType = children.filter(pool => pool.typeName === typeName);
-  is(
-    childrenByType.length,
-    expected,
-    `${parentPool.actorID} should have ${expected} children of type ${typeName}`
-  );
-}
-
-
-
-
-
 
 
 
