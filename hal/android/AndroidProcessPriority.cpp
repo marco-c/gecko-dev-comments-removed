@@ -10,6 +10,8 @@
 #include "mozilla/java/GeckoProcessTypeWrappers.h"
 #include "mozilla/java/ServiceAllocatorWrappers.h"
 
+using namespace mozilla::hal;
+
 
 
 

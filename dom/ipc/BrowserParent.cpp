@@ -162,7 +162,6 @@ using namespace mozilla::widget;
 using namespace mozilla::gfx;
 
 using mozilla::LazyLogModule;
-using mozilla::Unused;
 
 extern mozilla::LazyLogModule gSHIPBFCacheLog;
 
@@ -243,6 +242,14 @@ BrowserParent::BrowserParent(ContentParent* aManager, const TabId& aTabId,
   
   mIsReadyToHandleInputEvents = !ContentParent::IsInputEventQueueSupported();
 
+  
+  
+  
+  if (aBrowsingContext->IsTop()) {
+    RecomputeProcessPriority();
+  }
+
+  
   
   
   
@@ -3477,6 +3484,13 @@ bool BrowserParent::GetPriorityHint() { return mPriorityHint; }
 
 void BrowserParent::SetPriorityHint(bool aPriorityHint) {
   mPriorityHint = aPriorityHint;
+  RecomputeProcessPriority();
+}
+
+void BrowserParent::RecomputeProcessPriority() {
+  auto* bc = GetBrowsingContext();
+  ProcessPriorityManager::BrowserPriorityChanged(
+      bc, bc->IsActive() || mPriorityHint);
 }
 
 void BrowserParent::PreserveLayers(bool aPreserveLayers) {
