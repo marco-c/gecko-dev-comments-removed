@@ -28,7 +28,6 @@ use crate::{Error, Span};
 use std::borrow::Cow;
 use std::char;
 use std::fmt;
-use std::iter;
 use std::str;
 
 
@@ -38,8 +37,9 @@ use std::str;
 
 #[derive(Clone)]
 pub struct Lexer<'a> {
-    it: iter::Peekable<str::CharIndices<'a>>,
+    remaining: &'a str,
     input: &'a str,
+    allow_confusing_unicode: bool,
 }
 
 
@@ -140,6 +140,13 @@ pub enum LexError {
     
     LoneUnderscore,
 
+    
+    
+    
+    
+    
+    ConfusingUnicode(char),
+
     #[doc(hidden)]
     __Nonexhaustive,
 }
@@ -219,12 +226,45 @@ pub enum FloatVal<'a> {
     },
 }
 
+
+macro_rules! idchars {
+    () => {
+        b'0'..=b'9'
+        | b'A'..=b'Z'
+        | b'a'..=b'z'
+        | b'!'
+        | b'#'
+        | b'$'
+        | b'%'
+        | b'&'
+        | b'\''
+        | b'*'
+        | b'+'
+        | b'-'
+        | b'.'
+        | b'/'
+        | b':'
+        | b'<'
+        | b'='
+        | b'>'
+        | b'?'
+        | b'@'
+        | b'\\'
+        | b'^'
+        | b'_'
+        | b'`'
+        | b'|'
+        | b'~'
+    }
+}
+
 impl<'a> Lexer<'a> {
     
     pub fn new(input: &str) -> Lexer<'_> {
         Lexer {
-            it: input.char_indices().peekable(),
+            remaining: input,
             input,
+            allow_confusing_unicode: false,
         }
     }
 
@@ -240,69 +280,206 @@ impl<'a> Lexer<'a> {
     
     
     
-    pub fn parse(&mut self) -> Result<Option<Token<'a>>, Error> {
-        if let Some(ws) = self.ws() {
-            return Ok(Some(Token::Whitespace(ws)));
-        }
-        if let Some(comment) = self.comment()? {
-            return Ok(Some(comment));
-        }
-        if let Some(token) = self.token()? {
-            return Ok(Some(token));
-        }
-        match self.it.next() {
-            Some((i, ch)) => Err(self.error(i, LexError::Unexpected(ch))),
-            None => Ok(None),
-        }
+    
+    
+    
+    
+    pub fn allow_confusing_unicode(&mut self, allow: bool) -> &mut Self {
+        self.allow_confusing_unicode = allow;
+        self
     }
 
-    fn token(&mut self) -> Result<Option<Token<'a>>, Error> {
+    
+    
+    
+    
+    
+    
+    
+    pub fn parse(&mut self) -> Result<Option<Token<'a>>, Error> {
+        let pos = self.cur();
         
-        if let Some(pos) = self.eat_char('(') {
-            return Ok(Some(Token::LParen(&self.input[pos..pos + 1])));
-        }
-        if let Some(pos) = self.eat_char(')') {
-            return Ok(Some(Token::RParen(&self.input[pos..pos + 1])));
-        }
-
         
-        if let Some(pos) = self.eat_char('"') {
-            let val = self.string()?;
-            let src = &self.input[pos..self.cur()];
-            return Ok(Some(Token::String(WasmString(Box::new(WasmStringInner {
-                val,
-                src,
-            })))));
-        }
-
-        let (start, prefix) = match self.it.peek().cloned() {
-            Some((i, ch)) if is_idchar(ch) => (i, ch),
-            Some((i, ch)) if is_reserved_extra(ch) => {
-                self.it.next();
-                return Ok(Some(Token::Reserved(&self.input[i..self.cur()])));
-            }
-            Some((i, ch)) => return Err(self.error(i, LexError::Unexpected(ch))),
+        
+        let byte = match self.remaining.as_bytes().get(0) {
+            Some(b) => b,
             None => return Ok(None),
         };
 
-        while let Some((_, ch)) = self.it.peek().cloned() {
-            if is_idchar(ch) {
-                self.it.next();
-            } else {
-                break;
+        match byte {
+            
+            
+            
+            b'(' => match self.remaining.as_bytes().get(1) {
+                Some(b';') => {
+                    let mut level = 1;
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    let mut iter = self.remaining.as_bytes()[2..].iter();
+                    while let Some(ch) = iter.next() {
+                        match ch {
+                            b'(' => {
+                                if let Some(b';') = iter.as_slice().get(0) {
+                                    level += 1;
+                                    iter.next();
+                                }
+                            }
+                            b';' => {
+                                if let Some(b')') = iter.as_slice().get(0) {
+                                    level -= 1;
+                                    iter.next();
+                                    if level == 0 {
+                                        let len = self.remaining.len() - iter.as_slice().len();
+                                        let (comment, remaining) = self.remaining.split_at(len);
+                                        self.remaining = remaining;
+                                        self.check_confusing_comment(comment)?;
+                                        return Ok(Some(Token::BlockComment(comment)));
+                                    }
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                    Err(self.error(pos, LexError::DanglingBlockComment))
+                }
+                _ => Ok(Some(Token::LParen(self.split_first_byte()))),
+            },
+
+            b')' => Ok(Some(Token::RParen(self.split_first_byte()))),
+
+            b'"' => {
+                let val = self.string()?;
+                let src = &self.input[pos..self.cur()];
+                return Ok(Some(Token::String(WasmString(Box::new(WasmStringInner {
+                    val,
+                    src,
+                })))));
+            }
+
+            
+            b' ' | b'\n' | b'\r' | b'\t' => Ok(Some(Token::Whitespace(self.split_ws()))),
+
+            c @ idchars!() => {
+                let reserved = self.split_while(|b| match b {
+                    idchars!() => true,
+                    _ => false,
+                });
+
+                
+                if let Some(number) = self.number(reserved) {
+                    Ok(Some(number))
+                
+                } else if *c == b'$' && reserved.len() > 1 {
+                    Ok(Some(Token::Id(reserved)))
+                
+                } else if b'a' <= *c && *c <= b'z' {
+                    Ok(Some(Token::Keyword(reserved)))
+                } else {
+                    Ok(Some(Token::Reserved(reserved)))
+                }
+            }
+
+            
+            
+            b';' => match self.remaining.as_bytes().get(1) {
+                Some(b';') => {
+                    let comment = self.split_until(b'\n');
+                    self.check_confusing_comment(comment)?;
+                    Ok(Some(Token::LineComment(comment)))
+                }
+                _ => Ok(Some(Token::Reserved(self.split_first_byte()))),
+            },
+
+            
+            b',' | b'[' | b']' | b'{' | b'}' => Ok(Some(Token::Reserved(self.split_first_byte()))),
+
+            _ => {
+                let ch = self.remaining.chars().next().unwrap();
+                Err(self.error(pos, LexError::Unexpected(ch)))
             }
         }
+    }
 
-        let reserved = &self.input[start..self.cur()];
-        if let Some(number) = self.number(reserved) {
-            Ok(Some(number))
-        } else if prefix == '$' && reserved.len() > 1 {
-            Ok(Some(Token::Id(reserved)))
-        } else if 'a' <= prefix && prefix <= 'z' {
-            Ok(Some(Token::Keyword(reserved)))
-        } else {
-            Ok(Some(Token::Reserved(reserved)))
-        }
+    fn split_first_byte(&mut self) -> &'a str {
+        let (token, remaining) = self.remaining.split_at(1);
+        self.remaining = remaining;
+        token
+    }
+
+    fn split_until(&mut self, byte: u8) -> &'a str {
+        let pos = memchr::memchr(byte, self.remaining.as_bytes()).unwrap_or(self.remaining.len());
+        let (ret, remaining) = self.remaining.split_at(pos);
+        self.remaining = remaining;
+        ret
+    }
+
+    fn split_ws(&mut self) -> &'a str {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        #[rustfmt::skip]
+        const WS: [u8; 256] = [
+            
+             0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0,
+             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            
+             1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ];
+        let pos = self
+            .remaining
+            .as_bytes()
+            .iter()
+            .position(|b| WS[*b as usize] != 1)
+            .unwrap_or(self.remaining.len());
+        let (ret, remaining) = self.remaining.split_at(pos);
+        self.remaining = remaining;
+        ret
+    }
+
+    fn split_while(&mut self, f: impl Fn(u8) -> bool) -> &'a str {
+        let pos = self
+            .remaining
+            .as_bytes()
+            .iter()
+            .position(|b| !f(*b))
+            .unwrap_or(self.remaining.len());
+        let (ret, remaining) = self.remaining.split_at(pos);
+        self.remaining = remaining;
+        ret
     }
 
     fn number(&self, src: &'a str) -> Option<Token<'a>> {
@@ -483,128 +660,130 @@ impl<'a> Lexer<'a> {
 
     
     
-    fn ws(&mut self) -> Option<&'a str> {
-        let start = self.cur();
-        loop {
-            match self.it.peek() {
-                Some((_, ' ')) | Some((_, '\n')) | Some((_, '\r')) | Some((_, '\t')) => {
-                    drop(self.it.next())
+    
+    fn check_confusing_comment(&self, comment: &str) -> Result<(), Error> {
+        if self.allow_confusing_unicode {
+            return Ok(());
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let bytes = comment.as_bytes();
+        for pos in memchr::Memchr::new(0xe2, bytes) {
+            if let Some(c) = comment[pos..].chars().next() {
+                if is_confusing_unicode(c) {
+                    
+                    
+                    
+                    
+                    let pos = self.cur() - comment.len() + pos;
+                    return Err(self.error(pos, LexError::ConfusingUnicode(c)));
                 }
-                _ => break,
             }
         }
-        let end = self.cur();
-        if start != end {
-            Some(&self.input[start..end])
-        } else {
-            None
-        }
+
+        Ok(())
     }
 
     
-    fn comment(&mut self) -> Result<Option<Token<'a>>, Error> {
-        if let Some(start) = self.eat_str(";;") {
-            loop {
-                match self.it.peek() {
-                    None | Some((_, '\n')) => break,
-                    _ => drop(self.it.next()),
-                }
-            }
-            let end = self.cur();
-            return Ok(Some(Token::LineComment(&self.input[start..end])));
-        }
-        if let Some(start) = self.eat_str("(;") {
-            let mut level = 1;
-            while let Some((_, ch)) = self.it.next() {
-                if ch == '(' && self.eat_char(';').is_some() {
-                    level += 1;
-                }
-                if ch == ';' && self.eat_char(')').is_some() {
-                    level -= 1;
-                    if level == 0 {
-                        let end = self.cur();
-                        return Ok(Some(Token::BlockComment(&self.input[start..end])));
-                    }
-                }
-            }
-
-            return Err(self.error(start, LexError::DanglingBlockComment));
-        }
-        Ok(None)
-    }
-
+    
     
     
     fn string(&mut self) -> Result<Cow<'a, [u8]>, Error> {
+        let mut it = self.remaining[1..].chars();
+        let result = Lexer::parse_str(&mut it, self.allow_confusing_unicode);
+        let end = self.input.len() - it.as_str().len();
+        self.remaining = &self.input[end..];
+        result.map_err(|e| {
+            let err_pos = match &e {
+                LexError::UnexpectedEof => self.input.len(),
+                _ => self.input[..end].char_indices().next_back().unwrap().0,
+            };
+            self.error(err_pos, e)
+        })
+    }
+
+    fn parse_str(
+        it: &mut str::Chars<'a>,
+        allow_confusing_unicode: bool,
+    ) -> Result<Cow<'a, [u8]>, LexError> {
         enum State {
-            Start(usize),
+            Start,
             String(Vec<u8>),
         }
-        let mut state = State::Start(self.cur());
+        let orig = it.as_str();
+        let mut state = State::Start;
         loop {
-            match self.it.next() {
-                Some((i, '\\')) => {
+            match it.next().ok_or(LexError::UnexpectedEof)? {
+                '"' => break,
+                '\\' => {
                     match state {
                         State::String(_) => {}
-                        State::Start(start) => {
-                            state = State::String(self.input[start..i].as_bytes().to_vec());
+                        State::Start => {
+                            let pos = orig.len() - it.as_str().len() - 1;
+                            state = State::String(orig[..pos].as_bytes().to_vec());
                         }
                     }
                     let buf = match &mut state {
                         State::String(b) => b,
-                        State::Start(_) => unreachable!(),
+                        State::Start => unreachable!(),
                     };
-                    match self.it.next() {
-                        Some((_, '"')) => buf.push(b'"'),
-                        Some((_, '\'')) => buf.push(b'\''),
-                        Some((_, 't')) => buf.push(b'\t'),
-                        Some((_, 'n')) => buf.push(b'\n'),
-                        Some((_, 'r')) => buf.push(b'\r'),
-                        Some((_, '\\')) => buf.push(b'\\'),
-                        Some((i, 'u')) => {
-                            self.must_eat_char('{')?;
-                            let n = self.hexnum()?;
+                    match it.next().ok_or(LexError::UnexpectedEof)? {
+                        '"' => buf.push(b'"'),
+                        '\'' => buf.push(b'\''),
+                        't' => buf.push(b'\t'),
+                        'n' => buf.push(b'\n'),
+                        'r' => buf.push(b'\r'),
+                        '\\' => buf.push(b'\\'),
+                        'u' => {
+                            Lexer::must_eat_char(it, '{')?;
+                            let n = Lexer::hexnum(it)?;
                             let c = char::from_u32(n)
-                                .ok_or_else(|| self.error(i, LexError::InvalidUnicodeValue(n)))?;
+                                .ok_or_else(|| LexError::InvalidUnicodeValue(n))?;
                             buf.extend(c.encode_utf8(&mut [0; 4]).as_bytes());
-                            self.must_eat_char('}')?;
+                            Lexer::must_eat_char(it, '}')?;
                         }
-                        Some((_, c1)) if c1.is_ascii_hexdigit() => {
-                            let (_, c2) = self.hexdigit()?;
+                        c1 if c1.is_ascii_hexdigit() => {
+                            let c2 = Lexer::hexdigit(it)?;
                             buf.push(to_hex(c1) * 16 + c2);
                         }
-                        Some((i, c)) => return Err(self.error(i, LexError::InvalidStringEscape(c))),
-                        None => return Err(self.error(self.input.len(), LexError::UnexpectedEof)),
+                        c => return Err(LexError::InvalidStringEscape(c)),
                     }
                 }
-                Some((_, '"')) => break,
-                Some((i, c)) => {
-                    if (c as u32) < 0x20 || c as u32 == 0x7f {
-                        return Err(self.error(i, LexError::InvalidStringElement(c)));
-                    }
-                    match &mut state {
-                        State::Start(_) => {}
-                        State::String(v) => {
-                            v.extend(c.encode_utf8(&mut [0; 4]).as_bytes());
-                        }
-                    }
+                c if (c as u32) < 0x20 || c as u32 == 0x7f => {
+                    return Err(LexError::InvalidStringElement(c))
                 }
-                None => return Err(self.error(self.input.len(), LexError::UnexpectedEof)),
+                c if !allow_confusing_unicode && is_confusing_unicode(c) => {
+                    return Err(LexError::ConfusingUnicode(c))
+                }
+                c => match &mut state {
+                    State::Start => {}
+                    State::String(v) => {
+                        v.extend(c.encode_utf8(&mut [0; 4]).as_bytes());
+                    }
+                },
             }
         }
         match state {
-            State::Start(pos) => Ok(self.input[pos..self.cur() - 1].as_bytes().into()),
+            State::Start => Ok(orig[..orig.len() - it.as_str().len() - 1].as_bytes().into()),
             State::String(s) => Ok(s.into()),
         }
     }
 
-    fn hexnum(&mut self) -> Result<u32, Error> {
-        let (_, n) = self.hexdigit()?;
+    fn hexnum(it: &mut str::Chars<'_>) -> Result<u32, LexError> {
+        let n = Lexer::hexdigit(it)?;
         let mut last_underscore = false;
         let mut n = n as u32;
-        while let Some((i, c)) = self.it.peek().cloned() {
+        while let Some(c) = it.clone().next() {
             if c == '_' {
-                self.it.next();
+                it.next();
                 last_underscore = true;
                 continue;
             }
@@ -612,15 +791,14 @@ impl<'a> Lexer<'a> {
                 break;
             }
             last_underscore = false;
-            self.it.next();
+            it.next();
             n = n
                 .checked_mul(16)
                 .and_then(|n| n.checked_add(to_hex(c) as u32))
-                .ok_or_else(|| self.error(i, LexError::NumberTooBig))?;
+                .ok_or(LexError::NumberTooBig)?;
         }
         if last_underscore {
-            let cur = self.cur();
-            return Err(self.error(cur - 1, LexError::LoneUnderscore));
+            return Err(LexError::LoneUnderscore);
         }
         Ok(n)
     }
@@ -628,65 +806,34 @@ impl<'a> Lexer<'a> {
     
     
     
-    fn hexdigit(&mut self) -> Result<(usize, u8), Error> {
-        let (i, ch) = self.must_char()?;
+    fn hexdigit(it: &mut str::Chars<'_>) -> Result<u8, LexError> {
+        let ch = Lexer::must_char(it)?;
         if ch.is_ascii_hexdigit() {
-            Ok((i, to_hex(ch)))
+            Ok(to_hex(ch))
         } else {
-            Err(self.error(i, LexError::InvalidHexDigit(ch)))
-        }
-    }
-
-    
-    fn eat_str(&mut self, s: &str) -> Option<usize> {
-        if !self.cur_str().starts_with(s) {
-            return None;
-        }
-        let ret = self.cur();
-        for _ in s.chars() {
-            self.it.next();
-        }
-        Some(ret)
-    }
-
-    
-    fn eat_char(&mut self, needle: char) -> Option<usize> {
-        match self.it.peek() {
-            Some((i, c)) if *c == needle => {
-                let ret = *i;
-                self.it.next();
-                Some(ret)
-            }
-            _ => None,
+            Err(LexError::InvalidHexDigit(ch))
         }
     }
 
     
     
-    fn must_char(&mut self) -> Result<(usize, char), Error> {
-        self.it
-            .next()
-            .ok_or_else(|| self.error(self.input.len(), LexError::UnexpectedEof))
+    fn must_char(it: &mut str::Chars<'_>) -> Result<char, LexError> {
+        it.next().ok_or(LexError::UnexpectedEof)
     }
 
     
-    fn must_eat_char(&mut self, wanted: char) -> Result<usize, Error> {
-        let (pos, found) = self.must_char()?;
+    fn must_eat_char(it: &mut str::Chars<'_>, wanted: char) -> Result<(), LexError> {
+        let found = Lexer::must_char(it)?;
         if wanted == found {
-            Ok(pos)
+            Ok(())
         } else {
-            Err(self.error(pos, LexError::Expected { wanted, found }))
+            Err(LexError::Expected { wanted, found })
         }
     }
 
     
-    fn cur(&mut self) -> usize {
-        self.it.peek().map(|p| p.0).unwrap_or(self.input.len())
-    }
-
-    
-    fn cur_str(&mut self) -> &'a str {
-        &self.input[self.cur()..]
+    fn cur(&self) -> usize {
+        self.input.len() - self.remaining.len()
     }
 
     
@@ -773,45 +920,6 @@ fn to_hex(c: char) -> u8 {
     }
 }
 
-fn is_idchar(c: char) -> bool {
-    match c {
-        '0'..='9'
-        | 'a'..='z'
-        | 'A'..='Z'
-        | '!'
-        | '#'
-        | '$'
-        | '%'
-        | '&'
-        | '\''
-        | '*'
-        | '+'
-        | '-'
-        | '.'
-        | '/'
-        | ':'
-        | '<'
-        | '='
-        | '>'
-        | '?'
-        | '@'
-        | '\\'
-        | '^'
-        | '_'
-        | '`'
-        | '|'
-        | '~' => true,
-        _ => false,
-    }
-}
-
-fn is_reserved_extra(c: char) -> bool {
-    match c {
-        ',' | ';' | '[' | ']' | '{' | '}' => true,
-        _ => false,
-    }
-}
-
 impl fmt::Display for LexError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use LexError::*;
@@ -834,6 +942,7 @@ impl fmt::Display for LexError {
             NumberTooBig => f.write_str("number is too big to parse")?,
             InvalidUnicodeValue(c) => write!(f, "invalid unicode scalar value 0x{:x}", c)?,
             LoneUnderscore => write!(f, "bare underscore in numeric literal")?,
+            ConfusingUnicode(c) => write!(f, "likely-confusing unicode character found {:?}", c)?,
             __Nonexhaustive => unreachable!(),
         }
         Ok(())
@@ -842,14 +951,30 @@ impl fmt::Display for LexError {
 
 fn escape_char(c: char) -> String {
     match c {
-        '\t' => String::from("\\\t"),
-        '\r' => String::from("\\\r"),
-        '\n' => String::from("\\\n"),
+        '\t' => String::from("\\t"),
+        '\r' => String::from("\\r"),
+        '\n' => String::from("\\n"),
         '\\' => String::from("\\\\"),
         '\'' => String::from("\\\'"),
         '\"' => String::from("\""),
         '\x20'..='\x7e' => String::from(c),
         _ => c.escape_unicode().to_string(),
+    }
+}
+
+
+
+
+
+
+
+
+
+fn is_confusing_unicode(ch: char) -> bool {
+    match ch {
+        '\u{202a}' | '\u{202b}' | '\u{202d}' | '\u{202e}' | '\u{2066}' | '\u{2067}'
+        | '\u{2068}' | '\u{206c}' | '\u{2069}' => true,
+        _ => false,
     }
 }
 

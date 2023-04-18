@@ -26,11 +26,43 @@ impl Date {
     }
 
     
-    fn to_ymd(&self) -> (u16, u8, u8) {
-        let y = self.0 >> 9;
-        let m = (self.0 << 23) >> 28;
-        let d = (self.0 << 27) >> 27;
-        (y as u16, m as u8, d as u8)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn parse(date: &str) -> Option<Date> {
+        let mut ymd = [0u16; 3];
+        for (i, split) in date.split('-').map(|s| s.parse::<u16>()).enumerate() {
+            ymd[i] = match (i, split) {
+                (3, _) | (_, Err(_)) => return None,
+                (_, Ok(v)) => v,
+            };
+        }
+
+        let (year, month, day) = (ymd[0], ymd[1], ymd[2]);
+        if year == 0 || month == 0 || month > 12 || day == 0 || day > 31 {
+            return None;
+        }
+
+        Some(Date::from_ymd(year, month as u8, day as u8))
     }
 
     
@@ -50,17 +82,20 @@ impl Date {
     
     
     
-    pub fn parse(date: &str) -> Option<Date> {
-        let ymd: Vec<u32> = date.split("-")
-            .filter_map(|s| s.parse::<u32>().ok())
-            .collect();
+    
+    pub fn from_ymd(year: u16, month: u8, day: u8) -> Date {
+        let year = (year as u32) << 9;
+        let month = ((month as u32) & 0xF) << 5;
+        let day = (day as u32) & 0x1F;
+        Date(year | month | day)
+    }
 
-        if ymd.len() != 3 {
-            return None
-        }
-
-        let (y, m, d) = (ymd[0], ymd[1], ymd[2]);
-        Some(Date((y << 9) | ((m & 0xF) << 5) | (d & 0x1F)))
+    
+    fn to_ymd(&self) -> (u16, u8, u8) {
+        let y = self.0 >> 9;
+        let m = (self.0 >> 5) & 0xF;
+        let d = self.0 & 0x1F;
+        (y as u16, m as u8, d as u8)
     }
 
     
@@ -163,5 +198,6 @@ mod tests {
         reflexive_display!("2000-12-31");
         reflexive_display!("2090-12-31");
         reflexive_display!("1999-02-19");
+        reflexive_display!("9999-12-31");
     }
 }

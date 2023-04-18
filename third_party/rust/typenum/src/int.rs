@@ -38,12 +38,14 @@ use core::ops::{Add, Div, Mul, Neg, Rem, Sub};
 
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Copy, Hash, Debug, Default)]
+#[cfg_attr(feature = "scale_info", derive(scale_info::TypeInfo))]
 pub struct PInt<U: Unsigned + NonZero> {
     pub(crate) n: U,
 }
 
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Copy, Hash, Debug, Default)]
+#[cfg_attr(feature = "scale_info", derive(scale_info::TypeInfo))]
 pub struct NInt<U: Unsigned + NonZero> {
     pub(crate) n: U,
 }
@@ -66,6 +68,7 @@ impl<U: Unsigned + NonZero> NInt<U> {
 
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Copy, Hash, Debug, Default)]
+#[cfg_attr(feature = "scale_info", derive(scale_info::TypeInfo))]
 pub struct Z0;
 
 impl Z0 {

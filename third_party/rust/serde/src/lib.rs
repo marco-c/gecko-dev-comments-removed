@@ -84,7 +84,7 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde/1.0.130")]
+#![doc(html_root_url = "https://docs.rs/serde/1.0.133")]
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -94,13 +94,14 @@
 #![cfg_attr(feature = "unstable", feature(never_type))]
 #![allow(unknown_lints, bare_trait_objects, deprecated)]
 #![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
-#![cfg_attr(feature = "cargo-clippy", deny(clippy, clippy_pedantic))]
 
 #![cfg_attr(
     feature = "cargo-clippy",
     allow(
         
         unnested_or_patterns,
+        
+        semicolon_if_nothing_returned,
         
         checked_conversions,
         empty_enum,
@@ -294,3 +295,8 @@ extern crate serde_derive;
 #[cfg(feature = "serde_derive")]
 #[doc(hidden)]
 pub use serde_derive::*;
+
+#[cfg(all(serde_derive, any(feature = "std", feature = "alloc")))]
+mod actually_private {
+    pub struct T;
+}

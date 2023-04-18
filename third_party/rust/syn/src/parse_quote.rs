@@ -65,15 +65,43 @@
 
 
 
+#[cfg_attr(doc_cfg, doc(cfg(all(feature = "parsing", feature = "printing"))))]
+#[macro_export]
+macro_rules! parse_quote {
+    ($($tt:tt)*) => {
+        $crate::parse_quote::parse($crate::__private::quote::quote!($($tt)*))
+    };
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 
 #[cfg_attr(doc_cfg, doc(cfg(all(feature = "parsing", feature = "printing"))))]
 #[macro_export]
-macro_rules! parse_quote {
-    ($($tt:tt)*) => {
-        $crate::parse_quote::parse($crate::__private::quote::quote!($($tt)*))
+macro_rules! parse_quote_spanned {
+    ($span:expr=> $($tt:tt)*) => {
+        $crate::parse_quote::parse($crate::__private::quote::quote_spanned!($span=> $($tt)*))
     };
 }
 

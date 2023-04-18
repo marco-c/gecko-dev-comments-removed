@@ -83,7 +83,7 @@ const NEGATIVE_ONE: Decimal = Decimal {
 
 
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct UnpackedDecimal {
     pub negative: bool,
     pub scale: u32,

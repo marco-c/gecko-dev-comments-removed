@@ -158,7 +158,7 @@ impl<T: StdError + 'static> StdError for ThrottleError<T> {
     
     
     #[allow(deprecated)]
-    fn cause(&self) -> Option<&StdError> {
+    fn cause(&self) -> Option<&dyn StdError> {
         match self.0 {
             Either::A(ref err) => Some(err),
             Either::B(ref err) => Some(err),

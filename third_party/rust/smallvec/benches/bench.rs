@@ -161,10 +161,9 @@ fn gen_insert<V: Vector<u64>>(n: u64, b: &mut Bencher) {
         let mut vec = V::new();
         
         
-        
         vec.push(0);
         for x in 0..n {
-            insert_noinline(&mut vec, x as _, x);
+            insert_noinline(&mut vec, 0, x);
         }
         vec
     });
@@ -179,8 +178,8 @@ fn gen_remove<V: Vector<u64>>(n: usize, b: &mut Bencher) {
     b.iter(|| {
         let mut vec = V::from_elem(0, n as _);
 
-        for x in (0..n - 1).rev() {
-            remove_noinline(&mut vec, x);
+        for _ in 0..n {
+            remove_noinline(&mut vec, 0);
         }
     });
 }

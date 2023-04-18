@@ -228,6 +228,22 @@ impl RequestBuilder {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn remote_addr(mut self, addr: SocketAddr) -> Self {
+        self.remote_addr = Some(addr);
+        self
+    }
+
+    
     pub fn extension<T>(mut self, ext: T) -> Self
     where
         T: Send + Sync + 'static,

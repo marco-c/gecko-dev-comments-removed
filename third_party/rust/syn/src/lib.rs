@@ -250,16 +250,18 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/syn/1.0.82")]
+#![doc(html_root_url = "https://docs.rs/syn/1.0.85")]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
 #![allow(non_camel_case_types)]
 
 #![allow(
+    clippy::cast_lossless,
     clippy::collapsible_match, 
     clippy::doc_markdown,
     clippy::eval_order_dependence,
     clippy::inherent_to_string,
     clippy::large_enum_variant,
+    clippy::let_underscore_drop,
     clippy::manual_assert,
     clippy::manual_map, 
     clippy::match_on_vec_items,
@@ -267,6 +269,7 @@
     clippy::needless_doctest_main,
     clippy::needless_pass_by_value,
     clippy::never_loop,
+    clippy::return_self_not_must_use,
     clippy::too_many_arguments,
     clippy::trivially_copy_pass_by_ref,
     clippy::unnecessary_unwrap,

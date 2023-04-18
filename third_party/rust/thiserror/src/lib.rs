@@ -185,7 +185,27 @@
 
 
 
-#![allow(clippy::module_name_repetitions)]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![allow(
+    
+    clippy::doc_markdown,
+    clippy::module_name_repetitions,
+)]
 
 mod aserror;
 mod display;

@@ -190,7 +190,7 @@ mod postgres;
 #[cfg(feature = "rocket-traits")]
 mod rocket;
 #[cfg(feature = "serde")]
-mod serde;
+pub mod serde;
 
 pub use decimal::{Decimal, RoundingStrategy};
 pub use error::Error;
@@ -203,7 +203,7 @@ pub mod prelude {
     pub use crate::maths::MathematicalOps;
     pub use crate::{Decimal, RoundingStrategy};
     pub use core::str::FromStr;
-    pub use num_traits::{FromPrimitive, One, ToPrimitive, Zero};
+    pub use num_traits::{FromPrimitive, One, Signed, ToPrimitive, Zero};
 }
 
 #[cfg(feature = "diesel")]

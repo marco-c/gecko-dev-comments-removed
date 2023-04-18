@@ -1,4 +1,4 @@
-#![doc(html_root_url = "https://docs.rs/warp/0.2.2")]
+#![doc(html_root_url = "https://docs.rs/warp/0.2.3")]
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
 #![cfg_attr(test, deny(warnings))]
@@ -106,6 +106,9 @@ pub use self::filter::Filter;
 
 
 
+#[cfg(feature = "compression")]
+#[doc(hidden)]
+pub use self::filters::compression;
 #[cfg(feature = "multipart")]
 #[doc(hidden)]
 pub use self::filters::multipart;

@@ -13,9 +13,8 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/serde_derive/1.0.130")]
+#![doc(html_root_url = "https://docs.rs/serde_derive/1.0.133")]
 #![allow(unknown_lints, bare_trait_objects)]
-#![deny(clippy::all, clippy::pedantic)]
 
 #![allow(
     
@@ -44,6 +43,7 @@
     clippy::indexing_slicing,
     clippy::items_after_statements,
     clippy::let_underscore_drop,
+    clippy::manual_assert,
     clippy::map_err_ignore,
     clippy::match_same_arms,
     

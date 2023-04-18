@@ -16,6 +16,7 @@ use crate::Lifetime;
 use proc_macro2::{Delimiter, Group, Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
 use std::marker::PhantomData;
 use std::ptr;
+use std::slice;
 
 
 
@@ -39,7 +40,17 @@ pub struct TokenBuffer {
     
     
     
-    data: Box<[Entry]>,
+    ptr: *const Entry,
+    len: usize,
+}
+
+impl Drop for TokenBuffer {
+    fn drop(&mut self) {
+        unsafe {
+            let slice = slice::from_raw_parts_mut(self.ptr as *mut Entry, self.len);
+            let _ = Box::from_raw(slice);
+        }
+    }
 }
 
 impl TokenBuffer {
@@ -49,7 +60,7 @@ impl TokenBuffer {
         
         
         let mut entries = Vec::new();
-        let mut seqs = Vec::new();
+        let mut groups = Vec::new();
         for tt in stream {
             match tt {
                 TokenTree::Ident(sym) => {
@@ -64,7 +75,7 @@ impl TokenBuffer {
                 TokenTree::Group(g) => {
                     
                     
-                    seqs.push((entries.len(), g));
+                    groups.push((entries.len(), g));
                     entries.push(Entry::End(ptr::null()));
                 }
             }
@@ -78,19 +89,24 @@ impl TokenBuffer {
         
         
         let mut entries = entries.into_boxed_slice();
-        for (idx, group) in seqs {
+        for (idx, group) in groups {
             
             
             
-            let seq_up = &entries[idx + 1] as *const Entry;
+            let group_up = unsafe { entries.as_ptr().add(idx + 1) };
 
             
             
-            let inner = Self::inner_new(group.stream(), seq_up);
+            let inner = Self::inner_new(group.stream(), group_up);
             entries[idx] = Entry::Group(group, inner);
         }
 
-        TokenBuffer { data: entries }
+        let len = entries.len();
+        let ptr = Box::into_raw(entries);
+        TokenBuffer {
+            ptr: ptr as *const Entry,
+            len,
+        }
     }
 
     
@@ -102,20 +118,20 @@ impl TokenBuffer {
         not(all(target_arch = "wasm32", any(target_os = "unknown", target_os = "wasi"))),
         feature = "proc-macro"
     ))]
-    pub fn new(stream: pm::TokenStream) -> TokenBuffer {
+    pub fn new(stream: pm::TokenStream) -> Self {
         Self::new2(stream.into())
     }
 
     
     
-    pub fn new2(stream: TokenStream) -> TokenBuffer {
+    pub fn new2(stream: TokenStream) -> Self {
         Self::inner_new(stream, ptr::null())
     }
 
     
     
     pub fn begin(&self) -> Cursor {
-        unsafe { Cursor::create(&self.data[0], &self.data[self.data.len() - 1]) }
+        unsafe { Cursor::create(self.ptr, self.ptr.add(self.len - 1)) }
     }
 }
 
@@ -210,7 +226,7 @@ impl<'a> Cursor<'a> {
                 
                 
                 unsafe {
-                    *self = Cursor::create(&buf.data[0], self.scope);
+                    *self = Cursor::create(buf.ptr, self.scope);
                 }
             } else {
                 break;
@@ -321,9 +337,7 @@ impl<'a> Cursor<'a> {
             Entry::Literal(lit) => lit.clone().into(),
             Entry::Ident(ident) => ident.clone().into(),
             Entry::Punct(op) => op.clone().into(),
-            Entry::End(..) => {
-                return None;
-            }
+            Entry::End(..) => return None,
         };
 
         Some((tree, unsafe { self.bump() }))

@@ -46,6 +46,7 @@ pub use crate::marker_traits::{PowerOfTwo, Unsigned};
 
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Copy, Hash, Debug, Default)]
+#[cfg_attr(feature = "scale_info", derive(scale_info::TypeInfo))]
 pub struct UTerm;
 
 impl UTerm {
@@ -143,6 +144,7 @@ impl Unsigned for UTerm {
 
 
 #[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Copy, Hash, Debug, Default)]
+#[cfg_attr(feature = "scale_info", derive(scale_info::TypeInfo))]
 pub struct UInt<U, B> {
     
     pub(crate) msb: U,

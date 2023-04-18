@@ -160,8 +160,36 @@ impl<'a> Parse<'a> for Data<'a> {
             let offset = parser.parens(|parser| {
                 if parser.peek::<kw::offset>() {
                     parser.parse::<kw::offset>()?;
+                    parser.parse()
+                } else {
+                    
+                    
+                    
+                    let insn = parser.parse()?;
+                    if parser.is_empty() {
+                        return Ok(ast::Expression {
+                            instrs: [insn].into(),
+                        });
+                    }
+
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    let expr: ast::Expression = parser.parse()?;
+                    let mut instrs = Vec::from(expr.instrs);
+                    instrs.push(insn);
+                    Ok(ast::Expression {
+                        instrs: instrs.into(),
+                    })
                 }
-                parser.parse()
             })?;
             DataKind::Active { memory, offset }
         };

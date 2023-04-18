@@ -7,6 +7,7 @@ use crate::{AssertExpression, NanPattern, V128Pattern};
 
 
 
+#[derive(Debug)]
 pub struct Wast<'a> {
     #[allow(missing_docs)]
     pub directives: Vec<WastDirective<'a>>,
@@ -51,6 +52,7 @@ impl Peek for WastDirectiveToken {
 
 
 #[allow(missing_docs)]
+#[derive(Debug)]
 pub enum WastDirective<'a> {
     Module(ast::Module<'a>),
     QuoteModule {
@@ -265,6 +267,7 @@ impl<'a> Parse<'a> for WastDirective<'a> {
 }
 
 #[allow(missing_docs)]
+#[derive(Debug)]
 pub enum WastExecute<'a> {
     Invoke(WastInvoke<'a>),
     Module(ast::Module<'a>),
@@ -294,6 +297,7 @@ impl<'a> Parse<'a> for WastExecute<'a> {
 }
 
 #[allow(missing_docs)]
+#[derive(Debug)]
 pub struct WastInvoke<'a> {
     pub span: ast::Span,
     pub module: Option<ast::Id<'a>>,
@@ -320,6 +324,7 @@ impl<'a> Parse<'a> for WastInvoke<'a> {
 }
 
 #[allow(missing_docs)]
+#[derive(Debug)]
 pub enum QuoteModule<'a> {
     Module(ast::Module<'a>),
     Quote(Vec<&'a [u8]>),

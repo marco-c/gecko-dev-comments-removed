@@ -624,7 +624,7 @@ fn add_with_scale_internal(
     let mut temp4 = [0u32, 0u32, 0u32, 0u32];
     if *quotient_scale != *working_scale {
         
-        fn div_by_10(target: &mut [u32], temp: &mut [u32], scale: &mut i32, target_scale: i32) {
+        fn div_by_10<const N: usize>(target: &mut [u32], temp: &mut [u32; N], scale: &mut i32, target_scale: i32) {
             
             temp.copy_from_slice(target);
             
@@ -676,7 +676,12 @@ fn add_with_scale_internal(
     
     if *quotient_scale != *working_scale {
         
-        fn div_by_10_lossy(target: &mut [u32], temp: &mut [u32], scale: &mut i32, target_scale: i32) {
+        fn div_by_10_lossy<const N: usize>(
+            target: &mut [u32],
+            temp: &mut [u32; N],
+            scale: &mut i32,
+            target_scale: i32,
+        ) {
             temp.copy_from_slice(target);
             
             while *scale > target_scale {
