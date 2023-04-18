@@ -1021,7 +1021,14 @@ void InputQueue::UpdateActiveApzc(
 }
 
 void InputQueue::Clear() {
-  APZThreadUtils::AssertOnControllerThread();
+  
+  
+  
+  
+  
+  if (APZThreadUtils::IsControllerThreadAlive()) {
+    APZThreadUtils::AssertOnControllerThread();
+  }
 
   mQueuedInputs.Clear();
   mActiveTouchBlock = nullptr;
