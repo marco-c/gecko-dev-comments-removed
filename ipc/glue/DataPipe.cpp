@@ -653,6 +653,16 @@ NS_IMETHODIMP DataPipeReceiver::AsyncWait(nsIInputStreamCallback* aCallback,
 
 
 
+void DataPipeReceiver::SerializedComplexity(uint32_t aMaxSize,
+                                            uint32_t* aSizeUsed,
+                                            uint32_t* aPipes,
+                                            uint32_t* aTransferables) {
+  
+  
+  
+  *aTransferables = 1;
+}
+
 void DataPipeReceiver::Serialize(InputStreamParams& aParams,
                                  FileDescriptorArray& aFileDescriptors,
                                  bool aDelayedStart, uint32_t aMaxSize,
