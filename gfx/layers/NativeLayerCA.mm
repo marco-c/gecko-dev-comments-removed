@@ -319,27 +319,45 @@ void NativeLayerRootCA::Representation::Commit(WhichRepresentation aRepresentati
                                                bool aWindowIsFullscreen, bool aMouseMovedRecently) {
   bool mightIsolate = (aRepresentation == WhichRepresentation::ONSCREEN &&
                        StaticPrefs::gfx_core_animation_specialize_video());
-  bool mustRebuild = (mightIsolate && mMutatedMouseMovedRecently);
-
-  if (!mMutatedLayerStructure && !mustRebuild &&
-      std::none_of(aSublayers.begin(), aSublayers.end(), [=](const RefPtr<NativeLayerCA>& layer) {
-        return layer->HasUpdate(aRepresentation);
-      })) {
+  bool mustRebuild = (mMutatedLayerStructure || (mightIsolate && mMutatedMouseMovedRecently));
+  if (!mustRebuild) {
     
-    return;
+    NativeLayerCA::UpdateType updateRequired = NativeLayerCA::UpdateType::None;
+
+    for (auto layer : aSublayers) {
+      
+      updateRequired = std::max(updateRequired, layer->HasUpdate(aRepresentation));
+      if (updateRequired == NativeLayerCA::UpdateType::All) {
+        break;
+      }
+    }
+
+    if (updateRequired == NativeLayerCA::UpdateType::None) {
+      
+      return;
+    }
+
+    if (updateRequired == NativeLayerCA::UpdateType::OnlyVideo) {
+      bool allUpdatesSucceeded = std::all_of(
+          aSublayers.begin(), aSublayers.end(), [=](const RefPtr<NativeLayerCA>& layer) {
+            return layer->ApplyChanges(aRepresentation, NativeLayerCA::UpdateType::OnlyVideo);
+          });
+
+      if (allUpdatesSucceeded) {
+        
+        return;
+      }
+    }
   }
 
+  
   AutoCATransaction transaction;
-
-  
-  
-  
   for (auto layer : aSublayers) {
-    mustRebuild |= layer->HasUpdateAffectingLayers(aRepresentation);
-    layer->ApplyChanges(aRepresentation);
+    mustRebuild |= layer->WillUpdateAffectLayers(aRepresentation);
+    layer->ApplyChanges(aRepresentation, NativeLayerCA::UpdateType::All);
   }
 
-  if (mMutatedLayerStructure || mustRebuild) {
+  if (mustRebuild) {
     
     
 
@@ -733,7 +751,11 @@ void NativeLayerCA::AttachExternalImage(wr::RenderTextureHost* aExternalImage) {
   wr::RenderMacIOSurfaceTextureHost* texture = aExternalImage->AsRenderMacIOSurfaceTextureHost();
   MOZ_ASSERT(texture);
   mTextureHost = texture;
+
+  gfx::IntSize oldSize = mSize;
   mSize = texture->GetSize(0);
+  bool changedSizeAndDisplayRect = (mSize != oldSize);
+
   mDisplayRect = IntRect(IntPoint{}, mSize);
 
   bool oldSpecializeVideo = mSpecializeVideo;
@@ -742,8 +764,8 @@ void NativeLayerCA::AttachExternalImage(wr::RenderTextureHost* aExternalImage) {
 
   ForAllRepresentations([&](Representation& r) {
     r.mMutatedFrontSurface = true;
-    r.mMutatedDisplayRect = true;
-    r.mMutatedSize = true;
+    r.mMutatedDisplayRect |= changedSizeAndDisplayRect;
+    r.mMutatedSize |= changedSizeAndDisplayRect;
     r.mMutatedSpecializeVideo |= changedSpecializeVideo;
   });
 }
@@ -1177,7 +1199,13 @@ void NativeLayerCA::ForAllRepresentations(F aFn) {
   aFn(mOffscreenRepresentation);
 }
 
-void NativeLayerCA::ApplyChanges(WhichRepresentation aRepresentation) {
+NativeLayerCA::UpdateType NativeLayerCA::HasUpdate(WhichRepresentation aRepresentation) {
+  MutexAutoLock lock(mMutex);
+  return GetRepresentation(aRepresentation).HasUpdate(IsVideoAndLocked(lock));
+}
+
+bool NativeLayerCA::ApplyChanges(WhichRepresentation aRepresentation,
+                                 NativeLayerCA::UpdateType aUpdate) {
   MutexAutoLock lock(mMutex);
   CFTypeRefPtr<IOSurfaceRef> surface;
   if (mFrontSurface) {
@@ -1185,19 +1213,9 @@ void NativeLayerCA::ApplyChanges(WhichRepresentation aRepresentation) {
   } else if (mTextureHost) {
     surface = mTextureHost->GetSurface()->GetIOSurfaceRef();
   }
-  GetRepresentation(aRepresentation)
-      .ApplyChanges(mSize, mIsOpaque, mPosition, mTransform, mDisplayRect, mClipRect, mBackingScale,
-                    mSurfaceIsFlipped, mSamplingFilter, mSpecializeVideo, surface);
-}
-
-bool NativeLayerCA::HasUpdate(WhichRepresentation aRepresentation) {
-  MutexAutoLock lock(mMutex);
-  return GetRepresentation(aRepresentation).HasUpdate();
-}
-
-bool NativeLayerCA::HasUpdateAffectingLayers(WhichRepresentation aRepresentation) {
-  MutexAutoLock lock(mMutex);
-  return GetRepresentation(aRepresentation).mMutatedSpecializeVideo;
+  return GetRepresentation(aRepresentation)
+      .ApplyChanges(aUpdate, mSize, mIsOpaque, mPosition, mTransform, mDisplayRect, mClipRect,
+                    mBackingScale, mSurfaceIsFlipped, mSamplingFilter, mSpecializeVideo, surface);
 }
 
 CALayer* NativeLayerCA::UnderlyingCALayer(WhichRepresentation aRepresentation) {
@@ -1256,11 +1274,42 @@ bool NativeLayerCA::Representation::EnqueueSurface(IOSurfaceRef aSurfaceRef) {
   return true;
 }
 
-void NativeLayerCA::Representation::ApplyChanges(
-    const IntSize& aSize, bool aIsOpaque, const IntPoint& aPosition, const Matrix4x4& aTransform,
-    const IntRect& aDisplayRect, const Maybe<IntRect>& aClipRect, float aBackingScale,
-    bool aSurfaceIsFlipped, gfx::SamplingFilter aSamplingFilter, bool aSpecializeVideo,
+bool NativeLayerCA::Representation::ApplyChanges(
+    NativeLayerCA::UpdateType aUpdate, const IntSize& aSize, bool aIsOpaque,
+    const IntPoint& aPosition, const Matrix4x4& aTransform, const IntRect& aDisplayRect,
+    const Maybe<IntRect>& aClipRect, float aBackingScale, bool aSurfaceIsFlipped,
+    gfx::SamplingFilter aSamplingFilter, bool aSpecializeVideo,
     CFTypeRefPtr<IOSurfaceRef> aFrontSurface) {
+  
+  if (aUpdate == UpdateType::OnlyVideo) {
+    
+    
+    
+    if (HasUpdate(true) == UpdateType::None) {
+      return true;
+    }
+
+    MOZ_ASSERT(!mMutatedSpecializeVideo && mMutatedFrontSurface,
+               "Shouldn't attempt a OnlyVideo update in this case.");
+
+    bool updateSucceeded = false;
+    if (aSpecializeVideo) {
+      IOSurfaceRef surface = aFrontSurface.get();
+      if (CanSpecializeSurface(surface)) {
+        IOSurfaceRef surface = aFrontSurface.get();
+        updateSucceeded = EnqueueSurface(surface);
+
+        if (updateSucceeded) {
+          mMutatedFrontSurface = false;
+        }
+      }
+    }
+
+    return updateSucceeded;
+  }
+
+  MOZ_ASSERT(aUpdate == UpdateType::All);
+
   if (mWrappingCALayer && mMutatedSpecializeVideo) {
     
     
@@ -1429,16 +1478,36 @@ void NativeLayerCA::Representation::ApplyChanges(
   mMutatedFrontSurface = false;
   mMutatedSamplingFilter = false;
   mMutatedSpecializeVideo = false;
+
+  return true;
 }
 
-bool NativeLayerCA::Representation::HasUpdate() {
+NativeLayerCA::UpdateType NativeLayerCA::Representation::HasUpdate(bool aIsVideo) {
   if (!mWrappingCALayer) {
-    return true;
+    return UpdateType::All;
   }
 
-  return mMutatedPosition || mMutatedTransform || mMutatedDisplayRect || mMutatedClipRect ||
-         mMutatedBackingScale || mMutatedSize || mMutatedSurfaceIsFlipped || mMutatedFrontSurface ||
-         mMutatedSamplingFilter || mMutatedSpecializeVideo;
+  
+  
+  if (mMutatedPosition || mMutatedTransform || mMutatedDisplayRect || mMutatedClipRect ||
+      mMutatedBackingScale || mMutatedSize || mMutatedSurfaceIsFlipped || mMutatedSamplingFilter ||
+      mMutatedSpecializeVideo) {
+    return UpdateType::All;
+  }
+
+  
+  
+  
+  if (mMutatedFrontSurface) {
+    return (aIsVideo ? UpdateType::OnlyVideo : UpdateType::All);
+  }
+
+  return UpdateType::None;
+}
+
+bool NativeLayerCA::WillUpdateAffectLayers(WhichRepresentation aRepresentation) {
+  MutexAutoLock lock(mMutex);
+  return GetRepresentation(aRepresentation).mMutatedSpecializeVideo;
 }
 
 bool NativeLayerCA::Representation::CanSpecializeSurface(IOSurfaceRef surface) {

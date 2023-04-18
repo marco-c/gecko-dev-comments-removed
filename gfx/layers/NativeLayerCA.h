@@ -274,9 +274,17 @@ class NativeLayerCA : public NativeLayer {
   
   typedef NativeLayerRootCA::WhichRepresentation WhichRepresentation;
   CALayer* UnderlyingCALayer(WhichRepresentation aRepresentation);
-  void ApplyChanges(WhichRepresentation aRepresentation);
-  bool HasUpdate(WhichRepresentation aRepresentation);
-  bool HasUpdateAffectingLayers(WhichRepresentation aRepresentation);
+
+  enum class UpdateType {
+    None,       
+    OnlyVideo,  
+    All,
+  };
+
+  UpdateType HasUpdate(WhichRepresentation aRepresentation);
+  bool WillUpdateAffectLayers(WhichRepresentation aRepresentation);
+  bool ApplyChanges(WhichRepresentation aRepresentation, UpdateType aUpdate);
+
   void SetBackingScale(float aBackingScale);
 
   
@@ -325,8 +333,13 @@ class NativeLayerCA : public NativeLayer {
     
     
     
-    void ApplyChanges(const gfx::IntSize& aSize, bool aIsOpaque,
-                      const gfx::IntPoint& aPosition,
+    
+    
+    
+    
+    
+    bool ApplyChanges(UpdateType aUpdate, const gfx::IntSize& aSize,
+                      bool aIsOpaque, const gfx::IntPoint& aPosition,
                       const gfx::Matrix4x4& aTransform,
                       const gfx::IntRect& aDisplayRect,
                       const Maybe<gfx::IntRect>& aClipRect, float aBackingScale,
@@ -340,7 +353,7 @@ class NativeLayerCA : public NativeLayer {
     
     
     
-    bool HasUpdate();
+    UpdateType HasUpdate(bool aIsVideo);
 
     bool CanSpecializeSurface(IOSurfaceRef surface);
 
