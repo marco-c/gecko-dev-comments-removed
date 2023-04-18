@@ -3190,7 +3190,17 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
   if (aCacheDomain & CacheDomain::Bounds) {
     nsRect newBoundsRect = ParentRelativeBounds();
 
-    if (mBounds.isNothing() || !newBoundsRect.IsEqualEdges(mBounds.value())) {
+    
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT(aUpdateType == CacheUpdateType::Initial || mBounds.isSome(),
+               "Incremental cache push but mBounds is not set!");
+    if (aUpdateType == CacheUpdateType::Initial ||
+        !newBoundsRect.IsEqualEdges(mBounds.value())) {
       mBounds = Some(newBoundsRect);
 
       nsTArray<int32_t> boundsArray(4);
