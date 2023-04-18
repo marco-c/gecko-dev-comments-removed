@@ -1,0 +1,7 @@
+
+
+
+test(() => {
+    const early_hints_policy = "absent";
+    navigateToContentSecurityPolicyDocumentDisallowTest(early_hints_policy);
+});
