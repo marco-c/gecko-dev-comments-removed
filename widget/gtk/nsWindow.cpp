@@ -7941,7 +7941,7 @@ gboolean WindowDragMotionHandler(GtkWidget* aWidget,
   int tx = 0, ty = 0;
   
   
-  if (GdkIsWaylandDisplay()) {
+  if (innerMostWindow->IsWaylandPopup()) {
     gdk_window_get_position(innerWindow, &tx, &ty);
   }
 
@@ -8029,7 +8029,7 @@ gboolean WindowDragDropHandler(GtkWidget* aWidget, GdkDragContext* aDragContext,
   int tx = 0, ty = 0;
   
   
-  if (GdkIsWaylandDisplay()) {
+  if (innerMostWindow->IsWaylandPopup()) {
     gdk_window_get_position(innerWindow, &tx, &ty);
   }
 
