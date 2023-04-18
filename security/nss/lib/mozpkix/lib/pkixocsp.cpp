@@ -28,12 +28,6 @@
 #include "mozpkix/pkixcheck.h"
 #include "mozpkix/pkixutil.h"
 
-namespace {
-
-const size_t SHA1_DIGEST_LENGTH = 160 / 8;
-
-} 
-
 namespace mozilla { namespace pkix {
 
 
@@ -181,10 +175,12 @@ static inline Result MatchCertID(Reader& input,
                                  const Context& context,
                                   bool& match);
 static Result MatchKeyHash(TrustDomain& trustDomain,
+                           DigestAlgorithm hashAlgorithm,
                            Input issuerKeyHash,
                            Input issuerSubjectPublicKeyInfo,
                             bool& match);
 static Result KeyHash(TrustDomain& trustDomain,
+                      DigestAlgorithm hashAlgorithm,
                       Input subjectPublicKeyInfo,
                        uint8_t* hashBuf, size_t hashBufSize);
 
@@ -213,7 +209,7 @@ MatchResponderID(TrustDomain& trustDomain,
       if (rv != Success) {
         return rv;
       }
-      return MatchKeyHash(trustDomain, keyHash,
+      return MatchKeyHash(trustDomain, DigestAlgorithm::sha1, keyHash,
                           potentialSignerSubjectPublicKeyInfo, match);
     }
 
@@ -741,36 +737,36 @@ MatchCertID(Reader& input, const Context& context,  bool& match)
     return Success;
   }
 
-  
-
-  if (hashAlgorithm != DigestAlgorithm::sha1) {
-    
-    input.SkipToEnd();
-    return Success;
-  }
-
-  if (issuerNameHash.GetLength() != SHA1_DIGEST_LENGTH) {
+  size_t hashAlgorithmLength = DigestAlgorithmToSizeInBytes(hashAlgorithm);
+  if (issuerNameHash.GetLength() != hashAlgorithmLength) {
     return Result::ERROR_OCSP_MALFORMED_RESPONSE;
   }
 
   
   
   
-  uint8_t hashBuf[SHA1_DIGEST_LENGTH];
+  uint8_t hashBuf[MAX_DIGEST_SIZE_IN_BYTES];
+  if (hashAlgorithmLength > sizeof(hashBuf)) {
+    return Result::FATAL_ERROR_LIBRARY_FAILURE;
+  }
   rv = context.trustDomain.DigestBuf(context.certID.issuer,
-                                     DigestAlgorithm::sha1, hashBuf,
-                                     sizeof(hashBuf));
+                                     hashAlgorithm, hashBuf,
+                                     hashAlgorithmLength);
   if (rv != Success) {
     return rv;
   }
-  Input computed(hashBuf);
+  Input computed;
+  rv = computed.Init(hashBuf, hashAlgorithmLength);
+  if (rv != Success) {
+    return rv;
+  }
   if (!InputsAreEqual(computed, issuerNameHash)) {
     
     input.SkipToEnd();
     return Success;
   }
 
-  return MatchKeyHash(context.trustDomain, issuerKeyHash,
+  return MatchKeyHash(context.trustDomain, hashAlgorithm, issuerKeyHash,
                       context.certID.issuerSubjectPublicKeyInfo, match);
 }
 
@@ -784,30 +780,53 @@ MatchCertID(Reader& input, const Context& context,  bool& match)
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static Result
-MatchKeyHash(TrustDomain& trustDomain, Input keyHash,
-             const Input subjectPublicKeyInfo,  bool& match)
+MatchKeyHash(TrustDomain& trustDomain, DigestAlgorithm hashAlgorithm,
+             Input keyHash, const Input subjectPublicKeyInfo,
+              bool& match)
 {
-  if (keyHash.GetLength() != SHA1_DIGEST_LENGTH)  {
+  size_t hashLength = DigestAlgorithmToSizeInBytes(hashAlgorithm);
+  if (keyHash.GetLength() != hashLength)  {
     return Result::ERROR_OCSP_MALFORMED_RESPONSE;
   }
-  uint8_t hashBuf[SHA1_DIGEST_LENGTH];
-  Result rv = KeyHash(trustDomain, subjectPublicKeyInfo, hashBuf,
-                      sizeof hashBuf);
+  uint8_t hashBuf[MAX_DIGEST_SIZE_IN_BYTES];
+  if (hashLength > MAX_DIGEST_SIZE_IN_BYTES) {
+    return Result::FATAL_ERROR_LIBRARY_FAILURE;
+  }
+  Result rv = KeyHash(trustDomain, hashAlgorithm, subjectPublicKeyInfo,
+                      hashBuf, hashLength);
   if (rv != Success) {
     return rv;
   }
-  Input computed(hashBuf);
+  Input computed;
+  rv = computed.Init(hashBuf, hashLength);
+  if (rv != Success) {
+    return rv;
+  }
   match = InputsAreEqual(computed, keyHash);
   return Success;
 }
 
-
 Result
-KeyHash(TrustDomain& trustDomain, const Input subjectPublicKeyInfo,
-         uint8_t* hashBuf, size_t hashBufSize)
+KeyHash(TrustDomain& trustDomain, DigestAlgorithm hashAlgorithm,
+        const Input subjectPublicKeyInfo,  uint8_t* hashBuf,
+        size_t hashBufSize)
 {
-  if (!hashBuf || hashBufSize != SHA1_DIGEST_LENGTH) {
+  if (!hashBuf || hashBufSize != DigestAlgorithmToSizeInBytes(hashAlgorithm)) {
     return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
 
@@ -840,8 +859,8 @@ KeyHash(TrustDomain& trustDomain, const Input subjectPublicKeyInfo,
     return rv;
   }
 
-  return trustDomain.DigestBuf(subjectPublicKey, DigestAlgorithm::sha1,
-                               hashBuf, hashBufSize);
+  return trustDomain.DigestBuf(subjectPublicKey, hashAlgorithm, hashBuf,
+                               hashBufSize);
 }
 
 Result
@@ -922,8 +941,6 @@ CreateEncodedOCSPRequest(TrustDomain& trustDomain, const struct CertID& certID,
   
 
   
-
-  
   
   
   static const uint8_t hashAlgorithm[11] = {
@@ -986,7 +1003,8 @@ CreateEncodedOCSPRequest(TrustDomain& trustDomain, const struct CertID& certID,
   
   *d++ = 0x04;
   *d++ = hashLen;
-  rv = KeyHash(trustDomain, certID.issuerSubjectPublicKeyInfo, d, hashLen);
+  rv = KeyHash(trustDomain, DigestAlgorithm::sha1,
+               certID.issuerSubjectPublicKeyInfo, d, hashLen);
   if (rv != Success) {
     return rv;
   }

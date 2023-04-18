@@ -30,6 +30,7 @@
 
 
 
+
 #include <stdio.h>
 
 #include "gtest/gtest.h"
@@ -58,23 +59,29 @@ class TersePrinter : public EmptyTestEventListener {
 
   
   void OnTestStart(const TestInfo& test_info) override {
-    fprintf(stdout, "*** Test %s.%s starting.\n", test_info.test_case_name(),
+    fprintf(stdout,
+            "*** Test %s.%s starting.\n",
+            test_info.test_case_name(),
             test_info.name());
     fflush(stdout);
   }
 
   
   void OnTestPartResult(const TestPartResult& test_part_result) override {
-    fprintf(stdout, "%s in %s:%d\n%s\n",
+    fprintf(stdout,
+            "%s in %s:%d\n%s\n",
             test_part_result.failed() ? "*** Failure" : "Success",
-            test_part_result.file_name(), test_part_result.line_number(),
+            test_part_result.file_name(),
+            test_part_result.line_number(),
             test_part_result.summary());
     fflush(stdout);
   }
 
   
   void OnTestEnd(const TestInfo& test_info) override {
-    fprintf(stdout, "*** Test %s.%s ending.\n", test_info.test_case_name(),
+    fprintf(stdout,
+            "*** Test %s.%s ending.\n",
+            test_info.test_case_name(),
             test_info.name());
     fflush(stdout);
   }
@@ -94,15 +101,14 @@ TEST(CustomOutputTest, Fails) {
 }
 }  
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   InitGoogleTest(&argc, argv);
 
   bool terse_output = false;
-  if (argc > 1 && strcmp(argv[1], "--terse_output") == 0)
+  if (argc > 1 && strcmp(argv[1], "--terse_output") == 0 )
     terse_output = true;
   else
-    printf("%s\n",
-           "Run this program with --terse_output to change the way "
+    printf("%s\n", "Run this program with --terse_output to change the way "
            "it prints its output.");
 
   UnitTest& unit_test = *UnitTest::GetInstance();
@@ -143,7 +149,8 @@ int main(int argc, char** argv) {
   }
 
   
-  if (unexpectedly_failed_tests == 0) ret_val = 0;
+  if (unexpectedly_failed_tests == 0)
+    ret_val = 0;
 
   return ret_val;
 }

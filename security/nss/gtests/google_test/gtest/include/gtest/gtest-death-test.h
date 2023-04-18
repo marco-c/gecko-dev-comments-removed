@@ -35,8 +35,8 @@
 
 
 
-#ifndef GTEST_INCLUDE_GTEST_GTEST_DEATH_TEST_H_
-#define GTEST_INCLUDE_GTEST_GTEST_DEATH_TEST_H_
+#ifndef GOOGLETEST_INCLUDE_GTEST_GTEST_DEATH_TEST_H_
+#define GOOGLETEST_INCLUDE_GTEST_GTEST_DEATH_TEST_H_
 
 #include "gtest/internal/gtest-death-test-internal.h"
 
@@ -165,24 +165,28 @@ GTEST_API_ bool InDeathTestChild();
 
 
 
-#define ASSERT_EXIT(statement, predicate, regex) \
-  GTEST_DEATH_TEST_(statement, predicate, regex, GTEST_FATAL_FAILURE_)
-
-
-
-#define EXPECT_EXIT(statement, predicate, regex) \
-  GTEST_DEATH_TEST_(statement, predicate, regex, GTEST_NONFATAL_FAILURE_)
 
 
 
 
-#define ASSERT_DEATH(statement, regex) \
-  ASSERT_EXIT(statement, ::testing::internal::ExitedUnsuccessfully, regex)
+# define ASSERT_EXIT(statement, predicate, matcher) \
+    GTEST_DEATH_TEST_(statement, predicate, matcher, GTEST_FATAL_FAILURE_)
 
 
 
-#define EXPECT_DEATH(statement, regex) \
-  EXPECT_EXIT(statement, ::testing::internal::ExitedUnsuccessfully, regex)
+# define EXPECT_EXIT(statement, predicate, matcher) \
+    GTEST_DEATH_TEST_(statement, predicate, matcher, GTEST_NONFATAL_FAILURE_)
+
+
+
+
+# define ASSERT_DEATH(statement, matcher) \
+    ASSERT_EXIT(statement, ::testing::internal::ExitedUnsuccessfully, matcher)
+
+
+
+# define EXPECT_DEATH(statement, matcher) \
+    EXPECT_EXIT(statement, ::testing::internal::ExitedUnsuccessfully, matcher)
 
 
 
@@ -190,16 +194,14 @@ GTEST_API_ bool InDeathTestChild();
 class GTEST_API_ ExitedWithCode {
  public:
   explicit ExitedWithCode(int exit_code);
+  ExitedWithCode(const ExitedWithCode&) = default;
+  void operator=(const ExitedWithCode& other) = delete;
   bool operator()(int exit_status) const;
-
  private:
-  
-  void operator=(const ExitedWithCode& other);
-
   const int exit_code_;
 };
 
-#if !GTEST_OS_WINDOWS && !GTEST_OS_FUCHSIA
+# if !GTEST_OS_WINDOWS && !GTEST_OS_FUCHSIA
 
 
 
@@ -207,11 +209,10 @@ class GTEST_API_ KilledBySignal {
  public:
   explicit KilledBySignal(int signum);
   bool operator()(int exit_status) const;
-
  private:
   const int signum_;
 };
-#endif  
+# endif  
 
 
 
@@ -256,22 +257,24 @@ class GTEST_API_ KilledBySignal {
 
 
 
-#ifdef NDEBUG
+# ifdef NDEBUG
 
-#define EXPECT_DEBUG_DEATH(statement, regex) \
+#  define EXPECT_DEBUG_DEATH(statement, regex) \
   GTEST_EXECUTE_STATEMENT_(statement, regex)
 
-#define ASSERT_DEBUG_DEATH(statement, regex) \
+#  define ASSERT_DEBUG_DEATH(statement, regex) \
   GTEST_EXECUTE_STATEMENT_(statement, regex)
 
-#else
+# else
 
-#define EXPECT_DEBUG_DEATH(statement, regex) EXPECT_DEATH(statement, regex)
+#  define EXPECT_DEBUG_DEATH(statement, regex) \
+  EXPECT_DEATH(statement, regex)
 
-#define ASSERT_DEBUG_DEATH(statement, regex) ASSERT_DEATH(statement, regex)
+#  define ASSERT_DEBUG_DEATH(statement, regex) \
+  ASSERT_DEATH(statement, regex)
 
+# endif  
 #endif  
-#endif  
 
 
 
@@ -308,17 +311,18 @@ class GTEST_API_ KilledBySignal {
 
 
 
-#define GTEST_UNSUPPORTED_DEATH_TEST(statement, regex, terminator)             \
-  GTEST_AMBIGUOUS_ELSE_BLOCKER_                                                \
-  if (::testing::internal::AlwaysTrue()) {                                     \
-    GTEST_LOG_(WARNING) << "Death tests are not supported on this platform.\n" \
-                        << "Statement '" #statement "' cannot be verified.";   \
-  } else if (::testing::internal::AlwaysFalse()) {                             \
-    ::testing::internal::RE::PartialMatch(".*", (regex));                      \
-    GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement);                 \
-    terminator;                                                                \
-  } else                                                                       \
-    ::testing::Message()
+# define GTEST_UNSUPPORTED_DEATH_TEST(statement, regex, terminator) \
+    GTEST_AMBIGUOUS_ELSE_BLOCKER_ \
+    if (::testing::internal::AlwaysTrue()) { \
+      GTEST_LOG_(WARNING) \
+          << "Death tests are not supported on this platform.\n" \
+          << "Statement '" #statement "' cannot be verified."; \
+    } else if (::testing::internal::AlwaysFalse()) { \
+      ::testing::internal::RE::PartialMatch(".*", (regex)); \
+      GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement); \
+      terminator; \
+    } else \
+      ::testing::Message()
 
 
 
@@ -326,15 +330,15 @@ class GTEST_API_ KilledBySignal {
 
 
 #if GTEST_HAS_DEATH_TEST
-#define EXPECT_DEATH_IF_SUPPORTED(statement, regex) \
-  EXPECT_DEATH(statement, regex)
-#define ASSERT_DEATH_IF_SUPPORTED(statement, regex) \
-  ASSERT_DEATH(statement, regex)
+# define EXPECT_DEATH_IF_SUPPORTED(statement, regex) \
+    EXPECT_DEATH(statement, regex)
+# define ASSERT_DEATH_IF_SUPPORTED(statement, regex) \
+    ASSERT_DEATH(statement, regex)
 #else
-#define EXPECT_DEATH_IF_SUPPORTED(statement, regex) \
-  GTEST_UNSUPPORTED_DEATH_TEST(statement, regex, )
-#define ASSERT_DEATH_IF_SUPPORTED(statement, regex) \
-  GTEST_UNSUPPORTED_DEATH_TEST(statement, regex, return )
+# define EXPECT_DEATH_IF_SUPPORTED(statement, regex) \
+    GTEST_UNSUPPORTED_DEATH_TEST(statement, regex, )
+# define ASSERT_DEATH_IF_SUPPORTED(statement, regex) \
+    GTEST_UNSUPPORTED_DEATH_TEST(statement, regex, return)
 #endif
 
 }  

@@ -29,6 +29,7 @@
 
 
 
+
 #include "gtest/gtest.h"
 
 #include <stdlib.h>
@@ -54,7 +55,9 @@ void Fail(const char* msg) {
   exit(1);
 }
 
-static void AssertFalse() { ASSERT_EQ(2, 3) << "Expected failure"; }
+static void AssertFalse() {
+  ASSERT_EQ(2, 3) << "Expected failure";
+}
 
 
 
@@ -62,21 +65,21 @@ TEST(Test, Test) {
   
   try {
     EXPECT_EQ(3, 3);
-  } catch (...) {
+  } catch(...) {
     Fail("A successful assertion wrongfully threw.");
   }
 
   
   try {
     EXPECT_EQ(3, 4);
-  } catch (...) {
+  } catch(...) {
     Fail("A failed non-fatal assertion wrongfully threw.");
   }
 
   
   try {
     AssertFalse();
-  } catch (const testing::AssertionException& e) {
+  } catch(const testing::AssertionException& e) {
     if (strstr(e.what(), "Expected failure") != nullptr) throw;
 
     printf("%s",
@@ -84,7 +87,7 @@ TEST(Test, Test) {
            "but the message is incorrect.  Instead of containing \"Expected "
            "failure\", it is:\n");
     Fail(e.what());
-  } catch (...) {
+  } catch(...) {
     Fail("A failed assertion threw the wrong type of exception.");
   }
   Fail("A failed assertion should've thrown but didn't.");
@@ -92,7 +95,9 @@ TEST(Test, Test) {
 
 int kTestForContinuingTest = 0;
 
-TEST(Test, Test2) { kTestForContinuingTest = 1; }
+TEST(Test, Test2) {
+  kTestForContinuingTest = 1;
+}
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);

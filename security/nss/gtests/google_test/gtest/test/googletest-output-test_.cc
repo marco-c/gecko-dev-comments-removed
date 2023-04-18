@@ -56,7 +56,9 @@ namespace posix = ::testing::internal::posix;
 
 
 
-void TestEq1(int x) { ASSERT_EQ(1, x); }
+void TestEq1(int x) {
+  ASSERT_EQ(1, x);
+}
 
 
 
@@ -74,19 +76,24 @@ void TryTestSubroutine() {
   FAIL() << "This should never be reached.";
 }
 
-TEST(PassingTest, PassingTest1) {}
+TEST(PassingTest, PassingTest1) {
+}
 
-TEST(PassingTest, PassingTest2) {}
+TEST(PassingTest, PassingTest2) {
+}
 
 
 
 class FailingParamTest : public testing::TestWithParam<int> {};
 
-TEST_P(FailingParamTest, Fails) { EXPECT_EQ(1, GetParam()); }
+TEST_P(FailingParamTest, Fails) {
+  EXPECT_EQ(1, GetParam());
+}
 
 
 
-INSTANTIATE_TEST_SUITE_P(PrintingFailingParams, FailingParamTest,
+INSTANTIATE_TEST_SUITE_P(PrintingFailingParams,
+                         FailingParamTest,
                          testing::Values(2));
 
 
@@ -139,16 +146,18 @@ TEST(FatalFailureTest, FatalFailureInNestedSubroutine) {
 
 TEST(FatalFailureTest, NonfatalFailureInSubroutine) {
   printf("(expecting a failure on false)\n");
-  EXPECT_TRUE(false);               
+  EXPECT_TRUE(false);  
   ASSERT_FALSE(HasFatalFailure());  
 }
 
 
 TEST(LoggingTest, InterleavingLoggingAndAssertions) {
-  static const int a[4] = {3, 9, 2, 6};
+  static const int a[4] = {
+    3, 9, 2, 6
+  };
 
   printf("(expecting 2 failures on (3) >= (a[i]))\n");
-  for (int i = 0; i < static_cast<int>(sizeof(a) / sizeof(*a)); i++) {
+  for (int i = 0; i < static_cast<int>(sizeof(a)/sizeof(*a)); i++) {
     printf("i == %d\n", i);
     EXPECT_GE(3, a[i]);
   }
@@ -288,14 +297,16 @@ struct CheckPoints {
 static void ThreadWithScopedTrace(CheckPoints* check_points) {
   {
     SCOPED_TRACE("Trace B");
-    ADD_FAILURE() << "Expected failure #1 (in thread B, only trace B alive).";
+    ADD_FAILURE()
+        << "Expected failure #1 (in thread B, only trace B alive).";
     check_points->n1.Notify();
     check_points->n2.WaitForNotification();
 
     ADD_FAILURE()
         << "Expected failure #3 (in thread B, trace A & B both alive).";
   }  
-  ADD_FAILURE() << "Expected failure #4 (in thread B, only trace A alive).";
+  ADD_FAILURE()
+      << "Expected failure #4 (in thread B, only trace A alive).";
   check_points->n3.Notify();
 }
 
@@ -314,9 +325,11 @@ TEST(SCOPED_TRACETest, WorksConcurrently) {
     check_points.n2.Notify();
     check_points.n3.WaitForNotification();
 
-    ADD_FAILURE() << "Expected failure #5 (in thread A, only trace A alive).";
+    ADD_FAILURE()
+        << "Expected failure #5 (in thread A, only trace A alive).";
   }  
-  ADD_FAILURE() << "Expected failure #6 (in thread A, no trace alive).";
+  ADD_FAILURE()
+      << "Expected failure #6 (in thread A, no trace alive).";
   thread.Join();
 }
 #endif  
@@ -399,7 +412,9 @@ class FatalFailureInFixtureConstructorTest : public testing::Test {
   }
 
  private:
-  void Init() { FAIL() << "Expected failure #1, in the test fixture c'tor."; }
+  void Init() {
+    FAIL() << "Expected failure #1, in the test fixture c'tor.";
+  }
 };
 
 TEST_F(FatalFailureInFixtureConstructorTest, FailureInConstructor) {
@@ -421,7 +436,9 @@ class NonFatalFailureInSetUpTest : public testing::Test {
   void TearDown() override { FAIL() << "Expected failure #3, in TearDown()."; }
 
  private:
-  void Deinit() { FAIL() << "Expected failure #4, in the test fixture d'tor."; }
+  void Deinit() {
+    FAIL() << "Expected failure #4, in the test fixture d'tor.";
+  }
 };
 
 TEST_F(NonFatalFailureInSetUpTest, FailureInSetUp) {
@@ -441,7 +458,9 @@ class FatalFailureInSetUpTest : public testing::Test {
   void TearDown() override { FAIL() << "Expected failure #2, in TearDown()."; }
 
  private:
-  void Deinit() { FAIL() << "Expected failure #3, in the test fixture d'tor."; }
+  void Deinit() {
+    FAIL() << "Expected failure #3, in the test fixture d'tor.";
+  }
 };
 
 TEST_F(FatalFailureInSetUpTest, FailureInSetUp) {
@@ -457,63 +476,6 @@ TEST(GtestFailAtTest, MessageContainsSpecifiedFileAndLineNumber) {
   GTEST_FAIL_AT("foo.cc", 42) << "Expected fatal failure in foo.cc";
 }
 
-#if GTEST_IS_THREADSAFE
-
-
-void DieIf(bool should_die) {
-  GTEST_CHECK_(!should_die) << " - death inside DieIf().";
-}
-
-
-
-
-struct SpawnThreadNotifications {
-  SpawnThreadNotifications() {}
-
-  Notification spawn_thread_started;
-  Notification spawn_thread_ok_to_terminate;
-
- private:
-  GTEST_DISALLOW_COPY_AND_ASSIGN_(SpawnThreadNotifications);
-};
-
-
-
-static void ThreadRoutine(SpawnThreadNotifications* notifications) {
-  
-  notifications->spawn_thread_started.Notify();
-
-  
-  notifications->spawn_thread_ok_to_terminate.WaitForNotification();
-}
-
-
-
-
-class DeathTestAndMultiThreadsTest : public testing::Test {
- protected:
-  
-  void SetUp() override {
-    thread_.reset(new ThreadWithParam<SpawnThreadNotifications*>(
-        &ThreadRoutine, &notifications_, nullptr));
-    notifications_.spawn_thread_started.WaitForNotification();
-  }
-  
-  
-  
-  
-  
-  void TearDown() override {
-    notifications_.spawn_thread_ok_to_terminate.Notify();
-  }
-
- private:
-  SpawnThreadNotifications notifications_;
-  std::unique_ptr<ThreadWithParam<SpawnThreadNotifications*> > thread_;
-};
-
-#endif  
-
 
 
 
@@ -526,12 +488,14 @@ class DeathTestAndMultiThreadsTest : public testing::Test {
 
 namespace foo {
 
-class MixedUpTestSuiteTest : public testing::Test {};
+class MixedUpTestSuiteTest : public testing::Test {
+};
 
 TEST_F(MixedUpTestSuiteTest, FirstTestFromNamespaceFoo) {}
 TEST_F(MixedUpTestSuiteTest, SecondTestFromNamespaceFoo) {}
 
-class MixedUpTestSuiteWithSameTestNameTest : public testing::Test {};
+class MixedUpTestSuiteWithSameTestNameTest : public testing::Test {
+};
 
 TEST_F(MixedUpTestSuiteWithSameTestNameTest,
        TheSecondTestWithThisNameShouldFail) {}
@@ -540,14 +504,16 @@ TEST_F(MixedUpTestSuiteWithSameTestNameTest,
 
 namespace bar {
 
-class MixedUpTestSuiteTest : public testing::Test {};
+class MixedUpTestSuiteTest : public testing::Test {
+};
 
 
 
 TEST_F(MixedUpTestSuiteTest, ThisShouldFail) {}
 TEST_F(MixedUpTestSuiteTest, ThisShouldFailToo) {}
 
-class MixedUpTestSuiteWithSameTestNameTest : public testing::Test {};
+class MixedUpTestSuiteWithSameTestNameTest : public testing::Test {
+};
 
 
 
@@ -561,7 +527,8 @@ TEST_F(MixedUpTestSuiteWithSameTestNameTest,
 
 
 
-class TEST_F_before_TEST_in_same_test_case : public testing::Test {};
+class TEST_F_before_TEST_in_same_test_case : public testing::Test {
+};
 
 TEST_F(TEST_F_before_TEST_in_same_test_case, DefinedUsingTEST_F) {}
 
@@ -569,13 +536,15 @@ TEST_F(TEST_F_before_TEST_in_same_test_case, DefinedUsingTEST_F) {}
 
 TEST(TEST_F_before_TEST_in_same_test_case, DefinedUsingTESTAndShouldFail) {}
 
-class TEST_before_TEST_F_in_same_test_case : public testing::Test {};
+class TEST_before_TEST_F_in_same_test_case : public testing::Test {
+};
 
 TEST(TEST_before_TEST_F_in_same_test_case, DefinedUsingTEST) {}
 
 
 
-TEST_F(TEST_before_TEST_F_in_same_test_case, DefinedUsingTEST_FAndShouldFail) {}
+TEST_F(TEST_before_TEST_F_in_same_test_case, DefinedUsingTEST_FAndShouldFail) {
+}
 
 
 int global_integer = 0;
@@ -583,9 +552,9 @@ int global_integer = 0;
 
 TEST(ExpectNonfatalFailureTest, CanReferenceGlobalVariables) {
   global_integer = 0;
-  EXPECT_NONFATAL_FAILURE(
-      { EXPECT_EQ(1, global_integer) << "Expected non-fatal failure."; },
-      "Expected non-fatal failure.");
+  EXPECT_NONFATAL_FAILURE({
+    EXPECT_EQ(1, global_integer) << "Expected non-fatal failure.";
+  }, "Expected non-fatal failure.");
 }
 
 
@@ -594,48 +563,53 @@ TEST(ExpectNonfatalFailureTest, CanReferenceLocalVariables) {
   int m = 0;
   static int n;
   n = 1;
-  EXPECT_NONFATAL_FAILURE({ EXPECT_EQ(m, n) << "Expected non-fatal failure."; },
-                          "Expected non-fatal failure.");
+  EXPECT_NONFATAL_FAILURE({
+    EXPECT_EQ(m, n) << "Expected non-fatal failure.";
+  }, "Expected non-fatal failure.");
 }
 
 
 
 TEST(ExpectNonfatalFailureTest, SucceedsWhenThereIsOneNonfatalFailure) {
-  EXPECT_NONFATAL_FAILURE({ ADD_FAILURE() << "Expected non-fatal failure."; },
-                          "Expected non-fatal failure.");
+  EXPECT_NONFATAL_FAILURE({
+    ADD_FAILURE() << "Expected non-fatal failure.";
+  }, "Expected non-fatal failure.");
 }
 
 
 
 TEST(ExpectNonfatalFailureTest, FailsWhenThereIsNoNonfatalFailure) {
   printf("(expecting a failure)\n");
-  EXPECT_NONFATAL_FAILURE({}, "");
+  EXPECT_NONFATAL_FAILURE({
+  }, "");
 }
 
 
 
 TEST(ExpectNonfatalFailureTest, FailsWhenThereAreTwoNonfatalFailures) {
   printf("(expecting a failure)\n");
-  EXPECT_NONFATAL_FAILURE(
-      {
-        ADD_FAILURE() << "Expected non-fatal failure 1.";
-        ADD_FAILURE() << "Expected non-fatal failure 2.";
-      },
-      "");
+  EXPECT_NONFATAL_FAILURE({
+    ADD_FAILURE() << "Expected non-fatal failure 1.";
+    ADD_FAILURE() << "Expected non-fatal failure 2.";
+  }, "");
 }
 
 
 
 TEST(ExpectNonfatalFailureTest, FailsWhenThereIsOneFatalFailure) {
   printf("(expecting a failure)\n");
-  EXPECT_NONFATAL_FAILURE({ FAIL() << "Expected fatal failure."; }, "");
+  EXPECT_NONFATAL_FAILURE({
+    FAIL() << "Expected fatal failure.";
+  }, "");
 }
 
 
 
 TEST(ExpectNonfatalFailureTest, FailsWhenStatementReturns) {
   printf("(expecting a failure)\n");
-  EXPECT_NONFATAL_FAILURE({ return; }, "");
+  EXPECT_NONFATAL_FAILURE({
+    return;
+  }, "");
 }
 
 #if GTEST_HAS_EXCEPTIONS
@@ -645,8 +619,10 @@ TEST(ExpectNonfatalFailureTest, FailsWhenStatementReturns) {
 TEST(ExpectNonfatalFailureTest, FailsWhenStatementThrows) {
   printf("(expecting a failure)\n");
   try {
-    EXPECT_NONFATAL_FAILURE({ throw 0; }, "");
-  } catch (int) {  
+    EXPECT_NONFATAL_FAILURE({
+      throw 0;
+    }, "");
+  } catch(int) {  
   }
 }
 
@@ -655,9 +631,9 @@ TEST(ExpectNonfatalFailureTest, FailsWhenStatementThrows) {
 
 TEST(ExpectFatalFailureTest, CanReferenceGlobalVariables) {
   global_integer = 0;
-  EXPECT_FATAL_FAILURE(
-      { ASSERT_EQ(1, global_integer) << "Expected fatal failure."; },
-      "Expected fatal failure.");
+  EXPECT_FATAL_FAILURE({
+    ASSERT_EQ(1, global_integer) << "Expected fatal failure.";
+  }, "Expected fatal failure.");
 }
 
 
@@ -665,51 +641,58 @@ TEST(ExpectFatalFailureTest, CanReferenceGlobalVariables) {
 TEST(ExpectFatalFailureTest, CanReferenceLocalStaticVariables) {
   static int n;
   n = 1;
-  EXPECT_FATAL_FAILURE({ ASSERT_EQ(0, n) << "Expected fatal failure."; },
-                       "Expected fatal failure.");
+  EXPECT_FATAL_FAILURE({
+    ASSERT_EQ(0, n) << "Expected fatal failure.";
+  }, "Expected fatal failure.");
 }
 
 
 
 TEST(ExpectFatalFailureTest, SucceedsWhenThereIsOneFatalFailure) {
-  EXPECT_FATAL_FAILURE({ FAIL() << "Expected fatal failure."; },
-                       "Expected fatal failure.");
+  EXPECT_FATAL_FAILURE({
+    FAIL() << "Expected fatal failure.";
+  }, "Expected fatal failure.");
 }
 
 
 
 TEST(ExpectFatalFailureTest, FailsWhenThereIsNoFatalFailure) {
   printf("(expecting a failure)\n");
-  EXPECT_FATAL_FAILURE({}, "");
+  EXPECT_FATAL_FAILURE({
+  }, "");
 }
 
 
-void FatalFailure() { FAIL() << "Expected fatal failure."; }
+void FatalFailure() {
+  FAIL() << "Expected fatal failure.";
+}
 
 
 
 TEST(ExpectFatalFailureTest, FailsWhenThereAreTwoFatalFailures) {
   printf("(expecting a failure)\n");
-  EXPECT_FATAL_FAILURE(
-      {
-        FatalFailure();
-        FatalFailure();
-      },
-      "");
+  EXPECT_FATAL_FAILURE({
+    FatalFailure();
+    FatalFailure();
+  }, "");
 }
 
 
 
 TEST(ExpectFatalFailureTest, FailsWhenThereIsOneNonfatalFailure) {
   printf("(expecting a failure)\n");
-  EXPECT_FATAL_FAILURE({ ADD_FAILURE() << "Expected non-fatal failure."; }, "");
+  EXPECT_FATAL_FAILURE({
+    ADD_FAILURE() << "Expected non-fatal failure.";
+  }, "");
 }
 
 
 
 TEST(ExpectFatalFailureTest, FailsWhenStatementReturns) {
   printf("(expecting a failure)\n");
-  EXPECT_FATAL_FAILURE({ return; }, "");
+  EXPECT_FATAL_FAILURE({
+    return;
+  }, "");
 }
 
 #if GTEST_HAS_EXCEPTIONS
@@ -719,8 +702,10 @@ TEST(ExpectFatalFailureTest, FailsWhenStatementReturns) {
 TEST(ExpectFatalFailureTest, FailsWhenStatementThrows) {
   printf("(expecting a failure)\n");
   try {
-    EXPECT_FATAL_FAILURE({ throw 0; }, "");
-  } catch (int) {  
+    EXPECT_FATAL_FAILURE({
+      throw 0;
+    }, "");
+  } catch(int) {  
   }
 }
 
@@ -732,24 +717,42 @@ std::string ParamNameFunc(const testing::TestParamInfo<std::string>& info) {
   return info.param;
 }
 
-class ParamTest : public testing::TestWithParam<std::string> {};
+class ParamTest : public testing::TestWithParam<std::string> {
+};
 
-TEST_P(ParamTest, Success) { EXPECT_EQ("a", GetParam()); }
+TEST_P(ParamTest, Success) {
+  EXPECT_EQ("a", GetParam());
+}
 
-TEST_P(ParamTest, Failure) { EXPECT_EQ("b", GetParam()) << "Expected failure"; }
+TEST_P(ParamTest, Failure) {
+  EXPECT_EQ("b", GetParam()) << "Expected failure";
+}
 
-INSTANTIATE_TEST_SUITE_P(PrintingStrings, ParamTest,
-                         testing::Values(std::string("a")), ParamNameFunc);
+INSTANTIATE_TEST_SUITE_P(PrintingStrings,
+                         ParamTest,
+                         testing::Values(std::string("a")),
+                         ParamNameFunc);
 
 
-#if GTEST_HAS_TYPED_TEST
+using NoTests = ParamTest;
+INSTANTIATE_TEST_SUITE_P(ThisIsOdd, NoTests, ::testing::Values("Hello"));
+
+
+class DetectNotInstantiatedTest : public testing::TestWithParam<int> {};
+TEST_P(DetectNotInstantiatedTest, Used) { }
+
+
+
 
 template <typename T>
-class TypedTest : public testing::Test {};
+class TypedTest : public testing::Test {
+};
 
 TYPED_TEST_SUITE(TypedTest, testing::Types<int>);
 
-TYPED_TEST(TypedTest, Success) { EXPECT_EQ(0, TypeParam()); }
+TYPED_TEST(TypedTest, Success) {
+  EXPECT_EQ(0, TypeParam());
+}
 
 TYPED_TEST(TypedTest, Failure) {
   EXPECT_EQ(1, TypeParam()) << "Expected failure";
@@ -777,17 +780,15 @@ TYPED_TEST(TypedTestWithNames, Success) {}
 
 TYPED_TEST(TypedTestWithNames, Failure) { FAIL(); }
 
-#endif  
-
-
-#if GTEST_HAS_TYPED_TEST_P
-
 template <typename T>
-class TypedTestP : public testing::Test {};
+class TypedTestP : public testing::Test {
+};
 
 TYPED_TEST_SUITE_P(TypedTestP);
 
-TYPED_TEST_P(TypedTestP, Success) { EXPECT_EQ(0U, TypeParam()); }
+TYPED_TEST_P(TypedTestP, Success) {
+  EXPECT_EQ(0U, TypeParam());
+}
 
 TYPED_TEST_P(TypedTestP, Failure) {
   EXPECT_EQ(1U, TypeParam()) << "Expected failure";
@@ -812,43 +813,56 @@ class TypedTestPNames {
 };
 
 INSTANTIATE_TYPED_TEST_SUITE_P(UnsignedCustomName, TypedTestP, UnsignedTypes,
-                               TypedTestPNames);
+                              TypedTestPNames);
 
-#endif  
+template <typename T>
+class DetectNotInstantiatedTypesTest : public testing::Test {};
+TYPED_TEST_SUITE_P(DetectNotInstantiatedTypesTest);
+TYPED_TEST_P(DetectNotInstantiatedTypesTest, Used) {
+  TypeParam instantiate;
+  (void)instantiate;
+}
+REGISTER_TYPED_TEST_SUITE_P(DetectNotInstantiatedTypesTest, Used);
+
+
+
+
+
+
 
 #if GTEST_HAS_DEATH_TEST
 
 
 
 
-TEST(ADeathTest, ShouldRunFirst) {}
-
-#if GTEST_HAS_TYPED_TEST
+TEST(ADeathTest, ShouldRunFirst) {
+}
 
 
 
 
 template <typename T>
-class ATypedDeathTest : public testing::Test {};
+class ATypedDeathTest : public testing::Test {
+};
 
 typedef testing::Types<int, double> NumericTypes;
 TYPED_TEST_SUITE(ATypedDeathTest, NumericTypes);
 
-TYPED_TEST(ATypedDeathTest, ShouldRunFirst) {}
+TYPED_TEST(ATypedDeathTest, ShouldRunFirst) {
+}
 
-#endif  
-
-#if GTEST_HAS_TYPED_TEST_P
 
 
 
 
 template <typename T>
-class ATypeParamDeathTest : public testing::Test {};
+class ATypeParamDeathTest : public testing::Test {
+};
 
 TYPED_TEST_SUITE_P(ATypeParamDeathTest);
 
-TYPED_TEST_P(ATypeParamDeathTest, ShouldRunFirst) {}
+TYPED_TEST_P(ATypeParamDeathTest, ShouldRunFirst) {
+}
 
 REGISTER_TYPED_TEST_SUITE_P(ATypeParamDeathTest, ShouldRunFirst);
 
@@ -856,13 +870,14 @@ INSTANTIATE_TYPED_TEST_SUITE_P(My, ATypeParamDeathTest, NumericTypes);
 
 #endif  
 
-#endif  
-
 
 
 class ExpectFailureTest : public testing::Test {
  public:  
-  enum FailureMode { FATAL_FAILURE, NONFATAL_FAILURE };
+  enum FailureMode {
+    FATAL_FAILURE,
+    NONFATAL_FAILURE
+  };
   static void AddFailure(FailureMode failure) {
     if (failure == FATAL_FAILURE) {
       FAIL() << "Expected fatal failure.";
@@ -878,13 +893,11 @@ TEST_F(ExpectFailureTest, ExpectFatalFailure) {
   EXPECT_FATAL_FAILURE(SUCCEED(), "Expected fatal failure.");
   
   printf("(expecting 1 failure)\n");
-  EXPECT_FATAL_FAILURE(AddFailure(NONFATAL_FAILURE),
-                       "Expected non-fatal "
+  EXPECT_FATAL_FAILURE(AddFailure(NONFATAL_FAILURE), "Expected non-fatal "
                        "failure.");
   
   printf("(expecting 1 failure)\n");
-  EXPECT_FATAL_FAILURE(AddFailure(FATAL_FAILURE),
-                       "Some other fatal failure "
+  EXPECT_FATAL_FAILURE(AddFailure(FATAL_FAILURE), "Some other fatal failure "
                        "expected.");
 }
 
@@ -897,8 +910,7 @@ TEST_F(ExpectFailureTest, ExpectNonFatalFailure) {
   EXPECT_NONFATAL_FAILURE(AddFailure(FATAL_FAILURE), "Expected fatal failure.");
   
   printf("(expecting 1 failure)\n");
-  EXPECT_NONFATAL_FAILURE(AddFailure(NONFATAL_FAILURE),
-                          "Some other non-fatal "
+  EXPECT_NONFATAL_FAILURE(AddFailure(NONFATAL_FAILURE), "Some other non-fatal "
                           "failure.");
 }
 
@@ -963,8 +975,7 @@ TEST_F(ExpectFailureTest, ExpectFatalFailureOnAllThreads) {
 TEST_F(ExpectFailureTest, ExpectNonFatalFailureOnAllThreads) {
   
   printf("(expecting 1 failure)\n");
-  EXPECT_NONFATAL_FAILURE_ON_ALL_THREADS(SUCCEED(),
-                                         "Expected non-fatal "
+  EXPECT_NONFATAL_FAILURE_ON_ALL_THREADS(SUCCEED(), "Expected non-fatal "
                                          "failure.");
   
   printf("(expecting 1 failure)\n");
@@ -1054,7 +1065,7 @@ class BarEnvironment : public testing::Environment {
 
 
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   testing::GTEST_FLAG(print_time) = false;
 
   
@@ -1071,18 +1082,19 @@ int main(int argc, char** argv) {
 
 #if GTEST_HAS_DEATH_TEST
   if (testing::internal::GTEST_FLAG(internal_run_death_test) != "") {
-
-
-#if GTEST_OS_WINDOWS
+    
+    
+# if GTEST_OS_WINDOWS
     posix::FReopen("nul:", "w", stdout);
-#else
+# else
     posix::FReopen("/dev/null", "w", stdout);
-#endif  
+# endif  
     return RUN_ALL_TESTS();
   }
 #endif  
 
-  if (internal_skip_environment_and_ad_hoc_tests) return RUN_ALL_TESTS();
+  if (internal_skip_environment_and_ad_hoc_tests)
+    return RUN_ALL_TESTS();
 
   
   
@@ -1090,7 +1102,7 @@ int main(int argc, char** argv) {
   testing::AddGlobalTestEnvironment(new FooEnvironment);
   testing::AddGlobalTestEnvironment(new BarEnvironment);
 #if _MSC_VER
-  GTEST_DISABLE_MSC_WARNINGS_POP_()  
-#endif                               
+GTEST_DISABLE_MSC_WARNINGS_POP_()  
+#endif  
   return RunAllTests();
 }

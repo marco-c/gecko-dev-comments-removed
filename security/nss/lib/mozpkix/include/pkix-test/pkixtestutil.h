@@ -350,6 +350,14 @@ class OCSPResponseContext final {
 
   const CertID& certID;
   
+  
+  DigestAlgorithm certIDHashAlgorithm;
+  
+  
+  
+  ByteString certIDHashAlgorithmEncoded;
+
+  
 
   
 

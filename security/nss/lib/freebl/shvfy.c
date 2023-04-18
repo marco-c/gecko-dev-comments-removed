@@ -335,6 +335,7 @@ blapi_SHVerifyFile(const char *shName, PRBool self)
     SECStatus rv;
     DSAPublicKey key;
     int count;
+    (void)count; 
 #ifdef FREEBL_USE_PRELINK
     int pid = 0;
 #endif

@@ -31,10 +31,8 @@
 
 
 
-
-
-#ifndef GTEST_INCLUDE_GTEST_GTEST_PARAM_TEST_H_
-#define GTEST_INCLUDE_GTEST_GTEST_PARAM_TEST_H_
+#ifndef GOOGLETEST_INCLUDE_GTEST_GTEST_PARAM_TEST_H_
+#define GOOGLETEST_INCLUDE_GTEST_GTEST_PARAM_TEST_H_
 
 
 
@@ -355,9 +353,9 @@ internal::ValueArray<T...> Values(T... v) {
 
 
 
-inline internal::ParamGenerator<bool> Bool() { return Values(false, true); }
-
-
+inline internal::ParamGenerator<bool> Bool() {
+  return Values(false, true);
+}
 
 
 
@@ -413,19 +411,20 @@ internal::CartesianProductHolder<Generator...> Combine(const Generator&... g) {
       : public test_suite_name {                                               \
    public:                                                                     \
     GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)() {}                    \
-    virtual void TestBody();                                                   \
+    void TestBody() override;                                                  \
                                                                                \
    private:                                                                    \
     static int AddToRegistry() {                                               \
       ::testing::UnitTest::GetInstance()                                       \
           ->parameterized_test_registry()                                      \
           .GetTestSuitePatternHolder<test_suite_name>(                         \
-              #test_suite_name,                                                \
+              GTEST_STRINGIFY_(test_suite_name),                               \
               ::testing::internal::CodeLocation(__FILE__, __LINE__))           \
           ->AddTestPattern(                                                    \
               GTEST_STRINGIFY_(test_suite_name), GTEST_STRINGIFY_(test_name),  \
               new ::testing::internal::TestMetaFactory<GTEST_TEST_CLASS_NAME_( \
-                  test_suite_name, test_name)>());                             \
+                  test_suite_name, test_name)>(),                              \
+              ::testing::internal::CodeLocation(__FILE__, __LINE__));          \
       return 0;                                                                \
     }                                                                          \
     static int gtest_registering_dummy_ GTEST_ATTRIBUTE_UNUSED_;               \
@@ -480,12 +479,20 @@ internal::CartesianProductHolder<Generator...> Combine(const Generator&... g) {
           ::testing::UnitTest::GetInstance()                                  \
               ->parameterized_test_registry()                                 \
               .GetTestSuitePatternHolder<test_suite_name>(                    \
-                  #test_suite_name,                                           \
+                  GTEST_STRINGIFY_(test_suite_name),                          \
                   ::testing::internal::CodeLocation(__FILE__, __LINE__))      \
               ->AddTestSuiteInstantiation(                                    \
-                  #prefix, &gtest_##prefix##test_suite_name##_EvalGenerator_, \
+                  GTEST_STRINGIFY_(prefix),                                   \
+                  &gtest_##prefix##test_suite_name##_EvalGenerator_,          \
                   &gtest_##prefix##test_suite_name##_EvalGenerateName_,       \
                   __FILE__, __LINE__)
+
+
+
+#define GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(T)                   \
+  namespace gtest_do_not_use_outside_namespace_scope {}                   \
+  static const ::testing::internal::MarkAsIgnored gtest_allow_ignore_##T( \
+      GTEST_STRINGIFY_(T))
 
 
 #ifndef GTEST_REMOVE_LEGACY_TEST_CASEAPI_

@@ -31,6 +31,7 @@
 
 
 
+
 #include "prime_tables.h"
 
 #include "gtest/gtest.h"
@@ -71,8 +72,6 @@ class PrimeTableTest : public testing::Test {
   
   PrimeTable* const table_;
 };
-
-#if GTEST_HAS_TYPED_TEST
 
 using testing::Types;
 
@@ -133,10 +132,6 @@ TYPED_TEST(PrimeTableTest, CanGetNextPrime) {
 
 
 
-#endif  
-
-#if GTEST_HAS_TYPED_TEST_P
-
 using testing::Types;
 
 
@@ -156,7 +151,8 @@ using testing::Types;
 
 
 template <class T>
-class PrimeTableTest2 : public PrimeTableTest<T> {};
+class PrimeTableTest2 : public PrimeTableTest<T> {
+};
 
 
 
@@ -218,5 +214,4 @@ INSTANTIATE_TYPED_TEST_SUITE_P(OnTheFlyAndPreCalculated,
                                PrimeTableTest2,             
                                PrimeTableImplementations);  
 
-#endif  
 }  
