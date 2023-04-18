@@ -267,7 +267,7 @@ void HTMLSelectElement::InsertOptionsIntoList(nsIContent* aOptions,
         
         
         
-        OnOptionSelected(selectFrame, i, true, false, false);
+        OnOptionSelected(selectFrame, i, true, false, aNotify);
       }
     }
 
