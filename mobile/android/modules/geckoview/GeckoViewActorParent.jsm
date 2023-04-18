@@ -19,15 +19,37 @@ class GeckoViewActorParent extends JSWindowActorParent {
   }
 
   get window() {
-    return this.browser.ownerGlobal;
+    const { browsingContext } = this;
+    
+    
+    if (!browsingContext.isContent && browsingContext.window) {
+      return browsingContext.window;
+    }
+    return this.browser?.ownerGlobal;
   }
 
   get eventDispatcher() {
-    return this.window.moduleManager.eventDispatcher;
+    return this.window?.moduleManager.eventDispatcher;
   }
 
   receiveMessage(aMessage) {
+    if (!this.window) {
+      
+      
+      debug`receiveMessage window destroyed ${aMessage.name} ${aMessage.data?.type}`;
+      return null;
+    }
+
+    switch (aMessage.name) {
+      case "DispatcherMessage":
+        return this.eventDispatcher.sendRequest(aMessage.data);
+      case "DispatcherQuery":
+        return this.eventDispatcher.sendRequestForResult(aMessage.data);
+    }
+
     
-    this.window.moduleManager.onMessageFromActor(this.name, aMessage);
+    return this.window.moduleManager.onMessageFromActor(this.name, aMessage);
   }
 }
+
+const { debug, warn } = GeckoViewUtils.initLogging("GeckoViewActorParent");

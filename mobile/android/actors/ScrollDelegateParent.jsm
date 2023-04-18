@@ -1,0 +1,13 @@
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["ScrollDelegateParent"];
+
+const { GeckoViewActorParent } = ChromeUtils.import(
+  "resource://gre/modules/GeckoViewActorParent.jsm"
+);
+
+
+class ScrollDelegateParent extends GeckoViewActorParent {}

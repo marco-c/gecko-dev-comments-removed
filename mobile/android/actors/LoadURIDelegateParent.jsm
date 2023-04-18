@@ -1,0 +1,13 @@
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["LoadURIDelegateParent"];
+
+const { GeckoViewActorParent } = ChromeUtils.import(
+  "resource://gre/modules/GeckoViewActorParent.jsm"
+);
+
+
+class LoadURIDelegateParent extends GeckoViewActorParent {}
