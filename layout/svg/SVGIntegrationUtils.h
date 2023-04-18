@@ -152,7 +152,7 @@ class SVGIntegrationUtils final {
     nsDisplayListBuilder* builder;
     bool handleOpacity;  
                          
-    Maybe<gfx::Rect> maskRect;
+    Maybe<LayoutDeviceRect> maskRect;
     imgDrawingParams& imgParams;
 
     explicit PaintFramesParams(gfxContext& aCtx, nsIFrame* aFrame,
