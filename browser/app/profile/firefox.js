@@ -430,6 +430,14 @@ pref("browser.urlbar.quicksuggest.remoteSettings.enabled", true);
 pref("browser.urlbar.quicksuggest.allowPositionInSuggestions", true);
 
 
+
+pref("browser.urlbar.quicksuggest.impressionCaps.nonSponsoredEnabled", false);
+
+
+
+pref("browser.urlbar.quicksuggest.impressionCaps.sponsoredEnabled", false);
+
+
 #ifdef NIGHTLY_BUILD
 pref("browser.urlbar.unitConversion.enabled", true);
 #else

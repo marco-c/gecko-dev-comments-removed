@@ -6,11 +6,6 @@
 
 "use strict";
 
-XPCOMUtils.defineLazyModuleGetters(this, {
-  UrlbarProviderQuickSuggest:
-    "resource:///modules/UrlbarProviderQuickSuggest.jsm",
-});
-
 const MAX_RESULT_COUNT = UrlbarPrefs.get("maxRichResults");
 
 

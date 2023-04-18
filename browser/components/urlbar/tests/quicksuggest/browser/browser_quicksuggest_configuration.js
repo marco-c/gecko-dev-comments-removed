@@ -27,21 +27,21 @@ add_task(async function init() {
 
 
 
-add_task(async function test_updateExperimentState_pref() {
+add_task(async function test_updateFeatureState_pref() {
   Assert.ok(
     UrlbarPrefs.get("quicksuggest.enabled"),
     "Sanity check: quicksuggest.enabled is true by default"
   );
 
   let sandbox = sinon.createSandbox();
-  let spy = sandbox.spy(UrlbarProviderQuickSuggest, "_updateExperimentState");
+  let spy = sandbox.spy(UrlbarProviderQuickSuggest, "_updateFeatureState");
 
   UrlbarPrefs.set("quicksuggest.enabled", false);
   await UrlbarQuickSuggest.readyPromise;
   Assert.equal(
     spy.callCount,
     1,
-    "_updateExperimentState called once after changing pref"
+    "_updateFeatureState called once after changing pref"
   );
 
   UrlbarPrefs.clear("quicksuggest.enabled");
@@ -49,7 +49,7 @@ add_task(async function test_updateExperimentState_pref() {
   Assert.equal(
     spy.callCount,
     2,
-    "_updateExperimentState called again after clearing pref"
+    "_updateFeatureState called again after clearing pref"
   );
 
   sandbox.restore();
@@ -57,16 +57,16 @@ add_task(async function test_updateExperimentState_pref() {
 
 
 
-add_task(async function test_updateExperimentState_experiment() {
+add_task(async function test_updateFeatureState_experiment() {
   let sandbox = sinon.createSandbox();
-  let spy = sandbox.spy(UrlbarProviderQuickSuggest, "_updateExperimentState");
+  let spy = sandbox.spy(UrlbarProviderQuickSuggest, "_updateFeatureState");
 
   await QuickSuggestTestUtils.withExperiment({
     callback: () => {
       Assert.equal(
         spy.callCount,
         1,
-        "_updateExperimentState called once after installing experiment"
+        "_updateFeatureState called once after installing experiment"
       );
     },
   });
@@ -74,7 +74,7 @@ add_task(async function test_updateExperimentState_experiment() {
   Assert.equal(
     spy.callCount,
     2,
-    "_updateExperimentState called again after uninstalling experiment"
+    "_updateFeatureState called again after uninstalling experiment"
   );
 
   sandbox.restore();

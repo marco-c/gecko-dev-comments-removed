@@ -229,6 +229,20 @@ const PREF_URLBAR_DEFAULTS = new Map([
   ["quicksuggest.enabled", false],
 
   
+  
+  
+  ["quicksuggest.impressionCaps.nonSponsoredEnabled", false],
+
+  
+  
+  
+  ["quicksuggest.impressionCaps.sponsoredEnabled", false],
+
+  
+  
+  ["quicksuggest.impressionCaps.stats", ""],
+
+  
   ["quicksuggest.log", false],
 
   

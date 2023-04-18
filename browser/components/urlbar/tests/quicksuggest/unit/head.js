@@ -3,6 +3,12 @@
 
 
 
+XPCOMUtils.defineLazyModuleGetters(this, {
+  UrlbarProviderQuickSuggest:
+    "resource:///modules/UrlbarProviderQuickSuggest.jsm",
+  UrlbarQuickSuggest: "resource:///modules/UrlbarQuickSuggest.jsm",
+});
+
 
 
 

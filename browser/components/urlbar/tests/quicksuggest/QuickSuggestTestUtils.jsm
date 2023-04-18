@@ -201,7 +201,7 @@ class QSTestUtils {
 
 
   setConfig(config) {
-    UrlbarQuickSuggest._config = config;
+    UrlbarQuickSuggest._setConfig(config);
   }
 
   

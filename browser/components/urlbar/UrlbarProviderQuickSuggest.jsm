@@ -78,9 +78,14 @@ const QUICK_SUGGEST_SOURCE = {
 class ProviderQuickSuggest extends UrlbarProvider {
   constructor(...args) {
     super(...args);
-    this._updateExperimentState();
+
+    UrlbarQuickSuggest.init();
+    UrlbarQuickSuggest.on("config-set", () => this._validateImpressionStats());
+
+    this._updateFeatureState();
+    NimbusFeatures.urlbar.onUpdate(() => this._updateFeatureState());
+
     UrlbarPrefs.addObserver(this);
-    NimbusFeatures.urlbar.onUpdate(() => this._updateExperimentState());
   }
 
   
@@ -445,6 +450,9 @@ class ProviderQuickSuggest extends UrlbarProvider {
     }
 
     
+    this._updateImpressionStats(result.payload.isSponsored);
+
+    
     
     let telemetryResultIndex = resultIndex + 1;
 
@@ -546,10 +554,16 @@ class ProviderQuickSuggest extends UrlbarProvider {
   onPrefChanged(pref) {
     switch (pref) {
       case "quickSuggest.blockedDigests":
-        this.logger.debug(
-          "browser.urlbar.quickSuggest.blockedDigests changed, loading digests"
-        );
+        this.logger.info("browser.urlbar.quickSuggest.blockedDigests changed");
         this._loadBlockedDigests();
+        break;
+      case "quicksuggest.impressionCaps.stats":
+        if (!this._updatingImpressionStats) {
+          this.logger.info(
+            "browser.urlbar.quicksuggest.impressionCaps.stats changed"
+          );
+          this._loadImpressionStats();
+        }
         break;
       case "quicksuggest.dataCollection.enabled":
         if (!UrlbarPrefs.updatingFirefoxSuggestScenario) {
@@ -844,15 +858,50 @@ class ProviderQuickSuggest extends UrlbarProvider {
 
 
 
-
   async _canAddSuggestion(suggestion) {
-    return (
-      ((suggestion.is_sponsored &&
-        UrlbarPrefs.get("suggest.quicksuggest.sponsored")) ||
-        (!suggestion.is_sponsored &&
-          UrlbarPrefs.get("suggest.quicksuggest.nonsponsored"))) &&
-      !(await this.isSuggestionBlocked(suggestion.url))
-    );
+    this.logger.info("Checking if suggestion can be added");
+    this.logger.debug(JSON.stringify({ suggestion }));
+
+    
+    if (
+      (suggestion.is_sponsored &&
+        !UrlbarPrefs.get("suggest.quicksuggest.sponsored")) ||
+      (!suggestion.is_sponsored &&
+        !UrlbarPrefs.get("suggest.quicksuggest.nonsponsored"))
+    ) {
+      this.logger.info("Suggestions disabled, not adding suggestion");
+      return false;
+    }
+
+    
+    if (
+      (suggestion.is_sponsored &&
+        UrlbarPrefs.get("quickSuggestImpressionCapsSponsoredEnabled")) ||
+      (!suggestion.is_sponsored &&
+        UrlbarPrefs.get("quickSuggestImpressionCapsNonSponsoredEnabled"))
+    ) {
+      this._resetElapsedImpressionCounters();
+
+      let type = suggestion.is_sponsored ? "sponsored" : "nonsponsored";
+      let stats = this._impressionStats?.[type];
+      if (stats) {
+        let hitStats = stats.filter(s => s.maxCount <= s.count);
+        if (hitStats.length) {
+          this.logger.info("Impression cap(s) hit, not adding suggestion");
+          this.logger.debug(JSON.stringify({ hitStats }));
+          return false;
+        }
+      }
+    }
+
+    
+    if (await this.isSuggestionBlocked(suggestion.url)) {
+      this.logger.info("Suggestion blocked, not adding suggestion");
+      return false;
+    }
+
+    this.logger.info("Suggestion can be added");
+    return true;
   }
 
   
@@ -900,6 +949,236 @@ class ProviderQuickSuggest extends UrlbarProvider {
   
 
 
+
+
+
+
+
+  _updateImpressionStats(isSponsored) {
+    this.logger.info("Starting impression stats update");
+    this.logger.debug(
+      JSON.stringify({
+        isSponsored,
+        currentStats: this._impressionStats,
+        impression_caps: UrlbarQuickSuggest.config.impression_caps,
+      })
+    );
+
+    
+    if (
+      (isSponsored &&
+        !UrlbarPrefs.get("quickSuggestImpressionCapsSponsoredEnabled")) ||
+      (!isSponsored &&
+        !UrlbarPrefs.get("quickSuggestImpressionCapsNonSponsoredEnabled"))
+    ) {
+      this.logger.info("Impression caps disabled, skipping update");
+      return;
+    }
+
+    
+    
+    
+    let type = isSponsored ? "sponsored" : "nonsponsored";
+    let stats = this._impressionStats?.[type];
+    if (!stats) {
+      this.logger.info("Impression caps undefined, skipping update");
+      return;
+    }
+
+    
+    for (let stat of stats) {
+      stat.count++;
+
+      
+    }
+
+    
+    this._updatingImpressionStats = true;
+    try {
+      UrlbarPrefs.set(
+        "quicksuggest.impressionCaps.stats",
+        JSON.stringify(this._impressionStats)
+      );
+    } finally {
+      this._updatingImpressionStats = false;
+    }
+
+    this.logger.info("Finished impression stats update");
+    this.logger.debug(JSON.stringify({ newStats: this._impressionStats }));
+  }
+
+  
+
+
+  _loadImpressionStats() {
+    let json = UrlbarPrefs.get("quicksuggest.impressionCaps.stats");
+    if (!json) {
+      this._impressionStats = null;
+    } else {
+      try {
+        this._impressionStats = JSON.parse(
+          json,
+          
+          
+          (key, value) =>
+            key == "intervalSeconds" && value === null ? Infinity : value
+        );
+      } catch (error) {}
+    }
+    this._validateImpressionStats();
+  }
+
+  
+
+
+
+
+
+
+
+
+  _validateImpressionStats() {
+    let { impression_caps } = UrlbarQuickSuggest.config;
+
+    this.logger.info("Validating impression stats");
+    this.logger.debug(
+      JSON.stringify({
+        impression_caps,
+        currentStats: this._impressionStats,
+      })
+    );
+
+    if (!this._impressionStats || typeof this._impressionStats != "object") {
+      this._impressionStats = {};
+    }
+
+    for (let [type, cap] of Object.entries(impression_caps || {})) {
+      
+      let maxCapCounts = (cap.custom || []).reduce(
+        (map, { interval_s, max_count }) => {
+          map.set(interval_s, max_count);
+          return map;
+        },
+        new Map()
+      );
+      if (typeof cap.lifetime == "number") {
+        maxCapCounts.set(Infinity, cap.lifetime);
+      }
+
+      let stats = this._impressionStats[type];
+      if (!Array.isArray(stats)) {
+        stats = [];
+        this._impressionStats[type] = stats;
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      let orphanStats = [];
+      let maxCountInStats = 0;
+      for (let i = 0; i < stats.length; ) {
+        let stat = stats[i];
+        if (
+          typeof stat.intervalSeconds != "number" ||
+          typeof stat.startDateMs != "number" ||
+          typeof stat.count != "number" ||
+          typeof stat.maxCount != "number"
+        ) {
+          stats.splice(i, 1);
+        } else {
+          maxCountInStats = Math.max(maxCountInStats, stat.count);
+          let maxCount = maxCapCounts.get(stat.intervalSeconds);
+          if (maxCount === undefined) {
+            stats.splice(i, 1);
+            orphanStats.push(stat);
+          } else {
+            stat.maxCount = maxCount;
+            i++;
+          }
+        }
+      }
+
+      
+      for (let [intervalSeconds, maxCount] of maxCapCounts.entries()) {
+        if (!stats.some(s => s.intervalSeconds == intervalSeconds)) {
+          stats.push({
+            maxCount,
+            intervalSeconds,
+            startDateMs: Date.now(),
+            count: 0,
+          });
+        }
+      }
+
+      
+      
+      
+      
+      for (let orphan of orphanStats) {
+        for (let stat of stats) {
+          if (orphan.intervalSeconds <= stat.intervalSeconds) {
+            stat.count = Math.max(stat.count, orphan.count);
+            stat.startDateMs = Math.min(stat.startDateMs, orphan.startDateMs);
+          }
+        }
+      }
+
+      
+      
+      
+      let lifetimeStat = stats.find(s => s.intervalSeconds == Infinity);
+      if (lifetimeStat) {
+        lifetimeStat.count = maxCountInStats;
+      }
+
+      
+      
+      stats.sort((a, b) => a.intervalSeconds - b.intervalSeconds);
+    }
+
+    this.logger.debug(JSON.stringify({ newStats: this._impressionStats }));
+  }
+
+  
+
+
+  _resetElapsedImpressionCounters() {
+    this.logger.info("Resetting elapsed impression counters");
+    this.logger.debug(
+      JSON.stringify({
+        currentStats: this._impressionStats,
+        impression_caps: UrlbarQuickSuggest.config.impression_caps,
+      })
+    );
+
+    let now = Date.now();
+    for (let stats of Object.values(this._impressionStats)) {
+      for (let stat of stats) {
+        let elapsedMs = now - stat.startDateMs;
+        let intervalMs = 1000 * stat.intervalSeconds;
+        let elapsedIntervalCount = Math.floor(elapsedMs / intervalMs);
+        if (elapsedIntervalCount) {
+          let remainderMs = elapsedMs - elapsedIntervalCount * intervalMs;
+          stat.startDateMs = now - remainderMs;
+          stat.count = 0;
+
+          
+        }
+      }
+    }
+
+    this.logger.debug(JSON.stringify({ newStats: this._impressionStats }));
+  }
+
+  
+
+
   async _loadBlockedDigests() {
     this.logger.debug(`Queueing _loadBlockedDigests`);
     await this._blockTaskQueue.queue(() => {
@@ -941,25 +1220,81 @@ class ProviderQuickSuggest extends UrlbarProvider {
   
 
 
+  _updateFeatureState() {
+    let enabled = UrlbarPrefs.get("quickSuggestEnabled");
+    if (enabled == this._quickSuggestEnabled) {
+      
+      
+      
+      
+      
+      return;
+    }
 
+    this._quickSuggestEnabled = enabled;
+    this.logger.info("Updating feature state, feature enabled: " + enabled);
 
-  _updateExperimentState() {
     Services.telemetry.setEventRecordingEnabled(
       TELEMETRY_EVENT_CATEGORY,
-      UrlbarPrefs.get("quickSuggestEnabled")
+      enabled
     );
-
-    
-    
-    
-    if (UrlbarPrefs.get("quickSuggestEnabled")) {
-      UrlbarQuickSuggest; 
+    if (enabled) {
+      this._loadImpressionStats();
       this._loadBlockedDigests();
     }
   }
 
   
+  
+  
+  
+  _quickSuggestEnabled = false;
+
+  
   _addedResultInLastQuery = false;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  _impressionStats = null;
+
+  
+  _updatingImpressionStats = false;
 
   
   
