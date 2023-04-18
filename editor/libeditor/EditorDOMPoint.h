@@ -297,6 +297,18 @@ class EditorDOMPointBase final {
 
 
 
+  nsIContent* GetCurrentChildAtOffset() const {
+    MOZ_ASSERT(mOffset.isSome());
+    if (mOffset.isNothing()) {
+      return GetChild();
+    }
+    return mParent ? mParent->GetChildAt_Deprecated(*mOffset) : nullptr;
+  }
+
+  
+
+
+
   nsIContent* GetChildOrContainerIfDataNode() const {
     if (IsInDataNode()) {
       return ContainerAsContent();
