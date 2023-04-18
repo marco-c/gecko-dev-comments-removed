@@ -4,9 +4,10 @@
 import sys
 import os
 from os import path
+import stat
 
 import re
-from shutil import copy, copytree, move
+from shutil import copy, copytree, move, rmtree
 from subprocess import Popen
 from optparse import OptionParser
 import urllib.request
@@ -79,42 +80,23 @@ def which(program):
     return None
 
 
-def rmdirRecursive(directory):
-    """This is a replacement for shutil.rmtree that works better under
-    windows. Thanks to Bear at the OSAF for the code.
-    (Borrowed from buildbot.slave.commands)"""
-    if not path.exists(directory):
-        
-        if path.islink(directory):
-            os.remove(directory)
-        return
+def rmdirRecursive(directory: str):
+    """
+    This is similar to a call of shutil.rmtree(), except that it
+    should work better on Windows since it will more aggressively
+    attempt to remove files marked as "read-only".
+    """
 
-    if path.islink(directory):
-        os.remove(directory)
-        return
+    def rmdir_including_read_only(func, path: str, exc_info):
+        """
+        Source: https://stackoverflow.com/a/4829285
+        path contains the path of the file that couldn't be removed.
+        Let's just assume that it's read-only and unlink it.
+        """
+        os.chmod(path, mode=stat.S_IWRITE)
+        os.remove(path)
 
-    
-    os.chmod(directory, 0o700)
-
-    for name in os.listdir(directory):
-        full_name = path.join(directory, name)
-        
-        
-        if os.name == "nt":
-            if not os.access(full_name, os.W_OK):
-                
-                
-                
-                os.chmod(full_name, 0o600)
-
-        if path.isdir(full_name):
-            rmdirRecursive(full_name)
-        else:
-            
-            if not path.islink(full_name):
-                os.chmod(full_name, 0o700)
-            os.remove(full_name)
-    os.rmdir(directory)
+    rmtree(directory, onerror=rmdir_including_read_only)
 
 
 def printSeparator():
