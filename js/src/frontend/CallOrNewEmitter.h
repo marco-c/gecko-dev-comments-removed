@@ -224,6 +224,14 @@ class MOZ_STACK_CLASS CallOrNewEmitter {
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
   enum class State {
     
     Start,
@@ -320,6 +328,7 @@ class MOZ_STACK_CLASS CallOrNewEmitter {
   void reset();
 
   [[nodiscard]] bool prepareForNonSpreadArguments();
+  [[nodiscard]] bool prepareForSpreadArguments();
 
   
   [[nodiscard]] bool wantSpreadOperand();

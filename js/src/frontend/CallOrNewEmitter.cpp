@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "frontend/CallOrNewEmitter.h"
 
@@ -33,7 +33,7 @@ bool CallOrNewEmitter::emitNameCallee(TaggedParserAtomIndex name) {
       bce_, name,
       isCall() ? NameOpEmitter::Kind::Call : NameOpEmitter::Kind::Get);
   if (!noe.emitGet()) {
-    //              [stack] CALLEE THIS?
+    
     return false;
   }
 
@@ -89,15 +89,15 @@ bool CallOrNewEmitter::emitSuperCallee() {
   MOZ_ASSERT(state_ == State::Start);
 
   if (!bce_->emitThisEnvironmentCallee()) {
-    //              [stack] CALLEE
+    
     return false;
   }
   if (!bce_->emit1(JSOp::SuperFun)) {
-    //              [stack] CALLEE
+    
     return false;
   }
   if (!bce_->emit1(JSOp::IsConstructing)) {
-    //              [stack] CALLEE THIS
+    
     return false;
   }
 
@@ -156,12 +156,12 @@ bool CallOrNewEmitter::emitThis() {
   if (needsThis) {
     if (isNew() || isSuperCall()) {
       if (!bce_->emit1(JSOp::IsConstructing)) {
-        //          [stack] CALLEE THIS
+        
         return false;
       }
     } else {
       if (!bce_->emit1(JSOp::Undefined)) {
-        //          [stack] CALLEE THIS
+        
         return false;
       }
     }
@@ -171,8 +171,8 @@ bool CallOrNewEmitter::emitThis() {
   return true;
 }
 
-// Used by BytecodeEmitter::emitPipeline to reuse CallOrNewEmitter instance
-// across multiple chained calls.
+
+
 void CallOrNewEmitter::reset() {
   MOZ_ASSERT(state_ == State::End);
   state_ = State::Start;
@@ -186,7 +186,7 @@ bool CallOrNewEmitter::prepareForNonSpreadArguments() {
   return true;
 }
 
-// See the usage in the comment at the top of the class.
+
 bool CallOrNewEmitter::wantSpreadOperand() {
   MOZ_ASSERT(state_ == State::This);
   MOZ_ASSERT(isSpread());
@@ -195,47 +195,61 @@ bool CallOrNewEmitter::wantSpreadOperand() {
   return isSingleSpread() || isPassthroughRest();
 }
 
-bool CallOrNewEmitter::emitSpreadArgumentsTest() {
-  // Caller should check wantSpreadOperand before this.
+bool CallOrNewEmitter::prepareForSpreadArguments() {
   MOZ_ASSERT(state_ == State::WantSpreadOperand);
   MOZ_ASSERT(isSpread());
+  MOZ_ASSERT(!isSingleSpread() && !isPassthroughRest());
+
+  state_ = State::Arguments;
+  return true;
+}
+
+bool CallOrNewEmitter::emitSpreadArgumentsTest() {
+  
+  MOZ_ASSERT(state_ == State::WantSpreadOperand);
+  MOZ_ASSERT(isSpread());
+  MOZ_ASSERT(isSingleSpread() || isPassthroughRest());
 
   if (isSingleSpread()) {
-    // Emit a preparation code to optimize the spread call:
-    //
-    //   g(...args);
-    //
-    // If the spread operand is a packed array, skip the spread
-    // operation and pass it directly to spread call operation.
-    // See the comment in OptimizeSpreadCall in Interpreter.cpp
-    // for the optimizable conditions.
-    //              [stack] CALLEE THIS ARG0
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     ifNotOptimizable_.emplace(bce_);
+    if (!bce_->emit1(JSOp::Dup)) {
+      
+      return false;
+    }
     if (!bce_->emit1(JSOp::OptimizeSpreadCall)) {
-      //            [stack] CALLEE THIS ARRAY_OR_UNDEF
+      
       return false;
     }
 
     if (!bce_->emit1(JSOp::Dup)) {
-      //            [stack] CALLEE THIS ARRAY_OR_UNDEF ARRAY_OR_UNDEF
+      
       return false;
     }
     if (!bce_->emit1(JSOp::Undefined)) {
-      //            [stack] CALLEE THIS ARRAY_OR_UNDEF ARRAY_OR_UNDEF UNDEF
+      
       return false;
     }
     if (!bce_->emit1(JSOp::StrictEq)) {
-      //            [stack] CALLEE THIS ARRAY_OR_UNDEF EQ
+      
       return false;
     }
 
-    if (!ifNotOptimizable_->emitThen()) {
-      //            [stack] CALLEE THIS ARRAY_OR_UNDEF
+    if (!ifNotOptimizable_->emitThenElse()) {
+      
       return false;
     }
     if (!bce_->emit1(JSOp::Pop)) {
-      //            [stack] CALLEE THIS
+      
       return false;
     }
   }
@@ -256,8 +270,21 @@ bool CallOrNewEmitter::emitEnd(uint32_t argc, uint32_t beginPos) {
   MOZ_ASSERT(state_ == State::Arguments);
 
   if (isSingleSpread()) {
+    if (!ifNotOptimizable_->emitElse()) {
+      
+      return false;
+    }
+    if (!bce_->emit1(JSOp::Swap)) {
+      
+      return false;
+    }
+    if (!bce_->emit1(JSOp::Pop)) {
+      
+      return false;
+    }
+
     if (!ifNotOptimizable_->emitEnd()) {
-      //            [stack] CALLEE THIS ARR
+      
       return false;
     }
 
@@ -266,14 +293,14 @@ bool CallOrNewEmitter::emitEnd(uint32_t argc, uint32_t beginPos) {
   if (isNew() || isSuperCall()) {
     if (isSuperCall()) {
       if (!bce_->emit1(JSOp::NewTarget)) {
-        //          [stack] CALLEE THIS ARG.. NEW.TARGET
+        
         return false;
       }
     } else {
-      // Repush the callee as new.target
+      
       uint32_t effectiveArgc = isSpread() ? 1 : argc;
       if (!bce_->emitDupAt(effectiveArgc + 1)) {
-        //          [stack] CALLEE THIS ARR CALLEE
+        
         return false;
       }
     }
@@ -286,12 +313,12 @@ bool CallOrNewEmitter::emitEnd(uint32_t argc, uint32_t beginPos) {
   }
   if (!isSpread()) {
     if (!bce_->emitCall(op_, argc)) {
-      //            [stack] RVAL
+      
       return false;
     }
   } else {
     if (!bce_->emit1(op_)) {
-      //            [stack] RVAL
+      
       return false;
     }
   }

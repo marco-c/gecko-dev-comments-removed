@@ -8129,23 +8129,32 @@ bool BytecodeEmitter::emitArguments(ListNode* argsList, bool isCall,
         return false;
       }
     }
-  } else {
-    if (cone.wantSpreadOperand()) {
-      UnaryNode* spreadNode = &argsList->head()->as<UnaryNode>();
-      if (!emitTree(spreadNode->kid())) {
-        
-        return false;
-      }
+  } else if (cone.wantSpreadOperand()) {
+    auto* spreadNode = &argsList->head()->as<UnaryNode>();
+    if (!emitTree(spreadNode->kid())) {
+      
+      return false;
     }
+
     if (!cone.emitSpreadArgumentsTest()) {
       
       return false;
     }
+
     if (cone.wantSpreadIteration()) {
-      if (!emitArray(argsList->head(), argc)) {
+      if (!emitSpreadIntoArray(spreadNode)) {
         
         return false;
       }
+    }
+  } else {
+    if (!cone.prepareForSpreadArguments()) {
+      
+      return false;
+    }
+    if (!emitArray(argsList->head(), argc)) {
+      
+      return false;
     }
   }
 
@@ -10438,6 +10447,42 @@ bool BytecodeEmitter::emitArray(ParseNode* arrayHead, uint32_t count) {
       
       return false;
     }
+  }
+  return true;
+}
+
+bool BytecodeEmitter::emitSpreadIntoArray(UnaryNode* elem) {
+  MOZ_ASSERT(elem->isKind(ParseNodeKind::Spread));
+
+  if (!updateSourceCoordNotes(elem->pn_pos.begin)) {
+    
+    return false;
+  }
+
+  if (!emitIterator()) {
+    
+    return false;
+  }
+
+  if (!emitUint32Operand(JSOp::NewArray, 0)) {
+    
+    return false;
+  }
+
+  if (!emitNumberOp(0)) {
+    
+    return false;
+  }
+
+  bool allowSelfHostedIterFlag = allowSelfHostedIter(elem->kid());
+  if (!emitSpread(allowSelfHostedIterFlag)) {
+    
+    return false;
+  }
+
+  if (!emit1(JSOp::Pop)) {
+    
+    return false;
   }
   return true;
 }
