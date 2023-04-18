@@ -133,6 +133,9 @@ function TextPropertyEditor(ruleEditor, property) {
   this.getGridlineNames = this.getGridlineNames.bind(this);
   this.update = this.update.bind(this);
   this.updatePropertyState = this.updatePropertyState.bind(this);
+  this._onDraggablePreferenceChanged = this._onDraggablePreferenceChanged.bind(
+    this
+  );
   this._onEnableChanged = this._onEnableChanged.bind(this);
   this._onEnableClicked = this._onEnableClicked.bind(this);
   this._onExpandClicked = this._onExpandClicked.bind(this);
@@ -374,6 +377,10 @@ TextPropertyEditor.prototype = {
         }
       });
 
+      this.ruleView.on(
+        "draggable-preference-updated",
+        this._onDraggablePreferenceChanged
+      );
       if (this._isDraggableProperty(this.prop)) {
         this._addDraggingCapability();
       }
@@ -985,6 +992,18 @@ TextPropertyEditor.prototype = {
   
 
 
+
+  _onDraggablePreferenceChanged: function() {
+    if (this._isDraggableProperty(this.prop)) {
+      this._addDraggingCapability();
+    } else {
+      this._removeDraggingCapacity();
+    }
+  },
+
+  
+
+
   _onEnableClicked: function(event) {
     event.stopPropagation();
   },
@@ -1127,6 +1146,11 @@ TextPropertyEditor.prototype = {
         span.off("unit-change", this._onSwatchCommit);
       }
     }
+
+    this.ruleView.off(
+      "draggable-preference-updated",
+      this._onDraggablePreferenceChanged
+    );
 
     this.element.remove();
     this.ruleEditor.rule.editClosestTextProperty(this.prop, direction);
@@ -1335,6 +1359,15 @@ TextPropertyEditor.prototype = {
 
 
   _isDraggableProperty: function(textProperty) {
+    
+    if (
+      !Services.prefs.getBoolPref(
+        "devtools.inspector.draggable_properties",
+        false
+      )
+    ) {
+      return false;
+    }
     
     
     

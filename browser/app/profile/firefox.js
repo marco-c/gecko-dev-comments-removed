@@ -2320,6 +2320,8 @@ pref("devtools.inspector.compatibility.enabled", true);
 
 pref("devtools.overflow.debugging.enabled", true);
 
+pref("devtools.inspector.draggable_properties", true);
+
 
 pref("devtools.gridinspector.gridOutlineMaxColumns", 50);
 pref("devtools.gridinspector.gridOutlineMaxRows", 50);
