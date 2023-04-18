@@ -3950,6 +3950,9 @@ pref("network.trr.custom_uri", "");
 
 pref("network.trr.confirmationNS", "example.com");
 
+
+pref("network.trr.blacklist-duration", 60);
+
 pref("network.trr.excluded-domains", "");
 pref("network.trr.builtin-excluded-domains", "localhost,local");
 
