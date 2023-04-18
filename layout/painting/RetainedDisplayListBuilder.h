@@ -9,7 +9,7 @@
 
 #include "nsDisplayList.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/TypedEnumBits.h"
+#include "mozilla/EnumSet.h"
 
 class nsWindowSizes;
 
@@ -23,12 +23,9 @@ namespace mozilla {
 struct RetainedDisplayListData {
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(DisplayListData, RetainedDisplayListData)
 
-  enum class FrameFlags : uint8_t {
-    None = 0,
-    Modified = 1 << 0,
-    HasProps = 1 << 1,
-    HadWillChange = 1 << 2
-  };
+  enum class FrameFlag : uint8_t { Modified, HasProps, HadWillChange };
+
+  using FrameFlags = mozilla::EnumSet<FrameFlag, uint8_t>;
 
   RetainedDisplayListData() : mModifiedFramesCount(0) {}
 
@@ -48,8 +45,6 @@ struct RetainedDisplayListData {
   
 
 
-
-
   FrameFlags& Flags(nsIFrame* aFrame) { return mFrames.LookupOrInsert(aFrame); }
 
   
@@ -57,6 +52,18 @@ struct RetainedDisplayListData {
 
 
   FrameFlags GetFlags(nsIFrame* aFrame) const { return mFrames.Get(aFrame); }
+
+  bool IsModified(nsIFrame* aFrame) const {
+    return GetFlags(aFrame).contains(FrameFlag::Modified);
+  }
+
+  bool HasProps(nsIFrame* aFrame) const {
+    return GetFlags(aFrame).contains(FrameFlag::HasProps);
+  }
+
+  bool HadWillChange(nsIFrame* aFrame) const {
+    return GetFlags(aFrame).contains(FrameFlag::HadWillChange);
+  }
 
   
 
@@ -77,8 +84,6 @@ struct RetainedDisplayListData {
   nsTHashMap<nsPtrHashKey<nsIFrame>, FrameFlags> mFrames;
   uint32_t mModifiedFramesCount;
 };
-
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(RetainedDisplayListData::FrameFlags)
 
 
 

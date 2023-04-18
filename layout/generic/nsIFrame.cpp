@@ -927,9 +927,11 @@ void nsIFrame::DestroyFrom(nsIFrame* aDestructRoot,
       const RetainedDisplayListData* data =
           GetRetainedDisplayListData(rootFrame);
 
-      const bool inModifiedList =
-          data && (data->GetFlags(this) &
-                   RetainedDisplayListData::FrameFlags::Modified);
+      const bool inModifiedList = data && data->IsModified(this);
+
+      if (inModifiedList) {
+        DL_LOG(LogLevel::Warning, "Frame %p found in modified list", this);
+      }
 
       MOZ_ASSERT(!inModifiedList,
                  "A dtor added this frame to modified frames list!");
@@ -1075,22 +1077,24 @@ void nsIFrame::RemoveDisplayItemDataForDeletion() {
     return;
   }
 
-  const bool updateData = IsFrameModified() || HasOverrideDirtyRegion() ||
-                          MayHaveWillChangeBudget();
-
-  if (!updateData) {
-    
-    return;
-  }
-
   nsIFrame* rootFrame = PresShell()->GetRootFrame();
   MOZ_ASSERT(rootFrame);
 
   RetainedDisplayListData* data = GetOrSetRetainedDisplayListData(rootFrame);
 
+  const bool updateData = IsFrameModified() || HasOverrideDirtyRegion() ||
+                          MayHaveWillChangeBudget();
+
+  if (!updateData) {
+    
+    MOZ_RELEASE_ASSERT(!data->IsModified(this),
+                       "Deleted frame is in modified frame list");
+    return;
+  }
+
   if (MayHaveWillChangeBudget()) {
     
-    data->Flags(this) = RetainedDisplayListData::FrameFlags::HadWillChange;
+    data->Flags(this) = RetainedDisplayListData::FrameFlag::HadWillChange;
     return;
   }
 
