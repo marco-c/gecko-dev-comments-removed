@@ -502,18 +502,7 @@ mozilla::BinPathType BaseProcessLauncher::GetPathToBinary(
     if (!::GetModuleFileNameW(nullptr, exePathBuf, MAXPATHLEN)) {
       MOZ_CRASH("GetModuleFileNameW failed (FIXME)");
     }
-#  if defined(MOZ_SANDBOX)
-    
-    
-    
-    std::wstring exePathStr = exePathBuf;
-    if (widget::WinUtils::ResolveJunctionPointsAndSymLinks(exePathStr)) {
-      exePath = FilePath::FromWStringHack(exePathStr);
-    } else
-#  endif
-    {
-      exePath = FilePath::FromWStringHack(exePathBuf);
-    }
+    exePath = FilePath::FromWStringHack(exePathBuf);
 #elif defined(OS_POSIX)
     exePath = FilePath(CommandLine::ForCurrentProcess()->argv()[0]);
 #else
@@ -616,14 +605,8 @@ void GeckoChildProcessHost::PrepareLaunch() {
         std::wstring resolvedPath(trimmedPath.Data());
         
         
-        bool addWildcard = (resolvedPath.back() == L'\\');
-        if (!widget::WinUtils::ResolveJunctionPointsAndSymLinks(resolvedPath)) {
-          NS_ERROR("Failed to resolve test read policy rule.");
-          continue;
-        }
-
-        if (addWildcard) {
-          resolvedPath.append(L"\\*");
+        if (resolvedPath.back() == L'\\') {
+          resolvedPath.append(L"*");
         }
         mAllowedFilesRead.push_back(resolvedPath);
       }
@@ -863,20 +846,7 @@ void BaseProcessLauncher::GetChildLogName(const char* origLogName,
   
   char absPath[MAX_PATH + 2];
   if (_fullpath(absPath, origLogName, sizeof(absPath))) {
-#  ifdef MOZ_SANDBOX
-    
-    
-    std::wstring resolvedPath(NS_ConvertUTF8toUTF16(absPath).get());
-    if (widget::WinUtils::ResolveJunctionPointsAndSymLinks(resolvedPath)) {
-      AppendUTF16toUTF8(
-          Span(reinterpret_cast<const char16_t*>(resolvedPath.data()),
-               resolvedPath.size()),
-          buffer);
-    } else
-#  endif
-    {
-      buffer.Append(absPath);
-    }
+    buffer.Append(absPath);
   } else
 #endif
   {

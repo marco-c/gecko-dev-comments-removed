@@ -157,21 +157,6 @@ nsresult nsXREDirProvider::Initialize(
   mAppProvider = aAppProvider;
   mXULAppDir = aXULAppDir;
   mGREDir = aGREDir;
-#if defined(XP_WIN) && defined(MOZ_SANDBOX)
-  
-  
-  
-  if (!mozilla::widget::WinUtils::ResolveJunctionPointsAndSymLinks(mGREDir)) {
-    NS_WARNING("Failed to resolve GRE Dir.");
-  }
-  
-  
-  
-  if (!mozilla::widget::WinUtils::ResolveJunctionPointsAndSymLinks(
-          mXULAppDir)) {
-    NS_WARNING("Failed to resolve XUL App Dir.");
-  }
-#endif
   nsCOMPtr<nsIFile> binaryPath;
   nsresult rv = XRE_GetBinaryPath(getter_AddRefs(binaryPath));
   if (NS_FAILED(rv)) return rv;
@@ -231,15 +216,6 @@ nsresult nsXREDirProvider::SetProfile(nsIFile* aDir, nsIFile* aLocalDir) {
 
   mProfileDir = aDir;
   mProfileLocalDir = aLocalDir;
-#if defined(XP_WIN) && defined(MOZ_SANDBOX)
-  
-  
-  
-  if (!mozilla::widget::WinUtils::ResolveJunctionPointsAndSymLinks(
-          mProfileDir)) {
-    NS_WARNING("Failed to resolve Profile Dir.");
-  }
-#endif
   return NS_OK;
 }
 
@@ -651,16 +627,6 @@ nsresult nsXREDirProvider::LoadContentProcessTempDir() {
       return rv;
     }
   }
-
-#  if defined(XP_WIN)
-  
-  
-  
-  if (!mozilla::widget::WinUtils::ResolveJunctionPointsAndSymLinks(
-          mContentTempDir)) {
-    NS_WARNING("Failed to resolve Content Temp Dir.");
-  }
-#  endif
 
   return NS_OK;
 }
@@ -1463,14 +1429,6 @@ nsresult nsXREDirProvider::GetSysUserExtensionsDirectory(nsIFile** aFile) {
 
   rv = EnsureDirectoryExists(localDir);
   NS_ENSURE_SUCCESS(rv, rv);
-
-#if defined(XP_WIN) && defined(MOZ_SANDBOX)
-  
-  
-  if (!mozilla::widget::WinUtils::ResolveJunctionPointsAndSymLinks(localDir)) {
-    NS_WARNING("Failed to resolve sys user extensions directory.");
-  }
-#endif
 
   localDir.forget(aFile);
   return NS_OK;
