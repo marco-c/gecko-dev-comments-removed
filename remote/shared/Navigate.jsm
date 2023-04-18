@@ -235,6 +235,20 @@ class ProgressListener {
     });
   }
 
+  onLocationChange(progress, request, location, flag) {
+    
+    if (flag & Ci.nsIWebProgressListener.LOCATION_CHANGE_HASHCHANGE) {
+      this.#targetURI = location;
+
+      const messagePrefix = `[${this.browsingContext.id}] ${this.constructor.name}`;
+      logger.trace(
+        truncate`${messagePrefix} location=hashChange: ${this.targetURI?.spec}`
+      );
+
+      this.stop();
+    }
+  }
+
   
 
 
@@ -262,7 +276,7 @@ class ProgressListener {
     
     this.#webProgress.addProgressListener(
       this,
-      Ci.nsIWebProgress.NOTIFY_STATE_ALL
+      Ci.nsIWebProgress.NOTIFY_LOCATION | Ci.nsIWebProgress.NOTIFY_STATE_ALL
     );
 
     webProgressListeners.add(this);
@@ -293,7 +307,7 @@ class ProgressListener {
 
     this.#webProgress.removeProgressListener(
       this,
-      Ci.nsIWebProgress.NOTIFY_STATE_ALL
+      Ci.nsIWebProgress.NOTIFY_LOCATION | Ci.nsIWebProgress.NOTIFY_STATE_ALL
     );
     webProgressListeners.delete(this);
 
