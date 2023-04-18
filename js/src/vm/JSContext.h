@@ -186,9 +186,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   
   uint32_t allocsThisZoneSinceMinorGC_;
 
-  
-  js::ContextData<js::gc::FreeLists*> atomsZoneFreeLists_;
-
   js::ContextData<JSFreeOp> defaultFreeOp_;
 
   
@@ -256,11 +253,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   js::gc::FreeLists& freeLists() {
     MOZ_ASSERT(freeLists_);
     return *freeLists_;
-  }
-
-  js::gc::FreeLists& atomsZoneFreeLists() {
-    MOZ_ASSERT(atomsZoneFreeLists_);
-    return *atomsZoneFreeLists_;
   }
 
   template <typename T>
