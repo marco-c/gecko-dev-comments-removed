@@ -49,14 +49,33 @@ function getPreloadsFromSearchParams() {
 
 
 
-async function fetchScript(url) {
+
+async function fetchResource(element, url) {
     return new Promise((resolve, reject) => {
-        const el = document.createElement("script");
+        const el = document.createElement(element);
         el.src = url;
         el.onload = resolve;
-        el.onerror = _ => reject(new Error("Failed to fetch script"));
+        el.onerror = _ => reject(new Error("Failed to fetch resource: " + url));
         document.body.appendChild(el);
     });
+}
+
+
+
+
+
+
+async function fetchScript(url) {
+    return fetchResource("script", url);
+}
+
+
+
+
+
+
+ async function fetchImage(url) {
+    return fetchResource("img", url);
 }
 
 
