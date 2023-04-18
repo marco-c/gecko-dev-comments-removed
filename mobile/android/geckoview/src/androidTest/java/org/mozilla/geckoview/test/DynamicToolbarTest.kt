@@ -412,10 +412,10 @@ class DynamicToolbarTest : BaseSessionTest() {
 
         var dynamicViewportHeight = getComputedViewportHeight("100dvh");
         assertThat("dvh value at the initial state", dynamicViewportHeight,
-                   closeTo(SCREEN_HEIGHT / scale / pixelRatio, 0.1));
+                   closeTo((SCREEN_HEIGHT - dynamicToolbarMaxHeight) / scale / pixelRatio, 0.1));
 
         
-        sessionRule.display?.run { setVerticalClipping(-dynamicToolbarMaxHeight / 2) }
+        sessionRule.display?.run { setVerticalClipping(-dynamicToolbarMaxHeight / 4) }
 
         smallViewportHeight = getComputedViewportHeight("100svh");
         assertThat("svh value during toolbar transition", smallViewportHeight,
@@ -427,7 +427,7 @@ class DynamicToolbarTest : BaseSessionTest() {
 
         dynamicViewportHeight = getComputedViewportHeight("100dvh");
         assertThat("dvh value during toolbar transition", dynamicViewportHeight,
-                   closeTo((SCREEN_HEIGHT - dynamicToolbarMaxHeight / 2) / scale / pixelRatio, 0.1));
+                   closeTo((SCREEN_HEIGHT - dynamicToolbarMaxHeight + dynamicToolbarMaxHeight / 4) / scale / pixelRatio, 0.1));
     }
 
     
