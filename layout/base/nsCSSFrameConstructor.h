@@ -59,11 +59,11 @@ class FlattenedChildIterator;
 
 class nsCSSFrameConstructor final : public nsFrameManager {
  public:
-  typedef mozilla::ComputedStyle ComputedStyle;
-  typedef mozilla::PseudoStyleType PseudoStyleType;
-  typedef mozilla::PresShell PresShell;
-  typedef mozilla::dom::Element Element;
-  typedef mozilla::dom::Text Text;
+  using ComputedStyle = mozilla::ComputedStyle;
+  using PseudoStyleType = mozilla::PseudoStyleType;
+  using PresShell = mozilla::PresShell;
+  using Element = mozilla::dom::Element;
+  using Text = mozilla::dom::Text;
 
   
   friend class mozilla::RestyleManager;
@@ -585,10 +585,10 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
 
 
-  typedef nsIFrame* (*FrameCreationFunc)(PresShell*, ComputedStyle*);
-  typedef nsContainerFrame* (*ContainerFrameCreationFunc)(PresShell*,
-                                                          ComputedStyle*);
-  typedef nsBlockFrame* (*BlockFrameCreationFunc)(PresShell*, ComputedStyle*);
+  using FrameCreationFunc = nsIFrame* (*)(PresShell*, ComputedStyle*);
+  using ContainerFrameCreationFunc = nsContainerFrame* (*)(PresShell*,
+                                                           ComputedStyle*);
+  using BlockFrameCreationFunc = nsBlockFrame* (*)(PresShell*, ComputedStyle*);
 
   
 
@@ -597,8 +597,8 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
 
   struct FrameConstructionData;
-  typedef const FrameConstructionData* (*FrameConstructionDataGetter)(
-      const Element&, ComputedStyle&);
+  using FrameConstructionDataGetter =
+      const FrameConstructionData* (*)(const Element&, ComputedStyle&);
 
   
 
@@ -620,10 +620,12 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
 
 
-  typedef nsIFrame* (nsCSSFrameConstructor::*FrameFullConstructor)(
-      nsFrameConstructorState& aState, FrameConstructionItem& aItem,
-      nsContainerFrame* aParentFrame, const nsStyleDisplay* aStyleDisplay,
-      nsFrameList& aFrameList);
+  using FrameFullConstructor =
+      nsIFrame* (nsCSSFrameConstructor::*)(nsFrameConstructorState& aState,
+                                           FrameConstructionItem& aItem,
+                                           nsContainerFrame* aParentFrame,
+                                           const nsStyleDisplay* aStyleDisplay,
+                                           nsFrameList& aFrameList);
 
   
 
@@ -723,22 +725,47 @@ class nsCSSFrameConstructor final : public nsFrameManager {
 
   struct FrameConstructionData {
     
-    uint32_t mBits;
-    
-    
-    
-    
-    
-    
     
     union Func {
       FrameCreationFunc mCreationFunc;
       FrameConstructionDataGetter mDataGetter;
+      FrameFullConstructor mFullConstructor;
+
+      constexpr Func(FrameCreationFunc aFunc) : mCreationFunc(aFunc) {}
+      constexpr Func(FrameConstructionDataGetter aDataGetter)
+          : mDataGetter(aDataGetter) {}
+      constexpr Func(FrameFullConstructor aCtor) : mFullConstructor(aCtor) {}
     } mFunc;
-    FrameFullConstructor mFullConstructor;
+    
+    const uint32_t mBits = 0;
     
     
-    PseudoStyleType const mAnonBoxPseudo;
+    PseudoStyleType const mAnonBoxPseudo = PseudoStyleType::NotPseudo;
+
+    constexpr FrameConstructionData() : FrameConstructionData(nullptr) {}
+
+    constexpr FrameConstructionData(std::nullptr_t, uint32_t aBits = 0)
+        : mFunc(static_cast<FrameCreationFunc>(nullptr)), mBits(aBits) {}
+
+    constexpr FrameConstructionData(FrameCreationFunc aCreationFunc,
+                                    uint32_t aBits = 0)
+        : mFunc(aCreationFunc), mBits(aBits) {}
+    constexpr FrameConstructionData(FrameCreationFunc aCreationFunc,
+                                    uint32_t aBits,
+                                    PseudoStyleType aAnonBoxPseudo)
+        : mFunc(aCreationFunc),
+          mBits(aBits | FCDATA_CREATE_BLOCK_WRAPPER_FOR_ALL_KIDS),
+          mAnonBoxPseudo(aAnonBoxPseudo) {}
+    constexpr FrameConstructionData(FrameConstructionDataGetter aDataGetter,
+                                    uint32_t aBits = 0)
+        : mFunc(aDataGetter),
+          mBits(aBits | FCDATA_FUNC_IS_DATA_GETTER),
+          mAnonBoxPseudo(PseudoStyleType::NotPseudo) {}
+    constexpr FrameConstructionData(FrameFullConstructor aCtor,
+                                    uint32_t aBits = 0)
+        : mFunc(aCtor),
+          mBits(aBits | FCDATA_FUNC_IS_FULL_CTOR),
+          mAnonBoxPseudo(PseudoStyleType::NotPseudo) {}
   };
 
   
