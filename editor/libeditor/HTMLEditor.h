@@ -1130,7 +1130,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  Element* GetMostAncestorMailCiteElement(nsINode& aNode) const;
+
+  Element* GetMostDistantAncestorMailCiteElement(const nsINode& aNode) const;
 
   
 
@@ -1139,8 +1140,13 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT EditActionResult
-  SplitMailCiteElements(const EditorDOMPoint& aPointToSplit);
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
+  HandleInsertParagraphInMailCiteElement(Element& aMailCiteElement,
+                                         const EditorDOMPoint& aPointToSplit,
+                                         Element& aEditingHost);
 
   
 

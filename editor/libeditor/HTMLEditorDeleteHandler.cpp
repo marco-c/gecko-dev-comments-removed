@@ -2953,9 +2953,9 @@ HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteNonCollapsedRanges(
     return NS_OK;
   }
 
-  Element* startCiteNode = aHTMLEditor.GetMostAncestorMailCiteElement(
+  Element* startCiteNode = aHTMLEditor.GetMostDistantAncestorMailCiteElement(
       *aRangesToDelete.FirstRangeRef()->GetStartContainer());
-  Element* endCiteNode = aHTMLEditor.GetMostAncestorMailCiteElement(
+  Element* endCiteNode = aHTMLEditor.GetMostDistantAncestorMailCiteElement(
       *aRangesToDelete.FirstRangeRef()->GetEndContainer());
 
   if (startCiteNode && !endCiteNode) {
@@ -3087,10 +3087,12 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteNonCollapsedRanges(
   }
 
   
-  RefPtr<Element> startCiteNode = aHTMLEditor.GetMostAncestorMailCiteElement(
-      *aRangesToDelete.FirstRangeRef()->GetStartContainer());
-  RefPtr<Element> endCiteNode = aHTMLEditor.GetMostAncestorMailCiteElement(
-      *aRangesToDelete.FirstRangeRef()->GetEndContainer());
+  RefPtr<Element> startCiteNode =
+      aHTMLEditor.GetMostDistantAncestorMailCiteElement(
+          *aRangesToDelete.FirstRangeRef()->GetStartContainer());
+  RefPtr<Element> endCiteNode =
+      aHTMLEditor.GetMostDistantAncestorMailCiteElement(
+          *aRangesToDelete.FirstRangeRef()->GetEndContainer());
 
   
   
@@ -5060,7 +5062,8 @@ nsresult HTMLEditor::DeleteMostAncestorMailCiteElementIfEmpty(
 
   
   
-  RefPtr<Element> mailCiteElement = GetMostAncestorMailCiteElement(aContent);
+  RefPtr<Element> mailCiteElement =
+      GetMostDistantAncestorMailCiteElement(aContent);
   if (!mailCiteElement) {
     return NS_OK;
   }

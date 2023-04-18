@@ -1579,21 +1579,42 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction() {
     }
   }
 
-  
-  
+  RefPtr<Element> editingHost = GetActiveEditingHost();
+  if (NS_WARN_IF(!editingHost)) {
+    return EditActionIgnored(NS_ERROR_FAILURE);
+  }
+
   if (IsMailEditor()) {
     EditorDOMPoint pointToSplit(EditorBase::GetStartPoint(SelectionRef()));
-    if (NS_WARN_IF(!pointToSplit.IsSet())) {
+    if (NS_WARN_IF(!pointToSplit.IsInContentNode())) {
       return EditActionIgnored(NS_ERROR_FAILURE);
     }
 
-    EditActionResult result = SplitMailCiteElements(pointToSplit);
-    if (result.Failed()) {
-      NS_WARNING("HTMLEditor::SplitMailCiteElements() failed");
-      return result;
-    }
-    if (result.Handled()) {
-      return result;
+    if (RefPtr<Element> mailCiteElement = GetMostDistantAncestorMailCiteElement(
+            *pointToSplit.ContainerAsContent())) {
+      
+      
+      Result<EditorDOMPoint, nsresult> atNewBRElementOrError =
+          HandleInsertParagraphInMailCiteElement(*mailCiteElement, pointToSplit,
+                                                 *editingHost);
+      if (MOZ_UNLIKELY(atNewBRElementOrError.isErr())) {
+        NS_WARNING(
+            "HTMLEditor::HandleInsertParagraphInMailCiteElement() failed");
+        return EditActionHandled(atNewBRElementOrError.unwrapErr());
+      }
+      MOZ_ASSERT(atNewBRElementOrError.inspect().IsSet());
+      IgnoredErrorResult ignoredError;
+      SelectionRef().SetInterlinePosition(true, ignoredError);
+      NS_WARNING_ASSERTION(
+          !ignoredError.Failed(),
+          "Selection::SetInterlinePosition(true) failed, but ignored");
+      MOZ_ASSERT(atNewBRElementOrError.inspect().GetChild());
+      MOZ_ASSERT(atNewBRElementOrError.inspect().GetChild()->IsHTMLElement(
+          nsGkAtoms::br));
+      nsresult rv = CollapseSelectionTo(atNewBRElementOrError.inspect());
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                           "HTMLEditor::CollapseSelectionTo() failed");
+      return EditActionHandled(rv);
     }
   }
 
@@ -1618,10 +1639,6 @@ EditActionResult HTMLEditor::InsertParagraphSeparatorAsSubAction() {
   
   
   
-  RefPtr<Element> editingHost = GetActiveEditingHost();
-  if (NS_WARN_IF(!editingHost)) {
-    return EditActionIgnored(NS_ERROR_FAILURE);
-  }
   
   
   
@@ -2159,19 +2176,60 @@ nsresult HTMLEditor::HandleInsertLinefeed(const EditorDOMPoint& aPointToBreak,
   return NS_OK;
 }
 
-EditActionResult HTMLEditor::SplitMailCiteElements(
-    const EditorDOMPoint& aPointToSplit) {
+Result<EditorDOMPoint, nsresult>
+HTMLEditor::HandleInsertParagraphInMailCiteElement(
+    Element& aMailCiteElement, const EditorDOMPoint& aPointToSplit,
+    Element& aEditingHost) {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(aPointToSplit.IsSet());
+  NS_ASSERTION(!HTMLEditUtils::IsEmptyNode(aMailCiteElement),
+               "The mail-cite element will be deleted, does it expected result "
+               "for you?");
 
-  RefPtr<Element> citeNode =
-      GetMostAncestorMailCiteElement(*aPointToSplit.GetContainer());
-  if (!citeNode) {
-    return EditActionIgnored();
+  SplitNodeResult splitCiteElementResult = [&]() MOZ_CAN_RUN_SCRIPT {
+    EditorDOMPoint pointToSplit(aPointToSplit);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    WSScanResult forwardScanFromPointToSplitResult =
+        WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(&aEditingHost,
+                                                         pointToSplit);
+    if (forwardScanFromPointToSplitResult.Failed()) {
+      return SplitNodeResult(NS_ERROR_FAILURE);
+    }
+    
+    
+    if (forwardScanFromPointToSplitResult.ReachedBRElement() &&
+        forwardScanFromPointToSplitResult.BRElementPtr() != &aMailCiteElement &&
+        aMailCiteElement.Contains(
+            forwardScanFromPointToSplitResult.BRElementPtr())) {
+      pointToSplit = forwardScanFromPointToSplitResult.PointAfterContent();
+    }
+
+    if (NS_WARN_IF(!pointToSplit.GetContainerAsContent())) {
+      return SplitNodeResult(NS_ERROR_FAILURE);
+    }
+
+    SplitNodeResult result =
+        SplitNodeDeepWithTransaction(aMailCiteElement, pointToSplit,
+                                     SplitAtEdges::eDoNotCreateEmptyContainer);
+    NS_WARNING_ASSERTION(
+        result.Succeeded(),
+        "HTMLEditor::SplitNodeDeepWithTransaction(aMailCiteElement, "
+        "SplitAtEdges::eDoNotCreateEmptyContainer) failed");
+    return result;
+  }();
+  if (MOZ_UNLIKELY(splitCiteElementResult.Failed())) {
+    NS_WARNING("Failed to split a mail-cite element");
+    return Err(splitCiteElementResult.Rv());
   }
 
-  EditorDOMPoint pointToSplit(aPointToSplit);
-
   
   
   
@@ -2181,61 +2239,25 @@ EditActionResult HTMLEditor::SplitMailCiteElements(
   
   
   
-  RefPtr<Element> editingHost = GetActiveEditingHost();
-  WSScanResult forwardScanFromPointToSplitResult =
-      WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(editingHost,
-                                                       pointToSplit);
-  if (forwardScanFromPointToSplitResult.Failed()) {
-    return EditActionResult(NS_ERROR_FAILURE);
-  }
-  
-  
-  if (forwardScanFromPointToSplitResult.ReachedBRElement() &&
-      forwardScanFromPointToSplitResult.BRElementPtr() != citeNode &&
-      citeNode->Contains(forwardScanFromPointToSplitResult.BRElementPtr())) {
-    pointToSplit = forwardScanFromPointToSplitResult.PointAfterContent();
-  }
-
-  if (NS_WARN_IF(!pointToSplit.GetContainerAsContent())) {
-    return EditActionIgnored(NS_ERROR_FAILURE);
-  }
-
-  SplitNodeResult splitCiteNodeResult = SplitNodeDeepWithTransaction(
-      *citeNode, pointToSplit, SplitAtEdges::eDoNotCreateEmptyContainer);
-  if (MOZ_UNLIKELY(splitCiteNodeResult.Failed())) {
-    NS_WARNING(
-        "HTMLEditor::SplitNodeDeepWithTransaction(SplitAtEdges::"
-        "eDoNotCreateEmptyContainer) failed");
-    return EditActionIgnored(splitCiteNodeResult.Rv());
-  }
-  pointToSplit.Clear();
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nsIContent* previousNodeOfSplitPoint =
-      splitCiteNodeResult.GetPreviousContent();
-  if (previousNodeOfSplitPoint &&
-      previousNodeOfSplitPoint->IsHTMLElement(nsGkAtoms::span) &&
-      previousNodeOfSplitPoint->GetPrimaryFrame() &&
-      previousNodeOfSplitPoint->GetPrimaryFrame()->IsBlockFrameOrSubclass()) {
-    nsCOMPtr<nsINode> lastChild = previousNodeOfSplitPoint->GetLastChild();
+  Element* const leftCiteElement =
+      Element::FromNodeOrNull(splitCiteElementResult.GetPreviousContent());
+  Element* const rightCiteElement =
+      Element::FromNodeOrNull(splitCiteElementResult.GetNextContent());
+  if (leftCiteElement && leftCiteElement->IsHTMLElement(nsGkAtoms::span) &&
+      
+      
+      
+      leftCiteElement->GetPrimaryFrame() &&
+      leftCiteElement->GetPrimaryFrame()->IsBlockFrameOrSubclass()) {
+    nsIContent* lastChild = leftCiteElement->GetLastChild();
     if (lastChild && !lastChild->IsHTMLElement(nsGkAtoms::br)) {
       
-      EditorDOMPoint endOfPreviousNodeOfSplitPoint;
-      endOfPreviousNodeOfSplitPoint.SetToEndOf(previousNodeOfSplitPoint);
       Result<RefPtr<Element>, nsresult> resultOfInsertingInvisibleBRElement =
-          InsertBRElement(WithTransaction::Yes, endOfPreviousNodeOfSplitPoint);
-      if (resultOfInsertingInvisibleBRElement.isErr()) {
+          InsertBRElement(WithTransaction::Yes,
+                          EditorDOMPoint::AtEndOf(*leftCiteElement));
+      if (MOZ_UNLIKELY(resultOfInsertingInvisibleBRElement.isErr())) {
         NS_WARNING("HTMLEditor::InsertBRElement(WithTransaction::Yes) failed");
-        return EditActionIgnored(
-            resultOfInsertingInvisibleBRElement.unwrapErr());
+        return Err(resultOfInsertingInvisibleBRElement.unwrapErr());
       }
       MOZ_ASSERT(resultOfInsertingInvisibleBRElement.inspect());
     }
@@ -2246,107 +2268,108 @@ EditActionResult HTMLEditor::SplitMailCiteElements(
   
   Result<RefPtr<Element>, nsresult> resultOfInsertingBRElement =
       InsertBRElement(WithTransaction::Yes,
-                      splitCiteNodeResult.AtSplitPoint<EditorDOMPoint>());
-  if (resultOfInsertingBRElement.isErr()) {
+                      splitCiteElementResult.AtSplitPoint<EditorDOMPoint>());
+  if (MOZ_UNLIKELY(resultOfInsertingBRElement.isErr())) {
     NS_WARNING("HTMLEditor::InsertBRElement(WithTransaction::Yes) failed");
-    return EditActionIgnored(resultOfInsertingBRElement.unwrapErr());
+    return Err(resultOfInsertingBRElement.unwrapErr());
   }
   MOZ_ASSERT(resultOfInsertingBRElement.inspect());
 
   
-  EditorDOMPoint atBRElement(resultOfInsertingBRElement.inspect());
-  {
-    AutoEditorDOMPointChildInvalidator lockOffset(atBRElement);
-    IgnoredErrorResult ignoredError;
-    SelectionRef().SetInterlinePosition(true, ignoredError);
-    NS_WARNING_ASSERTION(
-        !ignoredError.Failed(),
-        "Selection::SetInterlinePosition(true) failed, but ignored");
-    nsresult rv = CollapseSelectionTo(atBRElement);
-    if (NS_FAILED(rv)) {
-      NS_WARNING("HTMLEditor::CollapseSelectionTo() failed");
-      return EditActionIgnored(rv);
-    }
-  }
+  
+  
+  
+  
+  if (HTMLEditUtils::IsInlineElement(aMailCiteElement)) {
+    nsresult rvOfInsertingBRElement = [&]() MOZ_CAN_RUN_SCRIPT {
+      EditorDOMPoint pointToCreateNewBRElement(
+          resultOfInsertingBRElement.inspect());
 
-  
-  
-  
-  
-  if (HTMLEditUtils::IsInlineElement(*citeNode)) {
-    
-    EditorDOMPoint pointToCreateNewBRElement(atBRElement);
-
-    WSScanResult backwardScanFromPointToCreateNewBRElementResult =
-        WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
-            editingHost, pointToCreateNewBRElement);
-    if (backwardScanFromPointToCreateNewBRElementResult.Failed()) {
-      NS_WARNING(
-          "WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary() failed");
-      return EditActionResult(NS_ERROR_FAILURE);
-    }
-    if (backwardScanFromPointToCreateNewBRElementResult
-            .InVisibleOrCollapsibleCharacters() ||
-        backwardScanFromPointToCreateNewBRElementResult
-            .ReachedSpecialContent()) {
-      EditorRawDOMPoint pointAfterNewBRElement(
-          EditorRawDOMPoint::After(pointToCreateNewBRElement));
-      NS_WARNING_ASSERTION(pointAfterNewBRElement.IsSet(),
-                           "Failed to set to after the <br> node");
+      
+      
+      
+      WSScanResult backwardScanFromPointToCreateNewBRElementResult =
+          WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary(
+              &aEditingHost, pointToCreateNewBRElement);
+      if (MOZ_UNLIKELY(
+              backwardScanFromPointToCreateNewBRElementResult.Failed())) {
+        NS_WARNING(
+            "WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary() "
+            "failed");
+        return NS_ERROR_FAILURE;
+      }
+      if (!backwardScanFromPointToCreateNewBRElementResult
+               .InVisibleOrCollapsibleCharacters() &&
+          !backwardScanFromPointToCreateNewBRElementResult
+               .ReachedSpecialContent()) {
+        return NS_SUCCESS_DOM_NO_OPERATION;
+      }
       WSScanResult forwardScanFromPointAfterNewBRElementResult =
           WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(
-              editingHost, pointAfterNewBRElement);
-      if (forwardScanFromPointAfterNewBRElementResult.Failed()) {
+              &aEditingHost,
+              EditorRawDOMPoint::After(pointToCreateNewBRElement));
+      if (MOZ_UNLIKELY(forwardScanFromPointAfterNewBRElementResult.Failed())) {
         NS_WARNING("WSRunScanner::ScanNextVisibleNodeOrBlockBoundary() failed");
-        return EditActionResult(NS_ERROR_FAILURE);
+        return NS_ERROR_FAILURE;
       }
-      if (forwardScanFromPointAfterNewBRElementResult
-              .InVisibleOrCollapsibleCharacters() ||
-          forwardScanFromPointAfterNewBRElementResult.ReachedSpecialContent() ||
+      if (!forwardScanFromPointAfterNewBRElementResult
+               .InVisibleOrCollapsibleCharacters() &&
+          !forwardScanFromPointAfterNewBRElementResult
+               .ReachedSpecialContent() &&
           
-          forwardScanFromPointAfterNewBRElementResult
-              .ReachedCurrentBlockBoundary()) {
-        Result<RefPtr<Element>, nsresult> resultOfInsertingBRElement =
-            InsertBRElement(WithTransaction::Yes, pointToCreateNewBRElement);
-        if (resultOfInsertingBRElement.isErr()) {
-          NS_WARNING(
-              "HTMLEditor::InsertBRElement(WithTransaction::Yes) failed");
-          return EditActionIgnored(resultOfInsertingBRElement.unwrapErr());
-        }
-        MOZ_ASSERT(resultOfInsertingBRElement.inspect());
-        
-        pointToCreateNewBRElement.Clear();
-        pointAfterNewBRElement.Clear();
+          !forwardScanFromPointAfterNewBRElementResult
+               .ReachedCurrentBlockBoundary()) {
+        return NS_SUCCESS_DOM_NO_OPERATION;
       }
+      Result<RefPtr<Element>, nsresult> result =
+          InsertBRElement(WithTransaction::Yes, pointToCreateNewBRElement);
+      if (MOZ_UNLIKELY(result.isErr())) {
+        NS_WARNING("HTMLEditor::InsertBRElement(WithTransaction::Yes) failed");
+        return result.unwrapErr();
+      }
+      MOZ_ASSERT(result.inspect());
+      return NS_OK;
+    }();
+
+    if (MOZ_UNLIKELY(NS_FAILED(rvOfInsertingBRElement))) {
+      NS_WARNING(
+          "Failed to insert additional <br> element before the inline right "
+          "mail-cite element");
+      return Err(rvOfInsertingBRElement);
     }
   }
 
-  
-  if (previousNodeOfSplitPoint &&
-      HTMLEditUtils::IsEmptyNode(*previousNodeOfSplitPoint)) {
-    nsresult rv =
-        DeleteNodeWithTransaction(MOZ_KnownLive(*previousNodeOfSplitPoint));
-    if (NS_WARN_IF(Destroyed())) {
-      return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
+  if (leftCiteElement && HTMLEditUtils::IsEmptyNode(*leftCiteElement)) {
+    
+    
+    nsresult rv = DeleteNodeWithTransaction(MOZ_KnownLive(*leftCiteElement));
+    if (MOZ_UNLIKELY(NS_WARN_IF(Destroyed()))) {
+      return Err(NS_ERROR_EDITOR_DESTROYED);
     }
     if (NS_FAILED(rv)) {
       NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
-      return EditActionIgnored(rv);
+      return Err(rv);
     }
   }
 
-  if (citeNode && HTMLEditUtils::IsEmptyNode(*citeNode)) {
-    nsresult rv = DeleteNodeWithTransaction(*citeNode);
-    if (NS_WARN_IF(Destroyed())) {
-      return EditActionIgnored(NS_ERROR_EDITOR_DESTROYED);
+  if (rightCiteElement && HTMLEditUtils::IsEmptyNode(*rightCiteElement)) {
+    
+    
+    nsresult rv = DeleteNodeWithTransaction(MOZ_KnownLive(*rightCiteElement));
+    if (MOZ_UNLIKELY(NS_WARN_IF(Destroyed()))) {
+      return Err(NS_ERROR_EDITOR_DESTROYED);
     }
     if (NS_FAILED(rv)) {
       NS_WARNING("HTMLEditor::DeleteNodeWithTransaction() failed");
-      return EditActionIgnored(rv);
+      return Err(rv);
     }
   }
 
-  return EditActionHandled();
+  if (MOZ_UNLIKELY(!resultOfInsertingBRElement.inspect()->GetParent())) {
+    NS_WARNING("Inserted <br> shouldn't become an orphan node");
+    return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+  }
+  return EditorDOMPoint(resultOfInsertingBRElement.inspect());
 }
 
 HTMLEditor::CharPointData
@@ -8282,15 +8305,17 @@ nsresult HTMLEditor::JoinNearestEditableNodesWithTransaction(
   return NS_OK;
 }
 
-Element* HTMLEditor::GetMostAncestorMailCiteElement(nsINode& aNode) const {
+Element* HTMLEditor::GetMostDistantAncestorMailCiteElement(
+    const nsINode& aNode) const {
   Element* mailCiteElement = nullptr;
   const bool isPlaintextEditor = IsInPlaintextMode();
-  for (nsINode* node = &aNode; node; node = node->GetParentNode()) {
-    if ((isPlaintextEditor && node->IsHTMLElement(nsGkAtoms::pre)) ||
-        HTMLEditUtils::IsMailCite(node)) {
-      mailCiteElement = node->AsElement();
+  for (Element* element : aNode.InclusiveAncestorsOfType<Element>()) {
+    if ((isPlaintextEditor && element->IsHTMLElement(nsGkAtoms::pre)) ||
+        HTMLEditUtils::IsMailCite(*element)) {
+      mailCiteElement = element;
+      continue;
     }
-    if (node->IsHTMLElement(nsGkAtoms::body)) {
+    if (element->IsHTMLElement(nsGkAtoms::body)) {
       break;
     }
   }
@@ -8910,7 +8935,8 @@ nsresult HTMLEditor::RemoveEmptyNodesIn(nsRange& aRange) {
     if (content->IsElement()) {
       if (content->IsHTMLElement(nsGkAtoms::body)) {
         
-      } else if ((isMailCite = HTMLEditUtils::IsMailCite(content)) ||
+      } else if ((isMailCite =
+                      HTMLEditUtils::IsMailCite(*content->AsElement())) ||
                  content->IsHTMLElement(nsGkAtoms::a) ||
                  HTMLEditUtils::IsInlineStyle(content) ||
                  HTMLEditUtils::IsAnyListElement(content) ||
