@@ -90,14 +90,10 @@ interface nsIWindowProvider : nsISupports
 
 
 
-
-
-
   [noscript]
   BrowsingContext provideWindow(in nsIOpenWindowInfo aOpenWindowInfo,
                                 in unsigned long aChromeFlags,
                                 in boolean aCalledFromJS,
-                                in boolean aWidthSpecified,
                                 in nsIURI aURI,
                                 in AString aName,
                                 in AUTF8String aFeatures,
