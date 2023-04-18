@@ -522,7 +522,10 @@ class LoginAutoComplete {
 
   startSearch(aSearchString, aPreviousResult, aElement, aCallback) {
     let { isNullPrincipal } = aElement.nodePrincipal;
-    if (aElement.nodePrincipal.schemeIs("about")) {
+    if (
+      aElement.nodePrincipal.schemeIs("about") ||
+      aElement.nodePrincipal.isSystemPrincipal
+    ) {
       
       
       return;
