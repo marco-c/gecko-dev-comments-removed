@@ -621,6 +621,9 @@ class BrowsertimeResultsHandler(PerftestResultsHandler):
                                 
                                 continue
 
+                            if metric not in measure:
+                                continue
+
                             val = cycle[metric]
                             if not accept_zero_vismet:
                                 if val == 0:
