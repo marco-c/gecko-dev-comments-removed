@@ -60,7 +60,12 @@ async function testWindowColorScheme({
 
 add_task(async function setup() {
   
-  await SpecialPowers.pushPrefEnv({ set: [["ui.systemUsesDarkTheme", 0]] });
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.theme.dark-private-windows", true],
+      ["ui.systemUsesDarkTheme", 0],
+    ],
+  });
   
   await BuiltInThemes.ensureBuiltInThemes();
 

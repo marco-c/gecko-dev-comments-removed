@@ -579,6 +579,10 @@ pref("browser.privatebrowsing.vpnpromourl", "https://vpn.mozilla.org/?utm_source
 
 pref("browser.privacySegmentation.enabled", false);
 
+
+
+pref("browser.theme.dark-private-windows", false);
+
 pref("browser.sessionhistory.max_entries", 50);
 
 
