@@ -133,20 +133,13 @@ class NativeLayerRootCA : public NativeLayerRoot {
     ~Representation();
     void Commit(WhichRepresentation aRepresentation,
                 const nsTArray<RefPtr<NativeLayerCA>>& aSublayers,
-                bool aWindowIsFullscreen, bool aMouseMovedRecently);
-    CALayer* FindVideoLayerToIsolate(
-        WhichRepresentation aRepresentation,
-        const nsTArray<NativeLayerCA*>& aSublayers);
+                bool aWindowIsFullscreen);
     CALayer* mRootCALayer = nullptr;  
-    bool mIsIsolatingVideo = false;
     bool mMutatedLayerStructure = false;
-    bool mMutatedMouseMovedRecently = false;
   };
 
   template <typename F>
   void ForAllRepresentations(F aFn);
-
-  void UpdateMouseMovedRecently(const MutexAutoLock& aProofOfLock);
 
   Mutex mMutex MOZ_UNANNOTATED;  
   Representation mOnscreenRepresentation;
@@ -171,12 +164,6 @@ class NativeLayerRootCA : public NativeLayerRoot {
   
   
   bool mWindowIsFullscreen = false;
-
-  
-  TimeStamp mLastMouseMoveTime;
-
-  
-  bool mMouseMovedRecently = false;
 };
 
 class RenderSourceNLRS;

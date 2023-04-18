@@ -135,9 +135,7 @@ static CALayer* MakeOffscreenRootCALayer() {
 NativeLayerRootCA::NativeLayerRootCA(CALayer* aLayer)
     : mMutex("NativeLayerRootCA"),
       mOnscreenRepresentation(aLayer),
-      mOffscreenRepresentation(MakeOffscreenRootCALayer()) {
-  mLastMouseMoveTime = TimeStamp::NowLoRes();
-}
+      mOffscreenRepresentation(MakeOffscreenRootCALayer()) {}
 
 NativeLayerRootCA::~NativeLayerRootCA() {
   MOZ_RELEASE_ASSERT(mSublayers.IsEmpty(),
@@ -246,9 +244,7 @@ bool NativeLayerRootCA::CommitToScreen() {
       return false;
     }
 
-    UpdateMouseMovedRecently(lock);
-    mOnscreenRepresentation.Commit(WhichRepresentation::ONSCREEN, mSublayers, mWindowIsFullscreen,
-                                   mMouseMovedRecently);
+    mOnscreenRepresentation.Commit(WhichRepresentation::ONSCREEN, mSublayers, mWindowIsFullscreen);
 
     mCommitPending = false;
   }
@@ -296,8 +292,7 @@ void NativeLayerRootCA::OnNativeLayerRootSnapshotterDestroyed(
 
 void NativeLayerRootCA::CommitOffscreen() {
   MutexAutoLock lock(mMutex);
-  mOffscreenRepresentation.Commit(WhichRepresentation::OFFSCREEN, mSublayers, mWindowIsFullscreen,
-                                  false);
+  mOffscreenRepresentation.Commit(WhichRepresentation::OFFSCREEN, mSublayers, mWindowIsFullscreen);
 }
 
 template <typename F>
@@ -322,10 +317,8 @@ NativeLayerRootCA::Representation::~Representation() {
 
 void NativeLayerRootCA::Representation::Commit(WhichRepresentation aRepresentation,
                                                const nsTArray<RefPtr<NativeLayerCA>>& aSublayers,
-                                               bool aWindowIsFullscreen, bool aMouseMovedRecently) {
-  bool mightIsolate = (aRepresentation == WhichRepresentation::ONSCREEN &&
-                       StaticPrefs::gfx_core_animation_specialize_video());
-  bool mustRebuild = (mMutatedLayerStructure || (mightIsolate && mMutatedMouseMovedRecently));
+                                               bool aWindowIsFullscreen) {
+  bool mustRebuild = mMutatedLayerStructure;
   if (!mustRebuild) {
     
     NativeLayerCA::UpdateType updateRequired = NativeLayerCA::UpdateType::None;
@@ -383,157 +376,15 @@ void NativeLayerRootCA::Representation::Commit(WhichRepresentation aRepresentati
   }
 
   if (mustRebuild) {
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
     uint32_t sublayersCount = sublayersWithExtent.Length();
-
-    
-    
-    auto acceptProvidedSublayers = [&]() {
-      NSMutableArray<CALayer*>* sublayers = [NSMutableArray arrayWithCapacity:sublayersCount];
-      for (auto layer : sublayersWithExtent) {
-        [sublayers addObject:layer->UnderlyingCALayer(aRepresentation)];
-      }
-      mRootCALayer.sublayers = sublayers;
-    };
-
-    
-    
-    bool topLayerIsRooted =
-        sublayersCount &&
-        (sublayersWithExtent.LastElement()->UnderlyingCALayer(aRepresentation).superlayer ==
-         mRootCALayer);
-
-    if (!topLayerIsRooted) {
-      
-      
-      
-      acceptProvidedSublayers();
+    NSMutableArray<CALayer*>* sublayers = [NSMutableArray arrayWithCapacity:sublayersCount];
+    for (auto layer : sublayersWithExtent) {
+      [sublayers addObject:layer->UnderlyingCALayer(aRepresentation)];
     }
-
-    
-    
-    
-    MOZ_DIAGNOSTIC_ASSERT(
-        !sublayersCount ||
-            (sublayersWithExtent.LastElement()->UnderlyingCALayer(aRepresentation).superlayer ==
-             mRootCALayer),
-        "The topmost layer must be a child of mRootCALayer.");
-
-    bool didIsolate = false;
-    if (mightIsolate && aWindowIsFullscreen && !aMouseMovedRecently) {
-      CALayer* isolatedLayer = FindVideoLayerToIsolate(aRepresentation, sublayersWithExtent);
-      if (isolatedLayer) {
-        
-        didIsolate = true;
-
-        
-        
-        if (!mIsIsolatingVideo || isolatedLayer != mRootCALayer.sublayers.lastObject) {
-          
-          CGFloat rootWidth = mRootCALayer.bounds.size.width;
-          CGFloat rootHeight = mRootCALayer.bounds.size.height;
-
-          
-          
-          CALayer* blackLayer = [CALayer layer];
-          blackLayer.position = NSZeroPoint;
-          blackLayer.anchorPoint = NSZeroPoint;
-          blackLayer.bounds = CGRectMake(0, 0, rootWidth, rootHeight);
-          blackLayer.backgroundColor = [[NSColor blackColor] CGColor];
-
-          mRootCALayer.sublayers = @[ blackLayer, isolatedLayer ];
-        }
-      }
-    }
-
-    
-    
-    if (topLayerIsRooted && !didIsolate) {
-      acceptProvidedSublayers();
-    }
-
-    mIsIsolatingVideo = didIsolate;
+    mRootCALayer.sublayers = sublayers;
   }
 
   mMutatedLayerStructure = false;
-  mMutatedMouseMovedRecently = false;
-}
-
-CALayer* NativeLayerRootCA::Representation::FindVideoLayerToIsolate(
-    WhichRepresentation aRepresentation, const nsTArray<NativeLayerCA*>& aSublayers) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  auto topLayer = aSublayers.LastElement();
-  if (!topLayer || !topLayer->IsVideo()) {
-    
-    return nil;
-  }
-
-  CALayer* candidateLayer = topLayer->UnderlyingCALayer(aRepresentation);
-  MOZ_ASSERT(candidateLayer);
-
-  
-  
-  CGFloat rootWidth = mRootCALayer.bounds.size.width;
-  CGFloat rootHeight = mRootCALayer.bounds.size.height;
-  CGFloat rootArea = rootWidth * rootHeight;
-  CGFloat minimumRootArea = rootArea * 0.8;
-
-  
-  CGRect candidateBoundsInRoot = [mRootCALayer convertRect:candidateLayer.bounds
-                                                 fromLayer:candidateLayer];
-  CGFloat candidateArea = candidateBoundsInRoot.size.width * candidateBoundsInRoot.size.height;
-  if (candidateArea < minimumRootArea) {
-    
-    return nil;
-  }
-
-  
-  CGFloat centerZoneWidth = rootWidth * 0.05;
-  CGFloat centerZoneHeight = rootHeight * 0.05;
-  CGRect centerZone =
-      CGRectMake((rootWidth * 0.5) - (centerZoneWidth * 0.5),
-                 (rootHeight * 0.5) - (centerZoneHeight * 0.5), centerZoneWidth, centerZoneHeight);
-  CGPoint candidateCenterInRoot =
-      CGPointMake(candidateBoundsInRoot.origin.x + (candidateBoundsInRoot.size.width * 0.5),
-                  candidateBoundsInRoot.origin.y + (candidateBoundsInRoot.size.height * 0.5));
-  if (!CGRectContainsPoint(centerZone, candidateCenterInRoot)) {
-    
-    return nil;
-  }
-
-  
-  for (auto layer : aSublayers) {
-    if (layer->IsVideo() && layer != topLayer) {
-      
-      return nil;
-    }
-  }
-
-  return candidateLayer;
 }
 
  UniquePtr<NativeLayerRootSnapshotterCA> NativeLayerRootSnapshotterCA::Create(
@@ -588,27 +439,6 @@ void NativeLayerRootCA::SetWindowIsFullscreen(bool aFullscreen) {
     for (auto layer : mSublayers) {
       layer->SetRootWindowIsFullscreen(mWindowIsFullscreen);
     }
-  }
-
-  
-  mLastMouseMoveTime = TimeStamp::NowLoRes();
-}
-
-void NativeLayerRootCA::NoteMouseMoveAtTime(const TimeStamp& aTime) {
-  MutexAutoLock lock(mMutex);
-  mLastMouseMoveTime = aTime;
-}
-
-void NativeLayerRootCA::UpdateMouseMovedRecently(const MutexAutoLock& aProofOfLock) {
-  static const double SECONDS_TO_WAIT = 2.0;
-
-  bool newMouseMovedRecently =
-      ((TimeStamp::NowLoRes() - mLastMouseMoveTime).ToSeconds() < SECONDS_TO_WAIT);
-
-  if (newMouseMovedRecently != mMouseMovedRecently) {
-    mMouseMovedRecently = newMouseMovedRecently;
-
-    ForAllRepresentations([&](Representation& r) { r.mMutatedMouseMovedRecently = true; });
   }
 }
 
