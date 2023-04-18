@@ -139,20 +139,9 @@ void OffscreenCanvas::GetContext(
       break;
   }
 
-  mImageContainer =
-      MakeRefPtr<layers::ImageContainer>(layers::ImageContainer::ASYNCHRONOUS);
-
   if (mDisplay) {
-    mDisplay->UpdateContext(mImageContainer, mCurrentContextType, childId);
+    mDisplay->UpdateContext(mCurrentContextType, childId);
   }
-}
-
-layers::ImageContainer* OffscreenCanvas::GetImageContainer() {
-  if (!mDisplay) {
-    return nullptr;
-  }
-  
-  MOZ_CRASH("todo");
 }
 
 already_AddRefed<nsICanvasRenderingContextInternal>
@@ -205,7 +194,14 @@ already_AddRefed<ImageBitmap> OffscreenCanvas::TransferToImageBitmap(
     return nullptr;
   }
 
-  
+  if (result && mCurrentContext) {
+    
+    
+    
+    
+    mCurrentContext->Reset();
+    mCurrentContext->SetDimensions(result->Width(), result->Height());
+  }
   return result.forget();
 }
 
