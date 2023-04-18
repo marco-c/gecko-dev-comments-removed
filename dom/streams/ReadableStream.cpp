@@ -335,27 +335,27 @@ void ReadableStreamClose(JSContext* aCx, ReadableStream* aStream,
   
   if (reader->IsDefault()) {
     
-    ReadableStreamDefaultReader* defaultReader = reader->AsDefault();
+    
+    
+    
+    
+    
+    LinkedList<RefPtr<ReadRequest>> readRequests =
+        std::move(reader->AsDefault()->ReadRequests());
 
     
     
-    
-    
-    
-    LinkedList<RefPtr<ReadRequest>> requestsToClose =
-        std::move(defaultReader->ReadRequests());
+    reader->AsDefault()->ReadRequests().clear();
 
     
-    while (RefPtr<ReadRequest> readRequest = requestsToClose.popFirst()) {
+    
+    while (RefPtr<ReadRequest> readRequest = readRequests.popFirst()) {
       
       readRequest->CloseSteps(aCx, aRv);
       if (aRv.Failed()) {
         return;
       }
     }
-
-    
-    defaultReader->ReadRequests().clear();
   }
 }
 
@@ -401,18 +401,22 @@ already_AddRefed<Promise> ReadableStreamCancel(JSContext* aCx,
   
   if (reader && reader->IsBYOB()) {
     
-    LinkedList<RefPtr<ReadIntoRequest>> readIntoRequestsToClose =
+    LinkedList<RefPtr<ReadIntoRequest>> readIntoRequests =
         std::move(reader->AsBYOB()->ReadIntoRequests());
+
+    
+    
+    reader->AsBYOB()->ReadIntoRequests().clear();
+
+    
     while (RefPtr<ReadIntoRequest> readIntoRequest =
-               readIntoRequestsToClose.popFirst()) {
+               readIntoRequests.popFirst()) {
+      
       readIntoRequest->CloseSteps(aCx, JS::UndefinedHandleValue, aRv);
       if (aRv.Failed()) {
         return nullptr;
       }
     }
-
-    
-    reader->AsBYOB()->ReadIntoRequests().clear();
   }
 
   
@@ -562,38 +566,25 @@ void ReadableStreamError(JSContext* aCx, ReadableStream* aStream,
   
   if (reader->IsDefault()) {
     
-    ReadableStreamDefaultReader* defaultReader = reader->AsDefault();
-
-    LinkedList<RefPtr<ReadRequest>> readRequestsToError =
-        std::move(defaultReader->ReadRequests());
-    while (RefPtr<ReadRequest> readRequest = readRequestsToError.popFirst()) {
-      readRequest->ErrorSteps(aCx, aValue, aRv);
-      if (aRv.Failed()) {
-        return;
-      }
-    }
-
     
-    defaultReader->ReadRequests().clear();
+    RefPtr<ReadableStreamDefaultReader> defaultReader = reader->AsDefault();
+    ReadableStreamDefaultReaderErrorReadRequests(aCx, defaultReader, aValue,
+                                                 aRv);
+    if (aRv.Failed()) {
+      return;
+    }
   } else {
     
     
     MOZ_ASSERT(reader->IsBYOB());
-    ReadableStreamBYOBReader* byobReader = reader->AsBYOB();
-    
-    LinkedList<RefPtr<ReadIntoRequest>> requestsToError =
-        std::move(byobReader->ReadIntoRequests());
 
-    while (RefPtr<ReadIntoRequest> readIntoRequest =
-               requestsToError.popFirst()) {
-      readIntoRequest->ErrorSteps(aCx, aValue, aRv);
-      if (aRv.Failed()) {
-        return;
-      }
+    
+    
+    RefPtr<ReadableStreamBYOBReader> byobReader = reader->AsBYOB();
+    ReadableStreamBYOBReaderErrorReadIntoRequests(aCx, byobReader, aValue, aRv);
+    if (aRv.Failed()) {
+      return;
     }
-
-    
-    byobReader->ReadIntoRequests().clear();
   }
 
   

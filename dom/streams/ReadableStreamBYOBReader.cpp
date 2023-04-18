@@ -272,17 +272,64 @@ already_AddRefed<Promise> ReadableStreamBYOBReader::Read(
 }
 
 
+void ReadableStreamBYOBReaderErrorReadIntoRequests(
+    JSContext* aCx, ReadableStreamBYOBReader* aReader,
+    JS::Handle<JS::Value> aError, ErrorResult& aRv) {
+  
+  LinkedList<RefPtr<ReadIntoRequest>> readIntoRequests =
+      std::move(aReader->ReadIntoRequests());
+
+  
+  
+  aReader->ReadIntoRequests().clear();
+
+  
+  while (RefPtr<ReadIntoRequest> readIntoRequest =
+             readIntoRequests.popFirst()) {
+    
+    readIntoRequest->ErrorSteps(aCx, aError, aRv);
+    if (aRv.Failed()) {
+      return;
+    }
+  }
+}
+
+
+void ReadableStreamBYOBReaderRelease(JSContext* aCx,
+                                     ReadableStreamBYOBReader* aReader,
+                                     ErrorResult& aRv) {
+  
+  ReadableStreamReaderGenericRelease(aReader, aRv);
+  if (aRv.Failed()) {
+    return;
+  }
+
+  
+  ErrorResult rv;
+  rv.ThrowTypeError("Releasing lock");
+  JS::Rooted<JS::Value> error(aCx);
+  MOZ_ALWAYS_TRUE(ToJSValue(aCx, std::move(rv), &error));
+
+  
+  ReadableStreamBYOBReaderErrorReadIntoRequests(aCx, aReader, error, aRv);
+}
+
+
 void ReadableStreamBYOBReader::ReleaseLock(ErrorResult& aRv) {
-  if (!GetStream()) {
+  
+  if (!mStream) {
     return;
   }
 
-  if (!ReadIntoRequests().isEmpty()) {
-    aRv.ThrowTypeError("ReadIntoRequests not empty");
-    return;
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(mGlobal)) {
+    return aRv.ThrowUnknownError("Internal error");
   }
+  JSContext* cx = jsapi.cx();
 
-  ReadableStreamReaderGenericRelease(this, aRv);
+  
+  RefPtr<ReadableStreamBYOBReader> thisRefPtr = this;
+  ReadableStreamBYOBReaderRelease(cx, thisRefPtr, aRv);
 }
 
 

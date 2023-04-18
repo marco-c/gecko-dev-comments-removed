@@ -715,5 +715,10 @@ void ReadableStreamDefaultController::PullSteps(JSContext* aCx,
   }
 }
 
+
+void ReadableStreamDefaultController::ReleaseSteps() {
+  
+}
+
 }  
 }  

@@ -73,6 +73,8 @@ class ReadableStreamDefaultController final : public ReadableStreamController,
                                             ReadRequest* aReadRequest,
                                             ErrorResult& aRv) override;
 
+  virtual void ReleaseSteps() override;
+
   
   UnderlyingSourceCancelCallbackHelper* GetCancelAlgorithm() const {
     return mCancelAlgorithm;

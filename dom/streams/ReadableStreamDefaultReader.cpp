@@ -268,14 +268,21 @@ already_AddRefed<Promise> ReadableStreamDefaultReader::Read(JSContext* aCx,
 void ReadableStreamReaderGenericRelease(ReadableStreamGenericReader* aReader,
                                         ErrorResult& aRv) {
   
-  MOZ_ASSERT(aReader->GetStream());
+  RefPtr<ReadableStream> stream = aReader->GetStream();
+
   
-  MOZ_ASSERT(aReader->GetStream()->GetReader() == aReader);
+  MOZ_ASSERT(stream);
+
+  
+  MOZ_ASSERT(stream->GetReader() == aReader);
+
+  
   
   if (aReader->GetStream()->State() == ReadableStream::ReaderState::Readable) {
     aReader->ClosedPromise()->MaybeRejectWithTypeError(
         "Releasing lock on readable stream");
   } else {
+    
     
     RefPtr<Promise> promise = Promise::Create(aReader->GetParentObject(), aRv);
     if (aRv.Failed()) {
@@ -289,10 +296,55 @@ void ReadableStreamReaderGenericRelease(ReadableStreamGenericReader* aReader,
   aReader->ClosedPromise()->SetSettledPromiseIsHandled();
 
   
-  aReader->GetStream()->SetReader(nullptr);
+  stream->Controller()->ReleaseSteps();
+
+  
+  stream->SetReader(nullptr);
 
   
   aReader->SetStream(nullptr);
+}
+
+
+void ReadableStreamDefaultReaderErrorReadRequests(
+    JSContext* aCx, ReadableStreamDefaultReader* aReader,
+    JS::Handle<JS::Value> aError, ErrorResult& aRv) {
+  
+  LinkedList<RefPtr<ReadRequest>> readRequests =
+      std::move(aReader->ReadRequests());
+
+  
+  
+  aReader->ReadRequests().clear();
+
+  
+  while (RefPtr<ReadRequest> readRequest = readRequests.popFirst()) {
+    
+    readRequest->ErrorSteps(aCx, aError, aRv);
+    if (aRv.Failed()) {
+      return;
+    }
+  }
+}
+
+
+void ReadableStreamDefaultReaderRelease(JSContext* aCx,
+                                        ReadableStreamDefaultReader* aReader,
+                                        ErrorResult& aRv) {
+  
+  ReadableStreamReaderGenericRelease(aReader, aRv);
+  if (aRv.Failed()) {
+    return;
+  }
+
+  
+  ErrorResult rv;
+  rv.ThrowTypeError("Releasing lock");
+  JS::Rooted<JS::Value> error(aCx);
+  MOZ_ALWAYS_TRUE(ToJSValue(aCx, std::move(rv), &error));
+
+  
+  ReadableStreamDefaultReaderErrorReadRequests(aCx, aReader, error, aRv);
 }
 
 
@@ -302,15 +354,15 @@ void ReadableStreamDefaultReader::ReleaseLock(ErrorResult& aRv) {
     return;
   }
 
-  
-  if (!mReadRequests.isEmpty()) {
-    aRv.ThrowTypeError(
-        "Cannot release lock while read requests are still pending.");
-    return;
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(mGlobal)) {
+    return aRv.ThrowUnknownError("Internal error");
   }
+  JSContext* cx = jsapi.cx();
 
   
-  ReadableStreamReaderGenericRelease(this, aRv);
+  RefPtr<ReadableStreamDefaultReader> thisRefPtr = this;
+  ReadableStreamDefaultReaderRelease(cx, thisRefPtr, aRv);
 }
 
 
