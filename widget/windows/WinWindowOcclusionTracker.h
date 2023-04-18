@@ -255,6 +255,9 @@ class WinWindowOcclusionTracker final : public DisplayStatusListener,
 
   void Destroy();
 
+  static void CallUpdateOcclusionState(
+      std::unordered_map<HWND, OcclusionState>* aMap, bool aShowAllWindows);
+
   
   
   
