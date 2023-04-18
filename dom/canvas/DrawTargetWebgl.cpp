@@ -180,7 +180,11 @@ StandaloneTexture::StandaloneTexture(const IntSize& aSize,
 
 DrawTargetWebgl::DrawTargetWebgl() = default;
 
-DrawTargetWebgl::~DrawTargetWebgl() {
+DrawTargetWebgl::~DrawTargetWebgl() = default;
+
+DrawTargetWebgl::SharedContext::SharedContext() = default;
+
+DrawTargetWebgl::SharedContext::~SharedContext() {
   while (!mTextureHandles.isEmpty()) {
     PruneTextureHandle(mTextureHandles.popLast());
     --mNumTextureHandles;
@@ -190,7 +194,7 @@ DrawTargetWebgl::~DrawTargetWebgl() {
 }
 
 
-inline void DrawTargetWebgl::UnlinkSurfaceTexture(
+inline void DrawTargetWebgl::SharedContext::UnlinkSurfaceTexture(
     const RefPtr<TextureHandle>& aHandle) {
   if (SourceSurface* surface = aHandle->GetSurface()) {
     surface->RemoveUserData(aHandle->IsShadow() ? &mShadowTextureKey
@@ -199,7 +203,7 @@ inline void DrawTargetWebgl::UnlinkSurfaceTexture(
 }
 
 
-void DrawTargetWebgl::UnlinkSurfaceTextures() {
+void DrawTargetWebgl::SharedContext::UnlinkSurfaceTextures() {
   for (RefPtr<TextureHandle> handle = mTextureHandles.getFirst(); handle;
        handle = handle->getNext()) {
     UnlinkSurfaceTexture(handle);
@@ -207,7 +211,7 @@ void DrawTargetWebgl::UnlinkSurfaceTextures() {
 }
 
 
-void DrawTargetWebgl::UnlinkGlyphCaches() {
+void DrawTargetWebgl::SharedContext::UnlinkGlyphCaches() {
   GlyphCache* cache = mGlyphCaches.getFirst();
   while (cache) {
     ScaledFont* font = cache->GetFont();
@@ -218,33 +222,31 @@ void DrawTargetWebgl::UnlinkGlyphCaches() {
   }
 }
 
+WeakPtr<DrawTargetWebgl::SharedContext> DrawTargetWebgl::sSharedContext;
+
 
 
 bool DrawTargetWebgl::Init(const IntSize& size, const SurfaceFormat format) {
-  WebGLContextOptions options = {};
-  options.alpha = !IsOpaque(format);
-  options.depth = false;
-  options.stencil = false;
-  options.antialias = true;
-  options.preserveDrawingBuffer = true;
-  options.failIfMajorPerformanceCaveat = true;
+  mSize = size;
+  mFormat = format;
 
-  mWebgl = new ClientWebGLContext(true);
-  mWebgl->SetContextOptions(options);
-  if (mWebgl->SetDimensions(size.width, size.height) != NS_OK) {
-    mWebgl = nullptr;
+  if (!sSharedContext || sSharedContext->IsContextLost()) {
+    mSharedContext = new DrawTargetWebgl::SharedContext;
+    if (!mSharedContext->Initialize()) {
+      mSharedContext = nullptr;
+      return false;
+    }
+    sSharedContext = mSharedContext;
+  } else {
+    mSharedContext = sSharedContext;
+  }
+
+  if (size_t(std::max(size.width, size.height)) >
+      mSharedContext->mMaxTextureSize) {
     return false;
   }
 
-  
-  mMaxTextureSize = mWebgl->Limits().maxTex2dSize;
-  if (size_t(std::max(size.width, size.height)) > mMaxTextureSize) {
-    mWebgl = nullptr;
-    return false;
-  }
-
-  if (!CreateShaders()) {
-    mWebgl = nullptr;
+  if (!CreateFramebuffer()) {
     return false;
   }
 
@@ -252,14 +254,125 @@ bool DrawTargetWebgl::Init(const IntSize& size, const SurfaceFormat format) {
   if (!mSkia->Init(size, SurfaceFormat::B8G8R8A8)) {
     return false;
   }
-  mSize = size;
-  mFormat = format;
+
+  return true;
+}
+
+bool DrawTargetWebgl::SharedContext::Initialize() {
+  WebGLContextOptions options = {};
+  options.alpha = true;
+  options.depth = false;
+  options.stencil = false;
+  options.antialias = false;
+  options.preserveDrawingBuffer = true;
+  options.failIfMajorPerformanceCaveat = true;
+
+  mWebgl = new ClientWebGLContext(true);
+  mWebgl->SetContextOptions(options);
+  if (mWebgl->SetDimensions(1, 1) != NS_OK) {
+    mWebgl = nullptr;
+    return false;
+  }
+
+  mMaxTextureSize = mWebgl->Limits().maxTex2dSize;
+
+  if (!CreateShaders()) {
+    mWebgl = nullptr;
+    return false;
+  }
+
+  return true;
+}
+
+void DrawTargetWebgl::SharedContext::SetBlendState(CompositionOp aOp) {
+  if (aOp == mLastCompositionOp) {
+    return;
+  }
+  mLastCompositionOp = aOp;
+
+  
+  mWebgl->Enable(LOCAL_GL_BLEND);
+  switch (aOp) {
+    case CompositionOp::OP_OVER:
+      mWebgl->BlendFuncSeparate(LOCAL_GL_ONE, LOCAL_GL_ONE_MINUS_SRC_ALPHA,
+                                LOCAL_GL_ONE, LOCAL_GL_ONE_MINUS_SRC_ALPHA);
+      break;
+    case CompositionOp::OP_ADD:
+      mWebgl->BlendFuncSeparate(LOCAL_GL_ONE, LOCAL_GL_ONE, LOCAL_GL_ONE,
+                                LOCAL_GL_ONE);
+      break;
+    case CompositionOp::OP_ATOP:
+      mWebgl->BlendFuncSeparate(
+          LOCAL_GL_DST_ALPHA, LOCAL_GL_ONE_MINUS_SRC_ALPHA, LOCAL_GL_DST_ALPHA,
+          LOCAL_GL_ONE_MINUS_SRC_ALPHA);
+      break;
+    case CompositionOp::OP_SOURCE:
+    default:
+      mWebgl->Disable(LOCAL_GL_BLEND);
+      break;
+  }
+}
+
+
+bool DrawTargetWebgl::SharedContext::SetTarget(DrawTargetWebgl* aDT) {
+  if (mWebgl->IsContextLost()) {
+    return false;
+  }
+  if (aDT != mCurrentTarget) {
+    mCurrentTarget = aDT;
+    mWebgl->BindFramebuffer(LOCAL_GL_FRAMEBUFFER, aDT->mFramebuffer);
+    mViewportSize = aDT->GetSize();
+    mWebgl->Viewport(0, 0, mViewportSize.width, mViewportSize.height);
+  }
   return true;
 }
 
 
+
+bool DrawTargetWebgl::PrepareContext(bool aClipped) {
+  if (!aClipped) {
+    
+    mSharedContext->SetClipRect(IntRect(IntPoint(), mSize));
+    
+    mClipDirty = true;
+  } else if (mClipDirty || !mSharedContext->IsCurrentTarget(this)) {
+    
+    
+    
+    Maybe<Rect> clip = mSkia->GetDeviceClipRect();
+    if (!clip) {
+      return false;
+    }
+    
+    
+    IntRect intClip;
+    if (!clip->IsEmpty()) {
+      
+      
+      
+      intClip = RoundedToInt(*clip);
+      if (!clip->WithinEpsilonOf(Rect(intClip), 1.0e-3f)) {
+        return false;
+      }
+      
+      
+      if (intClip.Contains(IntRect(IntPoint(), mSize))) {
+        intClip = IntRect(IntPoint(), mSize);
+      }
+    }
+    mSharedContext->SetClipRect(intClip);
+    mClipDirty = false;
+  }
+  return mSharedContext->SetTarget(this);
+}
+
+bool DrawTargetWebgl::SharedContext::IsContextLost() const {
+  return mWebgl->IsContextLost();
+}
+
+
 bool DrawTargetWebgl::IsValid() const {
-  return mWebgl && !mWebgl->IsContextLost();
+  return mSharedContext && !mSharedContext->IsContextLost();
 }
 
 already_AddRefed<DrawTargetWebgl> DrawTargetWebgl::Create(
@@ -314,13 +427,13 @@ void* DrawTargetWebgl::GetNativeSurface(NativeSurfaceType aType) {
   switch (aType) {
     case NativeSurfaceType::WEBGL_CONTEXT:
       
-      if (mWebgl->IsContextLost()) {
+      if (mSharedContext->IsContextLost()) {
         return nullptr;
       }
       if (!mWebglValid) {
         FlushFromSkia();
       }
-      return mWebgl.get();
+      return mSharedContext->mWebgl.get();
     default:
       return nullptr;
   }
@@ -343,7 +456,7 @@ already_AddRefed<SourceSurface> DrawTargetWebgl::Snapshot() {
 
   
   
-  if (mWebgl->IsContextLost()) {
+  if (mSharedContext->IsContextLost()) {
     return nullptr;
   }
 
@@ -366,6 +479,10 @@ already_AddRefed<SourceSurface> DrawTargetWebgl::Snapshot() {
 
 
 bool DrawTargetWebgl::ReadInto(uint8_t* aDstData, int32_t aDstStride) {
+  if (!PrepareContext(false)) {
+    return false;
+  }
+
   RefPtr<DataSourceSurface> temp =
       Factory::CreateDataSourceSurface(mSize, mFormat);
   if (!temp) {
@@ -382,7 +499,7 @@ bool DrawTargetWebgl::ReadInto(uint8_t* aDstData, int32_t aDstStride) {
   desc.size = *uvec2::FromSize(mSize);
   desc.packState.rowLength = srcStride / 4;
   Range<uint8_t> range = {srcMap.GetData(), size_t(srcStride) * mSize.height};
-  mWebgl->DoReadPixels(desc, range);
+  mSharedContext->mWebgl->DoReadPixels(desc, range);
   const uint8_t* srcRow = srcMap.GetData();
   uint8_t* dstRow = aDstData + size_t(aDstStride) * mSize.height;
   for (int y = 0; y < mSize.height; y++) {
@@ -422,7 +539,7 @@ void DrawTargetWebgl::ReleaseBits(uint8_t* aData) {
 
 
 
-bool DrawTargetWebgl::CreateShaders() {
+bool DrawTargetWebgl::SharedContext::CreateShaders() {
   if (!mVertexArray) {
     mVertexArray = mWebgl->CreateVertexArray();
   }
@@ -547,6 +664,10 @@ bool DrawTargetWebgl::CreateShaders() {
         !mImageProgramColor || !mImageProgramSampler) {
       return false;
     }
+    mWebgl->UseProgram(mImageProgram);
+    int32_t samplerData = 0;
+    mWebgl->UniformData(LOCAL_GL_INT, mImageProgramSampler, false,
+                        {(const uint8_t*)&samplerData, sizeof(samplerData)});
   }
   return true;
 }
@@ -555,6 +676,39 @@ void DrawTargetWebgl::ClearRect(const Rect& aRect) {
   ColorPattern pattern(
       DeviceColor(0.0f, 0.0f, 0.0f, IsOpaque(mFormat) ? 1.0f : 0.0f));
   DrawRect(aRect, pattern, DrawOptions(1.0f, CompositionOp::OP_SOURCE));
+}
+
+
+
+bool DrawTargetWebgl::CreateFramebuffer() {
+  RefPtr<ClientWebGLContext> webgl = mSharedContext->mWebgl;
+  if (!mFramebuffer) {
+    mFramebuffer = webgl->CreateFramebuffer();
+  }
+  if (!mTex) {
+    mTex = webgl->CreateTexture();
+    webgl->BindTexture(LOCAL_GL_TEXTURE_2D, mTex);
+    webgl->TexStorage2D(LOCAL_GL_TEXTURE_2D, 1, LOCAL_GL_RGBA8, mSize.width,
+                        mSize.height);
+    webgl->TexParameteri(LOCAL_GL_TEXTURE_2D, LOCAL_GL_TEXTURE_WRAP_S,
+                         LOCAL_GL_CLAMP_TO_EDGE);
+    webgl->TexParameteri(LOCAL_GL_TEXTURE_2D, LOCAL_GL_TEXTURE_WRAP_T,
+                         LOCAL_GL_CLAMP_TO_EDGE);
+    webgl->TexParameteri(LOCAL_GL_TEXTURE_2D, LOCAL_GL_TEXTURE_MAG_FILTER,
+                         LOCAL_GL_LINEAR);
+    webgl->TexParameteri(LOCAL_GL_TEXTURE_2D, LOCAL_GL_TEXTURE_MIN_FILTER,
+                         LOCAL_GL_LINEAR);
+    webgl->BindFramebuffer(LOCAL_GL_FRAMEBUFFER, mFramebuffer);
+    webgl->FramebufferTexture2D(LOCAL_GL_FRAMEBUFFER,
+                                LOCAL_GL_COLOR_ATTACHMENT0, LOCAL_GL_TEXTURE_2D,
+                                mTex, 0);
+    webgl->Viewport(0, 0, mSize.width, mSize.height);
+    webgl->ClearColor(0.0f, 0.0f, 0.0f, IsOpaque(mFormat) ? 1.0f : 0.0f);
+    webgl->Clear(LOCAL_GL_COLOR_BUFFER_BIT);
+    mSharedContext->ClearTarget();
+    mSharedContext->ClearLastTexture();
+  }
+  return true;
 }
 
 void DrawTargetWebgl::CopySurface(SourceSurface* aSurface,
@@ -586,18 +740,26 @@ void DrawTargetWebgl::CopySurface(SourceSurface* aSurface,
            false, false);
 }
 
-void DrawTargetWebgl::PushClip(const Path* aPath) { mSkia->PushClip(aPath); }
+void DrawTargetWebgl::PushClip(const Path* aPath) {
+  mClipDirty = true;
+  mSkia->PushClip(aPath);
+}
 
 void DrawTargetWebgl::PushClipRect(const Rect& aRect) {
+  mClipDirty = true;
   mSkia->PushClipRect(aRect);
 }
 
 void DrawTargetWebgl::PushDeviceSpaceClipRects(const IntRect* aRects,
                                                uint32_t aCount) {
+  mClipDirty = true;
   mSkia->PushDeviceSpaceClipRects(aRects, aCount);
 }
 
-void DrawTargetWebgl::PopClip() { mSkia->PopClip(); }
+void DrawTargetWebgl::PopClip() {
+  mClipDirty = true;
+  mSkia->PopClip();
+}
 
 
 static inline bool SupportsDrawOptions(const DrawOptions& aOptions) {
@@ -613,7 +775,7 @@ static inline bool SupportsDrawOptions(const DrawOptions& aOptions) {
 }
 
 
-bool DrawTargetWebgl::SupportsPattern(const Pattern& aPattern) {
+bool DrawTargetWebgl::SharedContext::SupportsPattern(const Pattern& aPattern) {
   switch (aPattern.GetType()) {
     case PatternType::COLOR:
       return true;
@@ -650,15 +812,6 @@ static void ReleaseTextureHandle(void* aPtr) {
   static_cast<TextureHandle*>(aPtr)->SetSurface(nullptr);
 }
 
-
-
-
-
-
-
-
-
-
 bool DrawTargetWebgl::DrawRect(const Rect& aRect, const Pattern& aPattern,
                                const DrawOptions& aOptions,
                                Maybe<DeviceColor> aMaskColor,
@@ -666,119 +819,124 @@ bool DrawTargetWebgl::DrawRect(const Rect& aRect, const Pattern& aPattern,
                                bool aTransformed, bool aClipped,
                                bool aAccelOnly, bool aForceUpdate,
                                const StrokeOptions* aStrokeOptions) {
+  
   if (aRect.IsEmpty()) {
     return true;
   }
-  
-  Maybe<IntRect> intClip;
-  if (!aClipped) {
-    
-    intClip = Some(IntRect(IntPoint(), mSize));
-  } else if (Maybe<Rect> clip = mSkia->GetDeviceClipRect()) {
-    
-    
-    if (clip->IsEmpty()) {
-      return true;
-    }
-    
-    
-    
-    IntRect intRect = RoundedToInt(*clip);
-    if (clip->WithinEpsilonOf(Rect(intRect), 1.0e-3f)) {
-      intClip = Some(intRect);
-    }
-  }
+
   
   
-  if (!SupportsDrawOptions(aOptions) || !SupportsPattern(aPattern) ||
-      !intClip || mWebgl->IsContextLost()) {
-    
-    if (aAccelOnly) {
-      return false;
-    }
-    
-    MarkSkiaChanged(aOptions);
-    if (aTransformed) {
-      
-      if (aMaskColor) {
-        mSkia->Mask(ColorPattern(*aMaskColor), aPattern, aOptions);
-      } else if (aStrokeOptions) {
-        mSkia->StrokeRect(aRect, aPattern, *aStrokeOptions, aOptions);
-      } else {
-        mSkia->FillRect(aRect, aPattern, aOptions);
-      }
-    } else if (aClipped) {
-      
-      
-      mSkia->SetTransform(Matrix());
-      if (aMaskColor) {
-        auto surfacePattern = static_cast<const SurfacePattern&>(aPattern);
-        if (surfacePattern.mSamplingRect.IsEmpty()) {
-          mSkia->MaskSurface(ColorPattern(*aMaskColor), surfacePattern.mSurface,
-                             aRect.TopLeft(), aOptions);
-        } else {
-          mSkia->Mask(ColorPattern(*aMaskColor), aPattern, aOptions);
-        }
-      } else if (aStrokeOptions) {
-        mSkia->StrokeRect(aRect, aPattern, *aStrokeOptions, aOptions);
-      } else {
-        mSkia->FillRect(aRect, aPattern, aOptions);
-      }
-      mSkia->SetTransform(mTransform);
-    } else if (aPattern.GetType() == PatternType::SURFACE) {
-      
-      
-      auto surfacePattern = static_cast<const SurfacePattern&>(aPattern);
-      mSkia->CopySurface(surfacePattern.mSurface,
-                         surfacePattern.mSurface->GetRect(),
-                         IntPoint::Round(aRect.TopLeft()));
-    } else {
-      MOZ_ASSERT(false);
+  
+  
+  if (!PrepareContext(aClipped) || (!mWebglValid && !FlushFromSkia())) {
+    if (!aAccelOnly) {
+      DrawRectFallback(aRect, aPattern, aOptions, aMaskColor, aTransformed,
+                       aClipped, aStrokeOptions);
     }
     return false;
   }
 
   
   
-  if (!mWebglValid) {
-    FlushFromSkia();
-  }
+  return mSharedContext->DrawRectAccel(
+      aRect, aPattern, aOptions, aMaskColor, aHandle, aTransformed, aClipped,
+      aAccelOnly, aForceUpdate, aStrokeOptions);
+}
 
-  MarkChanged();
-
+void DrawTargetWebgl::DrawRectFallback(const Rect& aRect,
+                                       const Pattern& aPattern,
+                                       const DrawOptions& aOptions,
+                                       Maybe<DeviceColor> aMaskColor,
+                                       bool aTransformed, bool aClipped,
+                                       const StrokeOptions* aStrokeOptions) {
   
-  if (aOptions.mCompositionOp != mLastCompositionOp) {
-    mLastCompositionOp = aOptions.mCompositionOp;
-    mWebgl->Enable(LOCAL_GL_BLEND);
-    switch (aOptions.mCompositionOp) {
-      case CompositionOp::OP_OVER:
-        mWebgl->BlendFuncSeparate(LOCAL_GL_ONE, LOCAL_GL_ONE_MINUS_SRC_ALPHA,
-                                  LOCAL_GL_ONE, LOCAL_GL_ONE_MINUS_SRC_ALPHA);
-        break;
-      case CompositionOp::OP_ADD:
-        mWebgl->BlendFuncSeparate(LOCAL_GL_ONE, LOCAL_GL_ONE, LOCAL_GL_ONE,
-                                  LOCAL_GL_ONE);
-        break;
-      case CompositionOp::OP_ATOP:
-        mWebgl->BlendFuncSeparate(
-            LOCAL_GL_DST_ALPHA, LOCAL_GL_ONE_MINUS_SRC_ALPHA,
-            LOCAL_GL_DST_ALPHA, LOCAL_GL_ONE_MINUS_SRC_ALPHA);
-        break;
-      case CompositionOp::OP_SOURCE:
-      default:
-        mWebgl->Disable(LOCAL_GL_BLEND);
-        break;
+  MarkSkiaChanged(aOptions);
+
+  if (aTransformed) {
+    
+    if (aMaskColor) {
+      mSkia->Mask(ColorPattern(*aMaskColor), aPattern, aOptions);
+    } else if (aStrokeOptions) {
+      mSkia->StrokeRect(aRect, aPattern, *aStrokeOptions, aOptions);
+    } else {
+      mSkia->FillRect(aRect, aPattern, aOptions);
     }
+  } else if (aClipped) {
+    
+    
+    mSkia->SetTransform(Matrix());
+    if (aMaskColor) {
+      auto surfacePattern = static_cast<const SurfacePattern&>(aPattern);
+      if (surfacePattern.mSamplingRect.IsEmpty()) {
+        mSkia->MaskSurface(ColorPattern(*aMaskColor), surfacePattern.mSurface,
+                           aRect.TopLeft(), aOptions);
+      } else {
+        mSkia->Mask(ColorPattern(*aMaskColor), aPattern, aOptions);
+      }
+    } else if (aStrokeOptions) {
+      mSkia->StrokeRect(aRect, aPattern, *aStrokeOptions, aOptions);
+    } else {
+      mSkia->FillRect(aRect, aPattern, aOptions);
+    }
+    mSkia->SetTransform(mTransform);
+  } else if (aPattern.GetType() == PatternType::SURFACE) {
+    
+    
+    auto surfacePattern = static_cast<const SurfacePattern&>(aPattern);
+    mSkia->CopySurface(surfacePattern.mSurface,
+                       surfacePattern.mSurface->GetRect(),
+                       IntPoint::Round(aRect.TopLeft()));
+  } else {
+    MOZ_ASSERT(false);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+bool DrawTargetWebgl::SharedContext::DrawRectAccel(
+    const Rect& aRect, const Pattern& aPattern, const DrawOptions& aOptions,
+    Maybe<DeviceColor> aMaskColor, RefPtr<TextureHandle>* aHandle,
+    bool aTransformed, bool aClipped, bool aAccelOnly, bool aForceUpdate,
+    const StrokeOptions* aStrokeOptions) {
+  
+  if (aRect.IsEmpty() || mClipRect.IsEmpty()) {
+    return true;
   }
 
   
-  if (intClip->Contains(IntRect(IntPoint(), mSize))) {
-    intClip = Nothing();
-  } else {
-    mWebgl->Enable(LOCAL_GL_SCISSOR_TEST);
-    mWebgl->Scissor(intClip->x, mSize.height - (intClip->y + intClip->height),
-                    intClip->width, intClip->height);
+  
+  if (!SupportsDrawOptions(aOptions) || !SupportsPattern(aPattern)) {
+    
+    
+    if (!aAccelOnly) {
+      mCurrentTarget->DrawRectFallback(aRect, aPattern, aOptions, aMaskColor,
+                                       aTransformed, aClipped, aStrokeOptions);
+    }
+    return false;
   }
+
+  
+  SetBlendState(aOptions.mCompositionOp);
+
+  
+  bool scissor = false;
+  if (!mClipRect.Contains(IntRect(IntPoint(), mViewportSize))) {
+    scissor = true;
+    mWebgl->Enable(LOCAL_GL_SCISSOR_TEST);
+    mWebgl->Scissor(mClipRect.x,
+                    mViewportSize.height - (mClipRect.y + mClipRect.height),
+                    mClipRect.width, mClipRect.height);
+  }
+
+  const Matrix& currentTransform = GetTransform();
+  bool success = false;
 
   
   switch (aPattern.GetType()) {
@@ -787,43 +945,42 @@ bool DrawTargetWebgl::DrawRect(const Rect& aRect, const Pattern& aPattern,
       if (((color.a * aOptions.mAlpha == 1.0f &&
             aOptions.mCompositionOp == CompositionOp::OP_OVER) ||
            aOptions.mCompositionOp == CompositionOp::OP_SOURCE) &&
-          mTransform.HasOnlyIntegerTranslation()) {
+          currentTransform.HasOnlyIntegerTranslation()) {
         
         
         
         auto intRect = RoundedToInt(aRect);
         if (aRect.WithinEpsilonOf(Rect(intRect), 1.0e-3f)) {
-          intRect += RoundedToInt(mTransform.GetTranslation());
-          IntRect bounds = intClip.refOr(IntRect(IntPoint(), mSize));
-          bool scissor = !intRect.Contains(bounds);
-          if (scissor) {
+          intRect += RoundedToInt(currentTransform.GetTranslation());
+          if (!intRect.Contains(mClipRect)) {
+            scissor = true;
             mWebgl->Enable(LOCAL_GL_SCISSOR_TEST);
-            intRect =
-                intRect.Intersect(intClip.refOr(IntRect(IntPoint(), mSize)));
+            intRect = intRect.Intersect(mClipRect);
             mWebgl->Scissor(intRect.x,
-                            mSize.height - (intRect.y + intRect.height),
+                            mViewportSize.height - (intRect.y + intRect.height),
                             intRect.width, intRect.height);
           }
           float a = color.a * aOptions.mAlpha;
           mWebgl->ClearColor(color.r * a, color.g * a, color.b * a, a);
           mWebgl->Clear(LOCAL_GL_COLOR_BUFFER_BIT);
-          if (scissor) {
-            mWebgl->Disable(LOCAL_GL_SCISSOR_TEST);
-          }
+          success = true;
           break;
         }
       }
       
       
-      mWebgl->UseProgram(mSolidProgram.get());
+      if (mLastProgram != mSolidProgram) {
+        mWebgl->UseProgram(mSolidProgram);
+        mLastProgram = mSolidProgram;
+      }
       float a = color.a * aOptions.mAlpha;
       float colorData[4] = {color.r * a, color.g * a, color.b * a, a};
       Matrix xform(aRect.width, 0.0f, 0.0f, aRect.height, aRect.x, aRect.y);
       if (aTransformed) {
-        xform *= mTransform;
+        xform *= currentTransform;
       }
-      xform *= Matrix(2.0f / float(mSize.width), 0.0f, 0.0f,
-                      -2.0f / float(mSize.height), -1, 1);
+      xform *= Matrix(2.0f / float(mViewportSize.width), 0.0f, 0.0f,
+                      -2.0f / float(mViewportSize.height), -1, 1);
       float xformData[6] = {xform._11, xform._12, xform._21,
                             xform._22, xform._31, xform._32};
       mWebgl->UniformData(LOCAL_GL_FLOAT_VEC2, mSolidProgramTransform, false,
@@ -833,6 +990,7 @@ bool DrawTargetWebgl::DrawRect(const Rect& aRect, const Pattern& aPattern,
       
       mWebgl->DrawArrays(
           aStrokeOptions ? LOCAL_GL_LINE_LOOP : LOCAL_GL_TRIANGLE_FAN, 0, 4);
+      success = true;
       break;
     }
     case PatternType::SURFACE: {
@@ -876,17 +1034,20 @@ bool DrawTargetWebgl::DrawRect(const Rect& aRect, const Pattern& aPattern,
       }
 
       
-      mWebgl->UseProgram(mImageProgram.get());
+      if (mLastProgram != mImageProgram) {
+        mWebgl->UseProgram(mImageProgram);
+        mLastProgram = mImageProgram;
+      }
       DeviceColor color = aMaskColor.valueOr(DeviceColor(1, 1, 1, 1));
       float a = color.a * aOptions.mAlpha;
       float colorData[4] = {color.r * a, color.g * a, color.b * a, a};
       float swizzleData = aMaskColor ? 1.0f : 0.0f;
       Matrix xform(aRect.width, 0.0f, 0.0f, aRect.height, aRect.x, aRect.y);
       if (aTransformed) {
-        xform *= mTransform;
+        xform *= currentTransform;
       }
-      xform *= Matrix(2.0f / float(mSize.width), 0.0f, 0.0f,
-                      -2.0f / float(mSize.height), -1, 1);
+      xform *= Matrix(2.0f / float(mViewportSize.width), 0.0f, 0.0f,
+                      -2.0f / float(mViewportSize.height), -1, 1);
       float xformData[6] = {xform._11, xform._12, xform._21,
                             xform._22, xform._31, xform._32};
       mWebgl->UniformData(LOCAL_GL_FLOAT_VEC2, mImageProgramTransform, false,
@@ -895,9 +1056,6 @@ bool DrawTargetWebgl::DrawRect(const Rect& aRect, const Pattern& aPattern,
                           {(const uint8_t*)colorData, sizeof(colorData)});
       mWebgl->UniformData(LOCAL_GL_FLOAT, mImageProgramSwizzle, false,
                           {(const uint8_t*)&swizzleData, sizeof(swizzleData)});
-      int32_t samplerData = 0;
-      mWebgl->UniformData(LOCAL_GL_INT, mImageProgramSampler, false,
-                          {(const uint8_t*)&samplerData, sizeof(samplerData)});
 
       RefPtr<WebGLTextureJS> tex;
       IntRect bounds;
@@ -999,7 +1157,10 @@ bool DrawTargetWebgl::DrawRect(const Rect& aRect, const Pattern& aPattern,
       }
       bounds = handle->GetBounds();
       backingSize = handle->GetBackingSize();
-      mWebgl->BindTexture(LOCAL_GL_TEXTURE_2D, tex.get());
+      if (mLastTexture != tex) {
+        mWebgl->BindTexture(LOCAL_GL_TEXTURE_2D, tex);
+        mLastTexture = tex;
+      }
 
       if (init) {
         
@@ -1097,6 +1258,7 @@ bool DrawTargetWebgl::DrawRect(const Rect& aRect, const Pattern& aPattern,
       
       mWebgl->DrawArrays(
           aStrokeOptions ? LOCAL_GL_LINE_LOOP : LOCAL_GL_TRIANGLE_FAN, 0, 4);
+      success = true;
       break;
     }
     default:
@@ -1107,14 +1269,18 @@ bool DrawTargetWebgl::DrawRect(const Rect& aRect, const Pattern& aPattern,
   
 
   
-  if (intClip) {
+  if (scissor) {
     mWebgl->Disable(LOCAL_GL_SCISSOR_TEST);
   }
-
-  return true;
+  if (success) {
+    
+    
+    mCurrentTarget->MarkChanged();
+  }
+  return success;
 }
 
-bool DrawTargetWebgl::RemoveSharedTexture(
+bool DrawTargetWebgl::SharedContext::RemoveSharedTexture(
     const RefPtr<SharedTexture>& aTexture) {
   auto pos =
       std::find(mSharedTextures.begin(), mSharedTextures.end(), aTexture);
@@ -1123,20 +1289,21 @@ bool DrawTargetWebgl::RemoveSharedTexture(
   }
   mTotalTextureMemory -= aTexture->UsedBytes();
   mSharedTextures.erase(pos);
+  ClearLastTexture();
   return true;
 }
 
-void SharedTextureHandle::Cleanup(DrawTargetWebgl& aDT) {
+void SharedTextureHandle::Cleanup(DrawTargetWebgl::SharedContext& aContext) {
   mTexture->Free(*this);
 
   
   
   if (!mTexture->HasAllocatedHandles()) {
-    aDT.RemoveSharedTexture(mTexture);
+    aContext.RemoveSharedTexture(mTexture);
   }
 }
 
-bool DrawTargetWebgl::RemoveStandaloneTexture(
+bool DrawTargetWebgl::SharedContext::RemoveStandaloneTexture(
     const RefPtr<StandaloneTexture>& aTexture) {
   auto pos = std::find(mStandaloneTextures.begin(), mStandaloneTextures.end(),
                        aTexture);
@@ -1145,15 +1312,17 @@ bool DrawTargetWebgl::RemoveStandaloneTexture(
   }
   mTotalTextureMemory -= aTexture->UsedBytes();
   mStandaloneTextures.erase(pos);
+  ClearLastTexture();
   return true;
 }
 
-void StandaloneTexture::Cleanup(DrawTargetWebgl& aDT) {
-  aDT.RemoveStandaloneTexture(this);
+void StandaloneTexture::Cleanup(DrawTargetWebgl::SharedContext& aContext) {
+  aContext.RemoveStandaloneTexture(this);
 }
 
 
-void DrawTargetWebgl::PruneTextureHandle(RefPtr<TextureHandle> aHandle) {
+void DrawTargetWebgl::SharedContext::PruneTextureHandle(
+    RefPtr<TextureHandle> aHandle) {
   
   aHandle->Invalidate();
   
@@ -1171,7 +1340,8 @@ void DrawTargetWebgl::PruneTextureHandle(RefPtr<TextureHandle> aHandle) {
 
 
 
-bool DrawTargetWebgl::PruneTextureMemory(size_t aMargin, bool aPruneUnused) {
+bool DrawTargetWebgl::SharedContext::PruneTextureMemory(size_t aMargin,
+                                                        bool aPruneUnused) {
   
   size_t maxBytes = StaticPrefs::gfx_canvas_accelerated_cache_size() << 20;
   maxBytes -= std::min(maxBytes, aMargin);
@@ -1325,98 +1495,111 @@ void DrawTargetWebgl::Fill(const Path* aPath, const Pattern& aPattern,
   }
 }
 
+bool DrawTargetWebgl::SharedContext::DrawPathAccel(
+    const Path* aPath, const Pattern& aPattern, const DrawOptions& aOptions,
+    const StrokeOptions* aStrokeOptions) {
+  
+  
+  const PathSkia* pathSkia = static_cast<const PathSkia*>(aPath);
+  const Matrix& currentTransform = GetTransform();
+  Rect bounds = pathSkia->GetFastBounds(currentTransform, aStrokeOptions)
+                    .Intersect(Rect(IntRect(IntPoint(), mViewportSize)));
+  
+  if (bounds.IsEmpty()) {
+    return true;
+  }
+  IntRect intBounds = RoundedOut(bounds);
+  
+  
+  
+  Maybe<DeviceColor> color =
+      aPattern.GetType() == PatternType::COLOR
+          ? Some(static_cast<const ColorPattern&>(aPattern).mColor)
+          : Nothing();
+  if (!mPathCache) {
+    mPathCache = MakeUnique<PathCache>();
+  }
+  
+  
+  RefPtr<PathCacheEntry> entry = mPathCache->FindOrInsertEntry(
+      pathSkia->GetPath(), color ? nullptr : &aPattern, aStrokeOptions,
+      currentTransform, intBounds, bounds.TopLeft());
+  if (!entry) {
+    return false;
+  }
+
+  RefPtr<TextureHandle> handle = entry->GetHandle();
+  if (handle && handle->IsValid()) {
+    
+    
+    
+    
+    
+    
+    
+    Point oldOffset = entry->GetOrigin() - entry->GetBounds().TopLeft();
+    Point newOffset = bounds.TopLeft() - intBounds.TopLeft();
+    Rect offsetRect = Rect(intBounds) + (newOffset - oldOffset);
+    SurfacePattern pathPattern(nullptr, ExtendMode::CLAMP,
+                               Matrix::Translation(offsetRect.TopLeft()));
+    if (DrawRectAccel(offsetRect, pathPattern, aOptions, color, &handle, false,
+                      true, true)) {
+      return true;
+    }
+  } else {
+    
+    
+    
+    
+    
+    handle = nullptr;
+    RefPtr<DrawTargetSkia> pathDT = new DrawTargetSkia;
+    if (pathDT->Init(intBounds.Size(),
+                     color ? SurfaceFormat::A8 : SurfaceFormat::B8G8R8A8)) {
+      pathDT->SetTransform(currentTransform *
+                           Matrix::Translation(-intBounds.TopLeft()));
+      DrawOptions drawOptions(1.0f, CompositionOp::OP_OVER,
+                              aOptions.mAntialiasMode);
+      static const ColorPattern maskPattern(
+          DeviceColor(1.0f, 1.0f, 1.0f, 1.0f));
+      const Pattern& cachePattern = color ? maskPattern : aPattern;
+      if (aStrokeOptions) {
+        pathDT->Stroke(aPath, cachePattern, *aStrokeOptions, drawOptions);
+      } else {
+        pathDT->Fill(aPath, cachePattern, drawOptions);
+      }
+      RefPtr<SourceSurface> pathSurface = pathDT->Snapshot();
+      if (pathSurface) {
+        SurfacePattern pathPattern(pathSurface, ExtendMode::CLAMP,
+                                   Matrix::Translation(intBounds.TopLeft()));
+        
+        
+        
+        
+        if (DrawRectAccel(Rect(intBounds), pathPattern, aOptions, color,
+                          &handle, false, true) &&
+            handle) {
+          entry->Link(handle);
+        } else {
+          entry->Unlink();
+        }
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 void DrawTargetWebgl::DrawPath(const Path* aPath, const Pattern& aPattern,
                                const DrawOptions& aOptions,
                                const StrokeOptions* aStrokeOptions) {
   
   
-  if (mWebglValid && SupportsDrawOptions(aOptions)) {
-    
-    
-    const PathSkia* pathSkia = static_cast<const PathSkia*>(aPath);
-    Rect bounds = pathSkia->GetFastBounds(mTransform, aStrokeOptions)
-                      .Intersect(Rect(mSkia->GetRect()));
-    if (bounds.IsEmpty()) {
-      return;
-    }
-    IntRect intBounds = RoundedOut(bounds);
-    
-    
-    
-    Maybe<DeviceColor> color =
-        aPattern.GetType() == PatternType::COLOR
-            ? Some(static_cast<const ColorPattern&>(aPattern).mColor)
-            : Nothing();
-    if (!mPathCache) {
-      mPathCache = MakeUnique<PathCache>();
-    }
-    
-    
-    RefPtr<PathCacheEntry> entry = mPathCache->FindOrInsertEntry(
-        pathSkia->GetPath(), color ? nullptr : &aPattern, aStrokeOptions,
-        mTransform, intBounds, bounds.TopLeft());
-    if (entry) {
-      RefPtr<TextureHandle> handle = entry->GetHandle();
-      if (handle && handle->IsValid()) {
-        
-        
-        
-        
-        
-        
-        
-        Point oldOffset = entry->GetOrigin() - entry->GetBounds().TopLeft();
-        Point newOffset = bounds.TopLeft() - intBounds.TopLeft();
-        Rect offsetRect = Rect(intBounds) + (newOffset - oldOffset);
-        SurfacePattern pathPattern(nullptr, ExtendMode::CLAMP,
-                                   Matrix::Translation(offsetRect.TopLeft()));
-        if (DrawRect(offsetRect, pathPattern, aOptions, color, &handle, false,
-                     true, true)) {
-          return;
-        }
-      } else {
-        
-        
-        
-        
-        
-        handle = nullptr;
-        RefPtr<DrawTargetSkia> pathDT = new DrawTargetSkia;
-        if (pathDT->Init(intBounds.Size(),
-                         color ? SurfaceFormat::A8 : SurfaceFormat::B8G8R8A8)) {
-          pathDT->SetTransform(mTransform *
-                               Matrix::Translation(-intBounds.TopLeft()));
-          DrawOptions drawOptions(1.0f, CompositionOp::OP_OVER,
-                                  aOptions.mAntialiasMode);
-          static const ColorPattern maskPattern(
-              DeviceColor(1.0f, 1.0f, 1.0f, 1.0f));
-          const Pattern& cachePattern = color ? maskPattern : aPattern;
-          if (aStrokeOptions) {
-            pathDT->Stroke(aPath, cachePattern, *aStrokeOptions, drawOptions);
-          } else {
-            pathDT->Fill(aPath, cachePattern, drawOptions);
-          }
-          RefPtr<SourceSurface> pathSurface = pathDT->Snapshot();
-          if (pathSurface) {
-            SurfacePattern pathPattern(
-                pathSurface, ExtendMode::CLAMP,
-                Matrix::Translation(intBounds.TopLeft()));
-            
-            
-            
-            
-            if (DrawRect(Rect(intBounds), pathPattern, aOptions, color, &handle,
-                         false, true) &&
-                handle) {
-              entry->Link(handle);
-            } else {
-              entry->Unlink();
-            }
-            return;
-          }
-        }
-      }
-    }
+  if (mWebglValid && SupportsDrawOptions(aOptions) && PrepareContext() &&
+      mSharedContext->DrawPathAccel(aPath, aPattern, aOptions,
+                                    aStrokeOptions)) {
+    return;
   }
 
   
@@ -1497,11 +1680,9 @@ static already_AddRefed<DataSourceSurface> ExtractAlpha(
   return alpha.forget();
 }
 
-void DrawTargetWebgl::DrawSurfaceWithShadow(SourceSurface* aSurface,
-                                            const Point& aDest,
-                                            const DeviceColor& aColor,
-                                            const Point& aOffset, Float aSigma,
-                                            CompositionOp aOperator) {
+bool DrawTargetWebgl::SharedContext::DrawSurfaceWithShadowAccel(
+    SourceSurface* aSurface, const Point& aDest, const DeviceColor& aColor,
+    const Point& aOffset, Float aSigma, CompositionOp aOperator) {
   
   
   
@@ -1530,9 +1711,9 @@ void DrawTargetWebgl::DrawSurfaceWithShadow(SourceSurface* aSurface,
       SurfacePattern shadowMask(alpha, ExtendMode::CLAMP,
                                 Matrix::Translation(Point(shadowOffset)));
       handle = nullptr;
-      if (DrawRect(Rect(IntRect(shadowOffset, size)), shadowMask,
-                   DrawOptions(1.0f, aOperator), Some(aColor), &handle, false,
-                   true) &&
+      if (DrawRectAccel(Rect(IntRect(shadowOffset, size)), shadowMask,
+                        DrawOptions(1.0f, aOperator), Some(aColor), &handle,
+                        false, true) &&
           handle) {
         
         
@@ -1546,29 +1727,43 @@ void DrawTargetWebgl::DrawSurfaceWithShadow(SourceSurface* aSurface,
       IntPoint surfaceOffset = IntPoint::Round(aDest);
       SurfacePattern surfacePattern(aSurface, ExtendMode::CLAMP,
                                     Matrix::Translation(Point(surfaceOffset)));
-      DrawRect(Rect(IntRect(surfaceOffset, size)), surfacePattern,
-               DrawOptions(1.0f, aOperator), Nothing(), nullptr, false, true);
-      return;
+      DrawRectAccel(Rect(IntRect(surfaceOffset, size)), surfacePattern,
+                    DrawOptions(1.0f, aOperator), Nothing(), nullptr, false,
+                    true);
+      return true;
     }
   } else {
     
     IntPoint shadowOffset = IntPoint::Round(aDest + aOffset);
     SurfacePattern shadowMask(nullptr, ExtendMode::CLAMP,
                               Matrix::Translation(Point(shadowOffset)));
-    if (DrawRect(Rect(IntRect(shadowOffset, size)), shadowMask,
-                 DrawOptions(1.0f, aOperator), Some(aColor), &handle, false,
-                 true, true)) {
+    if (DrawRectAccel(Rect(IntRect(shadowOffset, size)), shadowMask,
+                      DrawOptions(1.0f, aOperator), Some(aColor), &handle,
+                      false, true, true)) {
       
       
       IntPoint surfaceOffset = IntPoint::Round(aDest);
       SurfacePattern surfacePattern(aSurface, ExtendMode::CLAMP,
                                     Matrix::Translation(Point(surfaceOffset)));
-      DrawRect(Rect(IntRect(surfaceOffset, size)), surfacePattern,
-               DrawOptions(1.0f, aOperator), Nothing(), nullptr, false, true);
-      return;
+      DrawRectAccel(Rect(IntRect(surfaceOffset, size)), surfacePattern,
+                    DrawOptions(1.0f, aOperator), Nothing(), nullptr, false,
+                    true);
+      return true;
     }
   }
+  return false;
+}
 
+void DrawTargetWebgl::DrawSurfaceWithShadow(SourceSurface* aSurface,
+                                            const Point& aDest,
+                                            const DeviceColor& aColor,
+                                            const Point& aOffset, Float aSigma,
+                                            CompositionOp aOperator) {
+  if (mWebglValid && PrepareContext() &&
+      mSharedContext->DrawSurfaceWithShadowAccel(aSurface, aDest, aColor,
+                                                 aOffset, aSigma, aOperator)) {
+    return;
+  }
   
   
   MarkSkiaChanged();
@@ -1791,129 +1986,140 @@ static bool CheckForColorGlyphs(const RefPtr<SourceSurface>& aSurface) {
   return false;
 }
 
+bool DrawTargetWebgl::SharedContext::FillGlyphsAccel(
+    ScaledFont* aFont, const GlyphBuffer& aBuffer, const Pattern& aPattern,
+    const DrawOptions& aOptions) {
+  
+  
+  
+  
+  Maybe<Rect> bounds = mCurrentTarget->mSkia->GetGlyphLocalBounds(
+      aFont, aBuffer, aPattern, nullptr, aOptions);
+  if (!bounds) {
+    return false;
+  }
+
+  
+  
+  const Matrix& currentTransform = GetTransform();
+  Rect xformBounds = currentTransform.TransformBounds(*bounds).Intersect(
+      Rect(IntRect(IntPoint(), mViewportSize)));
+  if (xformBounds.IsEmpty()) {
+    return true;
+  }
+  IntRect intBounds = RoundedOut(xformBounds);
+
+  
+  
+  
+  AntialiasMode aaMode = aFont->GetDefaultAAMode();
+  if (aOptions.mAntialiasMode != AntialiasMode::DEFAULT) {
+    aaMode = aOptions.mAntialiasMode;
+  }
+  bool useSubpixelAA =
+      mCurrentTarget->GetPermitSubpixelAA() &&
+      (aaMode == AntialiasMode::DEFAULT || aaMode == AntialiasMode::SUBPIXEL);
+  
+  
+  
+  
+  
+  bool useColor = useSubpixelAA;
+
+  
+  GlyphCache* cache =
+      static_cast<GlyphCache*>(aFont->GetUserData(&mGlyphCacheKey));
+  if (!cache) {
+    cache = new GlyphCache(aFont);
+    aFont->AddUserData(&mGlyphCacheKey, cache, ReleaseGlyphCache);
+    mGlyphCaches.insertFront(cache);
+  }
+  
+  DeviceColor color = static_cast<const ColorPattern&>(aPattern).mColor;
+  DeviceColor aaColor = useColor ? color : DeviceColor(1.0f, 1.0f, 1.0f, 1.0f);
+  RefPtr<GlyphCacheEntry> entry =
+      cache->FindOrInsertEntry(aBuffer, aaColor, currentTransform, intBounds);
+  if (!entry) {
+    return false;
+  }
+
+  RefPtr<TextureHandle> handle = entry->GetHandle();
+  if (handle && handle->IsValid()) {
+    
+    
+    
+    
+    
+    SurfacePattern pattern(nullptr, ExtendMode::CLAMP,
+                           Matrix::Translation(intBounds.TopLeft()));
+    if (DrawRectAccel(
+            Rect(intBounds), pattern, aOptions,
+            handle->GetFormat() == SurfaceFormat::A8 ? Some(color) : Nothing(),
+            &handle, false, true, true)) {
+      return true;
+    }
+  } else {
+    handle = nullptr;
+
+    
+    
+    RefPtr<DrawTargetSkia> textDT = new DrawTargetSkia;
+    if (textDT->Init(intBounds.Size(), SurfaceFormat::B8G8R8A8)) {
+      textDT->SetTransform(currentTransform *
+                           Matrix::Translation(-intBounds.TopLeft()));
+      textDT->SetPermitSubpixelAA(useSubpixelAA);
+      DrawOptions drawOptions(1.0f, CompositionOp::OP_OVER,
+                              aOptions.mAntialiasMode);
+      textDT->FillGlyphs(aFont, aBuffer, ColorPattern(aaColor), drawOptions);
+      RefPtr<SourceSurface> textSurface = textDT->Snapshot();
+      if (textSurface) {
+        if (!useColor) {
+          
+          
+          
+          
+          if (CheckForColorGlyphs(textSurface)) {
+            useColor = true;
+          } else {
+            textSurface = ExtractAlpha(textSurface);
+            if (!textSurface) {
+              
+              return false;
+            }
+          }
+        }
+        
+        
+        SurfacePattern pattern(textSurface, ExtendMode::CLAMP,
+                               Matrix::Translation(intBounds.TopLeft()));
+        if (DrawRectAccel(Rect(intBounds), pattern, aOptions,
+                          useColor ? Nothing() : Some(color), &handle, false,
+                          true) &&
+            handle) {
+          
+          
+          entry->Link(handle);
+        } else {
+          
+          entry->Unlink();
+        }
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 void DrawTargetWebgl::FillGlyphs(ScaledFont* aFont, const GlyphBuffer& aBuffer,
                                  const Pattern& aPattern,
                                  const DrawOptions& aOptions) {
-  
-  
-  
   if (!aFont || !aBuffer.mNumGlyphs) {
     return;
   }
   if (mWebglValid && SupportsDrawOptions(aOptions) &&
-      aPattern.GetType() == PatternType::COLOR) {
-    
-    Maybe<Rect> bounds =
-        mSkia->GetGlyphLocalBounds(aFont, aBuffer, aPattern, nullptr, aOptions);
-    if (bounds) {
-      
-      
-      Rect xformBounds =
-          mTransform.TransformBounds(*bounds).Intersect(Rect(mSkia->GetRect()));
-      if (xformBounds.IsEmpty()) {
-        return;
-      }
-      IntRect intBounds = RoundedOut(xformBounds);
-
-      
-      
-      
-      AntialiasMode aaMode = aFont->GetDefaultAAMode();
-      if (aOptions.mAntialiasMode != AntialiasMode::DEFAULT) {
-        aaMode = aOptions.mAntialiasMode;
-      }
-      bool useSubpixelAA =
-          GetPermitSubpixelAA() && (aaMode == AntialiasMode::DEFAULT ||
-                                    aaMode == AntialiasMode::SUBPIXEL);
-      
-      
-      
-      
-      
-      bool useColor = useSubpixelAA;
-
-      
-      GlyphCache* cache =
-          static_cast<GlyphCache*>(aFont->GetUserData(&mGlyphCacheKey));
-      if (!cache) {
-        cache = new GlyphCache(aFont);
-        aFont->AddUserData(&mGlyphCacheKey, cache, ReleaseGlyphCache);
-        mGlyphCaches.insertFront(cache);
-      }
-      
-      DeviceColor color = static_cast<const ColorPattern&>(aPattern).mColor;
-      DeviceColor aaColor =
-          useColor ? color : DeviceColor(1.0f, 1.0f, 1.0f, 1.0f);
-      RefPtr<GlyphCacheEntry> entry =
-          cache->FindOrInsertEntry(aBuffer, aaColor, mTransform, intBounds);
-      if (entry) {
-        RefPtr<TextureHandle> handle = entry->GetHandle();
-        if (handle && handle->IsValid()) {
-          
-          
-          
-          
-          
-          SurfacePattern pattern(nullptr, ExtendMode::CLAMP,
-                                 Matrix::Translation(intBounds.TopLeft()));
-          if (DrawRect(Rect(intBounds), pattern, aOptions,
-                       handle->GetFormat() == SurfaceFormat::A8 ? Some(color)
-                                                                : Nothing(),
-                       &handle, false, true, true)) {
-            return;
-          }
-        } else {
-          handle = nullptr;
-
-          
-          
-          RefPtr<DrawTargetSkia> textDT = new DrawTargetSkia;
-          if (textDT->Init(intBounds.Size(), SurfaceFormat::B8G8R8A8)) {
-            textDT->SetTransform(mTransform *
-                                 Matrix::Translation(-intBounds.TopLeft()));
-            textDT->SetPermitSubpixelAA(useSubpixelAA);
-            DrawOptions drawOptions(1.0f, CompositionOp::OP_OVER,
-                                    aOptions.mAntialiasMode);
-            textDT->FillGlyphs(aFont, aBuffer, ColorPattern(aaColor),
-                               drawOptions);
-            RefPtr<SourceSurface> textSurface = textDT->Snapshot();
-            if (textSurface) {
-              if (!useColor) {
-                
-                
-                
-                
-                if (CheckForColorGlyphs(textSurface)) {
-                  useColor = true;
-                } else {
-                  textSurface = ExtractAlpha(textSurface);
-                  if (!textSurface) {
-                    
-                    return;
-                  }
-                }
-              }
-              
-              
-              SurfacePattern pattern(textSurface, ExtendMode::CLAMP,
-                                     Matrix::Translation(intBounds.TopLeft()));
-              if (DrawRect(Rect(intBounds), pattern, aOptions,
-                           useColor ? Nothing() : Some(color), &handle, false,
-                           true) &&
-                  handle) {
-                
-                
-                entry->Link(handle);
-              } else {
-                
-                entry->Unlink();
-              }
-              return;
-            }
-          }
-        }
-      }
-    }
+      aPattern.GetType() == PatternType::COLOR && PrepareContext() &&
+      mSharedContext->FillGlyphsAccel(aFont, aBuffer, aPattern, aOptions)) {
+    return;
   }
 
   
@@ -1944,7 +2150,7 @@ void DrawTargetWebgl::ReadIntoSkia() {
   if (mSkiaValid) {
     return;
   }
-  if (mWebglValid && !mWebgl->IsContextLost()) {
+  if (mWebglValid) {
     uint8_t* data = nullptr;
     IntSize size;
     int32_t stride;
@@ -1970,16 +2176,14 @@ void DrawTargetWebgl::FlattenSkia() {
   if (!mSkiaValid || !mSkiaLayer) {
     return;
   }
-  if (!mWebgl->IsContextLost()) {
-    RefPtr<DataSourceSurface> base =
-        Factory::CreateDataSourceSurface(mSize, mFormat);
-    if (base) {
-      DataSourceSurface::ScopedMap baseMap(base, DataSourceSurface::WRITE);
-      if (baseMap.IsMapped() &&
-          ReadInto(baseMap.GetData(), baseMap.GetStride())) {
-        mSkia->BlendSurface(base, GetRect(), IntPoint(),
-                            CompositionOp::OP_DEST_OVER);
-      }
+  RefPtr<DataSourceSurface> base =
+      Factory::CreateDataSourceSurface(mSize, mFormat);
+  if (base) {
+    DataSourceSurface::ScopedMap baseMap(base, DataSourceSurface::WRITE);
+    if (baseMap.IsMapped() &&
+        ReadInto(baseMap.GetData(), baseMap.GetStride())) {
+      mSkia->BlendSurface(base, GetRect(), IntPoint(),
+                          CompositionOp::OP_DEST_OVER);
     }
   }
   mSkiaLayer = false;
@@ -1988,24 +2192,37 @@ void DrawTargetWebgl::FlattenSkia() {
 
 bool DrawTargetWebgl::FlushFromSkia() {
   
-  if (mWebgl->IsContextLost()) {
+  if (mSharedContext->IsContextLost()) {
     mWebglValid = false;
     return false;
   }
+  
   if (mWebglValid) {
     return true;
   }
+  
+  
+  
   mWebglValid = true;
   if (mSkiaValid) {
     RefPtr<SourceSurface> skiaSnapshot = mSkia->Snapshot();
-    if (skiaSnapshot) {
-      SurfacePattern pattern(skiaSnapshot, ExtendMode::CLAMP);
+    if (!skiaSnapshot) {
       
       
-      DrawRect(Rect(GetRect()), pattern,
-               DrawOptions(1.0f, mSkiaLayer ? CompositionOp::OP_OVER
-                                            : CompositionOp::OP_SOURCE),
-               Nothing(), &mSnapshotTexture, false, false, false, true);
+      mWebglValid = false;
+      return false;
+    }
+    SurfacePattern pattern(skiaSnapshot, ExtendMode::CLAMP);
+    
+    
+    if (!DrawRect(Rect(GetRect()), pattern,
+                  DrawOptions(1.0f, mSkiaLayer ? CompositionOp::OP_OVER
+                                               : CompositionOp::OP_SOURCE),
+                  Nothing(), &mSnapshotTexture, false, false, true, true)) {
+      
+      
+      mWebglValid = false;
+      return false;
     }
   }
   return true;
@@ -2019,9 +2236,9 @@ void DrawTargetWebgl::Flush() {
     FlushFromSkia();
   }
   
-  mWebgl->OnBeforePaintTransaction();
+  mSharedContext->mWebgl->OnBeforePaintTransaction();
   
-  PruneTextureMemory();
+  mSharedContext->PruneTextureMemory();
 }
 
 already_AddRefed<DrawTarget> DrawTargetWebgl::CreateSimilarDrawTarget(
