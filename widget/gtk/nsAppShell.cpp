@@ -27,6 +27,7 @@
 #  include "nsIObserverService.h"
 #endif
 #include "gfxPlatform.h"
+#include "nsAppRunner.h"
 #include "ScreenHelperGTK.h"
 #include "HeadlessScreenHelper.h"
 #include "mozilla/widget/ScreenManager.h"
@@ -258,12 +259,8 @@ nsresult nsAppShell::Init() {
       
       
       
-      
-      
-      nsAutoString brandName;
-      mozilla::widget::WidgetUtils::GetBrandShortName(brandName);
-      if (!brandName.IsEmpty()) {
-        gdk_set_program_class(NS_ConvertUTF16toUTF8(brandName).get());
+      if (gAppData) {
+        gdk_set_program_class(gAppData->remotingName);
       }
     }
   }
