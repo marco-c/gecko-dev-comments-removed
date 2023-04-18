@@ -678,7 +678,7 @@ void ParseTask::scheduleDelazifyTask(AutoLockHelperThreadState& lock) {
     
     auto initial = cx->make_unique<frontend::ExtensibleCompilationStencil>(
         cx, options, stencil_->source);
-    if (!initial->cloneFrom(cx, *stencil_)) {
+    if (!initial || !initial->cloneFrom(cx, *stencil_)) {
       
       return;
     }
