@@ -20,6 +20,20 @@ namespace gc {
 class AllocSite;
 }  
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 enum AllowGC { NoGC = 0, CanGC = 1 };
 
 
