@@ -536,7 +536,7 @@ class nsIWidget : public nsISupports {
   
 
 
-  virtual void DidGetContentfulPaint() {}
+  virtual void DidGetNonBlankPaint() {}
 
   
 

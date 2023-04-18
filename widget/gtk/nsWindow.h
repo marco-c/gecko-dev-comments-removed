@@ -694,7 +694,7 @@ class nsWindow final : public nsBaseWidget {
   bool mConfiguredClearColor : 1;
   
   
-  bool mGotContentfulPaint : 1;
+  bool mGotNonBlankPaint : 1;
 
   
   
@@ -724,7 +724,7 @@ class nsWindow final : public nsBaseWidget {
 
   
   WindowRenderer* GetWindowRenderer() override;
-  void DidGetContentfulPaint() override;
+  void DidGetNonBlankPaint() override;
 
   void SetCompositorWidgetDelegate(CompositorWidgetDelegate* delegate) override;
 
