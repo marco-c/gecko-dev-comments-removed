@@ -569,20 +569,10 @@ class Dumper:
         try:
             cmd = self.dump_syms_cmdline(file, arch, dsymbundle=dsymbundle)
             print(" ".join(cmd), file=sys.stderr)
-            
-            
-            
-            
-            
-            
-            
-            
-            
             proc = subprocess.Popen(
                 cmd,
                 universal_newlines=True,
                 stdout=subprocess.PIPE,
-                stderr=open(os.devnull, "wb"),
             )
             try:
                 module_line = next(proc.stdout)
@@ -660,7 +650,10 @@ class Dumper:
                 f.close()
                 retcode = proc.wait()
                 if retcode != 0:
-                    raise RuntimeError("dump_syms failed with error code %d" % retcode)
+                    raise RuntimeError(
+                        "dump_syms failed with error code %d while processing %s\n"
+                        % (retcode, file)
+                    )
                 
                 
                 print(rel_path)
@@ -676,17 +669,12 @@ class Dumper:
                 
                 
                 
-                
-                proc = subprocess.Popen(
-                    cmd, stdout=open(os.devnull, "wb"), stderr=subprocess.PIPE
-                )
-                (_, dumperr) = proc.communicate()
-                retcode = proc.returncode
+                retcode = proc.wait()
                 message = [
                     "dump_syms failed to produce the expected output",
+                    "file: %s" % file,
                     "return code: %d" % retcode,
                     "first line of output: %s" % module_line,
-                    "stderr: %s" % dumperr,
                 ]
                 raise RuntimeError("\n----------\n".join(message))
         except Exception as e:
