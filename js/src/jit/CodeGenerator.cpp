@@ -5634,7 +5634,7 @@ void CodeGenerator::emitPopArguments(Register extraStackSpace) {
 
 void CodeGenerator::emitPushArguments(Register argcreg,
                                       Register extraStackSpace,
-                                      Register copyreg) {
+                                      Register copyreg, uint32_t extraFormals) {
   Label end;
 
   
@@ -5650,7 +5650,8 @@ void CodeGenerator::emitPushArguments(Register argcreg,
   
 
   
-  size_t argvSrcOffset = frameSize() + JitFrameLayout::offsetOfActualArgs();
+  size_t argvSrcOffset = frameSize() + JitFrameLayout::offsetOfActualArgs() +
+                         extraFormals * sizeof(JS::Value);
   size_t argvDstOffset = 0;
 
   
@@ -5687,10 +5688,11 @@ void CodeGenerator::emitPushArguments(LApplyArgsGeneric* apply,
   
   Register argcreg = ToRegister(apply->getArgc());
   Register copyreg = ToRegister(apply->getTempObject());
+  uint32_t extraFormals = apply->numExtraFormals();
 
   emitAllocateSpaceForApply(argcreg, extraStackSpace);
 
-  emitPushArguments(argcreg, extraStackSpace, copyreg);
+  emitPushArguments(argcreg, extraStackSpace, copyreg, extraFormals);
 
   
   masm.addPtr(Imm32(sizeof(Value)), extraStackSpace);
@@ -5814,12 +5816,13 @@ void CodeGenerator::emitPushArguments(LConstructArgsGeneric* construct,
   
   Register argcreg = ToRegister(construct->getArgc());
   Register copyreg = ToRegister(construct->getTempObject());
+  uint32_t extraFormals = construct->numExtraFormals();
 
   
   
   emitAllocateSpaceForConstructAndPushNewTarget(argcreg, extraStackSpace);
 
-  emitPushArguments(argcreg, extraStackSpace, copyreg);
+  emitPushArguments(argcreg, extraStackSpace, copyreg, extraFormals);
 
   
   masm.addPtr(Imm32(sizeof(Value)), extraStackSpace);
