@@ -321,10 +321,12 @@ this.backgroundPage = class extends ExtensionAPI {
     
     
     
+    
     if (
       isInStartup &&
       (extension.testNoDelayedStartup ||
-        extension.startupReason !== "APP_STARTUP")
+        extension.startupReason !== "APP_STARTUP" ||
+        extension.updateReason)
     ) {
       return this.build();
     }
