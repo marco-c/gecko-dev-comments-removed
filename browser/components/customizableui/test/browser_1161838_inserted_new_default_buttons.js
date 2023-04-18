@@ -9,22 +9,18 @@ function test() {
     CustomizableUI.AREA_NAVBAR
   );
 
-  let CustomizableUIBSPass = ChromeUtils.import(
-    "resource:///modules/CustomizableUI.jsm",
-    null
+  let gFuturePlacements = CustomizableUI.getTestOnlyInternalProp(
+    "gFuturePlacements"
   );
-
   is(
-    CustomizableUIBSPass.gFuturePlacements.size,
+    gFuturePlacements.size,
     0,
     "All future placements should be dealt with by now."
   );
 
-  let {
-    CustomizableUIInternal,
-    gFuturePlacements,
-    gPalette,
-  } = CustomizableUIBSPass;
+  let CustomizableUIInternal = CustomizableUI.getTestOnlyInternalProp(
+    "CustomizableUIInternal"
+  );
 
   
   CustomizableUIInternal.saveState();
@@ -49,10 +45,13 @@ function test() {
   if (!normalizedWidget) {
     return;
   }
-  CustomizableUIBSPass.gPalette.set(testWidgetNew.id, normalizedWidget);
+  let gPalette = CustomizableUI.getTestOnlyInternalProp("gPalette");
+  gPalette.set(testWidgetNew.id, normalizedWidget);
 
   
-  let navbarArea = CustomizableUIBSPass.gAreas.get(CustomizableUI.AREA_NAVBAR);
+  let navbarArea = CustomizableUI.getTestOnlyInternalProp("gAreas").get(
+    CustomizableUI.AREA_NAVBAR
+  );
   let navbarPlacements = navbarArea.get("defaultPlacements");
   navbarPlacements.splice(
     navbarPlacements.indexOf("bookmarks-menu-button") + 1,
@@ -60,8 +59,8 @@ function test() {
     testWidgetNew.id
   );
 
-  let savedPlacements =
-    CustomizableUIBSPass.gSavedState.placements[CustomizableUI.AREA_NAVBAR];
+  let savedPlacements = CustomizableUI.getTestOnlyInternalProp("gSavedState")
+    .placements[CustomizableUI.AREA_NAVBAR];
   
   CustomizableUIInternal._updateForNewVersion();
   is(gFuturePlacements.size, 1, "Should have 1 more future placement");
