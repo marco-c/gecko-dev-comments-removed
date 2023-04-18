@@ -71,6 +71,10 @@ EXPORTS.mozilla.dom += [
 ]
 
 
+EXPORTS.mozilla.gfx += [
+    "DrawTargetWebgl.h",
+]
+
 
 UNIFIED_SOURCES += [
     "CanvasGradient.cpp",
@@ -88,6 +92,7 @@ UNIFIED_SOURCES += [
 ]
 
 SOURCES += [
+    "DrawTargetWebgl.cpp",  
     "ImageUtils.cpp",
 ]
 
