@@ -1487,6 +1487,12 @@ IncrementalProgress GCRuntime::beginSweepingSweepGroup(JSFreeOp* fop,
   sweepDebuggerOnMainThread(fop);
 
   
+  
+  
+  
+  sweepFinalizationRegistriesOnMainThread();
+
+  
   sweepRealmGlobals();
 
   sweepEmbeddingWeakPointers(fop);
@@ -1537,11 +1543,6 @@ IncrementalProgress GCRuntime::beginSweepingSweepGroup(JSFreeOp* fop,
   if (sweepingAtoms) {
     startSweepingAtomsTable();
   }
-
-  
-  
-  
-  sweepFinalizationRegistriesOnMainThread();
 
   
   

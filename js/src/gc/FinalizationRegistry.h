@@ -56,17 +56,34 @@ class FinalizationRegistryZone {
 
   void clearRecords();
 
-  void markRoots(JSTracer* trc);
   void traceWeakEdges(JSTracer* trc);
   bool findSweepGroupEdges();
 
-  void updateForRemovedRecord(FinalizationRecordObject* record);
+  void updateForRemovedRecord(JSObject* wrapper,
+                              FinalizationRecordObject* record);
 
  private:
   bool incCrossZoneCount(Zone* otherZone);
   void decCrossZoneCount(Zone* otherZone);
 
   static bool shouldRemoveRecord(FinalizationRecordObject* record);
+};
+
+
+class FinalizationRegistryGlobalData {
+  
+  
+  using RecordSet = GCHashSet<HeapPtrObject, MovableCellHasher<HeapPtrObject>,
+                              ZoneAllocPolicy>;
+  RecordSet recordSet;
+
+ public:
+  explicit FinalizationRegistryGlobalData(Zone* zone);
+
+  bool addRecord(JSObject* record);
+  void removeRecord(JSObject* record);
+
+  void trace(JSTracer* trc, GlobalObject* global);
 };
 
 }  
