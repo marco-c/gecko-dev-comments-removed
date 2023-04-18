@@ -185,6 +185,8 @@ class ZoneAllocator : public JS::shadow::Zone,
   gc::JitHeapThreshold jitHeapThreshold;
 
   
+  
+  
   gc::SharedMemoryMap sharedMemoryUseCounts;
 
  private:
