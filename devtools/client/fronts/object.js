@@ -56,14 +56,6 @@ class ObjectFront extends FrontClassWithSpec(objectSpec) {
   
 
 
-
-  getOwnPropertyNames() {
-    return super.ownPropertyNames();
-  }
-
-  
-
-
   async getPrototypeAndProperties() {
     const result = await super.prototypeAndProperties();
 

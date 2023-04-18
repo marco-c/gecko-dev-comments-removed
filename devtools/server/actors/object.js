@@ -272,23 +272,6 @@ const proto = {
 
 
 
-  ownPropertyNames: function() {
-    let props = [];
-    if (DevToolsUtils.isSafeDebuggerObject(this.obj)) {
-      try {
-        props = this.obj.getOwnPropertyNames();
-      } catch (err) {
-        
-        
-      }
-    }
-    return { ownPropertyNames: props };
-  },
-
-  
-
-
-
 
 
   enumProperties: function(options) {
