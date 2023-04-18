@@ -79,6 +79,35 @@ interface nsICRLiteState : nsISupports {
 
 
 
+
+[scriptable, uuid(416453f7-29bd-4820-a039-9c2e055d3715)]
+interface nsICRLiteCoverage : nsISupports {
+    readonly attribute ACString b64LogID;
+    readonly attribute unsigned long long minTimestamp;
+    readonly attribute unsigned long long maxTimestamp;
+};
+
+
+
+
+
+
+
+[uuid(9676cfc4-6e84-11ec-a30d-d3cd0af86e01)]
+interface nsICRLiteTimestamp: nsISupports {
+    readonly attribute Array<octet> logID;
+    readonly attribute unsigned long long timestamp;
+};
+
+
+
+
+
+
+
+
+
+
 [scriptable, uuid(27b66f5e-0faf-403b-95b4-bc11691ac50d)]
 interface nsICertInfo : nsISupports {
   readonly attribute ACString cert;
@@ -107,6 +136,7 @@ interface nsICertStorage : nsISupports {
   const short STATE_UNSET = 0;
   const short STATE_ENFORCE = 1;
   const short STATE_NOT_ENROLLED = 2;
+  const short STATE_NOT_COVERED = 3;
 
   
 
@@ -167,12 +197,11 @@ interface nsICertStorage : nsISupports {
 
 
   [must_use]
-  void setFullCRLiteFilter(in Array<octet> filter, in uint64_t timestamp,
+  void setFullCRLiteFilter(in Array<octet> filter,
+                           in Array<nsICRLiteCoverage> coverage,
                            in nsICertStorageCallback callback);
 
   
-
-
 
 
 
@@ -189,7 +218,7 @@ interface nsICertStorage : nsISupports {
   short getCRLiteRevocationState(in Array<octet> issuer,
                                  in Array<octet> issuerSPKI,
                                  in Array<octet> serialNumber,
-                                 out uint64_t validBefore);
+                                 in Array<nsICRLiteTimestamp> timestamps);
 
   
 

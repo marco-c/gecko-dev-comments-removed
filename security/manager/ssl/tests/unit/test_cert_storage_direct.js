@@ -253,6 +253,17 @@ CRLiteState.prototype.QueryInterface = ChromeUtils.generateQI([
   "nsICRLiteState",
 ]);
 
+class CRLiteCoverage {
+  constructor(ctLogID, minTimestamp, maxTimestamp) {
+    this.b64LogID = ctLogID;
+    this.minTimestamp = minTimestamp;
+    this.maxTimestamp = maxTimestamp;
+  }
+}
+CRLiteCoverage.prototype.QueryInterface = ChromeUtils.generateQI([
+  "nsICRLiteCoverage",
+]);
+
 async function addCRLiteState(state) {
   let result = await new Promise(resolve => {
     certStorage.setCRLiteState(state, resolve);
@@ -404,15 +415,12 @@ add_task(async function test_crlite_filter() {
     false
   );
   ok(filterFile.exists(), "test filter file should exist");
+  let coverage = [];
   let filterBytes = stringToArray(readFile(filterFile));
   
   
   let setFullCRLiteFilterResult = await new Promise(resolve => {
-    certStorage.setFullCRLiteFilter(
-      filterBytes,
-      new Date("2017-10-28T00:00:00Z").getTime() / 1000,
-      resolve
-    );
+    certStorage.setFullCRLiteFilter(filterBytes, coverage, resolve);
   });
   Assert.equal(
     setFullCRLiteFilterResult,
@@ -446,12 +454,17 @@ add_task(async function test_crlite_filter() {
   );
 
   
+  
+  coverage.push(
+    new CRLiteCoverage(
+      "pLkJkLQYWBSHuxOizGdwCjw1mAT5G9+443fNDsgN3BA=",
+      0,
+      1641612275000
+    )
+  );
+
   setFullCRLiteFilterResult = await new Promise(resolve => {
-    certStorage.setFullCRLiteFilter(
-      filterBytes,
-      new Date("2019-10-28T00:00:00Z").getTime() / 1000,
-      resolve
-    );
+    certStorage.setFullCRLiteFilter(filterBytes, coverage, resolve);
   });
   Assert.equal(
     setFullCRLiteFilterResult,
