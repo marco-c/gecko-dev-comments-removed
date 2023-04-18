@@ -150,6 +150,16 @@ struct FunctionCall {
   size_t stackArgAreaSize;
 };
 
+enum class PostBarrierKind {
+  
+  
+  
+  Precise,
+  
+  
+  Imprecise,
+};
+
 
 
 
@@ -1277,15 +1287,23 @@ struct BaseCompiler final {
   
   
   
-  [[nodiscard]] bool emitPostBarrier(const Maybe<RegRef>& object,
+  
+  
+  
+  
+  
+  [[nodiscard]] bool emitPostBarrierImprecise(const Maybe<RegRef>& object,
                                      RegPtr valueAddr, RegRef value);
+  [[nodiscard]] bool emitPostBarrierPrecise(const Maybe<RegRef>& object,
+                                            RegPtr valueAddr, RegRef prevValue, RegRef value);
 
   
   
   
   
   [[nodiscard]] bool emitBarrieredStore(const Maybe<RegRef>& object,
-                                        RegPtr valueAddr, RegRef value);
+                                        RegPtr valueAddr, RegRef value,
+                                        PostBarrierKind kind);
 
   
   
