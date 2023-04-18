@@ -19,7 +19,7 @@ TEST(WindowsPackageManager, TestWithMatches)
   
   prefixes.AppendElement(u"Microsoft"_ns);
   nsresult retVal = wpm->FindUserInstalledPackages(prefixes, packages);
-  ASSERT_GT(packages.Length(), 0);
+  ASSERT_GT(packages.Length(), 0U);
   ASSERT_EQ(NS_OK, retVal);
 }
 
@@ -30,6 +30,6 @@ TEST(WindowsPackageManager, TestWithoutMatches)
   nsTArray<nsString> prefixes, packages;
   prefixes.AppendElement(u"DoesntExist"_ns);
   nsresult retVal = wpm->FindUserInstalledPackages(prefixes, packages);
-  ASSERT_EQ(packages.Length(), 0);
+  ASSERT_EQ(packages.Length(), 0U);
   ASSERT_EQ(NS_OK, retVal);
 }
