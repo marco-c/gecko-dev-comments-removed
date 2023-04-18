@@ -21,18 +21,17 @@ class nsHtml5TreeOpStage : public nsAHtml5TreeOpSink {
 
 
 
-  [[nodiscard]] virtual bool MoveOpsFrom(
-      nsTArray<nsHtml5TreeOperation>& aOpQueue) override;
+  virtual void MoveOpsFrom(nsTArray<nsHtml5TreeOperation>& aOpQueue) override;
 
   
 
 
-  [[nodiscard]] bool MoveOpsTo(nsTArray<nsHtml5TreeOperation>& aOpQueue);
+  void MoveOpsTo(nsTArray<nsHtml5TreeOperation>& aOpQueue);
 
   
 
 
-  [[nodiscard]] bool MoveOpsAndSpeculativeLoadsTo(
+  void MoveOpsAndSpeculativeLoadsTo(
       nsTArray<nsHtml5TreeOperation>& aOpQueue,
       nsTArray<nsHtml5SpeculativeLoad>& aSpeculativeLoadQueue);
 
