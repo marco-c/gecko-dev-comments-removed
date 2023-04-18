@@ -472,12 +472,20 @@ static gfx::YUVColorSpace TransferAVColorSpaceToYUVColorSpace(
 
 static bool IsColorFormatSupportedForUsingCustomizedBuffer(
     const AVPixelFormat& aFormat) {
+#  if XP_WIN
+  
+  
+  
+  return aFormat == AV_PIX_FMT_YUV420P || aFormat == AV_PIX_FMT_YUVJ420P ||
+         aFormat == AV_PIX_FMT_YUV444P;
+#  else
   
   
   return aFormat == AV_PIX_FMT_YUV420P || aFormat == AV_PIX_FMT_YUVJ420P ||
          aFormat == AV_PIX_FMT_YUV420P10LE ||
          aFormat == AV_PIX_FMT_YUV420P12LE || aFormat == AV_PIX_FMT_YUV444P ||
          aFormat == AV_PIX_FMT_YUV444P10LE || aFormat == AV_PIX_FMT_YUV444P12LE;
+#  endif
 }
 
 static gfx::ColorDepth GetColorDepth(const AVPixelFormat& aFormat) {
