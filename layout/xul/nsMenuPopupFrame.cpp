@@ -1490,7 +1490,6 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
   
   nsRect rootScreenRect = rootFrame->GetScreenRectInAppUnits();
 
-  nsDeviceContext* devContext = presContext->DeviceContext();
   nsPoint offsetForContextMenu;
 
   bool isNoAutoHide = IsNoAutoHide();
@@ -1552,30 +1551,15 @@ nsresult nsMenuPopupFrame::SetPopupPosition(nsIFrame* aAnchorFrame,
     
     
     
-    int32_t factor = devContext->AppUnitsPerDevPixelAtUnitFullZoom();
-
-    
-    
-    
     if (mAdjustOffsetForContextMenu) {
-      nsPoint offsetForContextMenuDev;
-      offsetForContextMenuDev.x =
-          CSSPixel::ToAppUnits(LookAndFeel::GetInt(
-              LookAndFeel::IntID::ContextMenuOffsetHorizontal)) /
-          factor;
-      offsetForContextMenuDev.y =
-          CSSPixel::ToAppUnits(LookAndFeel::GetInt(
-              LookAndFeel::IntID::ContextMenuOffsetVertical)) /
-          factor;
-      offsetForContextMenu.x =
-          presContext->DevPixelsToAppUnits(offsetForContextMenuDev.x);
-      offsetForContextMenu.y =
-          presContext->DevPixelsToAppUnits(offsetForContextMenuDev.y);
+      const CSSIntPoint offset(
+          LookAndFeel::GetInt(LookAndFeel::IntID::ContextMenuOffsetHorizontal),
+          LookAndFeel::GetInt(LookAndFeel::IntID::ContextMenuOffsetVertical));
+
+      offsetForContextMenu = CSSIntPoint::ToAppUnits(offset);
     }
 
-    
-    screenPoint.x = presContext->DevPixelsToAppUnits(mScreenRect.x / factor);
-    screenPoint.y = presContext->DevPixelsToAppUnits(mScreenRect.y / factor);
+    screenPoint = mScreenRect.TopLeft();
     anchorRect = nsRect(screenPoint, nsSize(0, 0));
 
     
