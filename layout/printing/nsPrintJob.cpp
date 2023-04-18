@@ -1080,9 +1080,8 @@ nsresult nsPrintJob::SetupToPrintContent() {
 
   nsAutoString fileNameStr;
   
-  bool isPrintToFile = false;
-  printData->mPrintSettings->GetPrintToFile(&isPrintToFile);
-  if (isPrintToFile) {
+  if (printData->mPrintSettings->GetOutputDestination() ==
+      nsIPrintSettings::kOutputDestinationFile) {
     
     printData->mPrintSettings->GetToFileName(fileNameStr);
   }
@@ -2332,8 +2331,7 @@ nsresult nsPrintJob::StartPagePrintTimer(const UniquePtr<nsPrintObject>& aPO) {
   if (!mPagePrintTimer) {
     
     
-    int32_t printPageDelay = 50;
-    mPrt->mPrintSettings->GetPrintPageDelay(&printPageDelay);
+    int32_t printPageDelay = mPrt->mPrintSettings->GetPrintPageDelay();
 
     nsCOMPtr<nsIContentViewer> cv = do_QueryInterface(mDocViewerPrint);
     NS_ENSURE_TRUE(cv, NS_ERROR_FAILURE);
