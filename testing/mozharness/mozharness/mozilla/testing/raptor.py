@@ -680,13 +680,6 @@ class Raptor(
             if value and arg not in self.config.get("raptor_cmd_line_args", []):
                 setattr(self, details["dest"], value)
 
-        if (
-            not self.run_local
-            and self.browsertime_visualmetrics
-            and self.browsertime_video
-        ):
-            self.error("Cannot run visual metrics in the same CI task as the test.")
-
     
     
     
@@ -1064,20 +1057,31 @@ class Raptor(
         )
 
         modules = ["pip>=1.5"]
-        if self.run_local and self.browsertime_visualmetrics:
-            
-            py3_minor = sys.version_info.minor
 
-            if py3_minor <= 7:
-                modules.extend(
-                    ["numpy==1.16.1", "Pillow==6.1.0", "scipy==1.2.3", "pyssim==0.4"]
-                )
-            else:  
-                modules.extend(
-                    ["numpy==1.22.0", "Pillow==9.0.0", "scipy==1.7.3", "pyssim==0.4"]
-                )
-            
+        
+        py3_minor = sys.version_info.minor
+        if py3_minor <= 7:
+            modules.extend(
+                [
+                    "numpy==1.16.1",
+                    "Pillow==6.1.0",
+                    "scipy==1.2.3",
+                    "pyssim==0.4",
+                    "opencv-python==4.5.4.60",
+                ]
+            )
+        else:  
+            modules.extend(
+                [
+                    "numpy==1.22.0",
+                    "Pillow==9.0.0",
+                    "scipy==1.7.3",
+                    "pyssim==0.4",
+                    "opencv-python==4.5.4.60",
+                ]
+            )
 
+        if self.run_local:
             self.setup_local_ffmpeg()
 
         
