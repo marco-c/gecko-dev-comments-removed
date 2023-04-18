@@ -18,9 +18,11 @@ const PREF_REMOTE_LOG_LEVEL = "remote.log.level";
 
 const PREF_MARIONETTE_LOG_LEVEL = "marionette.log.level";
 
+const lazy = {};
 
 
-XPCOMUtils.defineLazyGetter(this, "prefLogLevel", () => {
+
+XPCOMUtils.defineLazyGetter(lazy, "prefLogLevel", () => {
   function getLogLevelNumber(pref) {
     const level = Services.prefs.getCharPref(pref, "Fatal");
     return (
@@ -60,7 +62,7 @@ class Log {
     const logger = StdLog.repository.getLogger(type);
     if (logger.ownAppenders.length == 0) {
       logger.addAppender(new StdLog.DumpAppender());
-      logger.manageLevelFromPref(prefLogLevel);
+      logger.manageLevelFromPref(lazy.prefLogLevel);
     }
     return logger;
   }
@@ -71,7 +73,7 @@ class Log {
 
 
   static get isTraceLevel() {
-    return [StdLog.Level.All, StdLog.Level.Trace].includes(prefLogLevel);
+    return [StdLog.Level.All, StdLog.Level.Trace].includes(lazy.prefLogLevel);
   }
 
   static get verbose() {
