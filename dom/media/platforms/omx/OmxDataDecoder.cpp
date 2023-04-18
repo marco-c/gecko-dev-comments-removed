@@ -580,7 +580,11 @@ void OmxDataDecoder::FillCodecConfigDataToOmx() {
   RefPtr<BufferData> inbuf = FindAvailableBuffer(OMX_DirInput);
   RefPtr<MediaByteBuffer> csc;
   if (mTrackInfo->IsAudio()) {
-    csc = mTrackInfo->GetAsAudioInfo()->mCodecSpecificConfig;
+    
+    
+    
+    csc = ForceGetAudioCodecSpecificBlob(
+        mTrackInfo->GetAsAudioInfo()->mCodecSpecificConfig);
   } else if (mTrackInfo->IsVideo()) {
     csc = mTrackInfo->GetAsVideoInfo()->mExtraData;
   }
