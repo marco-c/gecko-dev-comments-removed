@@ -309,7 +309,7 @@ class nsDocShell final : public nsDocLoader,
   
   
   nsresult ForceRefreshURIFromTimer(nsIURI* aURI, nsIPrincipal* aPrincipal,
-                                    int32_t aDelay, nsITimer* aTimer);
+                                    uint32_t aDelay, nsITimer* aTimer);
 
   
   
