@@ -116,6 +116,31 @@ EventTree* NotificationController::QueueMutation(LocalAccessible* aContainer) {
   return tree;
 }
 
+void NotificationController::CoalesceHideEvent(AccHideEvent* aHideEvent) {
+  LocalAccessible* parent = aHideEvent->LocalParent();
+  while (parent) {
+    if (parent->IsDoc()) {
+      break;
+    }
+
+    if (parent->HideEventTarget()) {
+      DropMutationEvent(aHideEvent);
+      break;
+    }
+
+    if (parent->ShowEventTarget()) {
+      AccShowEvent* showEvent =
+          downcast_accEvent(mMutationMap.GetEvent(parent, EventMap::ShowEvent));
+      if (showEvent->EventGeneration() < aHideEvent->EventGeneration()) {
+        DropMutationEvent(aHideEvent);
+        break;
+      }
+    }
+
+    parent = parent->LocalParent();
+  }
+}
+
 bool NotificationController::QueueMutationEvent(AccTreeMutationEvent* aEvent) {
   if (aEvent->GetEventType() == nsIAccessibleEvent::EVENT_HIDE) {
     
@@ -158,9 +183,8 @@ bool NotificationController::QueueMutationEvent(AccTreeMutationEvent* aEvent) {
 
   
   
-  
   if (aEvent->GetEventType() == nsIAccessibleEvent::EVENT_HIDE) {
-    CoalesceMutationEvents();
+    CoalesceHideEvent(downcast_accEvent(aEvent));
 
     
     
@@ -402,28 +426,7 @@ void NotificationController::CoalesceMutationEvents() {
                  "mutation event list has an invalid event");
 
       AccHideEvent* hideEvent = downcast_accEvent(event);
-      LocalAccessible* parent = hideEvent->LocalParent();
-      while (parent) {
-        if (parent->IsDoc()) {
-          break;
-        }
-
-        if (parent->HideEventTarget()) {
-          DropMutationEvent(event);
-          break;
-        }
-
-        if (parent->ShowEventTarget()) {
-          AccShowEvent* showEvent = downcast_accEvent(
-              mMutationMap.GetEvent(parent, EventMap::ShowEvent));
-          if (showEvent->EventGeneration() < hideEvent->EventGeneration()) {
-            DropMutationEvent(hideEvent);
-            break;
-          }
-        }
-
-        parent = parent->LocalParent();
-      }
+      CoalesceHideEvent(hideEvent);
     }
 
     event = nextEvent;

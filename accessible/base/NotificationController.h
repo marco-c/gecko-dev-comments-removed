@@ -320,6 +320,11 @@ class NotificationController final : public EventQueue,
   
 
 
+  void CoalesceHideEvent(AccHideEvent* aHideEvent);
+
+  
+
+
   void DropMutationEvent(AccTreeMutationEvent* aEvent);
 
   
