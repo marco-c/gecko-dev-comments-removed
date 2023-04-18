@@ -169,7 +169,6 @@ class InactivePropertyHelper {
           "row-gap",
           
           
-          "grid-gap",
           "grid-row-gap",
         ],
         when: () => !this.gridContainer && !this.flexContainer,
@@ -195,6 +194,7 @@ class InactivePropertyHelper {
         invalidProperties: [
           "column-gap",
           "gap",
+          "grid-gap",
           
           
           "grid-column-gap",
