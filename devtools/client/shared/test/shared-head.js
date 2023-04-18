@@ -598,15 +598,15 @@ async function _watchForToolboxReload(
   { isErrorPage, waitForLoad } = {}
 ) {
   const tab = gBrowser.getTabForBrowser(browser);
+
   const toolbox = await gDevTools.getToolboxForTab(tab);
+
   if (!toolbox) {
     
     return function() {};
   }
-  const currentToolId = toolbox.currentToolId;
-  const panel = toolbox.getCurrentPanel();
 
-  const waitForCurrentPanelReload = watchForPanelReload(currentToolId, panel);
+  const waitForCurrentPanelReload = watchForCurrentPanelReload(toolbox);
   const waitForToolboxCommandsReload = await watchForCommandsReload(
     toolbox.commands,
     { isErrorPage, waitForLoad }
@@ -671,7 +671,20 @@ async function _watchForResponsiveReload(
   };
 }
 
-function watchForPanelReload(toolId, panel) {
+
+
+
+
+
+
+
+
+
+
+function watchForCurrentPanelReload(toolbox) {
+  const toolId = toolbox.currentToolId;
+  const panel = toolbox.getCurrentPanel();
+
   if (toolId == "inspector") {
     const markuploaded = panel.once("markuploaded");
     const onNewRoot = panel.once("new-root");
