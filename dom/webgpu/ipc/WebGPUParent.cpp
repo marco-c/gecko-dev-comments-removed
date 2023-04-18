@@ -20,7 +20,7 @@ static mozilla::LazyLogModule sLogger("WebGPU");
 
 class ErrorBuffer {
   
-  static constexpr unsigned BUFFER_SIZE = 256;
+  static constexpr unsigned BUFFER_SIZE = 512;
   char mUtf8[BUFFER_SIZE] = {};
   bool mGuard = false;
 
