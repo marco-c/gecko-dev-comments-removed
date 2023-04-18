@@ -1552,6 +1552,18 @@ void nsWindow::Show(bool bState) {
     
     ::SendMessageW(mWnd, WM_CHANGEUISTATE,
                    MAKEWPARAM(UIS_SET, UISF_HIDEFOCUS | UISF_HIDEACCEL), 0);
+#if defined(ACCESSIBILITY)
+    
+    
+    
+    
+    
+    
+    
+    if (::GetFocus() == mWnd && !GetAccService()) {
+      ::NotifyWinEvent(EVENT_OBJECT_FOCUS, mWnd, OBJID_CLIENT, CHILDID_SELF);
+    }
+#endif  
   }
 
   if (mWindowType == eWindowType_popup) {
