@@ -470,7 +470,6 @@ class AudioInfo : public TrackInfo {
         mBitDepth(0),
         mProfile(0),
         mExtendedProfile(0),
-        mCodecSpecificConfig(new MediaByteBuffer),
         mExtraData(new MediaByteBuffer) {}
 
   AudioInfo(const AudioInfo& aOther) = default;
@@ -511,7 +510,7 @@ class AudioInfo : public TrackInfo {
   
   int8_t mExtendedProfile;
 
-  RefPtr<MediaByteBuffer> mCodecSpecificConfig;
+  AudioCodecSpecificVariant mCodecSpecificConfig{NoCodecSpecificData{}};
   RefPtr<MediaByteBuffer> mExtraData;  
                                        
 };
