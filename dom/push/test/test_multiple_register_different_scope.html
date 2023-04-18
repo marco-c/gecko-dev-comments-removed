@@ -1,12 +1,12 @@
 <!DOCTYPE HTML>
 <html>
+<!--
+Bug 1150812: Test registering for two different scopes.
 
+Any copyright is dedicated to the Public Domain.
+http://creativecommons.org/licenses/publicdomain/
 
-
-
-
-
-
+-->
 <head>
   <title>Test for Bug 1150812</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -114,8 +114,9 @@
     }).then(SimpleTest.finish);
   }
 
-  setupPrefsAndMockSocket(new MockWebSocket()).then(_ => runTest());
-  SpecialPowers.addPermission("desktop-notification", true, document);
+  setupPrefsAndMockSocket(new MockWebSocket())
+    .then(_ => setPushPermission(true))
+    .then(_ => runTest());
   SimpleTest.waitForExplicitFinish();
 </script>
 </body>

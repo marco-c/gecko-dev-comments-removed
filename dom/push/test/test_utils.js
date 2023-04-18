@@ -172,9 +172,30 @@ SimpleTest.registerCleanupFunction(async function() {
 });
 
 function setPushPermission(allow) {
-  return SpecialPowers.pushPermissions([
+  let permissions = [
     { type: "desktop-notification", allow, context: document },
-  ]);
+  ];
+
+  if (isXOrigin) {
+    
+    
+    
+    let partitionedPrincipal = SpecialPowers.wrap(document)
+      .partitionedPrincipal;
+
+    permissions.push({
+      type: "desktop-notification",
+      allow,
+      context: {
+        url: partitionedPrincipal.originNoSuffix,
+        originAttributes: {
+          partitionKey: partitionedPrincipal.originAttributes.partitionKey,
+        },
+      },
+    });
+  }
+
+  return SpecialPowers.pushPermissions(permissions);
 }
 
 function setupPrefs() {
