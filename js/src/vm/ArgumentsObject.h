@@ -237,6 +237,13 @@ class ArgumentsObject : public NativeObject {
                                                HandleObject scopeChain,
                                                uint32_t numActuals);
 
+ private:
+  template <typename CopyArgs>
+  static ArgumentsObject* finishPure(JSContext* cx, ArgumentsObject* obj,
+                                     JSFunction* callee, JSObject* callObj,
+                                     unsigned numActuals, CopyArgs& copy);
+
+ public:
   
 
 
@@ -245,6 +252,14 @@ class ArgumentsObject : public NativeObject {
                                            jit::JitFrameLayout* frame,
                                            JSObject* scopeChain,
                                            ArgumentsObject* obj);
+
+  
+
+
+
+  static ArgumentsObject* finishInlineForIonPure(
+      JSContext* cx, JSObject* rawCallObj, JSFunction* rawCallee, Value* args,
+      uint32_t numActuals, ArgumentsObject* obj);
 
   static ArgumentsObject* createTemplateObject(JSContext* cx, bool mapped);
 
