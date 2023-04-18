@@ -87,9 +87,6 @@ const expected = [
       AppConstants.platform == "win" || AppConstants.platform == "macosx",
   },
   
-  { relPath: "ShutdownDuration.json" },
-  { relPath: "Telemetry.ShutdownTime.txt" },
-  
   { relPath: "cache2", isDirectory: true },
   
   { relPath: "cert9.db" },
