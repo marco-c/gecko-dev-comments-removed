@@ -975,7 +975,7 @@ static bool FormatStackFrameColumn(JSContext* cx, js::StringBuffer& sb,
     
     js::ToCStringBuf cbuf;
     const char* cstr =
-        NumberToCString(cx, &cbuf, frame->wasmBytecodeOffset(), 16);
+        NumberToCStringWithBase(cx, &cbuf, frame->wasmBytecodeOffset(), 16);
     if (!cstr) {
       return false;
     }

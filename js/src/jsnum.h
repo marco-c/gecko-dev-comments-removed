@@ -98,11 +98,13 @@ struct ToCStringBuf {
 
 
 
+extern char* NumberToCString(ToCStringBuf* cbuf, double d);
 
 
 
-extern char* NumberToCString(JSContext* cx, ToCStringBuf* cbuf, double d,
-                             int base = 10);
+
+extern char* NumberToCStringWithBase(JSContext* cx, ToCStringBuf* cbuf,
+                                     double d, int base);
 
 
 
