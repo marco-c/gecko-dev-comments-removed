@@ -19,6 +19,7 @@
 #include "nsIOutputStream.h"
 #include "nsMemory.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/Mutex.h"
 
 #define NS_STORAGESTREAM_CID                         \
   { /* 669a9795-6ff7-4ed4-9150-c34ce2971b63 */       \
@@ -44,21 +45,32 @@ class nsStorageStream final : public nsIStorageStream, public nsIOutputStream {
  private:
   ~nsStorageStream();
 
-  nsSegmentedBuffer* mSegmentedBuffer;
-  uint32_t
-      mSegmentSize;  
-                     
-  uint32_t mSegmentSizeLog2;  
-  bool mWriteInProgress;      
-  int32_t mLastSegmentNum;    
-  char* mWriteCursor;         
-  char* mSegmentEnd;          
-                              
-  uint32_t mLogicalLength;    
+  mozilla::Mutex mMutex{"nsStorageStream"};
+  nsSegmentedBuffer* mSegmentedBuffer GUARDED_BY(mMutex) = nullptr;
+  
+  
+  uint32_t mSegmentSize GUARDED_BY(mMutex) = 0;
+  
+  uint32_t mSegmentSizeLog2 GUARDED_BY(mMutex) = 0;
+  
+  bool mWriteInProgress GUARDED_BY(mMutex) = false;
+  
+  int32_t mLastSegmentNum GUARDED_BY(mMutex) = -1;
+  
+  char* mWriteCursor GUARDED_BY(mMutex) = nullptr;
+  
+  char* mSegmentEnd GUARDED_BY(mMutex) = nullptr;
+  
+  uint32_t mLogicalLength GUARDED_BY(mMutex) = 0;
+  
+  uint32_t mActiveSegmentBorrows GUARDED_BY(mMutex) = 0;
 
-  nsresult Seek(int32_t aPosition);
-  uint32_t SegNum(uint32_t aPosition) { return aPosition >> mSegmentSizeLog2; }
-  uint32_t SegOffset(uint32_t aPosition) {
+  nsresult SetLengthLocked(uint32_t aLength) REQUIRES(mMutex);
+  nsresult Seek(int32_t aPosition) REQUIRES(mMutex);
+  uint32_t SegNum(uint32_t aPosition) REQUIRES(mMutex) {
+    return aPosition >> mSegmentSizeLog2;
+  }
+  uint32_t SegOffset(uint32_t aPosition) REQUIRES(mMutex) {
     return aPosition & (mSegmentSize - 1);
   }
 };
