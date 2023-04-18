@@ -83,6 +83,10 @@ class AudioSink : private AudioStream::DataSource {
     return mAudioStream && mAudioStream->CallbackStarted();
   }
 
+  void UpdateStartTime(const media::TimeUnit& aStartTime) {
+    mStartTime = aStartTime;
+  }
+
  private:
   
   nsresult InitializeAudioStream(const PlaybackParams& aParams);
@@ -112,7 +116,7 @@ class AudioSink : private AudioStream::DataSource {
   
   
   
-  const media::TimeUnit mStartTime;
+  media::TimeUnit mStartTime;
 
   
   

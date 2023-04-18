@@ -42,7 +42,8 @@ RefPtr<MediaSink::EndedPromise> AudioSinkWrapper::OnEnded(TrackType aType) {
 TimeUnit AudioSinkWrapper::GetEndTime(TrackType aType) const {
   AssertOwnerThread();
   MOZ_ASSERT(mIsStarted, "Must be called after playback starts.");
-  if (aType == TrackInfo::kAudioTrack && mAudioSink) {
+  if (aType == TrackInfo::kAudioTrack && mAudioSink &&
+      mAudioSink->AudioStreamCallbackStarted()) {
     return mAudioSink->GetEndTime();
   }
 
@@ -77,7 +78,15 @@ TimeUnit AudioSinkWrapper::GetPosition(TimeStamp* aTimeStamp) {
   TimeUnit pos;
   TimeStamp t = TimeStamp::Now();
 
-  if (!mAudioEnded && !IsMuted() && mAudioSink && mAudioSink->AudioStreamCallbackStarted()) {
+  if (!mAudioEnded && !IsMuted() && mAudioSink) {
+    if (mLastClockSource == ClockSource::SystemClock) {
+      TimeUnit switchTime = GetSystemClockPosition(t);
+      
+      
+      mAudioSink->UpdateStartTime(switchTime);
+      LOGV("%p: switching to audio clock at media time %lf", this,
+           switchTime.ToSeconds());
+    }
     
     pos = mAudioSink->GetPosition();
     LOGV("%p: Getting position from the Audio Sink %lf", this, pos.ToSeconds());
