@@ -935,10 +935,6 @@ with modules["URILOADER"]:
     
     errors["NS_ERROR_PARSED_DATA_CACHED"] = FAILURE(33)
 
-    
-    
-    errors["NS_REFRESHURI_HEADER_FOUND"] = SUCCESS(2)
-
 
 
 

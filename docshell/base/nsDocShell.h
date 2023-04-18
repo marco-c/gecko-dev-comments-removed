@@ -289,6 +289,22 @@ class nsDocShell final : public nsDocLoader,
   nsresult RestoreFromHistory();
 
   
+
+
+
+
+
+
+
+
+
+
+
+  nsresult SetupRefreshURIFromHeader(nsIURI* aBaseURI, nsIPrincipal* aPrincipal,
+                                     uint64_t aInnerWindowID,
+                                     const nsACString& aHeader);
+
+  
   
   
   
@@ -951,8 +967,6 @@ class nsDocShell final : public nsDocLoader,
   nsresult Dispatch(mozilla::TaskCategory aCategory,
                     already_AddRefed<nsIRunnable>&& aRunnable);
 
-  void SetupReferrerInfoFromChannel(nsIChannel* aChannel);
-  void SetReferrerInfo(nsIReferrerInfo* aReferrerInfo);
   void ReattachEditorToWindow(nsISHEntry* aSHEntry);
   void ClearFrameHistory(nsISHEntry* aEntry);
   
