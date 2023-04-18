@@ -245,6 +245,10 @@ void JSRuntime::destroyRuntime() {
   sharedIntlData.ref().destroyInstance();
 #endif
 
+  
+  
+  caches().purgeStencils();
+
   if (gcInitialized) {
     
 

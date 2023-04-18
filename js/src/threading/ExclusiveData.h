@@ -129,8 +129,11 @@ class ExclusiveData {
 
 
   class MOZ_STACK_CLASS Guard {
+   protected:
     const ExclusiveData* parent_;
+    explicit Guard(std::nullptr_t) : parent_(nullptr) {}
 
+   private:
     Guard(const Guard&) = delete;
     Guard& operator=(const Guard&) = delete;
 
@@ -173,7 +176,52 @@ class ExclusiveData {
   
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+  class MOZ_STACK_CLASS NullableGuard : public Guard {
+   public:
+    explicit NullableGuard(std::nullptr_t) : Guard((std::nullptr_t) nullptr) {}
+    explicit NullableGuard(const ExclusiveData& parent) : Guard(parent) {}
+    explicit NullableGuard(Guard&& rhs) : Guard(std::move(rhs)) {}
+
+    NullableGuard& operator=(Guard&& rhs) {
+      this->~NullableGuard();
+      new (this) NullableGuard(std::move(rhs));
+      return *this;
+    }
+
+    
+
+
+    bool hasAccess() const { return this->parent_; }
+    explicit operator bool() const { return hasAccess(); }
+  };
+
+  
+
+
   Guard lock() const { return Guard(*this); }
+
+  
+
+
+
+
+
+  NullableGuard noAccess() const {
+    return NullableGuard((std::nullptr_t) nullptr);
+  }
 };
 
 template <class T>

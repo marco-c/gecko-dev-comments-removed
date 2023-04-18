@@ -21,6 +21,7 @@
 #include "vm/JSObject.h"
 #include "vm/JSScript.h"
 #include "vm/NativeObject.h"
+#include "vm/StencilCache.h"  
 
 namespace js {
 
@@ -120,10 +121,19 @@ class StringToAtomCache {
 
 class RuntimeCaches {
  public:
-  js::GSNCache gsnCache;
-  js::UncompressedSourceCache uncompressedSourceCache;
-  js::EvalCache evalCache;
-  js::StringToAtomCache stringToAtomCache;
+  GSNCache gsnCache;
+  UncompressedSourceCache uncompressedSourceCache;
+  EvalCache evalCache;
+  StringToAtomCache stringToAtomCache;
+
+  
+  
+  
+  
+  
+  
+  
+  StencilCache delazificationCache;
 
   void sweepAfterMinorGC(JSTracer* trc) { evalCache.traceWeak(trc); }
 #ifdef JSGC_HASH_TABLE_CHECKS
@@ -135,10 +145,13 @@ class RuntimeCaches {
     stringToAtomCache.purge();
   }
 
+  void purgeStencils() { delazificationCache.clearAndDisable(); }
+
   void purge() {
     purgeForCompaction();
     gsnCache.purge();
     uncompressedSourceCache.purge();
+    purgeStencils();
   }
 };
 
