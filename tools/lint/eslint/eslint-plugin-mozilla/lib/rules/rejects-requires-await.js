@@ -10,9 +10,14 @@
 
 module.exports = {
   meta: {
+    docs: {
+      url:
+        "https://firefox-source-docs.mozilla.org/code-quality/lint/linters/eslint-plugin-mozilla/reject-requires-await.html",
+    },
     messages: {
       rejectRequiresAwait: "Assert.rejects needs to be preceded by await.",
     },
+    type: "problem",
   },
 
   create(context) {
