@@ -504,57 +504,9 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  uint32_t AudioInputChannelCount() {
-    MOZ_ASSERT(OnGraphThreadOrNotRunning());
+  uint32_t AudioInputChannelCount();
 
-#ifdef ANDROID
-    if (!mDeviceTrackMap.Contains(mInputDeviceID)) {
-      return 0;
-    }
-#else
-    if (!mInputDeviceID) {
-      MOZ_ASSERT(mDeviceTrackMap.Count() == 0,
-                 "If running on a platform other than android,"
-                 "an explicit device id should be present");
-      return 0;
-    }
-#endif
-    uint32_t maxInputChannels = 0;
-    
-    
-    auto result = mDeviceTrackMap.Lookup(mInputDeviceID);
-    MOZ_ASSERT(result);
-    if (!result) {
-      return maxInputChannels;
-    }
-    for (const auto& listener : result.Data()->mDataUsers) {
-      maxInputChannels = std::max(maxInputChannels,
-                                  listener->RequestedInputChannelCount(this));
-    }
-    return maxInputChannels;
-  }
-
-  AudioInputType AudioInputDevicePreference() {
-    MOZ_ASSERT(OnGraphThreadOrNotRunning());
-
-    auto result = mDeviceTrackMap.Lookup(mInputDeviceID);
-    if (!result) {
-      return AudioInputType::Unknown;
-    }
-    bool voiceInput = false;
-    
-    
-
-    
-    
-    for (const auto& listener : result.Data()->mDataUsers) {
-      voiceInput |= listener->IsVoiceInput(this);
-    }
-    if (voiceInput) {
-      return AudioInputType::Voice;
-    }
-    return AudioInputType::Unknown;
-  }
+  AudioInputType AudioInputDevicePreference();
 
   CubebUtils::AudioDeviceID InputDeviceID() { return mInputDeviceID; }
 
