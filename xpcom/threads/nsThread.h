@@ -294,7 +294,6 @@ class nsThread : public nsIThreadInternal,
 
   static mozilla::OffTheBooksMutex& ThreadListMutex();
   static mozilla::LinkedList<nsThread>& ThreadList();
-  static void ClearThreadList();
 
   void AddToThreadList();
   void MaybeRemoveFromThreadList();
@@ -335,8 +334,6 @@ class nsThread : public nsIThreadInternal,
 
   
   bool mCanInvokeJS;
-
-  bool mHasTLSEntry = false;
 
   
   

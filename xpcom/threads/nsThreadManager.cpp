@@ -242,24 +242,11 @@ void AssertIsOnMainThread() { MOZ_ASSERT(NS_IsMainThread(), "Wrong thread!"); }
 
 typedef nsTArray<NotNull<RefPtr<nsThread>>> nsThreadArray;
 
-static Atomic<bool> sShutdownComplete;
-
 
 
 
 void nsThreadManager::ReleaseThread(void* aData) {
-  if (sShutdownComplete) {
-    
-    
-    return;
-  }
-
-  auto* thread = static_cast<nsThread*>(aData);
-
-  if (thread->mHasTLSEntry) {
-    thread->mHasTLSEntry = false;
-    thread->Release();
-  }
+  static_cast<nsThread*>(aData)->Release();
 }
 
 
@@ -437,31 +424,12 @@ void nsThreadManager::Shutdown() {
 
   
   PR_SetThreadPrivate(mCurThreadIndex, nullptr);
-
-  {
-    
-    nsTArray<RefPtr<nsThread>> threads;
-    for (auto* thread : nsThread::Enumerate()) {
-      if (thread->mHasTLSEntry) {
-        threads.AppendElement(dont_AddRef(thread));
-        thread->mHasTLSEntry = false;
-      }
-    }
-  }
-
-  
-  
-  
-  nsThread::ClearThreadList();
-
-  sShutdownComplete = true;
 }
 
 void nsThreadManager::RegisterCurrentThread(nsThread& aThread) {
   MOZ_ASSERT(aThread.GetPRThread() == PR_GetCurrentThread(), "bad aThread");
 
   aThread.AddRef();  
-  aThread.mHasTLSEntry = true;
   PR_SetThreadPrivate(mCurThreadIndex, &aThread);
 }
 
