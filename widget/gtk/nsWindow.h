@@ -546,6 +546,16 @@ class nsWindow final : public nsBaseWidget {
   static GdkCursor* gsGtkCursorCache[eCursorCount];
 
   
+  
+  
+  
+  
+  
+  
+  
+  mozilla::Atomic<bool, mozilla::Relaxed> mDrawInTitlebar{false};
+
+  
   bool mIsDestroyed : 1;
   
   bool mNeedsDispatchResized : 1;
@@ -578,8 +588,6 @@ class nsWindow final : public nsBaseWidget {
   bool mPanInProgress : 1;
   
   bool mDrawToContainer : 1;
-  
-  bool mDrawInTitlebar : 1;
   
   bool mTitlebarBackdropState : 1;
   
