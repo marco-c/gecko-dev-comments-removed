@@ -6760,9 +6760,7 @@ void Document::SetHeaderData(nsAtom* aHeaderField, const nsAString& aData) {
       
       
       
-      mDocumentContainer->SetupRefreshURIFromHeader(
-          mDocumentURI, NodePrincipal(), InnerWindowID(),
-          NS_ConvertUTF16toUTF8(aData));
+      mDocumentContainer->SetupRefreshURIFromHeader(this, aData);
     }
   }
 
