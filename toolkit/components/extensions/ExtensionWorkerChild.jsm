@@ -635,6 +635,13 @@ class WorkerContextChild extends BaseContext {
     return conduit;
   }
 
+  notifyWorkerLoaded() {
+    this.childManager.conduit.sendContextLoaded({
+      childId: this.childManager.id,
+      extensionId: this.extension.id,
+    });
+  }
+
   withAPIRequest(request, callable) {
     this.webidlAPIRequest = request;
     try {
@@ -766,6 +773,27 @@ var ExtensionWorkerChild = {
     }
 
     return null;
+  },
+
+  
+
+
+
+
+
+  notifyExtensionWorkerContextLoaded(descriptorId, policy) {
+    let context = this.extensionWorkerContexts.get(descriptorId);
+    if (context) {
+      if (context.extension.id !== policy.id) {
+        Cu.reportError(
+          new Error(
+            `ServiceWorker ${descriptorId} does not belong to the expected extension: ${policy.id}`
+          )
+        );
+        return;
+      }
+      context.notifyWorkerLoaded();
+    }
   },
 
   
