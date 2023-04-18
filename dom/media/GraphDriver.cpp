@@ -547,7 +547,6 @@ bool IsMacbookOrMacbookAir() {
     
     
     
-    
     sysctlbyname("hw.model", model.get(), &len, NULL, 0);
     char* substring = strstr(model.get(), "MacBook");
     if (substring) {
