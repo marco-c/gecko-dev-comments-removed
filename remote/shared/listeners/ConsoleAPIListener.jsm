@@ -1,0 +1,103 @@
+
+
+
+
+"use strict";
+
+const EXPORTED_SYMBOLS = ["ConsoleAPIListener"];
+
+const { XPCOMUtils } = ChromeUtils.import(
+  "resource://gre/modules/XPCOMUtils.jsm"
+);
+
+XPCOMUtils.defineLazyModuleGetters(this, {
+  EventEmitter: "resource://gre/modules/EventEmitter.jsm",
+  Services: "resource://gre/modules/Services.jsm",
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ConsoleAPIListener {
+  #innerWindowId;
+  #listening;
+
+  
+
+
+
+
+
+  constructor(innerWindowId) {
+    EventEmitter.decorate(this);
+
+    this.#listening = false;
+    this.#innerWindowId = innerWindowId;
+  }
+
+  destroy() {
+    this.stopListening();
+  }
+
+  startListening() {
+    if (this.#listening) {
+      return;
+    }
+
+    
+    
+    Services.obs.addObserver(
+      this.#onConsoleAPIMessage,
+      "console-api-log-event"
+    );
+    this.#listening = true;
+  }
+
+  stopListening() {
+    if (!this.#listening) {
+      return;
+    }
+
+    Services.obs.removeObserver(
+      this.#onConsoleAPIMessage,
+      "console-api-log-event"
+    );
+    this.#listening = false;
+  }
+
+  #onConsoleAPIMessage = message => {
+    const messageObject = message.wrappedJSObject;
+
+    if (messageObject.innerID !== this.#innerWindowId) {
+      // If the message doesn't match the innerWindowId of the current context
+      // ignore it.
+      return;
+    }
+
+    this.emit("message", {
+      arguments: messageObject.arguments,
+      level: messageObject.level,
+      rawMessage: message,
+      timeStamp: messageObject.timeStamp,
+    });
+  };
+}

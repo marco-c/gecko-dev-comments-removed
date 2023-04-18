@@ -11,8 +11,8 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 
 XPCOMUtils.defineLazyModuleGetters(this, {
-  Services: "resource://gre/modules/Services.jsm",
-
+  ConsoleAPIListener:
+    "chrome://remote/content/shared/listeners/ConsoleAPIListener.jsm",
   ConsoleListener:
     "chrome://remote/content/shared/listeners/ConsoleListener.jsm",
   Module: "chrome://remote/content/shared/messagehandler/Module.jsm",
@@ -20,10 +20,17 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 class Log extends Module {
+  #consoleAPIListener;
   #consoleMessageListener;
 
   constructor(messageHandler) {
     super(messageHandler);
+
+    
+    this.#consoleAPIListener = new ConsoleAPIListener(
+      this.messageHandler.innerWindowId
+    );
+    this.#consoleAPIListener.on("message", this.#onConsoleAPIMessage);
 
     
     this.#consoleMessageListener = new ConsoleListener(
@@ -33,22 +40,19 @@ class Log extends Module {
   }
 
   destroy() {
+    this.#consoleAPIListener.off("message", this.#onConsoleAPIMessage);
+    this.#consoleAPIListener.destroy();
     this.#consoleMessageListener.off("error", this.#onJavaScriptError);
     this.#consoleMessageListener.destroy();
-
-    Services.obs.removeObserver(
-      this.#onConsoleAPILogEvent,
-      "console-api-log-event"
-    );
   }
 
-  /**
-   * Private methods
-   */
+  
+
+
 
   _applySessionData(params) {
-    // TODO: Bug 1741861. Move this logic to a shared module or the an abstract
-    // class.
+    
+    
     if (params.category === "event") {
       for (const event of params.values) {
         this._subscribeEvent(event);
@@ -58,36 +62,26 @@ class Log extends Module {
 
   _subscribeEvent(event) {
     if (event === "log.entryAdded") {
+      this.#consoleAPIListener.startListening();
       this.#consoleMessageListener.startListening();
-
-      Services.obs.addObserver(
-        this.#onConsoleAPILogEvent,
-        "console-api-log-event"
-      );
     }
   }
 
-  #onConsoleAPILogEvent = message => {
-    const messageObject = message.wrappedJSObject;
+  #onConsoleAPIMessage = (eventName, data = {}) => {
+    const { message } = data;
 
-    if (messageObject.innerID !== this.messageHandler.innerWindowId) {
-      // If the message doesn't match the innerWindowId of the current context
-      // ignore it.
-      return;
-    }
+    
+    
 
-    // Step numbers below refer to the specifications at
-    //   https://w3c.github.io/webdriver-bidi/#event-log-entryAdded
-
-    // 1. The console method used to create the messageObject is stored in the
-    // `level` property. Translate it to a log.LogEntry level
-    const method = messageObject.level;
+    
+    
+    const method = message.level;
     const level = this._getLogEntryLevelFromConsoleMethod(method);
 
-    // 2. Use the message's timeStamp or fallback on the current time value.
-    const timestamp = messageObject.timeStamp || Date.now();
+    
+    const timestamp = message.timeStamp || Date.now();
 
-    // 3. Start assembling the text representation of the message.
+    
     let text = "";
 
     
@@ -97,7 +91,7 @@ class Log extends Module {
     
     
     
-    const args = messageObject.arguments || [];
+    const args = message.arguments || [];
     text += args.map(String).join(" ");
 
     
@@ -133,13 +127,13 @@ class Log extends Module {
   };
 
   #onJavaScriptError = (eventName, data = {}) => {
-    const { level, message, timestamp } = data;
+    const { level, message, timeStamp } = data;
 
     const entry = {
       type: "javascript",
       level,
       text: message,
-      timestamp,
+      timestamp: timeStamp || Date.now(),
       
       stackTrace: undefined,
     };
