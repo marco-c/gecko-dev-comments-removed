@@ -55,28 +55,33 @@ add_task(async function test_focus_promo_in_disallowed_region() {
   setupRegions(initialHomeRegion, intialCurrentRegion); 
 });
 
-add_task(async function test_focus_promo_in_DE_region_with_English_locale() {
-  await ASRouter.resetMessageState();
+add_task(
+  async function test_klar_promo_in_certain_regions_with_English_locale() {
+    const testLocale = "en-GB"; 
+    setLocale(testLocale);
 
-  const testRegion = "DE"; 
-  const testLocale = "en-GB"; 
-  setupRegions(testRegion);
-  setLocale(testLocale);
+    const testRegion = async region => {
+      setupRegions(region);
+      ASRouter.resetMessageState();
+      const { win, tab } = await openTabAndWaitForRender();
+      await SpecialPowers.spawn(tab, [], async function() {
+        const buttonText = content.document.querySelector(
+          "#private-browsing-vpn-link"
+        ).textContent;
+        Assert.equal(
+          buttonText,
+          "Download Firefox Klar",
+          "The promo button text reads 'Download Firefox Klar'"
+        );
+      });
+      await BrowserTestUtils.closeWindow(win);
+    };
 
-  const { win, tab } = await openTabAndWaitForRender();
+    await testRegion("AT"); 
+    await testRegion("DE"); 
+    await testRegion("CH"); 
 
-  await SpecialPowers.spawn(tab, [], async function() {
-    const buttonText = content.document.querySelector(
-      "#private-browsing-vpn-link"
-    ).textContent;
-    Assert.equal(
-      buttonText,
-      "Download Firefox Klar",
-      "The promo button text should read 'Download Firefox Klar'"
-    );
-  });
-
-  await BrowserTestUtils.closeWindow(win);
-  setupRegions(initialHomeRegion, intialCurrentRegion); 
-  setLocale(initialLocale); 
-});
+    setupRegions(initialHomeRegion, intialCurrentRegion); 
+    setLocale(initialLocale); 
+  }
+);
