@@ -43,6 +43,13 @@ export class MockFederatedAuthRequest {
     this.returnPending_ = true;
   }
 
+  logoutReturn(status) {
+    let validated = LogoutStatus[status];
+    if (validated === undefined)
+      throw new Error("Invalid status: " + status);
+    this.logoutStatus_ = validated;
+  }
+
   
   
   revokeReturn(status) {
