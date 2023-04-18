@@ -497,6 +497,26 @@ class DocAccessible : public HyperTextAccessibleWrap,
 
   void ProcessBoundsChanged();
 
+  bool IsAccessibleBeingMoved(LocalAccessible* aAcc) {
+    return mMovedAccessibles.Contains(aAcc);
+  }
+
+  
+
+
+
+  void SendAccessiblesWillMove();
+
+  
+
+
+
+
+  void ClearMovedAccessibles() {
+    mMovedAccessibles.Clear();
+    mInsertedAccessibles.Clear();
+  }
+
   
 
 
@@ -708,12 +728,25 @@ class DocAccessible : public HyperTextAccessibleWrap,
  private:
   void SetRoleMapEntryForDoc(dom::Element* aElement);
 
+  
+
+
+
+  void TrackMovedAccessible(LocalAccessible* aAcc);
+
   PresShell* mPresShell;
 
   
   DocAccessibleChild* mIPCDoc;
 
   nsTHashSet<RefPtr<LocalAccessible>> mMaybeBoundsChanged;
+  
+  
+  nsTHashSet<RefPtr<LocalAccessible>> mMovedAccessibles;
+  
+  
+  
+  nsTHashSet<RefPtr<LocalAccessible>> mInsertedAccessibles;
 };
 
 inline DocAccessible* LocalAccessible::AsDoc() {

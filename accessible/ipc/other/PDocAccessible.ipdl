@@ -133,6 +133,12 @@ parent:
 
   async Cache(CacheUpdateType aUpdateType, CacheData[] aData, bool aFinal);
 
+  
+
+
+
+  async AccessiblesWillMove(uint64_t[] aIDs);
+
 child:
   
 
