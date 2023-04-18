@@ -532,6 +532,9 @@ auto DocumentLoadListener::Open(nsDocShellLoadState* aLoadState,
   loadingContext->GetOriginAttributes(attrs);
 
   mLoadIdentifier = aLoadState->GetLoadIdentifier();
+  
+  mIsDownload = !aLoadState->FileName().IsVoid();
+  mIsLoadingJSURI = net::SchemeIsJavascript(aLoadState->URI());
 
   
   if (aLoadState->OriginalFrameSrc() || !mIsDocumentLoad) {
