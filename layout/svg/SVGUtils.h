@@ -467,6 +467,15 @@ class SVGUtils final {
         std::max(double(INT32_MIN), std::min(double(INT32_MAX), aVal)));
   }
 
+  
+
+
+
+  static int64_t ClampToInt64(double aVal) {
+    return static_cast<int64_t>(
+        std::clamp<double>(aVal, INT64_MIN, std::nexttoward(INT64_MAX, 0)));
+  }
+
   static nscolor GetFallbackOrPaintColor(
       const ComputedStyle&, StyleSVGPaint nsStyleSVG::*aFillOrStroke);
 

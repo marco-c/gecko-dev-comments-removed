@@ -200,7 +200,7 @@ void SVGSVGElement::SetCurrentTime(float seconds) {
     double fMilliseconds = double(seconds) * PR_MSEC_PER_SEC;
     
     
-    SMILTime lMilliseconds = int64_t(NS_round(fMilliseconds));
+    SMILTime lMilliseconds = SVGUtils::ClampToInt64(NS_round(fMilliseconds));
     mTimedDocumentRoot->SetCurrentTime(lMilliseconds);
     AnimationNeedsResample();
     
