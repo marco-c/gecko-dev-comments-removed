@@ -239,7 +239,6 @@ class RootFront extends FrontClassWithSpec(rootSpec) {
     const descriptorFront = await super.getTab(packet);
 
     
-    
     if (filter?.isWebExtension) {
       descriptorFront.setIsForWebExtension(true);
     }
