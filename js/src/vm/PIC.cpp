@@ -288,9 +288,10 @@ void js::ForOfPIC::Chain::trace(JSTracer* trc) {
   TraceEdge(trc, &canonicalNextFunc_,
             "ForOfPIC ArrayIterator.prototype.next builtin.");
 
+  JSFreeOp* fop = TlsFreeOp.get();
   if (trc->isMarkingTracer()) {
     
-    freeAllStubs(trc->runtime()->defaultFreeOp());
+    freeAllStubs(fop);
   }
 }
 

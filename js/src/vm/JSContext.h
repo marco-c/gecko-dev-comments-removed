@@ -187,8 +187,6 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   
   uint32_t allocsThisZoneSinceMinorGC_;
 
-  js::ContextData<JSFreeOp> defaultFreeOp_;
-
   
   js::ThreadId currentThread_;
 
@@ -304,7 +302,7 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
     return *runtime_->wellKnownSymbols;
   }
   js::PropertyName* emptyString() { return runtime_->emptyString; }
-  JSFreeOp* defaultFreeOp() { return &defaultFreeOp_.ref(); }
+  JSFreeOp* defaultFreeOp() { return runtime_->defaultFreeOp(); }
   uintptr_t stackLimit(JS::StackKind kind) { return nativeStackLimit[kind]; }
   uintptr_t stackLimitForJitCode(JS::StackKind kind);
   size_t gcSystemPageSize() { return js::gc::SystemPageSize(); }
@@ -541,37 +539,7 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
   js::ContextData<int32_t> suppressGC;
 
-  
-  enum class GCUse {
-    
-    None,
-
-    
-    
-    Marking,
-
-    
-    
-    
-    Sweeping,
-
-    
-    
-    
-    Finalizing
-  };
-  
-
 #ifdef DEBUG
-  
-  js::ContextData<GCUse> gcUse;
-
-  
-  js::ContextData<JS::Zone*> gcSweepZone;
-
-  
-  js::ContextData<size_t> isTouchingGrayThings;
-
   js::ContextData<size_t> noNurseryAllocationCheck;
 
   
@@ -1206,67 +1174,6 @@ class MOZ_RAII AutoUnsafeCallWithABI {
 };
 
 namespace gc {
-
-
-class MOZ_RAII AutoSetThreadIsPerformingGC {
-  JSContext* cx;
-  bool prev;
-
- public:
-  AutoSetThreadIsPerformingGC()
-      : cx(TlsContext.get()), prev(cx->defaultFreeOp()->isCollecting_) {
-    cx->defaultFreeOp()->isCollecting_ = true;
-  }
-
-  ~AutoSetThreadIsPerformingGC() { cx->defaultFreeOp()->isCollecting_ = prev; }
-};
-
-struct MOZ_RAII AutoSetThreadGCUse {
- protected:
-#ifndef DEBUG
-  explicit AutoSetThreadGCUse(JSContext::GCUse use, Zone* sweepZone = nullptr) {
-  }
-#else
-  explicit AutoSetThreadGCUse(JSContext::GCUse use, Zone* sweepZone = nullptr)
-      : cx(TlsContext.get()), prevUse(cx->gcUse), prevZone(cx->gcSweepZone) {
-    MOZ_ASSERT_IF(sweepZone, use == JSContext::GCUse::Sweeping);
-    cx->gcUse = use;
-    cx->gcSweepZone = sweepZone;
-  }
-
-  ~AutoSetThreadGCUse() {
-    cx->gcUse = prevUse;
-    cx->gcSweepZone = prevZone;
-    MOZ_ASSERT_IF(cx->gcUse == JSContext::GCUse::None, !cx->gcSweepZone);
-  }
-
- private:
-  JSContext* cx;
-  JSContext::GCUse prevUse;
-  JS::Zone* prevZone;
-#endif
-};
-
-
-
-struct MOZ_RAII AutoSetThreadIsMarking : public AutoSetThreadGCUse {
-  explicit AutoSetThreadIsMarking()
-      : AutoSetThreadGCUse(JSContext::GCUse::Marking) {}
-};
-
-
-
-struct MOZ_RAII AutoSetThreadIsSweeping : public AutoSetThreadGCUse {
-  explicit AutoSetThreadIsSweeping(Zone* zone = nullptr)
-      : AutoSetThreadGCUse(JSContext::GCUse::Sweeping, zone) {}
-};
-
-
-
-struct MOZ_RAII AutoSetThreadIsFinalizing : public AutoSetThreadGCUse {
-  explicit AutoSetThreadIsFinalizing()
-      : AutoSetThreadGCUse(JSContext::GCUse::Finalizing) {}
-};
 
 
 
