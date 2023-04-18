@@ -352,7 +352,10 @@ const StyleRuleActor = protocol.ActorClassWithSpec(styleRuleSpec, {
 
       
       
-      if (typeof this._parentSheet.ownerRule?.layerName !== "undefined") {
+      if (
+        this._parentSheet.ownerRule &&
+        this._parentSheet.ownerRule.layerName !== null
+      ) {
         form.ancestorData.unshift({
           type: "layer",
           value: this._parentSheet.ownerRule.layerName,
