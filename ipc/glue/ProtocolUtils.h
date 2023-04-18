@@ -560,6 +560,10 @@ MOZ_NEVER_INLINE void ProtocolErrorBreakpoint(const char* aMsg);
 
 
 
+MOZ_NEVER_INLINE void PickleFatalError(const char* aMsg, IProtocol* aActor);
+
+
+
 
 MOZ_NEVER_INLINE void FatalError(const char* aMsg, bool aIsParent);
 
