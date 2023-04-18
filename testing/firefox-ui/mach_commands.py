@@ -64,6 +64,11 @@ def run_firefox_ui_test(testtype=None, topsrcdir=None, **kwargs):
             for test in test_types[testtype]["default_tests"]
         ]
 
+    
+    if "test_tags" in kwargs and "remote" not in kwargs.get("test_tags"):
+        
+        os.environ["MOZ_DISABLE_NONLOCAL_CONNECTIONS"] = "1"
+
     kwargs["logger"] = kwargs.pop("log", None)
     if not kwargs["logger"]:
         kwargs["logger"] = commandline.setup_logging(

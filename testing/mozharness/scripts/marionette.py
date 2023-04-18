@@ -375,6 +375,10 @@ class MarionetteTest(TestingMixin, MercurialScript, TransferMixin, CodeCoverageM
 
         if not os.path.isdir(env["MOZ_UPLOAD_DIR"]):
             self.mkdir_p(env["MOZ_UPLOAD_DIR"])
+
+        
+        env["MOZ_DISABLE_NONLOCAL_CONNECTIONS"] = "1"
+
         env = self.query_env(partial_env=env)
 
         try:
