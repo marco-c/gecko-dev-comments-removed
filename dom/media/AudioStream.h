@@ -53,11 +53,7 @@ struct CallbackInfo {
 
 class AudioClock {
  public:
-  AudioClock();
-
-  
-  
-  void Init(uint32_t aRate);
+  explicit AudioClock(uint32_t aInRate);
 
   
   
@@ -98,6 +94,10 @@ class AudioClock {
   
   
   Atomic<uint32_t> mOutRate;
+  
+  const uint32_t mInRate;
+  
+  
   bool mPreservesPitch;
   
   
@@ -227,15 +227,14 @@ class AudioStream final {
     virtual ~DataSource() = default;
   };
 
-  explicit AudioStream(DataSource& aSource);
+  
+  
+  
+  
+  AudioStream(DataSource& aSource, uint32_t aInRate, uint32_t aOutputChannels,
+              AudioConfig::ChannelLayout::ChannelMap aChannelMap);
 
-  
-  
-  
-  
-  nsresult Init(uint32_t aNumChannels,
-                AudioConfig::ChannelLayout::ChannelMap aChannelMap,
-                uint32_t aRate, AudioDeviceInfo* aSinkInfo);
+  nsresult Init(AudioDeviceInfo* aSinkInfo);
 
   
   void Shutdown();
@@ -330,8 +329,8 @@ class AudioStream final {
   
   Monitor mMonitor;
 
-  uint32_t mChannels;
-  uint32_t mOutChannels;
+  const uint32_t mOutChannels;
+  const AudioConfig::ChannelLayout::ChannelMap mChannelMap;
   AudioClock mAudioClock;
 
   WavDumper mDumpFile;
