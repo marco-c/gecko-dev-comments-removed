@@ -43,6 +43,15 @@ const DEFAULT_IFRAME_DOC_BODY_ID = "default-iframe-body-id";
 const HTML_MIME_TYPE = "text/html";
 const XHTML_MIME_TYPE = "application/xhtml+xml";
 
+const isCacheEnabled = Services.prefs.getBoolPref(
+  "accessibility.cache.enabled",
+  false
+);
+
+
+
+const isWinNoCache = !isCacheEnabled && AppConstants.platform == "win";
+
 function loadHTMLFromFile(path) {
   
   
