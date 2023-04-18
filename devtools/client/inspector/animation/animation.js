@@ -498,12 +498,15 @@ class AnimationInspector {
   }
 
   async setAnimationsPlaybackRate(playbackRate) {
+    if (!this.inspector) {
+      return; 
+    }
+
     let animations = this.state.animations;
     
     
     
     this.setAnimationStateChangedListenerEnabled(false);
-
     try {
       await this.animationsFront.setPlaybackRates(animations, playbackRate);
       animations = await this.refreshAnimationsState(animations);
@@ -516,10 +519,16 @@ class AnimationInspector {
       this.setAnimationStateChangedListenerEnabled(true);
     }
 
-    await this.fireUpdateAction(animations);
+    if (animations) {
+      await this.fireUpdateAction(animations);
+    }
   }
 
   async setAnimationsPlayState(doPlay) {
+    if (!this.inspector) {
+      return; 
+    }
+
     let { animations, timeScale } = this.state;
 
     try {
@@ -558,6 +567,9 @@ class AnimationInspector {
 
 
   setAnimationStateChangedListenerEnabled(isEnabled) {
+    if (!this.inspector) {
+      return; 
+    }
     if (isEnabled) {
       for (const animation of this.state.animations) {
         animation.on("changed", this.onAnimationStateChanged);
