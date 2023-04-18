@@ -91,6 +91,35 @@ inline void DequeueValue(QueueContainingClass aContainer,
   aResultValue.set(valueWithSize->mValue);
 }
 
+
+template <class QueueContainingClass>
+inline void PeekQueueValue(QueueContainingClass aContainer,
+                           JS::MutableHandle<JS::Value> aResultValue) {
+  
+  
+  
+  MOZ_ASSERT(!aContainer->Queue().isEmpty());
+
+  
+  ValueWithSize* valueWithSize = aContainer->Queue().getFirst();
+
+  
+  aResultValue.set(valueWithSize->mValue);
+}
+
+
+template <class QueueContainingClass>
+inline void ResetQueue(QueueContainingClass aContainer) {
+  
+  
+
+  
+  aContainer->Queue().clear();
+
+  
+  aContainer->SetQueueTotalSize(0.0);
+}
+
 }  
 
 #endif

@@ -25,6 +25,7 @@
 #include "mozilla/dom/ReadableStreamDefaultReader.h"
 #include "mozilla/dom/ReadableStreamTee.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "mozilla/dom/StreamUtils.h"
 #include "mozilla/dom/TeeState.h"
 #include "mozilla/dom/UnderlyingSourceBinding.h"
 #include "nsCOMPtr.h"
@@ -79,29 +80,6 @@ JSObject* ReadableStream::WrapObject(JSContext* aCx,
 
 void ReadableStream::SetReader(ReadableStreamDefaultReader* aReader) {
   mReader = aReader;
-}
-
-
-
-
-static double ExtractHighWaterMark(const QueuingStrategy& aStrategy,
-                                   double aDefaultHWM, ErrorResult& aRv) {
-  
-  if (!aStrategy.mHighWaterMark.WasPassed()) {
-    return aDefaultHWM;
-  }
-
-  
-  double highWaterMark = aStrategy.mHighWaterMark.Value();
-
-  
-  if (mozilla::IsNaN(highWaterMark) || highWaterMark < 0) {
-    aRv.ThrowRangeError("Invalid highWaterMark");
-    return 0.0;
-  }
-
-  
-  return highWaterMark;
 }
 
 
