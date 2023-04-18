@@ -146,6 +146,17 @@ ValidityState* ElementInternals::GetValidity(ErrorResult& aRv) {
 }
 
 
+void ElementInternals::GetValidationMessage(nsAString& aValidationMessage,
+                                            ErrorResult& aRv) const {
+  if (!mTarget || !mTarget->IsFormAssociatedElement()) {
+    aRv.ThrowNotSupportedError(
+        "Target element is not a form-associated custom element");
+    return;
+  }
+  aValidationMessage = mValidationMessage;
+}
+
+
 already_AddRefed<nsINodeList> ElementInternals::GetLabels(
     ErrorResult& aRv) const {
   if (!mTarget || !mTarget->IsFormAssociatedElement()) {

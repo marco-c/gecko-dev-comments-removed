@@ -51,6 +51,8 @@ class ElementInternals final : public nsIFormControl,
   mozilla::dom::HTMLFormElement* GetForm(ErrorResult& aRv) const;
   bool GetWillValidate(ErrorResult& aRv) const;
   ValidityState* GetValidity(ErrorResult& aRv);
+  void GetValidationMessage(nsAString& aValidationMessage,
+                            ErrorResult& aRv) const;
   already_AddRefed<nsINodeList> GetLabels(ErrorResult& aRv) const;
 
   
@@ -98,6 +100,9 @@ class ElementInternals final : public nsIFormControl,
   
   
   Nullable<OwningFileOrUSVStringOrFormData> mState;
+
+  
+  nsString mValidationMessage;
 };
 
 }  
