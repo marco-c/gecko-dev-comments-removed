@@ -366,26 +366,6 @@ function execute(hud, input) {
 
 
 
-function executeAndWaitForMessage(
-  hud,
-  input,
-  matchingText,
-  selector = ".message"
-) {
-  const onMessage = waitForMessage(hud, matchingText, selector);
-  execute(hud, input);
-  return onMessage;
-}
-
-
-
-
-
-
-
-
-
-
 
 function executeAndWaitForMessageByType(
   hud,
