@@ -97,7 +97,6 @@ class HttpChannelChild final : public PHttpChannelChild,
   void DoDiagnosticAssertWhenOnStopNotCalledOnDestroy() override;
   
   NS_IMETHOD GetIsAuthChannel(bool* aIsAuthChannel) override;
-  NS_IMETHOD SetEarlyHintObserver(nsIEarlyHintObserver* aObserver) override;
   
   NS_IMETHOD SetPriority(int32_t value) override;
   
