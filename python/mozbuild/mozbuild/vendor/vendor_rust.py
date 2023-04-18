@@ -511,7 +511,10 @@ license file's hash.
         
         
         
-        subprocess.check_call([cargo, "update", "-p", "gkrust"], cwd=self.topsrcdir)
+        res = subprocess.run([cargo, "update", "-p", "gkrust"], cwd=self.topsrcdir)
+        if res.returncode:
+            self.log(logging.ERROR, "cargo_update_failed", {}, "Cargo update failed.")
+            return False
 
         with open(os.path.join(self.topsrcdir, "Cargo.lock")) as fh, open(
             os.path.join(self.topsrcdir, "Cargo.toml")
@@ -630,9 +633,13 @@ license file's hash.
             if failed:
                 return False
 
-        output = subprocess.check_output(
-            [cargo, "vendor", vendor_dir], cwd=self.topsrcdir
-        ).decode("UTF-8")
+        res = subprocess.run(
+            [cargo, "vendor", vendor_dir], cwd=self.topsrcdir, stdout=subprocess.PIPE
+        )
+        if res.returncode:
+            self.log(logging.ERROR, "cargo_vendor_failed", {}, "Cargo vendor failed.")
+            return False
+        output = res.stdout.decode("UTF-8")
 
         
         
