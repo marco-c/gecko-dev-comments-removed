@@ -41,7 +41,7 @@ class GraphRunner final : public Runnable {
   
 
 
-  NS_IMETHOD Run();
+  NS_IMETHOD Run() override;
 
   
 
