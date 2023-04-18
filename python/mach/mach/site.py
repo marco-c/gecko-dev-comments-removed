@@ -17,6 +17,7 @@ import shutil
 import subprocess
 import sys
 from collections import OrderedDict
+from distutils import dist
 from pathlib import Path
 import tempfile
 from contextlib import contextmanager
@@ -702,13 +703,6 @@ class PythonVirtualenv:
 
     @functools.lru_cache(maxsize=None)
     def site_packages_dir(self):
-        
-        
-        
-        
-        
-        from distutils import dist
-
         normalized_venv_root = os.path.normpath(self.prefix)
 
         distribution = dist.Distribution({"script_args": "--no-user-cfg"})
