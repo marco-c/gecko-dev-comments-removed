@@ -278,6 +278,9 @@ bool gfxAndroidPlatform::FontHintingEnabled() {
   
   
   
+  
+  
+  
   return false;
 #endif  
 

@@ -78,6 +78,9 @@
 
 #  include "skia/include/ports/SkTypeface_cairo.h"
 #endif
+#ifdef ANDROID
+#  include "skia/include/ports/SkTypeface_cairo.h"
+#endif
 #include "ChildProfilerController.h"
 #include "nsAppRunner.h"
 
@@ -307,12 +310,27 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
     MOZ_ASSERT(library);
     Factory::SetFTLibrary(library);
 
+    
+    
     SkInitCairoFT(true);
   }
 
   
   nsCOMPtr<nsIGfxInfo> gfxInfo = components::GfxInfo::Service();
   Unused << gfxInfo;
+#endif
+
+#ifdef ANDROID
+  
+  
+  
+  FT_Library library = Factory::NewFTLibrary();
+  MOZ_ASSERT(library);
+  Factory::SetFTLibrary(library);
+
+  
+  
+  SkInitCairoFT(false);
 #endif
 
   
