@@ -1943,8 +1943,6 @@ def _generateMessageConstructor(md, segmentSize, protocol, forReply=False):
                         ExprVar(msgid),
                         ExprLiteral.Int(int(segmentSize)),
                         flags,
-                        
-                        ExprLiteral.TRUE,
                     ],
                 )
             )
