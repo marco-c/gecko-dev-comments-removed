@@ -54,13 +54,6 @@ class ServiceWorkerCloneData final : public ipc::StructuredCloneData {
  public:
   ServiceWorkerCloneData();
 
-  
-  
-  
-  bool StealFromAndBuildClonedMessageData(
-      ClonedOrErrorMessageData& aFromClonedData,
-      ClonedOrErrorMessageData& aToClonedData);
-
   bool BuildClonedMessageData(ClonedOrErrorMessageData& aClonedData);
 
   void CopyFromClonedMessageData(const ClonedOrErrorMessageData& aClonedData);
