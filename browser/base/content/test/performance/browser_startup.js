@@ -47,7 +47,7 @@ const startupPhases = {
   
   "before opening first browser window": {
     denylist: {
-      modules: new Set(["resource://gre/modules/osfile.jsm"]),
+      modules: new Set([]),
     },
   },
 
@@ -113,6 +113,7 @@ const startupPhases = {
       modules: new Set([
         "resource://gre/modules/AsyncPrefs.jsm",
         "resource://gre/modules/LoginManagerContextMenu.jsm",
+        "resource://gre/modules/osfile.jsm",
         "resource://pdf.js/PdfStreamConverter.jsm",
       ]),
     },
