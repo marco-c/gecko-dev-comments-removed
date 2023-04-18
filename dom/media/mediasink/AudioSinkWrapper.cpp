@@ -176,8 +176,12 @@ void AudioSinkWrapper::OnMuted(bool aMuted) {
       }
       Maybe<MozPromiseHolder<MediaSink::EndedPromise>> rv =
           mAudioSink->Shutdown(ShutdownCause::Muting);
-      MOZ_ASSERT(rv.isSome());
-      mEndedPromiseHolder = std::move(rv.ref());
+      
+      
+      
+      if (rv.isSome()) {
+        mEndedPromiseHolder = std::move(rv.ref());
+      }
       mAudioSink = nullptr;
     }
   } else {
