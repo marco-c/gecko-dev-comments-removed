@@ -472,7 +472,8 @@ class nsXULPopupManager final : public nsIDOMEventListener,
 
 
 
-  void ShowMenu(nsIContent* aMenu, bool aSelectFirstItem);
+
+  void ShowMenu(nsIContent* aMenu, bool aSelectFirstItem, bool aAsynchronous);
 
   
 

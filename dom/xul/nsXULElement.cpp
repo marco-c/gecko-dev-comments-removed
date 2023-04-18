@@ -458,7 +458,7 @@ void nsXULElement::OpenMenu(bool aOpenFlag) {
   if (pm) {
     if (aOpenFlag) {
       
-      pm->ShowMenu(this, false);
+      pm->ShowMenu(this, false, false);
     } else {
       
       pm->HideMenu(this);
