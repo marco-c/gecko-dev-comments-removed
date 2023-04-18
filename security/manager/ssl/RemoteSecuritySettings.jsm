@@ -610,7 +610,7 @@ class CRLiteFilters {
     for (let filter of filtersToDownload) {
       try {
         
-        let localURI = await this.client.attachments.downloadToDisk(filter);
+        let localURI = await this.client.attachments.download(filter);
         let buffer = await (await fetch(localURI)).arrayBuffer();
         let bytes = new Uint8Array(buffer);
         log.debug(`Downloaded ${filter.details.name}: ${bytes.length} bytes`);

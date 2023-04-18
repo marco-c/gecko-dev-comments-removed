@@ -133,20 +133,33 @@ class Downloader {
 
 
 
+
+
   async download(record, options) {
     let {
       retries,
       checkHash,
       attachmentId = record?.id,
+      useCache = false,
       fallbackToCache = false,
       fallbackToDump = false,
     } = options || {};
+
+    if (!useCache) {
+      
+      
+      
+      return this.downloadToDisk(record, options);
+    }
+
+    if (!this.cacheImpl) {
+      throw new Error("useCache is true but there is no cacheImpl!");
+    }
+
     if (!attachmentId) {
       
       
-      throw new Error(
-        "download() was called without attachmentId or `record.id`"
-      );
+      throw new Error("download() was called without attachmentId or recordID");
     }
 
     const dumpInfo = new LazyRecordAndBuffer(() =>
@@ -171,7 +184,7 @@ class Downloader {
     }
 
     
-    if (record) {
+    if (useCache && record) {
       if (await cacheInfo.isMatchingRequestedRecord(record)) {
         try {
           return { ...(await cacheInfo.getResult()), _source: "cache_match" };
@@ -193,10 +206,12 @@ class Downloader {
           checkHash,
         });
         const blob = new Blob([newBuffer]);
-        
-        this.cacheImpl
-          .set(attachmentId, { record, blob })
-          .catch(e => Cu.reportError(e));
+        if (useCache) {
+          
+          this.cacheImpl
+            .set(attachmentId, { record, blob })
+            .catch(e => Cu.reportError(e));
+        }
         return { buffer: newBuffer, record, _source: "remote_match" };
       } catch (e) {
         
@@ -257,30 +272,6 @@ class Downloader {
 
 
 
-  async deleteDownloaded(record, options) {
-    let { attachmentId = record?.id } = options || {};
-    if (!attachmentId) {
-      
-      
-      throw new Error(
-        "deleteDownloaded() was called without attachmentId or `record.id`"
-      );
-    }
-    return this.cacheImpl.delete(attachmentId);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -317,7 +308,7 @@ class Downloader {
           checkHash: false, 
           retries: 0, 
         });
-        await IOUtils.write(localFilePath, new Uint8Array(buffer), {
+        await OS.File.writeAtomic(localFilePath, buffer, {
           tmpPath: `${localFilePath}.tmp`,
         });
       } catch (e) {
@@ -375,13 +366,7 @@ class Downloader {
 
 
 
-
-
-
-
-
-
-  async deleteFromDisk(record) {
+  async delete(record) {
     const {
       attachment: { filename },
     } = record;
@@ -390,8 +375,12 @@ class Downloader {
       ...this.folders,
       filename
     );
-    await IOUtils.remove(path);
+    await OS.File.remove(path, { ignoreAbsent: true });
     await this._rmDirs();
+  }
+
+  async deleteCached(attachmentId) {
+    return this.cacheImpl.delete(attachmentId);
   }
 
   async _baseAttachmentsURL() {
@@ -468,7 +457,7 @@ class Downloader {
       OS.Constants.Path.localProfileDir,
       ...this.folders
     );
-    await IOUtils.makeDirectory(dirPath, { createAncestors: true });
+    await OS.File.makeDir(dirPath, { from: OS.Constants.Path.localProfileDir });
   }
 
   async _rmDirs() {
@@ -478,7 +467,7 @@ class Downloader {
         ...this.folders.slice(0, i)
       );
       try {
-        await IOUtils.remove(dirPath);
+        await OS.File.removeEmptyDir(dirPath, { ignoreAbsent: true });
       } catch (e) {
         
         

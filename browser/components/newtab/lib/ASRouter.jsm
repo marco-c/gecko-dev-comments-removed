@@ -303,7 +303,7 @@ const MessageLoaderUtils = {
               "newtab"
             );
             
-            await downloader.downloadToDisk(record.data, {
+            await downloader.download(record.data, {
               retries: RS_DOWNLOAD_MAX_RETRIES,
             });
             RemoteL10n.reloadL10n();
