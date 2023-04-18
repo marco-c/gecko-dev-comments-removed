@@ -12,6 +12,7 @@
 #include "mozilla/layers/CompositorBridgeParent.h"  
 #include "mozilla/layers/CompositorThread.h"  
 #include "mozilla/layers/OMTAController.h"    
+#include "mozilla/ProfilerMarkers.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/webrender/WebRenderTypes.h"  
@@ -19,6 +20,34 @@
 #include "nsDisplayList.h"                     
 #include "nsLayoutUtils.h"
 #include "TreeTraversal.h"  
+
+namespace geckoprofiler::markers {
+
+using namespace mozilla;
+
+struct CompositorAnimationMarker {
+  static constexpr Span<const char> MarkerTypeName() {
+    return MakeStringSpan("CompositorAnimation");
+  }
+  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
+                                   uint64_t aId, nsCSSPropertyID aProperty) {
+    aWriter.IntProperty("pid", int64_t(aId >> 32));
+    aWriter.IntProperty("id", int64_t(aId & 0xffffffff));
+    aWriter.StringProperty("property", nsCSSProps::GetStringValue(aProperty));
+  }
+  static MarkerSchema MarkerTypeDisplay() {
+    using MS = MarkerSchema;
+    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
+    schema.AddKeyLabelFormat("pid", "Process Id", MS::Format::Integer);
+    schema.AddKeyLabelFormat("id", "Animation Id", MS::Format::Integer);
+    schema.AddKeyLabelFormat("property", "Animated Property",
+                             MS::Format::String);
+    schema.SetTableLabel("{marker.name} - {marker.data.property}");
+    return schema;
+  }
+};
+
+}  
 
 namespace mozilla {
 namespace layers {
@@ -28,6 +57,11 @@ using gfx::Matrix4x4;
 void CompositorAnimationStorage::ClearById(const uint64_t& aId) {
   MOZ_ASSERT(CompositorThreadHolder::IsInCompositorThread());
   MutexAutoLock lock(mLock);
+
+  PROFILER_MARKER("ClearAnimation", GRAPHICS,
+                  MarkerInnerWindowId(mCompositorBridge->GetInnerWindowId()),
+                  CompositorAnimationMarker, aId,
+                  mAnimations[aId]->mAnimation.LastElement().mProperty);
 
   mAnimatedValues.Remove(aId);
   mAnimations.erase(aId);
@@ -140,6 +174,11 @@ void CompositorAnimationStorage::SetAnimations(uint64_t aId,
   mAnimations[aId] = std::make_unique<AnimationStorageData>(
       AnimationHelper::ExtractAnimations(aLayersId, aValue));
 
+  PROFILER_MARKER("SetAnimation", GRAPHICS,
+                  MarkerInnerWindowId(mCompositorBridge->GetInnerWindowId()),
+                  CompositorAnimationMarker, aId,
+                  mAnimations[aId]->mAnimation.LastElement().mProperty);
+
   
   
   
@@ -201,6 +240,14 @@ bool CompositorAnimationStorage::SampleAnimations(
 
     const PropertyAnimationGroup& lastPropertyAnimationGroup =
         animationStorageData->mAnimation.LastElement();
+
+    PROFILER_MARKER(
+        "SampleAnimation", GRAPHICS,
+        MarkerOptions(
+            MarkerThreadId(CompositorThreadHolder::GetThreadId()),
+            MarkerInnerWindowId(mCompositorBridge->GetInnerWindowId())),
+        CompositorAnimationMarker, iter.first,
+        lastPropertyAnimationGroup.mProperty);
 
     
     switch (lastPropertyAnimationGroup.mProperty) {
