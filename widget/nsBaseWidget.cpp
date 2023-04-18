@@ -362,11 +362,8 @@ void nsBaseWidget::DestroyCompositor() {
     mAPZC = nullptr;
     SetCompositorWidgetDelegate(nullptr);
     mCompositorBridgeChild = nullptr;
-
-    
-    
-    RefPtr<CompositorSession> session = std::move(mCompositorSession);
-    session->Shutdown();
+    mCompositorSession->Shutdown();
+    mCompositorSession = nullptr;
   }
 }
 
