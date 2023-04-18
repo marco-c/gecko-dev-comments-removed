@@ -394,7 +394,7 @@ static int8_t GetClass(uint32_t u, LineBreaker::Strictness aLevel,
        CLASS_CHARACTER,
        CLASS_CHARACTER,
        CLASS_CHARACTER,
-       CLASS_CHARACTER,
+       CLASS_BREAKABLE,
        CLASS_OPEN_LIKE_CHARACTER,
        CLASS_CHARACTER,
        CLASS_CHARACTER,
@@ -623,9 +623,10 @@ static int8_t GetClass(uint32_t u, LineBreaker::Strictness aLevel,
       }
     } else if (0x0F00 == h) {
       
-      if (0x34 == l || 0x7f == l || 0x85 == l || 0xbe == l || 0xbf == l ||
-          0xd2 == l) {
-        return CLASS_BREAKABLE;
+      
+      
+      if (l == 0x0B) {
+        return GETCLASSFROMTABLE(gLBClass00, uint16_t(U_HYPHEN));
       }
     } else if (0x1800 == h) {
       if (0x0E == l) {
