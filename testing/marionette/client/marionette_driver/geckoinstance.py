@@ -588,6 +588,8 @@ class DesktopInstance(GeckoInstance):
         
         "browser.shell.checkDefaultBrowser": False,
         
+        "browser.startup.couldRestoreSession.count": -1,
+        
         "browser.startup.homepage_override.mstone": "ignore",
         
         "browser.startup.page": 0,

@@ -108,6 +108,9 @@ const COMMON_PREFERENCES = new Map([
   ["browser.shell.checkDefaultBrowser", false],
 
   
+  ["browser.startup.couldRestoreSession.count", -1],
+
+  
   ["browser.startup.homepage_override.mstone", "ignore"],
 
   
