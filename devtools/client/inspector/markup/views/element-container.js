@@ -75,7 +75,12 @@ MarkupElementContainer.prototype = extend(MarkupContainer.prototype, {
     const toolbox = this.markup.toolbox;
 
     
-    const eventTooltip = new EventTooltip(tooltip, listenerInfo, toolbox);
+    const eventTooltip = new EventTooltip(
+      tooltip,
+      listenerInfo,
+      toolbox,
+      this.node
+    );
 
     
     this.markup._disableImagePreviewTooltip();
