@@ -8,45 +8,6 @@
 
 
 
-
-
-
-
-async function prepareVideosAndTracks(browser, videoID, defaultTrackIndex = 0) {
-  info("Preparing video and initial text tracks");
-  await ensureVideosReady(browser);
-  await SpecialPowers.spawn(
-    browser,
-    [{ videoID, defaultTrackIndex }],
-    async args => {
-      let video = content.document.getElementById(args.videoID);
-      let tracks = video.textTracks;
-
-      is(tracks.length, 3, "Number of tracks loaded should be 3");
-
-      
-      if (args.defaultTrackIndex >= 0) {
-        info(`Loading track ${args.defaultTrackIndex + 1}`);
-        let track = tracks[args.defaultTrackIndex];
-        tracks.mode = "showing";
-        track.mode = "showing";
-      }
-
-      
-      info("Playing video to load text tracks");
-      video.play();
-      info("Pausing video");
-      video.pause();
-      ok(video.paused, "Video should be paused before proceeding with test");
-    }
-  );
-}
-
-
-
-
-
-
 add_task(async function test_text_tracks_new_window_pref_disabled() {
   info("Running test: new window - pref disabled");
   await SpecialPowers.pushPrefEnv({
@@ -65,7 +26,7 @@ add_task(async function test_text_tracks_new_window_pref_disabled() {
       gBrowser,
     },
     async browser => {
-      await prepareVideosAndTracks(browser, videoID);
+      await prepareVideosAndWebVTTTracks(browser, videoID);
 
       let pipWin = await triggerPictureInPicture(browser, videoID);
       ok(pipWin, "Got Picture-in-Picture window.");
@@ -107,7 +68,7 @@ add_task(async function test_text_tracks_new_window_pref_enabled() {
       gBrowser,
     },
     async browser => {
-      await prepareVideosAndTracks(browser, videoID);
+      await prepareVideosAndWebVTTTracks(browser, videoID);
 
       let pipWin = await triggerPictureInPicture(browser, videoID);
       ok(pipWin, "Got Picture-in-Picture window.");
@@ -147,7 +108,7 @@ add_task(async function test_text_tracks_new_window_no_track() {
       gBrowser,
     },
     async browser => {
-      await prepareVideosAndTracks(browser, videoID, -1);
+      await prepareVideosAndWebVTTTracks(browser, videoID, -1);
 
       let pipWin = await triggerPictureInPicture(browser, videoID);
       ok(pipWin, "Got Picture-in-Picture window.");

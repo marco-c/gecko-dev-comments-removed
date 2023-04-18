@@ -1296,15 +1296,9 @@ class PictureInPictureChild extends JSWindowActorChild {
       return;
     }
 
-    const allCuesArray = [...textTrackCues];
-    let lineNumberUsed = allCuesArray.find(cue => cue.line !== "auto");
-
+    let allCuesArray = [...textTrackCues];
     
-    
-    
-    if (lineNumberUsed) {
-      allCuesArray.sort((cue1, cue2) => cue1.line - cue2.line);
-    }
+    this.getOrderedWebVTTCues(allCuesArray);
     
     
     allCuesArray.forEach(cue => {
@@ -1317,6 +1311,41 @@ class PictureInPictureChild extends JSWindowActorChild {
       cueDiv.style = "white-space: pre;";
       pipWindowTracksContainer.appendChild(cueDiv);
     });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  getOrderedWebVTTCues(allCuesArray) {
+    if (!allCuesArray || allCuesArray.length <= 1) {
+      return;
+    }
+
+    let allCuesHaveNumericLines = allCuesArray.find(cue => cue.line !== "auto");
+
+    if (allCuesHaveNumericLines) {
+      allCuesArray.sort((cue1, cue2) => cue1.line - cue2.line);
+    } else if (allCuesArray.length >= 2) {
+      allCuesArray.reverse();
+    }
   }
 
   
