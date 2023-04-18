@@ -652,7 +652,7 @@ macro_rules! bool_pref_feature {
 
 
 
-pub static MEDIA_FEATURES: [MediaFeatureDescription; 58] = [
+pub static MEDIA_FEATURES: [MediaFeatureDescription; 57] = [
     feature!(
         atom!("width"),
         AllowsRanges::Yes,
@@ -920,7 +920,6 @@ pub static MEDIA_FEATURES: [MediaFeatureDescription; 58] = [
         GTKCSDReversedPlacement
     ),
     lnf_int_feature!(atom!("-moz-system-dark-theme"), SystemUsesDarkTheme),
-    bool_pref_feature!(atom!("-moz-proton"), "browser.proton.enabled"),
     bool_pref_feature!(
         atom!("-moz-proton-places-tooltip"),
         "browser.proton.places-tooltip.enabled"
