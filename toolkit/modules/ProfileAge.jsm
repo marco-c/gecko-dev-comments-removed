@@ -192,9 +192,9 @@ async function initProfileAge(profile) {
 
 
 
-async function ProfileAge(profile) {
+function ProfileAge(profile) {
   if (!profile) {
-    profile = await PathUtils.getProfileDir();
+    profile = PathUtils.profileDir;
   }
 
   if (PROFILES.has(profile)) {
