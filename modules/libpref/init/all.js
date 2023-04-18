@@ -163,10 +163,6 @@ pref("security.pki.crlite_mode", 1);
 
 
 
-pref("security.pki.crlite_ct_merge_delay_seconds", 100800);
-
-
-
 
 pref("security.pki.mitm_canary_issuer", "");
 
