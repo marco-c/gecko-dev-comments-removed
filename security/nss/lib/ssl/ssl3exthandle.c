@@ -1814,7 +1814,15 @@ ssl3_HandleSupportedPointFormatsXtn(const sslSocket *ss,
     }
 
     
+
+
+
+
+
+
+    ssl3_ExtSendAlert(ss, alert_fatal, illegal_parameter);
     PORT_SetError(SSL_ERROR_RX_MALFORMED_HANDSHAKE);
+
     return SECFailure;
 }
 

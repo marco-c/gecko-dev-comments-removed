@@ -311,21 +311,15 @@ INSTANTIATE_TEST_SUITE_P(TlsPadding, TlsPaddingTest,
                          ::testing::Combine(kContentSizes, kTrueFalse));
 
 
-
-
-
-
-
-
-
-
-
-class ZeroLengthInnerPlaintextCreatorFilter : public TlsRecordFilter {
+class Tls13RecordModifier : public TlsRecordFilter {
  public:
-  ZeroLengthInnerPlaintextCreatorFilter(
-      const std::shared_ptr<TlsAgent>& a,
-      SSLContentType contentType = ssl_ct_handshake, size_t padding = 0)
-      : TlsRecordFilter(a), contentType_(contentType), padding_(padding) {}
+  Tls13RecordModifier(const std::shared_ptr<TlsAgent>& a,
+                      uint8_t contentType = ssl_ct_handshake, size_t size = 0,
+                      size_t padding = 0)
+      : TlsRecordFilter(a),
+        contentType_(contentType),
+        size_(size),
+        padding_(padding) {}
 
  protected:
   PacketFilter::Action FilterRecord(const TlsRecordHeader& header,
@@ -350,7 +344,7 @@ class ZeroLengthInnerPlaintextCreatorFilter : public TlsRecordFilter {
 
     DataBuffer ciphertext;
     bool ok = Protect(spec(protection_epoch), out_header, contentType_,
-                      DataBuffer(0), &ciphertext, &out_header, padding_);
+                      DataBuffer(size_), &ciphertext, &out_header, padding_);
     EXPECT_TRUE(ok);
     if (!ok) {
       return KEEP;
@@ -361,7 +355,8 @@ class ZeroLengthInnerPlaintextCreatorFilter : public TlsRecordFilter {
   }
 
  private:
-  SSLContentType contentType_;
+  uint8_t contentType_;
+  size_t size_;
   size_t padding_;
 };
 
@@ -390,12 +385,17 @@ class ZeroLengthInnerPlaintextSetupTls13
 
 
 
+
+
+
+
+
 TEST_P(ZeroLengthInnerPlaintextSetupTls13, ZeroLengthInnerPlaintextRun) {
   EnsureTlsSetup();
 
   
-  auto filter = MakeTlsFilter<ZeroLengthInnerPlaintextCreatorFilter>(
-      client_, contentType_, padding_);
+  auto filter =
+      MakeTlsFilter<Tls13RecordModifier>(client_, contentType_, 0, padding_);
   filter->EnableDecryption();
   filter->Disable();
 
@@ -602,5 +602,203 @@ INSTANTIATE_TEST_SUITE_P(
       }
       return variant + "ZeroLength" + contentType + "Test";
     });
+
+
+
+
+
+
+
+
+
+
+
+class UndefinedContentTypeSetup : public TlsConnectGeneric {
+ public:
+  UndefinedContentTypeSetup() : TlsConnectGeneric() { StartConnect(); };
+
+  void createUndefinedContentTypeRecord(DataBuffer& buffer, unsigned epoch = 0,
+                                        unsigned seqn = 0) {
+    
+    uint8_t data[] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE};
+
+    size_t idx = 0;
+    
+    idx = buffer.Write(idx, 0xFF, 1);
+    
+    idx = buffer.Write(idx, 0xDEAD, 2);
+    
+    if (variant_ == ssl_variant_datagram) {
+      
+      idx = buffer.Write(idx, epoch, 2);
+      
+      idx = buffer.Write(idx, 0U, 2);
+      idx = buffer.Write(idx, seqn, 4);
+    }
+    
+    idx = buffer.Write(idx, 5U, 2);
+    
+    (void)buffer.Write(idx, data, 5);
+  }
+
+  void checkUndefinedContentTypeHandling(std::shared_ptr<TlsAgent> sender,
+                                         std::shared_ptr<TlsAgent> receiver) {
+    if (variant_ == ssl_variant_stream) {
+      
+      receiver->ExpectSendAlert(kTlsAlertUnexpectedMessage);
+      receiver->ReadBytes();
+      
+
+
+
+      if (version_ >= SSL_LIBRARY_VERSION_TLS_1_3 && sender == server_) {
+        sender->ExpectSendAlert(kTlsAlertUnexpectedMessage);
+      } else {
+        sender->ExpectReceiveAlert(kTlsAlertUnexpectedMessage);
+      }
+      sender->ReadBytes();
+    } else {  
+      size_t received = receiver->received_bytes();
+      receiver->ReadBytes();
+      
+      ASSERT_EQ(received, receiver->received_bytes());
+    }
+  }
+
+ protected:
+  DataBuffer buffer_;
+};
+
+INSTANTIATE_TEST_SUITE_P(
+    UndefinedContentTypePreHandshakeStream, UndefinedContentTypeSetup,
+    ::testing::Combine(TlsConnectTestBase::kTlsVariantsStream,
+                       TlsConnectTestBase::kTlsVAll));
+
+INSTANTIATE_TEST_SUITE_P(
+    UndefinedContentTypePreHandshakeDatagram, UndefinedContentTypeSetup,
+    ::testing::Combine(TlsConnectTestBase::kTlsVariantsDatagram,
+                       TlsConnectTestBase::kTlsV11Plus));
+
+TEST_P(UndefinedContentTypeSetup,
+       ServerReceiveUndefinedContentTypePreClientHello) {
+  createUndefinedContentTypeRecord(buffer_);
+
+  
+  client_->SendDirect(buffer_);
+
+  checkUndefinedContentTypeHandling(client_, server_);
+}
+
+TEST_P(UndefinedContentTypeSetup,
+       ServerReceiveUndefinedContentTypePostClientHello) {
+  
+  createUndefinedContentTypeRecord(buffer_, 0, 1);
+
+  
+  client_->Handshake();
+  
+  client_->SendDirect(buffer_);
+
+  checkUndefinedContentTypeHandling(client_, server_);
+}
+
+TEST_P(UndefinedContentTypeSetup,
+       ClientReceiveUndefinedContentTypePreClientHello) {
+  createUndefinedContentTypeRecord(buffer_);
+
+  
+  server_->SendDirect(buffer_);
+
+  checkUndefinedContentTypeHandling(server_, client_);
+}
+
+TEST_P(UndefinedContentTypeSetup,
+       ClientReceiveUndefinedContentTypePostClientHello) {
+  
+  createUndefinedContentTypeRecord(buffer_, 0, 1);
+
+  
+  client_->Handshake();
+  
+  server_->SendDirect(buffer_);
+
+  checkUndefinedContentTypeHandling(server_, client_);
+}
+
+class RecordOuterContentTypeSetter : public TlsRecordFilter {
+ public:
+  RecordOuterContentTypeSetter(const std::shared_ptr<TlsAgent>& a,
+                               uint8_t contentType = ssl_ct_handshake)
+      : TlsRecordFilter(a), contentType_(contentType) {}
+
+ protected:
+  PacketFilter::Action FilterRecord(const TlsRecordHeader& header,
+                                    const DataBuffer& record, size_t* offset,
+                                    DataBuffer* output) override {
+    TlsRecordHeader hdr(header.variant(), header.version(), contentType_,
+                        header.sequence_number());
+
+    *offset = hdr.Write(output, *offset, record);
+    return CHANGE;
+  }
+
+ private:
+  uint8_t contentType_;
+};
+
+
+
+
+TEST_P(TlsConnectTls13, UndefinedOuterContentType13) {
+  EnsureTlsSetup();
+  Connect();
+
+  
+  MakeTlsFilter<RecordOuterContentTypeSetter>(client_, 0xff);
+  client_->SendData(50);
+
+  if (variant_ == ssl_variant_stream) {
+    
+    server_->ExpectSendAlert(kTlsAlertUnexpectedMessage);
+    server_->ReadBytes();
+    
+    client_->ExpectReceiveAlert(kTlsAlertUnexpectedMessage);
+    client_->ReadBytes();
+  } else {
+    
+    size_t received = server_->received_bytes();
+    server_->ReadBytes();
+    ASSERT_EQ(received, server_->received_bytes());
+  }
+}
+
+TEST_P(TlsConnectTls13, UndefinedInnerContentType13) {
+  EnsureTlsSetup();
+
+  
+  auto filter = MakeTlsFilter<Tls13RecordModifier>(client_, 0xff, 50, 0);
+  filter->EnableDecryption();
+  filter->Disable();
+
+  Connect();
+
+  filter->Enable();
+  
+  client_->SendData(50);
+
+  if (variant_ == ssl_variant_stream) {
+    
+    server_->ExpectSendAlert(kTlsAlertUnexpectedMessage);
+    server_->ReadBytes();
+    
+    client_->ExpectReceiveAlert(kTlsAlertUnexpectedMessage);
+    client_->ReadBytes();
+  } else {
+    
+    size_t received = server_->received_bytes();
+    server_->ReadBytes();
+    ASSERT_EQ(received, server_->received_bytes());
+  }
+}
 
 }  

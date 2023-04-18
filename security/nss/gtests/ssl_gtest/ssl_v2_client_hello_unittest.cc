@@ -214,7 +214,7 @@ TEST_P(SSLv2ClientHelloTest, ConnectDisabled) {
   
   uint8_t zeros[SSL_LIBRARY_VERSION_TLS_1_2] = {0};
   client_->SendDirect(DataBuffer(zeros, sizeof(zeros)));
-  ExpectAlert(server_, kTlsAlertIllegalParameter);
+  ExpectAlert(server_, kTlsAlertUnexpectedMessage);
   server_->Handshake();
   client_->Handshake();
 }
@@ -237,8 +237,8 @@ TEST_P(SSLv2ClientHelloTest, ConnectAfterEmptyV3Record) {
   
   SetPadding(255);
 
-  ConnectExpectAlert(server_, kTlsAlertIllegalParameter);
-  EXPECT_EQ(SSL_ERROR_BAD_CLIENT, server_->error_code());
+  ConnectExpectAlert(server_, kTlsAlertUnexpectedMessage);
+  EXPECT_EQ(SSL_ERROR_RX_UNKNOWN_RECORD_TYPE, server_->error_code());
 }
 
 
@@ -277,7 +277,7 @@ TEST_P(SSLv2ClientHelloTest, SendSecurityEscape) {
   
   SetPadding(255);
 
-  ConnectExpectAlert(server_, kTlsAlertIllegalParameter);
+  ConnectExpectAlert(server_, kTlsAlertUnexpectedMessage);
 }
 
 

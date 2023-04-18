@@ -349,6 +349,14 @@ dtls_GatherData(sslSocket *ss, sslGather *gs, int flags)
         headerLen = 7;
     } else if (dtls_IsDtls13Ciphertext(ss->version, contentType)) {
         
+
+
+
+
+
+
+
+
         if (contentType & 0x10) {
             PORT_Assert(PR_FALSE);
             PORT_SetError(SSL_ERROR_RX_UNKNOWN_RECORD_TYPE);

@@ -143,7 +143,31 @@ extern unsigned long SECMOD_PubMechFlagstoInternal(unsigned long publicFlags);
 extern unsigned long SECMOD_InternaltoPubMechFlags(unsigned long internalFlags);
 extern unsigned long SECMOD_PubCipherFlagstoInternal(unsigned long publicFlags);
 
+
+
+
+
+
+
+
+
+
 PRBool SECMOD_HasRemovableSlots(SECMODModule *mod);
+
+
+
+
+
+PRBool SECMOD_LockedModuleHasRemovableSlots(SECMODModule *mod);
+
+
+
+
+
+
+
+
+
 PK11SlotInfo *SECMOD_WaitForAnyTokenEvent(SECMODModule *mod,
                                           unsigned long flags, PRIntervalTime latency);
 
@@ -153,6 +177,9 @@ PK11SlotInfo *SECMOD_WaitForAnyTokenEvent(SECMODModule *mod,
 
 
 SECStatus SECMOD_CancelWait(SECMODModule *mod);
+
+
+
 
 
 

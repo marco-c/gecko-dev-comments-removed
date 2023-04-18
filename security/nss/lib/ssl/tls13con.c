@@ -5819,6 +5819,13 @@ tls13_UnprotectRecord(sslSocket *ss,
 
     
 
+
+
+
+
+
+
+
     if (!(cText->hdr[0] == ssl_ct_application_data ||
           (IS_DTLS(ss) &&
            ss->version >= SSL_LIBRARY_VERSION_TLS_1_3 &&

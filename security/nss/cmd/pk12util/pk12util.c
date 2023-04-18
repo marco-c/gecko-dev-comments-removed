@@ -665,6 +665,17 @@ P12U_ExportPKCS12Object(char *nn, char *outfile, PK11SlotInfo *inSlot,
         goto loser;
     }
 
+    
+
+
+
+
+
+
+    if ((pwitem->len > 0) && (!pwitem->data[pwitem->len - 1])) {
+        pwitem->len--;
+    }
+
     p12cxt = p12u_InitContext(PR_FALSE, outfile);
     if (!p12cxt) {
         SECU_PrintError(progName, "Initialization failed: %s", outfile);

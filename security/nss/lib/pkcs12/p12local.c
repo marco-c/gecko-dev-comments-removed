@@ -911,18 +911,25 @@ sec_pkcs12_find_object(SEC_PKCS12SafeContents *safe,
 
 
 
+
+
+
+
 PRBool
 sec_pkcs12_convert_item_to_unicode(PLArenaPool *arena, SECItem *dest,
                                    SECItem *src, PRBool zeroTerm,
                                    PRBool asciiConvert, PRBool toUnicode)
 {
     PRBool success = PR_FALSE;
+    int bufferSize;
+
     if (!src || !dest) {
         PORT_SetError(SEC_ERROR_INVALID_ARGS);
         return PR_FALSE;
     }
 
-    dest->len = src->len * 3 + 2;
+    bufferSize = src->len * 3 + 2;
+    dest->len = bufferSize;
     if (arena) {
         dest->data = (unsigned char *)PORT_ArenaZAlloc(arena, dest->len);
     } else {
@@ -956,24 +963,36 @@ sec_pkcs12_convert_item_to_unicode(PLArenaPool *arena, SECItem *dest,
         return PR_FALSE;
     }
 
-    if ((dest->len >= 2) &&
-        (dest->data[dest->len - 1] || dest->data[dest->len - 2]) && zeroTerm) {
-        if (dest->len + 2 > 3 * src->len) {
-            if (arena) {
-                dest->data = (unsigned char *)PORT_ArenaGrow(arena,
-                                                             dest->data, dest->len,
-                                                             dest->len + 2);
-            } else {
-                dest->data = (unsigned char *)PORT_Realloc(dest->data,
-                                                           dest->len + 2);
-            }
+    
 
-            if (!dest->data) {
-                return PR_FALSE;
+    if (zeroTerm) {
+        
+        if (toUnicode) {
+            if ((dest->len >= 2) &&
+                (dest->data[dest->len - 1] || dest->data[dest->len - 2])) {
+                
+                PORT_Assert(dest->len + 2 <= bufferSize);
+                dest->len += 2;
+                dest->data[dest->len - 1] = dest->data[dest->len - 2] = 0;
+            }
+            
+        } else if ((dest->len >= 1) && dest->data[dest->len - 1]) {
+            PORT_Assert(dest->len + 1 <= bufferSize);
+            dest->len++;
+            dest->data[dest->len - 1] = 0;
+        }
+    } else {
+        
+        if (toUnicode) {
+            while ((dest->len >= 2) && !dest->data[dest->len - 1] &&
+                   !dest->data[dest->len - 2]) {
+                dest->len -= 2;
+            }
+        } else {
+            while (dest->len && !dest->data[dest->len - 1]) {
+                dest->len--;
             }
         }
-        dest->len += 2;
-        dest->data[dest->len - 1] = dest->data[dest->len - 2] = 0;
     }
 
     return PR_TRUE;
@@ -1012,6 +1031,7 @@ sec_pkcs12_is_pkcs12_pbe_algorithm(SECOidTag algorithm)
 
 
 
+
 PRBool
 sec_pkcs12_decode_password(PLArenaPool *arena,
                            SECItem *result,
@@ -1021,7 +1041,7 @@ sec_pkcs12_decode_password(PLArenaPool *arena,
     if (!sec_pkcs12_is_pkcs12_pbe_algorithm(algorithm))
         return sec_pkcs12_convert_item_to_unicode(arena, result,
                                                   (SECItem *)pwitem,
-                                                  PR_TRUE, PR_FALSE, PR_FALSE);
+                                                  PR_FALSE, PR_FALSE, PR_FALSE);
 
     return SECITEM_CopyItem(arena, result, pwitem) == SECSuccess;
 }

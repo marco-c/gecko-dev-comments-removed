@@ -2570,11 +2570,17 @@ NSSCKFWC_FindObjects(
         phObject[i] = nssCKFWInstance_FindObjectHandle(fwInstance, fwObject);
         if ((CK_OBJECT_HANDLE)0 == phObject[i]) {
             phObject[i] = nssCKFWInstance_CreateObjectHandle(fwInstance, fwObject, &error);
-        }
-        if ((CK_OBJECT_HANDLE)0 == phObject[i]) {
             
-            nssCKFWObject_Destroy(fwObject);
-            goto loser;
+
+
+
+            if (error == CKR_GENERAL_ERROR) {
+                error = CKR_OK;
+                phObject[i] = nssCKFWInstance_FindObjectHandle(fwInstance, fwObject);
+            }
+            if (error != CKR_OK || (CK_OBJECT_HANDLE)0 == phObject[i]) {
+                goto loser;
+            }
         }
     }
 

@@ -8991,9 +8991,15 @@ ssl3_HandleClientHello(sslSocket *ss, PRUint8 *b, PRUint32 length)
                                    PR_MIN(ss->clientHelloVersion,
                                           SSL_LIBRARY_VERSION_TLS_1_2),
                                    PR_TRUE);
+        
+
+
+
+
+
+
         if (rv != SECSuccess) {
-            desc = (ss->clientHelloVersion > SSL_LIBRARY_VERSION_3_0) ? protocol_version
-                                                                      : handshake_failure;
+            desc = protocol_version;
             errCode = SSL_ERROR_UNSUPPORTED_VERSION;
             goto alert_loser;
         }
@@ -13191,10 +13197,25 @@ ssl3_HandleNonApplicationData(sslSocket *ss, SSLContentType rType,
             }
         
         default:
+            
+
+
+
+
+
+
+
+
+
+
+
+
+            if (!IS_DTLS(ss)) {
+                SSL3_SendAlert(ss, alert_fatal, unexpected_message);
+            }
+            PORT_SetError(SSL_ERROR_RX_UNKNOWN_RECORD_TYPE);
             SSL_DBG(("%d: SSL3[%d]: bogus content type=%d",
                      SSL_GETPID(), ss->fd, rType));
-            PORT_SetError(SSL_ERROR_RX_UNKNOWN_RECORD_TYPE);
-            ssl3_DecodeError(ss);
             rv = SECFailure;
             break;
     }
