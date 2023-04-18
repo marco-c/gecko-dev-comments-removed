@@ -9,7 +9,9 @@ const { XPCOMUtils } = ChromeUtils.import(
 );
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   AddonManager: "resource://gre/modules/AddonManager.jsm",
   BuiltInThemeConfig: "resource:///modules/BuiltInThemeConfig.jsm",
 });
@@ -18,7 +20,7 @@ const kActiveThemePref = "extensions.activeThemeID";
 const kRetainedThemesPref = "browser.theme.retainedExpiredThemes";
 
 XPCOMUtils.defineLazyPreferenceGetter(
-  this,
+  lazy,
   "retainedThemes",
   kRetainedThemesPref,
   null,
@@ -45,7 +47,7 @@ class _BuiltInThemes {
 
 
 
-  builtInThemeMap = BuiltInThemeConfig;
+  builtInThemeMap = lazy.BuiltInThemeConfig;
 
   
 
@@ -83,7 +85,7 @@ class _BuiltInThemes {
     let activeBuiltInTheme = this.builtInThemeMap.get(activeThemeID);
 
     if (activeBuiltInTheme) {
-      AddonManager.maybeInstallBuiltinAddon(
+      lazy.AddonManager.maybeInstallBuiltinAddon(
         activeThemeID,
         activeBuiltInTheme.version,
         `resource://builtin-themes/${activeBuiltInTheme.path}`
@@ -105,11 +107,11 @@ class _BuiltInThemes {
     for (let [id, themeInfo] of this.builtInThemeMap.entries()) {
       if (
         !themeInfo.expiry ||
-        retainedThemes.includes(id) ||
+        lazy.retainedThemes.includes(id) ||
         new Date(themeInfo.expiry) > now
       ) {
         installPromises.push(
-          AddonManager.maybeInstallBuiltinAddon(
+          lazy.AddonManager.maybeInstallBuiltinAddon(
             id,
             themeInfo.version,
             themeInfo.path
@@ -150,7 +152,7 @@ class _BuiltInThemes {
 
 
   isRetainedExpiredTheme(id) {
-    return retainedThemes.includes(id) && this.themeIsExpired(id);
+    return lazy.retainedThemes.includes(id) && this.themeIsExpired(id);
   }
 
   
@@ -167,7 +169,7 @@ class _BuiltInThemes {
     const expiredThemes = Array.from(this.builtInThemeMap.entries()).filter(
       ([id, themeInfo]) =>
         !!themeInfo.expiry &&
-        !retainedThemes.includes(id) &&
+        !lazy.retainedThemes.includes(id) &&
         new Date(themeInfo.expiry) <= now
     );
     for (let [id] of expiredThemes) {
@@ -175,7 +177,7 @@ class _BuiltInThemes {
         this._retainLimitedTimeTheme(id);
       } else {
         try {
-          let addon = await AddonManager.getAddonByID(id);
+          let addon = await lazy.AddonManager.getAddonByID(id);
           if (addon) {
             await addon.uninstall();
           }
@@ -193,11 +195,11 @@ class _BuiltInThemes {
 
 
   _retainLimitedTimeTheme(id) {
-    if (!retainedThemes.includes(id)) {
-      retainedThemes.push(id);
+    if (!lazy.retainedThemes.includes(id)) {
+      lazy.retainedThemes.push(id);
       Services.prefs.setStringPref(
         kRetainedThemesPref,
-        JSON.stringify(retainedThemes)
+        JSON.stringify(lazy.retainedThemes)
       );
     }
   }
