@@ -11,7 +11,6 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StorageAccess.h"
 #include "nsContentUtils.h"
-#include "nsIDocShell.h"
 #include "nsIEffectiveTLDService.h"
 
 namespace mozilla {
@@ -82,78 +81,6 @@ bool ChooseOriginAttributes(nsIChannel* aChannel, OriginAttributes& aAttrs,
 
   aAttrs.SetPartitionKey(principalURI);
   return true;
-}
-
-bool VerifyValidPartitionedPrincipalInfoForPrincipalInfoInternal(
-    const ipc::PrincipalInfo& aPartitionedPrincipalInfo,
-    const ipc::PrincipalInfo& aPrincipalInfo,
-    bool aIgnoreSpecForContentPrincipal,
-    bool aIgnoreDomainForContentPrincipal) {
-  if (aPartitionedPrincipalInfo.type() != aPrincipalInfo.type()) {
-    return false;
-  }
-
-  if (aPartitionedPrincipalInfo.type() ==
-      mozilla::ipc::PrincipalInfo::TContentPrincipalInfo) {
-    const mozilla::ipc::ContentPrincipalInfo& spInfo =
-        aPartitionedPrincipalInfo.get_ContentPrincipalInfo();
-    const mozilla::ipc::ContentPrincipalInfo& pInfo =
-        aPrincipalInfo.get_ContentPrincipalInfo();
-
-    return spInfo.attrs().EqualsIgnoringPartitionKey(pInfo.attrs()) &&
-           spInfo.originNoSuffix() == pInfo.originNoSuffix() &&
-           (aIgnoreSpecForContentPrincipal || spInfo.spec() == pInfo.spec()) &&
-           (aIgnoreDomainForContentPrincipal ||
-            spInfo.domain() == pInfo.domain()) &&
-           spInfo.baseDomain() == pInfo.baseDomain();
-  }
-
-  if (aPartitionedPrincipalInfo.type() ==
-      mozilla::ipc::PrincipalInfo::TSystemPrincipalInfo) {
-    
-    return true;
-  }
-
-  if (aPartitionedPrincipalInfo.type() ==
-      mozilla::ipc::PrincipalInfo::TNullPrincipalInfo) {
-    const mozilla::ipc::NullPrincipalInfo& spInfo =
-        aPartitionedPrincipalInfo.get_NullPrincipalInfo();
-    const mozilla::ipc::NullPrincipalInfo& pInfo =
-        aPrincipalInfo.get_NullPrincipalInfo();
-
-    return spInfo.spec() == pInfo.spec() &&
-           spInfo.attrs().EqualsIgnoringPartitionKey(pInfo.attrs());
-  }
-
-  if (aPartitionedPrincipalInfo.type() ==
-      mozilla::ipc::PrincipalInfo::TExpandedPrincipalInfo) {
-    const mozilla::ipc::ExpandedPrincipalInfo& spInfo =
-        aPartitionedPrincipalInfo.get_ExpandedPrincipalInfo();
-    const mozilla::ipc::ExpandedPrincipalInfo& pInfo =
-        aPrincipalInfo.get_ExpandedPrincipalInfo();
-
-    if (!spInfo.attrs().EqualsIgnoringPartitionKey(pInfo.attrs())) {
-      return false;
-    }
-
-    if (spInfo.allowlist().Length() != pInfo.allowlist().Length()) {
-      return false;
-    }
-
-    for (uint32_t i = 0; i < spInfo.allowlist().Length(); ++i) {
-      if (!VerifyValidPartitionedPrincipalInfoForPrincipalInfoInternal(
-              spInfo.allowlist()[i], pInfo.allowlist()[i],
-              aIgnoreSpecForContentPrincipal,
-              aIgnoreDomainForContentPrincipal)) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  MOZ_CRASH("Invalid principalInfo type");
-  return false;
 }
 
 }  
@@ -231,16 +158,71 @@ StoragePrincipalHelper::PrepareEffectiveStoragePrincipalOriginAttributes(
 bool StoragePrincipalHelper::VerifyValidStoragePrincipalInfoForPrincipalInfo(
     const mozilla::ipc::PrincipalInfo& aStoragePrincipalInfo,
     const mozilla::ipc::PrincipalInfo& aPrincipalInfo) {
-  return VerifyValidPartitionedPrincipalInfoForPrincipalInfoInternal(
-      aStoragePrincipalInfo, aPrincipalInfo, false, false);
-}
+  if (aStoragePrincipalInfo.type() != aPrincipalInfo.type()) {
+    return false;
+  }
 
+  if (aStoragePrincipalInfo.type() ==
+      mozilla::ipc::PrincipalInfo::TContentPrincipalInfo) {
+    const mozilla::ipc::ContentPrincipalInfo& spInfo =
+        aStoragePrincipalInfo.get_ContentPrincipalInfo();
+    const mozilla::ipc::ContentPrincipalInfo& pInfo =
+        aPrincipalInfo.get_ContentPrincipalInfo();
 
-bool StoragePrincipalHelper::VerifyValidClientPrincipalInfoForPrincipalInfo(
-    const mozilla::ipc::PrincipalInfo& aClientPrincipalInfo,
-    const mozilla::ipc::PrincipalInfo& aPrincipalInfo) {
-  return VerifyValidPartitionedPrincipalInfoForPrincipalInfoInternal(
-      aClientPrincipalInfo, aPrincipalInfo, true, true);
+    if (!spInfo.attrs().EqualsIgnoringFPD(pInfo.attrs()) ||
+        spInfo.originNoSuffix() != pInfo.originNoSuffix() ||
+        spInfo.spec() != pInfo.spec() || spInfo.domain() != pInfo.domain() ||
+        spInfo.baseDomain() != pInfo.baseDomain()) {
+      return false;
+    }
+
+    return true;
+  }
+
+  if (aStoragePrincipalInfo.type() ==
+      mozilla::ipc::PrincipalInfo::TSystemPrincipalInfo) {
+    
+    return true;
+  }
+
+  if (aStoragePrincipalInfo.type() ==
+      mozilla::ipc::PrincipalInfo::TNullPrincipalInfo) {
+    const mozilla::ipc::NullPrincipalInfo& spInfo =
+        aStoragePrincipalInfo.get_NullPrincipalInfo();
+    const mozilla::ipc::NullPrincipalInfo& pInfo =
+        aPrincipalInfo.get_NullPrincipalInfo();
+
+    return spInfo.spec() == pInfo.spec() &&
+           spInfo.attrs().EqualsIgnoringFPD(pInfo.attrs());
+  }
+
+  if (aStoragePrincipalInfo.type() ==
+      mozilla::ipc::PrincipalInfo::TExpandedPrincipalInfo) {
+    const mozilla::ipc::ExpandedPrincipalInfo& spInfo =
+        aStoragePrincipalInfo.get_ExpandedPrincipalInfo();
+    const mozilla::ipc::ExpandedPrincipalInfo& pInfo =
+        aPrincipalInfo.get_ExpandedPrincipalInfo();
+
+    if (!spInfo.attrs().EqualsIgnoringFPD(pInfo.attrs())) {
+      return false;
+    }
+
+    if (spInfo.allowlist().Length() != pInfo.allowlist().Length()) {
+      return false;
+    }
+
+    for (uint32_t i = 0; i < spInfo.allowlist().Length(); ++i) {
+      if (!VerifyValidStoragePrincipalInfoForPrincipalInfo(
+              spInfo.allowlist()[i], pInfo.allowlist()[i])) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  MOZ_CRASH("Invalid principalInfo type");
+  return false;
 }
 
 
@@ -265,25 +247,6 @@ nsresult StoragePrincipalHelper::GetPrincipal(nsIChannel* aChannel,
                                       getter_AddRefs(partitionedPrincipal));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (XRE_IsParentProcess() && loadInfo->GetBrowsingContextID() != 0) {
-    AntiTrackingUtils::ComputeIsThirdPartyToTopWindow(aChannel);
   }
 
   nsCOMPtr<nsIPrincipal> outPrincipal = principal;
@@ -355,48 +318,6 @@ nsresult StoragePrincipalHelper::GetPrincipal(nsPIDOMWindowInner* aWindow,
 
   outPrincipal.forget(aPrincipal);
   return NS_OK;
-}
-
-
-bool StoragePrincipalHelper::ShouldUsePartitionPrincipalForServiceWorker(
-    nsIDocShell* aDocShell) {
-  MOZ_ASSERT(aDocShell);
-
-  RefPtr<Document> document = aDocShell->GetExtantDocument();
-
-  
-  
-  if (!document) {
-    nsCOMPtr<nsIDocShellTreeItem> parentItem;
-    aDocShell->GetInProcessSameTypeParent(getter_AddRefs(parentItem));
-
-    if (parentItem) {
-      document = parentItem->GetDocument();
-    }
-  }
-
-  nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
-
-  if (document) {
-    cookieJarSettings = document->CookieJarSettings();
-  } else {
-    
-    
-    cookieJarSettings = CookieJarSettings::Create(CookieJarSettings::eRegular);
-  }
-
-  
-  if (cookieJarSettings->GetCookieBehavior() !=
-      nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN) {
-    return false;
-  }
-
-  
-  
-  
-  return AntiTrackingUtils::IsThirdPartyContext(
-      document ? document->GetBrowsingContext()
-               : aDocShell->GetBrowsingContext());
 }
 
 

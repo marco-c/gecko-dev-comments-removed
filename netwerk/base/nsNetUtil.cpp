@@ -340,21 +340,13 @@ void AssertLoadingPrincipalAndClientInfoMatch(
       return;
     }
     
-    nsAutoCString loadingOriginNoSuffix;
-    MOZ_ALWAYS_SUCCEEDS(
-        aLoadingPrincipal->GetOriginNoSuffix(loadingOriginNoSuffix));
+    nsAutoCString loadingOrigin;
+    MOZ_ALWAYS_SUCCEEDS(aLoadingPrincipal->GetOrigin(loadingOrigin));
 
-    nsAutoCString clientOriginNoSuffix;
-    MOZ_ALWAYS_SUCCEEDS(
-        clientPrincipal->GetOriginNoSuffix(clientOriginNoSuffix));
+    nsAutoCString clientOrigin;
+    MOZ_ALWAYS_SUCCEEDS(clientPrincipal->GetOrigin(clientOrigin));
 
-    
-    
-    
-    MOZ_DIAGNOSTIC_ASSERT(loadingOriginNoSuffix == clientOriginNoSuffix);
-    MOZ_DIAGNOSTIC_ASSERT(
-        aLoadingPrincipal->OriginAttributesRef().EqualsIgnoringPartitionKey(
-            clientPrincipal->OriginAttributesRef()));
+    MOZ_DIAGNOSTIC_ASSERT(loadingOrigin == clientOrigin);
   }
 #endif
 }

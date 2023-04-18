@@ -1688,12 +1688,6 @@ nsresult ServiceWorkerPrivate::SpawnWorkerIfNeeded(WakeUpReason aWhy,
   info.mOriginAttributes = mInfo->GetOriginAttributes();
 
   
-  
-  
-  info.mIsThirdPartyContextToTopWindow =
-      !mInfo->Principal()->OriginAttributesRef().mPartitionKey.IsEmpty();
-
-  
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   nsCOMPtr<nsIContentSecurityPolicy> csp;
   if (info.mChannel) {

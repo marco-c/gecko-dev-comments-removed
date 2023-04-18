@@ -201,11 +201,6 @@ nsresult ServiceWorkerPrivateImpl::Initialize() {
     return remoteType.unwrapErr();
   }
 
-  
-  
-  bool isThirdPartyContextToTopWindow =
-      !principal->OriginAttributesRef().mPartitionKey.IsEmpty();
-
   mRemoteWorkerData = RemoteWorkerData(
       NS_ConvertUTF8toUTF16(mOuter->mInfo->ScriptSpec()), baseScriptURL,
       baseScriptURL,  VoidString(),
@@ -224,8 +219,7 @@ nsresult ServiceWorkerPrivateImpl::Initialize() {
       
        nullptr,
 
-      storageAccess, isThirdPartyContextToTopWindow,
-      std::move(serviceWorkerData), regInfo->AgentClusterId(),
+      storageAccess, std::move(serviceWorkerData), regInfo->AgentClusterId(),
       remoteType.unwrap());
 
   mRemoteWorkerData.referrerInfo() = MakeAndAddRef<ReferrerInfo>();

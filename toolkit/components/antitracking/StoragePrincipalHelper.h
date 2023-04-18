@@ -212,7 +212,6 @@
 
 class nsIChannel;
 class nsICookieJarSettings;
-class nsIDocShell;
 class nsILoadGroup;
 class nsIPrincipal;
 class nsIURI;
@@ -243,17 +242,8 @@ class StoragePrincipalHelper final {
   static nsresult PrepareEffectiveStoragePrincipalOriginAttributes(
       nsIChannel* aChannel, OriginAttributes& aOriginAttributes);
 
-  
   static bool VerifyValidStoragePrincipalInfoForPrincipalInfo(
       const mozilla::ipc::PrincipalInfo& aStoragePrincipalInfo,
-      const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
-
-  
-  
-  
-  
-  static bool VerifyValidClientPrincipalInfoForPrincipalInfo(
-      const mozilla::ipc::PrincipalInfo& aClientPrincipalInfo,
       const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
 
   enum PrincipalType {
@@ -296,12 +286,6 @@ class StoragePrincipalHelper final {
                                nsIPrincipal** aPrincipal);
 
   
-  
-  
-  static bool ShouldUsePartitionPrincipalForServiceWorker(
-      nsIDocShell* aDocShell);
-
-  
 
 
 
@@ -317,7 +301,7 @@ class StoragePrincipalHelper final {
 
   
   
-  static bool GetOriginAttributesForNetworkState(nsIChannel* aChannel,
+  static bool GetOriginAttributesForNetworkState(nsIChannel* aChanel,
                                                  OriginAttributes& aAttributes);
   static void GetOriginAttributesForNetworkState(dom::Document* aDocument,
                                                  OriginAttributes& aAttributes);
