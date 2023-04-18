@@ -683,6 +683,10 @@ class nsWindow final : public nsBaseWidget {
   bool mWaitingForMoveToRectCallback : 1;
 
   
+  
+  bool mUpdatedByMoveToRectCallback : 1;
+
+  
   bool mConfiguredClearColor : 1;
   
   
