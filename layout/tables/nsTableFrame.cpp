@@ -5978,11 +5978,6 @@ struct BCPaintBorderAction {
 class BCPaintBorderIterator {
  public:
   explicit BCPaintBorderIterator(nsTableFrame* aTable);
-  ~BCPaintBorderIterator() {
-    if (mBlockDirInfo) {
-      delete[] mBlockDirInfo;
-    }
-  }
   void Reset();
 
   
@@ -6078,24 +6073,25 @@ class BCPaintBorderIterator {
            mRowIndex != mDamageArea.StartRow();
   }
 
-  nscoord mInitialOffsetI;       
-                                 
-  nscoord mInitialOffsetB;       
-                                 
-  nscoord mNextOffsetB;          
-  BCBlockDirSeg* mBlockDirInfo;  
-                                 
-                                 
-                                 
-                                 
-                                 
-                                 
-                                 
-                                 
-                                 
-                                 
-  BCInlineDirSeg mInlineSeg;     
-                                 
+  nscoord mInitialOffsetI;  
+                            
+  nscoord mInitialOffsetB;  
+                            
+  nscoord mNextOffsetB;     
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  UniquePtr<BCBlockDirSeg[]> mBlockDirInfo;
+  BCInlineDirSeg mInlineSeg;        
+                                    
   BCPixelSize mPrevInlineSegBSize;  
                                     
 
@@ -6135,7 +6131,6 @@ BCPaintBorderIterator::BCPaintBorderIterator(nsTableFrame* aTable)
       mInitialOffsetI(0),
       mNextOffsetB(0),
       mPrevInlineSegBSize(0) {
-  mBlockDirInfo = nullptr;
   LogicalMargin childAreaOffset = mTable->GetChildAreaOffset(mTableWM, nullptr);
   
   mInitialOffsetB =
@@ -6250,7 +6245,7 @@ bool BCPaintBorderIterator::SetDamageArea(const nsRect& aDirtyRect) {
                 1 + endRowIndex - startRowIndex);
 
   Reset();
-  mBlockDirInfo = new BCBlockDirSeg[mDamageArea.ColCount() + 1];
+  mBlockDirInfo = MakeUnique<BCBlockDirSeg[]>(mDamageArea.ColCount() + 1);
   return true;
 }
 
@@ -7304,7 +7299,8 @@ void BCPaintBorderIterator::AccumulateOrDoActionBlockDirSegment(
 
 void BCPaintBorderIterator::ResetVerInfo() {
   if (mBlockDirInfo) {
-    memset(mBlockDirInfo, 0, mDamageArea.ColCount() * sizeof(BCBlockDirSeg));
+    memset(mBlockDirInfo.get(), 0,
+           mDamageArea.ColCount() * sizeof(BCBlockDirSeg));
     
     for (auto xIndex : IntegerRange(mDamageArea.ColCount())) {
       mBlockDirInfo[xIndex].mColWidth = -1;
