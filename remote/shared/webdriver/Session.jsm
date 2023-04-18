@@ -28,14 +28,6 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 XPCOMUtils.defineLazyGetter(this, "logger", () => Log.get());
-XPCOMUtils.defineLazyGetter(
-  this,
-  "messageHandlerError",
-  () =>
-    ChromeUtils.import(
-      "chrome://remote/content/shared/messagehandler/Errors.jsm"
-    ).error
-);
 
 
 
@@ -228,30 +220,26 @@ class WebDriverSession {
   }
 
   async execute(module, command, params) {
-    try {
-      return await this.messageHandler.handleCommand({
-        moduleName: module,
-        commandName: command,
-        params,
-
-        
-        
-        
-        
-        
-        
-        
-        destination: {
-          type: RootMessageHandler.type,
-        },
-      });
-    } catch (e) {
-      if (e instanceof messageHandlerError.UnsupportedCommandError) {
-        throw new error.UnknownCommandError(`${module}.${command}`);
-      }
-
-      throw e;
+    
+    
+    
+    
+    
+    
+    
+    const destination = {
+      type: RootMessageHandler.type,
+    };
+    if (!this.messageHandler.supportsCommand(module, command, destination)) {
+      throw new error.UnknownCommandError(`${module}.${command}`);
     }
+
+    return this.messageHandler.handleCommand({
+      moduleName: module,
+      commandName: command,
+      params,
+      destination,
+    });
   }
 
   get a11yChecks() {

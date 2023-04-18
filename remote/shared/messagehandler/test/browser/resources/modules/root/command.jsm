@@ -46,6 +46,16 @@ class CommandModule extends Module {
   testRootModule() {
     return "root-value";
   }
+
+  testMissingIntermediaryMethod(params, destination) {
+    
+    
+    return this.messageHandler.handleCommand({
+      moduleName: "command",
+      commandName: "missingMethod",
+      destination,
+    });
+  }
 }
 
 const command = CommandModule;
