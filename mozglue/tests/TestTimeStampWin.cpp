@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/CmdLineAndEnvUtils.h"
 #include "mozilla/TimeStamp.h"
 
 #include "nsWindowsHelpers.h"
@@ -11,14 +12,18 @@
 #include <stdio.h>
 #include <windows.h>
 
-static char kChildArg[] = "--child";
+static wchar_t kChildArg[] = L"--child";
 
-static nsReturnRef<HANDLE> CreateProcessWrapper(const char* aPath) {
+static nsReturnRef<HANDLE> CreateProcessWrapper(const wchar_t* aPath) {
   nsAutoHandle empty;
 
-  STARTUPINFOA si = {sizeof(si)};
+  const wchar_t* childArgv[] = {aPath, kChildArg};
+  mozilla::UniquePtr<wchar_t[]> cmdLine(
+      mozilla::MakeCommandLine(mozilla::ArrayLength(childArgv), childArgv));
+
+  STARTUPINFOW si = {sizeof(si)};
   PROCESS_INFORMATION pi;
-  BOOL ok = ::CreateProcessA(aPath, kChildArg, nullptr, nullptr, FALSE, 0,
+  BOOL ok = ::CreateProcessW(aPath, cmdLine.get(), nullptr, nullptr, FALSE, 0,
                              nullptr, nullptr, &si, &pi);
   if (!ok) {
     printf(
@@ -37,8 +42,7 @@ static nsReturnRef<HANDLE> CreateProcessWrapper(const char* aPath) {
 int ChildMain() {
   
   
-  bool inconsistent = false;
-  auto t0 = mozilla::TimeStamp::ProcessCreation(&inconsistent);
+  auto t0 = mozilla::TimeStamp::ProcessCreation();
   auto t1 = mozilla::TimeStamp::Now();
   if (t0 > t1) {
     printf(
@@ -50,16 +54,16 @@ int ChildMain() {
   return 0;
 }
 
-int main(int argc, char* argv[]) {
+int wmain(int argc, wchar_t* argv[]) {
+  if (argc == 2 && wcscmp(argv[1], kChildArg) == 0) {
+    return ChildMain();
+  }
+
   if (argc != 1) {
     printf(
         "TEST-FAILED | TimeStampWin | "
         "Unexpected argc\n");
     return 1;
-  }
-
-  if (strcmp(argv[0], kChildArg) == 0) {
-    return ChildMain();
   }
 
   
