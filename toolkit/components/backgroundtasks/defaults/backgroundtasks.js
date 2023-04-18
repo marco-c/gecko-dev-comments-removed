@@ -30,3 +30,6 @@ pref("network.cookie.noPersistentStorage", true);
 
 
 pref("toolkit.shutdown.fastShutdownStage", 0);
+
+
+pref("security.nocertdb", true);

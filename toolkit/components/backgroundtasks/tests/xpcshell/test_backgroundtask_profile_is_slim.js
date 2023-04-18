@@ -88,13 +88,9 @@ const expected = [
   },
   
   { relPath: "cache2", isDirectory: true },
-  
-  { relPath: "cert9.db" },
   { relPath: "compatibility.ini" },
   { relPath: "crashes", isDirectory: true },
   { relPath: "data", isDirectory: true },
-  
-  { relPath: "key4.db" },
   { relPath: "local", isDirectory: true },
   { relPath: "minidumps", isDirectory: true },
   
