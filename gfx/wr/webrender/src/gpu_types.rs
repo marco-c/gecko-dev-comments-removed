@@ -234,11 +234,10 @@ pub struct ClipMaskInstance {
 }
 
 
+#[repr(C)]
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
-
-#[allow(dead_code)]
 pub struct PrimitiveInstanceData {
     data: [i32; 4],
 }
