@@ -7,20 +7,12 @@
 #ifndef mozilla_dom_DOMJSProxyHandler_h
 #define mozilla_dom_DOMJSProxyHandler_h
 
-#include "mozilla/Attributes.h"
-#include "mozilla/Likely.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/TextUtils.h"
 
 #include "jsapi.h"
 #include "js/Object.h"  
 #include "js/Proxy.h"
-#include "js/String.h"  
-#include "nsString.h"
-
-
-
-#include "jsfriendapi.h"
 
 namespace mozilla {
 namespace dom {
@@ -172,42 +164,6 @@ inline const DOMProxyHandler* GetDOMProxyHandler(JSObject* obj) {
   MOZ_ASSERT(IsDOMProxy(obj));
   return static_cast<const DOMProxyHandler*>(js::GetProxyHandler(obj));
 }
-
-extern jsid s_length_id;
-
-
-
-inline uint32_t GetArrayIndexFromId(JS::Handle<jsid> id) {
-  
-  
-  
-  
-  
-  if (MOZ_LIKELY(id.isInt())) {
-    return id.toInt();
-  }
-  if (MOZ_LIKELY(id.get() == s_length_id)) {
-    return UINT32_MAX;
-  }
-  if (MOZ_UNLIKELY(!id.isAtom())) {
-    return UINT32_MAX;
-  }
-
-  JSLinearString* str = JS::AtomToLinearString(id.toAtom());
-  if (MOZ_UNLIKELY(JS::GetLinearStringLength(str) == 0)) {
-    return UINT32_MAX;
-  }
-
-  char16_t firstChar = JS::GetLinearStringCharAt(str, 0);
-  if (MOZ_LIKELY(IsAsciiLowercaseAlpha(firstChar))) {
-    return UINT32_MAX;
-  }
-
-  uint32_t i;
-  return js::StringIsArrayIndex(str, &i) ? i : UINT32_MAX;
-}
-
-inline bool IsArrayIndex(uint32_t index) { return index < UINT32_MAX; }
 
 }  
 }  
