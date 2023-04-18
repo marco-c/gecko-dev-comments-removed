@@ -46,33 +46,6 @@ const {
 
 const { isGeneratedId } = require("devtools/client/shared/source-map/index");
 
-function logThreadEvents(dbg, event) {
-  const thread = dbg.toolbox.threadFront;
-
-  thread.on(event, function onEvent(...args) {
-    info(`Thread event '${event}' fired.`);
-  });
-}
-
-
-
-
-
-function waitForNextDispatch(store, actionType) {
-  return new Promise(resolve => {
-    store.dispatch({
-      
-      
-      
-      type: "@@service/waitUntil",
-      predicate: action => action.type === actionType,
-      run: (dispatch, getState, action) => {
-        resolve(action);
-      },
-    });
-  });
-}
-
 
 
 
@@ -564,14 +537,6 @@ async function waitForPausedThread(dbg, thread) {
 
 
 
-function waitForever() {
-  return new Promise(r => {});
-}
-
-
-
-
-
 
 
 function waitForTime(ms) {
@@ -644,23 +609,6 @@ async function initDebuggerWithAbsoluteURL(url, ...sources) {
 async function initPane(url, pane, prefs) {
   await clearDebuggerPreferences(prefs);
   return openNewTabAndToolbox(EXAMPLE_URL + url, pane);
-}
-
-window.resumeTest = undefined;
-registerCleanupFunction(() => {
-  delete window.resumeTest;
-});
-
-
-
-
-
-
-
-
-function pauseTest() {
-  info("Test paused. Invoke resumeTest to continue.");
-  return new Promise(resolve => (window.resumeTest = resolve));
 }
 
 
@@ -742,19 +690,6 @@ function waitForLoadedSource(dbg, url) {
     state => {
       const source = findSource(dbg, url, { silent: true });
       return source && dbg.selectors.getSourceContent(source.id);
-    },
-    "loaded source"
-  );
-}
-
-function waitForLoadedSources(dbg) {
-  return waitForState(
-    dbg,
-    state => {
-      const sources = dbg.selectors.getSourceList();
-      return sources.every(
-        source => !!dbg.selectors.getSourceContent(source.id)
-      );
     },
     "loaded source"
   );
@@ -983,17 +918,6 @@ function disableBreakpoint(dbg, source, line, column) {
   const location = { sourceId: source.id, sourceUrl: source.url, line, column };
   const bp = getBreakpointForLocation(dbg, location);
   return dbg.actions.disableBreakpoint(getContext(dbg), bp);
-}
-
-function setBreakpointOptions(dbg, source, line, column, options) {
-  source = findSource(dbg, source);
-  const sourceId = source.id;
-  column = column || getFirstBreakpointColumn(dbg, { line, sourceId });
-  return dbg.actions.setBreakpointOptions(
-    getContext(dbg),
-    { sourceId, line, column },
-    options
-  );
 }
 
 function findBreakpoint(dbg, url, line) {
@@ -1762,18 +1686,6 @@ async function typeInPanel(dbg, text) {
   pressKey(dbg, "End");
   type(dbg, text);
   pressKey(dbg, "Enter");
-}
-
-
-
-
-
-
-
-
-
-function toggleCallStack(dbg) {
-  return findElement(dbg, "callStackHeader").click();
 }
 
 function toggleScopes(dbg) {
