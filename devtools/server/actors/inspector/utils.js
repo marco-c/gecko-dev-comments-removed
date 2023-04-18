@@ -468,15 +468,11 @@ async function getBackgroundColor({ rawNode: node, walker }) {
     };
   }
 
-  const bounds = getAdjustedQuads(
-    node.ownerGlobal,
-    node.firstChild,
-    "content"
-  )[0].bounds;
+  const quads = getAdjustedQuads(node.ownerGlobal, node.firstChild, "content");
 
   
   
-  if (!bounds) {
+  if (quads.length === 0 || !quads[0].bounds) {
     return {
       value: colorUtils.colorToRGBA(
         getClosestBackgroundColor(node),
@@ -485,6 +481,8 @@ async function getBackgroundColor({ rawNode: node, walker }) {
       ),
     };
   }
+
+  const bounds = quads[0].bounds;
 
   const docWalker = walker.getDocumentWalker(node);
   const firstChild = docWalker.firstChild();
