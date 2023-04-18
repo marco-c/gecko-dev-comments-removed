@@ -3,105 +3,636 @@
 
 
 
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
-#![doc(html_logo_url = "https://raw.githubusercontent.com/clap-rs/clap/master/assets/clap.png")]
-#![cfg_attr(feature = "derive", doc = include_str!("../README.md"))]
 
-#![warn(
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![crate_type = "lib"]
+#![doc(html_root_url = "https://docs.rs/clap/2.34.0")]
+#![deny(
     missing_docs,
     missing_debug_implementations,
     missing_copy_implementations,
     trivial_casts,
-    unused_allocation,
-    trivial_numeric_casts,
-    clippy::single_char_pattern
+    unused_import_braces,
+    unused_allocation
 )]
-#![forbid(unsafe_code)]
 
-#![allow(clippy::single_component_path_imports)]
-#![allow(clippy::branches_sharing_code)]
 
-#![allow(clippy::if_same_then_else)]
 
-#[cfg(not(feature = "std"))]
-compile_error!("`std` feature is currently required to build `clap`");
+#![cfg_attr(
+    not(any(feature = "cargo-clippy", feature = "nightly")),
+    forbid(unstable_features)
+)]
 
+
+
+
+
+#![allow(bare_trait_objects, deprecated)]
+
+#[cfg(all(feature = "color", not(target_os = "windows")))]
+extern crate ansi_term;
 #[cfg(feature = "color")]
-pub use crate::util::color::ColorChoice;
-pub use crate::{
-    build::{
-        App, AppFlags, AppSettings, Arg, ArgFlags, ArgGroup, ArgSettings, PossibleValue, ValueHint,
-    },
-    parse::errors::{Error, ErrorKind, Result},
-    parse::{ArgMatches, Indices, OsValues, Values},
-};
-
-pub use crate::derive::{ArgEnum, Args, FromArgMatches, IntoApp, Parser, Subcommand};
-
+extern crate atty;
+#[macro_use]
+extern crate bitflags;
+#[cfg(feature = "suggestions")]
+extern crate strsim;
+#[cfg(feature = "wrap_help")]
+extern crate term_size;
+extern crate textwrap;
+extern crate unicode_width;
+#[cfg(feature = "vec_map")]
+extern crate vec_map;
 #[cfg(feature = "yaml")]
-#[doc(hidden)]
-#[deprecated(
-    since = "3.0.0",
-    note = "Deprecated in Issue #3087, maybe clap::Parser would fit your use case?"
-)]
+extern crate yaml_rust;
+
+pub use app::{App, AppSettings};
+pub use args::{Arg, ArgGroup, ArgMatches, ArgSettings, OsValues, SubCommand, Values};
+pub use completions::Shell;
+pub use errors::{Error, ErrorKind, Result};
+pub use fmt::Format;
+#[cfg(feature = "yaml")]
 pub use yaml_rust::YamlLoader;
 
-#[cfg(feature = "derive")]
-#[doc(hidden)]
-pub use clap_derive::{self, *};
-
-
-#[deprecated(since = "3.0.0", note = "Replaced with `Parser`")]
-pub use Parser as StructOpt;
-
-#[cfg(any(feature = "derive", feature = "cargo"))]
-#[doc(hidden)]
-pub use lazy_static;
-
 #[macro_use]
-#[allow(missing_docs)]
 mod macros;
-
-mod derive;
-
-#[cfg(feature = "regex")]
-pub use crate::build::arg::RegexRef;
-
-mod build;
-mod mkeymap;
-mod output;
-mod parse;
-mod util;
+mod app;
+mod args;
+mod completions;
+mod errors;
+mod fmt;
+mod map;
+mod osstringext;
+mod strext;
+mod suggestions;
+mod usage_parser;
 
 const INTERNAL_ERROR_MSG: &str = "Fatal internal error. Please consider filing a bug \
-                                  report at https://github.com/clap-rs/clap/issues";
+                                          report at https://github.com/clap-rs/clap/issues";
 const INVALID_UTF8: &str = "unexpected invalid UTF-8 code point";
 
+#[cfg(unstable)]
+pub use derive::{ArgEnum, ClapApp, FromArgMatches, IntoApp};
 
-#[deprecated(
-    since = "3.0.0",
-    note = "Replaced with `App::new` unless you intended the `Subcommand` trait"
-)]
-#[derive(Debug, Copy, Clone)]
-pub struct SubCommand {}
+#[cfg(unstable)]
+mod derive {
+    
+    pub trait ClapApp: IntoApp + FromArgMatches + Sized {
+        
+        fn parse() -> Self {
+            Self::from_argmatches(Self::into_app().get_matches())
+        }
 
-#[allow(deprecated)]
-impl SubCommand {
-    
-    
-    #[deprecated(since = "3.0.0", note = "Replaced with `App::new`")]
-    pub fn with_name<'help>(name: &str) -> App<'help> {
-        App::new(name)
+        
+        fn parse_from<I, T>(argv: I) -> Self
+        where
+            I: IntoIterator<Item = T>,
+            T: Into<OsString> + Clone,
+        {
+            Self::from_argmatches(Self::into_app().get_matches_from(argv))
+        }
+
+        
+        fn try_parse() -> Result<Self, clap::Error> {
+            Self::try_from_argmatches(Self::into_app().get_matches_safe()?)
+        }
+
+        
+        fn try_parse_from<I, T>(argv: I) -> Result<Self, clap::Error>
+        where
+            I: IntoIterator<Item = T>,
+            T: Into<OsString> + Clone,
+        {
+            Self::try_from_argmatches(Self::into_app().get_matches_from_safe(argv)?)
+        }
     }
 
     
-    #[cfg(feature = "yaml")]
-    #[deprecated(
-        since = "3.0.0",
-        note = "Deprecated in Issue #3087, maybe clap::Parser would fit your use case?"
-    )]
-    pub fn from_yaml(yaml: &yaml_rust::Yaml) -> App {
-        #![allow(deprecated)]
-        App::from_yaml(yaml)
+    pub trait IntoApp {
+        
+        fn into_app<'a, 'b>() -> clap::App<'a, 'b>;
     }
+
+    
+    pub trait FromArgMatches: Sized {
+        
+        fn from_argmatches<'a>(matches: clap::ArgMatches<'a>) -> Self;
+
+        
+        fn try_from_argmatches<'a>(matches: clap::ArgMatches<'a>) -> Result<Self, clap::Error>;
+    }
+
+    
+    pub trait ArgEnum {}
 }
