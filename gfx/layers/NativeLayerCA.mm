@@ -1255,6 +1255,11 @@ bool NativeLayerCA::Representation::EnqueueSurface(IOSurfaceRef aSurfaceRef) {
   MOZ_ASSERT([mContentCALayer isKindOfClass:[AVSampleBufferDisplayLayer class]]);
 
   
+  if (!((AVSampleBufferDisplayLayer*)mContentCALayer).readyForMoreMediaData) {
+    return false;
+  }
+
+  
   CVPixelBufferRef pixelBuffer = nullptr;
   CVReturn cvValue =
       CVPixelBufferCreateWithIOSurface(kCFAllocatorDefault, aSurfaceRef, nullptr, &pixelBuffer);
