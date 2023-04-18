@@ -93,10 +93,6 @@ void UtilityProcessManager::OnPreferenceChange(const char16_t* aData) {
   
   NS_LossyConvertUTF16toASCII strData(aData);
 
-  
-  if (ShouldSanitizePreference(strData.Data(), false)) {
-    return;
-  }
   mozilla::dom::Pref pref(strData,  false,
                           ShouldSanitizePreference(strData.Data(), false),
                           Nothing(), Nothing());
