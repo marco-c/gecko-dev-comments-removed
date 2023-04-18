@@ -64,9 +64,10 @@ async function startTests(setupFun, name) {
           url,
         },
         async function(browser) {
-          await setupFun(browser);
-
-          let promiseFsState = waitForFullscreenState(document, false, true);
+          let promiseFsState = Promise.all([
+            setupFun(browser),
+            waitForFullscreenState(document, false, true),
+          ]);
           
           SpecialPowers.spawn(
             browser.browsingContext.children[0].children[0],
@@ -113,16 +114,27 @@ startTests(async browser => {
 
 startTests(async browser => {
   
+  let promise = waitRemoteFullscreenExitEvents([
+    
+    [browser.browsingContext, "toplevel"],
+  ]);
   await NavigateRemoteDocument(
     browser.browsingContext.children[0],
     "about:blank"
   );
+  return promise;
 }, "navigation_middle_frame");
 
 startTests(async browser => {
   
+  let promise = waitRemoteFullscreenExitEvents([
+    
+    [browser.browsingContext, "toplevel"],
+    [browser.browsingContext.children[0], "middle"],
+  ]);
   await NavigateRemoteDocument(
     browser.browsingContext.children[0].children[0],
     "about:blank"
   );
+  return promise;
 }, "navigation_inner_frame");

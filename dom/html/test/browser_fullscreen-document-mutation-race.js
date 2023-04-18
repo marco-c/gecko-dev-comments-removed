@@ -35,9 +35,10 @@ async function startTests(setupFun, name) {
           url,
         },
         async function(browser) {
-          await setupFun(browser);
-
-          let promiseFsState = waitForFullscreenState(document, false, true);
+          let promiseFsState = Promise.all([
+            setupFun(browser),
+            waitForFullscreenState(document, false, true),
+          ]);
           
           SpecialPowers.spawn(
             browser.browsingContext.children[0].children[0],
@@ -81,21 +82,39 @@ function RemoveElementFromRemoteDocument(aBrowsingContext, aElementId) {
 
 startTests(async browser => {
   
+  let promise = waitRemoteFullscreenExitEvents([
+    
+    [browser.browsingContext, "toplevel"],
+  ]);
   await RemoveElementFromRemoteDocument(browser.browsingContext, "div");
+  return promise;
 }, "document_mutation_toplevel");
 
 startTests(async browser => {
   
+  let promise = waitRemoteFullscreenExitEvents([
+    
+    [browser.browsingContext, "toplevel"],
+    [browser.browsingContext.children[0], "middle"],
+  ]);
   await RemoveElementFromRemoteDocument(
     browser.browsingContext.children[0],
     "div"
   );
+  return promise;
 }, "document_mutation_middle_frame");
 
 startTests(async browser => {
   
+  let promise = waitRemoteFullscreenExitEvents([
+    
+    [browser.browsingContext, "toplevel"],
+    [browser.browsingContext.children[0], "middle"],
+    [browser.browsingContext.children[0].children[0], "inner"],
+  ]);
   await RemoveElementFromRemoteDocument(
     browser.browsingContext.children[0].children[0],
     "div"
   );
+  return promise;
 }, "document_mutation_inner_frame");
