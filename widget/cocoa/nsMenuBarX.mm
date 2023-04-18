@@ -47,6 +47,7 @@ extern BOOL sTouchBarIsInitialized;
 
 static nsIContent* sAboutItemContent = nullptr;
 static nsIContent* sPrefItemContent = nullptr;
+static nsIContent* sAccountItemContent = nullptr;
 static nsIContent* sQuitItemContent = nullptr;
 
 
@@ -109,6 +110,9 @@ nsMenuBarX::~nsMenuBarX() {
   }
   if (sPrefItemContent == mPrefItemContent) {
     sPrefItemContent = nullptr;
+  }
+  if (sAccountItemContent == mAccountItemContent) {
+    sAccountItemContent = nullptr;
   }
 
   mMenuGroupOwner->UnregisterForLocaleChanges();
@@ -517,6 +521,12 @@ void nsMenuBarX::AquifyMenuBar() {
     }
 
     
+    mAccountItemContent = HideItem(domDoc, u"menu_accountmgr"_ns);
+    if (!sAccountItemContent) {
+      sAccountItemContent = mAccountItemContent;
+    }
+
+    
     HideItem(domDoc, u"menu_mac_services"_ns);
     HideItem(domDoc, u"menu_mac_hide_app"_ns);
     HideItem(domDoc, u"menu_mac_hide_others"_ns);
@@ -648,6 +658,7 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
 
 
 
+
   if (sApplicationMenu) {
     if (!mApplicationMenuDelegate) {
       mApplicationMenuDelegate = [[ApplicationMenuDelegate alloc] initWithApplicationMenu:this];
@@ -658,6 +669,7 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
 
     NSMenuItem* itemBeingAdded = nil;
     BOOL addAboutSeparator = FALSE;
+    BOOL addPrefsSeparator = FALSE;
 
     
     itemBeingAdded = CreateNativeAppMenuItem(aMenu, u"aboutName"_ns, @selector(menuItemHit:),
@@ -683,7 +695,20 @@ void nsMenuBarX::CreateApplicationMenu(nsMenuX* aMenu) {
       [itemBeingAdded release];
       itemBeingAdded = nil;
 
-      
+      addPrefsSeparator = TRUE;
+    }
+
+    
+    itemBeingAdded = CreateNativeAppMenuItem(aMenu, u"menu_accountmgr"_ns, @selector(menuItemHit:),
+                                             eCommand_ID_Account, nsMenuBarX::sNativeEventTarget);
+    if (itemBeingAdded) {
+      [sApplicationMenu addItem:itemBeingAdded];
+      [itemBeingAdded release];
+      itemBeingAdded = nil;
+    }
+
+    
+    if (addPrefsSeparator) {
       [sApplicationMenu addItem:[NSMenuItem separatorItem]];
     }
 
@@ -910,6 +935,14 @@ static BOOL gMenuItemsExecuteCommands = YES;
     nsIContent* mostSpecificContent = sPrefItemContent;
     if (menuBar && menuBar->mPrefItemContent) {
       mostSpecificContent = menuBar->mPrefItemContent;
+    }
+    nsMenuUtilsX::DispatchCommandTo(mostSpecificContent, modifierFlags, button);
+    return;
+  }
+  if (tag == eCommand_ID_Account) {
+    nsIContent* mostSpecificContent = sAccountItemContent;
+    if (menuBar && menuBar->mAccountItemContent) {
+      mostSpecificContent = menuBar->mAccountItemContent;
     }
     nsMenuUtilsX::DispatchCommandTo(mostSpecificContent, modifierFlags, button);
     return;
