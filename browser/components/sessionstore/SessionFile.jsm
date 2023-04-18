@@ -341,34 +341,37 @@ var SessionFileInternal = {
   },
 
   
-  
-  
-  _initWriter() {
-    if (this._initialized) {
-      return;
-    }
+  getWriter() {
+    if (!this._initialized) {
+      if (!this._readOrigin) {
+        return Promise.reject(
+          "SessionFileInternal.getWriter() called too early! Please read the session file from disk first."
+        );
+      }
 
-    if (!this._readOrigin) {
-      throw new Error(
-        "_initWriter called too early! Please read the session file from disk first."
+      this._initialized = true;
+      SessionWriter.init(
+        this._readOrigin,
+        this._usingOldExtension,
+        this.Paths,
+        {
+          maxUpgradeBackups: Services.prefs.getIntPref(
+            PREF_MAX_UPGRADE_BACKUPS,
+            3
+          ),
+          maxSerializeBack: Services.prefs.getIntPref(
+            PREF_MAX_SERIALIZE_BACK,
+            10
+          ),
+          maxSerializeForward: Services.prefs.getIntPref(
+            PREF_MAX_SERIALIZE_FWD,
+            -1
+          ),
+        }
       );
     }
 
-    this._initialized = true;
-    SessionWriter.init(this._readOrigin, this._usingOldExtension, this.Paths, {
-      maxUpgradeBackups: Services.prefs.getIntPref(PREF_MAX_UPGRADE_BACKUPS, 3),
-      maxSerializeBack: Services.prefs.getIntPref(PREF_MAX_SERIALIZE_BACK, 10),
-      maxSerializeForward: Services.prefs.getIntPref(
-        PREF_MAX_SERIALIZE_FWD,
-        -1
-      ),
-    });
-  },
-
-  
-  _callWriter(method, args = []) {
-    this._initWriter();
-    return SessionWriter[method](...args);
+    return Promise.resolve(SessionWriter);
   },
 
   write(aData) {
@@ -388,7 +391,7 @@ var SessionFileInternal = {
 
     this._attempts++;
     let options = { isFinalWrite, performShutdownCleanup };
-    let promise = this._callWriter("write", [aData, options]);
+    let promise = this.getWriter().then(writer => writer.write(aData, options));
 
     
     promise = promise.then(
@@ -446,12 +449,12 @@ var SessionFileInternal = {
     });
   },
 
-  wipe() {
-    return this._callWriter("wipe").then(() => {
-      
-      
-      this._initialized = false;
-    });
+  async wipe() {
+    const writer = await this.getWriter();
+    await writer.wipe();
+    
+    
+    this._initialized = false;
   },
 
   _recordTelemetry(telemetry) {
