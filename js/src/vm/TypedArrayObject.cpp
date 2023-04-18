@@ -1729,27 +1729,6 @@ static bool SetTypedArrayFromArrayLike(JSContext* cx,
 
   
   if (srcLength > 0) {
-    
-    
-    
-    
-    if (target->hasDetachedBuffer()) {
-      
-      RootedValue v(cx);
-      if (!GetElement(cx, src, src, 0, &v)) {
-        return false;
-      }
-
-      if (!target->convertForSideEffect(cx, v)) {
-        return false;
-      }
-
-      
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_TYPED_ARRAY_DETACHED);
-      return false;
-    }
-
     switch (target->type()) {
 #define SET_FROM_NON_TYPED_ARRAY(_, T, N)                             \
   case Scalar::N:                                                     \
@@ -1760,15 +1739,6 @@ static bool SetTypedArrayFromArrayLike(JSContext* cx,
 #undef SET_FROM_NON_TYPED_ARRAY
       default:
         MOZ_CRASH("Unsupported TypedArray type");
-    }
-
-    
-    
-    
-    if (target->hasDetachedBuffer()) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_TYPED_ARRAY_DETACHED);
-      return false;
     }
   }
 
