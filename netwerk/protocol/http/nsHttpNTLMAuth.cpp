@@ -176,6 +176,7 @@ nsHttpNTLMAuth::ChallengeReceived(nsIHttpAuthenticableChannel* channel,
   if (challenge.Equals("NTLM"_ns, nsCaseInsensitiveCStringComparator)) {
     nsCOMPtr<nsIAuthModule> module;
 
+#ifdef MOZ_AUTH_EXTENSION
     
     
     
@@ -192,7 +193,7 @@ nsHttpNTLMAuth::ChallengeReceived(nsIHttpAuthenticableChannel* channel,
         
         module = nsIAuthModule::CreateInstance("sys-ntlm");
       }
-#ifdef XP_WIN
+#  ifdef XP_WIN
       else {
         
         
@@ -203,15 +204,15 @@ nsHttpNTLMAuth::ChallengeReceived(nsIHttpAuthenticableChannel* channel,
         module = nsIAuthModule::CreateInstance("sys-ntlm");
         *identityInvalid = true;
       }
-#endif  
+#  endif  
       if (!module) LOG(("Native sys-ntlm auth module not found.\n"));
     }
 
-#ifdef XP_WIN
+#  ifdef XP_WIN
     
     
     if (!forceGeneric && !module) return NS_ERROR_UNEXPECTED;
-#endif
+#  endif
 
     
     
@@ -233,6 +234,7 @@ nsHttpNTLMAuth::ChallengeReceived(nsIHttpAuthenticableChannel* channel,
       
       *identityInvalid = true;
     }
+#endif
 
     
     if (!module) {
