@@ -3247,19 +3247,6 @@ static gfx::IntPoint GetIntegerDeltaForEvent(NSEvent* aEvent) {
       panEvent.SetLineOrPageDeltas(lineOrPageDelta.x, lineOrPageDelta.y);
     }
 
-    if (panEvent.mType == PanGestureInput::PANGESTURE_END) {
-      
-      
-      NSEvent* nextWheelEvent = [NSApp nextEventMatchingMask:NSEventMaskScrollWheel
-                                                   untilDate:[NSDate distantPast]
-                                                      inMode:NSDefaultRunLoopMode
-                                                     dequeue:NO];
-      if (nextWheelEvent &&
-          PanGestureTypeForEvent(nextWheelEvent) == PanGestureInput::PANGESTURE_MOMENTUMSTART) {
-        panEvent.mFollowedByMomentum = true;
-      }
-    }
-
     bool canTriggerSwipe = [self shouldConsiderStartingSwipeFromEvent:theEvent] &&
                            SwipeTracker::CanTriggerSwipe(panEvent);
     ;
