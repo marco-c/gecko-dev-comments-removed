@@ -21,7 +21,7 @@ class ModuleLoader {
 
   
   bool registerTestModule(JSContext* cx, HandleObject moduleRequest,
-                          HandleModuleObject module);
+                          Handle<ModuleObject*> module);
 
  private:
   static JSObject* ResolveImportedModule(JSContext* cx,

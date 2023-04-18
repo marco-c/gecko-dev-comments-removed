@@ -280,7 +280,7 @@ JSFunction* NewHandler(JSContext* cx, Native handler,
 }
 
 AsyncFunctionGeneratorObject* AsyncFunctionGeneratorObject::create(
-    JSContext* cx, HandleModuleObject module) {
+    JSContext* cx, Handle<ModuleObject*> module) {
   
   
   

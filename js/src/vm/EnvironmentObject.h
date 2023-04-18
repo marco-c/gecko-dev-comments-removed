@@ -27,8 +27,6 @@ class AbstractGeneratorObject;
 class IndirectBindingMap;
 class ModuleObject;
 
-using HandleModuleObject = Handle<ModuleObject*>;
-
 
 
 
@@ -430,12 +428,12 @@ class ModuleEnvironmentObject : public EnvironmentObject {
                                                ObjectFlag::QualifiedVarObj};
 
   static ModuleEnvironmentObject* create(JSContext* cx,
-                                         HandleModuleObject module);
+                                         Handle<ModuleObject*> module);
   ModuleObject& module() const;
   IndirectBindingMap& importBindings() const;
 
   bool createImportBinding(JSContext* cx, HandleAtom importName,
-                           HandleModuleObject module, HandleAtom exportName);
+                           Handle<ModuleObject*> module, HandleAtom exportName);
 
   bool hasImportBinding(HandlePropertyName name);
 
@@ -467,11 +465,6 @@ class ModuleEnvironmentObject : public EnvironmentObject {
                            MutableHandleIdVector properties,
                            bool enumerableOnly);
 };
-
-using RootedModuleEnvironmentObject = Rooted<ModuleEnvironmentObject*>;
-using HandleModuleEnvironmentObject = Handle<ModuleEnvironmentObject*>;
-using MutableHandleModuleEnvironmentObject =
-    MutableHandle<ModuleEnvironmentObject*>;
 
 class WasmInstanceEnvironmentObject : public EnvironmentObject {
   
