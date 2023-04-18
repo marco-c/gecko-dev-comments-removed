@@ -31,13 +31,14 @@ class ClassListPreviewer {
 
     this.onNewSelection = this.onNewSelection.bind(this);
     this.onCheckBoxChanged = this.onCheckBoxChanged.bind(this);
-    this.onKeyPress = this.onKeyPress.bind(this);
+    this.onKeyDown = this.onKeyDown.bind(this);
     this.onAddElementInputModified = debounce(
       this.onAddElementInputModified,
       75,
       this
     );
     this.onCurrentNodeClassChanged = this.onCurrentNodeClassChanged.bind(this);
+    this.onNodeFrontWillUnset = this.onNodeFrontWillUnset.bind(this);
 
     
     this.addEl = this.doc.createElement("input");
@@ -47,7 +48,7 @@ class ClassListPreviewer {
       "placeholder",
       L10N.getStr("inspector.classPanel.newClass.placeholder")
     );
-    this.addEl.addEventListener("keypress", this.onKeyPress);
+    this.addEl.addEventListener("keydown", this.onKeyDown);
     this.addEl.addEventListener("input", this.onAddElementInputModified);
     this.containerEl.appendChild(this.addEl);
 
@@ -68,12 +69,17 @@ class ClassListPreviewer {
           this.addEl.value = item.label;
           this.autocompletePopup.hidePopup();
           this.autocompletePopup.clearItems();
+          this.model.previewClass(item.label);
         }
       },
     });
 
     
     this.inspector.selection.on("new-node-front", this.onNewSelection);
+    this.inspector.selection.on(
+      "node-front-will-unset",
+      this.onNodeFrontWillUnset
+    );
     this.containerEl.addEventListener("input", this.onCheckBoxChanged);
     this.model.on("current-node-class-changed", this.onCurrentNodeClassChanged);
 
@@ -82,7 +88,11 @@ class ClassListPreviewer {
 
   destroy() {
     this.inspector.selection.off("new-node-front", this.onNewSelection);
-    this.addEl.removeEventListener("keypress", this.onKeyPress);
+    this.inspector.selection.off(
+      "node-front-will-unset",
+      this.onNodeFrontWillUnset
+    );
+    this.addEl.removeEventListener("keydown", this.onKeyDown);
     this.addEl.removeEventListener("input", this.onAddElementInputModified);
     this.containerEl.removeEventListener("input", this.onCheckBoxChanged);
 
@@ -181,7 +191,7 @@ class ClassListPreviewer {
     });
   }
 
-  onKeyPress(event) {
+  onKeyDown(event) {
     
     
     if (this.autocompletePopup.isOpen) {
@@ -205,6 +215,8 @@ class ClassListPreviewer {
   async onAddElementInputModified() {
     const newValue = this.addEl.value;
 
+    this.model.previewClass(newValue);
+
     
     if (newValue === "") {
       if (this.autocompletePopup.isOpen) {
@@ -218,12 +230,16 @@ class ClassListPreviewer {
     let items = [];
     try {
       const classNames = await this.model.getClassNames(newValue);
-      items = classNames.map(className => {
-        return {
-          preLabel: className.substring(0, newValue.length),
-          label: className,
-        };
-      });
+      items = classNames
+        .filter(
+          className => !this.model.previewClasses.split(" ").includes(className)
+        )
+        .map(className => {
+          return {
+            preLabel: className.substring(0, newValue.length),
+            label: className,
+          };
+        });
     } catch (e) {
       
       
@@ -261,6 +277,11 @@ class ClassListPreviewer {
 
   onCurrentNodeClassChanged() {
     this.render();
+  }
+
+  onNodeFrontWillUnset() {
+    this.model.eraseClassPreview();
+    this.addEl.value = "";
   }
 }
 
