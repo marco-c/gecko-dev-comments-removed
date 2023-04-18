@@ -295,15 +295,17 @@ def extract_unittests_from_args(args, environ, manifest_path):
         )
 
     
-    final_tests = []
+    errors = False
     log = mozlog.get_default_logger()
     for test in tests:
-        if os.path.isfile(test[0]):
-            final_tests.append(test)
-        else:
-            log.warning("test file not found: %s - skipped" % test[0])
+        if not os.path.isfile(test[0]):
+            errors = True
+            log.error("test file not found: %s" % test[0])
 
-    return final_tests
+    if errors:
+        raise RuntimeError("One or more cppunittests not found; aborting.")
+
+    return tests
 
 
 def update_mozinfo():
