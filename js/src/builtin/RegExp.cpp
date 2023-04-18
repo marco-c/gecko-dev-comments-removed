@@ -42,7 +42,7 @@ using JS::RegExpFlags;
 
 
 static PlainObject* CreateGroupsObject(JSContext* cx,
-                                       HandlePlainObject groupsTemplate) {
+                                       Handle<PlainObject*> groupsTemplate) {
   if (groupsTemplate->inDictionaryMode()) {
     return NewPlainObjectWithProto(cx, nullptr);
   }
@@ -128,7 +128,7 @@ bool js::CreateRegExpMatchResult(JSContext* cx, HandleRegExpShared re,
   
   
   RootedArrayObject indices(cx);
-  RootedPlainObject indicesGroups(cx);
+  Rooted<PlainObject*> indicesGroups(cx);
   if (hasIndices) {
     
     ArrayObject* indicesTemplate =
@@ -142,7 +142,7 @@ bool js::CreateRegExpMatchResult(JSContext* cx, HandleRegExpShared re,
 
     
     if (re->numNamedCaptures() > 0) {
-      RootedPlainObject groupsTemplate(cx, re->getGroupsTemplate());
+      Rooted<PlainObject*> groupsTemplate(cx, re->getGroupsTemplate());
       indicesGroups = CreateGroupsObject(cx, groupsTemplate);
       if (!indicesGroups) {
         return false;
@@ -178,10 +178,10 @@ bool js::CreateRegExpMatchResult(JSContext* cx, HandleRegExpShared re,
   }
 
   
-  RootedPlainObject groups(cx);
+  Rooted<PlainObject*> groups(cx);
   bool groupsInDictionaryMode = false;
   if (re->numNamedCaptures() > 0) {
-    RootedPlainObject groupsTemplate(cx, re->getGroupsTemplate());
+    Rooted<PlainObject*> groupsTemplate(cx, re->getGroupsTemplate());
     groupsInDictionaryMode = groupsTemplate->inDictionaryMode();
     groups = CreateGroupsObject(cx, groupsTemplate);
     if (!groups) {
@@ -198,7 +198,7 @@ bool js::CreateRegExpMatchResult(JSContext* cx, HandleRegExpShared re,
   
   if (groupsInDictionaryMode) {
     RootedIdVector keys(cx);
-    RootedPlainObject groupsTemplate(cx, re->getGroupsTemplate());
+    Rooted<PlainObject*> groupsTemplate(cx, re->getGroupsTemplate());
     if (!GetPropertyKeys(cx, groupsTemplate, 0, &keys)) {
       return false;
     }

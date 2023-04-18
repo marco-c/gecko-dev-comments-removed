@@ -858,7 +858,7 @@ inline bool IsPackedArray(JSObject* obj) {
 
 
 MOZ_ALWAYS_INLINE bool AddDataPropertyToPlainObject(JSContext* cx,
-                                                    HandlePlainObject obj,
+                                                    Handle<PlainObject*> obj,
                                                     HandleId id,
                                                     HandleValue v) {
   MOZ_ASSERT(!id.isInt());

@@ -17,7 +17,6 @@
 #include "frontend/ParserAtom.h"                   
 #include "frontend/TaggedParserAtomIndexHasher.h"  
 #include "gc/AllocKind.h"                          
-#include "gc/Rooting.h"                            
 #include "js/Id.h"                                 
 #include "js/RootingAPI.h"                         
 #include "js/TypeDecls.h"                          
@@ -116,7 +115,7 @@ enum class PropertySetKind {
 };
 
 template <PropertySetKind kind>
-bool InterpretObjLiteralObj(JSContext* cx, HandlePlainObject obj,
+bool InterpretObjLiteralObj(JSContext* cx, Handle<PlainObject*> obj,
                             const frontend::CompilationAtomCache& atomCache,
                             const mozilla::Span<const uint8_t> literalInsns) {
   ObjLiteralReader reader(literalInsns);
@@ -171,7 +170,7 @@ static JSObject* InterpretObjLiteralObj(
     uint32_t propertyCount) {
   gc::AllocKind allocKind = AllocKindForObjectLiteral(propertyCount);
 
-  RootedPlainObject obj(
+  Rooted<PlainObject*> obj(
       cx, NewPlainObjectWithAllocKind(cx, allocKind, TenuredObject));
   if (!obj) {
     return nullptr;

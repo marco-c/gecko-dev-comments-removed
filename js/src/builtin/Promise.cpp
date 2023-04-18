@@ -4314,7 +4314,7 @@ static bool PromiseAllSettledElementFunction(JSContext* cx, unsigned argc,
   }
 
   
-  RootedPlainObject obj(cx, NewPlainObject(cx));
+  Rooted<PlainObject*> obj(cx, NewPlainObject(cx));
   if (!obj) {
     return false;
   }
