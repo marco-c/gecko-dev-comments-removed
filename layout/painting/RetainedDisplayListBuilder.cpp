@@ -1529,7 +1529,9 @@ void CollectStackingContextItems(nsDisplayListBuilder* aBuilder,
 
     if (aParentReused) {
       
+#ifdef DEBUG
       RDLUtils::AssertDisplayItemUnmodified(item);
+#endif
       aList->AppendToTop(item);
     } else if (isStackingContextItem) {
       
