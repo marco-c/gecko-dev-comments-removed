@@ -59,6 +59,14 @@ static const wchar_t kUrl[] = TELEMETRY_BASE_URL TELEMETRY_NAMESPACE
 static const uint32_t kGuidCharLenWithNul = 39;
 static const uint32_t kGuidCharLenNoBracesNoNul = 36;
 static const mozilla::StaticXREAppData* gAppData;
+
+
+
+
+
+
+
+
 static bool gForceEventLog = false;
 
 namespace {
@@ -765,11 +773,10 @@ void HandleLauncherError(const LauncherError& aError,
   Unused << regInfo.DisableDueToFailure();
 #endif  
 
-  if (SendPing(aError, aProcessType) && !gForceEventLog) {
-    return;
+  if (!SendPing(aError, aProcessType)) {
+    
+    PostErrorToLog(aError);
   }
-
-  PostErrorToLog(aError);
 }
 
 void SetLauncherErrorAppData(const StaticXREAppData& aAppData) {
