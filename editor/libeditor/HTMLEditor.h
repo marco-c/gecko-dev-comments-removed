@@ -12,6 +12,7 @@
 #include "mozilla/EditorBase.h"
 #include "mozilla/EditorForwards.h"
 #include "mozilla/EditorUtils.h"
+#include "mozilla/ErrorResult.h"
 #include "mozilla/HTMLEditHelpers.h"
 #include "mozilla/ManualNAC.h"
 #include "mozilla/Result.h"
@@ -3052,6 +3053,13 @@ class HTMLEditor final : public EditorBase,
     [[nodiscard]] static CellData AtIndexInTableElement(
         const HTMLEditor& aHTMLEditor, const Element& aTableElement,
         int32_t aRowIndex, int32_t aColumnIndex);
+    [[nodiscard]] static CellData AtIndexInTableElement(
+        const HTMLEditor& aHTMLEditor, const Element& aTableElement,
+        const CellIndexes& aIndexes) {
+      MOZ_ASSERT(!aIndexes.isErr());
+      return AtIndexInTableElement(aHTMLEditor, aTableElement, aIndexes.mRow,
+                                   aIndexes.mColumn);
+    }
 
     
 
@@ -3630,7 +3638,8 @@ class HTMLEditor final : public EditorBase,
 
 
   MOZ_CAN_RUN_SCRIPT nsresult InsertTableRowsWithTransaction(
-      int32_t aNumberOfRowsToInsert, InsertPosition aInsertPosition);
+      Element& aCellElement, int32_t aNumberOfRowsToInsert,
+      InsertPosition aInsertPosition);
 
   
 
