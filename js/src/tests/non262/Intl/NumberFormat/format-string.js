@@ -114,8 +114,8 @@ for (let {value, expected} of tests) {
     ".1e+999999999",
 
     
-    "1e+99999",
-    "1e+999999",
+    "1e+9999999",
+    "1e+99999999",
 
     
     ".1e-2147483649",
@@ -129,8 +129,8 @@ for (let {value, expected} of tests) {
   }
 
   
-  assertEq(nf.format(".1e-99999"), "0");
-  assertEq(nf.format(".1e+99999"), "1" + "0".repeat(99999 - 1));
+  assertEq(nf.format(".1e-9999999"), "0");
+  assertEq(nf.format(".1e+9999999"), "1" + "0".repeat(9_999_999 - 1));
 
   
   assertEq(nf.format(".1e-999999998"), "0");

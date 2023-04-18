@@ -990,11 +990,7 @@ static bool ToIntlMathematicalValue(JSContext* cx, MutableHandleValue value,
 
   
   
-  
-  
-  
-  
-  constexpr int32_t maximumPositiveExponent = 99'999;
+  constexpr int32_t maximumPositiveExponent = 9'999'999;
 
   
   
@@ -1004,7 +1000,7 @@ static bool ToIntlMathematicalValue(JSContext* cx, MutableHandleValue value,
   
   
   
-  constexpr size_t maximumBigIntLength = 332189.4875606413 / BigInt::DigitBits;
+  constexpr size_t maximumBigIntLength = 33219277.626945525 / BigInt::DigitBits;
 
   if (!value.isString()) {
     if (!ToNumeric(cx, value)) {
