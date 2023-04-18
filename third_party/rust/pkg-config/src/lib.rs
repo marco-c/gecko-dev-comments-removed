@@ -246,6 +246,12 @@ pub fn probe_library(name: &str) -> Result<Library, Error> {
     Config::new().probe(name)
 }
 
+#[doc(hidden)]
+#[deprecated(note = "use config.target_supported() instance method instead")]
+pub fn target_supported() -> bool {
+    Config::new().target_supported()
+}
+
 
 
 
@@ -394,6 +400,7 @@ impl Config {
         Ok(library)
     }
 
+    
     pub fn target_supported(&self) -> bool {
         let target = env::var_os("TARGET").unwrap_or_default();
         let host = env::var_os("HOST").unwrap_or_default();

@@ -1,4 +1,5 @@
-#![forbid(safe_packed_borrows)]
+#![deny(renamed_and_removed_lints)]
+#![deny(safe_packed_borrows)] 
 #![allow(unaligned_references)]
 
 
@@ -18,10 +19,8 @@ struct PackedN {
 
 fn main() {
     let a = Packed { f: 1 };
-    &a.f; 
-    let _ = &a.f; 
+    let _ = &a.f;
 
     let b = PackedN { f: 1 };
-    &b.f; 
-    let _ = &b.f; 
+    let _ = &b.f;
 }

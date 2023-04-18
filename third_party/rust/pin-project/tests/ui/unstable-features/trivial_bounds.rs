@@ -10,25 +10,29 @@ use std::marker::{PhantomData, PhantomPinned};
 fn inner() {
     struct Inner(PhantomPinned);
 
-    struct A(Inner);
+    struct A(PhantomPinned);
 
-    impl Unpin for A where Inner: Unpin {} 
+    impl Unpin for A where PhantomPinned: Unpin {} 
+
+    struct B(Inner);
+
+    impl Unpin for B where Inner: Unpin {} 
 
     struct Wrapper<T>(T);
 
     impl<T> Unpin for Wrapper<T> where T: Unpin {}
 
-    struct B(Inner);
+    struct C(Inner);
 
-    impl Unpin for B where Wrapper<Inner>: Unpin {} 
+    impl Unpin for C where Wrapper<Inner>: Unpin {} 
 
     struct WrapperWithLifetime<'a, T>(PhantomData<&'a ()>, T);
 
     impl<T> Unpin for WrapperWithLifetime<'_, T> where T: Unpin {}
 
-    struct C(Inner);
+    struct D(Inner);
 
-    impl<'a> Unpin for C where WrapperWithLifetime<'a, Inner>: Unpin {} 
+    impl<'a> Unpin for D where WrapperWithLifetime<'a, Inner>: Unpin {} 
 }
 
 fn main() {}

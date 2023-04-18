@@ -28,7 +28,6 @@
 
 #![cfg_attr(test, deny(warnings))]
 #![deny(missing_docs)]
-#![doc(html_root_url = "https://docs.rs/num_cpus/1.13.0")]
 #![allow(non_snake_case)]
 
 #[cfg(not(windows))]
@@ -68,10 +67,14 @@ use linux::{get_num_cpus, get_num_physical_cpus};
 
 
 
+
+
 #[inline]
 pub fn get() -> usize {
     get_num_cpus()
 }
+
+
 
 
 

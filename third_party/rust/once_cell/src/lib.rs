@@ -441,6 +441,18 @@ pub mod unsync {
         
         
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         pub fn get_mut(&mut self) -> Option<&mut T> {
             
             unsafe { &mut *self.inner.get() }.as_mut()
@@ -573,6 +585,18 @@ pub mod unsync {
             Ok(self.get().unwrap())
         }
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         
         
@@ -737,7 +761,7 @@ pub mod sync {
         panic::RefUnwindSafe,
     };
 
-    use crate::imp::OnceCell as Imp;
+    use crate::{imp::OnceCell as Imp, take_unchecked};
 
     
     
@@ -835,6 +859,18 @@ pub mod sync {
         
         
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         pub fn get_mut(&mut self) -> Option<&mut T> {
             self.0.get_mut()
         }
@@ -897,7 +933,7 @@ pub mod sync {
         
         pub fn try_insert(&self, value: T) -> Result<&T, (&T, T)> {
             let mut value = Some(value);
-            let res = self.get_or_init(|| value.take().unwrap());
+            let res = self.get_or_init(|| unsafe { take_unchecked(&mut value) });
             match value {
                 None => Ok(res),
                 Some(value) => Err((res, value)),
@@ -982,6 +1018,18 @@ pub mod sync {
             Ok(unsafe { self.get_unchecked() })
         }
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
         
         
