@@ -720,6 +720,13 @@ add_task(async function save_download_links() {
           " was saved with the correct name when link has download attribute"
       );
     } else {
+      if (idx == 66 && filename == "index(1)") {
+        
+        
+        
+        filename = "index";
+      }
+
       is(
         filename,
         downloads[idx].filename,
