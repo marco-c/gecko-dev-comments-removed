@@ -295,5 +295,10 @@ BROWSER_PROCESS += [
 CHILD_PROCESSES += [
     
     DllBlocklistEntry("wbload.dll", ALL_VERSIONS),
+
+    
+    DllBlocklistEntry("videocapturer.dll", ALL_VERSIONS),
+    DllBlocklistEntry("videocapturerhk32.dll", ALL_VERSIONS),
+    DllBlocklistEntry("videocapturerhk64.dll", ALL_VERSIONS),
 ]
 
