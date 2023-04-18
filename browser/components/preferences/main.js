@@ -1098,7 +1098,7 @@ var gMainPane = {
       let description = document.createXULElement("description");
       description.classList.add("message-bar-description");
 
-      if (i == 0 && gMainPane.getLocaleDirection(locales[0]) === "rtl") {
+      if (i == 0 && Services.intl.getScriptDirection(locales[0]) === "rtl") {
         description.classList.add("rtl-locale");
       }
       description.setAttribute("flex", "1");
@@ -1403,29 +1403,6 @@ var gMainPane = {
 
 
 
-
-
-
-  getLocaleDirection(locale) {
-    if (
-      locale == "ar" ||
-      locale == "ckb" ||
-      locale == "fa" ||
-      locale == "he" ||
-      locale == "ur"
-    ) {
-      return "rtl";
-    }
-    return "ltr";
-  },
-
-  
-
-
-
-
-
-
   getLanguageSwitchTransitionType(newLocales) {
     const { appLocalesAsBCP47 } = Services.locale;
     if (appLocalesAsBCP47.join(",") === newLocales.join(",")) {
@@ -1435,8 +1412,8 @@ var gMainPane = {
 
     if (Services.prefs.getBoolPref("intl.multilingual.liveReload")) {
       if (
-        gMainPane.getLocaleDirection(newLocales[0]) !==
-          gMainPane.getLocaleDirection(appLocalesAsBCP47[0]) &&
+        Services.intl.getScriptDirection(newLocales[0]) !==
+          Services.intl.getScriptDirection(appLocalesAsBCP47[0]) &&
         !Services.prefs.getBoolPref("intl.multilingual.liveReloadBidirectional")
       ) {
         
