@@ -7075,7 +7075,7 @@ bool Document::ShouldThrottleFrameRequests() const {
   
   
   const IntersectionInput input = DOMIntersectionObserver::ComputeInput(
-      *this,  nullptr,  nullptr);
+      *el->OwnerDoc(),  nullptr,  nullptr);
   const IntersectionOutput output =
       DOMIntersectionObserver::Intersect(input, *el);
   return !output.Intersects();
