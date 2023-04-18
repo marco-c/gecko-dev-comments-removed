@@ -11,7 +11,9 @@ const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   RemoteAgent: "chrome://remote/content/components/RemoteAgent.jsm",
   TabManager: "chrome://remote/content/shared/TabManager.jsm",
   TabSession: "chrome://remote/content/cdp/sessions/TabSession.jsm",
@@ -19,7 +21,7 @@ XPCOMUtils.defineLazyModuleGetters(this, {
 });
 
 XPCOMUtils.defineLazyServiceGetter(
-  this,
+  lazy,
   "Favicons",
   "@mozilla.org/browser/favicon-service;1",
   "nsIFaviconService"
@@ -28,19 +30,19 @@ XPCOMUtils.defineLazyServiceGetter(
 
 
 
-class TabTarget extends Target {
+class TabTarget extends lazy.Target {
   
 
 
 
   constructor(targetList, browser) {
-    super(targetList, TabSession);
+    super(targetList, lazy.TabSession);
 
     this.browser = browser;
 
     
     
-    this.id = TabManager.getIdForBrowser(browser);
+    this.id = lazy.TabManager.getIdForBrowser(browser);
 
     
     this.path = `/devtools/page/${this.id}`;
@@ -99,7 +101,7 @@ class TabTarget extends Target {
   
   get faviconUrl() {
     return new Promise((resolve, reject) => {
-      Favicons.getFaviconURLForPage(this.browser.currentURI, url => {
+      lazy.Favicons.getFaviconURLForPage(this.browser.currentURI, url => {
         if (url) {
           resolve(url.spec);
         } else {
@@ -122,7 +124,7 @@ class TabTarget extends Target {
   }
 
   get wsDebuggerURL() {
-    const { host, port } = RemoteAgent;
+    const { host, port } = lazy.RemoteAgent;
     return `ws://${host}:${port}${this.path}`;
   }
 

@@ -10,13 +10,15 @@ var { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"
 );
 
-XPCOMUtils.defineLazyModuleGetters(this, {
+const lazy = {};
+
+XPCOMUtils.defineLazyModuleGetters(lazy, {
   AnimationFramePromise: "chrome://remote/content/shared/Sync.jsm",
   ContentProcessDomain:
     "chrome://remote/content/cdp/domains/ContentProcessDomain.jsm",
 });
 
-class Emulation extends ContentProcessDomain {
+class Emulation extends lazy.ContentProcessDomain {
   
 
   
@@ -34,7 +36,7 @@ class Emulation extends ContentProcessDomain {
     
     
     
-    await AnimationFramePromise(win);
+    await lazy.AnimationFramePromise(win);
 
     const checkBrowserSize = () => {
       if (win.innerWidth === width && win.innerHeight === height) {
