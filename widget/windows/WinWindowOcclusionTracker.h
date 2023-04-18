@@ -39,16 +39,13 @@ class UpdateOcclusionStateRunnable;
 
 
 
-class WinWindowOcclusionTracker final
-    : public SupportsThreadSafeWeakPtr<WinWindowOcclusionTracker>,
-      public DisplayStatusListener,
-      public SessionChangeListener {
+class WinWindowOcclusionTracker final : public DisplayStatusListener,
+                                        public SessionChangeListener {
  public:
-  MOZ_DECLARE_THREADSAFEWEAKREFERENCE_TYPENAME(WinWindowOcclusionTracker)
-  MOZ_DECLARE_REFCOUNTED_TYPENAME(WinWindowOcclusionTracker)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WinWindowOcclusionTracker)
 
   
-  static RefPtr<WinWindowOcclusionTracker> Get();
+  static WinWindowOcclusionTracker* Get();
 
   
   static void Ensure();
@@ -61,8 +58,6 @@ class WinWindowOcclusionTracker final
 
   
   static bool IsInWinWindowOcclusionThread();
-
-  virtual ~WinWindowOcclusionTracker();
 
   
   
@@ -86,6 +81,7 @@ class WinWindowOcclusionTracker final
   friend class ::WinWindowOcclusionTrackerInteractiveTest;
 
   explicit WinWindowOcclusionTracker(base::Thread* aThread);
+  virtual ~WinWindowOcclusionTracker();
 
   
   
@@ -244,8 +240,6 @@ class WinWindowOcclusionTracker final
 
     
     RefPtr<SerializedTaskDispatcher> mSerializedTaskDispatcher;
-
-    ThreadSafeWeakPtr<WinWindowOcclusionTracker> mOcclusionTracker;
 
     friend class OcclusionUpdateRunnable;
   };
