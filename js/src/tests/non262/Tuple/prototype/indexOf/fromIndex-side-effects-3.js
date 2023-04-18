@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+var stepFiveOccurs = false;
+var fromIndex = {
+  valueOf: function() {
+    stepFiveOccurs = true;
+    return 0;
+  }
+};
+assertThrowsInstanceOf(function() {
+  Tuple.prototype.indexOf.call(undefined, undefined, fromIndex);
+}, TypeError);
+assertEq(stepFiveOccurs, false, 'stepFiveOccurs');
+
+reportCompare(0, 0);

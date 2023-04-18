@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+var i = #[].indexOf(42);
+
+assertEq(i, -1);
+
+reportCompare(0, 0);

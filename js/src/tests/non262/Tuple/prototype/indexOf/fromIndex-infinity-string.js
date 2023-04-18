@@ -1,0 +1,13 @@
+
+
+
+
+
+
+
+
+
+
+assertEq(#[true].indexOf(true, "-Infinity"), 0);
+
+reportCompare(0, 0);

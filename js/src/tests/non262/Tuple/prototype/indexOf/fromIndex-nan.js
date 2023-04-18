@@ -1,0 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+
+assertEq(#[true].indexOf(true, NaN), 0, '[true].indexOf(true, NaN)');
+assertEq(#[true].indexOf(true, -NaN), 0, '[true].indexOf(true, -NaN)');
+
+reportCompare(0, 0);

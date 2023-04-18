@@ -32,7 +32,6 @@
 #include "vm/JSAtom-inl.h"
 #include "vm/JSObject-inl.h"
 #include "vm/NativeObject-inl.h"
-#include "vm/Shape-inl.h"
 
 using namespace js;
 
@@ -50,11 +49,14 @@ const ClassSpec RecordType::classSpec_ = {
     nullptr,
     nullptr};
 
+Shape* RecordType::getInitialShape(JSContext* cx) {
+  return SharedShape::getInitialShape(cx, &RecordType::class_, cx->realm(),
+                                      TaggedProto(nullptr), SLOT_COUNT);
+}
+
 RecordType* RecordType::createUninitialized(JSContext* cx,
                                             uint32_t initialLength) {
-  RootedShape shape(
-      cx, SharedShape::getInitialShape(cx, &RecordType::class_, cx->realm(),
-                                       TaggedProto(nullptr), SLOT_COUNT));
+  RootedShape shape(cx, getInitialShape(cx));
   if (!shape) {
     return nullptr;
   }

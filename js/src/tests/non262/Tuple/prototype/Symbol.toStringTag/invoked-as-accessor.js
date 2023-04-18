@@ -1,0 +1,22 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var TuplePrototype = Tuple.prototype;
+
+assertEq(TuplePrototype[Symbol.toStringTag], "Tuple");
+
+reportCompare(0, 0);

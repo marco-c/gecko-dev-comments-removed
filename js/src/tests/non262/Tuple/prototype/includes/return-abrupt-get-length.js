@@ -1,0 +1,27 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var obj = {};
+
+Object.defineProperty(obj, "length", {
+  get: function() {
+    throw new Test262Error();
+  }
+});
+
+assertThrowsInstanceOf(() => #[].includes.call(obj, 7), TypeError,
+		       "value of TupleObject must be a tuple");
+
+reportCompare(0, 0);

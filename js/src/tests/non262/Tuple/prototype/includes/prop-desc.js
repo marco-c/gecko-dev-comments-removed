@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+var desc = Object.getOwnPropertyDescriptor(Tuple.prototype, "includes");
+assertEq(desc.writable, true);
+assertEq(desc.enumerable, false);
+assertEq(desc.configurable, true);
+
+reportCompare(0, 0);

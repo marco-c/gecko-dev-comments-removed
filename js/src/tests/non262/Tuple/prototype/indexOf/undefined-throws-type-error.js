@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+assertThrowsInstanceOf(function() {
+  Tuple.prototype.indexOf.call(undefined);
+}, TypeError);
+
+assertThrowsInstanceOf(function() {
+  Tuple.prototype.indexOf.call(null);
+}, TypeError);
+
+reportCompare(0, 0);

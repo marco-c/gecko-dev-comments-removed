@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+assertEq(#[0].includes(), false, "#[0].includes()");
+assertEq(#[undefined].includes(), true, "#[undefined].includes()");
+
+reportCompare(0, 0);

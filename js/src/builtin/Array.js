@@ -1100,7 +1100,21 @@ function ArraySpeciesCreate(originalArray, length) {
 
 function IsConcatSpreadable(O) {
     
-    if (!IsObject(O))
+
+
+    var maybeSpreadable = true;
+
+    
+    if (!IsObject(O)) {
+        maybeSpreadable = false;
+#ifdef ENABLE_RECORD_TUPLE
+        
+        if (IsTuple(O)) {
+            return true;
+        }
+#endif
+    }
+    if (!maybeSpreadable)
         return false;
 
     
@@ -1111,7 +1125,12 @@ function IsConcatSpreadable(O) {
         return ToBoolean(spreadable);
 
     
-    return IsArray(O);
+    spreadable |= IsArray(O);
+#ifdef ENABLE_RECORD_TUPLE
+    
+    spreadable |= IsTuple(O);
+#endif
+    return spreadable;
 }
 
 

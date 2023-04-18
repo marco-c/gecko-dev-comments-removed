@@ -1,0 +1,14 @@
+
+
+
+
+
+
+
+
+let a = #[1, 2, 3];
+
+assertEq(a.indexOf(1, true), -1);
+assertEq(a.indexOf(1, false), 0);
+
+reportCompare(0, 0);

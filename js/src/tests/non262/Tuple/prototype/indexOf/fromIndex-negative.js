@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+var target = #[];
+
+assertEq(#[0, target, 2].indexOf(target, -1), -1, '[0, target, 2].indexOf(target, -1)');
+assertEq(#[0, 1, target].indexOf(target, -1), 2, '[0, 1, target].indexOf(target, -1)');
+
+reportCompare(0, 0);

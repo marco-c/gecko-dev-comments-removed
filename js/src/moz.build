@@ -628,6 +628,9 @@ selfhosted_inputs = [
     else []
 )
 
+if CONFIG["ENABLE_RECORD_TUPLE"]:
+    selfhosted_inputs += ["builtin/Tuple.js"]
+
 
 GeneratedFile(
     "selfhosted.out.h",
