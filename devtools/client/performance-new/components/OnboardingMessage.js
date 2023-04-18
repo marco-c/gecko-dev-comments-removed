@@ -77,14 +77,6 @@ class OnboardingMessage extends PureComponent {
     openDocLink(LEARN_MORE_URL, {});
   };
 
-  handleSettingsClick = () => {
-    
-    const anyWindow = window;
-    
-    const { gToolbox } = anyWindow;
-    gToolbox.selectTool("options");
-  };
-
   
 
 
@@ -114,11 +106,6 @@ class OnboardingMessage extends PureComponent {
       onClick: this.handleLearnMoreClick,
     });
 
-    const settingsLink = button({
-      className: "perf-external-link",
-      onClick: this.handleSettingsClick,
-    });
-
     const closeButton = Localized(
       {
         id: "perftools-onboarding-close-button",
@@ -140,13 +127,6 @@ class OnboardingMessage extends PureComponent {
             id: "perftools-onboarding-message",
             b: b(),
             a: learnMoreLink,
-          },
-          p({ className: "perf-onboarding-message-row" })
-        ),
-        Localized(
-          {
-            id: "perftools-onboarding-reenable-old-panel",
-            a: settingsLink,
           },
           p({ className: "perf-onboarding-message-row" })
         )
