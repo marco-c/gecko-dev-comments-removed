@@ -14,8 +14,7 @@
 #include "PerformanceServerTiming.h"
 #include "PerformanceTiming.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 class PerformanceResourceTiming : public PerformanceEntry {
@@ -198,7 +197,6 @@ class PerformanceResourceTiming : public PerformanceEntry {
   mutable Maybe<DOMHighResTimeStamp> mCachedStartTime;
 };
 
-}  
 }  
 
 #endif 

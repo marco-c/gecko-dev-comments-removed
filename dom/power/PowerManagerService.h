@@ -15,8 +15,7 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/dom/WakeLock.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class ContentParent;
 
@@ -52,7 +51,6 @@ class PowerManagerService : public nsIPowerManagerService,
   nsTArray<nsCOMPtr<nsIDOMMozWakeLockListener>> mWakeLockListeners;
 };
 
-}  
 }  
 }  
 

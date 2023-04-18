@@ -12,8 +12,7 @@
 class nsIHttpChannel;
 class nsITimedChannel;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class PerformanceTimingData;
 
@@ -31,7 +30,6 @@ class PerformanceStorage {
   virtual ~PerformanceStorage() = default;
 };
 
-}  
 }  
 
 #endif  

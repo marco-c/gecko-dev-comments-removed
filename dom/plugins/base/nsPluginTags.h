@@ -16,10 +16,8 @@
 
 class nsIURI;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 struct FakePluginTagInit;
-}  
 }  
 
 

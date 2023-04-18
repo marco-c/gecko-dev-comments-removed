@@ -24,8 +24,7 @@
 
 class nsIHttpChannel;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class PerformanceTiming;
 
@@ -420,10 +419,8 @@ class PerformanceTiming final : public nsWrapperCache {
 };
 
 }  
-}  
 
-namespace mozilla {
-namespace ipc {
+namespace mozilla::ipc {
 
 template <>
 struct IPDLParamTraits<mozilla::dom::PerformanceTimingData> {
@@ -593,7 +590,6 @@ struct IPDLParamTraits<nsIServerTiming*> {
   }
 };
 
-}  
 }  
 
 #endif  

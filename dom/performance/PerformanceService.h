@@ -11,8 +11,7 @@
 #include "nsCOMPtr.h"
 #include "nsDOMNavigationTiming.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -39,7 +38,6 @@ class PerformanceService {
   PRTime mCreationEpochTime;
 };
 
-}  
 }  
 
 #endif  

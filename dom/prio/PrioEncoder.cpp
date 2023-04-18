@@ -14,8 +14,7 @@
 
 #include "PrioEncoder.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 StaticRefPtr<PrioEncoder> PrioEncoder::sSingleton;
@@ -225,5 +224,4 @@ nsresult PrioEncoder::LazyInitSingleton() {
   return NS_OK;
 }
 
-}  
 }  

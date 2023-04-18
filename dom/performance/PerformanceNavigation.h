@@ -12,8 +12,7 @@
 #include "nsDOMNavigationTiming.h"
 #include "nsWrapperCache.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 class PerformanceNavigation final : public nsWrapperCache {
@@ -46,7 +45,6 @@ class PerformanceNavigation final : public nsWrapperCache {
   RefPtr<Performance> mPerformance;
 };
 
-}  
 }  
 
 #endif  

@@ -34,13 +34,11 @@ class nsXULPrototypeElement;
 class nsXULPrototypePI;
 class nsXULPrototypeScript;
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 class Element;
 class ScriptLoader;
 class Document;
 class XMLStylesheetProcessingInstruction;
-}  
 }  
 
 nsresult NS_NewPrototypeDocumentContentSink(nsIContentSink** aResult,
@@ -49,8 +47,7 @@ nsresult NS_NewPrototypeDocumentContentSink(nsIContentSink** aResult,
                                             nsISupports* aContainer,
                                             nsIChannel* aChannel);
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class PrototypeDocumentContentSink final : public nsIStreamLoaderObserver,
                                            public nsIContentSink,
@@ -260,7 +257,6 @@ class PrototypeDocumentContentSink final : public nsIStreamLoaderObserver,
   void CloseElement(Element* aElement, bool aHadChildren);
 };
 
-}  
 }  
 
 #endif  

@@ -24,8 +24,7 @@ namespace JS {
 class CloneDataPolicy;
 }  
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 class ThreadSafeWorkerRef;
 class WorkerPrivate;
@@ -215,7 +214,6 @@ class PromiseWorkerProxy : public PromiseNativeHandler,
   
   Mutex mCleanUpLock;
 };
-}  
 }  
 
 #endif  

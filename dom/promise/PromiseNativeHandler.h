@@ -14,8 +14,7 @@
 #include "mozilla/Maybe.h"
 #include "nsISupports.h"
 
-namespace mozilla {
-namespace dom {
+namespace mozilla::dom {
 
 
 
@@ -62,7 +61,6 @@ class DomPromiseListener final : public PromiseNativeHandler {
   CallbackTypeRejected mReject;
 };
 
-}  
 }  
 
 #endif  
