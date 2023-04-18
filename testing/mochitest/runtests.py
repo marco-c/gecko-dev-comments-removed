@@ -2654,34 +2654,27 @@ toolbar#nav-bar {
                 quiet=quiet,
             )
 
-            expected = None
             if crashAsPass:
                 
                 if crash_count > 0 and self.message_logger.is_test_running:
                     
-                    expected = "CRASH"
+                    message = {
+                        "action": "test_end",
+                        "status": "CRASH",
+                        "expected": "CRASH",
+                        "thread": None,
+                        "pid": None,
+                        "source": "mochitest",
+                        "time": int(time.time()) * 1000,
+                        "test": self.lastTestSeen,
+                        "message": "application terminated with exit code 0",
+                    }
+                    
+                    
+                    self.message_logger.process_message(message)
                 status = 0
             elif crash_count or zombieProcesses:
-                if self.message_logger.is_test_running:
-                    expected = "PASS"
                 status = 1
-
-            if expected:
-                
-                message = {
-                    "action": "test_end",
-                    "status": "CRASH",
-                    "expected": expected,
-                    "thread": None,
-                    "pid": None,
-                    "source": "mochitest",
-                    "time": int(time.time()) * 1000,
-                    "test": self.lastTestSeen,
-                    "message": "application terminated with exit code 0",
-                }
-                
-                
-                self.message_logger.process_message(message)
         finally:
             
             if os.path.exists(processLog):
