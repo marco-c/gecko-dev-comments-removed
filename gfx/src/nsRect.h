@@ -218,13 +218,6 @@ struct nsRect : public mozilla::gfx::BaseRect<nscoord, nsRect, nsPoint, nsSize,
 #  endif
 #endif
 
-  void SaturatingUnionRect(const nsRect& aRect1, const nsRect& aRect2) {
-    *this = aRect1.SaturatingUnion(aRect2);
-  }
-  void SaturatingUnionRectEdges(const nsRect& aRect1, const nsRect& aRect2) {
-    *this = aRect1.SaturatingUnionEdges(aRect2);
-  }
-
   
   bool Overflows() const;
 
