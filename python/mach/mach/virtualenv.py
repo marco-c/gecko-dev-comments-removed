@@ -172,7 +172,7 @@ class VirtualenvManager(VirtualenvHelper):
             "virtualenv",
             "version.py",
         )
-        deps = [__file__, virtualenv_package] + env_requirements.requirements_paths
+        deps = [virtualenv_package] + env_requirements.requirements_paths
 
         
         
