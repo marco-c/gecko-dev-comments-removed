@@ -220,7 +220,9 @@ nsresult TRRServiceChannel::MaybeResolveProxyAndBeginConnect() {
   
   
   
-  if (!mProxyInfo &&
+  
+  
+  if (!mProxyInfo && !mConnectionInfo &&
       !(mLoadFlags & (nsICachingChannel::LOAD_ONLY_FROM_CACHE |
                       nsICachingChannel::LOAD_NO_NETWORK_IO)) &&
       NS_SUCCEEDED(ResolveProxy())) {
@@ -409,7 +411,6 @@ nsresult TRRServiceChannel::BeginConnect() {
     Telemetry::Accumulate(Telemetry::HTTP_TRANSACTION_USE_ALTSVC_OE, !isHttps);
   } else if (mConnectionInfo) {
     LOG(("TRRServiceChannel %p Using channel supplied connection info", this));
-    Telemetry::Accumulate(Telemetry::HTTP_TRANSACTION_USE_ALTSVC, false);
   } else {
     LOG(("TRRServiceChannel %p Using default connection info", this));
 

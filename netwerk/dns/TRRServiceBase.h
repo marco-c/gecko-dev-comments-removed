@@ -7,22 +7,38 @@
 #define TRRServiceBase_h_
 
 #include "mozilla/Atomics.h"
+#include "mozilla/DataMutex.h"
 #include "nsString.h"
 #include "nsIDNSService.h"
+#include "nsIProtocolProxyService2.h"
+
+class nsICancelable;
+class nsIProxyInfo;
 
 namespace mozilla {
 namespace net {
 
+class nsHttpConnectionInfo;
+
 static const char kRolloutURIPref[] = "doh-rollout.uri";
 static const char kRolloutModePref[] = "doh-rollout.mode";
 
-class TRRServiceBase {
+class TRRServiceBase : public nsIProxyConfigChangedCallback {
  public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+
   TRRServiceBase();
   nsIDNSService::ResolverMode Mode() { return mMode; }
+  virtual void GetURI(nsACString& result) = 0;
+  already_AddRefed<nsHttpConnectionInfo> TRRConnectionInfo();
+  
+  
+  virtual void InitTRRConnectionInfo();
+  bool TRRConnectionInfoInited() const { return mTRRConnectionInfoInited; }
 
  protected:
-  ~TRRServiceBase() = default;
+  virtual ~TRRServiceBase();
+
   virtual bool MaybeSetPrivateURI(const nsACString& aURI) = 0;
   void ProcessURITemplate(nsACString& aURI);
   
@@ -38,6 +54,19 @@ class TRRServiceBase {
   void OnTRRURIChange();
 
   virtual void ReadEtcHostsFile() {}
+  
+  
+  
+  
+  
+  
+  
+  
+  void AsyncCreateTRRConnectionInfo(const nsACString& aURI);
+  void AsyncCreateTRRConnectionInfoInternal(const nsACString& aURI);
+  virtual void SetDefaultTRRConnectionInfo(nsHttpConnectionInfo* aConnInfo);
+  void RegisterProxyChangeListener();
+  void UnregisterProxyChangeListener();
 
   nsCString mPrivateURI;
   
@@ -45,8 +74,11 @@ class TRRServiceBase {
   nsCString mRolloutURIPref;
   nsCString mDefaultURIPref;
 
-  Atomic<nsIDNSService::ResolverMode, Relaxed> mMode;
-  Atomic<bool, Relaxed> mURISetByDetection;
+  Atomic<nsIDNSService::ResolverMode, Relaxed> mMode{
+      nsIDNSService::MODE_NATIVEONLY};
+  Atomic<bool, Relaxed> mURISetByDetection{false};
+  Atomic<bool, Relaxed> mTRRConnectionInfoInited{false};
+  DataMutex<RefPtr<nsHttpConnectionInfo>> mDefaultTRRConnectionInfo;
 };
 
 }  

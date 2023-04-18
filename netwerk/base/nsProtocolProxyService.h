@@ -374,6 +374,9 @@ class nsProtocolProxyService final : public nsIProtocolProxyService2,
   
   nsTArray<RefPtr<FilterLink>> mFilters;
 
+  nsTArray<nsCOMPtr<nsIProxyConfigChangedCallback>>
+      mProxyConfigChangedCallbacks;
+
   uint32_t mProxyConfig{PROXYCONFIG_DIRECT};
 
   nsCString mHTTPProxyHost;

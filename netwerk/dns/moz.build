@@ -105,6 +105,7 @@ GeneratedFile(
 
 LOCAL_INCLUDES += [
     "/netwerk/base",
+    "/netwerk/ipc",
     "/netwerk/protocol/http",
 ]
 

@@ -340,6 +340,9 @@ class HttpBaseChannel : public nsHashPropertyBag,
 
   NS_IMETHOD SetWaitForHTTPSSVCRecord() override;
 
+  virtual void SetConnectionInfo(
+      mozilla::net::nsHttpConnectionInfo* aCI) override;
+
   
   NS_IMETHOD GetPriority(int32_t* value) override;
   NS_IMETHOD AdjustPriority(int32_t delta) override;

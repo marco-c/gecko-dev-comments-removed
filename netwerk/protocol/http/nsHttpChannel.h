@@ -259,7 +259,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   RefPtr<TransactionObserver> mTransactionObserver;
 
  public:
-  void SetConnectionInfo(nsHttpConnectionInfo*);  
   void SetTransactionObserver(TransactionObserver* arg) {
     mTransactionObserver = arg;
   }
