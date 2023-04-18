@@ -235,9 +235,7 @@ bool FunctionEmitter::emitNonHoisted(GCThingIndex index) {
 
   
   
-  JSOp op = syntaxKind_ == FunctionSyntaxKind::Arrow ? JSOp::LambdaArrow
-                                                     : JSOp::Lambda;
-  if (!bce_->emitGCIndexOp(op, index)) {
+  if (!bce_->emitGCIndexOp(JSOp::Lambda, index)) {
     
     return false;
   }
