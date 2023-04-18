@@ -1223,8 +1223,12 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  SplitTextNodesAtRangeEnd(nsTArray<OwningNonNull<nsRange>>& aArrayOfRanges);
+
+
+
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
+  SplitTextNodesAtRangeEnd(
+      const nsTArray<OwningNonNull<nsRange>>& aArrayOfRanges);
 
   
 
