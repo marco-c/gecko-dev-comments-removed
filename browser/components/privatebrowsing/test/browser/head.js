@@ -60,6 +60,22 @@ async function openAboutPrivateBrowsing() {
   return { win, tab };
 }
 
+
+
+
+async function openTabAndWaitForRender() {
+  let { win, tab } = await openAboutPrivateBrowsing();
+  await SpecialPowers.spawn(tab, [], async function() {
+    
+    await ContentTaskUtils.waitForCondition(() =>
+      content.document.documentElement.hasAttribute(
+        "PrivateBrowsingRenderComplete"
+      )
+    );
+  });
+  return { win, tab };
+}
+
 function newDirectory() {
   let tmpDir = FileUtils.getDir("TmpD", [], true);
   let dir = tmpDir.clone();
