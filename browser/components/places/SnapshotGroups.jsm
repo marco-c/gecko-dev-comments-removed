@@ -197,14 +197,20 @@ const SnapshotGroups = new (class SnapshotGroups {
 
 
 
+
   async query({ limit = 50, builder = "", skipMinimum = false } = {}) {
     let db = await PlacesUtils.promiseDBConnection();
 
-    let params = { builder, limit };
+    let params = { builder };
     let sizeFragment = "";
+    let limitFragment = "";
     if (!skipMinimum) {
       sizeFragment = "HAVING snapshot_count >= :minGroupSize";
       params.minGroupSize = MIN_GROUP_SIZE;
+    }
+    if (limit != -1) {
+      params.limit = limit;
+      limitFragment = "LIMIT :limit";
     }
 
     let rows = await db.executeCached(
@@ -216,12 +222,37 @@ const SnapshotGroups = new (class SnapshotGroups {
       WHERE builder = :builder OR :builder = ""
       GROUP BY g.id ${sizeFragment}
       ORDER BY last_access DESC
-      LIMIT :limit
+      ${limitFragment}
         `,
       params
     );
 
     return rows.map(row => this.#translateSnapshotGroupRow(row));
+  }
+
+  
+
+
+
+
+
+
+
+  async getUrls({ id }) {
+    let params = { group_id: id };
+    let db = await PlacesUtils.promiseDBConnection();
+    let urlRows = await db.executeCached(
+      `
+      SELECT h.url
+      FROM moz_places_metadata_groups_to_snapshots s
+      JOIN moz_places h ON h.id = s.place_id
+      WHERE s.group_id = :group_id
+      ORDER BY h.last_visit_date DESC
+    `,
+      params
+    );
+
+    return urlRows.map(row => row.getResultByName("url"));
   }
 
   
