@@ -105,9 +105,6 @@ struct nsWidgetInitData {
   bool mIsAnimationSuppressed = false;
   
   bool mSupportTranslucency = false;
-  
-  
-  bool mMouseTransparent = false;
   bool mHasRemoteContent = false;
   bool mAlwaysOnTop = false;
   

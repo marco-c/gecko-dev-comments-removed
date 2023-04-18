@@ -348,7 +348,6 @@ nsresult nsCocoaWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (mWindowType == eWindowType_popup) {
-    SetWindowMouseTransparent(aInitData->mMouseTransparent);
     
     
     LayoutDeviceIntRect devRect = RoundedToInt(newBounds * GetDesktopToDeviceScale());

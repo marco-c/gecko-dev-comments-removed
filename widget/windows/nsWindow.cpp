@@ -971,12 +971,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
         ShouldUseOffMainThreadCompositing()) {
       extendedStyle |= WS_EX_COMPOSITED;
     }
-
-    if (aInitData->mMouseTransparent) {
-      
-      mMouseTransparent = true;
-      extendedStyle |= WS_EX_TRANSPARENT;
-    }
   } else if (mWindowType == eWindowType_invisible) {
     
     style &= ~0x40000000;  

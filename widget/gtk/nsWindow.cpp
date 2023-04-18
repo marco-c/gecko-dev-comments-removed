@@ -5511,7 +5511,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   
   
   mNoAutoHide = aInitData && aInitData->mNoAutoHide;
-  mMouseTransparent = aInitData && aInitData->mMouseTransparent;
 
   
   
