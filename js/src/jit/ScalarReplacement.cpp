@@ -1724,21 +1724,9 @@ void ArgumentsReplacer::visitGuardProto(MGuardProto* ins) {
     return;
   }
 
-#ifdef DEBUG
   
   
   
-  
-  
-  
-
-  if (args_->isCreateArgumentsObject()) {
-    auto* expected = &ins->expected()->toConstant()->toObject();
-    auto* templateObj = args_->toCreateArgumentsObject()->templateObject();
-
-    MOZ_ASSERT_IF(templateObj, templateObj->staticPrototype() == expected);
-  }
-#endif
 
   
   ins->replaceAllUsesWith(args_);
