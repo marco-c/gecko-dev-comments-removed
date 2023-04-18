@@ -304,8 +304,11 @@ class AccessibleCaretManager {
 
   
   
+  
+  
   MOZ_CAN_RUN_SCRIPT
-  virtual void DispatchCaretStateChangedEvent(dom::CaretChangedReason aReason);
+  virtual void DispatchCaretStateChangedEvent(dom::CaretChangedReason aReason,
+                                              const nsPoint* aPoint = nullptr);
 
   
   
