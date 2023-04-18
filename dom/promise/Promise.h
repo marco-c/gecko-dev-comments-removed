@@ -274,6 +274,13 @@ class Promise : public SupportsWeakPtr {
   ThenResult<Callback, Args...> CatchWithCycleCollectedArgs(
       Callback&& aOnReject, Args&&... aArgs);
 
+  
+  
+  
+  template <typename Callback, typename ArgsTuple, typename JSArgsTuple>
+  Result<RefPtr<Promise>, nsresult> ThenWithCycleCollectedArgsJS(
+      Callback&& aOnResolve, ArgsTuple&& aArgs, JSArgsTuple&& aJSArgs);
+
   Result<RefPtr<Promise>, nsresult> ThenWithoutCycleCollection(
       const std::function<already_AddRefed<Promise>(
           JSContext*, JS::HandleValue, ErrorResult& aRv)>& aCallback);
