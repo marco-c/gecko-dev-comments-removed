@@ -28,7 +28,20 @@ async function promiseDownloadFinished(list) {
 add_task(async function test_check_blob_origin_representation() {
   forcePromptForFiles("text/plain", "txt");
 
-  await BrowserTestUtils.withNewTab("https://example.org/1", async browser => {
+  await check_blob_origin(
+    "https://example.org/1",
+    "https://example.org",
+    "example.org"
+  );
+  await check_blob_origin(
+    "data:text/html,<body>Some Text<br>",
+    "blob:",
+    "blob"
+  );
+});
+
+async function check_blob_origin(pageURL, expectedSource, expectedListOrigin) {
+  await BrowserTestUtils.withNewTab(pageURL, async browser => {
     
     let downloadList = await Downloads.getList(Downloads.PUBLIC);
     let downloadPromise = promiseDownloadFinished(downloadList);
@@ -57,7 +70,11 @@ add_task(async function test_check_blob_origin_representation() {
     
     let dialogWin = await dialogPromise;
     let source = dialogWin.document.getElementById("source");
-    is(source.value, "https://example.org", "Should not list blob as source.");
+    is(
+      source.value,
+      expectedSource,
+      "Should list origin as source if available."
+    );
 
     
     let closedPromise = BrowserTestUtils.windowClosed(dialogWin);
@@ -93,9 +110,9 @@ add_task(async function test_check_blob_origin_representation() {
       let detailString = download.querySelector(".downloadDetailsNormal").value;
       Assert.stringContains(
         detailString,
-        "example.org",
-        "Should list origin in download list."
+        expectedListOrigin,
+        "Should list origin in download list if available."
       );
     });
   });
-});
+}

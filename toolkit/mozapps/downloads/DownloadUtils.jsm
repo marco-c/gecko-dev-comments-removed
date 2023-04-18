@@ -429,7 +429,18 @@ var DownloadUtils = {
     }
 
     if (uri.scheme == "blob") {
-      uri = Services.io.newURI(new URL(uri.spec).origin);
+      let origin = new URL(uri.spec).origin;
+      
+      if (origin != "null") {
+        
+        
+        
+        try {
+          uri = Services.io.newURI(origin);
+        } catch (ex) {
+          Cu.reportError(ex);
+        }
+      }
     }
 
     let fullHost;

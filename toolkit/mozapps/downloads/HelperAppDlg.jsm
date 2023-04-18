@@ -507,7 +507,18 @@ nsUnknownContentTypeDialog.prototype = {
       url = url.innermostURI;
     }
     if (url.scheme == "blob") {
-      url = Services.io.newURI(new URL(url.spec).origin);
+      let origin = new URL(url.spec).origin;
+      
+      if (origin != "null") {
+        
+        
+        
+        try {
+          url = Services.io.newURI(origin);
+        } catch (ex) {
+          Cu.reportError(ex);
+        }
+      }
     }
 
     var fname = "";
