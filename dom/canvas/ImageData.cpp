@@ -50,8 +50,11 @@ already_AddRefed<ImageData> ImageData::Constructor(const GlobalObject& aGlobal,
     aRv.Throw(NS_ERROR_DOM_INDEX_SIZE_ERR);
     return nullptr;
   }
+
+  
+  
   CheckedInt<uint32_t> length = CheckedInt<uint32_t>(aWidth) * aHeight * 4;
-  if (!length.isValid()) {
+  if (!length.isValid() || length.value() > INT32_MAX) {
     aRv.Throw(NS_ERROR_DOM_INDEX_SIZE_ERR);
     return nullptr;
   }
