@@ -1,20 +1,19 @@
 
 
-
-async function getDefaultPathCookies(path = '/cookies/resources') {
+async function getAndExpireCookiesForDefaultPathTest() {
   return new Promise((resolve, reject) => {
     try {
       const iframe = document.createElement('iframe');
       iframe.style = 'display: none';
-      iframe.src = `${path}/echo-cookie.html`;
-
+      iframe.src = '/cookies/resources/echo-cookie.html';
       iframe.addEventListener('load', (e) => {
         const win = e.target.contentWindow;
         const iframeCookies = win.getCookies();
-        win.expireCookie('test', path);
-        resolve(iframeCookies);
+        win.expireCookies().then(() => {
+          document.documentElement.removeChild(iframe);
+          resolve(iframeCookies);
+        });
       }, {once: true});
-
       document.documentElement.appendChild(iframe);
     } catch (e) {
       reject(e);
@@ -67,8 +66,16 @@ async function getRedirectedCookies(location, cookie) {
 
 
 
+
+
+
 function httpCookieTest(cookie, expectedValue, name, defaultPath = true) {
   return promise_test(async (t) => {
+    
+    await getAndExpireCookiesForDefaultPathTest();
+    await test_driver.delete_all_cookies();
+    t.add_cleanup(test_driver.delete_all_cookies);
+
     let encodedCookie = encodeURIComponent(JSON.stringify(cookie));
     await fetch(`/cookies/resources/cookie.py?set=${encodedCookie}`);
     let cookies = document.cookie;
@@ -76,14 +83,13 @@ function httpCookieTest(cookie, expectedValue, name, defaultPath = true) {
       
       
       
-      cookies = await getDefaultPathCookies();
+      cookies = await getAndExpireCookiesForDefaultPathTest();
     }
     if (Boolean(expectedValue)) {
       assert_equals(cookies, expectedValue, 'The cookie was set as expected.');
     } else {
       assert_equals(cookies, expectedValue, 'The cookie was rejected.');
     }
-    await fetch(`/cookies/resources/cookie.py?drop=${encodedCookie}`);
   }, name);
 }
 
