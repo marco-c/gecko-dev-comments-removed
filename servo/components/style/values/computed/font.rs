@@ -584,11 +584,24 @@ impl FontFamilyList {
     }
 
     
+    
+    pub fn first_generic(&self) -> Option<(GenericFontFamily, bool)> {
+        let mut first = true;
+        for f in self.iter() {
+            if let SingleFontFamily::Generic(f) = f {
+                return Some((*f, first));
+            }
+            first = false;
+        }
+        None
+    }
+
+    
     pub fn single_generic(&self) -> Option<GenericFontFamily> {
         let mut iter = self.iter();
         if let Some(SingleFontFamily::Generic(f)) = iter.next() {
             if iter.next().is_none() {
-                return Some(f.clone());
+                return Some(*f);
             }
         }
         None
