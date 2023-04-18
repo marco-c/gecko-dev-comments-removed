@@ -71,10 +71,10 @@ extern bool CopyDataPropertiesNative(JSContext* cx,
                                      bool* optimized);
 
 
-extern PlainObject* CreateThisForFunction(JSContext* cx,
-                                          JS::Handle<JSFunction*> callee,
-                                          JS::Handle<JSObject*> newTarget,
-                                          NewObjectKind newKind);
+
+extern Shape* ThisShapeForFunction(JSContext* cx,
+                                   JS::Handle<JSFunction*> callee,
+                                   JS::Handle<JSObject*> newTarget);
 
 
 extern PlainObject* NewPlainObject(JSContext* cx,
