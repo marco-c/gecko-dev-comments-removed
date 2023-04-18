@@ -159,6 +159,11 @@ int main(int argc, char* argv[]) {
     total += 1;
 
     printf("%s\n", name);
+
+    
+    
+    fflush(stdout);
+
     if (!test->init(maybeReusedContext)) {
       printf("TEST-UNEXPECTED-FAIL | %s | Failed to initialize.\n", name);
       failures++;
