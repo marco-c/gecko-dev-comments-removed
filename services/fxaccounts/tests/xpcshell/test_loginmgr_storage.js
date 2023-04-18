@@ -18,8 +18,7 @@ const { FXA_PWDMGR_HOST, FXA_PWDMGR_REALM } = ChromeUtils.import(
 
 
 var { LoginManagerStorage } = ChromeUtils.import(
-  "resource://gre/modules/FxAccountsStorage.jsm",
-  null
+  "resource://gre/modules/FxAccountsStorage.jsm"
 );
 var isLoggedIn = true;
 LoginManagerStorage.prototype.__defineGetter__("_isLoggedIn", () => isLoggedIn);

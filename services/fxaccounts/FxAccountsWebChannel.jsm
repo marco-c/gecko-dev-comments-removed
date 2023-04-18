@@ -10,7 +10,12 @@
 
 
 
-var EXPORTED_SYMBOLS = ["EnsureFxAccountsWebChannel"];
+var EXPORTED_SYMBOLS = [
+  "EnsureFxAccountsWebChannel",
+  
+  "FxAccountsWebChannel",
+  "FxAccountsWebChannelHelpers",
+];
 
 const { XPCOMUtils } = ChromeUtils.import(
   "resource://gre/modules/XPCOMUtils.jsm"

@@ -51,8 +51,7 @@ const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 
 
 const { AccountState } = ChromeUtils.import(
-  "resource://gre/modules/FxAccounts.jsm",
-  null
+  "resource://gre/modules/FxAccounts.jsm"
 );
 
 

@@ -1,10 +1,7 @@
 
 
 
-let { PostQueue } = ChromeUtils.import(
-  "resource://services-sync/record.js",
-  null
-);
+let { PostQueue } = ChromeUtils.import("resource://services-sync/record.js");
 
 function makeRecord(nbytes) {
   return {

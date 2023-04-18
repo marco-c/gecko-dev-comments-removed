@@ -9,6 +9,8 @@ var EXPORTED_SYMBOLS = [
   "CryptoWrapper",
   "CollectionKeyManager",
   "Collection",
+  
+  "PostQueue",
 ];
 
 const CRYPTO_COLLECTION = "crypto";
