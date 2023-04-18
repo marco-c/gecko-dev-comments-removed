@@ -3245,26 +3245,34 @@ static HCURSOR CursorForImage(const nsIWidget::Cursor& aCursor,
   return cursor;
 }
 
-
 void nsWindow::SetCursor(const Cursor& aCursor) {
-  static HCURSOR sCustomHCursor = nullptr;
+  static HCURSOR sCurrentHCursor = nullptr;
+  static bool sCurrentHCursorIsCustom = false;
 
   mCursor = aCursor;
 
-  if (!mUpdateCursor && sCurrentCursor == aCursor) {
+  if (sCurrentCursor == aCursor && sCurrentHCursor && !mUpdateCursor) {
+    
+    
+    
+    
+    ::SetCursor(sCurrentHCursor);
     return;
   }
 
   mUpdateCursor = false;
-  if (sCustomHCursor) {
-    ::DestroyIcon(sCustomHCursor);
-    sCustomHCursor = nullptr;
-  }
 
+  if (sCurrentHCursorIsCustom) {
+    ::DestroyIcon(sCurrentHCursor);
+  }
+  sCurrentHCursor = nullptr;
+  sCurrentHCursorIsCustom = false;
   sCurrentCursor = aCursor;
+
   HCURSOR cursor = CursorForImage(aCursor, GetDefaultScale());
+  bool custom = false;
   if (cursor) {
-    sCustomHCursor = cursor;
+    custom = true;
   } else {
     cursor = CursorFor(aCursor.mDefaultCursor);
   }
@@ -3273,6 +3281,8 @@ void nsWindow::SetCursor(const Cursor& aCursor) {
     return;
   }
 
+  sCurrentHCursor = cursor;
+  sCurrentHCursorIsCustom = custom;
   ::SetCursor(cursor);
 }
 
