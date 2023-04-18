@@ -1019,7 +1019,10 @@ SupportedAlpnRank IsAlpnSupported(const nsACString& aAlpn) {
   return SupportedAlpnRank::NOT_SUPPORTED;
 }
 
-bool SecurityErrorToBeHandledByTransaction(nsresult aReason) {
+
+
+
+bool SecurityErrorThatMayNeedRestart(nsresult aReason) {
   return (aReason ==
           psm::GetXPCOMFromNSSError(SSL_ERROR_PROTOCOL_VERSION_ALERT)) ||
          (aReason == psm::GetXPCOMFromNSSError(SSL_ERROR_BAD_MAC_ALERT));
