@@ -11,7 +11,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/dom/Promise.h"
-#include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/PromiseNativeHandler.h"
 #include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/ReadableStreamController.h"
@@ -403,6 +402,56 @@ void ReadableStreamDefaultControllerError(
 }
 
 
+
+class PullIfNeededNativePromiseHandler final : public PromiseNativeHandler {
+  ~PullIfNeededNativePromiseHandler() override = default;
+
+  
+  RefPtr<ReadableStreamDefaultController> mController;
+
+ public:
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_CLASS(PullIfNeededNativePromiseHandler)
+
+  explicit PullIfNeededNativePromiseHandler(
+      ReadableStreamDefaultController* aController)
+      : PromiseNativeHandler(), mController(aController) {}
+
+  MOZ_CAN_RUN_SCRIPT void ResolvedCallback(JSContext* aCx,
+                                           JS::Handle<JS::Value> aValue,
+                                           ErrorResult& aRv) override {
+    
+    
+    mController->SetPulling(false);
+    
+    if (mController->PullAgain()) {
+      
+      mController->SetPullAgain(false);
+
+      
+      ErrorResult rv;
+      ReadableStreamDefaultControllerCallPullIfNeeded(
+          aCx, MOZ_KnownLive(mController), aRv);
+    }
+  }
+
+  void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
+                        ErrorResult& aRv) override {
+    
+    
+    ReadableStreamDefaultControllerError(aCx, mController, aValue, aRv);
+  }
+};
+
+
+NS_IMPL_CYCLE_COLLECTION(PullIfNeededNativePromiseHandler, mController)
+NS_IMPL_CYCLE_COLLECTING_ADDREF(PullIfNeededNativePromiseHandler)
+NS_IMPL_CYCLE_COLLECTING_RELEASE(PullIfNeededNativePromiseHandler)
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(PullIfNeededNativePromiseHandler)
+  NS_INTERFACE_MAP_ENTRY(nsISupports)
+NS_INTERFACE_MAP_END
+
+
 static void ReadableStreamDefaultControllerCallPullIfNeeded(
     JSContext* aCx, ReadableStreamDefaultController* aController,
     ErrorResult& aRv) {
@@ -438,34 +487,60 @@ static void ReadableStreamDefaultControllerCallPullIfNeeded(
   }
 
   
-  pullPromise->AppendNativeHandler(new NativeThenHandler(
-      nullptr,
-      [](JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult& aRv,
-         ReadableStreamDefaultController* mController)
-          MOZ_CAN_RUN_SCRIPT_BOUNDARY -> already_AddRefed<Promise> {
-            
-            mController->SetPulling(false);
-            
-            if (mController->PullAgain()) {
-              
-              mController->SetPullAgain(false);
-
-              
-              ErrorResult rv;
-              ReadableStreamDefaultControllerCallPullIfNeeded(
-                  aCx, MOZ_KnownLive(mController), aRv);
-            }
-            return nullptr;
-          },
-      [](JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult& aRv,
-         ReadableStreamDefaultController* mController)
-          -> already_AddRefed<Promise> {
-        
-        ReadableStreamDefaultControllerError(aCx, mController, aValue, aRv);
-        return nullptr;
-      },
-      RefPtr(aController)));
+  pullPromise->AppendNativeHandler(
+      new PullIfNeededNativePromiseHandler(aController));
 }
+
+class StartPromiseNativeHandler final : public PromiseNativeHandler {
+  ~StartPromiseNativeHandler() override = default;
+
+  RefPtr<ReadableStreamDefaultController> mController;
+
+ public:
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_CLASS(StartPromiseNativeHandler)
+
+  explicit StartPromiseNativeHandler(
+      ReadableStreamDefaultController* aController)
+      : PromiseNativeHandler(), mController(aController) {}
+
+  MOZ_CAN_RUN_SCRIPT
+  void ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
+                        ErrorResult& aRv) override {
+    MOZ_ASSERT(mController);
+
+    
+    
+    
+    mController->SetStarted(true);
+
+    
+    mController->SetPulling(false);
+
+    
+    mController->SetPullAgain(false);
+
+    
+
+    RefPtr<ReadableStreamDefaultController> stackController = mController;
+    ReadableStreamDefaultControllerCallPullIfNeeded(aCx, stackController, aRv);
+  }
+
+  void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
+                        ErrorResult& aRv) override {
+    
+    
+    ReadableStreamDefaultControllerError(aCx, mController, aValue, aRv);
+  }
+};
+
+
+NS_IMPL_CYCLE_COLLECTION(StartPromiseNativeHandler, mController)
+NS_IMPL_CYCLE_COLLECTING_ADDREF(StartPromiseNativeHandler)
+NS_IMPL_CYCLE_COLLECTING_RELEASE(StartPromiseNativeHandler)
+NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(StartPromiseNativeHandler)
+  NS_INTERFACE_MAP_ENTRY(nsISupports)
+NS_INTERFACE_MAP_END
 
 
 void SetUpReadableStreamDefaultController(
@@ -516,36 +591,10 @@ void SetUpReadableStreamDefaultController(
   startPromise->MaybeResolve(startResult);
 
   
-  startPromise->AppendNativeHandler(new NativeThenHandler(
-      nullptr,
-      [](JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult& aRv,
-         ReadableStreamDefaultController* aController)
-          MOZ_CAN_RUN_SCRIPT_BOUNDARY -> already_AddRefed<Promise> {
-            MOZ_ASSERT(aController);
+  RefPtr<StartPromiseNativeHandler> startPromiseHandler =
+      new StartPromiseNativeHandler(aController);
 
-            
-            aController->SetStarted(true);
-
-            
-            aController->SetPulling(false);
-
-            
-            aController->SetPullAgain(false);
-
-            
-            ReadableStreamDefaultControllerCallPullIfNeeded(
-                aCx, MOZ_KnownLive(aController), aRv);
-            return nullptr;
-          },
-
-      [](JSContext* aCx, JS::Handle<JS::Value> aValue, ErrorResult& aRv,
-         ReadableStreamDefaultController* aController)
-          -> already_AddRefed<Promise> {
-        
-        ReadableStreamDefaultControllerError(aCx, aController, aValue, aRv);
-        return nullptr;
-      },
-      RefPtr(aController)));
+  startPromise->AppendNativeHandler(startPromiseHandler);
 }
 
 

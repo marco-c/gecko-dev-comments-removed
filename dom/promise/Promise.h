@@ -238,7 +238,7 @@ class Promise : public SupportsWeakPtr {
                    decltype(std::declval<Callback>()(
                        (JSContext*)(nullptr),
                        std::declval<JS::Handle<JS::Value>>(),
-                       std::declval<ErrorResult&>(), std::declval<Args>()...))>;
+                       std::declval<Args>()...))>;
 
   template <typename Callback, typename... Args>
   using ThenResult =
@@ -259,20 +259,14 @@ class Promise : public SupportsWeakPtr {
   
   
   
-  template <typename ResolveCallback, typename RejectCallback, typename... Args>
-  ThenResult<ResolveCallback, Args...> ThenCatchWithCycleCollectedArgs(
-      ResolveCallback&& aOnResolve, RejectCallback&& aOnReject,
-      Args&&... aArgs);
-
-  
   
   template <typename Callback, typename... Args>
   ThenResult<Callback, Args...> ThenWithCycleCollectedArgs(
       Callback&& aOnResolve, Args&&... aArgs);
 
   Result<RefPtr<Promise>, nsresult> ThenWithoutCycleCollection(
-      const std::function<already_AddRefed<Promise>(
-          JSContext*, JS::HandleValue, ErrorResult& aRv)>& aCallback);
+      const std::function<
+          already_AddRefed<Promise>(JSContext*, JS::HandleValue)>& aCallback);
 
   JSObject* PromiseObj() const { return mPromiseObj; }
 
