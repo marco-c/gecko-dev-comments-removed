@@ -1224,8 +1224,6 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
   nsresult CollectEditTargetNodes(
       nsTArray<RefPtr<nsRange>>& aArrayOfRanges,
       nsTArray<OwningNonNull<nsIContent>>& aOutArrayOfContents,
@@ -1307,26 +1305,6 @@ class HTMLEditor final : public EditorBase,
   void GetSelectionRangesExtendedToHardLineStartAndEnd(
       nsTArray<RefPtr<nsRange>>& aOutArrayOfRanges,
       EditSubAction aEditSubAction);
-
-  
-
-
-
-
-
-  nsresult CollectEditTargetNodesInExtendedSelectionRanges(
-      nsTArray<OwningNonNull<nsIContent>>& aOutArrayOfContents,
-      EditSubAction aEditSubAction,
-      CollectNonEditableNodes aCollectNonEditableNodes) {
-    AutoTArray<RefPtr<nsRange>, 4> extendedSelectionRanges;
-    GetSelectionRangesExtendedToHardLineStartAndEnd(extendedSelectionRanges,
-                                                    aEditSubAction);
-    nsresult rv =
-        CollectEditTargetNodes(extendedSelectionRanges, aOutArrayOfContents,
-                               aEditSubAction, aCollectNonEditableNodes);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "CollectEditTargetNodes() failed");
-    return rv;
-  }
 
   
 
@@ -4592,8 +4570,10 @@ class HTMLEditor final : public EditorBase,
   friend class
       ListElementSelectionState;  
                                   
+                                  
   friend class
       ListItemElementSelectionState;  
+                                      
                                       
   friend class MoveNodeResult;       
                                      
@@ -4602,6 +4582,7 @@ class HTMLEditor final : public EditorBase,
                                      
   friend class
       ParagraphStateAtSelection;  
+                                  
                                   
                                   
                                   
@@ -4740,6 +4721,7 @@ class MOZ_STACK_CLASS ParagraphStateAtSelection final {
       dom::Element& aNonFormatBlockElement);
 
   
+
 
 
 
