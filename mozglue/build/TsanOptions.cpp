@@ -267,10 +267,6 @@ extern "C" const char* __tsan_default_suppressions() {
          "race:DocumentTimeline::GetCurrentTimeAsDuration\n"
 
          
-         "race:style::traversal::note_children\n"
-         "race:style::matching::MatchMethods::apply_selector_flags\n"
-
-         
          "race:nssToken_Destroy\n"
          "race:nssSlot_GetToken\n"
 

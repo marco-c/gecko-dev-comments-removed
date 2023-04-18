@@ -28,8 +28,8 @@ use crate::traversal_flags::TraversalFlags;
 use app_units::Au;
 use euclid::default::Size2D;
 use euclid::Scale;
+#[cfg(feature = "servo")]
 use fxhash::FxHashMap;
-use selectors::matching::ElementSelectorFlags;
 use selectors::NthIndexCache;
 #[cfg(feature = "gecko")]
 use servo_arc::Arc;
@@ -42,7 +42,6 @@ use style_traits::DevicePixel;
 #[cfg(feature = "servo")]
 use style_traits::SpeculativePainter;
 use time;
-use uluru::{Entry, LRUCache};
 
 pub use selectors::matching::QuirksMode;
 
@@ -518,65 +517,6 @@ impl<E: TElement> SequentialTask<E> {
     }
 }
 
-type CacheItem<E> = (SendElement<E>, ElementSelectorFlags);
-
-
-
-pub struct SelectorFlagsMap<E: TElement> {
-    
-    map: FxHashMap<SendElement<E>, ElementSelectorFlags>,
-    
-    
-    cache: LRUCache<[Entry<CacheItem<E>>; 4 + 1]>,
-}
-
-#[cfg(debug_assertions)]
-impl<E: TElement> Drop for SelectorFlagsMap<E> {
-    fn drop(&mut self) {
-        debug_assert!(self.map.is_empty());
-    }
-}
-
-impl<E: TElement> SelectorFlagsMap<E> {
-    
-    pub fn new() -> Self {
-        SelectorFlagsMap {
-            map: FxHashMap::default(),
-            cache: LRUCache::default(),
-        }
-    }
-
-    
-    pub fn insert_flags(&mut self, element: E, flags: ElementSelectorFlags) {
-        let el = unsafe { SendElement::new(element) };
-        
-        if let Some(item) = self.cache.find(|x| x.0 == el) {
-            if !item.1.contains(flags) {
-                item.1.insert(flags);
-                self.map.get_mut(&el).unwrap().insert(flags);
-            }
-            return;
-        }
-
-        let f = self.map.entry(el).or_insert(ElementSelectorFlags::empty());
-        *f |= flags;
-
-        self.cache
-            .insert((unsafe { SendElement::new(element) }, *f))
-    }
-
-    
-    fn apply_flags(&mut self) {
-        debug_assert_eq!(thread_state::get(), ThreadState::LAYOUT);
-        self.cache.clear();
-        for (el, flags) in self.map.drain() {
-            unsafe {
-                el.set_selector_flags(flags);
-            }
-        }
-    }
-}
-
 
 pub struct SequentialTaskList<E>(Vec<SequentialTask<E>>)
 where
@@ -699,11 +639,6 @@ pub struct ThreadLocalStyleContext<E: TElement> {
     
     pub tasks: SequentialTaskList<E>,
     
-    
-    
-    
-    pub selector_flags: SelectorFlagsMap<E>,
-    
     pub statistics: PerThreadTraversalStatistics,
     
     
@@ -724,7 +659,6 @@ impl<E: TElement> ThreadLocalStyleContext<E> {
             rule_cache: RuleCache::new(),
             bloom_filter: StyleBloom::new(),
             tasks: SequentialTaskList(Vec::new()),
-            selector_flags: SelectorFlagsMap::new(),
             statistics: PerThreadTraversalStatistics::default(),
             font_metrics_provider: E::FontMetricsProvider::create_from(shared),
             stack_limit_checker: StackLimitChecker::new(
@@ -742,7 +676,6 @@ impl<E: TElement> ThreadLocalStyleContext<E> {
             rule_cache: RuleCache::new(),
             bloom_filter: StyleBloom::new(),
             tasks: SequentialTaskList(Vec::new()),
-            selector_flags: SelectorFlagsMap::new(),
             statistics: PerThreadTraversalStatistics::default(),
             font_metrics_provider: E::FontMetricsProvider::create_from(shared),
             stack_limit_checker: StackLimitChecker::new(
@@ -750,15 +683,6 @@ impl<E: TElement> ThreadLocalStyleContext<E> {
             ),
             nth_index_cache: NthIndexCache::default(),
         }
-    }
-}
-
-impl<E: TElement> Drop for ThreadLocalStyleContext<E> {
-    fn drop(&mut self) {
-        debug_assert_eq!(thread_state::get(), ThreadState::LAYOUT);
-
-        
-        self.selector_flags.apply_flags();
     }
 }
 

@@ -8,7 +8,7 @@
 #![deny(missing_docs)]
 
 use crate::computed_value_flags::ComputedValueFlags;
-use crate::context::{CascadeInputs, ElementCascadeInputs, QuirksMode, SelectorFlagsMap};
+use crate::context::{CascadeInputs, ElementCascadeInputs, QuirksMode};
 use crate::context::{SharedStyleContext, StyleContext};
 use crate::data::{ElementData, ElementStyles};
 use crate::dom::TElement;
@@ -26,7 +26,6 @@ use crate::style_resolver::{PseudoElementResolution, StyleResolverForElement};
 use crate::stylesheets::layer_rule::LayerOrder;
 use crate::stylist::RuleInclusion;
 use crate::traversal_flags::TraversalFlags;
-use selectors::matching::ElementSelectorFlags;
 use servo_arc::{Arc, ArcBorrow};
 
 
@@ -1003,51 +1002,6 @@ pub trait MatchMethods: TElement {
         }
 
         cascade_requirement
-    }
-
-    
-    
-    
-    
-    
-    fn apply_selector_flags(
-        &self,
-        map: &mut SelectorFlagsMap<Self>,
-        element: &Self,
-        flags: ElementSelectorFlags,
-    ) {
-        
-        let self_flags = flags.for_self();
-        if !self_flags.is_empty() {
-            if element == self {
-                
-                
-                
-                unsafe {
-                    element.set_selector_flags(self_flags);
-                }
-            } else {
-                
-                
-                
-                
-                
-                
-                if !element.has_selector_flags(self_flags) {
-                    map.insert_flags(*element, self_flags);
-                }
-            }
-        }
-
-        
-        let parent_flags = flags.for_parent();
-        if !parent_flags.is_empty() {
-            if let Some(p) = element.parent_element() {
-                if !p.has_selector_flags(parent_flags) {
-                    map.insert_flags(p, parent_flags);
-                }
-            }
-        }
     }
 
     

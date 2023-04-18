@@ -747,12 +747,24 @@ pub trait TElement:
     
     
     
-    
-    
-    unsafe fn set_selector_flags(&self, flags: ElementSelectorFlags);
+    fn set_selector_flags(&self, flags: ElementSelectorFlags);
 
     
-    fn has_selector_flags(&self, flags: ElementSelectorFlags) -> bool;
+    fn apply_selector_flags(&self, flags: ElementSelectorFlags) {
+        
+        let self_flags = flags.for_self();
+        if !self_flags.is_empty() {
+            self.set_selector_flags(self_flags);
+        }
+
+        
+        let parent_flags = flags.for_parent();
+        if !parent_flags.is_empty() {
+            if let Some(p) = self.parent_element() {
+                p.set_selector_flags(parent_flags);
+            }
+        }
+    }
 
     
     
