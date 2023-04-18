@@ -1684,6 +1684,14 @@ void nsCSSFrameConstructor::CreateGeneratedContentFromListStyleType(
 
 
 
+static bool HasUAWidget(const Element& aOriginatingElement) {
+  const ShadowRoot* sr = aOriginatingElement.GetShadowRoot();
+  return sr && sr->IsUAWidget();
+}
+
+
+
+
 
 
 
@@ -1705,10 +1713,7 @@ void nsCSSFrameConstructor::CreateGeneratedContentItem(
                  aPseudoElement == PseudoStyleType::marker,
              "unexpected aPseudoElement");
 
-  if (aParentFrame && (aParentFrame->IsHTMLVideoFrame() ||
-                       aParentFrame->IsDateTimeControlFrame())) {
-    
-    
+  if (HasUAWidget(aOriginatingElement)) {
     return;
   }
 
