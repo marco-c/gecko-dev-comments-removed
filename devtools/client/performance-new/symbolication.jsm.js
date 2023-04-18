@@ -355,7 +355,8 @@ function createLocalSymbolicationService(sharedLibraries, objdirs, perfFront) {
 }
 
 
- (this).module = {};
+
+var module = {};
 
 module.exports = {
   createLocalSymbolicationService,

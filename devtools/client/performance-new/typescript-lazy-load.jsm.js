@@ -43,7 +43,8 @@ function createLazyLoaders(definition) {
 }
 
 
- (this).module = {};
+
+var module = {};
 
 module.exports = {
   createLazyLoaders,

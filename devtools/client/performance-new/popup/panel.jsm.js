@@ -352,7 +352,8 @@ function initializePopup(panelState, panelview) {
 }
 
 
- (this).module = {};
+
+var module = {};
 
 module.exports = {
   initializePopup,

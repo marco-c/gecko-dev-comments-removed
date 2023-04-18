@@ -869,7 +869,8 @@ function registerProfileCaptureForBrowser(
 }
 
 
- (this).module = { exports: {} };
+
+var module = { exports: {} };
 
 module.exports = {
   presets,
