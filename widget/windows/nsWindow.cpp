@@ -695,7 +695,7 @@ static void MaybeHideCursor(bool aShouldHide) {
 nsWindow::nsWindow(bool aIsChildWindow)
     : nsBaseWidget(eBorderStyle_default),
       mBrush(::CreateSolidBrush(NSRGB_2_COLOREF(::GetSysColor(COLOR_BTNFACE)))),
-      mFrameState(this),
+      mFrameState(std::in_place, this),
       mIsChildWindow(aIsChildWindow),
       mLastPaintEndTime(TimeStamp::Now()),
       mCachedHitTestTime(TimeStamp::Now()),
@@ -998,7 +998,7 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
       
       
       mIsVisible = true;
-      mFrameState.ConsumePreXULSkeletonState(WasPreXULSkeletonUIMaximized());
+      mFrameState->ConsumePreXULSkeletonState(WasPreXULSkeletonUIMaximized());
 
       
       
@@ -1674,7 +1674,7 @@ void nsWindow::Show(bool bState) {
         
         SetCursor(Cursor{eCursor_standard});
 
-        switch (mFrameState.GetSizeMode()) {
+        switch (mFrameState->GetSizeMode()) {
           case nsSizeMode_Fullscreen:
             ::ShowWindow(mWnd, SW_SHOW);
             break;
@@ -2335,10 +2335,10 @@ void nsWindow::SetSizeMode(nsSizeMode aMode) {
     return;
   }
 
-  mFrameState.EnsureSizeMode(aMode);
+  mFrameState->EnsureSizeMode(aMode);
 }
 
-nsSizeMode nsWindow::SizeMode() { return mFrameState.GetSizeMode(); }
+nsSizeMode nsWindow::SizeMode() { return mFrameState->GetSizeMode(); }
 
 void DoGetWorkspaceID(HWND aWnd, nsAString* aWorkspaceID) {
   RefPtr<IVirtualDesktopManager> desktopManager = gVirtualDesktopManager;
@@ -2460,7 +2460,7 @@ void nsWindow::ConstrainPosition(bool aAllowSlop, int32_t* aX, int32_t* aY) {
 
   screenmgr->ScreenForRect(*aX, *aY, logWidth, logHeight,
                            getter_AddRefs(screen));
-  if (mFrameState.GetSizeMode() != nsSizeMode_Fullscreen) {
+  if (mFrameState->GetSizeMode() != nsSizeMode_Fullscreen) {
     
     nsresult rv = screen->GetAvailRectDisplayPix(&left, &top, &width, &height);
     if (NS_FAILED(rv)) {
@@ -2821,7 +2821,7 @@ bool nsWindow::UpdateNonClientMargins(int32_t aSizeMode, bool aReflowWindow) {
   if (!mCustomNonClient) return false;
 
   if (aSizeMode == -1) {
-    aSizeMode = mFrameState.GetSizeMode();
+    aSizeMode = mFrameState->GetSizeMode();
   }
 
   bool hasCaption = (mBorderStyle & (eBorderStyle_all | eBorderStyle_title |
@@ -3686,7 +3686,7 @@ void nsWindow::OnFullscreenChanged(bool aFullScreen) {
 
   
   
-  UpdateNonClientMargins(mFrameState.GetSizeMode(),  !aFullScreen);
+  UpdateNonClientMargins(mFrameState->GetSizeMode(),  !aFullScreen);
 
   
   
@@ -3694,7 +3694,7 @@ void nsWindow::OnFullscreenChanged(bool aFullScreen) {
   nsBaseWidget::InfallibleMakeFullScreen(aFullScreen);
 
   if (mIsVisible && !aFullScreen &&
-      mFrameState.GetSizeMode() == nsSizeMode_Normal) {
+      mFrameState->GetSizeMode() == nsSizeMode_Normal) {
     
     
     DispatchFocusToTopLevelWindow(true);
@@ -3705,7 +3705,7 @@ void nsWindow::OnFullscreenChanged(bool aFullScreen) {
     taskbarInfo->PrepareFullScreenHWND(mWnd, FALSE);
   }
 
-  OnSizeModeChange(mFrameState.GetSizeMode());
+  OnSizeModeChange(mFrameState->GetSizeMode());
 
   if (mWidgetListener) {
     mWidgetListener->FullscreenChanged(aFullScreen);
@@ -3713,7 +3713,7 @@ void nsWindow::OnFullscreenChanged(bool aFullScreen) {
 }
 
 nsresult nsWindow::MakeFullScreen(bool aFullScreen) {
-  mFrameState.EnsureFullscreenMode(aFullScreen);
+  mFrameState->EnsureFullscreenMode(aFullScreen);
   return NS_OK;
 }
 
@@ -4094,7 +4094,7 @@ WindowRenderer* nsWindow::GetWindowRenderer() {
     WinCompositorWidgetInitData initData(
         reinterpret_cast<uintptr_t>(mWnd),
         reinterpret_cast<uintptr_t>(static_cast<nsIWidget*>(this)),
-        mTransparencyMode, mFrameState.GetSizeMode());
+        mTransparencyMode, mFrameState->GetSizeMode());
     
     CompositorOptions options(false, false);
     mBasicLayersSurface =
@@ -5353,7 +5353,7 @@ bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
 
       
       
-      if (mFrameState.GetSizeMode() != nsSizeMode_Fullscreen &&
+      if (mFrameState->GetSizeMode() != nsSizeMode_Fullscreen &&
           gfxWindowsPlatform::GetPlatform()->DwmCompositionEnabled())
         break;
 
@@ -5650,7 +5650,7 @@ bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
       if (lParam != -1 && !result && mCustomNonClient &&
           mDraggableRegion.Contains(GET_X_LPARAM(pos), GET_Y_LPARAM(pos))) {
         
-        DisplaySystemMenu(mWnd, mFrameState.GetSizeMode(), mIsRTL,
+        DisplaySystemMenu(mWnd, mFrameState->GetSizeMode(), mIsRTL,
                           GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
         result = true;
       }
@@ -6099,18 +6099,18 @@ bool nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
 
     case WM_SYSCOMMAND: {
       WPARAM filteredWParam = (wParam & 0xFFF0);
-      if (mFrameState.GetSizeMode() == nsSizeMode_Fullscreen &&
+      if (mFrameState->GetSizeMode() == nsSizeMode_Fullscreen &&
           filteredWParam == SC_RESTORE &&
           GetCurrentShowCmd(mWnd) != SW_SHOWMINIMIZED) {
-        mFrameState.EnsureFullscreenMode(false);
+        mFrameState->EnsureFullscreenMode(false);
         result = true;
       }
 
       
       
       if (filteredWParam == SC_KEYMENU && lParam == VK_SPACE &&
-          mFrameState.GetSizeMode() == nsSizeMode_Fullscreen) {
-        DisplaySystemMenu(mWnd, mFrameState.GetSizeMode(), mIsRTL,
+          mFrameState->GetSizeMode() == nsSizeMode_Fullscreen) {
+        DisplaySystemMenu(mWnd, mFrameState->GetSizeMode(), mIsRTL,
                           MOZ_SYSCONTEXT_X_POS, MOZ_SYSCONTEXT_Y_POS);
         result = true;
       }
@@ -6346,8 +6346,8 @@ BOOL CALLBACK nsWindow::BroadcastMsg(HWND aTopWindow, LPARAM aMsg) {
 
 
 int32_t nsWindow::ClientMarginHitTestPoint(int32_t mx, int32_t my) {
-  if (mFrameState.GetSizeMode() == nsSizeMode_Minimized ||
-      mFrameState.GetSizeMode() == nsSizeMode_Fullscreen) {
+  if (mFrameState->GetSizeMode() == nsSizeMode_Minimized ||
+      mFrameState->GetSizeMode() == nsSizeMode_Fullscreen) {
     return HTCLIENT;
   }
 
@@ -6372,7 +6372,7 @@ int32_t nsWindow::ClientMarginHitTestPoint(int32_t mx, int32_t my) {
                                       eBorderStyle_default)) > 0
                          ? true
                          : false;
-  if (mFrameState.GetSizeMode() == nsSizeMode_Maximized) isResizable = false;
+  if (mFrameState->GetSizeMode() == nsSizeMode_Maximized) isResizable = false;
 
   
   
@@ -6386,7 +6386,7 @@ int32_t nsWindow::ClientMarginHitTestPoint(int32_t mx, int32_t my) {
                kResizableBorderMinSize));
 
   bool allowContentOverride =
-      mFrameState.GetSizeMode() == nsSizeMode_Maximized ||
+      mFrameState->GetSizeMode() == nsSizeMode_Maximized ||
       (mx >= winRect.left + nonClientSize.left &&
        mx <= winRect.right - nonClientSize.right &&
        my >= winRect.top + nonClientSize.top &&
@@ -6753,14 +6753,14 @@ void nsWindow::OnWindowPosChanged(WINDOWPOS* wp) {
     
     
     
-    if (mFrameState.GetSizeMode() == nsSizeMode_Minimized &&
+    if (mFrameState->GetSizeMode() == nsSizeMode_Minimized &&
         (wp->flags & SWP_NOACTIVATE)) {
       return;
     }
 
-    mFrameState.OnFrameChanged();
+    mFrameState->OnFrameChanged();
 
-    if (mFrameState.GetSizeMode() == nsSizeMode_Minimized) {
+    if (mFrameState->GetSizeMode() == nsSizeMode_Minimized) {
       
       return;
     }
@@ -6769,7 +6769,7 @@ void nsWindow::OnWindowPosChanged(WINDOWPOS* wp) {
   
   if (!(wp->flags & SWP_NOACTIVATE) && NeedsToTrackWindowOcclusionState()) {
     WinWindowOcclusionTracker::Get()->OnWindowVisibilityChanged(
-        this, mFrameState.GetSizeMode() != nsSizeMode_Minimized);
+        this, mFrameState->GetSizeMode() != nsSizeMode_Minimized);
   }
 
   
@@ -6845,7 +6845,7 @@ void nsWindow::OnWindowPosChanged(WINDOWPOS* wp) {
     }
 
     
-    if (mFrameState.GetSizeMode() == nsSizeMode_Maximized) {
+    if (mFrameState->GetSizeMode() == nsSizeMode_Maximized) {
       if (UpdateNonClientMargins(nsSizeMode_Maximized, true)) {
         
         return;
@@ -6881,13 +6881,13 @@ void nsWindow::OnWindowPosChanging(LPWINDOWPOS& info) {
   
   
   if (info->flags & SWP_FRAMECHANGED && !(info->flags & SWP_NOSIZE)) {
-    mFrameState.OnFrameChanging();
+    mFrameState->OnFrameChanging();
   }
 
   
   
   
-  if (mFrameState.GetSizeMode() == nsSizeMode_Fullscreen &&
+  if (mFrameState->GetSizeMode() == nsSizeMode_Fullscreen &&
       !(info->flags & SWP_NOMOVE) && !(info->flags & SWP_NOSIZE)) {
     nsCOMPtr<nsIScreenManager> screenmgr =
         do_GetService(sScreenManagerContractID);
@@ -7477,7 +7477,7 @@ void nsWindow::OnDPIChanged(int32_t x, int32_t y, int32_t width,
   mDefaultScale = -1.0;  
 
   if (mResizeState != RESIZING &&
-      mFrameState.GetSizeMode() == nsSizeMode_Normal) {
+      mFrameState->GetSizeMode() == nsSizeMode_Normal) {
     
     
     nsCOMPtr<nsIScreenManager> sm = do_GetService(sScreenManagerContractID);
@@ -7630,9 +7630,9 @@ void nsWindow::SetWindowTranslucencyInner(nsTransparencyMode aMode) {
 
   if (parent->mIsVisible) {
     style |= WS_VISIBLE;
-    if (parent->mFrameState.GetSizeMode() == nsSizeMode_Maximized) {
+    if (parent->mFrameState->GetSizeMode() == nsSizeMode_Maximized) {
       style |= WS_MAXIMIZE;
-    } else if (parent->mFrameState.GetSizeMode() == nsSizeMode_Minimized) {
+    } else if (parent->mFrameState->GetSizeMode() == nsSizeMode_Minimized) {
       style |= WS_MINIMIZE;
     }
   }
@@ -8669,7 +8669,7 @@ void nsWindow::GetCompositorWidgetInitData(
   *aInitData = WinCompositorWidgetInitData(
       reinterpret_cast<uintptr_t>(mWnd),
       reinterpret_cast<uintptr_t>(static_cast<nsIWidget*>(this)),
-      mTransparencyMode, mFrameState.GetSizeMode());
+      mTransparencyMode, mFrameState->GetSizeMode());
 }
 
 bool nsWindow::SynchronouslyRepaintOnResize() {
@@ -9066,6 +9066,21 @@ static void ShowWindowWithMode(HWND aWnd, nsSizeMode aMode) {
 nsWindow::FrameState::FrameState(nsWindow* aWindow) : mWindow(aWindow) {}
 
 nsSizeMode nsWindow::FrameState::GetSizeMode() const { return mSizeMode; }
+
+void nsWindow::FrameState::CheckInvariant() const {
+  MOZ_ASSERT(mSizeMode >= 0 && mSizeMode < nsSizeMode_Invalid);
+  MOZ_ASSERT(mLastSizeMode >= 0 && mLastSizeMode < nsSizeMode_Invalid);
+  MOZ_ASSERT(mOldSizeMode >= 0 && mOldSizeMode < nsSizeMode_Invalid);
+  MOZ_ASSERT(mWindow);
+
+  
+  MOZ_ASSERT_IF(mSizeMode == nsSizeMode_Fullscreen, mFullscreenMode);
+  MOZ_ASSERT_IF(!mFullscreenMode, mSizeMode != nsSizeMode_Fullscreen);
+
+  
+  
+  MOZ_ASSERT(mOldSizeMode != nsSizeMode_Fullscreen);
+}
 
 void nsWindow::FrameState::ConsumePreXULSkeletonState(bool aWasMaximized) {
   mSizeMode = aWasMaximized ? nsSizeMode_Maximized : nsSizeMode_Normal;
