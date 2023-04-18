@@ -479,7 +479,7 @@ class Nursery {
   PreviousGC previousGC;
 
   bool hasRecentGrowthData;
-  double smoothedGrowthFactor;
+  double smoothedTargetSize;
 
   
   
