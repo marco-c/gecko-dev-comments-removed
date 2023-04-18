@@ -69,8 +69,7 @@ nsScanner::nsScanner(const nsAString& anHTMLString) {
 
 
 
-nsScanner::nsScanner(nsString& aFilename, bool aCreateStream)
-    : mFilename(aFilename) {
+nsScanner::nsScanner(nsIURI* aURI, bool aCreateStream) : mURI(aURI) {
   MOZ_COUNT_CTOR(nsScanner);
   NS_ASSERTION(!aCreateStream, "This is always true.");
 
@@ -336,16 +335,6 @@ bool nsScanner::CopyUnusedData(nsString& aCopyBuffer) {
 
   return CopyUnicodeTo(start, end, aCopyBuffer);
 }
-
-
-
-
-
-
-
-
-
-nsString& nsScanner::GetFilename(void) { return mFilename; }
 
 
 

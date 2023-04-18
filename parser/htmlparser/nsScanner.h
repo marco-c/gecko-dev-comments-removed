@@ -50,7 +50,7 @@ class nsScanner final {
 
 
 
-  nsScanner(nsString& aFilename, bool aCreateStream);
+  nsScanner(nsIURI* aURI, bool aCreateStream);
 
   ~nsScanner();
 
@@ -128,10 +128,7 @@ class nsScanner final {
 
 
 
-
-
-
-  nsString& GetFilename(void);
+  nsIURI* GetURI(void) const { return mURI; }
 
   static void SelfTest();
 
@@ -177,7 +174,7 @@ class nsScanner final {
   nsScannerIterator
       mMarkPosition;  
   nsScannerIterator mEndPosition;  
-  nsString mFilename;
+  nsCOMPtr<nsIURI> mURI;
   bool mIncremental;
   int32_t mCharsetSource;
   nsCString mCharset;

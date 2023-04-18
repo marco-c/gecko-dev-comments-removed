@@ -23,6 +23,10 @@
 class nsIExpatSink;
 struct nsCatalogData;
 class RLBoxExpatSandboxData;
+namespace mozilla {
+template <typename, size_t>
+class Array;
+}
 
 class nsExpatDriver : public nsIDTD, public nsITokenizer {
   virtual ~nsExpatDriver();
@@ -71,9 +75,9 @@ class nsExpatDriver : public nsIDTD, public nsITokenizer {
   
   nsresult OpenInputStreamFromExternalDTD(const char16_t* aFPIStr,
                                           const char16_t* aURLStr,
-                                          const char16_t* aBaseURL,
+                                          nsIURI* aBaseURI,
                                           nsIInputStream** aStream,
-                                          nsAString& aAbsURL);
+                                          nsIURI** aAbsURI);
 
   
 
@@ -111,6 +115,34 @@ class nsExpatDriver : public nsIDTD, public nsITokenizer {
     return mInternalState == NS_ERROR_HTMLPARSER_BLOCK ||
            mInternalState == NS_ERROR_HTMLPARSER_INTERRUPTED;
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  using ExpatBaseURI = mozilla::Array<XML_Char, 2>;
+  ExpatBaseURI GetExpatBaseURI(nsIURI* aURI);
+  nsIURI* GetBaseURI(const XML_Char* aBase) const;
 
   RLBoxExpatSandboxData* SandboxData() const;
   rlbox_sandbox_expat* Sandbox() const;
@@ -153,7 +185,7 @@ class nsExpatDriver : public nsIDTD, public nsITokenizer {
   nsCOMPtr<nsIExpatSink> mSink;
 
   const nsCatalogData* mCatalogData;  
-  nsString mURISpec;
+  nsTArray<nsCOMPtr<nsIURI>> mURIs;
 
   
   uint64_t mInnerWindowID;

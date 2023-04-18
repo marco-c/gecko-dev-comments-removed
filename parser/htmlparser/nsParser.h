@@ -314,7 +314,7 @@ class nsParser final : public nsIParser,
 
 
 
-  nsresult WillBuildModel(nsString& aFilename);
+  nsresult WillBuildModel();
 
   
 
