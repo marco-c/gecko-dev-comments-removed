@@ -1766,11 +1766,6 @@ JS_PUBLIC_API void JS_GlobalObjectTraceHook(JSTracer* trc, JSObject* global) {
   
   
   
-  
-  
-  
-  
-  
   if (globalRealm->unsafeUnbarrieredMaybeGlobal() != globalObj) {
     return;
   }
