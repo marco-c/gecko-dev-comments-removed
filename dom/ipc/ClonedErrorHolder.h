@@ -65,7 +65,7 @@ class ClonedErrorHolder final {
   
   
   
-  bool ToErrorValue(JSContext* aCx, JS::MutableHandleValue aResult);
+  bool ToErrorValue(JSContext* aCx, JS::MutableHandle<JS::Value> aResult);
 
   class Holder final : public StructuredCloneHolder {
    public:

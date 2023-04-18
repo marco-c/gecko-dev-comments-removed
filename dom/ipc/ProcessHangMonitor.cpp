@@ -375,7 +375,7 @@ bool HangMonitorChild::InterruptCallback() {
 
   
   
-  JS::RootedObject global(mContext, JS::CurrentGlobalOrNull(mContext));
+  JS::Rooted<JSObject*> global(mContext, JS::CurrentGlobalOrNull(mContext));
   nsIPrincipal* principal = xpc::GetObjectPrincipal(global);
   if (principal && (principal->IsSystemPrincipal() ||
                     principal->GetIsAddonOrExpandedAddonPrincipal())) {

@@ -67,13 +67,13 @@ class SharedMap : public DOMEventTargetHelper {
   
   
   void Get(JSContext* cx, const nsACString& name,
-           JS::MutableHandleValue aRetVal, ErrorResult& aRv);
+           JS::MutableHandle<JS::Value> aRetVal, ErrorResult& aRv);
 
   
   bool Has(const nsAString& aName) { return Has(NS_ConvertUTF16toUTF8(aName)); }
 
   void Get(JSContext* aCx, const nsAString& aName,
-           JS::MutableHandleValue aRetVal, ErrorResult& aRv) {
+           JS::MutableHandle<JS::Value> aRetVal, ErrorResult& aRv) {
     return Get(aCx, NS_ConvertUTF16toUTF8(aName), aRetVal, aRv);
   }
 
@@ -115,7 +115,8 @@ class SharedMap : public DOMEventTargetHelper {
               nsTArray<RefPtr<BlobImpl>>&& aBlobs,
               nsTArray<nsCString>&& aChangedKeys);
 
-  JSObject* WrapObject(JSContext* aCx, JS::HandleObject aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
  protected:
   ~SharedMap() override = default;
@@ -186,7 +187,8 @@ class SharedMap : public DOMEventTargetHelper {
 
     
     
-    void Read(JSContext* aCx, JS::MutableHandleValue aRetVal, ErrorResult& aRv);
+    void Read(JSContext* aCx, JS::MutableHandle<JS::Value> aRetVal,
+              ErrorResult& aRv);
 
     
     uint32_t Size() const { return mSize; }
@@ -293,14 +295,14 @@ class WritableSharedMap final : public SharedMap {
 
   
   
-  void Set(JSContext* cx, const nsACString& name, JS::HandleValue value,
+  void Set(JSContext* cx, const nsACString& name, JS::Handle<JS::Value> value,
            ErrorResult& aRv);
 
   
   void Delete(const nsACString& name);
 
   
-  void Set(JSContext* aCx, const nsAString& aName, JS::HandleValue aValue,
+  void Set(JSContext* aCx, const nsAString& aName, JS::Handle<JS::Value> aValue,
            ErrorResult& aRv) {
     return Set(aCx, NS_ConvertUTF16toUTF8(aName), aValue, aRv);
   }
@@ -322,7 +324,8 @@ class WritableSharedMap final : public SharedMap {
 
   SharedMap* GetReadOnly();
 
-  JSObject* WrapObject(JSContext* aCx, JS::HandleObject aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
  protected:
   ~WritableSharedMap() override = default;
