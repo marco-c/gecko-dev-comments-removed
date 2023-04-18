@@ -37,13 +37,8 @@ var gMoreFromMozillaPane = {
 
   
   sendToDeviceEmailsSupported() {
-    
-    const userLocales = window.navigator.languages.map(l => l.toLowerCase());
-    
-    let userSupportedLocales = this.emailSupportedLocales.filter(loc =>
-      userLocales.includes(loc)
-    );
-    return !!userSupportedLocales.length;
+    const userLocale = Services.locale.appLocaleAsBCP47.toLowerCase();
+    return this.emailSupportedLocales.includes(userLocale);
   },
 
   getURL(url, region, option, hasEmail) {
