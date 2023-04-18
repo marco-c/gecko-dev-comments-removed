@@ -17,17 +17,6 @@ using namespace mozilla;
 
 
 static tainted_hunspell<char*> allocStrInSandbox(
-    rlbox_sandbox_hunspell& aSandbox, const nsAutoCString& str) {
-  size_t size = str.Length() + 1;
-  tainted_hunspell<char*> t_str = aSandbox.malloc_in_sandbox<char>(size);
-  if (t_str) {
-    rlbox::memcpy(aSandbox, t_str, str.get(), size);
-  }
-  return t_str;
-}
-
-
-static tainted_hunspell<char*> allocStrInSandbox(
     rlbox_sandbox_hunspell& aSandbox, const std::string& str) {
   size_t size = str.size() + 1;
   tainted_hunspell<char*> t_str = aSandbox.malloc_in_sandbox<char>(size);
@@ -38,8 +27,8 @@ static tainted_hunspell<char*> allocStrInSandbox(
 }
 
 
-RLBoxHunspell* RLBoxHunspell::Create(const nsAutoCString& affpath,
-                                     const nsAutoCString& dpath) {
+RLBoxHunspell* RLBoxHunspell::Create(const nsCString& affpath,
+                                     const nsCString& dpath) {
   MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
 
   mozilla::UniquePtr<rlbox_sandbox_hunspell, RLBoxDeleter> sandbox(
@@ -97,7 +86,7 @@ RLBoxHunspell* RLBoxHunspell::Create(const nsAutoCString& affpath,
 
 RLBoxHunspell::RLBoxHunspell(
     mozilla::UniquePtr<rlbox_sandbox_hunspell, RLBoxDeleter> aSandbox,
-    const nsAutoCString& affpath, const nsAutoCString& dpath)
+    const nsCString& affpath, const nsCString& dpath)
     : mSandbox(std::move(aSandbox)), mHandle(nullptr) {
   
   mCreateFilemgr =
@@ -121,10 +110,11 @@ RLBoxHunspell::RLBoxHunspell(
   
   
   
-  tainted_hunspell<char*> t_affpath = allocStrInSandbox(*mSandbox, affpath);
+  tainted_hunspell<char*> t_affpath =
+      allocStrInSandbox(*mSandbox, affpath.get());
   MOZ_RELEASE_ASSERT(t_affpath);
 
-  tainted_hunspell<char*> t_dpath = allocStrInSandbox(*mSandbox, dpath);
+  tainted_hunspell<char*> t_dpath = allocStrInSandbox(*mSandbox, dpath.get());
   MOZ_RELEASE_ASSERT(t_dpath);
 
   
