@@ -39,6 +39,12 @@ function setup() {
   
   
   addCertFromFile(certdb, "../unit/http2-ca.pem", "CTu,u,u");
+
+  if (!gDNS) {
+    gDNS = Cc["@mozilla.org/network/dns-service;1"].getService(
+      Ci.nsIDNSService
+    );
+  }
 }
 
 setup();
