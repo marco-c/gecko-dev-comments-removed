@@ -4,30 +4,31 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["LanguageDetector"];
+
+var EXPORTED_SYMBOLS = ["LanguageDetector", "workerManager"];
 
 const { clearTimeout, setTimeout } = ChromeUtils.import(
   "resource://gre/modules/Timer.jsm"
 );
 
-
-
-
-
-
-
-
-
-
-
-
-
-var LARGE_STRING = 1.5 * 1024 * 1024;
-var IDLE_TIMEOUT = 10 * 1000;
-
 const WORKER_URL = "resource:///modules/translation/cld-worker.js";
 
 var workerManager = {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  LARGE_STRING: 1.5 * 1024 * 1024,
+  IDLE_TIMEOUT: 10 * 1000,
+
   detectionQueue: [],
 
   detectLanguage(aParams) {
@@ -44,7 +45,10 @@ var workerManager = {
         
         
         
-        if (aParams.text.length >= LARGE_STRING || this._idleTimeout != null) {
+        if (
+          aParams.text.length >= this.LARGE_STRING ||
+          this._idleTimeout != null
+        ) {
           this.flushWorker();
         }
 
@@ -82,7 +86,10 @@ var workerManager = {
       clearTimeout(this._idleTimeout);
     }
 
-    this._idleTimeout = setTimeout(this._flushWorker.bind(this), IDLE_TIMEOUT);
+    this._idleTimeout = setTimeout(
+      this._flushWorker.bind(this),
+      this.IDLE_TIMEOUT
+    );
   },
 
   

@@ -4,7 +4,13 @@
 
 "use strict";
 
-var EXPORTED_SYMBOLS = ["AddressesEngine", "CreditCardsEngine"];
+var EXPORTED_SYMBOLS = [
+  "AddressesEngine",
+  "CreditCardsEngine",
+  
+  "sanitizeStorageObject",
+  "AutofillRecord",
+];
 
 const { Services } = ChromeUtils.import("resource://gre/modules/Services.jsm");
 const { Changeset, Store, SyncEngine, Tracker } = ChromeUtils.import(

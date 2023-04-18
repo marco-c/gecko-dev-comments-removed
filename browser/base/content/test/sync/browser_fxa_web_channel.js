@@ -12,11 +12,8 @@ ChromeUtils.defineModuleGetter(
   "resource://gre/modules/WebChannel.jsm"
 );
 
-
-
 var { FxAccountsWebChannel } = ChromeUtils.import(
-  "resource://gre/modules/FxAccountsWebChannel.jsm",
-  null
+  "resource://gre/modules/FxAccountsWebChannel.jsm"
 );
 
 const TEST_HTTP_PATH = "http://example.com";
