@@ -283,11 +283,11 @@ function TupleJoin(separator) {
 
 function TupleLastIndexOf(valueToFind ) {
     if (arguments.length < 2) {
-        return callContentFunction(ArrayLastIndexOf, ThisTupleValue(this),
-                                   valueToFind);
+        return callFunction(std_Array_lastIndexOf, ThisTupleValue(this),
+                            valueToFind);
     }
-    return callContentFunction(ArrayLastIndexOf, ThisTupleValue(this),
-                                   valueToFind, arguments[1]);
+    return callFunction(std_Array_lastIndexOf, ThisTupleValue(this),
+                        valueToFind, arguments[1]);
 }
 
 
